@@ -1,0 +1,11 @@
+read_verilog ../rtl/picorv32.v
+
+hierarchy -top picorv32
+proc; flatten
+
+synth;
+
+dfflibmap -liberty osu018_stdcells.lib
+abc -liberty osu018_stdcells.lib;
+
+stat

@@ -1,0 +1,14 @@
+read_verilog ../rtl/picorv32.v
+read_verilog ../rtl/spimemio.v
+read_verilog ../rtl/simpleuart.v
+read_verilog ../rtl/picosoc.v
+
+hierarchy -top picosoc
+proc; flatten
+
+synth;
+
+dfflibmap -liberty osu018_stdcells.lib
+abc -liberty osu018_stdcells.lib;
+
+stat
