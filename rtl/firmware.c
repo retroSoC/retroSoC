@@ -20,12 +20,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef ICEBREAKER
+#ifdef RETROSOC
 #  define MEM_TOTAL 0x20000 /* 128 KB */
-#elif HX8KDEMO
-#  define MEM_TOTAL 0x200 /* 2 KB */
 #else
-#  error "Set -DICEBREAKER or -DHX8KDEMO when compiling firmware.c"
+#  error "Set -DRETROSOC when compiling firmware.c"
 #endif
 
 // a pointer to this is a null pointer, but the compiler does not
@@ -110,7 +108,7 @@ void set_flash_mode_qddr()
 }
 #endif
 
-#ifdef ICEBREAKER
+#ifdef RETROSOC
 void set_flash_qspi_flag()
 {
 	uint8_t buffer[8];
@@ -386,7 +384,7 @@ void cmd_read_flash_regs()
 }
 #endif
 
-#ifdef ICEBREAKER
+#ifdef RETROSOC
 uint8_t cmd_read_flash_reg(uint8_t cmd)
 {
 	uint8_t buffer[2] = {cmd, 0};
@@ -610,7 +608,7 @@ void cmd_benchmark_all()
 }
 #endif
 
-#ifdef ICEBREAKER
+#ifdef RETROSOC
 void cmd_benchmark_all()
 {
 	uint32_t instns = 0;
