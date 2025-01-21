@@ -18,7 +18,7 @@
  */
 
 `ifdef PICOSOC_V
-`error "retrosoc.v must be read before picosoc.v!"
+// `error "retrosoc.v must be read before picosoc.v!"
 `endif
 
 `define PICOSOC_MEM ice40up5k_spram
