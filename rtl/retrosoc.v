@@ -66,15 +66,23 @@ module retrosoc (
     wire flash_io2_oe, flash_io2_do, flash_io2_di;
     wire flash_io3_oe, flash_io3_do, flash_io3_di;
 
-    SB_IO #(
-        .PIN_TYPE(6'b 1010_01),
-        .PULLUP(1'b 0)
-    ) flash_io_buf [3:0] (
-        .PACKAGE_PIN({flash_io3, flash_io2, flash_io1, flash_io0}),
-        .OUTPUT_ENABLE({flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe}),
-        .D_OUT_0({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
-        .D_IN_0({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
-    );
+    assign flash_io0 = flash_io0_oe ? flash_io0_do : 1'bz;
+    assign flash_io0_di = flash_io0;
+    assign flash_io1 = flash_io1_oe ? flash_io1_do : 1'bz;
+    assign flash_io1_di = flash_io1;
+    assign flash_io2 = flash_io2_oe ? flash_io2_do : 1'bz;
+    assign flash_io2_di = flash_io2;
+    assign flash_io3 = flash_io3_oe ? flash_io3_do : 1'bz;
+    assign flash_io3_di = flash_io3;
+    // SB_IO #(
+    //     .PIN_TYPE(6'b 1010_01),
+    //     .PULLUP(1'b 0)
+    // ) flash_io_buf [3:0] (
+    //     .PACKAGE_PIN({flash_io3, flash_io2, flash_io1, flash_io0}),
+    //     .OUTPUT_ENABLE({flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe}),
+    //     .D_OUT_0({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
+    //     .D_IN_0({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
+    // );
 
     wire        iomem_valid;
     reg         iomem_ready;
