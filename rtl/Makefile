@@ -12,10 +12,10 @@ retrosoc.json: retrosoc.v ice40up5k_spram.v spimemio.v simpleuart.v picosoc.v ..
 	yosys -ql retrosoc.log -p 'synth_ice40 -dsp -top retrosoc -json retrosoc.json' $^
 
 retrosoc_tb.vvp: retrosoc_tb.v retrosoc.v ice40up5k_spram.v spimemio.v simpleuart.v picosoc.v picorv32.v spiflash.v
-	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` -DNO_ICE40_DEFAULT_ASSIGNMENTS
+	iverilog -s retrosoc_tb -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` -DNO_ICE40_DEFAULT_ASSIGNMENTS
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v retrosoc_syn.v spiflash.v
-	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` -DNO_ICE40_DEFAULT_ASSIGNMENTS
+	iverilog -s retrosoc_tb -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` -DNO_ICE40_DEFAULT_ASSIGNMENTS
 
 retrosoc_syn.v: retrosoc.json
 	yosys -p 'read_json retrosoc.json; write_verilog retrosoc_syn.v'
