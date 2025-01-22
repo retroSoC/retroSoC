@@ -21,25 +21,31 @@ set abc_comb_script   [processAbcScript $abc_combinational_script]
 # read liberty files and prepare some variables
 source $script_dir/init_tech.tcl
 
-yosys plugin -i slang.so
+# yosys plugin -i slang.so
 
-# read design
-yosys read_slang --top $top_design -f $sv_flist \
-        --compat-mode --keep-hierarchy \
-        --allow-use-before-declare --ignore-unknown-modules
+# # read design
+# yosys read_slang --top $top_design -f $sv_flist \
+#         --compat-mode --keep-hierarchy \
+#         --allow-use-before-declare --ignore-unknown-modules
 
+yosys read_verilog ../../rtl/spram_model.v
+yosys read_verilog ../../rtl/picorv32.v
+yosys read_verilog ../../rtl/spimemio.v
+yosys read_verilog ../../rtl/simpleuart.v
+yosys read_verilog ../../rtl/picosoc.v
+yosys read_verilog ../../rtl/retrosoc.v
 
-# blackbox requested modules
-if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {
-    foreach sel $::env(YOSYS_BLACKBOX_MODULES) {
-        puts "Blackboxing the module ${sel}"
-        yosys select -list {*}$sel
-	    yosys blackbox {*}$sel
-        yosys setattr -set keep_hierarchy 1 {*}$sel
-    }
-}
+# # blackbox requested modules
+# if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {
+#     foreach sel $::env(YOSYS_BLACKBOX_MODULES) {
+#         puts "Blackboxing the module ${sel}"
+#         yosys select -list {*}$sel
+# 	    yosys blackbox {*}$sel
+#         yosys setattr -set keep_hierarchy 1 {*}$sel
+#     }
+# }
 
-# preserve hierarchy of selected modules/instances
+# # preserve hierarchy of selected modules/instances
 if { [info exists ::env(YOSYS_KEEP_HIER_INST)] } {
     foreach sel $::env(YOSYS_KEEP_HIER_INST) {
         puts "Keeping hierarchy of selection: $sel"

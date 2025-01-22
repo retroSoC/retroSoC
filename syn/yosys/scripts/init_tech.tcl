@@ -10,19 +10,19 @@ set yosys_dir [file dirname [file dirname [info script]]]
 set root_dir [file dirname $yosys_dir]
 
 if {[file exists "$root_dir/.cockpitrc"]} {
-	puts "0. Executing init_tech: load technology from ETHZ DZ cockpit"
-	set pdk_dir "$root_dir/technology"
-	set pdk_cells_lib ${pdk_dir}/lib
-	set pdk_sram_lib  ${pdk_dir}/lib
-	set pdk_io_lib    ${pdk_dir}/lib
+    puts "0. Executing init_tech: load technology from ETHZ DZ cockpit"
+    set pdk_dir "$root_dir/technology"
+    set pdk_cells_lib ${pdk_dir}/lib
+    set pdk_sram_lib  ${pdk_dir}/lib
+    set pdk_io_lib    ${pdk_dir}/lib
 } else {
-	puts "0. Executing init_tech: load technology from Github PDK"
-	if {![info exists pdk_dir]} {
-		set pdk_dir "$root_dir/ihp13/pdk"
-	}
-	set pdk_cells_lib ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib
-	set pdk_sram_lib  ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_sram/lib
-	set pdk_io_lib    ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_io/lib
+    puts "0. Executing init_tech: load technology from Github PDK"
+    if {![info exists pdk_dir]} {
+        set pdk_dir "$root_dir/IHP-Open-PDK"
+    }
+    set pdk_cells_lib ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib
+    set pdk_sram_lib  ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_sram/lib
+    set pdk_io_lib    ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_io/lib
 }
 
 set tech_cells [list "$pdk_cells_lib/sg13g2_stdcell_typ_1p20V_25C.lib"]
@@ -44,5 +44,5 @@ set tech_cells_args [concat {*}$tech_cells_args_list]
 
 # read library files
 foreach file $lib_list {
-	yosys read_liberty -lib "$file"
+    yosys read_liberty -lib "$file"
 }
