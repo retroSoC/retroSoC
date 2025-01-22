@@ -10,7 +10,9 @@ proc; flatten
 
 synth;
 
-dfflibmap -liberty osu018_stdcells.lib
-abc -liberty osu018_stdcells.lib;
+dfflibmap -liberty ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_typ_1p20V_25C.lib
+abc -liberty ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_typ_1p20V_25C.lib
 
 stat
+
+write_verilog retrosoc_syn.v

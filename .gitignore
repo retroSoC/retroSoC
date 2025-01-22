@@ -5,3 +5,5 @@
 *.vcd
 *.lib
 retrosoc_sections.lds
+retrosoc_syn*
+IHP-Open-PDK

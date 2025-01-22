@@ -24,7 +24,10 @@
 `define PICOSOC_MEM spram_model
 
 module retrosoc #(
-    parameter integer MEM_WORDS = 32768
+    // We limit the amount of memory in simulation
+    // in order to avoid reduce simulation time
+    // required for intialization of RAM
+    parameter integer MEM_WORDS = 256
 ) (
     input  clk_i,
     input  rst_n_i,

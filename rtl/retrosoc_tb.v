@@ -49,12 +49,7 @@ module retrosoc_tb;
     #1 $display("s_leds: %b", s_leds);
   end
 
-  retrosoc #(
-      // We limit the amount of memory in simulation
-      // in order to avoid reduce simulation time
-      // required for intialization of RAM
-      .MEM_WORDS(256)
-  ) u_retrosoc (
+  retrosoc u_retrosoc (
       .clk_i       (r_clk),
       .rst_n_i     (s_rst_n),
       .led1_o      (s_led1),
@@ -114,13 +109,18 @@ module retrosoc_tb;
   end
 
   initial begin
-    $dumpfile("retrosoc_tb.vcd");
+    if($test$plusargs("behv_wave")) begin
+      $dumpfile("retrosoc_tb.vcd");
+      $dumpvars(0, retrosoc_tb);
+    end else if($test$plusargs("syn_wave")) begin
+      $dumpfile("retrosoc_syn_tb.vcd");
     $dumpvars(0, retrosoc_tb);
-
-    repeat (10) begin
-      repeat (50000) @(posedge r_clk);
-      // $display("+50000 cycles");
     end
-    // $finish;
+
+    repeat (100) begin
+    repeat (5000) @(posedge r_clk);
+    // $display("+5000 cycles");
+    end
+    $finish;
   end
 endmodule
