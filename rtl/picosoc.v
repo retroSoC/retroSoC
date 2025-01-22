@@ -58,18 +58,18 @@ module picosoc #(
     input         uart_rx_i,
     output        flash_csb_o,
     output        flash_clk_o,
-    output        flash_io0_oe,
-    output        flash_io1_oe,
-    output        flash_io2_oe,
-    output        flash_io3_oe,
-    output        flash_io0_do,
-    output        flash_io1_do,
-    output        flash_io2_do,
-    output        flash_io3_do,
-    input         flash_io0_di,
-    input         flash_io1_di,
-    input         flash_io2_di,
-    input         flash_io3_di
+    output        flash_io0_oe_o,
+    output        flash_io1_oe_o,
+    output        flash_io2_oe_o,
+    output        flash_io3_oe_o,
+    output        flash_io0_do_o,
+    output        flash_io1_do_o,
+    output        flash_io2_do_o,
+    output        flash_io3_do_o,
+    input         flash_io0_di_i,
+    input         flash_io1_di_i,
+    input         flash_io2_di_i,
+    input         flash_io3_di_i
 );
 
   wire        s_mem_valid;
@@ -137,18 +137,18 @@ module picosoc #(
       .rdata       (s_spimem_rdata),
       .flash_csb   (flash_csb_o),
       .flash_clk   (flash_clk_o),
-      .flash_io0_oe(flash_io0_oe),
-      .flash_io1_oe(flash_io1_oe),
-      .flash_io2_oe(flash_io2_oe),
-      .flash_io3_oe(flash_io3_oe),
-      .flash_io0_do(flash_io0_do),
-      .flash_io1_do(flash_io1_do),
-      .flash_io2_do(flash_io2_do),
-      .flash_io3_do(flash_io3_do),
-      .flash_io0_di(flash_io0_di),
-      .flash_io1_di(flash_io1_di),
-      .flash_io2_di(flash_io2_di),
-      .flash_io3_di(flash_io3_di),
+      .flash_io0_oe(flash_io0_oe_o),
+      .flash_io1_oe(flash_io1_oe_o),
+      .flash_io2_oe(flash_io2_oe_o),
+      .flash_io3_oe(flash_io3_oe_o),
+      .flash_io0_do(flash_io0_do_o),
+      .flash_io1_do(flash_io1_do_o),
+      .flash_io2_do(flash_io2_do_o),
+      .flash_io3_do(flash_io3_do_o),
+      .flash_io0_di(flash_io0_di_i),
+      .flash_io1_di(flash_io1_di_i),
+      .flash_io2_di(flash_io2_di_i),
+      .flash_io3_di(flash_io3_di_i),
       .cfgreg_we   (s_spimemio_cfgreg_sel ? s_mem_wstrb : 4'b0000),
       .cfgreg_di   (s_mem_wdata),
       .cfgreg_do   (s_spimemio_cfgreg_do)
@@ -171,9 +171,7 @@ module picosoc #(
 
   always @(posedge clk_i) s_ram_ready <= s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS;
 
-  `PICOSOC_MEM #(
-      .WORDS(MEM_WORDS)
-  ) u_picosoc_mem (
+  `PICOSOC_MEM u_picosoc_mem (
       .clk  (clk_i),
       .wen  ((s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS) ? s_mem_wstrb : 4'b0),
       .addr (s_mem_addr[23:2]),
@@ -203,17 +201,14 @@ module picosoc_regs (
   assign rdata2 = regs[raddr2[4:0]];
 endmodule
 
-module picosoc_mem #(
-    parameter integer WORDS = 256
-) (
+module picosoc_mem (
     input             clk,
     input      [ 3:0] wen,
     input      [21:0] addr,
     input      [31:0] wdata,
     output reg [31:0] rdata
 );
-  reg [31:0] mem[0:WORDS-1];
-
+  reg [31:0] mem[0:256-1];
   always @(posedge clk) begin
     rdata <= mem[addr];
     if (wen[0]) mem[addr][7:0] <= wdata[7:0];

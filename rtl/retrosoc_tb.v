@@ -54,23 +54,23 @@ module retrosoc_tb;
       // required for intialization of RAM
       .MEM_WORDS(256)
   ) u_retrosoc (
-      .clk_i      (r_clk),
-      .rst_n_i    (s_rst_n),
-      .led1_o     (s_led1),
-      .led2_o     (s_led2),
-      .led3_o     (s_led3),
-      .led4_o     (s_led4),
-      .led5_o     (s_led5),
-      .led6_o     (s_led6),
-      .led7_o     (s_led7),
-      .uart_rx_i  (s_uart_rx),
-      .uart_tx_o  (s_uart_tx),
-      .flash_csb_o(s_flash_csb),
-      .flash_clk_o(s_flash_clk),
-      .flash_io0  (s_flash_io0),
-      .flash_io1  (s_flash_io1),
-      .flash_io2  (s_flash_io2),
-      .flash_io3  (s_flash_io3)
+      .clk_i       (r_clk),
+      .rst_n_i     (s_rst_n),
+      .led1_o      (s_led1),
+      .led2_o      (s_led2),
+      .led3_o      (s_led3),
+      .led4_o      (s_led4),
+      .led5_o      (s_led5),
+      .led6_o      (s_led6),
+      .led7_o      (s_led7),
+      .uart_rx_i   (s_uart_rx),
+      .uart_tx_o   (s_uart_tx),
+      .flash_csb_o (s_flash_csb),
+      .flash_clk_o (s_flash_clk),
+      .flash_io0_io(s_flash_io0),
+      .flash_io1_io(s_flash_io1),
+      .flash_io2_io(s_flash_io2),
+      .flash_io3_io(s_flash_io3)
   );
 
   spiflash u_spiflash (
