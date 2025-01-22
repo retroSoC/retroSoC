@@ -2,20 +2,20 @@
 CROSS=riscv32-unknown-elf-
 CFLAGS=
 
-retrosim: retrosoc_tb.vvp retrosoc_fw.hex
+retrosim: retrosoc_tb.vvp retrosoc_fw.hex retrosoc_fw.bin
 	vvp -N $< +firmware=retrosoc_fw.hex
 
 retrosynsim: retrosoc_syn_tb.vvp retrosoc_fw.hex
 	vvp -N $< +firmware=retrosoc_fw.hex
 
-retrosoc.json: retrosoc.v ice40up5k_spram.v spimemio.v simpleuart.v picosoc.v ../picorv32.v
+retrosoc.json: retrosoc.v spram_model.v spimemio.v simpleuart.v picosoc.v ../picorv32.v
 	yosys -ql retrosoc.log -p 'synth_ice40 -dsp -top retrosoc -json retrosoc.json' $^
 
-retrosoc_tb.vvp: retrosoc_tb.v retrosoc.v ice40up5k_spram.v spimemio.v simpleuart.v picosoc.v picorv32.v spiflash.v
-	iverilog -s retrosoc_tb -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` -DNO_ICE40_DEFAULT_ASSIGNMENTS
+retrosoc_tb.vvp: retrosoc_tb.v retrosoc.v spram_model.v spimemio.v simpleuart.v picosoc.v picorv32.v spiflash.v
+	iverilog -s retrosoc_tb -o $@ $^
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v retrosoc_syn.v spiflash.v
-	iverilog -s retrosoc_tb -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` -DNO_ICE40_DEFAULT_ASSIGNMENTS
+	iverilog -s retrosoc_tb -o $@ $^
 
 retrosoc_syn.v: retrosoc.json
 	yosys -p 'read_json retrosoc.json; write_verilog retrosoc_syn.v'
@@ -26,13 +26,6 @@ retrosoc.asc: retrosoc.pcf retrosoc.json
 retrosoc.bin: retrosoc.asc
 	icetime -d up5k -c 12 -mtr retrosoc.rpt retrosoc.asc
 	icepack retrosoc.asc retrosoc.bin
-
-retroprog: retrosoc.bin retrosoc_fw.bin
-	iceprog retrosoc.bin
-	iceprog -o 1M retrosoc_fw.bin
-
-retroprog_fw: retrosoc_fw.bin
-	iceprog -o 1M retrosoc_fw.bin
 
 retrosoc_sections.lds: sections.lds
 	$(CROSS)cpp -P -DRETROSOC -o $@ $^
@@ -47,7 +40,6 @@ retrosoc_fw.bin: retrosoc_fw.elf
 	$(CROSS)objcopy -O binary retrosoc_fw.elf retrosoc_fw.bin
 
 # ---- Testbench for SPI Flash Model ----
-
 spiflash_tb: spiflash_tb.vvp retrosoc_fw.hex
 	vvp -N $< +firmware=retrosoc_fw.hex
 
@@ -55,7 +47,6 @@ spiflash_tb.vvp: spiflash.v spiflash_tb.v
 	iverilog -s testbench -o $@ $^
 
 # ---- ASIC Synthesis Tests ----
-
 cmos.log: spimemio.v simpleuart.v picosoc.v ../picorv32.v
 	yosys -l cmos.log -p 'synth -top picosoc; abc -g cmos2; opt -fast; stat' $^
 

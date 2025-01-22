@@ -21,7 +21,7 @@
 #include <stdbool.h>
 
 #ifdef RETROSOC
-#  define MEM_TOTAL 0x20000 /* 128 KB */
+#  define MEM_TOTAL 0x4000 /* 16 KB */
 #else
 #  error "Set -DRETROSOC when compiling firmware.c"
 #endif
@@ -675,11 +675,12 @@ void main()
     // while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
 
     print("\n");
-    print("  ____  _          ____         ____\n");
-    print(" |  _ \\(_) ___ ___/ ___|  ___  / ___|\n");
-    print(" | |_) | |/ __/ _ \\___ \\ / _ \\| |\n");
-    print(" |  __/| | (_| (_) |__) | (_) | |___\n");
-    print(" |_|   |_|\\___\\___/____/ \\___/ \\____|\n");
+    print("           _             _____        _____ \n");
+    print("          | |           / ____|      / ____|\n");
+    print("  _ __ ___| |_ _ __ ___| (___   ___ | |     \n");
+    print(" | '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
+    print(" | | |  __/ |_| | | (_) |___) | (_) | |____ \n");
+    print(" |_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
     print("\n");
 
     print("Total memory: ");

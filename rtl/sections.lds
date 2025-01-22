@@ -1,5 +1,5 @@
 #ifdef RETROSOC
-#  define MEM_TOTAL 0x20000 /* 128 KB */
+#  define MEM_TOTAL 0x4000 /* 16 KB */
 #else
 #  error "Set -DRETROSOC when compiling firmware.c"
 #endif
