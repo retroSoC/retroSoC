@@ -16,8 +16,10 @@ retrosoc_tb.vvp: retrosoc_tb.v retrosoc.v spram_model.v spimemio.v simpleuart.v 
 	iverilog -s retrosoc_tb -o $@ $^
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v retrosoc_syn.v spiflash.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v
-	yosys ../syn/synth_retrosoc.ys
 	iverilog -s retrosoc_tb -o $@ $^
+
+retrosoc_syn.v:
+	yosys ../syn/synth_retrosoc.ys
 
 retrosoc_sections.lds: sections.lds
 	$(CROSS)cpp -P -DRETROSOC -o $@ $^
@@ -50,4 +52,4 @@ clean:
 	rm -f retrosoc_syn.v
 
 .PHONY: spiflash_tb clean
-.PHONY: retrosim retrosynsim
+.PHONY: retrosim retrosynsim retrosoc_syn.v
