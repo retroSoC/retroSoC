@@ -20,7 +20,8 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_tb;
-  localparam ser_half_period = 53;
+  // localparam ser_half_period = 53;
+  localparam ser_half_period = 26;
   event       ser_sample;
 
   reg         r_clk;
@@ -35,8 +36,8 @@ module retrosoc_tb;
   wire s_flash_io2;
   wire s_flash_io3;
 
-  always #5 r_clk = (r_clk === 1'b0);  // 100M
-  // always #10 r_clk = (r_clk === 1'b0);  // 50M
+  // always #5 r_clk = (r_clk === 1'b0);  // 100M
+  always #10 r_clk = (r_clk === 1'b0);  // 50M
   wire s_rst_n = &r_rst_cnt;
 
   always @(posedge r_clk) begin

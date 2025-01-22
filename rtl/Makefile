@@ -51,16 +51,11 @@ cmos.log: spimemio.v simpleuart.v picosoc.v ../picorv32.v
 	yosys -l cmos.log -p 'synth -top picosoc; abc -g cmos2; opt -fast; stat' $^
 
 # ---- Clean ----
-
 clean:
 	rm -f testbench.vvp testbench.vcd spiflash_tb.vvp spiflash_tb.vcd
-	rm -f hx8kdemo_fw.elf hx8kdemo_fw.hex hx8kdemo_fw.bin cmos.log
 	rm -f retrosoc_fw.elf retrosoc_fw.hex retrosoc_fw.bin
-	rm -f hx8kdemo.json hx8kdemo.log hx8kdemo.asc hx8kdemo.rpt hx8kdemo.bin
-	rm -f hx8kdemo_syn.v hx8kdemo_syn_tb.vvp hx8kdemo_tb.vvp
 	rm -f retrosoc.json retrosoc.log retrosoc.asc retrosoc.rpt retrosoc.bin
 	rm -f retrosoc_syn.v retrosoc_syn_tb.vvp retrosoc_tb.vvp
 
 .PHONY: spiflash_tb clean
-.PHONY: hx8kprog hx8kprog_fw hx8ksim hx8ksynsim
 .PHONY: retroprog retroprog_fw retrosim retrosynsim

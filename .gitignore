@@ -3,3 +3,5 @@
 *.bin
 *.vvp
 *.vcd
+*.lib
+retrosoc_sections.lds
