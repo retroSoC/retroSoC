@@ -12,7 +12,7 @@ export YOSYS_TARGET_PERIOD_PS := 10000
 export YOSYS_BLACKBOX_MODULES := "*tc_sram_blackbox*"
 
 # flatten hierarchy (except for below selections)
-export YOSYS_FLATTEN_HIER := 1
+export YOSYS_FLATTEN_HIER := 0
 
 # a list of yosys selection strings, all selected instances will be 
 # kept as a seperate hierarchical element, all others will be flattened

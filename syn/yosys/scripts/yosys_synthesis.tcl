@@ -28,6 +28,9 @@ source $script_dir/init_tech.tcl
 #         --compat-mode --keep-hierarchy \
 #         --allow-use-before-declare --ignore-unknown-modules
 
+yosys read_verilog ../../tech/tc_io.v
+yosys read_verilog ../../tech/tc_clk.v
+yosys read_verilog ../../tech/tc_sram.v
 yosys read_verilog ../../rtl/spram_model.v
 yosys read_verilog ../../rtl/picorv32.v
 yosys read_verilog ../../rtl/spimemio.v

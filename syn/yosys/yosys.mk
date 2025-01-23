@@ -32,7 +32,6 @@ $(NETLIST) $(NETLIST_DEBUG):
 	@mkdir -p $(YOSYS_OUT)
 	@mkdir -p $(YOSYS_WORK)
 	@mkdir -p $(YOSYS_REPORTS)
-	SV_FLIST="$(SV_FLIST)" \
 	TOP_DESIGN="$(TOP_DESIGN)" \
 	PROJ_NAME="$(RTL_NAME)" \
 	WORK="$(YOSYS_WORK)" \
@@ -40,10 +39,9 @@ $(NETLIST) $(NETLIST_DEBUG):
 	REPORTS="$(YOSYS_REPORTS)" \
 	NETLIST="$(NETLIST)" \
 	$(YOSYS) -c $(YOSYS_DIR)/scripts/yosys_synthesis.tcl \
-		2>&1 | TZ=UTC gawk '{ print strftime("[%Y-%m-%d %H:%M %Z]"), $$0 }' \
+		2>&1 | TZ=UTC-8 gawk '{ print strftime("[%Y-%m-%d %H:%M %Z]"), $$0 }' \
 			 | tee "$(YOSYS_DIR)/$(RTL_NAME).log" \
 			 | gawk -f $(YOSYS_DIR)/scripts/filter_output.awk;
-		
 
 ys_clean:
 	rm -rf $(YOSYS_OUT)
