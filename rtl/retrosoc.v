@@ -31,23 +31,25 @@ module retrosoc #(
 ) (
     input  clk_i,
     input  rst_n_i,
-    output uart_tx_o,
-    input  uart_rx_i,
-    output led1_o,
-    output led2_o,
-    output led3_o,
-    output led4_o,
-    output led5_o,
-    output led6_o,
-    output led7_o,
-    output flash_csb_o,
-    output flash_clk_o,
-    inout  flash_io0_io,
-    inout  flash_io1_io,
-    inout  flash_io2_io,
-    inout  flash_io3_io
+    output uart_tx_o_pad,
+    input  uart_rx_i_pad,
+    output flash_csb_o_pad,
+    output flash_clk_o_pad,
+    inout  flash_io0_io_pad,
+    inout  flash_io1_io_pad,
+    inout  flash_io2_io_pad,
+    inout  flash_io3_io_pad,
+    output led1_o_pad,
+    output led2_o_pad,
+    output led3_o_pad,
+    output led4_o_pad,
+    output led5_o_pad,
+    output led6_o_pad,
+    output led7_o_pad
 );
 
+  wire s_flash_csb_o, s_flash_clk_o;
+  wire s_uart_rx_i, s_uart_tx_o;
   wire s_flash_io0_oe, s_flash_io0_do, s_flash_io0_di;
   wire s_flash_io1_oe, s_flash_io1_do, s_flash_io1_di;
   wire s_flash_io2_oe, s_flash_io2_do, s_flash_io2_di;
@@ -61,23 +63,23 @@ module retrosoc #(
   wire [ 7:0] s_leds;
   reg  [31:0] r_gpio;
 
-  assign flash_io0_io   = s_flash_io0_oe ? s_flash_io0_do : 1'bz;
-  assign s_flash_io0_di = flash_io0_io;
-  assign flash_io1_io   = s_flash_io1_oe ? s_flash_io1_do : 1'bz;
-  assign s_flash_io1_di = flash_io1_io;
-  assign flash_io2_io   = s_flash_io2_oe ? s_flash_io2_do : 1'bz;
-  assign s_flash_io2_di = flash_io2_io;
-  assign flash_io3_io   = s_flash_io3_oe ? s_flash_io3_do : 1'bz;
-  assign s_flash_io3_di = flash_io3_io;
-
-  assign led1_o         = s_leds[1];
-  assign led2_o         = s_leds[2];
-  assign led3_o         = s_leds[3];
-  assign led4_o         = s_leds[4];
-  assign led5_o         = s_leds[5];
-  assign led6_o         = s_leds[6];
-  assign led7_o         = s_leds[7];
-  assign s_leds         = r_gpio;
+  // verilog_format: off
+  tc_io_tri_pad u_uart_tx_o_pad   (.pad(uart_tx_o_pad),    .c2p(s_uart_tx_o),    .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_uart_rx_i_pad   (.pad(uart_rx_i_pad),    .c2p(),               .c2p_en(1'b0),           .p2c(s_uart_rx_i));
+  tc_io_tri_pad u_flash_csb_o_pad (.pad(flash_csb_o_pad),  .c2p(s_flash_csb_o),  .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_flash_clk_o_pad (.pad(flash_clk_o_pad),  .c2p(s_flash_clk_o),  .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_flash_io0_io_pad(.pad(flash_io0_io_pad), .c2p(s_flash_io0_do), .c2p_en(s_flash_io0_oe), .p2c(s_flash_io0_di));
+  tc_io_tri_pad u_flash_io1_io_pad(.pad(flash_io1_io_pad), .c2p(s_flash_io1_do), .c2p_en(s_flash_io1_oe), .p2c(s_flash_io1_di));
+  tc_io_tri_pad u_flash_io2_io_pad(.pad(flash_io2_io_pad), .c2p(s_flash_io2_do), .c2p_en(s_flash_io2_oe), .p2c(s_flash_io2_di));
+  tc_io_tri_pad u_led1_o_pad      (.pad(led1_o_pad),       .c2p(s_leds[1]),      .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_led2_o_pad      (.pad(led2_o_pad),       .c2p(s_leds[2]),      .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_led3_o_pad      (.pad(led3_o_pad),       .c2p(s_leds[3]),      .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_led4_o_pad      (.pad(led4_o_pad),       .c2p(s_leds[4]),      .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_led5_o_pad      (.pad(led5_o_pad),       .c2p(s_leds[5]),      .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_led6_o_pad      (.pad(led6_o_pad),       .c2p(s_leds[6]),      .c2p_en(1'b1),           .p2c());
+  tc_io_tri_pad u_led7_o_pad      (.pad(led7_o_pad),       .c2p(s_leds[7]),      .c2p_en(1'b1),           .p2c());
+  // verilog_format: on
+  assign s_leds = r_gpio;
 
   always @(posedge clk_i) begin
     if (!rst_n_i) begin
@@ -104,10 +106,10 @@ module retrosoc #(
   ) u_picosoc (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
-      .uart_tx_o     (uart_tx_o),
-      .uart_rx_i     (uart_rx_i),
-      .flash_csb_o   (flash_csb_o),
-      .flash_clk_o   (flash_clk_o),
+      .uart_tx_o     (s_uart_tx_o),
+      .uart_rx_i     (s_uart_rx_i),
+      .flash_csb_o   (s_flash_csb_o),
+      .flash_clk_o   (s_flash_clk_o),
       .flash_io0_oe_o(s_flash_io0_oe),
       .flash_io1_oe_o(s_flash_io1_oe),
       .flash_io2_oe_o(s_flash_io2_oe),

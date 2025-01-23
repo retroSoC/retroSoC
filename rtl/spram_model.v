@@ -39,7 +39,8 @@ module spram_model (
                  ({32{cs_10}} & rdata_10) | ({32{cs_11}} & rdata_11);
 
   // 4x4KB=16KB
-  SPRAM1024X32 u_ram00 (
+  // SPRAM1024X32 u_ram00 (
+  tc_sram_1024x32 u_ram00 (
       .clk_i (clk),
       .cs_i  (cs_00),
       .addr_i(addr[9:0]),
@@ -49,7 +50,8 @@ module spram_model (
       .data_o(rdata_00)
   );
 
-  SPRAM1024X32 u_ram01 (
+  // SPRAM1024X32 u_ram01 (
+  tc_sram_1024x32 u_ram01 (
       .clk_i (clk),
       .cs_i  (cs_01),
       .addr_i(addr[9:0]),
@@ -59,7 +61,8 @@ module spram_model (
       .data_o(rdata_01)
   );
 
-  SPRAM1024X32 u_ram10 (
+  // SPRAM1024X32 u_ram10 (
+  tc_sram_1024x32 u_ram10 (
       .clk_i (clk),
       .cs_i  (cs_10),
       .addr_i(addr[9:0]),
@@ -69,7 +72,8 @@ module spram_model (
       .data_o(rdata_10)
   );
 
-  SPRAM1024X32 u_ram11 (
+  // SPRAM1024X32 u_ram11 (
+  tc_sram_1024x32 u_ram11 (
       .clk_i (clk),
       .cs_i  (cs_11),
       .addr_i(addr[9:0]),

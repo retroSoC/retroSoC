@@ -12,11 +12,14 @@ retrosim: retrosoc_tb.vvp retrosoc_fw.hex retrosoc_fw.bin
 retrosynsim: retrosoc_syn_tb.vvp retrosoc_fw.hex
 	vvp -N $< +firmware=retrosoc_fw.hex +syn_$(WAVE)
 
-retrosoc_tb.vvp: retrosoc_tb.v retrosoc.v spram_model.v spimemio.v simpleuart.v picosoc.v picorv32.v spiflash.v
+retrosoc_tb.vvp: retrosoc_tb.v retrosoc.v spram_model.v spimemio.v simpleuart.v picosoc.v picorv32.v spiflash.v ../tech/tc_io.v ../tech/tc_clk.v ../tech/tc_sram.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
 	iverilog -s retrosoc_tb -o $@ $^
 
-retrosoc_syn_tb.vvp: retrosoc_tb.v retrosoc_syn.v spiflash.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v
+retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_yosys.v spiflash.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
 	iverilog -s retrosoc_tb -o $@ $^
+
+../syn/yosys/out/retrosoc_yosys.v:
+	$(MAKE) -C ../syn/yosys -f yosys.mk
 
 retrosoc_syn.v:
 	yosys ../syn/synth_retrosoc.ys
