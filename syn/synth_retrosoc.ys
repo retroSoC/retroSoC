@@ -2,10 +2,10 @@ read_verilog ../rtl/spram_model.v
 read_verilog ../rtl/picorv32.v
 read_verilog ../rtl/spimemio.v
 read_verilog ../rtl/simpleuart.v
-read_verilog ../rtl/picosoc.v
 read_verilog ../rtl/retrosoc.v
+read_verilog ../rtl/retrosoc_asic.v
 
-hierarchy -top retrosoc
+hierarchy -top retrosoc_asic
 proc; flatten
 
 synth;

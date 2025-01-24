@@ -35,8 +35,8 @@ yosys read_verilog ../../rtl/spram_model.v
 yosys read_verilog ../../rtl/picorv32.v
 yosys read_verilog ../../rtl/spimemio.v
 yosys read_verilog ../../rtl/simpleuart.v
-yosys read_verilog ../../rtl/picosoc.v
 yosys read_verilog ../../rtl/retrosoc.v
+yosys read_verilog ../../rtl/retrosoc_asic.v
 
 # # blackbox requested modules
 # if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {

@@ -18,8 +18,8 @@ YOSYS_REPORTS   := $(YOSYS_DIR)/reports
 # Project variables
 include $(YOSYS_DIR)/project-synth.mk
 
-TOP_DESIGN      ?= retrosoc
-RTL_NAME        ?= retrosoc
+TOP_DESIGN      ?= retrosoc_asic
+RTL_NAME        ?= retrosoc_asic
 
 VLOG_FILES      := $(RTL_NAME)_sv2v.v
 NETLIST         := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
