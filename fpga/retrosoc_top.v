@@ -17,7 +17,7 @@ module retrosoc_top (
       .clk_out1(clk_core)
   );
 
-  retrosoc #(
+  retrosoc_asic #(
       .MEM_WORDS(256)
   ) u_retrosoc (
       .clk_i       (clk_core),
