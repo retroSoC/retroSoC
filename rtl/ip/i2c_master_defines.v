@@ -34,7 +34,7 @@
 //// POSSIBILITY OF SUCH DAMAGE.                                 ////
 ////                                                             ////
 /////////////////////////////////////////////////////////////////////
- 
+
 //  CVS Log
 //
 //  $Id: i2c_master_defines.v,v 1.3 2001-11-05 11:59:25 rherveille Exp $
@@ -47,13 +47,13 @@
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
- 
- 
+
+
 // I2C registers wishbone addresses
- 
+
 // bitcontroller states
-`define I2C_CMD_NOP   4'b0000
+`define I2C_CMD_NOP 4'b0000
 `define I2C_CMD_START 4'b0001
-`define I2C_CMD_STOP  4'b0010
+`define I2C_CMD_STOP 4'b0010
 `define I2C_CMD_WRITE 4'b0100
-`define I2C_CMD_READ  4'b1000
+`define I2C_CMD_READ 4'b1000
