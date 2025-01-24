@@ -4,6 +4,7 @@ CFLAGS=
 
 WAVE := NONE
 
+RTL :=
 # +behv_wave
 retrosim: retrosoc_tb.vvp retrosoc_fw.hex retrosoc_fw.bin
 	vvp -N $< +firmware=retrosoc_fw.hex +behv_$(WAVE)
@@ -12,7 +13,7 @@ retrosim: retrosoc_tb.vvp retrosoc_fw.hex retrosoc_fw.bin
 retrosynsim: retrosoc_syn_tb.vvp retrosoc_fw.hex
 	vvp -N $< +firmware=retrosoc_fw.hex +syn_$(WAVE)
 
-retrosoc_tb.vvp: retrosoc_tb.v retrosoc.v spram_model.v spimemio.v simpleuart.v picosoc.v picorv32.v spiflash.v ../tech/tc_io.v ../tech/tc_clk.v ../tech/tc_sram.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
+retrosoc_tb.vvp: retrosoc_tb.v retrosoc_asic.v ./ip/spram_model.v ./ip/spimemio.v ./ip/simpleuart.v retrosoc.v picorv32.v ./ip/spiflash.v ../tech/tc_io.v ../tech/tc_clk.v ../tech/tc_sram.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
 	iverilog -s retrosoc_tb -o $@ $^
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_yosys.v spiflash.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
@@ -44,8 +45,8 @@ spiflash_tb.vvp: spiflash.v spiflash_tb.v
 	iverilog -s testbench -o $@ $^
 
 # ---- ASIC Synthesis Tests ----
-cmos.log: spimemio.v simpleuart.v picosoc.v ../picorv32.v
-	yosys -l cmos.log -p 'synth -top picosoc; abc -g cmos2; opt -fast; stat' $^
+cmos.log: spimemio.v simpleuart.v retrosoc.v ../picorv32.v
+	yosys -l cmos.log -p 'synth -top retrosoc; abc -g cmos2; opt -fast; stat' $^
 
 # ---- Clean ----
 clean:

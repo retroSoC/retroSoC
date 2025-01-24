@@ -49,7 +49,7 @@ module retrosoc_tb;
     #1 $display("s_leds: %b", s_leds);
   end
 
-  retrosoc u_retrosoc (
+  retrosoc_asic u_retrosoc (
       .clk_i           (r_clk),
       .rst_n_i         (s_rst_n),
       .uart_tx_o_pad   (s_uart_tx),

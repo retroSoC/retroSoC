@@ -17,116 +17,211 @@
  *
  */
 
-`ifdef PICOSOC_V
-// `error "retrosoc.v must be read before picosoc.v!"
+`ifndef PICORV32_REGS
+`ifdef PICORV32_V
+// `error "picosoc.v must be read before picorv32.v!"
 `endif
 
-`define PICOSOC_MEM spram_model
+`define PICORV32_REGS picosoc_regs
+`endif
+
+`ifndef PICOSOC_MEM
+`define PICOSOC_MEM picosoc_mem
+`endif
+
+// this macro can be used to check if the verilog files in your
+// design are read in the correct order.
+`define PICOSOC_V
 
 module retrosoc #(
-    // We limit the amount of memory in simulation
-    // in order to avoid reduce simulation time
-    // required for intialization of RAM
-    parameter integer MEM_WORDS = 256
+    parameter integer        MEM_WORDS        = 256,
+    parameter         [ 0:0] BARREL_SHIFTER   = 1,
+    parameter         [ 0:0] COMPRESSED_ISA   = 1,
+    parameter         [ 0:0] ENABLE_MUL       = 0,
+    parameter         [ 0:0] ENABLE_FAST_MUL  = 1,
+    parameter         [ 0:0] ENABLE_DIV       = 1,
+    parameter         [ 0:0] ENABLE_IRQ       = 0,
+    parameter         [ 0:0] ENABLE_IRQ_QREGS = 1,
+    parameter         [31:0] STACKADDR        = (4 * MEM_WORDS),  // end of memory
+    parameter         [31:0] PROGADDR_RESET   = 32'h0010_0000,    // 1 MB into flash
+    parameter         [31:0] PROGADDR_IRQ     = 32'h0000_0000
 ) (
-    input  clk_i,
-    input  rst_n_i,
-    output uart_tx_o_pad,
-    input  uart_rx_i_pad,
-    output flash_csb_o_pad,
-    output flash_clk_o_pad,
-    inout  flash_io0_io_pad,
-    inout  flash_io1_io_pad,
-    inout  flash_io2_io_pad,
-    inout  flash_io3_io_pad,
-    output led1_o_pad,
-    output led2_o_pad,
-    output led3_o_pad,
-    output led4_o_pad,
-    output led5_o_pad,
-    output led6_o_pad,
-    output led7_o_pad
+    input         clk_i,
+    input         rst_n_i,
+    output        iomem_valid_o,
+    input         iomem_ready_i,
+    output [ 3:0] iomem_wstrb_o,
+    output [31:0] iomem_addr_o,
+    output [31:0] iomem_wdata_o,
+    input  [31:0] iomem_rdata_i,
+    output        uart_tx_o,
+    input         uart_rx_i,
+    output        flash_csb_o,
+    output        flash_clk_o,
+    output        flash_io0_oe_o,
+    output        flash_io1_oe_o,
+    output        flash_io2_oe_o,
+    output        flash_io3_oe_o,
+    output        flash_io0_do_o,
+    output        flash_io1_do_o,
+    output        flash_io2_do_o,
+    output        flash_io3_do_o,
+    input         flash_io0_di_i,
+    input         flash_io1_di_i,
+    input         flash_io2_di_i,
+    input         flash_io3_di_i
 );
 
-  wire s_flash_csb_o, s_flash_clk_o;
-  wire s_uart_rx_i, s_uart_tx_o;
-  wire s_flash_io0_oe, s_flash_io0_do, s_flash_io0_di;
-  wire s_flash_io1_oe, s_flash_io1_do, s_flash_io1_di;
-  wire s_flash_io2_oe, s_flash_io2_do, s_flash_io2_di;
-  wire s_flash_io3_oe, s_flash_io3_do, s_flash_io3_di;
-  wire        s_iomem_valid;
-  reg         r_iomem_ready;
-  wire [ 3:0] s_iomem_wstrb;
-  wire [31:0] s_iomem_addr;
-  wire [31:0] s_iomem_wdata;
-  reg  [31:0] r_iomem_rdata;
-  wire [ 7:0] s_leds;
-  reg  [31:0] r_gpio;
+  wire        s_mem_valid;
+  wire        s_mem_instr;
+  wire        s_mem_ready;
+  wire [31:0] s_mem_addr;
+  wire [31:0] s_mem_wdata;
+  wire [ 3:0] s_mem_wstrb;
+  wire [31:0] s_mem_rdata;
+  wire        s_spimem_ready;
+  wire [31:0] s_spimem_rdata;
+  reg         s_ram_ready;
+  wire [31:0] s_ram_rdata;
 
-  // verilog_format: off
-  tc_io_tri_pad u_uart_tx_o_pad   (.pad(uart_tx_o_pad),    .c2p(s_uart_tx_o),    .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_uart_rx_i_pad   (.pad(uart_rx_i_pad),    .c2p(),               .c2p_en(1'b0),           .p2c(s_uart_rx_i));
-  tc_io_tri_pad u_flash_csb_o_pad (.pad(flash_csb_o_pad),  .c2p(s_flash_csb_o),  .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_flash_clk_o_pad (.pad(flash_clk_o_pad),  .c2p(s_flash_clk_o),  .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_flash_io0_io_pad(.pad(flash_io0_io_pad), .c2p(s_flash_io0_do), .c2p_en(s_flash_io0_oe), .p2c(s_flash_io0_di));
-  tc_io_tri_pad u_flash_io1_io_pad(.pad(flash_io1_io_pad), .c2p(s_flash_io1_do), .c2p_en(s_flash_io1_oe), .p2c(s_flash_io1_di));
-  tc_io_tri_pad u_flash_io2_io_pad(.pad(flash_io2_io_pad), .c2p(s_flash_io2_do), .c2p_en(s_flash_io2_oe), .p2c(s_flash_io2_di));
-  tc_io_tri_pad u_led1_o_pad      (.pad(led1_o_pad),       .c2p(s_leds[1]),      .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_led2_o_pad      (.pad(led2_o_pad),       .c2p(s_leds[2]),      .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_led3_o_pad      (.pad(led3_o_pad),       .c2p(s_leds[3]),      .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_led4_o_pad      (.pad(led4_o_pad),       .c2p(s_leds[4]),      .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_led5_o_pad      (.pad(led5_o_pad),       .c2p(s_leds[5]),      .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_led6_o_pad      (.pad(led6_o_pad),       .c2p(s_leds[6]),      .c2p_en(1'b1),           .p2c());
-  tc_io_tri_pad u_led7_o_pad      (.pad(led7_o_pad),       .c2p(s_leds[7]),      .c2p_en(1'b1),           .p2c());
-  // verilog_format: on
-  assign s_leds = r_gpio;
+  assign iomem_valid_o = s_mem_valid && (s_mem_addr[31:24] > 8'h01);
+  assign iomem_wstrb_o = s_mem_wstrb;
+  assign iomem_addr_o  = s_mem_addr;
+  assign iomem_wdata_o = s_mem_wdata;
 
-  always @(posedge clk_i) begin
-    if (!rst_n_i) begin
-      r_gpio <= 0;
-    end else begin
-      r_iomem_ready <= 0;
-      if (s_iomem_valid && !r_iomem_ready && s_iomem_addr[31:24] == 8'h03) begin
-        r_iomem_ready <= 1;
-        r_iomem_rdata <= r_gpio;
-        if (s_iomem_wstrb[0]) r_gpio[7:0] <= s_iomem_wdata[7:0];
-        if (s_iomem_wstrb[1]) r_gpio[15:8] <= s_iomem_wdata[15:8];
-        if (s_iomem_wstrb[2]) r_gpio[23:16] <= s_iomem_wdata[23:16];
-        if (s_iomem_wstrb[3]) r_gpio[31:24] <= s_iomem_wdata[31:24];
-      end
-    end
-  end
+  wire        s_spimemio_cfgreg_sel = s_mem_valid && (s_mem_addr == 32'h0200_0000);
+  wire [31:0] s_spimemio_cfgreg_do;
+  wire        s_simpleuart_reg_div_sel = s_mem_valid && (s_mem_addr == 32'h0200_0004);
+  wire [31:0] s_simpleuart_reg_div_do;
+  wire        s_simpleuart_reg_dat_sel = s_mem_valid && (s_mem_addr == 32'h0200_0008);
+  wire [31:0] s_simpleuart_reg_dat_do;
+  wire        s_simpleuart_reg_dat_wait;
 
-  picosoc #(
-      .MEM_WORDS      (MEM_WORDS),
-      .BARREL_SHIFTER (1),
-      .COMPRESSED_ISA (1),
-      .ENABLE_FAST_MUL(1),
-      .ENABLE_DIV     (1)
-  ) u_picosoc (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .uart_tx_o     (s_uart_tx_o),
-      .uart_rx_i     (s_uart_rx_i),
-      .flash_csb_o   (s_flash_csb_o),
-      .flash_clk_o   (s_flash_clk_o),
-      .flash_io0_oe_o(s_flash_io0_oe),
-      .flash_io1_oe_o(s_flash_io1_oe),
-      .flash_io2_oe_o(s_flash_io2_oe),
-      .flash_io3_oe_o(s_flash_io3_oe),
-      .flash_io0_do_o(s_flash_io0_do),
-      .flash_io1_do_o(s_flash_io1_do),
-      .flash_io2_do_o(s_flash_io2_do),
-      .flash_io3_do_o(s_flash_io3_do),
-      .flash_io0_di_i(s_flash_io0_di),
-      .flash_io1_di_i(s_flash_io1_di),
-      .flash_io2_di_i(s_flash_io2_di),
-      .flash_io3_di_i(s_flash_io3_di),
-      .iomem_valid_o (s_iomem_valid),
-      .iomem_ready_i (r_iomem_ready),
-      .iomem_wstrb_o (s_iomem_wstrb),
-      .iomem_addr_o  (s_iomem_addr),
-      .iomem_wdata_o (s_iomem_wdata),
-      .iomem_rdata_i (r_iomem_rdata)
+  assign s_mem_ready = (iomem_valid_o && iomem_ready_i) || s_spimem_ready || s_ram_ready || s_spimemio_cfgreg_sel ||
+            s_simpleuart_reg_div_sel || (s_simpleuart_reg_dat_sel && !s_simpleuart_reg_dat_wait);
+
+  assign s_mem_rdata = (iomem_valid_o && iomem_ready_i) ? iomem_rdata_i : s_spimem_ready ? s_spimem_rdata : s_ram_ready ? s_ram_rdata :
+            s_spimemio_cfgreg_sel ? s_spimemio_cfgreg_do : s_simpleuart_reg_div_sel ? s_simpleuart_reg_div_do :
+            s_simpleuart_reg_dat_sel ? s_simpleuart_reg_dat_do : 32'h 0000_0000;
+
+  picorv32 #(
+      .BARREL_SHIFTER  (BARREL_SHIFTER),
+      .COMPRESSED_ISA  (COMPRESSED_ISA),
+      .ENABLE_MUL      (ENABLE_MUL),
+      .ENABLE_FAST_MUL (ENABLE_FAST_MUL),
+      .ENABLE_DIV      (ENABLE_DIV),
+      .ENABLE_IRQ      (1),
+      .ENABLE_IRQ_QREGS(ENABLE_IRQ_QREGS),
+      .STACKADDR       (STACKADDR),
+      .PROGADDR_RESET  (PROGADDR_RESET),
+      .PROGADDR_IRQ    (PROGADDR_IRQ)
+  ) u_picorv32 (
+      .clk      (clk_i),
+      .resetn   (rst_n_i),
+      .mem_valid(s_mem_valid),
+      .mem_instr(s_mem_instr),
+      .mem_ready(s_mem_ready),
+      .mem_addr (s_mem_addr),
+      .mem_wdata(s_mem_wdata),
+      .mem_wstrb(s_mem_wstrb),
+      .mem_rdata(s_mem_rdata),
+      .irq      (32'd0)
+  );
+
+  spimemio u_spimemio (
+      .clk         (clk_i),
+      .resetn      (rst_n_i),
+      .valid       (s_mem_valid && s_mem_addr >= 4 * MEM_WORDS && s_mem_addr < 32'h0200_0000),
+      .ready       (s_spimem_ready),
+      .addr        (s_mem_addr[23:0]),
+      .rdata       (s_spimem_rdata),
+      .flash_csb   (flash_csb_o),
+      .flash_clk   (flash_clk_o),
+      .flash_io0_oe(flash_io0_oe_o),
+      .flash_io1_oe(flash_io1_oe_o),
+      .flash_io2_oe(flash_io2_oe_o),
+      .flash_io3_oe(flash_io3_oe_o),
+      .flash_io0_do(flash_io0_do_o),
+      .flash_io1_do(flash_io1_do_o),
+      .flash_io2_do(flash_io2_do_o),
+      .flash_io3_do(flash_io3_do_o),
+      .flash_io0_di(flash_io0_di_i),
+      .flash_io1_di(flash_io1_di_i),
+      .flash_io2_di(flash_io2_di_i),
+      .flash_io3_di(flash_io3_di_i),
+      .cfgreg_we   (s_spimemio_cfgreg_sel ? s_mem_wstrb : 4'b0000),
+      .cfgreg_di   (s_mem_wdata),
+      .cfgreg_do   (s_spimemio_cfgreg_do)
+  );
+
+  simpleuart u_simpleuart (
+      .clk         (clk_i),
+      .resetn      (rst_n_i),
+      .ser_tx      (uart_tx_o),
+      .ser_rx      (uart_rx_i),
+      .reg_div_we  (s_simpleuart_reg_div_sel ? s_mem_wstrb : 4'b0000),
+      .reg_div_di  (s_mem_wdata),
+      .reg_div_do  (s_simpleuart_reg_div_do),
+      .reg_dat_we  (s_simpleuart_reg_dat_sel ? s_mem_wstrb[0] : 1'b0),
+      .reg_dat_re  (s_simpleuart_reg_dat_sel && !s_mem_wstrb),
+      .reg_dat_di  (s_mem_wdata),
+      .reg_dat_do  (s_simpleuart_reg_dat_do),
+      .reg_dat_wait(s_simpleuart_reg_dat_wait)
+  );
+
+  always @(posedge clk_i) s_ram_ready <= s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS;
+
+  `PICOSOC_MEM u_picosoc_mem (
+      .clk  (clk_i),
+      .wen  ((s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS) ? s_mem_wstrb : 4'b0),
+      .addr (s_mem_addr[23:2]),
+      .wdata(s_mem_wdata),
+      .rdata(s_ram_rdata)
   );
 endmodule
+
+// Implementation note:
+// Replace the following two modules with wrappers for your SRAM cells.
+
+module picosoc_regs (
+    input         clk,
+    input         wen,
+    input  [ 5:0] waddr,
+    input  [ 5:0] raddr1,
+    input  [ 5:0] raddr2,
+    input  [31:0] wdata,
+    output [31:0] rdata1,
+    output [31:0] rdata2
+);
+  reg [31:0] regs[0:31];
+
+  always @(posedge clk) if (wen) regs[waddr[4:0]] <= wdata;
+
+  assign rdata1 = regs[raddr1[4:0]];
+  assign rdata2 = regs[raddr2[4:0]];
+endmodule
+
+module picosoc_mem (
+    input             clk,
+    input      [ 3:0] wen,
+    input      [21:0] addr,
+    input      [31:0] wdata,
+    output reg [31:0] rdata
+);
+  //   reg [31:0] mem[0:256-1];
+  //   always @(posedge clk) begin
+  //     rdata <= mem[addr];
+  //     if (wen[0]) mem[addr][7:0] <= wdata[7:0];
+  //     if (wen[1]) mem[addr][15:8] <= wdata[15:8];
+  //     if (wen[2]) mem[addr][23:16] <= wdata[23:16];
+  //     if (wen[3]) mem[addr][31:24] <= wdata[31:24];
+  //   end
+  spram_model u_spram_model (
+      .clk  (clk),
+      .wen  (wen),
+      .addr (addr),
+      .wdata(wdata),
+      .rdata(rdata)
+  );
+endmodule
+

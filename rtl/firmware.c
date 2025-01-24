@@ -21,7 +21,7 @@
 #include <stdbool.h>
 
 #ifdef RETROSOC
-#  define MEM_TOTAL 0x4000 /* 16 KB */
+#  define MEM_TOTAL 0x10000 /* 64 KB */
 #else
 #  error "Set -DRETROSOC when compiling firmware.c"
 #endif
