@@ -1,4 +1,4 @@
-module tc_io_tri_pad (
+module ihp_io_tri_pad (
     inout  pad,
     input  c2p,
     input  c2p_en,

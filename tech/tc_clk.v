@@ -5,7 +5,7 @@
 //
 // -Thomas Benz <tbenz@iis.ee.ethz.ch>
 // -Tobias Senti <tsenti@student.ethz.ch>
-module tc_clk_inverter (
+module ihp_clk_inverter (
     input  clk_i,
     output clk_o
 );
@@ -18,7 +18,7 @@ module tc_clk_inverter (
 
 endmodule
 
-module tc_clk_buffer (
+module ihp_clk_buffer (
     input  clk_i,
     output clk_o
 );
@@ -31,7 +31,7 @@ module tc_clk_buffer (
 
 endmodule
 
-module tc_clk_mux2 (
+module ihp_clk_mux2 (
     input  clk0_i,
     input  clk1_i,
     input  clk_sel_i,
@@ -46,7 +46,7 @@ module tc_clk_mux2 (
   );
 endmodule
 
-module tc_clk_xor2 (
+module ihp_clk_xor2 (
     input  clk0_i,
     input  clk1_i,
     output clk_o
@@ -60,7 +60,7 @@ module tc_clk_xor2 (
   );
 endmodule
 
-module tc_clk_gating #(
+module ihp_clk_gating #(
     parameter [0:0] IS_FUNCTIONAL = 1'b1
 ) (
     input  clk_i,
