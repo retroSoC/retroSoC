@@ -1,7 +1,7 @@
 /*
  *  PicoSoC - A simple example SoC using PicoRV32
  *
- *  Copyright (C) 2017  Claire Xenia Wolf <claire@yosyshq.com>
+ *  Copyright (C) 2017  Clifford Wolf <clifford@clifford.at>
  *
  *  Permission to use, copy, modify, and/or distribute this software for any
  *  purpose with or without fee is hereby granted, provided that the above
@@ -17,9 +17,7 @@
  *
  */
 
-module simpleuart #(
-    parameter integer DEFAULT_DIV = 1
-) (
+module simpleuart (
     input         clk,
     input         resetn,
     output        ser_tx,
@@ -31,7 +29,8 @@ module simpleuart #(
     input         reg_dat_re,
     input  [31:0] reg_dat_di,
     output [31:0] reg_dat_do,
-    output        reg_dat_wait
+    output        reg_dat_wait,
+    output        irq_out
 );
   reg [31:0] cfg_divider;
 
@@ -51,9 +50,11 @@ module simpleuart #(
   assign reg_dat_wait = reg_dat_we && (send_bitcnt || send_dummy);
   assign reg_dat_do   = recv_buf_valid ? recv_buf_data : ~0;
 
+  assign irq_out      = recv_buf_valid;
+
   always @(posedge clk) begin
     if (!resetn) begin
-      cfg_divider <= DEFAULT_DIV;
+      cfg_divider <= 1;
     end else begin
       if (reg_div_we[0]) cfg_divider[7:0] <= reg_div_di[7:0];
       if (reg_div_we[1]) cfg_divider[15:8] <= reg_div_di[15:8];

@@ -1,7 +1,7 @@
 /*
  *  PicoSoC - A simple example SoC using PicoRV32
  *
- *  Copyright (C) 2017  Claire Xenia Wolf <claire@yosyshq.com>
+ *  Copyright (C) 2017  Clifford Wolf <clifford@clifford.at>
  *
  *  Permission to use, copy, modify, and/or distribute this software for any
  *  purpose with or without fee is hereby granted, provided that the above
@@ -24,12 +24,19 @@ module spimemio (
     output            ready,
     input      [23:0] addr,
     output reg [31:0] rdata,
+    input             pass_thru,
+    input             pass_thru_csb,
+    input             pass_thru_sck,
+    input             pass_thru_sdi,
+    output            pass_thru_sdo,
     output            flash_csb,
     output            flash_clk,
-    output            flash_io0_oe,
-    output            flash_io1_oe,
-    output            flash_io2_oe,
-    output            flash_io3_oe,
+    output            flash_csb_oeb,
+    output            flash_clk_oeb,
+    output            flash_io0_oeb,
+    output            flash_io1_oeb,
+    output            flash_io2_oeb,
+    output            flash_io3_oeb,
     output            flash_io0_do,
     output            flash_io1_do,
     output            flash_io2_do,
@@ -85,7 +92,7 @@ module spimemio (
   assign cfgreg_do[20]    = config_cont;
   assign cfgreg_do[19:16] = config_dummy;
   assign cfgreg_do[15:12] = 0;
-  assign cfgreg_do[11:8]  = {flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe};
+  assign cfgreg_do[11:8]  = {~flash_io3_oeb, ~flash_io2_oeb, ~flash_io1_oeb, ~flash_io0_oeb};
   assign cfgreg_do[7:6]   = 0;
   assign cfgreg_do[5]     = flash_csb;
   assign cfgreg_do[4]     = flash_clk;
@@ -150,25 +157,30 @@ module spimemio (
     xfer_io3_90 <= xfer_io3_do;
   end
 
-  assign flash_csb    = config_en ? xfer_csb : config_csb;
-  assign flash_clk    = config_en ? xfer_clk : config_clk;
+  assign flash_csb = pass_thru ? pass_thru_csb : (config_en ? xfer_csb : config_csb);
+  assign flash_clk = pass_thru ? pass_thru_sck : (config_en ? xfer_clk : config_clk);
+  assign flash_csb_oeb = pass_thru ? 1'b0 : ~resetn ? 1'b1 : 1'b0;
+  assign flash_clk_oeb = pass_thru ? 1'b0 : ~resetn ? 1'b1 : 1'b0;
 
-  assign flash_io0_oe = config_en ? xfer_io0_oe : config_oe[0];
-  assign flash_io1_oe = config_en ? xfer_io1_oe : config_oe[1];
-  assign flash_io2_oe = config_en ? xfer_io2_oe : config_oe[2];
-  assign flash_io3_oe = config_en ? xfer_io3_oe : config_oe[3];
+  assign flash_io0_oeb = pass_thru ? 1'b0 : ~resetn ? 1'b1 : (config_en ? ~xfer_io0_oe : ~config_oe[0]);
+  assign flash_io1_oeb = (pass_thru | ~resetn) ? 1'b1 : (config_en ? ~xfer_io1_oe : ~config_oe[1]);
+  assign flash_io2_oeb = (pass_thru | ~resetn) ? 1'b1 : (config_en ? ~xfer_io2_oe : ~config_oe[2]);
+  assign flash_io3_oeb = (pass_thru | ~resetn) ? 1'b1 : (config_en ? ~xfer_io3_oe : ~config_oe[3]);
 
-  assign flash_io0_do = config_en ? (config_ddr ? xfer_io0_90 : xfer_io0_do) : config_do[0];
+  assign flash_io0_do = pass_thru ? pass_thru_sdi : (config_en ? (config_ddr ? xfer_io0_90 : xfer_io0_do) : config_do[0]);
   assign flash_io1_do = config_en ? (config_ddr ? xfer_io1_90 : xfer_io1_do) : config_do[1];
   assign flash_io2_do = config_en ? (config_ddr ? xfer_io2_90 : xfer_io2_do) : config_do[2];
   assign flash_io3_do = config_en ? (config_ddr ? xfer_io3_90 : xfer_io3_do) : config_do[3];
+
+  assign pass_thru_sdo = pass_thru ? flash_io1_di : 1'b0;
 
   wire xfer_dspi = din_ddr && !din_qspi;
   wire xfer_ddr = din_ddr && din_qspi;
 
   spimemio_xfer xfer (
       .clk         (clk),
-      .resetn      (xfer_resetn),
+      .resetn      (resetn),
+      .xfer_resetn (xfer_resetn),
       .din_valid   (din_valid),
       .din_ready   (din_ready),
       .din_data    (din_data),
@@ -374,6 +386,7 @@ endmodule
 module spimemio_xfer (
     input clk,
     resetn,
+    xfer_resetn,
 
     input        din_valid,
     output       din_ready,
@@ -435,9 +448,9 @@ module spimemio_xfer (
     xfer_tag_q <= xfer_tag;
   end
 
-  assign din_ready  = din_valid && resetn && next_fetch;
+  assign din_ready  = din_valid && xfer_resetn && next_fetch;
 
-  assign dout_valid = (xfer_ddr_q ? fetch && !last_fetch : next_fetch && !fetch) && resetn;
+  assign dout_valid = (xfer_ddr_q ? fetch && !last_fetch : next_fetch && !fetch) && xfer_resetn;
   assign dout_data  = ibuffer;
   assign dout_tag   = xfer_tag_q;
 
@@ -532,7 +545,7 @@ module spimemio_xfer (
   end
 
   always @(posedge clk) begin
-    if (!resetn) begin
+    if (!resetn || !xfer_resetn) begin
       fetch       <= 1;
       last_fetch  <= 1;
       flash_csb   <= 1;
