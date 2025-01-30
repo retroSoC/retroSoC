@@ -1,3 +1,13 @@
+module ihp_io_xtl_pad (
+    input  xi_pad,
+    output xo_pad,
+    input  en,
+    output clk
+);
+
+  assign clk = en ? xi_pad : 1'b0;
+endmodule
+
 module ihp_io_tri_pad (
     inout  pad,
     input  c2p,
