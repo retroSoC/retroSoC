@@ -31,9 +31,9 @@
 extern uint32_t sram;
 
 #define reg_spictrl (*(volatile uint32_t*)0x02000000)
-#define reg_uart_clkdiv (*(volatile uint32_t*)0x02000004)
-#define reg_uart_data (*(volatile uint32_t*)0x02000008)
-#define reg_leds (*(volatile uint32_t*)0x03000000)
+#define reg_uart_clkdiv (*(volatile uint32_t*)0x03000078)
+#define reg_uart_data (*(volatile uint32_t*)0x0300007c)
+// #define reg_leds (*(volatile uint32_t*)0x04000000)
 
 // --------------------------------------------------------
 
@@ -166,7 +166,7 @@ char getchar_prompt(char *prompt)
     uint32_t cycles_begin, cycles_now, cycles;
     __asm__ volatile ("rdcycle %0" : "=r"(cycles_begin));
 
-    reg_leds = ~0;
+    // reg_leds = ~0;
 
     if (prompt)
         print(prompt);
@@ -178,12 +178,12 @@ char getchar_prompt(char *prompt)
             if (prompt)
                 print(prompt);
             cycles_begin = cycles_now;
-            reg_leds = ~reg_leds;
+            // reg_leds = ~reg_leds;
         }
         c = reg_uart_data;
     }
 
-    reg_leds = 0;
+    // reg_leds = 0;
     return c;
 }
 
@@ -473,15 +473,15 @@ void cmd_echo()
 
 void main()
 {
-    reg_leds = 31;
+    // reg_leds = 31;
     // reg_uart_clkdiv = 104; // for 100M
     reg_uart_clkdiv = 52; // for 50M
     print("Booting..\n");
 
-    reg_leds = 63;
+    // reg_leds = 63;
     set_flash_qspi_flag();
 
-    reg_leds = 127;
+    // reg_leds = 127;
     // while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
 
     print("\n");

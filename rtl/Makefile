@@ -4,17 +4,29 @@ CFLAGS=
 
 WAVE := NONE
 
-RTL :=
+IP := ./ip/spram_model.v \
+      ./ip/spimemio.v \
+      ./ip/simpleuart.v \
+	  ./ip/i2c_master_bit_ctrl.v \
+      ./ip/i2c_master_byte_ctrl.v \
+      ./ip/simple_i2c_master.v \
+      ./ip/simple_spi_master.v \
+      ./ip/counter_timer.v \
+	  ./ip/spi_slave.v \
+      ./ip/ravenna_spi.v
+
+INC := -I./ip
 # +behv_wave
-retrosim: retrosoc_tb.vvp retrosoc_fw.hex retrosoc_fw.bin
-	vvp -N $< +firmware=retrosoc_fw.hex +behv_$(WAVE)
+retrosim: retrosoc_tb.vvp retrosoc_fw.hex retrosoc_fw.bin retrosoc_fw.txt
+	vvp -N $< +firmware=retrosoc_fw.hex +behv_$(WAVE) -fst
 
 # +syn_wave
 retrosynsim: retrosoc_syn_tb.vvp retrosoc_fw.hex
-	vvp -N $< +firmware=retrosoc_fw.hex +syn_$(WAVE)
+	vvp -N $< +firmware=retrosoc_fw.hex +syn_$(WAVE) -fst
 
-retrosoc_tb.vvp: retrosoc_tb.v retrosoc_asic.v ./ip/spram_model.v ./ip/spimemio.v ./ip/simpleuart.v retrosoc.v picorv32.v ./ip/spiflash.v ../tech/tc_io.v ../tech/tc_clk.v ../tech/tc_sram.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
-	iverilog -s retrosoc_tb -o $@ $^
+
+retrosoc_tb.vvp: retrosoc_tb.v retrosoc_asic.v  retrosoc.v picorv32.v $(IP) ./ip/spiflash.v ../tech/tc_io.v ../tech/tc_clk.v ../tech/tc_sram.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
+	iverilog $(INC) -s retrosoc_tb -o $@ $^
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_yosys.v spiflash.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x16_c2_bm_bist.v
 	iverilog -s retrosoc_tb -o $@ $^
@@ -29,13 +41,16 @@ retrosoc_sections.lds: sections.lds
 	$(CROSS)cpp -P -DRETROSOC -o $@ $^
 
 retrosoc_fw.elf: retrosoc_sections.lds start.s firmware.c
-	$(CROSS)gcc $(CFLAGS) -DRETROSOC -mabi=ilp32 -march=rv32ic -Wl,-Bstatic,-T,retrosoc_sections.lds,--strip-debug -ffreestanding -nostdlib -o retrosoc_fw.elf start.s firmware.c
+	$(CROSS)gcc $(CFLAGS) -DRETROSOC -mabi=ilp32 -march=rv32i -Wl,-Bstatic,-T,retrosoc_sections.lds,--strip-debug -ffreestanding -nostdlib -o retrosoc_fw.elf start.s firmware.c
 
 retrosoc_fw.hex: retrosoc_fw.elf
 	$(CROSS)objcopy -O verilog retrosoc_fw.elf retrosoc_fw.hex
 
 retrosoc_fw.bin: retrosoc_fw.elf
 	$(CROSS)objcopy -O binary retrosoc_fw.elf retrosoc_fw.bin
+
+retrosoc_fw.txt: retrosoc_fw.elf
+	$(CROSS)objdump -d retrosoc_fw.elf > retrosoc_fw.txt
 
 # ---- Testbench for SPI Flash Model ----
 spiflash_tb: spiflash_tb.vvp retrosoc_fw.hex
@@ -50,7 +65,7 @@ cmos.log: spimemio.v simpleuart.v retrosoc.v ../picorv32.v
 
 # ---- Clean ----
 clean:
-	rm -f *.vvp *.vcd 
+	rm -f *.vvp *.vcd *.fst
 	rm -f *.elf *.hex *.bin
 	rm -f *.log
 	rm -f retrosoc_syn.v
