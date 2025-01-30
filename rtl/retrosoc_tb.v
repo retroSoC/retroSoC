@@ -26,8 +26,6 @@ module retrosoc_tb;
 
   reg         r_clk;
   reg   [5:0] r_rst_cnt = 0;
-  wire  [6:0] s_leds;
-  wire s_led1, s_led2, s_led3, s_led4, s_led5, s_led6, s_led7;
   wire s_uart_rx, s_uart_tx;
   wire s_flash_csb;
   wire s_flash_clk;
@@ -44,29 +42,46 @@ module retrosoc_tb;
     r_rst_cnt <= r_rst_cnt + !s_rst_n;
   end
 
-  assign s_leds = {s_led7, s_led6, s_led5, s_led4, s_led3, s_led2, s_led1};
-  always @(s_leds) begin
-    #1 $display("s_leds: %b", s_leds);
-  end
-
-  retrosoc_asic u_retrosoc (
-      .clk_i           (r_clk),
-      .rst_n_i         (s_rst_n),
-      .uart_tx_o_pad   (s_uart_tx),
-      .uart_rx_i_pad   (s_uart_rx),
-      .flash_csb_o_pad (s_flash_csb),
-      .flash_clk_o_pad (s_flash_clk),
-      .flash_io0_io_pad(s_flash_io0),
-      .flash_io1_io_pad(s_flash_io1),
-      .flash_io2_io_pad(s_flash_io2),
-      .flash_io3_io_pad(s_flash_io3),
-      .led1_o_pad      (s_led1),
-      .led2_o_pad      (s_led2),
-      .led3_o_pad      (s_led3),
-      .led4_o_pad      (s_led4),
-      .led5_o_pad      (s_led5),
-      .led6_o_pad      (s_led6),
-      .led7_o_pad      (s_led7)
+  retrosoc_asic u_retrosoc_asic (
+      .xi_i_pad         (r_clk),
+      .xo_o_pad         (),
+      .xclk_i_pad       (r_clk),
+      .rst_n_i_pad      (s_rst_n),
+      .hk_sdi_i_pad     (1'b1),
+      .hk_sdo_o_pad     (),
+      .hk_csb_i_pad     (1'b1),
+      .hk_sck_i_pad     (1'b0),
+      .spi_mst_sdi_i_pad(1'b0),
+      .spi_mst_csb_o_pad(),
+      .spi_mst_sck_o_pad(),
+      .spi_mst_sdo_o_pad(),
+      .flash_csb_o_pad  (s_flash_csb),
+      .flash_clk_o_pad  (s_flash_clk),
+      .flash_io0_io_pad (s_flash_io0),
+      .flash_io1_io_pad (s_flash_io1),
+      .flash_io2_io_pad (s_flash_io2),
+      .flash_io3_io_pad (s_flash_io3),
+      .uart_tx_o_pad    (s_uart_tx),
+      .uart_rx_i_pad    (s_uart_rx),
+      .i2c_sda_io_pad   (),
+      .i2c_scl_io_pad   (),
+      .gpio_0_o_pad     (),
+      .gpio_1_o_pad     (),
+      .gpio_2_o_pad     (),
+      .gpio_3_o_pad     (),
+      .gpio_4_o_pad     (),
+      .gpio_5_o_pad     (),
+      .gpio_6_o_pad     (),
+      .gpio_7_o_pad     (),
+      .gpio_8_o_pad     (),
+      .gpio_9_o_pad     (),
+      .gpio_10_o_pad    (),
+      .gpio_11_o_pad    (),
+      .gpio_12_o_pad    (),
+      .gpio_13_o_pad    (),
+      .gpio_14_o_pad    (),
+      .gpio_15_o_pad    (),
+      .irq_pin_i_pad    (1'b0)
   );
 
   spiflash u_spiflash (
@@ -110,17 +125,17 @@ module retrosoc_tb;
 
   initial begin
     if ($test$plusargs("behv_wave")) begin
-      $dumpfile("retrosoc_tb.vcd");
+      $dumpfile("retrosoc_tb.fst");
       $dumpvars(0, retrosoc_tb);
     end else if ($test$plusargs("syn_wave")) begin
-      $dumpfile("retrosoc_syn_tb.vcd");
+      $dumpfile("retrosoc_syn_tb.fst");
       $dumpvars(0, retrosoc_tb);
     end
 
-    repeat (100) begin
+    repeat (1500) begin
       repeat (5000) @(posedge r_clk);
       // $display("+5000 cycles");
     end
-    // $finish;
+    $finish;
   end
 endmodule

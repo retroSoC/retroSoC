@@ -2,7 +2,7 @@
 module spram_model (
     input         clk,
     input  [ 3:0] wen,
-    input  [21:0] addr,
+    input  [13:0] addr,
     input  [31:0] wdata,
     output [31:0] rdata
 );
