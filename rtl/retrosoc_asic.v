@@ -193,7 +193,8 @@ module retrosoc_asic (
   // reset assignment. "s_rst_n_i" comes from button, while "s_hk_rst"
   // comes from standalone SPI (and is normally zero unless activated from the SPI).
   assign s_clk   = s_hk_pll_bypass ? s_xclk_i_buf : s_pll_clk_buf;
-  assign s_rst_n = s_rst_n_i & ~s_hk_rst;
+//   assign s_rst_n = s_rst_n_i & ~s_hk_rst;
+  assign s_rst_n = s_rst_n_i;
   retrosoc u_retrosoc (
       .clk_i                    (s_clk),
       .rst_n_i                  (s_rst_n),

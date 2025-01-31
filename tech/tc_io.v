@@ -5,7 +5,8 @@ module ihp_io_xtl_pad (
     output clk
 );
 
-  assign clk = en ? xi_pad : 1'b0;
+  assign clk    = en ? xi_pad : 1'b0;
+  assign xo_pad = xi_pad;
 endmodule
 
 module ihp_io_tri_pad (

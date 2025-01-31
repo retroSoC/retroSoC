@@ -22,25 +22,22 @@
 module retrosoc_tb;
   // localparam ser_half_period = 53;
   localparam ser_half_period = 26;
-  event       ser_sample;
+  event ser_sample;
 
-  reg         r_clk;
-  reg   [5:0] r_rst_cnt = 0;
-  wire s_uart_rx, s_uart_tx;
-  wire s_flash_csb;
-  wire s_flash_clk;
-  wire s_flash_io0;
-  wire s_flash_io1;
-  wire s_flash_io2;
-  wire s_flash_io3;
+  reg   r_clk;
+  reg   s_rst_n;
+  wire  s_uart_rx;
+  wire  s_flash_csb;
+  wire  s_flash_clk;
+  wire  s_flash_io0;
+  wire  s_flash_io1;
+  wire  s_flash_io2;
+  wire  s_flash_io3;
+  wire  s_i2c_sda_io;
+  wire  s_i2c_scl_io;
 
   // always #5 r_clk = (r_clk === 1'b0);  // 100M
   always #10 r_clk = (r_clk === 1'b0);  // 50M
-  wire s_rst_n = &r_rst_cnt;
-
-  always @(posedge r_clk) begin
-    r_rst_cnt <= r_rst_cnt + !s_rst_n;
-  end
 
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad         (r_clk),
@@ -62,9 +59,9 @@ module retrosoc_tb;
       .flash_io2_io_pad (s_flash_io2),
       .flash_io3_io_pad (s_flash_io3),
       .uart_tx_o_pad    (s_uart_tx),
-      .uart_rx_i_pad    (s_uart_rx),
-      .i2c_sda_io_pad   (),
-      .i2c_scl_io_pad   (),
+      .uart_rx_i_pad    (1'b0),
+      .i2c_sda_io_pad   (s_i2c_sda_io),
+      .i2c_scl_io_pad   (s_i2c_scl_io),
       .gpio_0_o_pad     (),
       .gpio_1_o_pad     (),
       .gpio_2_o_pad     (),
@@ -92,6 +89,15 @@ module retrosoc_tb;
       .io2(s_flash_io2),
       .io3(s_flash_io3)
   );
+
+  i2c_slave u_i2c_slave (
+      .scl(s_i2c_scl_io),
+      .sda(s_i2c_sda_io)
+  );
+
+  // Testbench pullups on SDA, SCL lines
+  pullup i2c_scl_up (s_i2c_scl_io);
+  pullup i2c_sda_up (s_i2c_sda_io);
 
   reg [7:0] buffer;
   always begin
@@ -121,6 +127,14 @@ module retrosoc_tb;
       $write(
           "%c", buffer
       );
+  end
+
+  initial begin
+    s_rst_n = 1;
+    #60;
+    s_rst_n = 0;
+    #100;
+    s_rst_n = 1;
   end
 
   initial begin

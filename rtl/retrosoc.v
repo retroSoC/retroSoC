@@ -215,18 +215,19 @@ module retrosoc #(
   wire        s_irq_spi_mst;
   wire        s_irq_tim0;
 
-  assign s_irq[2:0] = 3'd0;
-  assign s_irq[3]   = s_irq_stall;
-  assign s_irq[4]   = s_irq_uart;
-  assign s_irq[5]   = irq_pin_i;
-  assign s_irq[6]   = irq_spi_i;
-  assign s_irq[7]   = s_irq_7;
-  assign s_irq[8]   = s_irq_8;
-  assign s_irq[9]   = 1'd0;
-  assign s_irq[10]  = 1'd0;
-  assign s_irq[11]  = s_irq_i2c;
-  assign s_irq[12]  = s_irq_spi_mst;
-  assign s_irq[13]  = s_irq_tim0;
+  assign s_irq[2:0]   = 3'd0;
+  assign s_irq[3]     = s_irq_stall;
+  assign s_irq[4]     = s_irq_uart;
+  assign s_irq[5]     = irq_pin_i;
+  assign s_irq[6]     = irq_spi_i;
+  assign s_irq[7]     = s_irq_7;
+  assign s_irq[8]     = s_irq_8;
+  assign s_irq[9]     = 1'd0;
+  assign s_irq[10]    = 1'd0;
+  assign s_irq[11]    = s_irq_i2c;
+  assign s_irq[12]    = s_irq_spi_mst;
+  assign s_irq[13]    = s_irq_tim0;
+  assign s_irq[31:14] = 18'd0;
 
   wire        s_mem_valid;
   wire        s_mem_instr;
