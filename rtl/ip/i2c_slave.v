@@ -9,7 +9,7 @@
 
 module i2c_slave (
     inout scl,
-    sda
+    inout sda
 );
 
   parameter [7:0] SIDLE = 8'h1, SADDR = 8'h2, SACK1 = 8'h4, SDATA = 8'h8, SACK2 = 8'h10;
