@@ -7,14 +7,15 @@ WAVE := NONE
 RTL_IP := ./ip/spram_model.v \
       ./ip/spimemio.v \
       ./ip/simpleuart.v \
-	  ./ip/i2c_master_bit_ctrl.v \
+      ./ip/i2c_master_bit_ctrl.v \
       ./ip/i2c_master_byte_ctrl.v \
       ./ip/simple_i2c_master.v \
+      ./ip/i2c_slave.v \
       ./ip/simple_spi_master.v \
       ./ip/counter_timer.v \
-	  ./ip/spi_slave.v \
+      ./ip/spi_slave.v \
       ./ip/ravenna_spi.v \
-	  ./ip/spiflash.v
+      ./ip/spiflash.v
 
 RTL_TECH := ../tech/tc_io.v \
             ../tech/tc_clk.v \

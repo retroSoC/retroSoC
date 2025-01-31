@@ -571,20 +571,32 @@ void cmd_echo()
         putchar(c);
 }
 
+void print_reg(char *info, uint32_t val, int digits)
+{
+    print(info);
+    print_hex(val, digits);
+    print("\n");
+}
+
 void ip_counter_timer_test()
 {
     print("[IP] counter timer test\n");
-    reg_timer_value = 0xffffffff;
+    print_reg("[TIM VALUE] ", reg_timer_value, 8);
+    print_reg("[TIM CONFIG] ", reg_timer_config, 8);
+
+    reg_timer_value = (uint32_t)0xffffffff;
     // reg_timer_config = 1;
     // reg_timer_config = 2;
     // reg_timer_config = 4; // One-shot mode, where the counter triggers an interrupt when it reaches the value of reg_timer_data
     reg_timer_config = 8; // 1000, timer enable, continuous mode, count down, irq disable
     // reg_timer_config = 15;
+
+    print_reg("[TIM VALUE] ", reg_timer_value, 8);
+    print_reg("[TIM CONFIG] ", reg_timer_config, 8);
+
     for (int i = 0; i < 10; ++i)
     {
-        print("[TIM] ");
-        print_hex(reg_timer_data, 7);
-        print("\n");
+        print_reg("[TIM DATA] ", reg_timer_data, 8);
     }
 }
 
@@ -596,16 +608,56 @@ void ip_gpio_test()
 
     reg_gpio_data = 0xffff;
     reg_gpio_data = 0x0000;
-    for(int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i)
+    {
         print("[GPIO] ");
         print_hex(reg_gpio_data, 7);
         print("\n");
     }
 }
 
+void i2c_init(unsigned int pre)
+{
+    reg_i2c_control = (uint16_t)(I2C_CTRL_EN | I2C_CTRL_IEN);
+    reg_i2c_prescale = (uint16_t)pre;
+}
+
+int i2c_send(unsigned char saddr, unsigned char sdata)
+{
+    int volatile y;
+    reg_i2c_data = saddr;
+    reg_i2c_command = I2C_CMD_STA | I2C_CMD_WR;
+
+    while ((reg_i2c_status & I2C_STAT_TIP) != 0)
+        ;
+
+    if ((reg_i2c_status & I2C_STAT_RXACK) == 1)
+    {
+        reg_i2c_command = I2C_CMD_STO;
+        return 0;
+    }
+
+    reg_i2c_data = sdata;
+    reg_i2c_command = I2C_CMD_WR;
+
+    while (reg_i2c_status & I2C_STAT_TIP)
+        ;
+    reg_i2c_command = I2C_CMD_STO;
+
+    if ((reg_i2c_status & I2C_STAT_RXACK) == 1)
+        return 0;
+    else
+        return 1;
+}
+
 void ip_i2c_test()
 {
     print("[IP] i2c test\n");
+    reg_i2c_config = 0;
+    reg_i2c_data = 0;
+    i2c_init(5);
+    // Send command 6, data byte 0xfa
+    i2c_send(0x6, 0xfa);
 }
 
 void main()
@@ -636,11 +688,16 @@ void main()
     // cmd_read_flash_id();
     // cmd_read_flash_regs();
     cmd_print_spi_state();
-    // cmd_echo();
-    ip_counter_timer_test();
-    ip_gpio_test();
 
-    while (1);
+    ip_counter_timer_test();
+    // ip_gpio_test();
+    ip_i2c_test();
+    cmd_benchmark(true, 0);
+    // cmd_benchmark_all();
+    cmd_memtest();
+    cmd_echo();
+    while (1)
+        ;
     // while (1) {
     //     print("\n");
     //     print("Select an action:\n");

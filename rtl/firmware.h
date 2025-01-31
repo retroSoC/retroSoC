@@ -1,5 +1,5 @@
-#ifndef _RETROSOC_H_
-#define _RETROSOC_H_
+#ifndef _RETROSOC_DEF_H_
+#define _RETROSOC_DEF_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -43,4 +43,40 @@
 
 #define reg_irq7_source    (*(volatile uint32_t*)0x030000b0)
 #define reg_irq8_source    (*(volatile uint32_t*)0x030000b4)
+
+// command register bits
+// bit 7 = start
+// bit 6 = stop
+// bit 5 = read
+// bit 4 = write
+
+// control register bits
+// bit 27 = acknowledge
+// bit 24 = interrupt acknowledge
+// bit 23 = enable
+// bit 22 = interrupt enable
+
+// bits 15-0:  clock prescaler
+#define     I2C_CMD_STA         0x80
+#define     I2C_CMD_STO         0x40
+#define     I2C_CMD_RD          0x20
+#define     I2C_CMD_WR          0x10
+#define     I2C_CMD_ACK         0x08
+#define     I2C_CMD_IACK        0x01
+
+#define     I2C_CTRL_EN         0x80
+#define     I2C_CTRL_IEN        0x40
+
+// status regiter bits:
+// bit 7 = receive acknowledge
+// bit 6 = busy (start signal detected)
+// bit 5 = arbitration lost
+// bit 1 = transfer in progress
+// bit 0 = interrupt flag
+#define     I2C_STAT_RXACK      0x80
+#define     I2C_STAT_BUSY       0x40
+#define     I2C_STAT_AL         0x20
+#define     I2C_STAT_TIP        0x02
+#define     I2C_STAT_IF         0x01
+
 #endif
