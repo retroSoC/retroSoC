@@ -17,26 +17,17 @@
  *
  */
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "firmware.h"
 
 #ifdef RETROSOC
-#  define MEM_TOTAL 0x10000 /* 64 KB */
+#define MEM_TOTAL 0x10000 /* 64 KB */
 #else
-#  error "Set -DRETROSOC when compiling firmware.c"
+#error "Set -DRETROSOC when compiling firmware.c"
 #endif
 
 // a pointer to this is a null pointer, but the compiler does not
 // know that because "sram" is a linker symbol from sections.lds.
 extern uint32_t sram;
-
-#define reg_spictrl (*(volatile uint32_t*)0x02000000)
-#define reg_uart_clkdiv (*(volatile uint32_t*)0x03000078)
-#define reg_uart_data (*(volatile uint32_t*)0x0300007c)
-// #define reg_leds (*(volatile uint32_t*)0x04000000)
-
-// --------------------------------------------------------
-
 extern uint32_t flashio_worker_begin;
 extern uint32_t flashio_worker_end;
 
@@ -50,10 +41,9 @@ void flashio(uint8_t *data, int len, uint8_t wrencmd)
     while (src_ptr != &flashio_worker_end)
         *(dst_ptr++) = *(src_ptr++);
 
-    ((void(*)(uint8_t*, uint32_t, uint32_t))func)(data, len, wrencmd);
+    ((void (*)(uint8_t *, uint32_t, uint32_t))func)(data, len, wrencmd);
 }
 
-#ifdef RETROSOC
 void set_flash_qspi_flag()
 {
     uint8_t buffer[8];
@@ -94,9 +84,7 @@ void enable_flash_crm()
 {
     reg_spictrl |= 0x00100000;
 }
-#endif
 
-// --------------------------------------------------------
 void putchar(char c)
 {
     if (c == '\n')
@@ -112,9 +100,11 @@ void print(const char *p)
 
 void print_hex(uint32_t v, int digits)
 {
-    for (int i = 7; i >= 0; i--) {
-        char c = "0123456789abcdef"[(v >> (4*i)) & 15];
-        if (c == '0' && i >= digits) continue;
+    for (int i = 7; i >= 0; i--)
+    {
+        char c = "0123456789abcdef"[(v >> (4 * i)) & 15];
+        if (c == '0' && i >= digits)
+            continue;
         putchar(c);
         digits = i;
     }
@@ -122,41 +112,151 @@ void print_hex(uint32_t v, int digits)
 
 void print_dec(uint32_t v)
 {
-    if (v >= 1000) {
+    if (v >= 1000)
+    {
         print(">=1000");
         return;
     }
 
-    if      (v >= 900) { putchar('9'); v -= 900; }
-    else if (v >= 800) { putchar('8'); v -= 800; }
-    else if (v >= 700) { putchar('7'); v -= 700; }
-    else if (v >= 600) { putchar('6'); v -= 600; }
-    else if (v >= 500) { putchar('5'); v -= 500; }
-    else if (v >= 400) { putchar('4'); v -= 400; }
-    else if (v >= 300) { putchar('3'); v -= 300; }
-    else if (v >= 200) { putchar('2'); v -= 200; }
-    else if (v >= 100) { putchar('1'); v -= 100; }
+    if (v >= 900)
+    {
+        putchar('9');
+        v -= 900;
+    }
+    else if (v >= 800)
+    {
+        putchar('8');
+        v -= 800;
+    }
+    else if (v >= 700)
+    {
+        putchar('7');
+        v -= 700;
+    }
+    else if (v >= 600)
+    {
+        putchar('6');
+        v -= 600;
+    }
+    else if (v >= 500)
+    {
+        putchar('5');
+        v -= 500;
+    }
+    else if (v >= 400)
+    {
+        putchar('4');
+        v -= 400;
+    }
+    else if (v >= 300)
+    {
+        putchar('3');
+        v -= 300;
+    }
+    else if (v >= 200)
+    {
+        putchar('2');
+        v -= 200;
+    }
+    else if (v >= 100)
+    {
+        putchar('1');
+        v -= 100;
+    }
 
-    if      (v >= 90) { putchar('9'); v -= 90; }
-    else if (v >= 80) { putchar('8'); v -= 80; }
-    else if (v >= 70) { putchar('7'); v -= 70; }
-    else if (v >= 60) { putchar('6'); v -= 60; }
-    else if (v >= 50) { putchar('5'); v -= 50; }
-    else if (v >= 40) { putchar('4'); v -= 40; }
-    else if (v >= 30) { putchar('3'); v -= 30; }
-    else if (v >= 20) { putchar('2'); v -= 20; }
-    else if (v >= 10) { putchar('1'); v -= 10; }
+    if (v >= 90)
+    {
+        putchar('9');
+        v -= 90;
+    }
+    else if (v >= 80)
+    {
+        putchar('8');
+        v -= 80;
+    }
+    else if (v >= 70)
+    {
+        putchar('7');
+        v -= 70;
+    }
+    else if (v >= 60)
+    {
+        putchar('6');
+        v -= 60;
+    }
+    else if (v >= 50)
+    {
+        putchar('5');
+        v -= 50;
+    }
+    else if (v >= 40)
+    {
+        putchar('4');
+        v -= 40;
+    }
+    else if (v >= 30)
+    {
+        putchar('3');
+        v -= 30;
+    }
+    else if (v >= 20)
+    {
+        putchar('2');
+        v -= 20;
+    }
+    else if (v >= 10)
+    {
+        putchar('1');
+        v -= 10;
+    }
 
-    if      (v >= 9) { putchar('9'); v -= 9; }
-    else if (v >= 8) { putchar('8'); v -= 8; }
-    else if (v >= 7) { putchar('7'); v -= 7; }
-    else if (v >= 6) { putchar('6'); v -= 6; }
-    else if (v >= 5) { putchar('5'); v -= 5; }
-    else if (v >= 4) { putchar('4'); v -= 4; }
-    else if (v >= 3) { putchar('3'); v -= 3; }
-    else if (v >= 2) { putchar('2'); v -= 2; }
-    else if (v >= 1) { putchar('1'); v -= 1; }
-    else putchar('0');
+    if (v >= 9)
+    {
+        putchar('9');
+        v -= 9;
+    }
+    else if (v >= 8)
+    {
+        putchar('8');
+        v -= 8;
+    }
+    else if (v >= 7)
+    {
+        putchar('7');
+        v -= 7;
+    }
+    else if (v >= 6)
+    {
+        putchar('6');
+        v -= 6;
+    }
+    else if (v >= 5)
+    {
+        putchar('5');
+        v -= 5;
+    }
+    else if (v >= 4)
+    {
+        putchar('4');
+        v -= 4;
+    }
+    else if (v >= 3)
+    {
+        putchar('3');
+        v -= 3;
+    }
+    else if (v >= 2)
+    {
+        putchar('2');
+        v -= 2;
+    }
+    else if (v >= 1)
+    {
+        putchar('1');
+        v -= 1;
+    }
+    else
+        putchar('0');
 }
 
 char getchar_prompt(char *prompt)
@@ -164,26 +264,26 @@ char getchar_prompt(char *prompt)
     int32_t c = -1;
 
     uint32_t cycles_begin, cycles_now, cycles;
-    __asm__ volatile ("rdcycle %0" : "=r"(cycles_begin));
-
-    // reg_leds = ~0;
+    __asm__ volatile("rdcycle %0"
+                     : "=r"(cycles_begin));
 
     if (prompt)
         print(prompt);
 
-    while (c == -1) {
-        __asm__ volatile ("rdcycle %0" : "=r"(cycles_now));
+    while (c == -1)
+    {
+        __asm__ volatile("rdcycle %0"
+                         : "=r"(cycles_now));
         cycles = cycles_now - cycles_begin;
-        if (cycles > 12000000) {
+        if (cycles > 12000000)
+        {
             if (prompt)
                 print(prompt);
             cycles_begin = cycles_now;
-            // reg_leds = ~reg_leds;
         }
         c = reg_uart_data;
     }
 
-    // reg_leds = 0;
     return c;
 }
 
@@ -237,25 +337,29 @@ void cmd_memtest()
     int stride = 256;
     uint32_t state;
 
-    volatile uint32_t *base_word = (uint32_t *) 0;
-    volatile uint8_t *base_byte = (uint8_t *) 0;
+    volatile uint32_t *base_word = (uint32_t *)0;
+    volatile uint8_t *base_byte = (uint8_t *)0;
 
     print("Running memtest ");
 
     // Walk in stride increments, word access
-    for (int i = 1; i <= cyc_count; i++) {
+    for (int i = 1; i <= cyc_count; i++)
+    {
         state = i;
 
-        for (int word = 0; word < MEM_TOTAL / sizeof(int); word += stride) {
+        for (int word = 0; word < MEM_TOTAL / sizeof(int); word += stride)
+        {
             *(base_word + word) = xorshift32(&state);
         }
 
         state = i;
 
-        for (int word = 0; word < MEM_TOTAL / sizeof(int); word += stride) {
-            if (*(base_word + word) != xorshift32(&state)) {
+        for (int word = 0; word < MEM_TOTAL / sizeof(int); word += stride)
+        {
+            if (*(base_word + word) != xorshift32(&state))
+            {
                 print(" ***FAILED WORD*** at ");
-                print_hex(4*word, 4);
+                print_hex(4 * word, 4);
                 print("\n");
                 return;
             }
@@ -265,12 +369,15 @@ void cmd_memtest()
     }
 
     // Byte access
-    for (int byte = 0; byte < 128; byte++) {
-        *(base_byte + byte) = (uint8_t) byte;
+    for (int byte = 0; byte < 128; byte++)
+    {
+        *(base_byte + byte) = (uint8_t)byte;
     }
 
-    for (int byte = 0; byte < 128; byte++) {
-        if (*(base_byte + byte) != (uint8_t) byte) {
+    for (int byte = 0; byte < 128; byte++)
+    {
+        if (*(base_byte + byte) != (uint8_t)byte)
+        {
             print(" ***FAILED BYTE*** at ");
             print_hex(byte, 4);
             print("\n");
@@ -281,22 +388,19 @@ void cmd_memtest()
     print(" passed\n");
 }
 
-// --------------------------------------------------------
-
 void cmd_read_flash_id()
 {
-    uint8_t buffer[17] = { 0x9F, /* zeros */ };
+    uint8_t buffer[17] = {0x9F, /* zeros */};
     flashio(buffer, 17, 0);
 
-    for (int i = 1; i <= 16; i++) {
+    for (int i = 1; i <= 16; i++)
+    {
         putchar(' ');
         print_hex(buffer[i], 2);
     }
     putchar('\n');
 }
 
-// --------------------------------------------------------
-#ifdef RETROSOC
 uint8_t cmd_read_flash_reg(uint8_t cmd)
 {
     uint8_t buffer[2] = {cmd, 0};
@@ -306,7 +410,8 @@ uint8_t cmd_read_flash_reg(uint8_t cmd)
 
 void print_reg_bit(int val, const char *name)
 {
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 12; i++)
+    {
         if (*name == 0)
             putchar(' ');
         else
@@ -355,21 +460,20 @@ void cmd_read_flash_regs()
     print_reg_bit(sr3 & 0x80, "S23 (HOLD)");
     putchar('\n');
 }
-#endif
-
-// --------------------------------------------------------
 
 uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
 {
     uint8_t data[256];
-    uint32_t *words = (void*)data;
+    uint32_t *words = (void *)data;
 
     uint32_t x32 = 314159265;
 
     uint32_t cycles_begin, cycles_end;
     uint32_t instns_begin, instns_end;
-    __asm__ volatile ("rdcycle %0" : "=r"(cycles_begin));
-    __asm__ volatile ("rdinstret %0" : "=r"(instns_begin));
+    __asm__ volatile("rdcycle %0"
+                     : "=r"(cycles_begin));
+    __asm__ volatile("rdinstret %0"
+                     : "=r"(instns_begin));
 
     for (int i = 0; i < 20; i++)
     {
@@ -393,8 +497,10 @@ uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
         }
     }
 
-    __asm__ volatile ("rdcycle %0" : "=r"(cycles_end));
-    __asm__ volatile ("rdinstret %0" : "=r"(instns_end));
+    __asm__ volatile("rdcycle %0"
+                     : "=r"(cycles_end));
+    __asm__ volatile("rdinstret %0"
+                     : "=r"(instns_end));
 
     if (verbose)
     {
@@ -417,8 +523,6 @@ uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
     return cycles_end - cycles_begin;
 }
 
-// --------------------------------------------------------
-#ifdef RETROSOC
 void cmd_benchmark_all()
 {
     uint32_t instns = 0;
@@ -457,9 +561,7 @@ void cmd_benchmark_all()
     enable_flash_crm();
     print_hex(cmd_benchmark(false, &instns), 8);
     putchar('\n');
-
 }
-#endif
 
 void cmd_echo()
 {
@@ -469,19 +571,50 @@ void cmd_echo()
         putchar(c);
 }
 
-// --------------------------------------------------------
+void ip_counter_timer_test()
+{
+    print("[IP] counter timer test\n");
+    reg_timer_value = 0xffffffff;
+    // reg_timer_config = 1;
+    // reg_timer_config = 2;
+    // reg_timer_config = 4; // One-shot mode, where the counter triggers an interrupt when it reaches the value of reg_timer_data
+    reg_timer_config = 8; // 1000, timer enable, continuous mode, count down, irq disable
+    // reg_timer_config = 15;
+    for (int i = 0; i < 10; ++i)
+    {
+        print("[TIM] ");
+        print_hex(reg_timer_data, 7);
+        print("\n");
+    }
+}
+
+void ip_gpio_test()
+{
+    print("[IP] gpio test\n");
+    reg_gpio_pub = 0x5a5a; // NOT(pullup)
+    reg_gpio_enb = 0xa5a5; // NOT(output enable)
+
+    reg_gpio_data = 0xffff;
+    reg_gpio_data = 0x0000;
+    for(int i = 0; i < 10; ++i) {
+        print("[GPIO] ");
+        print_hex(reg_gpio_data, 7);
+        print("\n");
+    }
+}
+
+void ip_i2c_test()
+{
+    print("[IP] i2c test\n");
+}
 
 void main()
 {
-    // reg_leds = 31;
     // reg_uart_clkdiv = 104; // for 100M
     reg_uart_clkdiv = 52; // for 50M
     print("Booting..\n");
-
-    // reg_leds = 63;
     set_flash_qspi_flag();
 
-    // reg_leds = 127;
     // while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
 
     print("\n");
@@ -500,90 +633,83 @@ void main()
 
     // cmd_memtest(); // test overwrites bss and data memory
     // print("\n");
-    cmd_read_flash_id();
-    cmd_read_flash_regs();
-    // set_flash_mode_spi();
-    // set_flash_mode_dual();
-    // set_flash_mode_quad();
-    // set_flash_mode_qddr();
-    // reg_spictrl = reg_spictrl ^ 0x00100000;
-    // cmd_benchmark(true, 0);
-    // cmd_benchmark_all();
-    // cmd_memtest();
+    // cmd_read_flash_id();
+    // cmd_read_flash_regs();
     cmd_print_spi_state();
-    cmd_echo();
+    // cmd_echo();
+    ip_counter_timer_test();
+    ip_gpio_test();
 
-    while (1)
-    {
-        print("\n");
+    while (1);
+    // while (1) {
+    //     print("\n");
+    //     print("Select an action:\n");
+    //     print("\n");
+    //     print("   [1] Read SPI Flash ID\n");
+    //     print("   [2] Read SPI Config Regs\n");
+    //     print("   [3] Switch to default mode\n");
+    //     print("   [4] Switch to Dual I/O mode\n");
+    //     print("   [5] Switch to Quad I/O mode\n");
+    //     print("   [6] Switch to Quad DDR mode\n");
+    //     print("   [7] Toggle continuous read mode\n");
+    //     print("   [9] Run simplistic benchmark\n");
+    //     print("   [0] Benchmark all configs\n");
+    //     print("   [M] Run Memtest\n");
+    //     print("   [S] Print SPI state\n");
+    //     print("   [e] Echo UART\n");
+    //     print("\n");
 
-        print("Select an action:\n");
-        print("\n");
-        print("   [1] Read SPI Flash ID\n");
-        print("   [2] Read SPI Config Regs\n");
-        print("   [3] Switch to default mode\n");
-        print("   [4] Switch to Dual I/O mode\n");
-        print("   [5] Switch to Quad I/O mode\n");
-        print("   [6] Switch to Quad DDR mode\n");
-        print("   [7] Toggle continuous read mode\n");
-        print("   [9] Run simplistic benchmark\n");
-        print("   [0] Benchmark all configs\n");
-        print("   [M] Run Memtest\n");
-        print("   [S] Print SPI state\n");
-        print("   [e] Echo UART\n");
-        print("\n");
+    //     for (int rep = 10; rep > 0; rep--)
+    //     {
+    //         print("Command> ");
+    //         char cmd = getchar();
+    //         if (cmd > 32 && cmd < 127)
+    //             putchar(cmd);
+    //         print("\n");
 
-        for (int rep = 10; rep > 0; rep--)
-        {
-            print("Command> ");
-            char cmd = getchar();
-            if (cmd > 32 && cmd < 127)
-                putchar(cmd);
-            print("\n");
+    //         switch (cmd)
+    //         {
+    //         case '1':
+    //             cmd_read_flash_id();
+    //             break;
+    //         case '2':
+    //             cmd_read_flash_regs();
+    //             break;
+    //         case '3':
+    //             set_flash_mode_spi();
+    //             break;
+    //         case '4':
+    //             set_flash_mode_dual();
+    //             break;
+    //         case '5':
+    //             set_flash_mode_quad();
+    //             break;
+    //         case '6':
+    //             set_flash_mode_qddr();
+    //             break;
+    //         case '7':
+    //             reg_spictrl = reg_spictrl ^ 0x00100000;
+    //             break;
+    //         case '9':
+    //             cmd_benchmark(true, 0);
+    //             break;
+    //         case '0':
+    //             cmd_benchmark_all();
+    //             break;
+    //         case 'M':
+    //             cmd_memtest();
+    //             break;
+    //         case 'S':
+    //             cmd_print_spi_state();
+    //             break;
+    //         case 'e':
+    //             cmd_echo();
+    //             break;
+    //         default:
+    //             continue;
+    //         }
 
-            switch (cmd)
-            {
-            case '1':
-                cmd_read_flash_id();
-                break;
-            case '2':
-                cmd_read_flash_regs();
-                break;
-            case '3':
-                set_flash_mode_spi();
-                break;
-            case '4':
-                set_flash_mode_dual();
-                break;
-            case '5':
-                set_flash_mode_quad();
-                break;
-            case '6':
-                set_flash_mode_qddr();
-                break;
-            case '7':
-                reg_spictrl = reg_spictrl ^ 0x00100000;
-                break;
-            case '9':
-                cmd_benchmark(true, 0);
-                break;
-            case '0':
-                cmd_benchmark_all();
-                break;
-            case 'M':
-                cmd_memtest();
-                break;
-            case 'S':
-                cmd_print_spi_state();
-                break;
-            case 'e':
-                cmd_echo();
-                break;
-            default:
-                continue;
-            }
-
-            break;
-        }
-    }
+    //         break;
+    //     }
+    // }
 }
