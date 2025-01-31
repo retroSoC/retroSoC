@@ -48,10 +48,10 @@ module counter_timer (
     if (resetn == 1'b0) begin
       value_reset <= 32'd0;
     end else begin
-      if (reg_val_we[3]) value_reset <= reg_val_di[31:24];
-      if (reg_val_we[2]) value_reset <= reg_val_di[23:16];
-      if (reg_val_we[1]) value_reset <= reg_val_di[15:8];
-      if (reg_val_we[0]) value_reset <= reg_val_di[7:0];
+      if (reg_val_we[3]) value_reset[31:24] <= reg_val_di[31:24];
+      if (reg_val_we[2]) value_reset[23:16] <= reg_val_di[23:16];
+      if (reg_val_we[1]) value_reset[15:8] <= reg_val_di[15:8];
+      if (reg_val_we[0]) value_reset[7:0] <= reg_val_di[7:0];
     end
   end
 

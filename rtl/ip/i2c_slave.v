@@ -55,7 +55,7 @@ module i2c_slave (
     if (cntr == 8) state = SDATA;
     else if ((state == SDATA) && (cntr == 17)) begin
       state <= SIDLE;
-      $display("i2c Slave has received 0x%X - Address: 0x%X", data, addr);
+      $display("[HARDWARE] i2c Slave has received 0x%X - Address: 0x%X", data, addr);
     end
 
   initial begin
