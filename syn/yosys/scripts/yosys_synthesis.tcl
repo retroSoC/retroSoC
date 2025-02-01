@@ -28,17 +28,6 @@ source $script_dir/init_tech.tcl
 #         --compat-mode --keep-hierarchy \
 #         --allow-use-before-declare --ignore-unknown-modules
 
-# IP := ./ip/spram_model.v \
-    #   ./ip/spimemio.v \
-    #   ./ip/simpleuart.v \
-	#   ./ip/i2c_master_bit_ctrl.v \
-    #   ./ip/i2c_master_byte_ctrl.v \
-    #   ./ip/simple_i2c_master.v \
-    #   ./ip/simple_spi_master.v \
-    #   ./ip/counter_timer.v \
-	#   ./ip/spi_slave.v \
-    #   ./ip/ravenna_spi.v
-
 yosys read_verilog ../../tech/tc_io.v
 yosys read_verilog ../../tech/tc_clk.v
 yosys read_verilog ../../tech/tc_sram.v
@@ -55,12 +44,14 @@ yosys read_verilog ../../rtl/ip/spi_slave.v
 yosys read_verilog ../../rtl/ip/ravenna_spi.v
 
 yosys read_verilog ../../rtl/ip/cust/register.v
+yosys read_verilog ../../rtl/ip/cust/lfsr.v
 yosys read_verilog ../../rtl/ip/cust/archinfo.v
-yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/flop.v
-yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/address_decoder.v
-yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/read_data_mux.v
-yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/apb_master.v
-yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/axi_apb_bridge.v
+yosys read_verilog ../../rtl/ip/cust/rng.v
+yosys read_verilog ../../rtl/ip/cust/axil2apb/flop.v
+yosys read_verilog ../../rtl/ip/cust/axil2apb/address_decoder.v
+yosys read_verilog ../../rtl/ip/cust/axil2apb/read_data_mux.v
+yosys read_verilog ../../rtl/ip/cust/axil2apb/apb_master.v
+yosys read_verilog ../../rtl/ip/cust/axil2apb/axi_apb_bridge.v
 yosys read_verilog ../../rtl/ip/axil_ip_wrapper.v
 
 yosys read_verilog ../../rtl/picorv32.v
