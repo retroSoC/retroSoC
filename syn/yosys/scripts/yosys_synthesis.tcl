@@ -53,6 +53,16 @@ yosys read_verilog ../../rtl/ip/simple_spi_master.v
 yosys read_verilog ../../rtl/ip/counter_timer.v
 yosys read_verilog ../../rtl/ip/spi_slave.v
 yosys read_verilog ../../rtl/ip/ravenna_spi.v
+
+yosys read_verilog ../../rtl/ip/cust/register.v
+yosys read_verilog ../../rtl/ip/cust/archinfo.v
+yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/flop.v
+yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/address_decoder.v
+yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/read_data_mux.v
+yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/apb_master.v
+yosys read_verilog ../../rtl/ip/cust/AXI4Lite_To_APB_Bridge/RTL/axi_apb_bridge.v
+yosys read_verilog ../../rtl/ip/axil_ip_wrapper.v
+
 yosys read_verilog ../../rtl/picorv32.v
 yosys read_verilog ../../rtl/retrosoc.v
 yosys read_verilog ../../rtl/retrosoc_asic.v

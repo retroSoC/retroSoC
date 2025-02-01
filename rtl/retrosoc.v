@@ -495,13 +495,35 @@ module retrosoc #(
       .mem_axi_rvalid (s_mem_axi_rvalid),
       .mem_axi_rready (s_mem_axi_rready),
       .mem_axi_rdata  (s_mem_axi_rdata),
-      .mem_valid      (s_iomem_valid),
+      .mem_valid      (s_iomem_valid && s_iomem_addr[31:8] == 24'h030001),
       .mem_instr      (s_mem_instr),
       .mem_ready      (s_aximem_ready),
       .mem_addr       (s_iomem_addr),
       .mem_wdata      (s_iomem_wdata),
       .mem_wstrb      (s_iomem_wstrb),
       .mem_rdata      (s_aximem_rdata)
+  );
+
+  axil_ip_wrapper u_axil_ip_wrapper (
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .mem_axi_awvalid(s_mem_axi_awvalid),
+      .mem_axi_awready(s_mem_axi_awready),
+      .mem_axi_awaddr (s_mem_axi_awaddr),
+      .mem_axi_awprot (s_mem_axi_awprot),
+      .mem_axi_wvalid (s_mem_axi_wvalid),
+      .mem_axi_wready (s_mem_axi_wready),
+      .mem_axi_wdata  (s_mem_axi_wdata),
+      .mem_axi_wstrb  (s_mem_axi_wstrb),
+      .mem_axi_bvalid (s_mem_axi_bvalid),
+      .mem_axi_bready (s_mem_axi_bready),
+      .mem_axi_arvalid(s_mem_axi_arvalid),
+      .mem_axi_arready(s_mem_axi_arready),
+      .mem_axi_araddr (s_mem_axi_araddr),
+      .mem_axi_arprot (s_mem_axi_arprot),
+      .mem_axi_rvalid (s_mem_axi_rvalid),
+      .mem_axi_rready (s_mem_axi_rready),
+      .mem_axi_rdata  (s_mem_axi_rdata)
   );
 
 
