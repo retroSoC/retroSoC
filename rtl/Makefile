@@ -17,12 +17,14 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/ravenna_spi.v \
       ./ip/spiflash.v \
       ./ip/cust/register.v \
+      ./ip/cust/lfsr.v \
       ./ip/cust/archinfo.v \
-      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/flop.v \
-      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/address_decoder.v \
-      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/read_data_mux.v \
-      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/apb_master.v \
-      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/axi_apb_bridge.v \
+      ./ip/cust/rng.v \
+      ./ip/cust/axil2apb/flop.v \
+      ./ip/cust/axil2apb/address_decoder.v \
+      ./ip/cust/axil2apb/read_data_mux.v \
+      ./ip/cust/axil2apb/apb_master.v \
+      ./ip/cust/axil2apb/axi_apb_bridge.v \
       ./ip/axil_ip_wrapper.v
 
 RTL_TECH := ../tech/tc_io.v \
