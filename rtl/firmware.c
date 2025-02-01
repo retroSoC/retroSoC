@@ -667,9 +667,27 @@ void ip_i2c_test()
 void ip_archinfo_test() {
     print("[IP] archinfo test\n");
 
-    print_reg("[ARCHINFO SYS]", reg_archinfo_sys, 8);
-    print_reg("[ARCHINFO IDL]", reg_archinfo_idl, 8);
-    print_reg("[ARCHINFO IDH]", reg_archinfo_idh, 8);
+    print_reg("[ARCHINFO SYS] ", reg_archinfo_sys, 8);
+    print_reg("[ARCHINFO IDL] ", reg_archinfo_idl, 8);
+    print_reg("[ARCHINFO IDH] ", reg_archinfo_idh, 8);
+}
+
+void ip_rng_test() {
+    print("[IP] rng test\n");
+
+    reg_rng_ctrl = (uint32_t)1;      // en the core
+    reg_rng_seed = (uint32_t)0xFE1C; // set the init seed
+    print_reg("[RNG SEED] ", reg_rng_seed, 8);
+
+    for(int i = 0; i < 5; ++i) {
+        print_reg("[RNG VAL] ", reg_rng_val, 8);
+    }
+
+    print("[RNG] reset the seed\n");
+    reg_rng_seed = (uint32_t)0;
+    for(int i = 0; i < 5; ++i) {
+        print_reg("[RNG VAL] ", reg_rng_val, 8);
+    }
 }
 
 void main()
@@ -705,6 +723,7 @@ void main()
     // ip_gpio_test();
     // ip_i2c_test();
     ip_archinfo_test();
+    ip_rng_test();
     // cmd_benchmark(true, 0);
     // cmd_benchmark_all();
     // cmd_memtest();

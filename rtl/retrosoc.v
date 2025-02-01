@@ -327,7 +327,7 @@ module retrosoc #(
   //    1 x RNG
   //    1 x ARCH
   //    1 x UART
-  //    1 x SPI
+  //    1 x SPI MASTER
   //    4 x PWM
   //    1 x PSRAM
   picorv32 #(
@@ -475,6 +475,7 @@ module retrosoc #(
       .irq_out   (s_irq_tim1)
   );
 
+  wire s_axi_mem_range = s_iomem_addr[31:8] >= 24'h0300_10 && s_iomem_addr[31:8] <= 24'h03FF_FF;
   picorv32_axi_adapter u_core2axi (
       .clk            (clk_i),
       .resetn         (rst_n_i),
@@ -495,7 +496,7 @@ module retrosoc #(
       .mem_axi_rvalid (s_mem_axi_rvalid),
       .mem_axi_rready (s_mem_axi_rready),
       .mem_axi_rdata  (s_mem_axi_rdata),
-      .mem_valid      (s_iomem_valid && s_iomem_addr[31:8] == 24'h030001),
+      .mem_valid      (s_iomem_valid && s_axi_mem_range),
       .mem_instr      (s_mem_instr),
       .mem_ready      (s_aximem_ready),
       .mem_addr       (s_iomem_addr),
@@ -543,7 +544,7 @@ module retrosoc #(
       r_irq_7_in_src  <= 0;
       r_irq_8_in_src  <= 0;
     end else begin
-      if (s_iomem_valid && !r_iomem_ready && s_iomem_addr[31:8] == 24'h030000) begin
+      if (s_iomem_valid && !r_iomem_ready && s_iomem_addr[31:8] == 24'h0300_00) begin
         // Handle r_iomem_ready based on wait states
         case (s_iomem_addr[7:0])
           8'h14:   r_iomem_ready <= ~s_simpleuart_reg_dat_wait;
@@ -620,7 +621,7 @@ module retrosoc #(
           8'h6c: r_iomem_rdata <= s_tim1_reg_val_dout;
           8'h70: r_iomem_rdata <= s_tim1_reg_dat_dout;
         endcase
-      end else if (s_iomem_valid && !r_iomem_ready && s_iomem_addr[31:8] == 24'h030001) begin
+      end else if (s_iomem_valid && !r_iomem_ready && s_axi_mem_range) begin
         r_iomem_ready <= s_aximem_ready;
         r_iomem_rdata <= s_aximem_rdata;
       end else begin
