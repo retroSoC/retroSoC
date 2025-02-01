@@ -15,7 +15,15 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/counter_timer.v \
       ./ip/spi_slave.v \
       ./ip/ravenna_spi.v \
-      ./ip/spiflash.v
+      ./ip/spiflash.v \
+      ./ip/cust/register.v \
+      ./ip/cust/archinfo.v \
+      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/flop.v \
+      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/address_decoder.v \
+      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/read_data_mux.v \
+      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/apb_master.v \
+      ./ip/cust/AXI4Lite_To_APB_Bridge/RTL/axi_apb_bridge.v \
+      ./ip/axil_ip_wrapper.v
 
 RTL_TECH := ../tech/tc_io.v \
             ../tech/tc_clk.v \
@@ -36,7 +44,7 @@ retrosynsim: retrosoc_syn_tb.vvp retrosoc_fw.hex
 	vvp -N $< +firmware=retrosoc_fw.hex +syn_$(WAVE) -fst
 
 
-retrosoc_tb.vvp: retrosoc_tb.v retrosoc_asic.v  retrosoc.v picorv32.v $(RTL_IP) $(RTL_TECH) $(RTL_PDK)
+retrosoc_tb.vvp: retrosoc_tb.v retrosoc_asic.v  retrosoc.v picorv32.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP)
 	iverilog $(RTL_INC) -s retrosoc_tb -o $@ $^
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v ./ip/spiflash.v $(RTL_PDK)

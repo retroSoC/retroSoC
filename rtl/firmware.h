@@ -49,9 +49,12 @@
 #define reg_timer1_value   (*(volatile uint32_t*)0x0300006c)
 #define reg_timer1_data    (*(volatile uint32_t*)0x03000070)
 
-// archinfo
-// rng
-// 
+#define reg_archinfo_sys   (*(volatile uint32_t*)0x03000100)
+#define reg_archinfo_idl   (*(volatile uint32_t*)0x03000104)
+#define reg_archinfo_idh   (*(volatile uint32_t*)0x03000108)
+
+
+
 
 // command register bits
 // bit 7 = start

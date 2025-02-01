@@ -664,6 +664,14 @@ void ip_i2c_test()
     i2c_send(0x6, 0xfa);
 }
 
+void ip_archinfo_test() {
+    print("[IP] archinfo test\n");
+
+    print_reg("[ARCHINFO SYS]", reg_archinfo_sys, 8);
+    print_reg("[ARCHINFO IDL]", reg_archinfo_idl, 8);
+    print_reg("[ARCHINFO IDH]", reg_archinfo_idh, 8);
+}
+
 void main()
 {
     // reg_uart_clkdiv = 104; // for 100M
@@ -694,12 +702,13 @@ void main()
     // cmd_print_spi_state();
 
     // ip_counter_timer_test();
-    ip_gpio_test();
-    ip_i2c_test();
+    // ip_gpio_test();
+    // ip_i2c_test();
+    ip_archinfo_test();
     // cmd_benchmark(true, 0);
     // cmd_benchmark_all();
     // cmd_memtest();
-    cmd_echo();
+    // cmd_echo();
     while (1)
         ;
     // while (1) {
