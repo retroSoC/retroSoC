@@ -114,6 +114,8 @@ module retrosoc #(
   wire [31:0] s_iomem_addr;
   wire [31:0] s_iomem_wdata;
   reg  [31:0] r_iomem_rdata;
+  wire        s_aximem_ready;
+  wire [31:0] s_aximem_rdata;
   // memory-mapped I/O control registers
   reg  [15:0] r_gpio;
   reg  [15:0] r_gpio_pu;
@@ -124,6 +126,24 @@ module retrosoc #(
   reg  [ 1:0] r_trap_out_dest;
   reg  [ 1:0] r_irq_7_in_src;
   reg  [ 1:0] r_irq_8_in_src;
+
+  wire        s_mem_axi_awvalid;
+  wire        s_mem_axi_awready;
+  wire [31:0] s_mem_axi_awaddr;
+  wire [ 2:0] s_mem_axi_awprot;
+  wire        s_mem_axi_wvalid;
+  wire        s_mem_axi_wready;
+  wire [31:0] s_mem_axi_wdata;
+  wire [ 3:0] s_mem_axi_wstrb;
+  wire        s_mem_axi_bvalid;
+  wire        s_mem_axi_bready;
+  wire        s_mem_axi_arvalid;
+  wire        s_mem_axi_arready;
+  wire [31:0] s_mem_axi_araddr;
+  wire [ 2:0] s_mem_axi_arprot;
+  wire        s_mem_axi_rvalid;
+  wire        s_mem_axi_rready;
+  wire [31:0] s_mem_axi_rdata;
 
 
   // GPIO assignments
@@ -209,11 +229,12 @@ module retrosoc #(
   assign ram_wdata_o = s_mem_wdata;  // just for naming conventions
 
   wire [31:0] s_irq;
-  wire        s_irq_stall = 0;  // not impl
+  wire        s_irq_stall = 0;
   wire        s_irq_uart;
   wire        s_irq_i2c;
   wire        s_irq_spi_mst;
   wire        s_irq_tim0;
+  wire        s_irq_tim1;
 
   assign s_irq[2:0]   = 3'd0;
   assign s_irq[3]     = s_irq_stall;
@@ -227,7 +248,8 @@ module retrosoc #(
   assign s_irq[11]    = s_irq_i2c;
   assign s_irq[12]    = s_irq_spi_mst;
   assign s_irq[13]    = s_irq_tim0;
-  assign s_irq[31:14] = 18'd0;
+  assign s_irq[14]    = s_irq_tim1;
+  assign s_irq[31:15] = 17'd0;
 
   wire        s_mem_valid;
   wire        s_mem_instr;
@@ -249,31 +271,39 @@ module retrosoc #(
   wire        s_spimemio_cfgreg_sel = s_mem_valid && (s_mem_addr == 32'h0200_0000);
   wire [31:0] s_spimemio_cfgreg_dout;
   // uart
-  wire        s_simpleuart_reg_div_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0078);
-  wire        s_simpleuart_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_007c);
+  wire        s_simpleuart_reg_div_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0010);
+  wire        s_simpleuart_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0014);
   wire [31:0] s_simpleuart_reg_div_dout;
   wire [31:0] s_simpleuart_reg_dat_dout;
   wire        s_simpleuart_reg_dat_wait;
-  // i2c
-  wire        s_simplei2c_reg_cfg1_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00d4);
-  wire        s_simplei2c_reg_cfg2_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00d8);
-  wire        s_simplei2c_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00dc);
-  wire [31:0] s_simplei2c_reg_cfg1_dout;
-  wire [31:0] s_simplei2c_reg_cfg2_dout;
-  wire [31:0] s_simplei2c_reg_dat_dout;
   // spi mst
-  wire        s_simplespi_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00b8);
-  wire        s_simplespi_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00bc);
+  wire        s_simplespi_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0048);
+  wire        s_simplespi_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_004c);
   wire [31:0] s_simplespi_reg_cfg_dout;
   wire [31:0] s_simplespi_reg_dat_dout;
   wire        s_simplespi_reg_dat_wait;
-  // tim
-  wire        s_tim0_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00f4);
-  wire        s_tim0_reg_val_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00f8);
-  wire        s_tim0_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_00fc);
+  // i2c
+  wire        s_simplei2c_reg_cfg1_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0050);
+  wire        s_simplei2c_reg_cfg2_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0054);
+  wire        s_simplei2c_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0058);
+  wire [31:0] s_simplei2c_reg_cfg1_dout;
+  wire [31:0] s_simplei2c_reg_cfg2_dout;
+  wire [31:0] s_simplei2c_reg_dat_dout;
+  // tim0
+  wire        s_tim0_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_005c);
+  wire        s_tim0_reg_val_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0060);
+  wire        s_tim0_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0064);
   wire [31:0] s_tim0_reg_cfg_dout;
   wire [31:0] s_tim0_reg_val_dout;
   wire [31:0] s_tim0_reg_dat_dout;
+  // tim1
+  wire        s_tim1_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0068);
+  wire        s_tim1_reg_val_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_006c);
+  wire        s_tim1_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0070);
+  wire [31:0] s_tim1_reg_cfg_dout;
+  wire [31:0] s_tim1_reg_val_dout;
+  wire [31:0] s_tim1_reg_dat_dout;
+
 
   assign s_mem_ready = (s_iomem_valid && r_iomem_ready) ||
                        s_spimem_ready || r_ram_ready || s_spimemio_cfgreg_sel;
@@ -286,64 +316,20 @@ module retrosoc #(
 
 
   // retroSoC memory mapped IP
-  // 1 crystal oscillator
-  // 1 I2C master
-  // 1 SPI master
-  // 1 32-bit counter/timer
-  // 1 QSPI flash controller
-  // 1 UART
-
-  // NOTE: Signals affecting critical core functions are controlled through
-  // an independent SPI having read-only access through the picorv32 core.
-  // SPI pins are independent of picorv32 SPI master. Signals controlled
-  // by the SPI are:
-  // 1) crystal oscillator enable (default on)
-  // 2) PLL enables (default on)
-  // 3) PLL trim (default TBD)
-  // NOTE:  SPI should have a pass-through mode that configures SDO as a
-  // copy of a chosen signal for as long as CSB is held low. This can be
-  // an SPI command, allows other internal signals to be passed to the
-  // output and viewed, including the RC oscillator output, comparator
-  // output, and other edge-based signals.
-
-  // Memory map:
-  // GPIO: 32 channels total
-  //          addr 0x03000000-1   data (16 bits)
-  //          addr 0x03000004-5   out (=0) or in (=1) (default 1)
-  //          addr 0x03000008-9   pu (=0)  or none (=1) (default 1)
-  //          addr 0x0300000c-d   pd (=0)  or none (=1) (default 1)
-  //
-  // UART:
-  //          addr 0x03000078     clock divider
-  //          addr 0x0300007c     data
-  //
-  // SPI SLV:
-  //          addr 0x03000080     SPI configuration
-  //          addr 0x03000084     xtal osc, reg, bg enables
-  //          addr 0x03000088     PLL enables, trim
-  //          addr 0x0300008c-d   manufacturer ID
-  //          addr 0x03000090     product ID
-  //          addr 0x03000094     product mask revision
-  //          addr 0x03000098     external clock select
-  //          addr 0x030000a0     xtal osc output dest (ext r_gpio pin 5-7)
-  //          addr 0x030000a4     PLL output dest (ext r_gpio pin 8-10)
-  //          addr 0x030000a8     trap_o output dest (ext r_gpio pin 11-13)
-  //          addr 0x030000b0     IRQ 7 source (ext r_gpio pin 0-3)
-  //          addr 0x030000b4     IRQ 8 source (ext r_gpio pin 4-7)
-  //
-  // SPI MST:
-  //          addr 0x030000b8     configuration
-  //          addr 0x030000bc     data
-  //
-  // I2C:     
-  //          addr 0x030000d4     configuration (1)
-  //          addr 0x030000d8     configuration (2)
-  //          addr 0x030000dc     data
-  //
-  // TIM:
-  //           addr 0x030000f4    configuration
-  //           addr 0x030000f8-b  count resetn value
-  //           addr 0x030000fc-f  count current value
+  // 1 x QSPI FLASH
+  // 1 x GPIO
+  // 1 x HOUSEKEEPING SPI INFO
+  // 1 x UART
+  // 1 x SPI MASTER
+  // 1 x I2C MASTER
+  // 2 x 32-bit COUNTER/TIMER
+  // AXI Wrapper
+  //    1 x RNG
+  //    1 x ARCH
+  //    1 x UART
+  //    1 x SPI
+  //    4 x PWM
+  //    1 x PSRAM
   picorv32 #(
       .PROGADDR_RESET  (PROGADDR_RESET),
       .PROGADDR_IRQ    (32'h0000_0000),
@@ -459,7 +445,7 @@ module retrosoc #(
       .sdoenb      (spi_mst_oenb_o)
   );
 
-  counter_timer u_counter_timer (
+  counter_timer u_counter_timer0 (
       .resetn    (rst_n_i),
       .clkin     (clk_i),
       .reg_val_we(s_tim0_reg_val_sel ? s_iomem_wstrb[3:0] : 4'h0),
@@ -474,11 +460,56 @@ module retrosoc #(
       .irq_out   (s_irq_tim0)
   );
 
+  counter_timer u_counter_timer1 (
+      .resetn    (rst_n_i),
+      .clkin     (clk_i),
+      .reg_val_we(s_tim1_reg_val_sel ? s_iomem_wstrb[3:0] : 4'h0),
+      .reg_val_di(s_iomem_wdata),
+      .reg_val_do(s_tim1_reg_val_dout),
+      .reg_cfg_we(s_tim1_reg_cfg_sel ? s_iomem_wstrb[0] : 1'b0),
+      .reg_cfg_di(s_iomem_wdata),
+      .reg_cfg_do(s_tim1_reg_cfg_dout),
+      .reg_dat_we(s_tim1_reg_dat_sel ? s_iomem_wstrb[3:0] : 4'h0),
+      .reg_dat_di(s_iomem_wdata),
+      .reg_dat_do(s_tim1_reg_dat_dout),
+      .irq_out   (s_irq_tim1)
+  );
+
+  picorv32_axi_adapter u_core2axi (
+      .clk            (clk_i),
+      .resetn         (rst_n_i),
+      .mem_axi_awvalid(s_mem_axi_awvalid),
+      .mem_axi_awready(s_mem_axi_awready),
+      .mem_axi_awaddr (s_mem_axi_awaddr),
+      .mem_axi_awprot (s_mem_axi_awprot),
+      .mem_axi_wvalid (s_mem_axi_wvalid),
+      .mem_axi_wready (s_mem_axi_wready),
+      .mem_axi_wdata  (s_mem_axi_wdata),
+      .mem_axi_wstrb  (s_mem_axi_wstrb),
+      .mem_axi_bvalid (s_mem_axi_bvalid),
+      .mem_axi_bready (s_mem_axi_bready),
+      .mem_axi_arvalid(s_mem_axi_arvalid),
+      .mem_axi_arready(s_mem_axi_arready),
+      .mem_axi_araddr (s_mem_axi_araddr),
+      .mem_axi_arprot (s_mem_axi_arprot),
+      .mem_axi_rvalid (s_mem_axi_rvalid),
+      .mem_axi_rready (s_mem_axi_rready),
+      .mem_axi_rdata  (s_mem_axi_rdata),
+      .mem_valid      (s_iomem_valid),
+      .mem_instr      (s_mem_instr),
+      .mem_ready      (s_aximem_ready),
+      .mem_addr       (s_iomem_addr),
+      .mem_wdata      (s_iomem_wdata),
+      .mem_wstrb      (s_iomem_wstrb),
+      .mem_rdata      (s_aximem_rdata)
+  );
+
+
   always @(posedge clk_i) begin
     r_ram_ready <= s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS;
   end
 
-  always @(posedge clk_i) begin
+  always @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
       r_gpio          <= 0;
       r_gpio_oeb      <= 16'hffff;
@@ -493,9 +524,9 @@ module retrosoc #(
       if (s_iomem_valid && !r_iomem_ready && s_iomem_addr[31:8] == 24'h030000) begin
         // Handle r_iomem_ready based on wait states
         case (s_iomem_addr[7:0])
-          8'h7c:   r_iomem_ready = ~s_simpleuart_reg_dat_wait;
-          8'hbc:   r_iomem_ready = ~s_simplespi_reg_dat_wait;
-          default: r_iomem_ready = 1'b1;
+          8'h14:   r_iomem_ready <= ~s_simpleuart_reg_dat_wait;
+          8'h4c:   r_iomem_ready <= ~s_simplespi_reg_dat_wait;
+          default: r_iomem_ready <= 1'b1;
         endcase
         case (s_iomem_addr[7:0])
           8'h00: begin
@@ -518,11 +549,11 @@ module retrosoc #(
             if (s_iomem_wstrb[0]) r_gpio_pd[7:0] <= s_iomem_wdata[7:0];
             if (s_iomem_wstrb[1]) r_gpio_pd[15:8] <= s_iomem_wdata[15:8];
           end
-          8'h78: r_iomem_rdata <= s_simpleuart_reg_div_dout;
-          8'h7c: r_iomem_rdata <= s_simpleuart_reg_dat_dout;
-          8'h80: r_iomem_rdata <= {24'd0, spi_slv_ro_config_i};
-          8'h84: r_iomem_rdata <= {30'd0, spi_slv_ro_xtal_ena_i, spi_slv_ro_reg_ena_i};
-          8'h88: begin
+          8'h10: r_iomem_rdata <= s_simpleuart_reg_div_dout;
+          8'h14: r_iomem_rdata <= s_simpleuart_reg_dat_dout;
+          8'h18: r_iomem_rdata <= {24'd0, spi_slv_ro_config_i};
+          8'h1c: r_iomem_rdata <= {30'd0, spi_slv_ro_xtal_ena_i, spi_slv_ro_reg_ena_i};
+          8'h20: begin
             r_iomem_rdata <= {
               25'd0,
               spi_slv_ro_pll_trim_i,
@@ -531,62 +562,48 @@ module retrosoc #(
               spi_slv_ro_pll_bias_ena_i
             };
           end
-          8'h8c: r_iomem_rdata <= {20'd0, spi_slv_ro_mfgr_id_i};
-          8'h90: r_iomem_rdata <= {24'd0, spi_slv_ro_prod_id_i};
-          8'h94: r_iomem_rdata <= {28'd0, spi_slv_ro_mask_rev_i};
-          8'h98: r_iomem_rdata <= {31'd0, clk_ext_sel_i};
-          8'ha0: begin
+          8'h24: r_iomem_rdata <= {20'd0, spi_slv_ro_mfgr_id_i};
+          8'h28: r_iomem_rdata <= {24'd0, spi_slv_ro_prod_id_i};
+          8'h2c: r_iomem_rdata <= {28'd0, spi_slv_ro_mask_rev_i};
+          8'h30: r_iomem_rdata <= {31'd0, clk_ext_sel_i};
+          8'h34: begin
             r_iomem_rdata <= {30'd0, r_xtal_out_dest};
             if (s_iomem_wstrb[0]) r_xtal_out_dest <= s_iomem_wdata[1:0];
           end
-          8'ha4: begin
+          8'h38: begin
             r_iomem_rdata <= {30'd0, r_pll_out_dest};
             if (s_iomem_wstrb[0]) r_pll_out_dest <= s_iomem_wdata[1:0];
           end
-          8'ha8: begin
+          8'h3c: begin
             r_iomem_rdata <= {30'd0, r_trap_out_dest};
             if (s_iomem_wstrb[0]) r_trap_out_dest <= s_iomem_wdata[1:0];
           end
-          8'hb0: begin
+          8'h40: begin
             r_iomem_rdata <= {30'd0, r_irq_7_in_src};
             if (s_iomem_wstrb[0]) r_irq_7_in_src <= s_iomem_wdata[1:0];
           end
-          8'hb4: begin
+          8'h44: begin
             r_iomem_rdata <= {30'd0, r_irq_8_in_src};
             if (s_iomem_wstrb[0]) r_irq_8_in_src <= s_iomem_wdata[1:0];
           end
-          8'hb8: r_iomem_rdata <= s_simplespi_reg_cfg_dout;
-          8'hbc: r_iomem_rdata <= s_simplespi_reg_dat_dout;
-          8'hd4: r_iomem_rdata <= s_simplei2c_reg_cfg1_dout;
-          8'hd8: r_iomem_rdata <= s_simplei2c_reg_cfg2_dout;
-          8'hdc: r_iomem_rdata <= s_simplei2c_reg_dat_dout;
-          8'hf4: r_iomem_rdata <= {28'd0, s_tim0_reg_cfg_dout};
-          8'hf8: r_iomem_rdata <= s_tim0_reg_val_dout;
-          8'hfc: r_iomem_rdata <= s_tim0_reg_dat_dout;
+          8'h48: r_iomem_rdata <= s_simplespi_reg_cfg_dout;
+          8'h4c: r_iomem_rdata <= s_simplespi_reg_dat_dout;
+          8'h50: r_iomem_rdata <= s_simplei2c_reg_cfg1_dout;
+          8'h54: r_iomem_rdata <= s_simplei2c_reg_cfg2_dout;
+          8'h58: r_iomem_rdata <= s_simplei2c_reg_dat_dout;
+          8'h5c: r_iomem_rdata <= {28'd0, s_tim0_reg_cfg_dout};
+          8'h60: r_iomem_rdata <= s_tim0_reg_val_dout;
+          8'h64: r_iomem_rdata <= s_tim0_reg_dat_dout;
+          8'h68: r_iomem_rdata <= {28'd0, s_tim1_reg_cfg_dout};
+          8'h6c: r_iomem_rdata <= s_tim1_reg_val_dout;
+          8'h70: r_iomem_rdata <= s_tim1_reg_dat_dout;
         endcase
+      end else if (s_iomem_valid && !r_iomem_ready && s_iomem_addr[31:8] == 24'h030001) begin
+        r_iomem_ready <= s_aximem_ready;
+        r_iomem_rdata <= s_aximem_rdata;
       end else begin
-        r_iomem_ready = 1'b0;
+        r_iomem_ready <= 1'b0;
       end
     end
   end
 endmodule
-
-// implementation note:
-// replace the following two modules with wrappers for your SRAM cells.
-// module retrosoc_regs (
-//     input         clk,
-//     input         wen,
-//     input  [ 5:0] waddr,
-//     input  [ 5:0] raddr1,
-//     input  [ 5:0] raddr2,
-//     input  [31:0] wdata,
-//     output [31:0] rdata1,
-//     output [31:0] rdata2
-// );
-//   reg [31:0] regs[0:31];
-
-//   always @(posedge clk) if (wen) regs[waddr[4:0]] <= wdata;
-
-//   assign rdata1 = regs[raddr1[4:0]];
-//   assign rdata2 = regs[raddr2[4:0]];
-// endmodule
