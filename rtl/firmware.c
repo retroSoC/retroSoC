@@ -581,39 +581,43 @@ void print_reg(char *info, uint32_t val, int digits)
 void ip_counter_timer_test()
 {
     print("[IP] counter timer test\n");
-    print_reg("[TIM VALUE] ", reg_timer_value, 8);
-    print_reg("[TIM CONFIG] ", reg_timer_config, 8);
+    print_reg("[TIM0 VALUE] ", reg_timer0_value, 8);
+    print_reg("[TIM0 CONFIG] ", reg_timer0_config, 8);
+    print_reg("[TIM1 VALUE] ", reg_timer1_value, 8);
+    print_reg("[TIM1 CONFIG] ", reg_timer1_config, 8);
 
-    reg_timer_value = (uint32_t)0xffffffff;
-    // reg_timer_config = 1;
-    // reg_timer_config = 2;
-    // reg_timer_config = 4; // One-shot mode, where the counter triggers an interrupt when it reaches the value of reg_timer_data
-    reg_timer_config = 8; // 1000, timer enable, continuous mode, count down, irq disable
-    // reg_timer_config = 15;
+    reg_timer0_value = (uint32_t)0xffffffff;
+    reg_timer0_config = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
 
-    print_reg("[TIM VALUE] ", reg_timer_value, 8);
-    print_reg("[TIM CONFIG] ", reg_timer_config, 8);
+    reg_timer1_value = (uint32_t)0x0000ffff;
+    reg_timer1_config = (uint32_t)0x0101; // irq disable, count up, continuous mode, timer enable
+
+    print_reg("[TIM0 VALUE] ", reg_timer0_value, 8);
+    print_reg("[TIM0 CONFIG] ", reg_timer0_config, 8);
+    print_reg("[TIM1 VALUE] ", reg_timer1_value, 8);
+    print_reg("[TIM1 CONFIG] ", reg_timer1_config, 8);
 
     for (int i = 0; i < 10; ++i)
     {
-        print_reg("[TIM DATA] ", reg_timer_data, 8);
+        print_reg("[TIM0 DATA] ", reg_timer0_data, 8);
+        print_reg("[TIM1 DATA] ", reg_timer1_data, 8);
     }
 }
 
 void ip_gpio_test()
 {
     print("[IP] gpio test\n");
-    reg_gpio_pub = 0x5a5a; // NOT(pullup)
-    reg_gpio_enb = 0xa5a5; // NOT(output enable)
 
-    reg_gpio_data = 0xffff;
-    reg_gpio_data = 0x0000;
-    for (int i = 0; i < 10; ++i)
-    {
-        print("[GPIO] ");
-        print_hex(reg_gpio_data, 7);
-        print("\n");
-    }
+    print_reg("[GPIO ENB] ", reg_gpio_enb, 8);
+    reg_gpio_enb = (uint32_t)0x0000;
+    print_reg("[GPIO ENB] ", reg_gpio_enb, 8);
+
+    print_reg("[GPIO DATA] ", reg_gpio_data, 8);
+    reg_gpio_data = (uint32_t)0xffff;
+    print_reg("[GPIO DATA] ", reg_gpio_data, 8);
+
+    reg_gpio_data = (uint32_t)0x0000;
+    print_reg("[GPIO DATA] ", reg_gpio_data, 8);
 }
 
 void i2c_init(unsigned int pre)
@@ -687,14 +691,14 @@ void main()
     // print("\n");
     // cmd_read_flash_id();
     // cmd_read_flash_regs();
-    cmd_print_spi_state();
+    // cmd_print_spi_state();
 
-    ip_counter_timer_test();
-    // ip_gpio_test();
+    // ip_counter_timer_test();
+    ip_gpio_test();
     ip_i2c_test();
-    cmd_benchmark(true, 0);
+    // cmd_benchmark(true, 0);
     // cmd_benchmark_all();
-    cmd_memtest();
+    // cmd_memtest();
     cmd_echo();
     while (1)
         ;
