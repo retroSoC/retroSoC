@@ -121,8 +121,8 @@ module apb4_archinfo (
   );
 
   assign prdata = ({32{~s_apb4_rd_hdshk}} & 32'h0) |
-                  ({32{s_apb4_addr == `ARCHINFO_SYS}} & {12'h0, s_arch_sys_q}) |
+                  ({32{s_apb4_rd_hdshk}} & (({32{s_apb4_addr == `ARCHINFO_SYS}} & {12'h0, s_arch_sys_q}) |
                   ({32{s_apb4_addr == `ARCHINFO_IDL}} & s_arch_idl_q) |
-                  ({32{s_apb4_addr == `ARCHINFO_IDH}} & {8'h0, s_arch_idh_q}) | 32'h0;
+                  ({32{s_apb4_addr == `ARCHINFO_IDH}} & {8'h0, s_arch_idh_q}) | 32'h0));
 
 endmodule

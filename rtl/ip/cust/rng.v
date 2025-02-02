@@ -103,6 +103,6 @@ module apb4_rng (
   );
 
   assign prdata = ({32{~s_apb4_rd_hdshk}} & 32'h0) |
-                  ({32{s_apb4_addr == `RNG_CTRL}} & {31'h0, s_rng_ctrl_q}) |
-                  ({32{s_apb4_addr == `RNG_VAL}} & s_rng_val) | 32'h0;
+                  ({32{s_apb4_rd_hdshk}} & (({32{s_apb4_addr == `RNG_CTRL}} & {31'h0, s_rng_ctrl_q}) |
+                  ({32{s_apb4_addr == `RNG_VAL}} & s_rng_val) | 32'h0));
 endmodule
