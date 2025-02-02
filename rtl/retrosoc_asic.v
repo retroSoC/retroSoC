@@ -67,7 +67,10 @@ module retrosoc_asic (
     output gpio_14_o_pad,
     output gpio_15_o_pad,
     // IRQ
-    input  irq_pin_i_pad
+    input  irq_pin_i_pad,
+    // CUST
+    output cust_uart_tx_o_pad,
+    input  cust_uart_rx_i_pad
 );
   // clk&rst
   wire        s_xtal_io;
@@ -145,46 +148,52 @@ module retrosoc_asic (
   wire [11:0] s_hk_mfgr_id;
   wire [ 7:0] s_hk_prod_id;
   wire [ 3:0] s_hk_mask_rev;
+  // cust
+  wire s_cust_uart_rx_i;
+  wire s_cust_uart_tx_o;
 
   // verilog_format: off
-  ihp_io_xtl_pad u_xtal_pad         (.xi_pad(xi_i_pad),       .xo_pad(xo_o_pad),      .en(s_hk_xtal_ena),            .clk(s_xtal_io));
-  ihp_io_tri_pad u_xclk_i_pad       (.pad(xclk_i_pad),        .c2p(),                 .c2p_en(1'b0),                 .p2c(s_xclk_i));
-  ihp_io_tri_pad u_rst_n_i_pad      (.pad(rst_n_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_rst_n_i));
-  ihp_io_tri_pad u_hk_sdi_i_pad     (.pad(hk_sdi_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sdi_i));
-  ihp_io_tri_pad u_hk_sdo_o_pad     (.pad(hk_sdo_o_pad),      .c2p(s_hk_sdo_o),       .c2p_en(~s_hk_sdo_enb),        .p2c());
-  ihp_io_tri_pad u_hk_csb_i_pad     (.pad(hk_csb_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_csb_i));
-  ihp_io_tri_pad u_hk_sck_i_pad     (.pad(hk_sck_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sck_i));
-  ihp_io_tri_pad u_spi_mst_sdi_i_pad(.pad(spi_mst_sdi_i_pad), .c2p(),                 .c2p_en(1'b0),                 .p2c(s_spi_mst_sdi_i));
-  ihp_io_tri_pad u_spi_mst_csb_o_pad(.pad(spi_mst_csb_o_pad), .c2p(s_spi_mst_csb_o),  .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_spi_mst_sck_o_pad(.pad(spi_mst_sck_o_pad), .c2p(s_spi_mst_sck_o),  .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_spi_mst_sdo_o_pad(.pad(spi_mst_sdo_o_pad), .c2p(s_spi_mst_sdo_o),  .c2p_en(~s_spi_mst_oenb_o),    .p2c());
-  ihp_io_tri_pad u_flash_csb_o_pad  (.pad(flash_csb_o_pad),   .c2p(s_flash_csb_o),    .c2p_en(~s_flash_csb_oeb_o),   .p2c());
-  ihp_io_tri_pad u_flash_clk_o_pad  (.pad(flash_clk_o_pad),   .c2p(s_flash_clk_o),    .c2p_en(~s_flash_clk_oeb_o),   .p2c());
-  ihp_io_tri_pad u_flash_io0_io_pad (.pad(flash_io0_io_pad),  .c2p(s_flash_io0_do_o), .c2p_en(~s_flash_io0_oeb_o),   .p2c(s_flash_io0_di_i));
-  ihp_io_tri_pad u_flash_io1_io_pad (.pad(flash_io1_io_pad),  .c2p(s_flash_io1_do_o), .c2p_en(~s_flash_io1_oeb_o),   .p2c(s_flash_io1_di_i));
-  ihp_io_tri_pad u_flash_io2_io_pad (.pad(flash_io2_io_pad),  .c2p(s_flash_io2_do_o), .c2p_en(~s_flash_io2_oeb_o),   .p2c(s_flash_io2_di_i));
-  ihp_io_tri_pad u_flash_io3_io_pad (.pad(flash_io3_io_pad),  .c2p(s_flash_io3_do_o), .c2p_en(~s_flash_io3_oeb_o),   .p2c(s_flash_io3_di_i));
-  ihp_io_tri_pad u_uart_tx_o_pad    (.pad(uart_tx_o_pad),     .c2p(s_uart_tx_o),      .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_uart_rx_i_pad    (.pad(uart_rx_i_pad),     .c2p(),                 .c2p_en(1'b0),                 .p2c(s_uart_rx_i));
-  ihp_io_tri_pad u_i2c_sda_io_pad   (.pad(i2c_sda_io_pad),    .c2p(s_i2c_sda_o),      .c2p_en(~s_i2c_sda_oeb_o),     .p2c(s_i2c_sda_i));
-  ihp_io_tri_pad u_i2c_scl_io_pad   (.pad(i2c_scl_io_pad),    .c2p(s_i2c_scl_o),      .c2p_en(~s_i2c_scl_oeb_o),     .p2c(s_i2c_scl_i));
-  ihp_io_tri_pad u_gpio_0_o_pad     (.pad(gpio_0_o_pad),      .c2p(s_gpio_out_o[0]),  .c2p_en(~s_gpio_outenb_o[0]),  .p2c(s_gpio_in_i[0]));
-  ihp_io_tri_pad u_gpio_1_o_pad     (.pad(gpio_1_o_pad),      .c2p(s_gpio_out_o[1]),  .c2p_en(~s_gpio_outenb_o[1]),  .p2c(s_gpio_in_i[1]));
-  ihp_io_tri_pad u_gpio_2_o_pad     (.pad(gpio_2_o_pad),      .c2p(s_gpio_out_o[2]),  .c2p_en(~s_gpio_outenb_o[2]),  .p2c(s_gpio_in_i[2]));
-  ihp_io_tri_pad u_gpio_3_o_pad     (.pad(gpio_3_o_pad),      .c2p(s_gpio_out_o[3]),  .c2p_en(~s_gpio_outenb_o[3]),  .p2c(s_gpio_in_i[3]));
-  ihp_io_tri_pad u_gpio_4_o_pad     (.pad(gpio_4_o_pad),      .c2p(s_gpio_out_o[4]),  .c2p_en(~s_gpio_outenb_o[4]),  .p2c(s_gpio_in_i[4]));
-  ihp_io_tri_pad u_gpio_5_o_pad     (.pad(gpio_5_o_pad),      .c2p(s_gpio_out_o[5]),  .c2p_en(~s_gpio_outenb_o[5]),  .p2c(s_gpio_in_i[5]));
-  ihp_io_tri_pad u_gpio_6_o_pad     (.pad(gpio_6_o_pad),      .c2p(s_gpio_out_o[6]),  .c2p_en(~s_gpio_outenb_o[6]),  .p2c(s_gpio_in_i[6]));
-  ihp_io_tri_pad u_gpio_7_o_pad     (.pad(gpio_7_o_pad),      .c2p(s_gpio_out_o[7]),  .c2p_en(~s_gpio_outenb_o[7]),  .p2c(s_gpio_in_i[7]));
-  ihp_io_tri_pad u_gpio_8_o_pad     (.pad(gpio_8_o_pad),      .c2p(s_gpio_out_o[8]),  .c2p_en(~s_gpio_outenb_o[8]),  .p2c(s_gpio_in_i[8]));
-  ihp_io_tri_pad u_gpio_9_o_pad     (.pad(gpio_9_o_pad),      .c2p(s_gpio_out_o[9]),  .c2p_en(~s_gpio_outenb_o[9]),  .p2c(s_gpio_in_i[9]));
-  ihp_io_tri_pad u_gpio_10_o_pad    (.pad(gpio_10_o_pad),     .c2p(s_gpio_out_o[10]), .c2p_en(~s_gpio_outenb_o[10]), .p2c(s_gpio_in_i[10]));
-  ihp_io_tri_pad u_gpio_11_o_pad    (.pad(gpio_11_o_pad),     .c2p(s_gpio_out_o[11]), .c2p_en(~s_gpio_outenb_o[11]), .p2c(s_gpio_in_i[11]));
-  ihp_io_tri_pad u_gpio_12_o_pad    (.pad(gpio_12_o_pad),     .c2p(s_gpio_out_o[12]), .c2p_en(~s_gpio_outenb_o[12]), .p2c(s_gpio_in_i[12]));
-  ihp_io_tri_pad u_gpio_13_o_pad    (.pad(gpio_13_o_pad),     .c2p(s_gpio_out_o[13]), .c2p_en(~s_gpio_outenb_o[13]), .p2c(s_gpio_in_i[13]));
-  ihp_io_tri_pad u_gpio_14_o_pad    (.pad(gpio_14_o_pad),     .c2p(s_gpio_out_o[14]), .c2p_en(~s_gpio_outenb_o[14]), .p2c(s_gpio_in_i[14]));
-  ihp_io_tri_pad u_gpio_15_o_pad    (.pad(gpio_15_o_pad),     .c2p(s_gpio_out_o[15]), .c2p_en(~s_gpio_outenb_o[15]), .p2c(s_gpio_in_i[15]));
-  ihp_io_tri_pad u_irq_pin_i_pad    (.pad(irq_pin_i_pad),     .c2p(),                 .c2p_en(1'b0),                 .p2c(s_irq_pin_i));
+  ihp_io_xtl_pad u_xtal_pad          (.xi_pad(xi_i_pad),        .xo_pad(xo_o_pad),      .en(s_hk_xtal_ena),            .clk(s_xtal_io));
+  ihp_io_tri_pad u_xclk_i_pad        (.pad(xclk_i_pad),         .c2p(),                 .c2p_en(1'b0),                 .p2c(s_xclk_i));
+  ihp_io_tri_pad u_rst_n_i_pad       (.pad(rst_n_i_pad),        .c2p(),                 .c2p_en(1'b0),                 .p2c(s_rst_n_i));
+  ihp_io_tri_pad u_hk_sdi_i_pad      (.pad(hk_sdi_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sdi_i));
+  ihp_io_tri_pad u_hk_sdo_o_pad      (.pad(hk_sdo_o_pad),       .c2p(s_hk_sdo_o),       .c2p_en(~s_hk_sdo_enb),        .p2c());
+  ihp_io_tri_pad u_hk_csb_i_pad      (.pad(hk_csb_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_csb_i));
+  ihp_io_tri_pad u_hk_sck_i_pad      (.pad(hk_sck_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sck_i));
+  ihp_io_tri_pad u_spi_mst_sdi_i_pad (.pad(spi_mst_sdi_i_pad),  .c2p(),                 .c2p_en(1'b0),                 .p2c(s_spi_mst_sdi_i));
+  ihp_io_tri_pad u_spi_mst_csb_o_pad (.pad(spi_mst_csb_o_pad),  .c2p(s_spi_mst_csb_o),  .c2p_en(1'b1),                 .p2c());
+  ihp_io_tri_pad u_spi_mst_sck_o_pad (.pad(spi_mst_sck_o_pad),  .c2p(s_spi_mst_sck_o),  .c2p_en(1'b1),                 .p2c());
+  ihp_io_tri_pad u_spi_mst_sdo_o_pad (.pad(spi_mst_sdo_o_pad),  .c2p(s_spi_mst_sdo_o),  .c2p_en(~s_spi_mst_oenb_o),    .p2c());
+  ihp_io_tri_pad u_flash_csb_o_pad   (.pad(flash_csb_o_pad),    .c2p(s_flash_csb_o),    .c2p_en(~s_flash_csb_oeb_o),   .p2c());
+  ihp_io_tri_pad u_flash_clk_o_pad   (.pad(flash_clk_o_pad),    .c2p(s_flash_clk_o),    .c2p_en(~s_flash_clk_oeb_o),   .p2c());
+  ihp_io_tri_pad u_flash_io0_io_pad  (.pad(flash_io0_io_pad),   .c2p(s_flash_io0_do_o), .c2p_en(~s_flash_io0_oeb_o),   .p2c(s_flash_io0_di_i));
+  ihp_io_tri_pad u_flash_io1_io_pad  (.pad(flash_io1_io_pad),   .c2p(s_flash_io1_do_o), .c2p_en(~s_flash_io1_oeb_o),   .p2c(s_flash_io1_di_i));
+  ihp_io_tri_pad u_flash_io2_io_pad  (.pad(flash_io2_io_pad),   .c2p(s_flash_io2_do_o), .c2p_en(~s_flash_io2_oeb_o),   .p2c(s_flash_io2_di_i));
+  ihp_io_tri_pad u_flash_io3_io_pad  (.pad(flash_io3_io_pad),   .c2p(s_flash_io3_do_o), .c2p_en(~s_flash_io3_oeb_o),   .p2c(s_flash_io3_di_i));
+  ihp_io_tri_pad u_uart_tx_o_pad     (.pad(uart_tx_o_pad),      .c2p(s_uart_tx_o),      .c2p_en(1'b1),                 .p2c());
+  ihp_io_tri_pad u_uart_rx_i_pad     (.pad(uart_rx_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_uart_rx_i));
+  ihp_io_tri_pad u_i2c_sda_io_pad    (.pad(i2c_sda_io_pad),     .c2p(s_i2c_sda_o),      .c2p_en(~s_i2c_sda_oeb_o),     .p2c(s_i2c_sda_i));
+  ihp_io_tri_pad u_i2c_scl_io_pad    (.pad(i2c_scl_io_pad),     .c2p(s_i2c_scl_o),      .c2p_en(~s_i2c_scl_oeb_o),     .p2c(s_i2c_scl_i));
+  ihp_io_tri_pad u_gpio_0_o_pad      (.pad(gpio_0_o_pad),       .c2p(s_gpio_out_o[0]),  .c2p_en(~s_gpio_outenb_o[0]),  .p2c(s_gpio_in_i[0]));
+  ihp_io_tri_pad u_gpio_1_o_pad      (.pad(gpio_1_o_pad),       .c2p(s_gpio_out_o[1]),  .c2p_en(~s_gpio_outenb_o[1]),  .p2c(s_gpio_in_i[1]));
+  ihp_io_tri_pad u_gpio_2_o_pad      (.pad(gpio_2_o_pad),       .c2p(s_gpio_out_o[2]),  .c2p_en(~s_gpio_outenb_o[2]),  .p2c(s_gpio_in_i[2]));
+  ihp_io_tri_pad u_gpio_3_o_pad      (.pad(gpio_3_o_pad),       .c2p(s_gpio_out_o[3]),  .c2p_en(~s_gpio_outenb_o[3]),  .p2c(s_gpio_in_i[3]));
+  ihp_io_tri_pad u_gpio_4_o_pad      (.pad(gpio_4_o_pad),       .c2p(s_gpio_out_o[4]),  .c2p_en(~s_gpio_outenb_o[4]),  .p2c(s_gpio_in_i[4]));
+  ihp_io_tri_pad u_gpio_5_o_pad      (.pad(gpio_5_o_pad),       .c2p(s_gpio_out_o[5]),  .c2p_en(~s_gpio_outenb_o[5]),  .p2c(s_gpio_in_i[5]));
+  ihp_io_tri_pad u_gpio_6_o_pad      (.pad(gpio_6_o_pad),       .c2p(s_gpio_out_o[6]),  .c2p_en(~s_gpio_outenb_o[6]),  .p2c(s_gpio_in_i[6]));
+  ihp_io_tri_pad u_gpio_7_o_pad      (.pad(gpio_7_o_pad),       .c2p(s_gpio_out_o[7]),  .c2p_en(~s_gpio_outenb_o[7]),  .p2c(s_gpio_in_i[7]));
+  ihp_io_tri_pad u_gpio_8_o_pad      (.pad(gpio_8_o_pad),       .c2p(s_gpio_out_o[8]),  .c2p_en(~s_gpio_outenb_o[8]),  .p2c(s_gpio_in_i[8]));
+  ihp_io_tri_pad u_gpio_9_o_pad      (.pad(gpio_9_o_pad),       .c2p(s_gpio_out_o[9]),  .c2p_en(~s_gpio_outenb_o[9]),  .p2c(s_gpio_in_i[9]));
+  ihp_io_tri_pad u_gpio_10_o_pad     (.pad(gpio_10_o_pad),      .c2p(s_gpio_out_o[10]), .c2p_en(~s_gpio_outenb_o[10]), .p2c(s_gpio_in_i[10]));
+  ihp_io_tri_pad u_gpio_11_o_pad     (.pad(gpio_11_o_pad),      .c2p(s_gpio_out_o[11]), .c2p_en(~s_gpio_outenb_o[11]), .p2c(s_gpio_in_i[11]));
+  ihp_io_tri_pad u_gpio_12_o_pad     (.pad(gpio_12_o_pad),      .c2p(s_gpio_out_o[12]), .c2p_en(~s_gpio_outenb_o[12]), .p2c(s_gpio_in_i[12]));
+  ihp_io_tri_pad u_gpio_13_o_pad     (.pad(gpio_13_o_pad),      .c2p(s_gpio_out_o[13]), .c2p_en(~s_gpio_outenb_o[13]), .p2c(s_gpio_in_i[13]));
+  ihp_io_tri_pad u_gpio_14_o_pad     (.pad(gpio_14_o_pad),      .c2p(s_gpio_out_o[14]), .c2p_en(~s_gpio_outenb_o[14]), .p2c(s_gpio_in_i[14]));
+  ihp_io_tri_pad u_gpio_15_o_pad     (.pad(gpio_15_o_pad),      .c2p(s_gpio_out_o[15]), .c2p_en(~s_gpio_outenb_o[15]), .p2c(s_gpio_in_i[15]));
+  ihp_io_tri_pad u_irq_pin_i_pad     (.pad(irq_pin_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_irq_pin_i));
+  // cust
+  ihp_io_tri_pad u_cust_uart_tx_o_pad(.pad(cust_uart_tx_o_pad), .c2p(s_cust_uart_tx_o), .c2p_en(1'b1),                 .p2c());
+  ihp_io_tri_pad u_cust_uart_rx_i_pad(.pad(cust_uart_rx_i_pad), .c2p(),                 .c2p_en(1'b0),                 .p2c(s_cust_uart_rx_i));
   // clk buf
   ihp_clk_buffer u_xtal_buf (.clk_i(s_xtal_io), .clk_o(s_xtal_io_buf));
   ihp_clk_buffer u_xclk_buf (.clk_i(s_xclk_i), .clk_o(s_xclk_i_buf));
@@ -193,7 +202,7 @@ module retrosoc_asic (
   // reset assignment. "s_rst_n_i" comes from button, while "s_hk_rst"
   // comes from standalone SPI (and is normally zero unless activated from the SPI).
   assign s_clk   = s_hk_pll_bypass ? s_xclk_i_buf : s_pll_clk_buf;
-//   assign s_rst_n = s_rst_n_i & ~s_hk_rst;
+  //   assign s_rst_n = s_rst_n_i & ~s_hk_rst;
   assign s_rst_n = s_rst_n_i;
   retrosoc u_retrosoc (
       .clk_i                    (s_clk),
@@ -256,11 +265,14 @@ module retrosoc_asic (
       .flash_io0_di_i           (s_flash_io0_di_i),
       .flash_io1_di_i           (s_flash_io1_di_i),
       .flash_io2_di_i           (s_flash_io2_di_i),
-      .flash_io3_di_i           (s_flash_io3_di_i)
+      .flash_io3_di_i           (s_flash_io3_di_i),
+      .cust_uart_rx_i           (s_cust_uart_rx_i),
+      .cust_uart_tx_o           (s_cust_uart_tx_o)
   );
 
   /* it can control the xtal oscillator, PLL which CANNOT be changed from the CPU */
   /* without potentially killing it.       */
+  // 'reg_ena': regulator enable
   ravenna_spi u_ravenna_spi (
       .RST            (~s_rst_n),
       .SCK            (s_hk_sck_i),
@@ -269,7 +281,7 @@ module retrosoc_asic (
       .SDO            (s_hk_sdo_o),
       .sdo_enb        (s_hk_sdo_enb),
       .xtal_ena       (s_hk_xtal_ena),
-      .reg_ena        (),                   // regulator
+      .reg_ena        (),
       .pll_vco_ena    (s_hk_pll_vco_ena),
       .pll_vco_in     (s_hk_pll_vco_in),
       .pll_cp_ena     (s_hk_pll_cp_ena),
@@ -301,19 +313,4 @@ module retrosoc_asic (
 
   assign s_pll_clk     = s_xclk_i_buf;
   assign s_pll_clk_buf = s_pll_clk;
-  /* 8x clock multiplier PLL (NOTE: IP from A_CELLS_1V8) */
-  //   apllc03_1v8 pll (
-  //       .VSSD  (VSS),
-  //       .EN_VCO(spi_pll_vco_ena_lv),
-  //       .EN_CP (spi_pll_cp_ena_lv),
-  //       .B_VCO (bias5u),
-  //       .B_CP  (bias10u),
-  //       .VSSA  (VSS),
-  //       .VDDD  (VDD1V8),
-  //       .VDDA  (VDD1V8),
-  //       .VCO_IN(pll_vco_in),
-  //       .CLK   (s_clk),               // output (fast) clock
-  //       .REF   (xtal_out_lv),         // input (slow) clock
-  //       .B     (spi_pll_trim_lv)      // 4-bit trim
-  //   );
 endmodule

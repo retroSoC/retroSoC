@@ -16,10 +16,13 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/spi_slave.v \
       ./ip/ravenna_spi.v \
       ./ip/spiflash.v \
+      ./ip/rs232.v \
       ./ip/cust/register.v \
       ./ip/cust/lfsr.v \
       ./ip/cust/archinfo.v \
       ./ip/cust/rng.v \
+      ./ip/cust/fifo.v \
+      ./ip/cust/uart.v \
       ./ip/cust/axil2apb/flop.v \
       ./ip/cust/axil2apb/address_decoder.v \
       ./ip/cust/axil2apb/read_data_mux.v \

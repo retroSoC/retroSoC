@@ -105,7 +105,10 @@ module retrosoc #(
     input         flash_io0_di_i,
     input         flash_io1_di_i,
     input         flash_io2_di_i,
-    input         flash_io3_di_i
+    input         flash_io3_di_i,
+    // cust
+    input         cust_uart_rx_i,
+    output        cust_uart_tx_o
 );
 
   wire        s_iomem_valid;
@@ -144,7 +147,8 @@ module retrosoc #(
   wire        s_mem_axi_rvalid;
   wire        s_mem_axi_rready;
   wire [31:0] s_mem_axi_rdata;
-
+  // cust
+  wire s_cust_uart_irq;
 
   // GPIO assignments
   assign gpio_out_o[0]        = r_gpio[0];
@@ -249,7 +253,8 @@ module retrosoc #(
   assign s_irq[12]    = s_irq_spi_mst;
   assign s_irq[13]    = s_irq_tim0;
   assign s_irq[14]    = s_irq_tim1;
-  assign s_irq[31:15] = 17'd0;
+  assign s_irq[15]    = s_cust_uart_irq;
+  assign s_irq[31:16] = 16'd0;
 
   wire        s_mem_valid;
   wire        s_mem_instr;
@@ -524,7 +529,10 @@ module retrosoc #(
       .mem_axi_arprot (s_mem_axi_arprot),
       .mem_axi_rvalid (s_mem_axi_rvalid),
       .mem_axi_rready (s_mem_axi_rready),
-      .mem_axi_rdata  (s_mem_axi_rdata)
+      .mem_axi_rdata  (s_mem_axi_rdata),
+      .uart_rx_i      (cust_uart_rx_i),
+      .uart_tx_o      (cust_uart_tx_o),
+      .uart_irq_o     (s_cust_uart_irq)
   );
 
 
