@@ -109,7 +109,9 @@ module retrosoc #(
     // cust
     input         cust_uart_rx_i,
     output        cust_uart_tx_o,
-    output [ 3:0] cust_pwm_pwm_o
+    output [ 3:0] cust_pwm_pwm_o,
+    input         cust_ps2_ps2_clk_i,
+    input         cust_ps2_ps2_dat_i
 );
 
   wire        s_iomem_valid;
@@ -151,6 +153,7 @@ module retrosoc #(
   // cust
   wire        s_cust_uart_irq;
   wire        s_cust_pwm_irq;
+  wire        s_cust_ps2_irq;
 
   // GPIO assignments
   assign gpio_out_o[0]        = r_gpio[0];
@@ -257,7 +260,8 @@ module retrosoc #(
   assign s_irq[14]    = s_irq_tim1;
   assign s_irq[15]    = s_cust_uart_irq;
   assign s_irq[16]    = s_cust_pwm_irq;
-  assign s_irq[31:17] = 15'd0;
+  assign s_irq[17]    = s_cust_ps2_irq;
+  assign s_irq[31:18] = 14'd0;
 
   wire        s_mem_valid;
   wire        s_mem_instr;
@@ -538,7 +542,10 @@ module retrosoc #(
       .uart_tx_o      (cust_uart_tx_o),
       .uart_irq_o     (s_cust_uart_irq),
       .pwm_pwm_o      (cust_pwm_pwm_o),
-      .pwm_irq_o      (s_cust_pwm_irq)
+      .pwm_irq_o      (s_cust_pwm_irq),
+      .ps2_ps2_clk_i  (cust_ps2_ps2_clk_i),
+      .ps2_ps2_dat_i  (cust_ps2_ps2_dat_i),
+      .ps2_irq_o      (s_cust_ps2_irq)
   );
 
 

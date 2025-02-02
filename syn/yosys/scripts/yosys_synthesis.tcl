@@ -48,10 +48,12 @@ yosys read_verilog ../../rtl/ip/cust/lfsr.v
 yosys read_verilog ../../rtl/ip/cust/fifo.v
 yosys read_verilog ../../rtl/ip/cust/cdc_sync.v
 yosys read_verilog ../../rtl/ip/cust/clk_int_div.v
+yosys read_verilog ../../rtl/ip/cust/edge_det.v
 yosys read_verilog ../../rtl/ip/cust/archinfo.v
 yosys read_verilog ../../rtl/ip/cust/rng.v
 yosys read_verilog ../../rtl/ip/cust/uart.v
 yosys read_verilog ../../rtl/ip/cust/pwm.v
+yosys read_verilog ../../rtl/ip/cust/ps2.v
 yosys read_verilog ../../rtl/ip/cust/axil2apb/flop.v
 yosys read_verilog ../../rtl/ip/cust/axil2apb/address_decoder.v
 yosys read_verilog ../../rtl/ip/cust/axil2apb/read_data_mux.v
