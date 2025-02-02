@@ -25,7 +25,7 @@ module retrosoc_tb;
   event ser_sample;
 
   reg   r_clk;
-  reg   s_rst_n;
+  reg   r_rst_n;
   wire  s_uart_rx;
   wire  s_flash_csb;
   wire  s_flash_clk;
@@ -44,49 +44,58 @@ module retrosoc_tb;
   always #10 r_clk = (r_clk === 1'b0);  // 50M
 
   retrosoc_asic u_retrosoc_asic (
-      .xi_i_pad              (r_clk),
-      .xo_o_pad              (),
-      .xclk_i_pad            (r_clk),
-      .rst_n_i_pad           (s_rst_n),
-      .hk_sdi_i_pad          (1'b1),
-      .hk_sdo_o_pad          (),
-      .hk_csb_i_pad          (1'b1),
-      .hk_sck_i_pad          (1'b0),
-      .spi_mst_sdi_i_pad     (1'b0),
-      .spi_mst_csb_o_pad     (),
-      .spi_mst_sck_o_pad     (),
-      .spi_mst_sdo_o_pad     (),
-      .flash_csb_o_pad       (s_flash_csb),
-      .flash_clk_o_pad       (s_flash_clk),
-      .flash_io0_io_pad      (s_flash_io0),
-      .flash_io1_io_pad      (s_flash_io1),
-      .flash_io2_io_pad      (s_flash_io2),
-      .flash_io3_io_pad      (s_flash_io3),
-      .uart_tx_o_pad         (s_uart_tx),
-      .uart_rx_i_pad         (1'b0),
-      .i2c_sda_io_pad        (s_i2c_sda_io),
-      .i2c_scl_io_pad        (s_i2c_scl_io),
-      .gpio_0_o_pad          (),
-      .gpio_1_o_pad          (),
-      .gpio_2_o_pad          (),
-      .gpio_3_o_pad          (),
-      .gpio_4_o_pad          (),
-      .gpio_5_o_pad          (),
-      .gpio_6_o_pad          (),
-      .gpio_7_o_pad          (),
-      .gpio_8_o_pad          (),
-      .gpio_9_o_pad          (),
-      .gpio_10_o_pad         (),
-      .gpio_11_o_pad         (),
-      .gpio_12_o_pad         (),
-      .gpio_13_o_pad         (),
-      .gpio_14_o_pad         (),
-      .gpio_15_o_pad         (),
-      .irq_pin_i_pad         (1'b0),
-      .cust_uart_tx_o_pad    (s_cust_uart_tx),
-      .cust_uart_rx_i_pad    (s_cust_uart_rx),
-      .cust_ps2_ps2_clk_i_pad(s_cust_ps2_ps2_clk),
-      .cust_ps2_ps2_dat_i_pad(s_cust_ps2_ps2_dat)
+      .xi_i_pad                 (r_clk),
+      .xo_o_pad                 (),
+      .xclk_i_pad               (r_clk),
+      .rst_n_i_pad              (r_rst_n),
+      .hk_sdi_i_pad             (1'b1),
+      .hk_sdo_o_pad             (),
+      .hk_csb_i_pad             (1'b1),
+      .hk_sck_i_pad             (1'b0),
+      .spi_mst_sdi_i_pad        (1'b0),
+      .spi_mst_csb_o_pad        (),
+      .spi_mst_sck_o_pad        (),
+      .spi_mst_sdo_o_pad        (),
+      .flash_csb_o_pad          (s_flash_csb),
+      .flash_clk_o_pad          (s_flash_clk),
+      .flash_io0_io_pad         (s_flash_io0),
+      .flash_io1_io_pad         (s_flash_io1),
+      .flash_io2_io_pad         (s_flash_io2),
+      .flash_io3_io_pad         (s_flash_io3),
+      .uart_tx_o_pad            (s_uart_tx),
+      .uart_rx_i_pad            (1'b0),
+      .i2c_sda_io_pad           (s_i2c_sda_io),
+      .i2c_scl_io_pad           (s_i2c_scl_io),
+      .gpio_0_o_pad             (),
+      .gpio_1_o_pad             (),
+      .gpio_2_o_pad             (),
+      .gpio_3_o_pad             (),
+      .gpio_4_o_pad             (),
+      .gpio_5_o_pad             (),
+      .gpio_6_o_pad             (),
+      .gpio_7_o_pad             (),
+      .gpio_8_o_pad             (),
+      .gpio_9_o_pad             (),
+      .gpio_10_o_pad            (),
+      .gpio_11_o_pad            (),
+      .gpio_12_o_pad            (),
+      .gpio_13_o_pad            (),
+      .gpio_14_o_pad            (),
+      .gpio_15_o_pad            (),
+      .irq_pin_i_pad            (1'b0),
+      .cust_uart_tx_o_pad       (s_cust_uart_tx),
+      .cust_uart_rx_i_pad       (s_cust_uart_rx),
+      .cust_ps2_ps2_clk_i_pad   (s_cust_ps2_ps2_clk),
+      .cust_ps2_ps2_dat_i_pad   (s_cust_ps2_ps2_dat),
+      .cust_qspi_spi_clk_o_pad  (),
+      .cust_qspi_spi_csn_0_o_pad(),
+      .cust_qspi_spi_csn_1_o_pad(),
+      .cust_qspi_spi_csn_2_o_pad(),
+      .cust_qspi_spi_csn_3_o_pad(),
+      .cust_qspi_dat_0_io_pad   (),
+      .cust_qspi_dat_1_io_pad   (),
+      .cust_qspi_dat_2_io_pad   (),
+      .cust_qspi_dat_3_io_pad   ()
   );
 
   spiflash u_spiflash (
@@ -107,8 +116,8 @@ module retrosoc_tb;
   );
 
   rs232 u_rs232 (
-      .rs232_rx_i(s_cust_uart_rx),
-      .rs232_tx_o(s_cust_uart_tx)
+      .rs232_rx_i(s_cust_uart_tx),
+      .rs232_tx_o(s_cust_uart_rx)
   );
 
   kdb_model u_kdb_model (
@@ -149,19 +158,22 @@ module retrosoc_tb;
 
 
   initial begin
-    s_rst_n = 1;
+    r_rst_n = 1;
     #60;
-    s_rst_n = 0;
+    r_rst_n = 0;
     #100;
-    s_rst_n = 1;
+    r_rst_n = 1;
   end
 
   initial begin : KDB_MODEL_BLOCK
     integer i;
     #1000;
-    for (i = 0; i < 26; i = i + 1) begin
-      u_kdb_model.send_code(i + 8'd65);
-      #500;
+    while (1) begin
+      #1000;
+      for (i = 0; i < 26; i = i + 1) begin
+        u_kdb_model.send_code(i + 8'd65);
+        #500;
+      end
     end
   end
 
