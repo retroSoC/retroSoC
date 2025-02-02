@@ -111,7 +111,12 @@ module retrosoc #(
     output        cust_uart_tx_o,
     output [ 3:0] cust_pwm_pwm_o,
     input         cust_ps2_ps2_clk_i,
-    input         cust_ps2_ps2_dat_i
+    input         cust_ps2_ps2_dat_i,
+    output        cust_qspi_spi_clk_o,
+    output [ 3:0] cust_qspi_spi_csn_o,
+    output [ 3:0] cust_qspi_spi_sdo_o,
+    output [ 3:0] cust_qspi_spi_oe_o,
+    input  [ 3:0] cust_qspi_spi_sdi_i
 );
 
   wire        s_iomem_valid;
@@ -154,6 +159,7 @@ module retrosoc #(
   wire        s_cust_uart_irq;
   wire        s_cust_pwm_irq;
   wire        s_cust_ps2_irq;
+  wire        s_cust_qspi_irq;
 
   // GPIO assignments
   assign gpio_out_o[0]        = r_gpio[0];
@@ -261,7 +267,8 @@ module retrosoc #(
   assign s_irq[15]    = s_cust_uart_irq;
   assign s_irq[16]    = s_cust_pwm_irq;
   assign s_irq[17]    = s_cust_ps2_irq;
-  assign s_irq[31:18] = 14'd0;
+  assign s_irq[18]    = s_cust_qspi_irq;
+  assign s_irq[31:19] = 13'd0;
 
   wire        s_mem_valid;
   wire        s_mem_instr;
@@ -327,21 +334,21 @@ module retrosoc #(
                        32'h0000_0000;
 
 
-  // retroSoC memory mapped IP
-  // 1  x QSPI FLFS
+  // memory mapped IP
+  // 1  x QSPI SPFS
   // 16 x GPIO
-  // 1  x HOUSEKEEPING SPI INFO
+  // 1  x HOUSEKEEPING SPI
   // 1  x UART
   // 1  x SPI
   // 1  x I2C
   // 2  x TIMER
-  // AXI Wrapper
+  // AXIL WRAPPER
   //    1 x RNG
-  //    1 x ARCH
+  //    1 x ARCHINFO
   //    1 x UART
   //    4 x PWM
   //    1 x PS2
-  //    1 x SPI MASTER
+  //    1 x QSPI
   //    1 x PSRAM
   picorv32 #(
       .PROGADDR_RESET  (PROGADDR_RESET),
@@ -545,7 +552,13 @@ module retrosoc #(
       .pwm_irq_o      (s_cust_pwm_irq),
       .ps2_ps2_clk_i  (cust_ps2_ps2_clk_i),
       .ps2_ps2_dat_i  (cust_ps2_ps2_dat_i),
-      .ps2_irq_o      (s_cust_ps2_irq)
+      .ps2_irq_o      (s_cust_ps2_irq),
+      .qspi_spi_clk_o (cust_qspi_spi_clk_o),
+      .qspi_spi_csn_o (cust_qspi_spi_csn_o),
+      .qspi_spi_sdo_o (cust_qspi_spi_sdo_o),
+      .qspi_spi_oe_o  (cust_qspi_spi_oe_o),
+      .qspi_spi_sdi_i (cust_qspi_spi_sdi_i),
+      .qspi_irq_o     (s_cust_qspi_irq)
   );
 
 

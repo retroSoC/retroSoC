@@ -77,7 +77,16 @@ module retrosoc_asic (
     output cust_pwm_pwm_2_o_pad,
     output cust_pwm_pwm_3_o_pad,
     inout  cust_ps2_ps2_clk_i_pad,
-    inout  cust_ps2_ps2_dat_i_pad
+    inout  cust_ps2_ps2_dat_i_pad,
+    output cust_qspi_spi_clk_o_pad,
+    output cust_qspi_spi_csn_0_o_pad,
+    output cust_qspi_spi_csn_1_o_pad,
+    output cust_qspi_spi_csn_2_o_pad,
+    output cust_qspi_spi_csn_3_o_pad,
+    inout  cust_qspi_dat_0_io_pad,
+    inout  cust_qspi_dat_1_io_pad,
+    inout  cust_qspi_dat_2_io_pad,
+    inout  cust_qspi_dat_3_io_pad
 );
   // clk&rst
   wire        s_xtal_io;
@@ -161,6 +170,12 @@ module retrosoc_asic (
   wire [ 3:0] s_cust_pwm_pwm_o;
   wire        s_cust_ps2_ps2_clk_i;
   wire        s_cust_ps2_ps2_dat_i;
+  wire        s_cust_qspi_spi_clk_o;
+  wire [ 3:0] s_cust_qspi_spi_csn_o;
+  wire [ 3:0] s_cust_qspi_spi_sdo_o;
+  wire [ 3:0] s_cust_qspi_spi_oe_o;
+  wire [ 3:0] s_cust_qspi_spi_sdi_i;
+
 
   // verilog_format: off
   ihp_io_xtl_pad u_xtal_pad          (.xi_pad(xi_i_pad),        .xo_pad(xo_o_pad),      .en(s_hk_xtal_ena),            .clk(s_xtal_io));
@@ -202,14 +217,23 @@ module retrosoc_asic (
   ihp_io_tri_pad u_gpio_15_o_pad     (.pad(gpio_15_o_pad),      .c2p(s_gpio_out_o[15]), .c2p_en(~s_gpio_outenb_o[15]), .p2c(s_gpio_in_i[15]));
   ihp_io_tri_pad u_irq_pin_i_pad     (.pad(irq_pin_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_irq_pin_i));
   // cust
-  ihp_io_tri_pad u_cust_uart_tx_o_pad    (.pad(cust_uart_tx_o_pad),     .c2p(s_cust_uart_tx_o),    .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_cust_uart_rx_i_pad    (.pad(cust_uart_rx_i_pad),     .c2p(),                    .c2p_en(1'b0),                 .p2c(s_cust_uart_rx_i));
-  ihp_io_tri_pad u_cust_pwm_pwm_0_o_pad  (.pad(cust_pwm_pwm_0_o_pad),   .c2p(s_cust_pwm_pwm_o[0]), .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_cust_pwm_pwm_1_o_pad  (.pad(cust_pwm_pwm_1_o_pad),   .c2p(s_cust_pwm_pwm_o[1]), .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_cust_pwm_pwm_2_o_pad  (.pad(cust_pwm_pwm_2_o_pad),   .c2p(s_cust_pwm_pwm_o[2]), .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_cust_pwm_pwm_3_o_pad  (.pad(cust_pwm_pwm_3_o_pad),   .c2p(s_cust_pwm_pwm_o[3]), .c2p_en(1'b1),                 .p2c());
-  ihp_io_tri_pad u_cust_ps2_ps2_clk_i_pad(.pad(cust_ps2_ps2_clk_i_pad), .c2p(),                    .c2p_en(1'b0),                 .p2c(s_cust_ps2_ps2_clk_i));
-  ihp_io_tri_pad u_cust_ps2_ps2_dat_i_pad(.pad(cust_ps2_ps2_dat_i_pad), .c2p(),                    .c2p_en(1'b0),                 .p2c(s_cust_ps2_ps2_dat_i));
+  ihp_io_tri_pad u_cust_uart_tx_o_pad       (.pad(cust_uart_tx_o_pad),        .c2p(s_cust_uart_tx_o),         .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_uart_rx_i_pad       (.pad(cust_uart_rx_i_pad),        .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_uart_rx_i));
+  ihp_io_tri_pad u_cust_pwm_pwm_0_o_pad     (.pad(cust_pwm_pwm_0_o_pad),      .c2p(s_cust_pwm_pwm_o[0]),      .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_pwm_pwm_1_o_pad     (.pad(cust_pwm_pwm_1_o_pad),      .c2p(s_cust_pwm_pwm_o[1]),      .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_pwm_pwm_2_o_pad     (.pad(cust_pwm_pwm_2_o_pad),      .c2p(s_cust_pwm_pwm_o[2]),      .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_pwm_pwm_3_o_pad     (.pad(cust_pwm_pwm_3_o_pad),      .c2p(s_cust_pwm_pwm_o[3]),      .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_ps2_ps2_clk_i_pad   (.pad(cust_ps2_ps2_clk_i_pad),    .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_ps2_ps2_clk_i));
+  ihp_io_tri_pad u_cust_ps2_ps2_dat_i_pad   (.pad(cust_ps2_ps2_dat_i_pad),    .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_ps2_ps2_dat_i));
+  ihp_io_tri_pad u_cust_qspi_spi_clk_o_pad  (.pad(cust_qspi_spi_clk_o_pad),   .c2p(s_cust_qspi_spi_clk_o),    .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_qspi_spi_csn_0_o_pad(.pad(cust_qspi_spi_csn_0_o_pad), .c2p(s_cust_qspi_spi_csn_o[0]), .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_qspi_spi_csn_1_o_pad(.pad(cust_qspi_spi_csn_1_o_pad), .c2p(s_cust_qspi_spi_csn_o[1]), .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_qspi_spi_csn_2_o_pad(.pad(cust_qspi_spi_csn_2_o_pad), .c2p(s_cust_qspi_spi_csn_o[2]), .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_qspi_spi_csn_3_o_pad(.pad(cust_qspi_spi_csn_3_o_pad), .c2p(s_cust_qspi_spi_csn_o[3]), .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_qspi_dat_0_io_pad   (.pad(cust_qspi_dat_0_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[0]), .c2p_en(s_cust_qspi_spi_oe_o[0]),  .p2c(s_cust_qspi_spi_sdi_i[0]));
+  ihp_io_tri_pad u_cust_qspi_dat_1_io_pad   (.pad(cust_qspi_dat_1_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[1]), .c2p_en(s_cust_qspi_spi_oe_o[1]),  .p2c(s_cust_qspi_spi_sdi_i[1]));
+  ihp_io_tri_pad u_cust_qspi_dat_2_io_pad   (.pad(cust_qspi_dat_2_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[2]), .c2p_en(s_cust_qspi_spi_oe_o[2]),  .p2c(s_cust_qspi_spi_sdi_i[2]));
+  ihp_io_tri_pad u_cust_qspi_dat_3_io_pad   (.pad(cust_qspi_dat_3_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[3]), .c2p_en(s_cust_qspi_spi_oe_o[3]),  .p2c(s_cust_qspi_spi_sdi_i[3]));
   // clk buf
   ihp_clk_buffer u_xtal_buf (.clk_i(s_xtal_io), .clk_o(s_xtal_io_buf));
   ihp_clk_buffer u_xclk_buf (.clk_i(s_xclk_i), .clk_o(s_xclk_i_buf));
@@ -286,7 +310,12 @@ module retrosoc_asic (
       .cust_uart_tx_o           (s_cust_uart_tx_o),
       .cust_pwm_pwm_o           (s_cust_pwm_pwm_o),
       .cust_ps2_ps2_clk_i       (s_cust_ps2_ps2_clk_i),
-      .cust_ps2_ps2_dat_i       (s_cust_ps2_ps2_dat_i)
+      .cust_ps2_ps2_dat_i       (s_cust_ps2_ps2_dat_i),
+      .cust_qspi_spi_clk_o       (s_cust_qspi_spi_clk_o),
+      .cust_qspi_spi_csn_o       (s_cust_qspi_spi_csn_o),
+      .cust_qspi_spi_sdo_o       (s_cust_qspi_spi_sdo_o),
+      .cust_qspi_spi_oe_o        (s_cust_qspi_spi_oe_o),
+      .cust_qspi_spi_sdi_i       (s_cust_qspi_spi_sdi_i)
   );
 
   /* it can control the xtal oscillator, PLL which CANNOT be changed from the CPU */
