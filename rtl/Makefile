@@ -19,10 +19,13 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/rs232.v \
       ./ip/cust/register.v \
       ./ip/cust/lfsr.v \
+      ./ip/cust/fifo.v \
+      ./ip/cust/cdc_sync.v \
+      ./ip/cust/clk_int_div.v \
       ./ip/cust/archinfo.v \
       ./ip/cust/rng.v \
-      ./ip/cust/fifo.v \
       ./ip/cust/uart.v \
+      ./ip/cust/pwm.v \
       ./ip/cust/axil2apb/flop.v \
       ./ip/cust/axil2apb/address_decoder.v \
       ./ip/cust/axil2apb/read_data_mux.v \

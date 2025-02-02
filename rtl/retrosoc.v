@@ -108,7 +108,8 @@ module retrosoc #(
     input         flash_io3_di_i,
     // cust
     input         cust_uart_rx_i,
-    output        cust_uart_tx_o
+    output        cust_uart_tx_o,
+    output [ 3:0] cust_pwm_pwm_o
 );
 
   wire        s_iomem_valid;
@@ -148,7 +149,8 @@ module retrosoc #(
   wire        s_mem_axi_rready;
   wire [31:0] s_mem_axi_rdata;
   // cust
-  wire s_cust_uart_irq;
+  wire        s_cust_uart_irq;
+  wire        s_cust_pwm_irq;
 
   // GPIO assignments
   assign gpio_out_o[0]        = r_gpio[0];
@@ -254,7 +256,8 @@ module retrosoc #(
   assign s_irq[13]    = s_irq_tim0;
   assign s_irq[14]    = s_irq_tim1;
   assign s_irq[15]    = s_cust_uart_irq;
-  assign s_irq[31:16] = 16'd0;
+  assign s_irq[16]    = s_cust_pwm_irq;
+  assign s_irq[31:17] = 15'd0;
 
   wire        s_mem_valid;
   wire        s_mem_instr;
@@ -321,19 +324,20 @@ module retrosoc #(
 
 
   // retroSoC memory mapped IP
-  // 1 x QSPI FLASH
-  // 1 x GPIO
-  // 1 x HOUSEKEEPING SPI INFO
-  // 1 x UART
-  // 1 x SPI MASTER
-  // 1 x I2C MASTER
-  // 2 x 32-bit COUNTER/TIMER
+  // 1  x QSPI FLFS
+  // 16 x GPIO
+  // 1  x HOUSEKEEPING SPI INFO
+  // 1  x UART
+  // 1  x SPI
+  // 1  x I2C
+  // 2  x TIMER
   // AXI Wrapper
   //    1 x RNG
   //    1 x ARCH
   //    1 x UART
-  //    1 x SPI MASTER
   //    4 x PWM
+  //    1 x PS2
+  //    1 x SPI MASTER
   //    1 x PSRAM
   picorv32 #(
       .PROGADDR_RESET  (PROGADDR_RESET),
@@ -532,7 +536,9 @@ module retrosoc #(
       .mem_axi_rdata  (s_mem_axi_rdata),
       .uart_rx_i      (cust_uart_rx_i),
       .uart_tx_o      (cust_uart_tx_o),
-      .uart_irq_o     (s_cust_uart_irq)
+      .uart_irq_o     (s_cust_uart_irq),
+      .pwm_pwm_o      (cust_pwm_pwm_o),
+      .pwm_irq_o      (s_cust_pwm_irq)
   );
 
 
