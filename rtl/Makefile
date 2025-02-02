@@ -29,6 +29,13 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/cust/uart.v \
       ./ip/cust/pwm.v \
       ./ip/cust/ps2.v \
+      ./ip/cust/apb_spi_master/spi_master_apb_if.v \
+      ./ip/cust/apb_spi_master/spi_master_clkgen.v \
+      ./ip/cust/apb_spi_master/spi_master_controller.v \
+      ./ip/cust/apb_spi_master/spi_master_fifo.v \
+      ./ip/cust/apb_spi_master/spi_master_rx.v \
+      ./ip/cust/apb_spi_master/spi_master_tx.v \
+      ./ip/cust/apb_spi_master/apb_spi_master.v \
       ./ip/cust/axil2apb/flop.v \
       ./ip/cust/axil2apb/address_decoder.v \
       ./ip/cust/axil2apb/read_data_mux.v \

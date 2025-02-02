@@ -54,6 +54,13 @@ yosys read_verilog ../../rtl/ip/cust/rng.v
 yosys read_verilog ../../rtl/ip/cust/uart.v
 yosys read_verilog ../../rtl/ip/cust/pwm.v
 yosys read_verilog ../../rtl/ip/cust/ps2.v
+yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_apb_if.v
+yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_clkgen.v
+yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_controller.v
+yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_fifo.v
+yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_rx.v
+yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_tx.v
+yosys read_verilog ../../rtl/ip/cust/apb_spi_master/apb_spi_master.v
 yosys read_verilog ../../rtl/ip/cust/axil2apb/flop.v
 yosys read_verilog ../../rtl/ip/cust/axil2apb/address_decoder.v
 yosys read_verilog ../../rtl/ip/cust/axil2apb/read_data_mux.v
