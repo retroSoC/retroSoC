@@ -17,7 +17,11 @@ module axil_ip_wrapper (
     input  [ 2:0] mem_axi_arprot,
     output        mem_axi_rvalid,
     input         mem_axi_rready,
-    output [31:0] mem_axi_rdata
+    output [31:0] mem_axi_rdata,
+    // uart
+    input         uart_rx_i,
+    output        uart_tx_o,
+    output        uart_irq_o
     // pwm
     // input         ls_clk_i,
     // input         pwm_pin_in_i,
@@ -31,9 +35,9 @@ module axil_ip_wrapper (
     // output [ 3:0] pwm_tim3_o
 );
 
-  localparam APB_SLAVES_NUM = 2;
-  localparam [32*APB_SLAVES_NUM-1 : 0] MEM_REGIONS1 = 64'h0300_2000__0300_1000;
-  localparam [32*APB_SLAVES_NUM-1 : 0] MEM_REGIONS2 = 64'h0300_2008__0300_1008;
+  localparam APB_SLAVES_NUM = 3;
+  localparam [32*APB_SLAVES_NUM-1 : 0] MEM_REGIONS1 = 96'h0300_3000__0300_2000__0300_1000;
+  localparam [32*APB_SLAVES_NUM-1 : 0] MEM_REGIONS2 = 96'h0300_3FFF__0300_2FFF__0300_1FFF;
 
   wire [              31:0] s_m_apb_paddr;
   wire [               2:0] s_m_apb_pprot;
@@ -81,28 +85,46 @@ module axil_ip_wrapper (
       .pslverr(s_m_apb_pslverr[1])
   );
 
-//   apb_adv_timer #(
-//       .APB_ADDR_WIDTH(32)
-//   ) u_apb_adv_timer (
-//       .HCLK           (clk_i),
-//       .HRESETn        (rst_n_i),
-//       .PADDR          (s_m_apb_paddr),
-//       .PWDATA         (s_m_apb_pwdata),
-//       .PWRITE         (s_m_apb_pwrite),
-//       .PSEL           (s_m_apb_psel[2]),
-//       .PENABLE        (s_m_apb_penable),
-//       .PRDATA         (s_m_apb_prdata3),
-//       .PREADY         (s_m_apb_pready[2]),
-//       .PSLVERR        (s_m_apb_pslverr[2]),
-//       .dft_cg_enable_i(1'b0),
-//       .low_speed_clk_i(ls_clk_i),
-//       .ext_sig_i      (pwm_pin_in_i),
-//       .events_o       ({pwm_irq3_o, pwm_irq2_o, pwm_irq1_o, pwm_irq0_o}),
-//       .ch_0_o         (pwm_tim0_o),
-//       .ch_1_o         (pwm_tim1_o),
-//       .ch_2_o         (pwm_tim2_o),
-//       .ch_3_o         (pwm_tim3_o)
-//   );
+  apb4_uart u_apb4_uart (
+      .pclk     (clk_i),
+      .presetn  (rst_n_i),
+      .paddr    (s_m_apb_paddr),
+      .pprot    (s_m_apb_pprot),
+      .psel     (s_m_apb_psel[2]),
+      .penable  (s_m_apb_penable),
+      .pwrite   (s_m_apb_pwrite),
+      .pwdata   (s_m_apb_pwdata),
+      .pstrb    (s_m_apb_pstrb),
+      .pready   (s_m_apb_pready[2]),
+      .prdata   (s_m_apb_prdata3),
+      .pslverr  (s_m_apb_pslverr[2]),
+      .uart_rx_i(uart_rx_i),
+      .uart_tx_o(uart_tx_o),
+      .irq_o    (uart_irq_o)
+  );
+
+  //   apb_adv_timer #(
+  //       .APB_ADDR_WIDTH(32)
+  //   ) u_apb_adv_timer (
+  //       .HCLK           (clk_i),
+  //       .HRESETn        (rst_n_i),
+  //       .PADDR          (s_m_apb_paddr),
+  //       .PWDATA         (s_m_apb_pwdata),
+  //       .PWRITE         (s_m_apb_pwrite),
+  //       .PSEL           (s_m_apb_psel[2]),
+  //       .PENABLE        (s_m_apb_penable),
+  //       .PRDATA         (s_m_apb_prdata3),
+  //       .PREADY         (s_m_apb_pready[2]),
+  //       .PSLVERR        (s_m_apb_pslverr[2]),
+  //       .dft_cg_enable_i(1'b0),
+  //       .low_speed_clk_i(ls_clk_i),
+  //       .ext_sig_i      (pwm_pin_in_i),
+  //       .events_o       ({pwm_irq3_o, pwm_irq2_o, pwm_irq1_o, pwm_irq0_o}),
+  //       .ch_0_o         (pwm_tim0_o),
+  //       .ch_1_o         (pwm_tim1_o),
+  //       .ch_2_o         (pwm_tim2_o),
+  //       .ch_3_o         (pwm_tim3_o)
+  //   );
 
   axi_apb_bridge #(
       .c_apb_num_slaves(APB_SLAVES_NUM),
@@ -144,7 +166,7 @@ module axil_ip_wrapper (
       // diff apb slave rdata
       .m_apb_prdata  (s_m_apb_prdata),
       .m_apb_prdata2 (s_m_apb_prdata2),
-      .m_apb_prdata3 (32'h0),
+      .m_apb_prdata3 (s_m_apb_prdata3),
       .m_apb_prdata4 (32'h0),
       .m_apb_prdata5 (32'h0),
       .m_apb_prdata6 (32'h0),

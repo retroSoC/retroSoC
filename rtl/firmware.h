@@ -48,14 +48,20 @@
 #define reg_timer1_config  (*(volatile uint32_t*)0x03000068)
 #define reg_timer1_value   (*(volatile uint32_t*)0x0300006c)
 #define reg_timer1_data    (*(volatile uint32_t*)0x03000070)
+// cust
+#define reg_cust_archinfo_sys (*(volatile uint32_t*)0x03001000)
+#define reg_cust_archinfo_idl (*(volatile uint32_t*)0x03001004)
+#define reg_cust_archinfo_idh (*(volatile uint32_t*)0x03001008)
 
-#define reg_archinfo_sys   (*(volatile uint32_t*)0x03001000)
-#define reg_archinfo_idl   (*(volatile uint32_t*)0x03001004)
-#define reg_archinfo_idh   (*(volatile uint32_t*)0x03001008)
+#define reg_cust_rng_ctrl     (*(volatile uint32_t*)0x03002000)
+#define reg_cust_rng_seed     (*(volatile uint32_t*)0x03002004)
+#define reg_cust_rng_val      (*(volatile uint32_t*)0x03002008)
 
-#define reg_rng_ctrl       (*(volatile uint32_t*)0x03002000)
-#define reg_rng_seed       (*(volatile uint32_t*)0x03002004)
-#define reg_rng_val        (*(volatile uint32_t*)0x03002008)
+#define reg_cust_uart_lcr     (*(volatile uint32_t*)0x03003000)
+#define reg_cust_uart_div     (*(volatile uint32_t*)0x03003004)
+#define reg_cust_uart_trx     (*(volatile uint32_t*)0x03003008)
+#define reg_cust_uart_fcr     (*(volatile uint32_t*)0x0300300c)
+#define reg_cust_uart_lsr     (*(volatile uint32_t*)0x03003010)
 
 // command register bits
 // bit 7 = start

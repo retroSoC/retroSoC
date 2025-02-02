@@ -664,30 +664,74 @@ void ip_i2c_test()
     i2c_send(0x6, 0xfa);
 }
 
-void ip_archinfo_test() {
-    print("[IP] archinfo test\n");
+void cust_ip_archinfo_test()
+{
+    print("[CUST IP] archinfo test\n");
 
-    print_reg("[ARCHINFO SYS] ", reg_archinfo_sys, 8);
-    print_reg("[ARCHINFO IDL] ", reg_archinfo_idl, 8);
-    print_reg("[ARCHINFO IDH] ", reg_archinfo_idh, 8);
+    print_reg("[ARCHINFO SYS] ", reg_cust_archinfo_sys, 8);
+    print_reg("[ARCHINFO IDL] ", reg_cust_archinfo_idl, 8);
+    print_reg("[ARCHINFO IDH] ", reg_cust_archinfo_idh, 8);
 }
 
-void ip_rng_test() {
-    print("[IP] rng test\n");
+void cust_ip_rng_test()
+{
+    print("[CUST IP] rng test\n");
 
-    reg_rng_ctrl = (uint32_t)1;      // en the core
-    reg_rng_seed = (uint32_t)0xFE1C; // set the init seed
-    print_reg("[RNG SEED] ", reg_rng_seed, 8);
+    reg_cust_rng_ctrl = (uint32_t)1;      // en the core
+    reg_cust_rng_seed = (uint32_t)0xFE1C; // set the init seed
+    print_reg("[RNG SEED] ", reg_cust_rng_seed, 8);
 
-    for(int i = 0; i < 5; ++i) {
-        print_reg("[RNG VAL] ", reg_rng_val, 8);
+    for (int i = 0; i < 5; ++i)
+    {
+        print_reg("[RNG VAL] ", reg_cust_rng_val, 8);
     }
 
     print("[RNG] reset the seed\n");
-    reg_rng_seed = (uint32_t)0;
-    for(int i = 0; i < 5; ++i) {
-        print_reg("[RNG VAL] ", reg_rng_val, 8);
+    reg_cust_rng_seed = (uint32_t)0;
+    for (int i = 0; i < 5; ++i)
+    {
+        print_reg("[RNG VAL] ", reg_cust_rng_val, 8);
     }
+}
+
+void cust_ip_uart_test()
+{
+    print("[CUST IP] uart test\n");
+
+    print_reg("[UART DIV] ", reg_cust_uart_div, 8);
+    print_reg("[UART LCR] ", reg_cust_uart_lcr, 8);
+
+    reg_cust_uart_div = (uint32_t)434;    // 50x10^6 / 115200
+    reg_cust_uart_fcr = (uint32_t)0b1111; // clear tx and rx fifo
+    reg_cust_uart_fcr = (uint32_t)0b1100;
+    reg_cust_uart_lcr = (uint32_t)0b00011111; // 8N1, en all irq
+
+    print_reg("[UART DIV] ", reg_cust_uart_div, 8);
+    print_reg("[UART LCR] ", reg_cust_uart_lcr, 8);
+
+    print("uart tx test\n");
+    uint32_t val = (uint32_t)0x41;
+    for (int i = 0; i < 10; ++i)
+    {
+        while (((reg_cust_uart_lsr & 0x100) >> 8) == 1)
+            ;
+        reg_cust_uart_trx = (uint32_t)(val + i);
+    }
+
+    print("uart tx test done\n");
+    // print("uart rx test\n");
+    // uint32_t rx_val = 0;
+    // for (int i = 0; i < 10; ++i)
+    // {
+    //     while (((reg_cust_uart_lsr & 0x080) >> 7) == 1)
+    //         ;
+    //     rx_val = reg_cust_uart_trx;
+    //     print
+    //     printf("%d RECV: %x CHAR: %c\n", i, rx_val, rx_val);
+    // }
+
+    // print("uart rx test done\n");
+    print("uart done\n");
 }
 
 void main()
@@ -722,8 +766,9 @@ void main()
     // ip_counter_timer_test();
     // ip_gpio_test();
     // ip_i2c_test();
-    ip_archinfo_test();
-    ip_rng_test();
+    cust_ip_archinfo_test();
+    // cust_ip_rng_test();
+    cust_ip_uart_test();
     // cmd_benchmark(true, 0);
     // cmd_benchmark_all();
     // cmd_memtest();
