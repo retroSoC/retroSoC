@@ -39,6 +39,15 @@ module retrosoc_tb;
   wire  s_cust_uart_rx;
   wire  s_cust_ps2_ps2_clk;
   wire  s_cust_ps2_ps2_dat;
+  wire  s_cust_psram_sclk;
+  wire  s_cust_psram_ce_0;
+  wire  s_cust_psram_ce_1;
+  wire  s_cust_psram_ce_2;
+  wire  s_cust_psram_ce_3;
+  wire  s_cust_psram_sio0;
+  wire  s_cust_psram_sio1;
+  wire  s_cust_psram_sio2;
+  wire  s_cust_psram_sio3;
 
   // always #5 r_clk = (r_clk === 1'b0);  // 100M
   always #10 r_clk = (r_clk === 1'b0);  // 50M
@@ -95,7 +104,16 @@ module retrosoc_tb;
       .cust_qspi_dat_0_io_pad   (),
       .cust_qspi_dat_1_io_pad   (),
       .cust_qspi_dat_2_io_pad   (),
-      .cust_qspi_dat_3_io_pad   ()
+      .cust_qspi_dat_3_io_pad   (),
+      .cust_psram_sclk_o_pad    (s_cust_psram_sclk),
+      .cust_psram_ce_0_o_pad    (s_cust_psram_ce_0),
+      .cust_psram_ce_1_o_pad    (s_cust_psram_ce_1),
+      .cust_psram_ce_2_o_pad    (s_cust_psram_ce_2),
+      .cust_psram_ce_3_o_pad    (s_cust_psram_ce_3),
+      .cust_psram_sio0_io_pad   (s_cust_psram_sio0),
+      .cust_psram_sio1_io_pad   (s_cust_psram_sio1),
+      .cust_psram_sio2_io_pad   (s_cust_psram_sio2),
+      .cust_psram_sio3_io_pad   (s_cust_psram_sio3)
   );
 
   spiflash u_spiflash (
@@ -123,6 +141,28 @@ module retrosoc_tb;
   kdb_model u_kdb_model (
       .ps2_clk_o(s_cust_ps2_ps2_clk),
       .ps2_dat_o(s_cust_ps2_ps2_dat)
+  );
+
+
+  psram_model u_psram_model0 (
+      .sck (s_cust_psram_sclk),
+      .dio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0}),
+      .ce_n(s_cust_psram_ce_0)
+  );
+  psram_model u_psram_model1 (
+      .sck (s_cust_psram_sclk),
+      .dio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0}),
+      .ce_n(s_cust_psram_ce_1)
+  );
+  psram_model u_psram_model2 (
+      .sck (s_cust_psram_sclk),
+      .dio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0}),
+      .ce_n(s_cust_psram_ce_2)
+  );
+  psram_model u_psram_model3 (
+      .sck (s_cust_psram_sclk),
+      .dio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0}),
+      .ce_n(s_cust_psram_ce_3)
   );
 
   reg [7:0] buffer;
@@ -200,8 +240,8 @@ module retrosoc_tb;
     end
 
     // repeat (1500) begin
-      // repeat (5000) @(posedge r_clk);
-      // $display("+5000 cycles");
+    // repeat (5000) @(posedge r_clk);
+    // $display("+5000 cycles");
     // end
     // $finish;
   end

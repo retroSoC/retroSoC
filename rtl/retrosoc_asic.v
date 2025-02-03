@@ -86,7 +86,16 @@ module retrosoc_asic (
     inout  cust_qspi_dat_0_io_pad,
     inout  cust_qspi_dat_1_io_pad,
     inout  cust_qspi_dat_2_io_pad,
-    inout  cust_qspi_dat_3_io_pad
+    inout  cust_qspi_dat_3_io_pad,
+    output cust_psram_sclk_o_pad,
+    output cust_psram_ce_0_o_pad,
+    output cust_psram_ce_1_o_pad,
+    output cust_psram_ce_2_o_pad,
+    output cust_psram_ce_3_o_pad,
+    inout  cust_psram_sio0_io_pad,
+    inout  cust_psram_sio1_io_pad,
+    inout  cust_psram_sio2_io_pad,
+    inout  cust_psram_sio3_io_pad
 );
   // clk&rst
   wire        s_xtal_io;
@@ -175,6 +184,17 @@ module retrosoc_asic (
   wire [ 3:0] s_cust_qspi_spi_sdo_o;
   wire [ 3:0] s_cust_qspi_spi_oe_o;
   wire [ 3:0] s_cust_qspi_spi_sdi_i;
+  wire        s_cust_psram_sclk_o;
+  wire        s_cust_psram_sio0_i;
+  wire        s_cust_psram_sio1_i;
+  wire        s_cust_psram_sio2_i;
+  wire        s_cust_psram_sio3_i;
+  wire        s_cust_psram_sio0_o;
+  wire        s_cust_psram_sio1_o;
+  wire        s_cust_psram_sio2_o;
+  wire        s_cust_psram_sio3_o;
+  wire [ 3:0] s_cust_psram_sio_oe_o;
+  wire [ 3:0] s_cust_psram_ce_o;
 
 
   // verilog_format: off
@@ -234,6 +254,15 @@ module retrosoc_asic (
   ihp_io_tri_pad u_cust_qspi_dat_1_io_pad   (.pad(cust_qspi_dat_1_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[1]), .c2p_en(s_cust_qspi_spi_oe_o[1]),  .p2c(s_cust_qspi_spi_sdi_i[1]));
   ihp_io_tri_pad u_cust_qspi_dat_2_io_pad   (.pad(cust_qspi_dat_2_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[2]), .c2p_en(s_cust_qspi_spi_oe_o[2]),  .p2c(s_cust_qspi_spi_sdi_i[2]));
   ihp_io_tri_pad u_cust_qspi_dat_3_io_pad   (.pad(cust_qspi_dat_3_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[3]), .c2p_en(s_cust_qspi_spi_oe_o[3]),  .p2c(s_cust_qspi_spi_sdi_i[3]));
+  ihp_io_tri_pad u_cust_psram_sclk_o_pad    (.pad(cust_psram_sclk_o_pad),     .c2p(s_cust_psram_sclk_o),      .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_psram_ce_0_o_pad    (.pad(cust_psram_ce_0_o_pad),     .c2p(s_cust_psram_ce_o[0]),     .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_psram_ce_1_o_pad    (.pad(cust_psram_ce_1_o_pad),     .c2p(s_cust_psram_ce_o[1]),     .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_psram_ce_2_o_pad    (.pad(cust_psram_ce_2_o_pad),     .c2p(s_cust_psram_ce_o[2]),     .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_psram_ce_3_o_pad    (.pad(cust_psram_ce_3_o_pad),     .c2p(s_cust_psram_ce_o[3]),     .c2p_en(1'b1),                     .p2c());
+  ihp_io_tri_pad u_cust_psram_sio0_io_pad   (.pad(cust_psram_sio0_io_pad),    .c2p(s_cust_psram_sio0_o),      .c2p_en(s_cust_psram_sio_oe_o[0]), .p2c(s_cust_psram_sio0_i));
+  ihp_io_tri_pad u_cust_psram_sio1_io_pad   (.pad(cust_psram_sio1_io_pad),    .c2p(s_cust_psram_sio1_o),      .c2p_en(s_cust_psram_sio_oe_o[1]), .p2c(s_cust_psram_sio1_i));
+  ihp_io_tri_pad u_cust_psram_sio2_io_pad   (.pad(cust_psram_sio2_io_pad),    .c2p(s_cust_psram_sio2_o),      .c2p_en(s_cust_psram_sio_oe_o[2]), .p2c(s_cust_psram_sio2_i));
+  ihp_io_tri_pad u_cust_psram_sio3_io_pad   (.pad(cust_psram_sio3_io_pad),    .c2p(s_cust_psram_sio3_o),      .c2p_en(s_cust_psram_sio_oe_o[3]), .p2c(s_cust_psram_sio3_i));
   // clk buf
   ihp_clk_buffer u_xtal_buf (.clk_i(s_xtal_io), .clk_o(s_xtal_io_buf));
   ihp_clk_buffer u_xclk_buf (.clk_i(s_xclk_i), .clk_o(s_xclk_i_buf));
@@ -311,11 +340,22 @@ module retrosoc_asic (
       .cust_pwm_pwm_o           (s_cust_pwm_pwm_o),
       .cust_ps2_ps2_clk_i       (s_cust_ps2_ps2_clk_i),
       .cust_ps2_ps2_dat_i       (s_cust_ps2_ps2_dat_i),
-      .cust_qspi_spi_clk_o       (s_cust_qspi_spi_clk_o),
-      .cust_qspi_spi_csn_o       (s_cust_qspi_spi_csn_o),
-      .cust_qspi_spi_sdo_o       (s_cust_qspi_spi_sdo_o),
-      .cust_qspi_spi_oe_o        (s_cust_qspi_spi_oe_o),
-      .cust_qspi_spi_sdi_i       (s_cust_qspi_spi_sdi_i)
+      .cust_qspi_spi_clk_o      (s_cust_qspi_spi_clk_o),
+      .cust_qspi_spi_csn_o      (s_cust_qspi_spi_csn_o),
+      .cust_qspi_spi_sdo_o      (s_cust_qspi_spi_sdo_o),
+      .cust_qspi_spi_oe_o       (s_cust_qspi_spi_oe_o),
+      .cust_qspi_spi_sdi_i      (s_cust_qspi_spi_sdi_i),
+      .cust_psram_sclk_o        (s_cust_psram_sclk_o),
+      .cust_psram_sio0_i        (s_cust_psram_sio0_i),
+      .cust_psram_sio1_i        (s_cust_psram_sio1_i),
+      .cust_psram_sio2_i        (s_cust_psram_sio2_i),
+      .cust_psram_sio3_i        (s_cust_psram_sio3_i),
+      .cust_psram_sio0_o        (s_cust_psram_sio0_o),
+      .cust_psram_sio1_o        (s_cust_psram_sio1_o),
+      .cust_psram_sio2_o        (s_cust_psram_sio2_o),
+      .cust_psram_sio3_o        (s_cust_psram_sio3_o),
+      .cust_psram_sio_oe_o      (s_cust_psram_sio_oe_o),
+      .cust_psram_ce_o          (s_cust_psram_ce_o)
   );
 
   /* it can control the xtal oscillator, PLL which CANNOT be changed from the CPU */
