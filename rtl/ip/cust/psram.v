@@ -22,33 +22,30 @@
 */
 // added wmask, sync-comb fsm, spi flash support, cen polarity, faster during
 // write operations: sb, sh behaves likes 8Mx32 memory
-`default_nettype none
+// `default_nettype none
 /*verilator lint_off UNUSEDSIGNAL*/
 module psram #(
     parameter CHIP_SELECTS = 2
 ) (
-    input  wire [22:0] addr,            // 8Mx32
-    output reg  [31:0] rdata,
-    input  wire [31:0] wdata,
-    input  wire [ 3:0] wstrb,
-    output reg         ready,
-    input  wire        valid,
-    input  wire        clk,
-    input  wire        resetn,
-    input  wire        PSRAM_SPIFLASH,
-    input  wire        QUAD_MODE,
-
-    output reg  sclk,
-    input  wire sio0_si_mosi_i,
-    input  wire sio1_so_miso_i,
-    input  wire sio2_i,
-    input  wire sio3_i,
-
-    output wire sio0_si_mosi_o,
-    output wire sio1_so_miso_o,
-    output wire sio2_o,
-    output wire sio3_o,
-
+    input  wire [             22:0] addr,            // 8Mx32
+    output reg  [             31:0] rdata,
+    input  wire [             31:0] wdata,
+    input  wire [              3:0] wstrb,
+    output reg                      ready,
+    input  wire                     valid,
+    input  wire                     clk,
+    input  wire                     resetn,
+    input  wire                     PSRAM_SPIFLASH,
+    input  wire                     QUAD_MODE,
+    output reg                      sclk,
+    input  wire                     sio0_si_mosi_i,
+    input  wire                     sio1_so_miso_i,
+    input  wire                     sio2_i,
+    input  wire                     sio3_i,
+    output wire                     sio0_si_mosi_o,
+    output wire                     sio1_so_miso_o,
+    output wire                     sio2_o,
+    output wire                     sio3_o,
     output reg  [              3:0] sio_oe,
     input  wire [CHIP_SELECTS -1:0] ce_ctrl,
     output reg  [CHIP_SELECTS -1:0] ce
@@ -108,7 +105,7 @@ module psram #(
   always @(posedge clk) begin
     if (!resetn) begin
       ce          <= ~0;
-      sclk        <= 1'b1;
+      sclk        <= 1'b0;
       sio_oe      <= 4'b0000;
       sio_out     <= 4'b0000;
       spi_buf     <= 0;

@@ -269,8 +269,7 @@ assign s_axi_wready     = condition12_state_Idle | condition13_state_Idle |
  
 
 
-
-assign write_req        = (bridge_state == axi_write) | condition2_state_Idle | ((bridge_state == Bridge_Idle) & (write_happened && s_axi_bready)) ;
+wire write_req        = (bridge_state == axi_write) | condition2_state_Idle | ((bridge_state == Bridge_Idle) & (write_happened && s_axi_bready)) ;
 
 assign read_valid_nxt	= ((state == Access) & |(m_apb_psel & m_apb_pready) & !write_req)| (condition2_state_axi_read_response_wait) | 
 				(condition22_state_axi_read) ;
