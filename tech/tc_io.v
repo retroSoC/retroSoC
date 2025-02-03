@@ -1,4 +1,4 @@
-module ihp_io_xtl_pad (
+module tc_io_xtl_pad (
     input  xi_pad,
     output xo_pad,
     input  en,
@@ -9,7 +9,7 @@ module ihp_io_xtl_pad (
   assign xo_pad = xi_pad;
 endmodule
 
-module ihp_io_tri_pad (
+module tc_io_tri_pad (
     inout  pad,
     input  c2p,
     input  c2p_en,

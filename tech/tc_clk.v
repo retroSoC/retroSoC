@@ -5,7 +5,7 @@
 //
 // -Thomas Benz <tbenz@iis.ee.ethz.ch>
 // -Tobias Senti <tsenti@student.ethz.ch>
-module ihp_clk_inverter (
+module tc_clk_inverter (
     input  clk_i,
     output clk_o
 );
@@ -18,7 +18,7 @@ module ihp_clk_inverter (
 
 endmodule
 
-module ihp_clk_buffer (
+module tc_clk_buffer (
     input  clk_i,
     output clk_o
 );
@@ -31,7 +31,7 @@ module ihp_clk_buffer (
 
 endmodule
 
-module ihp_clk_mux2 (
+module tc_clk_mux2 (
     input  clk0_i,
     input  clk1_i,
     input  clk_sel_i,
@@ -46,7 +46,7 @@ module ihp_clk_mux2 (
   );
 endmodule
 
-module ihp_clk_xor2 (
+module tc_clk_xor2 (
     input  clk0_i,
     input  clk1_i,
     output clk_o
@@ -60,25 +60,25 @@ module ihp_clk_xor2 (
   );
 endmodule
 
-module ihp_clk_gating #(
-    parameter [0:0] IS_FUNCTIONAL = 1'b1
-) (
-    input  clk_i,
-    input  en_i,
-    input  test_en_i,
-    output clk_o
-);
+// module tc_clk_gating #(
+//     parameter [0:0] IS_FUNCTIONAL = 1'b1
+// ) (
+//     input  clk_i,
+//     input  en_i,
+//     input  test_en_i,
+//     output clk_o
+// );
 
-  //   if (IS_FUNCTIONAL || `ifdef USE_CLKGATE 1 `else 0 `endif) begin
-  //     (* keep *)(* dont_touch = "true" *)
-  //     sg13g2_slgcp_1 i_clkgate (
-  //       .GATE ( en_i  ),
-  //       .SCE  ( test_en_i ),
-  //       .CLK  ( clk_i ),
-  //       .GCLK ( clk_o )
-  //     );
-  //   end else begin
-  assign clk_o = clk_i;
-  //   end
+//   //   if (IS_FUNCTIONAL || `ifdef USE_CLKGATE 1 `else 0 `endif) begin
+//   //     (* keep *)(* dont_touch = "true" *)
+//   //     sg13g2_slgcp_1 i_clkgate (
+//   //       .GATE ( en_i  ),
+//   //       .SCE  ( test_en_i ),
+//   //       .CLK  ( clk_i ),
+//   //       .GCLK ( clk_o )
+//   //     );
+//   //   end else begin
+//   assign clk_o = clk_i;
+//   //   end
 
-endmodule
+// endmodule
