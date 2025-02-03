@@ -54,6 +54,7 @@ yosys read_verilog ../../rtl/ip/cust/rng.v
 yosys read_verilog ../../rtl/ip/cust/uart.v
 yosys read_verilog ../../rtl/ip/cust/pwm.v
 yosys read_verilog ../../rtl/ip/cust/ps2.v
+yosys read_verilog ../../rtl/ip/cust/psram.v
 yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_apb_if.v
 yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_clkgen.v
 yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_controller.v
