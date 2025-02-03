@@ -49,6 +49,7 @@ yosys read_verilog ../../rtl/ip/cust/fifo.v
 yosys read_verilog ../../rtl/ip/cust/cdc_sync.v
 yosys read_verilog ../../rtl/ip/cust/clk_int_div.v
 yosys read_verilog ../../rtl/ip/cust/edge_det.v
+yosys read_verilog ../../rtl/ip/cust/rst_sync.v
 yosys read_verilog ../../rtl/ip/cust/archinfo.v
 yosys read_verilog ../../rtl/ip/cust/rng.v
 yosys read_verilog ../../rtl/ip/cust/uart.v
