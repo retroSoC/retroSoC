@@ -578,32 +578,6 @@ void print_reg(char *info, uint32_t val, int digits)
     print("\n");
 }
 
-void ip_counter_timer_test()
-{
-    print("[IP] counter timer test\n");
-    print_reg("[TIM0 VALUE] ", reg_timer0_value, 8);
-    print_reg("[TIM0 CONFIG] ", reg_timer0_config, 8);
-    print_reg("[TIM1 VALUE] ", reg_timer1_value, 8);
-    print_reg("[TIM1 CONFIG] ", reg_timer1_config, 8);
-
-    reg_timer0_value = (uint32_t)0xffffffff;
-    reg_timer0_config = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
-
-    reg_timer1_value = (uint32_t)0x0000ffff;
-    reg_timer1_config = (uint32_t)0x0101; // irq disable, count up, continuous mode, timer enable
-
-    print_reg("[TIM0 VALUE] ", reg_timer0_value, 8);
-    print_reg("[TIM0 CONFIG] ", reg_timer0_config, 8);
-    print_reg("[TIM1 VALUE] ", reg_timer1_value, 8);
-    print_reg("[TIM1 CONFIG] ", reg_timer1_config, 8);
-
-    for (int i = 0; i < 10; ++i)
-    {
-        print_reg("[TIM0 DATA] ", reg_timer0_data, 8);
-        print_reg("[TIM1 DATA] ", reg_timer1_data, 8);
-    }
-}
-
 void ip_gpio_test()
 {
     print("[IP] gpio test\n");
@@ -618,6 +592,19 @@ void ip_gpio_test()
 
     reg_gpio_data = (uint32_t)0x0000;
     print_reg("[GPIO DATA] ", reg_gpio_data, 8);
+}
+
+void ip_hk_spi_test()
+{
+    print("[IP] housekeeping spi test\n");
+
+    print_reg("[HK CONFIG] ", reg_spi_commconfig, 8);
+    print_reg("[HK ENB] ", reg_spi_enables, 8);
+    print_reg("[HK PLL] ", reg_spi_pll_config, 8);
+    print_reg("[HK MFGR ID] ", reg_spi_mfgr_id, 8);
+    print_reg("[HK PROD ID] ", reg_spi_prod_id, 8);
+    print_reg("[HK MASK REV] ", reg_spi_mask_rev, 8);
+    print_reg("[HK PLL BYP] ", reg_spi_pll_bypass, 8);
 }
 
 void i2c_init(unsigned int pre)
@@ -662,6 +649,32 @@ void ip_i2c_test()
     i2c_init(5);
     // Send command 6, data byte 0xfa
     i2c_send(0x6, 0xfa);
+}
+
+void ip_counter_timer_test()
+{
+    print("[IP] counter timer test\n");
+    print_reg("[TIM0 VALUE] ", reg_timer0_value, 8);
+    print_reg("[TIM0 CONFIG] ", reg_timer0_config, 8);
+    print_reg("[TIM1 VALUE] ", reg_timer1_value, 8);
+    print_reg("[TIM1 CONFIG] ", reg_timer1_config, 8);
+
+    reg_timer0_value = (uint32_t)0xffffffff;
+    reg_timer0_config = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
+
+    reg_timer1_value = (uint32_t)0x0000ffff;
+    reg_timer1_config = (uint32_t)0x0101; // irq disable, count up, continuous mode, timer enable
+
+    print_reg("[TIM0 VALUE] ", reg_timer0_value, 8);
+    print_reg("[TIM0 CONFIG] ", reg_timer0_config, 8);
+    print_reg("[TIM1 VALUE] ", reg_timer1_value, 8);
+    print_reg("[TIM1 CONFIG] ", reg_timer1_config, 8);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        print_reg("[TIM0 DATA] ", reg_timer0_data, 8);
+        print_reg("[TIM1 DATA] ", reg_timer1_data, 8);
+    }
 }
 
 void cust_ip_archinfo_test()
@@ -711,7 +724,7 @@ void cust_ip_uart_test()
 
     print("uart tx test\n");
     uint32_t val = (uint32_t)0x41;
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 5; ++i)
     {
         while (((reg_cust_uart_lsr & 0x100) >> 8) == 1)
             ;
@@ -719,19 +732,34 @@ void cust_ip_uart_test()
     }
 
     print("uart tx test done\n");
-    // print("uart rx test\n");
-    // uint32_t rx_val = 0;
-    // for (int i = 0; i < 10; ++i)
-    // {
-    //     while (((reg_cust_uart_lsr & 0x080) >> 7) == 1)
-    //         ;
-    //     rx_val = reg_cust_uart_trx;
-    //     print
-    //     printf("%d RECV: %x CHAR: %c\n", i, rx_val, rx_val);
-    // }
+    print("uart rx test\n");
+    uint32_t rx_val = 0;
+    for (int i = 0; i < 5; ++i)
+    {
+        while (((reg_cust_uart_lsr & 0x080) >> 7) == 1)
+            ;
+        rx_val = reg_cust_uart_trx;
+        print_reg("[UART TRX] ", rx_val, 8);
+    }
 
-    // print("uart rx test done\n");
+    print("uart rx test done\n");
     print("uart done\n");
+}
+
+void cust_ip_ps2_test()
+{
+    print("[CUST IP] ps2 test\n");
+
+    reg_cust_ps2_ctrl = (uint32_t)0b11;
+    uint32_t kdb_code, i = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        kdb_code = reg_cust_ps2_data;
+        if (kdb_code != 0)
+        {
+            print_reg("[PS2 DAT] ", kdb_code, 8);
+        }
+    }
 }
 
 void main()
@@ -750,6 +778,7 @@ void main()
     print(" | '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
     print(" | | |  __/ |_| | | (_) |___) | (_) | |____ \n");
     print(" |_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
+    print("        author: maksyuki (2025-2025)\n");
     print("\n");
 
     print("Total memory: ");
@@ -765,10 +794,12 @@ void main()
 
     // ip_counter_timer_test();
     // ip_gpio_test();
+    ip_hk_spi_test();
     // ip_i2c_test();
     cust_ip_archinfo_test();
     // cust_ip_rng_test();
     cust_ip_uart_test();
+    cust_ip_ps2_test();
     // cmd_benchmark(true, 0);
     // cmd_benchmark_all();
     // cmd_memtest();

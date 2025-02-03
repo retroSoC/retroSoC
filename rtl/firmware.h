@@ -63,6 +63,21 @@
 #define reg_cust_uart_fcr     (*(volatile uint32_t*)0x0300300c)
 #define reg_cust_uart_lsr     (*(volatile uint32_t*)0x03003010)
 
+#define reg_cust_pwm_ctrl     (*(volatile uint32_t*)0x03004000)
+#define reg_cust_pwm_pscr     (*(volatile uint32_t*)0x03004004)
+#define reg_cust_pwm_cnt      (*(volatile uint32_t*)0x03004008)
+#define reg_cust_pwm_cmp      (*(volatile uint32_t*)0x0300400c)
+#define reg_cust_pwm_cr0      (*(volatile uint32_t*)0x03004010)
+#define reg_cust_pwm_cr1      (*(volatile uint32_t*)0x03004014)
+#define reg_cust_pwm_cr2      (*(volatile uint32_t*)0x03004018)
+#define reg_cust_pwm_cr3      (*(volatile uint32_t*)0x0300401c)
+#define reg_cust_pwm_stat     (*(volatile uint32_t*)0x03004020)
+
+#define reg_cust_ps2_ctrl     (*(volatile uint32_t*)0x03005000)
+#define reg_cust_ps2_data     (*(volatile uint32_t*)0x03005004)
+#define reg_cust_ps2_stat     (*(volatile uint32_t*)0x03005008)
+
+
 // command register bits
 // bit 7 = start
 // bit 6 = stop
