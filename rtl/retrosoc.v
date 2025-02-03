@@ -33,8 +33,6 @@
 // `define PICORV32_REGS retrosoc_regs
 
 module retrosoc #(
-    /* parameter integer MEM_WORDS = 256; */
-    /* Increase scratchpad memory to 4K words */
     // parameter integer MEM_WORDS = 4096;
     parameter integer        MEM_WORDS      = 16384,
     parameter         [31:0] STACKADDR      = (4 * MEM_WORDS),  // end of memory
@@ -335,7 +333,7 @@ module retrosoc #(
 
 
   // memory mapped IP
-  // 1  x QSPI SPFS
+  // 1  x SPFS
   // 16 x GPIO
   // 1  x HOUSEKEEPING SPI
   // 1  x UART
@@ -349,7 +347,7 @@ module retrosoc #(
   //    4 x PWM
   //    1 x PS2
   //    1 x QSPI
-  //    1 x PSRAM
+  //    1 x PSRAM(8MBx2)
   picorv32 #(
       .PROGADDR_RESET  (PROGADDR_RESET),
       .PROGADDR_IRQ    (32'h0000_0000),

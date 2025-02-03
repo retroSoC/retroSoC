@@ -177,6 +177,19 @@ module retrosoc_tb;
     end
   end
 
+  initial begin : UART_RX_BLOCK
+    integer i;
+    #1000;
+    while (1) begin
+      #1000;
+      for (i = 0; i < 26; i = i + 1) begin
+        u_rs232.send(i + 8'd66);
+        #500;
+      end
+    end
+  end
+
+
   initial begin
     if ($test$plusargs("behv_wave")) begin
       $dumpfile("retrosoc_tb.fst");
@@ -186,10 +199,10 @@ module retrosoc_tb;
       $dumpvars(0, retrosoc_tb);
     end
 
-    repeat (1500) begin
-      repeat (5000) @(posedge r_clk);
+    // repeat (1500) begin
+      // repeat (5000) @(posedge r_clk);
       // $display("+5000 cycles");
-    end
-    $finish;
+    // end
+    // $finish;
   end
 endmodule

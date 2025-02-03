@@ -12,7 +12,8 @@ module kdb_model (
     output reg ps2_clk_o,
     output reg ps2_dat_o
 );
-  parameter [31:0] clk_period = 60;
+  // 20KHz
+  parameter [31:0] clk_period = 120;
   initial begin
     ps2_clk_o = 1'b1;
     ps2_dat_o = 1'b1;
