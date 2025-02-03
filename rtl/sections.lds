@@ -1,13 +1,9 @@
-#ifdef RETROSOC
-#  define MEM_TOTAL 0x10000 /* 64 KB */
-#else
-#  error "Set -DRETROSOC when compiling firmware.c"
-#endif
+#define RAM_SIZE 0x10000
 
 MEMORY
 {
     FLASH (rx)      : ORIGIN = 0x00100000, LENGTH = 0x400000 /* entire flash, 4 MiB */
-    RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = MEM_TOTAL
+    RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = RAM_SIZE
 }
 
 SECTIONS {

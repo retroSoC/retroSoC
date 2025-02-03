@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// memory map
+// 0x0000_0000 - 0x0001_0000 ram(64KB)
+// 0x0010_0000 - 0x01ff_ffff spfs(32MB)
+// 0x0300_0000 - 0x03ff_ffff mmio
+// 0x0400_0000 - 0x04ff_ffff psram(32MB)
 // memory map io definitions
 #define reg_spictrl        (*(volatile uint32_t*)0x02000000)
 

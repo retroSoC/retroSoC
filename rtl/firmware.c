@@ -19,11 +19,10 @@
 
 #include "firmware.h"
 
-#ifdef RETROSOC
-#define MEM_TOTAL 0x10000 /* 64 KB */
-#else
-#error "Set -DRETROSOC when compiling firmware.c"
-#endif
+#define RAM_TOTAL 0x10000 // 64 KB
+#define PSRAM_NUM 4
+#define CPU_FREQ 50   // unit: MHz
+#define UART_BPS 9600 // unit: bps
 
 // a pointer to this is a null pointer, but the compiler does not
 // know that because "sram" is a linker symbol from sections.lds.
@@ -331,50 +330,48 @@ uint32_t xorshift32(uint32_t *state)
     return x;
 }
 
-void cmd_memtest()
+void cmd_memtest(uint32_t addr, uint32_t range)
 {
     int cyc_count = 5;
     int stride = 256;
     uint32_t state;
 
-    volatile uint32_t *base_word = (uint32_t *)0;
-    volatile uint8_t *base_byte = (uint8_t *)0;
+    volatile uint32_t *base_word = (uint32_t *)addr;
+    volatile uint8_t *base_byte = (uint8_t *)addr;
 
-    print("Running memtest ");
+    print("Running memtest: \n");
 
     // Walk in stride increments, word access
-    for (int i = 1; i <= cyc_count; i++)
-    {
-        state = i;
+    // for (int i = 1; i <= cyc_count; i++)
+    // {
+    //     state = i;
+    //     for (int word = 0; word < RAM_TOTAL / sizeof(int); word += stride)
+    //     {
+    //         *(base_word + word) = xorshift32(&state);
+    //     }
 
-        for (int word = 0; word < MEM_TOTAL / sizeof(int); word += stride)
-        {
-            *(base_word + word) = xorshift32(&state);
-        }
+    //     state = i;
+    //     for (int word = 0; word < RAM_TOTAL / sizeof(int); word += stride)
+    //     {
+    //         if (*(base_word + word) != xorshift32(&state))
+    //         {
+    //             print(" ***FAILED WORD*** at ");
+    //             print_hex(4 * word, 4);
+    //             print("\n");
+    //             return;
+    //         }
+    //     }
 
-        state = i;
-
-        for (int word = 0; word < MEM_TOTAL / sizeof(int); word += stride)
-        {
-            if (*(base_word + word) != xorshift32(&state))
-            {
-                print(" ***FAILED WORD*** at ");
-                print_hex(4 * word, 4);
-                print("\n");
-                return;
-            }
-        }
-
-        print(".");
-    }
+    //     print(".");
+    // }
 
     // Byte access
-    for (int byte = 0; byte < 128; byte++)
+    for (int byte = 0; byte < range; byte++)
     {
         *(base_byte + byte) = (uint8_t)byte;
     }
 
-    for (int byte = 0; byte < 128; byte++)
+    for (int byte = 0; byte < range; byte++)
     {
         if (*(base_byte + byte) != (uint8_t)byte)
         {
@@ -764,9 +761,14 @@ void cust_ip_ps2_test()
 
 void main()
 {
-    // reg_uart_clkdiv = 104; // for 100M
-    reg_uart_clkdiv = 52; // for 50M
-    print("Booting..\n");
+    reg_uart_clkdiv = 52; // for 50M/9600bps
+    // reg_uart_clkdiv = 434; // for 50M/115200bps
+    // reg_uart_clkdiv = CPU_FREQ  * 1000000 / UART_BPS;
+    print("bootloader end\n");
+    print("uart config: 8n1 ");
+    print_dec(UART_BPS);
+    print("bps\n");
+    print("booting...\n");
     set_flash_qspi_flag();
 
     // while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
@@ -781,25 +783,53 @@ void main()
     print("        author: maksyuki (2025-2025)\n");
     print("\n");
 
-    print("Total memory: ");
-    print_dec(MEM_TOTAL / 1024);
-    print(" KiB\n");
-    print("\n");
+    print("Processor:\n");
+    print("  CORE:              picorv32\n");
+    print("  ISA:               rv32imac\n");
+    print("  FREQ:              ");
+    print_dec(CPU_FREQ);
+    print("MHz\n");
+    print("Inst/Memory Device: \n");
+    print("  SPI Flash size:    32 MB\n");
+    print("  On-board RAM size: ");
+    print_dec(RAM_TOTAL / 1024);
+    print(" KB\n");
+    print("  Extern PSRAM size: ");
+    print_dec(8 * PSRAM_NUM);
+    print(" MB(");
+    print_dec(PSRAM_NUM);
+    print("x8MB)\n\n");
 
-    // cmd_memtest(); // test overwrites bss and data memory
-    // print("\n");
+    print("Memory Map IO Device: \n");
+    print("  1 x SPFS\n");
+    print(" 16 x GPIO\n");
+    print("  1 x HOUSEKEEPING SPI\n");
+    print("  1 x UART\n");
+    print("  1 x SPI\n");
+    print("  1 x I2C\n");
+    print("  2 x TIMER\n");
+    print("  1 x RNG\n");
+    print("  1 x ARCHINFO\n");
+    print("  1 x UART(HP)\n");
+    print("  4 x PWM\n");
+    print("  1 x PS2\n");
+    print("  1 x QSPI\n");
+    print("  1 x PSRAM(4x8MB)\n\n");
+
     // cmd_read_flash_id();
     // cmd_read_flash_regs();
     // cmd_print_spi_state();
+    // cmd_memtest(0, RAM_TOTAL); // test overwrites bss and data memory
+    cmd_memtest(0x04000000, 16); // test extern psram
 
     // ip_counter_timer_test();
     // ip_gpio_test();
-    ip_hk_spi_test();
+    // ip_hk_spi_test();
     // ip_i2c_test();
-    cust_ip_archinfo_test();
+    // cust_ip_archinfo_test();
     // cust_ip_rng_test();
-    cust_ip_uart_test();
-    cust_ip_ps2_test();
+    // cust_ip_uart_test();
+    // cust_ip_ps2_test();
     // cmd_benchmark(true, 0);
     // cmd_benchmark_all();
     // cmd_memtest();
