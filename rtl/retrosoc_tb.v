@@ -55,7 +55,8 @@ module retrosoc_tb;
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad                 (r_clk),
       .xo_o_pad                 (),
-      .xclk_i_pad               (r_clk),
+      .extclk_i_pad             (r_clk),
+      .clkbypass_i_pad          (1'b1),
       .rst_n_i_pad              (r_rst_n),
       .hk_sdi_i_pad             (1'b1),
       .hk_sdo_o_pad             (),
@@ -239,10 +240,10 @@ module retrosoc_tb;
       $dumpvars(0, retrosoc_tb);
     end
 
-    // repeat (1500) begin
-    // repeat (5000) @(posedge r_clk);
-    // $display("+5000 cycles");
-    // end
+    repeat (1500) begin
+      repeat (5000) @(posedge r_clk);
+      // $display("+5000 cycles");
+    end
     // $finish;
   end
 endmodule

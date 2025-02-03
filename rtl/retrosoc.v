@@ -51,7 +51,7 @@ module retrosoc #(
     input                  hk_pt_sdi_i,
     output                 hk_pt_sdo_o,
     //sram if including clk_i and rst_n_i above
-    output [          3:0] ram_wenb_o,
+    output [          3:0] ram_wstrb_o,
     output [         13:0] ram_addr_o,
     output [         31:0] ram_wdata_o,
     input  [         31:0] ram_rdata_o,
@@ -276,12 +276,12 @@ module retrosoc #(
                    (r_irq_8_in_src == 2'b10) ? gpio_in_i[4] :
                    (r_irq_8_in_src == 2'b11) ? gpio_in_i[5] : 1'b0;
 
-  assign ram_wenb_o = (s_mem_valid && !s_mem_ready && s_mem_addr < 4*MEM_WORDS) ?
-        {~s_mem_wstrb[3], ~s_mem_wstrb[2], ~s_mem_wstrb[1], ~s_mem_wstrb[0]} : 4'hf;
-  assign ram_addr_o = s_mem_addr[15:2];
+  wire s_ram_range = s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS;
+  assign ram_wstrb_o = s_ram_range ? s_mem_wstrb : 4'h0;
+  assign ram_addr_o  = s_mem_addr[15:2];
   assign ram_wdata_o = s_mem_wdata;
   always @(posedge clk_i) begin
-    r_ram_ready <= s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS;
+    r_ram_ready <= s_ram_range;
   end
 
   assign s_irq[2:0]   = 3'd0;
@@ -318,7 +318,7 @@ module retrosoc #(
   //    4 x PWM
   //    1 x PS2
   //    1 x QSPI
-  //    1 x PSRAM(8MBx2)
+  //    1 x PSRAM(8MBx4)
   picorv32 #(
       .PROGADDR_RESET  (PROGADDR_RESET),
       .PROGADDR_IRQ    (32'h0000_0000),
@@ -506,10 +506,10 @@ module retrosoc #(
       .irq_out   (s_irq_tim1)
   );
 
-  assign s_psram_addr  = s_mem_addr[31:2];
-  assign s_psram_wdata = s_mem_wdata;
-  assign s_psram_wstrb = s_mem_wstrb;
-  assign s_psram_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h04);
+  assign s_psram_addr       = s_mem_addr[31:2];
+  assign s_psram_wdata      = s_mem_wdata;
+  assign s_psram_wstrb      = s_mem_wstrb;
+  assign s_psram_valid      = s_mem_valid && (s_mem_addr[31:24] == 8'h04);
   assign s_psram_ce_ctrl[0] = s_psram_valid & ((~s_psram_addr[23]) && (~s_psram_addr[22]));
   assign s_psram_ce_ctrl[1] = s_psram_valid & ((~s_psram_addr[23]) && s_psram_addr[22]);
   assign s_psram_ce_ctrl[2] = s_psram_valid & (s_psram_addr[23] && (~s_psram_addr[22]));
@@ -541,7 +541,7 @@ module retrosoc #(
       .ce            (cust_psram_ce_o)
   );
 
-  wire s_axi_mem_range = s_iomem_addr[31:8] >= 24'h0300_10 && s_iomem_addr[31:8] <= 24'h03FF_FF;
+  wire s_aximem_range = s_iomem_addr[31:8] >= 24'h0300_10 && s_iomem_addr[31:8] <= 24'h03FF_FF;
   picorv32_axi_adapter u_core2axi (
       .clk            (clk_i),
       .resetn         (rst_n_i),
@@ -562,7 +562,7 @@ module retrosoc #(
       .mem_axi_rvalid (s_mem_axi_rvalid),
       .mem_axi_rready (s_mem_axi_rready),
       .mem_axi_rdata  (s_mem_axi_rdata),
-      .mem_valid      (s_iomem_valid && s_axi_mem_range),
+      .mem_valid      (s_iomem_valid && s_aximem_range),
       .mem_instr      (s_mem_instr),
       .mem_ready      (s_aximem_ready),
       .mem_addr       (s_iomem_addr),
@@ -696,7 +696,7 @@ module retrosoc #(
           8'h6c: r_iomem_rdata <= s_tim1_reg_val_dout;
           8'h70: r_iomem_rdata <= s_tim1_reg_dat_dout;
         endcase
-      end else if (s_iomem_valid && !r_iomem_ready && s_axi_mem_range) begin
+      end else if (s_iomem_valid && !r_iomem_ready && s_aximem_range) begin
         r_iomem_ready <= s_aximem_ready;
         r_iomem_rdata <= s_aximem_rdata;
       end else begin
