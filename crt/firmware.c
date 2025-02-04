@@ -21,8 +21,8 @@
 
 #define RAM_TOTAL 0x10000 // 64 KB
 #define PSRAM_NUM 4
-#define CPU_FREQ 50   // unit: MHz
-#define UART_BPS 9600 // unit: bps
+#define CPU_FREQ 50     // unit: MHz
+#define UART_BPS 115200 // unit: bps
 
 uint32_t xorshift32(uint32_t *state)
 {
@@ -94,31 +94,27 @@ void cmd_memtest(uint32_t addr, uint32_t range)
     volatile uint32_t *base_word = (uint32_t *)addr;
     volatile uint8_t *base_byte = (uint8_t *)addr;
 
-    printf("Running memtest: \n");
+    printf("[memtest] addr: 0x%x range: %x...\n", addr, range);
+    // walk in stride increments, word access
+    for (int i = 1; i <= cyc_count; i++)
+    {
+        state = i;
+        for (int word = 0; word < range / sizeof(int); word += stride)
+        {
+            *(base_word + word) = xorshift32(&state);
+        }
 
-    // Walk in stride increments, word access
-    // for (int i = 1; i <= cyc_count; i++)
-    // {
-    //     state = i;
-    //     for (int word = 0; word < RAM_TOTAL / sizeof(int); word += stride)
-    //     {
-    //         *(base_word + word) = xorshift32(&state);
-    //     }
-
-    //     state = i;
-    //     for (int word = 0; word < RAM_TOTAL / sizeof(int); word += stride)
-    //     {
-    //         if (*(base_word + word) != xorshift32(&state))
-    //         {
-    //             printf(" ***FAILED WORD*** at ");
-    //             print_hex(4 * word, 4);
-    //             printf("\n");
-    //             return;
-    //         }
-    //     }
-
-    //     printf(".");
-    // }
+        state = i;
+        for (int word = 0; word < range / sizeof(int); word += stride)
+        {
+            if (*(base_word + word) != xorshift32(&state))
+            {
+                printf("***FAILED BYTE*** at %x\n", 4 * word);
+                return;
+            }
+        }
+        printf(".");
+    }
 
     // Byte access
     for (int byte = 0; byte < range; byte++)
@@ -130,12 +126,12 @@ void cmd_memtest(uint32_t addr, uint32_t range)
     {
         if (*(base_byte + byte) != (uint8_t)byte)
         {
-            printf(" ***FAILED BYTE*** at %x\n", byte);
+            printf("***FAILED BYTE*** at %x\n", byte);
             return;
         }
     }
 
-    printf(" passed\n");
+    printf("memtest passed\n");
 }
 
 void cmd_read_flash_id()
@@ -471,9 +467,9 @@ void cust_ip_ps2_test()
 
 void welcome_screen()
 {
-    printf("bootloader end\n");
+    printf("first bootloader done\n");
     printf("uart config: 8n1 %dbps\n", UART_BPS);
-    printf("booting...\n");
+    printf("app booting...\n");
     printf("\n");
     printf("           _             _____        _____ \n");
     printf("          | |           / ____|      / ____|\n");
@@ -513,12 +509,16 @@ void welcome_screen()
     // cmd_read_flash_id();
     // cmd_read_flash_regs();
     // cmd_print_spi_state();
-    cmd_memtest(0x04000000, 16); // test extern psram
+    cmd_memtest(0x04000000, 512); // test extern psram
 }
 
 void main()
 {
-    reg_uart_clkdiv = 52; // for 50M/9600bps
+    // reg_uart_clkdiv = 52; // for 50M/9600bps
+    reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS); // for 50M/9600bps
+    // uint32_t div_val = CPU_FREQ * 1000000 / UART_BPS;
+
+    // printf("div_val: %d\n", div_val);
     // reg_uart_clkdiv = 434; // for 50M/115200bps
     // reg_uart_clkdiv = CPU_FREQ  * 1000000 / UART_BPS;
 
