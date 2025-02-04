@@ -9,6 +9,38 @@ module tc_io_xtl_pad (
   assign xo_pad = xi_pad;
 endmodule
 
+module tc_io_in_pad (
+    inout  pad,
+    output p2c
+);
+
+`ifdef RTL_BEHAV
+  assign p2c = pad;
+`else
+  (* keep *) (* dont_touch = "true" *)
+  sg13g2_IOPadIn u_sg13g2_IOPadIn (
+      .pad(pad),
+      .p2c(p2c)
+  );
+`endif
+endmodule
+
+module tc_io_out_pad (
+    inout pad,
+    input c2p
+);
+
+`ifdef RTL_BEHAV
+  assign pad = c2p;
+`else
+  (* keep *) (* dont_touch = "true" *)
+  sg13g2_IOPadOut4mA u_sg13g2_IOPadOut4mA (
+      .pad(pad),
+      .c2p(c2p)
+  );
+`endif
+endmodule
+
 module tc_io_tri_pad (
     inout  pad,
     input  c2p,

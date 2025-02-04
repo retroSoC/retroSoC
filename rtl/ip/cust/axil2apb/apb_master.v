@@ -18,7 +18,6 @@ module apb_master #(
     output [                 3:0] PSTRB,
     input  [c_apb_num_slaves-1:0] PREADY,
     input  [                31:0] PRDATA,
-    input  [c_apb_num_slaves-1:0] PSLVERR,
     output [                 1:0] Out_State
 );
 

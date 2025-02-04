@@ -232,7 +232,6 @@ module axi_apb_bridge #(
       m_apb_pstrb,
       m_apb_pready,
       m_apb_prdata,
-      m_apb_pslverr,
       state
   );
 
