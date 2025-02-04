@@ -469,6 +469,7 @@ module retrosoc #(
       .reg_dat_do  (s_simplespi_reg_dat_dout),
       .reg_dat_wait(s_simplespi_reg_dat_wait),
       .irq_out     (s_irq_spi_mst),
+      .err_out     (),
       .sdi         (spi_mst_sdi_i),
       .csb         (spi_mst_csb_o),
       .sck         (spi_mst_sck_o),
