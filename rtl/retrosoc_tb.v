@@ -20,7 +20,8 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_tb;
-  localparam ser_half_period = 26;
+  localparam CPU_FREQ = 50;  // 50M
+  localparam ser_half_period = CPU_FREQ * 1000_000 / 115200 / 2;
   event ser_sample;
 
   reg   r_clk;
@@ -48,8 +49,7 @@ module retrosoc_tb;
   wire  s_cust_psram_sio2;
   wire  s_cust_psram_sio3;
 
-  // always #5 r_clk = (r_clk === 1'b0);  // 100M
-  always #10 r_clk = (r_clk === 1'b0);  // 50M
+  always #(1000 / CPU_FREQ / 2) r_clk = (r_clk === 1'b0);
 
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad                 (r_clk),
@@ -75,22 +75,22 @@ module retrosoc_tb;
       .uart_rx_i_pad            (1'b0),
       .i2c_sda_io_pad           (s_i2c_sda_io),
       .i2c_scl_io_pad           (s_i2c_scl_io),
-      .gpio_0_o_pad             (),
-      .gpio_1_o_pad             (),
-      .gpio_2_o_pad             (),
-      .gpio_3_o_pad             (),
-      .gpio_4_o_pad             (),
-      .gpio_5_o_pad             (),
-      .gpio_6_o_pad             (),
-      .gpio_7_o_pad             (),
-      .gpio_8_o_pad             (),
-      .gpio_9_o_pad             (),
-      .gpio_10_o_pad            (),
-      .gpio_11_o_pad            (),
-      .gpio_12_o_pad            (),
-      .gpio_13_o_pad            (),
-      .gpio_14_o_pad            (),
-      .gpio_15_o_pad            (),
+      .gpio_0_io_pad            (),
+      .gpio_1_io_pad            (),
+      .gpio_2_io_pad            (),
+      .gpio_3_io_pad            (),
+      .gpio_4_io_pad            (),
+      .gpio_5_io_pad            (),
+      .gpio_6_io_pad            (),
+      .gpio_7_io_pad            (),
+      .gpio_8_io_pad            (),
+      .gpio_9_io_pad            (),
+      .gpio_10_io_pad           (),
+      .gpio_11_io_pad           (),
+      .gpio_12_io_pad           (),
+      .gpio_13_io_pad           (),
+      .gpio_14_io_pad           (),
+      .gpio_15_io_pad           (),
       .irq_pin_i_pad            (1'b0),
       .cust_uart_tx_o_pad       (s_cust_uart_tx),
       .cust_uart_rx_i_pad       (s_cust_uart_rx),
