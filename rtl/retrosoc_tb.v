@@ -20,7 +20,6 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_tb;
-  // localparam ser_half_period = 53;
   localparam ser_half_period = 26;
   event ser_sample;
 
@@ -134,7 +133,14 @@ module retrosoc_tb;
       .sda(s_i2c_sda_io)
   );
 
-  rs232 u_rs232 (
+  // rs232 #(
+  //     .BAUD_RATE(9600)
+  // ) u_rs232_0 (
+  //     .rs232_rx_i(s_uart_tx),
+  //     .rs232_tx_o(s_uart_rx)
+  // );
+
+  rs232 u_rs232_1 (
       .rs232_rx_i(s_cust_uart_tx),
       .rs232_tx_o(s_cust_uart_rx)
   );
@@ -143,7 +149,6 @@ module retrosoc_tb;
       .ps2_clk_o(s_cust_ps2_ps2_clk),
       .ps2_dat_o(s_cust_ps2_ps2_dat)
   );
-
 
   psram_model u_psram_model0 (
       .sck (s_cust_psram_sclk),
@@ -184,25 +189,17 @@ module retrosoc_tb;
     repeat (ser_half_period) @(posedge r_clk);
     ->ser_sample;  // stop bit
 
-    if (buffer < 32 || buffer >= 127)
-      // $display("Serial data: %d", buffer);
-      $write(
-          "%c", buffer
-      );
-    else
-      // $display("Serial data: '%c'", buffer);
-      $write(
-          "%c", buffer
-      );
+    if (buffer < 32 || buffer >= 127) $write("%c", buffer);
+    else $write("%c", buffer);
   end
 
 
 
   initial begin
     r_rst_n = 1;
-    #60;
+    #43;
     r_rst_n = 0;
-    #100;
+    #162;
     r_rst_n = 1;
   end
 
@@ -224,7 +221,7 @@ module retrosoc_tb;
     while (1) begin
       #1000;
       for (i = 0; i < 26; i = i + 1) begin
-        u_rs232.send(i + 8'd66);
+        u_rs232_1.send(i + 8'd66);
         #500;
       end
     end
@@ -235,15 +232,23 @@ module retrosoc_tb;
     if ($test$plusargs("behv_wave")) begin
       $dumpfile("retrosoc_tb.fst");
       $dumpvars(0, retrosoc_tb);
+      repeat (1500) begin
+        repeat (5000) @(posedge r_clk);
+      end
+      $finish;
     end else if ($test$plusargs("syn_wave")) begin
       $dumpfile("retrosoc_syn_tb.fst");
       $dumpvars(0, retrosoc_tb);
+      repeat (1500) begin
+        repeat (5000) @(posedge r_clk);
+      end
+      $finish;
     end
 
-    repeat (1500) begin
-      repeat (5000) @(posedge r_clk);
-      // $display("+5000 cycles");
-    end
+    // repeat (1500) begin
+    // repeat (5000) @(posedge r_clk);
+    // $display("+5000 cycles");
+    // end
     // $finish;
   end
 endmodule
