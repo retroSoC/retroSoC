@@ -20,34 +20,32 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_tb;
-  localparam CPU_FREQ = 50;  // 50M
-  localparam ser_half_period = CPU_FREQ * 1000_000 / 115200 / 2;
-  event ser_sample;
+  localparam CPU_FREQ = 50;  // MHz
 
-  reg   r_clk;
-  reg   r_rst_n;
-  wire  s_uart_rx;
-  wire  s_flash_csb;
-  wire  s_flash_clk;
-  wire  s_flash_io0;
-  wire  s_flash_io1;
-  wire  s_flash_io2;
-  wire  s_flash_io3;
-  wire  s_i2c_sda_io;
-  wire  s_i2c_scl_io;
-  wire  s_cust_uart_tx;
-  wire  s_cust_uart_rx;
-  wire  s_cust_ps2_ps2_clk;
-  wire  s_cust_ps2_ps2_dat;
-  wire  s_cust_psram_sclk;
-  wire  s_cust_psram_ce_0;
-  wire  s_cust_psram_ce_1;
-  wire  s_cust_psram_ce_2;
-  wire  s_cust_psram_ce_3;
-  wire  s_cust_psram_sio0;
-  wire  s_cust_psram_sio1;
-  wire  s_cust_psram_sio2;
-  wire  s_cust_psram_sio3;
+  reg  r_clk;
+  reg  r_rst_n;
+  wire s_uart_rx;
+  wire s_flash_csb;
+  wire s_flash_clk;
+  wire s_flash_io0;
+  wire s_flash_io1;
+  wire s_flash_io2;
+  wire s_flash_io3;
+  wire s_i2c_sda_io;
+  wire s_i2c_scl_io;
+  wire s_cust_uart_tx;
+  wire s_cust_uart_rx;
+  wire s_cust_ps2_ps2_clk;
+  wire s_cust_ps2_ps2_dat;
+  wire s_cust_psram_sclk;
+  wire s_cust_psram_ce_0;
+  wire s_cust_psram_ce_1;
+  wire s_cust_psram_ce_2;
+  wire s_cust_psram_ce_3;
+  wire s_cust_psram_sio0;
+  wire s_cust_psram_sio1;
+  wire s_cust_psram_sio2;
+  wire s_cust_psram_sio3;
 
   always #(1000 / CPU_FREQ / 2) r_clk = (r_clk === 1'b0);
 
@@ -133,12 +131,10 @@ module retrosoc_tb;
       .sda(s_i2c_sda_io)
   );
 
-  // rs232 #(
-  //     .BAUD_RATE(9600)
-  // ) u_rs232_0 (
-  //     .rs232_rx_i(s_uart_tx),
-  //     .rs232_tx_o(s_uart_rx)
-  // );
+  rs232 u_rs232_0 (
+      .rs232_rx_i(s_uart_tx),
+      .rs232_tx_o(s_uart_rx)
+  );
 
   rs232 u_rs232_1 (
       .rs232_rx_i(s_cust_uart_tx),
@@ -170,30 +166,6 @@ module retrosoc_tb;
       .dio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0}),
       .ce_n(s_cust_psram_ce_3)
   );
-
-  reg [7:0] buffer;
-  always begin
-    @(negedge s_uart_tx);
-
-    repeat (ser_half_period) @(posedge r_clk);
-    ->ser_sample;  // start bit
-
-    repeat (8) begin
-      repeat (ser_half_period) @(posedge r_clk);
-      repeat (ser_half_period) @(posedge r_clk);
-      buffer = {s_uart_tx, buffer[7:1]};
-      ->ser_sample;  // data bit
-    end
-
-    repeat (ser_half_period) @(posedge r_clk);
-    repeat (ser_half_period) @(posedge r_clk);
-    ->ser_sample;  // stop bit
-
-    if (buffer < 32 || buffer >= 127) $write("%c", buffer);
-    else $write("%c", buffer);
-  end
-
-
 
   initial begin
     r_rst_n = 1;
