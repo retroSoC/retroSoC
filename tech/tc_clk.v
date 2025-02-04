@@ -5,30 +5,37 @@
 //
 // -Thomas Benz <tbenz@iis.ee.ethz.ch>
 // -Tobias Senti <tsenti@student.ethz.ch>
-module tc_clk_inverter (
+module tc_clk_inv (
     input  clk_i,
     output clk_o
 );
 
+`ifdef RTL_BEHAV
+  assign clk_o = ~clk_i;
+`else
   (* keep *) (* dont_touch = "true" *)
   sg13g2_inv_1 i_inv (
       .A(clk_i),
       .Y(clk_o)
   );
+`endif
 
 endmodule
 
-module tc_clk_buffer (
+module tc_clk_buf (
     input  clk_i,
     output clk_o
 );
 
+`ifdef RTL_BEHAV
+  assign clk_o = clk_i;
+`else
   (* keep *) (* dont_touch = "true" *)
   sg13g2_buf_1 i_buf (
       .A(clk_i),
       .X(clk_o)
   );
-
+`endif
 endmodule
 
 module tc_clk_mux2 (
@@ -37,6 +44,10 @@ module tc_clk_mux2 (
     input  clk_sel_i,
     output clk_o
 );
+
+`ifdef RTL_BEHAV
+  assign clk_o = clk_sel_i ? clk1_i : clk0_i;
+`else
   (* keep *) (* dont_touch = "true" *)
   sg13g2_mux2_1 i_mux (
       .A0(clk0_i),
@@ -44,6 +55,7 @@ module tc_clk_mux2 (
       .S (clk_sel_i),
       .X (clk_o)
   );
+`endif
 endmodule
 
 module tc_clk_xor2 (
@@ -52,33 +64,14 @@ module tc_clk_xor2 (
     output clk_o
 );
 
+`ifdef RTL_BEHAV
+  assign clk_o = clk0_i ^ clk1_i;
+`else
   (* keep *) (* dont_touch = "true" *)
   sg13g2_xor2_1 i_mux (
       .A(clk0_i),
       .B(clk1_i),
       .X(clk_o)
   );
+`endif
 endmodule
-
-// module tc_clk_gating #(
-//     parameter [0:0] IS_FUNCTIONAL = 1'b1
-// ) (
-//     input  clk_i,
-//     input  en_i,
-//     input  test_en_i,
-//     output clk_o
-// );
-
-//   //   if (IS_FUNCTIONAL || `ifdef USE_CLKGATE 1 `else 0 `endif) begin
-//   //     (* keep *)(* dont_touch = "true" *)
-//   //     sg13g2_slgcp_1 i_clkgate (
-//   //       .GATE ( en_i  ),
-//   //       .SCE  ( test_en_i ),
-//   //       .CLK  ( clk_i ),
-//   //       .GCLK ( clk_o )
-//   //     );
-//   //   end else begin
-//   assign clk_o = clk_i;
-//   //   end
-
-// endmodule

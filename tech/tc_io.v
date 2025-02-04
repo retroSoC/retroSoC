@@ -16,6 +16,10 @@ module tc_io_tri_pad (
     output p2c
 );
 
+`ifdef RTL_BEHAV
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+`else
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
       .pad   (pad),
@@ -23,5 +27,6 @@ module tc_io_tri_pad (
       .c2p_en(c2p_en),
       .p2c   (p2c)
   );
+`endif
 
 endmodule

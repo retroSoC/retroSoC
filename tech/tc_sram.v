@@ -8,6 +8,22 @@ module tc_sram_1024x32 (
     output [31:0] data_o
 );
 
+`ifdef RTL_BEHAV
+  reg [31:0] mem[0:1023];
+  always @(posedge clk_i) begin
+    if (cs_i) begin
+      if (!wren_i) begin
+        data_o <= mem[addr_i];
+      end else begin
+        if (mask_i[0]) mem[addr_i][7:0] <= data_i[7:0];
+        if (mask_i[1]) mem[addr_i][15:8] <= data_i[15:8];
+        if (mask_i[2]) mem[addr_i][23:16] <= data_i[23:16];
+        if (mask_i[3]) mem[addr_i][31:24] <= data_i[31:24];
+        data_o <= 32'bx;
+      end
+    end
+  end
+`else
   wire [63:0] s_rd_data_mem;
   assign data_o = s_rd_data_mem[31:0];
   RM_IHPSG13_1P_1024x64_c2_bm_bist u_mem (
@@ -29,30 +45,5 @@ module tc_sram_1024x32 (
       .A_BIST_DIN (64'd0),
       .A_BIST_BM  (64'd0)
   );
+`endif
 endmodule
-
-// 4KB
-// module SPRAM1024X16 (
-//     input             clk_i,
-//     input             cs_i,
-//     input      [ 9:0] addr_i,
-//     input      [15:0] data_i,
-//     input      [ 3:0] mask_i,
-//     input             wren_i,
-//     output reg [15:0] data_o
-// );
-//   reg [15:0] mem[0:1023];
-//   always @(posedge clk_i) begin
-//     if (cs_i) begin
-//       if (!wren_i) begin
-//         data_o <= mem[addr_i];
-//       end else begin
-//         if (mask_i[0]) mem[addr_i][7:0] <= data_i[7:0];
-//         if (mask_i[1]) mem[addr_i][15:8] <= data_i[15:8];
-//         if (mask_i[2]) mem[addr_i][23:16] <= data_i[23:16];
-//         if (mask_i[3]) mem[addr_i][31:24] <= data_i[31:24];
-//         data_o <= 32'bx;
-//       end
-//     end
-//   end
-// endmodule
