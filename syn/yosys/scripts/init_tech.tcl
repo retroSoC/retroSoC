@@ -18,20 +18,29 @@ if {[file exists "$root_dir/.cockpitrc"]} {
 } else {
     puts "0. Executing init_tech: load technology from Github PDK"
     if {![info exists pdk_dir]} {
-        set pdk_dir "$root_dir/IHP-Open-PDK"
+        # set pdk_dir "$root_dir/IHP-Open-PDK"
+        set pdk_dir "$root_dir/S110"
     }
-    set pdk_cells_lib ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib
-    set pdk_sram_lib  ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_sram/lib
-    set pdk_io_lib    ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_io/lib
+    # set pdk_cells_lib ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib
+    # set pdk_sram_lib  ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_sram/lib
+    # set pdk_io_lib    ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_io/lib
+    set pdk_cells_lib ${pdk_dir}
+    set pdk_sram_lib  ${pdk_dir}
+    set pdk_io_lib    ${pdk_dir}
 }
 
-set tech_cells [list "$pdk_cells_lib/sg13g2_stdcell_typ_1p20V_25C.lib"]
-set tech_macros [glob -nocomplain -directory $pdk_sram_lib *_typ_1p20V_25C.lib]
-lappend tech_macros "$pdk_io_lib/sg13g2_io_typ_1p2V_3p3V_25C.lib"
+# set tech_cells [list "$pdk_cells_lib/sg13g2_stdcell_typ_1p20V_25C.lib"]
+set tech_cells [list "$pdk_cells_lib/scc011ums_hd_lvt_tt_v1p2_25c_basic.lib"]
+# set tech_macros [glob -nocomplain -directory $pdk_sram_lib *_typ_1p20V_25C.lib]
+set tech_macros [glob -nocomplain -directory $pdk_sram_lib *_TT_1.2_25.lib]
+# lappend tech_macros "$pdk_io_lib/sg13g2_io_typ_1p2V_3p3V_25C.lib"
+lappend tech_macros "$pdk_io_lib/SP013D3WP_V1p7_typ.lib"
 
 # for hilomap
-set tech_cell_tiehi {sg13g2_tiehi L_HI}
-set tech_cell_tielo {sg13g2_tielo L_LO}
+# set tech_cell_tiehi {sg13g2_tiehi L_HI}
+# set tech_cell_tielo {sg13g2_tielo L_LO}
+set tech_cell_tiehi {LVT_PULLHD1 L_HI}
+set tech_cell_tielo {LVT_PULLHD0 L_LO}
 
 # pre-formated for easier use in yosys commands
 # all liberty files
