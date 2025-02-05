@@ -96,7 +96,11 @@ module retrosoc_asic (
     inout  cust_psram_sio0_io_pad,
     inout  cust_psram_sio1_io_pad,
     inout  cust_psram_sio2_io_pad,
-    inout  cust_psram_sio3_io_pad
+    inout  cust_psram_sio3_io_pad,
+    output cust_spfs_clk_o_pad,
+    output cust_spfs_cs_o_pad,
+    output cust_spfs_mosi_o_pad,
+    inout  cust_spfs_miso_i_pad
 );
   // clk&rst
   wire        s_xtal_io;
@@ -198,10 +202,14 @@ module retrosoc_asic (
   wire        s_cust_psram_sio3_o;
   wire [ 3:0] s_cust_psram_sio_oe_o;
   wire [ 3:0] s_cust_psram_ce_o;
+  wire        s_cust_spfs_clk_o;
+  wire        s_cust_spfs_cs_o;
+  wire        s_cust_spfs_mosi_o;
+  wire        s_cust_spfs_miso_i;
 
 
   // verilog_format: off
-  tc_io_xtl_pad u_xtal_io_pad       (.xi_pad(xi_i_pad),        .xo_pad(xo_o_pad),      .en(s_hk_xtal_ena),            .clk(s_xtal_io));
+  tc_io_xtl_pad u_xtal_io_pad       (.xi_pad(xi_i_pad),        .xo_pad(xo_o_pad),      .en(1'b1),                     .clk(s_xtal_io));
   tc_io_tri_pad u_extclk_i_pad      (.pad(extclk_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_clk_i));
   tc_io_tri_pad u_clkbypass_i_pad   (.pad(clkbypass_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_clkbypass_i));
   tc_io_tri_pad u_rst_n_i_pad       (.pad(rst_n_i_pad),        .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_rst_n_i));
@@ -267,12 +275,14 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_psram_sio1_io_pad   (.pad(cust_psram_sio1_io_pad),    .c2p(s_cust_psram_sio1_o),      .c2p_en(s_cust_psram_sio_oe_o[1]), .p2c(s_cust_psram_sio1_i));
   tc_io_tri_pad u_cust_psram_sio2_io_pad   (.pad(cust_psram_sio2_io_pad),    .c2p(s_cust_psram_sio2_o),      .c2p_en(s_cust_psram_sio_oe_o[2]), .p2c(s_cust_psram_sio2_i));
   tc_io_tri_pad u_cust_psram_sio3_io_pad   (.pad(cust_psram_sio3_io_pad),    .c2p(s_cust_psram_sio3_o),      .c2p_en(s_cust_psram_sio_oe_o[3]), .p2c(s_cust_psram_sio3_i));
+  tc_io_tri_pad u_cust_spfs_clk_o_pad      (.pad(cust_spfs_clk_o_pad),       .c2p(s_cust_spfs_clk_o),        .c2p_en(1'b1),                     .p2c());
+  tc_io_tri_pad u_cust_spfs_cs_o_pad       (.pad(cust_spfs_cs_o_pad),        .c2p(s_cust_spfs_cs_o),         .c2p_en(1'b1),                     .p2c());
+  tc_io_tri_pad u_cust_spfs_mosi_o_pad     (.pad(cust_spfs_mosi_o_pad),      .c2p(s_cust_spfs_mosi_o),       .c2p_en(1'b1),                     .p2c());
+  tc_io_tri_pad u_cust_spfs_miso_i_pad     (.pad(cust_spfs_miso_i_pad),      .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_spfs_miso_i));
   // verilog_format: on
-
   // clk config
   assign s_pll_clk = s_ext_clk_i_buf;
   assign s_sys_clk = s_clkbypass_i ? s_ext_clk_i_buf : s_pll_clk_buf;
-  //   assign s_sys_clk = s_hk_pll_bypass ? s_ext_clk_i_buf : s_pll_clk_buf;
   // clk buffer
   // verilog_format: off
   tc_clk_buf u_xtal_buf   (.clk_i(s_xtal_io),   .clk_o(s_xtal_io_buf));
@@ -289,10 +299,8 @@ module retrosoc_asic (
       .rst_n_o(s_ext_rst_n_sync)
   );
 
-  // reset: "s_ext_rst_n_i" comes from button, while "s_hk_rst"
-  // comes from standalone SPI (and is normally zero unless activated from the SPI).
+  // reset: "s_ext_rst_n_i" comes from button
   assign s_rst_n = s_ext_rst_n_sync;
-  // assign s_rst_n = s_ext_rst_n_sync & ~s_hk_rst;
   retrosoc u_retrosoc (
       .clk_i                    (s_sys_clk_buf),
       .rst_n_i                  (s_rst_n),
@@ -375,7 +383,11 @@ module retrosoc_asic (
       .cust_psram_sio2_o        (s_cust_psram_sio2_o),
       .cust_psram_sio3_o        (s_cust_psram_sio3_o),
       .cust_psram_sio_oe_o      (s_cust_psram_sio_oe_o),
-      .cust_psram_ce_o          (s_cust_psram_ce_o)
+      .cust_psram_ce_o          (s_cust_psram_ce_o),
+      .cust_spfs_clk_o          (s_cust_spfs_clk_o),
+      .cust_spfs_cs_o           (s_cust_spfs_cs_o),
+      .cust_spfs_mosi_o         (s_cust_spfs_mosi_o),
+      .cust_spfs_miso_i         (s_cust_spfs_miso_i)
   );
 
   /* it can control the xtal oscillator, PLL which CANNOT be changed from the CPU */
@@ -410,6 +422,7 @@ module retrosoc_asic (
       .prod_id        (s_hk_prod_id),
       .mask_rev       (s_hk_mask_rev)
   );
+
 
   spram_model u_spram_model (
       .clk  (s_sys_clk_buf),

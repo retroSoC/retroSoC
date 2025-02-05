@@ -33,10 +33,10 @@
 // `define PICORV32_REGS retrosoc_regs
 
 module retrosoc #(
-    // parameter integer MEM_WORDS = 4096;
     parameter integer        MEM_WORDS      = 16384,
     parameter         [31:0] STACKADDR      = (4 * MEM_WORDS),  // end of memory
-    parameter         [31:0] PROGADDR_RESET = 32'h0010_0000,    // 1 MB into flash
+    // parameter         [31:0] PROGADDR_RESET = 32'h3000_0000,     // flash
+    parameter         [31:0] PROGADDR_RESET = 32'h0010_0000,     // flash
     parameter                PSRAM_NUM      = 4
 ) (
     input                  clk_i,
@@ -127,7 +127,12 @@ module retrosoc #(
     output                 cust_psram_sio2_o,
     output                 cust_psram_sio3_o,
     output [PSRAM_NUM-1:0] cust_psram_sio_oe_o,
-    output [PSRAM_NUM-1:0] cust_psram_ce_o
+    output [PSRAM_NUM-1:0] cust_psram_ce_o,
+    // spfs
+    output                 cust_spfs_clk_o,
+    output                 cust_spfs_cs_o,
+    output                 cust_spfs_mosi_o,
+    input                  cust_spfs_miso_i
 );
   // core mem native if
   wire                 s_mem_valid;
@@ -198,6 +203,7 @@ module retrosoc #(
   wire                 s_cust_pwm_irq;
   wire                 s_cust_ps2_irq;
   wire                 s_cust_qspi_irq;
+  wire                 s_cust_spfs_irq;
 
   // GPIO assignments
   assign gpio_out_o[0]        = r_gpio[0];
@@ -301,7 +307,8 @@ module retrosoc #(
   assign s_irq[16]    = s_cust_pwm_irq;
   assign s_irq[17]    = s_cust_ps2_irq;
   assign s_irq[18]    = s_cust_qspi_irq;
-  assign s_irq[31:19] = 13'd0;
+  assign s_irq[19]    = s_cust_spfs_irq;
+  assign s_irq[31:20] = 12'd0;
 
   // memory mapped IP
   // 1  x SPFS
@@ -319,6 +326,7 @@ module retrosoc #(
   //    1 x PS2
   //    1 x QSPI
   //    1 x PSRAM(8MBx4)
+  //    1 x SPFS(HP)
   picorv32 #(
       .PROGADDR_RESET  (PROGADDR_RESET),
       .PROGADDR_IRQ    (32'h0000_0000),
@@ -345,7 +353,7 @@ module retrosoc #(
   );
 
   // mmio native perip
-  assign s_iomem_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h03);
+  assign s_iomem_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h03 || s_mem_addr >= 32'h3000_0000);
   assign s_iomem_wstrb = s_mem_wstrb;
   assign s_iomem_addr  = s_mem_addr;
   assign s_iomem_wdata = s_mem_wdata;
@@ -542,7 +550,7 @@ module retrosoc #(
       .ce            (cust_psram_ce_o)
   );
 
-  wire s_aximem_range = s_iomem_addr[31:8] >= 24'h0300_10 && s_iomem_addr[31:8] <= 24'h03FF_FF;
+  wire s_aximem_range = (s_iomem_addr[31:8] >= 24'h0300_10 && s_iomem_addr[31:8] <= 24'h03FF_FF) || s_iomem_addr >= 32'h3000_0000;
   picorv32_axi_adapter u_core2axi (
       .clk            (clk_i),
       .resetn         (rst_n_i),
@@ -605,7 +613,12 @@ module retrosoc #(
       .qspi_spi_sdo_o (cust_qspi_spi_sdo_o),
       .qspi_spi_oe_o  (cust_qspi_spi_oe_o),
       .qspi_spi_sdi_i (cust_qspi_spi_sdi_i),
-      .qspi_irq_o     (s_cust_qspi_irq)
+      .qspi_irq_o     (s_cust_qspi_irq),
+      .spfs_clk_o     (cust_spfs_clk_o),
+      .spfs_cs_o      (cust_spfs_cs_o),
+      .spfs_mosi_o    (cust_spfs_mosi_o),
+      .spfs_miso_i    (cust_spfs_miso_i),
+      .spfs_irq_o     (s_cust_spfs_irq)
   );
 
   always @(posedge clk_i, negedge rst_n_i) begin

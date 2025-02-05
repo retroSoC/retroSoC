@@ -46,6 +46,10 @@ module retrosoc_tb;
   wire s_cust_psram_sio1;
   wire s_cust_psram_sio2;
   wire s_cust_psram_sio3;
+  wire s_cust_spfs_clk_o;
+  wire s_cust_spfs_cs_o;
+  wire s_cust_spfs_mosi_o;
+  wire s_cust_spfs_miso_i;
 
   always #(1000 / CPU_FREQ / 2) r_clk = (r_clk === 1'b0);
 
@@ -111,17 +115,41 @@ module retrosoc_tb;
       .cust_psram_sio0_io_pad   (s_cust_psram_sio0),
       .cust_psram_sio1_io_pad   (s_cust_psram_sio1),
       .cust_psram_sio2_io_pad   (s_cust_psram_sio2),
-      .cust_psram_sio3_io_pad   (s_cust_psram_sio3)
+      .cust_psram_sio3_io_pad   (s_cust_psram_sio3),
+      .cust_spfs_clk_o_pad      (s_cust_spfs_clk_o),
+      .cust_spfs_cs_o_pad       (s_cust_spfs_cs_o),
+      .cust_spfs_mosi_o_pad     (s_cust_spfs_mosi_o),
+      .cust_spfs_miso_i_pad     (s_cust_spfs_miso_i)
   );
+
+//  N25Qxxx u_N25Qxxx (
+//       .S        (s_flash_csb),
+//       .C_       (s_flash_clk),
+//       .HOLD_DQ3 (),
+//       .DQ0      (s_flash_io0),
+//       .DQ1      (s_flash_io1),
+//       .Vcc      ('d3000),
+//       .Vpp_W_DQ2()
+//   );
 
   spiflash u_spiflash (
       .csb(s_flash_csb),
       .clk(s_flash_clk),
-      .io0(s_flash_io0),
-      .io1(s_flash_io1),
+      .io0(s_flash_io0), // MOSI
+      .io1(s_flash_io1), // MISO
       .io2(s_flash_io2),
       .io3(s_flash_io3)
   );
+
+  // N25Qxxx u_N25Qxxx (
+  //     .S        (s_cust_spfs_cs_o),
+  //     .C_       (s_cust_spfs_clk_o),
+  //     .HOLD_DQ3 (),
+  //     .DQ0      (s_cust_spfs_mosi_o),
+  //     .DQ1      (s_cust_spfs_miso_i),
+  //     .Vcc      ('d3000),
+  //     .Vpp_W_DQ2()
+  // );
 
   // Testbench pullups on SDA, SCL lines
   pullup i2c_scl_up (s_i2c_scl_io);
@@ -204,7 +232,7 @@ module retrosoc_tb;
     if ($test$plusargs("behv_wave")) begin
       $dumpfile("retrosoc_tb.fst");
       $dumpvars(0, retrosoc_tb);
-      repeat (1500) begin
+      repeat (100) begin
         repeat (5000) @(posedge r_clk);
       end
       $finish;
