@@ -94,7 +94,7 @@ void cmd_memtest(uint32_t addr, uint32_t range)
     volatile uint32_t *base_word = (uint32_t *)addr;
     volatile uint8_t *base_byte = (uint8_t *)addr;
 
-    printf("[memtest] addr: 0x%x range: %x...\n", addr, range);
+    printf("[memtest] addr: 0x%x range: %x\n", addr, range);
     // walk in stride increments, word access
     for (int i = 1; i <= cyc_count; i++)
     {
@@ -115,13 +115,15 @@ void cmd_memtest(uint32_t addr, uint32_t range)
         }
         printf(".");
     }
-
+    printf("stride test done\n");
     // Byte access
+
     for (int byte = 0; byte < range; byte++)
     {
         *(base_byte + byte) = (uint8_t)byte;
     }
 
+    printf("byte write done\n");
     for (int byte = 0; byte < range; byte++)
     {
         if (*(base_byte + byte) != (uint8_t)byte)
@@ -131,7 +133,7 @@ void cmd_memtest(uint32_t addr, uint32_t range)
         }
     }
 
-    printf("memtest passed\n");
+    printf("\nmemtest passed\n");
 }
 
 void cmd_read_flash_id()
@@ -189,6 +191,7 @@ void cmd_read_flash_regs()
 
 uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
 {
+    printf("benckmark\n");
     uint8_t data[256];
     uint32_t *words = (void *)data;
 
@@ -200,6 +203,8 @@ uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
                      : "=r"(cycles_begin));
     __asm__ volatile("rdinstret %0"
                      : "=r"(instns_begin));
+
+    printf("cycle and instns read done!\n");
 
     for (int i = 0; i < 20; i++)
     {
@@ -485,7 +490,7 @@ void welcome_screen()
     printf("  ISA:               rv32imac\n");
     printf("  FREQ:              %dMHz\n", CPU_FREQ);
     printf("Inst/Memory Device: \n");
-    printf("  SPI Flash size:    32MB\n");
+    printf("  SPI Flash size:    16MB\n");
     printf("  On-board RAM size: %dKB\n", RAM_TOTAL / 1024);
     printf("  Extern PSRAM size: %dMB(%dx8MB)\n\n", 8 * PSRAM_NUM, PSRAM_NUM);
 
@@ -503,24 +508,23 @@ void welcome_screen()
     printf("  4 x PWM\n");
     printf("  1 x PS2\n");
     printf("  1 x QSPI\n");
-    printf("  1 x PSRAM(4x8MB)\n\n");
+    printf("  1 x PSRAM(4x8MB)\n");
+    printf("  1 x SPFS(TPO)\n\n");
 
     printf("Self test:\n");
     // cmd_read_flash_id();
     // cmd_read_flash_regs();
     // cmd_print_spi_state();
-    cmd_memtest(0x04000000, 512); // test extern psram
+    cmd_memtest(0x04000000, 8 * 1024); // test extern psram
 }
 
 void main()
 {
-    // reg_uart_clkdiv = 52; // for 50M/9600bps
-    reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS); // for 50M/9600bps
-    // uint32_t div_val = CPU_FREQ * 1000000 / UART_BPS;
-
-    // printf("div_val: %d\n", div_val);
-    // reg_uart_clkdiv = 434; // for 50M/115200bps
-    // reg_uart_clkdiv = CPU_FREQ  * 1000000 / UART_BPS;
+    reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
+    // reg_cust_uart_div = (uint32_t)434;    // 50x10^6 / 115200
+    // reg_cust_uart_fcr = (uint32_t)0b1111; // clear tx and rx fifo
+    // reg_cust_uart_fcr = (uint32_t)0b1100;
+    // reg_cust_uart_lcr = (uint32_t)0b00011111; // 8N1, en all irq
 
     welcome_screen();
     set_flash_qspi_flag();
@@ -529,12 +533,13 @@ void main()
     // ip_counter_timer_test();
     // ip_gpio_test();
     // ip_hk_spi_test();
-    // ip_i2c_test();
-    // cust_ip_archinfo_test();
-    // cust_ip_rng_test();
+
+    ip_i2c_test();
+    cust_ip_archinfo_test();
+    cust_ip_rng_test();
     // cust_ip_uart_test();
     // cust_ip_ps2_test();
-    // cmd_benchmark(true, 0);
+    cmd_benchmark(true, 0);
     // cmd_benchmark_all();
     // cmd_memtest();
     // cmd_echo();

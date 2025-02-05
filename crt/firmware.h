@@ -9,6 +9,7 @@
 // 0x0010_0000 - 0x01ff_ffff spfs(32MB)
 // 0x0300_0000 - 0x03ff_ffff mmio
 // 0x0400_0000 - 0x04ff_ffff psram(32MB)
+// 0x3000_0000 - 0x3fff_ffff spfs
 // memory map io definitions
 #define reg_spictrl        (*(volatile uint32_t*)0x02000000)
 

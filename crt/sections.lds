@@ -1,9 +1,9 @@
-#define RAM_SIZE 0x10000
 
 MEMORY
 {
-    FLASH (rx)      : ORIGIN = 0x00100000, LENGTH = 0x400000 /* entire flash, 4 MiB */
-    RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = RAM_SIZE
+    FLASH (rx)      : ORIGIN = 0x00100000, LENGTH = 0x1000000 /* entire flash, 16 MiB */
+    /*FLASH (rx)      : ORIGIN = 0x00100000, LENGTH = 0x400000 entire flash, 4 MiB*/
+    RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 0x10000 /* 64KB */
 }
 
 SECTIONS {
