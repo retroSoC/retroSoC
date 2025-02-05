@@ -57,6 +57,7 @@ RTL_IP := ./ip/spram_model.v \
 
 RTL_TECH := ../tech/tc_io.v \
             ../tech/tc_clk.v \
+            ../tech/tc_pll.v \
             ../tech/tc_sram.v
 
 RTL_PDK := ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v \

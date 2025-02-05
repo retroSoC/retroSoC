@@ -30,6 +30,7 @@ source $script_dir/init_tech.tcl
 
 yosys read_verilog ../../tech/tc_io.v
 yosys read_verilog ../../tech/tc_clk.v
+yosys read_verilog ../../tech/tc_pll.v
 yosys read_verilog ../../tech/tc_sram.v
 # yosys read_verilog -I../../rtl/ip
 yosys read_verilog ../../rtl/ip/spram_model.v

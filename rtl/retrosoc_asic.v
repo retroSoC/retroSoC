@@ -281,7 +281,6 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_spfs_miso_i_pad     (.pad(cust_spfs_miso_i_pad),      .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_spfs_miso_i));
   // verilog_format: on
   // clk config
-  assign s_pll_clk = s_ext_clk_i_buf;
   assign s_sys_clk = s_clkbypass_i ? s_ext_clk_i_buf : s_pll_clk_buf;
   // clk buffer
   // verilog_format: off
@@ -290,6 +289,16 @@ module retrosoc_asic (
   tc_clk_buf u_pll_clk_buf(.clk_i(s_pll_clk),   .clk_o(s_pll_clk_buf));
   tc_clk_buf u_sys_clk_buf(.clk_i(s_sys_clk),   .clk_o(s_sys_clk_buf));
   // verilog_format: on
+
+  tc_pll u_tc_pll (
+      .fref_i    (s_xtal_io_buf),
+      .refdiv_i  (),
+      .fbdiv_i   (),
+      .postdiv1_i(),
+      .postdiv2_i(),
+      .pll_lock_o(),
+      .pll_clk_o (s_pll_clk)
+  );
 
   rst_sync #(
       .STAGE(5)
