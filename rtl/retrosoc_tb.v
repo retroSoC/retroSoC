@@ -122,34 +122,34 @@ module retrosoc_tb;
       .cust_spfs_miso_i_pad     (s_cust_spfs_miso_i)
   );
 
-//  N25Qxxx u_N25Qxxx (
-//       .S        (s_flash_csb),
-//       .C_       (s_flash_clk),
-//       .HOLD_DQ3 (),
-//       .DQ0      (s_flash_io0),
-//       .DQ1      (s_flash_io1),
-//       .Vcc      ('d3000),
-//       .Vpp_W_DQ2()
-//   );
+  //  N25Qxxx u_N25Qxxx (
+  //       .S        (s_flash_csb),
+  //       .C_       (s_flash_clk),
+  //       .HOLD_DQ3 (),
+  //       .DQ0      (s_flash_io0),
+  //       .DQ1      (s_flash_io1),
+  //       .Vcc      ('d3000),
+  //       .Vpp_W_DQ2()
+  //   );
 
   spiflash u_spiflash (
       .csb(s_flash_csb),
       .clk(s_flash_clk),
-      .io0(s_flash_io0), // MOSI
-      .io1(s_flash_io1), // MISO
+      .io0(s_flash_io0),  // MOSI
+      .io1(s_flash_io1),  // MISO
       .io2(s_flash_io2),
       .io3(s_flash_io3)
   );
 
-  // N25Qxxx u_N25Qxxx (
-  //     .S        (s_cust_spfs_cs_o),
-  //     .C_       (s_cust_spfs_clk_o),
-  //     .HOLD_DQ3 (),
-  //     .DQ0      (s_cust_spfs_mosi_o),
-  //     .DQ1      (s_cust_spfs_miso_i),
-  //     .Vcc      ('d3000),
-  //     .Vpp_W_DQ2()
-  // );
+  N25Qxxx u_N25Qxxx (
+      .C_       (s_cust_spfs_clk_o),
+      .S        (s_cust_spfs_cs_o),
+      .DQ0      (s_cust_spfs_mosi_o),
+      .DQ1      (s_cust_spfs_miso_i),
+      .HOLD_DQ3 (),
+      .Vpp_W_DQ2(),
+      .Vcc      ('d3000)
+  );
 
   // Testbench pullups on SDA, SCL lines
   pullup i2c_scl_up (s_i2c_scl_io);
@@ -199,7 +199,7 @@ module retrosoc_tb;
     r_rst_n = 1;
     #43;
     r_rst_n = 0;
-    #162;
+    #170701;
     r_rst_n = 1;
   end
 
@@ -232,7 +232,7 @@ module retrosoc_tb;
     if ($test$plusargs("behv_wave")) begin
       $dumpfile("retrosoc_tb.fst");
       $dumpvars(0, retrosoc_tb);
-      repeat (100) begin
+      repeat (200) begin
         repeat (5000) @(posedge r_clk);
       end
       $finish;

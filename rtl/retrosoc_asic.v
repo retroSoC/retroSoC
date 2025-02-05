@@ -280,14 +280,13 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_spfs_mosi_o_pad     (.pad(cust_spfs_mosi_o_pad),      .c2p(s_cust_spfs_mosi_o),       .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_spfs_miso_i_pad     (.pad(cust_spfs_miso_i_pad),      .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_spfs_miso_i));
   // verilog_format: on
-  // clk config
-  assign s_sys_clk = s_clkbypass_i ? s_ext_clk_i_buf : s_pll_clk_buf;
-  // clk buffer
+  // clk buffer & mux
   // verilog_format: off
-  tc_clk_buf u_xtal_buf   (.clk_i(s_xtal_io),   .clk_o(s_xtal_io_buf));
-  tc_clk_buf u_ext_clk_buf(.clk_i(s_ext_clk_i), .clk_o(s_ext_clk_i_buf));
-  tc_clk_buf u_pll_clk_buf(.clk_i(s_pll_clk),   .clk_o(s_pll_clk_buf));
-  tc_clk_buf u_sys_clk_buf(.clk_i(s_sys_clk),   .clk_o(s_sys_clk_buf));
+  tc_clk_mux2 u_sys_mux   (.clk0_i(s_pll_clk_buf), .clk1_i(s_ext_clk_i_buf), .clk_sel_i(s_clkbypass_i), .clk_o(s_sys_clk));
+  tc_clk_buf u_xtal_buf   (.clk_i(s_xtal_io),      .clk_o(s_xtal_io_buf));
+  tc_clk_buf u_ext_clk_buf(.clk_i(s_ext_clk_i),    .clk_o(s_ext_clk_i_buf));
+  tc_clk_buf u_pll_clk_buf(.clk_i(s_pll_clk),      .clk_o(s_pll_clk_buf));
+  tc_clk_buf u_sys_clk_buf(.clk_i(s_sys_clk),      .clk_o(s_sys_clk_buf));
   // verilog_format: on
 
   tc_pll u_tc_pll (

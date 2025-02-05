@@ -1,3 +1,4 @@
+*.log
 *.hex
 *.elf
 *.bin
@@ -8,7 +9,9 @@
 *.txt
 *.gtkw
 *.vmf
+*.tar.bz2
 retrosoc_sections.lds
 retrosoc_syn*
 IHP-Open-PDK
+S110
 AXI4Lite_To_APB_Bridge

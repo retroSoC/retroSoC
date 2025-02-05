@@ -8,6 +8,10 @@ CFLAGS := -mabi=ilp32 \
 
 WAVE := NONE
 
+RTL_SOC := ./retrosoc_asic.v \
+           ./retrosoc.v \
+           ./picorv32.v
+
 RTL_IP := ./ip/spram_model.v \
       ./ip/spimemio.v \
       ./ip/simpleuart.v \
@@ -60,10 +64,14 @@ RTL_TECH := ../tech/tc_io.v \
             ../tech/tc_pll.v \
             ../tech/tc_sram.v
 
-RTL_PDK := ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v \
-           ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v \
-           ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v \
-           ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x64_c2_bm_bist.v
+# RTL_PDK := ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v \
+#            ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v \
+#            ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v \
+#            ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x64_c2_bm_bist.v
+
+RTL_PDK := ../syn/S110/SP013D3WP_V1p7.v \
+           ../syn/S110/scc011ums_hd_lvt.v \
+           ../syn/S110/S011HD1P_X256Y4D32_BW.v
 
 RTL_INC := -I./ip \
            -I./ip/cust/spfs \
@@ -82,8 +90,9 @@ SRC_PATH := ../crt/start.s \
 LDS_PATH := ../crt/sections.lds
 # +behv_wave
 retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
-	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf 
-	vvp -N $< +firmware=$(FIRMWARE_NAME).hex +behv_$(WAVE) -fst
+# ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
+	ln -sf test_prog.hex mem_Q128_bottom.vmf
+	vvp -l run.log -N $< +firmware=$(FIRMWARE_NAME).hex +behv_$(WAVE) -fst
 
 # +syn_wave
 retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).hex
@@ -91,7 +100,8 @@ retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).hex
 
 
 retrosoc_tb.vvp:
-	iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ retrosoc_tb.v retrosoc_asic.v retrosoc.v picorv32.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP)
+	@mkdir -p build
+	(iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ retrosoc_tb.v $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) || exit -1) 2>&1 | tee compile.log
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP)
 	iverilog -DFUNCTIONAL -s retrosoc_tb -o $@ $^
@@ -108,17 +118,6 @@ $(FIRMWARE_NAME).elf:
 	$(CROSS)objcopy -O verilog $@ $(FIRMWARE_NAME).hex
 	$(CROSS)objcopy -O binary  $@ $(FIRMWARE_NAME).bin
 	$(CROSS)objdump -d $@ > $(FIRMWARE_NAME).txt
-
-# ---- Testbench for SPI Flash Model ----
-spiflash_tb: spiflash_tb.vvp $(FIRMWARE_NAME).hex
-	vvp -N $< +firmware=$(FIRMWARE_NAME).hex
-
-spiflash_tb.vvp: spiflash.v spiflash_tb.v
-	iverilog -s testbench -o $@ $^
-
-# ---- ASIC Synthesis Tests ----
-cmos.log: spimemio.v simpleuart.v retrosoc.v ../picorv32.v
-	yosys -l cmos.log -p 'synth -top retrosoc; abc -g cmos2; opt -fast; stat' $^
 
 clean:
 	rm -f *.vvp *.vcd *.fst
