@@ -23,6 +23,7 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/rs232.v \
       ./ip/kdb_model.v \
       ./ip/psram_model.v \
+      ./ip/cust/spfs_model/N25Qxxx.v \
       ./ip/cust/register.v \
       ./ip/cust/lfsr.v \
       ./ip/cust/fifo.v \
@@ -36,6 +37,10 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/cust/pwm.v \
       ./ip/cust/ps2.v \
       ./ip/cust/psram.v \
+      ./ip/cust/spfs/spi_clgen.v \
+      ./ip/cust/spfs/spi_shift.v \
+      ./ip/cust/spfs/spi_top.v \
+      ./ip/cust/spfs/spi_flash.v \
       ./ip/cust/apb_spi_master/spi_master_apb_if.v \
       ./ip/cust/apb_spi_master/spi_master_clkgen.v \
       ./ip/cust/apb_spi_master/spi_master_controller.v \
@@ -59,7 +64,9 @@ RTL_PDK := ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v
            ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v \
            ../syn/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x64_c2_bm_bist.v
 
-RTL_INC := -I./ip
+RTL_INC := -I./ip \
+           -I./ip/cust/spfs \
+           -I./ip/cust/spfs_model
 
 # software
 FIRMWARE_NAME := retrosoc_fw
@@ -73,7 +80,8 @@ SRC_PATH := ../crt/start.s \
 
 LDS_PATH := ../crt/sections.lds
 # +behv_wave
-retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).hex $(FIRMWARE_NAME).bin $(FIRMWARE_NAME).txt
+retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
+	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf 
 	vvp -N $< +firmware=$(FIRMWARE_NAME).hex +behv_$(WAVE) -fst
 
 # +syn_wave
@@ -81,8 +89,8 @@ retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).hex
 	vvp -N $< +firmware=$(FIRMWARE_NAME).hex +syn_$(WAVE) -fst
 
 
-retrosoc_tb.vvp: retrosoc_tb.v retrosoc_asic.v retrosoc.v picorv32.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP)
-	iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ $^
+retrosoc_tb.vvp:
+	iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ retrosoc_tb.v retrosoc_asic.v retrosoc.v picorv32.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP)
 
 retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP)
 	iverilog -DFUNCTIONAL -s retrosoc_tb -o $@ $^
@@ -93,21 +101,12 @@ retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_
 retrosoc_syn.v:
 	yosys ../syn/synth_retrosoc.ys
 
-retrosoc_sections.lds: $(LDS_PATH)
-	$(CROSS)cpp -P -o $@ $^
-
-$(FIRMWARE_NAME).elf: $(SRC_PATH)
-	@mkdir -p build
-	$(CROSS)gcc $(CFLAGS) -I../crt -o $@ $^
-
-$(FIRMWARE_NAME).hex: $(FIRMWARE_NAME).elf
-	$(CROSS)objcopy -O verilog $^ $@
-
-$(FIRMWARE_NAME).bin: $(FIRMWARE_NAME).elf
-	$(CROSS)objcopy -O binary $^ $@
-
-$(FIRMWARE_NAME).txt: $(FIRMWARE_NAME).elf
-	$(CROSS)objdump -d $^ > $@
+$(FIRMWARE_NAME).elf:
+	$(CROSS)cpp -P -o retrosoc_sections.lds $(LDS_PATH)
+	$(CROSS)gcc $(CFLAGS) -I../crt -o $@ $(SRC_PATH)
+	$(CROSS)objcopy -O verilog $@ $(FIRMWARE_NAME).hex
+	$(CROSS)objcopy -O binary  $@ $(FIRMWARE_NAME).bin
+	$(CROSS)objdump -d $@ > $(FIRMWARE_NAME).txt
 
 # ---- Testbench for SPI Flash Model ----
 spiflash_tb: spiflash_tb.vvp $(FIRMWARE_NAME).hex
@@ -127,4 +126,5 @@ clean:
 	rm -f retrosoc_syn.v
 
 .PHONY: spiflash_tb clean
-.PHONY: retrosim retrosynsim retrosoc_syn.v
+.PHONY: retrosim retrosynsim retrosoc_syn.v retrosoc_sections.lds
+.PHONY: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
