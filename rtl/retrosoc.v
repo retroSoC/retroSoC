@@ -35,8 +35,8 @@
 module retrosoc #(
     parameter integer        MEM_WORDS      = 16384,
     parameter         [31:0] STACKADDR      = (4 * MEM_WORDS),  // end of memory
-    // parameter         [31:0] PROGADDR_RESET = 32'h3000_0000,     // flash
-    parameter         [31:0] PROGADDR_RESET = 32'h0010_0000,     // flash
+    parameter         [31:0] PROGADDR_RESET = 32'h3000_0000,     // flash
+    // parameter         [31:0] PROGADDR_RESET = 32'h0010_0000,     // flash
     parameter                PSRAM_NUM      = 4
 ) (
     input                  clk_i,

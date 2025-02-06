@@ -1,9 +1,3 @@
-/*
-`include "apb_master.v"
-`include "address_decoder.v"
-`include "read_data_mux.v"
-`include "flop.v"
-*/
 
 module axi_apb_bridge #(
     parameter                             c_apb_num_slaves = 1,

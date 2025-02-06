@@ -27,6 +27,10 @@ module apb_master #(
 
   reg [1:0] state;
 
+  // for select ongoing slave
+  wire s_filter_pready = |(SSEL & PREADY);
+  // PREADY & SSEL
+  // 0111 & 1000 = 0000
   always @(posedge PCLK) begin
     if (!PRESETn) state <= Idle;
     if (state == Idle) begin
@@ -34,9 +38,9 @@ module apb_master #(
       else state <= Idle;
     end else if (state == Setup) state <= Access;
     else if (state == Access) begin
-      if (PREADY && STREQ) state <= Setup;
-      else if (PREADY && ~STREQ) state <= Idle;
-      else if (~PREADY) state <= Access;
+      if (s_filter_pready && STREQ) state <= Setup;
+      else if (s_filter_pready && ~STREQ) state <= Idle;
+      else if (~s_filter_pready) state <= Access;
       else state <= Idle;
     end else state <= Idle;
 

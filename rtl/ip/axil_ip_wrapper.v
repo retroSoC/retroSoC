@@ -215,7 +215,7 @@ module axil_ip_wrapper (
       .c_apb_num_slaves(APB_SLAVES_NUM),
       .memory_regions1 (MEM_REGIONS1),
       .memory_regions2 (MEM_REGIONS2),
-      .timeout_val     (1),
+      .timeout_val     (32'hFFFF_FFFF),
       .APB_Protocol    (4)
   ) u_axi_apb_bridge (
       .s_axi_clk    (clk_i),

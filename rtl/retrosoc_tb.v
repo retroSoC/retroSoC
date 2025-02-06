@@ -132,14 +132,14 @@ module retrosoc_tb;
   //       .Vpp_W_DQ2()
   //   );
 
-  spiflash u_spiflash (
-      .csb(s_flash_csb),
-      .clk(s_flash_clk),
-      .io0(s_flash_io0),  // MOSI
-      .io1(s_flash_io1),  // MISO
-      .io2(s_flash_io2),
-      .io3(s_flash_io3)
-  );
+  // spiflash u_spiflash (
+  //     .csb(s_flash_csb),
+  //     .clk(s_flash_clk),
+  //     .io0(s_flash_io0),  // MOSI
+  //     .io1(s_flash_io1),  // MISO
+  //     .io2(s_flash_io2),
+  //     .io3(s_flash_io3)
+  // );
 
   N25Qxxx u_N25Qxxx (
       .C_       (s_cust_spfs_clk_o),
