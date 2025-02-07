@@ -39,8 +39,8 @@ lappend tech_macros "$pdk_io_lib/SP013D3WP_V1p7_typ.lib"
 # for hilomap
 # set tech_cell_tiehi {sg13g2_tiehi L_HI}
 # set tech_cell_tielo {sg13g2_tielo L_LO}
-set tech_cell_tiehi {LVT_PULLHD1 L_HI}
-set tech_cell_tielo {LVT_PULLHD0 L_LO}
+set tech_cell_tiehi {LVT_PULLHD1 Z}
+set tech_cell_tielo {LVT_PULLHD0 Z}
 
 # pre-formated for easier use in yosys commands
 # all liberty files
