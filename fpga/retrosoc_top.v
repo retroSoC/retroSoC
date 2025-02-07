@@ -8,7 +8,13 @@ module retrosoc_top (
     output cust_spfs_clk_o,
     output cust_spfs_cs_o,
     output cust_spfs_mosi_o,
-    input  cust_spfs_miso_i
+    input  cust_spfs_miso_i,
+    inout  gpio_io0,
+    inout  gpio_io1,
+    inout  gpio_io2,
+    inout  i2c_scl_io,
+    inout  i2c_sda_io,
+    output pwm_pwm_o
 );
 
   wire s_sys_clk;
@@ -44,12 +50,12 @@ module retrosoc_top (
       .uart_tx_o_pad            (uart_tx_o),
       .uart_rx_i_pad            (uart_rx_i),
       // I2C
-      .i2c_sda_io_pad           (),
-      .i2c_scl_io_pad           (),
+      .i2c_sda_io_pad           (i2c_scl_io),
+      .i2c_scl_io_pad           (i2c_sda_io),
       // GPIO
-      .gpio_0_io_pad            (),
-      .gpio_1_io_pad            (),
-      .gpio_2_io_pad            (),
+      .gpio_0_io_pad            (gpio_io0),
+      .gpio_1_io_pad            (gpio_io1),
+      .gpio_2_io_pad            (gpio_io2),
       .gpio_3_io_pad            (),
       .gpio_4_io_pad            (),
       .gpio_5_io_pad            (),
@@ -68,7 +74,7 @@ module retrosoc_top (
       // CUST
       .cust_uart_tx_o_pad       (),
       .cust_uart_rx_i_pad       (1'b0),
-      .cust_pwm_pwm_0_o_pad     (),
+      .cust_pwm_pwm_0_o_pad     (pwm_pwm_o),
       .cust_pwm_pwm_1_o_pad     (),
       .cust_pwm_pwm_2_o_pad     (),
       .cust_pwm_pwm_3_o_pad     (),

@@ -9,3 +9,12 @@ set_property -dict {PACKAGE_PIN Y14 IOSTANDARD LVCMOS18} [get_ports cust_spfs_cs
 set_property -dict {PACKAGE_PIN AA17 IOSTANDARD LVCMOS18} [get_ports cust_spfs_clk_o]
 set_property -dict {PACKAGE_PIN AB17 IOSTANDARD LVCMOS18} [get_ports cust_spfs_mosi_o]
 set_property -dict {PACKAGE_PIN AA14 IOSTANDARD LVCMOS18} [get_ports cust_spfs_miso_i]
+
+
+set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS18} [get_ports gpio_io0]
+set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS18} [get_ports gpio_io1]
+set_property -dict {PACKAGE_PIN A16 IOSTANDARD LVCMOS18} [get_ports gpio_io2]
+set_property -dict {PACKAGE_PIN AA9 IOSTANDARD LVCMOS18} [get_ports pwm_pwm_o]
+
+set_property -dict {PACKAGE_PIN W15 IOSTANDARD LVCMOS18} [get_ports i2c_scl_io]
+set_property -dict {PACKAGE_PIN Y15 IOSTANDARD LVCMOS18} [get_ports i2c_sda_io]
