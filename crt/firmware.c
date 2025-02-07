@@ -63,28 +63,6 @@ char getchar_prompt(char *prompt)
     return c;
 }
 
-void cmd_print_spi_state()
-{
-    printf("SPI State:  LATENCY %d\n", (reg_spictrl >> 16) & 15);
-    printf("  DDR ");
-    if ((reg_spictrl & (1 << 22)) != 0)
-        printf("ON\n");
-    else
-        printf("OFF\n");
-
-    printf("  QSPI ");
-    if ((reg_spictrl & (1 << 21)) != 0)
-        printf("ON\n");
-    else
-        printf("OFF\n");
-
-    printf("  CRM ");
-    if ((reg_spictrl & (1 << 20)) != 0)
-        printf("ON\n");
-    else
-        printf("OFF\n");
-}
-
 void cmd_memtest(uint32_t addr, uint32_t range)
 {
     int cyc_count = 5;
@@ -136,62 +114,9 @@ void cmd_memtest(uint32_t addr, uint32_t range)
     printf("\nmemtest passed\n");
 }
 
-void cmd_read_flash_id()
-{
-    uint8_t buffer[17] = {0x9F, /* zeros */};
-    flashio(buffer, 17, 0);
-
-    for (int i = 1; i <= 16; i++)
-    {
-        printf(" %x", buffer[i]);
-    }
-    printf("\n");
-}
-
-uint8_t cmd_read_flash_reg(uint8_t cmd)
-{
-    uint8_t buffer[2] = {cmd, 0};
-    flashio(buffer, 2, 0);
-    return buffer[1];
-}
-
-void cmd_read_flash_regs()
-{
-    uint8_t sr1 = cmd_read_flash_reg(0x05);
-    uint8_t sr2 = cmd_read_flash_reg(0x35);
-    uint8_t sr3 = cmd_read_flash_reg(0x15);
-
-    printf("S0 (BUSY) : %d\n", sr1 & 0x01);
-    printf("S1 (WEL)  : %d\n", sr1 & 0x02);
-    printf("S2 (BP0)  : %d\n", sr1 & 0x04);
-    printf("S3 (BP1)  : %d\n", sr1 & 0x08);
-    printf("S4 (BP2)  : %d\n", sr1 & 0x10);
-    printf("S5 (TB)   : %d\n", sr1 & 0x20);
-    printf("S6 (SEC)  : %d\n", sr1 & 0x40);
-    printf("S7 (SRP)  : %d\n\n", sr1 & 0x80);
-
-    printf("S8  (SRL) : %d\n", sr2 & 0x01);
-    printf("S9  (QE)  : %d\n", sr2 & 0x02);
-    printf("S10 ----  : %d\n", sr2 & 0x04);
-    printf("S11 (LB1) : %d\n", sr2 & 0x08);
-    printf("S12 (LB2) : %d\n", sr2 & 0x10);
-    printf("S13 (LB3) : %d\n", sr2 & 0x20);
-    printf("S14 (CMP) : %d\n", sr2 & 0x40);
-    printf("S15 (SUS) : %d\n\n", sr2 & 0x80);
-
-    printf("S16 ----  : %d\n", sr3 & 0x01);
-    printf("S17 ----  : %d\n", sr3 & 0x02);
-    printf("S18 (WPS) : %d\n", sr3 & 0x04);
-    printf("S19 ----  : %d\n", sr3 & 0x08);
-    printf("S20 ----  : %d\n", sr3 & 0x10);
-    printf("S21 (DRV0): %d\n", sr3 & 0x20);
-    printf("S22 (DRV1): %d\n", sr3 & 0x40);
-    printf("S23 (HOLD): %d\n\n", sr3 & 0x80);
-}
-
 uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
 {
-    printf("benckmark\n");
+    printf("benckmark test\n");
     uint8_t data[256];
     uint32_t *words = (void *)data;
 
@@ -243,6 +168,7 @@ uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
     if (instns_p)
         *instns_p = instns_end - instns_begin;
 
+    printf("benckmark done\n");
     return cycles_end - cycles_begin;
 }
 
@@ -482,59 +408,60 @@ void welcome_screen()
     printf(" | '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
     printf(" | | |  __/ |_| | | (_) |___) | (_) | |____ \n");
     printf(" |_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
-    printf("        author: maksyuki (2025-2025)\n");
+    printf("   retroSoC: A Customized ASIC for Retro Stuff!\n");
+    printf("     <https://github.com/retroSoC/retroSoC>\n");
+    printf("  author:  MrAMS(init version) <https://github.com/MrAMS>\n");
+    printf("           maksyuki            <https://github.com/maksyuki>\n");
+    printf("  License: MulanPSL-2.0 license\n");
+    printf("  version: v1.0(commit: 73b7f30)\n");
     printf("\n");
 
     printf("Processor:\n");
     printf("  CORE:              picorv32\n");
     printf("  ISA:               rv32imac\n");
-    printf("  FREQ:              %dMHz\n", CPU_FREQ);
+    printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
+
     printf("Inst/Memory Device: \n");
     printf("  SPI Flash size:    16MB\n");
     printf("  On-board RAM size: %dKB\n", RAM_TOTAL / 1024);
     printf("  Extern PSRAM size: %dMB(%dx8MB)\n\n", 8 * PSRAM_NUM, PSRAM_NUM);
 
     printf("Memory Map IO Device:\n");
-    printf("  1 x SPFS\n");
-    printf(" 16 x GPIO\n");
-    printf("  1 x HOUSEKEEPING SPI\n");
-    printf("  1 x UART\n");
-    printf("  1 x SPI\n");
-    printf("  1 x I2C\n");
-    printf("  2 x TIMER\n");
-    printf("  1 x RNG\n");
-    printf("  1 x ARCHINFO\n");
-    printf("  1 x UART(HP)\n");
-    printf("  4 x PWM\n");
-    printf("  1 x PS2\n");
-    printf("  1 x QSPI\n");
-    printf("  1 x PSRAM(4x8MB)\n");
-    printf("  1 x SPFS(TPO)\n\n");
-
-    printf("Self test:\n");
+    printf("                     1 x QSPFS\n");
+    printf("                    16 x GPIO\n");
+    printf("                     1 x HOUSEKEEPING SPI\n");
+    printf("                     1 x UART\n");
+    printf("                     1 x SPI\n");
+    printf("                     1 x I2C\n");
+    printf("                     2 x TIMER\n");
+    printf("                     1 x RNG\n");
+    printf("                     1 x ARCHINFO\n");
+    printf("                     1 x UART(HP)\n");
+    printf("                     4 x PWM\n");
+    printf("                     1 x PS2\n");
+    printf("                     1 x QSPI\n");
+    printf("                     1 x PSRAM(4x8MB)\n");
+    printf("                     1 x SPFS(TPO)\n\n");
+    printf("self test start...\n");
     // cmd_read_flash_id();
-    // cmd_read_flash_regs();
-    // cmd_print_spi_state();
-    cmd_memtest(0x04000000, 8 * 1024); // test extern psram
+    cmd_read_flash_regs();
+    cmd_print_spi_state();
+    printf("[exterm psram test]\n");
+    // cmd_memtest(0x04000000, 8 * 1024); // test extern psram
+    printf("self test done\n");
 }
 
 void main()
 {
     reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
-    // reg_cust_uart_div = (uint32_t)434;    // 50x10^6 / 115200
-    // reg_cust_uart_fcr = (uint32_t)0b1111; // clear tx and rx fifo
-    // reg_cust_uart_fcr = (uint32_t)0b1100;
-    // reg_cust_uart_lcr = (uint32_t)0b00011111; // 8N1, en all irq
 
     welcome_screen();
     set_flash_qspi_flag();
-    // while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
 
-    // ip_counter_timer_test();
+    ip_counter_timer_test();
     // ip_gpio_test();
-    // ip_hk_spi_test();
-
-    ip_i2c_test();
+    ip_hk_spi_test();
+    // ip_i2c_test();
     cust_ip_archinfo_test();
     cust_ip_rng_test();
     // cust_ip_uart_test();
@@ -543,77 +470,80 @@ void main()
     // cmd_benchmark_all();
     // cmd_memtest();
     // cmd_echo();
+    while (getchar_prompt("Press ENTER to continue..\n") != '\r')
+    {
+    }
+
     while (1)
-        ;
-    // while (1) {
-    //     printf("\n");
-    //     printf("Select an action:\n");
-    //     printf("\n");
-    //     printf("   [1] Read SPI Flash ID\n");
-    //     printf("   [2] Read SPI Config Regs\n");
-    //     printf("   [3] Switch to default mode\n");
-    //     printf("   [4] Switch to Dual I/O mode\n");
-    //     printf("   [5] Switch to Quad I/O mode\n");
-    //     printf("   [6] Switch to Quad DDR mode\n");
-    //     printf("   [7] Toggle continuous read mode\n");
-    //     printf("   [9] Run simplistic benchmark\n");
-    //     printf("   [0] Benchmark all configs\n");
-    //     printf("   [M] Run Memtest\n");
-    //     printf("   [S] Print SPI state\n");
-    //     printf("   [e] Echo UART\n");
-    //     printf("\n");
+    {
+        printf("\n");
+        printf("Select an action:\n");
+        printf("\n");
+        printf("   [1] Read SPI Flash ID\n");
+        printf("   [2] Read SPI Config Regs\n");
+        printf("   [3] Switch to default mode\n");
+        printf("   [4] Switch to Dual I/O mode\n");
+        printf("   [5] Switch to Quad I/O mode\n");
+        printf("   [6] Switch to Quad DDR mode\n");
+        printf("   [7] Toggle continuous read mode\n");
+        printf("   [9] Run simplistic benchmark\n");
+        printf("   [0] Benchmark all configs\n");
+        printf("   [M] Run Memtest\n");
+        printf("   [S] Print SPI state\n");
+        printf("   [e] Echo UART\n");
+        printf("\n");
 
-    //     for (int rep = 10; rep > 0; rep--)
-    //     {
-    //         printf("Command> ");
-    //         char cmd = getchar();
-    //         if (cmd > 32 && cmd < 127)
-    //             putchar(cmd);
-    //         printf("\n");
+        for (int rep = 10; rep > 0; rep--)
+        {
+            printf("tinysh> ");
+            char cmd = getchar_prompt(0);
+            if (cmd > 32 && cmd < 127)
+                putch(cmd);
+            printf("\n");
 
-    //         switch (cmd)
-    //         {
-    //         case '1':
-    //             cmd_read_flash_id();
-    //             break;
-    //         case '2':
-    //             cmd_read_flash_regs();
-    //             break;
-    //         case '3':
-    //             set_flash_mode_spi();
-    //             break;
-    //         case '4':
-    //             set_flash_mode_dual();
-    //             break;
-    //         case '5':
-    //             set_flash_mode_quad();
-    //             break;
-    //         case '6':
-    //             set_flash_mode_qddr();
-    //             break;
-    //         case '7':
-    //             reg_spictrl = reg_spictrl ^ 0x00100000;
-    //             break;
-    //         case '9':
-    //             cmd_benchmark(true, 0);
-    //             break;
-    //         case '0':
-    //             cmd_benchmark_all();
-    //             break;
-    //         case 'M':
-    //             cmd_memtest();
-    //             break;
-    //         case 'S':
-    //             cmd_print_spi_state();
-    //             break;
-    //         case 'e':
-    //             cmd_echo();
-    //             break;
-    //         default:
-    //             continue;
-    //         }
+            switch (cmd)
+            {
+            case '1':
+                cmd_read_flash_id();
+                break;
+            case '2':
+                cmd_read_flash_regs();
+                break;
+            case '3':
+                set_flash_mode_spi();
+                break;
+            case '4':
+                set_flash_mode_dual();
+                break;
+            case '5':
+                set_flash_mode_quad();
+                break;
+            case '6':
+                set_flash_mode_qddr();
+                break;
+            case '7':
+                reg_spictrl = reg_spictrl ^ 0x00100000;
+                break;
+            case '9':
+                cmd_benchmark(true, 0);
+                break;
+            case '0':
+                cmd_benchmark_all();
+                break;
+            case 'M':
+                // cmd_memtest();
+                break;
+            case 'S':
+                cmd_print_spi_state();
+                break;
+            case 'e':
+                cmd_echo();
+                break;
+            default:
+                continue;
+            }
 
-    //         break;
-    //     }
-    // }
+            break;
+        }
+    }
 }

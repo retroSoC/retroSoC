@@ -16,4 +16,9 @@ void set_flash_mode_dual();
 void set_flash_mode_quad();
 void set_flash_mode_qddr();
 void enable_flash_crm();
+void cmd_read_flash_id();
+uint8_t cmd_read_flash_reg(uint8_t cmd);
+void cmd_print_spi_state();
+void cmd_read_flash_regs();
+
 #endif
