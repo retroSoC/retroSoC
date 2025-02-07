@@ -5,10 +5,10 @@ module retrosoc_top (
     input  rst_n_i,
     input  uart_rx_i,
     output uart_tx_o,
-    output flash_csb_o,
-    output flash_clk_o,
-    inout  flash_io0_io,
-    inout  flash_io1_io
+    output cust_spfs_clk_o,
+    output cust_spfs_cs_o,
+    output cust_spfs_mosi_o,
+    input  cust_spfs_miso_i
 );
 
   wire s_sys_clk;
@@ -34,10 +34,10 @@ module retrosoc_top (
       .spi_mst_sck_o_pad        (),
       .spi_mst_sdo_o_pad        (),
       // SPI FLASH
-      .flash_csb_o_pad          (flash_csb_o),
-      .flash_clk_o_pad          (flash_clk_o),
-      .flash_io0_io_pad         (flash_io0_io),
-      .flash_io1_io_pad         (flash_io1_io),
+      .flash_csb_o_pad          (),
+      .flash_clk_o_pad          (),
+      .flash_io0_io_pad         (),
+      .flash_io1_io_pad         (),
       .flash_io2_io_pad         (),
       .flash_io3_io_pad         (),
       // UART
@@ -91,6 +91,10 @@ module retrosoc_top (
       .cust_psram_sio0_io_pad   (),
       .cust_psram_sio1_io_pad   (),
       .cust_psram_sio2_io_pad   (),
-      .cust_psram_sio3_io_pad   ()
+      .cust_psram_sio3_io_pad   (),
+      .cust_spfs_clk_o_pad      (cust_spfs_clk_o),
+      .cust_spfs_cs_o_pad       (cust_spfs_cs_o),
+      .cust_spfs_mosi_o_pad     (cust_spfs_mosi_o),
+      .cust_spfs_miso_i_pad     (cust_spfs_miso_i)
   );
 endmodule
