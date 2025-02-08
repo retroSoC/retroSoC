@@ -10,6 +10,11 @@
 *.gtkw
 *.vmf
 *.tar.bz2
+simv.daidir
+ucli.*
+verdi_config_file
+csrc
+simv
 retrosoc_sections.lds
 retrosoc_syn*
 IHP-Open-PDK
