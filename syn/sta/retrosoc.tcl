@@ -7,7 +7,7 @@ link_design retrosoc_asic
 # 
 read_sdc retrosoc.sdc
 
-report_checks -path_delay min_max -group_path_count 1000000 -endpoint_path_count 1000000 > retrosoc_sta.log
+report_checks -path_delay min_max -path_group {xi_i_pad CLK_sys_peri CLK_spi_mst_sck_o CLK_flash_clk_o CLK_cust_qspi_spi_clk_o CLK_cust_psram_sclk_o CLK_cust_spfs_clk_o} -sort_by_slack -slack_max 0.00 -group_path_count 10000 -endpoint_path_count 10000 > retrosoc_sta.log
 
 # set_propagated_clock clk
 # read_spef gcd_sky130hd.spef
