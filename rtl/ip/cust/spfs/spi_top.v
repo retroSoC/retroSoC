@@ -1,3 +1,5 @@
+`include "spi_defines.v"
+
 module spi_top
 (
   // APB Signals
