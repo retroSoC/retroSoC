@@ -90,8 +90,7 @@ SRC_PATH := ../crt/start.s \
 LDS_PATH := ../crt/sections.lds
 # +behv_wave
 retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
-# ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
-	ln -sf test_prog.hex mem_Q128_bottom.vmf
+	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
 	vvp -l run.log -N $< +firmware=$(FIRMWARE_NAME).hex +behv_$(WAVE) -fst
 
 # +syn_wave
@@ -116,6 +115,7 @@ $(FIRMWARE_NAME).elf:
 	$(CROSS)cpp -P -o retrosoc_sections.lds $(LDS_PATH)
 	$(CROSS)gcc $(CFLAGS) -I../crt -o $@ $(SRC_PATH)
 	$(CROSS)objcopy -O verilog $@ $(FIRMWARE_NAME).hex
+	sed -i 's/@30000000/@00000000/g' retrosoc_fw.hex
 	$(CROSS)objcopy -O binary  $@ $(FIRMWARE_NAME).bin
 	$(CROSS)objdump -d $@ > $(FIRMWARE_NAME).txt
 
