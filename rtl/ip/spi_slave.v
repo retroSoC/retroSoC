@@ -183,7 +183,7 @@ module spi_slave (
         end else if (count == 3'b111) begin
           if (pre_pass_thru == 1'b1) begin
             state <= `PASSTHRU;
-            pre_pass_thru = 1'b0;
+            pre_pass_thru <= 1'b0;
           end else begin
             state <= `ADDRESS;
           end
