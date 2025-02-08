@@ -6,8 +6,34 @@ CFLAGS := -mabi=ilp32 \
           -ffreestanding \
           -nostdlib
 
-WAVE := NONE
+VNOVAS    := /eda/tools/snps/verdi/R-2020.12/share/PLI/VCS/LINUX64
+VEXTRA    := -P ${VNOVAS}/novas.tab\
+                ${VNOVAS}/pli.a
 
+VSIM_INC  := +incdir+./ip \
+             +incdir+./ip/cust/spfs \
+             +incdir+./ip/cust/spfs_model
+
+## vcs option
+VSIM_OPTIONS := -full64  +v2k -sverilog -timescale=1ns/10ps \
+                ${VEXTRA} \
+                -kdb \
+                -debug_acc+all \
+                +error+500 \
+                +vcs+flush+all \
+                +lint=TFIPC-L \
+                +define+no_warning \
+                +define+S50 \
+                +define+SVA_OFF \
+                -work DEFAULT \
+                +define+RANDOMIZE_REG_INIT \
+                ${VSIM_INC} \
+
+VTIME_OPTION := +notimingcheck \
+                +nospecify \
+
+# RTL code
+WAVE := NONE
 RTL_SOC := ./retrosoc_asic.v \
            ./retrosoc.v \
            ./picorv32.v
@@ -118,6 +144,12 @@ $(FIRMWARE_NAME).elf:
 	sed -i 's/@30000000/@00000000/g' retrosoc_fw.hex
 	$(CROSS)objcopy -O binary  $@ $(FIRMWARE_NAME).bin
 	$(CROSS)objdump -d $@ > $(FIRMWARE_NAME).txt
+
+vcomp:
+	vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) retrosoc_tb.v -top retrosoc_tb -l vcompile.log
+
+vsim: vcomp
+	./simv -l vsim.log
 
 clean:
 	rm -f *.vvp *.vcd *.fst
