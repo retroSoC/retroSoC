@@ -44,7 +44,7 @@ char getchar_prompt(char *prompt)
                      : "=r"(cycles_begin));
 
     if (prompt)
-        putstr(prompt);
+        printf(prompt);
 
     while (c == -1)
     {
@@ -54,7 +54,7 @@ char getchar_prompt(char *prompt)
         if (cycles > 12000000)
         {
             if (prompt)
-                putstr(prompt);
+                printf(prompt);
             cycles_begin = cycles_now;
         }
         c = reg_uart_data;
@@ -214,12 +214,26 @@ void cmd_echo()
         putch(c);
 }
 
+void delay_ms(uint32_t val)
+{
+    // 1ms = 50MHz  /
+    reg_timer0_config = (uint32_t)0x0000;
+    reg_timer0_data = (uint32_t)(CPU_FREQ * 1000 - 1);
+    for (int i = 1; i <= val; ++i)
+    {
+        reg_timer0_config = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
+        while (reg_timer0_data == 0)
+            ;
+        reg_timer0_config = (uint32_t)0x0000;
+    }
+}
+
 void ip_gpio_test()
 {
     printf("[IP] gpio test\n");
 
     printf("[GPIO ENB] %x\n", reg_gpio_enb);
-    reg_gpio_enb = (uint32_t)0x0000;
+    reg_gpio_enb = (uint32_t)0b0000;
     printf("[GPIO ENB] %x\n", reg_gpio_enb);
 
     printf("[GPIO DATA] %x\n", reg_gpio_data);
@@ -228,6 +242,45 @@ void ip_gpio_test()
 
     reg_gpio_data = (uint32_t)0x0000;
     printf("[GPIO DATA] %x\n", reg_gpio_data);
+
+    printf("led output test\n");
+
+    for (int i = 0; i < 50; ++i)
+    {
+        delay_ms(300);
+        if (reg_gpio_data == 0b00)
+            reg_gpio_data = (uint32_t)0b01;
+        else
+            reg_gpio_data = (uint32_t)0b00;
+    }
+
+    reg_gpio_data = (uint32_t)0b00;
+    printf("key input test\n"); // need extn board
+    reg_gpio_enb = (uint32_t)0b0010;
+    printf("[GPIO ENB] %x\n", reg_gpio_enb);
+    printf("[GPIO DATA] %x\n", reg_gpio_data);
+    while (1)
+    {
+        uint32_t led_val = 0b00;
+        if (((reg_gpio_data & 0b10) >> 1) == 0b0)
+        {
+            delay_ms(100); // debouncing
+            if (((reg_gpio_data & 0b10) >> 1) == 0b0)
+            {
+                printf("key detect\n");
+                if (led_val == 0b00)
+                {
+                    led_val = 0b01;
+                    reg_gpio_data = led_val;
+                }
+                else
+                {
+                    led_val = 0b00;
+                    reg_gpio_data = led_val;
+                }
+            }
+        }
+    }
 }
 
 void ip_hk_spi_test()
@@ -297,7 +350,7 @@ void ip_counter_timer_test()
     reg_timer0_value = (uint32_t)0xffffffff;
     reg_timer0_config = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
 
-    reg_timer1_value = (uint32_t)0x0000ffff;
+    reg_timer1_value = (uint32_t)0x00ffffff;
     reg_timer1_config = (uint32_t)0x0101; // irq disable, count up, continuous mode, timer enable
 
     printf("[TIM0 VALUE]  %x\n", reg_timer0_value);
@@ -358,7 +411,7 @@ void cust_ip_uart_test()
 
     printf("uart tx test\n");
     uint32_t val = (uint32_t)0x41;
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 30; ++i)
     {
         while (((reg_cust_uart_lsr & 0x100) >> 8) == 1)
             ;
@@ -366,17 +419,17 @@ void cust_ip_uart_test()
     }
 
     printf("uart tx test done\n");
-    printf("uart rx test\n");
-    uint32_t rx_val = 0;
-    for (int i = 0; i < 5; ++i)
-    {
-        while (((reg_cust_uart_lsr & 0x080) >> 7) == 1)
-            ;
-        rx_val = reg_cust_uart_trx;
-        printf("[UART TRX] %x\n", rx_val);
-    }
+    // printf("uart rx test\n");
+    // uint32_t rx_val = 0;
+    // for (int i = 0; i < 5; ++i)
+    // {
+    //     while (((reg_cust_uart_lsr & 0x080) >> 7) == 1)
+    //         ;
+    //     rx_val = reg_cust_uart_trx;
+    //     printf("[UART TRX] %x\n", rx_val);
+    // }
 
-    printf("uart rx test done\n");
+    // printf("uart rx test done\n");
     printf("uart done\n");
 }
 
@@ -386,7 +439,7 @@ void cust_ip_ps2_test()
 
     reg_cust_ps2_ctrl = (uint32_t)0b11;
     uint32_t kdb_code, i = 0;
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 16; i++)
     {
         kdb_code = reg_cust_ps2_data;
         if (kdb_code != 0)
@@ -459,7 +512,7 @@ void main()
     set_flash_qspi_flag();
 
     ip_counter_timer_test();
-    // ip_gpio_test();
+    ip_gpio_test();
     ip_hk_spi_test();
     // ip_i2c_test();
     cust_ip_archinfo_test();
@@ -530,10 +583,10 @@ void main()
             case '0':
                 cmd_benchmark_all();
                 break;
-            case 'M':
+            case 'm':
                 // cmd_memtest();
                 break;
-            case 'S':
+            case 's':
                 cmd_print_spi_state();
                 break;
             case 'e':
