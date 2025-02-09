@@ -5,16 +5,20 @@ module retrosoc_top (
     input  rst_n_i,
     input  uart_rx_i,
     output uart_tx_o,
-    output cust_spfs_clk_o,
-    output cust_spfs_cs_o,
-    output cust_spfs_mosi_o,
-    input  cust_spfs_miso_i,
     inout  gpio_io0,
     inout  gpio_io1,
     inout  gpio_io2,
     inout  i2c_scl_io,
     inout  i2c_sda_io,
-    output pwm_pwm_o
+    output cust_uart_tx_o,
+    input  cust_uart_rx_i,
+    output cust_pwm_pwm_o,
+    input  cust_ps2_ps2_clk_i,
+    input  cust_ps2_ps2_dat_i,
+    output cust_spfs_clk_o,
+    output cust_spfs_cs_o,
+    output cust_spfs_mosi_o,
+    input  cust_spfs_miso_i
 );
 
   wire s_sys_clk;
@@ -72,14 +76,14 @@ module retrosoc_top (
       // IRQ
       .irq_pin_i_pad            (1'b0),
       // CUST
-      .cust_uart_tx_o_pad       (),
-      .cust_uart_rx_i_pad       (1'b0),
-      .cust_pwm_pwm_0_o_pad     (pwm_pwm_o),
+      .cust_uart_tx_o_pad       (cust_uart_tx_o),
+      .cust_uart_rx_i_pad       (cust_uart_rx_i),
+      .cust_pwm_pwm_0_o_pad     (cust_pwm_pwm_o),
       .cust_pwm_pwm_1_o_pad     (),
       .cust_pwm_pwm_2_o_pad     (),
       .cust_pwm_pwm_3_o_pad     (),
-      .cust_ps2_ps2_clk_i_pad   (1'b0),
-      .cust_ps2_ps2_dat_i_pad   (1'b0),
+      .cust_ps2_ps2_clk_i_pad   (cust_ps2_ps2_clk_i),
+      .cust_ps2_ps2_dat_i_pad   (cust_ps2_ps2_dat_i),
       .cust_qspi_spi_clk_o_pad  (),
       .cust_qspi_spi_csn_0_o_pad(),
       .cust_qspi_spi_csn_1_o_pad(),
