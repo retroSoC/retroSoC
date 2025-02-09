@@ -259,7 +259,7 @@ void ip_gpio_test()
     reg_gpio_enb = (uint32_t)0b0010;
     printf("[GPIO ENB] %x\n", reg_gpio_enb);
     printf("[GPIO DATA] %x\n", reg_gpio_data);
-    while (1)
+    for(int i = 0; i < 60; ++i)
     {
         uint32_t led_val = 0b00;
         if (((reg_gpio_data & 0b10) >> 1) == 0b0)
@@ -419,17 +419,17 @@ void cust_ip_uart_test()
     }
 
     printf("uart tx test done\n");
-    // printf("uart rx test\n");
-    // uint32_t rx_val = 0;
-    // for (int i = 0; i < 5; ++i)
-    // {
-    //     while (((reg_cust_uart_lsr & 0x080) >> 7) == 1)
-    //         ;
-    //     rx_val = reg_cust_uart_trx;
-    //     printf("[UART TRX] %x\n", rx_val);
-    // }
+    printf("uart rx test\n");
+    uint32_t rx_val = 0;
+    for (int i = 0; i < 36; ++i)
+    {
+        while (((reg_cust_uart_lsr & 0x080) >> 7) == 1)
+            ;
+        rx_val = reg_cust_uart_trx;
+        printf("[UART TRX] %x\n", rx_val);
+    }
 
-    // printf("uart rx test done\n");
+    printf("uart rx test done\n");
     printf("uart done\n");
 }
 
@@ -439,11 +439,12 @@ void cust_ip_ps2_test()
 
     reg_cust_ps2_ctrl = (uint32_t)0b11;
     uint32_t kdb_code, i = 0;
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 36;)
     {
         kdb_code = reg_cust_ps2_data;
         if (kdb_code != 0)
         {
+            ++i;
             printf("[PS2 DAT] %x\n", kdb_code);
         }
     }
@@ -517,12 +518,10 @@ void main()
     // ip_i2c_test();
     cust_ip_archinfo_test();
     cust_ip_rng_test();
-    // cust_ip_uart_test();
-    // cust_ip_ps2_test();
+    cust_ip_uart_test();
+    cust_ip_ps2_test();
     cmd_benchmark(true, 0);
-    // cmd_benchmark_all();
-    // cmd_memtest();
-    // cmd_echo();
+    cmd_benchmark_all();
     while (getchar_prompt("Press ENTER to continue..\n") != '\r')
     {
     }
