@@ -60,7 +60,7 @@ module spiflash (
   reg     [ 7:0] spi_out;
   reg            spi_io_vld;
 
-  reg            powered_up = 1;
+  reg            powered_up = 0;
 
   localparam [3:0] mode_spi = 1;
   localparam [3:0] mode_dspi_rd = 2;

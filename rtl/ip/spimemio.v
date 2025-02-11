@@ -216,7 +216,7 @@ module spimemio (
     din_valid   <= 0;
 
     if (!resetn || softreset) begin
-      state       <= 4'd4;
+      state       <= 4'd0;
       xfer_resetn <= 0;
       rd_valid    <= 0;
       din_tag     <= 0;
@@ -239,36 +239,36 @@ module spimemio (
       if (valid) rd_wait <= 0;
 
       case (state)
-        // 0: begin
-        //   din_valid <= 1;
-        //   din_data  <= 8'hff;
-        //   din_tag   <= 0;
-        //   if (din_ready) begin
-        //     din_valid <= 0;
-        //     state     <= 1;
-        //   end
-        // end
-        // 1: begin
-        //   if (dout_valid) begin
-        //     xfer_resetn <= 0;
-        //     state       <= 2;
-        //   end
-        // end
-        // 2: begin
-        //   din_valid <= 1;
-        //   din_data  <= 8'hab;
-        //   din_tag   <= 0;
-        //   if (din_ready) begin
-        //     din_valid <= 0;
-        //     state     <= 3;
-        //   end
-        // end
-        // 3: begin
-        //   if (dout_valid) begin
-        //     xfer_resetn <= 0;
-        //     state       <= 4;
-        //   end
-        // end
+        0: begin
+          din_valid <= 1;
+          din_data  <= 8'hff;
+          din_tag   <= 0;
+          if (din_ready) begin
+            din_valid <= 0;
+            state     <= 1;
+          end
+        end
+        1: begin
+          if (dout_valid) begin
+            xfer_resetn <= 0;
+            state       <= 2;
+          end
+        end
+        2: begin
+          din_valid <= 1;
+          din_data  <= 8'hab;
+          din_tag   <= 0;
+          if (din_ready) begin
+            din_valid <= 0;
+            state     <= 3;
+          end
+        end
+        3: begin
+          if (dout_valid) begin
+            xfer_resetn <= 0;
+            state       <= 4;
+          end
+        end
         4: begin
           rd_inc    <= 0;
           din_valid <= 1;
