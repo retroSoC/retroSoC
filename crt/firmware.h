@@ -34,41 +34,29 @@
 #define reg_trap_out_dest  (*(volatile uint32_t*)0x0300003c)
 #define reg_irq7_source    (*(volatile uint32_t*)0x03000040)
 #define reg_irq8_source    (*(volatile uint32_t*)0x03000044)
-
-#define reg_spi_config     (*(volatile uint32_t*)0x03000048)
-#define reg_spi_data       (*(volatile uint32_t*)0x0300004c)
-
-// NOTE: "config" subsumes "control" and "prescale" fields.
-#define reg_i2c_config     (*(volatile uint32_t*)0x03000050)
-#define reg_i2c_prescale   (*(volatile uint16_t*)0x03000050)
-#define reg_i2c_control    (*(volatile uint16_t*)0x03000052)
-// NOTE: "status" and "command" are the same byte (one read, one write)
-#define reg_i2c_status     (*(volatile uint32_t*)0x03000054)
-#define reg_i2c_command    (*(volatile uint32_t*)0x03000054)
-#define reg_i2c_data       (*(volatile uint32_t*)0x03000058)
-
+// tim0
 #define reg_timer0_config  (*(volatile uint32_t*)0x0300005c)
 #define reg_timer0_value   (*(volatile uint32_t*)0x03000060)
 #define reg_timer0_data    (*(volatile uint32_t*)0x03000064)
-
+// tim1
 #define reg_timer1_config  (*(volatile uint32_t*)0x03000068)
 #define reg_timer1_value   (*(volatile uint32_t*)0x0300006c)
 #define reg_timer1_data    (*(volatile uint32_t*)0x03000070)
-// cust
+// cust archinfo
 #define reg_cust_archinfo_sys (*(volatile uint32_t*)0x03001000)
 #define reg_cust_archinfo_idl (*(volatile uint32_t*)0x03001004)
 #define reg_cust_archinfo_idh (*(volatile uint32_t*)0x03001008)
-
+// cust rng
 #define reg_cust_rng_ctrl     (*(volatile uint32_t*)0x03002000)
 #define reg_cust_rng_seed     (*(volatile uint32_t*)0x03002004)
 #define reg_cust_rng_val      (*(volatile uint32_t*)0x03002008)
-
+// cust uart
 #define reg_cust_uart_lcr     (*(volatile uint32_t*)0x03003000)
 #define reg_cust_uart_div     (*(volatile uint32_t*)0x03003004)
 #define reg_cust_uart_trx     (*(volatile uint32_t*)0x03003008)
 #define reg_cust_uart_fcr     (*(volatile uint32_t*)0x0300300c)
 #define reg_cust_uart_lsr     (*(volatile uint32_t*)0x03003010)
-
+// cust pwm
 #define reg_cust_pwm_ctrl     (*(volatile uint32_t*)0x03004000)
 #define reg_cust_pwm_pscr     (*(volatile uint32_t*)0x03004004)
 #define reg_cust_pwm_cnt      (*(volatile uint32_t*)0x03004008)
@@ -78,45 +66,28 @@
 #define reg_cust_pwm_cr2      (*(volatile uint32_t*)0x03004018)
 #define reg_cust_pwm_cr3      (*(volatile uint32_t*)0x0300401c)
 #define reg_cust_pwm_stat     (*(volatile uint32_t*)0x03004020)
-
+// cust ps2
 #define reg_cust_ps2_ctrl     (*(volatile uint32_t*)0x03005000)
 #define reg_cust_ps2_data     (*(volatile uint32_t*)0x03005004)
 #define reg_cust_ps2_stat     (*(volatile uint32_t*)0x03005008)
+// cust i2c
+#define reg_cust_i2c_ctrl     (*(volatile uint32_t*)0x03006000)
+#define reg_cust_i2c_pscr     (*(volatile uint32_t*)0x03006004)
+#define reg_cust_i2c_txr      (*(volatile uint32_t*)0x03006008)
+#define reg_cust_i2c_rxr      (*(volatile uint32_t*)0x0300600c)
+#define reg_cust_i2c_cmd      (*(volatile uint32_t*)0x03006010)
+#define reg_cust_i2c_sr       (*(volatile uint32_t*)0x03006014)
+// cust qspi
+#define reg_cust_qspi_status  (*(volatile uint32_t*)0x03007000)
+#define reg_cust_qspi_clkdiv  (*(volatile uint32_t*)0x03007004)
+#define reg_cust_qspi_cmd     (*(volatile uint32_t*)0x03007008)
+#define reg_cust_qspi_adr     (*(volatile uint32_t*)0x0300700c)
+#define reg_cust_qspi_len     (*(volatile uint32_t*)0x03007010)
+#define reg_cust_qspi_dum     (*(volatile uint32_t*)0x03007014)
+#define reg_cust_qspi_txfifo  (*(volatile uint32_t*)0x03007018)
+#define reg_cust_qspi_rxfifo  (*(volatile uint32_t*)0x03007020)
+#define reg_cust_qspi_intcfg  (*(volatile uint32_t*)0x03007024)
+#define reg_cust_qspi_intsta  (*(volatile uint32_t*)0x03007028)
 
-
-// command register bits
-// bit 7 = start
-// bit 6 = stop
-// bit 5 = read
-// bit 4 = write
-
-// control register bits
-// bit 27 = acknowledge
-// bit 24 = interrupt acknowledge
-// bit 23 = enable
-// bit 22 = interrupt enable
-
-// bits 15-0:  clock prescaler
-#define     I2C_CMD_STA         0x80
-#define     I2C_CMD_STO         0x40
-#define     I2C_CMD_RD          0x20
-#define     I2C_CMD_WR          0x10
-#define     I2C_CMD_ACK         0x08
-#define     I2C_CMD_IACK        0x01
-
-#define     I2C_CTRL_EN         0x80
-#define     I2C_CTRL_IEN        0x40
-
-// status regiter bits:
-// bit 7 = receive acknowledge
-// bit 6 = busy (start signal detected)
-// bit 5 = arbitration lost
-// bit 1 = transfer in progress
-// bit 0 = interrupt flag
-#define     I2C_STAT_RXACK      0x80
-#define     I2C_STAT_BUSY       0x40
-#define     I2C_STAT_AL         0x20
-#define     I2C_STAT_TIP        0x02
-#define     I2C_STAT_IF         0x01
 
 #endif

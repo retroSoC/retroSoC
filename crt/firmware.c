@@ -19,10 +19,68 @@
 
 #include <tinylib.h>
 
-#define RAM_TOTAL 0x10000 // 64 KB
+#define RAM_TOTAL 0x20000 // 128 KB
 #define PSRAM_NUM 4
-#define CPU_FREQ 50     // unit: MHz
+#define CPU_FREQ 72     // unit: MHz
 #define UART_BPS 115200 // unit: bps
+
+
+
+#define I2C_TEST_START       ((uint32_t)0x80)
+#define I2C_TEST_STOP        ((uint32_t)0x40)
+#define I2C_TEST_READ        ((uint32_t)0x20)
+#define I2C_TEST_WRITE       ((uint32_t)0x10)
+#define I2C_TEST_START_READ  ((uint32_t)0xA0)
+#define I2C_TEST_START_WRITE ((uint32_t)0x90)
+#define I2C_TEST_STOP_READ   ((uint32_t)0x60)
+#define I2C_TEST_STOP_WRITE  ((uint32_t)0x50)
+
+#define I2C_STATUS_RXACK     ((uint32_t)0x80) // (1 << 7)
+#define I2C_STATUS_BUSY      ((uint32_t)0x40) // (1 << 6)
+#define I2C_STATUS_AL        ((uint32_t)0x20) // (1 << 5)
+#define I2C_STATUS_TIP       ((uint32_t)0x02) // (1 << 1)
+#define I2C_STATUS_IF        ((uint32_t)0x01) // (1 << 0)
+
+#define I2C_DEV_ADDR_16BIT   0
+#define I2C_DEV_ADDR_8BIT    1
+
+#define I2C_TEST_NUM         24
+#define AT24C64_SLV_ADDR     0xA0
+#define PCF8563B_SLV_ADDR    0xA2
+
+#define PCF8563B_CTL_STATUS1 ((uint8_t)0x00)
+#define PCF8563B_CTL_STATUS2 ((uint8_t)0x01)
+#define PCF8563B_SECOND_REG  ((uint8_t)0x02)
+#define PCF8563B_MINUTE_REG  ((uint8_t)0x03)
+#define PCF8563B_HOUR_REG    ((uint8_t)0x04)
+#define PCF8563B_DAY_REG     ((uint8_t)0x05)
+#define PCF8563B_WEEKDAY_REG ((uint8_t)0x06)
+#define PCF8563B_MONTH_REG   ((uint8_t)0x07)
+#define PCF8563B_YEAR_REG    ((uint8_t)0x08)
+
+#define SECOND_MINUTE_REG_WIDTH ((uint8_t)0x7F)
+#define HOUR_DAY_REG_WIDTH      ((uint8_t)0x3F)
+#define WEEKDAY_REG_WIDTH       ((uint8_t)0x07)
+#define MONTH_REG_WIDTH         ((uint8_t)0x1F)
+#define YEAR_REG_WIDTH          ((uint8_t)0xFF)
+#define BCD_Century             ((uint8_t)0x80)
+
+typedef struct {
+    struct {
+        uint8_t second;
+        uint8_t minute;
+        uint8_t hour;
+    } time;
+
+    struct {
+        uint8_t weekday;
+        uint8_t day;
+        uint8_t month;
+        uint8_t year;
+    } date;
+
+} PCF8563B_info_t;
+
 
 uint32_t xorshift32(uint32_t *state)
 {
@@ -259,7 +317,7 @@ void ip_gpio_test()
     reg_gpio_enb = (uint32_t)0b0010;
     printf("[GPIO ENB] %x\n", reg_gpio_enb);
     printf("[GPIO DATA] %x\n", reg_gpio_data);
-    for(int i = 0; i < 60; ++i)
+    for (int i = 0; i < 60; ++i)
     {
         uint32_t led_val = 0b00;
         if (((reg_gpio_data & 0b10) >> 1) == 0b0)
@@ -293,50 +351,6 @@ void ip_hk_spi_test()
     printf("[HK PROD ID]  %x\n", reg_spi_prod_id);
     printf("[HK MASK REV] %x\n", reg_spi_mask_rev);
     printf("[HK PLL BYP]  %x\n", reg_spi_pll_bypass);
-}
-
-void i2c_init(unsigned int pre)
-{
-    reg_i2c_control = (uint16_t)(I2C_CTRL_EN | I2C_CTRL_IEN);
-    reg_i2c_prescale = (uint16_t)pre;
-}
-
-int i2c_send(unsigned char saddr, unsigned char sdata)
-{
-    int volatile y;
-    reg_i2c_data = saddr;
-    reg_i2c_command = I2C_CMD_STA | I2C_CMD_WR;
-
-    while ((reg_i2c_status & I2C_STAT_TIP) != 0)
-        ;
-
-    if ((reg_i2c_status & I2C_STAT_RXACK) == 1)
-    {
-        reg_i2c_command = I2C_CMD_STO;
-        return 0;
-    }
-
-    reg_i2c_data = sdata;
-    reg_i2c_command = I2C_CMD_WR;
-
-    while (reg_i2c_status & I2C_STAT_TIP)
-        ;
-    reg_i2c_command = I2C_CMD_STO;
-
-    if ((reg_i2c_status & I2C_STAT_RXACK) == 1)
-        return 0;
-    else
-        return 1;
-}
-
-void ip_i2c_test()
-{
-    printf("[IP] i2c test\n");
-    reg_i2c_config = 0;
-    reg_i2c_data = 0;
-    i2c_init(5);
-    // Send command 6, data byte 0xfa
-    i2c_send(0x6, 0xfa);
 }
 
 void ip_counter_timer_test()
@@ -433,6 +447,37 @@ void cust_ip_uart_test()
     printf("uart done\n");
 }
 
+void cust_ip_pwm_test()
+{
+    printf("pwm test\n");
+
+    reg_cust_pwm_ctrl = (uint32_t)0;
+    reg_cust_pwm_pscr = (uint32_t)(CPU_FREQ - 1); // 50M / 50 = 1MHz
+    reg_cust_pwm_cmp = (uint32_t)(1000 - 1);      // 1KHz
+    printf("reg_cust_pwm_ctrl: %d reg_cust_pwm_pscr: %d reg_cust_pwm_cmp: %d\n", reg_cust_pwm_ctrl, reg_cust_pwm_pscr, reg_cust_pwm_cmp);
+    for (int i = 0; i < 36; i++)
+    {
+        printf("[PWM]: %d/36\n", i);
+        for (int j = 10; j <= 990; j++)
+        {
+            reg_cust_pwm_ctrl = (uint32_t)4;
+            reg_cust_pwm_cr0 = j;
+            reg_cust_pwm_ctrl = (uint32_t)3;
+            reg_cust_pwm_pscr = 49;
+            delay_ms(5);
+        }
+
+        for (int j = 990; j >= 10; j--)
+        {
+            reg_cust_pwm_ctrl = (uint32_t)4;
+            reg_cust_pwm_cr0 = j;
+            reg_cust_pwm_ctrl = (uint32_t)3;
+            reg_cust_pwm_pscr = 49;
+            delay_ms(5);
+        }
+    }
+}
+
 void cust_ip_ps2_test()
 {
     printf("[CUST IP] ps2 test\n");
@@ -449,6 +494,199 @@ void cust_ip_ps2_test()
         }
     }
 }
+
+void i2c_config() {
+    reg_cust_i2c_ctrl = (uint32_t)0;
+    reg_cust_i2c_pscr = (uint32_t)99;         // 50MHz / (5 * 100KHz) - 1
+    printf("CTRL: %d PSCR: %d\n", reg_cust_i2c_ctrl, reg_cust_i2c_pscr);
+    reg_cust_i2c_ctrl = (uint32_t)0b10000000; // core en
+}
+
+uint32_t i2c_get_ack() {
+    while ((reg_cust_i2c_sr & I2C_STATUS_TIP) == 0); // need TIP go to 1
+    while ((reg_cust_i2c_sr & I2C_STATUS_TIP) != 0); // and then go back to 0
+    return !(reg_cust_i2c_sr & I2C_STATUS_RXACK);    // invert since signal is active low
+}
+
+uint32_t i2c_busy() {
+    return ((reg_cust_i2c_sr & I2C_STATUS_BUSY) == I2C_STATUS_BUSY);
+}
+
+void i2c_wr_start(uint32_t slv_addr) {
+    reg_cust_i2c_txr = slv_addr;
+    reg_cust_i2c_cmd = I2C_TEST_START_WRITE;
+    if (!i2c_get_ack()) printf("[wr start]no ack recv\n");
+}
+
+void i2c_rd_start(uint32_t slv_addr) {
+    do {
+        reg_cust_i2c_txr = slv_addr;
+        reg_cust_i2c_cmd = I2C_TEST_START_WRITE;
+    }while (!i2c_get_ack());
+}
+
+void i2c_write(uint8_t val) {
+    reg_cust_i2c_txr = val;
+    reg_cust_i2c_cmd = I2C_TEST_WRITE;
+    if (!i2c_get_ack()) printf("[i2c write]no ack recv\n");
+    // do {
+    //     reg_cust_i2c_txr = val;
+    //     reg_cust_i2c_cmd = I2C_TEST_WRITE;
+    // } while(!i2c_get_ack());
+}
+
+uint32_t i2c_read(uint32_t cmd) {
+    reg_cust_i2c_cmd = cmd;
+    if (!i2c_get_ack()) printf("[i2c read]no ack recv\n");
+    return reg_cust_i2c_rxr;
+}
+
+void i2c_stop() {
+    reg_cust_i2c_cmd = I2C_TEST_STOP;
+    while(i2c_busy());
+}
+
+void i2c_wr_nbyte(uint8_t slv_addr, uint16_t reg_addr, uint8_t type, uint8_t num, uint8_t *data) {
+    // i2c_wr_start(slv_addr);
+    i2c_rd_start(slv_addr);
+    if(type == I2C_DEV_ADDR_16BIT) {
+        i2c_write((uint8_t)((reg_addr >> 8) & 0xFF));
+        i2c_write((uint8_t)(reg_addr & 0xFF));
+    } else {
+        i2c_write((uint8_t)(reg_addr & 0xFF));
+    }
+    for(int i = 0; i < num; ++i) {
+        i2c_write(*data);
+        ++data;
+    }
+    i2c_stop();
+}
+
+void i2c_rd_nbyte(uint8_t slv_addr, uint16_t reg_addr, uint8_t type, uint8_t num, uint8_t *data) {
+    i2c_rd_start(slv_addr);
+    if(type == I2C_DEV_ADDR_16BIT) {
+        i2c_write((uint8_t)((reg_addr >> 8) & 0xFF));
+        i2c_write((uint8_t)(reg_addr & 0xFF));
+    } else {
+        i2c_write((uint8_t)(reg_addr & 0xFF));
+    }
+    i2c_stop();
+
+    i2c_wr_start(slv_addr + 1);
+    for (int i = 0; i < num; ++i) {
+        if (i == num - 1) data[i] = i2c_read(I2C_TEST_STOP_READ);
+        else data[i] = i2c_read(I2C_TEST_READ);
+    }
+}
+
+uint8_t PCF8563B_bin2bcd(uint8_t val) {
+    uint8_t bcdhigh = 0;
+    while (val >= 10) {
+        ++bcdhigh;
+        val -= 10;
+    }
+    return ((uint8_t)(bcdhigh << 4) | val);
+}
+
+static uint8_t PCF8563B_bcd2bin(uint8_t val,uint8_t reg_width)
+{
+    uint8_t res = 0;
+    res = (val & (reg_width & 0xF0)) >> 4;
+    res = res * 10 + (val & (reg_width & 0x0F));
+    return res;
+}
+
+
+void PCF8563B_wr_reg(PCF8563B_info_t *info) {
+    uint8_t wr_data[7] = {0};
+    *wr_data       = PCF8563B_bin2bcd(info->time.second);
+    *(wr_data + 1) = PCF8563B_bin2bcd(info->time.minute);
+    *(wr_data + 2) = PCF8563B_bin2bcd(info->time.hour);
+    *(wr_data + 3) = PCF8563B_bin2bcd(info->date.day);
+    *(wr_data + 4) = PCF8563B_bin2bcd(info->date.weekday);
+    *(wr_data + 5) = PCF8563B_bin2bcd(info->date.month);
+    *(wr_data + 6) = PCF8563B_bin2bcd(info->date.year);
+    i2c_wr_nbyte(PCF8563B_SLV_ADDR, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 7, wr_data);
+}
+
+PCF8563B_info_t PCF8563B_rd_reg() {
+    uint8_t rd_data[7] = {0};
+    PCF8563B_info_t info = {0};
+    i2c_rd_nbyte(PCF8563B_SLV_ADDR, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 7, rd_data);
+    info.time.second  = PCF8563B_bcd2bin(rd_data[0], SECOND_MINUTE_REG_WIDTH);
+    info.time.minute  = PCF8563B_bcd2bin(rd_data[1], SECOND_MINUTE_REG_WIDTH);
+    info.time.hour    = PCF8563B_bcd2bin(rd_data[2], HOUR_DAY_REG_WIDTH);
+    info.date.day     = PCF8563B_bcd2bin(rd_data[3], HOUR_DAY_REG_WIDTH);
+    info.date.weekday = PCF8563B_bcd2bin(rd_data[4], WEEKDAY_REG_WIDTH);
+    info.date.month   = PCF8563B_bcd2bin(rd_data[5], MONTH_REG_WIDTH);
+    info.date.year    = PCF8563B_bcd2bin(rd_data[6], YEAR_REG_WIDTH);
+    return info;
+}
+
+
+void cust_ip_i2c_test() {
+    printf("i2c test\n");
+    i2c_config();
+    printf("AT24C64 wr/rd test\n");
+    // prepare ref data
+    // uint8_t ref_data[I2C_TEST_NUM], rd_data[I2C_TEST_NUM];
+    // for(int i = 0; i < I2C_TEST_NUM; ++i) ref_data[i] = i;
+    // // write AT24C64
+    // i2c_wr_nbyte(AT24C64_SLV_ADDR, (uint16_t)0, I2C_DEV_ADDR_16BIT, I2C_TEST_NUM, ref_data);
+    // // read AT24C64
+    // i2c_rd_nbyte(AT24C64_SLV_ADDR, (uint16_t)0, I2C_DEV_ADDR_16BIT, I2C_TEST_NUM, rd_data);
+    // // check data
+    // for(int i = 0; i < I2C_TEST_NUM; ++i) {
+    //     printf("recv: %d expt: %d\n", rd_data[i], i);
+    //     if (rd_data[i] != i) printf("test fail\n");
+    // }
+
+    // i2c_wr_nbyte(AT24C64_SLV_ADDR, (uint16_t)0, I2C_DEV_ADDR_16BIT, I2C_TEST_NUM, ref_data);
+
+    printf("AT24C64 wr/rd test done\n");
+    printf("PCF8563B test\n");
+    PCF8563B_info_t init1_info = {
+        .time.second  = 51,
+        .time.minute  = 30,
+        .time.hour    = 18,
+        .date.weekday = 3,
+        .date.day     = 7,
+        .date.month   = 8,
+        .date.year    = 24
+    };
+    PCF8563B_wr_reg(&init1_info);
+
+    PCF8563B_info_t rd_info = {0};
+    for(int i = 0; i < 100; ++i) {
+        rd_info = PCF8563B_rd_reg();
+        printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
+                                                    rd_info.date.day, rd_info.date.weekday,
+                                                    rd_info.time.hour, rd_info.time.minute,
+                                                    rd_info.time.second);
+    }
+
+    PCF8563B_info_t init2_info = {
+        .time.second  = 23,
+        .time.minute  = 22,
+        .time.hour    = 12,
+        .date.weekday = 1,
+        .date.day     = 19,
+        .date.month   = 8,
+        .date.year    = 24
+    };
+    PCF8563B_wr_reg(&init2_info);
+    for(int i = 0; i < 100; ++i) {
+        rd_info = PCF8563B_rd_reg();
+        printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
+                                                    rd_info.date.day, rd_info.date.weekday,
+                                                    rd_info.time.hour, rd_info.time.minute,
+                                                    rd_info.time.second);
+    }
+
+    printf("PCF8563B test done\n");
+    printf("test done\n");
+}
+
 
 void welcome_screen()
 {
@@ -485,8 +723,6 @@ void welcome_screen()
     printf("                    16 x GPIO\n");
     printf("                     1 x HOUSEKEEPING SPI\n");
     printf("                     1 x UART\n");
-    printf("                     1 x SPI\n");
-    printf("                     1 x I2C\n");
     printf("                     2 x TIMER\n");
     printf("                     1 x RNG\n");
     printf("                     1 x ARCHINFO\n");
@@ -494,6 +730,7 @@ void welcome_screen()
     printf("                     4 x PWM\n");
     printf("                     1 x PS2\n");
     printf("                     1 x QSPI\n");
+    printf("                     1 x I2C\n");
     printf("                     1 x PSRAM(4x8MB)\n");
     printf("                     1 x SPFS(TPO)\n\n");
     printf("self test start...\n");
@@ -515,11 +752,15 @@ void main()
     ip_counter_timer_test();
     ip_gpio_test();
     ip_hk_spi_test();
-    // ip_i2c_test();
+
     cust_ip_archinfo_test();
     cust_ip_rng_test();
-    cust_ip_uart_test();
-    cust_ip_ps2_test();
+    // cust_ip_uart_test();
+    cust_ip_pwm_test();
+    // cust_ip_ps2_test();
+    // cust_ip_spi_test();
+    cust_ip_i2c_test();
+
     cmd_benchmark(true, 0);
     cmd_benchmark_all();
     while (getchar_prompt("Press ENTER to continue..\n") != '\r')
