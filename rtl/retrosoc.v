@@ -570,7 +570,6 @@ module retrosoc #(
         // Handle r_iomem_ready based on wait states
         case (s_iomem_addr[7:0])
           8'h14:   r_iomem_ready <= ~s_simpleuart_reg_dat_wait;
-          8'h4c:   r_iomem_ready <= ~s_simplespi_reg_dat_wait;
           default: r_iomem_ready <= 1'b1;
         endcase
         case (s_iomem_addr[7:0])
