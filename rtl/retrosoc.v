@@ -46,7 +46,7 @@ module retrosoc #(
     output                 hk_pt_sdo_o,
     //sram if including clk_i and rst_n_i above
     output [          3:0] ram_wstrb_o,
-    output [         13:0] ram_addr_o,
+    output [         14:0] ram_addr_o,
     output [         31:0] ram_wdata_o,
     input  [         31:0] ram_rdata_o,
     // memory mapped I/O signals
@@ -267,7 +267,7 @@ module retrosoc #(
 
   wire s_ram_range = s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS;
   assign ram_wstrb_o = s_ram_range ? s_mem_wstrb : 4'h0;
-  assign ram_addr_o  = s_mem_addr[15:2];
+  assign ram_addr_o  = s_mem_addr[16:2];
   assign ram_wdata_o = s_mem_wdata;
   always @(posedge clk_i) begin
     r_ram_ready <= s_ram_range;

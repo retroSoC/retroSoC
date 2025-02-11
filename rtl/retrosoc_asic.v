@@ -138,7 +138,7 @@ module retrosoc_asic (
   wire        s_irq_pin_i;
   // ram
   wire [ 3:0] s_ram_wstrb;
-  wire [13:0] s_ram_addr;
+  wire [14:0] s_ram_addr;
   wire [31:0] s_ram_wdata;
   wire [31:0] s_ram_rdata;
   // housekeeping
