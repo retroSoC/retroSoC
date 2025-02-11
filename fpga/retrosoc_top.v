@@ -41,11 +41,6 @@ module retrosoc_top (
       .hk_sdo_o_pad             (),
       .hk_csb_i_pad             (1'b0),
       .hk_sck_i_pad             (1'b0),
-      // SPI MST
-      .spi_mst_sdi_i_pad        (1'b0),
-      .spi_mst_csb_o_pad        (),
-      .spi_mst_sck_o_pad        (),
-      .spi_mst_sdo_o_pad        (),
       // SPI FLASH
       .flash_csb_o_pad          (),
       .flash_clk_o_pad          (),
@@ -56,9 +51,6 @@ module retrosoc_top (
       // UART
       .uart_tx_o_pad            (uart_tx_o),
       .uart_rx_i_pad            (uart_rx_i),
-      // I2C
-      .i2c_sda_io_pad           (i2c_scl_io),
-      .i2c_scl_io_pad           (i2c_sda_io),
       // GPIO
       .gpio_0_io_pad            (gpio_io0),
       .gpio_1_io_pad            (gpio_io1),
