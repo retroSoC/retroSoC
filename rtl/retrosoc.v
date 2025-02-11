@@ -19,24 +19,18 @@
  *
  */
 
-// `ifdef PICORV32_V
-// `error "retrosoc.v must be read before picorv32.v!"
-// `endif
 
 /* Note:  Synthesize register memory from flops */
 /* Inefficient, but not terribly so */
-
 /* Also note:  To avoid having a hard macro in the place & route    */
 /* (method not finished yet in qflow), SRAM pins are brought out to */
 /* the retrosoc I/O so that raven_soc.v itself is fully             */
 /* synthesizable and routable with qflow as-is.                     */
-// `define PICORV32_REGS retrosoc_regs
 
 module retrosoc #(
-    parameter integer        MEM_WORDS      = 16384,
+    parameter integer        MEM_WORDS      = 16384 * 2,
     parameter         [31:0] STACKADDR      = (4 * MEM_WORDS),  // end of memory
-    parameter         [31:0] PROGADDR_RESET = 32'h3000_0000,     // flash
-    // parameter         [31:0] PROGADDR_RESET = 32'h0010_0000,     // flash
+    parameter         [31:0] PROGADDR_RESET = 32'h3000_0000,    // flash
     parameter                PSRAM_NUM      = 4
 ) (
     input                  clk_i,
@@ -343,7 +337,7 @@ module retrosoc #(
   // mmio native perip
   assign s_iomem_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h03 || s_mem_addr >= 32'h3000_0000);
   assign s_iomem_wstrb = s_mem_wstrb;
-  assign s_iomem_addr  = s_mem_addr;
+  assign s_iomem_addr = s_mem_addr;
   assign s_iomem_wdata = s_mem_wdata;
   // spi flash
   wire        s_spimemio_cfgreg_sel = s_mem_valid && (s_mem_addr == 32'h0200_0000);
