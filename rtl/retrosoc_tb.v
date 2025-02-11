@@ -20,7 +20,7 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_tb;
-  localparam CPU_FREQ = 50;  // MHz
+  localparam real CPU_FREQ = 72.0;  // MHz
 
   reg  r_clk;
   reg  r_rst_n;
