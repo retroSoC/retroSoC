@@ -31,8 +31,8 @@ module retrosoc_tb;
   wire s_flash_io1;
   wire s_flash_io2;
   wire s_flash_io3;
-  wire s_i2c_sda_io;
-  wire s_i2c_scl_io;
+  // wire s_i2c_sda_io;
+  // wire s_i2c_scl_io;
   wire s_cust_uart_tx;
   wire s_cust_uart_rx;
   wire s_cust_ps2_ps2_clk;
@@ -63,10 +63,6 @@ module retrosoc_tb;
       .hk_sdo_o_pad             (),
       .hk_csb_i_pad             (1'b1),
       .hk_sck_i_pad             (1'b0),
-      .spi_mst_sdi_i_pad        (1'b0),
-      .spi_mst_csb_o_pad        (),
-      .spi_mst_sck_o_pad        (),
-      .spi_mst_sdo_o_pad        (),
       .flash_csb_o_pad          (s_flash_csb),
       .flash_clk_o_pad          (s_flash_clk),
       .flash_io0_io_pad         (s_flash_io0),
@@ -75,8 +71,6 @@ module retrosoc_tb;
       .flash_io3_io_pad         (s_flash_io3),
       .uart_tx_o_pad            (s_uart_tx),
       .uart_rx_i_pad            (1'b0),
-      .i2c_sda_io_pad           (s_i2c_sda_io),
-      .i2c_scl_io_pad           (s_i2c_scl_io),
       .gpio_0_io_pad            (),
       .gpio_1_io_pad            (),
       .gpio_2_io_pad            (),
@@ -122,25 +116,6 @@ module retrosoc_tb;
       .cust_spfs_miso_i_pad     (s_cust_spfs_miso_i)
   );
 
-  //  N25Qxxx u_N25Qxxx (
-  //       .S        (s_flash_csb),
-  //       .C_       (s_flash_clk),
-  //       .HOLD_DQ3 (),
-  //       .DQ0      (s_flash_io0),
-  //       .DQ1      (s_flash_io1),
-  //       .Vcc      ('d3000),
-  //       .Vpp_W_DQ2()
-  //   );
-
-  // spiflash u_spiflash (
-  //     .csb(s_flash_csb),
-  //     .clk(s_flash_clk),
-  //     .io0(s_flash_io0),  // MOSI
-  //     .io1(s_flash_io1),  // MISO
-  //     .io2(s_flash_io2),
-  //     .io3(s_flash_io3)
-  // );
-
   N25Qxxx u_N25Qxxx (
       .C_       (s_cust_spfs_clk_o),
       .S        (s_cust_spfs_cs_o),
@@ -152,12 +127,12 @@ module retrosoc_tb;
   );
 
   // Testbench pullups on SDA, SCL lines
-  pullup i2c_scl_up (s_i2c_scl_io);
-  pullup i2c_sda_up (s_i2c_sda_io);
-  i2c_slave u_i2c_slave (
-      .scl(s_i2c_scl_io),
-      .sda(s_i2c_sda_io)
-  );
+  // pullup i2c_scl_up (s_i2c_scl_io);
+  // pullup i2c_sda_up (s_i2c_sda_io);
+  // i2c_slave u_i2c_slave (
+  //     .scl(s_i2c_scl_io),
+  //     .sda(s_i2c_sda_io)
+  // );
 
   rs232 u_rs232_0 (
       .rs232_rx_i(s_uart_tx),

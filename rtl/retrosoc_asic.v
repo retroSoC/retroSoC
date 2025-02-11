@@ -33,11 +33,6 @@ module retrosoc_asic (
     output hk_sdo_o_pad,
     input  hk_csb_i_pad,
     input  hk_sck_i_pad,
-    // SPI MST
-    input  spi_mst_sdi_i_pad,
-    output spi_mst_csb_o_pad,
-    output spi_mst_sck_o_pad,
-    output spi_mst_sdo_o_pad,
     // SPI FLASH
     output flash_csb_o_pad,
     output flash_clk_o_pad,
@@ -48,9 +43,6 @@ module retrosoc_asic (
     // UART
     output uart_tx_o_pad,
     input  uart_rx_i_pad,
-    // I2C
-    inout  i2c_sda_io_pad,
-    inout  i2c_scl_io_pad,
     // GPIO
     output gpio_0_io_pad,
     output gpio_1_io_pad,
@@ -120,11 +112,6 @@ module retrosoc_asic (
   wire        s_hk_sdo_o;
   wire        s_hk_csb_i;
   wire        s_hk_sck_i;
-  wire        s_spi_mst_sdi_i;
-  wire        s_spi_mst_csb_o;
-  wire        s_spi_mst_sck_o;
-  wire        s_spi_mst_sdo_o;
-  wire        s_spi_mst_oenb_o;
   wire        s_flash_csb_o;
   wire        s_flash_clk_o;
   wire        s_flash_clk_oeb_o;
@@ -143,12 +130,6 @@ module retrosoc_asic (
   wire        s_flash_io3_di_i;
   wire        s_uart_tx_o;
   wire        s_uart_rx_i;
-  wire        s_i2c_scl_i;
-  wire        s_i2c_scl_o;
-  wire        s_i2c_scl_oeb_o;
-  wire        s_i2c_sda_i;
-  wire        s_i2c_sda_o;
-  wire        s_i2c_sda_oeb_o;
   wire [15:0] s_gpio_out_o;
   wire [15:0] s_gpio_in_i;
   wire [15:0] s_gpio_outenb_o;
@@ -217,10 +198,6 @@ module retrosoc_asic (
   tc_io_tri_pad u_hk_sdo_o_pad      (.pad(hk_sdo_o_pad),       .c2p(s_hk_sdo_o),       .c2p_en(~s_hk_sdo_enb),        .p2c());
   tc_io_tri_pad u_hk_csb_i_pad      (.pad(hk_csb_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_csb_i));
   tc_io_tri_pad u_hk_sck_i_pad      (.pad(hk_sck_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sck_i));
-  tc_io_tri_pad u_spi_mst_sdi_i_pad (.pad(spi_mst_sdi_i_pad),  .c2p(),                 .c2p_en(1'b0),                 .p2c(s_spi_mst_sdi_i));
-  tc_io_tri_pad u_spi_mst_csb_o_pad (.pad(spi_mst_csb_o_pad),  .c2p(s_spi_mst_csb_o),  .c2p_en(1'b1),                 .p2c());
-  tc_io_tri_pad u_spi_mst_sck_o_pad (.pad(spi_mst_sck_o_pad),  .c2p(s_spi_mst_sck_o),  .c2p_en(1'b1),                 .p2c());
-  tc_io_tri_pad u_spi_mst_sdo_o_pad (.pad(spi_mst_sdo_o_pad),  .c2p(s_spi_mst_sdo_o),  .c2p_en(~s_spi_mst_oenb_o),    .p2c());
   tc_io_tri_pad u_flash_csb_o_pad   (.pad(flash_csb_o_pad),    .c2p(s_flash_csb_o),    .c2p_en(~s_flash_csb_oeb_o),   .p2c());
   tc_io_tri_pad u_flash_clk_o_pad   (.pad(flash_clk_o_pad),    .c2p(s_flash_clk_o),    .c2p_en(~s_flash_clk_oeb_o),   .p2c());
   tc_io_tri_pad u_flash_io0_io_pad  (.pad(flash_io0_io_pad),   .c2p(s_flash_io0_do_o), .c2p_en(~s_flash_io0_oeb_o),   .p2c(s_flash_io0_di_i));
@@ -229,8 +206,6 @@ module retrosoc_asic (
   tc_io_tri_pad u_flash_io3_io_pad  (.pad(flash_io3_io_pad),   .c2p(s_flash_io3_do_o), .c2p_en(~s_flash_io3_oeb_o),   .p2c(s_flash_io3_di_i));
   tc_io_tri_pad u_uart_tx_o_pad     (.pad(uart_tx_o_pad),      .c2p(s_uart_tx_o),      .c2p_en(1'b1),                 .p2c());
   tc_io_tri_pad u_uart_rx_i_pad     (.pad(uart_rx_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_uart_rx_i));
-  tc_io_tri_pad u_i2c_sda_io_pad    (.pad(i2c_sda_io_pad),     .c2p(s_i2c_sda_o),      .c2p_en(~s_i2c_sda_oeb_o),     .p2c(s_i2c_sda_i));
-  tc_io_tri_pad u_i2c_scl_io_pad    (.pad(i2c_scl_io_pad),     .c2p(s_i2c_scl_o),      .c2p_en(~s_i2c_scl_oeb_o),     .p2c(s_i2c_scl_i));
   tc_io_tri_pad u_gpio_0_io_pad     (.pad(gpio_0_io_pad),      .c2p(s_gpio_out_o[0]),  .c2p_en(~s_gpio_outenb_o[0]),  .p2c(s_gpio_in_i[0]));
   tc_io_tri_pad u_gpio_1_io_pad     (.pad(gpio_1_io_pad),      .c2p(s_gpio_out_o[1]),  .c2p_en(~s_gpio_outenb_o[1]),  .p2c(s_gpio_in_i[1]));
   tc_io_tri_pad u_gpio_2_io_pad     (.pad(gpio_2_io_pad),      .c2p(s_gpio_out_o[2]),  .c2p_en(~s_gpio_outenb_o[2]),  .p2c(s_gpio_in_i[2]));
@@ -341,17 +316,6 @@ module retrosoc_asic (
       .spi_slv_ro_mask_rev_i    (s_hk_mask_rev),
       .uart_tx_o                (s_uart_tx_o),
       .uart_rx_i                (s_uart_rx_i),
-      .i2c_scl_i                (s_i2c_scl_i),
-      .i2c_scl_o                (s_i2c_scl_o),
-      .i2c_scl_oeb_o            (s_i2c_scl_oeb_o),
-      .i2c_sda_i                (s_i2c_sda_i),
-      .i2c_sda_o                (s_i2c_sda_o),
-      .i2c_sda_oeb_o            (s_i2c_sda_oeb_o),
-      .spi_mst_sdo_o            (s_spi_mst_sdo_o),
-      .spi_mst_csb_o            (s_spi_mst_csb_o),
-      .spi_mst_sck_o            (s_spi_mst_sck_o),
-      .spi_mst_sdi_i            (s_spi_mst_sdi_i),
-      .spi_mst_oenb_o           (s_spi_mst_oenb_o),
       .irq_pin_i                (s_irq_pin_i),
       .irq_spi_i                (s_hk_irq),
       .trap_o                   (s_hk_trap),

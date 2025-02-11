@@ -73,17 +73,6 @@ module retrosoc #(
     input  [          3:0] spi_slv_ro_mask_rev_i,
     output                 uart_tx_o,
     input                  uart_rx_i,
-    input                  i2c_scl_i,
-    output                 i2c_scl_o,
-    output                 i2c_scl_oeb_o,
-    input                  i2c_sda_i,
-    output                 i2c_sda_o,
-    output                 i2c_sda_oeb_o,
-    output                 spi_mst_sdo_o,
-    output                 spi_mst_csb_o,
-    output                 spi_mst_sck_o,
-    input                  spi_mst_sdi_i,
-    output                 spi_mst_oenb_o,
     // irq
     input                  irq_pin_i,
     input                  irq_spi_i,
@@ -315,8 +304,6 @@ module retrosoc #(
   // 16 x GPIO
   // 1  x HOUSEKEEPING SPI
   // 1  x UART
-  // 1  x SPI
-  // 1  x I2C
   // 2  x TIMER
   // AXIL WRAPPER
   //    1 x RNG
@@ -327,6 +314,7 @@ module retrosoc #(
   //    1 x QSPI
   //    1 x PSRAM(8MBx4)
   //    1 x SPFS(HP)
+  //    1 x I2C
   picorv32 #(
       .PROGADDR_RESET  (PROGADDR_RESET),
       .PROGADDR_IRQ    (32'h0000_0000),
@@ -366,19 +354,6 @@ module retrosoc #(
   wire [31:0] s_simpleuart_reg_div_dout;
   wire [31:0] s_simpleuart_reg_dat_dout;
   wire        s_simpleuart_reg_dat_wait;
-  // spi
-  wire        s_simplespi_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0048);
-  wire        s_simplespi_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_004c);
-  wire [31:0] s_simplespi_reg_cfg_dout;
-  wire [31:0] s_simplespi_reg_dat_dout;
-  wire        s_simplespi_reg_dat_wait;
-  // i2c
-  wire        s_simplei2c_reg_cfg1_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0050);
-  wire        s_simplei2c_reg_cfg2_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0054);
-  wire        s_simplei2c_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0058);
-  wire [31:0] s_simplei2c_reg_cfg1_dout;
-  wire [31:0] s_simplei2c_reg_cfg2_dout;
-  wire [31:0] s_simplei2c_reg_dat_dout;
   // tim0
   wire        s_tim0_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_005c);
   wire        s_tim0_reg_val_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0060);
@@ -441,48 +416,6 @@ module retrosoc #(
       .reg_dat_do  (s_simpleuart_reg_dat_dout),
       .reg_dat_wait(s_simpleuart_reg_dat_wait),
       .irq_out     (s_irq_uart)
-  );
-
-  simple_i2c_master u_simplei2c_master (
-      .clk         (clk_i),
-      .resetn      (rst_n_i),
-      .reg_cfg1_we (s_simplei2c_reg_cfg1_sel ? s_iomem_wstrb[2:0] : 3'b000),
-      .reg_cfg1_di (s_iomem_wdata),
-      .reg_cfg1_do (s_simplei2c_reg_cfg1_dout),
-      .reg_cfg2_we (s_simplei2c_reg_cfg2_sel ? s_iomem_wstrb[0] : 1'b0),
-      .reg_cfg2_di (s_iomem_wdata),
-      .reg_cfg2_do (s_simplei2c_reg_cfg2_dout),
-      .reg_dat_we  (s_simplei2c_reg_dat_sel ? s_iomem_wstrb[0] : 1'b0),
-      .reg_dat_re  (s_simplei2c_reg_dat_sel && !s_iomem_wstrb),
-      .reg_dat_di  (s_iomem_wdata),
-      .reg_dat_do  (s_simplei2c_reg_dat_dout),
-      .scl_pad_i   (i2c_scl_i),
-      .scl_pad_o   (i2c_scl_o),
-      .scl_padoeb_o(i2c_scl_oeb_o),
-      .sda_pad_i   (i2c_sda_i),
-      .sda_pad_o   (i2c_sda_o),
-      .sda_padoeb_o(i2c_sda_oeb_o),
-      .irq_o       (s_irq_i2c)
-  );
-
-  simple_spi_master u_simple_spi_master (
-      .resetn      (rst_n_i),
-      .clk         (clk_i),
-      .reg_cfg_we  (s_simplespi_reg_cfg_sel ? s_iomem_wstrb[1:0] : 2'b00),
-      .reg_cfg_di  (s_iomem_wdata),
-      .reg_cfg_do  (s_simplespi_reg_cfg_dout),
-      .reg_dat_we  (s_simplespi_reg_dat_sel ? s_iomem_wstrb[0] : 1'b0),
-      .reg_dat_re  (s_simplespi_reg_dat_sel && !s_iomem_wstrb),
-      .reg_dat_di  (s_iomem_wdata),
-      .reg_dat_do  (s_simplespi_reg_dat_dout),
-      .reg_dat_wait(s_simplespi_reg_dat_wait),
-      .irq_out     (s_irq_spi_mst),
-      .err_out     (),
-      .sdi         (spi_mst_sdi_i),
-      .csb         (spi_mst_csb_o),
-      .sck         (spi_mst_sck_o),
-      .sdo         (spi_mst_sdo_o),
-      .sdoenb      (spi_mst_oenb_o)
   );
 
   counter_timer u_counter_timer0 (
@@ -698,11 +631,6 @@ module retrosoc #(
             r_iomem_rdata <= {30'd0, r_irq_8_in_src};
             if (s_iomem_wstrb[0]) r_irq_8_in_src <= s_iomem_wdata[1:0];
           end
-          8'h48: r_iomem_rdata <= s_simplespi_reg_cfg_dout;
-          8'h4c: r_iomem_rdata <= s_simplespi_reg_dat_dout;
-          8'h50: r_iomem_rdata <= s_simplei2c_reg_cfg1_dout;
-          8'h54: r_iomem_rdata <= s_simplei2c_reg_cfg2_dout;
-          8'h58: r_iomem_rdata <= s_simplei2c_reg_dat_dout;
           8'h5c: r_iomem_rdata <= {28'd0, s_tim0_reg_cfg_dout};
           8'h60: r_iomem_rdata <= s_tim0_reg_val_dout;
           8'h64: r_iomem_rdata <= s_tim0_reg_dat_dout;
