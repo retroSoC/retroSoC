@@ -71,6 +71,8 @@ module retrosoc_asic (
     output cust_pwm_pwm_3_o_pad,
     inout  cust_ps2_ps2_clk_i_pad,
     inout  cust_ps2_ps2_dat_i_pad,
+    inout  cust_i2c_scl_io_pad,
+    inout  cust_i2c_sda_io_pad,
     output cust_qspi_spi_clk_o_pad,
     output cust_qspi_spi_csn_0_o_pad,
     output cust_qspi_spi_csn_1_o_pad,
@@ -167,6 +169,12 @@ module retrosoc_asic (
   wire [ 3:0] s_cust_pwm_pwm_o;
   wire        s_cust_ps2_ps2_clk_i;
   wire        s_cust_ps2_ps2_dat_i;
+  wire        s_cust_i2c_scl_i;
+  wire        s_cust_i2c_scl_o;
+  wire        s_cust_i2c_scl_dir_o;
+  wire        s_cust_i2c_sda_i;
+  wire        s_cust_i2c_sda_o;
+  wire        s_cust_i2c_sda_dir_o;
   wire        s_cust_qspi_spi_clk_o;
   wire [ 3:0] s_cust_qspi_spi_csn_o;
   wire [ 3:0] s_cust_qspi_spi_sdo_o;
@@ -232,6 +240,9 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_pwm_pwm_3_o_pad     (.pad(cust_pwm_pwm_3_o_pad),      .c2p(s_cust_pwm_pwm_o[3]),      .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_ps2_ps2_clk_i_pad   (.pad(cust_ps2_ps2_clk_i_pad),    .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_ps2_ps2_clk_i));
   tc_io_tri_pad u_cust_ps2_ps2_dat_i_pad   (.pad(cust_ps2_ps2_dat_i_pad),    .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_ps2_ps2_dat_i));
+
+  tc_io_tri_pad u_cust_i2c_scl_io_pad      (.pad(cust_i2c_scl_io_pad),       .c2p(s_cust_i2c_scl_o),         .c2p_en(~s_cust_i2c_scl_dir_o),    .p2c(s_cust_i2c_scl_i));
+  tc_io_tri_pad u_cust_i2c_sda_io_pad      (.pad(cust_i2c_sda_io_pad),       .c2p(s_cust_i2c_sda_o),         .c2p_en(~s_cust_i2c_sda_dir_o),    .p2c(s_cust_i2c_sda_i));
   tc_io_tri_pad u_cust_qspi_spi_clk_o_pad  (.pad(cust_qspi_spi_clk_o_pad),   .c2p(s_cust_qspi_spi_clk_o),    .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_qspi_spi_csn_0_o_pad(.pad(cust_qspi_spi_csn_0_o_pad), .c2p(s_cust_qspi_spi_csn_o[0]), .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_qspi_spi_csn_1_o_pad(.pad(cust_qspi_spi_csn_1_o_pad), .c2p(s_cust_qspi_spi_csn_o[1]), .c2p_en(1'b1),                     .p2c());
@@ -340,6 +351,12 @@ module retrosoc_asic (
       .cust_pwm_pwm_o           (s_cust_pwm_pwm_o),
       .cust_ps2_ps2_clk_i       (s_cust_ps2_ps2_clk_i),
       .cust_ps2_ps2_dat_i       (s_cust_ps2_ps2_dat_i),
+      .cust_i2c_scl_i           (s_cust_i2c_scl_i),
+      .cust_i2c_scl_o           (s_cust_i2c_scl_o),
+      .cust_i2c_scl_dir_o       (s_cust_i2c_scl_dir_o),
+      .cust_i2c_sda_i           (s_cust_i2c_sda_i),
+      .cust_i2c_sda_o           (s_cust_i2c_sda_o),
+      .cust_i2c_sda_dir_o       (s_cust_i2c_sda_dir_o),
       .cust_qspi_spi_clk_o      (s_cust_qspi_spi_clk_o),
       .cust_qspi_spi_csn_o      (s_cust_qspi_spi_csn_o),
       .cust_qspi_spi_sdo_o      (s_cust_qspi_spi_sdo_o),

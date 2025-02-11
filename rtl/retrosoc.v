@@ -94,12 +94,17 @@ module retrosoc #(
     output [          3:0] cust_pwm_pwm_o,
     input                  cust_ps2_ps2_clk_i,
     input                  cust_ps2_ps2_dat_i,
+    input                  cust_i2c_scl_i,
+    output                 cust_i2c_scl_o,
+    output                 cust_i2c_scl_dir_o,
+    input                  cust_i2c_sda_i,
+    output                 cust_i2c_sda_o,
+    output                 cust_i2c_sda_dir_o,
     output                 cust_qspi_spi_clk_o,
     output [          3:0] cust_qspi_spi_csn_o,
     output [          3:0] cust_qspi_spi_sdo_o,
     output [          3:0] cust_qspi_spi_oe_o,
     input  [          3:0] cust_qspi_spi_sdi_i,
-    // psram
     output                 cust_psram_sclk_o,
     input                  cust_psram_sio0_i,
     input                  cust_psram_sio1_i,
@@ -111,7 +116,6 @@ module retrosoc #(
     output                 cust_psram_sio3_o,
     output [PSRAM_NUM-1:0] cust_psram_sio_oe_o,
     output [PSRAM_NUM-1:0] cust_psram_ce_o,
-    // spfs
     output                 cust_spfs_clk_o,
     output                 cust_spfs_cs_o,
     output                 cust_spfs_mosi_o,
@@ -185,6 +189,7 @@ module retrosoc #(
   wire                 s_cust_uart_irq;
   wire                 s_cust_pwm_irq;
   wire                 s_cust_ps2_irq;
+  wire                 s_cust_i2c_irq;
   wire                 s_cust_qspi_irq;
   wire                 s_cust_spfs_irq;
 
@@ -289,9 +294,10 @@ module retrosoc #(
   assign s_irq[15]    = s_cust_uart_irq;
   assign s_irq[16]    = s_cust_pwm_irq;
   assign s_irq[17]    = s_cust_ps2_irq;
-  assign s_irq[18]    = s_cust_qspi_irq;
-  assign s_irq[19]    = s_cust_spfs_irq;
-  assign s_irq[31:20] = 12'd0;
+  assign s_irq[18]    = s_cust_i2c_irq;
+  assign s_irq[19]    = s_cust_qspi_irq;
+  assign s_irq[20]    = s_cust_spfs_irq;
+  assign s_irq[31:21] = 11'd0;
 
   // memory mapped IP
   // 1  x SPFS
@@ -535,6 +541,13 @@ module retrosoc #(
       .ps2_ps2_clk_i  (cust_ps2_ps2_clk_i),
       .ps2_ps2_dat_i  (cust_ps2_ps2_dat_i),
       .ps2_irq_o      (s_cust_ps2_irq),
+      .i2c_scl_i      (cust_i2c_scl_i),
+      .i2c_scl_o      (cust_i2c_scl_o),
+      .i2c_scl_dir_o  (cust_i2c_scl_dir_o),
+      .i2c_sda_i      (cust_i2c_sda_i),
+      .i2c_sda_o      (cust_i2c_sda_o),
+      .i2c_sda_dir_o  (cust_i2c_sda_dir_o),
+      .i2c_irq_o      (s_cust_i2c_irq),
       .qspi_spi_clk_o (cust_qspi_spi_clk_o),
       .qspi_spi_csn_o (cust_qspi_spi_csn_o),
       .qspi_spi_sdo_o (cust_qspi_spi_sdo_o),

@@ -92,6 +92,8 @@ module retrosoc_tb;
       .cust_uart_rx_i_pad       (s_cust_uart_rx),
       .cust_ps2_ps2_clk_i_pad   (s_cust_ps2_ps2_clk),
       .cust_ps2_ps2_dat_i_pad   (s_cust_ps2_ps2_dat),
+      .cust_i2c_scl_io_pad      (),
+      .cust_i2c_sda_io_pad      (),
       .cust_qspi_spi_clk_o_pad  (),
       .cust_qspi_spi_csn_0_o_pad(),
       .cust_qspi_spi_csn_1_o_pad(),
