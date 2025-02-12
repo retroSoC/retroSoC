@@ -182,8 +182,6 @@ module retrosoc #(
   wire [         31:0] s_irq;
   wire                 s_irq_stall = 0;
   wire                 s_irq_uart;
-  wire                 s_irq_i2c;
-  wire                 s_irq_spi_mst;
   wire                 s_irq_tim0;
   wire                 s_irq_tim1;
   wire                 s_cust_uart_irq;
@@ -287,17 +285,15 @@ module retrosoc #(
   assign s_irq[8]     = s_irq_8;
   assign s_irq[9]     = 1'd0;
   assign s_irq[10]    = 1'd0;
-  assign s_irq[11]    = s_irq_i2c;
-  assign s_irq[12]    = s_irq_spi_mst;
-  assign s_irq[13]    = s_irq_tim0;
-  assign s_irq[14]    = s_irq_tim1;
-  assign s_irq[15]    = s_cust_uart_irq;
-  assign s_irq[16]    = s_cust_pwm_irq;
-  assign s_irq[17]    = s_cust_ps2_irq;
-  assign s_irq[18]    = s_cust_i2c_irq;
-  assign s_irq[19]    = s_cust_qspi_irq;
-  assign s_irq[20]    = s_cust_spfs_irq;
-  assign s_irq[31:21] = 11'd0;
+  assign s_irq[11]    = s_irq_tim0;
+  assign s_irq[12]    = s_irq_tim1;
+  assign s_irq[13]    = s_cust_uart_irq;
+  assign s_irq[14]    = s_cust_pwm_irq;
+  assign s_irq[15]    = s_cust_ps2_irq;
+  assign s_irq[16]    = s_cust_i2c_irq;
+  assign s_irq[17]    = s_cust_qspi_irq;
+  assign s_irq[18]    = s_cust_spfs_irq;
+  assign s_irq[31:19] = 13'd0;
 
   // memory mapped IP
   // 1  x SPFS
