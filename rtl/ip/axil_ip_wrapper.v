@@ -186,7 +186,7 @@ module axil_ip_wrapper (
   );
 
   apb_spi_master #(
-      .BUFFER_DEPTH  (8),
+      .BUFFER_DEPTH  (16),
       .APB_ADDR_WIDTH(32)
   ) u_apb_spi_master (
       .HCLK    (clk_i),
