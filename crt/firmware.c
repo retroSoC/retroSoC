@@ -65,6 +65,30 @@
 #define YEAR_REG_WIDTH          ((uint8_t)0xFF)
 #define BCD_Century             ((uint8_t)0x80)
 
+#define lcd_dc_clr      (reg_gpio_data = (uint32_t)0b000)
+#define lcd_dc_set      (reg_gpio_data = (uint32_t)0b100)
+
+#define USE_HORIZONTAL 2
+
+#if USE_HORIZONTAL == 0 || USE_HORIZONTAL == 1
+#define LCD_W 135
+#define LCD_H 240
+#else
+#define LCD_W 240
+#define LCD_H 135
+#endif
+
+#define SPI_CMD_RD      0
+#define SPI_CMD_WR      1
+#define SPI_CMD_QRD     2
+#define SPI_CMD_QWR     3
+#define SPI_CMD_SWRST   4
+
+#define SPI_CSN0        0
+#define SPI_CSN1        1
+#define SPI_CSN2        2
+#define SPI_CSN3        3
+
 typedef struct {
     struct {
         uint8_t second;
@@ -80,6 +104,7 @@ typedef struct {
     } date;
 
 } PCF8563B_info_t;
+
 
 
 uint32_t xorshift32(uint32_t *state)
@@ -457,7 +482,7 @@ void cust_ip_pwm_test()
     printf("reg_cust_pwm_ctrl: %d reg_cust_pwm_pscr: %d reg_cust_pwm_cmp: %d\n", reg_cust_pwm_ctrl, reg_cust_pwm_pscr, reg_cust_pwm_cmp);
     for (int i = 0; i < 36; i++)
     {
-        printf("[PWM]: %d/36\n", i);
+        printf("[PWM]: %d/36\n", i+1);
         for (int j = 10; j <= 990; j++)
         {
             reg_cust_pwm_ctrl = (uint32_t)4;
@@ -596,7 +621,6 @@ static uint8_t PCF8563B_bcd2bin(uint8_t val,uint8_t reg_width)
     return res;
 }
 
-
 void PCF8563B_wr_reg(PCF8563B_info_t *info) {
     uint8_t wr_data[7] = {0};
     *wr_data       = PCF8563B_bin2bcd(info->time.second);
@@ -622,7 +646,6 @@ PCF8563B_info_t PCF8563B_rd_reg() {
     info.date.year    = PCF8563B_bcd2bin(rd_data[6], YEAR_REG_WIDTH);
     return info;
 }
-
 
 void cust_ip_i2c_test() {
     printf("i2c test\n");
@@ -687,6 +710,211 @@ void cust_ip_i2c_test() {
     printf("test done\n");
 }
 
+
+void spi_init() {
+    reg_gpio_enb = (uint32_t)0b011;
+    reg_cust_qspi_status = (uint32_t)0b10000;
+    reg_cust_qspi_status = (uint32_t)0b00000;
+    reg_cust_qspi_intcfg = (uint32_t)0b00000;
+    reg_cust_qspi_dum    = (uint32_t)0;
+    reg_cust_qspi_clkdiv = (uint32_t)0; // sck = apb_clk/2(div+1)
+}
+
+
+int32_t spi_write_fifo(uint32_t *data, uint32_t datalen) {
+    volatile int num_words, i;
+    num_words = (datalen >> 5) & 0x7FF;
+
+    if ( (datalen & 0x1F) != 0)
+        num_words++;
+
+    for (i = 0; i < num_words; i++) {
+        while (((reg_cust_qspi_status >> 24) & 0xFF) >= 8);
+        reg_cust_qspi_txfifo = data[i];
+    }
+
+    return 0;
+}
+
+
+int32_t spi_set_datalen(uint32_t datalen) {
+    volatile int old_len;
+    old_len = reg_cust_qspi_len;
+    old_len = ((datalen << 16) & 0xFFFF0000) | (old_len & 0xFFFF);
+    reg_cust_qspi_len = old_len;
+    
+    return 0;
+}
+
+int32_t spi_start_transaction(uint32_t trans_type, uint32_t csnum) {
+    reg_cust_qspi_status= ((1 << (csnum + 8)) & 0xF00) | ((1 << trans_type) & 0xFF);
+    return 0;
+}
+
+void spi_wr_dat(uint8_t data) {
+    uint32_t wdata = ((uint32_t) data) << 24;
+    spi_set_datalen(8);
+    spi_write_fifo(&wdata, 8);
+    spi_start_transaction(SPI_CMD_WR, SPI_CSN0);
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
+}
+
+void lcd_wr_cmd(uint8_t cmd) {
+    lcd_dc_clr;
+    spi_wr_dat(cmd);
+    // lcd_dc_set;
+}
+
+void lcd_wr_data8(uint8_t dat) {
+    lcd_dc_set;
+    spi_wr_dat(dat);
+}
+
+void lcd_wr_data16(uint16_t dat) {
+    lcd_dc_set;
+    spi_wr_dat(dat >> 8);
+    spi_wr_dat(dat);
+}
+
+void lcd_init() {
+    delay_ms(500);
+    lcd_wr_cmd(0x11);
+    delay_ms(120);
+    lcd_wr_cmd(0x36);
+    if(USE_HORIZONTAL == 0)lcd_wr_data8(0x00);
+    else if(USE_HORIZONTAL == 1)lcd_wr_data8(0xC0);
+    else if(USE_HORIZONTAL == 2)lcd_wr_data8(0x70);
+    else lcd_wr_data8(0xA0);
+
+    lcd_wr_cmd(0x3A);
+    lcd_wr_data8(0x05);
+
+    lcd_wr_cmd(0xB2);
+    lcd_wr_data8(0x0C);
+    lcd_wr_data8(0x0C);
+    lcd_wr_data8(0x00);
+    lcd_wr_data8(0x33);
+    lcd_wr_data8(0x33);
+
+    lcd_wr_cmd(0xB7);
+    lcd_wr_data8(0x35);
+
+    lcd_wr_cmd(0xBB);
+    lcd_wr_data8(0x19);
+
+    lcd_wr_cmd(0xC0);
+    lcd_wr_data8(0x2C);
+
+    lcd_wr_cmd(0xC2);
+    lcd_wr_data8(0x01);
+
+    lcd_wr_cmd(0xC3);
+    lcd_wr_data8(0x12);
+
+    lcd_wr_cmd(0xC4);
+    lcd_wr_data8(0x20);
+
+    lcd_wr_cmd(0xC6);
+    lcd_wr_data8(0x0F);
+
+    lcd_wr_cmd(0xD0);
+    lcd_wr_data8(0xA4);
+    lcd_wr_data8(0xA1);
+
+    lcd_wr_cmd(0xE0);
+    lcd_wr_data8(0xD0);
+    lcd_wr_data8(0x04);
+    lcd_wr_data8(0x0D);
+    lcd_wr_data8(0x11);
+    lcd_wr_data8(0x13);
+    lcd_wr_data8(0x2B);
+    lcd_wr_data8(0x3F);
+    lcd_wr_data8(0x54);
+    lcd_wr_data8(0x4C);
+    lcd_wr_data8(0x18);
+    lcd_wr_data8(0x0D);
+    lcd_wr_data8(0x0B);
+    lcd_wr_data8(0x1F);
+    lcd_wr_data8(0x23);
+
+    lcd_wr_cmd(0xE1);
+    lcd_wr_data8(0xD0);
+    lcd_wr_data8(0x04);
+    lcd_wr_data8(0x0C);
+    lcd_wr_data8(0x11);
+    lcd_wr_data8(0x13);
+    lcd_wr_data8(0x2C);
+    lcd_wr_data8(0x3F);
+    lcd_wr_data8(0x44);
+    lcd_wr_data8(0x51);
+    lcd_wr_data8(0x2F);
+    lcd_wr_data8(0x1F);
+    lcd_wr_data8(0x1F);
+    lcd_wr_data8(0x20);
+    lcd_wr_data8(0x23);
+
+    lcd_wr_cmd(0x21);
+    lcd_wr_cmd(0x29);
+}
+
+
+void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+    if(USE_HORIZONTAL == 0) {
+        lcd_wr_cmd(0x2A);      // set col addr
+        lcd_wr_data16(x1 + 52);
+        lcd_wr_data16(x2 + 52);
+        lcd_wr_cmd(0x2B);      // set row addr
+        lcd_wr_data16(y1 + 40);
+        lcd_wr_data16(y2 + 40);
+        lcd_wr_cmd(0x2C);      // write memory
+    } else if(USE_HORIZONTAL == 1) {
+        lcd_wr_cmd(0x2A);
+        lcd_wr_data16(x1 + 53);
+        lcd_wr_data16(x2 + 53);
+        lcd_wr_cmd(0x2B);
+        lcd_wr_data16(y1 + 40);
+        lcd_wr_data16(y2 + 40);
+        lcd_wr_cmd(0x2C);
+    } else if(USE_HORIZONTAL == 2) {
+        lcd_wr_cmd(0x2A);
+        lcd_wr_data16(x1 + 40);
+        lcd_wr_data16(x2 + 40);
+        lcd_wr_cmd(0x2B);
+        lcd_wr_data16(y1 + 53);
+        lcd_wr_data16(y2 + 53);
+        lcd_wr_cmd(0x2C);
+    } else {
+        lcd_wr_cmd(0x2A);
+        lcd_wr_data16(x1 + 40);
+        lcd_wr_data16(x2 + 40);
+        lcd_wr_cmd(0x2B);
+        lcd_wr_data16(y1 + 52);
+        lcd_wr_data16(y2 + 52);
+        lcd_wr_cmd(0x2C);
+    }
+}
+
+void lcd_fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint16_t color) {
+    lcd_addr_set(xsta, ysta, xend - 1, yend - 1);
+    for(uint16_t i = ysta; i < yend; ++i) {
+        for(uint16_t j = xsta; j < xend; ++j) {
+            lcd_wr_data16(color);
+        }
+    }
+}
+
+void cust_ip_lcd_test() {
+    printf("lcd test\n");
+    spi_init();
+    lcd_init();
+    printf("lcd init done\n");
+    // lcd_wr_cmd(0x01); // software reset
+    for(int i = 0; i < 6; ++i) {
+        lcd_fill(0, 0, LCD_W, LCD_H, 0xF800); // red
+        lcd_fill(0, 0, LCD_W, LCD_H, 0x07E0); // green
+        lcd_fill(0, 0, LCD_W, LCD_H, 0x001F); // blue
+    }
+}
 
 void welcome_screen()
 {
@@ -758,8 +986,8 @@ void main()
     // cust_ip_uart_test();
     cust_ip_pwm_test();
     // cust_ip_ps2_test();
-    // cust_ip_spi_test();
     cust_ip_i2c_test();
+    cust_ip_lcd_test();
 
     cmd_benchmark(true, 0);
     cmd_benchmark_all();
