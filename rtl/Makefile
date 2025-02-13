@@ -48,6 +48,7 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/rs232.v \
       ./ip/kdb_model.v \
       ./ip/psram_model.v \
+      ./ip/rcu.v \
       ./ip/cust/spfs_model/N25Qxxx.v \
       ./ip/cust/register.v \
       ./ip/cust/lfsr.v \
@@ -93,7 +94,8 @@ RTL_TECH := ../tech/tc_io.v \
 
 RTL_PDK := ../syn/S110/SP013D3WP_V1p7.v \
            ../syn/S110/scc011ums_hd_lvt.v \
-           ../syn/S110/S011HD1P_X256Y4D32_BW.v
+           ../syn/S110/S011HD1P_X256Y4D32_BW.v \
+           ../syn/S110/S013PLLFN_V1.4.2.v
 
 RTL_INC := -I./ip \
            -I./ip/cust/spfs \
