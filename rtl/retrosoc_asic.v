@@ -283,10 +283,8 @@ module retrosoc_asic (
   );
 
   retrosoc u_retrosoc (
-      .clk_i                    (s_sys_clk_buf),
+      .clk_i                    (s_sys_clk),
       .rst_n_i                  (s_sys_rst_n),
-      .xtal_in_i                (s_xtal_io_buf),
-      .clk_pll_i                (s_pll_clk_buf),
       .clk_ext_sel_i            (s_hk_pll_bypass),
       .hk_pt_i                  (s_hk_pt_rst),
       .hk_pt_csb_i              (s_hk_pt_csb),

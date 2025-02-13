@@ -35,8 +35,6 @@ module retrosoc #(
 ) (
     input                  clk_i,
     input                  rst_n_i,
-    input                  xtal_in_i,
-    input                  clk_pll_i,
     input                  clk_ext_sel_i,
     // pass-through mode from housekeeping SPI
     input                  hk_pt_i,
@@ -156,7 +154,6 @@ module retrosoc #(
   reg  [         15:0] r_gpio_pd;
   reg  [         15:0] r_gpio_oeb;
   reg  [          1:0] r_pll_out_dest;
-  reg  [          1:0] r_xtal_out_dest;
   reg  [          1:0] r_trap_out_dest;
   reg  [          1:0] r_irq_7_in_src;
   reg  [          1:0] r_irq_8_in_src;
@@ -197,10 +194,10 @@ module retrosoc #(
   assign gpio_out_o[2]        = r_gpio[2];
   assign gpio_out_o[3]        = r_gpio[3];
   assign gpio_out_o[4]        = r_gpio[4];
-  assign gpio_out_o[5]        = r_xtal_out_dest == 2'b01 ? xtal_in_i : r_gpio[5];
-  assign gpio_out_o[6]        = r_xtal_out_dest == 2'b10 ? xtal_in_i : r_gpio[6];
-  assign gpio_out_o[7]        = r_xtal_out_dest == 2'b11 ? xtal_in_i : r_gpio[7];
-  assign gpio_out_o[8]        = r_pll_out_dest == 2'b01 ? clk_pll_i : r_gpio[8];
+  assign gpio_out_o[5]        = r_gpio[5];
+  assign gpio_out_o[6]        = r_gpio[6];
+  assign gpio_out_o[7]        = r_gpio[7];
+  assign gpio_out_o[8]        = r_pll_out_dest == 2'b01 ? clk_i : r_gpio[8];
   assign gpio_out_o[9]        = r_pll_out_dest == 2'b10 ? clk_i : r_gpio[9];
   assign gpio_out_o[10]       = r_gpio[10];
   assign gpio_out_o[11]       = r_trap_out_dest == 2'b01 ? trap_o : r_gpio[11];
@@ -214,9 +211,9 @@ module retrosoc #(
   assign gpio_outenb_o[2]     = ~rst_n_i | r_gpio_oeb[2];
   assign gpio_outenb_o[3]     = ~rst_n_i | r_gpio_oeb[3];
   assign gpio_outenb_o[4]     = ~rst_n_i | r_gpio_oeb[4];
-  assign gpio_outenb_o[5]     = ~rst_n_i | (r_xtal_out_dest == 2'b00 ? r_gpio_oeb[5] : 1'b0);
-  assign gpio_outenb_o[6]     = ~rst_n_i | (r_xtal_out_dest == 2'b00 ? r_gpio_oeb[6] : 1'b0);
-  assign gpio_outenb_o[7]     = ~rst_n_i | (r_xtal_out_dest == 2'b00 ? r_gpio_oeb[7] : 1'b0);
+  assign gpio_outenb_o[5]     = ~rst_n_i | r_gpio_oeb[5];
+  assign gpio_outenb_o[6]     = ~rst_n_i | r_gpio_oeb[6];
+  assign gpio_outenb_o[7]     = ~rst_n_i | r_gpio_oeb[7];
   assign gpio_outenb_o[8]     = ~rst_n_i | (r_pll_out_dest == 2'b00 ? r_gpio_oeb[8] : 1'b0);
   assign gpio_outenb_o[9]     = ~rst_n_i | (r_pll_out_dest == 2'b00 ? r_gpio_oeb[9] : 1'b0);
   assign gpio_outenb_o[10]    = ~rst_n_i | (r_pll_out_dest == 2'b00 ? r_gpio_oeb[10] : 1'b0);
@@ -231,9 +228,9 @@ module retrosoc #(
   assign gpio_pullupb_o[2]    = r_gpio_pu[2];
   assign gpio_pullupb_o[3]    = r_gpio_pu[3];
   assign gpio_pullupb_o[4]    = r_gpio_pu[4];
-  assign gpio_pullupb_o[5]    = r_xtal_out_dest == 2'b00 ? r_gpio_pu[5] : 1'b1;
-  assign gpio_pullupb_o[6]    = r_xtal_out_dest == 2'b00 ? r_gpio_pu[6] : 1'b1;
-  assign gpio_pullupb_o[7]    = r_xtal_out_dest == 2'b00 ? r_gpio_pu[7] : 1'b1;
+  assign gpio_pullupb_o[5]    = r_gpio_pu[5];
+  assign gpio_pullupb_o[6]    = r_gpio_pu[6];
+  assign gpio_pullupb_o[7]    = r_gpio_pu[7];
   assign gpio_pullupb_o[8]    = r_pll_out_dest == 2'b00 ? r_gpio_pu[8] : 1'b1;
   assign gpio_pullupb_o[9]    = r_pll_out_dest == 2'b00 ? r_gpio_pu[9] : 1'b1;
   assign gpio_pullupb_o[10]   = r_pll_out_dest == 2'b00 ? r_gpio_pu[10] : 1'b1;
@@ -248,9 +245,9 @@ module retrosoc #(
   assign gpio_pulldownb_o[2]  = r_gpio_pd[2];
   assign gpio_pulldownb_o[3]  = r_gpio_pd[3];
   assign gpio_pulldownb_o[4]  = r_gpio_pd[4];
-  assign gpio_pulldownb_o[5]  = r_xtal_out_dest == 2'b00 ? r_gpio_pd[5] : 1'b1;
-  assign gpio_pulldownb_o[6]  = r_xtal_out_dest == 2'b00 ? r_gpio_pd[6] : 1'b1;
-  assign gpio_pulldownb_o[7]  = r_xtal_out_dest == 2'b00 ? r_gpio_pd[7] : 1'b1;
+  assign gpio_pulldownb_o[5]  = r_gpio_pd[5];
+  assign gpio_pulldownb_o[6]  = r_gpio_pd[6];
+  assign gpio_pulldownb_o[7]  = r_gpio_pd[7];
   assign gpio_pulldownb_o[8]  = r_pll_out_dest == 2'b00 ? r_gpio_pd[8] : 1'b1;
   assign gpio_pulldownb_o[9]  = r_pll_out_dest == 2'b00 ? r_gpio_pd[9] : 1'b1;
   assign gpio_pulldownb_o[10] = r_pll_out_dest == 2'b00 ? r_gpio_pd[10] : 1'b1;
@@ -564,7 +561,6 @@ module retrosoc #(
       r_gpio_pu       <= 0;
       r_gpio_pd       <= 0;
       r_pll_out_dest  <= 0;
-      r_xtal_out_dest <= 0;
       r_trap_out_dest <= 0;
       r_irq_7_in_src  <= 0;
       r_irq_8_in_src  <= 0;
@@ -613,10 +609,6 @@ module retrosoc #(
           8'h28: r_iomem_rdata <= {24'd0, spi_slv_ro_prod_id_i};
           8'h2c: r_iomem_rdata <= {28'd0, spi_slv_ro_mask_rev_i};
           8'h30: r_iomem_rdata <= {31'd0, clk_ext_sel_i};
-          8'h34: begin
-            r_iomem_rdata <= {30'd0, r_xtal_out_dest};
-            if (s_iomem_wstrb[0]) r_xtal_out_dest <= s_iomem_wdata[1:0];
-          end
           8'h38: begin
             r_iomem_rdata <= {30'd0, r_pll_out_dest};
             if (s_iomem_wstrb[0]) r_pll_out_dest <= s_iomem_wdata[1:0];
