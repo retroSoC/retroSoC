@@ -15,6 +15,7 @@ if {[file exists "$root_dir/.cockpitrc"]} {
     set pdk_cells_lib ${pdk_dir}/lib
     set pdk_sram_lib  ${pdk_dir}/lib
     set pdk_io_lib    ${pdk_dir}/lib
+    set pdk_pll_lib   ${pdk_dir}/lib
 } else {
     puts "0. Executing init_tech: load technology from Github PDK"
     if {![info exists pdk_dir]} {
@@ -27,6 +28,7 @@ if {[file exists "$root_dir/.cockpitrc"]} {
     set pdk_cells_lib ${pdk_dir}
     set pdk_sram_lib  ${pdk_dir}
     set pdk_io_lib    ${pdk_dir}
+    set pdk_pll_lib   ${pdk_dir}
 }
 
 # set tech_cells [list "$pdk_cells_lib/sg13g2_stdcell_typ_1p20V_25C.lib"]
@@ -35,6 +37,7 @@ set tech_cells [list "$pdk_cells_lib/scc011ums_hd_lvt_tt_v1p2_25c_basic.lib"]
 set tech_macros [glob -nocomplain -directory $pdk_sram_lib *_TT_1.2_25.lib]
 # lappend tech_macros "$pdk_io_lib/sg13g2_io_typ_1p2V_3p3V_25C.lib"
 lappend tech_macros "$pdk_io_lib/SP013D3WP_V1p7_typ.lib"
+lappend tech_macros "$pdk_pll_lib/S013PLLFN_v1.5.1_typ.lib"
 
 # for hilomap
 # set tech_cell_tiehi {sg13g2_tiehi L_HI}

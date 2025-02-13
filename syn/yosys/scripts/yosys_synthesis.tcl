@@ -39,6 +39,7 @@ yosys read_verilog ../../rtl/ip/simpleuart.v
 yosys read_verilog ../../rtl/ip/counter_timer.v
 yosys read_verilog ../../rtl/ip/spi_slave.v
 yosys read_verilog ../../rtl/ip/ravenna_spi.v
+yosys read_verilog ../../rtl/ip/rcu.v
 
 yosys read_verilog ../../rtl/ip/cust/register.v
 yosys read_verilog ../../rtl/ip/cust/lfsr.v
