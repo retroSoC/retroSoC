@@ -36,8 +36,11 @@ module retrosoc_top (
       .xi_i_pad                 (s_sys_clk),
       .xo_o_pad                 (),
       .extclk_i_pad             (s_sys_clk),
-      .clkbypass_i_pad          (1'b1),
-      .rst_n_i_pad              (rst_n_i),
+      .pll_cfg_0_i_pad          (1'b0),
+      .pll_cfg_1_i_pad          (1'b0),
+      .pll_cfg_2_i_pad          (1'b0),
+      .clk_bypass_i_pad         (1'b1),
+      .ext_rst_n_i_pad          (rst_n_i),
       // HOUSEKEEPING SPI
       .hk_sdi_i_pad             (1'b0),
       .hk_sdo_o_pad             (),

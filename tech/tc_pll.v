@@ -10,7 +10,7 @@ module tc_pll (
     output        pll_clk_o
 );
 
-`ifdef RTL_BEHV
+`ifdef RTL_BEHAV
   assign pll_lock_o = 1'b1;
   assign pll_clk_o  = fref_i;
 `else
@@ -26,12 +26,12 @@ module tc_pll (
   assign pll_lock_o = s_lock_cnt == `LOCK_CNT_END;
 
   S013PLLFN u0_pll (
-      .A2VDD33  (),
-      .A2VSS33  (),
-      .AVDD33   (),
-      .AVSS33   (),
-      .DVDD12   (),
-      .DVSS12   (),
+      // .A2VDD33  (),
+      // .A2VSS33  (),
+      // .AVDD33   (),
+      // .AVSS33   (),
+      // .DVDD12   (),
+      // .DVSS12   (),
       .XIN      (fref_i),
       .CLK_OUT  (pll_clk_o),
       .N        (postdiv1_i),
