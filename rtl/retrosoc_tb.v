@@ -21,37 +21,39 @@
 
 module retrosoc_tb;
   localparam real XTAL_CPU_FREQ = 24.0;  // MHz
-  localparam real EXT_CPU_FREQ = 72.0;
+  localparam real EXT_CPU_FREQ = 64.0;
 
-  reg  r_xtal_clk;
-  reg  r_ext_clk;
-  reg  r_rst_n;
-  wire s_uart_rx;
-  wire s_flash_csb;
-  wire s_flash_clk;
-  wire s_flash_io0;
-  wire s_flash_io1;
-  wire s_flash_io2;
-  wire s_flash_io3;
+  reg        r_xtal_clk;
+  reg        r_ext_clk;
+  reg        r_rst_n;
+  reg        r_pll_en;
+  reg  [2:0] r_pll_cfg;
+  wire       s_uart_rx;
+  wire       s_flash_csb;
+  wire       s_flash_clk;
+  wire       s_flash_io0;
+  wire       s_flash_io1;
+  wire       s_flash_io2;
+  wire       s_flash_io3;
   // wire s_i2c_sda_io;
   // wire s_i2c_scl_io;
-  wire s_cust_uart_tx;
-  wire s_cust_uart_rx;
-  wire s_cust_ps2_ps2_clk;
-  wire s_cust_ps2_ps2_dat;
-  wire s_cust_psram_sclk;
-  wire s_cust_psram_ce_0;
-  wire s_cust_psram_ce_1;
-  wire s_cust_psram_ce_2;
-  wire s_cust_psram_ce_3;
-  wire s_cust_psram_sio0;
-  wire s_cust_psram_sio1;
-  wire s_cust_psram_sio2;
-  wire s_cust_psram_sio3;
-  wire s_cust_spfs_clk_o;
-  wire s_cust_spfs_cs_o;
-  wire s_cust_spfs_mosi_o;
-  wire s_cust_spfs_miso_i;
+  wire       s_cust_uart_tx;
+  wire       s_cust_uart_rx;
+  wire       s_cust_ps2_ps2_clk;
+  wire       s_cust_ps2_ps2_dat;
+  wire       s_cust_psram_sclk;
+  wire       s_cust_psram_ce_0;
+  wire       s_cust_psram_ce_1;
+  wire       s_cust_psram_ce_2;
+  wire       s_cust_psram_ce_3;
+  wire       s_cust_psram_sio0;
+  wire       s_cust_psram_sio1;
+  wire       s_cust_psram_sio2;
+  wire       s_cust_psram_sio3;
+  wire       s_cust_spfs_clk_o;
+  wire       s_cust_spfs_cs_o;
+  wire       s_cust_spfs_mosi_o;
+  wire       s_cust_spfs_miso_i;
 
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
@@ -60,10 +62,10 @@ module retrosoc_tb;
       .xi_i_pad                 (r_xtal_clk),
       .xo_o_pad                 (),
       .extclk_i_pad             (r_ext_clk),
-      .pll_cfg_0_i_pad          (1'b0),
-      .pll_cfg_1_i_pad          (1'b0),
-      .pll_cfg_2_i_pad          (1'b0),
-      .clk_bypass_i_pad         (1'b1),
+      .pll_cfg_0_i_pad          (r_pll_cfg[0]),
+      .pll_cfg_1_i_pad          (r_pll_cfg[1]),
+      .pll_cfg_2_i_pad          (r_pll_cfg[2]),
+      .clk_bypass_i_pad         (r_pll_en),
       .ext_rst_n_i_pad          (r_rst_n),
       .hk_sdi_i_pad             (1'b1),
       .hk_sdo_o_pad             (),
@@ -233,5 +235,22 @@ module retrosoc_tb;
     // $display("+5000 cycles");
     // end
     // $finish;
+  end
+
+  initial begin
+    if ($test$plusargs("pll_bypass")) r_pll_en = 1'b0;
+    else r_pll_en = 1'b1;
+
+    if ($test$plusargs("pll_cfg0")) r_pll_cfg = 3'd0;  // 24M
+    else if ($test$plusargs("pll_cfg1")) r_pll_cfg = 3'd1;  // 24M
+    else if ($test$plusargs("pll_cfg2")) r_pll_cfg = 3'd2;  // 72M
+    else if ($test$plusargs("pll_cfg3")) r_pll_cfg = 3'd3;  // 96M
+    else if ($test$plusargs("pll_cfg4")) r_pll_cfg = 3'd4;  // 120M
+    else if ($test$plusargs("pll_cfg5")) r_pll_cfg = 3'd5;  // 144M
+    else if ($test$plusargs("pll_cfg6")) r_pll_cfg = 3'd6;  // 168M
+    else if ($test$plusargs("pll_cfg7")) r_pll_cfg = 3'd7;  // 192M
+    else r_pll_cfg = 3'd0;  // 24M
+
+    $display("bypass: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, (r_pll_cfg + 1) * 24);
   end
 endmodule

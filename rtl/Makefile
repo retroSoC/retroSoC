@@ -1,3 +1,6 @@
+RTL_SIM_PASS :=
+RTL_SIM_PLLCFG :=
+
 
 CROSS=riscv32-unknown-elf-
 CFLAGS := -mabi=ilp32 \
@@ -115,11 +118,11 @@ LDS_PATH := ../crt/sections.lds
 # +behv_wave
 retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
 	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
-	vvp -l run.log -N $< +firmware=$(FIRMWARE_NAME).hex +behv_$(WAVE) -fst
+	vvp -l run.log -N $< +$(RTL_SIM_PASS) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) -fst
 
 # +syn_wave
 retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).hex
-	vvp -N $< +firmware=$(FIRMWARE_NAME).hex +syn_$(WAVE) -fst
+	vvp -N $< +syn_$(WAVE) -fst
 
 
 retrosoc_tb.vvp:
