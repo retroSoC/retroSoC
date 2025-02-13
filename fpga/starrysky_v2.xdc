@@ -25,3 +25,14 @@ set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS18} [get_ports gpio_io2]
 set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS18} [get_ports cust_qspi_spi_csn_0_o]
 set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS18} [get_ports cust_qspi_spi_clk_o]
 set_property -dict {PACKAGE_PIN AB19 IOSTANDARD LVCMOS18} [get_ports cust_qspi_dat_0_io]
+# psram
+# mosi io0
+# miso io1
+# wp   io2
+# hold io3
+set_property -dict {PACKAGE_PIN E15 IOSTANDARD LVCMOS18} [get_ports cust_psram_sclk_o]
+set_property -dict {PACKAGE_PIN B15 IOSTANDARD LVCMOS18} [get_ports cust_psram_ce_0_o]
+set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS18} [get_ports cust_psram_sio0_io] 
+set_property -dict {PACKAGE_PIN D15 IOSTANDARD LVCMOS18} [get_ports cust_psram_sio1_io]
+set_property -dict {PACKAGE_PIN B17 IOSTANDARD LVCMOS18} [get_ports cust_psram_sio2_io]
+set_property -dict {PACKAGE_PIN B16 IOSTANDARD LVCMOS18} [get_ports cust_psram_sio3_io]
