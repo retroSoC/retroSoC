@@ -20,9 +20,11 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_tb;
-  localparam real CPU_FREQ = 72.0;  // MHz
+  localparam real XTAL_CPU_FREQ = 24.0;  // MHz
+  localparam real EXT_CPU_FREQ = 72.0;
 
-  reg  r_clk;
+  reg  r_xtal_clk;
+  reg  r_ext_clk;
   reg  r_rst_n;
   wire s_uart_rx;
   wire s_flash_csb;
@@ -51,14 +53,15 @@ module retrosoc_tb;
   wire s_cust_spfs_mosi_o;
   wire s_cust_spfs_miso_i;
 
-  always #(1000 / CPU_FREQ / 2) r_clk = (r_clk === 1'b0);
+  always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
+  always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
 
   retrosoc_asic u_retrosoc_asic (
-      .xi_i_pad                 (r_clk),
+      .xi_i_pad                 (r_xtal_clk),
       .xo_o_pad                 (),
-      .extclk_i_pad             (r_clk),
-      .clkbypass_i_pad          (1'b1),
-      .rst_n_i_pad              (r_rst_n),
+      .extclk_i_pad             (r_ext_clk),
+      .clk_bypass_i_pad         (1'b1),
+      .ext_rst_n_i_pad          (r_rst_n),
       .hk_sdi_i_pad             (1'b1),
       .hk_sdo_o_pad             (),
       .hk_csb_i_pad             (1'b1),
@@ -210,20 +213,20 @@ module retrosoc_tb;
       $dumpfile("retrosoc_tb.fst");
       $dumpvars(0, retrosoc_tb);
       repeat (200) begin
-        repeat (5000) @(posedge r_clk);
+        repeat (5000) @(posedge r_xtal_clk);
       end
       $finish;
     end else if ($test$plusargs("syn_wave")) begin
       $dumpfile("retrosoc_syn_tb.fst");
       $dumpvars(0, retrosoc_tb);
       repeat (1500) begin
-        repeat (5000) @(posedge r_clk);
+        repeat (5000) @(posedge r_xtal_clk);
       end
       $finish;
     end
 
     // repeat (1500) begin
-    // repeat (5000) @(posedge r_clk);
+    // repeat (5000) @(posedge r_xtal_clk);
     // $display("+5000 cycles");
     // end
     // $finish;

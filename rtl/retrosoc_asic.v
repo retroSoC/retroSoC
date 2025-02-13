@@ -26,8 +26,12 @@ module retrosoc_asic (
     input  xi_i_pad,
     output xo_o_pad,
     input  extclk_i_pad,
-    input  clkbypass_i_pad,
-    input  rst_n_i_pad,
+    input  pll_cfg_0_i_pad,
+    input  pll_cfg_1_i_pad,
+    input  pll_cfg_2_i_pad,
+    input  clk_bypass_i_pad,
+    input  ext_rst_n_i_pad,
+    output sys_clkdiv4_o_pad,
     // HOUSEKEEPING SPI
     input  hk_sdi_i_pad,
     output hk_sdo_o_pad,
@@ -98,17 +102,13 @@ module retrosoc_asic (
 );
   // clk&rst
   wire        s_xtal_io;
-  wire        s_xtal_io_buf;
   wire        s_ext_clk_i;
-  wire        s_ext_clk_i_buf;
-  wire        s_pll_clk;
-  wire        s_pll_clk_buf;
-  wire        s_clkbypass_i;
+  wire [ 2:0] s_pll_cfg_i;
+  wire        s_clk_bypass_i;
   wire        s_sys_clk;
-  wire        s_sys_clk_buf;
   wire        s_ext_rst_n_i;
-  wire        s_ext_rst_n_sync;
-  wire        s_rst_n;
+  wire        s_sys_rst_n;
+  wire        s_sys_clkdiv4_o;
   // io
   wire        s_hk_sdi_i;
   wire        s_hk_sdo_o;
@@ -200,8 +200,12 @@ module retrosoc_asic (
   // verilog_format: off
   tc_io_xtl_pad u_xtal_io_pad       (.xi_pad(xi_i_pad),        .xo_pad(xo_o_pad),      .en(1'b1),                     .clk(s_xtal_io));
   tc_io_tri_pad u_extclk_i_pad      (.pad(extclk_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_clk_i));
-  tc_io_tri_pad u_clkbypass_i_pad   (.pad(clkbypass_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_clkbypass_i));
-  tc_io_tri_pad u_rst_n_i_pad       (.pad(rst_n_i_pad),        .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_rst_n_i));
+  tc_io_tri_pad u_pll_cfg_0_i_pad   (.pad(pll_cfg_0_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[0]));
+  tc_io_tri_pad u_pll_cfg_1_i_pad   (.pad(pll_cfg_1_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[1]));
+  tc_io_tri_pad u_pll_cfg_2_i_pad   (.pad(pll_cfg_2_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[2]));
+  tc_io_tri_pad u_clk_bypass_i_pad  (.pad(clk_bypass_i_pad),   .c2p(),                 .c2p_en(1'b0),                 .p2c(s_clk_bypass_i));
+  tc_io_tri_pad u_ext_rst_n_i_pad   (.pad(ext_rst_n_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_rst_n_i));
+  tc_io_tri_pad u_sys_clkdiv4_o_pad (.pad(sys_clkdiv4_o_pad),  .c2p(s_sys_clkdiv4_o),  .c2p_en(1'b1),                 .p2c());
   tc_io_tri_pad u_hk_sdi_i_pad      (.pad(hk_sdi_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sdi_i));
   tc_io_tri_pad u_hk_sdo_o_pad      (.pad(hk_sdo_o_pad),       .c2p(s_hk_sdo_o),       .c2p_en(~s_hk_sdo_enb),        .p2c());
   tc_io_tri_pad u_hk_csb_i_pad      (.pad(hk_csb_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_csb_i));
@@ -267,37 +271,20 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_spfs_miso_i_pad     (.pad(cust_spfs_miso_i_pad),      .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_spfs_miso_i));
   // verilog_format: on
   // clk buffer & mux
-  // verilog_format: off
-  tc_clk_mux2 u_sys_mux   (.clk0_i(s_pll_clk_buf), .clk1_i(s_ext_clk_i_buf), .clk_sel_i(s_clkbypass_i), .clk_o(s_sys_clk));
-  tc_clk_buf u_xtal_buf   (.clk_i(s_xtal_io),      .clk_o(s_xtal_io_buf));
-  tc_clk_buf u_ext_clk_buf(.clk_i(s_ext_clk_i),    .clk_o(s_ext_clk_i_buf));
-  tc_clk_buf u_pll_clk_buf(.clk_i(s_pll_clk),      .clk_o(s_pll_clk_buf));
-  tc_clk_buf u_sys_clk_buf(.clk_i(s_sys_clk),      .clk_o(s_sys_clk_buf));
-  // verilog_format: on
-
-  tc_pll u_tc_pll (
-      .fref_i    (s_xtal_io_buf),
-      .refdiv_i  (),
-      .fbdiv_i   (),
-      .postdiv1_i(),
-      .postdiv2_i(),
-      .pll_lock_o(),
-      .pll_clk_o (s_pll_clk)
+  rcu u_rcu (
+      .xtal_clk_i   (s_xtal_io),
+      .ext_clk_i    (s_ext_clk_i),
+      .clk_bypass_i (s_clk_bypass_i),
+      .ext_rst_n_i  (s_ext_rst_n_i),
+      .pll_cfg_i    (s_pll_cfg_i),
+      .sys_clk_o    (s_sys_clk),
+      .sys_rst_n_o  (s_sys_rst_n),
+      .sys_clkdiv4_o(s_sys_clkdiv4_o)
   );
 
-  rst_sync #(
-      .STAGE(5)
-  ) u_rst_sync (
-      .clk_i  (s_sys_clk_buf),
-      .rst_n_i(s_ext_rst_n_i),
-      .rst_n_o(s_ext_rst_n_sync)
-  );
-
-  // reset: "s_ext_rst_n_i" comes from button
-  assign s_rst_n = s_ext_rst_n_sync;
   retrosoc u_retrosoc (
       .clk_i                    (s_sys_clk_buf),
-      .rst_n_i                  (s_rst_n),
+      .rst_n_i                  (s_sys_rst_n),
       .xtal_in_i                (s_xtal_io_buf),
       .clk_pll_i                (s_pll_clk_buf),
       .clk_ext_sel_i            (s_hk_pll_bypass),
@@ -383,7 +370,7 @@ module retrosoc_asic (
   /* without potentially killing it.       */
   // 'reg_ena': regulator enable
   ravenna_spi u_ravenna_spi (
-      .RST            (~s_rst_n),
+      .RST            (~s_sys_rst_n),
       .SCK            (s_hk_sck_i),
       .SDI            (s_hk_sdi_i),
       .CSB            (s_hk_csb_i),
@@ -414,7 +401,7 @@ module retrosoc_asic (
 
 
   spram_model u_spram_model (
-      .clk  (s_sys_clk_buf),
+      .clk  (s_sys_clk),
       .wen  (s_ram_wstrb),
       .addr (s_ram_addr),
       .wdata(s_ram_wdata),
