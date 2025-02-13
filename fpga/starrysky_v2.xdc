@@ -8,8 +8,6 @@ set_property -dict {PACKAGE_PIN AA16 IOSTANDARD LVCMOS18} [get_ports uart_tx_o]
 set_property -dict {PACKAGE_PIN AA8  IOSTANDARD LVCMOS18} [get_ports gpio_io0]
 set_property -dict {PACKAGE_PIN A16  IOSTANDARD LVCMOS18} [get_ports gpio_io1]
 
-set_property -dict {PACKAGE_PIN AA9  IOSTANDARD LVCMOS18} [get_ports pwm_pwm_o]
-
 set_property -dict {PACKAGE_PIN C19 IOSTANDARD LVCMOS18}  [get_ports cust_uart_tx_o]
 set_property -dict {PACKAGE_PIN D18 IOSTANDARD LVCMOS18}  [get_ports cust_uart_rx_i]
 set_property -dict {PACKAGE_PIN AA9 IOSTANDARD LVCMOS18}  [get_ports cust_pwm_pwm_o]
