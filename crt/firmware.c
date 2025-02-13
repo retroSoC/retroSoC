@@ -721,48 +721,50 @@ void spi_init() {
 }
 
 
-int32_t spi_write_fifo(uint32_t *data, uint32_t datalen) {
-    volatile int num_words, i;
-    num_words = (datalen >> 5) & 0x7FF;
+// int32_t spi_write_fifo(uint32_t *data, uint32_t datalen) {
+//     volatile int num_words, i;
+//     num_words = (datalen >> 5) & 0x7FF;
 
-    if ( (datalen & 0x1F) != 0)
-        num_words++;
+//     if ( (datalen & 0x1F) != 0)
+//         num_words++;
 
-    for (i = 0; i < num_words; i++) {
-        while (((reg_cust_qspi_status >> 24) & 0xFF) >= 8);
-        reg_cust_qspi_txfifo = data[i];
-    }
+//     for (i = 0; i < num_words; i++) {
+//         while (((reg_cust_qspi_status >> 24) & 0xFF) >= 8);
+//         reg_cust_qspi_txfifo = data[i];
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
 
-int32_t spi_set_datalen(uint32_t datalen) {
-    volatile int old_len;
-    old_len = reg_cust_qspi_len;
-    old_len = ((datalen << 16) & 0xFFFF0000) | (old_len & 0xFFFF);
-    reg_cust_qspi_len = old_len;
+// int32_t spi_set_datalen(uint32_t datalen) {
+//     volatile int old_len;
+//     old_len = reg_cust_qspi_len;
+//     old_len = ((datalen << 16) & 0xFFFF0000) | (old_len & 0xFFFF);
+//     reg_cust_qspi_len = datalen << 16;
     
-    return 0;
-}
+//     return 0;
+// }
 
-int32_t spi_start_transaction(uint32_t trans_type, uint32_t csnum) {
-    reg_cust_qspi_status= ((1 << (csnum + 8)) & 0xF00) | ((1 << trans_type) & 0xFF);
-    return 0;
-}
+// int32_t spi_start_transaction(uint32_t trans_type, uint32_t csnum) {
+//     reg_cust_qspi_status= ((1 << (csnum + 8)) & 0xF00) | ((1 << trans_type) & 0xFF);
+//     return 0;
+// }
 
-void spi_wr_dat(uint8_t data) {
-    uint32_t wdata = ((uint32_t) data) << 24;
-    spi_set_datalen(8);
-    spi_write_fifo(&wdata, 8);
-    spi_start_transaction(SPI_CMD_WR, SPI_CSN0);
+void spi_wr_dat(uint8_t dat) {
+    uint32_t wdat = ((uint32_t) dat) << 24;
+    // spi_set_datalen(8);
+    reg_cust_qspi_len    = 0x80000;
+    // spi_write_fifo(&wdata, 8);
+    reg_cust_qspi_txfifo = wdat;
+    // spi_start_transaction(SPI_CMD_WR, SPI_CSN0);
+    reg_cust_qspi_status = 258;
     while ((reg_cust_qspi_status & 0xFFFF) != 1);
 }
 
 void lcd_wr_cmd(uint8_t cmd) {
     lcd_dc_clr;
     spi_wr_dat(cmd);
-    // lcd_dc_set;
 }
 
 void lcd_wr_data8(uint8_t dat) {
@@ -772,8 +774,136 @@ void lcd_wr_data8(uint8_t dat) {
 
 void lcd_wr_data16(uint16_t dat) {
     lcd_dc_set;
-    spi_wr_dat(dat >> 8);
-    spi_wr_dat(dat);
+
+    uint32_t wdat = ((uint32_t) dat) << 16;
+    reg_cust_qspi_len    = 0x100000; // NOTE: 16bits
+    reg_cust_qspi_txfifo = wdat;
+    reg_cust_qspi_status = 258;
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
+    // spi_wr_dat(dat >> 8);
+    // spi_wr_dat(dat);
+}
+
+void lcd_wr_data32(uint32_t dat) {
+    lcd_dc_set;
+
+    reg_cust_qspi_len    = 0x200000; // NOTE: 32bits
+    reg_cust_qspi_txfifo = dat;
+    reg_cust_qspi_status = 258;
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
+}
+
+void lcd_wr_data32x2(uint32_t dat1, uint32_t dat2) {
+    lcd_dc_set;
+
+    reg_cust_qspi_len    = 0x400000; // NOTE: 32x2bits
+    reg_cust_qspi_txfifo = dat1;
+    reg_cust_qspi_txfifo = dat2;
+    reg_cust_qspi_status = 258;
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
+}
+
+void lcd_wr_data32x8(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4,
+                     uint32_t dat5, uint32_t dat6, uint32_t dat7, uint32_t dat8
+) {
+    lcd_dc_set;
+
+    reg_cust_qspi_len    = 0x1000000; // NOTE: 32x8bits
+    reg_cust_qspi_txfifo = dat1;
+    reg_cust_qspi_txfifo = dat2;
+    reg_cust_qspi_txfifo = dat3;
+    reg_cust_qspi_txfifo = dat4;
+    reg_cust_qspi_txfifo = dat5;
+    reg_cust_qspi_txfifo = dat6;
+    reg_cust_qspi_txfifo = dat7;
+    reg_cust_qspi_txfifo = dat8;
+    reg_cust_qspi_status = 258;
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
+}
+
+void lcd_wr_data32x16(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4,
+                      uint32_t dat5, uint32_t dat6, uint32_t dat7, uint32_t dat8,
+                      uint32_t dat9, uint32_t dat10, uint32_t dat11, uint32_t dat12,
+                      uint32_t dat13, uint32_t dat14, uint32_t dat15, uint32_t dat16
+) {
+    lcd_dc_set;
+
+    reg_cust_qspi_len    = 0x2000000; // NOTE: 32x16bits
+    reg_cust_qspi_txfifo = dat1;
+    reg_cust_qspi_txfifo = dat2;
+    reg_cust_qspi_txfifo = dat3;
+    reg_cust_qspi_txfifo = dat4;
+    reg_cust_qspi_txfifo = dat5;
+    reg_cust_qspi_txfifo = dat6;
+    reg_cust_qspi_txfifo = dat7;
+    reg_cust_qspi_txfifo = dat8;
+    reg_cust_qspi_txfifo = dat9;
+    reg_cust_qspi_txfifo = dat10;
+    reg_cust_qspi_txfifo = dat11;
+    reg_cust_qspi_txfifo = dat12;
+    reg_cust_qspi_txfifo = dat13;
+    reg_cust_qspi_txfifo = dat14;
+    reg_cust_qspi_txfifo = dat15;
+    reg_cust_qspi_txfifo = dat16;
+    reg_cust_qspi_status = 258;
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
+}
+
+void lcd_wr_data32x32(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4,
+                      uint32_t dat5, uint32_t dat6, uint32_t dat7, uint32_t dat8,
+                      uint32_t dat9, uint32_t dat10, uint32_t dat11, uint32_t dat12,
+                      uint32_t dat13, uint32_t dat14, uint32_t dat15, uint32_t dat16,
+                      uint32_t dat17, uint32_t dat18, uint32_t dat19, uint32_t dat20,
+                      uint32_t dat21, uint32_t dat22, uint32_t dat23, uint32_t dat24,
+                      uint32_t dat25, uint32_t dat26, uint32_t dat27, uint32_t dat28,
+                      uint32_t dat29, uint32_t dat30, uint32_t dat31, uint32_t dat32
+) {
+    lcd_dc_set;
+
+    reg_cust_qspi_len    = 0x4000000; // NOTE: 32x32bits
+    reg_cust_qspi_txfifo = dat1;
+    reg_cust_qspi_txfifo = dat2;
+    reg_cust_qspi_txfifo = dat3;
+    reg_cust_qspi_txfifo = dat4;
+    reg_cust_qspi_txfifo = dat5;
+    reg_cust_qspi_txfifo = dat6;
+    reg_cust_qspi_txfifo = dat7;
+    reg_cust_qspi_txfifo = dat8;
+    reg_cust_qspi_txfifo = dat9;
+    reg_cust_qspi_txfifo = dat10;
+    reg_cust_qspi_txfifo = dat11;
+    reg_cust_qspi_txfifo = dat12;
+    reg_cust_qspi_txfifo = dat13;
+    reg_cust_qspi_txfifo = dat14;
+    reg_cust_qspi_txfifo = dat15;
+    reg_cust_qspi_txfifo = dat16;
+    reg_cust_qspi_txfifo = dat17;
+    reg_cust_qspi_txfifo = dat18;
+    reg_cust_qspi_txfifo = dat19;
+    reg_cust_qspi_txfifo = dat20;
+    reg_cust_qspi_txfifo = dat21;
+    reg_cust_qspi_txfifo = dat22;
+    reg_cust_qspi_txfifo = dat23;
+    reg_cust_qspi_txfifo = dat24;
+    reg_cust_qspi_txfifo = dat25;
+    reg_cust_qspi_txfifo = dat26;
+    reg_cust_qspi_txfifo = dat27;
+    reg_cust_qspi_txfifo = dat28;
+    reg_cust_qspi_txfifo = dat29;
+    reg_cust_qspi_txfifo = dat30;
+    reg_cust_qspi_txfifo = dat31;
+    reg_cust_qspi_txfifo = dat32;
+    reg_cust_qspi_status = 258;
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
+}
+
+void lcd_wr_data32xlen(uint32_t dat, uint32_t dat_len) {
+    lcd_dc_set;
+
+    reg_cust_qspi_len    = (32 * dat_len) << 16; // NOTE: 32xlenbits
+    for(int i = 0; i < dat_len; ++i) reg_cust_qspi_txfifo = dat;
+    reg_cust_qspi_status = 258;
+    while ((reg_cust_qspi_status & 0xFFFF) != 1);
 }
 
 void lcd_init() {
@@ -894,11 +1024,17 @@ void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     }
 }
 
-void lcd_fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint16_t color) {
+void lcd_fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t color) {
     lcd_addr_set(xsta, ysta, xend - 1, yend - 1);
     for(uint16_t i = ysta; i < yend; ++i) {
-        for(uint16_t j = xsta; j < xend; ++j) {
-            lcd_wr_data16(color);
+        for(uint16_t j = xsta; j < xend; j += 64) {
+            // lcd_wr_data16(color);
+            // lcd_wr_data32(color);
+            // lcd_wr_data32x2(color, color);
+            // lcd_wr_data32x8(color, color, color, color, color, color, color, color);
+            // lcd_wr_data32x16(color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color);
+            lcd_wr_data32x32(color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color, color);
+            // lcd_wr_data32xlen(color, 16);
         }
     }
 }
@@ -909,10 +1045,11 @@ void cust_ip_lcd_test() {
     lcd_init();
     printf("lcd init done\n");
     // lcd_wr_cmd(0x01); // software reset
-    for(int i = 0; i < 6; ++i) {
-        lcd_fill(0, 0, LCD_W, LCD_H, 0xF800); // red
-        lcd_fill(0, 0, LCD_W, LCD_H, 0x07E0); // green
-        lcd_fill(0, 0, LCD_W, LCD_H, 0x001F); // blue
+    // for(int i = 0; i < 6; ++i) {
+        while(1){
+        lcd_fill(0, 0, LCD_W, LCD_H, 0xF800F800); // red
+        lcd_fill(0, 0, LCD_W, LCD_H, 0x07E007E0); // green
+        lcd_fill(0, 0, LCD_W, LCD_H, 0x001F001F); // blue
     }
 }
 
