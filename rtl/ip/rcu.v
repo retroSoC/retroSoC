@@ -118,8 +118,8 @@ module rcu (
       3'b111: begin  //8*clk 192MHz
         r_pll_bp = 1'b0;
         r_pll_M  = 8'd64;
-        r_pll_N  = 4'd2;
-        r_pll_OD = 2'd2;
+        r_pll_N  = 4'd4;
+        r_pll_OD = 2'd1;
       end
       default: begin  //bypass
         r_pll_bp = 1'b1;
