@@ -256,8 +256,10 @@ module retrosoc_tb;
     else if ($test$plusargs("pll_cfg7")) r_pll_cfg = 3'd7;  // 192M
     else r_pll_cfg = 3'd0;  // 24M
 
-    if (r_pll_en == 1'b0 || r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
+    if (r_pll_en == 1'b0) begin
       $display("pll_en: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, EXT_CPU_FREQ);
+    end else if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
+      $display("pll_en: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, XTAL_CPU_FREQ);
     end else begin
       $display("pll_en: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, (r_pll_cfg + 1) * 24);
     end
