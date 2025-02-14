@@ -243,11 +243,11 @@ module retrosoc_tb;
   end
 
   initial begin
-    if ($test$plusargs("pll_bypass")) r_pll_en = 1'b0;
-    else r_pll_en = 1'b1;
+    if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
+    else r_pll_en = 1'b0;
 
     if ($test$plusargs("pll_cfg0")) r_pll_cfg = 3'd0;  // 24M
-    else if ($test$plusargs("pll_cfg1")) r_pll_cfg = 3'd1;  // 24M
+    else if ($test$plusargs("pll_cfg1")) r_pll_cfg = 3'd1;  // 48M
     else if ($test$plusargs("pll_cfg2")) r_pll_cfg = 3'd2;  // 72M
     else if ($test$plusargs("pll_cfg3")) r_pll_cfg = 3'd3;  // 96M
     else if ($test$plusargs("pll_cfg4")) r_pll_cfg = 3'd4;  // 120M
@@ -257,9 +257,9 @@ module retrosoc_tb;
     else r_pll_cfg = 3'd0;  // 24M
 
     if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
-      $display("bypass: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, EXT_CPU_FREQ);
+      $display("pll_en: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, EXT_CPU_FREQ);
     end else begin
-      $display("bypass: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, (r_pll_cfg + 1) * 24);
+      $display("pll_en: %d pll_cfg: %d clk_freq: %dMHz", r_pll_en, r_pll_cfg, (r_pll_cfg + 1) * 24);
     end
   end
 endmodule

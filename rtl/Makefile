@@ -1,4 +1,4 @@
-RTL_SIM_PASS :=
+RTL_SIM_PLLEN :=
 RTL_SIM_PLLCFG :=
 SIM_TOOL :=
 
@@ -118,7 +118,7 @@ LDS_PATH := ../crt/sections.lds
 # +behv_wave
 retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
 	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
-	vvp -l run.log -N $< +$(RTL_SIM_PASS) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) -fst
+	vvp -l run.log -N $< +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) -fst
 
 # +syn_wave
 retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).hex
@@ -150,7 +150,7 @@ vcomp:
 	vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) retrosoc_tb.v -top retrosoc_tb -l vcompile.log
 
 vsim: vcomp
-	./simv -l vsim.log +$(RTL_SIM_PASS) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
+	./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
 vwave:
 	verdi -ssf retrosoc_tb.fsdb -nologo
