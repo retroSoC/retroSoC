@@ -44,6 +44,7 @@ module spi_flash #(
     output                  pready,
     output [          31:0] prdata,
     output                  pslverr,
+    input                   div4_i,
     output                  spi_clk,
     output [spi_cs_num-1:0] spi_cs,
     output                  spi_mosi,
@@ -216,6 +217,7 @@ module spi_flash #(
   assign spi_cs = ss_pad_o[1:0];
 
   spi_top u0_spi_top (
+      .div4_i (div4_i),
       .PCLK   (pclk),
       .PRESETN(presetn),
 

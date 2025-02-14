@@ -87,38 +87,38 @@ module rcu (
       end
       3'b010: begin  //3*clk 72MHz
         r_pll_bp = 1'b0;
-        r_pll_M  = 8'd27;
-        r_pll_N  = 4'd3;
-        r_pll_OD = 2'd3;
+        r_pll_M  = 8'd24;
+        r_pll_N  = 4'd2;
+        r_pll_OD = 2'd2;
       end
       3'b011: begin  //4*clk 96MHz
         r_pll_bp = 1'b0;
-        r_pll_M  = 8'd36;
-        r_pll_N  = 4'd3;
-        r_pll_OD = 2'd3;
+        r_pll_M  = 8'd32;
+        r_pll_N  = 4'd2;
+        r_pll_OD = 2'd2;
       end
       3'b100: begin  //5*clk 120MHz
         r_pll_bp = 1'b0;
-        r_pll_M  = 8'd30;
-        r_pll_N  = 4'd3;
+        r_pll_M  = 8'd40;
+        r_pll_N  = 4'd2;
         r_pll_OD = 2'd2;
       end
       3'b101: begin  //6*clk 144MHz
         r_pll_bp = 1'b0;
-        r_pll_M  = 8'd36;
-        r_pll_N  = 4'd3;
+        r_pll_M  = 8'd48;
+        r_pll_N  = 4'd2;
         r_pll_OD = 2'd2;
       end
       3'b110: begin  //7*clk 168MHz
         r_pll_bp = 1'b0;
-        r_pll_M  = 8'd42;
-        r_pll_N  = 4'd3;
+        r_pll_M  = 8'd56;
+        r_pll_N  = 4'd2;
         r_pll_OD = 2'd2;
       end
       3'b111: begin  //8*clk 192MHz
         r_pll_bp = 1'b0;
-        r_pll_M  = 8'd48;
-        r_pll_N  = 4'd3;
+        r_pll_M  = 8'd64;
+        r_pll_N  = 4'd2;
         r_pll_OD = 2'd2;
       end
       default: begin  //bypass

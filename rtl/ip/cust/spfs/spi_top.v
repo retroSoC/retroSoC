@@ -2,6 +2,7 @@
 
 module spi_top
 (
+  div4_i,
   // APB Signals
   PCLK, PRESETN, PADDR, PWDATA, PRDATA, PSEL,
   PWRITE, PENABLE, PREADY, PSLVERR,
@@ -13,6 +14,7 @@ module spi_top
 
   parameter Tp = 1;
   
+  input                            div4_i;
   input                            PCLK;            // APB System Clock
   input                            PRESETN;         // APB Reset - Active low
   input [4:0]                      PADDR;           // APB Address
@@ -175,7 +177,7 @@ module spi_top
 
   assign cpol       = ctrl[`SPI_CTRL_CPOL];
   assign ss         = ctrl[`SPI_CTRL_SS];//cuckoo
-  assign divider    = ctrl[`SPI_CTRL_DIV];//cuckoo
+  assign divider    = div4_i ? 8'd1 : ctrl[`SPI_CTRL_DIV];  //cuckoo
   assign rd_endian  = ctrl[`SPI_CTRL_RD_ENDIAN]; //cuckoo
   assign rx_negedge = ctrl[`SPI_CTRL_RX_NEGEDGE];
   assign tx_negedge = ctrl[`SPI_CTRL_TX_NEGEDGE];

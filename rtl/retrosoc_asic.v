@@ -358,6 +358,7 @@ module retrosoc_asic (
       .cust_psram_sio3_o        (s_cust_psram_sio3_o),
       .cust_psram_sio_oe_o      (s_cust_psram_sio_oe_o),
       .cust_psram_ce_o          (s_cust_psram_ce_o),
+      .cust_spfs_div4_i         (s_pll_cfg_i[2]),
       .cust_spfs_clk_o          (s_cust_spfs_clk_o),
       .cust_spfs_cs_o           (s_cust_spfs_cs_o),
       .cust_spfs_mosi_o         (s_cust_spfs_mosi_o),

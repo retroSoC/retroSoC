@@ -45,6 +45,7 @@ module axil_ip_wrapper (
     input  [ 3:0] qspi_spi_sdi_i,
     output        qspi_irq_o,
     // spfs
+    input         spfs_div4_i,
     output        spfs_clk_o,
     output        spfs_cs_o,
     output        spfs_mosi_o,
@@ -235,6 +236,7 @@ module axil_ip_wrapper (
       .pready     (s_m_apb_pready[7]),
       .prdata     (s_m_apb_prdata8),
       .pslverr    (s_m_apb_pslverr[7]),
+      .div4_i     (spfs_div4_i),
       .spi_clk    (spfs_clk_o),
       .spi_cs     (spfs_cs_o),
       .spi_mosi   (spfs_mosi_o),
