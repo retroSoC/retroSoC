@@ -137,7 +137,7 @@ module rcu (
       .fbdiv_i   (),
       .postdiv1_i(r_pll_N),
       .postdiv2_i(r_pll_OD),
-      .bp_i      (clk_bypass_i),
+      .bp_i      (clk_bypass_i || r_pll_bp),
       .pll_lock_o(s_pll_lock),
       .pll_clk_o (s_pll_clk)
   );
