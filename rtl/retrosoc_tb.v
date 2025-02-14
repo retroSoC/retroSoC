@@ -65,7 +65,7 @@ module retrosoc_tb;
       .pll_cfg_0_i_pad          (r_pll_cfg[0]),
       .pll_cfg_1_i_pad          (r_pll_cfg[1]),
       .pll_cfg_2_i_pad          (r_pll_cfg[2]),
-      .clk_bypass_i_pad         (r_pll_en),
+      .clk_bypass_i_pad         (~r_pll_en),
       .ext_rst_n_i_pad          (r_rst_n),
       .hk_sdi_i_pad             (1'b1),
       .hk_sdo_o_pad             (),

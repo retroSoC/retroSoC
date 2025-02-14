@@ -10,6 +10,11 @@
 *.gtkw
 *.vmf
 *.tar.bz2
+*.tbsim
+*.fsdb
+*.conf
+*.rc
+verdiLog
 simv.daidir
 ucli.*
 verdi_config_file
