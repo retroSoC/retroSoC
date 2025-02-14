@@ -215,8 +215,13 @@ module retrosoc_tb;
 
   initial begin
     if ($test$plusargs("behv_wave")) begin
-      $dumpfile("retrosoc_tb.fst");
-      $dumpvars(0, retrosoc_tb);
+      if ($test$plusargs("sim_iver")) begin
+        $dumpfile("retrosoc_tb.fst");
+        $dumpvars(0, retrosoc_tb);
+      end else begin
+        // $fsdbDumpfile("retrosoc_tb.fsdb");
+        // $fsdbDumpvars(0);
+      end
       repeat (200) begin
         repeat (5000) @(posedge r_xtal_clk);
       end
