@@ -647,7 +647,7 @@ module retrosoc #(
   // data mux
   assign s_mem_ready = (s_iomem_valid && r_iomem_ready) ||
                        s_spimem_ready || r_ram_ready ||
-                       s_spimemio_cfgreg_sel || s_psram_ready;
+                       s_spimemio_cfgreg_sel || (s_psram_ready & 0);
 
   assign s_mem_rdata = (s_iomem_valid && r_iomem_ready) ? r_iomem_rdata :
                        s_spimem_ready ? s_spimem_rdata :

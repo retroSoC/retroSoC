@@ -247,7 +247,7 @@ module psram_core (
     else if (cfg_wr_en_i) cfg_wait_o <= cfg_wait_i;
   end
 
-  assign ready_o         = r_fsm_state == FSM_IDLE;
+  assign ready_o         = r_fsm_state == FSM_IDLE; // BUG:
   assign psram_sio_oen_o = (r_fsm_state == FSM_RD_PRE_QUAD) | (r_fsm_state == FSM_RD_QUAD);
 
   always @(*) begin
