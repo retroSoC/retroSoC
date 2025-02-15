@@ -108,7 +108,7 @@ module psram_top (
       r_we_st         <= 1'b0;
       r_we_end        <= 1'b0;
       r_fsm_state     <= FSM_IDLE;
-      r_core_ready    <= s_core_ready;
+      r_core_ready    <= 1'b0;
       r_byte_xfer_cnt <= 4'd0;
     end else begin
       case (r_fsm_state)
