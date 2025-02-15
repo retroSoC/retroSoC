@@ -144,7 +144,7 @@ module retrosoc #(
   wire        s_psram_valid;
   wire        s_psram_ready;
   wire [ 3:0] s_psram_wstrb;
-  wire [29:0] s_psram_addr;
+  wire [31:0] s_psram_addr;
   wire [31:0] s_psram_wdata;
   wire [31:0] s_psram_rdata;
   // mmio ctrl regs
@@ -444,20 +444,21 @@ module retrosoc #(
       .irq_out   (s_irq_tim1)
   );
 
-  assign s_psram_addr  = s_mem_addr[31:2];
+  assign s_psram_addr  = s_mem_addr;
   assign s_psram_wdata = s_mem_wdata;
   assign s_psram_wstrb = s_mem_wstrb;
   assign s_psram_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h04);
   psram_top u_psram_top (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
-      .addr_i         (s_psram_addr), // TODO:
+      .addr_i         ({1'b0, s_psram_addr[22:0]}),
       .wstrb_i        (s_psram_wstrb),
       .wdata_i        (s_psram_wdata),
       .rdata_o        (s_psram_rdata),
       .we_i           (s_psram_valid && (|s_psram_wstrb)),
       .rd_i           (s_psram_valid && (~(|s_psram_wstrb))),
-      .ready_o        (s_psram_ready),
+      .ready_o        (),
+      .xfer_end_o     (s_psram_ready),
       .cfg_wr_en_i    (s_psram_cfg_sel ? s_iomem_wstrb[0] : 1'b0),
       .cfg_wait_i     (r_psram_cfg_wait_din),
       .cfg_wait_o     (s_psram_cfg_wait_dout),
@@ -647,7 +648,7 @@ module retrosoc #(
   // data mux
   assign s_mem_ready = (s_iomem_valid && r_iomem_ready) ||
                        s_spimem_ready || r_ram_ready ||
-                       s_spimemio_cfgreg_sel || (s_psram_ready & 0);
+                       s_spimemio_cfgreg_sel || s_psram_ready;
 
   assign s_mem_rdata = (s_iomem_valid && r_iomem_ready) ? r_iomem_rdata :
                        s_spimem_ready ? s_spimem_rdata :

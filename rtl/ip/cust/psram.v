@@ -8,6 +8,7 @@ module psram_top (
     input             we_i,
     input             rd_i,
     output            ready_o,
+    output reg        xfer_end_o,
     input             cfg_wr_en_i,
     input      [ 3:0] cfg_wait_i,
     output     [ 3:0] cfg_wait_o,
@@ -110,7 +111,9 @@ module psram_top (
       r_fsm_state     <= FSM_IDLE;
       r_core_ready    <= 1'b0;
       r_byte_xfer_cnt <= 4'd0;
+      xfer_end_o      <= 1'b0;
     end else begin
+      xfer_end_o <= 1'b0;
       case (r_fsm_state)
         // go FSM_IDLE right after reset, but first memory operation will
         // hang until the psram is ready_o
@@ -118,7 +121,7 @@ module psram_top (
           if (we_i) begin
             r_fsm_state     <= FSM_WE_ST;
             r_core_ready    <= 1'b0;
-            r_byte_xfer_cnt <= 4'd4;
+            r_byte_xfer_cnt <= 4'd4;  // TODO: support wstrb
           end else if (rd_i) begin
             r_fsm_state     <= FSM_RD_ST;
             r_core_ready    <= 1'b0;
@@ -148,6 +151,7 @@ module psram_top (
           if (r_byte_xfer_cnt == 4'd0) begin
             r_fsm_state <= FSM_IDLE;
             r_we_end    <= 1'b1;
+            xfer_end_o  <= 1'b1;
           end
         end
         FSM_RD_ST: begin
@@ -168,6 +172,7 @@ module psram_top (
           if (r_byte_xfer_cnt == 4'd0) begin
             rdata_o     <= {r_data_buf[3], r_data_buf[2], r_data_buf[1], r_data_buf[0]};
             r_fsm_state <= FSM_IDLE;
+            xfer_end_o  <= 1'b1;
           end
         end
       endcase
@@ -176,6 +181,59 @@ module psram_top (
 endmodule
 
 
+module align_wdata (
+    input      [ 3:0] wstrb,
+    input      [31:0] wdata,
+    output reg [ 1:0] byte_offset,
+    output reg [ 2:0] wr_bytes,
+    output reg [31:0] wr_buffer
+);
+  always @(*) begin
+    wr_buffer = wdata;
+    case (wstrb)
+      4'b0001: begin
+        byte_offset      = 2'd0;
+        wr_buffer[31:24] = wdata[7:0];
+        wr_bytes         = 3'd1;
+      end
+      4'b0010: begin
+        byte_offset      = 2'd1;
+        wr_buffer[31:24] = wdata[15:8];
+        wr_bytes         = 3'd1;
+      end
+      4'b0100: begin
+        byte_offset      = 2'd2;
+        wr_buffer[31:24] = wdata[23:16];
+        wr_bytes         = 3'd1;
+      end
+      4'b1000: begin
+        byte_offset      = 2'd3;
+        wr_buffer[31:24] = wdata[31:24];
+        wr_bytes         = 3'd1;
+      end
+      4'b0011: begin
+        byte_offset      = 2'd0;
+        wr_buffer[31:16] = wdata[15:0];
+        wr_bytes         = 3'd2;
+      end
+      4'b1100: begin
+        byte_offset      = 2'd2;
+        wr_buffer[31:16] = wdata[31:16];
+        wr_bytes         = 3'd2;
+      end
+      4'b1111: begin
+        byte_offset     = 2'd0;
+        wr_buffer[31:0] = wdata[31:0];
+        wr_bytes        = 3'd4;
+      end
+      default: begin
+        byte_offset = 2'd0;
+        wr_buffer   = wdata;
+        wr_bytes    = 3'd4;
+      end
+    endcase
+  end
+endmodule
 
 module psram_core (
     input             clk_i,
@@ -247,7 +305,7 @@ module psram_core (
     else if (cfg_wr_en_i) cfg_wait_o <= cfg_wait_i;
   end
 
-  assign ready_o         = r_fsm_state == FSM_IDLE; // BUG:
+  assign ready_o         = r_fsm_state == FSM_IDLE;  // BUG:
   assign psram_sio_oen_o = (r_fsm_state == FSM_RD_PRE_QUAD) | (r_fsm_state == FSM_RD_QUAD);
 
   always @(*) begin
