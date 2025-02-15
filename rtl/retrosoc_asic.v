@@ -87,10 +87,7 @@ module retrosoc_asic (
     inout  cust_qspi_dat_2_io_pad,
     inout  cust_qspi_dat_3_io_pad,
     output cust_psram_sclk_o_pad,
-    output cust_psram_ce_0_o_pad,
-    output cust_psram_ce_1_o_pad,
-    output cust_psram_ce_2_o_pad,
-    output cust_psram_ce_3_o_pad,
+    output cust_psram_ce_o_pad,
     inout  cust_psram_sio0_io_pad,
     inout  cust_psram_sio1_io_pad,
     inout  cust_psram_sio2_io_pad,
@@ -181,6 +178,7 @@ module retrosoc_asic (
   wire [ 3:0] s_cust_qspi_spi_oe_o;
   wire [ 3:0] s_cust_qspi_spi_sdi_i;
   wire        s_cust_psram_sclk_o;
+  wire        s_cust_psram_ce_o;
   wire        s_cust_psram_sio0_i;
   wire        s_cust_psram_sio1_i;
   wire        s_cust_psram_sio2_i;
@@ -189,8 +187,8 @@ module retrosoc_asic (
   wire        s_cust_psram_sio1_o;
   wire        s_cust_psram_sio2_o;
   wire        s_cust_psram_sio3_o;
-  wire [ 3:0] s_cust_psram_sio_oe_o;
-  wire [ 3:0] s_cust_psram_ce_o;
+  wire        s_cust_psram_sio_oe_o;
+
   wire        s_cust_spfs_clk_o;
   wire        s_cust_spfs_cs_o;
   wire        s_cust_spfs_mosi_o;
@@ -257,14 +255,11 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_qspi_dat_2_io_pad   (.pad(cust_qspi_dat_2_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[2]), .c2p_en(s_cust_qspi_spi_oe_o[2]),  .p2c(s_cust_qspi_spi_sdi_i[2]));
   tc_io_tri_pad u_cust_qspi_dat_3_io_pad   (.pad(cust_qspi_dat_3_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[3]), .c2p_en(s_cust_qspi_spi_oe_o[3]),  .p2c(s_cust_qspi_spi_sdi_i[3]));
   tc_io_tri_pad u_cust_psram_sclk_o_pad    (.pad(cust_psram_sclk_o_pad),     .c2p(s_cust_psram_sclk_o),      .c2p_en(1'b1),                     .p2c());
-  tc_io_tri_pad u_cust_psram_ce_0_o_pad    (.pad(cust_psram_ce_0_o_pad),     .c2p(s_cust_psram_ce_o[0]),     .c2p_en(1'b1),                     .p2c());
-  tc_io_tri_pad u_cust_psram_ce_1_o_pad    (.pad(cust_psram_ce_1_o_pad),     .c2p(s_cust_psram_ce_o[1]),     .c2p_en(1'b1),                     .p2c());
-  tc_io_tri_pad u_cust_psram_ce_2_o_pad    (.pad(cust_psram_ce_2_o_pad),     .c2p(s_cust_psram_ce_o[2]),     .c2p_en(1'b1),                     .p2c());
-  tc_io_tri_pad u_cust_psram_ce_3_o_pad    (.pad(cust_psram_ce_3_o_pad),     .c2p(s_cust_psram_ce_o[3]),     .c2p_en(1'b1),                     .p2c());
-  tc_io_tri_pad u_cust_psram_sio0_io_pad   (.pad(cust_psram_sio0_io_pad),    .c2p(s_cust_psram_sio0_o),      .c2p_en(s_cust_psram_sio_oe_o[0]), .p2c(s_cust_psram_sio0_i));
-  tc_io_tri_pad u_cust_psram_sio1_io_pad   (.pad(cust_psram_sio1_io_pad),    .c2p(s_cust_psram_sio1_o),      .c2p_en(s_cust_psram_sio_oe_o[1]), .p2c(s_cust_psram_sio1_i));
-  tc_io_tri_pad u_cust_psram_sio2_io_pad   (.pad(cust_psram_sio2_io_pad),    .c2p(s_cust_psram_sio2_o),      .c2p_en(s_cust_psram_sio_oe_o[2]), .p2c(s_cust_psram_sio2_i));
-  tc_io_tri_pad u_cust_psram_sio3_io_pad   (.pad(cust_psram_sio3_io_pad),    .c2p(s_cust_psram_sio3_o),      .c2p_en(s_cust_psram_sio_oe_o[3]), .p2c(s_cust_psram_sio3_i));
+  tc_io_tri_pad u_cust_psram_ce_o_pad      (.pad(cust_psram_ce_o_pad),       .c2p(s_cust_psram_ce_o),        .c2p_en(1'b1),                     .p2c());
+  tc_io_tri_pad u_cust_psram_sio0_io_pad   (.pad(cust_psram_sio0_io_pad),    .c2p(s_cust_psram_sio0_o),      .c2p_en(~s_cust_psram_sio_oe_o),   .p2c(s_cust_psram_sio0_i));
+  tc_io_tri_pad u_cust_psram_sio1_io_pad   (.pad(cust_psram_sio1_io_pad),    .c2p(s_cust_psram_sio1_o),      .c2p_en(~s_cust_psram_sio_oe_o),   .p2c(s_cust_psram_sio1_i));
+  tc_io_tri_pad u_cust_psram_sio2_io_pad   (.pad(cust_psram_sio2_io_pad),    .c2p(s_cust_psram_sio2_o),      .c2p_en(~s_cust_psram_sio_oe_o),   .p2c(s_cust_psram_sio2_i));
+  tc_io_tri_pad u_cust_psram_sio3_io_pad   (.pad(cust_psram_sio3_io_pad),    .c2p(s_cust_psram_sio3_o),      .c2p_en(~s_cust_psram_sio_oe_o),   .p2c(s_cust_psram_sio3_i));
   tc_io_tri_pad u_cust_spfs_clk_o_pad      (.pad(cust_spfs_clk_o_pad),       .c2p(s_cust_spfs_clk_o),        .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_spfs_cs_o_pad       (.pad(cust_spfs_cs_o_pad),        .c2p(s_cust_spfs_cs_o),         .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_spfs_mosi_o_pad     (.pad(cust_spfs_mosi_o_pad),      .c2p(s_cust_spfs_mosi_o),       .c2p_en(1'b1),                     .p2c());
@@ -348,6 +343,7 @@ module retrosoc_asic (
       .cust_qspi_spi_oe_o       (s_cust_qspi_spi_oe_o),
       .cust_qspi_spi_sdi_i      (s_cust_qspi_spi_sdi_i),
       .cust_psram_sclk_o        (s_cust_psram_sclk_o),
+      .cust_psram_ce_o          (s_cust_psram_ce_o),
       .cust_psram_sio0_i        (s_cust_psram_sio0_i),
       .cust_psram_sio1_i        (s_cust_psram_sio1_i),
       .cust_psram_sio2_i        (s_cust_psram_sio2_i),
@@ -357,7 +353,6 @@ module retrosoc_asic (
       .cust_psram_sio2_o        (s_cust_psram_sio2_o),
       .cust_psram_sio3_o        (s_cust_psram_sio3_o),
       .cust_psram_sio_oe_o      (s_cust_psram_sio_oe_o),
-      .cust_psram_ce_o          (s_cust_psram_ce_o),
       .cust_spfs_div4_i         (s_pll_cfg_i[2]),
       .cust_spfs_clk_o          (s_cust_spfs_clk_o),
       .cust_spfs_cs_o           (s_cust_spfs_cs_o),
