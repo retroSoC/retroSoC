@@ -362,7 +362,7 @@ module retrosoc #(
   wire [31:0] s_tim1_reg_dat_dout;
   // psram
   wire        s_psram_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0080);
-  reg [ 3:0] r_psram_cfg_wait_din;
+  reg  [ 3:0] r_psram_cfg_wait_din;
   wire [ 3:0] s_psram_cfg_wait_dout;
 
   spimemio u_spimemio (
@@ -451,7 +451,7 @@ module retrosoc #(
   psram_top u_psram_top (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
-      .addr_i         (24'd0),
+      .addr_i         (s_psram_addr), // TODO:
       .wstrb_i        (s_psram_wstrb),
       .wdata_i        (s_psram_wdata),
       .rdata_o        (s_psram_rdata),
