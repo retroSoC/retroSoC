@@ -113,11 +113,11 @@ module psram_top (
   );
 
   wr_dispatcher u_wr_dispatcher (
-      .wstrb_i    (mem_wstrb_i),
-      .wdata_i    (mem_wdata_i),
-      .addr_ofst_o(s_disp_addr_ofst),
-      .xfer_cnt_o (s_disp_xfer_bit_cnt),
-      .wdata_o    (s_disp_wdata)
+      .wstrb_i       (mem_wstrb_i),
+      .wdata_i       (mem_wdata_i),
+      .addr_ofst_o   (s_disp_addr_ofst),
+      .xfer_bit_cnt_o(s_disp_xfer_bit_cnt),
+      .wdata_o       (s_disp_wdata)
   );
 
 endmodule
@@ -127,7 +127,7 @@ module wr_dispatcher (
     input      [ 3:0] wstrb_i,
     input      [31:0] wdata_i,
     output reg [ 1:0] addr_ofst_o,
-    output reg [ 7:0] xfer_cnt_o,
+    output reg [ 7:0] xfer_bit_cnt_o,
     output reg [31:0] wdata_o
 );
   always @(*) begin
@@ -135,43 +135,43 @@ module wr_dispatcher (
     case (wstrb_i)
       4'b0001: begin
         addr_ofst_o    = 2'd0;
-        xfer_cnt_o     = 8'd4;
+        xfer_bit_cnt_o = 8'd8;
         wdata_o[31:24] = wdata_i[7:0];
       end
       4'b0010: begin
         addr_ofst_o    = 2'd1;
-        xfer_cnt_o     = 8'd4;
+        xfer_bit_cnt_o = 8'd8;
         wdata_o[31:24] = wdata_i[15:8];
       end
       4'b0100: begin
         addr_ofst_o    = 2'd2;
-        xfer_cnt_o     = 8'd4;
+        xfer_bit_cnt_o = 8'd8;
         wdata_o[31:24] = wdata_i[23:16];
       end
       4'b1000: begin
         addr_ofst_o    = 2'd3;
-        xfer_cnt_o     = 8'd4;
+        xfer_bit_cnt_o = 8'd8;
         wdata_o[31:24] = wdata_i[31:24];
       end
       4'b0011: begin
         addr_ofst_o    = 2'd0;
-        xfer_cnt_o     = 8'd16;
+        xfer_bit_cnt_o = 8'd16;
         wdata_o[31:16] = wdata_i[15:0];
       end
       4'b1100: begin
         addr_ofst_o    = 2'd2;
-        xfer_cnt_o     = 8'd16;
+        xfer_bit_cnt_o = 8'd16;
         wdata_o[31:16] = wdata_i[31:16];
       end
       4'b1111: begin
-        addr_ofst_o   = 2'd0;
-        xfer_cnt_o    = 8'd32;
-        wdata_o[31:0] = wdata_i[31:0];
+        addr_ofst_o    = 2'd0;
+        xfer_bit_cnt_o = 8'd32;
+        wdata_o[31:0]  = wdata_i[31:0];
       end
       default: begin
-        addr_ofst_o = 2'd0;
-        xfer_cnt_o  = 8'd32;
-        wdata_o     = wdata_i[31:0];
+        addr_ofst_o    = 2'd0;
+        xfer_bit_cnt_o = 8'd32;
+        wdata_o        = wdata_i[31:0];
       end
     endcase
   end
