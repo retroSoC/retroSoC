@@ -66,6 +66,7 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/cust/pwm.v \
       ./ip/cust/ps2.v \
       ./ip/cust/i2c.v \
+      ./ip/cust/psram_core.v \
       ./ip/cust/psram.v \
       ./ip/cust/spfs/spi_clgen.v \
       ./ip/cust/spfs/spi_shift.v \

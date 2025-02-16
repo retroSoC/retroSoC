@@ -54,6 +54,7 @@ yosys read_verilog ../../rtl/ip/cust/uart.v
 yosys read_verilog ../../rtl/ip/cust/pwm.v
 yosys read_verilog ../../rtl/ip/cust/ps2.v
 yosys read_verilog ../../rtl/ip/cust/i2c.v
+yosys read_verilog ../../rtl/ip/cust/psram_core.v
 yosys read_verilog ../../rtl/ip/cust/psram.v
 yosys read_verilog ../../rtl/ip/cust/spfs/spi_clgen.v
 yosys read_verilog ../../rtl/ip/cust/spfs/spi_shift.v
