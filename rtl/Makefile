@@ -154,7 +154,7 @@ vsim: vcomp
 	./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
 vwave:
-	verdi -ssf retrosoc_tb.fsdb -nologo
+	verdi -ssf retrosoc_tb.fsdb -nologo &
 
 clean:
 	rm -f *.vvp *.vcd *.fst
