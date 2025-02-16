@@ -229,7 +229,7 @@ module psram_core (
           // the first 'psram_sclk_o' is 0 in this state
           psram_sclk_o <= ~psram_sclk_o;
           if (psram_sclk_o) begin
-            r_xfer_data <= r_xfer_data_bit_cnt == 3'd0 ? r_xfer_data : {r_xfer_data[27:0], 4'd1};
+            r_xfer_data <= {r_xfer_data[27:0], 4'd1};
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 3'd4;
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_WR2IDLE;
