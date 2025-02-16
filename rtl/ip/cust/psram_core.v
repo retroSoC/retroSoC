@@ -104,9 +104,9 @@ module psram_core (
       r_fsm_state_tgt     <= FSM_INIT;
       r_boot_cnt          <= `BOOT_COUNTER;
       r_xfer_ca           <= 32'd0;
+      r_xfer_data         <= 32'd0;
       r_xfer_ca_bit_cnt   <= 8'd0;
-      r_xfer_data         <= 8'd0;
-      r_xfer_data_bit_cnt <= 3'd0;
+      r_xfer_data_bit_cnt <= 8'd0;
       r_ce_cnt            <= 4'd0;
       r_rd_wait_cnt       <= 4'd0;
       r_dev_rst           <= 1'b1;
@@ -217,7 +217,7 @@ module psram_core (
           if (psram_sclk_o) begin
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 3'd4;
             r_xfer_data <= {
-              r_xfer_data[3:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
+              r_xfer_data[27:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
             };
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_RD2IDLE;
@@ -229,7 +229,7 @@ module psram_core (
           // the first 'psram_sclk_o' is 0 in this state
           psram_sclk_o <= ~psram_sclk_o;
           if (psram_sclk_o) begin
-            r_xfer_data <= r_xfer_data_bit_cnt == 3'd0 ? r_xfer_data : {r_xfer_data[3:0], 4'd0};
+            r_xfer_data <= r_xfer_data_bit_cnt == 3'd0 ? r_xfer_data : {r_xfer_data[27:0], 4'd1};
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 3'd4;
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_WR2IDLE;
