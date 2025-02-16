@@ -20,8 +20,8 @@
 #include <tinylib.h>
 
 #define RAM_TOTAL 0x20000 // 128 KB
-#define PSRAM_NUM 4
-#define CPU_FREQ 72     // unit: MHz
+#define PSRAM_NUM 1
+#define CPU_FREQ 64     // unit: MHz
 #define UART_BPS 115200 // unit: bps
 
 
@@ -148,53 +148,64 @@ char getchar_prompt(char *prompt)
 
 void cmd_memtest(uint32_t addr, uint32_t range)
 {
-    int cyc_count = 5;
-    int stride = 256;
-    uint32_t state;
+    // int cyc_count = 5;
+    // int stride = 256;
+    // uint32_t state;
 
     volatile uint32_t *base_word = (uint32_t *)addr;
-    volatile uint8_t *base_byte = (uint8_t *)addr;
+    // volatile uint8_t *base_byte = (uint8_t *)addr;
 
-    printf("[memtest] addr: 0x%x range: %x\n", addr, range);
+    // printf("[memtest] addr: 0x%x range: %x\n", addr, range);
     // walk in stride increments, word access
-    for (int i = 1; i <= cyc_count; i++)
-    {
-        state = i;
-        for (int word = 0; word < range / sizeof(int); word += stride)
-        {
-            *(base_word + word) = xorshift32(&state);
-        }
+    // for (int i = 1; i <= cyc_count; i++)
+    // {
+    //     state = i;
+    //     for (int word = 0; word < range / sizeof(int); word += stride)
+    //     {
+    //         *(base_word + word) = xorshift32(&state);
+    //     }
 
-        state = i;
-        for (int word = 0; word < range / sizeof(int); word += stride)
-        {
-            if (*(base_word + word) != xorshift32(&state))
-            {
-                printf("***FAILED BYTE*** at %x\n", 4 * word);
-                return;
-            }
-        }
-        printf(".");
+    //     state = i;
+    //     for (int word = 0; word < range / sizeof(int); word += stride)
+    //     {
+    //         if (*(base_word + word) != xorshift32(&state))
+    //         {
+    //             printf("***FAILED BYTE*** at %x\n", 4 * word);
+    //             while(1);
+    //             return;
+    //         }
+    //     }
+    //     printf(".");
+    // }
+    // printf("stride test done\n");
+    // // Byte access
+
+    // for (int byte = 0; byte < range; byte++)
+    // {
+    //     *(base_byte + byte) = (uint8_t)byte;
+    // }
+
+    // printf("byte write done\n");
+    // for (int byte = 0; byte < range; byte++)
+    // {
+    //     if (*(base_byte + byte) != (uint8_t)byte)
+    //     {
+    //         printf("***FAILED BYTE*** at %x\n", byte);
+    //         while(1);
+    //         return;
+    //     }
+    // }
+
+    for(int i = 0; i < 16; ++i) {
+        *(base_word + i) = i;
     }
-    printf("stride test done\n");
-    // Byte access
 
-    for (int byte = 0; byte < range; byte++)
-    {
-        *(base_byte + byte) = (uint8_t)byte;
+    // uint32_t tmp_val;
+    for(int i = 0; i < 16; ++i) {
+        printf("tmp_val: %d\n", *(base_word + i));
     }
 
-    printf("byte write done\n");
-    for (int byte = 0; byte < range; byte++)
-    {
-        if (*(base_byte + byte) != (uint8_t)byte)
-        {
-            printf("***FAILED BYTE*** at %x\n", byte);
-            return;
-        }
-    }
-
-    printf("\nmemtest passed\n");
+    // printf("\nmemtest passed\n");
 }
 
 uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
@@ -1058,52 +1069,57 @@ void welcome_screen()
     printf("first bootloader done\n");
     printf("uart config: 8n1 %dbps\n", UART_BPS);
     printf("app booting...\n");
-    printf("\n");
-    printf("           _             _____        _____ \n");
-    printf("          | |           / ____|      / ____|\n");
-    printf("  _ __ ___| |_ _ __ ___| (___   ___ | |     \n");
-    printf(" | '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
-    printf(" | | |  __/ |_| | | (_) |___) | (_) | |____ \n");
-    printf(" |_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
-    printf("   retroSoC: A Customized ASIC for Retro Stuff!\n");
-    printf("     <https://github.com/retroSoC/retroSoC>\n");
-    printf("  author:  MrAMS(init version) <https://github.com/MrAMS>\n");
-    printf("           maksyuki            <https://github.com/maksyuki>\n");
-    printf("  License: MulanPSL-2.0 license\n");
-    printf("  version: v1.0(commit: 73b7f30)\n");
-    printf("\n");
+    // printf("\n");
+    // printf("           _             _____        _____ \n");
+    // printf("          | |           / ____|      / ____|\n");
+    // printf("  _ __ ___| |_ _ __ ___| (___   ___ | |     \n");
+    // printf(" | '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
+    // printf(" | | |  __/ |_| | | (_) |___) | (_) | |____ \n");
+    // printf(" |_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
+    // printf("   retroSoC: A Customized ASIC for Retro Stuff!\n");
+    // printf("     <https://github.com/retroSoC/retroSoC>\n");
+    // printf("  author:  MrAMS(init version) <https://github.com/MrAMS>\n");
+    // printf("           maksyuki            <https://github.com/maksyuki>\n");
+    // printf("  License: MulanPSL-2.0 license\n");
+    // printf("  version: v1.0(commit: 73b7f30)\n");
+    // printf("\n");
 
-    printf("Processor:\n");
-    printf("  CORE:              picorv32\n");
-    printf("  ISA:               rv32imac\n");
-    printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
+    // printf("Processor:\n");
+    // printf("  CORE:              picorv32\n");
+    // printf("  ISA:               rv32imac\n");
+    // printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
-    printf("Inst/Memory Device: \n");
-    printf("  SPI Flash size:    16MB\n");
-    printf("  On-board RAM size: %dKB\n", RAM_TOTAL / 1024);
-    printf("  Extern PSRAM size: %dMB(%dx8MB)\n\n", 8 * PSRAM_NUM, PSRAM_NUM);
+    // printf("Inst/Memory Device: \n");
+    // printf("  SPI Flash size:    16MB\n");
+    // printf("  On-board RAM size: %dKB\n", RAM_TOTAL / 1024);
+    // printf("  Extern PSRAM size: %dMB(%dx8MB)\n\n", 8 * PSRAM_NUM, PSRAM_NUM);
 
-    printf("Memory Map IO Device:\n");
-    printf("                     1 x QSPFS\n");
-    printf("                    16 x GPIO\n");
-    printf("                     1 x HOUSEKEEPING SPI\n");
-    printf("                     1 x UART\n");
-    printf("                     2 x TIMER\n");
-    printf("                     1 x RNG\n");
-    printf("                     1 x ARCHINFO\n");
-    printf("                     1 x UART(HP)\n");
-    printf("                     4 x PWM\n");
-    printf("                     1 x PS2\n");
-    printf("                     1 x QSPI\n");
-    printf("                     1 x I2C\n");
-    printf("                     1 x PSRAM(4x8MB)\n");
-    printf("                     1 x SPFS(TPO)\n\n");
+    // printf("Memory Map IO Device:\n");
+    // printf("                     1 x QSPFS\n");
+    // printf("                    16 x GPIO\n");
+    // printf("                     1 x HOUSEKEEPING SPI\n");
+    // printf("                     1 x UART\n");
+    // printf("                     2 x TIMER\n");
+    // printf("                     1 x RNG\n");
+    // printf("                     1 x ARCHINFO\n");
+    // printf("                     1 x UART(HP)\n");
+    // printf("                     4 x PWM\n");
+    // printf("                     1 x PS2\n");
+    // printf("                     1 x QSPI\n");
+    // printf("                     1 x I2C\n");
+    // printf("                     1 x PSRAM(%dx8MB)\n", PSRAM_NUM);
+    // printf("                     1 x SPFS(TPO)\n\n");
     printf("self test start...\n");
     // cmd_read_flash_id();
-    cmd_read_flash_regs();
-    cmd_print_spi_state();
+    // cmd_read_flash_regs();
+    // cmd_print_spi_state();
     printf("[exterm psram test]\n");
+    printf("[psram wait cycle]: %d\n", reg_psram_waitcycl);
+    reg_psram_waitcycl = (uint32_t)12;
+    printf("[psram wait cycle]: %d\n", reg_psram_waitcycl);
     // cmd_memtest(0x04000000, 8 * 1024); // test extern psram
+    cmd_memtest(0x04000000, 8 * 512); // test extern psram
+    while(1);
     printf("self test done\n");
 }
 
