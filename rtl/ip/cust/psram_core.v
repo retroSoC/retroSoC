@@ -58,8 +58,8 @@ module psram_core (
   reg         r_wr_st;
   reg         r_rd_st;
 
-  wire        s_wr_byte_data_upd;
-  wire [ 7:0] s_wr_byte_data;
+  wire        s_xfer_new_byte_upd;
+  wire [ 7:0] s_xfer_new_byte;
 
   // wait cycles(mmio)
   always @(posedge clk_i or negedge rst_n_i) begin
@@ -220,8 +220,8 @@ module psram_core (
           // the first 'psram_sclk_o' is 0 in this state
           psram_sclk_o <= ~psram_sclk_o;
           if (psram_sclk_o) begin
-            r_xfer_data <= {
-              r_xfer_data[27:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
+            r_xfer_byte_data <= {
+              r_xfer_byte_data[3:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
             };
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 8'd4;
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
@@ -234,7 +234,7 @@ module psram_core (
           // the first 'psram_sclk_o' is 0 in this state
           psram_sclk_o <= ~psram_sclk_o;
           if (psram_sclk_o) begin
-            if (s_wr_byte_data_upd) r_xfer_byte_data <= s_wr_byte_data;
+            if (s_xfer_new_byte_upd) r_xfer_byte_data <= s_xfer_new_byte;
             else r_xfer_byte_data <= {r_xfer_byte_data[3:0], 4'hF};
 
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 8'd4;
@@ -264,29 +264,32 @@ module psram_core (
     end
   end
 
-  load_wr_data u_load_wr_data (
+  load_new_byte u_load_new_byte (
       .xfer_data_bit_cnt_i(r_xfer_data_bit_cnt),
       .wr_data_i          (r_xfer_data),
-      .wr_data_upd_o      (s_wr_byte_data_upd),
-      .wr_data_o          (s_wr_byte_data)
+      .xfer_new_byte_upd_o(s_xfer_new_byte_upd),
+      .xfer_new_byte_o    (s_xfer_new_byte)
   );
 
 endmodule
 
 
-module load_wr_data (
+module load_new_byte (
     input  [ 7:0] xfer_data_bit_cnt_i,
     input  [31:0] wr_data_i,
-    output        wr_data_upd_o,
-    output [ 7:0] wr_data_o
+    output        xfer_new_byte_upd_o,
+    output [ 7:0] xfer_new_byte_o
 );
-  assign wr_data_upd_o = (xfer_data_bit_cnt_i == 8'd4)  |
-                         (xfer_data_bit_cnt_i == 8'd12) |
-                         (xfer_data_bit_cnt_i == 8'd20) |
-                         (xfer_data_bit_cnt_i == 8'd28);
+  assign xfer_new_byte_upd_o = (xfer_data_bit_cnt_i == 8'd4)  |
+                               (xfer_data_bit_cnt_i == 8'd12) |
+                               (xfer_data_bit_cnt_i == 8'd20);
 
-  assign wr_data_o = ({8{xfer_data_bit_cnt_i == 8'd4} } & wr_data_i[15:8])  |
-                     ({8{xfer_data_bit_cnt_i == 8'd12}} & wr_data_i[23:16]) |
-                     ({8{xfer_data_bit_cnt_i == 8'd20}} & wr_data_i[31:24]) |
-                     ({8{xfer_data_bit_cnt_i == 8'd28}} & 8'hFF) ;
+  assign xfer_new_byte_o = ({8{xfer_data_bit_cnt_i == 8'd4} } & wr_data_i[15:8])  |
+                           ({8{xfer_data_bit_cnt_i == 8'd12}} & wr_data_i[23:16]) |
+                           ({8{xfer_data_bit_cnt_i == 8'd20}} & wr_data_i[31:24]);
+
+  // r_xfer_data[7:0] <= r_xfer_data;
+  // r_xfer_data[15:8] <= r_xfer_data;
+  // r_xfer_data[7:0] <= r_xfer_data;
+  // r_xfer_data[15:8] <= r_xfer_data
 endmodule
