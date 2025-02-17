@@ -220,10 +220,10 @@ module psram_core (
           // the first 'psram_sclk_o' is 0 in this state
           psram_sclk_o <= ~psram_sclk_o;
           if (psram_sclk_o) begin
-            if (r_xfer_data_bit_cnt == 8'd4) r_xfer_data[7:0] <= r_xfer_byte_data;
-            else if (r_xfer_data_bit_cnt == 8'd12) r_xfer_data[15:8] <= r_xfer_byte_data;
-            else if (r_xfer_data_bit_cnt == 8'd20) r_xfer_data[23:16] <= r_xfer_byte_data;
-            else if (r_xfer_data_bit_cnt == 8'd28) r_xfer_data[31:24] <= r_xfer_byte_data;
+            if (r_xfer_data_bit_cnt == 8'd8) r_xfer_data[7:0] <= r_xfer_byte_data;
+            else if (r_xfer_data_bit_cnt == 8'd16) r_xfer_data[15:8] <= r_xfer_byte_data;
+            else if (r_xfer_data_bit_cnt == 8'd24) r_xfer_data[23:16] <= r_xfer_byte_data;
+            else if (r_xfer_data_bit_cnt == 8'd32) r_xfer_data[31:24] <= r_xfer_byte_data;
             r_xfer_byte_data <= {
               r_xfer_byte_data[3:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
             };
