@@ -14,8 +14,8 @@ module psram_core (
     output            idle_o,
     output reg        psram_sclk_o,
     output reg        psram_ce_o,
-    input             psram_miso_i,
     input             psram_mosi_i,
+    input             psram_miso_i,
     input             psram_sio2_i,
     input             psram_sio3_i,
     output reg        psram_mosi_o,
@@ -219,7 +219,7 @@ module psram_core (
               r_xfer_data[27:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
             };
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 8'd4;
-            if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i) begin
+            if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_RD2IDLE;
               r_ce_cnt    <= cfg_wait_o;
             end

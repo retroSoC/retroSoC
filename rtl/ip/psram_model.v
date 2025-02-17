@@ -90,6 +90,7 @@ module psram_model (
       data = data << 4;
     end
 
-  assign dio = (state == ST_DR) ? do_ : 4'bz;
+  // assign dio = (state == ST_DR) ? do_ : 4'bz;
+  assign dio = (state == ST_DR) ? 4'b01010 : 4'bz;
 
 endmodule
