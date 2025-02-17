@@ -65,9 +65,9 @@ module psram_core (
 
   assign idle_o = r_fsm_state == FSM_IDLE;
   assign psram_sio_oen_o = (r_fsm_state == FSM_RD_PRE_QPI) | (r_fsm_state == FSM_RD_QPI);
-  assign mem_rdata_o    = ({32{xfer_data_bit_cnt_i == 8'd32}} & (r_xfer_data & 32'hFFFF_FFFF)) |
-                          ({32{xfer_data_bit_cnt_i == 8'd16}} & (r_xfer_data & 32'h0000_FFFF)) |
-                          ({32{xfer_data_bit_cnt_i == 8'd8 }} & (r_xfer_data & 32'h0000_00FF));
+  assign mem_rdata_o = {
+    r_xfer_data[7:0], r_xfer_data[15:8], r_xfer_data[23:16], r_xfer_data[31:24]
+  };
 
   always @(*) begin
     if (r_fsm_state == FSM_INIT) begin

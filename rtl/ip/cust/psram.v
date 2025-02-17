@@ -57,8 +57,8 @@ module psram_top (
             r_mem_wdata         <= s_disp_wdata;
           end else if (mem_valid_i && (~(|mem_wstrb_i))) begin
             r_fsm_state         <= FSM_RD_ST;
-            r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
-            r_mem_addr          <= mem_addr_i + s_disp_addr_ofst;
+            r_xfer_data_bit_cnt <= 8'd32;
+            r_mem_addr          <= mem_addr_i;
             r_mem_wdata         <= mem_wdata_i;  // TODO: no used
           end
         end
