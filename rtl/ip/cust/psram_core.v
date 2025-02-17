@@ -43,20 +43,23 @@ module psram_core (
   localparam FSM_RD2IDLE = 13;
   localparam FSM_WR2IDLE = 14;
 
-  reg [ 4:0] r_fsm_state;
-  reg [ 4:0] r_fsm_state_tgt;
-  reg [17:0] r_boot_cnt;
+  reg  [ 4:0] r_fsm_state;
+  reg  [ 4:0] r_fsm_state_tgt;
+  reg  [17:0] r_boot_cnt;
   // ca mean: cmd + addr
-  reg [31:0] r_xfer_ca;
-  reg [31:0] r_xfer_data;
-  reg [ 7:0] r_xfer_ca_bit_cnt;
-  reg [ 7:0] r_xfer_data_bit_cnt;
-  reg [ 3:0] r_ce_cnt;
-  reg [ 3:0] r_rd_wait_cnt;
-  reg        r_dev_rst;
-  reg        r_xfer_byte_done;
-  reg        r_wr_st;
-  reg        r_rd_st;
+  reg  [31:0] r_xfer_ca;
+  reg  [31:0] r_xfer_data;
+  reg  [ 7:0] r_xfer_ca_bit_cnt;
+  reg  [ 7:0] r_xfer_data_bit_cnt;
+  reg  [ 7:0] r_xfer_byte_data;
+  reg  [ 3:0] r_ce_cnt;
+  reg  [ 3:0] r_rd_wait_cnt;
+  reg         r_dev_rst;
+  reg         r_wr_st;
+  reg         r_rd_st;
+
+  wire        s_wr_byte_data_upd;
+  wire [ 7:0] s_wr_byte_data;
 
   // wait cycles(mmio)
   always @(posedge clk_i or negedge rst_n_i) begin
@@ -77,7 +80,7 @@ module psram_core (
         {psram_sio3_o, psram_sio2_o, psram_miso_o} = 3'd0;
       end else begin  // qpi mode
         {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} = r_fsm_state == FSM_WR_QPI ? 
-        {r_xfer_data[7], r_xfer_data[6], r_xfer_data[5], r_xfer_data[4]} :
+        {r_xfer_byte_data[7], r_xfer_byte_data[6], r_xfer_byte_data[5], r_xfer_byte_data[4]} :
         {r_xfer_ca[31], r_xfer_ca[30], r_xfer_ca[29], r_xfer_ca[28]};
       end
     end else begin
@@ -107,6 +110,7 @@ module psram_core (
       r_xfer_data         <= 32'd0;
       r_xfer_ca_bit_cnt   <= 8'd0;
       r_xfer_data_bit_cnt <= 8'd0;
+      r_xfer_byte_data    <= 8'd0;
       r_ce_cnt            <= 4'd0;
       r_rd_wait_cnt       <= 4'd0;
       r_dev_rst           <= 1'b1;
@@ -171,7 +175,6 @@ module psram_core (
             r_fsm_state         <= FSM_SEND_QPI;
             r_fsm_state_tgt     <= FSM_WR_QPI;
             r_xfer_data_bit_cnt <= 8'd0;
-            r_xfer_byte_done    <= 1'b0;
             psram_ce_o          <= 1'b0;
           end else if (r_rd_st) begin
             r_xfer_ca           <= {8'hEB, mem_addr_i[23:0]};
@@ -180,7 +183,6 @@ module psram_core (
             r_fsm_state_tgt     <= FSM_RD_PRE_QPI;
             r_rd_wait_cnt       <= 4'd12;  // wait 6 cycle afer cmd+addr accrondig to TRM
             r_xfer_data_bit_cnt <= 8'd0;
-            r_xfer_byte_done    <= 1'b0;
             psram_ce_o          <= 1'b0;
           end else begin
             psram_ce_o <= 1'b1;
@@ -202,8 +204,9 @@ module psram_core (
             r_xfer_ca_bit_cnt <= r_xfer_ca_bit_cnt - 8'd4;
             r_xfer_ca         <= {r_xfer_ca[27:0], 4'd1};
             if (r_xfer_ca_bit_cnt == 8'd4) begin
-              r_fsm_state <= r_fsm_state_tgt;
-              r_xfer_data <= mem_wdata_i;  // for r_fsm_state_tgt == FSM_WR_QPI
+              r_fsm_state      <= r_fsm_state_tgt;
+              r_xfer_data      <= mem_wdata_i;
+              r_xfer_byte_data <= mem_wdata_i[7:0];
             end
           end
         end
@@ -231,10 +234,9 @@ module psram_core (
           // the first 'psram_sclk_o' is 0 in this state
           psram_sclk_o <= ~psram_sclk_o;
           if (psram_sclk_o) begin
-            r_xfer_byte_done <= ~r_xfer_byte_done;
-            if (r_xfer_byte_done) begin
-              r_xfer_data <= {8'd1, r_xfer_data[31:8]};  // right shift
-            end
+            if (s_wr_byte_data_upd) r_xfer_byte_data <= s_wr_byte_data;
+            else r_xfer_byte_data <= {r_xfer_byte_data[3:0], 4'hF};
+
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 8'd4;
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_WR2IDLE;
@@ -261,4 +263,30 @@ module psram_core (
       endcase
     end
   end
+
+  load_wr_data u_load_wr_data (
+      .xfer_data_bit_cnt_i(r_xfer_data_bit_cnt),
+      .wr_data_i          (r_xfer_data),
+      .wr_data_upd_o      (s_wr_byte_data_upd),
+      .wr_data_o          (s_wr_byte_data)
+  );
+
+endmodule
+
+
+module load_wr_data (
+    input  [ 7:0] xfer_data_bit_cnt_i,
+    input  [31:0] wr_data_i,
+    output        wr_data_upd_o,
+    output [ 7:0] wr_data_o
+);
+  assign wr_data_upd_o = (xfer_data_bit_cnt_i == 8'd4)  |
+                         (xfer_data_bit_cnt_i == 8'd12) |
+                         (xfer_data_bit_cnt_i == 8'd20) |
+                         (xfer_data_bit_cnt_i == 8'd28);
+
+  assign wr_data_o = ({8{xfer_data_bit_cnt_i == 8'd4} } & wr_data_i[15:8])  |
+                     ({8{xfer_data_bit_cnt_i == 8'd12}} & wr_data_i[23:16]) |
+                     ({8{xfer_data_bit_cnt_i == 8'd20}} & wr_data_i[31:24]) |
+                     ({8{xfer_data_bit_cnt_i == 8'd28}} & 8'hFF) ;
 endmodule
