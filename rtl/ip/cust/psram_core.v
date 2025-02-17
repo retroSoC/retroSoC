@@ -54,6 +54,7 @@ module psram_core (
   reg [ 3:0] r_ce_cnt;
   reg [ 3:0] r_rd_wait_cnt;
   reg        r_dev_rst;
+  reg        r_xfer_byte_done;
   reg        r_wr_st;
   reg        r_rd_st;
 
@@ -63,11 +64,9 @@ module psram_core (
     else if (cfg_wr_en_i) cfg_wait_o <= cfg_wait_i;
   end
 
-  assign idle_o = r_fsm_state == FSM_IDLE;
+  assign idle_o          = r_fsm_state == FSM_IDLE;
   assign psram_sio_oen_o = (r_fsm_state == FSM_RD_PRE_QPI) | (r_fsm_state == FSM_RD_QPI);
-  assign mem_rdata_o = {
-    r_xfer_data[7:0], r_xfer_data[15:8], r_xfer_data[23:16], r_xfer_data[31:24]
-  };
+  assign mem_rdata_o     = r_xfer_data;
 
   always @(*) begin
     if (r_fsm_state == FSM_INIT) begin
@@ -78,7 +77,7 @@ module psram_core (
         {psram_sio3_o, psram_sio2_o, psram_miso_o} = 3'd0;
       end else begin  // qpi mode
         {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} = r_fsm_state == FSM_WR_QPI ? 
-        {r_xfer_data[31], r_xfer_data[30], r_xfer_data[29], r_xfer_data[28]} :
+        {r_xfer_data[7], r_xfer_data[6], r_xfer_data[5], r_xfer_data[4]} :
         {r_xfer_ca[31], r_xfer_ca[30], r_xfer_ca[29], r_xfer_ca[28]};
       end
     end else begin
@@ -172,6 +171,7 @@ module psram_core (
             r_fsm_state         <= FSM_SEND_QPI;
             r_fsm_state_tgt     <= FSM_WR_QPI;
             r_xfer_data_bit_cnt <= 8'd0;
+            r_xfer_byte_done    <= 1'b0;
             psram_ce_o          <= 1'b0;
           end else if (r_rd_st) begin
             r_xfer_ca           <= {8'hEB, mem_addr_i[23:0]};
@@ -180,6 +180,7 @@ module psram_core (
             r_fsm_state_tgt     <= FSM_RD_PRE_QPI;
             r_rd_wait_cnt       <= 4'd12;  // wait 6 cycle afer cmd+addr accrondig to TRM
             r_xfer_data_bit_cnt <= 8'd0;
+            r_xfer_byte_done    <= 1'b0;
             psram_ce_o          <= 1'b0;
           end else begin
             psram_ce_o <= 1'b1;
@@ -230,7 +231,10 @@ module psram_core (
           // the first 'psram_sclk_o' is 0 in this state
           psram_sclk_o <= ~psram_sclk_o;
           if (psram_sclk_o) begin
-            r_xfer_data         <= {r_xfer_data[27:0], 4'd1};
+            r_xfer_byte_done <= ~r_xfer_byte_done;
+            if (r_xfer_byte_done) begin
+              r_xfer_data <= {8'd1, r_xfer_data[31:8]};  // right shift
+            end
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 8'd4;
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_WR2IDLE;
