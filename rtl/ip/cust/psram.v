@@ -1,9 +1,39 @@
+// NOTE: for supporting cross page xfer, the max freq of 'sclk' is 84MHz
+// when 'sclk' is 84MHz(max, ~11.90ns), according to TRM:
+//
+// tCLK(min: 7ns) is meet, dont have 8'h03 rd oper(min: 30.3ns)
+//
+// tCH/tCL(min:0.45%, max: 0.55%) tCLK is meet
+//
+// tKHKL(max: 1.5ns) is meet
+//
+// tCPH(min: 50ns) -> 50 / 11.90 = ~4.2 so wait cycles need to >= ceil(4.2) = 5,
+// so 'cfg_wait_o' = 5 * 2 >= 10 in default, reset value is 12 now
+//
+// tCEM(max: 8us) is enough long for just 32bits xfer:
+// QPI mode: 32(cmd+addr) + 32(data) / 4 = 16 cycles
+// for min sclk 12MHz, ~83ns * 16 = 1333ns = 1.333us
+//
+// tCSP(min: 2.5ns) is meet
+// sclk keeps 11.90 / 2 = 5.95ns low at least after ce activing
+//
+// tCHD(min: 20ns) > tACLK + tCLK
+// sclk keep 11.90 * 1.5 = 17.85 at least(no meet!)
+// need to add more cycle 
+//
+// tSP(min: 2ns) is meet
+// data keeps 11.90 / 2 = 5.95ns low at least befer sclk
+
+
 module psram_top (
     input         clk_i,
     input         rst_n_i,
-    input         cfg_wr_en_i,
+    input         cfg_wait_wr_en_i,
     input  [ 3:0] cfg_wait_i,
     output [ 3:0] cfg_wait_o,
+    input         cfg_chd_wr_en_i,
+    input         cfg_chd_i,
+    output        cfg_chd_o,
     input         mem_valid_i,
     output        mem_ready_o,
     input  [23:0] mem_addr_i,
@@ -59,7 +89,7 @@ module psram_top (
             r_fsm_state         <= FSM_RD_ST;
             r_xfer_data_bit_cnt <= 8'd32;
             r_mem_addr          <= mem_addr_i;
-            r_mem_wdata         <= mem_wdata_i;  // TODO: no used
+            r_mem_wdata         <= mem_wdata_i;  // NOTE: no used
           end
         end
         FSM_WE_ST: begin
@@ -88,9 +118,12 @@ module psram_top (
   psram_core u_psram_core (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
-      .cfg_wr_en_i        (cfg_wr_en_i),
+      .cfg_wait_wr_en_i   (cfg_wait_wr_en_i),
       .cfg_wait_i         (cfg_wait_i),
       .cfg_wait_o         (cfg_wait_o),
+      .cfg_chd_wr_en_i    (cfg_chd_wr_en_i),
+      .cfg_chd_i          (cfg_chd_i),
+      .cfg_chd_o          (cfg_chd_o),
       .mem_ready_o        (mem_ready_o),
       .mem_addr_i         (r_mem_addr),
       .mem_wdata_i        (r_mem_wdata),

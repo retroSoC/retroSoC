@@ -1,9 +1,12 @@
 module psram_core (
     input             clk_i,
     input             rst_n_i,
-    input             cfg_wr_en_i,
+    input             cfg_wait_wr_en_i,
     input      [ 3:0] cfg_wait_i,
     output reg [ 3:0] cfg_wait_o,
+    input             cfg_chd_wr_en_i,
+    input             cfg_chd_i,
+    output reg        cfg_chd_o,
     output reg        mem_ready_o,
     input      [23:0] mem_addr_i,
     input      [31:0] mem_wdata_i,
@@ -54,6 +57,7 @@ module psram_core (
   reg  [ 7:0] r_xfer_byte_data;
   reg  [ 3:0] r_ce_cnt;
   reg  [ 3:0] r_rd_wait_cnt;
+  reg         r_cfg_chd;
   reg         r_dev_rst;
   reg         r_wr_st;
   reg         r_rd_st;
@@ -63,8 +67,13 @@ module psram_core (
 
   // wait cycles(mmio)
   always @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) cfg_wait_o <= 4'd8;
-    else if (cfg_wr_en_i) cfg_wait_o <= cfg_wait_i;
+    if (~rst_n_i) cfg_wait_o <= 4'd12;
+    else if (cfg_wait_wr_en_i) cfg_wait_o <= cfg_wait_i;
+  end
+  // extra cycle for tCHD(mmio)
+  always @(posedge clk_i or negedge rst_n_i) begin
+    if (~rst_n_i) cfg_chd_o <= 1'b0;
+    else if (cfg_chd_wr_en_i) cfg_chd_o <= cfg_chd_i;
   end
 
   assign idle_o          = r_fsm_state == FSM_IDLE;
@@ -175,6 +184,7 @@ module psram_core (
             r_fsm_state         <= FSM_SEND_QPI;
             r_fsm_state_tgt     <= FSM_WR_QPI;
             r_xfer_data_bit_cnt <= 8'd0;
+            r_cfg_chd <= 1'b0;
             psram_ce_o          <= 1'b0;
           end else if (r_rd_st) begin
             r_xfer_ca           <= {8'hEB, mem_addr_i[23:0]};
@@ -183,6 +193,7 @@ module psram_core (
             r_fsm_state_tgt     <= FSM_RD_PRE_QPI;
             r_rd_wait_cnt       <= 4'd12;  // wait 6 cycle afer cmd+addr accrondig to TRM
             r_xfer_data_bit_cnt <= 8'd0;
+            r_cfg_chd <= 1'b0;
             psram_ce_o          <= 1'b0;
           end else begin
             psram_ce_o <= 1'b1;
@@ -249,20 +260,28 @@ module psram_core (
           end
         end
         FSM_RD2IDLE: begin
-          if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
-          if (r_ce_cnt == 4'd0) begin
-            r_fsm_state <= FSM_IDLE;
-            mem_ready_o <= 1'b1;
+          if (r_cfg_chd == cfg_chd_o) begin
+            if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
+            if (r_ce_cnt == 4'd0) begin
+              r_fsm_state <= FSM_IDLE;
+              mem_ready_o <= 1'b1;
+            end
+            r_ce_cnt <= r_ce_cnt - 1'b1;
+          end else begin
+            r_cfg_chd <= r_cfg_chd + 1'b1;
           end
-          r_ce_cnt <= r_ce_cnt - 1'b1;
         end
         FSM_WR2IDLE: begin
-          if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
-          if (r_ce_cnt == 4'd0) begin
-            r_fsm_state <= FSM_IDLE;
-            mem_ready_o <= 1'b1;
+          if (r_cfg_chd == cfg_chd_o) begin
+            if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
+            if (r_ce_cnt == 4'd0) begin
+              r_fsm_state <= FSM_IDLE;
+              mem_ready_o <= 1'b1;
+            end
+            r_ce_cnt <= r_ce_cnt - 1'b1;
+          end else begin
+            r_cfg_chd <= r_cfg_chd + 1'b1;
           end
-          r_ce_cnt <= r_ce_cnt - 1'b1;
         end
       endcase
     end

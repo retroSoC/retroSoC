@@ -361,9 +361,12 @@ module retrosoc #(
   wire [31:0] s_tim1_reg_val_dout;
   wire [31:0] s_tim1_reg_dat_dout;
   // psram
-  wire        s_psram_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0080);
+  wire        s_psram_cfg_wait_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0080);
+  wire        s_psram_cfg_chd_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0084);
   reg  [ 3:0] r_psram_cfg_wait_din;
   wire [ 3:0] s_psram_cfg_wait_dout;
+  reg         r_psram_cfg_chd_din;
+  wire        s_psram_cfg_chd_dout;
 
   spimemio u_spimemio (
       .clk          (clk_i),
@@ -449,28 +452,31 @@ module retrosoc #(
   assign s_psram_wstrb = s_mem_wstrb;
   assign s_psram_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h04);
   psram_top u_psram_top (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .cfg_wr_en_i    (s_psram_cfg_sel ? s_iomem_wstrb[0] : 1'b0),
-      .cfg_wait_i     (r_psram_cfg_wait_din),
-      .cfg_wait_o     (s_psram_cfg_wait_dout),
-      .mem_valid_i    (s_psram_valid),
-      .mem_ready_o    (s_psram_ready),
-      .mem_addr_i     ({1'b0, s_psram_addr[22:0]}),
-      .mem_wdata_i    (s_psram_wdata),
-      .mem_wstrb_i    (s_psram_wstrb),
-      .mem_rdata_o    (s_psram_rdata),
-      .psram_sclk_o   (cust_psram_sclk_o),
-      .psram_ce_o     (cust_psram_ce_o),
-      .psram_mosi_i   (cust_psram_sio0_i),
-      .psram_miso_i   (cust_psram_sio1_i),
-      .psram_sio2_i   (cust_psram_sio2_i),
-      .psram_sio3_i   (cust_psram_sio3_i),
-      .psram_mosi_o   (cust_psram_sio0_o),
-      .psram_miso_o   (cust_psram_sio1_o),
-      .psram_sio2_o   (cust_psram_sio2_o),
-      .psram_sio3_o   (cust_psram_sio3_o),
-      .psram_sio_oen_o(cust_psram_sio_oe_o)
+      .clk_i           (clk_i),
+      .rst_n_i         (rst_n_i),
+      .cfg_wait_wr_en_i(s_psram_cfg_wait_sel ? s_iomem_wstrb[0] : 1'b0),
+      .cfg_wait_i      (r_psram_cfg_wait_din),
+      .cfg_wait_o      (s_psram_cfg_wait_dout),
+      .cfg_chd_wr_en_i (s_psram_cfg_chd_sel ? s_iomem_wstrb[0] : 1'b0),
+      .cfg_chd_i       (r_psram_cfg_chd_din),
+      .cfg_chd_o       (s_psram_cfg_chd_dout),
+      .mem_valid_i     (s_psram_valid),
+      .mem_ready_o     (s_psram_ready),
+      .mem_addr_i      ({1'b0, s_psram_addr[22:0]}),
+      .mem_wdata_i     (s_psram_wdata),
+      .mem_wstrb_i     (s_psram_wstrb),
+      .mem_rdata_o     (s_psram_rdata),
+      .psram_sclk_o    (cust_psram_sclk_o),
+      .psram_ce_o      (cust_psram_ce_o),
+      .psram_mosi_i    (cust_psram_sio0_i),
+      .psram_miso_i    (cust_psram_sio1_i),
+      .psram_sio2_i    (cust_psram_sio2_i),
+      .psram_sio3_i    (cust_psram_sio3_i),
+      .psram_mosi_o    (cust_psram_sio0_o),
+      .psram_miso_o    (cust_psram_sio1_o),
+      .psram_sio2_o    (cust_psram_sio2_o),
+      .psram_sio3_o    (cust_psram_sio3_o),
+      .psram_sio_oen_o (cust_psram_sio_oe_o)
   );
 
   wire s_aximem_range = (s_iomem_addr[31:8] >= 24'h0300_10 && s_iomem_addr[31:8] <= 24'h03FF_FF) || s_iomem_addr >= 32'h3000_0000;
@@ -630,8 +636,12 @@ module retrosoc #(
           8'h6c: r_iomem_rdata <= s_tim1_reg_val_dout;
           8'h70: r_iomem_rdata <= s_tim1_reg_dat_dout;
           8'h80: begin
-            r_iomem_rdata <= s_psram_cfg_wait_dout;
+            r_iomem_rdata <= {28'd0, s_psram_cfg_wait_dout};
             if (s_iomem_wstrb[0]) r_psram_cfg_wait_din <= s_iomem_wdata[3:0];
+          end
+          8'h84: begin
+            r_iomem_rdata <= {31'd0, s_psram_cfg_chd_dout};
+            if (s_iomem_wstrb[0]) r_psram_cfg_chd_din <= s_iomem_wdata[0];
           end
         endcase
       end else if (s_iomem_valid && !r_iomem_ready && s_aximem_range) begin
