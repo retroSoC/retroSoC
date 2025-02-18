@@ -20,9 +20,13 @@
 #include <tinylib.h>
 
 #define RAM_TOTAL 0x20000 // 128 KB
-#define PSRAM_NUM 1
 #define CPU_FREQ 64     // unit: MHz
 #define UART_BPS 115200 // unit: bps
+#define PSRAM_NUM 1
+#define PSRAM_SCLK_MIN_FREQ 12  // unit: Mhz
+#define PSRAM_SCLK_MAX_FREQ 133 // unit: Mhz
+#define PSRAM_SCLK_FREQ (CPU_FREQ / 2)
+
 
 
 
@@ -146,66 +150,68 @@ char getchar_prompt(char *prompt)
     return c;
 }
 
-void cmd_memtest(uint32_t addr, uint32_t range)
+void psram_selftest(uint32_t addr, uint32_t range)
 {
-    // int cyc_count = 5;
-    // int stride = 256;
-    // uint32_t state;
-
     volatile uint32_t *base_word = (uint32_t *)addr;
-    // volatile uint8_t *base_byte = (uint8_t *)addr;
+    volatile uint16_t *base_hword = (uint16_t *)addr;
+    volatile uint8_t  *base_byte = (uint8_t *)addr;
+    int test_num = 8192;
 
-    // printf("[memtest] addr: 0x%x range: %x\n", addr, range);
-    // walk in stride increments, word access
-    // for (int i = 1; i <= cyc_count; i++)
-    // {
-    //     state = i;
-    //     for (int word = 0; word < range / sizeof(int); word += stride)
-    //     {
-    //         *(base_word + word) = xorshift32(&state);
-    //     }
-
-    //     state = i;
-    //     for (int word = 0; word < range / sizeof(int); word += stride)
-    //     {
-    //         if (*(base_word + word) != xorshift32(&state))
-    //         {
-    //             printf("***FAILED BYTE*** at %x\n", 4 * word);
-    //             while(1);
-    //             return;
-    //         }
-    //     }
-    //     printf(".");
-    // }
-    // printf("stride test done\n");
-    // // Byte access
-
-    // for (int byte = 0; byte < range; byte++)
-    // {
-    //     *(base_byte + byte) = (uint8_t)byte;
-    // }
-
-    // printf("byte write done\n");
-    // for (int byte = 0; byte < range; byte++)
-    // {
-    //     if (*(base_byte + byte) != (uint8_t)byte)
-    //     {
-    //         printf("***FAILED BYTE*** at %x\n", byte);
-    //         while(1);
-    //         return;
-    //     }
-    // }
-
-    for(int i = 0; i < 16; ++i) {
-        *(base_word + i) = i;
+    printf("[range: %dB] 4-bytes wr/rd test\n", 4 * test_num);
+    for(int i = 0; i < test_num; ++i) {
+        *(base_word + i) = (uint32_t)(0x12345678 + i);
+    }
+    for(int i = 0; i < test_num; ++i) {
+        if(*(base_word + i) != ((uint32_t)(0x12345678 + i)))
+            printf("[error] rd: %x org: %x\n", *(base_word + i), (uint32_t)(0x12345678 + i));
     }
 
-    // uint32_t tmp_val;
-    for(int i = 0; i < 16; ++i) {
-        printf("tmp_val: %d\n", *(base_word + i));
+    printf("[range: %dB] 2-bytes wr/rd test\n", 2 * test_num);
+    for(int i = 0; i < test_num; ++i) {
+        *(base_hword + i) = (uint16_t)(0x5678 + i);
+    }
+    for(int i = 0; i < test_num; ++i) {
+        if(*(base_hword + i) != ((uint16_t)(0x5678 + i)))
+            printf("[error] rd: %x org: %x\n", *(base_hword + i), (uint16_t)(0x5678 + i));
     }
 
-    // printf("\nmemtest passed\n");
+    printf("[range: %dB] 1-bytes wr/rd test\n", test_num);
+    for(int i = 0; i < test_num; ++i) {
+        *(base_byte + i) = (uint8_t)(0x78 + i);
+    }
+    for(int i = 0; i < test_num; ++i) {
+        if(*(base_byte + i) != ((uint8_t)(0x78 + i)))
+            printf("[error] rd: %x org: %x\n", *(base_byte + i), (uint8_t)(0x78 + i));
+    }
+
+    int cyc_count = 5;
+    int stride = 256;
+    uint32_t state;
+
+    printf("[range: %dMB] stride increments wr/rd test\n", range / 1024 / 1024);
+    for (int i = 1; i <= cyc_count; i++)
+    {
+        state = i;
+        for (int word = 0; word < range / sizeof(int); word += stride)
+        {
+            *(base_word + word) = xorshift32(&state);
+        }
+
+        state = i;
+        for (int word = 0; word < range / sizeof(int); word += stride)
+        {
+            if (*(base_word + word) != xorshift32(&state))
+            {
+                printf("***FAILED BYTE*** at %x\n", 4 * word);
+                while(1);
+                return;
+            }
+        }
+        printf(".");
+    }
+    printf("stride test done\n");
+    printf("[PSRAM] self test done\n");
+    while(1);
 }
 
 uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
@@ -731,37 +737,6 @@ void spi_init() {
     reg_cust_qspi_clkdiv = (uint32_t)0; // sck = apb_clk/2(div+1)
 }
 
-
-// int32_t spi_write_fifo(uint32_t *data, uint32_t datalen) {
-//     volatile int num_words, i;
-//     num_words = (datalen >> 5) & 0x7FF;
-
-//     if ( (datalen & 0x1F) != 0)
-//         num_words++;
-
-//     for (i = 0; i < num_words; i++) {
-//         while (((reg_cust_qspi_status >> 24) & 0xFF) >= 8);
-//         reg_cust_qspi_txfifo = data[i];
-//     }
-
-//     return 0;
-// }
-
-
-// int32_t spi_set_datalen(uint32_t datalen) {
-//     volatile int old_len;
-//     old_len = reg_cust_qspi_len;
-//     old_len = ((datalen << 16) & 0xFFFF0000) | (old_len & 0xFFFF);
-//     reg_cust_qspi_len = datalen << 16;
-    
-//     return 0;
-// }
-
-// int32_t spi_start_transaction(uint32_t trans_type, uint32_t csnum) {
-//     reg_cust_qspi_status= ((1 << (csnum + 8)) & 0xF00) | ((1 << trans_type) & 0xFF);
-//     return 0;
-// }
-
 void spi_wr_dat(uint8_t dat) {
     uint32_t wdat = ((uint32_t) dat) << 24;
     // spi_set_datalen(8);
@@ -1064,86 +1039,140 @@ void cust_ip_lcd_test() {
     }
 }
 
+void printf_info(char *str) {
+    printf("\e[0;33m%s\e[0m", str);
+}
+
 void welcome_screen()
 {
     printf("first bootloader done\n");
     printf("uart config: 8n1 %dbps\n", UART_BPS);
     printf("app booting...\n");
-    // printf("\n");
-    // printf("           _             _____        _____ \n");
-    // printf("          | |           / ____|      / ____|\n");
-    // printf("  _ __ ___| |_ _ __ ___| (___   ___ | |     \n");
-    // printf(" | '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
-    // printf(" | | |  __/ |_| | | (_) |___) | (_) | |____ \n");
-    // printf(" |_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
-    // printf("   retroSoC: A Customized ASIC for Retro Stuff!\n");
-    // printf("     <https://github.com/retroSoC/retroSoC>\n");
-    // printf("  author:  MrAMS(init version) <https://github.com/MrAMS>\n");
-    // printf("           maksyuki            <https://github.com/maksyuki>\n");
-    // printf("  License: MulanPSL-2.0 license\n");
-    // printf("  version: v1.0(commit: 73b7f30)\n");
-    // printf("\n");
+    printf("\n");
+    printf("           _             _____        _____ \n");
+    printf("          | |           / ____|      / ____|\n");
+    printf("  _ __ ___| |_ _ __ ___| (___   ___ | |     \n");
+    printf(" | '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
+    printf(" | | |  __/ |_| | | (_) |___) | (_) | |____ \n");
+    printf(" |_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
+    printf("   retroSoC: A Customized ASIC for Retro Stuff!\n");
+    printf("     <https://github.com/retroSoC/retroSoC>\n");
+    printf("  author:  MrAMS(init version) <https://github.com/MrAMS>\n");
+    printf("           maksyuki            <https://github.com/maksyuki>\n");
+    printf("  License: MulanPSL-2.0 license\n");
+    printf("  version: v1.0(commit: 73b7f30)\n");
+    printf("\n");
 
-    // printf("Processor:\n");
-    // printf("  CORE:              picorv32\n");
-    // printf("  ISA:               rv32imac\n");
-    // printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
+    printf("Processor:\n");
+    printf("  CORE:              picorv32\n");
+    printf("  ISA:               rv32imac\n");
+    printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
-    // printf("Inst/Memory Device: \n");
-    // printf("  SPI Flash size:    16MB\n");
-    // printf("  On-board RAM size: %dKB\n", RAM_TOTAL / 1024);
-    // printf("  Extern PSRAM size: %dMB(%dx8MB)\n\n", 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("Inst/Memory Device: \n");
+    printf("  SPI Flash size:    16MB\n");
+    printf("  On-board RAM size: %dKB\n", RAM_TOTAL / 1024);
+    printf("  Extern PSRAM size: %dMB(%dx8MB)\n\n", 8 * PSRAM_NUM, PSRAM_NUM);
 
-    // printf("Memory Map IO Device:\n");
-    // printf("                     1 x QSPFS\n");
-    // printf("                    16 x GPIO\n");
-    // printf("                     1 x HOUSEKEEPING SPI\n");
-    // printf("                     1 x UART\n");
-    // printf("                     2 x TIMER\n");
-    // printf("                     1 x RNG\n");
-    // printf("                     1 x ARCHINFO\n");
-    // printf("                     1 x UART(HP)\n");
-    // printf("                     4 x PWM\n");
-    // printf("                     1 x PS2\n");
-    // printf("                     1 x QSPI\n");
-    // printf("                     1 x I2C\n");
-    // printf("                     1 x PSRAM(%dx8MB)\n", PSRAM_NUM);
-    // printf("                     1 x SPFS(TPO)\n\n");
-    printf("self test start...\n");
+    printf("Memory Map IO Device:\n");
+    printf("                     1 x QSPFS\n");
+    printf("                    16 x GPIO\n");
+    printf("                     1 x HOUSEKEEPING SPI\n");
+    printf("                     1 x UART\n");
+    printf("                     2 x TIMER\n");
+    printf("                     1 x RNG\n");
+    printf("                     1 x ARCHINFO\n");
+    printf("                     1 x UART(HP)\n");
+    printf("                     4 x PWM\n");
+    printf("                     1 x PS2\n");
+    printf("                     1 x QSPI\n");
+    printf("                     1 x I2C\n");
+    printf("                     1 x PSRAM(%dx8MB)\n", PSRAM_NUM);
+    printf("                     1 x SPFS(TPO)\n\n");
+}
+
+void app_system_boot() {
+    // welcome_screen();
+    // set_flash_qspi_flag();
     // cmd_read_flash_id();
     // cmd_read_flash_regs();
     // cmd_print_spi_state();
-    printf("[exterm psram test]\n");
-    printf("[psram wait cycle]: %d\n", reg_psram_waitcycl);
-    reg_psram_waitcycl = (uint32_t)12;
-    printf("[psram wait cycle]: %d\n", reg_psram_waitcycl);
-    // cmd_memtest(0x04000000, 8 * 1024); // test extern psram
-    cmd_memtest(0x04000000, 8 * 512); // test extern psram
-    while(1);
-    printf("self test done\n");
+    printf("self test start...\n");
+
+    bool timing_pass = true;
+
+    printf("[PSRAM] device:     ESP-PSRAM64H(max 84MHz)\n");
+    printf("        volt:       3.3V\n");
+    printf("        power-up:   SPI mode\n");
+    printf("        normal:     QPI mode\n");
+    printf("        sclk freq:  %dMHz\n", PSRAM_SCLK_FREQ);
+    // check
+    uint32_t timing_expt = 0, timing_actual = 0;
+    char  msg_pass[20] = "\e[0;32m[PASS]\e[0m", msg_fail[20] = "\e[0;31m[FAIL]\e[0m";
+
+    printf("[PSRAM] wait cycles(default):      %d\n", reg_psram_waitcycl);
+    printf("[PSRAM] chd delay cycles(defalut): %d\n", reg_psram_chd);
+    printf("[PSRAM] timing check\n");
+    timing_expt = 1000 / PSRAM_SCLK_MAX_FREQ;
+    timing_actual = 1000 / (PSRAM_SCLK_FREQ);
+
+    printf("tCLK         expt:  %dns(min)\n", timing_expt);
+    printf("             actul: %dns ", timing_actual);
+    printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
+
+    printf("tCH/tCL      expt:  [0.45-0.55] tCLK(min)\n");
+    printf("             actul: [0.45-0.55] tCLK ");
+    printf("%s\n", msg_pass);
+
+    printf("tKHKL        expt:  1.5ns(max)\n");
+    printf("             actul: 1.5ns ");
+    printf("%s\n", msg_pass);
+
+    timing_expt = 50;
+    timing_actual = (reg_psram_waitcycl / 2) * (1000 / PSRAM_SCLK_FREQ);
+    printf("tCPH         expt:  %dns(min)\n", timing_expt);
+    printf("             actul: %dns ", timing_actual);
+    printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
+
+    timing_expt = 8;
+    // 32(cmd+addr) + 32(data)
+    timing_actual = ((1000 / PSRAM_SCLK_FREQ) * ((32 + 32) / 4)) / 1000;
+    printf("tCEM         expt:  %dus(max)\n", timing_expt);
+    printf("             actul: %dus ", timing_actual);
+    printf("%s\n", (timing_pass &= (timing_actual <= timing_expt)) ? msg_pass : msg_fail);
+
+    timing_expt = 2;
+    timing_actual = (1000 / PSRAM_SCLK_FREQ) / 2;
+    printf("tCSP         expt:  %dns(min)\n", timing_expt);
+    printf("             actul: %dns ", timing_actual);
+    printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
+
+    timing_expt = 20;
+    timing_actual = (1000 / PSRAM_SCLK_FREQ) * (reg_psram_chd / 2 + 1);
+    printf("tCHD         expt:  %dns(min)\n", timing_expt);
+    printf("             actul: %dns ", timing_actual);
+    printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
+
+    timing_expt = 2;
+    timing_actual = (1000 / PSRAM_SCLK_FREQ) / 2;
+    printf("tSP          expt:  %dns(min)\n", timing_expt);
+    printf("             actul: %dns ", timing_actual);
+    printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
+
+    if(!timing_pass) {
+        printf("[PSRAM] timing check fail\n");
+        while(1);
+    }
+
+    reg_psram_waitcycl = (uint32_t)8;
+    printf("[PSRAM] set wait cycles to %d\n", reg_psram_waitcycl);
+    reg_psram_chd = (uint32_t)0;
+    printf("[PSRAM] set chd cycles to %d\n", reg_psram_chd);
+    printf("[extern PSRAM test]\n");
+    psram_selftest(0x04000000, 8 * 1024 * 1024);
+    printf("self test done\n\n");
 }
 
-void main()
-{
-    reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
-
-    welcome_screen();
-    set_flash_qspi_flag();
-
-    ip_counter_timer_test();
-    ip_gpio_test();
-    ip_hk_spi_test();
-
-    cust_ip_archinfo_test();
-    cust_ip_rng_test();
-    // cust_ip_uart_test();
-    cust_ip_pwm_test();
-    // cust_ip_ps2_test();
-    cust_ip_i2c_test();
-    cust_ip_lcd_test();
-
-    cmd_benchmark(true, 0);
-    cmd_benchmark_all();
+void tinysh() {
     while (getchar_prompt("Press ENTER to continue..\n") != '\r')
     {
     }
@@ -1205,7 +1234,6 @@ void main()
                 cmd_benchmark_all();
                 break;
             case 'm':
-                // cmd_memtest();
                 break;
             case 's':
                 cmd_print_spi_state();
@@ -1216,8 +1244,30 @@ void main()
             default:
                 continue;
             }
-
             break;
         }
     }
+}
+
+void main()
+{
+    reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
+
+    // app_system_boot();
+    psram_selftest(0x04000000, 8 * 1024 * 1024);
+    // native ip test
+    ip_counter_timer_test();
+    ip_gpio_test();
+    ip_hk_spi_test();
+    // cust ip test
+    cust_ip_archinfo_test();
+    cust_ip_rng_test();
+    // cust_ip_uart_test();
+    cust_ip_pwm_test();
+    // cust_ip_ps2_test();
+    cust_ip_i2c_test();
+    cust_ip_lcd_test();
+    cmd_benchmark(true, 0);
+    cmd_benchmark_all();
+    tinysh();
 }

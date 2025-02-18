@@ -44,6 +44,7 @@
 #define reg_timer1_data    (*(volatile uint32_t*)0x03000070)
 // psram
 #define reg_psram_waitcycl (*(volatile uint32_t*)0x03000080)
+#define reg_psram_chd      (*(volatile uint32_t*)0x03000084)
 // cust archinfo
 #define reg_cust_archinfo_sys (*(volatile uint32_t*)0x03001000)
 #define reg_cust_archinfo_idl (*(volatile uint32_t*)0x03001004)
