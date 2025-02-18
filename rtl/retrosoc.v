@@ -365,8 +365,8 @@ module retrosoc #(
   wire        s_psram_cfg_chd_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0084);
   reg  [ 3:0] r_psram_cfg_wait_din;
   wire [ 3:0] s_psram_cfg_wait_dout;
-  reg         r_psram_cfg_chd_din;
-  wire        s_psram_cfg_chd_dout;
+  reg  [ 1:0] r_psram_cfg_chd_din;
+  wire [ 1:0] s_psram_cfg_chd_dout;
 
   spimemio u_spimemio (
       .clk          (clk_i),
@@ -640,8 +640,8 @@ module retrosoc #(
             if (s_iomem_wstrb[0]) r_psram_cfg_wait_din <= s_iomem_wdata[3:0];
           end
           8'h84: begin
-            r_iomem_rdata <= {31'd0, s_psram_cfg_chd_dout};
-            if (s_iomem_wstrb[0]) r_psram_cfg_chd_din <= s_iomem_wdata[0];
+            r_iomem_rdata <= {30'd0, s_psram_cfg_chd_dout};
+            if (s_iomem_wstrb[0]) r_psram_cfg_chd_din <= s_iomem_wdata[1:0];
           end
         endcase
       end else if (s_iomem_valid && !r_iomem_ready && s_aximem_range) begin
