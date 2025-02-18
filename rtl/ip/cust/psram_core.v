@@ -27,9 +27,9 @@ module psram_core (
     output reg        psram_sio3_o,
     output            psram_sio_oen_o
 );
-  // sclk(max: 84MHz ~ 11.9ns)
-  // 11.9 * 40000 = 476us / 2 = 238us > 150us
-  `define BOOT_COUNTER 18'd40_000
+  // sclk(max: 133MHz ~ 7.52ns)
+  // 7.52 * 50000 = 376us / 2 = 188us > 150us
+  `define BOOT_COUNTER 18'd50_000
 
   localparam FSM_INIT = 0;
   localparam FSM_RSTEN = 1;
