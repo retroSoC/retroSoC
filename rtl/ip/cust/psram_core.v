@@ -251,7 +251,6 @@ module psram_core (
             if (r_xfer_data_bit_cnt == 8'd8) r_xfer_data[7:0] <= r_xfer_byte_data;
             else if (r_xfer_data_bit_cnt == 8'd16) r_xfer_data[15:8] <= r_xfer_byte_data;
             else if (r_xfer_data_bit_cnt == 8'd24) r_xfer_data[23:16] <= r_xfer_byte_data;
-            else if (r_xfer_data_bit_cnt == 8'd32) r_xfer_data[31:24] <= r_xfer_byte_data;
             r_xfer_byte_data <= {
               r_xfer_byte_data[3:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
             };
@@ -278,7 +277,10 @@ module psram_core (
         end
         FSM_RD2IDLE: begin
           if (r_cfg_chd == cfg_chd_o) begin
-            if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
+            if (r_ce_cnt != cfg_wait_o) begin
+              psram_ce_o         <= 1'b1;
+              r_xfer_data[31:24] <= r_xfer_byte_data;  // HACK:
+            end
             if (r_ce_cnt == 4'd0) begin
               r_fsm_state <= FSM_IDLE;
               mem_ready_o <= 1'b1;
