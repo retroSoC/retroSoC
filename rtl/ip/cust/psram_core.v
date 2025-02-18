@@ -68,12 +68,12 @@ module psram_core (
 
   // wait cycles(mmio)
   always @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) cfg_wait_o <= 4'd12;
+    if (~rst_n_i) cfg_wait_o <= 4'd15;
     else if (cfg_wait_wr_en_i) cfg_wait_o <= cfg_wait_i;
   end
   // extra cycle for tCHD(mmio)
   always @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) cfg_chd_o <= 2'd2;
+    if (~rst_n_i) cfg_chd_o <= 2'd3;
     else if (cfg_chd_wr_en_i) cfg_chd_o <= cfg_chd_i;
   end
 

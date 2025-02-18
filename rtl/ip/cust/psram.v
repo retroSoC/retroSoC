@@ -1,5 +1,5 @@
 // NOTE: for supporting cross page xfer, the max freq of 'sclk' is 84MHz
-// when 'sclk' is 84MHz(max, ~11.90ns), according to TRM:
+// when 'sclk' is 133MHz(max, ~7.52ns), according to TRM:
 //
 // tCLK(min: 7ns) is meet, dont have 8'h03 rd oper(min: 30.3ns)
 //
@@ -7,22 +7,24 @@
 //
 // tKHKL(max: 1.5ns) is meet
 //
-// tCPH(min: 50ns) -> 50 / 11.90 = ~4.2 so wait cycles need to >= ceil(4.2) = 5,
-// so 'cfg_wait_o' = 5 * 2 >= 10 in default, reset value is 12 now
+// tCPH(min: 50ns) -> 50 / 7.52 = ~6.6 so wait cycles need to >= ceil(6.6) = 7,
+// so 'cfg_wait_o' = 7 * 2 >= 14 in default, reset value is 15
+// for lower freq, can modify this value for performance tuning
 //
 // tCEM(max: 8us) is enough long for just 32bits xfer:
 // QPI mode: 32(cmd+addr) + 32(data) / 4 = 16 cycles
 // for min sclk 12MHz, ~83ns * 16 = 1333ns = 1.333us
 //
 // tCSP(min: 2.5ns) is meet
-// sclk keeps 11.90 / 2 = 5.95ns low at least after ce activing
+// sclk keeps 7.52 / 2 = 3.76ns low at least after ce activing
 //
 // tCHD(min: 20ns) > tACLK + tCLK
-// sclk keep 11.90 * 1.5 = 17.85 at least(no meet!)
-// need to add more cycle 
+// sclk keep 7.52 * 1.5 = 11.28 at least(no meet!)
+// need to set 'cfg_chd_o' = ceil(ceil(20 / 7.52) - 1.5) * 2 = 2, reset value is 3
+// for lower freq, can modify this value for performance tuning
 //
 // tSP(min: 2ns) is meet
-// data keeps 11.90 / 2 = 5.95ns low at least befer sclk
+// data keeps 7.52 / 2 = 3.76ns low at least befer sclk
 
 
 module psram_top (
