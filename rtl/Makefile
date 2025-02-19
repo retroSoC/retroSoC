@@ -113,6 +113,19 @@ SRC_PATH := ../crt/start.s \
             ../crt/tinystring.c \
             ../crt/tinyprintf.c \
             ../crt/tinyflash.c \
+            ../crt/tinygpio.c \
+            ../crt/tinyhkspi.c \
+            ../crt/tinytim.c \
+            ../crt/tinyarchinfo.c \
+            ../crt/tinyrng.c \
+            ../crt/tinyhpuart.c \
+            ../crt/tinypwm.c \
+            ../crt/tinyps2.c \
+            ../crt/tinyi2c.c \
+            ../crt/tinylcd.c \
+            ../crt/tinypsram.c \
+            ../crt/tinybench.c \
+            ../crt/tinysh.c \
             ../crt/firmware.c
 
 LDS_PATH := ../crt/sections.lds

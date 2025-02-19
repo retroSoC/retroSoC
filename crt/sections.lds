@@ -3,7 +3,8 @@ MEMORY
 {
     FLASH (rx)      : ORIGIN = 0x30000000, LENGTH = 0x1000000 /* entire flash, 16 MiB */
     /*FLASH (rx)      : ORIGIN = 0x00100000, LENGTH = 0x400000 entire flash, 4 MiB*/
-    RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 0x20000 /* 128KB */
+    /*RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 0x20000 /* 128KB */
+    RAM (xrw)       : ORIGIN = 0x04000000, LENGTH = 0x800000 /* 8MB */
 }
 
 SECTIONS {
