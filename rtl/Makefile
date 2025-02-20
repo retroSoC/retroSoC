@@ -163,11 +163,20 @@ $(FIRMWARE_NAME).elf:
 vcomp:
 	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) retrosoc_tb.v -top retrosoc_tb -l vcompile.log
 
+vnetcomp:
+	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_TECH) $(RTL_PDK) $(RTL_IP) -v ../syn/yosys/out/retrosoc_asic_yosys.v retrosoc_tb.v -top retrosoc_tb -l vnetcompile.log -o net_simv
+
 vsim: vcomp
 	bsub -Is ./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
+vsim: vnetcomp
+	bsub -Is ./net_simv -l vnetsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL) +bus_conflict_off
+
 vwave:
 	bsub -Is verdi -ssf retrosoc_tb.fsdb -nologo &
+
+vsynwave:
+	bsub -Is verdi -ssf retrosoc_syn_tb.fsdb -nologo &
 
 clean:
 	rm -f *.vvp *.vcd *.fst
