@@ -169,7 +169,7 @@ vnetcomp:
 vsim: vcomp
 	bsub -Is ./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
-vsim: vnetcomp
+vnetsim: vnetcomp
 	bsub -Is ./net_simv -l vnetsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL) +bus_conflict_off
 
 vwave:
