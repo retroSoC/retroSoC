@@ -9,7 +9,7 @@ CFLAGS := -mabi=ilp32 \
           -ffreestanding \
           -nostdlib
 
-VNOVAS    := /eda/tools/snps/verdi/R-2020.12/share/PLI/VCS/LINUX64
+VNOVAS    := /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
 VEXTRA    := -P ${VNOVAS}/novas.tab\
                 ${VNOVAS}/pli.a
 
@@ -161,13 +161,13 @@ $(FIRMWARE_NAME).elf:
 	$(CROSS)objdump -d $@ > $(FIRMWARE_NAME).txt
 
 vcomp:
-	vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) retrosoc_tb.v -top retrosoc_tb -l vcompile.log
+	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) retrosoc_tb.v -top retrosoc_tb -l vcompile.log
 
 vsim: vcomp
-	./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
+	bsub -Is ./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
 vwave:
-	verdi -ssf retrosoc_tb.fsdb -nologo &
+	bsub -Is verdi -ssf retrosoc_tb.fsdb -nologo &
 
 clean:
 	rm -f *.vvp *.vcd *.fst
