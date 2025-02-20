@@ -83,3 +83,33 @@ module tc_io_tri_pad (
 `endif
 
 endmodule
+
+
+module tc_io_tri_schmitt_pad (
+    inout  pad,
+    input  c2p,
+    input  c2p_en,
+    output p2c
+);
+
+`ifdef RTL_BEHAV
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+`else
+  (* keep *) (* dont_touch = "true" *)
+  // sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
+  //     .pad   (pad),
+  //     .c2p   (c2p),
+  //     .c2p_en(c2p_en),
+  //     .p2c   (p2c)
+  // );
+  PBS4W u_PBS4W (
+      .OEN(~c2p_en),
+      .I  (c2p),
+      .PAD(pad),
+      .C  (p2c)
+  );
+
+`endif
+
+endmodule
