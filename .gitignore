@@ -15,7 +15,7 @@
 *.conf
 *.rc
 verdiLog
-simv.daidir
+*.daidir
 ucli.*
 verdi_config_file
 csrc
