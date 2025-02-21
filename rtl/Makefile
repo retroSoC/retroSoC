@@ -135,16 +135,18 @@ retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
 	vvp -l run.log -N $< +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) -fst
 
 # +syn_wave
-retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).hex
-	vvp -N $< +syn_$(WAVE) -fst
+retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).elf
+	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
+	vvp -l synrun.log -N $< +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) -fst
 
 
 retrosoc_tb.vvp:
 	@mkdir -p build
 	(iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ retrosoc_tb.v $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) || exit -1) 2>&1 | tee compile.log
 
-retrosoc_syn_tb.vvp: retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP)
-	iverilog -DFUNCTIONAL -s retrosoc_tb -o $@ $^
+retrosoc_syn_tb.vvp:
+	@mkdir -p build
+	(iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP) || exit -1) 2>&1 | tee syncompile.log
 
 ../syn/yosys/out/retrosoc_asic_yosys.v:
 	$(MAKE) -C ../syn/yosys -f yosys.mk
@@ -186,4 +188,4 @@ clean:
 
 .PHONY: spiflash_tb clean
 .PHONY: retrosim retrosynsim retrosoc_syn.v retrosoc_sections.lds
-.PHONY: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
+.PHONY: retrosoc_tb.vvp retrosoc_syn_tb.vvp $(FIRMWARE_NAME).elf
