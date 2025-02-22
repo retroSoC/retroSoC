@@ -47,16 +47,16 @@ void tinysh()
     while (1)
     {
         printf("\nSelect an action:\n\n");
-        printf("   [t] run timer test");
-        printf("   [g] run gpio test");
-        printf("   [h] print housekeeping spi info");
-        printf("   [a] run archinfo test");
-        printf("   [r] run rng test");
-        printf("   [u] run uart test");
-        printf("   [p] run pwm test");
-        printf("   [s] run ps2 test");
-        printf("   [i] run i2c test");
-        printf("   [l] run lcd test");
+        printf("   [t] run timer test\n");
+        printf("   [g] run gpio test\n");
+        printf("   [h] print housekeeping spi info\n");
+        printf("   [a] run archinfo test\n");
+        printf("   [r] run rng test\n");
+        printf("   [u] run uart test\n");
+        printf("   [p] run pwm test\n");
+        printf("   [s] run ps2 test\n");
+        printf("   [i] run i2c test\n");
+        printf("   [l] run lcd test\n");
         printf("   [b] run tiny benchmark\n");
         printf("   [m] run Memtest\n");
         printf("   [e] echo uart\n\n");

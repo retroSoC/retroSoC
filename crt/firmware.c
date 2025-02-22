@@ -86,7 +86,7 @@ void app_system_boot() {
 
     bool timing_pass = true;
 
-    printf("[PSRAM] device:     ESP-PSRAM64H(max %dHz)\n", PSRAM_SCLK_MAX_FREQ);
+    printf("[PSRAM] device:     ESP-PSRAM64H(max %dMHz)\n", PSRAM_SCLK_MAX_FREQ);
     printf("        volt:       3.3V\n");
     printf("        power-up:   SPI mode\n");
     printf("        normal:     QPI mode\n");
