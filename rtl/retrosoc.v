@@ -629,10 +629,10 @@ module retrosoc #(
             r_iomem_rdata <= {30'd0, r_irq_8_in_src};
             if (s_iomem_wstrb[0]) r_irq_8_in_src <= s_iomem_wdata[1:0];
           end
-          8'h5c: r_iomem_rdata <= {28'd0, s_tim0_reg_cfg_dout};
+          8'h5c: r_iomem_rdata <= s_tim0_reg_cfg_dout;
           8'h60: r_iomem_rdata <= s_tim0_reg_val_dout;
           8'h64: r_iomem_rdata <= s_tim0_reg_dat_dout;
-          8'h68: r_iomem_rdata <= {28'd0, s_tim1_reg_cfg_dout};
+          8'h68: r_iomem_rdata <= s_tim1_reg_cfg_dout;
           8'h6c: r_iomem_rdata <= s_tim1_reg_val_dout;
           8'h70: r_iomem_rdata <= s_tim1_reg_dat_dout;
           8'h80: begin

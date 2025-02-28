@@ -132,12 +132,12 @@ LDS_PATH := ../crt/sections.lds
 # +behv_wave
 retrosim: retrosoc_tb.vvp $(FIRMWARE_NAME).elf
 	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
-	vvp -l run.log -N $< +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) -fst
+	vvp -l run.log -N $< +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL) -fst
 
 # +syn_wave
 retrosynsim: retrosoc_syn_tb.vvp $(FIRMWARE_NAME).elf
 	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
-	vvp -l synrun.log -N $< +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) -fst
+	vvp -l synrun.log -N $< +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_$(SIM_TOOL) -fst
 
 
 retrosoc_tb.vvp:
@@ -172,7 +172,7 @@ vsim: vcomp
 	bsub -Is ./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
 vnetsim: vnetcomp
-	bsub -Is ./net_simv -l vnetsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL) +bus_conflict_off
+	bsub -Is ./net_simv -l vnetsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_$(SIM_TOOL) +bus_conflict_off
 
 vwave:
 	bsub -Is verdi -ssf retrosoc_tb.fsdb -nologo &
