@@ -152,6 +152,8 @@ retrosoc_syn_tb.vvp:
 	(iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP) || exit -1) 2>&1 | tee syncompile.log
 
 
+
+######### tiny version
 # +behv_wave
 retrosimtiny: retrosoc_tb_tiny.vvp $(FIRMWARE_NAME).elf
 	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
@@ -187,6 +189,7 @@ $(FIRMWARE_NAME).elf:
 	$(CROSS)objcopy -O binary  $@ $(FIRMWARE_NAME).bin
 	$(CROSS)objdump -d $@ > $(FIRMWARE_NAME).txt
 
+
 vcomp:
 	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) retrosoc_tb.v -top retrosoc_tb -l vcompile.log
 
@@ -204,6 +207,27 @@ vwave:
 
 vsynwave:
 	bsub -Is verdi -ssf retrosoc_syn_tb.fsdb -nologo &
+
+
+
+######### tiny version
+vcomptiny:
+	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) retrosoc_tb_tiny.v -top retrosoc_tb_tiny -l vcompiletiny.log -o simvtiny
+
+vnetcomptiny:
+	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_TECH) $(RTL_PDK) $(RTL_IP) -v ../syn/yosys/out/retrosoc_asic_tiny_yosys.v retrosoc_tb_tiny.v -top retrosoc_tb_tiny -l vnetcompiletiny.log -o net_simvtiny
+
+vsimtiny: vcomptiny
+	bsub -Is ./simvtiny -l vsimtiny.log +behv_$(WAVE) +sim_$(SIM_TOOL)
+
+vnetsimtiny: vnetcomptiny
+	bsub -Is ./net_simvtiny -l vnetsimtiny.log +syn_$(WAVE) +sim_$(SIM_TOOL) +bus_conflict_off
+
+vwavetiny:
+	bsub -Is verdi -ssf retrosoc_tb_tiny.fsdb -nologo &
+
+vsynwavetiny:
+	bsub -Is verdi -ssf retrosoc_syn_tb_tiny.fsdb -nologo &
 
 clean:
 	rm -f *.vvp *.vcd *.fst
