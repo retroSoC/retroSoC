@@ -38,7 +38,9 @@ VTIME_OPTION := +notimingcheck \
 # RTL code
 WAVE := NONE
 RTL_SOC := ./retrosoc_asic.v \
+           ./retrosoc_asic_tiny.v \
            ./retrosoc.v \
+           ./retrosoc_tiny.v \
            ./picorv32.v
 
 RTL_IP := ./ip/spram_model.v \
@@ -84,7 +86,8 @@ RTL_IP := ./ip/spram_model.v \
       ./ip/cust/axil2apb/read_data_mux.v \
       ./ip/cust/axil2apb/apb_master.v \
       ./ip/cust/axil2apb/axi_apb_bridge.v \
-      ./ip/axil_ip_wrapper.v
+      ./ip/axil_ip_wrapper.v \
+      ./ip/axil_ip_wrapper_tiny.v
 
 RTL_TECH := ../tech/tc_io.v \
             ../tech/tc_clk.v \
@@ -147,6 +150,28 @@ retrosoc_tb.vvp:
 retrosoc_syn_tb.vvp:
 	@mkdir -p build
 	(iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb -o $@ retrosoc_tb.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP) || exit -1) 2>&1 | tee syncompile.log
+
+
+# +behv_wave
+retrosimtiny: retrosoc_tb_tiny.vvp $(FIRMWARE_NAME).elf
+	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
+	vvp -l run.log -N $< +behv_$(WAVE) +sim_$(SIM_TOOL) -fst
+
+# +syn_wave
+retrosynsimtiny: retrosoc_syn_tb_tiny.vvp $(FIRMWARE_NAME).elf
+	ln -sf $(FIRMWARE_NAME).hex mem_Q128_bottom.vmf
+	vvp -l synrun.log -N $< +syn_$(WAVE) +sim_$(SIM_TOOL) -fst
+
+
+retrosoc_tb_tiny.vvp:
+	@mkdir -p build
+	(iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb_tiny -o $@ retrosoc_tb_tiny.v $(RTL_SOC) $(RTL_TECH) $(RTL_PDK) $(RTL_IP) || exit -1) 2>&1 | tee compile.log
+
+retrosoc_syn_tb_tiny.vvp:
+	@mkdir -p build
+	(iverilog -DFUNCTIONAL $(RTL_INC) -s retrosoc_tb_tiny -o $@ retrosoc_tb_tiny.v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TECH) $(RTL_PDK) $(RTL_IP) || exit -1) 2>&1 | tee syncompile.log
+
+
 
 ../syn/yosys/out/retrosoc_asic_yosys.v:
 	$(MAKE) -C ../syn/yosys -f yosys.mk
