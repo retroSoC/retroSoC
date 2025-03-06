@@ -328,8 +328,8 @@ module picorv32 #(
 		pcpi_int_wait  = |{ENABLE_PCPI && pcpi_wait,  (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_wait,  ENABLE_DIV && pcpi_div_wait};
 		pcpi_int_ready = |{ENABLE_PCPI && pcpi_ready, (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_ready, ENABLE_DIV && pcpi_div_ready};
 
-		(* parallel_case *)
-		case (1'b1)
+		// (* parallel_case *)
+		case (1'b1) // synopsys parallel_case
 			ENABLE_PCPI && pcpi_ready: begin
 				pcpi_int_wr = ENABLE_PCPI ? pcpi_wr : 0;
 				pcpi_int_rd = ENABLE_PCPI ? pcpi_rd : 0;
@@ -399,8 +399,8 @@ module picorv32 #(
 	end
 
 	always @* begin
-		(* full_case *)
-		case (mem_wordsize)
+		// (* full_case *)
+		case (mem_wordsize) // synopsys full_case
 			0: begin
 				mem_la_wdata = reg_op2;
 				mem_la_wstrb = 4'b1111;
@@ -1116,8 +1116,8 @@ module picorv32 #(
 			is_lui_auipc_jal_jalr_addi_add_sub <= 0;
 			is_compare <= 0;
 
-			(* parallel_case *)
-			case (1'b1)
+			// (* parallel_case *)
+			case (1'b1) // synopsys parallel_case
 				instr_jal:
 					decoded_imm <= decoded_imm_j;
 				|{instr_lui, instr_auipc}:
@@ -1248,8 +1248,8 @@ module picorv32 #(
 
 	always @* begin
 		alu_out_0 = 'bx;
-		(* parallel_case, full_case *)
-		case (1'b1)
+		// (* parallel_case, full_case *)
+		case (1'b1) // synopsys full_case parallel_case
 			instr_beq:
 				alu_out_0 = alu_eq;
 			instr_bne:
@@ -1265,8 +1265,8 @@ module picorv32 #(
 		endcase
 
 		alu_out = 'bx;
-		(* parallel_case, full_case *)
-		case (1'b1)
+		// (* parallel_case, full_case *)
+		case (1'b1)// synopsys full_case parallel_case
 			is_lui_auipc_jal_jalr_addi_add_sub:
 				alu_out = alu_add_sub;
 			is_compare:
@@ -1311,8 +1311,8 @@ module picorv32 #(
 		cpuregs_wrdata = 'bx;
 
 		if (cpu_state == cpu_state_fetch) begin
-			(* parallel_case *)
-			case (1'b1)
+			// (* parallel_case *)
+			case (1'b1) // synopsys parallel_case
 				latched_branch: begin
 					cpuregs_wrdata = reg_pc + (latched_compr ? 2 : 4);
 					cpuregs_write = 1;
@@ -1482,8 +1482,8 @@ module picorv32 #(
 			end
 			cpu_state <= cpu_state_fetch;
 		end else
-		(* parallel_case, full_case *)
-		case (cpu_state)
+		// (* parallel_case, full_case *)
+		case (cpu_state) // synopsys full_case parallel_case
 			cpu_state_trap: begin
 				trap <= 1;
 			end
@@ -1494,8 +1494,8 @@ module picorv32 #(
 
 				current_pc = reg_next_pc;
 
-				(* parallel_case *)
-				case (1'b1)
+				// (* parallel_case *)
+				case (1'b1) // synopsys parallel_case
 					latched_branch: begin
 						current_pc = latched_store ? (latched_stalu ? alu_out_q : reg_out) & ~1 : reg_next_pc;
 						`debug($display("ST_RD:  %2d 0x%08x, BRANCH 0x%08x", latched_rd, reg_pc + (latched_compr ? 2 : 4), current_pc);)
@@ -1580,8 +1580,8 @@ module picorv32 #(
 				reg_op1 <= 'bx;
 				reg_op2 <= 'bx;
 
-				(* parallel_case *)
-				case (1'b1)
+				// (* parallel_case *)
+				case (1'b1) // synopsys parallel_case
 					(CATCH_ILLINSN || WITH_PCPI) && instr_trap: begin
 						if (WITH_PCPI) begin
 							`debug($display("LD_RS1: %2d 0x%08x", decoded_rs1, cpuregs_rs1);)
@@ -1624,8 +1624,8 @@ module picorv32 #(
 						end
 					end
 					ENABLE_COUNTERS && is_rdcycle_rdcycleh_rdinstr_rdinstrh: begin
-						(* parallel_case, full_case *)
-						case (1'b1)
+						// (* parallel_case, full_case *)
+						case (1'b1) // synopsys full_case parallel_case
 							instr_rdcycle:
 								reg_out <= count_cycle[31:0];
 							instr_rdcycleh && ENABLE_COUNTERS64:
@@ -1732,8 +1732,8 @@ module picorv32 #(
 							reg_op2 <= cpuregs_rs2;
 							dbg_rs2val <= cpuregs_rs2;
 							dbg_rs2val_valid <= 1;
-							(* parallel_case *)
-							case (1'b1)
+							// (* parallel_case *)
+							case (1'b1) // synopsys parallel_case
 								is_sb_sh_sw: begin
 									cpu_state <= cpu_state_stmem;
 									mem_do_rinst <= 1;
@@ -1763,8 +1763,8 @@ module picorv32 #(
 				dbg_rs2val <= cpuregs_rs2;
 				dbg_rs2val_valid <= 1;
 
-				(* parallel_case *)
-				case (1'b1)
+				// (* parallel_case *)
+				case (1'b1) // synopsys parallel_case
 					WITH_PCPI && instr_trap: begin
 						pcpi_valid <= 1;
 						if (pcpi_int_ready) begin
@@ -1833,16 +1833,16 @@ module picorv32 #(
 					mem_do_rinst <= mem_do_prefetch;
 					cpu_state <= cpu_state_fetch;
 				end else if (TWO_STAGE_SHIFT && reg_sh >= 4) begin
-					(* parallel_case, full_case *)
-					case (1'b1)
+					// (* parallel_case, full_case *)
+					case (1'b1) // synopsys full_case parallel_case
 						instr_slli || instr_sll: reg_op1 <= reg_op1 << 4;
 						instr_srli || instr_srl: reg_op1 <= reg_op1 >> 4;
 						instr_srai || instr_sra: reg_op1 <= $signed(reg_op1) >>> 4;
 					endcase
 					reg_sh <= reg_sh - 4;
 				end else begin
-					(* parallel_case, full_case *)
-					case (1'b1)
+					// (* parallel_case, full_case *)
+					case (1'b1) // synopsys full_case parallel_case
 						instr_slli || instr_sll: reg_op1 <= reg_op1 << 1;
 						instr_srli || instr_srl: reg_op1 <= reg_op1 >> 1;
 						instr_srai || instr_sra: reg_op1 <= $signed(reg_op1) >>> 1;
@@ -1856,8 +1856,8 @@ module picorv32 #(
 					reg_out <= reg_op2;
 				if (!mem_do_prefetch || mem_done) begin
 					if (!mem_do_wdata) begin
-						(* parallel_case, full_case *)
-						case (1'b1)
+						// (* parallel_case, full_case *)
+						case (1'b1) // synopsys full_case parallel_case
 							instr_sb: mem_wordsize <= 2;
 							instr_sh: mem_wordsize <= 1;
 							instr_sw: mem_wordsize <= 0;
@@ -1881,8 +1881,8 @@ module picorv32 #(
 				latched_store <= 1;
 				if (!mem_do_prefetch || mem_done) begin
 					if (!mem_do_rdata) begin
-						(* parallel_case, full_case *)
-						case (1'b1)
+						// (* parallel_case, full_case *)
+						case (1'b1) // synopsys full_case parallel_case
 							instr_lb || instr_lbu: mem_wordsize <= 2;
 							instr_lh || instr_lhu: mem_wordsize <= 1;
 							instr_lw: mem_wordsize <= 0;
@@ -1898,8 +1898,8 @@ module picorv32 #(
 						set_mem_do_rdata = 1;
 					end
 					if (!mem_do_prefetch && mem_done) begin
-						(* parallel_case, full_case *)
-						case (1'b1)
+						// (* parallel_case, full_case *)
+						case (1'b1) // synopsys full_case parallel_case
 							latched_is_lu: reg_out <= mem_rdata_word;
 							latched_is_lh: reg_out <= $signed(mem_rdata_word[15:0]);
 							latched_is_lb: reg_out <= $signed(mem_rdata_word[7:0]);
