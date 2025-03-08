@@ -1,3 +1,3 @@
-tree     { retrosoc_tb }
+tree     { retrosoc_tb };
 instance { retrosoc_tb.retrosoc_asic } { xpropOn };
-merge = tmerge;
+merge = tmerge
