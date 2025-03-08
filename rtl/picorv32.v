@@ -2809,6 +2809,8 @@ module picorv32_axi_adapter (
 	always @(posedge clk) begin
 		if (!resetn) begin
 			ack_awvalid <= 0;
+			ack_arvalid <= 0;
+			ack_wvalid <= 0;
 		end else begin
 			xfer_done <= mem_valid && mem_ready;
 			if (mem_axi_awready && mem_axi_awvalid)
