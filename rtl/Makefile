@@ -198,7 +198,7 @@ vnetcomp:
 	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_TECH) $(RTL_PDK) $(RTL_IP) -v ../syn/yosys/out/retrosoc_asic_yosys.v retrosoc_tb.v -top retrosoc_tb -l vnetcompile.log -o net_simv
 
 vsim: vcomp
-	bsub -Is ./simv -l vsim.log -report=xprop[+exit] +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
+	bsub -Is ./simv -l vsim.log -report=xprop+exit +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
 vnetsim: vnetcomp
 	bsub -Is ./net_simv -l vnetsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_$(SIM_TOOL) +bus_conflict_off
