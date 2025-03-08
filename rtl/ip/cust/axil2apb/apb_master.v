@@ -25,25 +25,26 @@ module apb_master #(
   localparam Setup = 'd1;
   localparam Access = 'd2;
 
-  reg [1:0] state;
+  reg  [1:0] state;
 
   // for select ongoing slave
-  wire s_filter_pready = |(SSEL & PREADY);
+  wire       s_filter_pready = |(SSEL & PREADY);
   // PREADY & SSEL
   // 0111 & 1000 = 0000
   always @(posedge PCLK) begin
     if (!PRESETn) state <= Idle;
-    if (state == Idle) begin
-      if (STREQ) state <= Setup;
-      else state <= Idle;
-    end else if (state == Setup) state <= Access;
-    else if (state == Access) begin
-      if (s_filter_pready && STREQ) state <= Setup;
-      else if (s_filter_pready && ~STREQ) state <= Idle;
-      else if (~s_filter_pready) state <= Access;
-      else state <= Idle;
-    end else state <= Idle;
-
+    else begin
+      if (state == Idle) begin
+        if (STREQ) state <= Setup;
+        else state <= Idle;
+      end else if (state == Setup) state <= Access;
+      else if (state == Access) begin
+        if (s_filter_pready && STREQ) state <= Setup;
+        else if (s_filter_pready && ~STREQ) state <= Idle;
+        else if (~s_filter_pready) state <= Access;
+        else state <= Idle;
+      end else state <= Idle;
+    end
   end
 
   assign PENABLE   = (state == Access) ? 1'b1 : 1'b0;
