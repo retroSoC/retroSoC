@@ -28,6 +28,7 @@ VSIM_OPTIONS := -full64  +v2k -sverilog -timescale=1ns/10ps \
                 +define+no_warning \
                 +define+S50 \
                 +define+SVA_OFF \
+                -xprop \
                 -work DEFAULT \
                 +define+RANDOMIZE_REG_INIT \
                 ${VSIM_INC} \
