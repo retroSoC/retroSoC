@@ -5,6 +5,8 @@
 *.vvp
 *.vcd
 *.lib
+*.report
+*.ddb
 *.fst
 *.txt
 *.gtkw
@@ -15,7 +17,10 @@
 *.conf
 *.rc
 *.aig
+.vscode
+.metals
 verdiLog
+sdfAnnotateInfo
 *.daidir
 ucli.*
 verdi_config_file
