@@ -18,6 +18,9 @@
 *.rc
 *.aig
 .vscode
+build
+net_build
+post_buils
 .metals
 verdiLog
 sdfAnnotateInfo
