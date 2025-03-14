@@ -13,6 +13,11 @@ VNOVAS    := /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
 VEXTRA    := -P ${VNOVAS}/novas.tab\
                 ${VNOVAS}/pli.a
 
+
+VPOST_PATH  := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
+SDF_FILE   := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"
+
+
 VSIM_INC  := +incdir+./ip \
              +incdir+./ip/cust/spfs \
              +incdir+./ip/cust/spfs_model
@@ -21,7 +26,8 @@ VSIM_INC  := +incdir+./ip \
 VSIM_OPTIONS := -full64  +v2k -sverilog -timescale=1ns/10ps \
                 ${VEXTRA} \
                 -kdb \
-                -debug_acc+all \
+                -debug_access+all \
+                -debug_region=cell+lib \
                 +error+500 \
                 +vcs+flush+all \
                 +lint=TFIPC-L \
@@ -35,6 +41,15 @@ VSIM_OPTIONS := -full64  +v2k -sverilog -timescale=1ns/10ps \
 
 VTIME_OPTION := +notimingcheck \
                 +nospecify \
+
+VPOST_SIM_OPTION := -sdf min:retrosoc_tb.u_retrosoc_asic:${SDF_FILE} \
+                   +delay_mode_path \
+                   +sdfverbose \
+                   +neg_tchk \
+                   -negdelay \
+                   +optconfigfile+./disable_timing_checklist \
+                   -diag=sdf:verbose \
+                   +warn=OPD:10,IWNF:10,SDFCOM_UHICD:10,SDFCOM_ANICD:10,SDFCOM_NICD:10,DRTZ:10,SDFCOM_UHICD:10,SDFCOM_NTCDTL:10 \
 
 # RTL code
 WAVE := NONE
@@ -102,6 +117,7 @@ RTL_TECH := ../tech/tc_io.v \
 
 RTL_PDK := ../syn/S110/SP013D3WP_V1p7.v \
            ../syn/S110/scc011ums_hd_lvt.v \
+           ../syn/S110/scc011ums_hd_rvt.v \
            ../syn/S110/S011HD1P_X256Y4D32_BW.v \
            ../syn/S110/S013PLLFN_V1.4.2.v
 
@@ -198,10 +214,16 @@ vnetcomp:
 	bsub -Is vcs ${VSIM_OPTIONS} ${VTIME_OPTION} $(RTL_TECH) $(RTL_PDK) $(RTL_IP) -v ../syn/yosys/out/retrosoc_asic_yosys.v retrosoc_tb.v -top retrosoc_tb -l vnetcompile.log -o net_simv
 
 vsim: vcomp
-	bsub -Is ./simv -l vsim.log -report=xprop+exit +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
+	bsub -Is ./simv -l vsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
 vnetsim: vnetcomp
 	bsub -Is ./net_simv -l vnetsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_$(SIM_TOOL) +bus_conflict_off
+
+vpostcomp:
+	bsub -Is vcs ${VSIM_OPTIONS} ${VPOST_SIM_OPTION} ${RTL_PDK} ./ip/rs232.v ./ip/kdb_model.v ./ip/psram_model.v ./ip/cust/spfs_model/N25Qxxx.v retrosoc_tb.v -top retrosoc_tb -l vpostcompile.log ${VPOST_PATH} -o post_simv
+
+vpostsim: vpostcomp
+	bsub -Is ./post_simv -l vpostsim.log +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_$(SIM_TOOL)
 
 vwave:
 	bsub -Is verdi -ssf retrosoc_tb.fsdb -nologo &
