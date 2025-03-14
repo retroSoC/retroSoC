@@ -3,8 +3,11 @@ EXTRA        := -P ${NOVAS}/novas.tab ${NOVAS}/pli.a
 
 
 SIM_TOOL     := bsub -Is vcs
-SIM_BINY     := bsub -Is ../simv
+SIM_BINY     := bsub -Is ./simv
 VERDI_TOOL   := bsub -Is verdi
+
+COMP_LOG     := -l compile.log
+SIM_LOG      := -l sim.log
 
 RTL_INC  := +incdir+../ip \
             +incdir+../ip/cust/spfs \
