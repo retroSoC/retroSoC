@@ -32,18 +32,6 @@ module retrosoc_asic (
     input  clk_bypass_i_pad,
     input  ext_rst_n_i_pad,
     output sys_clkdiv4_o_pad,
-    // HOUSEKEEPING SPI
-    input  hk_sdi_i_pad,
-    output hk_sdo_o_pad,
-    input  hk_csb_i_pad,
-    input  hk_sck_i_pad,
-    // SPI FLASH
-    output flash_csb_o_pad,
-    output flash_clk_o_pad,
-    inout  flash_io0_io_pad,
-    inout  flash_io1_io_pad,
-    inout  flash_io2_io_pad,
-    inout  flash_io3_io_pad,
     // UART
     output uart_tx_o_pad,
     input  uart_rx_i_pad,
@@ -107,26 +95,6 @@ module retrosoc_asic (
   wire        s_sys_rst_n;
   wire        s_sys_clkdiv4_o;
   // io
-  wire        s_hk_sdi_i;
-  wire        s_hk_sdo_o;
-  wire        s_hk_csb_i;
-  wire        s_hk_sck_i;
-  wire        s_flash_csb_o;
-  wire        s_flash_clk_o;
-  wire        s_flash_clk_oeb_o;
-  wire        s_flash_csb_oeb_o;
-  wire        s_flash_io0_oeb_o;
-  wire        s_flash_io1_oeb_o;
-  wire        s_flash_io2_oeb_o;
-  wire        s_flash_io3_oeb_o;
-  wire        s_flash_io0_do_o;
-  wire        s_flash_io1_do_o;
-  wire        s_flash_io2_do_o;
-  wire        s_flash_io3_do_o;
-  wire        s_flash_io0_di_i;
-  wire        s_flash_io1_di_i;
-  wire        s_flash_io2_di_i;
-  wire        s_flash_io3_di_i;
   wire        s_uart_tx_o;
   wire        s_uart_rx_i;
   wire [15:0] s_gpio_out_o;
@@ -204,16 +172,6 @@ module retrosoc_asic (
   tc_io_tri_pad         u_clk_bypass_i_pad  (.pad(clk_bypass_i_pad),   .c2p(),                 .c2p_en(1'b0),                 .p2c(s_clk_bypass_i));
   tc_io_tri_schmitt_pad u_ext_rst_n_i_pad   (.pad(ext_rst_n_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_rst_n_i));
   tc_io_tri_pad         u_sys_clkdiv4_o_pad (.pad(sys_clkdiv4_o_pad),  .c2p(s_sys_clkdiv4_o),  .c2p_en(1'b1),                 .p2c());
-  tc_io_tri_pad         u_hk_sdi_i_pad      (.pad(hk_sdi_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sdi_i));
-  tc_io_tri_pad         u_hk_sdo_o_pad      (.pad(hk_sdo_o_pad),       .c2p(s_hk_sdo_o),       .c2p_en(~s_hk_sdo_enb),        .p2c());
-  tc_io_tri_pad         u_hk_csb_i_pad      (.pad(hk_csb_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_csb_i));
-  tc_io_tri_pad         u_hk_sck_i_pad      (.pad(hk_sck_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_hk_sck_i));
-  tc_io_tri_pad         u_flash_csb_o_pad   (.pad(flash_csb_o_pad),    .c2p(s_flash_csb_o),    .c2p_en(~s_flash_csb_oeb_o),   .p2c());
-  tc_io_tri_pad         u_flash_clk_o_pad   (.pad(flash_clk_o_pad),    .c2p(s_flash_clk_o),    .c2p_en(~s_flash_clk_oeb_o),   .p2c());
-  tc_io_tri_pad         u_flash_io0_io_pad  (.pad(flash_io0_io_pad),   .c2p(s_flash_io0_do_o), .c2p_en(~s_flash_io0_oeb_o),   .p2c(s_flash_io0_di_i));
-  tc_io_tri_pad         u_flash_io1_io_pad  (.pad(flash_io1_io_pad),   .c2p(s_flash_io1_do_o), .c2p_en(~s_flash_io1_oeb_o),   .p2c(s_flash_io1_di_i));
-  tc_io_tri_pad         u_flash_io2_io_pad  (.pad(flash_io2_io_pad),   .c2p(s_flash_io2_do_o), .c2p_en(~s_flash_io2_oeb_o),   .p2c(s_flash_io2_di_i));
-  tc_io_tri_pad         u_flash_io3_io_pad  (.pad(flash_io3_io_pad),   .c2p(s_flash_io3_do_o), .c2p_en(~s_flash_io3_oeb_o),   .p2c(s_flash_io3_di_i));
   tc_io_tri_pad         u_uart_tx_o_pad     (.pad(uart_tx_o_pad),      .c2p(s_uart_tx_o),      .c2p_en(1'b1),                 .p2c());
   tc_io_tri_pad         u_uart_rx_i_pad     (.pad(uart_rx_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_uart_rx_i));
   tc_io_tri_pad         u_gpio_0_io_pad     (.pad(gpio_0_io_pad),      .c2p(s_gpio_out_o[0]),  .c2p_en(~s_gpio_outenb_o[0]),  .p2c(s_gpio_in_i[0]));
@@ -280,12 +238,6 @@ module retrosoc_asic (
   retrosoc u_retrosoc (
       .clk_i                    (s_sys_clk),
       .rst_n_i                  (s_sys_rst_n),
-      .clk_ext_sel_i            (s_hk_pll_bypass),
-      .hk_pt_i                  (s_hk_pt_rst),
-      .hk_pt_csb_i              (s_hk_pt_csb),
-      .hk_pt_sck_i              (s_hk_pt_sck),
-      .hk_pt_sdi_i              (s_hk_pt_sdi),
-      .hk_pt_sdo_o              (s_hk_pt_sdo),
       .ram_wstrb_o              (s_ram_wstrb),
       .ram_addr_o               (s_ram_addr),
       .ram_wdata_o              (s_ram_wdata),
@@ -295,37 +247,9 @@ module retrosoc_asic (
       .gpio_pullupb_o           (s_gpio_pullupb_o),
       .gpio_pulldownb_o         (s_gpio_pulldownb_o),
       .gpio_outenb_o            (s_gpio_outenb_o),
-      .spi_slv_ro_config_i      (8'd0),
-      .spi_slv_ro_xtal_ena_i    (s_hk_xtal_ena),
-      .spi_slv_ro_reg_ena_i     (1'b0),
-      .spi_slv_ro_pll_cp_ena_i  (s_hk_pll_cp_ena),
-      .spi_slv_ro_pll_vco_ena_i (s_hk_pll_vco_ena),
-      .spi_slv_ro_pll_bias_ena_i(s_hk_pll_bias_ena),
-      .spi_slv_ro_pll_trim_i    (s_hk_pll_trim),
-      .spi_slv_ro_mfgr_id_i     (s_hk_mfgr_id),
-      .spi_slv_ro_prod_id_i     (s_hk_prod_id),
-      .spi_slv_ro_mask_rev_i    (s_hk_mask_rev),
       .uart_tx_o                (s_uart_tx_o),
       .uart_rx_i                (s_uart_rx_i),
       .irq_pin_i                (s_irq_pin_i),
-      .irq_spi_i                (s_hk_irq),
-      .trap_o                   (s_hk_trap),
-      .flash_csb_o              (s_flash_csb_o),
-      .flash_clk_o              (s_flash_clk_o),
-      .flash_clk_oeb_o          (s_flash_clk_oeb_o),
-      .flash_csb_oeb_o          (s_flash_csb_oeb_o),
-      .flash_io0_oeb_o          (s_flash_io0_oeb_o),
-      .flash_io1_oeb_o          (s_flash_io1_oeb_o),
-      .flash_io2_oeb_o          (s_flash_io2_oeb_o),
-      .flash_io3_oeb_o          (s_flash_io3_oeb_o),
-      .flash_io0_do_o           (s_flash_io0_do_o),
-      .flash_io1_do_o           (s_flash_io1_do_o),
-      .flash_io2_do_o           (s_flash_io2_do_o),
-      .flash_io3_do_o           (s_flash_io3_do_o),
-      .flash_io0_di_i           (s_flash_io0_di_i),
-      .flash_io1_di_i           (s_flash_io1_di_i),
-      .flash_io2_di_i           (s_flash_io2_di_i),
-      .flash_io3_di_i           (s_flash_io3_di_i),
       .cust_uart_rx_i           (s_cust_uart_rx_i),
       .cust_uart_tx_o           (s_cust_uart_tx_o),
       .cust_pwm_pwm_o           (s_cust_pwm_pwm_o),
@@ -359,40 +283,6 @@ module retrosoc_asic (
       .cust_spfs_mosi_o         (s_cust_spfs_mosi_o),
       .cust_spfs_miso_i         (s_cust_spfs_miso_i)
   );
-
-  /* it can control the xtal oscillator, PLL which CANNOT be changed from the CPU */
-  /* without potentially killing it.       */
-  // 'reg_ena': regulator enable
-  ravenna_spi u_ravenna_spi (
-      .RST            (~s_sys_rst_n),
-      .SCK            (s_hk_sck_i),
-      .SDI            (s_hk_sdi_i),
-      .CSB            (s_hk_csb_i),
-      .SDO            (s_hk_sdo_o),
-      .sdo_enb        (s_hk_sdo_enb),
-      .xtal_ena       (s_hk_xtal_ena),
-      .reg_ena        (),
-      .pll_vco_ena    (s_hk_pll_vco_ena),
-      .pll_vco_in     (s_hk_pll_vco_in),
-      .pll_cp_ena     (s_hk_pll_cp_ena),
-      .pll_bias_ena   (s_hk_pll_bias_ena),
-      .pll_trim       (s_hk_pll_trim),
-      .pll_bypass     (s_hk_pll_bypass),
-      .tm_nvcp        (),
-      .irq            (s_hk_irq),
-      .reset          (s_hk_rst),
-      .trap           (s_hk_trap),
-      .pass_thru_reset(s_hk_pt_rst),
-      .pass_thru_sck  (s_hk_pt_sck),
-      .pass_thru_csb  (s_hk_pt_csb),
-      .pass_thru_sdi  (s_hk_pt_sdi),
-      .pass_thru_sdo  (s_hk_pt_sdo),
-      .mask_rev_in    (4'd0),
-      .mfgr_id        (s_hk_mfgr_id),
-      .prod_id        (s_hk_prod_id),
-      .mask_rev       (s_hk_mask_rev)
-  );
-
 
   spram_model u_spram_model (
       .clk  (s_sys_clk),

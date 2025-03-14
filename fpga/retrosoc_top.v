@@ -47,18 +47,6 @@ module retrosoc_top (
       .pll_cfg_2_i_pad          (1'b0),
       .clk_bypass_i_pad         (1'b1),
       .ext_rst_n_i_pad          (rst_n_i),
-      // HOUSEKEEPING SPI
-      .hk_sdi_i_pad             (1'b0),
-      .hk_sdo_o_pad             (),
-      .hk_csb_i_pad             (1'b0),
-      .hk_sck_i_pad             (1'b0),
-      // SPI FLASH
-      .flash_csb_o_pad          (),
-      .flash_clk_o_pad          (),
-      .flash_io0_io_pad         (),
-      .flash_io1_io_pad         (),
-      .flash_io2_io_pad         (),
-      .flash_io3_io_pad         (),
       // UART
       .uart_tx_o_pad            (uart_tx_o),
       .uart_rx_i_pad            (uart_rx_i),

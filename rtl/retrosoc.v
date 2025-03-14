@@ -34,13 +34,6 @@ module retrosoc #(
 ) (
     input         clk_i,
     input         rst_n_i,
-    input         clk_ext_sel_i,
-    // pass-through mode from housekeeping SPI
-    input         hk_pt_i,
-    input         hk_pt_csb_i,
-    input         hk_pt_sck_i,
-    input         hk_pt_sdi_i,
-    output        hk_pt_sdo_o,
     //sram if including clk_i and rst_n_i above
     output [ 3:0] ram_wstrb_o,
     output [14:0] ram_addr_o,
@@ -52,39 +45,12 @@ module retrosoc #(
     output [15:0] gpio_pullupb_o,
     output [15:0] gpio_pulldownb_o,
     output [15:0] gpio_outenb_o,
-    input  [ 7:0] spi_slv_ro_config_i,
-    input         spi_slv_ro_xtal_ena_i,
-    input         spi_slv_ro_reg_ena_i,
-    input         spi_slv_ro_pll_cp_ena_i,
-    input         spi_slv_ro_pll_vco_ena_i,
-    input         spi_slv_ro_pll_bias_ena_i,
-    input  [ 3:0] spi_slv_ro_pll_trim_i,
-    input  [11:0] spi_slv_ro_mfgr_id_i,
-    input  [ 7:0] spi_slv_ro_prod_id_i,
-    input  [ 3:0] spi_slv_ro_mask_rev_i,
     output        uart_tx_o,
     input         uart_rx_i,
     // irq
     input         irq_pin_i,
     input         irq_spi_i,
     output        trap_o,
-    // spi flash
-    output        flash_csb_o,
-    output        flash_clk_o,
-    output        flash_clk_oeb_o,
-    output        flash_csb_oeb_o,
-    output        flash_io0_oeb_o,
-    output        flash_io1_oeb_o,
-    output        flash_io2_oeb_o,
-    output        flash_io3_oeb_o,
-    output        flash_io0_do_o,
-    output        flash_io1_do_o,
-    output        flash_io2_do_o,
-    output        flash_io3_do_o,
-    input         flash_io0_di_i,
-    input         flash_io1_di_i,
-    input         flash_io2_di_i,
-    input         flash_io3_di_i,
     // cust
     input         cust_uart_rx_i,
     output        cust_uart_tx_o,
@@ -152,8 +118,6 @@ module retrosoc #(
   reg  [15:0] r_gpio_pu;
   reg  [15:0] r_gpio_pd;
   reg  [15:0] r_gpio_oeb;
-  reg  [ 1:0] r_pll_out_dest;
-  reg  [ 1:0] r_trap_out_dest;
   reg  [ 1:0] r_irq_7_in_src;
   reg  [ 1:0] r_irq_8_in_src;
   // mmio axil if
@@ -176,7 +140,6 @@ module retrosoc #(
   wire [31:0] s_mem_axi_rdata;
   // irq
   wire [31:0] s_irq;
-  wire        s_irq_stall = 0;
   wire        s_irq_uart;
   wire        s_irq_tim0;
   wire        s_irq_tim1;
@@ -196,12 +159,12 @@ module retrosoc #(
   assign gpio_out_o[5]        = r_gpio[5];
   assign gpio_out_o[6]        = r_gpio[6];
   assign gpio_out_o[7]        = r_gpio[7];
-  assign gpio_out_o[8]        = r_pll_out_dest == 2'b01 ? clk_i : r_gpio[8];
-  assign gpio_out_o[9]        = r_pll_out_dest == 2'b10 ? clk_i : r_gpio[9];
+  assign gpio_out_o[8]        = r_gpio[8];
+  assign gpio_out_o[9]        = r_gpio[9];
   assign gpio_out_o[10]       = r_gpio[10];
-  assign gpio_out_o[11]       = r_trap_out_dest == 2'b01 ? trap_o : r_gpio[11];
-  assign gpio_out_o[12]       = r_trap_out_dest == 2'b10 ? trap_o : r_gpio[12];
-  assign gpio_out_o[13]       = r_trap_out_dest == 2'b11 ? trap_o : r_gpio[13];
+  assign gpio_out_o[11]       = r_gpio[11];
+  assign gpio_out_o[12]       = r_gpio[12];
+  assign gpio_out_o[13]       = r_gpio[13];
   assign gpio_out_o[14]       = r_gpio[14];
   assign gpio_out_o[15]       = r_gpio[15];
 
@@ -213,12 +176,12 @@ module retrosoc #(
   assign gpio_outenb_o[5]     = ~rst_n_i | r_gpio_oeb[5];
   assign gpio_outenb_o[6]     = ~rst_n_i | r_gpio_oeb[6];
   assign gpio_outenb_o[7]     = ~rst_n_i | r_gpio_oeb[7];
-  assign gpio_outenb_o[8]     = ~rst_n_i | (r_pll_out_dest == 2'b00 ? r_gpio_oeb[8] : 1'b0);
-  assign gpio_outenb_o[9]     = ~rst_n_i | (r_pll_out_dest == 2'b00 ? r_gpio_oeb[9] : 1'b0);
-  assign gpio_outenb_o[10]    = ~rst_n_i | (r_pll_out_dest == 2'b00 ? r_gpio_oeb[10] : 1'b0);
-  assign gpio_outenb_o[11]    = ~rst_n_i | (r_trap_out_dest == 2'b00 ? r_gpio_oeb[11] : 1'b0);
-  assign gpio_outenb_o[12]    = ~rst_n_i | (r_trap_out_dest == 2'b00 ? r_gpio_oeb[12] : 1'b0);
-  assign gpio_outenb_o[13]    = ~rst_n_i | (r_trap_out_dest == 2'b00 ? r_gpio_oeb[13] : 1'b0);
+  assign gpio_outenb_o[8]     = ~rst_n_i | r_gpio_oeb[8];
+  assign gpio_outenb_o[9]     = ~rst_n_i | r_gpio_oeb[9];
+  assign gpio_outenb_o[10]    = ~rst_n_i | r_gpio_oeb[10];
+  assign gpio_outenb_o[11]    = ~rst_n_i | r_gpio_oeb[11];
+  assign gpio_outenb_o[12]    = ~rst_n_i | r_gpio_oeb[12];
+  assign gpio_outenb_o[13]    = ~rst_n_i | r_gpio_oeb[13];
   assign gpio_outenb_o[14]    = ~rst_n_i | r_gpio_oeb[14];
   assign gpio_outenb_o[15]    = ~rst_n_i | r_gpio_oeb[15];
 
@@ -230,12 +193,12 @@ module retrosoc #(
   assign gpio_pullupb_o[5]    = r_gpio_pu[5];
   assign gpio_pullupb_o[6]    = r_gpio_pu[6];
   assign gpio_pullupb_o[7]    = r_gpio_pu[7];
-  assign gpio_pullupb_o[8]    = r_pll_out_dest == 2'b00 ? r_gpio_pu[8] : 1'b1;
-  assign gpio_pullupb_o[9]    = r_pll_out_dest == 2'b00 ? r_gpio_pu[9] : 1'b1;
-  assign gpio_pullupb_o[10]   = r_pll_out_dest == 2'b00 ? r_gpio_pu[10] : 1'b1;
-  assign gpio_pullupb_o[11]   = r_trap_out_dest == 2'b00 ? r_gpio_pu[11] : 1'b1;
-  assign gpio_pullupb_o[12]   = r_trap_out_dest == 2'b00 ? r_gpio_pu[12] : 1'b1;
-  assign gpio_pullupb_o[13]   = r_trap_out_dest == 2'b00 ? r_gpio_pu[13] : 1'b1;
+  assign gpio_pullupb_o[8]    = r_gpio_pu[8];
+  assign gpio_pullupb_o[9]    = r_gpio_pu[9];
+  assign gpio_pullupb_o[10]   = r_gpio_pu[10];
+  assign gpio_pullupb_o[11]   = r_gpio_pu[11];
+  assign gpio_pullupb_o[12]   = r_gpio_pu[12];
+  assign gpio_pullupb_o[13]   = r_gpio_pu[13];
   assign gpio_pullupb_o[14]   = r_gpio_pu[14];
   assign gpio_pullupb_o[15]   = r_gpio_pu[15];
 
@@ -247,12 +210,12 @@ module retrosoc #(
   assign gpio_pulldownb_o[5]  = r_gpio_pd[5];
   assign gpio_pulldownb_o[6]  = r_gpio_pd[6];
   assign gpio_pulldownb_o[7]  = r_gpio_pd[7];
-  assign gpio_pulldownb_o[8]  = r_pll_out_dest == 2'b00 ? r_gpio_pd[8] : 1'b1;
-  assign gpio_pulldownb_o[9]  = r_pll_out_dest == 2'b00 ? r_gpio_pd[9] : 1'b1;
-  assign gpio_pulldownb_o[10] = r_pll_out_dest == 2'b00 ? r_gpio_pd[10] : 1'b1;
-  assign gpio_pulldownb_o[11] = r_trap_out_dest == 2'b00 ? r_gpio_pd[11] : 1'b1;
-  assign gpio_pulldownb_o[12] = r_trap_out_dest == 2'b00 ? r_gpio_pd[12] : 1'b1;
-  assign gpio_pulldownb_o[13] = r_trap_out_dest == 2'b00 ? r_gpio_pd[13] : 1'b1;
+  assign gpio_pulldownb_o[8]  = r_gpio_pd[8];
+  assign gpio_pulldownb_o[9]  = r_gpio_pd[9];
+  assign gpio_pulldownb_o[10] = r_gpio_pd[10];
+  assign gpio_pulldownb_o[11] = r_gpio_pd[11];
+  assign gpio_pulldownb_o[12] = r_gpio_pd[12];
+  assign gpio_pulldownb_o[13] = r_gpio_pd[13];
   assign gpio_pulldownb_o[14] = r_gpio_pd[14];
   assign gpio_pulldownb_o[15] = r_gpio_pd[15];
 
@@ -273,28 +236,22 @@ module retrosoc #(
   end
 
   assign s_irq[2:0]   = 3'd0;
-  assign s_irq[3]     = s_irq_stall;
-  assign s_irq[4]     = s_irq_uart;
-  assign s_irq[5]     = irq_pin_i;
-  assign s_irq[6]     = irq_spi_i;
-  assign s_irq[7]     = s_irq_7;
-  assign s_irq[8]     = s_irq_8;
-  assign s_irq[9]     = 1'd0;
-  assign s_irq[10]    = 1'd0;
-  assign s_irq[11]    = s_irq_tim0;
-  assign s_irq[12]    = s_irq_tim1;
-  assign s_irq[13]    = s_cust_uart_irq;
-  assign s_irq[14]    = s_cust_pwm_irq;
-  assign s_irq[15]    = s_cust_ps2_irq;
-  assign s_irq[16]    = s_cust_i2c_irq;
-  assign s_irq[17]    = s_cust_qspi_irq;
-  assign s_irq[18]    = s_cust_spfs_irq;
-  assign s_irq[31:19] = 13'd0;
+  assign s_irq[3]     = s_irq_uart;
+  assign s_irq[4]     = irq_pin_i;
+  assign s_irq[5]     = s_irq_7;
+  assign s_irq[6]     = s_irq_8;
+  assign s_irq[7]     = s_irq_tim0;
+  assign s_irq[8]     = s_irq_tim1;
+  assign s_irq[9]     = s_cust_uart_irq;
+  assign s_irq[10]    = s_cust_pwm_irq;
+  assign s_irq[11]    = s_cust_ps2_irq;
+  assign s_irq[12]    = s_cust_i2c_irq;
+  assign s_irq[13]    = s_cust_qspi_irq;
+  assign s_irq[14]    = s_cust_spfs_irq;
+  assign s_irq[31:15] = 17'd0;
 
   // memory mapped IP
-  // 1  x SPFS
   // 16 x GPIO
-  // 1  x HOUSEKEEPING SPI
   // 1  x UART
   // 2  x TIMER
   // AXIL WRAPPER
@@ -337,9 +294,6 @@ module retrosoc #(
   assign s_iomem_wstrb = s_mem_wstrb;
   assign s_iomem_addr = s_mem_addr;
   assign s_iomem_wdata = s_mem_wdata;
-  // spi flash
-  wire        s_spimemio_cfgreg_sel = s_mem_valid && (s_mem_addr == 32'h0200_0000);
-  wire [31:0] s_spimemio_cfgreg_dout;
   // uart
   wire        s_simpleuart_reg_div_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0010);
   wire        s_simpleuart_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0014);
@@ -347,7 +301,7 @@ module retrosoc #(
   wire [31:0] s_simpleuart_reg_dat_dout;
   wire        s_simpleuart_reg_dat_wait;
   // tim0
-  wire        s_tim0_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_005c);
+  wire        s_tim0_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_005C);
   wire        s_tim0_reg_val_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0060);
   wire        s_tim0_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0064);
   wire [31:0] s_tim0_reg_cfg_dout;
@@ -355,7 +309,7 @@ module retrosoc #(
   wire [31:0] s_tim0_reg_dat_dout;
   // tim1
   wire        s_tim1_reg_cfg_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0068);
-  wire        s_tim1_reg_val_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_006c);
+  wire        s_tim1_reg_val_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_006C);
   wire        s_tim1_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0070);
   wire [31:0] s_tim1_reg_cfg_dout;
   wire [31:0] s_tim1_reg_val_dout;
@@ -367,39 +321,6 @@ module retrosoc #(
   wire [ 4:0] s_psram_cfg_wait_dout;
   reg  [ 2:0] r_psram_cfg_chd_din;
   wire [ 2:0] s_psram_cfg_chd_dout;
-
-  spimemio u_spimemio (
-      .clk          (clk_i),
-      .resetn       (rst_n_i),
-      .valid        (s_mem_valid && s_mem_addr >= 4 * MEM_WORDS && s_mem_addr < 32'h0200_0000),
-      .ready        (s_spimem_ready),
-      .addr         (s_mem_addr[23:0]),
-      .rdata        (s_spimem_rdata),
-      .pass_thru    (hk_pt_i),
-      .pass_thru_csb(hk_pt_csb_i),
-      .pass_thru_sck(hk_pt_sck_i),
-      .pass_thru_sdi(hk_pt_sdi_i),
-      .pass_thru_sdo(hk_pt_sdo_o),
-      .flash_csb    (flash_csb_o),
-      .flash_clk    (flash_clk_o),
-      .flash_csb_oeb(flash_csb_oeb_o),
-      .flash_clk_oeb(flash_clk_oeb_o),
-      .flash_io0_oeb(flash_io0_oeb_o),
-      .flash_io1_oeb(flash_io1_oeb_o),
-      .flash_io2_oeb(flash_io2_oeb_o),
-      .flash_io3_oeb(flash_io3_oeb_o),
-      .flash_io0_do (flash_io0_do_o),
-      .flash_io1_do (flash_io1_do_o),
-      .flash_io2_do (flash_io2_do_o),
-      .flash_io3_do (flash_io3_do_o),
-      .flash_io0_di (flash_io0_di_i),
-      .flash_io1_di (flash_io1_di_i),
-      .flash_io2_di (flash_io2_di_i),
-      .flash_io3_di (flash_io3_di_i),
-      .cfgreg_we    (s_spimemio_cfgreg_sel ? s_mem_wstrb : 4'b0000),
-      .cfgreg_di    (s_mem_wdata),
-      .cfgreg_do    (s_spimemio_cfgreg_dout)
-  );
 
   simpleuart u_simpleuart (
       .clk         (clk_i),
@@ -560,14 +481,12 @@ module retrosoc #(
 
   always @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
-      r_gpio          <= 0;
-      r_gpio_oeb      <= 16'hffff;
-      r_gpio_pu       <= 0;
-      r_gpio_pd       <= 0;
-      r_pll_out_dest  <= 0;
-      r_trap_out_dest <= 0;
-      r_irq_7_in_src  <= 0;
-      r_irq_8_in_src  <= 0;
+      r_gpio         <= 16'd0;
+      r_gpio_oeb     <= 16'hffff;
+      r_gpio_pu      <= 16'd0;
+      r_gpio_pd      <= 16'd0;
+      r_irq_7_in_src <= 2'd0;
+      r_irq_8_in_src <= 2'd0;
     end else begin
       if (s_iomem_valid && !r_iomem_ready && s_iomem_addr[31:8] == 24'h0300_00) begin
         // Handle r_iomem_ready based on wait states
@@ -591,49 +510,26 @@ module retrosoc #(
             if (s_iomem_wstrb[0]) r_gpio_pu[7:0] <= s_iomem_wdata[7:0];
             if (s_iomem_wstrb[1]) r_gpio_pu[15:8] <= s_iomem_wdata[15:8];
           end
-          8'h0c: begin
+          8'h0C: begin
             r_iomem_rdata <= {16'd0, r_gpio_pu};
             if (s_iomem_wstrb[0]) r_gpio_pd[7:0] <= s_iomem_wdata[7:0];
             if (s_iomem_wstrb[1]) r_gpio_pd[15:8] <= s_iomem_wdata[15:8];
           end
           8'h10: r_iomem_rdata <= s_simpleuart_reg_div_dout;
           8'h14: r_iomem_rdata <= s_simpleuart_reg_dat_dout;
-          8'h18: r_iomem_rdata <= {24'd0, spi_slv_ro_config_i};
-          8'h1c: r_iomem_rdata <= {30'd0, spi_slv_ro_xtal_ena_i, spi_slv_ro_reg_ena_i};
-          8'h20: begin
-            r_iomem_rdata <= {
-              25'd0,
-              spi_slv_ro_pll_trim_i,
-              spi_slv_ro_pll_cp_ena_i,
-              spi_slv_ro_pll_vco_ena_i,
-              spi_slv_ro_pll_bias_ena_i
-            };
-          end
-          8'h24: r_iomem_rdata <= {20'd0, spi_slv_ro_mfgr_id_i};
-          8'h28: r_iomem_rdata <= {24'd0, spi_slv_ro_prod_id_i};
-          8'h2c: r_iomem_rdata <= {28'd0, spi_slv_ro_mask_rev_i};
-          8'h30: r_iomem_rdata <= {31'd0, clk_ext_sel_i};
-          8'h38: begin
-            r_iomem_rdata <= {30'd0, r_pll_out_dest};
-            if (s_iomem_wstrb[0]) r_pll_out_dest <= s_iomem_wdata[1:0];
-          end
-          8'h3c: begin
-            r_iomem_rdata <= {30'd0, r_trap_out_dest};
-            if (s_iomem_wstrb[0]) r_trap_out_dest <= s_iomem_wdata[1:0];
-          end
-          8'h40: begin
+          8'h18: begin
             r_iomem_rdata <= {30'd0, r_irq_7_in_src};
             if (s_iomem_wstrb[0]) r_irq_7_in_src <= s_iomem_wdata[1:0];
           end
-          8'h44: begin
+          8'h1C: begin
             r_iomem_rdata <= {30'd0, r_irq_8_in_src};
             if (s_iomem_wstrb[0]) r_irq_8_in_src <= s_iomem_wdata[1:0];
           end
-          8'h5c: r_iomem_rdata <= s_tim0_reg_cfg_dout;
+          8'h5C: r_iomem_rdata <= s_tim0_reg_cfg_dout;
           8'h60: r_iomem_rdata <= s_tim0_reg_val_dout;
           8'h64: r_iomem_rdata <= s_tim0_reg_dat_dout;
           8'h68: r_iomem_rdata <= s_tim1_reg_cfg_dout;
-          8'h6c: r_iomem_rdata <= s_tim1_reg_val_dout;
+          8'h6C: r_iomem_rdata <= s_tim1_reg_val_dout;
           8'h70: r_iomem_rdata <= s_tim1_reg_dat_dout;
           8'h80: begin
             r_iomem_rdata <= {27'd0, s_psram_cfg_wait_dout};
@@ -654,14 +550,9 @@ module retrosoc #(
   end
 
   // data mux
-  assign s_mem_ready = (s_iomem_valid && r_iomem_ready) ||
-                       s_spimem_ready || r_ram_ready ||
-                       s_spimemio_cfgreg_sel || s_psram_ready;
-
+  assign s_mem_ready = (s_iomem_valid && r_iomem_ready) || r_ram_ready || s_psram_ready;
   assign s_mem_rdata = (s_iomem_valid && r_iomem_ready) ? r_iomem_rdata :
-                       s_spimem_ready ? s_spimem_rdata :
                        r_ram_ready ? ram_rdata_o :
-                       s_spimemio_cfgreg_sel ? s_spimemio_cfgreg_dout :
                        s_psram_ready ? s_psram_rdata :
                        32'h0000_0000;
 
