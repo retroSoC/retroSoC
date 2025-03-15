@@ -28,7 +28,7 @@ postsim: postcomp
 	${SIM_BINY} +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs ${SIM_LOG}
 
 wave:
-	${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &
+	${VERDI_TOOL} -ssf build/${RTL_TOP}.fsdb -nologo &
 
 clean:
 	rm -f build

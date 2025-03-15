@@ -24,7 +24,7 @@ TB_FLIST  := -f ../filelist/tb.fl
 
 ## vcs option
 SIM_OPTIONS := -full64  +v2k -sverilog -timescale=1ns/10ps \
-                ${VEXTRA} \
+                ${EXTRA} \
                 -kdb \
                 -debug_access+all \
                 -debug_region=cell+lib \
