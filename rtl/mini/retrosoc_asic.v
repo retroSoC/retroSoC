@@ -108,26 +108,6 @@ module retrosoc_asic (
   wire [14:0] s_ram_addr;
   wire [31:0] s_ram_wdata;
   wire [31:0] s_ram_rdata;
-  // housekeeping
-  wire        s_hk_sdo_enb;
-  wire        s_hk_xtal_ena;
-  wire        s_hk_pll_vco_ena;
-  wire        s_hk_pll_vco_in;
-  wire        s_hk_pll_cp_ena;
-  wire        s_hk_pll_bias_ena;
-  wire [ 3:0] s_hk_pll_trim;
-  wire        s_hk_pll_bypass;
-  wire        s_hk_irq;
-  wire        s_hk_rst;
-  wire        s_hk_trap;
-  wire        s_hk_pt_rst;
-  wire        s_hk_pt_csb;
-  wire        s_hk_pt_sck;
-  wire        s_hk_pt_sdi;
-  wire        s_hk_pt_sdo;
-  wire [11:0] s_hk_mfgr_id;
-  wire [ 7:0] s_hk_prod_id;
-  wire [ 3:0] s_hk_mask_rev;
   // cust
   wire        s_cust_uart_rx_i;
   wire        s_cust_uart_tx_o;
@@ -200,7 +180,6 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_pwm_pwm_3_o_pad     (.pad(cust_pwm_pwm_3_o_pad),      .c2p(s_cust_pwm_pwm_o[3]),      .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_ps2_ps2_clk_i_pad   (.pad(cust_ps2_ps2_clk_i_pad),    .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_ps2_ps2_clk_i));
   tc_io_tri_pad u_cust_ps2_ps2_dat_i_pad   (.pad(cust_ps2_ps2_dat_i_pad),    .c2p(),                         .c2p_en(1'b0),                     .p2c(s_cust_ps2_ps2_dat_i));
-
   tc_io_tri_pad u_cust_i2c_scl_io_pad      (.pad(cust_i2c_scl_io_pad),       .c2p(s_cust_i2c_scl_o),         .c2p_en(~s_cust_i2c_scl_dir_o),    .p2c(s_cust_i2c_scl_i));
   tc_io_tri_pad u_cust_i2c_sda_io_pad      (.pad(cust_i2c_sda_io_pad),       .c2p(s_cust_i2c_sda_o),         .c2p_en(~s_cust_i2c_sda_dir_o),    .p2c(s_cust_i2c_sda_i));
   tc_io_tri_pad u_cust_qspi_spi_clk_o_pad  (.pad(cust_qspi_spi_clk_o_pad),   .c2p(s_cust_qspi_spi_clk_o),    .c2p_en(1'b1),                     .p2c());

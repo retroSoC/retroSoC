@@ -49,8 +49,6 @@ module retrosoc #(
     input         uart_rx_i,
     // irq
     input         irq_pin_i,
-    input         irq_spi_i,
-    output        trap_o,
     // cust
     input         cust_uart_rx_i,
     output        cust_uart_tx_o,
@@ -85,16 +83,14 @@ module retrosoc #(
     output        cust_spfs_mosi_o,
     input         cust_spfs_miso_i
 );
-  // core mem native if
-  wire        s_mem_valid;
-  wire        s_mem_instr;
-  wire        s_mem_ready;
-  wire [31:0] s_mem_addr;
-  wire [31:0] s_mem_wdata;
-  wire [ 3:0] s_mem_wstrb;
-  wire [31:0] s_mem_rdata;
-  wire        s_spimem_ready;
-  wire [31:0] s_spimem_rdata;
+  // core native if
+  wire        s_core_valid;
+  wire        s_core_instr;
+  wire        s_core_ready;
+  wire [31:0] s_core_addr;
+  wire [31:0] s_core_wdata;
+  wire [ 3:0] s_core_wstrb;
+  wire [31:0] s_core_rdata;
   // mem map io if
   wire        s_iomem_valid;
   reg         r_iomem_ready;
@@ -120,24 +116,6 @@ module retrosoc #(
   reg  [15:0] r_gpio_oeb;
   reg  [ 1:0] r_irq_7_in_src;
   reg  [ 1:0] r_irq_8_in_src;
-  // mmio axil if
-  wire        s_mem_axi_awvalid;
-  wire        s_mem_axi_awready;
-  wire [31:0] s_mem_axi_awaddr;
-  wire [ 2:0] s_mem_axi_awprot;
-  wire        s_mem_axi_wvalid;
-  wire        s_mem_axi_wready;
-  wire [31:0] s_mem_axi_wdata;
-  wire [ 3:0] s_mem_axi_wstrb;
-  wire        s_mem_axi_bvalid;
-  wire        s_mem_axi_bready;
-  wire        s_mem_axi_arvalid;
-  wire        s_mem_axi_arready;
-  wire [31:0] s_mem_axi_araddr;
-  wire [ 2:0] s_mem_axi_arprot;
-  wire        s_mem_axi_rvalid;
-  wire        s_mem_axi_rready;
-  wire [31:0] s_mem_axi_rdata;
   // irq
   wire [31:0] s_irq;
   wire        s_irq_uart;
@@ -227,10 +205,10 @@ module retrosoc #(
                    (r_irq_8_in_src == 2'b10) ? gpio_in_i[4] :
                    (r_irq_8_in_src == 2'b11) ? gpio_in_i[5] : 1'b0;
 
-  wire s_ram_range = s_mem_valid && !s_mem_ready && s_mem_addr < 4 * MEM_WORDS;
-  assign ram_wstrb_o = s_ram_range ? s_mem_wstrb : 4'h0;
-  assign ram_addr_o  = s_mem_addr[16:2];
-  assign ram_wdata_o = s_mem_wdata;
+  wire s_ram_range = s_core_valid && !s_core_ready && s_core_addr < 4 * MEM_WORDS;
+  assign ram_wstrb_o = s_ram_range ? s_core_wstrb : 4'h0;
+  assign ram_addr_o  = s_core_addr[16:2];
+  assign ram_wdata_o = s_core_wdata;
   always @(posedge clk_i) begin
     r_ram_ready <= s_ram_range;
   end
@@ -278,22 +256,22 @@ module retrosoc #(
   ) u_picorv32 (
       .clk      (clk_i),
       .resetn   (rst_n_i),
-      .mem_valid(s_mem_valid),
-      .mem_instr(s_mem_instr),
-      .mem_ready(s_mem_ready),
-      .mem_addr (s_mem_addr),
-      .mem_wdata(s_mem_wdata),
-      .mem_wstrb(s_mem_wstrb),
-      .mem_rdata(s_mem_rdata),
+      .mem_valid(s_core_valid),
+      .mem_instr(s_core_instr),
+      .mem_ready(s_core_ready),
+      .mem_addr (s_core_addr),
+      .mem_wdata(s_core_wdata),
+      .mem_wstrb(s_core_wstrb),
+      .mem_rdata(s_core_rdata),
       .irq      (s_irq),
-      .trap     (trap_o)
+      .trap     ()
   );
 
   // mmio native perip
-  assign s_iomem_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h03 || s_mem_addr >= 32'h3000_0000);
-  assign s_iomem_wstrb = s_mem_wstrb;
-  assign s_iomem_addr = s_mem_addr;
-  assign s_iomem_wdata = s_mem_wdata;
+  assign s_iomem_valid = s_core_valid && (s_core_addr[31:24] == 8'h03 || s_core_addr >= 32'h3000_0000);
+  assign s_iomem_wstrb = s_core_wstrb;
+  assign s_iomem_addr = s_core_addr;
+  assign s_iomem_wdata = s_core_wdata;
   // uart
   wire        s_simpleuart_reg_div_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0010);
   wire        s_simpleuart_reg_dat_sel = s_iomem_valid && (s_iomem_addr == 32'h0300_0014);
@@ -368,10 +346,10 @@ module retrosoc #(
       .irq_out   (s_irq_tim1)
   );
 
-  assign s_psram_addr  = s_mem_addr;
-  assign s_psram_wdata = s_mem_wdata;
-  assign s_psram_wstrb = s_mem_wstrb;
-  assign s_psram_valid = s_mem_valid && (s_mem_addr[31:24] == 8'h04);
+  assign s_psram_addr  = s_core_addr;
+  assign s_psram_wdata = s_core_wdata;
+  assign s_psram_wstrb = s_core_wstrb;
+  assign s_psram_valid = s_core_valid && (s_core_addr[31:24] == 8'h04);
   psram_top u_psram_top (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
@@ -401,82 +379,43 @@ module retrosoc #(
   );
 
   wire s_aximem_range = (s_iomem_addr[31:8] >= 24'h0300_10 && s_iomem_addr[31:8] <= 24'h03FF_FF) || s_iomem_addr >= 32'h3000_0000;
-  picorv32_axi_adapter u_core2axi (
-      .clk            (clk_i),
-      .resetn         (rst_n_i),
-      .mem_axi_awvalid(s_mem_axi_awvalid),
-      .mem_axi_awready(s_mem_axi_awready),
-      .mem_axi_awaddr (s_mem_axi_awaddr),
-      .mem_axi_awprot (s_mem_axi_awprot),
-      .mem_axi_wvalid (s_mem_axi_wvalid),
-      .mem_axi_wready (s_mem_axi_wready),
-      .mem_axi_wdata  (s_mem_axi_wdata),
-      .mem_axi_wstrb  (s_mem_axi_wstrb),
-      .mem_axi_bvalid (s_mem_axi_bvalid),
-      .mem_axi_bready (s_mem_axi_bready),
-      .mem_axi_arvalid(s_mem_axi_arvalid),
-      .mem_axi_arready(s_mem_axi_arready),
-      .mem_axi_araddr (s_mem_axi_araddr),
-      .mem_axi_arprot (s_mem_axi_arprot),
-      .mem_axi_rvalid (s_mem_axi_rvalid),
-      .mem_axi_rready (s_mem_axi_rready),
-      .mem_axi_rdata  (s_mem_axi_rdata),
-      .mem_valid      (s_iomem_valid && s_aximem_range),
-      .mem_instr      (s_mem_instr),
-      .mem_ready      (s_aximem_ready),
-      .mem_addr       (s_iomem_addr),
-      .mem_wdata      (s_iomem_wdata),
-      .mem_wstrb      (s_iomem_wstrb),
-      .mem_rdata      (s_aximem_rdata)
-  );
-
-  axil_ip_wrapper u_axil_ip_wrapper (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .mem_axi_awvalid(s_mem_axi_awvalid),
-      .mem_axi_awready(s_mem_axi_awready),
-      .mem_axi_awaddr (s_mem_axi_awaddr),
-      .mem_axi_awprot (s_mem_axi_awprot),
-      .mem_axi_wvalid (s_mem_axi_wvalid),
-      .mem_axi_wready (s_mem_axi_wready),
-      .mem_axi_wdata  (s_mem_axi_wdata),
-      .mem_axi_wstrb  (s_mem_axi_wstrb),
-      .mem_axi_bvalid (s_mem_axi_bvalid),
-      .mem_axi_bready (s_mem_axi_bready),
-      .mem_axi_arvalid(s_mem_axi_arvalid),
-      .mem_axi_arready(s_mem_axi_arready),
-      .mem_axi_araddr (s_mem_axi_araddr),
-      .mem_axi_arprot (s_mem_axi_arprot),
-      .mem_axi_rvalid (s_mem_axi_rvalid),
-      .mem_axi_rready (s_mem_axi_rready),
-      .mem_axi_rdata  (s_mem_axi_rdata),
-      .uart_rx_i      (cust_uart_rx_i),
-      .uart_tx_o      (cust_uart_tx_o),
-      .uart_irq_o     (s_cust_uart_irq),
-      .pwm_pwm_o      (cust_pwm_pwm_o),
-      .pwm_irq_o      (s_cust_pwm_irq),
-      .ps2_ps2_clk_i  (cust_ps2_ps2_clk_i),
-      .ps2_ps2_dat_i  (cust_ps2_ps2_dat_i),
-      .ps2_irq_o      (s_cust_ps2_irq),
-      .i2c_scl_i      (cust_i2c_scl_i),
-      .i2c_scl_o      (cust_i2c_scl_o),
-      .i2c_scl_dir_o  (cust_i2c_scl_dir_o),
-      .i2c_sda_i      (cust_i2c_sda_i),
-      .i2c_sda_o      (cust_i2c_sda_o),
-      .i2c_sda_dir_o  (cust_i2c_sda_dir_o),
-      .i2c_irq_o      (s_cust_i2c_irq),
-      .qspi_spi_clk_o (cust_qspi_spi_clk_o),
-      .qspi_spi_csn_o (cust_qspi_spi_csn_o),
-      .qspi_spi_sdo_o (cust_qspi_spi_sdo_o),
-      .qspi_spi_oe_o  (cust_qspi_spi_oe_o),
-      .qspi_spi_sdi_i (cust_qspi_spi_sdi_i),
-      .qspi_irq_o     (s_cust_qspi_irq),
-      .spfs_div4_i    (cust_spfs_div4_i),
-      .spfs_clk_o     (cust_spfs_clk_o),
-      .spfs_cs_o      (cust_spfs_cs_o),
-      .spfs_mosi_o    (cust_spfs_mosi_o),
-      .spfs_miso_i    (cust_spfs_miso_i),
-      .spfs_irq_o     (s_cust_spfs_irq)
+  apb_ip_wrapper u_apb_ip_wrapper (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .mem_valid_i   (s_iomem_valid && s_aximem_range),
+      .mem_instr_i   (s_core_instr),
+      .mem_ready_o   (s_aximem_ready),
+      .mem_addr_i    (s_iomem_addr),
+      .mem_wdata_i   (s_iomem_wdata),
+      .mem_wstrb_i   (s_iomem_wstrb),
+      .mem_rdata_o   (s_aximem_rdata),
+      .uart_rx_i     (cust_uart_rx_i),
+      .uart_tx_o     (cust_uart_tx_o),
+      .uart_irq_o    (s_cust_uart_irq),
+      .pwm_pwm_o     (cust_pwm_pwm_o),
+      .pwm_irq_o     (s_cust_pwm_irq),
+      .ps2_ps2_clk_i (cust_ps2_ps2_clk_i),
+      .ps2_ps2_dat_i (cust_ps2_ps2_dat_i),
+      .ps2_irq_o     (s_cust_ps2_irq),
+      .i2c_scl_i     (cust_i2c_scl_i),
+      .i2c_scl_o     (cust_i2c_scl_o),
+      .i2c_scl_dir_o (cust_i2c_scl_dir_o),
+      .i2c_sda_i     (cust_i2c_sda_i),
+      .i2c_sda_o     (cust_i2c_sda_o),
+      .i2c_sda_dir_o (cust_i2c_sda_dir_o),
+      .i2c_irq_o     (s_cust_i2c_irq),
+      .qspi_spi_clk_o(cust_qspi_spi_clk_o),
+      .qspi_spi_csn_o(cust_qspi_spi_csn_o),
+      .qspi_spi_sdo_o(cust_qspi_spi_sdo_o),
+      .qspi_spi_oe_o (cust_qspi_spi_oe_o),
+      .qspi_spi_sdi_i(cust_qspi_spi_sdi_i),
+      .qspi_irq_o    (s_cust_qspi_irq),
+      .spfs_div4_i   (cust_spfs_div4_i),
+      .spfs_clk_o    (cust_spfs_clk_o),
+      .spfs_cs_o     (cust_spfs_cs_o),
+      .spfs_mosi_o   (cust_spfs_mosi_o),
+      .spfs_miso_i   (cust_spfs_miso_i),
+      .spfs_irq_o    (s_cust_spfs_irq)
   );
 
   always @(posedge clk_i, negedge rst_n_i) begin
@@ -550,8 +489,8 @@ module retrosoc #(
   end
 
   // data mux
-  assign s_mem_ready = (s_iomem_valid && r_iomem_ready) || r_ram_ready || s_psram_ready;
-  assign s_mem_rdata = (s_iomem_valid && r_iomem_ready) ? r_iomem_rdata :
+  assign s_core_ready = (s_iomem_valid && r_iomem_ready) || r_ram_ready || s_psram_ready;
+  assign s_core_rdata = (s_iomem_valid && r_iomem_ready) ? r_iomem_rdata :
                        r_ram_ready ? ram_rdata_o :
                        s_psram_ready ? s_psram_rdata :
                        32'h0000_0000;
