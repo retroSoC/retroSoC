@@ -1,23 +1,14 @@
-module axil_ip_wrapper (
+module apb_ip_wrapper (
     input         clk_i,
     input         rst_n_i,
-    input         mem_axi_awvalid,
-    output        mem_axi_awready,
-    input  [31:0] mem_axi_awaddr,
-    input  [ 2:0] mem_axi_awprot,
-    input         mem_axi_wvalid,
-    output        mem_axi_wready,
-    input  [31:0] mem_axi_wdata,
-    input  [ 3:0] mem_axi_wstrb,
-    output        mem_axi_bvalid,
-    input         mem_axi_bready,
-    input         mem_axi_arvalid,
-    output        mem_axi_arready,
-    input  [31:0] mem_axi_araddr,
-    input  [ 2:0] mem_axi_arprot,
-    output        mem_axi_rvalid,
-    input         mem_axi_rready,
-    output [31:0] mem_axi_rdata,
+    // mem if
+    input         mem_valid_i,
+    input         mem_instr_i,
+    output        mem_ready_o,
+    input  [31:0] mem_addr_i,
+    input  [31:0] mem_wdata_i,
+    input  [ 3:0] mem_wstrb_i,
+    output [31:0] mem_rdata_o,
     // uart
     input         uart_rx_i,
     output        uart_tx_o,
@@ -54,12 +45,6 @@ module axil_ip_wrapper (
 );
 
   localparam APB_SLAVES_NUM = 8;
-  localparam [32*APB_SLAVES_NUM-1 : 0] MEM_REGIONS1 = {
-    32'h3000_0000, 224'h0300_7000__0300_6000__0300_5000__0300_4000__0300_3000__0300_2000__0300_1000
-  };
-  localparam [32*APB_SLAVES_NUM-1 : 0] MEM_REGIONS2 = {
-    32'h3FFF_FFFF, 224'h0300_7FFF__0300_6FFF__0300_5FFF__0300_4FFF__0300_3FFF__0300_2FFF__0300_1FFF
-  };
 
   wire [              31:0] s_m_apb_paddr;
   wire [               2:0] s_m_apb_pprot;
@@ -70,6 +55,7 @@ module axil_ip_wrapper (
   wire [               3:0] s_m_apb_pstrb;
   wire [APB_SLAVES_NUM-1:0] s_m_apb_pready;
 
+  wire [              31:0] s_m_apb_prdata0;
   wire [              31:0] s_m_apb_prdata1;
   wire [              31:0] s_m_apb_prdata2;
   wire [              31:0] s_m_apb_prdata3;
@@ -77,7 +63,6 @@ module axil_ip_wrapper (
   wire [              31:0] s_m_apb_prdata5;
   wire [              31:0] s_m_apb_prdata6;
   wire [              31:0] s_m_apb_prdata7;
-  wire [              31:0] s_m_apb_prdata8;
   wire [APB_SLAVES_NUM-1:0] s_m_apb_pslverr;
 
   apb4_archinfo u_apb4_archinfo (
@@ -91,7 +76,7 @@ module axil_ip_wrapper (
       .pwdata (s_m_apb_pwdata),
       .pstrb  (s_m_apb_pstrb),
       .pready (s_m_apb_pready[0]),
-      .prdata (s_m_apb_prdata1),
+      .prdata (s_m_apb_prdata0),
       .pslverr(s_m_apb_pslverr[0])
   );
 
@@ -106,7 +91,7 @@ module axil_ip_wrapper (
       .pwdata (s_m_apb_pwdata),
       .pstrb  (s_m_apb_pstrb),
       .pready (s_m_apb_pready[1]),
-      .prdata (s_m_apb_prdata2),
+      .prdata (s_m_apb_prdata1),
       .pslverr(s_m_apb_pslverr[1])
   );
 
@@ -121,7 +106,7 @@ module axil_ip_wrapper (
       .pwdata   (s_m_apb_pwdata),
       .pstrb    (s_m_apb_pstrb),
       .pready   (s_m_apb_pready[2]),
-      .prdata   (s_m_apb_prdata3),
+      .prdata   (s_m_apb_prdata2),
       .pslverr  (s_m_apb_pslverr[2]),
       .uart_rx_i(uart_rx_i),
       .uart_tx_o(uart_tx_o),
@@ -139,7 +124,7 @@ module axil_ip_wrapper (
       .pwdata (s_m_apb_pwdata),
       .pstrb  (s_m_apb_pstrb),
       .pready (s_m_apb_pready[3]),
-      .prdata (s_m_apb_prdata4),
+      .prdata (s_m_apb_prdata3),
       .pslverr(s_m_apb_pslverr[3]),
       .pwm_o  (pwm_pwm_o),
       .irq_o  (pwm_irq_o)
@@ -156,7 +141,7 @@ module axil_ip_wrapper (
       .pwdata   (s_m_apb_pwdata),
       .pstrb    (s_m_apb_pstrb),
       .pready   (s_m_apb_pready[4]),
-      .prdata   (s_m_apb_prdata5),
+      .prdata   (s_m_apb_prdata4),
       .pslverr  (s_m_apb_pslverr[4]),
       .ps2_clk_i(ps2_ps2_clk_i),
       .ps2_dat_i(ps2_ps2_dat_i),
@@ -175,7 +160,7 @@ module axil_ip_wrapper (
       .pwdata   (s_m_apb_pwdata),
       .pstrb    (s_m_apb_pstrb),
       .pready   (s_m_apb_pready[5]),
-      .prdata   (s_m_apb_prdata6),
+      .prdata   (s_m_apb_prdata5),
       .pslverr  (s_m_apb_pslverr[5]),
       .scl_i    (i2c_scl_i),
       .scl_o    (i2c_scl_o),
@@ -197,7 +182,7 @@ module axil_ip_wrapper (
       .PWRITE  (s_m_apb_pwrite),
       .PSEL    (s_m_apb_psel[6]),
       .PENABLE (s_m_apb_penable),
-      .PRDATA  (s_m_apb_prdata7),
+      .PRDATA  (s_m_apb_prdata6),
       .PREADY  (s_m_apb_pready[6]),
       .PSLVERR (s_m_apb_pslverr[6]),
       .spi_clk (qspi_spi_clk_o),
@@ -234,7 +219,7 @@ module axil_ip_wrapper (
       .pwdata     (s_m_apb_pwdata),
       .pwstrb     (4'hF),
       .pready     (s_m_apb_pready[7]),
-      .prdata     (s_m_apb_prdata8),
+      .prdata     (s_m_apb_prdata7),
       .pslverr    (s_m_apb_pslverr[7]),
       .div4_i     (spfs_div4_i),
       .spi_clk    (spfs_clk_o),
@@ -244,61 +229,35 @@ module axil_ip_wrapper (
       .spi_irq_out(spfs_irq_o)
   );
 
-  axi_apb_bridge #(
-      .c_apb_num_slaves(APB_SLAVES_NUM),
-      .memory_regions1 (MEM_REGIONS1),
-      .memory_regions2 (MEM_REGIONS2),
-      .timeout_val     (32'hFFFF_FFFF),
-      .APB_Protocol    (4)
-  ) u_axi_apb_bridge (
-      .s_axi_clk    (clk_i),
-      .s_axi_aresetn(rst_n_i),
-      .s_axi_awaddr (mem_axi_awaddr),
-      .s_axi_awvalid(mem_axi_awvalid),
-      .s_axi_awready(mem_axi_awready),
-      .s_axi_wdata  (mem_axi_wdata),
-      .s_axi_wvalid (mem_axi_wvalid),
-      .s_axi_wstrb  (mem_axi_wstrb),
-      .s_axi_wready (mem_axi_wready),
-      .s_axi_bresp  (),
-      .s_axi_bvalid (mem_axi_bvalid),
-      .s_axi_bready (mem_axi_bready),
-      .s_axi_araddr (mem_axi_araddr),
-      .s_axi_arvalid(mem_axi_arvalid),
-      .s_axi_arready(mem_axi_arready),
-      .s_axi_rresp  (),
-      .s_axi_rvalid (mem_axi_rvalid),
-      .s_axi_rdata  (mem_axi_rdata),
-      .s_axi_rready (mem_axi_rready),
-      .s_axi_arprot (mem_axi_arprot),
-      .s_axi_awprot (mem_axi_awprot),
-
-      .m_apb_paddr   (s_m_apb_paddr),
-      .m_apb_pprot   (s_m_apb_pprot),
-      .m_apb_psel    (s_m_apb_psel),
-      .m_apb_penable (s_m_apb_penable),
-      .m_apb_pwrite  (s_m_apb_pwrite),
-      .m_apb_pwdata  (s_m_apb_pwdata),
-      .m_apb_pstrb   (s_m_apb_pstrb),
-      .m_apb_pready  (s_m_apb_pready),
-      // diff apb slave rdata
-      .m_apb_prdata  (s_m_apb_prdata1),
-      .m_apb_prdata2 (s_m_apb_prdata2),
-      .m_apb_prdata3 (s_m_apb_prdata3),
-      .m_apb_prdata4 (s_m_apb_prdata4),
-      .m_apb_prdata5 (s_m_apb_prdata5),
-      .m_apb_prdata6 (s_m_apb_prdata6),
-      .m_apb_prdata7 (s_m_apb_prdata7),
-      .m_apb_prdata8 (s_m_apb_prdata8),
-      .m_apb_prdata9 (32'h0),
-      .m_apb_prdata10(32'h0),
-      .m_apb_prdata11(32'h0),
-      .m_apb_prdata12(32'h0),
-      .m_apb_prdata13(32'h0),
-      .m_apb_prdata14(32'h0),
-      .m_apb_prdata15(32'h0),
-      .m_apb_prdata16(32'h0),
-      .m_apb_pslverr (s_m_apb_pslverr)
+  mem2apb #(
+      .APB_SLAVES_NUM(APB_SLAVES_NUM)
+  ) u_mem2apb (
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
+      .mem_valid_i  (mem_valid_i),
+      .mem_instr_i  (mem_instr_i),
+      .mem_ready_o  (mem_ready_o),
+      .mem_addr_i   (mem_addr_i),
+      .mem_wdata_i  (mem_wdata_i),
+      .mem_wstrb_i  (mem_wstrb_i),
+      .mem_rdata_o  (mem_rdata_o),
+      .apb_paddr_o  (s_m_apb_paddr),
+      .apb_pprot_o  (s_m_apb_pprot),
+      .apb_psel_o   (s_m_apb_psel),
+      .apb_penable_o(s_m_apb_penable),
+      .apb_pwrite_o (s_m_apb_pwrite),
+      .apb_pwdata_o (s_m_apb_pwdata),
+      .apb_pstrb_o  (s_m_apb_pstrb),
+      .apb_pready_i (s_m_apb_pready),
+      .apb_prdata0_i(s_m_apb_prdata0),
+      .apb_prdata1_i(s_m_apb_prdata1),
+      .apb_prdata2_i(s_m_apb_prdata2),
+      .apb_prdata3_i(s_m_apb_prdata3),
+      .apb_prdata4_i(s_m_apb_prdata4),
+      .apb_prdata5_i(s_m_apb_prdata5),
+      .apb_prdata6_i(s_m_apb_prdata6),
+      .apb_prdata7_i(s_m_apb_prdata7),
+      .apb_pslverr_i(s_m_apb_pslverr)
   );
 
 endmodule
