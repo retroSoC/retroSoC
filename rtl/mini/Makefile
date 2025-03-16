@@ -28,10 +28,16 @@ postsim: postcomp
 	${SIM_BINY} +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs ${SIM_LOG}
 
 wave:
-	${VERDI_TOOL} -ssf build/${RTL_TOP}.fsdb -nologo &
+	cd build && (${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &)
+
+netwave:
+	cd net_build && (${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &)
+
+postwave:
+	cd post_build && (${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &)
 
 clean:
-	rm -f build
+	rm -f build net_build post_build
 	rm -f *.elf *.hex *.bin
 
 .PHONY: clean $(FIRMWARE_NAME).elf
