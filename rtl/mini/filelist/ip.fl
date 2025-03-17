@@ -1,4 +1,4 @@
-../ip/spram_model.v
+../ip/onchip_ram.v
 ../ip/simpleuart.v
 ../ip/counter_timer.v
 ../ip/rs232.v
@@ -30,4 +30,6 @@
 ../ip/cust/apb_spi_master/spi_master_tx.v
 ../ip/cust/apb_spi_master/apb_spi_master.v
 ../ip/mem2apb.v
+../ip/natv_ip_wrapper.v
 ../ip/apb_ip_wrapper.v
+../ip/bus.v

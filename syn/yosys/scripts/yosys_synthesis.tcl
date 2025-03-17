@@ -28,55 +28,46 @@ source $script_dir/init_tech.tcl
 #         --compat-mode --keep-hierarchy \
 #         --allow-use-before-declare --ignore-unknown-modules
 
-yosys read_verilog ../../tech/tc_io.v
-yosys read_verilog ../../tech/tc_clk.v
-yosys read_verilog ../../tech/tc_pll.v
-yosys read_verilog ../../tech/tc_sram.v
+yosys read_verilog ../../rtl/mini/tech/tc_io.v
+yosys read_verilog ../../rtl/mini/tech/tc_clk.v
+yosys read_verilog ../../rtl/mini/tech/tc_pll.v
+yosys read_verilog ../../rtl/mini/tech/tc_sram.v
 # yosys read_verilog -I../../rtl/ip
-yosys read_verilog ../../rtl/ip/spram_model.v
-yosys read_verilog ../../rtl/ip/spimemio.v
-yosys read_verilog ../../rtl/ip/simpleuart.v
-yosys read_verilog ../../rtl/ip/counter_timer.v
-yosys read_verilog ../../rtl/ip/spi_slave.v
-yosys read_verilog ../../rtl/ip/ravenna_spi.v
-yosys read_verilog ../../rtl/ip/rcu.v
-
-yosys read_verilog ../../rtl/ip/cust/register.v
-yosys read_verilog ../../rtl/ip/cust/lfsr.v
-yosys read_verilog ../../rtl/ip/cust/fifo.v
-yosys read_verilog ../../rtl/ip/cust/cdc_sync.v
-yosys read_verilog ../../rtl/ip/cust/clk_int_div.v
-yosys read_verilog ../../rtl/ip/cust/edge_det.v
-yosys read_verilog ../../rtl/ip/cust/rst_sync.v
-yosys read_verilog ../../rtl/ip/cust/archinfo.v
-yosys read_verilog ../../rtl/ip/cust/rng.v
-yosys read_verilog ../../rtl/ip/cust/uart.v
-yosys read_verilog ../../rtl/ip/cust/pwm.v
-yosys read_verilog ../../rtl/ip/cust/ps2.v
-yosys read_verilog ../../rtl/ip/cust/i2c.v
-yosys read_verilog ../../rtl/ip/cust/psram_core.v
-yosys read_verilog ../../rtl/ip/cust/psram.v
-yosys read_verilog ../../rtl/ip/cust/spfs/spi_clgen.v
-yosys read_verilog ../../rtl/ip/cust/spfs/spi_shift.v
-yosys read_verilog ../../rtl/ip/cust/spfs/spi_top.v
-yosys read_verilog ../../rtl/ip/cust/spfs/spi_flash.v
-yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_apb_if.v
-yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_clkgen.v
-yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_controller.v
-yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_fifo.v
-yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_rx.v
-yosys read_verilog ../../rtl/ip/cust/apb_spi_master/spi_master_tx.v
-yosys read_verilog ../../rtl/ip/cust/apb_spi_master/apb_spi_master.v
-yosys read_verilog ../../rtl/ip/cust/axil2apb/flop.v
-yosys read_verilog ../../rtl/ip/cust/axil2apb/address_decoder.v
-yosys read_verilog ../../rtl/ip/cust/axil2apb/read_data_mux.v
-yosys read_verilog ../../rtl/ip/cust/axil2apb/apb_master.v
-yosys read_verilog ../../rtl/ip/cust/axil2apb/axi_apb_bridge.v
-yosys read_verilog ../../rtl/ip/axil_ip_wrapper.v
-
-yosys read_verilog ../../rtl/picorv32.v
-yosys read_verilog ../../rtl/retrosoc.v
-yosys read_verilog ../../rtl/retrosoc_asic.v
+yosys read_verilog ../../rtl/mini/ip/spram_model.v
+yosys read_verilog ../../rtl/mini/ip/simpleuart.v
+yosys read_verilog ../../rtl/mini/ip/counter_timer.v
+yosys read_verilog ../../rtl/mini/ip/rcu.v
+yosys read_verilog ../../rtl/mini/ip/cust/register.v
+yosys read_verilog ../../rtl/mini/ip/cust/lfsr.v
+yosys read_verilog ../../rtl/mini/ip/cust/fifo.v
+yosys read_verilog ../../rtl/mini/ip/cust/cdc_sync.v
+yosys read_verilog ../../rtl/mini/ip/cust/clk_int_div.v
+yosys read_verilog ../../rtl/mini/ip/cust/edge_det.v
+yosys read_verilog ../../rtl/mini/ip/cust/rst_sync.v
+yosys read_verilog ../../rtl/mini/ip/cust/archinfo.v
+yosys read_verilog ../../rtl/mini/ip/cust/rng.v
+yosys read_verilog ../../rtl/mini/ip/cust/uart.v
+yosys read_verilog ../../rtl/mini/ip/cust/pwm.v
+yosys read_verilog ../../rtl/mini/ip/cust/ps2.v
+yosys read_verilog ../../rtl/mini/ip/cust/i2c.v
+yosys read_verilog ../../rtl/mini/ip/cust/psram_core.v
+yosys read_verilog ../../rtl/mini/ip/cust/psram.v
+yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_clgen.v
+yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_shift.v
+yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_top.v
+yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_flash.v
+yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_apb_if.v
+yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_clkgen.v
+yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_controller.v
+yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_fifo.v
+yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_rx.v
+yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_tx.v
+yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/apb_spi_master.v
+yosys read_verilog ../../rtl/mini/ip/apb_ip_wrapper.v
+yosys read_verilog ../../rtl/mini/ip/mem2apb.v
+yosys read_verilog ../../rtl/mini/picorv32.v
+yosys read_verilog ../../rtl/mini/retrosoc.v
+yosys read_verilog ../../rtl/mini/retrosoc_asic.v
 
 # # blackbox requested modules
 # if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {

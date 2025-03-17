@@ -23,11 +23,12 @@ TB_FLIST  := -f ../filelist/tb.fl
             
 
 ## vcs option
-SIM_OPTIONS := -full64  +v2k -sverilog -timescale=1ns/10ps \
+# -debug_region=cell+lib
+SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 ${EXTRA} \
                 -kdb \
                 -debug_access+all \
-                -debug_region=cell+lib \
+                +vcs+loopreport+1000 \
                 +error+500 \
                 +vcs+flush+all \
                 +lint=TFIPC-L \

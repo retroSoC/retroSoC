@@ -37,7 +37,6 @@ postwave:
 	cd post_build && (${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &)
 
 clean:
-	rm -f build net_build post_build
-	rm -f *.elf *.hex *.bin
+	rm -rf build net_build post_build
 
 .PHONY: clean $(FIRMWARE_NAME).elf
