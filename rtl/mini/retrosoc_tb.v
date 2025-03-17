@@ -191,12 +191,13 @@ module retrosoc_tb;
       end else begin
          $fsdbDumpfile("retrosoc_tb.fsdb");
          $fsdbDumpvars(0);
-         $fsdbDumpMDA();
+        //  $fsdbDumpMDA();
       end
-      #398844962;
-      // repeat (200) begin
-      //   repeat (5000) @(posedge r_xtal_clk);
-      // end
+      // #398844962;
+
+      repeat (1500) begin
+        repeat (5000) @(posedge r_xtal_clk);
+      end
       $finish;
     end else if ($test$plusargs("syn_wave")) begin
       $display("gen syn sim wave");
