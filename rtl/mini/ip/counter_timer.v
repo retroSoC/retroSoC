@@ -1,8 +1,8 @@
 /* Simple 32-bit counter-timer for ravenna. */
 
 module counter_timer (
-    input             resetn,
-    input             clkin,
+    input             clk_i,
+    input             rst_n_i,
     input      [ 3:0] reg_val_we,
     input      [31:0] reg_val_di,
     output     [31:0] reg_val_do,
@@ -25,8 +25,8 @@ module counter_timer (
   // Configuration register
   assign reg_cfg_do = {28'd0, irq_ena, updown, oneshot, enable};
 
-  always @(posedge clkin or negedge resetn) begin
-    if (resetn == 1'b0) begin
+  always @(posedge clk_i or negedge rst_n_i) begin
+    if (rst_n_i == 1'b0) begin
       enable  <= 1'b0;
       oneshot <= 1'b0;
       updown  <= 1'b0;
@@ -42,10 +42,9 @@ module counter_timer (
   end
 
   // Counter/timer reset value register
-
   assign reg_val_do = value_reset;
-  always @(posedge clkin or negedge resetn) begin
-    if (resetn == 1'b0) begin
+  always @(posedge clk_i or negedge rst_n_i) begin
+    if (rst_n_i == 1'b0) begin
       value_reset <= 32'd0;
     end else begin
       if (reg_val_we[3]) value_reset[31:24] <= reg_val_di[31:24];
@@ -58,8 +57,8 @@ module counter_timer (
   assign reg_dat_do = value_cur;
 
   // Counter/timer current value register and timer implementation
-  always @(posedge clkin or negedge resetn) begin
-    if (resetn == 1'b0) begin
+  always @(posedge clk_i or negedge rst_n_i) begin
+    if (rst_n_i == 1'b0) begin
       value_cur <= 32'd0;
       irq_out   <= 1'b0;
     end else begin

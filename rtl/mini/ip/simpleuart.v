@@ -18,8 +18,8 @@
  */
 
 module simpleuart (
-    input         clk,
-    input         resetn,
+    input         clk_i,
+    input         rst_n_i,
     output        ser_tx,
     input         ser_rx,
     input  [ 3:0] reg_div_we,
@@ -52,8 +52,8 @@ module simpleuart (
 
   assign irq_out      = recv_buf_valid;
 
-  always @(posedge clk) begin
-    if (!resetn) begin
+  always @(posedge clk_i) begin
+    if (!rst_n_i) begin
       cfg_divider <= 1;
     end else begin
       if (reg_div_we[0]) cfg_divider[7:0] <= reg_div_di[7:0];
@@ -63,8 +63,8 @@ module simpleuart (
     end
   end
 
-  always @(posedge clk) begin
-    if (!resetn) begin
+  always @(posedge clk_i) begin
+    if (!rst_n_i) begin
       recv_state     <= 0;
       recv_divcnt    <= 0;
       recv_pattern   <= 0;
@@ -104,10 +104,10 @@ module simpleuart (
 
   assign ser_tx = send_pattern[0];
 
-  always @(posedge clk) begin
+  always @(posedge clk_i) begin
     if (reg_div_we) send_dummy <= 1;
     send_divcnt <= send_divcnt + 1;
-    if (!resetn) begin
+    if (!rst_n_i) begin
       send_pattern <= ~0;
       send_bitcnt  <= 0;
       send_divcnt  <= 0;
