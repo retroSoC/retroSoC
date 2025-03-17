@@ -2,24 +2,20 @@ module apb_ip_wrapper (
     input         clk_i,
     input         rst_n_i,
     // mem if
-    input         mem_valid_i,
-    input         mem_instr_i,
-    output        mem_ready_o,
-    input  [31:0] mem_addr_i,
-    input  [31:0] mem_wdata_i,
-    input  [ 3:0] mem_wstrb_i,
-    output [31:0] mem_rdata_o,
+    input         mmap_valid_i,
+    input  [31:0] mmap_addr_i,
+    input  [31:0] mmap_wdata_i,
+    input  [ 3:0] mmap_wstrb_i,
+    output [31:0] mmap_rdata_o,
+    output        mmap_ready_o,
     // uart
     input         uart_rx_i,
     output        uart_tx_o,
-    output        uart_irq_o,
     // pwm
     output [ 3:0] pwm_pwm_o,
-    output        pwm_irq_o,
     // ps2
     input         ps2_ps2_clk_i,
     input         ps2_ps2_dat_i,
-    output        ps2_irq_o,
     // i2c
     input         i2c_scl_i,
     output        i2c_scl_o,
@@ -27,21 +23,19 @@ module apb_ip_wrapper (
     input         i2c_sda_i,
     output        i2c_sda_o,
     output        i2c_sda_dir_o,
-    output        i2c_irq_o,
     // qspi
     output        qspi_spi_clk_o,
     output [ 3:0] qspi_spi_csn_o,
     output [ 3:0] qspi_spi_sdo_o,
     output [ 3:0] qspi_spi_oe_o,
     input  [ 3:0] qspi_spi_sdi_i,
-    output        qspi_irq_o,
     // spfs
     input         spfs_div4_i,
     output        spfs_clk_o,
     output        spfs_cs_o,
     output        spfs_mosi_o,
     input         spfs_miso_i,
-    output        spfs_irq_o
+    output [ 5:0] irq_o
 );
 
   localparam APB_SLAVES_NUM = 8;
@@ -110,7 +104,7 @@ module apb_ip_wrapper (
       .pslverr  (s_m_apb_pslverr[2]),
       .uart_rx_i(uart_rx_i),
       .uart_tx_o(uart_tx_o),
-      .irq_o    (uart_irq_o)
+      .irq_o    (irq_o[0])
   );
 
   apb4_pwm u_apb4_pwm (
@@ -127,7 +121,7 @@ module apb_ip_wrapper (
       .prdata (s_m_apb_prdata3),
       .pslverr(s_m_apb_pslverr[3]),
       .pwm_o  (pwm_pwm_o),
-      .irq_o  (pwm_irq_o)
+      .irq_o  (irq_o[1])
   );
 
   apb4_ps2 u_apb4_ps2 (
@@ -145,7 +139,7 @@ module apb_ip_wrapper (
       .pslverr  (s_m_apb_pslverr[4]),
       .ps2_clk_i(ps2_ps2_clk_i),
       .ps2_dat_i(ps2_ps2_dat_i),
-      .irq_o    (ps2_irq_o)
+      .irq_o    (irq_o[2])
   );
 
 
@@ -168,7 +162,7 @@ module apb_ip_wrapper (
       .sda_i    (i2c_sda_i),
       .sda_o    (i2c_sda_o),
       .sda_dir_o(i2c_sda_dir_o),
-      .irq_o    (i2c_irq_o)
+      .irq_o    (irq_o[3])
   );
 
   apb_spi_master #(
@@ -202,7 +196,7 @@ module apb_ip_wrapper (
       .spi_sdi1(qspi_spi_sdi_i[1]),
       .spi_sdi2(qspi_spi_sdi_i[2]),
       .spi_sdi3(qspi_spi_sdi_i[3]),
-      .events_o(qspi_irq_o)
+      .events_o(irq_o[4])
   );
 
   spi_flash #(
@@ -226,7 +220,7 @@ module apb_ip_wrapper (
       .spi_cs     (spfs_cs_o),
       .spi_mosi   (spfs_mosi_o),
       .spi_miso   (spfs_miso_i),
-      .spi_irq_out(spfs_irq_o)
+      .spi_irq_out(irq_o[5])
   );
 
   mem2apb #(
@@ -234,13 +228,12 @@ module apb_ip_wrapper (
   ) u_mem2apb (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
-      .mem_valid_i  (mem_valid_i),
-      .mem_instr_i  (mem_instr_i),
-      .mem_ready_o  (mem_ready_o),
-      .mem_addr_i   (mem_addr_i),
-      .mem_wdata_i  (mem_wdata_i),
-      .mem_wstrb_i  (mem_wstrb_i),
-      .mem_rdata_o  (mem_rdata_o),
+      .mem_valid_i  (mmap_valid_i),
+      .mem_addr_i   (mmap_addr_i),
+      .mem_wdata_i  (mmap_wdata_i),
+      .mem_wstrb_i  (mmap_wstrb_i),
+      .mem_rdata_o  (mmap_rdata_o),
+      .mem_ready_o  (mmap_ready_o),
       .apb_paddr_o  (s_m_apb_paddr),
       .apb_pprot_o  (s_m_apb_pprot),
       .apb_psel_o   (s_m_apb_psel),

@@ -5,12 +5,11 @@ module mem2apb #(
     input                       rst_n_i,
     // mem if
     input                       mem_valid_i,
-    input                       mem_instr_i,
-    output                      mem_ready_o,
     input  [              31:0] mem_addr_i,
     input  [              31:0] mem_wdata_i,
     input  [               3:0] mem_wstrb_i,
     output [              31:0] mem_rdata_o,
+    output                      mem_ready_o,
     // apb if
     output [              31:0] apb_paddr_o,
     output [               2:0] apb_pprot_o,
