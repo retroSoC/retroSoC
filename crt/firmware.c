@@ -44,7 +44,7 @@ void welcome_screen()
     printf("  retroSoC: A Customized ASIC for Retro Stuff!\n");
     printf("    <https://github.com/retroSoC/retroSoC>\n");
     printf("  author:  MrAMS(init version) <https://github.com/MrAMS>\n");
-    printf("           maksyuki            <https://github.com/maksyuki>\n");
+    printf("           Yuchi Miao          <https://github.com/maksyuki>\n");
     printf("  version: v1.0(commit: 73b7f30)\n");
     printf("  license: MulanPSL-2.0 license\n\n");
 
@@ -59,11 +59,8 @@ void welcome_screen()
     printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST, SPFS_MEM_OFFST / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
-    printf("                     1 x QSPFS         @0x0%x\n", &reg_spictrl);
     printf("                    16 x GPIO          @0x0%x\n", &reg_gpio_data);
     printf("                     1 x UART          @0x0%x\n", &reg_uart_clkdiv);
-    printf("                     1 x HK SPI        @0x0%x\n", &reg_spi_commconfig);
-    printf("                     1 x SYS CTRL      @0x0%x\n", &reg_xtal_out_dest);
     printf("                     2 x TIMER         @0x0%x,0x0%x\n", &reg_tim0_config, &reg_tim1_config);
     printf("                     1 x ARCHINFO      @0x0%x\n", &reg_cust_archinfo_sys);
     printf("                     1 x RNG           @0x0%x\n", &reg_cust_rng_ctrl);
@@ -149,10 +146,12 @@ void app_system_boot() {
         while(1);
     }
 
-    reg_psram_waitcycl = (uint32_t)8;
-    printf("[PSRAM] set wait cycles to %d\n", reg_psram_waitcycl);
-    reg_psram_chd = (uint32_t)0;
-    printf("[PSRAM] set chd cycles to %d\n", reg_psram_chd);
+    uint32_t psram_cfg_val = (uint32_t)8;
+    reg_psram_waitcycl = psram_cfg_val;
+    printf("[PSRAM] set wait cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_waitcycl);
+    psram_cfg_val = (uint32_t)0;
+    reg_psram_chd = psram_cfg_val;
+    printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_chd);
     printf("[extern PSRAM test]\n");
     // psram_selftest(0x04000000, 8 * 1024 * 1024);
     printf("self test done\n\n");
@@ -163,9 +162,9 @@ void main()
     reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
 
     app_system_boot();
+    // while(1);
     ip_tim_test();
     ip_gpio_test();
-    ip_hk_spi_test();
     ip_archinfo_test();
     ip_rng_test();
     ip_hpuart_test();

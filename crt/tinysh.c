@@ -78,7 +78,6 @@ void tinysh()
                 ip_gpio_test();
                 break;
             case 'h':
-                ip_hk_spi_test();
                 break;
             case 'a':
                 ip_archinfo_test();

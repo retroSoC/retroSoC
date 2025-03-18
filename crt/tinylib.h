@@ -5,9 +5,7 @@
 #include <tinyuart.h>
 #include <tinystring.h>
 #include <tinyprintf.h>
-#include <tinyflash.h>
 #include <tinygpio.h>
-#include <tinyhkspi.h>
 #include <tinytim.h>
 #include <tinyarchinfo.h>
 #include <tinyrng.h>
