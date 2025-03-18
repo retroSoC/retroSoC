@@ -18,6 +18,7 @@
 *.rc
 *.aig
 .vscode
+.sw_build
 build
 net_build
 post_buils
