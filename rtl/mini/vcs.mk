@@ -29,7 +29,7 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 ${EXTRA} \
                 -kdb \
                 -debug_access+all \
-                +vcs+loopreport+1000 \
+                +vcs+loopreport+10000 \
                 +error+500 \
                 +vcs+flush+all \
                 +lint=TFIPC-L \
