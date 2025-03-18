@@ -1,5 +1,6 @@
 # software
 FIRMWARE_NAME := retrosoc_fw
+EXEC_TYPE     := xip
 
 CROSS=riscv32-unknown-elf-
 
@@ -10,7 +11,7 @@ DUMP = $(CROSS)objdump
 
 CFLAGS := -mabi=ilp32 \
           -march=rv32im \
-          -Wl,-Bstatic,-T,retrosoc_sections.lds,--strip-debug \
+          -Wl,-Bstatic,-T,flash_$(EXEC_TYPE).lds,--strip-debug \
           -ffreestanding \
           -nostdlib
 
@@ -34,14 +35,14 @@ SRC_PATH := $(PRJ_ROOT_PATH)/crt/start.s \
             $(PRJ_ROOT_PATH)/crt/src/tinysh.c \
             $(PRJ_ROOT_PATH)/crt/src/firmware.c
 
-LDS_PATH := $(PRJ_ROOT_PATH)/crt/sections.lds
+LDS_PATH := $(PRJ_ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
 
 # %.o: %.c %.h $(DEPS)
 # 	$(CROSS)
 
 $(FIRMWARE_NAME).elf:
 	@mkdir -p .sw_build
-	cd .sw_build && ($(CP) -P -o retrosoc_sections.lds $(LDS_PATH))
+	cd .sw_build && ($(CP) -P -o flash_$(EXEC_TYPE).lds $(LDS_PATH))
 	cd .sw_build && ($(CC) $(CFLAGS) -I$(PRJ_ROOT_PATH)/crt/inc -o $@ $(SRC_PATH))
 	cd .sw_build && ($(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex)
 	cd .sw_build && (sed -i 's/@30000000/@00000000/g' $(FIRMWARE_NAME).hex)
