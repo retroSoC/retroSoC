@@ -1,4 +1,5 @@
 ../ip/cust/spfs_model/N25Qxxx.v
 ../ip/kdb_model.v
 ../ip/psram_model.v
-../retrosoc_tb.v
+../ip/rs232.v
+../tb/retrosoc_tb.v

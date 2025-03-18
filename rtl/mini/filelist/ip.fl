@@ -1,8 +1,7 @@
 ../ip/onchip_ram.v
 ../ip/simpleuart.v
 ../ip/counter_timer.v
-../ip/rs232.v
-../ip/rcu.v
+
 ../ip/cust/register.v
 ../ip/cust/lfsr.v
 ../ip/cust/fifo.v
@@ -10,6 +9,7 @@
 ../ip/cust/clk_int_div.v
 ../ip/cust/edge_det.v
 ../ip/cust/rst_sync.v
+
 ../ip/cust/archinfo.v
 ../ip/cust/rng.v
 ../ip/cust/uart.v
@@ -29,7 +29,9 @@
 ../ip/cust/apb_spi_master/spi_master_rx.v
 ../ip/cust/apb_spi_master/spi_master_tx.v
 ../ip/cust/apb_spi_master/apb_spi_master.v
+
 ../ip/mem2apb.v
 ../ip/natv_ip_wrapper.v
 ../ip/apb_ip_wrapper.v
 ../ip/bus.v
+../ip/rcu.v

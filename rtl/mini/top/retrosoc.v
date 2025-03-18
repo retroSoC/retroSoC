@@ -34,7 +34,6 @@ module retrosoc #(
 ) (
     input         clk_i,
     input         rst_n_i,
-    //sram if including clk_i and rst_n_i above,
     output [14:0] ram_addr_o,
     output [31:0] ram_wdata_o,
     output [ 3:0] ram_wstrb_o,

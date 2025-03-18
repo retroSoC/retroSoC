@@ -14,7 +14,8 @@ RTL_INC  := +incdir+../ip \
             +incdir+../ip/cust/spfs_model
 
 
-RTL_FLIST := -f ../filelist/soc.fl \
+RTL_FLIST := -f ../filelist/top.fl \
+             -f ../filelist/core.fl \
              -f ../filelist/ip.fl \
              -f ../filelist/tech.fl \
              -f ../filelist/pdk_s110.fl
