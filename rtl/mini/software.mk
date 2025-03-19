@@ -17,7 +17,7 @@ CFLAGS := -mabi=ilp32 \
 
 PRJ_ROOT_PATH = ../../..
 
-SRC_PATH := $(PRJ_ROOT_PATH)/crt/start.s \
+SRC_PATH := $(PRJ_ROOT_PATH)/crt/startup.s \
             $(PRJ_ROOT_PATH)/crt/src/tinyuart.c \
             $(PRJ_ROOT_PATH)/crt/src/tinystring.c \
             $(PRJ_ROOT_PATH)/crt/src/tinyprintf.c \
@@ -45,6 +45,6 @@ $(FIRMWARE_NAME).elf:
 	cd .sw_build && ($(CP) -P -o flash_$(EXEC_TYPE).lds $(LDS_PATH))
 	cd .sw_build && ($(CC) $(CFLAGS) -I$(PRJ_ROOT_PATH)/crt/inc -o $@ $(SRC_PATH))
 	cd .sw_build && ($(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex)
-	cd .sw_build && (sed -i 's/@30000000/@00000000/g' $(FIRMWARE_NAME).hex)
 	cd .sw_build && ($(OBJC) -O binary $@ $(FIRMWARE_NAME).bin)
 	cd .sw_build && ($(DUMP) -d $@ > $(FIRMWARE_NAME).txt)
+	cd .sw_build && ($(DUMP) -D $@ > $(FIRMWARE_NAME)_all.txt)
