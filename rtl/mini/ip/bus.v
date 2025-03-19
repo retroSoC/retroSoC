@@ -1,3 +1,4 @@
+`include "mmap_define.v"
 
 module bus (
     input         clk_i,
@@ -37,28 +38,28 @@ module bus (
     input         psram_ready_i
 );
 
-  wire s_mmap_sel, s_natv_sel, s_ram_sel, s_psram_sel;
+  wire s_natv_sel, s_mmap_sel, s_ram_sel, s_psram_sel;
   wire s_ram_valid, s_ram_ready;
 
-  assign s_mmap_sel    = core_addr_i[31:24] == 8'h03 || core_addr_i[31:24] == 8'h30;
-  assign mmap_valid_o  = core_valid_i && s_mmap_sel;
-  assign mmap_addr_o   = core_addr_i;
-  assign mmap_wdata_o  = core_wdata_i;
-  assign mmap_wstrb_o  = core_wstrb_i;
-
-  assign s_natv_sel    = core_addr_i[31:24] == 8'h02;
+  assign s_natv_sel    = core_addr_i[31:24] == `NATV_IP_START;
   assign natv_valid_o  = core_valid_i && s_natv_sel;
   assign natv_addr_o   = core_addr_i;
   assign natv_wdata_o  = core_wdata_i;
   assign natv_wstrb_o  = core_wstrb_i;
 
-  assign s_ram_sel     = core_addr_i[31:24] == 8'h00;
+  assign s_mmap_sel    = core_addr_i[31:24] == `FLASH_START || core_addr_i[31:24] == `CUST_IP_START;
+  assign mmap_valid_o  = core_valid_i && s_mmap_sel;
+  assign mmap_addr_o   = core_addr_i;
+  assign mmap_wdata_o  = core_wdata_i;
+  assign mmap_wstrb_o  = core_wstrb_i;
+
+  assign s_ram_sel     = core_addr_i[31:24] == `SRAM_START;
   assign s_ram_valid   = core_valid_i && s_ram_sel;
   assign ram_addr_o    = core_addr_i[16:2];
   assign ram_wdata_o   = core_wdata_i;
   assign ram_wstrb_o   = s_ram_valid ? core_wstrb_i : 4'd0;
 
-  assign s_psram_sel   = core_addr_i[31:24] == 8'h04;
+  assign s_psram_sel   = core_addr_i[31:24] == `PSRAM_START;
   assign psram_valid_o = core_valid_i && s_psram_sel;
   assign psram_addr_o  = core_addr_i;
   assign psram_wdata_o = core_wdata_i;

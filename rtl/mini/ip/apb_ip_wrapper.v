@@ -1,3 +1,5 @@
+`include "mmap_define.v"
+
 module apb_ip_wrapper (
     input         clk_i,
     input         rst_n_i,
@@ -200,8 +202,8 @@ module apb_ip_wrapper (
   );
 
   spi_flash #(
-      .flash_addr_start(32'h3000_0000),
-      .flash_addr_end  (32'h3FFF_FFFF),
+      .flash_addr_start(`FLASH_START_ADDR),
+      .flash_addr_end  (`FLASH_END_ADDR),
       .spi_cs_num      (1)
   ) u_spi_flash (
       .pclk       (clk_i),

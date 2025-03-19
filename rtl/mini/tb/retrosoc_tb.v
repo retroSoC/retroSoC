@@ -21,7 +21,7 @@
 
 module retrosoc_tb;
   localparam real XTAL_CPU_FREQ = 24.0;  // MHz
-  localparam real EXT_CPU_FREQ = 64.0;
+  localparam real EXT_CPU_FREQ = 72.0;
 
   reg        r_xtal_clk;
   reg        r_ext_clk;

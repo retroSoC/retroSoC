@@ -1,0 +1,13 @@
+`ifndef INC_MMAP_DEFINE_SV
+`define INC_MMAP_DEFINE_SV
+
+`define FLASH_START_ADDR 32'h0000_0000
+`define FLASH_END_ADDR   32'h0FFF_FFFF
+
+`define FLASH_START   8'h00
+`define NATV_IP_START 8'h10
+`define CUST_IP_START 8'h20
+`define SRAM_START    8'h30
+`define PSRAM_START   8'h40
+
+`endif

@@ -19,19 +19,9 @@
  *
  */
 
+`include "mmap_define.v"
 
-/* Note:  Synthesize register memory from flops */
-/* Inefficient, but not terribly so */
-/* Also note:  To avoid having a hard macro in the place & route    */
-/* (method not finished yet in qflow), SRAM pins are brought out to */
-/* the retrosoc I/O so that raven_soc.v itself is fully             */
-/* synthesizable and routable with qflow as-is.                     */
-
-module retrosoc #(
-    parameter integer        MEM_WORDS      = 16384 * 2,
-    parameter         [31:0] STACKADDR      = (4 * MEM_WORDS),  // end of memory
-    parameter         [31:0] PROGADDR_RESET = 32'h3000_0000     // flash
-) (
+module retrosoc (
     input         clk_i,
     input         rst_n_i,
     output [14:0] ram_addr_o,
@@ -145,16 +135,13 @@ module retrosoc #(
   //    1 x SPFS(HP)
   //    1 x I2C
   picorv32 #(
-      .PROGADDR_RESET  (PROGADDR_RESET),
-      .PROGADDR_IRQ    (32'h0000_0000),
-      .STACKADDR       (STACKADDR),
-      .BARREL_SHIFTER  (1),
-      .COMPRESSED_ISA  (1),
-      .ENABLE_MUL      (1),
-      .ENABLE_FAST_MUL (1),
-      .ENABLE_DIV      (1),
-      .ENABLE_IRQ      (1),
-      .ENABLE_IRQ_QREGS(0)
+      .BARREL_SHIFTER (1),
+      .COMPRESSED_ISA (1),
+      .ENABLE_MUL     (1),
+      .ENABLE_FAST_MUL(1),
+      .ENABLE_DIV     (1),
+      .ENABLE_IRQ     (0),
+      .PROGADDR_RESET (`FLASH_START_ADDR)
   ) u_picorv32 (
       .clk      (clk_i),
       .resetn   (rst_n_i),
