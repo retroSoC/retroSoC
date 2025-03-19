@@ -1,37 +1,24 @@
-/*
- *  PicoSoC - A simple example SoC using PicoRV32
- *
- *  Copyright (C) 2017  Claire Xenia Wolf <claire@yosyshq.com>
- *
- *  Permission to use, copy, modify, and/or distribute this software for any
- *  purpose with or without fee is hereby granted, provided that the above
- *  copyright notice and this permission notice appear in all copies.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- *  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- *  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- *  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- *  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- *  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- */
-
 #include <tinylib.h>
 
-extern uint32_t _sidata, _sdata, _edata;
+extern uint32_t _start, _etext;
+extern uint32_t _ram_lma, _ram_vma;
+extern uint32_t _psram_lma, _psram_vma, _edata;
 extern uint32_t _sbss, _ebss;
 extern uint32_t _heap_start;
 
 void welcome_screen()
 {
     printf("first bootloader done, app section info:\n");
-    printf("_sidata:     0x%0x\n", &_sidata);
-    printf("_sdata:      0x0%x\n", &_sdata);
-    printf("_edata:      0x0%x\n", &_edata);
-    printf("_sbss:       0x0%x\n", &_sbss);
-    printf("_ebss:       0x0%x\n", &_ebss);
-    printf("_heap_start: 0x0%x\n\n", &_heap_start);
+    printf("_stext(entry): 0x0%0x\n", &_start);
+    printf("_etext:        0x0%0x\n", &_etext);
+    printf("_ram_lma:      0x0%0x\n", &_ram_lma);
+    printf("_ram_vma:      0x0%0x\n", &_ram_vma);
+    printf("_psram_lma:    0x0%0x\n", &_psram_lma);
+    printf("_psram_vma:    0x0%0x\n", &_psram_vma);
+    printf("_edata:        0x0%x\n", &_edata);
+    printf("_sbss:         0x0%x\n", &_sbss);
+    printf("_ebss:         0x0%x\n", &_ebss);
+    printf("_heap_start:   0x0%x\n\n", &_heap_start);
     printf("uart config: 8n1 %dbps\n", UART_BPS);
     printf("app booting...\n");
     printf("\n");
