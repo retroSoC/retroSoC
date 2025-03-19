@@ -1,13 +1,29 @@
+ENTRY( _start )
 
 MEMORY
 {
-    FLASH (rx)      : ORIGIN = 0x30000000, LENGTH = 0x1000000 /* entire flash, 16 MiB */
-    /*FLASH (rx)      : ORIGIN = 0x00100000, LENGTH = 0x400000 entire flash, 4 MiB*/
-    /*RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 0x20000 /* 128KB */
-    RAM (xrw)       : ORIGIN = 0x04000000, LENGTH = 0x800000 /* 8MB */
+    FLASH (rxai!w) : ORIGIN = 0x00000000, LENGTH = 16M  /* 16MB */
+    SRAM  (wxa!ri) : ORIGIN = 0x30000000, LENGTH = 128K /* 128KB */
+    PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 8M   /* 8MB */
 }
 
 SECTIONS {
+    .init :
+    {
+        KEEP (*(SORT_NONE(.init)))
+    } >FLASH AT >FLASH
+
+    .ram_align_lma :
+    {
+        . = ALIGN(4);
+        PROVIDE( _ram_lma = . );
+    } >FLASH AT >FLASH
+
+    .ram_align_vma :
+    {
+        PROVIDE( _ram_vma = . );
+    } >FLASH AT>FLASH
+
     /* The program code and other data goes into FLASH */
     .text :
     {
@@ -20,33 +36,44 @@ SECTIONS {
         *(.srodata*)       /* .rodata* sections (constants, strings, etc.) */
         . = ALIGN(4);
         _etext = .;        /* define a global symbol at end of code */
-        _sidata = _etext;  /* This is used by the startup in order to initialize the .data secion */
-    } >FLASH
+    } >FLASH AT >FLASH
 
 
-    /* This is the initialized data section
-    The program executes knowing that the data is in the RAM
-    but the loader puts the initial values in the FLASH (inidata).
-    It is one task of the startup to copy the initial values from FLASH to RAM. */
-    .data : AT ( _sidata )
+    .stack_p ORIGIN(SRAM) + LENGTH(SRAM): {
+        PROVIDE ( _stack_point = .);
+    } >SRAM AT >FLASH
+
+    .psram_align_lma :
     {
         . = ALIGN(4);
-        _sdata = .;        /* create a global symbol at data start; used by startup code in order to initialise the .data section in RAM */
-        _ram_start = .;    /* create a global symbol at ram start for garbage collector */
+        PROVIDE( _psram_lma = . );
+    } >FLASH AT >FLASH
+
+    .psram_align_vma :
+    {
+        PROVIDE( _psram_vma = . );
+    } >PSRAM AT>FLASH
+
+    /* This is the initialized data section
+    The program executes knowing that the data is in the PSRAM
+    but the loader puts the initial values in the FLASH (inidata).
+    It is one task of the init to copy the initial values from FLASH to PSRAM. */
+    .data :
+    {
         . = ALIGN(4);
         *(.data)           /* .data sections */
         *(.data*)          /* .data* sections */
         *(.sdata)           /* .sdata sections */
         *(.sdata*)          /* .sdata* sections */
         . = ALIGN(4);
-        _edata = .;        /* define a global symbol at data end; used by startup code in order to initialise the .data section in RAM */
-    } >RAM
+        _edata = .;        /* define a global symbol at data end; used by init code in order to initialise the .data section in PSRAM */
+    } >PSRAM AT >FLASH
 
     /* Uninitialized data section */
     .bss :
     {
         . = ALIGN(4);
-        _sbss = .;         /* define a global symbol at bss start; used by startup code */
+        _sbss = .;         /* define a global symbol at bss start; used by init code */
         *(.bss)
         *(.bss*)
         *(.sbss)
@@ -54,13 +81,13 @@ SECTIONS {
         *(COMMON)
 
         . = ALIGN(4);
-        _ebss = .;         /* define a global symbol at bss end; used by startup code */
-    } >RAM
+        _ebss = .;         /* define a global symbol at bss end; used by init code */
+    } >PSRAM AT >PSRAM
 
     /* this is to define the start of the heap, and make sure we have a minimum size */
     .heap :
     {
         . = ALIGN(4);
         _heap_start = .;    /* define a global symbol at heap start */
-    } >RAM
+    } >PSRAM AT >PSRAM
 }
