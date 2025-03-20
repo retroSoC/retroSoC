@@ -144,9 +144,9 @@ module retrosoc_tb;
   );
 
   psram_model u_psram_model (
-      .sck (s_cust_psram_sclk),
-      .dio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0}),
-      .ce_n(s_cust_psram_ce)
+      .sck_i (s_cust_psram_sclk),
+      .ce_n_i(s_cust_psram_ce),
+      .dat_io({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0})
   );
 
   initial begin
@@ -189,8 +189,8 @@ module retrosoc_tb;
         $dumpfile("retrosoc_tb.fst");
         $dumpvars(0, retrosoc_tb);
       end else begin
-         $fsdbDumpfile("retrosoc_tb.fsdb");
-         $fsdbDumpvars(0);
+        $fsdbDumpfile("retrosoc_tb.fsdb");
+        $fsdbDumpvars(0);
         //  $fsdbDumpMDA();
       end
       // #398844962;
