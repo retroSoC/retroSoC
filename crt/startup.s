@@ -60,7 +60,7 @@ app_loader_end:
 
 ram_cleaner_start:
 # zero initialize entire scratchpad memory
-    li       a0, 0x00000000
+    la       a0, _sram_start
 ram_cleaner:
     sw       a0, 0(a0)
     addi     a0, a0, 4

@@ -2,9 +2,9 @@ ENTRY( _start )
 
 MEMORY
 {
-    FLASH (rxai!w) : ORIGIN = 0x00000000, LENGTH = 16M  /* 16MB */
-    SRAM  (wxa!ri) : ORIGIN = 0x30000000, LENGTH = 128K /* 128KB */
-    PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 8M   /* 8MB */
+    FLASH (rxai!w) : ORIGIN = 0x00000000, LENGTH = 16M
+    SRAM  (wxa!ri) : ORIGIN = 0x30000000, LENGTH = 128K
+    PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 8M
 }
 
 SECTIONS {
@@ -38,8 +38,11 @@ SECTIONS {
         _etext = .;        /* define a global symbol at end of code */
     } >FLASH AT >FLASH
 
+    .sram_s ORIGIN(SRAM) : {
+        PROVIDE ( _sram_start = .);
+    } >SRAM AT >FLASH
 
-    .stack_p ORIGIN(SRAM) + LENGTH(SRAM): {
+    .sram_e ORIGIN(SRAM) + LENGTH(SRAM): {
         PROVIDE ( _stack_point = .);
     } >SRAM AT >FLASH
 
