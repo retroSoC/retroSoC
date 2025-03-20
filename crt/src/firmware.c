@@ -9,16 +9,16 @@ extern uint32_t _heap_start;
 void welcome_screen()
 {
     printf("first bootloader done, app section info:\n");
-    printf("_stext(entry): 0x0%0x\n", &_start);
-    printf("_etext:        0x0%0x\n", &_etext);
-    printf("_ram_lma:      0x0%0x\n", &_ram_lma);
-    printf("_ram_vma:      0x0%0x\n", &_ram_vma);
-    printf("_psram_lma:    0x0%0x\n", &_psram_lma);
-    printf("_psram_vma:    0x0%0x\n", &_psram_vma);
-    printf("_edata:        0x0%x\n", &_edata);
-    printf("_sbss:         0x0%x\n", &_sbss);
-    printf("_ebss:         0x0%x\n", &_ebss);
-    printf("_heap_start:   0x0%x\n\n", &_heap_start);
+    printf("_stext(entry): 0x%0x\n", &_start);
+    printf("_etext:        0x%0x\n", &_etext);
+    printf("_ram_lma:      0x%0x\n", &_ram_lma);
+    printf("_ram_vma:      0x%0x\n", &_ram_vma);
+    printf("_psram_lma:    0x%0x\n", &_psram_lma);
+    printf("_psram_vma:    0x%0x\n", &_psram_vma);
+    printf("_edata:        0x%x\n", &_edata);
+    printf("_sbss:         0x%x\n", &_sbss);
+    printf("_ebss:         0x%x\n", &_ebss);
+    printf("_heap_start:   0x%x\n\n", &_heap_start);
     printf("uart config: 8n1 %dbps\n", UART_BPS);
     printf("app booting...\n");
     printf("\n");
@@ -41,9 +41,9 @@ void welcome_screen()
     printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Device: \n");
-    printf("  On-chip RAM size:  @[0x0000000%x-0x000%x] %dKB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST, SRAM_MEM_OFFST / 1024);
-    printf("  Extern PSRAM size: @[0x0%x-0x0%x] %dMB(%dx8MB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
-    printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  On-chip RAM size:  @[0x%x-0x%x] %dKB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST, SRAM_MEM_OFFST / 1024);
+    printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
 
     printf("Memory Map IO Device:\n");
     printf("                    16 x GPIO          @0x0%x\n", &reg_gpio_data);
@@ -62,10 +62,6 @@ void welcome_screen()
 
 void app_system_boot() {
     welcome_screen();
-    // set_flash_qspi_flag();
-    // cmd_read_flash_id();
-    // cmd_read_flash_regs();
-    // cmd_print_spi_state();
     printf("self test start...\n");
 
     bool timing_pass = true;
