@@ -55,17 +55,26 @@ app_loader:
     addi     a0, a0, 4
     addi     a1, a1, 4
     bltu     a1, a2, app_loader
-    j        data_loader_start
+    j        ram_rd_start
 app_loader_end:
 
 ram_cleaner_start:
-# zero initialize entire scratchpad memory
     la       a0, _sram_start
 ram_cleaner:
     sw       a0, 0(a0)
     addi     a0, a0, 4
     blt      a0, sp, ram_cleaner
+    j        data_loader_start
 ram_cleaner_end:
+
+# wait psram reset done
+ram_rd_start:
+    la       a0, _sram_start
+ram_rd:
+    lw       t0, 0(a0)
+    addi     a0, a0, 4
+    blt      a0, sp, ram_rd
+ram_rd_end:
 
 data_loader_start:
     la       a0, _psram_lma
