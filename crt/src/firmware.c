@@ -136,7 +136,7 @@ void app_system_boot() {
     reg_psram_chd = psram_cfg_val;
     printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_chd);
     printf("[extern PSRAM test]\n");
-    // psram_selftest(0x04000000, 8 * 1024 * 1024);
+    // ip_psram_selftest(0x40000000, 8 * 1024 * 1024);
     printf("self test done\n\n");
 }
 
@@ -152,7 +152,7 @@ void main()
     ip_rng_test();
     ip_hpuart_test();
     ip_pwm_test();
-    ip_ps2_test();
+    // ip_ps2_test();
     ip_i2c_test();
     ip_lcd_test();
     tinybench(true, 0);

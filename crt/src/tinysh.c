@@ -40,9 +40,9 @@ void tinysh_echo()
 
 void tinysh()
 {
-    while (getchar_prompt("Press ENTER to continue..\n") != '\r')
-    {
-    }
+    // while (getchar_prompt("Press ENTER to continue..\n") != '\r')
+    // {
+    // }
 
     while (1)
     {
