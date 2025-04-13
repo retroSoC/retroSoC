@@ -13,7 +13,10 @@ module tc_pll (
 `ifdef RTL_BEHAV
   assign pll_lock_o = 1'b1;
   assign pll_clk_o  = fref_i;
-`else
+`elsif PDK_IHP130
+  assign pll_lock_o = 1'b1;
+  assign pll_clk_o  = fref_i;
+`elsif PDK_S110
 
   `define LOCK_CNT_END 20'h1FFFF
 

@@ -9,6 +9,8 @@ VERDI_TOOL   := bsub -Is verdi
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
+PDK          ?= S110
+
 RTL_INC  := +incdir+../ip/native \
             +incdir+../ip/clusterip/common/rtl \
             +incdir+../ip/clusterip/common/rtl/cdc \
@@ -23,14 +25,20 @@ RTL_INC  := +incdir+../ip/native \
             +incdir+../ip/clusterip/ps2/rtl \
             +incdir+../ip/clusterip/i2c/rtl \
             +incdir+../ip/3rd_party/spfs \
-            +incdir+../ip/3rd_party/spfs_model \
+            +incdir+../ip/3rd_party/spfs_model
 
 
-RTL_FLIST := -f ../filelist/top.fl \
+
+ifeq ($(PDK), IHP130)
+    RTL_FLIST := -f ../filelist/pdk_ihp130.fl
+else ifeq ($(PDK), S110)
+    RTL_FLIST := -f ../filelist/pdk_s110.fl
+endif
+
+RTL_FLIST += -f ../filelist/top.fl \
              -f ../filelist/core.fl \
              -f ../filelist/ip.fl \
-             -f ../filelist/tech.fl \
-             -f ../filelist/pdk_s110.fl
+             -f ../filelist/tech.fl
 
 TB_FLIST  := -f ../filelist/tb.fl
             
@@ -45,17 +53,15 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 +error+500 \
                 +vcs+flush+all \
                 +lint=TFIPC-L \
-                +define+no_warning \
-                +define+S50 \
-                +define+SVA_OFF \
+                +define+SV_ASSRT_DISABLE \
+                +define+PDK_${PDK} \
                 -xprop=../xprop_config \
                 -work DEFAULT \
-                +define+RANDOMIZE_REG_INIT \
-                ${RTL_INC} \
+                ${RTL_INC}
 
 
 TIME_OPTION := +notimingcheck \
-               +nospecify \
+               +nospecify
 
 POST_PATH := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
 SDF_FILE  := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"
@@ -67,4 +73,4 @@ POST_SIM_OPTION := -sdf min:retrosoc_tb.u_retrosoc_asic:${SDF_FILE} \
                    -negdelay \
                    +optconfigfile+./disable_timing_checklist \
                    -diag=sdf:verbose \
-                   +warn=OPD:10,IWNF:10,SDFCOM_UHICD:10,SDFCOM_ANICD:10,SDFCOM_NICD:10,DRTZ:10,SDFCOM_UHICD:10,SDFCOM_NTCDTL:10 \
+                   +warn=OPD:10,IWNF:10,SDFCOM_UHICD:10,SDFCOM_ANICD:10,SDFCOM_NICD:10,DRTZ:10,SDFCOM_UHICD:10,SDFCOM_NTCDTL:10

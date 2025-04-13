@@ -26,29 +26,29 @@ module tc_sram_1024x32 (
       end
     end
   end
-`else
-  // wire [63:0] s_rd_data_mem;
-  // assign data_o = s_rd_data_mem[31:0];
-  // RM_IHPSG13_1P_1024x64_c2_bm_bist u_mem (
-  //     .A_CLK      (clk_i),
-  //     .A_ADDR     (addr_i),
-  //     .A_BM       ({32'h0, {8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
-  //     .A_MEN      (cs_i),
-  //     .A_WEN      (wren_i),
-  //     .A_REN      (~wren_i),
-  //     .A_DIN      ({32'h0, data_i[31:0]}),
-  //     .A_DOUT     (s_rd_data_mem),
-  //     .A_DLY      (1'b0),
-  //     .A_BIST_CLK (1'b0),
-  //     .A_BIST_EN  (1'b0),
-  //     .A_BIST_MEN (1'b0),
-  //     .A_BIST_WEN (1'b0),
-  //     .A_BIST_REN (1'b0),
-  //     .A_BIST_ADDR(10'd0),
-  //     .A_BIST_DIN (64'd0),
-  //     .A_BIST_BM  (64'd0)
-  // );
-
+`elsif PDK_IHP130
+  logic [63:0] s_rd_data_mem;
+  assign data_o = s_rd_data_mem[31:0];
+  RM_IHPSG13_1P_1024x64_c2_bm_bist u_mem (
+      .A_CLK      (clk_i),
+      .A_ADDR     (addr_i),
+      .A_BM       ({32'h0, {8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
+      .A_MEN      (cs_i),
+      .A_WEN      (wren_i),
+      .A_REN      (~wren_i),
+      .A_DIN      ({32'h0, data_i[31:0]}),
+      .A_DOUT     (s_rd_data_mem),
+      .A_DLY      ('0),
+      .A_BIST_CLK ('0),
+      .A_BIST_EN  ('0),
+      .A_BIST_MEN ('0),
+      .A_BIST_WEN ('0),
+      .A_BIST_REN ('0),
+      .A_BIST_ADDR('0),
+      .A_BIST_DIN ('0),
+      .A_BIST_BM  ('0)
+  );
+`elsif PDK_S110
   // mask_i
   S011HD1P_X256Y4D32_BW u_S011HD1P_X256Y4D32_BW (
       .Q   (data_o),
