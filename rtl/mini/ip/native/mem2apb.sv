@@ -55,7 +55,6 @@ module mem2apb #(
   assign mem_ready_o = mem_valid_i && apb_penable_o && s_xfer_ready;
   assign mem_rdata_o = {32{mem_ready_o}} & s_rd_data;
 
-
   assign s_psel_d = |apb_psel_o;
   dffr #(1) u_psel_dffr (
       clk_i,

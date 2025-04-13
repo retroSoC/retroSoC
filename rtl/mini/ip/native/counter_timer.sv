@@ -17,7 +17,6 @@ module counter_timer (
 
   logic [31:0] r_value_cur;
   logic [31:0] r_value_reset;
-
   // Enable (start) the counter/timer
   // Set r_oneshot (1) mode or continuous (0) mode
   // Count up (1) or down (0)
@@ -48,9 +47,9 @@ module counter_timer (
 
   // Counter/timer reset value register
   assign reg_val_do = r_value_reset;
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (rst_n_i == 1'b0) begin
-      r_value_reset <= 32'd0;
+      r_value_reset <= '0;
     end else begin
       if (reg_val_we[3]) r_value_reset[31:24] <= reg_val_di[31:24];
       if (reg_val_we[2]) r_value_reset[23:16] <= reg_val_di[23:16];
@@ -62,12 +61,12 @@ module counter_timer (
   assign reg_dat_do = r_value_cur;
 
   // Counter/timer current value register and timer implementation
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (rst_n_i == 1'b0) begin
-      r_value_cur <= 32'd0;
-      irq_out     <= 1'b0;
+      r_value_cur <= '0;
+      irq_out     <= '0;
     end else begin
-      if (reg_dat_we != 4'b0000) begin
+      if (reg_dat_we != '0) begin
         if (reg_dat_we[3] == 1'b1) r_value_cur[31:24] <= reg_dat_di[31:24];
         if (reg_dat_we[2] == 1'b1) r_value_cur[23:16] <= reg_dat_di[23:16];
         if (reg_dat_we[1] == 1'b1) r_value_cur[15:8] <= reg_dat_di[15:8];
@@ -76,26 +75,26 @@ module counter_timer (
         if (r_updown == 1'b1) begin
           if (r_value_cur == r_value_reset) begin
             if (r_oneshot != 1'b1) begin
-              r_value_cur <= 32'd0;
+              r_value_cur <= '0;
             end
             irq_out <= r_irq_ena;
           end else begin
             r_value_cur <= r_value_cur + 1;  // count up
-            irq_out     <= 1'b0;
+            irq_out     <= '0;
           end
         end else begin
-          if (r_value_cur == 32'd0) begin
+          if (r_value_cur == '0) begin
             if (r_oneshot != 1'b1) begin
               r_value_cur <= r_value_reset;
             end
             irq_out <= r_irq_ena;
           end else begin
             r_value_cur <= r_value_cur - 1;  // count down
-            irq_out     <= 1'b0;
+            irq_out     <= '0;
           end
         end
       end else begin
-        irq_out <= 1'b0;
+        irq_out <= '0;
       end
     end
   end

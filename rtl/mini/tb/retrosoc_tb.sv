@@ -65,8 +65,9 @@ module retrosoc_tb;
       .pll_cfg_2_i_pad          (r_pll_cfg[2]),
       .clk_bypass_i_pad         (~r_pll_en),
       .ext_rst_n_i_pad          (r_rst_n),
+      .sys_clkdiv4_o_pad        (),
       .uart_tx_o_pad            (s_uart_tx),
-      .uart_rx_i_pad            (1'b0),
+      .uart_rx_i_pad            ('0),
       .gpio_0_io_pad            (),
       .gpio_1_io_pad            (),
       .gpio_2_io_pad            (),
@@ -83,9 +84,13 @@ module retrosoc_tb;
       .gpio_13_io_pad           (),
       .gpio_14_io_pad           (),
       .gpio_15_io_pad           (),
-      .irq_pin_i_pad            (1'b0),
+      .irq_pin_i_pad            ('0),
       .cust_uart_tx_o_pad       (s_cust_uart_tx),
       .cust_uart_rx_i_pad       (s_cust_uart_rx),
+      .cust_pwm_pwm_0_o_pad     (),
+      .cust_pwm_pwm_1_o_pad     (),
+      .cust_pwm_pwm_2_o_pad     (),
+      .cust_pwm_pwm_3_o_pad     (),
       .cust_ps2_ps2_clk_i_pad   (s_cust_ps2_ps2_clk),
       .cust_ps2_ps2_dat_i_pad   (s_cust_ps2_ps2_dat),
       .cust_i2c_scl_io_pad      (),
@@ -163,7 +168,7 @@ module retrosoc_tb;
     #1000;
     while (1) begin
       #1000;
-      for (i = 0; i < 26; i = i + 1) begin
+      for (i = 0; i < 26; ++i) begin
         u_kdb_model.send_code(i + 8'd65);
         #500;
       end
@@ -175,7 +180,7 @@ module retrosoc_tb;
     #1000;
     while (1) begin
       #1000;
-      for (i = 0; i < 26; i = i + 1) begin
+      for (i = 0; i < 26; ++i) begin
         u_rs232_1.send(i + 8'd66);
         #500;
       end

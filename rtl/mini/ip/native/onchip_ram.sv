@@ -1,14 +1,14 @@
 // 32x4KB=128KB
 module onchip_ram (
-    input         clk_i,
-    input  [14:0] addr_i,
-    input  [31:0] wdata_i,
-    input  [ 3:0] wstrb_i,
-    output [31:0] rdata_o
+    input  logic        clk_i,
+    input  logic [14:0] addr_i,
+    input  logic [31:0] wdata_i,
+    input  logic [ 3:0] wstrb_i,
+    output logic [31:0] rdata_o
 );
 
-  wire        s_cs   [31:0];
-  wire [31:0] s_rdata[0:31];
+  logic        s_cs   [31:0];
+  logic [31:0] s_rdata[0:31];
 
   assign s_cs[0] = ~addr_i[14] && ~addr_i[13] && ~addr_i[12] & ~addr_i[11] && ~addr_i[10];
   assign s_cs[1] = ~addr_i[14] && ~addr_i[13] && ~addr_i[12] & ~addr_i[11] && addr_i[10];
@@ -61,19 +61,16 @@ module onchip_ram (
                  ({32{s_cs[28]}} & s_rdata[28]) | ({32{s_cs[29]}} & s_rdata[29]) |
                  ({32{s_cs[30]}} & s_rdata[30]) | ({32{s_cs[31]}} & s_rdata[31]);
 
-  genvar i;
-  generate
-    for (i = 0; i < 32; i = i + 1) begin : gen_sram_block
-      tc_sram_1024x32 u_ram (
-          .clk_i (clk_i),
-          .cs_i  (s_cs[i]),
-          .addr_i(addr_i[9:0]),
-          .data_i(wdata_i),
-          .mask_i(wstrb_i),
-          .wren_i(|wstrb_i),
-          .data_o(s_rdata[i])
-      );
-    end
-  endgenerate
+  for (genvar i = 0; i < 32; i = i + 1) begin : gen_sram_block
+    tc_sram_1024x32 u_ram (
+        .clk_i (clk_i),
+        .cs_i  (s_cs[i]),
+        .addr_i(addr_i[9:0]),
+        .data_i(wdata_i),
+        .mask_i(wstrb_i),
+        .wren_i(|wstrb_i),
+        .data_o(s_rdata[i])
+    );
+  end
 
 endmodule
