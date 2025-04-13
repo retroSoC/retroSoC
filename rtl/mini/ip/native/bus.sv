@@ -2,7 +2,7 @@
 
 module bus (
     input         clk_i,
-    output        rst_n_i,
+    input         rst_n_i,
     // core if
     input         core_valid_i,
     input  [31:0] core_addr_i,
