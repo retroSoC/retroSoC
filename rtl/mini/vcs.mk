@@ -10,8 +10,20 @@ COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
 RTL_INC  := +incdir+../ip/native \
+            +incdir+../ip/clusterip/common/rtl \
+            +incdir+../ip/clusterip/common/rtl/cdc \
+            +incdir+../ip/clusterip/common/rtl/clkrst \
+            +incdir+../ip/clusterip/common/rtl/interface \
+            +incdir+../ip/clusterip/common/rtl/tech \
+            +incdir+../ip/clusterip/common/rtl/utils \
+            +incdir+../ip/clusterip/archinfo/rtl \
+            +incdir+../ip/clusterip/rng/rtl \
+            +incdir+../ip/clusterip/uart/rtl \
+            +incdir+../ip/clusterip/pwm/rtl \
+            +incdir+../ip/clusterip/ps2/rtl \
+            +incdir+../ip/clusterip/i2c/rtl \
             +incdir+../ip/3rd_party/spfs \
-            +incdir+../ip/3rd_party/spfs_model
+            +incdir+../ip/3rd_party/spfs_model \
 
 
 RTL_FLIST := -f ../filelist/top.fl \

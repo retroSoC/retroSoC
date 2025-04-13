@@ -10,6 +10,12 @@
 
 `include "mmap_define.svh"
 
+`include "apb4_if.sv"
+`include "uart_define.sv"
+`include "pwm_define.sv"
+`include "ps2_define.sv"
+`include "i2c_define.sv"
+
 module apb_ip_wrapper (
     input  logic        clk_i,
     input  logic        rst_n_i,
@@ -71,111 +77,71 @@ module apb_ip_wrapper (
   logic [              31:0] s_m_apb_prdata7;
   logic [APB_SLAVES_NUM-1:0] s_m_apb_pslverr;
 
-  apb4_archinfo u_apb4_archinfo (
-      .pclk   (clk_i),
-      .presetn(rst_n_i),
-      .paddr  (s_m_apb_paddr),
-      .pprot  (s_m_apb_pprot),
-      .psel   (s_m_apb_psel[0]),
-      .penable(s_m_apb_penable),
-      .pwrite (s_m_apb_pwrite),
-      .pwdata (s_m_apb_pwdata),
-      .pstrb  (s_m_apb_pstrb),
-      .pready (s_m_apb_pready[0]),
-      .prdata (s_m_apb_prdata0),
-      .pslverr(s_m_apb_pslverr[0])
-  );
+  // verilog_format: off
+  apb4_if u_archinfo_0_apb4_if   (clk_i, rst_n_i);
+  apb4_if u_rng_0_apb4_if        (clk_i, rst_n_i);
+  apb4_if u_uart_0_apb4_if       (clk_i, rst_n_i);
+  apb4_if u_pwm_0_apb4_if        (clk_i, rst_n_i);
+  apb4_if u_ps2_0_apb4_if        (clk_i, rst_n_i);
+  apb4_if u_i2c_0_apb4_if        (clk_i, rst_n_i);
 
-  apb4_rng u_apb4_rng (
-      .pclk   (clk_i),
-      .presetn(rst_n_i),
-      .paddr  (s_m_apb_paddr),
-      .pprot  (s_m_apb_pprot),
-      .psel   (s_m_apb_psel[1]),
-      .penable(s_m_apb_penable),
-      .pwrite (s_m_apb_pwrite),
-      .pwdata (s_m_apb_pwdata),
-      .pstrb  (s_m_apb_pstrb),
-      .pready (s_m_apb_pready[1]),
-      .prdata (s_m_apb_prdata1),
-      .pslverr(s_m_apb_pslverr[1])
-  );
+  uart_if u_uart_0_if            ();
+  pwm_if  u_pwm_0_if             ();
+  ps2_if  u_ps2_0_if             ();
+  i2c_if  u_i2c_0_if             ();
 
-  apb4_uart u_apb4_uart (
-      .pclk     (clk_i),
-      .presetn  (rst_n_i),
-      .paddr    (s_m_apb_paddr),
-      .pprot    (s_m_apb_pprot),
-      .psel     (s_m_apb_psel[2]),
-      .penable  (s_m_apb_penable),
-      .pwrite   (s_m_apb_pwrite),
-      .pwdata   (s_m_apb_pwdata),
-      .pstrb    (s_m_apb_pstrb),
-      .pready   (s_m_apb_pready[2]),
-      .prdata   (s_m_apb_prdata2),
-      .pslverr  (s_m_apb_pslverr[2]),
-      .uart_rx_i(uart_rx_i),
-      .uart_tx_o(uart_tx_o),
-      .irq_o    (irq_o[0])
-  );
+  apb4_archinfo u_apb4_archinfo_0(u_archinfo_0_apb4_if);
+  apb4_rng      u_apb4_rng_0     (u_rng_0_apb4_if);
+  apb4_uart     u_apb4_uart_0    (u_uart_0_apb4_if, u_uart_0_if);
+  apb4_pwm      u_apb4_pwm_0     (u_pwm_0_apb4_if, u_pwm_0_if);
+  apb4_ps2      u_apb4_ps2_0     (u_ps2_0_apb4_if, u_ps2_0_if);
+  apb4_i2c      u_apb4_i2c_0     (u_i2c_0_apb4_if, u_i2c_0_if);
+  // verilog_format: on
 
-  apb4_pwm u_apb4_pwm (
-      .pclk   (clk_i),
-      .presetn(rst_n_i),
-      .paddr  (s_m_apb_paddr),
-      .pprot  (s_m_apb_pprot),
-      .psel   (s_m_apb_psel[3]),
-      .penable(s_m_apb_penable),
-      .pwrite (s_m_apb_pwrite),
-      .pwdata (s_m_apb_pwdata),
-      .pstrb  (s_m_apb_pstrb),
-      .pready (s_m_apb_pready[3]),
-      .prdata (s_m_apb_prdata3),
-      .pslverr(s_m_apb_pslverr[3]),
-      .pwm_o  (pwm_pwm_o),
-      .irq_o  (irq_o[1])
-  );
+  assign u_archinfo_0_apb4_if.psel = s_m_apb_psel[0];
+  assign s_m_apb_pready[0]         = u_archinfo_0_apb4_if.pready;
+  assign s_m_apb_pslverr[0]        = u_archinfo_0_apb4_if.pslverr;
+  assign s_m_apb_prdata0           = u_archinfo_0_apb4_if.prdata;
 
-  apb4_ps2 u_apb4_ps2 (
-      .pclk     (clk_i),
-      .presetn  (rst_n_i),
-      .paddr    (s_m_apb_paddr),
-      .pprot    (s_m_apb_pprot),
-      .psel     (s_m_apb_psel[4]),
-      .penable  (s_m_apb_penable),
-      .pwrite   (s_m_apb_pwrite),
-      .pwdata   (s_m_apb_pwdata),
-      .pstrb    (s_m_apb_pstrb),
-      .pready   (s_m_apb_pready[4]),
-      .prdata   (s_m_apb_prdata4),
-      .pslverr  (s_m_apb_pslverr[4]),
-      .ps2_clk_i(ps2_ps2_clk_i),
-      .ps2_dat_i(ps2_ps2_dat_i),
-      .irq_o    (irq_o[2])
-  );
+  assign u_rng_0_apb4_if.psel      = s_m_apb_psel[1];
+  assign s_m_apb_pready[1]         = u_rng_0_apb4_if.pready;
+  assign s_m_apb_pslverr[1]        = u_rng_0_apb4_if.pslverr;
+  assign s_m_apb_prdata1           = u_rng_0_apb4_if.prdata;
 
+  assign u_uart_0_apb4_if.psel     = s_m_apb_psel[2];
+  assign s_m_apb_pready[2]         = u_uart_0_apb4_if.pready;
+  assign s_m_apb_pslverr[2]        = u_uart_0_apb4_if.pslverr;
+  assign s_m_apb_prdata2           = u_uart_0_apb4_if.prdata;
+  assign u_uart_0_if.uart_rx_i     = uart_rx_i;
+  assign uart_tx_o                 = u_uart_0_if.uart_tx_o;
+  assign irq_o[0]                  = u_uart_0_if.irq_o;
 
-  apb4_i2c u_apb4_i2c (
-      .pclk     (clk_i),
-      .presetn  (rst_n_i),
-      .paddr    (s_m_apb_paddr),
-      .pprot    (s_m_apb_pprot),
-      .psel     (s_m_apb_psel[5]),
-      .penable  (s_m_apb_penable),
-      .pwrite   (s_m_apb_pwrite),
-      .pwdata   (s_m_apb_pwdata),
-      .pstrb    (s_m_apb_pstrb),
-      .pready   (s_m_apb_pready[5]),
-      .prdata   (s_m_apb_prdata5),
-      .pslverr  (s_m_apb_pslverr[5]),
-      .scl_i    (i2c_scl_i),
-      .scl_o    (i2c_scl_o),
-      .scl_dir_o(i2c_scl_dir_o),
-      .sda_i    (i2c_sda_i),
-      .sda_o    (i2c_sda_o),
-      .sda_dir_o(i2c_sda_dir_o),
-      .irq_o    (irq_o[3])
-  );
+  assign u_pwm_0_apb4_if.psel      = s_m_apb_psel[3];
+  assign s_m_apb_pready[3]         = u_pwm_0_apb4_if.pready;
+  assign s_m_apb_pslverr[3]        = u_pwm_0_apb4_if.pslverr;
+  assign s_m_apb_prdata3           = u_pwm_0_apb4_if.prdata;
+  assign pwm_pwm_o                 = u_pwm_0_if.pwm_o;
+  assign irq_o[1]                  = u_pwm_0_if.irq_o;
+
+  assign u_ps2_0_apb4_if.psel      = s_m_apb_psel[4];
+  assign s_m_apb_pready[4]         = u_ps2_0_apb4_if.pready;
+  assign s_m_apb_pslverr[4]        = u_ps2_0_apb4_if.pslverr;
+  assign s_m_apb_prdata4           = u_ps2_0_apb4_if.prdata;
+  assign u_ps2_0_if.ps2_clk_i      = ps2_ps2_clk_i;
+  assign u_ps2_0_if.ps2_dat_i      = ps2_ps2_dat_i;
+  assign irq_o[2]                  = u_ps2_0_if.irq_o;
+
+  assign u_i2c_0_apb4_if.psel      = s_m_apb_psel[5];
+  assign s_m_apb_pready[5]         = u_i2c_0_apb4_if.pready;
+  assign s_m_apb_pslverr[5]        = u_i2c_0_apb4_if.pslverr;
+  assign s_m_apb_prdata5           = u_i2c_0_apb4_if.prdata;
+  assign u_i2c_0_if.scl_i          = i2c_scl_i;
+  assign i2c_scl_o                 = u_i2c_0_if.scl_o;
+  assign i2c_scl_dir_o             = u_i2c_0_if.scl_dir_o;
+  assign u_i2c_0_if.sda_i          = i2c_sda_i;
+  assign i2c_sda_o                 = u_i2c_0_if.sda_o;
+  assign i2c_sda_dir_o             = u_i2c_0_if.sda_dir_o;
+  assign irq_o[3]                  = u_i2c_0_if.irq_o;
 
   apb_spi_master #(
       .BUFFER_DEPTH  (32),
