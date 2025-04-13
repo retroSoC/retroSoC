@@ -38,3 +38,4 @@ IHP-Open-PDK
 S110
 AXI4Lite_To_APB_Bridge
 dont_use_cell_*
+clusterip
