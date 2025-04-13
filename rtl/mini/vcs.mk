@@ -9,9 +9,9 @@ VERDI_TOOL   := bsub -Is verdi
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
-RTL_INC  := +incdir+../ip \
-            +incdir+../ip/cust/spfs \
-            +incdir+../ip/cust/spfs_model
+RTL_INC  := +incdir+../ip/native \
+            +incdir+../ip/3rd_party/spfs \
+            +incdir+../ip/3rd_party/spfs_model
 
 
 RTL_FLIST := -f ../filelist/top.fl \
