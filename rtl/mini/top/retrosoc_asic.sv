@@ -19,8 +19,6 @@
  *
  */
 
-`timescale 1 ns / 1 ps
-
 // NOTE: need to focus on the port dir
 module retrosoc_asic (
     input  xi_i_pad,
@@ -86,61 +84,61 @@ module retrosoc_asic (
     inout  cust_spfs_miso_i_pad
 );
   // clk&rst
-  wire        s_xtal_io;
-  wire        s_ext_clk_i;
-  wire [ 2:0] s_pll_cfg_i;
-  wire        s_clk_bypass_i;
-  wire        s_sys_clk;
-  wire        s_ext_rst_n_i;
-  wire        s_sys_rst_n;
-  wire        s_sys_clkdiv4_o;
+  logic        s_xtal_io;
+  logic        s_ext_clk_i;
+  logic [ 2:0] s_pll_cfg_i;
+  logic        s_clk_bypass_i;
+  logic        s_sys_clk;
+  logic        s_ext_rst_n_i;
+  logic        s_sys_rst_n;
+  logic        s_sys_clkdiv4_o;
   // io
-  wire        s_uart_tx_o;
-  wire        s_uart_rx_i;
-  wire [15:0] s_gpio_out_o;
-  wire [15:0] s_gpio_in_i;
-  wire [15:0] s_gpio_oeb_o;
-  wire [15:0] s_gpio_pub_o;
-  wire [15:0] s_gpio_pdb_o;
-  wire        s_irq_pin_i;
+  logic        s_uart_tx_o;
+  logic        s_uart_rx_i;
+  logic [15:0] s_gpio_out_o;
+  logic [15:0] s_gpio_in_i;
+  logic [15:0] s_gpio_oeb_o;
+  logic [15:0] s_gpio_pub_o;
+  logic [15:0] s_gpio_pdb_o;
+  logic        s_irq_pin_i;
   // ram
-  wire [14:0] s_ram_addr;
-  wire [31:0] s_ram_wdata;
-  wire [ 3:0] s_ram_wstrb;
-  wire [31:0] s_ram_rdata;
+  logic [14:0] s_ram_addr;
+  logic [31:0] s_ram_wdata;
+  logic [ 3:0] s_ram_wstrb;
+  logic [31:0] s_ram_rdata;
   // cust
-  wire        s_cust_uart_rx_i;
-  wire        s_cust_uart_tx_o;
-  wire [ 3:0] s_cust_pwm_pwm_o;
-  wire        s_cust_ps2_ps2_clk_i;
-  wire        s_cust_ps2_ps2_dat_i;
-  wire        s_cust_i2c_scl_i;
-  wire        s_cust_i2c_scl_o;
-  wire        s_cust_i2c_scl_dir_o;
-  wire        s_cust_i2c_sda_i;
-  wire        s_cust_i2c_sda_o;
-  wire        s_cust_i2c_sda_dir_o;
-  wire        s_cust_qspi_spi_clk_o;
-  wire [ 3:0] s_cust_qspi_spi_csn_o;
-  wire [ 3:0] s_cust_qspi_spi_sdo_o;
-  wire [ 3:0] s_cust_qspi_spi_oe_o;
-  wire [ 3:0] s_cust_qspi_spi_sdi_i;
-  wire        s_cust_psram_sclk_o;
-  wire        s_cust_psram_ce_o;
-  wire        s_cust_psram_sio0_i;
-  wire        s_cust_psram_sio1_i;
-  wire        s_cust_psram_sio2_i;
-  wire        s_cust_psram_sio3_i;
-  wire        s_cust_psram_sio0_o;
-  wire        s_cust_psram_sio1_o;
-  wire        s_cust_psram_sio2_o;
-  wire        s_cust_psram_sio3_o;
-  wire        s_cust_psram_sio_oe_o;
+  logic        s_cust_uart_rx_i;
+  logic        s_cust_uart_tx_o;
+  logic [ 3:0] s_cust_pwm_pwm_o;
+  logic        s_cust_ps2_ps2_clk_i;
+  logic        s_cust_ps2_ps2_dat_i;
+  logic        s_cust_i2c_scl_i;
+  logic        s_cust_i2c_scl_o;
+  logic        s_cust_i2c_scl_dir_o;
+  logic        s_cust_i2c_sda_i;
+  logic        s_cust_i2c_sda_o;
+  logic        s_cust_i2c_sda_dir_o;
+  logic        s_cust_qspi_spi_clk_o;
+  logic [ 3:0] s_cust_qspi_spi_csn_o;
+  logic [ 3:0] s_cust_qspi_spi_sdo_o;
+  logic [ 3:0] s_cust_qspi_spi_oe_o;
+  logic [ 3:0] s_cust_qspi_spi_sdi_i;
+  logic        s_cust_psram_sclk_o;
+  logic        s_cust_psram_ce_o;
+  logic        s_cust_psram_sio0_i;
+  logic        s_cust_psram_sio1_i;
+  logic        s_cust_psram_sio2_i;
+  logic        s_cust_psram_sio3_i;
+  logic        s_cust_psram_sio0_o;
+  logic        s_cust_psram_sio1_o;
+  logic        s_cust_psram_sio2_o;
+  logic        s_cust_psram_sio3_o;
+  logic        s_cust_psram_sio_oe_o;
 
-  wire        s_cust_spfs_clk_o;
-  wire        s_cust_spfs_cs_o;
-  wire        s_cust_spfs_mosi_o;
-  wire        s_cust_spfs_miso_i;
+  logic        s_cust_spfs_clk_o;
+  logic        s_cust_spfs_cs_o;
+  logic        s_cust_spfs_mosi_o;
+  logic        s_cust_spfs_miso_i;
 
 
   // verilog_format: off

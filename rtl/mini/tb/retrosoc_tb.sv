@@ -2,6 +2,7 @@
  *  PicoSoC - A simple example SoC using PicoRV32
  *
  *  Copyright (C) 2017  Claire Xenia Wolf <claire@yosyshq.com>
+ *  Copyright (C) 2025  Yuchi Miao <miaoyuchi@ict.ac.cn>
  *
  *  Permission to use, copy, modify, and/or distribute this software for any
  *  purpose with or without fee is hereby granted, provided that the above

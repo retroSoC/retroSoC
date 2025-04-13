@@ -1,4 +1,4 @@
-../tech/tc_io.v
-../tech/tc_clk.v
-../tech/tc_pll.v
-../tech/tc_sram.v
+../tech/tc_io.sv
+../tech/tc_clk.sv
+../tech/tc_pll.sv
+../tech/tc_sram.sv
