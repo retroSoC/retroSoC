@@ -1,19 +1,19 @@
 module tc_sram_1024x32 (
-    input         clk_i,
-    input         cs_i,
-    input  [ 9:0] addr_i,
-    input  [31:0] data_i,
-    input  [ 3:0] mask_i,
-    input         wren_i,
-    output [31:0] data_o
+    input  logic        clk_i,
+    input  logic        cs_i,
+    input  logic [ 9:0] addr_i,
+    input  logic [31:0] data_i,
+    input  logic [ 3:0] mask_i,
+    input  logic        wren_i,
+    output logic [31:0] data_o
 );
 
 `ifdef RTL_BEHAV
-  reg [31:0] r_data;
-  reg [31:0] mem    [0:1023];
+  logic [31:0] r_data;
+  logic [31:0] mem    [0:1023];
 
   assign data_o = r_data;
-  always @(posedge clk_i) begin
+  always_ff @(posedge clk_i) begin
     if (cs_i) begin
       if (!wren_i) begin
         r_data <= mem[addr_i];

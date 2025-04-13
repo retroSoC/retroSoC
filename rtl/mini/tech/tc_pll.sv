@@ -1,13 +1,13 @@
 module tc_pll (
-    input         fref_i,
-    input         rst_n_i,
-    input  [ 7:0] refdiv_i,
-    input  [11:0] fbdiv_i,
-    input  [ 3:0] postdiv1_i,
-    input  [ 1:0] postdiv2_i,
-    input         bp_i,
-    output        pll_lock_o,
-    output        pll_clk_o
+    input  logic        fref_i,
+    input  logic        rst_n_i,
+    input  logic [ 7:0] refdiv_i,
+    input  logic [11:0] fbdiv_i,
+    input  logic [ 3:0] postdiv1_i,
+    input  logic [ 1:0] postdiv2_i,
+    input  logic        bp_i,
+    output logic        pll_lock_o,
+    output logic        pll_clk_o
 );
 
 `ifdef RTL_BEHAV
@@ -17,13 +17,18 @@ module tc_pll (
 
   `define LOCK_CNT_END 20'h1FFFF
 
-  reg [19:0] s_lock_cnt;
+  logic [19:0] s_lock_cnt_d, s_lock_cnt_q;
+
+  assign pll_lock_o = s_lock_cnt_q == `LOCK_CNT_END;
   //lock Time Max 0.5ms(500us, 500*1000ns)
-  always @(posedge fref_i or negedge rst_n_i) begin
-    if (!rst_n_i) s_lock_cnt <= 20'h0;
-    else if (s_lock_cnt < `LOCK_CNT_END) s_lock_cnt <= s_lock_cnt + 20'h1;
-  end
-  assign pll_lock_o = s_lock_cnt == `LOCK_CNT_END;
+  assign s_lock_cnt_d = s_lock_cnt_q + 20'h1;
+  dffer #(20) u_lock_cnt_dffer (
+      fref_i,
+      rst_n_i,
+      s_lock_cnt_q < `LOCK_CNT_END,
+      s_lock_cnt_d,
+      s_lock_cnt_q
+  );
 
   S013PLLFN u0_pll (
       .A2VDD33  (),
@@ -36,13 +41,13 @@ module tc_pll (
       .CLK_OUT  (pll_clk_o),
       .N        (postdiv1_i),
       .M        (refdiv_i),
-      .RESET    (1'b0),
-      .SLEEP12  (1'b0),
+      .RESET    ('0),
+      .SLEEP12  ('0),
       .OD       (postdiv2_i),
       .BP       (bp_i),
       .SELECT   (1'b1),
-      .FS       (1'b0),
-      .FRAC_N_in(20'h0),
+      .FS       ('0),
+      .FRAC_N_in('0),
       .LKDT     ()
   );
 

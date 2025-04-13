@@ -23,8 +23,8 @@
 // endmodule
 
 module tc_clk_buf (
-    input  clk_i,
-    output clk_o
+    input  logic clk_i,
+    output logic clk_o
 );
 
 `ifdef RTL_BEHAV
@@ -43,10 +43,10 @@ module tc_clk_buf (
 endmodule
 
 module tc_clk_mux2 (
-    input  clk0_i,
-    input  clk1_i,
-    input  clk_sel_i,
-    output clk_o
+    input  logic clk0_i,
+    input  logic clk1_i,
+    input  logic clk_sel_i,
+    output logic clk_o
 );
 
 `ifdef RTL_BEHAV
@@ -70,9 +70,9 @@ module tc_clk_mux2 (
 endmodule
 
 // module tc_clk_xor2 (
-//     input  clk0_i,
-//     input  clk1_i,
-//     output clk_o
+//     input  logic clk0_i,
+//     input  logic clk1_i,
+//     output logic clk_o
 // );
 
 // `ifdef RTL_BEHAV

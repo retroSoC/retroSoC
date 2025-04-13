@@ -1,8 +1,8 @@
 module tc_io_xtl_pad (
-    input  xi_pad,
-    output xo_pad,
-    input  en,
-    output clk
+    input  logic xi_pad,
+    output logic xo_pad,
+    input  logic en,
+    output logic clk
 );
 `ifdef RTL_BEHAV
   assign clk    = en ? xi_pad : 1'b0;
@@ -24,8 +24,8 @@ module tc_io_xtl_pad (
 endmodule
 
 // module tc_io_in_pad (
-//     inout  pad,
-//     output p2c
+//     inout  logic pad,
+//     output logic p2c
 // );
 
 // `ifdef RTL_BEHAV
@@ -40,8 +40,8 @@ endmodule
 // endmodule
 
 // module tc_io_out_pad (
-//     inout pad,
-//     input c2p
+//     inout logic pad,
+//     input logic c2p
 // );
 
 // `ifdef RTL_BEHAV
@@ -56,10 +56,10 @@ endmodule
 // endmodule
 
 module tc_io_tri_pad (
-    inout  pad,
-    input  c2p,
-    input  c2p_en,
-    output p2c
+    inout  wire pad,
+    input  logic c2p,
+    input  logic c2p_en,
+    output logic p2c
 );
 
 `ifdef RTL_BEHAV
@@ -86,10 +86,10 @@ endmodule
 
 
 module tc_io_tri_schmitt_pad (
-    inout  pad,
-    input  c2p,
-    input  c2p_en,
-    output p2c
+    inout  wire pad,
+    input  logic c2p,
+    input  logic c2p_en,
+    output logic p2c
 );
 
 `ifdef RTL_BEHAV
