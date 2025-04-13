@@ -1,2 +1,2 @@
-../top/retrosoc_asic.v
-../top/retrosoc.v
+../top/retrosoc_asic.sv
+../top/retrosoc.sv
