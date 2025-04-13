@@ -61,7 +61,7 @@ module onchip_ram (
                  ({32{s_cs[28]}} & s_rdata[28]) | ({32{s_cs[29]}} & s_rdata[29]) |
                  ({32{s_cs[30]}} & s_rdata[30]) | ({32{s_cs[31]}} & s_rdata[31]);
 
-  for (genvar i = 0; i < 32; i = i + 1) begin : gen_sram_block
+  for (genvar i = 0; i < 32; ++i) begin : gen_sram_block
     tc_sram_1024x32 u_ram (
         .clk_i (clk_i),
         .cs_i  (s_cs[i]),
