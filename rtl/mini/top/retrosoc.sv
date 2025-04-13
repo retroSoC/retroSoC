@@ -22,96 +22,96 @@
 `include "mmap_define.svh"
 
 module retrosoc (
-    input         clk_i,
-    input         rst_n_i,
-    output [14:0] ram_addr_o,
-    output [31:0] ram_wdata_o,
-    output [ 3:0] ram_wstrb_o,
-    input  [31:0] ram_rdata_i,
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    output logic [14:0] ram_addr_o,
+    output logic [31:0] ram_wdata_o,
+    output logic [ 3:0] ram_wstrb_o,
+    input  logic [31:0] ram_rdata_i,
     // memory mapped I/O signals
-    output [15:0] gpio_out_o,
-    input  [15:0] gpio_in_i,
-    output [15:0] gpio_pub_o,
-    output [15:0] gpio_pdb_o,
-    output [15:0] gpio_oeb_o,
-    output        uart_tx_o,
-    input         uart_rx_i,
+    output logic [15:0] gpio_out_o,
+    input  logic [15:0] gpio_in_i,
+    output logic [15:0] gpio_pub_o,
+    output logic [15:0] gpio_pdb_o,
+    output logic [15:0] gpio_oeb_o,
+    output logic        uart_tx_o,
+    input  logic        uart_rx_i,
     // irq
-    input         irq_pin_i,
+    input  logic        irq_pin_i,
     // cust
-    input         cust_uart_rx_i,
-    output        cust_uart_tx_o,
-    output [ 3:0] cust_pwm_pwm_o,
-    input         cust_ps2_ps2_clk_i,
-    input         cust_ps2_ps2_dat_i,
-    input         cust_i2c_scl_i,
-    output        cust_i2c_scl_o,
-    output        cust_i2c_scl_dir_o,
-    input         cust_i2c_sda_i,
-    output        cust_i2c_sda_o,
-    output        cust_i2c_sda_dir_o,
-    output        cust_qspi_spi_clk_o,
-    output [ 3:0] cust_qspi_spi_csn_o,
-    output [ 3:0] cust_qspi_spi_sdo_o,
-    output [ 3:0] cust_qspi_spi_oe_o,
-    input  [ 3:0] cust_qspi_spi_sdi_i,
-    output        cust_psram_sclk_o,
-    output        cust_psram_ce_o,
-    input         cust_psram_sio0_i,
-    input         cust_psram_sio1_i,
-    input         cust_psram_sio2_i,
-    input         cust_psram_sio3_i,
-    output        cust_psram_sio0_o,
-    output        cust_psram_sio1_o,
-    output        cust_psram_sio2_o,
-    output        cust_psram_sio3_o,
-    output        cust_psram_sio_oe_o,
-    input         cust_spfs_div4_i,
-    output        cust_spfs_clk_o,
-    output        cust_spfs_cs_o,
-    output        cust_spfs_mosi_o,
-    input         cust_spfs_miso_i
+    input  logic        cust_uart_rx_i,
+    output logic        cust_uart_tx_o,
+    output logic [ 3:0] cust_pwm_pwm_o,
+    input  logic        cust_ps2_ps2_clk_i,
+    input  logic        cust_ps2_ps2_dat_i,
+    input  logic        cust_i2c_scl_i,
+    output logic        cust_i2c_scl_o,
+    output logic        cust_i2c_scl_dir_o,
+    input  logic        cust_i2c_sda_i,
+    output logic        cust_i2c_sda_o,
+    output logic        cust_i2c_sda_dir_o,
+    output logic        cust_qspi_spi_clk_o,
+    output logic [ 3:0] cust_qspi_spi_csn_o,
+    output logic [ 3:0] cust_qspi_spi_sdo_o,
+    output logic [ 3:0] cust_qspi_spi_oe_o,
+    input  logic [ 3:0] cust_qspi_spi_sdi_i,
+    output logic        cust_psram_sclk_o,
+    output logic        cust_psram_ce_o,
+    input  logic        cust_psram_sio0_i,
+    input  logic        cust_psram_sio1_i,
+    input  logic        cust_psram_sio2_i,
+    input  logic        cust_psram_sio3_i,
+    output logic        cust_psram_sio0_o,
+    output logic        cust_psram_sio1_o,
+    output logic        cust_psram_sio2_o,
+    output logic        cust_psram_sio3_o,
+    output logic        cust_psram_sio_oe_o,
+    input  logic        cust_spfs_div4_i,
+    output logic        cust_spfs_clk_o,
+    output logic        cust_spfs_cs_o,
+    output logic        cust_spfs_mosi_o,
+    input  logic        cust_spfs_miso_i
 );
   // core if
-  wire        s_core_valid;
-  wire [31:0] s_core_addr;
-  wire [31:0] s_core_wdata;
-  wire [ 3:0] s_core_wstrb;
-  wire [31:0] s_core_rdata;
-  wire        s_core_ready;
+  logic        s_core_valid;
+  logic [31:0] s_core_addr;
+  logic [31:0] s_core_wdata;
+  logic [ 3:0] s_core_wstrb;
+  logic [31:0] s_core_rdata;
+  logic        s_core_ready;
   // mmap if
-  wire        s_mmap_valid;
-  wire [ 3:0] s_mmap_wstrb;
-  wire [31:0] s_mmap_addr;
-  wire [31:0] s_mmap_wdata;
-  wire [31:0] s_mmap_rdata;
-  wire        s_mmap_ready;
+  logic        s_mmap_valid;
+  logic [ 3:0] s_mmap_wstrb;
+  logic [31:0] s_mmap_addr;
+  logic [31:0] s_mmap_wdata;
+  logic [31:0] s_mmap_rdata;
+  logic        s_mmap_ready;
   // natv if
-  wire        s_natv_valid;
-  wire [ 3:0] s_natv_wstrb;
-  wire [31:0] s_natv_addr;
-  wire [31:0] s_natv_wdata;
-  wire [31:0] s_natv_rdata;
-  wire        s_natv_ready;
+  logic        s_natv_valid;
+  logic [ 3:0] s_natv_wstrb;
+  logic [31:0] s_natv_addr;
+  logic [31:0] s_natv_wdata;
+  logic [31:0] s_natv_rdata;
+  logic        s_natv_ready;
   // psram if
-  wire        s_psram_valid;
-  wire [ 3:0] s_psram_wstrb;
-  wire [31:0] s_psram_addr;
-  wire [31:0] s_psram_wdata;
-  wire [31:0] s_psram_rdata;
-  wire        s_psram_ready;
+  logic        s_psram_valid;
+  logic [ 3:0] s_psram_wstrb;
+  logic [31:0] s_psram_addr;
+  logic [31:0] s_psram_wdata;
+  logic [31:0] s_psram_rdata;
+  logic        s_psram_ready;
   // psram cfg if
-  wire        s_psram_cfg_wait_wr_en;
-  wire [ 4:0] s_psram_cfg_wait_i;
-  wire [ 4:0] s_psram_cfg_wait_o;
-  wire        s_psram_cfg_chd_wr_en;
-  wire [ 2:0] s_psram_cfg_chd_i;
-  wire [ 2:0] s_psram_cfg_chd_o;
+  logic        s_psram_cfg_wait_wr_en;
+  logic [ 4:0] s_psram_cfg_wait_i;
+  logic [ 4:0] s_psram_cfg_wait_o;
+  logic        s_psram_cfg_chd_wr_en;
+  logic [ 2:0] s_psram_cfg_chd_i;
+  logic [ 2:0] s_psram_cfg_chd_o;
 
   // irq
-  wire [31:0] s_irq;
-  wire [ 2:0] s_natv_irq;
-  wire [ 5:0] s_apb_irq;
+  logic [31:0] s_irq;
+  logic [ 2:0] s_natv_irq;
+  logic [ 5:0] s_apb_irq;
 
   assign s_irq[4:0]   = 5'd0;
   assign s_irq[5]     = irq_pin_i;
