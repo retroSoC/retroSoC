@@ -1,65 +1,65 @@
 `include "mmap_define.svh"
 
 module apb_ip_wrapper (
-    input         clk_i,
-    input         rst_n_i,
+    input  logic        clk_i,
+    input  logic        rst_n_i,
     // mem if
-    input         mmap_valid_i,
-    input  [31:0] mmap_addr_i,
-    input  [31:0] mmap_wdata_i,
-    input  [ 3:0] mmap_wstrb_i,
-    output [31:0] mmap_rdata_o,
-    output        mmap_ready_o,
+    input  logic        mmap_valid_i,
+    input  logic [31:0] mmap_addr_i,
+    input  logic [31:0] mmap_wdata_i,
+    input  logic [ 3:0] mmap_wstrb_i,
+    output logic [31:0] mmap_rdata_o,
+    output logic        mmap_ready_o,
     // uart
-    input         uart_rx_i,
-    output        uart_tx_o,
+    input  logic        uart_rx_i,
+    output logic        uart_tx_o,
     // pwm
-    output [ 3:0] pwm_pwm_o,
+    output logic [ 3:0] pwm_pwm_o,
     // ps2
-    input         ps2_ps2_clk_i,
-    input         ps2_ps2_dat_i,
+    input  logic        ps2_ps2_clk_i,
+    input  logic        ps2_ps2_dat_i,
     // i2c
-    input         i2c_scl_i,
-    output        i2c_scl_o,
-    output        i2c_scl_dir_o,
-    input         i2c_sda_i,
-    output        i2c_sda_o,
-    output        i2c_sda_dir_o,
+    input  logic        i2c_scl_i,
+    output logic        i2c_scl_o,
+    output logic        i2c_scl_dir_o,
+    input  logic        i2c_sda_i,
+    output logic        i2c_sda_o,
+    output logic        i2c_sda_dir_o,
     // qspi
-    output        qspi_spi_clk_o,
-    output [ 3:0] qspi_spi_csn_o,
-    output [ 3:0] qspi_spi_sdo_o,
-    output [ 3:0] qspi_spi_oe_o,
-    input  [ 3:0] qspi_spi_sdi_i,
+    output logic        qspi_spi_clk_o,
+    output logic [ 3:0] qspi_spi_csn_o,
+    output logic [ 3:0] qspi_spi_sdo_o,
+    output logic [ 3:0] qspi_spi_oe_o,
+    input  logic [ 3:0] qspi_spi_sdi_i,
     // spfs
-    input         spfs_div4_i,
-    output        spfs_clk_o,
-    output        spfs_cs_o,
-    output        spfs_mosi_o,
-    input         spfs_miso_i,
-    output [ 5:0] irq_o
+    input  logic        spfs_div4_i,
+    output logic        spfs_clk_o,
+    output logic        spfs_cs_o,
+    output logic        spfs_mosi_o,
+    input  logic        spfs_miso_i,
+    output logic [ 5:0] irq_o
 );
 
   localparam APB_SLAVES_NUM = 8;
 
-  wire [              31:0] s_m_apb_paddr;
-  wire [               2:0] s_m_apb_pprot;
-  wire [APB_SLAVES_NUM-1:0] s_m_apb_psel;
-  wire                      s_m_apb_penable;
-  wire                      s_m_apb_pwrite;
-  wire [              31:0] s_m_apb_pwdata;
-  wire [               3:0] s_m_apb_pstrb;
-  wire [APB_SLAVES_NUM-1:0] s_m_apb_pready;
+  logic [              31:0] s_m_apb_paddr;
+  logic [               2:0] s_m_apb_pprot;
+  logic [APB_SLAVES_NUM-1:0] s_m_apb_psel;
+  logic                      s_m_apb_penable;
+  logic                      s_m_apb_pwrite;
+  logic [              31:0] s_m_apb_pwdata;
+  logic [               3:0] s_m_apb_pstrb;
+  logic [APB_SLAVES_NUM-1:0] s_m_apb_pready;
 
-  wire [              31:0] s_m_apb_prdata0;
-  wire [              31:0] s_m_apb_prdata1;
-  wire [              31:0] s_m_apb_prdata2;
-  wire [              31:0] s_m_apb_prdata3;
-  wire [              31:0] s_m_apb_prdata4;
-  wire [              31:0] s_m_apb_prdata5;
-  wire [              31:0] s_m_apb_prdata6;
-  wire [              31:0] s_m_apb_prdata7;
-  wire [APB_SLAVES_NUM-1:0] s_m_apb_pslverr;
+  logic [              31:0] s_m_apb_prdata0;
+  logic [              31:0] s_m_apb_prdata1;
+  logic [              31:0] s_m_apb_prdata2;
+  logic [              31:0] s_m_apb_prdata3;
+  logic [              31:0] s_m_apb_prdata4;
+  logic [              31:0] s_m_apb_prdata5;
+  logic [              31:0] s_m_apb_prdata6;
+  logic [              31:0] s_m_apb_prdata7;
+  logic [APB_SLAVES_NUM-1:0] s_m_apb_pslverr;
 
   apb4_archinfo u_apb4_archinfo (
       .pclk   (clk_i),
