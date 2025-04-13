@@ -19,7 +19,7 @@
  *
  */
 
-`include "mmap_define.v"
+`include "mmap_define.svh"
 
 module retrosoc (
     input         clk_i,

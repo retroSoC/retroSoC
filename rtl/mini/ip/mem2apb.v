@@ -1,4 +1,4 @@
-`include "mmap_define.v"
+`include "mmap_define.svh"
 
 module mem2apb #(
     parameter APB_SLAVES_NUM = 8

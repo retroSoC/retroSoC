@@ -1,4 +1,4 @@
-`include "mmap_define.v"
+`include "mmap_define.svh"
 
 module apb_ip_wrapper (
     input         clk_i,

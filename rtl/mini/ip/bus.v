@@ -1,4 +1,4 @@
-`include "mmap_define.v"
+`include "mmap_define.svh"
 
 module bus (
     input         clk_i,
