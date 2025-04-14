@@ -9,8 +9,6 @@ VERDI_TOOL   := bsub -Is verdi
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
-PDK          ?= S110
-
 RTL_INC  := +incdir+../ip/native \
             +incdir+../ip/clusterip/common/rtl \
             +incdir+../ip/clusterip/common/rtl/cdc \
@@ -41,7 +39,6 @@ RTL_FLIST += -f ../filelist/top.fl \
              -f ../filelist/tech.fl
 
 TB_FLIST  := -f ../filelist/tb.fl
-            
 
 ## vcs option
 # -debug_region=cell+lib
@@ -60,8 +57,7 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 ${RTL_INC}
 
 
-TIME_OPTION := +notimingcheck \
-               +nospecify
+TIME_OPTION := +notimingcheck +nospecify
 
 POST_PATH := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
 SDF_FILE  := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"

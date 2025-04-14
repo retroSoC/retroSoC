@@ -1,10 +1,19 @@
-RTL_SIM_PLLEN  :=
-RTL_SIM_PLLCFG :=
-WAVE           := NONE
-RTL_TOP        := retrosoc_tb
+SIMU           ?= VCS
+PDK            ?= S110
+RTL_TOP        ?= retrosoc_tb
+RTL_SIM_PLLEN  ?= NONE
+RTL_SIM_PLLCFG ?= NONE
+WAVE           ?= NONE
 
 include software.mk
-include vcs.mk
+
+ifeq ($(SIMU), VCS)
+	include vcs.mk
+else ifeq ($(SIMU), IVER)
+	include iverilog.mk
+else ifeq ($(SIMU), VERI)
+	include verilator.mk
+endif
 
 comp:
 	@mkdir -p build
