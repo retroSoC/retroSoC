@@ -8,7 +8,7 @@ module tc_sram_1024x32 (
     output logic [31:0] data_o
 );
 
-`ifdef RTL_BEHAV
+`ifdef PDK_BEHAV
   logic [31:0] r_data;
   logic [31:0] mem    [0:1023];
 

@@ -10,7 +10,7 @@ module tc_pll (
     output logic        pll_clk_o
 );
 
-`ifdef RTL_BEHAV
+`ifdef PDK_BEHAV
   assign pll_lock_o = 1'b1;
   assign pll_clk_o  = fref_i;
 `elsif PDK_IHP130
@@ -18,11 +18,15 @@ module tc_pll (
   assign pll_clk_o  = fref_i;
 `elsif PDK_S110
 
+`ifndef HAVE_PLL
+  assign pll_lock_o = 1'b1;
+  assign pll_clk_o  = fref_i;
+`else
   `define LOCK_CNT_END 20'h1FFFF
 
   logic [19:0] s_lock_cnt_d, s_lock_cnt_q;
 
-  assign pll_lock_o = s_lock_cnt_q == `LOCK_CNT_END;
+  assign pll_lock_o   = s_lock_cnt_q == `LOCK_CNT_END;
   //lock Time Max 0.5ms(500us, 500*1000ns)
   assign s_lock_cnt_d = s_lock_cnt_q + 20'h1;
   dffer #(20) u_lock_cnt_dffer (
@@ -54,5 +58,6 @@ module tc_pll (
       .LKDT     ()
   );
 
+`endif
 `endif
 endmodule

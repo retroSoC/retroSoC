@@ -8,29 +8,32 @@
 
 
 
-// module tc_clk_inv (
-//     input  clk_i,
-//     output clk_o
-// );
+module tc_clk_inv (
+    input  logic clk_i,
+    output logic clk_o
+);
 
-// `ifdef RTL_BEHAV
-//   assign clk_o = ~clk_i;
-// `else
-//   (* keep *) (* dont_touch = "true" *)
-//   sg13g2_inv_1 i_inv (
-//       .A(clk_i),
-//       .Y(clk_o)
-//   );
-// `endif
+`ifdef PDK_BEHAV
+  assign clk_o = ~clk_i;
+`elsif PDK_IHP130
+  (* keep *) (* dont_touch = "true" *)
+  sg13g2_inv_1 i_inv (
+      .A(clk_i),
+      .Y(clk_o)
+  );
+`elsif PDK_S110
+  (* keep *) (* dont_touch = "true" *)
+  assign clk_o = ~clk_i;  // HACK:
+`endif
 
-// endmodule
+endmodule
 
 module tc_clk_buf (
     input  logic clk_i,
     output logic clk_o
 );
 
-`ifdef RTL_BEHAV
+`ifdef PDK_BEHAV
   assign clk_o = clk_i;
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
@@ -54,7 +57,7 @@ module tc_clk_mux2 (
     output logic clk_o
 );
 
-`ifdef RTL_BEHAV
+`ifdef PDK_BEHAV
   assign clk_o = clk_sel_i ? clk1_i : clk0_i;
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
@@ -81,7 +84,7 @@ module tc_clk_xor2 (
     output logic clk_o
 );
 
-`ifdef RTL_BEHAV
+`ifdef PDK_BEHAV
   assign clk_o = clk0_i ^ clk1_i;
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
