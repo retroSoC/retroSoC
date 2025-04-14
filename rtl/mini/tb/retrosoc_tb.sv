@@ -191,14 +191,9 @@ module retrosoc_tb;
   initial begin
     if ($test$plusargs("behv_wave")) begin
       $display("gen behv sim wave");
-      if ($test$plusargs("sim_iver")) begin
-        $dumpfile("retrosoc_tb.fst");
-        $dumpvars(0, retrosoc_tb);
-      end else begin
-        $fsdbDumpfile("retrosoc_tb.fsdb");
-        $fsdbDumpvars(0);
-        //  $fsdbDumpMDA();
-      end
+      $fsdbDumpfile("retrosoc_tb.fsdb");
+      $fsdbDumpvars(0);
+      //  $fsdbDumpMDA();
       // #398844962;
 
       repeat (1500) begin
@@ -207,14 +202,9 @@ module retrosoc_tb;
       $finish;
     end else if ($test$plusargs("syn_wave")) begin
       $display("gen syn sim wave");
-      if ($test$plusargs("sim_iver")) begin
-        $display("gen retrosoc_syn_tb.fst");
-        $dumpfile("retrosoc_syn_tb.fst");
-        $dumpvars(0, retrosoc_tb);
-      end else begin
-        // $fsdbDumpfile("retrosoc_syn_tb.fsdb");
-        // $fsdbDumpvars(0);
-      end
+      $fsdbDumpfile("retrosoc_syn_tb.fsdb");
+      $fsdbDumpvars(0);
+
       repeat (10) begin
         $display("hello");
         repeat (100) @(posedge r_xtal_clk);
