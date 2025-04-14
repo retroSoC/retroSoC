@@ -1,5 +1,5 @@
 NOVAS        := /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
-EXTRA        := -P ${NOVAS}/novas.tab ${NOVAS}/pli.a
+EXTRA        := -P $(NOVAS)/novas.tab $(NOVAS)/pli.a
 
 
 SIM_TOOL     := bsub -Is vcs
@@ -25,7 +25,19 @@ RTL_INC  := +incdir+../ip/native \
             +incdir+../ip/3rd_party/spfs \
             +incdir+../ip/3rd_party/spfs_model
 
+DEF_LIST    ?= +define+PDK_$(PDK)
 
+ifeq ($(HAVE_PLL), YES)
+    DEF_LIST += +define+HAVE_PLL
+endif
+
+ifeq ($(HAVE_SRAM), YES)
+    DEF_LIST += +define+HAVE_SRAM
+endif
+
+ifeq ($(HAVE_SVA), NO)
+    DEF_LIST += +define+SV_ASSRT_DISABLE
+endif
 
 ifeq ($(PDK), IHP130)
     RTL_FLIST := -f ../filelist/pdk_ihp130.fl
@@ -43,18 +55,17 @@ TB_FLIST  := -f ../filelist/tb.fl
 ## vcs option
 # -debug_region=cell+lib
 SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
-                ${EXTRA} \
+                $(EXTRA) \
                 -kdb \
                 -debug_access+all \
                 +vcs+loopreport+10000 \
                 +error+500 \
                 +vcs+flush+all \
                 +lint=TFIPC-L \
-                +define+SV_ASSRT_DISABLE \
-                +define+PDK_${PDK} \
+                $(DEF_LIST) \
                 -xprop=../xprop_config \
                 -work DEFAULT \
-                ${RTL_INC}
+                $(RTL_INC)
 
 
 TIME_OPTION := +notimingcheck +nospecify
@@ -62,7 +73,7 @@ TIME_OPTION := +notimingcheck +nospecify
 POST_PATH := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
 SDF_FILE  := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"
 
-POST_SIM_OPTION := -sdf min:retrosoc_tb.u_retrosoc_asic:${SDF_FILE} \
+POST_SIM_OPTION := -sdf min:retrosoc_tb.u_retrosoc_asic:$(SDF_FILE) \
                    +delay_mode_path \
                    +sdfverbose \
                    +neg_tchk \

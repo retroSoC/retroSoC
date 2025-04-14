@@ -1,49 +1,61 @@
 SIMU           ?= VCS
 PDK            ?= S110
+HAVE_PLL       ?= YES
+HAVE_SRAM      ?= YES
+HAVE_SVA       ?= NO
+
 RTL_TOP        ?= retrosoc_tb
+CORE           ?= PICORV32
+
 RTL_SIM_PLLEN  ?= NONE
 RTL_SIM_PLLCFG ?= NONE
 WAVE           ?= NONE
 
 include software.mk
 
+$(info SIMU: $(SIMU))
+$(info PDK: $(PDK))
+$(info HAVE_PLL: $(HAVE_PLL))
+$(info HAVE_SRAM: $(HAVE_SRAM))
+$(info HAVE_SVA: $(HAVE_SVA))
+
 ifeq ($(SIMU), VCS)
-	include vcs.mk
+    include vcs.mk
 else ifeq ($(SIMU), IVER)
-	include iverilog.mk
+    include iverilog.mk
 else ifeq ($(SIMU), VERI)
-	include verilator.mk
+    include verilator.mk
 endif
 
 comp:
 	@mkdir -p build
-	cd build && (${SIM_TOOL} ${SIM_OPTIONS} ${TIME_OPTION} ${RTL_FLIST} ${TB_FLIST} -top ${RTL_TOP} ${COMP_LOG})
+	cd build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 sim: comp
-	cd build && (${SIM_BINY} +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs ${SIM_LOG})
+	cd build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
 
 netcomp:
 	@mkdir -p net_build
-	cd net_build && (${SIM_TOOL} ${SIM_OPTIONS} ${TIME_OPTION} ${RTL_FLIST} -v ../syn/yosys/out/retrosoc_asic_yosys.v ${RTL_TOP}.v -top ${RTL_TOP} ${COMP_LOG})
+	cd net_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) -v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TOP).v -top $(RTL_TOP) $(COMP_LOG))
 
 netsim: netcomp
-	${SIM_BINY} +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_vcs +bus_conflict_off ${SIM_LOG}
+	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG)
 
 postcomp:
 	@mkdir -p post_build
-	cd post_build && (${SIM_TOOL} ${SIM_OPTIONS} ${VPOST_SIM_OPTION} ${RTL_PDK} ./ip/rs232.v ./ip/kdb_model.v ./ip/psram_model.v ./ip/cust/spfs_model/N25Qxxx.v ${RTL_TOP}.v -top ${RTL_TOP} ${COMP_LOG} ${VPOST_PATH})
+	cd post_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(VPOST_SIM_OPTION) $(RTL_PDK) ./ip/rs232.v ./ip/kdb_model.v ./ip/psram_model.v ./ip/cust/spfs_model/N25Qxxx.v $(RTL_TOP).v -top $(RTL_TOP) $(COMP_LOG) $(VPOST_PATH))
 
 postsim: postcomp
-	${SIM_BINY} +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs ${SIM_LOG}
+	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG)
 
 wave:
-	cd build && (${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &)
+	cd build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
 
 netwave:
-	cd net_build && (${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &)
+	cd net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
 
 postwave:
-	cd post_build && (${VERDI_TOOL} -ssf ${RTL_TOP}.fsdb -nologo &)
+	cd post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
 
 clean:
 	rm -rf build net_build post_build
