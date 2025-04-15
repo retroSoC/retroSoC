@@ -9,7 +9,8 @@ VERDI_TOOL   := bsub -Is verdi
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
-RTL_INC  := +incdir+../ip/native \
+RTL_INC  := +incdir+../core/kianV \
+            +incdir+../ip/native \
             +incdir+../ip/clusterip/common/rtl \
             +incdir+../ip/clusterip/common/rtl/cdc \
             +incdir+../ip/clusterip/common/rtl/clkrst \
@@ -26,6 +27,7 @@ RTL_INC  := +incdir+../ip/native \
             +incdir+../ip/3rd_party/spfs_model
 
 DEF_LIST    ?= +define+PDK_$(PDK)
+DEF_LIST    += +define+CORE_$(CORE)
 
 ifeq ($(HAVE_PLL), YES)
     DEF_LIST += +define+HAVE_PLL
@@ -45,8 +47,13 @@ else ifeq ($(PDK), S110)
     RTL_FLIST := -f ../filelist/pdk_s110.fl
 endif
 
+ifeq ($(CORE), PICORV32)
+    RTL_FLIST += -f ../filelist/core_picorv32.fl
+else ifeq ($(CORE), KIANV)
+    RTL_FLIST += -f ../filelist/core_kianv.fl
+endif
+
 RTL_FLIST += -f ../filelist/top.fl \
-             -f ../filelist/core.fl \
              -f ../filelist/ip.fl \
              -f ../filelist/tech.fl
 
