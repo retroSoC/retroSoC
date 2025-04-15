@@ -134,26 +134,16 @@ module retrosoc (
   //    1 x QSPI
   //    1 x SPFS(HP)
   //    1 x I2C
-  picorv32 #(
-      .BARREL_SHIFTER (1),
-      .COMPRESSED_ISA (1),
-      .ENABLE_MUL     (1),
-      .ENABLE_FAST_MUL(1),
-      .ENABLE_DIV     (1),
-      .ENABLE_IRQ     (0),
-      .PROGADDR_RESET (`FLASH_START_ADDR)
-  ) u_picorv32 (
-      .clk      (clk_i),
-      .resetn   (rst_n_i),
-      .mem_valid(s_core_valid),
-      .mem_instr(),
-      .mem_addr (s_core_addr),
-      .mem_wdata(s_core_wdata),
-      .mem_wstrb(s_core_wstrb),
-      .mem_rdata(s_core_rdata),
-      .mem_ready(s_core_ready),
-      .irq      (s_irq),
-      .trap     ()
+  core_wrapper u_core_wrapper (
+      .clk_i       (clk_i),
+      .rst_n_i     (rst_n_i),
+      .core_valid_o(s_core_valid),
+      .core_addr_o (s_core_addr),
+      .core_wdata_o(s_core_wdata),
+      .core_wstrb_o(s_core_wstrb),
+      .core_rdata_i(s_core_rdata),
+      .core_ready_i(s_core_ready),
+      .irq_i       (s_irq)
   );
 
   bus u_bus (

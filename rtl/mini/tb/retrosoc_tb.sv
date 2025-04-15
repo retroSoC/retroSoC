@@ -29,7 +29,7 @@ module retrosoc_tb;
   reg        r_rst_n;
   reg        r_pll_en;
   reg  [2:0] r_pll_cfg;
-  wire       s_uart_rx;
+  wire       s_uart_tx;
   wire       s_flash_csb;
   wire       s_flash_clk;
   wire       s_flash_io0;
@@ -136,7 +136,7 @@ module retrosoc_tb;
 
   rs232 u_rs232_0 (
       .rs232_rx_i(s_uart_tx),
-      .rs232_tx_o(s_uart_rx)
+      .rs232_tx_o()
   );
 
   rs232 u_rs232_1 (
