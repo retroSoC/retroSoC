@@ -1,2 +1,3 @@
-../top/retrosoc_asic.sv
+../top/core_wrapper.sv
 ../top/retrosoc.sv
+../top/retrosoc_asic.sv
