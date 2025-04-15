@@ -27,6 +27,7 @@ module tc_sram_1024x32 (
     end
   end
 `elsif PDK_IHP130
+`ifdef HAVE_SRAM
   logic [63:0] s_rd_data_mem;
   assign data_o = s_rd_data_mem[31:0];
   RM_IHPSG13_1P_1024x64_c2_bm_bist u_mem (
@@ -48,8 +49,9 @@ module tc_sram_1024x32 (
       .A_BIST_DIN ('0),
       .A_BIST_BM  ('0)
   );
+`endif
 `elsif PDK_S110
-  // mask_i
+`ifdef HAVE_SRAM
   S011HD1P_X256Y4D32_BW u_S011HD1P_X256Y4D32_BW (
       .Q   (data_o),
       .CLK (clk_i),
@@ -59,5 +61,6 @@ module tc_sram_1024x32 (
       .A   (addr_i),
       .D   (data_i)
   );
+`endif
 `endif
 endmodule

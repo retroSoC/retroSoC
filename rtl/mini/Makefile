@@ -57,6 +57,9 @@ netwave:
 postwave:
 	cd post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
 
+syn:
+	@echo "hello"
+
 clean:
 	rm -rf build net_build post_build
 
