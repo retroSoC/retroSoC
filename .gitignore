@@ -26,6 +26,9 @@ video.h
 .post_build
 .syn_build
 .metals
+.mypy_cache
+.pytest_cache
+.vscode
 retrosoc_sections.lds
 retrosoc_syn*
 pdk
@@ -34,3 +37,4 @@ clusterip
 nanoV
 tinyQV
 kianV
+!get_pdk.py
