@@ -49,12 +49,18 @@ sim: comp
 	ln -sf ../retrosoc_fw.hex .build/mem_Q128_bottom.vmf
 	cd .build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
 
+wave:
+	cd .build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+
 netcomp:
 	@mkdir -p .net_build
 	cd .net_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) -v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TOP).v -top $(RTL_TOP) $(COMP_LOG))
 
 netsim: netcomp
 	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG)
+
+netwave:
+	cd .net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
 
 postcomp:
 	@mkdir -p .post_build
@@ -63,18 +69,8 @@ postcomp:
 postsim: postcomp
 	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG)
 
-wave:
-	cd .build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
-
-netwave:
-	cd .net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
-
 postwave:
 	cd .post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
-
-syn:
-	@mkdir -p .syn_build
-	@echo "hello"
 
 clean:
 	rm -rf .build .net_build .post_build

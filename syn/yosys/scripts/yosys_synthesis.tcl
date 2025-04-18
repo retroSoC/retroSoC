@@ -4,6 +4,18 @@
 #
 # Authors:
 # - Philippe Sauter <phsauter@iis.ee.ethz.ch>
+#
+# -- Adaptable modifications are redistributed under compatible License --
+#
+# Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
+# retroSoC is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#             http://license.coscl.org.cn/MulanPSL2
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
 
 # get environment variables
 set script_dir [file dirname [info script]]
@@ -21,53 +33,12 @@ set abc_comb_script   [processAbcScript $abc_combinational_script]
 # read liberty files and prepare some variables
 source $script_dir/init_tech.tcl
 
-# yosys plugin -i slang.so
+yosys plugin -i slang.so
 
 # # read design
-# yosys read_slang --top $top_design -f $sv_flist \
-#         --compat-mode --keep-hierarchy \
-#         --allow-use-before-declare --ignore-unknown-modules
-
-yosys read_verilog ../../rtl/mini/tech/tc_io.v
-yosys read_verilog ../../rtl/mini/tech/tc_clk.v
-yosys read_verilog ../../rtl/mini/tech/tc_pll.v
-yosys read_verilog ../../rtl/mini/tech/tc_sram.v
-# yosys read_verilog -I../../rtl/ip
-yosys read_verilog ../../rtl/mini/ip/spram_model.v
-yosys read_verilog ../../rtl/mini/ip/simpleuart.v
-yosys read_verilog ../../rtl/mini/ip/counter_timer.v
-yosys read_verilog ../../rtl/mini/ip/rcu.v
-yosys read_verilog ../../rtl/mini/ip/cust/register.v
-yosys read_verilog ../../rtl/mini/ip/cust/lfsr.v
-yosys read_verilog ../../rtl/mini/ip/cust/fifo.v
-yosys read_verilog ../../rtl/mini/ip/cust/cdc_sync.v
-yosys read_verilog ../../rtl/mini/ip/cust/clk_int_div.v
-yosys read_verilog ../../rtl/mini/ip/cust/edge_det.v
-yosys read_verilog ../../rtl/mini/ip/cust/rst_sync.v
-yosys read_verilog ../../rtl/mini/ip/cust/archinfo.v
-yosys read_verilog ../../rtl/mini/ip/cust/rng.v
-yosys read_verilog ../../rtl/mini/ip/cust/uart.v
-yosys read_verilog ../../rtl/mini/ip/cust/pwm.v
-yosys read_verilog ../../rtl/mini/ip/cust/ps2.v
-yosys read_verilog ../../rtl/mini/ip/cust/i2c.v
-yosys read_verilog ../../rtl/mini/ip/cust/psram_core.v
-yosys read_verilog ../../rtl/mini/ip/cust/psram.v
-yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_clgen.v
-yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_shift.v
-yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_top.v
-yosys read_verilog ../../rtl/mini/ip/cust/spfs/spi_flash.v
-yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_apb_if.v
-yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_clkgen.v
-yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_controller.v
-yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_fifo.v
-yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_rx.v
-yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/spi_master_tx.v
-yosys read_verilog ../../rtl/mini/ip/cust/apb_spi_master/apb_spi_master.v
-yosys read_verilog ../../rtl/mini/ip/apb_ip_wrapper.v
-yosys read_verilog ../../rtl/mini/ip/mem2apb.v
-yosys read_verilog ../../rtl/mini/picorv32.v
-yosys read_verilog ../../rtl/mini/retrosoc.v
-yosys read_verilog ../../rtl/mini/retrosoc_asic.v
+yosys read_slang --top $top_design -f $sv_flist \
+        --compat-mode --keep-hierarchy \
+        --allow-use-before-declare --ignore-unknown-modules
 
 # # blackbox requested modules
 # if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {
