@@ -7,6 +7,7 @@ $(info RTL_TOP:        $(RTL_TOP))
 $(info =========================================)
 
 $(info RTL_PATH: $(RTL_PATH))
+
 include $(RTL_PATH)/script/software.mk
 
 ifeq ($(SIMU), VCS)
@@ -50,4 +51,4 @@ postwave:
 clean:
 	rm -rf .build $(RTL_PATH)/.net_build $(RTL_PATH)/.post_build
 
-.PHONY: clean $(FIRMWARE_NAME).elf
+.PHONY: clean firmware
