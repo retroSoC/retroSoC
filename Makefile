@@ -1,6 +1,6 @@
 SOC            ?= MINI
 SIMU           ?= VCS
-SYNC           ?= YOSYS
+SYNTH          ?= YOSYS
 TIMI           ?= OPENSTA
 
 PDK            ?= S110
@@ -27,7 +27,7 @@ $(info MAKE FILELIST: $(MAKEFILE_LIST))
 $(info ============== CONFIG INFO ==============)
 $(info SOC:            $(SOC)     [MINI, STD])
 $(info SIMU:           $(SIMU)      [VCS, VERILATOR])
-$(info SYNC:           $(SYNC)    [YOSYS, DC])
+$(info SYNTH:          $(SYNTH)    [YOSYS, DC])
 $(info TIMI:           $(TIMI)  [OPENSTA, ISTA])
 $(info PDK:            $(PDK)     [S110, IHP130, SKY130])
 $(info HAVE_PLL:       $(HAVE_PLL)      [YES, NO])
@@ -43,8 +43,8 @@ ifeq ($(SOC), MINI)
     include rtl/mini/Makefile
 endif
 
-ifeq ($(SYNC), YOSYS)
+ifeq ($(SYNTH), YOSYS)
     include syn/yosys/yosys.mk
-else ifeq ($(SYNC), DC)
+else ifeq ($(SYNTH), DC)
     include syn/dc.mk
 endif
