@@ -29,6 +29,12 @@ module retrosoc_tb;
   reg        r_rst_n;
   reg        r_pll_en;
   reg  [2:0] r_pll_cfg;
+
+  wire       s_ext_clk;
+  wire       s_rst_n;
+  wire       s_pll_en;
+  wire [2:0] s_pll_cfg;
+
   wire       s_uart_tx;
   wire       s_flash_csb;
   wire       s_flash_clk;
@@ -56,18 +62,24 @@ module retrosoc_tb;
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
 
+  // connect inout pad
+  assign s_ext_clk = r_ext_clk;
+  assign s_rst_n   = r_rst_n;
+  assign s_pll_en  = r_pll_en;
+  assign s_pll_cfg = r_pll_cfg;
+
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad                 (r_xtal_clk),
       .xo_o_pad                 (),
-      .extclk_i_pad             (r_ext_clk),
-      .pll_cfg_0_i_pad          (r_pll_cfg[0]),
-      .pll_cfg_1_i_pad          (r_pll_cfg[1]),
-      .pll_cfg_2_i_pad          (r_pll_cfg[2]),
-      .clk_bypass_i_pad         (~r_pll_en),
-      .ext_rst_n_i_pad          (r_rst_n),
+      .extclk_i_pad             (s_ext_clk),
+      .pll_cfg_0_i_pad          (s_pll_cfg[0]),
+      .pll_cfg_1_i_pad          (s_pll_cfg[1]),
+      .pll_cfg_2_i_pad          (s_pll_cfg[2]),
+      .clk_bypass_i_pad         (~s_pll_en),
+      .ext_rst_n_i_pad          (s_rst_n),
       .sys_clkdiv4_o_pad        (),
       .uart_tx_o_pad            (s_uart_tx),
-      .uart_rx_i_pad            ('0),
+      .uart_rx_i_pad            (),
       .gpio_0_io_pad            (),
       .gpio_1_io_pad            (),
       .gpio_2_io_pad            (),
@@ -84,7 +96,7 @@ module retrosoc_tb;
       .gpio_13_io_pad           (),
       .gpio_14_io_pad           (),
       .gpio_15_io_pad           (),
-      .irq_pin_i_pad            ('0),
+      .irq_pin_i_pad            (),
       .cust_uart_tx_o_pad       (s_cust_uart_tx),
       .cust_uart_rx_i_pad       (s_cust_uart_rx),
       .cust_pwm_pwm_0_o_pad     (),

@@ -28,31 +28,31 @@
 
 
 module psram_top (
-    input         clk_i,
-    input         rst_n_i,
-    input         cfg_wait_wr_en_i,
-    input  [ 4:0] cfg_wait_i,
-    output [ 4:0] cfg_wait_o,
-    input         cfg_chd_wr_en_i,
-    input  [ 2:0] cfg_chd_i,
-    output [ 2:0] cfg_chd_o,
-    input         mem_valid_i,
-    output        mem_ready_o,
-    input  [23:0] mem_addr_i,
-    input  [31:0] mem_wdata_i,
-    input  [ 3:0] mem_wstrb_i,
-    output [31:0] mem_rdata_o,
-    output        psram_sclk_o,
-    output        psram_ce_o,
-    input         psram_mosi_i,
-    input         psram_miso_i,
-    input         psram_sio2_i,
-    input         psram_sio3_i,
-    output        psram_mosi_o,
-    output        psram_miso_o,
-    output        psram_sio2_o,
-    output        psram_sio3_o,
-    output        psram_sio_oen_o
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    input  logic        cfg_wait_wr_en_i,
+    input  logic [ 4:0] cfg_wait_i,
+    output logic [ 4:0] cfg_wait_o,
+    input  logic        cfg_chd_wr_en_i,
+    input  logic [ 2:0] cfg_chd_i,
+    output logic [ 2:0] cfg_chd_o,
+    input  logic        mem_valid_i,
+    output logic        mem_ready_o,
+    input  logic [23:0] mem_addr_i,
+    input  logic [31:0] mem_wdata_i,
+    input  logic [ 3:0] mem_wstrb_i,
+    output logic [31:0] mem_rdata_o,
+    output logic        psram_sclk_o,
+    output logic        psram_ce_o,
+    input  logic        psram_mosi_i,
+    input  logic        psram_miso_i,
+    input  logic        psram_sio2_i,
+    input  logic        psram_sio3_i,
+    output logic        psram_mosi_o,
+    output logic        psram_miso_o,
+    output logic        psram_sio2_o,
+    output logic        psram_sio3_o,
+    output logic        psram_sio_oen_o
 );
 
   localparam FSM_IDLE = 0;
@@ -61,24 +61,26 @@ module psram_top (
   localparam FSM_RD_ST = 3;
   localparam FSM_RD = 4;
 
-  reg         r_rd_st;
-  reg         r_wr_st;
-  reg  [ 7:0] r_xfer_data_bit_cnt;
-  reg  [ 5:0] r_fsm_state;
-  reg  [23:0] r_mem_addr;
-  reg  [31:0] r_mem_wdata;
+  logic        r_rd_st;
+  logic        r_wr_st;
+  logic [ 7:0] r_xfer_data_bit_cnt;
+  logic [ 5:0] r_fsm_state;
+  logic [23:0] r_mem_addr;
+  logic [31:0] r_mem_wdata;
 
-  wire [ 1:0] s_disp_addr_ofst;
-  wire [ 7:0] s_disp_xfer_bit_cnt;
-  wire [31:0] s_disp_wdata;
-  wire        s_core_idle;
+  logic [ 1:0] s_disp_addr_ofst;
+  logic [ 7:0] s_disp_xfer_bit_cnt;
+  logic [31:0] s_disp_wdata;
+  logic        s_core_idle;
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) begin
-      r_rd_st             <= 1'b0;
-      r_wr_st             <= 1'b0;
-      r_xfer_data_bit_cnt <= 8'd0;
+      r_rd_st             <= '0;
+      r_wr_st             <= '0;
+      r_xfer_data_bit_cnt <= '0;
       r_fsm_state         <= FSM_IDLE;
+      r_mem_addr          <= '0;
+      r_mem_wdata         <= '0;
     end else begin
       case (r_fsm_state)
         FSM_IDLE: begin
@@ -159,13 +161,13 @@ endmodule
 
 
 module wr_dispatcher (
-    input      [ 3:0] wstrb_i,
-    input      [31:0] wdata_i,
-    output reg [ 1:0] addr_ofst_o,
-    output reg [ 7:0] xfer_bit_cnt_o,
-    output reg [31:0] wdata_o
+    input  logic [ 3:0] wstrb_i,
+    input  logic [31:0] wdata_i,
+    output logic [ 1:0] addr_ofst_o,
+    output logic [ 7:0] xfer_bit_cnt_o,
+    output logic [31:0] wdata_o
 );
-  always @(*) begin
+  always_comb begin
     wdata_o = wdata_i;
     case (wstrb_i)
       4'b0001: begin

@@ -1,31 +1,31 @@
 module psram_core (
-    input             clk_i,
-    input             rst_n_i,
-    input             cfg_wait_wr_en_i,
-    input      [ 4:0] cfg_wait_i,
-    output reg [ 4:0] cfg_wait_o,
-    input             cfg_chd_wr_en_i,
-    input      [ 2:0] cfg_chd_i,
-    output reg [ 2:0] cfg_chd_o,
-    output reg        mem_ready_o,
-    input      [23:0] mem_addr_i,
-    input      [31:0] mem_wdata_i,
-    output     [31:0] mem_rdata_o,
-    input      [ 7:0] xfer_data_bit_cnt_i,
-    input             rd_st_i,
-    input             wr_st_i,
-    output            idle_o,
-    output reg        psram_sclk_o,
-    output reg        psram_ce_o,
-    input             psram_mosi_i,
-    input             psram_miso_i,
-    input             psram_sio2_i,
-    input             psram_sio3_i,
-    output reg        psram_mosi_o,
-    output reg        psram_miso_o,
-    output reg        psram_sio2_o,
-    output reg        psram_sio3_o,
-    output            psram_sio_oen_o
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    input  logic        cfg_wait_wr_en_i,
+    input  logic [ 4:0] cfg_wait_i,
+    output logic [ 4:0] cfg_wait_o,
+    input  logic        cfg_chd_wr_en_i,
+    input  logic [ 2:0] cfg_chd_i,
+    output logic [ 2:0] cfg_chd_o,
+    output logic        mem_ready_o,
+    input  logic [23:0] mem_addr_i,
+    input  logic [31:0] mem_wdata_i,
+    output logic [31:0] mem_rdata_o,
+    input  logic [ 7:0] xfer_data_bit_cnt_i,
+    input  logic        rd_st_i,
+    input  logic        wr_st_i,
+    output logic        idle_o,
+    output logic        psram_sclk_o,
+    output logic        psram_ce_o,
+    input  logic        psram_mosi_i,
+    input  logic        psram_miso_i,
+    input  logic        psram_sio2_i,
+    input  logic        psram_sio3_i,
+    output logic        psram_mosi_o,
+    output logic        psram_miso_o,
+    output logic        psram_sio2_o,
+    output logic        psram_sio3_o,
+    output logic        psram_sio_oen_o
 );
   // sclk(max: 144MHz ~ 6.94ns)
   // 6.94 * 50000 = 347us / 2 = 174us > 150us
@@ -47,32 +47,32 @@ module psram_core (
   localparam FSM_RD2IDLE = 13;
   localparam FSM_WR2IDLE = 14;
 
-  reg  [ 4:0] r_fsm_state;
-  reg  [ 4:0] r_fsm_state_tgt;
-  reg  [17:0] r_boot_cnt;
+  logic [ 4:0] r_fsm_state;
+  logic [ 4:0] r_fsm_state_tgt;
+  logic [17:0] r_boot_cnt;
   // ca mean: cmd + addr
-  reg  [31:0] r_xfer_ca;
-  reg  [31:0] r_xfer_data;
-  reg  [ 7:0] r_xfer_ca_bit_cnt;
-  reg  [ 7:0] r_xfer_data_bit_cnt;
-  reg  [ 7:0] r_xfer_byte_data;
-  reg  [ 4:0] r_ce_cnt;
-  reg  [ 3:0] r_rd_wait_cnt;
-  reg  [ 2:0] r_cfg_chd;
-  reg         r_dev_rst;
-  reg         r_wr_st;
-  reg         r_rd_st;
+  logic [31:0] r_xfer_ca;
+  logic [31:0] r_xfer_data;
+  logic [ 7:0] r_xfer_ca_bit_cnt;
+  logic [ 7:0] r_xfer_data_bit_cnt;
+  logic [ 7:0] r_xfer_byte_data;
+  logic [ 4:0] r_ce_cnt;
+  logic [ 3:0] r_rd_wait_cnt;
+  logic [ 2:0] r_cfg_chd;
+  logic        r_dev_rst;
+  logic        r_wr_st;
+  logic        r_rd_st;
 
-  wire        s_xfer_new_byte_upd;
-  wire [ 7:0] s_xfer_new_byte;
+  logic        s_xfer_new_byte_upd;
+  logic [ 7:0] s_xfer_new_byte;
 
   // wait cycles(mmio)
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) cfg_wait_o <= 5'd18;
     else if (cfg_wait_wr_en_i) cfg_wait_o <= cfg_wait_i;
   end
   // extra cycle for tCHD(mmio)
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) cfg_chd_o <= 3'd4;
     else if (cfg_chd_wr_en_i) cfg_chd_o <= cfg_chd_i;
   end
@@ -81,7 +81,7 @@ module psram_core (
   assign psram_sio_oen_o = (r_fsm_state == FSM_RD_PRE_QPI) | (r_fsm_state == FSM_RD_QPI);
   assign mem_rdata_o     = r_xfer_data;
 
-  always @(*) begin
+  always_comb begin
     if (r_fsm_state == FSM_INIT) begin
       {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} = 4'd0;
     end else if (r_fsm_state != FSM_IDLE) begin
@@ -98,20 +98,20 @@ module psram_core (
     end
   end
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_rd_st <= 1'b0;
     else if (rd_st_i) r_rd_st <= 1'b1;
     else if (r_fsm_state == FSM_RD2IDLE) r_rd_st <= 1'b0;
   end
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_wr_st <= 1'b0;
     else if (wr_st_i) r_wr_st <= 1'b1;
     else if (r_fsm_state == FSM_WR2IDLE) r_wr_st <= 1'b0;
   end
 
   // >150us, ce high, sclk low, si/so/sio[3:0] low
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) begin
       r_fsm_state         <= FSM_INIT;
       r_fsm_state_tgt     <= FSM_INIT;
@@ -317,10 +317,10 @@ endmodule
 
 
 module load_new_byte (
-    input  [ 7:0] xfer_data_bit_cnt_i,
-    input  [31:0] wr_data_i,
-    output        xfer_new_byte_upd_o,
-    output [ 7:0] xfer_new_byte_o
+    input  logic [ 7:0] xfer_data_bit_cnt_i,
+    input  logic [31:0] wr_data_i,
+    output logic        xfer_new_byte_upd_o,
+    output logic [ 7:0] xfer_new_byte_o
 );
   assign xfer_new_byte_upd_o = (xfer_data_bit_cnt_i == 8'd4)  |
                                (xfer_data_bit_cnt_i == 8'd12) |
