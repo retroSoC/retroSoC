@@ -11,18 +11,18 @@ SIM_LOG      := -l sim.log
 
 RTL_INC  := +incdir+../core/kianV \
             +incdir+../ip/native \
-            +incdir+../ip/clusterip/common/rtl \
-            +incdir+../ip/clusterip/common/rtl/cdc \
-            +incdir+../ip/clusterip/common/rtl/clkrst \
-            +incdir+../ip/clusterip/common/rtl/interface \
-            +incdir+../ip/clusterip/common/rtl/tech \
-            +incdir+../ip/clusterip/common/rtl/utils \
-            +incdir+../ip/clusterip/archinfo/rtl \
-            +incdir+../ip/clusterip/rng/rtl \
-            +incdir+../ip/clusterip/uart/rtl \
-            +incdir+../ip/clusterip/pwm/rtl \
-            +incdir+../ip/clusterip/ps2/rtl \
-            +incdir+../ip/clusterip/i2c/rtl \
+            +incdir+../../clusterip/common/rtl \
+            +incdir+../../clusterip/common/rtl/cdc \
+            +incdir+../../clusterip/common/rtl/clkrst \
+            +incdir+../../clusterip/common/rtl/interface \
+            +incdir+../../clusterip/common/rtl/tech \
+            +incdir+../../clusterip/common/rtl/utils \
+            +incdir+../../clusterip/archinfo/rtl \
+            +incdir+../../clusterip/rng/rtl \
+            +incdir+../../clusterip/uart/rtl \
+            +incdir+../../clusterip/pwm/rtl \
+            +incdir+../../clusterip/ps2/rtl \
+            +incdir+../../clusterip/i2c/rtl \
             +incdir+../ip/3rd_party/spfs \
             +incdir+../ip/3rd_party/spfs_model
 
