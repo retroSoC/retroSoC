@@ -4,49 +4,63 @@
 #
 # Authors:
 # - Philippe Sauter <phsauter@iis.ee.ethz.ch>
-
-# Tools
-YOSYS    ?= yosys
+#
+# -- Adaptable modifications are redistributed under compatible License --
+#
+# Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
+# retroSoC is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#             http://license.coscl.org.cn/MulanPSL2
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
 
 # Directories
 # directory of the path to the last called Makefile (this one)
-YOSYS_DIR       := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
-YOSYS_OUT       := $(YOSYS_DIR)/out
-YOSYS_WORK      := $(YOSYS_DIR)/tmp
-YOSYS_REPORTS   := $(YOSYS_DIR)/reports
+YOSYS_DIR   := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
+YOSYS_BUILD := $(YOSYS_DIR)/.synth_build
+YOSYS_OUT   := $(YOSYS_BUILD)/out
+YOSYS_TMP   := $(YOSYS_BUILD)/tmp
+YOSYS_RPT   := $(YOSYS_BUILD)/rpt
 
-# Project variables
-include $(YOSYS_DIR)/project-synth.mk
+include $(YOSYS_DIR)/synth_config.mk
 
-TOP_DESIGN      ?= retrosoc_asic
-RTL_NAME        ?= retrosoc_asic
+TOP_DESIGN    ?= retrosoc_asic
+RTL_NAME      ?= retrosoc_asic
+# SV_FLIST      := $(realpath $(YOSYS_DIR)/..)/mini.fl
+SV_FLIST      := $(YOSYS_DIR)/../../rtl/mini/filelist/mini.fl
 
-VLOG_FILES      := $(RTL_NAME)_sv2v.v
-NETLIST         := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
-NETLIST_DEBUG   := $(YOSYS_OUT)/$(RTL_NAME)_debug_yosys.v
+$(info SV_FLIST: $(SV_FLIST))
+
+VLOG_FILES    := $(RTL_NAME)_sv2v.v
+NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
+NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_debug_yosys.v
 
 ## Synthesize netlist using Yosys
-yosys: $(NETLIST)
+synth: $(NETLIST)
 
 $(NETLIST) $(NETLIST_DEBUG):
 	@mkdir -p $(YOSYS_OUT)
-	@mkdir -p $(YOSYS_WORK)
-	@mkdir -p $(YOSYS_REPORTS)
+	@mkdir -p $(YOSYS_TMP)
+	@mkdir -p $(YOSYS_RPT)
+	SV_FLIST="$(SV_FLIST)" \
 	TOP_DESIGN="$(TOP_DESIGN)" \
 	PROJ_NAME="$(RTL_NAME)" \
-	WORK="$(YOSYS_WORK)" \
+	WORK="$(YOSYS_TMP)" \
 	BUILD="$(YOSYS_OUT)" \
-	REPORTS="$(YOSYS_REPORTS)" \
+	REPORTS="$(YOSYS_RPT)" \
 	NETLIST="$(NETLIST)" \
-	$(YOSYS) -c $(YOSYS_DIR)/scripts/yosys_synthesis.tcl \
+	yosys -c $(YOSYS_DIR)/script/synth.tcl \
 		2>&1 | TZ=UTC-8 gawk '{ print strftime("[%Y-%m-%d %H:%M %Z]"), $$0 }' \
-			 | tee "$(YOSYS_DIR)/$(RTL_NAME).log" \
-			 | gawk -f $(YOSYS_DIR)/scripts/filter_output.awk;
+			 | tee "$(YOSYS_BUILD)/$(RTL_NAME).log" \
+			 | gawk -f $(YOSYS_DIR)/script/filter_output.awk;
 
-ys_clean:
+synth_clean:
 	rm -rf $(YOSYS_OUT)
-	rm -rf $(YOSYS_WORK)
-	rm -rf $(YOSYS_REPORTS) 
+	rm -rf $(YOSYS_TMP)
+	rm -rf $(YOSYS_RPT) 
 	rm -f $(YOSYS_DIR)/$(RTL_NAME).log
 
-.PHONY: ys_clean yosys synth $(NETLIST) $(NETLIST_DEBUG)
+.PHONY: synth_clean yosys synth $(NETLIST) $(NETLIST_DEBUG)

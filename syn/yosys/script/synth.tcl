@@ -19,10 +19,10 @@
 
 # get environment variables
 set script_dir [file dirname [info script]]
-source $script_dir/yosys_common.tcl
+source $script_dir/common.tcl
 
 # constraints file
-set abc_constr [file join $script_dir ../src/abc.constr]
+set abc_constr $script_dir/abc.constr
 
 # ABC script without DFF optimizations
 set abc_combinational_script $script_dir/abc-opt.script
@@ -33,12 +33,12 @@ set abc_comb_script   [processAbcScript $abc_combinational_script]
 # read liberty files and prepare some variables
 source $script_dir/init_tech.tcl
 
-yosys plugin -i slang.so
+yosys plugin -i syn/yosys/slang.so
 
 # # read design
-yosys read_slang --top $top_design -f $sv_flist \
+yosys read_slang --top $top_design -F $sv_flist \
         --compat-mode --keep-hierarchy \
-        --allow-use-before-declare --ignore-unknown-modules
+        --allow-use-before-declare --ignore-timing --ignore-unknown-modules
 
 # # blackbox requested modules
 # if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {

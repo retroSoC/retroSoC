@@ -6,8 +6,7 @@
 # - Philippe Sauter <phsauter@iis.ee.ethz.ch>
 
 # get environment variables
-set yosys_dir [file dirname [file dirname [info script]]]
-set root_dir [file dirname $yosys_dir]
+set root_dir [file dirname [file dirname [file dirname [file dirname [info script]]]]]
 
 if {[file exists "$root_dir/.cockpitrc"]} {
     puts "0. Executing init_tech: load technology from ETHZ DZ cockpit"
@@ -20,7 +19,7 @@ if {[file exists "$root_dir/.cockpitrc"]} {
     puts "0. Executing init_tech: load technology from Github PDK"
     if {![info exists pdk_dir]} {
         # set pdk_dir "$root_dir/IHP-Open-PDK"
-        set pdk_dir "$root_dir/S110"
+        set pdk_dir "$root_dir/pdk/s110"
     }
     # set pdk_cells_lib ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib
     # set pdk_sram_lib  ${pdk_dir}/ihp-sg13g2/libs.ref/sg13g2_sram/lib
