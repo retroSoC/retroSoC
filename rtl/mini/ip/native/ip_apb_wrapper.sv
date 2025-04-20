@@ -10,13 +10,12 @@
 
 `include "mmap_define.svh"
 
-`include "apb4_if.sv"
-`include "uart_define.sv"
-`include "pwm_define.sv"
-`include "ps2_define.sv"
-`include "i2c_define.sv"
+`include "uart_define.svh"
+`include "pwm_define.svh"
+`include "ps2_define.svh"
+`include "i2c_define.svh"
 
-module apb_ip_wrapper (
+module ip_apb_wrapper (
     input  logic        clk_i,
     input  logic        rst_n_i,
     // mem if

@@ -8,66 +8,67 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module natv_ip_wrapper (
-    input             clk_i,
-    input             rst_n_i,
+module ip_natv_wrapper (
+    input  logic        clk_i,
+    input  logic        rst_n_i,
     // natv if
-    input             natv_valid_i,
-    input      [31:0] natv_addr_i,
-    input      [31:0] natv_wdata_i,
-    input      [ 3:0] natv_wstrb_i,
-    output     [31:0] natv_rdata_o,
-    output            natv_ready_o,
+    input  logic        natv_valid_i,
+    input  logic [31:0] natv_addr_i,
+    input  logic [31:0] natv_wdata_i,
+    input  logic [ 3:0] natv_wstrb_i,
+    output logic [31:0] natv_rdata_o,
+    output logic        natv_ready_o,
     // gpio
-    output     [15:0] gpio_out_o,
-    input      [15:0] gpio_in_i,
-    output     [15:0] gpio_pub_o,
-    output     [15:0] gpio_pdb_o,
-    output     [15:0] gpio_oeb_o,
+    output logic [15:0] gpio_out_o,
+    input  logic [15:0] gpio_in_i,
+    output logic [15:0] gpio_pub_o,
+    output logic [15:0] gpio_pdb_o,
+    output logic [15:0] gpio_oeb_o,
     // uart
-    input             uart_rx_i,
-    output            uart_tx_o,
+    input  logic        uart_rx_i,
+    output logic        uart_tx_o,
     // psram if
-    output            psram_cfg_wait_wr_en_o,
-    input      [ 4:0] psram_cfg_wait_i,
-    output reg [ 4:0] psram_cfg_wait_o,
-    output            psram_cfg_chd_wr_en_o,
-    input      [ 2:0] psram_cfg_chd_i,
-    output reg [ 2:0] psram_cfg_chd_o,
-    output     [ 2:0] irq_o
+    output logic        psram_cfg_wait_wr_en_o,
+    input  logic [ 4:0] psram_cfg_wait_i,
+    output logic [ 4:0] psram_cfg_wait_o,
+    output logic        psram_cfg_chd_wr_en_o,
+    input  logic [ 2:0] psram_cfg_chd_i,
+    output logic [ 2:0] psram_cfg_chd_o,
+    output logic [ 2:0] irq_o
 );
 
-  wire        s_natv_ready_d;
-  wire        s_natv_ready_q;
-  reg  [31:0] r_mmap_rdata;
+  logic s_natv_ready_d, s_natv_ready_q;
+  logic [ 4:0] r_psram_cfg_wait;
+  logic [ 2:0] r_psram_cfg_chd;
+  logic [31:0] r_mmap_rdata;
   // gpio
-  reg  [15:0] r_gpio;
-  reg  [15:0] r_gpio_pub;
-  reg  [15:0] r_gpio_pdb;
-  reg  [15:0] r_gpio_oeb;
+  logic [15:0] r_gpio;
+  logic [15:0] r_gpio_pub;
+  logic [15:0] r_gpio_pdb;
+  logic [15:0] r_gpio_oeb;
   // uart
-  wire        s_uart_div_reg_sel;
-  wire        s_uart_dat_reg_sel;
-  wire [31:0] s_uart_div_reg_dout;
-  wire [31:0] s_uart_dat_reg_dout;
-  wire        s_uart_dat_reg_wait;
+  logic        s_uart_div_reg_sel;
+  logic        s_uart_dat_reg_sel;
+  logic [31:0] s_uart_div_reg_dout;
+  logic [31:0] s_uart_dat_reg_dout;
+  logic        s_uart_dat_reg_wait;
   // tim0
-  wire        s_tim0_cfg_reg_sel;
-  wire        s_tim0_val_reg_sel;
-  wire        s_tim0_dat_reg_sel;
-  wire [31:0] s_tim0_cfg_reg_dout;
-  wire [31:0] s_tim0_val_reg_dout;
-  wire [31:0] s_tim0_dat_reg_dout;
+  logic        s_tim0_cfg_reg_sel;
+  logic        s_tim0_val_reg_sel;
+  logic        s_tim0_dat_reg_sel;
+  logic [31:0] s_tim0_cfg_reg_dout;
+  logic [31:0] s_tim0_val_reg_dout;
+  logic [31:0] s_tim0_dat_reg_dout;
   // tim1
-  wire        s_tim1_cfg_reg_sel;
-  wire        s_tim1_val_reg_sel;
-  wire        s_tim1_dat_reg_sel;
-  wire [31:0] s_tim1_cfg_reg_dout;
-  wire [31:0] s_tim1_val_reg_dout;
-  wire [31:0] s_tim1_dat_reg_dout;
+  logic        s_tim1_cfg_reg_sel;
+  logic        s_tim1_val_reg_sel;
+  logic        s_tim1_dat_reg_sel;
+  logic [31:0] s_tim1_cfg_reg_dout;
+  logic [31:0] s_tim1_val_reg_dout;
+  logic [31:0] s_tim1_dat_reg_dout;
   // psram
-  wire        s_psram_wait_reg_sel;
-  wire        s_psram_chd_reg_sel;
+  logic        s_psram_wait_reg_sel;
+  logic        s_psram_chd_reg_sel;
 
   assign natv_rdata_o           = r_mmap_rdata;
   assign natv_ready_o           = s_natv_ready_q;
@@ -90,14 +91,19 @@ module natv_ip_wrapper (
 
   assign psram_cfg_wait_wr_en_o = s_psram_wait_reg_sel ? natv_wstrb_i[0] : 1'b0;
   assign psram_cfg_chd_wr_en_o  = s_psram_chd_reg_sel ? natv_wstrb_i[0] : 1'b0;
+  assign psram_cfg_wait_o       = r_psram_cfg_wait;
+  assign psram_cfg_chd_o        = r_psram_cfg_chd;
 
-  always @(posedge clk_i, negedge rst_n_i) begin
-    if (!rst_n_i) begin
-      r_gpio       <= 16'd0;
-      r_gpio_pub   <= 16'd0;
-      r_gpio_pdb   <= 16'd0;
-      r_gpio_oeb   <= 16'hFFFF;
-      r_mmap_rdata <= 32'd0;
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) begin
+      r_gpio           <= '0;
+      r_gpio_pub       <= '0;
+      r_gpio_pdb       <= '0;
+      r_gpio_oeb       <= '1;
+      r_mmap_rdata     <= '0;
+      r_psram_cfg_wait <= '0;
+      r_psram_cfg_chd  <= '0;
+
     end else begin
       if (natv_valid_i && !s_natv_ready_q) begin
         case (natv_addr_i[15:0])
@@ -131,11 +137,11 @@ module natv_ip_wrapper (
           16'h3008: r_mmap_rdata <= s_tim1_dat_reg_dout;
           16'h4000: begin
             r_mmap_rdata <= {27'd0, psram_cfg_wait_i};
-            if (natv_wstrb_i[0]) psram_cfg_wait_o <= natv_wdata_i[4:0];
+            if (natv_wstrb_i[0]) r_psram_cfg_wait <= natv_wdata_i[4:0];
           end
           16'h4004: begin
             r_mmap_rdata <= {29'd0, psram_cfg_chd_i};
-            if (natv_wstrb_i[0]) psram_cfg_chd_o <= natv_wdata_i[2:0];
+            if (natv_wstrb_i[0]) r_psram_cfg_chd <= natv_wdata_i[2:0];
           end
         endcase
       end

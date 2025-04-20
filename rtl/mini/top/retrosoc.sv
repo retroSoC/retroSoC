@@ -183,7 +183,7 @@ module retrosoc (
       .psram_rdata_i(s_psram_rdata)
   );
 
-  natv_ip_wrapper u_natv_ip_wrapper (
+  ip_natv_wrapper u_ip_natv_wrapper (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),
       .natv_valid_i          (s_natv_valid),
@@ -208,7 +208,7 @@ module retrosoc (
       .irq_o                 (s_natv_irq)
   );
 
-  apb_ip_wrapper u_apb_ip_wrapper (
+  ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .mmap_valid_i  (s_mmap_valid),
