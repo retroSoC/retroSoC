@@ -18,6 +18,7 @@ RTL_PATH       ?= NONE
 CORE           ?= PICORV32
 RTL_TOP        ?= retrosoc_tb
 
+$(info ============== BASE INFO =============================)
 $(info retroSoC:      <https://github.com/retroSoC/retroSoC>)
 $(info author:        Yuchi Miao <https://github.com/maksyuki>)
 $(info license:       MulanPSL-2.0 license)
@@ -27,7 +28,7 @@ $(info MAKE VERSION:  $(MAKE_VERSION))
 $(info MAKE APP:      $(MAKE))
 $(info MAKE CMDGOAL:  $(MAKECMDGOALS))
 $(info MAKE FILELIST: $(MAKEFILE_LIST))
-$(info ============== CONFIG INFO ==============)
+$(info ============== CONFIG INFO =============================)
 $(info SOC [MINI, STD]:            $(SOC))
 $(info CORE [PICORV32, KIANV]:     $(CORE))
 $(info SIMU [VCS, VERILATOR]:      $(SIMU))
@@ -40,7 +41,7 @@ $(info HAVE_SVA [YES, NO]:         $(HAVE_SVA))
 $(info RTL_SIM_PLLEN:              $(RTL_SIM_PLLEN))
 $(info RTL_SIM_PLLCFG:             $(RTL_SIM_PLLCFG))
 $(info WAVE:                       $(WAVE))
-$(info =========================================)
+$(info =======================================================)
 
 DEF_LIST    ?= +define+PDK_$(PDK)
 DEF_LIST    += +define+CORE_$(CORE)
@@ -64,7 +65,6 @@ endif
 
 ifeq ($(SYNTH), YOSYS)
     demo := $(shell python3 $(RTL_PATH)/filelist/comb.py $(RTL_FLIST))
-    $(info demo: $(demo))
     include syn/yosys/yosys.mk
 else ifeq ($(SYNTH), DC)
     include syn/dc.mk

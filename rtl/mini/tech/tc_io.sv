@@ -11,9 +11,11 @@ module tc_io_xtl_pad (
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadIn u_sg13g2_IOPadIn (
-      .pad(pad),
-      .p2c(p2c)
+      .pad(xi_pad),
+      .p2c(clk)
   );
+  assign xo_pad = xi_pad;
+
 `elsif PDK_S110
   (* keep *) (* dont_touch = "true" *)
   PXWE1W u_PXWE1W (
