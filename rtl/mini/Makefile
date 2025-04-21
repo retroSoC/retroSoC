@@ -1,11 +1,3 @@
-CORE    ?= PICORV32
-RTL_TOP ?= retrosoc_tb
-
-
-$(info CORE:           $(CORE) [PICORV32, KIANV])
-$(info RTL_TOP:        $(RTL_TOP))
-$(info =========================================)
-
 $(info RTL_PATH: $(RTL_PATH))
 
 include $(RTL_PATH)/script/software.mk

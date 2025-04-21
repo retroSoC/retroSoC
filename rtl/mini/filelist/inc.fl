@@ -1,0 +1,16 @@
++incdir+../core/kianV
++incdir+../ip/native
++incdir+../../clusterip/common/rtl
++incdir+../../clusterip/common/rtl/cdc
++incdir+../../clusterip/common/rtl/clkrst
++incdir+../../clusterip/common/rtl/interface
++incdir+../../clusterip/common/rtl/tech
++incdir+../../clusterip/common/rtl/utils
++incdir+../../clusterip/archinfo/rtl
++incdir+../../clusterip/rng/rtl
++incdir+../../clusterip/uart/rtl
++incdir+../../clusterip/pwm/rtl
++incdir+../../clusterip/ps2/rtl
++incdir+../../clusterip/i2c/rtl
++incdir+../ip/3rd_party/spfs
++incdir+../ip/3rd_party/spfs_model

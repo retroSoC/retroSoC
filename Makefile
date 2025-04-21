@@ -15,6 +15,9 @@ WAVE           ?= NONE
 ROOT_PATH      ?= $(CURDIR)
 RTL_PATH       ?= NONE
 
+CORE           ?= PICORV32
+RTL_TOP        ?= retrosoc_tb
+
 $(info retroSoC:      <https://github.com/retroSoC/retroSoC>)
 $(info author:        Yuchi Miao <https://github.com/maksyuki>)
 $(info license:       MulanPSL-2.0 license)
@@ -26,6 +29,7 @@ $(info MAKE CMDGOAL:  $(MAKECMDGOALS))
 $(info MAKE FILELIST: $(MAKEFILE_LIST))
 $(info ============== CONFIG INFO ==============)
 $(info SOC:            $(SOC)     [MINI, STD])
+$(info CORE:           $(CORE) [PICORV32, KIANV])
 $(info SIMU:           $(SIMU)      [VCS, VERILATOR])
 $(info SYNTH:          $(SYNTH)    [YOSYS, DC])
 $(info TIMI:           $(TIMI)  [OPENSTA, ISTA])
@@ -37,6 +41,7 @@ $(info HAVE_SVA:       $(HAVE_SVA)       [YES, NO])
 $(info RTL_SIM_PLLEN:  $(RTL_SIM_PLLEN))
 $(info RTL_SIM_PLLCFG: $(RTL_SIM_PLLCFG))
 $(info WAVE:           $(WAVE))
+$(info =========================================)
 
 ifeq ($(SOC), MINI)
     RTL_PATH = $(ROOT_PATH)/rtl/mini

@@ -29,7 +29,6 @@ include $(YOSYS_DIR)/synth_config.mk
 
 TOP_DESIGN    ?= retrosoc_asic
 RTL_NAME      ?= retrosoc_asic
-# SV_FLIST      := $(realpath $(YOSYS_DIR)/..)/mini.fl
 SV_FLIST      := $(YOSYS_DIR)/../../rtl/mini/filelist/mini.fl
 
 $(info SV_FLIST: $(SV_FLIST))

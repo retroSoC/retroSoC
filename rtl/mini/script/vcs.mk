@@ -9,26 +9,8 @@ VERDI_TOOL   := bsub -Is verdi
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
-RTL_INC  := +incdir+../core/kianV \
-            +incdir+../ip/native \
-            +incdir+../../clusterip/common/rtl \
-            +incdir+../../clusterip/common/rtl/cdc \
-            +incdir+../../clusterip/common/rtl/clkrst \
-            +incdir+../../clusterip/common/rtl/interface \
-            +incdir+../../clusterip/common/rtl/tech \
-            +incdir+../../clusterip/common/rtl/utils \
-            +incdir+../../clusterip/archinfo/rtl \
-            +incdir+../../clusterip/rng/rtl \
-            +incdir+../../clusterip/uart/rtl \
-            +incdir+../../clusterip/pwm/rtl \
-            +incdir+../../clusterip/ps2/rtl \
-            +incdir+../../clusterip/i2c/rtl \
-            +incdir+../ip/3rd_party/spfs \
-            +incdir+../ip/3rd_party/spfs_model
-
 DEF_LIST    ?= +define+PDK_$(PDK)
 DEF_LIST    += +define+CORE_$(CORE)
-
 ifeq ($(HAVE_PLL), YES)
     DEF_LIST += +define+HAVE_PLL
 endif
@@ -55,7 +37,9 @@ endif
 
 RTL_FLIST += -f ../filelist/top.fl \
              -f ../filelist/ip.fl \
-             -f ../filelist/tech.fl
+             -f ../filelist/tech.fl \
+             -f ../filelist/inc.fl \
+             -f ../filelist/def.fl
 
 TB_FLIST  := -f ../filelist/tb.fl
 
@@ -71,8 +55,7 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 +lint=TFIPC-L \
                 $(DEF_LIST) \
                 -xprop=../xprop_config \
-                -work DEFAULT \
-                $(RTL_INC)
+                -work DEFAULT
 
 
 TIME_OPTION := +notimingcheck +nospecify
