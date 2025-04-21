@@ -33,7 +33,6 @@ SV_FLIST      := $(YOSYS_DIR)/../../rtl/mini/filelist/yosys.fl
 
 $(info SV_FLIST: $(SV_FLIST))
 
-VLOG_FILES    := $(RTL_NAME)_sv2v.v
 NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
 NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_debug_yosys.v
 
@@ -44,6 +43,7 @@ $(NETLIST) $(NETLIST_DEBUG):
 	@mkdir -p $(YOSYS_OUT)
 	@mkdir -p $(YOSYS_TMP)
 	@mkdir -p $(YOSYS_RPT)
+	PDK="$(PDK)" \
 	SV_FLIST="$(SV_FLIST)" \
 	TOP_DESIGN="$(TOP_DESIGN)" \
 	PROJ_NAME="$(RTL_NAME)" \

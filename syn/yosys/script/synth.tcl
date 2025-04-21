@@ -145,9 +145,15 @@ yosys tee -q -o "${report_dir}/${proj_name}_pre_tech.json" stat -json -tech cmos
 # mapping to technology
 
 puts "Using combinational-only abc optimizations"
+if {$pdk == "S110"} {
 yosys dfflibmap {*}$dff_cells_dont_use_args {*}$tech_cells_args
 # yosys abc {*}$tech_cells_args -D $period_ps -script $abc_comb_script -constr $abc_constr -showtmp
 yosys abc {*}$comb_cells_dont_use_args {*}$tech_cells_args
+} else {
+    yosys dfflibmap {*}$tech_cells_args
+    yosys abc {*}$tech_cells_args
+}
+
 
 yosys clean -purge
 
