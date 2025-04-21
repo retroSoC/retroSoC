@@ -9,25 +9,16 @@ VERDI_TOOL   := bsub -Is verdi
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
-DEF_LIST    ?= +define+PDK_$(PDK)
-DEF_LIST    += +define+CORE_$(CORE)
-ifeq ($(HAVE_PLL), YES)
-    DEF_LIST += +define+HAVE_PLL
-endif
-
-ifeq ($(HAVE_SRAM), YES)
-    DEF_LIST += +define+HAVE_SRAM
-endif
-
-ifeq ($(HAVE_SVA), NO)
-    DEF_LIST += +define+SV_ASSRT_DISABLE
-endif
-
 ifeq ($(PDK), IHP130)
     RTL_FLIST := -f ../filelist/pdk_ihp130.fl
 else ifeq ($(PDK), S110)
     RTL_FLIST := -f ../filelist/pdk_s110.fl
 endif
+
+RTL_FLIST += -f ../filelist/def.fl \
+             -f ../filelist/inc.fl \
+             -f ../filelist/ip.fl \
+             -f ../filelist/tech.fl \
 
 ifeq ($(CORE), PICORV32)
     RTL_FLIST += -f ../filelist/core_picorv32.fl
@@ -35,11 +26,7 @@ else ifeq ($(CORE), KIANV)
     RTL_FLIST += -f ../filelist/core_kianv.fl
 endif
 
-RTL_FLIST += -f ../filelist/top.fl \
-             -f ../filelist/ip.fl \
-             -f ../filelist/tech.fl \
-             -f ../filelist/inc.fl \
-             -f ../filelist/def.fl
+RTL_FLIST += -f ../filelist/top.fl
 
 TB_FLIST  := -f ../filelist/tb.fl
 
@@ -53,7 +40,6 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 +error+500 \
                 +vcs+flush+all \
                 +lint=TFIPC-L \
-                $(DEF_LIST) \
                 -xprop=../xprop_config \
                 -work DEFAULT
 

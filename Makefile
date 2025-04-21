@@ -43,12 +43,29 @@ $(info RTL_SIM_PLLCFG: $(RTL_SIM_PLLCFG))
 $(info WAVE:           $(WAVE))
 $(info =========================================)
 
+DEF_LIST    ?= +define+PDK_$(PDK)
+DEF_LIST    += +define+CORE_$(CORE)
+ifeq ($(HAVE_PLL), YES)
+    DEF_LIST += +define+HAVE_PLL
+endif
+
+ifeq ($(HAVE_SRAM), YES)
+    DEF_LIST += +define+HAVE_SRAM
+endif
+
+ifeq ($(HAVE_SVA), NO)
+    DEF_LIST += +define+SV_ASSRT_DISABLE
+endif
+
 ifeq ($(SOC), MINI)
     RTL_PATH = $(ROOT_PATH)/rtl/mini
+    $(file > $(RTL_PATH)/filelist/def.fl, $(DEF_LIST))
     include rtl/mini/Makefile
 endif
 
 ifeq ($(SYNTH), YOSYS)
+    demo := $(shell python3 $(RTL_PATH)/filelist/comb.py $(RTL_FLIST))
+    $(info demo: $(demo))
     include syn/yosys/yosys.mk
 else ifeq ($(SYNTH), DC)
     include syn/dc.mk
