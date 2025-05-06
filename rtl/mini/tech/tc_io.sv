@@ -9,9 +9,11 @@ module tc_io_xtl_pad (
   assign clk    = en ? xi_pad : 1'b0;
   assign xo_pad = xi_pad;
 `elsif PDK_IHP130
+  wire s_xi_pad;
+  assign s_xi_pad = xi_pad;
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadIn u_sg13g2_IOPadIn (
-      .pad(xi_pad),
+      .pad(s_xi_pad),
       .p2c(clk)
   );
   assign xo_pad = xi_pad;
@@ -45,7 +47,7 @@ module tc_io_in_pad (
 endmodule
 
 module tc_io_out_pad (
-    inout logic pad,
+    inout wire  pad,
     input logic c2p
 );
 
