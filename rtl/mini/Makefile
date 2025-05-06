@@ -22,7 +22,7 @@ wave:
 
 netcomp:
 	@mkdir -p $(RTL_PATH)/.net_build
-	cd $(RTL_PATH)/.net_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) -v ../syn/yosys/out/retrosoc_asic_yosys.v $(RTL_TOP).v -top $(RTL_TOP) $(COMP_LOG))
+	cd $(RTL_PATH)/.net_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(NET_FLIST) $(NET_PATH) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 netsim: netcomp
 	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG)

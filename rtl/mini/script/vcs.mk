@@ -10,16 +10,15 @@ COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
 ifeq ($(PDK), IHP130)
-    RTL_FLIST := -f ../filelist/pdk_ihp130.fl
+    NET_FLIST := -f ../filelist/pdk_ihp130.fl
 else ifeq ($(PDK), S110)
-    RTL_FLIST := -f ../filelist/pdk_s110.fl
+    NET_FLIST := -f ../filelist/pdk_s110.fl
 endif
 
-RTL_FLIST += -f ../filelist/def.fl \
-             -f ../filelist/inc.fl \
-             -f ../filelist/ip.fl \
-             -f ../filelist/tech.fl \
+NET_FLIST  += -f ../filelist/def.fl -f ../filelist/inc.fl
 
+RTL_FLIST  := $(NET_FLIST)
+RTL_FLIST  += -f ../filelist/ip.fl -f ../filelist/tech.fl
 ifeq ($(CORE), PICORV32)
     RTL_FLIST += -f ../filelist/core_picorv32.fl
 else ifeq ($(CORE), KIANV)
@@ -46,6 +45,7 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
 
 TIME_OPTION := +notimingcheck +nospecify
 
+NET_PATH  := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
 POST_PATH := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
 SDF_FILE  := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"
 
