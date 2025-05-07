@@ -1,7 +1,4 @@
 # software
-FIRMWARE_NAME := retrosoc_fw
-EXEC_TYPE     := xip
-
 CROSS=riscv32-unknown-elf-
 
 CP   = $(CROSS)cpp
