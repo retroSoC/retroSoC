@@ -62,5 +62,19 @@ module tc_sram_1024x32 (
       .D   (data_i)
   );
 `endif
+
+`elsif PDK_CX55
+`ifdef HAVE_SRAM
+  S55NLLG1PH_X256Y4D32_BW u_S55NLLG1PH_X256Y4D32_BW (
+      .Q   (data_o),
+      .CLK (clk_i),
+      .CEN (~cs_i),
+      .WEN (~wren_i),
+      .BWEN(~{{8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
+      .A   (addr_i),
+      .D   (data_i)
+  );
+
+`endif
 `endif
 endmodule

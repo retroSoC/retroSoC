@@ -8,6 +8,7 @@ module tc_io_xtl_pad (
 `ifdef PDK_BEHAV
   assign clk    = en ? xi_pad : 1'b0;
   assign xo_pad = xi_pad;
+
 `elsif PDK_IHP130
   wire s_xi_pad;
   assign s_xi_pad = xi_pad;
@@ -26,6 +27,15 @@ module tc_io_xtl_pad (
       .XOUT(xo_pad),
       .XC  (clk)
   );
+
+`elsif PDK_CX55
+  (* keep *) (* dont_touch = "true" *)
+  P65_1233_PWE u_P65_1233_PWE (
+      .E   (en),
+      .XIN (xi_pad),
+      .XOUT(xo_pad),
+      .XC  (clk)
+  );
 `endif
 
 endmodule
@@ -37,6 +47,7 @@ module tc_io_in_pad (
 
 `ifdef PDK_BEHAV
   assign p2c = pad;
+
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadIn u_sg13g2_IOPadIn (
@@ -53,6 +64,7 @@ module tc_io_out_pad (
 
 `ifdef PDK_BEHAV
   assign pad = c2p;
+
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadOut4mA u_sg13g2_IOPadOut4mA (
@@ -72,6 +84,7 @@ module tc_io_tri_pad (
 `ifdef PDK_BEHAV
   assign pad = c2p_en ? c2p : 1'bz;
   assign p2c = pad;
+
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
@@ -80,6 +93,7 @@ module tc_io_tri_pad (
       .c2p_en(c2p_en),
       .p2c   (p2c)
   );
+
 `elsif PDK_S110
   (* keep *) (* dont_touch = "true" *)
   PB4W u_PB4W (
@@ -87,6 +101,23 @@ module tc_io_tri_pad (
       .I  (c2p),
       .PAD(pad),
       .C  (p2c)
+  );
+
+`elsif PDK_CX55
+  (* keep *) (* dont_touch = "true" *)
+  P65_1233_PBMUX u_P65_1233_PBMUX (
+      .C  (p2c),
+      .A  (),
+      .PAD(pad),
+      .IE (~c2p_en),
+      .CS (1'b1), // 1: CMOS 0: SCHMI
+      .I  (c2p),
+      .OE (c2p_en),
+      .OD (1'b0),
+      .PU (1'b0),
+      .PD (1'b0),
+      .DS0(1'b0),
+      .DS1(1'b1) // 8mA
   );
 `endif
 
@@ -103,6 +134,7 @@ module tc_io_tri_schmitt_pad (
 `ifdef PDK_BEHAV
   assign pad = c2p_en ? c2p : 1'bz;
   assign p2c = pad;
+
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
@@ -111,6 +143,7 @@ module tc_io_tri_schmitt_pad (
       .c2p_en(c2p_en),
       .p2c   (p2c)
   );
+
 `elsif PDK_S110
   (* keep *) (* dont_touch = "true" *)
   PBS4W u_PBS4W (
@@ -118,6 +151,23 @@ module tc_io_tri_schmitt_pad (
       .I  (c2p),
       .PAD(pad),
       .C  (p2c)
+  );
+
+`elsif PDK_CX55
+  (* keep *) (* dont_touch = "true" *)
+  P65_1233_PBMUX u_P65_1233_PBMUX (
+      .C  (p2c),
+      .A  (),
+      .PAD(pad),
+      .IE (~c2p_en),
+      .CS (1'b0), // 1: CMOS 0: SCHMI
+      .I  (c2p),
+      .OE (c2p_en),
+      .OD (1'b0),
+      .PU (1'b0),
+      .PD (1'b0),
+      .DS0(1'b0),
+      .DS1(1'b1) // 8mA
   );
 `endif
 
