@@ -146,10 +146,10 @@ void main()
 
     app_system_boot();
     // while(1);
-    ip_tim_test();
-    ip_gpio_test();
     ip_archinfo_test();
+    ip_tim_test();
     ip_rng_test();
+    ip_gpio_test();
     ip_hpuart_test();
     ip_pwm_test();
     // ip_ps2_test();
