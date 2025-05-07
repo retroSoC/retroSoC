@@ -2,6 +2,7 @@
 #define TINYLIB_H__
 
 #include <firmware.h>
+#include <tinyver.h>
 #include <tinyuart.h>
 #include <tinystring.h>
 #include <tinyprintf.h>

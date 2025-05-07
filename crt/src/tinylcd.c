@@ -4,7 +4,7 @@
 #include <tinytim.h>
 #include <tinygpio.h>
 #include <tinylcd.h>
-#include "video.h"
+// #include "video.h"
 
 void spi_init()
 {
@@ -971,24 +971,24 @@ void ip_lcd_test()
     //     pref_cnt += 2;
     // }
 
-    for (int i = 0; i < 100; ++i)
-    {
-        lcd_video_image(0, 0, 240, 135, only_my_railgun[i]);
-        pref_cnt += 1;
-    }
+    // for (int i = 0; i < 100; ++i)
+    // {
+    //     lcd_video_image(0, 0, 240, 135, only_my_railgun[i]);
+    //     pref_cnt += 1;
+    // }
 
-    __asm__ volatile("rdcycle %0"
-                     : "=r"(cycle_end));
-    __asm__ volatile("rdcycleh %0"
-                     : "=r"(cycleh_end));
+    // __asm__ volatile("rdcycle %0"
+    //                  : "=r"(cycle_end));
+    // __asm__ volatile("rdcycleh %0"
+    //                  : "=r"(cycleh_end));
 
-    __asm__ volatile("rdinstret %0"
-                     : "=r"(inst_end));
-    __asm__ volatile("rdinstreth %0"
-                     : "=r"(insth_end));
+    // __asm__ volatile("rdinstret %0"
+    //                  : "=r"(inst_end));
+    // __asm__ volatile("rdinstreth %0"
+    //                  : "=r"(insth_end));
 
-    printf("cycles num: %d(high: %d)\n", cycle_end - cycle_start, cycleh_end - cycleh_start);
-    printf("insts  num: %d(high: %d)\n", inst_end - inst_start, insth_end - insth_start);
-    printf("flush rate: %dfps\n", pref_cnt / ((cycle_end - cycle_start) / CPU_FREQ / 1000000));
+    // printf("cycles num: %d(high: %d)\n", cycle_end - cycle_start, cycleh_end - cycleh_start);
+    // printf("insts  num: %d(high: %d)\n", inst_end - inst_start, insth_end - insth_start);
+    // printf("flush rate: %dfps\n", pref_cnt / ((cycle_end - cycle_start) / CPU_FREQ / 1000000));
 
 }

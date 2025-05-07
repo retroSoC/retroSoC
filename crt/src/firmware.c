@@ -32,7 +32,7 @@ void welcome_screen()
     printf("    <https://github.com/retroSoC/retroSoC>\n");
     printf("  author:  MrAMS(init version) <https://github.com/MrAMS>\n");
     printf("           Yuchi Miao          <https://github.com/maksyuki>\n");
-    printf("  version: v1.0(commit: 73b7f30)\n");
+    printf("  version: v%s(commit: %s)\n", TINYLIB_VERSION, TINYLIB_COMMIT);
     printf("  license: MulanPSL-2.0 license\n\n");
 
     printf("Processor:\n");
