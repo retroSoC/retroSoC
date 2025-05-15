@@ -4,7 +4,7 @@ SYNTH          ?= YOSYS
 TIMI           ?= OPENSTA
 
 # HW
-PDK            ?= IHP110
+PDK            ?= IHP130
 HAVE_PLL       ?= YES
 HAVE_SRAM      ?= YES
 HAVE_SVA       ?= NO

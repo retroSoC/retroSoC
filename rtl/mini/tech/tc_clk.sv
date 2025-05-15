@@ -59,7 +59,7 @@ module tc_clk_buf (
       .Z(clk_o)
   );
 
-`elsif PDK_S110
+`elsif PDK_CX55
   (* keep *) (* dont_touch = "true" *)
   BUFX0P7H9L u_BUFX0P7H9L (
       .A(clk_i),
