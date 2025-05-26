@@ -129,11 +129,11 @@ module retrosoc (
   //    1 x RNG
   //    1 x ARCHINFO
   //    1 x UART
-  //    4 x PWM
+  //    1 x PWM(4 chnl)
   //    1 x PS2
-  //    1 x QSPI
+  //    1 x QSPI(4 cs)
   //    1 x SPFS(HP)
-  //    1 x I2C
+  //    2 x I2C
   core_wrapper u_core_wrapper (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
