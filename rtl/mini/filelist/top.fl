@@ -1,3 +1,8 @@
 ../top/core_wrapper.sv
 ../top/retrosoc.sv
 ../top/retrosoc_asic.sv
+../top/onchip_ram.sv
+../top/ip_natv_wrapper.sv
+../top/ip_apb_wrapper.sv
+../top/bus.sv
+../top/rcu.sv

@@ -25,14 +25,9 @@
 
 ../../ip/native/psram_core.sv
 ../../ip/native/psram.sv
-../../ip/native/onchip_ram.sv
 ../../ip/native/simpleuart.sv
-../../ip/native/counter_timer.sv
 ../../ip/native/mem2apb.sv
-../../ip/native/ip_natv_wrapper.sv
-../../ip/native/ip_apb_wrapper.sv
-../../ip/native/bus.sv
-../../ip/native/rcu.sv
+../../ip/native/counter_timer.sv
 
 ../../ip/3rd_party/spfs/spi_clgen.v
 ../../ip/3rd_party/spfs/spi_shift.v

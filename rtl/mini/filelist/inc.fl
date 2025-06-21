@@ -1,3 +1,4 @@
++incdir+../top
 +incdir+../core/kianV
 +incdir+../../clusterip/common/rtl
 +incdir+../../clusterip/common/rtl/cdc
