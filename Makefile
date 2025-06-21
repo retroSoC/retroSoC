@@ -74,6 +74,13 @@ ifeq ($(SOC), MINI)
     include rtl/mini/Makefile
 endif
 
+ifeq ($(SOC), TINY)
+    RTL_PATH = $(ROOT_PATH)/rtl/tiny
+    $(info DEF_LIST: $(DEF_LIST))
+    $(file > $(RTL_PATH)/filelist/def.fl, $(DEF_LIST))
+    include rtl/tiny/Makefile
+endif
+
 ifeq ($(SYNTH), YOSYS)
     demo := $(shell python3 $(RTL_PATH)/filelist/comb.py $(RTL_FLIST))
     include syn/yosys/yosys.mk
