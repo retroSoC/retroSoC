@@ -35,8 +35,8 @@ $(info MAKE APP:      $(MAKE))
 $(info MAKE CMDGOAL:  $(MAKECMDGOALS))
 $(info MAKE FILELIST: $(MAKEFILE_LIST))
 $(info ============== HW CONFIG INFO =============================)
-$(info SOC       [MINI, STD]:                  $(SOC))
-$(info CORE      [PICORV32, KIANV]:            $(CORE))
+$(info SOC       [TINY, MINI]:                 $(SOC))
+$(info CORE      [MINIRV PICORV32, KIANV]:     $(CORE))
 $(info SIMU      [VCS, VERILATOR]:             $(SIMU))
 $(info SYNTH     [YOSYS, DC]:                  $(SYNTH))
 $(info TIMI      [OPENSTA, ISTA]:              $(TIMI))
@@ -74,7 +74,17 @@ ifeq ($(SOC), MINI)
     include rtl/mini/Makefile
 endif
 
+ifeq ($(SOC), TINY)
+    RTL_PATH = $(ROOT_PATH)/rtl/tiny
+    $(info DEF_LIST: $(DEF_LIST))
+    $(file > $(RTL_PATH)/filelist/def.fl, $(DEF_LIST))
+    include rtl/tiny/Makefile
+endif
+
 ifeq ($(SYNTH), YOSYS)
+    DEF_LIST += +define+SYNTHESIS #HACK: for some core
+    $(info SYNTH DEF_LIST: $(DEF_LIST))
+    $(file > $(RTL_PATH)/filelist/def.fl, $(DEF_LIST))
     demo := $(shell python3 $(RTL_PATH)/filelist/comb.py $(RTL_FLIST))
     include syn/yosys/yosys.mk
 else ifeq ($(SYNTH), DC)

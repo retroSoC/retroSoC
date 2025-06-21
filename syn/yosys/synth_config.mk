@@ -17,23 +17,12 @@ export YOSYS_FLATTEN_HIER := 1
 # a list of yosys selection strings, all selected instances will be 
 # kept as a seperate hierarchical element, all others will be flattened
 # https://yosyshq.readthedocs.io/projects/yosys/en/latest/cmd/select.html
-export YOSYS_KEEP_HIER_INST :=  "t:croc_soc$$*" \
-								"t:croc_domain$$*" \
-								"t:core_wrap$$*" \
-								"t:cve2_register_file_ff$$*" \
-								"t:cve2_cs_registers$$*" \
-								"t:dmi_jtag$$*" \
-								"t:dm_top$$*" \
-								"t:gpio$$*" \
-								"t:timer_unit$$*" \
-								"t:reg_uart_wrap$$*" \
-								"t:tc_clk*$$*" \
-								"t:tc_sram$$*" \
-								"t:soc_ctrl_reg_top$$*" \
-								"t:user_domain$$*" \
+export YOSYS_KEEP_HIER_INST :=  "t:tc_clk*$$*" \
+								"t:tc_sram*$$*" \
 								"t:cdc_*$$*" \
-								"t:sync$$*" \
+								"t:core_*$$*" \
+								"t:sync*$$*" \
 
 # the paths (full names) of all instances matching these strings is reported
 # for floorplaning or writing constraints
-export YOSYS_REPORT_INSTS :=	"t:*RM_IHPSG13_*"
+export YOSYS_REPORT_INSTS :=	"t:*core_wrapper*"
