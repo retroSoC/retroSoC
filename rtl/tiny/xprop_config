@@ -1,0 +1,3 @@
+tree     { retrosoc_tb } { xpropOff };
+instance { retrosoc_tb.u_retrosoc_asic } { xpropOn };
+merge = tmerge;

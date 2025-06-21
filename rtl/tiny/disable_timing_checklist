@@ -1,0 +1,2 @@
+instance { retrosoc_tb.u_retrosoc_asic.\u_retrosoc.u_axil_ip_wrapper.u_apb4_ps2.u_ps2_clk_edge_det_fe.u_cdc_sync.CDC_SYNC_BLOCK[0].genblk1.u_sync_dffr.dat_o_reg } { noTiming };
+instance { retrosoc_tb.u_retrosoc_asic.\u_retrosoc.u_axil_ip_wrapper.u_apb4_uart.u_uart_rx.reg_rx_sync_0__reg } { noTiming };
