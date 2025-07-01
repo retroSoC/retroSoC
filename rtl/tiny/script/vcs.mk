@@ -10,11 +10,11 @@ COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
 ifeq ($(PDK), IHP130)
-    NET_FLIST := -f ../filelist/pdk_ihp130.fl
+    NET_FLIST := -f ../../filelist/pdk_ihp130.fl
 else ifeq ($(PDK), S110)
-    NET_FLIST := -f ../filelist/pdk_s110.fl
+    NET_FLIST := -f ../../filelist/pdk_s110.fl
 else ifeq ($(PDK), CX55)
-    NET_FLIST := -f ../filelist/pdk_cx55.fl
+    NET_FLIST := -f ../../filelist/pdk_cx55.fl
 endif
 
 NET_FLIST  += -f ../filelist/def.fl -f ../filelist/inc.fl
