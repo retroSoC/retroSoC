@@ -124,7 +124,7 @@ yosys splitnets -format __v
 yosys rename -wire -suffix _reg t:*DFF*
 yosys select -write ${report_dir}/${proj_name}_registers.rpt t:*DFF*
 # rename all other cells
-yosys autoname t:*DFF* %n
+# yosys autoname t:*DFF* %n
 yosys clean -purge
 
 # print paths to important instances

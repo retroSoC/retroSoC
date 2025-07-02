@@ -54,6 +54,17 @@ if {$pdk == "S110"} {
     # for hilomap
     set tech_cell_tiehi {sg13g2_tiehi L_HI}
     set tech_cell_tielo {sg13g2_tielo L_LO}
+} elseif {$pdk == "ICS55"} {
+    set pdk_dir "/nfs/share/home/zhuangchunan/proj/Flow_CX55/lib_data"
+    set pdk_cells_lib /nfs/share/home/qiming/yosys-flow
+    set pdk_sram_lib  ${pdk_dir}/mem
+    set pdk_io_lib    ${pdk_dir}/ccslib
+    set tech_cells    [list "$pdk_cells_lib/ETSCA_N55_H7BL_DSS_PRCMAX_V1P0_T125.lib"]
+    set tech_macros   [list "$pdk_sram_lib/S55NLLG1PH_X256Y4D32_BW_ss_1.08_125.lib"]
+    lappend tech_macros "$pdk_io_lib/ETIOA_N55_3P3_ss1p08v2p97v125c.lib"
+    # for hilomap
+    set tech_cell_tiehi {TIEHIH7H Y}
+    set tech_cell_tielo {TIELOH7H Y}
 }
 
 # pre-formated for easier use in yosys commands
