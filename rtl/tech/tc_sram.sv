@@ -63,7 +63,7 @@ module tc_sram_1024x32 (
   );
 `endif
 
-`elsif PDK_CX55
+`elsif PDK_ICS55
 `ifdef HAVE_SRAM
   S55NLLG1PH_X256Y4D32_BW u_S55NLLG1PH_X256Y4D32_BW (
       .Q   (data_o),

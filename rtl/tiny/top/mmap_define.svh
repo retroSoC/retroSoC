@@ -17,7 +17,7 @@
 `define FLASH_START   8'h00
 `define NATV_IP_START 8'h10
 `define CUST_IP_START 8'h20
-`define SRAM_START    8'h30
+// `define SRAM_START    8'h30
 `define PSRAM_START   8'h40
 
 `endif

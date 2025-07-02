@@ -19,9 +19,20 @@ export YOSYS_FLATTEN_HIER := 1
 # https://yosyshq.readthedocs.io/projects/yosys/en/latest/cmd/select.html
 export YOSYS_KEEP_HIER_INST :=  "t:tc_clk*$$*" \
 								"t:tc_sram*$$*" \
-								"t:cdc_*$$*" \
 								"t:core_*$$*" \
-								"t:sync*$$*" \
+								"t:bus*$$*" \
+								"t:ip_natv_wrapper*$$*" \
+								"t:ip_apb_wrapper*$$*" \
+								"t:apb_spi_master*$$*" \
+                                "t:spi_flash*$$*" \
+								"t:mem2apb*$$*" \
+								"t:apb4_archinfo*$$*" \
+								"t:apb4_rng*$$*" \
+								"t:apb4_uart*$$*" \
+								"t:apb4_pwm*$$*" \
+								"t:apb4_ps2*$$*" \
+								"t:apb4_i2c*$$*" \
+								"t:psram_top*$$*" \
 
 # the paths (full names) of all instances matching these strings is reported
 # for floorplaning or writing constraints

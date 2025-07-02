@@ -28,7 +28,7 @@ module tc_io_xtl_pad (
       .XC  (clk)
   );
 
-`elsif PDK_CX55
+`elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
   P65_1233_PWE u_P65_1233_PWE (
       .E   (en),
@@ -103,7 +103,7 @@ module tc_io_tri_pad (
       .C  (p2c)
   );
 
-`elsif PDK_CX55
+`elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
   P65_1233_PBMUX u_P65_1233_PBMUX (
       .C  (p2c),
@@ -153,7 +153,7 @@ module tc_io_tri_schmitt_pad (
       .C  (p2c)
   );
 
-`elsif PDK_CX55
+`elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
   P65_1233_PBMUX u_P65_1233_PBMUX (
       .C  (p2c),

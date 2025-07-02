@@ -89,12 +89,12 @@ module ip_apb_wrapper (
   ps2_if  u_ps2_0_if             ();
   i2c_if  u_i2c_0_if             ();
 
-  apb4_archinfo u_apb4_archinfo_0(u_archinfo_0_apb4_if);
-  apb4_rng      u_apb4_rng_0     (u_rng_0_apb4_if);
-  apb4_uart     u_apb4_uart_0    (u_uart_0_apb4_if, u_uart_0_if);
-  apb4_pwm      u_apb4_pwm_0     (u_pwm_0_apb4_if, u_pwm_0_if);
-  apb4_ps2      u_apb4_ps2_0     (u_ps2_0_apb4_if, u_ps2_0_if);
-  apb4_i2c      u_apb4_i2c_0     (u_i2c_0_apb4_if, u_i2c_0_if);
+  apb4_archinfo               u_apb4_archinfo_0(u_archinfo_0_apb4_if);
+  apb4_rng                    u_apb4_rng_0     (u_rng_0_apb4_if);
+  apb4_uart #(.FIFO_DEPTH(4)) u_apb4_uart_0    (u_uart_0_apb4_if, u_uart_0_if);
+  apb4_pwm                    u_apb4_pwm_0     (u_pwm_0_apb4_if, u_pwm_0_if);
+  apb4_ps2                    u_apb4_ps2_0     (u_ps2_0_apb4_if, u_ps2_0_if);
+  apb4_i2c                    u_apb4_i2c_0     (u_i2c_0_apb4_if, u_i2c_0_if);
   // verilog_format: on
 
   assign u_archinfo_0_apb4_if.paddr   = s_m_apb_paddr;
@@ -179,7 +179,7 @@ module ip_apb_wrapper (
   assign irq_o[3]                     = u_i2c_0_if.irq_o;
 
   apb_spi_master #(
-      .BUFFER_DEPTH  (32),
+      .BUFFER_DEPTH  (4),
       .APB_ADDR_WIDTH(32)
   ) u_apb_spi_master (
       .HCLK    (clk_i),
