@@ -27,9 +27,9 @@ module tc_clk_inv (
   (* keep *) (* dont_touch = "true" *)
   assign clk_o = ~clk_i;  // HACK:
 
-`elsif PDK_CX55
+`elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
-  INVX0P5H9L u_INVX0P5H9L (
+  INVX0P5H7L u_INVX0P5H7L (
       .A(clk_i),
       .Y(clk_o)
   );
@@ -59,9 +59,9 @@ module tc_clk_buf (
       .Z(clk_o)
   );
 
-`elsif PDK_CX55
+`elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
-  BUFX0P7H9L u_BUFX0P7H9L (
+  BUFX0P7H7L u_BUFX0P7H7L (
       .A(clk_i),
       .Y(clk_o)
   );
@@ -96,9 +96,9 @@ module tc_clk_mux2 (
       .Z (clk_o)
   );
 
-`elsif PDK_CX55
+`elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
-  MUX2X0P5H9L u_MUX2X0P5H9L (
+  MUX2X0P5H7L u_MUX2X0P5H7L (
       .S0(clk_sel_i),
       .A (clk0_i),
       .B (clk1_i),
