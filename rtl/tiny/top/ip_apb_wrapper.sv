@@ -14,6 +14,7 @@
 `include "pwm_define.svh"
 `include "ps2_define.svh"
 `include "i2c_define.svh"
+`include "spi_define.svh"
 
 module ip_apb_wrapper (
     input  logic        clk_i,
@@ -83,11 +84,13 @@ module ip_apb_wrapper (
   apb4_if u_pwm_0_apb4_if        (clk_i, rst_n_i);
   apb4_if u_ps2_0_apb4_if        (clk_i, rst_n_i);
   apb4_if u_i2c_0_apb4_if        (clk_i, rst_n_i);
+  apb4_if u_qspi_0_apb4_if       (clk_i, rst_n_i);
 
   uart_if u_uart_0_if            ();
   pwm_if  u_pwm_0_if             ();
   ps2_if  u_ps2_0_if             ();
   i2c_if  u_i2c_0_if             ();
+  spi_if  u_spi_0_if             ();
 
   apb4_archinfo               u_apb4_archinfo_0(u_archinfo_0_apb4_if);
   apb4_rng                    u_apb4_rng_0     (u_rng_0_apb4_if);
@@ -95,6 +98,7 @@ module ip_apb_wrapper (
   apb4_pwm                    u_apb4_pwm_0     (u_pwm_0_apb4_if, u_pwm_0_if);
   apb4_ps2                    u_apb4_ps2_0     (u_ps2_0_apb4_if, u_ps2_0_if);
   apb4_i2c                    u_apb4_i2c_0     (u_i2c_0_apb4_if, u_i2c_0_if);
+  apb4_spi #(.FIFO_DEPTH(4))  u_apb4_spi_0     (u_qspi_0_apb4_if, u_spi_0_if);
   // verilog_format: on
 
   assign u_archinfo_0_apb4_if.paddr   = s_m_apb_paddr;
@@ -178,39 +182,22 @@ module ip_apb_wrapper (
   assign i2c_sda_dir_o                = u_i2c_0_if.sda_dir_o;
   assign irq_o[3]                     = u_i2c_0_if.irq_o;
 
-  apb_spi_master #(
-      .BUFFER_DEPTH  (4),
-      .APB_ADDR_WIDTH(32)
-  ) u_apb_spi_master (
-      .HCLK    (clk_i),
-      .HRESETn (rst_n_i),
-      .PADDR   (s_m_apb_paddr),
-      .PWDATA  (s_m_apb_pwdata),
-      .PWRITE  (s_m_apb_pwrite),
-      .PSEL    (s_m_apb_psel[6]),
-      .PENABLE (s_m_apb_penable),
-      .PRDATA  (s_m_apb_prdata6),
-      .PREADY  (s_m_apb_pready[6]),
-      .PSLVERR (s_m_apb_pslverr[6]),
-      .spi_clk (qspi_spi_clk_o),
-      .spi_csn0(qspi_spi_csn_o[0]),
-      .spi_csn1(qspi_spi_csn_o[1]),
-      .spi_csn2(qspi_spi_csn_o[2]),
-      .spi_csn3(qspi_spi_csn_o[3]),
-      .spi_sdo0(qspi_spi_sdo_o[0]),
-      .spi_sdo1(qspi_spi_sdo_o[1]),
-      .spi_sdo2(qspi_spi_sdo_o[2]),
-      .spi_sdo3(qspi_spi_sdo_o[3]),
-      .spi_oe0 (qspi_spi_oe_o[0]),
-      .spi_oe1 (qspi_spi_oe_o[1]),
-      .spi_oe2 (qspi_spi_oe_o[2]),
-      .spi_oe3 (qspi_spi_oe_o[3]),
-      .spi_sdi0(qspi_spi_sdi_i[0]),
-      .spi_sdi1(qspi_spi_sdi_i[1]),
-      .spi_sdi2(qspi_spi_sdi_i[2]),
-      .spi_sdi3(qspi_spi_sdi_i[3]),
-      .events_o(irq_o[4])
-  );
+  assign u_qspi_0_apb4_if.paddr       = s_m_apb_paddr;
+  assign u_qspi_0_apb4_if.pprot       = s_m_apb_pprot;
+  assign u_qspi_0_apb4_if.psel        = s_m_apb_psel[6];
+  assign u_qspi_0_apb4_if.penable     = s_m_apb_penable;
+  assign u_qspi_0_apb4_if.pwrite      = s_m_apb_pwrite;
+  assign u_qspi_0_apb4_if.pwdata      = s_m_apb_pwdata;
+  assign u_qspi_0_apb4_if.pstrb       = s_m_apb_pstrb;
+  assign s_m_apb_pready[6]            = u_qspi_0_apb4_if.pready;
+  assign s_m_apb_pslverr[6]           = u_qspi_0_apb4_if.pslverr;
+  assign s_m_apb_prdata6              = u_qspi_0_apb4_if.prdata;
+  assign qspi_spi_clk_o               = u_spi_0_if.spi_sck_o;
+  assign qspi_spi_csn_o               = u_spi_0_if.spi_nss_o;
+  assign qspi_spi_sdo_o               = u_spi_0_if.spi_io_out_o;
+  assign qspi_spi_oe_o                = u_spi_0_if.spi_io_en_o;
+  assign u_spi_0_if.spi_io_in_i       = qspi_spi_sdi_i;
+  assign irq_o[4]                     = u_spi_0_if.irq_o;
 
   spi_flash #(
       .flash_addr_start(`FLASH_START_ADDR),
