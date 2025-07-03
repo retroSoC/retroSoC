@@ -22,6 +22,14 @@
 ../../clusterip/i2c/rtl/i2c_master_bit_ctrl.sv
 ../../clusterip/i2c/rtl/i2c_master_byte_ctrl.sv
 ../../clusterip/i2c/rtl/apb4_i2c.sv
+../../clusterip/spi/rtl/apb4_spi.sv
+../../clusterip/spi/rtl/spi_clkgen.sv
+../../clusterip/spi/rtl/spi_apb_if.sv
+../../clusterip/spi/rtl/spi_ctrl.sv
+../../clusterip/spi/rtl/spi_fifo.sv
+../../clusterip/spi/rtl/spi_rx.sv
+../../clusterip/spi/rtl/spi_tx.sv
+../../clusterip/spi/rtl/spi_core.sv
 
 ../../ip/native/psram_core.sv
 ../../ip/native/psram.sv
@@ -34,10 +42,3 @@
 ../../ip/3rd_party/spfs/spi_shift.v
 ../../ip/3rd_party/spfs/spi_top.v
 ../../ip/3rd_party/spfs/spi_flash.v
-../../ip/3rd_party/apb_spi_master/spi_master_apb_if.v
-../../ip/3rd_party/apb_spi_master/spi_master_clkgen.v
-../../ip/3rd_party/apb_spi_master/spi_master_controller.v
-../../ip/3rd_party/apb_spi_master/spi_master_fifo.v
-../../ip/3rd_party/apb_spi_master/spi_master_rx.v
-../../ip/3rd_party/apb_spi_master/spi_master_tx.v
-../../ip/3rd_party/apb_spi_master/apb_spi_master.v

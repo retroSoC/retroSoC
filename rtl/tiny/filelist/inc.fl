@@ -11,6 +11,7 @@
 +incdir+../../clusterip/pwm/rtl
 +incdir+../../clusterip/ps2/rtl
 +incdir+../../clusterip/i2c/rtl
++incdir+../../clusterip/spi/rtl
 +incdir+../../ip/native
 +incdir+../../ip/3rd_party/spfs
 +incdir+../../ip/3rd_party/spfs_model
