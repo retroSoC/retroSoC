@@ -3,9 +3,16 @@
     .type    _start,@function
 
 _start:
+# wait psram reset done
+    la       a0, _flash_wait_start
+    la       a1, _flash_wait_end
+wait_psram_reset:
+    lw       t0, 0(a0)
+    addi     a0, a0, 4
+    blt      a0, a1, wait_psram_reset # 128KB
+
 # ===== Startup Stage 1 =====
 # init the regfile
-
 # zero-initialize register file
     li       x1, 0
 # x2 (sp) is initialized by hardware
@@ -41,65 +48,44 @@ _start:
     li       x31, 0
 
 # ===== Startup Stage 2 =====
-# Load code section frm FLASH to RAM
+# Load code section from FLASH to RAM
 # when code LMA is different with VMA
 app_loader_start:
     la       a0, _ram_lma
     la       a1, _ram_vma
-    beq      a0, a1, app_loader_end
+    beq      a0, a1, data_loader_start # flash xip
     la       a2, _etext
-    bgeu     a1, a2, app_loader_end
+    bgeu     a1, a2, data_loader_start
 app_loader:
     lw       t0, (a0)
     sw       t0, (a1)
     addi     a0, a0, 4
     addi     a1, a1, 4
     bltu     a1, a2, app_loader
-    j        ram_rd_start
-app_loader_end:
-
-ram_cleaner_start:
-    la       a0, _sram_start
-ram_cleaner:
-    sw       a0, 0(a0)
-    addi     a0, a0, 4
-    blt      a0, sp, ram_cleaner
-    j        data_loader_start
-ram_cleaner_end:
-
-# wait psram reset done
-ram_rd_start:
-    la       a0, _sram_start
-ram_rd:
-    lw       t0, 0(a0)
-    addi     a0, a0, 4
-    blt      a0, sp, ram_rd
-ram_rd_end:
 
 data_loader_start:
     la       a0, _psram_lma
     la       a1, _psram_vma
-    beq      a0, a1, data_loader_end
+    beq      a0, a1, bss_cleaner_start
     la       a2, _edata
-    bgeu     a1, a2, data_loader_end
+    bgeu     a1, a2, bss_cleaner_start
 data_loader:
     lw       t0, (a0)
     sw       t0, (a1)
     addi     a0, a0, 4
     addi     a1, a1, 4
     bltu     a1, a2, data_loader
-data_loader_end:
 
 bss_cleaner_start:
     la       a0, _sbss
     la       a1, _ebss
-    bge      a0, a1, bss_cleaner_end
+    bge      a0, a1, main_start
 bss_cleaner:
     sw       zero, 0(a0)
     addi     a0, a0, 4
     blt      a0, a1, bss_cleaner
-bss_cleaner_end:
 
+main_start:
 # call main
     call     main
 loop:
