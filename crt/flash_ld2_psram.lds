@@ -13,6 +13,16 @@ SECTIONS {
         KEEP (*(SORT_NONE(.init)))
     } >FLASH AT >FLASH
 
+    .flash_wait_s ORIGIN(FLASH) :
+    {
+        PROVIDE ( _flash_wait_start = .);
+    } >FLASH AT >FLASH
+
+    .flash_wait_e ORIGIN(FLASH) + LENGTH(SRAM) :
+    {
+        PROVIDE ( _flash_wait_end = .);
+    } >FLASH AT >FLASH
+
     .ram_align_lma :
     {
         . = ALIGN(4);
@@ -22,11 +32,7 @@ SECTIONS {
     .ram_align_vma :
     {
         PROVIDE( _ram_vma = . );
-    } >SRAM AT>FLASH
-
-    .sram_s ORIGIN(SRAM) : {
-        PROVIDE ( _sram_start = .);
-    } >SRAM AT >FLASH
+    } >PSRAM AT >FLASH
 
     /* The program code and other data goes into FLASH */
     .text :
@@ -40,11 +46,12 @@ SECTIONS {
         *(.srodata*)       /* .rodata* sections (constants, strings, etc.) */
         . = ALIGN(4);
         _etext = .;        /* define a global symbol at end of code */
-    } >SRAM AT >FLASH
+    } >PSRAM AT >FLASH
 
-    .sram_e ORIGIN(SRAM) + LENGTH(SRAM): {
-        PROVIDE ( _stack_point = .);
-    } >SRAM AT >FLASH
+    .ram_s ORIGIN(PSRAM) :
+    {
+        PROVIDE ( _ram_start = .);
+    } >PSRAM AT >FLASH
 
     .psram_align_lma :
     {
@@ -55,7 +62,7 @@ SECTIONS {
     .psram_align_vma :
     {
         PROVIDE( _psram_vma = . );
-    } >PSRAM AT>FLASH
+    } >PSRAM AT >FLASH
 
     /* This is the initialized data section
     The program executes knowing that the data is in the PSRAM
@@ -93,4 +100,9 @@ SECTIONS {
         . = ALIGN(4);
         _heap_start = .;    /* define a global symbol at heap start */
     } >PSRAM AT >PSRAM
+
+    .ram_e ORIGIN(PSRAM) + LENGTH(PSRAM):
+    {
+        PROVIDE ( _stack_point = .);
+    } >PSRAM AT >FLASH
 }

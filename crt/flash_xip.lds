@@ -48,12 +48,12 @@ SECTIONS {
         _etext = .;        /* define a global symbol at end of code */
     } >FLASH AT >FLASH
 
-    .sram_s ORIGIN(SRAM) :
+    .ram_s ORIGIN(SRAM) :
     {
-        PROVIDE ( _sram_start = .);
+        PROVIDE ( _ram_start = .);
     } >SRAM AT >FLASH
 
-    .sram_e ORIGIN(SRAM) + LENGTH(SRAM) :
+    .ram_e ORIGIN(SRAM) + LENGTH(SRAM) :
     {
         PROVIDE ( _stack_point = .);
     } >SRAM AT >FLASH

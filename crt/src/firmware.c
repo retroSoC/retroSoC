@@ -2,7 +2,7 @@
 
 extern uint32_t _flash_wait_start, _flash_wait_end;
 extern uint32_t _ram_lma, _ram_vma;
-extern uint32_t _sram_start, _stack_point;
+extern uint32_t _ram_start, _stack_point;
 extern uint32_t _start, _etext;
 extern uint32_t _psram_lma, _psram_vma, _edata;
 extern uint32_t _sbss, _ebss;
@@ -13,11 +13,10 @@ void welcome_screen()
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%0x\n", &_flash_wait_start);
     printf("_flash_wait_end:   0x%0x\n", &_flash_wait_end);
-    printf("_ram_vma:          0x%0x\n", &_ram_vma);
     printf("_ram_lma:          0x%0x\n", &_ram_lma);
     printf("_ram_vma:          0x%0x\n", &_ram_vma);
-    printf("_sram_start:       0x%0x\n", &_sram_start);
-    printf("_sram_end(sp):     0x%0x\n", &_stack_point);
+    printf("_ram_start:        0x%0x\n", &_ram_start);
+    printf("stack point:       0x%0x\n", &_stack_point);
     printf("_stext(entry):     0x%0x\n", &_start);
     printf("_etext:            0x%0x\n", &_etext);
     printf("_psram_lma:        0x%0x\n", &_psram_lma);
