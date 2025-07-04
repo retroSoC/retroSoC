@@ -7,14 +7,18 @@ void ip_ps2_test()
     printf("[CUST IP] ps2 test\n");
 
     reg_cust_ps2_ctrl = (uint32_t)0b11;
-    uint32_t kdb_code, i = 0;
-    for (int i = 0; i < 36;)
+    printf("ps2 ctrl: %x\n", reg_cust_ps2_ctrl);
+    uint32_t kdb_code;
+    while(1)
     {
         kdb_code = reg_cust_ps2_data;
         if (kdb_code != 0)
         {
-            ++i;
+            if(kdb_code == 0x76) break;
             printf("[PS2 DAT] %x\n", kdb_code);
         }
     }
+
+    reg_cust_ps2_ctrl = (uint32_t)0b00;
+    printf("ps2 ctrl: %x\n", reg_cust_ps2_ctrl);
 }

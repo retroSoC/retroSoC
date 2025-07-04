@@ -1,7 +1,9 @@
 #include <tinylib.h>
 
-extern uint32_t _start, _etext;
+extern uint32_t _flash_wait_start, _flash_wait_end;
 extern uint32_t _ram_lma, _ram_vma;
+extern uint32_t _sram_start, _stack_point;
+extern uint32_t _start, _etext;
 extern uint32_t _psram_lma, _psram_vma, _edata;
 extern uint32_t _sbss, _ebss;
 extern uint32_t _heap_start;
@@ -9,16 +11,21 @@ extern uint32_t _heap_start;
 void welcome_screen()
 {
     printf("first bootloader done, app section info:\n");
-    printf("_stext(entry): 0x%0x\n", &_start);
-    printf("_etext:        0x%0x\n", &_etext);
-    printf("_ram_lma:      0x%0x\n", &_ram_lma);
-    printf("_ram_vma:      0x%0x\n", &_ram_vma);
-    printf("_psram_lma:    0x%0x\n", &_psram_lma);
-    printf("_psram_vma:    0x%0x\n", &_psram_vma);
-    printf("_edata:        0x%x\n", &_edata);
-    printf("_sbss:         0x%x\n", &_sbss);
-    printf("_ebss:         0x%x\n", &_ebss);
-    printf("_heap_start:   0x%x\n\n", &_heap_start);
+    printf("_flash_wait_start: 0x%0x\n", &_flash_wait_start);
+    printf("_flash_wait_end:   0x%0x\n", &_flash_wait_end);
+    printf("_ram_vma:          0x%0x\n", &_ram_vma);
+    printf("_ram_lma:          0x%0x\n", &_ram_lma);
+    printf("_ram_vma:          0x%0x\n", &_ram_vma);
+    printf("_sram_start:       0x%0x\n", &_sram_start);
+    printf("_sram_end(sp):     0x%0x\n", &_stack_point);
+    printf("_stext(entry):     0x%0x\n", &_start);
+    printf("_etext:            0x%0x\n", &_etext);
+    printf("_psram_lma:        0x%0x\n", &_psram_lma);
+    printf("_psram_vma:        0x%0x\n", &_psram_vma);
+    printf("_edata:            0x%x\n", &_edata);
+    printf("_sbss:             0x%x\n", &_sbss);
+    printf("_ebss:             0x%x\n", &_ebss);
+    printf("_heap_start:       0x%x\n\n", &_heap_start);
     printf("uart config: 8n1 %dbps\n", UART_BPS);
     printf("app booting...\n");
     printf("\n");

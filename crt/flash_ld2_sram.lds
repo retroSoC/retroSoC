@@ -13,6 +13,16 @@ SECTIONS {
         KEEP (*(SORT_NONE(.init)))
     } >FLASH AT >FLASH
 
+    .flash_wait_s ORIGIN(FLASH) :
+    {
+        PROVIDE ( _flash_wait_start = .);
+    } >FLASH AT >FLASH
+
+    .flash_wait_e ORIGIN(FLASH) + LENGTH(SRAM) :
+    {
+        PROVIDE ( _flash_wait_end = .);
+    } >FLASH AT >FLASH
+
     .ram_align_lma :
     {
         . = ALIGN(4);
@@ -22,10 +32,6 @@ SECTIONS {
     .ram_align_vma :
     {
         PROVIDE( _ram_vma = . );
-    } >SRAM AT>FLASH
-
-    .sram_s ORIGIN(SRAM) : {
-        PROVIDE ( _sram_start = .);
     } >SRAM AT >FLASH
 
     /* The program code and other data goes into FLASH */
@@ -42,7 +48,13 @@ SECTIONS {
         _etext = .;        /* define a global symbol at end of code */
     } >SRAM AT >FLASH
 
-    .sram_e ORIGIN(SRAM) + LENGTH(SRAM): {
+    .sram_s ORIGIN(SRAM) :
+    {
+        PROVIDE ( _sram_start = .);
+    } >SRAM AT >FLASH
+
+    .sram_e ORIGIN(SRAM) + LENGTH(SRAM):
+    {
         PROVIDE ( _stack_point = .);
     } >SRAM AT >FLASH
 
@@ -55,7 +67,7 @@ SECTIONS {
     .psram_align_vma :
     {
         PROVIDE( _psram_vma = . );
-    } >PSRAM AT>FLASH
+    } >PSRAM AT >FLASH
 
     /* This is the initialized data section
     The program executes knowing that the data is in the PSRAM
