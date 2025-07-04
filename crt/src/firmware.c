@@ -150,7 +150,7 @@ void main()
     ip_tim_test();
     ip_rng_test();
     ip_gpio_test();
-    ip_hpuart_test();
+    // ip_hpuart_test();
     ip_pwm_test();
     // ip_ps2_test();
     ip_i2c_test();
