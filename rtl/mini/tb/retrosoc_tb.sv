@@ -161,10 +161,10 @@ module retrosoc_tb;
       .ps2_dat_o(s_cust_ps2_ps2_dat)
   );
 
-  psram_model u_psram_model (
-      .sck_i (s_cust_psram_sclk),
-      .ce_n_i(s_cust_psram_ce),
-      .dat_io({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0})
+  ESP_PSRAM64H u_ESP_PSRAM64H (
+      .sclk(s_cust_psram_sclk),
+      .csn (s_cust_psram_ce),
+      .sio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0})
   );
 
   initial begin
@@ -205,12 +205,15 @@ module retrosoc_tb;
       $display("gen behv sim wave");
       $fsdbDumpfile("retrosoc_tb.fsdb");
       $fsdbDumpvars(0);
-      //  $fsdbDumpMDA();
+      $fsdbDumpMDA();
       // #398844962;
+      // #867652;
+      // #340686376;
+      #489238714;
 
-      repeat (1500) begin
-        repeat (5000) @(posedge r_xtal_clk);
-      end
+      // repeat (1500) begin
+      //   repeat (5000) @(posedge r_xtal_clk);
+      // end
       $finish;
     end else if ($test$plusargs("syn_wave")) begin
       $display("gen syn sim wave");

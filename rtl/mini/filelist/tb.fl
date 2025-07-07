@@ -1,5 +1,5 @@
 ../../clusterip/ps2/tb/kdb_model.sv
 ../../clusterip/uart/model/rs232.sv
 ../../ip/3rd_party/spfs_model/N25Qxxx.v
-../../ip/native/psram_model.sv
+../../ip/native/ESP_PSRAM64H.sv
 ../tb/retrosoc_tb.sv
