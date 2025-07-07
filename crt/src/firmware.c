@@ -8,8 +8,13 @@ extern uint32_t _psram_lma, _psram_vma, _edata;
 extern uint32_t _sbss, _ebss;
 extern uint32_t _heap_start;
 
+static uint32_t global_test[6] = {0x12, 0x23, 0x34, 0x45, 0x56, 0x67};
+
 void welcome_screen()
 {
+    for(int  i = 0; i < 6; ++i)
+        printf("global test:%x\n", global_test[i]);
+
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%0x\n", &_flash_wait_start);
     printf("_flash_wait_end:   0x%0x\n", &_flash_wait_end);
@@ -149,18 +154,17 @@ void app_system_boot() {
 void main()
 {
     reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
-
     app_system_boot();
     // while(1);
     ip_archinfo_test();
-    ip_tim_test();
-    ip_rng_test();
-    ip_gpio_test();
+    // ip_tim_test();
+    // ip_rng_test();
+    // ip_gpio_test();
     // ip_hpuart_test();
-    ip_pwm_test();
+    // ip_pwm_test();
     // ip_ps2_test();
-    ip_i2c_test();
-    ip_lcd_test();
-    tinybench(true, 0);
-    tinysh();
+    // ip_i2c_test();
+    // ip_lcd_test();
+    // tinybench(true, 0);
+    // tinysh();
 }

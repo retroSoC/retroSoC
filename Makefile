@@ -50,7 +50,7 @@ $(info WAVE:                                    $(WAVE))
 $(info ============== SW CONFIG INFO =============================)
 $(info ISA [RV32E RV32I RV32IM]:                $(ISA))
 $(info FIRMWARE_NAME [retrosoc_fw]:             $(FIRMWARE_NAME))
-$(info EXEC_TYPE [xip ld2_sram ld2_prsram]:     $(EXEC_TYPE))
+$(info EXEC_TYPE [xip ld2_sram ld2_psram]:      $(EXEC_TYPE))
 $(info ===========================================================)
 
 DEF_LIST    ?= +define+PDK_$(PDK)
