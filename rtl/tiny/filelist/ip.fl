@@ -22,6 +22,7 @@
 ../../clusterip/i2c/rtl/i2c_master_bit_ctrl.sv
 ../../clusterip/i2c/rtl/i2c_master_byte_ctrl.sv
 ../../clusterip/i2c/rtl/apb4_i2c.sv
+../../clusterip/spi/rtl/spi_if.sv
 ../../clusterip/spi/rtl/apb4_spi.sv
 ../../clusterip/spi/rtl/spi_clkgen.sv
 ../../clusterip/spi/rtl/spi_apb_if.sv
