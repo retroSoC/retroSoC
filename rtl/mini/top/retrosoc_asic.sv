@@ -101,11 +101,13 @@ module retrosoc_asic (
   logic [15:0] s_gpio_pub_o;
   logic [15:0] s_gpio_pdb_o;
   logic        s_irq_pin_i;
+// `ifdef HAVE_SRAM_IF
   // ram
   logic [14:0] s_ram_addr;
   logic [31:0] s_ram_wdata;
   logic [ 3:0] s_ram_wstrb;
   logic [31:0] s_ram_rdata;
+// `endif
   // cust
   logic        s_cust_uart_rx_i;
   logic        s_cust_uart_tx_o;
@@ -215,10 +217,12 @@ module retrosoc_asic (
   retrosoc u_retrosoc (
       .clk_i              (s_sys_clk),
       .rst_n_i            (s_sys_rst_n),
+`ifdef HAVE_SRAM_IF
       .ram_addr_o         (s_ram_addr),
       .ram_wdata_o        (s_ram_wdata),
       .ram_wstrb_o        (s_ram_wstrb),
       .ram_rdata_i        (s_ram_rdata),
+`endif
       .gpio_out_o         (s_gpio_out_o),
       .gpio_in_i          (s_gpio_in_i),
       .gpio_pub_o         (s_gpio_pub_o),
@@ -261,6 +265,7 @@ module retrosoc_asic (
       .cust_spfs_miso_i   (s_cust_spfs_miso_i)
   );
 
+`ifdef HAVE_SRAM_IF
   onchip_ram u_onchip_ram (
       .clk_i  (s_sys_clk),
       .addr_i (s_ram_addr),
@@ -268,5 +273,6 @@ module retrosoc_asic (
       .wstrb_i(s_ram_wstrb),
       .rdata_o(s_ram_rdata)
   );
+`endif
 
 endmodule

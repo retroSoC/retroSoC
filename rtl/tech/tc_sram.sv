@@ -9,7 +9,6 @@ module tc_sram_1024x32 (
 );
 
 `ifdef PDK_BEHAV
-`ifdef HAVE_SRAM
   logic [31:0] r_data;
   logic [31:0] mem    [0:1023];
 
@@ -27,9 +26,8 @@ module tc_sram_1024x32 (
       end
     end
   end
-`endif
 `elsif PDK_IHP130
-`ifdef HAVE_SRAM
+`ifdef HAVE_SRAM_MACRO
   logic [63:0] s_rd_data_mem;
   assign data_o = s_rd_data_mem[31:0];
   RM_IHPSG13_1P_1024x64_c2_bm_bist u_mem (
@@ -53,7 +51,7 @@ module tc_sram_1024x32 (
   );
 `endif
 `elsif PDK_S110
-`ifdef HAVE_SRAM
+`ifdef HAVE_SRAM_MACRO
   S011HD1P_X256Y4D32_BW u_S011HD1P_X256Y4D32_BW (
       .Q   (data_o),
       .CLK (clk_i),
@@ -66,7 +64,7 @@ module tc_sram_1024x32 (
 `endif
 
 `elsif PDK_ICS55
-`ifdef HAVE_SRAM
+`ifdef HAVE_SRAM_MACRO
   S55NLLG1PH_X256Y4D32_BW u_S55NLLG1PH_X256Y4D32_BW (
       .Q   (data_o),
       .CLK (clk_i),
