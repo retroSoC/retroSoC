@@ -9,6 +9,7 @@ module tc_sram_1024x32 (
 );
 
 `ifdef PDK_BEHAV
+`ifdef HAVE_SRAM
   logic [31:0] r_data;
   logic [31:0] mem    [0:1023];
 
@@ -26,6 +27,7 @@ module tc_sram_1024x32 (
       end
     end
   end
+`endif
 `elsif PDK_IHP130
 `ifdef HAVE_SRAM
   logic [63:0] s_rd_data_mem;
