@@ -24,10 +24,12 @@
 module retrosoc (
     input  logic        clk_i,
     input  logic        rst_n_i,
+`ifdef HAVE_SRAM_IF
     output logic [14:0] ram_addr_o,
     output logic [31:0] ram_wdata_o,
     output logic [ 3:0] ram_wstrb_o,
     input  logic [31:0] ram_rdata_i,
+`endif
     // memory mapped I/O signals
     output logic [15:0] gpio_out_o,
     input  logic [15:0] gpio_in_i,
@@ -170,10 +172,12 @@ module retrosoc (
       .mmap_wdata_o (s_mmap_wdata),
       .mmap_wstrb_o (s_mmap_wstrb),
       .mmap_rdata_i (s_mmap_rdata),
+`ifdef HAVE_SRAM_IF
       .ram_addr_o   (ram_addr_o),
       .ram_wdata_o  (ram_wdata_o),
       .ram_wstrb_o  (ram_wstrb_o),
       .ram_rdata_i  (ram_rdata_i),
+`endif
       // psram if
       .psram_valid_o(s_psram_valid),
       .psram_ready_i(s_psram_ready),

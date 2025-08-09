@@ -4,10 +4,11 @@ SYNTH          ?= YOSYS
 TIMI           ?= OPENSTA
 
 # HW
-PDK            ?= IHP130
-HAVE_PLL       ?= YES
-HAVE_SRAM      ?= YES
-HAVE_SVA       ?= NO
+PDK             ?= IHP130
+HAVE_PLL        ?= YES
+HAVE_SRAM_IF    ?= YES
+HAVE_SRAM_MACRO ?= YES
+HAVE_SVA        ?= NO
 
 RTL_SIM_PLLEN  ?= NONE
 RTL_SIM_PLLCFG ?= NONE
@@ -35,22 +36,23 @@ $(info MAKE APP:      $(MAKE))
 $(info MAKE CMDGOAL:  $(MAKECMDGOALS))
 $(info MAKE FILELIST: $(MAKEFILE_LIST))
 $(info ============== HW CONFIG INFO =============================)
-$(info SOC       [TINY, MINI]:                  $(SOC))
-$(info CORE      [MINIRV PICORV32, KIANV]:      $(CORE))
-$(info SIMU      [VCS, VERILATOR]:              $(SIMU))
-$(info SYNTH     [YOSYS, DC]:                   $(SYNTH))
-$(info TIMI      [OPENSTA, ISTA]:               $(TIMI))
-$(info PDK       [S110, IHP130, SKY130, ICS55]: $(PDK))
-$(info HAVE_PLL  [YES, NO]:                     $(HAVE_PLL))
-$(info HAVE_SRAM [YES, NO]:                     $(HAVE_SRAM))
-$(info HAVE_SVA  [YES, NO]:                     $(HAVE_SVA))
-$(info RTL_SIM_PLLEN:                           $(RTL_SIM_PLLEN))
-$(info RTL_SIM_PLLCFG:                          $(RTL_SIM_PLLCFG))
-$(info WAVE:                                    $(WAVE))
+$(info SOC             [TINY, MINI]:                  $(SOC))
+$(info CORE            [MINIRV PICORV32, KIANV]:      $(CORE))
+$(info SIMU            [VCS, VERILATOR]:              $(SIMU))
+$(info SYNTH           [YOSYS, DC]:                   $(SYNTH))
+$(info TIMI            [OPENSTA, ISTA]:               $(TIMI))
+$(info PDK             [S110, IHP130, SKY130, ICS55]: $(PDK))
+$(info HAVE_PLL        [YES, NO]:                     $(HAVE_PLL))
+$(info HAVE_SRAM_IF    [YES, NO]:                     $(HAVE_SRAM_IF))
+$(info HAVE_SRAM_MACRO [YES, NO]:                     $(HAVE_SRAM_MACRO))
+$(info HAVE_SVA        [YES, NO]:                     $(HAVE_SVA))
+$(info RTL_SIM_PLLEN:                                 $(RTL_SIM_PLLEN))
+$(info RTL_SIM_PLLCFG:                                $(RTL_SIM_PLLCFG))
+$(info WAVE:                                          $(WAVE))
 $(info ============== SW CONFIG INFO =============================)
-$(info ISA [RV32E RV32I RV32IM]:                $(ISA))
-$(info FIRMWARE_NAME [retrosoc_fw]:             $(FIRMWARE_NAME))
-$(info EXEC_TYPE [xip ld2_sram ld2_psram]:      $(EXEC_TYPE))
+$(info ISA           [RV32E RV32I RV32IM]:     $(ISA))
+$(info FIRMWARE_NAME [retrosoc_fw]:            $(FIRMWARE_NAME))
+$(info EXEC_TYPE     [xip ld2_sram ld2_psram]: $(EXEC_TYPE))
 $(info ===========================================================)
 
 DEF_LIST    ?= +define+PDK_$(PDK)
@@ -59,8 +61,12 @@ ifeq ($(HAVE_PLL), YES)
     DEF_LIST += +define+HAVE_PLL
 endif
 
-ifeq ($(HAVE_SRAM), YES)
-    DEF_LIST += +define+HAVE_SRAM
+ifeq ($(HAVE_SRAM_IF), YES)
+    DEF_LIST += +define+HAVE_SRAM_IF
+endif
+
+ifeq ($(HAVE_SRAM_MACRO), YES)
+    DEF_LIST += +define+HAVE_SRAM_MACRO
 endif
 
 ifeq ($(HAVE_SVA), NO)
