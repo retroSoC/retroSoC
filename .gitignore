@@ -43,3 +43,4 @@ def.fl
 yosys*.fl
 dc.fl
 minirv.sv
+user_design
