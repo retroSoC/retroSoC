@@ -24,6 +24,9 @@
 module retrosoc (
     input  logic        clk_i,
     input  logic        rst_n_i,
+`ifdef CORE_MERGE
+    input  logic [ 4:0] mstr_sel_i,
+`endif
 `ifdef HAVE_SRAM_IF
     output logic [14:0] ram_addr_o,
     output logic [31:0] ram_wdata_o,
@@ -139,6 +142,9 @@ module retrosoc (
   core_wrapper u_core_wrapper (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
+`ifdef CORE_MERGE
+      .mstr_sel_i  (mstr_sel_i),
+`endif
       .core_valid_o(s_core_valid),
       .core_addr_o (s_core_addr),
       .core_wdata_o(s_core_wdata),

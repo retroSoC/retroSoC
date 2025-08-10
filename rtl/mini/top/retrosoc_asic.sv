@@ -24,6 +24,13 @@ module retrosoc_asic (
     input  xi_i_pad,
     output xo_o_pad,
     inout  extclk_i_pad,
+`ifdef CORE_MERGE
+    inout  mstr_sel_0_i_pad,
+    inout  mstr_sel_1_i_pad,
+    inout  mstr_sel_2_i_pad,
+    inout  mstr_sel_3_i_pad,
+    inout  mstr_sel_4_i_pad,
+`endif
     inout  pll_cfg_0_i_pad,
     inout  pll_cfg_1_i_pad,
     inout  pll_cfg_2_i_pad,
@@ -101,51 +108,61 @@ module retrosoc_asic (
   logic [15:0] s_gpio_pub_o;
   logic [15:0] s_gpio_pdb_o;
   logic        s_irq_pin_i;
-// `ifdef HAVE_SRAM_IF
+`ifdef CORE_MERGE
+  logic [4:0] s_mstr_sel;
+`endif
+`ifdef HAVE_SRAM_IF
   // ram
   logic [14:0] s_ram_addr;
   logic [31:0] s_ram_wdata;
   logic [ 3:0] s_ram_wstrb;
   logic [31:0] s_ram_rdata;
-// `endif
+`endif
   // cust
-  logic        s_cust_uart_rx_i;
-  logic        s_cust_uart_tx_o;
-  logic [ 3:0] s_cust_pwm_pwm_o;
-  logic        s_cust_ps2_ps2_clk_i;
-  logic        s_cust_ps2_ps2_dat_i;
-  logic        s_cust_i2c_scl_i;
-  logic        s_cust_i2c_scl_o;
-  logic        s_cust_i2c_scl_dir_o;
-  logic        s_cust_i2c_sda_i;
-  logic        s_cust_i2c_sda_o;
-  logic        s_cust_i2c_sda_dir_o;
-  logic        s_cust_qspi_spi_clk_o;
-  logic [ 3:0] s_cust_qspi_spi_csn_o;
-  logic [ 3:0] s_cust_qspi_spi_sdo_o;
-  logic [ 3:0] s_cust_qspi_spi_oe_o;
-  logic [ 3:0] s_cust_qspi_spi_sdi_i;
-  logic        s_cust_psram_sclk_o;
-  logic        s_cust_psram_ce_o;
-  logic        s_cust_psram_sio0_i;
-  logic        s_cust_psram_sio1_i;
-  logic        s_cust_psram_sio2_i;
-  logic        s_cust_psram_sio3_i;
-  logic        s_cust_psram_sio0_o;
-  logic        s_cust_psram_sio1_o;
-  logic        s_cust_psram_sio2_o;
-  logic        s_cust_psram_sio3_o;
-  logic        s_cust_psram_sio_oe_o;
+  logic       s_cust_uart_rx_i;
+  logic       s_cust_uart_tx_o;
+  logic [3:0] s_cust_pwm_pwm_o;
+  logic       s_cust_ps2_ps2_clk_i;
+  logic       s_cust_ps2_ps2_dat_i;
+  logic       s_cust_i2c_scl_i;
+  logic       s_cust_i2c_scl_o;
+  logic       s_cust_i2c_scl_dir_o;
+  logic       s_cust_i2c_sda_i;
+  logic       s_cust_i2c_sda_o;
+  logic       s_cust_i2c_sda_dir_o;
+  logic       s_cust_qspi_spi_clk_o;
+  logic [3:0] s_cust_qspi_spi_csn_o;
+  logic [3:0] s_cust_qspi_spi_sdo_o;
+  logic [3:0] s_cust_qspi_spi_oe_o;
+  logic [3:0] s_cust_qspi_spi_sdi_i;
+  logic       s_cust_psram_sclk_o;
+  logic       s_cust_psram_ce_o;
+  logic       s_cust_psram_sio0_i;
+  logic       s_cust_psram_sio1_i;
+  logic       s_cust_psram_sio2_i;
+  logic       s_cust_psram_sio3_i;
+  logic       s_cust_psram_sio0_o;
+  logic       s_cust_psram_sio1_o;
+  logic       s_cust_psram_sio2_o;
+  logic       s_cust_psram_sio3_o;
+  logic       s_cust_psram_sio_oe_o;
 
-  logic        s_cust_spfs_clk_o;
-  logic        s_cust_spfs_cs_o;
-  logic        s_cust_spfs_mosi_o;
-  logic        s_cust_spfs_miso_i;
+  logic       s_cust_spfs_clk_o;
+  logic       s_cust_spfs_cs_o;
+  logic       s_cust_spfs_mosi_o;
+  logic       s_cust_spfs_miso_i;
 
 
   // verilog_format: off
   tc_io_xtl_pad         u_xtal_io_pad       (.xi_pad(xi_i_pad),        .xo_pad(xo_o_pad),      .en(1'b1),                     .clk(s_xtal_io));
   tc_io_tri_pad         u_extclk_i_pad      (.pad(extclk_i_pad),       .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_clk_i));
+`ifdef CORE_MERGE
+  tc_io_tri_pad         u_mstr_sel_0_i_pad   (.pad(mstr_sel_0_i_pad),   .c2p(),                .c2p_en(1'b0),                 .p2c(s_mstr_sel[0]));
+  tc_io_tri_pad         u_mstr_sel_1_i_pad   (.pad(mstr_sel_1_i_pad),   .c2p(),                .c2p_en(1'b0),                 .p2c(s_mstr_sel[1]));
+  tc_io_tri_pad         u_mstr_sel_2_i_pad   (.pad(mstr_sel_2_i_pad),   .c2p(),                .c2p_en(1'b0),                 .p2c(s_mstr_sel[2]));
+  tc_io_tri_pad         u_mstr_sel_3_i_pad   (.pad(mstr_sel_3_i_pad),   .c2p(),                .c2p_en(1'b0),                 .p2c(s_mstr_sel[3]));
+  tc_io_tri_pad         u_mstr_sel_4_i_pad   (.pad(mstr_sel_4_i_pad),   .c2p(),                .c2p_en(1'b0),                 .p2c(s_mstr_sel[4]));
+`endif 
   tc_io_tri_pad         u_pll_cfg_0_i_pad   (.pad(pll_cfg_0_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[0]));
   tc_io_tri_pad         u_pll_cfg_1_i_pad   (.pad(pll_cfg_1_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[1]));
   tc_io_tri_pad         u_pll_cfg_2_i_pad   (.pad(pll_cfg_2_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[2]));
@@ -217,6 +234,9 @@ module retrosoc_asic (
   retrosoc u_retrosoc (
       .clk_i              (s_sys_clk),
       .rst_n_i            (s_sys_rst_n),
+`ifdef CORE_MERGE
+      .mstr_sel_i         (s_mstr_sel),
+`endif
 `ifdef HAVE_SRAM_IF
       .ram_addr_o         (s_ram_addr),
       .ram_wdata_o        (s_ram_wdata),

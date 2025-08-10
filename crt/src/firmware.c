@@ -16,16 +16,16 @@ void welcome_screen()
         printf("global test:%x\n", global_test[i]);
 
     printf("first bootloader done, app section info:\n");
-    printf("_flash_wait_start: 0x%0x\n", &_flash_wait_start);
-    printf("_flash_wait_end:   0x%0x\n", &_flash_wait_end);
-    printf("_ram_lma:          0x%0x\n", &_ram_lma);
-    printf("_ram_vma:          0x%0x\n", &_ram_vma);
-    printf("_ram_start:        0x%0x\n", &_ram_start);
-    printf("stack point:       0x%0x\n", &_stack_point);
-    printf("_stext(entry):     0x%0x\n", &_start);
-    printf("_etext:            0x%0x\n", &_etext);
-    printf("_psram_lma:        0x%0x\n", &_psram_lma);
-    printf("_psram_vma:        0x%0x\n", &_psram_vma);
+    printf("_flash_wait_start: 0x%x\n", &_flash_wait_start);
+    printf("_flash_wait_end:   0x%x\n", &_flash_wait_end);
+    printf("_ram_lma:          0x%x\n", &_ram_lma);
+    printf("_ram_vma:          0x%x\n", &_ram_vma);
+    printf("_ram_start:        0x%x\n", &_ram_start);
+    printf("stack point:       0x%x\n", &_stack_point);
+    printf("_stext(entry):     0x%x\n", &_start);
+    printf("_etext:            0x%x\n", &_etext);
+    printf("_psram_lma:        0x%x\n", &_psram_lma);
+    printf("_psram_vma:        0x%x\n", &_psram_vma);
     printf("_edata:            0x%x\n", &_edata);
     printf("_sbss:             0x%x\n", &_sbss);
     printf("_ebss:             0x%x\n", &_ebss);
@@ -57,17 +57,17 @@ void welcome_screen()
     printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
 
     printf("Memory Map IO Device:\n");
-    printf("                    16 x GPIO          @0x0%x\n", &reg_gpio_data);
-    printf("                     1 x UART          @0x0%x\n", &reg_uart_clkdiv);
-    printf("                     2 x TIMER         @0x0%x,0x0%x\n", &reg_tim0_config, &reg_tim1_config);
-    printf("                     1 x ARCHINFO      @0x0%x\n", &reg_cust_archinfo_sys);
-    printf("                     1 x RNG           @0x0%x\n", &reg_cust_rng_ctrl);
-    printf("                     1 x UART(HP)      @0x0%x\n", &reg_cust_uart_lcr);
-    printf("                     4 x PWM           @0x0%x\n", &reg_cust_pwm_ctrl);
-    printf("                     1 x PS2           @0x0%x\n", &reg_cust_ps2_ctrl);
-    printf("                     1 x I2C           @0x0%x\n", &reg_cust_i2c_ctrl);
-    printf("                     1 x QSPI          @0x0%x\n", &reg_cust_qspi_status);
-    printf("                     1 x PSRAM         @0x0%x\n", &reg_psram_waitcycl);
+    printf("                    16 x GPIO          @0x%x\n", &reg_gpio_data);
+    printf("                     1 x UART          @0x%x\n", &reg_uart_clkdiv);
+    printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_config, &reg_tim1_config);
+    printf("                     1 x PSRAM         @0x%x\n", &reg_psram_waitcycl);
+    printf("                     1 x ARCHINFO      @0x%x\n", &reg_cust_archinfo_sys);
+    printf("                     1 x RNG           @0x%x\n", &reg_cust_rng_ctrl);
+    printf("                     1 x UART(HP)      @0x%x\n", &reg_cust_uart_lcr);
+    printf("                     4 x PWM           @0x%x\n", &reg_cust_pwm_ctrl);
+    printf("                     1 x PS2           @0x%x\n", &reg_cust_ps2_ctrl);
+    printf("                     1 x I2C           @0x%x\n", &reg_cust_i2c_ctrl);
+    printf("                     1 x QSPI          @0x%x\n", &reg_cust_qspi_status);
     printf("                     1 x SPFS(TPO)     @unused\n\n");
 }
 

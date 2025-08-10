@@ -25,6 +25,10 @@ ifeq ($(CORE), PICORV32)
     RTL_FLIST += -f ../filelist/core_picorv32.fl
 else ifeq ($(CORE), KIANV)
     RTL_FLIST += -f ../filelist/core_kianv.fl
+else ifeq ($(CORE), MINIRV)
+    RTL_FLIST += -f ../filelist/core_minirv.fl
+else ifeq ($(CORE), MERGE)
+    RTL_FLIST += -f ../filelist/core_merge.fl
 endif
 
 RTL_FLIST += -f ../filelist/top.fl
