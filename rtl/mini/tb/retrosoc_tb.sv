@@ -27,11 +27,13 @@ module retrosoc_tb;
   reg        r_xtal_clk;
   reg        r_ext_clk;
   reg        r_rst_n;
+  reg  [4:0] r_mstr_sel;
   reg        r_pll_en;
   reg  [2:0] r_pll_cfg;
 
   wire       s_ext_clk;
   wire       s_rst_n;
+  wire [4:0] s_mstr_sel;
   wire       s_pll_en;
   wire [2:0] s_pll_cfg;
 
@@ -63,15 +65,23 @@ module retrosoc_tb;
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk = r_ext_clk;
-  assign s_rst_n   = r_rst_n;
-  assign s_pll_en  = r_pll_en;
-  assign s_pll_cfg = r_pll_cfg;
+  assign s_ext_clk  = r_ext_clk;
+  assign s_rst_n    = r_rst_n;
+  assign s_mstr_sel = r_mstr_sel;
+  assign s_pll_en   = r_pll_en;
+  assign s_pll_cfg  = r_pll_cfg;
 
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad                 (r_xtal_clk),
       .xo_o_pad                 (),
       .extclk_i_pad             (s_ext_clk),
+`ifdef CORE_MERGE
+      .mstr_sel_0_i_pad         (s_mstr_sel[0]),
+      .mstr_sel_1_i_pad         (s_mstr_sel[1]),
+      .mstr_sel_2_i_pad         (s_mstr_sel[2]),
+      .mstr_sel_3_i_pad         (s_mstr_sel[3]),
+      .mstr_sel_4_i_pad         (s_mstr_sel[4]),
+`endif
       .pll_cfg_0_i_pad          (s_pll_cfg[0]),
       .pll_cfg_1_i_pad          (s_pll_cfg[1]),
       .pll_cfg_2_i_pad          (s_pll_cfg[2]),
@@ -235,6 +245,8 @@ module retrosoc_tb;
   end
 
   initial begin
+    r_mstr_sel = 5'd0;
+
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;
 
@@ -248,12 +260,25 @@ module retrosoc_tb;
     else if ($test$plusargs("pll_cfg7")) r_pll_cfg = 3'd7;  // 192M
     else r_pll_cfg = 3'd0;  // 24M
 
+`ifdef CORE_MERGE
+    if (r_pll_en == 1'b0) begin
+      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz mstr_sel: %0d", r_pll_en, r_pll_cfg, EXT_CPU_FREQ, r_mstr_sel);
+    end else if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
+      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz mstr_sel: %0d", r_pll_en, r_pll_cfg, XTAL_CPU_FREQ, r_mstr_sel);
+    end else begin
+      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz mstr_sel: %0d", r_pll_en, r_pll_cfg,
+               (r_pll_cfg + 1) * 24, r_mstr_sel);
+    end
+`else
     if (r_pll_en == 1'b0) begin
       $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg, EXT_CPU_FREQ);
     end else if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
       $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg, XTAL_CPU_FREQ);
     end else begin
-      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg, (r_pll_cfg + 1) * 24);
+      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg,
+               (r_pll_cfg + 1) * 24);
     end
+`endif
+
   end
 endmodule
