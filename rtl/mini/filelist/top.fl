@@ -6,7 +6,7 @@
 ../top/ip_apb_wrapper.sv
 ../top/bus.sv
 ../top/rcu.sv
-../top/merge_mstr_wrapper.sv
+../top/core_mdd_wrapper.sv
 ../top/mgmt_wrapper.sv
 ../top/user_mstr_design.sv
 ../top/user_mstr_wrapper.sv

@@ -3,8 +3,8 @@
 module core_wrapper (
     (* keep *) input  logic        clk_i,
     (* keep *) input  logic        rst_n_i,
-`ifdef CORE_MERGE
-    (* keep *) input  logic [ 4:0] mstr_sel_i,
+`ifdef CORE_MDD
+    (* keep *) input  logic [ 4:0] core_mdd_sel_i,
 `endif
     (* keep *) output logic        core_valid_o,
     (* keep *) output logic [31:0] core_addr_o,
@@ -151,11 +151,11 @@ module core_wrapper (
       s_remap_araddr = {8'h00, s_araddr[23:0]};
     end
   end
-`elsif CORE_MERGE
-  merge_mstr_wrapper u_merge_mstr_wrapper (
+`elsif CORE_MDD
+  core_mdd_wrapper u_core_mdd_wrapper (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
-      .sel_i       (mstr_sel_i),
+      .sel_i       (core_mdd_sel_i),
       .core_valid_o(core_valid_o),
       .core_addr_o (core_addr_o),
       .core_wdata_o(core_wdata_o),

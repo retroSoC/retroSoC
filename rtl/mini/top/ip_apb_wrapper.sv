@@ -26,6 +26,18 @@ module ip_apb_wrapper (
     input  logic [ 3:0] mmap_wstrb_i,
     output logic [31:0] mmap_rdata_o,
     output logic        mmap_ready_o,
+`ifdef IP_MDD
+    // ip mdd
+    output logic [31:0] ip_mdd_apb_paddr_o,
+    output logic [ 2:0] ip_mdd_apb_pprot_o,
+    output logic        ip_mdd_apb_psel_o,
+    output logic        ip_mdd_apb_penable_o,
+    output logic        ip_mdd_apb_pwrite_o,
+    output logic [31:0] ip_mdd_apb_pwdata_o,
+    output logic [ 3:0] ip_mdd_apb_pstrb_o,
+    input  logic        ip_mdd_apb_pready_i,
+    input  logic [31:0] ip_mdd_apb_prdata_i,
+`endif
     // uart
     input  logic        uart_rx_i,
     output logic        uart_tx_o,

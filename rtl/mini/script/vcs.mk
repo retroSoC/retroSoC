@@ -27,8 +27,8 @@ else ifeq ($(CORE), KIANV)
     RTL_FLIST += -f ../filelist/core_kianv.fl
 else ifeq ($(CORE), MINIRV)
     RTL_FLIST += -f ../filelist/core_minirv.fl
-else ifeq ($(CORE), MERGE)
-    RTL_FLIST += -f ../filelist/core_merge.fl
+else ifeq ($(CORE), MDD)
+    RTL_FLIST += -f ../filelist/core_mdd.fl
 endif
 
 RTL_FLIST += -f ../filelist/top.fl
