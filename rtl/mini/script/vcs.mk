@@ -31,6 +31,10 @@ else ifeq ($(CORE), MDD)
     RTL_FLIST += -f ../filelist/core_mdd.fl
 endif
 
+ifeq ($(IP), MDD)
+    RTL_FLIST += -f ../filelist/ip_mdd.fl
+endif
+
 RTL_FLIST += -f ../filelist/top.fl
 
 TB_FLIST  := -f ../filelist/tb.fl

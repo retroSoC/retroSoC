@@ -10,3 +10,6 @@
 ../top/mgmt_wrapper.sv
 ../top/user_mstr_design.sv
 ../top/user_mstr_wrapper.sv
+../top/ip_mdd_wrapper.sv
+../top/user_ip_design.sv
+../top/user_ip_wrapper.sv
