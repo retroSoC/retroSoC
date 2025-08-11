@@ -158,18 +158,18 @@ module retrosoc (
   //    1 x SPFS(HP)
   //    2 x I2C
   core_wrapper u_core_wrapper (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
 `ifdef CORE_MDD
-      .core_mdd_sel_i  (core_mdd_sel_i),
+      .core_mdd_sel_i(core_mdd_sel_i),
 `endif
-      .core_valid_o(s_core_valid),
-      .core_addr_o (s_core_addr),
-      .core_wdata_o(s_core_wdata),
-      .core_wstrb_o(s_core_wstrb),
-      .core_rdata_i(s_core_rdata),
-      .core_ready_i(s_core_ready),
-      .irq_i       (s_irq)
+      .core_valid_o  (s_core_valid),
+      .core_addr_o   (s_core_addr),
+      .core_wdata_o  (s_core_wdata),
+      .core_wstrb_o  (s_core_wstrb),
+      .core_rdata_i  (s_core_rdata),
+      .core_ready_i  (s_core_ready),
+      .irq_i         (s_irq)
   );
 
   bus u_bus (
@@ -282,7 +282,21 @@ module retrosoc (
 
 `ifdef IP_MDD
   ip_mdd_wrapper u_ip_mdd_wrapper (
-    .
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .sel_i            (ip_mdd_sel_i),
+      .gpio_out_o       (ip_mdd_gpio_out_o),
+      .gpio_in_i        (ip_mdd_gpio_in_i),
+      .gpio_oeb_o       (ip_mdd_gpio_oeb_o),
+      .slv_apb_paddr_i  (s_ip_mdd_apb_paddr),
+      .slv_apb_pprot_i  (s_ip_mdd_apb_pprot),
+      .slv_apb_psel_i   (s_ip_mdd_apb_psel),
+      .slv_apb_penable_i(s_ip_mdd_apb_penable),
+      .slv_apb_pwrite_i (s_ip_mdd_apb_pwrite),
+      .slv_apb_pwdata_i (s_ip_mdd_apb_pwdata),
+      .slv_apb_pstrb_i  (s_ip_mdd_apb_pstrb),
+      .slv_apb_pready_o (s_ip_mdd_apb_pready),
+      .slv_apb_prdata_o (s_ip_mdd_apb_prdata)
   );
 `endif
 
