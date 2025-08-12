@@ -74,9 +74,26 @@ module core_wrapper (
   logic [31:0] s_remap_awaddr;
   logic [31:0] s_remap_araddr;
 
+  // 0x20000 * 5
+
+  logic [18:0] s_delay_rst_cnt_d;
+  logic [18:0] s_delay_rst_cnt_q;
+  logic        s_delay_rst_n;
+
+  assign s_delay_rst_n     = s_delay_rst_cnt_q == '1;
+  assign s_delay_rst_cnt_d = s_delay_rst_cnt_q + 1'b1;
+  dffer #(19) u_delay_rst_cnt_dffer (
+      clk_i,
+      rst_n_i,
+      ~s_delay_rst_n,
+      s_delay_rst_cnt_d,
+      s_delay_rst_cnt_q
+  );
+
+
   minirv u_minirv (
       .clock            (clk_i),
-      .reset            (~rst_n_i),
+      .reset            (~s_delay_rst_n),
       .io_master_awready(s_awready),
       .io_master_awvalid(s_awvalid),
       .io_master_awaddr (s_awaddr),
@@ -109,39 +126,41 @@ module core_wrapper (
       .io_interrupt     (|irq_i)
   );
 
-  axi4l2mem u_axi4l2mem (
-      .ACLK     (clk_i),
-      .ARESETn  (rst_n_i),
-      .AWADDR   (s_remap_awaddr),
-      .AWVALID  (s_awvalid),
-      .AWREADY  (s_awready),
-      .WDATA    (s_wdata),
-      .WSTRB    (s_wstrb),
-      .WVALID   (s_wvalid),
-      .WREADY   (s_wready),
-      .BRESP    (s_bresp),
-      .BVALID   (s_bvalid),
-      .BREADY   (s_bready),
-      .ARADDR   (s_remap_araddr),
-      .ARVALID  (s_arvalid),
-      .ARREADY  (s_arready),
-      .RDATA    (s_rdata),
-      .RRESP    (s_rresp),
-      .RVALID   (s_rvalid),
-      .RREADY   (s_rready),
-      .mem_valid(core_valid_o),
-      .mem_instr(),
-      .mem_addr (core_addr_o),
-      .mem_wdata(core_wdata_o),
-      .mem_wstrb(core_wstrb_o),
-      .mem_ready(core_ready_i),
-      .mem_rdata(core_rdata_i)
+  axi4l2nmi u_axi4l2nmi (
+      .aclk_i     (clk_i),
+      .aresetn_i  (s_delay_rst_n),
+      .awaddr_i   (s_remap_awaddr),
+      .awvalid_i  (s_awvalid),
+      .awready_o  (s_awready),
+      .wdata_i    (s_wdata),
+      .wstrb_i    (s_wstrb),
+      .wvalid_i   (s_wvalid),
+      .wready_o   (s_wready),
+      .bresp_o    (s_bresp),
+      .bvalid_o   (s_bvalid),
+      .bready_i   (s_bready),
+      .araddr_i   (s_remap_araddr),
+      .arvalid_i  (s_arvalid),
+      .arready_o  (s_arready),
+      .rdata_o    (s_rdata),
+      .rresp_o    (s_rresp),
+      .rvalid_o   (s_rvalid),
+      .rready_i   (s_rready),
+      .mem_valid_o(core_valid_o),
+      .mem_instr_o(),
+      .mem_addr_o (core_addr_o),
+      .mem_wdata_o(core_wdata_o),
+      .mem_wstrb_o(core_wstrb_o),
+      .mem_ready_i(core_ready_i),
+      .mem_rdata_i(core_rdata_i)
   );
 
   always_comb begin
     s_remap_awaddr = s_awaddr;
     if (s_awaddr[31:24] == 8'h30) begin
       s_remap_awaddr = {8'h00, s_awaddr[23:0]};
+    end else if (s_awaddr[31:24] == 8'ha0) begin
+      s_remap_awaddr = {8'h40, s_awaddr[23:0]};
     end
   end
 
@@ -149,8 +168,11 @@ module core_wrapper (
     s_remap_araddr = s_araddr;
     if (s_araddr[31:24] == 8'h30) begin
       s_remap_araddr = {8'h00, s_araddr[23:0]};
+    end else if (s_araddr[31:24] == 8'ha0) begin
+      s_remap_araddr = {8'h40, s_araddr[23:0]};
     end
   end
+
 `elsif CORE_MDD
   core_mdd_wrapper u_core_mdd_wrapper (
       .clk_i       (clk_i),
