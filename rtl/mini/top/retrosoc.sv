@@ -24,8 +24,14 @@
 module retrosoc (
     input  logic        clk_i,
     input  logic        rst_n_i,
-`ifdef CORE_MERGE
-    input  logic [ 4:0] mstr_sel_i,
+`ifdef CORE_MDD
+    input  logic [ 4:0] core_mdd_sel_i,
+`endif
+`ifdef IP_MDD
+    input  logic [ 4:0] ip_mdd_sel_i,
+    output logic [15:0] ip_mdd_gpio_out_o,
+    input  logic [15:0] ip_mdd_gpio_in_i,
+    output logic [15:0] ip_mdd_gpio_oeb_o,
 `endif
 `ifdef HAVE_SRAM_IF
     output logic [14:0] ram_addr_o,
@@ -113,6 +119,18 @@ module retrosoc (
   logic [ 2:0] s_psram_cfg_chd_i;
   logic [ 2:0] s_psram_cfg_chd_o;
 
+`ifdef IP_MDD
+  logic [31:0] s_ip_mdd_apb_paddr;
+  logic [ 2:0] s_ip_mdd_apb_pprot;
+  logic        s_ip_mdd_apb_psel;
+  logic        s_ip_mdd_apb_penable;
+  logic        s_ip_mdd_apb_pwrite;
+  logic [31:0] s_ip_mdd_apb_pwdata;
+  logic [ 3:0] s_ip_mdd_apb_pstrb;
+  logic        s_ip_mdd_apb_pready;
+  logic [31:0] s_ip_mdd_apb_prdata;
+`endif
+
   // irq
   logic [31:0] s_irq;
   logic [ 2:0] s_natv_irq;
@@ -140,18 +158,18 @@ module retrosoc (
   //    1 x SPFS(HP)
   //    2 x I2C
   core_wrapper u_core_wrapper (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
-`ifdef CORE_MERGE
-      .mstr_sel_i  (mstr_sel_i),
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+`ifdef CORE_MDD
+      .core_mdd_sel_i(core_mdd_sel_i),
 `endif
-      .core_valid_o(s_core_valid),
-      .core_addr_o (s_core_addr),
-      .core_wdata_o(s_core_wdata),
-      .core_wstrb_o(s_core_wstrb),
-      .core_rdata_i(s_core_rdata),
-      .core_ready_i(s_core_ready),
-      .irq_i       (s_irq)
+      .core_valid_o  (s_core_valid),
+      .core_addr_o   (s_core_addr),
+      .core_wdata_o  (s_core_wdata),
+      .core_wstrb_o  (s_core_wstrb),
+      .core_rdata_i  (s_core_rdata),
+      .core_ready_i  (s_core_ready),
+      .irq_i         (s_irq)
   );
 
   bus u_bus (
@@ -219,37 +237,68 @@ module retrosoc (
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .mmap_valid_i  (s_mmap_valid),
-      .mmap_addr_i   (s_mmap_addr),
-      .mmap_wdata_i  (s_mmap_wdata),
-      .mmap_wstrb_i  (s_mmap_wstrb),
-      .mmap_rdata_o  (s_mmap_rdata),
-      .mmap_ready_o  (s_mmap_ready),
-      .uart_rx_i     (cust_uart_rx_i),
-      .uart_tx_o     (cust_uart_tx_o),
-      .pwm_pwm_o     (cust_pwm_pwm_o),
-      .ps2_ps2_clk_i (cust_ps2_ps2_clk_i),
-      .ps2_ps2_dat_i (cust_ps2_ps2_dat_i),
-      .i2c_scl_i     (cust_i2c_scl_i),
-      .i2c_scl_o     (cust_i2c_scl_o),
-      .i2c_scl_dir_o (cust_i2c_scl_dir_o),
-      .i2c_sda_i     (cust_i2c_sda_i),
-      .i2c_sda_o     (cust_i2c_sda_o),
-      .i2c_sda_dir_o (cust_i2c_sda_dir_o),
-      .qspi_spi_clk_o(cust_qspi_spi_clk_o),
-      .qspi_spi_csn_o(cust_qspi_spi_csn_o),
-      .qspi_spi_sdo_o(cust_qspi_spi_sdo_o),
-      .qspi_spi_oe_o (cust_qspi_spi_oe_o),
-      .qspi_spi_sdi_i(cust_qspi_spi_sdi_i),
-      .spfs_div4_i   (cust_spfs_div4_i),
-      .spfs_clk_o    (cust_spfs_clk_o),
-      .spfs_cs_o     (cust_spfs_cs_o),
-      .spfs_mosi_o   (cust_spfs_mosi_o),
-      .spfs_miso_i   (cust_spfs_miso_i),
-      .irq_o         (s_apb_irq)
+      .clk_i               (clk_i),
+      .rst_n_i             (rst_n_i),
+      .mmap_valid_i        (s_mmap_valid),
+      .mmap_addr_i         (s_mmap_addr),
+      .mmap_wdata_i        (s_mmap_wdata),
+      .mmap_wstrb_i        (s_mmap_wstrb),
+      .mmap_rdata_o        (s_mmap_rdata),
+      .mmap_ready_o        (s_mmap_ready),
+`ifdef IP_MDD
+      .ip_mdd_apb_paddr_o  (s_ip_mdd_apb_paddr),
+      .ip_mdd_apb_pprot_o  (s_ip_mdd_apb_pprot),
+      .ip_mdd_apb_psel_o   (s_ip_mdd_apb_psel),
+      .ip_mdd_apb_penable_o(s_ip_mdd_apb_penable),
+      .ip_mdd_apb_pwrite_o (s_ip_mdd_apb_pwrite),
+      .ip_mdd_apb_pwdata_o (s_ip_mdd_apb_pwdata),
+      .ip_mdd_apb_pstrb_o  (s_ip_mdd_apb_pstrb),
+      .ip_mdd_apb_pready_i (s_ip_mdd_apb_pready),
+      .ip_mdd_apb_prdata_i (s_ip_mdd_apb_prdata),
+`endif
+      .uart_rx_i           (cust_uart_rx_i),
+      .uart_tx_o           (cust_uart_tx_o),
+      .pwm_pwm_o           (cust_pwm_pwm_o),
+      .ps2_ps2_clk_i       (cust_ps2_ps2_clk_i),
+      .ps2_ps2_dat_i       (cust_ps2_ps2_dat_i),
+      .i2c_scl_i           (cust_i2c_scl_i),
+      .i2c_scl_o           (cust_i2c_scl_o),
+      .i2c_scl_dir_o       (cust_i2c_scl_dir_o),
+      .i2c_sda_i           (cust_i2c_sda_i),
+      .i2c_sda_o           (cust_i2c_sda_o),
+      .i2c_sda_dir_o       (cust_i2c_sda_dir_o),
+      .qspi_spi_clk_o      (cust_qspi_spi_clk_o),
+      .qspi_spi_csn_o      (cust_qspi_spi_csn_o),
+      .qspi_spi_sdo_o      (cust_qspi_spi_sdo_o),
+      .qspi_spi_oe_o       (cust_qspi_spi_oe_o),
+      .qspi_spi_sdi_i      (cust_qspi_spi_sdi_i),
+      .spfs_div4_i         (cust_spfs_div4_i),
+      .spfs_clk_o          (cust_spfs_clk_o),
+      .spfs_cs_o           (cust_spfs_cs_o),
+      .spfs_mosi_o         (cust_spfs_mosi_o),
+      .spfs_miso_i         (cust_spfs_miso_i),
+      .irq_o               (s_apb_irq)
   );
+
+`ifdef IP_MDD
+  ip_mdd_wrapper u_ip_mdd_wrapper (
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .sel_i            (ip_mdd_sel_i),
+      .gpio_out_o       (ip_mdd_gpio_out_o),
+      .gpio_in_i        (ip_mdd_gpio_in_i),
+      .gpio_oeb_o       (ip_mdd_gpio_oeb_o),
+      .slv_apb_paddr_i  (s_ip_mdd_apb_paddr),
+      .slv_apb_pprot_i  (s_ip_mdd_apb_pprot),
+      .slv_apb_psel_i   (s_ip_mdd_apb_psel),
+      .slv_apb_penable_i(s_ip_mdd_apb_penable),
+      .slv_apb_pwrite_i (s_ip_mdd_apb_pwrite),
+      .slv_apb_pwdata_i (s_ip_mdd_apb_pwdata),
+      .slv_apb_pstrb_i  (s_ip_mdd_apb_pstrb),
+      .slv_apb_pready_o (s_ip_mdd_apb_pready),
+      .slv_apb_prdata_o (s_ip_mdd_apb_prdata)
+  );
+`endif
 
   psram_top u_psram_top (
       .clk_i           (clk_i),

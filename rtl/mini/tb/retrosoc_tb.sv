@@ -27,13 +27,15 @@ module retrosoc_tb;
   reg        r_xtal_clk;
   reg        r_ext_clk;
   reg        r_rst_n;
-  reg  [4:0] r_mstr_sel;
+  reg  [4:0] r_core_mdd_sel;
+  reg  [4:0] r_ip_mdd_sel;
   reg        r_pll_en;
   reg  [2:0] r_pll_cfg;
 
   wire       s_ext_clk;
   wire       s_rst_n;
-  wire [4:0] s_mstr_sel;
+  wire [4:0] s_core_mdd_sel;
+  wire [4:0] s_ip_mdd_sel;
   wire       s_pll_en;
   wire [2:0] s_pll_cfg;
 
@@ -65,22 +67,46 @@ module retrosoc_tb;
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk  = r_ext_clk;
-  assign s_rst_n    = r_rst_n;
-  assign s_mstr_sel = r_mstr_sel;
-  assign s_pll_en   = r_pll_en;
-  assign s_pll_cfg  = r_pll_cfg;
+  assign s_ext_clk      = r_ext_clk;
+  assign s_rst_n        = r_rst_n;
+  assign s_core_mdd_sel = r_core_mdd_sel;
+  assign s_ip_mdd_sel   = r_ip_mdd_sel;
+  assign s_pll_en       = r_pll_en;
+  assign s_pll_cfg      = r_pll_cfg;
 
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad                 (r_xtal_clk),
       .xo_o_pad                 (),
       .extclk_i_pad             (s_ext_clk),
-`ifdef CORE_MERGE
-      .mstr_sel_0_i_pad         (s_mstr_sel[0]),
-      .mstr_sel_1_i_pad         (s_mstr_sel[1]),
-      .mstr_sel_2_i_pad         (s_mstr_sel[2]),
-      .mstr_sel_3_i_pad         (s_mstr_sel[3]),
-      .mstr_sel_4_i_pad         (s_mstr_sel[4]),
+`ifdef CORE_MDD
+      .core_mdd_sel_0_i_pad     (s_core_mdd_sel[0]),
+      .core_mdd_sel_1_i_pad     (s_core_mdd_sel[1]),
+      .core_mdd_sel_2_i_pad     (s_core_mdd_sel[2]),
+      .core_mdd_sel_3_i_pad     (s_core_mdd_sel[3]),
+      .core_mdd_sel_4_i_pad     (s_core_mdd_sel[4]),
+`endif
+`ifdef IP_MDD
+      .ip_mdd_sel_0_i_pad       (s_ip_mdd_sel[0]),
+      .ip_mdd_sel_1_i_pad       (s_ip_mdd_sel[1]),
+      .ip_mdd_sel_2_i_pad       (s_ip_mdd_sel[2]),
+      .ip_mdd_sel_3_i_pad       (s_ip_mdd_sel[3]),
+      .ip_mdd_sel_4_i_pad       (s_ip_mdd_sel[4]),
+      .ip_mdd_gpio_0_io_pad     (),
+      .ip_mdd_gpio_1_io_pad     (),
+      .ip_mdd_gpio_2_io_pad     (),
+      .ip_mdd_gpio_3_io_pad     (),
+      .ip_mdd_gpio_4_io_pad     (),
+      .ip_mdd_gpio_5_io_pad     (),
+      .ip_mdd_gpio_6_io_pad     (),
+      .ip_mdd_gpio_7_io_pad     (),
+      .ip_mdd_gpio_8_io_pad     (),
+      .ip_mdd_gpio_9_io_pad     (),
+      .ip_mdd_gpio_10_io_pad    (),
+      .ip_mdd_gpio_11_io_pad    (),
+      .ip_mdd_gpio_12_io_pad    (),
+      .ip_mdd_gpio_13_io_pad    (),
+      .ip_mdd_gpio_14_io_pad    (),
+      .ip_mdd_gpio_15_io_pad    (),
 `endif
       .pll_cfg_0_i_pad          (s_pll_cfg[0]),
       .pll_cfg_1_i_pad          (s_pll_cfg[1]),
@@ -245,7 +271,8 @@ module retrosoc_tb;
   end
 
   initial begin
-    r_mstr_sel = 5'd0;
+    r_core_mdd_sel = 5'd0;
+    r_ip_mdd_sel   = 5'd0;
 
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;
@@ -260,16 +287,14 @@ module retrosoc_tb;
     else if ($test$plusargs("pll_cfg7")) r_pll_cfg = 3'd7;  // 192M
     else r_pll_cfg = 3'd0;  // 24M
 
-`ifdef CORE_MERGE
-    if (r_pll_en == 1'b0) begin
-      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz mstr_sel: %0d", r_pll_en, r_pll_cfg, EXT_CPU_FREQ, r_mstr_sel);
-    end else if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
-      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz mstr_sel: %0d", r_pll_en, r_pll_cfg, XTAL_CPU_FREQ, r_mstr_sel);
-    end else begin
-      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz mstr_sel: %0d", r_pll_en, r_pll_cfg,
-               (r_pll_cfg + 1) * 24, r_mstr_sel);
-    end
-`else
+    $display("========================================================");
+`ifdef CORE_MDD
+    $display("core_mdd_sel: %0d", r_core_mdd_sel);
+`endif
+`ifdef IP_MDD
+    $display("ip_mdd_sel: %0d", r_ip_mdd_sel);
+`endif
+
     if (r_pll_en == 1'b0) begin
       $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg, EXT_CPU_FREQ);
     end else if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
@@ -278,7 +303,6 @@ module retrosoc_tb;
       $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg,
                (r_pll_cfg + 1) * 24);
     end
-`endif
-
+    $display("========================================================");
   end
 endmodule

@@ -1,4 +1,4 @@
-module merge_mstr_wrapper (
+module core_mdd_wrapper (
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [ 4:0] sel_i,

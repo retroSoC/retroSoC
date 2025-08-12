@@ -36,7 +36,7 @@
 ../../ip/native/psram.sv
 ../../ip/native/simpleuart.sv
 ../../ip/native/mem2apb.sv
-../../ip/native/axi4l2mem.v
+../../ip/native/axi4l2nmi.sv
 ../../ip/native/counter_timer.sv
 
 ../../ip/3rd_party/spfs/spi_clgen.v
