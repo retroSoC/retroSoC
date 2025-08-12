@@ -15,6 +15,12 @@ void welcome_screen()
     for(int  i = 0; i < 6; ++i)
         printf("global test:%x\n", global_test[i]);
 
+    printf("[USER IP design] archinfo test\n");
+    printf("[ARCHINFO SYS] %x\n", reg_ip_design_archinfo_sys);
+    printf("[ARCHINFO IDL] %x\n", reg_ip_design_archinfo_idl);
+    printf("[ARCHINFO IDH] %x\n", reg_ip_design_archinfo_idh);
+    while(1);
+
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%x\n", &_flash_wait_start);
     printf("_flash_wait_end:   0x%x\n", &_flash_wait_end);

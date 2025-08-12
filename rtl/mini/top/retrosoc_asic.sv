@@ -54,9 +54,11 @@ module retrosoc_asic (
     inout  ip_mdd_gpio_14_io_pad,
     inout  ip_mdd_gpio_15_io_pad,
 `endif
+`ifdef HAVE_PLL
     inout  pll_cfg_0_i_pad,
     inout  pll_cfg_1_i_pad,
     inout  pll_cfg_2_i_pad,
+`endif
     inout  clk_bypass_i_pad,
     inout  ext_rst_n_i_pad,
     output sys_clkdiv4_o_pad,
@@ -114,9 +116,11 @@ module retrosoc_asic (
     inout  cust_spfs_miso_i_pad
 );
   // clk&rst
-  logic        s_xtal_io;
-  logic        s_ext_clk_i;
-  logic [ 2:0] s_pll_cfg_i;
+  logic s_xtal_io;
+  logic s_ext_clk_i;
+`ifdef HAVE_PLL
+  logic [2:0] s_pll_cfg_i;
+`endif
   logic        s_clk_bypass_i;
   logic        s_sys_clk;
   logic        s_ext_rst_n_i;
@@ -215,9 +219,11 @@ module retrosoc_asic (
   tc_io_tri_pad         u_ip_mdd_gpio_14_io_pad (.pad(ip_mdd_gpio_14_io_pad), .c2p(s_ip_mdd_gpio_out[14]),   .c2p_en(~s_ip_mdd_gpio_oeb[14]),   .p2c(s_ip_mdd_gpio_in[14]));
   tc_io_tri_pad         u_ip_mdd_gpio_15_io_pad (.pad(ip_mdd_gpio_15_io_pad), .c2p(s_ip_mdd_gpio_out[15]),   .c2p_en(~s_ip_mdd_gpio_oeb[15]),   .p2c(s_ip_mdd_gpio_in[15]));
 `endif
+`ifdef HAVE_PLL
   tc_io_tri_pad         u_pll_cfg_0_i_pad   (.pad(pll_cfg_0_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[0]));
   tc_io_tri_pad         u_pll_cfg_1_i_pad   (.pad(pll_cfg_1_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[1]));
   tc_io_tri_pad         u_pll_cfg_2_i_pad   (.pad(pll_cfg_2_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_pll_cfg_i[2]));
+`endif
   tc_io_tri_pad         u_clk_bypass_i_pad  (.pad(clk_bypass_i_pad),   .c2p(),                 .c2p_en(1'b0),                 .p2c(s_clk_bypass_i));
   tc_io_tri_schmitt_pad u_ext_rst_n_i_pad   (.pad(ext_rst_n_i_pad),    .c2p(),                 .c2p_en(1'b0),                 .p2c(s_ext_rst_n_i));
   tc_io_tri_pad         u_sys_clkdiv4_o_pad (.pad(sys_clkdiv4_o_pad),  .c2p(s_sys_clkdiv4_o),  .c2p_en(1'b1),                 .p2c());
@@ -277,7 +283,9 @@ module retrosoc_asic (
       .ext_clk_i    (s_ext_clk_i),
       .clk_bypass_i (s_clk_bypass_i),
       .ext_rst_n_i  (s_ext_rst_n_i),
+`ifdef HAVE_PLL
       .pll_cfg_i    (s_pll_cfg_i),
+`endif
       .sys_clk_o    (s_sys_clk),
       .sys_rst_n_o  (s_sys_rst_n),
       .sys_clkdiv4_o(s_sys_clkdiv4_o)
@@ -336,7 +344,11 @@ module retrosoc_asic (
       .cust_psram_sio2_o  (s_cust_psram_sio2_o),
       .cust_psram_sio3_o  (s_cust_psram_sio3_o),
       .cust_psram_sio_oe_o(s_cust_psram_sio_oe_o),
+`ifdef HAVE_PLL
       .cust_spfs_div4_i   (s_pll_cfg_i[2]),
+`else
+      .cust_spfs_div4_i   ('0),
+`endif
       .cust_spfs_clk_o    (s_cust_spfs_clk_o),
       .cust_spfs_cs_o     (s_cust_spfs_cs_o),
       .cust_spfs_mosi_o   (s_cust_spfs_mosi_o),

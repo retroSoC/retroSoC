@@ -36,8 +36,10 @@ module retrosoc_tb;
   wire       s_rst_n;
   wire [4:0] s_core_mdd_sel;
   wire [4:0] s_ip_mdd_sel;
-  wire       s_pll_en;
+  wire       s_clk_bypass;
+`ifdef HAVE_PLL
   wire [2:0] s_pll_cfg;
+`endif
 
   wire       s_uart_tx;
   wire       s_flash_csb;
@@ -71,8 +73,10 @@ module retrosoc_tb;
   assign s_rst_n        = r_rst_n;
   assign s_core_mdd_sel = r_core_mdd_sel;
   assign s_ip_mdd_sel   = r_ip_mdd_sel;
-  assign s_pll_en       = r_pll_en;
+  assign s_clk_bypass   = ~r_pll_en;
+`ifdef HAVE_PLL
   assign s_pll_cfg      = r_pll_cfg;
+`endif
 
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad                 (r_xtal_clk),
@@ -108,10 +112,12 @@ module retrosoc_tb;
       .ip_mdd_gpio_14_io_pad    (),
       .ip_mdd_gpio_15_io_pad    (),
 `endif
+`ifdef HAVE_PLL
       .pll_cfg_0_i_pad          (s_pll_cfg[0]),
       .pll_cfg_1_i_pad          (s_pll_cfg[1]),
       .pll_cfg_2_i_pad          (s_pll_cfg[2]),
-      .clk_bypass_i_pad         (~s_pll_en),
+`endif
+      .clk_bypass_i_pad         (s_clk_bypass),
       .ext_rst_n_i_pad          (s_rst_n),
       .sys_clkdiv4_o_pad        (),
       .uart_tx_o_pad            (s_uart_tx),

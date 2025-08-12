@@ -82,5 +82,8 @@
 #define reg_cust_qspi_rxfifo  (*(volatile uint32_t*)0x20007020)
 #define reg_cust_qspi_intcfg  (*(volatile uint32_t*)0x20007024)
 #define reg_cust_qspi_intsta  (*(volatile uint32_t*)0x20007028)
-
+// user ip design(example)
+#define reg_ip_design_archinfo_sys (*(volatile uint32_t*)0x2000F000)
+#define reg_ip_design_archinfo_idl (*(volatile uint32_t*)0x2000F004)
+#define reg_ip_design_archinfo_idh (*(volatile uint32_t*)0x2000F008)
 #endif

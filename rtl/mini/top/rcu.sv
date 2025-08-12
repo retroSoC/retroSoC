@@ -13,7 +13,9 @@ module rcu (
     input  logic       ext_clk_i,
     input  logic       clk_bypass_i,
     input  logic       ext_rst_n_i,
+`ifdef HAVE_PLL
     input  logic [2:0] pll_cfg_i,
+`endif
     output logic       sys_clk_o,
     output logic       sys_rst_n_o,
     output logic       sys_clkdiv4_o
@@ -67,7 +69,7 @@ module rcu (
   assign sys_rst_n_o   = clk_bypass_i ? s_ext_rst_n_sync : s_pll_lock;
   assign sys_clkdiv4_o = s_sys_clkdiv4_q;
 
-  assign s_div_cnt_d = (s_div_cnt_q == 4'd1) ? '0: s_div_cnt_q + 1'b1;
+  assign s_div_cnt_d   = (s_div_cnt_q == 4'd1) ? '0 : s_div_cnt_q + 1'b1;
   dffr #(4) u_div_cnt_dffr (
       sys_clk_o,
       sys_rst_n_o,
@@ -87,6 +89,7 @@ module rcu (
   // 120 144 168 192
   // 2 <= N <= 4
   // 7 <= M 
+`ifdef HAVE_PLL
   always_comb begin
     unique case (pll_cfg_i)
       3'b000: begin  //bypass 24MHz
@@ -145,7 +148,12 @@ module rcu (
       end
     endcase
   end
-
+`else
+  assign s_pll_bp = 1'b1;
+  assign s_pll_M  = 8'd20;
+  assign s_pll_N  = 4'd2;
+  assign s_pll_OD = 2'd1;
+`endif
   tc_pll u_tc_pll (
       .fref_i    (s_xtal_clk_buf),
       .rst_n_i   (s_ext_rst_n_sync),

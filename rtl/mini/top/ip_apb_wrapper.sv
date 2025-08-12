@@ -27,7 +27,6 @@ module ip_apb_wrapper (
     output logic [31:0] mmap_rdata_o,
     output logic        mmap_ready_o,
 `ifdef IP_MDD
-    // ip mdd
     output logic [31:0] ip_mdd_apb_paddr_o,
     output logic [ 2:0] ip_mdd_apb_pprot_o,
     output logic        ip_mdd_apb_psel_o,
@@ -68,7 +67,11 @@ module ip_apb_wrapper (
     output logic [ 5:0] irq_o
 );
 
+`ifdef IP_MDD
+  localparam APB_SLAVES_NUM = 9;
+`else
   localparam APB_SLAVES_NUM = 8;
+`endif
 
   logic [              31:0] s_m_apb_paddr;
   logic [               2:0] s_m_apb_pprot;
@@ -87,6 +90,9 @@ module ip_apb_wrapper (
   logic [              31:0] s_m_apb_prdata5;
   logic [              31:0] s_m_apb_prdata6;
   logic [              31:0] s_m_apb_prdata7;
+`ifdef IP_MDD
+  logic [31:0] s_m_apb_prdata8;
+`endif
   logic [APB_SLAVES_NUM-1:0] s_m_apb_pslverr;
 
   // verilog_format: off
@@ -211,6 +217,19 @@ module ip_apb_wrapper (
   assign u_spi_0_if.spi_io_in_i       = qspi_spi_sdi_i;
   assign irq_o[4]                     = u_spi_0_if.irq_o;
 
+`ifdef IP_MDD
+  assign ip_mdd_apb_paddr_o   = s_m_apb_paddr;
+  assign ip_mdd_apb_pprot_o   = s_m_apb_pprot;
+  assign ip_mdd_apb_psel_o    = s_m_apb_psel[8];
+  assign ip_mdd_apb_penable_o = s_m_apb_penable;
+  assign ip_mdd_apb_pwrite_o  = s_m_apb_pwrite;
+  assign ip_mdd_apb_pwdata_o  = s_m_apb_pwdata;
+  assign ip_mdd_apb_pstrb_o   = s_m_apb_pstrb;
+  assign s_m_apb_pready[8]    = ip_mdd_apb_pready_i;
+  assign s_m_apb_pslverr[8]   = '0;
+  assign s_m_apb_prdata8      = ip_mdd_apb_prdata_i;
+`endif
+
   spi_flash #(
       .flash_addr_start(`FLASH_START_ADDR),
       .flash_addr_end  (`FLASH_END_ADDR),
@@ -262,6 +281,9 @@ module ip_apb_wrapper (
       .apb_prdata5_i(s_m_apb_prdata5),
       .apb_prdata6_i(s_m_apb_prdata6),
       .apb_prdata7_i(s_m_apb_prdata7),
+`ifdef IP_MDD
+      .apb_prdata8_i(s_m_apb_prdata8),
+`endif
       .apb_pslverr_i(s_m_apb_pslverr)
   );
 
