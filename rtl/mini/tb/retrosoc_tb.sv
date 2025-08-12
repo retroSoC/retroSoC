@@ -26,44 +26,43 @@ module retrosoc_tb;
 
   reg        r_xtal_clk;
   reg        r_ext_clk;
-  reg        r_rst_n;
-  reg  [4:0] r_core_mdd_sel;
-  reg  [4:0] r_ip_mdd_sel;
-  reg        r_pll_en;
-  reg  [2:0] r_pll_cfg;
-
   wire       s_ext_clk;
+  reg        r_rst_n;
   wire       s_rst_n;
+  reg  [4:0] r_core_mdd_sel;
   wire [4:0] s_core_mdd_sel;
+  reg  [4:0] r_ip_mdd_sel;
   wire [4:0] s_ip_mdd_sel;
+  reg        r_pll_en;
   wire       s_clk_bypass;
+  reg  [2:0] r_pll_cfg;
 `ifdef HAVE_PLL
   wire [2:0] s_pll_cfg;
 `endif
 
-  wire       s_uart_tx;
-  wire       s_flash_csb;
-  wire       s_flash_clk;
-  wire       s_flash_io0;
-  wire       s_flash_io1;
-  wire       s_flash_io2;
-  wire       s_flash_io3;
+  wire s_uart_tx;
+  wire s_flash_csb;
+  wire s_flash_clk;
+  wire s_flash_io0;
+  wire s_flash_io1;
+  wire s_flash_io2;
+  wire s_flash_io3;
   // wire s_i2c_sda_io;
   // wire s_i2c_scl_io;
-  wire       s_cust_uart_tx;
-  wire       s_cust_uart_rx;
-  wire       s_cust_ps2_ps2_clk;
-  wire       s_cust_ps2_ps2_dat;
-  wire       s_cust_psram_sclk;
-  wire       s_cust_psram_ce;
-  wire       s_cust_psram_sio0;
-  wire       s_cust_psram_sio1;
-  wire       s_cust_psram_sio2;
-  wire       s_cust_psram_sio3;
-  wire       s_cust_spfs_clk_o;
-  wire       s_cust_spfs_cs_o;
-  wire       s_cust_spfs_mosi_o;
-  wire       s_cust_spfs_miso_i;
+  wire s_cust_uart_tx;
+  wire s_cust_uart_rx;
+  wire s_cust_ps2_ps2_clk;
+  wire s_cust_ps2_ps2_dat;
+  wire s_cust_psram_sclk;
+  wire s_cust_psram_ce;
+  wire s_cust_psram_sio0;
+  wire s_cust_psram_sio1;
+  wire s_cust_psram_sio2;
+  wire s_cust_psram_sio3;
+  wire s_cust_spfs_clk_o;
+  wire s_cust_spfs_cs_o;
+  wire s_cust_spfs_mosi_o;
+  wire s_cust_spfs_miso_i;
 
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
@@ -75,7 +74,7 @@ module retrosoc_tb;
   assign s_ip_mdd_sel   = r_ip_mdd_sel;
   assign s_clk_bypass   = ~r_pll_en;
 `ifdef HAVE_PLL
-  assign s_pll_cfg      = r_pll_cfg;
+  assign s_pll_cfg = r_pll_cfg;
 `endif
 
   retrosoc_asic u_retrosoc_asic (
