@@ -49,9 +49,9 @@ module ip_mdd_wrapper (
   assign u_archinfo_ip_mdd_apb4_if.pwrite  = s_slv_0_apb_pwrite;
   assign u_archinfo_ip_mdd_apb4_if.pwdata  = s_slv_0_apb_pwdata;
   assign u_archinfo_ip_mdd_apb4_if.pstrb   = s_slv_0_apb_pstrb;
-  assign s_slv_0_apb_pready               = u_archinfo_ip_mdd_apb4_if.pready;
-  assign s_slv_0_apb_pslverr              = u_archinfo_ip_mdd_apb4_if.pslverr;
-  assign s_slv_0_apb_prdata               = u_archinfo_ip_mdd_apb4_if.prdata;
+  assign s_slv_0_apb_pready                = u_archinfo_ip_mdd_apb4_if.pready;
+  assign s_slv_0_apb_pslverr               = u_archinfo_ip_mdd_apb4_if.pslverr;
+  assign s_slv_0_apb_prdata                = u_archinfo_ip_mdd_apb4_if.prdata;
   // verilog_format: on
 
   assign slv_apb_pready_o     = sel_i == '0 ? s_slv_0_apb_pready : s_slv_user_apb_pready;

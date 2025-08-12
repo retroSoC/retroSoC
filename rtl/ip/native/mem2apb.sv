@@ -11,7 +11,11 @@
 `include "mmap_define.svh"
 
 module mem2apb #(
+`ifdef IP_MDD
+    parameter APB_SLAVES_NUM = 9
+`else
     parameter APB_SLAVES_NUM = 8
+`endif
 ) (
     input  logic                      clk_i,
     input  logic                      rst_n_i,
@@ -39,6 +43,9 @@ module mem2apb #(
     input  logic [              31:0] apb_prdata5_i,
     input  logic [              31:0] apb_prdata6_i,
     input  logic [              31:0] apb_prdata7_i,
+`ifdef IP_MDD
+    input  logic [              31:0] apb_prdata8_i,
+`endif
     input  logic [APB_SLAVES_NUM-1:0] apb_pslverr_i
 );
 
@@ -56,16 +63,19 @@ module mem2apb #(
   assign apb_psel_o[5] = mem_valid_i && (mem_addr_i[31:24] == `CUST_IP_START && mem_addr_i[15:8] == 8'h60);
   assign apb_psel_o[6] = mem_valid_i && (mem_addr_i[31:24] == `CUST_IP_START && mem_addr_i[15:8] == 8'h70);
   assign apb_psel_o[7] = mem_valid_i && (mem_addr_i[31:24] == `FLASH_START);
+`ifdef IP_MDD
+  assign apb_psel_o[8] = mem_valid_i && (mem_addr_i[31:24] == `CUST_IP_START && mem_addr_i[15:8] == 8'hF0);
+`endif
   assign apb_penable_o = s_psel_q;
-  assign apb_pwrite_o = |mem_wstrb_i;
-  assign apb_pwdata_o = mem_wdata_i;
-  assign apb_pstrb_o = mem_wstrb_i;
+  assign apb_pwrite_o  = |mem_wstrb_i;
+  assign apb_pwdata_o  = mem_wdata_i;
+  assign apb_pstrb_o   = mem_wstrb_i;
 
   // HACK: dont need psel signal
-  assign mem_ready_o = mem_valid_i && apb_penable_o && s_xfer_ready;
-  assign mem_rdata_o = {32{mem_ready_o}} & s_rd_data;
+  assign mem_ready_o   = mem_valid_i && apb_penable_o && s_xfer_ready;
+  assign mem_rdata_o   = {32{mem_ready_o}} & s_rd_data;
 
-  assign s_psel_d = |apb_psel_o;
+  assign s_psel_d      = |apb_psel_o;
   dffr #(1) u_psel_dffr (
       clk_i,
       rst_n_i,
@@ -81,6 +91,9 @@ module mem2apb #(
                      ({32{apb_psel_o[4]}} & apb_prdata4_i) |
                      ({32{apb_psel_o[5]}} & apb_prdata5_i) |
                      ({32{apb_psel_o[6]}} & apb_prdata6_i) |
+`ifdef IP_MDD
+                     ({32{apb_psel_o[8]}} & apb_prdata8_i) |
+`endif
                      ({32{apb_psel_o[7]}} & apb_prdata7_i);
 
   assign s_xfer_ready = (apb_psel_o[0] & apb_pready_i[0]) |
@@ -90,6 +103,9 @@ module mem2apb #(
                         (apb_psel_o[4] & apb_pready_i[4]) |
                         (apb_psel_o[5] & apb_pready_i[5]) |
                         (apb_psel_o[6] & apb_pready_i[6]) |
+`ifdef IP_MDD
+                        (apb_psel_o[8] & apb_pready_i[8]) |
+`endif
                         (apb_psel_o[7] & apb_pready_i[7]);
   // verilog_format: on
 
