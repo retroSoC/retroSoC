@@ -16,10 +16,9 @@ void welcome_screen()
         printf("global test:%x\n", global_test[i]);
 
     printf("[USER IP design] archinfo test\n");
-    printf("[ARCHINFO SYS] %x\n", reg_ip_design_archinfo_sys);
-    printf("[ARCHINFO IDL] %x\n", reg_ip_design_archinfo_idl);
-    printf("[ARCHINFO IDH] %x\n", reg_ip_design_archinfo_idh);
-    while(1);
+    // printf("[ARCHINFO SYS] %x\n", reg_ip_design_archinfo_sys);
+    // printf("[ARCHINFO IDL] %x\n", reg_ip_design_archinfo_idl);
+    // printf("[ARCHINFO IDH] %x\n", reg_ip_design_archinfo_idh);
 
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%x\n", &_flash_wait_start);
@@ -63,10 +62,10 @@ void welcome_screen()
     printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
 
     printf("Memory Map IO Device:\n");
-    printf("                    16 x GPIO          @0x%x\n", &reg_gpio_data);
+    printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
     printf("                     1 x UART          @0x%x\n", &reg_uart_clkdiv);
     printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_config, &reg_tim1_config);
-    printf("                     1 x PSRAM         @0x%x\n", &reg_psram_waitcycl);
+    printf("                     2 x PSRAM         @0x%x,0x%x\n", &reg_psram0_waitcycl, &reg_psram1_waitcycl);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_cust_archinfo_sys);
     printf("                     1 x RNG           @0x%x\n", &reg_cust_rng_ctrl);
     printf("                     1 x UART(HP)      @0x%x\n", &reg_cust_uart_lcr);
@@ -92,8 +91,8 @@ void app_system_boot() {
     uint32_t timing_expt = 0, timing_actual = 0;
     char  msg_pass[20] = "\e[0;32m[PASS]\e[0m", msg_fail[20] = "\e[0;31m[FAIL]\e[0m";
 
-    printf("[PSRAM] wait cycles(default):      %d\n", reg_psram_waitcycl);
-    printf("[PSRAM] chd delay cycles(defalut): %d\n", reg_psram_chd);
+    printf("[PSRAM] wait cycles(default):      %d\n", reg_psram0_waitcycl);
+    printf("[PSRAM] chd delay cycles(defalut): %d\n", reg_psram0_chd);
     printf("[PSRAM] timing check\n");
     timing_expt = 1000 / PSRAM_SCLK_MAX_FREQ;
     timing_actual = 1000 / (PSRAM_SCLK_FREQ);
@@ -111,7 +110,7 @@ void app_system_boot() {
     printf("%s\n", msg_pass);
 
     timing_expt = 50;
-    timing_actual = (reg_psram_waitcycl / 2) * (1000 / PSRAM_SCLK_FREQ);
+    timing_actual = (reg_psram0_waitcycl / 2) * (1000 / PSRAM_SCLK_FREQ);
     printf("tCPH    ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
@@ -130,7 +129,7 @@ void app_system_boot() {
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
 
     timing_expt = 20;
-    timing_actual = (1000 / PSRAM_SCLK_FREQ) * (reg_psram_chd / 2 + 1);
+    timing_actual = (1000 / PSRAM_SCLK_FREQ) * (reg_psram0_chd / 2 + 1);
     printf("tCHD    ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
@@ -147,11 +146,11 @@ void app_system_boot() {
     }
 
     uint32_t psram_cfg_val = (uint32_t)8;
-    reg_psram_waitcycl = psram_cfg_val;
-    printf("[PSRAM] set wait cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_waitcycl);
+    reg_psram0_waitcycl = psram_cfg_val;
+    printf("[PSRAM] set wait cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram0_waitcycl);
     psram_cfg_val = (uint32_t)0;
-    reg_psram_chd = psram_cfg_val;
-    printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_chd);
+    reg_psram0_chd = psram_cfg_val;
+    printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram0_chd);
     printf("[extern PSRAM test]\n");
     // ip_psram_selftest(0x40000000, 8 * 1024 * 1024);
     printf("self test done\n\n");

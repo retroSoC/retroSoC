@@ -40,11 +40,11 @@ module retrosoc (
     input  logic [31:0] ram_rdata_i,
 `endif
     // memory mapped I/O signals
-    output logic [15:0] gpio_out_o,
-    input  logic [15:0] gpio_in_i,
-    output logic [15:0] gpio_pub_o,
-    output logic [15:0] gpio_pdb_o,
-    output logic [15:0] gpio_oeb_o,
+    output logic [ 7:0] gpio_out_o,
+    input  logic [ 7:0] gpio_in_i,
+    output logic [ 7:0] gpio_pub_o,
+    output logic [ 7:0] gpio_pdb_o,
+    output logic [ 7:0] gpio_oeb_o,
     output logic        uart_tx_o,
     input  logic        uart_rx_i,
     // irq

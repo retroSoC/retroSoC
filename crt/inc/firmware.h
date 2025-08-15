@@ -6,9 +6,9 @@
 
 #define CPU_FREQ             72     // unit: MHz
 #define UART_BPS             115200 // unit: bps
-#define PSRAM_NUM            1
-#define PSRAM_SCLK_MIN_FREQ  12  // unit: Mhz
-#define PSRAM_SCLK_MAX_FREQ  133 // unit: Mhz
+#define PSRAM_NUM            2
+#define PSRAM_SCLK_MIN_FREQ  12  // unit: MHz
+#define PSRAM_SCLK_MAX_FREQ  133 // unit: MHz
 #define PSRAM_SCLK_FREQ      (CPU_FREQ / 2)
 
 #define SPFS_MEM_START        0x00000000
@@ -16,7 +16,7 @@
 #define SRAM_MEM_START        0x30000000
 #define SRAM_MEM_OFFST        0x20000
 #define PSRAM_MEM_START       0x40000000
-#define PSRAM_MEM_OFFST       0x800000
+#define PSRAM_MEM_OFFST       (0x800000 * PSRAM_NUM)
 // gpio
 #define reg_gpio_data         (*(volatile uint32_t*)0x10000000)
 #define reg_gpio_enb          (*(volatile uint32_t*)0x10000004)
@@ -33,9 +33,12 @@
 #define reg_tim1_config       (*(volatile uint32_t*)0x10003000)
 #define reg_tim1_value        (*(volatile uint32_t*)0x10003004)
 #define reg_tim1_data         (*(volatile uint32_t*)0x10003008)
-// psram
-#define reg_psram_waitcycl    (*(volatile uint32_t*)0x10004000)
-#define reg_psram_chd         (*(volatile uint32_t*)0x10004004)
+// psram0
+#define reg_psram0_waitcycl   (*(volatile uint32_t*)0x10004000)
+#define reg_psram0_chd        (*(volatile uint32_t*)0x10004004)
+// psram1
+#define reg_psram1_waitcycl   (*(volatile uint32_t*)0x10005000)
+#define reg_psram1_chd        (*(volatile uint32_t*)0x10005004)
 // cust archinfo
 #define reg_cust_archinfo_sys (*(volatile uint32_t*)0x20001000)
 #define reg_cust_archinfo_idl (*(volatile uint32_t*)0x20001004)
