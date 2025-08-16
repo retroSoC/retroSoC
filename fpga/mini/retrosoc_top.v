@@ -42,9 +42,41 @@ module retrosoc_top (
       .xi_i_pad                 (s_sys_clk),
       .xo_o_pad                 (),
       .extclk_i_pad             (s_sys_clk),
+`ifdef CORE_MDD
+      .core_mdd_sel_0_i_pad     (1'b0),
+      .core_mdd_sel_1_i_pad     (1'b0),
+      .core_mdd_sel_2_i_pad     (1'b0),
+      .core_mdd_sel_3_i_pad     (1'b0),
+      .core_mdd_sel_4_i_pad     (1'b0),
+`endif
+`ifdef IP_MDD
+      .ip_mdd_sel_0_i_pad       (1'b0),
+      .ip_mdd_sel_1_i_pad       (1'b0),
+      .ip_mdd_sel_2_i_pad       (1'b0),
+      .ip_mdd_sel_3_i_pad       (1'b0),
+      .ip_mdd_sel_4_i_pad       (1'b0),
+      .ip_mdd_gpio_0_io_pad     (),
+      .ip_mdd_gpio_1_io_pad     (),
+      .ip_mdd_gpio_2_io_pad     (),
+      .ip_mdd_gpio_3_io_pad     (),
+      .ip_mdd_gpio_4_io_pad     (),
+      .ip_mdd_gpio_5_io_pad     (),
+      .ip_mdd_gpio_6_io_pad     (),
+      .ip_mdd_gpio_7_io_pad     (),
+      .ip_mdd_gpio_8_io_pad     (),
+      .ip_mdd_gpio_9_io_pad     (),
+      .ip_mdd_gpio_10_io_pad    (),
+      .ip_mdd_gpio_11_io_pad    (),
+      .ip_mdd_gpio_12_io_pad    (),
+      .ip_mdd_gpio_13_io_pad    (),
+      .ip_mdd_gpio_14_io_pad    (),
+      .ip_mdd_gpio_15_io_pad    (),
+`endif
+`ifdef HAVE_PLL
       .pll_cfg_0_i_pad          (1'b0),
       .pll_cfg_1_i_pad          (1'b0),
       .pll_cfg_2_i_pad          (1'b0),
+`endif
       .clk_bypass_i_pad         (1'b1),
       .ext_rst_n_i_pad          (rst_n_i),
       // UART
@@ -59,14 +91,6 @@ module retrosoc_top (
       .gpio_5_io_pad            (),
       .gpio_6_io_pad            (),
       .gpio_7_io_pad            (),
-      .gpio_8_io_pad            (),
-      .gpio_9_io_pad            (),
-      .gpio_10_io_pad           (),
-      .gpio_11_io_pad           (),
-      .gpio_12_io_pad           (),
-      .gpio_13_io_pad           (),
-      .gpio_14_io_pad           (),
-      .gpio_15_io_pad           (),
       // IRQ
       .irq_pin_i_pad            (1'b0),
       // CUST
