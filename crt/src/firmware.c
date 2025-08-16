@@ -8,18 +8,18 @@ extern uint32_t _psram_lma, _psram_vma, _edata;
 extern uint32_t _sbss, _ebss;
 extern uint32_t _heap_start;
 
-static uint32_t global_test[6] = {0x12, 0x23, 0x34, 0x45, 0x56, 0x67};
+// static uint32_t global_test[6] = {0x12, 0x23, 0x34, 0x45, 0x56, 0x67};
 
 void welcome_screen()
 {
-    for(int  i = 0; i < 6; ++i)
-        printf("global test:%x\n", global_test[i]);
+    // for(int  i = 0; i < 6; ++i)
+    //     printf("global test:%x\n", global_test[i]);
 
     // printf("[USER IP design] archinfo test\n");
     // printf("[ARCHINFO SYS] %x\n", reg_ip_design_archinfo_sys);
     // printf("[ARCHINFO IDL] %x\n", reg_ip_design_archinfo_idl);
     // printf("[ARCHINFO IDH] %x\n", reg_ip_design_archinfo_idh);
-
+    printf("compile date: %s %s\n", __DATE__, __TIME__);
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%x\n", &_flash_wait_start);
     printf("_flash_wait_end:   0x%x\n", &_flash_wait_end);

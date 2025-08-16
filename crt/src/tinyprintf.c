@@ -309,7 +309,7 @@ static int vsnprintf_internal(char *out, size_t size, const char *fmt, va_list a
 
     case 's':
       p_str = va_arg(ap, char *);
-      conv_len = (prec == 0 ? strlen(p_str) : prec);
+      conv_len = (prec == 0 ? (int)(strlen(p_str)) : prec);
     print_str:
       width_pad_len = (width > conv_len ? width - conv_len : 0);
       if (!f.pad.is_right)
