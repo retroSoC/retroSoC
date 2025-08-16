@@ -6,14 +6,31 @@ CC   = $(CROSS)gcc
 OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
-CFLAGS := -mabi=ilp32 \
-          -march=rv32im \
-          -Wall -Wextra \
+CFLAGS := -Wall -Wextra \
           -Wl,-Bstatic,-T,flash_$(EXEC_TYPE).lds,--strip-debug \
           -ffreestanding \
           -nostdlib
 
-SRC_PATH := $(ROOT_PATH)/crt/startup.s \
+ifeq ($(ISA), RV32E)
+    CFLAGS += -mabi=ilp32e
+else
+    CFLAGS += -mabi=ilp32
+endif
+
+ifeq ($(ISA), RV32E)
+    CFLAGS += -march=rv32e
+else ifeq ($(ISA), RV32I)
+    CFLAGS += -march=rv32i
+else ifeq ($(ISA), RV32IM)
+    CFLAGS += -march=rv32im
+endif
+
+DEF_VAL += -DCORE_$(CORE)
+DEF_VAL += -DISA_$(ISA)
+CFLAGS += $(DEF_VAL)
+
+
+SRC_PATH := $(ROOT_PATH)/crt/startup.S \
             $(ROOT_PATH)/crt/src/tinyuart.c \
             $(ROOT_PATH)/crt/src/tinystring.c \
             $(ROOT_PATH)/crt/src/tinyprintf.c \
@@ -30,6 +47,12 @@ SRC_PATH := $(ROOT_PATH)/crt/startup.s \
             $(ROOT_PATH)/crt/src/tinybench.c \
             $(ROOT_PATH)/crt/src/tinysh.c \
             $(ROOT_PATH)/crt/src/firmware.c
+
+ifneq ($(filter RV32E RV32I,$(ISA)),)
+    SRC_PATH += $(ROOT_PATH)/crt/libgcc/div.S
+    SRC_PATH += $(ROOT_PATH)/crt/libgcc/muldi3.S
+    SRC_PATH += $(ROOT_PATH)/crt/libgcc/mulsi3.c
+endif
 
 LDS_PATH := $(ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
 
