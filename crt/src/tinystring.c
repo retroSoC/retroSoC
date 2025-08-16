@@ -83,7 +83,7 @@ void *memset(void *dst, int c, size_t n)
 {
   char *cdst = (char *)dst;
 
-  for (int i = 0; i < n; i++)
+  for (uint32_t i = 0; i < n; i++)
   {
     cdst[i] = c;
   }

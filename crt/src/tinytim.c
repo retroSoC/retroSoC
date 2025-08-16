@@ -7,7 +7,7 @@ void delay_ms(uint32_t val)
     // 1ms = 50MHz /
     reg_tim0_config = (uint32_t)0x0000;
     reg_tim0_data = (uint32_t)(CPU_FREQ * 1000 - 1);
-    for (int i = 1; i <= val; ++i)
+    for (uint32_t i = 1; i <= val; ++i)
     {
         reg_tim0_config = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
         while (reg_tim0_data == 0)

@@ -34,7 +34,7 @@ uint32_t tinybench(bool verbose, uint32_t *instns_p)
                 data[p++] = k;
         }
 
-        for (int k = 0, p = 0; k < 64; k++)
+        for (int k = 0; k < 64; k++)
         {
             x32 = x32 ^ words[k];
         }

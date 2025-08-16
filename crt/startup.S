@@ -30,6 +30,7 @@ wait_psram_reset:
     li       x13, 0
     li       x14, 0
     li       x15, 0
+#if ISA_RV32I || ISA_RV32IM
     li       x16, 0
     li       x17, 0
     li       x18, 0
@@ -46,6 +47,7 @@ wait_psram_reset:
     li       x29, 0
     li       x30, 0
     li       x31, 0
+#endif
 
 # ===== Startup Stage 2 =====
 # Load code section from FLASH to RAM

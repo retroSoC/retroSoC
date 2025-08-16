@@ -4,6 +4,26 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef CORE_PICORV32
+#define HW_CORE "picorv32"
+#elif CORE_MINIRV
+#define HW_CORE "minirv"
+#elif CORE_MDD
+#define HW_CORE "mdd(host core: picorv32)"
+#else
+#define HW_CORE "NONE"
+#endif
+
+#ifdef ISA_RV32E
+#define SW_ISA "rv32e"
+#elif ISA_RV32I
+#define SW_ISA "rv32i"
+#elif ISA_RV32IM
+#define SW_ISA "rv32im"
+#else
+#define SW_ISA "NONE"
+#endif
+
 #define CPU_FREQ             72     // unit: MHz
 #define UART_BPS             115200 // unit: bps
 #define PSRAM_NUM            2

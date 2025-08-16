@@ -180,7 +180,7 @@ void lcd_wr_data32xlen(uint32_t dat, uint32_t dat_len)
     lcd_dc_set;
 
     reg_cust_qspi_len = (32 * dat_len) << 16; // NOTE: 32xlenbits
-    for (int i = 0; i < dat_len; ++i)
+    for (uint32_t i = 0; i < dat_len; ++i)
         reg_cust_qspi_txfifo = dat;
     reg_cust_qspi_status = 258;
     while ((reg_cust_qspi_status & 0xFFFF) != 1)

@@ -63,13 +63,13 @@ void ip_psram_selftest(uint32_t addr, uint32_t range)
     for (int i = 1; i <= cyc_count; i++)
     {
         state = i;
-        for (int word = 0; word < range / sizeof(int); word += stride)
+        for (uint32_t word = 0; word < range / sizeof(int); word += stride)
         {
             *(base_word + word) = xorshift32(&state);
         }
 
         state = i;
-        for (int word = 0; word < range / sizeof(int); word += stride)
+        for (uint32_t word = 0; word < range / sizeof(int); word += stride)
         {
             if (*(base_word + word) != xorshift32(&state))
             {
