@@ -53,7 +53,7 @@ module psram_top (
     input  logic [ 3:0] mem_wstrb_i,
     output logic [31:0] mem_rdata_o,
     output logic        psram_sclk_o,
-    output logic        psram_ce_o,
+    output logic [ 1:0] psram_ce_o,
     input  logic        psram_mosi_i,
     input  logic        psram_miso_i,
     input  logic        psram_sio2_i,
@@ -78,10 +78,16 @@ module psram_top (
   logic [23:0] r_mem_addr;
   logic [31:0] r_mem_wdata;
 
+  logic        s_psram_ce;
   logic [ 1:0] s_disp_addr_ofst;
   logic [ 7:0] s_disp_xfer_bit_cnt;
   logic [31:0] s_disp_wdata;
+  logic        s_init_done;
   logic        s_core_idle;
+
+
+  assign psram_ce_o[0] = (~s_init_done) || (s_init_done && mem_addr_i[23] == 1'b0) ? s_psram_ce : 1'b1;
+  assign psram_ce_o[1] = (~s_init_done) || (s_init_done && mem_addr_i[23] == 1'b1) ? s_psram_ce : 1'b1;
 
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) begin
@@ -97,12 +103,12 @@ module psram_top (
           if (mem_valid_i && (|mem_wstrb_i)) begin
             r_fsm_state         <= FSM_WE_ST;
             r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
-            r_mem_addr          <= mem_addr_i + s_disp_addr_ofst;
+            r_mem_addr          <= {1'b0, mem_addr_i[22:0]} + s_disp_addr_ofst;
             r_mem_wdata         <= s_disp_wdata;
           end else if (mem_valid_i && (~(|mem_wstrb_i))) begin
             r_fsm_state         <= FSM_RD_ST;
             r_xfer_data_bit_cnt <= 8'd32;
-            r_mem_addr          <= mem_addr_i;
+            r_mem_addr          <= {1'b0, mem_addr_i[22:0]};
             r_mem_wdata         <= mem_wdata_i;  // NOTE: no used
           end
         end
@@ -145,9 +151,10 @@ module psram_top (
       .xfer_data_bit_cnt_i(r_xfer_data_bit_cnt),
       .rd_st_i            (r_rd_st),
       .wr_st_i            (r_wr_st),
+      .init_done_o        (s_init_done),
       .idle_o             (s_core_idle),
       .psram_sclk_o       (psram_sclk_o),
-      .psram_ce_o         (psram_ce_o),
+      .psram_ce_o         (s_psram_ce),
       .psram_mosi_i       (psram_mosi_i),
       .psram_miso_i       (psram_miso_i),
       .psram_sio2_i       (psram_sio2_i),

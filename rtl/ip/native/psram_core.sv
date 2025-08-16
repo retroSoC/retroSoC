@@ -24,6 +24,7 @@ module psram_core (
     input  logic [ 7:0] xfer_data_bit_cnt_i,
     input  logic        rd_st_i,
     input  logic        wr_st_i,
+    output logic        init_done_o,
     output logic        idle_o,
     output logic        psram_sclk_o,
     output logic        psram_ce_o,
@@ -72,6 +73,7 @@ module psram_core (
   logic        r_dev_rst;
   logic        r_wr_st;
   logic        r_rd_st;
+  logic        r_init_done;
 
   logic        s_xfer_new_byte_upd;
   logic [ 7:0] s_xfer_new_byte;
@@ -87,6 +89,7 @@ module psram_core (
     else if (cfg_chd_wr_en_i) cfg_chd_o <= cfg_chd_i;
   end
 
+  assign init_done_o     = r_init_done;
   assign idle_o          = r_fsm_state == FSM_IDLE;
   assign psram_sio_oen_o = (r_fsm_state == FSM_RD_PRE_QPI) | (r_fsm_state == FSM_RD_QPI);
   assign mem_rdata_o     = r_xfer_data;
@@ -135,6 +138,7 @@ module psram_core (
       r_rd_wait_cnt       <= 4'd0;
       r_cfg_chd           <= 3'd0;
       r_dev_rst           <= 1'b1;
+      r_init_done         <= 1'b0;
       mem_ready_o         <= 1'b0;
       psram_sclk_o        <= 1'b0;
       psram_ce_o          <= 1'b1;
@@ -193,7 +197,10 @@ module psram_core (
         FSM_QE2IDLE: begin
           if (r_cfg_chd == cfg_chd_o) begin
             if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
-            if (r_ce_cnt == 5'd0) r_fsm_state <= FSM_IDLE;
+            if (r_ce_cnt == 5'd0) begin
+              r_fsm_state <= FSM_IDLE;
+              r_init_done <= 1'b1;
+            end
             r_ce_cnt <= r_ce_cnt - 1'b1;
           end else begin
             r_cfg_chd <= r_cfg_chd + 1'b1;
