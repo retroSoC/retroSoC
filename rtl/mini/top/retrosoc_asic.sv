@@ -74,14 +74,6 @@ module retrosoc_asic (
     inout  gpio_5_io_pad,
     inout  gpio_6_io_pad,
     inout  gpio_7_io_pad,
-    inout  gpio_8_io_pad,
-    inout  gpio_9_io_pad,
-    inout  gpio_10_io_pad,
-    inout  gpio_11_io_pad,
-    inout  gpio_12_io_pad,
-    inout  gpio_13_io_pad,
-    inout  gpio_14_io_pad,
-    inout  gpio_15_io_pad,
     // IRQ
     inout  irq_pin_i_pad,
     // CUST
@@ -105,7 +97,8 @@ module retrosoc_asic (
     inout  cust_qspi_dat_2_io_pad,
     inout  cust_qspi_dat_3_io_pad,
     output cust_psram_sclk_o_pad,
-    output cust_psram_ce_o_pad,
+    output cust_psram_ce0_o_pad,
+    output cust_psram_ce1_o_pad,
     inout  cust_psram_sio0_io_pad,
     inout  cust_psram_sio1_io_pad,
     inout  cust_psram_sio2_io_pad,
@@ -121,20 +114,20 @@ module retrosoc_asic (
 `ifdef HAVE_PLL
   logic [2:0] s_pll_cfg_i;
 `endif
-  logic        s_clk_bypass_i;
-  logic        s_sys_clk;
-  logic        s_ext_rst_n_i;
-  logic        s_sys_rst_n;
-  logic        s_sys_clkdiv4_o;
+  logic       s_clk_bypass_i;
+  logic       s_sys_clk;
+  logic       s_ext_rst_n_i;
+  logic       s_sys_rst_n;
+  logic       s_sys_clkdiv4_o;
   // io
-  logic        s_uart_tx_o;
-  logic        s_uart_rx_i;
-  logic [15:0] s_gpio_out_o;
-  logic [15:0] s_gpio_in_i;
-  logic [15:0] s_gpio_oeb_o;
-  logic [15:0] s_gpio_pub_o;
-  logic [15:0] s_gpio_pdb_o;
-  logic        s_irq_pin_i;
+  logic       s_uart_tx_o;
+  logic       s_uart_rx_i;
+  logic [7:0] s_gpio_out_o;
+  logic [7:0] s_gpio_in_i;
+  logic [7:0] s_gpio_oeb_o;
+  logic [7:0] s_gpio_pub_o;
+  logic [7:0] s_gpio_pdb_o;
+  logic       s_irq_pin_i;
 `ifdef CORE_MDD
   logic [4:0] s_core_mdd_sel;
 `endif
@@ -169,7 +162,7 @@ module retrosoc_asic (
   logic [3:0] s_cust_qspi_spi_oe_o;
   logic [3:0] s_cust_qspi_spi_sdi_i;
   logic       s_cust_psram_sclk_o;
-  logic       s_cust_psram_ce_o;
+  logic [1:0] s_cust_psram_ce_o;
   logic       s_cust_psram_sio0_i;
   logic       s_cust_psram_sio1_i;
   logic       s_cust_psram_sio2_i;
@@ -233,18 +226,10 @@ module retrosoc_asic (
   tc_io_tri_pad         u_gpio_1_io_pad     (.pad(gpio_1_io_pad),      .c2p(s_gpio_out_o[1]),  .c2p_en(~s_gpio_oeb_o[1]),     .p2c(s_gpio_in_i[1]));
   tc_io_tri_pad         u_gpio_2_io_pad     (.pad(gpio_2_io_pad),      .c2p(s_gpio_out_o[2]),  .c2p_en(~s_gpio_oeb_o[2]),     .p2c(s_gpio_in_i[2]));
   tc_io_tri_pad         u_gpio_3_io_pad     (.pad(gpio_3_io_pad),      .c2p(s_gpio_out_o[3]),  .c2p_en(~s_gpio_oeb_o[3]),     .p2c(s_gpio_in_i[3]));
-  tc_io_tri_pad         u_gpio_4_io_pad     (.pad(gpio_4_io_pad),      .c2p(s_gpio_out_o[4]),  .c2p_en(~s_gpio_oeb_o[4]),     .p2c(s_gpio_in_i[4]));
-  tc_io_tri_pad         u_gpio_5_io_pad     (.pad(gpio_5_io_pad),      .c2p(s_gpio_out_o[5]),  .c2p_en(~s_gpio_oeb_o[5]),     .p2c(s_gpio_in_i[5]));
-  tc_io_tri_pad         u_gpio_6_io_pad     (.pad(gpio_6_io_pad),      .c2p(s_gpio_out_o[6]),  .c2p_en(~s_gpio_oeb_o[6]),     .p2c(s_gpio_in_i[6]));
-  tc_io_tri_pad         u_gpio_7_io_pad     (.pad(gpio_7_io_pad),      .c2p(s_gpio_out_o[7]),  .c2p_en(~s_gpio_oeb_o[7]),     .p2c(s_gpio_in_i[7]));
-  tc_io_tri_schmitt_pad u_gpio_8_io_pad     (.pad(gpio_8_io_pad),      .c2p(s_gpio_out_o[8]),  .c2p_en(~s_gpio_oeb_o[8]),     .p2c(s_gpio_in_i[8]));
-  tc_io_tri_schmitt_pad u_gpio_9_io_pad     (.pad(gpio_9_io_pad),      .c2p(s_gpio_out_o[9]),  .c2p_en(~s_gpio_oeb_o[9]),     .p2c(s_gpio_in_i[9]));
-  tc_io_tri_schmitt_pad u_gpio_10_io_pad    (.pad(gpio_10_io_pad),     .c2p(s_gpio_out_o[10]), .c2p_en(~s_gpio_oeb_o[10]),    .p2c(s_gpio_in_i[10]));
-  tc_io_tri_schmitt_pad u_gpio_11_io_pad    (.pad(gpio_11_io_pad),     .c2p(s_gpio_out_o[11]), .c2p_en(~s_gpio_oeb_o[11]),    .p2c(s_gpio_in_i[11]));
-  tc_io_tri_schmitt_pad u_gpio_12_io_pad    (.pad(gpio_12_io_pad),     .c2p(s_gpio_out_o[12]), .c2p_en(~s_gpio_oeb_o[12]),    .p2c(s_gpio_in_i[12]));
-  tc_io_tri_schmitt_pad u_gpio_13_io_pad    (.pad(gpio_13_io_pad),     .c2p(s_gpio_out_o[13]), .c2p_en(~s_gpio_oeb_o[13]),    .p2c(s_gpio_in_i[13]));
-  tc_io_tri_schmitt_pad u_gpio_14_io_pad    (.pad(gpio_14_io_pad),     .c2p(s_gpio_out_o[14]), .c2p_en(~s_gpio_oeb_o[14]),    .p2c(s_gpio_in_i[14]));
-  tc_io_tri_schmitt_pad u_gpio_15_io_pad    (.pad(gpio_15_io_pad),     .c2p(s_gpio_out_o[15]), .c2p_en(~s_gpio_oeb_o[15]),    .p2c(s_gpio_in_i[15]));
+  tc_io_tri_schmitt_pad u_gpio_4_io_pad     (.pad(gpio_4_io_pad),      .c2p(s_gpio_out_o[4]),  .c2p_en(~s_gpio_oeb_o[4]),     .p2c(s_gpio_in_i[4]));
+  tc_io_tri_schmitt_pad u_gpio_5_io_pad     (.pad(gpio_5_io_pad),      .c2p(s_gpio_out_o[5]),  .c2p_en(~s_gpio_oeb_o[5]),     .p2c(s_gpio_in_i[5]));
+  tc_io_tri_schmitt_pad u_gpio_6_io_pad     (.pad(gpio_6_io_pad),      .c2p(s_gpio_out_o[6]),  .c2p_en(~s_gpio_oeb_o[6]),     .p2c(s_gpio_in_i[6]));
+  tc_io_tri_schmitt_pad u_gpio_7_io_pad     (.pad(gpio_7_io_pad),      .c2p(s_gpio_out_o[7]),  .c2p_en(~s_gpio_oeb_o[7]),     .p2c(s_gpio_in_i[7]));
   tc_io_tri_schmitt_pad u_irq_pin_i_pad     (.pad(irq_pin_i_pad),      .c2p(),                 .c2p_en(1'b0),                 .p2c(s_irq_pin_i));
   // cust
   tc_io_tri_pad u_cust_uart_tx_o_pad       (.pad(cust_uart_tx_o_pad),        .c2p(s_cust_uart_tx_o),         .c2p_en(1'b1),                     .p2c());
@@ -267,7 +252,8 @@ module retrosoc_asic (
   tc_io_tri_pad u_cust_qspi_dat_2_io_pad   (.pad(cust_qspi_dat_2_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[2]), .c2p_en(s_cust_qspi_spi_oe_o[2]),  .p2c(s_cust_qspi_spi_sdi_i[2]));
   tc_io_tri_pad u_cust_qspi_dat_3_io_pad   (.pad(cust_qspi_dat_3_io_pad),    .c2p(s_cust_qspi_spi_sdo_o[3]), .c2p_en(s_cust_qspi_spi_oe_o[3]),  .p2c(s_cust_qspi_spi_sdi_i[3]));
   tc_io_tri_pad u_cust_psram_sclk_o_pad    (.pad(cust_psram_sclk_o_pad),     .c2p(s_cust_psram_sclk_o),      .c2p_en(1'b1),                     .p2c());
-  tc_io_tri_pad u_cust_psram_ce_o_pad      (.pad(cust_psram_ce_o_pad),       .c2p(s_cust_psram_ce_o),        .c2p_en(1'b1),                     .p2c());
+  tc_io_tri_pad u_cust_psram_ce0_o_pad     (.pad(cust_psram_ce0_o_pad),      .c2p(s_cust_psram_ce_o[0]),     .c2p_en(1'b1),                     .p2c());
+  tc_io_tri_pad u_cust_psram_ce1_o_pad     (.pad(cust_psram_ce1_o_pad),      .c2p(s_cust_psram_ce_o[1]),     .c2p_en(1'b1),                     .p2c());
   tc_io_tri_pad u_cust_psram_sio0_io_pad   (.pad(cust_psram_sio0_io_pad),    .c2p(s_cust_psram_sio0_o),      .c2p_en(~s_cust_psram_sio_oe_o),   .p2c(s_cust_psram_sio0_i));
   tc_io_tri_pad u_cust_psram_sio1_io_pad   (.pad(cust_psram_sio1_io_pad),    .c2p(s_cust_psram_sio1_o),      .c2p_en(~s_cust_psram_sio_oe_o),   .p2c(s_cust_psram_sio1_i));
   tc_io_tri_pad u_cust_psram_sio2_io_pad   (.pad(cust_psram_sio2_io_pad),    .c2p(s_cust_psram_sio2_o),      .c2p_en(~s_cust_psram_sio_oe_o),   .p2c(s_cust_psram_sio2_i));

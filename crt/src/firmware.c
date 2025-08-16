@@ -15,11 +15,10 @@ void welcome_screen()
     for(int  i = 0; i < 6; ++i)
         printf("global test:%x\n", global_test[i]);
 
-    printf("[USER IP design] archinfo test\n");
-    printf("[ARCHINFO SYS] %x\n", reg_ip_design_archinfo_sys);
-    printf("[ARCHINFO IDL] %x\n", reg_ip_design_archinfo_idl);
-    printf("[ARCHINFO IDH] %x\n", reg_ip_design_archinfo_idh);
-    while(1);
+    // printf("[USER IP design] archinfo test\n");
+    // printf("[ARCHINFO SYS] %x\n", reg_ip_design_archinfo_sys);
+    // printf("[ARCHINFO IDL] %x\n", reg_ip_design_archinfo_idl);
+    // printf("[ARCHINFO IDH] %x\n", reg_ip_design_archinfo_idh);
 
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%x\n", &_flash_wait_start);
@@ -63,7 +62,7 @@ void welcome_screen()
     printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
 
     printf("Memory Map IO Device:\n");
-    printf("                    16 x GPIO          @0x%x\n", &reg_gpio_data);
+    printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
     printf("                     1 x UART          @0x%x\n", &reg_uart_clkdiv);
     printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_config, &reg_tim1_config);
     printf("                     1 x PSRAM         @0x%x\n", &reg_psram_waitcycl);

@@ -31,7 +31,9 @@
 // Connect this module to your QSPI master controller in your simulation environment.
 //
 
-module ESP_PSRAM64H (
+module ESP_PSRAM64H #(
+    parameter ID = 0
+) (
     input wire       sclk,  // Serial Clock (SPI Clock)
     input wire       csn,   // Chip Select (Active Low)
     inout wire [3:0] sio    // Quad SPI Data Line 0 (MOSI/MISO)
@@ -40,7 +42,7 @@ module ESP_PSRAM64H (
 
   // --- Parameters ---
   // Memory depth in bytes (64 Mbits / 8 bits/byte = 8 MBytes)
-  localparam MEM_DEPTH_BYTES = 8*1024*1024; 
+  localparam MEM_DEPTH_BYTES = 8 * 1024 * 1024;
   // localparam MEM_DEPTH_BYTES = 72 * 1024; // for debug
   // Address width required for MEM_DEPTH_BYTES
   localparam ADDR_BITS = 24;
@@ -239,7 +241,8 @@ module ESP_PSRAM64H (
     end
     qspi_mode   = 0;
     r_fsm_state = S_IDLE;
-    $display("PSRAM Model: Initialized memory with address pattern.");
+    io_output_enable = 1'b0;
+    $display("PSRAM Model: Initialized memory with address pattern for device %0d.", ID);
   end
 
   // --- Debugging (Optional) ---

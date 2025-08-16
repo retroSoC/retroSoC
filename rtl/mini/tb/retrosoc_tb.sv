@@ -26,44 +26,44 @@ module retrosoc_tb;
 
   reg        r_xtal_clk;
   reg        r_ext_clk;
-  reg        r_rst_n;
-  reg  [4:0] r_core_mdd_sel;
-  reg  [4:0] r_ip_mdd_sel;
-  reg        r_pll_en;
-  reg  [2:0] r_pll_cfg;
-
   wire       s_ext_clk;
+  reg        r_rst_n;
   wire       s_rst_n;
+  reg  [4:0] r_core_mdd_sel;
   wire [4:0] s_core_mdd_sel;
+  reg  [4:0] r_ip_mdd_sel;
   wire [4:0] s_ip_mdd_sel;
+  reg        r_pll_en;
   wire       s_clk_bypass;
+  reg  [2:0] r_pll_cfg;
 `ifdef HAVE_PLL
   wire [2:0] s_pll_cfg;
 `endif
 
-  wire       s_uart_tx;
-  wire       s_flash_csb;
-  wire       s_flash_clk;
-  wire       s_flash_io0;
-  wire       s_flash_io1;
-  wire       s_flash_io2;
-  wire       s_flash_io3;
+  wire s_uart_tx;
+  wire s_flash_csb;
+  wire s_flash_clk;
+  wire s_flash_io0;
+  wire s_flash_io1;
+  wire s_flash_io2;
+  wire s_flash_io3;
   // wire s_i2c_sda_io;
   // wire s_i2c_scl_io;
-  wire       s_cust_uart_tx;
-  wire       s_cust_uart_rx;
-  wire       s_cust_ps2_ps2_clk;
-  wire       s_cust_ps2_ps2_dat;
-  wire       s_cust_psram_sclk;
-  wire       s_cust_psram_ce;
-  wire       s_cust_psram_sio0;
-  wire       s_cust_psram_sio1;
-  wire       s_cust_psram_sio2;
-  wire       s_cust_psram_sio3;
-  wire       s_cust_spfs_clk_o;
-  wire       s_cust_spfs_cs_o;
-  wire       s_cust_spfs_mosi_o;
-  wire       s_cust_spfs_miso_i;
+  wire s_cust_uart_tx;
+  wire s_cust_uart_rx;
+  wire s_cust_ps2_ps2_clk;
+  wire s_cust_ps2_ps2_dat;
+  wire s_cust_psram_sclk;
+  wire s_cust_psram_ce0;
+  wire s_cust_psram_ce1;
+  wire s_cust_psram_sio0;
+  wire s_cust_psram_sio1;
+  wire s_cust_psram_sio2;
+  wire s_cust_psram_sio3;
+  wire s_cust_spfs_clk_o;
+  wire s_cust_spfs_cs_o;
+  wire s_cust_spfs_mosi_o;
+  wire s_cust_spfs_miso_i;
 
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
@@ -75,7 +75,7 @@ module retrosoc_tb;
   assign s_ip_mdd_sel   = r_ip_mdd_sel;
   assign s_clk_bypass   = ~r_pll_en;
 `ifdef HAVE_PLL
-  assign s_pll_cfg      = r_pll_cfg;
+  assign s_pll_cfg = r_pll_cfg;
 `endif
 
   retrosoc_asic u_retrosoc_asic (
@@ -130,14 +130,6 @@ module retrosoc_tb;
       .gpio_5_io_pad            (),
       .gpio_6_io_pad            (),
       .gpio_7_io_pad            (),
-      .gpio_8_io_pad            (),
-      .gpio_9_io_pad            (),
-      .gpio_10_io_pad           (),
-      .gpio_11_io_pad           (),
-      .gpio_12_io_pad           (),
-      .gpio_13_io_pad           (),
-      .gpio_14_io_pad           (),
-      .gpio_15_io_pad           (),
       .irq_pin_i_pad            (),
       .cust_uart_tx_o_pad       (s_cust_uart_tx),
       .cust_uart_rx_i_pad       (s_cust_uart_rx),
@@ -159,7 +151,8 @@ module retrosoc_tb;
       .cust_qspi_dat_2_io_pad   (),
       .cust_qspi_dat_3_io_pad   (),
       .cust_psram_sclk_o_pad    (s_cust_psram_sclk),
-      .cust_psram_ce_o_pad      (s_cust_psram_ce),
+      .cust_psram_ce0_o_pad     (s_cust_psram_ce0),
+      .cust_psram_ce1_o_pad     (s_cust_psram_ce1),
       .cust_psram_sio0_io_pad   (s_cust_psram_sio0),
       .cust_psram_sio1_io_pad   (s_cust_psram_sio1),
       .cust_psram_sio2_io_pad   (s_cust_psram_sio2),
@@ -203,9 +196,15 @@ module retrosoc_tb;
       .ps2_dat_o(s_cust_ps2_ps2_dat)
   );
 
-  ESP_PSRAM64H u_ESP_PSRAM64H (
+  ESP_PSRAM64H #(0) u_ESP_PSRAM64H_0 (
       .sclk(s_cust_psram_sclk),
-      .csn (s_cust_psram_ce),
+      .csn (s_cust_psram_ce0),
+      .sio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0})
+  );
+
+  ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
+      .sclk(s_cust_psram_sclk),
+      .csn (s_cust_psram_ce1),
       .sio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0})
   );
 

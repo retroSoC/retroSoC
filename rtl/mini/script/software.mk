@@ -8,6 +8,7 @@ DUMP = $(CROSS)objdump
 
 CFLAGS := -mabi=ilp32 \
           -march=rv32im \
+          -Wall -Wextra \
           -Wl,-Bstatic,-T,flash_$(EXEC_TYPE).lds,--strip-debug \
           -ffreestanding \
           -nostdlib

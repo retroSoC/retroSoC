@@ -19,11 +19,11 @@ module ip_natv_wrapper (
     output logic [31:0] natv_rdata_o,
     output logic        natv_ready_o,
     // gpio
-    output logic [15:0] gpio_out_o,
-    input  logic [15:0] gpio_in_i,
-    output logic [15:0] gpio_pub_o,
-    output logic [15:0] gpio_pdb_o,
-    output logic [15:0] gpio_oeb_o,
+    output logic [ 7:0] gpio_out_o,
+    input  logic [ 7:0] gpio_in_i,
+    output logic [ 7:0] gpio_pub_o,
+    output logic [ 7:0] gpio_pdb_o,
+    output logic [ 7:0] gpio_oeb_o,
     // uart
     input  logic        uart_rx_i,
     output logic        uart_tx_o,
@@ -74,7 +74,7 @@ module ip_natv_wrapper (
   assign natv_ready_o           = s_natv_ready_q;
   // gpio
   assign gpio_out_o             = r_gpio;
-  assign gpio_oeb_o             = {16{~rst_n_i}} | r_gpio_oeb;
+  assign gpio_oeb_o             = {8{~rst_n_i}} | r_gpio_oeb;
   assign gpio_pub_o             = r_gpio_pub;
   assign gpio_pdb_o             = r_gpio_pdb;
 
@@ -110,22 +110,18 @@ module ip_natv_wrapper (
           16'h0000: begin
             r_mmap_rdata <= {gpio_out_o, gpio_in_i};
             if (natv_wstrb_i[0]) r_gpio[7:0] <= natv_wdata_i[7:0];
-            if (natv_wstrb_i[1]) r_gpio[15:8] <= natv_wdata_i[15:8];
           end
           16'h0004: begin
             r_mmap_rdata <= {16'd0, r_gpio_oeb};
             if (natv_wstrb_i[0]) r_gpio_oeb[7:0] <= natv_wdata_i[7:0];
-            if (natv_wstrb_i[1]) r_gpio_oeb[15:8] <= natv_wdata_i[15:8];
           end
           16'h0008: begin
             r_mmap_rdata <= {16'd0, r_gpio_pub};
             if (natv_wstrb_i[0]) r_gpio_pub[7:0] <= natv_wdata_i[7:0];
-            if (natv_wstrb_i[1]) r_gpio_pub[15:8] <= natv_wdata_i[15:8];
           end
           16'h000C: begin
             r_mmap_rdata <= {16'd0, r_gpio_pub};
             if (natv_wstrb_i[0]) r_gpio_pdb[7:0] <= natv_wdata_i[7:0];
-            if (natv_wstrb_i[1]) r_gpio_pdb[15:8] <= natv_wdata_i[15:8];
           end
           16'h1000: r_mmap_rdata <= s_uart_div_reg_dout;
           16'h1004: r_mmap_rdata <= s_uart_dat_reg_dout;
