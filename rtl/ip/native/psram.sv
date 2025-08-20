@@ -84,6 +84,14 @@ module psram_top (
   logic [31:0] s_disp_wdata;
   logic        s_init_done;
   logic        s_core_idle;
+  logic        s_mem_valid_re;
+
+  edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
+      clk_i,
+      rst_n_i,
+      mem_valid_i,
+      s_mem_valid_re
+  );
 
 
   assign psram_ce_o[0] = (~s_init_done) || (s_init_done && mem_addr_i[23] == 1'b0) ? s_psram_ce : 1'b1;
@@ -100,12 +108,12 @@ module psram_top (
     end else begin
       case (r_fsm_state)
         FSM_IDLE: begin
-          if (mem_valid_i && (|mem_wstrb_i)) begin
+          if (s_mem_valid_re && (|mem_wstrb_i)) begin
             r_fsm_state         <= FSM_WE_ST;
             r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
             r_mem_addr          <= {1'b0, mem_addr_i[22:0]} + s_disp_addr_ofst;
             r_mem_wdata         <= s_disp_wdata;
-          end else if (mem_valid_i && (~(|mem_wstrb_i))) begin
+          end else if (s_mem_valid_re && (~(|mem_wstrb_i))) begin
             r_fsm_state         <= FSM_RD_ST;
             r_xfer_data_bit_cnt <= 8'd32;
             r_mem_addr          <= {1'b0, mem_addr_i[22:0]};
