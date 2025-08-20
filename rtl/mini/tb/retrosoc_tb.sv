@@ -276,7 +276,7 @@ module retrosoc_tb;
   end
 
   initial begin
-    r_core_mdd_sel = 5'd0;
+    r_core_mdd_sel = 5'd1;
     r_ip_mdd_sel   = 5'd0;
 
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;

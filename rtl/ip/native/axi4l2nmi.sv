@@ -40,8 +40,7 @@ module axi4l2nmi (
   logic [1:0] s_rd_fsm_d, s_rd_fsm_q;
   logic [1:0] s_wr_fsm_d, s_wr_fsm_q;
 
-  logic [31:0] s_raddr_d, s_raddr_q;
-  logic [31:0] s_waddr_d, s_waddr_q;
+  logic [31:0] s_addr_d, s_addr_q;
   logic [31:0] s_rdata_d, s_rdata_q;
   logic [31:0] s_wdata_d, s_wdata_q;
   logic [3:0] s_wstrb_d, s_wstrb_q;
@@ -94,14 +93,22 @@ module axi4l2nmi (
       s_wr_fsm_q
   );
 
-
-  assign s_raddr_d = araddr_i;
-  dffer #(32) u_raddr_dffer (
+  always_comb begin
+    mem_addr_o = s_addr_q;
+    if (s_rd_fsm_q == RD_IDLE && arvalid_i) begin
+      mem_addr_o = araddr_i;
+      s_addr_d   = araddr_i;
+    end else if (s_wr_fsm_q == WR_IDLE && awvalid_i) begin
+      mem_addr_o = awaddr_i;
+      s_addr_d   = awaddr_i;
+    end
+  end
+  dffer #(32) u_addr_dffer (
       aclk_i,
       aresetn_i,
-      s_rd_fsm_q == RD_IDLE && arvalid_i,
-      s_raddr_d,
-      s_raddr_q
+      (s_rd_fsm_q == RD_IDLE && arvalid_i) || (s_wr_fsm_q == WR_IDLE && awvalid_i),
+      s_addr_d,
+      s_addr_q
   );
 
   assign s_rdata_d = mem_rdata_i;
@@ -111,16 +118,6 @@ module axi4l2nmi (
       s_rd_fsm_q == RD_DATA && mem_ready_i,
       s_rdata_d,
       s_rdata_q
-  );
-
-
-  assign s_waddr_d = awaddr_i;
-  dffer #(32) u_waddr_dffer (
-      aclk_i,
-      aresetn_i,
-      s_wr_fsm_q == WR_IDLE && awvalid_i,
-      s_waddr_d,
-      s_waddr_q
   );
 
   assign s_wdata_d = wdata_i;
@@ -153,23 +150,9 @@ module axi4l2nmi (
   assign bresp_o     = '0;
 
   assign s_rd_req    = (s_rd_fsm_q == RD_DATA || s_rd_fsm_q == RD_WAIT);
-  assign s_wr_req    = (s_wr_fsm_q == WR_WAIT || s_wr_fsm_q == WR_RESP);
+  assign s_wr_req    = s_wr_fsm_q == WR_WAIT;
   assign mem_valid_o = s_rd_req || s_wr_req;
   assign mem_instr_o = '0;
   assign mem_wdata_o = s_wdata_q;
   assign mem_wstrb_o = (s_wr_fsm_q == WR_WAIT) ? s_wstrb_q : '0;
-
-  always_comb begin
-    mem_addr_o = '0;
-    if (s_rd_fsm_q == RD_IDLE && arvalid_i) begin
-      mem_addr_o = araddr_i;
-    end else if (s_rd_fsm_q == RD_DATA || s_rd_fsm_q == RD_WAIT) begin
-      mem_addr_o = s_raddr_q;
-    end else if (s_wr_fsm_q == WR_IDLE && awvalid_i) begin
-      mem_addr_o = awaddr_i;
-    end else if (s_wr_fsm_q == WR_DATA || s_wr_fsm_q == WR_WAIT || s_wr_fsm_q == WR_RESP) begin
-      mem_addr_o = s_waddr_q;
-    end
-  end
-
 endmodule
