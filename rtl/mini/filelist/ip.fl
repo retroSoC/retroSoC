@@ -34,6 +34,8 @@
 
 ../../ip/native/psram_core.sv
 ../../ip/native/psram.sv
+../../ip/native/spisd_core.sv
+../../ip/native/spisd.sv
 ../../ip/native/simpleuart.sv
 ../../ip/native/mem2apb.sv
 ../../ip/native/axi4l2nmi.sv

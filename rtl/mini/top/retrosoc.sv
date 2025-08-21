@@ -77,6 +77,10 @@ module retrosoc (
     output logic        cust_psram_sio2_o,
     output logic        cust_psram_sio3_o,
     output logic        cust_psram_sio_oe_o,
+    output logic        cust_spisd_sclk_o,
+    output logic        cust_spisd_cs_o,
+    output logic        cust_spisd_mosi_o,
+    input  logic        cust_spisd_miso_i,
     input  logic        cust_spfs_div4_i,
     output logic        cust_spfs_clk_o,
     output logic        cust_spfs_cs_o,
@@ -142,21 +146,6 @@ module retrosoc (
   assign s_irq[14:9]  = s_apb_irq;
   assign s_irq[31:15] = 17'd0;
 
-  // memory mapped IP
-  // NATV WRAPPER
-  //    16 x GPIO
-  //    1  x UART
-  //    2  x TIMER
-  //    1  x PSRAM(8MB)
-  // APB WRAPPER
-  //    1 x RNG
-  //    1 x ARCHINFO
-  //    1 x UART
-  //    1 x PWM(4 chnl)
-  //    1 x PS2
-  //    1 x QSPI(4 cs)
-  //    1 x SPFS(HP)
-  //    2 x I2C
   core_wrapper u_core_wrapper (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
@@ -326,6 +315,21 @@ module retrosoc (
       .psram_sio2_o    (cust_psram_sio2_o),
       .psram_sio3_o    (cust_psram_sio3_o),
       .psram_sio_oen_o (cust_psram_sio_oe_o)
+  );
+
+  spisd u_spisd (
+      .clk_i       (clk_i),
+      .rst_n_i     (rst_n_i),
+      .mem_valid_i ('0),
+      .mem_ready_o (),
+      .mem_addr_i  ('0),
+      .mem_wdata_i ('0),
+      .mem_wstrb_i ('0),
+      .mem_rdata_o (),
+      .spisd_sclk_o(cust_spisd_sclk_o),
+      .spisd_cs_o  (cust_spisd_cs_o),
+      .spisd_mosi_o(cust_spisd_mosi_o),
+      .spisd_miso_i(cust_spisd_miso_i)
   );
 
 endmodule
