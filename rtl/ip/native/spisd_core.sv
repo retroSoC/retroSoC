@@ -16,7 +16,7 @@ module spisd_core (
     output logic        rd_vld_o,
     output logic [ 7:0] rd_data_o,
     input  logic        wr_st_i,
-    input  logc  [ 7:0] wr_data_i,
+    input  logic [ 7:0] wr_data_i,
     input  logic [31:0] addr_i,
     output logic        idle_o,
     output logic        spisd_sclk_o,
