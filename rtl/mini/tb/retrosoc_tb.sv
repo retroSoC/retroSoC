@@ -60,10 +60,10 @@ module retrosoc_tb;
   wire s_cust_psram_sio1;
   wire s_cust_psram_sio2;
   wire s_cust_psram_sio3;
-  wire s_cust_spfs_clk_o;
-  wire s_cust_spfs_cs_o;
-  wire s_cust_spfs_mosi_o;
-  wire s_cust_spfs_miso_i;
+  wire s_cust_spfs_clk;
+  wire s_cust_spfs_cs;
+  wire s_cust_spfs_mosi;
+  wire s_cust_spfs_miso;
 
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
@@ -157,17 +157,21 @@ module retrosoc_tb;
       .cust_psram_sio1_io_pad   (s_cust_psram_sio1),
       .cust_psram_sio2_io_pad   (s_cust_psram_sio2),
       .cust_psram_sio3_io_pad   (s_cust_psram_sio3),
-      .cust_spfs_clk_o_pad      (s_cust_spfs_clk_o),
-      .cust_spfs_cs_o_pad       (s_cust_spfs_cs_o),
-      .cust_spfs_mosi_o_pad     (s_cust_spfs_mosi_o),
-      .cust_spfs_miso_i_pad     (s_cust_spfs_miso_i)
+      .cust_spisd_sclk_o_pad    (),
+      .cust_spisd_cs_o_pad      (),
+      .cust_spisd_mosi_o_pad    (),
+      .cust_spisd_miso_i_pad    ('0),
+      .cust_spfs_clk_o_pad      (s_cust_spfs_clk),
+      .cust_spfs_cs_o_pad       (s_cust_spfs_cs),
+      .cust_spfs_mosi_o_pad     (s_cust_spfs_mosi),
+      .cust_spfs_miso_i_pad     (s_cust_spfs_miso)
   );
 
   N25Qxxx u_N25Qxxx (
-      .C_       (s_cust_spfs_clk_o),
-      .S        (s_cust_spfs_cs_o),
-      .DQ0      (s_cust_spfs_mosi_o),
-      .DQ1      (s_cust_spfs_miso_i),
+      .C_       (s_cust_spfs_clk),
+      .S        (s_cust_spfs_cs),
+      .DQ0      (s_cust_spfs_mosi),
+      .DQ1      (s_cust_spfs_miso),
       .HOLD_DQ3 (),
       .Vpp_W_DQ2(),
       .Vcc      ('d3000)
