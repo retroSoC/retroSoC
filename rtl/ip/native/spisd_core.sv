@@ -12,13 +12,14 @@
 module spisd_core (
     input  logic        clk_i,
     input  logic        rst_n_i,
-    input  logic        rd_st_i,
+    input  logic        rd_req_i,
     output logic        rd_vld_o,
     output logic [ 7:0] rd_data_o,
-    input  logic        wr_st_i,
+    input  logic        wr_req_i,
+    output logic        wr_byte_done_o,
     input  logic [ 7:0] wr_data_i,
-    input  logic [31:0] addr_i,
-    output logic        idle_o,
+    input  logic [22:0] addr_i,
+    output logic        init_done_o,
     output logic        spisd_sclk_o,
     output logic        spisd_cs_o,
     output logic        spisd_mosi_o,
@@ -58,4 +59,21 @@ module spisd_core (
   localparam FSM_WRITE_BYTE = 5'd19;
   localparam FSM_WRITE_WAIT = 5'd20;
 
+  logic [4:0] s_fsm_d, s_fsm_q;
+
+  assign rd_vld_o       = '0;
+  assign rd_data_o      = '0;
+  assign wr_byte_done_o = '0;
+  assign init_done_o    = '0;
+
+  assign spisd_sclk_o   = '0;
+  assign spisd_cs_o     = '1;
+  assign spisd_mosi_o   = '0;
+
+  dffr #(5) u_fsm_dffr (
+      clk_i,
+      rst_n_i,
+      s_fsm_d,
+      s_fsm_q
+  );
 endmodule
