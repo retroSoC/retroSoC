@@ -115,6 +115,13 @@ module retrosoc (
   logic [31:0] s_psram_wdata;
   logic [31:0] s_psram_rdata;
   logic        s_psram_ready;
+  // spisd if
+  logic        s_spisd_valid;
+  logic [ 3:0] s_spisd_wstrb;
+  logic [31:0] s_spisd_addr;
+  logic [31:0] s_spisd_wdata;
+  logic [31:0] s_spisd_rdata;
+  logic        s_spisd_ready;
   // psram cfg if
   logic        s_psram_cfg_wait_wr_en;
   logic [ 4:0] s_psram_cfg_wait_i;
@@ -197,7 +204,14 @@ module retrosoc (
       .psram_addr_o (s_psram_addr),
       .psram_wdata_o(s_psram_wdata),
       .psram_wstrb_o(s_psram_wstrb),
-      .psram_rdata_i(s_psram_rdata)
+      .psram_rdata_i(s_psram_rdata),
+      // spisd if
+      .spisd_valid_o(s_spisd_valid),
+      .spisd_ready_i(s_spisd_ready),
+      .spisd_addr_o (s_spisd_addr),
+      .spisd_wdata_o(s_spisd_wdata),
+      .spisd_wstrb_o(s_spisd_wstrb),
+      .spisd_rdata_i(s_spisd_rdata)
   );
 
   ip_natv_wrapper u_ip_natv_wrapper (
@@ -320,12 +334,12 @@ module retrosoc (
   spisd u_spisd (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
-      .mem_valid_i ('0),
-      .mem_ready_o (),
-      .mem_addr_i  ('0),
-      .mem_wdata_i ('0),
-      .mem_wstrb_i ('0),
-      .mem_rdata_o (),
+      .mem_valid_i (s_spisd_valid),
+      .mem_ready_o (s_spisd_ready),
+      .mem_addr_i  (s_spisd_addr),
+      .mem_wdata_i (s_spisd_wdata),
+      .mem_wstrb_i (s_spisd_wstrb),
+      .mem_rdata_o (s_spisd_rdata),
       .spisd_sclk_o(cust_spisd_sclk_o),
       .spisd_cs_o  (cust_spisd_cs_o),
       .spisd_mosi_o(cust_spisd_mosi_o),
