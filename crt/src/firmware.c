@@ -59,13 +59,15 @@ void welcome_screen()
     printf("Inst/Memory Device: \n");
     printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST, SPFS_MEM_OFFST / 1024 / 1024);
     printf("  On-chip RAM size:  @[0x%x-0x%x] %dKB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST, SRAM_MEM_OFFST / 1024);
-    printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  TF MMIO Card size: @[0x%x-0x%x] %dMB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST, TF_CARD_OFFST / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
     printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
     printf("                     1 x UART          @0x%x\n", &reg_uart_clkdiv);
     printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_config, &reg_tim1_config);
     printf("                     1 x PSRAM         @0x%x\n", &reg_psram_waitcycl);
+    printf("                     1 x SPISD         @0x%x\n", &reg_spisd_ctrl);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_cust_archinfo_sys);
     printf("                     1 x RNG           @0x%x\n", &reg_cust_rng_ctrl);
     printf("                     1 x UART(HP)      @0x%x\n", &reg_cust_uart_lcr);

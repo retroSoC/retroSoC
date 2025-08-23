@@ -47,10 +47,17 @@ module bus (
     output logic [31:0] psram_wdata_o,
     output logic [ 3:0] psram_wstrb_o,
     input  logic [31:0] psram_rdata_i,
-    input  logic        psram_ready_i
+    input  logic        psram_ready_i,
+    // spisd if
+    output logic        spisd_valid_o,
+    output logic [31:0] spisd_addr_o,
+    output logic [31:0] spisd_wdata_o,
+    output logic [ 3:0] spisd_wstrb_o,
+    input  logic [31:0] spisd_rdata_i,
+    input  logic        spisd_ready_i
 );
 
-  logic s_natv_sel, s_mmap_sel, s_ram_sel, s_psram_sel;
+  logic s_natv_sel, s_mmap_sel, s_ram_sel, s_psram_sel, s_spisd_sel;
   logic s_ram_valid, s_ram_ready;
 
   assign s_natv_sel    = core_addr_i[31:24] == `NATV_IP_START;
@@ -79,6 +86,13 @@ module bus (
   assign psram_wdata_o = core_wdata_i;
   assign psram_wstrb_o = core_wstrb_i;
 
+  assign s_spisd_sel   = core_addr_i[31:24] == `SPISD_START;
+  assign spisd_valid_o = core_valid_i && s_spisd_sel;
+  assign spisd_addr_o  = core_addr_i;
+  assign spisd_wdata_o = core_wdata_i;
+  assign spisd_wstrb_o = core_wstrb_i;
+
+
 `ifdef HAVE_SRAM_MACRO
   dffr #(1) u_ram_ready_dffr (
       clk_i,
@@ -89,18 +103,21 @@ module bus (
 `endif
 
   // verilog_format: off
-  assign core_ready_o = (natv_valid_o && natv_ready_i) || 
-                        (mmap_valid_o && mmap_ready_i) || 
+  assign core_ready_o = (natv_valid_o && natv_ready_i) ||
+                        (mmap_valid_o && mmap_ready_i) ||
 `ifdef HAVE_SRAM_IF
                          s_ram_ready ||
 `endif
-                        (psram_valid_o && psram_ready_i);
+                        (psram_valid_o && psram_ready_i) ||
+                        (spisd_valid_o && spisd_ready_i);
 
   assign core_rdata_o = (natv_valid_o && natv_ready_i) ? natv_rdata_i:
                         (mmap_valid_o && mmap_ready_i) ? mmap_rdata_i :
 `ifdef HAVE_SRAM_IF
                          s_ram_ready ? ram_rdata_i :
 `endif
-                        (psram_valid_o && psram_ready_i) ? psram_rdata_i : '0;
+                        (psram_valid_o && psram_ready_i) ? psram_rdata_i :
+                        (spisd_valid_o && spisd_ready_i) ? spisd_rdata_i :
+                        '0;
   // verilog_format: on
 endmodule
