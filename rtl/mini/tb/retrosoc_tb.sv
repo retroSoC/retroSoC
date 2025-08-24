@@ -253,8 +253,10 @@ module retrosoc_tb;
       $fsdbDumpMDA();
       // #398844962;
       // #867652;
+      #1667652;
       // #340686376;
-      #489238714;
+
+      // #489238714;
 
       // repeat (1500) begin
       //   repeat (5000) @(posedge r_xtal_clk);

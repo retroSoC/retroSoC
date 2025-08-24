@@ -1,5 +1,25 @@
+# set W25Q128JWSIQ_tDVCH 2
+# set W25Q128JWSIQ_tCHDX 3
+
+# set W25Q128JWSIQ_tCLQV 6
+# set W25Q128JWSIQ_tCLQX 1.5
+
+# timing constr
 create_clock -period 20.000 -waveform {0.000 10.000} [get_ports clk_i]
 
+# create_generated_clock -name spfs_clk -source [get_pins u_clk_wiz_0/clk_out1] -divide_by 2 [get_ports cust_spfs_clk_o]
+# create_generated_clock -name qspi_clk -source [get_pins u_clk_wiz_0/clk_out1] -divide_by 2 [get_ports cust_qspi_spi_clk_o]
+# create_generated_clock -name psram_clk -source [get_pins u_clk_wiz_0/clk_out1] -divide_by 2 [get_ports cust_psram_sclk_o]
+
+# set_output_delay -clock [get_clocks spfs_clk] -max [expr 0.5 + $W25Q128JWSIQ_tDVCH] [get_ports cust_spfs_mosi_o]
+# set_output_delay -clock [get_clocks spfs_clk] -min [expr -0.5 - $W25Q128JWSIQ_tCHDX] [get_ports cust_spfs_mosi_o]
+
+# set_input_delay -clock [get_clocks spfs_clk] -max [expr 0.5 + $W25Q128JWSIQ_tCLQV] [get_ports cust_spfs_miso_i]
+# set_input_delay -clock [get_clocks spfs_clk] -min [expr -0.5 + $W25Q128JWSIQ_tCLQX] [get_ports cust_spfs_miso_i]
+
+set_false_path -from [get_ports rst_n_i]
+
+# physical constr
 set_property -dict {PACKAGE_PIN L18 IOSTANDARD LVCMOS18} [get_ports clk_i]
 set_property -dict {PACKAGE_PIN AB11 IOSTANDARD LVCMOS18} [get_ports rst_n_i]
 set_property -dict {PACKAGE_PIN AB16 IOSTANDARD LVCMOS18} [get_ports uart_rx_i]

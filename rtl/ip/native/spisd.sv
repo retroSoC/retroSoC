@@ -9,6 +9,8 @@
 // See the Mulan PSL v2 for more details.
 //
 // memory-map rd/wr for first 512MB range of TF card
+// cache size: 512(width 9) [8:0]
+// tag width: 23 [22:0]
 module spisd (
     input  logic        clk_i,
     input  logic        rst_n_i,
@@ -23,10 +25,6 @@ module spisd (
     output logic        spisd_mosi_o,
     input  logic        spisd_miso_i
 );
-
-  // cache size: 512(width 9) [8:0]
-  // tag width: 23 [22:0]
-
 
   // verilog_format: off
   localparam FSM_IDLE     = 2'd0;
@@ -53,8 +51,7 @@ module spisd (
   logic        s_init_done;
   logic [6:0] s_line_cnt_d, s_line_cnt_q;
   logic [1:0] s_word_cnt_d, s_word_cnt_q;
-  logic [31:0] s_word_data_d;
-  logic [31:0] s_word_data_q;
+  logic [31:0] s_word_data_d, s_word_data_q;
   logic [31:0] s_ext_wstrb;
 
 
@@ -79,7 +76,6 @@ module spisd (
     s_sd_wr_req     = '0;
     s_sd_wr_data    = '0;
     s_sd_addr       = '0;
-
     // mem_if
     mem_ready_o     = '0;
     mem_rdata_o     = s_cache_data_q[s_cache_index];
@@ -142,6 +138,8 @@ module spisd (
           if (s_word_cnt_q == 2'd3) begin
             s_word_cnt_d = '0;
             s_line_cnt_d = s_line_cnt_q + 1'b1;
+            s_word_data_d = s_cache_data_q[s_line_cnt_d];
+            s_sd_wr_data = s_word_data_d[7:0];
             if (s_line_cnt_q == 7'd127) s_cache_fsm_d = FSM_ALLOC;
           end else begin
             s_word_cnt_d  = s_word_cnt_q + 1'b1;
@@ -202,6 +200,12 @@ module spisd (
       s_word_data_d,
       s_word_data_q
   );
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (~rst_n_i) begin
+      for (int i = 0; i < 128; ++i) s_cache_data_q[i] <= '0;
+    end else s_cache_data_q <= s_cache_data_d;
+  end
 
   spisd_core u_spisd_core (
       .clk_i         (clk_i),
