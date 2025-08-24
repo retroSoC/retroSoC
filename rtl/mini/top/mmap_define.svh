@@ -19,5 +19,6 @@
 `define CUST_IP_START 8'h20
 `define SRAM_START    8'h30
 `define PSRAM_START   8'h40
+`define SPISD_START   8'h50
 
 `endif
