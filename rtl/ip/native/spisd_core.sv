@@ -156,7 +156,7 @@ module spisd_core (
         s_spisd_cs_d        = 1'b0;
       end
       FSM_ACMD41: begin
-        s_xfer_cmd_d        = {ACMD41, 1'h1, 3'h0, 4'h1, 24'h0, 8'hFF};
+        s_xfer_cmd_d        = {ACMD41, 32'h40_00_00_00, 8'hFF};
         s_resp_type_d       = 2'd1;
         s_ret_fsm_d         = FSM_CHECK_INIT;
         s_fsm_d             = FSM_SEND_CMD;
