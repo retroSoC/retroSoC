@@ -58,7 +58,8 @@ module spisd_core (
   localparam FSM_WRITE_DATA = 5'd18;
   localparam FSM_WRITE_BYTE = 5'd19;
   localparam FSM_WRITE_WAIT = 5'd20;
-  localparam FSM_XFER_DONE = 5'd21;
+  localparam FSM_XFER_WAIT = 5'd21;
+  localparam FSM_XFER_DONE = 5'd22;
 
   // 100M / 200K = 500
   // spi signal
@@ -258,7 +259,7 @@ module spisd_core (
           end else if (s_byte_cnt_q == 10'd515) begin
             s_send_data_d = 8'hFE;
           end else begin
-            s_send_data_d     = wr_data_i;  // HACK:
+            s_send_data_d  = wr_data_i;  // HACK:
             wr_byte_done_o = 1'b1;
           end
         end
@@ -348,15 +349,14 @@ module spisd_core (
         if (s_spisd_sclk_q && s_clk_cnt_q == '0) begin
           s_recv_data_d = {s_recv_data_q[38:0], spisd_miso_i};
           if (s_bit_cnt_q == '0) begin
-            s_fsm_d      = FSM_XFER_DONE;
-            s_bit_cnt_d  = 6'd23;
-            s_spisd_cs_d = 1'b1;
+            s_fsm_d     = FSM_XFER_WAIT;
+            s_bit_cnt_d = 6'd7;
           end else begin
             s_bit_cnt_d = s_bit_cnt_q - 1'b1;
           end
         end
       end
-      FSM_XFER_DONE: begin
+      FSM_XFER_WAIT: begin
         if (s_clk_cnt_q == '0) begin
           s_clk_cnt_d    = s_clk_div_q;
           s_spisd_sclk_d = ~s_spisd_sclk_q;
@@ -366,11 +366,18 @@ module spisd_core (
 
         if (s_spisd_sclk_q && s_clk_cnt_q == '0) begin
           if (s_bit_cnt_q == '0) begin
-            s_fsm_d = s_ret_fsm_q;
+            s_fsm_d        = FSM_XFER_DONE;
+            s_spisd_sclk_d = 1'b1;
+            s_spisd_cs_d   = 1'b1;
+            s_bit_cnt_d    = 6'd7;
           end else begin
             s_bit_cnt_d = s_bit_cnt_q - 1'b1;
           end
         end
+      end
+      FSM_XFER_DONE: begin
+        if (s_bit_cnt_q == '0) s_fsm_d = s_ret_fsm_q;
+        else s_bit_cnt_d = s_bit_cnt_q - 1'b1;
       end
       default: begin
       end
