@@ -135,7 +135,7 @@ module spisd_core (
         s_spisd_cs_d        = 1'b0;
       end
       FSM_CMD8: begin
-        s_xfer_cmd_d        = {CMD8, 10'h0, 4'h1, 8'hAA, 8'h87};
+        s_xfer_cmd_d        = {CMD8, 20'h0, 4'h1, 8'hAA, 8'h87};
         s_resp_type_d       = 2'd2;
         s_ret_fsm_d         = FSM_CMD55;
         s_fsm_d             = FSM_SEND_CMD;
