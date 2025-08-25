@@ -93,7 +93,7 @@ module spisd_core (
     s_clk_cnt_d         = s_clk_cnt_q;
     s_xfer_cmd_d        = s_xfer_cmd_q;
     s_resp_type_d       = s_resp_type_q;
-    s_recv_data_q       = s_recv_data_q;
+    s_recv_data_d       = s_recv_data_q;
     s_send_data_d       = s_send_data_q;
     s_first_fall_edge_d = s_first_fall_edge_q;
     // spi_if
@@ -253,13 +253,13 @@ module spisd_core (
           s_byte_cnt_d = s_byte_cnt_q - 1'b1;
           s_bit_cnt_d  = 6'd7;
           s_fsm_d      = FSM_WRITE_BYTE;
-          if ((s_byte_cnt_q == 6'd2) || (s_byte_cnt_q == 6'd1)) begin
+          if ((s_byte_cnt_q == 10'd2) || (s_byte_cnt_q == 10'd1)) begin
             s_send_data_d = 8'hFF;
-          end else if (s_byte_cnt_q == 6'd515) begin
+          end else if (s_byte_cnt_q == 10'd515) begin
             s_send_data_d = 8'hFE;
           end else begin
             s_send_data_d     = wr_data_i;  // HACK:
-            next_byte_ready_o = 1'b1;  // HACK:
+            wr_byte_done_o = 1'b1;
           end
         end
       end
@@ -276,7 +276,7 @@ module spisd_core (
           if (s_bit_cnt_q == '0) begin
             s_fsm_d = FSM_WRITE_DATA;
           end else begin
-            s_send_data_d = {s_send_q[6:0], 1'b1};
+            s_send_data_d = {s_send_data_q[6:0], 1'b1};
             s_bit_cnt_d   = s_bit_cnt_q - 1'b1;
           end
         end
@@ -290,7 +290,7 @@ module spisd_core (
         end
 
         if (s_spisd_sclk_q && s_clk_cnt_q == '0) begin
-          if (miso_i == 1'b1) begin
+          if (spisd_miso_i == 1'b1) begin
             s_fsm_d = FSM_IDLE;
           end
         end
