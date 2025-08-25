@@ -345,7 +345,7 @@ module spisd_core (
           s_clk_cnt_d = s_clk_cnt_q - 1'b1;
         end
 
-        if (s_clk_cnt_q && s_clk_cnt_q == '0) begin
+        if (s_spisd_sclk_q && s_clk_cnt_q == '0) begin
           s_recv_data_d = {s_recv_data_q[38:0], spisd_miso_i};
           if (s_bit_cnt_q == '0) begin
             s_fsm_d      = FSM_XFER_DONE;
@@ -364,7 +364,7 @@ module spisd_core (
           s_clk_cnt_d = s_clk_cnt_q - 1'b1;
         end
 
-        if (s_clk_cnt_q && s_clk_cnt_q == '0) begin
+        if (s_spisd_sclk_q && s_clk_cnt_q == '0) begin
           if (s_bit_cnt_q == '0) begin
             s_fsm_d = s_ret_fsm_q;
           end else begin
