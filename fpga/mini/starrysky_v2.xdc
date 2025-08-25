@@ -56,3 +56,8 @@ set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS18} [get_ports cust_psram_s
 set_property -dict {PACKAGE_PIN D15 IOSTANDARD LVCMOS18} [get_ports cust_psram_sio1_io]
 set_property -dict {PACKAGE_PIN B17 IOSTANDARD LVCMOS18} [get_ports cust_psram_sio2_io]
 set_property -dict {PACKAGE_PIN B16 IOSTANDARD LVCMOS18} [get_ports cust_psram_sio3_io]
+# spisd
+set_property -dict {PACKAGE_PIN AA22 IOSTANDARD LVCMOS18} [get_ports cust_spisd_sclk_o]
+set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS18} [get_ports cust_spisd_cs_o]
+set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS18} [get_ports cust_spisd_mosi_o]
+set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS18} [get_ports cust_spisd_miso_i]
