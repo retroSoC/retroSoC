@@ -364,7 +364,7 @@ module spisd_core (
           if (s_bit_cnt_q == '0) begin
             s_fsm_d     = FSM_XFER_WAIT;
             s_bit_cnt_d = 6'd7;
-            if (s_cmd_idx_q == CMD8 || s_cmd_idx_q == CMD58) begin
+            if (s_cmd_idx_q == CMD8 || s_cmd_idx_q == CMD58 || s_cmd_idx_q == ACMD41) begin
               s_resp_state_d = s_recv_data_d[39:32];
               s_resp_data_d  = s_recv_data_d[31:0];
             end else begin
