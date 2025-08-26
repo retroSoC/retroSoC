@@ -37,15 +37,18 @@ module retrosoc_top (
 );
 
   wire s_sys_clk;
+  wire s_aud_clk;
   clk_wiz_0 u_clk_wiz_0 (
       .clk_in1 (clk_i),
-      .clk_out1(s_sys_clk)
+      .clk_out1(s_sys_clk),
+      .clk_out2(s_aud_clk)
   );
 
   retrosoc_asic u_retrosoc (
       .xi_i_pad                 (s_sys_clk),
       .xo_o_pad                 (),
       .extclk_i_pad             (s_sys_clk),
+      .audclk_i_pad             (s_aud_clk),
 `ifdef CORE_MDD
       .core_mdd_sel_0_i_pad     (1'b0),
       .core_mdd_sel_1_i_pad     (1'b0),
