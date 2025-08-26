@@ -26,13 +26,13 @@ module spisd_core (
     input  logic        spisd_miso_i
 );
 
-  localparam CMD0 = 8'h40;  // GO_IDLE_STATE
-  localparam CMD8 = 8'h48;  // SEND_IF_COND
-  localparam CMD17 = 8'h51;  // READ_SINGLE_BLOCK
-  localparam CMD24 = 8'h58;  // WRITE_BLOCK
-  localparam CMD55 = 8'h77;  // APP_CMD
-  localparam CMD58 = 8'h7A;  // READ_OCR
-  localparam ACMD41 = 8'h69;  // SD_SEND_OP_COND
+  localparam CMD0 = 8'h40;  //   GO_IDLE_STATE     R1
+  localparam CMD8 = 8'h48;  //   SEND_IF_COND      R7
+  localparam CMD17 = 8'h51;  //  READ_SINGLE_BLOCK R1
+  localparam CMD24 = 8'h58;  //  WRITE_BLOCK       R1
+  localparam CMD55 = 8'h77;  //  APP_CMD           R1
+  localparam CMD58 = 8'h7A;  //  READ_OCR          R3
+  localparam ACMD41 = 8'h69;  // SD_SEND_OP_COND   R1
 
   localparam FSM_RST = 5'd0;
   localparam FSM_RST2CMD0 = 5'd1;
@@ -66,6 +66,7 @@ module spisd_core (
   logic s_spisd_sclk_d, s_spisd_sclk_q;
   logic s_spisd_cs_d, s_spisd_cs_q;
   logic [4:0] s_fsm_d, s_fsm_q;
+  logic [7:0] s_cmd_idx_d, s_cmd_idx_q;
   logic [4:0] s_ret_fsm_d, s_ret_fsm_q;
   logic [7:0] s_boot_cnt_d, s_boot_cnt_q;  // 256 cycle
   logic [9:0] s_byte_cnt_d, s_byte_cnt_q;
@@ -94,6 +95,7 @@ module spisd_core (
     s_byte_cnt_d        = s_byte_cnt_q;
     s_bit_cnt_d         = s_bit_cnt_q;
     s_clk_cnt_d         = s_clk_cnt_q;
+    s_cmd_idx_d         = s_cmd_idx_q;
     s_xfer_cmd_d        = s_xfer_cmd_q;
     s_resp_type_d       = s_resp_type_q;
     s_recv_data_d       = s_recv_data_q;
@@ -130,6 +132,7 @@ module spisd_core (
         else s_boot_cnt_d = s_boot_cnt_q - 1'b1;
       end
       FSM_CMD0: begin
+        s_cmd_idx_d         = CMD0;
         s_xfer_cmd_d        = {CMD0, 32'h0, 8'h95};
         s_resp_type_d       = 2'd0;
         s_ret_fsm_d         = FSM_CMD8;
@@ -140,6 +143,7 @@ module spisd_core (
         s_spisd_cs_d        = 1'b0;
       end
       FSM_CMD8: begin
+        s_cmd_idx_d         = CMD8;
         s_xfer_cmd_d        = {CMD8, 20'h0, 4'h1, 8'hAA, 8'h87};
         s_resp_type_d       = 2'd2;
         s_ret_fsm_d         = FSM_CMD55;
@@ -150,6 +154,7 @@ module spisd_core (
         s_spisd_cs_d        = 1'b0;
       end
       FSM_CMD55: begin  // maybe crc can be set 0xFF?
+        s_cmd_idx_d         = CMD55;
         s_xfer_cmd_d        = {CMD55, 32'h0, 8'h65};
         s_resp_type_d       = 2'd0;
         s_ret_fsm_d         = FSM_ACMD41;
@@ -160,6 +165,7 @@ module spisd_core (
         s_spisd_cs_d        = 1'b0;
       end
       FSM_ACMD41: begin
+        s_cmd_idx_d         = ACMD41;
         s_xfer_cmd_d        = {ACMD41, 32'h40_00_00_00, 8'hFF};
         s_resp_type_d       = 2'd1;
         s_ret_fsm_d         = FSM_CHECK_INIT;
@@ -174,6 +180,7 @@ module spisd_core (
         else s_fsm_d = FSM_CMD55;
       end
       FSM_CMD58: begin
+        s_cmd_idx_d         = CMD58;
         s_xfer_cmd_d        = {CMD58, 32'h0, 8'hFF};
         s_resp_type_d       = 2'd1;
         s_ret_fsm_d         = FSM_IDLE;
@@ -188,6 +195,7 @@ module spisd_core (
         else if (wr_req_i) s_fsm_d = FSM_WRITE_CMD;
       end
       FSM_READ_CMD: begin
+        s_cmd_idx_d         = CMD17;
         s_xfer_cmd_d        = {CMD17, addr_i, 8'hFF};
         s_resp_type_d       = 2'd1;
         s_ret_fsm_d         = FSM_READ_WAIT;
@@ -234,6 +242,7 @@ module spisd_core (
         s_fsm_d     = FSM_RESP_DATA;
       end
       FSM_WRITE_CMD: begin
+        s_cmd_idx_d         = CMD24;
         s_xfer_cmd_d        = {CMD24, addr_i, 8'hFF};
         s_resp_type_d       = 2'd1;
         s_ret_fsm_d         = FSM_WRITE_WAIT;
@@ -353,10 +362,14 @@ module spisd_core (
         if (s_spisd_sclk_q && s_clk_cnt_q == '0) begin
           s_recv_data_d = {s_recv_data_q[38:0], spisd_miso_i};
           if (s_bit_cnt_q == '0) begin
-            s_fsm_d        = FSM_XFER_WAIT;
-            s_bit_cnt_d    = 6'd7;
-            s_resp_state_d = s_recv_data_d[7:0];
-            s_resp_data_d  = s_recv_data_d[39:8];
+            s_fsm_d     = FSM_XFER_WAIT;
+            s_bit_cnt_d = 6'd7;
+            if (s_cmd_idx_q == CMD8 || s_cmd_idx_q == CMD58) begin
+              s_resp_state_d = s_recv_data_d[39:32];
+              s_resp_data_d  = s_recv_data_d[31:0];
+            end else begin
+              s_resp_state_d = s_recv_data_d[7:0];
+            end
           end else begin
             s_bit_cnt_d = s_bit_cnt_q - 1'b1;
           end
@@ -444,6 +457,13 @@ module spisd_core (
       rst_n_i,
       s_spisd_cs_d,
       s_spisd_cs_q
+  );
+
+  dffr #(8) u_cmd_idx_dffr (
+      clk_i,
+      rst_n_i,
+      s_cmd_idx_d,
+      s_cmd_idx_q
   );
 
   dffrh #(48) u_xfer_cmd_dffrh (
