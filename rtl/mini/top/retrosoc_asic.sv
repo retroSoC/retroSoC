@@ -24,6 +24,7 @@ module retrosoc_asic (
     input  xi_i_pad,
     output xo_o_pad,
     inout  extclk_i_pad,
+    inout  audclk_i_pad,
 `ifdef CORE_MDD
     inout  core_mdd_sel_0_i_pad,
     inout  core_mdd_sel_1_i_pad,
@@ -115,6 +116,7 @@ module retrosoc_asic (
   // clk&rst
   logic s_xtal_io;
   logic s_ext_clk;
+  logic s_aud_clk;
 `ifdef HAVE_PLL
   logic [2:0] s_pll_cfg;
 `endif
@@ -122,6 +124,7 @@ module retrosoc_asic (
   logic       s_sys_clk;
   logic       s_ext_rst_n;
   logic       s_sys_rst_n;
+  logic       s_aud_rst_n;
   logic       s_sys_clkdiv4;
   // io
   logic       s_uart_tx;
@@ -189,6 +192,7 @@ module retrosoc_asic (
   // verilog_format: off
   tc_io_xtl_pad         u_xtal_io_pad          (.xi_pad(xi_i_pad),               .xo_pad(xo_o_pad),            .en(1'b1),                       .clk(s_xtal_io));
   tc_io_tri_pad         u_extclk_i_pad         (.pad(extclk_i_pad),              .c2p(),                       .c2p_en(1'b0),                   .p2c(s_ext_clk));
+  tc_io_tri_pad         u_audclk_i_pad         (.pad(audclk_i_pad),              .c2p(),                       .c2p_en(1'b0),                   .p2c(s_aud_clk));
 `ifdef CORE_MDD
   tc_io_tri_pad         u_core_mdd_sel_0_i_pad (.pad(core_mdd_sel_0_i_pad),      .c2p(),                       .c2p_en(1'b0),                   .p2c(s_core_mdd_sel[0]));
   tc_io_tri_pad         u_core_mdd_sel_1_i_pad (.pad(core_mdd_sel_1_i_pad),      .c2p(),                       .c2p_en(1'b0),                   .p2c(s_core_mdd_sel[1]));
@@ -278,6 +282,7 @@ module retrosoc_asic (
   rcu u_rcu (
       .xtal_clk_i   (s_xtal_io),
       .ext_clk_i    (s_ext_clk),
+      .aud_clk_i    (s_aud_clk),
       .clk_bypass_i (s_clk_bypass),
       .ext_rst_n_i  (s_ext_rst_n),
 `ifdef HAVE_PLL
@@ -285,12 +290,15 @@ module retrosoc_asic (
 `endif
       .sys_clk_o    (s_sys_clk),
       .sys_rst_n_o  (s_sys_rst_n),
+      .aud_rst_n_o  (s_aud_rst_n),
       .sys_clkdiv4_o(s_sys_clkdiv4)
   );
 
   retrosoc u_retrosoc (
       .clk_i              (s_sys_clk),
       .rst_n_i            (s_sys_rst_n),
+      .clk_aud_i          (s_aud_clk),
+      .rst_aud_n_i        (s_aud_rst_n),
 `ifdef CORE_MDD
       .core_mdd_sel_i     (s_core_mdd_sel),
 `endif
