@@ -79,6 +79,8 @@ module spisd_core (
   logic s_cmd_mode;
   // user reg
   logic [1:0] s_clk_div_d, s_clk_div_q;
+  logic [7:0] s_resp_state_d, s_resp_state_q;
+  logic [31:0] s_resp_data_d, s_resp_data_q;
 
   assign init_done_o  = s_fsm_q == FSM_IDLE;
   assign spisd_sclk_o = s_spisd_sclk_q;
@@ -97,6 +99,8 @@ module spisd_core (
     s_recv_data_d       = s_recv_data_q;
     s_send_data_d       = s_send_data_q;
     s_first_fall_edge_d = s_first_fall_edge_q;
+    s_resp_state_d      = s_resp_state_q;
+    s_resp_data_d       = s_resp_data_q;
     // spi_if
     s_spisd_sclk_d      = s_spisd_sclk_q;
     s_spisd_cs_d        = s_spisd_cs_q;
@@ -166,7 +170,7 @@ module spisd_core (
         s_spisd_cs_d        = 1'b0;
       end
       FSM_CHECK_INIT: begin
-        if (s_recv_data_q[0] == 1'b0) s_fsm_d = FSM_CMD58;
+        if (s_resp_state_q[0] == 1'b0) s_fsm_d = FSM_CMD58;
         else s_fsm_d = FSM_CMD55;
       end
       FSM_CMD58: begin
@@ -349,8 +353,10 @@ module spisd_core (
         if (s_spisd_sclk_q && s_clk_cnt_q == '0) begin
           s_recv_data_d = {s_recv_data_q[38:0], spisd_miso_i};
           if (s_bit_cnt_q == '0) begin
-            s_fsm_d     = FSM_XFER_WAIT;
-            s_bit_cnt_d = 6'd7;
+            s_fsm_d        = FSM_XFER_WAIT;
+            s_bit_cnt_d    = 6'd7;
+            s_resp_state_d = s_recv_data_d[7:0];
+            s_resp_data_d  = s_recv_data_d[39:8];
           end else begin
             s_bit_cnt_d = s_bit_cnt_q - 1'b1;
           end
@@ -447,7 +453,7 @@ module spisd_core (
       s_xfer_cmd_q
   );
 
-  dffr #(2) u_resp_data_dffr (
+  dffr #(2) u_resp_type_dffr (
       clk_i,
       rst_n_i,
       s_resp_type_d,
@@ -481,4 +487,19 @@ module spisd_core (
       s_first_fall_edge_d,
       s_first_fall_edge_q
   );
+
+  dffr #(8) u_resp_state_dffr (
+      clk_i,
+      rst_n_i,
+      s_resp_state_d,
+      s_resp_state_q
+  );
+
+  dffr #(32) u_resp_data_dffr (
+      clk_i,
+      rst_n_i,
+      s_resp_data_d,
+      s_resp_data_q
+  );
+
 endmodule

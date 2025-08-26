@@ -71,7 +71,7 @@ module nmi2nmi (
   // req frame: valid[1] addr[32], wdata[32], wstrb[4]
   async_fifo #(
       .DATA_WIDTH (1 + 32 + 32 + 4),
-      .DEPTH_POWER(1)
+      .DEPTH_POWER(4)
   ) u_req_async_fifo (
       .wr_clk_i  (mstr_clk_i),
       .wr_rst_n_i(mstr_rst_n_i),
@@ -88,7 +88,7 @@ module nmi2nmi (
   // resp frame: ready[1] data[32]
   async_fifo #(
       .DATA_WIDTH (33),
-      .DEPTH_POWER(1)
+      .DEPTH_POWER(4)
   ) u_resp_async_fifo (
       .wr_clk_i  (slvr_clk_i),
       .wr_rst_n_i(slvr_rst_n_i),
