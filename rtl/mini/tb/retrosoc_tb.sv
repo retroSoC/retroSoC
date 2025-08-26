@@ -23,10 +23,13 @@
 module retrosoc_tb;
   localparam real XTAL_CPU_FREQ = 24.0;  // MHz
   localparam real EXT_CPU_FREQ = 72.0;
+  localparam real AUD_CPU_FREQ = 12.288;
 
   reg        r_xtal_clk;
   reg        r_ext_clk;
   wire       s_ext_clk;
+  reg        r_aud_clk;
+  wire       s_aud_clk;
   reg        r_rst_n;
   wire       s_rst_n;
   reg  [4:0] r_core_mdd_sel;
@@ -67,9 +70,11 @@ module retrosoc_tb;
 
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
+  always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
 
   // connect inout pad
   assign s_ext_clk      = r_ext_clk;
+  assign s_aud_clk      = r_aud_clk;
   assign s_rst_n        = r_rst_n;
   assign s_core_mdd_sel = r_core_mdd_sel;
   assign s_ip_mdd_sel   = r_ip_mdd_sel;
@@ -82,6 +87,7 @@ module retrosoc_tb;
       .xi_i_pad                 (r_xtal_clk),
       .xo_o_pad                 (),
       .extclk_i_pad             (s_ext_clk),
+      .audclk_i_pad             (s_aud_clk),
 `ifdef CORE_MDD
       .core_mdd_sel_0_i_pad     (s_core_mdd_sel[0]),
       .core_mdd_sel_1_i_pad     (s_core_mdd_sel[1]),

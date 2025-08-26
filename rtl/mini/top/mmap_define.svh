@@ -20,5 +20,6 @@
 `define SRAM_START    8'h30
 `define PSRAM_START   8'h40
 `define SPISD_START   8'h50
+`define I2S_START     8'h60 //HACK:
 
 `endif

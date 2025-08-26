@@ -39,6 +39,8 @@
 ../../ip/native/simpleuart.sv
 ../../ip/native/mem2apb.sv
 ../../ip/native/axi4l2nmi.sv
+../../ip/native/async_fifo.sv
+../../ip/native/nmi2nmi.sv
 ../../ip/native/counter_timer.sv
 
 ../../ip/3rd_party/spfs/spi_clgen.v

@@ -11,6 +11,7 @@
 module rcu (
     input  logic       xtal_clk_i,
     input  logic       ext_clk_i,
+    input  logic       aud_clk_i,
     input  logic       clk_bypass_i,
     input  logic       ext_rst_n_i,
 `ifdef HAVE_PLL
@@ -18,6 +19,7 @@ module rcu (
 `endif
     output logic       sys_clk_o,
     output logic       sys_rst_n_o,
+    output logic       aud_rst_n_o,
     output logic       sys_clkdiv4_o
 );
   logic       s_xtal_clk_buf;
@@ -26,6 +28,7 @@ module rcu (
   logic       s_pll_clk_buf;
   logic       s_sys_clk;
   logic       s_ext_rst_n_sync;
+  logic       s_aud_rst_n_sync;
   logic       s_pll_lock;
   logic       s_pll_bp;
   logic [3:0] s_pll_N;
@@ -60,13 +63,22 @@ module rcu (
 
   rst_sync #(
       .STAGE(5)
-  ) u_rst_sync (
+  ) u_ext_rst_sync (
       .clk_i  (sys_clk_o),
       .rst_n_i(ext_rst_n_i),
       .rst_n_o(s_ext_rst_n_sync)
   );
 
+  rst_sync #(
+      .STAGE(5)
+  ) u_aud_rst_sync (
+      .clk_i  (aud_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .rst_n_o(s_aud_rst_n_sync)
+  );
+
   assign sys_rst_n_o   = clk_bypass_i ? s_ext_rst_n_sync : s_pll_lock;
+  assign aud_rst_n_o   = s_aud_rst_n_sync;
   assign sys_clkdiv4_o = s_sys_clkdiv4_q;
 
   assign s_div_cnt_d   = (s_div_cnt_q == 4'd1) ? '0 : s_div_cnt_q + 1'b1;

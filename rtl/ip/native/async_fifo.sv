@@ -52,7 +52,8 @@ module async_fifo #(
 
   always_ff @(posedge rd_clk_i or negedge rd_rst_n_i) begin
     if (!rd_rst_n_i) begin
-      r_wr_ptr_gray_sync <= '0;
+      r_wr_ptr_gray_sync[0] <= '0;
+      r_wr_ptr_gray_sync[1] <= '0;
     end else begin
       r_wr_ptr_gray_sync[0] <= r_wr_ptr_gray;
       r_wr_ptr_gray_sync[1] <= r_wr_ptr_gray_sync[0];
@@ -61,7 +62,8 @@ module async_fifo #(
 
   always_ff @(posedge wr_clk_i or negedge wr_rst_n_i) begin
     if (!wr_rst_n_i) begin
-      r_rd_ptr_gray_sync <= '0;
+      r_rd_ptr_gray_sync[0] <= '0;
+      r_rd_ptr_gray_sync[1] <= '0;
     end else begin
       r_rd_ptr_gray_sync[0] <= r_rd_ptr_gray;
       r_rd_ptr_gray_sync[1] <= r_rd_ptr_gray_sync[0];

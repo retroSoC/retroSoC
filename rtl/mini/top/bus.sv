@@ -54,7 +54,14 @@ module bus (
     output logic [31:0] spisd_wdata_o,
     output logic [ 3:0] spisd_wstrb_o,
     input  logic [31:0] spisd_rdata_i,
-    input  logic        spisd_ready_i
+    input  logic        spisd_ready_i,
+    // i2s if
+    output logic        i2s_valid_o,
+    output logic [31:0] i2s_addr_o,
+    output logic [31:0] i2s_wdata_o,
+    output logic [ 3:0] i2s_wstrb_o,
+    input  logic [31:0] i2s_rdata_i,
+    input  logic        i2s_ready_i
 );
 
   logic s_natv_sel, s_mmap_sel, s_ram_sel, s_psram_sel, s_spisd_sel;
@@ -91,6 +98,12 @@ module bus (
   assign spisd_addr_o  = core_addr_i;
   assign spisd_wdata_o = core_wdata_i;
   assign spisd_wstrb_o = core_wstrb_i;
+
+  assign s_i2s_sel   = core_addr_i[31:24] == `I2S_START;
+  assign i2s_valid_o = core_valid_i && s_i2s_sel;
+  assign i2s_addr_o  = core_addr_i;
+  assign i2s_wdata_o = core_wdata_i;
+  assign i2s_wstrb_o = core_wstrb_i;
 
 
 `ifdef HAVE_SRAM_MACRO
