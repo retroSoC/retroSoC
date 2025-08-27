@@ -183,7 +183,8 @@ module spisd_core (
         s_cmd_idx_d         = CMD58;
         s_xfer_cmd_d        = {CMD58, 32'h0, 8'hFF};
         s_resp_type_d       = 2'd1;
-        s_ret_fsm_d         = FSM_IDLE;
+        // s_ret_fsm_d         = FSM_IDLE;
+        s_ret_fsm_d         = FSM_WRITE_CMD;
         s_fsm_d             = FSM_SEND_CMD;
         s_clk_cnt_d         = s_clk_div_q;
         s_bit_cnt_d         = 6'd48;
@@ -191,13 +192,15 @@ module spisd_core (
         s_spisd_cs_d        = 1'b0;
       end
       FSM_IDLE: begin
-        if (rd_req_i) s_fsm_d = FSM_READ_CMD;
-        else if (wr_req_i) s_fsm_d = FSM_WRITE_CMD;
+        // if (rd_req_i) s_fsm_d = FSM_READ_CMD;
+        // else if (wr_req_i) s_fsm_d = FSM_WRITE_CMD;
+        s_fsm_d = FSM_READ_CMD;
       end
       FSM_READ_CMD: begin
         s_cmd_idx_d         = CMD17;
-        s_xfer_cmd_d        = {CMD17, addr_i, 8'hFF};
-        s_resp_type_d       = 2'd1;
+        // s_xfer_cmd_d        = {CMD17, addr_i, 8'hFF};
+        s_xfer_cmd_d        = {CMD17, 32'h0, 8'hFF};
+        s_resp_type_d       = 2'd0;
         s_ret_fsm_d         = FSM_READ_WAIT;
         s_fsm_d             = FSM_SEND_CMD;
         s_clk_cnt_d         = s_clk_div_q;
@@ -243,9 +246,10 @@ module spisd_core (
       end
       FSM_WRITE_CMD: begin
         s_cmd_idx_d         = CMD24;
-        s_xfer_cmd_d        = {CMD24, addr_i, 8'hFF};
-        s_resp_type_d       = 2'd1;
-        s_ret_fsm_d         = FSM_WRITE_WAIT;
+        // s_xfer_cmd_d        = {CMD24, addr_i, 8'hFF};
+        s_xfer_cmd_d        = {CMD24, 32'h0, 8'hFF};
+        s_resp_type_d       = 2'd0;
+        s_ret_fsm_d         = FSM_WRITE_INIT;
         s_fsm_d             = FSM_SEND_CMD;
         s_clk_cnt_d         = s_clk_div_q;
         s_bit_cnt_d         = 6'd48;
@@ -272,7 +276,9 @@ module spisd_core (
           end else if (s_byte_cnt_q == 10'd515) begin
             s_send_data_d = 8'hFE;
           end else begin
-            s_send_data_d  = wr_data_i;  // HACK:
+            // s_send_data_d  = wr_data_i;  // HACK:
+            if (~s_byte_cnt_q[0]) s_send_data_d = 8'h23;
+            else s_send_data_d = 8'h56;
             wr_byte_done_o = 1'b1;
           end
         end
