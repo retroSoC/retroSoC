@@ -78,29 +78,29 @@ Emulator::~Emulator()
 void Emulator::reset()
 {
     std::cout << rang::fg::yellow << "Initializing and resetting DUT ..." << rang::fg::reset << std::endl;
-    dutPtr->reset = 1;
-    for (int i = 0; i < 10; i++)
+    dutPtr->rst_n_i = 1;
+    for (int i = 0; i < 0x20000; i++)
     {
-        dutPtr->clock = 0;
+        dutPtr->ext_clk_i = 0;
         dutPtr->eval();
-        dutPtr->clock = 1;
+        dutPtr->ext_clk_i = 1;
         dutPtr->eval();
     }
-    dutPtr->clock = 0;
-    dutPtr->reset = 0;
+    dutPtr->ext_clk_i = 0;
+    dutPtr->rst_n_i = 0;
     dutPtr->eval();
 }
 
 void Emulator::step()
 {
-    dutPtr->clock = 1;
+    dutPtr->ext_clk_i = 1;
     dutPtr->eval();
     ++cycle;
     if (args.dumpWave && args.dumpBegin <= cycle && cycle <= args.dumpEnd)
     {
         wavePtr->dump((vluint64_t)cycle);
     }
-    dutPtr->clock = 0;
+    dutPtr->ext_clk_i = 0;
     dutPtr->eval();
 }
 
