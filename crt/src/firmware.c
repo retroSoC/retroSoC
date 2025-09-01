@@ -57,10 +57,10 @@ void welcome_screen()
     printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Device: \n");
-    printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST, SPFS_MEM_OFFST / 1024 / 1024);
-    printf("  On-chip RAM size:  @[0x%x-0x%x] %dKB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST, SRAM_MEM_OFFST / 1024);
-    printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST, 8 * PSRAM_NUM, PSRAM_NUM);
-    printf("  TF MMIO Card size: @[0x%x-0x%x] %dMB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST, TF_CARD_OFFST / 1024 / 1024);
+    printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  On-chip RAM size:  @[0x%x-0x%x] %dKB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
+    printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  TF MMIO Card size: @[0x%x-0x%x] %dMB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
     printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
