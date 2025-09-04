@@ -215,7 +215,7 @@ module spisd (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
       .init_done_o  (s_init_done),
-      .sec_addr_i   (s_sd_addr),
+      .sec_addr_i   ({9'd0, s_sd_addr}),
       .rd_req_i     (s_sd_rd_req),
       .rd_data_vld_o(s_sd_rd_vld),
       .rd_data_o    (s_sd_rd_data),
@@ -224,7 +224,7 @@ module spisd (
       .wr_data_req_o(s_sd_wr_data_req),
       .wr_data_i    (s_sd_wr_data),
       .wr_busy_o    (s_sd_wr_busy),
-      .spisd_sclk_o (spisd_sclk_o),
+      .spisd_clk_o  (spisd_sclk_o),
       .spisd_cs_o   (spisd_cs_o),
       .spisd_mosi_o (spisd_mosi_o),
       .spisd_miso_i (spisd_miso_i)
