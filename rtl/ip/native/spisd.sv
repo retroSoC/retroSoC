@@ -37,15 +37,17 @@ module spisd (
   logic s_cache_dirty_d, s_cache_dirty_q;
   logic [22:0] s_cache_tag_d, s_cache_tag_q;
   logic [1:0] s_cache_fsm_d, s_cache_fsm_q;
-  logic [31:0] s_cache_data_d    [0:128];
-  logic [31:0] s_cache_data_q    [0:128];
+  logic [31:0] s_cache_data_d   [0:128];
+  logic [31:0] s_cache_data_q   [0:128];
   // sd if
   logic        s_sd_rd_req;
   logic        s_sd_rd_vld;
   logic [ 7:0] s_sd_rd_data;
+  logic        s_sd_rd_busy;
   logic        s_sd_wr_req;
-  logic        s_sd_wr_byte_done;
+  logic        s_sd_wr_data_req;
   logic [ 7:0] s_sd_wr_data;
+  logic        s_sd_wr_busy;
   logic [22:0] s_sd_addr;
   // common
   logic        s_init_done;
@@ -102,24 +104,19 @@ module spisd (
           // tag line is clean
           if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
             s_cache_fsm_d = FSM_ALLOC;
-            s_sd_rd_req   = 1'b1;
-            s_sd_addr     = s_cache_tag_q;
-            s_line_cnt_d  = '0;
-            s_word_cnt_d  = '0;
           end else begin
             // need to flush data into sd card sectors
             s_cache_fsm_d = FSM_WR_BACK;
-            s_line_cnt_d  = '0;
-            s_word_cnt_d  = '0;
-            s_word_data_d = s_cache_data_q[0];
-            s_sd_wr_req   = 1'b1;
-            s_sd_addr     = s_cache_tag_q;
-            s_sd_wr_data  = s_word_data_d[7:0];
           end
         end
       end
       FSM_ALLOC: begin
-        if (s_sd_rd_vld) begin
+        if (~s_sd_rd_busy) begin
+          s_sd_rd_req  = 1'b1;
+          s_sd_addr    = {9'd0, s_cache_tag_q};
+          s_line_cnt_d = '0;
+          s_word_cnt_d = '0;
+        end else if (s_sd_rd_vld) begin
           if (s_word_cnt_q == 2'd3) begin
             s_word_cnt_d                 = '0;
             s_line_cnt_d                 = s_line_cnt_q + 1'b1;
@@ -132,19 +129,26 @@ module spisd (
         end
       end
       FSM_WR_BACK: begin
-        // 0 1 2 3
-        s_sd_wr_data = s_word_data_q[7:0];
-        if (s_sd_wr_byte_done) begin
-          if (s_word_cnt_q == 2'd3) begin
-            s_word_cnt_d = '0;
-            s_line_cnt_d = s_line_cnt_q + 1'b1;
-            s_word_data_d = s_cache_data_q[s_line_cnt_d];
-            s_sd_wr_data = s_word_data_d[7:0];
-            if (s_line_cnt_q == 7'd127) s_cache_fsm_d = FSM_ALLOC;
-          end else begin
-            s_word_cnt_d  = s_word_cnt_q + 1'b1;
-            s_word_data_d = {8'd0, s_word_data_q[31:8]};
-            s_sd_wr_data  = s_word_data_d[7:0];
+        if (~s_sd_wr_busy) begin
+          s_sd_wr_req   = 1'b1;
+          s_sd_addr     = {9'd0, s_cache_tag_q};
+          s_line_cnt_d  = '0;
+          s_word_cnt_d  = '0;
+          s_word_data_d = s_cache_data_q[0];
+        end else begin
+          // 0 1 2 3
+          if (s_sd_wr_data_req) begin
+            if (s_word_cnt_q == 2'd3) begin
+              s_word_cnt_d  = '0;
+              s_line_cnt_d  = s_line_cnt_q + 1'b1;
+              s_word_data_d = s_cache_data_q[s_line_cnt_d];
+              s_sd_wr_data  = s_word_data_d[7:0];
+              if (s_line_cnt_q == 7'd127) s_cache_fsm_d = FSM_ALLOC;
+            end else begin
+              s_word_cnt_d  = s_word_cnt_q + 1'b1;
+              s_word_data_d = {8'd0, s_word_data_q[31:8]};
+              s_sd_wr_data  = s_word_data_q[7:0];
+            end
           end
         end
       end
@@ -208,20 +212,22 @@ module spisd (
   end
 
   spisd_core u_spisd_core (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .rd_req_i      (s_sd_rd_req),
-      .rd_vld_o      (s_sd_rd_vld),
-      .rd_data_o     (s_sd_rd_data),
-      .wr_req_i      (s_sd_wr_req),
-      .wr_byte_done_o(s_sd_wr_byte_done),
-      .wr_data_i     (s_sd_wr_data),
-      .addr_i        (s_sd_addr),
-      .init_done_o   (s_init_done),
-      .spisd_sclk_o  (spisd_sclk_o),
-      .spisd_cs_o    (spisd_cs_o),
-      .spisd_mosi_o  (spisd_mosi_o),
-      .spisd_miso_i  (spisd_miso_i)
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
+      .init_done_o  (s_init_done),
+      .sec_addr_i   ({9'd0, s_sd_addr}),
+      .rd_req_i     (s_sd_rd_req),
+      .rd_data_vld_o(s_sd_rd_vld),
+      .rd_data_o    (s_sd_rd_data),
+      .rd_busy_o    (s_sd_rd_busy),
+      .wr_req_i     (s_sd_wr_req),
+      .wr_data_req_o(s_sd_wr_data_req),
+      .wr_data_i    (s_sd_wr_data),
+      .wr_busy_o    (s_sd_wr_busy),
+      .spisd_clk_o  (spisd_sclk_o),
+      .spisd_cs_o   (spisd_cs_o),
+      .spisd_mosi_o (spisd_mosi_o),
+      .spisd_miso_i (spisd_miso_i)
   );
 
 endmodule
