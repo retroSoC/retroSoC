@@ -38,6 +38,7 @@
 ../../ip/native/spisd_read.sv
 ../../ip/native/spisd_write.sv
 ../../ip/native/spisd_core.sv
+../../ip/native/spisd_data.sv
 ../../ip/native/spisd.sv
 ../../ip/native/simpleuart.sv
 ../../ip/native/mem2apb.sv

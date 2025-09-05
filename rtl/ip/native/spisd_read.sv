@@ -32,7 +32,7 @@ module spisd_read (
   logic        s_pos_rd_en;
 
   logic        r_rd_data_vld;
-  logic        r_rd_data;
+  logic [ 7:0] r_rd_data;
   logic        r_rd_busy;
   logic        r_spisd_cs;
   logic        r_spisd_mosi;
