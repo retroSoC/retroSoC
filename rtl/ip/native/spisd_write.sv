@@ -147,11 +147,11 @@ module spisd_write (
               r_wr_data_t  <= wr_data_i;
             end else r_spisd_mosi <= r_wr_data_t[4'd7-r_bit_cnt];
 
-            if ((r_bit_cnt == 4'd6) && (r_data_cnt <= 9'd255)) r_wr_data_req <= 1'b1;
+            if ((r_bit_cnt == 4'd6) && (r_data_cnt <= 9'd511)) r_wr_data_req <= 1'b1;
             if (r_bit_cnt == 4'd7) begin
               r_bit_cnt  <= '0;
-              r_data_cnt <= r_data_cnt + 9'd1;
-              if (r_data_cnt == 9'd255) begin
+              r_data_cnt <= r_data_cnt + 1'b1;
+              if (r_data_cnt == 9'd511) begin
                 r_data_cnt    <= '0;
                 r_wr_ctrl_cnt <= r_wr_ctrl_cnt + 4'd1;
               end
