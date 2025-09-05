@@ -12,6 +12,7 @@
 module spisd_core (
     input  logic        clk_i,
     input  logic        rst_n_i,
+    output logic        fir_clk_edge_o,
     output logic        init_done_o,
     input  logic [31:0] sec_addr_i,
     input  logic        rd_req_i,
@@ -42,6 +43,7 @@ module spisd_core (
 
   assign s_fir_clk_edge = s_nor_clk_q && (s_nor_clk_div_q == '0);
   assign s_sec_clk_edge = (s_nor_clk_q == '0) && (s_nor_clk_div_q == '0);
+  assign fir_clk_edge_o = s_fir_clk_edge;
   // 72 / 6 = 12M
   always_comb begin
     s_nor_clk_d     = s_nor_clk_q;
@@ -70,7 +72,7 @@ module spisd_core (
   );
 
 
-  assign spisd_clk_o = (init_done_o == 1'b0) ? s_init_sd_clk : 1'b1;
+  assign spisd_clk_o = (init_done_o == 1'b0) ? s_init_sd_clk : s_nor_clk_q;
 
   always_comb begin
     if (init_done_o == 1'b0) begin
