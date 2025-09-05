@@ -71,7 +71,7 @@ module spisd_data (
   end
 
   always @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i) wr_data_t <= '0;
+    if (!rst_n_i) wr_data_t <= '1;
     else if (fir_clk_edge_i && wr_data_req_i) wr_data_t <= wr_data_t + 1'b1;
   end
 
