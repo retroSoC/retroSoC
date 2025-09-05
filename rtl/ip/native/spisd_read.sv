@@ -23,7 +23,7 @@ module spisd_read (
   logic [ 7:0] r_rx_data_t;
   logic        r_rx_flag;
   logic [ 3:0] r_rx_bit_cnt;
-  logic [ 8:0] r_rx_data_cnt;
+  logic [ 9:0] r_rx_data_cnt;
   logic        r_rx_finish_en;
   logic [ 3:0] r_rd_ctrl_cnt;
   logic [47:0] r_cmd_rd;
@@ -100,9 +100,9 @@ module spisd_read (
           r_rx_data_t  <= {r_rx_data_t[7:0], spisd_miso_i};
           if (r_rx_bit_cnt == 4'd7) begin
             r_rx_bit_cnt  <= '0;
-            r_rx_data_cnt <= r_rx_data_cnt + 9'd1;
-            if (r_rx_data_cnt <= 9'd255) r_rx_en_t <= 1'b1;
-            else if (r_rx_data_cnt == 9'd257) begin
+            r_rx_data_cnt <= r_rx_data_cnt + 1'b1;
+            if (r_rx_data_cnt <= 10'd511) r_rx_en_t <= 1'b1;
+            else if (r_rx_data_cnt == 10'd513) begin
               r_rx_flag      <= 1'b0;
               r_rx_finish_en <= 1'b1;
               r_rx_data_cnt  <= '0;
