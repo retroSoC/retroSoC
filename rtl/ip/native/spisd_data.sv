@@ -35,7 +35,7 @@ module spisd_data (
 
   assign s_pos_init_done = (~sd_init_done_d1) & sd_init_done_d0;
   assign s_neg_wr_busy   = wr_busy_d1 & (~wr_busy_d0);
-  assign wr_data_o       = (wr_data_t > 7'd0) ? (wr_data_t - 1'b1) : '0;
+  assign wr_data_o       = wr_data_t;
 
   always @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
