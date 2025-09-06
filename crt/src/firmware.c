@@ -158,12 +158,26 @@ void app_system_boot() {
     printf("self test done\n\n");
 }
 
+
+void spisd_test() {
+    printf("spisd test\n");
+
+    for(int i = 0; i < 16; ++i) {
+        (*(volatile uint8_t*)0x50000000) = (uint8_t) i;
+    }
+
+    for(int i = 0; i < 16; ++i) {
+        printf("tf card rd: \n", (*(volatile uint8_t*)0x50000000 + i));
+    }
+}
+
 void main()
 {
     reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
     app_system_boot();
     // while(1);
     ip_archinfo_test();
+    spisd_test();
     // ip_tim_test();
     // ip_rng_test();
     // ip_gpio_test();
