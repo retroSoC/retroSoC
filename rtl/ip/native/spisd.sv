@@ -52,6 +52,7 @@ module spisd (
   logic [22:0] s_sd_addr;
   // common
   logic        s_init_done;
+  logic        s_fir_clk_edge;
   logic [6:0] s_line_cnt_d, s_line_cnt_q;
   logic [1:0] s_word_cnt_d, s_word_cnt_q;
   logic [31:0] s_word_data_d, s_word_data_q;
@@ -213,74 +214,75 @@ module spisd (
   end
 
   spisd_core u_spisd_core (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .init_done_o  (s_init_done),
-      .sec_addr_i   ({9'd0, s_sd_addr}),
-      .rd_req_i     (s_sd_rd_req),
-      .rd_data_vld_o(s_sd_rd_vld),
-      .rd_data_o    (s_sd_rd_data),
-      .rd_busy_o    (s_sd_rd_busy),
-      .wr_req_i     (s_sd_wr_req),
-      .wr_data_req_o(s_sd_wr_data_req),
-      .wr_data_i    (s_sd_wr_data),
-      .wr_busy_o    (s_sd_wr_busy),
-      .spisd_clk_o  (spisd_sclk_o),
-      .spisd_cs_o   (spisd_cs_o),
-      .spisd_mosi_o (spisd_mosi_o),
-      .spisd_miso_i (spisd_miso_i)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .fir_clk_edge_o(s_fir_clk_edge),
+      .init_done_o   (s_init_done),
+      .sec_addr_i    ({9'd0, s_sd_addr}),
+      .rd_req_i      (s_sd_rd_req),
+      .rd_data_vld_o (s_sd_rd_vld),
+      .rd_data_o     (s_sd_rd_data),
+      .rd_busy_o     (s_sd_rd_busy),
+      .wr_req_i      (s_sd_wr_req),
+      .wr_data_req_o (s_sd_wr_data_req),
+      .wr_data_i     (s_sd_wr_data),
+      .wr_busy_o     (s_sd_wr_busy),
+      .spisd_clk_o   (spisd_sclk_o),
+      .spisd_cs_o    (spisd_cs_o),
+      .spisd_mosi_o  (spisd_mosi_o),
+      .spisd_miso_i  (spisd_miso_i)
   );
 
 `else
-    // data gen test
-    logic        s_init_done;
-    logic [31:0] s_sec_addr;
-    logic        s_rd_req;
-    logic        s_rd_data_vld;
-    logic [ 7:0] s_rd_data;
-    logic        s_wr_req;
-    logic        s_wr_busy;
-    logic        s_wr_data_req;
-    logic [ 7:0] s_wr_data;
-    logic        s_fir_clk_edge;
+  // data gen test
+  logic        s_init_done;
+  logic [31:0] s_sec_addr;
+  logic        s_rd_req;
+  logic        s_rd_data_vld;
+  logic [ 7:0] s_rd_data;
+  logic        s_wr_req;
+  logic        s_wr_busy;
+  logic        s_wr_data_req;
+  logic [ 7:0] s_wr_data;
+  logic        s_fir_clk_edge;
 
-    assign mem_ready_o = '0;
-    assign mem_rdata_o = '0;
-    spisd_data u_spisd_data (
-        .clk_i         (clk_i),
-        .rst_n_i       (rst_n_i),
-        .fir_clk_edge_i(s_fir_clk_edge),
-        .init_done_i   (s_init_done),
-        .sec_addr_o    (s_sec_addr),
-        .rd_req_o      (s_rd_req),
-        .rd_data_vld_i (s_rd_data_vld),
-        .rd_data_i     (s_rd_data),
-        .wr_req_o      (s_wr_req),
-        .wr_data_req_i (s_wr_data_req),
-        .wr_data_o     (s_wr_data),
-        .wr_busy_i     (s_wr_busy)
-    );
+  assign mem_ready_o = '0;
+  assign mem_rdata_o = '0;
+  spisd_data u_spisd_data (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .fir_clk_edge_i(s_fir_clk_edge),
+      .init_done_i   (s_init_done),
+      .sec_addr_o    (s_sec_addr),
+      .rd_req_o      (s_rd_req),
+      .rd_data_vld_i (s_rd_data_vld),
+      .rd_data_i     (s_rd_data),
+      .wr_req_o      (s_wr_req),
+      .wr_data_req_i (s_wr_data_req),
+      .wr_data_o     (s_wr_data),
+      .wr_busy_i     (s_wr_busy)
+  );
 
 
-    spisd_core u_spisd_core (
-        .clk_i         (clk_i),
-        .rst_n_i       (rst_n_i),
-        .fir_clk_edge_o(s_fir_clk_edge),
-        .init_done_o   (s_init_done),
-        .sec_addr_i    (s_sec_addr),
-        .rd_req_i      (s_rd_req),
-        .rd_data_vld_o (s_rd_data_vld),
-        .rd_data_o     (s_rd_data),
-        .rd_busy_o     (),
-        .wr_req_i      (s_wr_req),
-        .wr_data_req_o (s_wr_data_req),
-        .wr_data_i     (s_wr_data),
-        .wr_busy_o     (s_wr_busy),
-        .spisd_clk_o   (spisd_sclk_o),
-        .spisd_cs_o    (spisd_cs_o),
-        .spisd_mosi_o  (spisd_mosi_o),
-        .spisd_miso_i  (spisd_miso_i)
-    );
+  spisd_core u_spisd_core (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .fir_clk_edge_o(s_fir_clk_edge),
+      .init_done_o   (s_init_done),
+      .sec_addr_i    (s_sec_addr),
+      .rd_req_i      (s_rd_req),
+      .rd_data_vld_o (s_rd_data_vld),
+      .rd_data_o     (s_rd_data),
+      .rd_busy_o     (),
+      .wr_req_i      (s_wr_req),
+      .wr_data_req_o (s_wr_data_req),
+      .wr_data_i     (s_wr_data),
+      .wr_busy_o     (s_wr_busy),
+      .spisd_clk_o   (spisd_sclk_o),
+      .spisd_cs_o    (spisd_cs_o),
+      .spisd_mosi_o  (spisd_mosi_o),
+      .spisd_miso_i  (spisd_miso_i)
+  );
 `endif
 
 endmodule
