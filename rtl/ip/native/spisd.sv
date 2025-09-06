@@ -56,13 +56,8 @@ module spisd (
   logic [6:0] s_line_cnt_d, s_line_cnt_q;
   logic [1:0] s_word_cnt_d, s_word_cnt_q;
   logic [31:0] s_word_data_d, s_word_data_q;
-  logic [31:0] s_ext_wstrb;
-
 
   assign s_cache_index = mem_addr_i[8:2];
-  assign s_ext_wstrb = {
-    {8{mem_wstrb_i[3]}}, {8{mem_wstrb_i[2]}}, {8{mem_wstrb_i[1]}}, {8{mem_wstrb_i[0]}}
-  };
 
   always_comb begin
     // cache
@@ -94,8 +89,11 @@ module spisd (
           mem_ready_o = 1'b1;
           // write oper, set dirty
           if (|mem_wstrb_i) begin
-            s_cache_dirty_d               = 1'b1;
-            s_cache_data_d[s_cache_index] = mem_rdata_o | (mem_wdata_i & s_ext_wstrb);
+            s_cache_dirty_d = 1'b1;
+            if (mem_wstrb_i[0]) s_cache_data_d[s_cache_index][7:0] = mem_wdata_i[7:0];
+            if (mem_wstrb_i[1]) s_cache_data_d[s_cache_index][15:8] = mem_wdata_i[15:8];
+            if (mem_wstrb_i[2]) s_cache_data_d[s_cache_index][23:16] = mem_wdata_i[23:16];
+            if (mem_wstrb_i[3]) s_cache_data_d[s_cache_index][31:24] = mem_wdata_i[31:24];
           end
           s_cache_fsm_d = FSM_IDLE;
         end else begin
