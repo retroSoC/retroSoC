@@ -118,7 +118,7 @@ module spisd (
           s_sd_addr    = {9'd0, s_cache_tag_q};
           s_line_cnt_d = '0;
           s_word_cnt_d = '0;
-        end else if (s_sd_rd_vld) begin
+        end else if (s_fir_clk_edge && s_sd_rd_vld) begin
           if (s_word_cnt_q == 2'd3) begin
             s_word_cnt_d                 = '0;
             s_line_cnt_d                 = s_line_cnt_q + 1'b1;
@@ -139,7 +139,7 @@ module spisd (
           s_word_data_d = s_cache_data_q[0];
         end else begin
           // 0 1 2 3
-          if (s_sd_wr_data_req) begin
+          if (s_fir_clk_edge && s_sd_wr_data_req) begin
             if (s_word_cnt_q == 2'd3) begin
               s_word_cnt_d  = '0;
               s_line_cnt_d  = s_line_cnt_q + 1'b1;
