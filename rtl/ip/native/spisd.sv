@@ -100,10 +100,10 @@ module spisd (
           // need to update tag line info
           s_cache_valid_d = 1'b1;
           s_cache_dirty_d = |mem_wstrb_i;
-          s_cache_tag_d   = mem_addr_i[31:9];
           // tag line is clean
           if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
             s_cache_fsm_d = FSM_ALLOC;
+            s_cache_tag_d = mem_addr_i[31:9];
           end else begin
             // need to flush data into sd card sectors
             s_cache_fsm_d = FSM_WR_BACK;
@@ -143,7 +143,10 @@ module spisd (
               s_line_cnt_d  = s_line_cnt_q + 1'b1;
               s_word_data_d = s_cache_data_q[s_line_cnt_d];
               s_sd_wr_data  = s_word_data_d[7:0];
-              if (s_line_cnt_q == 7'd127) s_cache_fsm_d = FSM_ALLOC;
+              if (s_line_cnt_q == 7'd127) begin
+                s_cache_fsm_d   = FSM_ALLOC;
+                s_cache_tag_d   = mem_addr_i[31:9];
+              end
             end else begin
               s_word_cnt_d  = s_word_cnt_q + 1'b1;
               s_word_data_d = {8'd0, s_word_data_q[31:8]};
