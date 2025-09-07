@@ -47,7 +47,7 @@ module spisd (
   logic        s_sd_rd_busy;
   logic        s_sd_wr_req;
   logic        s_sd_wr_data_req;
-  logic [ 7:0] s_sd_wr_data;
+  logic [7:0] s_sd_wr_data_d, s_sd_wr_data_q;
   logic        s_sd_wr_busy;
   logic [22:0] s_sd_addr;
   // common
@@ -73,7 +73,7 @@ module spisd (
     // sd_if
     s_sd_rd_req     = '0;
     s_sd_wr_req     = '0;
-    s_sd_wr_data    = '0;
+    s_sd_wr_data_d  = s_sd_wr_data_q;
     s_sd_addr       = '0;
     // mem_if
     mem_ready_o     = '0;
@@ -139,18 +139,18 @@ module spisd (
           // 0 1 2 3
           if (s_fir_clk_edge && s_sd_wr_data_req) begin
             if (s_word_cnt_q == 2'd3) begin
-              s_word_cnt_d  = '0;
-              s_line_cnt_d  = s_line_cnt_q + 1'b1;
-              s_word_data_d = s_cache_data_q[s_line_cnt_d];
-              s_sd_wr_data  = s_word_data_d[7:0];
+              s_word_cnt_d   = '0;
+              s_line_cnt_d   = s_line_cnt_q + 1'b1;
+              s_word_data_d  = s_cache_data_q[s_line_cnt_d];
+              s_sd_wr_data_d = s_word_data_d[7:0];
               if (s_line_cnt_q == 7'd127) begin
-                s_cache_fsm_d   = FSM_ALLOC;
-                s_cache_tag_d   = mem_addr_i[31:9];
+                s_cache_fsm_d = FSM_ALLOC;
+                s_cache_tag_d = mem_addr_i[31:9];
               end
             end else begin
-              s_word_cnt_d  = s_word_cnt_q + 1'b1;
-              s_word_data_d = {8'd0, s_word_data_q[31:8]};
-              s_sd_wr_data  = s_word_data_q[7:0];
+              s_word_cnt_d   = s_word_cnt_q + 1'b1;
+              s_word_data_d  = {8'd0, s_word_data_q[31:8]};
+              s_sd_wr_data_d = s_word_data_q[7:0];
             end
           end
         end
@@ -201,6 +201,13 @@ module spisd (
       s_word_cnt_q
   );
 
+  dffr #(8) u_s_sd_wr_data_dffr (
+      clk_i,
+      rst_n_i,
+      s_sd_wr_data_d,
+      s_sd_wr_data_q
+  );
+
   dffr #(32) u_word_data_dffr (
       clk_i,
       rst_n_i,
@@ -226,7 +233,7 @@ module spisd (
       .rd_busy_o     (s_sd_rd_busy),
       .wr_req_i      (s_sd_wr_req),
       .wr_data_req_o (s_sd_wr_data_req),
-      .wr_data_i     (s_sd_wr_data),
+      .wr_data_i     (s_sd_wr_data_q),
       .wr_busy_o     (s_sd_wr_busy),
       .spisd_clk_o   (spisd_sclk_o),
       .spisd_cs_o    (spisd_cs_o),
