@@ -40,7 +40,10 @@ module spisd_core (
   logic s_nor_clk_d, s_nor_clk_q;
   logic s_fir_clk_edge;
   logic s_sec_clk_edge;
+  logic s_wr_busy, s_rd_busy;
 
+  assign rd_busy_o = s_rd_busy;
+  assign wr_busy_o = s_wr_busy;
   assign s_fir_clk_edge = s_nor_clk_q && (s_nor_clk_div_q == '0);
   assign s_sec_clk_edge = (s_nor_clk_q == '0) && (s_nor_clk_div_q == '0);
   assign fir_clk_edge_o = s_fir_clk_edge;
@@ -79,10 +82,10 @@ module spisd_core (
       spisd_cs_o   = s_init_sd_cs;
       spisd_mosi_o = s_init_sd_mosi;
     end else begin
-      if (wr_busy_o) begin
+      if (s_wr_busy) begin
         spisd_cs_o   = s_wr_sd_cs;
         spisd_mosi_o = s_wr_sd_mosi;
-      end else if (rd_busy_o) begin
+      end else if (s_rd_busy) begin
         spisd_cs_o   = s_rd_sd_cs;
         spisd_mosi_o = s_rd_sd_mosi;
       end else begin
@@ -107,11 +110,11 @@ module spisd_core (
       .rst_n_i       (rst_n_i),
       .fir_clk_edge_i(s_fir_clk_edge),
       .sec_clk_edge_i(s_sec_clk_edge),
-      .wr_req_i      (wr_req_i & init_done_o),
+      .wr_req_i      (wr_req_i & init_done_o & ~s_rd_busy),
       .wr_sec_addr_i (sec_addr_i),
       .wr_data_req_o (wr_data_req_o),
       .wr_data_i     (wr_data_i),
-      .wr_busy_o     (wr_busy_o),
+      .wr_busy_o     (s_wr_busy),
       .spisd_cs_o    (s_wr_sd_cs),
       .spisd_mosi_o  (s_wr_sd_mosi),
       .spisd_miso_i  (spisd_miso_i)
@@ -122,11 +125,11 @@ module spisd_core (
       .rst_n_i       (rst_n_i),
       .fir_clk_edge_i(s_fir_clk_edge),
       .sec_clk_edge_i(s_sec_clk_edge),
-      .rd_req_i      (rd_req_i & init_done_o),
+      .rd_req_i      (rd_req_i & init_done_o & ~s_wr_busy),
       .rd_sec_addr_i (sec_addr_i),
       .rd_data_vld_o (rd_data_vld_o),
       .rd_data_o     (rd_data_o),
-      .rd_busy_o     (rd_busy_o),
+      .rd_busy_o     (s_rd_busy),
       .spisd_cs_o    (s_rd_sd_cs),
       .spisd_mosi_o  (s_rd_sd_mosi),
       .spisd_miso_i  (spisd_miso_i)

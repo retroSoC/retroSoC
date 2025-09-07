@@ -87,7 +87,7 @@ module spisd (
       end
       FSM_COMP_TAG: begin
         // cache hit
-        if (mem_addr_i[31:9] == s_cache_tag_q && s_cache_valid_q) begin
+        if (mem_addr_i[27:9] == s_cache_tag_q && s_cache_valid_q) begin
           mem_ready_o = 1'b1;
           // write oper, set dirty
           if (|mem_wstrb_i) begin
@@ -105,7 +105,7 @@ module spisd (
           // tag line is clean
           if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
             s_cache_fsm_d = FSM_ALLOC;
-            s_cache_tag_d = mem_addr_i[31:9];
+            s_cache_tag_d = mem_addr_i[27:9];
           end else begin
             // need to flush data into sd card sectors
             s_cache_fsm_d = FSM_WR_BACK;
@@ -115,7 +115,7 @@ module spisd (
       FSM_ALLOC: begin
         if (~s_sd_rd_busy) begin
           s_sd_rd_req  = 1'b1;
-          s_sd_addr    = {9'd0, s_cache_tag_q};
+          s_sd_addr    = {s_cache_tag_q, 9'd0};
           s_line_cnt_d = '0;
           s_word_cnt_d = '0;
         end else if (s_fir_clk_edge && s_sd_rd_vld) begin
@@ -133,9 +133,10 @@ module spisd (
       FSM_WR_BACK: begin
         if (~s_sd_wr_busy) begin
           s_sd_wr_req     = 1'b1;
-          s_sd_addr       = {9'd0, s_cache_tag_q};
+          s_sd_addr       = {s_cache_tag_q, 9'd0};
           s_line_cnt_d    = '0;
           s_word_cnt_d    = '0;
+          s_word_data_d   = s_cache_data_q[0];
           s_sd_wr_first_d = 1'b1;
         end else begin
           // 0 1 2 3
@@ -147,7 +148,7 @@ module spisd (
               s_word_data_d = s_cache_data_q[s_line_cnt_d];
               if (s_line_cnt_q == 7'd127) begin
                 s_cache_fsm_d = FSM_ALLOC;
-                s_cache_tag_d = mem_addr_i[31:9];
+                s_cache_tag_d = mem_addr_i[27:9];
               end
             end else begin
               if (s_sd_wr_first_q == 1'b0) begin
@@ -156,7 +157,6 @@ module spisd (
               end else begin
                 s_sd_wr_first_d = 1'b0;
                 s_word_cnt_d    = 1'b0;
-                s_word_data_d   = s_cache_data_q[0];
               end
             end
           end
