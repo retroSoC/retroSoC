@@ -41,7 +41,7 @@ module spisd (
   logic [31:0] s_cache_data_d   [0:128];
   logic [31:0] s_cache_data_q   [0:128];
   // sd if
-  logic [22:0] s_sd_addr;
+  logic [31:0] s_sd_addr;
   logic        s_sd_rd_req;
   logic        s_sd_rd_vld;
   logic [ 7:0] s_sd_rd_data;
@@ -87,7 +87,7 @@ module spisd (
       end
       FSM_COMP_TAG: begin
         // cache hit
-        if (mem_addr_i[27:9] == s_cache_tag_q && s_cache_valid_q) begin
+        if (mem_addr_i[27:9] == s_cache_tag_q[18:0] && s_cache_valid_q) begin
           mem_ready_o = 1'b1;
           // write oper, set dirty
           if (|mem_wstrb_i) begin
@@ -105,7 +105,7 @@ module spisd (
           // tag line is clean
           if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
             s_cache_fsm_d = FSM_ALLOC;
-            s_cache_tag_d = mem_addr_i[27:9];
+            s_cache_tag_d = {4'd0, mem_addr_i[27:9]};
           end else begin
             // need to flush data into sd card sectors
             s_cache_fsm_d = FSM_WR_BACK;
@@ -148,7 +148,7 @@ module spisd (
               s_word_data_d = s_cache_data_q[s_line_cnt_d];
               if (s_line_cnt_q == 7'd127) begin
                 s_cache_fsm_d = FSM_ALLOC;
-                s_cache_tag_d = mem_addr_i[27:9];
+                s_cache_tag_d = {4'd0, mem_addr_i[27:9]};
               end
             end else begin
               if (s_sd_wr_first_q == 1'b0) begin
@@ -240,7 +240,7 @@ module spisd (
       .rst_n_i       (rst_n_i),
       .fir_clk_edge_o(s_fir_clk_edge),
       .init_done_o   (s_init_done),
-      .sec_addr_i    ({9'd0, s_sd_addr}),
+      .sec_addr_i    (s_sd_addr),
       .rd_req_i      (s_sd_rd_req),
       .rd_data_vld_o (s_sd_rd_vld),
       .rd_data_o     (s_sd_rd_data),
