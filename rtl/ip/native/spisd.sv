@@ -38,8 +38,8 @@ module spisd (
   logic s_cache_dirty_d, s_cache_dirty_q;
   logic [22:0] s_cache_tag_d, s_cache_tag_q;
   logic [1:0] s_cache_fsm_d, s_cache_fsm_q;
-  logic [31:0] s_cache_data_d   [0:128];
-  logic [31:0] s_cache_data_q   [0:128];
+  logic [31:0] s_cache_data_d   [0:127];
+  logic [31:0] s_cache_data_q   [0:127];
   // sd if
   logic [31:0] s_sd_addr;
   logic        s_sd_rd_req;

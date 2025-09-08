@@ -18,7 +18,7 @@ module spisd_write (
   logic        r_wr_en_d0;
   logic        r_wr_en_d1;
   logic        r_resp_en;
-  logic [ 7:0] r_resp_data;
+  // logic [ 7:0] r_resp_data;
   logic        r_resp_flag;
   logic [ 5:0] r_resp_bit_cnt;
   logic [ 3:0] r_wr_ctrl_cnt;
@@ -57,18 +57,18 @@ module spisd_write (
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
       r_resp_en      <= '0;
-      r_resp_data    <= '0;
+      // r_resp_data    <= '0;
       r_resp_flag    <= '0;
       r_resp_bit_cnt <= '0;
     end else begin
       if (sec_clk_edge_i) begin
         if (spisd_miso_i == 1'b0 && r_resp_flag == 1'b0) begin
           r_resp_flag    <= 1'b1;
-          r_resp_data    <= {r_resp_data[6:0], spisd_miso_i};
+          // r_resp_data    <= {r_resp_data[6:0], spisd_miso_i};
           r_resp_bit_cnt <= r_resp_bit_cnt + 6'd1;
           r_resp_en      <= 1'b0;
         end else if (r_resp_flag) begin
-          r_resp_data    <= {r_resp_data[6:0], spisd_miso_i};
+          // r_resp_data    <= {r_resp_data[6:0], spisd_miso_i};
           r_resp_bit_cnt <= r_resp_bit_cnt + 6'd1;
           if (r_resp_bit_cnt == 6'd7) begin
             r_resp_flag    <= 1'b0;
