@@ -54,7 +54,7 @@ module spisd (
   logic s_init_done;
   logic s_fir_clk_edge;
   logic [6:0] s_line_cnt_d, s_line_cnt_q;
-  logic [2:0] s_word_cnt_d, s_word_cnt_q;
+  logic [1:0] s_word_cnt_d, s_word_cnt_q;
   logic [31:0] s_word_data_d, s_word_data_q;
 
   assign s_cache_index = mem_addr_i[8:2];
@@ -117,10 +117,10 @@ module spisd (
           s_line_cnt_d = '0;
           s_word_cnt_d = '0;
         end else if (s_fir_clk_edge && s_sd_rd_vld) begin
-          if (s_word_cnt_q == 3'd3) begin
+          if (s_word_cnt_q == 2'd3) begin
             s_word_cnt_d                 = '0;
             s_line_cnt_d                 = s_line_cnt_q + 1'b1;
-            s_cache_data_d[s_line_cnt_q] = {s_sd_rd_data, s_word_data_q};
+            s_cache_data_d[s_line_cnt_q] = {s_sd_rd_data, s_word_data_q[31:8]};
             if (s_line_cnt_q == 7'd127) s_cache_fsm_d = FSM_COMP_TAG;
           end else begin
             s_word_cnt_d  = s_word_cnt_q + 1'b1;
@@ -130,16 +130,16 @@ module spisd (
       end
       FSM_WR_BACK: begin
         if (~s_sd_wr_busy) begin
-          s_sd_wr_req     = 1'b1;
-          s_sd_addr       = {s_cache_tag_q, 9'd0};
-          s_line_cnt_d    = '0;
-          s_word_cnt_d    = '0;
-          s_word_data_d   = s_cache_data_q[0];
+          s_sd_wr_req   = 1'b1;
+          s_sd_addr     = {s_cache_tag_q, 9'd0};
+          s_line_cnt_d  = '0;
+          s_word_cnt_d  = '0;
+          s_word_data_d = s_cache_data_q[0];
         end else begin
           // 0 1 2 3
           if (s_fir_clk_edge && s_sd_wr_data_req) begin
             s_sd_wr_data_d = s_word_data_q[7:0];
-            if (s_word_cnt_q == 3'd4) begin
+            if (s_word_cnt_q == 2'd3) begin
               s_word_cnt_d  = '0;
               s_line_cnt_d  = s_line_cnt_q + 1'b1;
               s_word_data_d = s_cache_data_q[s_line_cnt_d];
@@ -193,7 +193,7 @@ module spisd (
       s_line_cnt_q
   );
 
-  dffr #(3) u_word_cnt_dffr (
+  dffr #(2) u_word_cnt_dffr (
       clk_i,
       rst_n_i,
       s_word_cnt_d,

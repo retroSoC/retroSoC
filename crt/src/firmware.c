@@ -162,13 +162,14 @@ void app_system_boot() {
 void spisd_test() {
     printf("spisd test\n");
 
+    int TEST_NUM = 520;
     volatile uint8_t *base_byte = (uint8_t *)0x50000000;
-    for(int i = 0; i < 16; ++i) {
+    for(int i = 0; i < TEST_NUM; ++i) {
         *(base_byte + i) = (uint8_t) i;
     }
 
-    for(int i = 0; i < 16; ++i) {
-        printf("tf card rd: %d\n", *(base_byte + i));
+    for(int i = 0; i < TEST_NUM; ++i) {
+        printf("tf card rd %d: %d\n", i, *(base_byte + i));
     }
 }
 
