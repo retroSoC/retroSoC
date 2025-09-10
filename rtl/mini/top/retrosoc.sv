@@ -144,6 +144,8 @@ module retrosoc (
   logic        s_psram_cfg_chd_wr_en;
   logic [ 2:0] s_psram_cfg_chd_i;
   logic [ 2:0] s_psram_cfg_chd_o;
+  // spisd cfg if
+  logic [ 1:0] s_spisd_cfg_clkdiv;
 
 `ifdef IP_MDD
   logic [31:0] s_ip_mdd_apb_paddr;
@@ -258,6 +260,7 @@ module retrosoc (
       .psram_cfg_chd_wr_en_o (s_psram_cfg_chd_wr_en),
       .psram_cfg_chd_i       (s_psram_cfg_chd_i),
       .psram_cfg_chd_o       (s_psram_cfg_chd_o),
+      .spisd_cfg_clkdiv_o    (s_spisd_cfg_clkdiv),
       .irq_o                 (s_natv_irq)
   );
 
@@ -356,6 +359,7 @@ module retrosoc (
   spisd u_spisd (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
+      .cfg_clkdiv_i(s_spisd_cfg_clkdiv),
       .mem_valid_i (s_spisd_valid),
       .mem_ready_o (s_spisd_ready),
       .mem_addr_i  (s_spisd_addr),

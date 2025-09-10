@@ -38,7 +38,7 @@
 #define PSRAM_MEM_START       0x40000000
 #define PSRAM_MEM_OFFST       (0x800000 * PSRAM_NUM)
 #define TF_CARD_START         0x50000000
-#define TF_CARD_OFFST         0x20000000
+#define TF_CARD_OFFST         0x10000000
 
 // gpio
 #define reg_gpio_data         (*(volatile uint32_t*)0x10000000)
@@ -61,7 +61,12 @@
 #define reg_psram_chd         (*(volatile uint32_t*)0x10004004)
 // spisd
 #define reg_spisd_ctrl        (*(volatile uint32_t*)0x10005000)
-#define reg_spisd_addr        (*(volatile uint32_t*)0x10005004)
+// i2s
+#define reg_i2s_ctrl          (*(volatile uint32_t*)0x10006000)
+// i2s
+#define reg_i2c_ctrl          (*(volatile uint32_t*)0x10007000)
+// system ctrl
+#define reg_sys_ctrl          (*(volatile uint32_t*)0x20000000)
 // cust archinfo
 #define reg_cust_archinfo_sys (*(volatile uint32_t*)0x20001000)
 #define reg_cust_archinfo_idl (*(volatile uint32_t*)0x20001004)

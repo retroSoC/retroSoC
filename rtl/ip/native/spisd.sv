@@ -14,6 +14,7 @@
 module spisd (
     input  logic        clk_i,
     input  logic        rst_n_i,
+    input  logic [ 1:0] cfg_clkdiv_i,
     input  logic        mem_valid_i,
     output logic        mem_ready_o,
     input  logic [31:0] mem_addr_i,
@@ -223,6 +224,7 @@ module spisd (
   spisd_core u_spisd_core (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
+      .cfg_clkdiv_i  (cfg_clkdiv_i),
       .fir_clk_edge_o(s_fir_clk_edge),
       .init_done_o   (s_init_done),
       .sec_addr_i    (s_sd_addr),
@@ -274,6 +276,7 @@ module spisd (
   spisd_core u_spisd_core (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
+      .cfg_clkdiv_i  (cfg_clkdiv_i),
       .fir_clk_edge_o(s_fir_clk_edge),
       .init_done_o   (s_init_done),
       .sec_addr_i    (s_sec_addr),
