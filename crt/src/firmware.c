@@ -181,9 +181,19 @@ void main()
     reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
     app_system_boot();
     // while(1);
-    ip_archinfo_test();
+    // ip_archinfo_test();
     // spisd_test();
+    printf("[SPISD] clk div(default): %d\n", reg_spisd_ctrl);
+    
+    reg_spisd_ctrl = (uint32_t)1;
+    printf("set to 1\n");
+    reg_spisd_ctrl = (uint32_t)2;
+    printf("set to 2\n");
+    reg_spisd_ctrl = (uint32_t)3;
+    printf("set to 3\n");
+    // printf("[SPISD] set clk div to %d, actul rd val: %d\n", spisd_cfg_val, reg_spisd_ctrl);
     ip_psram_selftest(0x50000000, 8 * 1024 * 1024);
+
     // ip_tim_test();
     // ip_rng_test();
     // ip_gpio_test();
