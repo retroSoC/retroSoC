@@ -34,12 +34,16 @@ module ip_natv_wrapper (
     output logic        psram_cfg_chd_wr_en_o,
     input  logic [ 2:0] psram_cfg_chd_i,
     output logic [ 2:0] psram_cfg_chd_o,
+    // spisd if
+    output logic [ 1:0] spisd_cfg_clkdiv_o,
+    // irq
     output logic [ 2:0] irq_o
 );
 
   logic s_natv_ready_d, s_natv_ready_q;
   logic [ 4:0] r_psram_cfg_wait;
   logic [ 2:0] r_psram_cfg_chd;
+  logic [ 1:0] r_spisd_cfg_clkdiv;
   logic [31:0] r_mmap_rdata;
   // gpio
   logic [15:0] r_gpio;
@@ -69,6 +73,8 @@ module ip_natv_wrapper (
   // psram
   logic        s_psram_wait_reg_sel;
   logic        s_psram_chd_reg_sel;
+  // spisd
+  logic        s_spisd_clkdiv_reg_sel;
 
   assign natv_rdata_o           = r_mmap_rdata;
   assign natv_ready_o           = s_natv_ready_q;
@@ -88,21 +94,25 @@ module ip_natv_wrapper (
   assign s_tim1_dat_reg_sel     = natv_valid_i && (natv_addr_i[15:0] == 16'h3008);
   assign s_psram_wait_reg_sel   = natv_valid_i && (natv_addr_i[15:0] == 16'h4000);
   assign s_psram_chd_reg_sel    = natv_valid_i && (natv_addr_i[15:0] == 16'h4004);
+  assign s_spisd_clkdiv_reg_sel = natv_valid_i && (natv_addr_i[15:0] == 16'h5000);
 
   assign psram_cfg_wait_wr_en_o = s_psram_wait_reg_sel ? natv_wstrb_i[0] : 1'b0;
   assign psram_cfg_chd_wr_en_o  = s_psram_chd_reg_sel ? natv_wstrb_i[0] : 1'b0;
   assign psram_cfg_wait_o       = r_psram_cfg_wait;
   assign psram_cfg_chd_o        = r_psram_cfg_chd;
+  assign spisd_cfg_clkdiv_o     = r_spisd_cfg_clkdiv;
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (~rst_n_i) begin
-      r_gpio           <= '0;
-      r_gpio_pub       <= '0;
-      r_gpio_pdb       <= '0;
-      r_gpio_oeb       <= '1;
-      r_mmap_rdata     <= '0;
-      r_psram_cfg_wait <= '0;
-      r_psram_cfg_chd  <= '0;
+      r_gpio             <= '0;
+      r_gpio_pub         <= '0;
+      r_gpio_pdb         <= '0;
+      r_gpio_oeb         <= '1;
+      r_mmap_rdata       <= '0;
+      r_psram_cfg_wait   <= '0;
+      r_psram_cfg_chd    <= '0;
+      r_spisd_cfg_clkdiv <= '0;
 
     end else begin
       if (natv_valid_i && !s_natv_ready_q) begin
@@ -138,6 +148,10 @@ module ip_natv_wrapper (
           16'h4004: begin
             r_mmap_rdata <= {29'd0, psram_cfg_chd_i};
             if (natv_wstrb_i[0]) r_psram_cfg_chd <= natv_wdata_i[2:0];
+          end
+          16'h5000: begin
+            r_mmap_rdata <= {30'd0, r_spisd_cfg_clkdiv};
+            if (natv_wstrb_i[0]) r_spisd_cfg_clkdiv <= natv_wdata_i[1:0];
           end
         endcase
       end
