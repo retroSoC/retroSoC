@@ -1,6 +1,6 @@
 /* Simple 32-bit counter-timer for ravenna. */
 
-module counter_timer (
+module simple_timer (
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [ 3:0] reg_val_we,

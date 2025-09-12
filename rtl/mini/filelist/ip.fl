@@ -40,12 +40,16 @@
 ../../ip/native/spisd_core.sv
 ../../ip/native/spisd_data.sv
 ../../ip/native/spisd.sv
-../../ip/native/simpleuart.sv
+../../ip/native/i2c_core.sv
+../../ip/native/i2c.sv
+../../ip/native/simple_timer.sv
+../../ip/native/simple_uart.sv
+../../ip/native/simple_gpio.sv
 ../../ip/native/mem2apb.sv
 ../../ip/native/axi4l2nmi.sv
 ../../ip/native/async_fifo.sv
 ../../ip/native/nmi2nmi.sv
-../../ip/native/counter_timer.sv
+
 
 ../../ip/3rd_party/spfs/spi_clgen.v
 ../../ip/3rd_party/spfs/spi_shift.v

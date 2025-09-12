@@ -18,7 +18,7 @@
  *
  */
 
-module simpleuart (
+module simple_uart (
     input  logic        clk_i,
     input  logic        rst_n_i,
     output logic        ser_tx,

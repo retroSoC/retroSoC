@@ -21,9 +21,9 @@ module ip_natv_wrapper (
     // gpio
     output logic [ 7:0] gpio_out_o,
     input  logic [ 7:0] gpio_in_i,
-    output logic [ 7:0] gpio_pub_o,
-    output logic [ 7:0] gpio_pdb_o,
-    output logic [ 7:0] gpio_oeb_o,
+    output logic [ 7:0] gpio_pun_o,
+    output logic [ 7:0] gpio_pdn_o,
+    output logic [ 7:0] gpio_oen_o,
     // uart
     input  logic        uart_rx_i,
     output logic        uart_tx_o,
@@ -47,9 +47,9 @@ module ip_natv_wrapper (
   logic [31:0] r_mmap_rdata;
   // gpio
   logic [15:0] r_gpio;
-  logic [15:0] r_gpio_pub;
-  logic [15:0] r_gpio_pdb;
-  logic [15:0] r_gpio_oeb;
+  logic [15:0] r_gpio_pun;
+  logic [15:0] r_gpio_pdn;
+  logic [15:0] r_gpio_oen;
   // uart
   logic        s_uart_div_reg_sel;
   logic        s_uart_dat_reg_sel;
@@ -80,9 +80,9 @@ module ip_natv_wrapper (
   assign natv_ready_o           = s_natv_ready_q;
   // gpio
   assign gpio_out_o             = r_gpio;
-  assign gpio_oeb_o             = {8{~rst_n_i}} | r_gpio_oeb;
-  assign gpio_pub_o             = r_gpio_pub;
-  assign gpio_pdb_o             = r_gpio_pdb;
+  assign gpio_oen_o             = {8{~rst_n_i}} | r_gpio_oen;
+  assign gpio_pun_o             = r_gpio_pun;
+  assign gpio_pdn_o             = r_gpio_pdn;
 
   assign s_uart_div_reg_sel     = natv_valid_i && (natv_addr_i[15:0] == 16'h1000);
   assign s_uart_dat_reg_sel     = natv_valid_i && (natv_addr_i[15:0] == 16'h1004);
@@ -106,9 +106,9 @@ module ip_natv_wrapper (
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (~rst_n_i) begin
       r_gpio             <= '0;
-      r_gpio_pub         <= '0;
-      r_gpio_pdb         <= '0;
-      r_gpio_oeb         <= '1;
+      r_gpio_pun         <= '0;
+      r_gpio_pdn         <= '0;
+      r_gpio_oen         <= '1;
       r_mmap_rdata       <= '0;
       r_psram_cfg_wait   <= '0;
       r_psram_cfg_chd    <= '0;
@@ -122,16 +122,16 @@ module ip_natv_wrapper (
             if (natv_wstrb_i[0]) r_gpio[7:0] <= natv_wdata_i[7:0];
           end
           16'h0004: begin
-            r_mmap_rdata <= {16'd0, r_gpio_oeb};
-            if (natv_wstrb_i[0]) r_gpio_oeb[7:0] <= natv_wdata_i[7:0];
+            r_mmap_rdata <= {16'd0, r_gpio_oen};
+            if (natv_wstrb_i[0]) r_gpio_oen[7:0] <= natv_wdata_i[7:0];
           end
           16'h0008: begin
-            r_mmap_rdata <= {16'd0, r_gpio_pub};
-            if (natv_wstrb_i[0]) r_gpio_pub[7:0] <= natv_wdata_i[7:0];
+            r_mmap_rdata <= {16'd0, r_gpio_pun};
+            if (natv_wstrb_i[0]) r_gpio_pun[7:0] <= natv_wdata_i[7:0];
           end
           16'h000C: begin
-            r_mmap_rdata <= {16'd0, r_gpio_pub};
-            if (natv_wstrb_i[0]) r_gpio_pdb[7:0] <= natv_wdata_i[7:0];
+            r_mmap_rdata <= {16'd0, r_gpio_pun};
+            if (natv_wstrb_i[0]) r_gpio_pdn[7:0] <= natv_wdata_i[7:0];
           end
           16'h1000: r_mmap_rdata <= s_uart_div_reg_dout;
           16'h1004: r_mmap_rdata <= s_uart_dat_reg_dout;
@@ -167,7 +167,7 @@ module ip_natv_wrapper (
       s_natv_ready_q
   );
 
-  simpleuart u_simpleuart (
+  simple_uart u_simple_uart (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
       .ser_tx      (uart_tx_o),
@@ -183,7 +183,7 @@ module ip_natv_wrapper (
       .irq_out     (irq_o[0])
   );
 
-  counter_timer u_counter_timer0 (
+  simple_timer u_simple_timer0 (
       .clk_i     (clk_i),
       .rst_n_i   (rst_n_i),
       .reg_val_we(s_tim0_val_reg_sel ? natv_wstrb_i : 4'h0),
@@ -198,7 +198,7 @@ module ip_natv_wrapper (
       .irq_out   (irq_o[1])
   );
 
-  counter_timer u_counter_timer1 (
+  simple_timer u_simple_timer1 (
       .clk_i     (clk_i),
       .rst_n_i   (rst_n_i),
       .reg_val_we(s_tim1_val_reg_sel ? natv_wstrb_i : 4'h0),
