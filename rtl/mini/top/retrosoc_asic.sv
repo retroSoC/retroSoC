@@ -131,9 +131,9 @@ module retrosoc_asic (
   logic       s_uart_rx;
   logic [7:0] s_gpio_out;
   logic [7:0] s_gpio_in;
-  logic [7:0] s_gpio_oeb;
-  logic [7:0] s_gpio_pub;
-  logic [7:0] s_gpio_pdb;
+  logic [7:0] s_gpio_oen;
+  logic [7:0] s_gpio_pun;
+  logic [7:0] s_gpio_pdn;
   logic       s_irq_pin;
 `ifdef CORE_MDD
   logic [4:0] s_core_mdd_sel;
@@ -233,14 +233,14 @@ module retrosoc_asic (
   tc_io_tri_pad         u_sys_clkdiv4_o_pad    (.pad(sys_clkdiv4_o_pad),         .c2p(s_sys_clkdiv4),          .c2p_en(1'b1),                   .p2c());
   tc_io_tri_pad         u_uart_tx_o_pad        (.pad(uart_tx_o_pad),             .c2p(s_uart_tx),              .c2p_en(1'b1),                   .p2c());
   tc_io_tri_pad         u_uart_rx_i_pad        (.pad(uart_rx_i_pad),             .c2p(),                       .c2p_en(1'b0),                   .p2c(s_uart_rx));
-  tc_io_tri_pad         u_gpio_0_io_pad        (.pad(gpio_0_io_pad),             .c2p(s_gpio_out[0]),          .c2p_en(~s_gpio_oeb[0]),         .p2c(s_gpio_in[0]));
-  tc_io_tri_pad         u_gpio_1_io_pad        (.pad(gpio_1_io_pad),             .c2p(s_gpio_out[1]),          .c2p_en(~s_gpio_oeb[1]),         .p2c(s_gpio_in[1]));
-  tc_io_tri_pad         u_gpio_2_io_pad        (.pad(gpio_2_io_pad),             .c2p(s_gpio_out[2]),          .c2p_en(~s_gpio_oeb[2]),         .p2c(s_gpio_in[2]));
-  tc_io_tri_pad         u_gpio_3_io_pad        (.pad(gpio_3_io_pad),             .c2p(s_gpio_out[3]),          .c2p_en(~s_gpio_oeb[3]),         .p2c(s_gpio_in[3]));
-  tc_io_tri_schmitt_pad u_gpio_4_io_pad        (.pad(gpio_4_io_pad),             .c2p(s_gpio_out[4]),          .c2p_en(~s_gpio_oeb[4]),         .p2c(s_gpio_in[4]));
-  tc_io_tri_schmitt_pad u_gpio_5_io_pad        (.pad(gpio_5_io_pad),             .c2p(s_gpio_out[5]),          .c2p_en(~s_gpio_oeb[5]),         .p2c(s_gpio_in[5]));
-  tc_io_tri_schmitt_pad u_gpio_6_io_pad        (.pad(gpio_6_io_pad),             .c2p(s_gpio_out[6]),          .c2p_en(~s_gpio_oeb[6]),         .p2c(s_gpio_in[6]));
-  tc_io_tri_schmitt_pad u_gpio_7_io_pad        (.pad(gpio_7_io_pad),             .c2p(s_gpio_out[7]),          .c2p_en(~s_gpio_oeb[7]),         .p2c(s_gpio_in[7]));
+  tc_io_tri_pad         u_gpio_0_io_pad        (.pad(gpio_0_io_pad),             .c2p(s_gpio_out[0]),          .c2p_en(~s_gpio_oen[0]),         .p2c(s_gpio_in[0]));
+  tc_io_tri_pad         u_gpio_1_io_pad        (.pad(gpio_1_io_pad),             .c2p(s_gpio_out[1]),          .c2p_en(~s_gpio_oen[1]),         .p2c(s_gpio_in[1]));
+  tc_io_tri_pad         u_gpio_2_io_pad        (.pad(gpio_2_io_pad),             .c2p(s_gpio_out[2]),          .c2p_en(~s_gpio_oen[2]),         .p2c(s_gpio_in[2]));
+  tc_io_tri_pad         u_gpio_3_io_pad        (.pad(gpio_3_io_pad),             .c2p(s_gpio_out[3]),          .c2p_en(~s_gpio_oen[3]),         .p2c(s_gpio_in[3]));
+  tc_io_tri_schmitt_pad u_gpio_4_io_pad        (.pad(gpio_4_io_pad),             .c2p(s_gpio_out[4]),          .c2p_en(~s_gpio_oen[4]),         .p2c(s_gpio_in[4]));
+  tc_io_tri_schmitt_pad u_gpio_5_io_pad        (.pad(gpio_5_io_pad),             .c2p(s_gpio_out[5]),          .c2p_en(~s_gpio_oen[5]),         .p2c(s_gpio_in[5]));
+  tc_io_tri_schmitt_pad u_gpio_6_io_pad        (.pad(gpio_6_io_pad),             .c2p(s_gpio_out[6]),          .c2p_en(~s_gpio_oen[6]),         .p2c(s_gpio_in[6]));
+  tc_io_tri_schmitt_pad u_gpio_7_io_pad        (.pad(gpio_7_io_pad),             .c2p(s_gpio_out[7]),          .c2p_en(~s_gpio_oen[7]),         .p2c(s_gpio_in[7]));
   tc_io_tri_schmitt_pad u_irq_pin_i_pad        (.pad(irq_pin_i_pad),             .c2p(),                       .c2p_en(1'b0),                   .p2c(s_irq_pin));
   // cust
   tc_io_tri_pad u_cust_uart_tx_o_pad           (.pad(cust_uart_tx_o_pad),        .c2p(s_cust_uart_tx),         .c2p_en(1'b1),                   .p2c());
@@ -316,9 +316,9 @@ module retrosoc_asic (
 `endif
       .gpio_out_o         (s_gpio_out),
       .gpio_in_i          (s_gpio_in),
-      .gpio_pub_o         (s_gpio_pub),
-      .gpio_pdb_o         (s_gpio_pdb),
-      .gpio_oeb_o         (s_gpio_oeb),
+      .gpio_pun_o         (s_gpio_pun),
+      .gpio_pdn_o         (s_gpio_pdn),
+      .gpio_oen_o         (s_gpio_oen),
       .uart_tx_o          (s_uart_tx),
       .uart_rx_i          (s_uart_rx),
       .irq_pin_i          (s_irq_pin),
