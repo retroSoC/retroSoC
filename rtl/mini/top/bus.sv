@@ -27,13 +27,13 @@ module bus (
     output logic [ 3:0] natv_wstrb_o,
     input  logic [31:0] natv_rdata_i,
     input  logic        natv_ready_i,
-    // mmap if
-    output logic        mmap_valid_o,
-    output logic [31:0] mmap_addr_o,
-    output logic [31:0] mmap_wdata_o,
-    output logic [ 3:0] mmap_wstrb_o,
-    input  logic [31:0] mmap_rdata_i,
-    input  logic        mmap_ready_i,
+    // apb if
+    output logic        apb_valid_o,
+    output logic [31:0] apb_addr_o,
+    output logic [31:0] apb_wdata_o,
+    output logic [ 3:0] apb_wstrb_o,
+    input  logic [31:0] apb_rdata_i,
+    input  logic        apb_ready_i,
     // ram if
 `ifdef HAVE_SRAM_IF
     output logic [14:0] ram_addr_o,
@@ -64,7 +64,7 @@ module bus (
     input  logic        i2s_ready_i
 );
 
-  logic s_natv_sel, s_mmap_sel, s_ram_sel, s_psram_sel, s_spisd_sel;
+  logic s_natv_sel, s_apb_sel, s_ram_sel, s_psram_sel, s_spisd_sel;
   logic s_ram_valid, s_ram_ready;
 
   assign s_natv_sel    = core_addr_i[31:24] == `NATV_IP_START;
@@ -73,11 +73,11 @@ module bus (
   assign natv_wdata_o  = core_wdata_i;
   assign natv_wstrb_o  = core_wstrb_i;
 
-  assign s_mmap_sel    = core_addr_i[31:24] == `FLASH_START || core_addr_i[31:24] == `CUST_IP_START;
-  assign mmap_valid_o  = core_valid_i && s_mmap_sel;
-  assign mmap_addr_o   = core_addr_i;
-  assign mmap_wdata_o  = core_wdata_i;
-  assign mmap_wstrb_o  = core_wstrb_i;
+  assign s_apb_sel    = core_addr_i[31:24] == `FLASH_START || core_addr_i[31:24] == `CUST_IP_START;
+  assign apb_valid_o  = core_valid_i && s_apb_sel;
+  assign apb_addr_o   = core_addr_i;
+  assign apb_wdata_o  = core_wdata_i;
+  assign apb_wstrb_o  = core_wstrb_i;
 
 `ifdef HAVE_SRAM_IF
   assign s_ram_sel     = core_addr_i[31:24] == `SRAM_START;
@@ -117,7 +117,7 @@ module bus (
 
   // verilog_format: off
   assign core_ready_o = (natv_valid_o && natv_ready_i) ||
-                        (mmap_valid_o && mmap_ready_i) ||
+                        (apb_valid_o && apb_ready_i) ||
 `ifdef HAVE_SRAM_IF
                          s_ram_ready ||
 `endif
@@ -125,7 +125,7 @@ module bus (
                         (spisd_valid_o && spisd_ready_i);
 
   assign core_rdata_o = (natv_valid_o && natv_ready_i) ? natv_rdata_i:
-                        (mmap_valid_o && mmap_ready_i) ? mmap_rdata_i :
+                        (apb_valid_o && apb_ready_i) ? apb_rdata_i :
 `ifdef HAVE_SRAM_IF
                          s_ram_ready ? ram_rdata_i :
 `endif

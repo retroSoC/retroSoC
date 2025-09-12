@@ -96,13 +96,13 @@ module retrosoc (
   logic [ 3:0] s_core_wstrb;
   logic [31:0] s_core_rdata;
   logic        s_core_ready;
-  // mmap if
-  logic        s_mmap_valid;
-  logic [ 3:0] s_mmap_wstrb;
-  logic [31:0] s_mmap_addr;
-  logic [31:0] s_mmap_wdata;
-  logic [31:0] s_mmap_rdata;
-  logic        s_mmap_ready;
+  // apb if
+  logic        s_apb_valid;
+  logic [ 3:0] s_apb_wstrb;
+  logic [31:0] s_apb_addr;
+  logic [31:0] s_apb_wdata;
+  logic [31:0] s_apb_rdata;
+  logic        s_apb_ready;
   // natv if
   logic        s_natv_valid;
   logic [ 3:0] s_natv_wstrb;
@@ -202,13 +202,13 @@ module retrosoc (
       .natv_wdata_o (s_natv_wdata),
       .natv_wstrb_o (s_natv_wstrb),
       .natv_rdata_i (s_natv_rdata),
-      // mmap if
-      .mmap_valid_o (s_mmap_valid),
-      .mmap_ready_i (s_mmap_ready),
-      .mmap_addr_o  (s_mmap_addr),
-      .mmap_wdata_o (s_mmap_wdata),
-      .mmap_wstrb_o (s_mmap_wstrb),
-      .mmap_rdata_i (s_mmap_rdata),
+      // apb if
+      .apb_valid_o  (s_apb_valid),
+      .apb_ready_i  (s_apb_ready),
+      .apb_addr_o   (s_apb_addr),
+      .apb_wdata_o  (s_apb_wdata),
+      .apb_wstrb_o  (s_apb_wstrb),
+      .apb_rdata_i  (s_apb_rdata),
 `ifdef HAVE_SRAM_IF
       .ram_addr_o   (ram_addr_o),
       .ram_wdata_o  (ram_wdata_o),
@@ -267,12 +267,12 @@ module retrosoc (
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),
-      .mmap_valid_i        (s_mmap_valid),
-      .mmap_addr_i         (s_mmap_addr),
-      .mmap_wdata_i        (s_mmap_wdata),
-      .mmap_wstrb_i        (s_mmap_wstrb),
-      .mmap_rdata_o        (s_mmap_rdata),
-      .mmap_ready_o        (s_mmap_ready),
+      .apb_valid_i         (s_apb_valid),
+      .apb_addr_i          (s_apb_addr),
+      .apb_wdata_i         (s_apb_wdata),
+      .apb_wstrb_i         (s_apb_wstrb),
+      .apb_rdata_o         (s_apb_rdata),
+      .apb_ready_o         (s_apb_ready),
 `ifdef IP_MDD
       .ip_mdd_apb_paddr_o  (s_ip_mdd_apb_paddr),
       .ip_mdd_apb_pprot_o  (s_ip_mdd_apb_pprot),
