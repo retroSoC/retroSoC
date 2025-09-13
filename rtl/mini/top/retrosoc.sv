@@ -92,7 +92,17 @@ module retrosoc (
 
   // verilog_format: off
   nmi_if u_core_nmi_if ();
+  nmi_if u_natv_nmi_if();
+  nmi_if u_apb_nmi_if();
   // verilog_format: on
+
+  // natv if
+  logic        s_natv_valid;
+  logic [ 3:0] s_natv_wstrb;
+  logic [31:0] s_natv_addr;
+  logic [31:0] s_natv_wdata;
+  logic [31:0] s_natv_rdata;
+  logic        s_natv_ready;
 
   // apb if
   logic        s_apb_valid;
@@ -101,13 +111,7 @@ module retrosoc (
   logic [31:0] s_apb_wdata;
   logic [31:0] s_apb_rdata;
   logic        s_apb_ready;
-  // natv if
-  logic        s_natv_valid;
-  logic [ 3:0] s_natv_wstrb;
-  logic [31:0] s_natv_addr;
-  logic [31:0] s_natv_wdata;
-  logic [31:0] s_natv_rdata;
-  logic        s_natv_ready;
+
   // psram if
   logic        s_psram_valid;
   logic [ 3:0] s_psram_wstrb;
@@ -182,13 +186,7 @@ module retrosoc (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
       .core_nmi     (u_core_nmi_if),
-      // natv if
-      .natv_valid_o (s_natv_valid),
-      .natv_ready_i (s_natv_ready),
-      .natv_addr_o  (s_natv_addr),
-      .natv_wdata_o (s_natv_wdata),
-      .natv_wstrb_o (s_natv_wstrb),
-      .natv_rdata_i (s_natv_rdata),
+      .natv_nmi     (u_natv_nmi_if),
       // apb if
       .apb_valid_o  (s_apb_valid),
       .apb_ready_i  (s_apb_ready),
@@ -228,12 +226,7 @@ module retrosoc (
   ip_natv_wrapper u_ip_natv_wrapper (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),
-      .natv_valid_i          (s_natv_valid),
-      .natv_addr_i           (s_natv_addr),
-      .natv_wdata_i          (s_natv_wdata),
-      .natv_wstrb_i          (s_natv_wstrb),
-      .natv_rdata_o          (s_natv_rdata),
-      .natv_ready_o          (s_natv_ready),
+      .nmi                   (u_natv_nmi_if),
       .gpio_out_o            (gpio_out_o),
       .gpio_in_i             (gpio_in_i),
       .gpio_pun_o            (gpio_pun_o),

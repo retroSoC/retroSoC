@@ -13,15 +13,8 @@
 module bus (
     input  logic        clk_i,
     input  logic        rst_n_i,
-    // core if
     nmi_if.slave        core_nmi,
-    // natv if
-    output logic        natv_valid_o,
-    output logic [31:0] natv_addr_o,
-    output logic [31:0] natv_wdata_o,
-    output logic [ 3:0] natv_wstrb_o,
-    input  logic [31:0] natv_rdata_i,
-    input  logic        natv_ready_i,
+    nmi_if.master       natv_nmi,
     // apb if
     output logic        apb_valid_o,
     output logic [31:0] apb_addr_o,
@@ -62,11 +55,11 @@ module bus (
   logic s_natv_sel, s_apb_sel, s_ram_sel, s_psram_sel, s_spisd_sel;
   logic s_ram_valid, s_ram_ready;
 
-  assign s_natv_sel    = core_nmi.addr[31:24] == `NATV_IP_START;
-  assign natv_valid_o  = core_nmi.valid && s_natv_sel;
-  assign natv_addr_o   = core_nmi.addr;
-  assign natv_wdata_o  = core_nmi.wdata;
-  assign natv_wstrb_o  = core_nmi.wstrb;
+  assign s_natv_sel      = core_nmi.addr[31:24] == `NATV_IP_START;
+  assign natv_nmi.valid  = core_nmi.valid && s_natv_sel;
+  assign natv_nmi.addr   = core_nmi.addr;
+  assign natv_nmi.wdata  = core_nmi.wdata;
+  assign natv_nmi.wstrb  = core_nmi.wstrb;
 
   assign s_apb_sel    = core_nmi.addr[31:24] == `FLASH_START || core_nmi.addr[31:24] == `CUST_IP_START;
   assign apb_valid_o  = core_nmi.valid && s_apb_sel;
@@ -111,7 +104,7 @@ module bus (
 `endif
 
   // verilog_format: off
-  assign core_nmi.ready = (natv_valid_o && natv_ready_i) ||
+  assign core_nmi.ready = (natv_nmi.valid && natv_nmi.ready) ||
                           (apb_valid_o && apb_ready_i) ||
 `ifdef HAVE_SRAM_IF
                           s_ram_ready ||
@@ -119,7 +112,7 @@ module bus (
                           (psram_valid_o && psram_ready_i) ||
                           (spisd_valid_o && spisd_ready_i);
 
-  assign core_nmi.rdata = (natv_valid_o && natv_ready_i) ? natv_rdata_i:
+  assign core_nmi.rdata = (natv_nmi.valid && natv_nmi.ready) ? natv_nmi.rdata:
                           (apb_valid_o && apb_ready_i) ? apb_rdata_i :
 `ifdef HAVE_SRAM_IF
                           s_ram_ready ? ram_rdata_i :
