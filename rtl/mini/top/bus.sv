@@ -14,12 +14,7 @@ module bus (
     input  logic        clk_i,
     input  logic        rst_n_i,
     // core if
-    input  logic        core_valid_i,
-    input  logic [31:0] core_addr_i,
-    input  logic [31:0] core_wdata_i,
-    input  logic [ 3:0] core_wstrb_i,
-    output logic [31:0] core_rdata_o,
-    output logic        core_ready_o,
+    nmi_if.slave        core_nmi,
     // natv if
     output logic        natv_valid_o,
     output logic [31:0] natv_addr_o,
@@ -67,43 +62,43 @@ module bus (
   logic s_natv_sel, s_apb_sel, s_ram_sel, s_psram_sel, s_spisd_sel;
   logic s_ram_valid, s_ram_ready;
 
-  assign s_natv_sel    = core_addr_i[31:24] == `NATV_IP_START;
-  assign natv_valid_o  = core_valid_i && s_natv_sel;
-  assign natv_addr_o   = core_addr_i;
-  assign natv_wdata_o  = core_wdata_i;
-  assign natv_wstrb_o  = core_wstrb_i;
+  assign s_natv_sel    = core_nmi.addr[31:24] == `NATV_IP_START;
+  assign natv_valid_o  = core_nmi.valid && s_natv_sel;
+  assign natv_addr_o   = core_nmi.addr;
+  assign natv_wdata_o  = core_nmi.wdata;
+  assign natv_wstrb_o  = core_nmi.wstrb;
 
-  assign s_apb_sel    = core_addr_i[31:24] == `FLASH_START || core_addr_i[31:24] == `CUST_IP_START;
-  assign apb_valid_o  = core_valid_i && s_apb_sel;
-  assign apb_addr_o   = core_addr_i;
-  assign apb_wdata_o  = core_wdata_i;
-  assign apb_wstrb_o  = core_wstrb_i;
+  assign s_apb_sel    = core_nmi.addr[31:24] == `FLASH_START || core_nmi.addr[31:24] == `CUST_IP_START;
+  assign apb_valid_o  = core_nmi.valid && s_apb_sel;
+  assign apb_addr_o   = core_nmi.addr;
+  assign apb_wdata_o  = core_nmi.wdata;
+  assign apb_wstrb_o  = core_nmi.wstrb;
 
 `ifdef HAVE_SRAM_IF
-  assign s_ram_sel     = core_addr_i[31:24] == `SRAM_START;
-  assign s_ram_valid   = core_valid_i && s_ram_sel;
-  assign ram_addr_o    = core_addr_i[16:2];
-  assign ram_wdata_o   = core_wdata_i;
-  assign ram_wstrb_o   = s_ram_valid ? core_wstrb_i : '0;
+  assign s_ram_sel     = core_nmi.addr[31:24] == `SRAM_START;
+  assign s_ram_valid   = core_nmi.valid && s_ram_sel;
+  assign ram_addr_o    = core_nmi.addr[16:2];
+  assign ram_wdata_o   = core_nmi.wdata;
+  assign ram_wstrb_o   = s_ram_valid ? core_nmi.wstrb : '0;
 `endif
 
-  assign s_psram_sel   = core_addr_i[31:24] == `PSRAM_START;
-  assign psram_valid_o = core_valid_i && s_psram_sel;
-  assign psram_addr_o  = core_addr_i;
-  assign psram_wdata_o = core_wdata_i;
-  assign psram_wstrb_o = core_wstrb_i;
+  assign s_psram_sel   = core_nmi.addr[31:24] == `PSRAM_START;
+  assign psram_valid_o = core_nmi.valid && s_psram_sel;
+  assign psram_addr_o  = core_nmi.addr;
+  assign psram_wdata_o = core_nmi.wdata;
+  assign psram_wstrb_o = core_nmi.wstrb;
 
-  assign s_spisd_sel   = core_addr_i[31:24] == `SPISD_START;
-  assign spisd_valid_o = core_valid_i && s_spisd_sel;
-  assign spisd_addr_o  = core_addr_i;
-  assign spisd_wdata_o = core_wdata_i;
-  assign spisd_wstrb_o = core_wstrb_i;
+  assign s_spisd_sel   = core_nmi.addr[31:24] == `SPISD_START;
+  assign spisd_valid_o = core_nmi.valid && s_spisd_sel;
+  assign spisd_addr_o  = core_nmi.addr;
+  assign spisd_wdata_o = core_nmi.wdata;
+  assign spisd_wstrb_o = core_nmi.wstrb;
 
-  assign s_i2s_sel   = core_addr_i[31:24] == `I2S_START;
-  assign i2s_valid_o = core_valid_i && s_i2s_sel;
-  assign i2s_addr_o  = core_addr_i;
-  assign i2s_wdata_o = core_wdata_i;
-  assign i2s_wstrb_o = core_wstrb_i;
+  assign s_i2s_sel   = core_nmi.addr[31:24] == `I2S_START;
+  assign i2s_valid_o = core_nmi.valid && s_i2s_sel;
+  assign i2s_addr_o  = core_nmi.addr;
+  assign i2s_wdata_o = core_nmi.wdata;
+  assign i2s_wstrb_o = core_nmi.wstrb;
 
 
 `ifdef HAVE_SRAM_MACRO
@@ -116,21 +111,21 @@ module bus (
 `endif
 
   // verilog_format: off
-  assign core_ready_o = (natv_valid_o && natv_ready_i) ||
-                        (apb_valid_o && apb_ready_i) ||
+  assign core_nmi.ready = (natv_valid_o && natv_ready_i) ||
+                          (apb_valid_o && apb_ready_i) ||
 `ifdef HAVE_SRAM_IF
-                         s_ram_ready ||
+                          s_ram_ready ||
 `endif
-                        (psram_valid_o && psram_ready_i) ||
-                        (spisd_valid_o && spisd_ready_i);
+                          (psram_valid_o && psram_ready_i) ||
+                          (spisd_valid_o && spisd_ready_i);
 
-  assign core_rdata_o = (natv_valid_o && natv_ready_i) ? natv_rdata_i:
-                        (apb_valid_o && apb_ready_i) ? apb_rdata_i :
+  assign core_nmi.rdata = (natv_valid_o && natv_ready_i) ? natv_rdata_i:
+                          (apb_valid_o && apb_ready_i) ? apb_rdata_i :
 `ifdef HAVE_SRAM_IF
-                         s_ram_ready ? ram_rdata_i :
+                          s_ram_ready ? ram_rdata_i :
 `endif
-                        (psram_valid_o && psram_ready_i) ? psram_rdata_i :
-                        (spisd_valid_o && spisd_ready_i) ? spisd_rdata_i :
-                        '0;
+                          (psram_valid_o && psram_ready_i) ? psram_rdata_i :
+                          (spisd_valid_o && spisd_ready_i) ? spisd_rdata_i :
+                          '0;
   // verilog_format: on
 endmodule

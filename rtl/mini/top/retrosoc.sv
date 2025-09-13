@@ -89,13 +89,11 @@ module retrosoc (
     output logic        cust_spfs_mosi_o,
     input  logic        cust_spfs_miso_i
 );
-  // core if
-  logic        s_core_valid;
-  logic [31:0] s_core_addr;
-  logic [31:0] s_core_wdata;
-  logic [ 3:0] s_core_wstrb;
-  logic [31:0] s_core_rdata;
-  logic        s_core_ready;
+
+  // verilog_format: off
+  nmi_if u_core_nmi_if ();
+  // verilog_format: on
+
   // apb if
   logic        s_apb_valid;
   logic [ 3:0] s_apb_wstrb;
@@ -176,25 +174,14 @@ module retrosoc (
 `ifdef CORE_MDD
       .core_mdd_sel_i(core_mdd_sel_i),
 `endif
-      .core_valid_o  (s_core_valid),
-      .core_addr_o   (s_core_addr),
-      .core_wdata_o  (s_core_wdata),
-      .core_wstrb_o  (s_core_wstrb),
-      .core_rdata_i  (s_core_rdata),
-      .core_ready_i  (s_core_ready),
+      .nmi           (u_core_nmi_if),
       .irq_i         (s_irq)
   );
 
   bus u_bus (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
-      // core if
-      .core_valid_i (s_core_valid),
-      .core_ready_o (s_core_ready),
-      .core_addr_i  (s_core_addr),
-      .core_wdata_i (s_core_wdata),
-      .core_wstrb_i (s_core_wstrb),
-      .core_rdata_o (s_core_rdata),
+      .core_nmi     (u_core_nmi_if),
       // natv if
       .natv_valid_o (s_natv_valid),
       .natv_ready_i (s_natv_ready),
