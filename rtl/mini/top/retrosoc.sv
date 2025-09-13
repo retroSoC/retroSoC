@@ -33,7 +33,7 @@ module retrosoc (
     input  logic [ 4:0] ip_mdd_sel_i,
     output logic [15:0] ip_mdd_gpio_out_o,
     input  logic [15:0] ip_mdd_gpio_in_i,
-    output logic [15:0] ip_mdd_gpio_oeb_o,
+    output logic [15:0] ip_mdd_gpio_oen_o,
 `endif
 `ifdef HAVE_SRAM_IF
     output logic [14:0] ram_addr_o,
@@ -267,7 +267,7 @@ module retrosoc (
       .sel_i            (ip_mdd_sel_i),
       .gpio_out_o       (ip_mdd_gpio_out_o),
       .gpio_in_i        (ip_mdd_gpio_in_i),
-      .gpio_oen_o       (ip_mdd_gpio_oeb_o),
+      .gpio_oen_o       (ip_mdd_gpio_oen_o),
       .slv_apb_paddr_i  (s_ip_mdd_apb_paddr),
       .slv_apb_pprot_i  (s_ip_mdd_apb_pprot),
       .slv_apb_psel_i   (s_ip_mdd_apb_psel),
