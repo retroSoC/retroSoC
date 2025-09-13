@@ -15,13 +15,7 @@ module bus (
     input  logic        rst_n_i,
     nmi_if.slave        core_nmi,
     nmi_if.master       natv_nmi,
-    // apb if
-    output logic        apb_valid_o,
-    output logic [31:0] apb_addr_o,
-    output logic [31:0] apb_wdata_o,
-    output logic [ 3:0] apb_wstrb_o,
-    input  logic [31:0] apb_rdata_i,
-    input  logic        apb_ready_i,
+    nmi_if.master       apb_nmi,
     // ram if
 `ifdef HAVE_SRAM_IF
     output logic [14:0] ram_addr_o,
@@ -61,11 +55,11 @@ module bus (
   assign natv_nmi.wdata  = core_nmi.wdata;
   assign natv_nmi.wstrb  = core_nmi.wstrb;
 
-  assign s_apb_sel    = core_nmi.addr[31:24] == `FLASH_START || core_nmi.addr[31:24] == `CUST_IP_START;
-  assign apb_valid_o  = core_nmi.valid && s_apb_sel;
-  assign apb_addr_o   = core_nmi.addr;
-  assign apb_wdata_o  = core_nmi.wdata;
-  assign apb_wstrb_o  = core_nmi.wstrb;
+  assign s_apb_sel       = core_nmi.addr[31:24] == `FLASH_START || core_nmi.addr[31:24] == `CUST_IP_START;
+  assign apb_nmi.valid   = core_nmi.valid && s_apb_sel;
+  assign apb_nmi.addr    = core_nmi.addr;
+  assign apb_nmi.wdata   = core_nmi.wdata;
+  assign apb_nmi.wstrb   = core_nmi.wstrb;
 
 `ifdef HAVE_SRAM_IF
   assign s_ram_sel     = core_nmi.addr[31:24] == `SRAM_START;
@@ -105,7 +99,7 @@ module bus (
 
   // verilog_format: off
   assign core_nmi.ready = (natv_nmi.valid && natv_nmi.ready) ||
-                          (apb_valid_o && apb_ready_i) ||
+                          (apb_nmi.valid && apb_nmi.ready) ||
 `ifdef HAVE_SRAM_IF
                           s_ram_ready ||
 `endif
@@ -113,7 +107,7 @@ module bus (
                           (spisd_valid_o && spisd_ready_i);
 
   assign core_nmi.rdata = (natv_nmi.valid && natv_nmi.ready) ? natv_nmi.rdata:
-                          (apb_valid_o && apb_ready_i) ? apb_rdata_i :
+                          (apb_nmi.valid && apb_nmi.ready) ? apb_nmi.rdata :
 `ifdef HAVE_SRAM_IF
                           s_ram_ready ? ram_rdata_i :
 `endif

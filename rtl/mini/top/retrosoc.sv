@@ -95,23 +95,6 @@ module retrosoc (
   nmi_if u_natv_nmi_if();
   nmi_if u_apb_nmi_if();
   // verilog_format: on
-
-  // natv if
-  logic        s_natv_valid;
-  logic [ 3:0] s_natv_wstrb;
-  logic [31:0] s_natv_addr;
-  logic [31:0] s_natv_wdata;
-  logic [31:0] s_natv_rdata;
-  logic        s_natv_ready;
-
-  // apb if
-  logic        s_apb_valid;
-  logic [ 3:0] s_apb_wstrb;
-  logic [31:0] s_apb_addr;
-  logic [31:0] s_apb_wdata;
-  logic [31:0] s_apb_rdata;
-  logic        s_apb_ready;
-
   // psram if
   logic        s_psram_valid;
   logic [ 3:0] s_psram_wstrb;
@@ -187,13 +170,7 @@ module retrosoc (
       .rst_n_i      (rst_n_i),
       .core_nmi     (u_core_nmi_if),
       .natv_nmi     (u_natv_nmi_if),
-      // apb if
-      .apb_valid_o  (s_apb_valid),
-      .apb_ready_i  (s_apb_ready),
-      .apb_addr_o   (s_apb_addr),
-      .apb_wdata_o  (s_apb_wdata),
-      .apb_wstrb_o  (s_apb_wstrb),
-      .apb_rdata_i  (s_apb_rdata),
+      .apb_nmi      (u_apb_nmi_if),
 `ifdef HAVE_SRAM_IF
       .ram_addr_o   (ram_addr_o),
       .ram_wdata_o  (ram_wdata_o),
@@ -247,12 +224,7 @@ module retrosoc (
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),
-      .apb_valid_i         (s_apb_valid),
-      .apb_addr_i          (s_apb_addr),
-      .apb_wdata_i         (s_apb_wdata),
-      .apb_wstrb_i         (s_apb_wstrb),
-      .apb_rdata_o         (s_apb_rdata),
-      .apb_ready_o         (s_apb_ready),
+      .nmi                 (u_apb_nmi_if),
 `ifdef IP_MDD
       .ip_mdd_apb_paddr_o  (s_ip_mdd_apb_paddr),
       .ip_mdd_apb_pprot_o  (s_ip_mdd_apb_pprot),
