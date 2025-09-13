@@ -33,7 +33,7 @@ module retrosoc (
     input  logic [ 4:0] ip_mdd_sel_i,
     output logic [15:0] ip_mdd_gpio_out_o,
     input  logic [15:0] ip_mdd_gpio_in_i,
-    output logic [15:0] ip_mdd_gpio_oeb_o,
+    output logic [15:0] ip_mdd_gpio_oen_o,
 `endif
 `ifdef HAVE_SRAM_IF
     output logic [14:0] ram_addr_o,
@@ -89,27 +89,12 @@ module retrosoc (
     output logic        cust_spfs_mosi_o,
     input  logic        cust_spfs_miso_i
 );
-  // core if
-  logic        s_core_valid;
-  logic [31:0] s_core_addr;
-  logic [31:0] s_core_wdata;
-  logic [ 3:0] s_core_wstrb;
-  logic [31:0] s_core_rdata;
-  logic        s_core_ready;
-  // apb if
-  logic        s_apb_valid;
-  logic [ 3:0] s_apb_wstrb;
-  logic [31:0] s_apb_addr;
-  logic [31:0] s_apb_wdata;
-  logic [31:0] s_apb_rdata;
-  logic        s_apb_ready;
-  // natv if
-  logic        s_natv_valid;
-  logic [ 3:0] s_natv_wstrb;
-  logic [31:0] s_natv_addr;
-  logic [31:0] s_natv_wdata;
-  logic [31:0] s_natv_rdata;
-  logic        s_natv_ready;
+
+  // verilog_format: off
+  nmi_if u_core_nmi_if ();
+  nmi_if u_natv_nmi_if();
+  nmi_if u_apb_nmi_if();
+  // verilog_format: on
   // psram if
   logic        s_psram_valid;
   logic [ 3:0] s_psram_wstrb;
@@ -176,39 +161,16 @@ module retrosoc (
 `ifdef CORE_MDD
       .core_mdd_sel_i(core_mdd_sel_i),
 `endif
-      .core_valid_o  (s_core_valid),
-      .core_addr_o   (s_core_addr),
-      .core_wdata_o  (s_core_wdata),
-      .core_wstrb_o  (s_core_wstrb),
-      .core_rdata_i  (s_core_rdata),
-      .core_ready_i  (s_core_ready),
+      .nmi           (u_core_nmi_if),
       .irq_i         (s_irq)
   );
 
   bus u_bus (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
-      // core if
-      .core_valid_i (s_core_valid),
-      .core_ready_o (s_core_ready),
-      .core_addr_i  (s_core_addr),
-      .core_wdata_i (s_core_wdata),
-      .core_wstrb_i (s_core_wstrb),
-      .core_rdata_o (s_core_rdata),
-      // natv if
-      .natv_valid_o (s_natv_valid),
-      .natv_ready_i (s_natv_ready),
-      .natv_addr_o  (s_natv_addr),
-      .natv_wdata_o (s_natv_wdata),
-      .natv_wstrb_o (s_natv_wstrb),
-      .natv_rdata_i (s_natv_rdata),
-      // apb if
-      .apb_valid_o  (s_apb_valid),
-      .apb_ready_i  (s_apb_ready),
-      .apb_addr_o   (s_apb_addr),
-      .apb_wdata_o  (s_apb_wdata),
-      .apb_wstrb_o  (s_apb_wstrb),
-      .apb_rdata_i  (s_apb_rdata),
+      .core_nmi     (u_core_nmi_if),
+      .natv_nmi     (u_natv_nmi_if),
+      .apb_nmi      (u_apb_nmi_if),
 `ifdef HAVE_SRAM_IF
       .ram_addr_o   (ram_addr_o),
       .ram_wdata_o  (ram_wdata_o),
@@ -241,12 +203,7 @@ module retrosoc (
   ip_natv_wrapper u_ip_natv_wrapper (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),
-      .natv_valid_i          (s_natv_valid),
-      .natv_addr_i           (s_natv_addr),
-      .natv_wdata_i          (s_natv_wdata),
-      .natv_wstrb_i          (s_natv_wstrb),
-      .natv_rdata_o          (s_natv_rdata),
-      .natv_ready_o          (s_natv_ready),
+      .nmi                   (u_natv_nmi_if),
       .gpio_out_o            (gpio_out_o),
       .gpio_in_i             (gpio_in_i),
       .gpio_pun_o            (gpio_pun_o),
@@ -267,12 +224,7 @@ module retrosoc (
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),
-      .apb_valid_i         (s_apb_valid),
-      .apb_addr_i          (s_apb_addr),
-      .apb_wdata_i         (s_apb_wdata),
-      .apb_wstrb_i         (s_apb_wstrb),
-      .apb_rdata_o         (s_apb_rdata),
-      .apb_ready_o         (s_apb_ready),
+      .nmi                 (u_apb_nmi_if),
 `ifdef IP_MDD
       .ip_mdd_apb_paddr_o  (s_ip_mdd_apb_paddr),
       .ip_mdd_apb_pprot_o  (s_ip_mdd_apb_pprot),
@@ -315,7 +267,7 @@ module retrosoc (
       .sel_i            (ip_mdd_sel_i),
       .gpio_out_o       (ip_mdd_gpio_out_o),
       .gpio_in_i        (ip_mdd_gpio_in_i),
-      .gpio_oen_o       (ip_mdd_gpio_oeb_o),
+      .gpio_oen_o       (ip_mdd_gpio_oen_o),
       .slv_apb_paddr_i  (s_ip_mdd_apb_paddr),
       .slv_apb_pprot_i  (s_ip_mdd_apb_pprot),
       .slv_apb_psel_i   (s_ip_mdd_apb_psel),

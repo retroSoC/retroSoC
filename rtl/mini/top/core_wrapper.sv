@@ -1,18 +1,13 @@
 `include "mmap_define.svh"
 
 module core_wrapper (
-    (* keep *) input  logic        clk_i,
-    (* keep *) input  logic        rst_n_i,
+    input logic                clk_i,
+    input logic                rst_n_i,
 `ifdef CORE_MDD
-    (* keep *) input  logic [ 4:0] core_mdd_sel_i,
+    input logic         [ 4:0] core_mdd_sel_i,
 `endif
-    (* keep *) output logic        core_valid_o,
-    (* keep *) output logic [31:0] core_addr_o,
-    (* keep *) output logic [31:0] core_wdata_o,
-    (* keep *) output logic [ 3:0] core_wstrb_o,
-    (* keep *) input  logic [31:0] core_rdata_i,
-    (* keep *) input  logic        core_ready_i,
-    (* keep *) input  logic [31:0] irq_i
+          nmi_if.master        nmi,
+    input logic         [31:0] irq_i
 );
 
 `ifdef CORE_PICORV32
@@ -27,13 +22,13 @@ module core_wrapper (
   ) u_picorv32 (
       .clk      (clk_i),
       .resetn   (rst_n_i),
-      .mem_valid(core_valid_o),
+      .mem_valid(nmi.valid),
       .mem_instr(),
-      .mem_addr (core_addr_o),
-      .mem_wdata(core_wdata_o),
-      .mem_wstrb(core_wstrb_o),
-      .mem_rdata(core_rdata_i),
-      .mem_ready(core_ready_i),
+      .mem_addr (nmi.addr),
+      .mem_wdata(nmi.wdata),
+      .mem_wstrb(nmi.wstrb),
+      .mem_rdata(nmi.rdata),
+      .mem_ready(nmi.ready),
       .irq      (irq_i),
       .trap     ()
   );
@@ -44,12 +39,12 @@ module core_wrapper (
   ) u_kianv_harris_mc_edition (
       .clk      (clk_i),
       .resetn   (rst_n_i),
-      .mem_valid(core_valid_o),
-      .mem_ready(core_ready_i),
-      .mem_wstrb(core_wstrb_o),
-      .mem_addr (core_addr_o),
-      .mem_wdata(core_wdata_o),
-      .mem_rdata(core_rdata_i)
+      .mem_valid(nmi.valid),
+      .mem_ready(nmi.ready),
+      .mem_wstrb(nmi.wstrb),
+      .mem_addr (nmi.addr),
+      .mem_wdata(nmi.wdata),
+      .mem_rdata(nmi.rdata)
   );
 
 `elsif CORE_MINIRV
@@ -75,7 +70,6 @@ module core_wrapper (
   logic [31:0] s_remap_araddr;
 
   // 0x20000 * 5
-
   logic [18:0] s_delay_rst_cnt_d;
   logic [18:0] s_delay_rst_cnt_q;
   logic        s_delay_rst_n;
@@ -146,13 +140,13 @@ module core_wrapper (
       .rresp_o    (s_rresp),
       .rvalid_o   (s_rvalid),
       .rready_i   (s_rready),
-      .mem_valid_o(core_valid_o),
+      .mem_valid_o(nmi.valid),
       .mem_instr_o(),
-      .mem_addr_o (core_addr_o),
-      .mem_wdata_o(core_wdata_o),
-      .mem_wstrb_o(core_wstrb_o),
-      .mem_ready_i(core_ready_i),
-      .mem_rdata_i(core_rdata_i)
+      .mem_addr_o (nmi.addr),
+      .mem_wdata_o(nmi.wdata),
+      .mem_wstrb_o(nmi.wstrb),
+      .mem_ready_i(nmi.ready),
+      .mem_rdata_i(nmi.rdata)
   );
 
   always_comb begin
@@ -175,15 +169,15 @@ module core_wrapper (
 
 `elsif CORE_MDD
   core_mdd_wrapper u_core_mdd_wrapper (
+      .sel_i       (core_mdd_sel_i),
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
-      .sel_i       (core_mdd_sel_i),
-      .core_valid_o(core_valid_o),
-      .core_addr_o (core_addr_o),
-      .core_wdata_o(core_wdata_o),
-      .core_wstrb_o(core_wstrb_o),
-      .core_rdata_i(core_rdata_i),
-      .core_ready_i(core_ready_i),
+      .core_valid_o(nmi.valid),
+      .core_addr_o (nmi.addr),
+      .core_wdata_o(nmi.wdata),
+      .core_wstrb_o(nmi.wstrb),
+      .core_rdata_i(nmi.rdata),
+      .core_ready_i(nmi.ready),
       .irq_i       (irq_i)
   );
 
