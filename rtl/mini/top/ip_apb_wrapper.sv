@@ -17,20 +17,10 @@
 `include "spi_define.svh"
 
 module ip_apb_wrapper (
+    // verilog_format: off
     input  logic        clk_i,
     input  logic        rst_n_i,
     nmi_if.slave        nmi,
-`ifdef IP_MDD
-    output logic [31:0] ip_mdd_apb_paddr_o,
-    output logic [ 2:0] ip_mdd_apb_pprot_o,
-    output logic        ip_mdd_apb_psel_o,
-    output logic        ip_mdd_apb_penable_o,
-    output logic        ip_mdd_apb_pwrite_o,
-    output logic [31:0] ip_mdd_apb_pwdata_o,
-    output logic [ 3:0] ip_mdd_apb_pstrb_o,
-    input  logic        ip_mdd_apb_pready_i,
-    input  logic [31:0] ip_mdd_apb_prdata_i,
-`endif
     // uart
     input  logic        uart_rx_i,
     output logic        uart_tx_o,
@@ -58,7 +48,13 @@ module ip_apb_wrapper (
     output logic        spfs_cs_o,
     output logic        spfs_mosi_o,
     input  logic        spfs_miso_i,
+`ifdef IP_MDD
+    output logic [15:0] ip_mdd_gpio_out_o,
+    input  logic [15:0] ip_mdd_gpio_in_i,
+    output logic [15:0] ip_mdd_gpio_oen_o,
+`endif
     output logic [ 5:0] irq_o
+    // verilog_format: on
 );
 
 `ifdef IP_MDD
@@ -85,6 +81,15 @@ module ip_apb_wrapper (
   logic [              31:0] s_m_apb_prdata6;
   logic [              31:0] s_m_apb_prdata7;
 `ifdef IP_MDD
+  logic [31:0] s_ip_mdd_apb_paddr;
+  logic [ 2:0] s_ip_mdd_apb_pprot;
+  logic        s_ip_mdd_apb_psel;
+  logic        s_ip_mdd_apb_penable;
+  logic        s_ip_mdd_apb_pwrite;
+  logic [31:0] s_ip_mdd_apb_pwdata;
+  logic [ 3:0] s_ip_mdd_apb_pstrb;
+  logic        s_ip_mdd_apb_pready;
+  logic [31:0] s_ip_mdd_apb_prdata;
   logic [31:0] s_m_apb_prdata8;
 `endif
   logic [APB_SLAVES_NUM-1:0] s_m_apb_pslverr;
@@ -212,16 +217,16 @@ module ip_apb_wrapper (
   assign irq_o[4]                     = u_spi_0_if.irq_o;
 
 `ifdef IP_MDD
-  assign ip_mdd_apb_paddr_o   = s_m_apb_paddr;
-  assign ip_mdd_apb_pprot_o   = s_m_apb_pprot;
-  assign ip_mdd_apb_psel_o    = s_m_apb_psel[8];
-  assign ip_mdd_apb_penable_o = s_m_apb_penable;
-  assign ip_mdd_apb_pwrite_o  = s_m_apb_pwrite;
-  assign ip_mdd_apb_pwdata_o  = s_m_apb_pwdata;
-  assign ip_mdd_apb_pstrb_o   = s_m_apb_pstrb;
-  assign s_m_apb_pready[8]    = ip_mdd_apb_pready_i;
+  assign s_ip_mdd_apb_paddr   = s_m_apb_paddr;
+  assign s_ip_mdd_apb_pprot   = s_m_apb_pprot;
+  assign s_ip_mdd_apb_psel    = s_m_apb_psel[8];
+  assign s_ip_mdd_apb_penable = s_m_apb_penable;
+  assign s_ip_mdd_apb_pwrite  = s_m_apb_pwrite;
+  assign s_ip_mdd_apb_pwdata  = s_m_apb_pwdata;
+  assign s_ip_mdd_apb_pstrb   = s_m_apb_pstrb;
+  assign s_m_apb_pready[8]    = s_ip_mdd_apb_pready;
   assign s_m_apb_pslverr[8]   = '0;
-  assign s_m_apb_prdata8      = ip_mdd_apb_prdata_i;
+  assign s_m_apb_prdata8      = s_ip_mdd_apb_prdata;
 `endif
 
   spi_flash #(
@@ -247,6 +252,26 @@ module ip_apb_wrapper (
       .spi_miso   (spfs_miso_i),
       .spi_irq_out(irq_o[5])
   );
+
+`ifdef IP_MDD
+  ip_mdd_wrapper u_ip_mdd_wrapper (
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .sel_i            ('0),                    // HACK:
+      .gpio_out_o       (ip_mdd_gpio_out_o),
+      .gpio_in_i        (ip_mdd_gpio_in_i),
+      .gpio_oen_o       (ip_mdd_gpio_oen_o),
+      .slv_apb_paddr_i  (s_ip_mdd_apb_paddr),
+      .slv_apb_pprot_i  (s_ip_mdd_apb_pprot),
+      .slv_apb_psel_i   (s_ip_mdd_apb_psel),
+      .slv_apb_penable_i(s_ip_mdd_apb_penable),
+      .slv_apb_pwrite_i (s_ip_mdd_apb_pwrite),
+      .slv_apb_pwdata_i (s_ip_mdd_apb_pwdata),
+      .slv_apb_pstrb_i  (s_ip_mdd_apb_pstrb),
+      .slv_apb_pready_o (s_ip_mdd_apb_pready),
+      .slv_apb_prdata_o (s_ip_mdd_apb_prdata)
+  );
+`endif
 
   mem2apb #(
       .APB_SLAVES_NUM(APB_SLAVES_NUM)

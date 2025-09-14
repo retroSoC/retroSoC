@@ -33,11 +33,6 @@ module retrosoc_asic (
     inout  core_mdd_sel_4_i_pad,
 `endif
 `ifdef IP_MDD
-    inout  ip_mdd_sel_0_i_pad,
-    inout  ip_mdd_sel_1_i_pad,
-    inout  ip_mdd_sel_2_i_pad,
-    inout  ip_mdd_sel_3_i_pad,
-    inout  ip_mdd_sel_4_i_pad,
     inout  ip_mdd_gpio_0_io_pad,
     inout  ip_mdd_gpio_1_io_pad,
     inout  ip_mdd_gpio_2_io_pad,
@@ -113,7 +108,7 @@ module retrosoc_asic (
     output cust_spfs_clk_o_pad,
     output cust_spfs_cs_o_pad,
     output cust_spfs_mosi_o_pad,
-    inout  cust_spfs_miso_i_pad        // HACK: inout right?
+    inout  cust_spfs_miso_i_pad
 );
   // clk&rst
   logic s_xtal_io;
@@ -156,7 +151,6 @@ module retrosoc_asic (
   logic [4:0] s_core_mdd_sel;
 `endif
 `ifdef IP_MDD
-  logic [ 4:0] s_ip_mdd_sel;
   logic [15:0] s_ip_mdd_gpio_out;
   logic [15:0] s_ip_mdd_gpio_in;
   logic [15:0] s_ip_mdd_gpio_oen;
@@ -203,11 +197,6 @@ module retrosoc_asic (
   tc_io_tri_pad         u_core_mdd_sel_4_i_pad (.pad(core_mdd_sel_4_i_pad),      .c2p(),                       .c2p_en(1'b0),                   .p2c(s_core_mdd_sel[4]));
 `endif
 `ifdef IP_MDD
-  tc_io_tri_pad         u_ip_mdd_sel_0_i_pad   (.pad(ip_mdd_sel_0_i_pad),        .c2p(),                       .c2p_en(1'b0),                   .p2c(s_ip_mdd_sel[0]));
-  tc_io_tri_pad         u_ip_mdd_sel_1_i_pad   (.pad(ip_mdd_sel_1_i_pad),        .c2p(),                       .c2p_en(1'b0),                   .p2c(s_ip_mdd_sel[1]));
-  tc_io_tri_pad         u_ip_mdd_sel_2_i_pad   (.pad(ip_mdd_sel_2_i_pad),        .c2p(),                       .c2p_en(1'b0),                   .p2c(s_ip_mdd_sel[2]));
-  tc_io_tri_pad         u_ip_mdd_sel_3_i_pad   (.pad(ip_mdd_sel_3_i_pad),        .c2p(),                       .c2p_en(1'b0),                   .p2c(s_ip_mdd_sel[3]));
-  tc_io_tri_pad         u_ip_mdd_sel_4_i_pad   (.pad(ip_mdd_sel_4_i_pad),        .c2p(),                       .c2p_en(1'b0),                   .p2c(s_ip_mdd_sel[4]));
   tc_io_tri_pad         u_ip_mdd_gpio_0_io_pad (.pad(ip_mdd_gpio_0_io_pad),      .c2p(s_ip_mdd_gpio_out[0]),   .c2p_en(~s_ip_mdd_gpio_oen[0]),  .p2c(s_ip_mdd_gpio_in[0]));
   tc_io_tri_pad         u_ip_mdd_gpio_1_io_pad (.pad(ip_mdd_gpio_1_io_pad),      .c2p(s_ip_mdd_gpio_out[1]),   .c2p_en(~s_ip_mdd_gpio_oen[1]),  .p2c(s_ip_mdd_gpio_in[1]));
   tc_io_tri_pad         u_ip_mdd_gpio_2_io_pad (.pad(ip_mdd_gpio_2_io_pad),      .c2p(s_ip_mdd_gpio_out[2]),   .c2p_en(~s_ip_mdd_gpio_oen[2]),  .p2c(s_ip_mdd_gpio_in[2]));
@@ -306,7 +295,6 @@ module retrosoc_asic (
       .core_mdd_sel_i     (s_core_mdd_sel),
 `endif
 `ifdef IP_MDD
-      .ip_mdd_sel_i       (s_ip_mdd_sel),
       .ip_mdd_gpio_out_o  (s_ip_mdd_gpio_out),
       .ip_mdd_gpio_in_i   (s_ip_mdd_gpio_in),
       .ip_mdd_gpio_oen_o  (s_ip_mdd_gpio_oen),

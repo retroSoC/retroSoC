@@ -34,8 +34,6 @@ module retrosoc_tb;
   wire       s_rst_n;
   reg  [4:0] r_core_mdd_sel;
   wire [4:0] s_core_mdd_sel;
-  reg  [4:0] r_ip_mdd_sel;
-  wire [4:0] s_ip_mdd_sel;
   reg        r_pll_en;
   wire       s_clk_bypass;
   reg  [2:0] r_pll_cfg;
@@ -71,7 +69,6 @@ module retrosoc_tb;
   assign s_aud_clk      = r_aud_clk;
   assign s_rst_n        = r_rst_n;
   assign s_core_mdd_sel = r_core_mdd_sel;
-  assign s_ip_mdd_sel   = r_ip_mdd_sel;
   assign s_clk_bypass   = ~r_pll_en;
 `ifdef HAVE_PLL
   assign s_pll_cfg = r_pll_cfg;
@@ -90,11 +87,6 @@ module retrosoc_tb;
       .core_mdd_sel_4_i_pad     (s_core_mdd_sel[4]),
 `endif
 `ifdef IP_MDD
-      .ip_mdd_sel_0_i_pad       (s_ip_mdd_sel[0]),
-      .ip_mdd_sel_1_i_pad       (s_ip_mdd_sel[1]),
-      .ip_mdd_sel_2_i_pad       (s_ip_mdd_sel[2]),
-      .ip_mdd_sel_3_i_pad       (s_ip_mdd_sel[3]),
-      .ip_mdd_sel_4_i_pad       (s_ip_mdd_sel[4]),
       .ip_mdd_gpio_0_io_pad     (),
       .ip_mdd_gpio_1_io_pad     (),
       .ip_mdd_gpio_2_io_pad     (),
@@ -284,7 +276,6 @@ module retrosoc_tb;
 
   initial begin
     r_core_mdd_sel = 5'd1;
-    r_ip_mdd_sel   = 5'd0;
 
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;
@@ -302,9 +293,6 @@ module retrosoc_tb;
     $display("========================================================");
 `ifdef CORE_MDD
     $display("core_mdd_sel: %0d", r_core_mdd_sel);
-`endif
-`ifdef IP_MDD
-    $display("ip_mdd_sel: %0d", r_ip_mdd_sel);
 `endif
 
     if (r_pll_en == 1'b0) begin
