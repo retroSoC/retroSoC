@@ -18,7 +18,7 @@
 // tKHKL(max: 1.5ns) is meet
 //
 // tCPH(min: 50ns) -> 50 / 6.94 = ~7.2 so wait cycles need to >= ceil(7.2) = 8,
-// so 'cfg_wait_o' = 8 * 2 >= 16 in default, reset value is '18'
+// so 'r_cfg_wait' = 8 * 2 >= 16 in default, reset value is '18'
 // for lower freq, can modify this value for performance tuning
 //
 // tCEM(max: 8us) is enough long for just 32bits xfer:
@@ -30,7 +30,7 @@
 //
 // tCHD(min: 20ns) > tACLK + tCLK
 // sclk keep 6.94 * 1.5 = 10.41 at least(no meet!)
-// need to set 'cfg_chd_o' = ceil(ceil(20 / 6.94) - 1.5) * 2 = 3, reset value is '4'
+// need to set 'r_cfg_chd' = ceil(ceil(20 / 6.94) - 1.5) * 2 = 3, reset value is '4'
 // for lower freq, can modify this value for performance tuning
 //
 // tSP(min: 2ns) is meet
@@ -40,15 +40,9 @@
 module psram_top (
     input  logic        clk_i,
     input  logic        rst_n_i,
-    input  logic        cfg_wait_wr_en_i,
-    input  logic [ 4:0] cfg_wait_i,
-    output logic [ 4:0] cfg_wait_o,
-    input  logic        cfg_chd_wr_en_i,
-    input  logic [ 2:0] cfg_chd_i,
-    output logic [ 2:0] cfg_chd_o,
     input  logic        mem_valid_i,
     output logic        mem_ready_o,
-    input  logic [23:0] mem_addr_i,
+    input  logic [31:0] mem_addr_i,
     input  logic [31:0] mem_wdata_i,
     input  logic [ 3:0] mem_wstrb_i,
     output logic [31:0] mem_rdata_o,
@@ -71,6 +65,12 @@ module psram_top (
   localparam FSM_RD_ST = 3;
   localparam FSM_RD = 4;
 
+  logic [ 4:0] r_cfg_wait;
+  logic [ 2:0] r_cfg_chd;
+  logic        s_cfg_reg_sel;
+  logic        s_mem_ready;
+  logic [31:0] s_mem_rdata;
+
   logic        r_rd_st;
   logic        r_wr_st;
   logic [ 7:0] r_xfer_data_bit_cnt;
@@ -86,13 +86,41 @@ module psram_top (
   logic        s_core_idle;
   logic        s_mem_valid_re;
 
+  assign s_cfg_reg_sel = mem_addr_i[31:24] == 8'h10 && mem_addr_i[15:8] == 8'h40;
+  assign mem_ready_o   = mem_addr_i[31:24] == 8'h40 ? s_mem_ready : 1'b1;
+  always_comb begin
+    mem_rdata_o = '0;
+    if (mem_addr_i[31:24] == 8'h40) begin
+      mem_rdata_o = s_mem_rdata;
+    end else if (mem_addr_i[7:0] == 8'h00) begin
+      mem_rdata_o = {27'd0, r_cfg_wait};
+    end else if (mem_addr_i[7:0] == 8'h04) begin
+      mem_rdata_o = {29'd0, r_cfg_chd};
+    end
+  end
+
+  // wait cycles(mmio)
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) r_cfg_wait <= 5'd18;
+    else if (mem_valid_i && mem_wstrb_i[0] && s_cfg_reg_sel && mem_addr_i[7:0] == 8'h00) begin
+      r_cfg_wait <= mem_wdata_i[4:0];
+    end
+  end
+  // extra cycle for tCHD(mmio)
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) r_cfg_chd <= 3'd4;
+    else if (mem_valid_i && mem_wstrb_i[0] && s_cfg_reg_sel && mem_addr_i[7:0] == 8'h04) begin
+      r_cfg_chd <= mem_wdata_i[2:0];
+    end
+  end
+
+
   edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
       clk_i,
       rst_n_i,
       mem_valid_i,
       s_mem_valid_re
   );
-
 
   assign psram_ce_o[0] = (~s_init_done) || (s_init_done && mem_addr_i[23] == 1'b0) ? s_psram_ce : 1'b1;
   assign psram_ce_o[1] = (~s_init_done) || (s_init_done && mem_addr_i[23] == 1'b1) ? s_psram_ce : 1'b1;
@@ -106,56 +134,54 @@ module psram_top (
       r_mem_addr          <= '0;
       r_mem_wdata         <= '0;
     end else begin
-      case (r_fsm_state)
-        FSM_IDLE: begin
-          if (s_mem_valid_re && (|mem_wstrb_i)) begin
-            r_fsm_state         <= FSM_WE_ST;
-            r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
-            r_mem_addr          <= {1'b0, mem_addr_i[22:0]} + s_disp_addr_ofst;
-            r_mem_wdata         <= s_disp_wdata;
-          end else if (s_mem_valid_re && (~(|mem_wstrb_i))) begin
-            r_fsm_state         <= FSM_RD_ST;
-            r_xfer_data_bit_cnt <= 8'd32;
-            r_mem_addr          <= {1'b0, mem_addr_i[22:0]};
-            r_mem_wdata         <= mem_wdata_i;  // NOTE: no used
+      if (mem_addr_i[31:24] == 8'h40) begin
+        case (r_fsm_state)
+          FSM_IDLE: begin
+            if (s_mem_valid_re && (|mem_wstrb_i)) begin
+              r_fsm_state         <= FSM_WE_ST;
+              r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
+              r_mem_addr          <= {1'b0, mem_addr_i[22:0]} + s_disp_addr_ofst;
+              r_mem_wdata         <= s_disp_wdata;
+            end else if (s_mem_valid_re && (~(|mem_wstrb_i))) begin
+              r_fsm_state         <= FSM_RD_ST;
+              r_xfer_data_bit_cnt <= 8'd32;
+              r_mem_addr          <= {1'b0, mem_addr_i[22:0]};
+              r_mem_wdata         <= mem_wdata_i;  // NOTE: no used
+            end
           end
-        end
-        FSM_WE_ST: begin
-          if (s_core_idle) begin
-            r_wr_st     <= 1'b1;
-            r_fsm_state <= FSM_WE;
+          FSM_WE_ST: begin
+            if (s_core_idle) begin
+              r_wr_st     <= 1'b1;
+              r_fsm_state <= FSM_WE;
+            end
           end
-        end
-        FSM_WE: begin
-          r_wr_st <= 1'b0;
-          if (mem_ready_o) r_fsm_state <= FSM_IDLE;
-        end
-        FSM_RD_ST: begin
-          if (s_core_idle) begin
-            r_rd_st     <= 1'b1;
-            r_fsm_state <= FSM_RD;
+          FSM_WE: begin
+            r_wr_st <= 1'b0;
+            if (s_mem_ready) r_fsm_state <= FSM_IDLE;
           end
-        end
-        FSM_RD: begin
-          r_rd_st <= 1'b0;
-          if (mem_ready_o) r_fsm_state <= FSM_IDLE;
-        end
-      endcase
+          FSM_RD_ST: begin
+            if (s_core_idle) begin
+              r_rd_st     <= 1'b1;
+              r_fsm_state <= FSM_RD;
+            end
+          end
+          FSM_RD: begin
+            r_rd_st <= 1'b0;
+            if (s_mem_ready) r_fsm_state <= FSM_IDLE;
+          end
+        endcase
+      end
     end
   end
   psram_core u_psram_core (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
-      .cfg_wait_wr_en_i   (cfg_wait_wr_en_i),
-      .cfg_wait_i         (cfg_wait_i),
-      .cfg_wait_o         (cfg_wait_o),
-      .cfg_chd_wr_en_i    (cfg_chd_wr_en_i),
-      .cfg_chd_i          (cfg_chd_i),
-      .cfg_chd_o          (cfg_chd_o),
-      .mem_ready_o        (mem_ready_o),
+      .cfg_wait_i         (r_cfg_wait),
+      .cfg_chd_i          (r_cfg_chd),
+      .mem_ready_o        (s_mem_ready),
       .mem_addr_i         (r_mem_addr),
       .mem_wdata_i        (r_mem_wdata),
-      .mem_rdata_o        (mem_rdata_o),
+      .mem_rdata_o        (s_mem_rdata),
       .xfer_data_bit_cnt_i(r_xfer_data_bit_cnt),
       .rd_st_i            (r_rd_st),
       .wr_st_i            (r_wr_st),

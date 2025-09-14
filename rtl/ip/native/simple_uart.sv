@@ -18,22 +18,43 @@
  *
  */
 
+`ifndef SIMP_UART_DEF_SV
+`define SIMP_UART_DEF_SV
+
+// verilog_format: off
+`define SIMP_UART_DIV 8'h00
+`define SIMP_UART_DAT 8'h04
+// verilog_format: on
+
+`endif
+
+interface simp_uart_if ();
+  logic tx;
+  logic rx;
+  logic irq;
+
+  modport dut(output tx, input rx, output irq);
+endinterface
+
 module simple_uart (
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    output logic        ser_tx,
-    input  logic        ser_rx,
-    input  logic [ 3:0] reg_div_we,
-    input  logic [31:0] reg_div_di,
-    output logic [31:0] reg_div_do,
-    input  logic        reg_dat_we,
-    input  logic        reg_dat_re,
-    input  logic [31:0] reg_dat_di,
-    output logic [31:0] reg_dat_do,
-    output logic        reg_dat_wait,
-    output logic        irq_out
+    // verilog_format: off
+    input logic      clk_i,
+    input logic      rst_n_i,
+    nmi_if.slave     nmi,
+    simp_uart_if.dut uart
+    // verilog_format: on
 );
-  logic [31:0] r_cfg_divider;
+
+  logic s_nmi_wr_hdshk, s_nmi_rd_hdshk;
+  logic s_nmi_ready_d, s_nmi_ready_q;
+  logic s_nmi_rdata_en;
+  logic [31:0] s_nmi_rdata_d, s_nmi_rdata_q;
+
+  logic s_uart_div_en;
+  logic [31:0] s_uart_div_d, s_uart_div_q;
+  logic        s_send_dat_wait;
+  logic        s_uart_dat_en;
+  // register
   logic [ 3:0] r_recv_state;
   logic [31:0] r_recv_divcnt;
   logic [ 7:0] r_recv_pattern;
@@ -44,22 +65,58 @@ module simple_uart (
   logic [31:0] r_send_divcnt;
   logic        r_send_dummy;
 
-  assign ser_tx       = r_send_pattern[0];
-  assign reg_div_do   = r_cfg_divider;
-  assign reg_dat_wait = reg_dat_we && (r_send_bitcnt || r_send_dummy);
-  assign reg_dat_do   = r_recv_buf_valid ? r_recv_buf_data : '1;
-  assign irq_out      = r_recv_buf_valid;
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
-    if (!rst_n_i) begin
-      r_cfg_divider <= 32'd1;
-    end else begin
-      if (reg_div_we[0]) r_cfg_divider[7:0] <= reg_div_di[7:0];
-      if (reg_div_we[1]) r_cfg_divider[15:8] <= reg_div_di[15:8];
-      if (reg_div_we[2]) r_cfg_divider[23:16] <= reg_div_di[23:16];
-      if (reg_div_we[3]) r_cfg_divider[31:24] <= reg_div_di[31:24];
-    end
+  assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
+  assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
+  assign nmi.ready      = s_nmi_ready_q;
+  assign nmi.rdata      = s_nmi_rdata_q;
+
+  assign uart.tx        = r_send_pattern[0];
+  assign uart.irq       = r_recv_buf_valid;
+
+  assign s_uart_div_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_UART_DIV;
+  always_comb begin
+    s_uart_div_d = s_uart_div_q;
+    if (nmi.wstrb[0]) s_uart_div_d[7:0] = nmi.wdata[7:0];
+    if (nmi.wstrb[1]) s_uart_div_d[15:8] = nmi.wdata[15:8];
+    if (nmi.wstrb[2]) s_uart_div_d[23:16] = nmi.wdata[23:16];
+    if (nmi.wstrb[3]) s_uart_div_d[31:24] = nmi.wdata[31:24];
   end
+  dfferh #(32) u_uart_div_dfferh (
+      clk_i,
+      rst_n_i,
+      s_uart_div_en,
+      s_uart_div_d,
+      s_uart_div_q
+  );
+
+  assign s_uart_dat_en   = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_UART_DAT;
+  assign s_send_dat_wait = s_uart_dat_en && nmi.wstrb[0] && (r_send_bitcnt || r_send_dummy);
+  assign s_nmi_ready_d   = nmi.valid && (~s_nmi_ready_q) && (~s_send_dat_wait);
+  dffr #(1) u_nmi_ready_dffr (
+      clk_i,
+      rst_n_i,
+      s_nmi_ready_d,
+      s_nmi_ready_q
+  );
+
+  assign s_nmi_rdata_en = s_nmi_rd_hdshk;
+  always_comb begin
+    s_nmi_rdata_d = s_nmi_rdata_q;
+    unique case (nmi.addr[7:0])
+      `SIMP_UART_DIV: s_nmi_rdata_d = s_uart_div_q;
+      `SIMP_UART_DAT: s_nmi_rdata_d = r_recv_buf_valid ? {24'd0, r_recv_buf_data} : '1;
+      default:        s_nmi_rdata_d = s_nmi_rdata_q;
+    endcase
+  end
+  dffer #(32) u_nmi_rdata_dffer (
+      clk_i,
+      rst_n_i,
+      s_nmi_rdata_en,
+      s_nmi_rdata_d,
+      s_nmi_rdata_q
+  );
+
 
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -70,29 +127,28 @@ module simple_uart (
       r_recv_buf_valid <= '0;
     end else begin
       r_recv_divcnt <= r_recv_divcnt + 1'b1;
-      if (reg_dat_re) r_recv_buf_valid <= '0;
-
-      unique case (r_recv_state)
+      if (s_uart_dat_en) r_recv_buf_valid <= '0;
+      case (r_recv_state)
         4'd0: begin
-          if (!ser_rx) r_recv_state <= 1'b1;
+          if (!uart.rx) r_recv_state <= 1'b1;
           r_recv_divcnt <= '0;
         end
         4'd1: begin
-          if (2 * r_recv_divcnt > r_cfg_divider) begin
+          if (2 * r_recv_divcnt > s_uart_div_q) begin
             r_recv_state  <= 4'd2;
             r_recv_divcnt <= '0;
           end
         end
         4'd10: begin
-          if (r_recv_divcnt > r_cfg_divider) begin
+          if (r_recv_divcnt > s_uart_div_q) begin
             r_recv_buf_data  <= r_recv_pattern;
             r_recv_buf_valid <= 1'b1;
             r_recv_state     <= '0;
           end
         end
         default: begin
-          if (r_recv_divcnt > r_cfg_divider) begin
-            r_recv_pattern <= {ser_rx, r_recv_pattern[7:1]};
+          if (r_recv_divcnt > s_uart_div_q) begin
+            r_recv_pattern <= {uart.rx, r_recv_pattern[7:1]};
             r_recv_state   <= r_recv_state + 1'b1;
             r_recv_divcnt  <= '0;
           end
@@ -108,7 +164,7 @@ module simple_uart (
       r_send_divcnt  <= '0;
       r_send_dummy   <= 1'b1;
     end else begin
-      if (reg_div_we) r_send_dummy <= 1'b1;
+      if (s_uart_div_en) r_send_dummy <= 1'b1;
       r_send_divcnt <= r_send_divcnt + 1'b1;
 
       if (r_send_dummy && !r_send_bitcnt) begin
@@ -116,11 +172,11 @@ module simple_uart (
         r_send_bitcnt  <= 4'd15;
         r_send_divcnt  <= '0;
         r_send_dummy   <= '0;
-      end else if (reg_dat_we && !r_send_bitcnt) begin
-        r_send_pattern <= {1'b1, reg_dat_di[7:0], 1'b0};
+      end else if (s_uart_dat_en && nmi.wstrb[0] && !r_send_bitcnt) begin
+        r_send_pattern <= {1'b1, nmi.wdata[7:0], 1'b0};
         r_send_bitcnt  <= 4'd10;
         r_send_divcnt  <= '0;
-      end else if (r_send_divcnt > r_cfg_divider && r_send_bitcnt) begin
+      end else if (r_send_divcnt > s_uart_div_q && r_send_bitcnt) begin
         r_send_pattern <= {1'b1, r_send_pattern[9:1]};
         r_send_bitcnt  <= r_send_bitcnt - 1'b1;
         r_send_divcnt  <= '0;

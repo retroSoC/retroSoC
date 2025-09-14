@@ -49,6 +49,21 @@ module retrosoc (
     output logic [ 7:0] gpio_oen_o,
     output logic        uart_tx_o,
     input  logic        uart_rx_i,
+    output logic        psram_sclk_o,
+    output logic [ 1:0] psram_ce_o,
+    input  logic        psram_sio0_i,
+    input  logic        psram_sio1_i,
+    input  logic        psram_sio2_i,
+    input  logic        psram_sio3_i,
+    output logic        psram_sio0_o,
+    output logic        psram_sio1_o,
+    output logic        psram_sio2_o,
+    output logic        psram_sio3_o,
+    output logic        psram_sio_oe_o,
+    output logic        spisd_sclk_o,
+    output logic        spisd_cs_o,
+    output logic        spisd_mosi_o,
+    input  logic        spisd_miso_i,
     // irq
     input  logic        irq_pin_i,
     // cust
@@ -68,21 +83,6 @@ module retrosoc (
     output logic [ 3:0] cust_qspi_spi_sdo_o,
     output logic [ 3:0] cust_qspi_spi_oe_o,
     input  logic [ 3:0] cust_qspi_spi_sdi_i,
-    output logic        cust_psram_sclk_o,
-    output logic [ 1:0] cust_psram_ce_o,
-    input  logic        cust_psram_sio0_i,
-    input  logic        cust_psram_sio1_i,
-    input  logic        cust_psram_sio2_i,
-    input  logic        cust_psram_sio3_i,
-    output logic        cust_psram_sio0_o,
-    output logic        cust_psram_sio1_o,
-    output logic        cust_psram_sio2_o,
-    output logic        cust_psram_sio3_o,
-    output logic        cust_psram_sio_oe_o,
-    output logic        cust_spisd_sclk_o,
-    output logic        cust_spisd_cs_o,
-    output logic        cust_spisd_mosi_o,
-    input  logic        cust_spisd_miso_i,
     input  logic        cust_spfs_div4_i,
     output logic        cust_spfs_clk_o,
     output logic        cust_spfs_cs_o,
@@ -95,42 +95,6 @@ module retrosoc (
   nmi_if u_natv_nmi_if();
   nmi_if u_apb_nmi_if();
   // verilog_format: on
-  // psram if
-  logic        s_psram_valid;
-  logic [ 3:0] s_psram_wstrb;
-  logic [31:0] s_psram_addr;
-  logic [31:0] s_psram_wdata;
-  logic [31:0] s_psram_rdata;
-  logic        s_psram_ready;
-  // spisd if
-  logic        s_spisd_valid;
-  logic [ 3:0] s_spisd_wstrb;
-  logic [31:0] s_spisd_addr;
-  logic [31:0] s_spisd_wdata;
-  logic [31:0] s_spisd_rdata;
-  logic        s_spisd_ready;
-  // i2s if
-  logic        s_i2s_valid;
-  logic [ 3:0] s_i2s_wstrb;
-  logic [31:0] s_i2s_addr;
-  logic [31:0] s_i2s_wdata;
-  logic [31:0] s_i2s_rdata;
-  logic        s_i2s_ready;
-  logic        s_i2s_aud_valid;
-  logic [ 3:0] s_i2s_aud_wstrb;
-  logic [31:0] s_i2s_aud_addr;
-  logic [31:0] s_i2s_aud_wdata;
-  logic [31:0] s_i2s_aud_rdata;
-  logic        s_i2s_aud_ready;
-  // psram cfg if
-  logic        s_psram_cfg_wait_wr_en;
-  logic [ 4:0] s_psram_cfg_wait_i;
-  logic [ 4:0] s_psram_cfg_wait_o;
-  logic        s_psram_cfg_chd_wr_en;
-  logic [ 2:0] s_psram_cfg_chd_i;
-  logic [ 2:0] s_psram_cfg_chd_o;
-  // spisd cfg if
-  logic [ 1:0] s_spisd_cfg_clkdiv;
 
 `ifdef IP_MDD
   logic [31:0] s_ip_mdd_apb_paddr;
@@ -166,59 +130,46 @@ module retrosoc (
   );
 
   bus u_bus (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .core_nmi     (u_core_nmi_if),
-      .natv_nmi     (u_natv_nmi_if),
-      .apb_nmi      (u_apb_nmi_if),
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
 `ifdef HAVE_SRAM_IF
-      .ram_addr_o   (ram_addr_o),
-      .ram_wdata_o  (ram_wdata_o),
-      .ram_wstrb_o  (ram_wstrb_o),
-      .ram_rdata_i  (ram_rdata_i),
+      .ram_addr_o (ram_addr_o),
+      .ram_wdata_o(ram_wdata_o),
+      .ram_wstrb_o(ram_wstrb_o),
+      .ram_rdata_i(ram_rdata_i),
 `endif
-      // psram if
-      .psram_valid_o(s_psram_valid),
-      .psram_ready_i(s_psram_ready),
-      .psram_addr_o (s_psram_addr),
-      .psram_wdata_o(s_psram_wdata),
-      .psram_wstrb_o(s_psram_wstrb),
-      .psram_rdata_i(s_psram_rdata),
-      // spisd if
-      .spisd_valid_o(s_spisd_valid),
-      .spisd_ready_i(s_spisd_ready),
-      .spisd_addr_o (s_spisd_addr),
-      .spisd_wdata_o(s_spisd_wdata),
-      .spisd_wstrb_o(s_spisd_wstrb),
-      .spisd_rdata_i(s_spisd_rdata),
-      // i2s if
-      .i2s_valid_o  (s_i2s_valid),
-      .i2s_addr_o   (s_i2s_addr),
-      .i2s_wdata_o  (s_i2s_wdata),
-      .i2s_wstrb_o  (s_i2s_wstrb),
-      .i2s_rdata_i  (s_i2s_rdata),
-      .i2s_ready_i  (s_i2s_ready)
+      .core_nmi   (u_core_nmi_if),
+      .natv_nmi   (u_natv_nmi_if),
+      .apb_nmi    (u_apb_nmi_if)
   );
 
   ip_natv_wrapper u_ip_natv_wrapper (
-      .clk_i                 (clk_i),
-      .rst_n_i               (rst_n_i),
-      .nmi                   (u_natv_nmi_if),
-      .gpio_out_o            (gpio_out_o),
-      .gpio_in_i             (gpio_in_i),
-      .gpio_pun_o            (gpio_pun_o),
-      .gpio_pdn_o            (gpio_pdn_o),
-      .gpio_oen_o            (gpio_oen_o),
-      .uart_rx_i             (uart_rx_i),
-      .uart_tx_o             (uart_tx_o),
-      .psram_cfg_wait_wr_en_o(s_psram_cfg_wait_wr_en),
-      .psram_cfg_wait_i      (s_psram_cfg_wait_i),
-      .psram_cfg_wait_o      (s_psram_cfg_wait_o),
-      .psram_cfg_chd_wr_en_o (s_psram_cfg_chd_wr_en),
-      .psram_cfg_chd_i       (s_psram_cfg_chd_i),
-      .psram_cfg_chd_o       (s_psram_cfg_chd_o),
-      .spisd_cfg_clkdiv_o    (s_spisd_cfg_clkdiv),
-      .irq_o                 (s_natv_irq)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .nmi           (u_natv_nmi_if),
+      .gpio_out_o    (gpio_out_o),
+      .gpio_in_i     (gpio_in_i),
+      .gpio_pun_o    (gpio_pun_o),
+      .gpio_pdn_o    (gpio_pdn_o),
+      .gpio_oen_o    (gpio_oen_o),
+      .uart_rx_i     (uart_rx_i),
+      .uart_tx_o     (uart_tx_o),
+      .psram_sclk_o  (psram_sclk_o),
+      .psram_ce_o    (psram_ce_o),
+      .psram_sio0_i  (psram_sio0_i),
+      .psram_sio1_i  (psram_sio1_i),
+      .psram_sio2_i  (psram_sio2_i),
+      .psram_sio3_i  (psram_sio3_i),
+      .psram_sio0_o  (psram_sio0_o),
+      .psram_sio1_o  (psram_sio1_o),
+      .psram_sio2_o  (psram_sio2_o),
+      .psram_sio3_o  (psram_sio3_o),
+      .psram_sio_oe_o(psram_sio_oe_o),
+      .spisd_sclk_o  (spisd_sclk_o),
+      .spisd_cs_o    (spisd_cs_o),
+      .spisd_mosi_o  (spisd_mosi_o),
+      .spisd_miso_i  (spisd_miso_i),
+      .irq_o         (s_natv_irq)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
@@ -280,70 +231,4 @@ module retrosoc (
   );
 `endif
 
-  psram_top u_psram_top (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .cfg_wait_wr_en_i(s_psram_cfg_wait_wr_en),
-      .cfg_wait_i      (s_psram_cfg_wait_o),
-      .cfg_wait_o      (s_psram_cfg_wait_i),
-      .cfg_chd_wr_en_i (s_psram_cfg_chd_wr_en),
-      .cfg_chd_i       (s_psram_cfg_chd_o),
-      .cfg_chd_o       (s_psram_cfg_chd_i),
-      .mem_valid_i     (s_psram_valid),
-      .mem_addr_i      (s_psram_addr[23:0]),
-      .mem_wdata_i     (s_psram_wdata),
-      .mem_wstrb_i     (s_psram_wstrb),
-      .mem_rdata_o     (s_psram_rdata),
-      .mem_ready_o     (s_psram_ready),
-      .psram_sclk_o    (cust_psram_sclk_o),
-      .psram_ce_o      (cust_psram_ce_o),
-      .psram_mosi_i    (cust_psram_sio0_i),
-      .psram_miso_i    (cust_psram_sio1_i),
-      .psram_sio2_i    (cust_psram_sio2_i),
-      .psram_sio3_i    (cust_psram_sio3_i),
-      .psram_mosi_o    (cust_psram_sio0_o),
-      .psram_miso_o    (cust_psram_sio1_o),
-      .psram_sio2_o    (cust_psram_sio2_o),
-      .psram_sio3_o    (cust_psram_sio3_o),
-      .psram_sio_oen_o (cust_psram_sio_oe_o)
-  );
-
-  spisd u_spisd (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
-      .cfg_clkdiv_i(s_spisd_cfg_clkdiv),
-      .mem_valid_i (s_spisd_valid),
-      .mem_ready_o (s_spisd_ready),
-      .mem_addr_i  (s_spisd_addr),
-      .mem_wdata_i (s_spisd_wdata),
-      .mem_wstrb_i (s_spisd_wstrb),
-      .mem_rdata_o (s_spisd_rdata),
-      .spisd_sclk_o(cust_spisd_sclk_o),
-      .spisd_cs_o  (cust_spisd_cs_o),
-      .spisd_mosi_o(cust_spisd_mosi_o),
-      .spisd_miso_i(cust_spisd_miso_i)
-  );
-
-  nmi2nmi u_nmi2nmi (
-      .mstr_clk_i  (clk_i),
-      .mstr_rst_n_i(rst_n_i),
-      .mstr_valid_i(s_i2s_valid),
-      .mstr_addr_i (s_i2s_addr),
-      .mstr_wdata_i(s_i2s_wdata),
-      .mstr_wstrb_i(s_i2s_wstrb),
-      .mstr_rdata_o(s_i2s_rdata),
-      .mstr_ready_o(s_i2s_ready),
-      .slvr_clk_i  (clk_aud_i),
-      .slvr_rst_n_i(rst_aud_n_i),
-      .slvr_valid_o(s_i2s_aud_valid),
-      .slvr_addr_o (s_i2s_aud_addr),
-      .slvr_wdata_o(s_i2s_aud_wdata),
-      .slvr_wstrb_o(s_i2s_aud_wstrb),
-      .slvr_rdata_i(s_i2s_aud_rdata),
-      .slvr_ready_i(s_i2s_aud_ready)
-  );
-
-  // HACK:
-  assign s_i2s_aud_rdata = '0;
-  assign s_i2s_aud_ready = '0;
 endmodule
