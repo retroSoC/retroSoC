@@ -11,12 +11,8 @@
 module psram_core (
     input  logic        clk_i,
     input  logic        rst_n_i,
-    input  logic        cfg_wait_wr_en_i,
     input  logic [ 4:0] cfg_wait_i,
-    output logic [ 4:0] cfg_wait_o,
-    input  logic        cfg_chd_wr_en_i,
     input  logic [ 2:0] cfg_chd_i,
-    output logic [ 2:0] cfg_chd_o,
     output logic        mem_ready_o,
     input  logic [23:0] mem_addr_i,
     input  logic [31:0] mem_wdata_i,
@@ -78,16 +74,6 @@ module psram_core (
   logic        s_xfer_new_byte_upd;
   logic [ 7:0] s_xfer_new_byte;
 
-  // wait cycles(mmio)
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
-    if (~rst_n_i) cfg_wait_o <= 5'd18;
-    else if (cfg_wait_wr_en_i) cfg_wait_o <= cfg_wait_i;
-  end
-  // extra cycle for tCHD(mmio)
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
-    if (~rst_n_i) cfg_chd_o <= 3'd4;
-    else if (cfg_chd_wr_en_i) cfg_chd_o <= cfg_chd_i;
-  end
 
   assign init_done_o     = r_init_done;
   assign idle_o          = r_fsm_state == FSM_IDLE;
@@ -154,13 +140,13 @@ module psram_core (
           r_xfer_ca_bit_cnt <= 8'd8;
           r_cfg_chd         <= 3'd0;
           psram_ce_o        <= 1'b0;
-          r_ce_cnt          <= cfg_wait_o;
+          r_ce_cnt          <= cfg_wait_i;
           r_fsm_state       <= FSM_SEND;
           r_fsm_state_tgt   <= FSM_RSTEN2RST;
         end
         FSM_RSTEN2RST: begin  // tCPH >= 50ns, when 192MHz, ce need keep high(>=10 cycles)
-          if (r_cfg_chd == cfg_chd_o) begin
-            if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
+          if (r_cfg_chd == cfg_chd_i) begin
+            if (r_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
             if (r_ce_cnt == 5'd0) r_fsm_state <= FSM_RST;
             r_ce_cnt <= r_ce_cnt - 1'b1;
           end else begin
@@ -172,13 +158,13 @@ module psram_core (
           r_xfer_ca_bit_cnt <= 8'd8;
           r_cfg_chd         <= 2'd0;
           psram_ce_o        <= 1'b0;
-          r_ce_cnt          <= cfg_wait_o;
+          r_ce_cnt          <= cfg_wait_i;
           r_fsm_state       <= FSM_SEND;
           r_fsm_state_tgt   <= FSM_RST2QE;
         end
         FSM_RST2QE: begin
-          if (r_cfg_chd == cfg_chd_o) begin
-            if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
+          if (r_cfg_chd == cfg_chd_i) begin
+            if (r_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
             if (r_ce_cnt == 5'd0) r_fsm_state <= FSM_QE;
             r_ce_cnt <= r_ce_cnt - 1'b1;
           end else begin
@@ -190,13 +176,13 @@ module psram_core (
           r_xfer_ca_bit_cnt <= 8'd8;
           r_cfg_chd         <= 3'd0;
           psram_ce_o        <= 1'b0;
-          r_ce_cnt          <= cfg_wait_o;
+          r_ce_cnt          <= cfg_wait_i;
           r_fsm_state       <= FSM_SEND;
           r_fsm_state_tgt   <= FSM_QE2IDLE;
         end
         FSM_QE2IDLE: begin
-          if (r_cfg_chd == cfg_chd_o) begin
-            if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
+          if (r_cfg_chd == cfg_chd_i) begin
+            if (r_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
             if (r_ce_cnt == 5'd0) begin
               r_fsm_state <= FSM_IDLE;
               r_init_done <= 1'b1;
@@ -274,7 +260,7 @@ module psram_core (
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 8'd4;
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_RD2IDLE;
-              r_ce_cnt    <= cfg_wait_o;
+              r_ce_cnt    <= cfg_wait_i;
             end
           end
         end
@@ -288,13 +274,13 @@ module psram_core (
             r_xfer_data_bit_cnt <= r_xfer_data_bit_cnt + 8'd4;
             if (r_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
               r_fsm_state <= FSM_WR2IDLE;
-              r_ce_cnt    <= cfg_wait_o;
+              r_ce_cnt    <= cfg_wait_i;
             end
           end
         end
         FSM_RD2IDLE: begin
-          if (r_cfg_chd == cfg_chd_o) begin
-            if (r_ce_cnt != cfg_wait_o) begin
+          if (r_cfg_chd == cfg_chd_i) begin
+            if (r_ce_cnt != cfg_wait_i) begin
               psram_ce_o         <= 1'b1;
               r_xfer_data[31:24] <= r_xfer_byte_data;  // HACK:
             end
@@ -308,8 +294,8 @@ module psram_core (
           end
         end
         FSM_WR2IDLE: begin
-          if (r_cfg_chd == cfg_chd_o) begin
-            if (r_ce_cnt != cfg_wait_o) psram_ce_o <= 1'b1;
+          if (r_cfg_chd == cfg_chd_i) begin
+            if (r_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
             if (r_ce_cnt == 5'd0) begin
               r_fsm_state <= FSM_IDLE;
               mem_ready_o <= 1'b1;

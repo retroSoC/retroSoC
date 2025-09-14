@@ -8,203 +8,201 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
+// addr range: [31:24]: 8'h10(reg), 8'h40(psram), 8'h50(spisd)
 module ip_natv_wrapper (
-    input  logic              clk_i,
-    input  logic              rst_n_i,
+    // verilog_format: off
+    input  logic       clk_i,
+    input  logic       rst_n_i,
     // natv if
-           nmi_if.slave       nmi,
+    nmi_if.slave       nmi,
     // gpio
-    output logic        [7:0] gpio_out_o,
-    input  logic        [7:0] gpio_in_i,
-    output logic        [7:0] gpio_pun_o,
-    output logic        [7:0] gpio_pdn_o,
-    output logic        [7:0] gpio_oen_o,
+    output logic [7:0] gpio_out_o,
+    input  logic [7:0] gpio_in_i,
+    output logic [7:0] gpio_oen_o,
+    output logic [7:0] gpio_pun_o,
+    output logic [7:0] gpio_pdn_o,
     // uart
-    input  logic              uart_rx_i,
-    output logic              uart_tx_o,
-    // psram if
-    output logic              psram_cfg_wait_wr_en_o,
-    input  logic        [4:0] psram_cfg_wait_i,
-    output logic        [4:0] psram_cfg_wait_o,
-    output logic              psram_cfg_chd_wr_en_o,
-    input  logic        [2:0] psram_cfg_chd_i,
-    output logic        [2:0] psram_cfg_chd_o,
-    // spisd if
-    output logic        [1:0] spisd_cfg_clkdiv_o,
+    input  logic       uart_rx_i,
+    output logic       uart_tx_o,
+    // psram
+    output logic       psram_sclk_o,
+    output logic [1:0] psram_ce_o,
+    input  logic       psram_sio0_i,
+    input  logic       psram_sio1_i,
+    input  logic       psram_sio2_i,
+    input  logic       psram_sio3_i,
+    output logic       psram_sio0_o,
+    output logic       psram_sio1_o,
+    output logic       psram_sio2_o,
+    output logic       psram_sio3_o,
+    output logic       psram_sio_oe_o,
+    // sd
+    output logic       spisd_sclk_o,
+    output logic       spisd_cs_o,
+    output logic       spisd_mosi_o,
+    input  logic       spisd_miso_i,
     // irq
-    output logic        [2:0] irq_o
+    output logic [2:0] irq_o
+    // verilog_format: on
 );
 
-  logic s_natv_ready_d, s_natv_ready_q;
-  logic [ 4:0] r_psram_cfg_wait;
-  logic [ 2:0] r_psram_cfg_chd;
-  logic [ 1:0] r_spisd_cfg_clkdiv;
-  logic [31:0] r_mmap_rdata;
-  // gpio
-  logic [15:0] r_gpio;
-  logic [15:0] r_gpio_pun;
-  logic [15:0] r_gpio_pdn;
-  logic [15:0] r_gpio_oen;
-  // uart
-  logic        s_uart_div_reg_sel;
-  logic        s_uart_dat_reg_sel;
-  logic [31:0] s_uart_div_reg_dout;
-  logic [31:0] s_uart_dat_reg_dout;
-  logic        s_uart_dat_reg_wait;
-  // tim0
-  logic        s_tim0_cfg_reg_sel;
-  logic        s_tim0_val_reg_sel;
-  logic        s_tim0_dat_reg_sel;
-  logic [31:0] s_tim0_cfg_reg_dout;
-  logic [31:0] s_tim0_val_reg_dout;
-  logic [31:0] s_tim0_dat_reg_dout;
-  // tim1
-  logic        s_tim1_cfg_reg_sel;
-  logic        s_tim1_val_reg_sel;
-  logic        s_tim1_dat_reg_sel;
-  logic [31:0] s_tim1_cfg_reg_dout;
-  logic [31:0] s_tim1_val_reg_dout;
-  logic [31:0] s_tim1_dat_reg_dout;
-  // psram
-  logic        s_psram_wait_reg_sel;
-  logic        s_psram_chd_reg_sel;
-  // spisd
-  logic        s_spisd_clkdiv_reg_sel;
+  nmi_if u_gpio_nmi_if ();
+  nmi_if u_uart_nmi_if ();
+  nmi_if u_tim0_nmi_if ();
+  nmi_if u_tim1_nmi_if ();
+  nmi_if u_psram_nmi_if ();
+  nmi_if u_spisd_nmi_if ();
+  simp_gpio_if u_simp_gpio_if ();
+  simp_uart_if u_simp_uart_if ();
 
-  assign nmi.rdata              = r_mmap_rdata;
-  assign nmi.ready              = s_natv_ready_q;
-  // gpio
-  assign gpio_out_o             = r_gpio;
-  assign gpio_oen_o             = {8{~rst_n_i}} | r_gpio_oen;
-  assign gpio_pun_o             = r_gpio_pun;
-  assign gpio_pdn_o             = r_gpio_pdn;
+  logic s_psram_cfg_sel;
+  logic s_spisd_cfg_sel;
 
-  assign s_uart_div_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h1000);
-  assign s_uart_dat_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h1004);
-  assign s_tim0_cfg_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h2000);
-  assign s_tim0_val_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h2004);
-  assign s_tim0_dat_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h2008);
-  assign s_tim1_cfg_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h3000);
-  assign s_tim1_val_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h3004);
-  assign s_tim1_dat_reg_sel     = nmi.valid && (nmi.addr[15:0] == 16'h3008);
-  assign s_psram_wait_reg_sel   = nmi.valid && (nmi.addr[15:0] == 16'h4000);
-  assign s_psram_chd_reg_sel    = nmi.valid && (nmi.addr[15:0] == 16'h4004);
-  assign s_spisd_clkdiv_reg_sel = nmi.valid && (nmi.addr[15:0] == 16'h5000);
+  assign u_gpio_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h00);
+  assign u_gpio_nmi_if.addr     = nmi.addr;
+  assign u_gpio_nmi_if.wdata    = nmi.wdata;
+  assign u_gpio_nmi_if.wstrb    = nmi.wstrb;
 
-  assign psram_cfg_wait_wr_en_o = s_psram_wait_reg_sel ? nmi.wstrb[0] : 1'b0;
-  assign psram_cfg_chd_wr_en_o  = s_psram_chd_reg_sel ? nmi.wstrb[0] : 1'b0;
-  assign psram_cfg_wait_o       = r_psram_cfg_wait;
-  assign psram_cfg_chd_o        = r_psram_cfg_chd;
-  assign spisd_cfg_clkdiv_o     = r_spisd_cfg_clkdiv;
+  assign u_uart_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h10);
+  assign u_uart_nmi_if.addr     = nmi.addr;
+  assign u_uart_nmi_if.wdata    = nmi.wdata;
+  assign u_uart_nmi_if.wstrb    = nmi.wstrb;
+
+  assign u_tim0_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h20);
+  assign u_tim0_nmi_if.addr     = nmi.addr;
+  assign u_tim0_nmi_if.wdata    = nmi.wdata;
+  assign u_tim0_nmi_if.wstrb    = nmi.wstrb;
+
+  assign u_tim1_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h30);
+  assign u_tim1_nmi_if.addr     = nmi.addr;
+  assign u_tim1_nmi_if.wdata    = nmi.wdata;
+  assign u_tim1_nmi_if.wstrb    = nmi.wstrb;
+
+  assign s_psram_cfg_sel        = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h40;
+  assign u_psram_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h40 || s_psram_cfg_sel);
+  assign u_psram_nmi_if.addr    = nmi.addr;
+  assign u_psram_nmi_if.wdata   = nmi.wdata;
+  assign u_psram_nmi_if.wstrb   = nmi.wstrb;
+
+  assign s_spisd_cfg_sel        = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h50;
+  assign u_spisd_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h50 || s_spisd_cfg_sel);
+  assign u_spisd_nmi_if.addr    = nmi.addr;
+  assign u_spisd_nmi_if.wdata   = nmi.wdata;
+  assign u_spisd_nmi_if.wstrb   = nmi.wstrb;
 
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) begin
-      r_gpio             <= '0;
-      r_gpio_pun         <= '0;
-      r_gpio_pdn         <= '0;
-      r_gpio_oen         <= '1;
-      r_mmap_rdata       <= '0;
-      r_psram_cfg_wait   <= '0;
-      r_psram_cfg_chd    <= '0;
-      r_spisd_cfg_clkdiv <= '0;
+  // verilog_format: off
+  assign nmi.ready              = (u_gpio_nmi_if.valid  & u_gpio_nmi_if.ready)  |
+                                  (u_uart_nmi_if.valid  & u_uart_nmi_if.ready)  |
+                                  (u_tim0_nmi_if.valid  & u_tim0_nmi_if.ready)  |
+                                  (u_tim1_nmi_if.valid  & u_tim1_nmi_if.ready)  |
+                                  (u_psram_nmi_if.valid & u_psram_nmi_if.ready) |
+                                  (u_spisd_nmi_if.valid & u_spisd_nmi_if.ready);
 
-    end else begin
-      if (nmi.valid && !s_natv_ready_q) begin
-        case (nmi.addr[15:0])
-          16'h0000: begin
-            r_mmap_rdata <= {gpio_out_o, gpio_in_i};
-            if (nmi.wstrb[0]) r_gpio[7:0] <= nmi.wdata[7:0];
-          end
-          16'h0004: begin
-            r_mmap_rdata <= {16'd0, r_gpio_oen};
-            if (nmi.wstrb[0]) r_gpio_oen[7:0] <= nmi.wdata[7:0];
-          end
-          16'h0008: begin
-            r_mmap_rdata <= {16'd0, r_gpio_pun};
-            if (nmi.wstrb[0]) r_gpio_pun[7:0] <= nmi.wdata[7:0];
-          end
-          16'h000C: begin
-            r_mmap_rdata <= {16'd0, r_gpio_pun};
-            if (nmi.wstrb[0]) r_gpio_pdn[7:0] <= nmi.wdata[7:0];
-          end
-          16'h1000: r_mmap_rdata <= s_uart_div_reg_dout;
-          16'h1004: r_mmap_rdata <= s_uart_dat_reg_dout;
-          16'h2000: r_mmap_rdata <= s_tim0_cfg_reg_dout;
-          16'h2004: r_mmap_rdata <= s_tim0_val_reg_dout;
-          16'h2008: r_mmap_rdata <= s_tim0_dat_reg_dout;
-          16'h3000: r_mmap_rdata <= s_tim1_cfg_reg_dout;
-          16'h3004: r_mmap_rdata <= s_tim1_val_reg_dout;
-          16'h3008: r_mmap_rdata <= s_tim1_dat_reg_dout;
-          16'h4000: begin
-            r_mmap_rdata <= {27'd0, psram_cfg_wait_i};
-            if (nmi.wstrb[0]) r_psram_cfg_wait <= nmi.wdata[4:0];
-          end
-          16'h4004: begin
-            r_mmap_rdata <= {29'd0, psram_cfg_chd_i};
-            if (nmi.wstrb[0]) r_psram_cfg_chd <= nmi.wdata[2:0];
-          end
-          16'h5000: begin
-            r_mmap_rdata <= {30'd0, r_spisd_cfg_clkdiv};
-            if (nmi.wstrb[0]) r_spisd_cfg_clkdiv <= nmi.wdata[1:0];
-          end
-        endcase
-      end
-    end
-  end
+  assign nmi.rdata              = ({32{(u_gpio_nmi_if.valid  & u_gpio_nmi_if.ready)}}  & u_gpio_nmi_if.rdata)  |
+                                  ({32{(u_uart_nmi_if.valid  & u_uart_nmi_if.ready)}}  & u_uart_nmi_if.rdata)  |
+                                  ({32{(u_tim0_nmi_if.valid  & u_tim0_nmi_if.ready)}}  & u_tim0_nmi_if.rdata)  |
+                                  ({32{(u_tim1_nmi_if.valid  & u_tim1_nmi_if.ready)}}  & u_tim1_nmi_if.rdata)  |
+                                  ({32{(u_psram_nmi_if.valid & u_psram_nmi_if.ready)}} & u_psram_nmi_if.rdata) |
+                                  ({32{(u_spisd_nmi_if.valid & u_spisd_nmi_if.ready)}} & u_spisd_nmi_if.rdata);
+ // verilog_format: on
 
-  assign s_natv_ready_d = (nmi.valid && !s_natv_ready_q) ? 
-                          (nmi.addr[15:0] == 16'h1004 ? ~s_uart_dat_reg_wait : 1'b1) : 1'b0;
-  dffr #(1) u_natv_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_natv_ready_d,
-      s_natv_ready_q
+  assign gpio_out_o             = u_simp_gpio_if.gpio_out;
+  assign u_simp_gpio_if.gpio_in = gpio_in_i;
+  assign gpio_oen_o             = u_simp_gpio_if.gpio_oen;
+  assign gpio_pun_o             = u_simp_gpio_if.gpio_pun;
+  assign gpio_pdn_o             = u_simp_gpio_if.gpio_pdn;
+
+  assign u_simp_uart_if.rx      = uart_rx_i;
+  assign uart_tx_o              = u_simp_uart_if.tx;
+  assign irq_o[0]               = u_simp_uart_if.irq;
+
+  simple_gpio u_simple_gpio (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_gpio_nmi_if),
+      .gpio   (u_simp_gpio_if)
   );
 
   simple_uart u_simple_uart (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
-      .ser_tx      (uart_tx_o),
-      .ser_rx      (uart_rx_i),
-      .reg_div_we  (s_uart_div_reg_sel ? nmi.wstrb : 4'b0000),
-      .reg_div_di  (nmi.wdata),
-      .reg_div_do  (s_uart_div_reg_dout),
-      .reg_dat_we  (s_uart_dat_reg_sel ? nmi.wstrb[0] : 1'b0),
-      .reg_dat_re  (s_uart_dat_reg_sel && !nmi.wstrb),
-      .reg_dat_di  (nmi.wdata),
-      .reg_dat_do  (s_uart_dat_reg_dout),
-      .reg_dat_wait(s_uart_dat_reg_wait),
-      .irq_out     (irq_o[0])
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_uart_nmi_if),
+      .uart   (u_simp_uart_if)
   );
 
   simple_timer u_simple_timer0 (
-      .clk_i     (clk_i),
-      .rst_n_i   (rst_n_i),
-      .reg_val_we(s_tim0_val_reg_sel ? nmi.wstrb : 4'h0),
-      .reg_val_di(nmi.wdata),
-      .reg_val_do(s_tim0_val_reg_dout),
-      .reg_cfg_we(s_tim0_cfg_reg_sel ? nmi.wstrb[0] : 1'b0),
-      .reg_cfg_di(nmi.wdata),
-      .reg_cfg_do(s_tim0_cfg_reg_dout),
-      .reg_dat_we(s_tim0_dat_reg_sel ? nmi.wstrb : 4'h0),
-      .reg_dat_di(nmi.wdata),
-      .reg_dat_do(s_tim0_dat_reg_dout),
-      .irq_out   (irq_o[1])
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_tim0_nmi_if),
+      .irq_o  (irq_o[1])
   );
 
   simple_timer u_simple_timer1 (
-      .clk_i     (clk_i),
-      .rst_n_i   (rst_n_i),
-      .reg_val_we(s_tim1_val_reg_sel ? nmi.wstrb : 4'h0),
-      .reg_val_di(nmi.wdata),
-      .reg_val_do(s_tim1_val_reg_dout),
-      .reg_cfg_we(s_tim1_cfg_reg_sel ? nmi.wstrb[0] : 1'b0),
-      .reg_cfg_di(nmi.wdata),
-      .reg_cfg_do(s_tim1_cfg_reg_dout),
-      .reg_dat_we(s_tim1_dat_reg_sel ? nmi.wstrb : 4'h0),
-      .reg_dat_di(nmi.wdata),
-      .reg_dat_do(s_tim1_dat_reg_dout),
-      .irq_out   (irq_o[2])
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_tim1_nmi_if),
+      .irq_o  (irq_o[2])
   );
+
+
+  psram_top u_psram_top (
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .mem_valid_i    (u_psram_nmi_if.valid),
+      .mem_addr_i     (u_psram_nmi_if.addr),
+      .mem_wdata_i    (u_psram_nmi_if.wdata),
+      .mem_wstrb_i    (u_psram_nmi_if.wstrb),
+      .mem_rdata_o    (u_psram_nmi_if.rdata),
+      .mem_ready_o    (u_psram_nmi_if.ready),
+      .psram_sclk_o   (psram_sclk_o),
+      .psram_ce_o     (psram_ce_o),
+      .psram_mosi_i   (psram_sio0_i),
+      .psram_miso_i   (psram_sio1_i),
+      .psram_sio2_i   (psram_sio2_i),
+      .psram_sio3_i   (psram_sio3_i),
+      .psram_mosi_o   (psram_sio0_o),
+      .psram_miso_o   (psram_sio1_o),
+      .psram_sio2_o   (psram_sio2_o),
+      .psram_sio3_o   (psram_sio3_o),
+      .psram_sio_oen_o(psram_sio_oe_o)
+  );
+
+  spisd u_spisd (
+      .clk_i       (clk_i),
+      .rst_n_i     (rst_n_i),
+      .mem_valid_i (u_spisd_nmi_if.valid),
+      .mem_ready_o (u_spisd_nmi_if.ready),
+      .mem_addr_i  (u_spisd_nmi_if.addr),
+      .mem_wdata_i (u_spisd_nmi_if.wdata),
+      .mem_wstrb_i (u_spisd_nmi_if.wstrb),
+      .mem_rdata_o (u_spisd_nmi_if.rdata),
+      .spisd_sclk_o(spisd_sclk_o),
+      .spisd_cs_o  (spisd_cs_o),
+      .spisd_mosi_o(spisd_mosi_o),
+      .spisd_miso_i(spisd_miso_i)
+  );
+
+  // nmi2nmi u_nmi2nmi (
+  //     .mstr_clk_i  (clk_i),
+  //     .mstr_rst_n_i(rst_n_i),
+  //     .mstr_valid_i(s_i2s_valid),
+  //     .mstr_addr_i (s_i2s_addr),
+  //     .mstr_wdata_i(s_i2s_wdata),
+  //     .mstr_wstrb_i(s_i2s_wstrb),
+  //     .mstr_rdata_o(s_i2s_rdata),
+  //     .mstr_ready_o(s_i2s_ready),
+  //     .slvr_clk_i  (clk_aud_i),
+  //     .slvr_rst_n_i(rst_aud_n_i),
+  //     .slvr_valid_o(s_i2s_aud_valid),
+  //     .slvr_addr_o (s_i2s_aud_addr),
+  //     .slvr_wdata_o(s_i2s_aud_wdata),
+  //     .slvr_wstrb_o(s_i2s_aud_wstrb),
+  //     .slvr_rdata_i(s_i2s_aud_rdata),
+  //     .slvr_ready_i(s_i2s_aud_ready)
+  // );
+
+  // // HACK:
+  // assign s_i2s_aud_rdata = '0;
+  // assign s_i2s_aud_ready = '0;
 endmodule
