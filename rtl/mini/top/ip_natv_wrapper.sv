@@ -21,9 +21,7 @@ module ip_natv_wrapper (
     output logic [7:0] gpio_oen_o,
     output logic [7:0] gpio_pun_o,
     output logic [7:0] gpio_pdn_o,
-    // uart
-    input  logic       uart_rx_i,
-    output logic       uart_tx_o,
+    uart_if.dut        uart,
     qspi_if.dut        psram,
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
@@ -40,7 +38,7 @@ module ip_natv_wrapper (
   nmi_if u_spisd_nmi_if ();
   nmi_if u_i2c_nmi_if ();
   simp_gpio_if u_simp_gpio_if ();
-  simp_uart_if u_simp_uart_if ();
+//   simp_uart_if u_simp_uart_if ();
 
 
   logic s_psram_cfg_sel;
@@ -104,10 +102,7 @@ module ip_natv_wrapper (
   assign gpio_pun_o             = u_simp_gpio_if.gpio_pun;
   assign gpio_pdn_o             = u_simp_gpio_if.gpio_pdn;
 
-  assign u_simp_uart_if.rx      = uart_rx_i;
-  assign uart_tx_o              = u_simp_uart_if.tx;
-  assign irq_o[0]               = u_simp_uart_if.irq;
-
+  assign irq_o[0]               = uart.irq_o;
   simple_gpio u_simple_gpio (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -119,7 +114,7 @@ module ip_natv_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_uart_nmi_if),
-      .uart   (u_simp_uart_if)
+      .uart   (uart)
   );
 
   simple_timer u_simple_timer0 (

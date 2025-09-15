@@ -28,20 +28,12 @@
 
 `endif
 
-interface simp_uart_if ();
-  logic tx;
-  logic rx;
-  logic irq;
-
-  modport dut(output tx, input rx, output irq);
-endinterface
-
 module simple_uart (
     // verilog_format: off
     input logic      clk_i,
     input logic      rst_n_i,
     nmi_if.slave     nmi,
-    simp_uart_if.dut uart
+    uart_if.dut      uart
     // verilog_format: on
 );
 
@@ -71,8 +63,8 @@ module simple_uart (
   assign nmi.ready      = s_nmi_ready_q;
   assign nmi.rdata      = s_nmi_rdata_q;
 
-  assign uart.tx        = r_send_pattern[0];
-  assign uart.irq       = r_recv_buf_valid;
+  assign uart.uart_tx_o = r_send_pattern[0];
+  assign uart.irq_o     = r_recv_buf_valid;
 
   assign s_uart_div_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_UART_DIV;
   always_comb begin
@@ -130,7 +122,7 @@ module simple_uart (
       if (s_uart_dat_en) r_recv_buf_valid <= '0;
       case (r_recv_state)
         4'd0: begin
-          if (!uart.rx) r_recv_state <= 1'b1;
+          if (!uart.uart_rx_i) r_recv_state <= 1'b1;
           r_recv_divcnt <= '0;
         end
         4'd1: begin
@@ -148,7 +140,7 @@ module simple_uart (
         end
         default: begin
           if (r_recv_divcnt > s_uart_div_q) begin
-            r_recv_pattern <= {uart.rx, r_recv_pattern[7:1]};
+            r_recv_pattern <= {uart.uart_rx_i, r_recv_pattern[7:1]};
             r_recv_state   <= r_recv_state + 1'b1;
             r_recv_divcnt  <= '0;
           end
