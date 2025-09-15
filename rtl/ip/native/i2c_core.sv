@@ -1,22 +1,22 @@
 module i2c_core (
     input  logic        clk_i,
     input  logic        rst_n_i,
-    input  logic [ 7:0] dev_addr_i,
     input  logic [ 6:0] clk_div_i,
+    input  logic [ 6:0] dev_addr_i,
     input  logic        wr_en_i,
     input  logic        rd_en_i,
     input  logic        start_i,
     output logic        end_o,
     input  logic        extn_addr_i,
-    input  logic [15:0] addr_i,
+    input  logic [15:0] reg_addr_i,
     input  logic [ 7:0] wr_data_i,
     output logic [ 7:0] rd_data_o,
     output logic        oper_clk_pos_o,
     output logic        oper_clk_fall_o,
-    output logic        i2c_scl_o,
-    output logic        sda_out_en_o,
-    output logic        sda_out_o,
-    input  logic        sda_in_i
+    output logic        scl_o,
+    output logic        sda_oe_o,
+    output logic        sda_o,
+    input  logic        sda_i
 );
 
   localparam FSM_IDLE = 4'd0;
@@ -58,10 +58,10 @@ module i2c_core (
   assign rd_data_o       = s_i2c_data_in_q;
 
   // verilog_format: off
-  assign sda_out_o = s_i2c_sda_out;
-  assign sda_out_en_o = ((s_fsm_q == FSM_RD_DATA) || (s_fsm_q == FSM_ACK_1) || (s_fsm_q == FSM_ACK_2)
-                      || (s_fsm_q == FSM_ACK_3)   || (s_fsm_q == FSM_ACK_4) || (s_fsm_q == FSM_ACK_5))
-                        ? 1'b0 : 1'b1;
+  assign sda_o    = s_i2c_sda_out;
+  assign sda_oe_o = ((s_fsm_q == FSM_RD_DATA) || (s_fsm_q == FSM_ACK_1) || (s_fsm_q == FSM_ACK_2)
+                  || (s_fsm_q == FSM_ACK_3)   || (s_fsm_q == FSM_ACK_4) || (s_fsm_q == FSM_ACK_5))
+                  ? 1'b0 : 1'b1;
   // verilog_format: on
 
 
@@ -228,29 +228,29 @@ module i2c_core (
     s_ack = 1'b1;
     if((s_fsm_q == FSM_ACK_1) || (s_fsm_q == FSM_ACK_2) || (s_fsm_q == FSM_ACK_3)
         || (s_fsm_q == FSM_ACK_4) || (s_fsm_q == FSM_ACK_5)) begin
-      if (s_i2c_clk_cnt_q == 2'd1) s_ack = sda_in_i;
-      // if (s_i2c_clk_cnt_q == 2'd0) s_ack = sda_in_i;  // BUG:
+      if (s_i2c_clk_cnt_q == 2'd1) s_ack = sda_i;
+      // if (s_i2c_clk_cnt_q == 2'd0) s_ack = sda_i;  // BUG:
     end
   end
 
   always_comb begin
-    i2c_scl_o = 1'b1;
+    scl_o = 1'b1;
     unique case (s_fsm_q)
-      FSM_IDLE: i2c_scl_o = 1'b1;
+      FSM_IDLE: scl_o = 1'b1;
       FSM_START_F: begin
-        if (s_i2c_clk_cnt_q == 2'd3) i2c_scl_o = 1'b0;
-        else i2c_scl_o = 1'b1;
+        if (s_i2c_clk_cnt_q == 2'd3) scl_o = 1'b0;
+        else scl_o = 1'b1;
       end
       FSM_SEND_DEV_ADDR,FSM_ACK_1,FSM_SEND_REG_ADDR_H,FSM_ACK_2,FSM_SEND_REG_ADDR_L,
       FSM_ACK_3,FSM_WR_DATA,FSM_ACK_4,FSM_START_S,FSM_SEND_RD_ADDR,FSM_ACK_5,FSM_RD_DATA,FSM_N_ACK: begin
-        if ((s_i2c_clk_cnt_q == 2'd1) || (s_i2c_clk_cnt_q == 2'd2)) i2c_scl_o = 1'b1;
-        else i2c_scl_o = 1'b0;
+        if ((s_i2c_clk_cnt_q == 2'd1) || (s_i2c_clk_cnt_q == 2'd2)) scl_o = 1'b1;
+        else scl_o = 1'b0;
       end
       FSM_STOP: begin
-        if ((s_xfer_bit_cnt_q == 3'd0) && (s_i2c_clk_cnt_q == 2'd0)) i2c_scl_o = 1'b0;
-        else i2c_scl_o = 1'b1;
+        if ((s_xfer_bit_cnt_q == 3'd0) && (s_i2c_clk_cnt_q == 2'd0)) scl_o = 1'b0;
+        else scl_o = 1'b1;
       end
-      default:  i2c_scl_o = 1'b1;
+      default:  scl_o = 1'b1;
     endcase
   end
 
@@ -273,13 +273,13 @@ module i2c_core (
         s_i2c_sda_out = 1'b1;
       end
       FSM_SEND_REG_ADDR_H: begin
-        s_i2c_sda_out = addr_i[15-s_xfer_bit_cnt_q];
+        s_i2c_sda_out = reg_addr_i[15-s_xfer_bit_cnt_q];
       end
       FSM_ACK_2: begin
         s_i2c_sda_out = 1'b1;
       end
       FSM_SEND_REG_ADDR_L: begin
-        s_i2c_sda_out = addr_i[7-s_xfer_bit_cnt_q];
+        s_i2c_sda_out = reg_addr_i[7-s_xfer_bit_cnt_q];
       end
       FSM_ACK_3: begin
         s_i2c_sda_out = 1'b1;
@@ -321,7 +321,7 @@ module i2c_core (
   always_comb begin
     s_i2c_data_in_d = s_i2c_data_in_q;
     if (s_fsm_q == FSM_RD_DATA && s_i2c_clk_cnt_q == 2'd1) begin
-      s_i2c_data_in_d[7-s_xfer_bit_cnt_q] = sda_in_i;
+      s_i2c_data_in_d[7-s_xfer_bit_cnt_q] = sda_i;
     end
   end
   dffer #(8) u_i2c_data_in_dffer (

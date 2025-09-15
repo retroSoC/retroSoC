@@ -22,102 +22,97 @@
 `include "mmap_define.svh"
 
 module retrosoc (
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic        clk_aud_i,
-    input  logic        rst_aud_n_i,
+    input  logic              clk_i,
+    input  logic              rst_n_i,
+    input  logic              clk_aud_i,
+    input  logic              rst_aud_n_i,
+    // irq
+    input  logic              irq_pin_i,
 `ifdef CORE_MDD
-    input  logic [ 4:0] core_mdd_sel_i,
+    input  logic       [ 4:0] core_mdd_sel_i,
 `endif
 `ifdef IP_MDD
-    input  logic [ 4:0] ip_mdd_sel_i,
-    output logic [15:0] ip_mdd_gpio_out_o,
-    input  logic [15:0] ip_mdd_gpio_in_i,
-    output logic [15:0] ip_mdd_gpio_oen_o,
+    output logic       [15:0] ip_mdd_gpio_out_o,
+    input  logic       [15:0] ip_mdd_gpio_in_i,
+    output logic       [15:0] ip_mdd_gpio_oen_o,
 `endif
 `ifdef HAVE_SRAM_IF
-    output logic [14:0] ram_addr_o,
-    output logic [31:0] ram_wdata_o,
-    output logic [ 3:0] ram_wstrb_o,
-    input  logic [31:0] ram_rdata_i,
+    output logic       [14:0] ram_addr_o,
+    output logic       [31:0] ram_wdata_o,
+    output logic       [ 3:0] ram_wstrb_o,
+    input  logic       [31:0] ram_rdata_i,
 `endif
     // memory mapped I/O signals
-    output logic [ 7:0] gpio_out_o,
-    input  logic [ 7:0] gpio_in_i,
-    output logic [ 7:0] gpio_pun_o,
-    output logic [ 7:0] gpio_pdn_o,
-    output logic [ 7:0] gpio_oen_o,
-    output logic        uart_tx_o,
-    input  logic        uart_rx_i,
-    output logic        psram_sclk_o,
-    output logic [ 1:0] psram_ce_o,
-    input  logic        psram_sio0_i,
-    input  logic        psram_sio1_i,
-    input  logic        psram_sio2_i,
-    input  logic        psram_sio3_i,
-    output logic        psram_sio0_o,
-    output logic        psram_sio1_o,
-    output logic        psram_sio2_o,
-    output logic        psram_sio3_o,
-    output logic        psram_sio_oe_o,
-    output logic        spisd_sclk_o,
-    output logic        spisd_cs_o,
-    output logic        spisd_mosi_o,
-    input  logic        spisd_miso_i,
-    // irq
-    input  logic        irq_pin_i,
-    // cust
-    input  logic        cust_uart_rx_i,
-    output logic        cust_uart_tx_o,
-    output logic [ 3:0] cust_pwm_pwm_o,
-    input  logic        cust_ps2_ps2_clk_i,
-    input  logic        cust_ps2_ps2_dat_i,
-    input  logic        cust_i2c_scl_i,
-    output logic        cust_i2c_scl_o,
-    output logic        cust_i2c_scl_dir_o,
-    input  logic        cust_i2c_sda_i,
-    output logic        cust_i2c_sda_o,
-    output logic        cust_i2c_sda_dir_o,
-    output logic        cust_qspi_spi_clk_o,
-    output logic [ 3:0] cust_qspi_spi_csn_o,
-    output logic [ 3:0] cust_qspi_spi_sdo_o,
-    output logic [ 3:0] cust_qspi_spi_oe_o,
-    input  logic [ 3:0] cust_qspi_spi_sdi_i,
-    input  logic        cust_spfs_div4_i,
-    output logic        cust_spfs_clk_o,
-    output logic        cust_spfs_cs_o,
-    output logic        cust_spfs_mosi_o,
-    input  logic        cust_spfs_miso_i
+    output logic       [ 7:0] gpio_out_o,
+    input  logic       [ 7:0] gpio_in_i,
+    output logic       [ 7:0] gpio_pun_o,
+    output logic       [ 7:0] gpio_pdn_o,
+    output logic       [ 7:0] gpio_oen_o,
+    output logic              uart_tx_o,
+    input  logic              uart_rx_i,
+    output logic              psram_sclk_o,
+    output logic       [ 1:0] psram_ce_o,
+    input  logic              psram_sio0_i,
+    input  logic              psram_sio1_i,
+    input  logic              psram_sio2_i,
+    input  logic              psram_sio3_i,
+    output logic              psram_sio0_o,
+    output logic              psram_sio1_o,
+    output logic              psram_sio2_o,
+    output logic              psram_sio3_o,
+    output logic              psram_sio_oe_o,
+    output logic              spisd_sclk_o,
+    output logic              spisd_cs_o,
+    output logic              spisd_mosi_o,
+    input  logic              spisd_miso_i,
+    // apb
+    input  logic              cust_spfs_div4_i,
+           uart_if.dut        uart,
+           pwm_if.dut         pwm,
+           ps2_if.dut         ps2,
+           i2c_if.dut         i2c,
+           qspi_if.dut        qspi,
+           spi_if.dut         spfs
 );
 
   // verilog_format: off
   nmi_if u_core_nmi_if ();
   nmi_if u_natv_nmi_if();
   nmi_if u_apb_nmi_if();
+  i2c_if u_natv_i2c_if();
+  i2c_if u_apb_i2c_if();
   // verilog_format: on
 
-`ifdef IP_MDD
-  logic [31:0] s_ip_mdd_apb_paddr;
-  logic [ 2:0] s_ip_mdd_apb_pprot;
-  logic        s_ip_mdd_apb_psel;
-  logic        s_ip_mdd_apb_penable;
-  logic        s_ip_mdd_apb_pwrite;
-  logic [31:0] s_ip_mdd_apb_pwdata;
-  logic [ 3:0] s_ip_mdd_apb_pstrb;
-  logic        s_ip_mdd_apb_pready;
-  logic [31:0] s_ip_mdd_apb_prdata;
-`endif
-
+  // tmp: i2c sel
+  logic s_i2c_sel_d, s_i2c_sel_q;
   // irq
   logic [31:0] s_irq;
   logic [ 2:0] s_natv_irq;
   logic [ 5:0] s_apb_irq;
 
-  assign s_irq[4:0]   = 5'd0;
-  assign s_irq[5]     = irq_pin_i;
-  assign s_irq[8:6]   = s_natv_irq;
-  assign s_irq[14:9]  = s_apb_irq;
-  assign s_irq[31:15] = 17'd0;
+  assign u_apb_i2c_if.scl_i  = i2c.scl_i;
+  assign u_natv_i2c_if.sda_i = i2c.sda_i;
+  assign u_apb_i2c_if.sda_i  = i2c.sda_i;
+  assign i2c.scl_o           = s_i2c_sel_q ? u_natv_i2c_if.scl_o : u_apb_i2c_if.scl_o;
+  assign i2c.scl_dir_o       = s_i2c_sel_q ? u_natv_i2c_if.scl_dir_o : ~u_apb_i2c_if.scl_dir_o;
+  assign i2c.sda_o           = s_i2c_sel_q ? u_natv_i2c_if.sda_o : u_apb_i2c_if.sda_o;
+  assign i2c.sda_dir_o       = s_i2c_sel_q ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
+
+  assign s_irq[4:0]          = 5'd0;
+  assign s_irq[5]            = irq_pin_i;
+  assign s_irq[8:6]          = s_natv_irq;
+  assign s_irq[14:9]         = s_apb_irq;
+  assign s_irq[31:15]        = 17'd0;
+
+
+  assign s_i2c_sel_d         = 1'b1;
+  dffr #(1) u_i2c_sel_dffr (
+      clk_i,
+      rst_n_i,
+      s_i2c_sel_d,
+      s_i2c_sel_q
+  );
+
 
   core_wrapper u_core_wrapper (
       .clk_i         (clk_i),
@@ -169,66 +164,27 @@ module retrosoc (
       .spisd_cs_o    (spisd_cs_o),
       .spisd_mosi_o  (spisd_mosi_o),
       .spisd_miso_i  (spisd_miso_i),
+      .i2c           (u_natv_i2c_if),
       .irq_o         (s_natv_irq)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i               (clk_i),
-      .rst_n_i             (rst_n_i),
-      .nmi                 (u_apb_nmi_if),
-`ifdef IP_MDD
-      .ip_mdd_apb_paddr_o  (s_ip_mdd_apb_paddr),
-      .ip_mdd_apb_pprot_o  (s_ip_mdd_apb_pprot),
-      .ip_mdd_apb_psel_o   (s_ip_mdd_apb_psel),
-      .ip_mdd_apb_penable_o(s_ip_mdd_apb_penable),
-      .ip_mdd_apb_pwrite_o (s_ip_mdd_apb_pwrite),
-      .ip_mdd_apb_pwdata_o (s_ip_mdd_apb_pwdata),
-      .ip_mdd_apb_pstrb_o  (s_ip_mdd_apb_pstrb),
-      .ip_mdd_apb_pready_i (s_ip_mdd_apb_pready),
-      .ip_mdd_apb_prdata_i (s_ip_mdd_apb_prdata),
-`endif
-      .uart_rx_i           (cust_uart_rx_i),
-      .uart_tx_o           (cust_uart_tx_o),
-      .pwm_pwm_o           (cust_pwm_pwm_o),
-      .ps2_ps2_clk_i       (cust_ps2_ps2_clk_i),
-      .ps2_ps2_dat_i       (cust_ps2_ps2_dat_i),
-      .i2c_scl_i           (cust_i2c_scl_i),
-      .i2c_scl_o           (cust_i2c_scl_o),
-      .i2c_scl_dir_o       (cust_i2c_scl_dir_o),
-      .i2c_sda_i           (cust_i2c_sda_i),
-      .i2c_sda_o           (cust_i2c_sda_o),
-      .i2c_sda_dir_o       (cust_i2c_sda_dir_o),
-      .qspi_spi_clk_o      (cust_qspi_spi_clk_o),
-      .qspi_spi_csn_o      (cust_qspi_spi_csn_o),
-      .qspi_spi_sdo_o      (cust_qspi_spi_sdo_o),
-      .qspi_spi_oe_o       (cust_qspi_spi_oe_o),
-      .qspi_spi_sdi_i      (cust_qspi_spi_sdi_i),
-      .spfs_div4_i         (cust_spfs_div4_i),
-      .spfs_clk_o          (cust_spfs_clk_o),
-      .spfs_cs_o           (cust_spfs_cs_o),
-      .spfs_mosi_o         (cust_spfs_mosi_o),
-      .spfs_miso_i         (cust_spfs_miso_i),
-      .irq_o               (s_apb_irq)
-  );
-
-`ifdef IP_MDD
-  ip_mdd_wrapper u_ip_mdd_wrapper (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .sel_i            (ip_mdd_sel_i),
-      .gpio_out_o       (ip_mdd_gpio_out_o),
-      .gpio_in_i        (ip_mdd_gpio_in_i),
-      .gpio_oen_o       (ip_mdd_gpio_oen_o),
-      .slv_apb_paddr_i  (s_ip_mdd_apb_paddr),
-      .slv_apb_pprot_i  (s_ip_mdd_apb_pprot),
-      .slv_apb_psel_i   (s_ip_mdd_apb_psel),
-      .slv_apb_penable_i(s_ip_mdd_apb_penable),
-      .slv_apb_pwrite_i (s_ip_mdd_apb_pwrite),
-      .slv_apb_pwdata_i (s_ip_mdd_apb_pwdata),
-      .slv_apb_pstrb_i  (s_ip_mdd_apb_pstrb),
-      .slv_apb_pready_o (s_ip_mdd_apb_pready),
-      .slv_apb_prdata_o (s_ip_mdd_apb_prdata)
-  );
+      .spfs_div4_i      (cust_spfs_div4_i),
+      .nmi              (u_apb_nmi_if),
+      .uart             (uart),
+      .pwm              (pwm),
+      .ps2              (ps2),
+      .i2c              (u_apb_i2c_if),
+      .qspi             (qspi),
+      .spfs             (spfs),
+`ifdef IP_MDD
+      .ip_mdd_gpio_out_o(ip_mdd_gpio_out_o),
+      .ip_mdd_gpio_in_i (ip_mdd_gpio_in_i),
+      .ip_mdd_gpio_oen_o(ip_mdd_gpio_oen_o),
 `endif
+      .irq_o            (s_apb_irq)
+  );
 
 endmodule

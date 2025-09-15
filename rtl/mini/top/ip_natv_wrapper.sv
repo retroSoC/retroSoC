@@ -41,6 +41,8 @@ module ip_natv_wrapper (
     output logic       spisd_cs_o,
     output logic       spisd_mosi_o,
     input  logic       spisd_miso_i,
+    // i2c
+    i2c_if.dut         i2c,
     // irq
     output logic [2:0] irq_o
     // verilog_format: on
@@ -52,12 +54,13 @@ module ip_natv_wrapper (
   nmi_if u_tim1_nmi_if ();
   nmi_if u_psram_nmi_if ();
   nmi_if u_spisd_nmi_if ();
+  nmi_if u_i2c_nmi_if ();
   simp_gpio_if u_simp_gpio_if ();
   simp_uart_if u_simp_uart_if ();
 
+
   logic s_psram_cfg_sel;
   logic s_spisd_cfg_sel;
-
   assign u_gpio_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h00);
   assign u_gpio_nmi_if.addr     = nmi.addr;
   assign u_gpio_nmi_if.wdata    = nmi.wdata;
@@ -90,6 +93,10 @@ module ip_natv_wrapper (
   assign u_spisd_nmi_if.wdata   = nmi.wdata;
   assign u_spisd_nmi_if.wstrb   = nmi.wstrb;
 
+  assign u_i2c_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h60);
+  assign u_i2c_nmi_if.addr    = nmi.addr;
+  assign u_i2c_nmi_if.wdata   = nmi.wdata;
+  assign u_i2c_nmi_if.wstrb   = nmi.wstrb;
 
   // verilog_format: off
   assign nmi.ready              = (u_gpio_nmi_if.valid  & u_gpio_nmi_if.ready)  |
@@ -181,6 +188,14 @@ module ip_natv_wrapper (
       .spisd_cs_o  (spisd_cs_o),
       .spisd_mosi_o(spisd_mosi_o),
       .spisd_miso_i(spisd_miso_i)
+  );
+
+
+  nmi_i2c u_nmi_i2c (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_i2c_nmi_if),
+      .i2c    (i2c)
   );
 
   // nmi2nmi u_nmi2nmi (

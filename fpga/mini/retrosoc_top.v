@@ -57,11 +57,6 @@ module retrosoc_top (
       .core_mdd_sel_4_i_pad     (1'b0),
 `endif
 `ifdef IP_MDD
-      .ip_mdd_sel_0_i_pad       (1'b0),
-      .ip_mdd_sel_1_i_pad       (1'b0),
-      .ip_mdd_sel_2_i_pad       (1'b0),
-      .ip_mdd_sel_3_i_pad       (1'b0),
-      .ip_mdd_sel_4_i_pad       (1'b0),
       .ip_mdd_gpio_0_io_pad     (),
       .ip_mdd_gpio_1_io_pad     (),
       .ip_mdd_gpio_2_io_pad     (),
