@@ -22,57 +22,38 @@
 `include "mmap_define.svh"
 
 module retrosoc (
-    input  logic              clk_i,
-    input  logic              rst_n_i,
-    input  logic              clk_aud_i,
-    input  logic              rst_aud_n_i,
+    input  logic                   clk_i,
+    input  logic                   rst_n_i,
+    input  logic                   clk_aud_i,
+    input  logic                   rst_aud_n_i,
+    input  logic                   spfs_div4_i,
     // irq
-    input  logic              irq_pin_i,
+    input  logic                   irq_pin_i,
 `ifdef CORE_MDD
-    input  logic       [ 4:0] core_mdd_sel_i,
+    input  logic            [ 4:0] core_mdd_sel_i,
 `endif
 `ifdef IP_MDD
-    output logic       [15:0] ip_mdd_gpio_out_o,
-    input  logic       [15:0] ip_mdd_gpio_in_i,
-    output logic       [15:0] ip_mdd_gpio_oen_o,
+    output logic            [15:0] ip_mdd_gpio_out_o,
+    input  logic            [15:0] ip_mdd_gpio_in_i,
+    output logic            [15:0] ip_mdd_gpio_oen_o,
 `endif
 `ifdef HAVE_SRAM_IF
-    output logic       [14:0] ram_addr_o,
-    output logic       [31:0] ram_wdata_o,
-    output logic       [ 3:0] ram_wstrb_o,
-    input  logic       [31:0] ram_rdata_i,
+    output logic            [14:0] ram_addr_o,
+    output logic            [31:0] ram_wdata_o,
+    output logic            [ 3:0] ram_wstrb_o,
+    input  logic            [31:0] ram_rdata_i,
 `endif
-    // memory mapped I/O signals
-    output logic       [ 7:0] gpio_out_o,
-    input  logic       [ 7:0] gpio_in_i,
-    output logic       [ 7:0] gpio_pun_o,
-    output logic       [ 7:0] gpio_pdn_o,
-    output logic       [ 7:0] gpio_oen_o,
-    output logic              uart_tx_o,
-    input  logic              uart_rx_i,
-    output logic              psram_sclk_o,
-    output logic       [ 1:0] psram_ce_o,
-    input  logic              psram_sio0_i,
-    input  logic              psram_sio1_i,
-    input  logic              psram_sio2_i,
-    input  logic              psram_sio3_i,
-    output logic              psram_sio0_o,
-    output logic              psram_sio1_o,
-    output logic              psram_sio2_o,
-    output logic              psram_sio3_o,
-    output logic              psram_sio_oe_o,
-    output logic              spisd_sclk_o,
-    output logic              spisd_cs_o,
-    output logic              spisd_mosi_o,
-    input  logic              spisd_miso_i,
+           simp_gpio_if.dut        gpio,
+           uart_if.dut             uart0,
+           qspi_if.dut             psram,
     // apb
-    input  logic              cust_spfs_div4_i,
-           uart_if.dut        uart,
-           pwm_if.dut         pwm,
-           ps2_if.dut         ps2,
-           i2c_if.dut         i2c,
-           qspi_if.dut        qspi,
-           spi_if.dut         spfs
+           spi_if.dut              spisd,
+           uart_if.dut             uart1,
+           pwm_if.dut              pwm,
+           ps2_if.dut              ps2,
+           i2c_if.dut              i2c,
+           qspi_if.dut             qspi,
+           spi_if.dut              spfs
 );
 
   // verilog_format: off
@@ -139,41 +120,23 @@ module retrosoc (
   );
 
   ip_natv_wrapper u_ip_natv_wrapper (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .nmi           (u_natv_nmi_if),
-      .gpio_out_o    (gpio_out_o),
-      .gpio_in_i     (gpio_in_i),
-      .gpio_pun_o    (gpio_pun_o),
-      .gpio_pdn_o    (gpio_pdn_o),
-      .gpio_oen_o    (gpio_oen_o),
-      .uart_rx_i     (uart_rx_i),
-      .uart_tx_o     (uart_tx_o),
-      .psram_sclk_o  (psram_sclk_o),
-      .psram_ce_o    (psram_ce_o),
-      .psram_sio0_i  (psram_sio0_i),
-      .psram_sio1_i  (psram_sio1_i),
-      .psram_sio2_i  (psram_sio2_i),
-      .psram_sio3_i  (psram_sio3_i),
-      .psram_sio0_o  (psram_sio0_o),
-      .psram_sio1_o  (psram_sio1_o),
-      .psram_sio2_o  (psram_sio2_o),
-      .psram_sio3_o  (psram_sio3_o),
-      .psram_sio_oe_o(psram_sio_oe_o),
-      .spisd_sclk_o  (spisd_sclk_o),
-      .spisd_cs_o    (spisd_cs_o),
-      .spisd_mosi_o  (spisd_mosi_o),
-      .spisd_miso_i  (spisd_miso_i),
-      .i2c           (u_natv_i2c_if),
-      .irq_o         (s_natv_irq)
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_natv_nmi_if),
+      .gpio   (gpio),
+      .uart   (uart0),
+      .psram  (psram),
+      .spisd  (spisd),
+      .i2c    (u_natv_i2c_if),
+      .irq_o  (s_natv_irq)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .spfs_div4_i      (cust_spfs_div4_i),
+      .spfs_div4_i      (spfs_div4_i),
       .nmi              (u_apb_nmi_if),
-      .uart             (uart),
+      .uart             (uart1),
       .pwm              (pwm),
       .ps2              (ps2),
       .i2c              (u_apb_i2c_if),

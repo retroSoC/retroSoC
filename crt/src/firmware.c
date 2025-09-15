@@ -68,8 +68,10 @@ void welcome_screen()
     printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_config, &reg_tim1_config);
     printf("                     1 x PSRAM         @0x%x\n", &reg_psram_waitcycl);
     printf("                     1 x SPISD         @0x%x\n", &reg_spisd_ctrl);
-    printf("                     1 x I2S           @0x%x\n", &reg_i2s_ctrl);
     printf("                     1 x I2C           @0x%x\n", &reg_i2c_ctrl);
+    printf("                     1 x I2S           @0x%x\n", &reg_i2s_ctrl);
+    printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_ctrl);
+    printf("                     1 x DMA           @0x%x\n", &reg_dma_ctrl);
     printf("                     1 x SYSCTRL       @0x%x\n", &reg_sys_ctrl);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_cust_archinfo_sys);
     printf("                     1 x RNG           @0x%x\n", &reg_cust_rng_ctrl);
@@ -192,10 +194,10 @@ void main()
     reg_spisd_ctrl = (uint32_t)3;
     printf("set to 3\n");
     // printf("[SPISD] set clk div to %d, actul rd val: %d\n", spisd_cfg_val, reg_spisd_ctrl);
-    ip_psram_selftest(0x50000000, 8 * 1024 * 1024);
+    // ip_psram_selftest(0x50000000, 8 * 1024 * 1024);
 
-    // ip_tim_test();
-    // ip_rng_test();
+    ip_tim_test();
+    ip_rng_test();
     // ip_gpio_test();
     // ip_hpuart_test();
     // ip_pwm_test();
