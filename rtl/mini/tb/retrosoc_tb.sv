@@ -125,6 +125,8 @@ module retrosoc_tb;
       .psram_sclk_o_pad     (s_psram_sclk),
       .psram_ce0_o_pad      (s_psram_ce0),
       .psram_ce1_o_pad      (s_psram_ce1),
+      .psram_ce2_o_pad      (),
+      .psram_ce3_o_pad      (),
       .psram_sio0_io_pad    (s_psram_sio0),
       .psram_sio1_io_pad    (s_psram_sio1),
       .psram_sio2_io_pad    (s_psram_sio2),

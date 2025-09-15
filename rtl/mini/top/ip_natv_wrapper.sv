@@ -24,18 +24,7 @@ module ip_natv_wrapper (
     // uart
     input  logic       uart_rx_i,
     output logic       uart_tx_o,
-    // psram
-    output logic       psram_sclk_o,
-    output logic [1:0] psram_ce_o,
-    input  logic       psram_sio0_i,
-    input  logic       psram_sio1_i,
-    input  logic       psram_sio2_i,
-    input  logic       psram_sio3_i,
-    output logic       psram_sio0_o,
-    output logic       psram_sio1_o,
-    output logic       psram_sio2_o,
-    output logic       psram_sio3_o,
-    output logic       psram_sio_oe_o,
+    qspi_if.dut        psram,
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
     // irq
@@ -148,26 +137,11 @@ module ip_natv_wrapper (
   );
 
 
-  psram_top u_psram_top (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .mem_valid_i    (u_psram_nmi_if.valid),
-      .mem_addr_i     (u_psram_nmi_if.addr),
-      .mem_wdata_i    (u_psram_nmi_if.wdata),
-      .mem_wstrb_i    (u_psram_nmi_if.wstrb),
-      .mem_rdata_o    (u_psram_nmi_if.rdata),
-      .mem_ready_o    (u_psram_nmi_if.ready),
-      .psram_sclk_o   (psram_sclk_o),
-      .psram_ce_o     (psram_ce_o),
-      .psram_mosi_i   (psram_sio0_i),
-      .psram_miso_i   (psram_sio1_i),
-      .psram_sio2_i   (psram_sio2_i),
-      .psram_sio3_i   (psram_sio3_i),
-      .psram_mosi_o   (psram_sio0_o),
-      .psram_miso_o   (psram_sio1_o),
-      .psram_sio2_o   (psram_sio2_o),
-      .psram_sio3_o   (psram_sio3_o),
-      .psram_sio_oen_o(psram_sio_oe_o)
+  nmi_psram u_nmi_psram (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_psram_nmi_if),
+      .qspi   (psram)
   );
 
   nmi_spisd u_nmi_spisd (

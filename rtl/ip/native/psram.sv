@@ -36,27 +36,23 @@
 // tSP(min: 2ns) is meet
 // data keeps 6.94 / 2 = 3.47ns low at least befer sclk
 
+`ifndef NATV_PSRAM_DEF_SV
+`define NATV_PSRAM_DEF_SV
 
-module psram_top (
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic        mem_valid_i,
-    output logic        mem_ready_o,
-    input  logic [31:0] mem_addr_i,
-    input  logic [31:0] mem_wdata_i,
-    input  logic [ 3:0] mem_wstrb_i,
-    output logic [31:0] mem_rdata_o,
-    output logic        psram_sclk_o,
-    output logic [ 1:0] psram_ce_o,
-    input  logic        psram_mosi_i,
-    input  logic        psram_miso_i,
-    input  logic        psram_sio2_i,
-    input  logic        psram_sio3_i,
-    output logic        psram_mosi_o,
-    output logic        psram_miso_o,
-    output logic        psram_sio2_o,
-    output logic        psram_sio3_o,
-    output logic        psram_sio_oen_o
+// verilog_format: off
+`define NATV_PSRAM_WAIT 8'h00
+`define NATV_PSRAM_CHD  8'h04
+// verilog_format: on
+
+`endif
+
+module nmi_psram (
+    // verilog_format: off
+    input logic  clk_i,
+    input logic  rst_n_i,
+    nmi_if.slave nmi,
+    qspi_if.dut  qspi
+    // verilog_format: on
 );
 
   localparam FSM_IDLE = 0;
@@ -79,6 +75,7 @@ module psram_top (
   logic [31:0] r_mem_wdata;
 
   logic        s_psram_ce;
+  logic        s_psram_sio_oen;
   logic [ 1:0] s_disp_addr_ofst;
   logic [ 7:0] s_disp_xfer_bit_cnt;
   logic [31:0] s_disp_wdata;
@@ -86,31 +83,45 @@ module psram_top (
   logic        s_core_idle;
   logic        s_mem_valid_re;
 
-  assign s_cfg_reg_sel = mem_addr_i[31:24] == 8'h10 && mem_addr_i[15:8] == 8'h40;
-  assign mem_ready_o   = mem_addr_i[31:24] == 8'h40 ? s_mem_ready : 1'b1;
+
+  // verilog_format: off
+  assign qspi.spi_nss_o[0]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd0) ? s_psram_ce : 1'b1;
+  assign qspi.spi_nss_o[1]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd1) ? s_psram_ce : 1'b1;
+  assign qspi.spi_nss_o[2]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd2) ? s_psram_ce : 1'b1;
+  assign qspi.spi_nss_o[3]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd3) ? s_psram_ce : 1'b1;
+  assign qspi.spi_io_en_o[0] = ~s_psram_sio_oen;
+  assign qspi.spi_io_en_o[1] = ~s_psram_sio_oen;
+  assign qspi.spi_io_en_o[2] = ~s_psram_sio_oen;
+  assign qspi.spi_io_en_o[3] = ~s_psram_sio_oen;
+  assign qspi.irq_o          = 1'b0;
+  // verilog_format: on
+
+
+  assign s_cfg_reg_sel = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h40;
+  assign nmi.ready     = nmi.addr[31:24] == 8'h40 ? s_mem_ready : 1'b1;
   always_comb begin
-    mem_rdata_o = '0;
-    if (mem_addr_i[31:24] == 8'h40) begin
-      mem_rdata_o = s_mem_rdata;
-    end else if (mem_addr_i[7:0] == 8'h00) begin
-      mem_rdata_o = {27'd0, r_cfg_wait};
-    end else if (mem_addr_i[7:0] == 8'h04) begin
-      mem_rdata_o = {29'd0, r_cfg_chd};
+    nmi.rdata = '0;
+    if (nmi.addr[31:24] == 8'h40) begin
+      nmi.rdata = s_mem_rdata;
+    end else if (nmi.addr[7:0] == `NATV_PSRAM_WAIT) begin
+      nmi.rdata = {27'd0, r_cfg_wait};
+    end else if (nmi.addr[7:0] == `NATV_PSRAM_CHD) begin
+      nmi.rdata = {29'd0, r_cfg_chd};
     end
   end
 
   // wait cycles(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_wait <= 5'd18;
-    else if (mem_valid_i && mem_wstrb_i[0] && s_cfg_reg_sel && mem_addr_i[7:0] == 8'h00) begin
-      r_cfg_wait <= mem_wdata_i[4:0];
+    else if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == `NATV_PSRAM_WAIT) begin
+      r_cfg_wait <= nmi.wdata[4:0];
     end
   end
   // extra cycle for tCHD(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_chd <= 3'd4;
-    else if (mem_valid_i && mem_wstrb_i[0] && s_cfg_reg_sel && mem_addr_i[7:0] == 8'h04) begin
-      r_cfg_chd <= mem_wdata_i[2:0];
+    else if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == `NATV_PSRAM_CHD) begin
+      r_cfg_chd <= nmi.wdata[2:0];
     end
   end
 
@@ -118,12 +129,9 @@ module psram_top (
   edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
       clk_i,
       rst_n_i,
-      mem_valid_i,
+      nmi.valid,
       s_mem_valid_re
   );
-
-  assign psram_ce_o[0] = (~s_init_done) || (s_init_done && mem_addr_i[23] == 1'b0) ? s_psram_ce : 1'b1;
-  assign psram_ce_o[1] = (~s_init_done) || (s_init_done && mem_addr_i[23] == 1'b1) ? s_psram_ce : 1'b1;
 
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) begin
@@ -134,19 +142,19 @@ module psram_top (
       r_mem_addr          <= '0;
       r_mem_wdata         <= '0;
     end else begin
-      if (mem_addr_i[31:24] == 8'h40) begin
+      if (nmi.addr[31:24] == 8'h40) begin
         case (r_fsm_state)
           FSM_IDLE: begin
-            if (s_mem_valid_re && (|mem_wstrb_i)) begin
+            if (s_mem_valid_re && (|nmi.wstrb)) begin
               r_fsm_state         <= FSM_WE_ST;
               r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
-              r_mem_addr          <= {1'b0, mem_addr_i[22:0]} + s_disp_addr_ofst;
+              r_mem_addr          <= {1'b0, nmi.addr[22:0]} + s_disp_addr_ofst;
               r_mem_wdata         <= s_disp_wdata;
-            end else if (s_mem_valid_re && (~(|mem_wstrb_i))) begin
+            end else if (s_mem_valid_re && (~(|nmi.wstrb))) begin
               r_fsm_state         <= FSM_RD_ST;
               r_xfer_data_bit_cnt <= 8'd32;
-              r_mem_addr          <= {1'b0, mem_addr_i[22:0]};
-              r_mem_wdata         <= mem_wdata_i;  // NOTE: no used
+              r_mem_addr          <= {1'b0, nmi.addr[22:0]};
+              r_mem_wdata         <= nmi.wdata;  // NOTE: no used
             end
           end
           FSM_WE_ST: begin
@@ -187,22 +195,22 @@ module psram_top (
       .wr_st_i            (r_wr_st),
       .init_done_o        (s_init_done),
       .idle_o             (s_core_idle),
-      .psram_sclk_o       (psram_sclk_o),
+      .psram_sclk_o       (qspi.spi_sck_o),
       .psram_ce_o         (s_psram_ce),
-      .psram_mosi_i       (psram_mosi_i),
-      .psram_miso_i       (psram_miso_i),
-      .psram_sio2_i       (psram_sio2_i),
-      .psram_sio3_i       (psram_sio3_i),
-      .psram_mosi_o       (psram_mosi_o),
-      .psram_miso_o       (psram_miso_o),
-      .psram_sio2_o       (psram_sio2_o),
-      .psram_sio3_o       (psram_sio3_o),
-      .psram_sio_oen_o    (psram_sio_oen_o)
+      .psram_mosi_i       (qspi.spi_io_in_i[0]),
+      .psram_miso_i       (qspi.spi_io_in_i[1]),
+      .psram_sio2_i       (qspi.spi_io_in_i[2]),
+      .psram_sio3_i       (qspi.spi_io_in_i[3]),
+      .psram_mosi_o       (qspi.spi_io_out_o[0]),
+      .psram_miso_o       (qspi.spi_io_out_o[1]),
+      .psram_sio2_o       (qspi.spi_io_out_o[2]),
+      .psram_sio3_o       (qspi.spi_io_out_o[3]),
+      .psram_sio_oen_o    (s_psram_sio_oen)
   );
 
   wr_dispatcher u_wr_dispatcher (
-      .wstrb_i       (mem_wstrb_i),
-      .wdata_i       (mem_wdata_i),
+      .wstrb_i       (nmi.wstrb),
+      .wdata_i       (nmi.wdata),
       .addr_ofst_o   (s_disp_addr_ofst),
       .xfer_bit_cnt_o(s_disp_xfer_bit_cnt),
       .wdata_o       (s_disp_wdata)
