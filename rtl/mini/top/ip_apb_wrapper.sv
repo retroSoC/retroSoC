@@ -30,12 +30,7 @@ module ip_apb_wrapper (
     input  logic        ps2_ps2_clk_i,
     input  logic        ps2_ps2_dat_i,
     // i2c
-    input  logic        i2c_scl_i,
-    output logic        i2c_scl_o,
-    output logic        i2c_scl_dir_o,
-    input  logic        i2c_sda_i,
-    output logic        i2c_sda_o,
-    output logic        i2c_sda_dir_o,
+    i2c_if.dut          i2c,
     // qspi
     output logic        qspi_spi_clk_o,
     output logic [ 3:0] qspi_spi_csn_o,
@@ -106,7 +101,7 @@ module ip_apb_wrapper (
   uart_if u_uart_0_if            ();
   pwm_if  u_pwm_0_if             ();
   ps2_if  u_ps2_0_if             ();
-  i2c_if  u_i2c_0_if             ();
+  // i2c_if  u_i2c_0_if             ();
   spi_if  u_spi_0_if             ();
 
   apb4_archinfo                u_apb4_archinfo_0(u_archinfo_0_apb4_if);
@@ -114,7 +109,7 @@ module ip_apb_wrapper (
   apb4_uart #(.FIFO_DEPTH(32)) u_apb4_uart_0    (u_uart_0_apb4_if, u_uart_0_if);
   apb4_pwm                     u_apb4_pwm_0     (u_pwm_0_apb4_if, u_pwm_0_if);
   apb4_ps2                     u_apb4_ps2_0     (u_ps2_0_apb4_if, u_ps2_0_if);
-  apb4_i2c                     u_apb4_i2c_0     (u_i2c_0_apb4_if, u_i2c_0_if);
+  apb4_i2c                     u_apb4_i2c_0     (u_i2c_0_apb4_if, i2c);
   apb4_spi #(.FIFO_DEPTH(32))  u_apb4_spi_0     (u_qspi_0_apb4_if, u_spi_0_if);
   // verilog_format: on
 
@@ -191,13 +186,7 @@ module ip_apb_wrapper (
   assign s_m_apb_pready[5]            = u_i2c_0_apb4_if.pready;
   assign s_m_apb_pslverr[5]           = u_i2c_0_apb4_if.pslverr;
   assign s_m_apb_prdata5              = u_i2c_0_apb4_if.prdata;
-  assign u_i2c_0_if.scl_i             = i2c_scl_i;
-  assign i2c_scl_o                    = u_i2c_0_if.scl_o;
-  assign i2c_scl_dir_o                = u_i2c_0_if.scl_dir_o;
-  assign u_i2c_0_if.sda_i             = i2c_sda_i;
-  assign i2c_sda_o                    = u_i2c_0_if.sda_o;
-  assign i2c_sda_dir_o                = u_i2c_0_if.sda_dir_o;
-  assign irq_o[3]                     = u_i2c_0_if.irq_o;
+  assign irq_o[3]                     = i2c.irq_o;
 
   assign u_qspi_0_apb4_if.paddr       = s_m_apb_paddr;
   assign u_qspi_0_apb4_if.pprot       = s_m_apb_pprot;

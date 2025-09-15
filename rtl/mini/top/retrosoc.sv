@@ -22,89 +22,106 @@
 `include "mmap_define.svh"
 
 module retrosoc (
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic        clk_aud_i,
-    input  logic        rst_aud_n_i,
+    input  logic             clk_i,
+    input  logic             rst_n_i,
+    input  logic             clk_aud_i,
+    input  logic             rst_aud_n_i,
 `ifdef CORE_MDD
-    input  logic [ 4:0] core_mdd_sel_i,
+    input  logic      [ 4:0] core_mdd_sel_i,
 `endif
 `ifdef IP_MDD
-    output logic [15:0] ip_mdd_gpio_out_o,
-    input  logic [15:0] ip_mdd_gpio_in_i,
-    output logic [15:0] ip_mdd_gpio_oen_o,
+    output logic      [15:0] ip_mdd_gpio_out_o,
+    input  logic      [15:0] ip_mdd_gpio_in_i,
+    output logic      [15:0] ip_mdd_gpio_oen_o,
 `endif
 `ifdef HAVE_SRAM_IF
-    output logic [14:0] ram_addr_o,
-    output logic [31:0] ram_wdata_o,
-    output logic [ 3:0] ram_wstrb_o,
-    input  logic [31:0] ram_rdata_i,
+    output logic      [14:0] ram_addr_o,
+    output logic      [31:0] ram_wdata_o,
+    output logic      [ 3:0] ram_wstrb_o,
+    input  logic      [31:0] ram_rdata_i,
 `endif
     // memory mapped I/O signals
-    output logic [ 7:0] gpio_out_o,
-    input  logic [ 7:0] gpio_in_i,
-    output logic [ 7:0] gpio_pun_o,
-    output logic [ 7:0] gpio_pdn_o,
-    output logic [ 7:0] gpio_oen_o,
-    output logic        uart_tx_o,
-    input  logic        uart_rx_i,
-    output logic        psram_sclk_o,
-    output logic [ 1:0] psram_ce_o,
-    input  logic        psram_sio0_i,
-    input  logic        psram_sio1_i,
-    input  logic        psram_sio2_i,
-    input  logic        psram_sio3_i,
-    output logic        psram_sio0_o,
-    output logic        psram_sio1_o,
-    output logic        psram_sio2_o,
-    output logic        psram_sio3_o,
-    output logic        psram_sio_oe_o,
-    output logic        spisd_sclk_o,
-    output logic        spisd_cs_o,
-    output logic        spisd_mosi_o,
-    input  logic        spisd_miso_i,
+    output logic      [ 7:0] gpio_out_o,
+    input  logic      [ 7:0] gpio_in_i,
+    output logic      [ 7:0] gpio_pun_o,
+    output logic      [ 7:0] gpio_pdn_o,
+    output logic      [ 7:0] gpio_oen_o,
+    output logic             uart_tx_o,
+    input  logic             uart_rx_i,
+    output logic             psram_sclk_o,
+    output logic      [ 1:0] psram_ce_o,
+    input  logic             psram_sio0_i,
+    input  logic             psram_sio1_i,
+    input  logic             psram_sio2_i,
+    input  logic             psram_sio3_i,
+    output logic             psram_sio0_o,
+    output logic             psram_sio1_o,
+    output logic             psram_sio2_o,
+    output logic             psram_sio3_o,
+    output logic             psram_sio_oe_o,
+    output logic             spisd_sclk_o,
+    output logic             spisd_cs_o,
+    output logic             spisd_mosi_o,
+    input  logic             spisd_miso_i,
     // irq
-    input  logic        irq_pin_i,
+    input  logic             irq_pin_i,
     // cust
-    input  logic        cust_uart_rx_i,
-    output logic        cust_uart_tx_o,
-    output logic [ 3:0] cust_pwm_pwm_o,
-    input  logic        cust_ps2_ps2_clk_i,
-    input  logic        cust_ps2_ps2_dat_i,
-    input  logic        cust_i2c_scl_i,
-    output logic        cust_i2c_scl_o,
-    output logic        cust_i2c_scl_dir_o,
-    input  logic        cust_i2c_sda_i,
-    output logic        cust_i2c_sda_o,
-    output logic        cust_i2c_sda_dir_o,
-    output logic        cust_qspi_spi_clk_o,
-    output logic [ 3:0] cust_qspi_spi_csn_o,
-    output logic [ 3:0] cust_qspi_spi_sdo_o,
-    output logic [ 3:0] cust_qspi_spi_oe_o,
-    input  logic [ 3:0] cust_qspi_spi_sdi_i,
-    input  logic        cust_spfs_div4_i,
-    output logic        cust_spfs_clk_o,
-    output logic        cust_spfs_cs_o,
-    output logic        cust_spfs_mosi_o,
-    input  logic        cust_spfs_miso_i
+    input  logic             cust_uart_rx_i,
+    output logic             cust_uart_tx_o,
+    output logic      [ 3:0] cust_pwm_pwm_o,
+    input  logic             cust_ps2_ps2_clk_i,
+    input  logic             cust_ps2_ps2_dat_i,
+           i2c_if.dut        i2c,
+    output logic             cust_qspi_spi_clk_o,
+    output logic      [ 3:0] cust_qspi_spi_csn_o,
+    output logic      [ 3:0] cust_qspi_spi_sdo_o,
+    output logic      [ 3:0] cust_qspi_spi_oe_o,
+    input  logic      [ 3:0] cust_qspi_spi_sdi_i,
+    input  logic             cust_spfs_div4_i,
+    output logic             cust_spfs_clk_o,
+    output logic             cust_spfs_cs_o,
+    output logic             cust_spfs_mosi_o,
+    input  logic             cust_spfs_miso_i
 );
 
   // verilog_format: off
   nmi_if u_core_nmi_if ();
   nmi_if u_natv_nmi_if();
   nmi_if u_apb_nmi_if();
+  i2c_if u_natv_i2c_if();
+  i2c_if u_apb_i2c_if();
   // verilog_format: on
 
+  // tmp: i2c sel
+  logic s_i2c_sel_d, s_i2c_sel_q;
   // irq
   logic [31:0] s_irq;
   logic [ 2:0] s_natv_irq;
   logic [ 5:0] s_apb_irq;
 
-  assign s_irq[4:0]   = 5'd0;
-  assign s_irq[5]     = irq_pin_i;
-  assign s_irq[8:6]   = s_natv_irq;
-  assign s_irq[14:9]  = s_apb_irq;
-  assign s_irq[31:15] = 17'd0;
+  assign u_apb_i2c_if.scl_i  = i2c.scl_i;
+  assign u_natv_i2c_if.sda_i = i2c.sda_i;
+  assign u_apb_i2c_if.sda_i  = i2c.sda_i;
+  assign i2c.scl_o           = s_i2c_sel_q ? u_natv_i2c_if.scl_o : u_apb_i2c_if.scl_o;
+  assign i2c.scl_dir_o       = s_i2c_sel_q ? u_natv_i2c_if.scl_dir_o : ~u_apb_i2c_if.scl_dir_o;
+  assign i2c.sda_o           = s_i2c_sel_q ? u_natv_i2c_if.sda_o : u_apb_i2c_if.sda_o;
+  assign i2c.sda_dir_o       = s_i2c_sel_q ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
+
+  assign s_irq[4:0]          = 5'd0;
+  assign s_irq[5]            = irq_pin_i;
+  assign s_irq[8:6]          = s_natv_irq;
+  assign s_irq[14:9]         = s_apb_irq;
+  assign s_irq[31:15]        = 17'd0;
+
+
+  assign s_i2c_sel_d         = 1'b1;
+  dffr #(1) u_i2c_sel_dffr (
+      clk_i,
+      rst_n_i,
+      s_i2c_sel_d,
+      s_i2c_sel_q
+  );
+
 
   core_wrapper u_core_wrapper (
       .clk_i         (clk_i),
@@ -156,6 +173,7 @@ module retrosoc (
       .spisd_cs_o    (spisd_cs_o),
       .spisd_mosi_o  (spisd_mosi_o),
       .spisd_miso_i  (spisd_miso_i),
+      .i2c           (u_natv_i2c_if),
       .irq_o         (s_natv_irq)
   );
 
@@ -168,12 +186,7 @@ module retrosoc (
       .pwm_pwm_o        (cust_pwm_pwm_o),
       .ps2_ps2_clk_i    (cust_ps2_ps2_clk_i),
       .ps2_ps2_dat_i    (cust_ps2_ps2_dat_i),
-      .i2c_scl_i        (cust_i2c_scl_i),
-      .i2c_scl_o        (cust_i2c_scl_o),
-      .i2c_scl_dir_o    (cust_i2c_scl_dir_o),
-      .i2c_sda_i        (cust_i2c_sda_i),
-      .i2c_sda_o        (cust_i2c_sda_o),
-      .i2c_sda_dir_o    (cust_i2c_sda_dir_o),
+      .i2c              (u_apb_i2c_if),
       .qspi_spi_clk_o   (cust_qspi_spi_clk_o),
       .qspi_spi_csn_o   (cust_qspi_spi_csn_o),
       .qspi_spi_sdo_o   (cust_qspi_spi_sdo_o),
