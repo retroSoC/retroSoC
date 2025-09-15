@@ -21,22 +21,11 @@ module ip_apb_wrapper (
     input  logic        clk_i,
     input  logic        rst_n_i,
     nmi_if.slave        nmi,
-    // uart
-    input  logic        uart_rx_i,
-    output logic        uart_tx_o,
-    // pwm
-    output logic [ 3:0] pwm_pwm_o,
-    // ps2
-    input  logic        ps2_ps2_clk_i,
-    input  logic        ps2_ps2_dat_i,
-    // i2c
+    uart_if.dut         uart,
+    pwm_if.dut          pwm,
+    ps2_if.dut          ps2,
     i2c_if.dut          i2c,
-    // qspi
-    output logic        qspi_spi_clk_o,
-    output logic [ 3:0] qspi_spi_csn_o,
-    output logic [ 3:0] qspi_spi_sdo_o,
-    output logic [ 3:0] qspi_spi_oe_o,
-    input  logic [ 3:0] qspi_spi_sdi_i,
+    qspi_if.dut         qspi,
     // spfs
     input  logic        spfs_div4_i,
     output logic        spfs_clk_o,
@@ -98,19 +87,15 @@ module ip_apb_wrapper (
   apb4_if u_i2c_0_apb4_if        (clk_i, rst_n_i);
   apb4_if u_qspi_0_apb4_if       (clk_i, rst_n_i);
 
-  uart_if u_uart_0_if            ();
-  pwm_if  u_pwm_0_if             ();
-  ps2_if  u_ps2_0_if             ();
-  // i2c_if  u_i2c_0_if             ();
-  spi_if  u_spi_0_if             ();
+
 
   apb4_archinfo                u_apb4_archinfo_0(u_archinfo_0_apb4_if);
   apb4_rng                     u_apb4_rng_0     (u_rng_0_apb4_if);
-  apb4_uart #(.FIFO_DEPTH(32)) u_apb4_uart_0    (u_uart_0_apb4_if, u_uart_0_if);
-  apb4_pwm                     u_apb4_pwm_0     (u_pwm_0_apb4_if, u_pwm_0_if);
-  apb4_ps2                     u_apb4_ps2_0     (u_ps2_0_apb4_if, u_ps2_0_if);
+  apb4_uart #(.FIFO_DEPTH(32)) u_apb4_uart_0    (u_uart_0_apb4_if, uart);
+  apb4_pwm                     u_apb4_pwm_0     (u_pwm_0_apb4_if, pwm);
+  apb4_ps2                     u_apb4_ps2_0     (u_ps2_0_apb4_if, ps2);
   apb4_i2c                     u_apb4_i2c_0     (u_i2c_0_apb4_if, i2c);
-  apb4_spi #(.FIFO_DEPTH(32))  u_apb4_spi_0     (u_qspi_0_apb4_if, u_spi_0_if);
+  apb4_spi #(.FIFO_DEPTH(32))  u_apb4_spi_0     (u_qspi_0_apb4_if, qspi);
   // verilog_format: on
 
   assign u_archinfo_0_apb4_if.paddr   = s_m_apb_paddr;
@@ -145,9 +130,7 @@ module ip_apb_wrapper (
   assign s_m_apb_pready[2]            = u_uart_0_apb4_if.pready;
   assign s_m_apb_pslverr[2]           = u_uart_0_apb4_if.pslverr;
   assign s_m_apb_prdata2              = u_uart_0_apb4_if.prdata;
-  assign u_uart_0_if.uart_rx_i        = uart_rx_i;
-  assign uart_tx_o                    = u_uart_0_if.uart_tx_o;
-  assign irq_o[0]                     = u_uart_0_if.irq_o;
+  assign irq_o[0]                     = uart.irq_o;
 
   assign u_pwm_0_apb4_if.paddr        = s_m_apb_paddr;
   assign u_pwm_0_apb4_if.pprot        = s_m_apb_pprot;
@@ -159,8 +142,7 @@ module ip_apb_wrapper (
   assign s_m_apb_pready[3]            = u_pwm_0_apb4_if.pready;
   assign s_m_apb_pslverr[3]           = u_pwm_0_apb4_if.pslverr;
   assign s_m_apb_prdata3              = u_pwm_0_apb4_if.prdata;
-  assign pwm_pwm_o                    = u_pwm_0_if.pwm_o;
-  assign irq_o[1]                     = u_pwm_0_if.irq_o;
+  assign irq_o[1]                     = pwm.irq_o;
 
   assign u_ps2_0_apb4_if.paddr        = s_m_apb_paddr;
   assign u_ps2_0_apb4_if.pprot        = s_m_apb_pprot;
@@ -172,9 +154,7 @@ module ip_apb_wrapper (
   assign s_m_apb_pready[4]            = u_ps2_0_apb4_if.pready;
   assign s_m_apb_pslverr[4]           = u_ps2_0_apb4_if.pslverr;
   assign s_m_apb_prdata4              = u_ps2_0_apb4_if.prdata;
-  assign u_ps2_0_if.ps2_clk_i         = ps2_ps2_clk_i;
-  assign u_ps2_0_if.ps2_dat_i         = ps2_ps2_dat_i;
-  assign irq_o[2]                     = u_ps2_0_if.irq_o;
+  assign irq_o[2]                     = ps2.irq_o;
 
   assign u_i2c_0_apb4_if.paddr        = s_m_apb_paddr;
   assign u_i2c_0_apb4_if.pprot        = s_m_apb_pprot;
@@ -198,12 +178,7 @@ module ip_apb_wrapper (
   assign s_m_apb_pready[6]            = u_qspi_0_apb4_if.pready;
   assign s_m_apb_pslverr[6]           = u_qspi_0_apb4_if.pslverr;
   assign s_m_apb_prdata6              = u_qspi_0_apb4_if.prdata;
-  assign qspi_spi_clk_o               = u_spi_0_if.spi_sck_o;
-  assign qspi_spi_csn_o               = u_spi_0_if.spi_nss_o;
-  assign qspi_spi_sdo_o               = u_spi_0_if.spi_io_out_o;
-  assign qspi_spi_oe_o                = u_spi_0_if.spi_io_en_o;
-  assign u_spi_0_if.spi_io_in_i       = qspi_spi_sdi_i;
-  assign irq_o[4]                     = u_spi_0_if.irq_o;
+  assign irq_o[4]                     = qspi.irq_o;
 
 `ifdef IP_MDD
   assign s_ip_mdd_apb_paddr   = s_m_apb_paddr;
