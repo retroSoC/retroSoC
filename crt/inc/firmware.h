@@ -45,7 +45,7 @@
 #define reg_gpio_enb          (*(volatile uint32_t*)0x10000004)
 #define reg_gpio_pub          (*(volatile uint32_t*)0x10000008)
 #define reg_gpio_pdb          (*(volatile uint32_t*)0x1000000c)
-
+// uart
 #define reg_uart_clkdiv       (*(volatile uint32_t*)0x10001000)
 #define reg_uart_data         (*(volatile uint32_t*)0x10001004)
 // tim0
@@ -61,12 +61,16 @@
 #define reg_psram_chd         (*(volatile uint32_t*)0x10004004)
 // spisd
 #define reg_spisd_ctrl        (*(volatile uint32_t*)0x10005000)
+// i2c
+#define reg_i2c_ctrl          (*(volatile uint32_t*)0x10006000)
 // i2s
-#define reg_i2s_ctrl          (*(volatile uint32_t*)0x10006000)
-// i2s
-#define reg_i2c_ctrl          (*(volatile uint32_t*)0x10007000)
-// system ctrl
-#define reg_sys_ctrl          (*(volatile uint32_t*)0x20000000)
+#define reg_i2s_ctrl          (*(volatile uint32_t*)0x10007000)
+// 1-wire
+#define reg_onewire_ctrl      (*(volatile uint32_t*)0x10008000)
+// dma
+#define reg_dma_ctrl          (*(volatile uint32_t*)0x10009000)
+// sys ctrl
+#define reg_sys_ctrl          (*(volatile uint32_t*)0x1000A000)
 // cust archinfo
 #define reg_cust_archinfo_sys (*(volatile uint32_t*)0x20001000)
 #define reg_cust_archinfo_idl (*(volatile uint32_t*)0x20001004)
