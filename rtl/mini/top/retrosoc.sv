@@ -22,43 +22,38 @@
 `include "mmap_define.svh"
 
 module retrosoc (
-    input  logic              clk_i,
-    input  logic              rst_n_i,
-    input  logic              clk_aud_i,
-    input  logic              rst_aud_n_i,
-    input  logic              spfs_div4_i,
+    input  logic                   clk_i,
+    input  logic                   rst_n_i,
+    input  logic                   clk_aud_i,
+    input  logic                   rst_aud_n_i,
+    input  logic                   spfs_div4_i,
     // irq
-    input  logic              irq_pin_i,
+    input  logic                   irq_pin_i,
 `ifdef CORE_MDD
-    input  logic       [ 4:0] core_mdd_sel_i,
+    input  logic            [ 4:0] core_mdd_sel_i,
 `endif
 `ifdef IP_MDD
-    output logic       [15:0] ip_mdd_gpio_out_o,
-    input  logic       [15:0] ip_mdd_gpio_in_i,
-    output logic       [15:0] ip_mdd_gpio_oen_o,
+    output logic            [15:0] ip_mdd_gpio_out_o,
+    input  logic            [15:0] ip_mdd_gpio_in_i,
+    output logic            [15:0] ip_mdd_gpio_oen_o,
 `endif
 `ifdef HAVE_SRAM_IF
-    output logic       [14:0] ram_addr_o,
-    output logic       [31:0] ram_wdata_o,
-    output logic       [ 3:0] ram_wstrb_o,
-    input  logic       [31:0] ram_rdata_i,
+    output logic            [14:0] ram_addr_o,
+    output logic            [31:0] ram_wdata_o,
+    output logic            [ 3:0] ram_wstrb_o,
+    input  logic            [31:0] ram_rdata_i,
 `endif
-    // memory mapped I/O signals
-    output logic       [ 7:0] gpio_out_o,
-    input  logic       [ 7:0] gpio_in_i,
-    output logic       [ 7:0] gpio_pun_o,
-    output logic       [ 7:0] gpio_pdn_o,
-    output logic       [ 7:0] gpio_oen_o,
-           uart_if.dut        uart0,
-           qspi_if.dut        psram,
+           simp_gpio_if.dut        gpio,
+           uart_if.dut             uart0,
+           qspi_if.dut             psram,
     // apb
-           spi_if.dut         spisd,
-           uart_if.dut        uart1,
-           pwm_if.dut         pwm,
-           ps2_if.dut         ps2,
-           i2c_if.dut         i2c,
-           qspi_if.dut        qspi,
-           spi_if.dut         spfs
+           spi_if.dut              spisd,
+           uart_if.dut             uart1,
+           pwm_if.dut              pwm,
+           ps2_if.dut              ps2,
+           i2c_if.dut              i2c,
+           qspi_if.dut             qspi,
+           spi_if.dut              spfs
 );
 
   // verilog_format: off
@@ -125,19 +120,15 @@ module retrosoc (
   );
 
   ip_natv_wrapper u_ip_natv_wrapper (
-      .clk_i     (clk_i),
-      .rst_n_i   (rst_n_i),
-      .nmi       (u_natv_nmi_if),
-      .gpio_out_o(gpio_out_o),
-      .gpio_in_i (gpio_in_i),
-      .gpio_pun_o(gpio_pun_o),
-      .gpio_pdn_o(gpio_pdn_o),
-      .gpio_oen_o(gpio_oen_o),
-      .uart      (uart0),
-      .psram     (psram),
-      .spisd     (spisd),
-      .i2c       (u_natv_i2c_if),
-      .irq_o     (s_natv_irq)
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_natv_nmi_if),
+      .gpio   (gpio),
+      .uart   (uart0),
+      .psram  (psram),
+      .spisd  (spisd),
+      .i2c    (u_natv_i2c_if),
+      .irq_o  (s_natv_irq)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (

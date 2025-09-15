@@ -15,12 +15,7 @@ module ip_natv_wrapper (
     input  logic       rst_n_i,
     // natv if
     nmi_if.slave       nmi,
-    // gpio
-    output logic [7:0] gpio_out_o,
-    input  logic [7:0] gpio_in_i,
-    output logic [7:0] gpio_oen_o,
-    output logic [7:0] gpio_pun_o,
-    output logic [7:0] gpio_pdn_o,
+    simp_gpio_if.dut   gpio,
     uart_if.dut        uart,
     qspi_if.dut        psram,
     spi_if.dut         spisd,
@@ -96,18 +91,12 @@ module ip_natv_wrapper (
                                   ({32{(u_spisd_nmi_if.valid & u_spisd_nmi_if.ready)}} & u_spisd_nmi_if.rdata);
  // verilog_format: on
 
-  assign gpio_out_o             = u_simp_gpio_if.gpio_out;
-  assign u_simp_gpio_if.gpio_in = gpio_in_i;
-  assign gpio_oen_o             = u_simp_gpio_if.gpio_oen;
-  assign gpio_pun_o             = u_simp_gpio_if.gpio_pun;
-  assign gpio_pdn_o             = u_simp_gpio_if.gpio_pdn;
-
   assign irq_o[0]               = uart.irq_o;
   simple_gpio u_simple_gpio (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_gpio_nmi_if),
-      .gpio   (u_simp_gpio_if)
+      .gpio   (gpio)
   );
 
   simple_uart u_simple_uart (
