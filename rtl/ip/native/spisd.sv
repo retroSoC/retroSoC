@@ -11,19 +11,13 @@
 // memory-map rd/wr for first 512MB range of TF card
 // cache size: 512(width 9) [8:0]
 // tag width: 23 [22:0]
-module spisd (
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic        mem_valid_i,
-    output logic        mem_ready_o,
-    input  logic [31:0] mem_addr_i,
-    input  logic [31:0] mem_wdata_i,
-    input  logic [ 3:0] mem_wstrb_i,
-    output logic [31:0] mem_rdata_o,
-    output logic        spisd_sclk_o,
-    output logic        spisd_cs_o,
-    output logic        spisd_mosi_o,
-    input  logic        spisd_miso_i
+module nmi_spisd (
+    // verilog_format: off
+    input  logic clk_i,
+    input  logic rst_n_i,
+    nmi_if.slave nmi,
+    spi_if.dut   spi
+    // verilog_format: on
 );
 
 `ifndef SPISD_UNIT_TEST
@@ -63,14 +57,14 @@ module spisd (
   logic [31:0] s_word_data_d, s_word_data_q;
 
 
-  assign s_cfg_reg_sel = mem_addr_i[31:24] == 8'h10 && mem_addr_i[15:8] == 8'h50;
-  assign mem_ready_o   = mem_addr_i[31:24] == 8'h50 ? s_mem_ready : 1'b1;
-  assign mem_rdata_o   = mem_addr_i[31:24] == 8'h50 ? s_cache_data_q[s_cache_index] : s_clkdiv_q;
+  assign s_cfg_reg_sel = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h50;
+  assign nmi.ready     = nmi.addr[31:24] == 8'h50 ? s_mem_ready : 1'b1;
+  assign nmi.rdata     = nmi.addr[31:24] == 8'h50 ? s_cache_data_q[s_cache_index] : s_clkdiv_q;
 
   always_comb begin
     s_clkdiv_d = s_clkdiv_q;
-    if (mem_valid_i && mem_wstrb_i[0] && s_cfg_reg_sel && mem_addr_i[7:0] == 8'h00) begin
-      s_clkdiv_d = mem_wdata_i[1:0];
+    if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == 8'h00) begin
+      s_clkdiv_d = nmi.wdata[1:0];
     end
   end
   dffr #(2) u_clkdiv_dffr (
@@ -81,7 +75,7 @@ module spisd (
   );
 
 
-  assign s_cache_index = mem_addr_i[8:2];
+  assign s_cache_index = nmi.addr[8:2];
   always_comb begin
     // cache
     s_cache_valid_d = s_cache_valid_q;
@@ -100,32 +94,32 @@ module spisd (
     s_sd_addr       = '0;
     // mem_if
     s_mem_ready     = '0;
-    if (mem_addr_i[31:24] == 8'h50) begin
+    if (nmi.addr[31:24] == 8'h50) begin
       unique case (s_cache_fsm_q)
         FSM_IDLE: begin
-          if (s_init_done && mem_valid_i) s_cache_fsm_d = FSM_COMP_TAG;
+          if (s_init_done && nmi.valid) s_cache_fsm_d = FSM_COMP_TAG;
         end
         FSM_COMP_TAG: begin
           // cache hit
-          if (mem_addr_i[27:9] == s_cache_tag_q[18:0] && s_cache_valid_q) begin
+          if (nmi.addr[27:9] == s_cache_tag_q[18:0] && s_cache_valid_q) begin
             s_mem_ready = 1'b1;
             // write oper, set dirty
-            if (|mem_wstrb_i) begin
+            if (|nmi.wstrb) begin
               s_cache_dirty_d = 1'b1;
-              if (mem_wstrb_i[0]) s_cache_data_d[s_cache_index][7:0] = mem_wdata_i[7:0];
-              if (mem_wstrb_i[1]) s_cache_data_d[s_cache_index][15:8] = mem_wdata_i[15:8];
-              if (mem_wstrb_i[2]) s_cache_data_d[s_cache_index][23:16] = mem_wdata_i[23:16];
-              if (mem_wstrb_i[3]) s_cache_data_d[s_cache_index][31:24] = mem_wdata_i[31:24];
+              if (nmi.wstrb[0]) s_cache_data_d[s_cache_index][7:0] = nmi.wdata[7:0];
+              if (nmi.wstrb[1]) s_cache_data_d[s_cache_index][15:8] = nmi.wdata[15:8];
+              if (nmi.wstrb[2]) s_cache_data_d[s_cache_index][23:16] = nmi.wdata[23:16];
+              if (nmi.wstrb[3]) s_cache_data_d[s_cache_index][31:24] = nmi.wdata[31:24];
             end
             s_cache_fsm_d = FSM_IDLE;
           end else begin
             // need to update tag line info
             s_cache_valid_d = 1'b1;
-            s_cache_dirty_d = |mem_wstrb_i;
+            s_cache_dirty_d = |nmi.wstrb;
             // tag line is clean
             if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
               s_cache_fsm_d = FSM_ALLOC;
-              s_cache_tag_d = {4'd0, mem_addr_i[27:9]};
+              s_cache_tag_d = {4'd0, nmi.addr[27:9]};
             end else begin
               // need to flush data into sd card sectors
               s_cache_fsm_d = FSM_WR_BACK;
@@ -167,7 +161,7 @@ module spisd (
                 s_word_data_d = s_cache_data_q[s_line_cnt_d];
                 if (s_line_cnt_q == 7'd127) begin
                   s_cache_fsm_d = FSM_ALLOC;
-                  s_cache_tag_d = {4'd0, mem_addr_i[27:9]};
+                  s_cache_tag_d = {4'd0, nmi.addr[27:9]};
                 end
               end else begin
                 s_word_cnt_d  = s_word_cnt_q + 1'b1;
@@ -278,7 +272,7 @@ module spisd (
   logic        s_fir_clk_edge;
 
   assign s_mem_ready = '0;
-  assign mem_rdata_o = '0;
+  assign nmi.rdata   = '0;
   spisd_data u_spisd_data (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),

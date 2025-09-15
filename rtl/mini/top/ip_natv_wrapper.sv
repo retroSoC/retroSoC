@@ -36,12 +36,7 @@ module ip_natv_wrapper (
     output logic       psram_sio2_o,
     output logic       psram_sio3_o,
     output logic       psram_sio_oe_o,
-    // sd
-    output logic       spisd_sclk_o,
-    output logic       spisd_cs_o,
-    output logic       spisd_mosi_o,
-    input  logic       spisd_miso_i,
-    // i2c
+    spi_if.dut         spisd,
     i2c_if.dut         i2c,
     // irq
     output logic [2:0] irq_o
@@ -66,32 +61,32 @@ module ip_natv_wrapper (
   assign u_gpio_nmi_if.wdata    = nmi.wdata;
   assign u_gpio_nmi_if.wstrb    = nmi.wstrb;
 
-  assign u_uart_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h10);
-  assign u_uart_nmi_if.addr     = nmi.addr;
-  assign u_uart_nmi_if.wdata    = nmi.wdata;
-  assign u_uart_nmi_if.wstrb    = nmi.wstrb;
+  assign u_uart_nmi_if.valid  = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h10);
+  assign u_uart_nmi_if.addr   = nmi.addr;
+  assign u_uart_nmi_if.wdata  = nmi.wdata;
+  assign u_uart_nmi_if.wstrb  = nmi.wstrb;
 
-  assign u_tim0_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h20);
-  assign u_tim0_nmi_if.addr     = nmi.addr;
-  assign u_tim0_nmi_if.wdata    = nmi.wdata;
-  assign u_tim0_nmi_if.wstrb    = nmi.wstrb;
+  assign u_tim0_nmi_if.valid  = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h20);
+  assign u_tim0_nmi_if.addr   = nmi.addr;
+  assign u_tim0_nmi_if.wdata  = nmi.wdata;
+  assign u_tim0_nmi_if.wstrb  = nmi.wstrb;
 
-  assign u_tim1_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h30);
-  assign u_tim1_nmi_if.addr     = nmi.addr;
-  assign u_tim1_nmi_if.wdata    = nmi.wdata;
-  assign u_tim1_nmi_if.wstrb    = nmi.wstrb;
+  assign u_tim1_nmi_if.valid  = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h30);
+  assign u_tim1_nmi_if.addr   = nmi.addr;
+  assign u_tim1_nmi_if.wdata  = nmi.wdata;
+  assign u_tim1_nmi_if.wstrb  = nmi.wstrb;
 
-  assign s_psram_cfg_sel        = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h40;
-  assign u_psram_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h40 || s_psram_cfg_sel);
-  assign u_psram_nmi_if.addr    = nmi.addr;
-  assign u_psram_nmi_if.wdata   = nmi.wdata;
-  assign u_psram_nmi_if.wstrb   = nmi.wstrb;
+  assign s_psram_cfg_sel      = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h40;
+  assign u_psram_nmi_if.valid = nmi.valid && (nmi.addr[31:24] == 8'h40 || s_psram_cfg_sel);
+  assign u_psram_nmi_if.addr  = nmi.addr;
+  assign u_psram_nmi_if.wdata = nmi.wdata;
+  assign u_psram_nmi_if.wstrb = nmi.wstrb;
 
-  assign s_spisd_cfg_sel        = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h50;
-  assign u_spisd_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h50 || s_spisd_cfg_sel);
-  assign u_spisd_nmi_if.addr    = nmi.addr;
-  assign u_spisd_nmi_if.wdata   = nmi.wdata;
-  assign u_spisd_nmi_if.wstrb   = nmi.wstrb;
+  assign s_spisd_cfg_sel      = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h50;
+  assign u_spisd_nmi_if.valid = nmi.valid && (nmi.addr[31:24] == 8'h50 || s_spisd_cfg_sel);
+  assign u_spisd_nmi_if.addr  = nmi.addr;
+  assign u_spisd_nmi_if.wdata = nmi.wdata;
+  assign u_spisd_nmi_if.wstrb = nmi.wstrb;
 
   assign u_i2c_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h60);
   assign u_i2c_nmi_if.addr    = nmi.addr;
@@ -175,19 +170,11 @@ module ip_natv_wrapper (
       .psram_sio_oen_o(psram_sio_oe_o)
   );
 
-  spisd u_spisd (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
-      .mem_valid_i (u_spisd_nmi_if.valid),
-      .mem_ready_o (u_spisd_nmi_if.ready),
-      .mem_addr_i  (u_spisd_nmi_if.addr),
-      .mem_wdata_i (u_spisd_nmi_if.wdata),
-      .mem_wstrb_i (u_spisd_nmi_if.wstrb),
-      .mem_rdata_o (u_spisd_nmi_if.rdata),
-      .spisd_sclk_o(spisd_sclk_o),
-      .spisd_cs_o  (spisd_cs_o),
-      .spisd_mosi_o(spisd_mosi_o),
-      .spisd_miso_i(spisd_miso_i)
+  nmi_spisd u_nmi_spisd (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_spisd_nmi_if),
+      .spi    (spisd)
   );
 
 

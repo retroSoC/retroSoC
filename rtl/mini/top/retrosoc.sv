@@ -26,6 +26,7 @@ module retrosoc (
     input  logic              rst_n_i,
     input  logic              clk_aud_i,
     input  logic              rst_aud_n_i,
+    input  logic              spfs_div4_i,
     // irq
     input  logic              irq_pin_i,
 `ifdef CORE_MDD
@@ -61,12 +62,8 @@ module retrosoc (
     output logic              psram_sio2_o,
     output logic              psram_sio3_o,
     output logic              psram_sio_oe_o,
-    output logic              spisd_sclk_o,
-    output logic              spisd_cs_o,
-    output logic              spisd_mosi_o,
-    input  logic              spisd_miso_i,
     // apb
-    input  logic              cust_spfs_div4_i,
+           spi_if.dut         spisd,
            uart_if.dut        uart,
            pwm_if.dut         pwm,
            ps2_if.dut         ps2,
@@ -160,10 +157,7 @@ module retrosoc (
       .psram_sio2_o  (psram_sio2_o),
       .psram_sio3_o  (psram_sio3_o),
       .psram_sio_oe_o(psram_sio_oe_o),
-      .spisd_sclk_o  (spisd_sclk_o),
-      .spisd_cs_o    (spisd_cs_o),
-      .spisd_mosi_o  (spisd_mosi_o),
-      .spisd_miso_i  (spisd_miso_i),
+      .spisd         (spisd),
       .i2c           (u_natv_i2c_if),
       .irq_o         (s_natv_irq)
   );
@@ -171,7 +165,7 @@ module retrosoc (
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .spfs_div4_i      (cust_spfs_div4_i),
+      .spfs_div4_i      (spfs_div4_i),
       .nmi              (u_apb_nmi_if),
       .uart             (uart),
       .pwm              (pwm),
