@@ -20,18 +20,14 @@ module ip_apb_wrapper (
     // verilog_format: off
     input  logic        clk_i,
     input  logic        rst_n_i,
+    input  logic        spfs_div4_i,
     nmi_if.slave        nmi,
     uart_if.dut         uart,
     pwm_if.dut          pwm,
     ps2_if.dut          ps2,
     i2c_if.dut          i2c,
     qspi_if.dut         qspi,
-    // spfs
-    input  logic        spfs_div4_i,
-    output logic        spfs_clk_o,
-    output logic        spfs_cs_o,
-    output logic        spfs_mosi_o,
-    input  logic        spfs_miso_i,
+    spi_if.dut          spfs,
 `ifdef IP_MDD
     output logic [15:0] ip_mdd_gpio_out_o,
     input  logic [15:0] ip_mdd_gpio_in_i,
@@ -210,10 +206,10 @@ module ip_apb_wrapper (
       .prdata     (s_m_apb_prdata7),
       .pslverr    (s_m_apb_pslverr[7]),
       .div4_i     (spfs_div4_i),
-      .spi_clk    (spfs_clk_o),
-      .spi_cs     (spfs_cs_o),
-      .spi_mosi   (spfs_mosi_o),
-      .spi_miso   (spfs_miso_i),
+      .spi_clk    (spfs.spi_sck_o),
+      .spi_cs     (spfs.spi_nss_o),
+      .spi_mosi   (spfs.spi_mosi_o),
+      .spi_miso   (spfs.spi_miso_i),
       .spi_irq_out(irq_o[5])
   );
 

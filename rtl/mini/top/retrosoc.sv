@@ -66,16 +66,13 @@ module retrosoc (
     output logic              spisd_mosi_o,
     input  logic              spisd_miso_i,
     // apb
+    input  logic              cust_spfs_div4_i,
            uart_if.dut        uart,
            pwm_if.dut         pwm,
            ps2_if.dut         ps2,
            i2c_if.dut         i2c,
            qspi_if.dut        qspi,
-    input  logic              cust_spfs_div4_i,
-    output logic              cust_spfs_clk_o,
-    output logic              cust_spfs_cs_o,
-    output logic              cust_spfs_mosi_o,
-    input  logic              cust_spfs_miso_i
+           spi_if.dut         spfs
 );
 
   // verilog_format: off
@@ -174,17 +171,14 @@ module retrosoc (
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
+      .spfs_div4_i      (cust_spfs_div4_i),
       .nmi              (u_apb_nmi_if),
       .uart             (uart),
       .pwm              (pwm),
       .ps2              (ps2),
       .i2c              (u_apb_i2c_if),
       .qspi             (qspi),
-      .spfs_div4_i      (cust_spfs_div4_i),
-      .spfs_clk_o       (cust_spfs_clk_o),
-      .spfs_cs_o        (cust_spfs_cs_o),
-      .spfs_mosi_o      (cust_spfs_mosi_o),
-      .spfs_miso_i      (cust_spfs_miso_i),
+      .spfs             (spfs),
 `ifdef IP_MDD
       .ip_mdd_gpio_out_o(ip_mdd_gpio_out_o),
       .ip_mdd_gpio_in_i (ip_mdd_gpio_in_i),
