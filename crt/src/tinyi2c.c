@@ -3,53 +3,53 @@
 #include <tinyi2c.h>
 
 void i2c_config() {
-    reg_cust_i2c_ctrl = (uint32_t)0;
-    reg_cust_i2c_pscr = (uint32_t)99;         // 50MHz / (5 * 100KHz) - 1
-    printf("CTRL: %d PSCR: %d\n", reg_cust_i2c_ctrl, reg_cust_i2c_pscr);
-    reg_cust_i2c_ctrl = (uint32_t)0b10000000; // core en
+    reg_i2c1_ctrl = (uint32_t)0;
+    reg_i2c1_pscr = (uint32_t)99;         // 50MHz / (5 * 100KHz) - 1
+    printf("CTRL: %d PSCR: %d\n", reg_i2c1_ctrl, reg_i2c1_pscr);
+    reg_i2c1_ctrl = (uint32_t)0b10000000; // core en
 }
 
 uint32_t i2c_get_ack() {
-    while ((reg_cust_i2c_sr & I2C_STATUS_TIP) == 0); // need TIP go to 1
-    while ((reg_cust_i2c_sr & I2C_STATUS_TIP) != 0); // and then go back to 0
-    return !(reg_cust_i2c_sr & I2C_STATUS_RXACK);    // invert since signal is active low
+    while ((reg_i2c1_sr & I2C_STATUS_TIP) == 0); // need TIP go to 1
+    while ((reg_i2c1_sr & I2C_STATUS_TIP) != 0); // and then go back to 0
+    return !(reg_i2c1_sr & I2C_STATUS_RXACK);    // invert since signal is active low
 }
 
 uint32_t i2c_busy() {
-    return ((reg_cust_i2c_sr & I2C_STATUS_BUSY) == I2C_STATUS_BUSY);
+    return ((reg_i2c1_sr & I2C_STATUS_BUSY) == I2C_STATUS_BUSY);
 }
 
 void i2c_wr_start(uint32_t slv_addr) {
-    reg_cust_i2c_txr = slv_addr;
-    reg_cust_i2c_cmd = I2C_TEST_START_WRITE;
+    reg_i2c1_txr = slv_addr;
+    reg_i2c1_cmd = I2C_TEST_START_WRITE;
     if (!i2c_get_ack()) printf("[wr start]no ack recv\n");
 }
 
 void i2c_rd_start(uint32_t slv_addr) {
     do {
-        reg_cust_i2c_txr = slv_addr;
-        reg_cust_i2c_cmd = I2C_TEST_START_WRITE;
+        reg_i2c1_txr = slv_addr;
+        reg_i2c1_cmd = I2C_TEST_START_WRITE;
     }while (!i2c_get_ack());
 }
 
 void i2c_write(uint8_t val) {
-    reg_cust_i2c_txr = val;
-    reg_cust_i2c_cmd = I2C_TEST_WRITE;
+    reg_i2c1_txr = val;
+    reg_i2c1_cmd = I2C_TEST_WRITE;
     if (!i2c_get_ack()) printf("[i2c write]no ack recv\n");
     // do {
-    //     reg_cust_i2c_txr = val;
-    //     reg_cust_i2c_cmd = I2C_TEST_WRITE;
+    //     reg_i2c1_txr = val;
+    //     reg_i2c1_cmd = I2C_TEST_WRITE;
     // } while(!i2c_get_ack());
 }
 
 uint32_t i2c_read(uint32_t cmd) {
-    reg_cust_i2c_cmd = cmd;
+    reg_i2c1_cmd = cmd;
     if (!i2c_get_ack()) printf("[i2c read]no ack recv\n");
-    return reg_cust_i2c_rxr;
+    return reg_i2c1_rxr;
 }
 
 void i2c_stop() {
-    reg_cust_i2c_cmd = I2C_TEST_STOP;
+    reg_i2c1_cmd = I2C_TEST_STOP;
     while(i2c_busy());
 }
 

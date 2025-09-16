@@ -25,7 +25,7 @@ char getchar_prompt(char *prompt)
                 printf(prompt);
             cycles_begin = cycles_now;
         }
-        c = reg_uart_data;
+        c = reg_uart0_data;
     }
     return c;
 }
