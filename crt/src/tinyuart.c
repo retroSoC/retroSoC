@@ -3,9 +3,9 @@
 
 void putch(char ch)
 {
-  // while (((reg_cust_uart_lsr & 0x100) >> 8) == 1)
+  // while (((reg_uart1_lsr & 0x100) >> 8) == 1)
   //   ;
-  // reg_cust_uart_trx = (uint32_t)ch;
+  // reg_uart1_trx = (uint32_t)ch;
 
-  reg_uart_data = ch;
+  reg_uart0_data = ch;
 }

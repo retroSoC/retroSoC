@@ -6,12 +6,12 @@ void ip_ps2_test()
 {
     printf("[CUST IP] ps2 test\n");
 
-    reg_cust_ps2_ctrl = (uint32_t)0b11;
-    printf("ps2 ctrl: %x\n", reg_cust_ps2_ctrl);
+    reg_ps2_ctrl = (uint32_t)0b11;
+    printf("ps2 ctrl: %x\n", reg_ps2_ctrl);
     uint32_t kdb_code;
     while(1)
     {
-        kdb_code = reg_cust_ps2_data;
+        kdb_code = reg_ps2_data;
         if (kdb_code != 0)
         {
             if(kdb_code == 0x76) break;
@@ -19,6 +19,6 @@ void ip_ps2_test()
         }
     }
 
-    reg_cust_ps2_ctrl = (uint32_t)0b00;
-    printf("ps2 ctrl: %x\n", reg_cust_ps2_ctrl);
+    reg_ps2_ctrl = (uint32_t)0b00;
+    printf("ps2 ctrl: %x\n", reg_ps2_ctrl);
 }

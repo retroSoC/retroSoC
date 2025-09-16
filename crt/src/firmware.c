@@ -16,9 +16,9 @@ void welcome_screen()
     //     printf("global test:%x\n", global_test[i]);
 
     // printf("[USER IP design] archinfo test\n");
-    // printf("[ARCHINFO SYS] %x\n", reg_ip_design_archinfo_sys);
-    // printf("[ARCHINFO IDL] %x\n", reg_ip_design_archinfo_idl);
-    // printf("[ARCHINFO IDH] %x\n", reg_ip_design_archinfo_idh);
+    // printf("[ARCHINFO SYS] %x\n", reg_user_ip_reg0);
+    // printf("[ARCHINFO IDL] %x\n", reg_user_ip_reg1);
+    // printf("[ARCHINFO IDH] %x\n", reg_user_ip_reg2);
     printf("compile date: %s %s\n", __DATE__, __TIME__);
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%x\n", &_flash_wait_start);
@@ -64,22 +64,22 @@ void welcome_screen()
 
     printf("Memory Map IO Device:\n");
     printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
-    printf("                     1 x UART          @0x%x\n", &reg_uart_clkdiv);
-    printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_config, &reg_tim1_config);
-    printf("                     1 x PSRAM         @0x%x\n", &reg_psram_waitcycl);
+    printf("                     1 x UART          @0x%x\n", &reg_uart0_clkdiv);
+    printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
+    printf("                     1 x PSRAM         @0x%x\n", &reg_psram_wait);
     printf("                     1 x SPISD         @0x%x\n", &reg_spisd_ctrl);
-    printf("                     1 x I2C           @0x%x\n", &reg_i2c_ctrl);
+    printf("                     1 x I2C           @0x%x\n", &reg_i2c1_ctrl);
     printf("                     1 x I2S           @0x%x\n", &reg_i2s_ctrl);
     printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_ctrl);
     printf("                     1 x DMA           @0x%x\n", &reg_dma_ctrl);
     printf("                     1 x SYSCTRL       @0x%x\n", &reg_sys_ctrl);
-    printf("                     1 x ARCHINFO      @0x%x\n", &reg_cust_archinfo_sys);
-    printf("                     1 x RNG           @0x%x\n", &reg_cust_rng_ctrl);
-    printf("                     1 x UART(ADV)     @0x%x\n", &reg_cust_uart_lcr);
-    printf("                     4 x PWM           @0x%x\n", &reg_cust_pwm_ctrl);
-    printf("                     1 x PS2           @0x%x\n", &reg_cust_ps2_ctrl);
-    printf("                     1 x I2C(ADV)      @0x%x\n", &reg_cust_i2c_ctrl);
-    printf("                     1 x QSPI          @0x%x\n", &reg_cust_qspi_status);
+    printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
+    printf("                     1 x RNG           @0x%x\n", &reg_rng_ctrl);
+    printf("                     1 x UART(ADV)     @0x%x\n", &reg_uart1_lcr);
+    printf("                     4 x PWM           @0x%x\n", &reg_pwm_ctrl);
+    printf("                     1 x PS2           @0x%x\n", &reg_ps2_ctrl);
+    printf("                     1 x I2C(ADV)      @0x%x\n", &reg_i2c1_ctrl);
+    printf("                     1 x QSPI          @0x%x\n", &reg_qspi_status);
     printf("                     1 x SPFS(TPO)     @unused\n\n");
 }
 
@@ -98,7 +98,7 @@ void app_system_boot() {
     uint32_t timing_expt = 0, timing_actual = 0;
     char  msg_pass[20] = "\e[0;32m[PASS]\e[0m", msg_fail[20] = "\e[0;31m[FAIL]\e[0m";
 
-    printf("[PSRAM] wait cycles(default):      %d\n", reg_psram_waitcycl);
+    printf("[PSRAM] wait cycles(default):      %d\n", reg_psram_wait);
     printf("[PSRAM] chd delay cycles(defalut): %d\n", reg_psram_chd);
     printf("[PSRAM] timing check\n");
     timing_expt = 1000 / PSRAM_SCLK_MAX_FREQ;
@@ -117,7 +117,7 @@ void app_system_boot() {
     printf("%s\n", msg_pass);
 
     timing_expt = 50;
-    timing_actual = (reg_psram_waitcycl / 2) * (1000 / PSRAM_SCLK_FREQ);
+    timing_actual = (reg_psram_wait / 2) * (1000 / PSRAM_SCLK_FREQ);
     printf("tCPH    ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
@@ -153,8 +153,8 @@ void app_system_boot() {
     }
 
     uint32_t psram_cfg_val = (uint32_t)8;
-    reg_psram_waitcycl = psram_cfg_val;
-    printf("[PSRAM] set wait cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_waitcycl);
+    reg_psram_wait = psram_cfg_val;
+    printf("[PSRAM] set wait cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_wait);
     psram_cfg_val = (uint32_t)0;
     reg_psram_chd = psram_cfg_val;
     printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_chd);
@@ -180,7 +180,7 @@ void spisd_test() {
 
 void main()
 {
-    reg_uart_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
+    reg_uart0_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
     app_system_boot();
     // while(1);
     // ip_archinfo_test();

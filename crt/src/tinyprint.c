@@ -5,7 +5,7 @@ void putchar(char c)
 {
     if (c == '\n')
         putchar('\r');
-    reg_uart_data = c;
+    reg_uart0_data = c;
 }
 
 void print(const char *p)

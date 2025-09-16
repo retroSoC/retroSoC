@@ -9,23 +9,23 @@
 void spi_init()
 {
     reg_gpio_enb = (uint32_t)0b011;
-    reg_cust_qspi_status = (uint32_t)0b10000;
-    reg_cust_qspi_status = (uint32_t)0b00000;
-    reg_cust_qspi_intcfg = (uint32_t)0b00000;
-    reg_cust_qspi_dum = (uint32_t)0;
-    reg_cust_qspi_clkdiv = (uint32_t)0; // sck = apb_clk/2(div+1)
+    reg_qspi_status = (uint32_t)0b10000;
+    reg_qspi_status = (uint32_t)0b00000;
+    reg_qspi_intcfg = (uint32_t)0b00000;
+    reg_qspi_dum = (uint32_t)0;
+    reg_qspi_clkdiv = (uint32_t)0; // sck = apb_clk/2(div+1)
 }
 
 void spi_wr_dat(uint8_t dat)
 {
     uint32_t wdat = ((uint32_t)dat) << 24;
     // spi_set_datalen(8);
-    reg_cust_qspi_len = 0x80000;
+    reg_qspi_len = 0x80000;
     // spi_write_fifo(&wdata, 8);
-    reg_cust_qspi_txfifo = wdat;
+    reg_qspi_txfifo = wdat;
     // spi_start_transaction(SPI_CMD_WR, SPI_CSN0);
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
 }
 
@@ -46,10 +46,10 @@ void lcd_wr_data16(uint16_t dat)
     lcd_dc_set;
 
     uint32_t wdat = ((uint32_t)dat) << 16;
-    reg_cust_qspi_len = 0x100000; // NOTE: 16bits
-    reg_cust_qspi_txfifo = wdat;
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+    reg_qspi_len = 0x100000; // NOTE: 16bits
+    reg_qspi_txfifo = wdat;
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
     // spi_wr_dat(dat >> 8);
     // spi_wr_dat(dat);
@@ -59,10 +59,10 @@ void lcd_wr_data32(uint32_t dat)
 {
     lcd_dc_set;
 
-    reg_cust_qspi_len = 0x200000; // NOTE: 32bits
-    reg_cust_qspi_txfifo = dat;
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+    reg_qspi_len = 0x200000; // NOTE: 32bits
+    reg_qspi_txfifo = dat;
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
 }
 
@@ -70,11 +70,11 @@ void lcd_wr_data32x2(uint32_t dat1, uint32_t dat2)
 {
     lcd_dc_set;
 
-    reg_cust_qspi_len = 0x400000; // NOTE: 32x2bits
-    reg_cust_qspi_txfifo = dat1;
-    reg_cust_qspi_txfifo = dat2;
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+    reg_qspi_len = 0x400000; // NOTE: 32x2bits
+    reg_qspi_txfifo = dat1;
+    reg_qspi_txfifo = dat2;
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
 }
 
@@ -83,17 +83,17 @@ void lcd_wr_data32x8(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4,
 {
     lcd_dc_set;
 
-    reg_cust_qspi_len = 0x1000000; // NOTE: 32x8bits
-    reg_cust_qspi_txfifo = dat1;
-    reg_cust_qspi_txfifo = dat2;
-    reg_cust_qspi_txfifo = dat3;
-    reg_cust_qspi_txfifo = dat4;
-    reg_cust_qspi_txfifo = dat5;
-    reg_cust_qspi_txfifo = dat6;
-    reg_cust_qspi_txfifo = dat7;
-    reg_cust_qspi_txfifo = dat8;
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+    reg_qspi_len = 0x1000000; // NOTE: 32x8bits
+    reg_qspi_txfifo = dat1;
+    reg_qspi_txfifo = dat2;
+    reg_qspi_txfifo = dat3;
+    reg_qspi_txfifo = dat4;
+    reg_qspi_txfifo = dat5;
+    reg_qspi_txfifo = dat6;
+    reg_qspi_txfifo = dat7;
+    reg_qspi_txfifo = dat8;
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
 }
 
@@ -104,25 +104,25 @@ void lcd_wr_data32x16(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4
 {
     lcd_dc_set;
 
-    reg_cust_qspi_len = 0x2000000; // NOTE: 32x16bits
-    reg_cust_qspi_txfifo = dat1;
-    reg_cust_qspi_txfifo = dat2;
-    reg_cust_qspi_txfifo = dat3;
-    reg_cust_qspi_txfifo = dat4;
-    reg_cust_qspi_txfifo = dat5;
-    reg_cust_qspi_txfifo = dat6;
-    reg_cust_qspi_txfifo = dat7;
-    reg_cust_qspi_txfifo = dat8;
-    reg_cust_qspi_txfifo = dat9;
-    reg_cust_qspi_txfifo = dat10;
-    reg_cust_qspi_txfifo = dat11;
-    reg_cust_qspi_txfifo = dat12;
-    reg_cust_qspi_txfifo = dat13;
-    reg_cust_qspi_txfifo = dat14;
-    reg_cust_qspi_txfifo = dat15;
-    reg_cust_qspi_txfifo = dat16;
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+    reg_qspi_len = 0x2000000; // NOTE: 32x16bits
+    reg_qspi_txfifo = dat1;
+    reg_qspi_txfifo = dat2;
+    reg_qspi_txfifo = dat3;
+    reg_qspi_txfifo = dat4;
+    reg_qspi_txfifo = dat5;
+    reg_qspi_txfifo = dat6;
+    reg_qspi_txfifo = dat7;
+    reg_qspi_txfifo = dat8;
+    reg_qspi_txfifo = dat9;
+    reg_qspi_txfifo = dat10;
+    reg_qspi_txfifo = dat11;
+    reg_qspi_txfifo = dat12;
+    reg_qspi_txfifo = dat13;
+    reg_qspi_txfifo = dat14;
+    reg_qspi_txfifo = dat15;
+    reg_qspi_txfifo = dat16;
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
 }
 
@@ -137,41 +137,41 @@ void lcd_wr_data32x32(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4
 {
     lcd_dc_set;
 
-    reg_cust_qspi_len = 0x4000000; // NOTE: 32x32bits
-    reg_cust_qspi_txfifo = dat1;
-    reg_cust_qspi_txfifo = dat2;
-    reg_cust_qspi_txfifo = dat3;
-    reg_cust_qspi_txfifo = dat4;
-    reg_cust_qspi_txfifo = dat5;
-    reg_cust_qspi_txfifo = dat6;
-    reg_cust_qspi_txfifo = dat7;
-    reg_cust_qspi_txfifo = dat8;
-    reg_cust_qspi_txfifo = dat9;
-    reg_cust_qspi_txfifo = dat10;
-    reg_cust_qspi_txfifo = dat11;
-    reg_cust_qspi_txfifo = dat12;
-    reg_cust_qspi_txfifo = dat13;
-    reg_cust_qspi_txfifo = dat14;
-    reg_cust_qspi_txfifo = dat15;
-    reg_cust_qspi_txfifo = dat16;
-    reg_cust_qspi_txfifo = dat17;
-    reg_cust_qspi_txfifo = dat18;
-    reg_cust_qspi_txfifo = dat19;
-    reg_cust_qspi_txfifo = dat20;
-    reg_cust_qspi_txfifo = dat21;
-    reg_cust_qspi_txfifo = dat22;
-    reg_cust_qspi_txfifo = dat23;
-    reg_cust_qspi_txfifo = dat24;
-    reg_cust_qspi_txfifo = dat25;
-    reg_cust_qspi_txfifo = dat26;
-    reg_cust_qspi_txfifo = dat27;
-    reg_cust_qspi_txfifo = dat28;
-    reg_cust_qspi_txfifo = dat29;
-    reg_cust_qspi_txfifo = dat30;
-    reg_cust_qspi_txfifo = dat31;
-    reg_cust_qspi_txfifo = dat32;
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+    reg_qspi_len = 0x4000000; // NOTE: 32x32bits
+    reg_qspi_txfifo = dat1;
+    reg_qspi_txfifo = dat2;
+    reg_qspi_txfifo = dat3;
+    reg_qspi_txfifo = dat4;
+    reg_qspi_txfifo = dat5;
+    reg_qspi_txfifo = dat6;
+    reg_qspi_txfifo = dat7;
+    reg_qspi_txfifo = dat8;
+    reg_qspi_txfifo = dat9;
+    reg_qspi_txfifo = dat10;
+    reg_qspi_txfifo = dat11;
+    reg_qspi_txfifo = dat12;
+    reg_qspi_txfifo = dat13;
+    reg_qspi_txfifo = dat14;
+    reg_qspi_txfifo = dat15;
+    reg_qspi_txfifo = dat16;
+    reg_qspi_txfifo = dat17;
+    reg_qspi_txfifo = dat18;
+    reg_qspi_txfifo = dat19;
+    reg_qspi_txfifo = dat20;
+    reg_qspi_txfifo = dat21;
+    reg_qspi_txfifo = dat22;
+    reg_qspi_txfifo = dat23;
+    reg_qspi_txfifo = dat24;
+    reg_qspi_txfifo = dat25;
+    reg_qspi_txfifo = dat26;
+    reg_qspi_txfifo = dat27;
+    reg_qspi_txfifo = dat28;
+    reg_qspi_txfifo = dat29;
+    reg_qspi_txfifo = dat30;
+    reg_qspi_txfifo = dat31;
+    reg_qspi_txfifo = dat32;
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
 }
 
@@ -179,11 +179,11 @@ void lcd_wr_data32xlen(uint32_t dat, uint32_t dat_len)
 {
     lcd_dc_set;
 
-    reg_cust_qspi_len = (32 * dat_len) << 16; // NOTE: 32xlenbits
+    reg_qspi_len = (32 * dat_len) << 16; // NOTE: 32xlenbits
     for (uint32_t i = 0; i < dat_len; ++i)
-        reg_cust_qspi_txfifo = dat;
-    reg_cust_qspi_status = 258;
-    while ((reg_cust_qspi_status & 0xFFFF) != 1)
+        reg_qspi_txfifo = dat;
+    reg_qspi_status = 258;
+    while ((reg_qspi_status & 0xFFFF) != 1)
         ;
 }
 

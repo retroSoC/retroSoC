@@ -11,18 +11,16 @@
 `include "mmap_define.svh"
 
 module bus (
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    // ram if
+  // verilog_format: off
+    input  logic  clk_i,
+    input  logic  rst_n_i,
 `ifdef HAVE_SRAM_IF
-    output logic [14:0] ram_addr_o,
-    output logic [31:0] ram_wdata_o,
-    output logic [ 3:0] ram_wstrb_o,
-    input  logic [31:0] ram_rdata_i,
+    ram_if.master ram,
 `endif
-    nmi_if.slave        core_nmi,
-    nmi_if.master       natv_nmi,
-    nmi_if.master       apb_nmi
+    nmi_if.slave  core_nmi,
+    nmi_if.master natv_nmi,
+    nmi_if.master apb_nmi
+    // verilog_format: on
 );
 
   logic s_natv_sel, s_apb_sel, s_ram_sel;
@@ -37,7 +35,7 @@ module bus (
   assign natv_nmi.wstrb  = core_nmi.wstrb;
 
   assign s_apb_sel       = core_nmi.addr[31:24] == `FLASH_START ||
-                           core_nmi.addr[31:24] == `CUST_IP_START;
+                           core_nmi.addr[31:24] == `APB_IP_START;
   assign apb_nmi.valid   = core_nmi.valid && s_apb_sel;
   assign apb_nmi.addr    = core_nmi.addr;
   assign apb_nmi.wdata   = core_nmi.wdata;
@@ -46,9 +44,9 @@ module bus (
 `ifdef HAVE_SRAM_IF
   assign s_ram_sel     = core_nmi.addr[31:24] == `SRAM_START;
   assign s_ram_valid   = core_nmi.valid && s_ram_sel;
-  assign ram_addr_o    = core_nmi.addr[16:2];
-  assign ram_wdata_o   = core_nmi.wdata;
-  assign ram_wstrb_o   = s_ram_valid ? core_nmi.wstrb : '0;
+  assign ram.addr      = core_nmi.addr[16:2];
+  assign ram.wdata     = core_nmi.wdata;
+  assign ram.wstrb     = s_ram_valid ? core_nmi.wstrb : '0;
 `endif
 
 `ifdef HAVE_SRAM_MACRO
@@ -73,7 +71,7 @@ module bus (
   assign core_nmi.rdata = (natv_nmi.valid && natv_nmi.ready) ? natv_nmi.rdata :
                           (apb_nmi.valid && apb_nmi.ready) ? apb_nmi.rdata :
 `ifdef HAVE_SRAM_IF
-                          s_ram_ready ? ram_rdata_i :
+                          s_ram_ready ? ram.rdata :
 `endif
                           '0;
   // verilog_format: on
