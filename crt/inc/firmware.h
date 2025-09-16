@@ -61,8 +61,15 @@
 #define reg_psram_chd      (*(volatile uint32_t*)0x10004004)
 // spisd
 #define reg_spisd_ctrl     (*(volatile uint32_t*)0x10005000)
-// i2c
-#define reg_i2c0_ctrl      (*(volatile uint32_t*)0x10006000)
+// i2c0
+#define reg_i2c0_clkdiv    (*(volatile uint32_t*)0x10006000)
+#define reg_i2c0_devaddr   (*(volatile uint32_t*)0x10006004)
+#define reg_i2c0_regaddr   (*(volatile uint32_t*)0x10006008)
+#define reg_i2c0_txdata    (*(volatile uint32_t*)0x1000600C)
+#define reg_i2c0_rxdata    (*(volatile uint32_t*)0x10006010)
+#define reg_i2c0_xfer      (*(volatile uint32_t*)0x10006014)
+#define reg_i2c0_cfg       (*(volatile uint32_t*)0x10006018)
+#define reg_i2c0_status    (*(volatile uint32_t*)0x1000601C)
 // i2s
 #define reg_i2s_ctrl       (*(volatile uint32_t*)0x10007000)
 // 1-wire
@@ -100,7 +107,7 @@
 #define reg_ps2_ctrl       (*(volatile uint32_t*)0x20005000)
 #define reg_ps2_data       (*(volatile uint32_t*)0x20005004)
 #define reg_ps2_stat       (*(volatile uint32_t*)0x20005008)
-// i2c
+// i2c1
 #define reg_i2c1_ctrl      (*(volatile uint32_t*)0x20006000)
 #define reg_i2c1_pscr      (*(volatile uint32_t*)0x20006004)
 #define reg_i2c1_txr       (*(volatile uint32_t*)0x20006008)
