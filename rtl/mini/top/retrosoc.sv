@@ -22,38 +22,35 @@
 `include "mmap_define.svh"
 
 module retrosoc (
-    input  logic                   clk_i,
-    input  logic                   rst_n_i,
-    input  logic                   clk_aud_i,
-    input  logic                   rst_aud_n_i,
-    input  logic                   spfs_div4_i,
-    // irq
-    input  logic                   irq_pin_i,
+    // verilog_format: off
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    input  logic        clk_aud_i,
+    input  logic        rst_aud_n_i,
+    input  logic        spfs_div4_i,
+    input  logic        irq_pin_i,
 `ifdef CORE_MDD
-    input  logic            [ 4:0] core_mdd_sel_i,
+    input  logic [4:0]  core_mdd_sel_i,
 `endif
 `ifdef IP_MDD
-    output logic            [15:0] ip_mdd_gpio_out_o,
-    input  logic            [15:0] ip_mdd_gpio_in_i,
-    output logic            [15:0] ip_mdd_gpio_oen_o,
+    output logic [15:0] ip_mdd_gpio_out_o,
+    input  logic [15:0] ip_mdd_gpio_in_i,
+    output logic [15:0] ip_mdd_gpio_oen_o,
 `endif
 `ifdef HAVE_SRAM_IF
-    output logic            [14:0] ram_addr_o,
-    output logic            [31:0] ram_wdata_o,
-    output logic            [ 3:0] ram_wstrb_o,
-    input  logic            [31:0] ram_rdata_i,
+    ram_if.master       ram,
 `endif
-           simp_gpio_if.dut        gpio,
-           uart_if.dut             uart0,
-           qspi_if.dut             psram,
-    // apb
-           spi_if.dut              spisd,
-           uart_if.dut             uart1,
-           pwm_if.dut              pwm,
-           ps2_if.dut              ps2,
-           i2c_if.dut              i2c,
-           qspi_if.dut             qspi,
-           spi_if.dut              spfs
+    uart_if.dut         uart0,
+    qspi_if.dut         psram,
+    spi_if.dut          spisd,
+    simp_gpio_if.dut    gpio,
+    uart_if.dut         uart1,
+    pwm_if.dut          pwm,
+    ps2_if.dut          ps2,
+    i2c_if.dut          i2c,
+    qspi_if.dut         qspi,
+    spi_if.dut          spfs
+    // verilog_format: on
 );
 
   // verilog_format: off
@@ -106,17 +103,14 @@ module retrosoc (
   );
 
   bus u_bus (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
 `ifdef HAVE_SRAM_IF
-      .ram_addr_o (ram_addr_o),
-      .ram_wdata_o(ram_wdata_o),
-      .ram_wstrb_o(ram_wstrb_o),
-      .ram_rdata_i(ram_rdata_i),
+      .ram     (ram),
 `endif
-      .core_nmi   (u_core_nmi_if),
-      .natv_nmi   (u_natv_nmi_if),
-      .apb_nmi    (u_apb_nmi_if)
+      .core_nmi(u_core_nmi_if),
+      .natv_nmi(u_natv_nmi_if),
+      .apb_nmi (u_apb_nmi_if)
   );
 
   ip_natv_wrapper u_ip_natv_wrapper (
