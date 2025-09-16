@@ -38,7 +38,6 @@ module nmi_i2c (
   logic s_i2c_txdata_en;
   logic [7:0] s_i2c_txdata_d, s_i2c_txdata_q;
   logic [7:0] s_i2c_rxdata;
-  logic       s_i2c_xfer_en;
   logic [2:0] s_i2c_xfer_d, s_i2c_xfer_q;
   logic s_i2c_cfg_en;
   logic s_i2c_cfg_d, s_i2c_cfg_q;
@@ -48,6 +47,8 @@ module nmi_i2c (
   logic s_bit_wr, s_bit_rd, s_bit_start;
   logic s_bit_end;
   logic s_bit_extn_addr;
+
+  logic s_oper_clk_pos;
 
   assign s_bit_wr        = s_i2c_xfer_q[0];
   assign s_bit_rd        = s_i2c_xfer_q[1];
@@ -107,13 +108,17 @@ module nmi_i2c (
   );
 
 
-
-  assign s_i2c_xfer_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2C_XFER;
-  assign s_i2c_xfer_d  = nmi.wdata[2:0];
-  dffer #(3) u_i2c_xfer_dffer (
+  always_comb begin
+    s_i2c_xfer_d = s_i2c_xfer_q;
+    if (s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2C_XFER) begin
+      s_i2c_xfer_d = nmi.wdata[2:0];
+    end else if (s_oper_clk_pos && (|s_i2c_xfer_q)) begin
+      s_i2c_xfer_d = '0;
+    end
+  end
+  dffr #(3) u_i2c_xfer_dffr (
       clk_i,
       rst_n_i,
-      s_i2c_xfer_en,
       s_i2c_xfer_d,
       s_i2c_xfer_q
   );
@@ -130,7 +135,7 @@ module nmi_i2c (
   );
 
 
-  assign s_i2c_status_en = 1'b1;
+  assign s_i2c_status_en = s_oper_clk_pos;
   assign s_i2c_status_d  = s_bit_end;
   dffer #(1) u_i2c_status_dffer (
       clk_i,
@@ -188,8 +193,7 @@ module nmi_i2c (
       .reg_addr_i     (s_i2c_regaddr_q),
       .wr_data_i      (s_i2c_txdata_q),
       .rd_data_o      (s_i2c_rxdata),
-      .oper_clk_pos_o (),
-      .oper_clk_fall_o(),
+      .oper_clk_pos_o (s_oper_clk_pos),
       .scl_o          (i2c.scl_o),
       .sda_oe_o       (i2c.sda_dir_o),
       .sda_o          (i2c.sda_o),

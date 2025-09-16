@@ -81,14 +81,16 @@ module ip_natv_wrapper (
                                   (u_tim0_nmi_if.valid  & u_tim0_nmi_if.ready)  |
                                   (u_tim1_nmi_if.valid  & u_tim1_nmi_if.ready)  |
                                   (u_psram_nmi_if.valid & u_psram_nmi_if.ready) |
-                                  (u_spisd_nmi_if.valid & u_spisd_nmi_if.ready);
+                                  (u_spisd_nmi_if.valid & u_spisd_nmi_if.ready) |
+                                  (u_i2c_nmi_if.valid   & u_i2c_nmi_if.ready);
 
   assign nmi.rdata              = ({32{(u_gpio_nmi_if.valid  & u_gpio_nmi_if.ready)}}  & u_gpio_nmi_if.rdata)  |
                                   ({32{(u_uart_nmi_if.valid  & u_uart_nmi_if.ready)}}  & u_uart_nmi_if.rdata)  |
                                   ({32{(u_tim0_nmi_if.valid  & u_tim0_nmi_if.ready)}}  & u_tim0_nmi_if.rdata)  |
                                   ({32{(u_tim1_nmi_if.valid  & u_tim1_nmi_if.ready)}}  & u_tim1_nmi_if.rdata)  |
                                   ({32{(u_psram_nmi_if.valid & u_psram_nmi_if.ready)}} & u_psram_nmi_if.rdata) |
-                                  ({32{(u_spisd_nmi_if.valid & u_spisd_nmi_if.ready)}} & u_spisd_nmi_if.rdata);
+                                  ({32{(u_spisd_nmi_if.valid & u_spisd_nmi_if.ready)}} & u_spisd_nmi_if.rdata) |
+                                  ({32{(u_i2c_nmi_if.valid   & u_i2c_nmi_if.ready)}}   & u_i2c_nmi_if.rdata);
  // verilog_format: on
 
   assign irq_o[0]               = uart.irq_o;
