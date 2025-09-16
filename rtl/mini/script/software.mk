@@ -46,6 +46,8 @@ SRC_PATH := $(ROOT_PATH)/crt/startup.S \
             $(ROOT_PATH)/crt/src/tinypsram.c \
             $(ROOT_PATH)/crt/src/tinybench.c \
             $(ROOT_PATH)/crt/src/tinysh.c \
+            $(ROOT_PATH)/crt/app/AT24C64.c \
+            $(ROOT_PATH)/crt/app/PCF8563B.c \
             $(ROOT_PATH)/crt/src/firmware.c
 
 ifneq ($(filter RV32E RV32I,$(ISA)),)
@@ -59,7 +61,7 @@ LDS_PATH := $(ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
 firmware:
 	@mkdir -p .sw_build
 	cd .sw_build && ($(CP) -P -o flash_$(EXEC_TYPE).lds $(LDS_PATH))
-	cd .sw_build && ($(CC) $(CFLAGS) -I$(ROOT_PATH)/crt/inc -o $@ $(SRC_PATH))
+	cd .sw_build && ($(CC) $(CFLAGS) -I$(ROOT_PATH)/crt/inc -I$(ROOT_PATH)/crt/app/inc -o $@ $(SRC_PATH))
 	cd .sw_build && ($(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex)
 	cd .sw_build && ($(OBJC) -O binary $@ $(FIRMWARE_NAME).bin)
 	cd .sw_build && ($(DUMP) -d $@ > $(FIRMWARE_NAME).txt)

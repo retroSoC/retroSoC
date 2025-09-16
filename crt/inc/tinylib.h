@@ -18,6 +18,8 @@
 #include <tinypsram.h>
 #include <tinybench.h>
 #include <tinysh.h>
+#include <AT24C64.h>
+#include <PCF8563B.h>
 
 #ifdef __cplusplus
 extern "C"

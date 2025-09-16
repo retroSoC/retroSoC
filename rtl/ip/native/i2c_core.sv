@@ -12,7 +12,6 @@ module i2c_core (
     input  logic [ 7:0] wr_data_i,
     output logic [ 7:0] rd_data_o,
     output logic        oper_clk_pos_o,
-    output logic        oper_clk_fall_o,
     output logic        scl_o,
     output logic        sda_oe_o,
     output logic        sda_o,
@@ -36,11 +35,11 @@ module i2c_core (
   localparam FSM_N_ACK = 4'd14;
   localparam FSM_STOP = 4'd15;
 
-  logic s_ack;
   // oper clk: i2c clk = 4:1
+  logic s_ack;
   logic [6:0] s_oper_clk_cnt_d, s_oper_clk_cnt_q;
   logic s_oper_clk_d, s_oper_clk_q;
-  logic s_oper_clk_pos, s_oper_clk_fall;
+  logic s_oper_clk_pos;
   logic s_i2c_clk_en_d, s_i2c_clk_en_q;
   logic [1:0] s_i2c_clk_cnt_d, s_i2c_clk_cnt_q;
   logic [2:0] s_xfer_bit_cnt_d, s_xfer_bit_cnt_q;
@@ -51,9 +50,7 @@ module i2c_core (
 
 
   assign s_oper_clk_pos  = (~s_oper_clk_q) & (s_oper_clk_cnt_q == clk_div_i);
-  assign s_oper_clk_fall = s_oper_clk_q & (s_oper_clk_cnt_q == clk_div_i);
   assign oper_clk_pos_o  = s_oper_clk_pos;
-  assign oper_clk_fall_o = s_oper_clk_fall;
   assign end_o           = s_xfer_end_q;
   assign rd_data_o       = s_i2c_data_in_q;
 
