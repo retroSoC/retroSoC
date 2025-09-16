@@ -36,7 +36,7 @@ module i2c_core (
   localparam FSM_STOP = 4'd15;
 
   // oper clk: i2c clk = 4:1
-  logic s_ack;
+  logic s_ack_d, s_ack_q;
   logic [6:0] s_oper_clk_cnt_d, s_oper_clk_cnt_q;
   logic s_oper_clk_d, s_oper_clk_q;
   logic s_oper_clk_pos;
@@ -147,7 +147,7 @@ module i2c_core (
         end
       end
       FSM_ACK_1: begin
-        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack == 1'b0)) begin
+        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack_q == 1'b0)) begin
           if (extn_addr_i == 1'b1) s_fsm_d = FSM_SEND_REG_ADDR_H;
           else s_fsm_d = FSM_SEND_REG_ADDR_L;
         end
@@ -158,7 +158,7 @@ module i2c_core (
         end
       end
       FSM_ACK_2: begin
-        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack == 1'b0)) begin
+        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack_q == 1'b0)) begin
           s_fsm_d = FSM_SEND_REG_ADDR_L;
         end
       end
@@ -168,7 +168,7 @@ module i2c_core (
         end
       end
       FSM_ACK_3: begin
-        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack == 1'b0)) begin
+        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack_q == 1'b0)) begin
           if (wr_en_i == 1'b1) s_fsm_d = FSM_WR_DATA;
           else if (rd_en_i == 1'b1) s_fsm_d = FSM_START_S;
         end
@@ -179,7 +179,7 @@ module i2c_core (
         end
       end
       FSM_ACK_4: begin
-        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack == 1'b0)) begin
+        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack_q == 1'b0)) begin
           s_fsm_d = FSM_STOP;
         end
       end
@@ -192,7 +192,7 @@ module i2c_core (
         end
       end
       FSM_ACK_5: begin
-        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack == 1'b0)) begin
+        if ((s_i2c_clk_cnt_q == 2'd3) && (s_ack_q == 1'b0)) begin
           s_fsm_d = FSM_RD_DATA;
         end
       end
@@ -222,13 +222,19 @@ module i2c_core (
 
 
   always_comb begin
-    s_ack = 1'b1;
+    s_ack_d = 1'b1;
     if((s_fsm_q == FSM_ACK_1) || (s_fsm_q == FSM_ACK_2) || (s_fsm_q == FSM_ACK_3)
         || (s_fsm_q == FSM_ACK_4) || (s_fsm_q == FSM_ACK_5)) begin
-      if (s_i2c_clk_cnt_q == 2'd1) s_ack = sda_i;
-      // if (s_i2c_clk_cnt_q == 2'd0) s_ack = sda_i;  // BUG:
+      if (s_i2c_clk_cnt_q == 2'd1) s_ack_d = sda_i;
+      // if (s_i2c_clk_cnt_q == 2'd0) s_ack_q = sda_i;  // BUG:
     end
   end
+  dffr #(1) u_ack_dffr(
+    clk_i,
+    rst_n_i,
+    s_ack_d,
+    s_ack_q
+  );
 
   always_comb begin
     scl_o = 1'b1;
