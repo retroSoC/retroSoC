@@ -35,7 +35,7 @@ module bus (
   assign natv_nmi.wstrb  = core_nmi.wstrb;
 
   assign s_apb_sel       = core_nmi.addr[31:24] == `FLASH_START ||
-                           core_nmi.addr[31:24] == `CUST_IP_START;
+                           core_nmi.addr[31:24] == `APB_IP_START;
   assign apb_nmi.valid   = core_nmi.valid && s_apb_sel;
   assign apb_nmi.addr    = core_nmi.addr;
   assign apb_nmi.wdata   = core_nmi.wdata;
