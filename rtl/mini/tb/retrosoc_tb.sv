@@ -42,21 +42,21 @@ module retrosoc_tb;
 `endif
 
   wire s_uart0_tx;
-  wire s_psram_sclk;
-  wire s_psram_ce0;
-  wire s_psram_ce1;
-  wire s_psram_sio0;
-  wire s_psram_sio1;
-  wire s_psram_sio2;
-  wire s_psram_sio3;
+  wire s_psram_sck;
+  wire s_psram_nss0;
+  wire s_psram_nss1;
+  wire s_psram_dat0;
+  wire s_psram_dat1;
+  wire s_psram_dat2;
+  wire s_psram_dat3;
   // wire s_i2c_sda_io;
   // wire s_i2c_scl_io;
   wire s_uart1_tx;
   wire s_uart1_rx;
-  wire s_ps2_ps2_clk;
-  wire s_ps2_ps2_dat;
-  wire s_spfs_clk;
-  wire s_spfs_cs;
+  wire s_ps2_clk;
+  wire s_ps2_dat;
+  wire s_spfs_sck;
+  wire s_spfs_nss;
   wire s_spfs_mosi;
   wire s_spfs_miso;
 
@@ -79,6 +79,7 @@ module retrosoc_tb;
       .xo_o_pad             (),
       .extclk_i_pad         (s_ext_clk),
       .audclk_i_pad         (s_aud_clk),
+      .irq_pin_i_pad        (),
 `ifdef CORE_MDD
       .core_mdd_sel_0_i_pad (s_core_mdd_sel[0]),
       .core_mdd_sel_1_i_pad (s_core_mdd_sel[1]),
@@ -122,48 +123,47 @@ module retrosoc_tb;
       .gpio_5_io_pad        (),
       .gpio_6_io_pad        (),
       .gpio_7_io_pad        (),
-      .psram_sclk_o_pad     (s_psram_sclk),
-      .psram_ce0_o_pad      (s_psram_ce0),
-      .psram_ce1_o_pad      (s_psram_ce1),
-      .psram_ce2_o_pad      (),
-      .psram_ce3_o_pad      (),
-      .psram_sio0_io_pad    (s_psram_sio0),
-      .psram_sio1_io_pad    (s_psram_sio1),
-      .psram_sio2_io_pad    (s_psram_sio2),
-      .psram_sio3_io_pad    (s_psram_sio3),
-      .spisd_sclk_o_pad     (),
-      .spisd_cs_o_pad       (),
+      .psram_sck_o_pad      (s_psram_sck),
+      .psram_nss0_o_pad     (s_psram_nss0),
+      .psram_nss1_o_pad     (s_psram_nss1),
+      .psram_nss2_o_pad     (),
+      .psram_nss3_o_pad     (),
+      .psram_dat0_io_pad    (s_psram_dat0),
+      .psram_dat1_io_pad    (s_psram_dat1),
+      .psram_dat2_io_pad    (s_psram_dat2),
+      .psram_dat3_io_pad    (s_psram_dat3),
+      .spisd_sck_o_pad      (),
+      .spisd_nss_o_pad      (),
       .spisd_mosi_o_pad     (),
       .spisd_miso_i_pad     ('0),
-      .irq_pin_i_pad        (),
       .uart1_tx_o_pad       (s_uart1_tx),
       .uart1_rx_i_pad       (s_uart1_rx),
-      .pwm_pwm_0_o_pad      (),
-      .pwm_pwm_1_o_pad      (),
-      .pwm_pwm_2_o_pad      (),
-      .pwm_pwm_3_o_pad      (),
-      .ps2_ps2_clk_i_pad    (s_ps2_ps2_clk),
-      .ps2_ps2_dat_i_pad    (s_ps2_ps2_dat),
+      .pwm_0_o_pad          (),
+      .pwm_1_o_pad          (),
+      .pwm_2_o_pad          (),
+      .pwm_3_o_pad          (),
+      .ps2_clk_i_pad        (s_ps2_clk),
+      .ps2_dat_i_pad        (s_ps2_dat),
       .i2c_scl_io_pad       (),
       .i2c_sda_io_pad       (),
-      .qspi_spi_clk_o_pad   (),
-      .qspi_spi_csn_0_o_pad (),
-      .qspi_spi_csn_1_o_pad (),
-      .qspi_spi_csn_2_o_pad (),
-      .qspi_spi_csn_3_o_pad (),
-      .qspi_dat_0_io_pad    (),
-      .qspi_dat_1_io_pad    (),
-      .qspi_dat_2_io_pad    (),
-      .qspi_dat_3_io_pad    (),
-      .spfs_clk_o_pad       (s_spfs_clk),
-      .spfs_cs_o_pad        (s_spfs_cs),
+      .qspi_sck_o_pad       (),
+      .qspi_nss0_o_pad      (),
+      .qspi_nss1_o_pad      (),
+      .qspi_nss2_o_pad      (),
+      .qspi_nss3_o_pad      (),
+      .qspi_dat0_io_pad     (),
+      .qspi_dat1_io_pad     (),
+      .qspi_dat2_io_pad     (),
+      .qspi_dat3_io_pad     (),
+      .spfs_sck_o_pad       (s_spfs_sck),
+      .spfs_nss_o_pad       (s_spfs_nss),
       .spfs_mosi_o_pad      (s_spfs_mosi),
       .spfs_miso_i_pad      (s_spfs_miso)
   );
 
   N25Qxxx u_N25Qxxx (
-      .C_       (s_spfs_clk),
-      .S        (s_spfs_cs),
+      .C_       (s_spfs_sck),
+      .S        (s_spfs_nss),
       .DQ0      (s_spfs_mosi),
       .DQ1      (s_spfs_miso),
       .HOLD_DQ3 (),
@@ -190,20 +190,20 @@ module retrosoc_tb;
   );
 
   kdb_model u_kdb_model (
-      .ps2_clk_o(s_ps2_ps2_clk),
-      .ps2_dat_o(s_ps2_ps2_dat)
+      .ps2_clk_o(s_ps2_clk),
+      .ps2_dat_o(s_ps2_dat)
   );
 
   ESP_PSRAM64H #(0) u_ESP_PSRAM64H_0 (
-      .sclk(s_psram_sclk),
-      .csn (s_psram_ce0),
-      .sio ({s_psram_sio3, s_psram_sio2, s_psram_sio1, s_psram_sio0})
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss0),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
   ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
-      .sclk(s_psram_sclk),
-      .csn (s_psram_ce1),
-      .sio ({s_psram_sio3, s_psram_sio2, s_psram_sio1, s_psram_sio0})
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss1),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
   initial begin
