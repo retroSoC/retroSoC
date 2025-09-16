@@ -80,7 +80,7 @@ void welcome_screen()
     printf("                     1 x PS2           @0x%x\n", &reg_ps2_ctrl);
     printf("                     1 x I2C(ADV)      @0x%x\n", &reg_i2c1_ctrl);
     printf("                     1 x QSPI          @0x%x\n", &reg_qspi_status);
-    printf("                     1 x SPFS(TPO)     @unused\n\n");
+    printf("                     1 x USER_IP       @0x%x\n\n", &reg_user_ip_reg0);
 }
 
 void app_system_boot() {
