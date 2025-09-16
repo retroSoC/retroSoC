@@ -25,8 +25,6 @@ module retrosoc_top (
     output pwm_0_o,
     input  ps2_clk_i,
     input  ps2_dat_i,
-    inout  i2c_scl_io,
-    inout  i2c_sda_io,
     output qspi_sck_o,
     output qspi_nss0_o,
     inout  qspi_dat0_io,
@@ -40,8 +38,8 @@ module retrosoc_top (
   wire s_aud_clk;
   clk_wiz_0 u_clk_wiz_0 (
       .clk_in1 (clk_i),
-      .sck_out1(s_sys_clk),
-      .sck_out2(s_aud_clk)
+      .clk_out1(s_sys_clk),
+      .clk_out2(s_aud_clk)
   );
 
   retrosoc_asic u_retrosoc (
