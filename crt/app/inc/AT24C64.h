@@ -2,7 +2,7 @@
 #define AT24C64_H__
 
 #define I2C_TEST_NUM         24
-#define AT24C64_SLV_ADDR     0xA0
+#define AT24C64_DEV_ADDR     0xA0
 
 void AT24C64_test();
 

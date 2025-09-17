@@ -185,16 +185,22 @@ void main()
     // while(1);
     // ip_archinfo_test();
     // spisd_test();
-    printf("[SPISD] clk div(default): %d\n", reg_spisd_ctrl);
+    // printf("[SPISD] clk div(default): %d\n", reg_spisd_ctrl);
     // printf("[SPISD] set clk div to %d, actul rd val: %d\n", spisd_cfg_val, reg_spisd_ctrl);
     // ip_psram_selftest(0x50000000, 8 * 1024 * 1024);
 
     i2c0_init((uint8_t)35);
-    uint8_t i2c_txdata[1] = {68};
-    uint8_t i2c_rxdata[1] = {0};
-    i2c0_wr_nbyte(PCF8563B_DEV_ADDR >> 1, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 1, i2c_txdata);
-    i2c0_rd_nbyte(PCF8563B_DEV_ADDR >> 1, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 1, i2c_rxdata);
-    printf("i2c_rxdata: %d\n", i2c_rxdata[0]);
+    uint8_t i2c_txdata0[1] = {0x68};
+    uint8_t i2c_rxdata0[1] = {0};
+    i2c0_wr_nbyte(AT24C64_DEV_ADDR >> 1, (uint16_t)0, I2C_DEV_ADDR_16BIT, 1, i2c_txdata0);
+    i2c0_rd_nbyte(AT24C64_DEV_ADDR >> 1, (uint16_t)0, I2C_DEV_ADDR_16BIT, 1, i2c_rxdata0);
+    printf("i2c_rxdata: %x\n", i2c_rxdata0[0]);
+
+    uint8_t i2c_txdata1[1] = {68};
+    uint8_t i2c_rxdata1[1] = {0};
+    i2c0_wr_nbyte(PCF8563B_DEV_ADDR >> 1, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 1, i2c_txdata1);
+    i2c0_rd_nbyte(PCF8563B_DEV_ADDR >> 1, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 1, i2c_rxdata1);
+    printf("i2c_rxdata: %d\n", i2c_rxdata1[0]);
     // PCF8563B_test();
 
     ip_tim_test();
