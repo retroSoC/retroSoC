@@ -49,8 +49,8 @@ module retrosoc_tb;
   wire s_psram_dat1;
   wire s_psram_dat2;
   wire s_psram_dat3;
-  // wire s_i2c_sda_io;
-  // wire s_i2c_scl_io;
+  wire s_i2c_sda_io;
+  wire s_i2c_scl_io;
   wire s_uart1_tx;
   wire s_uart1_rx;
   wire s_ps2_clk;
@@ -144,8 +144,8 @@ module retrosoc_tb;
       .pwm_3_o_pad          (),
       .ps2_clk_i_pad        (s_ps2_clk),
       .ps2_dat_i_pad        (s_ps2_dat),
-      .i2c_scl_io_pad       (),
-      .i2c_sda_io_pad       (),
+      .i2c_scl_io_pad       (s_i2c_scl_io),
+      .i2c_sda_io_pad       (s_i2c_sda_io),
       .qspi_sck_o_pad       (),
       .qspi_nss0_o_pad      (),
       .qspi_nss1_o_pad      (),
@@ -172,12 +172,13 @@ module retrosoc_tb;
   );
 
   // Testbench pullups on SDA, SCL lines
-  // pullup i2c_scl_up (s_i2c_scl_io);
-  // pullup i2c_sda_up (s_i2c_sda_io);
-  // i2c_slave u_i2c_slave (
-  //     .scl(s_i2c_scl_io),
-  //     .sda(s_i2c_sda_io)
-  // );
+  pullup i2c_scl_up (s_i2c_scl_io);
+  pullup i2c_sda_up (s_i2c_sda_io);
+  AT24C04 u_AT24C04_0 (
+      .WP (1'b0),
+      .SCL(s_i2c_scl_io),
+      .SDA(s_i2c_sda_io)
+  );
 
   rs232 u_rs232_0 (
       .rs232_rx_i(s_uart0_tx),
@@ -249,7 +250,8 @@ module retrosoc_tb;
       // #867652;
       // #1667652;
       // #836901000;
-      #873310000;
+      #468320000;
+      // #873310000;
       // #340686376;
 
       // #489238714;

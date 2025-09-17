@@ -38,21 +38,19 @@ module nmi_i2c (
   logic s_i2c_txdata_en;
   logic [7:0] s_i2c_txdata_d, s_i2c_txdata_q;
   logic [7:0] s_i2c_rxdata;
-  logic [2:0] s_i2c_xfer_d, s_i2c_xfer_q;
+  logic [1:0] s_i2c_xfer_d, s_i2c_xfer_q;
   logic s_i2c_cfg_en;
   logic s_i2c_cfg_d, s_i2c_cfg_q;
-  logic s_i2c_status_en;
   logic s_i2c_status_d, s_i2c_status_q;
 
-  logic s_bit_wr, s_bit_rd, s_bit_start;
+  logic s_bit_rdwr, s_bit_start;
   logic s_bit_end;
   logic s_bit_extn_addr;
 
   logic s_oper_clk_pos;
 
-  assign s_bit_wr        = s_i2c_xfer_q[0];
-  assign s_bit_rd        = s_i2c_xfer_q[1];
-  assign s_bit_start     = s_i2c_xfer_q[2];
+  assign s_bit_rdwr      = s_i2c_xfer_q[0];
+  assign s_bit_start     = s_i2c_xfer_q[1];
   assign s_bit_extn_addr = s_i2c_cfg_q;
 
   assign s_nmi_wr_hdshk  = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
@@ -111,12 +109,12 @@ module nmi_i2c (
   always_comb begin
     s_i2c_xfer_d = s_i2c_xfer_q;
     if (s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2C_XFER) begin
-      s_i2c_xfer_d = nmi.wdata[2:0];
+      s_i2c_xfer_d = nmi.wdata[1:0];
     end else if (s_oper_clk_pos && (|s_i2c_xfer_q)) begin
       s_i2c_xfer_d = '0;
     end
   end
-  dffr #(3) u_i2c_xfer_dffr (
+  dffr #(2) u_i2c_xfer_dffr (
       clk_i,
       rst_n_i,
       s_i2c_xfer_d,
@@ -135,12 +133,16 @@ module nmi_i2c (
   );
 
 
-  assign s_i2c_status_en = s_oper_clk_pos;
-  assign s_i2c_status_d  = s_bit_end;
-  dffer #(1) u_i2c_status_dffer (
+  always_comb begin
+    s_i2c_status_d = s_i2c_status_q;
+    if (s_bit_end) s_i2c_status_d = 1'b1;
+    else if (s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_I2C_STATUS) begin
+      s_i2c_status_d = 1'b0;
+    end
+  end
+  dffr #(1) u_i2c_status_dffr (
       clk_i,
       rst_n_i,
-      s_i2c_status_en,
       s_i2c_status_d,
       s_i2c_status_q
   );
@@ -163,7 +165,7 @@ module nmi_i2c (
       `NATV_I2C_REGADDR: s_nmi_rdata_d = {16'd0, s_i2c_regaddr_q};
       `NATV_I2C_TXDATA:  s_nmi_rdata_d = {24'd0, s_i2c_txdata_q};
       `NATV_I2C_RXDATA:  s_nmi_rdata_d = {24'd0, s_i2c_rxdata};
-      `NATV_I2C_XFER:    s_nmi_rdata_d = {29'd0, s_i2c_xfer_q};
+      `NATV_I2C_XFER:    s_nmi_rdata_d = {30'd0, s_i2c_xfer_q};
       `NATV_I2C_CFG:     s_nmi_rdata_d = {31'd0, s_i2c_cfg_q};
       `NATV_I2C_STATUS:  s_nmi_rdata_d = {31'd0, s_i2c_status_q};
       default:           s_nmi_rdata_d = s_nmi_rdata_q;
@@ -181,23 +183,22 @@ module nmi_i2c (
   assign i2c.scl_dir_o = 1'b1;
   assign i2c.irq_o     = 1'b0;
   i2c_core u_i2c_core (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .clk_div_i      (s_i2c_clkdiv_q),
-      .dev_addr_i     (s_i2c_devaddr_q),
-      .wr_en_i        (s_bit_wr),
-      .rd_en_i        (s_bit_rd),
-      .start_i        (s_bit_start),
-      .end_o          (s_bit_end),
-      .extn_addr_i    (s_bit_extn_addr),
-      .reg_addr_i     (s_i2c_regaddr_q),
-      .wr_data_i      (s_i2c_txdata_q),
-      .rd_data_o      (s_i2c_rxdata),
-      .oper_clk_pos_o (s_oper_clk_pos),
-      .scl_o          (i2c.scl_o),
-      .sda_oe_o       (i2c.sda_dir_o),
-      .sda_o          (i2c.sda_o),
-      .sda_i          (i2c.sda_i)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .clk_div_i     (s_i2c_clkdiv_q),
+      .dev_addr_i    (s_i2c_devaddr_q),
+      .rdwr_i        (s_bit_rdwr),
+      .start_i       (s_bit_start),
+      .end_o         (s_bit_end),
+      .extn_addr_i   (s_bit_extn_addr),
+      .reg_addr_i    (s_i2c_regaddr_q),
+      .wr_data_i     (s_i2c_txdata_q),
+      .rd_data_o     (s_i2c_rxdata),
+      .oper_clk_pos_o(s_oper_clk_pos),
+      .scl_o         (i2c.scl_o),
+      .sda_oe_o      (i2c.sda_dir_o),
+      .sda_o         (i2c.sda_o),
+      .sda_i         (i2c.sda_i)
   );
 
 
