@@ -3,8 +3,7 @@ module i2c_core (
     input  logic        rst_n_i,
     input  logic [ 6:0] clk_div_i,
     input  logic [ 6:0] dev_addr_i,
-    input  logic        wr_en_i,
-    input  logic        rd_en_i,
+    input  logic        rdwr_i,
     input  logic        start_i,
     output logic        end_o,
     input  logic        extn_addr_i,
@@ -36,6 +35,7 @@ module i2c_core (
   localparam FSM_STOP = 4'd15;
 
   // oper clk: i2c clk = 4:1
+  logic s_rdwr_d, s_rdwr_q;
   logic [6:0] s_oper_clk_cnt_d, s_oper_clk_cnt_q;
   logic s_oper_clk_d, s_oper_clk_q;
   logic s_oper_clk_pos;
@@ -169,8 +169,8 @@ module i2c_core (
       end
       FSM_ACK_3: begin
         if ((s_i2c_clk_cnt_q == 2'd3) && (s_i2c_ack_q == 1'b0)) begin
-          if (wr_en_i == 1'b1) s_fsm_d = FSM_WR_DATA;
-          else if (rd_en_i == 1'b1) s_fsm_d = FSM_START_S;
+          if (~s_rdwr_q) s_fsm_d = FSM_WR_DATA;
+          else s_fsm_d = FSM_START_S;
         end
       end
       FSM_WR_DATA: begin
@@ -226,14 +226,29 @@ module i2c_core (
     if((s_fsm_q == FSM_ACK_1) || (s_fsm_q == FSM_ACK_2) || (s_fsm_q == FSM_ACK_3)
         || (s_fsm_q == FSM_ACK_4) || (s_fsm_q == FSM_ACK_5)) begin
       if (s_i2c_clk_cnt_q == 2'd1) s_i2c_ack_d = sda_i;
-      else if (s_i2c_clk_cnt_q == 2'd3) s_i2c_ack_d = '0;
+      else if (s_i2c_clk_cnt_q == 2'd3) s_i2c_ack_d = 1'b1;
     end
   end
-  dffr #(1) u_ack_dffr (
+  dfferh #(1) u_ack_dfferh (
       clk_i,
       rst_n_i,
+      s_oper_clk_pos,
       s_i2c_ack_d,
       s_i2c_ack_q
+  );
+
+  always_comb begin
+    s_rdwr_d = s_rdwr_q;
+    if (s_fsm_q == FSM_IDLE && start_i) begin
+      s_rdwr_d = rdwr_i;
+    end
+  end
+  dffer #(1) u_rdwr_dffer (
+      clk_i,
+      rst_n_i,
+      s_oper_clk_pos,
+      s_rdwr_d,
+      s_rdwr_q
   );
 
   always_comb begin

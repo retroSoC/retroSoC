@@ -1,8 +1,8 @@
 #ifndef TINYI2C_H__
 #define TINYI2C_H__
 
-#define I2C0_XFER_WR       0b101
-#define I2C0_XFER_RD       0b110
+#define I2C0_XFER_WR       0b10
+#define I2C0_XFER_RD       0b11
 
 #define I2C1_START         ((uint32_t)0x80)
 #define I2C1_STOP          ((uint32_t)0x40)
