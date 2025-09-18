@@ -87,6 +87,12 @@ module retrosoc_asic (
     output spisd_nss_o_pad,
     output spisd_mosi_o_pad,
     input  spisd_miso_i_pad,
+    // i2s
+    output i2s_mclk_o_pad,
+    output i2s_sclk_o_pad,
+    output i2s_lrck_o_pad,
+    output i2s_dacdat_o_pad,
+    input  i2s_adcdat_i_pad,
     // apb ip
     output uart1_tx_o_pad,
     inout  uart1_rx_i_pad,
@@ -119,13 +125,13 @@ module retrosoc_asic (
 `ifdef HAVE_PLL
   logic [2:0] s_pll_cfg;
 `endif
-  logic       s_clk_bypass;
-  logic       s_sys_clk;
-  logic       s_ext_rst_n;
-  logic       s_sys_rst_n;
-  logic       s_aud_rst_n;
-  logic       s_sys_clkdiv4;
-  logic       s_irq_pin;
+  logic s_clk_bypass;
+  logic s_sys_clk;
+  logic s_ext_rst_n;
+  logic s_sys_rst_n;
+  logic s_aud_rst_n;
+  logic s_sys_clkdiv4;
+  logic s_irq_pin;
 `ifdef CORE_MDD
   logic [4:0] s_core_mdd_sel;
 `endif
@@ -146,6 +152,7 @@ module retrosoc_asic (
   uart_if u_uart0_if ();
   qspi_if u_psram_if ();
   spi_if u_spisd_if ();
+  nv_i2s_if u_i2s_if ();
   uart_if u_uart1_if ();
   pwm_if u_pwm_if ();
   ps2_if u_ps2_if ();
@@ -214,6 +221,11 @@ module retrosoc_asic (
   tc_io_tri_pad         u_spisd_nss_o_pad       (.pad(spisd_nss_o_pad),       .c2p(u_spisd_if.spi_nss_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_spisd_mosi_o_pad      (.pad(spisd_mosi_o_pad),      .c2p(u_spisd_if.spi_mosi_o),      .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_spisd_miso_i_pad      (.pad(spisd_miso_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(u_spisd_if.spi_miso_i));
+  tc_io_tri_pad         u_i2s_mclk_o_pad        (.pad(i2s_mclk_o_pad),        .c2p(u_i2s_if.mclk_o),            .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_sclk_o_pad        (.pad(i2s_sclk_o_pad),        .c2p(u_i2s_if.sclk_o),            .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_lrck_o_pad        (.pad(i2s_lrck_o_pad),        .c2p(u_i2s_if.lrck_o),            .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_dacdat_o_pad      (.pad(i2s_dacdat_o_pad),      .c2p(u_i2s_if.dacdat_o),          .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_adcdat_i_pad      (.pad(i2s_adcdat_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(u_i2s_if.adcdat_i));
   // apb
   tc_io_tri_pad         u_uart1_tx_o_pad       (.pad(uart1_tx_o_pad),         .c2p(u_uart1_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_uart1_rx_i_pad       (.pad(uart1_rx_i_pad),         .c2p(),                           .c2p_en(1'b0),                      .p2c(u_uart1_if.uart_rx_i));
@@ -285,6 +297,7 @@ module retrosoc_asic (
       .uart0            (u_uart0_if),
       .psram            (u_psram_if),
       .spisd            (u_spisd_if),
+      .i2s              (u_i2s_if),
       .uart1            (u_uart1_if),
       .pwm              (u_pwm_if),
       .ps2              (u_ps2_if),

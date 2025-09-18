@@ -40,10 +40,11 @@ module retrosoc (
 `ifdef HAVE_SRAM_IF
     ram_if.master       ram,
 `endif
+    simp_gpio_if.dut    gpio,
     uart_if.dut         uart0,
     qspi_if.dut         psram,
     spi_if.dut          spisd,
-    simp_gpio_if.dut    gpio,
+    nv_i2s_if.dut       i2s,
     uart_if.dut         uart1,
     pwm_if.dut          pwm,
     ps2_if.dut          ps2,
@@ -114,15 +115,18 @@ module retrosoc (
   );
 
   ip_natv_wrapper u_ip_natv_wrapper (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .nmi    (u_natv_nmi_if),
-      .gpio   (gpio),
-      .uart   (uart0),
-      .psram  (psram),
-      .spisd  (spisd),
-      .i2c    (u_natv_i2c_if),
-      .irq_o  (s_natv_irq)
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .clk_aud_i  (clk_aud_i),
+      .rst_aud_n_i(rst_aud_n_i),
+      .nmi        (u_natv_nmi_if),
+      .gpio       (gpio),
+      .uart       (uart0),
+      .psram      (psram),
+      .spisd      (spisd),
+      .i2c        (u_natv_i2c_if),
+      .i2s        (i2s),
+      .irq_o      (s_natv_irq)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
