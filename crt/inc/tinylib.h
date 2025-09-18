@@ -20,6 +20,7 @@
 #include <tinysh.h>
 #include <AT24C64.h>
 #include <PCF8563B.h>
+#include <ES8388.h>
 
 #ifdef __cplusplus
 extern "C"

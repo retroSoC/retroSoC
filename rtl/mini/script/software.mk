@@ -30,25 +30,31 @@ DEF_VAL += -DISA_$(ISA)
 CFLAGS += $(DEF_VAL)
 
 
-SRC_PATH := $(ROOT_PATH)/crt/startup.S \
-            $(ROOT_PATH)/crt/src/tinyuart.c \
-            $(ROOT_PATH)/crt/src/tinystring.c \
-            $(ROOT_PATH)/crt/src/tinyprintf.c \
-            $(ROOT_PATH)/crt/src/tinygpio.c \
-            $(ROOT_PATH)/crt/src/tinytim.c \
-            $(ROOT_PATH)/crt/src/tinyarchinfo.c \
-            $(ROOT_PATH)/crt/src/tinyrng.c \
-            $(ROOT_PATH)/crt/src/tinyhpuart.c \
-            $(ROOT_PATH)/crt/src/tinypwm.c \
-            $(ROOT_PATH)/crt/src/tinyps2.c \
-            $(ROOT_PATH)/crt/src/tinyi2c.c \
-            $(ROOT_PATH)/crt/src/tinylcd.c \
-            $(ROOT_PATH)/crt/src/tinypsram.c \
-            $(ROOT_PATH)/crt/src/tinybench.c \
-            $(ROOT_PATH)/crt/src/tinysh.c \
-            $(ROOT_PATH)/crt/app/AT24C64.c \
-            $(ROOT_PATH)/crt/app/PCF8563B.c \
-            $(ROOT_PATH)/crt/src/firmware.c
+
+TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
+                $(ROOT_PATH)/crt/src/tinyuart.c \
+                $(ROOT_PATH)/crt/src/tinystring.c \
+                $(ROOT_PATH)/crt/src/tinyprintf.c \
+                $(ROOT_PATH)/crt/src/tinygpio.c \
+                $(ROOT_PATH)/crt/src/tinytim.c \
+                $(ROOT_PATH)/crt/src/tinyarchinfo.c \
+                $(ROOT_PATH)/crt/src/tinyrng.c \
+                $(ROOT_PATH)/crt/src/tinyhpuart.c \
+                $(ROOT_PATH)/crt/src/tinypwm.c \
+                $(ROOT_PATH)/crt/src/tinyps2.c \
+                $(ROOT_PATH)/crt/src/tinyi2c.c \
+                $(ROOT_PATH)/crt/src/tinylcd.c \
+                $(ROOT_PATH)/crt/src/tinypsram.c \
+                $(ROOT_PATH)/crt/src/tinybench.c \
+                $(ROOT_PATH)/crt/src/tinysh.c \
+                $(ROOT_PATH)/crt/src/firmware.c
+
+APP_PATH :=     $(ROOT_PATH)/crt/app/AT24C64.c \
+                $(ROOT_PATH)/crt/app/PCF8563B.c \
+                $(ROOT_PATH)/crt/app/ES8388.c
+
+SRC_PATH := $(TINYLIB_PATH)
+SRC_PATH += $(APP_PATH)
 
 ifneq ($(filter RV32E RV32I,$(ISA)),)
     SRC_PATH += $(ROOT_PATH)/crt/libgcc/div.S
