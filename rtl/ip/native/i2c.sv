@@ -44,7 +44,7 @@ module nmi_i2c (
   logic s_i2c_status_d, s_i2c_status_q;
 
   logic s_bit_rdwr, s_bit_start;
-  logic s_bit_end;
+  logic s_bit_end, s_bit_end_re;
   logic s_bit_extn_addr;
 
   logic s_oper_clk_pos;
@@ -133,9 +133,15 @@ module nmi_i2c (
   );
 
 
+  edge_det_sync_re #(1) u_i2c_end_edge_det_sync_re (
+      clk_i,
+      rst_n_i,
+      s_bit_end,
+      s_bit_end_re
+  );
   always_comb begin
     s_i2c_status_d = s_i2c_status_q;
-    if (s_bit_end) s_i2c_status_d = 1'b1;
+    if (s_bit_end_re) s_i2c_status_d = 1'b1;
     else if (s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_I2C_STATUS) begin
       s_i2c_status_d = 1'b0;
     end
