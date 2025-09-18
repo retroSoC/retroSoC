@@ -1,7 +1,7 @@
 #ifndef PCF8563B_H__
 #define PCF8563B_H__
 
-#define PCF8563B_DEV_ADDR       0xA2
+#define PCF8563B_DEV_ADDR       0x51
 
 #define PCF8563B_CTL_STATUS1    ((uint8_t)0x00)
 #define PCF8563B_CTL_STATUS2    ((uint8_t)0x01)

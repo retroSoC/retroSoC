@@ -29,13 +29,13 @@ void PCF8563B_wr_reg(PCF8563B_info_t *info) {
     *(wr_data + 4) = PCF8563B_bin2bcd(info->date.weekday);
     *(wr_data + 5) = PCF8563B_bin2bcd(info->date.month);
     *(wr_data + 6) = PCF8563B_bin2bcd(info->date.year);
-    i2c0_wr_nbyte(PCF8563B_DEV_ADDR >> 1, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 7, wr_data);
+    i2c0_wr_nbyte(PCF8563B_DEV_ADDR, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 7, wr_data);
 }
 
 PCF8563B_info_t PCF8563B_rd_reg() {
     uint8_t rd_data[7] = {0};
     PCF8563B_info_t info = {0};
-    i2c0_rd_nbyte(PCF8563B_DEV_ADDR >> 1, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 7, rd_data);
+    i2c0_rd_nbyte(PCF8563B_DEV_ADDR, PCF8563B_SECOND_REG, I2C_DEV_ADDR_8BIT, 7, rd_data);
     info.time.second  = PCF8563B_bcd2bin(rd_data[0], SECOND_MINUTE_REG_WIDTH);
     info.time.minute  = PCF8563B_bcd2bin(rd_data[1], SECOND_MINUTE_REG_WIDTH);
     info.time.hour    = PCF8563B_bcd2bin(rd_data[2], HOUR_DAY_REG_WIDTH);
