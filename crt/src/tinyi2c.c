@@ -28,6 +28,7 @@ void i2c0_rd_nbyte(uint8_t dev_addr, uint16_t reg_addr, uint8_t type, uint8_t nu
         reg_i2c0_regaddr = reg_addr + i;
         reg_i2c0_xfer = I2C0_XFER_RD;
         while(reg_i2c0_status != (uint32_t)1);
+        // printf("[i2c0] i: %d, rxdata: %x\n", i, reg_i2c0_rxdata);
         data[i] = reg_i2c0_rxdata;
     }
 }
