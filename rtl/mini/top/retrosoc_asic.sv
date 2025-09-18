@@ -26,7 +26,7 @@ module retrosoc_asic (
     inout  extclk_i_pad,
     inout  audclk_i_pad,
     // IRQ
-    inout  irq_pin_i_pad,
+    inout  irq_i_pad,
 `ifdef CORE_MDD
     inout  core_mdd_sel_0_i_pad,
     inout  core_mdd_sel_1_i_pad,
@@ -87,6 +87,12 @@ module retrosoc_asic (
     output spisd_nss_o_pad,
     output spisd_mosi_o_pad,
     input  spisd_miso_i_pad,
+    // i2s
+    output i2s_mclk_o_pad,
+    output i2s_sclk_o_pad,
+    output i2s_lrck_o_pad,
+    output i2s_dacdat_o_pad,
+    input  i2s_adcdat_i_pad,
     // apb ip
     output uart1_tx_o_pad,
     inout  uart1_rx_i_pad,
@@ -119,13 +125,13 @@ module retrosoc_asic (
 `ifdef HAVE_PLL
   logic [2:0] s_pll_cfg;
 `endif
-  logic       s_clk_bypass;
-  logic       s_sys_clk;
-  logic       s_ext_rst_n;
-  logic       s_sys_rst_n;
-  logic       s_aud_rst_n;
-  logic       s_sys_clkdiv4;
-  logic       s_irq_pin;
+  logic s_clk_bypass;
+  logic s_sys_clk;
+  logic s_ext_rst_n;
+  logic s_sys_rst_n;
+  logic s_aud_rst_n;
+  logic s_sys_clkdiv4;
+  logic s_irq_pin;
 `ifdef CORE_MDD
   logic [4:0] s_core_mdd_sel;
 `endif
@@ -135,17 +141,14 @@ module retrosoc_asic (
   logic [15:0] s_ip_mdd_gpio_oen;
 `endif
 `ifdef HAVE_SRAM_IF
-  // ram
-  logic [14:0] s_ram_addr;
-  logic [31:0] s_ram_wdata;
-  logic [ 3:0] s_ram_wstrb;
-  logic [31:0] s_ram_rdata;
+  ram_if u_ram_if ();
 `endif
 
   simp_gpio_if u_gpio_if ();
   uart_if u_uart0_if ();
   qspi_if u_psram_if ();
   spi_if u_spisd_if ();
+  nv_i2s_if u_i2s_if ();
   uart_if u_uart1_if ();
   pwm_if u_pwm_if ();
   ps2_if u_ps2_if ();
@@ -156,7 +159,7 @@ module retrosoc_asic (
   tc_io_xtl_pad         u_xtal_io_pad           (.xi_pad(xi_i_pad),           .xo_pad(xo_o_pad),                .en(1'b1),                          .clk(s_xtal_io));
   tc_io_tri_pad         u_extclk_i_pad          (.pad(extclk_i_pad),          .c2p(),                           .c2p_en(1'b0),                      .p2c(s_ext_clk));
   tc_io_tri_pad         u_audclk_i_pad          (.pad(audclk_i_pad),          .c2p(),                           .c2p_en(1'b0),                      .p2c(s_aud_clk));
-  tc_io_tri_schmitt_pad u_irq_pin_i_pad         (.pad(irq_pin_i_pad),         .c2p(),                           .c2p_en(1'b0),                      .p2c(s_irq_pin));
+  tc_io_tri_schmitt_pad u_irq_i_pad             (.pad(irq_i_pad),             .c2p(),                           .c2p_en(1'b0),                      .p2c(s_irq_pin));
 `ifdef CORE_MDD
   tc_io_tri_pad         u_core_mdd_sel_0_i_pad  (.pad(core_mdd_sel_0_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[0]));
   tc_io_tri_pad         u_core_mdd_sel_1_i_pad  (.pad(core_mdd_sel_1_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[1]));
@@ -214,6 +217,11 @@ module retrosoc_asic (
   tc_io_tri_pad         u_spisd_nss_o_pad       (.pad(spisd_nss_o_pad),       .c2p(u_spisd_if.spi_nss_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_spisd_mosi_o_pad      (.pad(spisd_mosi_o_pad),      .c2p(u_spisd_if.spi_mosi_o),      .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_spisd_miso_i_pad      (.pad(spisd_miso_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(u_spisd_if.spi_miso_i));
+  tc_io_tri_pad         u_i2s_mclk_o_pad        (.pad(i2s_mclk_o_pad),        .c2p(u_i2s_if.mclk_o),            .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_sclk_o_pad        (.pad(i2s_sclk_o_pad),        .c2p(u_i2s_if.sclk_o),            .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_lrck_o_pad        (.pad(i2s_lrck_o_pad),        .c2p(u_i2s_if.lrck_o),            .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_dacdat_o_pad      (.pad(i2s_dacdat_o_pad),      .c2p(u_i2s_if.dacdat_o),          .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_i2s_adcdat_i_pad      (.pad(i2s_adcdat_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(u_i2s_if.adcdat_i));
   // apb
   tc_io_tri_pad         u_uart1_tx_o_pad       (.pad(uart1_tx_o_pad),         .c2p(u_uart1_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_uart1_rx_i_pad       (.pad(uart1_rx_i_pad),         .c2p(),                           .c2p_en(1'b0),                      .p2c(u_uart1_if.uart_rx_i));
@@ -276,15 +284,13 @@ module retrosoc_asic (
       .ip_mdd_gpio_oen_o(s_ip_mdd_gpio_oen),
 `endif
 `ifdef HAVE_SRAM_IF
-      .ram_addr_o       (s_ram_addr),
-      .ram_wdata_o      (s_ram_wdata),
-      .ram_wstrb_o      (s_ram_wstrb),
-      .ram_rdata_i      (s_ram_rdata),
+      .ram              (u_ram_if),
 `endif
       .gpio             (u_gpio_if),
       .uart0            (u_uart0_if),
       .psram            (u_psram_if),
       .spisd            (u_spisd_if),
+      .i2s              (u_i2s_if),
       .uart1            (u_uart1_if),
       .pwm              (u_pwm_if),
       .ps2              (u_ps2_if),
@@ -295,11 +301,8 @@ module retrosoc_asic (
 
 `ifdef HAVE_SRAM_IF
   onchip_ram u_onchip_ram (
-      .clk_i  (s_sys_clk),
-      .addr_i (s_ram_addr),
-      .wdata_i(s_ram_wdata),
-      .wstrb_i(s_ram_wstrb),
-      .rdata_o(s_ram_rdata)
+      .clk_i(s_sys_clk),
+      .ram  (u_ram_if)
   );
 `endif
 

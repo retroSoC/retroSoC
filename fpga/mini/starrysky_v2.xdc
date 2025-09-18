@@ -61,3 +61,9 @@ set_property -dict {PACKAGE_PIN AA22 IOSTANDARD LVCMOS18} [get_ports spisd_sck_o
 set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS18} [get_ports spisd_nss_o]
 set_property -dict {PACKAGE_PIN Y19  IOSTANDARD LVCMOS18} [get_ports spisd_mosi_o]
 set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS18} [get_ports spisd_miso_i]
+#i2s
+set_property -dict {PACKAGE_PIN Y10 IOSTANDARD LVCMOS18} [get_ports i2s_mclk_o]
+set_property -dict {PACKAGE_PIN Y11 IOSTANDARD LVCMOS18} [get_ports i2s_sclk_o]
+set_property -dict {PACKAGE_PIN AB12 IOSTANDARD LVCMOS18} [get_ports i2s_lrck_o]
+set_property -dict {PACKAGE_PIN AA12 IOSTANDARD LVCMOS18} [get_ports i2s_dacdat_o]
+set_property -dict {PACKAGE_PIN W12 IOSTANDARD LVCMOS18} [get_ports i2s_adcdat_i]

@@ -11,8 +11,10 @@
 // addr range: [31:24]: 8'h10(reg), 8'h40(psram), 8'h50(spisd)
 module ip_natv_wrapper (
     // verilog_format: off
-    input  logic       clk_i,
-    input  logic       rst_n_i,
+    input logic        clk_i,
+    input logic        rst_n_i,
+    input logic        clk_aud_i,
+    input logic        rst_aud_n_i,
     // natv if
     nmi_if.slave       nmi,
     simp_gpio_if.dut   gpio,
@@ -20,6 +22,7 @@ module ip_natv_wrapper (
     qspi_if.dut        psram,
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
+    nv_i2s_if.dut      i2s,
     // irq
     output logic [2:0] irq_o
     // verilog_format: on
@@ -32,8 +35,9 @@ module ip_natv_wrapper (
   nmi_if u_psram_nmi_if ();
   nmi_if u_spisd_nmi_if ();
   nmi_if u_i2c_nmi_if ();
+  nmi_if u_i2s_nmi_if ();
   simp_gpio_if u_simp_gpio_if ();
-//   simp_uart_if u_simp_uart_if ();
+  //   simp_uart_if u_simp_uart_if ();
 
 
   logic s_psram_cfg_sel;
@@ -74,6 +78,11 @@ module ip_natv_wrapper (
   assign u_i2c_nmi_if.addr    = nmi.addr;
   assign u_i2c_nmi_if.wdata   = nmi.wdata;
   assign u_i2c_nmi_if.wstrb   = nmi.wstrb;
+
+  assign u_i2s_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h70);
+  assign u_i2s_nmi_if.addr    = nmi.addr;
+  assign u_i2s_nmi_if.wdata   = nmi.wdata;
+  assign u_i2s_nmi_if.wstrb   = nmi.wstrb;
 
   // verilog_format: off
   assign nmi.ready              = (u_gpio_nmi_if.valid  & u_gpio_nmi_if.ready)  |
@@ -164,7 +173,10 @@ module ip_natv_wrapper (
   //     .slvr_ready_i(s_i2s_aud_ready)
   // );
 
-  // // HACK:
-  // assign s_i2s_aud_rdata = '0;
-  // assign s_i2s_aud_ready = '0;
+  nmi_i2s u_nmi_i2s (
+      .clk_i  (clk_aud_i),
+      .rst_n_i(rst_aud_n_i),
+      .nmi    (u_i2s_nmi_if),  // TODO: cdc
+      .i2s    (i2s)
+  );
 endmodule

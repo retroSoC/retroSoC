@@ -45,6 +45,8 @@
 ../../ip/native/spisd.sv
 ../../ip/native/i2c_core.sv
 ../../ip/native/i2c.sv
+../../ip/native/i2s_core.sv
+../../ip/native/i2s.sv
 ../../ip/native/simple_timer.sv
 ../../ip/native/simple_uart.sv
 ../../ip/native/simple_gpio.sv
