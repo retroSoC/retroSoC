@@ -1,7 +1,7 @@
 module i2s_core (
     // verilog_format: off
-    input logic    clk_i,
-    input logic    rst_n_i,
+    input logic   clk_i,
+    input logic   rst_n_i,
     nv_i2s_if.dut i2s
     // verilog_format: on
 );

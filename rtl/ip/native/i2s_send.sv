@@ -16,10 +16,9 @@ module i2s_send (
   logic [4:0] s_bit_cnt_d, s_bit_cnt_q;
   logic [15:0] s_xfer_data_d, s_xfer_data_q;
   logic s_dacdat_d, s_dacdat_q;
-  logic s_done_d, s_done_q;
 
   assign dacdat_o      = s_dacdat_q;
-  assign done_o        = s_done_q;
+  assign done_o        = s_bit_cnt_q == 5'd15;
   assign s_lrck_trg    = lrck_i ^ s_lrck_dely_q;
 
   assign s_lrck_dely_d = lrck_i;
@@ -35,7 +34,7 @@ module i2s_send (
   always_comb begin
     s_bit_cnt_d = s_bit_cnt_q;
     if (s_lrck_trg) s_bit_cnt_d = '0;
-    else if (s_bit_cnt_q < 5'd16) begin
+    else if (s_bit_cnt_q < 5'd15) begin
       s_bit_cnt_d = s_bit_cnt_q + 1'b1;
     end
   end
@@ -65,16 +64,6 @@ module i2s_send (
       sclk_fall_i,
       s_dacdat_d,
       s_dacdat_q
-  );
-
-
-  assign s_done_d = s_bit_cnt_q == 5'd16;
-  dffer #(1) u_done_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_done_d,
-      s_done_q
   );
 
 endmodule
