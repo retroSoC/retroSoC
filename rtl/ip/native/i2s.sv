@@ -28,5 +28,9 @@ module nmi_i2s (
     // verilog_format: on
 );
 
-
+  i2s_core u_i2s_core (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .i2s    (i2s)
+  );
 endmodule
