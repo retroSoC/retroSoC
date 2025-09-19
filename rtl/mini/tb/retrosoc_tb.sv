@@ -51,6 +51,9 @@ module retrosoc_tb;
   wire s_psram_dat3;
   wire s_i2c_sda_io;
   wire s_i2c_scl_io;
+  wire s_i2s_sclk;
+  wire s_i2s_lrck;
+  wire s_i2s_adcdat;
   wire s_uart1_tx;
   wire s_uart1_rx;
   wire s_ps2_clk;
@@ -79,7 +82,7 @@ module retrosoc_tb;
       .xo_o_pad             (),
       .extclk_i_pad         (s_ext_clk),
       .audclk_i_pad         (s_aud_clk),
-      .irq_pin_i_pad        (),
+      .irq_i_pad            (),
 `ifdef CORE_MDD
       .core_mdd_sel_0_i_pad (s_core_mdd_sel[0]),
       .core_mdd_sel_1_i_pad (s_core_mdd_sel[1]),
@@ -137,10 +140,10 @@ module retrosoc_tb;
       .spisd_mosi_o_pad     (),
       .spisd_miso_i_pad     ('0),
       .i2s_mclk_o_pad       (),
-      .i2s_sclk_o_pad       (),
-      .i2s_lrck_o_pad       (),
+      .i2s_sclk_o_pad       (s_i2s_sclk),
+      .i2s_lrck_o_pad       (s_i2s_lrck),
       .i2s_dacdat_o_pad     (),
-      .i2s_adcdat_i_pad     (),
+      .i2s_adcdat_i_pad     (s_i2s_adcdat),
       .uart1_tx_o_pad       (s_uart1_tx),
       .uart1_rx_i_pad       (s_uart1_rx),
       .pwm_0_o_pad          (),
@@ -212,6 +215,12 @@ module retrosoc_tb;
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
+  mic #(16) u_mic (
+      .sck_i(s_i2s_sclk),
+      .ws_i (s_i2s_lrck),
+      .sd_o (s_i2s_adcdat)
+  );
+
   initial begin
     r_rst_n = 1;
     #43;
@@ -252,10 +261,10 @@ module retrosoc_tb;
       $fsdbDumpvars(0);
       $fsdbDumpMDA();
       // #398844962;
-      // #867652;
+      #867652;
       // #1667652;
       // #836901000;
-      #468320000;
+      // #468320000;
       // #873310000;
       // #340686376;
 
