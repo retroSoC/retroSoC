@@ -79,7 +79,7 @@ module retrosoc_tb;
       .xo_o_pad             (),
       .extclk_i_pad         (s_ext_clk),
       .audclk_i_pad         (s_aud_clk),
-      .irq_pin_i_pad        (),
+      .irq_i_pad            (),
 `ifdef CORE_MDD
       .core_mdd_sel_0_i_pad (s_core_mdd_sel[0]),
       .core_mdd_sel_1_i_pad (s_core_mdd_sel[1]),
@@ -252,10 +252,10 @@ module retrosoc_tb;
       $fsdbDumpvars(0);
       $fsdbDumpMDA();
       // #398844962;
-      // #867652;
+      #867652;
       // #1667652;
       // #836901000;
-      #468320000;
+      // #468320000;
       // #873310000;
       // #340686376;
 
