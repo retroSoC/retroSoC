@@ -1,12 +1,12 @@
 
 module user_ip_design #(
-    parameter int ID = 8'd23
+    parameter int ID = 8'd255
 ) (
     // verilog_format: off
-    input logic        clk_i,
-    input logic        rst_n_i,
-    user_gpio_if.dut   gpio,
-    apb4_if.slave      apb
+    input logic      clk_i,
+    input logic      rst_n_i,
+    user_gpio_if.dut gpio,
+    apb4_if.slave    apb
     // verilog_format: on
 );
 
@@ -26,13 +26,15 @@ module user_ip_design #(
     apb.rdata = '0;
     if (s_apb_rd_hdshk) begin
       unique case (apb4.addr[7:0])
-        8'h00:   apb4.rdata = {24'd0, ID};
-        default: apb4.rdata = '0;
+        USER_IP_APB_ID: apb4.rdata = {24'd0, ID};
+        default:        apb4.rdata = '0;
       endcase
     end
   end
 
   assign gpio.gpio_out = '0;
   assign gpio.gpio_oen = '0;
+
+  // INSTANCE USER CUSTOM DESIGN HERE!!!!
 
 endmodule
