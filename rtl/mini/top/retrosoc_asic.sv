@@ -35,22 +35,22 @@ module retrosoc_asic (
     inout  core_mdd_sel_4_i_pad,
 `endif
 `ifdef IP_MDD
-    inout  ip_mdd_gpio_0_io_pad,
-    inout  ip_mdd_gpio_1_io_pad,
-    inout  ip_mdd_gpio_2_io_pad,
-    inout  ip_mdd_gpio_3_io_pad,
-    inout  ip_mdd_gpio_4_io_pad,
-    inout  ip_mdd_gpio_5_io_pad,
-    inout  ip_mdd_gpio_6_io_pad,
-    inout  ip_mdd_gpio_7_io_pad,
-    inout  ip_mdd_gpio_8_io_pad,
-    inout  ip_mdd_gpio_9_io_pad,
-    inout  ip_mdd_gpio_10_io_pad,
-    inout  ip_mdd_gpio_11_io_pad,
-    inout  ip_mdd_gpio_12_io_pad,
-    inout  ip_mdd_gpio_13_io_pad,
-    inout  ip_mdd_gpio_14_io_pad,
-    inout  ip_mdd_gpio_15_io_pad,
+    inout  user_gpio_0_io_pad,
+    inout  user_gpio_1_io_pad,
+    inout  user_gpio_2_io_pad,
+    inout  user_gpio_3_io_pad,
+    inout  user_gpio_4_io_pad,
+    inout  user_gpio_5_io_pad,
+    inout  user_gpio_6_io_pad,
+    inout  user_gpio_7_io_pad,
+    inout  user_gpio_8_io_pad,
+    inout  user_gpio_9_io_pad,
+    inout  user_gpio_10_io_pad,
+    inout  user_gpio_11_io_pad,
+    inout  user_gpio_12_io_pad,
+    inout  user_gpio_13_io_pad,
+    inout  user_gpio_14_io_pad,
+    inout  user_gpio_15_io_pad,
 `endif
 `ifdef HAVE_PLL
     inout  pll_cfg_0_i_pad,
@@ -136,9 +136,7 @@ module retrosoc_asic (
   logic [4:0] s_core_mdd_sel;
 `endif
 `ifdef IP_MDD
-  logic [15:0] s_ip_mdd_gpio_out;
-  logic [15:0] s_ip_mdd_gpio_in;
-  logic [15:0] s_ip_mdd_gpio_oen;
+  user_gpio_if u_user_gpio_if ();
 `endif
 `ifdef HAVE_SRAM_IF
   ram_if u_ram_if ();
@@ -168,22 +166,22 @@ module retrosoc_asic (
   tc_io_tri_pad         u_core_mdd_sel_4_i_pad  (.pad(core_mdd_sel_4_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[4]));
 `endif
 `ifdef IP_MDD
-  tc_io_tri_pad         u_ip_mdd_gpio_0_io_pad  (.pad(ip_mdd_gpio_0_io_pad),  .c2p(s_ip_mdd_gpio_out[0]),       .c2p_en(s_ip_mdd_gpio_oen[0]),      .p2c(s_ip_mdd_gpio_in[0]));
-  tc_io_tri_pad         u_ip_mdd_gpio_1_io_pad  (.pad(ip_mdd_gpio_1_io_pad),  .c2p(s_ip_mdd_gpio_out[1]),       .c2p_en(s_ip_mdd_gpio_oen[1]),      .p2c(s_ip_mdd_gpio_in[1]));
-  tc_io_tri_pad         u_ip_mdd_gpio_2_io_pad  (.pad(ip_mdd_gpio_2_io_pad),  .c2p(s_ip_mdd_gpio_out[2]),       .c2p_en(s_ip_mdd_gpio_oen[2]),      .p2c(s_ip_mdd_gpio_in[2]));
-  tc_io_tri_pad         u_ip_mdd_gpio_3_io_pad  (.pad(ip_mdd_gpio_3_io_pad),  .c2p(s_ip_mdd_gpio_out[3]),       .c2p_en(s_ip_mdd_gpio_oen[3]),      .p2c(s_ip_mdd_gpio_in[3]));
-  tc_io_tri_pad         u_ip_mdd_gpio_4_io_pad  (.pad(ip_mdd_gpio_4_io_pad),  .c2p(s_ip_mdd_gpio_out[4]),       .c2p_en(s_ip_mdd_gpio_oen[4]),      .p2c(s_ip_mdd_gpio_in[4]));
-  tc_io_tri_pad         u_ip_mdd_gpio_5_io_pad  (.pad(ip_mdd_gpio_5_io_pad),  .c2p(s_ip_mdd_gpio_out[5]),       .c2p_en(s_ip_mdd_gpio_oen[5]),      .p2c(s_ip_mdd_gpio_in[5]));
-  tc_io_tri_pad         u_ip_mdd_gpio_6_io_pad  (.pad(ip_mdd_gpio_6_io_pad),  .c2p(s_ip_mdd_gpio_out[6]),       .c2p_en(s_ip_mdd_gpio_oen[6]),      .p2c(s_ip_mdd_gpio_in[6]));
-  tc_io_tri_pad         u_ip_mdd_gpio_7_io_pad  (.pad(ip_mdd_gpio_7_io_pad),  .c2p(s_ip_mdd_gpio_out[7]),       .c2p_en(s_ip_mdd_gpio_oen[7]),      .p2c(s_ip_mdd_gpio_in[7]));
-  tc_io_tri_pad         u_ip_mdd_gpio_8_io_pad  (.pad(ip_mdd_gpio_8_io_pad),  .c2p(s_ip_mdd_gpio_out[8]),       .c2p_en(s_ip_mdd_gpio_oen[8]),      .p2c(s_ip_mdd_gpio_in[8]));
-  tc_io_tri_pad         u_ip_mdd_gpio_9_io_pad  (.pad(ip_mdd_gpio_9_io_pad),  .c2p(s_ip_mdd_gpio_out[9]),       .c2p_en(s_ip_mdd_gpio_oen[9]),      .p2c(s_ip_mdd_gpio_in[9]));
-  tc_io_tri_pad         u_ip_mdd_gpio_10_io_pad (.pad(ip_mdd_gpio_10_io_pad), .c2p(s_ip_mdd_gpio_out[10]),      .c2p_en(s_ip_mdd_gpio_oen[10]),     .p2c(s_ip_mdd_gpio_in[10]));
-  tc_io_tri_pad         u_ip_mdd_gpio_11_io_pad (.pad(ip_mdd_gpio_11_io_pad), .c2p(s_ip_mdd_gpio_out[11]),      .c2p_en(s_ip_mdd_gpio_oen[11]),     .p2c(s_ip_mdd_gpio_in[11]));
-  tc_io_tri_pad         u_ip_mdd_gpio_12_io_pad (.pad(ip_mdd_gpio_12_io_pad), .c2p(s_ip_mdd_gpio_out[12]),      .c2p_en(s_ip_mdd_gpio_oen[12]),     .p2c(s_ip_mdd_gpio_in[12]));
-  tc_io_tri_pad         u_ip_mdd_gpio_13_io_pad (.pad(ip_mdd_gpio_13_io_pad), .c2p(s_ip_mdd_gpio_out[13]),      .c2p_en(s_ip_mdd_gpio_oen[13]),     .p2c(s_ip_mdd_gpio_in[13]));
-  tc_io_tri_pad         u_ip_mdd_gpio_14_io_pad (.pad(ip_mdd_gpio_14_io_pad), .c2p(s_ip_mdd_gpio_out[14]),      .c2p_en(s_ip_mdd_gpio_oen[14]),     .p2c(s_ip_mdd_gpio_in[14]));
-  tc_io_tri_pad         u_ip_mdd_gpio_15_io_pad (.pad(ip_mdd_gpio_15_io_pad), .c2p(s_ip_mdd_gpio_out[15]),      .c2p_en(s_ip_mdd_gpio_oen[15]),     .p2c(s_ip_mdd_gpio_in[15]));
+  tc_io_tri_pad         u_user_gpio_0_io_pad    (.pad(user_gpio_0_io_pad),    .c2p(u_user_gpio_if.gpio_out[0]),  .c2p_en(~u_user_gpio_if.gpio_oen[0]),  .p2c(u_user_gpio_if.gpio_in[0]));
+  tc_io_tri_pad         u_user_gpio_1_io_pad    (.pad(user_gpio_1_io_pad),    .c2p(u_user_gpio_if.gpio_out[1]),  .c2p_en(~u_user_gpio_if.gpio_oen[1]),  .p2c(u_user_gpio_if.gpio_in[1]));
+  tc_io_tri_pad         u_user_gpio_2_io_pad    (.pad(user_gpio_2_io_pad),    .c2p(u_user_gpio_if.gpio_out[2]),  .c2p_en(~u_user_gpio_if.gpio_oen[2]),  .p2c(u_user_gpio_if.gpio_in[2]));
+  tc_io_tri_pad         u_user_gpio_3_io_pad    (.pad(user_gpio_3_io_pad),    .c2p(u_user_gpio_if.gpio_out[3]),  .c2p_en(~u_user_gpio_if.gpio_oen[3]),  .p2c(u_user_gpio_if.gpio_in[3]));
+  tc_io_tri_pad         u_user_gpio_4_io_pad    (.pad(user_gpio_4_io_pad),    .c2p(u_user_gpio_if.gpio_out[4]),  .c2p_en(~u_user_gpio_if.gpio_oen[4]),  .p2c(u_user_gpio_if.gpio_in[4]));
+  tc_io_tri_pad         u_user_gpio_5_io_pad    (.pad(user_gpio_5_io_pad),    .c2p(u_user_gpio_if.gpio_out[5]),  .c2p_en(~u_user_gpio_if.gpio_oen[5]),  .p2c(u_user_gpio_if.gpio_in[5]));
+  tc_io_tri_pad         u_user_gpio_6_io_pad    (.pad(user_gpio_6_io_pad),    .c2p(u_user_gpio_if.gpio_out[6]),  .c2p_en(~u_user_gpio_if.gpio_oen[6]),  .p2c(u_user_gpio_if.gpio_in[6]));
+  tc_io_tri_pad         u_user_gpio_7_io_pad    (.pad(user_gpio_7_io_pad),    .c2p(u_user_gpio_if.gpio_out[7]),  .c2p_en(~u_user_gpio_if.gpio_oen[7]),  .p2c(u_user_gpio_if.gpio_in[7]));
+  tc_io_tri_pad         u_user_gpio_8_io_pad    (.pad(user_gpio_8_io_pad),    .c2p(u_user_gpio_if.gpio_out[8]),  .c2p_en(~u_user_gpio_if.gpio_oen[8]),  .p2c(u_user_gpio_if.gpio_in[8]));
+  tc_io_tri_pad         u_user_gpio_9_io_pad    (.pad(user_gpio_9_io_pad),    .c2p(u_user_gpio_if.gpio_out[9]),  .c2p_en(~u_user_gpio_if.gpio_oen[9]),  .p2c(u_user_gpio_if.gpio_in[9]));
+  tc_io_tri_pad         u_user_gpio_10_io_pad   (.pad(user_gpio_10_io_pad),   .c2p(u_user_gpio_if.gpio_out[10]), .c2p_en(~u_user_gpio_if.gpio_oen[10]), .p2c(u_user_gpio_if.gpio_in[10]));
+  tc_io_tri_pad         u_user_gpio_11_io_pad   (.pad(user_gpio_11_io_pad),   .c2p(u_user_gpio_if.gpio_out[11]), .c2p_en(~u_user_gpio_if.gpio_oen[11]), .p2c(u_user_gpio_if.gpio_in[11]));
+  tc_io_tri_pad         u_user_gpio_12_io_pad   (.pad(user_gpio_12_io_pad),   .c2p(u_user_gpio_if.gpio_out[12]), .c2p_en(~u_user_gpio_if.gpio_oen[12]), .p2c(u_user_gpio_if.gpio_in[12]));
+  tc_io_tri_pad         u_user_gpio_13_io_pad   (.pad(user_gpio_13_io_pad),   .c2p(u_user_gpio_if.gpio_out[13]), .c2p_en(~u_user_gpio_if.gpio_oen[13]), .p2c(u_user_gpio_if.gpio_in[13]));
+  tc_io_tri_pad         u_user_gpio_14_io_pad   (.pad(user_gpio_14_io_pad),   .c2p(u_user_gpio_if.gpio_out[14]), .c2p_en(~u_user_gpio_if.gpio_oen[14]), .p2c(u_user_gpio_if.gpio_in[14]));
+  tc_io_tri_pad         u_user_gpio_15_io_pad   (.pad(user_gpio_15_io_pad),   .c2p(u_user_gpio_if.gpio_out[15]), .c2p_en(~u_user_gpio_if.gpio_oen[15]), .p2c(u_user_gpio_if.gpio_in[15]));
 `endif
 `ifdef HAVE_PLL
   tc_io_tri_pad         u_pll_cfg_0_i_pad       (.pad(pll_cfg_0_i_pad),       .c2p(),                           .c2p_en(1'b0),                      .p2c(s_pll_cfg[0]));
@@ -265,38 +263,36 @@ module retrosoc_asic (
   );
 
   retrosoc u_retrosoc (
-      .clk_i            (s_sys_clk),
-      .rst_n_i          (s_sys_rst_n),
-      .clk_aud_i        (s_aud_clk),
-      .rst_aud_n_i      (s_aud_rst_n),
+      .clk_i         (s_sys_clk),
+      .rst_n_i       (s_sys_rst_n),
+      .clk_aud_i     (s_aud_clk),
+      .rst_aud_n_i   (s_aud_rst_n),
 `ifdef HAVE_PLL
-      .spfs_div4_i      (s_pll_cfg[2]),
+      .spfs_div4_i   (s_pll_cfg[2]),
 `else
-      .spfs_div4_i      ('0),
+      .spfs_div4_i   ('0),
 `endif
-      .irq_pin_i        (s_irq_pin),
+      .irq_pin_i     (s_irq_pin),
 `ifdef CORE_MDD
-      .core_mdd_sel_i   (s_core_mdd_sel),
+      .core_mdd_sel_i(s_core_mdd_sel),
 `endif
 `ifdef IP_MDD
-      .ip_mdd_gpio_out_o(s_ip_mdd_gpio_out),
-      .ip_mdd_gpio_in_i (s_ip_mdd_gpio_in),
-      .ip_mdd_gpio_oen_o(s_ip_mdd_gpio_oen),
+      .gpio          (u_user_gpio_if),
 `endif
 `ifdef HAVE_SRAM_IF
-      .ram              (u_ram_if),
+      .ram           (u_ram_if),
 `endif
-      .gpio             (u_gpio_if),
-      .uart0            (u_uart0_if),
-      .psram            (u_psram_if),
-      .spisd            (u_spisd_if),
-      .i2s              (u_i2s_if),
-      .uart1            (u_uart1_if),
-      .pwm              (u_pwm_if),
-      .ps2              (u_ps2_if),
-      .i2c              (u_i2c_if),
-      .qspi             (u_qspi_if),
-      .spfs             (u_spfs_if)
+      .gpio          (u_gpio_if),
+      .uart0         (u_uart0_if),
+      .psram         (u_psram_if),
+      .spisd         (u_spisd_if),
+      .i2s           (u_i2s_if),
+      .uart1         (u_uart1_if),
+      .pwm           (u_pwm_if),
+      .ps2           (u_ps2_if),
+      .i2c           (u_i2c_if),
+      .qspi          (u_qspi_if),
+      .spfs          (u_spfs_if)
   );
 
 `ifdef HAVE_SRAM_IF

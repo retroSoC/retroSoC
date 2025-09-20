@@ -16,6 +16,7 @@
 #include <tinyi2c.h>
 #include <tinylcd.h>
 #include <tinypsram.h>
+#include <tinyspisd.h>
 #include <tinybench.h>
 #include <tinysh.h>
 #include <AT24C64.h>

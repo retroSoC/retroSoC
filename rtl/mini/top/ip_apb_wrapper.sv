@@ -29,9 +29,7 @@ module ip_apb_wrapper (
     qspi_if.dut         qspi,
     spi_if.dut          spfs,
 `ifdef IP_MDD
-    output logic [15:0] ip_mdd_gpio_out_o,
-    input  logic [15:0] ip_mdd_gpio_in_i,
-    output logic [15:0] ip_mdd_gpio_oen_o,
+    user_gpio_if.dut    gpio,
 `endif
     output logic [ 5:0] irq_o
     // verilog_format: on
@@ -108,22 +106,11 @@ module ip_apb_wrapper (
 
 `ifdef IP_MDD
   ip_mdd_wrapper u_ip_mdd_wrapper (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      // HACK:
-      .sel_i            ('0),
-      .gpio_out_o       (ip_mdd_gpio_out_o),
-      .gpio_in_i        (ip_mdd_gpio_in_i),
-      .gpio_oen_o       (ip_mdd_gpio_oen_o),
-      .slv_apb_paddr_i  (u_user_ip_apb_if.paddr),
-      .slv_apb_pprot_i  (u_user_ip_apb_if.pprot),
-      .slv_apb_psel_i   (u_user_ip_apb_if.psel),
-      .slv_apb_penable_i(u_user_ip_apb_if.penable),
-      .slv_apb_pwrite_i (u_user_ip_apb_if.pwrite),
-      .slv_apb_pwdata_i (u_user_ip_apb_if.pwdata),
-      .slv_apb_pstrb_i  (u_user_ip_apb_if.pstrb),
-      .slv_apb_pready_o (u_user_ip_apb_if.pready),
-      .slv_apb_prdata_o (u_user_ip_apb_if.prdata)
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .sel_i  ('0),               // HACK:
+      .gpio   (gpio),
+      .apb    (u_user_ip_apb_if)
   );
 `endif
 

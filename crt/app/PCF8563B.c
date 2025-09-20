@@ -60,7 +60,7 @@ void PCF8563B_test() {
     PCF8563B_wr_reg(&init1_info);
 
     PCF8563B_info_t rd_info = {0};
-    for(int i = 0; i < 100; ++i) {
+    for(int i = 0; i < 50; ++i) {
         rd_info = PCF8563B_rd_reg();
         printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
                                                     rd_info.date.day, rd_info.date.weekday,
@@ -78,7 +78,7 @@ void PCF8563B_test() {
         .date.year    = 24
     };
     PCF8563B_wr_reg(&init2_info);
-    for(int i = 0; i < 100; ++i) {
+    for(int i = 0; i < 50; ++i) {
         rd_info = PCF8563B_rd_reg();
         printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
                                                     rd_info.date.day, rd_info.date.weekday,
