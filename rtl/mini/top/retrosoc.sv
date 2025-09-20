@@ -23,14 +23,14 @@
 
 module retrosoc (
     // verilog_format: off
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic        clk_aud_i,
-    input  logic        rst_aud_n_i,
-    input  logic        spfs_div4_i,
-    input  logic        irq_pin_i,
+    input  logic       clk_i,
+    input  logic       rst_n_i,
+    input  logic       clk_aud_i,
+    input  logic       rst_aud_n_i,
+    input  logic       spfs_div4_i,
+    input  logic       irq_pin_i,
 `ifdef CORE_MDD
-    input  logic [4:0]  core_mdd_sel_i,
+    input  logic [4:0] core_mdd_sel_i,
 `endif
 `ifdef IP_MDD
     user_gpio_if.dut    gpio,
@@ -38,17 +38,18 @@ module retrosoc (
 `ifdef HAVE_SRAM_IF
     ram_if.master       ram,
 `endif
-    simp_gpio_if.dut    gpio,
-    uart_if.dut         uart0,
-    qspi_if.dut         psram,
-    spi_if.dut          spisd,
-    nv_i2s_if.dut       i2s,
-    uart_if.dut         uart1,
-    pwm_if.dut          pwm,
-    ps2_if.dut          ps2,
-    i2c_if.dut          i2c,
-    qspi_if.dut         qspi,
-    spi_if.dut          spfs
+    simp_gpio_if.dut   gpio,
+    uart_if.dut        uart0,
+    qspi_if.dut        psram,
+    spi_if.dut         spisd,
+    nv_i2s_if.dut      i2s,
+    onewire_if.dut     onewire,
+    uart_if.dut        uart1,
+    pwm_if.dut         pwm,
+    ps2_if.dut         ps2,
+    i2c_if.dut         i2c,
+    qspi_if.dut        qspi,
+    spi_if.dut         spfs
     // verilog_format: on
 );
 
@@ -124,6 +125,7 @@ module retrosoc (
       .spisd      (spisd),
       .i2c        (u_natv_i2c_if),
       .i2s        (i2s),
+      .onewire    (onewire),
       .irq_o      (s_natv_irq)
   );
 

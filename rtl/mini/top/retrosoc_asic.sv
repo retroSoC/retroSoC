@@ -93,6 +93,8 @@ module retrosoc_asic (
     output i2s_lrck_o_pad,
     output i2s_dacdat_o_pad,
     input  i2s_adcdat_i_pad,
+    // onewire
+    output onewire_dat_o_pad,
     // apb ip
     output uart1_tx_o_pad,
     inout  uart1_rx_i_pad,
@@ -147,6 +149,7 @@ module retrosoc_asic (
   qspi_if u_psram_if ();
   spi_if u_spisd_if ();
   nv_i2s_if u_i2s_if ();
+  onewire_if u_onewire_if ();
   uart_if u_uart1_if ();
   pwm_if u_pwm_if ();
   ps2_if u_ps2_if ();
@@ -220,6 +223,7 @@ module retrosoc_asic (
   tc_io_tri_pad         u_i2s_lrck_o_pad        (.pad(i2s_lrck_o_pad),        .c2p(u_i2s_if.lrck_o),            .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_i2s_dacdat_o_pad      (.pad(i2s_dacdat_o_pad),      .c2p(u_i2s_if.dacdat_o),          .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_i2s_adcdat_i_pad      (.pad(i2s_adcdat_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(u_i2s_if.adcdat_i));
+  tc_io_tri_pad         u_onewire_dat_o_pad     (.pad(onewire_dat_o_pad),     .c2p(u_onewire_if.dat_o),         .c2p_en(1'b1),                      .p2c());
   // apb
   tc_io_tri_pad         u_uart1_tx_o_pad       (.pad(uart1_tx_o_pad),         .c2p(u_uart1_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_uart1_rx_i_pad       (.pad(uart1_rx_i_pad),         .c2p(),                           .c2p_en(1'b0),                      .p2c(u_uart1_if.uart_rx_i));
@@ -287,6 +291,7 @@ module retrosoc_asic (
       .psram         (u_psram_if),
       .spisd         (u_spisd_if),
       .i2s           (u_i2s_if),
+      .onewire       (u_onewire_if),
       .uart1         (u_uart1_if),
       .pwm           (u_pwm_if),
       .ps2           (u_ps2_if),

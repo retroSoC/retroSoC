@@ -140,6 +140,7 @@ module retrosoc_tb;
       .spisd_mosi_o_pad    (),
       .spisd_miso_i_pad    ('0),
       .i2s_mclk_o_pad      (),
+      .onewire_dat_o_pad   (),
       .i2s_sclk_o_pad      (s_i2s_sclk),
       .i2s_lrck_o_pad      (s_i2s_lrck),
       .i2s_dacdat_o_pad    (),

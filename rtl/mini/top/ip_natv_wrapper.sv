@@ -23,6 +23,7 @@ module ip_natv_wrapper (
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
     nv_i2s_if.dut      i2s,
+    onewire_if.dut     onewire,
     // irq
     output logic [2:0] irq_o
     // verilog_format: on
@@ -36,6 +37,7 @@ module ip_natv_wrapper (
   nmi_if u_spisd_nmi_if ();
   nmi_if u_i2c_nmi_if ();
   nmi_if u_i2s_nmi_if ();
+  nmi_if u_onewire_nmi_if ();
   simp_gpio_if u_simp_gpio_if ();
 
 
@@ -83,22 +85,31 @@ module ip_natv_wrapper (
   assign u_i2s_nmi_if.wdata   = nmi.wdata;
   assign u_i2s_nmi_if.wstrb   = nmi.wstrb;
 
-  // verilog_format: off
-  assign nmi.ready              = (u_gpio_nmi_if.valid  & u_gpio_nmi_if.ready)  |
-                                  (u_uart_nmi_if.valid  & u_uart_nmi_if.ready)  |
-                                  (u_tim0_nmi_if.valid  & u_tim0_nmi_if.ready)  |
-                                  (u_tim1_nmi_if.valid  & u_tim1_nmi_if.ready)  |
-                                  (u_psram_nmi_if.valid & u_psram_nmi_if.ready) |
-                                  (u_spisd_nmi_if.valid & u_spisd_nmi_if.ready) |
-                                  (u_i2c_nmi_if.valid   & u_i2c_nmi_if.ready);
+  assign u_onewire_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h80);
+  assign u_onewire_nmi_if.addr    = nmi.addr;
+  assign u_onewire_nmi_if.wdata   = nmi.wdata;
+  assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
 
-  assign nmi.rdata              = ({32{(u_gpio_nmi_if.valid  & u_gpio_nmi_if.ready)}}  & u_gpio_nmi_if.rdata)  |
-                                  ({32{(u_uart_nmi_if.valid  & u_uart_nmi_if.ready)}}  & u_uart_nmi_if.rdata)  |
-                                  ({32{(u_tim0_nmi_if.valid  & u_tim0_nmi_if.ready)}}  & u_tim0_nmi_if.rdata)  |
-                                  ({32{(u_tim1_nmi_if.valid  & u_tim1_nmi_if.ready)}}  & u_tim1_nmi_if.rdata)  |
-                                  ({32{(u_psram_nmi_if.valid & u_psram_nmi_if.ready)}} & u_psram_nmi_if.rdata) |
-                                  ({32{(u_spisd_nmi_if.valid & u_spisd_nmi_if.ready)}} & u_spisd_nmi_if.rdata) |
-                                  ({32{(u_i2c_nmi_if.valid   & u_i2c_nmi_if.ready)}}   & u_i2c_nmi_if.rdata);
+  // verilog_format: off
+  assign nmi.ready              = (u_gpio_nmi_if.valid    & u_gpio_nmi_if.ready)  |
+                                  (u_uart_nmi_if.valid    & u_uart_nmi_if.ready)  |
+                                  (u_tim0_nmi_if.valid    & u_tim0_nmi_if.ready)  |
+                                  (u_tim1_nmi_if.valid    & u_tim1_nmi_if.ready)  |
+                                  (u_psram_nmi_if.valid   & u_psram_nmi_if.ready) |
+                                  (u_spisd_nmi_if.valid   & u_spisd_nmi_if.ready) |
+                                  (u_i2c_nmi_if.valid     & u_i2c_nmi_if.ready) |
+                                  (u_i2s_nmi_if.valid     & u_i2s_nmi_if.ready) |
+                                  (u_onewire_nmi_if.valid & u_onewire_nmi_if.ready);
+
+  assign nmi.rdata              = ({32{(u_gpio_nmi_if.valid    & u_gpio_nmi_if.ready)}}    & u_gpio_nmi_if.rdata)  |
+                                  ({32{(u_uart_nmi_if.valid    & u_uart_nmi_if.ready)}}    & u_uart_nmi_if.rdata)  |
+                                  ({32{(u_tim0_nmi_if.valid    & u_tim0_nmi_if.ready)}}    & u_tim0_nmi_if.rdata)  |
+                                  ({32{(u_tim1_nmi_if.valid    & u_tim1_nmi_if.ready)}}    & u_tim1_nmi_if.rdata)  |
+                                  ({32{(u_psram_nmi_if.valid   & u_psram_nmi_if.ready)}}   & u_psram_nmi_if.rdata) |
+                                  ({32{(u_spisd_nmi_if.valid   & u_spisd_nmi_if.ready)}}   & u_spisd_nmi_if.rdata) |
+                                  ({32{(u_i2c_nmi_if.valid     & u_i2c_nmi_if.ready)}}     & u_i2c_nmi_if.rdata) |
+                                  ({32{(u_i2s_nmi_if.valid     & u_i2s_nmi_if.ready)}}     & u_i2s_nmi_if.rdata) |
+                                  ({32{(u_onewire_nmi_if.valid & u_onewire_nmi_if.ready)}} & u_onewire_nmi_if.rdata);
  // verilog_format: on
 
   assign irq_o[0]               = uart.irq_o;
@@ -161,5 +172,12 @@ module ip_natv_wrapper (
       .rst_aud_n_i(rst_aud_n_i),
       .nmi        (u_i2s_nmi_if),
       .i2s        (i2s)
+  );
+
+  nmi_onewire u_nmi_onewire (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_onewire_nmi_if),
+      .onewire(onewire)
   );
 endmodule
