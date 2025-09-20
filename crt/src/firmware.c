@@ -165,17 +165,7 @@ void app_system_boot() {
 
 
 void spisd_test() {
-    printf("spisd test\n");
-
-    int TEST_NUM = 520;
-    volatile uint8_t *base_byte = (uint8_t *)0x50000000;
-    for(int i = 0; i < TEST_NUM; ++i) {
-        *(base_byte + i) = (uint8_t) i;
-    }
-
-    for(int i = 0; i < TEST_NUM; ++i) {
-        printf("tf card rd %d: %d\n", i, *(base_byte + i));
-    }
+  
 }
 
 void main()
@@ -183,30 +173,18 @@ void main()
     reg_uart0_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
     app_system_boot();
     // while(1);
-    // ip_archinfo_test();
-    // spisd_test();
-    // printf("[SPISD] clk div(default): %d\n", reg_spisd_ctrl);
-    // printf("[SPISD] set clk div to %d, actul rd val: %d\n", spisd_cfg_val, reg_spisd_ctrl);
-    // ip_psram_selftest(0x50000000, 8 * 1024 * 1024);
-
+    ip_archinfo_test();
+    ip_spisd_test();
     i2c0_init((uint8_t)35);
-    // uint8_t i2c_txdata0[1] = {0x68};
-    // uint8_t i2c_rxdata0[1] = {0};
-    // i2c0_wr_nbyte(AT24C64_DEV_ADDR, (uint16_t)0, I2C_DEV_ADDR_16BIT, 1, i2c_txdata0);
-    // i2c0_rd_nbyte(AT24C64_DEV_ADDR, (uint16_t)0, I2C_DEV_ADDR_16BIT, 1, i2c_rxdata0);
-    // printf("i2c_rxdata: %x\n", i2c_rxdata0[0]);
-
-    // PCF8563B_test();
+    PCF8563B_test();
     ES8388_init();
-
-    // ip_tim_test();
-    // ip_rng_test();
+    ip_tim_test();
+    ip_rng_test();
     
     // ip_gpio_test();
     // ip_hpuart_test();
     // ip_pwm_test();
     // ip_ps2_test();
-    // ip_i2c_test();
     // ip_lcd_test();
     // tinybench(true, 0);
     // tinysh();
