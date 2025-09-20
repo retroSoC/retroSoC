@@ -33,9 +33,7 @@ module retrosoc (
     input  logic [4:0]  core_mdd_sel_i,
 `endif
 `ifdef IP_MDD
-    output logic [15:0] ip_mdd_gpio_out_o,
-    input  logic [15:0] ip_mdd_gpio_in_i,
-    output logic [15:0] ip_mdd_gpio_oen_o,
+    user_gpio_if.dut    gpio,
 `endif
 `ifdef HAVE_SRAM_IF
     ram_if.master       ram,
@@ -130,22 +128,20 @@ module retrosoc (
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .spfs_div4_i      (spfs_div4_i),
-      .nmi              (u_apb_nmi_if),
-      .uart             (uart1),
-      .pwm              (pwm),
-      .ps2              (ps2),
-      .i2c              (u_apb_i2c_if),
-      .qspi             (qspi),
-      .spfs             (spfs),
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .spfs_div4_i(spfs_div4_i),
+      .nmi        (u_apb_nmi_if),
+      .uart       (uart1),
+      .pwm        (pwm),
+      .ps2        (ps2),
+      .i2c        (u_apb_i2c_if),
+      .qspi       (qspi),
+      .spfs       (spfs),
 `ifdef IP_MDD
-      .ip_mdd_gpio_out_o(ip_mdd_gpio_out_o),
-      .ip_mdd_gpio_in_i (ip_mdd_gpio_in_i),
-      .ip_mdd_gpio_oen_o(ip_mdd_gpio_oen_o),
+      .gpio       (gpio),
 `endif
-      .irq_o            (s_apb_irq)
+      .irq_o      (s_apb_irq)
   );
 
 endmodule

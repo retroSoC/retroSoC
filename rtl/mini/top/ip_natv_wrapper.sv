@@ -37,7 +37,6 @@ module ip_natv_wrapper (
   nmi_if u_i2c_nmi_if ();
   nmi_if u_i2s_nmi_if ();
   simp_gpio_if u_simp_gpio_if ();
-  //   simp_uart_if u_simp_uart_if ();
 
 
   logic s_psram_cfg_sel;
@@ -154,29 +153,13 @@ module ip_natv_wrapper (
       .i2c    (i2c)
   );
 
-  // nmi2nmi u_nmi2nmi (
-  //     .mstr_clk_i  (clk_i),
-  //     .mstr_rst_n_i(rst_n_i),
-  //     .mstr_valid_i(s_i2s_valid),
-  //     .mstr_addr_i (s_i2s_addr),
-  //     .mstr_wdata_i(s_i2s_wdata),
-  //     .mstr_wstrb_i(s_i2s_wstrb),
-  //     .mstr_rdata_o(s_i2s_rdata),
-  //     .mstr_ready_o(s_i2s_ready),
-  //     .slvr_clk_i  (clk_aud_i),
-  //     .slvr_rst_n_i(rst_aud_n_i),
-  //     .slvr_valid_o(s_i2s_aud_valid),
-  //     .slvr_addr_o (s_i2s_aud_addr),
-  //     .slvr_wdata_o(s_i2s_aud_wdata),
-  //     .slvr_wstrb_o(s_i2s_aud_wstrb),
-  //     .slvr_rdata_i(s_i2s_aud_rdata),
-  //     .slvr_ready_i(s_i2s_aud_ready)
-  // );
 
   nmi_i2s u_nmi_i2s (
-      .clk_i  (clk_aud_i),
-      .rst_n_i(rst_aud_n_i),
-      .nmi    (u_i2s_nmi_if),  // TODO: cdc
-      .i2s    (i2s)
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .clk_aud_i  (clk_aud_i),
+      .rst_aud_n_i(rst_aud_n_i),
+      .nmi        (u_i2s_nmi_if),
+      .i2s        (i2s)
   );
 endmodule
