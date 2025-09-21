@@ -71,9 +71,17 @@
 #define reg_i2c0_cfg       (*(volatile uint32_t*)0x10006018)
 #define reg_i2c0_status    (*(volatile uint32_t*)0x1000601C)
 // i2s
-#define reg_i2s_ctrl       (*(volatile uint32_t*)0x10007000)
+#define reg_i2s_mode       (*(volatile uint32_t*)0x10007000)
+#define reg_i2s_txdata     (*(volatile uint32_t*)0x10007004)
+#define reg_i2s_rxdata     (*(volatile uint32_t*)0x10007008)
 // 1-wire
-#define reg_onewire_ctrl   (*(volatile uint32_t*)0x10008000)
+#define reg_onewire_clkdiv  (*(volatile uint32_t*)0x10008000)
+#define reg_onewire_zerocnt (*(volatile uint32_t*)0x10008004)
+#define reg_onewire_onecnt  (*(volatile uint32_t*)0x10008008)
+#define reg_onewire_rstnum  (*(volatile uint32_t*)0x1000800C)
+#define reg_onewire_txdata  (*(volatile uint32_t*)0x10008010)
+#define reg_onewire_ctrl    (*(volatile uint32_t*)0x10008014)
+#define reg_onewire_status  (*(volatile uint32_t*)0x10008018)
 // dma
 #define reg_dma_ctrl       (*(volatile uint32_t*)0x10009000)
 // sys ctrl
