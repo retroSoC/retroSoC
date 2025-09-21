@@ -69,8 +69,8 @@ void welcome_screen()
     printf("                     1 x PSRAM         @0x%x\n", &reg_psram_wait);
     printf("                     1 x SPISD         @0x%x\n", &reg_spisd_ctrl);
     printf("                     1 x I2C           @0x%x\n", &reg_i2c0_clkdiv);
-    printf("                     1 x I2S           @0x%x\n", &reg_i2s_ctrl);
-    printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_ctrl);
+    printf("                     1 x I2S           @0x%x\n", &reg_i2s_mode);
+    printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
     printf("                     1 x DMA           @0x%x\n", &reg_dma_ctrl);
     printf("                     1 x SYSCTRL       @0x%x\n", &reg_sys_ctrl);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
@@ -163,23 +163,19 @@ void app_system_boot() {
     printf("self test done\n\n");
 }
 
-
-void spisd_test() {
-  
-}
-
 void main()
 {
     reg_uart0_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
-    app_system_boot();
+    // app_system_boot();
     // while(1);
-    ip_archinfo_test();
-    ip_spisd_test();
-    i2c0_init((uint8_t)35);
-    PCF8563B_test();
-    ES8388_init();
-    ip_tim_test();
-    ip_rng_test();
+    // ip_archinfo_test();
+    ip_1wire_test();
+    // ip_spisd_test();
+    // i2c0_init((uint8_t)35);
+    // PCF8563B_test();
+    // ES8388_init();
+    // ip_tim_test();
+    // ip_rng_test();
     
     // ip_gpio_test();
     // ip_hpuart_test();

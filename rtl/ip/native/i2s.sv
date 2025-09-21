@@ -2,8 +2,9 @@
 `define NATV_I2S_DEF_SV
 
 // verilog_format: off
-`define NATV_I2S_CLKDIV  8'h00
-`define NATV_I2S_DEVADDR 8'h04
+`define NATV_I2S_MODE   8'h00
+`define NATV_I2S_TXDATA 8'h04
+`define NATV_I2S_RXDATA 8'h08
 // verilog_format: on
 
 interface nv_i2s_if ();
@@ -23,10 +24,32 @@ module nmi_i2s (
     // verilog_format: off
     input logic   clk_i,
     input logic   rst_n_i,
+    input logic   clk_aud_i  ,
+    input logic   rst_aud_n_i,
     nmi_if.slave  nmi,
     nv_i2s_if.dut i2s
     // verilog_format: on
 );
+
+
+  // nmi2nmi u_nmi2nmi (
+  //     .mstr_clk_i  (clk_i),
+  //     .mstr_rst_n_i(rst_n_i),
+  //     .mstr_valid_i(s_i2s_valid),
+  //     .mstr_addr_i (s_i2s_addr),
+  //     .mstr_wdata_i(s_i2s_wdata),
+  //     .mstr_wstrb_i(s_i2s_wstrb),
+  //     .mstr_rdata_o(s_i2s_rdata),
+  //     .mstr_ready_o(s_i2s_ready),
+  //     .slvr_clk_i  (clk_aud_i),
+  //     .slvr_rst_n_i(rst_aud_n_i),
+  //     .slvr_valid_o(s_i2s_aud_valid),
+  //     .slvr_addr_o (s_i2s_aud_addr),
+  //     .slvr_wdata_o(s_i2s_aud_wdata),
+  //     .slvr_wstrb_o(s_i2s_aud_wstrb),
+  //     .slvr_rdata_i(s_i2s_aud_rdata),
+  //     .slvr_ready_i(s_i2s_aud_ready)
+  // );
 
   i2s_core u_i2s_core (
       .clk_i  (clk_i),

@@ -14,6 +14,7 @@
 #include <tinypwm.h>
 #include <tinyps2.h>
 #include <tinyi2c.h>
+#include <tiny1wire.h>
 #include <tinylcd.h>
 #include <tinypsram.h>
 #include <tinyspisd.h>

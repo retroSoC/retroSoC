@@ -67,3 +67,5 @@ set_property -dict {PACKAGE_PIN Y11 IOSTANDARD LVCMOS18} [get_ports i2s_sclk_o]
 set_property -dict {PACKAGE_PIN AB12 IOSTANDARD LVCMOS18} [get_ports i2s_lrck_o]
 set_property -dict {PACKAGE_PIN AA12 IOSTANDARD LVCMOS18} [get_ports i2s_dacdat_o]
 set_property -dict {PACKAGE_PIN W12 IOSTANDARD LVCMOS18} [get_ports i2s_adcdat_i]
+#onewire
+set_property -dict {PACKAGE_PIN AB10 IOSTANDARD LVCMOS18} [get_ports onewire_dat_o]

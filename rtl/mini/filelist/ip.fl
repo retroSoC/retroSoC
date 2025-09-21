@@ -49,6 +49,8 @@
 ../../ip/native/i2s_send.sv
 ../../ip/native/i2s_core.sv
 ../../ip/native/i2s.sv
+../../ip/native/onewire_core.sv
+../../ip/native/onewire.sv
 ../../ip/native/simple_timer.sv
 ../../ip/native/simple_uart.sv
 ../../ip/native/simple_gpio.sv
