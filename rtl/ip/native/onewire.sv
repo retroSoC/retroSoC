@@ -44,8 +44,6 @@ module nmi_onewire (
   logic [7:0] s_onecnt_d, s_onecnt_q;
   logic s_rstnum_en;
   logic [7:0] s_rstnum_d, s_rstnum_q;
-  logic s_txdata_en;
-  logic [23:0] s_txdata_d, s_txdata_q;
   logic [1:0] s_ctrl_d, s_ctrl_q;
   logic [2:0] s_status_d, s_status_q;
   // fifo
@@ -54,8 +52,6 @@ module nmi_onewire (
   logic [23:0] s_tx_push_data, s_tx_pop_data;
 
   logic s_done;
-
-
 
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
   assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
@@ -108,7 +104,9 @@ module nmi_onewire (
     s_tx_push_data  = '0;
     if (s_nmi_wr_hdshk && nmi.addr[7:0] == `ONEWIRE_TXDATA) begin
       s_tx_push_valid = 1'b1;
-      s_tx_push_data  = nmi.wdata[23:0];
+      if(nmi.wstrb[0]) s_tx_push_data[7:0] = nmi.wdata[7:0];
+      if(nmi.wstrb[1]) s_tx_push_data[15:8] = nmi.wdata[15:8];
+      if(nmi.wstrb[2]) s_tx_push_data[23:16] = nmi.wdata[23:16];
     end
   end
 
@@ -180,7 +178,7 @@ module nmi_onewire (
       `ONEWIRE_ZEROCNT: s_nmi_rdata_d = {24'd0, s_zerocnt_q};
       `ONEWIRE_ONECNT:  s_nmi_rdata_d = {24'd0, s_onecnt_q};
       `ONEWIRE_RSTNUM:  s_nmi_rdata_d = {24'd0, s_rstnum_q};
-      `ONEWIRE_STATUS:  s_nmi_rdata_d = {31'd0, s_status_q};
+      `ONEWIRE_STATUS:  s_nmi_rdata_d = {29'd0, s_status_q};
       default:          s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
@@ -199,7 +197,7 @@ module nmi_onewire (
       .zerocnt_i (s_zerocnt_q),
       .onecnt_i  (s_onecnt_q),
       .rstnum_i  (s_rstnum_q),
-      .start_i   (s_ctrl_q[0]),
+      .start_i   (s_ctrl_q[1]),
       .data_req_o(s_tx_pop_valid),
       .data_rdy_i(s_tx_pop_ready),
       .data_i    (s_tx_pop_data),

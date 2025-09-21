@@ -21,23 +21,24 @@ module onewire_core (
   localparam FSM_XFER = 2'd1;
   localparam FSM_RST = 2'd2;
 
+  logic [1:0] s_fsm_d, s_fsm_q;
   logic s_clkdiv_cnt_en;
   logic [7:0] s_clkdiv_cnt_d, s_clkdiv_cnt_q;
-  logic [1:0] s_fsm_d, s_fsm_q;
-  logic [4:0] s_bit_cnt_d, s_bit_cnt_q;
   logic [7:0] s_rst_cnt_d, s_rst_cnt_q;
+  logic [4:0] s_bit_cnt_d, s_bit_cnt_q;
   logic [23:0] s_xfer_data_d, s_xfer_data_q;
   logic s_done_d, s_done_q;
 
   assign done_o = s_done_q;
 
   always_comb begin
-    s_clkdiv_cnt_d = s_clkdiv_cnt_q;
     s_fsm_d        = s_fsm_q;
-    s_done_d       = s_done_q;
+    s_clkdiv_cnt_d = s_clkdiv_cnt_q;
     s_bit_cnt_d    = s_bit_cnt_q;
     s_rst_cnt_d    = s_rst_cnt_q;
     s_xfer_data_d  = s_xfer_data_q;
+    s_done_d       = s_done_q;
+    data_req_o     = '0;
     onewire.dat_o  = '0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
@@ -65,7 +66,7 @@ module onewire_core (
           s_bit_cnt_d    = s_bit_cnt_q + 1'b1;
         end
 
-        if (s_bit_cnt_q == 5'd23) begin
+        if (s_bit_cnt_q == 5'd23 && s_clkdiv_cnt_q == clkdiv_i) begin
           s_bit_cnt_d = '0;
           if (~data_rdy_i) begin
             s_fsm_d = FSM_RST;
@@ -77,12 +78,26 @@ module onewire_core (
       end
       FSM_RST: begin
         if (s_rst_cnt_q == rstnum_i) begin
-          s_rst_cnt_d = '0;
-          s_fsm_d     = FSM_IDLE;
-          s_done_d    = 1'b1;
+          s_rst_cnt_d    = '0;
+          s_clkdiv_cnt_d = '0;
+          s_fsm_d        = FSM_IDLE;
+          s_done_d       = 1'b1;
         end else begin
-          s_rst_cnt_d = s_rst_cnt_q + 1'b1;
+          s_clkdiv_cnt_d = s_clkdiv_cnt_q + 1'b1;
+          if (s_clkdiv_cnt_q == clkdiv_i) begin
+            s_clkdiv_cnt_d = '0;
+            s_rst_cnt_d    = s_rst_cnt_q + 1'b1;
+          end
         end
+      end
+      default: begin
+        s_fsm_d        = s_fsm_q;
+        s_clkdiv_cnt_d = s_clkdiv_cnt_q;
+        s_bit_cnt_d    = s_bit_cnt_q;
+        s_rst_cnt_d    = s_rst_cnt_q;
+        s_xfer_data_d  = s_xfer_data_q;
+        s_done_d       = s_done_q;
+        onewire.dat_o  = '0;
       end
     endcase
   end
@@ -93,7 +108,7 @@ module onewire_core (
       s_fsm_q
   );
 
-  assign s_clkdiv_cnt_en = s_fsm_q == FSM_XFER;
+  assign s_clkdiv_cnt_en = s_fsm_q != FSM_IDLE;
   dffer #(8) u_clkdiv_cnt_dffer (
       clk_i,
       rst_n_i,
@@ -129,9 +144,5 @@ module onewire_core (
       s_xfer_data_d,
       s_xfer_data_q
   );
-
-
-
-
 
 endmodule
