@@ -1,5 +1,5 @@
 // Copyright 2019 EmbedFire http://www.embedfire.com
-// https://gitee.com/Embedfire-altera <embedfire@embedfire.com>
+// https://github.com/Embedfire-altera <embedfire@embedfire.com>
 //
 // The first version of this code was derived from EmbedFire sd_ctrl.v. The
 // original code is open source on Gitee, but it doesn't specify an open-source
