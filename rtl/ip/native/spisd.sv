@@ -1,5 +1,5 @@
 // Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
-// spisd is licensed under Mulan PSL v2.
+// retroSoC is licensed under Mulan PSL v2.
 // You can use this software according to the terms and conditions of the Mulan PSL v2.
 // You may obtain a copy of Mulan PSL v2 at:
 //             http://license.coscl.org.cn/MulanPSL2
@@ -11,6 +11,7 @@
 // memory-map rd/wr for first 512MB range of TF card
 // cache size: 512(width 9) [8:0]
 // tag width: 23 [22:0]
+
 module nmi_spisd (
     // verilog_format: off
     input  logic clk_i,

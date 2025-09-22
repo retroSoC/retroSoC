@@ -1,8 +1,8 @@
 /*
- *  PicoSoC - A simple example SoC using PicoRV32
+ *  Ravenna - A full example SoC using PicoRV32 in ASIC
  *
  *  Copyright (C) 2017  Clifford Wolf <clifford@clifford.at>
- *  Copyright (C) 2025  Yuchi Miao <miaoyuchi@ict.ac.cn>
+ *  Copyright (C) 2018,2019  Tim Edwards <tim@efabless.com>
  *
  *  Permission to use, copy, modify, and/or distribute this software for any
  *  purpose with or without fee is hereby granted, provided that the above
@@ -17,6 +17,17 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
+// -- Adaptable modifications are redistributed under compatible License --
+//
+// Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
 
 `ifndef SIMP_UART_DEF_SV
 `define SIMP_UART_DEF_SV

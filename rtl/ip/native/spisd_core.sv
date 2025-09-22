@@ -1,5 +1,15 @@
-// Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
-// spisd is licensed under Mulan PSL v2.
+// Copyright 2019 EmbedFire http://www.embedfire.com
+// https://github.com/Embedfire-altera <embedfire@embedfire.com>
+//
+// The first version of this code was derived from EmbedFire sd_ctrl.v. The
+// original code is open source on Gitee, but it doesn't specify an open-source
+// license. I'm re-releasing it here under the most compatible license(PSL License).
+// If anyone knows what the original license is, please contact <miaoyuchi@ict.ac.cn>.
+//
+// -- Adaptable modifications are redistributed under compatible License --
+//
+// Copyright (c) 2023-2025 Miao Yuchi <miaoyuchi@ict.ac.cn>
+// retroSoC is licensed under Mulan PSL v2.
 // You can use this software according to the terms and conditions of the Mulan PSL v2.
 // You may obtain a copy of Mulan PSL v2 at:
 //             http://license.coscl.org.cn/MulanPSL2
@@ -7,7 +17,6 @@
 // EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
-//
 
 module spisd_core (
     input  logic        clk_i,
