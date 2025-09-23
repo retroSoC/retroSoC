@@ -2,7 +2,7 @@
 // https://github.com/Embedfire-altera <embedfire@embedfire.com>
 //
 // The first version of this code was derived from EmbedFire data_rw_ctrl.v. The
-// original code is open source on Gitee, but it doesn't specify an open-source
+// original code is open source on Github, but it doesn't specify an open-source
 // license. I'm re-releasing it here under the most compatible license(PSL License).
 // If anyone knows what the original license is, please contact <miaoyuchi@ict.ac.cn>.
 //
