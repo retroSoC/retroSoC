@@ -2,13 +2,13 @@
 // https://github.com/Embedfire-altera <embedfire@embedfire.com>
 //
 // The first version of this code was derived from EmbedFire sd_init.v. The
-// original code is open source on Gitee, but it doesn't specify an open-source
+// original code is open source on Github, but it doesn't specify an open-source
 // license. I'm re-releasing it here under the most compatible license(PSL License).
 // If anyone knows what the original license is, please contact <miaoyuchi@ict.ac.cn>.
 //
 // -- Adaptable modifications are redistributed under compatible License --
 //
-// Copyright (c) 2023-2025 Miao Yuchi <miaoyuchi@ict.ac.cn>
+// Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 // You can use this software according to the terms and conditions of the Mulan PSL v2.
 // You may obtain a copy of Mulan PSL v2 at:

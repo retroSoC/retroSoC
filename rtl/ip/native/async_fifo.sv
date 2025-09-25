@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2025 Miao Yuchi <miaoyuchi@ict.ac.cn>
+// Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 // You can use this software according to the terms and conditions of the Mulan PSL v2.
 // You may obtain a copy of Mulan PSL v2 at:
