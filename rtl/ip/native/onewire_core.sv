@@ -15,7 +15,7 @@ module onewire_core (
     input  logic [7:0]  clkdiv_i,
     input  logic [7:0]  zerocnt_i,
     input  logic [7:0]  onecnt_i,
-    input  logic [7:0]  rstnum_i,
+    input  logic [7:0]  rstcnt_i,
     input  logic        start_i,
     output logic        data_req_o,
     input  logic        data_rdy_i,
@@ -85,7 +85,7 @@ module onewire_core (
         end
       end
       FSM_RST: begin
-        if (s_rst_cnt_q == rstnum_i) begin
+        if (s_rst_cnt_q == rstcnt_i) begin
           s_rst_cnt_d    = '0;
           s_clkdiv_cnt_d = '0;
           s_fsm_d        = FSM_IDLE;
