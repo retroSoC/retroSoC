@@ -166,14 +166,14 @@ void app_system_boot() {
 void main()
 {
     reg_uart0_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
-    // app_system_boot();
+    app_system_boot();
     // while(1);
-    // ip_archinfo_test();
+    ip_archinfo_test();
     ip_1wire_test();
     // ip_spisd_test();
-    // i2c0_init((uint8_t)35);
-    // PCF8563B_test();
-    // ES8388_init();
+    i2c0_init((uint8_t)35);
+    PCF8563B_test();
+    ES8388_init();
     // ip_tim_test();
     // ip_rng_test();
     
