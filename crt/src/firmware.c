@@ -72,7 +72,7 @@ void welcome_screen()
     printf("                     1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
     printf("                     1 x DMA           @0x%x\n", &reg_dma_ctrl);
-    printf("                     1 x SYSCTRL       @0x%x\n", &reg_sys_ctrl);
+    printf("                     1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                     1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                     1 x UART(ADV)     @0x%x\n", &reg_uart1_lcr);
@@ -169,11 +169,12 @@ void main()
     app_system_boot();
     // while(1);
     ip_archinfo_test();
-    ip_1wire_test();
-    // ip_spisd_test();
     i2c0_init((uint8_t)35);
     PCF8563B_test();
     ES8388_init();
+    ip_1wire_test();
+    // ip_spisd_test();
+
     // ip_tim_test();
     // ip_rng_test();
     

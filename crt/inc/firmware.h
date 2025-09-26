@@ -84,9 +84,11 @@
 #define reg_onewire_ctrl    (*(volatile uint32_t*)0x10008014)
 #define reg_onewire_status  (*(volatile uint32_t*)0x10008018)
 // dma
-#define reg_dma_ctrl       (*(volatile uint32_t*)0x10009000)
+#define reg_dma_ctrl        (*(volatile uint32_t*)0x10009000)
 // sys ctrl
-#define reg_sys_ctrl       (*(volatile uint32_t*)0x20000000)
+#define reg_sysctrl_coresel (*(volatile uint32_t*)0x1000A000)
+#define reg_sysctrl_ipsel   (*(volatile uint32_t*)0x1000A004)
+#define reg_sysctrl_i2csel  (*(volatile uint32_t*)0x1000A008)
 // apb
 // archinfo
 #define reg_archinfo_sys   (*(volatile uint32_t*)0x20001000)
