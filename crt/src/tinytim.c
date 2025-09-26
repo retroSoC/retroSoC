@@ -10,8 +10,7 @@ void delay_ms(uint32_t val)
     for (uint32_t i = 1; i <= val; ++i)
     {
         reg_tim0_cfg = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
-        while (reg_tim0_dat == 0)
-            ;
+        while (reg_tim0_dat == 0);
         reg_tim0_cfg = (uint32_t)0x0000;
     }
 }

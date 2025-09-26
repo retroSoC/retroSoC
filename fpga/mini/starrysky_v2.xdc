@@ -17,6 +17,7 @@ create_clock -period 20.000 -waveform {0.000 10.000} [get_ports clk_i]
 # set_input_delay -clock [get_clocks spfs_clk] -max [expr 0.5 + $W25Q128JWSIQ_tCLQV] [get_ports cust_spfs_miso_i]
 # set_input_delay -clock [get_clocks spfs_clk] -min [expr -0.5 + $W25Q128JWSIQ_tCLQX] [get_ports cust_spfs_miso_i]
 
+set_clock_groups -name cgp_async -asynchronous -group [get_clocks -include_generated_clocks clk_out1_clk_wiz_0] -group [get_clocks -include_generated_clocks clk_out2_clk_wiz_0]
 set_false_path -from [get_ports rst_n_i]
 
 # physical constr

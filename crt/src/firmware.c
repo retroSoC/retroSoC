@@ -169,11 +169,12 @@ void main()
     app_system_boot();
     // while(1);
     ip_archinfo_test();
-    ip_1wire_test();
-    // ip_spisd_test();
     i2c0_init((uint8_t)35);
     PCF8563B_test();
     ES8388_init();
+    ip_1wire_test();
+    // ip_spisd_test();
+
     // ip_tim_test();
     // ip_rng_test();
     
