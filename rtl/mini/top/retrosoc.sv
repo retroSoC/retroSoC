@@ -48,38 +48,35 @@ module retrosoc (
   nmi_if u_apb_nmi_if();
   i2c_if u_natv_i2c_if();
   i2c_if u_apb_i2c_if();
+  sysctrl_if u_sysctrl_if();
   // verilog_format: on
 
-  // tmp: i2c sel
-  logic s_i2c_sel_d, s_i2c_sel_q;
   // irq
   logic [31:0] s_irq;
   logic [ 2:0] s_natv_irq;
   logic [ 5:0] s_apb_irq;
 
+`ifdef CORE_MDD
+  assign u_sysctrl_if.core_sel_i = core_mdd_sel_i;
+`else
+  assign u_sysctrl_if.core_sel_i = '0;
+`endif
+
+  // verilog_format: off
   assign u_apb_i2c_if.scl_i  = i2c.scl_i;
   assign u_natv_i2c_if.sda_i = i2c.sda_i;
   assign u_apb_i2c_if.sda_i  = i2c.sda_i;
-  assign i2c.scl_o           = s_i2c_sel_q ? u_natv_i2c_if.scl_o : u_apb_i2c_if.scl_o;
-  assign i2c.scl_dir_o       = s_i2c_sel_q ? u_natv_i2c_if.scl_dir_o : ~u_apb_i2c_if.scl_dir_o;
-  assign i2c.sda_o           = s_i2c_sel_q ? u_natv_i2c_if.sda_o : u_apb_i2c_if.sda_o;
-  assign i2c.sda_dir_o       = s_i2c_sel_q ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
+  assign i2c.scl_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.scl_o : u_apb_i2c_if.scl_o;
+  assign i2c.scl_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.scl_dir_o : ~u_apb_i2c_if.scl_dir_o;
+  assign i2c.sda_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_o : u_apb_i2c_if.sda_o;
+  assign i2c.sda_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
 
   assign s_irq[4:0]          = 5'd0;
   assign s_irq[5]            = irq_pin_i;
   assign s_irq[8:6]          = s_natv_irq;
   assign s_irq[14:9]         = s_apb_irq;
   assign s_irq[31:15]        = 17'd0;
-
-
-  assign s_i2c_sel_d         = 1'b1;
-  dffr #(1) u_i2c_sel_dffr (
-      clk_i,
-      rst_n_i,
-      s_i2c_sel_d,
-      s_i2c_sel_q
-  );
-
+// verilog_format: on
 
   core_wrapper u_core_wrapper (
       .clk_i         (clk_i),
@@ -115,6 +112,7 @@ module retrosoc (
       .i2c        (u_natv_i2c_if),
       .i2s        (i2s),
       .onewire    (onewire),
+      .sysctrl    (u_sysctrl_if),
       .irq_o      (s_natv_irq)
   );
 
@@ -130,6 +128,7 @@ module retrosoc (
       .qspi       (qspi),
       .spfs       (spfs),
 `ifdef IP_MDD
+      .ip_sel_i   (u_sysctrl_if.ip_sel_o),
       .gpio       (gpio),
 `endif
       .irq_o      (s_apb_irq)

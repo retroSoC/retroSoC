@@ -16,22 +16,25 @@
 `include "i2c_define.svh"
 `include "spi_define.svh"
 
+`include "mdd_config.svh"
+
 module ip_apb_wrapper (
     // verilog_format: off
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic        spfs_div4_i,
-    nmi_if.slave        nmi,
-    uart_if.dut         uart,
-    pwm_if.dut          pwm,
-    ps2_if.dut          ps2,
-    i2c_if.dut          i2c,
-    qspi_if.dut         qspi,
-    spi_if.dut          spfs,
+    input  logic                        clk_i,
+    input  logic                        rst_n_i,
+    input  logic                        spfs_div4_i,
+    nmi_if.slave                        nmi,
+    uart_if.dut                         uart,
+    pwm_if.dut                          pwm,
+    ps2_if.dut                          ps2,
+    i2c_if.dut                          i2c,
+    qspi_if.dut                         qspi,
+    spi_if.dut                          spfs,
 `ifdef IP_MDD
-    user_gpio_if.dut    gpio,
+    input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
+    user_gpio_if.dut                    gpio,
 `endif
-    output logic [ 5:0] irq_o
+    output logic [ 5:0]                 irq_o
     // verilog_format: on
 );
 
@@ -108,7 +111,7 @@ module ip_apb_wrapper (
   ip_mdd_wrapper u_ip_mdd_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .sel_i  ('0),               // HACK:
+      .sel_i  (ip_sel_i),
       .gpio   (gpio),
       .apb    (u_user_ip_apb_if)
   );
