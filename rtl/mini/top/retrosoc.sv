@@ -17,7 +17,7 @@ module retrosoc (
     input  logic       clk_aud_i,
     input  logic       rst_aud_n_i,
     input  logic       spfs_div4_i,
-    input  logic       irq_pin_i,
+    input  logic       extn_irq_i,
 `ifdef CORE_MDD
     input  logic [4:0] core_mdd_sel_i,
 `endif
@@ -72,7 +72,7 @@ module retrosoc (
   assign i2c.sda_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
 
   assign s_irq[4:0]          = 5'd0;
-  assign s_irq[5]            = irq_pin_i;
+  assign s_irq[5]            = extn_irq_i;
   assign s_irq[8:6]          = s_natv_irq;
   assign s_irq[14:9]         = s_apb_irq;
   assign s_irq[31:15]        = 17'd0;

@@ -53,7 +53,7 @@ module retrosoc_top (
       .xo_o_pad             (),
       .extclk_i_pad         (s_sys_clk),
       .audclk_i_pad         (s_aud_clk),
-      .irq_i_pad            (1'b0),
+      .extn_irq_i_pad       (1'b0),
 `ifdef CORE_MDD
       .core_mdd_sel_0_i_pad (1'b0),
       .core_mdd_sel_1_i_pad (1'b0),
