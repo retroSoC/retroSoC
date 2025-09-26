@@ -10,9 +10,16 @@
 
 module i2s_core (
     // verilog_format: off
-    input logic   clk_i,
-    input logic   rst_n_i,
-    nv_i2s_if.dut i2s
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    input  logic        mode_i,
+    output logic        tx_valid_o,
+    input  logic [15:0] tx_data_i,
+    input  logic        tx_empty_i,
+    output logic        rx_valid_o,
+    output logic [15:0] rx_data_o,
+    input  logic        rx_full_i,
+    nv_i2s_if.dut       i2s
     // verilog_format: on
 );
 
@@ -22,7 +29,35 @@ module i2s_core (
   logic [3:0] s_lrck_div_cnt_d, s_lrck_div_cnt_q;
   logic s_lrck_d, s_lrck_q;
   logic s_sclk_pos, s_sclk_fall;
-  logic [15:0] s_tmp_dat;
+  logic [15:0] s_loopback_data;
+
+  logic [15:0] s_recv_data, s_send_data;
+  logic s_recv_done, s_send_done;
+
+  always_comb begin
+    rx_valid_o      = '0;
+    rx_data_o       = '0;
+    s_loopback_data = '0;
+    if (!mode_i) s_loopback_data = s_recv_data;
+    else begin
+      if (~rx_full_i && s_recv_done) begin
+        rx_valid_o = 1'b1;
+        rx_data_o  = s_recv_data;
+      end
+    end
+  end
+
+  always_comb begin
+    tx_valid_o  = '0;
+    s_send_data = '0;
+    if (!mode_i) s_send_data = s_loopback_data;
+    else begin
+      if (~tx_empty_i && s_send_done) begin
+        tx_valid_o  = 1'b1;
+        s_send_data = tx_data_i;
+      end
+    end
+  end
 
   assign i2s.mclk_o  = clk_i;
   assign i2s.sclk_o  = s_sclk_q;
@@ -85,8 +120,8 @@ module i2s_core (
       .sclk_pos_i(s_sclk_pos),
       .lrck_i    (s_lrck_q),
       .adcdat_i  (i2s.adcdat_i),
-      .data_o    (s_tmp_dat),
-      .done_o    ()
+      .data_o    (s_recv_data),
+      .done_o    (s_recv_done)
   );
 
   i2s_send u_i2s_send (
@@ -95,9 +130,9 @@ module i2s_core (
       .sclk_pos_i (s_sclk_pos),
       .sclk_fall_i(s_sclk_fall),
       .lrck_i     (s_lrck_q),
-      .data_i     (s_tmp_dat),
+      .data_i     (s_send_data),
       .dacdat_o   (i2s.dacdat_o),
-      .done_o     ()
+      .done_o     (s_send_done)
   );
 
 
