@@ -26,7 +26,7 @@
 
 #define CPU_FREQ            72     // unit: MHz
 #define UART_BPS            115200 // unit: bps
-#define PSRAM_NUM           2
+#define PSRAM_NUM           4
 #define PSRAM_SCLK_MIN_FREQ 12     // unit: MHz
 #define PSRAM_SCLK_MAX_FREQ 133    // unit: MHz
 #define PSRAM_SCLK_FREQ     (CPU_FREQ / 2)
@@ -86,7 +86,7 @@
 // dma
 #define reg_dma_ctrl       (*(volatile uint32_t*)0x10009000)
 // sys ctrl
-#define reg_sys_ctrl       (*(volatile uint32_t*)0x1000A000)
+#define reg_sys_ctrl       (*(volatile uint32_t*)0x20000000)
 // apb
 // archinfo
 #define reg_archinfo_sys   (*(volatile uint32_t*)0x20001000)

@@ -11,13 +11,15 @@ void ip_1wire_test() {
     reg_onewire_onecnt = (uint8_t)45;
     reg_onewire_rstcnt = (uint8_t)6;
 
-    // clear fifo
-    reg_onewire_ctrl = (uint8_t)0b01;
-    // write data(GRB888 format)
-    reg_onewire_txdata = (uint32_t) 0x00FF0000;
-    reg_onewire_txdata = (uint32_t) 0x0000FF00;
-    reg_onewire_txdata = (uint32_t) 0x000000FF;
-    reg_onewire_txdata = (uint32_t) 0x00FF00FF;
-
-    reg_onewire_ctrl = (uint8_t)0b10;
+    for(int i = 0; i < 256; ++i) {
+        // clear fifo
+        reg_onewire_ctrl = (uint8_t)0b01;
+        // write data(GRB888 format)
+        reg_onewire_txdata = (uint32_t) i;
+        reg_onewire_txdata = (uint32_t) (i << 16);
+        reg_onewire_txdata = (uint32_t) (i << 24);
+        reg_onewire_txdata = (uint32_t) ((i << 16) | (i << 24));
+        reg_onewire_ctrl = (uint8_t)0b10;
+        while((reg_onewire_status & ((uint8_t) 1)) == 0);
+    }
 }
