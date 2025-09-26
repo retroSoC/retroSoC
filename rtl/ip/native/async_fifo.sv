@@ -16,12 +16,12 @@ module async_fifo #(
     input  logic                  wr_rst_n_i,
     input  logic                  wr_en_i,
     input  logic [DATA_WIDTH-1:0] wr_data_i,
-    output logic                  full_o,
+    output logic                  wr_full_o,
     input  logic                  rd_clk_i,
     input  logic                  rd_rst_n_i,
     input  logic                  rd_en_i,
     output logic [DATA_WIDTH-1:0] rd_data_o,
-    output logic                  empty_o
+    output logic                  rd_empty_o
 );
 
   localparam int FIFO_DEPTH = 2 ** DEPTH_POWER;
@@ -38,7 +38,7 @@ module async_fifo #(
     if (!wr_rst_n_i) begin
       r_wr_ptr_bin  <= '0;
       r_wr_ptr_gray <= '0;
-    end else if (wr_en_i && !full_o) begin
+    end else if (wr_en_i && !wr_full_o) begin
       r_mem[r_wr_ptr_bin[DEPTH_POWER-1:0]] <= wr_data_i;
       r_wr_ptr_bin                         <= r_wr_ptr_bin + 1'b1;
       r_wr_ptr_gray                        <= bin2gray(r_wr_ptr_bin + 1'b1);
@@ -51,7 +51,7 @@ module async_fifo #(
       r_rd_ptr_bin  <= '0;
       r_rd_ptr_gray <= '0;
       rd_data_o     <= '0;
-    end else if (rd_en_i && !empty_o) begin
+    end else if (rd_en_i && !rd_empty_o) begin
       rd_data_o     <= r_mem[r_rd_ptr_bin[DEPTH_POWER-1:0]];
       r_rd_ptr_bin  <= r_rd_ptr_bin + 1'b1;
       r_rd_ptr_gray <= bin2gray(r_rd_ptr_bin + 1'b1);
@@ -79,10 +79,10 @@ module async_fifo #(
     end
   end
 
-  assign full_o = r_wr_ptr_gray == {~r_rd_ptr_gray_sync[1][PTR_WIDTH-1:PTR_WIDTH-2],
-                                     r_rd_ptr_gray_sync[1][PTR_WIDTH-3:0]};
+  assign wr_full_o = r_wr_ptr_gray == {~r_rd_ptr_gray_sync[1][PTR_WIDTH-1:PTR_WIDTH-2],
+                                        r_rd_ptr_gray_sync[1][PTR_WIDTH-3:0]};
 
-  assign empty_o = r_rd_ptr_gray == r_wr_ptr_gray_sync[1];
+  assign rd_empty_o = r_rd_ptr_gray == r_wr_ptr_gray_sync[1];
 
   function automatic logic [PTR_WIDTH-1:0] bin2gray(input logic [PTR_WIDTH-1:0] bin);
     return (bin >> 1) ^ bin;
