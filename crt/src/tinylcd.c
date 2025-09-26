@@ -8,7 +8,7 @@
 
 void spi_init()
 {
-    reg_gpio_enb = (uint32_t)0b011;
+    reg_gpio_oen = (uint32_t)0b011;
     reg_qspi_status = (uint32_t)0b10000;
     reg_qspi_status = (uint32_t)0b00000;
     reg_qspi_intcfg = (uint32_t)0b00000;

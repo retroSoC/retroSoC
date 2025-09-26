@@ -26,7 +26,7 @@
 
 #define CPU_FREQ            72     // unit: MHz
 #define UART_BPS            115200 // unit: bps
-#define PSRAM_NUM           2
+#define PSRAM_NUM           4
 #define PSRAM_SCLK_MIN_FREQ 12     // unit: MHz
 #define PSRAM_SCLK_MAX_FREQ 133    // unit: MHz
 #define PSRAM_SCLK_FREQ     (CPU_FREQ / 2)
@@ -42,9 +42,9 @@
 
 // gpio
 #define reg_gpio_data      (*(volatile uint32_t*)0x10000000)
-#define reg_gpio_enb       (*(volatile uint32_t*)0x10000004)
-#define reg_gpio_pub       (*(volatile uint32_t*)0x10000008)
-#define reg_gpio_pdb       (*(volatile uint32_t*)0x1000000c)
+#define reg_gpio_oen       (*(volatile uint32_t*)0x10000004)
+#define reg_gpio_pun       (*(volatile uint32_t*)0x10000008)
+#define reg_gpio_pdn       (*(volatile uint32_t*)0x1000000c)
 // uart1
 #define reg_uart0_clkdiv   (*(volatile uint32_t*)0x10001000)
 #define reg_uart0_data     (*(volatile uint32_t*)0x10001004)
@@ -74,18 +74,19 @@
 #define reg_i2s_mode       (*(volatile uint32_t*)0x10007000)
 #define reg_i2s_txdata     (*(volatile uint32_t*)0x10007004)
 #define reg_i2s_rxdata     (*(volatile uint32_t*)0x10007008)
+#define reg_i2s_status     (*(volatile uint32_t*)0x1000700C)
 // 1-wire
 #define reg_onewire_clkdiv  (*(volatile uint32_t*)0x10008000)
 #define reg_onewire_zerocnt (*(volatile uint32_t*)0x10008004)
 #define reg_onewire_onecnt  (*(volatile uint32_t*)0x10008008)
-#define reg_onewire_rstnum  (*(volatile uint32_t*)0x1000800C)
+#define reg_onewire_rstcnt  (*(volatile uint32_t*)0x1000800C)
 #define reg_onewire_txdata  (*(volatile uint32_t*)0x10008010)
 #define reg_onewire_ctrl    (*(volatile uint32_t*)0x10008014)
 #define reg_onewire_status  (*(volatile uint32_t*)0x10008018)
 // dma
 #define reg_dma_ctrl       (*(volatile uint32_t*)0x10009000)
 // sys ctrl
-#define reg_sys_ctrl       (*(volatile uint32_t*)0x1000A000)
+#define reg_sys_ctrl       (*(volatile uint32_t*)0x20000000)
 // apb
 // archinfo
 #define reg_archinfo_sys   (*(volatile uint32_t*)0x20001000)
