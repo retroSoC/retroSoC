@@ -9,6 +9,9 @@
 // See the Mulan PSL v2 for more details.
 
 // NOTE: need to focus on the port dir
+
+`include "mdd_config.svh"
+
 module retrosoc_asic (
     input  xi_i_pad,
     output xo_o_pad,
@@ -124,7 +127,7 @@ module retrosoc_asic (
   logic s_sys_clkdiv4;
   logic s_extn_irq;
 `ifdef CORE_MDD
-  logic [4:0] s_core_sel;
+  logic [`USER_CORESEL_WIDTH-1:0] s_core_sel;
 `endif
 `ifdef IP_MDD
   user_gpio_if u_user_gpio_if ();
