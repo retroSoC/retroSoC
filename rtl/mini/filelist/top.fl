@@ -6,11 +6,11 @@
 ../top/ip_apb_wrapper.sv
 ../top/bus.sv
 ../top/rcu.sv
-../top/core_mdd_wrapper.sv
-../top/mgmt_wrapper.sv
-../top/user_mstr_design.sv
-../top/user_mstr_wrapper.sv
+../top/mgmt_core_wrapper.sv
+../top/user_core_design.sv
+../top/user_core_top.sv
+../top/user_core_wrapper.sv
 ../top/user_gpio.sv
 ../top/user_ip_design.sv
+../top/user_ip_top.sv
 ../top/user_ip_wrapper.sv
-../top/ip_mdd_wrapper.sv

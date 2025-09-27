@@ -15,11 +15,11 @@ module core_wrapper (
     // verilog_format: off
     input logic                           clk_i,
     input logic                           rst_n_i,
+    input logic [31:0]                    irq_i,
 `ifdef CORE_MDD
     input logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
 `endif
-    nmi_if.master                         nmi,
-    input logic [31:0]                    irq_i
+    nmi_if.master                         nmi
     // verilog_format: on
 );
 
@@ -181,10 +181,10 @@ module core_wrapper (
 //   end
 
 `elsif CORE_MDD
-  core_mdd_wrapper u_core_mdd_wrapper (
-      .sel_i       (core_sel_i),
+  user_core_wrapper u_user_core_wrapper (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
+      .sel_i       (core_sel_i),
       .core_valid_o(nmi.valid),
       .core_addr_o (nmi.addr),
       .core_wdata_o(nmi.wdata),
