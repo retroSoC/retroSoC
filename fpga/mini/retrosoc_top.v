@@ -55,11 +55,11 @@ module retrosoc_top (
       .audclk_i_pad         (s_aud_clk),
       .extn_irq_i_pad       (1'b0),
 `ifdef CORE_MDD
-      .core_mdd_sel_0_i_pad (1'b0),
-      .core_mdd_sel_1_i_pad (1'b0),
-      .core_mdd_sel_2_i_pad (1'b0),
-      .core_mdd_sel_3_i_pad (1'b0),
-      .core_mdd_sel_4_i_pad (1'b0),
+      .core_sel_0_i_pad     (1'b0),
+      .core_sel_1_i_pad     (1'b0),
+      .core_sel_2_i_pad     (1'b0),
+      .core_sel_3_i_pad     (1'b0),
+      .core_sel_4_i_pad     (1'b0),
 `endif
 `ifdef IP_MDD
       .ip_mdd_gpio_0_io_pad (),

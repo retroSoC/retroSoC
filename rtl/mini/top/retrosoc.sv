@@ -19,7 +19,7 @@ module retrosoc (
     input  logic       spfs_div4_i,
     input  logic       extn_irq_i,
 `ifdef CORE_MDD
-    input  logic [4:0] core_mdd_sel_i,
+    input  logic [4:0] core_sel_i,
 `endif
 `ifdef IP_MDD
     user_gpio_if.dut    gpio,
@@ -57,7 +57,7 @@ module retrosoc (
   logic [ 5:0] s_apb_irq;
 
 `ifdef CORE_MDD
-  assign u_sysctrl_if.core_sel_i = core_mdd_sel_i;
+  assign u_sysctrl_if.core_sel_i = core_sel_i;
 `else
   assign u_sysctrl_if.core_sel_i = '0;
 `endif
@@ -79,13 +79,13 @@ module retrosoc (
 // verilog_format: on
 
   core_wrapper u_core_wrapper (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
 `ifdef CORE_MDD
-      .core_mdd_sel_i(core_mdd_sel_i),
+      .core_sel_i(core_sel_i),
 `endif
-      .nmi           (u_core_nmi_if),
-      .irq_i         (s_irq)
+      .nmi       (u_core_nmi_if),
+      .irq_i     (s_irq)
   );
 
   bus u_bus (

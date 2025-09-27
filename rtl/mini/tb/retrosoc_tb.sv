@@ -23,8 +23,8 @@ module retrosoc_tb;
   wire       s_aud_clk;
   reg        r_rst_n;
   wire       s_rst_n;
-  reg  [4:0] r_core_mdd_sel;
-  wire [4:0] s_core_mdd_sel;
+  reg  [4:0] r_core_sel;
+  wire [4:0] s_core_sel;
   reg        r_pll_en;
   wire       s_clk_bypass;
   reg  [2:0] r_pll_cfg;
@@ -59,106 +59,106 @@ module retrosoc_tb;
   always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk      = r_ext_clk;
-  assign s_aud_clk      = r_aud_clk;
-  assign s_rst_n        = r_rst_n;
-  assign s_core_mdd_sel = r_core_mdd_sel;
-  assign s_clk_bypass   = ~r_pll_en;
+  assign s_ext_clk    = r_ext_clk;
+  assign s_aud_clk    = r_aud_clk;
+  assign s_rst_n      = r_rst_n;
+  assign s_core_sel   = r_core_sel;
+  assign s_clk_bypass = ~r_pll_en;
 `ifdef HAVE_PLL
   assign s_pll_cfg = r_pll_cfg;
 `endif
 
   retrosoc_asic u_retrosoc_asic (
-      .xi_i_pad            (r_xtal_clk),
-      .xo_o_pad            (),
-      .extclk_i_pad        (s_ext_clk),
-      .audclk_i_pad        (s_aud_clk),
-      .extn_irq_i_pad      (),
+      .xi_i_pad           (r_xtal_clk),
+      .xo_o_pad           (),
+      .extclk_i_pad       (s_ext_clk),
+      .audclk_i_pad       (s_aud_clk),
+      .extn_irq_i_pad     (),
 `ifdef CORE_MDD
-      .core_mdd_sel_0_i_pad(s_core_mdd_sel[0]),
-      .core_mdd_sel_1_i_pad(s_core_mdd_sel[1]),
-      .core_mdd_sel_2_i_pad(s_core_mdd_sel[2]),
-      .core_mdd_sel_3_i_pad(s_core_mdd_sel[3]),
-      .core_mdd_sel_4_i_pad(s_core_mdd_sel[4]),
+      .core_sel_0_i_pad   (s_core_sel[0]),
+      .core_sel_1_i_pad   (s_core_sel[1]),
+      .core_sel_2_i_pad   (s_core_sel[2]),
+      .core_sel_3_i_pad   (s_core_sel[3]),
+      .core_sel_4_i_pad   (s_core_sel[4]),
 `endif
 `ifdef IP_MDD
-      .user_gpio_0_io_pad  (),
-      .user_gpio_1_io_pad  (),
-      .user_gpio_2_io_pad  (),
-      .user_gpio_3_io_pad  (),
-      .user_gpio_4_io_pad  (),
-      .user_gpio_5_io_pad  (),
-      .user_gpio_6_io_pad  (),
-      .user_gpio_7_io_pad  (),
-      .user_gpio_8_io_pad  (),
-      .user_gpio_9_io_pad  (),
-      .user_gpio_10_io_pad (),
-      .user_gpio_11_io_pad (),
-      .user_gpio_12_io_pad (),
-      .user_gpio_13_io_pad (),
-      .user_gpio_14_io_pad (),
-      .user_gpio_15_io_pad (),
+      .user_gpio_0_io_pad (),
+      .user_gpio_1_io_pad (),
+      .user_gpio_2_io_pad (),
+      .user_gpio_3_io_pad (),
+      .user_gpio_4_io_pad (),
+      .user_gpio_5_io_pad (),
+      .user_gpio_6_io_pad (),
+      .user_gpio_7_io_pad (),
+      .user_gpio_8_io_pad (),
+      .user_gpio_9_io_pad (),
+      .user_gpio_10_io_pad(),
+      .user_gpio_11_io_pad(),
+      .user_gpio_12_io_pad(),
+      .user_gpio_13_io_pad(),
+      .user_gpio_14_io_pad(),
+      .user_gpio_15_io_pad(),
 `endif
 `ifdef HAVE_PLL
-      .pll_cfg_0_i_pad     (s_pll_cfg[0]),
-      .pll_cfg_1_i_pad     (s_pll_cfg[1]),
-      .pll_cfg_2_i_pad     (s_pll_cfg[2]),
+      .pll_cfg_0_i_pad    (s_pll_cfg[0]),
+      .pll_cfg_1_i_pad    (s_pll_cfg[1]),
+      .pll_cfg_2_i_pad    (s_pll_cfg[2]),
 `endif
-      .clk_bypass_i_pad    (s_clk_bypass),
-      .ext_rst_n_i_pad     (s_rst_n),
-      .sys_clkdiv4_o_pad   (),
-      .uart0_tx_o_pad      (s_uart0_tx),
-      .uart0_rx_i_pad      (),
-      .gpio_0_io_pad       (),
-      .gpio_1_io_pad       (),
-      .gpio_2_io_pad       (),
-      .gpio_3_io_pad       (),
-      .gpio_4_io_pad       (),
-      .gpio_5_io_pad       (),
-      .gpio_6_io_pad       (),
-      .gpio_7_io_pad       (),
-      .psram_sck_o_pad     (s_psram_sck),
-      .psram_nss0_o_pad    (s_psram_nss0),
-      .psram_nss1_o_pad    (s_psram_nss1),
-      .psram_nss2_o_pad    (),
-      .psram_nss3_o_pad    (),
-      .psram_dat0_io_pad   (s_psram_dat0),
-      .psram_dat1_io_pad   (s_psram_dat1),
-      .psram_dat2_io_pad   (s_psram_dat2),
-      .psram_dat3_io_pad   (s_psram_dat3),
-      .spisd_sck_o_pad     (),
-      .spisd_nss_o_pad     (),
-      .spisd_mosi_o_pad    (),
-      .spisd_miso_i_pad    ('0),
-      .i2s_mclk_o_pad      (),
-      .onewire_dat_o_pad   (),
-      .i2s_sclk_o_pad      (s_i2s_sclk),
-      .i2s_lrck_o_pad      (s_i2s_lrck),
-      .i2s_dacdat_o_pad    (),
-      .i2s_adcdat_i_pad    (s_i2s_adcdat),
-      .uart1_tx_o_pad      (s_uart1_tx),
-      .uart1_rx_i_pad      (s_uart1_rx),
-      .pwm_0_o_pad         (),
-      .pwm_1_o_pad         (),
-      .pwm_2_o_pad         (),
-      .pwm_3_o_pad         (),
-      .ps2_clk_i_pad       (s_ps2_clk),
-      .ps2_dat_i_pad       (s_ps2_dat),
-      .i2c_scl_io_pad      (s_i2c_scl_io),
-      .i2c_sda_io_pad      (s_i2c_sda_io),
-      .qspi_sck_o_pad      (),
-      .qspi_nss0_o_pad     (),
-      .qspi_nss1_o_pad     (),
-      .qspi_nss2_o_pad     (),
-      .qspi_nss3_o_pad     (),
-      .qspi_dat0_io_pad    (),
-      .qspi_dat1_io_pad    (),
-      .qspi_dat2_io_pad    (),
-      .qspi_dat3_io_pad    (),
-      .spfs_sck_o_pad      (s_spfs_sck),
-      .spfs_nss_o_pad      (s_spfs_nss),
-      .spfs_mosi_o_pad     (s_spfs_mosi),
-      .spfs_miso_i_pad     (s_spfs_miso)
+      .clk_bypass_i_pad   (s_clk_bypass),
+      .ext_rst_n_i_pad    (s_rst_n),
+      .sys_clkdiv4_o_pad  (),
+      .uart0_tx_o_pad     (s_uart0_tx),
+      .uart0_rx_i_pad     (),
+      .gpio_0_io_pad      (),
+      .gpio_1_io_pad      (),
+      .gpio_2_io_pad      (),
+      .gpio_3_io_pad      (),
+      .gpio_4_io_pad      (),
+      .gpio_5_io_pad      (),
+      .gpio_6_io_pad      (),
+      .gpio_7_io_pad      (),
+      .psram_sck_o_pad    (s_psram_sck),
+      .psram_nss0_o_pad   (s_psram_nss0),
+      .psram_nss1_o_pad   (s_psram_nss1),
+      .psram_nss2_o_pad   (),
+      .psram_nss3_o_pad   (),
+      .psram_dat0_io_pad  (s_psram_dat0),
+      .psram_dat1_io_pad  (s_psram_dat1),
+      .psram_dat2_io_pad  (s_psram_dat2),
+      .psram_dat3_io_pad  (s_psram_dat3),
+      .spisd_sck_o_pad    (),
+      .spisd_nss_o_pad    (),
+      .spisd_mosi_o_pad   (),
+      .spisd_miso_i_pad   ('0),
+      .i2s_mclk_o_pad     (),
+      .onewire_dat_o_pad  (),
+      .i2s_sclk_o_pad     (s_i2s_sclk),
+      .i2s_lrck_o_pad     (s_i2s_lrck),
+      .i2s_dacdat_o_pad   (),
+      .i2s_adcdat_i_pad   (s_i2s_adcdat),
+      .uart1_tx_o_pad     (s_uart1_tx),
+      .uart1_rx_i_pad     (s_uart1_rx),
+      .pwm_0_o_pad        (),
+      .pwm_1_o_pad        (),
+      .pwm_2_o_pad        (),
+      .pwm_3_o_pad        (),
+      .ps2_clk_i_pad      (s_ps2_clk),
+      .ps2_dat_i_pad      (s_ps2_dat),
+      .i2c_scl_io_pad     (s_i2c_scl_io),
+      .i2c_sda_io_pad     (s_i2c_sda_io),
+      .qspi_sck_o_pad     (),
+      .qspi_nss0_o_pad    (),
+      .qspi_nss1_o_pad    (),
+      .qspi_nss2_o_pad    (),
+      .qspi_nss3_o_pad    (),
+      .qspi_dat0_io_pad   (),
+      .qspi_dat1_io_pad   (),
+      .qspi_dat2_io_pad   (),
+      .qspi_dat3_io_pad   (),
+      .spfs_sck_o_pad     (s_spfs_sck),
+      .spfs_nss_o_pad     (s_spfs_nss),
+      .spfs_mosi_o_pad    (s_spfs_mosi),
+      .spfs_miso_i_pad    (s_spfs_miso)
   );
 
   N25Qxxx u_N25Qxxx (
@@ -286,7 +286,7 @@ module retrosoc_tb;
   end
 
   initial begin
-    r_core_mdd_sel = 5'd1;
+    r_core_sel = 5'd1;
 
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;
@@ -303,7 +303,7 @@ module retrosoc_tb;
 
     $display("========================================================");
 `ifdef CORE_MDD
-    $display("core_mdd_sel: %0d", r_core_mdd_sel);
+    $display("core_sel: %0d", r_core_sel);
 `endif
 
     if (r_pll_en == 1'b0) begin

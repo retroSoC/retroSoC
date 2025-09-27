@@ -14,7 +14,7 @@ module core_wrapper (
     input logic                clk_i,
     input logic                rst_n_i,
 `ifdef CORE_MDD
-    input logic         [ 4:0] core_mdd_sel_i,
+    input logic         [ 4:0] core_sel_i,
 `endif
           nmi_if.master        nmi,
     input logic         [31:0] irq_i
@@ -179,7 +179,7 @@ module core_wrapper (
 
 `elsif CORE_MDD
   core_mdd_wrapper u_core_mdd_wrapper (
-      .sel_i       (core_mdd_sel_i),
+      .sel_i       (core_sel_i),
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
       .core_valid_o(nmi.valid),
