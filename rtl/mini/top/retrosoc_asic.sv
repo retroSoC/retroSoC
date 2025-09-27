@@ -9,19 +9,22 @@
 // See the Mulan PSL v2 for more details.
 
 // NOTE: need to focus on the port dir
+
+`include "mdd_config.svh"
+
 module retrosoc_asic (
     input  xi_i_pad,
     output xo_o_pad,
     inout  extclk_i_pad,
     inout  audclk_i_pad,
     // IRQ
-    inout  irq_i_pad,
+    inout  extn_irq_i_pad,
 `ifdef CORE_MDD
-    inout  core_mdd_sel_0_i_pad,
-    inout  core_mdd_sel_1_i_pad,
-    inout  core_mdd_sel_2_i_pad,
-    inout  core_mdd_sel_3_i_pad,
-    inout  core_mdd_sel_4_i_pad,
+    inout  core_sel_0_i_pad,
+    inout  core_sel_1_i_pad,
+    inout  core_sel_2_i_pad,
+    inout  core_sel_3_i_pad,
+    inout  core_sel_4_i_pad,
 `endif
 `ifdef IP_MDD
     inout  user_gpio_0_io_pad,
@@ -122,9 +125,9 @@ module retrosoc_asic (
   logic s_sys_rst_n;
   logic s_aud_rst_n;
   logic s_sys_clkdiv4;
-  logic s_irq_pin;
+  logic s_extn_irq;
 `ifdef CORE_MDD
-  logic [4:0] s_core_mdd_sel;
+  logic [`USER_CORESEL_WIDTH-1:0] s_core_sel;
 `endif
 `ifdef IP_MDD
   user_gpio_if u_user_gpio_if ();
@@ -149,13 +152,13 @@ module retrosoc_asic (
   tc_io_xtl_pad         u_xtal_io_pad           (.xi_pad(xi_i_pad),           .xo_pad(xo_o_pad),                .en(1'b1),                          .clk(s_xtal_io));
   tc_io_tri_pad         u_extclk_i_pad          (.pad(extclk_i_pad),          .c2p(),                           .c2p_en(1'b0),                      .p2c(s_ext_clk));
   tc_io_tri_pad         u_audclk_i_pad          (.pad(audclk_i_pad),          .c2p(),                           .c2p_en(1'b0),                      .p2c(s_aud_clk));
-  tc_io_tri_schmitt_pad u_irq_i_pad             (.pad(irq_i_pad),             .c2p(),                           .c2p_en(1'b0),                      .p2c(s_irq_pin));
+  tc_io_tri_schmitt_pad u_extn_irq_i_pad        (.pad(extn_irq_i_pad),        .c2p(),                           .c2p_en(1'b0),                      .p2c(s_extn_irq));
 `ifdef CORE_MDD
-  tc_io_tri_pad         u_core_mdd_sel_0_i_pad  (.pad(core_mdd_sel_0_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[0]));
-  tc_io_tri_pad         u_core_mdd_sel_1_i_pad  (.pad(core_mdd_sel_1_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[1]));
-  tc_io_tri_pad         u_core_mdd_sel_2_i_pad  (.pad(core_mdd_sel_2_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[2]));
-  tc_io_tri_pad         u_core_mdd_sel_3_i_pad  (.pad(core_mdd_sel_3_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[3]));
-  tc_io_tri_pad         u_core_mdd_sel_4_i_pad  (.pad(core_mdd_sel_4_i_pad),  .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_mdd_sel[4]));
+  tc_io_tri_pad         u_core_sel_0_i_pad      (.pad(core_sel_0_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_sel[0]));
+  tc_io_tri_pad         u_core_sel_1_i_pad      (.pad(core_sel_1_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_sel[1]));
+  tc_io_tri_pad         u_core_sel_2_i_pad      (.pad(core_sel_2_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_sel[2]));
+  tc_io_tri_pad         u_core_sel_3_i_pad      (.pad(core_sel_3_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_sel[3]));
+  tc_io_tri_pad         u_core_sel_4_i_pad      (.pad(core_sel_4_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_sel[4]));
 `endif
 `ifdef IP_MDD
   tc_io_tri_pad         u_user_gpio_0_io_pad    (.pad(user_gpio_0_io_pad),    .c2p(u_user_gpio_if.gpio_out[0]),  .c2p_en(~u_user_gpio_if.gpio_oen[0]),  .p2c(u_user_gpio_if.gpio_in[0]));
@@ -256,37 +259,37 @@ module retrosoc_asic (
   );
 
   retrosoc u_retrosoc (
-      .clk_i         (s_sys_clk),
-      .rst_n_i       (s_sys_rst_n),
-      .clk_aud_i     (s_aud_clk),
-      .rst_aud_n_i   (s_aud_rst_n),
+      .clk_i      (s_sys_clk),
+      .rst_n_i    (s_sys_rst_n),
+      .clk_aud_i  (s_aud_clk),
+      .rst_aud_n_i(s_aud_rst_n),
 `ifdef HAVE_PLL
-      .spfs_div4_i   (s_pll_cfg[2]),
+      .spfs_div4_i(s_pll_cfg[2]),
 `else
-      .spfs_div4_i   ('0),
+      .spfs_div4_i('0),
 `endif
-      .irq_pin_i     (s_irq_pin),
+      .extn_irq_i (s_extn_irq),
 `ifdef CORE_MDD
-      .core_mdd_sel_i(s_core_mdd_sel),
+      .core_sel_i (s_core_sel),
 `endif
 `ifdef IP_MDD
-      .gpio          (u_user_gpio_if),
+      .gpio       (u_user_gpio_if),
 `endif
 `ifdef HAVE_SRAM_IF
-      .ram           (u_ram_if),
+      .ram        (u_ram_if),
 `endif
-      .gpio          (u_gpio_if),
-      .uart0         (u_uart0_if),
-      .psram         (u_psram_if),
-      .spisd         (u_spisd_if),
-      .i2s           (u_i2s_if),
-      .onewire       (u_onewire_if),
-      .uart1         (u_uart1_if),
-      .pwm           (u_pwm_if),
-      .ps2           (u_ps2_if),
-      .i2c           (u_i2c_if),
-      .qspi          (u_qspi_if),
-      .spfs          (u_spfs_if)
+      .gpio       (u_gpio_if),
+      .uart0      (u_uart0_if),
+      .psram      (u_psram_if),
+      .spisd      (u_spisd_if),
+      .i2s        (u_i2s_if),
+      .onewire    (u_onewire_if),
+      .uart1      (u_uart1_if),
+      .pwm        (u_pwm_if),
+      .ps2        (u_ps2_if),
+      .i2c        (u_i2c_if),
+      .qspi       (u_qspi_if),
+      .spfs       (u_spfs_if)
   );
 
 `ifdef HAVE_SRAM_IF

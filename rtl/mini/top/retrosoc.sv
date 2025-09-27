@@ -9,36 +9,37 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
+`include "mdd_config.svh"
 
 module retrosoc (
     // verilog_format: off
-    input  logic       clk_i,
-    input  logic       rst_n_i,
-    input  logic       clk_aud_i,
-    input  logic       rst_aud_n_i,
-    input  logic       spfs_div4_i,
-    input  logic       irq_pin_i,
+    input  logic                           clk_i,
+    input  logic                           rst_n_i,
+    input  logic                           clk_aud_i,
+    input  logic                           rst_aud_n_i,
+    input  logic                           spfs_div4_i,
+    input  logic                           extn_irq_i,
 `ifdef CORE_MDD
-    input  logic [4:0] core_mdd_sel_i,
+    input  logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
 `endif
 `ifdef IP_MDD
-    user_gpio_if.dut    gpio,
+    user_gpio_if.dut                       gpio,
 `endif
 `ifdef HAVE_SRAM_IF
-    ram_if.master       ram,
+    ram_if.master                          ram,
 `endif
-    simp_gpio_if.dut   gpio,
-    uart_if.dut        uart0,
-    qspi_if.dut        psram,
-    spi_if.dut         spisd,
-    nv_i2s_if.dut      i2s,
-    onewire_if.dut     onewire,
-    uart_if.dut        uart1,
-    pwm_if.dut         pwm,
-    ps2_if.dut         ps2,
-    i2c_if.dut         i2c,
-    qspi_if.dut        qspi,
-    spi_if.dut         spfs
+    simp_gpio_if.dut                       gpio,
+    uart_if.dut                            uart0,
+    qspi_if.dut                            psram,
+    spi_if.dut                             spisd,
+    nv_i2s_if.dut                          i2s,
+    onewire_if.dut                         onewire,
+    uart_if.dut                            uart1,
+    pwm_if.dut                             pwm,
+    ps2_if.dut                             ps2,
+    i2c_if.dut                             i2c,
+    qspi_if.dut                            qspi,
+    spi_if.dut                             spfs
     // verilog_format: on
 );
 
@@ -57,7 +58,7 @@ module retrosoc (
   logic [ 5:0] s_apb_irq;
 
 `ifdef CORE_MDD
-  assign u_sysctrl_if.core_sel_i = core_mdd_sel_i;
+  assign u_sysctrl_if.core_sel_i = core_sel_i;
 `else
   assign u_sysctrl_if.core_sel_i = '0;
 `endif
@@ -72,20 +73,20 @@ module retrosoc (
   assign i2c.sda_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
 
   assign s_irq[4:0]          = 5'd0;
-  assign s_irq[5]            = irq_pin_i;
+  assign s_irq[5]            = extn_irq_i;
   assign s_irq[8:6]          = s_natv_irq;
   assign s_irq[14:9]         = s_apb_irq;
   assign s_irq[31:15]        = 17'd0;
 // verilog_format: on
 
   core_wrapper u_core_wrapper (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
 `ifdef CORE_MDD
-      .core_mdd_sel_i(core_mdd_sel_i),
+      .core_sel_i(core_sel_i),
 `endif
-      .nmi           (u_core_nmi_if),
-      .irq_i         (s_irq)
+      .nmi       (u_core_nmi_if),
+      .irq_i     (s_irq)
   );
 
   bus u_bus (
