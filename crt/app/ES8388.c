@@ -40,7 +40,7 @@ uint8_t es8388_init_cfg[] = {
 
 void ES8388_init() {
     int init_cfg_len = sizeof(es8388_init_cfg)/sizeof(uint8_t);
-    printf("[es8388] init cfg len: %d\n", init_cfg_len);
+    printf("[ES8388] init cfg len: %d\n", init_cfg_len);
     for(int i = 0; i < init_cfg_len; i += 2) {
         i2c0_wr_nbyte(ES8388_DEV_ADDR, (uint16_t)es8388_init_cfg[i], I2C_DEV_ADDR_8BIT, 1, es8388_init_cfg + i + 1);
     }
@@ -48,6 +48,6 @@ void ES8388_init() {
     uint8_t rxdata[60] = {0};
     i2c0_rd_nbyte(ES8388_DEV_ADDR, (uint16_t)0, I2C_DEV_ADDR_8BIT, 53, rxdata);
     for(int i = 0; i < 53; ++i) {
-        printf("[es8388] reg: %d val:%x\n", i, rxdata[i]);
+        printf("[ES8388] reg: %d val:%x\n", i, rxdata[i]);
     }
 }
