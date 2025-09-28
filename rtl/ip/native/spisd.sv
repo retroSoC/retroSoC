@@ -8,7 +8,7 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 //
-// memory-map rd/wr for first 512MB range of TF card
+// memory-map rd/wr for first 256MB range of TF card
 // cache size: 512(width 9) [8:0]
 // tag width: 23 [22:0]
 
