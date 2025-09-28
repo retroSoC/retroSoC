@@ -59,8 +59,8 @@ module nmi_spisd (
 
 
   assign s_cfg_reg_sel = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h50;
-  assign nmi.ready     = nmi.addr[31:24] == 8'h50 ? s_mem_ready : 1'b1;
-  assign nmi.rdata     = nmi.addr[31:24] == 8'h50 ? s_cache_data_q[s_cache_index] : s_clkdiv_q;
+  assign nmi.ready     = nmi.addr[31:28] == 4'h5 ? s_mem_ready : 1'b1;
+  assign nmi.rdata     = nmi.addr[31:28] == 4'h5 ? s_cache_data_q[s_cache_index] : s_clkdiv_q;
 
   always_comb begin
     s_clkdiv_d = s_clkdiv_q;
@@ -95,7 +95,7 @@ module nmi_spisd (
     s_sd_addr       = '0;
     // mem_if
     s_mem_ready     = '0;
-    if (nmi.addr[31:24] == 8'h50) begin
+    if (nmi.addr[31:28] == 4'h5) begin
       unique case (s_cache_fsm_q)
         FSM_IDLE: begin
           if (s_init_done && nmi.valid) s_cache_fsm_d = FSM_COMP_TAG;
