@@ -27,8 +27,9 @@ module bus (
   logic s_ram_valid, s_ram_ready;
 
   assign s_natv_sel      = core_nmi.addr[31:24] == `NATV_IP_START ||
-                           core_nmi.addr[31:24] == `PSRAM_START ||
-                           core_nmi.addr[31:24] == `SPISD_START;
+                           core_nmi.addr[31:24] == `PSRAM0_START ||
+                           core_nmi.addr[31:24] == `PSRAM1_START ||
+                           core_nmi.addr[31:28] == `SPISD_START;
   assign natv_nmi.valid  = core_nmi.valid && s_natv_sel;
   assign natv_nmi.addr   = core_nmi.addr;
   assign natv_nmi.wdata  = core_nmi.wdata;

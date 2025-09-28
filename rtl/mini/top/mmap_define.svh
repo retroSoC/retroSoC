@@ -18,7 +18,8 @@
 `define NATV_IP_START 8'h10
 `define APB_IP_START  8'h20
 `define SRAM_START    8'h30
-`define PSRAM_START   8'h40
-`define SPISD_START   8'h50
+`define PSRAM0_START  8'h40
+`define PSRAM1_START  8'h41
+`define SPISD_START   4'h5
 
 `endif
