@@ -6,13 +6,16 @@
 
 void ip_spisd_test() {
     printf("spisd test\n");
-    printf("[SPISD] clk div(default): %d\n", reg_spisd_mode);
+    printf("[SPISD] clk div(default): %d\n", reg_spisd_clkdiv);
     ip_psram_selftest(0x50000000, 1 * 1024 * 1024);
 }
 
 void ip_spisd_read(uint32_t addr, uint32_t len) {
     printf("spisd read test\n");
-    printf("[SPISD] clk div(default): %d\n", reg_spisd_mode);
+    printf("[SPISD] mode(default): %d\n", reg_spisd_mode);
+    printf("[SPISD] clk div(default): %d\n", reg_spisd_clkdiv);
+    printf("[SPISD] status: %d\n", reg_spisd_status);
+
     printf("START: %x LEN: %x\n\n", addr, len);
     volatile uint32_t *vis_addr = (uint32_t *)addr;
     for(uint32_t i = 0; i < len; ++i, ++vis_addr) {
