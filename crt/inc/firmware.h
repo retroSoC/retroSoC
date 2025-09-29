@@ -60,7 +60,14 @@
 #define reg_psram_wait     (*(volatile uint32_t*)0x10004000)
 #define reg_psram_chd      (*(volatile uint32_t*)0x10004004)
 // spisd
-#define reg_spisd_ctrl     (*(volatile uint32_t*)0x10005000)
+#define reg_spisd_mode     (*(volatile uint32_t*)0x10005000)
+#define reg_spisd_clkdiv   (*(volatile uint32_t*)0x10005004)
+#define reg_spisd_addr     (*(volatile uint32_t*)0x10005008)
+#define reg_spisd_txdata   (*(volatile uint32_t*)0x1000500C)
+#define reg_spisd_rxdata   (*(volatile uint32_t*)0x10005010)
+#define reg_spisd_start    (*(volatile uint32_t*)0x10005014)
+#define reg_spisd_status   (*(volatile uint32_t*)0x10005018)
+
 // i2c0
 #define reg_i2c0_clkdiv    (*(volatile uint32_t*)0x10006000)
 #define reg_i2c0_devaddr   (*(volatile uint32_t*)0x10006004)

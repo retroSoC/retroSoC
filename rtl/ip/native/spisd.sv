@@ -36,7 +36,7 @@ module nmi_spisd (
   logic [6:0] s_cache_index;
   logic s_cache_valid_d, s_cache_valid_q;
   logic s_cache_dirty_d, s_cache_dirty_q;
-  logic [22:0] s_cache_tag_d, s_cache_tag_q;
+  logic [31:0] s_cache_tag_d, s_cache_tag_q;
   logic [1:0] s_cache_fsm_d, s_cache_fsm_q;
   logic [31:0] s_cache_data_d   [0:127];
   logic [31:0] s_cache_data_q   [0:127];
@@ -120,7 +120,7 @@ module nmi_spisd (
             // tag line is clean
             if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
               s_cache_fsm_d = FSM_ALLOC;
-              s_cache_tag_d = {4'd0, nmi.addr[27:9]};
+              s_cache_tag_d = {13'd0, nmi.addr[27:9]};
             end else begin
               // need to flush data into sd card sectors
               s_cache_fsm_d = FSM_WR_BACK;
@@ -130,7 +130,7 @@ module nmi_spisd (
         FSM_ALLOC: begin
           if (~s_sd_rd_busy) begin
             s_sd_rd_req  = 1'b1;
-            s_sd_addr    = {s_cache_tag_q, 9'd0};
+            s_sd_addr    = s_cache_tag_q;
             s_line_cnt_d = '0;
             s_word_cnt_d = '0;
           end else if (s_fir_clk_edge && s_sd_rd_vld) begin
@@ -148,7 +148,7 @@ module nmi_spisd (
         FSM_WR_BACK: begin
           if (~s_sd_wr_busy) begin
             s_sd_wr_req   = 1'b1;
-            s_sd_addr     = {s_cache_tag_q, 9'd0};
+            s_sd_addr     = s_cache_tag_q;
             s_line_cnt_d  = '0;
             s_word_cnt_d  = '0;
             s_word_data_d = s_cache_data_q[0];
@@ -162,7 +162,7 @@ module nmi_spisd (
                 s_word_data_d = s_cache_data_q[s_line_cnt_d];
                 if (s_line_cnt_q == 7'd127) begin
                   s_cache_fsm_d = FSM_ALLOC;
-                  s_cache_tag_d = {4'd0, nmi.addr[27:9]};
+                  s_cache_tag_d = {13'd0, nmi.addr[27:9]};
                 end
               end else begin
                 s_word_cnt_d  = s_word_cnt_q + 1'b1;
@@ -196,7 +196,7 @@ module nmi_spisd (
       s_cache_dirty_q
   );
 
-  dffr #(23) u_cache_tag_dffr (
+  dffr #(32) u_cache_tag_dffr (
       clk_i,
       rst_n_i,
       s_cache_tag_d,
