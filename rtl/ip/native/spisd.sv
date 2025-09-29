@@ -10,7 +10,7 @@
 //
 // memory-map rd/wr for first 256MB range of TF card
 // cache size: 512(width 9) [8:0]
-// tag width: 23 [22:0]
+// tag width: 23(mem access) 32(reg access)
 
 module nmi_spisd (
     // verilog_format: off
@@ -22,10 +22,10 @@ module nmi_spisd (
 );
 
   logic        s_cfg_reg_sel;
+  logic        s_init_done;
   logic        s_mode;
   logic [ 1:0] s_clkdiv;
   logic        s_fir_clk_edge;
-  logic        s_init_done;
   logic [31:0] s_sd_addr;
   logic        s_sd_rd_req;
   logic        s_sd_rd_vld;
@@ -58,7 +58,7 @@ module nmi_spisd (
   spisd_reg u_spisd_reg (
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
-      // .init_done_i(s_init_done),
+      .init_done_i(s_init_done),
       .mode_o     (s_mode),
       .clkdiv_o   (s_clkdiv),
       .nmi        (u_cfg_nmi_if),
@@ -75,11 +75,10 @@ module nmi_spisd (
   assign u_cache_byp_nmi_if.rdata = s_mode ? u_cache_nmi_if.rdata : '0;
   assign u_cache_mem_nmi_if.ready = ~s_mode ? u_cache_nmi_if.ready : '0;
   assign u_cache_mem_nmi_if.rdata = ~s_mode ? u_cache_nmi_if.rdata : '0;
-
-  // assign the different addr mdoe TODO:
   spisd_cache u_spisd_cache (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
+      .mode_i          (s_mode),
       .init_done_i     (s_init_done),
       .fir_clk_edge_i  (s_fir_clk_edge),
       .sd_addr_o       (s_sd_addr),

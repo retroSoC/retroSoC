@@ -12,6 +12,7 @@ module spisd_cache (
     // verilog_format: off
     input logic         clk_i,
     input logic         rst_n_i,
+    input logic         mode_i,
     input logic         init_done_i,
     input logic         fir_clk_edge_i,
     output logic [31:0] sd_addr_o,
@@ -34,6 +35,7 @@ module spisd_cache (
   localparam FSM_WR_BACK  = 2'd3;
   // verilog_format: on
 
+  logic s_cache_mem_hit, s_cache_byp_hit;
   logic [6:0] s_cache_index;
   logic s_cache_valid_d, s_cache_valid_q;
   logic s_cache_dirty_d, s_cache_dirty_q;
@@ -48,9 +50,13 @@ module spisd_cache (
   logic [1:0] s_word_cnt_d, s_word_cnt_q;
   logic [31:0] s_word_data_d, s_word_data_q;
 
-  assign sd_wr_data_o  = s_sd_wr_data_q;
-  assign s_cache_index = nmi.addr[8:2];
-  assign nmi.rdata     = s_cache_data_q[s_cache_index];
+  // io
+  assign sd_wr_data_o    = s_sd_wr_data_q;
+  assign nmi.rdata       = s_cache_data_q[s_cache_index];
+  // cache
+  assign s_cache_index   = nmi.addr[8:2];
+  assign s_cache_mem_hit = ~mode_i && (nmi.addr[27:9] == s_cache_tag_q[18:0]);
+  assign s_cache_byp_hit = mode_i && (nmi.addr == s_cache_tag_q);
 
   always_comb begin
     // cache
@@ -76,7 +82,7 @@ module spisd_cache (
       end
       FSM_COMP_TAG: begin
         // cache hit
-        if (nmi.addr[27:9] == s_cache_tag_q[18:0] && s_cache_valid_q) begin
+        if ((s_cache_mem_hit || s_cache_byp_hit) && s_cache_valid_q) begin
           nmi.ready = 1'b1;
           // write oper, set dirty
           if (|nmi.wstrb) begin
@@ -94,7 +100,8 @@ module spisd_cache (
           // tag line is clean
           if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
             s_cache_fsm_d = FSM_ALLOC;
-            s_cache_tag_d = {13'd0, nmi.addr[27:9]};
+            if (~mode_i) s_cache_tag_d = {13'd0, nmi.addr[27:9]};
+            else s_cache_tag_d = nmi.addr;
           end else begin
             // need to flush data into sd card sectors
             s_cache_fsm_d = FSM_WR_BACK;
@@ -136,7 +143,8 @@ module spisd_cache (
               s_word_data_d = s_cache_data_q[s_line_cnt_d];
               if (s_line_cnt_q == 7'd127) begin
                 s_cache_fsm_d = FSM_ALLOC;
-                s_cache_tag_d = {13'd0, nmi.addr[27:9]};
+                if (~mode_i) s_cache_tag_d = {13'd0, nmi.addr[27:9]};
+                else s_cache_tag_d = nmi.addr;
               end
             end else begin
               s_word_cnt_d  = s_word_cnt_q + 1'b1;
