@@ -67,7 +67,7 @@ void welcome_screen()
     printf("                     1 x UART          @0x%x\n", &reg_uart0_clkdiv);
     printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
     printf("                     1 x PSRAM         @0x%x\n", &reg_psram_wait);
-    printf("                     1 x SPISD         @0x%x\n", &reg_spisd_ctrl);
+    printf("                     1 x SPISD         @0x%x\n", &reg_spisd_mode);
     printf("                     1 x I2C           @0x%x\n", &reg_i2c0_clkdiv);
     printf("                     1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
@@ -172,7 +172,9 @@ void main()
     i2c0_init((uint8_t)35);
     PCF8563B_test();
     ES8388_init();
-    ip_1wire_test();
+    // ip_1wire_test();
+    // 0x0100_4000
+    ip_spisd_read((uint32_t)0x51004000, (uint32_t)44);
     // ip_spisd_test();
 
     // ip_tim_test();
