@@ -40,6 +40,8 @@
 ../../ip/native/spisd_init.sv
 ../../ip/native/spisd_read.sv
 ../../ip/native/spisd_write.sv
+../../ip/native/spisd_reg.sv
+../../ip/native/spisd_cache.sv
 ../../ip/native/spisd_core.sv
 ../../ip/native/spisd_data.sv
 ../../ip/native/spisd.sv
