@@ -4,6 +4,33 @@
 #include <tinyspisd.h>
 
 
+void spisd_drv_read(uint8_t *buff, uint32_t sector, uint32_t count) {
+    uint32_t start_addr = sector * 512;
+    start_addr += 0x50000000;
+    // printf("START: %x LEN: %x\n\n", start_addr, 512 * count);
+
+    volatile uint32_t *vis_addr = (uint32_t *)start_addr;
+    for(uint32_t i = 0; i < count; ++i) {
+        for(uint32_t j = 0; j < 128; ++j, ++vis_addr, buff += 4) {
+            // printf("addr: %x val: %x\n", vis_addr, *vis_addr);
+            *((uint32_t*)buff) = *vis_addr;
+        }
+    }
+}
+
+void spisd_drv_write(uint8_t *buff, uint32_t sector, uint32_t count) {
+    uint32_t start_addr = sector * 512;
+    start_addr += 0x50000000;
+    // printf("START: %x LEN: %x\n\n", start_addr, 512 * count);
+
+    volatile uint32_t *vis_addr = (uint32_t *)start_addr;
+    for(uint32_t i = 0; i < count; ++i) {
+        for(uint32_t j = 0; j < 128; ++j, ++vis_addr, buff += 4) {
+            *vis_addr = *((uint32_t*)buff);
+        }
+    }
+}
+
 void ip_spisd_test() {
     printf("spisd test\n");
     printf("[SPISD] clk div(default): %d\n", reg_spisd_clkdiv);
@@ -20,5 +47,12 @@ void ip_spisd_read(uint32_t addr, uint32_t len) {
     volatile uint32_t *vis_addr = (uint32_t *)addr;
     for(uint32_t i = 0; i < len; ++i, ++vis_addr) {
         printf("addr: %x val: %x\n", vis_addr, *vis_addr);
+    }
+
+    uint8_t res[512] = {0};
+    printf("\nsector read test\n");
+    spisd_drv_read(res, 32800, 1);
+    for(int i = 0; i < 512; ++i) {
+        printf("res[%d]: %x\n", i, res[i]);
     }
 }
