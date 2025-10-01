@@ -95,7 +95,7 @@ void tinysh()
                 ip_ps2_test();
                 break;
             case 'i':
-                AT24C64_test();
+                at24cxx_test();
                 break;
             case 'l':
                 ip_lcd_test();

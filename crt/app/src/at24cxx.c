@@ -1,9 +1,9 @@
 #include <firmware.h>
 #include <tinyprintf.h>
 #include <tinyi2c.h>
-#include <AT24C64.h>
+#include <at24cxx.h>
 
-void AT24C64_test() {
+void at24cxx_test() {
     printf("AT24C64 wr/rd test\n");
     // prepare ref data
     uint8_t ref_data[I2C_TEST_NUM], rd_data[I2C_TEST_NUM];

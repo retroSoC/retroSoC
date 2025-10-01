@@ -51,9 +51,9 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinysh.c \
                 $(ROOT_PATH)/crt/src/firmware.c
 
-APP_PATH :=     $(ROOT_PATH)/crt/app/AT24C64.c \
-                $(ROOT_PATH)/crt/app/PCF8563B.c \
-                $(ROOT_PATH)/crt/app/ES8388.c
+APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
+                $(ROOT_PATH)/crt/app/src/pcf8563b.c \
+                $(ROOT_PATH)/crt/app/src/es8388.c
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)

@@ -37,12 +37,12 @@ typedef struct {
 } PCF8563B_info_t;
 
 // helper functions
-uint8_t PCF8563B_bcd2bin(uint8_t val,uint8_t reg_width);
-uint8_t PCF8563B_bin2bcd(uint8_t val);
+uint8_t pcf8563b_bcd2bin(uint8_t val,uint8_t reg_width);
+uint8_t pcf8563b_bin2bcd(uint8_t val);
 
-void PCF8563B_wr_reg(PCF8563B_info_t *info);
-PCF8563B_info_t PCF8563B_rd_reg();
+void pcf8563b_wr_reg(PCF8563B_info_t *info);
+PCF8563B_info_t pcf8563b_rd_reg();
 
-void PCF8563B_test();
+void pcf8563b_test();
 
 #endif
