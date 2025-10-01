@@ -65,8 +65,7 @@
 #define reg_spisd_addr     (*(volatile uint32_t*)0x10005008)
 #define reg_spisd_txdata   (*(volatile uint32_t*)0x1000500C)
 #define reg_spisd_rxdata   (*(volatile uint32_t*)0x10005010)
-#define reg_spisd_start    (*(volatile uint32_t*)0x10005014)
-#define reg_spisd_status   (*(volatile uint32_t*)0x10005018)
+#define reg_spisd_status   (*(volatile uint32_t*)0x10005014)
 
 // i2c0
 #define reg_i2c0_clkdiv    (*(volatile uint32_t*)0x10006000)
