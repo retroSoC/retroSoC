@@ -34,6 +34,7 @@ CFLAGS += $(DEF_VAL)
 TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinyuart.c \
                 $(ROOT_PATH)/crt/src/tinystring.c \
+                $(ROOT_PATH)/crt/src/tinylib.c \
                 $(ROOT_PATH)/crt/src/tinyprintf.c \
                 $(ROOT_PATH)/crt/src/tinygpio.c \
                 $(ROOT_PATH)/crt/src/tinytim.c \
@@ -53,7 +54,8 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
 
 APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
                 $(ROOT_PATH)/crt/app/src/pcf8563b.c \
-                $(ROOT_PATH)/crt/app/src/es8388.c
+                $(ROOT_PATH)/crt/app/src/es8388.c \
+                $(ROOT_PATH)/crt/app/src/wav_decoder.c
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)

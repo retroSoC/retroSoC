@@ -175,6 +175,7 @@ void main()
     // ip_1wire_test();
     // 0x0100_4000
     ip_spisd_read((uint32_t)0x51004000, (uint32_t)44);
+    wav_file_decoder((uint32_t)0x51004000);
     // ip_spisd_test();
 
     // ip_tim_test();
