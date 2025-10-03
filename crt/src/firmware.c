@@ -170,11 +170,12 @@ void main()
     // while(1);
     ip_archinfo_test();
     i2c0_init((uint8_t)35);
-    PCF8563B_test();
-    ES8388_init();
+    pcf8563b_test();
+    es8388_init();
     // ip_1wire_test();
     // 0x0100_4000
     ip_spisd_read((uint32_t)0x51004000, (uint32_t)44);
+    wav_file_decoder((uint32_t)0x51004000);
     // ip_spisd_test();
 
     // ip_tim_test();

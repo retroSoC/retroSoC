@@ -1,6 +1,8 @@
 #ifndef TINYLIB_H__
 #define TINYLIB_H__
 
+#include <stddef.h>
+#include <stdint.h>
 #include <firmware.h>
 #include <tinyver.h>
 #include <tinyuart.h>
@@ -20,14 +22,18 @@
 #include <tinyspisd.h>
 #include <tinybench.h>
 #include <tinysh.h>
-#include <AT24C64.h>
-#include <PCF8563B.h>
-#include <ES8388.h>
+#include <at24cxx.h>
+#include <pcf8563b.h>
+#include <es8388.h>
+#include <wav_decoder.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+void *malloc(size_t size);
+void free(void *ptr);
 
 #define putstr(s) \
   ({ for (const char *p = s; *p; p++) putch(*p); })

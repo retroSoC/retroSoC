@@ -1,7 +1,7 @@
 #include <firmware.h>
 #include <tinyprintf.h>
 #include <tinyi2c.h>
-#include <ES8388.h>
+#include <es8388.h>
 
 #define ES8388_PHONE_VOLUME 20
 #define ES8388_SPEAK_VOLUME 30
@@ -38,7 +38,7 @@ uint8_t es8388_init_cfg[] = {
     (uint8_t)49, (uint8_t)ES8388_SPEAK_VOLUME,
 };
 
-void ES8388_init() {
+void es8388_init() {
     int init_cfg_len = sizeof(es8388_init_cfg)/sizeof(uint8_t);
     printf("[ES8388] init cfg len: %d\n", init_cfg_len);
     for(int i = 0; i < init_cfg_len; i += 2) {
