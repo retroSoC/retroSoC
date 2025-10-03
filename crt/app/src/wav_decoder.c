@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <tinylib.h>
 #include <tinyprintf.h>
 #include <tinystring.h>
 #include <tinyspisd.h>
@@ -78,7 +79,7 @@ WAVFile_t* wav_file_decoder(uint32_t start_addr) {
     
 
     // RIFF
-    printf("File size:     %d bytes(~%dMiB)\n", header.riff.ChunkSize + 8, (header.riff.ChunkSize + 8) / 1024 / 1024);
+    printf("File size:     %d bytes(~%d MiB)\n", header.riff.ChunkSize + 8, (header.riff.ChunkSize + 8) / 1024 / 1024);
     printf("Format:        %.4s\n", header.riff.Format);
     // FMT
     printf("AudioFormat:   %d(PCM)\n", header.fmt.AudioFormat); // TODO: need to assign by looking up table
@@ -93,20 +94,12 @@ WAVFile_t* wav_file_decoder(uint32_t start_addr) {
         printfln(header.list[i].ChunkData, header.list[i].ChunkSize);
     }
     // data
-    printf("Data size:     %d bytes(~%dMiB)\n", header.data.Subchunk2Size, (header.data.Subchunk2Size) / 1024 / 1024);
-
-    // audio_data = (WAVFile_t*)malloc(sizeof(struct WAVData));
-    // if (audio_data == NULL) {
-    //     return NULL;
-    // }
-    // audio_data->header = header;
-    // // audio_data->sample = (uint8_t*)malloc(header.Subchunk2Size);
-    // // if (audio_data->sample == NULL) {
-    // //     return NULL;
-    // // }
-    // // fread(audio_data->sample, header.Subchunk2Size, 1, inputFile);
-    // // fclose(inputFile);
-
-    // return audio_data;
+    printf("Data size:     %d bytes(~%d MiB)\n", header.data.Subchunk2Size, (header.data.Subchunk2Size) / 1024 / 1024);
+    // prepare the data
+    volatile uint16_t *rd_ptr = (uint16_t*)start_addr;
+    for(uint32_t i = 0; i < header.data.Subchunk2Size; i += 2, ++rd_ptr) {
+        while(reg_i2s_status & (uint32_t)1); // check if fifo is full or not
+        reg_i2s_txdata = *rd_ptr;
+    }
     return NULL;
 }

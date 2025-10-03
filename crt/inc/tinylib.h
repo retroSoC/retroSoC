@@ -20,6 +20,7 @@
 #include <tinylcd.h>
 #include <tinypsram.h>
 #include <tinyspisd.h>
+#include <tinyi2s.h>
 #include <tinybench.h>
 #include <tinysh.h>
 #include <at24cxx.h>

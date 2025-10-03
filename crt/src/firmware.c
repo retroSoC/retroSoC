@@ -166,17 +166,17 @@ void app_system_boot() {
 void main()
 {
     reg_uart0_clkdiv = (uint32_t)(CPU_FREQ * 1000000 / UART_BPS);
-    app_system_boot();
+    // app_system_boot();
     // while(1);
-    ip_archinfo_test();
-    i2c0_init((uint8_t)35);
-    pcf8563b_test();
-    es8388_init();
+    // ip_archinfo_test();
+    // i2c0_init((uint8_t)35);
+    // pcf8563b_test();
+    // es8388_init();
     // ip_1wire_test();
-    // 0x0100_4000
-    ip_spisd_read((uint32_t)0x51004000, (uint32_t)44);
-    wav_file_decoder((uint32_t)0x51004000);
+    // ip_spisd_read((uint32_t)0x51004000, (uint32_t)44);
     // ip_spisd_test();
+    ip_i2s_test();
+    wav_file_decoder((uint32_t)0x51004000);
 
     // ip_tim_test();
     // ip_rng_test();
