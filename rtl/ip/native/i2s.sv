@@ -53,11 +53,11 @@ module nmi_i2s (
   // tx fifo
   logic s_tx_push_valid, s_tx_full, s_tx_empty;
   logic s_tx_pop_valid, s_tx_pop_ready;
-  logic [15:0] s_tx_push_data, s_tx_pop_data;
+  logic [31:0] s_tx_push_data, s_tx_pop_data;
   // rx fifo
   logic s_rx_push_valid, s_rx_full, s_rx_empty;
   logic s_rx_pop_valid, s_rx_pop_ready;
-  logic [15:0] s_rx_push_data, s_rx_pop_data;
+  logic [31:0] s_rx_push_data, s_rx_pop_data;
 
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
   assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
@@ -82,6 +82,8 @@ module nmi_i2s (
       s_tx_push_valid = 1'b1;
       if (nmi.wstrb[0]) s_tx_push_data[7:0] = nmi.wdata[7:0];
       if (nmi.wstrb[1]) s_tx_push_data[15:8] = nmi.wdata[15:8];
+      if (nmi.wstrb[2]) s_tx_push_data[23:16] = nmi.wdata[23:16];
+      if (nmi.wstrb[3]) s_tx_push_data[31:24] = nmi.wdata[31:24];
     end
   end
 
@@ -113,7 +115,7 @@ module nmi_i2s (
       `NATV_I2S_MODE:   s_nmi_rdata_d = {31'd0, s_i2s_mode_q};
       `NATV_I2S_RXDATA: begin
         s_rx_pop_valid = 1'b1;
-        if (!s_rx_empty) s_nmi_rdata_d = {16'd0, s_rx_pop_data};
+        if (!s_rx_empty) s_nmi_rdata_d = s_rx_pop_data;
         else s_nmi_rdata_d = '0;
       end
       `NATV_I2S_STATUS: s_nmi_rdata_d = {30'd0, s_i2s_status_q};
@@ -130,7 +132,7 @@ module nmi_i2s (
 
 
   async_fifo #(
-      .DATA_WIDTH (16),
+      .DATA_WIDTH (32),
       .DEPTH_POWER(7)
   ) u_tx_async_fifo (
       .wr_clk_i  (clk_i),
@@ -147,7 +149,7 @@ module nmi_i2s (
 
 
   async_fifo #(
-      .DATA_WIDTH (16),
+      .DATA_WIDTH (32),
       .DEPTH_POWER(7)
   ) u_rx_async_fifo (
       .wr_clk_i  (clk_aud_i),

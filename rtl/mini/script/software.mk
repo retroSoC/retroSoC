@@ -48,6 +48,7 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinylcd.c \
                 $(ROOT_PATH)/crt/src/tinypsram.c \
                 $(ROOT_PATH)/crt/src/tinyspisd.c \
+                $(ROOT_PATH)/crt/src/tinyi2s.c \
                 $(ROOT_PATH)/crt/src/tinybench.c \
                 $(ROOT_PATH)/crt/src/tinysh.c \
                 $(ROOT_PATH)/crt/src/firmware.c
