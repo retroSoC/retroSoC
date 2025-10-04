@@ -53,6 +53,8 @@
 ../../ip/native/i2s.sv
 ../../ip/native/onewire_core.sv
 ../../ip/native/onewire.sv
+../../ip/native/dma_core.sv
+../../ip/native/dma.sv
 ../../ip/native/sysctrl.sv
 ../../ip/native/simple_timer.sv
 ../../ip/native/simple_uart.sv

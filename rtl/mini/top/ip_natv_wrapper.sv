@@ -24,6 +24,7 @@ module ip_natv_wrapper (
     i2c_if.dut         i2c,
     nv_i2s_if.dut      i2s,
     onewire_if.dut     onewire,
+    nmi_if.master      dma_nmi,
     sysctrl_if.dut     sysctrl,
     // irq
     output logic [2:0] irq_o
@@ -39,6 +40,7 @@ module ip_natv_wrapper (
   nmi_if u_i2c_nmi_if ();
   nmi_if u_i2s_nmi_if ();
   nmi_if u_onewire_nmi_if ();
+  nmi_if u_dma_nmi_if ();
   nmi_if u_sysctrl_nmi_if ();
 
 
@@ -91,6 +93,11 @@ module ip_natv_wrapper (
   assign u_onewire_nmi_if.addr    = nmi.addr;
   assign u_onewire_nmi_if.wdata   = nmi.wdata;
   assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
+
+  assign u_dma_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h90);
+  assign u_dma_nmi_if.addr    = nmi.addr;
+  assign u_dma_nmi_if.wdata   = nmi.wdata;
+  assign u_dma_nmi_if.wstrb   = nmi.wstrb;
 
   assign u_sysctrl_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'hA0);
   assign u_sysctrl_nmi_if.addr    = nmi.addr;
@@ -185,6 +192,13 @@ module ip_natv_wrapper (
       .rst_n_i(rst_n_i),
       .nmi    (u_onewire_nmi_if),
       .onewire(onewire)
+  );
+
+  nmi_dma u_nmi_dma (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_dma_nmi_if),
+      .nmi_dma(dma_nmi)
   );
 
   nmi_sysctrl u_nmi_sysctrl (

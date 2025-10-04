@@ -45,6 +45,7 @@ module retrosoc (
 
   // verilog_format: off
   nmi_if u_core_nmi_if ();
+  nmi_if u_dma_nmi_if ();
   nmi_if u_natv_nmi_if();
   nmi_if u_apb_nmi_if();
   i2c_if u_natv_i2c_if();
@@ -96,6 +97,7 @@ module retrosoc (
       .ram     (ram),
 `endif
       .core_nmi(u_core_nmi_if),
+      .dma_nmi (u_dma_nmi_if),
       .natv_nmi(u_natv_nmi_if),
       .apb_nmi (u_apb_nmi_if)
   );
@@ -113,6 +115,7 @@ module retrosoc (
       .i2c        (u_natv_i2c_if),
       .i2s        (i2s),
       .onewire    (onewire),
+      .dma_nmi    (u_dma_nmi_if),
       .sysctrl    (u_sysctrl_if),
       .irq_o      (s_natv_irq)
   );
