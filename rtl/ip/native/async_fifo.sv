@@ -21,7 +21,8 @@ module async_fifo #(
     input  logic                  rd_rst_n_i,
     input  logic                  rd_en_i,
     output logic [DATA_WIDTH-1:0] rd_data_o,
-    output logic                  rd_empty_o
+    output logic                  rd_empty_o,
+    output logic [ DEPTH_POWER:0] elem_num_o
 );
 
   localparam int FIFO_DEPTH = 2 ** DEPTH_POWER;
@@ -32,6 +33,7 @@ module async_fifo #(
   logic [PTR_WIDTH-1:0] r_wr_ptr_gray, r_rd_ptr_gray;
   logic [PTR_WIDTH-1:0] r_wr_ptr_gray_sync[0:1];
   logic [PTR_WIDTH-1:0] r_rd_ptr_gray_sync[0:1];
+  logic [PTR_WIDTH-1:0] s_rd_ptr_bin_sync;
 
   // wr logic
   always_ff @(posedge wr_clk_i or negedge wr_rst_n_i) begin
@@ -84,9 +86,18 @@ module async_fifo #(
 
   assign rd_empty_o = r_rd_ptr_gray == r_wr_ptr_gray_sync[1];
 
+  assign elem_num_o = r_wr_ptr_bin - s_rd_ptr_bin_sync;
+
   function automatic logic [PTR_WIDTH-1:0] bin2gray(input logic [PTR_WIDTH-1:0] bin);
     return (bin >> 1) ^ bin;
   endfunction
+
+  gray2bin #(
+      .DATA_WIDTH(PTR_WIDTH)
+  ) u_gray2bin (
+      .gray_i(r_rd_ptr_gray_sync[1]),
+      .bin_o (s_rd_ptr_bin_sync)
+  );
 
   initial begin
     if (DEPTH_POWER < 1 || DEPTH_POWER > 10) $error("DEPTH_POWER ERROR");

@@ -14,10 +14,12 @@
 // verilog_format: off
 `define NATV_DMA_MODE    8'h00
 `define NATV_DMA_SRCADDR 8'h04
-`define NATV_DMA_DSTADDR 8'h08
-`define NATV_DMA_XFERLEN 8'h0C
-`define NATV_DMA_START   8'h10
-`define NATV_DMA_STATUS  8'h14
+`define NATV_DMA_SRCINCR 8'h08
+`define NATV_DMA_DSTADDR 8'h0C
+`define NATV_DMA_DSTINCR 8'h10
+`define NATV_DMA_XFERLEN 8'h14
+`define NATV_DMA_START   8'h18
+`define NATV_DMA_STATUS  8'h1C
 // verilog_format: on
 
 `endif
@@ -26,6 +28,7 @@ module nmi_dma (
     // verilog_format: off
     input  logic  clk_i,
     input  logic  rst_n_i,
+    input  logic  i2s_tx_proc_i,
     nmi_if.slave  nmi,
     nmi_if.master nmi_dma
     // verilog_format: on
@@ -37,11 +40,15 @@ module nmi_dma (
   logic [31:0] s_nmi_rdata_d, s_nmi_rdata_q;
 
   logic s_dma_mode_en;
-  logic s_dma_mode_d, s_dma_mode_q;
+  logic [1:0] s_dma_mode_d, s_dma_mode_q;
   logic s_dma_srcaddr_en;
   logic [31:0] s_dma_srcaddr_d, s_dma_srcaddr_q;
+  logic s_dma_srcincr_en;
+  logic s_dma_srcincr_d, s_dma_srcincr_q;
   logic s_dma_dstaddr_en;
   logic [31:0] s_dma_dstaddr_d, s_dma_dstaddr_q;
+  logic s_dma_dstincr_en;
+  logic s_dma_dstincr_d, s_dma_dstincr_q;
   logic s_dma_xferlen_en;
   logic [31:0] s_dma_xferlen_d, s_dma_xferlen_q;
   logic s_dma_status_d, s_dma_status_q;
@@ -55,9 +62,10 @@ module nmi_dma (
   assign nmi.rdata      = s_nmi_rdata_q;
 
 
+  // [3]: resv [2]: spi fifo trg [1]: i2s fifo trg [0]: sft trg
   assign s_dma_mode_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_MODE;
-  assign s_dma_mode_d   = nmi.wdata[0];
-  dffer #(1) u_dma_mode_dffer (
+  assign s_dma_mode_d   = nmi.wdata[1:0];
+  dffer #(2) u_dma_mode_dffer (
       clk_i,
       rst_n_i,
       s_dma_mode_en,
@@ -83,6 +91,17 @@ module nmi_dma (
   );
 
 
+  assign s_dma_srcincr_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_SRCINCR;
+  assign s_dma_srcincr_d  = nmi.wdata[0];
+  dffer #(1) u_dma_srcincr_dffer (
+      clk_i,
+      rst_n_i,
+      s_dma_srcincr_en,
+      s_dma_srcincr_d,
+      s_dma_srcincr_q
+  );
+
+
   assign s_dma_dstaddr_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_DSTADDR;
   always_comb begin
     s_dma_dstaddr_d = s_dma_dstaddr_q;
@@ -97,6 +116,16 @@ module nmi_dma (
       s_dma_dstaddr_en,
       s_dma_dstaddr_d,
       s_dma_dstaddr_q
+  );
+
+  assign s_dma_dstincr_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_DSTINCR;
+  assign s_dma_dstincr_d  = nmi.wdata[0];
+  dffer #(1) u_dma_dstincr_dffer (
+      clk_i,
+      rst_n_i,
+      s_dma_dstincr_en,
+      s_dma_dstincr_d,
+      s_dma_dstincr_q
   );
 
   assign s_dma_xferlen_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_XFERLEN;
@@ -146,9 +175,11 @@ module nmi_dma (
   always_comb begin
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
-      `NATV_DMA_MODE:    s_nmi_rdata_d = {31'd0, s_dma_mode_q};
+      `NATV_DMA_MODE:    s_nmi_rdata_d = {30'd0, s_dma_mode_q};
       `NATV_DMA_SRCADDR: s_nmi_rdata_d = s_dma_srcaddr_q;
+      `NATV_DMA_SRCINCR: s_nmi_rdata_d = {31'd0, s_dma_srcincr_q};
       `NATV_DMA_DSTADDR: s_nmi_rdata_d = s_dma_dstaddr_q;
+      `NATV_DMA_DSTINCR: s_nmi_rdata_d = {31'd0, s_dma_dstincr_q};
       `NATV_DMA_XFERLEN: s_nmi_rdata_d = s_dma_xferlen_q;
       `NATV_DMA_STATUS:  s_nmi_rdata_d = {31'd0, s_dma_status_q};
       default:           s_nmi_rdata_d = s_nmi_rdata_q;
@@ -164,14 +195,18 @@ module nmi_dma (
 
 
   dma_core u_dma_core (
-      .clk_i    (clk_i),
-      .rst_n_i  (rst_n_i),
-      .srcaddr_i(s_dma_srcaddr_q),
-      .dstaddr_i(s_dma_dstaddr_q),
-      .xferlen_i(s_dma_xferlen_q),
-      .start_i  (s_xfer_start),
-      .done_o   (s_xfer_done),
-      .nmi      (nmi_dma)
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
+      .mode_i       (s_dma_mode_q),
+      .srcaddr_i    (s_dma_srcaddr_q),
+      .srcincr_i    (s_dma_srcincr_q),
+      .dstaddr_i    (s_dma_dstaddr_q),
+      .dstincr_i    (s_dma_dstincr_q),
+      .xferlen_i    (s_dma_xferlen_q),
+      .start_i      (s_xfer_start),
+      .i2s_tx_proc_i(i2s_tx_proc_i),
+      .done_o       (s_xfer_done),
+      .nmi          (nmi_dma)
   );
 
 endmodule

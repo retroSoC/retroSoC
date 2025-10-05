@@ -12,10 +12,14 @@ module dma_core (
     // verilog_format: off
     input logic        clk_i,
     input logic        rst_n_i,
+    input logic [1:0]  mode_i,
     input logic [31:0] srcaddr_i,
+    input logic        srcincr_i,
     input logic [31:0] dstaddr_i,
+    input logic        dstincr_i,
     input logic [31:0] xferlen_i,
     input logic        start_i,
+    input logic        i2s_tx_proc_i,
     output logic       done_o,
     nmi_if.master      nmi
     // verilog_format: on
@@ -28,6 +32,7 @@ module dma_core (
   logic [1:0] s_fsm_d, s_fsm_q;
   logic [31:0] s_xfer_cnt_d, s_xfer_cnt_q;
   logic [31:0] s_src_addr_d, s_src_addr_q;
+  logic [31:0] s_dst_addr_d, s_dst_addr_q;
   logic [31:0] s_rd_data_d, s_rd_data_q;
   logic s_xfer_type_d, s_xfer_type_q;  // 0: rd 1: wr
 
@@ -36,6 +41,7 @@ module dma_core (
     s_fsm_d       = s_fsm_q;
     s_xfer_cnt_d  = s_xfer_cnt_q;
     s_src_addr_d  = s_src_addr_q;
+    s_dst_addr_d  = s_dst_addr_q;
     s_rd_data_d   = s_rd_data_q;
     s_xfer_type_d = s_xfer_type_q;
     // nmi if
@@ -50,17 +56,24 @@ module dma_core (
         if (start_i) begin
           s_fsm_d      = FSM_XFER;
           s_src_addr_d = srcaddr_i;
+          s_dst_addr_d = dstaddr_i;
         end
       end
       FSM_XFER: begin
-        nmi.valid = 1'b1;
         if (~s_xfer_type_q) begin
-          nmi.addr = s_src_addr_q;
+          nmi.valid = 1'b1;
+          nmi.addr  = s_src_addr_q;
           if (nmi.ready) begin
             s_xfer_type_d = 1'b1;
             s_rd_data_d   = nmi.rdata;
           end
         end else begin
+          unique case (mode_i)
+            2'd0:    nmi.valid = 1'b1;
+            2'd1:    if (i2s_tx_proc_i) nmi.valid = 1'b1;
+            default: nmi.valid = 1'b1;
+          endcase
+
           nmi.addr  = dstaddr_i;
           nmi.wdata = s_rd_data_q;
           nmi.wstrb = '1;
@@ -71,8 +84,9 @@ module dma_core (
               s_xfer_cnt_d = '0;
               s_fsm_d      = FSM_DONE;
             end else begin
-              s_xfer_cnt_d = s_xfer_cnt_q + 3'd4;
-              s_src_addr_d = s_src_addr_q + 3'd4;
+              s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
+              if (srcincr_i) s_src_addr_d = s_src_addr_q + 3'd4;
+              if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 3'd4;
             end
           end
         end
@@ -85,6 +99,7 @@ module dma_core (
         s_fsm_d       = s_fsm_q;
         s_xfer_cnt_d  = s_xfer_cnt_q;
         s_src_addr_d  = s_src_addr_q;
+        s_dst_addr_d  = s_dst_addr_q;
         s_rd_data_d   = s_rd_data_q;
         s_xfer_type_d = s_xfer_type_q;
         // nmi if
@@ -116,6 +131,13 @@ module dma_core (
       rst_n_i,
       s_src_addr_d,
       s_src_addr_q
+  );
+
+  dffr #(32) u_dst_addr_dffr (
+      clk_i,
+      rst_n_i,
+      s_dst_addr_d,
+      s_dst_addr_q
   );
 
   dffr #(32) u_rd_data_dffr (
