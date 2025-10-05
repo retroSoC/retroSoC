@@ -66,7 +66,7 @@
 #define reg_spisd_txdata   (*(volatile uint32_t*)0x1000500C)
 #define reg_spisd_rxdata   (*(volatile uint32_t*)0x10005010)
 #define reg_spisd_status   (*(volatile uint32_t*)0x10005014)
-
+#define reg_spisd_sync     (*(volatile uint32_t*)0x10005018)
 // i2c0
 #define reg_i2c0_clkdiv    (*(volatile uint32_t*)0x10006000)
 #define reg_i2c0_devaddr   (*(volatile uint32_t*)0x10006004)
@@ -89,8 +89,13 @@
 #define reg_onewire_txdata  (*(volatile uint32_t*)0x10008010)
 #define reg_onewire_ctrl    (*(volatile uint32_t*)0x10008014)
 #define reg_onewire_status  (*(volatile uint32_t*)0x10008018)
-// dma
-#define reg_dma_ctrl        (*(volatile uint32_t*)0x10009000)
+// dma(32b xfer, hardware trigger by I2S fifo, QSPI fifo)
+#define reg_dma_mode        (*(volatile uint32_t*)0x10009000)
+#define reg_dma_srcaddr     (*(volatile uint32_t*)0x10009004)
+#define reg_dma_dstaddr     (*(volatile uint32_t*)0x10009008)
+#define reg_dma_xferlen     (*(volatile uint32_t*)0x1000900C)
+#define reg_dma_start       (*(volatile uint32_t*)0x10009010)
+#define reg_dma_status      (*(volatile uint32_t*)0x10009014)
 // sys ctrl
 #define reg_sysctrl_coresel (*(volatile uint32_t*)0x1000A000)
 #define reg_sysctrl_ipsel   (*(volatile uint32_t*)0x1000A004)
