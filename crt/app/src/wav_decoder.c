@@ -12,7 +12,7 @@ static void printfln(char *buff, uint32_t len) {
 
 
 static void parseLISTChunk(WAVHeader_t *header, uint32_t addr) {
-    const char *info_tag[] = {"IART", "ICOP", "ICRD", "IGNR", "INAM", "IPRD", "ISFT", "ISRC", "ICMT", "ISBJ", "ITCH"};
+    const char *info_tag[] = {"IART", "ICOP", "ICRD", "IGNR", "INAM", "IPRD", "IPRT", "ISFT", "ISRC", "ICMT", "ISBJ", "ITCH"};
     char info_tag_len = sizeof(info_tag) / sizeof(info_tag[0]);
     ChunkHeader_t chunkHeader;
     uint32_t info_num = 0;
@@ -96,8 +96,8 @@ WAVFile_t* wav_file_decoder(uint32_t start_addr) {
     // data
     printf("Data size:     %d bytes(~%d MiB)\n", header.data.Subchunk2Size, (header.data.Subchunk2Size) / 1024 / 1024);
     // prepare the data
-    volatile uint16_t *rd_ptr = (uint16_t*)start_addr;
-    for(uint32_t i = 0; i < header.data.Subchunk2Size; i += 2, ++rd_ptr) {
+    volatile uint32_t *rd_ptr = (uint32_t*)start_addr;
+    for(uint32_t i = 0; i < header.data.Subchunk2Size; i += 4, ++rd_ptr) {
         while(reg_i2s_status & (uint32_t)1); // check if fifo is full or not
         reg_i2s_txdata = *rd_ptr;
     }

@@ -71,7 +71,7 @@ void welcome_screen()
     printf("                     1 x I2C           @0x%x\n", &reg_i2c0_clkdiv);
     printf("                     1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
-    printf("                     1 x DMA           @0x%x\n", &reg_dma_ctrl);
+    printf("                     1 x DMA           @0x%x\n", &reg_dma_mode);
     printf("                     1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                     1 x RNG           @0x%x\n", &reg_rng_ctrl);
@@ -176,7 +176,9 @@ void main()
     // ip_spisd_read((uint32_t)0x51004000, (uint32_t)44);
     // ip_spisd_test();
     ip_i2s_test();
-    wav_file_decoder((uint32_t)0x51004000);
+    // ip_dma_test();
+    // wav_file_decoder((uint32_t)0x51004000);
+    // wav_file_decoder((uint32_t)0x54737000);
 
     // ip_tim_test();
     // ip_rng_test();
