@@ -116,10 +116,16 @@ module nmi_dma (
   );
 
 
-  assign s_xfer_start   = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_START;
+  assign s_xfer_start = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_START;
 
 
-  assign s_dma_status_d = s_xfer_done;
+  always_comb begin
+    if (s_dma_status_q && s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_DMA_STATUS) begin
+      s_dma_status_d = '0;
+    end else begin
+      s_dma_status_d = s_xfer_done;
+    end
+  end
   dffr #(1) u_dma_status_dffr (
       clk_i,
       rst_n_i,

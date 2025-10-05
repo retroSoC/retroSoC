@@ -11,7 +11,7 @@
 `include "mmap_define.svh"
 
 module bus (
-  // verilog_format: off
+    // verilog_format: off
     input  logic  clk_i,
     input  logic  rst_n_i,
 `ifdef HAVE_SRAM_IF
@@ -26,17 +26,52 @@ module bus (
 
   logic s_natv_sel, s_apb_sel, s_ram_sel;
   logic s_ram_valid, s_ram_ready;
+  logic s_mstr_lock_d, s_mstr_lock_q;
+  logic s_mstr_id_d, s_mstr_id_q;
+  nmi_if u_mstr_nmi_if ();
 
-  nmi_if u_mstr_nmi_if();
+  always_comb begin
+    s_mstr_lock_d = s_mstr_lock_q;
+    s_mstr_id_d   = s_mstr_id_q;
+    if (~s_mstr_lock_q) begin
+      if (core_nmi.valid && ~dma_nmi.valid) begin
+        s_mstr_lock_d = 1'b1;
+        s_mstr_id_d   = 1'b0;
+      end else if (dma_nmi.valid) begin
+        s_mstr_lock_d = 1'b1;
+        s_mstr_id_d   = 1'b1;
+      end
+    end else begin
+      if (~s_mstr_id_q && core_nmi.ready) begin
+        s_mstr_lock_d = 1'b0;
+      end else if (s_mstr_id_q && dma_nmi.ready) begin
+        s_mstr_lock_d = 1'b0;
+      end
+    end
+  end
+  dffr #(1) u_mstr_lock_dffr (
+      clk_i,
+      rst_n_i,
+      s_mstr_lock_d,
+      s_mstr_lock_q
+  );
+  dffr #(1) u_mstr_id_dffr (
+      clk_i,
+      rst_n_i,
+      s_mstr_id_d,
+      s_mstr_id_q
+  );
+
   // simple arbiter
-  assign u_mstr_nmi_if.valid = dma_nmi.valid                      ? 1'b1                : core_nmi.valid;
-  assign u_mstr_nmi_if.addr  = dma_nmi.valid                      ? dma_nmi.addr        : core_nmi.addr;
-  assign u_mstr_nmi_if.wdata = dma_nmi.valid                      ? dma_nmi.wdata       : core_nmi.wdata;
-  assign u_mstr_nmi_if.wstrb = dma_nmi.valid                      ? dma_nmi.wstrb       : core_nmi.wstrb;
-  assign dma_nmi.ready       = dma_nmi.valid                      ? u_mstr_nmi_if.ready : '0;
-  assign dma_nmi.rdata       = dma_nmi.valid                      ? u_mstr_nmi_if.rdata : '0;
-  assign core_nmi.ready      = (~dma_nmi.valid && core_nmi.valid) ? u_mstr_nmi_if.ready : '0;
-  assign core_nmi.rdata      = (~dma_nmi.valid && core_nmi.valid) ? u_mstr_nmi_if.rdata : '0;
+  assign u_mstr_nmi_if.valid = s_mstr_id_q ? 1'b1 : core_nmi.valid;
+  assign u_mstr_nmi_if.addr  = s_mstr_id_q ? dma_nmi.addr : core_nmi.addr;
+  assign u_mstr_nmi_if.wdata = s_mstr_id_q ? dma_nmi.wdata : core_nmi.wdata;
+  assign u_mstr_nmi_if.wstrb = s_mstr_id_q ? dma_nmi.wstrb : core_nmi.wstrb;
+
+  assign dma_nmi.ready       =  s_mstr_id_q ? u_mstr_nmi_if.ready : '0;
+  assign dma_nmi.rdata       =  s_mstr_id_q ? u_mstr_nmi_if.rdata : '0;
+  assign core_nmi.ready      = ~s_mstr_id_q ? u_mstr_nmi_if.ready : '0;
+  assign core_nmi.rdata      = ~s_mstr_id_q ? u_mstr_nmi_if.rdata : '0;
 
 
   assign s_natv_sel      = u_mstr_nmi_if.addr[31:24] == `NATV_IP_START ||
