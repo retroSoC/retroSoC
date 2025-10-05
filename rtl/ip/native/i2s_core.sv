@@ -33,10 +33,24 @@ module i2s_core (
 
   logic [15:0] s_recv_data, s_send_data;
   logic [15:0] s_recv_data_d, s_recv_data_q;
-  logic [15:0] s_send_data_d, s_send_data_q;
+  logic [31:0] s_send_data_d, s_send_data_q;
   logic s_recv_done, s_send_done;
+  logic s_recv_done_pos, s_send_done_pos;
   logic s_recv_cnt_d, s_recv_cnt_q;
   logic s_send_cnt_d, s_send_cnt_q;
+
+  edge_det_sync_re u_recv_done_edge_det_sync_re (
+      clk_i,
+      rst_n_i,
+      s_recv_done,
+      s_recv_done_pos
+  );
+  edge_det_sync_re u_send_done_edge_det_sync_re (
+      clk_i,
+      rst_n_i,
+      s_send_done,
+      s_send_done_pos
+  );
 
   always_comb begin
     rx_valid_o      = '0;
@@ -46,7 +60,7 @@ module i2s_core (
     s_recv_data_d   = s_recv_data_q;
     if (!mode_i) s_loopback_data = s_recv_data;
     else begin
-      if (s_recv_done) begin
+      if (s_recv_done_pos) begin
         if (~rx_full_i && s_recv_cnt_q == '1) begin
           s_recv_cnt_d = '0;
           rx_valid_o   = 1'b1;
@@ -74,20 +88,19 @@ module i2s_core (
 
   always_comb begin
     tx_valid_o    = '0;
-    s_send_data   = s_send_data_q;
     s_send_cnt_d  = s_send_cnt_q;
     s_send_data_d = s_send_data_q;
     if (!mode_i) s_send_data = s_loopback_data;
     else begin
-      if (s_send_done) begin
+      s_send_data = s_send_data_q[15:0];
+      if (s_send_done_pos) begin
         if (s_send_cnt_q == 1'b1) begin
-          s_send_cnt_d = '0;
-          s_send_data  = s_send_data_q;
+          s_send_cnt_d  = '0;
+          s_send_data_d = {15'd0, s_send_data_q[31:16]};
         end else if (~tx_empty_i) begin
           tx_valid_o    = 1'b1;
           s_send_cnt_d  = s_send_cnt_q + 1'b1;
-          s_send_data   = tx_data_i[15:0];
-          s_send_data_d = tx_data_i[31:16];
+          s_send_data_d = tx_data_i;
         end
       end
     end
@@ -98,7 +111,7 @@ module i2s_core (
       s_send_cnt_d,
       s_send_cnt_q
   );
-  dffr #(16) u_send_data_dffr (
+  dffr #(32) u_send_data_dffr (
       clk_i,
       rst_n_i,
       s_send_data_d,

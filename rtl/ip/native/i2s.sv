@@ -165,8 +165,8 @@ module nmi_i2s (
   );
 
   i2s_core u_i2s_core (
-      .clk_i     (clk_i),
-      .rst_n_i   (rst_n_i),
+      .clk_i     (clk_aud_i),
+      .rst_n_i   (rst_aud_n_i),
       .mode_i    (s_i2s_mode_q),
       .tx_valid_o(s_tx_pop_valid),
       .tx_data_i (s_tx_pop_data),
