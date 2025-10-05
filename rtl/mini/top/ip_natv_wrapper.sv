@@ -46,6 +46,8 @@ module ip_natv_wrapper (
 
   logic s_psram_cfg_sel, s_psram_mem_sel;
   logic s_spisd_cfg_sel;
+  logic s_dma_i2s_tx_stall;
+
   assign u_gpio_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h00);
   assign u_gpio_nmi_if.addr     = nmi.addr;
   assign u_gpio_nmi_if.wdata    = nmi.wdata;
@@ -181,12 +183,13 @@ module ip_natv_wrapper (
   );
 
   nmi_i2s u_nmi_i2s (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .clk_aud_i  (clk_aud_i),
-      .rst_aud_n_i(rst_aud_n_i),
-      .nmi        (u_i2s_nmi_if),
-      .i2s        (i2s)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .clk_aud_i     (clk_aud_i),
+      .rst_aud_n_i   (rst_aud_n_i),
+      .dma_tx_stall_o(s_dma_i2s_tx_stall),
+      .nmi           (u_i2s_nmi_if),
+      .i2s           (i2s)
   );
 
   nmi_onewire u_nmi_onewire (
@@ -197,10 +200,11 @@ module ip_natv_wrapper (
   );
 
   nmi_dma u_nmi_dma (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .nmi    (u_dma_nmi_if),
-      .nmi_dma(dma_nmi)
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
+      .i2s_tx_proc_i(~s_dma_i2s_tx_stall),
+      .nmi          (u_dma_nmi_if),
+      .nmi_dma      (dma_nmi)
   );
 
   nmi_sysctrl u_nmi_sysctrl (
