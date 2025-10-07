@@ -19,8 +19,8 @@ module dma_core (
     input logic        dstincr_i,
     input logic [31:0] xferlen_i,
     input logic        start_i,
-    input logic        i2s_tx_proc_i,
     output logic       done_o,
+    dma_hw_trg_if.dut  hw_trg,
     nmi_if.master      nmi
     // verilog_format: on
 );
@@ -61,7 +61,11 @@ module dma_core (
       end
       FSM_XFER: begin
         if (~s_xfer_type_q) begin
-          nmi.valid = 1'b1;
+          unique case (mode_i)
+            2'd0:    nmi.valid = 1'b1;
+            2'd2:    if (hw_trg.i2s_rx_proc) nmi.valid = 1'b1;
+            default: nmi.valid = 1'b1;
+          endcase
           nmi.addr  = s_src_addr_q;
           if (nmi.ready) begin
             s_xfer_type_d = 1'b1;
@@ -70,11 +74,11 @@ module dma_core (
         end else begin
           unique case (mode_i)
             2'd0:    nmi.valid = 1'b1;
-            2'd1:    if (i2s_tx_proc_i) nmi.valid = 1'b1;
+            2'd1:    if (hw_trg.i2s_tx_proc) nmi.valid = 1'b1;
             default: nmi.valid = 1'b1;
           endcase
 
-          nmi.addr  = dstaddr_i;
+          nmi.addr  = s_dst_addr_q;
           nmi.wdata = s_rd_data_q;
           nmi.wstrb = '1;
           if (nmi.ready) begin

@@ -80,9 +80,10 @@
 #define reg_i2s_mode       (*(volatile uint32_t*)0x10007000)
 #define reg_i2s_upbound    (*(volatile uint32_t*)0x10007004)
 #define reg_i2s_lowbound   (*(volatile uint32_t*)0x10007008)
-#define reg_i2s_txdata     (*(volatile uint32_t*)0x1000700C)
-#define reg_i2s_rxdata     (*(volatile uint32_t*)0x10007010)
-#define reg_i2s_status     (*(volatile uint32_t*)0x10007014)
+#define reg_i2s_recven     (*(volatile uint32_t*)0x1000700C)
+#define reg_i2s_txdata     (*(volatile uint32_t*)0x10007010)
+#define reg_i2s_rxdata     (*(volatile uint32_t*)0x10007014)
+#define reg_i2s_status     (*(volatile uint32_t*)0x10007018)
 // 1-wire
 #define reg_onewire_clkdiv  (*(volatile uint32_t*)0x10008000)
 #define reg_onewire_zerocnt (*(volatile uint32_t*)0x10008004)

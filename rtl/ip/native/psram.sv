@@ -46,6 +46,8 @@
 
 `endif
 
+`include "mmap_define.svh"
+
 module nmi_psram (
     // verilog_format: off
     input logic  clk_i,
@@ -60,10 +62,11 @@ module nmi_psram (
   localparam FSM_WE = 2;
   localparam FSM_RD_ST = 3;
   localparam FSM_RD = 4;
-
+  // reg
   logic [ 4:0] r_cfg_wait;
   logic [ 2:0] r_cfg_chd;
   logic        s_cfg_reg_sel;
+  logic        s_mem_sel;
   logic        s_mem_ready;
   logic [31:0] s_mem_rdata;
 
@@ -97,11 +100,12 @@ module nmi_psram (
   // verilog_format: on
 
 
+  assign s_mem_sel     = (nmi.addr[31:24] == `PSRAM0_START) || (nmi.addr[31:24] == `PSRAM1_START);
   assign s_cfg_reg_sel = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h40;
-  assign nmi.ready     = nmi.addr[31:24] == 8'h40 ? s_mem_ready : 1'b1;
+  assign nmi.ready     = s_mem_sel ? s_mem_ready : 1'b1;
   always_comb begin
     nmi.rdata = '0;
-    if (nmi.addr[31:24] == 8'h40) begin
+    if (s_mem_sel) begin
       nmi.rdata = s_mem_rdata;
     end else if (nmi.addr[7:0] == `NATV_PSRAM_WAIT) begin
       nmi.rdata = {27'd0, r_cfg_wait};
@@ -142,7 +146,7 @@ module nmi_psram (
       r_mem_addr          <= '0;
       r_mem_wdata         <= '0;
     end else begin
-      if (nmi.addr[31:24] == 8'h40) begin
+      if (s_mem_sel) begin
         case (r_fsm_state)
           FSM_IDLE: begin
             if (s_mem_valid_re && (|nmi.wstrb)) begin

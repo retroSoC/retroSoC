@@ -6,6 +6,8 @@
 
 
 void app_boot_info() {
+    printf("#############################################################\n");
+    printf("#############################################################\n");
     printf("compile date: %s %s\n", __DATE__, __TIME__);
     printf("first bootloader done, app section info:\n");
     printf("_flash_wait_start: 0x%x\n", &_flash_wait_start);
@@ -68,6 +70,8 @@ void app_boot_info() {
     printf("                     1 x I2C(ADV)      @0x%x\n", &reg_i2c1_ctrl);
     printf("                     1 x QSPI          @0x%x\n", &reg_qspi_status);
     printf("                     1 x USER_IP       @0x%x\n\n", &reg_user_ip_reg0);
+    printf("#############################################################\n");
+    printf("#############################################################\n");
 }
 
 void boot_mode_select() {
