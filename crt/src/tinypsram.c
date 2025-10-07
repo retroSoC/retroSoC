@@ -77,7 +77,7 @@ void ip_psram_boot() {
     printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_chd);
     printf("[extern PSRAM test]\n");
     // ip_psram_selftest(0x40000000, 8 * 1024 * 1024);
-    printf("psram self test done\n\n");
+    printf("psram self test done\n");
 }
 
 uint32_t xorshift32(uint32_t *state) {

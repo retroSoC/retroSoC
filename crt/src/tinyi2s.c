@@ -17,11 +17,14 @@ void ip_i2s_test() {
     }
     printf("i2s tx done\n");
 
+    reg_i2s_recven = (uint32_t)1;
     for(uint32_t i = 0; i < 6; ++i) {
         test_data[i] = reg_i2s_rxdata;
     }
+    reg_i2s_recven = (uint32_t)0;
     for(uint32_t i = 0; i < 6; ++i) {
-        printf("test_data[%d]: %u\n", i, test_data[i]);
+        printf("test_data[%d]: %x\n", i, test_data[i]);
     }
+
     printf("i2s rx done\n");
 }
