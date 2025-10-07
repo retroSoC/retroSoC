@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <firmware.h>
 #include <tinyver.h>
+#include <tinybooter.h>
 #include <tinyuart.h>
 #include <tinystring.h>
 #include <tinyprintf.h>
