@@ -22,15 +22,22 @@
 `define NATV_DMA_STATUS  8'h1C
 // verilog_format: on
 
+interface dma_hw_trg_if ();
+  logic i2s_tx_proc;
+  logic i2s_rx_proc;
+
+  modport dut(input i2s_tx_proc, input i2s_rx_proc);
+endinterface
+
 `endif
 
 module nmi_dma (
     // verilog_format: off
-    input  logic  clk_i,
-    input  logic  rst_n_i,
-    input  logic  i2s_tx_proc_i,
-    nmi_if.slave  nmi,
-    nmi_if.master nmi_dma
+    input  logic      clk_i,
+    input  logic      rst_n_i,
+    dma_hw_trg_if.dut hw_trg,
+    nmi_if.slave      nmi,
+    nmi_if.master     nmi_dma
     // verilog_format: on
 );
 
@@ -62,7 +69,7 @@ module nmi_dma (
   assign nmi.rdata      = s_nmi_rdata_q;
 
 
-  // [3]: resv [2]: spi fifo trg [1]: i2s fifo trg [0]: sft trg
+  // [3]: spi tx fifo trg [2]: i2s rx fifo trg [1]: i2s tx fifo trg [0]: sft trg
   assign s_dma_mode_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_MODE;
   assign s_dma_mode_d   = nmi.wdata[1:0];
   dffer #(2) u_dma_mode_dffer (
@@ -107,8 +114,8 @@ module nmi_dma (
     s_dma_dstaddr_d = s_dma_dstaddr_q;
     if (nmi.wstrb[0]) s_dma_dstaddr_d[7:0] = nmi.wdata[7:0];
     if (nmi.wstrb[1]) s_dma_dstaddr_d[15:8] = nmi.wdata[15:8];
-    if (nmi.wstrb[3]) s_dma_dstaddr_d[31:24] = nmi.wdata[31:24];
     if (nmi.wstrb[2]) s_dma_dstaddr_d[23:16] = nmi.wdata[23:16];
+    if (nmi.wstrb[3]) s_dma_dstaddr_d[31:24] = nmi.wdata[31:24];
   end
   dffer #(32) u_dma_dstaddr_dffer (
       clk_i,
@@ -149,10 +156,11 @@ module nmi_dma (
 
 
   always_comb begin
-    if (s_dma_status_q && s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_DMA_STATUS) begin
+    s_dma_status_d = s_dma_status_q;
+    if (s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_DMA_STATUS) begin
       s_dma_status_d = '0;
-    end else begin
-      s_dma_status_d = s_xfer_done;
+    end else if (s_xfer_done) begin
+      s_dma_status_d = 1'b1;
     end
   end
   dffr #(1) u_dma_status_dffr (
@@ -195,18 +203,18 @@ module nmi_dma (
 
 
   dma_core u_dma_core (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .mode_i       (s_dma_mode_q),
-      .srcaddr_i    (s_dma_srcaddr_q),
-      .srcincr_i    (s_dma_srcincr_q),
-      .dstaddr_i    (s_dma_dstaddr_q),
-      .dstincr_i    (s_dma_dstincr_q),
-      .xferlen_i    (s_dma_xferlen_q),
-      .start_i      (s_xfer_start),
-      .i2s_tx_proc_i(i2s_tx_proc_i),
-      .done_o       (s_xfer_done),
-      .nmi          (nmi_dma)
+      .clk_i    (clk_i),
+      .rst_n_i  (rst_n_i),
+      .mode_i   (s_dma_mode_q),
+      .srcaddr_i(s_dma_srcaddr_q),
+      .srcincr_i(s_dma_srcincr_q),
+      .dstaddr_i(s_dma_dstaddr_q),
+      .dstincr_i(s_dma_dstincr_q),
+      .xferlen_i(s_dma_xferlen_q),
+      .start_i  (s_xfer_start),
+      .done_o   (s_xfer_done),
+      .hw_trg   (hw_trg),
+      .nmi      (nmi_dma)
   );
 
 endmodule
