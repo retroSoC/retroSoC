@@ -86,16 +86,17 @@ module bus (
   );
 
   // simple arbiter
-  assign u_mstr_nmi_if.valid = s_mstr_id_q ? 1'b1 : core_nmi.valid;
-  assign u_mstr_nmi_if.addr  = s_mstr_id_q ? dma_nmi.addr : core_nmi.addr;
+  // verilog_format: off
+  assign u_mstr_nmi_if.valid = s_mstr_id_q ? dma_nmi.valid : core_nmi.valid;
+  assign u_mstr_nmi_if.addr  = s_mstr_id_q ? dma_nmi.addr  : core_nmi.addr;
   assign u_mstr_nmi_if.wdata = s_mstr_id_q ? dma_nmi.wdata : core_nmi.wdata;
   assign u_mstr_nmi_if.wstrb = s_mstr_id_q ? dma_nmi.wstrb : core_nmi.wstrb;
 
-  assign dma_nmi.ready       = s_mstr_id_q ? u_mstr_nmi_if.ready : '0;
-  assign dma_nmi.rdata       = s_mstr_id_q ? u_mstr_nmi_if.rdata : '0;
+  assign dma_nmi.ready       = s_mstr_id_q ?  u_mstr_nmi_if.ready : '0;
+  assign dma_nmi.rdata       = s_mstr_id_q ?  u_mstr_nmi_if.rdata : '0;
   assign core_nmi.ready      = ~s_mstr_id_q ? u_mstr_nmi_if.ready : '0;
   assign core_nmi.rdata      = ~s_mstr_id_q ? u_mstr_nmi_if.rdata : '0;
-
+  // verilog_format: on
 
   // regslice to opt the timing
   nmi_regslice u_nmi_regslice (
