@@ -28,19 +28,12 @@ module nmi_regslice (
   logic [3:0] s_nmi_mst_wstrb_d, s_nmi_mst_wstrb_q;
   logic [31:0] s_nmi_mst_rdata_d, s_nmi_mst_rdata_q;
   logic s_nmi_mst_ready_d, s_nmi_mst_ready_q;
-  // logic s_nmi_slv_valid_pos;
   // nmi mst if
   assign nmi_mst.valid = s_nmi_mst_valid_q;
   assign nmi_mst.addr  = s_nmi_mst_addr_q;
   assign nmi_mst.wdata = s_nmi_mst_wdata_q;
   assign nmi_mst.wstrb = s_nmi_mst_wstrb_q;
 
-  // edge_det_sync_re u_nmi_slv_valid_edge_det_sync_re (
-  //     clk_i,
-  //     rst_n_i,
-  //     nmi_slv.valid,
-  //     s_nmi_slv_valid_pos
-  // );
 
   always_comb begin
     s_fsm_d           = s_fsm_q;
@@ -54,7 +47,6 @@ module nmi_regslice (
     nmi_slv.rdata     = '0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
-        // if (s_nmi_slv_valid_pos) begin
         if (nmi_slv.valid) begin
           s_fsm_d           = FSM_REQ;
           s_nmi_mst_valid_d = nmi_slv.valid;
