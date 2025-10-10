@@ -78,13 +78,13 @@ module retrosoc_asic (
     output spisd_sck_o_pad,
     output spisd_nss_o_pad,
     output spisd_mosi_o_pad,
-    input  spisd_miso_i_pad,
+    inout  spisd_miso_i_pad,
     // i2s
     output i2s_mclk_o_pad,
     output i2s_sclk_o_pad,
     output i2s_lrck_o_pad,
     output i2s_dacdat_o_pad,
-    input  i2s_adcdat_i_pad,
+    inout  i2s_adcdat_i_pad,
     // onewire
     output onewire_dat_o_pad,
     // apb ip
