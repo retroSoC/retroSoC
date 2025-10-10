@@ -93,6 +93,7 @@ module nmi_spisd (
       .nmi             (u_cache_nmi_if)
   );
 
+  assign spi.irq_o = 1'b0; // TODO:
   spisd_core u_spisd_core (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
