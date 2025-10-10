@@ -49,6 +49,13 @@ module nmi_sysctrl (
   logic s_sysctrl_i2csel_en;
   logic s_sysctrl_i2csel_d, s_sysctrl_i2csel_q;
 
+  assign s_nmi_wr_hdshk      = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
+  assign s_nmi_rd_hdshk      = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
+  assign nmi.ready           = s_nmi_ready_q;
+  assign nmi.rdata           = s_nmi_rdata_q;
+
+  assign sysctrl.ip_sel_o    = s_sysctrl_ipsel_q;
+  assign sysctrl.i2c_sel_o   = s_sysctrl_i2csel_q;
 
   assign s_sysctrl_coresel_d = sysctrl.core_sel_i;
   dffr #(`USER_CORESEL_WIDTH) u_sysctrl_coresel_dffr (
@@ -90,10 +97,11 @@ module nmi_sysctrl (
   always_comb begin
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
-      `NATV_SYSCTRL_CORESEL: s_nmi_rdata_d = {{(32-`USER_CORESEL_WIDTH){1'b0}}, s_sysctrl_coresel_q};
-      `NATV_SYSCTRL_IPSEL:   s_nmi_rdata_d = {{(32-`USER_IPSEL_WIDTH){1'b0}}, s_sysctrl_ipsel_q};
-      `NATV_SYSCTRL_I2CSEL:  s_nmi_rdata_d = {31'd0, s_sysctrl_i2csel_q};
-      default:               s_nmi_rdata_d = s_nmi_rdata_q;
+      `NATV_SYSCTRL_CORESEL:
+      s_nmi_rdata_d = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
+      `NATV_SYSCTRL_IPSEL: s_nmi_rdata_d = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
+      `NATV_SYSCTRL_I2CSEL: s_nmi_rdata_d = {31'd0, s_sysctrl_i2csel_q};
+      default: s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
   dffer #(32) u_nmi_rdata_dffer (
