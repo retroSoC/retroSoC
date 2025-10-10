@@ -73,6 +73,7 @@ module retrosoc_tb;
       .xo_o_pad           (),
       .extclk_i_pad       (s_ext_clk),
       .audclk_i_pad       (s_aud_clk),
+      .tmr_capch_i_pad    (),
       .extn_irq_i_pad     (),
 `ifdef CORE_MDD
       .core_sel_0_i_pad   (s_core_sel[0]),
@@ -129,7 +130,7 @@ module retrosoc_tb;
       .spisd_sck_o_pad    (),
       .spisd_nss_o_pad    (),
       .spisd_mosi_o_pad   (),
-      .spisd_miso_i_pad   ('0),
+      .spisd_miso_i_pad   (),
       .i2s_mclk_o_pad     (),
       .onewire_dat_o_pad  (),
       .i2s_sclk_o_pad     (s_i2s_sclk),
