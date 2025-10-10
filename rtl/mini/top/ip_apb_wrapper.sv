@@ -65,6 +65,7 @@ module ip_apb_wrapper (
   assign irq_o[2] = ps2.irq_o;
   assign irq_o[3] = i2c.irq_o;
   assign irq_o[4] = qspi.irq_o;
+  assign irq_o[5] = spfs.irq_o;
 
   mem2apb u_mem2apb (
       .clk_i   (clk_i),
@@ -104,7 +105,7 @@ module ip_apb_wrapper (
       .spi_cs     (spfs.spi_nss_o),
       .spi_mosi   (spfs.spi_mosi_o),
       .spi_miso   (spfs.spi_miso_i),
-      .spi_irq_out(irq_o[5])
+      .spi_irq_out(spfs.irq_o)
   );
 
 `ifdef IP_MDD
