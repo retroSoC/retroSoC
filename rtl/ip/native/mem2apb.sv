@@ -12,20 +12,20 @@
 
 module mem2apb (
     // verilog_format: off
-    input  logic   clk_i,
-    input  logic   rst_n_i,
-    nmi_if.slave   nmi,
+    input  logic       clk_i,
+    input  logic       rst_n_i,
+    nmi_if.slave       nmi,
 `ifdef IP_MDD
-    apb4_if.master user_ip,
+    apb4_pure_if.master user_ip,
 `endif
-    apb4_if.master archinfo,
-    apb4_if.master rng,
-    apb4_if.master uart,
-    apb4_if.master pwm,
-    apb4_if.master ps2,
-    apb4_if.master i2c,
-    apb4_if.master qspi,
-    apb4_if.master spfs
+    apb4_pure_if.master archinfo,
+    apb4_pure_if.master rng,
+    apb4_pure_if.master uart,
+    apb4_pure_if.master pwm,
+    apb4_pure_if.master ps2,
+    apb4_pure_if.master i2c,
+    apb4_pure_if.master qspi,
+    apb4_pure_if.master spfs
     // verilog_format: on
 );
 

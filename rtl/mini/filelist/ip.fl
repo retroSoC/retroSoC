@@ -1,4 +1,5 @@
 ../../clusterip/common/rtl/interface/apb4_if.sv
+../../clusterip/common/rtl/interface/apb4_pure_if.sv
 ../../clusterip/common/rtl/interface/nmi_if.sv
 ../../clusterip/common/rtl/interface/ram_if.sv
 ../../clusterip/common/rtl/utils/register.sv
