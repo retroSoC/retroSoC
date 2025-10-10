@@ -17,6 +17,7 @@ module retrosoc_asic (
     output xo_o_pad,
     inout  extclk_i_pad,
     inout  audclk_i_pad,
+    inout  tmr_capch_i_pad,
     // IRQ
     inout  extn_irq_i_pad,
 `ifdef CORE_MDD
@@ -124,6 +125,7 @@ module retrosoc_asic (
   logic s_ext_rst_n;
   logic s_sys_rst_n;
   logic s_aud_rst_n;
+  logic s_tmr_capch;
   logic s_sys_clkdiv4;
   logic s_extn_irq;
 `ifdef CORE_MDD
@@ -152,6 +154,7 @@ module retrosoc_asic (
   tc_io_xtl_pad         u_xtal_io_pad           (.xi_pad(xi_i_pad),           .xo_pad(xo_o_pad),                .en(1'b1),                          .clk(s_xtal_io));
   tc_io_tri_pad         u_extclk_i_pad          (.pad(extclk_i_pad),          .c2p(),                           .c2p_en(1'b0),                      .p2c(s_ext_clk));
   tc_io_tri_pad         u_audclk_i_pad          (.pad(audclk_i_pad),          .c2p(),                           .c2p_en(1'b0),                      .p2c(s_aud_clk));
+  tc_io_tri_schmitt_pad u_tmr_capch_i_pad       (.pad(tmr_capch_i_pad),       .c2p(),                           .c2p_en(1'b0),                      .p2c(s_tmr_capch));
   tc_io_tri_schmitt_pad u_extn_irq_i_pad        (.pad(extn_irq_i_pad),        .c2p(),                           .c2p_en(1'b0),                      .p2c(s_extn_irq));
 `ifdef CORE_MDD
   tc_io_tri_pad         u_core_sel_0_i_pad      (.pad(core_sel_0_i_pad),      .c2p(),                           .c2p_en(1'b0),                      .p2c(s_core_sel[0]));
@@ -263,6 +266,7 @@ module retrosoc_asic (
       .rst_n_i    (s_sys_rst_n),
       .clk_aud_i  (s_aud_clk),
       .rst_aud_n_i(s_aud_rst_n),
+      .tmr_capch_i(s_tmr_capch),
 `ifdef HAVE_PLL
       .spfs_div4_i(s_pll_cfg[2]),
 `else

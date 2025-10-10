@@ -8,8 +8,10 @@
 ../../clusterip/common/rtl/utils/gray2bin.sv
 ../../clusterip/common/rtl/utils/edge_det.sv
 ../../clusterip/common/rtl/cdc/cdc_sync.sv
+../../clusterip/common/rtl/cdc/cdc_2phase.sv
 ../../clusterip/common/rtl/clkrst/clk_int_div.sv
 ../../clusterip/common/rtl/clkrst/rst_sync.sv
+../../clusterip/common/rtl/clkrst/counter.sv
 
 ../../clusterip/archinfo/rtl/apb4_archinfo.sv
 ../../clusterip/rng/rtl/apb4_rng.sv
@@ -29,6 +31,17 @@
 ../../clusterip/spi/rtl/apb4_spi.sv
 ../../clusterip/spi/rtl/spi_if.sv
 ../../clusterip/spi/rtl/qspi_if.sv
+../../clusterip/rtc/rtl/rtc_if.sv
+../../clusterip/rtc/rtl/apb4_rtc.sv
+../../clusterip/wdg/rtl/wdg_if.sv
+../../clusterip/wdg/rtl/apb4_wdg.sv
+../../clusterip/crc/rtl/crc8_model.sv
+../../clusterip/crc/rtl/crc16_model.sv
+../../clusterip/crc/rtl/crc32_model.sv
+../../clusterip/crc/rtl/apb4_crc.sv
+../../clusterip/timer/rtl/tmr_if.sv
+../../clusterip/timer/rtl/apb4_tmr.sv
+
 ../../clusterip/spi/rtl/spi_clkgen.sv
 ../../clusterip/spi/rtl/spi_apb_if.sv
 ../../clusterip/spi/rtl/spi_ctrl.sv
@@ -66,7 +79,6 @@
 ../../ip/native/async_fifo.sv
 ../../ip/native/nmi_regslice.sv
 ../../ip/native/nmi2nmi.sv
-
 
 ../../ip/3rd_party/spfs/spi_clgen.v
 ../../ip/3rd_party/spfs/spi_shift.v

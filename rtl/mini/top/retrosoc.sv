@@ -17,6 +17,7 @@ module retrosoc (
     input  logic                           rst_n_i,
     input  logic                           clk_aud_i,
     input  logic                           rst_aud_n_i,
+    input  logic                           tmr_capch_i,
     input  logic                           spfs_div4_i,
     input  logic                           extn_irq_i,
 `ifdef CORE_MDD
@@ -56,7 +57,7 @@ module retrosoc (
   // irq
   logic [31:0] s_irq;
   logic [ 2:0] s_natv_irq;
-  logic [ 5:0] s_apb_irq;
+  logic [ 8:0] s_apb_irq;
 
 `ifdef CORE_MDD
   assign u_sysctrl_if.core_sel_i = core_sel_i;
@@ -79,8 +80,8 @@ module retrosoc (
   assign s_irq[4:0]          = 5'd0;
   assign s_irq[5]            = extn_irq_i;
   assign s_irq[8:6]          = s_natv_irq;
-  assign s_irq[14:9]         = s_apb_irq;
-  assign s_irq[31:15]        = 17'd0;
+  assign s_irq[17:9]         = s_apb_irq;
+  assign s_irq[31:18]        = 14'd0;
 // verilog_format: on
 
   core_wrapper u_core_wrapper (
@@ -126,6 +127,9 @@ module retrosoc (
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
+      .clk_aud_i  (clk_aud_i),
+      .rst_aud_n_i(rst_aud_n_i),
+      .tmr_capch_i(tmr_capch_i),
       .spfs_div4_i(spfs_div4_i),
       .nmi        (u_apb_nmi_if),
       .uart       (uart1),

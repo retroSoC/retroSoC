@@ -25,6 +25,10 @@ module mem2apb (
     apb4_pure_if.master ps2,
     apb4_pure_if.master i2c,
     apb4_pure_if.master qspi,
+    apb4_pure_if.master rtc,
+    apb4_pure_if.master wdg,
+    apb4_pure_if.master crc,
+    apb4_pure_if.master tmr,
     apb4_pure_if.master spfs
     // verilog_format: on
 );
@@ -47,6 +51,10 @@ module mem2apb (
   assign ps2.paddr        = nmi.addr;
   assign i2c.paddr        = nmi.addr;
   assign qspi.paddr       = nmi.addr;
+  assign rtc.paddr        = nmi.addr;
+  assign wdg.paddr        = nmi.addr;
+  assign crc.paddr        = nmi.addr;
+  assign tmr.paddr        = nmi.addr;
   assign spfs.paddr       = nmi.addr;
 
   assign archinfo.pprot   = '0;
@@ -56,6 +64,10 @@ module mem2apb (
   assign ps2.pprot        = '0;
   assign i2c.pprot        = '0;
   assign qspi.pprot       = '0;
+  assign rtc.pprot        = '0;
+  assign wdg.pprot        = '0;
+  assign crc.pprot        = '0;
+  assign tmr.pprot        = '0;
   assign spfs.pprot       = '0;
 
   assign archinfo.psel    = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h10);
@@ -65,6 +77,10 @@ module mem2apb (
   assign ps2.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h50);
   assign i2c.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h60);
   assign qspi.psel        = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h70);
+  assign rtc.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h80);
+  assign wdg.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h90);
+  assign crc.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'hA0);
+  assign tmr.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'hB0);
   assign spfs.psel        = s_xfer_valid && (nmi.addr[31:24] == `FLASH_START);
 
   assign archinfo.penable = s_fsm_q == FSM_ENABLE;
@@ -74,6 +90,10 @@ module mem2apb (
   assign ps2.penable      = s_fsm_q == FSM_ENABLE;
   assign i2c.penable      = s_fsm_q == FSM_ENABLE;
   assign qspi.penable     = s_fsm_q == FSM_ENABLE;
+  assign rtc.penable      = s_fsm_q == FSM_ENABLE;
+  assign wdg.penable      = s_fsm_q == FSM_ENABLE;
+  assign crc.penable      = s_fsm_q == FSM_ENABLE;
+  assign tmr.penable      = s_fsm_q == FSM_ENABLE;
   assign spfs.penable     = s_fsm_q == FSM_ENABLE;
 
   assign archinfo.pwrite  = |nmi.wstrb;
@@ -83,6 +103,10 @@ module mem2apb (
   assign ps2.pwrite       = |nmi.wstrb;
   assign i2c.pwrite       = |nmi.wstrb;
   assign qspi.pwrite      = |nmi.wstrb;
+  assign rtc.pwrite       = |nmi.wstrb;
+  assign wdg.pwrite       = |nmi.wstrb;
+  assign crc.pwrite       = |nmi.wstrb;
+  assign tmr.pwrite       = |nmi.wstrb;
   assign spfs.pwrite      = |nmi.wstrb;
 
   assign archinfo.pwdata  = nmi.wdata;
@@ -92,6 +116,10 @@ module mem2apb (
   assign ps2.pwdata       = nmi.wdata;
   assign i2c.pwdata       = nmi.wdata;
   assign qspi.pwdata      = nmi.wdata;
+  assign rtc.pwdata       = nmi.wdata;
+  assign wdg.pwdata       = nmi.wdata;
+  assign crc.pwdata       = nmi.wdata;
+  assign tmr.pwdata       = nmi.wdata;
   assign spfs.pwdata      = nmi.wdata;
 
   assign archinfo.pstrb   = nmi.wstrb;
@@ -101,6 +129,10 @@ module mem2apb (
   assign ps2.pstrb        = nmi.wstrb;
   assign i2c.pstrb        = nmi.wstrb;
   assign qspi.pstrb       = nmi.wstrb;
+  assign rtc.pstrb        = nmi.wstrb;
+  assign wdg.pstrb        = nmi.wstrb;
+  assign crc.pstrb        = nmi.wstrb;
+  assign tmr.pstrb        = nmi.wstrb;
   assign spfs.pstrb       = nmi.wstrb;
 
 `ifdef IP_MDD
@@ -149,31 +181,39 @@ module mem2apb (
 
   // verilog_format: off
   assign s_rd_data = ({32{archinfo.psel}} & archinfo.prdata) |
-                     ({32{rng.psel}} & rng.prdata) |
-                     ({32{uart.psel}} & uart.prdata) |
-                     ({32{pwm.psel}} & pwm.prdata) |
-                     ({32{ps2.psel}} & ps2.prdata) |
-                     ({32{i2c.psel}} & i2c.prdata) |
-                     ({32{qspi.psel}} & qspi.prdata) |
+                     ({32{rng.psel}}      & rng.prdata) |
+                     ({32{uart.psel}}     & uart.prdata) |
+                     ({32{pwm.psel}}      & pwm.prdata) |
+                     ({32{ps2.psel}}      & ps2.prdata) |
+                     ({32{i2c.psel}}      & i2c.prdata) |
+                     ({32{qspi.psel}}     & qspi.prdata) |
+                     ({32{rtc.psel}}      & rtc.prdata) |
+                     ({32{wdg.psel}}      & wdg.prdata) |
+                     ({32{crc.psel}}      & crc.prdata) |
+                     ({32{tmr.psel}}      & tmr.prdata) |
 `ifdef IP_MDD
-                     ({32{spfs.psel}} & spfs.prdata) |
-                     ({32{user_ip.psel}} & user_ip.prdata);
+                     ({32{spfs.psel}}     & spfs.prdata) |
+                     ({32{user_ip.psel}}  & user_ip.prdata);
 `else
-                     ({32{spfs.psel}} & spfs.prdata);
+                     ({32{spfs.psel}}     & spfs.prdata);
 `endif
 
   assign s_xfer_ready = (archinfo.psel & archinfo.pready) |
-                        (rng.psel & rng.pready) |
-                        (uart.psel & uart.pready) |
-                        (pwm.psel & pwm.pready) |
-                        (ps2.psel & ps2.pready) |
-                        (i2c.psel & i2c.pready) |
-                        (qspi.psel & qspi.pready) |
+                        (rng.psel      & rng.pready) |
+                        (uart.psel     & uart.pready) |
+                        (pwm.psel      & pwm.pready) |
+                        (ps2.psel      & ps2.pready) |
+                        (i2c.psel      & i2c.pready) |
+                        (qspi.psel     & qspi.pready) |
+                        (rtc.psel      & rtc.pready) |
+                        (wdg.psel      & wdg.pready) |
+                        (crc.psel      & crc.pready) |
+                        (tmr.psel      & tmr.pready) |
 `ifdef IP_MDD
-                        (spfs.psel & spfs.pready) |
-                        (user_ip.psel & user_ip.pready);
+                        (spfs.psel     & spfs.pready) |
+                        (user_ip.psel  & user_ip.pready);
 `else
-                        (spfs.psel & spfs.pready);
+                        (spfs.psel     & spfs.pready);
 `endif
   // verilog_format: on
 
