@@ -29,6 +29,15 @@
 ../../clusterip/spi/rtl/apb4_spi.sv
 ../../clusterip/spi/rtl/spi_if.sv
 ../../clusterip/spi/rtl/qspi_if.sv
+../../clusterip/rtc/rtl/rtc_if.sv
+../../clusterip/rtc/rtl/apb4_rtc.sv
+../../clusterip/rtc/rtl/wdg_if.sv
+../../clusterip/rtc/rtl/apb4_wdg.sv
+../../clusterip/rtc/rtl/crc_if.sv
+../../clusterip/rtc/rtl/apb4_crc.sv
+../../clusterip/rtc/rtl/tmr_if.sv
+../../clusterip/rtc/rtl/apb4_tmr.sv
+
 ../../clusterip/spi/rtl/spi_clkgen.sv
 ../../clusterip/spi/rtl/spi_apb_if.sv
 ../../clusterip/spi/rtl/spi_ctrl.sv
@@ -66,7 +75,6 @@
 ../../ip/native/async_fifo.sv
 ../../ip/native/nmi_regslice.sv
 ../../ip/native/nmi2nmi.sv
-
 
 ../../ip/3rd_party/spfs/spi_clgen.v
 ../../ip/3rd_party/spfs/spi_shift.v
