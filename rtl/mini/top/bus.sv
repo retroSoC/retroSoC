@@ -10,6 +10,28 @@
 
 `include "mmap_define.svh"
 
+module regslice #(
+    parameter int WIDTH  = 1,
+    parameter int BYPASS = 0
+) (
+    input  logic             clk_i,
+    input  logic             rst_n_i,
+    input  logic [WIDTH-1:0] dat_i,
+    output logic [WIDTH-1:0] dat_o
+);
+
+  if (BYPASS == 1) assign dat_o = dat_i;
+  else begin
+    dffr #(WIDTH) u_regslice_dffr (
+        clk_i,
+        rst_n_i,
+        dat_i,
+        dat_o
+    );
+  end
+endmodule
+
+
 module bus (
     // verilog_format: off
     input  logic  clk_i,
@@ -29,6 +51,7 @@ module bus (
   logic s_mstr_lock_d, s_mstr_lock_q;
   logic s_mstr_id_d, s_mstr_id_q;
   nmi_if u_mstr_nmi_if ();
+  nmi_if u_mstr_rgsl_nmi_if ();
 
   always_comb begin
     s_mstr_lock_d = s_mstr_lock_q;
@@ -63,40 +86,52 @@ module bus (
   );
 
   // simple arbiter
-  assign u_mstr_nmi_if.valid = s_mstr_id_q ? 1'b1 : core_nmi.valid;
-  assign u_mstr_nmi_if.addr  = s_mstr_id_q ? dma_nmi.addr : core_nmi.addr;
+  // verilog_format: off
+  assign u_mstr_nmi_if.valid = s_mstr_id_q ? dma_nmi.valid : core_nmi.valid;
+  assign u_mstr_nmi_if.addr  = s_mstr_id_q ? dma_nmi.addr  : core_nmi.addr;
   assign u_mstr_nmi_if.wdata = s_mstr_id_q ? dma_nmi.wdata : core_nmi.wdata;
   assign u_mstr_nmi_if.wstrb = s_mstr_id_q ? dma_nmi.wstrb : core_nmi.wstrb;
 
-  assign dma_nmi.ready       =  s_mstr_id_q ? u_mstr_nmi_if.ready : '0;
-  assign dma_nmi.rdata       =  s_mstr_id_q ? u_mstr_nmi_if.rdata : '0;
+  assign dma_nmi.ready       = s_mstr_id_q ?  u_mstr_nmi_if.ready : '0;
+  assign dma_nmi.rdata       = s_mstr_id_q ?  u_mstr_nmi_if.rdata : '0;
   assign core_nmi.ready      = ~s_mstr_id_q ? u_mstr_nmi_if.ready : '0;
   assign core_nmi.rdata      = ~s_mstr_id_q ? u_mstr_nmi_if.rdata : '0;
+  // verilog_format: on
 
+  // regslice to opt the timing
+  nmi_regslice u_nmi_regslice (
+      clk_i,
+      rst_n_i,
+      u_mstr_nmi_if,
+      u_mstr_rgsl_nmi_if
+  );
 
-  assign s_natv_sel      = u_mstr_nmi_if.addr[31:24] == `NATV_IP_START ||
-                           u_mstr_nmi_if.addr[31:24] == `PSRAM0_START ||
-                           u_mstr_nmi_if.addr[31:24] == `PSRAM1_START ||
-                           u_mstr_nmi_if.addr[31:28] == `SPISD_START;
-  assign natv_nmi.valid  = u_mstr_nmi_if.valid && s_natv_sel;
-  assign natv_nmi.addr   = u_mstr_nmi_if.addr;
-  assign natv_nmi.wdata  = u_mstr_nmi_if.wdata;
-  assign natv_nmi.wstrb  = u_mstr_nmi_if.wstrb;
+  // bus mux
+  // verilog_format: off
+  assign s_natv_sel      = u_mstr_rgsl_nmi_if.addr[31:24] == `NATV_IP_START ||
+                           u_mstr_rgsl_nmi_if.addr[31:24] == `PSRAM0_START ||
+                           u_mstr_rgsl_nmi_if.addr[31:24] == `PSRAM1_START ||
+                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START;
+  assign natv_nmi.valid  = u_mstr_rgsl_nmi_if.valid && s_natv_sel;
+  assign natv_nmi.addr   = u_mstr_rgsl_nmi_if.addr;
+  assign natv_nmi.wdata  = u_mstr_rgsl_nmi_if.wdata;
+  assign natv_nmi.wstrb  = u_mstr_rgsl_nmi_if.wstrb;
 
-  assign s_apb_sel       = u_mstr_nmi_if.addr[31:24] == `FLASH_START ||
-                           u_mstr_nmi_if.addr[31:24] == `APB_IP_START;
-  assign apb_nmi.valid   = u_mstr_nmi_if.valid && s_apb_sel;
-  assign apb_nmi.addr    = u_mstr_nmi_if.addr;
-  assign apb_nmi.wdata   = u_mstr_nmi_if.wdata;
-  assign apb_nmi.wstrb   = u_mstr_nmi_if.wstrb;
+  assign s_apb_sel       = u_mstr_rgsl_nmi_if.addr[31:24] == `FLASH_START ||
+                           u_mstr_rgsl_nmi_if.addr[31:24] == `APB_IP_START;
+  assign apb_nmi.valid   = u_mstr_rgsl_nmi_if.valid && s_apb_sel;
+  assign apb_nmi.addr    = u_mstr_rgsl_nmi_if.addr;
+  assign apb_nmi.wdata   = u_mstr_rgsl_nmi_if.wdata;
+  assign apb_nmi.wstrb   = u_mstr_rgsl_nmi_if.wstrb;
 
 `ifdef HAVE_SRAM_IF
-  assign s_ram_sel     = u_mstr_nmi_if.addr[31:24] == `SRAM_START;
-  assign s_ram_valid   = u_mstr_nmi_if.valid && s_ram_sel;
-  assign ram.addr      = u_mstr_nmi_if.addr[16:2];
-  assign ram.wdata     = u_mstr_nmi_if.wdata;
-  assign ram.wstrb     = s_ram_valid ? u_mstr_nmi_if.wstrb : '0;
+  assign s_ram_sel     = u_mstr_rgsl_nmi_if.addr[31:24] == `SRAM_START;
+  assign s_ram_valid   = u_mstr_rgsl_nmi_if.valid && s_ram_sel;
+  assign ram.addr      = u_mstr_rgsl_nmi_if.addr[16:2];
+  assign ram.wdata     = u_mstr_rgsl_nmi_if.wdata;
+  assign ram.wstrb     = s_ram_valid ? u_mstr_rgsl_nmi_if.wstrb : '0;
 `endif
+  // verilog_format: on
 
 `ifdef HAVE_SRAM_MACRO
   dffr #(1) u_ram_ready_dffr (
@@ -109,19 +144,23 @@ module bus (
 
   // verilog_format: off
 `ifdef HAVE_SRAM_IF
-  assign u_mstr_nmi_if.ready = (natv_nmi.valid && natv_nmi.ready) ||
-                               (apb_nmi.valid && apb_nmi.ready)   ||
-                               s_ram_ready;
+  assign u_mstr_rgsl_nmi_if.ready = (natv_nmi.valid && natv_nmi.ready) ||
+                                    (apb_nmi.valid && apb_nmi.ready)   ||
+                                    s_ram_ready;
 `else
-  assign u_mstr_nmi_if.ready = (natv_nmi.valid && natv_nmi.ready) ||
-                               (apb_nmi.valid && apb_nmi.ready);
+  assign u_mstr_rgsl_nmi_if.ready = (natv_nmi.valid && natv_nmi.ready) ||
+                                    (apb_nmi.valid && apb_nmi.ready);
 `endif
 
-  assign u_mstr_nmi_if.rdata = (natv_nmi.valid && natv_nmi.ready) ? natv_nmi.rdata :
-                               (apb_nmi.valid && apb_nmi.ready) ? apb_nmi.rdata :
+
 `ifdef HAVE_SRAM_IF
-                               s_ram_ready ? ram.rdata :
+  assign u_mstr_rgsl_nmi_if.rdata = (natv_nmi.valid && natv_nmi.ready) ? natv_nmi.rdata :
+                                    (apb_nmi.valid && apb_nmi.ready) ? apb_nmi.rdata :
+                                    s_ram_ready ? ram.rdata : '0;
+`else
+  assign u_mstr_rgsl_nmi_if.rdata = (natv_nmi.valid && natv_nmi.ready) ? natv_nmi.rdata :
+                                    (apb_nmi.valid && apb_nmi.ready) ? apb_nmi.rdata : '0;
 `endif
-                              '0;
+
   // verilog_format: on
 endmodule
