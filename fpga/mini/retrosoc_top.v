@@ -2,8 +2,8 @@
 
 module retrosoc_top (
     input  clk_i,
-    input  rst_n_i,
-    input  uart0_rx_i,
+    inout  rst_n_i,
+    inout  uart0_rx_i,
     output uart0_tx_o,
     inout  gpio_io0,
     inout  gpio_io1,
@@ -17,27 +17,27 @@ module retrosoc_top (
     output spisd_sck_o,
     output spisd_nss_o,
     output spisd_mosi_o,
-    input  spisd_miso_i,
+    inout  spisd_miso_i,
     output i2s_mclk_o,
     output i2s_sclk_o,
     output i2s_lrck_o,
     output i2s_dacdat_o,
-    input  i2s_adcdat_i,
+    inout  i2s_adcdat_i,
     output onewire_dat_o,
     inout  i2c_scl_io,
     inout  i2c_sda_io,
     output uart1_tx_o,
-    input  uart1_rx_i,
+    inout  uart1_rx_i,
     output pwm_0_o,
-    input  ps2_clk_i,
-    input  ps2_dat_i,
+    inout  ps2_clk_i,
+    inout  ps2_dat_i,
     output qspi_sck_o,
     output qspi_nss0_o,
     inout  qspi_dat0_io,
     output spfs_sck_o,
     output spfs_nss_o,
     output spfs_mosi_o,
-    input  spfs_miso_i
+    inout  spfs_miso_i
 );
 
   wire s_sys_clk;
@@ -86,6 +86,7 @@ module retrosoc_top (
 `endif
       .clk_bypass_i_pad     (1'b1),
       .ext_rst_n_i_pad      (rst_n_i),
+      .sys_clkdiv4_o_pad    (),
       .uart0_tx_o_pad       (uart0_tx_o),
       .uart0_rx_i_pad       (uart0_rx_i),
       .gpio_0_io_pad        (gpio_io0),
