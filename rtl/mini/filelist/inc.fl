@@ -13,6 +13,10 @@
 +incdir+../../clusterip/ps2/rtl
 +incdir+../../clusterip/i2c/rtl
 +incdir+../../clusterip/spi/rtl
++incdir+../../clusterip/rtc/rtl
++incdir+../../clusterip/wdg/rtl
++incdir+../../clusterip/crc/rtl
++incdir+../../clusterip/timer/rtl
 +incdir+../../ip/native
 +incdir+../../ip/3rd_party/spfs
 +incdir+../../ip/3rd_party/spfs_model
