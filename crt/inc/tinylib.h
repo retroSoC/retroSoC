@@ -23,6 +23,10 @@
 #include <tinypsram.h>
 #include <tinyspisd.h>
 #include <tinyi2s.h>
+#include <tinyrtc.h>
+#include <tinywdg.h>
+#include <tinycrc.h>
+#include <tinyadvtim.h>
 #include <tinybench.h>
 #include <tinysh.h>
 #include <at24cxx.h>

@@ -53,23 +53,27 @@ void app_boot_info() {
 
     printf("Memory Map IO Device:\n");
     printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
-    printf("                     1 x UART          @0x%x\n", &reg_uart0_clkdiv);
-    printf("                     2 x TIMER         @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
+    printf("                     1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
+    printf("                     2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
     printf("                     1 x PSRAM         @0x%x\n", &reg_psram_wait);
     printf("                     1 x SPISD         @0x%x\n", &reg_spisd_mode);
-    printf("                     1 x I2C           @0x%x\n", &reg_i2c0_clkdiv);
+    printf("                     1 x I2C0          @0x%x\n", &reg_i2c0_clkdiv);
     printf("                     1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
     printf("                     1 x DMA           @0x%x\n", &reg_dma_mode);
     printf("                     1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                     1 x RNG           @0x%x\n", &reg_rng_ctrl);
-    printf("                     1 x UART(ADV)     @0x%x\n", &reg_uart1_lcr);
+    printf("                     1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);
     printf("                     4 x PWM           @0x%x\n", &reg_pwm_ctrl);
     printf("                     1 x PS2           @0x%x\n", &reg_ps2_ctrl);
-    printf("                     1 x I2C(ADV)      @0x%x\n", &reg_i2c1_ctrl);
+    printf("                     1 x I2C1(ADV)     @0x%x\n", &reg_i2c1_ctrl);
     printf("                     1 x QSPI          @0x%x\n", &reg_qspi_status);
-    printf("                     1 x USER_IP       @0x%x\n\n", &reg_user_ip_reg0);
+    printf("                     1 x RTC           @0x%x\n", &reg_rtc_ctrl);
+    printf("                     1 x WDG           @0x%x\n", &reg_wdg_ctrl);
+    printf("                     1 x CRC           @0x%x\n", &reg_crc_ctrl);
+    printf("                     1 x TIMER3(ADV)   @0x%x\n", &reg_tim3_ctrl);
+    printf("                     1 x USER_IP(4KB)  @0x%x\n\n", &reg_user_ip_reg0);
     printf("#############################################################\n");
     printf("#############################################################\n");
 }

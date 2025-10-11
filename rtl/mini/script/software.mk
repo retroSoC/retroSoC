@@ -38,11 +38,15 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinybooter.c \
                 $(ROOT_PATH)/crt/src/tinyprintf.c \
                 $(ROOT_PATH)/crt/src/tinygpio.c \
-                $(ROOT_PATH)/crt/src/tinytim.c \
                 $(ROOT_PATH)/crt/src/tinyarchinfo.c \
                 $(ROOT_PATH)/crt/src/tinyrng.c \
-                $(ROOT_PATH)/crt/src/tinyhpuart.c \
+                $(ROOT_PATH)/crt/src/tinytim.c \
                 $(ROOT_PATH)/crt/src/tinypwm.c \
+                $(ROOT_PATH)/crt/src/tinyrtc.c \
+                $(ROOT_PATH)/crt/src/tinywdg.c \
+                $(ROOT_PATH)/crt/src/tinycrc.c \
+                $(ROOT_PATH)/crt/src/tinyadvtim.c \
+                $(ROOT_PATH)/crt/src/tinyhpuart.c \
                 $(ROOT_PATH)/crt/src/tinyps2.c \
                 $(ROOT_PATH)/crt/src/tinyi2c.c \
                 $(ROOT_PATH)/crt/src/tiny1wire.c \

@@ -3,8 +3,7 @@
 #include <tinytim.h>
 #include <tinygpio.h>
 
-void ip_gpio_test()
-{
+void ip_gpio_test() {
     printf("[IP] gpio test\n");
 
     printf("[GPIO ENB] %x\n", reg_gpio_oen);
