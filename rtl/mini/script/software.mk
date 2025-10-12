@@ -36,6 +36,7 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinystring.c \
                 $(ROOT_PATH)/crt/src/tinylib.c \
                 $(ROOT_PATH)/crt/src/tinybooter.c \
+                $(ROOT_PATH)/crt/src/tinyprint.c \
                 $(ROOT_PATH)/crt/src/tinyprintf.c \
                 $(ROOT_PATH)/crt/src/tinygpio.c \
                 $(ROOT_PATH)/crt/src/tinyarchinfo.c \
