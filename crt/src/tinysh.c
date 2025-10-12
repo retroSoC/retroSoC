@@ -1,117 +1,72 @@
 #include <firmware.h>
+#include <tinyprint.h>
 #include <tinyprintf.h>
-#include <tinyuart.h>
+#include <tinystring.h>
 #include <tinysh.h>
-#include <tinylib.h>
 
-char getchar_prompt(char *prompt)
-{
-    int32_t c = -1;
-    uint32_t cycles_begin, cycles_now, cycles;
-    __asm__ volatile("rdcycle %0"
-                     : "=r"(cycles_begin));
+static tinysh_cmd_t sh_cmd_list[MAX_CMD_NUM];
+static uint8_t sh_cmd_len;
 
-    if (prompt)
-        printf(prompt);
+uint8_t tinysh_register(char *name, char *info, void *handler) {
+    if(!name || !handler || !strlen(name)) return 1;
+    if(sh_cmd_len == MAX_CMD_NUM) return 1;
 
-    while (c == -1)
-    {
-        __asm__ volatile("rdcycle %0"
-                         : "=r"(cycles_now));
-        cycles = cycles_now - cycles_begin;
-        if (cycles > 12000000)
-        {
-            if (prompt)
-                printf(prompt);
-            cycles_begin = cycles_now;
-        }
-        c = reg_uart0_data;
+    for(uint8_t i = 0; i < sh_cmd_len; ++i) {
+        if(strcmp(name, sh_cmd_list[i].name) == 0) return 1;
     }
-    return c;
+
+    tinysh_cmd_t tmp = {name, info, handler};
+    sh_cmd_list[sh_cmd_len++] = tmp;
+    return 0;
 }
 
-void tinysh_echo()
-{
-    printf("Return to menu by sending '!'\n\n");
-    char c;
-    while ((c = getchar_prompt(0)) != '!')
-        putch(c);
-}
-
-void tinysh()
-{
-    // while (getchar_prompt("Press ENTER to continue..\n") != '\r')
-    // {
-    // }
-
-    while (1)
-    {
-        printf("\nSelect an action:\n\n");
-        printf("   [t] run timer test\n");
-        printf("   [g] run gpio test\n");
-        printf("   [h] print housekeeping spi info\n");
-        printf("   [a] run archinfo test\n");
-        printf("   [r] run rng test\n");
-        printf("   [u] run uart test\n");
-        printf("   [p] run pwm test\n");
-        printf("   [s] run ps2 test\n");
-        printf("   [i] run i2c test\n");
-        printf("   [l] run lcd test\n");
-        printf("   [b] run tiny benchmark\n");
-        printf("   [m] run Memtest\n");
-        printf("   [e] echo uart\n\n");
-
-        for (int rep = 10; rep > 0; rep--)
-        {
-            printf("tinysh> ");
-            char cmd = getchar_prompt(0);
-            if (cmd > 32 && cmd < 127)
-                putch(cmd);
-            printf("\n");
-
-            switch (cmd)
-            {
-            case 't':
-                ip_tim_test();
-                break;
-            case 'g':
-                ip_gpio_test();
-                break;
-            case 'h':
-                break;
-            case 'a':
-                ip_archinfo_test();
-                break;
-            case 'r':
-                ip_rng_test();
-                break;
-            case 'u':
-                ip_hpuart_test();
-                break;
-            case 'p':
-                ip_pwm_test();
-                break;
-            case 's':
-                ip_ps2_test();
-                break;
-            case 'i':
-                at24cxx_test();
-                break;
-            case 'l':
-                ip_lcd_test();
-                break;
-            case 'b':
-                tinybench(true, 0);
-                break;
-            case 'm':
-                break;
-            case 'e':
-                tinysh_echo();
-                break;
-            default:
-                continue;
-            }
+static void tinysh_find_cmd(char *cmd) {
+    bool is_find = false;
+    for(uint8_t i = 0; i < sh_cmd_len; ++i) {
+        if(strcmp(cmd, sh_cmd_list[i].name) == 0) {
+            is_find = true;
+            sh_cmd_list[i].handler();
             break;
         }
+    }
+
+    if(!is_find) printf("recv cmd: %s not found\n", cmd);
+}
+
+static void tinysh_help() {
+    for(uint8_t i = 0; i < sh_cmd_len; ++i) {
+        printf("cmd: %s info: %s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
+    }
+}
+
+void tinysh_init() {
+    sh_cmd_len = 0;
+}
+
+void tinysh() {
+    char type_res[MAX_CMD_LEN], type_ch;
+    uint8_t type_len;
+    // register internal cmd
+    tinysh_register("help", "default help info", tinysh_help);
+    while(1) {
+        printf("tinysh> ");
+        type_len = 0;
+
+        do {
+            type_ch = getchar();
+            if((type_ch >= 'a' && type_ch <= 'z') || (type_ch >= 'A' && type_ch <= 'Z') || (type_ch >= '0' && type_ch <= '9')) {
+                if(type_len == MAX_CMD_LEN) break;
+                putchar(type_ch);
+                type_res[type_len++] = type_ch;
+            } else if(type_ch == 'h'){
+                if(type_len == 0) continue;
+                // type_res[type_len--];
+            }
+
+        } while(type_ch != '\n' && type_ch != '\r');
+        putchar('\n');
+        
+        type_res[type_len] = 0;
+        tinysh_find_cmd(type_res);
     }
 }
