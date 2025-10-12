@@ -20,6 +20,10 @@ uint8_t tinysh_register(char *name, char *info, void *handler) {
     return 0;
 }
 
+// static void tinysh_search_cmd(char *cmd, uint8_t len) {
+
+// }
+
 static void tinysh_find_cmd(char *cmd) {
     bool is_find = false;
     for(uint8_t i = 0; i < sh_cmd_len; ++i) {
@@ -62,6 +66,8 @@ void tinysh() {
                 if(type_len == 0) continue;
                 printf("\b \b");
                 type_res[type_len--] = 0;
+            } else if(type_ch == (char) 9) {
+                // tinysh_search_cmd(type_res, type_len);
             }
 
         } while(type_ch != '\n' && type_ch != '\r');

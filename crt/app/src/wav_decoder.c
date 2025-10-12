@@ -3,6 +3,7 @@
 #include <tinyprintf.h>
 #include <tinystring.h>
 #include <tinyspisd.h>
+#include <tinydma.h>
 #include <wav_decoder.h>
 
 static void printfln(char *buff, uint32_t len) {
@@ -16,7 +17,7 @@ static void parseLISTChunk(WAVHeader_t *header, uint32_t addr) {
     char info_tag_len = sizeof(info_tag) / sizeof(info_tag[0]);
     ChunkHeader_t chunkHeader;
     uint32_t info_num = 0;
-    
+
 
     // "LIST"
     spisd_mem_read((uint8_t *)&chunkHeader, 1, sizeof(ChunkHeader_t), addr);
@@ -76,7 +77,7 @@ WAVFile_t* wav_file_decoder(uint32_t start_addr) {
             break;
         }
     }
-    
+
 
     // RIFF
     printf("File size:     %d bytes(~%d MiB)\n", header.riff.ChunkSize + 8, (header.riff.ChunkSize + 8) / 1024 / 1024);
@@ -95,7 +96,12 @@ WAVFile_t* wav_file_decoder(uint32_t start_addr) {
     }
     // data
     printf("Data size:     %d bytes(~%d MiB)\n", header.data.Subchunk2Size, (header.data.Subchunk2Size) / 1024 / 1024);
-    // prepare the data
+
+    // prepare the data HACK:
+    dma_config(1, start_addr, (uint32_t)1, (uint32_t)&reg_i2s_txdata, (uint32_t)0, header.data.Subchunk2Size / 4);
+    dma_start_xfer();
+    dma_wait_done();
+    // sw write i2s tx fifo reg
     // volatile uint32_t *rd_ptr = (uint32_t*)start_addr;
     // for(uint32_t i = 0; i < header.data.Subchunk2Size; i += 4, ++rd_ptr) {
     //     while(reg_i2s_status & (uint32_t)1); // check if fifo is full or not
