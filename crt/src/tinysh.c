@@ -35,7 +35,7 @@ static void tinysh_find_cmd(char *cmd) {
 
 static void tinysh_help() {
     for(uint8_t i = 0; i < sh_cmd_len; ++i) {
-        printf("cmd: %s info: %s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
+        printf("cmd: %8s info: %24s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
     }
 }
 
@@ -49,7 +49,7 @@ void tinysh() {
     // register internal cmd
     tinysh_register("help", "default help info", tinysh_help);
     while(1) {
-        printf("tinysh> ");
+        printf("tinysh > ");
         type_len = 0;
 
         do {
@@ -58,9 +58,10 @@ void tinysh() {
                 if(type_len == MAX_CMD_LEN) break;
                 putchar(type_ch);
                 type_res[type_len++] = type_ch;
-            } else if(type_ch == 'h'){
+            } else if(type_ch == '\b' || type_ch == (char) 127){
                 if(type_len == 0) continue;
-                // type_res[type_len--];
+                printf("\b \b");
+                type_res[type_len--] = 0;
             }
 
         } while(type_ch != '\n' && type_ch != '\r');
