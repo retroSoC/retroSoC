@@ -2,9 +2,8 @@
 #include <tinyprintf.h>
 #include <tinyrng.h>
 
-void ip_rng_test()
-{
-    printf("[CUST IP] rng test\n");
+void ip_rng_test() {
+    printf("[APB IP] rng test\n");
 
     reg_rng_ctrl = (uint32_t)1;      // en the core
     reg_rng_seed = (uint32_t)0xFE1C; // set the init seed

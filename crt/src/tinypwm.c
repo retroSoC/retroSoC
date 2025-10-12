@@ -5,10 +5,10 @@
 
 void ip_pwm_test()
 {
-    printf("pwm test\n");
+    printf("[APB IP] pwm test\n");
 
     reg_pwm_ctrl = (uint32_t)0;
-    reg_pwm_pscr = (uint32_t)(CPU_FREQ - 1); // 50M / 50 = 1MHz
+    reg_pwm_pscr = (uint32_t)(CPU_FREQ - 1); // 'CPU_FREQ' MHz for 1MHz
     reg_pwm_cmp = (uint32_t)(1000 - 1);      // 1KHz
     printf("reg_pwm_ctrl: %d reg_pwm_pscr: %d reg_pwm_cmp: %d\n", reg_pwm_ctrl, reg_pwm_pscr, reg_pwm_cmp);
     for (int i = 0; i < 36; i++)

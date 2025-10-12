@@ -2,9 +2,8 @@
 #include <tinyprintf.h>
 #include <tinyhpuart.h>
 
-void ip_hpuart_test()
-{
-    printf("[CUST IP] uart test\n");
+void ip_hpuart_test() {
+    printf("[IP] uart test\n");
 
     printf("[UART DIV] %x\n", reg_uart1_div);
     printf("[UART LCR] %x\n", reg_uart1_lcr);

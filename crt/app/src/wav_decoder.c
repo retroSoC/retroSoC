@@ -96,10 +96,10 @@ WAVFile_t* wav_file_decoder(uint32_t start_addr) {
     // data
     printf("Data size:     %d bytes(~%d MiB)\n", header.data.Subchunk2Size, (header.data.Subchunk2Size) / 1024 / 1024);
     // prepare the data
-    volatile uint32_t *rd_ptr = (uint32_t*)start_addr;
-    for(uint32_t i = 0; i < header.data.Subchunk2Size; i += 4, ++rd_ptr) {
-        while(reg_i2s_status & (uint32_t)1); // check if fifo is full or not
-        reg_i2s_txdata = *rd_ptr;
-    }
+    // volatile uint32_t *rd_ptr = (uint32_t*)start_addr;
+    // for(uint32_t i = 0; i < header.data.Subchunk2Size; i += 4, ++rd_ptr) {
+    //     while(reg_i2s_status & (uint32_t)1); // check if fifo is full or not
+    //     reg_i2s_txdata = *rd_ptr;
+    // }
     return NULL;
 }

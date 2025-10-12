@@ -2,9 +2,7 @@
 #include <tinyprintf.h>
 #include <tinytim.h>
 
-void delay_ms(uint32_t val)
-{
-    // 1ms = 50MHz /
+void delay_ms(uint32_t val) {
     reg_tim0_cfg = (uint32_t)0x0000;
     reg_tim0_dat = (uint32_t)(CPU_FREQ * 1000 - 1);
     for (uint32_t i = 1; i <= val; ++i)
@@ -15,9 +13,8 @@ void delay_ms(uint32_t val)
     }
 }
 
-void ip_tim_test()
-{
-    printf("[IP] counter timer test\n");
+void ip_tim_test() {
+    printf("[NATV IP] counter timer test\n");
     printf("[TIM0 VALUE]  %x\n", reg_tim0_val);
     printf("[TIM0 CONFIG] %x\n", reg_tim0_cfg);
     printf("[TIM1 VALUE]  %x\n", reg_tim1_val);
