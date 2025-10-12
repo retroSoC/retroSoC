@@ -4,7 +4,7 @@
 #include <tinygpio.h>
 
 void ip_gpio_test() {
-    printf("[IP] gpio test\n");
+    printf("[NATV IP] gpio test\n");
 
     printf("[GPIO ENB] %x\n", reg_gpio_oen);
     reg_gpio_oen = (uint32_t)0b0000;
