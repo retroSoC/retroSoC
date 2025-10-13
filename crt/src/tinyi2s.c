@@ -1,6 +1,7 @@
 #include <firmware.h>
 #include <tinyprintf.h>
 #include <wav_decoder.h>
+#include <tinydma.h>
 #include <tinyi2s.h>
 
 uint32_t test_data[] = {0x12345678, 0x12345679, 0x1234567A, 0x2345EF23, 0x2345EF24, 0x2345EF25};
@@ -8,7 +9,8 @@ uint32_t test_data[] = {0x12345678, 0x12345679, 0x1234567A, 0x2345EF23, 0x2345EF
 void i2s_init(uint32_t mode) {
     reg_i2s_mode = (uint32_t)mode;
     reg_i2s_upbound = (uint32_t)120;
-    reg_i2s_lowbound = (uint32_t)32;
+    // NOTE: larger than 'clk/clk_aud 'size of i2x tx fifo
+    reg_i2s_lowbound = (uint32_t)80;
 }
 
 void i2s_simp_test() {
@@ -36,5 +38,8 @@ void ip_i2s_test() {
     i2s_init(1);
     // wav_file_decoder((uint32_t)0x51004000);
     wav_file_decoder((uint32_t)0x54737000);
+    // dma_config(1, (uint32_t)audio_data, (uint32_t)1, (uint32_t)&reg_i2s_txdata, (uint32_t)0, 1024 * 512 / 4);
+    // dma_start_xfer();
+    // dma_wait_done();
     i2s_init(0);
 }

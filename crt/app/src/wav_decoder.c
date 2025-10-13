@@ -97,7 +97,7 @@ WAVFile_t* wav_file_decoder(uint32_t start_addr) {
     // data
     printf("Data size:     %d bytes(~%d MiB)\n", header.data.Subchunk2Size, (header.data.Subchunk2Size) / 1024 / 1024);
 
-    // prepare the data HACK:
+    // prepare the data
     dma_config(1, start_addr, (uint32_t)1, (uint32_t)&reg_i2s_txdata, (uint32_t)0, header.data.Subchunk2Size / 4);
     dma_start_xfer();
     dma_wait_done();
