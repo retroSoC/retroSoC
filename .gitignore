@@ -21,6 +21,7 @@
 .vscode
 pic
 video.h
+audio_file.h
 .sw_build
 .build
 .net_build

@@ -3,6 +3,24 @@
 #include <tinydma.h>
 #include <tinyi2s.h>
 
+void dma_config(uint32_t mode, uint32_t src, uint32_t srcincr, uint32_t dst, uint32_t dstincr, uint32_t xferlen) {
+    reg_dma_mode = mode;
+    reg_dma_srcaddr = src;
+    reg_dma_srcincr = srcincr;
+    reg_dma_dstaddr = dst;
+    reg_dma_dstincr = dstincr;
+    reg_dma_xferlen = xferlen;
+}
+
+void dma_start_xfer() {
+    reg_dma_start = (uint32_t)1;
+}
+
+void dma_wait_done() {
+    while(reg_dma_status == (uint32_t)0);
+    printf("dma tx done\n");
+}
+
 void ip_dma_test() {
     printf("dma test\n");
 

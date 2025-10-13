@@ -3,8 +3,8 @@
 #include <tinyi2c.h>
 #include <es8388.h>
 
-#define ES8388_PHONE_VOLUME 20
-#define ES8388_SPEAK_VOLUME 30
+#define ES8388_PHONE_VOLUME 3
+#define ES8388_SPEAK_VOLUME 3
 
 uint8_t es8388_init_cfg[] = {
     (uint8_t)0,  (uint8_t)0x80,
