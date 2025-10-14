@@ -43,13 +43,21 @@ static void tinysh_help() {
     }
 }
 
+static void tinysh_welcome() {
+    printf("================================\n");
+    printf("           Tiny Shell           \n");
+    printf("================================\n");
+}
+
 void tinysh_init() {
     sh_cmd_len = 0;
 }
 
-void tinysh() {
+void tinysh_launch() {
     char type_res[MAX_CMD_LEN], type_ch;
     uint8_t type_len;
+
+    tinysh_welcome();
     // register internal cmd
     tinysh_register("help", "default help info", tinysh_help);
     while(1) {

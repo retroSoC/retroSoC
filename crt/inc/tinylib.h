@@ -32,7 +32,7 @@
 #include <at24cxx.h>
 #include <pcf8563b.h>
 #include <es8388.h>
-#include <wav_decoder.h>
+#include <wav_audio.h>
 
 #ifdef __cplusplus
 extern "C"

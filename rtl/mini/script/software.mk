@@ -63,7 +63,7 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
 APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
                 $(ROOT_PATH)/crt/app/src/pcf8563b.c \
                 $(ROOT_PATH)/crt/app/src/es8388.c \
-                $(ROOT_PATH)/crt/app/src/wav_decoder.c
+                $(ROOT_PATH)/crt/app/src/wav_audio.c
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)

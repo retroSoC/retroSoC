@@ -19,6 +19,8 @@ module dma_core (
     input logic        dstincr_i,
     input logic [31:0] xferlen_i,
     input logic        start_i,
+    input logic        stop_i,
+    input logic        reset_i,
     output logic       done_o,
     dma_hw_trg_if.dut  hw_trg,
     nmi_if.master      nmi
@@ -36,7 +38,7 @@ module dma_core (
   logic [31:0] s_rd_data_d, s_rd_data_q;
   logic s_xfer_type_d, s_xfer_type_q;  // 0: rd 1: wr
   logic s_xfer_done_d, s_xfer_done_q;
-
+  logic s_ctrl_stop_d, s_ctrl_stop_q;
 
   always_comb begin
     s_fsm_d       = s_fsm_q;
@@ -64,46 +66,55 @@ module dma_core (
         end
       end
       FSM_XFER: begin
-        if (~s_xfer_type_q) begin
-          unique case (mode_i)
-            2'd2: begin
-              if (~hw_trg.i2s_rx_proc && s_xfer_done_q) nmi.valid = 1'b0;
-              else nmi.valid = 1'b1;
+        if (~s_ctrl_stop_q) begin
+          if (~s_xfer_type_q) begin
+            unique case (mode_i)
+              2'd2: begin
+                if (~hw_trg.i2s_rx_proc && s_xfer_done_q) nmi.valid = 1'b0;
+                else nmi.valid = 1'b1;
+              end
+              default: nmi.valid = 1'b1;
+            endcase
+            nmi.addr = s_src_addr_q;
+            if (nmi.ready) begin
+              s_xfer_type_d = 1'b1;
+              s_xfer_done_d = 1'b1;
+              s_rd_data_d   = nmi.rdata;
+            end else if (nmi.valid) begin
+              s_xfer_done_d = 1'b0;
             end
-            default: nmi.valid = 1'b1;
-          endcase
-          nmi.addr = s_src_addr_q;
-          if (nmi.ready) begin
-            s_xfer_type_d = 1'b1;
-            s_xfer_done_d = 1'b1;
-            s_rd_data_d   = nmi.rdata;
-          end else if (nmi.valid) begin
-            s_xfer_done_d = 1'b0;
+          end else begin
+            unique case (mode_i)
+              2'd1: begin
+                if (~hw_trg.i2s_tx_proc && s_xfer_done_q) nmi.valid = 1'b0;
+                else nmi.valid = 1'b1;
+              end
+              default: nmi.valid = 1'b1;
+            endcase
+            nmi.addr  = s_dst_addr_q;
+            nmi.wdata = s_rd_data_q;
+            nmi.wstrb = '1;
+            if (nmi.ready) begin
+              s_xfer_type_d = 1'b0;
+              s_xfer_done_d = 1'b1;
+              // when src rd+wr xfer done
+              if (s_xfer_cnt_q == xferlen_i) begin
+                s_xfer_cnt_d = '0;
+                s_fsm_d      = FSM_DONE;
+              end else begin
+                s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
+                if (srcincr_i) s_src_addr_d = s_src_addr_q + 3'd4;
+                if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 3'd4;
+              end
+            end else if (nmi.valid) s_xfer_done_d = 1'b0;
           end
         end else begin
-          unique case (mode_i)
-            2'd1: begin
-              if (~hw_trg.i2s_tx_proc && s_xfer_done_q) nmi.valid = 1'b0;
-              else nmi.valid = 1'b1;
-            end
-            default: nmi.valid = 1'b1;
-          endcase
-          nmi.addr  = s_dst_addr_q;
-          nmi.wdata = s_rd_data_q;
-          nmi.wstrb = '1;
-          if (nmi.ready) begin
+          if (reset_i) begin
+            s_src_addr_d  = srcaddr_i;
+            s_dst_addr_d  = dstaddr_i;
             s_xfer_type_d = 1'b0;
             s_xfer_done_d = 1'b1;
-            // when src rd+wr xfer done
-            if (s_xfer_cnt_q == xferlen_i) begin
-              s_xfer_cnt_d = '0;
-              s_fsm_d      = FSM_DONE;
-            end else begin
-              s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
-              if (srcincr_i) s_src_addr_d = s_src_addr_q + 3'd4;
-              if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 3'd4;
-            end
-          end else if (nmi.valid) s_xfer_done_d = 1'b0;
+          end
         end
       end
       FSM_DONE: begin
@@ -177,5 +188,16 @@ module dma_core (
       s_xfer_done_q
   );
 
+  // control the xfer
+  always_comb begin
+    s_ctrl_stop_d = s_ctrl_stop_q;
+    if (stop_i) s_ctrl_stop_d = ~s_ctrl_stop_q;
+  end
+  dffr #(1) u_ctrl_stop_dffr (
+      clk_i,
+      rst_n_i,
+      s_ctrl_stop_d,
+      s_ctrl_stop_q
+  );
 
 endmodule

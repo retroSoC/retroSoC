@@ -15,5 +15,5 @@ typedef struct {
 
 uint8_t tinysh_register(char *name, char *info, void *handler);
 void tinysh_init();
-void tinysh();
+void tinysh_launch();
 #endif

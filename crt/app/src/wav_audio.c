@@ -4,7 +4,7 @@
 #include <tinystring.h>
 #include <tinyspisd.h>
 #include <tinydma.h>
-#include <wav_decoder.h>
+#include <wav_audio.h>
 
 static void printfln(char *buff, uint32_t len) {
     for(uint32_t i = 0; i < len; ++i) printf("%c", buff[i]);
@@ -21,7 +21,7 @@ static void parseLISTChunk(WAVHeader_t *header, uint32_t addr) {
 
     // "LIST"
     spisd_mem_read((uint8_t *)&chunkHeader, 1, sizeof(ChunkHeader_t), addr);
-    printf("ChunkID: %.4s\n", chunkHeader.ChunkID);
+    // printf("ChunkID: %.4s\n", chunkHeader.ChunkID);
     uint32_t list_end = addr + chunkHeader.ChunkSize;
     addr += sizeof(ChunkHeader_t);
 
@@ -34,8 +34,8 @@ static void parseLISTChunk(WAVHeader_t *header, uint32_t addr) {
             for(int i = 0; i < info_tag_len; ++i) {
                 if (memcmp(chunkHeader.ChunkID, info_tag[i], 4) == 0) {
                     // printf("tag %.4s\n", chunkHeader.ChunkID);
-                    printf("ChunkID: %.4s\n", chunkHeader.ChunkID);
-                    printf("addr: %x\n", addr);
+                    // printf("ChunkID: %.4s\n", chunkHeader.ChunkID);
+                    // printf("addr: %x\n", addr);
                     is_find = true;
                     spisd_mem_read((uint8_t *)&header->list[info_num++], 1, chunkHeader.ChunkSize + 8, addr);
                     addr += chunkHeader.ChunkSize + 8;
@@ -50,7 +50,7 @@ static void parseLISTChunk(WAVHeader_t *header, uint32_t addr) {
 
 
 
-WAVFile_t* wav_file_decoder(uint32_t start_addr) {
+WAVFile_t* wav_audio_play(uint32_t start_addr) {
     WAVHeader_t header;
     ChunkHeader_t chunkHeader;
 

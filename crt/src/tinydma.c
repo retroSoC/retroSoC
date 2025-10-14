@@ -16,6 +16,14 @@ void dma_start_xfer() {
     reg_dma_start = (uint32_t)1;
 }
 
+void dma_stop_xfer() {
+    // reg_dma_start = (uint32_t)1;
+}
+
+void dma_reset_xfer() {
+    // reg_dma_start = (uint32_t)1;
+}
+
 void dma_wait_done() {
     while(reg_dma_status == (uint32_t)0);
     printf("dma tx done\n");
@@ -23,7 +31,6 @@ void dma_wait_done() {
 
 void ip_dma_test() {
     printf("dma test\n");
-
     // i2s
     reg_i2s_mode = (uint32_t)1;
     reg_i2s_upbound = (uint32_t)120;

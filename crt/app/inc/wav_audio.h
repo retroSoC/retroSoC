@@ -1,5 +1,5 @@
-#ifndef WAV_DECODER_H__
-#define WAV_DECODER_H__
+#ifndef WAV_AUDIO_H__
+#define WAV_AUDIO_H__
 
 typedef struct {
     char     ChunkID[4];
@@ -47,6 +47,6 @@ typedef struct {
     WAVHeader_t header;
 } WAVFile_t;
 
-WAVFile_t* wav_file_decoder(uint32_t start_addr);
+WAVFile_t* wav_audio_play(uint32_t start_addr);
 
 #endif
