@@ -3,9 +3,9 @@
 #include <tinyi2c.h>
 
 void i2c0_init(uint8_t clkdiv) {
-    printf("[i2c0] clkdiv: %d\n", reg_i2c0_clkdiv);
+    // printf("[i2c0] clkdiv: %d\n", reg_i2c0_clkdiv);
     reg_i2c0_clkdiv = clkdiv;
-    printf("[i2c0] clkdiv: %d\n", reg_i2c0_clkdiv);
+    // printf("[i2c0] clkdiv: %d\n", reg_i2c0_clkdiv);
 }
 
 void i2c0_wr_nbyte(uint8_t dev_addr, uint16_t reg_addr, uint8_t type, uint8_t num, uint8_t *data) {

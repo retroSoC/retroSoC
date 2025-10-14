@@ -16,12 +16,14 @@ void dma_start_xfer() {
     reg_dma_start = (uint32_t)1;
 }
 
-void dma_stop_xfer() {
-    // reg_dma_start = (uint32_t)1;
+void dma_stop_toggle() {
+    reg_dma_stop = (uint32_t)1;
 }
 
 void dma_reset_xfer() {
-    // reg_dma_start = (uint32_t)1;
+    dma_stop_toggle();
+    reg_dma_reset = (uint32_t)1;
+    dma_stop_toggle();
 }
 
 void dma_wait_done() {
