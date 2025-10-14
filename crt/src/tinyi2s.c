@@ -7,6 +7,8 @@
 #include <es8388.h>
 
 uint32_t test_data[] = {0x12345678, 0x12345679, 0x1234567A, 0x2345EF23, 0x2345EF24, 0x2345EF25};
+uint32_t audio_addr[] = {0x51004000, 0x54737000};
+uint32_t audio_len = 2, audio_idx = 0;
 
 void i2s_init(uint32_t mode) {
     reg_i2s_mode = (uint32_t)mode;
@@ -34,38 +36,67 @@ void i2s_simp_test() {
     printf("i2s rx done\n");
 }
 
+void i2s_audio_load() {
+    WAVFile_t res = wav_audio_parse(audio_addr[audio_idx]);
+    if(res.addr == 0 || res.size == 0) printf("wav file pase error\n");
+    else dma_config(1, res.addr, (uint32_t)1, (uint32_t)&reg_i2s_txdata, (uint32_t)0, res.size);
+}
+
 void ip_i2s_test() {
     char type_ch;
-    uint32_t mode = 0;
+    uint32_t mode = 0, stop = 0, xfering = 0;
 
     es8388_init();
     printf("[APB IP] i2s test\n");
-    printf("exit[e] mode[m] start[s] stop[t] reset[r] \n");
-
+    // load first data
+    i2s_audio_load();
+    printf("help[h] next[n] mode[m] start[s] stop[t] reset[r] exit[e]\n");
     while(1) {
         type_ch = getchar();
-        if(type_ch == 'e') break;
-        else if(type_ch == 'm') {
+
+        if(xfering) {
+            if(reg_dma_status == (uint32_t)1) printf("dma tx done\n");
+        }
+
+        if(type_ch == 'e' && !xfering) break;
+        else if(type_ch == 'h' && !xfering) printf("help[h] next[n] mode[m] start[s] stop[t] reset[r] exit[e]\n");
+        else if(type_ch == 'n' && !xfering) {
+            if(audio_idx == audio_len - 1) audio_idx = 0;
+            else ++audio_idx;
+
+            i2s_audio_load();
+        } else if(type_ch == 'm' && !xfering) {
             if(mode) {
-                mode = 0;
+                mode = (uint32_t)0;
                 printf("switch to loopback mode\n");
             } else {
-                mode = 1;
-                printf("switch to normal mode\n");
+                mode = (uint32_t)1;
+                printf("switch to fifo-xfer mode\n");
             }
             i2s_init(mode);
-        } else if(type_ch == 's') {
-            if(mode == 1) wav_audio_play((uint32_t)0x54737000);
-            else printf("need to set normal mode first\n");
-        } else if(type_ch == 't') {
-            i2s_init(0);
-            dma_stop_xfer();
-        } else if(type_ch == 'r') {
+        } else if(type_ch == 's' && !xfering) {
+            if(mode == 1) {
+                xfering = (uint32_t)1;
+                dma_start_xfer();
+            } else printf("need to set fifo-xfer mode first\n");
+        } else if(type_ch == 't' && xfering) {
+            dma_stop_toggle();
+            if(stop) {
+                stop = (uint32_t)0;
+                i2s_init(1);
+                printf("restore wav audio\n");
+            } else {
+                stop = (uint32_t)1;
+                i2s_init(0);    
+                printf("stop wav audio\n");
+            }
+        } else if(type_ch == 'r' && xfering) {
+            xfering = 0;
             i2s_init(0);
             dma_reset_xfer();
+            printf("reset wav audio\n");
         }
     }
 
-    // wav_audio_play((uint32_t)0x51004000);
     i2s_init(0);
 }

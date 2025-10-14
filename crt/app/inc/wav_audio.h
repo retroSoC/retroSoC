@@ -43,10 +43,16 @@ typedef struct {
 } WAVHeader_t;
 
 
+// typedef struct {
+//     WAVHeader_t header;
+//     uint32_t    addr;
+// } WAVFile_t;
+
 typedef struct {
-    WAVHeader_t header;
+    uint32_t addr;
+    uint32_t size;
 } WAVFile_t;
 
-WAVFile_t* wav_audio_play(uint32_t start_addr);
+WAVFile_t wav_audio_parse(uint32_t start_addr);
 
 #endif

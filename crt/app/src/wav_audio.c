@@ -50,15 +50,16 @@ static void parseLISTChunk(WAVHeader_t *header, uint32_t addr) {
 
 
 
-WAVFile_t* wav_audio_play(uint32_t start_addr) {
+WAVFile_t wav_audio_parse(uint32_t start_addr) {
     WAVHeader_t header;
     ChunkHeader_t chunkHeader;
+    WAVFile_t res = {0, 0};
 
     spisd_mem_read((uint8_t *)&header.riff, 1, sizeof(RIFFChunk_t), start_addr);
     start_addr += sizeof(RIFFChunk_t);
 
     if (memcmp(header.riff.ChunkID, "RIFF", 4) != 0 || memcmp(header.riff.Format, "WAVE", 4) != 0) {
-        return NULL;
+        return res;
     }
 
     while(1) {
@@ -97,15 +98,7 @@ WAVFile_t* wav_audio_play(uint32_t start_addr) {
     // data
     printf("Data size:     %d bytes(~%d MiB)\n", header.data.Subchunk2Size, (header.data.Subchunk2Size) / 1024 / 1024);
 
-    // prepare the data
-    dma_config(1, start_addr, (uint32_t)1, (uint32_t)&reg_i2s_txdata, (uint32_t)0, header.data.Subchunk2Size / 4);
-    dma_start_xfer();
-    dma_wait_done();
-    // sw write i2s tx fifo reg
-    // volatile uint32_t *rd_ptr = (uint32_t*)start_addr;
-    // for(uint32_t i = 0; i < header.data.Subchunk2Size; i += 4, ++rd_ptr) {
-    //     while(reg_i2s_status & (uint32_t)1); // check if fifo is full or not
-    //     reg_i2s_txdata = *rd_ptr;
-    // }
-    return NULL;
+    res.addr = start_addr;
+    res.size = header.data.Subchunk2Size / 4;
+    return res;
 }

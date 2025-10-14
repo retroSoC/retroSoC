@@ -109,12 +109,7 @@ module dma_core (
             end else if (nmi.valid) s_xfer_done_d = 1'b0;
           end
         end else begin
-          if (reset_i) begin
-            s_src_addr_d  = srcaddr_i;
-            s_dst_addr_d  = dstaddr_i;
-            s_xfer_type_d = 1'b0;
-            s_xfer_done_d = 1'b1;
-          end
+          if (reset_i) s_fsm_d = FSM_IDLE;
         end
       end
       FSM_DONE: begin

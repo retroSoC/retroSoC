@@ -100,7 +100,9 @@
 #define reg_dma_dstincr     (*(volatile uint32_t*)0x10009010)
 #define reg_dma_xferlen     (*(volatile uint32_t*)0x10009014)
 #define reg_dma_start       (*(volatile uint32_t*)0x10009018)
-#define reg_dma_status      (*(volatile uint32_t*)0x1000901C)
+#define reg_dma_stop        (*(volatile uint32_t*)0x1000901C)
+#define reg_dma_reset       (*(volatile uint32_t*)0x10009020)
+#define reg_dma_status      (*(volatile uint32_t*)0x10009024)
 // sys ctrl
 #define reg_sysctrl_coresel (*(volatile uint32_t*)0x1000A000)
 #define reg_sysctrl_ipsel   (*(volatile uint32_t*)0x1000A004)
