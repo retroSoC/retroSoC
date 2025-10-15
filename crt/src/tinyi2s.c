@@ -44,7 +44,7 @@ void i2s_audio_load() {
 
 void i2s_audio_panel() {
     printf("============================================================\n");
-    printf("                      Tiny Audio Player                     \n")
+    printf("                      Tiny Audio Player                     \n");
     printf(" system:   help[h] exit[e] mode[m] next-audio[n]            \n");
     printf("============================================================\n");
     printf(" player: play[s] pause[t] reset[r] vol-up[u] vol-down[d]    \n");

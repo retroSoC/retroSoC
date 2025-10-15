@@ -6,124 +6,111 @@
 #include <tinylcd.h>
 // #include "video.h"
 
-void spi_init()
-{
+void qspi1_init() {
     reg_gpio_oen = (uint32_t)0b011;
-    reg_qspi_status = (uint32_t)0b10000;
-    reg_qspi_status = (uint32_t)0b00000;
-    reg_qspi_intcfg = (uint32_t)0b00000;
-    reg_qspi_dum = (uint32_t)0;
-    reg_qspi_clkdiv = (uint32_t)0; // sck = apb_clk/2(div+1)
+    reg_qspi1_status = (uint32_t)0b10000;
+    reg_qspi1_status = (uint32_t)0b00000;
+    reg_qspi1_intcfg = (uint32_t)0b00000;
+    reg_qspi1_dum = (uint32_t)0;
+    reg_qspi1_clkdiv = (uint32_t)0; // sck = apb_clk/2(div+1)
 }
 
-void spi_wr_dat(uint8_t dat)
-{
+void qspi1_wr_dat(uint8_t dat) {
     uint32_t wdat = ((uint32_t)dat) << 24;
     // spi_set_datalen(8);
-    reg_qspi_len = 0x80000;
+    reg_qspi1_len = 0x80000;
     // spi_write_fifo(&wdata, 8);
-    reg_qspi_txfifo = wdat;
+    reg_qspi1_txfifo = wdat;
     // spi_start_transaction(SPI_CMD_WR, SPI_CSN0);
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
-        ;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1);
 }
 
-void lcd_wr_cmd(uint8_t cmd)
-{
+void lcd_wr_cmd(uint8_t cmd) {
     lcd_dc_clr;
-    spi_wr_dat(cmd);
+    qspi1_wr_dat(cmd);
 }
 
-void lcd_wr_data8(uint8_t dat)
-{
+void lcd_wr_data8(uint8_t dat) {
     lcd_dc_set;
-    spi_wr_dat(dat);
+    qspi1_wr_dat(dat);
 }
 
-void lcd_wr_data16(uint16_t dat)
-{
+void lcd_wr_data16(uint16_t dat) {
     lcd_dc_set;
 
     uint32_t wdat = ((uint32_t)dat) << 16;
-    reg_qspi_len = 0x100000; // NOTE: 16bits
-    reg_qspi_txfifo = wdat;
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
-        ;
-    // spi_wr_dat(dat >> 8);
-    // spi_wr_dat(dat);
+    reg_qspi1_len = 0x100000; // NOTE: 16bits
+    reg_qspi1_txfifo = wdat;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1);
+    // qspi1_wr_dat(dat >> 8);
+    // qspi1_wr_dat(dat);
 }
 
-void lcd_wr_data32(uint32_t dat)
-{
+void lcd_wr_data32(uint32_t dat) {
     lcd_dc_set;
 
-    reg_qspi_len = 0x200000; // NOTE: 32bits
-    reg_qspi_txfifo = dat;
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
-        ;
+    reg_qspi1_len = 0x200000; // NOTE: 32bits
+    reg_qspi1_txfifo = dat;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1);
 }
 
-void lcd_wr_data32x2(uint32_t dat1, uint32_t dat2)
-{
+void lcd_wr_data32x2(uint32_t dat1, uint32_t dat2) {
     lcd_dc_set;
 
-    reg_qspi_len = 0x400000; // NOTE: 32x2bits
-    reg_qspi_txfifo = dat1;
-    reg_qspi_txfifo = dat2;
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
+    reg_qspi1_len = 0x400000; // NOTE: 32x2bits
+    reg_qspi1_txfifo = dat1;
+    reg_qspi1_txfifo = dat2;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1)
         ;
 }
 
 void lcd_wr_data32x8(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4,
-                     uint32_t dat5, uint32_t dat6, uint32_t dat7, uint32_t dat8)
-{
+                     uint32_t dat5, uint32_t dat6, uint32_t dat7, uint32_t dat8) {
     lcd_dc_set;
 
-    reg_qspi_len = 0x1000000; // NOTE: 32x8bits
-    reg_qspi_txfifo = dat1;
-    reg_qspi_txfifo = dat2;
-    reg_qspi_txfifo = dat3;
-    reg_qspi_txfifo = dat4;
-    reg_qspi_txfifo = dat5;
-    reg_qspi_txfifo = dat6;
-    reg_qspi_txfifo = dat7;
-    reg_qspi_txfifo = dat8;
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
+    reg_qspi1_len = 0x1000000; // NOTE: 32x8bits
+    reg_qspi1_txfifo = dat1;
+    reg_qspi1_txfifo = dat2;
+    reg_qspi1_txfifo = dat3;
+    reg_qspi1_txfifo = dat4;
+    reg_qspi1_txfifo = dat5;
+    reg_qspi1_txfifo = dat6;
+    reg_qspi1_txfifo = dat7;
+    reg_qspi1_txfifo = dat8;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1)
         ;
 }
 
 void lcd_wr_data32x16(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4,
                       uint32_t dat5, uint32_t dat6, uint32_t dat7, uint32_t dat8,
                       uint32_t dat9, uint32_t dat10, uint32_t dat11, uint32_t dat12,
-                      uint32_t dat13, uint32_t dat14, uint32_t dat15, uint32_t dat16)
-{
+                      uint32_t dat13, uint32_t dat14, uint32_t dat15, uint32_t dat16) {
     lcd_dc_set;
 
-    reg_qspi_len = 0x2000000; // NOTE: 32x16bits
-    reg_qspi_txfifo = dat1;
-    reg_qspi_txfifo = dat2;
-    reg_qspi_txfifo = dat3;
-    reg_qspi_txfifo = dat4;
-    reg_qspi_txfifo = dat5;
-    reg_qspi_txfifo = dat6;
-    reg_qspi_txfifo = dat7;
-    reg_qspi_txfifo = dat8;
-    reg_qspi_txfifo = dat9;
-    reg_qspi_txfifo = dat10;
-    reg_qspi_txfifo = dat11;
-    reg_qspi_txfifo = dat12;
-    reg_qspi_txfifo = dat13;
-    reg_qspi_txfifo = dat14;
-    reg_qspi_txfifo = dat15;
-    reg_qspi_txfifo = dat16;
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
-        ;
+    reg_qspi1_len = 0x2000000; // NOTE: 32x16bits
+    reg_qspi1_txfifo = dat1;
+    reg_qspi1_txfifo = dat2;
+    reg_qspi1_txfifo = dat3;
+    reg_qspi1_txfifo = dat4;
+    reg_qspi1_txfifo = dat5;
+    reg_qspi1_txfifo = dat6;
+    reg_qspi1_txfifo = dat7;
+    reg_qspi1_txfifo = dat8;
+    reg_qspi1_txfifo = dat9;
+    reg_qspi1_txfifo = dat10;
+    reg_qspi1_txfifo = dat11;
+    reg_qspi1_txfifo = dat12;
+    reg_qspi1_txfifo = dat13;
+    reg_qspi1_txfifo = dat14;
+    reg_qspi1_txfifo = dat15;
+    reg_qspi1_txfifo = dat16;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1);
 }
 
 void lcd_wr_data32x32(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4,
@@ -133,62 +120,57 @@ void lcd_wr_data32x32(uint32_t dat1, uint32_t dat2, uint32_t dat3, uint32_t dat4
                       uint32_t dat17, uint32_t dat18, uint32_t dat19, uint32_t dat20,
                       uint32_t dat21, uint32_t dat22, uint32_t dat23, uint32_t dat24,
                       uint32_t dat25, uint32_t dat26, uint32_t dat27, uint32_t dat28,
-                      uint32_t dat29, uint32_t dat30, uint32_t dat31, uint32_t dat32)
-{
+                      uint32_t dat29, uint32_t dat30, uint32_t dat31, uint32_t dat32) {
     lcd_dc_set;
 
-    reg_qspi_len = 0x4000000; // NOTE: 32x32bits
-    reg_qspi_txfifo = dat1;
-    reg_qspi_txfifo = dat2;
-    reg_qspi_txfifo = dat3;
-    reg_qspi_txfifo = dat4;
-    reg_qspi_txfifo = dat5;
-    reg_qspi_txfifo = dat6;
-    reg_qspi_txfifo = dat7;
-    reg_qspi_txfifo = dat8;
-    reg_qspi_txfifo = dat9;
-    reg_qspi_txfifo = dat10;
-    reg_qspi_txfifo = dat11;
-    reg_qspi_txfifo = dat12;
-    reg_qspi_txfifo = dat13;
-    reg_qspi_txfifo = dat14;
-    reg_qspi_txfifo = dat15;
-    reg_qspi_txfifo = dat16;
-    reg_qspi_txfifo = dat17;
-    reg_qspi_txfifo = dat18;
-    reg_qspi_txfifo = dat19;
-    reg_qspi_txfifo = dat20;
-    reg_qspi_txfifo = dat21;
-    reg_qspi_txfifo = dat22;
-    reg_qspi_txfifo = dat23;
-    reg_qspi_txfifo = dat24;
-    reg_qspi_txfifo = dat25;
-    reg_qspi_txfifo = dat26;
-    reg_qspi_txfifo = dat27;
-    reg_qspi_txfifo = dat28;
-    reg_qspi_txfifo = dat29;
-    reg_qspi_txfifo = dat30;
-    reg_qspi_txfifo = dat31;
-    reg_qspi_txfifo = dat32;
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
-        ;
+    reg_qspi1_len = 0x4000000; // NOTE: 32x32bits
+    reg_qspi1_txfifo = dat1;
+    reg_qspi1_txfifo = dat2;
+    reg_qspi1_txfifo = dat3;
+    reg_qspi1_txfifo = dat4;
+    reg_qspi1_txfifo = dat5;
+    reg_qspi1_txfifo = dat6;
+    reg_qspi1_txfifo = dat7;
+    reg_qspi1_txfifo = dat8;
+    reg_qspi1_txfifo = dat9;
+    reg_qspi1_txfifo = dat10;
+    reg_qspi1_txfifo = dat11;
+    reg_qspi1_txfifo = dat12;
+    reg_qspi1_txfifo = dat13;
+    reg_qspi1_txfifo = dat14;
+    reg_qspi1_txfifo = dat15;
+    reg_qspi1_txfifo = dat16;
+    reg_qspi1_txfifo = dat17;
+    reg_qspi1_txfifo = dat18;
+    reg_qspi1_txfifo = dat19;
+    reg_qspi1_txfifo = dat20;
+    reg_qspi1_txfifo = dat21;
+    reg_qspi1_txfifo = dat22;
+    reg_qspi1_txfifo = dat23;
+    reg_qspi1_txfifo = dat24;
+    reg_qspi1_txfifo = dat25;
+    reg_qspi1_txfifo = dat26;
+    reg_qspi1_txfifo = dat27;
+    reg_qspi1_txfifo = dat28;
+    reg_qspi1_txfifo = dat29;
+    reg_qspi1_txfifo = dat30;
+    reg_qspi1_txfifo = dat31;
+    reg_qspi1_txfifo = dat32;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1);
 }
 
-void lcd_wr_data32xlen(uint32_t dat, uint32_t dat_len)
-{
+void lcd_wr_data32xlen(uint32_t dat, uint32_t dat_len) {
     lcd_dc_set;
 
-    reg_qspi_len = (32 * dat_len) << 16; // NOTE: 32xlenbits
+    reg_qspi1_len = (32 * dat_len) << 16; // NOTE: 32xlenbits
     for (uint32_t i = 0; i < dat_len; ++i)
-        reg_qspi_txfifo = dat;
-    reg_qspi_status = 258;
-    while ((reg_qspi_status & 0xFFFF) != 1)
-        ;
+        reg_qspi1_txfifo = dat;
+    reg_qspi1_status = 258;
+    while ((reg_qspi1_status & 0xFFFF) != 1);
 }
 
-void lcd_init()
-{
+void lcd_init() {
     delay_ms(500);
     lcd_wr_cmd(0x11);
     delay_ms(120);
@@ -273,10 +255,8 @@ void lcd_init()
     lcd_wr_cmd(0x29);
 }
 
-void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
-{
-    if (USE_HORIZONTAL == 0)
-    {
+void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+    if (USE_HORIZONTAL == 0) {
         lcd_wr_cmd(0x2A); // set col addr
         lcd_wr_data16(x1 + 52);
         lcd_wr_data16(x2 + 52);
@@ -284,9 +264,7 @@ void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
         lcd_wr_data16(y1 + 40);
         lcd_wr_data16(y2 + 40);
         lcd_wr_cmd(0x2C); // write memory
-    }
-    else if (USE_HORIZONTAL == 1)
-    {
+    } else if (USE_HORIZONTAL == 1) {
         lcd_wr_cmd(0x2A);
         lcd_wr_data16(x1 + 53);
         lcd_wr_data16(x2 + 53);
@@ -294,9 +272,7 @@ void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
         lcd_wr_data16(y1 + 40);
         lcd_wr_data16(y2 + 40);
         lcd_wr_cmd(0x2C);
-    }
-    else if (USE_HORIZONTAL == 2)
-    {
+    } else if (USE_HORIZONTAL == 2) {
         lcd_wr_cmd(0x2A);
         lcd_wr_data16(x1 + 40);
         lcd_wr_data16(x2 + 40);
@@ -304,9 +280,7 @@ void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
         lcd_wr_data16(y1 + 53);
         lcd_wr_data16(y2 + 53);
         lcd_wr_cmd(0x2C);
-    }
-    else
-    {
+    } else {
         lcd_wr_cmd(0x2A);
         lcd_wr_data16(x1 + 40);
         lcd_wr_data16(x2 + 40);
@@ -317,13 +291,10 @@ void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
     }
 }
 
-void lcd_fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t color)
-{
+void lcd_fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t color) {
     lcd_addr_set(xsta, ysta, xend - 1, yend - 1);
-    for (uint16_t i = ysta; i < yend; ++i)
-    {
-        for (uint16_t j = xsta; j < xend; j += 64)
-        {
+    for (uint16_t i = ysta; i < yend; ++i) {
+        for (uint16_t j = xsta; j < xend; j += 64) {
             // lcd_wr_data16(color);
             // lcd_wr_data32(color);
             // lcd_wr_data32x2(color, color);
@@ -335,13 +306,11 @@ void lcd_fill(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32
     }
 }
 
-void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint16_t *data)
-{
+void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint16_t *data) {
     lcd_addr_set(xsta, ysta, xend - 1, yend - 1);
     int tot = (xend - xsta) * (yend - ysta);
 
-    for (int i = 0; i < tot; i += 1)
-    {
+    for (int i = 0; i < tot; i += 1) {
         lcd_wr_data16(data[i]);
     }
 }
@@ -351,8 +320,7 @@ void lcd_video_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend,
     lcd_addr_set(xsta, ysta, xend - 1, yend - 1);
     int tot = (xend - xsta) * (yend - ysta);
 
-    for (int i = 0; i < tot; i += 64)
-    {
+    for (int i = 0; i < tot; i += 64) {
         // lcd_wr_data16(data[i]);
         // lcd_wr_data32x16(data[i], data[i+1], data[i+2], data[i+3], data[i+4], data[i+5], data[i+6], data[i+7], data[i+8], data[i+9], data[i+10], data[i+11], data[i+12], data[i+13], data[i+14], data[i+15]);
         lcd_wr_data32x32(
@@ -909,64 +877,50 @@ void lcd_video_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend,
 //     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
 // };
 
+void lcd_frame(uint32_t first, uint32_t pref_cnt) {
+    static uint32_t cycle_start, cycle_end;
+    static uint32_t cycleh_start, cycleh_end;
+    static uint32_t inst_start, inst_end;
+    static uint32_t insth_start, insth_end;
+
+    if(first) {
+        __asm__ volatile("rdcycle %0"    : "=r"(cycle_start));
+        __asm__ volatile("rdcycleh %0"   : "=r"(cycleh_start));
+        __asm__ volatile("rdinstret %0"  : "=r"(inst_start));
+        __asm__ volatile("rdinstreth %0" : "=r"(insth_start));
+    } else {
+        __asm__ volatile("rdcycle %0"    : "=r"(cycle_end));
+        __asm__ volatile("rdcycleh %0"   : "=r"(cycleh_end));
+        __asm__ volatile("rdinstret %0"  : "=r"(inst_end));
+        __asm__ volatile("rdinstreth %0" : "=r"(insth_end));
+
+        printf("cycles num: %d(high: %d)\n", cycle_end - cycle_start, cycleh_end - cycleh_start);
+        printf("insts  num: %d(high: %d)\n", inst_end - inst_start, insth_end - insth_start);
+        printf("flush rate: %dfps\n", pref_cnt / ((cycle_end - cycle_start) / CPU_FREQ / 1000000));
+    }
+}
 
 
-void ip_lcd_test()
-{
+void ip_lcd_test() {
     printf("lcd test\n");
-    spi_init();
+    qspi1_init();
     lcd_init();
     printf("lcd init done\n");
     // lcd_wr_cmd(0x01); // software reset
     uint32_t pref_cnt = 0;
-    uint32_t cycle_start, cycle_end;
-    uint32_t cycleh_start, cycleh_end;
-    uint32_t inst_start, inst_end;
-    uint32_t insth_start, insth_end;
 
-    __asm__ volatile("rdcycle %0"
-                     : "=r"(cycle_start));
-    __asm__ volatile("rdcycleh %0"
-                     : "=r"(cycleh_start));
-
-    __asm__ volatile("rdinstret %0"
-                     : "=r"(inst_start));
-    __asm__ volatile("rdinstreth %0"
-                     : "=r"(insth_start));
-
-    for (int i = 0; i < 16; ++i)
-    {
+    lcd_frame(1, pref_cnt);
+    for (int i = 0; i < 16; ++i) {
         lcd_fill(0, 0, LCD_W, LCD_H, 0xF800F800); // red
         lcd_fill(0, 0, LCD_W, LCD_H, 0x07E007E0); // green
         lcd_fill(0, 0, LCD_W, LCD_H, 0x001F001F); // blue
         pref_cnt += 3;
     }
+    lcd_frame(0, pref_cnt);
 
-    __asm__ volatile("rdcycle %0"
-                     : "=r"(cycle_end));
-    __asm__ volatile("rdcycleh %0"
-                     : "=r"(cycleh_end));
 
-    __asm__ volatile("rdinstret %0"
-                     : "=r"(inst_end));
-    __asm__ volatile("rdinstreth %0"
-                     : "=r"(insth_end));
-
-    printf("cycles num: %d(high: %d)\n", cycle_end - cycle_start, cycleh_end - cycleh_start);
-    printf("insts  num: %d(high: %d)\n", inst_end - inst_start, insth_end - insth_start);
-    printf("flush rate: %dfps\n", pref_cnt / ((cycle_end - cycle_start) / CPU_FREQ / 1000000));
-
-    __asm__ volatile("rdcycle %0"
-                     : "=r"(cycle_start));
-    __asm__ volatile("rdcycleh %0"
-                     : "=r"(cycleh_start));
-
-    __asm__ volatile("rdinstret %0"
-                     : "=r"(inst_start));
-    __asm__ volatile("rdinstreth %0"
-                     : "=r"(insth_start));
-
-    pref_cnt = 0;
+    // pref_cnt = 0;
+    // lcd_frame(1, pref_cnt);
     // for (int i = 0; i < 16; ++i)
     // {
     //     lcd_fill_image(0, 0, 240, 135, image_data_chunyihongbao);
@@ -979,19 +933,5 @@ void ip_lcd_test()
     //     lcd_video_image(0, 0, 240, 135, only_my_railgun[i]);
     //     pref_cnt += 1;
     // }
-
-    // __asm__ volatile("rdcycle %0"
-    //                  : "=r"(cycle_end));
-    // __asm__ volatile("rdcycleh %0"
-    //                  : "=r"(cycleh_end));
-
-    // __asm__ volatile("rdinstret %0"
-    //                  : "=r"(inst_end));
-    // __asm__ volatile("rdinstreth %0"
-    //                  : "=r"(insth_end));
-
-    // printf("cycles num: %d(high: %d)\n", cycle_end - cycle_start, cycleh_end - cycleh_start);
-    // printf("insts  num: %d(high: %d)\n", inst_end - inst_start, insth_end - insth_start);
-    // printf("flush rate: %dfps\n", pref_cnt / ((cycle_end - cycle_start) / CPU_FREQ / 1000000));
-
+    // lcd_frame(0, pref_cnt);
 }

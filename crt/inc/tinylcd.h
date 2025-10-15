@@ -27,8 +27,8 @@
 #define SPI_CSN2       2
 #define SPI_CSN3       3
 
-void spi_init();
-void spi_wr_dat(uint8_t dat);
+void qspi1_init();
+void qspi1_wr_dat(uint8_t dat);
 void lcd_wr_cmd(uint8_t cmd);
 void lcd_wr_data8(uint8_t dat);
 void lcd_wr_data16(uint16_t dat);
