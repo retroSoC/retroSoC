@@ -102,12 +102,12 @@ module ip_natv_wrapper (
   assign u_onewire_nmi_if.wdata   = nmi.wdata;
   assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
 
-  assign u_dma_nmi_if.valid       = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h90);
+  assign u_dma_nmi_if.valid       = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'hA0);
   assign u_dma_nmi_if.addr        = nmi.addr;
   assign u_dma_nmi_if.wdata       = nmi.wdata;
   assign u_dma_nmi_if.wstrb       = nmi.wstrb;
 
-  assign u_sysctrl_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'hA0);
+  assign u_sysctrl_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'hB0);
   assign u_sysctrl_nmi_if.addr    = nmi.addr;
   assign u_sysctrl_nmi_if.wdata   = nmi.wdata;
   assign u_sysctrl_nmi_if.wstrb   = nmi.wstrb;
