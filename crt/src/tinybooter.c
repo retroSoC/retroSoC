@@ -68,7 +68,7 @@ void app_boot_info() {
     printf("                     4 x PWM           @0x%x\n", &reg_pwm_ctrl);
     printf("                     1 x PS2           @0x%x\n", &reg_ps2_ctrl);
     printf("                     1 x I2C1(ADV)     @0x%x\n", &reg_i2c1_ctrl);
-    printf("                     1 x QSPI          @0x%x\n", &reg_qspi_status);
+    printf("                     1 x QSPI          @0x%x\n", &reg_qspi1_status);
     printf("                     1 x RTC           @0x%x\n", &reg_rtc_ctrl);
     printf("                     1 x WDG           @0x%x\n", &reg_wdg_ctrl);
     printf("                     1 x CRC           @0x%x\n", &reg_crc_ctrl);

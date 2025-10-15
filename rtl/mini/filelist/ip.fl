@@ -68,6 +68,12 @@
 ../../ip/native/i2s.sv
 ../../ip/native/onewire_core.sv
 ../../ip/native/onewire.sv
+../../ip/native/qspi_recv.sv
+../../ip/native/qspi_send.sv
+../../ip/native/qspi_fifo.sv
+../../ip/native/qspi_clkgen.sv
+../../ip/native/qspi_core.sv
+../../ip/native/qspi.sv
 ../../ip/native/dma_core.sv
 ../../ip/native/dma.sv
 ../../ip/native/sysctrl.sv

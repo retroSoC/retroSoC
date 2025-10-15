@@ -15,6 +15,7 @@
 `define NATV_SYSCTRL_CORESEL 8'h00 // RO
 `define NATV_SYSCTRL_IPSEL   8'h04 // WR/RD
 `define NATV_SYSCTRL_I2CSEL  8'h08 // WR/RD
+`define NATV_SYSCTRL_QSPISEL 8'h0C // WR/RD
 // verilog_format: on
 
 `endif
@@ -25,8 +26,9 @@ interface sysctrl_if ();
   logic [`USER_CORESEL_WIDTH-1:0] core_sel_i;
   logic [  `USER_IPSEL_WIDTH-1:0] ip_sel_o;
   logic                           i2c_sel_o;
+  logic                           qspi_sel_o;
 
-  modport dut(input core_sel_i, output ip_sel_o, output i2c_sel_o);
+  modport dut(input core_sel_i, output ip_sel_o, output i2c_sel_o, output qspi_sel_o);
 endinterface
 
 module nmi_sysctrl (
@@ -48,6 +50,8 @@ module nmi_sysctrl (
   logic [`USER_IPSEL_WIDTH-1:0] s_sysctrl_ipsel_d, s_sysctrl_ipsel_q;
   logic s_sysctrl_i2csel_en;
   logic s_sysctrl_i2csel_d, s_sysctrl_i2csel_q;
+  logic s_sysctrl_qspisel_en;
+  logic s_sysctrl_qspisel_d, s_sysctrl_qspisel_q;
 
   assign s_nmi_wr_hdshk      = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
   assign s_nmi_rd_hdshk      = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
@@ -85,6 +89,16 @@ module nmi_sysctrl (
       s_sysctrl_i2csel_q
   );
 
+  assign s_sysctrl_qspisel_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SYSCTRL_QSPISEL;
+  assign s_sysctrl_qspisel_d  = nmi.wdata[0];
+  dffer #(1) u_sysctrl_qspisel_dffer (
+      clk_i,
+      rst_n_i,
+      s_sysctrl_qspisel_en,
+      s_sysctrl_qspisel_d,
+      s_sysctrl_qspisel_q
+  );
+
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
   dffr #(1) u_nmi_ready_dffr (
       clk_i,
@@ -97,12 +111,14 @@ module nmi_sysctrl (
   always_comb begin
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
-      `NATV_SYSCTRL_CORESEL:
-      s_nmi_rdata_d = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
-      `NATV_SYSCTRL_IPSEL: s_nmi_rdata_d = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
-      `NATV_SYSCTRL_I2CSEL: s_nmi_rdata_d = {31'd0, s_sysctrl_i2csel_q};
+      // verilog_format: off
+      `NATV_SYSCTRL_CORESEL: s_nmi_rdata_d = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
+      `NATV_SYSCTRL_IPSEL:   s_nmi_rdata_d = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
+      `NATV_SYSCTRL_I2CSEL:  s_nmi_rdata_d = {31'd0, s_sysctrl_i2csel_q};
+      `NATV_SYSCTRL_QSPISEL: s_nmi_rdata_d = {31'd0, s_sysctrl_qspisel_q};
       default: s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
+      // verilog_format: on
   end
   dffer #(32) u_nmi_rdata_dffer (
       clk_i,

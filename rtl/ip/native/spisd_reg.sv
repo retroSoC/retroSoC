@@ -18,6 +18,7 @@
 `define NATV_SPISD_TXDATA 8'h0C
 `define NATV_SPISD_RXDATA 8'h10
 `define NATV_SPISD_STATUS 8'h14
+`define NATV_SPISD_SYNC   8'h18
 // verilog_format: on
 
 `endif
