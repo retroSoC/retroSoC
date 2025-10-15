@@ -42,10 +42,10 @@ module dma_core (
 
   always_comb begin
     s_fsm_d       = s_fsm_q;
-    s_xfer_cnt_d  = s_xfer_cnt_q;
     s_src_addr_d  = s_src_addr_q;
     s_dst_addr_d  = s_dst_addr_q;
     s_rd_data_d   = s_rd_data_q;
+    s_xfer_cnt_d  = s_xfer_cnt_q;
     s_xfer_type_d = s_xfer_type_q;
     s_xfer_done_d = s_xfer_done_q;
     // nmi if
@@ -61,6 +61,7 @@ module dma_core (
           s_fsm_d       = FSM_XFER;
           s_src_addr_d  = srcaddr_i;
           s_dst_addr_d  = dstaddr_i;
+          s_xfer_cnt_d  = '0;
           s_xfer_type_d = 1'b0;
           s_xfer_done_d = 1'b1;
         end
@@ -118,10 +119,10 @@ module dma_core (
       end
       default: begin
         s_fsm_d       = s_fsm_q;
-        s_xfer_cnt_d  = s_xfer_cnt_q;
         s_src_addr_d  = s_src_addr_q;
         s_dst_addr_d  = s_dst_addr_q;
         s_rd_data_d   = s_rd_data_q;
+        s_xfer_cnt_d  = s_xfer_cnt_q;
         s_xfer_type_d = s_xfer_type_q;
         s_xfer_done_d = s_xfer_done_q;
         // nmi if
