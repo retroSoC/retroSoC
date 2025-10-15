@@ -24,6 +24,9 @@ void dma_reset_xfer() {
     dma_stop_toggle();
     reg_dma_reset = (uint32_t)1;
     dma_stop_toggle();
+    printf("fsm: %d\n", reg_dma_fsm);
+    printf("dma reset done\n");
+
 }
 
 void dma_wait_done() {
