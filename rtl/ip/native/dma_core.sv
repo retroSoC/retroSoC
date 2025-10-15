@@ -22,6 +22,7 @@ module dma_core (
     input logic        stop_i,
     input logic        reset_i,
     output logic       done_o,
+    output logic [1:0] fsm_o,
     dma_hw_trg_if.dut  hw_trg,
     nmi_if.master      nmi
     // verilog_format: on

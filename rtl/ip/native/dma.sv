@@ -22,6 +22,7 @@
 `define NATV_DMA_STOP    8'h1C
 `define NATV_DMA_RESET   8'h20
 `define NATV_DMA_STATUS  8'h24
+`define NATV_DMA_FSM     8'h28
 // verilog_format: on
 
 interface dma_hw_trg_if ();
@@ -63,6 +64,7 @@ module nmi_dma (
   logic s_dma_status_d, s_dma_status_q;
   // common
   logic s_xfer_start, s_xfer_stop, s_xfer_reset, s_xfer_done;
+  logic [1:0] s_xfer_fsm;
 
 
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
@@ -194,6 +196,7 @@ module nmi_dma (
       `NATV_DMA_DSTINCR: s_nmi_rdata_d = {31'd0, s_dma_dstincr_q};
       `NATV_DMA_XFERLEN: s_nmi_rdata_d = s_dma_xferlen_q;
       `NATV_DMA_STATUS:  s_nmi_rdata_d = {31'd0, s_dma_status_q};
+      `NATV_DMA_FSM:     s_nmi_rdata_d = {30'd0, s_xfer_fsm};
       default:           s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
@@ -219,6 +222,7 @@ module nmi_dma (
       .stop_i   (s_xfer_stop),
       .reset_i  (s_xfer_reset),
       .done_o   (s_xfer_done),
+      .fsm_o    (s_xfer_fsm),
       .hw_trg   (hw_trg),
       .nmi      (nmi_dma)
   );
