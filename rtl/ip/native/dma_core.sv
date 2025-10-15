@@ -41,6 +41,7 @@ module dma_core (
   logic s_xfer_done_d, s_xfer_done_q;
   logic s_ctrl_stop_d, s_ctrl_stop_q;
 
+  assign fsm_o = s_fsm_q;
   always_comb begin
     s_fsm_d       = s_fsm_q;
     s_src_addr_d  = s_src_addr_q;
