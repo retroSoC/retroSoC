@@ -51,6 +51,8 @@ module retrosoc (
   nmi_if u_apb_nmi_if();
   i2c_if u_natv_i2c_if();
   i2c_if u_apb_i2c_if();
+  qspi_if u_natv_qspi_if();
+  qspi_if u_apb_qspi_if();
   sysctrl_if u_sysctrl_if();
   // verilog_format: on
 
@@ -66,16 +68,26 @@ module retrosoc (
 `endif
 
   // verilog_format: off
+  // natv/apb i2s mux
   assign u_apb_i2c_if.scl_i  = i2c.scl_i;
   assign u_apb_i2c_if.sda_i  = i2c.sda_i;
   assign u_natv_i2c_if.scl_i = i2c.scl_i;
   assign u_natv_i2c_if.sda_i = i2c.sda_i;
 
-  assign i2c.scl_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.scl_o : u_apb_i2c_if.scl_o;
+  assign i2c.scl_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.scl_o     :  u_apb_i2c_if.scl_o;
   assign i2c.scl_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.scl_dir_o : ~u_apb_i2c_if.scl_dir_o;
-  assign i2c.sda_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_o : u_apb_i2c_if.sda_o;
+  assign i2c.sda_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_o     :  u_apb_i2c_if.sda_o;
   assign i2c.sda_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
   assign i2c.irq_o           = '0;
+  // natv/apb qspi mux
+  assign u_apb_qspi_if.spi_io_in_i  = qspi.spi_io_in_i;
+  assign u_natv_qspi_if.spi_io_in_i = qspi.spi_io_in_i;
+
+  assign qspi.spi_sck_o             = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_sck_o    : u_apb_qspi_if.spi_sck_o;
+  assign qspi.spi_nss_o             = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_nss_o    : u_apb_qspi_if.spi_nss_o;
+  assign qspi.spi_io_en_o           = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_io_en_o  : u_apb_qspi_if.spi_io_en_o;
+  assign qspi.spi_io_out_o          = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_io_out_o : u_apb_qspi_if.spi_io_out_o;
+  assign qspi.irq_o                 = '0;
 
   assign s_irq[4:0]          = 5'd0;
   assign s_irq[5]            = extn_irq_i;
@@ -119,6 +131,7 @@ module retrosoc (
       .i2c        (u_natv_i2c_if),
       .i2s        (i2s),
       .onewire    (onewire),
+      .qspi       (u_natv_qspi_if),
       .dma_nmi    (u_dma_nmi_if),
       .sysctrl    (u_sysctrl_if),
       .irq_o      (s_natv_irq)
@@ -136,7 +149,7 @@ module retrosoc (
       .pwm        (pwm),
       .ps2        (ps2),
       .i2c        (u_apb_i2c_if),
-      .qspi       (qspi),
+      .qspi       (u_apb_qspi_if),
       .spfs       (spfs),
 `ifdef IP_MDD
       .ip_sel_i   (u_sysctrl_if.ip_sel_o),
