@@ -60,6 +60,7 @@ void app_boot_info() {
     printf("                     1 x I2C0          @0x%x\n", &reg_i2c0_clkdiv);
     printf("                     1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
+    printf("                     1 x QSPI0         @0x%x\n", &reg_qspi0_mode);
     printf("                     1 x DMA           @0x%x\n", &reg_dma_mode);
     printf("                     1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
@@ -68,7 +69,7 @@ void app_boot_info() {
     printf("                     4 x PWM           @0x%x\n", &reg_pwm_ctrl);
     printf("                     1 x PS2           @0x%x\n", &reg_ps2_ctrl);
     printf("                     1 x I2C1(ADV)     @0x%x\n", &reg_i2c1_ctrl);
-    printf("                     1 x QSPI          @0x%x\n", &reg_qspi1_status);
+    printf("                     1 x QSPI1         @0x%x\n", &reg_qspi1_status);
     printf("                     1 x RTC           @0x%x\n", &reg_rtc_ctrl);
     printf("                     1 x WDG           @0x%x\n", &reg_wdg_ctrl);
     printf("                     1 x CRC           @0x%x\n", &reg_crc_ctrl);
