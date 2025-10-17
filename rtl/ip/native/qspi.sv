@@ -8,38 +8,7 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef NATV_QSPI_DEF_SV
-`define NATV_QSPI_DEF_SV
-
-// verilog_format: off
-`define NATV_QSPI_MODE     8'h00
-`define NATV_QSPI_CLKDIV   8'h04
-`define NATV_QSPI_UPBOUND  8'h08
-`define NATV_QSPI_LOWBOUND 8'h0C
-`define NATV_QSPI_CMDTYP   8'h10
-`define NATV_QSPI_CMDLEN   8'h14
-`define NATV_QSPI_CMDDAT   8'h18
-`define NATV_QSPI_ADRTYP   8'h1C
-`define NATV_QSPI_ADRLEN   8'h20
-`define NATV_QSPI_ADRDAT   8'h24
-`define NATV_QSPI_DUMTYP   8'h28
-`define NATV_QSPI_DUMLEN   8'h2C
-`define NATV_QSPI_DUMDAT   8'h30
-`define NATV_QSPI_DATTYP   8'h34
-`define NATV_QSPI_DATLEN   8'h38
-`define NATV_QSPI_TXDATA   8'h3C
-`define NATV_QSPI_RXDATA   8'h40
-`define NATV_QSPI_HLVLEN   8'h44
-`define NATV_QSPI_START    8'h48
-`define NATV_QSPI_STATUS   8'h4C
-
-`define QSPI_TYPE_NONE 2'd0
-`define QSPI_TYPE_SNGL 2'd1
-`define QSPI_TYPE_DUAL 2'd2
-`define QSPI_TYPE_QUAD 2'd3
-// verilog_format: on
-
-`endif
+`include "qspi_define.svh"
 
 module nmi_qspi (
     // verilog_format: off
@@ -67,14 +36,14 @@ module nmi_qspi (
   logic s_qspi_cmdtyp_en;
   logic [1:0] s_qspi_cmdtyp_d, s_qspi_cmdtyp_q;
   logic s_qspi_cmdlen_en;
-  logic [1:0] s_qspi_cmdlen_d, s_qspi_cmdlen_q;
+  logic [2:0] s_qspi_cmdlen_d, s_qspi_cmdlen_q;
   logic s_qspi_cmddat_en;
   logic [31:0] s_qspi_cmddat_d, s_qspi_cmddat_q;
   // adr
   logic s_qspi_adrtyp_en;
   logic [1:0] s_qspi_adrtyp_d, s_qspi_adrtyp_q;
   logic s_qspi_adrlen_en;
-  logic [1:0] s_qspi_adrlen_d, s_qspi_adrlen_q;
+  logic [2:0] s_qspi_adrlen_d, s_qspi_adrlen_q;
   logic s_qspi_adrdat_en;
   logic [31:0] s_qspi_adrdat_d, s_qspi_adrdat_q;
   // dum
@@ -95,7 +64,13 @@ module nmi_qspi (
   logic s_qspi_start_en;
   logic s_qspi_start_d, s_qspi_start_q;
   logic s_qspi_status_en;
-  logic [1:0] s_qspi_status_d, s_qspi_status_q;
+  logic [2:0] s_qspi_status_d, s_qspi_status_q;
+  // common
+  logic s_xfer_start, s_xfer_done;
+  // fifo
+  logic s_tx_push_valid, s_tx_empty, s_tx_full;
+  logic s_tx_pop_valid, s_tx_pop_ready;
+  logic [31:0] s_tx_push_data, s_tx_pop_data;
 
 
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
@@ -159,8 +134,8 @@ module nmi_qspi (
 
 
   assign s_qspi_cmdlen_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_CMDLEN;
-  assign s_qspi_cmdlen_d  = nmi.wdata[1:0];
-  dffer #(2) u_qspi_cmdlen_dffer (
+  assign s_qspi_cmdlen_d  = nmi.wdata[2:0];
+  dffer #(3) u_qspi_cmdlen_dffer (
       clk_i,
       rst_n_i,
       s_qspi_cmdlen_en,
@@ -198,8 +173,8 @@ module nmi_qspi (
 
 
   assign s_qspi_adrlen_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_ADRLEN;
-  assign s_qspi_adrlen_d  = nmi.wdata[1:0];
-  dffer #(2) u_qspi_adrlen_dffer (
+  assign s_qspi_adrlen_d  = nmi.wdata[2:0];
+  dffer #(3) u_qspi_adrlen_dffer (
       clk_i,
       rst_n_i,
       s_qspi_adrlen_en,
@@ -296,6 +271,54 @@ module nmi_qspi (
       s_qspi_hlvlen_q
   );
 
+  // tx fifo
+  always_comb begin
+    s_tx_push_valid = 1'b0;
+    s_tx_push_data  = '0;
+    if (s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_TXDATA) begin
+      s_tx_push_valid = 1'b1;
+      if (nmi.wstrb[0]) s_tx_push_data[7:0] = nmi.wdata[7:0];
+      if (nmi.wstrb[1]) s_tx_push_data[15:8] = nmi.wdata[15:8];
+      if (nmi.wstrb[2]) s_tx_push_data[23:16] = nmi.wdata[23:16];
+      if (nmi.wstrb[3]) s_tx_push_data[31:24] = nmi.wdata[31:24];
+    end
+  end
+
+  assign s_tx_pop_ready = ~s_tx_empty;
+  fifo #(
+      .DATA_WIDTH  (32),
+      .BUFFER_DEPTH(256)
+  ) u_tx_fifo (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .flush_i(1'b0),
+      .push_i (s_tx_push_valid),
+      .full_o (s_tx_full),
+      .dat_i  (s_tx_push_data),
+      .pop_i  (s_tx_pop_valid),
+      .empty_o(s_tx_empty),
+      .dat_o  (s_tx_pop_data),
+      .cnt_o  ()
+  );
+
+
+  // [0] xfer done [1] tx fifo full [2] tx fifo empty
+  always_comb begin
+    s_qspi_status_d    = s_qspi_status_q;
+    s_qspi_status_d[1] = s_tx_full;
+    s_qspi_status_d[2] = s_tx_empty;
+    if (s_xfer_done) begin
+      s_qspi_status_d[0] = 1'b1;
+    end else if (s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_QSPI_STATUS) begin
+      s_qspi_status_d[0] = 1'b0;
+    end
+  end
+  dffr #(3) u_qspi_status_dffr (
+      clk_i,
+      rst_n_i,
+      s_qspi_status_d,
+      s_qspi_status_q
+  );
 
 
   // rd
@@ -338,6 +361,31 @@ module nmi_qspi (
       s_nmi_rdata_q
   );
 
-  // qspi_core u_qspi_core ();
+
+  qspi_core u_qspi_core (
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
+      .mode_i       (s_qspi_mode_q),
+      .nss_i        (4'b0001),
+      .clkdiv_i     (s_qspi_clkdiv_q),
+      .cmdtyp_i     (s_qspi_cmdtyp_q),
+      .cmdlen_i     (s_qspi_cmdlen_q),
+      .cmddat_i     (s_qspi_cmddat_q),
+      .adrtyp_i     (s_qspi_adrtyp_q),
+      .adrlen_i     (s_qspi_adrlen_q),
+      .adrdat_i     (s_qspi_adrdat_q),
+      .dumtyp_i     (s_qspi_dumtyp_q),
+      .dumlen_i     (s_qspi_dumlen_q),
+      .dumdat_i     (s_qspi_dumdat_q),
+      .dattyp_i     (s_qspi_dattyp_q),
+      .datlen_i     (s_qspi_datlen_q),
+      .hlvlen_i     (s_qspi_hlvlen_q),
+      .tx_data_req_o(s_tx_pop_valid),
+      .tx_data_rdy_i(s_tx_pop_ready),
+      .tx_data_i    (s_tx_pop_data),
+      .start_i      (s_xfer_start),
+      .done_o       (s_xfer_done),
+      .qspi         (qspi)
+  );
 
 endmodule
