@@ -126,13 +126,13 @@ module nmi_onewire (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .flush_i(s_onewire_ctrl_q[0]),
-      .cnt_o  (),
       .push_i (s_tx_push_valid),
       .full_o (s_tx_full),
       .dat_i  (s_tx_push_data),
       .pop_i  (s_tx_pop_valid),
       .empty_o(s_tx_empty),
-      .dat_o  (s_tx_pop_data)
+      .dat_o  (s_tx_pop_data),
+      .cnt_o  ()
   );
 
 
