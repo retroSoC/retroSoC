@@ -26,6 +26,8 @@ module nmi_qspi (
   // reg
   logic s_qspi_mode_en;
   logic s_qspi_mode_d, s_qspi_mode_q;
+  logic s_qspi_nss_en;
+  logic [3:0] s_qspi_nss_d, s_qspi_nss_q;
   logic s_qspi_clkdiv_en;
   logic [7:0] s_qspi_clkdiv_d, s_qspi_clkdiv_q;
   logic s_qspi_upbound_en;
@@ -86,6 +88,17 @@ module nmi_qspi (
       s_qspi_mode_en,
       s_qspi_mode_d,
       s_qspi_mode_q
+  );
+
+
+  assign s_qspi_nss_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_NSS;
+  assign s_qspi_nss_d  = nmi.wdata[3:0];
+  dffer #(4) u_qspi_nss_dffer (
+      clk_i,
+      rst_n_i,
+      s_qspi_nss_en,
+      s_qspi_nss_d,
+      s_qspi_nss_q
   );
 
 
@@ -335,6 +348,7 @@ module nmi_qspi (
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
       `NATV_QSPI_MODE:     s_nmi_rdata_d = {31'd0, s_qspi_mode_q};
+      `NATV_QSPI_NSS:      s_nmi_rdata_d = {28'd0, s_qspi_nss_q};
       `NATV_QSPI_CLKDIV:   s_nmi_rdata_d = {24'd0, s_qspi_clkdiv_q};
       `NATV_QSPI_UPBOUND:  s_nmi_rdata_d = {24'd0, s_qspi_upbound_q};
       `NATV_QSPI_LOWBOUND: s_nmi_rdata_d = {24'd0, s_qspi_lowbound_q};
@@ -349,7 +363,7 @@ module nmi_qspi (
       `NATV_QSPI_DUMDAT:   s_nmi_rdata_d = s_qspi_dumdat_q;
       `NATV_QSPI_DATTYP:   s_nmi_rdata_d = {30'd0, s_qspi_dattyp_q};
       `NATV_QSPI_DATLEN:   s_nmi_rdata_d = {24'd0, s_qspi_datlen_q};
-      `NATV_QSPI_STATUS:   s_nmi_rdata_d = {30'd0, s_qspi_status_q};
+      `NATV_QSPI_STATUS:   s_nmi_rdata_d = {29'd0, s_qspi_status_q};
       default:             s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
@@ -366,7 +380,7 @@ module nmi_qspi (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
       .mode_i       (s_qspi_mode_q),
-      .nss_i        (4'b0001),
+      .nss_i        (s_qspi_nss_q),
       .clkdiv_i     (s_qspi_clkdiv_q),
       .cmdtyp_i     (s_qspi_cmdtyp_q),
       .cmdlen_i     (s_qspi_cmdlen_q),
