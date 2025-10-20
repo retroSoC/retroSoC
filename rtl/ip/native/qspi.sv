@@ -14,6 +14,8 @@ module nmi_qspi (
     // verilog_format: off
     input  logic clk_i,
     input  logic rst_n_i,
+    output logic dma_tx_stall_o,
+    output logic dma_rx_stall_o,
     nmi_if.slave nmi,
     qspi_if.dut  qspi
     // verilog_format: on
@@ -30,6 +32,10 @@ module nmi_qspi (
   logic [3:0] s_qspi_nss_d, s_qspi_nss_q;
   logic s_qspi_clkdiv_en;
   logic [7:0] s_qspi_clkdiv_d, s_qspi_clkdiv_q;
+  logic s_qspi_revdat_en;
+  logic s_qspi_revdat_d, s_qspi_revdat_q;
+  logic s_qspi_rdwr_en;
+  logic s_qspi_rdwr_d, s_qspi_rdwr_q;
   logic s_qspi_upbound_en;
   logic [7:0] s_qspi_upbound_d, s_qspi_upbound_q;
   logic s_qspi_lowbound_en;
@@ -69,16 +75,23 @@ module nmi_qspi (
   logic [2:0] s_qspi_status_d, s_qspi_status_q;
   // common
   logic s_xfer_start, s_xfer_done;
+  logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
+  logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
   // fifo
   logic s_tx_push_valid, s_tx_empty, s_tx_full;
   logic s_tx_pop_valid, s_tx_pop_ready;
   logic [31:0] s_tx_push_data, s_tx_pop_data;
+  logic [8:0] s_tx_elem_num;
 
 
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
   assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
   assign nmi.ready      = s_nmi_ready_q;
   assign nmi.rdata      = s_nmi_rdata_q;
+
+  assign dma_tx_stall_o = s_tx_fifo_stall_q;
+  assign dma_rx_stall_o = s_rx_fifo_stall_q;
+
 
   assign s_qspi_mode_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_MODE;
   assign s_qspi_mode_d  = nmi.wdata[0];
@@ -110,6 +123,28 @@ module nmi_qspi (
       s_qspi_clkdiv_en,
       s_qspi_clkdiv_d,
       s_qspi_clkdiv_q
+  );
+
+
+  assign s_qspi_revdat_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_REVDAT;
+  assign s_qspi_revdat_d  = nmi.wdata[0];
+  dffer #(1) u_qspi_revdat_dffer (
+      clk_i,
+      rst_n_i,
+      s_qspi_revdat_en,
+      s_qspi_revdat_d,
+      s_qspi_revdat_q
+  );
+
+
+  assign s_qspi_rdwr_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_RDWR;
+  assign s_qspi_rdwr_d  = nmi.wdata[0];
+  dffer #(1) u_qspi_rdwr_dffer (
+      clk_i,
+      rst_n_i,
+      s_qspi_rdwr_en,
+      s_qspi_rdwr_d,
+      s_qspi_rdwr_q
   );
 
 
@@ -315,7 +350,7 @@ module nmi_qspi (
       .pop_i  (s_tx_pop_valid),
       .empty_o(s_tx_empty),
       .dat_o  (s_tx_pop_data),
-      .cnt_o  ()
+      .cnt_o  (s_tx_elem_num)
   );
 
 
@@ -338,6 +373,38 @@ module nmi_qspi (
   );
 
 
+  always_comb begin
+    s_tx_fifo_stall_d = s_tx_fifo_stall_q;
+    if (~s_tx_fifo_stall_q && s_tx_elem_num[7:0] > s_qspi_upbound_q) begin
+      s_tx_fifo_stall_d = 1'b1;
+    end else if (s_tx_fifo_stall_q && s_tx_elem_num[7:0] < s_qspi_lowbound_q) begin
+      s_tx_fifo_stall_d = 1'b0;
+    end
+  end
+  dffr #(1) u_tx_fifo_stall_dffr (
+      clk_i,
+      rst_n_i,
+      s_tx_fifo_stall_d,
+      s_tx_fifo_stall_q
+  );
+
+
+  //   always_comb begin
+  //     s_rx_fifo_stall_d = s_rx_fifo_stall_q;
+  //     if (~s_rx_fifo_stall_q && s_rx_elem_num < s_qspi_lowbound_q) begin
+  //       s_rx_fifo_stall_d = 1'b1;
+  //     end else if (s_rx_fifo_stall_q && s_rx_elem_num > s_qspi_upbound_q) begin
+  //       s_rx_fifo_stall_d = 1'b0;
+  //     end
+  //   end
+  dffr #(1) u_rx_fifo_stall_dffr (
+      clk_i,
+      rst_n_i,
+      s_rx_fifo_stall_d,
+      s_rx_fifo_stall_q
+  );
+
+
   // rd
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
   dffr #(1) u_nmi_ready_dffr (
@@ -354,6 +421,8 @@ module nmi_qspi (
       `NATV_QSPI_MODE:     s_nmi_rdata_d = {31'd0, s_qspi_mode_q};
       `NATV_QSPI_NSS:      s_nmi_rdata_d = {28'd0, s_qspi_nss_q};
       `NATV_QSPI_CLKDIV:   s_nmi_rdata_d = {24'd0, s_qspi_clkdiv_q};
+      `NATV_QSPI_RDWR:     s_nmi_rdata_d = {31'd0, s_qspi_rdwr_q};
+      `NATV_QSPI_REVDAT:   s_nmi_rdata_d = {31'd0, s_qspi_revdat_q};
       `NATV_QSPI_UPBOUND:  s_nmi_rdata_d = {24'd0, s_qspi_upbound_q};
       `NATV_QSPI_LOWBOUND: s_nmi_rdata_d = {24'd0, s_qspi_lowbound_q};
       `NATV_QSPI_CMDTYP:   s_nmi_rdata_d = {30'd0, s_qspi_cmdtyp_q};
@@ -386,6 +455,8 @@ module nmi_qspi (
       .mode_i       (s_qspi_mode_q),
       .nss_i        (s_qspi_nss_q),
       .clkdiv_i     (s_qspi_clkdiv_q),
+      .rdwr_i       (s_qspi_rdwr_q),
+      .revdat_i     (s_qspi_revdat_q),
       .cmdtyp_i     (s_qspi_cmdtyp_q),
       .cmdlen_i     (s_qspi_cmdlen_q),
       .cmddat_i     (s_qspi_cmddat_q),

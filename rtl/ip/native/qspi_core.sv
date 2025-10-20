@@ -17,6 +17,8 @@ module qspi_core (
     input logic        mode_i,
     input logic [3:0]  nss_i,
     input logic [7:0]  clkdiv_i,
+    input logic        rdwr_i,
+    input logic        revdat_i,
     input logic [1:0]  cmdtyp_i,
     input logic [2:0]  cmdlen_i,
     input logic [31:0] cmddat_i,
@@ -106,7 +108,7 @@ module qspi_core (
     qspi.spi_io_out_o   = '0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
-        if (start_i) begin
+        if ((~mode_i && start_i) || mode_i) begin
           s_nss_d     = 1'b0;
           s_sclk_en_d = 1'b1;
           if (cmdtyp_i != `QSPI_TYPE_NONE) begin
@@ -122,11 +124,13 @@ module qspi_core (
             s_xfer_bit_cnt_d = {8'd0, dumlen_i};
             s_xfer_data_d    = dumdat_i;
           end else if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d           = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = FSM_RXDATA;
+            else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = 16'd32;
             s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
-              s_xfer_data_d   = tx_data_i;
+              if (revdat_i) s_xfer_data_d = {tx_data_i[15:0], tx_data_i[31:16]};
+              else s_xfer_data_d = tx_data_i;
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
@@ -173,11 +177,13 @@ module qspi_core (
             s_xfer_bit_cnt_d = {8'd0, dumlen_i};
             s_xfer_data_d    = dumdat_i;
           end else if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d           = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = FSM_RXDATA;
+            else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = 16'd32;
             s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
-              s_xfer_data_d   = tx_data_i;
+              if (revdat_i) s_xfer_data_d = {tx_data_i[15:0], tx_data_i[31:16]};
+              else s_xfer_data_d = tx_data_i;
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
@@ -220,11 +226,13 @@ module qspi_core (
             s_xfer_bit_cnt_d = {8'd0, dumlen_i};
             s_xfer_data_d    = dumdat_i;
           end else if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d           = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = FSM_RXDATA;
+            else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = 16'd32;
             s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
-              s_xfer_data_d   = tx_data_i;
+              if (revdat_i) s_xfer_data_d = {tx_data_i[15:0], tx_data_i[31:16]};
+              else s_xfer_data_d = tx_data_i;
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
@@ -263,11 +271,13 @@ module qspi_core (
 
         if (s_xfer_bit_cnt_q == 16'd1) begin
           if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d           = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = FSM_RXDATA;
+            else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = 16'd32;
             s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
-              s_xfer_data_d   = tx_data_i;
+              if (revdat_i) s_xfer_data_d = {tx_data_i[15:0], tx_data_i[31:16]};
+              else s_xfer_data_d = tx_data_i;
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
@@ -313,7 +323,8 @@ module qspi_core (
             s_xfer_bit_cnt_d  = 16'd32;
             s_xfer_byte_cnt_d = s_xfer_byte_cnt_q - 1'b1;
             if (tx_data_rdy_i) begin
-              s_xfer_data_d   = tx_data_i;
+              if (revdat_i) s_xfer_data_d = {tx_data_i[15:0], tx_data_i[31:16]};
+              else s_xfer_data_d = tx_data_i;
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end
