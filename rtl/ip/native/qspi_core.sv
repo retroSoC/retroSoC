@@ -56,14 +56,16 @@ module qspi_core (
   // xfer
   logic [31:0] s_xfer_data_d, s_xfer_data_q;
   // 256 x 32
-  logic [15:0] s_xfer_bit_len, s_xfer_bit_cnt_d, s_xfer_bit_cnt_q;
-  logic [7:0] s_xfer_byte_len, s_xfer_byte_cnt_d, s_xfer_byte_cnt_q;
+  logic [15:0] s_xfer_bit_cnt_d, s_xfer_bit_cnt_q;
+  logic [7:0] s_xfer_byte_cnt_d, s_xfer_byte_cnt_q;
   // common
   logic [2:0] s_fsm_d, s_fsm_q;
   logic s_xfer_sta_trg, s_xfer_end_trg;
 
 
   assign qspi.spi_sck_o = s_sclk;
+  // BUG:
+  // nss_i: 1111 & 0001 = 0001
   assign qspi.spi_nss_o = {4{s_nss_q}} & nss_i;
   assign qspi.irq_o     = '0;
 
@@ -84,8 +86,6 @@ module qspi_core (
     s_fsm_d             = s_fsm_q;
     s_nss_d             = s_nss_q;
     s_sclk_en_d         = s_sclk_en_q;
-    s_xfer_bit_len      = '0;
-    s_xfer_byte_len     = '0;
     s_xfer_bit_cnt_d    = s_xfer_bit_cnt_q;
     s_xfer_byte_cnt_d   = s_xfer_byte_cnt_q;
     s_xfer_data_d       = s_xfer_data_q;
@@ -99,26 +99,24 @@ module qspi_core (
     unique case (s_fsm_q)
       FSM_IDLE: begin
         if (start_i) begin
-          s_nss_d           = 1'b0;
-          s_sclk_en_d       = 1'b1;
-          s_xfer_bit_cnt_d  = s_xfer_bit_len;
-          s_xfer_byte_cnt_d = s_xfer_byte_len;
+          s_nss_d     = 1'b0;
+          s_sclk_en_d = 1'b1;
           if (cmdtyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d        = FSM_CMD;
-            s_xfer_bit_len = {10'd0, cmdlen_i, 3'd0};
-            s_xfer_data_d  = cmddat_i;
+            s_fsm_d          = FSM_CMD;
+            s_xfer_bit_cnt_d = {10'd0, cmdlen_i, 3'd0};
+            s_xfer_data_d    = cmddat_i;
           end else if (adrtyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d        = FSM_ADDR;
-            s_xfer_bit_len = {10'd0, adrlen_i, 3'd0};
-            s_xfer_data_d  = adrdat_i;
+            s_fsm_d          = FSM_ADDR;
+            s_xfer_bit_cnt_d = {10'd0, adrlen_i, 3'd0};
+            s_xfer_data_d    = adrdat_i;
           end else if (dumtyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d        = FSM_DUM;
-            s_xfer_bit_len = {8'd0, dumlen_i};
-            s_xfer_data_d  = dumdat_i;
+            s_fsm_d          = FSM_DUM;
+            s_xfer_bit_cnt_d = {8'd0, dumlen_i};
+            s_xfer_data_d    = dumdat_i;
           end else if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d         = FSM_TXDATA;
-            s_xfer_bit_len  = 16'd32;
-            s_xfer_byte_len = datlen_i;
+            s_fsm_d           = FSM_TXDATA;
+            s_xfer_bit_cnt_d  = 16'd32;
+            s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
               s_xfer_data_d = tx_data_i;
               tx_data_req_o = 1'b1;
@@ -157,21 +155,19 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == '0) begin
-          s_xfer_bit_cnt_d  = s_xfer_bit_len;
-          s_xfer_byte_cnt_d = s_xfer_byte_len;
+        if (s_xfer_bit_cnt_q == 16'd1) begin
           if (adrtyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d        = FSM_ADDR;
-            s_xfer_bit_len = {10'd0, adrlen_i, 3'd0};
-            s_xfer_data_d  = adrdat_i;
+            s_fsm_d          = FSM_ADDR;
+            s_xfer_bit_cnt_d = {10'd0, adrlen_i, 3'd0};
+            s_xfer_data_d    = adrdat_i;
           end else if (dumtyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d        = FSM_DUM;
-            s_xfer_bit_len = {8'd0, dumlen_i};
-            s_xfer_data_d  = dumdat_i;
+            s_fsm_d          = FSM_DUM;
+            s_xfer_bit_cnt_d = {8'd0, dumlen_i};
+            s_xfer_data_d    = dumdat_i;
           end else if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d         = FSM_TXDATA;
-            s_xfer_bit_len  = 16'd32;
-            s_xfer_byte_len = datlen_i;
+            s_fsm_d           = FSM_TXDATA;
+            s_xfer_bit_cnt_d  = 16'd32;
+            s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
               s_xfer_data_d = tx_data_i;
               tx_data_req_o = 1'b1;
@@ -210,17 +206,15 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == '0) begin
-          s_xfer_bit_cnt_d  = s_xfer_bit_len;
-          s_xfer_byte_cnt_d = s_xfer_byte_len;
+        if (s_xfer_bit_cnt_q == 16'd1) begin
           if (dumtyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d        = FSM_DUM;
-            s_xfer_bit_len = {8'd0, dumlen_i};
-            s_xfer_data_d  = dumdat_i;
+            s_fsm_d          = FSM_DUM;
+            s_xfer_bit_cnt_d = {8'd0, dumlen_i};
+            s_xfer_data_d    = dumdat_i;
           end else if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d         = FSM_TXDATA;
-            s_xfer_bit_len  = 16'd32;
-            s_xfer_byte_len = datlen_i;
+            s_fsm_d           = FSM_TXDATA;
+            s_xfer_bit_cnt_d  = 16'd32;
+            s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
               s_xfer_data_d = tx_data_i;
               tx_data_req_o = 1'b1;
@@ -259,13 +253,11 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == '0) begin
-          s_xfer_bit_cnt_d  = s_xfer_bit_len;
-          s_xfer_byte_cnt_d = s_xfer_byte_len;
+        if (s_xfer_bit_cnt_q == 16'd1) begin
           if (dattyp_i != `QSPI_TYPE_NONE) begin
-            s_fsm_d         = FSM_TXDATA;
-            s_xfer_bit_len  = 16'd32;
-            s_xfer_byte_len = datlen_i;
+            s_fsm_d           = FSM_TXDATA;
+            s_xfer_bit_cnt_d  = 16'd32;
+            s_xfer_byte_cnt_d = datlen_i;
             if (tx_data_rdy_i) begin
               s_xfer_data_d = tx_data_i;
               tx_data_req_o = 1'b1;
@@ -304,8 +296,8 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == '0) begin
-          if (s_xfer_byte_cnt_q == '0) begin
+        if (s_xfer_bit_cnt_q == 16'd1) begin
+          if (s_xfer_byte_cnt_q == 16'd1) begin
             s_fsm_d          = FSM_DONE;
             s_sclk_en_d      = 1'b0;
             s_xfer_bit_cnt_d = 16'd2;
@@ -343,8 +335,6 @@ module qspi_core (
         s_fsm_d             = s_fsm_q;
         s_nss_d             = s_nss_q;
         s_sclk_en_d         = s_sclk_en_q;
-        s_xfer_bit_len      = '0;
-        s_xfer_byte_len     = '0;
         s_xfer_bit_cnt_d    = s_xfer_bit_cnt_q;
         s_xfer_byte_cnt_d   = s_xfer_byte_cnt_q;
         s_xfer_data_d       = s_xfer_data_q;

@@ -284,6 +284,10 @@ module nmi_qspi (
       s_qspi_hlvlen_q
   );
 
+
+  assign s_xfer_start = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_START;
+
+
   // tx fifo
   always_comb begin
     s_tx_push_valid = 1'b0;
