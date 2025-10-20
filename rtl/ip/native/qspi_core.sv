@@ -38,6 +38,7 @@ module qspi_core (
     // rx fifo
     input logic        start_i,
     output logic       done_o,
+    input logic [7:0]  tx_elem_num_i,
     qspi_if.dut        qspi
     // verilog_format: on
 );
@@ -79,7 +80,7 @@ module qspi_core (
 
   assign tx_data_req_o  = s_tx_data_req_q;
 
-  assign s_xfer_sta_trg = s_fsm_q == FSM_IDLE && start_i;
+  assign s_xfer_sta_trg = s_fsm_q == FSM_IDLE && ((~mode_i && start_i) || (mode_i && tx_elem_num_i >= datlen_i));
   assign s_xfer_end_trg = s_fsm_q == FSM_DONE || s_fsm_q == FSM_HLVD;
 
   qspi_clkgen u_qspi_clkgen (
@@ -108,7 +109,7 @@ module qspi_core (
     qspi.spi_io_out_o   = '0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
-        if ((~mode_i && start_i) || mode_i) begin
+        if ((~mode_i && start_i) || (mode_i && tx_elem_num_i >= datlen_i)) begin
           s_nss_d     = 1'b0;
           s_sclk_en_d = 1'b1;
           if (cmdtyp_i != `QSPI_TYPE_NONE) begin

@@ -354,7 +354,9 @@ module nmi_qspi (
   );
 
 
-  // [0] xfer done [1] tx fifo full [2] tx fifo empty
+  // [2] tx fifo empty
+  // [1] tx fifo full
+  // [0] xfer done
   always_comb begin
     s_qspi_status_d    = s_qspi_status_q;
     s_qspi_status_d[1] = s_tx_full;
@@ -474,6 +476,7 @@ module nmi_qspi (
       .tx_data_i    (s_tx_pop_data),
       .start_i      (s_xfer_start),
       .done_o       (s_xfer_done),
+      .tx_elem_num_i(s_tx_elem_num[7:0]),
       .qspi         (qspi)
   );
 
