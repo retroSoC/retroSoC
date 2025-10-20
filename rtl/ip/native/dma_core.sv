@@ -12,7 +12,7 @@ module dma_core (
     // verilog_format: off
     input logic        clk_i,
     input logic        rst_n_i,
-    input logic [1:0]  mode_i,
+    input logic [2:0]  mode_i,
     input logic [31:0] srcaddr_i,
     input logic        srcincr_i,
     input logic [31:0] dstaddr_i,
@@ -27,6 +27,19 @@ module dma_core (
     nmi_if.master      nmi
     // verilog_format: on
 );
+
+  // mode
+  // [7:5]: resv
+  // [4]:   qspi rx fifo trg
+  // [3]:   qspi tx fifo trg
+  // [2]:   i2s  rx fifo trg
+  // [1]:   i2s  tx fifo trg
+  // [0]:   sft trg
+  localparam SFT_TRG = 3'd0;
+  localparam HWT_I2S_TX_TRG = 3'd1;
+  localparam HWT_I2S_RX_TRG = 3'd2;
+  localparam HWT_QSPI_TX_TRG = 3'd3;
+  localparam HWT_QSPI_RX_TRG = 3'd4;
 
   localparam FSM_IDLE = 2'd0;
   localparam FSM_XFER = 2'd1;
@@ -72,7 +85,7 @@ module dma_core (
         if (~s_ctrl_stop_q) begin
           if (~s_xfer_type_q) begin
             unique case (mode_i)
-              2'd2: begin
+              HWT_I2S_RX_TRG: begin
                 if (~hw_trg.i2s_rx_proc && s_xfer_done_q) nmi.valid = 1'b0;
                 else nmi.valid = 1'b1;
               end
@@ -88,8 +101,12 @@ module dma_core (
             end
           end else begin
             unique case (mode_i)
-              2'd1: begin
+              HWT_I2S_TX_TRG: begin
                 if (~hw_trg.i2s_tx_proc && s_xfer_done_q) nmi.valid = 1'b0;
+                else nmi.valid = 1'b1;
+              end
+              HWT_QSPI_TX_TRG: begin
+                if (~hw_trg.qspi_tx_proc && s_xfer_done_q) nmi.valid = 1'b0;
                 else nmi.valid = 1'b1;
               end
               default: nmi.valid = 1'b1;

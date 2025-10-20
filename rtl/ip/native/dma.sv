@@ -28,8 +28,10 @@
 interface dma_hw_trg_if ();
   logic i2s_tx_proc;
   logic i2s_rx_proc;
+  logic qspi_tx_proc;
+  logic qspi_rx_proc;
 
-  modport dut(input i2s_tx_proc, input i2s_rx_proc);
+  modport dut(input i2s_tx_proc, input i2s_rx_proc, input qspi_tx_proc, input qspi_rx_proc);
 endinterface
 
 `endif
@@ -50,7 +52,7 @@ module nmi_dma (
   logic [31:0] s_nmi_rdata_d, s_nmi_rdata_q;
 
   logic s_dma_mode_en;
-  logic [1:0] s_dma_mode_d, s_dma_mode_q;
+  logic [2:0] s_dma_mode_d, s_dma_mode_q;
   logic s_dma_srcaddr_en;
   logic [31:0] s_dma_srcaddr_d, s_dma_srcaddr_q;
   logic s_dma_srcincr_en;
@@ -73,10 +75,9 @@ module nmi_dma (
   assign nmi.rdata      = s_nmi_rdata_q;
 
 
-  // [3]: spi tx fifo trg [2]: i2s rx fifo trg [1]: i2s tx fifo trg [0]: sft trg
   assign s_dma_mode_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_MODE;
-  assign s_dma_mode_d   = nmi.wdata[1:0];
-  dffer #(2) u_dma_mode_dffer (
+  assign s_dma_mode_d   = nmi.wdata[2:0];
+  dffer #(3) u_dma_mode_dffer (
       clk_i,
       rst_n_i,
       s_dma_mode_en,
@@ -189,7 +190,7 @@ module nmi_dma (
   always_comb begin
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
-      `NATV_DMA_MODE:    s_nmi_rdata_d = {30'd0, s_dma_mode_q};
+      `NATV_DMA_MODE:    s_nmi_rdata_d = {29'd0, s_dma_mode_q};
       `NATV_DMA_SRCADDR: s_nmi_rdata_d = s_dma_srcaddr_q;
       `NATV_DMA_SRCINCR: s_nmi_rdata_d = {31'd0, s_dma_srcincr_q};
       `NATV_DMA_DSTADDR: s_nmi_rdata_d = s_dma_dstaddr_q;
