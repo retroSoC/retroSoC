@@ -49,12 +49,14 @@ module ip_natv_wrapper (
 
   logic s_psram_cfg_sel, s_psram_mem_sel;
   logic s_spisd_cfg_sel;
-  logic s_dma_i2s_tx_stall;
-  logic s_dma_i2s_rx_stall;
+  logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
+  logic s_dma_qspi_tx_stall, s_dma_qspi_rx_stall;
 
   // dma channel
   assign u_dma_hw_trg_if.i2s_tx_proc = ~s_dma_i2s_tx_stall;
   assign u_dma_hw_trg_if.i2s_rx_proc = ~s_dma_i2s_rx_stall;
+  assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_qspi_tx_stall;
+  assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_qspi_rx_stall;
   // addr
   assign u_gpio_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h00);
   assign u_gpio_nmi_if.addr     = nmi.addr;
@@ -216,10 +218,12 @@ module ip_natv_wrapper (
   );
 
   nmi_qspi u_nmi_qspi (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .nmi    (u_qspi_nmi_if),
-      .qspi   (qspi)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(s_dma_qspi_tx_stall),
+      .dma_rx_stall_o(s_dma_qspi_rx_stall),
+      .nmi           (u_qspi_nmi_if),
+      .qspi          (qspi)
   );
 
   nmi_dma u_nmi_dma (
