@@ -28,16 +28,14 @@
 `define NATV_QSPI_ADRTYP     8'h34
 `define NATV_QSPI_ADRLEN     8'h38
 `define NATV_QSPI_ADRDAT     8'h3C
-`define NATV_QSPI_DUMTYP     8'h40
-`define NATV_QSPI_DUMLEN     8'h44
-`define NATV_QSPI_DUMDAT     8'h48
-`define NATV_QSPI_DATTYP     8'h4C
-`define NATV_QSPI_DATLEN     8'h50
-`define NATV_QSPI_TXDATA     8'h54
-`define NATV_QSPI_RXDATA     8'h58
-`define NATV_QSPI_HLVLEN     8'h5C
-`define NATV_QSPI_START      8'h60
-`define NATV_QSPI_STATUS     8'h64
+`define NATV_QSPI_DUMLEN     8'h40
+`define NATV_QSPI_DATTYP     8'h44
+`define NATV_QSPI_DATLEN     8'h48
+`define NATV_QSPI_TXDATA     8'h4C
+`define NATV_QSPI_RXDATA     8'h50
+`define NATV_QSPI_HLVLEN     8'h54
+`define NATV_QSPI_START      8'h58
+`define NATV_QSPI_STATUS     8'h5C
 
 `define QSPI_TYPE_NONE 2'd0
 `define QSPI_TYPE_SNGL 2'd1
