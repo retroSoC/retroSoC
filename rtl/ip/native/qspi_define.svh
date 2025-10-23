@@ -31,11 +31,12 @@
 `define NATV_QSPI_DUMLEN     8'h40
 `define NATV_QSPI_DATTYP     8'h44
 `define NATV_QSPI_DATLEN     8'h48
-`define NATV_QSPI_TXDATA     8'h4C
-`define NATV_QSPI_RXDATA     8'h50
-`define NATV_QSPI_HLVLEN     8'h54
-`define NATV_QSPI_START      8'h58
-`define NATV_QSPI_STATUS     8'h5C
+`define NATV_QSPI_DATBIT     8'h4C
+`define NATV_QSPI_TXDATA     8'h50
+`define NATV_QSPI_RXDATA     8'h54
+`define NATV_QSPI_HLVLEN     8'h58
+`define NATV_QSPI_START      8'h5C
+`define NATV_QSPI_STATUS     8'h60
 
 `define QSPI_TYPE_NONE 2'd0
 `define QSPI_TYPE_SNGL 2'd1

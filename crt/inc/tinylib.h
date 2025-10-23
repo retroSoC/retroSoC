@@ -22,6 +22,7 @@
 #include <tinylcd.h>
 #include <tinypsram.h>
 #include <tinyspisd.h>
+#include <tinyqspi.h>
 #include <tinyi2s.h>
 #include <tinyrtc.h>
 #include <tinywdg.h>
@@ -32,6 +33,7 @@
 #include <at24cxx.h>
 #include <pcf8563b.h>
 #include <es8388.h>
+#include <w25q128jvxim.h>
 #include <wav_audio.h>
 
 #ifdef __cplusplus
