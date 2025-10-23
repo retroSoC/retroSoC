@@ -314,7 +314,7 @@ module qspi_core (
         unique case (dattyp_i)
           `QSPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 3'd1;
-            s_xfer_data_d    = {s_xfer_data_q[30:0], qspi.spi_io_in_i[0]};
+            s_xfer_data_d    = {s_xfer_data_q[30:0], qspi.spi_io_in_i[1]};
             qspi.spi_io_en_o = '0;
           end
           `QSPI_TYPE_DUAL: begin
@@ -329,7 +329,7 @@ module qspi_core (
           end
           default: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 3'd1;
-            s_xfer_data_d    = {s_xfer_data_q[30:0], qspi.spi_io_in_i[0]};
+            s_xfer_data_d    = {s_xfer_data_q[30:0], qspi.spi_io_in_i[1]};
             qspi.spi_io_en_o = '0;
           end
         endcase

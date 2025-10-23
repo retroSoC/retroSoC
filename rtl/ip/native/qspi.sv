@@ -462,7 +462,8 @@ module nmi_qspi (
 
   assign s_nmi_rdata_en = s_nmi_rd_hdshk;
   always_comb begin
-    s_nmi_rdata_d = s_nmi_rdata_q;
+    s_rx_pop_valid = '0;
+    s_nmi_rdata_d  = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
       `NATV_QSPI_MODE:       s_nmi_rdata_d = {31'd0, s_qspi_mode_q};
       `NATV_QSPI_NSS:        s_nmi_rdata_d = {28'd0, s_qspi_nss_q};
