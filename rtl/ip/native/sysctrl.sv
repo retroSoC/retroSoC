@@ -60,6 +60,7 @@ module nmi_sysctrl (
 
   assign sysctrl.ip_sel_o    = s_sysctrl_ipsel_q;
   assign sysctrl.i2c_sel_o   = s_sysctrl_i2csel_q;
+  assign sysctrl.qspi_sel_o  = s_sysctrl_qspisel_q;
 
   assign s_sysctrl_coresel_d = sysctrl.core_sel_i;
   dffr #(`USER_CORESEL_WIDTH) u_sysctrl_coresel_dffr (
