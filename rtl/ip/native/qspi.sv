@@ -68,6 +68,8 @@ module nmi_qspi (
   logic [1:0] s_qspi_dattyp_d, s_qspi_dattyp_q;
   logic s_qspi_datlen_en;
   logic [7:0] s_qspi_datlen_d, s_qspi_datlen_q;
+  logic s_qspi_datbit_en;
+  logic [2:0] s_qspi_datbit_d, s_qspi_datbit_q;
   // ctrl
   logic s_qspi_hlvlen_en;
   logic [7:0] s_qspi_hlvlen_d, s_qspi_hlvlen_q;
@@ -80,7 +82,7 @@ module nmi_qspi (
   logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
   // tx fifo
-  logic s_tx_push_valid; // NOTE: push ready?
+  logic s_tx_push_valid;  // NOTE: push ready?
   logic s_tx_pop_valid, s_tx_pop_ready;
   logic s_tx_empty, s_tx_full;
   logic [31:0] s_tx_push_data, s_tx_pop_data;
@@ -318,6 +320,15 @@ module nmi_qspi (
       s_qspi_datlen_q
   );
 
+  assign s_qspi_datbit_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_DATBIT;
+  assign s_qspi_datbit_d  = nmi.wdata[2:0];
+  dffer #(3) u_qspi_datbit_dffer (
+      clk_i,
+      rst_n_i,
+      s_qspi_datbit_en,
+      s_qspi_datbit_d,
+      s_qspi_datbit_q
+  );
 
   assign s_qspi_hlvlen_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_HLVLEN;
   assign s_qspi_hlvlen_d  = nmi.wdata[7:0];
@@ -463,14 +474,15 @@ module nmi_qspi (
       `NATV_QSPI_RXUPBOUND:  s_nmi_rdata_d = {26'd0, s_qspi_rxupbound_q};
       `NATV_QSPI_RXLOWBOUND: s_nmi_rdata_d = {26'd0, s_qspi_rxlowbound_q};
       `NATV_QSPI_CMDTYP:     s_nmi_rdata_d = {30'd0, s_qspi_cmdtyp_q};
-      `NATV_QSPI_CMDLEN:     s_nmi_rdata_d = {30'd0, s_qspi_cmdlen_q};
+      `NATV_QSPI_CMDLEN:     s_nmi_rdata_d = {29'd0, s_qspi_cmdlen_q};
       `NATV_QSPI_CMDDAT:     s_nmi_rdata_d = s_qspi_cmddat_q;
       `NATV_QSPI_ADRTYP:     s_nmi_rdata_d = {30'd0, s_qspi_adrtyp_q};
-      `NATV_QSPI_ADRLEN:     s_nmi_rdata_d = {30'd0, s_qspi_adrlen_q};
+      `NATV_QSPI_ADRLEN:     s_nmi_rdata_d = {29'd0, s_qspi_adrlen_q};
       `NATV_QSPI_ADRDAT:     s_nmi_rdata_d = s_qspi_adrdat_q;
       `NATV_QSPI_DUMLEN:     s_nmi_rdata_d = {24'd0, s_qspi_dumlen_q};
       `NATV_QSPI_DATTYP:     s_nmi_rdata_d = {30'd0, s_qspi_dattyp_q};
       `NATV_QSPI_DATLEN:     s_nmi_rdata_d = {24'd0, s_qspi_datlen_q};
+      `NATV_QSPI_DATBIT:     s_nmi_rdata_d = {29'd0, s_qspi_datbit_q};
       `NATV_QSPI_RXDATA: begin
         if (s_rx_pop_ready) begin
           s_rx_pop_valid = 1'b1;
@@ -507,6 +519,7 @@ module nmi_qspi (
       .dumlen_i     (s_qspi_dumlen_q),
       .dattyp_i     (s_qspi_dattyp_q),
       .datlen_i     (s_qspi_datlen_q),
+      .datbit_i     (s_qspi_datbit_q),
       .hlvlen_i     (s_qspi_hlvlen_q),
       .tx_data_req_o(s_tx_pop_valid),
       .tx_data_rdy_i(s_tx_pop_ready),
