@@ -485,10 +485,11 @@ module nmi_qspi (
       `NATV_QSPI_DATLEN:     s_nmi_rdata_d = {24'd0, s_qspi_datlen_q};
       `NATV_QSPI_DATBIT:     s_nmi_rdata_d = {29'd0, s_qspi_datbit_q};
       `NATV_QSPI_RXDATA: begin
-        if (s_rx_pop_ready) begin
+        if (s_nmi_rd_hdshk) begin
           s_rx_pop_valid = 1'b1;
-          s_nmi_rdata_d  = s_rx_pop_data;
-        end else s_nmi_rdata_d = '0;
+          if (s_rx_pop_ready) s_nmi_rdata_d = s_rx_pop_data;
+          else s_nmi_rdata_d = '0;
+        end
       end
       `NATV_QSPI_STATUS:     s_nmi_rdata_d = {27'd0, s_qspi_status_q};
       default:               s_nmi_rdata_d = s_nmi_rdata_q;
