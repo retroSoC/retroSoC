@@ -65,6 +65,7 @@ module qspi_core (
   logic [7:0] s_xfer_bit_cnt_d, s_xfer_bit_cnt_q;
   logic [7:0] s_xfer_byte_cnt_d, s_xfer_byte_cnt_q;
   logic s_tx_data_req_d, s_tx_data_req_q;
+  logic s_rx_data_req_d, s_rx_data_req_q;
   // common
   logic [2:0] s_fsm_d, s_fsm_q;
   logic s_xfer_sta_trg, s_xfer_end_trg;
@@ -80,6 +81,7 @@ module qspi_core (
   end
   assign qspi.irq_o = '0;
   assign tx_data_req_o = s_tx_data_req_q;
+  assign rx_data_req_o = s_rx_data_req_q;
 
   assign s_xfer_sta_trg = s_fsm_q == FSM_IDLE && ((~mode_i && start_i) || (mode_i && tx_elem_num_i >= datlen_i));
   assign s_xfer_end_trg = s_fsm_q == FSM_DONE || s_fsm_q == FSM_HLVD;
@@ -102,8 +104,8 @@ module qspi_core (
     s_xfer_byte_cnt_d   = s_xfer_byte_cnt_q;
     s_xfer_data_d       = s_xfer_data_q;
     s_tx_data_req_d     = '0;
+    s_rx_data_req_d     = '0;
     // system
-    rx_data_req_o       = '0;
     rx_data_o           = '0;
     done_o              = 1'b0;
     // qspi if
@@ -336,7 +338,9 @@ module qspi_core (
 
         if (s_xfer_bit_cnt_q == 16'd1) begin
           if (rx_data_rdy_i) begin
-            rx_data_req_o = 1'b1;
+            if(~s_rx_data_req_q) s_rx_data_req_d = 1'b1;
+            else s_rx_data_req_d = 1'b0;
+
             if (revdat_i) begin
               rx_data_o = {s_xfer_data_q[15:0], s_xfer_data_q[31:16]};
               unique case (datbit_i)
@@ -394,8 +398,8 @@ module qspi_core (
         s_xfer_byte_cnt_d   = s_xfer_byte_cnt_q;
         s_xfer_data_d       = s_xfer_data_q;
         s_tx_data_req_d     = '0;
+        s_rx_data_req_d     = '0;
         // system
-        rx_data_req_o       = '0;
         rx_data_o           = '0;
         done_o              = 1'b0;
         // qspi if
@@ -465,5 +469,13 @@ module qspi_core (
       s_tx_data_req_q
   );
 
+
+  dffer #(1) u_rx_data_req_dffer (
+      clk_i,
+      rst_n_i,
+      (s_fsm_q == FSM_RXDATA && s_fir_clk_edge) | s_rx_data_req_q,
+      s_rx_data_req_d,
+      s_rx_data_req_q
+  );
 
 endmodule
