@@ -2,6 +2,7 @@
 ../../clusterip/i2c/model/at24cxxx.sv
 ../../clusterip/uart/model/rs232.sv
 ../../clusterip/i2s/model/mic.sv
+../../clusterip/spi/model/w25q128jvxim.sv
 ../../ip/3rd_party/spfs_model/N25Qxxx.v
 ../../ip/native/ESP_PSRAM64H.sv
 ../tb/retrosoc_tb.sv

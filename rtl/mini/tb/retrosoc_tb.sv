@@ -42,6 +42,15 @@ module retrosoc_tb;
   wire s_psram_dat3;
   wire s_i2c_sda_io;
   wire s_i2c_scl_io;
+  wire s_qspi_sck_o;
+  wire s_qspi_nss0_o;
+  wire s_qspi_nss1_o;
+  wire s_qspi_nss2_o;
+  wire s_qspi_nss3_o;
+  wire s_qspi_dat0_io;
+  wire s_qspi_dat1_io;
+  wire s_qspi_dat2_io;
+  wire s_qspi_dat3_io;
   wire s_i2s_sclk;
   wire s_i2s_lrck;
   wire s_i2s_adcdat;
@@ -147,15 +156,15 @@ module retrosoc_tb;
       .ps2_dat_i_pad      (s_ps2_dat),
       .i2c_scl_io_pad     (s_i2c_scl_io),
       .i2c_sda_io_pad     (s_i2c_sda_io),
-      .qspi_sck_o_pad     (),
-      .qspi_nss0_o_pad    (),
-      .qspi_nss1_o_pad    (),
-      .qspi_nss2_o_pad    (),
-      .qspi_nss3_o_pad    (),
-      .qspi_dat0_io_pad   (),
-      .qspi_dat1_io_pad   (),
-      .qspi_dat2_io_pad   (),
-      .qspi_dat3_io_pad   (),
+      .qspi_sck_o_pad     (s_qspi_sck_o),
+      .qspi_nss0_o_pad    (s_qspi_nss0_o),
+      .qspi_nss1_o_pad    (s_qspi_nss1_o),
+      .qspi_nss2_o_pad    (s_qspi_nss2_o),
+      .qspi_nss3_o_pad    (s_qspi_nss3_o),
+      .qspi_dat0_io_pad   (s_qspi_dat0_io),
+      .qspi_dat1_io_pad   (s_qspi_dat1_io),
+      .qspi_dat2_io_pad   (s_qspi_dat2_io),
+      .qspi_dat3_io_pad   (s_qspi_dat3_io),
       .spfs_sck_o_pad     (s_spfs_sck),
       .spfs_nss_o_pad     (s_spfs_nss),
       .spfs_mosi_o_pad    (s_spfs_mosi),
@@ -170,6 +179,42 @@ module retrosoc_tb;
       .HOLD_DQ3 (),
       .Vpp_W_DQ2(),
       .Vcc      ('d3000)
+  );
+
+  W25Q128JVxIM u_W25Q128JVxIM_0 (
+      .CSn  (s_qspi_nss0_o),
+      .CLK  (s_qspi_sck_o),
+      .DIO  (s_qspi_dat0_io),
+      .DO   (s_qspi_dat1_io),
+      .WPn  (s_qspi_dat2_io),
+      .HOLDn(s_qspi_dat3_io)
+  );
+
+  W25Q128JVxIM u_W25Q128JVxIM_1 (
+      .CSn  (s_qspi_nss1_o),
+      .CLK  (s_qspi_sck_o),
+      .DIO  (s_qspi_dat0_io),
+      .DO   (s_qspi_dat1_io),
+      .WPn  (s_qspi_dat2_io),
+      .HOLDn(s_qspi_dat3_io)
+  );
+
+  W25Q128JVxIM u_W25Q128JVxIM_2 (
+      .CSn  (s_qspi_nss2_o),
+      .CLK  (s_qspi_sck_o),
+      .DIO  (s_qspi_dat0_io),
+      .DO   (s_qspi_dat1_io),
+      .WPn  (s_qspi_dat2_io),
+      .HOLDn(s_qspi_dat3_io)
+  );
+
+  W25Q128JVxIM u_W25Q128JVxIM_3 (
+      .CSn  (s_qspi_nss3_o),
+      .CLK  (s_qspi_sck_o),
+      .DIO  (s_qspi_dat0_io),
+      .DO   (s_qspi_dat1_io),
+      .WPn  (s_qspi_dat2_io),
+      .HOLDn(s_qspi_dat3_io)
   );
 
   // Testbench pullups on SDA, SCL lines
@@ -270,7 +315,10 @@ module retrosoc_tb;
       // #1667652;
       // #836901000;
       // #468320000;
-      #505600311;
+      // #505600311;
+      // #507983431
+      // #507983430;
+      #535996319;
       // #873310000;
       // #340686376;
 
