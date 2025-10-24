@@ -173,7 +173,9 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == 8'd1) begin
+        if ((cmdtyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (cmdtyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (cmdtyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (adrtyp_i != `QSPI_TYPE_NONE) begin
             s_fsm_d          = FSM_ADDR;
             s_xfer_bit_cnt_d = {2'd0, adrlen_i, 3'd0};
@@ -226,7 +228,9 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == 8'd1) begin
+        if ((adrtyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (adrtyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (adrtyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (dumlen_i != '0) begin
             s_fsm_d          = FSM_DUM;
             s_xfer_bit_cnt_d = dumlen_i;
@@ -296,7 +300,9 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == 8'd1) begin
+        if ((dattyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (dattyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (dattyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (s_xfer_byte_cnt_q == 16'd1) begin
             s_fsm_d          = FSM_DONE;
             s_sclk_en_d      = 1'b0;
@@ -336,9 +342,11 @@ module qspi_core (
           end
         endcase
 
-        if (s_xfer_bit_cnt_q == 8'd1) begin
+        if ((dattyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (dattyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (dattyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (rx_data_rdy_i) begin
-            if(~s_rx_data_req_q) s_rx_data_req_d = 1'b1;
+            if (~s_rx_data_req_q) s_rx_data_req_d = 1'b1;
             else s_rx_data_req_d = 1'b0;
 
             if (revdat_i) begin
