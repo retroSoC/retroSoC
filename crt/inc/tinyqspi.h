@@ -13,12 +13,16 @@ typedef struct {
 
 void qspi0_init(QSPI0_InitStruct_t val);
 
-void qspi0_spi_rd(uint32_t cmdlen, uint32_t cmddat, uint32_t adrlen, uint32_t adrdat, uint32_t dumlen, uint32_t datlen, uint32_t datbit, uint32_t* dat_list);
-void qspi0_spi_wr_cmd(uint8_t cmd);
+void qspi0_wr(uint32_t cmdtyp, uint32_t cmdlen, uint32_t cmddat,
+              uint32_t adrtyp, uint32_t adrlen, uint32_t adrdat,
+              uint32_t dumlen,
+              uint32_t dattyp, uint32_t datlen, uint32_t datbit,
+              uint32_t* dat_list);
 
-// void qspi0_spi_wr(uint32_t data);
-// void qspi0_dpi_wr(uint32_t data);
-// void qspi0_qspi_wr(uint32_t data);
-// void qspi0_qpi_wr(uint32_t data);
+void qspi0_rd(uint32_t cmdtyp, uint32_t cmdlen, uint32_t cmddat,
+              uint32_t adrtyp, uint32_t adrlen, uint32_t adrdat,
+              uint32_t dumlen,
+              uint32_t dattyp, uint32_t datlen, uint32_t datbit,
+              uint32_t* dat_list);
 
 #endif
