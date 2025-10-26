@@ -160,7 +160,7 @@ module retrosoc_tb;
       .qspi_nss0_o_pad    (s_qspi_nss0_o),
       .qspi_nss1_o_pad    (s_qspi_nss1_o),
       .qspi_nss2_o_pad    (s_qspi_nss2_o),
-      .qspi_nss3_o_pad    (s_qspi_nss3_o),
+      .qspi_nss3_o_pad    (), // tft test
       .qspi_dat0_io_pad   (s_qspi_dat0_io),
       .qspi_dat1_io_pad   (s_qspi_dat1_io),
       .qspi_dat2_io_pad   (s_qspi_dat2_io),
@@ -208,14 +208,6 @@ module retrosoc_tb;
       .HOLDn(s_qspi_dat3_io)
   );
 
-  W25Q128JVxIM u_W25Q128JVxIM_3 (
-      .CSn  (s_qspi_nss3_o),
-      .CLK  (s_qspi_sck_o),
-      .DIO  (s_qspi_dat0_io),
-      .DO   (s_qspi_dat1_io),
-      .WPn  (s_qspi_dat2_io),
-      .HOLDn(s_qspi_dat3_io)
-  );
 
   // Testbench pullups on SDA, SCL lines
   pullup i2c_scl_up (s_i2c_scl_io);
