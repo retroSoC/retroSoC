@@ -62,8 +62,7 @@ void main()
     // reg_dma_start = (uint32_t)1;
     // while(reg_dma_status == (uint32_t)0);
     // printf("dma tx done\n");
-
-    ip_norflash_test();
+    ip_lcd_test();
     while(1);
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     app_system_boot();
