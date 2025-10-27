@@ -28,13 +28,13 @@ module dma_core (
     // verilog_format: on
 );
 
-  // mode
-  // [7:5]: resv
-  // [4]:   qspi rx fifo trg
-  // [3]:   qspi tx fifo trg
-  // [2]:   i2s  rx fifo trg
-  // [1]:   i2s  tx fifo trg
-  // [0]:   sft trg
+  // mode val
+  // 7-5: resv
+  // 4:   qspi rx fifo trg
+  // 3:   qspi tx fifo trg
+  // 2:   i2s  rx fifo trg
+  // 1:   i2s  tx fifo trg
+  // 0:   sft trg
   localparam SFT_TRG = 3'd0;
   localparam HWT_I2S_TX_TRG = 3'd1;
   localparam HWT_I2S_RX_TRG = 3'd2;
