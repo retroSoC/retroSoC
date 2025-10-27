@@ -1,5 +1,7 @@
 #include <firmware.h>
 #include <tinyqspi.h>
+#include <tinydma.h>
+#include <tinyprintf.h>
 
 
 void qspi0_init(QSPI0_InitStruct_t val) {
@@ -103,6 +105,7 @@ void qspi0_wr_dat16(uint16_t dat) {
 }
 
 void qspi0_wr_data32(uint32_t* dat, uint32_t len) {
+    reg_qspi0_revdat = (uint32_t)1;
     reg_qspi0_datlen = (uint32_t)32;
     reg_qspi0_datbit = (uint32_t)4;
    for (uint32_t i = 0; i < len; ++i) {
@@ -111,6 +114,7 @@ void qspi0_wr_data32(uint32_t* dat, uint32_t len) {
 
     reg_qspi0_start = (uint32_t)1;
     while((reg_qspi0_status & (uint32_t)1) == 0);
+    reg_qspi0_revdat = (uint32_t)0;
     reg_qspi0_datlen = (uint32_t)1;
 }
 
@@ -145,6 +149,25 @@ void qspi0_rd(uint32_t cmdtyp, uint32_t cmdlen, uint32_t cmddat,
     }
 }
 
+
+void qspi0_dma_xfer(uint32_t addr, uint32_t len) {
+    reg_qspi0_mode = (uint32_t)1;
+    reg_qspi0_flush = (uint32_t)1;
+    reg_qspi0_revdat = (uint32_t)1;
+    reg_qspi0_datlen = (uint32_t)32;
+    reg_qspi0_datbit = (uint32_t)4;
+    printf("[qspi0 dma] src addr: %x, len: %d\n", addr, len);
+    uint32_t *ptr = (uint32_t*)addr;
+    for(int i = 0; i < 36; ++i) {
+        printf("data: %x\n", ptr[i]);
+    }
+    dma_config((uint32_t)3, addr, (uint32_t)1, (uint32_t)&reg_qspi0_txdata, (uint32_t)0, len);
+    dma_start_xfer();
+    dma_wait_done();
+    reg_qspi0_mode = (uint32_t)0;
+    reg_qspi0_revdat = (uint32_t)0;
+    reg_qspi0_datlen = (uint32_t)1;
+}
 
 void qspi1_init() {
     reg_gpio_oen = (uint32_t)0b011;

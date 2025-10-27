@@ -23,7 +23,7 @@ void ip_1wire_test() {
             reg_onewire_txdata = (uint32_t) ((i << 8) | (i << 16));
             reg_onewire_ctrl = (uint8_t)0b10;
             while(!(reg_onewire_status == (uint32_t)5));
-            delay_ms(100);
+            delay_ms(5);
         }
     }
 
