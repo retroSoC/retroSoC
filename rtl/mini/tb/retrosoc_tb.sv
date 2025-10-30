@@ -199,15 +199,6 @@ module retrosoc_tb;
       .HOLDn(s_qspi_dat3_io)
   );
 
-  W25Q128JVxIM u_W25Q128JVxIM_2 (
-      .CSn  (s_qspi_nss2_o),
-      .CLK  (s_qspi_sck_o),
-      .DIO  (s_qspi_dat0_io),
-      .DO   (s_qspi_dat1_io),
-      .WPn  (s_qspi_dat2_io),
-      .HOLDn(s_qspi_dat3_io)
-  );
-
 
   // Testbench pullups on SDA, SCL lines
   pullup i2c_scl_up (s_i2c_scl_io);
@@ -311,7 +302,9 @@ module retrosoc_tb;
       // #507983431
       // #507983430;
       // #535996319;
-      #577859417; // pure
+      // #543128473;
+      // #577859417; // pure
+      #585923415;
       // #1070933733; // debug spi
       // #873310000;
       // #340686376;

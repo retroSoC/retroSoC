@@ -14,6 +14,7 @@ module nmi_qspi (
     // verilog_format: off
     input  logic clk_i,
     input  logic rst_n_i,
+    input  logic dma_xfer_done_i,
     output logic dma_tx_stall_o,
     output logic dma_rx_stall_o,
     nmi_if.slave nmi,
@@ -76,7 +77,7 @@ module nmi_qspi (
   logic s_qspi_start_en;
   logic s_qspi_start_d, s_qspi_start_q;
   logic s_qspi_status_en;
-  logic [4:0] s_qspi_status_d, s_qspi_status_q;
+  logic [20:0] s_qspi_status_d, s_qspi_status_q;
   // common
   logic s_xfer_start, s_xfer_done;
   logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
@@ -393,25 +394,28 @@ module nmi_qspi (
       .cnt_o  (s_rx_elem_num)
   );
 
-
-  // [4] rx fifo empty
-  // [3] rx fifo full
-  // [2] tx fifo empty
-  // [1] tx fifo full
-  // [0] xfer done
+  // [20:14] rx elem num
+  // [13:5]  tx elem num
+  // [4]     rx fifo empty
+  // [3]     rx fifo full
+  // [2]     tx fifo empty
+  // [1]     tx fifo full
+  // [0]     xfer done
   always_comb begin
-    s_qspi_status_d    = s_qspi_status_q;
-    s_qspi_status_d[1] = s_tx_full;
-    s_qspi_status_d[2] = s_tx_empty;
-    s_qspi_status_d[3] = s_rx_full;
-    s_qspi_status_d[4] = s_rx_empty;
+    s_qspi_status_d        = s_qspi_status_q;
+    s_qspi_status_d[1]     = s_tx_full;
+    s_qspi_status_d[2]     = s_tx_empty;
+    s_qspi_status_d[3]     = s_rx_full;
+    s_qspi_status_d[4]     = s_rx_empty;
+    s_qspi_status_d[13:5]  = s_tx_elem_num;
+    s_qspi_status_d[20:14] = s_rx_elem_num;
     if (s_xfer_done) begin
       s_qspi_status_d[0] = 1'b1;
     end else if (s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_QSPI_STATUS) begin
       s_qspi_status_d[0] = 1'b0;
     end
   end
-  dffr #(5) u_qspi_status_dffr (
+  dffr #(21) u_qspi_status_dffr (
       clk_i,
       rst_n_i,
       s_qspi_status_d,
@@ -505,34 +509,35 @@ module nmi_qspi (
 
 
   qspi_core u_qspi_core (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .mode_i       (s_qspi_mode_q),
-      .nss_i        (s_qspi_nss_q),
-      .clkdiv_i     (s_qspi_clkdiv_q),
-      .rdwr_i       (s_qspi_rdwr_q),
-      .revdat_i     (s_qspi_revdat_q),
-      .cmdtyp_i     (s_qspi_cmdtyp_q),
-      .cmdlen_i     (s_qspi_cmdlen_q),
-      .cmddat_i     (s_qspi_cmddat_q),
-      .adrtyp_i     (s_qspi_adrtyp_q),
-      .adrlen_i     (s_qspi_adrlen_q),
-      .adrdat_i     (s_qspi_adrdat_q),
-      .dumlen_i     (s_qspi_dumlen_q),
-      .dattyp_i     (s_qspi_dattyp_q),
-      .datlen_i     (s_qspi_datlen_q),
-      .datbit_i     (s_qspi_datbit_q),
-      .hlvlen_i     (s_qspi_hlvlen_q),
-      .tx_data_req_o(s_tx_pop_valid),
-      .tx_data_rdy_i(s_tx_pop_ready),
-      .tx_data_i    (s_tx_pop_data),
-      .rx_data_req_o(s_rx_push_valid),
-      .rx_data_rdy_i(s_rx_push_ready),
-      .rx_data_o    (s_rx_push_data),
-      .start_i      (s_xfer_start),
-      .done_o       (s_xfer_done),
-      .tx_elem_num_i(s_tx_elem_num[7:0]),
-      .qspi         (qspi)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .mode_i         (s_qspi_mode_q),
+      .nss_i          (s_qspi_nss_q),
+      .clkdiv_i       (s_qspi_clkdiv_q),
+      .rdwr_i         (s_qspi_rdwr_q),
+      .revdat_i       (s_qspi_revdat_q),
+      .cmdtyp_i       (s_qspi_cmdtyp_q),
+      .cmdlen_i       (s_qspi_cmdlen_q),
+      .cmddat_i       (s_qspi_cmddat_q),
+      .adrtyp_i       (s_qspi_adrtyp_q),
+      .adrlen_i       (s_qspi_adrlen_q),
+      .adrdat_i       (s_qspi_adrdat_q),
+      .dumlen_i       (s_qspi_dumlen_q),
+      .dattyp_i       (s_qspi_dattyp_q),
+      .datlen_i       (s_qspi_datlen_q),
+      .datbit_i       (s_qspi_datbit_q),
+      .hlvlen_i       (s_qspi_hlvlen_q),
+      .tx_data_req_o  (s_tx_pop_valid),
+      .tx_data_rdy_i  (s_tx_pop_ready),
+      .tx_data_i      (s_tx_pop_data),
+      .rx_data_req_o  (s_rx_push_valid),
+      .rx_data_rdy_i  (s_rx_push_ready),
+      .rx_data_o      (s_rx_push_data),
+      .start_i        (s_xfer_start),
+      .done_o         (s_xfer_done),
+      .tx_elem_num_i  (s_tx_elem_num[7:0]),
+      .dma_xfer_done_i(dma_xfer_done_i),
+      .qspi           (qspi)
   );
 
 endmodule

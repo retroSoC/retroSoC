@@ -218,20 +218,22 @@ module ip_natv_wrapper (
   );
 
   nmi_qspi u_nmi_qspi (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .dma_tx_stall_o(s_dma_qspi_tx_stall),
-      .dma_rx_stall_o(s_dma_qspi_rx_stall),
-      .nmi           (u_qspi_nmi_if),
-      .qspi          (qspi)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .dma_xfer_done_i(s_dma_xfer_done),
+      .dma_tx_stall_o (s_dma_qspi_tx_stall),
+      .dma_rx_stall_o (s_dma_qspi_rx_stall),
+      .nmi            (u_qspi_nmi_if),
+      .qspi           (qspi)
   );
 
   nmi_dma u_nmi_dma (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .hw_trg (u_dma_hw_trg_if),
-      .nmi    (u_dma_nmi_if),
-      .nmi_dma(dma_nmi)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .dma_xfer_done_o(s_dma_xfer_done),
+      .hw_trg         (u_dma_hw_trg_if),
+      .nmi            (u_dma_nmi_if),
+      .nmi_dma        (dma_nmi)
   );
 
   nmi_sysctrl u_nmi_sysctrl (
