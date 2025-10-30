@@ -280,7 +280,8 @@ void ip_lcd_test() {
         (uint32_t)250,
         (uint32_t)140,
         (uint32_t)24,
-        (uint32_t)10
+        (uint32_t)10,
+        (uint32_t)2,
     };
     qspi0_init(qspi0);
     // 1-1-1(tx data only)
@@ -296,29 +297,33 @@ void ip_lcd_test() {
 
     lcd_init();
     // // lcd_wr_dc_cmd(0x01); // software reset
-    uint32_t pref_cnt = 0;
-    lcd_frame(1, pref_cnt);
-    for (int i = 0; i < 6; ++i) {
-        lcd_fill_bg(0, 0, LCD_W, LCD_H, 0);
-        lcd_fill_bg(0, 0, LCD_W, LCD_H, 1);
-        lcd_fill_bg(0, 0, LCD_W, LCD_H, 2);
-        pref_cnt += 3;
-    }
-    lcd_frame(0, pref_cnt);
+    // uint32_t pref_cnt = 0;
+    // lcd_frame(1, pref_cnt);
+    // for (int i = 0; i < 6; ++i) {
+    //     lcd_fill_bg(0, 0, LCD_W, LCD_H, 0);
+    //     lcd_fill_bg(0, 0, LCD_W, LCD_H, 1);
+    //     lcd_fill_bg(0, 0, LCD_W, LCD_H, 2);
+    //     pref_cnt += 3;
+    // }
+    // lcd_frame(0, pref_cnt);
 
 #ifdef USE_QSPI0_DMA
     printf("enable dma\n");
 #endif
 
-    // lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
-    pref_cnt = 0;
-    lcd_frame(1, pref_cnt);
-    for (int i = 0; i < 16; ++i) {
-        lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
-        lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_retro_spitft);
-        pref_cnt += 2;
-    }
-    lcd_frame(0, pref_cnt);
+    lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
+    delay_ms(1000);
+    // lcd_fill_image(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
+    lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
+    lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_retro_spitft);
+    // pref_cnt = 0;
+    // lcd_frame(1, pref_cnt);
+    // for (int i = 0; i < 16; ++i) {
+        // lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
+        // lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_retro_spitft);
+        // pref_cnt += 2;
+    // }
+    // lcd_frame(0, pref_cnt);
 
     // for (int i = 0; i < 100; ++i)
     // {

@@ -13,6 +13,7 @@ void qspi0_init(QSPI0_InitStruct_t val) {
     reg_qspi0_txlowbound = val.txlb;
     reg_qspi0_rxupbound  = val.rxub;
     reg_qspi0_rxlowbound = val.rxlb;
+    reg_qspi0_hlvlen     = val.hlven;
 }
 
 void qspi0_wr(uint32_t cmdtyp, uint32_t cmdlen, uint32_t cmddat,
@@ -168,9 +169,9 @@ void qspi0_dma_xfer(uint32_t addr, uint32_t len) {
     // }
     dma_config((uint32_t)3, addr, (uint32_t)1, (uint32_t)&reg_qspi0_txdata, (uint32_t)0, len);
     dma_start_xfer();
-    dma_wait_done();
-    // NOTE: when tx fifo is empty
+    // NOTE: must guarantee dma xfer done flag is clr after tx fifo empty check!
     while((reg_qspi0_status & (uint32_t)(1 << 2)) == 0);
+    dma_wait_done();
     reg_qspi0_mode = (uint32_t)0;
     reg_qspi0_flush = (uint32_t)1;
     reg_qspi0_revdat = (uint32_t)0;
