@@ -40,6 +40,7 @@ module nmi_dma (
     // verilog_format: off
     input  logic      clk_i,
     input  logic      rst_n_i,
+    output logic      dma_xfer_done_o,
     dma_hw_trg_if.dut hw_trg,
     nmi_if.slave      nmi,
     nmi_if.master     nmi_dma
@@ -73,6 +74,8 @@ module nmi_dma (
   assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
   assign nmi.ready      = s_nmi_ready_q;
   assign nmi.rdata      = s_nmi_rdata_q;
+
+  assign dma_xfer_done_o = s_dma_status_q;
 
 
   assign s_dma_mode_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_MODE;

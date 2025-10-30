@@ -348,7 +348,8 @@ void ip_norflash_test() {
         (uint32_t)250,
         (uint32_t)140,
         (uint32_t)24,
-        (uint32_t)10
+        (uint32_t)10,
+        (uint32_t)0,
     };
 
     qspi0_init(qspi0);

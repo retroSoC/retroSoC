@@ -12,6 +12,7 @@ typedef struct {
     uint32_t txlb;
     uint32_t rxub;
     uint32_t rxlb;
+    uint32_t hlven;
 } QSPI0_InitStruct_t;
 
 void qspi0_init(QSPI0_InitStruct_t val);

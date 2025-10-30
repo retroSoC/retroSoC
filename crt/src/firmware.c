@@ -3,12 +3,9 @@
 void main()
 {
     uart0_init(CPU_FREQ, UART_BPS);
-    // printf("bef delay\n");
-    // delay_ms(2);
-    // printf("aft delay\n");
-    // while(1);
-    // ip_lcd_test();
-    // while(1);
+    // ip_norflash_test();
+    ip_lcd_test();
+    while(1);
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     app_system_boot();
     ip_archinfo_test();
