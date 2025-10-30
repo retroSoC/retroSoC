@@ -6,10 +6,16 @@
 #include <tinyqspi.h>
 #include <tinylcd.h>
 #include <tinydma.h>
-// #include "image.h"
+#include "image.h"
 // #include "video.h"
 
 // static uint16_t test_frame_data[] = {
+//     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
+//     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
+//     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
+//     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
+//     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
+//     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
 //     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
 //     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
 //     0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678, 0x1234, 0x5678,
@@ -157,6 +163,7 @@ void lcd_init() {
 
     lcd_wr_dc_cmd(0x21);
     lcd_wr_dc_cmd(0x29);
+    printf("lcd init done\n");
 }
 
 void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
@@ -214,22 +221,27 @@ void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, 
 #ifdef USE_QSPI0_DMA
     uintptr_t addr = (uintptr_t)data;
     printf("addr: %x\n\n", addr);
-
+    lcd_dc_set;
     qspi0_dma_xfer(addr, tot / 2); // perf: every xfer in 32bits(2 pixels for RGB565 format)
 #else
-    for (int i = 0, j = 0; i < tot; i += 64, j += 32) {
-        lcd_wr_data32(data + j, 32);
+    int i, j;
+    for (i = 0, j = 0; i + 64 < tot; i += 64, j += 32) {
+        lcd_wr_data32(data + j, 32); // 32x2 pixels = 64pisel
     }
+
+    if (i < tot) lcd_wr_data32(data + j, (tot - i) / 2);
 #endif
 }
 
-void lcd_video_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t *data) {
+void lcd_fill_video(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t *data) {
     lcd_addr_set(xsta, ysta, xend - 1, yend - 1);
     int tot = (xend - xsta) * (yend - ysta);
-
-    for (int i = 0, j = 0; i < tot; i += 64, j += 32) {
-        lcd_wr_data32(data + j, 32);
+    int i, j;
+    for (i = 0, j = 0; i + 64 < tot; i += 64, j += 32) {
+        lcd_wr_data32(data + j, 32); // 32x2 pixels = 64pisel
     }
+
+    if (i < tot) lcd_wr_data32(data + j, (tot - i) / 2);
 }
 
 
@@ -283,7 +295,6 @@ void ip_lcd_test() {
 #endif
 
     lcd_init();
-    printf("lcd init done\n");
     // // lcd_wr_dc_cmd(0x01); // software reset
     uint32_t pref_cnt = 0;
     lcd_frame(1, pref_cnt);
@@ -298,22 +309,20 @@ void ip_lcd_test() {
 #ifdef USE_QSPI0_DMA
     printf("enable dma\n");
 #endif
-    // lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
-    // pref_cnt = 0;
-    // lcd_frame(1, pref_cnt);
-    
-    // for (int i = 0; i < 16; ++i)
-    // {
-        // lcd_fill_image(0, 0, 240, 135, (uint32_t*)test_frame_data);
-        // lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
-        // lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_retro_spitft);
-        // pref_cnt += 1;
-    // }
-    // lcd_frame(0, pref_cnt);
+
+    // lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
+    pref_cnt = 0;
+    lcd_frame(1, pref_cnt);
+    for (int i = 0; i < 16; ++i) {
+        lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
+        lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_retro_spitft);
+        pref_cnt += 2;
+    }
+    lcd_frame(0, pref_cnt);
 
     // for (int i = 0; i < 100; ++i)
     // {
-    //     lcd_video_image(0, 0, 240, 135, only_my_railgun[i]);
+    //     lcd_fill_video(0, 0, 240, 135, only_my_railgun[i]);
     //     pref_cnt += 1;
     // }
     // lcd_frame(0, pref_cnt);
