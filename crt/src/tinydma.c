@@ -31,7 +31,7 @@ void dma_reset_xfer() {
 
 void dma_wait_done() {
     while(reg_dma_status == (uint32_t)0);
-    printf("dma tx done\n");
+    // printf("dma tx done\n");
 }
 
 void ip_dma_test() {

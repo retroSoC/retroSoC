@@ -495,7 +495,7 @@ module nmi_qspi (
           else s_nmi_rdata_d = '0;
         end
       end
-      `NATV_QSPI_STATUS:     s_nmi_rdata_d = {27'd0, s_qspi_status_q};
+      `NATV_QSPI_STATUS:     s_nmi_rdata_d = {11'd0, s_qspi_status_q};
       default:               s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
