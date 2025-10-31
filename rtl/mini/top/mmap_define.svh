@@ -20,6 +20,9 @@
 `define SRAM_START    8'h30
 `define PSRAM0_START  8'h40
 `define PSRAM1_START  8'h41
-`define SPISD_START   4'h5
+`define SPISD_START0  4'h5
+`define SPISD_START1  4'h6
+`define SPISD_START2  4'h7
+`define SPISD_START3  4'h8
 
 `endif

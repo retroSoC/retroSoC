@@ -17,5 +17,5 @@
 #endif
 
 void ip_lcd_test();
-
+void lcd_fill_video(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t *data);
 #endif
