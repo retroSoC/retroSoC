@@ -65,7 +65,8 @@ APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
                 $(ROOT_PATH)/crt/app/src/pcf8563b.c \
                 $(ROOT_PATH)/crt/app/src/es8388.c \
                 $(ROOT_PATH)/crt/app/src/w25q128jvxim.c \
-                $(ROOT_PATH)/crt/app/src/wav_audio.c
+                $(ROOT_PATH)/crt/app/src/wav_audio.c \
+                $(ROOT_PATH)/crt/app/src/video_player.c
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)

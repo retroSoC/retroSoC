@@ -323,6 +323,9 @@ void ip_lcd_test() {
     }
     lcd_frame(0, pref_cnt);
 
+    lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
+    delay_ms(1000);
+
     // for (int i = 0; i < 100; ++i)
     // {
     //     lcd_fill_video(0, 0, 240, 135, only_my_railgun[i]);

@@ -35,6 +35,7 @@
 #include <es8388.h>
 #include <w25q128jvxim.h>
 #include <wav_audio.h>
+#include <video_player.h>
 
 #ifdef __cplusplus
 extern "C"

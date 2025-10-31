@@ -5,6 +5,7 @@ void main()
     uart0_init(CPU_FREQ, UART_BPS);
     // ip_norflash_test();
     ip_lcd_test();
+    video_show(0x579D1000);
     while(1);
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     app_system_boot();
