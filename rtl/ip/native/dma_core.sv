@@ -89,6 +89,10 @@ module dma_core (
                 if (~hw_trg.i2s_rx_proc && s_xfer_done_q) nmi.valid = 1'b0;
                 else nmi.valid = 1'b1;
               end
+              HWT_QSPI_RX_TRG: begin
+                if (~hw_trg.qspi_rx_proc && s_xfer_done_q) nmi.valid = 1'b0;
+                else nmi.valid = 1'b1;
+              end
               default: nmi.valid = 1'b1;
             endcase
             nmi.addr = s_src_addr_q;
