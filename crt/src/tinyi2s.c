@@ -7,7 +7,7 @@
 #include <es8388.h>
 
 uint32_t test_data[] = {0x12345678, 0x12345679, 0x1234567A, 0x2345EF23, 0x2345EF24, 0x2345EF25};
-uint32_t audio_addr[] = {0x51004000, 0x54737000};
+uint32_t audio_addr[] = {0x61004000, 0x64737000};
 uint32_t audio_len = 2, audio_idx = 0;
 
 void i2s_init(uint32_t mode) {

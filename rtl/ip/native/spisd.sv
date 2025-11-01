@@ -12,6 +12,8 @@
 // cache size: 512(width 9) [8:0]
 // tag width: 23(mem access) 32(reg access)
 
+`include "mmap_define.svh"
+
 module nmi_spisd (
     // verilog_format: off
     input  logic clk_i,
@@ -41,7 +43,7 @@ module nmi_spisd (
   nmi_if u_cache_mem_nmi_if ();
   nmi_if u_cache_byp_nmi_if ();
 
-  assign s_cfg_reg_sel            = nmi.addr[31:24] == 8'h10 && nmi.addr[15:8] == 8'h50;
+  assign s_cfg_reg_sel            = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
   assign u_cfg_nmi_if.valid       = nmi.valid && s_cfg_reg_sel;
   assign u_cfg_nmi_if.addr        = nmi.addr;
   assign u_cfg_nmi_if.wdata       = nmi.wdata;

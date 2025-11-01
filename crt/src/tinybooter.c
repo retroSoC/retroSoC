@@ -45,10 +45,13 @@ void app_boot_info() {
     printf("  ISA:               %s\n", SW_ISA);
     printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
-    printf("Inst/Memory Device: \n");
+    printf("Inst/Memory Address Range:\n");
     printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  NMI MEM IPs size:  @[0x%x-0x%x] %dMB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
+    printf("  APB MEM IPs size:  @[0x%x-0x%x] %dMB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
     printf("  On-chip RAM size:  @[0x%x-0x%x] %dKB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
     printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  QSPI MEM MAP size: @[0x%x-0x%x] %dMB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
     printf("  TF MMIO Card size: @[0x%x-0x%x] %dMB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
