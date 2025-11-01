@@ -70,18 +70,18 @@ module mem2apb (
   assign tmr.pprot        = '0;
   assign spfs.pprot       = '0;
 
-  assign archinfo.psel    = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h10);
-  assign rng.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h20);
-  assign uart.psel        = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h30);
-  assign pwm.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h40);
-  assign ps2.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h50);
-  assign i2c.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h60);
-  assign qspi.psel        = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h70);
-  assign rtc.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h80);
-  assign wdg.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'h90);
-  assign crc.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'hA0);
-  assign tmr.psel         = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'hB0);
-  assign spfs.psel        = s_xfer_valid && (nmi.addr[31:24] == `FLASH_START);
+  assign archinfo.psel    = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_ARCHINFO_START);
+  assign rng.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RNG_START);
+  assign uart.psel        = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_UART_START);
+  assign pwm.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PWM_START);
+  assign ps2.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PS2_START);
+  assign i2c.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_I2C_START);
+  assign qspi.psel        = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_QSPI_START);
+  assign rtc.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RTC_START);
+  assign wdg.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_WDG_START);
+  assign crc.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_CRC_START);
+  assign tmr.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_TMR_START);
+  assign spfs.psel        = s_xfer_valid && (nmi.addr[31:28] == `FLASH_START);
 
   assign archinfo.penable = s_fsm_q == FSM_ENABLE;
   assign rng.penable      = s_fsm_q == FSM_ENABLE;
@@ -138,7 +138,7 @@ module mem2apb (
 `ifdef IP_MDD
   assign user_ip.paddr    = nmi.addr;
   assign user_ip.pprot    = '0;
-  assign user_ip.psel     = s_xfer_valid && (nmi.addr[31:24] == `APB_IP_START && nmi.addr[15:8] == 8'hF0);
+  assign user_ip.psel     = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_USR_START);
   assign user_ip.penable  = s_fsm_q == FSM_ENABLE;
   assign user_ip.pwrite   = |nmi.wstrb;
   assign user_ip.pwdata   = nmi.wdata;

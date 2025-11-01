@@ -8,7 +8,7 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-// addr range: [31:24]: 8'h10(reg), 8'h40(psram), 8'h50(spisd)
+// addr range: [31:28]: 4'h1(reg), 4'h4(psram), 4'h5(spisd)
 `include "mmap_define.svh"
 
 module ip_natv_wrapper (
@@ -60,35 +60,34 @@ module ip_natv_wrapper (
   assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_qspi_tx_stall;
   assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_qspi_rx_stall;
   // addr
-  assign u_gpio_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h00);
+  assign u_gpio_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_GPIO_START);
   assign u_gpio_nmi_if.addr     = nmi.addr;
   assign u_gpio_nmi_if.wdata    = nmi.wdata;
   assign u_gpio_nmi_if.wstrb    = nmi.wstrb;
 
-  assign u_uart_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h10);
+  assign u_uart_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_UART_START);
   assign u_uart_nmi_if.addr     = nmi.addr;
   assign u_uart_nmi_if.wdata    = nmi.wdata;
   assign u_uart_nmi_if.wstrb    = nmi.wstrb;
 
-  assign u_tim0_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h20);
+  assign u_tim0_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_TIM0_START);
   assign u_tim0_nmi_if.addr     = nmi.addr;
   assign u_tim0_nmi_if.wdata    = nmi.wdata;
   assign u_tim0_nmi_if.wstrb    = nmi.wstrb;
 
-  assign u_tim1_nmi_if.valid    = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h30);
+  assign u_tim1_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_TIM1_START);
   assign u_tim1_nmi_if.addr     = nmi.addr;
   assign u_tim1_nmi_if.wdata    = nmi.wdata;
   assign u_tim1_nmi_if.wstrb    = nmi.wstrb;
 
-  assign s_psram_cfg_sel        = nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h40;
-  assign s_psram_mem_sel        = nmi.addr[31:24] == `PSRAM0_START ||
-                                  nmi.addr[31:24] == `PSRAM1_START;
+  assign s_psram_cfg_sel        = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM_START;
+  assign s_psram_mem_sel        = nmi.addr[31:28] == `PSRAM_START;
   assign u_psram_nmi_if.valid   = nmi.valid && (s_psram_mem_sel || s_psram_cfg_sel);
   assign u_psram_nmi_if.addr    = nmi.addr;
   assign u_psram_nmi_if.wdata   = nmi.wdata;
   assign u_psram_nmi_if.wstrb   = nmi.wstrb;
 
-  assign s_spisd_cfg_sel        = nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h50;
+  assign s_spisd_cfg_sel        = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
   assign u_spisd_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `SPISD_START0 ||
                                                 nmi.addr[31:28] == `SPISD_START1 ||
                                                 nmi.addr[31:28] == `SPISD_START2 ||
@@ -97,32 +96,32 @@ module ip_natv_wrapper (
   assign u_spisd_nmi_if.wdata   = nmi.wdata;
   assign u_spisd_nmi_if.wstrb   = nmi.wstrb;
 
-  assign u_i2c_nmi_if.valid     = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h60);
+  assign u_i2c_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_I2C_START);
   assign u_i2c_nmi_if.addr      = nmi.addr;
   assign u_i2c_nmi_if.wdata     = nmi.wdata;
   assign u_i2c_nmi_if.wstrb     = nmi.wstrb;
 
-  assign u_i2s_nmi_if.valid     = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h70);
+  assign u_i2s_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_I2S_START);
   assign u_i2s_nmi_if.addr      = nmi.addr;
   assign u_i2s_nmi_if.wdata     = nmi.wdata;
   assign u_i2s_nmi_if.wstrb     = nmi.wstrb;
 
-  assign u_onewire_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h80);
+  assign u_onewire_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_ONEWIRE_START);
   assign u_onewire_nmi_if.addr    = nmi.addr;
   assign u_onewire_nmi_if.wdata   = nmi.wdata;
   assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
 
-  assign u_qspi_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'h90);
-  assign u_qspi_nmi_if.addr    = nmi.addr;
-  assign u_qspi_nmi_if.wdata   = nmi.wdata;
-  assign u_qspi_nmi_if.wstrb   = nmi.wstrb;
+  assign u_qspi_nmi_if.valid      = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START);
+  assign u_qspi_nmi_if.addr       = nmi.addr;
+  assign u_qspi_nmi_if.wdata      = nmi.wdata;
+  assign u_qspi_nmi_if.wstrb      = nmi.wstrb;
 
-  assign u_dma_nmi_if.valid       = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'hA0);
+  assign u_dma_nmi_if.valid       = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_DMA_START);
   assign u_dma_nmi_if.addr        = nmi.addr;
   assign u_dma_nmi_if.wdata       = nmi.wdata;
   assign u_dma_nmi_if.wstrb       = nmi.wstrb;
 
-  assign u_sysctrl_nmi_if.valid   = nmi.valid && (nmi.addr[31:24] == `NATV_IP_START && nmi.addr[15:8] == 8'hB0);
+  assign u_sysctrl_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SYSCTRL_START);
   assign u_sysctrl_nmi_if.addr    = nmi.addr;
   assign u_sysctrl_nmi_if.wdata   = nmi.wdata;
   assign u_sysctrl_nmi_if.wstrb   = nmi.wstrb;
