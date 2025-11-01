@@ -32,13 +32,19 @@
 #define PSRAM_SCLK_FREQ     (CPU_FREQ / 2)
 
 #define SPFS_MEM_START      0x00000000
-#define SPFS_MEM_OFFST      0x1000000
+#define SPFS_MEM_OFFST      16 * 1024 * 1024
+#define NMI_MEM_START       0x10000000
+#define NMI_MEM_OFFST       256 * 1024 * 1024
+#define APB_MEM_START       0x20000000
+#define APB_MEM_OFFST       256 * 1024 * 1024
 #define SRAM_MEM_START      0x30000000
-#define SRAM_MEM_OFFST      0x20000
+#define SRAM_MEM_OFFST      128 * 1024
 #define PSRAM_MEM_START     0x40000000
-#define PSRAM_MEM_OFFST     (0x800000 * PSRAM_NUM)
-#define TF_CARD_START       0x50000000
-#define TF_CARD_OFFST       0x10000000
+#define PSRAM_MEM_OFFST     8 * 1024 * 1024 * PSRAM_NUM
+#define QSPI_MEM_START      0x50000000
+#define QSPI_MEM_OFFST      256 * 1024 * 1024
+#define TF_CARD_START       (uint32_t)0x60000000
+#define TF_CARD_OFFST       (uint32_t)0x40000000
 
 // gpio
 #define reg_gpio_data      (*(volatile uint32_t*)0x10000000)
@@ -137,78 +143,78 @@
 #define reg_sysctrl_qspicsel (*(volatile uint32_t*)0x1000B00C)
 // apb
 // archinfo
-#define reg_archinfo_sys   (*(volatile uint32_t*)0x20001000)
-#define reg_archinfo_idl   (*(volatile uint32_t*)0x20001004)
-#define reg_archinfo_idh   (*(volatile uint32_t*)0x20001008)
+#define reg_archinfo_sys   (*(volatile uint32_t*)0x20000000)
+#define reg_archinfo_idl   (*(volatile uint32_t*)0x20000004)
+#define reg_archinfo_idh   (*(volatile uint32_t*)0x20000008)
 // rng
-#define reg_rng_ctrl       (*(volatile uint32_t*)0x20002000)
-#define reg_rng_seed       (*(volatile uint32_t*)0x20002004)
-#define reg_rng_val        (*(volatile uint32_t*)0x20002008)
+#define reg_rng_ctrl       (*(volatile uint32_t*)0x20001000)
+#define reg_rng_seed       (*(volatile uint32_t*)0x20001004)
+#define reg_rng_val        (*(volatile uint32_t*)0x20001008)
 // uart
-#define reg_uart1_lcr      (*(volatile uint32_t*)0x20003000)
-#define reg_uart1_div      (*(volatile uint32_t*)0x20003004)
-#define reg_uart1_trx      (*(volatile uint32_t*)0x20003008)
-#define reg_uart1_fcr      (*(volatile uint32_t*)0x2000300c)
-#define reg_uart1_lsr      (*(volatile uint32_t*)0x20003010)
+#define reg_uart1_lcr      (*(volatile uint32_t*)0x20002000)
+#define reg_uart1_div      (*(volatile uint32_t*)0x20002004)
+#define reg_uart1_trx      (*(volatile uint32_t*)0x20002008)
+#define reg_uart1_fcr      (*(volatile uint32_t*)0x2000200c)
+#define reg_uart1_lsr      (*(volatile uint32_t*)0x20002010)
 // pwm
-#define reg_pwm_ctrl       (*(volatile uint32_t*)0x20004000)
-#define reg_pwm_pscr       (*(volatile uint32_t*)0x20004004)
-#define reg_pwm_cnt        (*(volatile uint32_t*)0x20004008)
-#define reg_pwm_cmp        (*(volatile uint32_t*)0x2000400c)
-#define reg_pwm_cr0        (*(volatile uint32_t*)0x20004010)
-#define reg_pwm_cr1        (*(volatile uint32_t*)0x20004014)
-#define reg_pwm_cr2        (*(volatile uint32_t*)0x20004018)
-#define reg_pwm_cr3        (*(volatile uint32_t*)0x2000401c)
-#define reg_pwm_stat       (*(volatile uint32_t*)0x20004020)
+#define reg_pwm_ctrl       (*(volatile uint32_t*)0x20003000)
+#define reg_pwm_pscr       (*(volatile uint32_t*)0x20003004)
+#define reg_pwm_cnt        (*(volatile uint32_t*)0x20003008)
+#define reg_pwm_cmp        (*(volatile uint32_t*)0x2000300c)
+#define reg_pwm_cr0        (*(volatile uint32_t*)0x20003010)
+#define reg_pwm_cr1        (*(volatile uint32_t*)0x20003014)
+#define reg_pwm_cr2        (*(volatile uint32_t*)0x20003018)
+#define reg_pwm_cr3        (*(volatile uint32_t*)0x2000301c)
+#define reg_pwm_stat       (*(volatile uint32_t*)0x20003020)
 // ps2
-#define reg_ps2_ctrl       (*(volatile uint32_t*)0x20005000)
-#define reg_ps2_data       (*(volatile uint32_t*)0x20005004)
-#define reg_ps2_stat       (*(volatile uint32_t*)0x20005008)
+#define reg_ps2_ctrl       (*(volatile uint32_t*)0x20004000)
+#define reg_ps2_data       (*(volatile uint32_t*)0x20004004)
+#define reg_ps2_stat       (*(volatile uint32_t*)0x20004008)
 // i2c1
-#define reg_i2c1_ctrl      (*(volatile uint32_t*)0x20006000)
-#define reg_i2c1_pscr      (*(volatile uint32_t*)0x20006004)
-#define reg_i2c1_txr       (*(volatile uint32_t*)0x20006008)
-#define reg_i2c1_rxr       (*(volatile uint32_t*)0x2000600c)
-#define reg_i2c1_cmd       (*(volatile uint32_t*)0x20006010)
-#define reg_i2c1_sr        (*(volatile uint32_t*)0x20006014)
+#define reg_i2c1_ctrl      (*(volatile uint32_t*)0x20005000)
+#define reg_i2c1_pscr      (*(volatile uint32_t*)0x20005004)
+#define reg_i2c1_txr       (*(volatile uint32_t*)0x20005008)
+#define reg_i2c1_rxr       (*(volatile uint32_t*)0x2000500c)
+#define reg_i2c1_cmd       (*(volatile uint32_t*)0x20005010)
+#define reg_i2c1_sr        (*(volatile uint32_t*)0x20005014)
 // qspi1
-#define reg_qspi1_status   (*(volatile uint32_t*)0x20007000)
-#define reg_qspi1_clkdiv   (*(volatile uint32_t*)0x20007004)
-#define reg_qspi1_cmd      (*(volatile uint32_t*)0x20007008)
-#define reg_qspi1_adr      (*(volatile uint32_t*)0x2000700c)
-#define reg_qspi1_len      (*(volatile uint32_t*)0x20007010)
-#define reg_qspi1_dum      (*(volatile uint32_t*)0x20007014)
-#define reg_qspi1_txfifo   (*(volatile uint32_t*)0x20007018)
-#define reg_qspi1_rxfifo   (*(volatile uint32_t*)0x20007020)
-#define reg_qspi1_intcfg   (*(volatile uint32_t*)0x20007024)
-#define reg_qspi1_intsta   (*(volatile uint32_t*)0x20007028)
+#define reg_qspi1_status   (*(volatile uint32_t*)0x20006000)
+#define reg_qspi1_clkdiv   (*(volatile uint32_t*)0x20006004)
+#define reg_qspi1_cmd      (*(volatile uint32_t*)0x20006008)
+#define reg_qspi1_adr      (*(volatile uint32_t*)0x2000600c)
+#define reg_qspi1_len      (*(volatile uint32_t*)0x20006010)
+#define reg_qspi1_dum      (*(volatile uint32_t*)0x20006014)
+#define reg_qspi1_txfifo   (*(volatile uint32_t*)0x20006018)
+#define reg_qspi1_rxfifo   (*(volatile uint32_t*)0x20006020)
+#define reg_qspi1_intcfg   (*(volatile uint32_t*)0x20006024)
+#define reg_qspi1_intsta   (*(volatile uint32_t*)0x20006028)
 // rtc
-#define reg_rtc_ctrl       (*(volatile uint32_t*)0x20008000)
-#define reg_rtc_pscr       (*(volatile uint32_t*)0x20008004)
-#define reg_rtc_cnt        (*(volatile uint32_t*)0x20008008)
-#define reg_rtc_alrm       (*(volatile uint32_t*)0x2000800C)
-#define reg_rtc_ista       (*(volatile uint32_t*)0x20008010)
-#define reg_rtc_ssta       (*(volatile uint32_t*)0x20008014)
+#define reg_rtc_ctrl       (*(volatile uint32_t*)0x20007000)
+#define reg_rtc_pscr       (*(volatile uint32_t*)0x20007004)
+#define reg_rtc_cnt        (*(volatile uint32_t*)0x20007008)
+#define reg_rtc_alrm       (*(volatile uint32_t*)0x2000700C)
+#define reg_rtc_ista       (*(volatile uint32_t*)0x20007010)
+#define reg_rtc_ssta       (*(volatile uint32_t*)0x20007014)
 // wdg
-#define reg_wdg_ctrl       (*(volatile uint32_t*)0x20009000)
-#define reg_wdg_pscr       (*(volatile uint32_t*)0x20009004)
-#define reg_wdg_cnt        (*(volatile uint32_t*)0x20009008)
-#define reg_wdg_cmp        (*(volatile uint32_t*)0x2000900C)
-#define reg_wdg_stat       (*(volatile uint32_t*)0x20009010)
-#define reg_wdg_key        (*(volatile uint32_t*)0x20009014)
-#define reg_wdg_feed       (*(volatile uint32_t*)0x20009018)
+#define reg_wdg_ctrl       (*(volatile uint32_t*)0x20008000)
+#define reg_wdg_pscr       (*(volatile uint32_t*)0x20008004)
+#define reg_wdg_cnt        (*(volatile uint32_t*)0x20008008)
+#define reg_wdg_cmp        (*(volatile uint32_t*)0x2000800C)
+#define reg_wdg_stat       (*(volatile uint32_t*)0x20008010)
+#define reg_wdg_key        (*(volatile uint32_t*)0x20008014)
+#define reg_wdg_feed       (*(volatile uint32_t*)0x20008018)
 // crc
-#define reg_crc_ctrl       (*(volatile uint32_t*)0x2000A000)
-#define reg_crc_init       (*(volatile uint32_t*)0x2000A004)
-#define reg_crc_xorv       (*(volatile uint32_t*)0x2000A008)
-#define reg_crc_data       (*(volatile uint32_t*)0x2000A00C)
-#define reg_crc_stat       (*(volatile uint32_t*)0x2000A010)
+#define reg_crc_ctrl       (*(volatile uint32_t*)0x20009000)
+#define reg_crc_init       (*(volatile uint32_t*)0x20009004)
+#define reg_crc_xorv       (*(volatile uint32_t*)0x20009008)
+#define reg_crc_data       (*(volatile uint32_t*)0x2000900C)
+#define reg_crc_stat       (*(volatile uint32_t*)0x20009010)
 // tim
-#define reg_tim3_ctrl      (*(volatile uint32_t*)0x2000B000)
-#define reg_tim3_pscr      (*(volatile uint32_t*)0x2000B004)
-#define reg_tim3_cnt       (*(volatile uint32_t*)0x2000B008)
-#define reg_tim3_cmp       (*(volatile uint32_t*)0x2000B00C)
-#define reg_tim3_stat      (*(volatile uint32_t*)0x2000B010)
+#define reg_tim3_ctrl      (*(volatile uint32_t*)0x2000A000)
+#define reg_tim3_pscr      (*(volatile uint32_t*)0x2000A004)
+#define reg_tim3_cnt       (*(volatile uint32_t*)0x2000A008)
+#define reg_tim3_cmp       (*(volatile uint32_t*)0x2000A00C)
+#define reg_tim3_stat      (*(volatile uint32_t*)0x2000A010)
 
 // user ip design(example)
 #define reg_user_ip_reg0   (*(volatile uint32_t*)0x2000F000)
