@@ -137,3 +137,13 @@ int memcmp(const void *s1, const void *s2, size_t n)
 
   return 0;
 }
+
+char *strchr(const char *s, int c) {
+    const char ch = (char)c;
+
+    do {
+        if (*s == ch) return (char *)s;
+    } while (*s++ != '\0');
+
+    return 0;
+}

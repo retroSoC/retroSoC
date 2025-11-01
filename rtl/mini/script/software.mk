@@ -66,7 +66,11 @@ APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
                 $(ROOT_PATH)/crt/app/src/es8388.c \
                 $(ROOT_PATH)/crt/app/src/w25q128jvxim.c \
                 $(ROOT_PATH)/crt/app/src/wav_audio.c \
-                $(ROOT_PATH)/crt/app/src/video_player.c
+                $(ROOT_PATH)/crt/app/src/video_player.c \
+                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/diskio.c \
+                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ff.c \
+                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ffsystem.c \
+                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ffunicode.c
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)
@@ -82,7 +86,7 @@ LDS_PATH := $(ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
 firmware:
 	@mkdir -p .sw_build
 	cd .sw_build && ($(CP) -P -o flash_$(EXEC_TYPE).lds $(LDS_PATH))
-	cd .sw_build && ($(CC) $(CFLAGS) -I$(ROOT_PATH)/crt/inc -I$(ROOT_PATH)/crt/app/inc -o $@ $(SRC_PATH))
+	cd .sw_build && ($(CC) $(CFLAGS) -I$(ROOT_PATH)/crt/inc -I$(ROOT_PATH)/crt/app/inc -I$(ROOT_PATH)/crt/app/src/fatfs/ff16/source -o $@ $(SRC_PATH))
 	cd .sw_build && ($(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex)
 	cd .sw_build && ($(OBJC) -O binary $@ $(FIRMWARE_NAME).bin)
 	cd .sw_build && ($(DUMP) -d $@ > $(FIRMWARE_NAME).txt)

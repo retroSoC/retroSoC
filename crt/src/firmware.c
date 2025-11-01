@@ -1,12 +1,45 @@
 #include <tinylib.h>
+#include <ff.h> // app/fat32
 
 void main()
 {
     uart0_init(CPU_FREQ, UART_BPS);
+    FATFS fs;
+    // FIL fnew;
+    FRESULT ff_res;
+    // BYTE buffer[1024]= {0};
+
+    ff_res = f_mount(&fs, "0:", 1);
+    if (ff_res == FR_NO_FILESYSTEM) {
+        printf("[fatfs] no filesystem");
+    } else if (ff_res != FR_OK) {
+        printf("[fatfs] filesystem mount fail\n");
+    } else {
+        printf("[fatfs] mount done\n");
+        FILINFO ff_info;
+        ff_res = f_stat("silkroad.wav", &ff_info);
+        if(ff_res == FR_OK) {
+        printf("Size: %lu\n", ff_info.fsize);
+        printf("Timestamp: %u-%02u-%02u, %02u:%02u\n",
+               (ff_info.fdate >> 9) + 1980, ff_info.fdate >> 5 & 15, ff_info.fdate & 31,
+               ff_info.ftime >> 11, ff_info.ftime >> 5 & 63);
+        printf("Attributes: %c%c%c%c%c\n",
+               (ff_info.fattrib & AM_DIR) ? 'D' : '-',
+               (ff_info.fattrib & AM_RDO) ? 'R' : '-',
+               (ff_info.fattrib & AM_HID) ? 'H' : '-',
+               (ff_info.fattrib & AM_SYS) ? 'S' : '-',
+               (ff_info.fattrib & AM_ARC) ? 'A' : '-');
+        }
+
+        f_mount(NULL, "0:", 1);
+    }
+
+
     // ip_norflash_test();
-    // ip_lcd_test();
-    // video_show(0x679D1000);
-    // while(1);
+    while(1);
+    ip_lcd_test();
+    video_show(0x679D1000);
+    while(1);
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     app_system_boot();
     // while(1);
