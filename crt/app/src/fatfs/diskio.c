@@ -9,10 +9,10 @@
 
 #include "ff.h"     /* Basic definitions of FatFs */
 #include "diskio.h" /* Declarations FatFs MAI */
+#include <tinyspisd.h>
 
-
-#define DEV_TF   0 /* Map MMC/SD card to physical drive 1 */
-
+#define DEV_TF       0 /* Map MMC/SD card to physical drive 1 */
+#define SD_BLOCKSIZE 512
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
@@ -65,7 +65,20 @@ DRESULT disk_read (
     if (!count) return RES_PARERR;    /* Check parameter */
     switch (pdrv) {
     case DEV_TF:
-        spisd_drv_read(buff, sector, count);
+        // if ((DWORD)buff&3) {
+        //     DRESULT res = RES_OK;
+        //     DWORD scratch[SD_BLOCKSIZE / 4];
+        //     while (count--) {
+        //         res = disk_read(DEV_TF, (void *)scratch, sector++, 1);
+        //         if (res != RES_OK) {
+        //             break;
+        //         }
+        //         memcpy(buff, scratch, SD_BLOCKSIZE);
+        //         buff += SD_BLOCKSIZE;
+        //     }
+        //     return res;
+        // }
+        spisd_sector_read(buff, sector, count);
         status = RES_OK;
         break;
     default:
@@ -97,7 +110,7 @@ DRESULT disk_write (
     if (!count) return RES_PARERR;    /* Check parameter */
     switch (pdrv) {
     case DEV_TF:
-        spisd_drv_write(buff, sector, count);
+        spisd_sector_write(buff, sector, count);
         status = RES_OK;
         break;
     default:
@@ -127,10 +140,10 @@ DRESULT disk_ioctl (
     case DEV_TF:
         switch(cmd) {
         case GET_SECTOR_SIZE:
-            *(WORD * )buff = 512;
+            *(WORD * )buff = SD_BLOCKSIZE;
             break;
         case GET_SECTOR_COUNT:
-            *(WORD * )buff = 524288; // 256MiB(mem access)
+            *(DWORD * )buff = 524288 * 4; // 1024MiB(mem access)
             break;
         case GET_BLOCK_SIZE:
             *(WORD * )buff = 1;
