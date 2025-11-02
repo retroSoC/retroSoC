@@ -6,6 +6,8 @@
 
 static tinysh_cmd_t sh_cmd_list[MAX_CMD_NUM];
 static uint8_t sh_cmd_len;
+static char sh_history_table[MAX_CMD_HIST][MAX_CMD_LEN];
+static uint8_t sh_history_idx;
 
 uint8_t tinysh_register(char *name, char *info, void *handler) {
     if(!name || !handler || !strlen(name)) return 1;
@@ -39,7 +41,13 @@ static void tinysh_find_cmd(char *cmd) {
 
 static void tinysh_help() {
     for(uint8_t i = 0; i < sh_cmd_len; ++i) {
-        printf("cmd: %8s info: %24s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
+        printf("cmd: %8s info: %16s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
+    }
+}
+
+static void tinysh_history_list() {
+    for(uint8_t i = 0; i < sh_history_idx; ++i) {
+        printf("%3d %s\n", i, sh_history_table[i]);
     }
 }
 
@@ -51,6 +59,7 @@ static void tinysh_welcome() {
 
 void tinysh_init() {
     sh_cmd_len = 0;
+    sh_history_idx = 0;
 }
 
 void tinysh_launch() {
@@ -60,6 +69,9 @@ void tinysh_launch() {
     tinysh_welcome();
     // register internal cmd
     tinysh_register("help", "default help info", tinysh_help);
+    tinysh_register("history", "print history list", tinysh_history_list);
+    // ls -> fatfs
+    //
     while(1) {
         printf("tinysh > ");
         type_len = 0;
@@ -74,7 +86,8 @@ void tinysh_launch() {
                 if(type_len == 0) continue;
                 printf("\b \b");
                 type_res[type_len--] = 0;
-            } else if(type_ch == (char) 9) {
+            } else if(type_ch == (char) 9) { // tab
+                printf("tab\n");
                 // tinysh_search_cmd(type_res, type_len);
             }
 
@@ -82,6 +95,14 @@ void tinysh_launch() {
         putchar('\n');
         
         type_res[type_len] = 0;
+        if(sh_history_idx < MAX_CMD_HIST) strcpy(sh_history_table[sh_history_idx++], type_res);
+        else {
+            for(uint8_t i = 1; i < MAX_CMD_HIST; ++i) {
+                strcpy(sh_history_table[i-1], sh_history_table[i]);
+            }
+            strcpy(sh_history_table[sh_history_idx-1], type_res);
+        }
+
         tinysh_find_cmd(type_res);
     }
 }

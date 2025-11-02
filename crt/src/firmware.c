@@ -4,6 +4,24 @@
 void main()
 {
     uart0_init(CPU_FREQ, UART_BPS);
+    tinysh_init();
+    tinysh_register("arch", "archinfo test", ip_archinfo_test);
+    tinysh_register("1wire", "1wire test", ip_1wire_test);
+    tinysh_register("tim", "timer test", ip_tim_test);
+    tinysh_register("gpio", "gpio test", ip_gpio_test);
+    tinysh_register("pwm", "pwm test", ip_pwm_test);
+    tinysh_register("rtc", "rtc test", ip_rtc_test);
+    tinysh_register("wdg", "wdg test", ip_wdg_test);
+    tinysh_register("rng", "rng test", ip_rng_test);
+    tinysh_register("crc", "crc test", ip_crc_test);
+    tinysh_register("nor", "nor flash test", ip_norflash_test);
+    tinysh_register("uart1", "uart1 test", ip_hpuart_test);
+    tinysh_register("ps2", "ps2 test", ip_ps2_test);
+    tinysh_register("lcd", "lcd test", ip_lcd_test);
+    tinysh_register("i2s", "i2s test", ip_i2s_test);
+    tinysh_register("pcf", "pcf8563b test", pcf8563b_test);
+    while(1);
+
     FATFS fs;
     // FIL fnew;
     FRESULT ff_res;
@@ -62,21 +80,5 @@ void main()
     // ip_i2s_test();
     // ip_dma_test();
     // tinybench(true, 0);
-    tinysh_init();
-    tinysh_register("arch", "archinfo test", ip_archinfo_test);
-    tinysh_register("1wire", "1wire test", ip_1wire_test);
-    tinysh_register("tim", "timer test", ip_tim_test);
-    tinysh_register("gpio", "gpio test", ip_gpio_test);
-    tinysh_register("pwm", "pwm test", ip_pwm_test);
-    tinysh_register("rtc", "rtc test", ip_rtc_test);
-    tinysh_register("wdg", "wdg test", ip_wdg_test);
-    tinysh_register("rng", "rng test", ip_rng_test);
-    tinysh_register("crc", "crc test", ip_crc_test);
-    tinysh_register("nor", "nor flash test", ip_norflash_test);
-    tinysh_register("uart1", "uart1 test", ip_hpuart_test);
-    tinysh_register("ps2", "ps2 test", ip_ps2_test);
-    tinysh_register("lcd", "lcd test", ip_lcd_test);
-    tinysh_register("i2s", "i2s test", ip_i2s_test);
-    tinysh_register("pcf", "pcf8563b test", pcf8563b_test);
     tinysh_launch();
 }
