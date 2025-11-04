@@ -14,6 +14,7 @@ module spisd_cache (
     input logic         rst_n_i,
     input logic         mode_i,
     input logic         init_done_i,
+    input logic         wr_sync_i,
     input logic         fir_clk_edge_i,
     output logic [31:0] sd_addr_o,
     output logic        sd_rd_req_o,
@@ -78,7 +79,14 @@ module spisd_cache (
     nmi.ready       = '0;
     unique case (s_cache_fsm_q)
       FSM_IDLE: begin
-        if (init_done_i && nmi.valid) s_cache_fsm_d = FSM_COMP_TAG;
+        if (init_done_i) begin
+          if (nmi.valid) s_cache_fsm_d = FSM_COMP_TAG;
+          // sw wr sync
+          else if (wr_sync_i && s_cache_dirty_q) begin
+            s_cache_fsm_d   = FSM_WR_BACK;
+            s_cache_dirty_d = 1'b0;
+          end
+        end
       end
       FSM_COMP_TAG: begin
         // cache hit

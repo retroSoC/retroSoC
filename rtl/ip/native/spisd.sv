@@ -25,6 +25,7 @@ module nmi_spisd (
 
   logic        s_cfg_reg_sel;
   logic        s_init_done;
+  logic        s_wr_sync;
   logic        s_mode;
   logic [ 1:0] s_clkdiv;
   logic        s_fir_clk_edge;
@@ -43,6 +44,7 @@ module nmi_spisd (
   nmi_if u_cache_mem_nmi_if ();
   nmi_if u_cache_byp_nmi_if ();
 
+  // verilog_format: off
   assign s_cfg_reg_sel            = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
   assign u_cfg_nmi_if.valid       = nmi.valid && s_cfg_reg_sel;
   assign u_cfg_nmi_if.addr        = nmi.addr;
@@ -56,11 +58,13 @@ module nmi_spisd (
 
   assign nmi.ready                = s_cfg_reg_sel ? u_cfg_nmi_if.ready : u_cache_mem_nmi_if.ready;
   assign nmi.rdata                = s_cfg_reg_sel ? u_cfg_nmi_if.rdata : u_cache_mem_nmi_if.rdata;
+ // verilog_format: on
 
   spisd_reg u_spisd_reg (
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
       .init_done_i(s_init_done),
+      .wr_sync_o  (s_wr_sync),
       .mode_o     (s_mode),
       .clkdiv_o   (s_clkdiv),
       .nmi        (u_cfg_nmi_if),
@@ -82,6 +86,7 @@ module nmi_spisd (
       .rst_n_i         (rst_n_i),
       .mode_i          (s_mode),
       .init_done_i     (s_init_done),
+      .wr_sync_i       (s_wr_sync),
       .fir_clk_edge_i  (s_fir_clk_edge),
       .sd_addr_o       (s_sd_addr),
       .sd_rd_req_o     (s_sd_rd_req),
@@ -95,7 +100,7 @@ module nmi_spisd (
       .nmi             (u_cache_nmi_if)
   );
 
-  assign spi.irq_o = 1'b0; // TODO:
+  assign spi.irq_o = 1'b0;  // TODO:
   spisd_core u_spisd_core (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),

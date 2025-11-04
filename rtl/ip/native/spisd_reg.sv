@@ -28,6 +28,7 @@ module spisd_reg (
     input logic        clk_i,
     input logic        rst_n_i,
     input logic        init_done_i,
+    output logic       wr_sync_o,
     output logic       mode_o,
     output logic [1:0] clkdiv_o,
     nmi_if.slave       nmi,
@@ -111,6 +112,10 @@ module spisd_reg (
       s_spisd_status_d,
       s_spisd_status_q
   );
+
+  // software wr sync
+  assign s_wr_sync = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SPISD_SYNC;
+
 
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
   dffr #(1) u_nmi_ready_dffr (
