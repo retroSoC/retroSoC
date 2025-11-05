@@ -10,7 +10,10 @@ void delay_ms(uint32_t val) {
     reg_tim0_cfg = (uint32_t)0b0000;
 }
 
-void ip_tim_test() {
+void ip_tim_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("[NATV IP] counter timer test\n");
     printf("[TIM0 VALUE]  %x\n", reg_tim0_val);
     printf("[TIM0 CONFIG] %x\n", reg_tim0_cfg);

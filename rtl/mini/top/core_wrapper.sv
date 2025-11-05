@@ -31,19 +31,36 @@ module core_wrapper (
       .ENABLE_FAST_MUL(1),
       .ENABLE_DIV     (1),
       .ENABLE_IRQ     (0),
-      .PROGADDR_RESET (`FLASH_START_ADDR)
+      .PROGADDR_RESET (`FLASH_START_ADDR),
+      .PROGADDR_IRQ   (`IRQ_HANDLER_START_ADDR)
   ) u_picorv32 (
-      .clk      (clk_i),
-      .resetn   (rst_n_i),
-      .mem_valid(nmi.valid),
-      .mem_instr(),
-      .mem_addr (nmi.addr),
-      .mem_wdata(nmi.wdata),
-      .mem_wstrb(nmi.wstrb),
-      .mem_rdata(nmi.rdata),
-      .mem_ready(nmi.ready),
-      .irq      (irq_i),
-      .trap     ()
+      .clk         (clk_i),
+      .resetn      (rst_n_i),
+      .trap        (),
+      .mem_valid   (nmi.valid),
+      .mem_instr   (),
+      .mem_addr    (nmi.addr),
+      .mem_wdata   (nmi.wdata),
+      .mem_wstrb   (nmi.wstrb),
+      .mem_rdata   (nmi.rdata),
+      .mem_ready   (nmi.ready),
+      .mem_la_read (),
+      .mem_la_write(),
+      .mem_la_addr (),
+      .mem_la_wdata(),
+      .mem_la_wstrb(),
+      .pcpi_valid  (),
+      .pcpi_insn   (),
+      .pcpi_rs1    (),
+      .pcpi_rs2    (),
+      .pcpi_wr     (),
+      .pcpi_rd     (),
+      .pcpi_wait   (),
+      .pcpi_ready  (),
+      .irq         (irq_i),
+      .eoi         (),
+      .trace_valid (),
+      .trace_data  ()
   );
 // `elsif CORE_KIANV
 //   kianv_harris_mc_edition #(

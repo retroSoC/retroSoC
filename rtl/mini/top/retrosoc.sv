@@ -89,6 +89,10 @@ module retrosoc (
   assign qspi.spi_io_out_o          = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_io_out_o : u_apb_qspi_if.spi_io_out_o;
   assign qspi.irq_o                 = '0;
 
+  // PicoRV32 built-in interrupt
+  // 0  Timer Interrupt
+  // 1  EBREAK/ECALL or Illegal Instruction
+  // 2  BUS Error (Unalign Memory Access)
   assign s_irq[4:0]          = 5'd0;
   assign s_irq[5]            = extn_irq_i;
   assign s_irq[8:6]          = s_natv_irq;

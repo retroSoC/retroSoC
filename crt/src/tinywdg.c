@@ -2,7 +2,10 @@
 #include <tinyprintf.h>
 #include <tinywdg.h>
 
-void ip_wdg_test() {
+void ip_wdg_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("[APB IP] wdg test\n");
 
     reg_wdg_key = WDG_MAGIC_NUM;

@@ -46,8 +46,11 @@ PCF8563B_info_t pcf8563b_rd_reg() {
     return info;
 }
 
-void pcf8563b_test() {
-   printf("PCF8563B test\n");
+void pcf8563b_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
+    printf("PCF8563B test\n");
     PCF8563B_info_t init1_info = {
         .time.second  = 51,
         .time.minute  = 30,

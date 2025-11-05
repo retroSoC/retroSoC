@@ -5,7 +5,10 @@
 // 12.288M/256=48K
 // apb4 clk: 'CPU_FREQ' MHz
 // rtc_clk:  12.288     MHz
-void ip_rtc_test() {
+void ip_rtc_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("rtc test\n");
 
     reg_rtc_ctrl = (uint32_t)1;             // enter config mode

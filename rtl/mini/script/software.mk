@@ -33,6 +33,7 @@ CFLAGS += $(DEF_VAL)
 
 TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/irq_opt.S \
+                $(ROOT_PATH)/crt/irq_gcc.S \
                 $(ROOT_PATH)/crt/src/tinyuart.c \
                 $(ROOT_PATH)/crt/src/tinystring.c \
                 $(ROOT_PATH)/crt/src/tinylib.c \
@@ -60,7 +61,7 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinyi2s.c \
                 $(ROOT_PATH)/crt/src/tinybench.c \
                 $(ROOT_PATH)/crt/src/tinysh.c \
-                $(ROOT_PATH)/crt/src/firmware.c
+                $(ROOT_PATH)/crt/src/main.c
 
 APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
                 $(ROOT_PATH)/crt/app/src/pcf8563b.c \

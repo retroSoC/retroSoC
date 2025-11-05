@@ -4,7 +4,9 @@
 #include <tinytim.h>
 
 
-void ip_1wire_test() {
+void ip_1wire_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
     printf("1-wire test\n");
 
     reg_onewire_clkdiv = (uint8_t)90;

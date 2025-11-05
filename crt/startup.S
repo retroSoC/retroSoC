@@ -2,6 +2,14 @@
     .global  _start
     .type    _start,@function
 
+#include "irq_opt.S"
+
+_reset_vec:
+    // no more than 16 bytes here !
+    # picorv32_waitirq_insn(zero)
+    # picorv32_maskirq_insn(zero, zero)
+    # j _start
+
 _start:
 # wait psram reset done
     la       a0, _flash_wait_start

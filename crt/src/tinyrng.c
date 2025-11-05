@@ -2,7 +2,10 @@
 #include <tinyprintf.h>
 #include <tinyrng.h>
 
-void ip_rng_test() {
+void ip_rng_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("[APB IP] rng test\n");
 
     reg_rng_ctrl = (uint32_t)1;      // en the core
