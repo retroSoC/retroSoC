@@ -111,15 +111,18 @@ void tinysh_init() {
 uint8_t tinysh_mount_fs(FATFS *fs) {
     FRESULT ff_res;
     ff_res = f_mount(fs, "0:", 1);
-    if (ff_res == FR_NO_FILESYSTEM) {
-        printf("[fatfs] no filesystem\n");
-        return 1;
-    } else if (ff_res != FR_OK) {
-        printf("[fatfs] filesystem mount fail\n");
-        return 1;
-    } else {
-        printf("[fatfs] mount done\n");
-        return 0;
+    switch(ff_res) {
+        case FR_NO_FILESYSTEM:
+            printf("[fatfs] no filesystem\n");
+            return 1;
+        break;
+        case FR_OK:
+           printf("[fatfs] mount done\n");
+            return 0;
+        break;
+        default:
+            printf("[fatfs] filesystem mount fail\n");
+            return 1;
     }
 }
 
@@ -152,17 +155,26 @@ void tinysh_fat32_file_cmd(int argc, char **argv) {
     FILINFO ff_info;
     FRESULT ff_res;
     ff_res = f_stat(argv[1], &ff_info);
-    if(ff_res == FR_OK) {
-    printf("attr: %c%c%c%c%c ",
-           (ff_info.fattrib & AM_DIR) ? 'D' : '-',
-           (ff_info.fattrib & AM_RDO) ? 'R' : '-',
-           (ff_info.fattrib & AM_HID) ? 'H' : '-',
-           (ff_info.fattrib & AM_SYS) ? 'S' : '-',
-           (ff_info.fattrib & AM_ARC) ? 'A' : '-');
-    printf("size: %lu bytes", ff_info.fsize);
-    printf("date: %u-%02u-%02u, %02u:%02u\n",
-           (ff_info.fdate >> 9) + 1980, ff_info.fdate >> 5 & 15, ff_info.fdate & 31,
-           ff_info.ftime >> 11, ff_info.ftime >> 5 & 63);
+
+    switch(ff_res) {
+        case FR_OK:
+            printf("[attr]: %c%c%c%c%c ",
+                   (ff_info.fattrib & AM_DIR) ? 'D' : '-',
+                   (ff_info.fattrib & AM_RDO) ? 'R' : '-',
+                   (ff_info.fattrib & AM_HID) ? 'H' : '-',
+                   (ff_info.fattrib & AM_SYS) ? 'S' : '-',
+                   (ff_info.fattrib & AM_ARC) ? 'A' : '-');
+            printf("[size]: %lu bytes ", ff_info.fsize);
+            printf("[date]: %u-%02u-%02u %02u:%02u\n",
+                   (ff_info.fdate >> 9) + 1980, ff_info.fdate >> 5 & 15, ff_info.fdate & 31,
+                   ff_info.ftime >> 11, ff_info.ftime >> 5 & 63);
+        break;
+        case FR_NO_FILE:
+        case FR_NO_PATH:
+            printf("\"%s\" is not exist.\n", argv[1]);
+        break;
+        default:
+            printf("An error occured. (%d)\n", ff_res);
     }
 }
 
