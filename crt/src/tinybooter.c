@@ -46,13 +46,13 @@ void app_boot_info() {
     printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Address Range:\n");
-    printf("  SPI Flash size:    @[0x%x-0x%x] %dMB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
-    printf("  NMI MEM IPs size:  @[0x%x-0x%x] %dMB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
-    printf("  APB MEM IPs size:  @[0x%x-0x%x] %dMB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
-    printf("  On-chip RAM size:  @[0x%x-0x%x] %dKB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
-    printf("  Extern PSRAM size: @[0x%x-0x%x] %dMB(%dx8MB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
-    printf("  QSPI MEM MAP size: @[0x%x-0x%x] %dMB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
-    printf("  TF MMIO Card size: @[0x%x-0x%x] %dMB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024);
+    printf("  SPI Flash:    @[0x%x-0x%x] %dMiB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  NMI IP MMIO:  @[0x%x-0x%x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
+    printf("  APB IP MMIO:  @[0x%x-0x%x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
+    printf("  On-chip RAM:  @[0x%x-0x%x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
+    printf("  Extern PSRAM: @[0x%x-0x%x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  QSPI0 MMIO:   @[0x%x-0x%x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
+    printf("  TF Card MMIO: @[0x%x-0x%x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
     printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
@@ -77,7 +77,7 @@ void app_boot_info() {
     printf("                     1 x WDG           @0x%x\n", &reg_wdg_ctrl);
     printf("                     1 x CRC           @0x%x\n", &reg_crc_ctrl);
     printf("                     1 x TIMER3(ADV)   @0x%x\n", &reg_tim3_ctrl);
-    printf("                     1 x USER_IP(4KB)  @0x%x\n\n", &reg_user_ip_reg0);
+    printf("                     1 x USER_IP(4KiB) @0x%x\n\n", &reg_user_ip_reg0);
     printf("#############################################################\n");
     printf("#############################################################\n");
 }
