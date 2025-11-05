@@ -3,8 +3,10 @@
 #include <tinytim.h>
 #include <tinypwm.h>
 
-void ip_pwm_test()
-{
+void ip_pwm_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("[APB IP] pwm test\n");
 
     reg_pwm_ctrl = (uint32_t)0;

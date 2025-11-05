@@ -51,7 +51,10 @@ void i2s_audio_panel() {
     printf("============================================================\n");
 }
 
-void ip_i2s_test() {
+void ip_i2s_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     char type_ch;
     uint32_t mode = 0, pause = 0, xfering = 0;
 

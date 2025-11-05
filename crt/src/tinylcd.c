@@ -269,7 +269,10 @@ void lcd_frame(uint32_t first, uint32_t pref_cnt) {
 }
 
 
-void ip_lcd_test() {
+void ip_lcd_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("lcd test\n");
 #ifdef USE_QSPI0_DEV
     QSPI0_InitStruct_t qspi0 = {

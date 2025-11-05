@@ -2,9 +2,11 @@
 #include <tinyprintf.h>
 #include <tinyps2.h>
 
-void ip_ps2_test()
-{
-    printf("[CUST IP] ps2 test\n");
+void ip_ps2_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
+    printf("[APB IP] ps2 test\n");
 
     reg_ps2_ctrl = (uint32_t)0b11;
     printf("ps2 ctrl: %x\n", reg_ps2_ctrl);

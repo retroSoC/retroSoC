@@ -338,7 +338,10 @@ static void norflash_qpi_test() {
     norflash_quit_qpi_mode();
 }
 
-void ip_norflash_test() {
+void ip_norflash_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("[NATV IP] qspi nor flash test\n");
 
     QSPI0_InitStruct_t qspi0 = {

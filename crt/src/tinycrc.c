@@ -2,7 +2,10 @@
 #include <tinyprintf.h>
 #include <tinycrc.h>
 
-void ip_crc_test() {
+void ip_crc_test(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+
     printf("[APB IP] crc test\n");
 
     reg_crc_ctrl = (uint32_t)0;

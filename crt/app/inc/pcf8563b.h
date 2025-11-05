@@ -43,6 +43,6 @@ uint8_t pcf8563b_bin2bcd(uint8_t val);
 void pcf8563b_wr_reg(PCF8563B_info_t *info);
 PCF8563B_info_t pcf8563b_rd_reg();
 
-void pcf8563b_test();
+void pcf8563b_test(int argc, char **argv);
 
 #endif

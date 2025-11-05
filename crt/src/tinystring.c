@@ -147,3 +147,24 @@ char *strchr(const char *s, int c) {
 
     return 0;
 }
+
+
+void trim_whitespace(char *str) {
+    char *start = str;
+    while (*start && *start == ' ') start++;
+    
+    if (*start == '\0') {
+        *str = '\0';
+        return;
+    }
+    
+    char *end = start + strlen(start) - 1;
+    while (end > start && (*end == ' ' || *end == '\n' || *end == '\r')) {
+        *end = '\0';
+        end--;
+    }
+    
+    if (start != str) {
+        memmove(str, start, (end - start) + 2);
+    }
+}
