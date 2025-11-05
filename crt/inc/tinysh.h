@@ -6,6 +6,7 @@ typedef void (*cmd_handler)(int argc, char **argv);
 typedef struct {
     char *name;
     char *info;
+    uint8_t batch;
     cmd_handler handler;
 } tinysh_cmd_t;
 
@@ -15,7 +16,8 @@ typedef struct {
 #define MAX_CMD_LEN 100
 #define MAX_CMD_HIST 100
 
-uint8_t tinysh_register(char *name, char *info, void *handler);
+uint8_t tinysh_register(char *name, char *info, uint8_t batch, void *handler);
 void tinysh_init();
+void tinysh_batch_run();
 void tinysh_launch();
 #endif

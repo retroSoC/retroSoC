@@ -14,7 +14,7 @@ static char sh_history_table[MAX_CMD_HIST][MAX_CMD_LEN];
 static uint8_t sh_history_idx;
 
 
-uint8_t tinysh_register(char *name, char *info, void *handler) {
+uint8_t tinysh_register(char *name, char *info, uint8_t batch, void *handler) {
     if(!name || !handler || !strlen(name)) return 1;
     if(sh_cmd_len == MAX_CMD_NUM) return 1;
 
@@ -22,7 +22,7 @@ uint8_t tinysh_register(char *name, char *info, void *handler) {
         if(strcmp(name, sh_cmd_list[i].name) == 0) return 1;
     }
 
-    tinysh_cmd_t tmp = {name, info, handler};
+    tinysh_cmd_t tmp = {name, info, batch, handler};
     sh_cmd_list[sh_cmd_len++] = tmp;
     return 0;
 }
@@ -51,6 +51,10 @@ static uint8_t tinysh_split_cmd(char *cmd) {
             sub_cmd[tmp_len++] = cmd[i];
         }
     }
+    sub_cmd[tmp_len] = 0;
+    // printf("sub cmd: %s\n", sub_cmd);
+    strcpy(sh_argv[sh_argc], sub_cmd);
+    ++sh_argc;
 
     strcpy(sh_argv[sh_argc], NULL);
 
@@ -59,7 +63,7 @@ static uint8_t tinysh_split_cmd(char *cmd) {
     //     printf(" %s", sh_argv[i] == NULL ? "NULL" : sh_argv[i]);
     // }
     // printf("\n");
-    
+
     return 0;
 }
 
@@ -213,19 +217,19 @@ void tinysh_fat32_file_cmd(int argc, char **argv) {
 
 void tinysh_launch() {
     char type_res[MAX_CMD_LEN], type_ch;
-    uint8_t type_len, fs_init_state = 0;
-    FATFS fs;
+    uint8_t type_len;
 
     tinysh_welcome();
+    uint8_t fs_init_state = 0;
+    FATFS fs;
     fs_init_state = tinysh_mount_fs(&fs);
     // register internal cmd
-    tinysh_register("help", "default help info", tinysh_help);
-    tinysh_register("history", "print history list", tinysh_history_list);
+    tinysh_register("help", "default help info", (uint8_t)0, tinysh_help);
+    tinysh_register("history", "print history list", (uint8_t)0, tinysh_history_list);
     if(fs_init_state == (uint8_t)0) {
-        tinysh_register("ls", "list directory contents", tinysh_fat32_ls_cmd);
-        tinysh_register("pwd", "print current directory", tinysh_fat32_pwd_cmd);
-        // pwd -> fatfs
-        tinysh_register("file", "print file info", tinysh_fat32_file_cmd);
+        tinysh_register("ls", "list directory contents", (uint8_t)0, tinysh_fat32_ls_cmd);
+        tinysh_register("pwd", "print current directory", (uint8_t)0, tinysh_fat32_pwd_cmd);
+        tinysh_register("file", "print file info", (uint8_t)0, tinysh_fat32_file_cmd);
     }
 
     while(1) {
@@ -236,7 +240,7 @@ void tinysh_launch() {
             type_ch = getchar();
             if((type_ch >= 'a' && type_ch <= 'z') || (type_ch >= 'A' && type_ch <= 'Z') ||
                (type_ch >= '0' && type_ch <= '9') || type_ch == ' ' || type_ch == '.' ||
-                type_ch == '/') {
+                type_ch == '/' || type_ch == '_' || tych_ch == '"') {
                 if(type_len == MAX_CMD_LEN) break;
                 putchar(type_ch);
                 type_res[type_len++] = type_ch;
@@ -263,5 +267,10 @@ void tinysh_launch() {
 
         tinysh_parse_and_exec(type_res);
     }
+}
 
+void tinysh_batch_run() {
+    for(uint8_t i = 0; i < sh_cmd_len; ++i) {
+        if(sh_cmd_list[i].batch == (uint8_t)1) sh_cmd_list[i].handler(0, NULL);
+    }
 }
