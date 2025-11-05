@@ -32,6 +32,7 @@ CFLAGS += $(DEF_VAL)
 
 
 TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
+                $(ROOT_PATH)/crt/irq_opt.S \
                 $(ROOT_PATH)/crt/src/tinyuart.c \
                 $(ROOT_PATH)/crt/src/tinystring.c \
                 $(ROOT_PATH)/crt/src/tinylib.c \
