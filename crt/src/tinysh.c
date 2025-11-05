@@ -55,10 +55,10 @@ static uint8_t tinysh_split_cmd(char *cmd) {
     strcpy(sh_argv[sh_argc], NULL);
 
     // printf("argc: %d\nargv:", sh_argc);
-    for(uint8_t i = 0; i <= sh_argc; ++i) {
-        printf(" %s", sh_argv[i] == NULL ? "NULL" : sh_argv[i]);
-    }
-    printf("\n");
+    // for(uint8_t i = 0; i <= sh_argc; ++i) {
+    //     printf(" %s", sh_argv[i] == NULL ? "NULL" : sh_argv[i]);
+    // }
+    // printf("\n");
     
     return 0;
 }
@@ -84,7 +84,7 @@ static void tinysh_parse_and_exec(char *cmd) {
 
 static void tinysh_help() {
     for(uint8_t i = 0; i < sh_cmd_len; ++i) {
-        printf("cmd: %8s info: %20s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
+        printf("cmd: %8s info: %30s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
     }
 }
 
@@ -130,17 +130,50 @@ void tinysh_unmount_fs() {
     f_mount(NULL, "0:", 1);
 }
 
-void tinysh_ls_cmd_fs() {
 
+void tinysh_fat32_ls_cmd(int argc, char **argv) {
+    if(argc != 2) {
+        printf("ls cmd param error\n");
+        return;
+    }
+
+    printf("path name: %s\n", argv[1]);
+
+    FRESULT ff_res;
+    DIR ff_dir;
+    FILINFO ff_info;
+    int file_num, dir_num;
+
+    ff_res = f_opendir(&ff_dir, argv[1]);
+    if (ff_res == FR_OK) {
+        file_num = dir_num = 0;
+        while(1) {
+            ff_res = f_readdir(&ff_dir, &ff_info);     /* Read a directory item */
+            if (ff_info.fname[0] == 0) break;          /* Error or end of ff_dir */
+            if (ff_info.fattrib & AM_DIR) {            /* It is a directory */
+                printf("   <DIR>   %s\n", ff_info.fname);
+                ++dir_num;
+            } else {                               /* It is a file */
+                printf("%10u %s\n", ff_info.fsize, ff_info.fname);
+                ++file_num;
+            }
+        }
+        f_closedir(&ff_dir);
+        printf("%d dirs, %d files.\n", dir_num, file_num);
+    } else {
+        printf("Failed to open \"%s\". (%u)\n", argv[1], ff_res);
+    }
 }
 
-void tinysh_pwd_cmd_fs() {
-    // FRESULT ff_res;
-    // UINT buf_len = (UINT)100;
-    // TCHAR path_name[buf_len];
+void tinysh_fat32_pwd_cmd(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
 
-    // ff_res = f_getcwd(path_name, buf_len);
-    // if(ff_res == FR_OK) printf("%s\n", path_name);
+    FRESULT ff_res;
+    TCHAR path_name[100];
+
+    ff_res = f_getcwd(path_name, 100);
+    if(ff_res == FR_OK) printf("%s\n", path_name);
 }
 
 void tinysh_fat32_file_cmd(int argc, char **argv) {
@@ -189,7 +222,8 @@ void tinysh_launch() {
     tinysh_register("help", "default help info", tinysh_help);
     tinysh_register("history", "print history list", tinysh_history_list);
     if(fs_init_state == (uint8_t)0) {
-        // ls -> fatfs
+        tinysh_register("ls", "list directory contents", tinysh_fat32_ls_cmd);
+        tinysh_register("pwd", "print current directory", tinysh_fat32_pwd_cmd);
         // pwd -> fatfs
         tinysh_register("file", "print file info", tinysh_fat32_file_cmd);
     }
@@ -201,7 +235,8 @@ void tinysh_launch() {
         do {
             type_ch = getchar();
             if((type_ch >= 'a' && type_ch <= 'z') || (type_ch >= 'A' && type_ch <= 'Z') ||
-               (type_ch >= '0' && type_ch <= '9') || type_ch == ' ' || type_ch == '.') {
+               (type_ch >= '0' && type_ch <= '9') || type_ch == ' ' || type_ch == '.' ||
+                type_ch == '/') {
                 if(type_len == MAX_CMD_LEN) break;
                 putchar(type_ch);
                 type_res[type_len++] = type_ch;
