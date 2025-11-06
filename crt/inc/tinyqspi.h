@@ -50,4 +50,6 @@ void qspi1_wr_dat8(uint8_t dat);
 
 void qspi1_wr_data16(uint16_t dat);
 void qspi1_wr_data32(uint32_t* dat, uint32_t len);
+
+void qspi_dev_init();
 #endif

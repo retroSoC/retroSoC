@@ -36,6 +36,7 @@
 #include <w25q128jvxim.h>
 #include <wav_audio.h>
 #include <video_player.h>
+#include <donut.h>
 
 #ifdef __cplusplus
 extern "C"

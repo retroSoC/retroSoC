@@ -16,6 +16,7 @@
 #define LCD_H 135
 #endif
 
+void lcd_init();
 void ip_lcd_test(int argc, char **argv);
 void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t *data);

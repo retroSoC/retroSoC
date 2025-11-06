@@ -206,10 +206,35 @@ void qspi1_wr_data16(uint16_t dat) {
     while ((reg_qspi1_status & 0xFFFF) != 1);
 }
 
-
 void qspi1_wr_data32(uint32_t* dat, uint32_t len) {
     reg_qspi1_len = (32 * len) << 16;
     for(uint32_t i = 0; i < len; ++i) reg_qspi1_txfifo = dat[i];
     reg_qspi1_status = 258;
     while ((reg_qspi1_status & 0xFFFF) != 1);
+}
+
+void qspi_dev_init() {
+#ifdef USE_QSPI0_DEV
+    QSPI0_InitStruct_t qspi0 = {
+        (uint32_t)0,
+        (uint32_t)0b0001, // fpga
+        // (uint32_t)0b1000, // soc
+        (uint32_t)0,
+        (uint32_t)250,
+        (uint32_t)200,
+        (uint32_t)24,
+        (uint32_t)10,
+        (uint32_t)2,
+    };
+    qspi0_init(qspi0);
+    // 1-1-1(tx data only)
+    qspi0_xfer_config((uint32_t)0, (uint32_t)0, (uint32_t)1, // flush bit
+                      (uint32_t)0, (uint32_t)0,
+                      (uint32_t)0, (uint32_t)0,
+                      (uint32_t)0,
+                      (uint32_t)1, (uint32_t)1, (uint32_t)1
+                     );
+#else
+    qspi1_init();
+#endif
 }

@@ -274,31 +274,6 @@ void ip_lcd_test(int argc, char **argv) {
     (void) argv;
 
     printf("lcd test\n");
-#ifdef USE_QSPI0_DEV
-    QSPI0_InitStruct_t qspi0 = {
-        (uint32_t)0, 
-        (uint32_t)0b0001, // fpga
-        // (uint32_t)0b1000, // soc
-        (uint32_t)0,
-        (uint32_t)250,
-        (uint32_t)200,
-        (uint32_t)24,
-        (uint32_t)10,
-        (uint32_t)2,
-    };
-    qspi0_init(qspi0);
-    // 1-1-1(tx data only)
-    qspi0_xfer_config((uint32_t)0, (uint32_t)0, (uint32_t)1, // flush bit
-                      (uint32_t)0, (uint32_t)0,
-                      (uint32_t)0, (uint32_t)0,
-                      (uint32_t)0,
-                      (uint32_t)1, (uint32_t)1, (uint32_t)1
-                     );
-#else
-    qspi1_init();
-#endif
-
-    lcd_init();
     // // lcd_wr_dc_cmd(0x01); // software reset
     uint32_t pref_cnt = 0;
     lcd_frame(1, pref_cnt);

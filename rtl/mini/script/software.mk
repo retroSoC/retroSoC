@@ -69,6 +69,7 @@ APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
                 $(ROOT_PATH)/crt/app/src/w25q128jvxim.c \
                 $(ROOT_PATH)/crt/app/src/wav_audio.c \
                 $(ROOT_PATH)/crt/app/src/video_player.c \
+                $(ROOT_PATH)/crt/app/src/donut.c \
                 $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/diskio.c \
                 $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ff.c \
                 $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ffsystem.c \
