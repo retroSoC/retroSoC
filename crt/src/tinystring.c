@@ -168,3 +168,17 @@ void trim_whitespace(char *str) {
         memmove(str, start, (end - start) + 2);
     }
 }
+
+void remove_suffix(char *dst, char *src, char sign) {
+    // "a/asdf/bb/asdfa"
+    uint8_t idx = 0;
+    for(uint8_t i = strlen(src) - 1; i >= 1; --i) {
+      if(src[i] == sign) {
+        idx = i; break;
+      }
+    }
+
+    for(uint8_t i = 0; i < idx; ++i) dst[i] = src[i];
+
+    dst[idx] = 0;
+}

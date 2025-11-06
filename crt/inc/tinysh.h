@@ -15,6 +15,7 @@ typedef struct {
 #define MAX_CMD_NUM 32
 #define MAX_CMD_LEN 100
 #define MAX_CMD_HIST 100
+#define MAX_PATH_LEN 128
 
 uint8_t tinysh_register(char *name, char *info, uint8_t batch, void *handler);
 void tinysh_init();

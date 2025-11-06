@@ -16,5 +16,5 @@ int strcmp(const char *s1, const char *s2);
 int strncmp(const char *s1, const char *s2, size_t n);
 char *strchr(const char *s, int c);
 void trim_whitespace(char *str);
-
+void remove_suffix(char *dst, char *src, char sign);
 #endif
