@@ -224,6 +224,31 @@ void tinysh_fat32_pwd_cmd(int argc, char **argv) {
     }
 }
 
+void tinysh_fat32_find_cmd(int argc, char **argv) {
+    if(argc != 2 && argc != 3) {
+        printf("find cmd param error\n");
+        return;
+    }
+
+    FRESULT ff_res;  /* Return value */
+    DIR ff_dir;      /* Directory object */
+    FILINFO ff_info; /* File information */
+
+    // support blob oper
+    if(argc == 2) {
+        ff_res = f_findfirst(&ff_dir, &ff_info, fat32_pwd, argv[1]);
+    } else if(argc == 3) {
+        ff_res = f_findfirst(&ff_dir, &ff_info, argv[1], argv[2]);
+    }
+
+    while (ff_res == FR_OK && ff_info.fname[0]) {     /* Repeat while an item is found */
+        printf("%s\n", ff_info.fname);                /* Print the object name */
+        ff_res = f_findnext(&ff_dir, &ff_info);       /* Search for next item */
+    }
+
+    f_closedir(&ff_dir);
+}
+
 void tinysh_fat32_file_cmd(int argc, char **argv) {
 
     if(argc != 2) {
@@ -274,6 +299,7 @@ void tinysh_launch() {
         tinysh_register("ls", "list directory contents", (uint8_t)0, tinysh_fat32_ls_cmd);
         tinysh_register("cd", "change directory", (uint8_t)0, tinysh_fat32_cd_cmd);
         tinysh_register("pwd", "print current directory", (uint8_t)0, tinysh_fat32_pwd_cmd);
+        tinysh_register("find", "search files in directory", (uint8_t)0, tinysh_fat32_find_cmd);
         tinysh_register("file", "print file info", (uint8_t)0, tinysh_fat32_file_cmd);
     }
 
@@ -285,7 +311,8 @@ void tinysh_launch() {
             type_ch = getchar();
             if((type_ch >= 'a' && type_ch <= 'z') || (type_ch >= 'A' && type_ch <= 'Z') ||
                (type_ch >= '0' && type_ch <= '9') || type_ch == ' ' || type_ch == '.' ||
-                type_ch == '/' || type_ch == '_' || type_ch == '"' || type_ch == '/') {
+                type_ch == '/' || type_ch == '_' || type_ch == '"' || type_ch == '/' ||
+                type_ch == '*') {
                 if(type_len == MAX_CMD_LEN) break;
                 putchar(type_ch);
                 type_res[type_len++] = type_ch;
