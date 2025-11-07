@@ -6,7 +6,7 @@
 #include <tinyqspi.h>
 #include <tinylcd.h>
 #include <tinydma.h>
-#include "image.h"
+// #include "image.h"
 // #include "video.h"
 
 // static uint16_t test_frame_data[] = {
@@ -289,20 +289,19 @@ void ip_lcd_test(int argc, char **argv) {
     printf("enable dma\n");
 #endif
 
-    lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
-    delay_ms(1000);
+    // lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
+    // delay_ms(1000);
 
-    pref_cnt = 0;
-    lcd_frame(1, pref_cnt);
-    for (int i = 0; i < 100; ++i) {
-        lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
-        lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_retro_spitft);
-        pref_cnt += 2;
-    }
-    lcd_frame(0, pref_cnt);
+    // pref_cnt = 0;
+    // lcd_frame(1, pref_cnt);
+    // for (int i = 0; i < 100; ++i) {
+    //     lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_chunyihongbao);
+    //     lcd_fill_image(0, 0, 240, 135, (uint32_t*)image_data_retro_spitft);
+    //     pref_cnt += 2;
+    // }
+    // lcd_frame(0, pref_cnt);
 
-    lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
-    delay_ms(1000);
+    // delay_ms(1000);
 
     // for (int i = 0; i < 100; ++i)
     // {
