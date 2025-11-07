@@ -1,13 +1,14 @@
-#include <tinylib.h>
+#include <libdef.h>
 
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);
+    tinybooter();
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     qspi_dev_init();
     lcd_init();
 
     tinysh_init();
-    tinysh_register("boot", "system boot", (uint8_t)1, app_system_boot);
+    tinysh_register("app", "app info", (uint8_t)1, app_info);
     tinysh_register("arch", "archinfo test", (uint8_t)1, ip_archinfo_test);
     tinysh_register("1wire", "1wire test", (uint8_t)1, ip_1wire_test);
     tinysh_register("tim", "timer test", (uint8_t)1, ip_tim_test);
