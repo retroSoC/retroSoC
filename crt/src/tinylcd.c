@@ -289,9 +289,6 @@ void ip_lcd_test(int argc, char **argv) {
     printf("enable dma\n");
 #endif
 
-    // lcd_fill_video(0, 0, 48, 48, (uint32_t*)gImage_hello_file);
-    // delay_ms(1000);
-
     // pref_cnt = 0;
     // lcd_frame(1, pref_cnt);
     // for (int i = 0; i < 100; ++i) {
