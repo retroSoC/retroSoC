@@ -44,8 +44,6 @@ extern "C"
 #endif
 
 uint32_t *irq_handler(uint32_t *regs, uint32_t irqs);
-void *malloc(size_t size);
-void free(void *ptr);
 
 #define putstr(s) \
   ({ for (const char *p = s; *p; p++) putch(*p); })
