@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <tinylib.h>
+#include <libdef.h>
 #include <tinyprintf.h>
 #include <tinystring.h>
 #include <tinyspisd.h>

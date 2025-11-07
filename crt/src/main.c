@@ -1,4 +1,4 @@
-#include <tinylib.h>
+#include <libdef.h>
 
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);

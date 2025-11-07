@@ -1,5 +1,5 @@
-#ifndef TINYLIB_H__
-#define TINYLIB_H__
+#ifndef LIBDEF_H__
+#define LIBDEF_H__
 
 #include <stddef.h>
 #include <stdint.h>

@@ -169,7 +169,7 @@ void tinysh_fat32_ls_cmd(int argc, char **argv) {
             ff_res = f_readdir(&ff_dir, &ff_info);     /* Read a directory item */
             if (ff_info.fname[0] == 0) break;          /* Error or end of ff_dir */
             if (ff_info.fattrib & AM_DIR) {            /* It is a directory */
-                printf("   <DIR>   %s\n", ff_info.fname);
+                printf("   <DIR>   %s/\n", ff_info.fname);
                 ++dir_num;
             } else {                               /* It is a file */
                 printf("%10u %s\n", ff_info.fsize, ff_info.fname);
