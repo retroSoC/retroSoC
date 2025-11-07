@@ -9,8 +9,7 @@ extern uint32_t _psram_lma, _psram_vma, _edata;
 extern uint32_t _sbss, _ebss;
 extern uint32_t _heap_start;
 
-void app_boot_info();
-void boot_mode_select();
-void app_system_boot();
+void app_info();
+void tinybooter();
 
 #endif

@@ -2,10 +2,14 @@
 #include <tinyprintf.h>
 #include <tinyver.h>
 #include <tinypsram.h>
+#include <tinytim.h>
+#include <tinyprint.h>
+#include <tinystring.h>
+#include <tinysh.h>
 #include <tinybooter.h>
 
 
-void app_boot_info() {
+void app_info() {
     printf("#############################################################\n");
     printf("#############################################################\n");
     printf("compile date: %s %s\n", __DATE__, __TIME__);
@@ -82,21 +86,76 @@ void app_boot_info() {
     printf("#############################################################\n");
 }
 
-void boot_mode_select() {
-    // delay some seconds
-    // detect gpio1 gpio0 io voltage level
-    // 0: flash 1: uart 2: TF 3: RESV
+uint8_t boot_shell() {
+    printf("================================\n");
+    printf("      Tiny Booter Shell         \n");
+    printf("================================\n");
+    printf("0: flash(defalut) 1: uart 2: tf\n");
+
+    char type_res[MAX_CMD_LEN], type_ch;
+    uint8_t type_len;
+
+    while(1) {
+        printf("tinysh > ");
+        type_len = 0;
+         do {
+            type_ch = getchar();
+            if((type_ch >= 'a' && type_ch <= 'z') || (type_ch >= 'A' && type_ch <= 'Z') ||
+               (type_ch >= '0' && type_ch <= '9') || type_ch == ' ' || type_ch == '.' ||
+                type_ch == '/' || type_ch == '_' || type_ch == '"' || type_ch == '/' ||
+                type_ch == '*' || type_ch == '-') {
+                if(type_len == MAX_CMD_LEN) break;
+                putchar(type_ch);
+                type_res[type_len++] = type_ch;
+            } else if(type_ch == '\b' || type_ch == (char) 127){
+                if(type_len == 0) continue;
+                printf("\b \b");
+                type_res[type_len--] = 0;
+            } else if(type_ch == (char) 9) { // tab
+                printf("tab\n");
+            }
+
+        } while(type_ch != '\n' && type_ch != '\r');
+        putchar('\n');
+
+        type_res[type_len] = 0;
+        if(strcmp(type_res, "flash") == 0) return 0;
+        else if(strcmp(type_res, "uart") == 0) return 1;
+        else if(strcmp(type_res, "tf") == 0) return 2;
+        else printf("cmd [%s] not found\n", type_res);
+    }
+
 }
-void app_system_boot() {
-    app_boot_info();
+
+uint8_t check_key() {
+    printf("booter and flash app load done\n");
+    printf("whether enter [booter shell] or not...(press key0 to enter)\n\n");
+
+    uint8_t enter_boot_delay = 6, enter_shell = 0;
+    for(uint8_t i = 0; i < enter_boot_delay; ++i) {
+        printf("delay %ds...[all %ds]\n", i, enter_boot_delay);
+        delay_ms(1000);
+        if(i == 5) enter_shell = 1;
+        if(enter_shell) {
+            printf("\n");
+            return enter_shell;
+        }
+    }
+    printf("\n");
+    return enter_shell;
+}
+
+void tinybooter() {
+    uint8_t boot_mode = 0;
+
+    if(check_key()) boot_mode = boot_shell();
+    else printf("no key0 pressed, default ");
+
+    printf("boot mode is [%s]\n\n", boot_mode == 0 ? "FLASH" :
+                                    boot_mode == 1 ? "UART" :
+                                    boot_mode == 2 ? "TF" : "NONE");
 
     printf("mem self test start...\n");
     ip_psram_boot();
     printf("mem self test done\n");
-    // printf("boot mode select...\n");
-    
-    boot_mode_select();
-
-    printf("boot mode select [FLASH]\n");
-
 }

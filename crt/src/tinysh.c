@@ -88,7 +88,7 @@ static void tinysh_parse_and_exec(char *cmd) {
         }
     }
 
-    if(!is_find) printf("cmd: %s not found\n", sh_argv[0]);
+    if(!is_find) printf("cmd: [%s] not found\n", sh_argv[0]);
 }
 
 static void tinysh_help() {
@@ -289,7 +289,7 @@ void tinysh_fat32_file_cmd(int argc, char **argv) {
         return;
     }
 
-    printf("file name: %s\n", argv[1]);
+    // printf("file name: %s\n", argv[1]);
 
     FILINFO ff_info;
     FRESULT ff_res;
