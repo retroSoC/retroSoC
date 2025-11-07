@@ -12,7 +12,7 @@ typedef struct {
 
 
 #define MAX_CMD_ARGC 16
-#define MAX_CMD_NUM 32
+#define MAX_CMD_NUM 72
 #define MAX_CMD_LEN 100
 #define MAX_CMD_HIST 100
 #define MAX_PATH_LEN 128

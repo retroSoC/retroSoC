@@ -183,6 +183,39 @@ void tinysh_fat32_ls_cmd(int argc, char **argv) {
     }
 }
 
+FRESULT tinysh_fat32_lsr_cmd(int argc, char **argv) {
+    (void) argv;
+
+    if(argc != 1) {
+        printf("lsr cmd param error\n");
+        return FR_OK;
+    }
+
+    FRESULT ff_res;
+    DIR ff_dir;
+    UINT i;
+    FILINFO ff_info;
+
+    ff_res = f_opendir(&ff_dir, fat32_pwd);                  /* Open the directory */
+    if (ff_res == FR_OK) {
+        while(1) {
+            ff_res = f_readdir(&ff_dir, &ff_info);            /* Read a directory item */
+            if (ff_info.fname[0] == 0) break;                 /* Break on error or end of ff_dir */
+            if (ff_info.fattrib & AM_DIR) {                   /* The item is a directory */
+                i = strlen(fat32_pwd);
+                sprintf(&fat32_pwd[i], "/%s", ff_info.fname);
+                ff_res = tinysh_fat32_lsr_cmd(argc, argv);    /* Enter the directory */
+                if (ff_res != FR_OK) break;
+                fat32_pwd[i] = 0;
+            } else {                                         /* The item is a file. */
+                printf("%s/%s\n", fat32_pwd, ff_info.fname);
+            }
+        }
+        f_closedir(&ff_dir);
+    }
+    return ff_res;
+}
+
 void tinysh_fat32_cd_cmd(int argc, char **argv) {
     if(argc != 2) {
         printf("cd cmd param error\n");
@@ -297,6 +330,7 @@ void tinysh_launch() {
     tinysh_register("history", "print history list", (uint8_t)0, tinysh_history_list);
     if(fs_init_state == (uint8_t)0) {
         tinysh_register("ls", "list directory contents", (uint8_t)0, tinysh_fat32_ls_cmd);
+        tinysh_register("lsr", "list directory contents recursively", (uint8_t)0, tinysh_fat32_lsr_cmd);
         tinysh_register("cd", "change directory", (uint8_t)0, tinysh_fat32_cd_cmd);
         tinysh_register("pwd", "print current directory", (uint8_t)0, tinysh_fat32_pwd_cmd);
         tinysh_register("find", "search files in directory", (uint8_t)0, tinysh_fat32_find_cmd);
@@ -312,7 +346,7 @@ void tinysh_launch() {
             if((type_ch >= 'a' && type_ch <= 'z') || (type_ch >= 'A' && type_ch <= 'Z') ||
                (type_ch >= '0' && type_ch <= '9') || type_ch == ' ' || type_ch == '.' ||
                 type_ch == '/' || type_ch == '_' || type_ch == '"' || type_ch == '/' ||
-                type_ch == '*') {
+                type_ch == '*' || type_ch == '-') {
                 if(type_len == MAX_CMD_LEN) break;
                 putchar(type_ch);
                 type_res[type_len++] = type_ch;
