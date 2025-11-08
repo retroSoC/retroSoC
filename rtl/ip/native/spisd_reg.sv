@@ -29,6 +29,7 @@ module spisd_reg (
     input logic        rst_n_i,
     input logic        init_done_i,
     output logic       wr_sync_o,
+    input logic        wr_sync_done_i,
     output logic       mode_o,
     output logic [1:0] clkdiv_o,
     nmi_if.slave       nmi,
@@ -47,7 +48,7 @@ module spisd_reg (
   logic [1:0] s_spisd_clkdiv_d, s_spisd_clkdiv_q;
   logic s_spisd_addr_en;
   logic [31:0] s_spisd_addr_d, s_spisd_addr_q;
-  logic s_spisd_status_d, s_spisd_status_q;
+  logic [1:0] s_spisd_status_d, s_spisd_status_q;
   // common
   logic s_wr_byp, s_rd_byp;
 
@@ -104,9 +105,18 @@ module spisd_reg (
       s_spisd_addr_q
   );
 
-  // [0] init done
-  assign s_spisd_status_d = init_done_i;
-  dffr #(1) u_spisd_status_dffr (
+  // 0: init done
+  // 1: wr sync done
+  always_comb begin
+    s_spisd_status_d    = s_spisd_status_q;
+    s_spisd_status_d[0] = init_done_i;
+    if (wr_sync_done_i && ~s_spisd_status_q[1]) begin
+      s_spisd_status_d[1] = 1'b1;
+    end else if (s_spisd_status_q[1] && s_nmi_rd_hdshk && nmi.addr[7:0] == `NATV_SPISD_STATUS) begin
+      s_spisd_status_d[1] = 1'b0;
+    end
+  end
+  dffr #(2) u_spisd_status_dffr (
       clk_i,
       rst_n_i,
       s_spisd_status_d,
@@ -114,7 +124,7 @@ module spisd_reg (
   );
 
   // software wr sync
-  assign wr_sync_o = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SPISD_SYNC;
+  assign wr_sync_o     = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SPISD_SYNC;
 
 
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
@@ -132,7 +142,7 @@ module spisd_reg (
       `NATV_SPISD_MODE:   s_nmi_rdata_d = {31'd0, s_spisd_mode_q};
       `NATV_SPISD_CLKDIV: s_nmi_rdata_d = {30'd0, s_spisd_clkdiv_q};
       `NATV_SPISD_ADDR:   s_nmi_rdata_d = s_spisd_addr_q;
-      `NATV_SPISD_STATUS: s_nmi_rdata_d = {31'd0, s_spisd_status_q};
+      `NATV_SPISD_STATUS: s_nmi_rdata_d = {30'd0, s_spisd_status_q};
       default:            s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
