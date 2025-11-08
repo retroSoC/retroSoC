@@ -135,7 +135,7 @@ uint8_t check_key() {
     for(uint8_t i = 1; i <= enter_boot_delay; ++i) {
         printf("delay %ds...[all %ds]\n", i, enter_boot_delay);
         delay_ms(1000);
-        if(i == 5) enter_shell = 1;
+        // if(i == 5) enter_shell = 1; // mock the oper
         if(enter_shell) {
             printf("\n");
             return enter_shell;

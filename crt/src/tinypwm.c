@@ -15,14 +15,13 @@ void ip_pwm_test(int argc, char **argv) {
     printf("reg_pwm_ctrl: %d reg_pwm_pscr: %d reg_pwm_cmp: %d\n", reg_pwm_ctrl, reg_pwm_pscr, reg_pwm_cmp);
     for (int i = 0; i < 6; i++)
     {
-        printf("[PWM]: %d/6\n", i + 1);
         for (int j = 10; j <= 990; ++j)
         {
             reg_pwm_ctrl = (uint32_t)4;
             reg_pwm_cr0 = j;
             reg_pwm_ctrl = (uint32_t)3;
             reg_pwm_pscr = 49;
-            delay_ms(2);
+            delay_ms(1);
         }
 
         for (int j = 990; j >= 10; --j)
@@ -31,7 +30,8 @@ void ip_pwm_test(int argc, char **argv) {
             reg_pwm_cr0 = j;
             reg_pwm_ctrl = (uint32_t)3;
             reg_pwm_pscr = 49;
-            delay_ms(2);
+            delay_ms(1);
         }
+        printf("[PWM]: %d/6\n", i + 1);
     }
 }

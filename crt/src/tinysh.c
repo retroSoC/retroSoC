@@ -331,6 +331,7 @@ void tinysh_load_file(char *path) {
     FRESULT ff_res;
     UINT br;
 
+    printf("path: %s\n", path);
     ff_res = f_open(&ff_obj, path, FA_READ);
     if (ff_res != FR_OK) return;
 
@@ -352,13 +353,15 @@ void tinysh_app_image_cmd(int argc, char **argv) {
         return;
     }
 
+    // for(uint8_t i = 0; i < 64; ++i) printf("file_buffer: %x\n", file_buffer[i]);
+
     static uint8_t image_is_init = 0;
     if(image_is_init == 0) {
         tinysh_load_file(argv[1]);
         image_is_init = 1;
     }
 
-    for(uint8_t i = 0; i < 16; ++i) printf("file_buffer: %x\n", file_buffer[i]);
+    for(uint8_t i = 0; i < 64; ++i) printf("file_buffer: %x\n", file_buffer[i]);
 }
 
 
@@ -381,6 +384,7 @@ void tinysh_launch() {
         tinysh_register("find", "search files in directory", (uint8_t)0, tinysh_fat32_find_cmd);
         tinysh_register("file", "print file info", (uint8_t)0, tinysh_fat32_file_cmd);
         tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
+        // design -s 0-256
         // video -i info
         // audio -i info
         // arduboy
