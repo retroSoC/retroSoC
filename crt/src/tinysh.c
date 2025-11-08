@@ -3,7 +3,11 @@
 #include <tinyprintf.h>
 #include <tinystring.h>
 #include <tinysh.h>
-#include <ff.h> // app/fat32
+#include <tinylcd.h>
+#include <tinytim.h>
+#include <ff.h>
+#include <video_player.h>
+
 
 static char sh_argv_buf[MAX_CMD_ARGC][MAX_CMD_LEN]; // NOTE: clear
 static char *sh_argv[MAX_CMD_ARGC];
@@ -335,11 +339,18 @@ void tinysh_load_file(char *path) {
     ff_res = f_open(&ff_obj, path, FA_READ);
     if (ff_res != FR_OK) return;
 
-    printf("open file is right!\n");
-    // TODO: check path is less than file buffer size
-    ff_res = f_read(&ff_obj, file_buffer, 4096, &br);
-    if(ff_res != FR_OK) printf("br: %d\n", br);
+    // printf("open file is right!\n");
+    printf("stat: %d\n", ff_obj.obj.stat);
+    printf("size: %d bytes\n", ff_obj.obj.objsize);
 
+    //  check file size
+    if(ff_obj.obj.objsize > MAX_BUFFER_LEN) {
+        printf("file size is larger than the buffer size\n");
+        return;
+    }
+
+    ff_res = f_read(&ff_obj, file_buffer, ff_obj.obj.objsize, &br);
+    if(ff_res != FR_OK) printf("br: %d\n", br);
     f_close(&ff_obj);
 }
 
@@ -361,7 +372,30 @@ void tinysh_app_image_cmd(int argc, char **argv) {
         image_is_init = 1;
     }
 
-    for(uint8_t i = 0; i < 64; ++i) printf("file_buffer: %x\n", file_buffer[i]);
+    VideoHeader_t* videoHeader = (VideoHeader_t *)file_buffer;
+    printf("================================\n");
+    printf("       image bin file info      \n");
+    printf("width:       %d\n", videoHeader->width);
+    printf("height:      %d\n", videoHeader->height);
+    printf("frame count: %d\n", videoHeader->frame_count);
+    printf("================================\n");
+
+    uint32_t* ptr = (uint32_t*)(file_buffer + 16);
+    uint32_t delta = videoHeader->width * videoHeader->height / 2;
+    uint8_t idx = 0;
+    while(1) {
+        lcd_fill_image(0, 0, videoHeader->width, videoHeader->height, ptr);
+        delay_ms(3000);
+
+        if(idx == 3) {
+            idx = 0;
+            ptr = (uint32_t*)(file_buffer + 16);
+        } else {
+            ++idx;
+            ptr += delta;
+        }
+    }
+
 }
 
 
