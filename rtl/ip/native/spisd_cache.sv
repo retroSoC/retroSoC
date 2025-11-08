@@ -15,6 +15,7 @@ module spisd_cache (
     input logic         mode_i,
     input logic         init_done_i,
     input logic         wr_sync_i,
+    output logic        wr_sync_done_o,
     input logic         fir_clk_edge_i,
     output logic [31:0] sd_addr_o,
     output logic        sd_rd_req_o,
@@ -50,6 +51,8 @@ module spisd_cache (
   logic [6:0] s_line_cnt_d, s_line_cnt_q;
   logic [1:0] s_word_cnt_d, s_word_cnt_q;
   logic [31:0] s_word_data_d, s_word_data_q;
+  // wr sync
+  logic s_wr_sync_d, s_wr_sync_q;
 
   // io
   assign sd_wr_data_o    = s_sd_wr_data_q;
@@ -77,6 +80,8 @@ module spisd_cache (
     sd_addr_o       = '0;
     // mem_if
     nmi.ready       = '0;
+    // wr sync
+    wr_sync_done_o  = '0;
     unique case (s_cache_fsm_q)
       FSM_IDLE: begin
         if (init_done_i) begin
@@ -91,14 +96,17 @@ module spisd_cache (
       FSM_COMP_TAG: begin
         // cache hit
         if ((s_cache_mem_hit || s_cache_byp_hit) && s_cache_valid_q) begin
-          nmi.ready = 1'b1;
-          // write oper, set dirty
-          if (|nmi.wstrb) begin
-            s_cache_dirty_d = 1'b1;
-            if (nmi.wstrb[0]) s_cache_data_d[s_cache_index][7:0] = nmi.wdata[7:0];
-            if (nmi.wstrb[1]) s_cache_data_d[s_cache_index][15:8] = nmi.wdata[15:8];
-            if (nmi.wstrb[2]) s_cache_data_d[s_cache_index][23:16] = nmi.wdata[23:16];
-            if (nmi.wstrb[3]) s_cache_data_d[s_cache_index][31:24] = nmi.wdata[31:24];
+          if (s_wr_sync_q) wr_sync_done_o = 1'b1;  // wr sync oper
+          else begin
+            nmi.ready = 1'b1;  // nomral oper
+            // write oper, set dirty
+            if (|nmi.wstrb) begin
+              s_cache_dirty_d = 1'b1;
+              if (nmi.wstrb[0]) s_cache_data_d[s_cache_index][7:0] = nmi.wdata[7:0];
+              if (nmi.wstrb[1]) s_cache_data_d[s_cache_index][15:8] = nmi.wdata[15:8];
+              if (nmi.wstrb[2]) s_cache_data_d[s_cache_index][23:16] = nmi.wdata[23:16];
+              if (nmi.wstrb[3]) s_cache_data_d[s_cache_index][31:24] = nmi.wdata[31:24];
+            end
           end
           s_cache_fsm_d = FSM_IDLE;
         end else begin
@@ -225,5 +233,18 @@ module spisd_cache (
       for (int i = 0; i < 128; ++i) s_cache_data_q[i] <= '0;
     end else s_cache_data_q <= s_cache_data_d;
   end
+
+  // wr sync oper
+  always_comb begin
+    s_wr_sync_d = s_wr_sync_q;
+    if (wr_sync_i) s_wr_sync_d = 1'b1;
+    else if (wr_sync_done_o) s_wr_sync_d = 1'b0;
+  end
+  dffr #(1) u_wr_sync_dffr (
+      clk_i,
+      rst_n_i,
+      s_wr_sync_d,
+      s_wr_sync_q
+  );
 
 endmodule

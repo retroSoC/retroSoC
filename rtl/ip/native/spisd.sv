@@ -26,6 +26,7 @@ module nmi_spisd (
   logic        s_cfg_reg_sel;
   logic        s_init_done;
   logic        s_wr_sync;
+  logic        s_wr_sync_done;
   logic        s_mode;
   logic [ 1:0] s_clkdiv;
   logic        s_fir_clk_edge;
@@ -61,14 +62,15 @@ module nmi_spisd (
  // verilog_format: on
 
   spisd_reg u_spisd_reg (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .init_done_i(s_init_done),
-      .wr_sync_o  (s_wr_sync),
-      .mode_o     (s_mode),
-      .clkdiv_o   (s_clkdiv),
-      .nmi        (u_cfg_nmi_if),
-      .byp_nmi    (u_cache_byp_nmi_if)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .init_done_i   (s_init_done),
+      .wr_sync_o     (s_wr_sync),
+      .wr_sync_done_i(s_wr_sync_done),
+      .mode_o        (s_mode),
+      .clkdiv_o      (s_clkdiv),
+      .nmi           (u_cfg_nmi_if),
+      .byp_nmi       (u_cache_byp_nmi_if)
   );
 
 
@@ -87,6 +89,7 @@ module nmi_spisd (
       .mode_i          (s_mode),
       .init_done_i     (s_init_done),
       .wr_sync_i       (s_wr_sync),
+      .wr_sync_done_o  (s_wr_sync_done),
       .fir_clk_edge_i  (s_fir_clk_edge),
       .sd_addr_o       (s_sd_addr),
       .sd_rd_req_o     (s_sd_rd_req),
