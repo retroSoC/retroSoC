@@ -26,10 +26,10 @@ void main() {
     tinysh_register("pcf", "pcf8563b test", (uint8_t)1, pcf8563b_test);
     tinysh_register("donut", "dount test", (uint8_t)0, donut_test);
     tinysh_batch_run();
+    // video_show(0x60000000);
     tinysh_launch();
     // ip_norflash_test();
     // ip_lcd_test(0, NULL);
-    video_show(0x679D1000);
 
     // ip_spisd_read((uint32_t)0x51004000, (uint32_t)44);
     // ip_spisd_test();
