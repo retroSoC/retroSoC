@@ -149,6 +149,7 @@ DRESULT disk_ioctl (
             *(WORD * )buff = 1;
             break;
         case CTRL_SYNC:
+            spisd_sector_sync();
             break;
         }
         status = RES_OK;
@@ -161,3 +162,12 @@ DRESULT disk_ioctl (
  return status;
 }
 
+DWORD get_fattime(void) {
+    // HACK:
+    return    ((DWORD)(2025 - 1980) << 25)  /* Year 2025 */
+            | ((DWORD)1 << 21)              /* Month 1 */
+            | ((DWORD)1 << 16)              /* Mday 1 */
+            | ((DWORD)0 << 11)              /* Hour 0 */
+            | ((DWORD)0 << 5)               /* Min 0 */
+            | ((DWORD)0 >> 1);              /* Sec 0 */
+}

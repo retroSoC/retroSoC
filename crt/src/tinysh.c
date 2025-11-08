@@ -232,7 +232,7 @@ FRESULT tinysh_fat32_lsr_cmd(int argc, char **argv) {
 
 void tinysh_fat32_cd_cmd(int argc, char **argv) {
     if(argc != 2) {
-        printf("cd cmd param error\n");
+        printf("[cd] cmd param error\n");
         return;
     }
 
@@ -256,6 +256,18 @@ void tinysh_fat32_cd_cmd(int argc, char **argv) {
     } else strcpy(fat32_pwd, dir_path);
 
 }
+
+void tinysh_fat32_mv_cmd(int argc, char **argv) {
+    if(argc != 3) {
+        printf("[mv] cmd param error\n");
+        return;
+    }
+
+    FRESULT ff_res;
+    ff_res = f_rename(argv[1], argv[2]);
+    if(ff_res != FR_OK) printf("error: %d\n", ff_res);
+}
+
 
 void tinysh_fat32_pwd_cmd(int argc, char **argv) {
     (void) argc;
@@ -414,6 +426,7 @@ void tinysh_launch() {
         tinysh_register("ls", "list directory contents", (uint8_t)0, tinysh_fat32_ls_cmd);
         tinysh_register("lsr", "list directory contents recursively", (uint8_t)0, tinysh_fat32_lsr_cmd);
         tinysh_register("cd", "change directory", (uint8_t)0, tinysh_fat32_cd_cmd);
+        tinysh_register("mv", "move/remove files", (uint8_t)0, tinysh_fat32_mv_cmd);
         tinysh_register("pwd", "print current directory", (uint8_t)0, tinysh_fat32_pwd_cmd);
         tinysh_register("find", "search files in directory", (uint8_t)0, tinysh_fat32_find_cmd);
         tinysh_register("file", "print file info", (uint8_t)0, tinysh_fat32_file_cmd);

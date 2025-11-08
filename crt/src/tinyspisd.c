@@ -44,7 +44,7 @@ void spisd_sector_read(uint8_t *buff, uint32_t sector, uint32_t count) {
     }
 }
 
-void spisd_sector_write(uint8_t *buff, uint32_t sector, uint32_t count) {
+void spisd_sector_write(const uint8_t *buff, uint32_t sector, uint32_t count) {
     uint32_t start_addr = sector * 512;
     start_addr += 0x60000000;
     // printf("START: %x LEN: %x\n\n", start_addr, 512 * count);
@@ -55,6 +55,12 @@ void spisd_sector_write(uint8_t *buff, uint32_t sector, uint32_t count) {
             *vis_addr = *((uint32_t*)buff);
         }
     }
+}
+
+void spisd_sector_sync() {
+    reg_spisd_sync = (uint32_t)1;
+    while(reg_spisd_status == (uint32_t)0b11);
+    printf("spisd wr sync\n");
 }
 
 void ip_spisd_test() {

@@ -8,7 +8,7 @@
 / Function Configurations
 /---------------------------------------------------------------------------*/
 
-#define FF_FS_READONLY	1
+#define FF_FS_READONLY	0
 /* This option switches read-only configuration. (0:Read/Write or 1:Read-only)
 /  Read-only configuration removes writing API functions, f_write(), f_sync(),
 /  f_unlink(), f_mkdir(), f_chmod(), f_rename(), f_truncate(), f_getfree()
@@ -30,7 +30,7 @@
 /  f_findnext(). (0:Disable, 1:Enable 2:Enable with matching altname[] too) */
 
 
-#define FF_USE_MKFS		0
+#define FF_USE_MKFS		1
 /* This option switches f_mkfs(). (0:Disable or 1:Enable) */
 
 
@@ -38,25 +38,25 @@
 /* This option switches fast seek feature. (0:Disable or 1:Enable) */
 
 
-#define FF_USE_EXPAND	0
+#define FF_USE_EXPAND	1
 /* This option switches f_expand(). (0:Disable or 1:Enable) */
 
 
-#define FF_USE_CHMOD	0
+#define FF_USE_CHMOD	1
 /* This option switches attribute control API functions, f_chmod() and f_utime().
 /  (0:Disable or 1:Enable) Also FF_FS_READONLY needs to be 0 to enable this option. */
 
 
-#define FF_USE_LABEL	0
+#define FF_USE_LABEL	1
 /* This option switches volume label API functions, f_getlabel() and f_setlabel().
 /  (0:Disable or 1:Enable) */
 
 
-#define FF_USE_FORWARD	0
+#define FF_USE_FORWARD	1
 /* This option switches f_forward(). (0:Disable or 1:Enable) */
 
 
-#define FF_USE_STRFUNC	0
+#define FF_USE_STRFUNC	1
 #define FF_PRINT_LLI	0
 #define FF_PRINT_FLOAT	0
 #define FF_STRF_ENCODE	0
@@ -263,7 +263,7 @@
 /  These options have no effect in read-only configuration (FF_FS_READONLY = 1). */
 
 
-#define FF_FS_CRTIME	0
+#define FF_FS_CRTIME	1
 /* This option enables(1)/disables(0) the timestamp of the file created. When
 /  set 1, the file created time is available in FILINFO structure. */
 
