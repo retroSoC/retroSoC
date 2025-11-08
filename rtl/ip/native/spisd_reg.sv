@@ -114,7 +114,7 @@ module spisd_reg (
   );
 
   // software wr sync
-  assign s_wr_sync = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SPISD_SYNC;
+  assign wr_sync_o = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SPISD_SYNC;
 
 
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
