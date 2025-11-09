@@ -48,4 +48,6 @@ dc.fl
 minirv.sv
 user_design
 *.zip
+*.tar*
 ff16
+lvgl-*

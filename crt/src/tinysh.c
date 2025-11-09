@@ -1,6 +1,7 @@
 #include <firmware.h>
 #include <tinyprint.h>
 #include <tinyprintf.h>
+#include <tinylib.h>
 #include <tinystring.h>
 #include <tinysh.h>
 #include <tinylcd.h>
@@ -97,9 +98,41 @@ static void tinysh_parse_and_exec(char *cmd) {
     if(!is_find) printf("cmd: [%s] not found\n", sh_argv[0]);
 }
 
+void tinysh_load_file(char *path, uint8_t head) {
+    FIL ff_obj;
+    FRESULT ff_res;
+    UINT br;
+    FSIZE_t rd_len = 0;
+
+    // printf("path: %s\n", path);
+    ff_res = f_open(&ff_obj, path, FA_READ);
+    if (ff_res != FR_OK) {
+        f_close(&ff_obj);
+        return;
+    }
+
+    // printf("open file is right!\n");
+    printf("stat: %d\n", ff_obj.obj.stat);
+    printf("size: %d bytes\n", ff_obj.obj.objsize);
+
+    if(head) rd_len = 64;
+    else {
+        if(ff_obj.obj.objsize > MAX_BUFFER_LEN) {
+            printf("file size is larger than the buffer size\n");
+            f_close(&ff_obj);
+            return;
+        }
+        rd_len = ff_obj.obj.objsize;
+    }
+
+    ff_res = f_read(&ff_obj, file_buffer, rd_len, &br);
+    if(ff_res != FR_OK) printf("br: %d\n", br);
+    f_close(&ff_obj);
+}
+
 static void tinysh_help() {
     for(uint8_t i = 0; i < sh_cmd_len; ++i) {
-        printf("cmd: %-8s --- %s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
+        printf("cmd: %-10s --- %s\n", sh_cmd_list[i].name, sh_cmd_list[i].info);
     }
 }
 
@@ -232,7 +265,7 @@ FRESULT tinysh_fat32_lsr_cmd(int argc, char **argv) {
 
 void tinysh_fat32_cd_cmd(int argc, char **argv) {
     if(argc != 2) {
-        printf("cd cmd param error\n");
+        printf("[cd] cmd param error\n");
         return;
     }
 
@@ -257,6 +290,18 @@ void tinysh_fat32_cd_cmd(int argc, char **argv) {
 
 }
 
+void tinysh_fat32_mv_cmd(int argc, char **argv) {
+    if(argc != 3) {
+        printf("[mv] cmd param error\n");
+        return;
+    }
+
+    FRESULT ff_res;
+    ff_res = f_rename(argv[1], argv[2]);
+    if(ff_res != FR_OK) printf("error: %d\n", ff_res);
+}
+
+
 void tinysh_fat32_pwd_cmd(int argc, char **argv) {
     (void) argc;
     (void) argv;
@@ -269,6 +314,58 @@ void tinysh_fat32_pwd_cmd(int argc, char **argv) {
         printf("%s\n", dir_path);
         strcpy(fat32_pwd, dir_path);
     }
+}
+
+void tinysh_fat32_mkdir_cmd(int argc, char **argv) {
+    if(argc != 2) {
+        printf("[mkdir] cmd param error\n");
+        return;
+    }
+
+    FRESULT ff_res;
+    ff_res = f_mkdir(argv[1]);
+    if(ff_res != FR_OK) printf("error: %d\n", ff_res);
+}
+
+void tinysh_fat32_rm_cmd(int argc, char **argv) {
+    if(argc != 2) {
+        printf("[rm] cmd param error\n");
+        return;
+    }
+
+    FRESULT ff_res;
+    ff_res = f_unlink(argv[1]);
+    if(ff_res != FR_OK) printf("error: %d\n", ff_res);
+}
+
+void tinysh_fat32_chmod_cmd(int argc, char **argv) {
+    if(argc != 2) {
+        printf("[chmod] cmd param error\n");
+        return;
+    }
+
+    FRESULT ff_res;
+    ff_res = f_chmod(argv[1], AM_RDO, AM_RDO);
+    if(ff_res != FR_OK) printf("error: %d\n", ff_res);
+}
+
+void tinysh_fat32_touch_cmd(int argc, char **argv) {
+    if(argc != 8) {
+        printf("[touch] cmd param error\n");
+        return;
+    }
+
+    FRESULT ff_res;
+    FILINFO ff_info;
+    // touch file year month day hour min sec
+    ff_info.fdate = (WORD)(((atoi(argv[2]) - 1980) * 512U) | atoi(argv[3]) * 32U | atoi(argv[4]));
+    ff_info.ftime = (WORD)(atoi(argv[5]) * 2048U | atoi(argv[6]) * 32U | atoi(argv[7]) / 2U);
+#if FF_FS_CRTIME
+    ff_info.crdate = 0;   /* Do not change created time in this code */
+#endif
+
+    ff_res = f_utime(argv[1], &ff_info);
+    if(ff_res != FR_OK) printf("error: %d\n", ff_res);
 }
 
 void tinysh_fat32_find_cmd(int argc, char **argv) {
@@ -317,9 +414,9 @@ void tinysh_fat32_file_cmd(int argc, char **argv) {
                    (ff_info.fattrib & AM_SYS) ? 'S' : '-',
                    (ff_info.fattrib & AM_ARC) ? 'A' : '-');
             printf("[size]: %lu bytes ", ff_info.fsize);
-            printf("[date]: %u-%02u-%02u %02u:%02u\n",
+            printf("[date]: %u-%02u-%02u %02u:%02u%02u\n",
                    (ff_info.fdate >> 9) + 1980, ff_info.fdate >> 5 & 15, ff_info.fdate & 31,
-                   ff_info.ftime >> 11, ff_info.ftime >> 5 & 63);
+                   ff_info.ftime >> 11, ff_info.ftime >> 5 & 63, ff_info.ftime * 2);
         break;
         case FR_NO_FILE:
         case FR_NO_PATH:
@@ -330,35 +427,93 @@ void tinysh_fat32_file_cmd(int argc, char **argv) {
     }
 }
 
-void tinysh_load_file(char *path) {
-    FIL ff_obj;
-    FRESULT ff_res;
-    UINT br;
-
-    printf("path: %s\n", path);
-    ff_res = f_open(&ff_obj, path, FA_READ);
-    if (ff_res != FR_OK) return;
-
-    // printf("open file is right!\n");
-    printf("stat: %d\n", ff_obj.obj.stat);
-    printf("size: %d bytes\n", ff_obj.obj.objsize);
-
-    //  check file size
-    if(ff_obj.obj.objsize > MAX_BUFFER_LEN) {
-        printf("file size is larger than the buffer size\n");
+void tinysh_fat32_write_cmd(int argc, char **argv) {
+    // write test.txt asdf.txtxt
+    if(argc != 3) {
+        printf("[write] cmd param error\n");
         return;
     }
 
-    ff_res = f_read(&ff_obj, file_buffer, ff_obj.obj.objsize, &br);
-    if(ff_res != FR_OK) printf("br: %d\n", br);
+    FIL ff_obj;
+    FRESULT ff_res;
+    UINT ff_num;
+    ff_res = f_open(&ff_obj, argv[1], FA_WRITE | FA_CREATE_ALWAYS);
+    if(ff_res == FR_OK) {
+        ff_res = f_write(&ff_obj, argv[2], strlen(argv[2]), &ff_num);
+        if(ff_res != FR_OK) printf("error: %d\n", ff_res);
+    } else {
+        printf("error: %d\n", ff_res);
+    }
     f_close(&ff_obj);
+}
+
+void tinysh_fat32_cat_cmd(int argc, char **argv) {
+    if(argc != 2) {
+        printf("[cat] cmd param error\n");
+        return;
+    }
+
+    tinysh_load_file(argv[1], (uint8_t)1);
+    printf("file header:\n");
+    for(uint8_t i = 0; i < 4; ++i) {
+        for(uint8_t j = 0; j < 16; ++j) {
+            printf("%02x", file_buffer[16*i+j]);
+            if(j <= 14) printf(" ");
+        }
+        printf("\n");
+    }
+}
+
+void tinysh_fat32_df_cmd(int argc, char **argv) {
+    (void) argv;
+    if(argc != 1) {
+        printf("[df] cmd param error\n");
+        return;
+    }
+
+    FATFS *fs;
+    FRESULT ff_res;
+    DWORD free_clust, free_sect, total_sect;
+    /* Get volume information and free clusters of drive 1 */
+    ff_res = f_getfree("0:", &free_clust, &fs);
+    if (ff_res != FR_OK) {
+        printf("error: %d\n", ff_res);
+        return;
+    }
+
+    /* Get total sectors and free sectors */
+    total_sect = (fs->n_fatent - 2) * fs->csize;
+    free_sect = free_clust * fs->csize;
+
+    /* Print the free space (assuming 512 bytes/sector) */
+    printf("%10lu MiB total drive space.\n%10lu MiB available.\n", total_sect / 2 / 1024, free_sect / 2 / 1024);
+}
+
+void tinysh_fat32_fatlabel_cmd(int argc, char **argv) {
+    if(argc != 1 && argc != 2) {
+        printf("[fatlabel] cmd param error\n");
+        return;
+    }
+
+    TCHAR label[24];
+    DWORD vsn;
+    FRESULT ff_res;
+    if(argc == 1) {
+        ff_res = f_getlabel("", label, &vsn);
+        if (ff_res != FR_OK) printf("error: %d\n", ff_res);
+        printf("Volume Label: %s\n", label);
+        printf("Volume Serial Number: %lu\n", (unsigned long)vsn);
+    } else if(argc == 2) {
+        ff_res = f_setlabel(argv[1]);
+        if(ff_res != FR_OK) printf("error: %d\n", ff_res);
+    }
 }
 
 void tinysh_app_image_cmd(int argc, char **argv) {
     // image: -i -m[0] file.bin
     // uint8_t is_info = 1, frame = 0;
     // check cmd if valid
-    printf("argc: %d\n", argc);
+    // printf("argc: %d\n", argc);
     if(argc != 2) {
         printf("image cmd param error\n");
         return;
@@ -368,7 +523,7 @@ void tinysh_app_image_cmd(int argc, char **argv) {
 
     static uint8_t image_is_init = 0;
     if(image_is_init == 0) {
-        tinysh_load_file(argv[1]);
+        tinysh_load_file(argv[1], (uint8_t)0);
         image_is_init = 1;
     }
 
@@ -414,15 +569,27 @@ void tinysh_launch() {
         tinysh_register("ls", "list directory contents", (uint8_t)0, tinysh_fat32_ls_cmd);
         tinysh_register("lsr", "list directory contents recursively", (uint8_t)0, tinysh_fat32_lsr_cmd);
         tinysh_register("cd", "change directory", (uint8_t)0, tinysh_fat32_cd_cmd);
+        tinysh_register("mv", "move/remove files", (uint8_t)0, tinysh_fat32_mv_cmd);
         tinysh_register("pwd", "print current directory", (uint8_t)0, tinysh_fat32_pwd_cmd);
+        tinysh_register("mkdir", "make directories", (uint8_t)0, tinysh_fat32_mkdir_cmd);
+        tinysh_register("rm", "remove files or directories", (uint8_t)0, tinysh_fat32_rm_cmd);
+        tinysh_register("chmod", "change file mode bits", (uint8_t)0, tinysh_fat32_chmod_cmd);
+        tinysh_register("touch", "change file timestamps", (uint8_t)0, tinysh_fat32_touch_cmd);
         tinysh_register("find", "search files in directory", (uint8_t)0, tinysh_fat32_find_cmd);
         tinysh_register("file", "print file info", (uint8_t)0, tinysh_fat32_file_cmd);
+        tinysh_register("write", "write stirng to file", (uint8_t)0, tinysh_fat32_write_cmd);
+        tinysh_register("cat", "concatenate file(s) to standard output", (uint8_t)0, tinysh_fat32_cat_cmd);
+        tinysh_register("df", "report file system disk space usage", (uint8_t)0, tinysh_fat32_df_cmd);
+        tinysh_register("fatlabel", "set/get filesystem label or volume ID", (uint8_t)0, tinysh_fat32_fatlabel_cmd);
         tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
-        // design -s 0-256
+        // cat
+        // userip -s 0-256
         // video -i info
         // audio -i info
         // arduboy
         // nes
+        // coremark
+        printf("register cmd num: %d\n", sh_cmd_len);
     }
 
     while(1) {
