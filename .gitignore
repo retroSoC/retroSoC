@@ -50,3 +50,4 @@ user_design
 *.zip
 *.tar*
 ff16
+lvgl-*
