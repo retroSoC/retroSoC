@@ -9,6 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 module axi4l2nmi (
+    // verilog_format: off
     input  logic        aclk_i,
     input  logic        aresetn_i,
     input  logic [31:0] awaddr_i,
@@ -28,14 +29,8 @@ module axi4l2nmi (
     output logic [ 1:0] rresp_o,
     output logic        rvalid_o,
     input  logic        rready_i,
-
-    output logic        mem_valid_o,
-    output logic        mem_instr_o,
-    output logic [31:0] mem_addr_o,
-    output logic [31:0] mem_wdata_o,
-    output logic [ 3:0] mem_wstrb_o,
-    input  logic        mem_ready_i,
-    input  logic [31:0] mem_rdata_i
+    nmi_if.master       nmi
+    // verilog_format: on
 );
 
   localparam [1:0] RD_IDLE = 2'd0;
@@ -63,7 +58,7 @@ module axi4l2nmi (
         if (arvalid_i) s_rd_fsm_d = RD_DATA;
       end
       RD_DATA: begin
-        if (mem_ready_i) s_rd_fsm_d = RD_WAIT;
+        if (nmi.ready) s_rd_fsm_d = RD_WAIT;
       end
       RD_WAIT: begin
         if (rready_i) s_rd_fsm_d = RD_IDLE;
@@ -88,7 +83,7 @@ module axi4l2nmi (
         if (wvalid_i) s_wr_fsm_d = WR_WAIT;
       end
       WR_WAIT: begin
-        if (mem_ready_i) s_wr_fsm_d = WR_RESP;
+        if (nmi.ready) s_wr_fsm_d = WR_RESP;
       end
       WR_RESP: begin
         if (bready_i) s_wr_fsm_d = WR_IDLE;
@@ -104,13 +99,13 @@ module axi4l2nmi (
   );
 
   always_comb begin
-    mem_addr_o = s_addr_q;
+    nmi.addr = s_addr_q;
     if (s_rd_fsm_q == RD_IDLE && arvalid_i) begin
-      mem_addr_o = araddr_i;
-      s_addr_d   = araddr_i;
+      nmi.addr = araddr_i;
+      s_addr_d = araddr_i;
     end else if (s_wr_fsm_q == WR_IDLE && awvalid_i) begin
-      mem_addr_o = awaddr_i;
-      s_addr_d   = awaddr_i;
+      nmi.addr = awaddr_i;
+      s_addr_d = awaddr_i;
     end
   end
   dffer #(32) u_addr_dffer (
@@ -121,11 +116,11 @@ module axi4l2nmi (
       s_addr_q
   );
 
-  assign s_rdata_d = mem_rdata_i;
+  assign s_rdata_d = nmi.rdata;
   dffer #(32) u_rdata_dffer (
       aclk_i,
       aresetn_i,
-      s_rd_fsm_q == RD_DATA && mem_ready_i,
+      s_rd_fsm_q == RD_DATA && nmi.ready,
       s_rdata_d,
       s_rdata_q
   );
@@ -149,20 +144,19 @@ module axi4l2nmi (
   );
 
   // axil
-  assign arready_o   = s_rd_fsm_q == RD_IDLE && arvalid_i;
-  assign rvalid_o    = s_rd_fsm_q == RD_WAIT;
-  assign rresp_o     = '0;
-  assign rdata_o     = s_rdata_q;
+  assign arready_o = s_rd_fsm_q == RD_IDLE && arvalid_i;
+  assign rvalid_o  = s_rd_fsm_q == RD_WAIT;
+  assign rresp_o   = '0;
+  assign rdata_o   = s_rdata_q;
 
-  assign awready_o   = s_wr_fsm_q == WR_IDLE && awvalid_i;
-  assign wready_o    = s_wr_fsm_q == WR_DATA && wvalid_i;
-  assign bvalid_o    = s_wr_fsm_q == WR_RESP;
-  assign bresp_o     = '0;
+  assign awready_o = s_wr_fsm_q == WR_IDLE && awvalid_i;
+  assign wready_o  = s_wr_fsm_q == WR_DATA && wvalid_i;
+  assign bvalid_o  = s_wr_fsm_q == WR_RESP;
+  assign bresp_o   = '0;
 
-  assign s_rd_req    = (s_rd_fsm_q == RD_DATA || s_rd_fsm_q == RD_WAIT);
-  assign s_wr_req    = s_wr_fsm_q == WR_WAIT;
-  assign mem_valid_o = s_rd_req || s_wr_req;
-  assign mem_instr_o = '0;
-  assign mem_wdata_o = s_wdata_q;
-  assign mem_wstrb_o = (s_wr_fsm_q == WR_WAIT) ? s_wstrb_q : '0;
+  assign s_rd_req  = (s_rd_fsm_q == RD_DATA || s_rd_fsm_q == RD_WAIT);
+  assign s_wr_req  = s_wr_fsm_q == WR_WAIT;
+  assign nmi.valid = s_rd_req || s_wr_req;
+  assign nmi.wdata = s_wdata_q;
+  assign nmi.wstrb = (s_wr_fsm_q == WR_WAIT) ? s_wstrb_q : '0;
 endmodule
