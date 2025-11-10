@@ -6,8 +6,6 @@
 
 #ifdef CORE_PICORV32
 #define HW_CORE "picorv32"
-#elif CORE_MINIRV
-#define HW_CORE "minirv"
 #elif CORE_MDD
 #define HW_CORE "mdd(host core: picorv32)"
 #else
@@ -215,9 +213,9 @@
 #define reg_tim3_cnt       (*(volatile uint32_t*)0x2000A008)
 #define reg_tim3_cmp       (*(volatile uint32_t*)0x2000A00C)
 #define reg_tim3_stat      (*(volatile uint32_t*)0x2000A010)
-
 // user ip design(example)
 #define reg_user_ip_reg0   (*(volatile uint32_t*)0x2000F000)
 #define reg_user_ip_reg1   (*(volatile uint32_t*)0x2000F004)
 #define reg_user_ip_reg2   (*(volatile uint32_t*)0x2000F008)
+// ... user custom area ...
 #endif

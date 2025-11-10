@@ -8,6 +8,9 @@
 #include <tinytim.h>
 #include <ff.h>
 #include <video_player.h>
+#ifdef IP_MDD
+#include <userip.h>
+#endif
 
 
 static char sh_argv_buf[MAX_CMD_ARGC][MAX_CMD_LEN]; // NOTE: clear
@@ -512,10 +515,8 @@ void tinysh_fat32_fatlabel_cmd(int argc, char **argv) {
 void tinysh_app_image_cmd(int argc, char **argv) {
     // image: -i -m[0] file.bin
     // uint8_t is_info = 1, frame = 0;
-    // check cmd if valid
-    // printf("argc: %d\n", argc);
     if(argc != 2) {
-        printf("image cmd param error\n");
+        printf("[image] cmd param error\n");
         return;
     }
 
@@ -553,6 +554,30 @@ void tinysh_app_image_cmd(int argc, char **argv) {
 
 }
 
+#ifdef IP_MDD
+void tinysh_app_userip_cmd(int argc, char **argv) {
+    if(argc != 1 && argc != 2) {
+        printf("[userip] cmd param error\n");
+        return;
+    }
+
+    if(argc == 1) {
+        printf("current user ip id: %03d\n", reg_sysctrl_ipsel);
+        userip_main(0, NULL);
+    } else if(argc == 2) {
+        int16_t user_id = atoi(argv[1]);
+        if(user_id >= 0 && user_id <= 255) {
+            printf("switch to user ip id to [%03d...]\n", user_id);
+            reg_sysctrl_ipsel = (uint8_t)user_id;
+            userip_main(0, NULL);
+        } else {
+            printf("error use id: %d\n", user_id);
+            return;
+        }
+    }
+    // userip: list all info/current id
+}
+#endif
 
 void tinysh_launch() {
     char type_res[MAX_CMD_LEN], type_ch;
@@ -582,13 +607,14 @@ void tinysh_launch() {
         tinysh_register("df", "report file system disk space usage", (uint8_t)0, tinysh_fat32_df_cmd);
         tinysh_register("fatlabel", "set/get filesystem label or volume ID", (uint8_t)0, tinysh_fat32_fatlabel_cmd);
         tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
-        // userip: list all info
-        // userip id(0-256): select
         // video -i info
         // audio -i info
         // arduboy
         // nes
         // coremark
+#ifdef IP_MDD
+        tinysh_register("userip", "run user ip program", (uint8_t)0, tinysh_app_userip_cmd);
+#endif
         printf("register cmd num: %d\n", sh_cmd_len);
     }
 
