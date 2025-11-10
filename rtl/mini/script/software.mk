@@ -27,6 +27,7 @@ endif
 
 DEF_VAL += -DCORE_$(CORE)
 DEF_VAL += -DISA_$(ISA)
+DEF_VAL += -DIP_$(IP)
 CFLAGS += $(DEF_VAL)
 
 
@@ -75,15 +76,6 @@ APP_PATH :=     $(ROOT_PATH)/app/src/at24cxx.c \
                 $(ROOT_PATH)/app/src/fatfs/ff16/source/ffsystem.c \
                 $(ROOT_PATH)/app/src/fatfs/ff16/source/ffunicode.c
 
-SRC_PATH := $(TINYLIB_PATH)
-SRC_PATH += $(APP_PATH)
-
-ifneq ($(filter RV32E RV32I,$(ISA)),)
-    SRC_PATH += $(ROOT_PATH)/crt/libgcc/div.S
-    SRC_PATH += $(ROOT_PATH)/crt/libgcc/muldi3.S
-    SRC_PATH += $(ROOT_PATH)/crt/libgcc/mulsi3.c
-endif
-
 INC_PATH := -I$(ROOT_PATH)/crt/inc \
             -I$(ROOT_PATH)/app/inc \
             -I$(ROOT_PATH)/app/src/fatfs/ff16/source \
@@ -102,6 +94,21 @@ INC_PATH := -I$(ROOT_PATH)/crt/inc \
             -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/tick \
             -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/widgets \
 
+# user custom area
+ifeq ($(IP), MDD)
+    APP_PATH += $(ROOT_PATH)/app/src/userip/userip.c
+    INC_PATH += -I$(ROOT_PATH)/app/src/userip
+    # add more user custom files into 'APP_PATH'
+endif
+
+SRC_PATH := $(TINYLIB_PATH)
+SRC_PATH += $(APP_PATH)
+
+ifneq ($(filter RV32E RV32I,$(ISA)),)
+    SRC_PATH += $(ROOT_PATH)/crt/libgcc/div.S
+    SRC_PATH += $(ROOT_PATH)/crt/libgcc/muldi3.S
+    SRC_PATH += $(ROOT_PATH)/crt/libgcc/mulsi3.c
+endif
 
 LDS_PATH := $(ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
 

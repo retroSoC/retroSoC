@@ -253,7 +253,7 @@ module ip_apb_wrapper (
   assign irq_o[7] = u_tmr_if.irq_o;
   assign irq_o[8] = spfs.irq_o;
 
-  mem2apb u_mem2apb (
+  nmi2apb u_nmi2apb (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
       .nmi     (nmi),
@@ -299,7 +299,7 @@ module ip_apb_wrapper (
   );
 
 `ifdef IP_MDD
-  uesr_ip_wrapper u_user_ip_wrapper (
+  user_ip_wrapper u_user_ip_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .sel_i  (ip_sel_i),

@@ -24,7 +24,7 @@ module retrosoc (
     input  logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
 `endif
 `ifdef IP_MDD
-    user_gpio_if.dut                       gpio,
+    user_gpio_if.dut                       user_gpio,
 `endif
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
@@ -157,7 +157,7 @@ module retrosoc (
       .spfs       (spfs),
 `ifdef IP_MDD
       .ip_sel_i   (u_sysctrl_if.ip_sel_o),
-      .gpio       (gpio),
+      .gpio       (user_gpio),
 `endif
       .irq_o      (s_apb_irq)
   );

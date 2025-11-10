@@ -277,7 +277,7 @@ module retrosoc_asic (
       .core_sel_i (s_core_sel),
 `endif
 `ifdef IP_MDD
-      .gpio       (u_user_gpio_if),
+      .user_gpio  (u_user_gpio_if),
 `endif
 `ifdef HAVE_SRAM_IF
       .ram        (u_ram_if),

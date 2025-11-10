@@ -8,8 +8,15 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-
-module user_ip_design #(
+/*
+ * 0. copy this file as `user_ip_design.sv`
+ * 1. create a new folder `userip` and simply put `user_ip_design.sv` into `userip` folder
+ * 2. put all user custom design files into `userip` folder
+ *    - instance top module of user design under `user_ip_design.sv`
+ *    - create a filelist named `userip.fl` to include all files needed to be add into the path
+ * 3. archive 'userip' as `userip.zip` and upload `userip.zip` to cloud platform
+ */
+module user_ip_design_template #(
     parameter int ID = 8'd255
 ) (
     // verilog_format: off
@@ -33,11 +40,11 @@ module user_ip_design #(
   assign apb.pslverr    = 1'b0;
 
   always_comb begin
-    apb.rdata = '0;
+    apb.prdata = '0;
     if (s_apb_rd_hdshk) begin
-      unique case (apb4.addr[7:0])
-        USER_IP_APB_ID: apb4.rdata = {24'd0, ID};
-        default:        apb4.rdata = '0;
+      unique case (apb.paddr[7:0])
+        USER_IP_APB_ID: apb.prdata = {24'd0, ID};
+        default:        apb.prdata = '0;
       endcase
     end
   end
@@ -45,6 +52,8 @@ module user_ip_design #(
   assign gpio.gpio_out = '0;
   assign gpio.gpio_oen = '0;
 
-  // INSTANCE USER CUSTOM DESIGN HERE!!!!
+  // ====== INSTANCE USER CUSTOM DESIGN HERE!!!! ======
+  // ====== ==================================== ======
+  // ====== ==================================== ======
 
 endmodule

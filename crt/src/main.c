@@ -2,6 +2,8 @@
 
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);
+    printf("hello test\n");
+    while(1);
     tinybooter();
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     qspi_dev_init();
