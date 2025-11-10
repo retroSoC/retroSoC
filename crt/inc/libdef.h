@@ -43,6 +43,15 @@ extern "C"
 {
 #endif
 
+// uint32_t system_runtime() {
+//     uint32_t sys_cycle_val, sys_cycle_valh;
+//     __asm__ volatile("rdcycle %0"    : "=r"(sys_cycle_val));
+//     __asm__ volatile("rdcycleh %0"   : "=r"(sys_cycle_valh));
+
+//     if(sys_cycle_valh == 0) return sys_cycle_val * CPU_FREQ / 1000;
+//     else return (sys_cycle_val) * CPU_FREQ / 1000; // unit: ms
+// }
+
 uint32_t *irq_handler(uint32_t *regs, uint32_t irqs);
 
 #define putstr(s) \

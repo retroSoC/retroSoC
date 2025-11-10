@@ -582,8 +582,8 @@ void tinysh_launch() {
         tinysh_register("df", "report file system disk space usage", (uint8_t)0, tinysh_fat32_df_cmd);
         tinysh_register("fatlabel", "set/get filesystem label or volume ID", (uint8_t)0, tinysh_fat32_fatlabel_cmd);
         tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
-        // cat
-        // userip -s 0-256
+        // userip: list all info
+        // userip id(0-256): select
         // video -i info
         // audio -i info
         // arduboy
