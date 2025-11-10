@@ -63,17 +63,17 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinysh.c \
                 $(ROOT_PATH)/crt/src/main.c
 
-APP_PATH :=     $(ROOT_PATH)/crt/app/src/at24cxx.c \
-                $(ROOT_PATH)/crt/app/src/pcf8563b.c \
-                $(ROOT_PATH)/crt/app/src/es8388.c \
-                $(ROOT_PATH)/crt/app/src/w25q128jvxim.c \
-                $(ROOT_PATH)/crt/app/src/wav_audio.c \
-                $(ROOT_PATH)/crt/app/src/video_player.c \
-                $(ROOT_PATH)/crt/app/src/donut.c \
-                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/diskio.c \
-                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ff.c \
-                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ffsystem.c \
-                $(ROOT_PATH)/crt/app/src/fatfs/ff16/source/ffunicode.c
+APP_PATH :=     $(ROOT_PATH)/app/src/at24cxx.c \
+                $(ROOT_PATH)/app/src/pcf8563b.c \
+                $(ROOT_PATH)/app/src/es8388.c \
+                $(ROOT_PATH)/app/src/w25q128jvxim.c \
+                $(ROOT_PATH)/app/src/wav_audio.c \
+                $(ROOT_PATH)/app/src/video_player.c \
+                $(ROOT_PATH)/app/src/donut.c \
+                $(ROOT_PATH)/app/src/fatfs/ff16/source/diskio.c \
+                $(ROOT_PATH)/app/src/fatfs/ff16/source/ff.c \
+                $(ROOT_PATH)/app/src/fatfs/ff16/source/ffsystem.c \
+                $(ROOT_PATH)/app/src/fatfs/ff16/source/ffunicode.c
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)
@@ -84,12 +84,31 @@ ifneq ($(filter RV32E RV32I,$(ISA)),)
     SRC_PATH += $(ROOT_PATH)/crt/libgcc/mulsi3.c
 endif
 
+INC_PATH := -I$(ROOT_PATH)/crt/inc \
+            -I$(ROOT_PATH)/app/inc \
+            -I$(ROOT_PATH)/app/src/fatfs/ff16/source \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/core \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/display \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/draw \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/font \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/index \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/layouts \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/libs \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/misc \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/others \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/stdlib \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/themes \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/tick \
+            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/widgets \
+
+
 LDS_PATH := $(ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
 
 firmware:
 	@mkdir -p .sw_build
 	cd .sw_build && ($(CP) -P -o flash_$(EXEC_TYPE).lds $(LDS_PATH))
-	cd .sw_build && ($(CC) $(CFLAGS) -I$(ROOT_PATH)/crt/inc -I$(ROOT_PATH)/crt/app/inc -I$(ROOT_PATH)/crt/app/src/fatfs/ff16/source -o $@ $(SRC_PATH))
+	cd .sw_build && ($(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH))
 	cd .sw_build && ($(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex)
 	cd .sw_build && ($(OBJC) -O binary $@ $(FIRMWARE_NAME).bin)
 	cd .sw_build && ($(DUMP) -d $@ > $(FIRMWARE_NAME).txt)
