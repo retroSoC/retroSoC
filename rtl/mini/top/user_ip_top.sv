@@ -105,7 +105,7 @@ module user_ip_top (
     endcase
   end
 
-  user_ip_design_username1 #(1) user_ip_design_username1 (
+  user_ip_design_username1 #(1) u_user_ip_design_username1 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .gpio   (u_user_1_gpio_if),
