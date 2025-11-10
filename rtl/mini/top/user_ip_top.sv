@@ -105,14 +105,14 @@ module user_ip_top (
     endcase
   end
 
-  user_ip_design #(1) u_user_1_ip_design (
+  user_ip_design_username1 #(1) user_ip_design_username1 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .gpio   (u_user_1_gpio_if),
       .apb    (u_user_1_apb_if)
   );
 
-  user_ip_design #(2) u_user_2_ip_design (
+  user_ip_design_username2 #(2) u_user_ip_design_username2 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .gpio   (u_user_2_gpio_if),

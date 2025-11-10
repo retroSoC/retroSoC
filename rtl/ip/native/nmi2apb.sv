@@ -181,40 +181,36 @@ module nmi2apb (
 
   // verilog_format: off
   assign s_rd_data = ({32{archinfo.psel}} & archinfo.prdata) |
-                     ({32{rng.psel}}      & rng.prdata) |
-                     ({32{uart.psel}}     & uart.prdata) |
-                     ({32{pwm.psel}}      & pwm.prdata) |
-                     ({32{ps2.psel}}      & ps2.prdata) |
-                     ({32{i2c.psel}}      & i2c.prdata) |
-                     ({32{qspi.psel}}     & qspi.prdata) |
-                     ({32{rtc.psel}}      & rtc.prdata) |
-                     ({32{wdg.psel}}      & wdg.prdata) |
-                     ({32{crc.psel}}      & crc.prdata) |
-                     ({32{tmr.psel}}      & tmr.prdata) |
+                     ({32{rng.psel}}      & rng.prdata)      |
+                     ({32{uart.psel}}     & uart.prdata)     |
+                     ({32{pwm.psel}}      & pwm.prdata)      |
+                     ({32{ps2.psel}}      & ps2.prdata)      |
+                     ({32{i2c.psel}}      & i2c.prdata)      |
+                     ({32{qspi.psel}}     & qspi.prdata)     |
+                     ({32{rtc.psel}}      & rtc.prdata)      |
+                     ({32{wdg.psel}}      & wdg.prdata)      |
+                     ({32{crc.psel}}      & crc.prdata)      |
+                     ({32{tmr.psel}}      & tmr.prdata)      |
 `ifdef IP_MDD
-                     ({32{spfs.psel}}     & spfs.prdata) |
-                     ({32{user_ip.psel}}  & user_ip.prdata);
-`else
-                     ({32{spfs.psel}}     & spfs.prdata);
+                     ({32{user_ip.psel}}  & user_ip.prdata)  |
 `endif
+                     ({32{spfs.psel}}     & spfs.prdata);
 
   assign s_xfer_ready = (archinfo.psel & archinfo.pready) |
-                        (rng.psel      & rng.pready) |
-                        (uart.psel     & uart.pready) |
-                        (pwm.psel      & pwm.pready) |
-                        (ps2.psel      & ps2.pready) |
-                        (i2c.psel      & i2c.pready) |
-                        (qspi.psel     & qspi.pready) |
-                        (rtc.psel      & rtc.pready) |
-                        (wdg.psel      & wdg.pready) |
-                        (crc.psel      & crc.pready) |
-                        (tmr.psel      & tmr.pready) |
+                        (rng.psel      & rng.pready)      |
+                        (uart.psel     & uart.pready)     |
+                        (pwm.psel      & pwm.pready)      |
+                        (ps2.psel      & ps2.pready)      |
+                        (i2c.psel      & i2c.pready)      |
+                        (qspi.psel     & qspi.pready)     |
+                        (rtc.psel      & rtc.pready)      |
+                        (wdg.psel      & wdg.pready)      |
+                        (crc.psel      & crc.pready)      |
+                        (tmr.psel      & tmr.pready)      |
 `ifdef IP_MDD
-                        (spfs.psel     & spfs.pready) |
-                        (user_ip.psel  & user_ip.pready);
-`else
-                        (spfs.psel     & spfs.pready);
+                        (user_ip.psel  & user_ip.pready)  |
 `endif
+                        (spfs.psel     & spfs.pready);
   // verilog_format: on
 
 endmodule
