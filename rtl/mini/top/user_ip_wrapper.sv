@@ -26,8 +26,8 @@ module user_ip_wrapper (
   apb4_archinfo u_apb4_archinfo_ip(u_demo_apb4_if);
   // verilog_format: on
 
-  assign apb.pready             = |sel_i ? u_demo_apb4_if.pready : u_user_apb4_if.pready;
-  assign apb.prdata             = |sel_i ? u_demo_apb4_if.prdata : u_user_apb4_if.prdata;
+  assign apb.pready             = ~(|sel_i) ? u_demo_apb4_if.pready : u_user_apb4_if.pready;
+  assign apb.prdata             = ~(|sel_i) ? u_demo_apb4_if.prdata : u_user_apb4_if.prdata;
 
   assign u_demo_apb4_if.paddr   = ~(|sel_i) ? apb.paddr : '0;
   assign u_demo_apb4_if.pprot   = ~(|sel_i) ? apb.pprot : '0;
