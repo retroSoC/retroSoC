@@ -33,11 +33,11 @@ module user_ip_design #(
   assign apb.pslverr    = 1'b0;
 
   always_comb begin
-    apb.rdata = '0;
+    apb.prdata = '0;
     if (s_apb_rd_hdshk) begin
-      unique case (apb4.addr[7:0])
-        USER_IP_APB_ID: apb4.rdata = {24'd0, ID};
-        default:        apb4.rdata = '0;
+      unique case (apb.paddr[7:0])
+        USER_IP_APB_ID: apb.prdata = {24'd0, ID};
+        default:        apb.prdata = '0;
       endcase
     end
   end

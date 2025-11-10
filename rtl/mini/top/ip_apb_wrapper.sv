@@ -299,7 +299,7 @@ module ip_apb_wrapper (
   );
 
 `ifdef IP_MDD
-  uesr_ip_wrapper u_user_ip_wrapper (
+  user_ip_wrapper u_user_ip_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .sel_i  (ip_sel_i),
