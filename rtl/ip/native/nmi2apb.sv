@@ -10,7 +10,7 @@
 
 `include "mmap_define.svh"
 
-module mem2apb (
+module nmi2apb (
     // verilog_format: off
     input  logic       clk_i,
     input  logic       rst_n_i,
