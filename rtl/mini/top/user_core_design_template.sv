@@ -9,6 +9,16 @@
 // See the Mulan PSL v2 for more details.
 
 
+/* NOTE: README FIRST
+ * 0. copy this file as `user_core_design.sv`
+ * 1. create a new folder `usercore` and simply put `user_core_design.sv` into `usercore` folder
+ * 2. put all user custom design files into `usercore` folder
+ *    - instance top module of user design in `user_core_design.sv`
+ *    - create a filelist named `usercore.fl` to include all files needed to be included
+ * 3. archive 'usercore' as `usercore.zip` and upload `usercore.zip` to cloud platform
+ */
+
+// NOTE: dont remove `ID` parameter and port defines
 module user_core_design #(
     parameter int ID = 5'd31
 ) (
@@ -20,12 +30,15 @@ module user_core_design #(
     // verilog_format: on
 );
 
-  // ========== USER CUSTOM AREA ==========
+  // ========== USER CUSTOM AREA ==============
   assign nmi.valid = '0;
   assign nmi.addr  = '0;
   assign nmi.wdata = '0;
   assign nmi.wstrb = '0;
+  // ========== USER CUSTOM AREA END ==========
 
-  // INSTANCE USER CUSTOM DESIGN HERE!!!!
+  // ====== INSTANCE USER CUSTOM TOP DESIGN HERE ======
+  // ==================================================
+  // ==================================================
 
 endmodule

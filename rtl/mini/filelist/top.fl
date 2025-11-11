@@ -7,7 +7,7 @@
 ../top/bus.sv
 ../top/rcu.sv
 ../top/mgmt_core_wrapper.sv
-../top/user_core_design.sv
+../top/user_core_design_template.sv
 ../top/user_core_top.sv
 ../top/user_core_wrapper.sv
 ../top/user_gpio.sv

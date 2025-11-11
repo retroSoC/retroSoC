@@ -1,5 +1,3 @@
 ../core/picorv32.v
-../core/user_design/mstr/user_mstr_design_1.sv
-../core/user_design/mstr/user_mstr_design_2.sv
-../core/user_design/mstr/user_mstr_design_3.sv
-../core/user_design/mstr/user_mstr_design_4.sv
+../core/user_design/core/user_core_design_username1.sv
+../core/user_design/core/user_core_design_username2.sv
