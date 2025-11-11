@@ -62,20 +62,6 @@ module core_wrapper (
       .trace_valid (),
       .trace_data  ()
   );
-  // `elsif CORE_KIANV
-  //   kianv_harris_mc_edition #(
-  //       .RESET_ADDR(`FLASH_START_ADDR),
-  //       .RV32E     (0)
-  //   ) u_kianv_harris_mc_edition (
-  //       .clk      (clk_i),
-  //       .resetn   (rst_n_i),
-  //       .mem_valid(nmi.valid),
-  //       .mem_ready(nmi.ready),
-  //       .mem_wstrb(nmi.wstrb),
-  //       .mem_addr (nmi.addr),
-  //       .mem_wdata(nmi.wdata),
-  //       .mem_rdata(nmi.rdata)
-  //   );
 
   // `elsif CORE_MINIRV
   //   logic [31:0] s_awaddr;

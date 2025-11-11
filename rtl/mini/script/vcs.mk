@@ -23,16 +23,12 @@ RTL_FLIST  := $(NET_FLIST)
 RTL_FLIST  += -f ../filelist/ip.fl -f ../filelist/tech.fl
 ifeq ($(CORE), PICORV32)
     RTL_FLIST += -f ../filelist/core_picorv32.fl
-else ifeq ($(CORE), KIANV)
-    RTL_FLIST += -f ../filelist/core_kianv.fl
-else ifeq ($(CORE), MINIRV)
-    RTL_FLIST += -f ../filelist/core_minirv.fl
 else ifeq ($(CORE), MDD)
-    RTL_FLIST += -f ../filelist/core_mdd.fl
+    RTL_FLIST += -f ../mpw/.build/core/core.fl
 endif
 
 ifeq ($(IP), MDD)
-    RTL_FLIST += -f ../filelist/ip_mdd.fl
+    RTL_FLIST += -f ../mpw/.build/ip/ip.fl
 endif
 
 RTL_FLIST += -f ../filelist/top.fl

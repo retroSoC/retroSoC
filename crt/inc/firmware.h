@@ -9,7 +9,7 @@
 #elif CORE_MDD
 #define HW_CORE "mdd(host core: picorv32)"
 #else
-#define HW_CORE "NONE"
+#define HW_CORE "none"
 #endif
 
 #ifdef ISA_RV32E
@@ -19,7 +19,7 @@
 #elif ISA_RV32IM
 #define SW_ISA "rv32im"
 #else
-#define SW_ISA "NONE"
+#define SW_ISA "none"
 #endif
 
 #define CPU_FREQ            72     // unit: MHz
