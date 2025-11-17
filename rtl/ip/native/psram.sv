@@ -236,32 +236,32 @@ module wr_dispatcher (
       4'b0001: begin
         addr_ofst_o    = 2'd0;
         xfer_bit_cnt_o = 8'd8;
-        wdata_o[31:24] = wdata_i[7:0];
+        wdata_o[7:0]   = wdata_i[7:0];
       end
       4'b0010: begin
         addr_ofst_o    = 2'd1;
         xfer_bit_cnt_o = 8'd8;
-        wdata_o[31:24] = wdata_i[15:8];
+        wdata_o[7:0]   = wdata_i[15:8];
       end
       4'b0100: begin
         addr_ofst_o    = 2'd2;
         xfer_bit_cnt_o = 8'd8;
-        wdata_o[31:24] = wdata_i[23:16];
+        wdata_o[7:0]   = wdata_i[23:16];
       end
       4'b1000: begin
         addr_ofst_o    = 2'd3;
         xfer_bit_cnt_o = 8'd8;
-        wdata_o[31:24] = wdata_i[31:24];
+        wdata_o[7:0]   = wdata_i[31:24];
       end
       4'b0011: begin
         addr_ofst_o    = 2'd0;
         xfer_bit_cnt_o = 8'd16;
-        wdata_o[31:16] = wdata_i[15:0];
+        wdata_o[15:0]  = wdata_i[15:0];
       end
       4'b1100: begin
         addr_ofst_o    = 2'd2;
         xfer_bit_cnt_o = 8'd16;
-        wdata_o[31:16] = wdata_i[31:16];
+        wdata_o[15:0]  = wdata_i[31:16];
       end
       4'b1111: begin
         addr_ofst_o    = 2'd0;

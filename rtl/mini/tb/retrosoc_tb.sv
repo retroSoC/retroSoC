@@ -33,6 +33,8 @@ module retrosoc_tb;
 `endif
 
   wire s_uart0_tx;
+  // for handle x-prop issue
+  wire s_uart0_rx = 1'b1;
   wire s_psram_sck;
   wire s_psram_nss0;
   wire s_psram_nss1;
@@ -118,7 +120,7 @@ module retrosoc_tb;
       .ext_rst_n_i_pad    (s_rst_n),
       .sys_clkdiv4_o_pad  (),
       .uart0_tx_o_pad     (s_uart0_tx),
-      .uart0_rx_i_pad     (),
+      .uart0_rx_i_pad     (s_uart0_rx),
       .gpio_0_io_pad      (),
       .gpio_1_io_pad      (),
       .gpio_2_io_pad      (),
@@ -296,6 +298,8 @@ module retrosoc_tb;
       // #398844962;
       // #867652;
       // #1667652;
+      #327820116;
+      // #327179489;
       // #836901000;
       // #468320000;
       // #505600311;
@@ -304,7 +308,7 @@ module retrosoc_tb;
       // #535996319;
       // #543128473;
       // #577859417; // pure
-      #585923415;
+      // #585923415;
       // #1070933733; // debug spi
       // #873310000;
       // #340686376;
