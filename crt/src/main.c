@@ -2,8 +2,7 @@
 
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);
-    printf("hello test\n");
-    while(1);
+
     tinybooter();
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     qspi_dev_init();
@@ -28,8 +27,8 @@ void main() {
     tinysh_register("pcf", "pcf8563b test", (uint8_t)1, pcf8563b_test);
     tinysh_register("donut", "dount test", (uint8_t)0, donut_test);
     tinysh_batch_run();
-    // video_show(0x60000000);
     tinysh_launch();
+    // video_show(0x60000000);
     // ip_norflash_test();
     // ip_lcd_test(0, NULL);
 

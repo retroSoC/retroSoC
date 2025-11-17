@@ -339,7 +339,7 @@ module retrosoc_tb;
   end
 
   initial begin
-    r_core_sel = 5'd1;
+    r_core_sel = 5'd0;
 
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;
