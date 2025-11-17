@@ -10,6 +10,14 @@ else ifeq ($(SIMU), VERI)
     include $(RTL_PATH)/script/verilator.mk
 endif
 
+gen_mpw_code:
+ifeq ($(IP), MDD)
+	@echo "[mpw] generating user ip ..."
+	python3 $(RTL_PATH)/mpw/ip.py
+else
+	@echo "[mpw] skipping user ip generation"
+endif
+
 comp:
 	@mkdir -p $(RTL_PATH)/.build
 	cd $(RTL_PATH)/.build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
