@@ -4,7 +4,7 @@
  */
 
 /*Copy this file as "lv_port_disp.c" and set this value to "1" to enable content*/
-#if 0
+#if 1
 
 /*********************
  *      INCLUDES
@@ -12,6 +12,8 @@
 #include "lv_port_disp_template.h"
 #include <stdbool.h>
 
+#define MY_DISP_HOR_RES 240
+#define MY_DISP_VER_RES 135
 /*********************
  *      DEFINES
  *********************/
@@ -72,22 +74,22 @@ void lv_port_disp_init(void)
     /* Example 2
      * Two buffers for partial rendering
      * In flush_cb DMA or similar hardware should be used to update the display in the background.*/
-    LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_2_1[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
+    // LV_ATTRIBUTE_MEM_ALIGN
+    // static uint8_t buf_2_1[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
 
-    LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_2_2[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
-    lv_display_set_buffers(disp, buf_2_1, buf_2_2, sizeof(buf_2_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
+    // LV_ATTRIBUTE_MEM_ALIGN
+    // static uint8_t buf_2_2[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
+    // lv_display_set_buffers(disp, buf_2_1, buf_2_2, sizeof(buf_2_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
     /* Example 3
      * Two buffers screen sized buffer for double buffering.
      * Both LV_DISPLAY_RENDER_MODE_DIRECT and LV_DISPLAY_RENDER_MODE_FULL works, see their comments*/
-    LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_3_1[MY_DISP_HOR_RES * MY_DISP_VER_RES * BYTE_PER_PIXEL];
+    // LV_ATTRIBUTE_MEM_ALIGN
+    // static uint8_t buf_3_1[MY_DISP_HOR_RES * MY_DISP_VER_RES * BYTE_PER_PIXEL];
 
-    LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_3_2[MY_DISP_HOR_RES * MY_DISP_VER_RES * BYTE_PER_PIXEL];
-    lv_display_set_buffers(disp, buf_3_1, buf_3_2, sizeof(buf_3_1), LV_DISPLAY_RENDER_MODE_DIRECT);
+    // LV_ATTRIBUTE_MEM_ALIGN
+    // static uint8_t buf_3_2[MY_DISP_HOR_RES * MY_DISP_VER_RES * BYTE_PER_PIXEL];
+    // lv_display_set_buffers(disp, buf_3_1, buf_3_2, sizeof(buf_3_1), LV_DISPLAY_RENDER_MODE_DIRECT);
 
 }
 
