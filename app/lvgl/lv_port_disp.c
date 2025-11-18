@@ -9,7 +9,7 @@
 /*********************
  *      INCLUDES
  *********************/
-#include "lv_port_disp_template.h"
+#include "lv_port_disp.h"
 #include <stdbool.h>
 
 #define MY_DISP_HOR_RES 240
