@@ -7,7 +7,7 @@ OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
 CFLAGS := -Wall -Wextra \
-          -Wl,-Bstatic,-T,flash_$(EXEC_TYPE).lds,--strip-debug \
+          -Wl,-Bstatic,-T,flash_$(EXEC_TYPE).lds,--strip-debug -O3 \
           -ffreestanding \
           -nostdlib
 
@@ -74,11 +74,19 @@ APP_PATH :=     $(ROOT_PATH)/app/src/at24cxx.c \
                 $(ROOT_PATH)/app/src/fatfs/ff16/source/diskio.c \
                 $(ROOT_PATH)/app/src/fatfs/ff16/source/ff.c \
                 $(ROOT_PATH)/app/src/fatfs/ff16/source/ffsystem.c \
-                $(ROOT_PATH)/app/src/fatfs/ff16/source/ffunicode.c
+                $(ROOT_PATH)/app/src/fatfs/ff16/source/ffunicode.c \
+                $(ROOT_PATH)/app/src/coremark/coremark-main/core_main.c \
+                $(ROOT_PATH)/app/src/coremark/coremark-main/core_list_join.c \
+                $(ROOT_PATH)/app/src/coremark/coremark-main/core_matrix.c \
+                $(ROOT_PATH)/app/src/coremark/coremark-main/core_state.c \
+                $(ROOT_PATH)/app/src/coremark/coremark-main/core_util.c \
+                $(ROOT_PATH)/app/src/coremark/core_portme.c
 
 INC_PATH := -I$(ROOT_PATH)/crt/inc \
             -I$(ROOT_PATH)/app/inc \
             -I$(ROOT_PATH)/app/src/fatfs/ff16/source \
+            -I$(ROOT_PATH)/app/src/coremark/coremark-main \
+            -I$(ROOT_PATH)/app/src/coremark \
             -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src \
             -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/core \
             -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/display \
