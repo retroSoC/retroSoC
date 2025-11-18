@@ -14,9 +14,9 @@ void ip_crc_test(int argc, char **argv) {
     reg_crc_ctrl = (uint32_t)0b1001001;
 
     uint32_t val = 0x123456;
-    for(int i = 0; i < 50; ++i) {
+    for(int i = 0; i < 16; ++i) {
         reg_crc_data = val + i;
         while(reg_crc_stat == (uint32_t)0);
-        printf("i: %d CRC: %x\n", i, reg_crc_data);
+        printf("cnt: %d crc: %x\n", i, reg_crc_data);
     }
 }
