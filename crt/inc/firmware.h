@@ -54,12 +54,12 @@
 #define reg_uart0_data     (*(volatile uint32_t*)0x10001004)
 // tim0
 #define reg_tim0_cfg       (*(volatile uint32_t*)0x10002000)
-#define reg_tim0_val       (*(volatile uint32_t*)0x10002004)
-#define reg_tim0_dat       (*(volatile uint32_t*)0x10002008)
+#define reg_tim0_rld       (*(volatile uint32_t*)0x10002004)
+#define reg_tim0_val       (*(volatile uint32_t*)0x10002008)
 // tim1
 #define reg_tim1_cfg       (*(volatile uint32_t*)0x10003000)
-#define reg_tim1_val       (*(volatile uint32_t*)0x10003004)
-#define reg_tim1_dat       (*(volatile uint32_t*)0x10003008)
+#define reg_tim1_rld       (*(volatile uint32_t*)0x10003004)
+#define reg_tim1_val       (*(volatile uint32_t*)0x10003008)
 // psram
 #define reg_psram_wait     (*(volatile uint32_t*)0x10004000)
 #define reg_psram_chd      (*(volatile uint32_t*)0x10004004)

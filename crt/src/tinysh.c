@@ -8,6 +8,7 @@
 #include <tinytim.h>
 #include <ff.h>
 #include <video_player.h>
+#include <core_portme.h>
 #ifdef IP_MDD
 #include <userip.h>
 #endif
@@ -554,6 +555,12 @@ void tinysh_app_image_cmd(int argc, char **argv) {
 
 }
 
+void tinysh_app_coremark_cmd(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+    core_main();
+}
+
 #ifdef IP_MDD
 void tinysh_app_userip_cmd(int argc, char **argv) {
     if(argc != 1 && argc != 2) {
@@ -607,7 +614,7 @@ void tinysh_launch() {
         tinysh_register("df", "report file system disk space usage", (uint8_t)0, tinysh_fat32_df_cmd);
         tinysh_register("fatlabel", "set/get filesystem label or volume ID", (uint8_t)0, tinysh_fat32_fatlabel_cmd);
         tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
-        // coremark
+        tinysh_register("coremark", "coremark test", (uint8_t)0, tinysh_app_coremark_cmd);
         // video -i info
         // audio -i info
         // arduboy
