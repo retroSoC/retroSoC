@@ -555,6 +555,33 @@ void tinysh_app_image_cmd(int argc, char **argv) {
 
 }
 
+// video -i info
+void tinysh_app_video_cmd(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+}
+
+// audio -i info
+void tinysh_app_audio_cmd(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+}
+
+void tinysh_app_lvgl_cmd(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+}
+
+void tinysh_app_arduboy_cmd(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+}
+
+void tinysh_app_nes_cmd(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+}
+
 void tinysh_app_coremark_cmd(int argc, char **argv) {
     (void)argc;
     (void)argv;
@@ -613,12 +640,13 @@ void tinysh_launch() {
         tinysh_register("cat", "concatenate file(s) to standard output", (uint8_t)0, tinysh_fat32_cat_cmd);
         tinysh_register("df", "report file system disk space usage", (uint8_t)0, tinysh_fat32_df_cmd);
         tinysh_register("fatlabel", "set/get filesystem label or volume ID", (uint8_t)0, tinysh_fat32_fatlabel_cmd);
-        tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
         tinysh_register("coremark", "coremark test", (uint8_t)0, tinysh_app_coremark_cmd);
-        // video -i info
-        // audio -i info
-        // arduboy
-        // nes
+        tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
+        tinysh_register("video", "video player", (uint8_t)0, tinysh_app_video_cmd);
+        tinysh_register("audio", "audio player", (uint8_t)0, tinysh_app_audio_cmd);
+        tinysh_register("lvgl", "show lvgl components", (uint8_t)0, tinysh_app_lvgl_cmd);
+        tinysh_register("arduboy", "run arduboy", (uint8_t)0, tinysh_app_arduboy_cmd);
+        tinysh_register("nes", "run nes simulator", (uint8_t)0, tinysh_app_nes_cmd);
 #ifdef IP_MDD
         tinysh_register("userip", "run user ip program", (uint8_t)0, tinysh_app_userip_cmd);
 #endif
