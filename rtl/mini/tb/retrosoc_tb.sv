@@ -295,10 +295,10 @@ module retrosoc_tb;
       $fsdbDumpfile("retrosoc_tb.fsdb");
       $fsdbDumpvars(0);
       $fsdbDumpMDA();
-      // #398844962;
+      #398844962;
       // #867652;
       // #1667652;
-      #327820116;
+      // #327820116;
       // #327179489;
       // #836901000;
       // #468320000;
@@ -339,7 +339,7 @@ module retrosoc_tb;
   end
 
   initial begin
-    r_core_sel = 5'd1;
+    r_core_sel = 5'd0;
 
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;

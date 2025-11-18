@@ -2,5 +2,7 @@
 #define TINYTIM_H__
 
 void delay_ms(uint32_t val);
+void tim1_init();
+uint32_t tim1_get_value();
 void ip_tim_test(int argc, char **argv);
 #endif

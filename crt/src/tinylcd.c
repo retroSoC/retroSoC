@@ -277,7 +277,7 @@ void ip_lcd_test(int argc, char **argv) {
     // // lcd_wr_dc_cmd(0x01); // software reset
     uint32_t pref_cnt = 0;
     lcd_frame(1, pref_cnt);
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 12; ++i) {
         lcd_fill_bg(0, 0, LCD_W, LCD_H, 0);
         lcd_fill_bg(0, 0, LCD_W, LCD_H, 1);
         lcd_fill_bg(0, 0, LCD_W, LCD_H, 2);

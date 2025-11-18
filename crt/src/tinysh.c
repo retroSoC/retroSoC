@@ -8,6 +8,7 @@
 #include <tinytim.h>
 #include <ff.h>
 #include <video_player.h>
+#include <core_portme.h>
 #ifdef IP_MDD
 #include <userip.h>
 #endif
@@ -554,6 +555,12 @@ void tinysh_app_image_cmd(int argc, char **argv) {
 
 }
 
+void tinysh_app_coremark_cmd(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+    core_main();
+}
+
 #ifdef IP_MDD
 void tinysh_app_userip_cmd(int argc, char **argv) {
     if(argc != 1 && argc != 2) {
@@ -569,7 +576,7 @@ void tinysh_app_userip_cmd(int argc, char **argv) {
         if(user_id >= 0 && user_id <= 255) {
             printf("switch to user ip id to [%03d...]\n", user_id);
             reg_sysctrl_ipsel = (uint8_t)user_id;
-            userip_main(0, NULL);
+            userip_main(user_id, NULL); // HACK:
         } else {
             printf("error use id: %d\n", user_id);
             return;
@@ -607,11 +614,11 @@ void tinysh_launch() {
         tinysh_register("df", "report file system disk space usage", (uint8_t)0, tinysh_fat32_df_cmd);
         tinysh_register("fatlabel", "set/get filesystem label or volume ID", (uint8_t)0, tinysh_fat32_fatlabel_cmd);
         tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
+        tinysh_register("coremark", "coremark test", (uint8_t)0, tinysh_app_coremark_cmd);
         // video -i info
         // audio -i info
         // arduboy
         // nes
-        // coremark
 #ifdef IP_MDD
         tinysh_register("userip", "run user ip program", (uint8_t)0, tinysh_app_userip_cmd);
 #endif
