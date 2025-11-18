@@ -35,10 +35,11 @@ void ip_tim_test(int argc, char **argv) {
     printf("[tim1 config] %x\n", reg_tim1_cfg);
 
     reg_tim0_rld = (uint32_t)0xffffffff;
-    reg_tim0_cfg = (uint32_t)0x0001; // irq disable, count down, continuous mode, timer enable
+    reg_tim0_cfg = (uint32_t)0b0001; // irq disable, count down, continuous mode, timer enable
 
     reg_tim1_rld = (uint32_t)0x00ffffff;
-    reg_tim1_cfg = (uint32_t)0x0101; // irq disable, count up, continuous mode, timer enable
+    reg_tim1_val = (uint32_t)0;
+    reg_tim1_cfg = (uint32_t)0b0101; // irq disable, count up, continuous mode, timer enable
 
     for (int i = 0; i < 10; ++i) {
         printf("[tim0 val] %x\n", reg_tim0_val);
