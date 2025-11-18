@@ -1,5 +1,6 @@
 #include <firmware.h>
 #include <tinyprintf.h>
+#include <tinytim.h>
 #include <tinyi2c.h>
 #include <pcf8563b.h>
 
@@ -63,12 +64,13 @@ void pcf8563b_test(int argc, char **argv) {
     pcf8563b_wr_reg(&init1_info);
 
     PCF8563B_info_t rd_info = {0};
-    for(int i = 0; i < 50; ++i) {
+    for(int i = 0; i < 6; ++i) {
         rd_info = pcf8563b_rd_reg();
         printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
                                                     rd_info.date.day, rd_info.date.weekday,
                                                     rd_info.time.hour, rd_info.time.minute,
                                                     rd_info.time.second);
+        delay_ms(1000);
     }
 
     PCF8563B_info_t init2_info = {
@@ -81,12 +83,13 @@ void pcf8563b_test(int argc, char **argv) {
         .date.year    = 24
     };
     pcf8563b_wr_reg(&init2_info);
-    for(int i = 0; i < 50; ++i) {
+    for(int i = 0; i < 6; ++i) {
         rd_info = pcf8563b_rd_reg();
         printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
                                                     rd_info.date.day, rd_info.date.weekday,
                                                     rd_info.time.hour, rd_info.time.minute,
                                                     rd_info.time.second);
+        delay_ms(1000);
     }
 
     printf("PCF8563B test done\n");
