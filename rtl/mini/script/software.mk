@@ -76,14 +76,8 @@ APP_PATH :=     $(ROOT_PATH)/app/base/src/at24cxx.c \
 INC_PATH := -I$(ROOT_PATH)/crt/inc \
             -I$(ROOT_PATH)/app/base/inc
 
-# user custom area
-ifeq ($(IP), MDD)
-    APP_PATH += $(ROOT_PATH)/app/userip/userip.c
-    INC_PATH += -I$(ROOT_PATH)/app/userip
-    # add more user custom files into 'APP_PATH'
-endif
-
-# other 3rd-party app
+# extern app
+include $(ROOT_PATH)/app/userip/userip.mk
 include $(ROOT_PATH)/app/fatfs/fatfs.mk
 include $(ROOT_PATH)/app/coremark/coremark.mk
 include $(ROOT_PATH)/app/lvgl/lvgl.mk
