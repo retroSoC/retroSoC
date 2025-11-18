@@ -64,29 +64,29 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinysh.c \
                 $(ROOT_PATH)/crt/src/main.c
 
-APP_PATH :=     $(ROOT_PATH)/app/src/at24cxx.c \
-                $(ROOT_PATH)/app/src/pcf8563b.c \
-                $(ROOT_PATH)/app/src/es8388.c \
-                $(ROOT_PATH)/app/src/w25q128jvxim.c \
-                $(ROOT_PATH)/app/src/wav_audio.c \
-                $(ROOT_PATH)/app/src/video_player.c \
-                $(ROOT_PATH)/app/src/donut.c
+APP_PATH :=     $(ROOT_PATH)/app/base/src/at24cxx.c \
+                $(ROOT_PATH)/app/base/src/pcf8563b.c \
+                $(ROOT_PATH)/app/base/src/es8388.c \
+                $(ROOT_PATH)/app/base/src/w25q128jvxim.c \
+                $(ROOT_PATH)/app/base/src/wav_audio.c \
+                $(ROOT_PATH)/app/base/src/video_player.c \
+                $(ROOT_PATH)/app/base/src/donut.c
 
 
 INC_PATH := -I$(ROOT_PATH)/crt/inc \
-            -I$(ROOT_PATH)/app/inc
+            -I$(ROOT_PATH)/app/base/inc
 
 # user custom area
 ifeq ($(IP), MDD)
-    APP_PATH += $(ROOT_PATH)/app/src/userip/userip.c
-    INC_PATH += -I$(ROOT_PATH)/app/src/userip
+    APP_PATH += $(ROOT_PATH)/app/userip/userip.c
+    INC_PATH += -I$(ROOT_PATH)/app/userip
     # add more user custom files into 'APP_PATH'
 endif
 
 # other 3rd-party app
-include $(ROOT_PATH)/app/src/fatfs/fatfs.mk
-include $(ROOT_PATH)/app/src/coremark/coremark.mk
-include $(ROOT_PATH)/app/src/lvgl/lvgl.mk
+include $(ROOT_PATH)/app/fatfs/fatfs.mk
+include $(ROOT_PATH)/app/coremark/coremark.mk
+include $(ROOT_PATH)/app/lvgl/lvgl.mk
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)
