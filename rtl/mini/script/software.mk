@@ -70,37 +70,11 @@ APP_PATH :=     $(ROOT_PATH)/app/src/at24cxx.c \
                 $(ROOT_PATH)/app/src/w25q128jvxim.c \
                 $(ROOT_PATH)/app/src/wav_audio.c \
                 $(ROOT_PATH)/app/src/video_player.c \
-                $(ROOT_PATH)/app/src/donut.c \
-                $(ROOT_PATH)/app/src/fatfs/ff16/source/diskio.c \
-                $(ROOT_PATH)/app/src/fatfs/ff16/source/ff.c \
-                $(ROOT_PATH)/app/src/fatfs/ff16/source/ffsystem.c \
-                $(ROOT_PATH)/app/src/fatfs/ff16/source/ffunicode.c \
-                $(ROOT_PATH)/app/src/coremark/coremark-main/core_main.c \
-                $(ROOT_PATH)/app/src/coremark/coremark-main/core_list_join.c \
-                $(ROOT_PATH)/app/src/coremark/coremark-main/core_matrix.c \
-                $(ROOT_PATH)/app/src/coremark/coremark-main/core_state.c \
-                $(ROOT_PATH)/app/src/coremark/coremark-main/core_util.c \
-                $(ROOT_PATH)/app/src/coremark/core_portme.c
+                $(ROOT_PATH)/app/src/donut.c
+
 
 INC_PATH := -I$(ROOT_PATH)/crt/inc \
-            -I$(ROOT_PATH)/app/inc \
-            -I$(ROOT_PATH)/app/src/fatfs/ff16/source \
-            -I$(ROOT_PATH)/app/src/coremark/coremark-main \
-            -I$(ROOT_PATH)/app/src/coremark \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/core \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/display \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/draw \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/font \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/index \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/layouts \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/libs \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/misc \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/others \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/stdlib \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/themes \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/tick \
-            -I$(ROOT_PATH)/app/src/lvgl/lvgl-9.4.0/src/widgets \
+            -I$(ROOT_PATH)/app/inc
 
 # user custom area
 ifeq ($(IP), MDD)
@@ -108,6 +82,11 @@ ifeq ($(IP), MDD)
     INC_PATH += -I$(ROOT_PATH)/app/src/userip
     # add more user custom files into 'APP_PATH'
 endif
+
+# other 3rd-party app
+include $(ROOT_PATH)/app/src/fatfs/fatfs.mk
+include $(ROOT_PATH)/app/src/coremark/coremark.mk
+include $(ROOT_PATH)/app/src/lvgl/lvgl.mk
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)
