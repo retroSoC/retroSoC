@@ -21,6 +21,13 @@ Original Author: Shay Gal-on
 */
 #ifndef CORE_PORTME_H
 #define CORE_PORTME_H
+
+#include <stddef.h>
+#define ITERATIONS 36
+#define STANDALONE
+#define VALIDATION_RUN 1
+int core_main(void);
+// #define PERFORMANCE_RUN 1
 /************************/
 /* Data types and settings */
 /************************/
@@ -28,21 +35,21 @@ Original Author: Shay Gal-on
         Define to 1 if the platform supports floating point.
 */
 #ifndef HAS_FLOAT
-#define HAS_FLOAT 1
+#define HAS_FLOAT 0
 #endif
 /* Configuration : HAS_TIME_H
         Define to 1 if platform has the time.h header file,
         and implementation of functions thereof.
 */
 #ifndef HAS_TIME_H
-#define HAS_TIME_H 1
+#define HAS_TIME_H 0
 #endif
 /* Configuration : USE_CLOCK
         Define to 1 if platform has the time.h header file,
         and implementation of functions thereof.
 */
 #ifndef USE_CLOCK
-#define USE_CLOCK 1
+#define USE_CLOCK 0
 #endif
 /* Configuration : HAS_STDIO
         Define to 1 if the platform has stdio.h.
@@ -55,7 +62,7 @@ Original Author: Shay Gal-on
    function.
 */
 #ifndef HAS_PRINTF
-#define HAS_PRINTF 0
+#define HAS_PRINTF 1
 #endif
 
 /* Definitions : COMPILER_VERSION, COMPILER_FLAGS, MEM_LOCATION
@@ -70,7 +77,7 @@ Original Author: Shay Gal-on
 #endif
 #ifndef COMPILER_FLAGS
 #define COMPILER_FLAGS \
-    FLAGS_STR /* "Please put compiler flags here (e.g. -o3)" */
+    "-o3" /* "Please put compiler flags here (e.g. -o3)" */
 #endif
 #ifndef MEM_LOCATION
 #define MEM_LOCATION "STACK"
@@ -166,7 +173,7 @@ typedef ee_u32 CORE_TICKS;
    greater then 1.
 */
 #ifndef MAIN_HAS_NOARGC
-#define MAIN_HAS_NOARGC 0
+#define MAIN_HAS_NOARGC 1
 #endif
 
 /* Configuration : MAIN_HAS_NORETURN
