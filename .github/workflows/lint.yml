@@ -1,8 +1,31 @@
-# name: lint
+name: lint
 
-# on:
-#   push:
-#     branches: [ test ]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup environment
+      run: echo "No setup needed for this minimal workflow"
+      
+    - name: Run tests
+      run: echo "No tests defined yet"
+      
+    - name: Build project
+      run: echo "Build placeholder"
+      
+    - name: Success notification
+      run: echo "Workflow completed successfully"
 
 # jobs:
 #   lint-tgt:
