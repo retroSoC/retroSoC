@@ -16,6 +16,8 @@
 #define LCD_H 135
 #endif
 
+#define USE_SPISD_DMA
+
 void lcd_init();
 void ip_lcd_test(int argc, char **argv);
 void lcd_addr_set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
