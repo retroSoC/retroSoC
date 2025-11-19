@@ -9,6 +9,8 @@
 #include <ff.h>
 #include <video_player.h>
 #include <core_portme.h>
+// #include <lvgl.h>
+// #include <lv_port_disp.h>
 #ifdef IP_MDD
 #include <userip.h>
 #endif
@@ -567,9 +569,31 @@ void tinysh_app_audio_cmd(int argc, char **argv) {
     (void)argv;
 }
 
+
+// val * 1000 / CPU_FREQ / 1000 / 1000
+// uint32_t my_get_millis(void) {
+//     return reg_tim1_val / CPU_FREQ / 1000;
+// }
+
 void tinysh_app_lvgl_cmd(int argc, char **argv) {
     (void)argc;
     (void)argv;
+
+    // lv_init();
+    // tim1_init();
+    // lv_tick_set_cb(my_get_millis);
+
+    // lv_port_disp_init();
+
+    // lv_obj_t *label = lv_label_create(lv_scr_act());
+    // lv_label_set_text(label,"Hello maksyuki!!!");
+    // lv_obj_center(label);
+
+    // while(1) {
+    //     lv_timer_handler();
+    //     delay_ms(5);
+    //     printf("hello\n");
+    // }
 }
 
 void tinysh_app_arduboy_cmd(int argc, char **argv) {

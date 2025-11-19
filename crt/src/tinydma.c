@@ -4,6 +4,7 @@
 #include <tinyi2s.h>
 
 void dma_config(uint32_t mode, uint32_t src, uint32_t srcincr, uint32_t dst, uint32_t dstincr, uint32_t xferlen) {
+    // printf("dst: %x\n", dst);
     reg_dma_mode = mode;
     reg_dma_srcaddr = src;
     reg_dma_srcincr = srcincr;

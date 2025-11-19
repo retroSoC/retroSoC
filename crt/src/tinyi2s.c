@@ -61,7 +61,7 @@ void ip_i2s_test(int argc, char **argv) {
     es8388_init();
     printf("[APB IP] i2s test\n");
     // load first data
-    i2s_audio_load();
+    // i2s_audio_load();
     i2s_audio_panel();
     while(1) {
         type_ch = getchar();

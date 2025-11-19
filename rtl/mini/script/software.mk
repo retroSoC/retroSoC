@@ -80,7 +80,7 @@ INC_PATH := -I$(ROOT_PATH)/crt/inc \
 include $(ROOT_PATH)/app/userip/userip.mk
 include $(ROOT_PATH)/app/fatfs/fatfs.mk
 include $(ROOT_PATH)/app/coremark/coremark.mk
-include $(ROOT_PATH)/app/lvgl/lvgl.mk
+# include $(ROOT_PATH)/app/lvgl/lvgl.mk
 
 SRC_PATH := $(TINYLIB_PATH)
 SRC_PATH += $(APP_PATH)

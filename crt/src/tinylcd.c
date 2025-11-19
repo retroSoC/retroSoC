@@ -213,6 +213,7 @@ void lcd_fill_bg(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uin
 }
 
 void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t *data) {
+    // printf("xsta: %d ysta: %d xend: %d yend: %d\n", xsta, ysta, xend, yend);
     lcd_addr_set(xsta, ysta, xend - 1, yend - 1);
 
     int tot = (xend - xsta) * (yend - ysta);

@@ -1,4 +1,11 @@
 #include <libdef.h>
+// #include <lvgl.h>
+// #include <lv_port_disp.h>
+
+// val * 1000 / CPU_FREQ / 1000 / 1000
+uint32_t my_get_millis(void) {
+    return reg_tim1_val / CPU_FREQ / 1000;
+}
 
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);
@@ -7,6 +14,22 @@ void main() {
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
     qspi_dev_init();
     lcd_init();
+
+    // lv_init();
+    // tim1_init();
+    // lv_tick_set_cb(my_get_millis);
+
+    // lv_port_disp_init();
+
+    // lv_obj_t *label = lv_label_create(lv_scr_act());
+    // lv_label_set_text(label,"Hello maksyuki!!!");
+    // lv_obj_center(label);
+
+    // while(1) {
+    //     lv_timer_handler();
+    //     delay_ms(5);
+    //     printf("hello\n");
+    // }
 
     tinysh_init();
     tinysh_register("app", "app info", (uint8_t)1, app_info);

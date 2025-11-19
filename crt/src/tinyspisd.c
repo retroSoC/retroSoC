@@ -1,6 +1,7 @@
 #include <firmware.h>
 #include <libdef.h>
 #include <tinyprintf.h>
+#include <tinydma.h>
 #include <tinyspisd.h>
 
 
@@ -32,9 +33,14 @@ void spisd_mem_read(uint8_t *buff, uint32_t size, uint32_t count, uint32_t addr)
 
 void spisd_sector_read(uint8_t *buff, uint32_t sector, uint32_t count) {
     uint32_t start_addr = sector * 512;
-    start_addr += 0x60000000;
-    // printf("START: %x LEN: %x\n\n", start_addr, 512 * count);
+    start_addr += TF_CARD_START;
+    // printf("start: %x len: %x buff: %p\n\n", start_addr, 128 * count, buff);
 
+#ifdef USE_SPISD_DMA
+    dma_config((uint32_t)0, start_addr, (uint32_t)1, (uint32_t)buff, (uint32_t)1, 128 * count);
+    dma_start_xfer();
+    dma_wait_done();
+#else
     volatile uint32_t *vis_addr = (uint32_t *)start_addr;
     for(uint32_t i = 0; i < count; ++i) {
         for(uint32_t j = 0; j < 128; ++j, ++vis_addr, buff += 4) {
@@ -42,19 +48,26 @@ void spisd_sector_read(uint8_t *buff, uint32_t sector, uint32_t count) {
             *((uint32_t*)buff) = *vis_addr;
         }
     }
+#endif
 }
 
 void spisd_sector_write(const uint8_t *buff, uint32_t sector, uint32_t count) {
     uint32_t start_addr = sector * 512;
-    start_addr += 0x60000000;
-    // printf("START: %x LEN: %x\n\n", start_addr, 512 * count);
+    start_addr += TF_CARD_START;
+    // printf("start: %x len: %x buff: %p\n\n", start_addr, 128 * count, buff);
 
+#ifdef USE_SPISD_DMA
+    dma_config((uint32_t)0, (uint32_t)buff, (uint32_t)1, start_addr, (uint32_t)1, 128 * count);
+    dma_start_xfer();
+    dma_wait_done();
+#else
     volatile uint32_t *vis_addr = (uint32_t *)start_addr;
     for(uint32_t i = 0; i < count; ++i) {
         for(uint32_t j = 0; j < 128; ++j, ++vis_addr, buff += 4) {
             *vis_addr = *((uint32_t*)buff);
         }
     }
+#endif
 }
 
 void spisd_sector_sync() {
