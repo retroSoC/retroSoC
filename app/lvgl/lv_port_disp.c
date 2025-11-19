@@ -11,6 +11,8 @@
  *********************/
 #include "lv_port_disp.h"
 #include <stdbool.h>
+#include <tinylcd.h>
+#include <tinyprintf.h>
 
 #define MY_DISP_HOR_RES 240
 #define MY_DISP_VER_RES 135
@@ -125,18 +127,19 @@ void disp_disable_update(void)
  *'lv_display_flush_ready()' has to be called when it's finished.*/
 static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t * px_map)
 {
+    printf("disp enab: %d\n", disp_flush_enabled);
     if(disp_flush_enabled) {
         /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one*/
-
-        int32_t x;
-        int32_t y;
-        for(y = area->y1; y <= area->y2; y++) {
-            for(x = area->x1; x <= area->x2; x++) {
-                /*Put a pixel to the display. For example:*/
-                /*put_px(x, y, *px_map)*/
-                px_map++;
-            }
-        }
+        lcd_fill_image(area->x1, area->y1, area->x2, area->y2, (uint32_t *)px_map);
+        // int32_t x;
+        // int32_t y;
+        // for(y = area->y1; y <= area->y2; y++) {
+        //     for(x = area->x1; x <= area->x2; x++) {
+        //         /*Put a pixel to the display. For example:*/
+        //         /*put_px(x, y, *px_map)*/
+        //         px_map++;
+        //     }
+        // }
     }
 
     /*IMPORTANT!!!
