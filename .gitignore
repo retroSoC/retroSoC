@@ -1,6 +1,8 @@
 *.log
 *.hex
 *.elf
+*.o
+*.flash
 *.bin
 *.vvp
 *.vcd
