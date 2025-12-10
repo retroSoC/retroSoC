@@ -63,3 +63,36 @@ POST_SIM_OPTION := -sdf min:retrosoc_tb.u_retrosoc_asic:$(SDF_FILE) \
                    +optconfigfile+./disable_timing_checklist \
                    -diag=sdf:verbose \
                    +warn=OPD:10,IWNF:10,SDFCOM_UHICD:10,SDFCOM_ANICD:10,SDFCOM_NICD:10,DRTZ:10,SDFCOM_UHICD:10,SDFCOM_NTCDTL:10
+
+comp:
+	@mkdir -p $(RTL_PATH)/.build
+	cd $(RTL_PATH)/.build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
+
+sim: comp
+	cd $(RTL_PATH)/.build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
+
+wave:
+	cd $(RTL_PATH)/.build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+
+netcomp:
+	@mkdir -p $(RTL_PATH)/.net_build
+	cd $(RTL_PATH)/.net_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(NET_FLIST) $(NET_PATH) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
+
+netsim: netcomp
+	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG)
+
+netwave:
+	cd $(RTL_PATH)/.net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+
+postcomp:
+	@mkdir -p $(RTL_PATH)/.post_build
+	cd $(RTL_PATH)/.post_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(VPOST_SIM_OPTION) $(RTL_PDK) ./ip/rs232.v ./ip/kdb_model.v ./ip/psram_model.v ./ip/cust/spfs_model/N25Qxxx.v $(RTL_TOP).v -top $(RTL_TOP) $(COMP_LOG) $(VPOST_PATH))
+
+postsim: postcomp
+	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG)
+
+postwave:
+	cd $(RTL_PATH)/.post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+
+clean:
+	rm -rf .build $(RTL_PATH)/.net_build $(RTL_PATH)/.post_build
