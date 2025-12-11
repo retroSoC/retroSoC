@@ -1,5 +1,6 @@
 ../../clusterip/common/rtl/interface/apb4_if.sv
 ../../clusterip/common/rtl/interface/apb4_pure_if.sv
+../../clusterip/common/rtl/interface/ahbl_if.sv
 ../../clusterip/common/rtl/interface/nmi_if.sv
 ../../clusterip/common/rtl/interface/ram_if.sv
 ../../clusterip/common/rtl/utils/register.sv
@@ -13,6 +14,8 @@
 ../../clusterip/common/rtl/clkrst/rst_sync.sv
 ../../clusterip/common/rtl/clkrst/counter.sv
 
+../../clusterip/archinfo/rtl/archinfo_reg_pkg.sv
+../../clusterip/archinfo/rtl/archinfo_reg.sv
 ../../clusterip/archinfo/rtl/apb4_archinfo.sv
 ../../clusterip/rng/rtl/apb4_rng.sv
 ../../clusterip/uart/rtl/uart_if.sv
@@ -78,6 +81,7 @@
 ../../ip/native/simple_uart.sv
 ../../ip/native/simple_gpio.sv
 ../../ip/native/nmi2apb.sv
+../../ip/native/ahbl2nmi.sv
 ../../ip/native/axi4l2nmi.sv
 ../../ip/native/async_fifo.sv
 ../../ip/native/nmi_regslice.sv
