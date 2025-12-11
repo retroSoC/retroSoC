@@ -93,6 +93,10 @@ endif
 
 LDS_PATH := $(ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
 
+asm:
+	cd app/asm && make
+	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
+
 firmware:
 	@mkdir -p .sw_build
 	cd .sw_build && ($(CP) -P -o flash_$(EXEC_TYPE).lds $(LDS_PATH))
