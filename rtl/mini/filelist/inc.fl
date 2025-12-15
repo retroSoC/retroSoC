@@ -18,4 +18,3 @@
 +incdir+../../clusterip/timer/rtl
 +incdir+../../ip/native
 +incdir+../../ip/3rd_party/spfs
-+incdir+../../ip/3rd_party/spfs_model

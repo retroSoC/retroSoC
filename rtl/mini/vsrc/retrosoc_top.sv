@@ -25,135 +25,134 @@ module retrosoc_top (
     input wire rst_n_i
 );
 
+  wire s_clk;
+  wire s_rst_n;
+  wire s_clk_bypass;
   wire s_uart_tx;
-  wire s_flash_csb;
-  wire s_flash_clk;
-  wire s_flash_io0;
-  wire s_flash_io1;
-  wire s_flash_io2;
-  wire s_flash_io3;
-  wire s_cust_psram_sclk;
-  wire s_cust_psram_ce;
-  wire s_cust_psram_sio0;
-  wire s_cust_psram_sio1;
-  wire s_cust_psram_sio2;
-  wire s_cust_psram_sio3;
-  wire s_cust_spfs_clk_o;
-  wire s_cust_spfs_cs_o;
-  wire s_cust_spfs_mosi_o;
-  wire s_cust_spfs_miso_i;
+  wire s_psram_sck;
+  wire s_psram_nss0;
+  wire s_psram_dat0;
+  wire s_psram_dat1;
+  wire s_psram_dat2;
+  wire s_psram_dat3;
+  wire s_spfs_sck;
+  wire s_spfs_nss;
+  wire s_spfs_mosi;
+  wire s_spfs_miso;
 
+  assign s_clk        = ext_clk_i;
+  assign s_rst_n      = rst_n_i;
+  assign s_clk_bypass = 1'b1;
   retrosoc_asic u_retrosoc_asic (
-      .xi_i_pad                 ('0),
-      .xo_o_pad                 (),
-      .extclk_i_pad             (ext_clk_i),
+      .xi_i_pad           (),
+      .xo_o_pad           (),
+      .extclk_i_pad       (s_clk),
+      .audclk_i_pad       (),
+      .tmr_capch_i_pad    (),
+      .extn_irq_i_pad     (),
 `ifdef CORE_MDD
-      .core_mdd_sel_0_i_pad     ('0),
-      .core_mdd_sel_1_i_pad     ('0),
-      .core_mdd_sel_2_i_pad     ('0),
-      .core_mdd_sel_3_i_pad     ('0),
-      .core_mdd_sel_4_i_pad     ('0),
+      .core_sel_0_i_pad   (),
+      .core_sel_1_i_pad   (),
+      .core_sel_2_i_pad   (),
+      .core_sel_3_i_pad   (),
+      .core_sel_4_i_pad   (),
 `endif
 `ifdef IP_MDD
-      .ip_mdd_sel_0_i_pad       ('0),
-      .ip_mdd_sel_1_i_pad       ('0),
-      .ip_mdd_sel_2_i_pad       ('0),
-      .ip_mdd_sel_3_i_pad       ('0),
-      .ip_mdd_sel_4_i_pad       ('0),
-      .ip_mdd_gpio_0_io_pad     (),
-      .ip_mdd_gpio_1_io_pad     (),
-      .ip_mdd_gpio_2_io_pad     (),
-      .ip_mdd_gpio_3_io_pad     (),
-      .ip_mdd_gpio_4_io_pad     (),
-      .ip_mdd_gpio_5_io_pad     (),
-      .ip_mdd_gpio_6_io_pad     (),
-      .ip_mdd_gpio_7_io_pad     (),
-      .ip_mdd_gpio_8_io_pad     (),
-      .ip_mdd_gpio_9_io_pad     (),
-      .ip_mdd_gpio_10_io_pad    (),
-      .ip_mdd_gpio_11_io_pad    (),
-      .ip_mdd_gpio_12_io_pad    (),
-      .ip_mdd_gpio_13_io_pad    (),
-      .ip_mdd_gpio_14_io_pad    (),
-      .ip_mdd_gpio_15_io_pad    (),
+      .user_gpio_0_io_pad (),
+      .user_gpio_1_io_pad (),
+      .user_gpio_2_io_pad (),
+      .user_gpio_3_io_pad (),
+      .user_gpio_4_io_pad (),
+      .user_gpio_5_io_pad (),
+      .user_gpio_6_io_pad (),
+      .user_gpio_7_io_pad (),
+      .user_gpio_8_io_pad (),
+      .user_gpio_9_io_pad (),
+      .user_gpio_10_io_pad(),
+      .user_gpio_11_io_pad(),
+      .user_gpio_12_io_pad(),
+      .user_gpio_13_io_pad(),
+      .user_gpio_14_io_pad(),
+      .user_gpio_15_io_pad(),
 `endif
 `ifdef HAVE_PLL
-      .pll_cfg_0_i_pad          ('0),
-      .pll_cfg_1_i_pad          ('0),
-      .pll_cfg_2_i_pad          ('0),
+      .pll_cfg_0_i_pad    (),
+      .pll_cfg_1_i_pad    (),
+      .pll_cfg_2_i_pad    (),
 `endif
-      .clk_bypass_i_pad         ('1),
-      .ext_rst_n_i_pad          (rst_n_i),
-      .sys_clkdiv4_o_pad        (),
-      .uart_tx_o_pad            (s_uart_tx),
-      .uart_rx_i_pad            (),
-      .gpio_0_io_pad            (),
-      .gpio_1_io_pad            (),
-      .gpio_2_io_pad            (),
-      .gpio_3_io_pad            (),
-      .gpio_4_io_pad            (),
-      .gpio_5_io_pad            (),
-      .gpio_6_io_pad            (),
-      .gpio_7_io_pad            (),
-      .gpio_8_io_pad            (),
-      .gpio_9_io_pad            (),
-      .gpio_10_io_pad           (),
-      .gpio_11_io_pad           (),
-      .gpio_12_io_pad           (),
-      .gpio_13_io_pad           (),
-      .gpio_14_io_pad           (),
-      .gpio_15_io_pad           (),
-      .irq_pin_i_pad            (),
-      .cust_uart_tx_o_pad       (),
-      .cust_uart_rx_i_pad       (),
-      .cust_pwm_pwm_0_o_pad     (),
-      .cust_pwm_pwm_1_o_pad     (),
-      .cust_pwm_pwm_2_o_pad     (),
-      .cust_pwm_pwm_3_o_pad     (),
-      .cust_ps2_ps2_clk_i_pad   (),
-      .cust_ps2_ps2_dat_i_pad   (),
-      .cust_i2c_scl_io_pad      (),
-      .cust_i2c_sda_io_pad      (),
-      .cust_qspi_spi_clk_o_pad  (),
-      .cust_qspi_spi_csn_0_o_pad(),
-      .cust_qspi_spi_csn_1_o_pad(),
-      .cust_qspi_spi_csn_2_o_pad(),
-      .cust_qspi_spi_csn_3_o_pad(),
-      .cust_qspi_dat_0_io_pad   (),
-      .cust_qspi_dat_1_io_pad   (),
-      .cust_qspi_dat_2_io_pad   (),
-      .cust_qspi_dat_3_io_pad   (),
-      .cust_psram_sclk_o_pad    (s_cust_psram_sclk),
-      .cust_psram_ce_o_pad      (s_cust_psram_ce),
-      .cust_psram_sio0_io_pad   (s_cust_psram_sio0),
-      .cust_psram_sio1_io_pad   (s_cust_psram_sio1),
-      .cust_psram_sio2_io_pad   (s_cust_psram_sio2),
-      .cust_psram_sio3_io_pad   (s_cust_psram_sio3),
-      .cust_spfs_clk_o_pad      (s_cust_spfs_clk_o),
-      .cust_spfs_cs_o_pad       (s_cust_spfs_cs_o),
-      .cust_spfs_mosi_o_pad     (s_cust_spfs_mosi_o),
-      .cust_spfs_miso_i_pad     (s_cust_spfs_miso_i)
+      .clk_bypass_i_pad   (s_clk_bypass),
+      .ext_rst_n_i_pad    (s_rst_n),
+      .sys_clkdiv4_o_pad  (),
+      .uart0_tx_o_pad     (s_uart_tx),
+      .uart0_rx_i_pad     (),
+      .gpio_0_io_pad      (),
+      .gpio_1_io_pad      (),
+      .gpio_2_io_pad      (),
+      .gpio_3_io_pad      (),
+      .gpio_4_io_pad      (),
+      .gpio_5_io_pad      (),
+      .gpio_6_io_pad      (),
+      .gpio_7_io_pad      (),
+      .psram_sck_o_pad    (s_psram_sck),
+      .psram_nss0_o_pad   (s_psram_nss0),
+      .psram_nss1_o_pad   (),
+      .psram_nss2_o_pad   (),
+      .psram_nss3_o_pad   (),
+      .psram_dat0_io_pad  (s_psram_dat0),
+      .psram_dat1_io_pad  (s_psram_dat1),
+      .psram_dat2_io_pad  (s_psram_dat2),
+      .psram_dat3_io_pad  (s_psram_dat3),
+      .spisd_sck_o_pad    (),
+      .spisd_nss_o_pad    (),
+      .spisd_mosi_o_pad   (),
+      .spisd_miso_i_pad   (),
+      .i2s_mclk_o_pad     (),
+      .i2s_sclk_o_pad     (),
+      .i2s_lrck_o_pad     (),
+      .i2s_dacdat_o_pad   (),
+      .i2s_adcdat_i_pad   (),
+      .onewire_dat_o_pad  (),
+      .uart1_tx_o_pad     (),
+      .uart1_rx_i_pad     (),
+      .pwm_0_o_pad        (),
+      .pwm_1_o_pad        (),
+      .pwm_2_o_pad        (),
+      .pwm_3_o_pad        (),
+      .ps2_clk_i_pad      (),
+      .ps2_dat_i_pad      (),
+      .i2c_scl_io_pad     (),
+      .i2c_sda_io_pad     (),
+      .qspi_sck_o_pad     (),
+      .qspi_nss0_o_pad    (),
+      .qspi_nss1_o_pad    (),
+      .qspi_nss2_o_pad    (),
+      .qspi_nss3_o_pad    (),              // tft test
+      .qspi_dat0_io_pad   (),
+      .qspi_dat1_io_pad   (),
+      .qspi_dat2_io_pad   (),
+      .qspi_dat3_io_pad   (),
+      .spfs_sck_o_pad     (s_spfs_sck),
+      .spfs_nss_o_pad     (s_spfs_nss),
+      .spfs_mosi_o_pad    (s_spfs_mosi),
+      .spfs_miso_i_pad    (s_spfs_miso)
   );
 
-  N25Qxxx u_N25Qxxx (
-      .C_       (s_cust_spfs_clk_o),
-      .S        (s_cust_spfs_cs_o),
-      .DQ0      (s_cust_spfs_mosi_o),
-      .DQ1      (s_cust_spfs_miso_i),
-      .HOLD_DQ3 (),
-      .Vpp_W_DQ2(),
-      .Vcc      ('d3000)
+  spiFlash u_spiFlash (
+      .clk (s_spfs_sck),
+      .cs  (s_spfs_nss),
+      .mosi(s_spfs_mosi),
+      .miso(s_spfs_miso)
   );
 
-  rs232 u_rs232_0 (
-      .rs232_rx_i(s_uart_tx),
-      .rs232_tx_o()
-  );
+  //   rs232 u_rs232_0 (
+  //       .rs232_rx_i(s_uart_tx),
+  //       .rs232_tx_o()
+  //   );
 
   ESP_PSRAM64H u_ESP_PSRAM64H (
-      .sclk(s_cust_psram_sclk),
-      .csn (s_cust_psram_ce),
-      .sio ({s_cust_psram_sio3, s_cust_psram_sio2, s_cust_psram_sio1, s_cust_psram_sio0})
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss0),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
 

@@ -20,7 +20,7 @@ module spiFlash (
   wire [63:0] rdata;
   wire [63:0] raddr;
 
-  assign reset = cs[0];
+  assign reset = cs;
   assign miso  = data[63];
   assign ren   = (state == addr_t) && (counter == 8'd22);
   assign raddr = {40'd0, addr, 2'd0};
