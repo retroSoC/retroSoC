@@ -30,6 +30,7 @@ audio_file.h
 .net_build
 .post_build
 .synth_build
+.verilator_build
 .metals
 .mypy_cache
 .pytest_cache
@@ -45,7 +46,8 @@ tinyQV
 kianV
 !get_pdk.py
 def.fl
-yosys*.fl
+*yosys*.fl
+*verilator*.fl
 dc.fl
 minirv.sv
 user_design
