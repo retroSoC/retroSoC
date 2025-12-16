@@ -152,7 +152,7 @@ module nmi_psram (
             if (s_mem_valid_re && (|nmi.wstrb)) begin
               r_fsm_state         <= FSM_WE_ST;
               r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
-              r_mem_addr          <= {1'b0, nmi.addr[22:0]} + s_disp_addr_ofst;
+              r_mem_addr          <= {1'b0, nmi.addr[22:0]} + {22'd0, s_disp_addr_ofst};
               r_mem_wdata         <= s_disp_wdata;
             end else if (s_mem_valid_re && (~(|nmi.wstrb))) begin
               r_fsm_state         <= FSM_RD_ST;

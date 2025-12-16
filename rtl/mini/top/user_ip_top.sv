@@ -52,7 +52,7 @@ module user_ip_top (
     u_user_2_apb_if.pwdata   = '0;
     u_user_2_apb_if.pstrb    = '0;
     unique case (sel_i)
-      5'd1: begin
+      8'd1: begin
         gpio.gpio_out            = u_user_1_gpio_if.gpio_out;
         gpio.gpio_oen            = u_user_1_gpio_if.gpio_oen;
         u_user_1_gpio_if.gpio_in = gpio.gpio_in;
@@ -66,7 +66,7 @@ module user_ip_top (
         u_user_1_apb_if.pwdata   = apb.pwdata;
         u_user_1_apb_if.pstrb    = apb.pstrb;
       end
-      5'd2: begin
+      8'd2: begin
         gpio.gpio_out            = u_user_2_gpio_if.gpio_out;
         gpio.gpio_oen            = u_user_2_gpio_if.gpio_oen;
         u_user_2_gpio_if.gpio_in = gpio.gpio_in;

@@ -96,7 +96,7 @@ module i2s_core (
       if (s_send_done_pos) begin
         if (s_send_cnt_q == 1'b1) begin
           s_send_cnt_d  = '0;
-          s_send_data_d = {15'd0, s_send_data_q[31:16]};
+          s_send_data_d = {16'd0, s_send_data_q[31:16]};
         end else if (~tx_empty_i) begin
           tx_valid_o    = 1'b1;
           s_send_cnt_d  = s_send_cnt_q + 1'b1;

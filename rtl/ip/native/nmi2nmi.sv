@@ -87,12 +87,13 @@ module nmi2nmi (
       .wr_rst_n_i(mstr_rst_n_i),
       .wr_en_i   (s_mstr_valid_re),
       .wr_data_i ({mstr_valid_i, mstr_addr_i, mstr_wdata_i, mstr_wstrb_i}),
-      .full_o    (),
+      .wr_full_o (),
       .rd_clk_i  (slvr_clk_i),
       .rd_rst_n_i(slvr_rst_n_i),
       .rd_en_i   (1'b1),
       .rd_data_o (s_req_rdata),
-      .empty_o   (s_req_empty)
+      .rd_empty_o(s_req_empty),
+      .elem_num_o()
   );
 
   // resp frame: ready[1] data[32]
@@ -104,12 +105,13 @@ module nmi2nmi (
       .wr_rst_n_i(slvr_rst_n_i),
       .wr_en_i   (slvr_ready_i),
       .wr_data_i ({slvr_ready_i, slvr_rdata_i}),
-      .full_o    (),
+      .wr_full_o (),
       .rd_clk_i  (mstr_clk_i),
       .rd_rst_n_i(mstr_rst_n_i),
       .rd_en_i   (1'b1),
       .rd_data_o (s_resp_rdata),
-      .empty_o   (s_resp_empty)
+      .rd_empty_o(s_resp_empty),
+      .elem_num_o()
   );
 
 endmodule

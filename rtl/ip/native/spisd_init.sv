@@ -46,7 +46,7 @@ module spisd_init (
   logic s_div_clk_d, s_div_clk_q;
   logic [7:0] s_div_cnt_d, s_div_cnt_q;  // 512 div
   logic [6:0] s_boot_cnt_d, s_boot_cnt_q;  // count 128
-  logic [6:0] s_fsm_q, s_fsm_d;
+  logic [2:0] s_fsm_d, s_fsm_q;
   logic s_fir_clk_edge, s_sec_clk_edge;
   // resp 
   logic        r_resp_en;
@@ -175,7 +175,7 @@ module spisd_init (
       default:       s_fsm_d = FSM_IDLE;
     endcase
   end
-  dffer #(7) u_fsm_dffer (
+  dffer #(3) u_fsm_dffer (
       clk_i,
       rst_n_i,
       s_fir_clk_edge,
