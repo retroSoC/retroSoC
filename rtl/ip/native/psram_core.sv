@@ -156,7 +156,7 @@ module psram_core (
         FSM_RST: begin
           r_xfer_ca         <= {8'h99, 24'd0};
           r_xfer_ca_bit_cnt <= 8'd8;
-          r_cfg_chd         <= 2'd0;
+          r_cfg_chd         <= 3'd0;
           psram_ce_o        <= 1'b0;
           r_ce_cnt          <= cfg_wait_i;
           r_fsm_state       <= FSM_SEND;

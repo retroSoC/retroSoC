@@ -127,8 +127,8 @@ module dma_core (
                 s_fsm_d      = FSM_DONE;
               end else begin
                 s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
-                if (srcincr_i) s_src_addr_d = s_src_addr_q + 3'd4;
-                if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 3'd4;
+                if (srcincr_i) s_src_addr_d = s_src_addr_q + 32'd4;
+                if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 32'd4;
               end
             end else if (nmi.valid) s_xfer_done_d = 1'b0;
           end

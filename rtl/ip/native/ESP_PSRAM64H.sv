@@ -65,7 +65,7 @@ module ESP_PSRAM64H #(
   reg [7:0] command_byte;  // Stores the received command byte
   reg [ADDR_BITS-1:0] current_address;  // Stores the current address for read/write
   reg [5:0] bit_counter;        // Counter for bits/nibbles within a state (e.g., 2 nibbles for command, 6 for address)
-  reg [3:0] byte_counter;
+  reg [2:0] byte_counter;
   reg [5:0] dummy_cycle_counter;  // Counter for dummy cycles
 
   reg io_output_enable;         // Controls whether the PSRAM drives the IO lines (1'b1 for output, 1'b0 for input)

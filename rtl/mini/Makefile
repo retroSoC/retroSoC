@@ -6,7 +6,7 @@ ifeq ($(SIMU), VCS)
     include $(RTL_PATH)/script/vcs.mk
 else ifeq ($(SIMU), IVER)
     include $(RTL_PATH)/script/iverilog.mk
-else ifeq ($(SIMU), VERI)
+else ifeq ($(SIMU), VERILATOR)
     include $(RTL_PATH)/script/verilator.mk
 endif
 

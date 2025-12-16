@@ -10,9 +10,10 @@ HAVE_SRAM_IF    ?= YES
 HAVE_SRAM_MACRO ?= YES
 HAVE_SVA        ?= NO
 
-RTL_SIM_PLLEN  ?= NONE
-RTL_SIM_PLLCFG ?= NONE
-WAVE           ?= NONE
+RTL_SIM_PLLEN   ?= NONE
+RTL_SIM_PLLCFG  ?= NONE
+RTL_SIM_CORESEL ?= 0
+WAVE            ?= NONE
 
 ROOT_PATH      ?= $(CURDIR)
 RTL_PATH       ?= NONE
@@ -50,6 +51,7 @@ $(info HAVE_SRAM_MACRO [YES, NO]:                     $(HAVE_SRAM_MACRO))
 $(info HAVE_SVA        [YES, NO]:                     $(HAVE_SVA))
 $(info RTL_SIM_PLLEN:                                 $(RTL_SIM_PLLEN))
 $(info RTL_SIM_PLLCFG:                                $(RTL_SIM_PLLCFG))
+$(info RTL_SIM_CORESEL:                               $(RTL_SIM_CORESEL))
 $(info WAVE:                                          $(WAVE))
 $(info ============== SW CONFIG INFO =============================)
 $(info ISA           [RV32E RV32I RV32IM]:            $(ISA))

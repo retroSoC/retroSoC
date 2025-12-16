@@ -53,6 +53,7 @@ module ip_natv_wrapper (
   logic s_spisd_cfg_sel;
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_qspi_tx_stall, s_dma_qspi_rx_stall;
+  logic s_dma_xfer_done;
 
   // dma channel
   assign u_dma_hw_trg_if.i2s_tx_proc = ~s_dma_i2s_tx_stall;

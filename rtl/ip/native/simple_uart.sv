@@ -94,7 +94,7 @@ module simple_uart (
   );
 
   assign s_uart_dat_en   = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_UART_DAT;
-  assign s_send_dat_wait = s_uart_dat_en && nmi.wstrb[0] && (r_send_bitcnt || r_send_dummy);
+  assign s_send_dat_wait = s_uart_dat_en && nmi.wstrb[0] && ((|r_send_bitcnt) || r_send_dummy);
   assign s_nmi_ready_d   = nmi.valid && (~s_nmi_ready_q) && (~s_send_dat_wait);
   dffr #(1) u_nmi_ready_dffr (
       clk_i,
@@ -133,7 +133,7 @@ module simple_uart (
       if (s_uart_dat_en) r_recv_buf_valid <= '0;
       case (r_recv_state)
         4'd0: begin
-          if (!uart.uart_rx_i) r_recv_state <= 1'b1;
+          if (!uart.uart_rx_i) r_recv_state <= 4'b1;
           r_recv_divcnt <= '0;
         end
         4'd1: begin
@@ -170,16 +170,16 @@ module simple_uart (
       if (s_uart_div_en) r_send_dummy <= 1'b1;
       r_send_divcnt <= r_send_divcnt + 1'b1;
 
-      if (r_send_dummy && !r_send_bitcnt) begin
+      if (r_send_dummy && (~(|r_send_bitcnt))) begin
         r_send_pattern <= '1;
         r_send_bitcnt  <= 4'd15;
         r_send_divcnt  <= '0;
         r_send_dummy   <= '0;
-      end else if (s_uart_dat_en && nmi.wstrb[0] && !r_send_bitcnt) begin
+      end else if (s_uart_dat_en && nmi.wstrb[0] && (~(|r_send_bitcnt))) begin
         r_send_pattern <= {1'b1, nmi.wdata[7:0], 1'b0};
         r_send_bitcnt  <= 4'd10;
         r_send_divcnt  <= '0;
-      end else if (r_send_divcnt > s_uart_div_q && r_send_bitcnt) begin
+      end else if (r_send_divcnt > s_uart_div_q && (|r_send_bitcnt)) begin
         r_send_pattern <= {1'b1, r_send_pattern[9:1]};
         r_send_bitcnt  <= r_send_bitcnt - 1'b1;
         r_send_divcnt  <= '0;

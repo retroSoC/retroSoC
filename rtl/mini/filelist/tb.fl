@@ -1,3 +1,5 @@
++incdir+../../ip/3rd_party/spfs_model
+
 ../../clusterip/ps2/tb/kdb_model.sv
 ../../clusterip/i2c/model/at24cxxx.sv
 ../../clusterip/uart/model/rs232.sv
