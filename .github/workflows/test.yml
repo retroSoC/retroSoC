@@ -16,8 +16,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Setup environment
-      run: |
-      python3 setup.py
+      run: python3 setup.py
       
     - name: Run tests
       run: echo "No tests defined yet"
