@@ -16,8 +16,8 @@ jobs:
 
     - name: Download and extract RISC-V toolchain
       run: |
-        wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2021.09.21/riscv32-elf-ubuntu-20.04-nightly-2021.09.21-nightly.tar.gz
-        tar -xvf riscv32-elf-ubuntu-20.04-nightly-2021.09.21-nightly.tar.gz -C /tmp
+        wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz
+        tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz -C /tmp
         toolchain_bin="/tmp/riscv/bin"
         echo "RISCV_TOOLCHAIN_BIN=$toolchain_bin" >> $GITHUB_ENV
         echo "$toolchain_bin" >> $GITHUB_PATH
