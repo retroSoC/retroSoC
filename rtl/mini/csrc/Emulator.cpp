@@ -120,7 +120,7 @@ void Emulator::reset()
 
 void Emulator::step()
 {
-    dutPtr->ext_clk_i = 1;
+    dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
     dutPtr->eval();
     // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
     ++cycle;
@@ -128,14 +128,6 @@ void Emulator::step()
     {
         wavePtr->dump((vluint64_t)cycle);
     }
-    dutPtr->ext_clk_i = 0;
-    dutPtr->eval();
-    ++cycle;
-    if (args.dumpWave && args.dumpBegin <= cycle && cycle <= args.dumpEnd)
-    {
-        wavePtr->dump((vluint64_t)cycle);
-    }
-    // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
 }
 
 void Emulator::state()
