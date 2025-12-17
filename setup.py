@@ -54,7 +54,7 @@ def install_dependencies():
     
     # Install dependencies (according to Verilator official documentation)
     dependencies = [
-        "git", "help2man", "perl", "python3", "make", "autoconf", "g++", "flex", "bison", "ccache",
+        "git", "help2man", "perl", "python3", "make", "autoconf", "g++", "gcc", "flex", "bison", "ccache",
         "numactl", "perl-doc",
         "libfl2",
         "libfl-dev",
