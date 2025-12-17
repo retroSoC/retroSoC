@@ -9,20 +9,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-      
+
     - name: Setup Environment
       run: python3 setup.py
-      
-    - name: Run Tests
-      run: echo "No tests defined yet"
-      
-    - name: Build Project
-      run: echo "Build placeholder"
-      
+
+    - name: Compile Firmware
+      run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32IM EXEC_TYPE=ld2_psram firmware
+
+    - name: Build and Run sim
+      run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32IM EXEC_TYPE=ld2_psram sim
+
     - name: Success Notification
       run: echo "Workflow completed successfully"
 

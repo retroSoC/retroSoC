@@ -9,11 +9,12 @@ uint32_t my_get_millis(void) {
 
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);
-
-    tinybooter();
-    i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
-    qspi_dev_init();
-    lcd_init();
+    app_info();
+    while(1);
+    // tinybooter();
+    // i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
+    // qspi_dev_init();
+    // lcd_init();
 
     // lv_init();
     // tim1_init();

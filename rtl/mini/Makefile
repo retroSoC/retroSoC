@@ -1,12 +1,18 @@
 $(info RTL_PATH: $(RTL_PATH))
 
 gen_mpw_code:
+	python3 $(RTL_PATH)/mpw/setup.py
 ifeq ($(IP), MDD)
 	@echo "[mpw] generating user ip ..."
 	python3 $(RTL_PATH)/mpw/ip.py
-	python3 $(RTL_PATH)/mpw/core.py $(SIMU)
 else
 	@echo "[mpw] skipping user ip generation"
+endif
+ifeq ($(CORE), MDD)
+	@echo "[mpw] generating core ..."
+	python3 $(RTL_PATH)/mpw/core.py $(SIMU)
+else
+	@echo "[mpw] skipping core generation"
 endif
 
 include $(RTL_PATH)/script/software.mk

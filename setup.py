@@ -205,7 +205,7 @@ def check_software_toolchain_installed():
         result = run_command("riscv32-unknown-elf-gcc --version", check=False)
         if result.returncode == 0:
             version = result.stdout.strip()
-            print(f"✓ riscv32-unknown-elf-gcc version: {version}")
+            print(f"✓ {version}")
             return True
         else:
             print("✗ riscv32-unknown-elf-gcc command exists but cannot get version info")
@@ -251,6 +251,8 @@ def main():
     print("=" * 60)
     print("Verilator Installation Check Script")
     print("=" * 60)
+
+    project_path = os.getcwd()
 
     # Check current system
     if not sys.platform.startswith('linux'):
@@ -325,6 +327,11 @@ def main():
         sys.exit(1)
 
     check_software_toolchain_installed()
+
+    # TODO: git clone mpw
+    os.chdir(project_path)
+    run_command("git clone https://github.com/retroSoC/mini-ver-mpw.git rtl/mini/mpw")
+    
 
 if __name__ == "__main__":
     main()
