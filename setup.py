@@ -70,8 +70,9 @@ def install_dependencies():
 
     print(f"Installing dependencies: {', '.join(dependencies)}")
     
-    cmd = f"sudo apt-get install -y {' '.join(all_deps)}"
-    result = run_command(cmd)
+    for v in dependencies:
+        cmd = f"sudo apt-get install -y {v}"
+        result = run_command(cmd)
 
     print("✓ Dependencies installed successfully")
     return True
