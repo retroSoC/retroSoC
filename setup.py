@@ -109,7 +109,7 @@ def install_verilator_from_source():
         # Get latest stable tag
         result = run_command("git tag -l 'v[0-9]*' | sort -V | tail -1")
         latest_stable = result.stdout.strip()
-        # latest_stable = "v5.038"
+        latest_stable = "v5.038"
         
         if latest_stable:
             run_command(f"git checkout {latest_stable}")
