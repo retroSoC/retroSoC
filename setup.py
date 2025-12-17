@@ -193,6 +193,59 @@ def check_installation_success():
         print("✗ Verilator installation failed")
         return False
 
+def check_software_toolchain_installed():
+    """Check if Software toolchain is already installed"""
+    print("Checking if Software toolchain is installed...")
+    
+    # Method 1: Check if verilator command exists
+    if shutil.which("riscv32-unknown-elf-gcc"):
+        print("✓ riscv32-unknown-elf-gcc command exists")
+        
+        # Check version
+        result = run_command("riscv32-unknown-elf-gcc --version", check=False)
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            print(f"✓ riscv32-unknown-elf-gcc version: {version}")
+            return True
+        else:
+            print("✗ riscv32-unknown-elf-gcc command exists but cannot get version info")
+            return False
+    else:
+        print("✗ riscv32-unknown-elf-gcc not installed")
+        return False
+
+
+def install_software_toolchain():
+      """Install software toolchain from source"""
+    print("\nInstalling software toolchain from source...")
+
+    # Create temporary directory
+    temp_dir = Path("/tmp/software_install")
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+    temp_dir.mkdir(parents=True)
+
+    try:
+        # Change to temporary directory
+        os.chdir(temp_dir)
+        
+        # Clone Verilator repository
+        print("Download RISCV GNU Toolchain ...")
+        run_command("wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz")
+        run_command("tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz")
+        run_command("sudo cp -rf riscv/bin/* /usr/local")
+
+        print("✓ software toolchain installation completed")
+        return True
+        
+    except Exception as e:
+        print(f"✗ software toolchain installation failed: {e}")
+        return False
+    finally:
+        # Clean up temporary directory
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)
+
 def main():
     """Main function"""
     print("=" * 60)
@@ -262,6 +315,16 @@ def main():
         print("\n❌ Verilator installation failed")
         print("Please refer to official documentation for manual installation: https://verilator.org/guide/latest/install.html")
         sys.exit(1)
+
+    if check_software_toolchain_installed():
+        print("\n✓ software toolchain is already installed, no action needed")
+        sys.exit(0)
+
+    if not install_software_toolchain():
+        print("software toolchain installation failed, exiting")
+        sys.exit(1)
+
+    check_software_toolchain_installed()
 
 if __name__ == "__main__":
     main()
