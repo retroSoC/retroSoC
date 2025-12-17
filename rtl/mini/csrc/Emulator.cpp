@@ -50,7 +50,7 @@ Emulator::Emulator(cxxopts::ParseResult &res)
     std::cout << rang::fg::green << "Initializing flash with " << args.image << " ..." << rang::fg::reset << std::endl;
     flash_init(args.image.c_str());
 
-    dutPtr = new VysyxSoCFull;
+    dutPtr = new Vretrosoc_top;
     reset();
 
     if (args.dumpWave)
@@ -75,26 +75,54 @@ Emulator::~Emulator()
     }
 }
 
+void Emulator::wave()
+{
+    ++cycle;
+    if (args.dumpWave && args.dumpBegin <= cycle && cycle <= args.dumpEnd)
+    {
+        wavePtr->dump((vluint64_t)cycle);
+    }
+}
+
 void Emulator::reset()
 {
     std::cout << rang::fg::yellow << "Initializing and resetting DUT ..." << rang::fg::reset << std::endl;
     dutPtr->rst_n_i = 1;
-    for (int i = 0; i < 0x20000; i++)
-    {
-        dutPtr->ext_clk_i = 0;
-        dutPtr->eval();
-        dutPtr->ext_clk_i = 1;
-        dutPtr->eval();
-    }
     dutPtr->ext_clk_i = 0;
-    dutPtr->rst_n_i = 0;
     dutPtr->eval();
+    // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
+
+    for (int i = 0; i < 10; i++)
+    {
+        dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+        dutPtr->eval();
+        // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
+    }
+
+    dutPtr->rst_n_i = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+        dutPtr->eval();
+        // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
+    }
+
+    dutPtr->rst_n_i = 1;
+    for (int i = 0; i < 5; i++)
+    {
+        dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+        dutPtr->eval();
+        // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
+    }
+
+    std::cout << rang::fg::yellow << "Initializing and resetting DUT done" << rang::fg::reset << std::endl;
 }
 
 void Emulator::step()
 {
     dutPtr->ext_clk_i = 1;
     dutPtr->eval();
+    // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
     ++cycle;
     if (args.dumpWave && args.dumpBegin <= cycle && cycle <= args.dumpEnd)
     {
@@ -102,6 +130,12 @@ void Emulator::step()
     }
     dutPtr->ext_clk_i = 0;
     dutPtr->eval();
+    ++cycle;
+    if (args.dumpWave && args.dumpBegin <= cycle && cycle <= args.dumpEnd)
+    {
+        wavePtr->dump((vluint64_t)cycle);
+    }
+    // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " << static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
 }
 
 void Emulator::state()
@@ -121,6 +155,7 @@ bool Emulator::getArriveTime()
 
 void Emulator::runSim()
 {
+    std::cout << rang::fg::yellow << "Running DUT simulation..." << rang::fg::reset << std::endl;
     while (!Verilated::gotFinish() && signal_received == 0 && !getArriveTime())
     {
         step();

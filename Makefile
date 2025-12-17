@@ -62,6 +62,7 @@ $(info ===========================================================)
 DEF_LIST    ?= +define+PDK_$(PDK)
 DEF_LIST    += +define+CORE_$(CORE)
 DEF_LIST    += +define+IP_$(IP)
+DEF_LIST    += +define+SIMU_$(SIMU)
 
 ifeq ($(HAVE_PLL), YES)
     DEF_LIST += +define+HAVE_PLL

@@ -126,7 +126,7 @@ module retrosoc_top (
       .qspi_nss0_o_pad    (),
       .qspi_nss1_o_pad    (),
       .qspi_nss2_o_pad    (),
-      .qspi_nss3_o_pad    (),              // tft test
+      .qspi_nss3_o_pad    (),
       .qspi_dat0_io_pad   (),
       .qspi_dat1_io_pad   (),
       .qspi_dat2_io_pad   (),
@@ -144,10 +144,10 @@ module retrosoc_top (
       .miso(s_spfs_miso)
   );
 
-  //   rs232 u_rs232_0 (
-  //       .rs232_rx_i(s_uart_tx),
-  //       .rs232_tx_o()
-  //   );
+  rs232 u_rs232_0 (
+      .rs232_rx_i(s_uart_tx),
+      .rs232_tx_o()
+  );
 
   ESP_PSRAM64H u_ESP_PSRAM64H (
       .sclk(s_psram_sck),

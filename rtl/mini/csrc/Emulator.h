@@ -17,6 +17,7 @@ class Emulator
 public:
     Emulator(cxxopts::ParseResult &res);
     ~Emulator();
+    void wave();
     void reset();
     void step();
     void state();
@@ -27,7 +28,7 @@ public:
 private:
     unsigned long long cycle = 0;
     chrono::system_clock::time_point startTime;
-    VysyxSoCFull *dutPtr = nullptr;
+    Vretrosoc_top *dutPtr = nullptr;
     struct Args
     {
         bool dumpWave = false;

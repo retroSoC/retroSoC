@@ -177,6 +177,9 @@ module simple_uart (
         r_send_dummy   <= '0;
       end else if (s_uart_dat_en && nmi.wstrb[0] && (~(|r_send_bitcnt))) begin
         r_send_pattern <= {1'b1, nmi.wdata[7:0], 1'b0};
+`ifdef SIMU_VERILATOR
+        $write("%c", nmi.wdata[7:0]); // NOTE: just for verilator sim
+`endif
         r_send_bitcnt  <= 4'd10;
         r_send_divcnt  <= '0;
       end else if (r_send_divcnt > s_uart_div_q && (|r_send_bitcnt)) begin
