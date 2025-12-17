@@ -54,12 +54,11 @@ def install_dependencies():
     
     # Install dependencies (according to Verilator official documentation)
     dependencies = [
-        "git", "help2man", "perl", "python3", "make", "autoconf", "g++", "gcc", "flex", "bison", "ccache",
+        "git", "help2man", "perl", "python3", "make", "autoconf", "g++", "flex", "bison", "ccache",
         "numactl", "perl-doc",
         "libfl2",
         "libfl-dev",
-        "zlib1g", "zlib1g-dev",
-        "build-essential"
+        "zlib1g", "zlib1g-dev"
     ]
 
     # Additional packages for newer Ubuntu versions
@@ -243,9 +242,10 @@ def install_software_toolchain():
         print(f"✗ software toolchain installation failed: {e}")
         return False
     finally:
+        pass
         # Clean up temporary directory
-        if temp_dir.exists():
-            shutil.rmtree(temp_dir)
+        # if temp_dir.exists():
+            # shutil.rmtree(temp_dir)
 
 def main():
     """Main function"""
