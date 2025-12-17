@@ -58,7 +58,8 @@ def install_dependencies():
         "numactl", "perl-doc",
         "libfl2",
         "libfl-dev",
-        "zlib1g", "zlib1g-dev"
+        "zlib1g", "zlib1g-dev",
+        "build-essential"
     ]
 
     # Additional packages for newer Ubuntu versions
