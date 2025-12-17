@@ -58,7 +58,7 @@ def install_dependencies():
         "libgoogle-perftools-dev", "numactl", "perl-doc",
         "libfl2",
         "libfl-dev",
-        "zlibc", "zlib1g", "zlib1g-dev"
+        "zlib1g", "zlib1g-dev"
     ]
 
     # Additional packages for newer Ubuntu versions
