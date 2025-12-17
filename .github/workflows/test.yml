@@ -14,6 +14,19 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Download and extract RISC-V toolchain
+      run: |
+        wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2021.09.21/riscv32-elf-ubuntu-20.04-nightly-2021.09.21-nightly.tar.gz
+        tar -xzf riscv32-elf-ubuntu-20.04-nightly-2021.09.21-nightly.tar.gz -C /tmp
+        toolchain_bin="/tmp/riscv32-elf-ubuntu-20.04-nightly-2021.09.21-nightly/bin"
+        echo "RISCV_TOOLCHAIN_BIN=$toolchain_bin" >> $GITHUB_ENV
+        echo "$toolchain_bin" >> $GITHUB_PATH
+
+    - name: Use the toolchain in a subsequent step
+      run: |
+        echo "The toolchain path is $RISCV_TOOLCHAIN_BIN"
+        riscv32-unknown-elf-gcc --version
+
     - name: Setup Environment
       run: python3 setup.py
 

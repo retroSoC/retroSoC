@@ -318,15 +318,15 @@ def main():
         print("Please refer to official documentation for manual installation: https://verilator.org/guide/latest/install.html")
         sys.exit(1)
 
-    if check_software_toolchain_installed():
-        print("\n✓ software toolchain is already installed, no action needed")
-        sys.exit(0)
+    # if check_software_toolchain_installed():
+    #     print("\n✓ software toolchain is already installed, no action needed")
+    #     sys.exit(0)
 
-    if not install_software_toolchain():
-        print("software toolchain installation failed, exiting")
-        sys.exit(1)
+    # if not install_software_toolchain():
+    #     print("software toolchain installation failed, exiting")
+    #     sys.exit(1)
 
-    check_software_toolchain_installed()
+    # check_software_toolchain_installed()
 
     # TODO: git clone mpw
     os.chdir(project_path)
