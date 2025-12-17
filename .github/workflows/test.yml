@@ -1,4 +1,4 @@
-name: lint
+name: test
 
 on:
   push:
@@ -10,13 +10,14 @@ jobs:
   build:
     name: Build and Test
     runs-on: ubuntu-22.04
-
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       
     - name: Setup environment
-      run: echo "No setup needed for this minimal workflow"
+      run: |
+      python3 setup.py
       
     - name: Run tests
       run: echo "No tests defined yet"
