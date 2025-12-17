@@ -233,7 +233,7 @@ def install_software_toolchain():
         print("Download RISCV GNU Toolchain ...")
         run_command("wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz")
         run_command("tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz")
-        run_command("sudo cp -rf riscv/bin/* /usr/local")
+        run_command("sudo cp -rf riscv/bin/* /usr/local/bin")
 
         print("✓ software toolchain installation completed")
         return True
