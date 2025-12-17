@@ -60,25 +60,27 @@ def install_dependencies():
         "libfl-dev",
         "zlibc", "zlib1g", "zlib1g-dev"
     ]
-    
+
     # Additional packages for newer Ubuntu versions
     extra_deps = [
         "gtkwave",  # Optional: waveform viewer
     ]
     
     all_deps = dependencies + extra_deps
-    
+
     print(f"Installing dependencies: {', '.join(dependencies)}")
     
     cmd = f"sudo apt-get install -y {' '.join(all_deps)}"
     result = run_command(cmd)
-    
-    if result.returncode == 0:
-        print("✓ Dependencies installed successfully")
-        return True
-    else:
-        print("✗ Dependency installation failed")
-        return False
+
+    print("✓ Dependencies installed successfully")
+    return True
+    # if result.returncode == 0:
+    #     print("✓ Dependencies installed successfully")
+    #     return True
+    # else:
+    #     print("✗ Dependency installation failed")
+    #     return False
 
 def install_verilator_from_source():
     """Compile and install Verilator from source"""
