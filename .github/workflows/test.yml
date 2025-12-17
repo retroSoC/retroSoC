@@ -12,19 +12,19 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
-    - name: Checkout repository
+    - name: Checkout Repository
       uses: actions/checkout@v4
       
-    - name: Setup environment
+    - name: Setup Environment
       run: python3 setup.py
       
-    - name: Run tests
+    - name: Run Tests
       run: echo "No tests defined yet"
       
-    - name: Build project
+    - name: Build Project
       run: echo "Build placeholder"
       
-    - name: Success notification
+    - name: Success Notification
       run: echo "Workflow completed successfully"
 
 # jobs:

@@ -50,26 +50,27 @@ def install_dependencies():
     
     # Update package list
     print("Updating package list...")
-    run_command("sudo apt update")
+    run_command("sudo apt-get update")
     
     # Install dependencies (according to Verilator official documentation)
     dependencies = [
-        "git", "make", "autoconf", "g++", "flex", "bison",
-        "libfl-dev", "libgoogle-perftools-dev", "perl",
-        "python3", "zlib1g-dev", "libgz", "libfl2", "libfl-dev"
+        "git", "help2man", "perl", "python3", "make", "autoconf", "g++", "flex", "bison", "ccache",
+        "libgoogle-perftools-dev", "numactl", "perl-doc",
+        "libfl2",
+        "libfl-dev",
+        "zlibc", "zlib1g", "zlib1g-dev"
     ]
     
     # Additional packages for newer Ubuntu versions
     extra_deps = [
         "gtkwave",  # Optional: waveform viewer
-        "ccache"    # Optional: compilation cache accelerator
     ]
     
     all_deps = dependencies + extra_deps
     
     print(f"Installing dependencies: {', '.join(dependencies)}")
     
-    cmd = f"sudo apt install -y {' '.join(all_deps)}"
+    cmd = f"sudo apt-get install -y {' '.join(all_deps)}"
     result = run_command(cmd)
     
     if result.returncode == 0:
@@ -97,13 +98,15 @@ def install_verilator_from_source():
         print("Cloning Verilator source code...")
         run_command("git clone https://github.com/verilator/verilator")
         
+        run_command("unset VERILATOR_ROOT")
         os.chdir("verilator")
-        
+
         # Switch to stable version (e.g., latest stable tag)
         print("Switching to stable version...")
         # Get latest stable tag
         result = run_command("git tag -l 'v[0-9]*' | sort -V | tail -1")
         latest_stable = result.stdout.strip()
+        # latest_stable = "v5.038"
         
         if latest_stable:
             run_command(f"git checkout {latest_stable}")
@@ -146,11 +149,11 @@ def install_verilator_from_ppa():
         # Add PPA repository
         print("Adding Verilator PPA...")
         run_command("sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test")
-        run_command("sudo apt update")
+        run_command("sudo apt-get update")
         
         # Install Verilator
         print("Installing Verilator...")
-        run_command("sudo apt install -y verilator")
+        run_command("sudo apt-get install -y verilator")
         
         # Verify installation
         result = run_command("verilator --version", check=False)
