@@ -196,11 +196,11 @@ def check_installation_success():
 def check_software_toolchain_installed():
     """Check if Software toolchain is already installed"""
     print("Checking if Software toolchain is installed...")
-    
+
     # Method 1: Check if verilator command exists
     if shutil.which("riscv32-unknown-elf-gcc"):
         print("✓ riscv32-unknown-elf-gcc command exists")
-        
+
         # Check version
         result = run_command("riscv32-unknown-elf-gcc --version", check=False)
         if result.returncode == 0:
@@ -216,7 +216,7 @@ def check_software_toolchain_installed():
 
 
 def install_software_toolchain():
-      """Install software toolchain from source"""
+    """Install software toolchain from source"""
     print("\nInstalling software toolchain from source...")
 
     # Create temporary directory
