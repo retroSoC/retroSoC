@@ -232,10 +232,7 @@ def install_software_toolchain():
         print("Download RISCV GNU Toolchain ...")
         run_command("wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz")
         run_command("tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz")
-        run_command(f"echo 'export PATH=${temp_dir}/bin:$PATH' >> ~/.bashrc")
-        run_command("source ~/.bashrc")
-        # echo 'export LD_LIBRARY_PATH=/opt/riscv32/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
-
+        run_command(f"export PATH=${temp_dir}/bin:$PATH")
 
         print("✓ software toolchain installation completed")
         return True
