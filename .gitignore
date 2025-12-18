@@ -37,14 +37,15 @@ audio_file.h
 .vscode
 retrosoc_sections.lds
 retrosoc_syn*
-pdk
+s110
+IHP-Open-PDK
+skywater-pdk
 demo
 dont_use_cell_*
 clusterip
 nanoV
 tinyQV
 kianV
-!get_pdk.py
 def.fl
 *yosys*.fl
 *verilator*.fl
@@ -58,3 +59,4 @@ lvgl-*
 mpw
 coremark-main
 *wave
+picorv32_ver.v
