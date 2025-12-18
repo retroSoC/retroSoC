@@ -14,7 +14,7 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Download and extract RISC-V toolchain
+    - name: Download and Extract RISC-V Toolchain
       run: |
         wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz
         tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz -C /tmp
@@ -22,13 +22,16 @@ jobs:
         echo "RISCV_TOOLCHAIN_BIN=$toolchain_bin" >> $GITHUB_ENV
         echo "$toolchain_bin" >> $GITHUB_PATH
 
-    - name: Use the toolchain in a subsequent step
+    - name: Test RISC-V Toolchain
       run: |
         echo "The toolchain path is $RISCV_TOOLCHAIN_BIN"
         riscv32-unknown-elf-gcc --version
 
-    - name: Setup Environment
+    - name: Setup Verilator and MPW Repo
       run: python3 setup.py
+
+    - name: Config FatFs and Coremark Repo
+      run: python3 app/setup.py
 
     - name: Compile Firmware
       run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32IM EXEC_TYPE=ld2_psram firmware

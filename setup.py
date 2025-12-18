@@ -328,10 +328,9 @@ def main():
 
     # check_software_toolchain_installed()
 
-    # TODO: git clone mpw
+    # TODO: git clone mpw, add some stdout output
     os.chdir(project_path)
     run_command("git clone https://github.com/retroSoC/mini-ver-mpw.git rtl/mini/mpw")
-    
 
 if __name__ == "__main__":
     main()
