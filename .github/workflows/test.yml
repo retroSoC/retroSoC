@@ -37,7 +37,9 @@ jobs:
       run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32IM EXEC_TYPE=ld2_psram firmware
 
     - name: Build and Run sim
-      run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32IM EXEC_TYPE=ld2_psram sim
+      run: |
+        python3 verilator.py
+        make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32IM EXEC_TYPE=ld2_psram sim
 
     - name: Success Notification
       run: echo "Workflow completed successfully"
