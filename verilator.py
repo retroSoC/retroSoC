@@ -10,7 +10,7 @@ lines = ''
 with open(f'{ROOT_PATH}/rtl/mini/filelist/inc.fl', 'r', encoding='utf-8') as fp:
     for v in fp:
         if '+incdir+..' in v:
-            lines += v.replace('+incdir+..', f'+incdir+{ROOT_PATH}')
+            lines += v.replace('+incdir+..', f'+incdir+{ROOT_PATH}/rtl/mini')
         else:
             lines += v
 
