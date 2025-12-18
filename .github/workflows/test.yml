@@ -30,6 +30,9 @@ jobs:
     - name: Setup Verilator and MPW Repo
       run: python3 setup.py
 
+  - name: Setup Verilator and MPW Repo
+      run: python3 pdk/setup.py
+
     - name: Config FatFs and Coremark Repo
       run: python3 app/setup.py
 
