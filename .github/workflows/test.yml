@@ -34,7 +34,7 @@ jobs:
       run: python3 rtl/clusterip/setup.py
 
     - name: Download Open PDK Repo
-      run: python3 pdk/get_pdk.py
+      run: python3 pdk/setup.py
 
     - name: Config FatFs and Coremark Repo
       run: python3 app/setup.py
