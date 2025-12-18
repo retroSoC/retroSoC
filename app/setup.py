@@ -10,9 +10,9 @@ COREMARK_DIR = os.path.join(APP_DIR, 'coremark')
 LVGL_DIR = os.path.join(APP_DIR, 'lvgl')
 LVGL_NAME = 'v9.4.0.tar.gz'
 
-print(APP_DIR)
-print(FATFS_DIR)
-print(COREMARK_DIR)
+# print(APP_DIR)
+# print(FATFS_DIR)
+# print(COREMARK_DIR)
 
 
 def prepend_line(filename, line):
@@ -22,6 +22,7 @@ def prepend_line(filename, line):
         f.write(line + '\n' + content)
 
 def replace_line(filename, old, new):
+    lines = ''
     with open(filename, 'r', encoding='utf-8') as fp:
         for v in fp:
             if old in v:
