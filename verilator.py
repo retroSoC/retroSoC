@@ -17,4 +17,4 @@ with open(f'{ROOT_PATH}/rtl/mini/filelist/inc.fl', 'r', encoding='utf-8') as fp:
 with open(f'{ROOT_PATH}/rtl/mini/filelist/inc_verilator.fl', 'w', encoding='utf-8') as fp:
     fp.writelines(lines)
 
-os.sysetm(f'cat {ROOT_PATH}/rtl/mini/filelist/inc_verilator.fl')
+os.system(f'cat {ROOT_PATH}/rtl/mini/filelist/inc_verilator.fl')
