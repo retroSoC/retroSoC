@@ -37,6 +37,7 @@ module user_ip_top (
     u_user_2_gpio_if.gpio_in = '0;
     apb.pready               = '0;
     apb.prdata               = '0;
+    apb.pslverr              = '0;
     u_user_1_apb_if.paddr    = '0;
     u_user_1_apb_if.pprot    = '0;
     u_user_1_apb_if.psel     = '0;
@@ -58,6 +59,7 @@ module user_ip_top (
         u_user_1_gpio_if.gpio_in = gpio.gpio_in;
         apb.pready               = u_user_1_apb_if.pready;
         apb.prdata               = u_user_1_apb_if.prdata;
+        apb.pslverr              = u_user_1_apb_if.pslverr;
         u_user_1_apb_if.paddr    = apb.paddr;
         u_user_1_apb_if.pprot    = apb.pprot;
         u_user_1_apb_if.psel     = apb.psel;
@@ -72,6 +74,7 @@ module user_ip_top (
         u_user_2_gpio_if.gpio_in = gpio.gpio_in;
         apb.pready               = u_user_2_apb_if.pready;
         apb.prdata               = u_user_2_apb_if.prdata;
+        apb.pslverr              = u_user_2_apb_if.pslverr;
         u_user_2_apb_if.paddr    = apb.paddr;
         u_user_2_apb_if.pprot    = apb.pprot;
         u_user_2_apb_if.psel     = apb.psel;
@@ -87,6 +90,7 @@ module user_ip_top (
         u_user_2_gpio_if.gpio_in = '0;
         apb.pready               = '0;
         apb.prdata               = '0;
+        apb.pslverr              = '0;
         u_user_1_apb_if.paddr    = '0;
         u_user_1_apb_if.pprot    = '0;
         u_user_1_apb_if.psel     = '0;
