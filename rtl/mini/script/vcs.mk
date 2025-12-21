@@ -9,31 +9,7 @@ VERDI_TOOL   := bsub -Is verdi
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 
-ifeq ($(PDK), IHP130)
-    NET_FLIST := -f ../../filelist/pdk_ihp130.fl
-else ifeq ($(PDK), S110)
-    NET_FLIST := -f ../../filelist/pdk_s110.fl
-else ifeq ($(PDK), ICS55)
-    NET_FLIST := -f ../../filelist/pdk_ics55.fl
-endif
-
-NET_FLIST  += -f ../filelist/def.fl -f ../filelist/inc.fl
-
-RTL_FLIST  := $(NET_FLIST)
-RTL_FLIST  += -f ../filelist/ip.fl -f ../filelist/tech.fl
-ifeq ($(CORE), PICORV32)
-    RTL_FLIST += -f ../filelist/core_picorv32.fl
-else ifeq ($(CORE), MDD)
-    RTL_FLIST += -f ../mpw/.build/core/core.fl
-endif
-
-ifeq ($(IP), MDD)
-    RTL_FLIST += -f ../mpw/.build/ip/ip.fl
-endif
-
-RTL_FLIST += -f ../filelist/top.fl
-
-TB_FLIST  := -f ../filelist/tb.fl
+TB_FLIST  := -f $(RTL_PATH)/filelist/tb.fl
 
 ## vcs option
 # -debug_region=cell+lib

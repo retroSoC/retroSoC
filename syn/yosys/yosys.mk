@@ -29,15 +29,19 @@ include $(YOSYS_DIR)/synth_config.mk
 
 TOP_DESIGN    ?= retrosoc_asic
 RTL_NAME      ?= retrosoc_asic
-SV_FLIST      := $(YOSYS_DIR)/../../rtl/$(shell echo $(SOC) | tr A-Z a-z )/filelist/yosys-abspath.fl
+SV_FLIST      := $(YOSYS_DIR)/../../rtl/$(shell echo $(SOC) | tr A-Z a-z )/filelist/yosys.fl
 
-$(info SV_FLIST: $(SV_FLIST))
+$(info SYNTH SV_FLIST: $(SV_FLIST))
 
 NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
 NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_debug_yosys.v
 
+gen_synth_filelist: gen_mpw_code
+	$(info SYNTH RTL_FLIST: $(RTL_FLIST))
+	@python3 $(RTL_PATH)/filelist/comb.py $(RTL_FLIST)
+
 ## Synthesize netlist using Yosys
-synth: $(NETLIST)
+synth: gen_synth_filelist $(NETLIST)
 
 $(NETLIST) $(NETLIST_DEBUG):
 	@mkdir -p $(YOSYS_OUT)

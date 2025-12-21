@@ -28,6 +28,7 @@ module user_ip_wrapper (
 
   assign apb.pready             = ~(|sel_i) ? u_demo_apb4_if.pready : u_user_apb4_if.pready;
   assign apb.prdata             = ~(|sel_i) ? u_demo_apb4_if.prdata : u_user_apb4_if.prdata;
+  assign apb.pslverr            = ~(|sel_i) ? u_demo_apb4_if.pslverr : u_user_apb4_if.pslverr;
 
   assign u_demo_apb4_if.paddr   = ~(|sel_i) ? apb.paddr : '0;
   assign u_demo_apb4_if.pprot   = ~(|sel_i) ? apb.pprot : '0;

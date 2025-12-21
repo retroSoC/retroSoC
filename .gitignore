@@ -40,6 +40,7 @@ retrosoc_syn*
 s110
 IHP-Open-PDK
 skywater-pdk
+gf180mcu-pdk
 demo
 dont_use_cell_*
 clusterip

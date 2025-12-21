@@ -9,30 +9,9 @@ SOC_VSRC_TOP      := retrosoc_top
 SOC_VSRC_HOME     += $(RTL_PATH)/vsrc
 SOC_COMPILE_HOME  := $(BUILD_DIR)/emu_compile
 
-ifeq ($(PDK), IHP130)
-    SOC_VXXFILES := -f $(RTL_PATH)/../filelist/pdk_ihp130.fl
-else ifeq ($(PDK), S110)
-    SOC_VXXFILES := -f $(RTL_PATH)/../filelist/pdk_s110.fl
-else ifeq ($(PDK), ICS55)
-    SOC_VXXFILES := -f $(RTL_PATH)/../filelist/pdk_ics55.fl
-endif
 
 
-ifeq ($(CORE), PICORV32)
-    SOC_VXXFILES += -f $(RTL_PATH)/filelist/core_picorv32.fl
-else ifeq ($(CORE), MDD)
-    SOC_VXXFILES += -f $(RTL_PATH)/mpw/.build/core/core.fl
-endif
-
-ifeq ($(IP), MDD)
-    SOC_VXXFILES += -f  $(RTL_PATH)/mpw/.build/ip/ip.fl
-endif
-
-SOC_VXXFILES      += -f $(RTL_PATH)/filelist/def.fl
-SOC_VXXFILES      += -f $(RTL_PATH)/filelist/inc_verilator.fl
-SOC_VXXFILES      += -f $(RTL_PATH)/filelist/ip.fl
-SOC_VXXFILES      += -f $(RTL_PATH)/filelist/top.fl
-SOC_VXXFILES      += -f $(RTL_PATH)/filelist/tech.fl
+SOC_VXXFILES      := $(RTL_FLIST)
 SOC_VXXFILES      += $(RTL_PATH)/../clusterip/uart/model/rs232.sv
 SOC_VXXFILES      += $(RTL_PATH)/../ip/native/ESP_PSRAM64H.sv
 SOC_VXXFILES      += $(shell find $(SOC_VSRC_HOME) -name "*.sv")

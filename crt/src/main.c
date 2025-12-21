@@ -9,12 +9,13 @@ uint32_t my_get_millis(void) {
 
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);
+#ifdef SW_BASE
     app_info();
-    while(1);
-    // tinybooter();
-    // i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
-    // qspi_dev_init();
-    // lcd_init();
+#else
+    tinybooter();
+    i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));
+    qspi_dev_init();
+    lcd_init();
 
     // lv_init();
     // tim1_init();
@@ -60,4 +61,5 @@ void main() {
     // ip_spisd_test();
     // ip_dma_test(0, NULL);
     // tinybench(true, 0);
+#endif
 }
