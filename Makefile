@@ -25,7 +25,7 @@ RTL_TOP        ?= retrosoc_tb
 # SW
 ISA            ?= RV32IM
 FIRMWARE_NAME  ?= retrosoc_fw
-PROJ_TYPE      ?= full
+PROG_TYPE      ?= FULL
 LINK_TYPE      ?= ld2_sram
 
 $(info ============== BASE INFO ==================================)
@@ -57,7 +57,7 @@ $(info WAVE:                                           $(WAVE))
 $(info ============== SW CONFIG INFO =============================)
 $(info ISA           [RV32E RV32I RV32IM]:             $(ISA))
 $(info FIRMWARE_NAME [retrosoc_fw]:                    $(FIRMWARE_NAME))
-$(info PROG_TYPE     [base full]:                      $(PROG_TYPE))
+$(info PROG_TYPE     [BASE FULL]:                      $(PROG_TYPE))
 $(info LINK_TYPE     [xip ld2_sram ld2_psram]:         $(LINK_TYPE))
 $(info ===========================================================)
 
