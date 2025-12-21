@@ -10,9 +10,11 @@ SOC_VSRC_HOME     += $(RTL_PATH)/vsrc
 SOC_COMPILE_HOME  := $(BUILD_DIR)/emu_compile
 
 
-RTL_FLIST         += $(RTL_PATH)/../clusterip/uart/model/rs232.sv
-RTL_FLIST         += $(RTL_PATH)/../ip/native/ESP_PSRAM64H.sv
-RTL_FLIST         += $(shell find $(SOC_VSRC_HOME) -name "*.sv")
+
+SOC_VXXFILES      := $(RTL_FLIST)
+SOC_VXXFILES      += $(RTL_PATH)/../clusterip/uart/model/rs232.sv
+SOC_VXXFILES      += $(RTL_PATH)/../ip/native/ESP_PSRAM64H.sv
+SOC_VXXFILES      += $(shell find $(SOC_VSRC_HOME) -name "*.sv")
 SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
 # SOC_VSRC_INCLPATH += -I$(RTL_PATH)/perip/spi/rtl
 
@@ -24,7 +26,7 @@ VERILATOR_FLAGS    += --trace-fst --assert --stats-vars --output-split 30000 --o
 VERILATOR_FLAGS    += --timescale "1ns/1ns" -Wno-fatal
 VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
 VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
-VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(RTL_FLIST)
+VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
 
 SOC_SIM_TIME ?= -1
 
