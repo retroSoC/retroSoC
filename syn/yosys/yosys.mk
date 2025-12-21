@@ -29,9 +29,9 @@ include $(YOSYS_DIR)/synth_config.mk
 
 TOP_DESIGN    ?= retrosoc_asic
 RTL_NAME      ?= retrosoc_asic
-SV_FLIST      := $(YOSYS_DIR)/../../rtl/$(shell echo $(SOC) | tr A-Z a-z )/filelist/yosys-abspath.fl
+SV_FLIST      := $(YOSYS_DIR)/../../rtl/$(shell echo $(SOC) | tr A-Z a-z )/filelist/yosys.fl
 
-$(info SV_FLIST: $(SV_FLIST))
+$(info SYNTH SV_FLIST: $(SV_FLIST))
 
 NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
 NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_debug_yosys.v
