@@ -7,7 +7,7 @@ OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
 CFLAGS := -Wall -Wextra \
-          -Wl,-Bstatic,-T,flash_$(EXEC_TYPE).lds,--strip-debug -O3 \
+          -Wl,-Bstatic,-T,flash_$(LINK_TYPE).lds,--strip-debug -O3 \
           -ffreestanding \
           -nostdlib
 
@@ -91,15 +91,18 @@ ifneq ($(filter RV32E RV32I,$(ISA)),)
     SRC_PATH += $(ROOT_PATH)/crt/libgcc/mulsi3.c
 endif
 
-LDS_PATH := $(ROOT_PATH)/crt/flash_$(EXEC_TYPE).lds
+LDS_PATH := $(ROOT_PATH)/crt/flash_$(LINK_TYPE).lds
 
 asm:
 	cd app/asm && make
 	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
 
+base:
+	echo "hello"
+
 firmware:
 	@mkdir -p .sw_build
-	cd .sw_build && ($(CP) -P -o flash_$(EXEC_TYPE).lds $(LDS_PATH))
+	cd .sw_build && ($(CP) -P -o flash_$(LINK_TYPE).lds $(LDS_PATH))
 	cd .sw_build && ($(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH))
 	cd .sw_build && ($(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex)
 	cd .sw_build && ($(OBJC) -O binary $@ $(FIRMWARE_NAME).bin)

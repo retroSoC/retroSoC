@@ -15,6 +15,8 @@ else ifeq ($(PDK), S110)
     NET_FLIST := -f ../../filelist/pdk_s110.fl
 else ifeq ($(PDK), ICS55)
     NET_FLIST := -f ../../filelist/pdk_ics55.fl
+else ifeq ($(PDK), GF180)
+    NET_FLIST := -f ../../filelist/pdk_gf180.fl
 endif
 
 NET_FLIST  += -f ../filelist/def.fl -f ../filelist/inc.fl

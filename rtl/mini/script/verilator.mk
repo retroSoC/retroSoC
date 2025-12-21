@@ -15,6 +15,8 @@ else ifeq ($(PDK), S110)
     SOC_VXXFILES := -f $(RTL_PATH)/../filelist/pdk_s110.fl
 else ifeq ($(PDK), ICS55)
     SOC_VXXFILES := -f $(RTL_PATH)/../filelist/pdk_ics55.fl
+else ifeq ($(PDK), GF180)
+    SOC_VXXFILES := -f $(RTL_PATH)/../filelist/pdk_gf180.fl
 endif
 
 
