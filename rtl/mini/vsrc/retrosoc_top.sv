@@ -21,27 +21,30 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_top (
-    input wire ext_clk_i,
-    input wire rst_n_i
+    input wire       ext_clk_i,
+    input wire       rst_n_i,
+    input wire [4:0] core_sel_i
 );
 
-  wire s_clk;
-  wire s_rst_n;
-  wire s_clk_bypass;
-  wire s_uart_tx;
-  wire s_psram_sck;
-  wire s_psram_nss0;
-  wire s_psram_dat0;
-  wire s_psram_dat1;
-  wire s_psram_dat2;
-  wire s_psram_dat3;
-  wire s_spfs_sck;
-  wire s_spfs_nss;
-  wire s_spfs_mosi;
-  wire s_spfs_miso;
+  wire       s_clk;
+  wire       s_rst_n;
+  wire [4:0] s_core_sel;
+  wire       s_clk_bypass;
+  wire       s_uart_tx;
+  wire       s_psram_sck;
+  wire       s_psram_nss0;
+  wire       s_psram_dat0;
+  wire       s_psram_dat1;
+  wire       s_psram_dat2;
+  wire       s_psram_dat3;
+  wire       s_spfs_sck;
+  wire       s_spfs_nss;
+  wire       s_spfs_mosi;
+  wire       s_spfs_miso;
 
   assign s_clk        = ext_clk_i;
   assign s_rst_n      = rst_n_i;
+  assign s_core_sel   = core_sel_i;
   assign s_clk_bypass = 1'b1;
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad           (),
@@ -51,11 +54,11 @@ module retrosoc_top (
       .tmr_capch_i_pad    (),
       .extn_irq_i_pad     (),
 `ifdef CORE_MDD
-      .core_sel_0_i_pad   (),
-      .core_sel_1_i_pad   (),
-      .core_sel_2_i_pad   (),
-      .core_sel_3_i_pad   (),
-      .core_sel_4_i_pad   (),
+      .core_sel_0_i_pad   (s_core_sel[0]),
+      .core_sel_1_i_pad   (s_core_sel[1]),
+      .core_sel_2_i_pad   (s_core_sel[2]),
+      .core_sel_3_i_pad   (s_core_sel[3]),
+      .core_sel_4_i_pad   (s_core_sel[4]),
 `endif
 `ifdef IP_MDD
       .user_gpio_0_io_pad (),

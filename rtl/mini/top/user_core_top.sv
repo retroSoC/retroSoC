@@ -24,7 +24,8 @@ module user_core_top (
   // verilog_format: off
   nmi_if u_user_1_nmi_if ();
   nmi_if u_user_2_nmi_if ();
-  logic [31:0] s_user_1_irq, s_user_2_irq;
+  logic [31:0] s_user_1_irq;
+  logic [31:0] s_user_2_irq;
   // ...
   // verilog_format: on
   always_comb begin
@@ -80,18 +81,11 @@ module user_core_top (
       .nmi    (u_user_1_nmi_if)
   );
 
-  // user_core_design_username2 #(2) u_user_core_design_username2 (
-  //     .clk_i  (clk_i),
-  //     .rst_n_i(rst_n_i),
-  //     .irq_i  (s_user_2_irq),
-  //     .nmi    (u_user_2_nmi_if)
-  // );
-
-  // user_core_design_username2 #(3) u_user_core_design_username3 (
-  //     .clk_i  (clk_i),
-  //     .rst_n_i(rst_n_i),
-  //     .irq_i  (s_user_2_irq),
-  //     .nmi    (u_user_2_nmi_if)
-  // );
+  user_core_design_username2 #(2) u_user_core_design_username2 (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .irq_i  (s_user_2_irq),
+      .nmi    (u_user_2_nmi_if)
+  );
 
 endmodule

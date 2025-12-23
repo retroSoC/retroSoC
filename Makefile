@@ -90,7 +90,8 @@ ifeq ($(SOC), MINI)
 endif
 
 ifeq ($(SYNTH), YOSYS)
-    DEF_LIST += +define+SYNTHESIS #HACK: for some core
+    #HACK: for some core
+    DEF_LIST += +define+SYNTHESIS
     $(info SYNTH DEF_LIST: $(DEF_LIST))
     $(file > $(RTL_PATH)/filelist/def.fl, $(DEF_LIST))
     include syn/yosys/yosys.mk
