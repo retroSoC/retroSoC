@@ -51,6 +51,7 @@ Emulator::Emulator(cxxopts::ParseResult &res)
     flash_init(args.image.c_str());
 
     dutPtr = new Vretrosoc_top;
+    dutPtr->core_sel_i = 0;
     reset();
 
     if (args.dumpWave)

@@ -45,7 +45,7 @@ void app_info() {
     printf("  license: MulanPSL-2.0 license\n\n");
 
     printf("Processor:\n");
-    printf("  CORE:              %s\n", HW_CORE);
+    printf("  CORE:              %s user id: %d\n", HW_CORE, reg_sysctrl_coresel);
     printf("  ISA:               %s\n", SW_ISA);
     printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
@@ -70,6 +70,7 @@ void app_info() {
     printf("                     1 x QSPI0         @0x%x\n", &reg_qspi0_mode);
     printf("                     1 x DMA           @0x%x\n", &reg_dma_mode);
     printf("                     1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
+    printf("                     1 x CLINT         @0x%x\n", &reg_clint_clkdiv);
     printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                     1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                     1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);

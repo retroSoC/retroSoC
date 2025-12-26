@@ -139,6 +139,13 @@
 #define reg_sysctrl_ipsel    (*(volatile uint32_t*)0x1000B004)
 #define reg_sysctrl_i2csel   (*(volatile uint32_t*)0x1000B008)
 #define reg_sysctrl_qspicsel (*(volatile uint32_t*)0x1000B00C)
+// clint
+#define reg_clint_clkdiv     (*(volatile uint32_t*)0x1000C000)
+#define reg_clint_mtimel     (*(volatile uint32_t*)0x1000C004)
+#define reg_clint_mtimeh     (*(volatile uint32_t*)0x1000C008)
+#define reg_clint_mtimecmpl  (*(volatile uint32_t*)0x1000C00C)
+#define reg_clint_mtimecmph  (*(volatile uint32_t*)0x1000C010)
+#define reg_clint_msip       (*(volatile uint32_t*)0x1000C014)
 // apb
 // archinfo
 #define reg_archinfo_sys   (*(volatile uint32_t*)0x20000000)

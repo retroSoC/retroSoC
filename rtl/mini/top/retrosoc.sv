@@ -54,6 +54,7 @@ module retrosoc (
   qspi_if u_natv_qspi_if();
   qspi_if u_apb_qspi_if();
   sysctrl_if u_sysctrl_if();
+  simp_clint_if u_clint_if();
   // verilog_format: on
 
   // irq
@@ -89,15 +90,13 @@ module retrosoc (
   assign qspi.spi_io_out_o          = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_io_out_o : u_apb_qspi_if.spi_io_out_o;
   assign qspi.irq_o                 = '0;
 
-  // PicoRV32 built-in interrupt
-  // 0  Timer Interrupt
-  // 1  EBREAK/ECALL or Illegal Instruction
-  // 2  BUS Error (Unalign Memory Access)
-  assign s_irq[4:0]          = 5'd0;
-  assign s_irq[5]            = extn_irq_i;
-  assign s_irq[8:6]          = s_natv_irq;
-  assign s_irq[17:9]         = s_apb_irq;
-  assign s_irq[31:18]        = 14'd0;
+  // interrupt
+  assign s_irq[0]     = u_clint_if.tmr_irq_o;
+  assign s_irq[1]     = u_clint_if.sfr_irq_o;
+  assign s_irq[2]     = extn_irq_i;
+  assign s_irq[5:3]   = s_natv_irq;
+  assign s_irq[14:6]  = s_apb_irq;
+  assign s_irq[31:15] = 17'd0;
 // verilog_format: on
 
   core_wrapper u_core_wrapper (
@@ -138,6 +137,7 @@ module retrosoc (
       .qspi       (u_natv_qspi_if),
       .dma_nmi    (u_dma_nmi_if),
       .sysctrl    (u_sysctrl_if),
+      .clint      (u_clint_if),
       .irq_o      (s_natv_irq)
   );
 

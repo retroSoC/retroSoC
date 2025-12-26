@@ -29,6 +29,7 @@ module ip_natv_wrapper (
     qspi_if.dut        qspi,
     nmi_if.master      dma_nmi,
     sysctrl_if.dut     sysctrl,
+    simp_clint_if.dut  clint,
     // irq
     output logic [2:0] irq_o
     // verilog_format: on
@@ -46,6 +47,7 @@ module ip_natv_wrapper (
   nmi_if u_qspi_nmi_if ();
   nmi_if u_dma_nmi_if ();
   nmi_if u_sysctrl_nmi_if ();
+  nmi_if u_clint_nmi_if ();
 
   dma_hw_trg_if u_dma_hw_trg_if ();
 
@@ -127,6 +129,11 @@ module ip_natv_wrapper (
   assign u_sysctrl_nmi_if.wdata   = nmi.wdata;
   assign u_sysctrl_nmi_if.wstrb   = nmi.wstrb;
 
+  assign u_clint_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_CLINT_START);
+  assign u_clint_nmi_if.addr    = nmi.addr;
+  assign u_clint_nmi_if.wdata   = nmi.wdata;
+  assign u_clint_nmi_if.wstrb   = nmi.wstrb;
+
   // verilog_format: off
   assign nmi.ready              = (u_gpio_nmi_if.valid    & u_gpio_nmi_if.ready)  |
                                   (u_uart_nmi_if.valid    & u_uart_nmi_if.ready)  |
@@ -139,7 +146,8 @@ module ip_natv_wrapper (
                                   (u_onewire_nmi_if.valid & u_onewire_nmi_if.ready) |
                                   (u_qspi_nmi_if.valid    & u_qspi_nmi_if.ready) |
                                   (u_dma_nmi_if.valid     & u_dma_nmi_if.ready) |
-                                  (u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready);
+                                  (u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready) |
+                                  (u_clint_nmi_if.valid   & u_clint_nmi_if.ready);
 
   assign nmi.rdata              = ({32{(u_gpio_nmi_if.valid    & u_gpio_nmi_if.ready)}}    & u_gpio_nmi_if.rdata)  |
                                   ({32{(u_uart_nmi_if.valid    & u_uart_nmi_if.ready)}}    & u_uart_nmi_if.rdata)  |
@@ -152,7 +160,8 @@ module ip_natv_wrapper (
                                   ({32{(u_onewire_nmi_if.valid & u_onewire_nmi_if.ready)}} & u_onewire_nmi_if.rdata) |
                                   ({32{(u_qspi_nmi_if.valid    & u_qspi_nmi_if.ready)}}    & u_qspi_nmi_if.rdata) |
                                   ({32{(u_dma_nmi_if.valid     & u_dma_nmi_if.ready)}}     & u_dma_nmi_if.rdata) |
-                                  ({32{(u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready)}} & u_sysctrl_nmi_if.rdata);
+                                  ({32{(u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready)}} & u_sysctrl_nmi_if.rdata) |
+                                  ({32{(u_clint_nmi_if.valid   & u_clint_nmi_if.ready)}}   & u_clint_nmi_if.rdata);
  // verilog_format: on
 
   assign irq_o[0]               = uart.irq_o;
@@ -247,5 +256,12 @@ module ip_natv_wrapper (
       .rst_n_i(rst_n_i),
       .nmi    (u_sysctrl_nmi_if),
       .sysctrl(sysctrl)
+  );
+
+  nmi_clint u_nmi_clint (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_clint_nmi_if),
+      .clint  (clint)
   );
 endmodule

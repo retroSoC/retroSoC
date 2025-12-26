@@ -4,7 +4,7 @@ import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-ip = ['archinfo', 'common', 'crc', 'i2c', 'ps2', 'pwm', 'rng', 'rtc', 'spi', 'timer', 'uart', 'wdg']
+ip = ['archinfo', 'clint', 'common', 'crc', 'gpio', 'i2c', 'i2s', 'plic', 'ps2', 'pwm', 'rng', 'rtc', 'spi', 'timer', 'uart', 'wdg']
 
 for v in ip:
     # print(f'git clone git@github.com:retroSoC/{v}.git')
