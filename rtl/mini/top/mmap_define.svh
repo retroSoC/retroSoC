@@ -40,6 +40,7 @@
 `define NMI_QSPI_START     8'h90
 `define NMI_DMA_START      8'hA0
 `define NMI_SYSCTRL_START  8'hB0
+`define NMI_CLINT_START    8'hC0
 // APB IP REG ADDR
 `define APB_ARCHINFO_START 8'h00
 `define APB_RNG_START      8'h10
