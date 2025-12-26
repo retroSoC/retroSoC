@@ -45,7 +45,7 @@ void app_info() {
     printf("  license: MulanPSL-2.0 license\n\n");
 
     printf("Processor:\n");
-    printf("  CORE:              %s\n", HW_CORE);
+    printf("  CORE:              %s user id: %d\n", HW_CORE, reg_sysctrl_coresel);
     printf("  ISA:               %s\n", SW_ISA);
     printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
 
