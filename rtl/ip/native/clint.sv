@@ -124,6 +124,16 @@ module nmi_clint (
   );
 
 
+  assign s_clint_msip_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_CLINT_MSIP;
+  assign s_clint_msip_d  = nmi.wdata[0];
+  dffer #(1) u_clint_msip_dffer(
+    clk_i,
+    rst_n_i,
+    s_clint_msip_en,
+    s_clint_msip_d,
+    s_clint_msip_q
+  );
+
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
   dffr #(1) u_nmi_ready_dffr (
       clk_i,
@@ -145,5 +155,12 @@ module nmi_clint (
       default:               s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
+  dffer #(32) u_nmi_rdata_dffer (
+      clk_i,
+      rst_n_i,
+      s_nmi_rdata_en,
+      s_nmi_rdata_d,
+      s_nmi_rdata_q
+  );
 
 endmodule
