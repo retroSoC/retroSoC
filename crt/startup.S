@@ -13,11 +13,11 @@ _reset_vec:
 _start:
 # wait psram reset done
     la       a0, _flash_wait_start
-    la       a1, _flash_wait_end
+    la       a1, 2000
 wait_psram_reset:
     lw       t0, 0(a0)
     addi     a0, a0, 4
-    blt      a0, a1, wait_psram_reset # 128KB
+    blt      a0, a1, wait_psram_reset
 
 # ===== Startup Stage 1 =====
 # init the regfile
