@@ -7,6 +7,10 @@
 #include <tinystring.h>
 #include <tinysh.h>
 #include <tinybooter.h>
+// HACK:
+#if defined(CORE_MDD) || defined(IP_MDD)
+#include <../../rtl/mini/mpw/.build/user_design_info.h>
+#endif
 
 
 void app_info() {
@@ -41,48 +45,62 @@ void app_info() {
     printf("    <https://github.com/retroSoC/retroSoC>\n");
     printf("  author:       Yuchi Miao   <https://github.com/maksyuki>\n");
     printf("  contributor:  MrAMS        <https://github.com/MrAMS>\n");
-    printf("  version: v%s(commit: %s)\n", TINYLIB_VERSION, TINYLIB_COMMIT);
-    printf("  license: MulanPSL-2.0 license\n\n");
+    printf("  version:      v%s(commit: %s)\n", TINYLIB_VERSION, TINYLIB_COMMIT);
+    printf("  license:      MulanPSL-2.0 license\n\n");
 
     printf("Processor:\n");
-    printf("  CORE:              %s user id: %d\n", HW_CORE, reg_sysctrl_coresel);
-    printf("  ISA:               %s\n", SW_ISA);
-    printf("  FREQ:              %dMHz\n\n", CPU_FREQ);
+#ifndef CORE_MDD
+    printf("  CORE:              %s\n", HW_CORE);
+#else
+    uint32_t core_size = sizeof(user_core_info)/sizeof(user_core_info[0]);
+    printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
+    for(uint32_t i = 0; i < core_size; ++i) {
+        if(reg_sysctrl_coresel == i) printf("=>");
+        else printf("  ");
+        printf("[%d]: %-15s %-12s %-12s %s\n", i, user_core_info[i].name, user_core_info[i].isa, user_core_info[i].maintainer, user_core_info[i].repo);
+    }
+#endif
+
+    printf("\nSoftware:\n");
+    printf("  COMPILER:            %s\n", COMPILER_NAME);
+    printf("  CFLAGS:              %s\n", COMPILER_CFLAGS);
+    printf("  ISA:                 %s\n", COMPILER_ISA);
+    printf("  FREQ:                %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Address Range:\n");
-    printf("  SPI Flash:    @[0x%x-0x%x] %dMiB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
-    printf("  NMI IP MMIO:  @[0x%x-0x%x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
-    printf("  APB IP MMIO:  @[0x%x-0x%x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
-    printf("  On-chip RAM:  @[0x%x-0x%x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
-    printf("  Extern PSRAM: @[0x%x-0x%x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
-    printf("  QSPI0 MMIO:   @[0x%x-0x%x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
-    printf("  TF Card MMIO: @[0x%x-0x%x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
+    printf("  SPI Flash:           @[0x%x-0x%x] %dMiB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  NMI IP MMIO:         @[0x%x-0x%x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
+    printf("  APB IP MMIO:         @[0x%x-0x%x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
+    printf("  On-chip RAM:         @[0x%x-0x%x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
+    printf("  Extern PSRAM:        @[0x%x-0x%x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  QSPI0 MMIO:          @[0x%x-0x%x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
+    printf("  TF Card MMIO:        @[0x%x-0x%x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
-    printf("                     8 x GPIO          @0x%x\n", &reg_gpio_data);
-    printf("                     1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
-    printf("                     2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
-    printf("                     1 x PSRAM         @0x%x\n", &reg_psram_wait);
-    printf("                     1 x SPISD         @0x%x\n", &reg_spisd_mode);
-    printf("                     1 x I2C0          @0x%x\n", &reg_i2c0_clkdiv);
-    printf("                     1 x I2S           @0x%x\n", &reg_i2s_mode);
-    printf("                     1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
-    printf("                     1 x QSPI0         @0x%x\n", &reg_qspi0_mode);
-    printf("                     1 x DMA           @0x%x\n", &reg_dma_mode);
-    printf("                     1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
-    printf("                     1 x CLINT         @0x%x\n", &reg_clint_clkdiv);
-    printf("                     1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
-    printf("                     1 x RNG           @0x%x\n", &reg_rng_ctrl);
-    printf("                     1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);
-    printf("                     4 x PWM           @0x%x\n", &reg_pwm_ctrl);
-    printf("                     1 x PS2           @0x%x\n", &reg_ps2_ctrl);
-    printf("                     1 x I2C1(ADV)     @0x%x\n", &reg_i2c1_ctrl);
-    printf("                     1 x QSPI1         @0x%x\n", &reg_qspi1_status);
-    printf("                     1 x RTC           @0x%x\n", &reg_rtc_ctrl);
-    printf("                     1 x WDG           @0x%x\n", &reg_wdg_ctrl);
-    printf("                     1 x CRC           @0x%x\n", &reg_crc_ctrl);
-    printf("                     1 x TIMER3(ADV)   @0x%x\n", &reg_tim3_ctrl);
-    printf("                     1 x USER_IP(4KiB) @0x%x\n\n", &reg_user_ip_reg0);
+    printf("                       8 x GPIO          @0x%x\n", &reg_gpio_data);
+    printf("                       1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
+    printf("                       2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
+    printf("                       1 x PSRAM         @0x%x\n", &reg_psram_wait);
+    printf("                       1 x SPISD         @0x%x\n", &reg_spisd_mode);
+    printf("                       1 x I2C0          @0x%x\n", &reg_i2c0_clkdiv);
+    printf("                       1 x I2S           @0x%x\n", &reg_i2s_mode);
+    printf("                       1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
+    printf("                       1 x QSPI0         @0x%x\n", &reg_qspi0_mode);
+    printf("                       1 x DMA           @0x%x\n", &reg_dma_mode);
+    printf("                       1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
+    printf("                       1 x CLINT         @0x%x\n", &reg_clint_clkdiv);
+    printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
+    printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
+    printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);
+    printf("                       4 x PWM           @0x%x\n", &reg_pwm_ctrl);
+    printf("                       1 x PS2           @0x%x\n", &reg_ps2_ctrl);
+    printf("                       1 x I2C1(ADV)     @0x%x\n", &reg_i2c1_ctrl);
+    printf("                       1 x QSPI1         @0x%x\n", &reg_qspi1_status);
+    printf("                       1 x RTC           @0x%x\n", &reg_rtc_ctrl);
+    printf("                       1 x WDG           @0x%x\n", &reg_wdg_ctrl);
+    printf("                       1 x CRC           @0x%x\n", &reg_crc_ctrl);
+    printf("                       1 x TIMER3(ADV)   @0x%x\n", &reg_tim3_ctrl);
+    printf("                       1 x USER_IP(4KiB) @0x%x\n\n", &reg_user_ip_reg0);
     printf("#############################################################\n");
     printf("#############################################################\n");
 }

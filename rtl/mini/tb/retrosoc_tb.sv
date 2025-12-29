@@ -10,6 +10,7 @@
 
 
 `timescale 1 ns / 1 ps
+// `default_nettype none
 
 module retrosoc_tb;
   localparam real XTAL_CPU_FREQ = 24.0;  // MHz

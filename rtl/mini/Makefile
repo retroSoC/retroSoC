@@ -5,12 +5,14 @@ gen_mpw_code:
 ifeq ($(IP), MDD)
 	@echo "[mpw] generating user ip ..."
 	python3 $(RTL_PATH)/mpw/ip.py
+	python3 $(RTL_PATH)/mpw/info.py IP
 else
 	@echo "[mpw] skipping user ip generation"
 endif
 ifeq ($(CORE), MDD)
 	@echo "[mpw] generating core ..."
 	python3 $(RTL_PATH)/mpw/core.py $(SIMU)
+	python3 $(RTL_PATH)/mpw/info.py CORE
 else
 	@echo "[mpw] skipping core generation"
 endif
