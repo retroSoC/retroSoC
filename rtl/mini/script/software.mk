@@ -117,7 +117,7 @@ asm:
 	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
 	cp -rf app/asm/hello-asm.bin .sw_build/retrosoc_fw.bin
 
-firmware:
+firmware: gen_mpw_code
 	@mkdir -p .sw_build
 	cd .sw_build && ($(CP) -P -o flash_$(LINK_TYPE).lds $(LDS_PATH))
 	cd .sw_build && ($(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH))

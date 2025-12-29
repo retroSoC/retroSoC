@@ -68,13 +68,13 @@ void app_info() {
     printf("  FREQ:                %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Address Range:\n");
-    printf("  SPI Flash:           @[0x%x-0x%x] %dMiB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
-    printf("  NMI IP MMIO:         @[0x%x-0x%x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
-    printf("  APB IP MMIO:         @[0x%x-0x%x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
-    printf("  On-chip RAM:         @[0x%x-0x%x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
-    printf("  Extern PSRAM:        @[0x%x-0x%x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
-    printf("  QSPI0 MMIO:          @[0x%x-0x%x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
-    printf("  TF Card MMIO:        @[0x%x-0x%x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
+    printf("  SPI Flash:           @[0x%08x-0x%08x] %dMiB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  NMI IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
+    printf("  APB IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
+    printf("  On-chip RAM:         @[0x%08x-0x%08x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
+    printf("  Extern PSRAM:        @[0x%08x-0x%08x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  QSPI0 MMIO:          @[0x%08x-0x%08x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
+    printf("  TF Card MMIO:        @[0x%08x-0x%08x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
     printf("                       8 x GPIO          @0x%x\n", &reg_gpio_data);
