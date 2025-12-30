@@ -23,12 +23,13 @@ void parseArgs(int argc, char *argv[])
 {
     // clang-format off
     args.add_options()
-        ("h,help", "print usage")
-        ("d,dump-wave", "dump FST format waveform when log is enabled", cxxopts::value<bool>()->default_value("false"))
-        ("b,log-begin", "display log from [NUM] th cycle", cxxopts::value<unsigned long>()->default_value("0"))
-        ("e,log-end", "stop display log at [NUM] th cycle", cxxopts::value<unsigned long>()->default_value("0"))
-        ("t,sim-time", "stop simulation after [NUM] seconds", cxxopts::value<unsigned long>()->default_value("0"))
-        ("i,image", "run with this image file", cxxopts::value<std::string>());
+        ("h, help", "print usage")
+        ("d, dump-wave", "dump FST format waveform when log is enabled", cxxopts::value<bool>()->default_value("false"))
+        ("b, log-begin", "display log from [NUM] th cycle", cxxopts::value<unsigned long>()->default_value("0"))
+        ("e, log-end", "stop display log at [NUM] th cycle", cxxopts::value<unsigned long>()->default_value("0"))
+        ("s, core-sel", "select id [NUM] core", cxxopts::value<unsigned long>()->default_value("0"))
+        ("t, sim-time", "stop simulation after [NUM] seconds", cxxopts::value<unsigned long>()->default_value("0"))
+        ("i, image", "run with this image file", cxxopts::value<std::string>());
     // clang-format on
     Verilated::commandArgs(argc, argv);
 }
