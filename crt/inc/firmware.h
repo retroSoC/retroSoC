@@ -5,21 +5,11 @@
 #include <stdbool.h>
 
 #ifdef CORE_PICORV32
-#define HW_CORE "picorv32"
-#elif CORE_MDD
-#define HW_CORE "mdd(host core: picorv32)"
+#define HW_CORE "PicoRV32"
+#elif CORE_HAZARD3
+#define HW_CORE "HAZARD3"
 #else
 #define HW_CORE "none"
-#endif
-
-#ifdef ISA_RV32E
-#define SW_ISA "rv32e"
-#elif ISA_RV32I
-#define SW_ISA "rv32i"
-#elif ISA_RV32IM
-#define SW_ISA "rv32im"
-#else
-#define SW_ISA "none"
 #endif
 
 #define CPU_FREQ            72     // unit: MHz

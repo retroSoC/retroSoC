@@ -6,29 +6,34 @@ CC   = $(CROSS)gcc
 OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
-CFLAGS := -Wall -Wextra \
-          -Wl,-Bstatic,-T,flash_$(LINK_TYPE).lds,--strip-debug -O3 \
-          -ffreestanding \
-          -nostdlib
+GCC_FLAGS := -Wall -Wextra \
+             -Wl,-Bstatic,-T,flash_$(LINK_TYPE).lds,--strip-debug -O3 \
+             -ffreestanding \
+             -nostdlib
 
 ifeq ($(ISA), RV32E)
-    CFLAGS += -mabi=ilp32e
+    ISA_FLAGS := -mabi=ilp32e
 else
-    CFLAGS += -mabi=ilp32
+    ISA_FLAGS := -mabi=ilp32
 endif
 
 ifeq ($(ISA), RV32E)
-    CFLAGS += -march=rv32e
+    ISA_FLAGS += -march=rv32e
 else ifeq ($(ISA), RV32I)
-    CFLAGS += -march=rv32i
+    ISA_FLAGS += -march=rv32i
 else ifeq ($(ISA), RV32IM)
-    CFLAGS += -march=rv32im
+    ISA_FLAGS += -march=rv32im
 endif
 
 DEF_VAL += -DCORE_$(CORE)
 DEF_VAL += -DIP_$(IP)
-DEF_VAL += -DISA_$(ISA)
+DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
+DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS)"'
+DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
 DEF_VAL += -DSW_$(PROG_TYPE)
+
+CFLAGS := $(GCC_FLAGS)
+CFLAGS += $(ISA_FLAGS)
 CFLAGS += $(DEF_VAL)
 
 
@@ -82,6 +87,12 @@ endif
 INC_PATH := -I$(ROOT_PATH)/crt/inc \
             -I$(ROOT_PATH)/app/base/inc
 
+
+ifneq ($(findstring MDD,$(CORE) $(IP)),)
+INC_PATH += -I$(ROOT_PATH)/rtl/min/mpw/.build
+endif
+
+
 ifeq ($(PROG_TYPE), FULL)
 # extern app
 include $(ROOT_PATH)/app/userip/userip.mk
@@ -101,12 +112,12 @@ endif
 
 LDS_PATH := $(ROOT_PATH)/crt/flash_$(LINK_TYPE).lds
 
-asm:
+asm: gen_mpw_code
 	cd app/asm && make
 	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
 	cp -rf app/asm/hello-asm.bin .sw_build/retrosoc_fw.bin
 
-firmware:
+firmware: gen_mpw_code
 	@mkdir -p .sw_build
 	cd .sw_build && ($(CP) -P -o flash_$(LINK_TYPE).lds $(LDS_PATH))
 	cd .sw_build && ($(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH))

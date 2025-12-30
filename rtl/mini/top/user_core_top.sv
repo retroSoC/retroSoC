@@ -25,9 +25,15 @@ module user_core_top (
   nmi_if u_user_1_nmi_if ();
   nmi_if u_user_2_nmi_if ();
   nmi_if u_user_3_nmi_if ();
+  nmi_if u_user_4_nmi_if ();
+  nmi_if u_user_5_nmi_if ();
+  nmi_if u_user_6_nmi_if ();
   logic [31:0] s_user_1_irq;
   logic [31:0] s_user_2_irq;
   logic [31:0] s_user_3_irq;
+  logic [31:0] s_user_4_irq;
+  logic [31:0] s_user_5_irq;
+  logic [31:0] s_user_6_irq;
   // ...
   // verilog_format: on
   always_comb begin
@@ -44,6 +50,15 @@ module user_core_top (
     u_user_3_nmi_if.rdata = '0;
     u_user_3_nmi_if.ready = '0;
     s_user_3_irq          = '0;
+    u_user_4_nmi_if.rdata = '0;
+    u_user_4_nmi_if.ready = '0;
+    s_user_4_irq          = '0;
+    u_user_5_nmi_if.rdata = '0;
+    u_user_5_nmi_if.ready = '0;
+    s_user_5_irq          = '0;
+    u_user_6_nmi_if.rdata = '0;
+    u_user_6_nmi_if.ready = '0;
+    s_user_6_irq          = '0;
     unique case (sel_i)
       5'd1: begin
         nmi.valid             = u_user_1_nmi_if.valid;
@@ -72,6 +87,33 @@ module user_core_top (
         u_user_3_nmi_if.ready = nmi.ready;
         s_user_3_irq          = irq_i;
       end
+      5'd4: begin
+        nmi.valid             = u_user_4_nmi_if.valid;
+        nmi.addr              = u_user_4_nmi_if.addr;
+        nmi.wdata             = u_user_4_nmi_if.wdata;
+        nmi.wstrb             = u_user_4_nmi_if.wstrb;
+        u_user_4_nmi_if.rdata = nmi.rdata;
+        u_user_4_nmi_if.ready = nmi.ready;
+        s_user_4_irq          = irq_i;
+      end
+      5'd5: begin
+        nmi.valid             = u_user_5_nmi_if.valid;
+        nmi.addr              = u_user_5_nmi_if.addr;
+        nmi.wdata             = u_user_5_nmi_if.wdata;
+        nmi.wstrb             = u_user_5_nmi_if.wstrb;
+        u_user_5_nmi_if.rdata = nmi.rdata;
+        u_user_5_nmi_if.ready = nmi.ready;
+        s_user_5_irq          = irq_i;
+      end
+      5'd6: begin
+        nmi.valid             = u_user_6_nmi_if.valid;
+        nmi.addr              = u_user_6_nmi_if.addr;
+        nmi.wdata             = u_user_6_nmi_if.wdata;
+        nmi.wstrb             = u_user_6_nmi_if.wstrb;
+        u_user_6_nmi_if.rdata = nmi.rdata;
+        u_user_6_nmi_if.ready = nmi.ready;
+        s_user_6_irq          = irq_i;
+      end
       default: begin
         nmi.valid             = '0;
         nmi.addr              = '0;
@@ -86,6 +128,15 @@ module user_core_top (
         u_user_3_nmi_if.rdata = '0;
         u_user_3_nmi_if.ready = '0;
         s_user_3_irq          = '0;
+        u_user_4_nmi_if.rdata = '0;
+        u_user_4_nmi_if.ready = '0;
+        s_user_4_irq          = '0;
+        u_user_5_nmi_if.rdata = '0;
+        u_user_5_nmi_if.ready = '0;
+        s_user_5_irq          = '0;
+        u_user_6_nmi_if.rdata = '0;
+        u_user_6_nmi_if.ready = '0;
+        s_user_6_irq          = '0;
       end
     endcase
   end
@@ -112,4 +163,24 @@ module user_core_top (
       .nmi    (u_user_3_nmi_if)
   );
 
+  user_core_design_username4 #(4) u_user_core_design_username4 (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .irq_i  (s_user_4_irq),
+      .nmi    (u_user_4_nmi_if)
+  );
+
+  user_core_design_username5 #(5) u_user_core_design_username5 (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .irq_i  (s_user_5_irq),
+      .nmi    (u_user_5_nmi_if)
+  );
+
+  user_core_design_username6 #(6) u_user_core_design_username6 (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .irq_i  (s_user_6_irq),
+      .nmi    (u_user_6_nmi_if)
+  );
 endmodule
