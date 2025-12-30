@@ -37,6 +37,7 @@ endif
 
 lint: gen_mpw_code
 	@mkdir -p $(BUILD_DIR)
+	ls -alh $(RTL_PATH)/mpw/.build/core/username6
 
 comp: lint
 	verilator $(VERILATOR_FLAGS)
