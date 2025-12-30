@@ -112,7 +112,7 @@ endif
 
 LDS_PATH := $(ROOT_PATH)/crt/flash_$(LINK_TYPE).lds
 
-asm:
+asm: gen_mpw_code
 	cd app/asm && make
 	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
 	cp -rf app/asm/hello-asm.bin .sw_build/retrosoc_fw.bin

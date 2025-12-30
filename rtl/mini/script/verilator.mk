@@ -43,7 +43,7 @@ comp: lint
 	$(MAKE) VM_PARALLEL_BUILDS=1 OPT_FAST="-O3" -C $(SOC_COMPILE_HOME) -f V$(SOC_VSRC_TOP).mk -j$(nproc) > $(BUILD_DIR)/compile.log 2>&1
 
 sim: comp
-	$(BUILD_DIR)/emu -i .sw_build/retrosoc_fw.bin -t 420
+	$(BUILD_DIR)/emu -i .sw_build/retrosoc_fw.bin -t 600
 
 # $(BUILD_DIR)/emu -t $(SOC_SIM_TIME) -i $(RTL_PATH)/.sw_build/retrosoc_fw.bin
 # $(BUILD_DIR)/emu -i app/asm/hello-asm.bin
