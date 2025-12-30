@@ -40,8 +40,7 @@ lint: gen_mpw_code
 	ls -alh $(RTL_PATH)/mpw/.build/core/username6
 
 comp: lint
-	verilator $(VERILATOR_FLAGS)
-# verilator $(VERILATOR_FLAGS) > $(BUILD_DIR)/verilating.log 2>&1
+	verilator $(VERILATOR_FLAGS) > $(BUILD_DIR)/verilating.log 2>&1
 	$(MAKE) VM_PARALLEL_BUILDS=1 OPT_FAST="-O3" -C $(SOC_COMPILE_HOME) -f V$(SOC_VSRC_TOP).mk -j$(nproc) > $(BUILD_DIR)/compile.log 2>&1
 
 sim: comp
