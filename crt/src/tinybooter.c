@@ -48,7 +48,7 @@ void app_info() {
     printf("  version:      v%s(commit: %s)\n", TINYLIB_VERSION, TINYLIB_COMMIT);
     printf("  license:      MulanPSL-2.0 license\n\n");
 
-    printf("Processor:\n");
+    printf("User Processors:\n");
 #ifndef CORE_MDD
     printf("  CORE:              %s\n", HW_CORE);
 #else
@@ -60,6 +60,15 @@ void app_info() {
         printf("[%d]: %-15s %-12s %-12s %s\n", i, user_core_info[i].name, user_core_info[i].isa, user_core_info[i].maintainer, user_core_info[i].repo);
     }
 #endif
+    printf("\nUser IPs:\n");
+    uint32_t ip_size = sizeof(user_ip_info)/sizeof(user_ip_info[0]);
+    printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
+    for(uint32_t i = 0; i < ip_size; ++i) {
+        if(reg_sysctrl_ipsel == i) printf("=>");
+        else printf("  ");
+        printf("[%d]: %-15s %-12s %-12s %s\n", i, user_ip_info[i].name, user_ip_info[i].isa, user_ip_info[i].maintainer, user_ip_info[i].repo);
+    }
+
 
     printf("\nSoftware:\n");
     printf("  COMPILER:            %s\n", COMPILER_NAME);
