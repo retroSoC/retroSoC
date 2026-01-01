@@ -179,7 +179,7 @@ void qspi0_dma_xfer(uint32_t addr, uint32_t len) {
 }
 
 void qspi1_init() {
-    reg_gpio_oen = (uint32_t)0b011;
+    reg_gpio_oe = (uint32_t)0b100;
     reg_qspi1_status = (uint32_t)0b10000;
     reg_qspi1_status = (uint32_t)0b00000;
     reg_qspi1_intcfg = (uint32_t)0b00000;

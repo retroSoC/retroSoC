@@ -67,10 +67,10 @@ module user_ip_design_template #(
 
   // ========== USER CUSTOM AREA ==============
   // NOTE: If needed, define io logic here.
-  // `gpio_oen` is active low, meaning gpio is
-  // output when `gpio_oen[x]` = 1'b0.
+  // `gpio_oe` is active high, meaning gpio is
+  // output when `gpio_oe[x]` = 1'b1.
   assign gpio.gpio_out = '0;
-  assign gpio.gpio_oen = '0;
+  assign gpio.gpio_oe = '0;
   // ========== USER CUSTOM AREA END ==========
 
   // ====== INSTANCE USER CUSTOM TOP DESIGN HERE ======
