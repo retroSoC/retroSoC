@@ -9,9 +9,9 @@ void ip_gpio_test(int argc, char **argv) {
 
     printf("[NATV IP] gpio test\n");
 
-    printf("[GPIO ENB] %x\n", reg_gpio_oen);
-    reg_gpio_oen = (uint32_t)0b0000;
-    printf("[GPIO ENB] %x\n", reg_gpio_oen);
+    printf("[GPIO OE] %x\n", reg_gpio_oe);
+    reg_gpio_oe = (uint32_t)0b1111;
+    printf("[GPIO OE] %x\n", reg_gpio_oe);
 
     printf("[GPIO DATA] %x\n", reg_gpio_data);
     reg_gpio_data = (uint32_t)0xffff;
@@ -33,8 +33,8 @@ void ip_gpio_test(int argc, char **argv) {
 
     reg_gpio_data = (uint32_t)0b00;
     printf("key input test\n"); // need extn board
-    reg_gpio_oen = (uint32_t)0b0010;
-    printf("[GPIO ENB] %x\n", reg_gpio_oen);
+    reg_gpio_oe = (uint32_t)0b1101;
+    printf("[GPIO OE] %x\n", reg_gpio_oe);
     printf("[GPIO DATA] %x\n", reg_gpio_data);
     for (int i = 0; i < 60; ++i)
     {

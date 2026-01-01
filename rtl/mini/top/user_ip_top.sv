@@ -32,7 +32,7 @@ module user_ip_top (
   // verilog_format: on
   always_comb begin
     gpio.gpio_out            = '0;
-    gpio.gpio_oen            = '0;
+    gpio.gpio_oe             = '0;
     u_user_1_gpio_if.gpio_in = '0;
     u_user_2_gpio_if.gpio_in = '0;
     apb.pready               = '0;
@@ -55,7 +55,7 @@ module user_ip_top (
     unique case (sel_i)
       8'd1: begin
         gpio.gpio_out            = u_user_1_gpio_if.gpio_out;
-        gpio.gpio_oen            = u_user_1_gpio_if.gpio_oen;
+        gpio.gpio_oe             = u_user_1_gpio_if.gpio_oe;
         u_user_1_gpio_if.gpio_in = gpio.gpio_in;
         apb.pready               = u_user_1_apb_if.pready;
         apb.prdata               = u_user_1_apb_if.prdata;
@@ -70,7 +70,7 @@ module user_ip_top (
       end
       8'd2: begin
         gpio.gpio_out            = u_user_2_gpio_if.gpio_out;
-        gpio.gpio_oen            = u_user_2_gpio_if.gpio_oen;
+        gpio.gpio_oe             = u_user_2_gpio_if.gpio_oe;
         u_user_2_gpio_if.gpio_in = gpio.gpio_in;
         apb.pready               = u_user_2_apb_if.pready;
         apb.prdata               = u_user_2_apb_if.prdata;
@@ -85,7 +85,7 @@ module user_ip_top (
       end
       default: begin
         gpio.gpio_out            = '0;
-        gpio.gpio_oen            = '0;
+        gpio.gpio_oe             = '0;
         u_user_1_gpio_if.gpio_in = '0;
         u_user_2_gpio_if.gpio_in = '0;
         apb.pready               = '0;

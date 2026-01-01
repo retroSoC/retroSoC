@@ -35,7 +35,7 @@
 // verilog_format: off
 `define SIMP_GPIO_NUM  8
 `define SIMP_GPIO_DATA 8'h00
-`define SIMP_GPIO_OEN  8'h04
+`define SIMP_GPIO_OE   8'h04
 `define SIMP_GPIO_PUN  8'h08
 `define SIMP_GPIO_PDN  8'h0C
 // verilog_format: on
@@ -45,11 +45,11 @@
 interface simp_gpio_if ();
   logic [`SIMP_GPIO_NUM-1:0] gpio_out;
   logic [`SIMP_GPIO_NUM-1:0] gpio_in;
-  logic [`SIMP_GPIO_NUM-1:0] gpio_oen;
+  logic [`SIMP_GPIO_NUM-1:0] gpio_oe;
   logic [`SIMP_GPIO_NUM-1:0] gpio_pun;
   logic [`SIMP_GPIO_NUM-1:0] gpio_pdn;
 
-  modport dut(output gpio_out, input gpio_in, output gpio_oen, output gpio_pun, output gpio_pdn);
+  modport dut(output gpio_out, input gpio_in, output gpio_oe, output gpio_pun, output gpio_pdn);
 endinterface
 
 module simple_gpio (
@@ -68,8 +68,8 @@ module simple_gpio (
 
   logic s_gpio_en;
   logic [`SIMP_GPIO_NUM-1:0] s_gpio_d, s_gpio_q;
-  logic s_gpio_oen_en;
-  logic [`SIMP_GPIO_NUM-1:0] s_gpio_oen_d, s_gpio_oen_q;
+  logic s_gpio_oe_en;
+  logic [`SIMP_GPIO_NUM-1:0] s_gpio_oe_d, s_gpio_oe_q;
   logic s_gpio_pun_en;
   logic [`SIMP_GPIO_NUM-1:0] s_gpio_pun_d, s_gpio_pun_q;
   logic s_gpio_pdn_en;
@@ -82,7 +82,7 @@ module simple_gpio (
   assign nmi.rdata      = s_nmi_rdata_q;
 
   assign gpio.gpio_out  = s_gpio_q;
-  assign gpio.gpio_oen  = {(`SIMP_GPIO_NUM) {~rst_n_i}} | s_gpio_oen_q;
+  assign gpio.gpio_oe   = {(`SIMP_GPIO_NUM) {~rst_n_i}} | s_gpio_oe_q;
   assign gpio.gpio_pun  = s_gpio_pun_q;
   assign gpio.gpio_pdn  = s_gpio_pdn_q;
 
@@ -97,14 +97,14 @@ module simple_gpio (
       s_gpio_q
   );
 
-  assign s_gpio_oen_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_GPIO_OEN;
-  assign s_gpio_oen_d  = nmi.wdata[7:0];
-  dffer #(`SIMP_GPIO_NUM) u_gpio_oen_dffer (
+  assign s_gpio_oe_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_GPIO_OE;
+  assign s_gpio_oe_d  = nmi.wdata[7:0];
+  dffer #(`SIMP_GPIO_NUM) u_gpio_oe_dffer (
       clk_i,
       rst_n_i,
-      s_gpio_oen_en,
-      s_gpio_oen_d,
-      s_gpio_oen_q
+      s_gpio_oe_en,
+      s_gpio_oe_d,
+      s_gpio_oe_q
   );
 
   assign s_gpio_pun_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_GPIO_PUN;
@@ -140,7 +140,7 @@ module simple_gpio (
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
       `SIMP_GPIO_DATA: s_nmi_rdata_d = {16'd0, s_gpio_q, gpio.gpio_in};
-      `SIMP_GPIO_OEN:  s_nmi_rdata_d = {24'd0, s_gpio_oen_q};
+      `SIMP_GPIO_OE:   s_nmi_rdata_d = {24'd0, s_gpio_oe_q};
       `SIMP_GPIO_PUN:  s_nmi_rdata_d = {24'd0, s_gpio_pun_q};
       `SIMP_GPIO_PDN:  s_nmi_rdata_d = {24'd0, s_gpio_pdn_q};
       default:         s_nmi_rdata_d = s_nmi_rdata_q;

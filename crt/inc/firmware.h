@@ -36,7 +36,7 @@
 
 // gpio
 #define reg_gpio_data      (*(volatile uint32_t*)0x10000000)
-#define reg_gpio_oen       (*(volatile uint32_t*)0x10000004)
+#define reg_gpio_oe        (*(volatile uint32_t*)0x10000004)
 #define reg_gpio_pun       (*(volatile uint32_t*)0x10000008)
 #define reg_gpio_pdn       (*(volatile uint32_t*)0x1000000c)
 // uart1

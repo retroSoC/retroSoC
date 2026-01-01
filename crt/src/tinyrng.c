@@ -18,6 +18,7 @@ void ip_rng_test(int argc, char **argv) {
 
     printf("reset the seed\n");
     reg_rng_seed = (uint32_t)0;
+    printf("[rng seed] %x\n", reg_rng_seed);
     for (int i = 0; i < 5; ++i) {
         printf("[rng val] %x\n", reg_rng_val);
     }
