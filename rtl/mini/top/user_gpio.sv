@@ -12,9 +12,19 @@
 `include "mdd_config.svh"
 
 interface user_gpio_if ();
-  logic [`USER_GPIO_NUM-1:0] gpio_out;
   logic [`USER_GPIO_NUM-1:0] gpio_in;
+  logic [`USER_GPIO_NUM-1:0] gpio_out;
   logic [`USER_GPIO_NUM-1:0] gpio_oe;
+  logic [`USER_GPIO_NUM-1:0] gpio_cs;
+  logic [`USER_GPIO_NUM-1:0] gpio_pu;
+  logic [`USER_GPIO_NUM-1:0] gpio_pd;
 
-  modport dut(output gpio_out, input gpio_in, output gpio_oe);
+  modport dut(
+      input gpio_in,
+      output gpio_oe,
+      output gpio_cs,
+      output gpio_pu,
+      output gpio_pd,
+      output gpio_out
+  );
 endinterface

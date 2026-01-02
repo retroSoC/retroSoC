@@ -257,3 +257,77 @@ module tc_io_tri_schmitt_pad (
 `endif
 
 endmodule
+
+
+module tc_io_tri_full_pad (
+    inout  wire  pad,
+    input  logic c2p,
+    input  logic c2p_en,
+    output logic p2c,
+    input  logic cs,
+    input  logic pu,
+    input  logic pd
+);
+
+`ifdef PDK_BEHAV
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+
+`elsif PDK_IHP130
+  (* keep *) (* dont_touch = "true" *)
+  sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(c2p_en),
+      .p2c   (p2c)
+  );
+
+`elsif PDK_S110
+  (* keep *) (* dont_touch = "true" *)
+  PBS4W u_PBS4W (
+      .OEN(~c2p_en),
+      .I  (c2p),
+      .PAD(pad),
+      .C  (p2c)
+  );
+
+`elsif PDK_ICS55
+  (* keep *) (* dont_touch = "true" *)
+  P65_1233_PBMUX u_P65_1233_PBMUX (
+      .C  (p2c),
+      .A  (),
+      .PAD(pad),
+      .IE (~c2p_en),
+      .CS (cs),       // 1: CMOS 0: SCHMI
+      .I  (c2p),
+      .OE (c2p_en),
+      .OD (1'b0),
+      .PU (pu),       // active high
+      .PD (pd),       // active high
+      .DS0(1'b0),
+      .DS1(1'b1)      // 8mA
+  );
+
+`elsif PDK_GF180
+  (* keep *) (* dont_touch = "true" *)
+  gf180mcu_fd_io__bi_t u_gf180mcu_fd_io__bi_t (
+      .CS   (1'b1),     // 1: SCHMI 0: CMOS
+      .SL   (1'b0),     // 1: SLOW 0: FAST
+      .IE   (~c2p_en),
+      .OE   (c2p_en),
+      .PU   (1'b0),
+      .PD   (1'b0),
+      .A    (c2p),
+      .PDRV0(1'b0),
+      .PDRV1(1'b0),     // 4mA
+      .PAD  (pad),
+      .Y    (p2c),
+      .DVDD (),
+      .DVSS (),
+      .VDD  (),
+      .VSS  ()
+  );
+
+`endif
+
+endmodule

@@ -33,9 +33,13 @@ module retrosoc_tb;
   wire [2:0] s_pll_cfg;
 `endif
 
+  wire s_user_gpio_0_io;
+  reg  r_user_gpio_0_io;
   wire s_uart0_tx;
   // for handle x-prop issue
   wire s_uart0_rx = 1'b1;
+  wire s_gpio_0_io;
+  wire s_gpio_1_ip;
   wire s_psram_sck;
   wire s_psram_nss0;
   wire s_psram_nss1;
@@ -79,6 +83,7 @@ module retrosoc_tb;
 `ifdef HAVE_PLL
   assign s_pll_cfg = r_pll_cfg;
 `endif
+  assign s_user_gpio_0_io = r_user_gpio_0_io;
 
   retrosoc_asic u_retrosoc_asic (
       .xi_i_pad           (r_xtal_clk),
@@ -95,7 +100,7 @@ module retrosoc_tb;
       .core_sel_4_i_pad   (s_core_sel[4]),
 `endif
 `ifdef IP_MDD
-      .user_gpio_0_io_pad (),
+      .user_gpio_0_io_pad (s_user_gpio_0_io),
       .user_gpio_1_io_pad (),
       .user_gpio_2_io_pad (),
       .user_gpio_3_io_pad (),
@@ -122,8 +127,8 @@ module retrosoc_tb;
       .sys_clkdiv4_o_pad  (),
       .uart0_tx_o_pad     (s_uart0_tx),
       .uart0_rx_i_pad     (s_uart0_rx),
-      .gpio_0_io_pad      (),
-      .gpio_1_io_pad      (),
+      .gpio_0_io_pad      (s_gpio_0_io),
+      .gpio_1_io_pad      (s_gpio_1_io),
       .gpio_2_io_pad      (),
       .gpio_3_io_pad      (),
       .gpio_4_io_pad      (),
@@ -163,7 +168,7 @@ module retrosoc_tb;
       .qspi_nss0_o_pad    (s_qspi_nss0_o),
       .qspi_nss1_o_pad    (s_qspi_nss1_o),
       .qspi_nss2_o_pad    (s_qspi_nss2_o),
-      .qspi_nss3_o_pad    (), // tft test
+      .qspi_nss3_o_pad    (),                  // tft test
       .qspi_dat0_io_pad   (s_qspi_dat0_io),
       .qspi_dat1_io_pad   (s_qspi_dat1_io),
       .qspi_dat2_io_pad   (s_qspi_dat2_io),
@@ -222,7 +227,12 @@ module retrosoc_tb;
       .rs232_tx_o(s_uart1_rx)
   );
 
-  kdb_model u_kdb_model (
+  kdb_model u_kdb_model_0 (
+      .ps2_clk_o(s_gpio_0_io),
+      .ps2_dat_o(s_gpio_1_io)
+  );
+
+  kdb_model u_kdb_model_1 (
       .ps2_clk_o(s_ps2_clk),
       .ps2_dat_o(s_ps2_dat)
   );
@@ -265,13 +275,25 @@ module retrosoc_tb;
     r_rst_n = 1;
   end
 
-  initial begin : KDB_MODEL_BLOCK
+  initial begin : KDB_MODEL_0_BLOCK
     integer i;
     #1000;
     while (1) begin
       #1000;
       for (i = 0; i < 26; ++i) begin
-        u_kdb_model.send_code(i + 8'd65);
+        u_kdb_model_0.send_code(i + 8'd65);
+        #500;
+      end
+    end
+  end
+
+  initial begin : KDB_MODEL_1_BLOCK
+    integer i;
+    #1000;
+    while (1) begin
+      #1000;
+      for (i = 0; i < 26; ++i) begin
+        u_kdb_model_1.send_code(i + 8'd65);
         #500;
       end
     end
@@ -289,6 +311,15 @@ module retrosoc_tb;
     end
   end
 
+  initial begin : USER_GPIO_BLOCK
+    integer i;
+    #1000;
+    r_user_gpio_0_io = 1'b0;
+    while (1) begin
+      #150000;
+      r_user_gpio_0_io = ~r_user_gpio_0_io;
+    end
+  end
 
   initial begin
     if ($test$plusargs("behv_wave")) begin
@@ -298,7 +329,10 @@ module retrosoc_tb;
       $fsdbDumpMDA();
       // #398844962;
       // #867652;
-      #21149063;
+      // #145541740;
+      #205541740;
+      // #382928081;
+      // #21149063;
       // #1667652;
       // #327820116;
       // #327179489;
@@ -341,7 +375,7 @@ module retrosoc_tb;
   end
 
   initial begin
-    if(!$value$plusargs("core_sel=%d", r_core_sel)) r_core_sel = 5'd0;
+    if (!$value$plusargs("core_sel=%d", r_core_sel)) r_core_sel = 5'd0;
 
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;

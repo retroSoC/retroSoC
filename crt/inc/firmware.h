@@ -214,5 +214,9 @@
 #define reg_user_ip_reg0   (*(volatile uint32_t*)0x2000F000)
 #define reg_user_ip_reg1   (*(volatile uint32_t*)0x2000F004)
 #define reg_user_ip_reg2   (*(volatile uint32_t*)0x2000F008)
+#define reg_user_ip_reg3   (*(volatile uint32_t*)0x2000F00C)
+#define reg_user_ip_reg4   (*(volatile uint32_t*)0x2000F010)
+#define reg_user_ip_reg5   (*(volatile uint32_t*)0x2000F014)
+#define reg_user_ip_reg6   (*(volatile uint32_t*)0x2000F018)
 // ... user custom area ...
 #endif
