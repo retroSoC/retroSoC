@@ -6,6 +6,7 @@
 
 
 void qspi0_init(QSPI0_InitStruct_t val) {
+    reg_gpio_oe          = (uint32_t)0b100;
     reg_qspi0_mode       = val.mode;
     reg_qspi0_nss        = val.nss;
     reg_qspi0_clkdiv     = val.clkdiv;

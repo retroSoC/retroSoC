@@ -31,10 +31,15 @@ module user_ip_top (
   // ...
   // verilog_format: on
   always_comb begin
+    // gpio
     gpio.gpio_out            = '0;
     gpio.gpio_oe             = '0;
+    gpio.gpio_cs             = '0;
+    gpio.gpio_pu             = '0;
+    gpio.gpio_pd             = '0;
     u_user_1_gpio_if.gpio_in = '0;
     u_user_2_gpio_if.gpio_in = '0;
+    // apb
     apb.pready               = '0;
     apb.prdata               = '0;
     apb.pslverr              = '0;
@@ -54,9 +59,14 @@ module user_ip_top (
     u_user_2_apb_if.pstrb    = '0;
     unique case (sel_i)
       8'd1: begin
+        // gpio
         gpio.gpio_out            = u_user_1_gpio_if.gpio_out;
         gpio.gpio_oe             = u_user_1_gpio_if.gpio_oe;
+        gpio.gpio_cs             = u_user_1_gpio_if.gpio_cs;
+        gpio.gpio_pu             = u_user_1_gpio_if.gpio_pu;
+        gpio.gpio_pd             = u_user_1_gpio_if.gpio_pd;
         u_user_1_gpio_if.gpio_in = gpio.gpio_in;
+        // apb
         apb.pready               = u_user_1_apb_if.pready;
         apb.prdata               = u_user_1_apb_if.prdata;
         apb.pslverr              = u_user_1_apb_if.pslverr;
@@ -69,9 +79,14 @@ module user_ip_top (
         u_user_1_apb_if.pstrb    = apb.pstrb;
       end
       8'd2: begin
+        // gpio
         gpio.gpio_out            = u_user_2_gpio_if.gpio_out;
         gpio.gpio_oe             = u_user_2_gpio_if.gpio_oe;
+        gpio.gpio_cs             = u_user_2_gpio_if.gpio_cs;
+        gpio.gpio_pu             = u_user_2_gpio_if.gpio_pu;
+        gpio.gpio_pd             = u_user_2_gpio_if.gpio_pd;
         u_user_2_gpio_if.gpio_in = gpio.gpio_in;
+        // apb
         apb.pready               = u_user_2_apb_if.pready;
         apb.prdata               = u_user_2_apb_if.prdata;
         apb.pslverr              = u_user_2_apb_if.pslverr;
@@ -84,10 +99,15 @@ module user_ip_top (
         u_user_2_apb_if.pstrb    = apb.pstrb;
       end
       default: begin
+        // gpio
         gpio.gpio_out            = '0;
         gpio.gpio_oe             = '0;
+        gpio.gpio_cs             = '0;
+        gpio.gpio_pu             = '0;
+        gpio.gpio_pd             = '0;
         u_user_1_gpio_if.gpio_in = '0;
         u_user_2_gpio_if.gpio_in = '0;
+        // apb
         apb.pready               = '0;
         apb.prdata               = '0;
         apb.pslverr              = '0;

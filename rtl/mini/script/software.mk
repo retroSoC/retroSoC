@@ -112,12 +112,15 @@ endif
 
 LDS_PATH := $(ROOT_PATH)/crt/flash_$(LINK_TYPE).lds
 
+upd_ver_info:
+	python3 crt/ver.py
+
 asm: gen_mpw_code
 	cd app/asm && make
 	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
 	cp -rf app/asm/hello-asm.bin .sw_build/retrosoc_fw.bin
 
-firmware: gen_mpw_code
+firmware: gen_mpw_code upd_ver_info
 	@mkdir -p .sw_build
 	cd .sw_build && ($(CP) -P -o flash_$(LINK_TYPE).lds $(LDS_PATH))
 	cd .sw_build && ($(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH))

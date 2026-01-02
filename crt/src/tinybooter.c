@@ -1,6 +1,6 @@
 #include <firmware.h>
 #include <tinyprintf.h>
-#include <tinyver.h>
+#include <socver.h>
 #include <tinypsram.h>
 #include <tinytim.h>
 #include <tinyprint.h>
@@ -45,8 +45,10 @@ void app_info() {
     printf("    <https://github.com/retroSoC/retroSoC>\n");
     printf("  author:       Yuchi Miao   <https://github.com/maksyuki>\n");
     printf("  contributor:  MrAMS        <https://github.com/MrAMS>\n");
-    printf("  version:      v%s(commit: %s)\n", TINYLIB_VERSION, TINYLIB_COMMIT);
     printf("  license:      MulanPSL-2.0 license\n\n");
+    printf("  series:       retroSoC Mini\n");
+    printf("  specs:        Gen2\n");
+    printf("  version:      %s(commit: %s)\n\n", RETROSOC_BRANCH, RETROSOC_COMMIT);
 
     printf("User Processors:\n");
 #ifndef CORE_MDD
