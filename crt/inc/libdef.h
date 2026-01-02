@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <firmware.h>
-#include <tinyver.h>
+#include <socver.h>
 #include <tinybooter.h>
 #include <tinyuart.h>
 #include <tinystring.h>
