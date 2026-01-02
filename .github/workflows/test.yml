@@ -28,7 +28,9 @@ jobs:
         riscv32-unknown-elf-gcc --version
 
     - name: Setup Verilator and MPW Repo
-      run: python3 setup.py
+      run: |
+        pip install tomli
+        python3 setup.py
 
     - name: Download clusterIP
       run: python3 rtl/clusterip/setup.py
