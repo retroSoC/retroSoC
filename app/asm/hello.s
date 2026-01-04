@@ -18,7 +18,7 @@ APP_INIT:
     li t2, 6
 APP_LOOP:
     la s0, msg_luck
-    li a0, 72
+    li a0, 67
 INTER_LOOP:
     addi s0, s0, 1
     jal ra, PUTC
@@ -139,5 +139,5 @@ PUTC:
 
 .section .data
 msg_hello: .string "Hello retroSoC!\n"
-msg_luck: .string "Have a good luck!\n"
+msg_luck: .string "Clock in luck, reset doubts!\n"
 msg_succ: .string "Mem wr/rd test succ!\n"
