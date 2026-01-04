@@ -91,8 +91,8 @@ module retrosoc (
   assign qspi.irq_o                 = '0;
 
   // interrupt
-  assign s_irq[0]     = u_clint_if.tmr_irq_o;
-  assign s_irq[1]     = u_clint_if.sfr_irq_o;
+  assign s_irq[0]     = u_clint_if.sfr_irq_o;
+  assign s_irq[1]     = u_clint_if.tmr_irq_o;
   assign s_irq[2]     = extn_irq_i;
   assign s_irq[5:3]   = s_natv_irq;
   assign s_irq[14:6]  = s_apb_irq;
