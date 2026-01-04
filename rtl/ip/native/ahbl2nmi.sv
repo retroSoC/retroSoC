@@ -41,28 +41,7 @@ module ahbl2nmi (
   // NOTE: need to gurantee `ahbl.hready` and `ahbl.hrdata` sampled in same cycle
   assign ahbl.hready = (s_fsm_q == STATE_IDLE) || nmi.ready;
   assign ahbl.hresp  = AHBL_RESP_OKAY;
-  always_comb begin
-    ahbl.hrdata = '0;
-    unique case (s_hsize_q)
-      AHBL_SIZE_BYTE: begin
-        unique case (s_haddr_q[1:0])
-          2'b00:   ahbl.hrdata = {24'b0, nmi.rdata[7:0]};
-          2'b01:   ahbl.hrdata = {24'b0, nmi.rdata[15:8]};
-          2'b10:   ahbl.hrdata = {24'b0, nmi.rdata[23:16]};
-          2'b11:   ahbl.hrdata = {24'b0, nmi.rdata[31:24]};
-          default: ahbl.hrdata = {24'b0, nmi.rdata[7:0]};
-        endcase
-      end
-      AHBL_SIZE_HWRD: begin
-        unique case (s_haddr_q[1])
-          1'b0: ahbl.hrdata = {16'b0, nmi.rdata[15:0]};
-          1'b1: ahbl.hrdata = {16'b0, nmi.rdata[31:16]};
-        endcase
-      end
-      AHBL_SIZE_WORD: ahbl.hrdata = nmi.rdata;
-      default:   ahbl.hrdata = nmi.rdata;
-    endcase
-  end
+  assign ahbl.hrdata = nmi.rdata;
 
   // nmi if
   assign nmi.valid = s_fsm_q != STATE_IDLE;
@@ -130,7 +109,7 @@ module ahbl2nmi (
     unique case (s_fsm_q)
       STATE_IDLE: begin
         // just for no-burst ahbl
-        if (ahbl.htrans == AHBL_TRANS_NSEQ && ahbl.hburst == '0) begin
+        if (ahbl.htrans == AHBL_TRANS_NSEQ && ahbl.hready) begin
           s_fsm_d    = STATE_DATA;
           s_haddr_d  = ahbl.haddr;
           s_hwrite_d = ahbl.hwrite;
@@ -140,7 +119,7 @@ module ahbl2nmi (
       STATE_DATA: begin
         if (~nmi.ready) s_fsm_d = STATE_WAIT;
         // nmi.ready == 1'b1
-        else if (ahbl.htrans == AHBL_TRANS_NSEQ && ahbl.hburst == '0) begin
+        else if (ahbl.htrans == AHBL_TRANS_NSEQ) begin
           s_fsm_d    = STATE_DATA;
           s_haddr_d  = ahbl.haddr;
           s_hwrite_d = ahbl.hwrite;
@@ -149,7 +128,7 @@ module ahbl2nmi (
       end
       STATE_WAIT: begin
         if (nmi.ready) begin
-          if (ahbl.htrans == AHBL_TRANS_NSEQ && ahbl.hburst == '0) begin
+          if (ahbl.htrans == AHBL_TRANS_NSEQ) begin
             s_fsm_d    = STATE_DATA;
             s_haddr_d  = ahbl.haddr;
             s_hwrite_d = ahbl.hwrite;
