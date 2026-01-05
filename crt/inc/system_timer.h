@@ -31,12 +31,13 @@
 #define __SYSTEM_TIMER_H__
 
 #include <system_gcc.h>
+#include <system_base.h>
 
 typedef struct {
-    __IOM uint32_t clkdiv;
     __IOM uint64_t mtime;
     __IOM uint64_t mtimecmp;
     __IOM uint32_t msip;
+    __IOM uint32_t clkdiv;
 } SysTimer_Type;
 
 

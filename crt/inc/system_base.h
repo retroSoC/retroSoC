@@ -32,6 +32,7 @@
 
 #include <stdint.h>
 #include <system_csr.h>
+#include <system_gcc.h>
 
 
 #ifndef __RISCV_XLEN

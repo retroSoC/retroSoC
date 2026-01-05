@@ -84,6 +84,7 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
 ifeq ($(HAVE_CSR), YES)
 TINYLIB_PATH += $(ROOT_PATH)/crt/system_irq.S
 TINYLIB_PATH += $(ROOT_PATH)/crt/src/system_irq_handler.c
+TINYLIB_PATH += $(ROOT_PATH)/crt/src/tinyirq.c
 endif
 
 ifeq ($(PROG_TYPE), FULL)

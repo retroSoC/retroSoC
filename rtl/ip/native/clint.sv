@@ -12,12 +12,12 @@
 `define CLINT_DEF_SV
 
 // verilog_format: off
-`define NATV_CLINT_CLKDIV    8'h00
-`define NATV_CLINT_MTIMEL    8'h04
-`define NATV_CLINT_MTIMEH    8'h08
-`define NATV_CLINT_MTIMECMPL 8'h0C
-`define NATV_CLINT_MTIMECMPH 8'h10
-`define NATV_CLINT_MSIP      8'h14
+`define NATV_CLINT_MTIMEL    8'h00
+`define NATV_CLINT_MTIMEH    8'h04
+`define NATV_CLINT_MTIMECMPL 8'h08
+`define NATV_CLINT_MTIMECMPH 8'h0C
+`define NATV_CLINT_MSIP      8'h10
+`define NATV_CLINT_CLKDIV    8'h14
 // verilog_format: on
 
 `endif
