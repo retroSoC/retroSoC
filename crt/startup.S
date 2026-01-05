@@ -102,7 +102,9 @@ bss_cleaner:
 
 main_start:
 # call main
+#ifdef CSR_ENABLE
     call     _premain_init # init irq
+#endif
     call     main
 loop:
     j        loop
