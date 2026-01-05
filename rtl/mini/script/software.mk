@@ -18,11 +18,23 @@ else
 endif
 
 ifeq ($(ISA), RV32E)
-    ISA_FLAGS += -march=rv32e
+    ifeq ($(HAVE_CSR), YES)
+        ISA_FLAGS += -march=rv32e_zicsr
+    else
+        ISA_FLAGS += -march=rv32e
+    endif
 else ifeq ($(ISA), RV32I)
-    ISA_FLAGS += -march=rv32i
+    ifeq ($(HAVE_CSR), YES)
+        ISA_FLAGS += -march=rv32i_zicsr
+    else
+        ISA_FLAGS += -march=rv32i
+    endif
 else ifeq ($(ISA), RV32IM)
-    ISA_FLAGS += -march=rv32im
+    ifeq ($(HAVE_CSR), YES)
+        ISA_FLAGS += -march=rv32im_zicsr
+    else
+        ISA_FLAGS += -march=rv32im
+    endif
 endif
 
 DEF_VAL += -DCORE_$(CORE)
@@ -31,6 +43,9 @@ DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
 DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
 DEF_VAL += -DSW_$(PROG_TYPE)
+ifeq ($(HAVE_CSR), YES)
+    DEF_VAL += -DCSR_ENABLE
+endif
 
 CFLAGS := $(GCC_FLAGS)
 CFLAGS += $(ISA_FLAGS)
@@ -39,8 +54,6 @@ CFLAGS += $(DEF_VAL)
 
 
 TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
-                $(ROOT_PATH)/crt/irq_opt.S \
-                $(ROOT_PATH)/crt/irq_gcc.S \
                 $(ROOT_PATH)/crt/src/tinylib.c \
                 $(ROOT_PATH)/crt/src/tinyuart.c \
                 $(ROOT_PATH)/crt/src/tinystring.c \
@@ -67,6 +80,11 @@ TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
                 $(ROOT_PATH)/crt/src/tinybench.c \
                 $(ROOT_PATH)/crt/src/tinybooter.c \
                 $(ROOT_PATH)/crt/src/main.c
+
+ifeq ($(HAVE_CSR), YES)
+TINYLIB_PATH += $(ROOT_PATH)/crt/system_irq.S
+TINYLIB_PATH += $(ROOT_PATH)/crt/src/system_irq_handler.c
+endif
 
 ifeq ($(PROG_TYPE), FULL)
 TINYLIB_PATH += $(ROOT_PATH)/crt/src/tinysh.c

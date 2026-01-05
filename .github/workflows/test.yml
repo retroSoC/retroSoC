@@ -42,7 +42,7 @@ jobs:
       run: python3 app/setup.py
 
     - name: Compile Firmware
-      run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32I PROG_TYPE=BASE LINK_TYPE=ld2_psram firmware
+      run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32I HAVE_CSR=NO PROG_TYPE=BASE LINK_TYPE=ld2_psram firmware
 
     - name: Build and Run sim
       run: |
