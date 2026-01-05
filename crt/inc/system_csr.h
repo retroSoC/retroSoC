@@ -30,87 +30,7 @@
 #ifndef __SYSTEM_CSR_H__
 #define __SYSTEM_CSR_H__
 
-#if __riscv_xlen == 64
-# define SLL32                  sllw
-# define STORE                  sd
-# define LOAD                   ld
-# define LWU                    lwu
-# define LOG_REGBYTES           3
-#else
-# define SLL32                  sll
-# define STORE                  sw
-# define LOAD                   lw
-# define LWU                    lw
-# define LOG_REGBYTES           2
-#endif /* __riscv_xlen */
-
-#define REGBYTES (1 << LOG_REGBYTES)
-
-#define __rv_likely(x)          __builtin_expect((x), 1)
-#define __rv_unlikely(x)        __builtin_expect((x), 0)
-
-#define __RV_ROUNDUP(a, b)      ((((a)-1)/(b)+1)*(b))
-#define __RV_ROUNDDOWN(a, b)    ((a)/(b)*(b))
-
-#define __RV_MAX(a, b)          ((a) > (b) ? (a) : (b))
-#define __RV_MIN(a, b)          ((a) < (b) ? (a) : (b))
-#define __RV_CLAMP(a, lo, hi)   MIN(MAX(a, lo), hi)
-
-#define __RV_EXTRACT_FIELD(val, which)                  (((val) & (which)) / ((which) & ~((which)-1)))
-#define __RV_INSERT_FIELD(val, which, fieldval)         (((val) & ~(which)) | ((fieldval) * ((which) & ~((which)-1))))
-
-#ifdef __ASSEMBLY__
-#define _AC(X,Y)                X
-#define _AT(T,X)                X
-#else
-#define __AC(X,Y)               (X##Y)
-#define _AC(X,Y)                __AC(X,Y)
-#define _AT(T,X)                ((T)(X))
-#endif /* __ASSEMBLY__ */
-
-#define _UL(x)                  (_AC(x, UL))
-#define _ULL(x)                 (_AC(x, ULL))
-
-#define _BITUL(x)               (_UL(1) << (x))
-#define _BITULL(x)              (_ULL(1) << (x))
-
-#define UL(x)                   (_UL(x))
-#define ULL(x)                  (_ULL(x))
-
-#define STR(x)                  XSTR(x)
-#define XSTR(x)                 #x
-#define __STR(s)                #s
-#define STRINGIFY(s)            __STR(s)
-
-
-#define _WRITE_CSR(name, data) ({ asm volatile ("csrw " #name ", %0" : : "r" (data)); })
-#define _SET_CSR(name, data)   ({ asm volatile ("csrs " #name ", %0" : : "r" (data)); })
-#define _CLEAR_CSR(name, data) ({ asm volatile ("csrc " #name ", %0" : : "r" (data)); })
-
-#define _READ_CSR(name) ({ \
-  uint32_t __csr_val_u32; \
-  asm volatile ("csrr %0, " #name : "=r" (__csr_val_u32)); \
-  __csr_val_u32; \
-})
-
-#define _RDWR_CSR(name, data) ({ \
-  uint32_t __csr_val_u32; \
-  asm volatile ("csrrw %0, " #name ", %1" : "=r" (__csr_val_u32) : "r" (data)); \
-  __csr_val_u32; \
-})
-
-#define _RDSET_CSR(name, data) ({ \
-  uint32_t __csr_val_u32; \
-  asm volatile ("csrrs %0, " #name ", %1" : "=r" (__csr_val_u32) : "r" (data)); \
-  __csr_val_u32; \
-})
-
-#define _RDCLR_CSR(name, data) ({ \
-  uint32_t __csr_val_u32; \
-  asm volatile ("csrrc %0, " #name ", %1" : "=r" (__csr_val_u32) : "r" (data)); \
-  __csr_val_u32; \
-})
-
+#include <system_bit.h>
 
 #define MSTATUS_UIE         0x00000001
 #define MSTATUS_SIE         0x00000002
@@ -128,52 +48,174 @@
 #define MSTATUS_PUM         0x00040000
 #define MSTATUS_MXR         0x00080000
 #define MSTATUS_VM          0x1F000000
+#define MSTATUS32_SD        0x80000000
+#define MSTATUS64_SD        0x8000000000000000
 
-#define MCAUSE_INTERRUPT    (1ULL<<((__riscv_xlen)-1))
+#define MSTATUS_FS_INITIAL  0x00002000
+#define MSTATUS_FS_CLEAN    0x00004000
+#define MSTATUS_FS_DIRTY    0x00006000
 
-#define MIP_MSIP            (1 << IRQ_M_SOFT)
-#define MIP_MTIP            (1 << IRQ_M_TIMER)
-#define MIP_MEIP            (1 << IRQ_M_EXT)
+#define SSTATUS_UIE         0x00000001
+#define SSTATUS_SIE         0x00000002
+#define SSTATUS_UPIE        0x00000010
+#define SSTATUS_SPIE        0x00000020
+#define SSTATUS_SPP         0x00000100
+#define SSTATUS_FS          0x00006000
+#define SSTATUS_XS          0x00018000
+#define SSTATUS_PUM         0x00040000
+#define SSTATUS32_SD        0x80000000
+#define SSTATUS64_SD        0x8000000000000000
 
-#define MIE_MSIE            MIP_MSIP
-#define MIE_MTIE            MIP_MTIP
-#define MIE_MEIE            MIP_MEIP
 
-#define MCOUNTINHIBIT_IR    (1<<2)
-#define MCOUNTINHIBIT_CY    (1<<0)
+#define MCAUSE_INTERRUPT        (1ULL<<((__riscv_xlen)-1))
 
+#define MIP_SSIP                (1 << IRQ_S_SOFT)
+#define MIP_HSIP                (1 << IRQ_H_SOFT)
+#define MIP_MSIP                (1 << IRQ_M_SOFT)
+#define MIP_STIP                (1 << IRQ_S_TIMER)
+#define MIP_HTIP                (1 << IRQ_H_TIMER)
+#define MIP_MTIP                (1 << IRQ_M_TIMER)
+#define MIP_SEIP                (1 << IRQ_S_EXT)
+#define MIP_HEIP                (1 << IRQ_H_EXT)
+#define MIP_MEIP                (1 << IRQ_M_EXT)
+
+#define MIE_SSIE                MIP_SSIP
+#define MIE_HSIE                MIP_HSIP
+#define MIE_MSIE                MIP_MSIP
+#define MIE_STIE                MIP_STIP
+#define MIE_HTIE                MIP_HTIP
+#define MIE_MTIE                MIP_MTIP
+#define MIE_SEIE                MIP_SEIP
+#define MIE_HEIE                MIP_HEIP
+#define MIE_MEIE                MIP_MEIP
+
+#define WFE_WFE                 0x1
+
+#define MCOUNTINHIBIT_IR        (1<<2)
+#define MCOUNTINHIBIT_CY        (1<<0)
+
+#define MMISC_CTL_NMI_CAUSE_FFF (1<<9)
+#define MMISC_CTL_MISALIGN      (1<<6)
+#define MMISC_CTL_BPU           (1<<3)
+
+#define SIP_SSIP MIP_SSIP
+#define SIP_STIP MIP_STIP
+
+#define PRV_U        0
+#define PRV_S        1
+#define PRV_H        2
 #define PRV_M        3
+
+#define VM_MBARE     0
+#define VM_MBB       1
+#define VM_MBBID     2
+#define VM_SV32      8
+#define VM_SV39      9
+#define VM_SV48      10
+
+#define IRQ_S_SOFT   1
+#define IRQ_H_SOFT   2
 #define IRQ_M_SOFT   3
+#define IRQ_S_TIMER  5
+#define IRQ_H_TIMER  6
 #define IRQ_M_TIMER  7
+#define IRQ_S_EXT    9
+#define IRQ_H_EXT    10
 #define IRQ_M_EXT    11
+#define IRQ_COP      12
+#define IRQ_HOST     13
 
-#define CSR_CYCLE      0xc00
-#define CSR_TIME       0xc01
-#define CSR_INSTRET    0xc02
-#define CSR_MSTATUS    0x300
-#define CSR_MISA       0x301
-#define CSR_MEDELEG    0x302
-#define CSR_MIDELEG    0x303
-#define CSR_MIE        0x304
-#define CSR_MTVEC      0x305
-#define CSR_MCOUNTEREN 0x306
-#define CSR_MSCRATCH   0x340
-#define CSR_MEPC       0x341
-#define CSR_MCAUSE     0x342
-#define CSR_MBADADDR   0x343
-#define CSR_MIP        0x344
-#define CSR_MCYCLE     0xb00
-#define CSR_MINSTRET   0xb02
-#define CSR_MVENDORID  0xf11
-#define CSR_MARCHID    0xf12
-#define CSR_MIMPID     0xf13
-#define CSR_MHARTID    0xf14
-#define CSR_CYCLEH     0xc80
-#define CSR_TIMEH      0xc81
-#define CSR_INSTRETH   0xc82
-#define CSR_MCYCLEH    0xb80
-#define CSR_MINSTRETH  0xb82
+/* === FPU FRM Rounding Mode === */
+/** FPU Round to Nearest, ties to Even*/
+#define FRM_RNDMODE_RNE     0x0
+/** FPU Round Towards Zero */
+#define FRM_RNDMODE_RTZ     0x1
+/** FPU Round Down (towards -inf) */
+#define FRM_RNDMODE_RDN     0x2
+/** FPU Round Up (towards +inf) */
+#define FRM_RNDMODE_RUP     0x3
+/** FPU Round to nearest, ties to Max Magnitude */
+#define FRM_RNDMODE_RMM     0x4
+/**
+ * In instruction's rm, selects dynamic rounding mode.
+ * In Rounding Mode register, Invalid */
+#define FRM_RNDMODE_DYN     0x7
 
+/* === FPU FFLAGS Accrued Exceptions === */
+/** FPU Inexact */
+#define FFLAGS_AE_NX        (1<<0)
+/** FPU Underflow */
+#define FFLAGS_AE_UF        (1<<1)
+/** FPU Overflow */
+#define FFLAGS_AE_OF        (1<<2)
+/** FPU Divide by Zero */
+#define FFLAGS_AE_DZ        (1<<3)
+/** FPU Invalid Operation */
+#define FFLAGS_AE_NV        (1<<4)
+/** Floating Point Register f0-f31, eg. f0 -> FREG(0) */
+#define FREG(idx)           f##idx
+
+
+#ifdef __riscv
+
+#ifdef __riscv64
+# define MSTATUS_SD MSTATUS64_SD
+# define SSTATUS_SD SSTATUS64_SD
+# define RISCV_PGLEVEL_BITS 9
+#else
+# define MSTATUS_SD MSTATUS32_SD
+# define SSTATUS_SD SSTATUS32_SD
+# define RISCV_PGLEVEL_BITS 10
+#endif /* __riscv64 */
+
+#define RISCV_PGSHIFT 12
+#define RISCV_PGSIZE (1 << RISCV_PGSHIFT)
+
+#endif
+
+/* === Standard RISC-V CSR Registers === */
+#define CSR_USTATUS	    0x0
+#define CSR_FFLAGS      0x1
+#define CSR_FRM         0x2
+#define CSR_FCSR        0x3
+#define CSR_CYCLE       0xc00
+#define CSR_TIME        0xc01
+#define CSR_INSTRET     0xc02
+#define CSR_SSTATUS     0x100
+#define CSR_SIE         0x104
+#define CSR_STVEC       0x105
+#define CSR_SSCRATCH    0x140
+#define CSR_SEPC        0x141
+#define CSR_SCAUSE      0x142
+#define CSR_SBADADDR    0x143
+#define CSR_SIP         0x144
+#define CSR_SPTBR       0x180
+#define CSR_MSTATUS     0x300
+#define CSR_MISA        0x301
+#define CSR_MEDELEG     0x302
+#define CSR_MIDELEG     0x303
+#define CSR_MIE         0x304
+#define CSR_MTVEC       0x305
+#define CSR_MCOUNTEREN  0x306
+#define CSR_MSCRATCH    0x340
+#define CSR_MEPC        0x341
+#define CSR_MCAUSE      0x342
+#define CSR_MBADADDR    0x343
+#define CSR_MIP         0x344
+#define CSR_MCYCLE      0xb00
+#define CSR_MINSTRET    0xb02
+#define CSR_MUCOUNTEREN 0x320
+#define CSR_MSCOUNTEREN 0x321
+
+#define CSR_MVENDORID     0xf11
+#define CSR_MARCHID       0xf12
+#define CSR_MIMPID        0xf13
+#define CSR_MHARTID       0xf14
+#define CSR_CYCLEH        0xc80
+#define CSR_TIMEH         0xc81
+#define CSR_INSTRETH      0xc82
+#define CSR_MCYCLEH       0xb80
+#define CSR_MINSTRETH     0xb82
 
 /* Exception Code in MCAUSE CSR */
 #define CAUSE_MISALIGNED_FETCH    0x0

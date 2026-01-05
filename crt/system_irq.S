@@ -27,15 +27,27 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
+#include <system_csr.h>
 
-#include "system_csr.h"
-
-
+/**
+ * \brief  Global interrupt disabled
+ * \details
+ *  This function disable global interrupt.
+ * \remarks
+ *  - All the interrupt requests will be ignored by CPU.
+ */
 .macro DISABLE_MIE
     csrc CSR_MSTATUS, MSTATUS_MIE
 .endm
 
-
+/**
+ * \brief  Macro for context save
+ * \details
+ * This macro save ABI defined caller saved registers in the stack.
+ * \remarks
+ * - This Macro could use to save context when you enter to interrupt
+ * or exception
+*/
 /* Save caller registers */
 .macro SAVE_CONTEXT
     /* Allocate stack space for context saving */
@@ -43,7 +55,7 @@
     addi sp, sp, -20*REGBYTES
 #else
     addi sp, sp, -14*REGBYTES
-#endif
+#endif /* __riscv_32e */
 
     STORE x1, 0*REGBYTES(sp)
     STORE x4, 1*REGBYTES(sp)
@@ -66,6 +78,14 @@
 #endif /* __riscv_32e */
 .endm
 
+/**
+ * \brief  Macro for restore caller registers
+ * \details
+ * This macro restore ABI defined caller saved registers from stack.
+ * \remarks
+ * - You could use this macro to restore context before you want return
+ * from interrupt or exeception
+ */
 /* Restore caller registers */
 .macro RESTORE_CONTEXT
     LOAD x1, 0*REGBYTES(sp)
@@ -92,11 +112,15 @@
 #else
     /* De-allocate the stack space */
     addi sp, sp, 14*REGBYTES
-#endif
+#endif /* __riscv_32e */
 
 .endm
 
-
+/**
+ * \brief  Macro for save necessary CSRs to stack
+ * \details
+ * This macro store MCAUSE, MEPC, MSTATUS to stack.
+ */
 .macro SAVE_CSR_CONTEXT
     csrr x5, CSR_MEPC
     STORE x5, 11*REGBYTES(sp)
@@ -106,7 +130,11 @@
     STORE x5, 13*REGBYTES(sp)
 .endm
 
-
+/**
+ * \brief  Macro for restore necessary CSRs from stack
+ * \details
+ * This macro restore MEPC, MCAUSE, MSTATUS from stack.
+ */
 .macro RESTORE_CSR_CONTEXT
     LOAD x5,  11*REGBYTES(sp)
     csrw CSR_MEPC, x5
@@ -116,7 +144,15 @@
     csrw CSR_MSTATUS, x5
 .endm
 
-
+/**
+ * \brief  Trap Entry
+ * \details
+ * This function provide common entry functions for trap.
+ * \remarks
+ * This function provide a default trap entry.
+ * ABI defined caller save register and some CSR registers
+ * to be saved before enter interrupt handler and be restored before return.
+ */
 .section .text.trap
 .align 2
 .global system_trap_entry
@@ -126,6 +162,7 @@ system_trap_entry:
     SAVE_CONTEXT
     /* Save the necessary CSR registers */
     SAVE_CSR_CONTEXT
+
     /*
      * Set the exception handler function arguments
      * argument 1: mcause value
@@ -139,9 +176,11 @@ system_trap_entry:
      * system_Device.c, you can adjust it as you want
      */
     call system_trap_handler
+
     /* Restore the necessary CSR registers */
     RESTORE_CSR_CONTEXT
     /* Restore the caller saving registers (context) */
     RESTORE_CONTEXT
+
     /* Return to regular code */
     mret
