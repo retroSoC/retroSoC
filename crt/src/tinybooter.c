@@ -52,7 +52,7 @@ void app_info() {
 
     printf("User Processors:\n");
 #ifndef CORE_MDD
-    printf("  CORE:              %s\n", HW_CORE);
+    printf("  CORE:                %s\n", HW_CORE);
 #else
     uint32_t core_size = sizeof(user_core_info)/sizeof(user_core_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");

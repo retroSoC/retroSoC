@@ -63,125 +63,126 @@ module core_wrapper (
       .trace_data  ()
   );
 
-  // `elsif CORE_MINIRV
-  //   logic [31:0] s_awaddr;
-  //   logic        s_awvalid;
-  //   logic        s_awready;
-  //   logic [31:0] s_wdata;
-  //   logic [ 3:0] s_wstrb;
-  //   logic        s_wvalid;
-  //   logic        s_wready;
-  //   logic [ 1:0] s_bresp;
-  //   logic        s_bvalid;
-  //   logic        s_bready;
-  //   logic [31:0] s_araddr;
-  //   logic        s_arvalid;
-  //   logic        s_arready;
-  //   logic [31:0] s_rdata;
-  //   logic [ 1:0] s_rresp;
-  //   logic        s_rvalid;
-  //   logic        s_rready;
+`elsif CORE_HAZARD3
 
-  //   logic [31:0] s_remap_awaddr;
-  //   logic [31:0] s_remap_araddr;
+  logic s_pwrup_req;
+  // verilog_format: off
+  ahbl_if u_ahbl_if (clk_i, rst_n_i);
+  ahbl2nmi u_ahbl2nmi (u_ahbl_if, nmi);
+  // verilog_format: on
 
-  //   // 0x20000 * 5
-  //   logic [18:0] s_delay_rst_cnt_d;
-  //   logic [18:0] s_delay_rst_cnt_q;
-  //   logic        s_delay_rst_n;
-
-  //   assign s_delay_rst_n     = s_delay_rst_cnt_q == '1;
-  //   assign s_delay_rst_cnt_d = s_delay_rst_cnt_q + 1'b1;
-  //   dffer #(19) u_delay_rst_cnt_dffer (
-  //       clk_i,
-  //       rst_n_i,
-  //       ~s_delay_rst_n,
-  //       s_delay_rst_cnt_d,
-  //       s_delay_rst_cnt_q
-  //   );
-
-
-  //   minirv u_minirv (
-  //       .clock            (clk_i),
-  //       .reset            (~s_delay_rst_n),
-  //       .io_master_awready(s_awready),
-  //       .io_master_awvalid(s_awvalid),
-  //       .io_master_awaddr (s_awaddr),
-  //       .io_master_awsize (),
-  //       .io_master_awid   (),
-  //       .io_master_awlen  (),
-  //       .io_master_awburst(),
-  //       .io_master_wready (s_wready),
-  //       .io_master_wvalid (s_wvalid),
-  //       .io_master_wdata  (s_wdata),
-  //       .io_master_wstrb  (s_wstrb),
-  //       .io_master_wlast  (),
-  //       .io_master_bready (s_bready),
-  //       .io_master_bvalid (s_bvalid),
-  //       .io_master_bresp  (s_bresp),
-  //       .io_master_bid    (),
-  //       .io_master_arready(s_arready),
-  //       .io_master_arvalid(s_arvalid),
-  //       .io_master_araddr (s_araddr),
-  //       .io_master_arsize (),
-  //       .io_master_arid   (),
-  //       .io_master_arlen  (),
-  //       .io_master_arburst(),
-  //       .io_master_rready (s_rready),
-  //       .io_master_rvalid (s_rvalid),
-  //       .io_master_rresp  (s_rresp),
-  //       .io_master_rdata  (s_rdata),
-  //       .io_master_rlast  (),
-  //       .io_master_rid    (),
-  //       .io_interrupt     (|irq_i)
-  //   );
-
-  //   axi4l2nmi u_axi4l2nmi (
-  //       .aclk_i     (clk_i),
-  //       .aresetn_i  (s_delay_rst_n),
-  //       .awaddr_i   (s_remap_awaddr),
-  //       .awvalid_i  (s_awvalid),
-  //       .awready_o  (s_awready),
-  //       .wdata_i    (s_wdata),
-  //       .wstrb_i    (s_wstrb),
-  //       .wvalid_i   (s_wvalid),
-  //       .wready_o   (s_wready),
-  //       .bresp_o    (s_bresp),
-  //       .bvalid_o   (s_bvalid),
-  //       .bready_i   (s_bready),
-  //       .araddr_i   (s_remap_araddr),
-  //       .arvalid_i  (s_arvalid),
-  //       .arready_o  (s_arready),
-  //       .rdata_o    (s_rdata),
-  //       .rresp_o    (s_rresp),
-  //       .rvalid_o   (s_rvalid),
-  //       .rready_i   (s_rready),
-  //       .mem_valid_o(nmi.valid),
-  //       .mem_instr_o(),
-  //       .mem_addr_o (nmi.addr),
-  //       .mem_wdata_o(nmi.wdata),
-  //       .mem_wstrb_o(nmi.wstrb),
-  //       .mem_ready_i(nmi.ready),
-  //       .mem_rdata_i(nmi.rdata)
-  //   );
-
-  //   always_comb begin
-  //     s_remap_awaddr = s_awaddr;
-  //     if (s_awaddr[31:24] == 8'h30) begin
-  //       s_remap_awaddr = {8'h00, s_awaddr[23:0]};
-  //     end else if (s_awaddr[31:24] == 8'ha0) begin
-  //       s_remap_awaddr = {8'h40, s_awaddr[23:0]};
-  //     end
-  //   end
-
-  //   always_comb begin
-  //     s_remap_araddr = s_araddr;
-  //     if (s_araddr[31:24] == 8'h30) begin
-  //       s_remap_araddr = {8'h00, s_araddr[23:0]};
-  //     end else if (s_araddr[31:24] == 8'ha0) begin
-  //       s_remap_araddr = {8'h40, s_araddr[23:0]};
-  //     end
-  //   end
+  hazard3_cpu_1port #(
+      .RESET_VECTOR       (`FLASH_START_ADDR),
+      .MTVEC_INIT         (32'h0000_0000),
+      .EXTENSION_A        (1),
+      .EXTENSION_C        (1),
+      .EXTENSION_E        (0),
+      .EXTENSION_M        (1),
+      .EXTENSION_ZBA      (1),
+      .EXTENSION_ZBB      (1),
+      .EXTENSION_ZBC      (1),
+      .EXTENSION_ZBKB     (1),
+      .EXTENSION_ZBKX     (1),
+      .EXTENSION_ZBS      (1),
+      .EXTENSION_ZCB      (0),
+      .EXTENSION_ZCLSD    (0),
+      .EXTENSION_ZCMP     (0),
+      .EXTENSION_ZIFENCEI (1),
+      .EXTENSION_ZILSD    (1),
+      .EXTENSION_XH3BEXTM (1),
+      .EXTENSION_XH3IRQ   (1),
+      .EXTENSION_XH3PMPM  (0),
+      .EXTENSION_XH3POWER (0),
+      .CSR_M_MANDATORY    (1),
+      .CSR_M_TRAP         (1),
+      .CSR_COUNTER        (1),
+      .U_MODE             (0),
+      .PMP_REGIONS        (0),
+      .PMP_GRAIN          (0),
+      .PMP_MATCH_NAPOT    (1),
+      .PMP_MATCH_TOR      (0),
+      .PMP_HARDWIRED      (0),
+      .PMP_HARDWIRED_ADDR (0),
+      .PMP_HARDWIRED_CFG  (0),
+      .DEBUG_SUPPORT      (0),
+      .BREAKPOINT_TRIGGERS(0),
+      .NUM_IRQS           (30),
+      .IRQ_PRIORITY_BITS  (2),
+      .IRQ_INPUT_BYPASS   (30'h0),
+      .MVENDORID_VAL      (32'h0),
+      .MCONFIGPTR_VAL     (32'h0),
+      .REDUCED_BYPASS     (0),
+      .MULDIV_UNROLL      (1),
+      .MUL_FAST           (1),
+      .MUL_FASTER         (1),
+      .MULH_FAST          (1),
+      .FAST_BRANCHCMP     (1),
+      .RESET_REGFILE      (1),
+      .BRANCH_PREDICTOR   (0),
+      .MTVEC_WMASK        (32'hfffffffd)
+  ) u_hazard3_cpu_1port (
+      // Global signals
+      .clk                       (clk_i),
+      .clk_always_on             (clk_i),
+      .rst_n                     (rst_n_i),
+      // Power control signals
+      .pwrup_req                 (s_pwrup_req),
+      .pwrup_ack                 (s_pwrup_req),          // tied back
+      .clk_en                    (),
+      .unblock_out               (),
+      .unblock_in                (1'b0),
+      // AHB5 Master port
+      .haddr                     (u_ahbl_if.haddr),
+      .hwrite                    (u_ahbl_if.hwrite),
+      .htrans                    (u_ahbl_if.htrans),
+      .hsize                     (u_ahbl_if.hsize),
+      .hburst                    (u_ahbl_if.hburst),
+      .hprot                     (u_ahbl_if.hprot),
+      .hmastlock                 (u_ahbl_if.hmastlock),
+      .hmaster                   (),
+      .hexcl                     (),
+      .hready                    (u_ahbl_if.hready),
+      .hresp                     (u_ahbl_if.hresp),
+      .hexokay                   (1'b1),
+      .hwdata                    (u_ahbl_if.hwdata),
+      .hrdata                    (u_ahbl_if.hrdata),
+      // Memory ordering signals
+      .fence_i_vld               (),
+      .fence_d_vld               (),
+      .fence_rdy                 (1'b1),
+      // Debugger run/halt control
+      .dbg_req_halt              (1'b0),
+      .dbg_req_halt_on_reset     (1'b0),
+      .dbg_req_resume            (1'b0),
+      .dbg_halted                (),
+      .dbg_running               (),
+      // Debugger access to data0 CSR
+      .dbg_data0_rdata           ('0),
+      .dbg_data0_wdata           (),
+      .dbg_data0_wen             (),
+      // Debugger instruction injection
+      .dbg_instr_data            ('0),
+      .dbg_instr_data_vld        ('0),
+      .dbg_instr_data_rdy        (),
+      .dbg_instr_caught_exception(),
+      .dbg_instr_caught_ebreak   (),
+      // Optional debug system bus access patch-through
+      .dbg_sbus_addr             ('0),
+      .dbg_sbus_write            ('0),
+      .dbg_sbus_size             ('0),
+      .dbg_sbus_vld              ('0),
+      .dbg_sbus_rdy              (),
+      .dbg_sbus_err              (),
+      .dbg_sbus_wdata            ('0),
+      .dbg_sbus_rdata            (),
+      // Identification CSR values
+      .mhartid_val               ('0),
+      .eco_version               ('0),
+      // Level-sensitive interrupt sources
+      .irq                       (irq_i[31:2]),
+      .soft_irq                  (irq_i[0]),
+      .timer_irq                 (irq_i[1])
+  );
 
 `elsif CORE_MDD
   user_core_wrapper u_user_core_wrapper (
