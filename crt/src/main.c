@@ -10,7 +10,6 @@ uint32_t my_get_millis(void) {
 void main() {
     uart0_init(CPU_FREQ, UART_BPS);
 #ifdef SW_BASE
-    irq_test(0, NULL);
     app_info();
 #else
     tinybooter();
