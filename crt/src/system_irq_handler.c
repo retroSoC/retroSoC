@@ -243,4 +243,6 @@ void _premain_init(void) {
     init_system_exception();
     /* Initialize Interrupt default handlers */
     init_system_irq();
+    /* Enable MCYCLE & MINSTRET counter */
+    __enable_all_counter();
 }
