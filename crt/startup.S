@@ -2,15 +2,20 @@
     .global  _start
     .type    _start,@function
 
-#include "irq_opt.S"
-
-_reset_vec:
-    // no more than 16 bytes here !
-    # picorv32_waitirq_insn(zero)
-    # picorv32_maskirq_insn(zero, zero)
-    # j _start
+#include "system_csr.h"
 
 _start:
+#ifdef CSR_ENABLE
+    /* Disable Global Interrupt */
+    csrc CSR_MSTATUS, MSTATUS_MIE
+    /* Disable all interrupts controlled by CSR MIE */
+    csrw CSR_MIE, 0x0
+    /* Set Trap Entry MTVEC to trap_entry */
+    la t0, system_trap_entry
+    csrw CSR_MTVEC, t0
+    /* Direct Mode: All exceptions set pc to BASE */
+    csrc CSR_MTVEC, 0x3
+#endif
 # wait psram reset done
     la       a0, _flash_wait_start
     la       a1, 2000
@@ -97,6 +102,9 @@ bss_cleaner:
 
 main_start:
 # call main
+#ifdef CSR_ENABLE
+    call     _premain_init # init irq
+#endif
     call     main
 loop:
     j        loop

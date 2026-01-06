@@ -50,6 +50,9 @@ void main() {
     tinysh_register("nor", "nor flash test", (uint8_t)0, ip_norflash_test);
     tinysh_register("uart1", "uart1 test", (uint8_t)0, ip_hpuart_test);
     tinysh_register("pcf", "pcf8563b test", (uint8_t)1, pcf8563b_test);
+#ifdef CSR_ENABLE
+    tinysh_register("irq", "tmr/sw irq test", (uint8_t)1, irq_test);
+#endif
     tinysh_register("donut", "dount test", (uint8_t)0, donut_test);
     tinysh_batch_run();
     tinysh_launch();

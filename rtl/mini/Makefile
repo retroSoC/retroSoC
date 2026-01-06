@@ -45,6 +45,8 @@ RTL_FLIST  += -f $(RTL_PATH)/filelist/tech.fl
 
 ifeq ($(CORE), PICORV32)
     RTL_FLIST += -f $(RTL_PATH)/filelist/core_picorv32.fl
+else ifeq ($(CORE), HAZARD3)
+    RTL_FLIST += -f $(RTL_PATH)/filelist/core_hazard3.fl
 else ifeq ($(CORE), MDD)
     RTL_FLIST += -f $(RTL_PATH)/mpw/.build/core/core.fl
 endif

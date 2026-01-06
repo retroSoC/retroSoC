@@ -24,6 +24,7 @@ RTL_TOP        ?= retrosoc_tb
 
 # SW
 ISA            ?= RV32IM
+HAVE_CSR       ?= NO
 FIRMWARE_NAME  ?= retrosoc_fw
 PROG_TYPE      ?= FULL
 LINK_TYPE      ?= ld2_sram
@@ -40,7 +41,7 @@ $(info MAKE CMDGOAL:  $(MAKECMDGOALS))
 $(info MAKE FILELIST: $(MAKEFILE_LIST))
 $(info ============== HW CONFIG INFO =============================)
 $(info SOC             [TINY, MINI]:                   $(SOC))
-$(info CORE            [PICORV32, MDD]:                $(CORE))
+$(info CORE            [PICORV32, HAZARD3, MDD]:       $(CORE))
 $(info IP              [NONE, MDD]:                    $(IP))
 $(info SIMU            [VCS, VERILATOR]:               $(SIMU))
 $(info SYNTH           [YOSYS, DC]:                    $(SYNTH))
@@ -56,9 +57,10 @@ $(info RTL_SIM_CORESEL:                                $(RTL_SIM_CORESEL))
 $(info WAVE:                                           $(WAVE))
 $(info ============== SW CONFIG INFO =============================)
 $(info ISA           [RV32E RV32I RV32IM]:             $(ISA))
+$(info HAVE_CSR      [YES, NO]:                        $(HAVE_CSR))
 $(info FIRMWARE_NAME [retrosoc_fw]:                    $(FIRMWARE_NAME))
-$(info PROG_TYPE     [BASE FULL]:                      $(PROG_TYPE))
-$(info LINK_TYPE     [xip ld2_sram ld2_psram]:         $(LINK_TYPE))
+$(info PROG_TYPE     [BASE, FULL]:                     $(PROG_TYPE))
+$(info LINK_TYPE     [xip, ld2_sram, ld2_psram]:       $(LINK_TYPE))
 $(info ===========================================================)
 
 DEF_LIST    ?= +define+PDK_$(PDK)

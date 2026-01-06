@@ -38,6 +38,10 @@
 #include <video_player.h>
 #include <donut.h>
 
+#ifdef CSR_ENABLE
+#include <tinyirq.h>
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
