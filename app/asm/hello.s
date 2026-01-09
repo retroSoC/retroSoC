@@ -2,7 +2,8 @@
 _start:
 UART_INIT:
     lui a4, 0x10001
-    li a5, 625
+    # li a5, 625 # 72M 115200bps
+    li a5, 78 # 72M 921600ps
     sw a5, 0(a4)
 HELLO_INIT:
     la s0, msg_hello

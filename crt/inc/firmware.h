@@ -13,7 +13,7 @@
 #endif
 
 #define CPU_FREQ            48     // unit: MHz
-#define UART_BPS            115200 // unit: bps
+#define UART_BPS            921600 // unit: bps
 #define PSRAM_NUM           4
 #define PSRAM_SCLK_MIN_FREQ 12     // unit: MHz
 #define PSRAM_SCLK_MAX_FREQ 133    // unit: MHz

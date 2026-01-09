@@ -217,12 +217,18 @@ module retrosoc_tb;
       .SDA(s_i2c_sda_io)
   );
 
-  rs232 u_rs232_0 (
+  rs232 #(
+    .BAUD_RATE(921600)
+  )
+  u_rs232_0 (
       .rs232_rx_i(s_uart0_tx),
       .rs232_tx_o()
   );
 
-  rs232 u_rs232_1 (
+  rs232 #
+  (.BAUD_RATE(115200)
+  )
+  u_rs232_1 (
       .rs232_rx_i(s_uart1_tx),
       .rs232_tx_o(s_uart1_rx)
   );
@@ -330,9 +336,9 @@ module retrosoc_tb;
       // #398844962;
       // #867652;
       // #145541740;
-      #205541740;
+      // #205541740;
       // #382928081;
-      // #21149063;
+      #21149063;
       // #1667652;
       // #327820116;
       // #327179489;
@@ -357,13 +363,10 @@ module retrosoc_tb;
       $finish;
     end else if ($test$plusargs("syn_wave")) begin
       $display("gen syn sim wave");
-      $fsdbDumpfile("retrosoc_syn_tb.fsdb");
+      $fsdbDumpfile("retrosoc_tb_syn.fsdb");
       $fsdbDumpvars(0);
 
-      repeat (10) begin
-        $display("hello");
-        repeat (100) @(posedge r_xtal_clk);
-      end
+      #21149063;
       $finish;
     end
 
