@@ -400,6 +400,9 @@ module picorv32 #(
 
 	always @* begin
 		// (* full_case *)
+		mem_la_wdata = 32'b0;
+		mem_la_wstrb = 4'b0000;
+		mem_rdata_word = 32'b0;
 		case (mem_wordsize) // synopsys full_case
 			0: begin
 				mem_la_wdata = reg_op2;

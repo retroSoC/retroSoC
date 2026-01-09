@@ -55,10 +55,10 @@ netcomp:
 	cd $(RTL_PATH)/.net_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(NET_FLIST) $(NET_PATH) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 netsim: netcomp
-	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG)
+	cd $(RTL_PATH)/.net_build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG))
 
 netwave:
-	cd $(RTL_PATH)/.net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+	cd $(RTL_PATH)/.net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP)_syn.fsdb -nologo &)
 
 postcomp:
 	@mkdir -p $(RTL_PATH)/.post_build
@@ -68,7 +68,7 @@ postsim: postcomp
 	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG)
 
 postwave:
-	cd $(RTL_PATH)/.post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+	cd $(RTL_PATH)/.post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP)_post.fsdb -nologo &)
 
 clean:
 	rm -rf .build $(RTL_PATH)/.net_build $(RTL_PATH)/.post_build
