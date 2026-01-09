@@ -49,7 +49,7 @@ module retrosoc_top (
   retrosoc_asic u_retrosoc_asic (
       .extclk_i_pad       (s_clk),
       .audclk_i_pad       (),
-            .ext_rst_n_i_pad    (s_rst_n),
+      .ext_rst_n_i_pad    (s_rst_n),
       .sys_clkdiv4_o_pad  (),
 `ifdef HAVE_PLL
       .xi_i_pad           (),
