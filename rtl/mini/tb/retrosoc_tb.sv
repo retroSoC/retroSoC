@@ -17,81 +17,88 @@ module retrosoc_tb;
   localparam real EXT_CPU_FREQ = 72.0;
   localparam real AUD_CPU_FREQ = 12.288;
 
+  reg  r_ext_clk;
+  wire s_ext_clk;
+  reg  r_aud_clk;
+  wire s_aud_clk;
+  reg  r_rst_n;
+  wire s_rst_n;
+`ifdef HAVE_PLL
   reg        r_xtal_clk;
-  reg        r_ext_clk;
-  wire       s_ext_clk;
-  reg        r_aud_clk;
-  wire       s_aud_clk;
-  reg        r_rst_n;
-  wire       s_rst_n;
-  reg  [4:0] r_core_sel;
-  wire [4:0] s_core_sel;
   reg        r_pll_en;
   wire       s_clk_bypass;
   reg  [2:0] r_pll_cfg;
-`ifdef HAVE_PLL
   wire [2:0] s_pll_cfg;
 `endif
-
-  wire s_user_gpio_0_io;
-  reg  r_user_gpio_0_io;
-  wire s_uart0_tx;
+  reg  [4:0] r_core_sel;
+  wire [4:0] s_core_sel;
+  wire       s_user_gpio_0_io;
+  reg        r_user_gpio_0_io;
+  wire       s_uart0_tx;
   // for handle x-prop issue
-  wire s_uart0_rx = 1'b1;
-  wire s_gpio_0_io;
-  wire s_gpio_1_ip;
-  wire s_psram_sck;
-  wire s_psram_nss0;
-  wire s_psram_nss1;
-  wire s_psram_dat0;
-  wire s_psram_dat1;
-  wire s_psram_dat2;
-  wire s_psram_dat3;
-  wire s_i2c_sda_io;
-  wire s_i2c_scl_io;
-  wire s_qspi_sck_o;
-  wire s_qspi_nss0_o;
-  wire s_qspi_nss1_o;
-  wire s_qspi_nss2_o;
-  wire s_qspi_nss3_o;
-  wire s_qspi_dat0_io;
-  wire s_qspi_dat1_io;
-  wire s_qspi_dat2_io;
-  wire s_qspi_dat3_io;
-  wire s_i2s_sclk;
-  wire s_i2s_lrck;
-  wire s_i2s_adcdat;
-  wire s_uart1_tx;
-  wire s_uart1_rx;
-  wire s_ps2_clk;
-  wire s_ps2_dat;
-  wire s_spfs_sck;
-  wire s_spfs_nss;
-  wire s_spfs_mosi;
-  wire s_spfs_miso;
+  wire       s_uart0_rx = 1'b1;
+  wire       s_gpio_0_io;
+  wire       s_gpio_1_ip;
+  wire       s_psram_sck;
+  wire       s_psram_nss0;
+  wire       s_psram_nss1;
+  wire       s_psram_dat0;
+  wire       s_psram_dat1;
+  wire       s_psram_dat2;
+  wire       s_psram_dat3;
+  wire       s_i2c_sda_io;
+  wire       s_i2c_scl_io;
+  wire       s_qspi_sck_o;
+  wire       s_qspi_nss0_o;
+  wire       s_qspi_nss1_o;
+  wire       s_qspi_nss2_o;
+  wire       s_qspi_nss3_o;
+  wire       s_qspi_dat0_io;
+  wire       s_qspi_dat1_io;
+  wire       s_qspi_dat2_io;
+  wire       s_qspi_dat3_io;
+  wire       s_i2s_sclk;
+  wire       s_i2s_lrck;
+  wire       s_i2s_adcdat;
+  wire       s_uart1_tx;
+  wire       s_uart1_rx;
+  wire       s_ps2_clk;
+  wire       s_ps2_dat;
+  wire       s_spfs_sck;
+  wire       s_spfs_nss;
+  wire       s_spfs_mosi;
+  wire       s_spfs_miso;
 
+`ifdef HAVE_PLL
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
+`endif
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
   always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk    = r_ext_clk;
-  assign s_aud_clk    = r_aud_clk;
-  assign s_rst_n      = r_rst_n;
-  assign s_core_sel   = r_core_sel;
-  assign s_clk_bypass = ~r_pll_en;
+  assign s_ext_clk = r_ext_clk;
+  assign s_aud_clk = r_aud_clk;
+  assign s_rst_n   = r_rst_n;
 `ifdef HAVE_PLL
-  assign s_pll_cfg = r_pll_cfg;
+  assign s_clk_bypass = ~r_pll_en;
+  assign s_pll_cfg    = r_pll_cfg;
 `endif
+  assign s_core_sel       = r_core_sel;
   assign s_user_gpio_0_io = r_user_gpio_0_io;
 
   retrosoc_asic u_retrosoc_asic (
-      .xi_i_pad           (r_xtal_clk),
-      .xo_o_pad           (),
       .extclk_i_pad       (s_ext_clk),
       .audclk_i_pad       (s_aud_clk),
-      .tmr_capch_i_pad    (),
-      .extn_irq_i_pad     (),
+      .ext_rst_n_i_pad    (s_rst_n),
+      .sys_clkdiv4_o_pad  (),
+`ifdef HAVE_PLL
+      .xi_i_pad           (r_xtal_clk),
+      .xo_o_pad           (),
+      .clk_bypass_i_pad   (s_clk_bypass),
+      .pll_cfg_0_i_pad    (s_pll_cfg[0]),
+      .pll_cfg_1_i_pad    (s_pll_cfg[1]),
+      .pll_cfg_2_i_pad    (s_pll_cfg[2]),
+`endif
 `ifdef CORE_MDD
       .core_sel_0_i_pad   (s_core_sel[0]),
       .core_sel_1_i_pad   (s_core_sel[1]),
@@ -117,14 +124,8 @@ module retrosoc_tb;
       .user_gpio_14_io_pad(),
       .user_gpio_15_io_pad(),
 `endif
-`ifdef HAVE_PLL
-      .pll_cfg_0_i_pad    (s_pll_cfg[0]),
-      .pll_cfg_1_i_pad    (s_pll_cfg[1]),
-      .pll_cfg_2_i_pad    (s_pll_cfg[2]),
-`endif
-      .clk_bypass_i_pad   (s_clk_bypass),
-      .ext_rst_n_i_pad    (s_rst_n),
-      .sys_clkdiv4_o_pad  (),
+      .tmr_capch_i_pad    (),
+      .extn_irq_i_pad     (),
       .uart0_tx_o_pad     (s_uart0_tx),
       .uart0_rx_i_pad     (s_uart0_rx),
       .gpio_0_io_pad      (s_gpio_0_io),
@@ -218,17 +219,15 @@ module retrosoc_tb;
   );
 
   rs232 #(
-    .BAUD_RATE(921600)
-  )
-  u_rs232_0 (
+      .BAUD_RATE(921600)
+  ) u_rs232_0 (
       .rs232_rx_i(s_uart0_tx),
       .rs232_tx_o()
   );
 
-  rs232 #
-  (.BAUD_RATE(115200)
-  )
-  u_rs232_1 (
+  rs232 #(
+      .BAUD_RATE(115200)
+  ) u_rs232_1 (
       .rs232_rx_i(s_uart1_tx),
       .rs232_tx_o(s_uart1_rx)
   );
@@ -378,8 +377,13 @@ module retrosoc_tb;
   end
 
   initial begin
-    if (!$value$plusargs("core_sel=%d", r_core_sel)) r_core_sel = 5'd0;
+    $display("========================================================");
+`ifdef CORE_MDD
+  if (!$value$plusargs("core_sel=%d", r_core_sel)) r_core_sel = 5'd0;
+    $display("core_sel: %0d", r_core_sel);
+`endif
 
+`ifdef HAVE_PLL
     if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
     else r_pll_en = 1'b0;
 
@@ -393,11 +397,6 @@ module retrosoc_tb;
     else if ($test$plusargs("pll_cfg7")) r_pll_cfg = 3'd7;  // 192M
     else r_pll_cfg = 3'd0;  // 24M
 
-    $display("========================================================");
-`ifdef CORE_MDD
-    $display("core_sel: %0d", r_core_sel);
-`endif
-
     if (r_pll_en == 1'b0) begin
       $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg, EXT_CPU_FREQ);
     end else if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
@@ -406,6 +405,9 @@ module retrosoc_tb;
       $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg,
                (r_pll_cfg + 1) * 24);
     end
+`else
+    $display("ext clk_freq: %0dMHz", EXT_CPU_FREQ);
+`endif
     $display("========================================================");
   end
 endmodule

@@ -47,12 +47,18 @@ module retrosoc_top (
   assign s_core_sel   = core_sel_i;
   assign s_clk_bypass = 1'b1;
   retrosoc_asic u_retrosoc_asic (
-      .xi_i_pad           (),
-      .xo_o_pad           (),
       .extclk_i_pad       (s_clk),
       .audclk_i_pad       (),
-      .tmr_capch_i_pad    (),
-      .extn_irq_i_pad     (),
+            .ext_rst_n_i_pad    (s_rst_n),
+      .sys_clkdiv4_o_pad  (),
+`ifdef HAVE_PLL
+      .xi_i_pad           (),
+      .xo_o_pad           (),
+      .clk_bypass_i_pad   (s_clk_bypass),
+      .pll_cfg_0_i_pad    (),
+      .pll_cfg_1_i_pad    (),
+      .pll_cfg_2_i_pad    (),
+`endif
 `ifdef CORE_MDD
       .core_sel_0_i_pad   (s_core_sel[0]),
       .core_sel_1_i_pad   (s_core_sel[1]),
@@ -78,14 +84,8 @@ module retrosoc_top (
       .user_gpio_14_io_pad(),
       .user_gpio_15_io_pad(),
 `endif
-`ifdef HAVE_PLL
-      .pll_cfg_0_i_pad    (),
-      .pll_cfg_1_i_pad    (),
-      .pll_cfg_2_i_pad    (),
-`endif
-      .clk_bypass_i_pad   (s_clk_bypass),
-      .ext_rst_n_i_pad    (s_rst_n),
-      .sys_clkdiv4_o_pad  (),
+      .tmr_capch_i_pad    (),
+      .extn_irq_i_pad     (),
       .uart0_tx_o_pad     (s_uart_tx),
       .uart0_rx_i_pad     (),
       .gpio_0_io_pad      (),
