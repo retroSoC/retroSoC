@@ -198,7 +198,7 @@ module ip_natv_wrapper (
   );
 
 
-  simple_timer u_simple_timer0 (
+  nmi_timer u_nmi_timer0 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_tim0_nmi_if),
@@ -206,7 +206,7 @@ module ip_natv_wrapper (
   );
 
 
-  simple_timer u_simple_timer1 (
+  nmi_timer u_nmi_timer1 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_tim1_nmi_if),

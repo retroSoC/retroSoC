@@ -32,6 +32,7 @@ void ip_gpio_test(int argc, char **argv) {
     reg_gpio_oe = (uint32_t)0b1101;
     printf("[GPIO OE] %x\n", reg_gpio_oe);
     printf("[GPIO DATA] %x\n", reg_gpio_do);
+    return;
     for (int i = 0; i < 60; ++i) {
         uint32_t led_val = 0b00;
         if (((reg_gpio_do & 0b10) >> 1) == 0b0) {
