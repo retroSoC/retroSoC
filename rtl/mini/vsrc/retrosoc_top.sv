@@ -30,7 +30,6 @@ module retrosoc_top (
   wire       s_rst_n;
   wire [4:0] s_core_sel;
   wire       s_clk_bypass;
-  wire       s_uart_tx;
   wire       s_psram_sck;
   wire       s_psram_nss0;
   wire       s_psram_dat0;
@@ -86,7 +85,7 @@ module retrosoc_top (
 `endif
       .tmr_capch_i_pad    (),
       .extn_irq_i_pad     (),
-      .uart0_tx_o_pad     (s_uart_tx),
+      .uart0_tx_o_pad     (),
       .uart0_rx_i_pad     (),
       .gpio_0_io_pad      (),
       .gpio_1_io_pad      (),
@@ -145,11 +144,6 @@ module retrosoc_top (
       .cs  (s_spfs_nss),
       .mosi(s_spfs_mosi),
       .miso(s_spfs_miso)
-  );
-
-  rs232 u_rs232_0 (
-      .rs232_rx_i(s_uart_tx),
-      .rs232_tx_o()
   );
 
   ESP_PSRAM64H u_ESP_PSRAM64H (

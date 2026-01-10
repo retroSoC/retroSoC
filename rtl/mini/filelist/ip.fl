@@ -28,10 +28,6 @@
 ../../clusterip/ps2/rtl/ps2_if.sv
 ../../clusterip/ps2/rtl/apb4_ps2.sv
 ../../clusterip/i2c/rtl/i2c_if.sv
-../../clusterip/i2c/rtl/i2c_master_bit_ctrl.sv
-../../clusterip/i2c/rtl/i2c_master_byte_ctrl.sv
-../../clusterip/i2c/rtl/apb4_i2c.sv
-../../clusterip/spi/rtl/apb4_spi.sv
 ../../clusterip/spi/rtl/spi_if.sv
 ../../clusterip/spi/rtl/qspi_if.sv
 ../../clusterip/rtc/rtl/rtc_if.sv

@@ -12,7 +12,6 @@ SOC_COMPILE_HOME  := $(BUILD_DIR)/emu_compile
 
 
 SOC_VXXFILES      := $(RTL_FLIST)
-SOC_VXXFILES      += $(RTL_PATH)/../clusterip/uart/model/rs232.sv
 SOC_VXXFILES      += $(RTL_PATH)/../ip/native/ESP_PSRAM64H.sv
 SOC_VXXFILES      += $(shell find $(SOC_VSRC_HOME) -name "*.sv")
 SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
@@ -37,7 +36,6 @@ endif
 
 lint: gen_mpw_code
 	@mkdir -p $(BUILD_DIR)
-	ls -alh $(RTL_PATH)/mpw/.build/core/username6
 
 comp: lint
 	verilator $(VERILATOR_FLAGS) > $(BUILD_DIR)/verilating.log 2>&1

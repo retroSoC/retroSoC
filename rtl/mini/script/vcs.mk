@@ -27,7 +27,8 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
 
 TIME_OPTION := +notimingcheck +nospecify
 
-NET_PATH  := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
+# NET_PATH  := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
+NET_PATH  := -v /nfs/share/home/miaoyuchi/Flow_CX55_MPW/syn/netlist/retrosoc_asic_v1.syn.v.gz
 POST_PATH := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
 SDF_FILE  := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"
 

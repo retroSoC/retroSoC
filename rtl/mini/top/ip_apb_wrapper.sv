@@ -13,8 +13,6 @@
 `include "uart_define.svh"
 `include "pwm_define.svh"
 `include "ps2_define.svh"
-`include "i2c_define.svh"
-`include "spi_define.svh"
 
 `include "mdd_config.svh"
 
@@ -30,14 +28,12 @@ module ip_apb_wrapper (
     uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
-    i2c_if.dut                          i2c,
-    qspi_if.dut                         qspi,
     spi_if.dut                          spfs,
 `ifdef IP_MDD
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
     user_gpio_if.dut                    gpio,
 `endif
-    output logic [ 8:0]                 irq_o
+    output logic [ 6:0]                 irq_o
     // verilog_format: on
 );
 
@@ -47,8 +43,6 @@ module ip_apb_wrapper (
   apb4_if      u_uart1_apb_if    (clk_i, rst_n_i);
   apb4_if      u_pwm_apb_if      (clk_i, rst_n_i);
   apb4_if      u_ps2_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_i2c_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_qspi_apb_if     (clk_i, rst_n_i);
   apb4_if      u_rtc_apb_if      (clk_i, rst_n_i);
   apb4_if      u_wdg_apb_if      (clk_i, rst_n_i);
   apb4_if      u_crc_apb_if      (clk_i, rst_n_i);
@@ -61,8 +55,6 @@ module ip_apb_wrapper (
   apb4_pure_if u_uart1_apb_pure_if    ();
   apb4_pure_if u_pwm_apb_pure_if      ();
   apb4_pure_if u_ps2_apb_pure_if      ();
-  apb4_pure_if u_i2c_apb_pure_if      ();
-  apb4_pure_if u_qspi_apb_pure_if     ();
   apb4_pure_if u_rtc_apb_pure_if      ();
   apb4_pure_if u_wdg_apb_pure_if      ();
   apb4_pure_if u_crc_apb_pure_if      ();
@@ -84,6 +76,7 @@ module ip_apb_wrapper (
 `endif
   // verilog_format: on
 
+  // archinfo
   assign u_archinfo_apb_if.paddr        = u_archinfo_apb_pure_if.paddr;
   assign u_archinfo_apb_if.pprot        = u_archinfo_apb_pure_if.pprot;
   assign u_archinfo_apb_if.psel         = u_archinfo_apb_pure_if.psel;
@@ -94,7 +87,7 @@ module ip_apb_wrapper (
   assign u_archinfo_apb_pure_if.pready  = u_archinfo_apb_if.pready;
   assign u_archinfo_apb_pure_if.prdata  = u_archinfo_apb_if.prdata;
   assign u_archinfo_apb_pure_if.pslverr = u_archinfo_apb_if.pslverr;
-
+  // rng
   assign u_rng_apb_if.paddr             = u_rng_apb_pure_if.paddr;
   assign u_rng_apb_if.pprot             = u_rng_apb_pure_if.pprot;
   assign u_rng_apb_if.psel              = u_rng_apb_pure_if.psel;
@@ -105,7 +98,7 @@ module ip_apb_wrapper (
   assign u_rng_apb_pure_if.pready       = u_rng_apb_if.pready;
   assign u_rng_apb_pure_if.prdata       = u_rng_apb_if.prdata;
   assign u_rng_apb_pure_if.pslverr      = u_rng_apb_if.pslverr;
-
+  // uart1
   assign u_uart1_apb_if.paddr           = u_uart1_apb_pure_if.paddr;
   assign u_uart1_apb_if.pprot           = u_uart1_apb_pure_if.pprot;
   assign u_uart1_apb_if.psel            = u_uart1_apb_pure_if.psel;
@@ -116,7 +109,7 @@ module ip_apb_wrapper (
   assign u_uart1_apb_pure_if.pready     = u_uart1_apb_if.pready;
   assign u_uart1_apb_pure_if.prdata     = u_uart1_apb_if.prdata;
   assign u_uart1_apb_pure_if.pslverr    = u_uart1_apb_if.pslverr;
-
+  // pwm
   assign u_pwm_apb_if.paddr             = u_pwm_apb_pure_if.paddr;
   assign u_pwm_apb_if.pprot             = u_pwm_apb_pure_if.pprot;
   assign u_pwm_apb_if.psel              = u_pwm_apb_pure_if.psel;
@@ -127,7 +120,7 @@ module ip_apb_wrapper (
   assign u_pwm_apb_pure_if.pready       = u_pwm_apb_if.pready;
   assign u_pwm_apb_pure_if.prdata       = u_pwm_apb_if.prdata;
   assign u_pwm_apb_pure_if.pslverr      = u_pwm_apb_if.pslverr;
-
+  // ps2
   assign u_ps2_apb_if.paddr             = u_ps2_apb_pure_if.paddr;
   assign u_ps2_apb_if.pprot             = u_ps2_apb_pure_if.pprot;
   assign u_ps2_apb_if.psel              = u_ps2_apb_pure_if.psel;
@@ -138,29 +131,7 @@ module ip_apb_wrapper (
   assign u_ps2_apb_pure_if.pready       = u_ps2_apb_if.pready;
   assign u_ps2_apb_pure_if.prdata       = u_ps2_apb_if.prdata;
   assign u_ps2_apb_pure_if.pslverr      = u_ps2_apb_if.pslverr;
-
-  assign u_i2c_apb_if.paddr             = u_i2c_apb_pure_if.paddr;
-  assign u_i2c_apb_if.pprot             = u_i2c_apb_pure_if.pprot;
-  assign u_i2c_apb_if.psel              = u_i2c_apb_pure_if.psel;
-  assign u_i2c_apb_if.penable           = u_i2c_apb_pure_if.penable;
-  assign u_i2c_apb_if.pwrite            = u_i2c_apb_pure_if.pwrite;
-  assign u_i2c_apb_if.pwdata            = u_i2c_apb_pure_if.pwdata;
-  assign u_i2c_apb_if.pstrb             = u_i2c_apb_pure_if.pstrb;
-  assign u_i2c_apb_pure_if.pready       = u_i2c_apb_if.pready;
-  assign u_i2c_apb_pure_if.prdata       = u_i2c_apb_if.prdata;
-  assign u_i2c_apb_pure_if.pslverr      = u_i2c_apb_if.pslverr;
-
-  assign u_qspi_apb_if.paddr            = u_qspi_apb_pure_if.paddr;
-  assign u_qspi_apb_if.pprot            = u_qspi_apb_pure_if.pprot;
-  assign u_qspi_apb_if.psel             = u_qspi_apb_pure_if.psel;
-  assign u_qspi_apb_if.penable          = u_qspi_apb_pure_if.penable;
-  assign u_qspi_apb_if.pwrite           = u_qspi_apb_pure_if.pwrite;
-  assign u_qspi_apb_if.pwdata           = u_qspi_apb_pure_if.pwdata;
-  assign u_qspi_apb_if.pstrb            = u_qspi_apb_pure_if.pstrb;
-  assign u_qspi_apb_pure_if.pready      = u_qspi_apb_if.pready;
-  assign u_qspi_apb_pure_if.prdata      = u_qspi_apb_if.prdata;
-  assign u_qspi_apb_pure_if.pslverr     = u_qspi_apb_if.pslverr;
-
+  // rtc
   assign u_rtc_apb_if.paddr             = u_rtc_apb_pure_if.paddr;
   assign u_rtc_apb_if.pprot             = u_rtc_apb_pure_if.pprot;
   assign u_rtc_apb_if.psel              = u_rtc_apb_pure_if.psel;
@@ -171,7 +142,7 @@ module ip_apb_wrapper (
   assign u_rtc_apb_pure_if.pready       = u_rtc_apb_if.pready;
   assign u_rtc_apb_pure_if.prdata       = u_rtc_apb_if.prdata;
   assign u_rtc_apb_pure_if.pslverr      = u_rtc_apb_if.pslverr;
-
+  // wdg
   assign u_wdg_apb_if.paddr             = u_wdg_apb_pure_if.paddr;
   assign u_wdg_apb_if.pprot             = u_wdg_apb_pure_if.pprot;
   assign u_wdg_apb_if.psel              = u_wdg_apb_pure_if.psel;
@@ -182,7 +153,7 @@ module ip_apb_wrapper (
   assign u_wdg_apb_pure_if.pready       = u_wdg_apb_if.pready;
   assign u_wdg_apb_pure_if.prdata       = u_wdg_apb_if.prdata;
   assign u_wdg_apb_pure_if.pslverr      = u_wdg_apb_if.pslverr;
-
+  // crc
   assign u_crc_apb_if.paddr             = u_crc_apb_pure_if.paddr;
   assign u_crc_apb_if.pprot             = u_crc_apb_pure_if.pprot;
   assign u_crc_apb_if.psel              = u_crc_apb_pure_if.psel;
@@ -193,7 +164,7 @@ module ip_apb_wrapper (
   assign u_crc_apb_pure_if.pready       = u_crc_apb_if.pready;
   assign u_crc_apb_pure_if.prdata       = u_crc_apb_if.prdata;
   assign u_crc_apb_pure_if.pslverr      = u_crc_apb_if.pslverr;
-
+  // tmr
   assign u_tmr_apb_if.paddr             = u_tmr_apb_pure_if.paddr;
   assign u_tmr_apb_if.pprot             = u_tmr_apb_pure_if.pprot;
   assign u_tmr_apb_if.psel              = u_tmr_apb_pure_if.psel;
@@ -204,7 +175,7 @@ module ip_apb_wrapper (
   assign u_tmr_apb_pure_if.pready       = u_tmr_apb_if.pready;
   assign u_tmr_apb_pure_if.prdata       = u_tmr_apb_if.prdata;
   assign u_tmr_apb_pure_if.pslverr      = u_tmr_apb_if.pslverr;
-
+  // spfs
   assign u_spfs_apb_if.paddr            = u_spfs_apb_pure_if.paddr;
   assign u_spfs_apb_if.pprot            = u_spfs_apb_pure_if.pprot;
   assign u_spfs_apb_if.psel             = u_spfs_apb_pure_if.psel;
@@ -234,8 +205,6 @@ module ip_apb_wrapper (
   apb4_uart #(.FIFO_DEPTH(32)) u_apb4_uart     (u_uart1_apb_if, uart);
   apb4_pwm                     u_apb4_pwm      (u_pwm_apb_if, pwm);
   apb4_ps2                     u_apb4_ps2      (u_ps2_apb_if, ps2);
-  apb4_i2c                     u_apb4_i2c      (u_i2c_apb_if, i2c);
-  apb4_spi #(.FIFO_DEPTH(32))  u_apb4_spi      (u_qspi_apb_if, qspi);
   apb4_rtc                     u_apb4_rtc      (u_rtc_apb_if, u_rtc_if);
   apb4_wdg                     u_apb4_wdg      (u_wdg_apb_if, u_wdg_if);
   apb4_crc                     u_apb4_crc      (u_crc_apb_if);
@@ -246,12 +215,10 @@ module ip_apb_wrapper (
   assign irq_o[0] = uart.irq_o;
   assign irq_o[1] = pwm.irq_o;
   assign irq_o[2] = ps2.irq_o;
-  assign irq_o[3] = i2c.irq_o;
-  assign irq_o[4] = qspi.irq_o;
-  assign irq_o[5] = u_rtc_if.irq_o;
-  assign irq_o[6] = u_wdg_if.rst_o;
-  assign irq_o[7] = u_tmr_if.irq_o;
-  assign irq_o[8] = spfs.irq_o;
+  assign irq_o[3] = u_rtc_if.irq_o;
+  assign irq_o[4] = u_wdg_if.rst_o;
+  assign irq_o[5] = u_tmr_if.irq_o;
+  assign irq_o[6] = spfs.irq_o;
 
   nmi2apb u_nmi2apb (
       .clk_i   (clk_i),
@@ -265,8 +232,6 @@ module ip_apb_wrapper (
       .uart    (u_uart1_apb_pure_if),
       .pwm     (u_pwm_apb_pure_if),
       .ps2     (u_ps2_apb_pure_if),
-      .i2c     (u_i2c_apb_pure_if),
-      .qspi    (u_qspi_apb_pure_if),
       .rtc     (u_rtc_apb_pure_if),
       .wdg     (u_wdg_apb_pure_if),
       .crc     (u_crc_apb_pure_if),
