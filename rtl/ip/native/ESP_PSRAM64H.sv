@@ -31,6 +31,7 @@
 // Connect this module to your QSPI master controller in your simulation environment.
 //
 
+/* verilator lint_off WIDTHTRUNC */
 module ESP_PSRAM64H #(
     parameter ID = 0
 ) (

@@ -13,15 +13,20 @@ TB_FLIST  := -f $(RTL_PATH)/filelist/tb.fl
 
 ## vcs option
 # -debug_region=cell+lib
+# +lint=TFIPC-H(Timing, Floating Port, Implicit Net Declaration, Parameter, Comparison, High-Level)
+# +ling=PCWM-H(Port, Parameter, Unused Wire, Module Instantiation, High-Level)
+# -error=all(turn all warning into error)
 SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 $(EXTRA) \
                 -kdb \
                 -debug_access+all \
-                +vcs+loopreport+10000 \
+                -msg_config=../lint.msg \
                 +error+500 \
+                +vcs+loopreport+10000 \
                 +vcs+flush+all \
-                +lint=TFIPC-L \
                 -xprop=../xprop_config \
+                -override_timescale=1ns/1ps \
+                -reportstats \
                 -work DEFAULT
 
 
@@ -46,7 +51,7 @@ comp:
 	cd $(RTL_PATH)/.build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 sim: comp
-	cd $(RTL_PATH)/.build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
+	cd $(RTL_PATH)/.build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +loopdetect  +loopdetect+1000 +core_sel=$(RTL_SIM_CORESEL) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
 
 wave:
 	cd $(RTL_PATH)/.build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
