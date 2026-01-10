@@ -47,11 +47,9 @@
 `define APB_UART_START     8'h20
 `define APB_PWM_START      8'h30
 `define APB_PS2_START      8'h40
-`define APB_I2C_START      8'h50
-`define APB_QSPI_START     8'h60
-`define APB_RTC_START      8'h70
-`define APB_WDG_START      8'h80
-`define APB_CRC_START      8'h90
-`define APB_TMR_START      8'hA0
+`define APB_RTC_START      8'h50
+`define APB_WDG_START      8'h60
+`define APB_CRC_START      8'h70
+`define APB_TMR_START      8'h80
 `define APB_USR_START      8'hF0
 `endif

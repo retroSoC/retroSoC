@@ -1,7 +1,7 @@
 SOC            ?= MINI
 SIMU           ?= VCS
 SYNTH          ?= NONE
-TIMI           ?= OPENSTA
+TIMI           ?= NONE
 
 # HW
 PDK             ?= IHP130
@@ -44,8 +44,8 @@ $(info SOC             [TINY, MINI]:                   $(SOC))
 $(info CORE            [PICORV32, HAZARD3, MDD]:       $(CORE))
 $(info IP              [NONE, MDD]:                    $(IP))
 $(info SIMU            [VCS, VERILATOR]:               $(SIMU))
-$(info SYNTH           [YOSYS, DC]:                    $(SYNTH))
-$(info TIMI            [OPENSTA, ISTA]:                $(TIMI))
+$(info SYNTH           [NONE, YOSYS, DC]:              $(SYNTH))
+$(info TIMI            [NONE, OPENSTA, ISTA]:          $(TIMI))
 $(info PDK             [ICS55, IHP130, SKY130, GF180]: $(PDK))
 $(info HAVE_PLL        [YES, NO]:                      $(HAVE_PLL))
 $(info HAVE_SRAM_IF    [YES, NO]:                      $(HAVE_SRAM_IF))

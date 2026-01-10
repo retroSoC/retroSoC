@@ -83,8 +83,8 @@ void app_info() {
     printf("  NMI IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
     printf("  APB IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
     printf("  On-chip RAM:         @[0x%08x-0x%08x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
-    printf("  Extern PSRAM:        @[0x%08x-0x%08x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
-    printf("  QSPI0 MMIO:          @[0x%08x-0x%08x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
+    printf("  Off-chip PSRAM:      @[0x%08x-0x%08x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
+    printf("  XPI MMIO:            @[0x%08x-0x%08x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
     printf("  TF Card MMIO:        @[0x%08x-0x%08x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
@@ -92,21 +92,20 @@ void app_info() {
     printf("                       1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
     printf("                       2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
     printf("                       1 x PSRAM         @0x%x\n", &reg_psram_wait);
-    printf("                       1 x SPISD         @0x%x\n", &reg_spisd_mode);
-    printf("                       1 x I2C0          @0x%x\n", &reg_i2c0_clkdiv);
+    printf("                       1 x SPISD/SDIO    @0x%x\n", &reg_spisd_mode);
+    printf("                       1 x I2C           @0x%x\n", &reg_i2c0_clkdiv);
     printf("                       1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                       1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
-    printf("                       1 x QSPI0         @0x%x\n", &reg_qspi0_mode);
+    printf("                       1 x XPI           @0x%x\n", &reg_qspi0_mode);
     printf("                       1 x DMA           @0x%x\n", &reg_dma_mode);
     printf("                       1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                       1 x CLINT         @0x%x\n", &reg_clint_clkdiv);
+    printf("                       1 x SDRAM         @0x%x\n", &reg_clint_clkdiv);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);
     printf("                       4 x PWM           @0x%x\n", &reg_pwm_ctrl);
     printf("                       1 x PS2           @0x%x\n", &reg_ps2_ctrl);
-    printf("                       1 x I2C1(ADV)     @0x%x\n", &reg_i2c1_ctrl);
-    printf("                       1 x QSPI1         @0x%x\n", &reg_qspi1_status);
     printf("                       1 x RTC           @0x%x\n", &reg_rtc_ctrl);
     printf("                       1 x WDG           @0x%x\n", &reg_wdg_ctrl);
     printf("                       1 x CRC           @0x%x\n", &reg_crc_ctrl);
