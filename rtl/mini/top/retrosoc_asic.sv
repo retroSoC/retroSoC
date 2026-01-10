@@ -54,9 +54,6 @@ module retrosoc_asic (
     inout  tmr_capch_i_pad,
     // irq
     inout  extn_irq_i_pad,
-    // uart
-    output uart0_tx_o_pad,
-    inout  uart0_rx_i_pad,
     // gpio
     inout  gpio_0_io_pad,
     inout  gpio_1_io_pad,
@@ -66,6 +63,9 @@ module retrosoc_asic (
     inout  gpio_5_io_pad,
     inout  gpio_6_io_pad,
     inout  gpio_7_io_pad,
+    // uart
+    output uart0_tx_o_pad,
+    inout  uart0_rx_i_pad,
     // psram
     output psram_sck_o_pad,
     output psram_nss0_o_pad,
@@ -196,8 +196,6 @@ module retrosoc_asic (
   tc_io_tri_schmitt_pad u_tmr_capch_i_pad       (.pad(tmr_capch_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_tmr_capch));
   tc_io_tri_schmitt_pad u_extn_irq_i_pad        (.pad(extn_irq_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_extn_irq));
   // natv
-  tc_io_tri_pad         u_uart0_tx_o_pad        (.pad(uart0_tx_o_pad),        .c2p(u_uart0_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_uart0_rx_i_pad        (.pad(uart0_rx_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_uart0_if.uart_rx_i));
   tc_io_tri_pad         u_gpio_0_io_pad         (.pad(gpio_0_io_pad),         .c2p(u_gpio_if.gpio_out[0]),      .c2p_en(u_gpio_if.gpio_oe[0]),      .p2c(u_gpio_if.gpio_in[0]));
   tc_io_tri_pad         u_gpio_1_io_pad         (.pad(gpio_1_io_pad),         .c2p(u_gpio_if.gpio_out[1]),      .c2p_en(u_gpio_if.gpio_oe[1]),      .p2c(u_gpio_if.gpio_in[1]));
   tc_io_tri_pad         u_gpio_2_io_pad         (.pad(gpio_2_io_pad),         .c2p(u_gpio_if.gpio_out[2]),      .c2p_en(u_gpio_if.gpio_oe[2]),      .p2c(u_gpio_if.gpio_in[2]));
@@ -206,6 +204,8 @@ module retrosoc_asic (
   tc_io_tri_schmitt_pad u_gpio_5_io_pad         (.pad(gpio_5_io_pad),         .c2p(u_gpio_if.gpio_out[5]),      .c2p_en(u_gpio_if.gpio_oe[5]),      .p2c(u_gpio_if.gpio_in[5]));
   tc_io_tri_schmitt_pad u_gpio_6_io_pad         (.pad(gpio_6_io_pad),         .c2p(u_gpio_if.gpio_out[6]),      .c2p_en(u_gpio_if.gpio_oe[6]),      .p2c(u_gpio_if.gpio_in[6]));
   tc_io_tri_schmitt_pad u_gpio_7_io_pad         (.pad(gpio_7_io_pad),         .c2p(u_gpio_if.gpio_out[7]),      .c2p_en(u_gpio_if.gpio_oe[7]),      .p2c(u_gpio_if.gpio_in[7]));
+  tc_io_tri_pad         u_uart0_tx_o_pad        (.pad(uart0_tx_o_pad),        .c2p(u_uart0_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_uart0_rx_i_pad        (.pad(uart0_rx_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_uart0_if.uart_rx_i));
   tc_io_tri_pad         u_psram_sck_o_pad       (.pad(psram_sck_o_pad),       .c2p(u_psram_if.spi_sck_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_psram_nss0_o_pad      (.pad(psram_nss0_o_pad),      .c2p(u_psram_if.spi_nss_o[0]),    .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_psram_nss1_o_pad      (.pad(psram_nss1_o_pad),      .c2p(u_psram_if.spi_nss_o[1]),    .c2p_en(1'b1),                      .p2c());
@@ -267,6 +267,13 @@ module retrosoc_asic (
       .sys_clkdiv4_o(s_sys_clkdiv4)
   );
 
+`ifdef HAVE_SRAM_IF
+  onchip_ram u_onchip_ram (
+      .clk_i(s_sys_clk),
+      .ram  (u_ram_if)
+  );
+`endif
+
   retrosoc u_retrosoc (
       .clk_i      (s_sys_clk),
       .rst_n_i    (s_sys_rst_n),
@@ -301,12 +308,5 @@ module retrosoc_asic (
       .qspi       (u_qspi_if),
       .spfs       (u_spfs_if)
   );
-
-`ifdef HAVE_SRAM_IF
-  onchip_ram u_onchip_ram (
-      .clk_i(s_sys_clk),
-      .ram  (u_ram_if)
-  );
-`endif
 
 endmodule

@@ -29,8 +29,8 @@ module retrosoc (
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
-    uart_if.dut                            uart0,
     simp_gpio_if.dut                       gpio,
+    uart_if.dut                            uart0,
     qspi_if.dut                            psram,
     spi_if.dut                             spisd,
     i2c_if.dut                             i2c,
@@ -103,8 +103,8 @@ module retrosoc (
       .clk_aud_i  (clk_aud_i),
       .rst_aud_n_i(rst_aud_n_i),
       .nmi        (u_natv_nmi_if),
-      .uart       (uart0),
       .gpio       (gpio),
+      .uart       (uart0),
       .psram      (psram),
       .spisd      (spisd),
       .i2c        (i2c),
