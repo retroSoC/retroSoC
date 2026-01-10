@@ -6,6 +6,9 @@
 #include <tinyqspi.h>
 #include <tinylcd.h>
 #include <tinydma.h>
+#ifdef CSR_ENABLE
+#include <system_base.h>
+#endif
 // #include "image.h"
 // #include "video.h"
 
@@ -247,11 +250,11 @@ void lcd_fill_video(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, 
 
 
 void lcd_frame(uint32_t first, uint32_t pref_cnt) {
+#ifdef CORE_PICORV32
     static uint32_t cycle_start, cycle_end;
     static uint32_t cycleh_start, cycleh_end;
     static uint32_t inst_start, inst_end;
     static uint32_t insth_start, insth_end;
-
     if(first) {
         __asm__ volatile("rdcycle %0"    : "=r"(cycle_start));
         __asm__ volatile("rdcycleh %0"   : "=r"(cycleh_start));
@@ -267,6 +270,24 @@ void lcd_frame(uint32_t first, uint32_t pref_cnt) {
         printf("insts  num: %d(high: %d)\n", inst_end - inst_start, insth_end - insth_start);
         printf("flush rate: %dfps\n", pref_cnt / ((cycle_end - cycle_start) / CPU_FREQ / 1000000));
     }
+#elif CORE_HAZARD3
+    static uint64_t cycle_start, cycle_end;
+    static uint64_t inst_start, inst_end;
+    if(first) {
+        cycle_start = __get_rv_cycle();
+        inst_start = __get_rv_instret();
+    } else {
+        cycle_end = __get_rv_cycle();
+        inst_end = __get_rv_instret();
+        printf("cycles num: %lld\n", cycle_end - cycle_start);
+        printf("insts  num: %lld\n", inst_end - inst_start);
+        printf("flush rate: %lldfps\n", pref_cnt / ((uint32_t)(cycle_end - cycle_start) / CPU_FREQ / 1000000));
+    }
+
+#else
+ (void) first;
+ (void) pref_cnt;
+#endif
 }
 
 

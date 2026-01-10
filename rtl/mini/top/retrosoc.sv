@@ -29,38 +29,34 @@ module retrosoc (
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
-    simp_gpio_if.dut                       gpio,
     uart_if.dut                            uart0,
+    simp_gpio_if.dut                       gpio,
     qspi_if.dut                            psram,
     spi_if.dut                             spisd,
+    i2c_if.dut                             i2c,
+    qspi_if.dut                            qspi,
     nv_i2s_if.dut                          i2s,
     onewire_if.dut                         onewire,
     uart_if.dut                            uart1,
     pwm_if.dut                             pwm,
     ps2_if.dut                             ps2,
-    i2c_if.dut                             i2c,
-    qspi_if.dut                            qspi,
     spi_if.dut                             spfs
     // verilog_format: on
 );
 
   // verilog_format: off
+  // bus interface
   nmi_if u_core_nmi_if ();
   nmi_if u_dma_nmi_if ();
   nmi_if u_natv_nmi_if();
   nmi_if u_apb_nmi_if();
-  i2c_if u_natv_i2c_if();
-  i2c_if u_apb_i2c_if();
-  qspi_if u_natv_qspi_if();
-  qspi_if u_apb_qspi_if();
+  // ip interface
   sysctrl_if u_sysctrl_if();
-  simp_clint_if u_clint_if();
   // verilog_format: on
-
   // irq
   logic [31:0] s_irq;
-  logic [ 2:0] s_natv_irq;
-  logic [ 8:0] s_apb_irq;
+  logic [ 9:0] s_natv_irq;
+  logic [ 6:0] s_apb_irq;
 
 `ifdef CORE_MDD
   assign u_sysctrl_if.core_sel_i = core_sel_i;
@@ -68,36 +64,12 @@ module retrosoc (
   assign u_sysctrl_if.core_sel_i = '0;
 `endif
 
-  // verilog_format: off
-  // natv/apb i2s mux
-  assign u_apb_i2c_if.scl_i  = i2c.scl_i;
-  assign u_apb_i2c_if.sda_i  = i2c.sda_i;
-  assign u_natv_i2c_if.scl_i = i2c.scl_i;
-  assign u_natv_i2c_if.sda_i = i2c.sda_i;
+  // irq
+  assign s_irq[9:0]   = s_natv_irq;
+  assign s_irq[16:10] = s_apb_irq;
+  assign s_irq[17]    = extn_irq_i;
+  assign s_irq[31:18] = 14'd0;
 
-  assign i2c.scl_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.scl_o     :  u_apb_i2c_if.scl_o;
-  assign i2c.scl_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.scl_dir_o : ~u_apb_i2c_if.scl_dir_o;
-  assign i2c.sda_o           = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_o     :  u_apb_i2c_if.sda_o;
-  assign i2c.sda_dir_o       = ~u_sysctrl_if.i2c_sel_o ? u_natv_i2c_if.sda_dir_o : ~u_apb_i2c_if.sda_dir_o;
-  assign i2c.irq_o           = '0;
-  // natv/apb qspi mux
-  assign u_apb_qspi_if.spi_io_in_i  = qspi.spi_io_in_i;
-  assign u_natv_qspi_if.spi_io_in_i = qspi.spi_io_in_i;
-
-  assign qspi.spi_sck_o             = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_sck_o    : u_apb_qspi_if.spi_sck_o;
-  assign qspi.spi_nss_o             = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_nss_o    : u_apb_qspi_if.spi_nss_o;
-  assign qspi.spi_io_en_o           = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_io_en_o  : u_apb_qspi_if.spi_io_en_o;
-  assign qspi.spi_io_out_o          = ~u_sysctrl_if.qspi_sel_o ? u_natv_qspi_if.spi_io_out_o : u_apb_qspi_if.spi_io_out_o;
-  assign qspi.irq_o                 = '0;
-
-  // interrupt
-  assign s_irq[0]     = u_clint_if.sfr_irq_o;
-  assign s_irq[1]     = u_clint_if.tmr_irq_o;
-  assign s_irq[2]     = extn_irq_i;
-  assign s_irq[5:3]   = s_natv_irq;
-  assign s_irq[14:6]  = s_apb_irq;
-  assign s_irq[31:15] = 17'd0;
-// verilog_format: on
 
   core_wrapper u_core_wrapper (
       .clk_i     (clk_i),
@@ -109,17 +81,21 @@ module retrosoc (
       .irq_i     (s_irq)
   );
 
+
   bus u_bus (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
 `ifdef HAVE_SRAM_IF
       .ram     (ram),
 `endif
+      // master
       .core_nmi(u_core_nmi_if),
       .dma_nmi (u_dma_nmi_if),
+      // slave
       .natv_nmi(u_natv_nmi_if),
       .apb_nmi (u_apb_nmi_if)
   );
+
 
   ip_natv_wrapper u_ip_natv_wrapper (
       .clk_i      (clk_i),
@@ -127,19 +103,19 @@ module retrosoc (
       .clk_aud_i  (clk_aud_i),
       .rst_aud_n_i(rst_aud_n_i),
       .nmi        (u_natv_nmi_if),
-      .gpio       (gpio),
       .uart       (uart0),
+      .gpio       (gpio),
       .psram      (psram),
       .spisd      (spisd),
-      .i2c        (u_natv_i2c_if),
+      .i2c        (i2c),
       .i2s        (i2s),
       .onewire    (onewire),
-      .qspi       (u_natv_qspi_if),
+      .qspi       (qspi),
       .dma_nmi    (u_dma_nmi_if),
       .sysctrl    (u_sysctrl_if),
-      .clint      (u_clint_if),
       .irq_o      (s_natv_irq)
   );
+
 
   ip_apb_wrapper u_ip_apb_wrapper (
       .clk_i      (clk_i),
@@ -152,8 +128,6 @@ module retrosoc (
       .uart       (uart1),
       .pwm        (pwm),
       .ps2        (ps2),
-      .i2c        (u_apb_i2c_if),
-      .qspi       (u_apb_qspi_if),
       .spfs       (spfs),
 `ifdef IP_MDD
       .ip_sel_i   (u_sysctrl_if.ip_sel_o),

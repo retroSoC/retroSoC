@@ -1,6 +1,6 @@
 SOC            ?= MINI
 SIMU           ?= VCS
-SYNTH          ?= YOSYS
+SYNTH          ?= NONE
 TIMI           ?= OPENSTA
 
 # HW

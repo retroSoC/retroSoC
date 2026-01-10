@@ -27,8 +27,16 @@ interface nv_i2s_if ();
   logic lrck_o;
   logic dacdat_o;
   logic adcdat_i;
+  logic irq_o;
 
-  modport dut(output mclk_o, output sclk_o, output lrck_o, output dacdat_o, input adcdat_i);
+  modport dut(
+      output mclk_o,
+      output sclk_o,
+      output lrck_o,
+      output dacdat_o,
+      input adcdat_i,
+      output irq_o
+  );
 
 endinterface
 

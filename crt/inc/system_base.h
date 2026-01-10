@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include <system_csr.h>
 #include <system_gcc.h>
+#include <tinyprintf.h>
 
 
 #ifndef __RISCV_XLEN
@@ -455,6 +456,7 @@ __STATIC_FORCEINLINE uint64_t __get_rv_cycle(void) {
     high0 = __RV_CSR_READ(CSR_MCYCLEH);
     low = __RV_CSR_READ(CSR_MCYCLE);
     high = __RV_CSR_READ(CSR_MCYCLEH);
+    // printf("high: %d low: %d\n", high, low);
     if (high0 != high) {
         low = __RV_CSR_READ(CSR_MCYCLE);
     }

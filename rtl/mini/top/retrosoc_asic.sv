@@ -13,13 +13,18 @@
 `include "mdd_config.svh"
 
 module retrosoc_asic (
-    input  xi_i_pad,
-    output xo_o_pad,
     inout  extclk_i_pad,
     inout  audclk_i_pad,
-    inout  tmr_capch_i_pad,
-    // IRQ
-    inout  extn_irq_i_pad,
+    inout  ext_rst_n_i_pad,
+    output sys_clkdiv4_o_pad,
+`ifdef HAVE_PLL
+    input  xi_i_pad,
+    output xo_o_pad,
+    inout  clk_bypass_i_pad,
+    inout  pll_cfg_0_i_pad,
+    inout  pll_cfg_1_i_pad,
+    inout  pll_cfg_2_i_pad,
+`endif
 `ifdef CORE_MDD
     inout  core_sel_0_i_pad,
     inout  core_sel_1_i_pad,
@@ -45,14 +50,10 @@ module retrosoc_asic (
     inout  user_gpio_14_io_pad,
     inout  user_gpio_15_io_pad,
 `endif
-`ifdef HAVE_PLL
-    inout  pll_cfg_0_i_pad,
-    inout  pll_cfg_1_i_pad,
-    inout  pll_cfg_2_i_pad,
-`endif
-    inout  clk_bypass_i_pad,
-    inout  ext_rst_n_i_pad,
-    output sys_clkdiv4_o_pad,
+    // tmr extern capture
+    inout  tmr_capch_i_pad,
+    // irq
+    inout  extn_irq_i_pad,
     // uart
     output uart0_tx_o_pad,
     inout  uart0_rx_i_pad,
@@ -114,48 +115,59 @@ module retrosoc_asic (
     inout  spfs_miso_i_pad
 );
   // clk&rst
-  logic s_xtal_io;
   logic s_ext_clk;
   logic s_aud_clk;
+  logic s_extn_irq;
+  logic s_sys_clkdiv4;
 `ifdef HAVE_PLL
+  logic       s_xtal_io;
+  logic       s_clk_bypass;
   logic [2:0] s_pll_cfg;
 `endif
-  logic s_clk_bypass;
   logic s_sys_clk;
   logic s_ext_rst_n;
   logic s_sys_rst_n;
   logic s_aud_rst_n;
   logic s_tmr_capch;
-  logic s_sys_clkdiv4;
-  logic s_extn_irq;
+
 `ifdef CORE_MDD
   logic [`USER_CORESEL_WIDTH-1:0] s_core_sel;
 `endif
+
 `ifdef IP_MDD
   user_gpio_if u_user_gpio_if ();
 `endif
+
 `ifdef HAVE_SRAM_IF
   ram_if u_ram_if ();
 `endif
 
-  simp_gpio_if u_gpio_if ();
-  uart_if u_uart0_if ();
-  qspi_if u_psram_if ();
-  spi_if u_spisd_if ();
-  nv_i2s_if u_i2s_if ();
-  onewire_if u_onewire_if ();
-  uart_if u_uart1_if ();
-  pwm_if u_pwm_if ();
-  ps2_if u_ps2_if ();
-  i2c_if u_i2c_if ();
-  qspi_if u_qspi_if ();
-  spi_if u_spfs_if ();
   // verilog_format: off
-  tc_io_xtl_pad         u_xtal_io_pad           (.xi_pad(xi_i_pad),           .xo_pad(xo_o_pad),                .en(1'b1),                          .clk(s_xtal_io));
+  simp_gpio_if u_gpio_if    ();
+  uart_if      u_uart0_if   ();
+  qspi_if      u_psram_if   ();
+  spi_if       u_spisd_if   ();
+  nv_i2s_if    u_i2s_if     ();
+  onewire_if   u_onewire_if ();
+  uart_if      u_uart1_if   ();
+  pwm_if       u_pwm_if     ();
+  ps2_if       u_ps2_if     ();
+  i2c_if       u_i2c_if     ();
+  qspi_if      u_qspi_if    ();
+  spi_if       u_spfs_if    ();
+
+
   tc_io_tri_pad         u_extclk_i_pad          (.pad(extclk_i_pad),          .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_ext_clk));
   tc_io_tri_pad         u_audclk_i_pad          (.pad(audclk_i_pad),          .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_aud_clk));
-  tc_io_tri_schmitt_pad u_tmr_capch_i_pad       (.pad(tmr_capch_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_tmr_capch));
-  tc_io_tri_schmitt_pad u_extn_irq_i_pad        (.pad(extn_irq_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_extn_irq));
+  tc_io_tri_schmitt_pad u_ext_rst_n_i_pad       (.pad(ext_rst_n_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_ext_rst_n));
+  tc_io_tri_pad         u_sys_clkdiv4_o_pad     (.pad(sys_clkdiv4_o_pad),     .c2p(s_sys_clkdiv4),              .c2p_en(1'b1),                      .p2c());
+`ifdef HAVE_PLL
+  tc_io_xtl_pad         u_xtal_io_pad           (.xi_pad(xi_i_pad),           .xo_pad(xo_o_pad),                .en(1'b1),                          .clk(s_xtal_io));
+  tc_io_tri_pad         u_clk_bypass_i_pad      (.pad(clk_bypass_i_pad),      .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_clk_bypass));
+  tc_io_tri_pad         u_pll_cfg_0_i_pad       (.pad(pll_cfg_0_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_pll_cfg[0]));
+  tc_io_tri_pad         u_pll_cfg_1_i_pad       (.pad(pll_cfg_1_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_pll_cfg[1]));
+  tc_io_tri_pad         u_pll_cfg_2_i_pad       (.pad(pll_cfg_2_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_pll_cfg[2]));
+`endif
 `ifdef CORE_MDD
   tc_io_tri_pad         u_core_sel_0_i_pad      (.pad(core_sel_0_i_pad),      .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_core_sel[0]));
   tc_io_tri_pad         u_core_sel_1_i_pad      (.pad(core_sel_1_i_pad),      .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_core_sel[1]));
@@ -181,14 +193,8 @@ module retrosoc_asic (
   tc_io_tri_full_pad    u_user_gpio_14_io_pad   (.pad(user_gpio_14_io_pad),   .c2p(u_user_gpio_if.gpio_out[14]), .c2p_en(u_user_gpio_if.gpio_oe[14]), .p2c(u_user_gpio_if.gpio_in[14]), .cs(u_user_gpio_if.gpio_cs[14]), .pu(u_user_gpio_if.gpio_pu[14]), .pd(u_user_gpio_if.gpio_pd[14]));
   tc_io_tri_full_pad    u_user_gpio_15_io_pad   (.pad(user_gpio_15_io_pad),   .c2p(u_user_gpio_if.gpio_out[15]), .c2p_en(u_user_gpio_if.gpio_oe[15]), .p2c(u_user_gpio_if.gpio_in[15]), .cs(u_user_gpio_if.gpio_cs[15]), .pu(u_user_gpio_if.gpio_pu[15]), .pd(u_user_gpio_if.gpio_pd[15]));
 `endif
-`ifdef HAVE_PLL
-  tc_io_tri_pad         u_pll_cfg_0_i_pad       (.pad(pll_cfg_0_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_pll_cfg[0]));
-  tc_io_tri_pad         u_pll_cfg_1_i_pad       (.pad(pll_cfg_1_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_pll_cfg[1]));
-  tc_io_tri_pad         u_pll_cfg_2_i_pad       (.pad(pll_cfg_2_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_pll_cfg[2]));
-`endif
-  tc_io_tri_pad         u_clk_bypass_i_pad      (.pad(clk_bypass_i_pad),      .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_clk_bypass));
-  tc_io_tri_schmitt_pad u_ext_rst_n_i_pad       (.pad(ext_rst_n_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_ext_rst_n));
-  tc_io_tri_pad         u_sys_clkdiv4_o_pad     (.pad(sys_clkdiv4_o_pad),     .c2p(s_sys_clkdiv4),              .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_schmitt_pad u_tmr_capch_i_pad       (.pad(tmr_capch_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_tmr_capch));
+  tc_io_tri_schmitt_pad u_extn_irq_i_pad        (.pad(extn_irq_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_extn_irq));
   // natv
   tc_io_tri_pad         u_uart0_tx_o_pad        (.pad(uart0_tx_o_pad),        .c2p(u_uart0_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_uart0_rx_i_pad        (.pad(uart0_rx_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_uart0_if.uart_rx_i));
@@ -247,12 +253,12 @@ module retrosoc_asic (
   // verilog_format: on
   // clk buffer & mux
   rcu u_rcu (
-      .xtal_clk_i   (s_xtal_io),
       .ext_clk_i    (s_ext_clk),
       .aud_clk_i    (s_aud_clk),
-      .clk_bypass_i (s_clk_bypass),
       .ext_rst_n_i  (s_ext_rst_n),
 `ifdef HAVE_PLL
+      .xtal_clk_i   (s_xtal_io),
+      .clk_bypass_i (s_clk_bypass),
       .pll_cfg_i    (s_pll_cfg),
 `endif
       .sys_clk_o    (s_sys_clk),
@@ -266,13 +272,11 @@ module retrosoc_asic (
       .rst_n_i    (s_sys_rst_n),
       .clk_aud_i  (s_aud_clk),
       .rst_aud_n_i(s_aud_rst_n),
-      .tmr_capch_i(s_tmr_capch),
 `ifdef HAVE_PLL
       .spfs_div4_i(s_pll_cfg[2]),
 `else
       .spfs_div4_i('0),
 `endif
-      .extn_irq_i (s_extn_irq),
 `ifdef CORE_MDD
       .core_sel_i (s_core_sel),
 `endif
@@ -282,6 +286,8 @@ module retrosoc_asic (
 `ifdef HAVE_SRAM_IF
       .ram        (u_ram_if),
 `endif
+      .tmr_capch_i(s_tmr_capch),
+      .extn_irq_i (s_extn_irq),
       .gpio       (u_gpio_if),
       .uart0      (u_uart0_if),
       .psram      (u_psram_if),

@@ -122,6 +122,7 @@ module i2s_core (
   assign i2s.mclk_o  = clk_i;
   assign i2s.sclk_o  = s_sclk_q;
   assign i2s.lrck_o  = s_lrck_q;
+  assign i2s.irq_o   = '0;
 
   assign s_sclk_pos  = (~s_sclk_q) && (s_sclk_div_cnt_q == '0);
   assign s_sclk_fall = s_sclk_q && (s_sclk_div_cnt_q == '0);

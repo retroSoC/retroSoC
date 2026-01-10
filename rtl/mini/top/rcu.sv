@@ -9,12 +9,12 @@
 // See the Mulan PSL v2 for more details.
 
 module rcu (
-    input  logic       xtal_clk_i,
     input  logic       ext_clk_i,
     input  logic       aud_clk_i,
-    input  logic       clk_bypass_i,
     input  logic       ext_rst_n_i,
 `ifdef HAVE_PLL
+    input  logic       xtal_clk_i,
+    input  logic       clk_bypass_i,
     input  logic [2:0] pll_cfg_i,
 `endif
     output logic       sys_clk_o,
@@ -22,45 +22,66 @@ module rcu (
     output logic       aud_rst_n_o,
     output logic       sys_clkdiv4_o
 );
+`ifdef HAVE_PLL
   logic       s_xtal_clk_buf;
-  logic       s_ext_clk_buf;
-  logic       s_pll_clk;
   logic       s_pll_clk_buf;
-  logic       s_sys_clk;
-  logic       s_ext_rst_n_sync;
-  logic       s_aud_rst_n_sync;
+  logic       s_pll_clk;
   logic       s_pll_lock;
   logic       s_pll_bp;
   logic [3:0] s_pll_N;
   logic [7:0] s_pll_M;
   logic [1:0] s_pll_OD;
+`endif
+  logic s_ext_clk_buf;
+  logic s_sys_clk;
+  logic s_aud_clk_buf;
+  logic s_ext_rst_n_sync;
+  logic s_aud_rst_n_sync;
+
   logic [3:0] s_div_cnt_d, s_div_cnt_q;
   logic s_sys_clkdiv4_d, s_sys_clkdiv4_q;
 
 
-  tc_clk_buf u_xtal_buf (
-      .clk_i(xtal_clk_i),
-      .clk_o(s_xtal_clk_buf)
-  );
+  // ext buffer
   tc_clk_buf u_ext_clk_buf (
       .clk_i(ext_clk_i),
       .clk_o(s_ext_clk_buf)
   );
+  // aud buffer
+  tc_clk_buf u_aud_clk_buf (
+      .clk_i(aud_clk_i),
+      .clk_o(s_aud_clk_buf)
+  );
+
+`ifdef HAVE_PLL
+  tc_clk_buf u_xtal_buf (
+      .clk_i(xtal_clk_i),
+      .clk_o(s_xtal_clk_buf)
+  );
+
   tc_clk_buf u_pll_clk_buf (
       .clk_i(s_pll_clk),
       .clk_o(s_pll_clk_buf)
   );
+
+  // select system clock from pll or ext
   tc_clk_mux2 u_sys_mux (
       .clk0_i   (s_pll_clk_buf),
       .clk1_i   (s_ext_clk_buf),
       .clk_sel_i(clk_bypass_i),
       .clk_o    (s_sys_clk)
   );
+`else
+  assign s_sys_clk = s_ext_clk_buf;
+`endif
+
   tc_clk_buf u_sys_clk_buf (
       .clk_i(s_sys_clk),
       .clk_o(sys_clk_o)
   );
 
+
+  // reset sync logic
   rst_sync #(
       .STAGE(5)
   ) u_ext_rst_sync (
@@ -72,12 +93,17 @@ module rcu (
   rst_sync #(
       .STAGE(5)
   ) u_aud_rst_sync (
-      .clk_i  (aud_clk_i),
+      .clk_i  (s_aud_clk_buf),
       .rst_n_i(ext_rst_n_i),
       .rst_n_o(s_aud_rst_n_sync)
   );
 
-  assign sys_rst_n_o   = clk_bypass_i ? s_ext_rst_n_sync : s_pll_lock;
+`ifdef HAVE_PLL
+  assign sys_rst_n_o = clk_bypass_i ? s_ext_rst_n_sync : s_pll_lock;
+`else
+  assign sys_rst_n_o = s_ext_rst_n_sync;
+`endif
+
   assign aud_rst_n_o   = s_aud_rst_n_sync;
   assign sys_clkdiv4_o = s_sys_clkdiv4_q;
 
@@ -160,12 +186,7 @@ module rcu (
       end
     endcase
   end
-`else
-  assign s_pll_bp = 1'b1;
-  assign s_pll_M  = 8'd20;
-  assign s_pll_N  = 4'd2;
-  assign s_pll_OD = 2'd1;
-`endif
+
   tc_pll u_tc_pll (
       .fref_i    (s_xtal_clk_buf),
       .rst_n_i   (s_ext_rst_n_sync),
@@ -177,5 +198,6 @@ module rcu (
       .pll_lock_o(s_pll_lock),
       .pll_clk_o (s_pll_clk)
   );
+`endif
 
 endmodule

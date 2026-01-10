@@ -9,10 +9,10 @@ void ip_1wire_test(int argc, char **argv) {
     (void) argv;
     printf("1-wire test\n");
 
-    reg_onewire_clkdiv = (uint8_t)90;
-    reg_onewire_zerocnt = (uint8_t)24;
-    reg_onewire_onecnt = (uint8_t)45;
-    reg_onewire_rstcnt = (uint8_t)6;
+    reg_onewire_clkdiv  = (uint8_t)(CPU_FREQ / 0.8); // 72M 90
+    reg_onewire_zerocnt = (uint8_t)(CPU_FREQ / 3);   // 72M 24
+    reg_onewire_onecnt  = (uint8_t)(CPU_FREQ / 1.6); // 72M 45
+    reg_onewire_rstcnt  = (uint8_t)(CPU_FREQ / 12);  // 72M 6
 
     for(int num = 0; num < 6; ++num) {
         for(int i = 0; i < 256; ++i) {

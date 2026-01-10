@@ -648,6 +648,10 @@ void tinysh_launch() {
     // register internal cmd
     tinysh_register("help", "help info", (uint8_t)0, tinysh_help);
     tinysh_register("history", "print history list", (uint8_t)0, tinysh_history_list);
+    tinysh_register("coremark", "coremark test", (uint8_t)0, tinysh_app_coremark_cmd);
+#ifdef IP_MDD
+    tinysh_register("userip", "run user ip program", (uint8_t)0, tinysh_app_userip_cmd);
+#endif
     if(fs_init_state == (uint8_t)0) {
         tinysh_register("ls", "list directory contents", (uint8_t)0, tinysh_fat32_ls_cmd);
         tinysh_register("lsr", "list directory contents recursively", (uint8_t)0, tinysh_fat32_lsr_cmd);
@@ -664,16 +668,12 @@ void tinysh_launch() {
         tinysh_register("cat", "concatenate file(s) to standard output", (uint8_t)0, tinysh_fat32_cat_cmd);
         tinysh_register("df", "report file system disk space usage", (uint8_t)0, tinysh_fat32_df_cmd);
         tinysh_register("fatlabel", "set/get filesystem label or volume ID", (uint8_t)0, tinysh_fat32_fatlabel_cmd);
-        tinysh_register("coremark", "coremark test", (uint8_t)0, tinysh_app_coremark_cmd);
         tinysh_register("image", "image viewer", (uint8_t)0, tinysh_app_image_cmd);
         tinysh_register("video", "video player", (uint8_t)0, tinysh_app_video_cmd);
         tinysh_register("audio", "audio player", (uint8_t)0, tinysh_app_audio_cmd);
         tinysh_register("lvgl", "show lvgl components", (uint8_t)0, tinysh_app_lvgl_cmd);
         tinysh_register("arduboy", "run arduboy", (uint8_t)0, tinysh_app_arduboy_cmd);
         tinysh_register("nes", "run nes simulator", (uint8_t)0, tinysh_app_nes_cmd);
-#ifdef IP_MDD
-        tinysh_register("userip", "run user ip program", (uint8_t)0, tinysh_app_userip_cmd);
-#endif
         printf("register cmd num: %d\n", sh_cmd_len);
     }
 

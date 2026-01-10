@@ -23,8 +23,6 @@ module nmi2apb (
     apb4_pure_if.master uart,
     apb4_pure_if.master pwm,
     apb4_pure_if.master ps2,
-    apb4_pure_if.master i2c,
-    apb4_pure_if.master qspi,
     apb4_pure_if.master rtc,
     apb4_pure_if.master wdg,
     apb4_pure_if.master crc,
@@ -34,8 +32,8 @@ module nmi2apb (
 );
 
   localparam FSM_IDLE = 2'd0;
-  localparam FSM_SETUP = 2'd1;
-  localparam FSM_ENABLE = 2'd2;
+  localparam FSM_SETP = 2'd1;
+  localparam FSM_ENAB = 2'd2;
 
   logic [31:0] s_rd_data;
   logic s_xfer_valid, s_xfer_ready;
@@ -49,8 +47,6 @@ module nmi2apb (
   assign uart.paddr       = nmi.addr;
   assign pwm.paddr        = nmi.addr;
   assign ps2.paddr        = nmi.addr;
-  assign i2c.paddr        = nmi.addr;
-  assign qspi.paddr       = nmi.addr;
   assign rtc.paddr        = nmi.addr;
   assign wdg.paddr        = nmi.addr;
   assign crc.paddr        = nmi.addr;
@@ -62,8 +58,6 @@ module nmi2apb (
   assign uart.pprot       = '0;
   assign pwm.pprot        = '0;
   assign ps2.pprot        = '0;
-  assign i2c.pprot        = '0;
-  assign qspi.pprot       = '0;
   assign rtc.pprot        = '0;
   assign wdg.pprot        = '0;
   assign crc.pprot        = '0;
@@ -75,34 +69,28 @@ module nmi2apb (
   assign uart.psel        = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_UART_START);
   assign pwm.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PWM_START);
   assign ps2.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PS2_START);
-  assign i2c.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_I2C_START);
-  assign qspi.psel        = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_QSPI_START);
   assign rtc.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RTC_START);
   assign wdg.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_WDG_START);
   assign crc.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_CRC_START);
   assign tmr.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_TMR_START);
   assign spfs.psel        = s_xfer_valid && (nmi.addr[31:28] == `FLASH_START);
 
-  assign archinfo.penable = s_fsm_q == FSM_ENABLE;
-  assign rng.penable      = s_fsm_q == FSM_ENABLE;
-  assign uart.penable     = s_fsm_q == FSM_ENABLE;
-  assign pwm.penable      = s_fsm_q == FSM_ENABLE;
-  assign ps2.penable      = s_fsm_q == FSM_ENABLE;
-  assign i2c.penable      = s_fsm_q == FSM_ENABLE;
-  assign qspi.penable     = s_fsm_q == FSM_ENABLE;
-  assign rtc.penable      = s_fsm_q == FSM_ENABLE;
-  assign wdg.penable      = s_fsm_q == FSM_ENABLE;
-  assign crc.penable      = s_fsm_q == FSM_ENABLE;
-  assign tmr.penable      = s_fsm_q == FSM_ENABLE;
-  assign spfs.penable     = s_fsm_q == FSM_ENABLE;
+  assign archinfo.penable = s_fsm_q == FSM_ENAB;
+  assign rng.penable      = s_fsm_q == FSM_ENAB;
+  assign uart.penable     = s_fsm_q == FSM_ENAB;
+  assign pwm.penable      = s_fsm_q == FSM_ENAB;
+  assign ps2.penable      = s_fsm_q == FSM_ENAB;
+  assign rtc.penable      = s_fsm_q == FSM_ENAB;
+  assign wdg.penable      = s_fsm_q == FSM_ENAB;
+  assign crc.penable      = s_fsm_q == FSM_ENAB;
+  assign tmr.penable      = s_fsm_q == FSM_ENAB;
+  assign spfs.penable     = s_fsm_q == FSM_ENAB;
 
   assign archinfo.pwrite  = |nmi.wstrb;
   assign rng.pwrite       = |nmi.wstrb;
   assign uart.pwrite      = |nmi.wstrb;
   assign pwm.pwrite       = |nmi.wstrb;
   assign ps2.pwrite       = |nmi.wstrb;
-  assign i2c.pwrite       = |nmi.wstrb;
-  assign qspi.pwrite      = |nmi.wstrb;
   assign rtc.pwrite       = |nmi.wstrb;
   assign wdg.pwrite       = |nmi.wstrb;
   assign crc.pwrite       = |nmi.wstrb;
@@ -114,8 +102,6 @@ module nmi2apb (
   assign uart.pwdata      = nmi.wdata;
   assign pwm.pwdata       = nmi.wdata;
   assign ps2.pwdata       = nmi.wdata;
-  assign i2c.pwdata       = nmi.wdata;
-  assign qspi.pwdata      = nmi.wdata;
   assign rtc.pwdata       = nmi.wdata;
   assign wdg.pwdata       = nmi.wdata;
   assign crc.pwdata       = nmi.wdata;
@@ -127,8 +113,6 @@ module nmi2apb (
   assign uart.pstrb       = nmi.wstrb;
   assign pwm.pstrb        = nmi.wstrb;
   assign ps2.pstrb        = nmi.wstrb;
-  assign i2c.pstrb        = nmi.wstrb;
-  assign qspi.pstrb       = nmi.wstrb;
   assign rtc.pstrb        = nmi.wstrb;
   assign wdg.pstrb        = nmi.wstrb;
   assign crc.pstrb        = nmi.wstrb;
@@ -139,7 +123,7 @@ module nmi2apb (
   assign user_ip.paddr    = nmi.addr;
   assign user_ip.pprot    = '0;
   assign user_ip.psel     = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_USR_START);
-  assign user_ip.penable  = s_fsm_q == FSM_ENABLE;
+  assign user_ip.penable  = s_fsm_q == FSM_ENAB;
   assign user_ip.pwrite   = |nmi.wstrb;
   assign user_ip.pwdata   = nmi.wdata;
   assign user_ip.pstrb    = nmi.wstrb;
@@ -154,18 +138,14 @@ module nmi2apb (
   );
 
   assign s_xfer_valid = ((s_fsm_q == FSM_IDLE) && s_mem_valid_re) ||
-                         (s_fsm_q == FSM_SETUP) || (s_fsm_q == FSM_ENABLE);
+                         (s_fsm_q == FSM_SETP) || (s_fsm_q == FSM_ENAB);
 
   always_comb begin
     s_fsm_d = s_fsm_q;
     unique case (s_fsm_q)
-      FSM_IDLE: begin
-        if (s_mem_valid_re) s_fsm_d = FSM_SETUP;
-      end
-      FSM_SETUP: s_fsm_d = FSM_ENABLE;
-      FSM_ENABLE: begin
-        if (s_xfer_ready) s_fsm_d = FSM_IDLE;
-      end
+      FSM_IDLE: if (s_mem_valid_re) s_fsm_d = FSM_SETP;
+      FSM_SETP: s_fsm_d = FSM_ENAB;
+      FSM_ENAB:  if (s_xfer_ready) s_fsm_d = FSM_IDLE;
       default:   s_fsm_d = s_fsm_q;
     endcase
   end
@@ -176,7 +156,7 @@ module nmi2apb (
       s_fsm_q
   );
 
-  assign nmi.ready   = nmi.valid && (s_fsm_q == FSM_ENABLE) && s_xfer_ready;
+  assign nmi.ready   = nmi.valid && (s_fsm_q == FSM_ENAB) && s_xfer_ready;
   assign nmi.rdata   = {32{nmi.ready}} & s_rd_data;
 
   // verilog_format: off
@@ -185,8 +165,6 @@ module nmi2apb (
                      ({32{uart.psel}}     & uart.prdata)     |
                      ({32{pwm.psel}}      & pwm.prdata)      |
                      ({32{ps2.psel}}      & ps2.prdata)      |
-                     ({32{i2c.psel}}      & i2c.prdata)      |
-                     ({32{qspi.psel}}     & qspi.prdata)     |
                      ({32{rtc.psel}}      & rtc.prdata)      |
                      ({32{wdg.psel}}      & wdg.prdata)      |
                      ({32{crc.psel}}      & crc.prdata)      |
@@ -201,8 +179,6 @@ module nmi2apb (
                         (uart.psel     & uart.pready)     |
                         (pwm.psel      & pwm.pready)      |
                         (ps2.psel      & ps2.pready)      |
-                        (i2c.psel      & i2c.pready)      |
-                        (qspi.psel     & qspi.pready)     |
                         (rtc.psel      & rtc.pready)      |
                         (wdg.psel      & wdg.pready)      |
                         (crc.psel      & crc.pready)      |

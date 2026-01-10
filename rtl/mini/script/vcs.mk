@@ -13,21 +13,27 @@ TB_FLIST  := -f $(RTL_PATH)/filelist/tb.fl
 
 ## vcs option
 # -debug_region=cell+lib
+# +lint=TFIPC-H(Timing, Floating Port, Implicit Net Declaration, Parameter, Comparison, High-Level)
+# +ling=PCWM-H(Port, Parameter, Unused Wire, Module Instantiation, High-Level)
+# -error=all(turn all warning into error)
 SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 $(EXTRA) \
                 -kdb \
                 -debug_access+all \
-                +vcs+loopreport+10000 \
+                -msg_config=../lint.msg \
                 +error+500 \
+                +vcs+loopreport+10000 \
                 +vcs+flush+all \
-                +lint=TFIPC-L \
                 -xprop=../xprop_config \
+                -override_timescale=1ns/1ps \
+                -reportstats \
                 -work DEFAULT
 
 
 TIME_OPTION := +notimingcheck +nospecify
 
-NET_PATH  := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
+# NET_PATH  := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
+NET_PATH  := -v /nfs/share/home/miaoyuchi/Flow_CX55_MPW/syn/netlist/retrosoc_asic_v1.syn.v.gz
 POST_PATH := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
 SDF_FILE  := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"
 
@@ -45,7 +51,7 @@ comp:
 	cd $(RTL_PATH)/.build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 sim: comp
-	cd $(RTL_PATH)/.build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
+	cd $(RTL_PATH)/.build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +loopdetect  +loopdetect+1000 +core_sel=$(RTL_SIM_CORESEL) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
 
 wave:
 	cd $(RTL_PATH)/.build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
@@ -55,10 +61,10 @@ netcomp:
 	cd $(RTL_PATH)/.net_build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(NET_FLIST) $(NET_PATH) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 netsim: netcomp
-	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG)
+	cd $(RTL_PATH)/.net_build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +syn_$(WAVE) +sim_vcs +bus_conflict_off $(SIM_LOG))
 
 netwave:
-	cd $(RTL_PATH)/.net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+	cd $(RTL_PATH)/.net_build && ($(VERDI_TOOL) -ssf $(RTL_TOP)_syn.fsdb -nologo &)
 
 postcomp:
 	@mkdir -p $(RTL_PATH)/.post_build
@@ -68,7 +74,7 @@ postsim: postcomp
 	$(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +behv_$(WAVE) +sim_vcs $(SIM_LOG)
 
 postwave:
-	cd $(RTL_PATH)/.post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
+	cd $(RTL_PATH)/.post_build && ($(VERDI_TOOL) -ssf $(RTL_TOP)_post.fsdb -nologo &)
 
 clean:
 	rm -rf .build $(RTL_PATH)/.net_build $(RTL_PATH)/.post_build
