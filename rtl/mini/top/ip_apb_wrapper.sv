@@ -9,11 +9,9 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-
 `include "uart_define.svh"
 `include "pwm_define.svh"
 `include "ps2_define.svh"
-
 `include "mdd_config.svh"
 
 module ip_apb_wrapper (
@@ -31,7 +29,7 @@ module ip_apb_wrapper (
     spi_if.dut                          spfs,
 `ifdef IP_MDD
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
-    user_gpio_if.dut                    gpio,
+    nmi_gpio_if.dut                     gpio,
 `endif
     output logic [ 6:0]                 irq_o
     // verilog_format: on

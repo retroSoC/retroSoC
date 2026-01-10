@@ -19,7 +19,7 @@ module ip_natv_wrapper (
     input logic        rst_aud_n_i,
     // natv if
     nmi_if.slave       nmi,
-    simp_gpio_if.dut   gpio,
+    nmi_gpio_if.dut    gpio,
     uart_if.dut        uart,
     qspi_if.dut        psram,
     spi_if.dut         spisd,
@@ -182,7 +182,7 @@ module ip_natv_wrapper (
   assign irq_o[9] = qspi.irq_o;
 
 
-  simple_gpio u_simple_gpio (
+  nmi_gpio u_nmi_gpio (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_gpio_nmi_if),

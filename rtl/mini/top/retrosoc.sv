@@ -24,12 +24,12 @@ module retrosoc (
     input  logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
 `endif
 `ifdef IP_MDD
-    user_gpio_if.dut                       user_gpio,
+    nmi_gpio_if.dut                        user_gpio,
 `endif
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
-    simp_gpio_if.dut                       gpio,
+    nmi_gpio_if.dut                        gpio,
     uart_if.dut                            uart0,
     qspi_if.dut                            psram,
     spi_if.dut                             spisd,

@@ -1,7 +1,6 @@
 #ifndef TINYQSPI_H__
 #define TINYQSPI_H__
 
-#define USE_QSPI0_DEV
 #define USE_QSPI0_DMA
 
 typedef struct {
@@ -44,12 +43,6 @@ void qspi0_wr_dat8(uint8_t dat);
 void qspi0_wr_dat16(uint16_t dat);
 void qspi0_wr_data32(uint32_t* dat, uint32_t len);
 void qspi0_dma_xfer(uint32_t addr, uint32_t len);
-
-void qspi1_init();
-void qspi1_wr_dat8(uint8_t dat);
-
-void qspi1_wr_data16(uint16_t dat);
-void qspi1_wr_data32(uint32_t* dat, uint32_t len);
 
 void qspi_dev_init();
 #endif

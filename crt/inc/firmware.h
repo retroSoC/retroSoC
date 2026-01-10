@@ -35,10 +35,12 @@
 #define TF_CARD_OFFST       (uint32_t)0x40000000
 
 // gpio
-#define reg_gpio_data      (*(volatile uint32_t*)0x10000000)
-#define reg_gpio_oe        (*(volatile uint32_t*)0x10000004)
-#define reg_gpio_pun       (*(volatile uint32_t*)0x10000008)
-#define reg_gpio_pdn       (*(volatile uint32_t*)0x1000000c)
+#define reg_gpio_oe        (*(volatile uint32_t*)0x10000000)
+#define reg_gpio_cs        (*(volatile uint32_t*)0x10000004)
+#define reg_gpio_pu        (*(volatile uint32_t*)0x10000008)
+#define reg_gpio_pd        (*(volatile uint32_t*)0x1000000c)
+#define reg_gpio_do        (*(volatile uint32_t*)0x10000010)
+#define reg_gpio_di        (*(volatile uint32_t*)0x10000014)
 // uart1
 #define reg_uart0_clkdiv   (*(volatile uint32_t*)0x10001000)
 #define reg_uart0_data     (*(volatile uint32_t*)0x10001004)

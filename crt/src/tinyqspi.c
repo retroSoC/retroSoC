@@ -179,43 +179,7 @@ void qspi0_dma_xfer(uint32_t addr, uint32_t len) {
     reg_qspi0_datlen = (uint32_t)1;
 }
 
-void qspi1_init() {
-    reg_gpio_oe = (uint32_t)0b100;
-    reg_qspi1_status = (uint32_t)0b10000;
-    reg_qspi1_status = (uint32_t)0b00000;
-    reg_qspi1_intcfg = (uint32_t)0b00000;
-    reg_qspi1_dum = (uint32_t)0;
-    reg_qspi1_clkdiv = (uint32_t)0; // sck = apb_clk/2(div+1)
-}
-
-void qspi1_wr_dat8(uint8_t dat) {
-    uint32_t wdat = ((uint32_t)dat) << 24;
-    // spi_set_datalen(8);
-    reg_qspi1_len = 0x80000;
-    // spi_write_fifo(&wdata, 8);
-    reg_qspi1_txfifo = wdat;
-    // spi_start_transaction(SPI_CMD_WR, SPI_CSN0);
-    reg_qspi1_status = 258;
-    while ((reg_qspi1_status & 0xFFFF) != 1);
-}
-
-void qspi1_wr_data16(uint16_t dat) {
-    uint32_t wdat = ((uint32_t)dat) << 16;
-    reg_qspi1_len = 0x100000; // NOTE: 16bits
-    reg_qspi1_txfifo = wdat;
-    reg_qspi1_status = 258;
-    while ((reg_qspi1_status & 0xFFFF) != 1);
-}
-
-void qspi1_wr_data32(uint32_t* dat, uint32_t len) {
-    reg_qspi1_len = (32 * len) << 16;
-    for(uint32_t i = 0; i < len; ++i) reg_qspi1_txfifo = dat[i];
-    reg_qspi1_status = 258;
-    while ((reg_qspi1_status & 0xFFFF) != 1);
-}
-
 void qspi_dev_init() {
-#ifdef USE_QSPI0_DEV
     QSPI0_InitStruct_t qspi0 = {
         (uint32_t)0,
         (uint32_t)0b0001, // fpga
@@ -235,7 +199,4 @@ void qspi_dev_init() {
                       (uint32_t)0,
                       (uint32_t)1, (uint32_t)1, (uint32_t)1
                      );
-#else
-    qspi1_init();
-#endif
 }

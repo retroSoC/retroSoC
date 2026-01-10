@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define lcd_dc_clr     (reg_gpio_data = (uint32_t)0b000)
-#define lcd_dc_set     (reg_gpio_data = (uint32_t)0b100)
+#define lcd_dc_clr     (reg_gpio_do = (uint32_t)0b000)
+#define lcd_dc_set     (reg_gpio_do = (uint32_t)0b100)
 
 #define USE_HORIZONTAL 2
 

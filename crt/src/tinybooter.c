@@ -62,6 +62,8 @@ void app_info() {
         printf("[%d]: %-15s %-12s %-12s %s\n", i, user_core_info[i].name, user_core_info[i].isa, user_core_info[i].maintainer, user_core_info[i].repo);
     }
 #endif
+
+#ifdef IP_MDD
     printf("\nUser IPs:\n");
     uint32_t ip_size = sizeof(user_ip_info)/sizeof(user_ip_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
@@ -70,6 +72,7 @@ void app_info() {
         else printf("  ");
         printf("[%d]: %-15s %-12s %-12s %s\n", i, user_ip_info[i].name, user_ip_info[i].isa, user_ip_info[i].maintainer, user_ip_info[i].repo);
     }
+#endif
 
 
     printf("\nSoftware:\n");
@@ -88,7 +91,7 @@ void app_info() {
     printf("  TF Card MMIO:        @[0x%08x-0x%08x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
-    printf("                       8 x GPIO          @0x%x\n", &reg_gpio_data);
+    printf("                       8 x GPIO          @0x%x\n", &reg_gpio_oe);
     printf("                       1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
     printf("                       2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
     printf("                       1 x PSRAM         @0x%x\n", &reg_psram_wait);

@@ -10,7 +10,6 @@
 ../top/user_core_design_template.sv
 ../top/user_core_top.sv
 ../top/user_core_wrapper.sv
-../top/user_gpio.sv
 ../top/user_ip_design_template.sv
 ../top/user_ip_top.sv
 ../top/user_ip_wrapper.sv
