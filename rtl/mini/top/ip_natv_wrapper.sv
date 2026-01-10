@@ -190,7 +190,7 @@ module ip_natv_wrapper (
   );
 
 
-  simple_uart u_simple_uart (
+  nmi_uart u_nmi_uart (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_uart_nmi_if),

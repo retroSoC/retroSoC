@@ -75,7 +75,7 @@
 ../../ip/native/sysctrl.sv
 ../../ip/native/clint.sv
 ../../ip/native/timer.sv
-../../ip/native/simple_uart.sv
+../../ip/native/uart.sv
 ../../ip/native/gpio.sv
 ../../ip/native/nmi2apb.sv
 ../../ip/native/ahbl2nmi.sv
