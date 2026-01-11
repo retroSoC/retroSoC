@@ -57,11 +57,14 @@ module nmi_psram (
     // verilog_format: on
 );
 
-  localparam FSM_IDLE = 0;
-  localparam FSM_WE_ST = 1;
-  localparam FSM_WE = 2;
-  localparam FSM_RD_ST = 3;
-  localparam FSM_RD = 4;
+  // verilog_format: off
+  localparam FSM_IDLE  = 6'd0;
+  localparam FSM_WE_ST = 6'd1;
+  localparam FSM_WE    = 6'd2;
+  localparam FSM_RD_ST = 6'd3;
+  localparam FSM_RD    = 6'd4;
+  // verilog_format: on
+
   // reg
   logic [ 4:0] r_cfg_wait;
   logic [ 2:0] r_cfg_chd;
