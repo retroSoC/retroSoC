@@ -102,8 +102,8 @@ void app_info() {
     printf("                       1 x XPI           @0x%x\n", &reg_qspi0_mode);
     printf("                       1 x DMA           @0x%x\n", &reg_dma_mode);
     printf("                       1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
-    printf("                       1 x CLINT         @0x%x\n", &reg_clint_clkdiv);
-    printf("                       1 x SDRAM         @0x%x\n", &reg_clint_clkdiv);
+    printf("                       1 x CLINT         @0x%x\n", &reg_clint_mtimel);
+    printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_cfg);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);

@@ -138,6 +138,8 @@
 #define reg_clint_mtimecmph  (*(volatile uint32_t*)0x1000C00C)
 #define reg_clint_msip       (*(volatile uint32_t*)0x1000C010)
 #define reg_clint_clkdiv     (*(volatile uint32_t*)0x1000C014)
+// sdram
+#define reg_sdram_cfg        (*(volatile uint32_t*)0x1000D000)
 // apb
 // archinfo
 #define reg_archinfo_sys   (*(volatile uint32_t*)0x20000000)
