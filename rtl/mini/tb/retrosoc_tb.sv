@@ -180,15 +180,16 @@ module retrosoc_tb;
       .spfs_miso_i_pad    (s_spfs_miso)
   );
 
-  N25Qxxx u_N25Qxxx (
-      .C_       (s_spfs_sck),
-      .S        (s_spfs_nss),
-      .DQ0      (s_spfs_mosi),
-      .DQ1      (s_spfs_miso),
-      .HOLD_DQ3 (),
-      .Vpp_W_DQ2(),
-      .Vcc      ('d3000)
+
+  W25Q128JVxIM u_W25Q128JVxIM_norflash (
+      .CSn  (s_spfs_nss),
+      .CLK  (s_spfs_sck),
+      .DIO  (s_spfs_mosi),
+      .DO   (s_spfs_miso),
+      .WPn  (),
+      .HOLDn()
   );
+
 
   W25Q128JVxIM u_W25Q128JVxIM_0 (
       .CSn  (s_qspi_nss0_o),
