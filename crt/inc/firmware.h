@@ -114,6 +114,7 @@
 #define reg_qspi0_hlvlen     (*(volatile uint32_t*)0x10009058)
 #define reg_qspi0_start      (*(volatile uint32_t*)0x1000905C)
 #define reg_qspi0_status     (*(volatile uint32_t*)0x10009060)
+#define reg_qspi0_mmmode     (*(volatile uint32_t*)0x10009064)
 // dma(32b xfer, hardware trigger by I2S fifo, QSPI fifo)
 #define reg_dma_mode        (*(volatile uint32_t*)0x1000A000)
 #define reg_dma_srcaddr     (*(volatile uint32_t*)0x1000A004)

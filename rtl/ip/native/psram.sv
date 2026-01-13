@@ -150,6 +150,7 @@ module nmi_psram (
       r_mem_wdata         <= '0;
     end else begin
       if (s_mem_sel) begin
+        /* verilator lint_off CASEINCOMPLETE */
         case (r_fsm_state)
           FSM_IDLE: begin
             if (s_mem_valid_re && (|nmi.wstrb)) begin

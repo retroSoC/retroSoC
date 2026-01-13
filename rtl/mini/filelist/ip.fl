@@ -83,8 +83,3 @@
 ../../ip/native/async_fifo.sv
 ../../ip/native/nmi_regslice.sv
 ../../ip/native/nmi2nmi.sv
-
-../../ip/3rd_party/spfs/spi_clgen.v
-../../ip/3rd_party/spfs/spi_shift.v
-../../ip/3rd_party/spfs/spi_top.v
-../../ip/3rd_party/spfs/spi_flash.v

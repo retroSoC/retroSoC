@@ -21,12 +21,10 @@ module ip_apb_wrapper (
     input  logic                        clk_aud_i,
     input  logic                        rst_aud_n_i,
     input  logic                        tmr_capch_i,
-    input  logic                        spfs_div4_i,
     nmi_if.slave                        nmi,
     uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
-    spi_if.dut                          spfs,
 `ifdef IP_MDD
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
     nmi_gpio_if.dut                     gpio,
@@ -45,7 +43,6 @@ module ip_apb_wrapper (
   apb4_if      u_wdg_apb_if      (clk_i, rst_n_i);
   apb4_if      u_crc_apb_if      (clk_i, rst_n_i);
   apb4_if      u_tmr_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_spfs_apb_if     (clk_i, rst_n_i);
 
   // NOTE: for FPGA-compatible
   apb4_pure_if u_archinfo_apb_pure_if ();
@@ -57,7 +54,6 @@ module ip_apb_wrapper (
   apb4_pure_if u_wdg_apb_pure_if      ();
   apb4_pure_if u_crc_apb_pure_if      ();
   apb4_pure_if u_tmr_apb_pure_if      ();
-  apb4_pure_if u_spfs_apb_pure_if     ();
 
   // low freq clock perip
   rtc_if u_rtc_if (clk_aud_i, rst_aud_n_i);
@@ -173,17 +169,6 @@ module ip_apb_wrapper (
   assign u_tmr_apb_pure_if.pready       = u_tmr_apb_if.pready;
   assign u_tmr_apb_pure_if.prdata       = u_tmr_apb_if.prdata;
   assign u_tmr_apb_pure_if.pslverr      = u_tmr_apb_if.pslverr;
-  // spfs
-  assign u_spfs_apb_if.paddr            = u_spfs_apb_pure_if.paddr;
-  assign u_spfs_apb_if.pprot            = u_spfs_apb_pure_if.pprot;
-  assign u_spfs_apb_if.psel             = u_spfs_apb_pure_if.psel;
-  assign u_spfs_apb_if.penable          = u_spfs_apb_pure_if.penable;
-  assign u_spfs_apb_if.pwrite           = u_spfs_apb_pure_if.pwrite;
-  assign u_spfs_apb_if.pwdata           = u_spfs_apb_pure_if.pwdata;
-  assign u_spfs_apb_if.pstrb            = u_spfs_apb_pure_if.pstrb;
-  assign u_spfs_apb_pure_if.pready      = u_spfs_apb_if.pready;
-  assign u_spfs_apb_pure_if.prdata      = u_spfs_apb_if.prdata;
-  assign u_spfs_apb_pure_if.pslverr     = u_spfs_apb_if.pslverr;
 `ifdef IP_MDD
   assign u_user_ip_apb_if.paddr        = u_user_ip_apb_pure_if.paddr;
   assign u_user_ip_apb_if.pprot        = u_user_ip_apb_pure_if.pprot;
@@ -216,7 +201,7 @@ module ip_apb_wrapper (
   assign irq_o[3] = u_rtc_if.irq_o;
   assign irq_o[4] = u_wdg_if.rst_o;
   assign irq_o[5] = u_tmr_if.irq_o;
-  assign irq_o[6] = spfs.irq_o;
+  assign irq_o[6] = 1'b0;
 
   nmi2apb u_nmi2apb (
       .clk_i   (clk_i),
@@ -233,32 +218,7 @@ module ip_apb_wrapper (
       .rtc     (u_rtc_apb_pure_if),
       .wdg     (u_wdg_apb_pure_if),
       .crc     (u_crc_apb_pure_if),
-      .tmr     (u_tmr_apb_pure_if),
-      .spfs    (u_spfs_apb_pure_if)
-  );
-
-  spi_flash #(
-      .flash_addr_start(`FLASH_START_ADDR),
-      .flash_addr_end  (`FLASH_END_ADDR),
-      .spi_cs_num      (1)
-  ) u_spi_flash (
-      .pclk       (clk_i),
-      .presetn    (rst_n_i),
-      .paddr      (u_spfs_apb_if.paddr),
-      .psel       (u_spfs_apb_if.psel),
-      .penable    (u_spfs_apb_if.penable),
-      .pwrite     (u_spfs_apb_if.pwrite),
-      .pwdata     (u_spfs_apb_if.pwdata),
-      .pwstrb     (4'hF),
-      .pready     (u_spfs_apb_if.pready),
-      .prdata     (u_spfs_apb_if.prdata),
-      .pslverr    (u_spfs_apb_if.pslverr),
-      .div4_i     (spfs_div4_i),
-      .spi_clk    (spfs.spi_sck_o),
-      .spi_cs     (spfs.spi_nss_o),
-      .spi_mosi   (spfs.spi_mosi_o),
-      .spi_miso   (spfs.spi_miso_i),
-      .spi_irq_out(spfs.irq_o)
+      .tmr     (u_tmr_apb_pure_if)
   );
 
 `ifdef IP_MDD

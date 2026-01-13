@@ -64,10 +64,6 @@ module retrosoc_tb;
   wire       s_uart1_rx;
   wire       s_ps2_clk;
   wire       s_ps2_dat;
-  wire       s_spfs_sck;
-  wire       s_spfs_nss;
-  wire       s_spfs_mosi;
-  wire       s_spfs_miso;
 
 `ifdef HAVE_PLL
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
@@ -166,32 +162,18 @@ module retrosoc_tb;
       .i2c_scl_io_pad     (s_i2c_scl_io),
       .i2c_sda_io_pad     (s_i2c_sda_io),
       .qspi_sck_o_pad     (s_qspi_sck_o),
-      .qspi_nss0_o_pad    (s_qspi_nss0_o),
-      .qspi_nss1_o_pad    (s_qspi_nss1_o),
-      .qspi_nss2_o_pad    (s_qspi_nss2_o),
+      .qspi_nss0_o_pad    (s_qspi_nss0_o), // qspi flash
+      .qspi_nss1_o_pad    (s_qspi_nss1_o), // qpi flash
+      .qspi_nss2_o_pad    (s_qspi_nss2_o), // 
       .qspi_nss3_o_pad    (),                  // tft test
       .qspi_dat0_io_pad   (s_qspi_dat0_io),
       .qspi_dat1_io_pad   (s_qspi_dat1_io),
       .qspi_dat2_io_pad   (s_qspi_dat2_io),
-      .qspi_dat3_io_pad   (s_qspi_dat3_io),
-      .spfs_sck_o_pad     (s_spfs_sck),
-      .spfs_nss_o_pad     (s_spfs_nss),
-      .spfs_mosi_o_pad    (s_spfs_mosi),
-      .spfs_miso_i_pad    (s_spfs_miso)
+      .qspi_dat3_io_pad   (s_qspi_dat3_io)
   );
 
 
   W25Q128JVxIM u_W25Q128JVxIM_norflash (
-      .CSn  (s_spfs_nss),
-      .CLK  (s_spfs_sck),
-      .DIO  (s_spfs_mosi),
-      .DO   (s_spfs_miso),
-      .WPn  (),
-      .HOLDn()
-  );
-
-
-  W25Q128JVxIM u_W25Q128JVxIM_0 (
       .CSn  (s_qspi_nss0_o),
       .CLK  (s_qspi_sck_o),
       .DIO  (s_qspi_dat0_io),
@@ -354,12 +336,7 @@ module retrosoc_tb;
       // #1070933733; // debug spi
       // #873310000;
       // #340686376;
-
       // #489238714;
-
-      // repeat (1500) begin
-      //   repeat (5000) @(posedge r_xtal_clk);
-      // end
       $finish;
     end else if ($test$plusargs("syn_wave")) begin
       $display("gen syn sim wave");
@@ -369,12 +346,6 @@ module retrosoc_tb;
       #21149063;
       $finish;
     end
-
-    // repeat (1500) begin
-    // repeat (5000) @(posedge r_xtal_clk);
-    // $display("+5000 cycles");
-    // end
-    // $finish;
   end
 
   initial begin

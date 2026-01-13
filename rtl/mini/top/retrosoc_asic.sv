@@ -108,11 +108,7 @@ module retrosoc_asic (
     inout  qspi_dat0_io_pad,
     inout  qspi_dat1_io_pad,
     inout  qspi_dat2_io_pad,
-    inout  qspi_dat3_io_pad,
-    output spfs_sck_o_pad,
-    output spfs_nss_o_pad,
-    output spfs_mosi_o_pad,
-    inout  spfs_miso_i_pad
+    inout  qspi_dat3_io_pad
 );
   // clk&rst
   logic s_ext_clk;
@@ -154,7 +150,6 @@ module retrosoc_asic (
   ps2_if                        u_ps2_if     ();
   i2c_if                        u_i2c_if     ();
   qspi_if                       u_qspi_if    ();
-  spi_if                        u_spfs_if    ();
 
 
   tc_io_tri_pad         u_extclk_i_pad          (.pad(extclk_i_pad),          .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(s_ext_clk));
@@ -245,12 +240,9 @@ module retrosoc_asic (
   tc_io_tri_pad         u_qspi_dat1_io_pad     (.pad(qspi_dat1_io_pad),       .c2p(u_qspi_if.spi_io_out_o[1]),  .c2p_en(u_qspi_if.spi_io_en_o[1]),  .p2c(u_qspi_if.spi_io_in_i[1]));
   tc_io_tri_pad         u_qspi_dat2_io_pad     (.pad(qspi_dat2_io_pad),       .c2p(u_qspi_if.spi_io_out_o[2]),  .c2p_en(u_qspi_if.spi_io_en_o[2]),  .p2c(u_qspi_if.spi_io_in_i[2]));
   tc_io_tri_pad         u_qspi_dat3_io_pad     (.pad(qspi_dat3_io_pad),       .c2p(u_qspi_if.spi_io_out_o[3]),  .c2p_en(u_qspi_if.spi_io_en_o[3]),  .p2c(u_qspi_if.spi_io_in_i[3]));
-  tc_io_tri_pad         u_spfs_sck_o_pad       (.pad(spfs_sck_o_pad),         .c2p(u_spfs_if.spi_sck_o),        .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_spfs_nss_o_pad       (.pad(spfs_nss_o_pad),         .c2p(u_spfs_if.spi_nss_o),        .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_spfs_mosi_o_pad      (.pad(spfs_mosi_o_pad),        .c2p(u_spfs_if.spi_mosi_o),       .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_spfs_miso_i_pad      (.pad(spfs_miso_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_spfs_if.spi_miso_i));
-
   // verilog_format: on
+
+
   // clk buffer & mux
   rcu u_rcu (
       .ext_clk_i    (s_ext_clk),
@@ -279,11 +271,6 @@ module retrosoc_asic (
       .rst_n_i    (s_sys_rst_n),
       .clk_aud_i  (s_aud_clk),
       .rst_aud_n_i(s_aud_rst_n),
-`ifdef HAVE_PLL
-      .spfs_div4_i(s_pll_cfg[2]),
-`else
-      .spfs_div4_i('0),
-`endif
 `ifdef CORE_MDD
       .core_sel_i (s_core_sel),
 `endif
@@ -305,8 +292,7 @@ module retrosoc_asic (
       .pwm        (u_pwm_if),
       .ps2        (u_ps2_if),
       .i2c        (u_i2c_if),
-      .qspi       (u_qspi_if),
-      .spfs       (u_spfs_if)
+      .qspi       (u_qspi_if)
   );
 
 endmodule

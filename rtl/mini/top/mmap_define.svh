@@ -14,7 +14,7 @@
 `define FLASH_START_ADDR 32'h0000_0000
 `define FLASH_END_ADDR   32'h0FFF_FFFF
 // NOTE: need to set a right value for software!
-`define IRQ_HANDLER_START_ADDR 32'h0000_0000
+`define IRQ_START_ADDR   32'h0000_0000
 
 `define FLASH_START    4'h0
 `define NATV_IP_START  4'h1

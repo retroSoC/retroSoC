@@ -21,6 +21,11 @@ module nmi_qspi (
     qspi_if.dut  qspi
     // verilog_format: on
 );
+  localparam FSM_IDLE = 6'd0;
+  localparam FSM_WE_ST = 6'd1;
+  localparam FSM_WE = 6'd2;
+  localparam FSM_RD_ST = 6'd3;
+  localparam FSM_RD = 6'd4;
 
   logic s_nmi_wr_hdshk, s_nmi_rd_hdshk;
   logic s_nmi_ready_d, s_nmi_ready_q;
@@ -78,12 +83,15 @@ module nmi_qspi (
   logic s_qspi_start_d, s_qspi_start_q;
   logic s_qspi_status_en;
   logic [20:0] s_qspi_status_d, s_qspi_status_q;
+  // mm mode
+  logic s_qspi_mmmode_en;
+  logic s_qspi_mmmode_d, s_qspi_mmmode_q;
   // common
   logic s_xfer_start, s_xfer_done;
   logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
   // tx fifo
-  logic s_tx_push_valid;  // NOTE: push ready?
+  logic s_tx_push_valid, s_tx_push_ready;
   logic s_tx_pop_valid, s_tx_pop_ready;
   logic s_tx_empty, s_tx_full;
   logic [31:0] s_tx_push_data, s_tx_pop_data;
@@ -93,7 +101,18 @@ module nmi_qspi (
   logic s_rx_pop_valid, s_rx_pop_ready;
   logic s_rx_empty, s_rx_full;
   logic [31:0] s_rx_push_data, s_rx_pop_data;
-  logic [6:0] s_rx_elem_num;
+  logic [ 6:0] s_rx_elem_num;
+  // memory-mapped
+  logic        r_mm_rd_st;
+  logic        r_mm_wr_st;
+  logic [ 7:0] r_mm_xfer_byte_cnt;
+  logic [ 5:0] r_mm_fsm_state;
+  logic [23:0] r_mm_mem_addr;
+  logic [31:0] r_mm_mem_wdata;
+  logic [ 1:0] s_mm_disp_addr_ofst;
+  logic [ 7:0] s_mm_disp_byte_cnt;
+  logic [31:0] s_mm_disp_wdata;
+  logic        s_mem_valid_re;
 
 
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
@@ -358,7 +377,8 @@ module nmi_qspi (
     end
   end
 
-  assign s_tx_pop_ready = ~s_tx_empty;
+  assign s_tx_push_ready = ~s_tx_full;
+  assign s_tx_pop_ready  = ~s_tx_empty;
   fifo #(
       .DATA_WIDTH  (32),
       .BUFFER_DEPTH(256)
@@ -423,6 +443,17 @@ module nmi_qspi (
   );
 
 
+  assign s_qspi_mmmode_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_QSPI_MMMODE;
+  assign s_qspi_mmmode_d  = nmi.wdata[0];
+  dffer #(1) u_qspi_mmmode_dffer (
+      clk_i,
+      rst_n_i,
+      s_qspi_mmmode_en,
+      s_qspi_mmmode_d,
+      s_qspi_mmmode_q
+  );
+
+
   always_comb begin
     s_tx_fifo_stall_d = s_tx_fifo_stall_q;
     if (~s_tx_fifo_stall_q && s_tx_elem_num[7:0] > s_qspi_txupbound_q) begin
@@ -456,7 +487,7 @@ module nmi_qspi (
 
 
   // rd
-  assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
+  assign s_nmi_ready_d = ~s_qspi_mmmode_q ? s_rx_pop_ready : (nmi.valid && (~s_nmi_ready_q));
   dffr #(1) u_nmi_ready_dffr (
       clk_i,
       rst_n_i,
@@ -468,36 +499,43 @@ module nmi_qspi (
   always_comb begin
     s_rx_pop_valid = '0;
     s_nmi_rdata_d  = s_nmi_rdata_q;
-    unique case (nmi.addr[7:0])
-      `NATV_QSPI_MODE:       s_nmi_rdata_d = {31'd0, s_qspi_mode_q};
-      `NATV_QSPI_NSS:        s_nmi_rdata_d = {28'd0, s_qspi_nss_q};
-      `NATV_QSPI_CLKDIV:     s_nmi_rdata_d = {24'd0, s_qspi_clkdiv_q};
-      `NATV_QSPI_RDWR:       s_nmi_rdata_d = {31'd0, s_qspi_rdwr_q};
-      `NATV_QSPI_REVDAT:     s_nmi_rdata_d = {31'd0, s_qspi_revdat_q};
-      `NATV_QSPI_TXUPBOUND:  s_nmi_rdata_d = {24'd0, s_qspi_txupbound_q};
-      `NATV_QSPI_TXLOWBOUND: s_nmi_rdata_d = {24'd0, s_qspi_txlowbound_q};
-      `NATV_QSPI_RXUPBOUND:  s_nmi_rdata_d = {26'd0, s_qspi_rxupbound_q};
-      `NATV_QSPI_RXLOWBOUND: s_nmi_rdata_d = {26'd0, s_qspi_rxlowbound_q};
-      `NATV_QSPI_CMDTYP:     s_nmi_rdata_d = {30'd0, s_qspi_cmdtyp_q};
-      `NATV_QSPI_CMDLEN:     s_nmi_rdata_d = {29'd0, s_qspi_cmdlen_q};
-      `NATV_QSPI_CMDDAT:     s_nmi_rdata_d = s_qspi_cmddat_q;
-      `NATV_QSPI_ADRTYP:     s_nmi_rdata_d = {30'd0, s_qspi_adrtyp_q};
-      `NATV_QSPI_ADRLEN:     s_nmi_rdata_d = {29'd0, s_qspi_adrlen_q};
-      `NATV_QSPI_ADRDAT:     s_nmi_rdata_d = s_qspi_adrdat_q;
-      `NATV_QSPI_DUMLEN:     s_nmi_rdata_d = {24'd0, s_qspi_dumlen_q};
-      `NATV_QSPI_DATTYP:     s_nmi_rdata_d = {30'd0, s_qspi_dattyp_q};
-      `NATV_QSPI_DATLEN:     s_nmi_rdata_d = {24'd0, s_qspi_datlen_q};
-      `NATV_QSPI_DATBIT:     s_nmi_rdata_d = {29'd0, s_qspi_datbit_q};
-      `NATV_QSPI_RXDATA: begin
-        if (s_nmi_rd_hdshk) begin
-          s_rx_pop_valid = 1'b1;
-          if (s_rx_pop_ready) s_nmi_rdata_d = s_rx_pop_data;
-          else s_nmi_rdata_d = '0;
+    if (~s_qspi_mmmode_q) begin
+      s_rx_pop_valid = 1'b1;
+      if (s_rx_pop_ready) s_nmi_rdata_d = s_rx_pop_data;
+    end else begin
+      unique case (nmi.addr[7:0])
+        `NATV_QSPI_MODE:       s_nmi_rdata_d = {31'd0, s_qspi_mode_q};
+        `NATV_QSPI_NSS:        s_nmi_rdata_d = {28'd0, s_qspi_nss_q};
+        `NATV_QSPI_CLKDIV:     s_nmi_rdata_d = {24'd0, s_qspi_clkdiv_q};
+        `NATV_QSPI_RDWR:       s_nmi_rdata_d = {31'd0, s_qspi_rdwr_q};
+        `NATV_QSPI_REVDAT:     s_nmi_rdata_d = {31'd0, s_qspi_revdat_q};
+        `NATV_QSPI_TXUPBOUND:  s_nmi_rdata_d = {24'd0, s_qspi_txupbound_q};
+        `NATV_QSPI_TXLOWBOUND: s_nmi_rdata_d = {24'd0, s_qspi_txlowbound_q};
+        `NATV_QSPI_RXUPBOUND:  s_nmi_rdata_d = {26'd0, s_qspi_rxupbound_q};
+        `NATV_QSPI_RXLOWBOUND: s_nmi_rdata_d = {26'd0, s_qspi_rxlowbound_q};
+        `NATV_QSPI_CMDTYP:     s_nmi_rdata_d = {30'd0, s_qspi_cmdtyp_q};
+        `NATV_QSPI_CMDLEN:     s_nmi_rdata_d = {29'd0, s_qspi_cmdlen_q};
+        `NATV_QSPI_CMDDAT:     s_nmi_rdata_d = s_qspi_cmddat_q;
+        `NATV_QSPI_ADRTYP:     s_nmi_rdata_d = {30'd0, s_qspi_adrtyp_q};
+        `NATV_QSPI_ADRLEN:     s_nmi_rdata_d = {29'd0, s_qspi_adrlen_q};
+        `NATV_QSPI_ADRDAT:     s_nmi_rdata_d = s_qspi_adrdat_q;
+        `NATV_QSPI_DUMLEN:     s_nmi_rdata_d = {24'd0, s_qspi_dumlen_q};
+        `NATV_QSPI_DATTYP:     s_nmi_rdata_d = {30'd0, s_qspi_dattyp_q};
+        `NATV_QSPI_DATLEN:     s_nmi_rdata_d = {24'd0, s_qspi_datlen_q};
+        `NATV_QSPI_DATBIT:     s_nmi_rdata_d = {29'd0, s_qspi_datbit_q};
+        `NATV_QSPI_RXDATA: begin
+          if (s_nmi_rd_hdshk) begin
+            s_rx_pop_valid = 1'b1;
+            if (s_rx_pop_ready) s_nmi_rdata_d = s_rx_pop_data;
+            else s_nmi_rdata_d = '0;
+          end
         end
-      end
-      `NATV_QSPI_STATUS:     s_nmi_rdata_d = {11'd0, s_qspi_status_q};
-      default:               s_nmi_rdata_d = s_nmi_rdata_q;
-    endcase
+        `NATV_QSPI_STATUS:     s_nmi_rdata_d = {11'd0, s_qspi_status_q};
+        `NATV_QSPI_MMMODE:     s_nmi_rdata_d = {31'd0, s_qspi_mmmode_q};
+        default:               s_nmi_rdata_d = s_nmi_rdata_q;
+      endcase
+    end
+
   end
   dffer #(32) u_nmi_rdata_dffer (
       clk_i,
@@ -511,33 +549,162 @@ module nmi_qspi (
   qspi_core u_qspi_core (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
-      .mode_i         (s_qspi_mode_q),
-      .nss_i          (s_qspi_nss_q),
-      .clkdiv_i       (s_qspi_clkdiv_q),
-      .rdwr_i         (s_qspi_rdwr_q),
-      .revdat_i       (s_qspi_revdat_q),
-      .cmdtyp_i       (s_qspi_cmdtyp_q),
-      .cmdlen_i       (s_qspi_cmdlen_q),
-      .cmddat_i       (s_qspi_cmddat_q),
-      .adrtyp_i       (s_qspi_adrtyp_q),
-      .adrlen_i       (s_qspi_adrlen_q),
-      .adrdat_i       (s_qspi_adrdat_q),
-      .dumlen_i       (s_qspi_dumlen_q),
-      .dattyp_i       (s_qspi_dattyp_q),
-      .datlen_i       (s_qspi_datlen_q),
-      .datbit_i       (s_qspi_datbit_q),
-      .hlvlen_i       (s_qspi_hlvlen_q),
+      .mode_i         (~s_qspi_mmmode_q ? 1'b0 : s_qspi_mode_q),
+      .nss_i          (~s_qspi_mmmode_q ? 4'd1 : s_qspi_nss_q),
+      .clkdiv_i       (~s_qspi_mmmode_q ? 8'd0 : s_qspi_clkdiv_q),
+      .rdwr_i         (~s_qspi_mmmode_q ? 1'b1 : s_qspi_rdwr_q),
+      .revdat_i       (~s_qspi_mmmode_q ? 1'b0 : s_qspi_revdat_q),
+      .cmdtyp_i       (~s_qspi_mmmode_q ? 2'd1 : s_qspi_cmdtyp_q),
+      .cmdlen_i       (~s_qspi_mmmode_q ? 3'd1 : s_qspi_cmdlen_q),
+      .cmddat_i       (~s_qspi_mmmode_q ? 32'hEB000000 : s_qspi_cmddat_q),
+      .adrtyp_i       (~s_qspi_mmmode_q ? 2'd3 : s_qspi_adrtyp_q),
+      .adrlen_i       (~s_qspi_mmmode_q ? 3'd4 : s_qspi_adrlen_q),
+      .adrdat_i       (~s_qspi_mmmode_q ? {r_mm_mem_addr, 8'hF0} : s_qspi_adrdat_q),
+      .dumlen_i       (~s_qspi_mmmode_q ? 8'd4 : s_qspi_dumlen_q),
+      .dattyp_i       (~s_qspi_mmmode_q ? 2'd3 : s_qspi_dattyp_q),
+      .datlen_i       (~s_qspi_mmmode_q ? 8'd1 : s_qspi_datlen_q),
+      .datbit_i       (~s_qspi_mmmode_q ? 3'd4 : s_qspi_datbit_q),
+      .hlvlen_i       (~s_qspi_mmmode_q ? 8'd2 : s_qspi_hlvlen_q),
       .tx_data_req_o  (s_tx_pop_valid),
       .tx_data_rdy_i  (s_tx_pop_ready),
       .tx_data_i      (s_tx_pop_data),
       .rx_data_req_o  (s_rx_push_valid),
       .rx_data_rdy_i  (s_rx_push_ready),
       .rx_data_o      (s_rx_push_data),
-      .start_i        (s_xfer_start),
+      .start_i        (~s_qspi_mmmode_q ? r_mm_rd_st : s_xfer_start),
       .done_o         (s_xfer_done),
       .tx_elem_num_i  (s_tx_elem_num[7:0]),
       .dma_xfer_done_i(dma_xfer_done_i),
       .qspi           (qspi)
   );
 
+
+  // memory-mapped mode
+  edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
+      clk_i,
+      rst_n_i,
+      nmi.valid,
+      s_mem_valid_re
+  );
+
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) begin
+      r_mm_rd_st         <= '0;
+      r_mm_wr_st         <= '0;
+      r_mm_xfer_byte_cnt <= '0;
+      r_mm_fsm_state     <= FSM_IDLE;
+      r_mm_mem_addr      <= '0;
+      r_mm_mem_wdata     <= '0;
+    end else begin
+      if (nmi.addr[31:28] == `FLASH_START) begin
+        unique case (r_mm_fsm_state)
+          FSM_IDLE: begin
+            if (s_mem_valid_re) begin
+              if (|nmi.wstrb) begin
+                r_mm_fsm_state     <= FSM_WE_ST;
+                r_mm_xfer_byte_cnt <= s_mm_disp_byte_cnt;
+                r_mm_mem_addr      <= nmi.addr[23:0] + {22'd0, s_mm_disp_addr_ofst};
+                r_mm_mem_wdata     <= s_mm_disp_wdata;
+              end else begin
+                r_mm_fsm_state     <= FSM_RD_ST;
+                r_mm_xfer_byte_cnt <= 8'd4;
+                r_mm_mem_addr      <= nmi.addr[23:0];
+                r_mm_mem_wdata     <= nmi.wdata;  // NOTE: no used
+              end
+            end
+          end
+          FSM_WE_ST: begin
+            if (s_tx_push_ready) begin
+              r_mm_wr_st     <= 1'b1;
+              r_mm_fsm_state <= FSM_WE;
+            end
+          end
+          FSM_WE: begin
+            r_mm_wr_st <= 1'b0;
+            if (s_xfer_done) r_mm_fsm_state <= FSM_IDLE;
+          end
+          FSM_RD_ST: begin
+            if (1'b1) begin
+              r_mm_rd_st     <= 1'b1;
+              r_mm_fsm_state <= FSM_RD;
+            end
+          end
+          FSM_RD: begin
+            r_mm_rd_st <= 1'b0;
+            if (s_rx_pop_ready) r_mm_fsm_state <= FSM_IDLE;
+          end
+          default: begin
+            r_mm_rd_st         <= '0;
+            r_mm_wr_st         <= '0;
+            r_mm_xfer_byte_cnt <= '0;
+            r_mm_fsm_state     <= FSM_IDLE;
+            r_mm_mem_addr      <= '0;
+            r_mm_mem_wdata     <= '0;
+          end
+        endcase
+      end
+    end
+  end
+
+  xfer_dispatcher u_xfer_dispatcher (
+      .wstrb_i        (nmi.wstrb),
+      .wdata_i        (nmi.wdata),
+      .addr_ofst_o    (s_mm_disp_addr_ofst),
+      .xfer_byte_cnt_o(s_mm_disp_byte_cnt),
+      .wdata_o        (s_mm_disp_wdata)
+  );
+endmodule
+
+module xfer_dispatcher (
+    input  logic [ 3:0] wstrb_i,
+    input  logic [31:0] wdata_i,
+    output logic [ 1:0] addr_ofst_o,
+    output logic [ 7:0] xfer_byte_cnt_o,
+    output logic [31:0] wdata_o
+);
+  always_comb begin
+    wdata_o = wdata_i;
+    case (wstrb_i)
+      4'b0001: begin
+        addr_ofst_o     = 2'd0;
+        xfer_byte_cnt_o = 8'd1;
+        wdata_o[7:0]    = wdata_i[7:0];
+      end
+      4'b0010: begin
+        addr_ofst_o     = 2'd1;
+        xfer_byte_cnt_o = 8'd1;
+        wdata_o[7:0]    = wdata_i[15:8];
+      end
+      4'b0100: begin
+        addr_ofst_o     = 2'd2;
+        xfer_byte_cnt_o = 8'd1;
+        wdata_o[7:0]    = wdata_i[23:16];
+      end
+      4'b1000: begin
+        addr_ofst_o     = 2'd3;
+        xfer_byte_cnt_o = 8'd1;
+        wdata_o[7:0]    = wdata_i[31:24];
+      end
+      4'b0011: begin
+        addr_ofst_o     = 2'd0;
+        xfer_byte_cnt_o = 8'd2;
+        wdata_o[15:0]   = wdata_i[15:0];
+      end
+      4'b1100: begin
+        addr_ofst_o     = 2'd2;
+        xfer_byte_cnt_o = 8'd2;
+        wdata_o[15:0]   = wdata_i[31:16];
+      end
+      4'b1111: begin
+        addr_ofst_o     = 2'd0;
+        xfer_byte_cnt_o = 8'd4;
+        wdata_o[31:0]   = wdata_i[31:0];
+      end
+      default: begin
+        addr_ofst_o     = 2'd0;
+        xfer_byte_cnt_o = 8'd4;
+        wdata_o         = wdata_i[31:0];
+      end
+    endcase
+  end
 endmodule

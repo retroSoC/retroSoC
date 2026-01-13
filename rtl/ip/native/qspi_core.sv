@@ -381,8 +381,8 @@ module qspi_core (
                 3'd1:    rx_data_o = {24'd0, s_xfer_data_q[7:0]};
                 3'd2:    rx_data_o = {16'd0, s_xfer_data_q[15:0]};
                 3'd3:    rx_data_o = {8'd0, s_xfer_data_q[23:0]};
-                3'd4:    rx_data_o = s_xfer_data_q;
-                default: rx_data_o = s_xfer_data_q;
+                3'd4:    rx_data_o = {s_xfer_data_q[7:0], s_xfer_data_q[15:8], s_xfer_data_q[23:16], s_xfer_data_q[31:24]}; // HACK:
+                default: rx_data_o = {s_xfer_data_q[7:0], s_xfer_data_q[15:8], s_xfer_data_q[23:16], s_xfer_data_q[31:24]}; // HACK:
               endcase
             end
           end

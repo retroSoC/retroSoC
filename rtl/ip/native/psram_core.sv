@@ -132,6 +132,7 @@ module psram_core (
       psram_ce_o          <= 1'b1;
     end else begin
       mem_ready_o <= 1'b0;
+      /* verilator lint_off CASEINCOMPLETE */
       case (r_fsm_state)
         FSM_INIT: begin
           if (r_boot_cnt == 18'd0) r_fsm_state <= FSM_RSTEN;

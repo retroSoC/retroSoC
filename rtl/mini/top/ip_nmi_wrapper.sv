@@ -11,7 +11,7 @@
 // addr range: [31:28]: 4'h1(reg), 4'h4(psram), 4'h5(spisd)
 `include "mmap_define.svh"
 
-module ip_natv_wrapper (
+module ip_nmi_wrapper (
     // verilog_format: off
     input logic        clk_i,
     input logic        rst_n_i,
@@ -118,7 +118,7 @@ module ip_natv_wrapper (
   assign u_onewire_nmi_if.wdata   = nmi.wdata;
   assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
   // qspi
-  assign u_qspi_nmi_if.valid      = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START);
+  assign u_qspi_nmi_if.valid      = nmi.valid && ((nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START) | nmi.addr[31:28] == `FLASH_START);
   assign u_qspi_nmi_if.addr       = nmi.addr;
   assign u_qspi_nmi_if.wdata      = nmi.wdata;
   assign u_qspi_nmi_if.wstrb      = nmi.wstrb;
