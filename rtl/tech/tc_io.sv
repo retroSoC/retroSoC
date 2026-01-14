@@ -274,6 +274,10 @@ module tc_io_tri_full_pad (
   assign p2c = pad;
 
 `elsif PDK_IHP130
+  logic [2:0] dum;
+  assign dum[0] = cs;
+  assign dum[1] = pu;
+  assign dum[2] = pd;
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
       .pad   (pad),
