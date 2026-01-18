@@ -18,25 +18,21 @@
   } while (0)
 
 #define FLASH_SIZE (256 * 1024 * 1024) // 256MB
+#define PAGE_SIZE  4096
+#define PG_ALIGN   __attribute((aligned(PAGE_SIZE)))
 
-#define PAGE_SIZE 4096
-#define PG_ALIGN __attribute((aligned(PAGE_SIZE)))
-
-static inline bool in_flash(uint64_t addr) {
-  return (addr < FLASH_SIZE);
-}
-
+static inline bool in_flash(uint64_t addr) { return addr < FLASH_SIZE; }
 static uint8_t flash[FLASH_SIZE] PG_ALIGN = {};
 
-extern "C" void flash_read(uint64_t addr, uint64_t *data) {
+extern "C" void flash_read(uint32_t addr, uint32_t *data) {
   if (!data) return;
-  Assert(in_flash(addr), "Flash address 0x%lx out of bound", addr);
-  *data = *(uint64_t *)(flash + addr);
+  Assert(in_flash(addr), "Flash address 0x%x out of bound", addr);
+  *data = *(uint32_t *)(flash + addr);
 }
 
 extern "C" void flash_init(char *img) {
   FILE *fp = fopen(img, "rb");
-  Assert(fp, "Can not open '%s'", img);
+  Assert(fp, "can not open '%s'", img);
   fseek(fp, 0, SEEK_END);
   uint64_t size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
