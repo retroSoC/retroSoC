@@ -41,14 +41,6 @@
 ../../clusterip/timer/rtl/tmr_if.sv
 ../../clusterip/timer/rtl/apb4_tmr.sv
 
-../../clusterip/spi/rtl/spi_clkgen.sv
-../../clusterip/spi/rtl/spi_apb_if.sv
-../../clusterip/spi/rtl/spi_ctrl.sv
-../../clusterip/spi/rtl/spi_fifo.sv
-../../clusterip/spi/rtl/spi_rx.sv
-../../clusterip/spi/rtl/spi_tx.sv
-../../clusterip/spi/rtl/spi_core.sv
-
 ../../ip/native/psram_core.sv
 ../../ip/native/psram.sv
 ../../ip/native/spisd_init.sv
@@ -74,17 +66,12 @@
 ../../ip/native/dma.sv
 ../../ip/native/sysctrl.sv
 ../../ip/native/clint.sv
-../../ip/native/simple_timer.sv
-../../ip/native/simple_uart.sv
-../../ip/native/simple_gpio.sv
+../../ip/native/timer.sv
+../../ip/native/uart.sv
+../../ip/native/gpio.sv
 ../../ip/native/nmi2apb.sv
 ../../ip/native/ahbl2nmi.sv
 ../../ip/native/axi4l2nmi.sv
 ../../ip/native/async_fifo.sv
 ../../ip/native/nmi_regslice.sv
 ../../ip/native/nmi2nmi.sv
-
-../../ip/3rd_party/spfs/spi_clgen.v
-../../ip/3rd_party/spfs/spi_shift.v
-../../ip/3rd_party/spfs/spi_top.v
-../../ip/3rd_party/spfs/spi_flash.v

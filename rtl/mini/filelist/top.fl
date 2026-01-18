@@ -2,7 +2,7 @@
 ../top/retrosoc.sv
 ../top/retrosoc_asic.sv
 ../top/onchip_ram.sv
-../top/ip_natv_wrapper.sv
+../top/ip_nmi_wrapper.sv
 ../top/ip_apb_wrapper.sv
 ../top/bus.sv
 ../top/rcu.sv
@@ -10,7 +10,6 @@
 ../top/user_core_design_template.sv
 ../top/user_core_top.sv
 ../top/user_core_wrapper.sv
-../top/user_gpio.sv
 ../top/user_ip_design_template.sv
 ../top/user_ip_top.sv
 ../top/user_ip_wrapper.sv

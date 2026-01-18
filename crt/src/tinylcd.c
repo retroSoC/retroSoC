@@ -48,38 +48,22 @@ static uint32_t rgb_color[][32] = {
 
 void lcd_wr_dc_cmd(uint8_t cmd) {
     lcd_dc_clr;
-#ifdef USE_QSPI0_DEV
     qspi0_wr_dat8(cmd);
-#else
-    qspi1_wr_dat8(cmd);
-#endif
 }
 
 void lcd_wr_dc_data8(uint8_t dat) {
     lcd_dc_set;
-#ifdef USE_QSPI0_DEV
     qspi0_wr_dat8(dat);
-#else
-    qspi1_wr_dat8(dat);
-#endif
 }
 
 void lcd_wr_dc_data16(uint16_t dat) {
     lcd_dc_set;
-#ifdef USE_QSPI0_DEV
     qspi0_wr_dat16(dat);
-#else
-    qspi1_wr_data16(dat);
-#endif
 }
 
 void lcd_wr_data32(uint32_t* dat, uint32_t len) {
     lcd_dc_set;
-#ifdef USE_QSPI0_DEV
     qspi0_wr_data32(dat, len);
-#else
-    qspi1_wr_data32(dat, len);
-#endif
 }
 
 

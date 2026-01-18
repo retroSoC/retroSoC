@@ -10,28 +10,6 @@
 
 `include "mmap_define.svh"
 
-module regslice #(
-    parameter int WIDTH  = 1,
-    parameter int BYPASS = 0
-) (
-    input  logic             clk_i,
-    input  logic             rst_n_i,
-    input  logic [WIDTH-1:0] dat_i,
-    output logic [WIDTH-1:0] dat_o
-);
-
-  if (BYPASS == 1) assign dat_o = dat_i;
-  else begin
-    dffr #(WIDTH) u_regslice_dffr (
-        clk_i,
-        rst_n_i,
-        dat_i,
-        dat_o
-    );
-  end
-endmodule
-
-
 module bus (
     // verilog_format: off
     input  logic  clk_i,
@@ -108,7 +86,8 @@ module bus (
 
   // bus mux
   // verilog_format: off
-  assign s_natv_sel      = u_mstr_rgsl_nmi_if.addr[31:28] == `NATV_IP_START ||
+  assign s_natv_sel      = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START ||
+                           u_mstr_rgsl_nmi_if.addr[31:28] == `NATV_IP_START ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `PSRAM_START ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START0 ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START1 ||
@@ -119,8 +98,7 @@ module bus (
   assign natv_nmi.wdata  = u_mstr_rgsl_nmi_if.wdata;
   assign natv_nmi.wstrb  = u_mstr_rgsl_nmi_if.wstrb;
 
-  assign s_apb_sel       = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `APB_IP_START;
+  assign s_apb_sel       = u_mstr_rgsl_nmi_if.addr[31:28] == `APB_IP_START;
   assign apb_nmi.valid   = u_mstr_rgsl_nmi_if.valid && s_apb_sel;
   assign apb_nmi.addr    = u_mstr_rgsl_nmi_if.addr;
   assign apb_nmi.wdata   = u_mstr_rgsl_nmi_if.wdata;

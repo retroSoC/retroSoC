@@ -27,7 +27,7 @@ module mgmt_core_wrapper (
       .ENABLE_DIV     (1),
       .ENABLE_IRQ     (0),
       .PROGADDR_RESET (`FLASH_START_ADDR),
-      .PROGADDR_IRQ   (`IRQ_HANDLER_START_ADDR)
+      .PROGADDR_IRQ   (`IRQ_START_ADDR)
   ) u_picorv32 (
       .clk         (clk_i),
       .resetn      (rst_n_i),

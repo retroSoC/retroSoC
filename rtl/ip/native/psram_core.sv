@@ -38,21 +38,23 @@ module psram_core (
   // 6.94 * 50000 = 347us / 2 = 174us > 150us
   `define BOOT_COUNTER 18'd50_000
 
-  localparam FSM_INIT = 0;
-  localparam FSM_RSTEN = 1;
-  localparam FSM_RSTEN2RST = 2;
-  localparam FSM_RST = 3;
-  localparam FSM_RST2QE = 4;
-  localparam FSM_QE = 5;
-  localparam FSM_QE2IDLE = 6;
-  localparam FSM_IDLE = 7;
-  localparam FSM_SEND = 8;
-  localparam FSM_SEND_QPI = 9;
-  localparam FSM_RD_PRE_QPI = 10;
-  localparam FSM_RD_QPI = 11;
-  localparam FSM_WR_QPI = 12;
-  localparam FSM_RD2IDLE = 13;
-  localparam FSM_WR2IDLE = 14;
+  // verilog_format: off
+  localparam FSM_INIT       = 5'd0;
+  localparam FSM_RSTEN      = 5'd1;
+  localparam FSM_RSTEN2RST  = 5'd2;
+  localparam FSM_RST        = 5'd3;
+  localparam FSM_RST2QE     = 5'd4;
+  localparam FSM_QE         = 5'd5;
+  localparam FSM_QE2IDLE    = 5'd6;
+  localparam FSM_IDLE       = 5'd7;
+  localparam FSM_SEND       = 5'd8;
+  localparam FSM_SEND_QPI   = 5'd9;
+  localparam FSM_RD_PRE_QPI = 5'd10;
+  localparam FSM_RD_QPI     = 5'd11;
+  localparam FSM_WR_QPI     = 5'd12;
+  localparam FSM_RD2IDLE    = 5'd13;
+  localparam FSM_WR2IDLE    = 5'd14;
+  // verilog_format: on
 
   logic [ 4:0] r_fsm_state;
   logic [ 4:0] r_fsm_state_tgt;
@@ -130,6 +132,7 @@ module psram_core (
       psram_ce_o          <= 1'b1;
     end else begin
       mem_ready_o <= 1'b0;
+      /* verilator lint_off CASEINCOMPLETE */
       case (r_fsm_state)
         FSM_INIT: begin
           if (r_boot_cnt == 18'd0) r_fsm_state <= FSM_RSTEN;
@@ -200,7 +203,7 @@ module psram_core (
             psram_ce_o <= 1'b1;
           end else if (r_wr_st) begin
             r_xfer_ca           <= {8'h38, mem_addr_i[23:0]};
-            r_xfer_ca_bit_cnt   <= 32;
+            r_xfer_ca_bit_cnt   <= 8'd32;
             r_fsm_state         <= FSM_SEND_QPI;
             r_fsm_state_tgt     <= FSM_WR_QPI;
             r_xfer_data_bit_cnt <= 8'd0;
@@ -208,7 +211,7 @@ module psram_core (
             psram_ce_o          <= 1'b0;
           end else if (r_rd_st) begin
             r_xfer_ca           <= {8'hEB, mem_addr_i[23:0]};
-            r_xfer_ca_bit_cnt   <= 32;
+            r_xfer_ca_bit_cnt   <= 8'd32;
             r_fsm_state         <= FSM_SEND_QPI;
             r_fsm_state_tgt     <= FSM_RD_PRE_QPI;
             r_rd_wait_cnt       <= 4'd12;  // wait 6 cycle afer cmd+addr accrondig to TRM

@@ -36,10 +36,12 @@ module retrosoc_top (
   wire       s_psram_dat1;
   wire       s_psram_dat2;
   wire       s_psram_dat3;
-  wire       s_spfs_sck;
-  wire       s_spfs_nss;
-  wire       s_spfs_mosi;
-  wire       s_spfs_miso;
+  wire       s_qspi_nss0_o;
+  wire       s_qspi_sck_o;
+  wire       s_qspi_dat0_io;
+  wire       s_qspi_dat1_io;
+  wire       s_qspi_dat2_io;
+  wire       s_qspi_dat3_io;
 
   assign s_clk        = ext_clk_i;
   assign s_rst_n      = rst_n_i;
@@ -124,26 +126,24 @@ module retrosoc_top (
       .ps2_dat_i_pad      (),
       .i2c_scl_io_pad     (),
       .i2c_sda_io_pad     (),
-      .qspi_sck_o_pad     (),
-      .qspi_nss0_o_pad    (),
+      .qspi_sck_o_pad     (s_qspi_sck_o),
+      .qspi_nss0_o_pad    (s_qspi_nss0_o),
       .qspi_nss1_o_pad    (),
       .qspi_nss2_o_pad    (),
       .qspi_nss3_o_pad    (),
-      .qspi_dat0_io_pad   (),
-      .qspi_dat1_io_pad   (),
-      .qspi_dat2_io_pad   (),
-      .qspi_dat3_io_pad   (),
-      .spfs_sck_o_pad     (s_spfs_sck),
-      .spfs_nss_o_pad     (s_spfs_nss),
-      .spfs_mosi_o_pad    (s_spfs_mosi),
-      .spfs_miso_i_pad    (s_spfs_miso)
+      .qspi_dat0_io_pad   (s_qspi_dat0_io),
+      .qspi_dat1_io_pad   (s_qspi_dat1_io),
+      .qspi_dat2_io_pad   (s_qspi_dat2_io),
+      .qspi_dat3_io_pad   (s_qspi_dat3_io)
   );
 
-  spiFlash u_spiFlash (
-      .clk (s_spfs_sck),
-      .cs  (s_spfs_nss),
-      .mosi(s_spfs_mosi),
-      .miso(s_spfs_miso)
+  QSPIFlash u_QSPIFlash (
+      .clk(s_qspi_sck_o),
+      .cs (s_qspi_nss0_o),
+      .io0(s_qspi_dat0_io),
+      .io1(s_qspi_dat1_io),
+      .io2(s_qspi_dat2_io),
+      .io3(s_qspi_dat3_io)
   );
 
   ESP_PSRAM64H u_ESP_PSRAM64H (

@@ -26,8 +26,7 @@ module nmi2apb (
     apb4_pure_if.master rtc,
     apb4_pure_if.master wdg,
     apb4_pure_if.master crc,
-    apb4_pure_if.master tmr,
-    apb4_pure_if.master spfs
+    apb4_pure_if.master tmr
     // verilog_format: on
 );
 
@@ -51,7 +50,6 @@ module nmi2apb (
   assign wdg.paddr        = nmi.addr;
   assign crc.paddr        = nmi.addr;
   assign tmr.paddr        = nmi.addr;
-  assign spfs.paddr       = nmi.addr;
 
   assign archinfo.pprot   = '0;
   assign rng.pprot        = '0;
@@ -62,7 +60,6 @@ module nmi2apb (
   assign wdg.pprot        = '0;
   assign crc.pprot        = '0;
   assign tmr.pprot        = '0;
-  assign spfs.pprot       = '0;
 
   assign archinfo.psel    = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_ARCHINFO_START);
   assign rng.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RNG_START);
@@ -73,7 +70,6 @@ module nmi2apb (
   assign wdg.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_WDG_START);
   assign crc.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_CRC_START);
   assign tmr.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_TMR_START);
-  assign spfs.psel        = s_xfer_valid && (nmi.addr[31:28] == `FLASH_START);
 
   assign archinfo.penable = s_fsm_q == FSM_ENAB;
   assign rng.penable      = s_fsm_q == FSM_ENAB;
@@ -84,7 +80,6 @@ module nmi2apb (
   assign wdg.penable      = s_fsm_q == FSM_ENAB;
   assign crc.penable      = s_fsm_q == FSM_ENAB;
   assign tmr.penable      = s_fsm_q == FSM_ENAB;
-  assign spfs.penable     = s_fsm_q == FSM_ENAB;
 
   assign archinfo.pwrite  = |nmi.wstrb;
   assign rng.pwrite       = |nmi.wstrb;
@@ -95,7 +90,6 @@ module nmi2apb (
   assign wdg.pwrite       = |nmi.wstrb;
   assign crc.pwrite       = |nmi.wstrb;
   assign tmr.pwrite       = |nmi.wstrb;
-  assign spfs.pwrite      = |nmi.wstrb;
 
   assign archinfo.pwdata  = nmi.wdata;
   assign rng.pwdata       = nmi.wdata;
@@ -106,7 +100,6 @@ module nmi2apb (
   assign wdg.pwdata       = nmi.wdata;
   assign crc.pwdata       = nmi.wdata;
   assign tmr.pwdata       = nmi.wdata;
-  assign spfs.pwdata      = nmi.wdata;
 
   assign archinfo.pstrb   = nmi.wstrb;
   assign rng.pstrb        = nmi.wstrb;
@@ -117,7 +110,6 @@ module nmi2apb (
   assign wdg.pstrb        = nmi.wstrb;
   assign crc.pstrb        = nmi.wstrb;
   assign tmr.pstrb        = nmi.wstrb;
-  assign spfs.pstrb       = nmi.wstrb;
 
 `ifdef IP_MDD
   assign user_ip.paddr    = nmi.addr;
@@ -168,11 +160,11 @@ module nmi2apb (
                      ({32{rtc.psel}}      & rtc.prdata)      |
                      ({32{wdg.psel}}      & wdg.prdata)      |
                      ({32{crc.psel}}      & crc.prdata)      |
-                     ({32{tmr.psel}}      & tmr.prdata)      |
 `ifdef IP_MDD
                      ({32{user_ip.psel}}  & user_ip.prdata)  |
 `endif
-                     ({32{spfs.psel}}     & spfs.prdata);
+                     ({32{tmr.psel}}      & tmr.prdata);
+
 
   assign s_xfer_ready = (archinfo.psel & archinfo.pready) |
                         (rng.psel      & rng.pready)      |
@@ -182,11 +174,10 @@ module nmi2apb (
                         (rtc.psel      & rtc.pready)      |
                         (wdg.psel      & wdg.pready)      |
                         (crc.psel      & crc.pready)      |
-                        (tmr.psel      & tmr.pready)      |
 `ifdef IP_MDD
                         (user_ip.psel  & user_ip.pready)  |
 `endif
-                        (spfs.psel     & spfs.pready);
+                        (tmr.psel      & tmr.pready);
   // verilog_format: on
 
 endmodule

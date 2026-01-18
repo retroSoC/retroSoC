@@ -18,19 +18,18 @@ module retrosoc (
     input  logic                           clk_aud_i,
     input  logic                           rst_aud_n_i,
     input  logic                           tmr_capch_i,
-    input  logic                           spfs_div4_i,
     input  logic                           extn_irq_i,
 `ifdef CORE_MDD
     input  logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
 `endif
 `ifdef IP_MDD
-    user_gpio_if.dut                       user_gpio,
+    nmi_gpio_if.dut                        user_gpio,
 `endif
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
+    nmi_gpio_if.dut                        gpio,
     uart_if.dut                            uart0,
-    simp_gpio_if.dut                       gpio,
     qspi_if.dut                            psram,
     spi_if.dut                             spisd,
     i2c_if.dut                             i2c,
@@ -39,8 +38,7 @@ module retrosoc (
     onewire_if.dut                         onewire,
     uart_if.dut                            uart1,
     pwm_if.dut                             pwm,
-    ps2_if.dut                             ps2,
-    spi_if.dut                             spfs
+    ps2_if.dut                             ps2
     // verilog_format: on
 );
 
@@ -97,14 +95,14 @@ module retrosoc (
   );
 
 
-  ip_natv_wrapper u_ip_natv_wrapper (
+  ip_nmi_wrapper u_ip_nmi_wrapper (
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
       .clk_aud_i  (clk_aud_i),
       .rst_aud_n_i(rst_aud_n_i),
       .nmi        (u_natv_nmi_if),
-      .uart       (uart0),
       .gpio       (gpio),
+      .uart       (uart0),
       .psram      (psram),
       .spisd      (spisd),
       .i2c        (i2c),
@@ -123,12 +121,10 @@ module retrosoc (
       .clk_aud_i  (clk_aud_i),
       .rst_aud_n_i(rst_aud_n_i),
       .tmr_capch_i(tmr_capch_i),
-      .spfs_div4_i(spfs_div4_i),
       .nmi        (u_apb_nmi_if),
       .uart       (uart1),
       .pwm        (pwm),
       .ps2        (ps2),
-      .spfs       (spfs),
 `ifdef IP_MDD
       .ip_sel_i   (u_sysctrl_if.ip_sel_o),
       .gpio       (user_gpio),

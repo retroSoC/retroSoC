@@ -29,17 +29,17 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef SIMP_UART_DEF_SV
-`define SIMP_UART_DEF_SV
+`ifndef NMI_UART_DEF_SV
+`define NMI_UART_DEF_SV
 
 // verilog_format: off
-`define SIMP_UART_DIV 8'h00
-`define SIMP_UART_DAT 8'h04
+`define NMI_UART_DIV 8'h00
+`define NMI_UART_DAT 8'h04
 // verilog_format: on
 
 `endif
 
-module simple_uart (
+module nmi_uart (
     // verilog_format: off
     input logic      clk_i,
     input logic      rst_n_i,
@@ -77,7 +77,7 @@ module simple_uart (
   assign uart.uart_tx_o = r_send_pattern[0];
   assign uart.irq_o     = r_recv_buf_valid;
 
-  assign s_uart_div_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_UART_DIV;
+  assign s_uart_div_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_UART_DIV;
   always_comb begin
     s_uart_div_d = s_uart_div_q;
     if (nmi.wstrb[0]) s_uart_div_d[7:0] = nmi.wdata[7:0];
@@ -93,7 +93,7 @@ module simple_uart (
       s_uart_div_q
   );
 
-  assign s_uart_dat_en   = s_nmi_wr_hdshk && nmi.addr[7:0] == `SIMP_UART_DAT;
+  assign s_uart_dat_en   = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_UART_DAT;
   assign s_send_dat_wait = s_uart_dat_en && nmi.wstrb[0] && ((|r_send_bitcnt) || r_send_dummy);
   assign s_nmi_ready_d   = nmi.valid && (~s_nmi_ready_q) && (~s_send_dat_wait);
   dffr #(1) u_nmi_ready_dffr (
@@ -107,8 +107,8 @@ module simple_uart (
   always_comb begin
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
-      `SIMP_UART_DIV: s_nmi_rdata_d = s_uart_div_q;
-      `SIMP_UART_DAT: s_nmi_rdata_d = r_recv_buf_valid ? {24'd0, r_recv_buf_data} : '1;
+      `NMI_UART_DIV: s_nmi_rdata_d = s_uart_div_q;
+      `NMI_UART_DAT: s_nmi_rdata_d = r_recv_buf_valid ? {24'd0, r_recv_buf_data} : '1;
       default:        s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end

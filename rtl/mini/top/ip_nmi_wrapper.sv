@@ -11,7 +11,7 @@
 // addr range: [31:28]: 4'h1(reg), 4'h4(psram), 4'h5(spisd)
 `include "mmap_define.svh"
 
-module ip_natv_wrapper (
+module ip_nmi_wrapper (
     // verilog_format: off
     input logic        clk_i,
     input logic        rst_n_i,
@@ -19,8 +19,8 @@ module ip_natv_wrapper (
     input logic        rst_aud_n_i,
     // natv if
     nmi_if.slave       nmi,
+    nmi_gpio_if.dut    gpio,
     uart_if.dut        uart,
-    simp_gpio_if.dut   gpio,
     qspi_if.dut        psram,
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
@@ -66,16 +66,16 @@ module ip_natv_wrapper (
   assign u_dma_hw_trg_if.i2s_rx_proc = ~s_dma_i2s_rx_stall;
   assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_qspi_tx_stall;
   assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_qspi_rx_stall;
-  // uart
-  assign u_uart_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_UART_START);
-  assign u_uart_nmi_if.addr     = nmi.addr;
-  assign u_uart_nmi_if.wdata    = nmi.wdata;
-  assign u_uart_nmi_if.wstrb    = nmi.wstrb;
   // gpio
   assign u_gpio_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_GPIO_START);
   assign u_gpio_nmi_if.addr     = nmi.addr;
   assign u_gpio_nmi_if.wdata    = nmi.wdata;
   assign u_gpio_nmi_if.wstrb    = nmi.wstrb;
+  // uart
+  assign u_uart_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_UART_START);
+  assign u_uart_nmi_if.addr     = nmi.addr;
+  assign u_uart_nmi_if.wdata    = nmi.wdata;
+  assign u_uart_nmi_if.wstrb    = nmi.wstrb;
   // tim0
   assign u_tim0_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_TIM0_START);
   assign u_tim0_nmi_if.addr     = nmi.addr;
@@ -118,7 +118,7 @@ module ip_natv_wrapper (
   assign u_onewire_nmi_if.wdata   = nmi.wdata;
   assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
   // qspi
-  assign u_qspi_nmi_if.valid      = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START);
+  assign u_qspi_nmi_if.valid      = nmi.valid && ((nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START) | nmi.addr[31:28] == `FLASH_START);
   assign u_qspi_nmi_if.addr       = nmi.addr;
   assign u_qspi_nmi_if.wdata      = nmi.wdata;
   assign u_qspi_nmi_if.wstrb      = nmi.wstrb;
@@ -182,15 +182,7 @@ module ip_natv_wrapper (
   assign irq_o[9] = qspi.irq_o;
 
 
-  simple_uart u_simple_uart (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .nmi    (u_uart_nmi_if),
-      .uart   (uart)
-  );
-
-
-  simple_gpio u_simple_gpio (
+  nmi_gpio u_nmi_gpio (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_gpio_nmi_if),
@@ -198,7 +190,15 @@ module ip_natv_wrapper (
   );
 
 
-  simple_timer u_simple_timer0 (
+  nmi_uart u_nmi_uart (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_uart_nmi_if),
+      .uart   (uart)
+  );
+
+
+  nmi_timer u_nmi_timer0 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_tim0_nmi_if),
@@ -206,7 +206,7 @@ module ip_natv_wrapper (
   );
 
 
-  simple_timer u_simple_timer1 (
+  nmi_timer u_nmi_timer1 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_tim1_nmi_if),

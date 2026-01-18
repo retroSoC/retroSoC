@@ -8,8 +8,8 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef NATV_QSPI_DEF_SV
-`define NATV_QSPI_DEF_SV
+`ifndef NMI_QSPI_DEF_SV
+`define NMI_QSPI_DEF_SV
 
 // verilog_format: off
 `define NATV_QSPI_MODE       8'h00
@@ -37,6 +37,7 @@
 `define NATV_QSPI_HLVLEN     8'h58
 `define NATV_QSPI_START      8'h5C
 `define NATV_QSPI_STATUS     8'h60
+`define NATV_QSPI_MMMODE     8'h64
 
 `define QSPI_TYPE_NONE 2'd0
 `define QSPI_TYPE_SNGL 2'd1
