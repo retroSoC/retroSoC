@@ -27,6 +27,8 @@
 #define APB_MEM_OFFST       256 * 1024 * 1024
 #define SRAM_MEM_START      0x30000000
 #define SRAM_MEM_OFFST      128 * 1024
+#define SDRAM_MEM_START     0x38000000
+#define SDRAM_MEM_OFFST     64 * 1024 * 1024
 #define PSRAM_MEM_START     0x40000000
 #define PSRAM_MEM_OFFST     8 * 1024 * 1024 * PSRAM_NUM
 #define QSPI_MEM_START      0x50000000
@@ -89,32 +91,39 @@
 #define reg_onewire_ctrl    (*(volatile uint32_t*)0x10008014)
 #define reg_onewire_status  (*(volatile uint32_t*)0x10008018)
 // xpi
-#define reg_qspi0_mode       (*(volatile uint32_t*)0x10009000)
-#define reg_qspi0_nss        (*(volatile uint32_t*)0x10009004)
-#define reg_qspi0_clkdiv     (*(volatile uint32_t*)0x10009008)
-#define reg_qspi0_rdwr       (*(volatile uint32_t*)0x1000900C)
-#define reg_qspi0_revdat     (*(volatile uint32_t*)0x10009010)
-#define reg_qspi0_txupbound  (*(volatile uint32_t*)0x10009014)
-#define reg_qspi0_txlowbound (*(volatile uint32_t*)0x10009018)
-#define reg_qspi0_rxupbound  (*(volatile uint32_t*)0x1000901C)
-#define reg_qspi0_rxlowbound (*(volatile uint32_t*)0x10009020)
-#define reg_qspi0_flush      (*(volatile uint32_t*)0x10009024)
-#define reg_qspi0_cmdtyp     (*(volatile uint32_t*)0x10009028)
-#define reg_qspi0_cmdlen     (*(volatile uint32_t*)0x1000902C)
-#define reg_qspi0_cmddat     (*(volatile uint32_t*)0x10009030)
-#define reg_qspi0_adrtyp     (*(volatile uint32_t*)0x10009034)
-#define reg_qspi0_adrlen     (*(volatile uint32_t*)0x10009038)
-#define reg_qspi0_adrdat     (*(volatile uint32_t*)0x1000903C)
-#define reg_qspi0_dumlen     (*(volatile uint32_t*)0x10009040)
-#define reg_qspi0_dattyp     (*(volatile uint32_t*)0x10009044)
-#define reg_qspi0_datlen     (*(volatile uint32_t*)0x10009048)
-#define reg_qspi0_datbit     (*(volatile uint32_t*)0x1000904C)
-#define reg_qspi0_txdata     (*(volatile uint32_t*)0x10009050)
-#define reg_qspi0_rxdata     (*(volatile uint32_t*)0x10009054)
-#define reg_qspi0_hlvlen     (*(volatile uint32_t*)0x10009058)
-#define reg_qspi0_start      (*(volatile uint32_t*)0x1000905C)
-#define reg_qspi0_status     (*(volatile uint32_t*)0x10009060)
-#define reg_qspi0_mmmode     (*(volatile uint32_t*)0x10009064)
+#define reg_qspi0_cfgidx     (*(volatile uint32_t*)0x10009000)
+#define reg_qspi0_accmd      (*(volatile uint32_t*)0x10009004)
+#define reg_qspi0_mmstad     (*(volatile uint32_t*)0x10009008)
+#define reg_qspi0_mmoffst    (*(volatile uint32_t*)0x1000900C)
+#define reg_qspi0_mode       (*(volatile uint32_t*)0x10009010)
+#define reg_qspi0_nss        (*(volatile uint32_t*)0x10009014)
+#define reg_qspi0_clkdiv     (*(volatile uint32_t*)0x10009018)
+#define reg_qspi0_rdwr       (*(volatile uint32_t*)0x1000901C)
+#define reg_qspi0_revdat     (*(volatile uint32_t*)0x10009020)
+#define reg_qspi0_txupb      (*(volatile uint32_t*)0x10009024)
+#define reg_qspi0_txlowb     (*(volatile uint32_t*)0x10009028)
+#define reg_qspi0_rxupb      (*(volatile uint32_t*)0x1000902C)
+#define reg_qspi0_rxlowb     (*(volatile uint32_t*)0x10009030)
+#define reg_qspi0_flush      (*(volatile uint32_t*)0x10009034)
+#define reg_qspi0_cmdtyp     (*(volatile uint32_t*)0x10009038)
+#define reg_qspi0_cmdlen     (*(volatile uint32_t*)0x1000903C)
+#define reg_qspi0_cmddat     (*(volatile uint32_t*)0x10009040)
+#define reg_qspi0_adrtyp     (*(volatile uint32_t*)0x10009044)
+#define reg_qspi0_adrlen     (*(volatile uint32_t*)0x10009048)
+#define reg_qspi0_adrdat     (*(volatile uint32_t*)0x1000904C)
+#define reg_qspi0_alttyp     (*(volatile uint32_t*)0x10009050)
+#define reg_qspi0_altlen     (*(volatile uint32_t*)0x10009054)
+#define reg_qspi0_altdat     (*(volatile uint32_t*)0x10009058)
+#define reg_qspi0_tdulen     (*(volatile uint32_t*)0x1000905C)
+#define reg_qspi0_rdulen     (*(volatile uint32_t*)0x10009060)
+#define reg_qspi0_dattyp     (*(volatile uint32_t*)0x10009064)
+#define reg_qspi0_datlen     (*(volatile uint32_t*)0x10009068)
+#define reg_qspi0_datbit     (*(volatile uint32_t*)0x1000906C)
+#define reg_qspi0_hlvlen     (*(volatile uint32_t*)0x10009070)
+#define reg_qspi0_txdata     (*(volatile uint32_t*)0x10009074)
+#define reg_qspi0_rxdata     (*(volatile uint32_t*)0x10009078)
+#define reg_qspi0_start      (*(volatile uint32_t*)0x1000907C)
+#define reg_qspi0_status     (*(volatile uint32_t*)0x10009080)
 // dma(32b xfer, hardware trigger by I2S fifo, QSPI fifo)
 #define reg_dma_mode        (*(volatile uint32_t*)0x1000A000)
 #define reg_dma_srcaddr     (*(volatile uint32_t*)0x1000A004)
@@ -141,6 +150,8 @@
 #define reg_clint_clkdiv     (*(volatile uint32_t*)0x1000C014)
 // sdram
 #define reg_sdram_cfg        (*(volatile uint32_t*)0x1000D000)
+// dvp
+#define reg_dvp_cfg          (*(volatile uint32_t*)0x1000E000)
 // apb
 // archinfo
 #define reg_archinfo_sys   (*(volatile uint32_t*)0x20000000)

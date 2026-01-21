@@ -86,6 +86,7 @@ void app_info() {
     printf("  NMI IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
     printf("  APB IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
     printf("  On-chip RAM:         @[0x%08x-0x%08x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
+    printf("  Off-chip SDRAM:      @[0x%08x-0x%08x] %dMiB\n", SDRAM_MEM_START, SDRAM_MEM_START + SDRAM_MEM_OFFST - 1, SDRAM_MEM_OFFST / 1024 / 1024);
     printf("  Off-chip PSRAM:      @[0x%08x-0x%08x] %dMiB(%dx8MiB)\n", PSRAM_MEM_START, PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
     printf("  XPI MMIO:            @[0x%08x-0x%08x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
     printf("  TF Card MMIO:        @[0x%08x-0x%08x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
@@ -104,6 +105,7 @@ void app_info() {
     printf("                       1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                       1 x CLINT         @0x%x\n", &reg_clint_mtimel);
     printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_cfg);
+    printf("                       1 x DVP           @0x%x\n", &reg_dvp_cfg);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);

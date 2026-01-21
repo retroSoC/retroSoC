@@ -10,10 +10,10 @@ void qspi0_init(QSPI0_InitStruct_t val) {
     reg_qspi0_mode       = val.mode;
     reg_qspi0_nss        = val.nss;
     reg_qspi0_clkdiv     = val.clkdiv;
-    reg_qspi0_txupbound  = val.txub;
-    reg_qspi0_txlowbound = val.txlb;
-    reg_qspi0_rxupbound  = val.rxub;
-    reg_qspi0_rxlowbound = val.rxlb;
+    reg_qspi0_txupb      = val.txub;
+    reg_qspi0_txlowb     = val.txlb;
+    reg_qspi0_rxupb      = val.rxub;
+    reg_qspi0_rxlowb     = val.rxlb;
     reg_qspi0_hlvlen     = val.hlven;
 }
 
@@ -35,7 +35,8 @@ void qspi0_wr(uint32_t cmdtyp, uint32_t cmdlen, uint32_t cmddat,
     reg_qspi0_adrlen = adrlen;
     reg_qspi0_adrdat = adrdat;
     // dum
-    reg_qspi0_dumlen = dumlen;
+    reg_qspi0_tdulen = dumlen;
+    reg_qspi0_rdulen = dumlen;
     // dat
     reg_qspi0_dattyp = dattyp;
     reg_qspi0_datlen = datlen;
@@ -67,7 +68,8 @@ void qspi0_xfer_config(
     reg_qspi0_adrtyp = adrtyp;
     reg_qspi0_adrlen = adrlen;
     // dum
-    reg_qspi0_dumlen = dumlen;
+    reg_qspi0_tdulen = dumlen;
+    reg_qspi0_rdulen = dumlen;
     // dat
     reg_qspi0_dattyp = dattyp;
     reg_qspi0_datlen = datlen;
@@ -143,7 +145,8 @@ void qspi0_rd(uint32_t cmdtyp, uint32_t cmdlen, uint32_t cmddat,
     reg_qspi0_adrlen = adrlen;
     reg_qspi0_adrdat = adrdat;
     // dum
-    reg_qspi0_dumlen = dumlen;
+    reg_qspi0_tdulen = dumlen;
+    reg_qspi0_rdulen = dumlen;
     // dat
     reg_qspi0_dattyp = dattyp;
     reg_qspi0_datlen = datlen;

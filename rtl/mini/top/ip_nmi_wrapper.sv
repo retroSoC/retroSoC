@@ -49,11 +49,12 @@ module ip_nmi_wrapper (
   nmi_if u_sysctrl_nmi_if ();
   nmi_if u_clint_nmi_if ();
   // ip interface
-  simp_clint_if u_clint_if();
+  simp_clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
 
   logic s_psram_cfg_sel, s_psram_mem_sel;
   logic s_spisd_cfg_sel;
+  logic s_qspi_mm_sel;
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_qspi_tx_stall, s_dma_qspi_rx_stall;
   logic s_dma_xfer_done;
@@ -118,7 +119,8 @@ module ip_nmi_wrapper (
   assign u_onewire_nmi_if.wdata   = nmi.wdata;
   assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
   // qspi
-  assign u_qspi_nmi_if.valid      = nmi.valid && ((nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START) | nmi.addr[31:28] == `FLASH_START);
+  assign s_qspi_mm_sel            = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `QSPI_MEM_START;
+  assign u_qspi_nmi_if.valid      = nmi.valid && ((nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START) | s_qspi_mm_sel);
   assign u_qspi_nmi_if.addr       = nmi.addr;
   assign u_qspi_nmi_if.wdata      = nmi.wdata;
   assign u_qspi_nmi_if.wstrb      = nmi.wstrb;

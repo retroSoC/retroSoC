@@ -29,7 +29,6 @@
 ../../clusterip/ps2/rtl/apb4_ps2.sv
 ../../clusterip/i2c/rtl/i2c_if.sv
 ../../clusterip/spi/rtl/spi_if.sv
-../../clusterip/spi/rtl/qspi_if.sv
 ../../clusterip/rtc/rtl/rtc_if.sv
 ../../clusterip/rtc/rtl/apb4_rtc.sv
 ../../clusterip/wdg/rtl/wdg_if.sv
@@ -59,6 +58,8 @@
 ../../ip/native/i2s.sv
 ../../ip/native/onewire_core.sv
 ../../ip/native/onewire.sv
+../../ip/native/qspi_reg.sv
+../../ip/native/qspi_mm.sv
 ../../ip/native/qspi_clkgen.sv
 ../../ip/native/qspi_core.sv
 ../../ip/native/qspi.sv

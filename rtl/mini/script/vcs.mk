@@ -22,7 +22,7 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 -debug_access+all \
                 -msg_config=../lint.msg \
                 +error+500 \
-                +vcs+loopreport+10000 \
+                +vcs+loopreport+1000 \
                 +vcs+flush+all \
                 -xprop=../xprop_config \
                 -override_timescale=1ns/1ps \
@@ -51,7 +51,7 @@ comp:
 	cd $(RTL_PATH)/.build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 sim: comp
-	cd $(RTL_PATH)/.build && ($(SIM_BINY) +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +loopdetect  +loopdetect+1000 +core_sel=$(RTL_SIM_CORESEL) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
+	cd $(RTL_PATH)/.build && ($(SIM_BINY) +vcs+loopreport+1000 -suppress=ASLR_DETECTED_INFO +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
 
 wave:
 	cd $(RTL_PATH)/.build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
