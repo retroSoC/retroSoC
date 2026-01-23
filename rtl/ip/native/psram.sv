@@ -48,12 +48,42 @@
 
 `include "mmap_define.svh"
 
+interface psram_if ();
+  logic       spi_sck_o;
+  logic [1:0] spi_nss_o;
+  logic [3:0] spi_io_en_o;
+  logic [3:0] spi_io_in_i;
+  logic [3:0] spi_io_out_o;
+  logic       irq_o;
+
+  modport dut(
+      output spi_sck_o,
+      output spi_nss_o,
+      output spi_io_en_o,
+      input spi_io_in_i,
+      output spi_io_out_o,
+      output irq_o
+  );
+
+  // verilog_format: off
+  modport tb(
+      input spi_sck_o,
+      input spi_nss_o,
+      input spi_io_en_o,
+      output spi_io_in_i,
+      input spi_io_out_o,
+      input irq_o
+  );
+  // verilog_format: on
+endinterface
+
+
 module nmi_psram (
     // verilog_format: off
     input logic  clk_i,
     input logic  rst_n_i,
     nmi_if.slave nmi,
-    qspi_if.dut  qspi
+    psram_if.dut psram
     // verilog_format: on
 );
 
@@ -91,15 +121,13 @@ module nmi_psram (
 
 
   // verilog_format: off
-  assign qspi.spi_nss_o[0]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd0) ? s_psram_ce : 1'b1;
-  assign qspi.spi_nss_o[1]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd1) ? s_psram_ce : 1'b1;
-  assign qspi.spi_nss_o[2]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd2) ? s_psram_ce : 1'b1;
-  assign qspi.spi_nss_o[3]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd3) ? s_psram_ce : 1'b1;
-  assign qspi.spi_io_en_o[0] = ~s_psram_sio_oen;
-  assign qspi.spi_io_en_o[1] = ~s_psram_sio_oen;
-  assign qspi.spi_io_en_o[2] = ~s_psram_sio_oen;
-  assign qspi.spi_io_en_o[3] = ~s_psram_sio_oen;
-  assign qspi.irq_o          = 1'b0;
+  assign psram.spi_nss_o[0]   = (~s_init_done) || (s_init_done && nmi.addr[23] == 1'b0) ? s_psram_ce : 1'b1;
+  assign psram.spi_nss_o[1]   = (~s_init_done) || (s_init_done && nmi.addr[23] == 1'b1) ? s_psram_ce : 1'b1;
+  assign psram.spi_io_en_o[0] = ~s_psram_sio_oen;
+  assign psram.spi_io_en_o[1] = ~s_psram_sio_oen;
+  assign psram.spi_io_en_o[2] = ~s_psram_sio_oen;
+  assign psram.spi_io_en_o[3] = ~s_psram_sio_oen;
+  assign psram.irq_o          = 1'b0;
   // verilog_format: on
 
 
@@ -203,16 +231,16 @@ module nmi_psram (
       .wr_st_i            (r_wr_st),
       .init_done_o        (s_init_done),
       .idle_o             (s_core_idle),
-      .psram_sclk_o       (qspi.spi_sck_o),
+      .psram_sclk_o       (psram.spi_sck_o),
       .psram_ce_o         (s_psram_ce),
-      .psram_mosi_i       (qspi.spi_io_in_i[0]),
-      .psram_miso_i       (qspi.spi_io_in_i[1]),
-      .psram_sio2_i       (qspi.spi_io_in_i[2]),
-      .psram_sio3_i       (qspi.spi_io_in_i[3]),
-      .psram_mosi_o       (qspi.spi_io_out_o[0]),
-      .psram_miso_o       (qspi.spi_io_out_o[1]),
-      .psram_sio2_o       (qspi.spi_io_out_o[2]),
-      .psram_sio3_o       (qspi.spi_io_out_o[3]),
+      .psram_mosi_i       (psram.spi_io_in_i[0]),
+      .psram_miso_i       (psram.spi_io_in_i[1]),
+      .psram_sio2_i       (psram.spi_io_in_i[2]),
+      .psram_sio3_i       (psram.spi_io_in_i[3]),
+      .psram_mosi_o       (psram.spi_io_out_o[0]),
+      .psram_miso_o       (psram.spi_io_out_o[1]),
+      .psram_sio2_o       (psram.spi_io_out_o[2]),
+      .psram_sio3_o       (psram.spi_io_out_o[3]),
       .psram_sio_oen_o    (s_psram_sio_oen)
   );
 

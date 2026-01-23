@@ -82,7 +82,7 @@ void app_info() {
     printf("  FREQ:                %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Address Range:\n");
-    printf("  SPI Flash:           @[0x%08x-0x%08x] %dMiB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
+    printf("  QSPI Flash:          @[0x%08x-0x%08x] %dMiB\n", SPFS_MEM_START, SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
     printf("  NMI IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", NMI_MEM_START, NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
     printf("  APB IP MMIO:         @[0x%08x-0x%08x] %dMiB\n", APB_MEM_START, APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
     printf("  On-chip RAM:         @[0x%08x-0x%08x] %dKiB\n", SRAM_MEM_START, SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
@@ -96,7 +96,7 @@ void app_info() {
     printf("                       1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
     printf("                       2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
     printf("                       1 x PSRAM         @0x%x\n", &reg_psram_wait);
-    printf("                       1 x SPISD/SDIO    @0x%x\n", &reg_spisd_mode);
+    printf("                       1 x SPISD         @0x%x\n", &reg_spisd_mode);
     printf("                       1 x I2C           @0x%x\n", &reg_i2c0_clkdiv);
     printf("                       1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                       1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
@@ -106,6 +106,7 @@ void app_info() {
     printf("                       1 x CLINT         @0x%x\n", &reg_clint_mtimel);
     printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_cfg);
     printf("                       1 x DVP           @0x%x\n", &reg_dvp_cfg);
+    printf("                       1 x SDIO          @0x%x\n", &reg_sdio_cfg);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);

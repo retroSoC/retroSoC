@@ -70,8 +70,6 @@ module retrosoc_asic (
     output psram_sck_o_pad,
     output psram_nss0_o_pad,
     output psram_nss1_o_pad,
-    output psram_nss2_o_pad,
-    output psram_nss3_o_pad,
     inout  psram_dat0_io_pad,
     inout  psram_dat1_io_pad,
     inout  psram_dat2_io_pad,
@@ -141,7 +139,7 @@ module retrosoc_asic (
   // verilog_format: off
   nmi_gpio_if #(`NMI_GPIO_NUM)  u_gpio_if    ();
   uart_if                       u_uart0_if   ();
-  qspi_if                       u_psram_if   ();
+  psram_if                      u_psram_if   ();
   spi_if                        u_spisd_if   ();
   nv_i2s_if                     u_i2s_if     ();
   onewire_if                    u_onewire_if ();
@@ -204,8 +202,6 @@ module retrosoc_asic (
   tc_io_tri_pad         u_psram_sck_o_pad       (.pad(psram_sck_o_pad),       .c2p(u_psram_if.spi_sck_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_psram_nss0_o_pad      (.pad(psram_nss0_o_pad),      .c2p(u_psram_if.spi_nss_o[0]),    .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_psram_nss1_o_pad      (.pad(psram_nss1_o_pad),      .c2p(u_psram_if.spi_nss_o[1]),    .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_psram_nss2_o_pad      (.pad(psram_nss2_o_pad),      .c2p(u_psram_if.spi_nss_o[2]),    .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_psram_nss3_o_pad      (.pad(psram_nss3_o_pad),      .c2p(u_psram_if.spi_nss_o[3]),    .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_psram_dat0_io_pad     (.pad(psram_dat0_io_pad),     .c2p(u_psram_if.spi_io_out_o[0]), .c2p_en(u_psram_if.spi_io_en_o[0]), .p2c(u_psram_if.spi_io_in_i[0]));
   tc_io_tri_pad         u_psram_dat1_io_pad     (.pad(psram_dat1_io_pad),     .c2p(u_psram_if.spi_io_out_o[1]), .c2p_en(u_psram_if.spi_io_en_o[1]), .p2c(u_psram_if.spi_io_in_i[1]));
   tc_io_tri_pad         u_psram_dat2_io_pad     (.pad(psram_dat2_io_pad),     .c2p(u_psram_if.spi_io_out_o[2]), .c2p_en(u_psram_if.spi_io_en_o[2]), .p2c(u_psram_if.spi_io_in_i[2]));

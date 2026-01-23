@@ -100,8 +100,6 @@ module retrosoc_top (
       .psram_sck_o_pad    (s_psram_sck),
       .psram_nss0_o_pad   (s_psram_nss0),
       .psram_nss1_o_pad   (),
-      .psram_nss2_o_pad   (),
-      .psram_nss3_o_pad   (),
       .psram_dat0_io_pad  (s_psram_dat0),
       .psram_dat1_io_pad  (s_psram_dat1),
       .psram_dat2_io_pad  (s_psram_dat2),

@@ -21,7 +21,7 @@ module ip_nmi_wrapper (
     nmi_if.slave       nmi,
     nmi_gpio_if.dut    gpio,
     uart_if.dut        uart,
-    qspi_if.dut        psram,
+    psram_if.dut       psram,
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
     nv_i2s_if.dut      i2s,
@@ -220,7 +220,7 @@ module ip_nmi_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_psram_nmi_if),
-      .qspi   (psram)
+      .psram  (psram)
   );
 
 

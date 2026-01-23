@@ -135,8 +135,6 @@ module retrosoc_tb;
       .psram_sck_o_pad    (s_psram_sck),
       .psram_nss0_o_pad   (s_psram_nss0),
       .psram_nss1_o_pad   (s_psram_nss1),
-      .psram_nss2_o_pad   (s_psram_nss2),
-      .psram_nss3_o_pad   (s_psram_nss3),
       .psram_dat0_io_pad  (s_psram_dat0),
       .psram_dat1_io_pad  (s_psram_dat1),
       .psram_dat2_io_pad  (s_psram_dat2),
@@ -234,18 +232,6 @@ module retrosoc_tb;
   ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss1),
-      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
-  );
-
-  ESP_PSRAM64H #(2) u_ESP_PSRAM64H_2 (
-      .sclk(s_psram_sck),
-      .csn (s_psram_nss2),
-      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
-  );
-
-  ESP_PSRAM64H #(3) u_ESP_PSRAM64H_3 (
-      .sclk(s_psram_sck),
-      .csn (s_psram_nss3),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
