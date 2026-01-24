@@ -21,7 +21,7 @@ module ip_nmi_wrapper (
     nmi_if.slave       nmi,
     nmi_gpio_if.dut    gpio,
     uart_if.dut        uart,
-    qspi_if.dut        psram,
+    psram_if.dut       psram,
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
     nv_i2s_if.dut      i2s,
@@ -29,6 +29,7 @@ module ip_nmi_wrapper (
     qspi_if.dut        qspi,
     nmi_if.master      dma_nmi,
     sysctrl_if.dut     sysctrl,
+    sdram_if.dut       sdram,
     // irq
     output logic [9:0] irq_o
     // verilog_format: on
@@ -48,12 +49,15 @@ module ip_nmi_wrapper (
   nmi_if u_dma_nmi_if ();
   nmi_if u_sysctrl_nmi_if ();
   nmi_if u_clint_nmi_if ();
+  nmi_if u_sdram_nmi_if ();
   // ip interface
-  simp_clint_if u_clint_if();
+  simp_clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
 
   logic s_psram_cfg_sel, s_psram_mem_sel;
   logic s_spisd_cfg_sel;
+  logic s_sdram_cfg_sel, s_sdram_mem_sel;
+  logic s_qspi_cfg_sel, s_qspi_mem_sel;
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_qspi_tx_stall, s_dma_qspi_rx_stall;
   logic s_dma_xfer_done;
@@ -113,31 +117,39 @@ module ip_nmi_wrapper (
   assign u_i2s_nmi_if.wdata     = nmi.wdata;
   assign u_i2s_nmi_if.wstrb     = nmi.wstrb;
   // onewire
-  assign u_onewire_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_ONEWIRE_START);
-  assign u_onewire_nmi_if.addr    = nmi.addr;
-  assign u_onewire_nmi_if.wdata   = nmi.wdata;
-  assign u_onewire_nmi_if.wstrb   = nmi.wstrb;
+  assign u_onewire_nmi_if.valid = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_ONEWIRE_START);
+  assign u_onewire_nmi_if.addr  = nmi.addr;
+  assign u_onewire_nmi_if.wdata = nmi.wdata;
+  assign u_onewire_nmi_if.wstrb = nmi.wstrb;
   // qspi
-  assign u_qspi_nmi_if.valid      = nmi.valid && ((nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START) | nmi.addr[31:28] == `FLASH_START);
-  assign u_qspi_nmi_if.addr       = nmi.addr;
-  assign u_qspi_nmi_if.wdata      = nmi.wdata;
-  assign u_qspi_nmi_if.wstrb      = nmi.wstrb;
+  assign s_qspi_cfg_sel         = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START;
+  assign s_qspi_mem_sel         = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `QSPI_MEM_START;
+  assign u_qspi_nmi_if.valid    = nmi.valid && (s_qspi_cfg_sel || s_qspi_mem_sel);
+  assign u_qspi_nmi_if.addr     = nmi.addr;
+  assign u_qspi_nmi_if.wdata    = nmi.wdata;
+  assign u_qspi_nmi_if.wstrb    = nmi.wstrb;
   // dma
-  assign u_dma_nmi_if.valid       = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_DMA_START);
-  assign u_dma_nmi_if.addr        = nmi.addr;
-  assign u_dma_nmi_if.wdata       = nmi.wdata;
-  assign u_dma_nmi_if.wstrb       = nmi.wstrb;
+  assign u_dma_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_DMA_START);
+  assign u_dma_nmi_if.addr      = nmi.addr;
+  assign u_dma_nmi_if.wdata     = nmi.wdata;
+  assign u_dma_nmi_if.wstrb     = nmi.wstrb;
   // sysctrl
-  assign u_sysctrl_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SYSCTRL_START);
-  assign u_sysctrl_nmi_if.addr    = nmi.addr;
-  assign u_sysctrl_nmi_if.wdata   = nmi.wdata;
-  assign u_sysctrl_nmi_if.wstrb   = nmi.wstrb;
+  assign u_sysctrl_nmi_if.valid = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SYSCTRL_START);
+  assign u_sysctrl_nmi_if.addr  = nmi.addr;
+  assign u_sysctrl_nmi_if.wdata = nmi.wdata;
+  assign u_sysctrl_nmi_if.wstrb = nmi.wstrb;
   // clint
   assign u_clint_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_CLINT_START);
   assign u_clint_nmi_if.addr    = nmi.addr;
   assign u_clint_nmi_if.wdata   = nmi.wdata;
   assign u_clint_nmi_if.wstrb   = nmi.wstrb;
-
+  // sdram
+  assign s_sdram_cfg_sel        = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SDRAM_START;
+  assign s_sdram_mem_sel        = nmi.addr[31:24] == `SDRAM_START;
+  assign u_sdram_nmi_if.valid   = nmi.valid && (s_sdram_cfg_sel || s_sdram_mem_sel);
+  assign u_sdram_nmi_if.addr    = nmi.addr;
+  assign u_sdram_nmi_if.wdata   = nmi.wdata;
+  assign u_sdram_nmi_if.wstrb   = nmi.wstrb;
 
   // verilog_format: off
   assign nmi.ready              = (u_uart_nmi_if.valid    & u_uart_nmi_if.ready)    |
@@ -152,7 +164,8 @@ module ip_nmi_wrapper (
                                   (u_qspi_nmi_if.valid    & u_qspi_nmi_if.ready)    |
                                   (u_dma_nmi_if.valid     & u_dma_nmi_if.ready)     |
                                   (u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready) |
-                                  (u_clint_nmi_if.valid   & u_clint_nmi_if.ready);
+                                  (u_clint_nmi_if.valid   & u_clint_nmi_if.ready)   |
+                                  (u_sdram_nmi_if.valid   & u_sdram_nmi_if.ready);
 
   assign nmi.rdata              = ({32{(u_uart_nmi_if.valid    & u_uart_nmi_if.ready)}}    & u_uart_nmi_if.rdata)    |
                                   ({32{(u_gpio_nmi_if.valid    & u_gpio_nmi_if.ready)}}    & u_gpio_nmi_if.rdata)    |
@@ -166,7 +179,8 @@ module ip_nmi_wrapper (
                                   ({32{(u_qspi_nmi_if.valid    & u_qspi_nmi_if.ready)}}    & u_qspi_nmi_if.rdata)    |
                                   ({32{(u_dma_nmi_if.valid     & u_dma_nmi_if.ready)}}     & u_dma_nmi_if.rdata)     |
                                   ({32{(u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready)}} & u_sysctrl_nmi_if.rdata) |
-                                  ({32{(u_clint_nmi_if.valid   & u_clint_nmi_if.ready)}}   & u_clint_nmi_if.rdata);
+                                  ({32{(u_clint_nmi_if.valid   & u_clint_nmi_if.ready)}}   & u_clint_nmi_if.rdata)   |
+                                  ({32{(u_sdram_nmi_if.valid   & u_sdram_nmi_if.ready)}}   & u_sdram_nmi_if.rdata);
   // verilog_format: on
 
   // irq
@@ -218,7 +232,7 @@ module ip_nmi_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_psram_nmi_if),
-      .qspi   (psram)
+      .psram  (psram)
   );
 
 
@@ -289,4 +303,13 @@ module ip_nmi_wrapper (
       .nmi    (u_clint_nmi_if),
       .clint  (u_clint_if)
   );
+
+
+  nmi_sdram u_nmi_sdram (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_sdram_nmi_if),
+      .sdram  (sdram)
+  );
+
 endmodule
