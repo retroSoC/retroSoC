@@ -67,10 +67,12 @@ module nmi_sdram #(
     parameter TCH_NS   = 2,
     parameter CAS      = 3'd2
 ) (
+    // verilog_format: off
     input logic  clk_i,
     input logic  rst_n_i,
     nmi_if.slave nmi,
     sdram_if.dut sdram
+    // verilog_format: on
 );
 
 
@@ -112,6 +114,7 @@ module nmi_sdram #(
   // auto refresh (cke=H), selfrefresh assign cke=L
   localparam CMD_RFSH = 4'b0001;
   localparam CMD_NOP = 4'b0111;
+  localparam SDRAM_MODE = {3'b0, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
 
   // verilog_format: off
   localparam RESET                   = 4'd0;
@@ -132,7 +135,6 @@ module nmi_sdram #(
   localparam LAST_STATE              = 4'd15;
   // verilog_format: on
 
-  localparam sdram_mode = {3'b0, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
 
   initial begin
     $display("Clk frequence: %6d MHz", CLK_FREQ);
@@ -144,226 +146,226 @@ module nmi_sdram #(
     $display("CAS_LATENCY:   %6d cycles", CAS_LATENCY);
   end
 
-  reg [3:0] command, command_nxt;
-  reg cke, cke_nxt;
-  reg [1:0] dqm;
-  reg [12:0] saddr, saddr_nxt;
-  reg [1:0] ba, ba_nxt;
 
-  reg [3:0] state, state_nxt;
-  reg [3:0] ret_state, ret_state_nxt;
-  reg [15:0] wait_states, wait_states_nxt;
-  reg        ready_nxt;
-  reg [31:0] dout_nxt;
-  reg [ 1:0] dqm_nxt;
-  reg update_ready, update_ready_nxt;
-  reg [15:0] dq, dq_nxt;
-  reg oe, oe_nxt;
-  reg [31:0] dout;
-  reg        ready;
+  logic [3:0] s_state_d, s_state_q;
+  logic [3:0] s_ret_state_d, s_ret_state_q;
+  logic [15:0] s_wait_cnt_d, s_wait_cnt_q;
+  logic [3:0] s_cmd_d, s_cmd_q;
+  logic s_ready_d, s_ready_q;
+  logic [31:0] s_rdata_d, s_rdata_q;
+  // sdram
+  logic [1:0] s_dqm_d, s_dqm_q;
+  logic [15:0] s_dq_d, s_dq_q;
+  logic [1:0] s_ba_q, s_ba_d;
+  logic s_oe_q, s_oe_d;
+  logic s_cke_q, s_cke_d;
+  logic [12:0] s_addr_d, s_addr_q;
+  logic s_upd_ready_d, s_upd_ready_q;
+
 
   // nmi
-  assign nmi.ready                                                  = ready;
-  assign nmi.rdata                                                  = dout;
+  assign nmi.ready                                                  = s_ready_q;
+  assign nmi.rdata                                                  = s_rdata_q;
   // sdram
   assign sdram.clk_o                                                = clk_i;
-  assign sdram.cke_o                                                = cke;
-  assign sdram.addr_o                                               = saddr;
-  assign sdram.dqm_o                                                = dqm;
-  assign {sdram.cs_n_o, sdram.ras_n_o, sdram.cas_n_o, sdram.we_n_o} = command;
-  assign sdram.ba_o                                                 = ba;
-  assign sdram.dq_o                                                 = dq;
-  assign sdram.oe_o                                                 = oe;
+  assign sdram.cke_o                                                = s_cke_q;
+  assign sdram.addr_o                                               = s_addr_q;
+  assign sdram.dqm_o                                                = s_dqm_q;
+  assign {sdram.cs_n_o, sdram.ras_n_o, sdram.cas_n_o, sdram.we_n_o} = s_cmd_q;
+  assign sdram.ba_o                                                 = s_ba_q;
+  assign sdram.dq_o                                                 = s_dq_q;
+  assign sdram.oe_o                                                 = s_oe_q;
 
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
-    if (~rst_n_i) begin
-      state        <= RESET;
-      ret_state    <= RESET;
-      wait_states  <= '0;
-      command      <= CMD_NOP;
-      ready        <= '0;
-      dout         <= '0;
-      // sdram
-      dqm          <= '1;
-      dq           <= '0;
-      ba           <= '1;
-      oe           <= '0;
-      cke          <= '0;
-      saddr        <= '0;
-      update_ready <= '0;
-    end else begin
-      state        <= state_nxt;
-      ret_state    <= ret_state_nxt;
-      wait_states  <= wait_states_nxt;
-      command      <= command_nxt;
-      ready        <= ready_nxt;
-      dout         <= dout_nxt;
-      // sdram
-      dqm          <= dqm_nxt;
-      dq           <= dq_nxt;
-      ba           <= ba_nxt;
-      oe           <= oe_nxt;
-      cke          <= cke_nxt;
-      saddr        <= saddr_nxt;
-      update_ready <= update_ready_nxt;
-    end
-  end
 
   always_comb begin
-    state_nxt        = state;
-    ret_state_nxt    = ret_state;
-    wait_states_nxt  = wait_states;
-    command_nxt      = command;
-    ready_nxt        = ready;
-    dout_nxt         = dout;
+    s_state_d     = s_state_q;
+    s_ret_state_d = s_ret_state_q;
+    s_wait_cnt_d  = s_wait_cnt_q;
+    s_cmd_d       = s_cmd_q;
+    s_ready_d     = s_ready_q;
+    s_rdata_d     = s_rdata_q;
     // sdram
-    dqm_nxt          = dqm;
-    dq_nxt           = dq;
-    ba_nxt           = ba;
-    oe_nxt           = oe;
-    cke_nxt          = cke;
-    saddr_nxt        = saddr;
-    update_ready_nxt = update_ready;
-    case (state)
+    s_dqm_d       = s_dqm_q;
+    s_dq_d        = s_dq_q;
+    s_ba_d        = s_ba_q;
+    s_oe_d        = s_oe_q;
+    s_cke_d       = s_cke_q;
+    s_addr_d      = s_addr_q;
+    s_upd_ready_d = s_upd_ready_q;
+    case (s_state_q)
       RESET: begin
-        cke_nxt         = 1'b0;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = ASSERT_CKE;
-        wait_states_nxt = 16'(WAIT_100US);
+        s_cke_d       = 1'b0;
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = ASSERT_CKE;
+        s_wait_cnt_d  = 16'(WAIT_100US);
       end
       ASSERT_CKE: begin
-        cke_nxt         = 1'b1;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = INIT_SEQ_PRE_CHARGE_ALL;
-        wait_states_nxt = 16'd2;
+        s_cke_d       = 1'b1;
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = INIT_SEQ_PRE_CHARGE_ALL;
+        s_wait_cnt_d  = 16'd2;
       end
       INIT_SEQ_PRE_CHARGE_ALL: begin
-        cke_nxt         = 1'b1;
-        command_nxt     = CMD_PRER;
-        saddr_nxt[10]   = 1'b1;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = INIT_SEQ_AUTO_REFRESH0;
-        wait_states_nxt = 16'(TRP);
+        s_cke_d       = 1'b1;
+        s_cmd_d       = CMD_PRER;
+        s_addr_d[10]  = 1'b1;
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = INIT_SEQ_AUTO_REFRESH0;
+        s_wait_cnt_d  = 16'(TRP);
       end
       INIT_SEQ_AUTO_REFRESH0: begin
-        command_nxt     = CMD_RFSH;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = INIT_SEQ_AUTO_REFRESH1;
-        wait_states_nxt = 16'(TRC);
+        s_cmd_d       = CMD_RFSH;
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = INIT_SEQ_AUTO_REFRESH1;
+        s_wait_cnt_d  = 16'(TRC);
       end
       INIT_SEQ_AUTO_REFRESH1: begin
-        command_nxt     = CMD_RFSH;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = INIT_SEQ_LOAD_MODE;
-        wait_states_nxt = 16'(TRC);
+        s_cmd_d       = CMD_RFSH;
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = INIT_SEQ_LOAD_MODE;
+        s_wait_cnt_d  = 16'(TRC);
       end
       INIT_SEQ_LOAD_MODE: begin
-        command_nxt     = CMD_MRS;
-        saddr_nxt       = sdram_mode;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = IDLE;
-        wait_states_nxt = 16'(TCH);
+        s_cmd_d       = CMD_MRS;
+        s_addr_d      = SDRAM_MODE;
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = IDLE;
+        s_wait_cnt_d  = 16'(TCH);
       end
       IDLE: begin
-        oe_nxt    = 1'b0;
-        dqm_nxt   = 2'b11;
-        ready_nxt = 1'b0;
-        if (nmi.valid && !ready) begin
-          command_nxt      = CMD_ACT;
-          ba_nxt           = nmi.addr[22:21];
-          saddr_nxt        = {nmi.addr[24:23], nmi.addr[20:10]};
-          state_nxt        = WAIT_STATE;
-          ret_state_nxt    = |nmi.wstrb ? COL_WRITEL : COL_READ;
-          wait_states_nxt  = 16'(TRCD);
-          update_ready_nxt = 1'b1;
+        s_oe_d    = 1'b0;
+        s_dqm_d   = 2'b11;
+        s_ready_d = 1'b0;
+        if (nmi.valid && !s_ready_q) begin
+          s_cmd_d       = CMD_ACT;
+          s_ba_d        = nmi.addr[22:21];
+          s_addr_d      = {nmi.addr[24:23], nmi.addr[20:10]};
+          s_state_d     = WAIT_STATE;
+          s_ret_state_d = |nmi.wstrb ? COL_WRITEL : COL_READ;
+          s_wait_cnt_d  = 16'(TRCD);
+          s_upd_ready_d = 1'b1;
         end else begin
           // autorefresh
-          command_nxt      = CMD_RFSH;
-          saddr_nxt        = '0;
-          ba_nxt           = '0;
+          s_cmd_d       = CMD_RFSH;
+          s_addr_d      = '0;
+          s_ba_d        = '0;
           // TRC
-          state_nxt        = WAIT_STATE;
-          ret_state_nxt    = IDLE;
-          wait_states_nxt  = 16'd3;
-          update_ready_nxt = 1'b0;
+          s_state_d     = WAIT_STATE;
+          s_ret_state_d = IDLE;
+          s_wait_cnt_d  = 16'd3;
+          s_upd_ready_d = 1'b0;
         end
       end
       COL_READ: begin
-        command_nxt     = CMD_READ;
-        dqm_nxt         = 2'b00;
+        s_cmd_d       = CMD_READ;
+        s_dqm_d       = 2'b00;
         // autoprecharge and column
-        ba_nxt          = nmi.addr[22:21];
-        saddr_nxt       = {3'b001, nmi.addr[10:2], 1'b0};
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = COL_READL;
-        wait_states_nxt = 16'(CAS_LATENCY);
+        s_ba_d        = nmi.addr[22:21];
+        s_addr_d      = {3'b001, nmi.addr[10:2], 1'b0};
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = COL_READL;
+        s_wait_cnt_d  = 16'(CAS_LATENCY);
       end
       COL_READL: begin
-        command_nxt    = CMD_NOP;
-        dqm_nxt        = 2'b00;
-        dout_nxt[15:0] = sdram.dq_i;
-        state_nxt      = COL_READH;
-        //wait_states_nxt = TRP;
-        // ret_state_nxt   = COL_READH;
+        s_cmd_d         = CMD_NOP;
+        s_dqm_d         = 2'b00;
+        s_rdata_d[15:0] = sdram.dq_i;
+        s_state_d       = COL_READH;
+        //s_wait_cnt_d = TRP;
+        // s_ret_state_d   = COL_READH;
       end
       COL_READH: begin
-        command_nxt     = CMD_NOP;
-        dqm_nxt         = 2'b00;
-        dout_nxt[31:16] = sdram.dq_i;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = IDLE;
-        wait_states_nxt = 16'(TRP);
+        s_cmd_d          = CMD_NOP;
+        s_dqm_d          = 2'b00;
+        s_rdata_d[31:16] = sdram.dq_i;
+        s_state_d        = WAIT_STATE;
+        s_ret_state_d    = IDLE;
+        s_wait_cnt_d     = 16'(TRP);
       end
       COL_WRITEL: begin
-        command_nxt = CMD_WRITE;
-        dqm_nxt     = ~nmi.wstrb[1:0];
+        s_cmd_d   = CMD_WRITE;
+        s_dqm_d   = ~nmi.wstrb[1:0];
         // autoprecharge and column
-        ba_nxt      = nmi.addr[22:21];
-        saddr_nxt   = {3'b001, nmi.addr[10:2], 1'b0};
-        dq_nxt      = nmi.wdata[15:0];
-        oe_nxt      = 1'b1;
-        state_nxt   = COL_WRITEH;
-        //ret_state_nxt   = COL_WRITEH;
-        //wait_states_nxt = TRP;
+        s_ba_d    = nmi.addr[22:21];
+        s_addr_d  = {3'b001, nmi.addr[10:2], 1'b0};
+        s_dq_d    = nmi.wdata[15:0];
+        s_oe_d    = 1'b1;
+        s_state_d = COL_WRITEH;
+        //s_ret_state_d   = COL_WRITEH;
+        //s_wait_cnt_d = TRP;
       end
       COL_WRITEH: begin
-        command_nxt     = CMD_NOP;
-        dqm_nxt         = ~nmi.wstrb[3:2];
+        s_cmd_d       = CMD_NOP;
+        s_dqm_d       = ~nmi.wstrb[3:2];
         // autoprecharge and column
-        ba_nxt          = nmi.addr[22:21];
-        saddr_nxt       = {3'b001, nmi.addr[10:2], 1'b0};
-        dq_nxt          = nmi.wdata[31:16];
-        oe_nxt          = 1'b1;
-        state_nxt       = WAIT_STATE;
-        ret_state_nxt   = IDLE;
-        wait_states_nxt = 16'(TRP);
+        s_ba_d        = nmi.addr[22:21];
+        s_addr_d      = {3'b001, nmi.addr[10:2], 1'b0};
+        s_dq_d        = nmi.wdata[31:16];
+        s_oe_d        = 1'b1;
+        s_state_d     = WAIT_STATE;
+        s_ret_state_d = IDLE;
+        s_wait_cnt_d  = 16'(TRP);
       end
       // NOTE: notused
       // PRE_CHARGE_ALL: begin
-      //   command_nxt     = CMD_PRER;
+      //   s_cmd_d     = CMD_PRER;
       //   // select all banks
-      //   saddr_nxt[10]   = 1'b1;
-      //   ba_nxt          = 0;
-      //   state_nxt       = WAIT_STATE;
-      //   ret_state_nxt   = IDLE;
-      //   wait_states_nxt = TRP;
+      //   s_addr_d[10]   = 1'b1;
+      //   s_ba_d          = 0;
+      //   s_state_d       = WAIT_STATE;
+      //   s_ret_state_d   = IDLE;
+      //   s_wait_cnt_d = TRP;
       // end
       WAIT_STATE: begin
-        command_nxt     = CMD_NOP;
-        wait_states_nxt = wait_states - 1'b1;
-        if (wait_states == 16'd1) begin
-          state_nxt = ret_state;
-          if (ret_state == IDLE && update_ready) begin
-            update_ready_nxt = 1'b0;
-            ready_nxt        = 1'b1;
+        s_cmd_d      = CMD_NOP;
+        s_wait_cnt_d = s_wait_cnt_q - 1'b1;
+        if (s_wait_cnt_q == 16'd1) begin
+          s_state_d = s_ret_state_q;
+          if (s_ret_state_q == IDLE && s_upd_ready_q) begin
+            s_upd_ready_d = 1'b0;
+            s_ready_d     = 1'b1;
           end
         end
       end
       default: begin
-        state_nxt = state;
+        s_state_d = s_state_q;
       end
     endcase
+  end
+
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) begin
+      s_state_q     <= RESET;
+      s_ret_state_q <= RESET;
+      s_wait_cnt_q  <= '0;
+      s_cmd_q       <= CMD_NOP;
+      s_ready_q     <= '0;
+      s_rdata_q     <= '0;
+      // sdram
+      s_dqm_q       <= '1;
+      s_dq_q        <= '0;
+      s_ba_q        <= '1;
+      s_oe_q        <= '0;
+      s_cke_q       <= '0;
+      s_addr_q      <= '0;
+      s_upd_ready_q <= '0;
+    end else begin
+      s_state_q     <= s_state_d;
+      s_ret_state_q <= s_ret_state_d;
+      s_wait_cnt_q  <= s_wait_cnt_d;
+      s_cmd_q       <= s_cmd_d;
+      s_ready_q     <= s_ready_d;
+      s_rdata_q     <= s_rdata_d;
+      // sdram
+      s_dqm_q       <= s_dqm_d;
+      s_dq_q        <= s_dq_d;
+      s_ba_q        <= s_ba_d;
+      s_oe_q        <= s_oe_d;
+      s_cke_q       <= s_cke_d;
+      s_addr_q      <= s_addr_d;
+      s_upd_ready_q <= s_upd_ready_d;
+    end
   end
 
 endmodule
