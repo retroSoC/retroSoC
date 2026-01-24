@@ -35,6 +35,9 @@ jobs:
     - name: Download clusterIP
       run: python3 rtl/clusterip/setup.py
 
+    - name: Download 3rd-party IP and models
+      run: python3 rtl/ip/setup.py
+
     - name: Download Open PDK Repo
       run: python3 pdk/setup.py
 
