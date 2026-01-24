@@ -4,4 +4,5 @@
 ../../clusterip/i2s/model/mic.sv
 ../../clusterip/spi/model/w25q128jvxim.sv
 ../../ip/native/ESP_PSRAM64H.sv
+../../ip/3rd-party/model/sdram/sdr.v
 ../tb/retrosoc_tb.sv

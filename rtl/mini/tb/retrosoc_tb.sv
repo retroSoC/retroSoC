@@ -149,6 +149,45 @@ module retrosoc_tb;
       .i2s_dacdat_o_pad   (),
       .i2s_adcdat_i_pad   (s_i2s_adcdat),
       .onewire_dat_o_pad  (),
+      .sdram_clk_o_pad    (),
+      .sdram_cke_o_pad    (),
+      .sdram_cs_n_o_pad   (),
+      .sdram_ras_n_o_pad  (),
+      .sdram_cas_n_o_pad  (),
+      .sdram_we_n_o_pad   (),
+      .sdram_ba0_o_pad    (),
+      .sdram_ba1_o_pad    (),
+      .sdram_addr0_o_pad  (),
+      .sdram_addr1_o_pad  (),
+      .sdram_addr2_o_pad  (),
+      .sdram_addr3_o_pad  (),
+      .sdram_addr4_o_pad  (),
+      .sdram_addr5_o_pad  (),
+      .sdram_addr6_o_pad  (),
+      .sdram_addr7_o_pad  (),
+      .sdram_addr8_o_pad  (),
+      .sdram_addr9_o_pad  (),
+      .sdram_addr10_o_pad (),
+      .sdram_addr11_o_pad (),
+      .sdram_addr12_o_pad (),
+      .sdram_dqm0_o_pad   (),
+      .sdram_dqm1_o_pad   (),
+      .sdram_dq0_io_pad   (),
+      .sdram_dq1_io_pad   (),
+      .sdram_dq2_io_pad   (),
+      .sdram_dq3_io_pad   (),
+      .sdram_dq4_io_pad   (),
+      .sdram_dq5_io_pad   (),
+      .sdram_dq6_io_pad   (),
+      .sdram_dq7_io_pad   (),
+      .sdram_dq8_io_pad   (),
+      .sdram_dq9_io_pad   (),
+      .sdram_dq10_io_pad  (),
+      .sdram_dq11_io_pad  (),
+      .sdram_dq12_io_pad  (),
+      .sdram_dq13_io_pad  (),
+      .sdram_dq14_io_pad  (),
+      .sdram_dq15_io_pad  (),
       .uart1_tx_o_pad     (s_uart1_tx),
       .uart1_rx_i_pad     (s_uart1_rx),
       .pwm_0_o_pad        (),
@@ -160,9 +199,9 @@ module retrosoc_tb;
       .i2c_scl_io_pad     (s_i2c_scl_io),
       .i2c_sda_io_pad     (s_i2c_sda_io),
       .qspi_sck_o_pad     (s_qspi_sck_o),
-      .qspi_nss0_o_pad    (s_qspi_nss0_o), // qspi flash
-      .qspi_nss1_o_pad    (s_qspi_nss1_o), // qpi flash
-      .qspi_nss2_o_pad    (s_qspi_nss2_o), // 
+      .qspi_nss0_o_pad    (s_qspi_nss0_o),     // qspi flash
+      .qspi_nss1_o_pad    (s_qspi_nss1_o),     // qpi flash
+      .qspi_nss2_o_pad    (s_qspi_nss2_o),     // 
       .qspi_nss3_o_pad    (),                  // tft test
       .qspi_dat0_io_pad   (s_qspi_dat0_io),
       .qspi_dat1_io_pad   (s_qspi_dat1_io),
@@ -337,7 +376,7 @@ module retrosoc_tb;
   initial begin
     $display("========================================================");
 `ifdef CORE_MDD
-  if (!$value$plusargs("core_sel=%d", r_core_sel)) r_core_sel = 5'd0;
+    if (!$value$plusargs("core_sel=%d", r_core_sel)) r_core_sel = 5'd0;
     $display("core_sel: %0d", r_core_sel);
 `endif
 

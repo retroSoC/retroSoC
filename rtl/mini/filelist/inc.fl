@@ -17,3 +17,4 @@
 +incdir+../../clusterip/crc/rtl
 +incdir+../../clusterip/timer/rtl
 +incdir+../../ip/native
++incdir+../../ip/3rd-party/model/sdram/

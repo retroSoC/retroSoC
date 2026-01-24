@@ -28,331 +28,338 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-// ===============================
-// 16Mx16 = 32MByte
-// Row addressing 8k (A0-A12)
-// Bank Switching 4 (BA0, BA1)
-// Column Addressing 512 (A0-A8)
-// ===============================
+interface sdram_if ();
+  logic        clk_o;
+  logic        cke_o;
+  logic        cs_n_o;
+  logic        ras_n_o;
+  logic        cas_n_o;
+  logic        we_n_o;
+  logic [ 1:0] ba_o;
+  logic [12:0] addr_o;
+  logic [ 1:0] dqm_o;
+  logic        oe_o;
+  logic [15:0] dq_i;
+  logic [15:0] dq_o;
+
+  modport dut(
+      output clk_o,
+      output cke_o,
+      output cs_n_o,
+      output ras_n_o,
+      output cas_n_o,
+      output we_n_o,
+      output ba_o,
+      output addr_o,
+      output dqm_o,
+      output oe_o,
+      input dq_i,
+      output dq_o
+  );
+  // verilog_format: on
+endinterface
+
 module nmi_sdram #(
-    parameter SDRAM_CLK_FREQ = 64,
-    parameter TRP_NS = 20,
-    parameter TRC_NS = 66,
-    parameter TRCD_NS = 20,
-    parameter TCH_NS = 2,
-    parameter CAS = 3'd2
+    parameter CLK_FREQ = 72,
+    parameter TRP_NS   = 20,
+    parameter TRC_NS   = 66,
+    parameter TRCD_NS  = 20,
+    parameter TCH_NS   = 2,
+    parameter CAS      = 3'd2
 ) (
-    input wire clk,
-    input wire resetn,
-
-    input wire [24:0] addr,
-    input wire [31:0] din,
-    input wire [3:0] wmask,
-    input wire valid,
-    output reg [31:0] dout,
-    output reg ready,
-
-    output wire sdram_clk,
-    output wire sdram_cke,
-    output wire [1:0] sdram_dqm,
-    output wire [12:0] sdram_addr,  //  A0-A12 row address, A0-A8 column address
-    output wire [1:0] sdram_ba,  // bank select A11,A12
-    output wire sdram_csn,
-    output wire sdram_wen,
-    output wire sdram_rasn,
-    output wire sdram_casn,
-    inout wire [15:0] sdram_dq
+    input logic  clk_i,
+    input logic  rst_n_i,
+    nmi_if.slave nmi,
+    sdram_if.dut sdram
 );
 
-  localparam ONE_MICROSECOND = SDRAM_CLK_FREQ;
-  localparam WAIT_100US = 100 * ONE_MICROSECOND;  // 64 * 1/64e6 = 1us => 100 * 1us
+
+  // CLK_FREQ * 1/CLK_FREQe6s = 1us
+  localparam ONE_OVER_MICROSECOND = CLK_FREQ;
+  localparam WAIT_100US = 100 * ONE_OVER_MICROSECOND;
   // command period; PRE to ACT in ns, e.g. 20ns
-  localparam TRP = $rtoi((TRP_NS * ONE_MICROSECOND / 1000) + 1);
+  localparam TRP = $rtoi((TRP_NS * ONE_OVER_MICROSECOND / 1000) + 1);
   // tRC command period (REF to REF/ACT TO ACT) in ns
-  localparam TRC = $rtoi((TRC_NS * ONE_MICROSECOND / 1000) + 1);  //
+  localparam TRC = $rtoi((TRC_NS * ONE_OVER_MICROSECOND / 1000) + 1);
   // tRCD active command to read/write command delay; row-col-delay in ns
-  localparam TRCD = $rtoi((TRCD_NS * ONE_MICROSECOND / 1000) + 1);
+  localparam TRCD = $rtoi((TRCD_NS * ONE_OVER_MICROSECOND / 1000) + 1);
   // tCH command hold time
-  localparam TCH = $rtoi((TCH_NS * ONE_MICROSECOND / 1000) + 1);
+  localparam TCH = $rtoi((TCH_NS * ONE_OVER_MICROSECOND / 1000) + 1);
+  // 000: 1-burst, 001: 2-burst
+  // 010: 4-burst, 011: 8-burst
+  localparam BURST_LENGTH = 3'b001;
+  // 0: sequential, 1: interleaved
+  localparam ACCESS_TYPE = 1'b0;
+  // 2/3 allowed, tRCD=20ns -> 3 cycles@128MHz
+  localparam CAS_LATENCY = CAS;
+  // only 00 (standard operation) allowed
+  localparam OP_MODE = 2'b00;
+  // 0: write burst enabled, 1: only single access write
+  localparam NO_WRITE_BURST = 1'b0;
+  // (CS, RAS, CAS, WE)
+  // mode register set
+  localparam CMD_MRS = 4'b0000;
+  // bank active
+  localparam CMD_ACT = 4'b0011;
+  // have read variant with autoprecharge set A10=H
+  localparam CMD_READ = 4'b0101;
+  // A10=H to have autoprecharge
+  localparam CMD_WRITE = 4'b0100;
+  // burst stop
+  localparam CMD_BST = 4'b0110;
+  // precharge selected bank, A10=H both banks
+  localparam CMD_PRER = 4'b0010;
+  // auto refresh (cke=H), selfrefresh assign cke=L
+  localparam CMD_RFSH = 4'b0001;
+  localparam CMD_NOP = 4'b0111;
+
+  // verilog_format: off
+  localparam RESET                   = 4'd0;
+  localparam ASSERT_CKE              = 4'd1;
+  localparam INIT_SEQ_PRE_CHARGE_ALL = 4'd2;
+  localparam INIT_SEQ_AUTO_REFRESH0  = 4'd3;
+  localparam INIT_SEQ_AUTO_REFRESH1  = 4'd4;
+  localparam INIT_SEQ_LOAD_MODE      = 4'd5;
+  localparam IDLE                    = 4'd6;
+  localparam COL_READ                = 4'd7;
+  localparam COL_READL               = 4'd8;
+  localparam COL_READH               = 4'd9;
+  localparam COL_WRITEL              = 4'd10;
+  localparam COL_WRITEH              = 4'd11;
+  localparam AUTO_REFRESH            = 4'd12;
+  localparam PRE_CHARGE_ALL          = 4'd13;
+  localparam WAIT_STATE              = 4'd14;
+  localparam LAST_STATE              = 4'd15;
+  // verilog_format: on
+
+  localparam sdram_mode = {3'b0, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
 
   initial begin
-    $display("Clk frequence: %d MHz", SDRAM_CLK_FREQ);
-    $display("WAIT_100US: %d cycles", WAIT_100US);
-    $display("TRP: %d cycles", TRP);
-    $display("TRC: %d cycles", TRC);
-    $display("TRCD: %d cycles", TRCD);
-    $display("TCH: %d cycles", TCH);
-    $display("CAS_LATENCY: %d cycles", CAS_LATENCY);
+    $display("Clk frequence: %6d MHz", CLK_FREQ);
+    $display("WAIT_100US:    %6d cycles", WAIT_100US);
+    $display("TRP:           %6d cycles", TRP);
+    $display("TRC:           %6d cycles", TRC);
+    $display("TRCD:          %6d cycles", TRCD);
+    $display("TCH:           %6d cycles", TCH);
+    $display("CAS_LATENCY:   %6d cycles", CAS_LATENCY);
   end
 
-  localparam BURST_LENGTH = 3'b001;  // 000=1, 001=2, 010=4, 011=8
-  localparam ACCESS_TYPE = 1'b0;  // 0=sequential, 1=interleaved
-  localparam CAS_LATENCY = CAS;  // 2/3 allowed, tRCD=20ns -> 3 cycles@128MHz
-  localparam OP_MODE = 2'b00;  // only 00 (standard operation) allowed
-  localparam NO_WRITE_BURST = 1'b0;  // 0= write burst enabled, 1=only single access write
-  localparam sdram_mode = {1'b0, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
-  //
-  // ISSI-IS425 datasheet page 16
-  // (CS, RAS, CAS, WE)
-  localparam CMD_MRS = 4'b0000;  // mode register set
-  localparam CMD_ACT = 4'b0011;  // bank active
-  localparam CMD_READ = 4'b0101;  // to have read variant with autoprecharge set A10=H
-  localparam CMD_WRITE = 4'b0100;  // A10=H to have autoprecharge
-  localparam CMD_BST = 4'b0110;  // burst stop
-  localparam CMD_PRE = 4'b0010;  // precharge selected bank, A10=H both banks
-  localparam CMD_REF = 4'b0001;  // auto refresh (cke=H), selfrefresh assign cke=L
-  localparam CMD_NOP = 4'b0111;
-  localparam CMD_DSEL = 4'b1xxx;
-
-  reg [3:0] command;
-  reg [3:0] command_nxt;
-  reg cke;
-  reg cke_nxt;
+  reg [3:0] command, command_nxt;
+  reg cke, cke_nxt;
   reg [1:0] dqm;
-  reg [12:0] saddr;
-  reg [12:0] saddr_nxt;
-  reg [1:0] ba;
-  reg [1:0] ba_nxt;
+  reg [12:0] saddr, saddr_nxt;
+  reg [1:0] ba, ba_nxt;
 
-  assign sdram_clk = clk;
-  assign sdram_cke = cke;
-  assign sdram_addr = saddr;
-  assign sdram_dqm = dqm;
-  assign {sdram_csn, sdram_rasn, sdram_casn, sdram_wen} = command;
-  assign sdram_ba = ba;
-
-  // state machine stuff
-  localparam RESET = 0;
-  localparam ASSERT_CKE = 1;
-  localparam INIT_SEQ_PRE_CHARGE_ALL = 2;
-  localparam INIT_SEQ_AUTO_REFRESH0 = 3;
-  localparam INIT_SEQ_AUTO_REFRESH1 = 4;
-  localparam INIT_SEQ_LOAD_MODE = 5;
-  localparam IDLE = 6;
-  localparam COL_READ = 7;
-  localparam COL_READL = 8;
-  localparam COL_READH = 9;
-  localparam COL_WRITEL = 10;
-  localparam COL_WRITEH = 11;
-  localparam AUTO_REFRESH = 12;
-  localparam PRE_CHARGE_ALL = 13;
-  localparam WAIT_STATE = 14;
-  localparam LAST_STATE = 15;
-
-  localparam STATE_WIDTH = $clog2(LAST_STATE);
-
-  reg [STATE_WIDTH -1:0] state;
-  reg [STATE_WIDTH -1:0] state_nxt;
-  reg [STATE_WIDTH -1:0] ret_state;
-  reg [STATE_WIDTH -1:0] ret_state_nxt;
-  localparam WAIT_STATE_WIDTH = $clog2(WAIT_100US);
-  reg [WAIT_STATE_WIDTH -1:0] wait_states;
-  reg [WAIT_STATE_WIDTH -1:0] wait_states_nxt;
-
-  reg ready_nxt;
+  reg [3:0] state, state_nxt;
+  reg [3:0] ret_state, ret_state_nxt;
+  reg [15:0] wait_states, wait_states_nxt;
+  reg        ready_nxt;
   reg [31:0] dout_nxt;
-  reg [1:0] dqm_nxt;
+  reg [ 1:0] dqm_nxt;
+  reg update_ready, update_ready_nxt;
+  reg [15:0] dq, dq_nxt;
+  reg oe, oe_nxt;
+  reg [31:0] dout;
+  reg        ready;
 
-  reg update_ready;
-  reg update_ready_nxt;
+  // nmi
+  assign nmi.ready                                                  = ready;
+  assign nmi.rdata                                                  = dout;
+  // sdram
+  assign sdram.clk_o                                                = clk_i;
+  assign sdram.cke_o                                                = cke;
+  assign sdram.addr_o                                               = saddr;
+  assign sdram.dqm_o                                                = dqm;
+  assign {sdram.cs_n_o, sdram.ras_n_o, sdram.cas_n_o, sdram.we_n_o} = command;
+  assign sdram.ba_o                                                 = ba;
+  assign sdram.dq_o                                                 = dq;
+  assign sdram.oe_o                                                 = oe;
 
-  reg [15:0] dq;
-  reg [15:0] dq_nxt;
-  assign sdram_dq = oe ? dq : 16'hz;
 
-  reg oe;
-  reg oe_nxt;
-
-  always @(posedge clk) begin
-    if (~resetn) begin
-      state <= RESET;
-      ret_state <= RESET;
-      ready <= 1'b0;
-      wait_states <= 0;
-      dout <= 0;
-      command <= CMD_NOP;
-      dqm <= 2'b11;
-      dq <= 0;
-      ba <= 2'b11;
-      oe <= 1'b0;
-      saddr <= 0;
-      update_ready <= 1'b0;
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) begin
+      state        <= RESET;
+      ret_state    <= RESET;
+      wait_states  <= '0;
+      command      <= CMD_NOP;
+      ready        <= '0;
+      dout         <= '0;
+      // sdram
+      dqm          <= '1;
+      dq           <= '0;
+      ba           <= '1;
+      oe           <= '0;
+      cke          <= '0;
+      saddr        <= '0;
+      update_ready <= '0;
     end else begin
-      dq <= dq_nxt;
-      dout <= dout_nxt;
-      state <= state_nxt;
-      ready <= ready_nxt;
-      dqm <= dqm_nxt;
-      cke <= cke_nxt;
-      command <= command_nxt;
-      wait_states <= wait_states_nxt;
-      ret_state <= ret_state_nxt;
-      ba <= ba_nxt;
-      oe <= oe_nxt;
-      saddr <= saddr_nxt;
+      state        <= state_nxt;
+      ret_state    <= ret_state_nxt;
+      wait_states  <= wait_states_nxt;
+      command      <= command_nxt;
+      ready        <= ready_nxt;
+      dout         <= dout_nxt;
+      // sdram
+      dqm          <= dqm_nxt;
+      dq           <= dq_nxt;
+      ba           <= ba_nxt;
+      oe           <= oe_nxt;
+      cke          <= cke_nxt;
+      saddr        <= saddr_nxt;
       update_ready <= update_ready_nxt;
     end
   end
 
-  always @(*) begin
-    wait_states_nxt  = wait_states;
+  always_comb begin
     state_nxt        = state;
-    ready_nxt        = ready;
     ret_state_nxt    = ret_state;
-    dout_nxt         = dout;
+    wait_states_nxt  = wait_states;
     command_nxt      = command;
-
+    ready_nxt        = ready;
+    dout_nxt         = dout;
+    // sdram
+    dqm_nxt          = dqm;
+    dq_nxt           = dq;
+    ba_nxt           = ba;
+    oe_nxt           = oe;
     cke_nxt          = cke;
     saddr_nxt        = saddr;
-    ba_nxt           = ba;
-    dqm_nxt          = dqm;
-    oe_nxt           = oe;
-    dq_nxt           = dq;
     update_ready_nxt = update_ready;
-
     case (state)
       RESET: begin
         cke_nxt         = 1'b0;
-        wait_states_nxt = WAIT_100US;
-        ret_state_nxt   = ASSERT_CKE;
         state_nxt       = WAIT_STATE;
+        ret_state_nxt   = ASSERT_CKE;
+        wait_states_nxt = 16'(WAIT_100US);
       end
-
       ASSERT_CKE: begin
         cke_nxt         = 1'b1;
-        wait_states_nxt = 2;
-        ret_state_nxt   = INIT_SEQ_PRE_CHARGE_ALL;
         state_nxt       = WAIT_STATE;
+        ret_state_nxt   = INIT_SEQ_PRE_CHARGE_ALL;
+        wait_states_nxt = 16'd2;
       end
-
       INIT_SEQ_PRE_CHARGE_ALL: begin
         cke_nxt         = 1'b1;
-        command_nxt     = CMD_PRE;
+        command_nxt     = CMD_PRER;
         saddr_nxt[10]   = 1'b1;
-        wait_states_nxt = TRP;
-        ret_state_nxt   = INIT_SEQ_AUTO_REFRESH0;
         state_nxt       = WAIT_STATE;
+        ret_state_nxt   = INIT_SEQ_AUTO_REFRESH0;
+        wait_states_nxt = 16'(TRP);
       end
-
       INIT_SEQ_AUTO_REFRESH0: begin
-        command_nxt = CMD_REF;
-        wait_states_nxt = TRC;
-        ret_state_nxt = INIT_SEQ_AUTO_REFRESH1;
-        state_nxt = WAIT_STATE;
+        command_nxt     = CMD_RFSH;
+        state_nxt       = WAIT_STATE;
+        ret_state_nxt   = INIT_SEQ_AUTO_REFRESH1;
+        wait_states_nxt = 16'(TRC);
       end
-
       INIT_SEQ_AUTO_REFRESH1: begin
-        command_nxt = CMD_REF;
-        wait_states_nxt = TRC;
-        ret_state_nxt = INIT_SEQ_LOAD_MODE;
-        state_nxt = WAIT_STATE;
+        command_nxt     = CMD_RFSH;
+        state_nxt       = WAIT_STATE;
+        ret_state_nxt   = INIT_SEQ_LOAD_MODE;
+        wait_states_nxt = 16'(TRC);
       end
-
       INIT_SEQ_LOAD_MODE: begin
-        command_nxt = CMD_MRS;
-        saddr_nxt = sdram_mode;
-        wait_states_nxt = TCH;
-        ret_state_nxt = IDLE;
-        state_nxt = WAIT_STATE;
+        command_nxt     = CMD_MRS;
+        saddr_nxt       = sdram_mode;
+        state_nxt       = WAIT_STATE;
+        ret_state_nxt   = IDLE;
+        wait_states_nxt = 16'(TCH);
       end
-
       IDLE: begin
-        oe_nxt = 1'b0;
-        dqm_nxt = 2'b11;
+        oe_nxt    = 1'b0;
+        dqm_nxt   = 2'b11;
         ready_nxt = 1'b0;
-        if (valid && !ready) begin
-          command_nxt     = CMD_ACT;
-          ba_nxt          = addr[22:21];
-          saddr_nxt       = {addr[24:23], addr[20:10]};
-          wait_states_nxt = TRCD;
-          ret_state_nxt   = |wmask ? COL_WRITEL : COL_READ;
+        if (nmi.valid && !ready) begin
+          command_nxt      = CMD_ACT;
+          ba_nxt           = nmi.addr[22:21];
+          saddr_nxt        = {nmi.addr[24:23], nmi.addr[20:10]};
+          state_nxt        = WAIT_STATE;
+          ret_state_nxt    = |nmi.wstrb ? COL_WRITEL : COL_READ;
+          wait_states_nxt  = 16'(TRCD);
           update_ready_nxt = 1'b1;
-          state_nxt       = WAIT_STATE;
         end else begin
-          /* autorefresh */
-          command_nxt = CMD_REF;
-          saddr_nxt = 0;
-          ba_nxt = 0;
-          wait_states_nxt = 3;  //TRC;
-          ret_state_nxt = IDLE;
+          // autorefresh
+          command_nxt      = CMD_RFSH;
+          saddr_nxt        = '0;
+          ba_nxt           = '0;
+          // TRC
+          state_nxt        = WAIT_STATE;
+          ret_state_nxt    = IDLE;
+          wait_states_nxt  = 16'd3;
           update_ready_nxt = 1'b0;
-          state_nxt = WAIT_STATE;
         end
       end
-
       COL_READ: begin
         command_nxt     = CMD_READ;
         dqm_nxt         = 2'b00;
-        saddr_nxt       = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
-        ba_nxt          = addr[22:21];
-        wait_states_nxt = CAS_LATENCY;
-        ret_state_nxt   = COL_READL;
+        // autoprecharge and column
+        ba_nxt          = nmi.addr[22:21];
+        saddr_nxt       = {3'b001, nmi.addr[10:2], 1'b0};
         state_nxt       = WAIT_STATE;
+        ret_state_nxt   = COL_READL;
+        wait_states_nxt = 16'(CAS_LATENCY);
       end
-
       COL_READL: begin
         command_nxt    = CMD_NOP;
         dqm_nxt        = 2'b00;
-        dout_nxt[15:0] = sdram_dq;
+        dout_nxt[15:0] = sdram.dq_i;
+        state_nxt      = COL_READH;
         //wait_states_nxt = TRP;
         // ret_state_nxt   = COL_READH;
-        state_nxt      = COL_READH;
       end
-
       COL_READH: begin
-        command_nxt      = CMD_NOP;
-        dqm_nxt          = 2'b00;
-        dout_nxt[31:16]  = sdram_dq;
-        wait_states_nxt  = TRP;
-        ret_state_nxt    = IDLE;
-        state_nxt        = WAIT_STATE;
+        command_nxt     = CMD_NOP;
+        dqm_nxt         = 2'b00;
+        dout_nxt[31:16] = sdram.dq_i;
+        state_nxt       = WAIT_STATE;
+        ret_state_nxt   = IDLE;
+        wait_states_nxt = 16'(TRP);
       end
-
       COL_WRITEL: begin
         command_nxt = CMD_WRITE;
-        dqm_nxt     = ~wmask[1:0];
-        saddr_nxt   = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
-        ba_nxt      = addr[22:21];
-        dq_nxt      = din[15:0];
+        dqm_nxt     = ~nmi.wstrb[1:0];
+        // autoprecharge and column
+        ba_nxt      = nmi.addr[22:21];
+        saddr_nxt   = {3'b001, nmi.addr[10:2], 1'b0};
+        dq_nxt      = nmi.wdata[15:0];
         oe_nxt      = 1'b1;
-        //wait_states_nxt = TRP;
-        //ret_state_nxt   = COL_WRITEH;
         state_nxt   = COL_WRITEH;
+        //ret_state_nxt   = COL_WRITEH;
+        //wait_states_nxt = TRP;
       end
-
       COL_WRITEH: begin
-        command_nxt      = CMD_NOP;
-        dqm_nxt          = ~wmask[3:2];
-        saddr_nxt        = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
-        ba_nxt           = addr[22:21];
-        dq_nxt           = din[31:16];
-        oe_nxt           = 1'b1;
-        wait_states_nxt  = TRP;
-        ret_state_nxt    = IDLE;
-        state_nxt        = WAIT_STATE;
+        command_nxt     = CMD_NOP;
+        dqm_nxt         = ~nmi.wstrb[3:2];
+        // autoprecharge and column
+        ba_nxt          = nmi.addr[22:21];
+        saddr_nxt       = {3'b001, nmi.addr[10:2], 1'b0};
+        dq_nxt          = nmi.wdata[31:16];
+        oe_nxt          = 1'b1;
+        state_nxt       = WAIT_STATE;
+        ret_state_nxt   = IDLE;
+        wait_states_nxt = 16'(TRP);
       end
-
-      PRE_CHARGE_ALL: begin
-        command_nxt = CMD_PRE;
-        saddr_nxt[10] = 1'b1;  // select all banks
-        ba_nxt = 0;
-        wait_states_nxt = TRP;
-        ret_state_nxt = IDLE;
-        state_nxt = WAIT_STATE;
-      end
-
+      // NOTE: notused
+      // PRE_CHARGE_ALL: begin
+      //   command_nxt     = CMD_PRER;
+      //   // select all banks
+      //   saddr_nxt[10]   = 1'b1;
+      //   ba_nxt          = 0;
+      //   state_nxt       = WAIT_STATE;
+      //   ret_state_nxt   = IDLE;
+      //   wait_states_nxt = TRP;
+      // end
       WAIT_STATE: begin
-        command_nxt = CMD_NOP;
-        wait_states_nxt = wait_states - 1;
-        if (wait_states == 1) begin
+        command_nxt     = CMD_NOP;
+        wait_states_nxt = wait_states - 1'b1;
+        if (wait_states == 16'd1) begin
           state_nxt = ret_state;
           if (ret_state == IDLE && update_ready) begin
             update_ready_nxt = 1'b0;
-            ready_nxt = 1'b1;
+            ready_nxt        = 1'b1;
           end
         end
       end
-
       default: begin
         state_nxt = state;
       end

@@ -87,6 +87,46 @@ module retrosoc_asic (
     inout  i2s_adcdat_i_pad,
     // onewire
     output onewire_dat_o_pad,
+    // sdram
+    output sdram_clk_o_pad,
+    output sdram_cke_o_pad,
+    output sdram_cs_n_o_pad,
+    output sdram_ras_n_o_pad,
+    output sdram_cas_n_o_pad,
+    output sdram_we_n_o_pad,
+    output sdram_ba0_o_pad,
+    output sdram_ba1_o_pad,
+    output sdram_addr0_o_pad,
+    output sdram_addr1_o_pad,
+    output sdram_addr2_o_pad,
+    output sdram_addr3_o_pad,
+    output sdram_addr4_o_pad,
+    output sdram_addr5_o_pad,
+    output sdram_addr6_o_pad,
+    output sdram_addr7_o_pad,
+    output sdram_addr8_o_pad,
+    output sdram_addr9_o_pad,
+    output sdram_addr10_o_pad,
+    output sdram_addr11_o_pad,
+    output sdram_addr12_o_pad,
+    output sdram_dqm0_o_pad,
+    output sdram_dqm1_o_pad,
+    inout  sdram_dq0_io_pad,
+    inout  sdram_dq1_io_pad,
+    inout  sdram_dq2_io_pad,
+    inout  sdram_dq3_io_pad,
+    inout  sdram_dq4_io_pad,
+    inout  sdram_dq5_io_pad,
+    inout  sdram_dq6_io_pad,
+    inout  sdram_dq7_io_pad,
+    inout  sdram_dq8_io_pad,
+    inout  sdram_dq9_io_pad,
+    inout  sdram_dq10_io_pad,
+    inout  sdram_dq11_io_pad,
+    inout  sdram_dq12_io_pad,
+    inout  sdram_dq13_io_pad,
+    inout  sdram_dq14_io_pad,
+    inout  sdram_dq15_io_pad,
     // apb ip
     output uart1_tx_o_pad,
     inout  uart1_rx_i_pad,
@@ -143,6 +183,7 @@ module retrosoc_asic (
   spi_if                        u_spisd_if   ();
   nv_i2s_if                     u_i2s_if     ();
   onewire_if                    u_onewire_if ();
+  sdram_if                      u_sdram_if   ();
   uart_if                       u_uart1_if   ();
   pwm_if                        u_pwm_if     ();
   ps2_if                        u_ps2_if     ();
@@ -216,6 +257,45 @@ module retrosoc_asic (
   tc_io_tri_pad         u_i2s_dacdat_o_pad      (.pad(i2s_dacdat_o_pad),      .c2p(u_i2s_if.dacdat_o),          .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_i2s_adcdat_i_pad      (.pad(i2s_adcdat_i_pad),      .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_i2s_if.adcdat_i));
   tc_io_tri_pad         u_onewire_dat_o_pad     (.pad(onewire_dat_o_pad),     .c2p(u_onewire_if.dat_o),         .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_clk_o_pad       (.pad(sdram_clk_o_pad),       .c2p(u_sdram_if.clk_o),           .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_cke_o_pad       (.pad(sdram_cke_o_pad),       .c2p(u_sdram_if.cke_o),           .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_cs_n_o_pad      (.pad(sdram_cs_n_o_pad),      .c2p(u_sdram_if.cs_n_o),          .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_ras_n_o_pad     (.pad(sdram_ras_n_o_pad),     .c2p(u_sdram_if.ras_n_o),         .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_cas_n_o_pad     (.pad(sdram_cas_n_o_pad),     .c2p(u_sdram_if.cas_n_o),         .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_we_n_o_pad      (.pad(sdram_we_n_o_pad),      .c2p(u_sdram_if.we_n_o),          .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_ba0_o_pad       (.pad(sdram_ba0_o_pad),       .c2p(u_sdram_if.ba_o[0]),         .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_ba1_o_pad       (.pad(sdram_ba1_o_pad),       .c2p(u_sdram_if.ba_o[1]),         .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr0_o_pad     (.pad(sdram_addr0_o_pad),     .c2p(u_sdram_if.addr_o[0]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr1_o_pad     (.pad(sdram_addr1_o_pad),     .c2p(u_sdram_if.addr_o[1]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr2_o_pad     (.pad(sdram_addr2_o_pad),     .c2p(u_sdram_if.addr_o[2]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr3_o_pad     (.pad(sdram_addr3_o_pad),     .c2p(u_sdram_if.addr_o[3]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr4_o_pad     (.pad(sdram_addr4_o_pad),     .c2p(u_sdram_if.addr_o[4]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr5_o_pad     (.pad(sdram_addr5_o_pad),     .c2p(u_sdram_if.addr_o[5]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr6_o_pad     (.pad(sdram_addr6_o_pad),     .c2p(u_sdram_if.addr_o[6]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr7_o_pad     (.pad(sdram_addr7_o_pad),     .c2p(u_sdram_if.addr_o[7]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr8_o_pad     (.pad(sdram_addr8_o_pad),     .c2p(u_sdram_if.addr_o[8]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr9_o_pad     (.pad(sdram_addr9_o_pad),     .c2p(u_sdram_if.addr_o[9]),       .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr10_o_pad    (.pad(sdram_addr10_o_pad),    .c2p(u_sdram_if.addr_o[10]),      .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr11_o_pad    (.pad(sdram_addr11_o_pad),    .c2p(u_sdram_if.addr_o[11]),      .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_addr12_o_pad    (.pad(sdram_addr12_o_pad),    .c2p(u_sdram_if.addr_o[12]),      .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_dqm0_o_pad      (.pad(sdram_dqm0_o_pad),      .c2p(u_sdram_if.dqm_o[0]),        .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_dqm1_o_pad      (.pad(sdram_dqm1_o_pad),      .c2p(u_sdram_if.dqm_o[1]),        .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_sdram_dq0_io_pad      (.pad(sdram_dq0_io_pad),      .c2p(u_sdram_if.dq_o[0]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[0]));
+  tc_io_tri_pad         u_sdram_dq1_io_pad      (.pad(sdram_dq1_io_pad),      .c2p(u_sdram_if.dq_o[1]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[1]));
+  tc_io_tri_pad         u_sdram_dq2_io_pad      (.pad(sdram_dq2_io_pad),      .c2p(u_sdram_if.dq_o[2]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[2]));
+  tc_io_tri_pad         u_sdram_dq3_io_pad      (.pad(sdram_dq3_io_pad),      .c2p(u_sdram_if.dq_o[3]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[3]));
+  tc_io_tri_pad         u_sdram_dq4_io_pad      (.pad(sdram_dq4_io_pad),      .c2p(u_sdram_if.dq_o[4]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[4]));
+  tc_io_tri_pad         u_sdram_dq5_io_pad      (.pad(sdram_dq5_io_pad),      .c2p(u_sdram_if.dq_o[5]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[5]));
+  tc_io_tri_pad         u_sdram_dq6_io_pad      (.pad(sdram_dq6_io_pad),      .c2p(u_sdram_if.dq_o[6]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[6]));
+  tc_io_tri_pad         u_sdram_dq7_io_pad      (.pad(sdram_dq7_io_pad),      .c2p(u_sdram_if.dq_o[7]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[7]));
+  tc_io_tri_pad         u_sdram_dq8_io_pad      (.pad(sdram_dq8_io_pad),      .c2p(u_sdram_if.dq_o[8]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[8]));
+  tc_io_tri_pad         u_sdram_dq9_io_pad      (.pad(sdram_dq9_io_pad),      .c2p(u_sdram_if.dq_o[9]),         .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[9]));
+  tc_io_tri_pad         u_sdram_dq10_io_pad     (.pad(sdram_dq10_io_pad),     .c2p(u_sdram_if.dq_o[10]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[10]));
+  tc_io_tri_pad         u_sdram_dq11_io_pad     (.pad(sdram_dq11_io_pad),     .c2p(u_sdram_if.dq_o[11]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[11]));
+  tc_io_tri_pad         u_sdram_dq12_io_pad     (.pad(sdram_dq12_io_pad),     .c2p(u_sdram_if.dq_o[12]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[12]));
+  tc_io_tri_pad         u_sdram_dq13_io_pad     (.pad(sdram_dq13_io_pad),     .c2p(u_sdram_if.dq_o[13]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[13]));
+  tc_io_tri_pad         u_sdram_dq14_io_pad     (.pad(sdram_dq14_io_pad),     .c2p(u_sdram_if.dq_o[14]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[14]));
+  tc_io_tri_pad         u_sdram_dq15_io_pad     (.pad(sdram_dq15_io_pad),     .c2p(u_sdram_if.dq_o[15]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[15]));
   // apb
   tc_io_tri_pad         u_uart1_tx_o_pad       (.pad(uart1_tx_o_pad),         .c2p(u_uart1_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_uart1_rx_i_pad       (.pad(uart1_rx_i_pad),         .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_uart1_if.uart_rx_i));
@@ -284,6 +364,7 @@ module retrosoc_asic (
       .spisd      (u_spisd_if),
       .i2s        (u_i2s_if),
       .onewire    (u_onewire_if),
+      .sdram      (u_sdram_if),
       .uart1      (u_uart1_if),
       .pwm        (u_pwm_if),
       .ps2        (u_ps2_if),

@@ -36,6 +36,7 @@ module retrosoc (
     qspi_if.dut                            qspi,
     nv_i2s_if.dut                          i2s,
     onewire_if.dut                         onewire,
+    sdram_if.dut                           sdram,
     uart_if.dut                            uart1,
     pwm_if.dut                             pwm,
     ps2_if.dut                             ps2
@@ -111,6 +112,7 @@ module retrosoc (
       .qspi       (qspi),
       .dma_nmi    (u_dma_nmi_if),
       .sysctrl    (u_sysctrl_if),
+      .sdram      (sdram),
       .irq_o      (s_natv_irq)
   );
 
