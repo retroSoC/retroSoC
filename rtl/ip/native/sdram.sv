@@ -253,7 +253,7 @@ module nmi_sdram #(
           // TRC
           s_state_d     = WAIT_STATE;
           s_ret_state_d = IDLE;
-          s_wait_cnt_d  = 16'd3;
+          s_wait_cnt_d  = 16'(TRC);
           s_upd_ready_d = 1'b0;
         end
       end

@@ -32,6 +32,7 @@ else ifeq ($(PDK), GF180)
 endif
 
 NET_FLIST  += -f $(RTL_PATH)/filelist/def.fl
+NET_FLIST  += -f $(RTL_PATH)/filelist/sys_def.fl
 
 ifeq ($(SIMU), VCS)
     NET_FLIST  += -f $(RTL_PATH)/filelist/inc.fl
