@@ -105,7 +105,7 @@ void app_info() {
     printf("                       1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                       1 x CLINT         @0x%x\n", &reg_clint_mtimel);
     printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_cfg);
-    printf("                       1 x DVP           @0x%x\n", &reg_dvp_cfg);
+    printf("                       1 x DVP           @0x%x\n", &reg_dvp_recven);
     printf("                       1 x SDIO          @0x%x\n", &reg_sdio_cfg);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);

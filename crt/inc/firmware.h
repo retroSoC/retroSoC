@@ -151,7 +151,9 @@
 // sdram
 #define reg_sdram_cfg        (*(volatile uint32_t*)0x1000D000)
 // dvp
-#define reg_dvp_cfg          (*(volatile uint32_t*)0x1000E000)
+#define reg_dvp_recven       (*(volatile uint32_t*)0x1000E000)
+#define reg_dvp_rxdata       (*(volatile uint32_t*)0x1000E004)
+#define reg_dvp_status       (*(volatile uint32_t*)0x1000E008)
 // sdio
 #define reg_sdio_cfg         (*(volatile uint32_t*)0x1000F000)
 // apb

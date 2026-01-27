@@ -127,6 +127,18 @@ module retrosoc_asic (
     inout  sdram_dq13_io_pad,
     inout  sdram_dq14_io_pad,
     inout  sdram_dq15_io_pad,
+    // dvp
+    inout  dvp_pclk_i_pad,
+    inout  dvp_href_i_pad,
+    inout  dvp_vsync_i_pad,
+    inout  dvp_dat0_i_pad,
+    inout  dvp_dat1_i_pad,
+    inout  dvp_dat2_i_pad,
+    inout  dvp_dat3_i_pad,
+    inout  dvp_dat4_i_pad,
+    inout  dvp_dat5_i_pad,
+    inout  dvp_dat6_i_pad,
+    inout  dvp_dat7_i_pad,
     // apb ip
     output uart1_tx_o_pad,
     inout  uart1_rx_i_pad,
@@ -184,6 +196,7 @@ module retrosoc_asic (
   nv_i2s_if                     u_i2s_if     ();
   onewire_if                    u_onewire_if ();
   sdram_if                      u_sdram_if   ();
+  dvp_if                        u_dvp_if     ();  
   uart_if                       u_uart1_if   ();
   pwm_if                        u_pwm_if     ();
   ps2_if                        u_ps2_if     ();
@@ -296,6 +309,18 @@ module retrosoc_asic (
   tc_io_tri_pad         u_sdram_dq13_io_pad     (.pad(sdram_dq13_io_pad),     .c2p(u_sdram_if.dq_o[13]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[13]));
   tc_io_tri_pad         u_sdram_dq14_io_pad     (.pad(sdram_dq14_io_pad),     .c2p(u_sdram_if.dq_o[14]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[14]));
   tc_io_tri_pad         u_sdram_dq15_io_pad     (.pad(sdram_dq15_io_pad),     .c2p(u_sdram_if.dq_o[15]),        .c2p_en(u_sdram_if.oe_o),           .p2c(u_sdram_if.dq_i[15]));
+  tc_io_tri_pad         u_dvp_pclk_i_pad        (.pad(dvp_pclk_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.pclk_i));
+  tc_io_tri_pad         u_dvp_href_i_pad        (.pad(dvp_href_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.href_i));
+  tc_io_tri_pad         u_dvp_vsync_i_pad       (.pad(dvp_vsync_i_pad),       .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.vsync_i));
+  tc_io_tri_pad         u_dvp_dat0_i_pad        (.pad(dvp_dat0_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[0]));
+  tc_io_tri_pad         u_dvp_dat1_i_pad        (.pad(dvp_dat1_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[1]));
+  tc_io_tri_pad         u_dvp_dat2_i_pad        (.pad(dvp_dat2_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[2]));
+  tc_io_tri_pad         u_dvp_dat3_i_pad        (.pad(dvp_dat3_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[3]));
+  tc_io_tri_pad         u_dvp_dat4_i_pad        (.pad(dvp_dat4_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[4]));
+  tc_io_tri_pad         u_dvp_dat5_i_pad        (.pad(dvp_dat5_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[5]));
+  tc_io_tri_pad         u_dvp_dat6_i_pad        (.pad(dvp_dat6_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[6]));
+  tc_io_tri_pad         u_dvp_dat7_i_pad        (.pad(dvp_dat7_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_dvp_if.dat_i[7]));
+
   // apb
   tc_io_tri_pad         u_uart1_tx_o_pad       (.pad(uart1_tx_o_pad),         .c2p(u_uart1_if.uart_tx_o),       .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_uart1_rx_i_pad       (.pad(uart1_rx_i_pad),         .c2p(1'b0),                       .c2p_en(1'b0),                      .p2c(u_uart1_if.uart_rx_i));
@@ -365,6 +390,7 @@ module retrosoc_asic (
       .i2s        (u_i2s_if),
       .onewire    (u_onewire_if),
       .sdram      (u_sdram_if),
+      .dvp        (u_dvp_if),
       .uart1      (u_uart1_if),
       .pwm        (u_pwm_if),
       .ps2        (u_ps2_if),

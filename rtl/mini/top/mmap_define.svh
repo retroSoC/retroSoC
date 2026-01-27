@@ -45,6 +45,7 @@
 `define NMI_SYSCTRL_START  8'hB0
 `define NMI_CLINT_START    8'hC0
 `define NMI_SDRAM_START    8'hD0
+`define NMI_DVP_START      8'hE0
 // APB IP REG ADDR
 `define APB_ARCHINFO_START 8'h00
 `define APB_RNG_START      8'h10
