@@ -114,6 +114,7 @@ module nmi_sdram #(
   // auto refresh (cke=H), selfrefresh assign cke=L
   localparam CMD_RFSH = 4'b0001;
   localparam CMD_NOP = 4'b0111;
+  // sdram mode NOTE: can config
   localparam SDRAM_MODE = {3'b0, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
 
   // verilog_format: off
@@ -241,6 +242,8 @@ module nmi_sdram #(
           s_cmd_d       = CMD_ACT;
           s_ba_d        = nmi.addr[22:21];
           s_addr_d      = {nmi.addr[24:23], nmi.addr[20:10]};
+          // $display("nmi addr: %0x", nmi.addr);
+          // $display("row addr: %0x", s_addr_d);
           s_state_d     = WAIT_STATE;
           s_ret_state_d = |nmi.wstrb ? COL_WRITEL : COL_READ;
           s_wait_cnt_d  = 16'(TRCD);
@@ -263,6 +266,7 @@ module nmi_sdram #(
         // autoprecharge and column
         s_ba_d        = nmi.addr[22:21];
         s_addr_d      = {3'b001, nmi.addr[10:2], 1'b0};
+        // $display("rd col addr: %0x", s_addr_d);
         s_state_d     = WAIT_STATE;
         s_ret_state_d = COL_READL;
         s_wait_cnt_d  = 16'(CAS_LATENCY);
@@ -272,8 +276,6 @@ module nmi_sdram #(
         s_dqm_d         = 2'b00;
         s_rdata_d[15:0] = sdram.dq_i;
         s_state_d       = COL_READH;
-        //s_wait_cnt_d = TRP;
-        // s_ret_state_d   = COL_READH;
       end
       COL_READH: begin
         s_cmd_d          = CMD_NOP;
@@ -289,18 +291,15 @@ module nmi_sdram #(
         // autoprecharge and column
         s_ba_d    = nmi.addr[22:21];
         s_addr_d  = {3'b001, nmi.addr[10:2], 1'b0};
+        // $display("wr col addr: %0x", s_addr_d);
         s_dq_d    = nmi.wdata[15:0];
         s_oe_d    = 1'b1;
         s_state_d = COL_WRITEH;
-        //s_ret_state_d   = COL_WRITEH;
-        //s_wait_cnt_d = TRP;
       end
       COL_WRITEH: begin
         s_cmd_d       = CMD_NOP;
         s_dqm_d       = ~nmi.wstrb[3:2];
         // autoprecharge and column
-        s_ba_d        = nmi.addr[22:21];
-        s_addr_d      = {3'b001, nmi.addr[10:2], 1'b0};
         s_dq_d        = nmi.wdata[31:16];
         s_oe_d        = 1'b1;
         s_state_d     = WAIT_STATE;

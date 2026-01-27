@@ -30,6 +30,7 @@ module ip_nmi_wrapper (
     nmi_if.master      dma_nmi,
     sysctrl_if.dut     sysctrl,
     sdram_if.dut       sdram,
+    dvp_if.dut         dvp,
     // irq
     output logic [9:0] irq_o
     // verilog_format: on
@@ -50,6 +51,7 @@ module ip_nmi_wrapper (
   nmi_if u_sysctrl_nmi_if ();
   nmi_if u_clint_nmi_if ();
   nmi_if u_sdram_nmi_if ();
+  nmi_if u_dvp_nmi_if ();
   // ip interface
   simp_clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
@@ -145,11 +147,16 @@ module ip_nmi_wrapper (
   assign u_clint_nmi_if.wstrb   = nmi.wstrb;
   // sdram
   assign s_sdram_cfg_sel        = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SDRAM_START;
-  assign s_sdram_mem_sel        = nmi.addr[31:24] == `SDRAM_START;
+  assign s_sdram_mem_sel        = nmi.addr[31:24] >= `SDRAM_START && nmi.addr[31:24] <= `SDRAM_END;
   assign u_sdram_nmi_if.valid   = nmi.valid && (s_sdram_cfg_sel || s_sdram_mem_sel);
   assign u_sdram_nmi_if.addr    = nmi.addr;
   assign u_sdram_nmi_if.wdata   = nmi.wdata;
   assign u_sdram_nmi_if.wstrb   = nmi.wstrb;
+  // dvp
+  assign u_dvp_nmi_if.valid   = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_DVP_START);
+  assign u_dvp_nmi_if.addr    = nmi.addr;
+  assign u_dvp_nmi_if.wdata   = nmi.wdata;
+  assign u_dvp_nmi_if.wstrb   = nmi.wstrb;
 
   // verilog_format: off
   assign nmi.ready              = (u_uart_nmi_if.valid    & u_uart_nmi_if.ready)    |
@@ -165,7 +172,8 @@ module ip_nmi_wrapper (
                                   (u_dma_nmi_if.valid     & u_dma_nmi_if.ready)     |
                                   (u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready) |
                                   (u_clint_nmi_if.valid   & u_clint_nmi_if.ready)   |
-                                  (u_sdram_nmi_if.valid   & u_sdram_nmi_if.ready);
+                                  (u_sdram_nmi_if.valid   & u_sdram_nmi_if.ready)   |
+                                  (u_dvp_nmi_if.valid     & u_dvp_nmi_if.ready);
 
   assign nmi.rdata              = ({32{(u_uart_nmi_if.valid    & u_uart_nmi_if.ready)}}    & u_uart_nmi_if.rdata)    |
                                   ({32{(u_gpio_nmi_if.valid    & u_gpio_nmi_if.ready)}}    & u_gpio_nmi_if.rdata)    |
@@ -180,7 +188,8 @@ module ip_nmi_wrapper (
                                   ({32{(u_dma_nmi_if.valid     & u_dma_nmi_if.ready)}}     & u_dma_nmi_if.rdata)     |
                                   ({32{(u_sysctrl_nmi_if.valid & u_sysctrl_nmi_if.ready)}} & u_sysctrl_nmi_if.rdata) |
                                   ({32{(u_clint_nmi_if.valid   & u_clint_nmi_if.ready)}}   & u_clint_nmi_if.rdata)   |
-                                  ({32{(u_sdram_nmi_if.valid   & u_sdram_nmi_if.ready)}}   & u_sdram_nmi_if.rdata);
+                                  ({32{(u_sdram_nmi_if.valid   & u_sdram_nmi_if.ready)}}   & u_sdram_nmi_if.rdata)   |
+                                  ({32{(u_dvp_nmi_if.valid     & u_dvp_nmi_if.ready)}}     & u_dvp_nmi_if.rdata);
   // verilog_format: on
 
   // irq
@@ -310,6 +319,14 @@ module ip_nmi_wrapper (
       .rst_n_i(rst_n_i),
       .nmi    (u_sdram_nmi_if),
       .sdram  (sdram)
+  );
+
+
+  nmi_dvp u_nmi_dvp (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (u_dvp_nmi_if),
+      .dvp    (dvp)
   );
 
 endmodule

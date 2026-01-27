@@ -30,40 +30,51 @@ module retrosoc_tb;
   reg  [2:0] r_pll_cfg;
   wire [2:0] s_pll_cfg;
 `endif
-  reg  [4:0] r_core_sel;
-  wire [4:0] s_core_sel;
-  wire       s_user_gpio_0_io;
-  reg        r_user_gpio_0_io;
-  wire       s_uart0_tx;
+  reg  [ 4:0] r_core_sel;
+  wire [ 4:0] s_core_sel;
+  wire        s_user_gpio_0_io;
+  reg         r_user_gpio_0_io;
+  wire        s_uart0_tx;
   // for handle x-prop issue
-  wire       s_uart0_rx = 1'b1;
-  wire       s_gpio_0_io;
-  wire       s_gpio_1_ip;
-  wire       s_psram_sck;
-  wire       s_psram_nss0;
-  wire       s_psram_nss1;
-  wire       s_psram_dat0;
-  wire       s_psram_dat1;
-  wire       s_psram_dat2;
-  wire       s_psram_dat3;
-  wire       s_i2c_sda_io;
-  wire       s_i2c_scl_io;
-  wire       s_qspi_sck_o;
-  wire       s_qspi_nss0_o;
-  wire       s_qspi_nss1_o;
-  wire       s_qspi_nss2_o;
-  wire       s_qspi_nss3_o;
-  wire       s_qspi_dat0_io;
-  wire       s_qspi_dat1_io;
-  wire       s_qspi_dat2_io;
-  wire       s_qspi_dat3_io;
-  wire       s_i2s_sclk;
-  wire       s_i2s_lrck;
-  wire       s_i2s_adcdat;
-  wire       s_uart1_tx;
-  wire       s_uart1_rx;
-  wire       s_ps2_clk;
-  wire       s_ps2_dat;
+  wire        s_uart0_rx = 1'b1;
+  wire        s_gpio_0_io;
+  wire        s_gpio_1_ip;
+  wire        s_psram_sck;
+  wire        s_psram_nss0;
+  wire        s_psram_nss1;
+  wire        s_psram_dat0;
+  wire        s_psram_dat1;
+  wire        s_psram_dat2;
+  wire        s_psram_dat3;
+  wire        s_i2c_sda_io;
+  wire        s_i2c_scl_io;
+  wire        s_qspi_sck_o;
+  wire        s_qspi_nss0_o;
+  wire        s_qspi_nss1_o;
+  wire        s_qspi_nss2_o;
+  wire        s_qspi_nss3_o;
+  wire        s_qspi_dat0_io;
+  wire        s_qspi_dat1_io;
+  wire        s_qspi_dat2_io;
+  wire        s_qspi_dat3_io;
+  wire        s_i2s_sclk;
+  wire        s_i2s_lrck;
+  wire        s_i2s_adcdat;
+  wire        s_sdram_clk;
+  wire        s_sdram_cke;
+  wire        s_sdram_cs_n;
+  wire        s_sdram_ras_n;
+  wire        s_sdram_cas_n;
+  wire        s_sdram_we_n;
+  wire [ 1:0] s_sdram_ba;
+  wire [12:0] s_sdram_addr;
+  wire [ 1:0] s_sdram_dqm;
+  wire [15:0] s_sdram_dq;
+
+  wire        s_uart1_tx;
+  wire        s_uart1_rx;
+  wire        s_ps2_clk;
+  wire        s_ps2_dat;
 
 `ifdef HAVE_PLL
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
@@ -149,45 +160,56 @@ module retrosoc_tb;
       .i2s_dacdat_o_pad   (),
       .i2s_adcdat_i_pad   (s_i2s_adcdat),
       .onewire_dat_o_pad  (),
-      .sdram_clk_o_pad    (),
-      .sdram_cke_o_pad    (),
-      .sdram_cs_n_o_pad   (),
-      .sdram_ras_n_o_pad  (),
-      .sdram_cas_n_o_pad  (),
-      .sdram_we_n_o_pad   (),
-      .sdram_ba0_o_pad    (),
-      .sdram_ba1_o_pad    (),
-      .sdram_addr0_o_pad  (),
-      .sdram_addr1_o_pad  (),
-      .sdram_addr2_o_pad  (),
-      .sdram_addr3_o_pad  (),
-      .sdram_addr4_o_pad  (),
-      .sdram_addr5_o_pad  (),
-      .sdram_addr6_o_pad  (),
-      .sdram_addr7_o_pad  (),
-      .sdram_addr8_o_pad  (),
-      .sdram_addr9_o_pad  (),
-      .sdram_addr10_o_pad (),
-      .sdram_addr11_o_pad (),
-      .sdram_addr12_o_pad (),
-      .sdram_dqm0_o_pad   (),
-      .sdram_dqm1_o_pad   (),
-      .sdram_dq0_io_pad   (),
-      .sdram_dq1_io_pad   (),
-      .sdram_dq2_io_pad   (),
-      .sdram_dq3_io_pad   (),
-      .sdram_dq4_io_pad   (),
-      .sdram_dq5_io_pad   (),
-      .sdram_dq6_io_pad   (),
-      .sdram_dq7_io_pad   (),
-      .sdram_dq8_io_pad   (),
-      .sdram_dq9_io_pad   (),
-      .sdram_dq10_io_pad  (),
-      .sdram_dq11_io_pad  (),
-      .sdram_dq12_io_pad  (),
-      .sdram_dq13_io_pad  (),
-      .sdram_dq14_io_pad  (),
-      .sdram_dq15_io_pad  (),
+      .sdram_clk_o_pad    (s_sdram_clk),
+      .sdram_cke_o_pad    (s_sdram_cke),
+      .sdram_cs_n_o_pad   (s_sdram_cs_n),
+      .sdram_ras_n_o_pad  (s_sdram_ras_n),
+      .sdram_cas_n_o_pad  (s_sdram_cas_n),
+      .sdram_we_n_o_pad   (s_sdram_we_n),
+      .sdram_ba0_o_pad    (s_sdram_ba[0]),
+      .sdram_ba1_o_pad    (s_sdram_ba[1]),
+      .sdram_addr0_o_pad  (s_sdram_addr[0]),
+      .sdram_addr1_o_pad  (s_sdram_addr[1]),
+      .sdram_addr2_o_pad  (s_sdram_addr[2]),
+      .sdram_addr3_o_pad  (s_sdram_addr[3]),
+      .sdram_addr4_o_pad  (s_sdram_addr[4]),
+      .sdram_addr5_o_pad  (s_sdram_addr[5]),
+      .sdram_addr6_o_pad  (s_sdram_addr[6]),
+      .sdram_addr7_o_pad  (s_sdram_addr[7]),
+      .sdram_addr8_o_pad  (s_sdram_addr[8]),
+      .sdram_addr9_o_pad  (s_sdram_addr[9]),
+      .sdram_addr10_o_pad (s_sdram_addr[10]),
+      .sdram_addr11_o_pad (s_sdram_addr[11]),
+      .sdram_addr12_o_pad (s_sdram_addr[12]),
+      .sdram_dqm0_o_pad   (s_sdram_dqm[0]),
+      .sdram_dqm1_o_pad   (s_sdram_dqm[1]),
+      .sdram_dq0_io_pad   (s_sdram_dq[0]),
+      .sdram_dq1_io_pad   (s_sdram_dq[1]),
+      .sdram_dq2_io_pad   (s_sdram_dq[2]),
+      .sdram_dq3_io_pad   (s_sdram_dq[3]),
+      .sdram_dq4_io_pad   (s_sdram_dq[4]),
+      .sdram_dq5_io_pad   (s_sdram_dq[5]),
+      .sdram_dq6_io_pad   (s_sdram_dq[6]),
+      .sdram_dq7_io_pad   (s_sdram_dq[7]),
+      .sdram_dq8_io_pad   (s_sdram_dq[8]),
+      .sdram_dq9_io_pad   (s_sdram_dq[9]),
+      .sdram_dq10_io_pad  (s_sdram_dq[10]),
+      .sdram_dq11_io_pad  (s_sdram_dq[11]),
+      .sdram_dq12_io_pad  (s_sdram_dq[12]),
+      .sdram_dq13_io_pad  (s_sdram_dq[13]),
+      .sdram_dq14_io_pad  (s_sdram_dq[14]),
+      .sdram_dq15_io_pad  (s_sdram_dq[15]),
+      .dvp_pclk_i_pad     (),
+      .dvp_href_i_pad     (),
+      .dvp_vsync_i_pad    (),
+      .dvp_dat0_i_pad     (),
+      .dvp_dat1_i_pad     (),
+      .dvp_dat2_i_pad     (),
+      .dvp_dat3_i_pad     (),
+      .dvp_dat4_i_pad     (),
+      .dvp_dat5_i_pad     (),
+      .dvp_dat6_i_pad     (),
+      .dvp_dat7_i_pad     (),
       .uart1_tx_o_pad     (s_uart1_tx),
       .uart1_rx_i_pad     (s_uart1_rx),
       .pwm_0_o_pad        (),
@@ -228,6 +250,18 @@ module retrosoc_tb;
       .HOLDn(s_qspi_dat3_io)
   );
 
+  sdr u_sdr (
+      .Clk  (s_sdram_clk),
+      .Cke  (s_sdram_cke),
+      .Cs_n (s_sdram_cs_n),
+      .Ras_n(s_sdram_ras_n),
+      .Cas_n(s_sdram_cas_n),
+      .We_n (s_sdram_we_n),
+      .Addr (s_sdram_addr),
+      .Ba   (s_sdram_ba),
+      .Dq   (s_sdram_dq),
+      .Dqm  (s_sdram_dqm)
+  );
 
   // Testbench pullups on SDA, SCL lines
   pullup i2c_scl_up (s_i2c_scl_io);
@@ -345,7 +379,10 @@ module retrosoc_tb;
       // #145541740;
       // #205541740;
       // #382928081;
-      #21149063;
+      // #300000;
+      // #45050000;
+      #86869320;
+      // #21149063;
       // #1667652;
       // #327820116;
       // #327179489;

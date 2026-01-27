@@ -68,6 +68,8 @@
 ../../ip/native/sysctrl.sv
 ../../ip/native/clint.sv
 ../../ip/native/sdram.sv
+../../ip/native/dvp_core.sv
+../../ip/native/dvp.sv
 ../../ip/native/timer.sv
 ../../ip/native/uart.sv
 ../../ip/native/gpio.sv
