@@ -20,7 +20,9 @@
 `define NATV_IP_START  4'h1
 `define APB_IP_START   4'h2
 `define SRAM_START     8'h30
+`define SRAM_END       8'h37
 `define SDRAM_START    8'h38
+`define SDRAM_END      8'h3F
 `define PSRAM_START    4'h4
 `define QSPI_MEM_START 4'h5
 `define SPISD_START0   4'h6

@@ -145,7 +145,7 @@ module ip_nmi_wrapper (
   assign u_clint_nmi_if.wstrb   = nmi.wstrb;
   // sdram
   assign s_sdram_cfg_sel        = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SDRAM_START;
-  assign s_sdram_mem_sel        = nmi.addr[31:24] == `SDRAM_START;
+  assign s_sdram_mem_sel        = nmi.addr[31:24] >= `SDRAM_START && nmi.addr[31:24] <= `SDRAM_END;
   assign u_sdram_nmi_if.valid   = nmi.valid && (s_sdram_cfg_sel || s_sdram_mem_sel);
   assign u_sdram_nmi_if.addr    = nmi.addr;
   assign u_sdram_nmi_if.wdata   = nmi.wdata;

@@ -88,7 +88,8 @@ module bus (
   // verilog_format: off
   assign s_natv_sel      = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START   ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `NATV_IP_START ||
-                           u_mstr_rgsl_nmi_if.addr[31:24] == `SDRAM_START   ||
+                          (u_mstr_rgsl_nmi_if.addr[31:24] >= `SDRAM_START   &&
+                           u_mstr_rgsl_nmi_if.addr[31:24] <= `SDRAM_END)    ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `PSRAM_START   ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START0  ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START1  ||
@@ -106,7 +107,7 @@ module bus (
   assign apb_nmi.wstrb   = u_mstr_rgsl_nmi_if.wstrb;
 
 `ifdef HAVE_SRAM_IF
-  assign s_ram_sel     = u_mstr_rgsl_nmi_if.addr[31:24] == `SRAM_START;
+  assign s_ram_sel     = u_mstr_rgsl_nmi_if.addr[31:24] >= `SRAM_START && u_mstr_rgsl_nmi_if.addr[31:24] <= `SRAM_END;
   assign s_ram_valid   = u_mstr_rgsl_nmi_if.valid && s_ram_sel;
   assign ram.addr      = u_mstr_rgsl_nmi_if.addr[16:2];
   assign ram.wdata     = u_mstr_rgsl_nmi_if.wdata;
