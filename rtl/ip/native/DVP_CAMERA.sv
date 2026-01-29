@@ -29,9 +29,15 @@ module DVP_CAMERA (
   localparam int  V_ACTIVE  = 240; // unit: TLINE = H_TOTAL
   localparam int  V_FRONT   = 12;  // unit: TLINE = H_TOTAL
   localparam int  V_TOTAL   = 278; // unit: TLINE = H_TOTAL
+  // timing parameters
+  localparam real tpPDV = 5.0;
+  localparam real tpPHH = 5.0;
+  localparam real tpPHL = 5.0;
+
   // verilog_format: on
   logic r_pclk;
   logic r_rst_n, s_rst_n;
+  logic org_href;
 
   logic [11:0] s_h_cnt_d, s_h_cnt_q;
   logic [11:0] s_v_cnt_d, s_v_cnt_q;
@@ -59,7 +65,7 @@ module DVP_CAMERA (
 
 
   assign s_h_cnt_d = s_h_cnt_q == 12'(H_TOTAL) - 12'd1 ? '0 : s_h_cnt_q + 12'd1;
-  dffr #(12) u_h_cnt_dffr (
+  ndffr #(12) u_h_cnt_dffr (
       pclk,
       s_rst_n,
       s_h_cnt_d,
@@ -75,7 +81,7 @@ module DVP_CAMERA (
       s_v_cnt_d = s_v_cnt_q + 12'd1;
     end
   end
-  dffr #(12) u_v_cnt_dffr (
+  ndffr #(12) u_v_cnt_dffr (
       pclk,
       s_rst_n,
       s_v_cnt_d,
@@ -84,7 +90,7 @@ module DVP_CAMERA (
 
 
   assign s_pix_data_d = href ? s_pix_data_q + 8'd1 : s_pix_data_q;
-  dffr #(8) u_pix_data (
+  ndffr #(8) u_pix_data (
       pclk,
       s_rst_n,
       s_pix_data_d,
@@ -92,8 +98,24 @@ module DVP_CAMERA (
   );
 
 
-  assign href  = s_h_cnt_q <= (12'(H_ACTIVE) - 12'd1) &&
-               ((s_v_cnt_q >= 12'(V_SYNC + V_BACK)) && (s_v_cnt_q <= 12'(V_SYNC + V_BACK + V_ACTIVE - 12'd1)));
-  assign vsync = s_v_cnt_q <= 12'(V_SYNC) - 12'd1;
+  assign org_href = (s_h_cnt_q <= (12'(H_ACTIVE) - 12'd1)) &&
+                   ((s_v_cnt_q >= 12'(V_SYNC + V_BACK)) && (s_v_cnt_q <= 12'(V_SYNC + V_BACK + V_ACTIVE - 12'd1)));
+  assign vsync    = s_v_cnt_q <= 12'(V_SYNC) - 12'd1;
+  // tPHL or tPHH
+  always@(negedge pclk) href = #tpPHL org_href;
 
+  specify
+    specparam tSU = 15.0;
+    specparam tHD = 8.0;
+    specparam tPDV = 5.0;
+    specparam tPHH = 5.0;
+    specparam tPHL = 5.0;
+
+    $setuphold(posedge pclk, data, tSU, tHD);
+    $setuphold(negedge pclk, posedge href, tPHH, 0);
+    $setuphold(negedge pclk, negedge href, tPHL, 0);
+    $setuphold(negedge pclk, data, tPDV, 0);
+
+
+  endspecify
 endmodule
