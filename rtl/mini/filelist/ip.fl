@@ -67,6 +67,7 @@
 ../../ip/native/dma.sv
 ../../ip/native/sysctrl.sv
 ../../ip/native/clint.sv
+../../ip/native/sdram_core.sv
 ../../ip/native/sdram.sv
 ../../ip/native/dvp_core.sv
 ../../ip/native/dvp.sv
