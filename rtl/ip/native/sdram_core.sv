@@ -29,22 +29,24 @@
 // See the Mulan PSL v2 for more details.
 
 
-module sdram_core #(
-    parameter CLK_FREQ = 72,
-    parameter TRP_NS   = 20,
-    parameter TRC_NS   = 66,
-    parameter TRCD_NS  = 20,
-    parameter TCH_NS   = 2,
-    parameter CAS      = 3'd2
-) (
+module sdram_core (
     // verilog_format: off
     input logic  clk_i,
     input logic  rst_n_i,
+    input logic  sdram_clk_i,
+    input logic  fir_edge_i,
+    input logic  sec_edge_i,
     nmi_if.slave nmi,
     sdram_if.dut sdram
     // verilog_format: on
 );
 
+  localparam CLK_FREQ = 36;
+  localparam TRP_NS = 20;
+  localparam TRC_NS = 66;
+  localparam TRCD_NS = 20;
+  localparam TCH_NS = 2;
+  localparam CAS = 3'd2;
 
   // CLK_FREQ * 1/CLK_FREQe6s = 1us
   localparam ONE_OVER_MICROSECOND = CLK_FREQ;
@@ -138,7 +140,7 @@ module sdram_core #(
   assign nmi.ready                                                  = s_ready_q;
   assign nmi.rdata                                                  = s_rdata_q;
   // sdram
-  assign sdram.clk_o                                                = clk_i;
+  assign sdram.clk_o                                                = sdram_clk_i;
   assign sdram.cke_o                                                = s_cke_q;
   assign sdram.addr_o                                               = s_addr_q;
   assign sdram.dqm_o                                                = s_dqm_q;
@@ -320,20 +322,24 @@ module sdram_core #(
       s_addr_q      <= '0;
       s_upd_ready_q <= '0;
     end else begin
-      s_state_q     <= s_state_d;
-      s_ret_state_q <= s_ret_state_d;
-      s_wait_cnt_q  <= s_wait_cnt_d;
-      s_cmd_q       <= s_cmd_d;
-      s_ready_q     <= s_ready_d;
-      s_rdata_q     <= s_rdata_d;
-      // sdram
-      s_dqm_q       <= s_dqm_d;
-      s_dq_q        <= s_dq_d;
-      s_ba_q        <= s_ba_d;
-      s_oe_q        <= s_oe_d;
-      s_cke_q       <= s_cke_d;
-      s_addr_q      <= s_addr_d;
-      s_upd_ready_q <= s_upd_ready_d;
+      s_ready_q <= s_ready_d;
+      if (fir_edge_i) begin
+        s_rdata_q <= s_rdata_d;
+      end
+      if (sec_edge_i) begin
+        s_state_q     <= s_state_d;
+        s_ret_state_q <= s_ret_state_d;
+        s_wait_cnt_q  <= s_wait_cnt_d;
+        s_cmd_q       <= s_cmd_d;
+        // sdram
+        s_dqm_q       <= s_dqm_d;
+        s_dq_q        <= s_dq_d;
+        s_ba_q        <= s_ba_d;
+        s_oe_q        <= s_oe_d;
+        s_cke_q       <= s_cke_d;
+        s_addr_q      <= s_addr_d;
+        s_upd_ready_q <= s_upd_ready_d;
+      end
     end
   end
 

@@ -49,12 +49,63 @@ module nmi_sdram (
     // verilog_format: on
 );
 
+  logic       s_sdram_reg_sel;
+  logic [1:0] s_sdram_clkdiv;
+  logic       s_sdram_clk;
+  logic       s_fir_edge;
+  logic       s_sec_edge;
+
+  // interface
+  nmi_if u_reg_nmi_if ();
+  nmi_if u_mem_nmi_if ();
+
+  // nmi mux
+  assign s_sdram_reg_sel    = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SDRAM_START;
+  assign u_reg_nmi_if.valid = nmi.valid && s_sdram_reg_sel;
+  assign u_reg_nmi_if.addr  = nmi.addr;
+  assign u_reg_nmi_if.wdata = nmi.wdata;
+  assign u_reg_nmi_if.wstrb = nmi.wstrb;
+
+  assign u_mem_nmi_if.valid = nmi.valid && (~s_sdram_reg_sel);
+  assign u_mem_nmi_if.addr  = nmi.addr;
+  assign u_mem_nmi_if.wdata = nmi.wdata;
+  assign u_mem_nmi_if.wstrb = nmi.wstrb;
+
+  // verilog_format: off
+  assign nmi.ready = (u_reg_nmi_if.valid & u_reg_nmi_if.ready) |
+                     (u_mem_nmi_if.valid  & u_mem_nmi_if.ready);
+
+  assign nmi.rdata = ({32{(u_reg_nmi_if.valid & u_reg_nmi_if.ready)}}  & u_reg_nmi_if.rdata) |
+                     ({32{(u_mem_nmi_if.valid  & u_mem_nmi_if.ready)}} & u_mem_nmi_if.rdata);
+  // verilog_format: on
+
+
+  sdram_reg u_sdram_reg (
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .nmi     (u_reg_nmi_if),
+      .clkdiv_o(s_sdram_clkdiv)
+  );
+
+
+  sdram_clkgen u_sdram_clkgen (
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
+      .div_i     (s_sdram_clkdiv),
+      .clk_o     (s_sdram_clk),
+      .fir_edge_o(s_fir_edge),
+      .sec_edge_o(s_sec_edge)
+  );
+
 
   sdram_core u_sdram_core (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .nmi    (nmi),
-      .sdram  (sdram)
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .fir_edge_i (s_fir_edge),
+      .sec_edge_i (s_sec_edge),
+      .sdram_clk_i(s_sdram_clk),
+      .nmi        (u_mem_nmi_if),
+      .sdram      (sdram)
   );
 
 
