@@ -20,6 +20,7 @@ module dvp_core (
     output logic [31:0] rgb_dat_o
 );
 
+  //   localparam FRAME_WAIT = 4'd3;  // for sim
   localparam FRAME_WAIT = 4'd12;
 
 
@@ -69,7 +70,7 @@ module dvp_core (
 
 
   assign s_pix_cnt_d = dvp_href_i ? s_pix_cnt_q + 2'd1 : '0;
-  dffr #(2) u_pix_flag_dffr (
+  dffr #(2) u_pix_cnt_dffr (
       clk_i,
       rst_n_i,
       s_pix_cnt_d,

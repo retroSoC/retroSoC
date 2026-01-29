@@ -70,6 +70,10 @@ module retrosoc_tb;
   wire [12:0] s_sdram_addr;
   wire [ 1:0] s_sdram_dqm;
   wire [15:0] s_sdram_dq;
+  wire        s_dvp_pclk;
+  wire        s_dvp_href;
+  wire        s_dvp_vsync;
+  wire [ 7:0] s_dvp_data;
 
   wire        s_uart1_tx;
   wire        s_uart1_rx;
@@ -198,18 +202,18 @@ module retrosoc_tb;
       .sdram_dq12_io_pad  (s_sdram_dq[12]),
       .sdram_dq13_io_pad  (s_sdram_dq[13]),
       .sdram_dq14_io_pad  (s_sdram_dq[14]),
-      .sdram_dq15_io_pad  (s_sdram_dq[15]),
-      .dvp_pclk_i_pad     (),
-      .dvp_href_i_pad     (),
-      .dvp_vsync_i_pad    (),
-      .dvp_dat0_i_pad     (),
-      .dvp_dat1_i_pad     (),
-      .dvp_dat2_i_pad     (),
-      .dvp_dat3_i_pad     (),
-      .dvp_dat4_i_pad     (),
-      .dvp_dat5_i_pad     (),
-      .dvp_dat6_i_pad     (),
-      .dvp_dat7_i_pad     (),
+      .sdram_dq15_io_pad  (s_sdram_dq[15]), 
+      .dvp_pclk_i_pad     (s_dvp_pclk),
+      .dvp_href_i_pad     (s_dvp_href),
+      .dvp_vsync_i_pad    (s_dvp_vsync),
+      .dvp_dat0_i_pad     (s_dvp_data[0]),
+      .dvp_dat1_i_pad     (s_dvp_data[1]),
+      .dvp_dat2_i_pad     (s_dvp_data[2]),
+      .dvp_dat3_i_pad     (s_dvp_data[3]),
+      .dvp_dat4_i_pad     (s_dvp_data[4]),
+      .dvp_dat5_i_pad     (s_dvp_data[5]),
+      .dvp_dat6_i_pad     (s_dvp_data[6]),
+      .dvp_dat7_i_pad     (s_dvp_data[7]),
       .uart1_tx_o_pad     (s_uart1_tx),
       .uart1_rx_i_pad     (s_uart1_rx),
       .pwm_0_o_pad        (),
@@ -313,6 +317,14 @@ module retrosoc_tb;
       .ws_i (s_i2s_lrck),
       .sd_o (s_i2s_adcdat)
   );
+
+  DVP_CAMERA u_DVP_CAMERA (
+      .pclk (s_dvp_pclk),
+      .href (s_dvp_href),
+      .vsync(s_dvp_vsync),
+      .data (s_dvp_data)
+  );
+
 
   initial begin
     r_rst_n = 1;
