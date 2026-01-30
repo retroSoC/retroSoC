@@ -13,9 +13,9 @@
 // `default_nettype none
 
 module retrosoc_tb;
-  localparam real XTAL_CPU_FREQ = 24.0;  // MHz
+  localparam real XTAL_CPU_FREQ = 24.0;
   localparam real EXT_CPU_FREQ = 72.0;
-  localparam real AUD_CPU_FREQ = 12.288;
+  localparam real AUD_CPU_FREQ = 18.432;
 
   reg  r_ext_clk;
   wire s_ext_clk;
@@ -392,8 +392,8 @@ module retrosoc_tb;
       // #205541740;
       // #382928081;
       // #300000;
-      // #45050000;
-      #86869320;
+      #45050000;
+      // #86869320;
       // #21149063;
       // #1667652;
       // #327820116;

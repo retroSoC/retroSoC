@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2025 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 // You can use this software according to the terms and conditions of the Mulan PSL v2.
 // You may obtain a copy of Mulan PSL v2 at:
@@ -185,6 +185,7 @@ module i2s_core (
       .done_o    (s_recv_done)
   );
 
+
   i2s_send u_i2s_send (
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
@@ -195,8 +196,6 @@ module i2s_core (
       .dacdat_o   (i2s.dacdat_o),
       .done_o     (s_send_done)
   );
-
-
 
 
 endmodule
