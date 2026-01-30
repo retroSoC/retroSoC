@@ -8,18 +8,20 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef NATV_I2S_DEF_SV
-`define NATV_I2S_DEF_SV
+`ifndef NMI_I2S_DEF_SV
+`define NMI_I2S_DEF_SV
 
 // verilog_format: off
-`define NATV_I2S_MODE     8'h00
-`define NATV_I2S_UPBOUND  8'h04
-`define NATV_I2S_LOWBOUND 8'h08
-`define NATV_I2S_RECVEN   8'h0C
-`define NATV_I2S_TXDATA   8'h10
-`define NATV_I2S_RXDATA   8'h14
-`define NATV_I2S_STATUS   8'h18
+`define NMI_I2S_MODE     8'h00
+`define NMI_I2S_UPBOUND  8'h04
+`define NMI_I2S_LOWBOUND 8'h08
+`define NMI_I2S_RECVEN   8'h0C
+`define NMI_I2S_TXDATA   8'h10
+`define NMI_I2S_RXDATA   8'h14
+`define NMI_I2S_STATUS   8'h18
 // verilog_format: on
+
+`endif
 
 interface nv_i2s_if ();
   logic mclk_o;
@@ -37,10 +39,8 @@ interface nv_i2s_if ();
       input adcdat_i,
       output irq_o
   );
-
 endinterface
 
-`endif
 
 module nmi_i2s (
     // verilog_format: off
@@ -54,12 +54,13 @@ module nmi_i2s (
     nv_i2s_if.dut i2s
     // verilog_format: on
 );
-
+ 
+  // nmi
   logic s_nmi_wr_hdshk, s_nmi_rd_hdshk;
   logic s_nmi_ready_d, s_nmi_ready_q;
   logic s_nmi_rdata_en;
   logic [31:0] s_nmi_rdata_d, s_nmi_rdata_q;
-
+  // register
   logic s_i2s_mode_en;
   logic s_i2s_mode_d, s_i2s_mode_q;
   logic s_i2s_upbound_en;
@@ -83,15 +84,18 @@ module nmi_i2s (
   logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
 
+
+  // nmi
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
   assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
   assign nmi.ready      = s_nmi_ready_q;
   assign nmi.rdata      = s_nmi_rdata_q;
-
+  // dma
   assign dma_tx_stall_o = s_tx_fifo_stall_q;
   assign dma_rx_stall_o = s_rx_fifo_stall_q;
 
-  assign s_i2s_mode_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2S_MODE;
+
+  assign s_i2s_mode_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_I2S_MODE;
   assign s_i2s_mode_d   = nmi.wdata[0];
   dffer #(1) u_i2s_mode_dffer (
       clk_i,
@@ -101,7 +105,7 @@ module nmi_i2s (
       s_i2s_mode_q
   );
 
-  assign s_i2s_upbound_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2S_UPBOUND;
+  assign s_i2s_upbound_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_I2S_UPBOUND;
   assign s_i2s_upbound_d  = nmi.wdata[7:0];
   dfferh #(8) u_i2s_upbound_dfferh (
       clk_i,
@@ -112,7 +116,7 @@ module nmi_i2s (
   );
 
 
-  assign s_i2s_lowbound_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2S_LOWBOUND;
+  assign s_i2s_lowbound_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_I2S_LOWBOUND;
   assign s_i2s_lowbound_d  = nmi.wdata[7:0];
   dffer #(8) u_i2s_lowbound_dffer (
       clk_i,
@@ -123,7 +127,7 @@ module nmi_i2s (
   );
 
 
-  assign s_i2s_recven_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2S_RECVEN;
+  assign s_i2s_recven_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_I2S_RECVEN;
   assign s_i2s_recven_d  = nmi.wdata[0];
   dffer #(1) u_i2s_recven_dffer (
       clk_i,
@@ -170,7 +174,7 @@ module nmi_i2s (
   always_comb begin
     s_tx_push_valid = 1'b0;
     s_tx_push_data  = '0;
-    if (s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_I2S_TXDATA) begin
+    if (s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_I2S_TXDATA) begin
       s_tx_push_valid = 1'b1;
       if (nmi.wstrb[0]) s_tx_push_data[7:0] = nmi.wdata[7:0];
       if (nmi.wstrb[1]) s_tx_push_data[15:8] = nmi.wdata[15:8];
@@ -204,15 +208,15 @@ module nmi_i2s (
     s_rx_pop_valid = 1'b0;
     s_nmi_rdata_d  = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
-      `NATV_I2S_MODE:   s_nmi_rdata_d = {31'd0, s_i2s_mode_q};
-      `NATV_I2S_RXDATA: begin
+      `NMI_I2S_MODE:   s_nmi_rdata_d = {31'd0, s_i2s_mode_q};
+      `NMI_I2S_RXDATA: begin
         if (s_nmi_rd_hdshk) begin
           s_rx_pop_valid = 1'b1;
           if (!s_rx_empty) s_nmi_rdata_d = s_rx_pop_data;
           else s_nmi_rdata_d = '0;
         end
       end
-      `NATV_I2S_STATUS: s_nmi_rdata_d = {30'd0, s_i2s_status_q};
+      `NMI_I2S_STATUS: s_nmi_rdata_d = {30'd0, s_i2s_status_q};
       default:          s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
