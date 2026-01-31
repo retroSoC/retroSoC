@@ -18,6 +18,8 @@ void i2s_init(uint32_t mode) {
 }
 
 void i2s_simp_test() {
+    reg_i2s_mode = (uint32_t)1;
+    reg_i2s_format = (uint32_t)0;
     for(uint32_t i = 0; i < 6; ++i) {
         // while(reg_i2s_status & (uint32_t)1); // check if fifo is full or not
         reg_i2s_txdata = test_data[i];
@@ -25,14 +27,14 @@ void i2s_simp_test() {
     printf("i2s tx done\n");
 
     reg_i2s_recven = (uint32_t)1;
-    for(uint32_t i = 0; i < 6; ++i) {
-        test_data[i] = reg_i2s_rxdata;
+    uint32_t tmp = 0;
+    for(uint32_t i = 0; i < 6; ) {
+        tmp = reg_i2s_rxdata;
+        if(tmp != 0) {
+            printf("rx data: %x\n", tmp);
+            ++i;
+        }
     }
-    reg_i2s_recven = (uint32_t)0;
-    for(uint32_t i = 0; i < 6; ++i) {
-        printf("test_data[%d]: %x\n", i, test_data[i]);
-    }
-
     printf("i2s rx done\n");
 }
 
