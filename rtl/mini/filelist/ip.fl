@@ -52,6 +52,8 @@
 ../../ip/native/spisd.sv
 ../../ip/native/i2c_core.sv
 ../../ip/native/i2c.sv
+../../ip/native/i2s_reg.sv
+../../ip/native/i2s_clkgen.sv
 ../../ip/native/i2s_recv.sv
 ../../ip/native/i2s_send.sv
 ../../ip/native/i2s_core.sv
