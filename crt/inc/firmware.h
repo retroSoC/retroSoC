@@ -158,6 +158,8 @@
 #define reg_dvp_status       (*(volatile uint32_t*)0x1000E008)
 // sdio
 #define reg_sdio_cfg         (*(volatile uint32_t*)0x1000F000)
+// gpu
+#define reg_gpu_cfg          (*(volatile uint32_t*)0x10010000)
 // apb
 // archinfo
 #define reg_archinfo_sys   (*(volatile uint32_t*)0x20000000)

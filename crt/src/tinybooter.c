@@ -47,7 +47,7 @@ void app_info() {
     printf("  contributor:  MrAMS        <https://github.com/MrAMS>\n");
     printf("  license:      MulanPSL-2.0 license\n\n");
     printf("  series:       retroSoC Mini\n");
-    printf("  specs:        Gen2\n");
+    printf("  specs:        Gen2 Plus\n");
     printf("  version:      %s(commit: %s)\n\n", RETROSOC_BRANCH, RETROSOC_COMMIT);
 
     printf("User Processors:\n");
@@ -107,6 +107,7 @@ void app_info() {
     printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_clkdiv);
     printf("                       1 x DVP           @0x%x\n", &reg_dvp_recven);
     printf("                       1 x SDIO          @0x%x\n", &reg_sdio_cfg);
+    printf("                       1 x GPU(mini)     @0x%x\n", &reg_gpu_cfg);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);
