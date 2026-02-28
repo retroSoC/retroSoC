@@ -14,6 +14,18 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Compile Yosys
+      run: |
+        git clone --recursive https://github.com/YosysHQ/yosys.git
+        sudo apt-get install -y gawk git make python3 lld bison clang flex libffi-dev libfl-dev libreadline-dev pkg-config tcl-dev zlib1g-dev graphviz xdot
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        cd yosys
+        make config-gcc
+        make
+        sudo make install
+        yosys --version
+
+
     - name: Download and Extract RISC-V Toolchain
       run: |
         wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz
@@ -47,10 +59,10 @@ jobs:
     - name: Compile Firmware
       run: make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32I HAVE_CSR=NO PROG_TYPE=BASE LINK_TYPE=ld2_psram firmware
 
-    - name: Build and Run sim
+    - name: Run RTL sim
       run: |
         python3 verilator.py
         make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO sim
 
     - name: Success Notification
-      run: echo "Workflow completed successfully"
+      run: echo "RTL simulation completed successfully"
