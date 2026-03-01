@@ -33,7 +33,7 @@ set abc_comb_script   [processAbcScript $abc_combinational_script]
 # read liberty files and prepare some variables
 source $script_dir/init_tech.tcl
 
-yosys plugin -i syn/yosys/slang.so
+yosys plugin -i slang
 
 # # read design
 yosys read_slang --top $top_design -F $sv_flist \

@@ -12,7 +12,8 @@ is_first = True
 for v in sys.argv[1:]:
     if '-f' not in v:
         if 'pdk' in v: continue
-        print(v)
+
+        print(f'gen code: {v}')
 
         if is_first:
             os.system(f'cat {v} > {res}')
