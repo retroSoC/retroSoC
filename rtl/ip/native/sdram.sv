@@ -8,6 +8,8 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
+`include "mmap_define.svh"
+
 interface sdram_if ();
   logic        clk_o;
   logic        cke_o;
