@@ -22,7 +22,12 @@ jobs:
         tar -xvf verilator-v5.046-ubuntu-22.04-gcc.tar.gz -C $verilator_path
         echo "$(pwd)/$verilator_path/bin" >> $GITHUB_PATH
         sudo apt-get update
-        sudo apt-get install mold
+        sudo apt-get install git help2man perl python3 make autoconf g++ flex bison ccache mold
+        sudo apt-get install libunwind-dev libgoogle-perftools-dev numactl perl-doc
+        sudo apt-get install libfl2
+        sudo apt-get install libfl-dev
+        sudo apt-get install zlib1g zlib1g-dev
+        sudo apt-get install tree
 
     - name: Test Verilator Toolchain
       run: |
