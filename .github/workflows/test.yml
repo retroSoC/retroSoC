@@ -22,9 +22,11 @@ jobs:
       run: |
         yosys_path="yosys-artifact"
         mkdir $yosys_path
-        ls
+        ls -al
         wget https://github.com/retroSoC/artifact/releases/download/yosys-v0.58/yosys-v0.58-ubuntu-22.04-gcc.tar.gz
         tar -xvf yosys-v0.58-ubuntu-22.04-gcc.tar.gz -C $yosys_path
+        ls -al
+        echo "$(pwd)/$yosys_path/bin"
         echo "$(pwd)/$yosys_path/bin" >> $GITHUB_PATH
         yosys --version
 
