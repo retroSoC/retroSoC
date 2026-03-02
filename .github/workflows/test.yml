@@ -20,11 +20,12 @@ jobs:
 
     - name: Download and Extract Yosys Artifact
       run: |
-        yosys_path="/tmp/yosys-artifact"
-        sudo mkdir -p $yosys_path
+        yosys_path="yosys-artifact"
+        mkdir $yosys_path
+        ls
         wget https://github.com/retroSoC/artifact/releases/download/yosys-v0.58/yosys-v0.58-ubuntu-22.04-gcc.tar.gz
         tar -xvf yosys-v0.58-ubuntu-22.04-gcc.tar.gz -C $yosys_path
-        echo "$yosys_path/bin" >> $GITHUB_PATH
+        echo "$(pwd)/$yosys_path/bin" >> $GITHUB_PATH
         yosys --version
 
     - name: Download and Extract RISC-V GNU Toolchain Artifact
