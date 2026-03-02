@@ -10,6 +10,7 @@
 
 // NOTE: need to focus on the port dir
 
+`include "gpio_define.svh"
 `include "mdd_config.svh"
 
 module retrosoc_asic (

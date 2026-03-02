@@ -29,19 +29,7 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef NMI_GPIO_DEF_SV
-`define NMI_GPIO_DEF_SV
-
-// verilog_format: off
-`define NMI_GPIO_NUM 8
-`define NMI_GPIO_OE  8'h00 // rw
-`define NMI_GPIO_CS  8'h04 // rw
-`define NMI_GPIO_PU  8'h08 // rw
-`define NMI_GPIO_PD  8'h0C // rw
-`define NMI_GPIO_DO  8'h10 // rw
-`define NMI_GPIO_DI  8'h14 // ro
-// verilog_format: on
-`endif
+`include "gpio_define.svh"
 
 interface nmi_gpio_if #(
     parameter int DATA_WIDTH = 32
