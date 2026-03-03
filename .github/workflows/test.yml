@@ -14,24 +14,50 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Download and Extract Yosys
+    - name: Download and Extract Verilator Artifact
       run: |
-        echo "Downlaod Yosys"
+        verilator_path="verilator-artifact"
+        mkdir $verilator_path
+        wget https://github.com/retroSoC/artifact/releases/download/verilator-v5.046/verilator-v5.046-ubuntu-22.04-gcc.tar.gz
+        tar -xvf verilator-v5.046-ubuntu-22.04-gcc.tar.gz -C $verilator_path
+        echo "$(pwd)/$verilator_path/bin" >> $GITHUB_PATH
+        sudo apt-get update
+        sudo apt-get install git help2man perl python3 make autoconf g++ flex bison ccache mold
+        sudo apt-get install libunwind-dev libgoogle-perftools-dev numactl perl-doc
+        sudo apt-get install libfl2
+        sudo apt-get install libfl-dev
+        sudo apt-get install zlib1g zlib1g-dev
+        sudo apt-get install tree
 
-    - name: Download and Extract RISC-V GNU Toolchain
+    - name: Test Verilator Toolchain
       run: |
+        verilator --version
+
+    - name: Download and Extract Yosys Artifact
+      run: |
+        yosys_path="yosys-artifact"
+        mkdir $yosys_path
+        wget https://github.com/retroSoC/artifact/releases/download/yosys-v0.58/yosys-v0.58-ubuntu-22.04-gcc.tar.gz
+        tar -xvf yosys-v0.58-ubuntu-22.04-gcc.tar.gz -C $yosys_path
+        echo "$(pwd)/$yosys_path/bin" >> $GITHUB_PATH
+
+    - name: Test Yosys Toolchain
+      run: |
+        yosys --version
+
+    - name: Download and Extract RISC-V GNU Toolchain Artifact
+      run: |
+        riscv_toolchain_path="riscv-toolchain-artifact"
+        mkdir $riscv_toolchain_path
         wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz
-        tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz -C /tmp
-        toolchain_bin="/tmp/riscv/bin"
-        echo "RISCV_TOOLCHAIN_BIN=$toolchain_bin" >> $GITHUB_ENV
-        echo "$toolchain_bin" >> $GITHUB_PATH
+        tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz -C $riscv_toolchain_path
+        echo "$(pwd)/$riscv_toolchain_path/riscv/bin" >> $GITHUB_PATH
 
-    - name: Test RISC-V Toolchain
+    - name: Test RISCV-V GNU Toolchain
       run: |
-        echo "The toolchain path is $RISCV_TOOLCHAIN_BIN"
         riscv32-unknown-elf-gcc --version
 
-    - name: Setup Verilator and MPW Repo
+    - name: Setup MPW Repo
       run: |
         pip install tomli
         python3 setup.py
@@ -54,7 +80,12 @@ jobs:
     - name: Run RTL sim
       run: |
         python3 verilator.py
-        make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO sim
+        make CORE=PICORV32 IP=NONE SIMU=VERILATOR PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_CORESEL=0 sim
+        # make CORE=MDD IP=MDD SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO sim
+
+    - name: Run synth
+      run: |
+        make CORE=PICORV32 IP=NONE SIMU=VERILATOR SYNTH=YOSYS PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_CORESEL=0 synth
 
     - name: Success Notification
       run: echo "RTL simulation completed successfully"
