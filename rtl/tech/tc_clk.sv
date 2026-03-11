@@ -40,7 +40,7 @@ module tc_clk_inv (
 
 `elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
-  INVX0P5H7L u_INVX0P5H7L (
+  INVX0P5H7R u_INVX0P5H7R (
       .A(clk_i),
       .Y(clk_o)
   );
@@ -72,7 +72,7 @@ module tc_clk_buf (
 
 `elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
-  BUFX0P7H7L u_BUFX0P7H7L (
+  BUFX0P7H7R u_BUFX0P7H7R (
       .A(clk_i),
       .Y(clk_o)
   );
@@ -109,7 +109,7 @@ module tc_clk_mux2 (
 
 `elsif PDK_ICS55
   (* keep *) (* dont_touch = "true" *)
-  MUX2X0P5H7L u_MUX2X0P5H7L (
+  MUX2X0P5H7R u_MUX2X0P5H7R (
       .S0(clk_sel_i),
       .A (clk0_i),
       .B (clk1_i),

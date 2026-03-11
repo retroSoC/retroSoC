@@ -1,4 +1,2 @@
-/pdk/ics55_LLSC_H7CH.v
-/pdk/ics55_LLSC_H7CL.v
-/pdk/ics55_LLSC_H7CR.v
-/pdk/icsIOA_N55_3P3.v
+../../../pdk/icsprout55-pdk/IP/STD_cell/ics55_LLSC_H7C_V1p10C100/ics55_LLSC_H7CR/verilog/ics55_LLSC_H7CR.v
+../../../pdk/icsprout55-pdk/IP/IO/ICsprout_55LLULP1233_IO_251013/verilog/icsIOA_N55_3P3.v
