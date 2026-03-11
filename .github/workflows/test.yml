@@ -62,6 +62,9 @@ jobs:
         pip install tomli
         python3 setup.py
 
+    - name: Generate modified core
+      run: python3 rtl/mini/core/setup.py
+
     - name: Download clusterIP
       run: python3 rtl/clusterip/setup.py
 
@@ -85,6 +88,15 @@ jobs:
     - name: Run synth
       run: |
         make CORE=PICORV32 IP=NONE SIMU=VERILATOR SYNTH=YOSYS PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_CORESEL=0 synth
+
+    # - name: Upload to Actions Artifacts(Temporary storage)
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: ${{ env.PACKAGE_NAME }}
+    #     path: |
+    #       verilator/${{ env.PACKAGE_NAME }}.tar.gz
+    #       verilator/${{ env.PACKAGE_NAME }}.tar.gz.sha256
+    #     retention-days: 90 # Retain for 90 days
 
     - name: Success Notification
       run: echo "RTL simulation completed successfully"
