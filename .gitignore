@@ -38,6 +38,7 @@ audio_file.h
 retrosoc_sections.lds
 retrosoc_syn*
 s110
+icsprout55-pdk
 IHP-Open-PDK
 skywater-pdk
 gf180mcu-pdk

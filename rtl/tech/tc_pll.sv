@@ -28,8 +28,12 @@ module tc_pll (
   assign pll_lock_o = 1'b1;
   assign pll_clk_o  = fref_i;
 `elsif PDK_ICS55
+`ifndef HAVE_PLL
   assign pll_lock_o = 1'b1;
   assign pll_clk_o  = fref_i;
+`else
+
+`endif
 `elsif PDK_S110
 
 `ifndef HAVE_PLL
