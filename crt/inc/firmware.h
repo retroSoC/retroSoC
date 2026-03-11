@@ -43,6 +43,12 @@
 #define reg_gpio_pd          (*(volatile uint32_t*)0x1000000c)
 #define reg_gpio_do          (*(volatile uint32_t*)0x10000010)
 #define reg_gpio_di          (*(volatile uint32_t*)0x10000014)
+#define reg_gpio_ien         (*(volatile uint32_t*)0x10000018)
+#define reg_gpio_itype0      (*(volatile uint32_t*)0x1000001c)
+#define reg_gpio_itype1      (*(volatile uint32_t*)0x10000020)
+#define reg_gpio_istat       (*(volatile uint32_t*)0x10000024)
+#define reg_gpio_iofcfg      (*(volatile uint32_t*)0x10000028)
+#define reg_gpio_pinmux      (*(volatile uint32_t*)0x1000002c)
 // uart1
 #define reg_uart0_clkdiv     (*(volatile uint32_t*)0x10001000)
 #define reg_uart0_data       (*(volatile uint32_t*)0x10001004)
