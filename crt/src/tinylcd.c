@@ -258,11 +258,11 @@ void lcd_frame(uint32_t first, uint32_t pref_cnt) {
     static uint64_t cycle_start, cycle_end;
     static uint64_t inst_start, inst_end;
     if(first) {
-        cycle_start = __get_rv_cycle();
-        inst_start = __get_rv_instret();
+        // cycle_start = __get_rv_cycle();
+        // inst_start = __get_rv_instret();
     } else {
-        cycle_end = __get_rv_cycle();
-        inst_end = __get_rv_instret();
+        // cycle_end = __get_rv_cycle();
+        // inst_end = __get_rv_instret();
         printf("cycles num: %lld\n", cycle_end - cycle_start);
         printf("insts  num: %lld\n", inst_end - inst_start);
         printf("flush rate: %lldfps\n", pref_cnt / ((uint32_t)(cycle_end - cycle_start) / CPU_FREQ / 1000000));

@@ -18,7 +18,7 @@ WAVE            ?= NONE
 ROOT_PATH      ?= $(CURDIR)
 RTL_PATH       ?= NONE
 
-CORE           ?= PICORV32
+CORE           ?= HAZARD3
 IP             ?= NONE
 RTL_TOP        ?= retrosoc_tb
 
