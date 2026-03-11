@@ -95,7 +95,7 @@ void app_info() {
     printf("                       8 x GPIO          @0x%x\n", &reg_gpio_oe);
     printf("                       1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
     printf("                       2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
-    printf("                       1 x PSRAM         @0x%x\n", &reg_psram_wait);
+    printf("                       1 x PSRAM(SDR)    @0x%x\n", &reg_psram_wait);
     printf("                       1 x SPISD         @0x%x\n", &reg_spisd_mode);
     printf("                       1 x I2C           @0x%x\n", &reg_i2c0_clkdiv);
     printf("                       1 x I2S           @0x%x\n", &reg_i2s_mode);
@@ -107,7 +107,9 @@ void app_info() {
     printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_clkdiv);
     printf("                       1 x DVP           @0x%x\n", &reg_dvp_recven);
     printf("                       1 x SDIO          @0x%x\n", &reg_sdio_cfg);
-    printf("                       1 x GPU(mini)     @0x%x\n", &reg_gpu_cfg);
+    printf("                       1 x PSRAM(DTR)    @0x%x\n", &reg_opiram_cfg);
+    printf("                       1 x GA*           @0x%x\n", &reg_ga_cfg);
+    printf("                       1 x APU*          @0x%x\n", &reg_apu_cfg);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);
