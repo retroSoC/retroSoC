@@ -20,7 +20,7 @@ module i2s_core (
     output logic        rx_valid_o,
     output logic [31:0] rx_data_o,
     input  logic        rx_full_i,
-    nv_i2s_if.dut       i2s
+    i2s_if.dut          i2s
     // verilog_format: on
 );
 

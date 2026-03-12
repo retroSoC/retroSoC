@@ -25,7 +25,7 @@ module user_ip_design_template #(
     // verilog_format: off
     input logic      clk_i,
     input logic      rst_n_i,
-    nmi_gpio_if.dut  gpio,
+    gpio_if.dut      gpio,
     apb4_if.slave    apb
     // verilog_format: on
 );

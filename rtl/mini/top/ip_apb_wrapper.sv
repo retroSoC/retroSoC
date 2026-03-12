@@ -27,7 +27,7 @@ module ip_apb_wrapper (
     ps2_if.dut                          ps2,
 `ifdef IP_MDD
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
-    nmi_gpio_if.dut                     gpio,
+    gpio_if.dut                         gpio,
 `endif
     output logic [ 6:0]                 irq_o
     // verilog_format: on
