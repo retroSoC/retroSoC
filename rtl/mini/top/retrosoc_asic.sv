@@ -182,7 +182,7 @@ module retrosoc_asic (
 `endif
 
 `ifdef IP_MDD
-  nmi_gpio_if #(`USER_GPIO_NUM) u_user_gpio_if ();
+  gpio_if #(`USER_GPIO_NUM) u_user_gpio_if ();
 `endif
 
 `ifdef HAVE_SRAM_IF
@@ -190,7 +190,7 @@ module retrosoc_asic (
 `endif
 
   // verilog_format: off
-  nmi_gpio_if u_gpio_if    ();
+  gpio_if     u_gpio_if    ();
   uart_if     u_uart0_if   ();
   psram_if    u_psram_if   ();
   spi_if      u_spisd_if   ();

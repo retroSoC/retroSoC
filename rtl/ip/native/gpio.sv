@@ -31,7 +31,7 @@
 
 `include "gpio_define.svh"
 
-interface nmi_gpio_if ();
+interface gpio_if ();
   logic [`NMI_GPIO_NUM-1:0] gpio_oe_o;
   logic [`NMI_GPIO_NUM-1:0] gpio_cs_o;
   logic [`NMI_GPIO_NUM-1:0] gpio_pu_o;
@@ -66,7 +66,7 @@ module nmi_gpio (
     input logic     clk_i,
     input logic     rst_n_i,
     nmi_if.slave    nmi,
-    nmi_gpio_if.dut gpio
+    gpio_if.dut     gpio
     // verilog_format: on
 );
 

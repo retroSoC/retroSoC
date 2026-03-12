@@ -19,7 +19,7 @@ module ip_nmi_wrapper (
     input logic        rst_aud_n_i,
     // natv if
     nmi_if.slave       nmi,
-    nmi_gpio_if.dut    gpio,
+    gpio_if.dut        gpio,
     uart_if.dut        uart,
     psram_if.dut       psram,
     spi_if.dut         spisd,
