@@ -10,7 +10,7 @@
 
 `include "i2s_define.svh"
 
-interface nv_i2s_if ();
+interface i2s_if ();
   logic mclk_o;
   logic sclk_o;
   logic lrck_o;
@@ -38,7 +38,7 @@ module nmi_i2s (
     output logic  dma_tx_stall_o,
     output logic  dma_rx_stall_o,
     nmi_if.slave  nmi,
-    nv_i2s_if.dut i2s
+    i2s_if.dut    i2s
     // verilog_format: on
 );
 

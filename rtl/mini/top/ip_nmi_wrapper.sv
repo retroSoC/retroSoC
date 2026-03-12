@@ -24,7 +24,7 @@ module ip_nmi_wrapper (
     psram_if.dut       psram,
     spi_if.dut         spisd,
     i2c_if.dut         i2c,
-    nv_i2s_if.dut      i2s,
+    i2s_if.dut         i2s,
     onewire_if.dut     onewire,
     qspi_if.dut        qspi,
     nmi_if.master      dma_nmi,

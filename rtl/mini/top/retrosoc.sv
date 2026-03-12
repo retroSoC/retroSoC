@@ -34,7 +34,7 @@ module retrosoc (
     spi_if.dut                             spisd,
     i2c_if.dut                             i2c,
     qspi_if.dut                            qspi,
-    nv_i2s_if.dut                          i2s,
+    i2s_if.dut                             i2s,
     onewire_if.dut                         onewire,
     sdram_if.dut                           sdram,
     dvp_if.dut                             dvp,

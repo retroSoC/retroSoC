@@ -194,7 +194,7 @@ module retrosoc_asic (
   uart_if     u_uart0_if   ();
   psram_if    u_psram_if   ();
   spi_if      u_spisd_if   ();
-  nv_i2s_if   u_i2s_if     ();
+  i2s_if      u_i2s_if     ();
   onewire_if  u_onewire_if ();
   sdram_if    u_sdram_if   ();
   dvp_if      u_dvp_if     ();
