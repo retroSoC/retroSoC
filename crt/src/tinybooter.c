@@ -107,7 +107,7 @@ void app_info() {
     printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_clkdiv);
     printf("                       1 x DVP           @0x%x\n", &reg_dvp_recven);
     printf("                       1 x SDIO          @0x%x\n", &reg_sdio_cfg);
-    printf("                       1 x PSRAM(DTR)    @0x%x\n", &reg_opiram_cfg);
+    printf("                       1 x PSRAM(DTR)    @0x%x\n", &reg_opipsram_cfg);
     printf("                       1 x GA*           @0x%x\n", &reg_ga_cfg);
     printf("                       1 x APU*          @0x%x\n", &reg_apu_cfg);
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);

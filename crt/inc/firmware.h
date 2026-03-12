@@ -164,8 +164,9 @@
 #define reg_dvp_status       (*(volatile uint32_t*)0x1000E008)
 // sdio
 #define reg_sdio_cfg         (*(volatile uint32_t*)0x1000F000)
-// opisam
-#define reg_opiram_cfg       (*(volatile uint32_t*)0x10010000)
+// opipsram
+#define reg_opipsram_cfg     (*(volatile uint32_t*)0x10010000)
+
 // ga
 #define reg_ga_cfg           (*(volatile uint32_t*)0x10011000)
 // apu
