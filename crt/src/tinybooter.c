@@ -101,14 +101,14 @@ void app_info() {
     printf("                       1 x I2C0          @0x%x\n", &reg_i2c0_clkdiv);
     printf("                       1 x I2S           @0x%x\n", &reg_i2s_mode);
     printf("                       1 x ONEWIRE       @0x%x\n", &reg_onewire_clkdiv);
-    printf("                       1 x XPI           @0x%x\n", &reg_qspi0_cfgidx);
+    printf("                       1 x XPI           @0x%x\n", &reg_xpi_cfgidx);
     printf("                       1 x DMA           @0x%x\n", &reg_dma_mode);
     printf("                       1 x SYSCTRL       @0x%x\n", &reg_sysctrl_coresel);
     printf("                       1 x CLINT         @0x%x\n", &reg_clint_mtimel);
     printf("                       1 x SDRAM         @0x%x\n", &reg_sdram_clkdiv);
     printf("                       1 x DVP           @0x%x\n", &reg_dvp_recven);
     printf("                       1 x SDIO          @0x%x\n", &reg_sdio_cfg);
-    printf("                       1 x PSRAM1(DTR)   @0x%x\n", &reg_psram1_cfg);
+    printf("                       1 x PSRAM1(DTR)   @0x%x\n", &reg_opipsram_cfg);
     printf("                       1 x I2C1          @0x%x\n", &reg_i2c1_clkdiv);
     printf("                       1 x GA*           @0x%x\n", &reg_ga_cfg);
     printf("                       1 x APU*          @0x%x\n", &reg_apu_cfg);
