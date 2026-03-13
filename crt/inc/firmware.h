@@ -12,12 +12,12 @@
 #define HW_CORE "none"
 #endif
 
-#define CPU_FREQ            72     // unit: MHz
-#define UART_BPS            921600 // unit: bps
-#define PSRAM_NUM           2
-#define PSRAM_SCLK_MIN_FREQ 12     // unit: MHz
-#define PSRAM_SCLK_MAX_FREQ 133    // unit: MHz
-#define PSRAM_SCLK_FREQ     (CPU_FREQ / 2)
+#define CPU_FREQ             72     // unit: MHz
+#define UART_BPS             921600 // unit: bps
+#define PSRAM0_NUM           4
+#define PSRAM0_SCLK_MIN_FREQ 12     // unit: MHz
+#define PSRAM0_SCLK_MAX_FREQ 133    // unit: MHz
+#define PSRAM0_SCLK_FREQ     (CPU_FREQ / 2)
 
 #define SPFS_MEM_START      0x00000000
 #define SPFS_MEM_OFFST      32 * 1024 * 1024
@@ -29,8 +29,10 @@
 #define SRAM_MEM_OFFST      128 * 1024
 #define SDRAM_MEM_START     0x38000000
 #define SDRAM_MEM_OFFST     64 * 1024 * 1024
-#define PSRAM_MEM_START     0x40000000
-#define PSRAM_MEM_OFFST     8 * 1024 * 1024 * PSRAM_NUM
+#define PSRAM0_MEM_START    0x40000000
+#define PSRAM0_MEM_OFFST    8 * 1024 * 1024 * PSRAM0_NUM
+#define PSRAM1_MEM_START    0x48000000
+#define PSRAM1_MEM_OFFST    32 * 1024 * 1024
 #define QSPI_MEM_START      0x50000000
 #define QSPI_MEM_OFFST      256 * 1024 * 1024
 #define TF_CARD_START       (uint32_t)0x60000000
@@ -49,7 +51,7 @@
 #define reg_gpio_istat       (*(volatile uint32_t*)0x10000024)
 #define reg_gpio_iofcfg      (*(volatile uint32_t*)0x10000028)
 #define reg_gpio_pinmux      (*(volatile uint32_t*)0x1000002c)
-// uart1
+// uart0
 #define reg_uart0_clkdiv     (*(volatile uint32_t*)0x10001000)
 #define reg_uart0_data       (*(volatile uint32_t*)0x10001004)
 // tim0
@@ -60,9 +62,9 @@
 #define reg_tim1_cfg         (*(volatile uint32_t*)0x10003000)
 #define reg_tim1_rld         (*(volatile uint32_t*)0x10003004)
 #define reg_tim1_val         (*(volatile uint32_t*)0x10003008)
-// psram
-#define reg_psram_wait       (*(volatile uint32_t*)0x10004000)
-#define reg_psram_chd        (*(volatile uint32_t*)0x10004004)
+// psram0
+#define reg_psram0_wait      (*(volatile uint32_t*)0x10004000)
+#define reg_psram0_chd       (*(volatile uint32_t*)0x10004004)
 // spisd
 #define reg_spisd_mode       (*(volatile uint32_t*)0x10005000)
 #define reg_spisd_clkdiv     (*(volatile uint32_t*)0x10005004)
@@ -164,13 +166,21 @@
 #define reg_dvp_status       (*(volatile uint32_t*)0x1000E008)
 // sdio
 #define reg_sdio_cfg         (*(volatile uint32_t*)0x1000F000)
-// opipsram
-#define reg_opipsram_cfg     (*(volatile uint32_t*)0x10010000)
-
+// psram1(opi)
+#define reg_psram1_cfg       (*(volatile uint32_t*)0x10010000)
+// i2c1
+#define reg_i2c1_clkdiv      (*(volatile uint32_t*)0x10011000)
+#define reg_i2c1_devaddr     (*(volatile uint32_t*)0x10011004)
+#define reg_i2c1_regaddr     (*(volatile uint32_t*)0x10011008)
+#define reg_i2c1_txdata      (*(volatile uint32_t*)0x1001100C)
+#define reg_i2c1_rxdata      (*(volatile uint32_t*)0x10011010)
+#define reg_i2c1_xfer        (*(volatile uint32_t*)0x10011014)
+#define reg_i2c1_cfg         (*(volatile uint32_t*)0x10011018)
+#define reg_i2c1_status      (*(volatile uint32_t*)0x1001101C)
 // ga
-#define reg_ga_cfg           (*(volatile uint32_t*)0x10011000)
+#define reg_ga_cfg           (*(volatile uint32_t*)0x10012000)
 // apu
-#define reg_apu_cfg          (*(volatile uint32_t*)0x10012000)
+#define reg_apu_cfg          (*(volatile uint32_t*)0x10013000)
 // archinfo
 #define reg_archinfo_sys     (*(volatile uint32_t*)0x20000000)
 #define reg_archinfo_idl     (*(volatile uint32_t*)0x20000004)
