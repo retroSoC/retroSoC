@@ -65,16 +65,6 @@ interface psram_if ();
       output irq_o
   );
 
-  // verilog_format: off
-  modport tb(
-      input spi_sck_o,
-      input spi_nss_o,
-      input spi_io_en_o,
-      output spi_io_in_i,
-      input spi_io_out_o,
-      input irq_o
-  );
-  // verilog_format: on
 endinterface
 
 
