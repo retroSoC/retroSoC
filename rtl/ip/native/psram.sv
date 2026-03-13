@@ -36,12 +36,12 @@
 // tSP(min: 2ns) is meet
 // data keeps 6.94 / 2 = 3.47ns low at least befer sclk
 
-`ifndef NATV_PSRAM_DEF_SV
-`define NATV_PSRAM_DEF_SV
+`ifndef NMI_PSRAM_DEF_SV
+`define NMI_PSRAM_DEF_SV
 
 // verilog_format: off
-`define NATV_PSRAM_WAIT 8'h00
-`define NATV_PSRAM_CHD  8'h04
+`define NMI_PSRAM_WAIT 8'h00
+`define NMI_PSRAM_CHD  8'h04
 // verilog_format: on
 
 `endif
@@ -65,16 +65,6 @@ interface psram_if ();
       output irq_o
   );
 
-  // verilog_format: off
-  modport tb(
-      input spi_sck_o,
-      input spi_nss_o,
-      input spi_io_en_o,
-      output spi_io_in_i,
-      input spi_io_out_o,
-      input irq_o
-  );
-  // verilog_format: on
 endinterface
 
 
@@ -132,15 +122,15 @@ module nmi_psram (
 
 
   assign s_mem_sel     = nmi.addr[31:28] == `PSRAM_START;
-  assign s_cfg_reg_sel = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM_START;
+  assign s_cfg_reg_sel = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM0_START;
   assign nmi.ready     = s_mem_sel ? s_mem_ready : 1'b1;
   always_comb begin
     nmi.rdata = '0;
     if (s_mem_sel) begin
       nmi.rdata = s_mem_rdata;
-    end else if (nmi.addr[7:0] == `NATV_PSRAM_WAIT) begin
+    end else if (nmi.addr[7:0] == `NMI_PSRAM_WAIT) begin
       nmi.rdata = {27'd0, r_cfg_wait};
-    end else if (nmi.addr[7:0] == `NATV_PSRAM_CHD) begin
+    end else if (nmi.addr[7:0] == `NMI_PSRAM_CHD) begin
       nmi.rdata = {29'd0, r_cfg_chd};
     end
   end
@@ -148,14 +138,14 @@ module nmi_psram (
   // wait cycles(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_wait <= 5'd18;
-    else if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == `NATV_PSRAM_WAIT) begin
+    else if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == `NMI_PSRAM_WAIT) begin
       r_cfg_wait <= nmi.wdata[4:0];
     end
   end
   // extra cycle for tCHD(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_chd <= 3'd4;
-    else if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == `NATV_PSRAM_CHD) begin
+    else if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == `NMI_PSRAM_CHD) begin
       r_cfg_chd <= nmi.wdata[2:0];
     end
   end

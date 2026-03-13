@@ -11,10 +11,9 @@
 `ifndef INC_MMAP_DEFINE_SVH
 `define INC_MMAP_DEFINE_SVH
 
-`define FLASH_START_ADDR 32'h0000_0000
-`define FLASH_END_ADDR   32'h0FFF_FFFF
+`define CPU_RESET_ADDR 32'h0000_0000
 // NOTE: need to set a right value for software!
-`define IRQ_START_ADDR   32'h0000_0000
+`define IRQ_START_ADDR 32'h0000_0000
 
 `define FLASH_START    4'h0
 `define NATV_IP_START  4'h1
@@ -35,17 +34,24 @@
 `define NMI_UART_START     8'h10
 `define NMI_TIM0_START     8'h20
 `define NMI_TIM1_START     8'h30
-`define NMI_PSRAM_START    8'h40
+`define NMI_PSRAM0_START   8'h40
 `define NMI_SPISD_START    8'h50
-`define NMI_I2C_START      8'h60
+`define NMI_I2C0_START     8'h60
 `define NMI_I2S_START      8'h70
 `define NMI_ONEWIRE_START  8'h80
-`define NMI_QSPI_START     8'h90
+`define NMI_XPI_START      8'h90
 `define NMI_DMA_START      8'hA0
 `define NMI_SYSCTRL_START  8'hB0
 `define NMI_CLINT_START    8'hC0
 `define NMI_SDRAM_START    8'hD0
 `define NMI_DVP_START      8'hE0
+`define NMI_SDIO_START     8'hF0
+// new cycle
+`define NMI_PSRAM1_START   8'h00
+`define NMI_I2C1_START     8'h10
+`define NMI_GA_START       8'h20
+`define NMI_APU_START      8'h30
+
 // APB IP REG ADDR
 `define APB_ARCHINFO_START 8'h00
 `define APB_RNG_START      8'h10

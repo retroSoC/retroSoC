@@ -93,7 +93,7 @@ module ip_nmi_wrapper (
   assign u_tim1_nmi_if.wdata    = nmi.wdata;
   assign u_tim1_nmi_if.wstrb    = nmi.wstrb;
   // psram
-  assign s_psram_cfg_sel        = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM_START;
+  assign s_psram_cfg_sel        = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM0_START;
   assign s_psram_mem_sel        = nmi.addr[31:28] == `PSRAM_START;
   assign u_psram_nmi_if.valid   = nmi.valid && (s_psram_mem_sel || s_psram_cfg_sel);
   assign u_psram_nmi_if.addr    = nmi.addr;
@@ -109,7 +109,7 @@ module ip_nmi_wrapper (
   assign u_spisd_nmi_if.wdata   = nmi.wdata;
   assign u_spisd_nmi_if.wstrb   = nmi.wstrb;
   // i2c
-  assign u_i2c_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_I2C_START);
+  assign u_i2c_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_I2C0_START);
   assign u_i2c_nmi_if.addr      = nmi.addr;
   assign u_i2c_nmi_if.wdata     = nmi.wdata;
   assign u_i2c_nmi_if.wstrb     = nmi.wstrb;
@@ -124,7 +124,7 @@ module ip_nmi_wrapper (
   assign u_onewire_nmi_if.wdata = nmi.wdata;
   assign u_onewire_nmi_if.wstrb = nmi.wstrb;
   // qspi
-  assign s_qspi_cfg_sel         = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_QSPI_START;
+  assign s_qspi_cfg_sel         = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_XPI_START;
   assign s_qspi_mem_sel         = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `QSPI_MEM_START;
   assign u_qspi_nmi_if.valid    = nmi.valid && (s_qspi_cfg_sel || s_qspi_mem_sel);
   assign u_qspi_nmi_if.addr     = nmi.addr;

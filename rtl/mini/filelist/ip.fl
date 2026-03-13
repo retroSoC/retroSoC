@@ -42,6 +42,8 @@
 
 ../../ip/native/psram_core.sv
 ../../ip/native/psram.sv
+../../ip/native/opipsram.sv
+../../ip/native/opipsram_core.sv
 ../../ip/native/spisd_init.sv
 ../../ip/native/spisd_read.sv
 ../../ip/native/spisd_write.sv
@@ -50,6 +52,7 @@
 ../../ip/native/spisd_core.sv
 ../../ip/native/spisd_data.sv
 ../../ip/native/spisd.sv
+../../ip/native/sdio.sv
 ../../ip/native/i2c_core.sv
 ../../ip/native/i2c.sv
 ../../ip/native/i2s_reg.sv
