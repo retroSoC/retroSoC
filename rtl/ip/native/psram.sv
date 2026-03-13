@@ -122,7 +122,7 @@ module nmi_psram (
 
 
   assign s_mem_sel     = nmi.addr[31:28] == `PSRAM_START;
-  assign s_cfg_reg_sel = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM_START;
+  assign s_cfg_reg_sel = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM0_START;
   assign nmi.ready     = s_mem_sel ? s_mem_ready : 1'b1;
   always_comb begin
     nmi.rdata = '0;
