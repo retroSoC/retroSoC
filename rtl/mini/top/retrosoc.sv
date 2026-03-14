@@ -75,42 +75,42 @@ module retrosoc (
   assign s_irq[31:17]             = 15'd0;
 
   // bind io
-  // ===================================================
-  // | GPIO0 | FUNC0              | FUNC1              |
-  // ===================================================
-  // | 0     | uart1_rx_i_pad     | ps2_clk_i_pad      |
-  // | 1     | uart1_tx_o_pad     | ps2_dat_i_pad      |
-  // | 2     | tmr_capch_i_pad    | onewire_dat_o_pad  |
-  // | 3     | pwm_0_o_pad        | i2c1_scl_io_pad    |
-  // | 4     | pwm_1_o_pad        | i2c1_sda_io_pad    |
-  // | 5     | pwm_2_o_pad        | sys_clkdiv4_o_pad  |
-  // | 6     | pwm_3_o_pad        | spisd_sck_pad      |
-  // | 7     | i2c0_scl_io_pad    | spisd_nss_pad      |
-  // | 8     | i2c0_sda_io_pad    | spisd_mosi_pad     |
-  // | 9     | __NONE_FUNC__      | spisd_miso_pad     |
-  // | 10    | i2s_0_mclk_o_pad   | dvp_pclk_i_pad     |
-  // | 11    | i2s_0_sck_io_pad   | dvp_href_i_pad     |
-  // | 12    | i2s_lrck_o_pad     | dvp_vsync_i_pad    |
-  // | 13    | i2s_dacdat_o_pad   | dvp_dat0_i_pad     |
-  // | 14    | i2s_adcdat_i_pad   | dvp_dat1_i_pad     |
-  // | 15    | sdio0_sck_o_pad    | dvp_dat2_i_pad     |
-  // | 16    | sdio0_cmd_o_pad    | dvp_dat3_i_pad     |
-  // | 17    | sdio0_dat0_io_pad  | dvp_dat4_i_pad     |
-  // | 18    | sdio0_dat1_io_pad  | dvp_dat5_i_pad     |
-  // | 19    | sdio0_dat2_io_pad  | dvp_dat6_i_pad     |
-  // | 20    | sdio0_dat3_io_pad  | dvp_dat7_i_pad     |
-  // | 21    | psram1_sck_o_pad   | psram0_sck_o_pad   |
-  // | 22    | psram1_ce_o_pad    | psram0_ce0_o_pad   |
-  // | 23    | psram1_dat0_io_pad | psram0_dat0_io_pad |
-  // | 24    | psram1_dat1_io_pad | psram0_dat1_io_pad |
-  // | 25    | psram1_dat2_io_pad | psram0_dat2_io_pad |
-  // | 26    | psram1_dat3_io_pad | psram0_dat3_io_pad |
-  // | 27    | psram1_dat4_io_pad | psram0_ce1_o_pad   |
-  // | 28    | psram1_dat5_io_pad | psram0_ce2_o_pad   |
-  // | 29    | psram1_dat6_io_pad | psram0_ce3_o_pad   |
-  // | 30    | psram1_dat7_io_pad | __NONE_FUNC__      |
-  // | 31    | psram1_dqs_o_pad   | __NONE_FUNC__      |
-  // ===================================================
+  // =====================================================
+  // | GPIO0 | FUNC0                | FUNC1              |
+  // =====================================================
+  // | 0     | uart1_rx_i_pad       | ps2_clk_i_pad      |
+  // | 1     | uart1_tx_o_pad       | ps2_dat_i_pad      |
+  // | 2     | tmr_capch_i_pad      | onewire_dat_o_pad  |
+  // | 3     | pwm_0_o_pad          | i2c1_scl_io_pad    |
+  // | 4     | pwm_1_o_pad          | i2c1_sda_io_pad    |
+  // | 5     | pwm_2_o_pad          | sys_clkdiv4_o_pad  |
+  // | 6     | pwm_3_o_pad          | spisd_sck_pad      |
+  // | 7     | i2c0_scl_io_pad      | spisd_nss_pad      |
+  // | 8     | i2c0_sda_io_pad      | spisd_mosi_pad     |
+  // | 9     | __NONE_FUNC__        | spisd_miso_pad     |
+  // | 10    | i2s_0_mclk_o_pad     | dvp_pclk_i_pad     |
+  // | 11    | i2s_0_sck_io_pad     | dvp_href_i_pad     |
+  // | 12    | i2s_lrck_o_pad       | dvp_vsync_i_pad    |
+  // | 13    | i2s_dacdat_o_pad     | dvp_dat0_i_pad     |
+  // | 14    | i2s_adcdat_i_pad     | dvp_dat1_i_pad     |
+  // | 15    | sdio_sck_o_pad       | dvp_dat2_i_pad     |
+  // | 16    | sdio_cmd_o_pad       | dvp_dat3_i_pad     |
+  // | 17    | sdio_dat0_io_pad     | dvp_dat4_i_pad     |
+  // | 18    | sdio_dat1_io_pad     | dvp_dat5_i_pad     |
+  // | 19    | sdio_dat2_io_pad     | dvp_dat6_i_pad     |
+  // | 20    | sdio_dat3_io_pad     | dvp_dat7_i_pad     |
+  // | 21    | opipsram_sck_o_pad   | psram_sck_o_pad    |
+  // | 22    | opipsram_ce_o_pad    | psram_ce0_o_pad    |
+  // | 23    | opipsram_dat0_io_pad | psram_dat0_io_pad  |
+  // | 24    | opipsram_dat1_io_pad | psram_dat1_io_pad  |
+  // | 25    | opipsram_dat2_io_pad | psram_dat2_io_pad  |
+  // | 26    | opipsram_dat3_io_pad | psram_dat3_io_pad  |
+  // | 27    | opipsram_dat4_io_pad | psram_ce1_o_pad    |
+  // | 28    | opipsram_dat5_io_pad | psram_ce2_o_pad    |
+  // | 29    | opipsram_dat6_io_pad | psram_ce3_o_pad    |
+  // | 30    | opipsram_dat7_io_pad | __NONE_FUNC__      |
+  // | 31    | opipsram_dqs_o_pad   | __NONE_FUNC__      |
+  // =====================================================
   assign gpio.oe_o                = u_gpio_if.oe_o;
   assign gpio.cs_o                = u_gpio_if.cs_o;
   assign gpio.pu_o                = u_gpio_if.pu_o;

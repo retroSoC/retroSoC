@@ -14,9 +14,9 @@ module xpi_mm (
     // verilog_format: off
     input  logic                     clk_i,
     input  logic                     rst_n_i,
-    input  logic [             31:0] qspi_mmstad_i  [0:`QSPI_NSS_NUM-1],
-    input  logic [             31:0] qspi_mmoffst_i [0:`QSPI_NSS_NUM-1],
-    output logic [`QSPI_LNS_NUM-1:0] nss_o,
+    input  logic [             31:0] xpi_mmstad_i  [0:`XPI_NSS_NUM-1],
+    input  logic [             31:0] xpi_mmoffst_i [0:`XPI_NSS_NUM-1],
+    output logic [`XPI_LNS_NUM-1:0]  nss_o,
     output logic                     rd_st_o,
     output logic                     wr_st_o,
     output logic                     rdwr_o,
@@ -60,7 +60,7 @@ module xpi_mm (
   logic [ 2:0] s_disp_byte_cnt;
   logic [31:0] s_disp_wdata;
   logic        s_mem_valid_re;
-  logic [`QSPI_LNS_NUM-1:0] s_nss_d, s_nss_q;
+  logic [`XPI_LNS_NUM-1:0] s_nss_d, s_nss_q;
 
   // nmi
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
@@ -108,14 +108,14 @@ module xpi_mm (
   // HACK:
   always_comb begin
     s_nss_d = s_nss_q;
-    for (int i = 0; i < `QSPI_NSS_NUM; i++) begin
-      if (qspi_mmstad_i[i] <= nmi.addr && nmi.addr <= qspi_mmstad_i[i] + qspi_mmoffst_i[i]) begin
-        s_nss_d = `QSPI_LNS_NUM'(i);
+    for (int i = 0; i < `XPI_NSS_NUM; i++) begin
+      if (xpi_mmstad_i[i] <= nmi.addr && nmi.addr <= xpi_mmstad_i[i] + xpi_mmoffst_i[i]) begin
+        s_nss_d = `XPI_LNS_NUM'(i);
         break;
       end
     end
   end
-  dffer #(`QSPI_LNS_NUM) u_accid_dffer (
+  dffer #(`XPI_LNS_NUM) u_accid_dffer (
       clk_i,
       rst_n_i,
       s_mem_valid_re,

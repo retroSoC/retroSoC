@@ -12,12 +12,12 @@
 `include "xpi_define.svh"
 
 interface xpi_if ();
-  logic                     sck_o;
-  logic [`QSPI_NSS_NUM-1:0] nss_o;
-  logic [              3:0] io_oe_o;
-  logic [              3:0] io_di_i;
-  logic [              3:0] io_do_o;
-  logic                     irq_o;
+  logic                    sck_o;
+  logic [`XPI_NSS_NUM-1:0] nss_o;
+  logic [             3:0] io_oe_o;
+  logic [             3:0] io_di_i;
+  logic [             3:0] io_do_o;
+  logic                    irq_o;
 
   modport dut(
       output sck_o,
@@ -42,51 +42,51 @@ module nmi_xpi (
 );
 
   // nss
-  logic [`QSPI_LNS_NUM-1:0] s_qspi_nss;
+  logic [`XPI_LNS_NUM-1:0] s_xpi_nss;
   // reg mode
-  logic [             31:0] s_qspi_mmstad       [0:`QSPI_NSS_NUM-1];
-  logic [             31:0] s_qspi_mmoffst      [0:`QSPI_NSS_NUM-1];
-  logic                     s_qspi_mode         [0:`QSPI_NSS_NUM-1];
-  logic [`QSPI_LNS_NUM-1:0] s_qspi_regnss;
-  logic [              7:0] s_qspi_clkdiv       [0:`QSPI_NSS_NUM-1];
-  logic                     s_qspi_rdwr         [0:`QSPI_NSS_NUM-1];
-  logic                     s_qspi_revdat       [0:`QSPI_NSS_NUM-1];
-  logic [              7:0] s_qspi_txupb        [0:`QSPI_NSS_NUM-1];
-  logic [              7:0] s_qspi_txlowb       [0:`QSPI_NSS_NUM-1];
-  logic [              5:0] s_qspi_rxupb        [0:`QSPI_NSS_NUM-1];
-  logic [              5:0] s_qspi_rxlowb       [0:`QSPI_NSS_NUM-1];
-  logic [              1:0] s_qspi_cmdtyp       [0:`QSPI_NSS_NUM-1];
-  logic [              2:0] s_qspi_cmdlen       [0:`QSPI_NSS_NUM-1];
-  logic [             31:0] s_qspi_cmddat       [0:`QSPI_NSS_NUM-1];
-  logic [              1:0] s_qspi_adrtyp       [0:`QSPI_NSS_NUM-1];
-  logic [              2:0] s_qspi_adrlen       [0:`QSPI_NSS_NUM-1];
-  logic [             31:0] s_qspi_adrdat       [0:`QSPI_NSS_NUM-1];
-  logic [              1:0] s_qspi_alttyp       [0:`QSPI_NSS_NUM-1];
-  logic [              2:0] s_qspi_altlen       [0:`QSPI_NSS_NUM-1];
-  logic [             31:0] s_qspi_altdat       [0:`QSPI_NSS_NUM-1];
-  logic [              7:0] s_qspi_tdulen       [0:`QSPI_NSS_NUM-1];
-  logic [              7:0] s_qspi_rdulen       [0:`QSPI_NSS_NUM-1];
-  logic [              1:0] s_qspi_dattyp       [0:`QSPI_NSS_NUM-1];
-  logic [              7:0] s_qspi_datlen       [0:`QSPI_NSS_NUM-1];
-  logic [              2:0] s_qspi_datbit       [0:`QSPI_NSS_NUM-1];
-  logic [              7:0] s_qspi_hlvlen       [0:`QSPI_NSS_NUM-1];
+  logic [            31:0] s_xpi_mmstad        [0:`XPI_NSS_NUM-1];
+  logic [            31:0] s_xpi_mmoffst       [0:`XPI_NSS_NUM-1];
+  logic                    s_xpi_mode          [0:`XPI_NSS_NUM-1];
+  logic [`XPI_LNS_NUM-1:0] s_xpi_regnss;
+  logic [             7:0] s_xpi_clkdiv        [0:`XPI_NSS_NUM-1];
+  logic                    s_xpi_rdwr          [0:`XPI_NSS_NUM-1];
+  logic                    s_xpi_revdat        [0:`XPI_NSS_NUM-1];
+  logic [             7:0] s_xpi_txupb         [0:`XPI_NSS_NUM-1];
+  logic [             7:0] s_xpi_txlowb        [0:`XPI_NSS_NUM-1];
+  logic [             5:0] s_xpi_rxupb         [0:`XPI_NSS_NUM-1];
+  logic [             5:0] s_xpi_rxlowb        [0:`XPI_NSS_NUM-1];
+  logic [             1:0] s_xpi_cmdtyp        [0:`XPI_NSS_NUM-1];
+  logic [             2:0] s_xpi_cmdlen        [0:`XPI_NSS_NUM-1];
+  logic [            31:0] s_xpi_cmddat        [0:`XPI_NSS_NUM-1];
+  logic [             1:0] s_xpi_adrtyp        [0:`XPI_NSS_NUM-1];
+  logic [             2:0] s_xpi_adrlen        [0:`XPI_NSS_NUM-1];
+  logic [            31:0] s_xpi_adrdat        [0:`XPI_NSS_NUM-1];
+  logic [             1:0] s_xpi_alttyp        [0:`XPI_NSS_NUM-1];
+  logic [             2:0] s_xpi_altlen        [0:`XPI_NSS_NUM-1];
+  logic [            31:0] s_xpi_altdat        [0:`XPI_NSS_NUM-1];
+  logic [             7:0] s_xpi_tdulen        [0:`XPI_NSS_NUM-1];
+  logic [             7:0] s_xpi_rdulen        [0:`XPI_NSS_NUM-1];
+  logic [             1:0] s_xpi_dattyp        [0:`XPI_NSS_NUM-1];
+  logic [             7:0] s_xpi_datlen        [0:`XPI_NSS_NUM-1];
+  logic [             2:0] s_xpi_datbit        [0:`XPI_NSS_NUM-1];
+  logic [             7:0] s_xpi_hlvlen        [0:`XPI_NSS_NUM-1];
   // reg mode - fifo
-  logic                     s_reg_tx_push_valid;
-  logic [             31:0] s_reg_tx_push_data;
-  logic                     s_reg_rx_pop_valid;
+  logic                    s_reg_tx_push_valid;
+  logic [            31:0] s_reg_tx_push_data;
+  logic                    s_reg_rx_pop_valid;
   // mm mode
-  logic                     s_qspi_mm_sel;
-  logic                     s_qspi_mm_req;
-  logic [`QSPI_LNS_NUM-1:0] s_qspi_mm_nss;
-  logic                     s_qspi_mm_rd_st;
-  logic                     s_qspi_mm_wr_st;
-  logic                     s_qspi_mm_rdwr;
-  logic [             31:0] s_qspi_mm_addr;
-  logic [              2:0] s_qspi_mm_xfer_byte;
+  logic                    s_xpi_mm_sel;
+  logic                    s_xpi_mm_req;
+  logic [`XPI_LNS_NUM-1:0] s_xpi_mm_nss;
+  logic                    s_xpi_mm_rd_st;
+  logic                    s_xpi_mm_wr_st;
+  logic                    s_xpi_mm_rdwr;
+  logic [            31:0] s_xpi_mm_addr;
+  logic [             2:0] s_xpi_mm_xfer_byte;
   // mm mode - fifo
-  logic                     s_mm_tx_push_valid;
-  logic [             31:0] s_mm_tx_push_data;
-  logic                     s_mm_rx_pop_valid;
+  logic                    s_mm_tx_push_valid;
+  logic [            31:0] s_mm_tx_push_data;
+  logic                    s_mm_rx_pop_valid;
   // tx fifo
   logic s_tx_push_valid, s_tx_push_ready;
   logic s_tx_pop_valid, s_tx_pop_ready;
@@ -107,13 +107,13 @@ module nmi_xpi (
 
 
   // nmi mux
-  assign s_qspi_mm_sel      = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `QSPI_MEM_START;
-  assign u_reg_nmi_if.valid = nmi.valid && (~s_qspi_mm_sel);
+  assign s_xpi_mm_sel       = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `QSPI_MEM_START;
+  assign u_reg_nmi_if.valid = nmi.valid && (~s_xpi_mm_sel);
   assign u_reg_nmi_if.addr  = nmi.addr;
   assign u_reg_nmi_if.wdata = nmi.wdata;
   assign u_reg_nmi_if.wstrb = nmi.wstrb;
 
-  assign u_mm_nmi_if.valid  = nmi.valid && s_qspi_mm_sel;
+  assign u_mm_nmi_if.valid  = nmi.valid && s_xpi_mm_sel;
   assign u_mm_nmi_if.addr   = nmi.addr;
   assign u_mm_nmi_if.wdata  = nmi.wdata;
   assign u_mm_nmi_if.wstrb  = nmi.wstrb;
@@ -127,42 +127,42 @@ module nmi_xpi (
   // verilog_format: on
 
   // reg/mm mode nss
-  assign s_qspi_nss      = s_qspi_mm_sel ? s_qspi_mm_nss : s_qspi_regnss;
-  assign s_tx_push_valid = s_qspi_mm_sel ? s_mm_tx_push_valid : s_reg_tx_push_valid;
-  assign s_tx_push_data  = s_qspi_mm_sel ? s_mm_tx_push_data  : s_reg_tx_push_data;
-  assign s_rx_pop_valid  = s_qspi_mm_sel ? s_mm_rx_pop_valid  : s_reg_rx_pop_valid;
-  assign s_qspi_mm_req   = s_qspi_mm_rd_st || s_qspi_mm_wr_st;
+  assign s_xpi_nss       = s_xpi_mm_sel ? s_xpi_mm_nss : s_xpi_regnss;
+  assign s_tx_push_valid = s_xpi_mm_sel ? s_mm_tx_push_valid : s_reg_tx_push_valid;
+  assign s_tx_push_data  = s_xpi_mm_sel ? s_mm_tx_push_data  : s_reg_tx_push_data;
+  assign s_rx_pop_valid  = s_xpi_mm_sel ? s_mm_rx_pop_valid  : s_reg_rx_pop_valid;
+  assign s_xpi_mm_req    = s_xpi_mm_rd_st || s_xpi_mm_wr_st;
 
 
-  xpi_reg u_qspi_reg (
+  xpi_reg u_xpi_reg (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       // reg
-      .qspi_accmd_o   (),
-      .qspi_mmstad_o  (s_qspi_mmstad),
-      .qspi_mmoffst_o (s_qspi_mmoffst),
-      .qspi_mode_o    (s_qspi_mode),
-      .qspi_regnss_o  (s_qspi_regnss),
-      .qspi_clkdiv_o  (s_qspi_clkdiv),
-      .qspi_rdwr_o    (s_qspi_rdwr),
-      .qspi_revdat_o  (s_qspi_revdat),
-      .qspi_tx_flush_o(s_tx_flush),
-      .qspi_rx_flush_o(s_rx_flush),
-      .qspi_cmdtyp_o  (s_qspi_cmdtyp),
-      .qspi_cmdlen_o  (s_qspi_cmdlen),
-      .qspi_cmddat_o  (s_qspi_cmddat),
-      .qspi_adrtyp_o  (s_qspi_adrtyp),
-      .qspi_adrlen_o  (s_qspi_adrlen),
-      .qspi_adrdat_o  (s_qspi_adrdat),
-      .qspi_alttyp_o  (s_qspi_alttyp),
-      .qspi_altlen_o  (s_qspi_altlen),
-      .qspi_altdat_o  (s_qspi_altdat),
-      .qspi_tdulen_o  (s_qspi_tdulen),
-      .qspi_rdulen_o  (s_qspi_rdulen),
-      .qspi_dattyp_o  (s_qspi_dattyp),
-      .qspi_datlen_o  (s_qspi_datlen),
-      .qspi_datbit_o  (s_qspi_datbit),
-      .qspi_hlvlen_o  (s_qspi_hlvlen),
+      .xpi_accmd_o    (),
+      .xpi_mmstad_o   (s_xpi_mmstad),
+      .xpi_mmoffst_o  (s_xpi_mmoffst),
+      .xpi_mode_o     (s_xpi_mode),
+      .xpi_regnss_o   (s_xpi_regnss),
+      .xpi_clkdiv_o   (s_xpi_clkdiv),
+      .xpi_rdwr_o     (s_xpi_rdwr),
+      .xpi_revdat_o   (s_xpi_revdat),
+      .xpi_tx_flush_o (s_tx_flush),
+      .xpi_rx_flush_o (s_rx_flush),
+      .xpi_cmdtyp_o   (s_xpi_cmdtyp),
+      .xpi_cmdlen_o   (s_xpi_cmdlen),
+      .xpi_cmddat_o   (s_xpi_cmddat),
+      .xpi_adrtyp_o   (s_xpi_adrtyp),
+      .xpi_adrlen_o   (s_xpi_adrlen),
+      .xpi_adrdat_o   (s_xpi_adrdat),
+      .xpi_alttyp_o   (s_xpi_alttyp),
+      .xpi_altlen_o   (s_xpi_altlen),
+      .xpi_altdat_o   (s_xpi_altdat),
+      .xpi_tdulen_o   (s_xpi_tdulen),
+      .xpi_rdulen_o   (s_xpi_rdulen),
+      .xpi_dattyp_o   (s_xpi_dattyp),
+      .xpi_datlen_o   (s_xpi_datlen),
+      .xpi_datbit_o   (s_xpi_datbit),
+      .xpi_hlvlen_o   (s_xpi_hlvlen),
       // tx fifo
       .tx_push_valid_o(s_reg_tx_push_valid),
       .tx_push_data_o (s_reg_tx_push_data),
@@ -185,17 +185,17 @@ module nmi_xpi (
   );
 
 
-  xpi_mm u_qspi_mm (
+  xpi_mm u_xpi_mm (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
-      .qspi_mmstad_i  (s_qspi_mmstad),
-      .qspi_mmoffst_i (s_qspi_mmoffst),
-      .nss_o          (s_qspi_mm_nss),
-      .rd_st_o        (s_qspi_mm_rd_st),
-      .wr_st_o        (s_qspi_mm_wr_st),
-      .rdwr_o         (s_qspi_mm_rdwr),
-      .addr_o         (s_qspi_mm_addr),
-      .xfer_byte_o    (s_qspi_mm_xfer_byte),
+      .xpi_mmstad_i   (s_xpi_mmstad),
+      .xpi_mmoffst_i  (s_xpi_mmoffst),
+      .nss_o          (s_xpi_mm_nss),
+      .rd_st_o        (s_xpi_mm_rd_st),
+      .wr_st_o        (s_xpi_mm_wr_st),
+      .rdwr_o         (s_xpi_mm_rdwr),
+      .addr_o         (s_xpi_mm_addr),
+      .xfer_byte_o    (s_xpi_mm_xfer_byte),
       // tx fifo
       .tx_push_valid_o(s_mm_tx_push_valid),
       .tx_push_data_o (s_mm_tx_push_data),
@@ -249,34 +249,34 @@ module nmi_xpi (
   );
 
 
-  xpi_core u_qspi_core (
+  xpi_core u_xpi_core (
       .clk_i(clk_i),
       .rst_n_i(rst_n_i),
-      .nss_i(s_qspi_nss),
-      .mode_i(s_qspi_mode[s_qspi_nss]),
-      .clkdiv_i(s_qspi_clkdiv[s_qspi_nss]),
-      .rdwr_i(u_mm_nmi_if.valid ? s_qspi_mm_rdwr : s_qspi_rdwr[s_qspi_nss]),
-      .revdat_i(s_qspi_revdat[s_qspi_nss]),
-      .cmdtyp_i(s_qspi_cmdtyp[s_qspi_nss]),
-      .cmdlen_i(s_qspi_cmdlen[s_qspi_nss]),
-      .cmddat_i(s_qspi_cmddat[s_qspi_nss]),
-      .adrtyp_i(s_qspi_adrtyp[s_qspi_nss]),
-      .adrlen_i(s_qspi_adrlen[s_qspi_nss]),
+      .nss_i(s_xpi_nss),
+      .mode_i(s_xpi_mode[s_xpi_nss]),
+      .clkdiv_i(s_xpi_clkdiv[s_xpi_nss]),
+      .rdwr_i(u_mm_nmi_if.valid ? s_xpi_mm_rdwr : s_xpi_rdwr[s_xpi_nss]),
+      .revdat_i(s_xpi_revdat[s_xpi_nss]),
+      .cmdtyp_i(s_xpi_cmdtyp[s_xpi_nss]),
+      .cmdlen_i(s_xpi_cmdlen[s_xpi_nss]),
+      .cmddat_i(s_xpi_cmddat[s_xpi_nss]),
+      .adrtyp_i(s_xpi_adrtyp[s_xpi_nss]),
+      .adrlen_i(s_xpi_adrlen[s_xpi_nss]),
       // HACK:
-      .adrdat_i(u_mm_nmi_if.valid ? {s_qspi_mm_addr[23:0], 8'hF0} : s_qspi_adrdat[s_qspi_nss]),
-      .tdulen_i(s_qspi_tdulen[s_qspi_nss]),
-      .rdulen_i(s_qspi_rdulen[s_qspi_nss]),
-      .dattyp_i(s_qspi_dattyp[s_qspi_nss]),
-      .datlen_i(s_qspi_datlen[s_qspi_nss]),  // NOTE:
-      .datbit_i(u_mm_nmi_if.valid ? s_qspi_mm_xfer_byte : s_qspi_datbit[s_qspi_nss]),
-      .hlvlen_i(s_qspi_hlvlen[s_qspi_nss]),
+      .adrdat_i(u_mm_nmi_if.valid ? {s_xpi_mm_addr[23:0], 8'hF0} : s_xpi_adrdat[s_xpi_nss]),
+      .tdulen_i(s_xpi_tdulen[s_xpi_nss]),
+      .rdulen_i(s_xpi_rdulen[s_xpi_nss]),
+      .dattyp_i(s_xpi_dattyp[s_xpi_nss]),
+      .datlen_i(s_xpi_datlen[s_xpi_nss]),  // NOTE:
+      .datbit_i(u_mm_nmi_if.valid ? s_xpi_mm_xfer_byte : s_xpi_datbit[s_xpi_nss]),
+      .hlvlen_i(s_xpi_hlvlen[s_xpi_nss]),
       .tx_data_req_o(s_tx_pop_valid),
       .tx_data_rdy_i(s_tx_pop_ready),
       .tx_data_i(s_tx_pop_data),
       .rx_data_req_o(s_rx_push_valid),
       .rx_data_rdy_i(s_rx_push_ready),
       .rx_data_o(s_rx_push_data),
-      .start_i(u_mm_nmi_if.valid ? s_qspi_mm_req : s_reg_xfer_start),
+      .start_i(u_mm_nmi_if.valid ? s_xpi_mm_req : s_reg_xfer_start),
       .done_o(s_xfer_done),
       .tx_elem_num_i(s_tx_elem_num[7:0]),
       .dma_xfer_done_i(dma_xfer_done_i),
