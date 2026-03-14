@@ -8,9 +8,9 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`include "qspi_define.svh"
+`include "xpi_define.svh"
 
-module qspi_mm (
+module xpi_mm (
     // verilog_format: off
     input  logic                     clk_i,
     input  logic                     rst_n_i,

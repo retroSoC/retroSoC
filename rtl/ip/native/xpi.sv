@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-`include "qspi_define.svh"
+`include "xpi_define.svh"
 
 interface xpi_if ();
   logic                     spi_sck_o;
@@ -29,7 +29,7 @@ interface xpi_if ();
   );
 endinterface
 
-module nmi_qspi (
+module nmi_xpi (
     // verilog_format: off
     input  logic clk_i,
     input  logic rst_n_i,
@@ -134,7 +134,7 @@ module nmi_qspi (
   assign s_qspi_mm_req   = s_qspi_mm_rd_st || s_qspi_mm_wr_st;
 
 
-  qspi_reg u_qspi_reg (
+  xpi_reg u_qspi_reg (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       // reg
@@ -185,7 +185,7 @@ module nmi_qspi (
   );
 
 
-  qspi_mm u_qspi_mm (
+  xpi_mm u_qspi_mm (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .qspi_mmstad_i  (s_qspi_mmstad),
@@ -249,7 +249,7 @@ module nmi_qspi (
   );
 
 
-  qspi_core u_qspi_core (
+  xpi_core u_qspi_core (
       .clk_i(clk_i),
       .rst_n_i(rst_n_i),
       .nss_i(s_qspi_nss),

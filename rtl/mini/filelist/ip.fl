@@ -63,11 +63,11 @@
 ../../ip/native/i2s.sv
 ../../ip/native/onewire_core.sv
 ../../ip/native/onewire.sv
-../../ip/native/qspi_reg.sv
-../../ip/native/qspi_mm.sv
-../../ip/native/qspi_clkgen.sv
-../../ip/native/qspi_core.sv
-../../ip/native/qspi.sv
+../../ip/native/xpi_reg.sv
+../../ip/native/xpi_mm.sv
+../../ip/native/xpi_clkgen.sv
+../../ip/native/xpi_core.sv
+../../ip/native/xpi.sv
 ../../ip/native/dma_core.sv
 ../../ip/native/dma.sv
 ../../ip/native/sysctrl.sv

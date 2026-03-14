@@ -8,7 +8,7 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module qspi_clkgen (
+module xpi_clkgen (
     input  logic       clk_i,
     input  logic       rst_n_i,
     input  logic [7:0] div_i,

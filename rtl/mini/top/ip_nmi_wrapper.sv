@@ -49,7 +49,7 @@ module ip_nmi_wrapper (
   nmi_if u_i2c0_nmi_if ();
   nmi_if u_i2s_nmi_if ();
   nmi_if u_onewire_nmi_if ();
-  nmi_if u_qspi_nmi_if ();
+  nmi_if u_xpi_nmi_if ();
   nmi_if u_dma_nmi_if ();
   nmi_if u_sysctrl_nmi_if ();
   nmi_if u_clint_nmi_if ();
@@ -71,7 +71,7 @@ module ip_nmi_wrapper (
   logic s_xpi_cfg_sel, s_xpi_mem_sel;
   // dma
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
-  logic s_dma_qspi_tx_stall, s_dma_qspi_rx_stall;
+  logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
   logic s_dma_xfer_done;
   // irq
   logic s_tim0_irq, s_tim1_irq;
@@ -80,8 +80,8 @@ module ip_nmi_wrapper (
   // dma channel
   assign u_dma_hw_trg_if.i2s_tx_proc = ~s_dma_i2s_tx_stall;
   assign u_dma_hw_trg_if.i2s_rx_proc = ~s_dma_i2s_rx_stall;
-  assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_qspi_tx_stall;
-  assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_qspi_rx_stall;
+  assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
+  assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
   // gpio
   assign u_gpio_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_GPIO_START);
   assign u_gpio_nmi_if.addr      = nmi.addr;
@@ -136,10 +136,10 @@ module ip_nmi_wrapper (
   // xpi
   assign s_xpi_cfg_sel           = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_XPI_START;
   assign s_xpi_mem_sel           = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `QSPI_MEM_START;
-  assign u_qspi_nmi_if.valid     = nmi.valid && (s_xpi_cfg_sel || s_xpi_mem_sel);
-  assign u_qspi_nmi_if.addr      = nmi.addr;
-  assign u_qspi_nmi_if.wdata     = nmi.wdata;
-  assign u_qspi_nmi_if.wstrb     = nmi.wstrb;
+  assign u_xpi_nmi_if.valid      = nmi.valid && (s_xpi_cfg_sel || s_xpi_mem_sel);
+  assign u_xpi_nmi_if.addr       = nmi.addr;
+  assign u_xpi_nmi_if.wdata      = nmi.wdata;
+  assign u_xpi_nmi_if.wstrb      = nmi.wstrb;
   // dma
   assign u_dma_nmi_if.valid      = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_DMA_START);
   assign u_dma_nmi_if.addr       = nmi.addr;
@@ -195,7 +195,7 @@ module ip_nmi_wrapper (
                                   (u_i2c0_nmi_if.valid     & u_i2c0_nmi_if.ready)     |
                                   (u_i2s_nmi_if.valid      & u_i2s_nmi_if.ready)      |
                                   (u_onewire_nmi_if.valid  & u_onewire_nmi_if.ready)  |
-                                  (u_qspi_nmi_if.valid     & u_qspi_nmi_if.ready)     |
+                                  (u_xpi_nmi_if.valid     & u_xpi_nmi_if.ready)     |
                                   (u_dma_nmi_if.valid      & u_dma_nmi_if.ready)      |
                                   (u_sysctrl_nmi_if.valid  & u_sysctrl_nmi_if.ready)  |
                                   (u_clint_nmi_if.valid    & u_clint_nmi_if.ready)    |
@@ -214,7 +214,7 @@ module ip_nmi_wrapper (
                                   ({32{(u_i2c0_nmi_if.valid     & u_i2c0_nmi_if.ready)}}     & u_i2c0_nmi_if.rdata)      |
                                   ({32{(u_i2s_nmi_if.valid      & u_i2s_nmi_if.ready)}}      & u_i2s_nmi_if.rdata)      |
                                   ({32{(u_onewire_nmi_if.valid  & u_onewire_nmi_if.ready)}}  & u_onewire_nmi_if.rdata)  |
-                                  ({32{(u_qspi_nmi_if.valid     & u_qspi_nmi_if.ready)}}     & u_qspi_nmi_if.rdata)     |
+                                  ({32{(u_xpi_nmi_if.valid     & u_xpi_nmi_if.ready)}}     & u_xpi_nmi_if.rdata)     |
                                   ({32{(u_dma_nmi_if.valid      & u_dma_nmi_if.ready)}}      & u_dma_nmi_if.rdata)      |
                                   ({32{(u_sysctrl_nmi_if.valid  & u_sysctrl_nmi_if.ready)}}  & u_sysctrl_nmi_if.rdata)  |
                                   ({32{(u_clint_nmi_if.valid    & u_clint_nmi_if.ready)}}    & u_clint_nmi_if.rdata)    |
@@ -313,13 +313,13 @@ module ip_nmi_wrapper (
       .onewire(onewire)
   );
 
-  nmi_qspi u_nmi_qspi (
+  nmi_xpi u_nmi_xpi (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .dma_xfer_done_i(s_dma_xfer_done),
-      .dma_tx_stall_o (s_dma_qspi_tx_stall),
-      .dma_rx_stall_o (s_dma_qspi_rx_stall),
-      .nmi            (u_qspi_nmi_if),
+      .dma_tx_stall_o (s_dma_xpi_tx_stall),
+      .dma_rx_stall_o (s_dma_xpi_rx_stall),
+      .nmi            (u_xpi_nmi_if),
       .xpi            (xpi)
   );
 
