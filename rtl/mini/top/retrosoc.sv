@@ -27,7 +27,12 @@ module retrosoc (
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
-    gpio_if.dut                            gpio,
+    output logic [31:0]                    gpio_oe_o,
+    output logic [31:0]                    gpio_cs_o,
+    output logic [31:0]                    gpio_pu_o,
+    output logic [31:0]                    gpio_pd_o,
+    output logic [31:0]                    gpio_do_o,
+    input  logic [31:0]                    gpio_di_i,
     uart_if.dut                            uart0,
     xpi_if.dut                             xpi,
     sdram_if.dut                           sdram
@@ -111,22 +116,22 @@ module retrosoc (
   // | 30    | opipsram_dat7_io_pad | __NONE_FUNC__      |
   // | 31    | opipsram_dqs_o_pad   | __NONE_FUNC__      |
   // =====================================================
-  assign gpio.oe_o                = u_gpio_if.oe_o;
-  assign gpio.cs_o                = u_gpio_if.cs_o;
-  assign gpio.pu_o                = u_gpio_if.pu_o;
-  assign gpio.pd_o                = u_gpio_if.pd_o;
-  assign gpio.do_o                = u_gpio_if.do_o;
-  assign u_gpio_if.di_i           = gpio.di_i;
+  assign gpio_oe_o                = u_gpio_if.oe_o;
+  assign gpio_cs_o                = u_gpio_if.cs_o;
+  assign gpio_pu_o                = u_gpio_if.pu_o;
+  assign gpio_pd_o                = u_gpio_if.pd_o;
+  assign gpio_do_o                = u_gpio_if.do_o;
+  assign u_gpio_if.di_i           = gpio_di_i;
   // GPIO0 FUNC0
   // pad0
-  assign u_uart1_if.rx_i          = u_gpio_if.alt_di_o[0];
+  assign u_uart1_if.rx_i          = u_gpio_if.di_i[0];
   assign u_gpio_if.alt0_do_i[0]   = '0;
   assign u_gpio_if.alt0_oe_i[0]   = '0;
   // pad1
   assign u_gpio_if.alt0_do_i[1]   = u_uart1_if.tx_o;
   assign u_gpio_if.alt0_oe_i[1]   = '1;
   // pad2
-  assign s_tmr_capch              = u_gpio_if.alt_di_o[2];
+  assign s_tmr_capch              = u_gpio_if.di_i[2];
   assign u_gpio_if.alt0_do_i[2]   = '0;
   assign u_gpio_if.alt0_oe_i[2]   = '0;
   // pad3
@@ -142,11 +147,11 @@ module retrosoc (
   assign u_gpio_if.alt0_do_i[6]   = u_pwm_if.do_o[3];
   assign u_gpio_if.alt0_oe_i[6]   = '1;
   // pad7
-  assign u_i2c0_if.scl_i          = u_gpio_if.alt_di_o[7];
+  assign u_i2c0_if.scl_i          = u_gpio_if.di_i[7];
   assign u_gpio_if.alt0_do_i[7]   = u_i2c0_if.scl_o;
   assign u_gpio_if.alt0_oe_i[7]   = u_i2c0_if.scl_oe_o;
   // pad8
-  assign u_i2c0_if.sda_i          = u_gpio_if.alt_di_o[8];
+  assign u_i2c0_if.sda_i          = u_gpio_if.di_i[8];
   assign u_gpio_if.alt0_do_i[8]   = u_i2c0_if.sda_o;
   assign u_gpio_if.alt0_oe_i[8]   = u_i2c0_if.sda_oe_o;
   // pad9
@@ -165,30 +170,30 @@ module retrosoc (
   assign u_gpio_if.alt0_do_i[13]  = u_i2s_if.dacdat_o;
   assign u_gpio_if.alt0_oe_i[13]  = '1;
   // pad14
-  assign u_i2s_if.adcdat_i        = u_gpio_if.alt_di_o[14];
+  assign u_i2s_if.adcdat_i        = u_gpio_if.di_i[14];
   assign u_gpio_if.alt0_do_i[14]  = '0;
   assign u_gpio_if.alt0_oe_i[14]  = '0;
   // pad15
   assign u_gpio_if.alt0_do_i[15]  = u_sdio_if.sck_o;
   assign u_gpio_if.alt0_oe_i[15]  = '1;
   // pad16
-  assign u_sdio_if.cmd_di_i       = u_gpio_if.alt_di_o[16];
+  assign u_sdio_if.cmd_di_i       = u_gpio_if.di_i[16];
   assign u_gpio_if.alt0_do_i[16]  = u_sdio_if.cmd_do_o;
   assign u_gpio_if.alt0_oe_i[16]  = u_sdio_if.cmd_oe_o;
   // pad17
-  assign u_sdio_if.dat_di_i[0]    = u_gpio_if.alt_di_o[17];
+  assign u_sdio_if.dat_di_i[0]    = u_gpio_if.di_i[17];
   assign u_gpio_if.alt0_do_i[17]  = u_sdio_if.dat_do_o[0];
   assign u_gpio_if.alt0_oe_i[17]  = u_sdio_if.dat_oe_o[0];
   // pad18
-  assign u_sdio_if.dat_di_i[1]    = u_gpio_if.alt_di_o[18];
+  assign u_sdio_if.dat_di_i[1]    = u_gpio_if.di_i[18];
   assign u_gpio_if.alt0_do_i[18]  = u_sdio_if.dat_do_o[1];
   assign u_gpio_if.alt0_oe_i[18]  = u_sdio_if.dat_oe_o[1];
   // pad19
-  assign u_sdio_if.dat_di_i[2]    = u_gpio_if.alt_di_o[19];
+  assign u_sdio_if.dat_di_i[2]    = u_gpio_if.di_i[19];
   assign u_gpio_if.alt0_do_i[19]  = u_sdio_if.dat_do_o[2];
   assign u_gpio_if.alt0_oe_i[19]  = u_sdio_if.dat_oe_o[2];
   // pad20
-  assign u_sdio_if.dat_di_i[3]    = u_gpio_if.alt_di_o[20];
+  assign u_sdio_if.dat_di_i[3]    = u_gpio_if.di_i[20];
   assign u_gpio_if.alt0_do_i[20]  = u_sdio_if.dat_do_o[3];
   assign u_gpio_if.alt0_oe_i[20]  = u_sdio_if.dat_oe_o[3];
   // pad21
@@ -198,60 +203,60 @@ module retrosoc (
   assign u_gpio_if.alt0_do_i[22]  = u_opipsram_if.ce_o;
   assign u_gpio_if.alt0_oe_i[22]  = '1;
   // pad23
-  assign u_opipsram_if.io_di_i[0] = u_gpio_if.alt_di_o[23];
+  assign u_opipsram_if.io_di_i[0] = u_gpio_if.di_i[23];
   assign u_gpio_if.alt0_do_i[23]  = u_opipsram_if.io_do_o[0];
   assign u_gpio_if.alt0_oe_i[23]  = u_opipsram_if.io_oe_o[0];
   // pad24
-  assign u_opipsram_if.io_di_i[1] = u_gpio_if.alt_di_o[24];
+  assign u_opipsram_if.io_di_i[1] = u_gpio_if.di_i[24];
   assign u_gpio_if.alt0_do_i[24]  = u_opipsram_if.io_do_o[1];
   assign u_gpio_if.alt0_oe_i[24]  = u_opipsram_if.io_oe_o[1];
   // pad25
-  assign u_opipsram_if.io_di_i[2] = u_gpio_if.alt_di_o[25];
+  assign u_opipsram_if.io_di_i[2] = u_gpio_if.di_i[25];
   assign u_gpio_if.alt0_do_i[25]  = u_opipsram_if.io_do_o[2];
   assign u_gpio_if.alt0_oe_i[25]  = u_opipsram_if.io_oe_o[2];
   // pad26
-  assign u_opipsram_if.io_di_i[3] = u_gpio_if.alt_di_o[26];
+  assign u_opipsram_if.io_di_i[3] = u_gpio_if.di_i[26];
   assign u_gpio_if.alt0_do_i[26]  = u_opipsram_if.io_do_o[3];
   assign u_gpio_if.alt0_oe_i[26]  = u_opipsram_if.io_oe_o[3];
   // pad27
-  assign u_opipsram_if.io_di_i[4] = u_gpio_if.alt_di_o[27];
+  assign u_opipsram_if.io_di_i[4] = u_gpio_if.di_i[27];
   assign u_gpio_if.alt0_do_i[27]  = u_opipsram_if.io_do_o[4];
   assign u_gpio_if.alt0_oe_i[27]  = u_opipsram_if.io_oe_o[4];
   // pad28
-  assign u_opipsram_if.io_di_i[5] = u_gpio_if.alt_di_o[28];
+  assign u_opipsram_if.io_di_i[5] = u_gpio_if.di_i[28];
   assign u_gpio_if.alt0_do_i[28]  = u_opipsram_if.io_do_o[5];
   assign u_gpio_if.alt0_oe_i[28]  = u_opipsram_if.io_oe_o[5];
   // pad29
-  assign u_opipsram_if.io_di_i[6] = u_gpio_if.alt_di_o[29];
+  assign u_opipsram_if.io_di_i[6] = u_gpio_if.di_i[29];
   assign u_gpio_if.alt0_do_i[29]  = u_opipsram_if.io_do_o[6];
   assign u_gpio_if.alt0_oe_i[29]  = u_opipsram_if.io_oe_o[6];
   // pad30
-  assign u_opipsram_if.io_di_i[7] = u_gpio_if.alt_di_o[30];
+  assign u_opipsram_if.io_di_i[7] = u_gpio_if.di_i[30];
   assign u_gpio_if.alt0_do_i[30]  = u_opipsram_if.io_do_o[7];
   assign u_gpio_if.alt0_oe_i[30]  = u_opipsram_if.io_oe_o[7];
   // pad31
-  assign u_opipsram_if.dqs_di_i   = u_gpio_if.alt_di_o[31];
+  assign u_opipsram_if.dqs_di_i   = u_gpio_if.di_i[31];
   assign u_gpio_if.alt0_do_i[31]  = u_opipsram_if.dqs_do_o;
   assign u_gpio_if.alt0_oe_i[31]  = u_opipsram_if.dqs_oe_o;
 
   // GPIO0 FUNC1
   // pad0
-  assign u_ps2_if.ps2_clk_i       = u_gpio_if.alt_di_o[0];
+  assign u_ps2_if.ps2_clk_i       = u_gpio_if.di_i[0];
   assign u_gpio_if.alt1_do_i[0]   = '0;
   assign u_gpio_if.alt1_oe_i[0]   = '0;
   // pad1
-  assign u_ps2_if.ps2_dat_i       = u_gpio_if.alt_di_o[1];
+  assign u_ps2_if.ps2_dat_i       = u_gpio_if.di_i[1];
   assign u_gpio_if.alt1_do_i[1]   = '0;
   assign u_gpio_if.alt1_oe_i[1]   = '0;
   // pad2
   assign u_gpio_if.alt1_do_i[2]   = u_onewire_if.dat_o;
   assign u_gpio_if.alt1_oe_i[2]   = '1;
   // pad3
-  assign u_i2c1_if.scl_i          = u_gpio_if.alt_di_o[3];
+  assign u_i2c1_if.scl_i          = u_gpio_if.di_i[3];
   assign u_gpio_if.alt1_do_i[3]   = u_i2c1_if.scl_o;
   assign u_gpio_if.alt1_oe_i[3]   = u_i2c1_if.scl_oe_o;
   // pad4
-  assign u_i2c1_if.sda_i          = u_gpio_if.alt_di_o[4];
+  assign u_i2c1_if.sda_i          = u_gpio_if.di_i[4];
   assign u_gpio_if.alt1_do_i[4]   = u_i2c1_if.sda_o;
   assign u_gpio_if.alt1_oe_i[4]   = u_i2c1_if.sda_oe_o;
   // pad5
@@ -267,51 +272,51 @@ module retrosoc (
   assign u_gpio_if.alt1_do_i[8]   = u_spisd_if.mosi_o;
   assign u_gpio_if.alt1_oe_i[8]   = '1;
   // pad9
-  assign u_spisd_if.miso_i        = u_gpio_if.alt_di_o[9];
+  assign u_spisd_if.miso_i        = u_gpio_if.di_i[9];
   assign u_gpio_if.alt1_do_i[9]   = '0;
   assign u_gpio_if.alt1_oe_i[9]   = '0;
   // pad10
-  assign u_dvp_if.pclk_i          = u_gpio_if.alt_di_o[10];
+  assign u_dvp_if.pclk_i          = u_gpio_if.di_i[10];
   assign u_gpio_if.alt1_do_i[10]  = '0;
   assign u_gpio_if.alt1_oe_i[10]  = '0;
   // pad11
-  assign u_dvp_if.href_i          = u_gpio_if.alt_di_o[11];
+  assign u_dvp_if.href_i          = u_gpio_if.di_i[11];
   assign u_gpio_if.alt1_do_i[11]  = '0;
   assign u_gpio_if.alt1_oe_i[11]  = '0;
   // pad12
-  assign u_dvp_if.vsync_i         = u_gpio_if.alt_di_o[12];
+  assign u_dvp_if.vsync_i         = u_gpio_if.di_i[12];
   assign u_gpio_if.alt1_do_i[12]  = '0;
   assign u_gpio_if.alt1_oe_i[12]  = '0;
   // pad13
-  assign u_dvp_if.dat_i[0]        = u_gpio_if.alt_di_o[13];
+  assign u_dvp_if.dat_i[0]        = u_gpio_if.di_i[13];
   assign u_gpio_if.alt1_do_i[13]  = '0;
   assign u_gpio_if.alt1_oe_i[13]  = '0;
   // pad14
-  assign u_dvp_if.dat_i[1]        = u_gpio_if.alt_di_o[14];
+  assign u_dvp_if.dat_i[1]        = u_gpio_if.di_i[14];
   assign u_gpio_if.alt1_do_i[14]  = '0;
   assign u_gpio_if.alt1_oe_i[14]  = '0;
   // pad15
-  assign u_dvp_if.dat_i[2]        = u_gpio_if.alt_di_o[15];
+  assign u_dvp_if.dat_i[2]        = u_gpio_if.di_i[15];
   assign u_gpio_if.alt1_do_i[15]  = '0;
   assign u_gpio_if.alt1_oe_i[15]  = '0;
   // pad16
-  assign u_dvp_if.dat_i[3]        = u_gpio_if.alt_di_o[16];
+  assign u_dvp_if.dat_i[3]        = u_gpio_if.di_i[16];
   assign u_gpio_if.alt1_do_i[16]  = '0;
   assign u_gpio_if.alt1_oe_i[16]  = '0;
   // pad17
-  assign u_dvp_if.dat_i[4]        = u_gpio_if.alt_di_o[17];
+  assign u_dvp_if.dat_i[4]        = u_gpio_if.di_i[17];
   assign u_gpio_if.alt1_do_i[17]  = '0;
   assign u_gpio_if.alt1_oe_i[17]  = '0;
   // pad18
-  assign u_dvp_if.dat_i[5]        = u_gpio_if.alt_di_o[18];
+  assign u_dvp_if.dat_i[5]        = u_gpio_if.di_i[18];
   assign u_gpio_if.alt1_do_i[18]  = '0;
   assign u_gpio_if.alt1_oe_i[18]  = '0;
   // pad19
-  assign u_dvp_if.dat_i[6]        = u_gpio_if.alt_di_o[19];
+  assign u_dvp_if.dat_i[6]        = u_gpio_if.di_i[19];
   assign u_gpio_if.alt1_do_i[19]  = '0;
   assign u_gpio_if.alt1_oe_i[19]  = '0;
   // pad20
-  assign u_dvp_if.dat_i[7]        = u_gpio_if.alt_di_o[20];
+  assign u_dvp_if.dat_i[7]        = u_gpio_if.di_i[20];
   assign u_gpio_if.alt1_do_i[20]  = '0;
   assign u_gpio_if.alt1_oe_i[20]  = '0;
   // pad21
@@ -321,19 +326,19 @@ module retrosoc (
   assign u_gpio_if.alt1_do_i[22]  = u_psram_if.nss_o[0];
   assign u_gpio_if.alt1_oe_i[22]  = '1;
   // pad23
-  assign u_psram_if.io_di_i[0]    = u_gpio_if.alt_di_o[23];
+  assign u_psram_if.io_di_i[0]    = u_gpio_if.di_i[23];
   assign u_gpio_if.alt1_do_i[23]  = u_psram_if.io_do_o[0];
   assign u_gpio_if.alt1_oe_i[23]  = u_psram_if.io_oe_o[0];
   // pad24
-  assign u_psram_if.io_di_i[1]    = u_gpio_if.alt_di_o[24];
+  assign u_psram_if.io_di_i[1]    = u_gpio_if.di_i[24];
   assign u_gpio_if.alt1_do_i[24]  = u_psram_if.io_do_o[1];
   assign u_gpio_if.alt1_oe_i[24]  = u_psram_if.io_oe_o[1];
   // pad25
-  assign u_psram_if.io_di_i[2]    = u_gpio_if.alt_di_o[25];
+  assign u_psram_if.io_di_i[2]    = u_gpio_if.di_i[25];
   assign u_gpio_if.alt1_do_i[25]  = u_psram_if.io_do_o[2];
   assign u_gpio_if.alt1_oe_i[25]  = u_psram_if.io_oe_o[2];
   // pad26
-  assign u_psram_if.io_di_i[3]    = u_gpio_if.alt_di_o[26];
+  assign u_psram_if.io_di_i[3]    = u_gpio_if.di_i[26];
   assign u_gpio_if.alt1_do_i[26]  = u_psram_if.io_do_o[3];
   assign u_gpio_if.alt1_oe_i[26]  = u_psram_if.io_oe_o[3];
   // pad27
