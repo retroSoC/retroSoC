@@ -74,7 +74,7 @@ module nmi_uart (
   assign nmi.ready      = s_nmi_ready_q;
   assign nmi.rdata      = s_nmi_rdata_q;
 
-  assign uart.uart_tx_o = r_send_pattern[0];
+  assign uart.tx_o      = r_send_pattern[0];
   assign uart.irq_o     = r_recv_buf_valid;
 
   assign s_uart_div_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_UART_DIV;
@@ -109,7 +109,7 @@ module nmi_uart (
     unique case (nmi.addr[7:0])
       `NMI_UART_DIV: s_nmi_rdata_d = s_uart_div_q;
       `NMI_UART_DAT: s_nmi_rdata_d = r_recv_buf_valid ? {24'd0, r_recv_buf_data} : '1;
-      default:        s_nmi_rdata_d = s_nmi_rdata_q;
+      default:       s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
   dffer #(32) u_nmi_rdata_dffer (
@@ -133,7 +133,7 @@ module nmi_uart (
       if (s_uart_dat_en) r_recv_buf_valid <= '0;
       case (r_recv_state)
         4'd0: begin
-          if (!uart.uart_rx_i) r_recv_state <= 4'b1;
+          if (!uart.rx_i) r_recv_state <= 4'b1;
           r_recv_divcnt <= '0;
         end
         4'd1: begin
@@ -151,7 +151,7 @@ module nmi_uart (
         end
         default: begin
           if (r_recv_divcnt > s_uart_div_q) begin
-            r_recv_pattern <= {uart.uart_rx_i, r_recv_pattern[7:1]};
+            r_recv_pattern <= {uart.rx_i, r_recv_pattern[7:1]};
             r_recv_state   <= r_recv_state + 1'b1;
             r_recv_divcnt  <= '0;
           end
@@ -179,11 +179,11 @@ module nmi_uart (
         r_send_pattern <= {1'b1, nmi.wdata[7:0], 1'b0};
 `ifndef SYNTHESIS
 `ifdef SIMU_VERILATOR
-        $write("%c", nmi.wdata[7:0]); // NOTE: just for verilator sim
+        $write("%c", nmi.wdata[7:0]);  // NOTE: just for verilator sim
 `endif
 `endif
-        r_send_bitcnt  <= 4'd10;
-        r_send_divcnt  <= '0;
+        r_send_bitcnt <= 4'd10;
+        r_send_divcnt <= '0;
       end else if (r_send_divcnt > s_uart_div_q && (|r_send_bitcnt)) begin
         r_send_pattern <= {1'b1, r_send_pattern[9:1]};
         r_send_bitcnt  <= r_send_bitcnt - 1'b1;

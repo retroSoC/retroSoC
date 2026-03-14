@@ -196,7 +196,7 @@ module nmi_i2c (
   );
 
 
-  assign i2c.scl_dir_o = 1'b1;
+  assign i2c.scl_oe_o = 1'b1;
   assign i2c.irq_o     = 1'b0;
   i2c_core u_i2c_core (
       .clk_i         (clk_i),
@@ -212,7 +212,7 @@ module nmi_i2c (
       .rd_data_o     (s_i2c_rxdata),
       .oper_clk_pos_o(s_oper_clk_pos),
       .scl_o         (i2c.scl_o),
-      .sda_oe_o      (i2c.sda_dir_o),
+      .sda_oe_o      (i2c.sda_oe_o),
       .sda_o         (i2c.sda_o),
       .sda_i         (i2c.sda_i)
   );

@@ -12,19 +12,19 @@
 `include "xpi_define.svh"
 
 interface xpi_if ();
-  logic                     spi_sck_o;
-  logic [`QSPI_NSS_NUM-1:0] spi_nss_o;
-  logic [              3:0] spi_io_en_o;
-  logic [              3:0] spi_io_in_i;
-  logic [              3:0] spi_io_out_o;
+  logic                     sck_o;
+  logic [`QSPI_NSS_NUM-1:0] nss_o;
+  logic [              3:0] io_oe_o;
+  logic [              3:0] io_di_i;
+  logic [              3:0] io_do_o;
   logic                     irq_o;
 
   modport dut(
-      output spi_sck_o,
-      output spi_nss_o,
-      output spi_io_en_o,
-      input spi_io_in_i,
-      output spi_io_out_o,
+      output sck_o,
+      output nss_o,
+      output io_oe_o,
+      input io_di_i,
+      output io_do_o,
       output irq_o
   );
 endinterface

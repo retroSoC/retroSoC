@@ -119,10 +119,10 @@ module nmi_spisd (
       .wr_data_req_o (s_sd_wr_data_req),
       .wr_data_i     (s_sd_wr_data),
       .wr_busy_o     (s_sd_wr_busy),
-      .spisd_clk_o   (spi.spi_sck_o),
-      .spisd_cs_o    (spi.spi_nss_o),
-      .spisd_mosi_o  (spi.spi_mosi_o),
-      .spisd_miso_i  (spi.spi_miso_i)
+      .spisd_clk_o   (spi.sck_o),
+      .spisd_cs_o    (spi.nss_o),
+      .spisd_mosi_o  (spi.mosi_o),
+      .spisd_miso_i  (spi.miso_i)
   );
 
 endmodule
