@@ -634,7 +634,7 @@ module xpi_reg (
   end
 
   // start
-  assign xfer_start_o = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_XPI_START;
+  assign xfer_start_o = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_XPI_XST;
 
   // status
   // [20:14] rx elem num

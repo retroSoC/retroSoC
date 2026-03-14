@@ -43,16 +43,16 @@
 `define NMI_XPI_HLVLEN  8'h70
 `define NMI_XPI_TXDATA  8'h74
 `define NMI_XPI_RXDATA  8'h78
-`define NMI_XPI_START   8'h7C
+`define NMI_XPI_XST     8'h7C
 `define NMI_XPI_STATUS  8'h80
 
-`define XPI_TYPE_NONE  2'd0
-`define XPI_TYPE_SNGL  2'd1
-`define XPI_TYPE_DUAL  2'd2
-`define XPI_TYPE_QUAD  2'd3
+`define XPI_TYPE_NONE   2'd0
+`define XPI_TYPE_SNGL   2'd1
+`define XPI_TYPE_DUAL   2'd2
+`define XPI_TYPE_QUAD   2'd3
 
-`define XPI_NSS_NUM    4
-`define XPI_LNS_NUM    $clog2(`XPI_NSS_NUM)
+`define XPI_NSS_NUM     4
+`define XPI_LNS_NUM     $clog2(`XPI_NSS_NUM)
 // verilog_format: on
 
 `endif
