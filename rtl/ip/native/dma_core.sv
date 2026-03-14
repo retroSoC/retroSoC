@@ -30,8 +30,8 @@ module dma_core (
 
   // mode val
   // 7-5: resv
-  // 4:   qspi rx fifo trg
-  // 3:   qspi tx fifo trg
+  // 4:   xpi rx fifo trg
+  // 3:   xpi tx fifo trg
   // 2:   i2s  rx fifo trg
   // 1:   i2s  tx fifo trg
   // 0:   sft trg

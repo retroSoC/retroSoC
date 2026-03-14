@@ -41,6 +41,9 @@ module nmi_opipsram (
     // verilog_format: on
 );
 
+  logic dummy0 = clk_i;
+  logic dummy1 = rst_n_i;
+
   // nmi
   assign nmi.rdata      = '0;
   assign nmi.ready      = '0;
@@ -51,6 +54,6 @@ module nmi_opipsram (
   assign psram.io_do_o  = '0;
   assign psram.dqs_oe_o = '0;
   assign psram.dqs_do_o = '0;
-  assign prram.irq_o    = '0;
+  assign psram.irq_o    = '0;
 
 endmodule

@@ -16,13 +16,16 @@
 `define IRQ_START_ADDR 32'h0000_0000
 
 `define FLASH_START    4'h0
-`define NATV_IP_START  4'h1
+`define NMI_IP_START   4'h1
 `define APB_IP_START   4'h2
 `define SRAM_START     8'h30
 `define SRAM_END       8'h37
 `define SDRAM_START    8'h38
 `define SDRAM_END      8'h3F
-`define PSRAM_START    4'h4
+`define PSRAM_START    8'h40
+`define PSRAM_END      8'h47
+`define OPIPSRAM_START 8'h48
+`define OPIPSRAM_END   8'h4F
 `define QSPI_MEM_START 4'h5
 `define SPISD_START0   4'h6
 `define SPISD_START1   4'h7
@@ -34,7 +37,7 @@
 `define NMI_UART_START     8'h10
 `define NMI_TIM0_START     8'h20
 `define NMI_TIM1_START     8'h30
-`define NMI_PSRAM0_START   8'h40
+`define NMI_PSRAM_START    8'h40
 `define NMI_SPISD_START    8'h50
 `define NMI_I2C0_START     8'h60
 `define NMI_I2S_START      8'h70
@@ -47,7 +50,7 @@
 `define NMI_DVP_START      8'hE0
 `define NMI_SDIO_START     8'hF0
 // new cycle
-`define NMI_PSRAM1_START   8'h00
+`define NMI_OPIPSRAM_START 8'h00
 `define NMI_I2C1_START     8'h10
 `define NMI_GA_START       8'h20
 `define NMI_APU_START      8'h30

@@ -46,7 +46,7 @@ module nmi_spisd (
   nmi_if u_cache_byp_nmi_if ();
 
   // verilog_format: off
-  assign s_cfg_reg_sel            = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
+  assign s_cfg_reg_sel            = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
   assign u_cfg_nmi_if.valid       = nmi.valid && s_cfg_reg_sel;
   assign u_cfg_nmi_if.addr        = nmi.addr;
   assign u_cfg_nmi_if.wdata       = nmi.wdata;

@@ -86,14 +86,15 @@ module bus (
 
   // bus mux
   // verilog_format: off
-  assign s_natv_sel      = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START   ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `NATV_IP_START ||
-                          (u_mstr_rgsl_nmi_if.addr[31:24] >= `SDRAM_START   &&
-                           u_mstr_rgsl_nmi_if.addr[31:24] <= `SDRAM_END)    ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `PSRAM_START   ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START0  ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START1  ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START2  ||
+  assign s_natv_sel      = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START    ||
+                           u_mstr_rgsl_nmi_if.addr[31:28] == `NMI_IP_START   ||
+                          (u_mstr_rgsl_nmi_if.addr[31:24] >= `SDRAM_START    &&
+                           u_mstr_rgsl_nmi_if.addr[31:24] <= `SDRAM_END)     ||
+                           u_mstr_rgsl_nmi_if.addr[31:24] == `PSRAM_START    ||
+                           u_mstr_rgsl_nmi_if.addr[31:24] == `OPIPSRAM_START ||
+                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START0   ||
+                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START1   ||
+                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START2   ||
                            u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START3;
   assign natv_nmi.valid  = u_mstr_rgsl_nmi_if.valid && s_natv_sel;
   assign natv_nmi.addr   = u_mstr_rgsl_nmi_if.addr;

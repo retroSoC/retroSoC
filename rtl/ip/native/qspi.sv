@@ -11,7 +11,7 @@
 `include "mmap_define.svh"
 `include "qspi_define.svh"
 
-interface qspi_if ();
+interface xpi_if ();
   logic                     spi_sck_o;
   logic [`QSPI_NSS_NUM-1:0] spi_nss_o;
   logic [              3:0] spi_io_en_o;
@@ -37,7 +37,7 @@ module nmi_qspi (
     output logic dma_tx_stall_o,
     output logic dma_rx_stall_o,
     nmi_if.slave nmi,
-    qspi_if.dut  qspi
+    xpi_if.dut  xpi
     // verilog_format: on
 );
 
@@ -280,7 +280,7 @@ module nmi_qspi (
       .done_o(s_xfer_done),
       .tx_elem_num_i(s_tx_elem_num[7:0]),
       .dma_xfer_done_i(dma_xfer_done_i),
-      .qspi(qspi)
+      .xpi(xpi)
   );
 
 endmodule

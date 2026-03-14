@@ -32,31 +32,31 @@
 `include "gpio_define.svh"
 
 interface gpio_if ();
-  logic [`NMI_GPIO_NUM-1:0] gpio_oe_o;
-  logic [`NMI_GPIO_NUM-1:0] gpio_cs_o;
-  logic [`NMI_GPIO_NUM-1:0] gpio_pu_o;
-  logic [`NMI_GPIO_NUM-1:0] gpio_pd_o;
-  logic [`NMI_GPIO_NUM-1:0] gpio_do_o;
-  logic [`NMI_GPIO_NUM-1:0] gpio_di_i;
-  logic [`NMI_GPIO_NUM-1:0] gpio_alt_in_o;
-  logic [`NMI_GPIO_NUM-1:0] gpio_alt0_out_i;
-  logic [`NMI_GPIO_NUM-1:0] gpio_alt0_oe_i;
-  logic [`NMI_GPIO_NUM-1:0] gpio_alt1_out_i;
-  logic [`NMI_GPIO_NUM-1:0] gpio_alt1_oe_i;
+  logic [`NMI_GPIO_NUM-1:0] oe_o;
+  logic [`NMI_GPIO_NUM-1:0] cs_o;
+  logic [`NMI_GPIO_NUM-1:0] pu_o;
+  logic [`NMI_GPIO_NUM-1:0] pd_o;
+  logic [`NMI_GPIO_NUM-1:0] do_o;
+  logic [`NMI_GPIO_NUM-1:0] di_i;
+  logic [`NMI_GPIO_NUM-1:0] alt_di_o;
+  logic [`NMI_GPIO_NUM-1:0] alt0_do_i;
+  logic [`NMI_GPIO_NUM-1:0] alt0_oe_i;
+  logic [`NMI_GPIO_NUM-1:0] alt1_do_i;
+  logic [`NMI_GPIO_NUM-1:0] alt1_oe_i;
   logic                     irq_o;
 
   modport dut(
-      output gpio_oe_o,
-      output gpio_cs_o,
-      output gpio_pu_o,
-      output gpio_pd_o,
-      output gpio_do_o,
-      input gpio_di_i,
-      output gpio_alt_in_o,
-      input gpio_alt0_out_i,
-      input gpio_alt0_oe_i,
-      input gpio_alt1_out_i,
-      input gpio_alt1_oe_i,
+      output oe_o,
+      output cs_o,
+      output pu_o,
+      output pd_o,
+      output do_o,
+      input di_i,
+      output alt_di_o,
+      input alt0_do_i,
+      input alt0_oe_i,
+      input alt1_do_i,
+      input alt1_oe_i,
       output irq_o
   );
 endinterface
@@ -114,17 +114,17 @@ module nmi_gpio (
   assign nmi.ready      = s_nmi_ready_q;
   assign nmi.rdata      = s_nmi_rdata_q;
   // gpio
-  assign gpio.gpio_cs_o = s_gpio_cs_q;  // 1: CMOS 0: SCHMI
-  assign gpio.gpio_pu_o = s_gpio_pu_q;
-  assign gpio.gpio_pd_o = s_gpio_pd_q;
+  assign gpio.cs_o      = s_gpio_cs_q;  // 1: CMOS 0: SCHMI
+  assign gpio.pu_o      = s_gpio_pu_q;
+  assign gpio.pd_o      = s_gpio_pd_q;
   for (genvar i = 0; i < `NMI_GPIO_NUM; i++) begin : ALT_PINMUX_BLOCK
-    assign s_gpio_alt_oe[i] = s_gpio_pinmux_q[i] ? gpio.gpio_alt1_oe_i[i] : gpio.gpio_alt0_oe_i[i];
-    assign s_gpio_alt_out[i] = s_gpio_pinmux_q[i] ? gpio.gpio_alt1_out_i[i] : gpio.gpio_alt0_out_i[i];
+    assign s_gpio_alt_oe[i]  = s_gpio_pinmux_q[i] ? gpio.alt1_oe_i[i] : gpio.alt0_oe_i[i];
+    assign s_gpio_alt_out[i] = s_gpio_pinmux_q[i] ? gpio.alt1_do_i[i] : gpio.alt0_do_i[i];
   end
   for (genvar i = 0; i < `NMI_GPIO_NUM; i++) begin : IOF_PINMUX_BLOCK
-    assign gpio.gpio_oe_o[i]     = s_gpio_iofcfg_q[i] ? s_gpio_alt_oe[i] : s_gpio_oe_q[i];
-    assign gpio.gpio_do_o[i]     = s_gpio_iofcfg_q[i] ? s_gpio_alt_out[i] : s_gpio_do_q[i];
-    assign gpio.gpio_alt_in_o[i] = s_gpio_iofcfg_q[i] ? gpio.gpio_di_i[i] : '0;
+    assign gpio.oe_o[i]     = s_gpio_iofcfg_q[i] ? s_gpio_alt_oe[i] : s_gpio_oe_q[i];
+    assign gpio.do_o[i]     = s_gpio_iofcfg_q[i] ? s_gpio_alt_out[i] : s_gpio_do_q[i];
+    assign gpio.alt_di_o[i] = s_gpio_iofcfg_q[i] ? gpio.di_i[i] : '0;
   end
   assign s_irq_stat = |s_gpio_istat_q;
   assign gpio.irq_o = s_irq_stat;
@@ -146,7 +146,7 @@ module nmi_gpio (
   ) u_gpio_di_edge_det (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (gpio.gpio_di_i),
+      .dat_i  (gpio.di_i),
       .dat_o  (s_gpio_di),
       .re_o   (s_gpio_di_re),
       .fe_o   (s_gpio_di_fe)
