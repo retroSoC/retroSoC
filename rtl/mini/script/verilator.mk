@@ -42,7 +42,7 @@ comp: lint
 	$(MAKE) VM_PARALLEL_BUILDS=1 OPT_FAST="-O3" -C $(SOC_COMPILE_HOME) -f V$(SOC_VSRC_TOP).mk -j$(nproc) > $(BUILD_DIR)/compile.log 2>&1
 
 sim: comp
-	$(BUILD_DIR)/emu -i .sw_build/retrosoc_fw.bin -s $(RTL_SIM_CORESEL) -t 60
+	$(BUILD_DIR)/emu -i .sw_build/retrosoc_fw.bin -s $(RTL_SIM_CORESEL) -t 40
 
 wave:
 

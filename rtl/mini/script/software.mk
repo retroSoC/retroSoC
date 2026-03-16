@@ -138,6 +138,7 @@ asm: gen_mpw_code
 	cd app/asm && make
 	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
 	cp -rf app/asm/hello-asm.bin .sw_build/retrosoc_fw.bin
+	cp -rf app/asm/hello-asm.txt .sw_build/retrosoc_fw_all.txt
 
 firmware: gen_mpw_code upd_ver_info
 	@mkdir -p .sw_build

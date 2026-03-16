@@ -14,7 +14,7 @@
 
 #define CPU_FREQ             72     // unit: MHz
 #define UART_BPS             921600 // unit: bps
-#define PSRAM0_NUM           4
+#define PSRAM_NUM            4
 #define PSRAM0_SCLK_MIN_FREQ 12     // unit: MHz
 #define PSRAM0_SCLK_MAX_FREQ 133    // unit: MHz
 #define PSRAM0_SCLK_FREQ     (CPU_FREQ / 2)
@@ -29,10 +29,10 @@
 #define SRAM_MEM_OFFST      128 * 1024
 #define SDRAM_MEM_START     0x38000000
 #define SDRAM_MEM_OFFST     64 * 1024 * 1024
-#define PSRAM0_MEM_START    0x40000000
-#define PSRAM0_MEM_OFFST    8 * 1024 * 1024 * PSRAM0_NUM
-#define PSRAM1_MEM_START    0x48000000
-#define PSRAM1_MEM_OFFST    32 * 1024 * 1024
+#define PSRAM_MEM_START     0x40000000
+#define PSRAM_MEM_OFFST     8 * 1024 * 1024 * PSRAM_NUM
+#define OPIPSRAM_MEM_START  0x48000000
+#define OPIPSRAM_MEM_OFFST  32 * 1024 * 1024
 #define XPI_MEM_START       0x50000000
 #define XPI_MEM_OFFST       256 * 1024 * 1024
 #define TF_CARD_START       (uint32_t)0x60000000

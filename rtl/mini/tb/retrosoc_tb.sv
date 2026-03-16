@@ -154,12 +154,12 @@ module retrosoc_tb;
       .gpio_18_io_pad     (),
       .gpio_19_io_pad     (),
       .gpio_20_io_pad     (),
-      .gpio_21_io_pad     (),
-      .gpio_22_io_pad     (),
-      .gpio_23_io_pad     (),
-      .gpio_24_io_pad     (),
-      .gpio_25_io_pad     (),
-      .gpio_26_io_pad     (),
+      .gpio_21_io_pad     (s_psram_sck),
+      .gpio_22_io_pad     (s_psram_nss0),
+      .gpio_23_io_pad     (s_psram_dat0),
+      .gpio_24_io_pad     (s_psram_dat1),
+      .gpio_25_io_pad     (s_psram_dat2),
+      .gpio_26_io_pad     (s_psram_dat3),
       .gpio_27_io_pad     (),
       .gpio_28_io_pad     (),
       .gpio_29_io_pad     (),
@@ -227,6 +227,7 @@ module retrosoc_tb;
       .HOLDn(s_xpi_dat3_io)
   );
 
+
   W25Q128JVxIM u_W25Q128JVxIM_1 (
       .CSn  (s_xpi_nss1_o),
       .CLK  (s_xpi_sck_o),
@@ -235,6 +236,7 @@ module retrosoc_tb;
       .WPn  (s_xpi_dat2_io),
       .HOLDn(s_xpi_dat3_io)
   );
+
 
   sdr u_sdr (
       .Clk  (s_sdram_clk),
@@ -249,14 +251,15 @@ module retrosoc_tb;
       .Dqm  (s_sdram_dqm)
   );
 
-  // Testbench pullups on SDA, SCL lines
-  pullup i2c_scl_up (s_i2c_scl_io);
-  pullup i2c_sda_up (s_i2c_sda_io);
+
+  pullup u_i2c_scl_pullup (s_i2c_scl_io);
+  pullup u_i2c_sda_pullup (s_i2c_sda_io);
   AT24C04 u_AT24C04_0 (
       .WP (1'b0),
       .SCL(s_i2c_scl_io),
       .SDA(s_i2c_sda_io)
   );
+
 
   rs232 #(
       .BAUD_RATE(921600)
@@ -265,6 +268,7 @@ module retrosoc_tb;
       .rs232_tx_o()
   );
 
+
   rs232 #(
       .BAUD_RATE(115200)
   ) u_rs232_1 (
@@ -272,21 +276,26 @@ module retrosoc_tb;
       .rs232_tx_o(s_uart1_rx)
   );
 
+
   kdb_model u_kdb_model_0 (
       .ps2_clk_o(s_gpio_0_io),
       .ps2_dat_o(s_gpio_1_io)
   );
+
 
   kdb_model u_kdb_model_1 (
       .ps2_clk_o(s_ps2_clk),
       .ps2_dat_o(s_ps2_dat)
   );
 
+
+  pullup u_s_psram_nss0_pullup (s_psram_nss0);
   ESP_PSRAM64H #(0) u_ESP_PSRAM64H_0 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss0),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
+
 
   ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
       .sclk(s_psram_sck),
@@ -294,11 +303,13 @@ module retrosoc_tb;
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
+
   mic #(16) u_mic (
       .sck_i(s_i2s_sclk),
       .ws_i (s_i2s_lrck),
       .sd_o (s_i2s_adcdat)
   );
+
 
   DVP_CAMERA u_DVP_CAMERA (
       .pclk (s_dvp_pclk),
