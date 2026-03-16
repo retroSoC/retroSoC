@@ -66,28 +66,27 @@ wait_psram_reset:
 # Load code section from FLASH to RAM
 # when code LMA is different with VMA
 # test: using psram before loading
-# gpio 21-29 alt1
-# reg_gpio_iofcfg[29-21] = '1
-# reg_gpio_pinmux[29-21] = '1
 
-# 0. Define the addresses
+# Define the addresses
 .equ GPIO_IOFCFG, 0x10000028
 .equ GPIO_PINMUX, 0x1000002C
 .equ BIT_MASK,    0x3FE00000  # Bits 21 to 29 set to 1
+.equ PSRAM_INIT,  0x10004008
 
-# 1. Handle reg_gpio_iofcfg
-li t0, GPIO_IOFCFG      # Load address into t0
-lw t1, 0(t0)            # Read current value
-li t2, BIT_MASK         # Load mask into t2
-or t1, t1, t2           # Set bits 21-29 to 1
-sw t1, 0(t0)            # Store back to register
-
-# 2. Handle reg_gpio_pinmux
-li t0, GPIO_PINMUX      # Load address into t0
-lw t1, 0(t0)            # Read current value
-# t2 already holds the mask from the previous step
-or t1, t1, t2           # Set bits 21-29 to 1
-sw t1, 0(t0)            # Store back to register
+PINMUX_PSRAM:
+    li t0, GPIO_IOFCFG
+    lw t1, 0(t0)
+    li t2, BIT_MASK
+    or t1, t1, t2
+    sw t1, 0(t0)
+    li t0, GPIO_PINMUX
+    lw t1, 0(t0)
+    or t1, t1, t2
+    sw t1, 0(t0)
+PSRAM_INIT_TRG:
+    li t0, PSRAM_INIT
+    li t1, 1
+    sw t1, 0(t0)
 
 app_loader_start:
     la       a0, _ram_lma

@@ -33,6 +33,7 @@ CHECK:
 .equ GPIO_IOFCFG, 0x10000028
 .equ GPIO_PINMUX, 0x1000002C
 .equ BIT_MASK,    0x3FE00000  # Bits 21 to 29 set to 1
+.equ PSRAM_INIT,  0x10004008
 PINMUX_PSRAM:
     li t0, GPIO_IOFCFG
     lw t1, 0(t0)
@@ -43,7 +44,10 @@ PINMUX_PSRAM:
     lw t1, 0(t0)
     or t1, t1, t2
     sw t1, 0(t0)
-
+PSRAM_INIT_TRG:
+    li t0, PSRAM_INIT
+    li t1, 1
+    sw t1, 0(t0)
 
 # NEW ===========================
     la a0, 0x0

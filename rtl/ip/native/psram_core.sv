@@ -13,6 +13,7 @@ module psram_core (
     input  logic        rst_n_i,
     input  logic [ 4:0] cfg_wait_i,
     input  logic [ 2:0] cfg_chd_i,
+    input  logic        cfg_init_i,
     output logic        mem_ready_o,
     input  logic [23:0] mem_addr_i,
     input  logic [31:0] mem_wdata_i,
@@ -135,8 +136,8 @@ module psram_core (
       /* verilator lint_off CASEINCOMPLETE */
       case (r_fsm_state)
         FSM_INIT: begin
-          if (r_boot_cnt == 18'd0) r_fsm_state <= FSM_RSTEN;
-          else r_boot_cnt <= r_boot_cnt - 1'b1;
+          if (r_boot_cnt != '0) r_boot_cnt <= r_boot_cnt - 1'b1;
+          else if (cfg_init_i) r_fsm_state <= FSM_RSTEN;
         end
         FSM_RSTEN: begin
           r_xfer_ca         <= {8'h66, 24'd0};

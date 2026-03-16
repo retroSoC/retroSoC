@@ -240,7 +240,7 @@ module ESP_PSRAM64H #(
     for (i = 0; i < MEM_DEPTH_BYTES; i = i + 1) begin
       mem_array[i] = i[7:0];  // Initialize with address lower 8 bits
     end
-    qspi_mode   = 1;
+    qspi_mode   = 1'b0;
     r_fsm_state = S_IDLE;
     io_output_enable = 1'b0;
     $display("PSRAM Model: Initialized memory with address pattern for device %0d.", ID);

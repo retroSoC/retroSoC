@@ -96,7 +96,7 @@ void app_info() {
     printf("                       8 x GPIO          @0x%x\n", &reg_gpio_oe);
     printf("                       1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
     printf("                       2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
-    printf("                       1 x PSRAM         @0x%x\n", &reg_psram0_wait);
+    printf("                       1 x PSRAM         @0x%x\n", &reg_psram_wait);
     printf("                       1 x SPISD         @0x%x\n", &reg_spisd_mode);
     printf("                       1 x I2C0          @0x%x\n", &reg_i2c0_clkdiv);
     printf("                       1 x I2S           @0x%x\n", &reg_i2s_mode);

@@ -15,9 +15,9 @@
 #define CPU_FREQ             72     // unit: MHz
 #define UART_BPS             921600 // unit: bps
 #define PSRAM_NUM            4
-#define PSRAM0_SCLK_MIN_FREQ 12     // unit: MHz
-#define PSRAM0_SCLK_MAX_FREQ 133    // unit: MHz
-#define PSRAM0_SCLK_FREQ     (CPU_FREQ / 2)
+#define PSRAM_SCLK_MIN_FREQ  12     // unit: MHz
+#define PSRAM_SCLK_MAX_FREQ  133    // unit: MHz
+#define PSRAM_SCLK_FREQ      (CPU_FREQ / 2)
 
 #define SPFS_MEM_START      0x00000000
 #define SPFS_MEM_OFFST      32 * 1024 * 1024
@@ -63,8 +63,9 @@
 #define reg_tim1_rld         (*(volatile uint32_t*)0x10003004)
 #define reg_tim1_val         (*(volatile uint32_t*)0x10003008)
 // psram
-#define reg_psram0_wait      (*(volatile uint32_t*)0x10004000)
-#define reg_psram0_chd       (*(volatile uint32_t*)0x10004004)
+#define reg_psram_wait       (*(volatile uint32_t*)0x10004000)
+#define reg_psram_chd        (*(volatile uint32_t*)0x10004004)
+#define reg_psram_init       (*(volatile uint32_t*)0x10004008)
 // spisd
 #define reg_spisd_mode       (*(volatile uint32_t*)0x10005000)
 #define reg_spisd_clkdiv     (*(volatile uint32_t*)0x10005004)
