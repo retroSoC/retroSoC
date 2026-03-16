@@ -13,6 +13,7 @@ SOC_COMPILE_HOME  := $(BUILD_DIR)/emu_compile
 
 SOC_VXXFILES      := $(RTL_FLIST)
 SOC_VXXFILES      += $(RTL_PATH)/../ip/native/ESP_PSRAM64H.sv
+SOC_VXXFILES      += $(RTL_PATH)/vsrc/flash_read_binder.sv
 SOC_VXXFILES      += $(RTL_PATH)/vsrc/QSPIFlash.sv
 SOC_VXXFILES      += $(RTL_PATH)/vsrc/retrosoc_top.sv
 SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
