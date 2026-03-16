@@ -8,14 +8,14 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`include "qspi_define.svh"
+`include "xpi_define.svh"
 
-module qspi_core (
+module xpi_core (
     // verilog_format: off
     input  logic                     clk_i,
     input  logic                     rst_n_i,
     input  logic                     mode_i,
-    input  logic [`QSPI_LNS_NUM-1:0] nss_i,
+    input  logic [`XPI_LNS_NUM-1:0]  nss_i,
     input  logic [              7:0] clkdiv_i,
     input  logic                     rdwr_i,
     input  logic                     revdat_i,
@@ -44,7 +44,7 @@ module qspi_core (
     output logic                     done_o,
     input  logic [              7:0] tx_elem_num_i,
     input  logic                     dma_xfer_done_i,
-    qspi_if.dut                      qspi
+    xpi_if.dut                       xpi
 );
   // verilog_format: on
 
@@ -79,12 +79,12 @@ module qspi_core (
   logic [7:0] s_dma_xfer_datlen;
 
 
-  assign qspi.spi_sck_o = s_sclk;
+  assign xpi.sck_o = s_sclk;
   always_comb begin
-    qspi.spi_nss_o        = 4'b1111;
-    qspi.spi_nss_o[nss_i] = s_nss_q;
+    xpi.nss_o        = 4'b1111;
+    xpi.nss_o[nss_i] = s_nss_q;
   end
-  assign qspi.irq_o    = '0;
+  assign xpi.irq_o     = '0;
   assign tx_data_req_o = s_tx_data_req_q;
   assign rx_data_req_o = s_rx_data_req_q;
 
@@ -111,7 +111,7 @@ module qspi_core (
   assign s_dumlen       = rdwr_i ? rdulen_i : tdulen_i;
 
 
-  qspi_clkgen u_qspi_clkgen (
+  xpi_clkgen u_xpi_clkgen (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .div_i         (clkdiv_i),
@@ -123,31 +123,31 @@ module qspi_core (
 
 
   always_comb begin
-    s_fsm_d             = s_fsm_q;
-    s_nss_d             = s_nss_q;
-    s_sclk_en_d         = s_sclk_en_q;
-    s_xfer_bit_cnt_d    = s_xfer_bit_cnt_q;
-    s_xfer_byte_cnt_d   = s_xfer_byte_cnt_q;
-    s_xfer_data_d       = s_xfer_data_q;
-    s_tx_data_req_d     = '0;
-    s_rx_data_req_d     = '0;
+    s_fsm_d           = s_fsm_q;
+    s_nss_d           = s_nss_q;
+    s_sclk_en_d       = s_sclk_en_q;
+    s_xfer_bit_cnt_d  = s_xfer_bit_cnt_q;
+    s_xfer_byte_cnt_d = s_xfer_byte_cnt_q;
+    s_xfer_data_d     = s_xfer_data_q;
+    s_tx_data_req_d   = '0;
+    s_rx_data_req_d   = '0;
     // system
-    rx_data_o           = '0;
-    done_o              = 1'b0;
-    // qspi if
-    qspi.spi_io_en_o    = '0;
-    qspi.spi_io_en_o[0] = 1'b1;
-    qspi.spi_io_out_o   = '0;
+    rx_data_o         = '0;
+    done_o            = 1'b0;
+    // xpi if
+    xpi.io_oe_o       = '0;
+    xpi.io_oe_o[0]    = 1'b1;
+    xpi.io_do_o       = '0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
         if (s_xfer_condi) begin
           s_nss_d     = 1'b0;
           s_sclk_en_d = 1'b1;
-          if (cmdtyp_i != `QSPI_TYPE_NONE) begin
+          if (cmdtyp_i != `XPI_TYPE_NONE) begin
             s_fsm_d          = FSM_CMD;
             s_xfer_bit_cnt_d = {2'd0, cmdlen_i, 3'd0};
             s_xfer_data_d    = cmddat_i;
-          end else if (adrtyp_i != `QSPI_TYPE_NONE) begin
+          end else if (adrtyp_i != `XPI_TYPE_NONE) begin
             s_fsm_d          = FSM_ADDR;
             s_xfer_bit_cnt_d = {2'd0, adrlen_i, 3'd0};
             s_xfer_data_d    = adrdat_i;
@@ -155,7 +155,7 @@ module qspi_core (
             s_fsm_d          = FSM_DUM;
             s_xfer_bit_cnt_d = s_dumlen;
             s_xfer_data_d    = '0;
-          end else if (dattyp_i != `QSPI_TYPE_NONE) begin
+          end else if (dattyp_i != `XPI_TYPE_NONE) begin
             if (rdwr_i) s_fsm_d = FSM_RXDATA;
             else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
@@ -173,36 +173,36 @@ module qspi_core (
       end
       FSM_CMD: begin
         unique case (cmdtyp_i)
-          `QSPI_TYPE_SNGL: begin
-            s_xfer_bit_cnt_d     = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d        = {s_xfer_data_q[30:0], 1'd0};
-            qspi.spi_io_en_o[0]  = 1'b1;
-            qspi.spi_io_out_o[0] = s_xfer_data_q[31];
+          `XPI_TYPE_SNGL: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
+            xpi.io_oe_o[0]   = 1'b1;
+            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
-          `QSPI_TYPE_DUAL: begin
-            s_xfer_bit_cnt_d       = s_xfer_bit_cnt_q - 8'd2;
-            s_xfer_data_d          = {s_xfer_data_q[29:0], 2'd0};
-            qspi.spi_io_en_o[1:0]  = 2'b11;
-            qspi.spi_io_out_o[1:0] = s_xfer_data_q[31:30];
+          `XPI_TYPE_DUAL: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
+            s_xfer_data_d    = {s_xfer_data_q[29:0], 2'd0};
+            xpi.io_oe_o[1:0] = 2'b11;
+            xpi.io_do_o[1:0] = s_xfer_data_q[31:30];
           end
-          `QSPI_TYPE_QUAD: begin
-            s_xfer_bit_cnt_d       = s_xfer_bit_cnt_q - 8'd4;
-            s_xfer_data_d          = {s_xfer_data_q[27:0], 4'd0};
-            qspi.spi_io_en_o[3:0]  = 4'b1111;
-            qspi.spi_io_out_o[3:0] = s_xfer_data_q[31:28];
+          `XPI_TYPE_QUAD: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
+            s_xfer_data_d    = {s_xfer_data_q[27:0], 4'd0};
+            xpi.io_oe_o[3:0] = 4'b1111;
+            xpi.io_do_o[3:0] = s_xfer_data_q[31:28];
           end
           default: begin
-            s_xfer_bit_cnt_d     = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d        = {s_xfer_data_q[30:0], 1'd0};
-            qspi.spi_io_en_o[0]  = 1'b1;
-            qspi.spi_io_out_o[0] = s_xfer_data_q[31];
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
+            xpi.io_oe_o[0]   = 1'b1;
+            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
         endcase
 
-        if ((cmdtyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
-            (cmdtyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
-            (cmdtyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
-          if (adrtyp_i != `QSPI_TYPE_NONE) begin
+        if ((cmdtyp_i == `XPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (cmdtyp_i == `XPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (cmdtyp_i == `XPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
+          if (adrtyp_i != `XPI_TYPE_NONE) begin
             s_fsm_d          = FSM_ADDR;
             s_xfer_bit_cnt_d = {2'd0, adrlen_i, 3'd0};
             s_xfer_data_d    = adrdat_i;
@@ -210,7 +210,7 @@ module qspi_core (
             s_fsm_d          = FSM_DUM;
             s_xfer_bit_cnt_d = s_dumlen;
             s_xfer_data_d    = '0;
-          end else if (dattyp_i != `QSPI_TYPE_NONE) begin
+          end else if (dattyp_i != `XPI_TYPE_NONE) begin
             if (rdwr_i) s_fsm_d = FSM_RXDATA;
             else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
@@ -228,40 +228,40 @@ module qspi_core (
       end
       FSM_ADDR: begin
         unique case (adrtyp_i)
-          `QSPI_TYPE_SNGL: begin
-            s_xfer_bit_cnt_d     = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d        = {s_xfer_data_q[30:0], 1'd0};
-            qspi.spi_io_en_o[0]  = 1'b1;
-            qspi.spi_io_out_o[0] = s_xfer_data_q[31];
+          `XPI_TYPE_SNGL: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
+            xpi.io_oe_o[0]   = 1'b1;
+            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
-          `QSPI_TYPE_DUAL: begin
-            s_xfer_bit_cnt_d       = s_xfer_bit_cnt_q - 8'd2;
-            s_xfer_data_d          = {s_xfer_data_q[29:0], 2'd0};
-            qspi.spi_io_en_o[1:0]  = 2'b11;
-            qspi.spi_io_out_o[1:0] = s_xfer_data_q[31:30];
+          `XPI_TYPE_DUAL: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
+            s_xfer_data_d    = {s_xfer_data_q[29:0], 2'd0};
+            xpi.io_oe_o[1:0] = 2'b11;
+            xpi.io_do_o[1:0] = s_xfer_data_q[31:30];
           end
-          `QSPI_TYPE_QUAD: begin
-            s_xfer_bit_cnt_d       = s_xfer_bit_cnt_q - 8'd4;
-            s_xfer_data_d          = {s_xfer_data_q[27:0], 4'd0};
-            qspi.spi_io_en_o[3:0]  = 4'b1111;
-            qspi.spi_io_out_o[3:0] = s_xfer_data_q[31:28];
+          `XPI_TYPE_QUAD: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
+            s_xfer_data_d    = {s_xfer_data_q[27:0], 4'd0};
+            xpi.io_oe_o[3:0] = 4'b1111;
+            xpi.io_do_o[3:0] = s_xfer_data_q[31:28];
           end
           default: begin
-            s_xfer_bit_cnt_d     = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d        = {s_xfer_data_q[30:0], 1'd0};
-            qspi.spi_io_en_o[0]  = 1'b1;
-            qspi.spi_io_out_o[0] = s_xfer_data_q[31];
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
+            xpi.io_oe_o[0]   = 1'b1;
+            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
         endcase
 
-        if ((adrtyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
-            (adrtyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
-            (adrtyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
+        if ((adrtyp_i == `XPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (adrtyp_i == `XPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (adrtyp_i == `XPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (s_dumlen != '0) begin
             s_fsm_d          = FSM_DUM;
             s_xfer_bit_cnt_d = s_dumlen;
             s_xfer_data_d    = '0;
-          end else if (dattyp_i != `QSPI_TYPE_NONE) begin
+          end else if (dattyp_i != `XPI_TYPE_NONE) begin
             if (rdwr_i) s_fsm_d = FSM_RXDATA;
             else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
@@ -278,11 +278,11 @@ module qspi_core (
         end
       end
       FSM_DUM: begin
-        qspi.spi_io_en_o = '0;
+        xpi.io_oe_o      = '0;
         s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
 
         if (s_xfer_bit_cnt_q == 8'd1) begin
-          if (dattyp_i != `QSPI_TYPE_NONE) begin
+          if (dattyp_i != `XPI_TYPE_NONE) begin
             if (rdwr_i) s_fsm_d = FSM_RXDATA;
             else s_fsm_d = FSM_TXDATA;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
@@ -300,35 +300,35 @@ module qspi_core (
       end
       FSM_TXDATA: begin
         unique case (dattyp_i)
-          `QSPI_TYPE_SNGL: begin
-            s_xfer_bit_cnt_d     = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d        = {s_xfer_data_q[30:0], 1'd0};
-            qspi.spi_io_en_o[0]  = 1'b1;
-            qspi.spi_io_out_o[0] = s_xfer_data_q[31];
+          `XPI_TYPE_SNGL: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
+            xpi.io_oe_o[0]   = 1'b1;
+            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
-          `QSPI_TYPE_DUAL: begin
-            s_xfer_bit_cnt_d       = s_xfer_bit_cnt_q - 8'd2;
-            s_xfer_data_d          = {s_xfer_data_q[29:0], 2'd0};
-            qspi.spi_io_en_o[1:0]  = 2'b11;
-            qspi.spi_io_out_o[1:0] = s_xfer_data_q[31:30];
+          `XPI_TYPE_DUAL: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
+            s_xfer_data_d    = {s_xfer_data_q[29:0], 2'd0};
+            xpi.io_oe_o[1:0] = 2'b11;
+            xpi.io_do_o[1:0] = s_xfer_data_q[31:30];
           end
-          `QSPI_TYPE_QUAD: begin
-            s_xfer_bit_cnt_d       = s_xfer_bit_cnt_q - 8'd4;
-            s_xfer_data_d          = {s_xfer_data_q[27:0], 4'd0};
-            qspi.spi_io_en_o[3:0]  = 4'b1111;
-            qspi.spi_io_out_o[3:0] = s_xfer_data_q[31:28];
+          `XPI_TYPE_QUAD: begin
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
+            s_xfer_data_d    = {s_xfer_data_q[27:0], 4'd0};
+            xpi.io_oe_o[3:0] = 4'b1111;
+            xpi.io_do_o[3:0] = s_xfer_data_q[31:28];
           end
           default: begin
-            s_xfer_bit_cnt_d     = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d        = {s_xfer_data_q[30:0], 1'd0};
-            qspi.spi_io_en_o[0]  = 1'b1;
-            qspi.spi_io_out_o[0] = s_xfer_data_q[31];
+            s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
+            xpi.io_oe_o[0]   = 1'b1;
+            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
         endcase
 
-        if ((dattyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
-            (dattyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
-            (dattyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
+        if ((dattyp_i == `XPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (dattyp_i == `XPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (dattyp_i == `XPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (s_xfer_byte_cnt_q == 8'd1) begin
             s_fsm_d          = FSM_DONE;
             s_sclk_en_d      = 1'b0;
@@ -346,31 +346,31 @@ module qspi_core (
       end
       FSM_RXDATA: begin
         unique case (dattyp_i)
-          `QSPI_TYPE_SNGL: begin
+          `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d    = {s_xfer_data_q[30:0], qspi.spi_io_in_i[1]};
-            qspi.spi_io_en_o = '0;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], xpi.io_di_i[1]};
+            xpi.io_oe_o      = '0;
           end
-          `QSPI_TYPE_DUAL: begin
+          `XPI_TYPE_DUAL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
-            s_xfer_data_d    = {s_xfer_data_q[29:0], qspi.spi_io_in_i[1:0]};
-            qspi.spi_io_en_o = '0;
+            s_xfer_data_d    = {s_xfer_data_q[29:0], xpi.io_di_i[1:0]};
+            xpi.io_oe_o      = '0;
           end
-          `QSPI_TYPE_QUAD: begin
+          `XPI_TYPE_QUAD: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
-            s_xfer_data_d    = {s_xfer_data_q[27:0], qspi.spi_io_in_i[3:0]};
-            qspi.spi_io_en_o = '0;
+            s_xfer_data_d    = {s_xfer_data_q[27:0], xpi.io_di_i[3:0]};
+            xpi.io_oe_o      = '0;
           end
           default: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
-            s_xfer_data_d    = {s_xfer_data_q[30:0], qspi.spi_io_in_i[1]};
-            qspi.spi_io_en_o = '0;
+            s_xfer_data_d    = {s_xfer_data_q[30:0], xpi.io_di_i[1]};
+            xpi.io_oe_o      = '0;
           end
         endcase
 
-        if ((dattyp_i == `QSPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
-            (dattyp_i == `QSPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
-            (dattyp_i == `QSPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
+        if ((dattyp_i == `XPI_TYPE_SNGL && s_xfer_bit_cnt_q == 8'd1) ||
+            (dattyp_i == `XPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
+            (dattyp_i == `XPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (rx_data_rdy_i) begin
             if (~s_rx_data_req_q) s_rx_data_req_d = 1'b1;
             else s_rx_data_req_d = 1'b0;
@@ -437,21 +437,21 @@ module qspi_core (
         end
       end
       default: begin
-        s_fsm_d             = s_fsm_q;
-        s_nss_d             = s_nss_q;
-        s_sclk_en_d         = s_sclk_en_q;
-        s_xfer_bit_cnt_d    = s_xfer_bit_cnt_q;
-        s_xfer_byte_cnt_d   = s_xfer_byte_cnt_q;
-        s_xfer_data_d       = s_xfer_data_q;
-        s_tx_data_req_d     = '0;
-        s_rx_data_req_d     = '0;
+        s_fsm_d           = s_fsm_q;
+        s_nss_d           = s_nss_q;
+        s_sclk_en_d       = s_sclk_en_q;
+        s_xfer_bit_cnt_d  = s_xfer_bit_cnt_q;
+        s_xfer_byte_cnt_d = s_xfer_byte_cnt_q;
+        s_xfer_data_d     = s_xfer_data_q;
+        s_tx_data_req_d   = '0;
+        s_rx_data_req_d   = '0;
         // system
-        rx_data_o           = '0;
-        done_o              = 1'b0;
-        // qspi if
-        qspi.spi_io_en_o    = '0;
-        qspi.spi_io_en_o[0] = 1'b1;
-        qspi.spi_io_out_o   = '0;
+        rx_data_o         = '0;
+        done_o            = 1'b0;
+        // xpi if
+        xpi.io_oe_o       = '0;
+        xpi.io_oe_o[0]    = 1'b1;
+        xpi.io_do_o       = '0;
       end
     endcase
   end

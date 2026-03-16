@@ -49,19 +49,19 @@
 `include "mmap_define.svh"
 
 interface psram_if ();
-  logic       spi_sck_o;
-  logic [1:0] spi_nss_o;
-  logic [3:0] spi_io_en_o;
-  logic [3:0] spi_io_in_i;
-  logic [3:0] spi_io_out_o;
+  logic       sck_o;
+  logic [3:0] nss_o;
+  logic [3:0] io_oe_o;
+  logic [3:0] io_di_i;
+  logic [3:0] io_do_o;
   logic       irq_o;
 
   modport dut(
-      output spi_sck_o,
-      output spi_nss_o,
-      output spi_io_en_o,
-      input spi_io_in_i,
-      output spi_io_out_o,
+      output sck_o,
+      output nss_o,
+      output io_oe_o,
+      input io_di_i,
+      output io_do_o,
       output irq_o
   );
 
@@ -111,18 +111,20 @@ module nmi_psram (
 
 
   // verilog_format: off
-  assign psram.spi_nss_o[0]   = (~s_init_done) || (s_init_done && nmi.addr[23] == 1'b0) ? s_psram_ce : 1'b1;
-  assign psram.spi_nss_o[1]   = (~s_init_done) || (s_init_done && nmi.addr[23] == 1'b1) ? s_psram_ce : 1'b1;
-  assign psram.spi_io_en_o[0] = ~s_psram_sio_oen;
-  assign psram.spi_io_en_o[1] = ~s_psram_sio_oen;
-  assign psram.spi_io_en_o[2] = ~s_psram_sio_oen;
-  assign psram.spi_io_en_o[3] = ~s_psram_sio_oen;
-  assign psram.irq_o          = 1'b0;
+  assign psram.nss_o[0]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd0) ? s_psram_ce : 1'b1;
+  assign psram.nss_o[1]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd1) ? s_psram_ce : 1'b1;
+  assign psram.nss_o[2]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd2) ? s_psram_ce : 1'b1;
+  assign psram.nss_o[3]   = (~s_init_done) || (s_init_done && nmi.addr[24:23] == 2'd3) ? s_psram_ce : 1'b1;
+  assign psram.io_oe_o[0] = ~s_psram_sio_oen;
+  assign psram.io_oe_o[1] = ~s_psram_sio_oen;
+  assign psram.io_oe_o[2] = ~s_psram_sio_oen;
+  assign psram.io_oe_o[3] = ~s_psram_sio_oen;
+  assign psram.irq_o      = 1'b0;
   // verilog_format: on
 
 
-  assign s_mem_sel     = nmi.addr[31:28] == `PSRAM_START;
-  assign s_cfg_reg_sel = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_PSRAM0_START;
+  assign s_mem_sel     = nmi.addr[31:24] == `PSRAM_START;
+  assign s_cfg_reg_sel = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_PSRAM_START;
   assign nmi.ready     = s_mem_sel ? s_mem_ready : 1'b1;
   always_comb begin
     nmi.rdata = '0;
@@ -221,16 +223,16 @@ module nmi_psram (
       .wr_st_i            (r_wr_st),
       .init_done_o        (s_init_done),
       .idle_o             (s_core_idle),
-      .psram_sclk_o       (psram.spi_sck_o),
+      .psram_sclk_o       (psram.sck_o),
       .psram_ce_o         (s_psram_ce),
-      .psram_mosi_i       (psram.spi_io_in_i[0]),
-      .psram_miso_i       (psram.spi_io_in_i[1]),
-      .psram_sio2_i       (psram.spi_io_in_i[2]),
-      .psram_sio3_i       (psram.spi_io_in_i[3]),
-      .psram_mosi_o       (psram.spi_io_out_o[0]),
-      .psram_miso_o       (psram.spi_io_out_o[1]),
-      .psram_sio2_o       (psram.spi_io_out_o[2]),
-      .psram_sio3_o       (psram.spi_io_out_o[3]),
+      .psram_mosi_i       (psram.io_di_i[0]),
+      .psram_miso_i       (psram.io_di_i[1]),
+      .psram_sio2_i       (psram.io_di_i[2]),
+      .psram_sio3_i       (psram.io_di_i[3]),
+      .psram_mosi_o       (psram.io_do_o[0]),
+      .psram_miso_o       (psram.io_do_o[1]),
+      .psram_sio2_o       (psram.io_do_o[2]),
+      .psram_sio3_o       (psram.io_do_o[3]),
       .psram_sio_oen_o    (s_psram_sio_oen)
   );
 

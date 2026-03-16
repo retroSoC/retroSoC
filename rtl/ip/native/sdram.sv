@@ -62,7 +62,7 @@ module nmi_sdram (
   nmi_if u_mem_nmi_if ();
 
   // nmi mux
-  assign s_sdram_reg_sel    = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SDRAM_START;
+  assign s_sdram_reg_sel    = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_SDRAM_START;
   assign u_reg_nmi_if.valid = nmi.valid && s_sdram_reg_sel;
   assign u_reg_nmi_if.addr  = nmi.addr;
   assign u_reg_nmi_if.wdata = nmi.wdata;

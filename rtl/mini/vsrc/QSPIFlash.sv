@@ -1,3 +1,14 @@
+// Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
+
 `timescale 1ns / 10ps
 
 // 1-4-4
@@ -18,31 +29,27 @@ module QSPIFlash (
     err_t
   } state_t;
 
-  reg  [ 2:0] r_state;
-  reg  [ 7:0] r_cnt;
-  reg  [ 7:0] r_cmd;
-  reg  [31:0] r_addr;
-  reg  [31:0] r_data;
-  wire        s_reset;
-  wire        s_ren;
-  wire [31:0] s_rdata;
-  wire [31:0] s_raddr;
-  wire        s_out_en;
+  logic [2:0] r_state;
+  logic [7:0] r_cnt, r_cmd;
+  logic [31:0] r_addr, r_data;
+  logic s_reset, s_rd_en;
+  logic [31:0] s_rdata, s_raddr;
+  logic s_out_en;
 
   assign s_reset  = cs;
   assign io0      = s_out_en ? r_data[28] : 1'bz;
   assign io1      = s_out_en ? r_data[29] : 1'bz;
   assign io2      = s_out_en ? r_data[30] : 1'bz;
   assign io3      = s_out_en ? r_data[31] : 1'bz;
-  assign s_ren    = (r_state == addr_t) && (r_cnt == 8'd24);
+  assign s_rd_en  = (r_state == addr_t) && (r_cnt == 8'd24);
   assign s_out_en = r_state == data_t;
   assign s_raddr  = r_addr;
 
-  FlashRead flashRead (
-      .clock (clk),
-      .s_ren (s_ren),
-      .r_addr({8'd0, s_raddr[23:0]}),
-      .r_data(s_rdata)
+  flash_read_binder #(32) u_flash_read_binder (
+      .clk_i  (clk),
+      .rd_en_i(s_rd_en),
+      .addr_i ({8'd0, s_raddr[23:0]}),
+      .data_o (s_rdata)
   );
 
   always @(posedge clk or posedge s_reset) begin
@@ -94,20 +101,3 @@ module QSPIFlash (
 
 endmodule
 
-
-
-import "DPI-C" function void flash_read(
-  input  int r_addr,
-  output int r_data
-);
-
-module FlashRead (
-    input             clock,
-    input             s_ren,
-    input      [31:0] r_addr,
-    output reg [31:0] r_data
-);
-  always @(posedge clock) begin
-    if (s_ren) flash_read(r_addr, r_data);
-  end
-endmodule

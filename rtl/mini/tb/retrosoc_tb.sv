@@ -48,15 +48,14 @@ module retrosoc_tb;
   wire        s_psram_dat3;
   wire        s_i2c_sda_io;
   wire        s_i2c_scl_io;
-  wire        s_qspi_sck_o;
-  wire        s_qspi_nss0_o;
-  wire        s_qspi_nss1_o;
-  wire        s_qspi_nss2_o;
-  wire        s_qspi_nss3_o;
-  wire        s_qspi_dat0_io;
-  wire        s_qspi_dat1_io;
-  wire        s_qspi_dat2_io;
-  wire        s_qspi_dat3_io;
+  wire        s_xpi_sck_o;
+  wire        s_xpi_nss0_o;
+  wire        s_xpi_nss1_o;
+  wire        s_xpi_nss2_o;
+  wire        s_xpi_dat0_io;
+  wire        s_xpi_dat1_io;
+  wire        s_xpi_dat2_io;
+  wire        s_xpi_dat3_io;
   wire        s_i2s_sclk;
   wire        s_i2s_lrck;
   wire        s_i2s_adcdat;
@@ -101,7 +100,6 @@ module retrosoc_tb;
       .extclk_i_pad       (s_ext_clk),
       .audclk_i_pad       (s_aud_clk),
       .ext_rst_n_i_pad    (s_rst_n),
-      .sys_clkdiv4_o_pad  (),
 `ifdef HAVE_PLL
       .xi_i_pad           (r_xtal_clk),
       .xo_o_pad           (),
@@ -135,10 +133,6 @@ module retrosoc_tb;
       .user_gpio_14_io_pad(),
       .user_gpio_15_io_pad(),
 `endif
-      .tmr_capch_i_pad    (),
-      .extn_irq_i_pad     (),
-      .uart0_tx_o_pad     (s_uart0_tx),
-      .uart0_rx_i_pad     (s_uart0_rx),
       .gpio_0_io_pad      (s_gpio_0_io),
       .gpio_1_io_pad      (s_gpio_1_io),
       .gpio_2_io_pad      (),
@@ -147,23 +141,41 @@ module retrosoc_tb;
       .gpio_5_io_pad      (),
       .gpio_6_io_pad      (),
       .gpio_7_io_pad      (),
-      .psram_sck_o_pad    (s_psram_sck),
-      .psram_nss0_o_pad   (s_psram_nss0),
-      .psram_nss1_o_pad   (s_psram_nss1),
-      .psram_dat0_io_pad  (s_psram_dat0),
-      .psram_dat1_io_pad  (s_psram_dat1),
-      .psram_dat2_io_pad  (s_psram_dat2),
-      .psram_dat3_io_pad  (s_psram_dat3),
-      .spisd_sck_o_pad    (),
-      .spisd_nss_o_pad    (),
-      .spisd_mosi_o_pad   (),
-      .spisd_miso_i_pad   (),
-      .i2s_mclk_o_pad     (),
-      .i2s_sclk_o_pad     (s_i2s_sclk),
-      .i2s_lrck_o_pad     (s_i2s_lrck),
-      .i2s_dacdat_o_pad   (),
-      .i2s_adcdat_i_pad   (s_i2s_adcdat),
-      .onewire_dat_o_pad  (),
+      .gpio_8_io_pad      (),
+      .gpio_9_io_pad      (),
+      .gpio_10_io_pad     (),
+      .gpio_11_io_pad     (),
+      .gpio_12_io_pad     (),
+      .gpio_13_io_pad     (),
+      .gpio_14_io_pad     (),
+      .gpio_15_io_pad     (),
+      .gpio_16_io_pad     (),
+      .gpio_17_io_pad     (),
+      .gpio_18_io_pad     (),
+      .gpio_19_io_pad     (),
+      .gpio_20_io_pad     (),
+      .gpio_21_io_pad     (s_psram_sck),
+      .gpio_22_io_pad     (s_psram_nss0),
+      .gpio_23_io_pad     (s_psram_dat0),
+      .gpio_24_io_pad     (s_psram_dat1),
+      .gpio_25_io_pad     (s_psram_dat2),
+      .gpio_26_io_pad     (s_psram_dat3),
+      .gpio_27_io_pad     (),
+      .gpio_28_io_pad     (),
+      .gpio_29_io_pad     (),
+      .gpio_30_io_pad     (),
+      .gpio_31_io_pad     (),
+      .uart0_tx_o_pad     (s_uart0_tx),
+      .uart0_rx_i_pad     (s_uart0_rx),
+      .xpi_sck_o_pad      (s_xpi_sck_o),
+      .xpi_nss0_o_pad     (s_xpi_nss0_o),      // xpi flash
+      .xpi_nss1_o_pad     (s_xpi_nss1_o),      // qpi flash
+      .xpi_nss2_o_pad     (s_xpi_nss2_o),
+      .xpi_nss3_o_pad     (),                  // tft test
+      .xpi_dat0_io_pad    (s_xpi_dat0_io),
+      .xpi_dat1_io_pad    (s_xpi_dat1_io),
+      .xpi_dat2_io_pad    (s_xpi_dat2_io),
+      .xpi_dat3_io_pad    (s_xpi_dat3_io),
       .sdram_clk_o_pad    (s_sdram_clk),
       .sdram_cke_o_pad    (s_sdram_cke),
       .sdram_cs_n_o_pad   (s_sdram_cs_n),
@@ -202,57 +214,29 @@ module retrosoc_tb;
       .sdram_dq12_io_pad  (s_sdram_dq[12]),
       .sdram_dq13_io_pad  (s_sdram_dq[13]),
       .sdram_dq14_io_pad  (s_sdram_dq[14]),
-      .sdram_dq15_io_pad  (s_sdram_dq[15]), 
-      .dvp_pclk_i_pad     (s_dvp_pclk),
-      .dvp_href_i_pad     (s_dvp_href),
-      .dvp_vsync_i_pad    (s_dvp_vsync),
-      .dvp_dat0_i_pad     (s_dvp_data[0]),
-      .dvp_dat1_i_pad     (s_dvp_data[1]),
-      .dvp_dat2_i_pad     (s_dvp_data[2]),
-      .dvp_dat3_i_pad     (s_dvp_data[3]),
-      .dvp_dat4_i_pad     (s_dvp_data[4]),
-      .dvp_dat5_i_pad     (s_dvp_data[5]),
-      .dvp_dat6_i_pad     (s_dvp_data[6]),
-      .dvp_dat7_i_pad     (s_dvp_data[7]),
-      .uart1_tx_o_pad     (s_uart1_tx),
-      .uart1_rx_i_pad     (s_uart1_rx),
-      .pwm_0_o_pad        (),
-      .pwm_1_o_pad        (),
-      .pwm_2_o_pad        (),
-      .pwm_3_o_pad        (),
-      .ps2_clk_i_pad      (s_ps2_clk),
-      .ps2_dat_i_pad      (s_ps2_dat),
-      .i2c_scl_io_pad     (s_i2c_scl_io),
-      .i2c_sda_io_pad     (s_i2c_sda_io),
-      .qspi_sck_o_pad     (s_qspi_sck_o),
-      .qspi_nss0_o_pad    (s_qspi_nss0_o),     // qspi flash
-      .qspi_nss1_o_pad    (s_qspi_nss1_o),     // qpi flash
-      .qspi_nss2_o_pad    (s_qspi_nss2_o),     // 
-      .qspi_nss3_o_pad    (),                  // tft test
-      .qspi_dat0_io_pad   (s_qspi_dat0_io),
-      .qspi_dat1_io_pad   (s_qspi_dat1_io),
-      .qspi_dat2_io_pad   (s_qspi_dat2_io),
-      .qspi_dat3_io_pad   (s_qspi_dat3_io)
+      .sdram_dq15_io_pad  (s_sdram_dq[15])
   );
 
 
   W25Q128JVxIM u_W25Q128JVxIM_norflash (
-      .CSn  (s_qspi_nss0_o),
-      .CLK  (s_qspi_sck_o),
-      .DIO  (s_qspi_dat0_io),
-      .DO   (s_qspi_dat1_io),
-      .WPn  (s_qspi_dat2_io),
-      .HOLDn(s_qspi_dat3_io)
+      .CSn  (s_xpi_nss0_o),
+      .CLK  (s_xpi_sck_o),
+      .DIO  (s_xpi_dat0_io),
+      .DO   (s_xpi_dat1_io),
+      .WPn  (s_xpi_dat2_io),
+      .HOLDn(s_xpi_dat3_io)
   );
 
+
   W25Q128JVxIM u_W25Q128JVxIM_1 (
-      .CSn  (s_qspi_nss1_o),
-      .CLK  (s_qspi_sck_o),
-      .DIO  (s_qspi_dat0_io),
-      .DO   (s_qspi_dat1_io),
-      .WPn  (s_qspi_dat2_io),
-      .HOLDn(s_qspi_dat3_io)
+      .CSn  (s_xpi_nss1_o),
+      .CLK  (s_xpi_sck_o),
+      .DIO  (s_xpi_dat0_io),
+      .DO   (s_xpi_dat1_io),
+      .WPn  (s_xpi_dat2_io),
+      .HOLDn(s_xpi_dat3_io)
   );
+
 
   sdr u_sdr (
       .Clk  (s_sdram_clk),
@@ -267,14 +251,15 @@ module retrosoc_tb;
       .Dqm  (s_sdram_dqm)
   );
 
-  // Testbench pullups on SDA, SCL lines
-  pullup i2c_scl_up (s_i2c_scl_io);
-  pullup i2c_sda_up (s_i2c_sda_io);
+
+  pullup u_i2c_scl_pullup (s_i2c_scl_io);
+  pullup u_i2c_sda_pullup (s_i2c_sda_io);
   AT24C04 u_AT24C04_0 (
       .WP (1'b0),
       .SCL(s_i2c_scl_io),
       .SDA(s_i2c_sda_io)
   );
+
 
   rs232 #(
       .BAUD_RATE(921600)
@@ -283,6 +268,7 @@ module retrosoc_tb;
       .rs232_tx_o()
   );
 
+
   rs232 #(
       .BAUD_RATE(115200)
   ) u_rs232_1 (
@@ -290,21 +276,26 @@ module retrosoc_tb;
       .rs232_tx_o(s_uart1_rx)
   );
 
+
   kdb_model u_kdb_model_0 (
       .ps2_clk_o(s_gpio_0_io),
       .ps2_dat_o(s_gpio_1_io)
   );
+
 
   kdb_model u_kdb_model_1 (
       .ps2_clk_o(s_ps2_clk),
       .ps2_dat_o(s_ps2_dat)
   );
 
+
+  pullup u_s_psram_nss0_pullup (s_psram_nss0);
   ESP_PSRAM64H #(0) u_ESP_PSRAM64H_0 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss0),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
+
 
   ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
       .sclk(s_psram_sck),
@@ -312,11 +303,13 @@ module retrosoc_tb;
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
+
   mic #(16) u_mic (
       .sck_i(s_i2s_sclk),
       .ws_i (s_i2s_lrck),
       .sd_o (s_i2s_adcdat)
   );
+
 
   DVP_CAMERA u_DVP_CAMERA (
       .pclk (s_dvp_pclk),

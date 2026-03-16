@@ -12,7 +12,7 @@
 `define NMI_GPIO_DEF_SV
 
 // verilog_format: off
-`define NMI_GPIO_NUM    8
+`define NMI_GPIO_NUM    32
 `define NMI_GPIO_OE     8'h00 // rw
 `define NMI_GPIO_CS     8'h04 // rw
 `define NMI_GPIO_PU     8'h08 // rw

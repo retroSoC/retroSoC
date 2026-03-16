@@ -46,7 +46,7 @@ module nmi_spisd (
   nmi_if u_cache_byp_nmi_if ();
 
   // verilog_format: off
-  assign s_cfg_reg_sel            = nmi.addr[31:28] == `NATV_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
+  assign s_cfg_reg_sel            = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
   assign u_cfg_nmi_if.valid       = nmi.valid && s_cfg_reg_sel;
   assign u_cfg_nmi_if.addr        = nmi.addr;
   assign u_cfg_nmi_if.wdata       = nmi.wdata;
@@ -119,10 +119,10 @@ module nmi_spisd (
       .wr_data_req_o (s_sd_wr_data_req),
       .wr_data_i     (s_sd_wr_data),
       .wr_busy_o     (s_sd_wr_busy),
-      .spisd_clk_o   (spi.spi_sck_o),
-      .spisd_cs_o    (spi.spi_nss_o),
-      .spisd_mosi_o  (spi.spi_mosi_o),
-      .spisd_miso_i  (spi.spi_miso_i)
+      .spisd_clk_o   (spi.sck_o),
+      .spisd_cs_o    (spi.nss_o),
+      .spisd_mosi_o  (spi.mosi_o),
+      .spisd_miso_i  (spi.miso_i)
   );
 
 endmodule
