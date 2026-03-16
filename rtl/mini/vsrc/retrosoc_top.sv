@@ -36,12 +36,12 @@ module retrosoc_top (
   wire       s_psram_dat1;
   wire       s_psram_dat2;
   wire       s_psram_dat3;
-  wire       s_qspi_nss0_o;
-  wire       s_qspi_sck_o;
-  wire       s_qspi_dat0_io;
-  wire       s_qspi_dat1_io;
-  wire       s_qspi_dat2_io;
-  wire       s_qspi_dat3_io;
+  wire       s_xpi_nss0_o;
+  wire       s_xpi_sck_o;
+  wire       s_xpi_dat0_io;
+  wire       s_xpi_dat1_io;
+  wire       s_xpi_dat2_io;
+  wire       s_xpi_dat3_io;
 
   assign s_clk        = ext_clk_i;
   assign s_rst_n      = rst_n_i;
@@ -118,15 +118,15 @@ module retrosoc_top (
       .gpio_31_io_pad     (),
       .uart0_tx_o_pad     (),
       .uart0_rx_i_pad     (),
-      .qspi_sck_o_pad     (s_qspi_sck_o),
-      .qspi_nss0_o_pad    (s_qspi_nss0_o),
-      .qspi_nss1_o_pad    (),
-      .qspi_nss2_o_pad    (),
-      .qspi_nss3_o_pad    (),
-      .qspi_dat0_io_pad   (s_qspi_dat0_io),
-      .qspi_dat1_io_pad   (s_qspi_dat1_io),
-      .qspi_dat2_io_pad   (s_qspi_dat2_io),
-      .qspi_dat3_io_pad   (s_qspi_dat3_io),
+      .xpi_sck_o_pad      (s_xpi_sck_o),
+      .xpi_nss0_o_pad     (s_xpi_nss0_o),
+      .xpi_nss1_o_pad     (),
+      .xpi_nss2_o_pad     (),
+      .xpi_nss3_o_pad     (),
+      .xpi_dat0_io_pad    (s_xpi_dat0_io),
+      .xpi_dat1_io_pad    (s_xpi_dat1_io),
+      .xpi_dat2_io_pad    (s_xpi_dat2_io),
+      .xpi_dat3_io_pad    (s_xpi_dat3_io),
       .sdram_clk_o_pad    (),
       .sdram_cke_o_pad    (),
       .sdram_cs_n_o_pad   (),
@@ -169,12 +169,12 @@ module retrosoc_top (
   );
 
   QSPIFlash u_QSPIFlash (
-      .clk(s_qspi_sck_o),
-      .cs (s_qspi_nss0_o),
-      .io0(s_qspi_dat0_io),
-      .io1(s_qspi_dat1_io),
-      .io2(s_qspi_dat2_io),
-      .io3(s_qspi_dat3_io)
+      .clk(s_xpi_sck_o),
+      .cs (s_xpi_nss0_o),
+      .io0(s_xpi_dat0_io),
+      .io1(s_xpi_dat1_io),
+      .io2(s_xpi_dat2_io),
+      .io3(s_xpi_dat3_io)
   );
 
   ESP_PSRAM64H u_ESP_PSRAM64H (

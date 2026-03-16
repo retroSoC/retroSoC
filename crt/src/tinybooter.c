@@ -89,7 +89,7 @@ void app_info() {
     printf("  Off-chip SDRAM:      @[0x%08x-0x%08x] %dMiB\n", SDRAM_MEM_START, SDRAM_MEM_START + SDRAM_MEM_OFFST - 1, SDRAM_MEM_OFFST / 1024 / 1024);
     printf("  Off-chip PSRAM(SDR): @[0x%08x-0x%08x] %dMiB(%dx8MiB)\n", PSRAM0_MEM_START, PSRAM0_MEM_START + PSRAM0_MEM_OFFST - 1, 8 * PSRAM0_NUM, PSRAM0_NUM);
     printf("  Off-chip PSRAM(DTR): @[0x%08x-0x%08x] %dMiB\n", PSRAM1_MEM_START, PSRAM1_MEM_START + PSRAM1_MEM_OFFST - 1, PSRAM0_MEM_OFFST / 1024 / 1024);
-    printf("  XPI MMIO:            @[0x%08x-0x%08x] %dMiB\n", QSPI_MEM_START, QSPI_MEM_START + QSPI_MEM_OFFST - 1, QSPI_MEM_OFFST / 1024 / 1024);
+    printf("  XPI MMIO:            @[0x%08x-0x%08x] %dMiB\n", XPI_MEM_START, XPI_MEM_START + XPI_MEM_OFFST - 1, XPI_MEM_OFFST / 1024 / 1024);
     printf("  TF Card MMIO:        @[0x%08x-0x%08x] %dGiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");

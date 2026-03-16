@@ -33,8 +33,8 @@
 #define PSRAM0_MEM_OFFST    8 * 1024 * 1024 * PSRAM0_NUM
 #define PSRAM1_MEM_START    0x48000000
 #define PSRAM1_MEM_OFFST    32 * 1024 * 1024
-#define QSPI_MEM_START      0x50000000
-#define QSPI_MEM_OFFST      256 * 1024 * 1024
+#define XPI_MEM_START       0x50000000
+#define XPI_MEM_OFFST       256 * 1024 * 1024
 #define TF_CARD_START       (uint32_t)0x60000000
 #define TF_CARD_OFFST       (uint32_t)0x40000000
 

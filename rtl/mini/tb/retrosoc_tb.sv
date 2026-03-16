@@ -48,15 +48,14 @@ module retrosoc_tb;
   wire        s_psram_dat3;
   wire        s_i2c_sda_io;
   wire        s_i2c_scl_io;
-  wire        s_qspi_sck_o;
-  wire        s_qspi_nss0_o;
-  wire        s_qspi_nss1_o;
-  wire        s_qspi_nss2_o;
-  wire        s_qspi_nss3_o;
-  wire        s_qspi_dat0_io;
-  wire        s_qspi_dat1_io;
-  wire        s_qspi_dat2_io;
-  wire        s_qspi_dat3_io;
+  wire        s_xpi_sck_o;
+  wire        s_xpi_nss0_o;
+  wire        s_xpi_nss1_o;
+  wire        s_xpi_nss2_o;
+  wire        s_xpi_dat0_io;
+  wire        s_xpi_dat1_io;
+  wire        s_xpi_dat2_io;
+  wire        s_xpi_dat3_io;
   wire        s_i2s_sclk;
   wire        s_i2s_lrck;
   wire        s_i2s_adcdat;
@@ -168,15 +167,15 @@ module retrosoc_tb;
       .gpio_31_io_pad     (),
       .uart0_tx_o_pad     (s_uart0_tx),
       .uart0_rx_i_pad     (s_uart0_rx),
-      .qspi_sck_o_pad     (s_qspi_sck_o),
-      .qspi_nss0_o_pad    (s_qspi_nss0_o),     // xpi flash
-      .qspi_nss1_o_pad    (s_qspi_nss1_o),     // qpi flash
-      .qspi_nss2_o_pad    (s_qspi_nss2_o),     // 
-      .qspi_nss3_o_pad    (),                  // tft test
-      .qspi_dat0_io_pad   (s_qspi_dat0_io),
-      .qspi_dat1_io_pad   (s_qspi_dat1_io),
-      .qspi_dat2_io_pad   (s_qspi_dat2_io),
-      .qspi_dat3_io_pad   (s_qspi_dat3_io),
+      .xpi_sck_o_pad      (s_xpi_sck_o),
+      .xpi_nss0_o_pad     (s_xpi_nss0_o),      // xpi flash
+      .xpi_nss1_o_pad     (s_xpi_nss1_o),      // qpi flash
+      .xpi_nss2_o_pad     (s_xpi_nss2_o),
+      .xpi_nss3_o_pad     (),                  // tft test
+      .xpi_dat0_io_pad    (s_xpi_dat0_io),
+      .xpi_dat1_io_pad    (s_xpi_dat1_io),
+      .xpi_dat2_io_pad    (s_xpi_dat2_io),
+      .xpi_dat3_io_pad    (s_xpi_dat3_io),
       .sdram_clk_o_pad    (s_sdram_clk),
       .sdram_cke_o_pad    (s_sdram_cke),
       .sdram_cs_n_o_pad   (s_sdram_cs_n),
@@ -220,21 +219,21 @@ module retrosoc_tb;
 
 
   W25Q128JVxIM u_W25Q128JVxIM_norflash (
-      .CSn  (s_qspi_nss0_o),
-      .CLK  (s_qspi_sck_o),
-      .DIO  (s_qspi_dat0_io),
-      .DO   (s_qspi_dat1_io),
-      .WPn  (s_qspi_dat2_io),
-      .HOLDn(s_qspi_dat3_io)
+      .CSn  (s_xpi_nss0_o),
+      .CLK  (s_xpi_sck_o),
+      .DIO  (s_xpi_dat0_io),
+      .DO   (s_xpi_dat1_io),
+      .WPn  (s_xpi_dat2_io),
+      .HOLDn(s_xpi_dat3_io)
   );
 
   W25Q128JVxIM u_W25Q128JVxIM_1 (
-      .CSn  (s_qspi_nss1_o),
-      .CLK  (s_qspi_sck_o),
-      .DIO  (s_qspi_dat0_io),
-      .DO   (s_qspi_dat1_io),
-      .WPn  (s_qspi_dat2_io),
-      .HOLDn(s_qspi_dat3_io)
+      .CSn  (s_xpi_nss1_o),
+      .CLK  (s_xpi_sck_o),
+      .DIO  (s_xpi_dat0_io),
+      .DO   (s_xpi_dat1_io),
+      .WPn  (s_xpi_dat2_io),
+      .HOLDn(s_xpi_dat3_io)
   );
 
   sdr u_sdr (

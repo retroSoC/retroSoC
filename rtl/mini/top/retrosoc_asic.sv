@@ -87,15 +87,15 @@ module retrosoc_asic (
     output uart0_tx_o_pad,
     inout  uart0_rx_i_pad,
     // xpi
-    output qspi_sck_o_pad,
-    output qspi_nss0_o_pad,
-    output qspi_nss1_o_pad,
-    output qspi_nss2_o_pad,
-    output qspi_nss3_o_pad,
-    inout  qspi_dat0_io_pad,
-    inout  qspi_dat1_io_pad,
-    inout  qspi_dat2_io_pad,
-    inout  qspi_dat3_io_pad,
+    output xpi_sck_o_pad,
+    output xpi_nss0_o_pad,
+    output xpi_nss1_o_pad,
+    output xpi_nss2_o_pad,
+    output xpi_nss3_o_pad,
+    inout  xpi_dat0_io_pad,
+    inout  xpi_dat1_io_pad,
+    inout  xpi_dat2_io_pad,
+    inout  xpi_dat3_io_pad,
     // sdram
     output sdram_clk_o_pad,
     output sdram_cke_o_pad,
@@ -248,15 +248,15 @@ module retrosoc_asic (
   tc_io_tri_pad         u_uart0_tx_o_pad        (.pad(uart0_tx_o_pad),        .c2p(u_uart0_if.tx_o),            .c2p_en(1'b1),                   .p2c());
   tc_io_tri_pad         u_uart0_rx_i_pad        (.pad(uart0_rx_i_pad),        .c2p(1'b0),                       .c2p_en(1'b0),                   .p2c(u_uart0_if.rx_i));
   // xpi
-  tc_io_tri_pad         u_qspi_sck_o_pad       (.pad(qspi_sck_o_pad),         .c2p(u_xpi_if.sck_o),        .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_qspi_nss0_o_pad      (.pad(qspi_nss0_o_pad),        .c2p(u_xpi_if.nss_o[0]),     .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_qspi_nss1_o_pad      (.pad(qspi_nss1_o_pad),        .c2p(u_xpi_if.nss_o[1]),     .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_qspi_nss2_o_pad      (.pad(qspi_nss2_o_pad),        .c2p(u_xpi_if.nss_o[2]),     .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_qspi_nss3_o_pad      (.pad(qspi_nss3_o_pad),        .c2p(u_xpi_if.nss_o[3]),     .c2p_en(1'b1),                      .p2c());
-  tc_io_tri_pad         u_qspi_dat0_io_pad     (.pad(qspi_dat0_io_pad),       .c2p(u_xpi_if.io_do_o[0]),  .c2p_en(u_xpi_if.io_oe_o[0]),  .p2c(u_xpi_if.io_di_i[0]));
-  tc_io_tri_pad         u_qspi_dat1_io_pad     (.pad(qspi_dat1_io_pad),       .c2p(u_xpi_if.io_do_o[1]),  .c2p_en(u_xpi_if.io_oe_o[1]),  .p2c(u_xpi_if.io_di_i[1]));
-  tc_io_tri_pad         u_qspi_dat2_io_pad     (.pad(qspi_dat2_io_pad),       .c2p(u_xpi_if.io_do_o[2]),  .c2p_en(u_xpi_if.io_oe_o[2]),  .p2c(u_xpi_if.io_di_i[2]));
-  tc_io_tri_pad         u_qspi_dat3_io_pad     (.pad(qspi_dat3_io_pad),       .c2p(u_xpi_if.io_do_o[3]),  .c2p_en(u_xpi_if.io_oe_o[3]),  .p2c(u_xpi_if.io_di_i[3]));
+  tc_io_tri_pad         u_qspi_sck_o_pad       (.pad(xpi_sck_o_pad),         .c2p(u_xpi_if.sck_o),        .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_qspi_nss0_o_pad      (.pad(xpi_nss0_o_pad),        .c2p(u_xpi_if.nss_o[0]),     .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_qspi_nss1_o_pad      (.pad(xpi_nss1_o_pad),        .c2p(u_xpi_if.nss_o[1]),     .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_qspi_nss2_o_pad      (.pad(xpi_nss2_o_pad),        .c2p(u_xpi_if.nss_o[2]),     .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_qspi_nss3_o_pad      (.pad(xpi_nss3_o_pad),        .c2p(u_xpi_if.nss_o[3]),     .c2p_en(1'b1),                      .p2c());
+  tc_io_tri_pad         u_qspi_dat0_io_pad     (.pad(xpi_dat0_io_pad),       .c2p(u_xpi_if.io_do_o[0]),  .c2p_en(u_xpi_if.io_oe_o[0]),  .p2c(u_xpi_if.io_di_i[0]));
+  tc_io_tri_pad         u_qspi_dat1_io_pad     (.pad(xpi_dat1_io_pad),       .c2p(u_xpi_if.io_do_o[1]),  .c2p_en(u_xpi_if.io_oe_o[1]),  .p2c(u_xpi_if.io_di_i[1]));
+  tc_io_tri_pad         u_qspi_dat2_io_pad     (.pad(xpi_dat2_io_pad),       .c2p(u_xpi_if.io_do_o[2]),  .c2p_en(u_xpi_if.io_oe_o[2]),  .p2c(u_xpi_if.io_di_i[2]));
+  tc_io_tri_pad         u_qspi_dat3_io_pad     (.pad(xpi_dat3_io_pad),       .c2p(u_xpi_if.io_do_o[3]),  .c2p_en(u_xpi_if.io_oe_o[3]),  .p2c(u_xpi_if.io_di_i[3]));
   // sdram
   tc_io_tri_pad         u_sdram_clk_o_pad       (.pad(sdram_clk_o_pad),       .c2p(u_sdram_if.clk_o),           .c2p_en(1'b1),                      .p2c());
   tc_io_tri_pad         u_sdram_cke_o_pad       (.pad(sdram_cke_o_pad),       .c2p(u_sdram_if.cke_o),           .c2p_en(1'b1),                      .p2c());

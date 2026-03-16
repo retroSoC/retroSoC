@@ -26,7 +26,7 @@
 `define PSRAM_END      8'h47
 `define OPIPSRAM_START 8'h48
 `define OPIPSRAM_END   8'h4F
-`define QSPI_MEM_START 4'h5
+`define XPI_MEM_START  4'h5
 `define SPISD_START0   4'h6
 `define SPISD_START1   4'h7
 `define SPISD_START2   4'h8

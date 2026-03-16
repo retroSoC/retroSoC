@@ -135,7 +135,7 @@ module ip_nmi_wrapper (
   assign u_onewire_nmi_if.wstrb  = nmi.wstrb;
   // xpi
   assign s_xpi_cfg_sel           = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_XPI_START;
-  assign s_xpi_mem_sel           = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `QSPI_MEM_START;
+  assign s_xpi_mem_sel           = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `XPI_MEM_START;
   assign u_xpi_nmi_if.valid      = nmi.valid && (s_xpi_cfg_sel || s_xpi_mem_sel);
   assign u_xpi_nmi_if.addr       = nmi.addr;
   assign u_xpi_nmi_if.wdata      = nmi.wdata;
