@@ -102,6 +102,7 @@ module i2s_core (
 
   always_comb begin
     tx_valid_o    = '0;
+    s_send_data   = '0;
     s_send_cnt_d  = s_send_cnt_q;
     s_send_data_d = s_send_data_q;
     if (!mode_i) s_send_data = s_loopback_data;
