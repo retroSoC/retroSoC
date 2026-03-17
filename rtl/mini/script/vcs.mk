@@ -32,8 +32,7 @@ SIM_OPTIONS := -full64 +v2k -sverilog -timescale=1ns/10ps \
 
 TIME_OPTION := +notimingcheck +nospecify
 
-# NET_PATH  := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
-NET_PATH  := -v /nfs/share/home/miaoyuchi/Flow_CX55_MPW/syn/netlist/retrosoc_asic_v1.syn.v.gz
+NET_PATH  := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
 POST_PATH := -v /nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic.v
 SDF_FILE  := "/nfs/share/temp/flow_110/bes_data/sta/sdf/retrosoc_asic_CTS_MIN_CMIN_SDF_Mar_10_00/retrosoc_asic_CTS_MIN.sdf.gz"
 
@@ -51,7 +50,7 @@ comp:
 	cd $(RTL_PATH)/.build && ($(SIM_TOOL) $(SIM_OPTIONS) $(TIME_OPTION) $(RTL_FLIST) $(TB_FLIST) -top $(RTL_TOP) $(COMP_LOG))
 
 sim: comp
-	cd $(RTL_PATH)/.build && ($(SIM_BINY) +vcs+loopreport+1000 -suppress=ASLR_DETECTED_INFO +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +behv_$(WAVE) +sim_vcs $(SIM_LOG))
+	cd $(RTL_PATH)/.build && ($(SIM_BINY) +vcs+loopreport+1000 -suppress=ASLR_DETECTED_INFO +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +wave_$(WAVE) +sim_vcs $(SIM_LOG))
 
 wave:
 	cd $(RTL_PATH)/.build && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)

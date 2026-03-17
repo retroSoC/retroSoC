@@ -5,15 +5,15 @@ TIMI           ?= NONE
 
 # HW
 PDK             ?= ICS55
-HAVE_PLL        ?= YES
-HAVE_SRAM_IF    ?= YES
-HAVE_SRAM_MACRO ?= YES
+HAVE_PLL        ?= NO
+HAVE_SRAM_IF    ?= NO
+HAVE_SRAM_MACRO ?= NO
 HAVE_SVA        ?= NO
+WAVE            ?= NO
 
 RTL_SIM_PLLEN   ?= NONE
 RTL_SIM_PLLCFG  ?= NONE
 RTL_SIM_CORESEL ?= 0
-WAVE            ?= NONE
 
 ROOT_PATH      ?= $(CURDIR)
 RTL_PATH       ?= NONE
@@ -51,10 +51,10 @@ $(info HAVE_PLL        [YES, NO]:                           $(HAVE_PLL))
 $(info HAVE_SRAM_IF    [YES, NO]:                           $(HAVE_SRAM_IF))
 $(info HAVE_SRAM_MACRO [YES, NO]:                           $(HAVE_SRAM_MACRO))
 $(info HAVE_SVA        [YES, NO]:                           $(HAVE_SVA))
+$(info WAVE:           [YES, NO]:                           $(WAVE))
 $(info RTL_SIM_PLLEN:                                       $(RTL_SIM_PLLEN))
 $(info RTL_SIM_PLLCFG:                                      $(RTL_SIM_PLLCFG))
 $(info RTL_SIM_CORESEL:                                     $(RTL_SIM_CORESEL))
-$(info WAVE:                                                $(WAVE))
 $(info ============== SW CONFIG INFO ===================================)
 $(info ISA           [RV32E RV32I RV32IM]:                  $(ISA))
 $(info HAVE_CSR      [YES, NO]:                             $(HAVE_CSR))

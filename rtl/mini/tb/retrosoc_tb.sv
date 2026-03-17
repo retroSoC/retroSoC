@@ -375,43 +375,12 @@ module retrosoc_tb;
   end
 
   initial begin
-    if ($test$plusargs("behv_wave")) begin
-      $display("gen behv sim wave");
+    if ($test$plusargs("wave_YES")) begin
+      $display("== generate simulation wave ==");
       $fsdbDumpfile("retrosoc_tb.fsdb");
       $fsdbDumpvars(0);
       $fsdbDumpMDA();
-      // #398844962;
-      // #867652;
-      // #145541740;
-      // #205541740;
-      // #382928081;
-      // #300000;
       #47050000;
-      // #86869320;
-      // #21149063;
-      // #1667652;
-      // #327820116;
-      // #327179489;
-      // #836901000;
-      // #468320000;
-      // #505600311;
-      // #507983431
-      // #507983430;
-      // #535996319;
-      // #543128473;
-      // #577859417; // pure
-      // #585923415;
-      // #1070933733; // debug spi
-      // #873310000;
-      // #340686376;
-      // #489238714;
-      $finish;
-    end else if ($test$plusargs("syn_wave")) begin
-      $display("gen syn sim wave");
-      $fsdbDumpfile("retrosoc_tb_syn.fsdb");
-      $fsdbDumpvars(0);
-
-      #21149063;
       $finish;
     end
   end
