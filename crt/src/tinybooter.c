@@ -93,7 +93,7 @@ void app_info() {
     printf("  SPISD MMIO:          @[0x%08x-0x%08x] %3d GiB\n\n", TF_CARD_START, TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
-    printf("                      32 x GPIO          @0x%x\n", &reg_gpio_oe);
+    printf("                       1 x GPIO(32PIN)   @0x%x\n", &reg_gpio_oe);
     printf("                       1 x UART0         @0x%x\n", &reg_uart0_clkdiv);
     printf("                       2 x TIMER(0,1)    @0x%x,0x%x\n", &reg_tim0_cfg, &reg_tim1_cfg);
     printf("                       1 x PSRAM         @0x%x\n", &reg_psram_wait);
@@ -115,7 +115,7 @@ void app_info() {
     printf("                       1 x ARCHINFO      @0x%x\n", &reg_archinfo_sys);
     printf("                       1 x RNG           @0x%x\n", &reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @0x%x\n", &reg_uart1_lcr);
-    printf("                       4 x PWM           @0x%x\n", &reg_pwm_ctrl);
+    printf("                       1 x PWM(4CHNL)    @0x%x\n", &reg_pwm_ctrl);
     printf("                       1 x PS2           @0x%x\n", &reg_ps2_ctrl);
     printf("                       1 x RTC           @0x%x\n", &reg_rtc_ctrl);
     printf("                       1 x WDG           @0x%x\n", &reg_wdg_ctrl);
