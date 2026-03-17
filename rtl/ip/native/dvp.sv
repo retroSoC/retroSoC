@@ -87,7 +87,8 @@ module nmi_dvp (
 
   assign s_nmi_rdata_en = s_nmi_rd_hdshk;
   always_comb begin
-    s_nmi_rdata_d = s_nmi_rdata_q;
+    s_rx_pop_valid = '0;
+    s_nmi_rdata_d  = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
       `NMI_DVP_RECVEN: s_nmi_rdata_d = {31'd0, s_dvp_recven_q};
       `NMI_DVP_RXDATA: begin

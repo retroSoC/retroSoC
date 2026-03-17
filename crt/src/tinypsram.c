@@ -6,20 +6,20 @@
 void ip_psram_boot() {
     bool timing_pass = true;
 
-    printf("[PSRAM] device:     ESP-PSRAM64H(max %dMHz)\n", PSRAM0_SCLK_MAX_FREQ);
+    printf("[PSRAM] device:     ESP-PSRAM64H(max %dMHz)\n", PSRAM_SCLK_MAX_FREQ);
     printf("        volt:       3.3V\n");
     printf("        power-up:   SPI mode\n");
     printf("        normal:     QPI mode\n");
-    printf("        sclk freq:  %dMHz\n", PSRAM0_SCLK_FREQ);
+    printf("        sclk freq:  %dMHz\n", PSRAM_SCLK_FREQ);
     // check
     uint32_t timing_expt = 0, timing_actual = 0;
     char  msg_pass[20] = "\e[0;32m[PASS]\e[0m", msg_fail[20] = "\e[0;31m[FAIL]\e[0m";
 
-    printf("[PSRAM] wait cycles(default):      %d\n", reg_psram0_wait);
-    printf("[PSRAM] chd delay cycles(defalut): %d\n", reg_psram0_chd);
+    printf("[PSRAM] wait cycles(default):      %d\n", reg_psram_wait);
+    printf("[PSRAM] chd delay cycles(defalut): %d\n", reg_psram_chd);
     printf("[PSRAM] timing check\n");
-    timing_expt = 1000 / PSRAM0_SCLK_MAX_FREQ;
-    timing_actual = 1000 / (PSRAM0_SCLK_FREQ);
+    timing_expt = 1000 / PSRAM_SCLK_MAX_FREQ;
+    timing_actual = 1000 / (PSRAM_SCLK_FREQ);
 
     printf("tCLK    ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
@@ -34,32 +34,32 @@ void ip_psram_boot() {
     printf("%s\n", msg_pass);
 
     timing_expt = 50;
-    timing_actual = (reg_psram0_wait / 2) * (1000 / PSRAM0_SCLK_FREQ);
+    timing_actual = (reg_psram_wait / 2) * (1000 / PSRAM_SCLK_FREQ);
     printf("tCPH    ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
 
     timing_expt = 8;
     // 32(cmd+addr) + 32(data)
-    timing_actual = ((1000 / PSRAM0_SCLK_FREQ) * ((32 + 32) / 4)) / 1000;
+    timing_actual = ((1000 / PSRAM_SCLK_FREQ) * ((32 + 32) / 4)) / 1000;
     printf("tCEM    ===> expt:  %dus(max)\n", timing_expt);
     printf("             actul: %dus ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual <= timing_expt)) ? msg_pass : msg_fail);
 
     timing_expt = 2;
-    timing_actual = (1000 / PSRAM0_SCLK_FREQ) / 2;
+    timing_actual = (1000 / PSRAM_SCLK_FREQ) / 2;
     printf("tCSP    ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
 
     timing_expt = 20;
-    timing_actual = (1000 / PSRAM0_SCLK_FREQ) * (reg_psram0_chd / 2 + 1);
+    timing_actual = (1000 / PSRAM_SCLK_FREQ) * (reg_psram_chd / 2 + 1);
     printf("tCHD    ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
 
     timing_expt = 2;
-    timing_actual = (1000 / PSRAM0_SCLK_FREQ) / 2;
+    timing_actual = (1000 / PSRAM_SCLK_FREQ) / 2;
     printf("tSP     ===> expt:  %dns(min)\n", timing_expt);
     printf("             actul: %dns ", timing_actual);
     printf("%s\n", (timing_pass &= (timing_actual >= timing_expt)) ? msg_pass : msg_fail);
@@ -70,11 +70,11 @@ void ip_psram_boot() {
     }
 
     uint32_t psram_cfg_val = (uint32_t)8;
-    reg_psram0_wait = psram_cfg_val;
-    printf("[PSRAM] set wait cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram0_wait);
+    reg_psram_wait = psram_cfg_val;
+    printf("[PSRAM] set wait cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_wait);
     psram_cfg_val = (uint32_t)0;
-    reg_psram0_chd = psram_cfg_val;
-    printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram0_chd);
+    reg_psram_chd = psram_cfg_val;
+    printf("[PSRAM] set chd cycles to %d, actul rd val: %d\n", psram_cfg_val, reg_psram_chd);
     printf("[extern PSRAM test]\n");
     // ip_psram_selftest(0x40000000, 8 * 1024 * 1024);
     printf("psram self test done\n");

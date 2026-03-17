@@ -46,8 +46,8 @@ module retrosoc_tb;
   wire        s_psram_dat1;
   wire        s_psram_dat2;
   wire        s_psram_dat3;
-  wire        s_i2c_sda_io;
-  wire        s_i2c_scl_io;
+  wire        s_i2c0_sda_io;
+  wire        s_i2c0_scl_io;
   wire        s_xpi_sck_o;
   wire        s_xpi_nss0_o;
   wire        s_xpi_nss1_o;
@@ -140,8 +140,8 @@ module retrosoc_tb;
       .gpio_4_io_pad      (),
       .gpio_5_io_pad      (),
       .gpio_6_io_pad      (),
-      .gpio_7_io_pad      (),
-      .gpio_8_io_pad      (),
+      .gpio_7_io_pad      (s_i2c0_scl_io),
+      .gpio_8_io_pad      (s_i2c0_sda_io),
       .gpio_9_io_pad      (),
       .gpio_10_io_pad     (),
       .gpio_11_io_pad     (),
@@ -160,7 +160,7 @@ module retrosoc_tb;
       .gpio_24_io_pad     (s_psram_dat1),
       .gpio_25_io_pad     (s_psram_dat2),
       .gpio_26_io_pad     (s_psram_dat3),
-      .gpio_27_io_pad     (),
+      .gpio_27_io_pad     (s_psram_nss1),
       .gpio_28_io_pad     (),
       .gpio_29_io_pad     (),
       .gpio_30_io_pad     (),
@@ -252,12 +252,12 @@ module retrosoc_tb;
   );
 
 
-  pullup u_i2c_scl_pullup (s_i2c_scl_io);
-  pullup u_i2c_sda_pullup (s_i2c_sda_io);
+  pullup u_i2c0_scl_pullup (s_i2c0_scl_io);
+  pullup u_i2c0_sda_pullup (s_i2c0_sda_io);
   AT24C04 u_AT24C04_0 (
       .WP (1'b0),
-      .SCL(s_i2c_scl_io),
-      .SDA(s_i2c_sda_io)
+      .SCL(s_i2c0_scl_io),
+      .SDA(s_i2c0_sda_io)
   );
 
 
@@ -289,7 +289,7 @@ module retrosoc_tb;
   );
 
 
-  pullup u_s_psram_nss0_pullup (s_psram_nss0);
+  pullup u_psram_nss0_pullup (s_psram_nss0);
   ESP_PSRAM64H #(0) u_ESP_PSRAM64H_0 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss0),
@@ -297,6 +297,7 @@ module retrosoc_tb;
   );
 
 
+  pullup u_psram_nss1_pullup (s_psram_nss1);
   ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss1),
@@ -374,43 +375,12 @@ module retrosoc_tb;
   end
 
   initial begin
-    if ($test$plusargs("behv_wave")) begin
-      $display("gen behv sim wave");
+    if ($test$plusargs("wave_YES")) begin
+      $display("== generate simulation wave ==");
       $fsdbDumpfile("retrosoc_tb.fsdb");
       $fsdbDumpvars(0);
       $fsdbDumpMDA();
-      // #398844962;
-      // #867652;
-      // #145541740;
-      // #205541740;
-      // #382928081;
-      // #300000;
       #47050000;
-      // #86869320;
-      // #21149063;
-      // #1667652;
-      // #327820116;
-      // #327179489;
-      // #836901000;
-      // #468320000;
-      // #505600311;
-      // #507983431
-      // #507983430;
-      // #535996319;
-      // #543128473;
-      // #577859417; // pure
-      // #585923415;
-      // #1070933733; // debug spi
-      // #873310000;
-      // #340686376;
-      // #489238714;
-      $finish;
-    end else if ($test$plusargs("syn_wave")) begin
-      $display("gen syn sim wave");
-      $fsdbDumpfile("retrosoc_tb_syn.fsdb");
-      $fsdbDumpvars(0);
-
-      #21149063;
       $finish;
     end
   end

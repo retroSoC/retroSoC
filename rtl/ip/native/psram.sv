@@ -42,6 +42,7 @@
 // verilog_format: off
 `define NMI_PSRAM_WAIT 8'h00
 `define NMI_PSRAM_CHD  8'h04
+`define NMI_PSRAM_INIT 8'h08
 // verilog_format: on
 
 `endif
@@ -88,6 +89,7 @@ module nmi_psram (
   // reg
   logic [ 4:0] r_cfg_wait;
   logic [ 2:0] r_cfg_chd;
+  logic        r_cfg_init;
   logic        s_cfg_reg_sel;
   logic        s_mem_sel;
   logic        s_mem_ready;
@@ -134,6 +136,8 @@ module nmi_psram (
       nmi.rdata = {27'd0, r_cfg_wait};
     end else if (nmi.addr[7:0] == `NMI_PSRAM_CHD) begin
       nmi.rdata = {29'd0, r_cfg_chd};
+    end else if (nmi.addr[7:0] == `NMI_PSRAM_INIT) begin
+      nmi.rdata = {31'd0, r_cfg_init};
     end
   end
 
@@ -151,7 +155,13 @@ module nmi_psram (
       r_cfg_chd <= nmi.wdata[2:0];
     end
   end
-
+  // init device/switch qpi mode
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
+    if (~rst_n_i) r_cfg_init <= '0;
+    else if (nmi.valid && nmi.wstrb[0] && s_cfg_reg_sel && nmi.addr[7:0] == `NMI_PSRAM_INIT) begin
+      r_cfg_init <= nmi.wdata[0];
+    end
+  end
 
   edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
       clk_i,
@@ -214,6 +224,7 @@ module nmi_psram (
       .rst_n_i            (rst_n_i),
       .cfg_wait_i         (r_cfg_wait),
       .cfg_chd_i          (r_cfg_chd),
+      .cfg_init_i         (r_cfg_init),
       .mem_ready_o        (s_mem_ready),
       .mem_addr_i         (r_mem_addr),
       .mem_wdata_i        (r_mem_wdata),
