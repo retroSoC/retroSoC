@@ -41,7 +41,7 @@ void app_info() {
     printf("| '__/ _ \\ __| '__/ _ \\\\___ \\ / _ \\| |\n");
     printf("| | |  __/ |_| | | (_) |___) | (_) | |____ \n");
     printf("|_|  \\___|\\__|_|  \\___/_____/ \\___/ \\_____|\n");
-    printf("  retroSoC: A Customized ASIC for Retro Stuff!\n");
+    printf("  retroSoC: A Customized ASIC for Retro Stuff\n");
     printf("    <https://github.com/retroSoC/retroSoC>\n");
     printf("  author:       Yuchi Miao   <https://github.com/maksyuki>\n");
     printf("  contributor:  MrAMS        <https://github.com/MrAMS>\n");
