@@ -33,6 +33,7 @@ endif
 
 NET_FLIST  += -f $(RTL_PATH)/filelist/def.fl
 NET_FLIST  += -f $(RTL_PATH)/filelist/sys_def.fl
+NET_FLIST  += -f $(RTL_PATH)/filelist/commonip.fl
 
 ifeq ($(SIMU), VCS)
     NET_FLIST  += -f $(RTL_PATH)/filelist/inc.fl
@@ -41,6 +42,7 @@ else ifeq ($(SIMU), VERILATOR)
 endif
 
 RTL_FLIST  := $(NET_FLIST)
+RTL_FLIST  += -f $(RTL_PATH)/filelist/clusterip.fl
 RTL_FLIST  += -f $(RTL_PATH)/filelist/ip.fl
 RTL_FLIST  += -f $(RTL_PATH)/filelist/tech.fl
 

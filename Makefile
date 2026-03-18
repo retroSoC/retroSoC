@@ -4,7 +4,7 @@ SYNTH          ?= NONE
 TIMI           ?= NONE
 
 # HW
-PDK             ?= ICS55
+PDK             ?= IHP130
 HAVE_PLL        ?= NO
 HAVE_SRAM_IF    ?= NO
 HAVE_SRAM_MACRO ?= NO

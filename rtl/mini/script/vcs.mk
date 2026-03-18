@@ -18,6 +18,7 @@ TB_FLIST     := -f $(RTL_PATH)/filelist/tb.fl
 # +lint=TFIPC-H(Timing, Floating Port, Implicit Net Declaration, Parameter, Comparison, High-Level)
 # +ling=PCWM-H(Port, Parameter, Unused Wire, Module Instantiation, High-Level)
 # -error=all(turn all warning into error)
+# +vcs+loopreport+100000 \
 # --- Compilation Flags ---
 COMMON_OPTS  := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 $(EXTRA) \
@@ -25,7 +26,6 @@ COMMON_OPTS  := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 -debug_access+all \
                 -msg_config=../lint.msg \
                 +error+500 \
-                +vcs+loopreport+1000 \
                 +vcs+flush+all \
                 -xprop=../xprop_config \
                 -override_timescale=1ns/1ps \
