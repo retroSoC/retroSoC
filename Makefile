@@ -4,7 +4,7 @@ SYNTH          ?= NONE
 TIMI           ?= NONE
 
 # HW
-PDK             ?= ICS55
+PDK             ?= IHP130
 HAVE_PLL        ?= NO
 HAVE_SRAM_IF    ?= NO
 HAVE_SRAM_MACRO ?= NO
@@ -87,7 +87,8 @@ endif
 ifeq ($(SOC), MINI)
     RTL_PATH = $(ROOT_PATH)/rtl/mini
     $(info DEF_LIST: $(DEF_LIST))
-    $(file > $(RTL_PATH)/filelist/def.fl, $(DEF_LIST))
+    $(shell mkdir -p $(RTL_PATH)/.generated_fl)
+    $(file > $(RTL_PATH)/.generated_fl/def.fl, $(DEF_LIST))
     include rtl/mini/Makefile
 endif
 
@@ -95,7 +96,8 @@ ifeq ($(SYNTH), YOSYS)
     #HACK: for some core
     DEF_LIST += +define+SYNTHESIS
     $(info SYNTH DEF_LIST: $(DEF_LIST))
-    $(file > $(RTL_PATH)/filelist/def.fl, $(DEF_LIST))
+    $(shell mkdir -p $(RTL_PATH)/.generated_fl)
+    $(file > $(RTL_PATH)/.generated_fl/def.fl, $(DEF_LIST))
     include syn/yosys/yosys.mk
 
 else ifeq ($(SYNTH), DC)

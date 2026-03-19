@@ -109,6 +109,7 @@ module sdram_core (
   // verilog_format: on
 
 
+`ifndef SYNTHESIS
   initial begin
     $display("Clk frequence: %6d MHz", CLK_FREQ);
     $display("WAIT_100US:    %6d cycles", WAIT_100US);
@@ -118,7 +119,7 @@ module sdram_core (
     $display("TCH:           %6d cycles", TCH);
     $display("CAS_LATENCY:   %6d cycles", CAS_LATENCY);
   end
-
+`endif
 
   logic [3:0] s_state_d, s_state_q;
   logic [3:0] s_ret_state_d, s_ret_state_q;

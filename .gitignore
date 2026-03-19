@@ -25,11 +25,13 @@ pic
 video.h
 image.h
 audio_file.h
+.generated_fl
 .sw_build
 .build
 .net_build
 .post_build
 .synth_build
+.vcs_build
 .verilator_build
 .metals
 .mypy_cache

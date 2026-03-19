@@ -95,7 +95,7 @@ jobs:
 
     - name: Run synth
       run: |
-        make CORE=PICORV32 IP=NONE SIMU=VERILATOR SYNTH=YOSYS PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_CORESEL=0 synth
+        make CORE=PICORV32 IP=NONE SIMU=VERILATOR SYNTH=YOSYS PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO synth
 
     # - name: Upload to Actions Artifacts(Temporary storage)
     #   uses: actions/upload-artifact@v4
