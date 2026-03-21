@@ -25,11 +25,9 @@ try:
     
     if not missing_files:
         print(f'contains all files')
-        print(f'cp -rf {NORLASH_DIR}/*.TXT {SIM_DIR}')
-        print(f'ln -sf {SIM_DIR}/MEM.TXT {ROOT_DIR}/.sw_build/retrosoc_fw.hex')
     else:
-        # os.system(f'cp -rf {NORLASH_DIR}/*.TXT {SIM_DIR}')
-        # os.system(f'ln -sf {SIM_DIR}/MEM.TXT {ROOT_DIR}/.sw_build/retrosoc_fw.hex')
+        os.system(f'cp -rf {NORLASH_DIR}/*.TXT {SIM_DIR}')
+        os.system(f'ln -sf {SIM_DIR}/MEM.TXT {ROOT_DIR}/.sw_build/retrosoc_fw.hex')
         pass
   
 except PermissionError:
