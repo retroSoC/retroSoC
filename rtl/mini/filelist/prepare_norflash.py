@@ -27,8 +27,7 @@ try:
         print(f'contains all files')
     else:
         os.system(f'cp -rf {NORLASH_DIR}/*.TXT {SIM_DIR}')
-        os.system(f'ln -sf {SIM_DIR}/MEM.TXT {ROOT_DIR}/.sw_build/retrosoc_fw.hex')
-        pass
+        os.system(f'ln -sf {ROOT_DIR}/.sw_build/retrosoc_fw.hex {SIM_DIR}/MEM.TXT')
   
 except PermissionError:
     print(f"ERROR: {SIM_DIR} has not permission")
