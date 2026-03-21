@@ -16,7 +16,7 @@ jobs:
 
     - name: Download and Extract Verilator Artifact
       run: |
-        verilator_path="verilator-artifact"
+        verilator_path="artifact-verilator"
         mkdir $verilator_path
         wget https://github.com/retroSoC/artifact/releases/download/verilator-v5.046/verilator-v5.046-ubuntu-22.04-gcc.tar.gz
         tar -xvf verilator-v5.046-ubuntu-22.04-gcc.tar.gz -C $verilator_path
@@ -33,9 +33,33 @@ jobs:
       run: |
         verilator --version
 
+    - name: Download and Extract Sv2v Artifact
+      run: |
+        sv2v_path="artifact-sv2v"
+        mkdir $sv2v_path
+        wget https://github.com/retroSoC/artifact/releases/download/sv2v-v0.0.13-9-gd381209/sv2v-v0.0.13-9-gd381209-ubuntu-22.04-gcc.tar.gz
+        tar -xvf sv2v-v0.0.13-9-gd381209-ubuntu-22.04-gcc.tar.gz -C $sv2v_path
+        echo "$(pwd)/$sv2v_path/bin" >> $GITHUB_PATH
+
+    - name: Test Sv2v Toolchain
+      run: |
+        sv2v --version
+
+    - name: Download and Extract Iverilog Artifact
+      run: |
+        iverilog_path="artifact-iverilog"
+        mkdir $iverilog_path
+        wget https://github.com/retroSoC/artifact/releases/download/iverilog-v13_0/iverilog-v13_0-ubuntu-22.04-gcc.tar.gz
+        tar -xvf iverilog-v13_0-ubuntu-22.04-gcc.tar.gz -C $iverilog_path
+        echo "$(pwd)/iverilog_path/bin" >> $GITHUB_PATH
+
+    - name: Test Iverilog Toolchain
+      run: |
+        iverilog -V
+
     - name: Download and Extract Yosys Artifact
       run: |
-        yosys_path="yosys-artifact"
+        yosys_path="artifact-yosys"
         mkdir $yosys_path
         wget https://github.com/retroSoC/artifact/releases/download/yosys-v0.58/yosys-v0.58-ubuntu-22.04-gcc.tar.gz
         tar -xvf yosys-v0.58-ubuntu-22.04-gcc.tar.gz -C $yosys_path
@@ -45,9 +69,21 @@ jobs:
       run: |
         yosys --version
 
+    - name: Download and Extract OpenSTA Artifact
+      run: |
+        opensta_path="artifact-opensta"
+        mkdir $opensta_path
+        wget https://github.com/retroSoC/artifact/releases/download/opensta-v2.2.0-1767-ga93b51ec/opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz
+        tar -xvf opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz -C $opensta_path
+        echo "$(pwd)/opensta_path/bin" >> $GITHUB_PATH
+
+    - name: Test OpenSTA Toolchain
+      run: |
+        sta --version
+
     - name: Download and Extract RISC-V GNU Toolchain Artifact
       run: |
-        riscv_toolchain_path="riscv-toolchain-artifact"
+        riscv_toolchain_path="artifact-riscv-toolchain"
         mkdir $riscv_toolchain_path
         wget https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz
         tar -xvf riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz -C $riscv_toolchain_path
