@@ -43,19 +43,26 @@ netwave:  DIR   := .iverilog_build/netl
 postwave: DIR   := .iverilog_build/post
 
 
-sim: comp
-netsim: netcomp
-postsim: postcomp
+sim: comp prepare_norflash
+netsim: netcomp prepare_norflash
+postsim: postcomp prepare_norflash
 
 convt_sv2v: generate_filelist
+	@mkdir -p $(RTL_PATH)/$(DIR)
 	python3 $(RTL_PATH)/filelist/convt_sv2v.py $(RTL_FLIST)
 
 gen_iverilog_filelist:
+	@mkdir -p $(RTL_PATH)/$(DIR)
 	python3 $(RTL_PATH)/filelist/gen_iverilog_filelist.py $(PDK)
+
+prepare_norflash:
+	@mkdir -p $(RTL_PATH)/$(DIR)
+	python3 $(RTL_PATH)/filelist/prepare_norflash.py
 
 comp netcomp postcomp: convt_sv2v gen_iverilog_filelist
 	@mkdir -p $(RTL_PATH)/$(DIR)
 	cd $(RTL_PATH)/$(DIR) && ($(SIM_TOOL) $(COMMON_OPTS) $(OPTS) $(FLIST) -o simv -s $(RTL_TOP)) 2>&1 | tee $(COMP_LOG)
+
 
 sim netsim postsim:
 	cd $(RTL_PATH)/$(DIR) && (stdbuf -oL -eL $(SIM_BINY) $(SIM_OPTS)) 2>&1 | tee $(SIM_LOG)
