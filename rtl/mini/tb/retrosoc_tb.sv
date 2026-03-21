@@ -17,6 +17,8 @@ module retrosoc_tb;
   localparam real EXT_CPU_FREQ = 72.0;
   localparam real AUD_CPU_FREQ = 18.432;
 
+  integer sim_runtime;
+
   reg  r_ext_clk;
   wire s_ext_clk;
   reg  r_aud_clk;
@@ -377,12 +379,29 @@ module retrosoc_tb;
   initial begin
     if ($test$plusargs("wave_YES")) begin
       $display("== generate simulation wave ==");
+`ifdef SIMU_VCS
       $fsdbDumpfile("retrosoc_tb.fsdb");
       $fsdbDumpvars(0);
       $fsdbDumpMDA();
-      #47050000;
+`elsif SIMU_IVERILOG
+      $dumpfile("retrosoc_tb.fst");
+      $dumpvars(0);
+`endif
+      #4705000;
       $finish;
     end
+  end
+
+  initial begin
+    // sim_runtime = -1;
+    // check for +TIMEOUT=xxx in the command line
+    if ($value$plusargs("sim_timeout=%d", sim_runtime)) begin
+      $display("Simulation timeout set to: %0dns", sim_runtime);
+    end
+
+    #sim_runtime;
+    $display("Simulation reached timeout. Finishing...");
+    $finish;
   end
 
   initial begin

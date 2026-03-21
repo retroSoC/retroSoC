@@ -14,6 +14,7 @@ WAVE            ?= NO
 RTL_SIM_PLLEN   ?= NONE
 RTL_SIM_PLLCFG  ?= NONE
 RTL_SIM_CORESEL ?= 0
+RTL_SIM_TIMEOUT ?= -1
 
 ROOT_PATH      ?= $(CURDIR)
 RTL_PATH       ?= NONE
@@ -43,7 +44,7 @@ $(info ============== HW CONFIG INFO ===================================)
 $(info SOC             [TINY, MINI]:                        $(SOC))
 $(info CORE            [PICORV32, HAZARD3, MDD]:            $(CORE))
 $(info IP              [NONE, MDD]:                         $(IP))
-$(info SIMU            [VCS, VERILATOR]:                    $(SIMU))
+$(info SIMU            [VCS, VERILATOR, IVERILOG]:          $(SIMU))
 $(info SYNTH           [NONE, YOSYS, DC]:                   $(SYNTH))
 $(info TIMI            [NONE, OPENSTA, ISTA]:               $(TIMI))
 $(info PDK             [ICS55, IHP130, SKY130, GF180]:      $(PDK))
@@ -55,6 +56,7 @@ $(info WAVE:           [YES, NO]:                           $(WAVE))
 $(info RTL_SIM_PLLEN:                                       $(RTL_SIM_PLLEN))
 $(info RTL_SIM_PLLCFG:                                      $(RTL_SIM_PLLCFG))
 $(info RTL_SIM_CORESEL:                                     $(RTL_SIM_CORESEL))
+$(info RTL_SIM_TIMEOUT:                                     $(RTL_SIM_TIMEOUT))
 $(info ============== SW CONFIG INFO ===================================)
 $(info ISA           [RV32E RV32I RV32IM]:                  $(ISA))
 $(info HAVE_CSR      [YES, NO]:                             $(HAVE_CSR))
