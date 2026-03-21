@@ -39,7 +39,7 @@ jobs:
         mkdir $sv2v_path
         wget https://github.com/retroSoC/artifact/releases/download/sv2v-v0.0.13-9-gd381209/sv2v-v0.0.13-9-gd381209-ubuntu-22.04-gcc.tar.gz
         tar -xvf sv2v-v0.0.13-9-gd381209-ubuntu-22.04-gcc.tar.gz -C $sv2v_path
-        echo "$(pwd)/$sv2v_path/bin" >> $GITHUB_PATH
+        echo "$(pwd)/$sv2v_path" >> $GITHUB_PATH
 
     - name: Test Sv2v Toolchain
       run: |
