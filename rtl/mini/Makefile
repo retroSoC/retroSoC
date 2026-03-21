@@ -21,7 +21,7 @@ generate_filelist:
 	python3 $(RTL_PATH)/filelist/generate_filelist.py
 
 # software
-include $(RTL_PATH)/script/software.mk
+include $(RTL_PATH)/makefile/software.mk
 
 #====================== filelist ======================
 ifeq ($(PDK), IHP130)
@@ -60,11 +60,11 @@ RTL_FLIST += -f $(RTL_PATH)/.generated_fl/top.fl
 #====================== end ======================
 
 ifeq ($(SIMU), VCS)
-    include $(RTL_PATH)/script/vcs.mk
+    include $(RTL_PATH)/makefile/vcs.mk
 else ifeq ($(SIMU), VERILATOR)
-    include $(RTL_PATH)/script/verilator.mk
+    include $(RTL_PATH)/makefile/verilator.mk
 else ifeq ($(SIMU), IVERILOG)
-    include $(RTL_PATH)/script/iverilog.mk
+    include $(RTL_PATH)/makefile/iverilog.mk
 endif
 
 .PHONY: clean firmware
