@@ -79,7 +79,7 @@ jobs:
 
     - name: Test OpenSTA Toolchain
       run: |
-        sta --version
+        sta -version
 
     - name: Download and Extract RISC-V GNU Toolchain Artifact
       run: |
