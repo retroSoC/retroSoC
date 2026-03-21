@@ -75,7 +75,7 @@ jobs:
         mkdir $opensta_path
         wget https://github.com/retroSoC/artifact/releases/download/opensta-v2.2.0-1767-ga93b51ec/opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz
         tar -xvf opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz -C $opensta_path
-        echo "$(pwd)/opensta_path/bin" >> $GITHUB_PATH
+        echo "$(pwd)/$opensta_path/bin" >> $GITHUB_PATH
 
     - name: Test OpenSTA Toolchain
       run: |
