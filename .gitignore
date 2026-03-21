@@ -33,6 +33,7 @@ audio_file.h
 .synth_build
 .vcs_build
 .verilator_build
+.iverilog_build
 .metals
 .mypy_cache
 .pytest_cache
