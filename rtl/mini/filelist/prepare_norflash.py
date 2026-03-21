@@ -6,7 +6,7 @@ import os
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 MINI_DIR    = os.path.abspath(f'{SCRIPT_DIR}/..')
 ROOT_DIR    = os.path.abspath(f'{MINI_DIR}/../..')
-NORLASH_DIR = os.path.abspath(f'{MINI_DIR}/../ip/3rd_party/norflash')
+NORLASH_DIR = os.path.abspath(f'{MINI_DIR}/../ip/3rd-party/norflash')
 SIM_DIR     = os.path.abspath(f'{MINI_DIR}/.iverilog_build/behv')
 
 # check 
