@@ -93,7 +93,7 @@ jobs:
       run: |
         riscv32-unknown-elf-gcc --version
 
-    - name: Setup MPW Repo
+    - name: Setup MPW Repository
       run: |
         pip install tomli
         python3 setup.py
@@ -107,31 +107,32 @@ jobs:
     - name: Download 3rd-party IP and models
       run: python3 rtl/ip/setup.py
 
-    - name: Download Open PDK Repo
+    - name: Download Open PDK Repository
       run: python3 pdk/setup.py
 
-    - name: Config FatFs and Coremark Repo
+    - name: Config FatFs and Coremark Repository
       run: python3 app/setup.py
 
     - name: Compile Single Core Firmware
-      run: make CORE=PICORV32 IP=NONE SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32I HAVE_CSR=NO PROG_TYPE=BASE LINK_TYPE=ld2_psram firmware
+      run: make CORE=HAZARD3 IP=NONE ISA=RV32IM HAVE_CSR=NO PROG_TYPE=BASE LINK_TYPE=ld2_psram firmware
 
-    - name: Run Single Core RTL sim
-      run: |
-        python3 verilator.py
-        make CORE=PICORV32 IP=NONE SIMU=VERILATOR PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_CORESEL=0 sim
+    - name: Run Verilator Behavioral Simulation(Single Core)
+      run: make CORE=HAZARD3 IP=NONE SIMU=VERILATOR PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO sim
 
     - name: Compile MDD Firmware
-      run: make CORE=MDD IP=NONE SIMU=VERILATOR HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO ISA=RV32I HAVE_CSR=NO PROG_TYPE=BASE LINK_TYPE=ld2_psram firmware
+      run: make CORE=MDD IP=NONE ISA=RV32IM HAVE_CSR=NO PROG_TYPE=BASE LINK_TYPE=ld2_psram firmware
 
-    - name: Run MDD RTL sim
-      run: |
-        python3 verilator.py
-        make CORE=MDD IP=NONE SIMU=VERILATOR PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_CORESEL=0 sim
+    - name: Run Verilator Behavioral Simulation(MDD)
+      run: make CORE=MDD IP=NONE SIMU=VERILATOR PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_CORESEL=0 sim
 
-    - name: Run synth
-      run: |
-        make CORE=PICORV32 IP=NONE SIMU=VERILATOR SYNTH=YOSYS PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO synth
+    - name: Compile Assembly Firmware
+      run: make ISA=RV32IM HAVE_CSR=NO PROG_TYPE=BASE LINK_TYPE=ld2_psram asm
+
+    - name: Run Iverilog Behavioral Simulation(Single Core)
+      run: make CORE=HAZARD3 IP=NONE SIMU=IVERILOG PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_TIMEOUT=5200000 sim
+
+    - name: Run synthesis
+      run: make CORE=HAZARD3 IP=NONE SYNTH=YOSYS PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO synth
 
     # - name: Upload to Actions Artifacts(Temporary storage)
     #   uses: actions/upload-artifact@v4

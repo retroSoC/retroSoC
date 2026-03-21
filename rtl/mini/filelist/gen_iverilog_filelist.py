@@ -18,7 +18,7 @@ for file in filelist:
 cmd += [f'{MINI_DIR}/.iverilog_build/behv/converted_soc.v\n']
 
 pdk = sys.argv[1]
-print(f'PDK: {pdk}')
+# print(f'PDK: {pdk}')
 with open(f'{GEN_DIR}/pdk_{pdk.lower()}.fl', 'r', encoding='utf-8') as fp:
     tmp = fp.readlines()
     cmd += tmp

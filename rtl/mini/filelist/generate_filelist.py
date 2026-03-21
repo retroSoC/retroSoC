@@ -99,11 +99,11 @@ def process_lint_files(folder_path):
                 f.writelines(processed_lines)
 
         except FileNotFoundError:
-            print(f"ERROR: file {msg_file} is not found")
+            print(f'ERROR: file {msg_file} is not found')
         except PermissionError:
-            print(f"ERROR: file {msg_file} is not permission")
+            print(f'ERROR: file {msg_file} has not permission')
         except Exception as e:
-            print(f"ERROR: file {msg_file} unknown {str(e)}")
+            print(f'ERROR: file {msg_file} unknown {str(e)}')
 
 
 print('generate filelists')
