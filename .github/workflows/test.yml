@@ -51,7 +51,7 @@ jobs:
         mkdir $iverilog_path
         wget https://github.com/retroSoC/artifact/releases/download/iverilog-v13_0/iverilog-v13_0-ubuntu-22.04-gcc.tar.gz
         tar -xvf iverilog-v13_0-ubuntu-22.04-gcc.tar.gz -C $iverilog_path
-        echo "$(pwd)/iverilog_path/bin" >> $GITHUB_PATH
+        echo "$(pwd)/$iverilog_path/bin" >> $GITHUB_PATH
 
     - name: Test Iverilog Toolchain
       run: |
