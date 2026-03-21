@@ -49,15 +49,15 @@ postsim: postcomp prepare_norflash
 
 convt_sv2v: generate_filelist
 	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/filelist/convt_sv2v.py $(RTL_FLIST)
+	python3 $(RTL_PATH)/script/convt_sv2v.py $(RTL_FLIST)
 
 gen_iverilog_filelist:
 	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/filelist/gen_iverilog_filelist.py $(PDK)
+	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py $(PDK)
 
 prepare_norflash:
 	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/filelist/prepare_norflash.py
+	python3 $(RTL_PATH)/script/prepare_norflash.py
 
 comp netcomp postcomp: convt_sv2v gen_iverilog_filelist
 	@mkdir -p $(RTL_PATH)/$(DIR)

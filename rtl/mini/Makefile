@@ -18,7 +18,7 @@ else
 endif
 
 generate_filelist:
-	python3 $(RTL_PATH)/filelist/generate_filelist.py
+	python3 $(RTL_PATH)/script/generate_filelist.py
 
 # software
 include $(RTL_PATH)/makefile/software.mk

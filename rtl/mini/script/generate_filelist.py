@@ -11,8 +11,6 @@ MINI_DIR   = os.path.abspath(f'{SCRIPT_DIR}/..')
 GEN_DIR    = os.path.abspath(f'{MINI_DIR}/.generated_fl')
 
 
-
-
 def process_fl_files(folder_path):
     # source files
     pdk_patn  = re.compile(r'^(/(pdk))')

@@ -38,7 +38,7 @@ NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_debug_yosys.v
 
 gen_synth_filelist: gen_mpw_code generate_filelist
 	$(info SYNTH RTL_FLIST: $(RTL_FLIST))
-	@python3 $(RTL_PATH)/filelist/comb.py $(RTL_FLIST)
+	@python3 $(RTL_PATH)/script/comb.py $(RTL_FLIST)
 
 ## Synthesize netlist using Yosys
 synth: gen_synth_filelist $(NETLIST)
