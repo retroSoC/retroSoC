@@ -14,15 +14,30 @@ for file in filelist:
     with open(f'{GEN_DIR}/{file}.fl', 'r', encoding='utf-8') as fp:
         tmp = fp.readlines()
         cmd += tmp
-    
-cmd += [f'{MINI_DIR}/.iverilog_build/behv/converted_soc.v\n']
 
-pdk = sys.argv[1]
-# print(f'PDK: {pdk}')
+
+tgt  = sys.argv[1]
+pdk  = sys.argv[2]
+netl = sys.argv[3]
+print(f'tgt: {tgt}')
+print(f'pdk: {pdk}')
+print(f'netl: {netl}')
+
+if tgt == 'sim':
+    cmd += [f'{MINI_DIR}/.iverilog_build/behv/converted_soc.v\n']
+
+elif tgt == 'netsim':
+    with open(f'{GEN_DIR}/commonip.fl', 'r', encoding='utf-8') as fp:
+        tmp = fp.readlines()
+        cmd += tmp
+    cmd += f'{netl}\n'
+
+elif tgt == 'postsim':
+    pass
+
 with open(f'{GEN_DIR}/pdk_{pdk.lower()}.fl', 'r', encoding='utf-8') as fp:
-    tmp = fp.readlines()
-    cmd += tmp
-# print(cmd)
+      tmp = fp.readlines()
+      cmd += tmp
 
 with open(f'{GEN_DIR}/iverilog.fl', 'w', encoding='utf-8') as fp:
     fp.writelines(cmd)

@@ -134,6 +134,9 @@ jobs:
     - name: Run synthesis
       run: make CORE=HAZARD3 IP=NONE SYNTH=YOSYS PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO synth
 
+    - name: Run Iverilog Netlist Simulation(Single Core)
+      run: make CORE=HAZARD3 IP=NONE SIMU=IVERILOG PDK=IHP130 HAVE_SRAM_IF=NO HAVE_SRAM_MACRO=NO HAVE_PLL=NO RTL_SIM_TIMEOUT=5200000 netsim
+
     # - name: Upload to Actions Artifacts(Temporary storage)
     #   uses: actions/upload-artifact@v4
     #   with:

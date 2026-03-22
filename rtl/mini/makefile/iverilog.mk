@@ -5,9 +5,9 @@ GTKWAVE_TOOL := gtkwave
 COMP_LOG     := compile.log
 SIM_LOG      := sim.log
 # netlist file path
-NETLIST_PATH := -v $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
-POST_PATH    := -v $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
-SDF_PATH     := "$(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz"
+NETLIST_PATH := $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
+POST_PATH    := $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
+SDF_PATH     := $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
 # testbench filelist
 TB_FLIST     := -f $(RTL_PATH)/.generate_verilogd_fl/tb.fl
 
@@ -27,7 +27,7 @@ comp:     FLIST := -f $(RTL_PATH)/.generated_fl/iverilog.fl
 comp:     OPTS  := $(TIME_OPTS)
 
 netcomp:  DIR   := .iverilog_build/netl
-netcomp:  FLIST := $(NETLIST_PATH) $(NET_FLIST) $(TB_FLIST)
+netcomp:  FLIST := -f $(RTL_PATH)/.generated_fl/iverilog.fl
 netcomp:  OPTS  := $(TIME_OPTS)
 
 postcomp: DIR   := .iverilog_build/post
@@ -49,15 +49,15 @@ postsim: postcomp prepare_norflash
 
 convt_sv2v: generate_filelist
 	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/filelist/convt_sv2v.py $(RTL_FLIST)
+	python3 $(RTL_PATH)/script/convt_sv2v.py $(RTL_FLIST)
 
 gen_iverilog_filelist:
 	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/filelist/gen_iverilog_filelist.py $(PDK)
+	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py $(MAKECMDGOALS) $(PDK) $(NETLIST_PATH)
 
 prepare_norflash:
 	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/filelist/prepare_norflash.py
+	python3 $(RTL_PATH)/script/prepare_norflash.py $(MAKECMDGOALS)
 
 comp netcomp postcomp: convt_sv2v gen_iverilog_filelist
 	@mkdir -p $(RTL_PATH)/$(DIR)
