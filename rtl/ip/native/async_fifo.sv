@@ -36,14 +36,18 @@ module async_fifo #(
   logic [PTR_WIDTH-1:0] s_rd_ptr_bin_sync;
 
   // wr logic
+  always_ff @(posedge wr_clk_i) begin
+    if (wr_en_i && !wr_full_o) begin
+      r_mem[r_wr_ptr_bin[DEPTH_POWER-1:0]] <= wr_data_i;
+    end
+  end
   always_ff @(posedge wr_clk_i or negedge wr_rst_n_i) begin
     if (!wr_rst_n_i) begin
       r_wr_ptr_bin  <= '0;
       r_wr_ptr_gray <= '0;
     end else if (wr_en_i && !wr_full_o) begin
-      r_mem[r_wr_ptr_bin[DEPTH_POWER-1:0]] <= wr_data_i;
-      r_wr_ptr_bin                         <= r_wr_ptr_bin + 1'b1;
-      r_wr_ptr_gray                        <= bin2gray(r_wr_ptr_bin + 1'b1);
+      r_wr_ptr_bin  <= r_wr_ptr_bin + 1'b1;
+      r_wr_ptr_gray <= bin2gray(r_wr_ptr_bin + 1'b1);
     end
   end
 
