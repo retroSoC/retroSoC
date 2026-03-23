@@ -12,30 +12,18 @@ set clk_aud_period  [expr 1000.0 / $clk_aud_freq]
 
 set clk_period_factor .2
 
-
-
 # set_operating_conditions -analysis_type on_chip_variation -library [get_libs {ETSCA_N55_H7BH_DSS_PRCMAX_V1P0_T125.db:ETSCA_N55_H7BH_DSS_PRCMAX_V1P0_T125}]
 ###############################################################################
 # Clock Related Information
 ###############################################################################
-create_clock -name clk_ext -period $clk_ext_period [get_pins \u_extclk_i_pad.u_sg13g2_IOPadInOut4mA/p2c]
-create_clock -name clk_aud -period $clk_aud_period [get_pins \u_audclk_i_pad.u_sg13g2_IOPadInOut4mA/p2c]
+create_clock -name clk_ext -period $clk_ext_period [get_ports extclk_i_pad]
+create_clock -name clk_aud -period $clk_aud_period [get_ports audclk_i_pad]
 ###############################################################################
 # Derived Clock related information
 ###############################################################################
-# create_generated_clock -name CLK_sys_clk_buf -source [get_pins {u_rcu.u_ext_clk_buf.u_BUFX0P7H7L/Y}]  -divide_by 1  -add -master_clock [get_clocks {clk_ext}] [get_pins {u_rcu.u_sys_clk_buf.u_BUFX0P7H7L/Y}] 
-# set_clock_uncertainty -setup  0.2 [get_clocks {CLK_sys_clk_buf}]
-# set_clock_uncertainty -hold  0.1 [get_clocks {CLK_sys_clk_buf}]
-# create_generated_clock -name CLK_cust_qspi_spi_clk_o -source [get_pins {u_rcu.u_sys_clk_buf.u_BUFX0P7H7L/Y}]  -divide_by 2 [get_ports {cust_qspi_spi_clk_o_pad}] 
-# set_clock_uncertainty -setup  0.2 [get_clocks {CLK_cust_qspi_spi_clk_o}]
-# set_clock_uncertainty -hold  0.1 [get_clocks {CLK_cust_qspi_spi_clk_o}]
-# create_generated_clock -name CLK_cust_spfs_clk_o -source [get_pins {u_rcu.u_sys_clk_buf.u_BUFX0P7H7L/Y}]  -divide_by 2 [get_ports {cust_spfs_clk_o_pad}] 
-# set_clock_uncertainty -setup  0.2 [get_clocks {CLK_cust_spfs_clk_o}]
-# set_clock_uncertainty -hold  0.1 [get_clocks {CLK_cust_spfs_clk_o}]
-# create_generated_clock -name CLK_cust_psram_sclk_o -source [get_pins {u_rcu.u_sys_clk_buf.u_BUFX0P7H7L/Y}]  -divide_by 2 [get_ports {cust_psram_sclk_o_pad}] 
-# set_clock_uncertainty -setup  0.2 [get_clocks {CLK_cust_psram_sclk_o}]
-# set_clock_uncertainty -hold  0.1 [get_clocks {CLK_cust_psram_sclk_o}]
-# set_clock_groups -asynchronous -name CLK_u_xtal_io_pad_u_P65_1233_PWE_XC_1 -group [get_clocks {CLK_u_xtal_io_pad_u_P65_1233_PWE_XC}] -group [get_clocks {clk_ext CLK_sys_clk_buf CLK_cust_qspi_spi_clk_o CLK_cust_psram_sclk_o CLK_cust_spfs_clk_o}] -group [get_clocks {CLK_u_rcu_u_pll_clk_buf_u_BUFX0P7H7L_Y}]
+create_generated_clock -name clk_i2s_mclk_o -source [get_pins \u_rcu.u_aud_clk_buf/clk_o] -divide_by 1 [get_ports gpio_10_io_pad]
+set_clock_uncertainty -setup  0.2 [get_clocks clk_i2s_mclk_o]
+set_clock_uncertainty -hold  0.1 [get_clocks clk_i2s_mclk_o]
 ###############################################################################
 # Point to Point exceptions
 ###############################################################################

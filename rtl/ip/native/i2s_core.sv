@@ -38,7 +38,12 @@ module i2s_core (
   logic s_send_cnt_d, s_send_cnt_q;
 
   // i2s
-  assign i2s.mclk_o = clk_i;
+  // NOTE: for jitter control
+  tc_clk_buf u_mclk_clk_buf (
+      .clk_i(clk_i),
+      .clk_o(i2s.mclk_o)
+  );
+
   assign i2s.sclk_o = s_sclk;
   assign i2s.lrck_o = s_lrck;
   assign i2s.irq_o  = '0;

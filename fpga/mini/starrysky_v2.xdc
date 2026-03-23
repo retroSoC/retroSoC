@@ -1,6 +1,8 @@
 # timing constr
 # create_clock -period 20.000 -waveform {0.000 10.000} [get_ports clk_i]
 
+create_generated_clock -name i2s_mclk_out -source [get_pins u_clk_wiz_0/clk_out2] [get_ports i2s_mclk_o] -divide_by 1
+
 set_clock_groups -name cgp_async -asynchronous -group [get_clocks -include_generated_clocks clk_out1_clk_wiz_0] -group [get_clocks -include_generated_clocks clk_out2_clk_wiz_0]
 set_false_path -from [get_ports rst_n_i]
 
