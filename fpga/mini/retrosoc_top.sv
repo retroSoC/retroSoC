@@ -2,7 +2,7 @@
 
 module retrosoc_top (
     input  clk_i,
-    inout  rst_n_i,
+    input  rst_n_i,
     // gpio
     inout  ps2_clk_i,
     inout  ps2_dat_i,
@@ -27,7 +27,7 @@ module retrosoc_top (
     inout  psram_dat3_io,
     inout  gpio_io30,
     output uart0_tx_o,
-    inout  uart0_rx_i,
+    input  uart0_rx_i,
     output xpi_sck_o,
     output xpi_nss0_o,
     inout  xpi_dat0_io,
