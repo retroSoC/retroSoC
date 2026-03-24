@@ -84,18 +84,22 @@ module bus (
       u_mstr_rgsl_nmi_if
   );
 
-  // bus mux
+  // bus mux — hierarchical address decode (2-level)
   // verilog_format: off
-  assign s_natv_sel      = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START    ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `NMI_IP_START   ||
-                          (u_mstr_rgsl_nmi_if.addr[31:24] >= `SDRAM_START    &&
-                           u_mstr_rgsl_nmi_if.addr[31:24] <= `SDRAM_END)     ||
-                           u_mstr_rgsl_nmi_if.addr[31:24] == `PSRAM_START    ||
-                           u_mstr_rgsl_nmi_if.addr[31:24] == `OPIPSRAM_START ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START0   ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START1   ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START2   ||
-                           u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START3;
+  logic s_natv_hi_sel;
+  // Level 1: fast 4-bit decode on addr[31:28]
+  assign s_natv_hi_sel = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START  ||
+                         u_mstr_rgsl_nmi_if.addr[31:28] == `NMI_IP_START ||
+                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START0 ||
+                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START1 ||
+                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START2 ||
+                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START3;
+  // Level 2: memory-mapped ranges that need wider compare
+  assign s_natv_sel    = s_natv_hi_sel ||
+                        (u_mstr_rgsl_nmi_if.addr[31:24] >= `SDRAM_START    &&
+                         u_mstr_rgsl_nmi_if.addr[31:24] <= `SDRAM_END)     ||
+                         u_mstr_rgsl_nmi_if.addr[31:24] == `PSRAM_START    ||
+                         u_mstr_rgsl_nmi_if.addr[31:24] == `OPIPSRAM_START;
   assign natv_nmi.valid  = u_mstr_rgsl_nmi_if.valid && s_natv_sel;
   assign natv_nmi.addr   = u_mstr_rgsl_nmi_if.addr;
   assign natv_nmi.wdata  = u_mstr_rgsl_nmi_if.wdata;

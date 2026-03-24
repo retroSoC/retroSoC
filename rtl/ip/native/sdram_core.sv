@@ -135,6 +135,10 @@ module sdram_core (
   logic s_cke_q, s_cke_d;
   logic [12:0] s_addr_d, s_addr_q;
   logic s_upd_ready_d, s_upd_ready_q;
+  // Registered NMI inputs (captured at IDLE→ACT)
+  logic [24:0] s_nmi_addr_d, s_nmi_addr_q;   // addr[24:0] (relevant bits)
+  logic [31:0] s_nmi_wdata_d, s_nmi_wdata_q;
+  logic [3:0]  s_nmi_wstrb_d, s_nmi_wstrb_q;
 
 
   // nmi
@@ -167,6 +171,9 @@ module sdram_core (
     s_cke_d       = s_cke_q;
     s_addr_d      = s_addr_q;
     s_upd_ready_d = s_upd_ready_q;
+    s_nmi_addr_d  = s_nmi_addr_q;
+    s_nmi_wdata_d = s_nmi_wdata_q;
+    s_nmi_wstrb_d = s_nmi_wstrb_q;
     case (s_state_q)
       RESET: begin
         s_cke_d       = 1'b0;
@@ -212,11 +219,13 @@ module sdram_core (
         s_dqm_d   = 2'b11;
         s_ready_d = 1'b0;
         if (nmi.valid && !s_ready_q) begin
+          // Capture NMI inputs into holding registers
+          s_nmi_addr_d  = nmi.addr[24:0];
+          s_nmi_wdata_d = nmi.wdata;
+          s_nmi_wstrb_d = nmi.wstrb;
           s_cmd_d       = CMD_ACT;
           s_ba_d        = nmi.addr[22:21];
           s_addr_d      = {nmi.addr[24:23], nmi.addr[20:10]};
-          // $display("nmi addr: %0x", nmi.addr);
-          // $display("row addr: %0x", s_addr_d);
           s_state_d     = WAIT_STATE;
           s_ret_state_d = |nmi.wstrb ? COL_WRITEL : COL_READ;
           s_wait_cnt_d  = 16'(TRCD);
@@ -236,9 +245,9 @@ module sdram_core (
       COL_READ: begin
         s_cmd_d       = CMD_READ;
         s_dqm_d       = 2'b00;
-        // autoprecharge and column
-        s_ba_d        = nmi.addr[22:21];
-        s_addr_d      = {3'b001, nmi.addr[10:2], 1'b0};
+        // autoprecharge and column (use registered addr)
+        s_ba_d        = s_nmi_addr_q[22:21];
+        s_addr_d      = {3'b001, s_nmi_addr_q[10:2], 1'b0};
         // $display("rd col addr: %0x", s_addr_d);
         s_state_d     = WAIT_STATE;
         s_ret_state_d = COL_READL;
@@ -260,20 +269,19 @@ module sdram_core (
       end
       COL_WRITEL: begin
         s_cmd_d   = CMD_WRITE;
-        s_dqm_d   = ~nmi.wstrb[1:0];
-        // autoprecharge and column
-        s_ba_d    = nmi.addr[22:21];
-        s_addr_d  = {3'b001, nmi.addr[10:2], 1'b0};
-        // $display("wr col addr: %0x", s_addr_d);
-        s_dq_d    = nmi.wdata[15:0];
+        s_dqm_d   = ~s_nmi_wstrb_q[1:0];
+        // autoprecharge and column (use registered addr)
+        s_ba_d    = s_nmi_addr_q[22:21];
+        s_addr_d  = {3'b001, s_nmi_addr_q[10:2], 1'b0};
+        s_dq_d    = s_nmi_wdata_q[15:0];
         s_oe_d    = 1'b1;
         s_state_d = COL_WRITEH;
       end
       COL_WRITEH: begin
         s_cmd_d       = CMD_NOP;
-        s_dqm_d       = ~nmi.wstrb[3:2];
-        // autoprecharge and column
-        s_dq_d        = nmi.wdata[31:16];
+        s_dqm_d       = ~s_nmi_wstrb_q[3:2];
+        // autoprecharge and column (use registered wdata)
+        s_dq_d        = s_nmi_wdata_q[31:16];
         s_oe_d        = 1'b1;
         s_state_d     = WAIT_STATE;
         s_ret_state_d = IDLE;
@@ -322,6 +330,9 @@ module sdram_core (
       s_cke_q       <= '0;
       s_addr_q      <= '0;
       s_upd_ready_q <= '0;
+      s_nmi_addr_q  <= '0;
+      s_nmi_wdata_q <= '0;
+      s_nmi_wstrb_q <= '0;
     end else begin
       s_ready_q <= s_ready_d;
       if (fir_edge_i) begin
@@ -340,6 +351,9 @@ module sdram_core (
         s_cke_q       <= s_cke_d;
         s_addr_q      <= s_addr_d;
         s_upd_ready_q <= s_upd_ready_d;
+        s_nmi_addr_q  <= s_nmi_addr_d;
+        s_nmi_wdata_q <= s_nmi_wdata_d;
+        s_nmi_wstrb_q <= s_nmi_wstrb_d;
       end
     end
   end

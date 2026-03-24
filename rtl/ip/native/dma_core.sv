@@ -53,8 +53,17 @@ module dma_core (
   logic s_xfer_type_d, s_xfer_type_q;  // 0: rd 1: wr
   logic s_xfer_done_d, s_xfer_done_q;
   logic s_ctrl_stop_d, s_ctrl_stop_q;
+  // Registered NMI master outputs
+  logic        s_nmi_valid_d, s_nmi_valid_q;
+  logic [31:0] s_nmi_addr_d, s_nmi_addr_q;
+  logic [31:0] s_nmi_wdata_d, s_nmi_wdata_q;
+  logic [3:0]  s_nmi_wstrb_d, s_nmi_wstrb_q;
 
-  assign fsm_o = s_fsm_q;
+  assign fsm_o     = s_fsm_q;
+  assign nmi.valid = s_nmi_valid_q;
+  assign nmi.addr  = s_nmi_addr_q;
+  assign nmi.wdata = s_nmi_wdata_q;
+  assign nmi.wstrb = s_nmi_wstrb_q;
   always_comb begin
     s_fsm_d       = s_fsm_q;
     s_src_addr_d  = s_src_addr_q;
@@ -63,11 +72,11 @@ module dma_core (
     s_xfer_cnt_d  = s_xfer_cnt_q;
     s_xfer_type_d = s_xfer_type_q;
     s_xfer_done_d = s_xfer_done_q;
-    // nmi if
-    nmi.valid     = '0;
-    nmi.addr      = '0;
-    nmi.wdata     = '0;
-    nmi.wstrb     = '0;
+    // nmi if (registered outputs)
+    s_nmi_valid_d = '0;
+    s_nmi_addr_d  = s_nmi_addr_q;
+    s_nmi_wdata_d = s_nmi_wdata_q;
+    s_nmi_wstrb_d = '0;
     // common
     done_o        = '0;
     unique case (s_fsm_q)
@@ -86,16 +95,16 @@ module dma_core (
           if (~s_xfer_type_q) begin
             unique case (mode_i)
               HWT_I2S_RX_TRG: begin
-                if (~hw_trg.i2s_rx_proc && s_xfer_done_q) nmi.valid = 1'b0;
-                else nmi.valid = 1'b1;
+                if (~hw_trg.i2s_rx_proc && s_xfer_done_q) s_nmi_valid_d = 1'b0;
+                else s_nmi_valid_d = 1'b1;
               end
               HWT_QSPI_RX_TRG: begin
-                if (~hw_trg.qspi_rx_proc && s_xfer_done_q) nmi.valid = 1'b0;
-                else nmi.valid = 1'b1;
+                if (~hw_trg.qspi_rx_proc && s_xfer_done_q) s_nmi_valid_d = 1'b0;
+                else s_nmi_valid_d = 1'b1;
               end
-              default: nmi.valid = 1'b1;
+              default: s_nmi_valid_d = 1'b1;
             endcase
-            nmi.addr = s_src_addr_q;
+            s_nmi_addr_d = s_src_addr_q;
             if (nmi.ready) begin
               s_xfer_type_d = 1'b1;
               s_xfer_done_d = 1'b1;
@@ -106,18 +115,18 @@ module dma_core (
           end else begin
             unique case (mode_i)
               HWT_I2S_TX_TRG: begin
-                if (~hw_trg.i2s_tx_proc && s_xfer_done_q) nmi.valid = 1'b0;
-                else nmi.valid = 1'b1;
+                if (~hw_trg.i2s_tx_proc && s_xfer_done_q) s_nmi_valid_d = 1'b0;
+                else s_nmi_valid_d = 1'b1;
               end
               HWT_QSPI_TX_TRG: begin
-                if (~hw_trg.qspi_tx_proc && s_xfer_done_q) nmi.valid = 1'b0;
-                else nmi.valid = 1'b1;
+                if (~hw_trg.qspi_tx_proc && s_xfer_done_q) s_nmi_valid_d = 1'b0;
+                else s_nmi_valid_d = 1'b1;
               end
-              default: nmi.valid = 1'b1;
+              default: s_nmi_valid_d = 1'b1;
             endcase
-            nmi.addr  = s_dst_addr_q;
-            nmi.wdata = s_rd_data_q;
-            nmi.wstrb = '1;
+            s_nmi_addr_d  = s_dst_addr_q;
+            s_nmi_wdata_d = s_rd_data_q;
+            s_nmi_wstrb_d = '1;
             if (nmi.ready) begin
               s_xfer_type_d = 1'b0;
               s_xfer_done_d = 1'b1;
@@ -149,10 +158,10 @@ module dma_core (
         s_xfer_type_d = s_xfer_type_q;
         s_xfer_done_d = s_xfer_done_q;
         // nmi if
-        nmi.valid     = '0;
-        nmi.addr      = '0;
-        nmi.wdata     = '0;
-        nmi.wstrb     = '0;
+        s_nmi_valid_d = '0;
+        s_nmi_addr_d  = '0;
+        s_nmi_wdata_d = '0;
+        s_nmi_wstrb_d = '0;
         // common
         done_o        = '0;
       end
@@ -217,6 +226,32 @@ module dma_core (
       rst_n_i,
       s_ctrl_stop_d,
       s_ctrl_stop_q
+  );
+
+  // Registered NMI master outputs
+  dffr #(1) u_nmi_valid_dffr (
+      clk_i,
+      rst_n_i,
+      s_nmi_valid_d,
+      s_nmi_valid_q
+  );
+  dffr #(32) u_nmi_addr_dffr (
+      clk_i,
+      rst_n_i,
+      s_nmi_addr_d,
+      s_nmi_addr_q
+  );
+  dffr #(32) u_nmi_wdata_dffr (
+      clk_i,
+      rst_n_i,
+      s_nmi_wdata_d,
+      s_nmi_wdata_q
+  );
+  dffr #(4) u_nmi_wstrb_dffr (
+      clk_i,
+      rst_n_i,
+      s_nmi_wstrb_d,
+      s_nmi_wstrb_q
   );
 
 endmodule
