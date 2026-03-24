@@ -62,7 +62,19 @@ module i2s_send (
   );
 
 
-  assign s_xfer_data_d = s_lrck_trg ? data_i : s_xfer_data_q;
+  always_comb begin
+    s_xfer_data_d = s_xfer_data_q;
+    if (s_lrck_trg) begin
+      s_xfer_data_d = data_i;
+    end else if (s_bit_cnt_q < s_bit_num) begin
+      if (bitmode_i) begin
+        s_xfer_data_d = {s_xfer_data_q[22:0], 1'b0};
+      end else begin
+        s_xfer_data_d[23:16] = s_xfer_data_q[23:16];
+        s_xfer_data_d[15:0]  = {s_xfer_data_q[14:0], 1'b0};
+      end
+    end
+  end
   dffer #(24) u_xfer_data_dffer (
       clk_i,
       rst_n_i,
@@ -75,8 +87,8 @@ module i2s_send (
   always_comb begin
     s_dacdat_d = s_dacdat_q;
     if (s_bit_cnt_q <= s_bit_num) begin
-      if (bitmode_i) s_dacdat_d = s_xfer_data_q[5'd23-s_bit_cnt_q];
-      else s_dacdat_d = s_xfer_data_q[5'd15-s_bit_cnt_q];
+      if (bitmode_i) s_dacdat_d = s_xfer_data_q[23];
+      else s_dacdat_d = s_xfer_data_q[15];
     end
   end
   dffer #(1) u_dacdat_dffer (

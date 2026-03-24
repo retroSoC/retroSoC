@@ -24,6 +24,7 @@ module i2s_recv (
   logic s_lrck_trg;
   logic [4:0] s_bit_cnt_d, s_bit_cnt_q;
   logic [4:0] s_bit_num;
+  logic s_first_bit_d, s_first_bit_q;
   logic [23:0] s_recv_data_d, s_recv_data_q;
   logic [23:0] s_data_d, s_data_q;
 
@@ -62,9 +63,15 @@ module i2s_recv (
 
   always_comb begin
     s_recv_data_d = s_recv_data_q;
-    if (s_bit_cnt_q <= s_bit_num) begin
-      if (bitmode_i) s_recv_data_d[5'd23-s_bit_cnt_q] = adcdat_i;
-      else s_recv_data_d[5'd15-s_bit_cnt_q] = adcdat_i;
+    if (s_lrck_trg) begin
+      s_recv_data_d = '0;
+    end else if (s_bit_cnt_q < s_bit_num) begin
+      if (bitmode_i) begin
+        s_recv_data_d[23:0] = {s_recv_data_q[22:0], adcdat_i};
+      end else begin
+        s_recv_data_d[23:16] = s_recv_data_q[23:16];
+        s_recv_data_d[15:0]  = {s_recv_data_q[14:0], adcdat_i};
+      end
     end
   end
   dffer #(24) u_recv_data_dffer (
@@ -76,7 +83,26 @@ module i2s_recv (
   );
 
 
-  assign s_data_d = s_bit_cnt_q == s_bit_num ? s_recv_data_d : s_data_q;
+  always_comb begin
+    s_first_bit_d = s_first_bit_q;
+    if (s_lrck_trg) s_first_bit_d = adcdat_i;
+  end
+  dffer #(1) u_first_bit_dffer (
+      clk_i,
+      rst_n_i,
+      sclk_pos_i,
+      s_first_bit_d,
+      s_first_bit_q
+  );
+
+
+  always_comb begin
+    s_data_d = s_data_q;
+    if ((!s_lrck_trg) && (s_bit_cnt_q == (s_bit_num - 1'b1))) begin
+      if (bitmode_i) s_data_d = {s_recv_data_d[22:0], s_first_bit_q};
+      else s_data_d = {8'd0, s_recv_data_d[14:0], s_first_bit_q};
+    end
+  end
   dffer #(24) u_data_dffer (
       clk_i,
       rst_n_i,
