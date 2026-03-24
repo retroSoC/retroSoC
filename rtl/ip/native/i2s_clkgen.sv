@@ -22,14 +22,20 @@ module i2s_clkgen (
 
   logic [2:0] s_sclk_div_num;
   logic [2:0] s_sclk_div_cnt_d, s_sclk_div_cnt_q;
+  logic s_sclk_tc;
   logic s_sclk_d, s_sclk_q;
   logic [4:0] s_lrck_div_num;
   logic [4:0] s_lrck_div_cnt_d, s_lrck_div_cnt_q;
   logic s_lrck_d, s_lrck_q;
+  logic s_lrck_tc;
+  logic s_sclk_pos, s_sclk_fall;
 
 
-  assign sclk_pos_o  = (~s_sclk_q) && (s_sclk_div_cnt_q == s_sclk_div_num);
-  assign sclk_fall_o = s_sclk_q && (s_sclk_div_cnt_q == s_sclk_div_num);
+  assign s_sclk_tc   = s_sclk_div_cnt_q == s_sclk_div_num;
+  assign s_sclk_pos  = (~s_sclk_q) && s_sclk_tc;
+  assign s_sclk_fall = s_sclk_q && s_sclk_tc;
+  assign sclk_pos_o  = s_sclk_pos;
+  assign sclk_fall_o = s_sclk_fall;
   assign sclk_o      = s_sclk_q;
   assign lrck_o      = s_lrck_q;
 
@@ -47,7 +53,7 @@ module i2s_clkgen (
 
   always_comb begin
     s_sclk_d = s_sclk_q;
-    if (s_sclk_div_cnt_q == s_sclk_div_num) begin
+    if (s_sclk_tc) begin
       s_sclk_div_cnt_d = '0;
       s_sclk_d         = ~s_sclk_q;
     end else begin
@@ -80,8 +86,9 @@ module i2s_clkgen (
 
 
   always_comb begin
-    s_lrck_d = s_lrck_q;
-    if (s_lrck_div_cnt_q == s_lrck_div_num) begin
+    s_lrck_d  = s_lrck_q;
+    s_lrck_tc = s_lrck_div_cnt_q == s_lrck_div_num;
+    if (s_lrck_tc) begin
       s_lrck_div_cnt_d = '0;
       s_lrck_d         = ~s_lrck_q;
     end else begin
@@ -91,19 +98,17 @@ module i2s_clkgen (
   dffer #(5) u_lrck_div_cnt_dffer (
       clk_i,
       rst_n_i,
-      sclk_fall_o,
+      s_sclk_fall,
       s_lrck_div_cnt_d,
       s_lrck_div_cnt_q
   );
   dffer #(1) u_lrck_dffer (
       clk_i,
       rst_n_i,
-      sclk_fall_o,
+      s_sclk_fall,
       s_lrck_d,
       s_lrck_q
   );
 
 
 endmodule
-
-
