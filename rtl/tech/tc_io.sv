@@ -160,11 +160,7 @@ module tc_io_tri_pad (
       .PU   (1'b0),
       .PD   (1'b0),
       .DS0  (1'b0),
-      .DS1  (1'b1),     // 8mA
-      .VDD  (),
-      .VDDIO(),
-      .VSS  (),
-      .VSSIO()
+      .DS1  (1'b1)     // 8mA
   );
 
 `elsif PDK_GF180
@@ -235,11 +231,7 @@ module tc_io_tri_schmitt_pad (
       .PU   (1'b0),
       .PD   (1'b0),
       .DS0  (1'b0),
-      .DS1  (1'b1),     // 8mA
-      .VDD  (),
-      .VDDIO(),
-      .VSS  (),
-      .VSSIO()
+      .DS1  (1'b1)     // 8mA
   );
 
 `elsif PDK_GF180
@@ -317,11 +309,7 @@ module tc_io_tri_full_pad (
       .PU   (pu),       // active high
       .PD   (pd),       // active high
       .DS0  (1'b0),
-      .DS1  (1'b1),     // 8mA
-      .VDD  (),
-      .VDDIO(),
-      .VSS  (),
-      .VSSIO()
+      .DS1  (1'b1)     // 8mA
   );
 
 `elsif PDK_GF180

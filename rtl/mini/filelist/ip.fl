@@ -43,5 +43,6 @@
 /ip/native/ahbl2nmi.sv
 /ip/native/axi4l2nmi.sv
 /ip/native/async_fifo.sv
+/ip/native/fifo.sv
 /ip/native/nmi_regslice.sv
 /ip/native/nmi2nmi.sv
