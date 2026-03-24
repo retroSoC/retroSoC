@@ -186,43 +186,84 @@ module ip_nmi_wrapper (
   assign u_i2c1_nmi_if.wstrb     = nmi.wstrb;
 
   // verilog_format: off
-  assign nmi.ready              = (u_uart_nmi_if.valid     & u_uart_nmi_if.ready)     |
-                                  (u_gpio_nmi_if.valid     & u_gpio_nmi_if.ready)     |
-                                  (u_tim0_nmi_if.valid     & u_tim0_nmi_if.ready)     |
-                                  (u_tim1_nmi_if.valid     & u_tim1_nmi_if.ready)     |
-                                  (u_psram_nmi_if.valid    & u_psram_nmi_if.ready)    |
-                                  (u_spisd_nmi_if.valid    & u_spisd_nmi_if.ready)    |
-                                  (u_i2c0_nmi_if.valid     & u_i2c0_nmi_if.ready)     |
-                                  (u_i2s_nmi_if.valid      & u_i2s_nmi_if.ready)      |
-                                  (u_onewire_nmi_if.valid  & u_onewire_nmi_if.ready)  |
-                                  (u_xpi_nmi_if.valid     & u_xpi_nmi_if.ready)     |
-                                  (u_dma_nmi_if.valid      & u_dma_nmi_if.ready)      |
-                                  (u_sysctrl_nmi_if.valid  & u_sysctrl_nmi_if.ready)  |
-                                  (u_clint_nmi_if.valid    & u_clint_nmi_if.ready)    |
-                                  (u_sdram_nmi_if.valid    & u_sdram_nmi_if.ready)    |
-                                  (u_dvp_nmi_if.valid      & u_dvp_nmi_if.ready)      |
-                                  (u_sdio_nmi_if.valid     & u_sdio_nmi_if.ready)     |
-                                  (u_opipsram_nmi_if.valid & u_opipsram_nmi_if.ready) |
-                                  (u_i2c1_nmi_if.valid     & u_i2c1_nmi_if.ready);
+  // Registered one-hot slave select for response mux (breaks comb fanin)
+  logic [17:0] s_slv_sel_d, s_slv_sel_q;
+  assign s_slv_sel_d = { u_i2c1_nmi_if.valid,
+                         u_opipsram_nmi_if.valid,
+                         u_sdio_nmi_if.valid,
+                         u_dvp_nmi_if.valid,
+                         u_sdram_nmi_if.valid,
+                         u_clint_nmi_if.valid,
+                         u_sysctrl_nmi_if.valid,
+                         u_dma_nmi_if.valid,
+                         u_xpi_nmi_if.valid,
+                         u_onewire_nmi_if.valid,
+                         u_i2s_nmi_if.valid,
+                         u_i2c0_nmi_if.valid,
+                         u_spisd_nmi_if.valid,
+                         u_psram_nmi_if.valid,
+                         u_tim1_nmi_if.valid,
+                         u_tim0_nmi_if.valid,
+                         u_gpio_nmi_if.valid,
+                         u_uart_nmi_if.valid };
+  dffr #(18) u_slv_sel_dffr (
+      clk_i,
+      rst_n_i,
+      s_slv_sel_d,
+      s_slv_sel_q
+  );
 
-  assign nmi.rdata              = ({32{(u_uart_nmi_if.valid     & u_uart_nmi_if.ready)}}     & u_uart_nmi_if.rdata)     |
-                                  ({32{(u_gpio_nmi_if.valid     & u_gpio_nmi_if.ready)}}     & u_gpio_nmi_if.rdata)     |
-                                  ({32{(u_tim0_nmi_if.valid     & u_tim0_nmi_if.ready)}}     & u_tim0_nmi_if.rdata)     |
-                                  ({32{(u_tim1_nmi_if.valid     & u_tim1_nmi_if.ready)}}     & u_tim1_nmi_if.rdata)     |
-                                  ({32{(u_psram_nmi_if.valid    & u_psram_nmi_if.ready)}}    & u_psram_nmi_if.rdata)    |
-                                  ({32{(u_spisd_nmi_if.valid    & u_spisd_nmi_if.ready)}}    & u_spisd_nmi_if.rdata)    |
-                                  ({32{(u_i2c0_nmi_if.valid     & u_i2c0_nmi_if.ready)}}     & u_i2c0_nmi_if.rdata)      |
-                                  ({32{(u_i2s_nmi_if.valid      & u_i2s_nmi_if.ready)}}      & u_i2s_nmi_if.rdata)      |
-                                  ({32{(u_onewire_nmi_if.valid  & u_onewire_nmi_if.ready)}}  & u_onewire_nmi_if.rdata)  |
-                                  ({32{(u_xpi_nmi_if.valid     & u_xpi_nmi_if.ready)}}     & u_xpi_nmi_if.rdata)     |
-                                  ({32{(u_dma_nmi_if.valid      & u_dma_nmi_if.ready)}}      & u_dma_nmi_if.rdata)      |
-                                  ({32{(u_sysctrl_nmi_if.valid  & u_sysctrl_nmi_if.ready)}}  & u_sysctrl_nmi_if.rdata)  |
-                                  ({32{(u_clint_nmi_if.valid    & u_clint_nmi_if.ready)}}    & u_clint_nmi_if.rdata)    |
-                                  ({32{(u_sdram_nmi_if.valid    & u_sdram_nmi_if.ready)}}    & u_sdram_nmi_if.rdata)    |
-                                  ({32{(u_dvp_nmi_if.valid      & u_dvp_nmi_if.ready)}}      & u_dvp_nmi_if.rdata)      |
-                                  ({32{(u_sdio_nmi_if.valid     & u_sdio_nmi_if.ready)}}     & u_sdio_nmi_if.rdata)     |
-                                  ({32{(u_opipsram_nmi_if.valid & u_opipsram_nmi_if.ready)}} & u_opipsram_nmi_if.rdata) |
-                                  ({32{(u_i2c1_nmi_if.valid     & u_i2c1_nmi_if.ready)}}     & u_i2c1_nmi_if.rdata);
+  // Collect per-slave ready signals into a vector
+  logic [17:0] s_slv_ready;
+  assign s_slv_ready = { u_i2c1_nmi_if.ready,
+                         u_opipsram_nmi_if.ready,
+                         u_sdio_nmi_if.ready,
+                         u_dvp_nmi_if.ready,
+                         u_sdram_nmi_if.ready,
+                         u_clint_nmi_if.ready,
+                         u_sysctrl_nmi_if.ready,
+                         u_dma_nmi_if.ready,
+                         u_xpi_nmi_if.ready,
+                         u_onewire_nmi_if.ready,
+                         u_i2s_nmi_if.ready,
+                         u_i2c0_nmi_if.ready,
+                         u_spisd_nmi_if.ready,
+                         u_psram_nmi_if.ready,
+                         u_tim1_nmi_if.ready,
+                         u_tim0_nmi_if.ready,
+                         u_gpio_nmi_if.ready,
+                         u_uart_nmi_if.ready };
+
+  assign nmi.ready = |(s_slv_sel_q & s_slv_ready);
+
+  // Registered select mux for rdata (reduces fanin from 18 to a clean one-hot mux)
+  logic [31:0] s_slv_rdata [0:17];
+  assign s_slv_rdata[0]  = u_uart_nmi_if.rdata;
+  assign s_slv_rdata[1]  = u_gpio_nmi_if.rdata;
+  assign s_slv_rdata[2]  = u_tim0_nmi_if.rdata;
+  assign s_slv_rdata[3]  = u_tim1_nmi_if.rdata;
+  assign s_slv_rdata[4]  = u_psram_nmi_if.rdata;
+  assign s_slv_rdata[5]  = u_spisd_nmi_if.rdata;
+  assign s_slv_rdata[6]  = u_i2c0_nmi_if.rdata;
+  assign s_slv_rdata[7]  = u_i2s_nmi_if.rdata;
+  assign s_slv_rdata[8]  = u_onewire_nmi_if.rdata;
+  assign s_slv_rdata[9]  = u_xpi_nmi_if.rdata;
+  assign s_slv_rdata[10] = u_dma_nmi_if.rdata;
+  assign s_slv_rdata[11] = u_sysctrl_nmi_if.rdata;
+  assign s_slv_rdata[12] = u_clint_nmi_if.rdata;
+  assign s_slv_rdata[13] = u_sdram_nmi_if.rdata;
+  assign s_slv_rdata[14] = u_dvp_nmi_if.rdata;
+  assign s_slv_rdata[15] = u_sdio_nmi_if.rdata;
+  assign s_slv_rdata[16] = u_opipsram_nmi_if.rdata;
+  assign s_slv_rdata[17] = u_i2c1_nmi_if.rdata;
+
+  // One-hot mux using registered slave select
+  always_comb begin
+    nmi.rdata = '0;
+    for (int i = 0; i < 18; i++) begin
+      if (s_slv_sel_q[i]) nmi.rdata = nmi.rdata | s_slv_rdata[i];
+    end
+  end
   // verilog_format: on
 
   // irq

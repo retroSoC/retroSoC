@@ -27,10 +27,10 @@ module rcu (
   logic       s_pll_clk_buf;
   logic       s_pll_clk;
   logic       s_pll_lock;
-  logic       s_pll_bp;
-  logic [3:0] s_pll_N;
-  logic [7:0] s_pll_M;
-  logic [1:0] s_pll_OD;
+  logic       s_pll_bp, s_pll_bp_q;
+  logic [3:0] s_pll_N, s_pll_N_q;
+  logic [7:0] s_pll_M, s_pll_M_q;
+  logic [1:0] s_pll_OD, s_pll_OD_q;
 `endif
   logic s_ext_clk_buf;
   logic s_sys_clk;
@@ -187,14 +187,29 @@ module rcu (
     endcase
   end
 
+  // Register PLL config outputs to break the comb path to PLL macro
+  always_ff @(posedge s_ext_clk_buf or negedge ext_rst_n_i) begin
+    if (~ext_rst_n_i) begin
+      s_pll_bp_q <= 1'b1;
+      s_pll_M_q  <= 8'd20;
+      s_pll_N_q  <= 4'd2;
+      s_pll_OD_q <= 2'd1;
+    end else begin
+      s_pll_bp_q <= s_pll_bp;
+      s_pll_M_q  <= s_pll_M;
+      s_pll_N_q  <= s_pll_N;
+      s_pll_OD_q <= s_pll_OD;
+    end
+  end
+
   tc_pll u_tc_pll (
       .fref_i    (s_xtal_clk_buf),
       .rst_n_i   (s_ext_rst_n_sync),
-      .refdiv_i  (s_pll_M),
+      .refdiv_i  (s_pll_M_q),
       .fbdiv_i   (),
-      .postdiv1_i(s_pll_N),
-      .postdiv2_i(s_pll_OD),
-      .bp_i      (clk_bypass_i || s_pll_bp),
+      .postdiv1_i(s_pll_N_q),
+      .postdiv2_i(s_pll_OD_q),
+      .bp_i      (clk_bypass_i || s_pll_bp_q),
       .pll_lock_o(s_pll_lock),
       .pll_clk_o (s_pll_clk)
   );
