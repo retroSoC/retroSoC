@@ -54,11 +54,16 @@ module async_fifo #(
   // rd logic
   always_ff @(posedge rd_clk_i or negedge rd_rst_n_i) begin
     if (!rd_rst_n_i) begin
+      rd_data_o <= '0;
+    end else if (rd_en_i && !rd_empty_o) begin
+      rd_data_o <= r_mem[r_rd_ptr_bin[DEPTH_POWER-1:0]];
+    end
+  end
+  always_ff @(posedge rd_clk_i or negedge rd_rst_n_i) begin
+    if (!rd_rst_n_i) begin
       r_rd_ptr_bin  <= '0;
       r_rd_ptr_gray <= '0;
-      rd_data_o     <= '0;
     end else if (rd_en_i && !rd_empty_o) begin
-      rd_data_o     <= r_mem[r_rd_ptr_bin[DEPTH_POWER-1:0]];
       r_rd_ptr_bin  <= r_rd_ptr_bin + 1'b1;
       r_rd_ptr_gray <= bin2gray(r_rd_ptr_bin + 1'b1);
     end
@@ -103,9 +108,11 @@ module async_fifo #(
       .bin_o (s_rd_ptr_bin_sync)
   );
 
+`ifndef SYNTHESIS
   initial begin
     if (DEPTH_POWER < 1 || DEPTH_POWER > 10) $error("DEPTH_POWER ERROR");
     if (DATA_WIDTH < 1 || DATA_WIDTH > 256) $error("DATA_WIDTH ERROR");
   end
+`endif
 
 endmodule
