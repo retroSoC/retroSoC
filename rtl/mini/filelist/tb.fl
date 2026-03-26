@@ -3,7 +3,7 @@
 /clusterip/uart/model/rs232.sv
 /clusterip/i2s/model/mic.sv
 /clusterip/spi/model/w25q128jvxim.sv
-/ip/native/ESP_PSRAM64H.sv
-/ip/native/DVP_CAMERA.sv
+/ip/tb/ESP_PSRAM64H.sv
+/ip/tb/DVP_CAMERA.sv
 /ip/3rd-party/model/sdram/sdr.v
 /tb/retrosoc_tb.sv
