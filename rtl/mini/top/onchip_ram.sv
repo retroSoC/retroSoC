@@ -63,7 +63,7 @@ module onchip_ram (
         .addr_i(ram.addr[9:0]),
         .data_i(ram.wdata),
         .mask_i(ram.wstrb),
-        .wren_i(|ram.wstrb_i),
+        .wren_i(|ram.wstrb),
         .data_o(s_rdata[i])
     );
   end
