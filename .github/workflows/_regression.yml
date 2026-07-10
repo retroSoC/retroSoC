@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Restore locked source dependencies
-        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             app/coremark/coremark-main
@@ -54,7 +54,7 @@ jobs:
           key: sources-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
 
       - name: Restore locked toolchains
-        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .cache/retrosoc/downloads
@@ -62,7 +62,7 @@ jobs:
           key: tools-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
 
       - name: Restore Verilator compiler cache
-        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: .cache/retrosoc/ccache
           key: ccache-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
