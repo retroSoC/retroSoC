@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import io
 import json
 import re
@@ -10,6 +11,7 @@ import sys
 import tarfile
 import time
 from pathlib import Path
+from zipfile import ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -460,6 +462,27 @@ def test_safe_extract_rejects_parent_traversal(tmp_path: Path) -> None:
     else:
         raise AssertionError("unsafe archive was extracted")
     assert not (tmp_path / "outside").exists()
+
+
+def test_fatfs_update_reextracts_downloaded_archive(tmp_path: Path) -> None:
+    module_path = ROOT / "app/setup.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_app_setup", module_path)
+    assert spec is not None and spec.loader is not None
+    app_setup = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(app_setup)
+
+    archive = tmp_path / "ff16.zip"
+    with ZipFile(archive, "w") as zip_archive:
+        zip_archive.writestr("source/ff.c", "new archive contents\n")
+
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "ff.c").write_text("stale contents\n", encoding="utf-8")
+    app_setup.extract_fatfs(archive, source, update=False)
+    assert (source / "ff.c").read_text(encoding="utf-8") == "stale contents\n"
+
+    app_setup.extract_fatfs(archive, source, update=True)
+    assert (source / "ff.c").read_text(encoding="utf-8") == "new archive contents\n"
 
 
 def test_ci_actions_are_pinned_to_commits() -> None:

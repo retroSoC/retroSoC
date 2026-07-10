@@ -64,7 +64,7 @@
   "archives": {
     "fatfs": {
       "url": "https://elm-chan.org/fsw/ff/arc/ff16.zip",
-      "sha256": "41d98115f72b090c2d0c269a001c5c0216efd78fbd84bb6427be808a76315a5a",
+      "sha256": "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e",
       "destination": "app/fatfs/ff16/ff16.zip",
       "license": "LicenseRef-FatFs"
     },

@@ -18,6 +18,14 @@ FATFS_DIR = APP_DIR / "fatfs"
 COREMARK_DIR = APP_DIR / "coremark/coremark-main"
 
 
+def extract_fatfs(archive: Path, destination: Path, *, update: bool) -> None:
+    if update and destination.is_dir():
+        shutil.rmtree(destination)
+    if not destination.is_dir():
+        with ZipFile(archive) as zip_archive:
+            zip_archive.extractall(archive.parent)
+
+
 def patch_coremark() -> None:
     header = COREMARK_DIR / "coremark.h"
     content = header.read_text(encoding="utf-8")
@@ -48,9 +56,7 @@ def main() -> int:
     fatfs_archive = ROOT / fatfs["destination"]
     download_file(fatfs["url"], fatfs_archive, fatfs["sha256"], update=args.update)
     fatfs_source = fatfs_archive.parent / "source"
-    if not fatfs_source.is_dir():
-        with ZipFile(fatfs_archive) as zip_archive:
-            zip_archive.extractall(fatfs_archive.parent)
+    extract_fatfs(fatfs_archive, fatfs_source, update=args.update)
     for name in ("ffconf.h", "diskio.c"):
         config_source = FATFS_DIR / name
         if not config_source.is_file():
