@@ -176,3 +176,13 @@ yosys tee -q -o "${report_dir}/${proj_name}_area_logic.rpt" stat -top $top_desig
 # final netlist
 yosys write_verilog -noattr -noexpr -nohex -nodec $netlist
 
+# Record the configuration only after the netlist has been written successfully.
+set config_tmp "${config}.tmp"
+set config_file [open $config_tmp "w"]
+puts $config_file "PDK=$pdk"
+puts $config_file "SOC=$soc"
+puts $config_file "CORE=$core"
+puts $config_file "IP=$ip"
+puts $config_file "TOP_DESIGN=$top_design"
+close $config_file
+file rename -force $config_tmp $config

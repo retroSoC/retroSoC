@@ -1,38 +1,38 @@
-#!/bin/python
+#!/usr/bin/env python3
 
-import os
-import sys
+from __future__ import annotations
+
+import argparse
 import subprocess
+from pathlib import Path
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MINI_DIR   = os.path.abspath(f'{SCRIPT_DIR}/..')
-GEN_DIR    = os.path.abspath(f'{MINI_DIR}/.iverilog_build/behv')
-
-
-sv2v_cmd = 'sv2v'
-
-for v in sys.argv[1:]:
-    if '-f' not in v:
-        if 'pdk' in v: continue
-        # print(f'filelist: {v}')
-        try:
-            result = subprocess.run(
-                f"sed -e 's/+incdir+/-I/g' -e 's/+define+/-D/g' -e 's/^-v/-y/g' {v}",
-                shell=True,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            sed_output = result.stdout
-            # print(sed_output.split('\n'))
-            lines = sed_output.split('\n')
-            for v in lines:
-                if v != '':
-                    sv2v_cmd = f'{sv2v_cmd} {v}'
-        except Exception as e:
-            print(f"fail：{str(e)}")
+from filelist import parse_filelists
 
 
-sv2v_cmd = f'{sv2v_cmd} --write {GEN_DIR}/converted_soc.v'
-# print(f'sv2v_cmd: {sv2v_cmd}')
-os.system(sv2v_cmd)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Convert the behavioral RTL with sv2v")
+    parser.add_argument("-f", "--filelist", action="append", type=Path, default=[])
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--sv2v", default="sv2v", help="sv2v executable")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    selected = [path for path in args.filelist if not path.name.startswith("pdk_")]
+    if not selected:
+        raise SystemExit("at least one non-PDK -f/--filelist is required")
+
+    filelist = parse_filelists(selected)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    command = [args.sv2v]
+    command.extend(f"-D{item[len('+define+'):]}" for item in filelist.defines)
+    command.extend(f"-I{path}" for path in filelist.incdirs)
+    command.extend(str(path) for path in filelist.files)
+    command.extend(("--write", str(args.output.resolve())))
+    subprocess.run(command, check=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

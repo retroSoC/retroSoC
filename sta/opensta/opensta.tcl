@@ -1,11 +1,19 @@
-# report_timing
-read_liberty pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/lib/sg13g2_io_typ_1p2V_3p3V_25C.lib
-read_liberty pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_typ_1p20V_25C.lib
-read_verilog syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
-link_design retrosoc_asic
-read_sdc sta/opensta/gen2.sdc
+foreach variable {OPENSTA_NETLIST OPENSTA_LIBERTY OPENSTA_IO_LIB OPENSTA_SRAM_LIBS OPENSTA_SDC OPENSTA_REPORT} {
+    if {![info exists ::env($variable)] || $::env($variable) eq ""} {
+        error "required environment variable is missing: $variable"
+    }
+}
 
-report_checks -path_delay min_max -path_group {clk_ext clk_aud } -sort_by_slack -slack_max 0.0 -group_path_count 1000 -endpoint_path_count 1000 > sta/opensta/retrosoc_sta.log
+read_liberty $::env(OPENSTA_IO_LIB)
+read_liberty $::env(OPENSTA_LIBERTY)
+foreach liberty $::env(OPENSTA_SRAM_LIBS) {
+    read_liberty $liberty
+}
+read_verilog $::env(OPENSTA_NETLIST)
+link_design retrosoc_asic
+read_sdc $::env(OPENSTA_SDC)
+
+report_checks -path_delay min_max -path_group {clk_ext clk_aud } -sort_by_slack -slack_max 0.0 -group_path_count 1000 -endpoint_path_count 1000 > $::env(OPENSTA_REPORT)
 
 # set_propagated_clock clk
 # read_spef gcd_sky130hd.spef

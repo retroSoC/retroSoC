@@ -11,6 +11,7 @@ void main() {
     uart0_init(CPU_FREQ, UART_BPS);
 #ifdef SW_BASE
     app_info();
+    ip_archinfo_test(0, NULL);
 #else
     tinybooter();
     i2c0_init((uint8_t)(CPU_FREQ / 2 - 1));

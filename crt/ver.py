@@ -1,43 +1,45 @@
-#!/bin/python
+#!/usr/bin/env python3
 
-import os
+import argparse
 import subprocess
+import sys
+from pathlib import Path
 
-ROOT_PATH = os.getcwd()
 
-def get_git_info():
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from scripts.setup_helpers import atomic_write  # noqa: E402
+
+
+def git_value(root: Path, *args: str, fallback: str = "unknown") -> str:
     try:
-        branch = subprocess.check_output(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-            stderr=subprocess.STDOUT
-        ).decode('utf-8').strip()
+        return subprocess.check_output(
+            ["git", "-C", str(root), *args],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return fallback
 
-        # get full commit hash
-        commit = subprocess.check_output(
-            ['git', 'rev-parse', 'HEAD'],
-            stderr=subprocess.STDOUT
-        ).decode('utf-8').strip()[0:6]
 
-        return branch, commit
-    except subprocess.CalledProcessError:
-        return None, None
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Generate the firmware version header")
+    parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+    root = args.root.resolve()
+    output = args.output or root / "crt/inc/socver.h"
 
-branch, commit = get_git_info()
-print(f"current branch: {branch}")
-print(f"current commit: {commit}")
-print(ROOT_PATH)
+    branch = git_value(root, "rev-parse", "--abbrev-ref", "HEAD")
+    commit = git_value(root, "rev-parse", "--short=6", "HEAD")
+    template = (root / "crt/ver.tmpl").read_text(encoding="utf-8")
+    content = template.replace("SOC_DEFAULT_BRANCH", branch).replace(
+        "SOC_DEFAULT_COMMIT", commit
+    )
+    changed = atomic_write(output, content)
+    print(f"version {branch}@{commit}: {'updated' if changed else 'unchanged'}")
+    return 0
 
-res = ''
-with open(f'{ROOT_PATH}/crt/ver.tmpl', 'r', encoding='utf-8') as fp:
-    file = fp.readlines()
 
-    for line in file:
-        if 'SOC_DEFAULT_BRANCH' in line:
-            res += line.replace('SOC_DEFAULT_BRANCH', branch)
-        elif 'SOC_DEFAULT_COMMIT' in line:
-            res += line.replace('SOC_DEFAULT_COMMIT', commit)
-        else:
-            res += line
-
-with open(f'{ROOT_PATH}/crt/inc/socver.h', 'w', encoding='utf-8') as fp:
-    fp.writelines(res)
+if __name__ == "__main__":
+    raise SystemExit(main())

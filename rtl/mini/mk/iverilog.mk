@@ -1,76 +1,94 @@
-# tools & paths
-SIM_TOOL     := iverilog
-SIM_BINY     := vvp simv -fst
-GTKWAVE_TOOL := gtkwave
-COMP_LOG     := compile.log
-SIM_LOG      := sim.log
-# netlist file path
-NETLIST_PATH := $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
-POST_PATH    := $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
-SDF_PATH     := $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
-# testbench filelist
-TB_FLIST     := -f $(RTL_PATH)/.generate_verilogd_fl/tb.fl
+IVERILOG       ?= iverilog
+VVP            ?= vvp
+GTKWAVE        ?= gtkwave
 
+NETLIST_PATH   ?= $(ROOT_PATH)/syn/yosys/.synth_build/out/retrosoc_asic_yosys.v
+POST_PATH      ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
+SDF_PATH       ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
+SDF_SCOPE      ?= $(RTL_TOP).u_retrosoc_asic
 
-# --- Compilation Flags ---
-COMMON_OPTS  := -g2012
+IVERILOG_ROOT       := $(RTL_PATH)/.iverilog_build
+IVERILOG_BEHV_DIR   := $(IVERILOG_ROOT)/behv
+IVERILOG_NETL_DIR   := $(IVERILOG_ROOT)/netl
+IVERILOG_POST_DIR   := $(IVERILOG_ROOT)/post
+IVERILOG_BEHV_FLIST := $(IVERILOG_BEHV_DIR)/iverilog.fl
+IVERILOG_NETL_FLIST := $(IVERILOG_NETL_DIR)/iverilog.fl
+IVERILOG_POST_FLIST := $(IVERILOG_POST_DIR)/iverilog.fl
+CONVERTED_SOC       := $(IVERILOG_BEHV_DIR)/converted_soc.v
 
-POST_OPTS    := -ghello
+IVERILOG_COMMON_OPTS := -g2012
+IVERILOG_TIME_OPTS   := -gno-specify
+IVERILOG_POST_OPTS   := -gspecify -Tmin
+IVERILOG_SIM_OPTS    := +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) \
+	+core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
-TIME_OPTS    := -gno-specify
-SIM_OPTS     := +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) +core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) \
-                +wave_$(WAVE)
+$(CONVERTED_SOC): gen_mpw_code generate_filelist
+	@mkdir -p $(@D)
+	python3 $(RTL_PATH)/script/convt_sv2v.py $(RTL_FLIST) --output $@
 
+$(IVERILOG_BEHV_FLIST): generate_filelist $(CONVERTED_SOC)
+	@mkdir -p $(@D)
+	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
+		--mode behv --pdk $(PDK) --output $@ --converted $(CONVERTED_SOC)
 
-comp:     DIR   := .iverilog_build/behv
-comp:     FLIST := -f $(RTL_PATH)/.generated_fl/iverilog.fl
-comp:     OPTS  := $(TIME_OPTS)
+$(IVERILOG_NETL_FLIST): generate_filelist
+	@mkdir -p $(@D)
+	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
+		--mode netl --pdk $(PDK) --output $@ --netlist $(NETLIST_PATH)
 
-netcomp:  DIR   := .iverilog_build/netl
-netcomp:  FLIST := -f $(RTL_PATH)/.generated_fl/iverilog.fl
-netcomp:  OPTS  := $(TIME_OPTS)
+$(IVERILOG_POST_FLIST): generate_filelist
+	@mkdir -p $(@D)
+	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
+		--mode post --pdk $(PDK) --output $@ --netlist $(POST_PATH) --sdf $(SDF_PATH) \
+		--sdf-scope $(SDF_SCOPE)
 
-postcomp: DIR   := .iverilog_build/post
-postcomp: FLIST := $(NET_FLIST) $(TB_FLIST)
-postcomp: OPTS  := $(POST_OPTS)
+convt_sv2v: $(CONVERTED_SOC)
+gen_iverilog_filelist: $(IVERILOG_BEHV_FLIST)
 
-sim:      DIR   := .iverilog_build/behv
-netsim:   DIR   := .iverilog_build/netl
-postsim:  DIR   := .iverilog_build/post
+comp: $(IVERILOG_BEHV_FLIST)
+	@mkdir -p $(IVERILOG_BEHV_DIR)
+	@cd $(IVERILOG_BEHV_DIR) && set -o pipefail && \
+		$(IVERILOG) $(IVERILOG_COMMON_OPTS) $(IVERILOG_TIME_OPTS) -f $< \
+		-o simv -s $(RTL_TOP) 2>&1 | tee compile.log
 
-wave:     DIR   := .iverilog_build/behv
-netwave:  DIR   := .iverilog_build/netl
-postwave: DIR   := .iverilog_build/post
+netcomp: $(IVERILOG_NETL_FLIST)
+	@mkdir -p $(IVERILOG_NETL_DIR)
+	@cd $(IVERILOG_NETL_DIR) && set -o pipefail && \
+		$(IVERILOG) $(IVERILOG_COMMON_OPTS) $(IVERILOG_TIME_OPTS) -f $< \
+		-o simv -s $(RTL_TOP) 2>&1 | tee compile.log
 
+postcomp: $(IVERILOG_POST_FLIST)
+	@mkdir -p $(IVERILOG_POST_DIR)
+	@cd $(IVERILOG_POST_DIR) && set -o pipefail && \
+		$(IVERILOG) $(IVERILOG_COMMON_OPTS) $(IVERILOG_POST_OPTS) -f $< \
+		-o simv -s $(RTL_TOP) -s retrosoc_sdf_annotator 2>&1 | tee compile.log
 
-sim: comp prepare_norflash
-netsim: netcomp prepare_norflash
-postsim: postcomp prepare_norflash
+sim: comp
+	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_BEHV_DIR) \
+		--firmware $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME).hex
+	@cd $(IVERILOG_BEHV_DIR) && set -o pipefail && \
+		stdbuf -oL -eL $(VVP) simv -fst $(IVERILOG_SIM_OPTS) 2>&1 | tee sim.log
 
-convt_sv2v: generate_filelist
-	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/script/convt_sv2v.py $(RTL_FLIST)
+netsim: netcomp
+	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_NETL_DIR) \
+		--firmware $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME).hex
+	@cd $(IVERILOG_NETL_DIR) && set -o pipefail && \
+		stdbuf -oL -eL $(VVP) simv -fst $(IVERILOG_SIM_OPTS) 2>&1 | tee sim.log
 
-gen_iverilog_filelist:
-	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py $(MAKECMDGOALS) $(PDK) $(NETLIST_PATH)
+postsim: postcomp
+	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_POST_DIR) \
+		--firmware $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME).hex
+	@cd $(IVERILOG_POST_DIR) && set -o pipefail && \
+		stdbuf -oL -eL $(VVP) simv -fst $(IVERILOG_SIM_OPTS) 2>&1 | tee sim.log
 
-prepare_norflash:
-	@mkdir -p $(RTL_PATH)/$(DIR)
-	python3 $(RTL_PATH)/script/prepare_norflash.py $(MAKECMDGOALS)
-
-comp netcomp postcomp: convt_sv2v gen_iverilog_filelist
-	@mkdir -p $(RTL_PATH)/$(DIR)
-	cd $(RTL_PATH)/$(DIR) && ($(SIM_TOOL) $(COMMON_OPTS) $(OPTS) $(FLIST) -o simv -s $(RTL_TOP)) 2>&1 | tee $(COMP_LOG)
-
-
-sim netsim postsim:
-	cd $(RTL_PATH)/$(DIR) && (stdbuf -oL -eL $(SIM_BINY) $(SIM_OPTS)) 2>&1 | tee $(SIM_LOG)
-
-wave netwave postwave:
-	cd $(RTL_PATH)/$(DIR) && ($(GTKWAVE_TOOL) $(RTL_TOP).fst &)
+wave:
+	cd $(IVERILOG_BEHV_DIR) && $(GTKWAVE) $(RTL_TOP).fst &
+netwave:
+	cd $(IVERILOG_NETL_DIR) && $(GTKWAVE) $(RTL_TOP).fst &
+postwave:
+	cd $(IVERILOG_POST_DIR) && $(GTKWAVE) $(RTL_TOP).fst &
 
 clean:
-	rm -rf .iverilog_build/behv $(RTL_PATH)/.iverilog_build/netl $(RTL_PATH)/.iverilog_build/post
+	rm -rf $(IVERILOG_ROOT)
 
-.PHONY: comp netcomp postcomp sim netsim postsim wave clean
+.PHONY: convt_sv2v gen_iverilog_filelist comp netcomp postcomp sim netsim postsim wave netwave postwave clean

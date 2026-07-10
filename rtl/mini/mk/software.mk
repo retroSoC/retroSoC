@@ -1,5 +1,5 @@
 # software
-CROSS=riscv32-unknown-elf-
+CROSS ?= riscv32-unknown-elf-
 
 CP   = $(CROSS)cpp
 CC   = $(CROSS)gcc
@@ -108,7 +108,7 @@ INC_PATH := -I$(ROOT_PATH)/crt/inc \
 
 
 ifneq ($(findstring MDD,$(CORE) $(IP)),)
-INC_PATH += -I$(ROOT_PATH)/rtl/min/mpw/.build
+INC_PATH += -I$(ROOT_PATH)/rtl/mini/mpw/.build
 endif
 
 
@@ -129,22 +129,23 @@ ifneq ($(filter RV32E RV32I,$(ISA)),)
     SRC_PATH += $(ROOT_PATH)/crt/libgcc/mulsi3.c
 endif
 
-LDS_PATH := $(ROOT_PATH)/crt/./lds/$(LINK_TYPE).lds
+LDS_PATH := $(ROOT_PATH)/crt/lds/$(LINK_TYPE).lds
 
 upd_ver_info:
-	python3 crt/ver.py
+	python3 $(ROOT_PATH)/crt/ver.py --root $(ROOT_PATH)
 
 asm: gen_mpw_code
-	cd app/asm && make
-	cp -rf app/asm/hello-asm.flash .sw_build/retrosoc_fw.hex
-	cp -rf app/asm/hello-asm.bin .sw_build/retrosoc_fw.bin
-	cp -rf app/asm/hello-asm.txt .sw_build/retrosoc_fw_all.txt
+	@mkdir -p $(ROOT_PATH)/.sw_build
+	$(MAKE) -C $(ROOT_PATH)/app/asm
+	cp $(ROOT_PATH)/app/asm/hello-asm.flash $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME).hex
+	cp $(ROOT_PATH)/app/asm/hello-asm.bin $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME).bin
+	cp $(ROOT_PATH)/app/asm/hello-asm.txt $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME)_all.txt
 
 firmware: gen_mpw_code upd_ver_info
-	@mkdir -p .sw_build
-	cd .sw_build && ($(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH))
-	cd .sw_build && ($(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH))
-	cd .sw_build && ($(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex)
-	cd .sw_build && ($(OBJC) -O binary $@ $(FIRMWARE_NAME).bin)
-	cd .sw_build && ($(DUMP) -d $@ > $(FIRMWARE_NAME).txt)
-	cd .sw_build && ($(DUMP) -D $@ > $(FIRMWARE_NAME)_all.txt)
+	@mkdir -p $(ROOT_PATH)/.sw_build
+	cd $(ROOT_PATH)/.sw_build && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)
+	cd $(ROOT_PATH)/.sw_build && $(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH)
+	cd $(ROOT_PATH)/.sw_build && $(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex
+	cd $(ROOT_PATH)/.sw_build && $(OBJC) -O binary $@ $(FIRMWARE_NAME).bin
+	cd $(ROOT_PATH)/.sw_build && $(DUMP) -d $@ > $(FIRMWARE_NAME).txt
+	cd $(ROOT_PATH)/.sw_build && $(DUMP) -D $@ > $(FIRMWARE_NAME)_all.txt

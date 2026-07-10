@@ -1,44 +1,84 @@
-#!/bin/python
+#!/usr/bin/env python3
 
-import sys
-import os
+from __future__ import annotations
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MINI_DIR   = os.path.abspath(f'{SCRIPT_DIR}/..')
-GEN_DIR    = os.path.abspath(f'{MINI_DIR}/.generated_fl')
+import argparse
+import gzip
+from pathlib import Path
 
-cmd      = ['+timescale+1ns/1ps\n']
-filelist = ['def', 'sys_def', 'inc', 'tb']
-
-for file in filelist:
-    with open(f'{GEN_DIR}/{file}.fl', 'r', encoding='utf-8') as fp:
-        tmp = fp.readlines()
-        cmd += tmp
+from filelist import FileList, atomic_write, parse_filelists, write_filelist
 
 
-tgt  = sys.argv[1]
-pdk  = sys.argv[2]
-netl = sys.argv[3]
-print(f'tgt: {tgt}')
-print(f'pdk: {pdk}')
-print(f'netl: {netl}')
+SCRIPT_DIR = Path(__file__).resolve().parent
+MINI_DIR = SCRIPT_DIR.parent
+DEFAULT_GENERATED_DIR = MINI_DIR / ".generated_fl"
 
-if tgt == 'sim':
-    cmd += [f'{MINI_DIR}/.iverilog_build/behv/converted_soc.v\n']
 
-elif tgt == 'netsim':
-    with open(f'{GEN_DIR}/commonip.fl', 'r', encoding='utf-8') as fp:
-        tmp = fp.readlines()
-        cmd += tmp
-    cmd += f'{netl}\n'
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate an Icarus Verilog filelist")
+    parser.add_argument("--mode", required=True, choices=("behv", "netl", "post"))
+    parser.add_argument("--pdk", required=True)
+    parser.add_argument("--generated-dir", type=Path, default=DEFAULT_GENERATED_DIR)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--converted", type=Path)
+    parser.add_argument("--netlist", type=Path)
+    parser.add_argument("--sdf", type=Path)
+    parser.add_argument("--sdf-scope", default="retrosoc_tb.u_retrosoc_asic")
+    return parser.parse_args()
 
-elif tgt == 'postsim':
-    pass
 
-with open(f'{GEN_DIR}/pdk_{pdk.lower()}.fl', 'r', encoding='utf-8') as fp:
-      tmp = fp.readlines()
-      cmd += tmp
+def _require(path: Path | None, description: str) -> Path:
+    if path is None or not path.is_file():
+        raise FileNotFoundError(f"{description} not found: {path}")
+    return path.resolve()
 
-with open(f'{GEN_DIR}/iverilog.fl', 'w', encoding='utf-8') as fp:
-    fp.writelines(cmd)
 
+def _prepare_sdf(source: Path, output_dir: Path, scope: str) -> Path:
+    sdf_output = output_dir / "timing.sdf"
+    if source.suffix == ".gz":
+        content = gzip.open(source, "rt", encoding="utf-8", errors="replace").read()
+    else:
+        content = source.read_text(encoding="utf-8", errors="replace")
+    atomic_write(sdf_output, content)
+
+    annotator = output_dir / "sdf_annotator.sv"
+    escaped_sdf = str(sdf_output.resolve()).replace("\\", "\\\\").replace('"', '\\"')
+    atomic_write(
+        annotator,
+        "module retrosoc_sdf_annotator;\n"
+        "  initial begin\n"
+        f'    $sdf_annotate("{escaped_sdf}", {scope}, , "sdf.log", "MINIMUM");\n'
+        "  end\n"
+        "endmodule\n",
+    )
+    return annotator
+
+
+def main() -> int:
+    args = parse_args()
+    generated_dir = args.generated_dir.resolve()
+    base_names = ["def.fl", "sys_def.fl", "inc.fl", "tb.fl"]
+    base = parse_filelists(generated_dir / name for name in base_names)
+    base.options.insert(0, "+timescale+1ns/1ps")
+
+    if args.mode == "behv":
+        base.files.append(_require(args.converted, "converted behavioral RTL"))
+    else:
+        common = parse_filelists([generated_dir / "commonip.fl"])
+        base.extend(common)
+        base.files.append(_require(args.netlist, f"{args.mode} netlist"))
+
+    if args.mode == "post":
+        sdf = _require(args.sdf, "post-layout SDF")
+        base.files.append(_prepare_sdf(sdf, args.output.resolve().parent, args.sdf_scope))
+
+    pdk_filelist = generated_dir / f"pdk_{args.pdk.lower()}.fl"
+    base.extend(parse_filelists([pdk_filelist]))
+    base.deduplicate()
+    write_filelist(args.output.resolve(), base)
+    print(f"generated {args.mode} filelist: {args.output.resolve()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

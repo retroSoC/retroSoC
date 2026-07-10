@@ -20,6 +20,8 @@
 *.rc
 *.aig
 *.so
+*.py[cod]
+__pycache__/
 .vscode
 pic
 video.h

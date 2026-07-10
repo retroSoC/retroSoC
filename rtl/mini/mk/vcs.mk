@@ -1,9 +1,12 @@
 # tools & paths
-NOVAS        := /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
-EXTRA        := -P $(NOVAS)/novas.tab $(NOVAS)/pli.a
-SIM_TOOL     := bsub -Is vcs
-SIM_BINY     := bsub -Is ./simv
-VERDI_TOOL   := bsub -Is verdi
+NOVAS        ?= /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
+VCS_RUNNER   ?= bsub -Is
+VCS          ?= vcs
+VERDI        ?= verdi
+EXTRA        ?= -P $(NOVAS)/novas.tab $(NOVAS)/pli.a
+SIM_TOOL     := $(VCS_RUNNER) $(VCS)
+SIM_BINY     := $(VCS_RUNNER) ./simv
+VERDI_TOOL   := $(VCS_RUNNER) $(VERDI)
 COMP_LOG     := -l compile.log
 SIM_LOG      := -l sim.log
 # netlist file path
@@ -56,7 +59,7 @@ netcomp:  FLIST := $(NETLIST_PATH) $(NET_FLIST) $(TB_FLIST)
 netcomp:  OPTS  := $(TIME_OPTION)
 
 postcomp: DIR   := .vcs_build/post
-postcomp: FLIST := $(NET_FLIST) $(TB_FLIST)
+postcomp: FLIST := $(POST_PATH) $(NET_FLIST) $(TB_FLIST)
 postcomp: OPTS  := $(POST_OPTS)
 
 sim:      DIR   := .vcs_build/behv
@@ -72,18 +75,19 @@ sim: comp
 netsim: netcomp
 postsim: postcomp
 
+comp netcomp postcomp: gen_mpw_code generate_filelist
 
 comp netcomp postcomp:
 	@mkdir -p $(RTL_PATH)/$(DIR)
-	cd $(RTL_PATH)/$(DIR) && ($(SIM_TOOL) $(COMMON_OPTS) $(OPTS) $(FLIST) -top $(RTL_TOP) $(COMP_LOG))
+	cd $(RTL_PATH)/$(DIR) && $(SIM_TOOL) $(COMMON_OPTS) $(OPTS) $(FLIST) -top $(RTL_TOP) $(COMP_LOG)
 
 sim netsim postsim:
-	cd $(RTL_PATH)/$(DIR) && ($(SIM_BINY) $(SIM_OPTS) $(if $(filter netsim postsim,$@),+bus_conflict_off) $(SIM_LOG))
+	cd $(RTL_PATH)/$(DIR) && $(SIM_BINY) $(SIM_OPTS) $(if $(filter netsim postsim,$@),+bus_conflict_off) $(SIM_LOG)
 
 wave netwave postwave:
 	cd $(RTL_PATH)/$(DIR) && ($(VERDI_TOOL) -ssf $(RTL_TOP).fsdb -nologo &)
 
 clean:
-	rm -rf .vcs_build/behv $(RTL_PATH)/.vcs_build/netl $(RTL_PATH)/.vcs_build/post
+	rm -rf $(RTL_PATH)/.vcs_build
 
 .PHONY: comp netcomp postcomp sim netsim postsim wave clean

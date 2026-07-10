@@ -1,7 +1,16 @@
-$(info RTL_PATH: $(RTL_PATH))
+GENERATED_FL_DIR := $(RTL_PATH)/.generated_fl
+MPW_STAMP        := $(RTL_PATH)/mpw/.build/.prepared
 
-gen_mpw_code:
-	python3 $(RTL_PATH)/mpw/setup.py
+$(MPW_STAMP):
+	@test -d $(RTL_PATH)/mpw/.git || { \
+		echo "missing $(RTL_PATH)/mpw; run 'make setup-mpw' first" >&2; \
+		exit 1; \
+	}
+	python3 $(ROOT_PATH)/scripts/prepare_mpw.py
+	@mkdir -p $(@D)
+	@touch $@
+
+gen_mpw_code: $(MPW_STAMP)
 ifeq ($(IP), MDD)
 	@echo "[mpw] generating user ip ..."
 	python3 $(RTL_PATH)/mpw/ip.py
@@ -18,7 +27,9 @@ else
 endif
 
 generate_filelist:
-	python3 $(RTL_PATH)/script/generate_filelist.py
+	python3 $(RTL_PATH)/script/generate_filelist.py \
+		--output-dir $(GENERATED_FL_DIR) \
+		$(foreach define,$(DEF_LIST),--define $(define))
 
 # software
 include $(RTL_PATH)/mk/software.mk
@@ -67,4 +78,4 @@ else ifeq ($(SIMU), IVERILOG)
     include $(RTL_PATH)/mk/iverilog.mk
 endif
 
-.PHONY: clean firmware
+.PHONY: gen_mpw_code generate_filelist firmware

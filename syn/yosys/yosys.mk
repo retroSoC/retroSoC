@@ -29,41 +29,38 @@ include $(YOSYS_DIR)/synth_config.mk
 
 TOP_DESIGN    ?= retrosoc_asic
 RTL_NAME      ?= retrosoc_asic
-SV_FLIST      := $(YOSYS_DIR)/../../rtl/$(shell echo $(SOC) | tr A-Z a-z )/.generated_fl/yosys.fl
-
-$(info SYNTH SV_FLIST PATH: $(SV_FLIST))
+SV_FLIST      := $(RTL_PATH)/.generated_fl/yosys.fl
 
 NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
-NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_debug_yosys.v
+NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
+NETLIST_CONFIG := $(YOSYS_OUT)/$(RTL_NAME)_yosys.config
 
 gen_synth_filelist: gen_mpw_code generate_filelist
-	$(info SYNTH RTL_FLIST: $(RTL_FLIST))
-	@python3 $(RTL_PATH)/script/comb.py $(RTL_FLIST)
+	@python3 $(RTL_PATH)/script/comb.py $(RTL_FLIST) --output $(SV_FLIST)
 
 ## Synthesize netlist using Yosys
-synth: gen_synth_filelist $(NETLIST)
+synth: $(NETLIST)
 
-$(NETLIST) $(NETLIST_DEBUG):
+$(NETLIST): gen_synth_filelist
 	@mkdir -p $(YOSYS_OUT)
 	@mkdir -p $(YOSYS_TMP)
 	@mkdir -p $(YOSYS_RPT)
-	PDK="$(PDK)" \
-	SV_FLIST="$(SV_FLIST)" \
-	TOP_DESIGN="$(TOP_DESIGN)" \
-	PROJ_NAME="$(RTL_NAME)" \
-	WORK="$(YOSYS_TMP)" \
-	BUILD="$(YOSYS_OUT)" \
-	REPORTS="$(YOSYS_RPT)" \
-	NETLIST="$(NETLIST)" \
-	yosys -c $(YOSYS_DIR)/script/synth.tcl \
+	export PDK="$(PDK)" SOC="$(SOC)" CORE="$(CORE)" IP="$(IP)" \
+		SV_FLIST="$(SV_FLIST)" TOP_DESIGN="$(TOP_DESIGN)" CONFIG="$(NETLIST_CONFIG)" \
+		PROJ_NAME="$(RTL_NAME)" WORK="$(YOSYS_TMP)" BUILD="$(YOSYS_OUT)" \
+		REPORTS="$(YOSYS_RPT)" NETLIST="$(NETLIST)"; \
+	set -o pipefail; yosys -c $(YOSYS_DIR)/script/synth.tcl \
 		2>&1 | TZ=UTC-8 gawk '{ print strftime("[%Y-%m-%d %H:%M %Z]"), $$0 }' \
 			 | tee "$(YOSYS_BUILD)/$(RTL_NAME).log" \
-			 | gawk -f $(YOSYS_DIR)/script/filter_output.awk;
+			 | gawk -f $(YOSYS_DIR)/script/filter_output.awk
+
+$(NETLIST_DEBUG): $(NETLIST)
+	@test -f $@
 
 synth_clean:
 	rm -rf $(YOSYS_OUT)
 	rm -rf $(YOSYS_TMP)
 	rm -rf $(YOSYS_RPT) 
-	rm -f $(YOSYS_DIR)/$(RTL_NAME).log
+	rm -f $(YOSYS_BUILD)/$(RTL_NAME).log
 
-.PHONY: synth_clean yosys synth $(NETLIST) $(NETLIST_DEBUG)
+.PHONY: gen_synth_filelist synth_clean synth
