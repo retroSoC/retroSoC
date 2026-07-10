@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyrng.h>
+#include <rs_printf.h>
+#include <rs_rng.h>
 
 void ip_rng_test(int argc, char **argv) {
     (void) argc;

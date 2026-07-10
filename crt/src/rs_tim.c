@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinytim.h>
+#include <rs_printf.h>
+#include <rs_tim.h>
 
 void delay_ms(uint32_t val) {
     reg_tim0_val = (uint32_t)(CPU_FREQ * val * 1000 - 1);

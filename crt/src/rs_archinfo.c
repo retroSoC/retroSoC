@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyarchinfo.h>
+#include <rs_printf.h>
+#include <rs_archinfo.h>
 
 void ip_archinfo_test(int argc, char **argv) {
     (void) argc;

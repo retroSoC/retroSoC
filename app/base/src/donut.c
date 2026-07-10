@@ -25,10 +25,10 @@
 // See the Mulan PSL v2 for more details.
 
 #include <firmware.h>
-#include <tinystring.h>
-#include <tinyprintf.h>
-#include <tinyqspi.h>
-#include <tinylcd.h>
+#include <rs_string.h>
+#include <rs_printf.h>
+#include <rs_qspi.h>
+#include <rs_lcd.h>
 
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)

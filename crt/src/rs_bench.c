@@ -1,5 +1,5 @@
 #include <firmware.h>
-#include <tinyprintf.h>
+#include <rs_printf.h>
 
 uint32_t tinybench(bool verbose, uint32_t *instns_p)
 {

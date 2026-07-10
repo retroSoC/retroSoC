@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinywdg.h>
+#include <rs_printf.h>
+#include <rs_wdg.h>
 
 void ip_wdg_test(int argc, char **argv) {
     (void) argc;

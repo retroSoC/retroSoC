@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyrtc.h>
+#include <rs_printf.h>
+#include <rs_rtc.h>
 
 // 12.288M/256=48K
 // apb4 clk: 'CPU_FREQ' MHz

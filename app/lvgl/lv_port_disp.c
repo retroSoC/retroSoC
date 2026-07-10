@@ -11,8 +11,8 @@
  *********************/
 #include "lv_port_disp.h"
 #include <stdbool.h>
-#include <tinylcd.h>
-#include <tinyprintf.h>
+#include <rs_lcd.h>
+#include <rs_printf.h>
 
 #define MY_DISP_HOR_RES 240
 #define MY_DISP_VER_RES 135

@@ -1,7 +1,7 @@
 
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinypsram.h>
+#include <rs_printf.h>
+#include <rs_psram.h>
 
 void ip_psram_boot() {
     bool timing_pass = true;

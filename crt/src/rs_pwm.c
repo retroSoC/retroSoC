@@ -1,7 +1,7 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinytim.h>
-#include <tinypwm.h>
+#include <rs_printf.h>
+#include <rs_tim.h>
+#include <rs_pwm.h>
 
 void ip_pwm_test(int argc, char **argv) {
     (void) argc;

@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <libdef.h>
-#include <tinyprintf.h>
-#include <tinystring.h>
-#include <tinyspisd.h>
-#include <tinydma.h>
+#include <rs_printf.h>
+#include <rs_string.h>
+#include <rs_spisd.h>
+#include <rs_dma.h>
 #include <wav_audio.h>
 
 static void printfln(char *buff, uint32_t len) {

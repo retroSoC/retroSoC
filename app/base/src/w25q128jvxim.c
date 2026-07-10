@@ -1,9 +1,9 @@
 #include <stdbool.h>
-#include <tinyprintf.h>
-#include <tinystring.h>
-#include <tinyqspi.h>
-// #include <tinyspisd.h>
-// #include <tinydma.h>
+#include <rs_printf.h>
+#include <rs_string.h>
+#include <rs_qspi.h>
+// #include <rs_spisd.h>
+// #include <rs_dma.h>
 
 static void norflash_spi_wr_en() {
     uint32_t data[] = {0};

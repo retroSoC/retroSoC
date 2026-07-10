@@ -1,5 +1,5 @@
 #include <libdef.h>
-#include <tinyprintf.h>
+#include <rs_printf.h>
 
 #include <stdint.h>
 #include <stdbool.h>

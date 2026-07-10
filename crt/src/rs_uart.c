@@ -1,5 +1,5 @@
 #include <firmware.h>
-#include <tinyuart.h>
+#include <rs_uart.h>
 
 void uart0_init(uint32_t freq, uint32_t bps) {
   reg_uart0_clkdiv = (uint32_t)(freq * 1000000 / bps);

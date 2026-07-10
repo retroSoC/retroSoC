@@ -33,7 +33,7 @@
 #include <stdint.h>
 #include <system_csr.h>
 #include <system_gcc.h>
-#include <tinyprintf.h>
+#include <rs_printf.h>
 
 
 #ifndef __RISCV_XLEN

@@ -1,5 +1,5 @@
 #include <firmware.h>
-#include <tinyprint.h>
+#include <rs_print.h>
 
 void putchar(char c) {
     if (c == '\n') putchar('\r');

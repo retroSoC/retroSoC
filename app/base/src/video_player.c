@@ -1,9 +1,9 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyspisd.h>
-#include <tinylcd.h>
-#include <tinydma.h>
-#include <tinyqspi.h>
+#include <rs_printf.h>
+#include <rs_spisd.h>
+#include <rs_lcd.h>
+#include <rs_dma.h>
+#include <rs_qspi.h>
 #include <video_player.h>
 
 

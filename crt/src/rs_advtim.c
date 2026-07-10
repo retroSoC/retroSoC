@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyadvtim.h>
+#include <rs_printf.h>
+#include <rs_advtim.h>
 
 void advtimer_init(uint32_t div, uint32_t cmp) {
     reg_tim3_ctrl = (uint32_t)0x0;

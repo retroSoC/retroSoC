@@ -1,5 +1,5 @@
 #include <libdef.h>
-#include <tinylib.h>
+#include <rs_lib.h>
 
 static unsigned long int rand_nxt = 1;
 

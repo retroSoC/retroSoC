@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyi2c.h>
+#include <rs_printf.h>
+#include <rs_i2c.h>
 #include <es8388.h>
 
 #define ES8388_PHONE_VOLUME 3

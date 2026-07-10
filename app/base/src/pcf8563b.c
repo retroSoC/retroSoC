@@ -1,7 +1,7 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinytim.h>
-#include <tinyi2c.h>
+#include <rs_printf.h>
+#include <rs_tim.h>
+#include <rs_i2c.h>
 #include <pcf8563b.h>
 
 uint8_t pcf8563b_bin2bcd(uint8_t val) {

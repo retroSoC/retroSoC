@@ -1,8 +1,8 @@
 #include <system_csr.h>
 #include <system_timer.h>
 #include <system_base.h>
-#include <tinyprintf.h>
-#include <tinytim.h>
+#include <rs_printf.h>
+#include <rs_tim.h>
 
 #define TIMER_DELTA_VALUE 360000UL
 /* Define the interrupt handler name same as vector table in case download mode is flashxip. */

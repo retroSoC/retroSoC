@@ -1,8 +1,8 @@
 #include <firmware.h>
 #include <libdef.h>
-#include <tinyprintf.h>
-#include <tinydma.h>
-#include <tinyspisd.h>
+#include <rs_printf.h>
+#include <rs_dma.h>
+#include <rs_spisd.h>
 
 
 void spisd_mem_read(uint8_t *buff, uint32_t size, uint32_t count, uint32_t addr) {

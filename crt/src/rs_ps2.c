@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyps2.h>
+#include <rs_printf.h>
+#include <rs_ps2.h>
 
 void ip_ps2_test(int argc, char **argv) {
     (void) argc;

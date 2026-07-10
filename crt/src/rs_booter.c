@@ -1,12 +1,12 @@
 #include <firmware.h>
-#include <tinyprintf.h>
+#include <rs_printf.h>
 #include <socver.h>
-#include <tinypsram.h>
-#include <tinytim.h>
-#include <tinyprint.h>
-#include <tinystring.h>
-#include <tinysh.h>
-#include <tinybooter.h>
+#include <rs_psram.h>
+#include <rs_tim.h>
+#include <rs_print.h>
+#include <rs_string.h>
+#include <rs_sh.h>
+#include <rs_booter.h>
 // HACK:
 #if defined(CORE_MDD) || defined(IP_MDD)
 #include <../../rtl/mini/mpw/.build/user_design_info.h>

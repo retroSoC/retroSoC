@@ -54,42 +54,42 @@ CFLAGS += $(DEF_VAL)
 
 
 TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
-                $(ROOT_PATH)/crt/src/tinylib.c \
-                $(ROOT_PATH)/crt/src/tinyuart.c \
-                $(ROOT_PATH)/crt/src/tinystring.c \
-                $(ROOT_PATH)/crt/src/tinyprint.c \
-                $(ROOT_PATH)/crt/src/tinyprintf.c \
-                $(ROOT_PATH)/crt/src/tinygpio.c \
-                $(ROOT_PATH)/crt/src/tinyarchinfo.c \
-                $(ROOT_PATH)/crt/src/tinyrng.c \
-                $(ROOT_PATH)/crt/src/tinytim.c \
-                $(ROOT_PATH)/crt/src/tinypwm.c \
-                $(ROOT_PATH)/crt/src/tinyrtc.c \
-                $(ROOT_PATH)/crt/src/tinywdg.c \
-                $(ROOT_PATH)/crt/src/tinycrc.c \
-                $(ROOT_PATH)/crt/src/tinyadvtim.c \
-                $(ROOT_PATH)/crt/src/tinyhpuart.c \
-                $(ROOT_PATH)/crt/src/tinyps2.c \
-                $(ROOT_PATH)/crt/src/tinyi2c.c \
-                $(ROOT_PATH)/crt/src/tiny1wire.c \
-                $(ROOT_PATH)/crt/src/tinydma.c \
-                $(ROOT_PATH)/crt/src/tinylcd.c \
-                $(ROOT_PATH)/crt/src/tinypsram.c \
-                $(ROOT_PATH)/crt/src/tinyspisd.c \
-                $(ROOT_PATH)/crt/src/tinyqspi.c \
-                $(ROOT_PATH)/crt/src/tinybench.c \
-                $(ROOT_PATH)/crt/src/tinybooter.c \
+                $(ROOT_PATH)/crt/src/rs_lib.c \
+                $(ROOT_PATH)/crt/src/rs_uart.c \
+                $(ROOT_PATH)/crt/src/rs_string.c \
+                $(ROOT_PATH)/crt/src/rs_print.c \
+                $(ROOT_PATH)/crt/src/rs_printf.c \
+                $(ROOT_PATH)/crt/src/rs_gpio.c \
+                $(ROOT_PATH)/crt/src/rs_archinfo.c \
+                $(ROOT_PATH)/crt/src/rs_rng.c \
+                $(ROOT_PATH)/crt/src/rs_tim.c \
+                $(ROOT_PATH)/crt/src/rs_pwm.c \
+                $(ROOT_PATH)/crt/src/rs_rtc.c \
+                $(ROOT_PATH)/crt/src/rs_wdg.c \
+                $(ROOT_PATH)/crt/src/rs_crc.c \
+                $(ROOT_PATH)/crt/src/rs_advtim.c \
+                $(ROOT_PATH)/crt/src/rs_hpuart.c \
+                $(ROOT_PATH)/crt/src/rs_ps2.c \
+                $(ROOT_PATH)/crt/src/rs_i2c.c \
+                $(ROOT_PATH)/crt/src/rs_1wire.c \
+                $(ROOT_PATH)/crt/src/rs_dma.c \
+                $(ROOT_PATH)/crt/src/rs_lcd.c \
+                $(ROOT_PATH)/crt/src/rs_psram.c \
+                $(ROOT_PATH)/crt/src/rs_spisd.c \
+                $(ROOT_PATH)/crt/src/rs_qspi.c \
+                $(ROOT_PATH)/crt/src/rs_bench.c \
+                $(ROOT_PATH)/crt/src/rs_booter.c \
                 $(ROOT_PATH)/crt/src/main.c
 
 ifeq ($(HAVE_CSR), YES)
 TINYLIB_PATH += $(ROOT_PATH)/crt/system_irq.S
 TINYLIB_PATH += $(ROOT_PATH)/crt/src/system_irq_handler.c
-TINYLIB_PATH += $(ROOT_PATH)/crt/src/tinyirq.c
+TINYLIB_PATH += $(ROOT_PATH)/crt/src/rs_irq.c
 endif
 
 ifeq ($(PROG_TYPE), FULL)
-TINYLIB_PATH += $(ROOT_PATH)/crt/src/tinysh.c
-TINYLIB_PATH += $(ROOT_PATH)/crt/src/tinyi2s.c
+TINYLIB_PATH += $(ROOT_PATH)/crt/src/rs_sh.c
+TINYLIB_PATH += $(ROOT_PATH)/crt/src/rs_i2s.c
 endif
 
 

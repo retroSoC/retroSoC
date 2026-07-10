@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyi2c.h>
+#include <rs_printf.h>
+#include <rs_i2c.h>
 
 void i2c0_init(uint8_t clkdiv) {
     // printf("[i2c0] clkdiv: %d\n", reg_i2c0_clkdiv);

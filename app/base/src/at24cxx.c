@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyi2c.h>
+#include <rs_printf.h>
+#include <rs_i2c.h>
 #include <at24cxx.h>
 
 void at24cxx_test() {

@@ -1,7 +1,7 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinydma.h>
-#include <tinyi2s.h>
+#include <rs_printf.h>
+#include <rs_dma.h>
+#include <rs_i2s.h>
 
 void dma_config(uint32_t mode, uint32_t src, uint32_t srcincr, uint32_t dst, uint32_t dstincr, uint32_t xferlen) {
     // printf("dst: %x\n", dst);

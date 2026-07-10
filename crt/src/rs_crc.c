@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinycrc.h>
+#include <rs_printf.h>
+#include <rs_crc.h>
 
 void ip_crc_test(int argc, char **argv) {
     (void) argc;

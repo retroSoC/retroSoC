@@ -26,15 +26,36 @@ def extract_fatfs(archive: Path, destination: Path, *, update: bool) -> None:
             zip_archive.extractall(archive.parent)
 
 
+def patch_fatfs(source: Path) -> None:
+    fatfs_source = source / "ff.c"
+    content = fatfs_source.read_text(encoding="utf-8")
+    original_content = content
+    include = "#include <rs_string.h>"
+    if include not in content:
+        for legacy_include in ("#include <string.h>", "#include <tinystring.h>"):
+            if legacy_include in content:
+                content = content.replace(legacy_include, include)
+                break
+        else:
+            raise RuntimeError(f"FatFs string include missing in {fatfs_source}")
+    if content != original_content:
+        atomic_write(fatfs_source, content)
+
+
 def patch_coremark() -> None:
     header = COREMARK_DIR / "coremark.h"
     content = header.read_text(encoding="utf-8")
-    include = "#include <tinyprintf.h>"
+    original_content = content
+    include = "#include <rs_printf.h>"
+    legacy_include = "#include <tinyprintf.h>"
+    if legacy_include in content:
+        content = content.replace(legacy_include, include)
     if include not in content:
         marker = '#include "core_portme.h"'
         if marker not in content:
             raise RuntimeError(f"CoreMark patch marker missing in {header}")
         content = content.replace(marker, f"{marker}\n{include}", 1)
+    if content != original_content:
         atomic_write(header, content)
 
     source = COREMARK_DIR / "core_main.c"
@@ -57,6 +78,7 @@ def main() -> int:
     download_file(fatfs["url"], fatfs_archive, fatfs["sha256"], update=args.update)
     fatfs_source = fatfs_archive.parent / "source"
     extract_fatfs(fatfs_archive, fatfs_source, update=args.update)
+    patch_fatfs(fatfs_source)
     for name in ("ffconf.h", "diskio.c"):
         config_source = FATFS_DIR / name
         if not config_source.is_file():

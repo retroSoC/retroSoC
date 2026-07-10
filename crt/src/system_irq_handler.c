@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <system_csr.h>
 #include <system_base.h>
-#include <tinyprintf.h>
+#include <rs_printf.h>
 
 #define SYSTEM_EXC_MAX_NUM      16
 #define SYSTEM_IRQ_CORE_MAX_NUM 12

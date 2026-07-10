@@ -1,11 +1,11 @@
 
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinytim.h>
-#include <tinygpio.h>
-#include <tinyqspi.h>
-#include <tinylcd.h>
-#include <tinydma.h>
+#include <rs_printf.h>
+#include <rs_tim.h>
+#include <rs_gpio.h>
+#include <rs_qspi.h>
+#include <rs_lcd.h>
+#include <rs_dma.h>
 #ifdef CSR_ENABLE
 #include <system_base.h>
 #endif

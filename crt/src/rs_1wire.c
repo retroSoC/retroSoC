@@ -1,7 +1,7 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tiny1wire.h>
-#include <tinytim.h>
+#include <rs_printf.h>
+#include <rs_1wire.h>
+#include <rs_tim.h>
 
 
 void ip_1wire_test(int argc, char **argv) {

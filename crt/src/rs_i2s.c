@@ -1,8 +1,8 @@
 #include <firmware.h>
-#include <tinyprint.h>
-#include <tinyprintf.h>
-#include <tinydma.h>
-#include <tinyi2s.h>
+#include <rs_print.h>
+#include <rs_printf.h>
+#include <rs_dma.h>
+#include <rs_i2s.h>
 #include <wav_audio.h>
 #include <es8388.h>
 

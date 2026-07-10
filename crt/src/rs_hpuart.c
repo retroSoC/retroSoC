@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinyhpuart.h>
+#include <rs_printf.h>
+#include <rs_hpuart.h>
 
 void ip_hpuart_test(int argc, char **argv) {
     (void) argc;

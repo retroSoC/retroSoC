@@ -1,7 +1,7 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinytim.h>
-#include <tinygpio.h>
+#include <rs_printf.h>
+#include <rs_tim.h>
+#include <rs_gpio.h>
 
 void ip_gpio_test(int argc, char **argv) {
     (void) argc;

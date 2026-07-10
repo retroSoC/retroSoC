@@ -1,8 +1,8 @@
 #include <firmware.h>
-#include <tinytim.h>
-#include <tinyqspi.h>
-#include <tinydma.h>
-#include <tinyprintf.h>
+#include <rs_tim.h>
+#include <rs_qspi.h>
+#include <rs_dma.h>
+#include <rs_printf.h>
 
 
 void qspi0_init(QSPI0_InitStruct_t val) {

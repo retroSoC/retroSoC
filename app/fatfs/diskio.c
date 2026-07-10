@@ -9,7 +9,7 @@
 
 #include "ff.h"     /* Basic definitions of FatFs */
 #include "diskio.h" /* Declarations FatFs MAI */
-#include <tinyspisd.h>
+#include <rs_spisd.h>
 
 #define DEV_TF       0 /* Map MMC/SD card to physical drive 1 */
 #define SD_BLOCKSIZE 512

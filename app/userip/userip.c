@@ -1,6 +1,6 @@
 #include <firmware.h>
-#include <tinyprintf.h>
-#include <tinytim.h>
+#include <rs_printf.h>
+#include <rs_tim.h>
 #include <userip.h>
 
 
