@@ -30,6 +30,19 @@ To update a dependency:
 Do not reuse an old checksum with a new URL or version. The lock digest is part of every variant ID,
 so changing the lock creates a new output directory without contaminating prior results.
 
+For binary tool archives, calculate the checksum from a fresh download of the exact URL in the lock;
+never derive it from an already-installed local tool or a separately cached archive. Before committing
+a toolchain lock update, install every affected tool into an empty temporary cache and check its
+reported version. This is the same checksum and safe-extraction path exercised by CI:
+
+```sh
+python3 scripts/install_toolchain.py \
+  --lock config/dependencies.lock.json --platform ubuntu-22.04 \
+  --cache /tmp/retrosoc-toolchain-verify \
+  --tool verilator --tool sv2v --tool iverilog \
+  --tool yosys --tool opensta --tool riscv_gnu
+```
+
 ## Build Layout
 
 The variant identifier is the profile name plus a hash over effective hardware/software build

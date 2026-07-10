@@ -80,7 +80,7 @@
       "verilator": {
         "version": "5.046",
         "url": "https://github.com/retroSoC/artifact/releases/download/verilator-v5.046/verilator-v5.046-ubuntu-22.04-gcc.tar.gz",
-        "sha256": "f91b8496a0aaf26bf72395e876e145ceb99c94ff724cc9a16bb81d243ce5d953",
+        "sha256": "17e88e100e82b9450040dabee7efaf49a834e8736fda4bbe1036aecd1c4aeb57",
         "archive": "verilator-v5.046-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
       },
@@ -94,21 +94,21 @@
       "iverilog": {
         "version": "13.0",
         "url": "https://github.com/retroSoC/artifact/releases/download/iverilog-v13_0/iverilog-v13_0-ubuntu-22.04-gcc.tar.gz",
-        "sha256": "22b51e988a94abdd0cd94f31f804a9bd6183e98d9380799ad3441188abc12987",
+        "sha256": "16fe3ce5ce7b16cc3e8d7d3756c4f9ad02f678a8f81bb43dd9473bde2e7fc81b",
         "archive": "iverilog-v13_0-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
       },
       "yosys": {
         "version": "0.58",
         "url": "https://github.com/retroSoC/artifact/releases/download/yosys-v0.58/yosys-v0.58-ubuntu-22.04-gcc.tar.gz",
-        "sha256": "589447b6ed9aa20a1cc90155851f809490815089e5cc181ed4d23a5389b65adb",
+        "sha256": "54468eb1fe474b11b8014fcabb068bf1398eaa072fa724b26e09dd2df58c3386",
         "archive": "yosys-v0.58-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
       },
       "opensta": {
         "version": "2.2.0-1767-ga93b51ec",
         "url": "https://github.com/retroSoC/artifact/releases/download/opensta-v2.2.0-1767-ga93b51ec/opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz",
-        "sha256": "e8b17134cd0935d2f5d354e8233c27833834141f2aef44264a1ad5d2cca0623b",
+        "sha256": "ab9f023eb46ed6197f8bd88584e77c26c31a728640db02b50908fac5bf9f279a",
         "archive": "opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
       },
