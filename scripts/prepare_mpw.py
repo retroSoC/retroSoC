@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import shutil
 import sys
@@ -11,15 +12,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from scripts.dependency_lock import archive, source  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
 MPW_DIR = ROOT / "rtl/mini/mpw"
-HAZARD3_REVISION = "5b3a34f6955e50e03bdcb964201c91462f7078c3"
-IBEX_REVISION = "0c233f54361d769f370889223acc456f2ac19d46"
 SERV_ARCHIVE = MPW_DIR / "serv-1.4.0.tar.gz"
-SERV_URL = "https://github.com/olofk/serv/archive/refs/tags/1.4.0.tar.gz"
-SERV_SHA256 = "f81c37b9f9d548c658e23bb7eb90fbed8b54e2e9e51fa42b8cd2f34cecc472ab"
 
 
 def tree_digest(root: Path) -> str:
@@ -55,30 +53,24 @@ def extract_serv() -> Path:
     return extracted
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Prepare pinned MPW core sources")
-    parser.add_argument("--update", action="store_true")
-    args = parser.parse_args()
+def prepare(update: bool) -> None:
     if not (MPW_DIR / ".git").is_dir():
         raise SystemExit("MPW generator is missing; run 'python3 setup.py' first")
 
+    hazard3 = source("hazard3")
     ensure_git_repo(
-        "https://github.com/Wren6991/Hazard3.git",
-        MPW_DIR / "Hazard3",
-        HAZARD3_REVISION,
-        update=args.update,
+        hazard3["url"], ROOT / hazard3["destination"], hazard3["revision"],
+        update=update,
     )
+    ibex = source("ibex")
     ensure_git_repo(
-        "https://github.com/lowRISC/ibex.git",
-        MPW_DIR / "ibex",
-        IBEX_REVISION,
-        update=args.update,
+        ibex["url"], ROOT / ibex["destination"], ibex["revision"],
+        update=update,
     )
+    serv_archive = archive("serv")
     download_file(
-        SERV_URL,
-        SERV_ARCHIVE,
-        SERV_SHA256,
-        update=args.update,
+        serv_archive["url"], ROOT / serv_archive["destination"],
+        serv_archive["sha256"], update=update,
     )
     serv = extract_serv()
 
@@ -87,6 +79,20 @@ def main() -> int:
     sync_tree(MPW_DIR / "ibex/rtl", MPW_DIR / "core/username7/ibex")
     (MPW_DIR / ".build").mkdir(exist_ok=True)
     print("pinned MPW core sources are ready")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Prepare pinned MPW core sources")
+    parser.add_argument("--update", action="store_true")
+    parser.add_argument("--lock-file", type=Path)
+    args = parser.parse_args()
+    if args.lock_file is None:
+        prepare(args.update)
+        return 0
+    args.lock_file.parent.mkdir(parents=True, exist_ok=True)
+    with args.lock_file.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        prepare(args.update)
     return 0
 
 

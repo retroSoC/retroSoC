@@ -41,11 +41,10 @@ def ensure_git_repo(
     created = False
     if not destination.exists():
         destination.parent.mkdir(parents=True, exist_ok=True)
-        command = ["git", "clone"]
-        if recursive:
-            command.append("--recursive")
-        command.extend((url, str(destination)))
-        run(command)
+        run(("git", "init", str(destination)))
+        run(("git", "remote", "add", "origin", url), cwd=destination)
+        run(("git", "fetch", "--depth", "1", "origin", revision), cwd=destination)
+        run(("git", "checkout", "--detach", "FETCH_HEAD"), cwd=destination)
         created = True
     elif not (destination / ".git").exists():
         raise RuntimeError(f"dependency path is not a Git repository: {destination}")
@@ -62,13 +61,16 @@ def ensure_git_repo(
         try:
             git_output(destination, "cat-file", "-e", f"{revision}^{{commit}}")
         except subprocess.CalledProcessError:
-            run(("git", "fetch", "origin", revision), cwd=destination)
+            run(("git", "fetch", "--depth", "1", "origin", revision), cwd=destination)
         run(("git", "checkout", "--detach", revision), cwd=destination)
     elif dirty and not allow_dirty:
         raise RuntimeError(f"pinned dependency has local changes: {destination}")
 
     if recursive:
-        run(("git", "submodule", "update", "--init", "--recursive"), cwd=destination)
+        run(
+            ("git", "submodule", "update", "--init", "--recursive", "--depth", "1"),
+            cwd=destination,
+        )
     print(f"[dependency] {destination.name}: {revision}")
 
 

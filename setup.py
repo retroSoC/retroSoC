@@ -3,22 +3,21 @@
 import argparse
 from pathlib import Path
 
+from scripts.dependency_lock import source
 from scripts.setup_helpers import ensure_git_repo
 
 
 ROOT = Path(__file__).resolve().parent
-MPW_REVISION = "30503eb8a7cf33a0c955913faba5014ebd00186f"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Install the pinned MPW generator")
     parser.add_argument("--update", action="store_true")
     args = parser.parse_args()
+    dependency = source("mpw")
     ensure_git_repo(
-        "https://github.com/retroSoC/mini-ver-mpw.git",
-        ROOT / "rtl/mini/mpw",
-        MPW_REVISION,
-        update=args.update,
+        dependency["url"], ROOT / dependency["destination"], dependency["revision"],
+        recursive=dependency.get("recursive", False), update=args.update,
     )
     return 0
 

@@ -1,0 +1,7 @@
+# Build and dependency controls require explicit maintainer review.
+/Makefile @maksyuki
+/config/ @maksyuki
+/configs/ @maksyuki
+/scripts/ @maksyuki
+/.github/ @maksyuki
+/quality/ @maksyuki

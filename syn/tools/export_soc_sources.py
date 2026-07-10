@@ -54,14 +54,20 @@ def configured_filelist(args: argparse.Namespace, generated_dir: Path) -> FileLi
     if args.core in ("HAZARD3", "PICORV32"):
         names.append(f"core_{args.core.lower()}.fl")
     else:
-        dynamic_core = REPO_ROOT / "rtl/mini/mpw/.build/core/core.fl"
+        dynamic_core = args.dynamic_core_filelist
         if not dynamic_core.is_file():
-            raise FileNotFoundError("MDD core is not generated; run 'make CORE=MDD gen_mpw_code'")
+            raise FileNotFoundError(
+                f"MDD core filelist is not generated: {dynamic_core}; "
+                "run 'make CORE=MDD gen_mpw_code'"
+            )
         names.append(str(dynamic_core))
     if args.ip == "MDD":
-        dynamic_ip = REPO_ROOT / "rtl/mini/mpw/.build/ip/ip.fl"
+        dynamic_ip = args.dynamic_ip_filelist
         if not dynamic_ip.is_file():
-            raise FileNotFoundError("MDD IP is not generated; run 'make IP=MDD gen_mpw_code'")
+            raise FileNotFoundError(
+                f"MDD IP filelist is not generated: {dynamic_ip}; "
+                "run 'make IP=MDD gen_mpw_code'"
+            )
         names.append(str(dynamic_ip))
     names.append("top.fl")
     paths = [Path(name) if Path(name).is_absolute() else generated_dir / name for name in names]
@@ -181,6 +187,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--have-sram-if", action="store_true")
     parser.add_argument("--have-sram-macro", action="store_true")
     parser.add_argument("--have-sva", action="store_true")
+    parser.add_argument(
+        "--dynamic-core-filelist",
+        type=Path,
+        default=REPO_ROOT / "rtl/mini/mpw/.build/core/core.fl",
+    )
+    parser.add_argument(
+        "--dynamic-ip-filelist",
+        type=Path,
+        default=REPO_ROOT / "rtl/mini/mpw/.build/ip/ip.fl",
+    )
     parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "export")
     return parser.parse_args()
 

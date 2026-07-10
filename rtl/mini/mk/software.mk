@@ -103,12 +103,13 @@ APP_PATH :=     $(ROOT_PATH)/app/base/src/at24cxx.c \
                 $(ROOT_PATH)/app/base/src/donut.c
 endif
 
-INC_PATH := -I$(ROOT_PATH)/crt/inc \
+INC_PATH := -I$(SW_BUILD_DIR)/include \
+            -I$(ROOT_PATH)/crt/inc \
             -I$(ROOT_PATH)/app/base/inc
 
 
 ifneq ($(findstring MDD,$(CORE) $(IP)),)
-INC_PATH += -I$(ROOT_PATH)/rtl/mini/mpw/.build
+INC_PATH += -I$(MPW_OUTPUT_DIR)
 endif
 
 
@@ -130,22 +131,39 @@ ifneq ($(filter RV32E RV32I,$(ISA)),)
 endif
 
 LDS_PATH := $(ROOT_PATH)/crt/lds/$(LINK_TYPE).lds
+VERSION_HEADER := $(SW_BUILD_DIR)/include/socver.h
+FIRMWARE_ELF := $(SW_BUILD_DIR)/firmware
+ASM_FIRMWARE_NAME ?= retrosoc_asm
+SW_HEADERS := $(shell find $(ROOT_PATH)/crt/inc $(ROOT_PATH)/app -type f \
+                      \( -name '*.h' -o -name '*.hpp' \) 2>/dev/null)
 
-upd_ver_info:
-	python3 $(ROOT_PATH)/crt/ver.py --root $(ROOT_PATH)
+$(VERSION_HEADER): FORCE_VERSION $(ROOT_PATH)/crt/ver.py $(ROOT_PATH)/crt/ver.tmpl
+	python3 $(ROOT_PATH)/crt/ver.py --root $(ROOT_PATH) \
+		--output $@
 
-asm: gen_mpw_code
-	@mkdir -p $(ROOT_PATH)/.sw_build
-	$(MAKE) -C $(ROOT_PATH)/app/asm
-	cp $(ROOT_PATH)/app/asm/hello-asm.flash $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME).hex
-	cp $(ROOT_PATH)/app/asm/hello-asm.bin $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME).bin
-	cp $(ROOT_PATH)/app/asm/hello-asm.txt $(ROOT_PATH)/.sw_build/$(FIRMWARE_NAME)_all.txt
+FORCE_VERSION:
 
-firmware: gen_mpw_code upd_ver_info
-	@mkdir -p $(ROOT_PATH)/.sw_build
-	cd $(ROOT_PATH)/.sw_build && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)
-	cd $(ROOT_PATH)/.sw_build && $(CC) $(CFLAGS) $(INC_PATH) -o $@ $(SRC_PATH)
-	cd $(ROOT_PATH)/.sw_build && $(OBJC) -O verilog $@ $(FIRMWARE_NAME).hex
-	cd $(ROOT_PATH)/.sw_build && $(OBJC) -O binary $@ $(FIRMWARE_NAME).bin
-	cd $(ROOT_PATH)/.sw_build && $(DUMP) -d $@ > $(FIRMWARE_NAME).txt
-	cd $(ROOT_PATH)/.sw_build && $(DUMP) -D $@ > $(FIRMWARE_NAME)_all.txt
+upd_ver_info: $(VERSION_HEADER)
+
+asm: $(MPW_VARIANT_STAMP)
+	@mkdir -p $(SW_BUILD_DIR)/asm
+	$(MAKE) -C $(ROOT_PATH)/app/asm OUT_DIR=$(SW_BUILD_DIR)/asm
+	cp $(SW_BUILD_DIR)/asm/hello-asm.flash $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).hex
+	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
+	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
+
+$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+                 $(ROOT_PATH)/rtl/mini/mk/software.mk
+	@mkdir -p $(SW_BUILD_DIR)
+	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)
+	cd $(SW_BUILD_DIR) && $(CC) $(CFLAGS) $(INC_PATH) -o $(@F) $(SRC_PATH)
+	cd $(SW_BUILD_DIR) && $(OBJC) -O verilog $(@F) $(FIRMWARE_NAME).hex
+	cd $(SW_BUILD_DIR) && $(OBJC) -O binary $(@F) $(FIRMWARE_NAME).bin
+	cd $(SW_BUILD_DIR) && $(DUMP) -d $(@F) > $(FIRMWARE_NAME).txt
+	cd $(SW_BUILD_DIR) && $(DUMP) -D $(@F) > $(FIRMWARE_NAME)_all.txt
+
+firmware: $(FIRMWARE_ELF)
+
+firmware asm: | manifest
+
+.PHONY: FORCE_VERSION

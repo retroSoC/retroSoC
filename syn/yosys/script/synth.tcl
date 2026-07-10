@@ -171,6 +171,7 @@ yosys hilomap -singleton -hicell {*}$tech_cell_tiehi -locell {*}$tech_cell_tielo
 # final reports
 yosys tee -q -o "${report_dir}/${proj_name}_synth.rpt" check
 yosys tee -q -o "${report_dir}/${proj_name}_area.rpt" stat -top $top_design {*}$liberty_args
+yosys tee -q -o "${report_dir}/${proj_name}_area.json" stat -json -top $top_design {*}$liberty_args
 yosys tee -q -o "${report_dir}/${proj_name}_area_logic.rpt" stat -top $top_design {*}$tech_cells_args
 
 # final netlist

@@ -9,16 +9,13 @@ from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from scripts.dependency_lock import archive, source  # noqa: E402
 from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo  # noqa: E402
 
 
 APP_DIR = Path(__file__).resolve().parent
 FATFS_DIR = APP_DIR / "fatfs"
-FATFS_ARCHIVE = FATFS_DIR / "ff16/ff16.zip"
-FATFS_URL = "https://elm-chan.org/fsw/ff/arc/ff16.zip"
-FATFS_SHA256 = "41d98115f72b090c2d0c269a001c5c0216efd78fbd84bb6427be808a76315a5a"
 COREMARK_DIR = APP_DIR / "coremark/coremark-main"
-COREMARK_REVISION = "1f483d5b8316753a742cbf5590caf5bd0a4e4777"
 
 
 def patch_coremark() -> None:
@@ -47,26 +44,22 @@ def main() -> int:
     parser.add_argument("--update", action="store_true")
     args = parser.parse_args()
 
-    download_file(
-        FATFS_URL,
-        FATFS_ARCHIVE,
-        FATFS_SHA256,
-        update=args.update,
-    )
-    fatfs_source = FATFS_ARCHIVE.parent / "source"
+    fatfs = archive("fatfs")
+    fatfs_archive = ROOT / fatfs["destination"]
+    download_file(fatfs["url"], fatfs_archive, fatfs["sha256"], update=args.update)
+    fatfs_source = fatfs_archive.parent / "source"
     if not fatfs_source.is_dir():
-        with ZipFile(FATFS_ARCHIVE) as archive:
-            archive.extractall(FATFS_ARCHIVE.parent)
+        with ZipFile(fatfs_archive) as zip_archive:
+            zip_archive.extractall(fatfs_archive.parent)
     for name in ("ffconf.h", "diskio.c"):
-        source = FATFS_DIR / name
-        if not source.is_file():
-            raise FileNotFoundError(f"FatFs configuration file missing: {source}")
-        shutil.copy2(source, fatfs_source / name)
+        config_source = FATFS_DIR / name
+        if not config_source.is_file():
+            raise FileNotFoundError(f"FatFs configuration file missing: {config_source}")
+        shutil.copy2(config_source, fatfs_source / name)
 
+    coremark = source("coremark")
     ensure_git_repo(
-        "https://github.com/eembc/coremark.git",
-        COREMARK_DIR,
-        COREMARK_REVISION,
+        coremark["url"], ROOT / coremark["destination"], coremark["revision"],
         update=args.update,
         allow_dirty=True,
     )

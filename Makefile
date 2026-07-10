@@ -2,6 +2,22 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .DELETE_ON_ERROR:
 
+ROOT_PATH      ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+CONFIG         ?=
+LOCK_FILE      ?= $(ROOT_PATH)/config/dependencies.lock.json
+
+ifneq ($(strip $(CONFIG)),)
+CONFIG_PATH := $(if $(filter /%,$(CONFIG)),$(CONFIG),$(ROOT_PATH)/$(CONFIG))
+ifeq ($(wildcard $(CONFIG_PATH)),)
+$(error Configuration profile not found: $(CONFIG_PATH))
+endif
+include $(CONFIG_PATH)
+PROFILE_NAME := $(basename $(notdir $(CONFIG_PATH)))
+else
+CONFIG_PATH :=
+PROFILE_NAME := manual
+endif
+
 SOC            ?= MINI
 SIMU           ?= VCS
 SYNTH          ?= NONE
@@ -19,8 +35,9 @@ RTL_SIM_PLLEN   ?= NONE
 RTL_SIM_PLLCFG  ?= NONE
 RTL_SIM_CORESEL ?= 0
 RTL_SIM_TIMEOUT ?= -1
+SIM_FIRMWARE_NAME ?= $(FIRMWARE_NAME)
+SIM_SUCCESS_MARKER ?= retroSoC: A Customized ASIC for Retro Stuff
 
-ROOT_PATH      ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 RTL_PATH       := $(ROOT_PATH)/rtl/mini
 
 CORE           ?= HAZARD3
@@ -33,6 +50,34 @@ HAVE_CSR       ?= NO
 FIRMWARE_NAME  ?= retrosoc_fw
 PROG_TYPE      ?= FULL
 LINK_TYPE      ?= ld2_sram
+
+BUILD_ROOT     ?= $(ROOT_PATH)/build
+CACHE_ROOT     ?= $(ROOT_PATH)/.cache/retrosoc
+MAX_JOBS       ?= 16
+JOBS           ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
+                       if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
+                       else printf '%s' "$$count"; fi)
+CONFIG_KEY_VARS := SOC CORE IP PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
+                   ISA HAVE_CSR PROG_TYPE LINK_TYPE RTL_TOP FIRMWARE_NAME
+VARIANT_ID := $(strip $(shell python3 $(ROOT_PATH)/scripts/config_key.py \
+    --lock $(LOCK_FILE) --profile $(PROFILE_NAME) \
+    $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var)))))
+ifeq ($(VARIANT_ID),)
+$(error Failed to calculate build variant ID)
+endif
+LOCK_DIGEST := $(strip $(shell python3 $(ROOT_PATH)/scripts/dependency_lock.py --lock $(LOCK_FILE) --digest))
+VARIANT_ROOT := $(abspath $(BUILD_ROOT))/$(VARIANT_ID)
+SW_BUILD_DIR := $(VARIANT_ROOT)/sw
+SIM_TOOL_NAME := $(shell printf '%s' '$(SIMU)' | tr '[:upper:]' '[:lower:]')
+SIM_BUILD_ROOT := $(VARIANT_ROOT)/sim/$(SIM_TOOL_NAME)
+SYN_BUILD_ROOT := $(VARIANT_ROOT)/syn/yosys
+STA_BUILD_ROOT := $(VARIANT_ROOT)/sta/opensta
+META_DIR := $(VARIANT_ROOT)/meta
+ifeq ($(SYNTH),YOSYS)
+FLOW_FILELIST_DIR := $(SYN_BUILD_ROOT)/filelists
+else
+FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
+endif
 
 VALID_SOC       := MINI
 VALID_CORE      := PICORV32 HAZARD3 MDD
@@ -114,7 +159,9 @@ ifeq ($(STA), OPENSTA)
     include sta/opensta/opensta.mk
 endif
 
-.PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app clean-all
+.PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
+        clean-all purge-cache manifest check-warnings metrics check-metrics package \
+        regress-pr regress-nightly sim-asm
 .NOTPARALLEL: setup
 
 help:
@@ -122,19 +169,28 @@ help:
 	  'retroSoC build targets:' \
 	  '  firmware | asm             build firmware' \
 	  '  comp | sim                 behavioral simulation' \
+	  '  sim-asm                    build/run the assembly self-test' \
 	  '  netcomp | netsim           synthesized-netlist simulation' \
 	  '  postcomp | postsim         post-layout simulation' \
 	  '  synth | sta                synthesis and timing analysis' \
 	  '  setup                      install pinned external dependencies' \
 	  '  doctor                     check tools, paths, and selected configuration' \
-	  '  config                     print selected configuration' \
-	  '  clean | clean-all          clean current backend or all generated output' \
+	  '  config | manifest          print/write the effective configuration' \
+	  '  check-warnings | metrics   analyze flow logs and reports' \
+	  '  check-metrics              apply the committed metrics policy' \
+	  '  regress-pr | regress-nightly run supported regression suites' \
+	  '  package                    create checksummed source deliverables' \
+	  '  clean | clean-all          clean current flow or all build output' \
+	  '  purge-cache                remove dependency and compiler caches' \
 	  '' \
-	  'Key variables: SOC CORE IP SIMU SYNTH STA PDK ISA PROG_TYPE LINK_TYPE'
+	  'Usage: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim'
 
 config:
 	@printf '%-18s %s\n' \
-	  ROOT_PATH '$(ROOT_PATH)' SOC '$(SOC)' CORE '$(CORE)' IP '$(IP)' \
+	  ROOT_PATH '$(ROOT_PATH)' CONFIG '$(or $(CONFIG_PATH),<defaults>)' \
+	  VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
+	  JOBS '$(JOBS)' \
+	  SOC '$(SOC)' CORE '$(CORE)' IP '$(IP)' \
 	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' HAVE_SVA '$(HAVE_SVA)' \
@@ -144,13 +200,14 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --core $(CORE) --ip $(IP)
+	  --pdk $(PDK) --core $(CORE) --ip $(IP) --lock $(LOCK_FILE)
 
 setup: setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app
 
 setup-mpw:
 	python3 $(ROOT_PATH)/setup.py
-	python3 $(ROOT_PATH)/scripts/prepare_mpw.py
+	python3 $(ROOT_PATH)/scripts/prepare_mpw.py \
+	  --lock-file $(CACHE_ROOT)/locks/mpw-prepare.lock
 	@mkdir -p $(dir $(MPW_STAMP))
 	@touch $(MPW_STAMP)
 
@@ -164,10 +221,46 @@ setup-ip:
 	python3 $(ROOT_PATH)/rtl/ip/setup.py
 
 setup-pdk:
-	python3 $(ROOT_PATH)/pdk/setup.py
+	python3 $(ROOT_PATH)/pdk/setup.py --pdk $(PDK)
 
 setup-app:
 	python3 $(ROOT_PATH)/app/setup.py
 
 clean-all:
-	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH)
+	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(abspath $(BUILD_ROOT))
+
+purge-cache:
+	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(abspath $(CACHE_ROOT))
+
+manifest:
+	python3 $(ROOT_PATH)/scripts/manifest.py create --root $(ROOT_PATH) \
+	  --lock $(LOCK_FILE) --output $(META_DIR)/manifest.json --profile $(PROFILE_NAME) \
+	  $(foreach var,$(CONFIG_KEY_VARS),--config $(var)=$($(var))) \
+	  --config SIMU=$(SIMU) --config SYNTH=$(SYNTH) --config STA=$(STA)
+
+check-warnings:
+	python3 $(ROOT_PATH)/scripts/analyze_warnings.py check --root $(ROOT_PATH) \
+	  --profile $(PROFILE_NAME) --variant-root $(VARIANT_ROOT) --output $(META_DIR)/warnings.json
+
+metrics:
+	python3 $(ROOT_PATH)/scripts/metrics.py collect --variant-root $(VARIANT_ROOT) \
+	  --output $(META_DIR)/metrics.json
+
+check-metrics: metrics
+	python3 $(ROOT_PATH)/scripts/metrics.py check --metrics $(META_DIR)/metrics.json \
+	  --policy $(ROOT_PATH)/quality/metrics/policy.json \
+	  --baseline $(ROOT_PATH)/quality/metrics/baseline.json
+
+package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
+	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
+	  --variant-root $(VARIANT_ROOT) --output-dir $(ROOT_PATH)/dist/$(VARIANT_ID)
+
+regress-pr:
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr
+
+regress-nightly:
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly
+
+sim-asm: asm
+	$(MAKE) SIM_FIRMWARE_NAME=$(ASM_FIRMWARE_NAME) \
+	  SIM_SUCCESS_MARKER='Mem wr/rd test success' sim

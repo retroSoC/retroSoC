@@ -6,7 +6,7 @@ import argparse
 import gzip
 from pathlib import Path
 
-from filelist import FileList, atomic_write, parse_filelists, write_filelist
+from filelist import atomic_write, parse_filelists, write_filelist
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent

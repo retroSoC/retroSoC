@@ -20,7 +20,7 @@
 # Directories
 # directory of the path to the last called Makefile (this one)
 YOSYS_DIR   := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
-YOSYS_BUILD := $(YOSYS_DIR)/.synth_build
+YOSYS_BUILD := $(SYN_BUILD_ROOT)
 YOSYS_OUT   := $(YOSYS_BUILD)/out
 YOSYS_TMP   := $(YOSYS_BUILD)/tmp
 YOSYS_RPT   := $(YOSYS_BUILD)/rpt
@@ -29,38 +29,44 @@ include $(YOSYS_DIR)/synth_config.mk
 
 TOP_DESIGN    ?= retrosoc_asic
 RTL_NAME      ?= retrosoc_asic
-SV_FLIST      := $(RTL_PATH)/.generated_fl/yosys.fl
+SV_FLIST      := $(GENERATED_FL_DIR)/yosys.fl
 
 NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
 NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
 NETLIST_CONFIG := $(YOSYS_OUT)/$(RTL_NAME)_yosys.config
+YOSYS_DEPFILE := $(YOSYS_BUILD)/yosys.d
+YOSYS_SCRIPTS := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk $(YOSYS_DIR)/yosys.mk
 
-gen_synth_filelist: gen_mpw_code generate_filelist
+-include $(YOSYS_DEPFILE)
+
+$(SV_FLIST): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
 	@python3 $(RTL_PATH)/script/comb.py $(RTL_FLIST) --output $(SV_FLIST)
+	@python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) --target $(NETLIST) \
+		--output $(YOSYS_DEPFILE)
+
+gen_synth_filelist: $(SV_FLIST)
 
 ## Synthesize netlist using Yosys
 synth: $(NETLIST)
 
-$(NETLIST): gen_synth_filelist
+$(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 	@mkdir -p $(YOSYS_OUT)
 	@mkdir -p $(YOSYS_TMP)
 	@mkdir -p $(YOSYS_RPT)
-	export PDK="$(PDK)" SOC="$(SOC)" CORE="$(CORE)" IP="$(IP)" \
-		SV_FLIST="$(SV_FLIST)" TOP_DESIGN="$(TOP_DESIGN)" CONFIG="$(NETLIST_CONFIG)" \
-		PROJ_NAME="$(RTL_NAME)" WORK="$(YOSYS_TMP)" BUILD="$(YOSYS_OUT)" \
-		REPORTS="$(YOSYS_RPT)" NETLIST="$(NETLIST)"; \
-	set -o pipefail; yosys -c $(YOSYS_DIR)/script/synth.tcl \
-		2>&1 | TZ=UTC-8 gawk '{ print strftime("[%Y-%m-%d %H:%M %Z]"), $$0 }' \
-			 | tee "$(YOSYS_BUILD)/$(RTL_NAME).log" \
-			 | gawk -f $(YOSYS_DIR)/script/filter_output.awk
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool yosys \
+		--log $(YOSYS_BUILD)/$(RTL_NAME).log --result $(YOSYS_BUILD)/result-synth.json \
+		--env PDK=$(PDK) --env SOC=$(SOC) --env CORE=$(CORE) --env IP=$(IP) \
+		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
+		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
+		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \
+		yosys -c $(YOSYS_DIR)/script/synth.tcl
 
 $(NETLIST_DEBUG): $(NETLIST)
 	@test -f $@
 
 synth_clean:
-	rm -rf $(YOSYS_OUT)
-	rm -rf $(YOSYS_TMP)
-	rm -rf $(YOSYS_RPT) 
-	rm -f $(YOSYS_BUILD)/$(RTL_NAME).log
+	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(YOSYS_BUILD)
 
 .PHONY: gen_synth_filelist synth_clean synth
+
+synth: | manifest

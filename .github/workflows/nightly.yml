@@ -1,0 +1,20 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: "17 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-regression
+  cancel-in-progress: false
+
+jobs:
+  extended-open-source-flows:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: nightly
+      retention_days: 90

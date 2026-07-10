@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "mpw": {
+      "url": "https://github.com/retroSoC/mini-ver-mpw.git",
+      "revision": "30503eb8a7cf33a0c955913faba5014ebd00186f",
+      "destination": "rtl/mini/mpw",
+      "license": "NOASSERTION"
+    },
+    "hazard3": {
+      "url": "https://github.com/Wren6991/Hazard3.git",
+      "revision": "5b3a34f6955e50e03bdcb964201c91462f7078c3",
+      "destination": "rtl/mini/mpw/Hazard3",
+      "license": "NOASSERTION"
+    },
+    "ibex": {
+      "url": "https://github.com/lowRISC/ibex.git",
+      "revision": "0c233f54361d769f370889223acc456f2ac19d46",
+      "destination": "rtl/mini/mpw/ibex",
+      "license": "Apache-2.0"
+    },
+    "coremark": {
+      "url": "https://github.com/eembc/coremark.git",
+      "revision": "1f483d5b8316753a742cbf5590caf5bd0a4e4777",
+      "destination": "app/coremark/coremark-main",
+      "license": "Apache-2.0"
+    },
+    "third_party_ip": {
+      "url": "https://github.com/retroSoC/3rd-party.git",
+      "revision": "d991ec9f7bf696e7e5d840758487068b11bd4121",
+      "destination": "rtl/ip/3rd-party",
+      "license": "NOASSERTION"
+    },
+    "pdk_ihp130": {
+      "url": "https://github.com/IHP-GmbH/IHP-Open-PDK.git",
+      "revision": "68eebafcd9b2f5e92c69d37a8d3d90eb266550f5",
+      "destination": "pdk/IHP-Open-PDK",
+      "recursive": true,
+      "license": "Apache-2.0"
+    },
+    "pdk_ics55": {
+      "url": "https://github.com/openecos-projects/icsprout55-pdk.git",
+      "revision": "e696e093129ca2212487aa169af74d06ebd86eb6",
+      "destination": "pdk/icsprout55-pdk",
+      "recursive": true,
+      "license": "NOASSERTION"
+    },
+    "cluster_archinfo": {"url": "https://github.com/retroSoC/archinfo.git", "revision": "d65dd13c83a1176668bf5178004814a1551bf6ba", "destination": "rtl/clusterip/archinfo", "license": "NOASSERTION"},
+    "cluster_clint": {"url": "https://github.com/retroSoC/clint.git", "revision": "ce49f1a5501c0a9f18c0e3f358417648f3f2fb18", "destination": "rtl/clusterip/clint", "license": "NOASSERTION"},
+    "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "d9921eb05160be873aebc46bb2f820bee2c7eebc", "destination": "rtl/clusterip/common", "license": "NOASSERTION"},
+    "cluster_crc": {"url": "https://github.com/retroSoC/crc.git", "revision": "4654a63d06d487b5b9fe22af228c36c736b90bad", "destination": "rtl/clusterip/crc", "license": "NOASSERTION"},
+    "cluster_i2c": {"url": "https://github.com/retroSoC/i2c.git", "revision": "73b024547c5cd70fb8bf801cc7757db2536c604f", "destination": "rtl/clusterip/i2c", "license": "NOASSERTION"},
+    "cluster_i2s": {"url": "https://github.com/retroSoC/i2s.git", "revision": "bd0978e8b45e4cf4c1335a1fa7311385d2a4e805", "destination": "rtl/clusterip/i2s", "license": "NOASSERTION"},
+    "cluster_plic": {"url": "https://github.com/retroSoC/plic.git", "revision": "c851d93829d2e75b224003a058e718925855c0cc", "destination": "rtl/clusterip/plic", "license": "NOASSERTION"},
+    "cluster_ps2": {"url": "https://github.com/retroSoC/ps2.git", "revision": "60921e0f72d6113f8615d03ce54567388fc2410f", "destination": "rtl/clusterip/ps2", "license": "NOASSERTION"},
+    "cluster_pwm": {"url": "https://github.com/retroSoC/pwm.git", "revision": "0777ef085c661d2b103f2fa0f8519f97eea3c950", "destination": "rtl/clusterip/pwm", "license": "NOASSERTION"},
+    "cluster_rng": {"url": "https://github.com/retroSoC/rng.git", "revision": "7374e1e7f25bfd1ff9954ea99f19b77a583def29", "destination": "rtl/clusterip/rng", "license": "NOASSERTION"},
+    "cluster_rtc": {"url": "https://github.com/retroSoC/rtc.git", "revision": "69963b8424cb00e04c8be70157b8ca738464e342", "destination": "rtl/clusterip/rtc", "license": "NOASSERTION"},
+    "cluster_spi": {"url": "https://github.com/retroSoC/spi.git", "revision": "515cb408806584525605b4747db5e890dbdf1928", "destination": "rtl/clusterip/spi", "license": "NOASSERTION"},
+    "cluster_timer": {"url": "https://github.com/retroSoC/timer.git", "revision": "0c44b0d8b742c6a477fda15a812cf22962b54dd8", "destination": "rtl/clusterip/timer", "license": "NOASSERTION"},
+    "cluster_uart": {"url": "https://github.com/retroSoC/uart.git", "revision": "eca12213ba06f42e0a6dd0f27907fd4c447e2774", "destination": "rtl/clusterip/uart", "license": "NOASSERTION"},
+    "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "b2603c1faeba96603392f0fe9e692e645d7e061f", "destination": "rtl/clusterip/wdg", "license": "NOASSERTION"}
+  },
+  "archives": {
+    "fatfs": {
+      "url": "https://elm-chan.org/fsw/ff/arc/ff16.zip",
+      "sha256": "41d98115f72b090c2d0c269a001c5c0216efd78fbd84bb6427be808a76315a5a",
+      "destination": "app/fatfs/ff16/ff16.zip",
+      "license": "LicenseRef-FatFs"
+    },
+    "serv": {
+      "url": "https://github.com/olofk/serv/archive/refs/tags/1.4.0.tar.gz",
+      "sha256": "f81c37b9f9d548c658e23bb7eb90fbed8b54e2e9e51fa42b8cd2f34cecc472ab",
+      "destination": "rtl/mini/mpw/serv-1.4.0.tar.gz",
+      "license": "ISC"
+    }
+  },
+  "toolchains": {
+    "ubuntu-22.04": {
+      "verilator": {
+        "version": "5.046",
+        "url": "https://github.com/retroSoC/artifact/releases/download/verilator-v5.046/verilator-v5.046-ubuntu-22.04-gcc.tar.gz",
+        "sha256": "f91b8496a0aaf26bf72395e876e145ceb99c94ff724cc9a16bb81d243ce5d953",
+        "archive": "verilator-v5.046-ubuntu-22.04-gcc.tar.gz",
+        "path": "bin"
+      },
+      "sv2v": {
+        "version": "0.0.13-9-gd381209",
+        "url": "https://github.com/retroSoC/artifact/releases/download/sv2v-v0.0.13-9-gd381209/sv2v-v0.0.13-9-gd381209-ubuntu-22.04-gcc.tar.gz",
+        "sha256": "af0f5438fc293d1469d4d3e01be442663c55f5db6ff28bbed40722eaf429c690",
+        "archive": "sv2v-v0.0.13-9-gd381209-ubuntu-22.04-gcc.tar.gz",
+        "path": "."
+      },
+      "iverilog": {
+        "version": "13.0",
+        "url": "https://github.com/retroSoC/artifact/releases/download/iverilog-v13_0/iverilog-v13_0-ubuntu-22.04-gcc.tar.gz",
+        "sha256": "22b51e988a94abdd0cd94f31f804a9bd6183e98d9380799ad3441188abc12987",
+        "archive": "iverilog-v13_0-ubuntu-22.04-gcc.tar.gz",
+        "path": "bin"
+      },
+      "yosys": {
+        "version": "0.58",
+        "url": "https://github.com/retroSoC/artifact/releases/download/yosys-v0.58/yosys-v0.58-ubuntu-22.04-gcc.tar.gz",
+        "sha256": "589447b6ed9aa20a1cc90155851f809490815089e5cc181ed4d23a5389b65adb",
+        "archive": "yosys-v0.58-ubuntu-22.04-gcc.tar.gz",
+        "path": "bin"
+      },
+      "opensta": {
+        "version": "2.2.0-1767-ga93b51ec",
+        "url": "https://github.com/retroSoC/artifact/releases/download/opensta-v2.2.0-1767-ga93b51ec/opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz",
+        "sha256": "e8b17134cd0935d2f5d354e8233c27833834141f2aef44264a1ad5d2cca0623b",
+        "archive": "opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz",
+        "path": "bin"
+      },
+      "riscv_gnu": {
+        "version": "2025.05.01",
+        "url": "https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz",
+        "sha256": "39dc7e8554d8d152258d2588cdb14c9dff5d2e8563325b78a923faa868a07191",
+        "archive": "riscv32-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz",
+        "path": "riscv/bin"
+      }
+    }
+  }
+}
