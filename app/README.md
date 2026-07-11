@@ -63,6 +63,12 @@ Application-specific public headers belong below their own component include
 directory, such as `board/include/retrosoc/board/` or
 `media/include/retrosoc/media/`.
 
+Self-owned application C/H code follows the project
+[MISRA C:2012 Amendment 2 policy](../docs/misra-c-2012.md). Managed upstream
+sources and exclusions listed in `quality/embedded_c_policy.json` are outside
+that scope; project glue must not be presented as evidence of upstream MISRA
+conformance.
+
 ## Quality Checks
 
 Run the shared checks from the repository root before submitting changes:
@@ -75,7 +81,9 @@ python3 -m pytest -q
 ```
 
 The embedded-C checks apply to self-owned code and deliberately exclude managed
-third-party source trees. Use the repository regression suites for end-to-end
+third-party source trees. Required-rule deviations need a reviewed entry in
+[`quality/misra/deviations.md`](../quality/misra/deviations.md). Use the
+repository regression suites for end-to-end
 firmware, RTL, netlist, synthesis, and timing coverage:
 
 ```sh

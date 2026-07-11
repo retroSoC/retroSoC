@@ -44,6 +44,20 @@ python3 scripts/install_toolchain.py \
   --tool yosys --tool opensta --tool riscv_gnu
 ```
 
+## MISRA Governance
+
+Self-owned `crt/` and `app/` C/header code follows the
+[MISRA C:2012 Amendment 2 policy](misra-c-2012.md). The policy defines its
+scope, exclusions, Mandatory/Required/Advisory handling, partial automated
+enforcement, and required deviation process. The executable exclusion list in
+`quality/embedded_c_policy.json` remains authoritative.
+
+This repository does not claim complete MISRA certification from its current
+format, policy, compiler-warning, unit-test, or regression gates. Required-rule
+deviations must be reviewed and recorded in
+[`quality/misra/deviations.md`](../quality/misra/deviations.md) with the
+affected implementation change.
+
 ## Build Layout
 
 The variant identifier is the profile name plus a hash over effective hardware/software build

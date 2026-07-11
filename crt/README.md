@@ -51,6 +51,10 @@ The resulting firmware and generated headers are isolated under
 
 ## API and Contribution Rules
 
+- Self-owned C/H code in `crt/` follows the project
+  [MISRA C:2012 Amendment 2 policy](../docs/misra-c-2012.md). Assembly,
+  linker scripts, compatibility material, and excluded paths are outside that
+  C-language scope.
 - Keep public interfaces in the matching `include/retrosoc/<layer>/` directory
   and implementations in the corresponding `src/<layer>/` directory.
 - Use the `rs_` API namespace and `rs_status_t` for operations that can fail.
@@ -60,6 +64,11 @@ The resulting firmware and generated headers are isolated under
   timeout-based register waits over unbounded operations.
 - Add deterministic host tests when new code does not require real registers,
   timing, or board hardware.
+
+Required-rule deviations need a reviewed entry in
+[`quality/misra/deviations.md`](../quality/misra/deviations.md). Existing
+automation is partial enforcement; it is not a claim of complete MISRA
+certification.
 
 ## Quality Checks
 

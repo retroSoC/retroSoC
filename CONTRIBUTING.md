@@ -1,14 +1,24 @@
 # Contributing
 
-Run the script quality gate before opening a pull request:
+Read [`AGENTS.md`](AGENTS.md) and the
+[MISRA C:2012 Amendment 2 policy](docs/misra-c-2012.md) before changing
+self-owned embedded C. Run the applicable quality gates before opening a pull
+request:
 
 ```sh
 python3 -m pip install --requirement requirements/ci.txt
+make sw-format-check
+make sw-policy-check
+make sw-host-test
 ruff check .
 python3 -m pytest -q
 yamllint .github .yamllint.yml
 python3 scripts/regress.py --root . --suite pr --dry-run
 ```
+
+The automated C checks enforce a partial subset of the documented MISRA
+baseline. Required-rule deviations need reviewed records in
+`quality/misra/deviations.md`; Mandatory rules are not waived.
 
 For build changes, use a committed profile and keep generated files below `build/` or `.cache/`.
 Do not add new downloads directly to workflow YAML or setup scripts. Add the source or archive to
