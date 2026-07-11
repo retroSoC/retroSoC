@@ -24,6 +24,36 @@ truth wins.
 Do not guess a profile, tool version, dependency revision, or generated-file
 location. Inspect the corresponding source of truth first.
 
+## Top-Level Directory Guides
+
+Every Git-tracked first-level directory has a README that defines its ownership
+and validation boundary.
+
+| Directory | Guide | Role |
+| --- | --- | --- |
+| `.github/` | [.github/README.md](.github/README.md) | CI, release automation, reusable actions, and ownership metadata. |
+| `app/` | [app/README.md](app/README.md) | Firmware applications and integrations. |
+| `config/` | [config/README.md](config/README.md) | Locked external inputs and checksums. |
+| `configs/` | [configs/README.md](configs/README.md) | Reproducible build profiles. |
+| `crt/` | [crt/README.md](crt/README.md) | Freestanding runtime and SDK. |
+| `docs/` | [docs/README.md](docs/README.md) | Engineering and MISRA policy. |
+| `fpga/` | [fpga/README.md](fpga/README.md) | FPGA wrapper and board constraints. |
+| `licenses/` | [licenses/README.md](licenses/README.md) | Third-party notices and license texts. |
+| `pd/` | [pd/README.md](pd/README.md) | Physical-design entry points. |
+| `pdk/` | [pdk/README.md](pdk/README.md) | Managed PDK and technology inputs. |
+| `quality/` | [quality/README.md](quality/README.md) | Executable quality policy and baselines. |
+| `requirements/` | [requirements/README.md](requirements/README.md) | Pinned Python tool requirements. |
+| `rtl/` | [rtl/README.md](rtl/README.md) | RTL, testbench, and SoC integration. |
+| `scripts/` | [scripts/README.md](scripts/README.md) | Build, setup, regression, and quality helpers. |
+| `sta/` | [sta/README.md](sta/README.md) | Static timing analysis. |
+| `syn/` | [syn/README.md](syn/README.md) | Synthesis and source export. |
+| `tests/` | [tests/README.md](tests/README.md) | Host C and Python test suites. |
+
+Do not create project documentation inside generated/local roots such as
+`build/`, `.cache/`, `.sw_build/`, or tool caches, or inside managed vendor
+subtrees. When adding a new Git-tracked first-level directory, add a concise
+README that states its ownership, source of truth, and validation expectations.
+
 ## Ownership and Architecture
 
 - `crt/` is the freestanding SDK. Its active layers are `arch/riscv`,
