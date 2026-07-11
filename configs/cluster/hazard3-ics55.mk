@@ -8,5 +8,5 @@ HAVE_SRAM_MACRO := NO
 HAVE_SVA := NO
 ISA := RV32IM
 HAVE_CSR := NO
-PROG_TYPE := BASE
+APP := bringup
 LINK_TYPE := ld2_psram

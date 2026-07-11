@@ -14,7 +14,7 @@ from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo  
 
 
 APP_DIR = Path(__file__).resolve().parent
-FATFS_DIR = APP_DIR / "fatfs"
+FATFS_DIR = APP_DIR / "middleware/fatfs"
 COREMARK_DIR = APP_DIR / "coremark/coremark-main"
 
 
@@ -30,9 +30,9 @@ def patch_fatfs(source: Path) -> None:
     fatfs_source = source / "ff.c"
     content = fatfs_source.read_text(encoding="utf-8")
     original_content = content
-    include = "#include <rs_string.h>"
+    include = "#include <retrosoc/lib/string.h>"
     if include not in content:
-        for legacy_include in ("#include <string.h>", "#include <tinystring.h>"):
+        for legacy_include in ("#include <string.h>", "#include <tinystring.h>", "#include <rs_string.h>"):
             if legacy_include in content:
                 content = content.replace(legacy_include, include)
                 break
@@ -46,10 +46,10 @@ def patch_coremark() -> None:
     header = COREMARK_DIR / "coremark.h"
     content = header.read_text(encoding="utf-8")
     original_content = content
-    include = "#include <rs_printf.h>"
-    legacy_include = "#include <tinyprintf.h>"
-    if legacy_include in content:
-        content = content.replace(legacy_include, include)
+    include = "#include <retrosoc/lib/printf.h>"
+    for legacy_include in ("#include <tinyprintf.h>", "#include <rs_printf.h>"):
+        if legacy_include in content:
+            content = content.replace(legacy_include, include)
     if include not in content:
         marker = '#include "core_portme.h"'
         if marker not in content:

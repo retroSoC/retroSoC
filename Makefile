@@ -48,17 +48,19 @@ RTL_TOP        ?= retrosoc_tb
 ISA            ?= RV32IM
 HAVE_CSR       ?= NO
 FIRMWARE_NAME  ?= retrosoc_fw
-PROG_TYPE      ?= FULL
+APP            ?= shell
 LINK_TYPE      ?= ld2_sram
 
 BUILD_ROOT     ?= $(ROOT_PATH)/build
 CACHE_ROOT     ?= $(ROOT_PATH)/.cache/retrosoc
 MAX_JOBS       ?= 16
+HOST_CC        ?= cc
+CLANG_FORMAT   ?= clang-format-14
 JOBS           ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
                        else printf '%s' "$$count"; fi)
 CONFIG_KEY_VARS := SOC CORE IP PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
-                   ISA HAVE_CSR PROG_TYPE LINK_TYPE RTL_TOP FIRMWARE_NAME
+                   ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
 VARIANT_ID := $(strip $(shell python3 $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var)))))
@@ -88,7 +90,7 @@ VALID_STA       := NONE OPENSTA
 VALID_PDK       := ICS55 IHP130 SKY130 GF180
 VALID_BOOL      := YES NO
 VALID_ISA       := RV32E RV32I RV32IM
-VALID_PROG_TYPE := BASE FULL
+VALID_APP       := bringup shell
 VALID_LINK_TYPE := xip ld2_sram ld2_psram ld2_sdram
 
 define validate_value
@@ -109,7 +111,7 @@ $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
 $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
-$(call validate_value,PROG_TYPE,$(VALID_PROG_TYPE))
+$(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 
 ifeq ($(SYNTH),YOSYS)
@@ -161,7 +163,7 @@ endif
 
 .PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
         clean-all purge-cache manifest check-warnings metrics check-metrics package \
-        regress-pr regress-nightly sim-asm
+        regress-pr regress-nightly sim-asm sw-format sw-format-check sw-policy-check sw-host-test
 .NOTPARALLEL: setup
 
 help:
@@ -178,6 +180,10 @@ help:
 	  '  config | manifest          print/write the effective configuration' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
+	  '  sw-format                  apply clang-format to self-owned embedded C code' \
+	  '  sw-format-check            check embedded C whitespace and line-ending policy' \
+	  '  sw-policy-check            check embedded C API and naming policy' \
+	  '  sw-host-test               run host tests for deterministic SDK utilities' \
 	  '  regress-pr | regress-nightly run supported regression suites' \
 	  '  package                    create checksummed source deliverables' \
 	  '  clean | clean-all          clean current flow or all build output' \
@@ -194,7 +200,7 @@ config:
 	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' HAVE_SVA '$(HAVE_SVA)' \
-	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' PROG_TYPE '$(PROG_TYPE)' \
+	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
 	  LINK_TYPE '$(LINK_TYPE)'
 
 doctor:
@@ -250,6 +256,20 @@ check-metrics: metrics
 	python3 $(ROOT_PATH)/scripts/metrics.py check --metrics $(META_DIR)/metrics.json \
 	  --policy $(ROOT_PATH)/quality/metrics/policy.json \
 	  --baseline $(ROOT_PATH)/quality/metrics/baseline.json
+
+sw-format:
+	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) \
+	  --apply-format --clang-format $(CLANG_FORMAT)
+
+sw-format-check:
+	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) --format-check \
+	  --clang-format-check --clang-format $(CLANG_FORMAT)
+
+sw-policy-check:
+	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) --policy-check
+
+sw-host-test:
+	python3 $(ROOT_PATH)/scripts/run_c_tests.py --root $(ROOT_PATH) --cc $(HOST_CC)
 
 package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
 	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \

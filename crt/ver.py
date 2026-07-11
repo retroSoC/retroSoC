@@ -28,7 +28,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = args.root.resolve()
-    output = args.output or root / "crt/inc/socver.h"
+    output = args.output or root / "crt/include/socver.h"
 
     branch = git_value(root, "rev-parse", "--abbrev-ref", "HEAD")
     commit = git_value(root, "rev-parse", "--short=6", "HEAD")

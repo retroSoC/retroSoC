@@ -22,6 +22,7 @@ sys.path.insert(0, str(FILELIST_SCRIPT_DIR))
 from filelist import atomic_write, parse_filelists, write_filelist  # noqa: E402
 from generate_filelist import generate_all  # noqa: E402
 from scripts.analyze_warnings import normalize  # noqa: E402
+from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
@@ -396,6 +397,25 @@ def test_warning_normalization_keeps_ranges_and_removes_variant_hash(tmp_path: P
         "WIDTH:$BUILD/generated/core.sv:<line>: "
         "Bit extraction of var[7:0] is too wide"
     )
+
+
+def test_c_warning_filter_excludes_vendored_sources(tmp_path: Path) -> None:
+    policy_dir = tmp_path / "quality"
+    policy_dir.mkdir()
+    (policy_dir / "embedded_c_policy.json").write_text(
+        (ROOT / "quality/embedded_c_policy.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    output = "\n".join(
+        (
+            f"{tmp_path}/crt/src/hal/timer.c:9:1: warning: self-owned warning",
+            f"{tmp_path}/app/coremark/coremark-main/core_main.c:4:1: warning: vendor warning",
+        )
+    )
+
+    warnings = self_owned_warnings(tmp_path, output)
+
+    assert warnings == ["crt/src/hal/timer.c:9: warning: self-owned warning"]
 
 
 def test_metrics_collection_and_observe_policy(tmp_path: Path) -> None:

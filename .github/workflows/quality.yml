@@ -31,11 +31,25 @@ jobs:
       - name: Install pinned quality tools
         run: python3 -m pip install --requirement requirements/ci.txt
 
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes clang-format-14
+
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock config/dependencies.lock.json
 
       - name: Lint Python
         run: ruff check .
+
+      - name: Check embedded C formatting policy
+        run: make sw-format-check
+
+      - name: Check embedded C safety policy
+        run: make sw-policy-check
+
+      - name: Run embedded C host tests
+        run: make sw-host-test
 
       - name: Test scripts
         run: python3 -m pytest -q

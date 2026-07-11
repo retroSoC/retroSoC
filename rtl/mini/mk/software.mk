@@ -1,145 +1,128 @@
-# software
+# Software SDK and application build
 CROSS ?= riscv32-unknown-elf-
 
-CP   = $(CROSS)cpp
-CC   = $(CROSS)gcc
+CP = $(CROSS)cpp
+CC = $(CROSS)gcc
 OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
-GCC_FLAGS := -Wall -Wextra \
+GCC_FLAGS := -std=gnu11 -Wall -Wextra \
              -Wl,-Bstatic,-T,$(LINK_TYPE).lds,--strip-debug -O3 \
-             -ffreestanding \
-             -nostdlib
+             -ffreestanding -nostdlib
+SW_WARN_FLAGS := -Wformat=2 -Wshadow -Wstrict-prototypes -Wmissing-prototypes \
+                 -Wcast-align -Werror=implicit-function-declaration \
+                 -Werror=return-type -Werror=incompatible-pointer-types \
+                 -Werror=int-conversion -Werror=format
 
-ifeq ($(ISA), RV32E)
-    ISA_FLAGS := -mabi=ilp32e
+ifeq ($(ISA),RV32E)
+ISA_FLAGS := -mabi=ilp32e
 else
-    ISA_FLAGS := -mabi=ilp32
+ISA_FLAGS := -mabi=ilp32
 endif
 
-ifeq ($(ISA), RV32E)
-    ifeq ($(HAVE_CSR), YES)
-        ISA_FLAGS += -march=rv32e_zicsr
-    else
-        ISA_FLAGS += -march=rv32e
-    endif
-else ifeq ($(ISA), RV32I)
-    ifeq ($(HAVE_CSR), YES)
-        ISA_FLAGS += -march=rv32i_zicsr
-    else
-        ISA_FLAGS += -march=rv32i
-    endif
-else ifeq ($(ISA), RV32IM)
-    ifeq ($(HAVE_CSR), YES)
-        ISA_FLAGS += -march=rv32im_zicsr
-    else
-        ISA_FLAGS += -march=rv32im
-    endif
+ifeq ($(ISA),RV32E)
+ifeq ($(HAVE_CSR),YES)
+ISA_FLAGS += -march=rv32e_zicsr
+else
+ISA_FLAGS += -march=rv32e
+endif
+else ifeq ($(ISA),RV32I)
+ifeq ($(HAVE_CSR),YES)
+ISA_FLAGS += -march=rv32i_zicsr
+else
+ISA_FLAGS += -march=rv32i
+endif
+else ifeq ($(ISA),RV32IM)
+ifeq ($(HAVE_CSR),YES)
+ISA_FLAGS += -march=rv32im_zicsr
+else
+ISA_FLAGS += -march=rv32im
+endif
 endif
 
 DEF_VAL += -DCORE_$(CORE)
 DEF_VAL += -DIP_$(IP)
+DEF_VAL += -DAPP_$(APP)
 DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
-DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS)"'
+DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS) $(SW_WARN_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
-DEF_VAL += -DSW_$(PROG_TYPE)
-ifeq ($(HAVE_CSR), YES)
-    DEF_VAL += -DCSR_ENABLE
+ifeq ($(HAVE_CSR),YES)
+DEF_VAL += -DCSR_ENABLE
 endif
 
-CFLAGS := $(GCC_FLAGS)
-CFLAGS += $(ISA_FLAGS)
-CFLAGS += $(DEF_VAL)
+CFLAGS := $(GCC_FLAGS) $(SW_WARN_FLAGS) $(ISA_FLAGS) $(DEF_VAL)
 
+CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
+            $(ROOT_PATH)/crt/arch/riscv/libgcc/clzsi2.c \
+            $(ROOT_PATH)/crt/arch/riscv/libgcc/divdi3.c \
+            $(ROOT_PATH)/crt/arch/riscv/libgcc/ffssi2.c \
+            $(ROOT_PATH)/crt/arch/riscv/libgcc/udivdi3.c \
+            $(ROOT_PATH)/crt/arch/riscv/libgcc/umoddi3.c \
+            $(ROOT_PATH)/crt/src/lib/stdlib.c \
+            $(ROOT_PATH)/crt/src/lib/string.c \
+            $(ROOT_PATH)/crt/src/lib/console.c \
+            $(ROOT_PATH)/crt/src/lib/printf.c \
+            $(ROOT_PATH)/crt/src/core/archinfo.c \
+            $(ROOT_PATH)/crt/src/service/bench.c \
+            $(ROOT_PATH)/crt/src/service/booter.c \
+            $(ROOT_PATH)/crt/src/hal/uart.c \
+            $(ROOT_PATH)/crt/src/hal/gpio.c \
+            $(ROOT_PATH)/crt/src/hal/timer.c \
+            $(ROOT_PATH)/crt/src/hal/pwm.c \
+            $(ROOT_PATH)/crt/src/hal/rtc.c \
+            $(ROOT_PATH)/crt/src/hal/watchdog.c \
+            $(ROOT_PATH)/crt/src/hal/crc.c \
+            $(ROOT_PATH)/crt/src/hal/rng.c \
+            $(ROOT_PATH)/crt/src/hal/advanced_timer.c \
+            $(ROOT_PATH)/crt/src/hal/hpuart.c \
+            $(ROOT_PATH)/crt/src/hal/ps2.c \
+            $(ROOT_PATH)/crt/src/hal/i2c.c \
+            $(ROOT_PATH)/crt/src/hal/onewire.c \
+            $(ROOT_PATH)/crt/src/hal/dma.c \
+            $(ROOT_PATH)/crt/src/hal/lcd.c \
+            $(ROOT_PATH)/crt/src/hal/psram.c \
+            $(ROOT_PATH)/crt/src/hal/spisd.c \
+            $(ROOT_PATH)/crt/src/hal/qspi.c
 
-
-TINYLIB_PATH := $(ROOT_PATH)/crt/startup.S \
-                $(ROOT_PATH)/crt/src/rs_lib.c \
-                $(ROOT_PATH)/crt/src/rs_uart.c \
-                $(ROOT_PATH)/crt/src/rs_string.c \
-                $(ROOT_PATH)/crt/src/rs_print.c \
-                $(ROOT_PATH)/crt/src/rs_printf.c \
-                $(ROOT_PATH)/crt/src/rs_gpio.c \
-                $(ROOT_PATH)/crt/src/rs_archinfo.c \
-                $(ROOT_PATH)/crt/src/rs_rng.c \
-                $(ROOT_PATH)/crt/src/rs_tim.c \
-                $(ROOT_PATH)/crt/src/rs_pwm.c \
-                $(ROOT_PATH)/crt/src/rs_rtc.c \
-                $(ROOT_PATH)/crt/src/rs_wdg.c \
-                $(ROOT_PATH)/crt/src/rs_crc.c \
-                $(ROOT_PATH)/crt/src/rs_advtim.c \
-                $(ROOT_PATH)/crt/src/rs_hpuart.c \
-                $(ROOT_PATH)/crt/src/rs_ps2.c \
-                $(ROOT_PATH)/crt/src/rs_i2c.c \
-                $(ROOT_PATH)/crt/src/rs_1wire.c \
-                $(ROOT_PATH)/crt/src/rs_dma.c \
-                $(ROOT_PATH)/crt/src/rs_lcd.c \
-                $(ROOT_PATH)/crt/src/rs_psram.c \
-                $(ROOT_PATH)/crt/src/rs_spisd.c \
-                $(ROOT_PATH)/crt/src/rs_qspi.c \
-                $(ROOT_PATH)/crt/src/rs_bench.c \
-                $(ROOT_PATH)/crt/src/rs_booter.c \
-                $(ROOT_PATH)/crt/src/main.c
-
-ifeq ($(HAVE_CSR), YES)
-TINYLIB_PATH += $(ROOT_PATH)/crt/system_irq.S
-TINYLIB_PATH += $(ROOT_PATH)/crt/src/system_irq_handler.c
-TINYLIB_PATH += $(ROOT_PATH)/crt/src/rs_irq.c
+ifeq ($(HAVE_CSR),YES)
+CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/system_irq.S
+CRT_SRCS += $(ROOT_PATH)/crt/src/core/system_irq_handler.c
+CRT_SRCS += $(ROOT_PATH)/crt/src/core/irq.c
 endif
 
-ifeq ($(PROG_TYPE), FULL)
-TINYLIB_PATH += $(ROOT_PATH)/crt/src/rs_sh.c
-TINYLIB_PATH += $(ROOT_PATH)/crt/src/rs_i2s.c
+APP_SRCS :=
+APP_INC_DIRS :=
+APP_MK := $(ROOT_PATH)/app/apps/$(APP)/app.mk
+
+ifeq ($(wildcard $(APP_MK)),)
+$(error Application profile not found: $(APP_MK))
+endif
+include $(APP_MK)
+
+ifneq ($(findstring MDD,$(CORE) $(IP)),)
+APP_INC_DIRS += $(MPW_OUTPUT_DIR)
 endif
 
-
-ifeq ($(PROG_TYPE), FULL)
-APP_PATH :=     $(ROOT_PATH)/app/base/src/at24cxx.c \
-                $(ROOT_PATH)/app/base/src/pcf8563b.c \
-                $(ROOT_PATH)/app/base/src/es8388.c \
-                $(ROOT_PATH)/app/base/src/w25q128jvxim.c \
-                $(ROOT_PATH)/app/base/src/wav_audio.c \
-                $(ROOT_PATH)/app/base/src/video_player.c \
-                $(ROOT_PATH)/app/base/src/donut.c
+ifneq ($(filter RV32E RV32I,$(ISA)),)
+CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/libgcc/div.S
+CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/libgcc/muldi3.S
+CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/libgcc/mulsi3.c
 endif
 
 INC_PATH := -I$(SW_BUILD_DIR)/include \
-            -I$(ROOT_PATH)/crt/inc \
-            -I$(ROOT_PATH)/app/base/inc
-
-
-ifneq ($(findstring MDD,$(CORE) $(IP)),)
-INC_PATH += -I$(MPW_OUTPUT_DIR)
-endif
-
-
-ifeq ($(PROG_TYPE), FULL)
-# extern app
-include $(ROOT_PATH)/app/userip/userip.mk
-include $(ROOT_PATH)/app/fatfs/fatfs.mk
-include $(ROOT_PATH)/app/coremark/coremark.mk
-# include $(ROOT_PATH)/app/lvgl/lvgl.mk
-endif
-
-SRC_PATH := $(TINYLIB_PATH)
-SRC_PATH += $(APP_PATH)
-
-ifneq ($(filter RV32E RV32I,$(ISA)),)
-    SRC_PATH += $(ROOT_PATH)/crt/libgcc/div.S
-    SRC_PATH += $(ROOT_PATH)/crt/libgcc/muldi3.S
-    SRC_PATH += $(ROOT_PATH)/crt/libgcc/mulsi3.c
-endif
-
-LDS_PATH := $(ROOT_PATH)/crt/lds/$(LINK_TYPE).lds
+            -I$(ROOT_PATH)/crt/include \
+            $(addprefix -I,$(APP_INC_DIRS))
+SRC_PATH := $(CRT_SRCS) $(APP_SRCS)
+LDS_PATH := $(ROOT_PATH)/crt/linker/$(LINK_TYPE).lds
 VERSION_HEADER := $(SW_BUILD_DIR)/include/socver.h
 FIRMWARE_ELF := $(SW_BUILD_DIR)/firmware
 ASM_FIRMWARE_NAME ?= retrosoc_asm
-SW_HEADERS := $(shell find $(ROOT_PATH)/crt/inc $(ROOT_PATH)/app -type f \
+SW_HEADERS := $(shell find $(ROOT_PATH)/crt/include $(ROOT_PATH)/app -type f \
                       \( -name '*.h' -o -name '*.hpp' \) 2>/dev/null)
 
 $(VERSION_HEADER): FORCE_VERSION $(ROOT_PATH)/crt/ver.py $(ROOT_PATH)/crt/ver.tmpl
-	python3 $(ROOT_PATH)/crt/ver.py --root $(ROOT_PATH) \
-		--output $@
+	@mkdir -p $(dir $@)
+	python3 $(ROOT_PATH)/crt/ver.py --root $(ROOT_PATH) --output $@
 
 FORCE_VERSION:
 
