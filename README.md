@@ -4,35 +4,144 @@
 [![regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression.yml)
 [![nightly](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml)
 
-## Build Automation
+retroSoC is a fully open-source RISC-V SoC project. The repository brings together
+SystemVerilog RTL, a freestanding embedded C SDK and applications, simulation, synthesis,
+static timing analysis, reproducible dependencies, and release packaging. It is licensed
+under the [Mulan Permissive Software License, Version 2](LICENSE).
 
-The build uses committed configuration profiles and a single dependency lock. Start with the
-verified HAZARD3 profile:
+## Highlights
+
+- Selectable RV32IM CPU configurations using HAZARD3, PicoRV32, or MDD cores.
+- Configurable IHP130 and ICS55 implementation targets, with open-source IHP130 flows
+  available in CI and ICS55 flows intended for a configured cluster environment.
+- A memory-mapped peripheral subsystem with GPIO, UART, timers, PWM, I2C, I2S, PS2,
+  1-Wire, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
+  support. Available interfaces depend on the selected SoC configuration.
+- A standalone RISC-V runtime, HAL, board support, middleware, and `bringup` and `shell`
+  applications.
+- Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
+  Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
+- Checksum-verified dependency and toolchain locks, structured flow results, warning
+  baselines, metrics collection, SBOM generation, and checksummed release packages.
+
+## Repository Layout
+
+| Path | Contents |
+| --- | --- |
+| [`rtl/`](rtl) | SoC RTL, CPU integration, peripherals, interfaces, testbenches, and technology wrappers. |
+| [`crt/`](crt) | Freestanding RISC-V startup code, linker scripts, runtime library, core services, and HAL headers. |
+| [`app/`](app) | Applications, board support, media, middleware, networking, ports, and benchmarks. |
+| [`configs/`](configs) | Versioned build profiles for CI, nightly, and cluster flows. |
+| [`pdk/`](pdk) | PDK setup entry points and technology-specific integration. |
+| [`syn/`](syn) and [`sta/`](sta) | Synthesis and static timing analysis flows. |
+| [`scripts/`](scripts) and [`quality/`](quality) | Build helpers, regression orchestration, checks, warning baselines, and metric policy. |
+| [`docs/`](docs) | Engineering workflow and release-process documentation. |
+
+## Supported Configurations
+
+The committed profiles are the supported starting points. They select a core, ISA, PDK,
+application, linker layout, and optional features as one reproducible configuration.
+
+| Profile | Core / ISA | Application | Coverage |
+| --- | --- | --- | --- |
+| [`configs/ci/hazard3-rv32im-ihp130.mk`](configs/ci/hazard3-rv32im-ihp130.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
+| [`configs/ci/hazard3-rv32im-ihp130-shell.mk`](configs/ci/hazard3-rv32im-ihp130-shell.mk) | HAZARD3 / RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
+| [`configs/ci/mdd-rv32im-ihp130.mk`](configs/ci/mdd-rv32im-ihp130.mk) | MDD / RV32IM | `bringup` | Pull-request firmware and Verilator regression. |
+| [`configs/nightly/picorv32-rv32im-ihp130.mk`](configs/nightly/picorv32-rv32im-ihp130.mk) | PicoRV32 / RV32IM | `bringup` | Nightly firmware, Verilator, and Icarus regression. |
+| [`configs/cluster/hazard3-ics55.mk`](configs/cluster/hazard3-ics55.mk) | HAZARD3 / RV32IM | `bringup` | Cluster-only configuration; requires the site PDK and licensed-tool environment. |
+
+## Prerequisites
+
+The prebuilt, locked toolchain bundles target Ubuntu 22.04. Install Python 3, GNU Make, a host
+C compiler, `clang-format-14`, a RISC-V bare-metal GNU toolchain, and the tools required by the
+flow you intend to run: Icarus Verilog, Verilator, sv2v, Yosys, and OpenSTA. The CI environment
+installs the exact versions from [`config/dependencies.lock.json`](config/dependencies.lock.json);
+local tools must be available on `PATH` before running `make doctor`.
+
+Install the Python build dependencies once per environment:
 
 ```sh
 python3 -m pip install --requirement requirements/build.txt
+```
+
+The lock file also pins external RTL, PDK, benchmark, and application sources. Their setup
+scripts verify full Git revisions or SHA-256 checksums before use. See the
+[engineering workflow](docs/engineering.md#reproducible-inputs) for the locked-tool installer
+and dependency update procedure.
+
+## Quick Start
+
+Start with the CI-verified HAZARD3/IHP130 `bringup` profile. `setup` retrieves the pinned
+source dependencies, and `doctor` reports any missing local executables or setup inputs.
+
+```sh
 make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk setup
 make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG doctor
 make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim
 ```
 
-Other open-source flows use the same profile:
+Select the interactive shell application without editing source files:
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR sim
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta
+make CONFIG=configs/ci/hazard3-rv32im-ihp130-shell.mk firmware
 ```
 
-`make help` lists targets, while `make config` prints the effective configuration and its variant
-identifier. Outputs live below `build/<profile>-<config-hash>/`; firmware, simulator, synthesis,
-STA, reports, and manifests are isolated inside that directory. `make clean` removes the selected
-backend, `make clean-all` removes all build outputs, and `make purge-cache` explicitly removes
+## Common Flows
+
+All commands use a committed profile. `make config` prints the effective configuration and
+variant identifier; `make help` lists all available targets. Netlist simulation and timing
+analysis consume the Yosys netlist, so run the synthesis command first. The CI-proven netlist
+regression uses the assembly self-test image:
+
+```sh
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
+  SIM_FIRMWARE_NAME=retrosoc_asm \
+  SIM_SUCCESS_MARKER='Mem wr/rd test success' \
+  RTL_SIM_TIMEOUT=5200000 netsim
+```
+
+| Goal | Command |
+| --- | --- |
+| Icarus behavioral simulation | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim` |
+| Verilator behavioral simulation | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR sim` |
+| Assembly self-test with Icarus | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm` |
+| Yosys synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth` |
+| Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG netsim` |
+| OpenSTA timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
+| Pull-request regression suite | `make regress-pr` |
+| Nightly regression suite | `make regress-nightly` |
+| Script and policy checks | `make sw-format-check sw-policy-check sw-host-test` |
+
+Build outputs are isolated below `build/<profile>-<config-hash>/`. Each variant keeps its
+firmware, generated sources, simulator output, synthesis and timing reports, manifest, warning
+analysis, and metrics separate from other configurations. Use `make clean` to remove the
+selected backend, `make clean-all` to remove all build output, and `make purge-cache` to remove
 download and compiler caches.
 
-Dependency sources and binary tool archives are pinned in
-[`config/dependencies.lock.json`](config/dependencies.lock.json). Downloads are checksum verified,
-and every flow writes a machine-readable manifest and result records. See
-[`docs/engineering.md`](docs/engineering.md) for CI coverage, warning baselines, metrics promotion,
-release packaging, and cluster-only flows.
+## Reproducibility And CI
+
+[`config/dependencies.lock.json`](config/dependencies.lock.json) is the source of truth for
+external repositories, application archives, and Ubuntu 22.04 toolchain bundles. The lock digest
+is part of each build variant, and every download is checksum verified. GitHub Actions pins its
+actions by commit, validates the lock and engineering scripts, and runs pull-request and nightly
+regression matrices.
+
+Every EDA command is recorded with a log and a machine-readable result JSON. The regression
+policy checks warning deltas against committed baselines and collects metrics for later gate
+promotion. Tags matching `v*` produce a flattened SystemVerilog export, source archive, build
+manifest, dependency lock, CycloneDX SBOM, and `SHA256SUMS`. Run `make package` to create the
+same local deliverables under `dist/<variant>/`.
+
+See [`docs/engineering.md`](docs/engineering.md) for supported-flow details, artifact layout,
+warning and metric policy, CI behavior, and release contents.
+
+## Contributing And Security
+
+- Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting changes.
+- Report vulnerabilities according to [`Security.md`](Security.md).
+- Review retained third-party notices in [`NOTICE`](NOTICE) and
+  [`ATTRIBUTIONS.md`](ATTRIBUTIONS.md).
+- The project is distributed under [Mulan PSL v2](LICENSE).
