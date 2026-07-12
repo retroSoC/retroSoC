@@ -11,6 +11,8 @@
 *.ddb
 *.fst
 *.txt
+!requirements/
+!requirements/*.txt
 *.gtkw
 *.vmf
 *.tar.bz2
@@ -20,6 +22,8 @@
 *.rc
 *.aig
 *.so
+*.py[cod]
+__pycache__/
 .vscode
 pic
 video.h
@@ -37,6 +41,9 @@ audio_file.h
 .metals
 .mypy_cache
 .pytest_cache
+/build/
+/.cache/
+/dist/
 .vscode
 retrosoc_sections.lds
 retrosoc_syn*

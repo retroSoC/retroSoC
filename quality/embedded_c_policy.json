@@ -1,0 +1,27 @@
+{
+  "excluded_prefixes": [
+    "app/coremark/coremark-main/",
+    "app/fatfs/ff16/",
+    "app/lvgl/lvgl-main/",
+    "app/middleware/fatfs/ffconf.h",
+    "app/ports/lvgl/",
+    "crt/inc/",
+    "crt/arch/riscv/pico_irq/"
+  ],
+  "compatibility_files": [
+    "crt/include/retrosoc/lib/string.h",
+    "crt/src/lib/string.c",
+    "crt/include/retrosoc/lib/stdlib.h",
+    "crt/src/lib/stdlib.c"
+  ],
+  "forbidden_calls": [
+    "strcpy",
+    "strcat",
+    "strncpy",
+    "sprintf",
+    "vsprintf",
+    "malloc",
+    "free",
+    "atoi"
+  ]
+}

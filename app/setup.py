@@ -1,47 +1,100 @@
-#!/bin/python
+#!/usr/bin/env python3
 
-import os
-
-# Always use the script directory as the base to avoid failures in different working directories
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-APP_DIR = SCRIPT_DIR
-FATFS_DIR = os.path.join(APP_DIR, 'fatfs')
-COREMARK_DIR = os.path.join(APP_DIR, 'coremark')
-LVGL_DIR = os.path.join(APP_DIR, 'lvgl')
-LVGL_NAME = 'v9.4.0.tar.gz'
-
-# print(APP_DIR)
-# print(FATFS_DIR)
-# print(COREMARK_DIR)
+import argparse
+import shutil
+import sys
+from pathlib import Path
+from zipfile import ZipFile
 
 
-def prepend_line(filename, line):
-    with open(filename, 'r') as f:
-        content = f.read()
-    with open(filename, 'w') as f:
-        f.write(line + '\n' + content)
-
-def replace_line(filename, old, new):
-    lines = ''
-    with open(filename, 'r', encoding='utf-8') as fp:
-        for v in fp:
-            if old in v:
-                lines += v.replace(old, new)
-            else:
-                lines += v
-
-    with open(filename, 'w', encoding='utf-8') as fp:
-        fp.writelines(lines)
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from scripts.dependency_lock import archive, source  # noqa: E402
+from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo  # noqa: E402
 
 
-os.system(f'mkdir -p "{FATFS_DIR}"/ff16 && cd "{FATFS_DIR}"/ff16 && if [ -d source ]; then echo "[fatfs] already exists, skip"; else wget https://elm-chan.org/fsw/ff/arc/ff16.zip && unzip -q ff16.zip && echo "[fatfs] downloaded and extracted"; fi')
-os.system(f'cd "{FATFS_DIR}" && cp -rf ffconf.h diskio.c ff16/source/')
-
-os.system(f'git clone https://github.com/eembc/coremark.git {COREMARK_DIR}/coremark-main')
-os.system(f'cd {COREMARK_DIR}/coremark-main && git checkout 1f483d5b8316753a742cbf5590caf5bd0a4e4777')
-os.chdir(f'{COREMARK_DIR}/coremark-main')
-prepend_line('coremark.h', '#include <tinyprintf.h>')
-replace_line('core_main.c', 'main', 'core_main')
+APP_DIR = Path(__file__).resolve().parent
+FATFS_DIR = APP_DIR / "middleware/fatfs"
+COREMARK_DIR = APP_DIR / "coremark/coremark-main"
 
 
-# os.system(f'cd "{LVGL_DIR}" && if ls -1d lvgl-* >/dev/null 2>&1; then echo "[lvgl] already exists, skip"; else wget https://github.com/lvgl/lvgl/archive/refs/tags/{LVGL_NAME} && tar -xf {LVGL_NAME} && echo "[lvgl] downloaded and extracted"; fi')
+def extract_fatfs(archive: Path, destination: Path, *, update: bool) -> None:
+    if update and destination.is_dir():
+        shutil.rmtree(destination)
+    if not destination.is_dir():
+        with ZipFile(archive) as zip_archive:
+            zip_archive.extractall(archive.parent)
+
+
+def patch_fatfs(source: Path) -> None:
+    fatfs_source = source / "ff.c"
+    content = fatfs_source.read_text(encoding="utf-8")
+    original_content = content
+    include = "#include <retrosoc/lib/string.h>"
+    if include not in content:
+        for legacy_include in ("#include <string.h>", "#include <tinystring.h>", "#include <rs_string.h>"):
+            if legacy_include in content:
+                content = content.replace(legacy_include, include)
+                break
+        else:
+            raise RuntimeError(f"FatFs string include missing in {fatfs_source}")
+    if content != original_content:
+        atomic_write(fatfs_source, content)
+
+
+def patch_coremark() -> None:
+    header = COREMARK_DIR / "coremark.h"
+    content = header.read_text(encoding="utf-8")
+    original_content = content
+    include = "#include <retrosoc/lib/printf.h>"
+    for legacy_include in ("#include <tinyprintf.h>", "#include <rs_printf.h>"):
+        if legacy_include in content:
+            content = content.replace(legacy_include, include)
+    if include not in content:
+        marker = '#include "core_portme.h"'
+        if marker not in content:
+            raise RuntimeError(f"CoreMark patch marker missing in {header}")
+        content = content.replace(marker, f"{marker}\n{include}", 1)
+    if content != original_content:
+        atomic_write(header, content)
+
+    source = COREMARK_DIR / "core_main.c"
+    content = source.read_text(encoding="utf-8")
+    if "core_main(" not in content:
+        if "main(" not in content:
+            raise RuntimeError(f"CoreMark entry point not found in {source}")
+        content = content.replace("/* Function: main", "/* Function: core_main", 1)
+        content = content.replace("\nmain(", "\ncore_main(")
+        atomic_write(source, content)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Install pinned application dependencies")
+    parser.add_argument("--update", action="store_true")
+    args = parser.parse_args()
+
+    fatfs = archive("fatfs")
+    fatfs_archive = ROOT / fatfs["destination"]
+    download_file(fatfs["url"], fatfs_archive, fatfs["sha256"], update=args.update)
+    fatfs_source = fatfs_archive.parent / "source"
+    extract_fatfs(fatfs_archive, fatfs_source, update=args.update)
+    patch_fatfs(fatfs_source)
+    for name in ("ffconf.h", "diskio.c"):
+        config_source = FATFS_DIR / name
+        if not config_source.is_file():
+            raise FileNotFoundError(f"FatFs configuration file missing: {config_source}")
+        shutil.copy2(config_source, fatfs_source / name)
+
+    coremark = source("coremark")
+    ensure_git_repo(
+        coremark["url"], ROOT / coremark["destination"], coremark["revision"],
+        update=args.update,
+        allow_dirty=True,
+    )
+    patch_coremark()
+    print("application dependencies are ready")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "mode": "observe",
+  "required_baseline_samples": 10,
+  "maximum_growth": {
+    "firmware.retrosoc_fw.bin.bytes": 0.05,
+    "synthesis.top_area": 0.03,
+    "synthesis.top_cells": 0.03
+  },
+  "maximum_wns_regression": 0.05,
+  "tns_policy": "report_only"
+}

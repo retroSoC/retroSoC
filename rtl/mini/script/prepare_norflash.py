@@ -1,39 +1,55 @@
-#!/bin/python
+#!/usr/bin/env python3
 
-import sys
-import os
+from __future__ import annotations
 
-sim_dir = { 'sim': 'behv', 'netsim': 'netl', 'postsim': 'post' }
-tgt  = sys.argv[1]
-
-SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
-MINI_DIR    = os.path.abspath(f'{SCRIPT_DIR}/..')
-ROOT_DIR    = os.path.abspath(f'{MINI_DIR}/../..')
-NORLASH_DIR = os.path.abspath(f'{MINI_DIR}/../ip/3rd-party/norflash')
-SIM_DIR     = os.path.abspath(f'{MINI_DIR}/.iverilog_build/{sim_dir[tgt]}')
+import argparse
+import shutil
+from pathlib import Path
 
 
-# check 
-check_files = ['SECSI', 'SFDP', 'SREG', 'MEM']
+SCRIPT_DIR = Path(__file__).resolve().parent
+MINI_DIR = SCRIPT_DIR.parent
+ROOT_DIR = MINI_DIR.parent.parent
+DEFAULT_MODELS = MINI_DIR.parent / "ip" / "3rd-party" / "norflash"
+DEFAULT_FIRMWARE = ROOT_DIR / ".sw_build" / "retrosoc_fw.hex"
 
-try:
-    dir_file_list = [
-        fname for fname in os.listdir(SIM_DIR)
-        if os.path.isfile(os.path.join(SIM_DIR, fname))
-    ]
-    
-    missing_files = []
-    for fname in check_files:
-        if f'{fname}.TXT' not in dir_file_list:
-            missing_files.append(fname)
-    
-    if not missing_files:
-        print(f'contains all files')
-    else:
-        os.system(f'cp -rf {NORLASH_DIR}/*.TXT {SIM_DIR}')
-        os.system(f'ln -sf {ROOT_DIR}/.sw_build/retrosoc_fw.hex {SIM_DIR}/MEM.TXT')
-  
-except PermissionError:
-    print(f"ERROR: {SIM_DIR} has not permission")
-except Exception as e:
-    print(f"ERROR: unknown {str(e)}")
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Prepare NOR Flash simulation files")
+    parser.add_argument("--sim-dir", type=Path, required=True)
+    parser.add_argument("--models-dir", type=Path, default=DEFAULT_MODELS)
+    parser.add_argument("--firmware", type=Path, default=DEFAULT_FIRMWARE)
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    sim_dir = args.sim_dir.resolve()
+    models_dir = args.models_dir.resolve()
+    firmware = args.firmware.resolve()
+    sim_dir.mkdir(parents=True, exist_ok=True)
+
+    model_names = ("SECSI.TXT", "SFDP.TXT", "SREG.TXT")
+    missing_models = [name for name in model_names if not (models_dir / name).is_file()]
+    if missing_models:
+        raise FileNotFoundError(
+            f"NOR Flash model files missing in {models_dir}: {', '.join(missing_models)}"
+        )
+    if not firmware.is_file():
+        raise FileNotFoundError(
+            f"firmware image not found: {firmware}; run 'make firmware' first"
+        )
+
+    for name in model_names:
+        shutil.copy2(models_dir / name, sim_dir / name)
+
+    memory = sim_dir / "MEM.TXT"
+    if memory.is_symlink() or memory.exists():
+        memory.unlink()
+    memory.symlink_to(firmware)
+    print(f"prepared NOR Flash files in {sim_dir}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

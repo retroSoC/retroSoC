@@ -1,0 +1,42 @@
+{
+  "entries": [
+    {
+      "count": 2,
+      "example": "CMPCONST:$ROOT/rtl/ip/native/spisd_write.sv:<line>: Comparison is constant due to limited range",
+      "signature": "11b9d285d4747e4f"
+    },
+    {
+      "count": 1,
+      "example": "SPECIFYIGN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x64_c2_bm_bist.v:<line>: Ignoring unsupported: specify block construct",
+      "signature": "7a759d6e07651fd8"
+    },
+    {
+      "count": 68,
+      "example": "SPECIFYIGN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v:<line>: Ignoring unsupported: specify block construct",
+      "signature": "c54331448f63ac73"
+    },
+    {
+      "count": 3,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
+      "signature": "cdd5c3ca84a609c6"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/ip/native/xpi.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_xpi_if.io_di_i'",
+      "signature": "ee29e23bc895ee17"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
+      "signature": "f8f8278c6ce4431d"
+    },
+    {
+      "count": 11,
+      "example": "SPECIFYIGN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/verilog/sg13g2_io.v:<line>: Ignoring unsupported: specify block construct",
+      "signature": "faa191e2dbf4a242"
+    }
+  ],
+  "profile": "picorv32-rv32im-ihp130",
+  "schema_version": 1,
+  "tool": "verilator"
+}

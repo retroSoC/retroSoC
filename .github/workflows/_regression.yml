@@ -1,0 +1,103 @@
+name: reusable regression
+
+on:
+  workflow_call:
+    inputs:
+      suite:
+        description: Regression suite from scripts/regress.py
+        required: true
+        type: string
+      retention_days:
+        description: Report artifact retention
+        required: false
+        default: 30
+        type: number
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Restore locked source dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            app/coremark/coremark-main
+            app/fatfs/ff16
+            pdk/IHP-Open-PDK
+            rtl/clusterip/archinfo
+            rtl/clusterip/clint
+            rtl/clusterip/common
+            rtl/clusterip/crc
+            rtl/clusterip/i2c
+            rtl/clusterip/i2s
+            rtl/clusterip/plic
+            rtl/clusterip/ps2
+            rtl/clusterip/pwm
+            rtl/clusterip/rng
+            rtl/clusterip/rtc
+            rtl/clusterip/spi
+            rtl/clusterip/timer
+            rtl/clusterip/uart
+            rtl/clusterip/wdg
+            rtl/ip/3rd-party
+            rtl/mini/mpw
+            .cache/retrosoc/stamps
+          key: sources-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+
+      - name: Restore locked toolchains
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            .cache/retrosoc/downloads
+            .cache/retrosoc/toolchains
+          key: tools-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+
+      - name: Restore Verilator compiler cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: .cache/retrosoc/ccache
+          key: ccache-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}-${{ github.sha }}-
+            ccache-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}-
+
+      - name: Install build Python dependency
+        run: python3 -m pip install --requirement requirements/build.txt
+
+      - name: Set up locked EDA and compiler tools
+        uses: ./.github/actions/locked-tools
+        with:
+          tools: verilator sv2v iverilog yosys opensta riscv_gnu
+
+      - name: Set up locked source dependencies
+        run: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk setup
+
+      - name: Check environment
+        run: |
+          make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk \
+            SIMU=IVERILOG SYNTH=YOSYS STA=OPENSTA doctor
+          make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR doctor
+
+      - name: Run ${{ inputs.suite }} regression
+        run: python3 scripts/regress.py --root . --suite "${{ inputs.suite }}"
+
+      - name: Upload reports and structured results
+        if: always()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808  # v4.3.3
+        with:
+          name: ${{ inputs.suite }}-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/**/meta/*.json
+            build/**/*.log
+            build/**/*.rpt
+          if-no-files-found: warn
+          retention-days: ${{ inputs.retention_days }}

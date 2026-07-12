@@ -12,6 +12,9 @@ set variables {
     vlog_files  { VLOG_FILES               ""                       }
     sv_flist    { SV_FLIST                 ""                       }
     pdk         { PDK                      ""                       }
+    soc         { SOC                      ""                       }
+    core        { CORE                     ""                       }
+    ip          { IP                       ""                       }
     top_design  { TOP_DESIGN               ""                       }
     hier_depth  { HIER_DEPTH               0                        }
     period_ps   { YOSYS_TARGET_PERIOD_PS   5000                     }
@@ -20,6 +23,7 @@ set variables {
     work_dir    { WORK                     "[set dir [pwd]]/WORK"   }
     report_dir  { REPORTS                  "[set dir [pwd]]/report" }
     netlist     { NETLIST                  ""                       }
+    config      { CONFIG                   ""                       }
 }
 
 # either use env-var or default to fallback
@@ -39,6 +43,9 @@ foreach var [dict keys $variables] {
 
 if {[string eq $netlist ""]} {
     set netlist ${build_dir}/${top_design}_netlist.v
+}
+if {[string eq $config ""]} {
+    set config ${netlist}.config
 }
 
 proc envVarValid {var_name} {

@@ -1,24 +1,33 @@
-#!/bin/python
+#!/usr/bin/env python3
 
-import sys
-import os
+from __future__ import annotations
+
+import argparse
 from pathlib import Path
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MINI_DIR   = os.path.abspath(f'{SCRIPT_DIR}/..')
-GEN_DIR    = os.path.abspath(f'{MINI_DIR}/.generated_fl')
+from filelist import parse_filelists, write_filelist
 
-res = f'{GEN_DIR}/yosys.fl'
-is_first = True
 
-for v in sys.argv[1:]:
-    if '-f' not in v:
-        if 'pdk' in v: continue
+DEFAULT_OUTPUT = Path(__file__).resolve().parent.parent / ".generated_fl" / "yosys.fl"
 
-        print(f'gen code: {v}')
 
-        if is_first:
-            os.system(f'cat {v} > {res}')
-            is_first = False
-        else:
-            os.system(f'cat {v} >> {res}')
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Combine synthesis filelists")
+    parser.add_argument("-f", "--filelist", action="append", type=Path, default=[])
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    selected = [path for path in args.filelist if not path.name.startswith("pdk_")]
+    if not selected:
+        raise SystemExit("at least one non-PDK -f/--filelist is required")
+    combined = parse_filelists(selected)
+    write_filelist(args.output.resolve(), combined)
+    print(f"generated synthesis filelist: {args.output.resolve()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

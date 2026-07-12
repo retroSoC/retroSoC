@@ -9,9 +9,11 @@ OBJCOPY = $(GCC)objcopy
 AS_FLAGS = -fno-pic -march=rv32im -mabi=ilp32
 LDFLAGS  = -T flash.ld -melf32lriscv
 APP ?= hello
-APP_ALL = $(APP)-asm
+OUT_DIR ?= .
+APP_ALL = $(OUT_DIR)/$(APP)-asm
 
 all: $(APP).s
+	@mkdir -p $(OUT_DIR)
 	$(AS) $(AS_FLAGS) $(APP).s -o $(APP_ALL).o
 	$(LD) $(LDFLAGS) $(APP_ALL).o -o $(APP_ALL).elf
 	$(OBJDUMP) -d $(APP_ALL).elf > $(APP_ALL).txt

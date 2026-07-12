@@ -1,0 +1,71 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  source-package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Restore locked source dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            app/coremark/coremark-main
+            app/fatfs/ff16
+            pdk/IHP-Open-PDK
+            rtl/clusterip/archinfo
+            rtl/clusterip/clint
+            rtl/clusterip/common
+            rtl/clusterip/crc
+            rtl/clusterip/i2c
+            rtl/clusterip/i2s
+            rtl/clusterip/plic
+            rtl/clusterip/ps2
+            rtl/clusterip/pwm
+            rtl/clusterip/rng
+            rtl/clusterip/rtc
+            rtl/clusterip/spi
+            rtl/clusterip/timer
+            rtl/clusterip/uart
+            rtl/clusterip/wdg
+            rtl/ip/3rd-party
+            rtl/mini/mpw
+            .cache/retrosoc/stamps
+          key: sources-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+
+      - name: Install build Python dependency
+        run: python3 -m pip install --requirement requirements/build.txt
+
+      - name: Set up locked source dependencies
+        run: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk setup
+
+      - name: Build checksummed source package and SBOM
+        run: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk package
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808  # v4.3.3
+        with:
+          name: retrosoc-${{ github.ref_name }}
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish GitHub release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release create "${GITHUB_REF_NAME}" --generate-notes --verify-tag
+          fi
+          mapfile -d '' files < <(find dist -type f -print0)
+          gh release upload "${GITHUB_REF_NAME}" "${files[@]}" --clobber

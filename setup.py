@@ -1,8 +1,26 @@
 #!/usr/bin/env python3
 
-import sys
-import os
+import argparse
+from pathlib import Path
 
-project_path = os.getcwd()
-os.chdir(project_path)
-os.system("git clone https://github.com/retroSoC/mini-ver-mpw.git rtl/mini/mpw")
+from scripts.dependency_lock import source
+from scripts.setup_helpers import ensure_git_repo
+
+
+ROOT = Path(__file__).resolve().parent
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Install the pinned MPW generator")
+    parser.add_argument("--update", action="store_true")
+    args = parser.parse_args()
+    dependency = source("mpw")
+    ensure_git_repo(
+        dependency["url"], ROOT / dependency["destination"], dependency["revision"],
+        recursive=dependency.get("recursive", False), update=args.update,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

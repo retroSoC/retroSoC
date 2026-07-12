@@ -1,7 +1,7 @@
-BUILD_DIR         := $(RTL_PATH)/.verilator_build
+BUILD_DIR         := $(SIM_BUILD_ROOT)
 SOC_CSRC_HOME     += $(RTL_PATH)/csrc
 SOC_CSRC_LIB_HOME += $(RTL_PATH)/csrc
-SOC_CXXFILES      += $(shell find $(SOC_CSRC_HOME) -name "*.cpp")
+SOC_CXXFILES      += $(sort $(wildcard $(SOC_CSRC_HOME)/*.cpp))
 SOC_CSRC_INCLPATH += -I$(SOC_CSRC_HOME)
 SOC_CSRC_INCLPATH += $(foreach val, $(SOC_CSRC_LIB_HOME), -I$(val))
 
@@ -18,7 +18,9 @@ SOC_VXXFILES      += $(RTL_PATH)/vsrc/QSPIFlash.sv
 SOC_VXXFILES      += $(RTL_PATH)/vsrc/retrosoc_top.sv
 SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
 
-VERILATOR_CXXFLAGS += -std=c++17 -static -Wall $(SOC_CSRC_INCLPATH) -DDUMP_WAVE_FST
+VERILATOR          ?= verilator
+VERILATOR_JOBS     ?= $(JOBS)
+VERILATOR_CXXFLAGS += -std=c++17 -Wall $(SOC_CSRC_INCLPATH) -DDUMP_WAVE_FST
 VERILATOR_FLAGS    += --cc --exe --no-timing --top-module $(SOC_VSRC_TOP)
 VERILATOR_FLAGS    += --x-assign unique -O3 -CFLAGS "$(VERILATOR_CXXFLAGS)"
 VERILATOR_FLAGS    += --trace-fst --assert --stats-vars --output-split 30000 --output-split-cfuncs 30000
@@ -27,28 +29,61 @@ VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
 VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
 VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
 
-SOC_SIM_TIME ?= -1
+SOC_SIM_TIME ?= 40
+VERILATOR_STAMP := $(BUILD_DIR)/verilate.stamp
+VERILATOR_DEPFILE := $(BUILD_DIR)/verilate.d
+VERILATOR_EMU := $(BUILD_DIR)/emu
+VERILATOR_EXTRA_SOURCES := $(RTL_PATH)/../ip/tb/ESP_PSRAM64H.sv \
+                           $(RTL_PATH)/vsrc/flash_read_binder.sv \
+                           $(RTL_PATH)/vsrc/QSPIFlash.sv \
+                           $(RTL_PATH)/vsrc/retrosoc_top.sv \
+                           $(SOC_CXXFILES) $(wildcard $(SOC_CSRC_HOME)/*.h) \
+                           $(wildcard $(SOC_CSRC_HOME)/*.hpp)
 
-CCACHE := $(if $(shell which ccache),ccache,)
+-include $(VERILATOR_DEPFILE)
+
+CCACHE := $(shell command -v ccache 2>/dev/null)
 ifneq ($(CCACHE),)
 export OBJCACHE = ccache
+export CCACHE_DIR = $(CACHE_ROOT)/ccache/verilator
+export CCACHE_TEMPDIR = $(CACHE_ROOT)/ccache/verilator/tmp
 endif
 
-lint: gen_mpw_code generate_filelist
+$(VERILATOR_STAMP): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
 	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(CCACHE_TEMPDIR)
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator \
+		--log $(BUILD_DIR)/verilating.log --result $(BUILD_DIR)/result-verilate.json \
+		-- $(VERILATOR) $(VERILATOR_FLAGS)
+	python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) \
+		$(foreach source,$(VERILATOR_EXTRA_SOURCES),--extra $(source)) \
+		--target $@ --output $(VERILATOR_DEPFILE)
+	@touch $@
 
-comp: lint 
-# verilator $(VERILATOR_FLAGS)
-	verilator $(VERILATOR_FLAGS) > $(BUILD_DIR)/verilating.log 2>&1
-	$(MAKE) VM_PARALLEL_BUILDS=1 OPT_FAST="-O3" -C $(SOC_COMPILE_HOME) -f V$(SOC_VSRC_TOP).mk -j$(nproc) > $(BUILD_DIR)/compile.log 2>&1
+$(VERILATOR_EMU): $(VERILATOR_STAMP)
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-compile \
+		--log $(BUILD_DIR)/compile.log --result $(BUILD_DIR)/result-compile.json \
+		-- make -j$(VERILATOR_JOBS) VM_PARALLEL_BUILDS=1 OPT_FAST=-O3 -C $(SOC_COMPILE_HOME) \
+		-f V$(SOC_VSRC_TOP).mk
+
+lint: $(VERILATOR_STAMP)
+comp: $(VERILATOR_EMU)
 
 sim: comp
-	$(BUILD_DIR)/emu -i .sw_build/retrosoc_fw.bin -s $(RTL_SIM_CORESEL) -t 40
+	@test -f $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin || { \
+		echo "firmware image missing; run 'make firmware' first" >&2; exit 1; }
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-sim \
+		--log $(BUILD_DIR)/sim.log --result $(BUILD_DIR)/result-sim.json \
+		--cwd $(BUILD_DIR) -- $(BUILD_DIR)/emu -i $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin \
+		-s $(RTL_SIM_CORESEL) -t $(SOC_SIM_TIME)
+	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(BUILD_DIR)/sim.log \
+		--result $(BUILD_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
+
+comp sim: | manifest
 
 wave:
 
 clean:
-	rm -rf .verilator_build
+	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(BUILD_DIR)
 
 .PHONY: comp sim clean
-

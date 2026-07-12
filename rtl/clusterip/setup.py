@@ -1,10 +1,32 @@
-#!/bin/python
+#!/usr/bin/env python3
 
-import os
+import argparse
+import sys
+from pathlib import Path
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-ip = ['archinfo', 'clint', 'common', 'crc', 'i2c', 'i2s', 'plic', 'ps2', 'pwm', 'rng', 'rtc', 'spi', 'timer', 'uart', 'wdg']
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.dependency_lock import load_lock  # noqa: E402
+from scripts.setup_helpers import ensure_git_repo  # noqa: E402
 
-for v in ip:
-    os.system(f'git clone https://github.com/retroSoC/{v}.git {SCRIPT_DIR}/{v}')
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Install pinned cluster IP repositories")
+    parser.add_argument("--update", action="store_true")
+    args = parser.parse_args()
+    dependencies = load_lock()["sources"]
+    for name in sorted(item for item in dependencies if item.startswith("cluster_")):
+        dependency = dependencies[name]
+        ensure_git_repo(
+            dependency["url"],
+            ROOT / dependency["destination"],
+            dependency["revision"],
+            recursive=dependency.get("recursive", False),
+            update=args.update,
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
