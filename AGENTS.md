@@ -31,7 +31,7 @@ and validation boundary.
 
 | Directory | Guide | Role |
 | --- | --- | --- |
-| `.github/` | [.github/README.md](.github/README.md) | CI, release automation, reusable actions, and ownership metadata. |
+| `.github/` | [.github/GUIDE.md](.github/GUIDE.md) | CI, release automation, reusable actions, and ownership metadata. |
 | `app/` | [app/README.md](app/README.md) | Firmware applications and integrations. |
 | `config/` | [config/README.md](config/README.md) | Locked external inputs and checksums. |
 | `configs/` | [configs/README.md](configs/README.md) | Reproducible build profiles. |

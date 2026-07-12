@@ -521,19 +521,59 @@ def test_ci_actions_are_pinned_to_commits() -> None:
         assert re.fullmatch(r"[^@]+@[0-9a-f]{40}", value), f"unpinned action in {path}: {value}"
 
 
+HASH_LOCKED_REQUIREMENT = re.compile(
+    r"[^\s=]+==[^\s]+(?:\s+--hash=sha256:[0-9a-f]{64})+"
+)
+
+
+def hash_locked_requirement_lines(content: str) -> list[str]:
+    logical_content = re.sub(r"\\\r?\n[ \t]*", " ", content)
+    return [
+        line.strip()
+        for line in logical_content.splitlines()
+        if line.strip() and not line.lstrip().startswith(("#", "--"))
+    ]
+
+
 def test_python_requirements_are_hash_locked() -> None:
     for path in sorted((ROOT / "requirements").glob("*.txt")):
         content = path.read_text(encoding="utf-8")
         assert "--require-hashes" in content
         assert "--only-binary=:all:" in content
-        requirements = [
-            line for line in content.splitlines() if line and not line.startswith(("#", "--"))
-        ]
+        requirements = hash_locked_requirement_lines(content)
         assert requirements
         for requirement in requirements:
-            assert re.search(r"==[^ ]+ --hash=sha256:[0-9a-f]{64}$", requirement), (
+            assert HASH_LOCKED_REQUIREMENT.fullmatch(requirement), (
                 f"unlocked requirement in {path}: {requirement}"
             )
+
+
+def test_python_requirement_hash_validation_accepts_multiple_hashes() -> None:
+    first_hash = "a" * 64
+    second_hash = "b" * 64
+    requirements = hash_locked_requirement_lines(
+        "--only-binary=:all:\n"
+        "--require-hashes\n"
+        "ruff==0.15.21 \\\n"
+        f"  --hash=sha256:{first_hash} \\\n"
+        f"  --hash=sha256:{second_hash}\n"
+    )
+
+    assert len(requirements) == 1
+    assert HASH_LOCKED_REQUIREMENT.fullmatch(requirements[0])
+
+
+def test_python_requirement_hash_validation_rejects_unlocked_entries() -> None:
+    valid_hash = "a" * 64
+    invalid_requirements = (
+        "ruff>=0.15.21 --hash=sha256:" + valid_hash,
+        "ruff==0.15.21",
+        "ruff==0.15.21 --hash=sha256:" + "a" * 63,
+        "ruff==0.15.21 --hash=sha256:" + valid_hash + " --extra",
+    )
+
+    for requirement in invalid_requirements:
+        assert not HASH_LOCKED_REQUIREMENT.fullmatch(requirement)
 
 
 def test_clean_all_stays_within_repository(tmp_path: Path) -> None:

@@ -16,7 +16,10 @@ from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 PR_COMMANDS = (
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
     ("configs/ci/hazard3-rv32im-ihp130-shell.mk", ("firmware",)),
-    ("configs/ci/mdd-rv32im-ihp130.mk", ("SIMU=VERILATOR", "firmware", "sim")),
+    (
+        "configs/ci/mdd-rv32im-ihp130.mk",
+        ("SIMU=VERILATOR", "SOC_SIM_TIME=120", "firmware", "sim"),
+    ),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=VERILATOR", "sim")),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("SYNTH=YOSYS", "synth")),
