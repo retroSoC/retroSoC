@@ -35,6 +35,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 | [`pdk/`](pdk) | PDK setup entry points and technology-specific integration. |
 | [`syn/`](syn) and [`sta/`](sta) | Synthesis and static timing analysis flows. |
 | [`scripts/`](scripts) and [`quality/`](quality) | Build helpers, regression orchestration, checks, warning baselines, and metric policy. |
+| [`.github/`](.github) | GitHub automation, Dependabot configuration, and CI/release workflows; see [`GUIDE.md`](.github/GUIDE.md). |
 | [`docs/`](docs) | Engineering workflow and release-process documentation. |
 
 ## Supported Configurations
