@@ -1,11 +1,6 @@
 ENTRY( _start )
 
-MEMORY
-{
-    FLASH (rxai!w) : ORIGIN = 0x00000000, LENGTH = 16M
-    SRAM  (wxa!ri) : ORIGIN = 0x30000000, LENGTH = 128K
-    PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 8M
-}
+INCLUDE memory_regions.ld
 
 SECTIONS {
     .init :

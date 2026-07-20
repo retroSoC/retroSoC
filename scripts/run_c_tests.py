@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -37,7 +38,20 @@ def main() -> int:
 
     root = args.root.resolve()
     with tempfile.TemporaryDirectory(prefix="retrosoc-c-tests-") as temporary_directory:
-        executable = Path(temporary_directory) / "runtime_tests"
+        temporary_root = Path(temporary_directory)
+        memory_map_root = temporary_root / "memory_map"
+        subprocess.run(
+            [
+                sys.executable,
+                str(root / "rtl/mini/script/generate_memory_map.py"),
+                "--map",
+                str(root / "rtl/mini/memory_map.json"),
+                "--output-dir",
+                str(memory_map_root),
+            ],
+            check=True,
+        )
+        executable = temporary_root / "runtime_tests"
         command = [
             compiler,
             "-std=c11",
@@ -45,6 +59,8 @@ def main() -> int:
             "-Wextra",
             "-Werror",
             "-fno-builtin",
+            "-I",
+            str(memory_map_root / "include"),
             "-I",
             str(root / "crt/include"),
             "-I",

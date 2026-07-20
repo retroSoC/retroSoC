@@ -67,6 +67,10 @@ module retrosoc (
   logic [31:0] s_irq;
   logic [ 9:0] s_nmi_irq;
   logic [ 6:0] s_apb_irq;
+  logic        s_bus_fault_valid;
+  logic [31:0] s_bus_fault_addr;
+  logic [ 3:0] s_bus_fault_wstrb;
+  logic        s_bus_fault_reserved;
 
 `ifdef CORE_MDD
   assign u_sysctrl_if.core_sel_i = core_sel_i;
@@ -371,42 +375,50 @@ module retrosoc (
 
 
   bus u_bus (
-      .clk_i   (clk_i),
-      .rst_n_i (rst_n_i),
+      .clk_i           (clk_i),
+      .rst_n_i         (rst_n_i),
 `ifdef HAVE_SRAM_IF
-      .ram     (ram),
+      .ram             (ram),
 `endif
       // master
-      .core_nmi(u_core_nmi_if),
-      .dma_nmi (u_dma_nmi_if),
+      .core_nmi        (u_core_nmi_if),
+      .dma_nmi         (u_dma_nmi_if),
       // slave
-      .natv_nmi(u_nmi_nmi_if),
-      .apb_nmi (u_apb_nmi_if)
+      .natv_nmi        (u_nmi_nmi_if),
+      .apb_nmi         (u_apb_nmi_if),
+      .fault_valid_o   (s_bus_fault_valid),
+      .fault_addr_o    (s_bus_fault_addr),
+      .fault_wstrb_o   (s_bus_fault_wstrb),
+      .fault_reserved_o(s_bus_fault_reserved)
   );
 
 
   ip_nmi_wrapper u_ip_nmi_wrapper (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .clk_aud_i  (clk_aud_i),
-      .rst_aud_n_i(rst_aud_n_i),
-      .nmi        (u_nmi_nmi_if),
-      .gpio       (u_gpio_if),
-      .uart       (uart0),
-      .psram      (u_psram_if),
-      .spisd      (u_spisd_if),
-      .i2c0       (u_i2c0_if),
-      .i2s        (u_i2s_if),
-      .onewire    (u_onewire_if),
-      .xpi        (xpi),
-      .dma_nmi    (u_dma_nmi_if),
-      .sysctrl    (u_sysctrl_if),
-      .sdram      (sdram),
-      .dvp        (u_dvp_if),
-      .sdio       (u_sdio_if),
-      .opipsram   (u_opipsram_if),
-      .i2c1       (u_i2c1_if),
-      .irq_o      (s_nmi_irq)
+      .clk_i           (clk_i),
+      .rst_n_i         (rst_n_i),
+      .clk_aud_i       (clk_aud_i),
+      .rst_aud_n_i     (rst_aud_n_i),
+      .nmi             (u_nmi_nmi_if),
+      .gpio            (u_gpio_if),
+      .uart            (uart0),
+      .psram           (u_psram_if),
+      .spisd           (u_spisd_if),
+      .i2c0            (u_i2c0_if),
+      .i2s             (u_i2s_if),
+      .onewire         (u_onewire_if),
+      .xpi             (xpi),
+      .dma_nmi         (u_dma_nmi_if),
+      .sysctrl         (u_sysctrl_if),
+      .sdram           (sdram),
+      .dvp             (u_dvp_if),
+      .sdio            (u_sdio_if),
+      .opipsram        (u_opipsram_if),
+      .i2c1            (u_i2c1_if),
+      .fault_valid_i   (s_bus_fault_valid),
+      .fault_addr_i    (s_bus_fault_addr),
+      .fault_wstrb_i   (s_bus_fault_wstrb),
+      .fault_reserved_i(s_bus_fault_reserved),
+      .irq_o           (s_nmi_irq)
   );
 
 

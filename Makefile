@@ -178,6 +178,8 @@ help:
 	  '  setup                      install pinned external dependencies' \
 	  '  doctor                     check tools, paths, and selected configuration' \
 	  '  config | manifest          print/write the effective configuration' \
+	  '  memory-map                 generate the selected address-map artifacts' \
+	  '  check-memory-map           validate the canonical address map' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
 	  '  sw-format                  apply clang-format to self-owned embedded C code' \

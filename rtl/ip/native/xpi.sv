@@ -107,7 +107,7 @@ module nmi_xpi (
 
 
   // nmi mux
-  assign s_xpi_mm_sel       = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `XPI_MEM_START;
+  assign s_xpi_mm_sel       = `SOC_ADDR_IS_FLASH(nmi.addr) || `SOC_ADDR_IS_XPI(nmi.addr);
   assign u_reg_nmi_if.valid = nmi.valid && (~s_xpi_mm_sel);
   assign u_reg_nmi_if.addr  = nmi.addr;
   assign u_reg_nmi_if.wdata = nmi.wdata;

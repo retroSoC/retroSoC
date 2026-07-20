@@ -69,15 +69,15 @@ module nmi2apb (
   assign crc.pprot        = '0;
   assign tmr.pprot        = '0;
 
-  assign archinfo.psel    = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_ARCHINFO_START);
-  assign rng.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RNG_START);
-  assign uart.psel        = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_UART_START);
-  assign pwm.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PWM_START);
-  assign ps2.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PS2_START);
-  assign rtc.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RTC_START);
-  assign wdg.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_WDG_START);
-  assign crc.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_CRC_START);
-  assign tmr.psel         = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_TMR_START);
+  assign archinfo.psel    = s_xfer_valid && `SOC_ADDR_IS_APB_ARCHINFO(nmi.addr);
+  assign rng.psel         = s_xfer_valid && `SOC_ADDR_IS_APB_RNG(nmi.addr);
+  assign uart.psel        = s_xfer_valid && `SOC_ADDR_IS_APB_UART1(nmi.addr);
+  assign pwm.psel         = s_xfer_valid && `SOC_ADDR_IS_APB_PWM(nmi.addr);
+  assign ps2.psel         = s_xfer_valid && `SOC_ADDR_IS_APB_PS2(nmi.addr);
+  assign rtc.psel         = s_xfer_valid && `SOC_ADDR_IS_APB_RTC(nmi.addr);
+  assign wdg.psel         = s_xfer_valid && `SOC_ADDR_IS_APB_WDG(nmi.addr);
+  assign crc.psel         = s_xfer_valid && `SOC_ADDR_IS_APB_CRC(nmi.addr);
+  assign tmr.psel         = s_xfer_valid && `SOC_ADDR_IS_APB_TMR(nmi.addr);
 
   assign archinfo.penable = s_fsm_q == FSM_ENAB;
   assign rng.penable      = s_fsm_q == FSM_ENAB;
@@ -122,7 +122,7 @@ module nmi2apb (
 `ifdef IP_MDD
   assign user_ip.paddr    = nmi.addr;
   assign user_ip.pprot    = '0;
-  assign user_ip.psel     = s_xfer_valid && (nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_USR_START);
+  assign user_ip.psel     = s_xfer_valid && `SOC_ADDR_IS_APB_USER_IP(nmi.addr);
   assign user_ip.penable  = s_fsm_q == FSM_ENAB;
   assign user_ip.pwrite   = |nmi.wstrb;
   assign user_ip.pwdata   = nmi.wdata;
@@ -161,17 +161,17 @@ module nmi2apb (
 
   // Capture slave-select one-hot at FSM_SETP for cleaner response mux
   // verilog_format: off
-  assign s_psel_comb[0] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_ARCHINFO_START;
-  assign s_psel_comb[1] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RNG_START;
-  assign s_psel_comb[2] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_UART_START;
-  assign s_psel_comb[3] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PWM_START;
-  assign s_psel_comb[4] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_PS2_START;
-  assign s_psel_comb[5] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_RTC_START;
-  assign s_psel_comb[6] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_WDG_START;
-  assign s_psel_comb[7] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_CRC_START;
-  assign s_psel_comb[8] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_TMR_START;
+  assign s_psel_comb[0] = `SOC_ADDR_IS_APB_ARCHINFO(nmi.addr);
+  assign s_psel_comb[1] = `SOC_ADDR_IS_APB_RNG(nmi.addr);
+  assign s_psel_comb[2] = `SOC_ADDR_IS_APB_UART1(nmi.addr);
+  assign s_psel_comb[3] = `SOC_ADDR_IS_APB_PWM(nmi.addr);
+  assign s_psel_comb[4] = `SOC_ADDR_IS_APB_PS2(nmi.addr);
+  assign s_psel_comb[5] = `SOC_ADDR_IS_APB_RTC(nmi.addr);
+  assign s_psel_comb[6] = `SOC_ADDR_IS_APB_WDG(nmi.addr);
+  assign s_psel_comb[7] = `SOC_ADDR_IS_APB_CRC(nmi.addr);
+  assign s_psel_comb[8] = `SOC_ADDR_IS_APB_TMR(nmi.addr);
 `ifdef IP_MDD
-  assign s_psel_comb[9] = nmi.addr[31:28] == `APB_IP_START && nmi.addr[15:8] == `APB_USR_START;
+  assign s_psel_comb[9] = `SOC_ADDR_IS_APB_USER_IP(nmi.addr);
 `endif
 
   assign s_psel_d = (s_fsm_q == FSM_IDLE && s_mem_valid_re) ? s_psel_comb : s_psel_q;

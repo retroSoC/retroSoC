@@ -52,7 +52,7 @@ icsprout55-pdk
 IHP-Open-PDK
 skywater-pdk
 gf180mcu-pdk
-demo
+demo*
 dont_use_cell_*
 clusterip
 nanoV

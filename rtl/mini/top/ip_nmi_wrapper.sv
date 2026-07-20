@@ -34,6 +34,10 @@ module ip_nmi_wrapper (
     sdio_if.dut        sdio,
     opipsram_if.dut    opipsram,
     i2c_if.dut         i2c1,
+    input logic        fault_valid_i,
+    input logic [31:0] fault_addr_i,
+    input logic [3:0]  fault_wstrb_i,
+    input logic        fault_reserved_i,
     // irq
     output logic [9:0] irq_o
     // verilog_format: on
@@ -83,107 +87,104 @@ module ip_nmi_wrapper (
   assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
   assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
   // gpio
-  assign u_gpio_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_GPIO_START);
-  assign u_gpio_nmi_if.addr      = nmi.addr;
-  assign u_gpio_nmi_if.wdata     = nmi.wdata;
-  assign u_gpio_nmi_if.wstrb     = nmi.wstrb;
+  assign u_gpio_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_GPIO(nmi.addr);
+  assign u_gpio_nmi_if.addr = nmi.addr;
+  assign u_gpio_nmi_if.wdata = nmi.wdata;
+  assign u_gpio_nmi_if.wstrb = nmi.wstrb;
   // uart
-  assign u_uart_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_UART_START);
-  assign u_uart_nmi_if.addr      = nmi.addr;
-  assign u_uart_nmi_if.wdata     = nmi.wdata;
-  assign u_uart_nmi_if.wstrb     = nmi.wstrb;
+  assign u_uart_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_UART0(nmi.addr);
+  assign u_uart_nmi_if.addr = nmi.addr;
+  assign u_uart_nmi_if.wdata = nmi.wdata;
+  assign u_uart_nmi_if.wstrb = nmi.wstrb;
   // tim0
-  assign u_tim0_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_TIM0_START);
-  assign u_tim0_nmi_if.addr      = nmi.addr;
-  assign u_tim0_nmi_if.wdata     = nmi.wdata;
-  assign u_tim0_nmi_if.wstrb     = nmi.wstrb;
+  assign u_tim0_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_TIM0(nmi.addr);
+  assign u_tim0_nmi_if.addr = nmi.addr;
+  assign u_tim0_nmi_if.wdata = nmi.wdata;
+  assign u_tim0_nmi_if.wstrb = nmi.wstrb;
   // tim1
-  assign u_tim1_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_TIM1_START);
-  assign u_tim1_nmi_if.addr      = nmi.addr;
-  assign u_tim1_nmi_if.wdata     = nmi.wdata;
-  assign u_tim1_nmi_if.wstrb     = nmi.wstrb;
+  assign u_tim1_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_TIM1(nmi.addr);
+  assign u_tim1_nmi_if.addr = nmi.addr;
+  assign u_tim1_nmi_if.wdata = nmi.wdata;
+  assign u_tim1_nmi_if.wstrb = nmi.wstrb;
   // psram
-  assign s_psram_cfg_sel         = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_PSRAM_START;
-  assign s_psram_mem_sel         = nmi.addr[31:24] >= `PSRAM_START && nmi.addr[31:24] <= `PSRAM_END;
-  assign u_psram_nmi_if.valid    = nmi.valid && (s_psram_mem_sel || s_psram_cfg_sel);
-  assign u_psram_nmi_if.addr     = nmi.addr;
-  assign u_psram_nmi_if.wdata    = nmi.wdata;
-  assign u_psram_nmi_if.wstrb    = nmi.wstrb;
+  assign s_psram_cfg_sel = `SOC_ADDR_IS_NMI_PSRAM(nmi.addr);
+  assign s_psram_mem_sel = `SOC_ADDR_IS_PSRAM(nmi.addr);
+  assign u_psram_nmi_if.valid = nmi.valid && (s_psram_mem_sel || s_psram_cfg_sel);
+  assign u_psram_nmi_if.addr = nmi.addr;
+  assign u_psram_nmi_if.wdata = nmi.wdata;
+  assign u_psram_nmi_if.wstrb = nmi.wstrb;
   // spisd
-  assign s_spisd_cfg_sel         = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_SPISD_START;
-  assign u_spisd_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `SPISD_START0 ||
-                                                 nmi.addr[31:28] == `SPISD_START1 ||
-                                                 nmi.addr[31:28] == `SPISD_START2 ||
-                                                 nmi.addr[31:28] == `SPISD_START3 || s_spisd_cfg_sel);
-  assign u_spisd_nmi_if.addr     = nmi.addr;
-  assign u_spisd_nmi_if.wdata    = nmi.wdata;
-  assign u_spisd_nmi_if.wstrb    = nmi.wstrb;
+  assign s_spisd_cfg_sel = `SOC_ADDR_IS_NMI_SPISD(nmi.addr);
+  assign u_spisd_nmi_if.valid = nmi.valid && (`SOC_ADDR_IS_SPISD(nmi.addr) || s_spisd_cfg_sel);
+  assign u_spisd_nmi_if.addr = nmi.addr;
+  assign u_spisd_nmi_if.wdata = nmi.wdata;
+  assign u_spisd_nmi_if.wstrb = nmi.wstrb;
   // i2c0
-  assign u_i2c0_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_I2C0_START);
-  assign u_i2c0_nmi_if.addr      = nmi.addr;
-  assign u_i2c0_nmi_if.wdata     = nmi.wdata;
-  assign u_i2c0_nmi_if.wstrb     = nmi.wstrb;
+  assign u_i2c0_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_I2C0(nmi.addr);
+  assign u_i2c0_nmi_if.addr = nmi.addr;
+  assign u_i2c0_nmi_if.wdata = nmi.wdata;
+  assign u_i2c0_nmi_if.wstrb = nmi.wstrb;
   // i2s
-  assign u_i2s_nmi_if.valid      = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_I2S_START);
-  assign u_i2s_nmi_if.addr       = nmi.addr;
-  assign u_i2s_nmi_if.wdata      = nmi.wdata;
-  assign u_i2s_nmi_if.wstrb      = nmi.wstrb;
+  assign u_i2s_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_I2S(nmi.addr);
+  assign u_i2s_nmi_if.addr = nmi.addr;
+  assign u_i2s_nmi_if.wdata = nmi.wdata;
+  assign u_i2s_nmi_if.wstrb = nmi.wstrb;
   // onewire
-  assign u_onewire_nmi_if.valid  = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_ONEWIRE_START);
-  assign u_onewire_nmi_if.addr   = nmi.addr;
-  assign u_onewire_nmi_if.wdata  = nmi.wdata;
-  assign u_onewire_nmi_if.wstrb  = nmi.wstrb;
+  assign u_onewire_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_ONEWIRE(nmi.addr);
+  assign u_onewire_nmi_if.addr = nmi.addr;
+  assign u_onewire_nmi_if.wdata = nmi.wdata;
+  assign u_onewire_nmi_if.wstrb = nmi.wstrb;
   // xpi
-  assign s_xpi_cfg_sel           = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_XPI_START;
-  assign s_xpi_mem_sel           = nmi.addr[31:28] == `FLASH_START || nmi.addr[31:28] == `XPI_MEM_START;
-  assign u_xpi_nmi_if.valid      = nmi.valid && (s_xpi_cfg_sel || s_xpi_mem_sel);
-  assign u_xpi_nmi_if.addr       = nmi.addr;
-  assign u_xpi_nmi_if.wdata      = nmi.wdata;
-  assign u_xpi_nmi_if.wstrb      = nmi.wstrb;
+  assign s_xpi_cfg_sel = `SOC_ADDR_IS_NMI_XPI(nmi.addr);
+  assign s_xpi_mem_sel = `SOC_ADDR_IS_FLASH(nmi.addr) || `SOC_ADDR_IS_XPI(nmi.addr);
+  assign u_xpi_nmi_if.valid = nmi.valid && (s_xpi_cfg_sel || s_xpi_mem_sel);
+  assign u_xpi_nmi_if.addr = nmi.addr;
+  assign u_xpi_nmi_if.wdata = nmi.wdata;
+  assign u_xpi_nmi_if.wstrb = nmi.wstrb;
   // dma
-  assign u_dma_nmi_if.valid      = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_DMA_START);
-  assign u_dma_nmi_if.addr       = nmi.addr;
-  assign u_dma_nmi_if.wdata      = nmi.wdata;
-  assign u_dma_nmi_if.wstrb      = nmi.wstrb;
+  assign u_dma_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_DMA(nmi.addr);
+  assign u_dma_nmi_if.addr = nmi.addr;
+  assign u_dma_nmi_if.wdata = nmi.wdata;
+  assign u_dma_nmi_if.wstrb = nmi.wstrb;
   // sysctrl
-  assign u_sysctrl_nmi_if.valid  = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_SYSCTRL_START);
-  assign u_sysctrl_nmi_if.addr   = nmi.addr;
-  assign u_sysctrl_nmi_if.wdata  = nmi.wdata;
-  assign u_sysctrl_nmi_if.wstrb  = nmi.wstrb;
+  assign u_sysctrl_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_SYSCTRL(nmi.addr);
+  assign u_sysctrl_nmi_if.addr = nmi.addr;
+  assign u_sysctrl_nmi_if.wdata = nmi.wdata;
+  assign u_sysctrl_nmi_if.wstrb = nmi.wstrb;
   // clint
-  assign u_clint_nmi_if.valid    = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_CLINT_START);
-  assign u_clint_nmi_if.addr     = nmi.addr;
-  assign u_clint_nmi_if.wdata    = nmi.wdata;
-  assign u_clint_nmi_if.wstrb    = nmi.wstrb;
+  assign u_clint_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_CLINT(nmi.addr);
+  assign u_clint_nmi_if.addr = nmi.addr;
+  assign u_clint_nmi_if.wdata = nmi.wdata;
+  assign u_clint_nmi_if.wstrb = nmi.wstrb;
   // sdram
-  assign s_sdram_cfg_sel         = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_SDRAM_START;
-  assign s_sdram_mem_sel         = nmi.addr[31:24] >= `SDRAM_START && nmi.addr[31:24] <= `SDRAM_END;
-  assign u_sdram_nmi_if.valid    = nmi.valid && (s_sdram_cfg_sel || s_sdram_mem_sel);
-  assign u_sdram_nmi_if.addr     = nmi.addr;
-  assign u_sdram_nmi_if.wdata    = nmi.wdata;
-  assign u_sdram_nmi_if.wstrb    = nmi.wstrb;
+  assign s_sdram_cfg_sel = `SOC_ADDR_IS_NMI_SDRAM(nmi.addr);
+  assign s_sdram_mem_sel = `SOC_ADDR_IS_SDRAM(nmi.addr);
+  assign u_sdram_nmi_if.valid = nmi.valid && (s_sdram_cfg_sel || s_sdram_mem_sel);
+  assign u_sdram_nmi_if.addr = nmi.addr;
+  assign u_sdram_nmi_if.wdata = nmi.wdata;
+  assign u_sdram_nmi_if.wstrb = nmi.wstrb;
   // dvp
-  assign u_dvp_nmi_if.valid      = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_DVP_START);
-  assign u_dvp_nmi_if.addr       = nmi.addr;
-  assign u_dvp_nmi_if.wdata      = nmi.wdata;
-  assign u_dvp_nmi_if.wstrb      = nmi.wstrb;
+  assign u_dvp_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_DVP(nmi.addr);
+  assign u_dvp_nmi_if.addr = nmi.addr;
+  assign u_dvp_nmi_if.wdata = nmi.wdata;
+  assign u_dvp_nmi_if.wstrb = nmi.wstrb;
   // sdio
-  assign u_sdio_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_SDIO_START);
-  assign u_sdio_nmi_if.addr      = nmi.addr;
-  assign u_sdio_nmi_if.wdata     = nmi.wdata;
-  assign u_sdio_nmi_if.wstrb     = nmi.wstrb;
+  assign u_sdio_nmi_if.valid = 1'b0;
+  assign u_sdio_nmi_if.addr = nmi.addr;
+  assign u_sdio_nmi_if.wdata = nmi.wdata;
+  assign u_sdio_nmi_if.wstrb = nmi.wstrb;
   // opipsram
-  assign s_opipsram_cfg_sel      = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[19:16] == 4'd1 && nmi.addr[15:8] == `NMI_OPIPSRAM_START;
-  assign s_opipsram_mem_sel      = nmi.addr[31:24] >= `OPIPSRAM_START && nmi.addr[31:24] <= `OPIPSRAM_END;
-  assign u_opipsram_nmi_if.valid = nmi.valid && (s_opipsram_mem_sel || s_opipsram_cfg_sel);
-  assign u_opipsram_nmi_if.addr  = nmi.addr;
+  assign s_opipsram_cfg_sel = 1'b0;
+  assign s_opipsram_mem_sel = 1'b0;
+  assign u_opipsram_nmi_if.valid = 1'b0;
+  assign u_opipsram_nmi_if.addr = nmi.addr;
   assign u_opipsram_nmi_if.wdata = nmi.wdata;
   assign u_opipsram_nmi_if.wstrb = nmi.wstrb;
   // i2c1
-  assign u_i2c1_nmi_if.valid     = nmi.valid && (nmi.addr[31:28] == `NMI_IP_START && nmi.addr[19:16] == 4'd1 && nmi.addr[15:8] == `NMI_I2C1_START);
-  assign u_i2c1_nmi_if.addr      = nmi.addr;
-  assign u_i2c1_nmi_if.wdata     = nmi.wdata;
-  assign u_i2c1_nmi_if.wstrb     = nmi.wstrb;
+  assign u_i2c1_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_I2C1(nmi.addr);
+  assign u_i2c1_nmi_if.addr = nmi.addr;
+  assign u_i2c1_nmi_if.wdata = nmi.wdata;
+  assign u_i2c1_nmi_if.wstrb = nmi.wstrb;
 
   // verilog_format: off
   // Registered one-hot slave select for response mux (breaks comb fanin)
@@ -374,10 +375,14 @@ module ip_nmi_wrapper (
   );
 
   nmi_sysctrl u_nmi_sysctrl (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .nmi    (u_sysctrl_nmi_if),
-      .sysctrl(sysctrl)
+      .clk_i           (clk_i),
+      .rst_n_i         (rst_n_i),
+      .fault_valid_i   (fault_valid_i),
+      .fault_addr_i    (fault_addr_i),
+      .fault_wstrb_i   (fault_wstrb_i),
+      .fault_reserved_i(fault_reserved_i),
+      .nmi             (u_sysctrl_nmi_if),
+      .sysctrl         (sysctrl)
   );
 
   nmi_clint u_nmi_clint (

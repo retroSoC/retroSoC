@@ -125,8 +125,8 @@ module nmi_psram (
   // verilog_format: on
 
 
-  assign s_mem_sel     = nmi.addr[31:24] == `PSRAM_START;
-  assign s_cfg_reg_sel = nmi.addr[31:28] == `NMI_IP_START && nmi.addr[15:8] == `NMI_PSRAM_START;
+  assign s_mem_sel     = `SOC_ADDR_IS_PSRAM(nmi.addr);
+  assign s_cfg_reg_sel = `SOC_ADDR_IS_NMI_PSRAM(nmi.addr);
   assign nmi.ready     = s_mem_sel ? s_mem_ready : 1'b1;
   always_comb begin
     nmi.rdata = '0;

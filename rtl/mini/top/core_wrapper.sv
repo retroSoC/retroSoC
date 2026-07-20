@@ -31,8 +31,8 @@ module core_wrapper (
       .ENABLE_FAST_MUL(1),
       .ENABLE_DIV     (1),
       .ENABLE_IRQ     (0),
-      .PROGADDR_RESET (`CPU_RESET_ADDR),
-      .PROGADDR_IRQ   (`IRQ_START_ADDR)
+      .PROGADDR_RESET (`SOC_CPU_RESET_ADDR),
+      .PROGADDR_IRQ   (`SOC_IRQ_START_ADDR)
   ) u_picorv32 (
       .clk         (clk_i),
       .resetn      (rst_n_i),
@@ -72,7 +72,7 @@ module core_wrapper (
   // verilog_format: on
 
   hazard3_cpu_1port #(
-      .RESET_VECTOR       (`CPU_RESET_ADDR),
+      .RESET_VECTOR       (`SOC_CPU_RESET_ADDR),
       .MTVEC_INIT         (32'h0000_0000),
       .EXTENSION_A        (1),
       .EXTENSION_C        (1),

@@ -9,9 +9,8 @@
 #include <retrosoc/lib/string.h>
 #include <retrosoc/service/shell.h>
 #include <retrosoc/service/booter.h>
-// HACK:
 #if defined(CORE_MDD) || defined(IP_MDD)
-#include <../../rtl/mini/mpw/.build/user_design_info.h>
+#include <user_design_info.h>
 #endif
 
 void rs_app_info(void) {
@@ -90,18 +89,14 @@ void rs_app_info(void) {
     printf("Inst/Memory Address Range:\n");
     printf("  QSPI Flash:          @[0x%08x-0x%08x] %3d MiB\n", SPFS_MEM_START,
            SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
-    printf("  NMI IP MMIO:         @[0x%08x-0x%08x] %3d MiB\n", NMI_MEM_START,
-           NMI_MEM_START + NMI_MEM_OFFST - 1, NMI_MEM_OFFST / 1024 / 1024);
-    printf("  APB IP MMIO:         @[0x%08x-0x%08x] %3d MiB\n", APB_MEM_START,
-           APB_MEM_START + APB_MEM_OFFST - 1, APB_MEM_OFFST / 1024 / 1024);
+#if RS_SOC_HAS_SRAM
     printf("  On-chip RAM:         @[0x%08x-0x%08x] %3d KiB\n", SRAM_MEM_START,
            SRAM_MEM_START + SRAM_MEM_OFFST - 1, SRAM_MEM_OFFST / 1024);
+#endif
     printf("  Off-chip SDRAM:      @[0x%08x-0x%08x] %3d MiB\n", SDRAM_MEM_START,
            SDRAM_MEM_START + SDRAM_MEM_OFFST - 1, SDRAM_MEM_OFFST / 1024 / 1024);
-    printf("  Off-chip PSRAM:      @[0x%08x-0x%08x] %3d MiB(%dx8MiB)\n", PSRAM_MEM_START,
-           PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, 8 * PSRAM_NUM, PSRAM_NUM);
-    printf("  Off-chip OPIPSRAM:   @[0x%08x-0x%08x] %3d MiB\n", OPIPSRAM_MEM_START,
-           OPIPSRAM_MEM_START + OPIPSRAM_MEM_OFFST - 1, OPIPSRAM_MEM_OFFST / 1024 / 1024);
+    printf("  Off-chip PSRAM:      @[0x%08x-0x%08x] %3d MiB\n", PSRAM_MEM_START,
+           PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, PSRAM_MEM_OFFST / 1024 / 1024);
     printf("  XPI MMIO:            @[0x%08x-0x%08x] %3d MiB\n", XPI_MEM_START,
            XPI_MEM_START + XPI_MEM_OFFST - 1, XPI_MEM_OFFST / 1024 / 1024);
     printf("  SPISD MMIO:          @[0x%08x-0x%08x] %3d GiB\n\n", TF_CARD_START,
@@ -123,11 +118,7 @@ void rs_app_info(void) {
     printf("                       1 x CLINT         @%p\n", (void *)&reg_clint_mtimel);
     printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);
     printf("                       1 x DVP           @%p\n", (void *)&reg_dvp_recven);
-    printf("                       1 x SDIO          @%p\n", (void *)&reg_sdio_cfg);
-    printf("                       1 x OPIPSRAM      @%p\n", (void *)&reg_opipsram_cfg);
     printf("                       1 x I2C1          @%p\n", (void *)&reg_i2c1_clkdiv);
-    printf("                       1 x GA*           @%p\n", (void *)&reg_ga_cfg);
-    printf("                       1 x APU*          @%p\n", (void *)&reg_apu_cfg);
     printf("                       1 x ARCHINFO      @%p\n", (void *)&reg_archinfo_sys);
     printf("                       1 x RNG           @%p\n", (void *)&reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @%p\n", (void *)&reg_uart1_lcr);
@@ -137,7 +128,10 @@ void rs_app_info(void) {
     printf("                       1 x WDG           @%p\n", (void *)&reg_wdg_ctrl);
     printf("                       1 x CRC           @%p\n", (void *)&reg_crc_ctrl);
     printf("                       1 x TIMER3(ADV)   @%p\n", (void *)&reg_tim3_ctrl);
-    printf("                       1 x USER_IP(4KiB) @%p\n\n", (void *)&reg_user_ip_reg0);
+#ifdef IP_MDD
+    printf("                       1 x USER_IP(4KiB) @%p\n", (void *)&reg_user_ip_reg0);
+#endif
+    printf("\n");
     printf("#############################################################\n");
     printf("#############################################################\n");
 }
