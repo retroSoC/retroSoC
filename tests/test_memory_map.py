@@ -177,3 +177,20 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
     assert "sysctrl fault registers test passed" in result.stdout
+
+
+def test_sysctrl_does_not_expose_unused_i2c_or_qspi_select_registers() -> None:
+    rtl = (ROOT / "rtl/ip/native/peripheral/sysctrl.sv").read_text(encoding="utf-8")
+    header = (ROOT / "crt/include/retrosoc/core/soc.h").read_text(encoding="utf-8")
+
+    for symbol in (
+        "NATV_SYSCTRL_I2CSEL",
+        "NATV_SYSCTRL_QSPISEL",
+        "i2c_sel_o",
+        "qspi_sel_o",
+        "s_sysctrl_i2csel",
+        "s_sysctrl_qspisel",
+    ):
+        assert symbol not in rtl
+    assert "reg_sysctrl_i2csel" not in header
+    assert "reg_sysctrl_qspicsel" not in header
