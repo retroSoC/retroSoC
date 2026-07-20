@@ -10,8 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GENERATOR = ROOT / "rtl/mini/script/generate_memory_map.py"
-MEMORY_MAP = ROOT / "rtl/mini/memory_map.json"
+GENERATOR = ROOT / "rtl/mini/address_map/generate_memory_map.py"
+MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
 
 
 def generate(output_dir: Path, *, ip: str = "NONE", sram: str = "NO") -> None:
@@ -96,10 +96,10 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
             [
                 "+define+SV_ASSRT_DISABLE",
                 f"+incdir+{tmp_path / 'rtl'}",
-                f"+incdir+{ROOT / 'rtl/clusterip/common/rtl'}",
-                str(ROOT / "rtl/clusterip/common/rtl/interface/nmi_if.sv"),
-                str(ROOT / "rtl/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "rtl/ip/native/nmi_regslice.sv"),
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+                str(ROOT / "rtl/ip/native/interconnect/nmi_regslice.sv"),
                 str(ROOT / "rtl/mini/top/bus.sv"),
                 str(ROOT / "tests/rtl/bus_fault_tb.sv"),
                 "",
@@ -148,10 +148,10 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
                 "+define+SV_ASSRT_DISABLE",
                 f"+incdir+{tmp_path / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
-                f"+incdir+{ROOT / 'rtl/clusterip/common/rtl'}",
-                str(ROOT / "rtl/clusterip/common/rtl/interface/nmi_if.sv"),
-                str(ROOT / "rtl/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "rtl/ip/native/sysctrl.sv"),
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+                str(ROOT / "rtl/ip/native/peripheral/sysctrl.sv"),
                 str(ROOT / "tests/rtl/sysctrl_fault_tb.sv"),
                 "",
             ]

@@ -220,10 +220,10 @@ setup-mpw:
 	@touch $(MPW_STAMP)
 
 setup-core: setup-mpw
-	python3 $(ROOT_PATH)/rtl/mini/core/setup.py
+	python3 $(ROOT_PATH)/rtl/mini/script/prepare_picorv32.py
 
 setup-clusterip:
-	python3 $(ROOT_PATH)/rtl/clusterip/setup.py
+	python3 $(ROOT_PATH)/rtl/managed/clusterip/setup.py
 
 setup-ip:
 	python3 $(ROOT_PATH)/rtl/ip/setup.py

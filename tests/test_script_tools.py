@@ -84,7 +84,7 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert {path: path.stat().st_mtime_ns for path in generated} == mtimes
     assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
-    assert str(ROOT / "rtl/clusterip") in cluster
+    assert str(ROOT / "rtl/managed/clusterip") in cluster
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
@@ -583,7 +583,7 @@ def test_clean_all_stays_within_repository(tmp_path: Path) -> None:
     generated = fake_root / "rtl/mini/.iverilog_build"
     generated.mkdir(parents=True)
     (generated / "simv").write_text("generated", encoding="utf-8")
-    dependency = fake_root / "rtl/ip/3rd-party"
+    dependency = fake_root / "rtl/managed/third_party"
     dependency.mkdir(parents=True)
     (dependency / "model.v").write_text("dependency", encoding="utf-8")
 

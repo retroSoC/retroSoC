@@ -16,5 +16,11 @@
 +incdir+/clusterip/wdg/rtl
 +incdir+/clusterip/crc/rtl
 +incdir+/clusterip/timer/rtl
-+incdir+/ip/native
-+incdir+/ip/3rd-party/model/sdram/
++incdir+/ip/native/interconnect
++incdir+/ip/native/util
++incdir+/ip/native/memory
++incdir+/ip/native/storage
++incdir+/ip/native/serial
++incdir+/ip/native/multimedia
++incdir+/ip/native/peripheral
++incdir+/third_party/model/sdram/

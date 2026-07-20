@@ -33,23 +33,23 @@ jobs:
             app/coremark/coremark-main
             app/fatfs/ff16
             pdk/IHP-Open-PDK
-            rtl/clusterip/archinfo
-            rtl/clusterip/clint
-            rtl/clusterip/common
-            rtl/clusterip/crc
-            rtl/clusterip/i2c
-            rtl/clusterip/i2s
-            rtl/clusterip/plic
-            rtl/clusterip/ps2
-            rtl/clusterip/pwm
-            rtl/clusterip/rng
-            rtl/clusterip/rtc
-            rtl/clusterip/spi
-            rtl/clusterip/timer
-            rtl/clusterip/uart
-            rtl/clusterip/wdg
-            rtl/ip/3rd-party
-            rtl/mini/mpw
+            rtl/managed/clusterip/archinfo
+            rtl/managed/clusterip/clint
+            rtl/managed/clusterip/common
+            rtl/managed/clusterip/crc
+            rtl/managed/clusterip/i2c
+            rtl/managed/clusterip/i2s
+            rtl/managed/clusterip/plic
+            rtl/managed/clusterip/ps2
+            rtl/managed/clusterip/pwm
+            rtl/managed/clusterip/rng
+            rtl/managed/clusterip/rtc
+            rtl/managed/clusterip/spi
+            rtl/managed/clusterip/timer
+            rtl/managed/clusterip/uart
+            rtl/managed/clusterip/wdg
+            rtl/managed/third_party
+            rtl/managed/mpw
             .cache/retrosoc/stamps
           key: sources-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
 

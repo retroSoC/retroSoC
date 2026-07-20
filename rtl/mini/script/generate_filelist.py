@@ -17,12 +17,15 @@ DEFAULT_OUTPUT_DIR = MINI_DIR / ".generated_fl"
 
 PATH_PREFIXES = {
     "pdk": ROOT_DIR / "pdk",
-    "clusterip": RTL_DIR / "clusterip",
+    "clusterip": RTL_DIR / "managed" / "clusterip",
     "ip": RTL_DIR / "ip",
+    "third_party": RTL_DIR / "managed" / "third_party",
     "tech": RTL_DIR / "tech",
     "core": MINI_DIR / "core",
-    "mpw": MINI_DIR / "mpw",
-    "tb": MINI_DIR / "tb",
+    "mpw": RTL_DIR / "managed" / "mpw",
+    "picorv32": RTL_DIR / "managed" / "picorv32" / "rtl",
+    "tb": MINI_DIR / "dv" / "tb",
+    "model": MINI_DIR / "dv" / "model",
     "top": MINI_DIR / "top",
 }
 

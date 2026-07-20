@@ -1,6 +1,6 @@
 GENERATED_FL_DIR := $(FLOW_FILELIST_DIR)
-MEMORY_MAP_SOURCE := $(RTL_PATH)/memory_map.json
-MEMORY_MAP_SCRIPT := $(RTL_PATH)/script/generate_memory_map.py
+MEMORY_MAP_SOURCE := $(RTL_PATH)/address_map/memory_map.json
+MEMORY_MAP_SCRIPT := $(RTL_PATH)/address_map/generate_memory_map.py
 MEMORY_MAP_DIR    := $(VARIANT_ROOT)/generated/memory_map
 MEMORY_MAP_STAMP  := $(MEMORY_MAP_DIR)/.stamp
 MEMORY_MAP_RTL_DIR := $(MEMORY_MAP_DIR)/rtl
@@ -15,8 +15,8 @@ FILELIST_TEMPLATES := $(sort $(wildcard $(ROOT_PATH)/rtl/filelist/pdk_*.fl) \
                       $(wildcard $(RTL_PATH)/filelist/*.fl) $(RTL_PATH)/lint.msg)
 
 $(MPW_STAMP):
-	@test -d $(RTL_PATH)/mpw/.git || { \
-		echo "missing $(RTL_PATH)/mpw; run 'make setup-mpw' first" >&2; \
+	@test -d $(ROOT_PATH)/rtl/managed/mpw/.git || { \
+		echo "missing $(ROOT_PATH)/rtl/managed/mpw; run 'make setup-mpw' first" >&2; \
 		exit 1; \
 	}
 	python3 $(ROOT_PATH)/scripts/prepare_mpw.py \

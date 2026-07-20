@@ -4,9 +4,9 @@ This repository includes RTL source files that preserve third-party copyright an
 
 The following third-party projects or authors are referenced in the RTL source headers currently present in this repository:
 
-- ETH Zurich and University of Bologna: notices are preserved in several RTL files under rtl/clusterip/, rtl/mini/mpw/core/username7/ibex/, and in rtl/tech/tc_clk.sv.
-- Ravenna / PicoRV32 in ASIC: notices are preserved in rtl/ip/native/gpio.sv, rtl/ip/native/timer.sv, and rtl/ip/native/uart.sv.
-- Hirosh Dabui: the original copyright notice is preserved in rtl/ip/native/sdram_core.sv.
-- EmbedFire: attribution is preserved in rtl/ip/native/i2c_core.sv and the SPI SD card related files under rtl/ip/native/.
+- ETH Zurich and University of Bologna: notices are preserved in several RTL files under rtl/managed/clusterip/, rtl/managed/mpw/core/username7/ibex/, and in rtl/tech/tc_clk.sv.
+- Ravenna / PicoRV32 in ASIC: notices are preserved in rtl/ip/native/peripheral/gpio.sv, rtl/ip/native/peripheral/timer.sv, and rtl/ip/native/serial/uart.sv.
+- Hirosh Dabui: the original copyright notice is preserved in rtl/ip/native/memory/sdram_core.sv.
+- EmbedFire: attribution is preserved in rtl/ip/native/serial/i2c_core.sv and the SPI SD card related files under rtl/ip/native/storage/.
 
 These notices are included solely to preserve attribution for the retained third-party source material. They do not alter the licensing terms of the retroSoC repository itself, which is distributed under the Mulan PSL v2 license.

@@ -10,9 +10,9 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
 def main() -> int:
-    core_dir = Path(__file__).resolve().parent
-    source = core_dir / "picorv32.v"
-    destination = core_dir / "picorv32_ver.v"
+    picorv32_dir = ROOT / "rtl/managed/picorv32/rtl"
+    source = picorv32_dir / "picorv32.v"
+    destination = picorv32_dir / "picorv32_ver.v"
     content = source.read_text(encoding="utf-8")
     content = content.replace("// synopsys full_case parallel_case", "")
     content = content.replace("// synopsys parallel_case", "")

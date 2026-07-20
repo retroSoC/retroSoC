@@ -41,17 +41,34 @@ def run(root: Path, log: TextIO, script: Path, *args: str) -> None:
     )
 
 
-def rewrite_filelists(root: Path, old_prefix: Path, new_prefix: Path) -> None:
+def rewrite_filelists(root: Path, replacements: tuple[tuple[Path, Path], ...]) -> None:
     for filelist in root.rglob("*.fl"):
         content = filelist.read_text(encoding="utf-8")
-        content = content.replace(str(old_prefix.resolve()), str(new_prefix.resolve()))
+        for old_prefix, new_prefix in replacements:
+            content = content.replace(str(old_prefix.resolve()), str(new_prefix.resolve()))
         filelist.write_text(content, encoding="utf-8")
+
+
+def prepare_legacy_mpw_workspace(root: Path, source: Path, workspace: Path) -> Path:
+    legacy_mpw = workspace / "rtl" / "mini" / "mpw"
+    legacy_mpw.mkdir(parents=True, exist_ok=True)
+    for name in ("common.py", "core.py", "info.py", "ip.py", "user_design_info.h"):
+        shutil.copy2(source / name, legacy_mpw / name)
+    for name in ("core", "ip"):
+        shutil.copytree(source / name, legacy_mpw / name)
+    (legacy_mpw / ".build").mkdir()
+
+    legacy_core = workspace / "rtl" / "mini" / "core"
+    legacy_core.mkdir(parents=True, exist_ok=True)
+    picorv32 = root / "rtl" / "managed" / "picorv32" / "rtl"
+    shutil.copy2(picorv32 / "picorv32.v", legacy_core / "picorv32.v")
+    shutil.copy2(picorv32 / "picorv32_ver.v", legacy_core / "picorv32_ver.v")
+    return legacy_mpw
 
 
 def generate(args: argparse.Namespace) -> None:
     root = args.root.resolve()
-    mpw = root / "rtl/mini/mpw"
-    shared = mpw / ".build"
+    managed_mpw = root / "rtl/managed/mpw"
     output = args.output.resolve()
     needs_core = args.core == "MDD"
     needs_ip = args.ip == "MDD"
@@ -62,23 +79,42 @@ def generate(args: argparse.Namespace) -> None:
         prefix=f".{output.name}.", dir=output.parent
     ) as temp:
         log.write(f"simulator={args.simu} core={args.core} ip={args.ip}\n")
-        candidate = Path(temp) / "output"
+        workspace = Path(temp)
+        candidate = workspace / "output"
         candidate.mkdir()
+        if not needs_core and not needs_ip:
+            if tree_digest(candidate) == tree_digest(output):
+                print(f"[mpw] generated output unchanged: {output} (log: {log_path})")
+                return
+            if output.exists():
+                shutil.rmtree(output)
+            os.replace(candidate, output)
+            print(f"[mpw] generated isolated output: {output} (log: {log_path})")
+            return
+
+        mpw = prepare_legacy_mpw_workspace(root, managed_mpw, workspace)
+        shared = mpw / ".build"
         (shared / "user_design_info.h").unlink(missing_ok=True)
 
         if needs_ip:
-            run(root, log, mpw / "ip.py")
-            run(root, log, mpw / "info.py", "IP")
+            run(workspace, log, mpw / "ip.py")
+            run(workspace, log, mpw / "info.py", "IP")
             shutil.copytree(shared / "ip", candidate / "ip")
         if needs_core:
-            run(root, log, mpw / "core.py", args.simu)
-            run(root, log, mpw / "info.py", "CORE")
+            run(workspace, log, mpw / "core.py", args.simu)
+            run(workspace, log, mpw / "info.py", "CORE")
             shutil.copytree(shared / "core", candidate / "core")
         info = shared / "user_design_info.h"
         if info.is_file():
             shutil.copy2(info, candidate / info.name)
 
-        rewrite_filelists(candidate, shared, output)
+        rewrite_filelists(
+            candidate,
+            (
+                (shared, output),
+                (workspace / "rtl" / "mini" / "core", root / "rtl/managed/picorv32/rtl"),
+            ),
+        )
         if tree_digest(candidate) == tree_digest(output):
             print(f"[mpw] generated output unchanged: {output} (log: {log_path})")
             return

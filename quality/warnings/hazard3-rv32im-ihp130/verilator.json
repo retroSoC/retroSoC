@@ -1,9 +1,29 @@
 {
   "entries": [
     {
-      "count": 2,
-      "example": "CMPCONST:$ROOT/rtl/ip/native/spisd_write.sv:<line>: Comparison is constant due to limited range",
-      "signature": "11b9d285d4747e4f"
+      "count": 1,
+      "example": "UNSIGNED:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Comparison is constant due to unsigned arithmetic",
+      "signature": "010491867f065cec"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Operator CASE expects 32 bits on the Case Item, but Case Item's CONST '8'h8' generates 8 bits.",
+      "signature": "2f1913ee897eabb8"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Operator EQ expects 32 bits on the LHS, but LHS's SEL generates 8 bits.",
+      "signature": "3bba21d5150bdc2e"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_xpi_if.io_di_i'",
+      "signature": "411d9ab46fef9d7d"
+    },
+    {
+      "count": 1,
+      "example": "UNSIGNED:$ROOT/rtl/mini/top/ip_nmi_wrapper.sv:<line>: Comparison is constant due to unsigned arithmetic",
+      "signature": "7350cffccb478d64"
     },
     {
       "count": 1,
@@ -11,24 +31,49 @@
       "signature": "7a759d6e07651fd8"
     },
     {
+      "count": 2,
+      "example": "CMPCONST:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Comparison is constant due to limited range",
+      "signature": "813090adc9f1e8a8"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Operator CASE expects 32 bits on the Case Item, but Case Item's CONST '8'h0' generates 8 bits.",
+      "signature": "8ad9b6921bd232e7"
+    },
+    {
+      "count": 1,
+      "example": "UNSIGNED:$ROOT/rtl/mini/top/bus.sv:<line>: Comparison is constant due to unsigned arithmetic",
+      "signature": "9f53ff454a8648a4"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Operator CASE expects 32 bits on the Case Item, but Case Item's CONST '8'h4' generates 8 bits.",
+      "signature": "be2cb5333a881eca"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Operator CASE expects 32 bits on the Case expression, but Case expression's SEL generates 8 bits.",
+      "signature": "c43a29f4c975e9c1"
+    },
+    {
       "count": 68,
       "example": "SPECIFYIGN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v:<line>: Ignoring unsupported: specify block construct",
       "signature": "c54331448f63ac73"
     },
     {
+      "count": 1,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
+      "signature": "c963ef155f9a032c"
+    },
+    {
       "count": 3,
-      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
-      "signature": "cdd5c3ca84a609c6"
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
+      "signature": "ef9f314dab2ac31d"
     },
     {
       "count": 1,
-      "example": "UNOPTFLAT:$ROOT/rtl/ip/native/xpi.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_xpi_if.io_di_i'",
-      "signature": "ee29e23bc895ee17"
-    },
-    {
-      "count": 1,
-      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
-      "signature": "f8f8278c6ce4431d"
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Operator CASE expects 32 bits on the Case Item, but Case Item's CONST '8'hc' generates 8 bits.",
+      "signature": "f6f2aa6bb2b3f6c4"
     },
     {
       "count": 11,

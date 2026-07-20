@@ -43,9 +43,9 @@ def main() -> int:
         subprocess.run(
             [
                 sys.executable,
-                str(root / "rtl/mini/script/generate_memory_map.py"),
+                str(root / "rtl/mini/address_map/generate_memory_map.py"),
                 "--map",
-                str(root / "rtl/mini/memory_map.json"),
+                str(root / "rtl/mini/address_map/memory_map.json"),
                 "--output-dir",
                 str(memory_map_root),
             ],
