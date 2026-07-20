@@ -91,10 +91,6 @@ module retrosoc_top (
 `ifdef HAVE_PLL
       .xi_i_pad           (s_sys_clk),
       .xo_o_pad           (),
-      .clk_bypass_i_pad   (1'b1),
-      .pll_cfg_0_i_pad    (1'b0),
-      .pll_cfg_1_i_pad    (1'b0),
-      .pll_cfg_2_i_pad    (1'b0),
 `endif
 `ifdef CORE_MDD
       .core_sel_0_i_pad   (1'b0),

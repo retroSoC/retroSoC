@@ -19,18 +19,14 @@ module retrosoc_tb;
 
   integer sim_runtime;
 
-  reg  r_ext_clk;
-  wire s_ext_clk;
-  reg  r_aud_clk;
-  wire s_aud_clk;
-  reg  r_rst_n;
-  wire s_rst_n;
+  reg     r_ext_clk;
+  wire    s_ext_clk;
+  reg     r_aud_clk;
+  wire    s_aud_clk;
+  reg     r_rst_n;
+  wire    s_rst_n;
 `ifdef HAVE_PLL
-  reg        r_xtal_clk;
-  reg        r_pll_en;
-  wire       s_clk_bypass;
-  reg  [2:0] r_pll_cfg;
-  wire [2:0] s_pll_cfg;
+  reg r_xtal_clk;
 `endif
   reg  [ 4:0] r_core_sel;
   wire [ 4:0] s_core_sel;
@@ -88,13 +84,9 @@ module retrosoc_tb;
   always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk = r_ext_clk;
-  assign s_aud_clk = r_aud_clk;
-  assign s_rst_n   = r_rst_n;
-`ifdef HAVE_PLL
-  assign s_clk_bypass = ~r_pll_en;
-  assign s_pll_cfg    = r_pll_cfg;
-`endif
+  assign s_ext_clk        = r_ext_clk;
+  assign s_aud_clk        = r_aud_clk;
+  assign s_rst_n          = r_rst_n;
   assign s_core_sel       = r_core_sel;
   assign s_user_gpio_0_io = r_user_gpio_0_io;
 
@@ -105,10 +97,6 @@ module retrosoc_tb;
 `ifdef HAVE_PLL
       .xi_i_pad           (r_xtal_clk),
       .xo_o_pad           (),
-      .clk_bypass_i_pad   (s_clk_bypass),
-      .pll_cfg_0_i_pad    (s_pll_cfg[0]),
-      .pll_cfg_1_i_pad    (s_pll_cfg[1]),
-      .pll_cfg_2_i_pad    (s_pll_cfg[2]),
 `endif
 `ifdef CORE_MDD
       .core_sel_0_i_pad   (s_core_sel[0]),
@@ -412,27 +400,7 @@ module retrosoc_tb;
 `endif
 
 `ifdef HAVE_PLL
-    if ($test$plusargs("pll_en")) r_pll_en = 1'b1;
-    else r_pll_en = 1'b0;
-
-    if ($test$plusargs("pll_cfg0")) r_pll_cfg = 3'd0;  // 24M
-    else if ($test$plusargs("pll_cfg1")) r_pll_cfg = 3'd1;  // 48M
-    else if ($test$plusargs("pll_cfg2")) r_pll_cfg = 3'd2;  // 72M
-    else if ($test$plusargs("pll_cfg3")) r_pll_cfg = 3'd3;  // 96M
-    else if ($test$plusargs("pll_cfg4")) r_pll_cfg = 3'd4;  // 120M
-    else if ($test$plusargs("pll_cfg5")) r_pll_cfg = 3'd5;  // 144M
-    else if ($test$plusargs("pll_cfg6")) r_pll_cfg = 3'd6;  // 168M
-    else if ($test$plusargs("pll_cfg7")) r_pll_cfg = 3'd7;  // 192M
-    else r_pll_cfg = 3'd0;  // 24M
-
-    if (r_pll_en == 1'b0) begin
-      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg, EXT_CPU_FREQ);
-    end else if (r_pll_cfg == 3'd0 || r_pll_cfg == 3'd1) begin
-      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg, XTAL_CPU_FREQ);
-    end else begin
-      $display("pll_en: %0d pll_cfg: %0d clk_freq: %0dMHz", r_pll_en, r_pll_cfg,
-               (r_pll_cfg + 1) * 24);
-    end
+    $display("pll clock control: sysctrl");
 `else
     $display("ext clk_freq: %0dMHz", EXT_CPU_FREQ);
 `endif

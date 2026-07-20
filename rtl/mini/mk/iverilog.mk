@@ -28,8 +28,7 @@ IVERILOG_POST_DEPFILE := $(IVERILOG_POST_DIR)/simv.d
 IVERILOG_COMMON_OPTS := -g2012
 IVERILOG_TIME_OPTS   := -gno-specify
 IVERILOG_POST_OPTS   := -gspecify -Tmin
-IVERILOG_SIM_OPTS    := +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) \
-	+core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
+IVERILOG_SIM_OPTS    := +core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
 $(CONVERTED_SOC): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
 	@mkdir -p $(@D)

@@ -5,74 +5,122 @@
 //             http://license.coscl.org.cn/MulanPSL2
 // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 // EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
 module rcu (
-    input  logic       ext_clk_i,
-    input  logic       aud_clk_i,
-    input  logic       ext_rst_n_i,
+    input  logic           ext_clk_i,
+    input  logic           aud_clk_i,
+    input  logic           ext_rst_n_i,
 `ifdef HAVE_PLL
-    input  logic       xtal_clk_i,
-    input  logic       clk_bypass_i,
-    input  logic [2:0] pll_cfg_i,
+    input  logic           xtal_clk_i,
 `endif
-    output logic       sys_clk_o,
-    output logic       sys_rst_n_o,
-    output logic       aud_rst_n_o,
-    output logic       sys_clkdiv4_o
+           pll_ctrl_if.rcu pll_ctrl,
+    output logic           sys_clk_o,
+    output logic           sys_rst_n_o,
+    output logic           aud_rst_n_o,
+    output logic           sys_clkdiv4_o
 );
-`ifdef HAVE_PLL
-  logic       s_xtal_clk_buf;
-  logic       s_pll_clk_buf;
-  logic       s_pll_clk;
-  logic       s_pll_lock;
-  logic       s_pll_bp, s_pll_bp_q;
-  logic [3:0] s_pll_N, s_pll_N_q;
-  logic [7:0] s_pll_M, s_pll_M_q;
-  logic [1:0] s_pll_OD, s_pll_OD_q;
-`endif
   logic s_ext_clk_buf;
-  logic s_sys_clk;
   logic s_aud_clk_buf;
+  logic s_sys_clk;
   logic s_ext_rst_n_sync;
+  logic s_sys_rst_n_sync;
   logic s_aud_rst_n_sync;
-
   logic [3:0] s_div_cnt_d, s_div_cnt_q;
   logic s_sys_clkdiv4_d, s_sys_clkdiv4_q;
 
-
-  // ext buffer
   tc_clk_buf u_ext_clk_buf (
       .clk_i(ext_clk_i),
       .clk_o(s_ext_clk_buf)
   );
-  // aud buffer
   tc_clk_buf u_aud_clk_buf (
       .clk_i(aud_clk_i),
       .clk_o(s_aud_clk_buf)
   );
 
+  rst_sync #(
+      .STAGE(5)
+  ) u_ext_rst_sync (
+      .clk_i  (s_ext_clk_buf),
+      .rst_n_i(ext_rst_n_i),
+      .rst_n_o(s_ext_rst_n_sync)
+  );
+
 `ifdef HAVE_PLL
+  logic       s_xtal_clk_buf;
+  logic       s_pll_clk;
+  logic       s_pll_clk_buf;
+  logic       s_pll_lock;
+  logic       s_pll_capable;
+  logic [2:0] s_pll_sel;
+  logic       s_pll_apply;
+  logic       s_select_ext_clk;
+
   tc_clk_buf u_xtal_buf (
       .clk_i(xtal_clk_i),
       .clk_o(s_xtal_clk_buf)
   );
-
+  tc_pll u_tc_pll (
+      .fref_i       (s_xtal_clk_buf),
+      .rst_n_i      (s_ext_rst_n_sync),
+      .cfg_sel_i    (s_pll_sel),
+      .cfg_apply_i  (s_pll_apply),
+      .pll_capable_o(s_pll_capable),
+      .pll_lock_o   (s_pll_lock),
+      .pll_clk_o    (s_pll_clk)
+  );
   tc_clk_buf u_pll_clk_buf (
       .clk_i(s_pll_clk),
       .clk_o(s_pll_clk_buf)
   );
-
-  // select system clock from pll or ext
-  tc_clk_mux2 u_sys_mux (
+  tc_clk_switch2 u_sys_clk_switch (
       .clk0_i   (s_pll_clk_buf),
       .clk1_i   (s_ext_clk_buf),
-      .clk_sel_i(clk_bypass_i),
+      .clk_sel_i(s_select_ext_clk),
       .clk_o    (s_sys_clk)
   );
+
+  pll_rcu_controller u_pll_rcu_controller (
+      .sys_clk_i       (s_sys_clk),
+      .sys_rst_n_i     (s_sys_rst_n_sync),
+      .ext_clk_i       (s_ext_clk_buf),
+      .ext_rst_n_i     (s_ext_rst_n_sync),
+      .pll_lock_i      (s_pll_lock),
+      .pll_capable_i   (s_pll_capable),
+      .pll_sel_o       (s_pll_sel),
+      .pll_apply_o     (s_pll_apply),
+      .select_ext_clk_o(s_select_ext_clk),
+      .pll_ctrl        (pll_ctrl)
+  );
 `else
-  assign s_sys_clk = s_ext_clk_buf;
+  logic s_no_pll_rsp_valid_d, s_no_pll_rsp_valid_q;
+
+  assign s_sys_clk                   = s_ext_clk_buf;
+  assign pll_ctrl.req_ready_i        = ~s_no_pll_rsp_valid_q;
+  assign pll_ctrl.rsp_active_sel_i   = '0;
+  assign pll_ctrl.rsp_active_valid_i = 1'b0;
+  assign pll_ctrl.rsp_safe_clk_i     = 1'b1;
+  assign pll_ctrl.rsp_pll_lock_i     = 1'b0;
+  assign pll_ctrl.rsp_error_i        = 2'd1;
+  assign pll_ctrl.rsp_valid_i        = s_no_pll_rsp_valid_q;
+  assign pll_ctrl.capable_i          = 1'b0;
+
+  always_comb begin
+    s_no_pll_rsp_valid_d = s_no_pll_rsp_valid_q;
+    if (pll_ctrl.req_valid_o && pll_ctrl.req_ready_i) begin
+      s_no_pll_rsp_valid_d = 1'b1;
+    end
+    if (s_no_pll_rsp_valid_q && pll_ctrl.rsp_ready_o) begin
+      s_no_pll_rsp_valid_d = 1'b0;
+    end
+  end
+  dffr #(1) u_no_pll_rsp_valid_dffr (
+      s_ext_clk_buf,
+      s_ext_rst_n_sync,
+      s_no_pll_rsp_valid_d,
+      s_no_pll_rsp_valid_q
+  );
 `endif
 
   tc_clk_buf u_sys_clk_buf (
@@ -80,16 +128,13 @@ module rcu (
       .clk_o(sys_clk_o)
   );
 
-
-  // reset sync logic
   rst_sync #(
       .STAGE(5)
-  ) u_ext_rst_sync (
+  ) u_sys_rst_sync (
       .clk_i  (sys_clk_o),
       .rst_n_i(ext_rst_n_i),
-      .rst_n_o(s_ext_rst_n_sync)
+      .rst_n_o(s_sys_rst_n_sync)
   );
-
   rst_sync #(
       .STAGE(5)
   ) u_aud_rst_sync (
@@ -98,12 +143,7 @@ module rcu (
       .rst_n_o(s_aud_rst_n_sync)
   );
 
-`ifdef HAVE_PLL
-  assign sys_rst_n_o = clk_bypass_i ? s_ext_rst_n_sync : s_pll_lock;
-`else
-  assign sys_rst_n_o = s_ext_rst_n_sync;
-`endif
-
+  assign sys_rst_n_o   = s_sys_rst_n_sync;
   assign aud_rst_n_o   = s_aud_rst_n_sync;
   assign sys_clkdiv4_o = s_sys_clkdiv4_q;
 
@@ -114,7 +154,6 @@ module rcu (
       s_div_cnt_d,
       s_div_cnt_q
   );
-
   assign s_sys_clkdiv4_d = (s_div_cnt_q == 4'd1) ? ~s_sys_clkdiv4_q : s_sys_clkdiv4_q;
   dffr #(1) u_sys_clkdiv4_dffr (
       sys_clk_o,
@@ -122,97 +161,226 @@ module rcu (
       s_sys_clkdiv4_d,
       s_sys_clkdiv4_q
   );
+endmodule
 
-  // 24(bypass) 48(ext clk) 72 96
-  // 120 144 168 192
-  // 2 <= N <= 4
-  // 7 <= M 
-`ifdef HAVE_PLL
+module pll_rcu_controller #(
+    parameter int LOCK_TIMEOUT = 1024
+) (
+    input  logic                 sys_clk_i,
+    input  logic                 sys_rst_n_i,
+    input  logic                 ext_clk_i,
+    input  logic                 ext_rst_n_i,
+    input  logic                 pll_lock_i,
+    input  logic                 pll_capable_i,
+    output logic           [2:0] pll_sel_o,
+    output logic                 pll_apply_o,
+    output logic                 select_ext_clk_o,
+           pll_ctrl_if.rcu       pll_ctrl
+);
+  localparam logic [2:0] PLL_IDLE = 3'd0;
+  localparam logic [2:0] PLL_SAFE = 3'd1;
+  localparam logic [2:0] PLL_APPLY = 3'd2;
+  localparam logic [2:0] PLL_WAIT_LOCK = 3'd3;
+  localparam logic [2:0] PLL_SWITCH = 3'd4;
+  localparam logic [2:0] PLL_RESPOND = 3'd5;
+
+  logic [2:0] s_req_sel;
+  logic s_req_valid, s_req_ready;
+  logic [7:0] s_rsp_data;
+  logic s_rsp_valid, s_rsp_ready;
+  logic [7:0] s_rsp_sys_data;
+  logic       s_rsp_sys_valid;
+  logic [2:0] s_state_d, s_state_q;
+  logic [2:0] s_pll_sel_d, s_pll_sel_q;
+  logic s_pll_apply_d, s_pll_apply_q;
+  logic s_select_ext_clk_d, s_select_ext_clk_q;
+  logic [15:0] s_lock_count_d, s_lock_count_q;
+  logic [2:0] s_active_sel_d, s_active_sel_q;
+  logic s_active_valid_d, s_active_valid_q;
+  logic s_safe_clk_d, s_safe_clk_q;
+  logic s_lock_d, s_lock_q;
+  logic [1:0] s_error_d, s_error_q;
+  logic s_rsp_valid_d, s_rsp_valid_q;
+
+  cdc_2phase #(
+      .DATA_WIDTH(3)
+  ) u_pll_request_cdc (
+      .src_clk_i  (sys_clk_i),
+      .src_rst_n_i(sys_rst_n_i),
+      .src_data_i (pll_ctrl.req_sel_o),
+      .src_valid_i(pll_ctrl.req_valid_o),
+      .src_ready_o(pll_ctrl.req_ready_i),
+      .dst_clk_i  (ext_clk_i),
+      .dst_rst_n_i(ext_rst_n_i),
+      .dst_data_o (s_req_sel),
+      .dst_valid_o(s_req_valid),
+      .dst_ready_i(s_req_ready)
+  );
+  cdc_2phase #(
+      .DATA_WIDTH(8)
+  ) u_pll_response_cdc (
+      .src_clk_i  (ext_clk_i),
+      .src_rst_n_i(ext_rst_n_i),
+      .src_data_i (s_rsp_data),
+      .src_valid_i(s_rsp_valid_q),
+      .src_ready_o(s_rsp_ready),
+      .dst_clk_i  (sys_clk_i),
+      .dst_rst_n_i(sys_rst_n_i),
+      .dst_data_o (s_rsp_sys_data),
+      .dst_valid_o(s_rsp_sys_valid),
+      .dst_ready_i(pll_ctrl.rsp_ready_o)
+  );
+
+  assign pll_ctrl.rsp_active_sel_i = s_rsp_sys_data[2:0];
+  assign pll_ctrl.rsp_active_valid_i = s_rsp_sys_data[3];
+  assign pll_ctrl.rsp_safe_clk_i = s_rsp_sys_data[4];
+  assign pll_ctrl.rsp_pll_lock_i = s_rsp_sys_data[5];
+  assign pll_ctrl.rsp_error_i = s_rsp_sys_data[7:6];
+  assign pll_ctrl.rsp_valid_i = s_rsp_sys_valid;
+  assign pll_ctrl.capable_i = pll_capable_i;
+  assign s_req_ready = s_state_q == PLL_IDLE;
+  assign s_rsp_data = {s_error_q, s_lock_q, s_safe_clk_q, s_active_valid_q, s_active_sel_q};
+  assign pll_sel_o = s_pll_sel_q;
+  assign pll_apply_o = s_pll_apply_q;
+  assign select_ext_clk_o = s_select_ext_clk_q;
+
   always_comb begin
-    unique case (pll_cfg_i)
-      3'b000: begin  //bypass 24MHz
-        s_pll_bp = 1'b1;
-        s_pll_M  = 8'd20;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd1;
+    s_state_d          = s_state_q;
+    s_pll_sel_d        = s_pll_sel_q;
+    s_pll_apply_d      = (s_state_q == PLL_APPLY) || (s_state_q == PLL_WAIT_LOCK);
+    s_select_ext_clk_d = s_select_ext_clk_q;
+    s_lock_count_d     = s_lock_count_q;
+    s_active_sel_d     = s_active_sel_q;
+    s_active_valid_d   = s_active_valid_q;
+    s_safe_clk_d       = s_safe_clk_q;
+    s_lock_d           = s_lock_q;
+    s_error_d          = s_error_q;
+    s_rsp_valid_d      = s_rsp_valid_q;
+
+    unique case (s_state_q)
+      PLL_IDLE: begin
+        if (s_req_valid) begin
+          s_pll_sel_d        = s_req_sel;
+          s_select_ext_clk_d = 1'b1;
+          s_error_d          = 2'd0;
+          s_state_d          = PLL_SAFE;
+        end
       end
-      3'b001: begin  //bypass 24MHz
-        s_pll_bp = 1'b1;
-        s_pll_M  = 8'd20;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd1;
+      PLL_SAFE: begin
+        s_select_ext_clk_d = 1'b1;
+        s_safe_clk_d       = 1'b1;
+        s_lock_d           = 1'b0;
+        if (pll_capable_i) begin
+          s_state_d = PLL_APPLY;
+        end else begin
+          s_active_valid_d = 1'b0;
+          s_error_d        = 2'd1;
+          s_state_d        = PLL_RESPOND;
+        end
       end
-      3'b010: begin  //3*clk 72MHz
-        s_pll_bp = 1'b0;
-        s_pll_M  = 8'd24;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd2;
+      PLL_APPLY: begin
+        s_lock_count_d = '0;
+        s_state_d      = PLL_WAIT_LOCK;
       end
-      3'b011: begin  //4*clk 96MHz
-        s_pll_bp = 1'b0;
-        s_pll_M  = 8'd32;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd2;
+      PLL_WAIT_LOCK: begin
+        if (pll_lock_i) begin
+          s_active_sel_d   = s_pll_sel_q;
+          s_active_valid_d = 1'b1;
+          s_safe_clk_d     = 1'b0;
+          s_lock_d         = 1'b1;
+          s_error_d        = 2'd0;
+          s_state_d        = PLL_SWITCH;
+        end else if (s_lock_count_q == LOCK_TIMEOUT - 1) begin
+          s_active_valid_d = 1'b0;
+          s_safe_clk_d     = 1'b1;
+          s_lock_d         = 1'b0;
+          s_error_d        = 2'd2;
+          s_state_d        = PLL_RESPOND;
+        end else begin
+          s_lock_count_d = s_lock_count_q + 1'b1;
+        end
       end
-      3'b100: begin  //5*clk 120MHz
-        s_pll_bp = 1'b0;
-        s_pll_M  = 8'd40;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd2;
+      PLL_SWITCH: begin
+        s_select_ext_clk_d = 1'b0;
+        s_state_d          = PLL_RESPOND;
       end
-      3'b101: begin  //6*clk 144MHz
-        s_pll_bp = 1'b0;
-        s_pll_M  = 8'd48;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd2;
+      PLL_RESPOND: begin
+        s_rsp_valid_d = 1'b1;
+        if (s_rsp_valid_q && s_rsp_ready) begin
+          s_rsp_valid_d = 1'b0;
+          s_state_d     = PLL_IDLE;
+        end
       end
-      3'b110: begin  //7*clk 168MHz
-        s_pll_bp = 1'b0;
-        s_pll_M  = 8'd56;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd2;
-      end
-      3'b111: begin  //8*clk 192MHz
-        s_pll_bp = 1'b0;
-        s_pll_M  = 8'd64;
-        s_pll_N  = 4'd4;
-        s_pll_OD = 2'd1;
-      end
-      default: begin  //bypass
-        s_pll_bp = 1'b1;
-        s_pll_M  = 8'd20;
-        s_pll_N  = 4'd2;
-        s_pll_OD = 2'd1;
+      default: begin
+        s_state_d = PLL_IDLE;
       end
     endcase
   end
 
-  // Register PLL config outputs to break the comb path to PLL macro
-  always_ff @(posedge s_ext_clk_buf or negedge ext_rst_n_i) begin
-    if (~ext_rst_n_i) begin
-      s_pll_bp_q <= 1'b1;
-      s_pll_M_q  <= 8'd20;
-      s_pll_N_q  <= 4'd2;
-      s_pll_OD_q <= 2'd1;
-    end else begin
-      s_pll_bp_q <= s_pll_bp;
-      s_pll_M_q  <= s_pll_M;
-      s_pll_N_q  <= s_pll_N;
-      s_pll_OD_q <= s_pll_OD;
-    end
-  end
-
-  tc_pll u_tc_pll (
-      .fref_i    (s_xtal_clk_buf),
-      .rst_n_i   (s_ext_rst_n_sync),
-      .refdiv_i  (s_pll_M_q),
-      .fbdiv_i   (),
-      .postdiv1_i(s_pll_N_q),
-      .postdiv2_i(s_pll_OD_q),
-      .bp_i      (clk_bypass_i || s_pll_bp_q),
-      .pll_lock_o(s_pll_lock),
-      .pll_clk_o (s_pll_clk)
+  dffrc #(3, PLL_IDLE) u_state_dffrc (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_state_d,
+      s_state_q
   );
-`endif
-
+  dffr #(3) u_pll_sel_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_pll_sel_d,
+      s_pll_sel_q
+  );
+  dffr #(1) u_pll_apply_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_pll_apply_d,
+      s_pll_apply_q
+  );
+  dffrc #(1, 1'b1) u_select_ext_clk_dffrc (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_select_ext_clk_d,
+      s_select_ext_clk_q
+  );
+  dffr #(16) u_lock_count_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_lock_count_d,
+      s_lock_count_q
+  );
+  dffr #(3) u_active_sel_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_active_sel_d,
+      s_active_sel_q
+  );
+  dffr #(1) u_active_valid_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_active_valid_d,
+      s_active_valid_q
+  );
+  dffrc #(1, 1'b1) u_safe_clk_dffrc (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_safe_clk_d,
+      s_safe_clk_q
+  );
+  dffr #(1) u_lock_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_lock_d,
+      s_lock_q
+  );
+  dffr #(2) u_error_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_error_d,
+      s_error_q
+  );
+  dffr #(1) u_rsp_valid_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_rsp_valid_d,
+      s_rsp_valid_q
+  );
 endmodule

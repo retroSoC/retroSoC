@@ -49,6 +49,10 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_NMI_SDIO_BASE" not in header
     assert "RS_SOC_OPIPSRAM_BASE" not in header
     assert "RS_SOC_HAS_SRAM 1U" in header
+    assert "SOC_SYSCTRL_PLL_CFG_OFFSET      32'h00000008" in rtl
+    assert "SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C" in rtl
+    assert "RS_SOC_SYSCTRL_PLL_CFG_OFFSET UINT32_C(0x00000008)" in header
+    assert "RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)" in header
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x00800000" in linker
 
 
@@ -151,6 +155,7 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+                str(ROOT / "rtl/ip/native/peripheral/pll_ctrl_if.sv"),
                 str(ROOT / "rtl/ip/native/peripheral/sysctrl.sv"),
                 str(ROOT / "tests/rtl/sysctrl_fault_tb.sv"),
                 "",
@@ -177,6 +182,98 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
     assert "sysctrl fault registers test passed" in result.stdout
+
+
+def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        return
+    generate(tmp_path)
+    source_list = tmp_path / "pll_ctrl.fl"
+    source_list.write_text(
+        "\n".join(
+            [
+                "+define+SV_ASSRT_DISABLE",
+                "+define+PDK_BEHAV",
+                "+define+HAVE_PLL",
+                f"+incdir+{tmp_path / 'rtl'}",
+                f"+incdir+{ROOT / 'rtl/mini/top'}",
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv"),
+                str(ROOT / "rtl/ip/native/peripheral/pll_ctrl_if.sv"),
+                str(ROOT / "rtl/ip/native/peripheral/sysctrl.sv"),
+                str(ROOT / "rtl/tech/tc_clk.sv"),
+                str(ROOT / "rtl/tech/tc_pll.sv"),
+                str(ROOT / "rtl/mini/top/rcu.sv"),
+                str(ROOT / "tests/rtl/pll_ctrl_tb.sv"),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    converted = tmp_path / "pll_ctrl_tb.v"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            "-f",
+            str(source_list),
+            "--output",
+            str(converted),
+        ],
+        check=True,
+    )
+    simulation = tmp_path / "pll_ctrl_tb"
+    subprocess.run(
+        [iverilog, "-g2012", "-s", "pll_ctrl_tb", "-o", str(simulation), str(converted)],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
+    assert "pll controller dynamic configuration test passed" in result.stdout
+    result = subprocess.run(
+        [vvp, str(simulation), "+pll_lock_fail"], text=True, capture_output=True, check=True
+    )
+    assert "pll controller timeout test passed" in result.stdout
+
+    unsupported_list = tmp_path / "pll_unsupported.fl"
+    unsupported_list.write_text(
+        source_list.read_text(encoding="utf-8").replace("+define+HAVE_PLL\n", ""),
+        encoding="utf-8",
+    )
+    unsupported_converted = tmp_path / "pll_unsupported_tb.v"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            "-f",
+            str(unsupported_list),
+            "--output",
+            str(unsupported_converted),
+        ],
+        check=True,
+    )
+    unsupported_simulation = tmp_path / "pll_unsupported_tb"
+    subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-s",
+            "pll_ctrl_tb",
+            "-o",
+            str(unsupported_simulation),
+            str(unsupported_converted),
+        ],
+        check=True,
+    )
+    result = subprocess.run(
+        [vvp, str(unsupported_simulation)], text=True, capture_output=True, check=True
+    )
+    assert "pll controller capability gate test passed" in result.stdout
 
 
 def test_sysctrl_does_not_expose_unused_i2c_or_qspi_select_registers() -> None:

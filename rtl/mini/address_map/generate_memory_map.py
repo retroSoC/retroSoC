@@ -129,9 +129,12 @@ def render_rtl(cpu_reset: int, regions: list[dict[str, Any]]) -> str:
         lines.append(f"`define SOC_ADDR_IS_{route.upper()}(addr) ({join_or(selected)})")
     lines += [
         "",
+        "`define SOC_SYSCTRL_PLL_CFG_OFFSET      32'h00000008",
+        "`define SOC_SYSCTRL_PLL_CMD_OFFSET      32'h0000000C",
         "`define SOC_SYSCTRL_FAULT_STATUS_OFFSET 32'h00000010",
         "`define SOC_SYSCTRL_FAULT_ADDR_OFFSET   32'h00000014",
         "`define SOC_SYSCTRL_FAULT_COUNT_OFFSET  32'h00000018",
+        "`define SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C",
         "",
         "`endif",
         "",
@@ -162,9 +165,12 @@ def render_c(cpu_reset: int, regions: list[dict[str, Any]], have_sram_if: str) -
         ]
     lines += [
         "",
+        "#define RS_SOC_SYSCTRL_PLL_CFG_OFFSET UINT32_C(0x00000008)",
+        "#define RS_SOC_SYSCTRL_PLL_CMD_OFFSET UINT32_C(0x0000000C)",
         "#define RS_SOC_SYSCTRL_FAULT_STATUS_OFFSET UINT32_C(0x00000010)",
         "#define RS_SOC_SYSCTRL_FAULT_ADDR_OFFSET   UINT32_C(0x00000014)",
         "#define RS_SOC_SYSCTRL_FAULT_COUNT_OFFSET  UINT32_C(0x00000018)",
+        "#define RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)",
         "",
         "#endif",
         "",

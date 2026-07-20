@@ -9,6 +9,7 @@ module sysctrl_fault_tb;
   logic        fault_reserved_i = 1'b0;
   nmi_if nmi ();
   sysctrl_if sysctrl ();
+  pll_ctrl_if pll_ctrl ();
 
   always #5 clk_i = ~clk_i;
 
@@ -20,7 +21,8 @@ module sysctrl_fault_tb;
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
       .nmi             (nmi),
-      .sysctrl         (sysctrl)
+      .sysctrl         (sysctrl),
+      .pll_ctrl        (pll_ctrl)
   );
 
   task automatic read_register(input logic [31:0] address, output logic [31:0] data);
@@ -54,11 +56,19 @@ module sysctrl_fault_tb;
 
   logic [31:0] read_data;
   initial begin
-    nmi.valid          = 1'b0;
-    nmi.addr           = '0;
-    nmi.wdata          = '0;
-    nmi.wstrb          = '0;
-    sysctrl.core_sel_i = '0;
+    nmi.valid                   = 1'b0;
+    nmi.addr                    = '0;
+    nmi.wdata                   = '0;
+    nmi.wstrb                   = '0;
+    sysctrl.core_sel_i          = '0;
+    pll_ctrl.req_ready_i        = 1'b1;
+    pll_ctrl.rsp_active_sel_i   = '0;
+    pll_ctrl.rsp_active_valid_i = 1'b0;
+    pll_ctrl.rsp_safe_clk_i     = 1'b1;
+    pll_ctrl.rsp_pll_lock_i     = 1'b0;
+    pll_ctrl.rsp_error_i        = '0;
+    pll_ctrl.rsp_valid_i        = 1'b0;
+    pll_ctrl.capable_i          = 1'b0;
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 

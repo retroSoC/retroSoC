@@ -20,10 +20,6 @@ module retrosoc_asic (
 `ifdef HAVE_PLL
     input  xi_i_pad,
     output xo_o_pad,
-    inout  clk_bypass_i_pad,
-    inout  pll_cfg_0_i_pad,
-    inout  pll_cfg_1_i_pad,
-    inout  pll_cfg_2_i_pad,
 `endif
 `ifdef CORE_MDD
     inout  core_sel_0_i_pad,
@@ -142,9 +138,7 @@ module retrosoc_asic (
   logic s_aud_clk;
   logic s_sys_clkdiv4;
 `ifdef HAVE_PLL
-  logic       s_xtal_io;
-  logic       s_clk_bypass;
-  logic [2:0] s_pll_cfg;
+  logic s_xtal_io;
 `endif
   logic s_sys_clk;
   logic s_ext_rst_n;
@@ -174,6 +168,7 @@ module retrosoc_asic (
   uart_if      u_uart0_if ();
   xpi_if       u_xpi_if   ();
   sdram_if     u_sdram_if ();
+  pll_ctrl_if  u_pll_ctrl_if ();
 
 
   tc_io_tri_pad         u_extclk_i_pad        (.pad(extclk_i_pad),        .c2p(1'b0),                    .c2p_en(1'b0),                    .p2c(s_ext_clk));
@@ -181,10 +176,6 @@ module retrosoc_asic (
   tc_io_tri_schmitt_pad u_ext_rst_n_i_pad     (.pad(ext_rst_n_i_pad),     .c2p(1'b0),                    .c2p_en(1'b0),                    .p2c(s_ext_rst_n));
 `ifdef HAVE_PLL
   tc_io_xtl_pad         u_xtal_io_pad         (.xi_pad(xi_i_pad),         .xo_pad(xo_o_pad),             .en(1'b1),                        .clk(s_xtal_io));
-  tc_io_tri_pad         u_clk_bypass_i_pad    (.pad(clk_bypass_i_pad),    .c2p(1'b0),                    .c2p_en(1'b0),                    .p2c(s_clk_bypass));
-  tc_io_tri_pad         u_pll_cfg_0_i_pad     (.pad(pll_cfg_0_i_pad),     .c2p(1'b0),                    .c2p_en(1'b0),                    .p2c(s_pll_cfg[0]));
-  tc_io_tri_pad         u_pll_cfg_1_i_pad     (.pad(pll_cfg_1_i_pad),     .c2p(1'b0),                    .c2p_en(1'b0),                    .p2c(s_pll_cfg[1]));
-  tc_io_tri_pad         u_pll_cfg_2_i_pad     (.pad(pll_cfg_2_i_pad),     .c2p(1'b0),                    .c2p_en(1'b0),                    .p2c(s_pll_cfg[2]));
 `endif
 `ifdef CORE_MDD
   tc_io_tri_pad         u_core_sel_0_i_pad    (.pad(core_sel_0_i_pad),    .c2p(1'b0),                    .c2p_en(1'b0),                    .p2c(s_core_sel[0]));
@@ -307,9 +298,8 @@ module retrosoc_asic (
       .ext_rst_n_i  (s_ext_rst_n),
 `ifdef HAVE_PLL
       .xtal_clk_i   (s_xtal_io),
-      .clk_bypass_i (s_clk_bypass),
-      .pll_cfg_i    (s_pll_cfg),
 `endif
+      .pll_ctrl     (u_pll_ctrl_if),
       .sys_clk_o    (s_sys_clk),
       .sys_rst_n_o  (s_sys_rst_n),
       .aud_rst_n_o  (s_aud_rst_n),
@@ -329,6 +319,7 @@ module retrosoc_asic (
       .clk_aud_i  (s_aud_clk),
       .rst_aud_n_i(s_aud_rst_n),
       .clkdiv4_i  (s_sys_clkdiv4),
+      .pll_ctrl   (u_pll_ctrl_if),
 `ifdef CORE_MDD
       .core_sel_i (s_core_sel),
 `endif

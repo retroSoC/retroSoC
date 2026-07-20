@@ -29,6 +29,7 @@ module ip_nmi_wrapper (
     xpi_if.dut         xpi,
     nmi_if.master      dma_nmi,
     sysctrl_if.dut     sysctrl,
+    pll_ctrl_if.sysctrl pll_ctrl,
     sdram_if.dut       sdram,
     dvp_if.dut         dvp,
     sdio_if.dut        sdio,
@@ -382,7 +383,8 @@ module ip_nmi_wrapper (
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
       .nmi             (u_sysctrl_nmi_if),
-      .sysctrl         (sysctrl)
+      .sysctrl         (sysctrl),
+      .pll_ctrl        (pll_ctrl)
   );
 
   nmi_clint u_nmi_clint (

@@ -148,10 +148,13 @@
 #define RS_SOC_SYSCTRL_REG32(offset) RS_SOC_REG32(RS_SOC_NMI_SYSCTRL_BASE, (offset))
 #define reg_sysctrl_coresel RS_SOC_REG32(RS_SOC_NMI_SYSCTRL_BASE, UINT32_C(0x00))
 #define reg_sysctrl_ipsel RS_SOC_REG32(RS_SOC_NMI_SYSCTRL_BASE, UINT32_C(0x04))
+#define reg_sysctrl_pll_cfg RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PLL_CFG_OFFSET)
+#define reg_sysctrl_pll_cmd RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PLL_CMD_OFFSET)
 /* Status: bit 0 pending (W1C), bit 1 write, bits 3:2 reason (1 unmapped, 2 reserved). */
 #define reg_sysctrl_bus_fault_status RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_FAULT_STATUS_OFFSET)
 #define reg_sysctrl_bus_fault_addr RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_FAULT_ADDR_OFFSET)
 #define reg_sysctrl_bus_fault_count RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_FAULT_COUNT_OFFSET)
+#define reg_sysctrl_pll_status RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PLL_STATUS_OFFSET)
 #define RS_SOC_BUS_FAULT_PENDING UINT32_C(0x00000001)
 #define RS_SOC_BUS_FAULT_WRITE UINT32_C(0x00000002)
 #define RS_SOC_BUS_FAULT_REASON_MASK UINT32_C(0x0000000C)

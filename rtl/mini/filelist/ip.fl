@@ -28,6 +28,7 @@
 /ip/native/storage/xpi.sv
 /ip/native/peripheral/dma_core.sv
 /ip/native/peripheral/dma.sv
+/ip/native/peripheral/pll_ctrl_if.sv
 /ip/native/peripheral/sysctrl.sv
 /ip/native/peripheral/clint.sv
 /ip/native/memory/sdram_clkgen.sv

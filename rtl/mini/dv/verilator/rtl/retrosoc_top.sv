@@ -29,7 +29,6 @@ module retrosoc_top (
   wire       s_clk;
   wire       s_rst_n;
   wire [4:0] s_core_sel;
-  wire       s_clk_bypass;
   wire       s_psram_sck;
   wire       s_psram_nss0;
   wire       s_psram_dat0;
@@ -43,10 +42,9 @@ module retrosoc_top (
   wire       s_xpi_dat2_io;
   wire       s_xpi_dat3_io;
 
-  assign s_clk        = ext_clk_i;
-  assign s_rst_n      = rst_n_i;
-  assign s_core_sel   = core_sel_i;
-  assign s_clk_bypass = 1'b1;
+  assign s_clk      = ext_clk_i;
+  assign s_rst_n    = rst_n_i;
+  assign s_core_sel = core_sel_i;
   retrosoc_asic u_retrosoc_asic (
       .extclk_i_pad       (s_clk),
       .audclk_i_pad       (),
@@ -54,10 +52,6 @@ module retrosoc_top (
 `ifdef HAVE_PLL
       .xi_i_pad           (),
       .xo_o_pad           (),
-      .clk_bypass_i_pad   (s_clk_bypass),
-      .pll_cfg_0_i_pad    (),
-      .pll_cfg_1_i_pad    (),
-      .pll_cfg_2_i_pad    (),
 `endif
 `ifdef CORE_MDD
       .core_sel_0_i_pad   (s_core_sel[0]),

@@ -18,6 +18,7 @@ module retrosoc (
     input  logic                           clk_aud_i,
     input  logic                           rst_aud_n_i,
     input  logic                           clkdiv4_i,
+    pll_ctrl_if.sysctrl                    pll_ctrl,
 `ifdef CORE_MDD
     input  logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
 `endif
@@ -409,6 +410,7 @@ module retrosoc (
       .xpi             (xpi),
       .dma_nmi         (u_dma_nmi_if),
       .sysctrl         (u_sysctrl_if),
+      .pll_ctrl        (pll_ctrl),
       .sdram           (sdram),
       .dvp             (u_dvp_if),
       .sdio            (u_sdio_if),
