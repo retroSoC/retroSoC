@@ -2,15 +2,15 @@
 
 GCC = riscv32-unknown-elf-
 
-AS = $(GCC)as
-LD = $(GCC)ld
-OBJDUMP = $(GCC)objdump
-OBJCOPY = $(GCC)objcopy
+AS       = $(GCC)as
+LD       = $(GCC)ld
+OBJDUMP  = $(GCC)objdump
+OBJCOPY  = $(GCC)objcopy
 AS_FLAGS = -fno-pic -march=rv32im -mabi=ilp32
 LDFLAGS  = -T flash.ld -melf32lriscv
-APP ?= hello
-OUT_DIR ?= .
-APP_ALL = $(OUT_DIR)/$(APP)-asm
+APP      ?= hello
+OUT_DIR  ?= .
+APP_ALL  = $(OUT_DIR)/$(APP)-asm
 
 all: $(APP).s
 	@mkdir -p $(OUT_DIR)

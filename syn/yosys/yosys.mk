@@ -27,15 +27,15 @@ YOSYS_RPT   := $(YOSYS_BUILD)/rpt
 
 include $(YOSYS_DIR)/synth_config.mk
 
-TOP_DESIGN    ?= retrosoc_asic
-RTL_NAME      ?= retrosoc_asic
-SV_FLIST      := $(GENERATED_FL_DIR)/yosys.fl
+TOP_DESIGN ?= retrosoc_asic
+RTL_NAME   ?= retrosoc_asic
+SV_FLIST   := $(GENERATED_FL_DIR)/yosys.fl
 
-NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
-NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
+NETLIST        := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
+NETLIST_DEBUG  := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
 NETLIST_CONFIG := $(YOSYS_OUT)/$(RTL_NAME)_yosys.config
-YOSYS_DEPFILE := $(YOSYS_BUILD)/yosys.d
-YOSYS_SCRIPTS := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk $(YOSYS_DIR)/yosys.mk
+YOSYS_DEPFILE  := $(YOSYS_BUILD)/yosys.d
+YOSYS_SCRIPTS  := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk $(YOSYS_DIR)/yosys.mk
 
 -include $(YOSYS_DEPFILE)
 

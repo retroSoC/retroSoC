@@ -5,11 +5,9 @@ SOC_CXXFILES      += $(sort $(wildcard $(SOC_CSRC_HOME)/*.cpp))
 SOC_CSRC_INCLPATH += -I$(SOC_CSRC_HOME)
 SOC_CSRC_INCLPATH += $(foreach val, $(SOC_CSRC_LIB_HOME), -I$(val))
 
-SOC_VSRC_TOP      := retrosoc_top
-SOC_VSRC_HOME     += $(RTL_PATH)/dv/verilator/rtl
-SOC_COMPILE_HOME  := $(BUILD_DIR)/emu_compile
-
-
+SOC_VSRC_TOP     := retrosoc_top
+SOC_VSRC_HOME    += $(RTL_PATH)/dv/verilator/rtl
+SOC_COMPILE_HOME := $(BUILD_DIR)/emu_compile
 
 SOC_VXXFILES      := $(RTL_FLIST)
 SOC_VXXFILES      += $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv
@@ -29,10 +27,10 @@ VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
 VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
 VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
 
-SOC_SIM_TIME ?= 40
-VERILATOR_STAMP := $(BUILD_DIR)/verilate.stamp
-VERILATOR_DEPFILE := $(BUILD_DIR)/verilate.d
-VERILATOR_EMU := $(BUILD_DIR)/emu
+SOC_SIM_TIME            ?= 40
+VERILATOR_STAMP         := $(BUILD_DIR)/verilate.stamp
+VERILATOR_DEPFILE       := $(BUILD_DIR)/verilate.d
+VERILATOR_EMU           := $(BUILD_DIR)/emu
 VERILATOR_EXTRA_SOURCES := $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv \
                            $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv \
                            $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv \

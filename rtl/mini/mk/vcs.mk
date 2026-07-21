@@ -1,20 +1,20 @@
 # tools & paths
-NOVAS        ?= /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
-VCS_RUNNER   ?= bsub -Is
-VCS          ?= vcs
-VERDI        ?= verdi
-EXTRA        ?= -P $(NOVAS)/novas.tab $(NOVAS)/pli.a
-SIM_TOOL     := $(VCS_RUNNER) $(VCS)
-SIM_BINY     := $(VCS_RUNNER) ./simv
-VERDI_TOOL   := $(VCS_RUNNER) $(VERDI)
-COMP_LOG     := -l compile.log
-SIM_LOG      := -l sim.log
+NOVAS      ?= /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
+VCS_RUNNER ?= bsub -Is
+VCS        ?= vcs
+VERDI      ?= verdi
+EXTRA      ?= -P $(NOVAS)/novas.tab $(NOVAS)/pli.a
+SIM_TOOL   := $(VCS_RUNNER) $(VCS)
+SIM_BINY   := $(VCS_RUNNER) ./simv
+VERDI_TOOL := $(VCS_RUNNER) $(VERDI)
+COMP_LOG   := -l compile.log
+SIM_LOG    := -l sim.log
 # netlist file path
 NETLIST_PATH := -v $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 POST_PATH    := -v $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
 SDF_PATH     := "$(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz"
 # testbench filelist
-TB_FLIST     := -f $(GENERATED_FL_DIR)/tb.fl
+TB_FLIST := -f $(GENERATED_FL_DIR)/tb.fl
 
 ## vcs option
 # -debug_region=cell+lib
@@ -23,7 +23,7 @@ TB_FLIST     := -f $(GENERATED_FL_DIR)/tb.fl
 # -error=all(turn all warning into error)
 # +vcs+loopreport+100000 \
 # --- Compilation Flags ---
-COMMON_OPTS  := -full64 +v2k -sverilog -timescale=1ns/10ps \
+COMMON_OPTS := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 $(EXTRA) \
                 -kdb \
                 -debug_access+all \
@@ -35,7 +35,7 @@ COMMON_OPTS  := -full64 +v2k -sverilog -timescale=1ns/10ps \
                 -reportstats \
                 -work DEFAULT
 
-POST_OPTS   := -sdf min:retrosoc_tb.u_retrosoc_asic:$(SDF_PATH) \
+POST_OPTS := -sdf min:retrosoc_tb.u_retrosoc_asic:$(SDF_PATH) \
                +delay_mode_path \
                +sdfverbose \
                +neg_tchk \
@@ -48,12 +48,12 @@ TIME_OPTION := +notimingcheck +nospecify
 SIM_OPTS    := +vcs+loopreport+1000 -suppress=ASLR_DETECTED_INFO \
                +core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
-VCS_BEHV_DIR := $(SIM_BUILD_ROOT)/behv
-VCS_NETL_DIR := $(SIM_BUILD_ROOT)/netl
-VCS_POST_DIR := $(SIM_BUILD_ROOT)/post
-VCS_BEHV_SIMV := $(VCS_BEHV_DIR)/simv
-VCS_NETL_SIMV := $(VCS_NETL_DIR)/simv
-VCS_POST_SIMV := $(VCS_POST_DIR)/simv
+VCS_BEHV_DIR     := $(SIM_BUILD_ROOT)/behv
+VCS_NETL_DIR     := $(SIM_BUILD_ROOT)/netl
+VCS_POST_DIR     := $(SIM_BUILD_ROOT)/post
+VCS_BEHV_SIMV    := $(VCS_BEHV_DIR)/simv
+VCS_NETL_SIMV    := $(VCS_NETL_DIR)/simv
+VCS_POST_SIMV    := $(VCS_POST_DIR)/simv
 VCS_BEHV_DEPFILE := $(VCS_BEHV_DIR)/simv.d
 VCS_NETL_DEPFILE := $(VCS_NETL_DIR)/simv.d
 VCS_POST_DEPFILE := $(VCS_POST_DIR)/simv.d
@@ -85,7 +85,6 @@ postsim:  DIR   := $(VCS_POST_DIR)
 wave:     DIR   := $(SIM_BUILD_ROOT)/behv
 netwave:  DIR   := $(SIM_BUILD_ROOT)/netl
 postwave: DIR   := $(SIM_BUILD_ROOT)/post
-
 
 comp: $(VCS_BEHV_SIMV)
 netcomp: $(VCS_NETL_SIMV)

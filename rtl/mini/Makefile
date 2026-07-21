@@ -1,29 +1,29 @@
-GENERATED_FL_DIR := $(FLOW_FILELIST_DIR)
-MEMORY_MAP_SOURCE := $(RTL_PATH)/address_map/memory_map.json
-MEMORY_MAP_SCRIPT := $(RTL_PATH)/address_map/generate_memory_map.py
-MEMORY_MAP_DIR    := $(VARIANT_ROOT)/generated/memory_map
-MEMORY_MAP_STAMP  := $(MEMORY_MAP_DIR)/.stamp
-MEMORY_MAP_RTL_DIR := $(MEMORY_MAP_DIR)/rtl
-MEMORY_MAP_C_DIR   := $(MEMORY_MAP_DIR)/include
+GENERATED_FL_DIR      := $(FLOW_FILELIST_DIR)
+MEMORY_MAP_SOURCE     := $(RTL_PATH)/address_map/memory_map.json
+MEMORY_MAP_SCRIPT     := $(RTL_PATH)/address_map/generate_memory_map.py
+MEMORY_MAP_DIR        := $(VARIANT_ROOT)/generated/memory_map
+MEMORY_MAP_STAMP      := $(MEMORY_MAP_DIR)/.stamp
+MEMORY_MAP_RTL_DIR    := $(MEMORY_MAP_DIR)/rtl
+MEMORY_MAP_C_DIR      := $(MEMORY_MAP_DIR)/include
 MEMORY_MAP_LINKER_DIR := $(MEMORY_MAP_DIR)/linker
-MEMORY_MAP_FILELIST := $(MEMORY_MAP_DIR)/memory_map.fl
-PIN_MAP_SOURCE := $(RTL_PATH)/pin_map/pin_map.json
-PIN_MAP_SCRIPT := $(RTL_PATH)/pin_map/generate_pin_map.py
-PIN_MAP_DIR := $(VARIANT_ROOT)/generated/pin_map
-PIN_MAP_STAMP := $(PIN_MAP_DIR)/.stamp
-PIN_MAP_FILELIST := $(PIN_MAP_DIR)/pin_map.fl
-MPW_STAMP        := $(CACHE_ROOT)/stamps/mpw-$(LOCK_DIGEST).prepared
-MPW_OUTPUT_DIR   := $(VARIANT_ROOT)/generated/mpw/$(SIM_TOOL_NAME)
-MPW_VARIANT_STAMP := $(MPW_OUTPUT_DIR)/.stamp
-FILELIST_STAMP   := $(GENERATED_FL_DIR)/.stamp
-FILELIST_TEMPLATES := $(sort $(wildcard $(ROOT_PATH)/rtl/filelist/pdk_*.fl) \
+MEMORY_MAP_FILELIST   := $(MEMORY_MAP_DIR)/memory_map.fl
+PIN_MAP_SOURCE        := $(RTL_PATH)/pin_map/pin_map.json
+PIN_MAP_SCRIPT        := $(RTL_PATH)/pin_map/generate_pin_map.py
+PIN_MAP_DIR           := $(VARIANT_ROOT)/generated/pin_map
+PIN_MAP_STAMP         := $(PIN_MAP_DIR)/.stamp
+PIN_MAP_FILELIST      := $(PIN_MAP_DIR)/pin_map.fl
+MPW_STAMP             := $(CACHE_ROOT)/stamps/mpw-$(LOCK_DIGEST).prepared
+MPW_OUTPUT_DIR        := $(VARIANT_ROOT)/generated/mpw/$(SIM_TOOL_NAME)
+MPW_VARIANT_STAMP     := $(MPW_OUTPUT_DIR)/.stamp
+FILELIST_STAMP        := $(GENERATED_FL_DIR)/.stamp
+FILELIST_TEMPLATES    := $(sort $(wildcard $(ROOT_PATH)/rtl/filelist/pdk_*.fl) \
                       $(wildcard $(RTL_PATH)/filelist/*.fl) $(RTL_PATH)/lint.msg)
 
 $(MPW_STAMP):
 	@test -d $(ROOT_PATH)/rtl/managed/mpw/.git || { \
 		echo "missing $(ROOT_PATH)/rtl/managed/mpw; run 'make setup-mpw' first" >&2; \
 		exit 1; \
-	}
+		}
 	python3 $(ROOT_PATH)/scripts/prepare_mpw.py \
 		--lock-file $(CACHE_ROOT)/locks/mpw-prepare.lock
 	@mkdir -p $(@D)
@@ -58,7 +58,7 @@ check-pin-map:
 	python3 $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --check
 
 $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py \
-                   $(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP)
+	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP)
 	python3 $(RTL_PATH)/script/generate_filelist.py \
 		--output-dir $(GENERATED_FL_DIR) \
 		$(foreach define,$(DEF_LIST),--define $(define))
@@ -80,15 +80,15 @@ else ifeq ($(PDK), GF180)
     NET_FLIST := -f $(GENERATED_FL_DIR)/pdk_gf180.fl
 endif
 
-NET_FLIST  += -f $(GENERATED_FL_DIR)/def.fl
-NET_FLIST  += -f $(GENERATED_FL_DIR)/sys_def.fl
-NET_FLIST  += -f $(GENERATED_FL_DIR)/commonip.fl
-NET_FLIST  += -f $(GENERATED_FL_DIR)/inc.fl
+NET_FLIST += -f $(GENERATED_FL_DIR)/def.fl
+NET_FLIST += -f $(GENERATED_FL_DIR)/sys_def.fl
+NET_FLIST += -f $(GENERATED_FL_DIR)/commonip.fl
+NET_FLIST += -f $(GENERATED_FL_DIR)/inc.fl
 
-RTL_FLIST  := -f $(MEMORY_MAP_FILELIST) -f $(PIN_MAP_FILELIST) $(NET_FLIST)
-RTL_FLIST  += -f $(GENERATED_FL_DIR)/clusterip.fl
-RTL_FLIST  += -f $(GENERATED_FL_DIR)/ip.fl
-RTL_FLIST  += -f $(GENERATED_FL_DIR)/tech.fl
+RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(PIN_MAP_FILELIST) $(NET_FLIST)
+RTL_FLIST += -f $(GENERATED_FL_DIR)/clusterip.fl
+RTL_FLIST += -f $(GENERATED_FL_DIR)/ip.fl
+RTL_FLIST += -f $(GENERATED_FL_DIR)/tech.fl
 
 ifeq ($(CORE), PICORV32)
     RTL_FLIST += -f $(GENERATED_FL_DIR)/core_picorv32.fl
