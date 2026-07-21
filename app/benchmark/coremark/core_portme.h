@@ -98,7 +98,7 @@ typedef unsigned char ee_u8;
 typedef unsigned int ee_u32;
 typedef ee_u32 ee_ptr_int;
 typedef size_t ee_size_t;
-#define NULL ((void *)0)
+#define NULL         ((void *)0)
 /* align_mem :
         This macro is used to align an offset to point to a 32b value. It is
    used in the Matrix algorithm to initialize the input memory blocks.
@@ -156,8 +156,8 @@ typedef ee_u32 CORE_TICKS;
 #ifndef MULTITHREAD
 #define MULTITHREAD 1
 #define USE_PTHREAD 0
-#define USE_FORK 0
-#define USE_SOCKET 0
+#define USE_FORK    0
+#define USE_SOCKET  0
 #endif
 
 /* Configuration : MAIN_HAS_NOARGC

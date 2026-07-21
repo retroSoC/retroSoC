@@ -45,18 +45,18 @@ typedef struct {
 #define SysTimer_MSIP_MSIP_MASK                                                                    \
     (1UL << SysTimer_MSIP_MSIP_POS) /*!< SysTick Timer msip: msip Mask */
 
-#define SysTimer_MTIMER_MASK (0xFFFFFFFFFFFFFFFFULL)    /*!< SysTick Timer MTIMER value Mask */
+#define SysTimer_MTIMER_MASK    (0xFFFFFFFFFFFFFFFFULL) /*!< SysTick Timer MTIMER value Mask */
 #define SysTimer_MTIMERCMP_MASK (0xFFFFFFFFFFFFFFFFULL) /*!< SysTick Timer MTIMERCMP value Mask */
-#define SysTimer_MSIP_MASK (0xFFFFFFFFUL)               /*!< SysTick Timer msip   value Mask */
+#define SysTimer_MSIP_MASK      (0xFFFFFFFFUL)          /*!< SysTick Timer msip   value Mask */
 
-#define __SYSTIMER_BASEADDR 0x1000C000
+#define __SYSTIMER_BASEADDR     0x1000C000
 #ifndef __SYSTIMER_BASEADDR
 /* Base address of SYSTIMER(__SYSTIMER_BASEADDR) should be defined in <Device.h> */
 #error "__SYSTIMER_BASEADDR is not defined, please check!"
 #endif
 /* System Timer Memory mapping of Device */
-#define SysTimer_BASE __SYSTIMER_BASEADDR         /*!< SysTick Base Address */
-#define SysTimer ((SysTimer_Type *)SysTimer_BASE) /*!< SysTick configuration struct */
+#define SysTimer_BASE __SYSTIMER_BASEADDR              /*!< SysTick Base Address */
+#define SysTimer      ((SysTimer_Type *)SysTimer_BASE) /*!< SysTick configuration struct */
 
 /**
  * \defgroup NMSIS_Core_SysTimer SysTimer Functions

@@ -8,3 +8,4 @@ AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 PointerAlignment: Right
 SortIncludes: Never
+AlignConsecutiveMacros: AcrossEmptyLinesAndComments

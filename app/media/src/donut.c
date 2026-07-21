@@ -31,15 +31,15 @@
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/media/donut.h>
 
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#define GRAY_LEVELS 12
+#define likely(x)            __builtin_expect(!!(x), 1)
+#define unlikely(x)          __builtin_expect(!!(x), 0)
+#define GRAY_LEVELS          12
 // screen framebuffer (128x128)
-#define scale_x 8
-#define scale_y 8
-#define DONUT_SIZE 16
-#define DONUT_WIDTH DONUT_SIZE *scale_x
-#define DONUT_HEIGHT DONUT_SIZE *scale_y
+#define scale_x              8
+#define scale_y              8
+#define DONUT_SIZE           16
+#define DONUT_WIDTH          DONUT_SIZE *scale_x
+#define DONUT_HEIGHT         DONUT_SIZE *scale_y
 #define RS_DONUT_FRAME_COUNT 300U
 
 static const uint32_t gray_colors[GRAY_LEVELS] = {

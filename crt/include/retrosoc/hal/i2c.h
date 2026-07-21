@@ -5,9 +5,9 @@
 
 #include <retrosoc/core/status.h>
 
-#define RS_I2C_XFER_WRITE 0x2U
-#define RS_I2C_XFER_READ 0x3U
-#define RS_I2C_DEVICE_ADDRESS_8BIT 0U
+#define RS_I2C_XFER_WRITE           0x2U
+#define RS_I2C_XFER_READ            0x3U
+#define RS_I2C_DEVICE_ADDRESS_8BIT  0U
 #define RS_I2C_DEVICE_ADDRESS_16BIT 1U
 
 rs_status_t rs_i2c0_init(uint8_t clock_divider);

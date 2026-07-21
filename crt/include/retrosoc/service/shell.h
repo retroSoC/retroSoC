@@ -6,12 +6,12 @@
 
 #include <retrosoc/core/status.h>
 
-#define RS_SHELL_MAX_ARGC 16U
-#define RS_SHELL_MAX_COMMANDS 72U
+#define RS_SHELL_MAX_ARGC           16U
+#define RS_SHELL_MAX_COMMANDS       72U
 #define RS_SHELL_MAX_COMMAND_LENGTH 100U
-#define RS_SHELL_MAX_HISTORY 100U
-#define RS_SHELL_MAX_PATH 128U
-#define RS_SHELL_MAX_BUFFER (512U * 1024U)
+#define RS_SHELL_MAX_HISTORY        100U
+#define RS_SHELL_MAX_PATH           128U
+#define RS_SHELL_MAX_BUFFER         (512U * 1024U)
 
 typedef void (*rs_shell_handler_t)(int argc, char **argv);
 

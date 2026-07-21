@@ -623,17 +623,17 @@ __STATIC_FORCEINLINE void __FENCE_I(void) {
 }
 
 /** \brief Read & Write Memory barrier */
-#define __RWMB() __FENCE(iorw, iorw)
+#define __RWMB()      __FENCE(iorw, iorw)
 /** \brief Read Memory barrier */
-#define __RMB() __FENCE(ir, ir)
+#define __RMB()       __FENCE(ir, ir)
 /** \brief Write Memory barrier */
-#define __WMB() __FENCE(ow, ow)
+#define __WMB()       __FENCE(ow, ow)
 /** \brief SMP Read & Write Memory barrier */
-#define __SMP_RWMB() __FENCE(rw, rw)
+#define __SMP_RWMB()  __FENCE(rw, rw)
 /** \brief SMP Read Memory barrier */
-#define __SMP_RMB() __FENCE(r, r)
+#define __SMP_RMB()   __FENCE(r, r)
 /** \brief SMP Write Memory barrier */
-#define __SMP_WMB() __FENCE(w, w)
+#define __SMP_WMB()   __FENCE(w, w)
 /** \brief CPU relax for busy loop */
 #define __CPU_RELAX() __ASM volatile("" : : : "memory")
 

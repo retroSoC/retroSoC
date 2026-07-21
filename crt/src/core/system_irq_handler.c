@@ -5,8 +5,8 @@
 #include <retrosoc/core/irq.h>
 #include <retrosoc/lib/printf.h>
 
-#define RS_EXCEPTION_COUNT 16U
-#define RS_CORE_IRQ_COUNT 12U
+#define RS_EXCEPTION_COUNT    16U
+#define RS_CORE_IRQ_COUNT     12U
 #define RS_EXTERNAL_IRQ_COUNT 30U
 
 static rs_trap_handler_t exception_handlers[RS_EXCEPTION_COUNT];
