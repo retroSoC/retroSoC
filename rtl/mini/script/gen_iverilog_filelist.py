@@ -19,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", required=True, choices=("behv", "netl", "post"))
     parser.add_argument("--pdk", required=True)
     parser.add_argument("--generated-dir", type=Path, default=DEFAULT_GENERATED_DIR)
+    parser.add_argument("--pin-map-rtl-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--converted", type=Path)
     parser.add_argument("--netlist", type=Path)
@@ -60,6 +61,10 @@ def main() -> int:
     base_names = ["def.fl", "sys_def.fl", "inc.fl", "tb.fl"]
     base = parse_filelists(generated_dir / name for name in base_names)
     base.options.insert(0, "+timescale+1ns/1ps")
+    pin_map_rtl_dir = args.pin_map_rtl_dir.resolve()
+    if not pin_map_rtl_dir.is_dir():
+        raise FileNotFoundError(f"pin-map RTL directory not found: {pin_map_rtl_dir}")
+    base.incdirs.append(pin_map_rtl_dir)
 
     if args.mode == "behv":
         base.files.append(_require(args.converted, "converted behavioral RTL"))

@@ -57,6 +57,10 @@ interface gpio_if ();
       input alt1_oe_i,
       output irq_o
   );
+
+  modport pad(input oe_o, input cs_o, input pu_o, input pd_o, input do_o, output di_i);
+
+  modport soc_pad(output oe_o, output cs_o, output pu_o, output pd_o, output do_o, input di_i);
 endinterface
 
 module nmi_gpio (
@@ -120,8 +124,8 @@ module nmi_gpio (
     assign s_gpio_alt_out[i] = s_gpio_pinmux_q[i] ? gpio.alt1_do_i[i] : gpio.alt0_do_i[i];
   end
   for (genvar i = 0; i < `NMI_GPIO_NUM; i++) begin : IOF_PINMUX_BLOCK
-    assign gpio.oe_o[i]     = s_gpio_iofcfg_q[i] ? s_gpio_alt_oe[i] : s_gpio_oe_q[i];
-    assign gpio.do_o[i]     = s_gpio_iofcfg_q[i] ? s_gpio_alt_out[i] : s_gpio_do_q[i];
+    assign gpio.oe_o[i] = s_gpio_iofcfg_q[i] ? s_gpio_alt_oe[i] : s_gpio_oe_q[i];
+    assign gpio.do_o[i] = s_gpio_iofcfg_q[i] ? s_gpio_alt_out[i] : s_gpio_do_q[i];
   end
   assign s_irq_stat = |s_gpio_istat_q;
   assign gpio.irq_o = s_irq_stat;

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,14 +39,25 @@ PR_PROFILES = (
 NIGHTLY_PROFILES = PR_PROFILES + ("configs/nightly/picorv32-rv32im-ihp130.mk",)
 
 
-def run_command(command: list[str], root: Path, capture_output: bool) -> str:
+def regression_environment() -> dict[str, str]:
+    environment = os.environ.copy()
+    environment.setdefault(
+        "BUILD_TIMESTAMP", datetime.now().astimezone().strftime("%Y-%m-%d-%H-%M")
+    )
+    return environment
+
+
+def run_command(
+    command: list[str], root: Path, capture_output: bool, environment: dict[str, str]
+) -> str:
     if not capture_output:
-        subprocess.run(command, cwd=root, check=True)
+        subprocess.run(command, cwd=root, env=environment, check=True)
         return ""
 
     result = subprocess.run(
         command,
         cwd=root,
+        env=environment,
         check=False,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -63,11 +76,12 @@ def main() -> int:
     args = parser.parse_args()
     commands = PR_COMMANDS if args.suite == "pr" else NIGHTLY_COMMANDS
     profiles = PR_PROFILES if args.suite == "pr" else NIGHTLY_PROFILES
+    environment = regression_environment()
     for profile, values in commands:
         command = ["make", f"CONFIG={profile}", *values]
         print("+ " + " ".join(command), flush=True)
         if not args.dry_run:
-            output = run_command(command, args.root, "firmware" in values)
+            output = run_command(command, args.root, "firmware" in values, environment)
             warnings = self_owned_warnings(args.root, output)
             if warnings:
                 print("self-owned C compiler warnings:", flush=True)
@@ -82,7 +96,7 @@ def main() -> int:
         ]
         print("+ " + " ".join(command), flush=True)
         if not args.dry_run:
-            subprocess.run(command, cwd=args.root, check=True)
+            subprocess.run(command, cwd=args.root, env=environment, check=True)
     return 0
 
 

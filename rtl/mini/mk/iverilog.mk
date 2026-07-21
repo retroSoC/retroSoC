@@ -40,19 +40,19 @@ $(IVERILOG_BEHV_FLIST): $(FILELIST_STAMP) $(CONVERTED_SOC)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode behv --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
-		--output $@ --converted $(CONVERTED_SOC)
+		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --converted $(CONVERTED_SOC)
 
 $(IVERILOG_NETL_FLIST): $(FILELIST_STAMP) $(NETLIST_PATH)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode netl --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
-		--output $@ --netlist $(NETLIST_PATH)
+		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --netlist $(NETLIST_PATH)
 
 $(IVERILOG_POST_FLIST): $(FILELIST_STAMP) $(POST_PATH) $(SDF_PATH)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode post --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
-		--output $@ --netlist $(POST_PATH) --sdf $(SDF_PATH) \
+		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --netlist $(POST_PATH) --sdf $(SDF_PATH) \
 		--sdf-scope $(SDF_SCOPE)
 
 convt_sv2v: $(CONVERTED_SOC)

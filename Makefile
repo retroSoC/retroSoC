@@ -51,6 +51,7 @@ LINK_TYPE      ?= ld2_sram
 
 BUILD_ROOT     ?= $(ROOT_PATH)/build
 CACHE_ROOT     ?= $(ROOT_PATH)/.cache/retrosoc
+BUILD_TIMESTAMP ?= $(shell date '+%Y-%m-%d-%H-%M')
 MAX_JOBS       ?= 16
 HOST_CC        ?= cc
 CLANG_FORMAT   ?= clang-format-14
@@ -60,12 +61,13 @@ JOBS           ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
 CONFIG_KEY_VARS := SOC CORE IP PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
                    ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
 VARIANT_ID := $(strip $(shell python3 $(ROOT_PATH)/scripts/config_key.py \
-    --lock $(LOCK_FILE) --profile $(PROFILE_NAME) \
+    --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var)))))
 ifeq ($(VARIANT_ID),)
 $(error Failed to calculate build variant ID)
 endif
 LOCK_DIGEST := $(strip $(shell python3 $(ROOT_PATH)/scripts/dependency_lock.py --lock $(LOCK_FILE) --digest))
+export BUILD_TIMESTAMP
 VARIANT_ROOT := $(abspath $(BUILD_ROOT))/$(VARIANT_ID)
 SW_BUILD_DIR := $(VARIANT_ROOT)/sw
 SIM_TOOL_NAME := $(shell printf '%s' '$(SIMU)' | tr '[:upper:]' '[:lower:]')
@@ -161,7 +163,8 @@ endif
 
 .PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
         clean-all purge-cache manifest check-warnings metrics check-metrics package \
-        regress-pr regress-nightly sim-asm sw-format sw-format-check sw-policy-check sw-host-test
+        regress-pr regress-nightly sim-asm sw-format sw-format-check sw-policy-check sw-host-test \
+        pin-map check-pin-map
 .NOTPARALLEL: setup
 
 help:
@@ -178,6 +181,8 @@ help:
 	  '  config | manifest          print/write the effective configuration' \
 	  '  memory-map                 generate the selected address-map artifacts' \
 	  '  check-memory-map           validate the canonical address map' \
+	  '  pin-map                    generate the selected pin-map artifacts' \
+	  '  check-pin-map              validate the canonical SoC pin map' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
 	  '  sw-format                  apply clang-format to self-owned embedded C code' \
@@ -194,7 +199,7 @@ help:
 config:
 	@printf '%-18s %s\n' \
 	  ROOT_PATH '$(ROOT_PATH)' CONFIG '$(or $(CONFIG_PATH),<defaults>)' \
-	  VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
+	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
 	  SOC '$(SOC)' CORE '$(CORE)' IP '$(IP)' \
 	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' PDK '$(PDK)' \

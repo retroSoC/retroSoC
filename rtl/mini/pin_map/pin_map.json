@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "pads": [
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {"name": "extclk_i_pad", "signal": "s_ext_clk"},
+        {"name": "audclk_i_pad", "signal": "s_aud_clk"}
+      ]
+    },
+    {
+      "kind": "schmitt_input",
+      "direction": "inout",
+      "ports": [
+        {"name": "ext_rst_n_i_pad", "signal": "s_ext_rst_n"}
+      ]
+    },
+    {
+      "kind": "xtal",
+      "feature": "HAVE_PLL",
+      "ports": [
+        {"name": "xi_i_pad", "direction": "input", "signal": "s_xtal_io", "peer": "xo_o_pad"},
+        {"name": "xo_o_pad", "direction": "output", "bind": false}
+      ]
+    },
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "feature": "CORE_MDD",
+      "prefix": "core_sel_",
+      "suffix": "_i_pad",
+      "count": 5,
+      "signal": "s_core_sel[{index}]"
+    },
+    {
+      "kind": "full",
+      "direction": "inout",
+      "feature": "IP_MDD",
+      "prefix": "user_gpio_",
+      "suffix": "_io_pad",
+      "count": 16,
+      "interface": "u_user_gpio_if"
+    },
+    {
+      "kind": "full",
+      "direction": "inout",
+      "prefix": "gpio_",
+      "suffix": "_io_pad",
+      "count": 32,
+      "interface": "u_gpio_if"
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {"name": "uart0_tx_o_pad", "signal": "u_uart0_if.tx_o"}
+      ]
+    },
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {"name": "uart0_rx_i_pad", "signal": "u_uart0_if.rx_i"}
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {"name": "xpi_sck_o_pad", "signal": "u_xpi_if.sck_o"}
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "prefix": "xpi_nss",
+      "suffix": "_o_pad",
+      "count": 4,
+      "signal": "u_xpi_if.nss_o[{index}]"
+    },
+    {
+      "kind": "xpi_data",
+      "direction": "inout",
+      "prefix": "xpi_dat",
+      "suffix": "_io_pad",
+      "count": 4
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {"name": "sdram_clk_o_pad", "signal": "u_sdram_if.clk_o"},
+        {"name": "sdram_cke_o_pad", "signal": "u_sdram_if.cke_o"},
+        {"name": "sdram_cs_n_o_pad", "signal": "u_sdram_if.cs_n_o"},
+        {"name": "sdram_ras_n_o_pad", "signal": "u_sdram_if.ras_n_o"},
+        {"name": "sdram_cas_n_o_pad", "signal": "u_sdram_if.cas_n_o"},
+        {"name": "sdram_we_n_o_pad", "signal": "u_sdram_if.we_n_o"}
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "prefix": "sdram_ba",
+      "suffix": "_o_pad",
+      "count": 2,
+      "signal": "u_sdram_if.ba_o[{index}]"
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "prefix": "sdram_addr",
+      "suffix": "_o_pad",
+      "count": 13,
+      "signal": "u_sdram_if.addr_o[{index}]"
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "prefix": "sdram_dqm",
+      "suffix": "_o_pad",
+      "count": 2,
+      "signal": "u_sdram_if.dqm_o[{index}]"
+    },
+    {
+      "kind": "sdram_dq",
+      "direction": "inout",
+      "prefix": "sdram_dq",
+      "suffix": "_io_pad",
+      "count": 16
+    }
+  ],
+  "profiles": {
+    "fpga_mini": {
+      "bindings": {
+        "extclk_i_pad": "s_sys_clk",
+        "audclk_i_pad": "s_aud_clk",
+        "ext_rst_n_i_pad": "rst_n_i",
+        "xi_i_pad": "s_sys_clk",
+        "core_sel_0_i_pad": "1'b0",
+        "core_sel_1_i_pad": "1'b0",
+        "core_sel_2_i_pad": "1'b0",
+        "core_sel_3_i_pad": "1'b0",
+        "core_sel_4_i_pad": "1'b0",
+        "gpio_0_io_pad": "ps2_clk_i",
+        "gpio_1_io_pad": "ps2_dat_i",
+        "gpio_2_io_pad": "onewire_dat_o",
+        "gpio_3_io_pad": "i2c_scl_io",
+        "gpio_4_io_pad": "i2c_sda_io",
+        "gpio_5_io_pad": "pwm_2_o",
+        "gpio_6_io_pad": "spisd_sck_o",
+        "gpio_7_io_pad": "spisd_nss_o",
+        "gpio_8_io_pad": "spisd_mosi_o",
+        "gpio_9_io_pad": "spisd_miso_i",
+        "gpio_10_io_pad": "i2s_mclk_o",
+        "gpio_11_io_pad": "i2s_sclk_o",
+        "gpio_12_io_pad": "i2s_lrck_o",
+        "gpio_13_io_pad": "i2s_dacdat_o",
+        "gpio_14_io_pad": "i2s_adcdat_i",
+        "gpio_21_io_pad": "psram_sck_o",
+        "gpio_22_io_pad": "psram_nss0_o",
+        "gpio_23_io_pad": "psram_dat0_io",
+        "gpio_24_io_pad": "psram_dat1_io",
+        "gpio_25_io_pad": "psram_dat2_io",
+        "gpio_26_io_pad": "psram_dat3_io",
+        "gpio_30_io_pad": "gpio_io30",
+        "uart0_tx_o_pad": "uart0_tx_o",
+        "uart0_rx_i_pad": "uart0_rx_i",
+        "xpi_sck_o_pad": "xpi_sck_o",
+        "xpi_nss0_o_pad": "xpi_nss0_o",
+        "xpi_dat0_io_pad": "xpi_dat0_io",
+        "xpi_dat1_io_pad": "xpi_dat1_io",
+        "xpi_dat2_io_pad": "xpi_dat2_io",
+        "xpi_dat3_io_pad": "xpi_dat3_io",
+        "sdram_clk_o_pad": "sdram_clk_o",
+        "sdram_cke_o_pad": "sdram_cke_o",
+        "sdram_cs_n_o_pad": "sdram_cs_n_o",
+        "sdram_ras_n_o_pad": "sdram_ras_n_o",
+        "sdram_cas_n_o_pad": "sdram_cas_n_o",
+        "sdram_we_n_o_pad": "sdram_we_n_o",
+        "sdram_ba0_o_pad": "sdram_ba0_o",
+        "sdram_ba1_o_pad": "sdram_ba1_o",
+        "sdram_addr0_o_pad": "sdram_addr0_o",
+        "sdram_addr1_o_pad": "sdram_addr1_o",
+        "sdram_addr2_o_pad": "sdram_addr2_o",
+        "sdram_addr3_o_pad": "sdram_addr3_o",
+        "sdram_addr4_o_pad": "sdram_addr4_o",
+        "sdram_addr5_o_pad": "sdram_addr5_o",
+        "sdram_addr6_o_pad": "sdram_addr6_o",
+        "sdram_addr7_o_pad": "sdram_addr7_o",
+        "sdram_addr8_o_pad": "sdram_addr8_o",
+        "sdram_addr9_o_pad": "sdram_addr9_o",
+        "sdram_addr10_o_pad": "sdram_addr10_o",
+        "sdram_addr11_o_pad": "sdram_addr11_o",
+        "sdram_addr12_o_pad": "sdram_addr12_o",
+        "sdram_dqm0_o_pad": "sdram_dqm0_o",
+        "sdram_dqm1_o_pad": "sdram_dqm1_o",
+        "sdram_dq0_io_pad": "sdram_dq0_io",
+        "sdram_dq1_io_pad": "sdram_dq1_io",
+        "sdram_dq2_io_pad": "sdram_dq2_io",
+        "sdram_dq3_io_pad": "sdram_dq3_io",
+        "sdram_dq4_io_pad": "sdram_dq4_io",
+        "sdram_dq5_io_pad": "sdram_dq5_io",
+        "sdram_dq6_io_pad": "sdram_dq6_io",
+        "sdram_dq7_io_pad": "sdram_dq7_io",
+        "sdram_dq8_io_pad": "sdram_dq8_io",
+        "sdram_dq9_io_pad": "sdram_dq9_io",
+        "sdram_dq10_io_pad": "sdram_dq10_io",
+        "sdram_dq11_io_pad": "sdram_dq11_io",
+        "sdram_dq12_io_pad": "sdram_dq12_io",
+        "sdram_dq13_io_pad": "sdram_dq13_io",
+        "sdram_dq14_io_pad": "sdram_dq14_io",
+        "sdram_dq15_io_pad": "sdram_dq15_io"
+      }
+    },
+    "verilator": {
+      "bindings": {
+        "extclk_i_pad": "s_clk",
+        "ext_rst_n_i_pad": "s_rst_n",
+        "core_sel_0_i_pad": "s_core_sel[0]",
+        "core_sel_1_i_pad": "s_core_sel[1]",
+        "core_sel_2_i_pad": "s_core_sel[2]",
+        "core_sel_3_i_pad": "s_core_sel[3]",
+        "core_sel_4_i_pad": "s_core_sel[4]",
+        "gpio_21_io_pad": "s_psram_sck",
+        "gpio_22_io_pad": "s_psram_nss0",
+        "gpio_23_io_pad": "s_psram_dat0",
+        "gpio_24_io_pad": "s_psram_dat1",
+        "gpio_25_io_pad": "s_psram_dat2",
+        "gpio_26_io_pad": "s_psram_dat3",
+        "xpi_sck_o_pad": "s_xpi_sck_o",
+        "xpi_nss0_o_pad": "s_xpi_nss0_o",
+        "xpi_dat0_io_pad": "s_xpi_dat0_io",
+        "xpi_dat1_io_pad": "s_xpi_dat1_io",
+        "xpi_dat2_io_pad": "s_xpi_dat2_io",
+        "xpi_dat3_io_pad": "s_xpi_dat3_io"
+      }
+    },
+    "tb": {
+      "bindings": {
+        "extclk_i_pad": "s_ext_clk",
+        "audclk_i_pad": "s_aud_clk",
+        "ext_rst_n_i_pad": "s_rst_n",
+        "xi_i_pad": "r_xtal_clk",
+        "core_sel_0_i_pad": "s_core_sel[0]",
+        "core_sel_1_i_pad": "s_core_sel[1]",
+        "core_sel_2_i_pad": "s_core_sel[2]",
+        "core_sel_3_i_pad": "s_core_sel[3]",
+        "core_sel_4_i_pad": "s_core_sel[4]",
+        "user_gpio_0_io_pad": "s_user_gpio_0_io",
+        "gpio_0_io_pad": "s_gpio_0_io",
+        "gpio_1_io_pad": "s_gpio_1_io",
+        "gpio_7_io_pad": "s_i2c0_scl_io",
+        "gpio_8_io_pad": "s_i2c0_sda_io",
+        "gpio_21_io_pad": "s_psram_sck",
+        "gpio_22_io_pad": "s_psram_nss0",
+        "gpio_23_io_pad": "s_psram_dat0",
+        "gpio_24_io_pad": "s_psram_dat1",
+        "gpio_25_io_pad": "s_psram_dat2",
+        "gpio_26_io_pad": "s_psram_dat3",
+        "gpio_27_io_pad": "s_psram_nss1",
+        "uart0_tx_o_pad": "s_uart0_tx",
+        "uart0_rx_i_pad": "s_uart0_rx",
+        "xpi_sck_o_pad": "s_xpi_sck_o",
+        "xpi_nss0_o_pad": "s_xpi_nss0_o",
+        "xpi_nss1_o_pad": "s_xpi_nss1_o",
+        "xpi_nss2_o_pad": "s_xpi_nss2_o",
+        "xpi_dat0_io_pad": "s_xpi_dat0_io",
+        "xpi_dat1_io_pad": "s_xpi_dat1_io",
+        "xpi_dat2_io_pad": "s_xpi_dat2_io",
+        "xpi_dat3_io_pad": "s_xpi_dat3_io",
+        "sdram_clk_o_pad": "s_sdram_clk",
+        "sdram_cke_o_pad": "s_sdram_cke",
+        "sdram_cs_n_o_pad": "s_sdram_cs_n",
+        "sdram_ras_n_o_pad": "s_sdram_ras_n",
+        "sdram_cas_n_o_pad": "s_sdram_cas_n",
+        "sdram_we_n_o_pad": "s_sdram_we_n",
+        "sdram_ba0_o_pad": "s_sdram_ba[0]",
+        "sdram_ba1_o_pad": "s_sdram_ba[1]",
+        "sdram_addr0_o_pad": "s_sdram_addr[0]",
+        "sdram_addr1_o_pad": "s_sdram_addr[1]",
+        "sdram_addr2_o_pad": "s_sdram_addr[2]",
+        "sdram_addr3_o_pad": "s_sdram_addr[3]",
+        "sdram_addr4_o_pad": "s_sdram_addr[4]",
+        "sdram_addr5_o_pad": "s_sdram_addr[5]",
+        "sdram_addr6_o_pad": "s_sdram_addr[6]",
+        "sdram_addr7_o_pad": "s_sdram_addr[7]",
+        "sdram_addr8_o_pad": "s_sdram_addr[8]",
+        "sdram_addr9_o_pad": "s_sdram_addr[9]",
+        "sdram_addr10_o_pad": "s_sdram_addr[10]",
+        "sdram_addr11_o_pad": "s_sdram_addr[11]",
+        "sdram_addr12_o_pad": "s_sdram_addr[12]",
+        "sdram_dqm0_o_pad": "s_sdram_dqm[0]",
+        "sdram_dqm1_o_pad": "s_sdram_dqm[1]",
+        "sdram_dq0_io_pad": "s_sdram_dq[0]",
+        "sdram_dq1_io_pad": "s_sdram_dq[1]",
+        "sdram_dq2_io_pad": "s_sdram_dq[2]",
+        "sdram_dq3_io_pad": "s_sdram_dq[3]",
+        "sdram_dq4_io_pad": "s_sdram_dq[4]",
+        "sdram_dq5_io_pad": "s_sdram_dq[5]",
+        "sdram_dq6_io_pad": "s_sdram_dq[6]",
+        "sdram_dq7_io_pad": "s_sdram_dq[7]",
+        "sdram_dq8_io_pad": "s_sdram_dq[8]",
+        "sdram_dq9_io_pad": "s_sdram_dq[9]",
+        "sdram_dq10_io_pad": "s_sdram_dq[10]",
+        "sdram_dq11_io_pad": "s_sdram_dq[11]",
+        "sdram_dq12_io_pad": "s_sdram_dq[12]",
+        "sdram_dq13_io_pad": "s_sdram_dq[13]",
+        "sdram_dq14_io_pad": "s_sdram_dq[14]",
+        "sdram_dq15_io_pad": "s_sdram_dq[15]"
+      }
+    }
+  }
+}

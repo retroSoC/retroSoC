@@ -60,13 +60,17 @@ affected implementation change.
 
 ## Build Layout
 
-The variant identifier is the profile name plus a hash over effective hardware/software build
-settings and the dependency lock. Runtime-only settings such as wave capture and timeout do not
-create a new variant.
+The variant identifier is the profile name, the local creation timestamp, and a hash over effective
+hardware/software build settings and the dependency lock. The timestamp has the
+`YYYY-MM-DD-HH-MM` format and does not alter the hash. Runtime-only settings such as wave capture
+and timeout do not alter the hash either. `BUILD_TIMESTAMP` defaults to the current local minute;
+set it explicitly when separate Make commands must share one variant. The regression runner exports
+one timestamp to all of its child Make commands.
 
 ```text
 build/<variant>/
   generated/mpw/<simulator>/
+  generated/pin_map/
   sw/
   sim/<simulator>/
   syn/yosys/

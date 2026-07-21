@@ -25,6 +25,7 @@ from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
+from scripts.regress import regression_environment  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -190,7 +191,7 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
 
 
-def test_dependency_lock_and_config_key_are_deterministic(tmp_path: Path) -> None:
+def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path) -> None:
     lock = load_lock(ROOT / "config/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
@@ -202,6 +203,8 @@ def test_dependency_lock_and_config_key_are_deterministic(tmp_path: Path) -> Non
         str(ROOT / "config/dependencies.lock.json"),
         "--profile",
         "unit",
+        "--timestamp",
+        "2026-07-21-10-39",
         "--value",
         "CORE=HAZARD3",
         "--value",
@@ -210,7 +213,15 @@ def test_dependency_lock_and_config_key_are_deterministic(tmp_path: Path) -> Non
     first = run(*command).stdout.strip()
     second = run(*command).stdout.strip()
     assert first == second
-    assert first.startswith("unit-")
+    assert re.fullmatch(r"unit-2026-07-21-10-39-[0-9a-f]{12}", first)
+
+    invalid_timestamp = subprocess.run(
+        [*command, "--timestamp", "2026-07-21-10-99"],
+        text=True,
+        capture_output=True,
+    )
+    assert invalid_timestamp.returncode != 0
+    assert "timestamp must use %Y-%m-%d-%H-%M" in invalid_timestamp.stderr
 
     broken = tmp_path / "broken.json"
     broken.write_text('{"schema_version": 1}\n', encoding="utf-8")
@@ -220,6 +231,17 @@ def test_dependency_lock_and_config_key_are_deterministic(tmp_path: Path) -> Non
         assert "missing or empty" in str(error)
     else:
         raise AssertionError("invalid dependency lock was accepted")
+
+
+def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
+    monkeypatch.setenv("BUILD_TIMESTAMP", "2026-07-21-10-39")
+    assert regression_environment()["BUILD_TIMESTAMP"] == "2026-07-21-10-39"
+
+    monkeypatch.delenv("BUILD_TIMESTAMP")
+    assert re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}",
+        regression_environment()["BUILD_TIMESTAMP"],
+    )
 
 
 def test_run_flow_writes_structured_result(tmp_path: Path) -> None:

@@ -116,11 +116,20 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 | Nightly regression suite | `make regress-nightly` |
 | Script and policy checks | `make sw-format-check sw-policy-check sw-host-test` |
 
-Build outputs are isolated below `build/<profile>-<config-hash>/`. Each variant keeps its
+Build outputs are isolated below `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`. Each variant keeps its
 firmware, generated sources, simulator output, synthesis and timing reports, manifest, warning
 analysis, and metrics separate from other configurations. Use `make clean` to remove the
 selected backend, `make clean-all` to remove all build output, and `make purge-cache` to remove
 download and compiler caches.
+
+`BUILD_TIMESTAMP` defaults to the local build-start time. Set it explicitly when separate Make
+commands must reuse one variant:
+
+```sh
+export BUILD_TIMESTAMP=2026-07-21-10-39
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim
+```
 
 ## Reproducibility And CI
 

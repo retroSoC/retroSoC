@@ -7,6 +7,11 @@ MEMORY_MAP_RTL_DIR := $(MEMORY_MAP_DIR)/rtl
 MEMORY_MAP_C_DIR   := $(MEMORY_MAP_DIR)/include
 MEMORY_MAP_LINKER_DIR := $(MEMORY_MAP_DIR)/linker
 MEMORY_MAP_FILELIST := $(MEMORY_MAP_DIR)/memory_map.fl
+PIN_MAP_SOURCE := $(RTL_PATH)/pin_map/pin_map.json
+PIN_MAP_SCRIPT := $(RTL_PATH)/pin_map/generate_pin_map.py
+PIN_MAP_DIR := $(VARIANT_ROOT)/generated/pin_map
+PIN_MAP_STAMP := $(PIN_MAP_DIR)/.stamp
+PIN_MAP_FILELIST := $(PIN_MAP_DIR)/pin_map.fl
 MPW_STAMP        := $(CACHE_ROOT)/stamps/mpw-$(LOCK_DIGEST).prepared
 MPW_OUTPUT_DIR   := $(VARIANT_ROOT)/generated/mpw/$(SIM_TOOL_NAME)
 MPW_VARIANT_STAMP := $(MPW_OUTPUT_DIR)/.stamp
@@ -43,8 +48,17 @@ memory-map: $(MEMORY_MAP_STAMP)
 check-memory-map:
 	python3 $(MEMORY_MAP_SCRIPT) --map $(MEMORY_MAP_SOURCE) --check
 
+$(PIN_MAP_STAMP): $(PIN_MAP_SOURCE) $(PIN_MAP_SCRIPT)
+	python3 $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --output-dir $(PIN_MAP_DIR)
+	@touch $@
+
+pin-map: $(PIN_MAP_STAMP)
+
+check-pin-map:
+	python3 $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --check
+
 $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py \
-                   $(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP)
+                   $(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP)
 	python3 $(RTL_PATH)/script/generate_filelist.py \
 		--output-dir $(GENERATED_FL_DIR) \
 		$(foreach define,$(DEF_LIST),--define $(define))
@@ -71,7 +85,7 @@ NET_FLIST  += -f $(GENERATED_FL_DIR)/sys_def.fl
 NET_FLIST  += -f $(GENERATED_FL_DIR)/commonip.fl
 NET_FLIST  += -f $(GENERATED_FL_DIR)/inc.fl
 
-RTL_FLIST  := -f $(MEMORY_MAP_FILELIST) $(NET_FLIST)
+RTL_FLIST  := -f $(MEMORY_MAP_FILELIST) -f $(PIN_MAP_FILELIST) $(NET_FLIST)
 RTL_FLIST  += -f $(GENERATED_FL_DIR)/clusterip.fl
 RTL_FLIST  += -f $(GENERATED_FL_DIR)/ip.fl
 RTL_FLIST  += -f $(GENERATED_FL_DIR)/tech.fl
@@ -99,4 +113,4 @@ else ifeq ($(SIMU), IVERILOG)
     include $(RTL_PATH)/mk/iverilog.mk
 endif
 
-.PHONY: gen_mpw_code generate_filelist memory-map check-memory-map firmware
+.PHONY: gen_mpw_code generate_filelist memory-map check-memory-map pin-map check-pin-map firmware

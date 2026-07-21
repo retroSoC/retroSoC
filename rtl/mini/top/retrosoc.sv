@@ -28,12 +28,7 @@ module retrosoc (
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
-    output logic [31:0]                    gpio_oe_o,
-    output logic [31:0]                    gpio_cs_o,
-    output logic [31:0]                    gpio_pu_o,
-    output logic [31:0]                    gpio_pd_o,
-    output logic [31:0]                    gpio_do_o,
-    input  logic [31:0]                    gpio_di_i,
+    gpio_if.soc_pad                        gpio,
     uart_if.dut                            uart0,
     xpi_if.dut                             xpi,
     sdram_if.dut                           sdram
@@ -72,6 +67,11 @@ module retrosoc (
   logic [31:0] s_bus_fault_addr;
   logic [ 3:0] s_bus_fault_wstrb;
   logic        s_bus_fault_reserved;
+
+  gpio_pad_bridge u_gpio_pad_bridge (
+      .inner(u_gpio_if),
+      .outer(gpio)
+  );
 
 `ifdef CORE_MDD
   assign u_sysctrl_if.core_sel_i = core_sel_i;
@@ -122,12 +122,6 @@ module retrosoc (
   // | 30    | opipsram_dat7_io_pad | __NONE_FUNC__      |
   // | 31    | opipsram_dqs_o_pad   | __NONE_FUNC__      |
   // =====================================================
-  assign gpio_oe_o                = u_gpio_if.oe_o;
-  assign gpio_cs_o                = u_gpio_if.cs_o;
-  assign gpio_pu_o                = u_gpio_if.pu_o;
-  assign gpio_pd_o                = u_gpio_if.pd_o;
-  assign gpio_do_o                = u_gpio_if.do_o;
-  assign u_gpio_if.di_i           = gpio_di_i;
   // GPIO0 FUNC0
   // pad0
   assign u_uart1_if.rx_i          = u_gpio_if.di_i[0];
