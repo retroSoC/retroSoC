@@ -11,7 +11,7 @@ OPENSTA_LOG       ?= $(STA_BUILD_ROOT)/opensta.log
 OPENSTA_METRICS   ?= $(STA_BUILD_ROOT)/timing_metrics.rpt
 OPENSTA_CONFIG    ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.config
 
-sta:
+sta: | manifest
 	@mkdir -p $(STA_BUILD_ROOT)
 	@for input in $(OPENSTA_NETLIST) $(OPENSTA_LIBERTY) $(OPENSTA_IO_LIB) $(OPENSTA_SRAM_LIBS) $(OPENSTA_SDC) $(OPENSTA_CONFIG); do \
 		test -f "$$input" || { echo "OpenSTA input missing: $$input" >&2; exit 1; }; \
@@ -27,7 +27,5 @@ sta:
 		--env OPENSTA_SDC=$(OPENSTA_SDC) --env OPENSTA_REPORT=$(OPENSTA_REPORT) \
 		--env OPENSTA_METRICS=$(OPENSTA_METRICS) -- \
 		$(OPENSTA) $(ROOT_PATH)/sta/opensta/opensta.tcl -threads $(OPENSTA_THREADS)
-
-sta: | manifest
 
 .PHONY: sta

@@ -190,10 +190,10 @@ module xpi_reg (
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
 
   // nmi
-  assign s_nmi_wr_hdshk   = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
-  assign s_nmi_rd_hdshk   = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
-  assign nmi.ready        = s_nmi_ready_q;
-  assign nmi.rdata        = s_nmi_rdata_q;
+  assign s_nmi_wr_hdshk  = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
+  assign s_nmi_rd_hdshk  = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
+  assign nmi.ready       = s_nmi_ready_q;
+  assign nmi.rdata       = s_nmi_rdata_q;
   // reg
   assign xpi_accmd_o     = s_xpi_accmd_q;
   assign xpi_mmstad_o    = s_xpi_mmstad_q;
@@ -221,8 +221,8 @@ module xpi_reg (
   assign xpi_datbit_o    = s_xpi_datbit_q;
   assign xpi_hlvlen_o    = s_xpi_hlvlen_q;
   // dma
-  assign dma_tx_stall_o   = s_tx_fifo_stall_q;
-  assign dma_rx_stall_o   = s_rx_fifo_stall_q;
+  assign dma_tx_stall_o  = s_tx_fifo_stall_q;
+  assign dma_rx_stall_o  = s_rx_fifo_stall_q;
 
 
   assign s_xpi_cfgidx_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_XPI_CFGIDX;

@@ -54,10 +54,10 @@ module dma_core (
   logic s_xfer_done_d, s_xfer_done_q;
   logic s_ctrl_stop_d, s_ctrl_stop_q;
   // Registered NMI master outputs
-  logic        s_nmi_valid_d, s_nmi_valid_q;
+  logic s_nmi_valid_d, s_nmi_valid_q;
   logic [31:0] s_nmi_addr_d, s_nmi_addr_q;
   logic [31:0] s_nmi_wdata_d, s_nmi_wdata_q;
-  logic [3:0]  s_nmi_wstrb_d, s_nmi_wstrb_q;
+  logic [3:0] s_nmi_wstrb_d, s_nmi_wstrb_q;
 
   assign fsm_o     = s_fsm_q;
   assign nmi.valid = s_nmi_valid_q;

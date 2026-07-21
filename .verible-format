@@ -9,4 +9,3 @@
 --named_port_alignment=align
 --port_declarations_alignment=align
 --struct_union_members_alignment=align
---inplace

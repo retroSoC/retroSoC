@@ -36,14 +36,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends --yes clang-format-14
 
+      - name: Set up locked RTL formatter
+        uses: ./.github/actions/locked-tools
+        with:
+          tools: verible
+
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock config/dependencies.lock.json
 
       - name: Lint Python
         run: ruff check .
 
-      - name: Check embedded C formatting policy
-        run: make sw-format-check
+      - name: Check source formatting
+        run: make format-check
 
       - name: Check embedded C safety policy
         run: make sw-policy-check

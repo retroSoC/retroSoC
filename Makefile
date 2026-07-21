@@ -55,6 +55,8 @@ BUILD_TIMESTAMP ?= $(shell date '+%Y-%m-%d-%H-%M')
 MAX_JOBS        ?= 16
 HOST_CC         ?= cc
 CLANG_FORMAT    ?= clang-format-14
+MBAKE           ?= mbake
+VERIBLE_FORMAT  ?= verible-verilog-format
 JOBS            ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
@@ -163,7 +165,8 @@ endif
 
 .PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
-	regress-pr regress-nightly sim-asm sw-format sw-format-check sw-policy-check sw-host-test \
+	regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
+	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
 	pin-map check-pin-map
 .NOTPARALLEL: setup
 
@@ -185,8 +188,12 @@ help:
 	  '  check-pin-map              validate the canonical SoC pin map' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
+	  '  format                     format self-owned C, Makefile, and RTL sources' \
+	  '  format-check               check self-owned C, Makefile, and RTL formatting' \
 	  '  sw-format                  apply clang-format to self-owned embedded C code' \
 	  '  sw-format-check            check embedded C whitespace and line-ending policy' \
+	  '  mk-format | mk-format-check apply/check tracked Makefile formatting' \
+	  '  rtl-format | rtl-format-check apply/check self-owned RTL formatting' \
 	  '  sw-policy-check            check embedded C API and naming policy' \
 	  '  sw-host-test               run host tests for deterministic SDK utilities' \
 	  '  regress-pr | regress-nightly run supported regression suites' \
@@ -269,6 +276,26 @@ sw-format:
 sw-format-check:
 	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) --format-check \
 	  --clang-format-check --clang-format $(CLANG_FORMAT)
+
+format: sw-format mk-format rtl-format
+
+format-check: sw-format-check mk-format-check rtl-format-check
+
+mk-format:
+	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind make --apply \
+	  --mbake $(MBAKE)
+
+mk-format-check:
+	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind make \
+	  --mbake $(MBAKE)
+
+rtl-format:
+	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind rtl --apply \
+	  --verible-verilog-format $(VERIBLE_FORMAT)
+
+rtl-format-check:
+	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind rtl \
+	  --verible-verilog-format $(VERIBLE_FORMAT)
 
 sw-policy-check:
 	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) --policy-check

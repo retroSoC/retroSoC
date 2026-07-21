@@ -197,7 +197,7 @@ module nmi_i2c (
 
 
   assign i2c.scl_oe_o = 1'b1;
-  assign i2c.irq_o     = 1'b0;
+  assign i2c.irq_o    = 1'b0;
   i2c_core u_i2c_core (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),

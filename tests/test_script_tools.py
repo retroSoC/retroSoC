@@ -23,6 +23,7 @@ from filelist import atomic_write, parse_filelists, write_filelist  # noqa: E402
 from generate_filelist import generate_all  # noqa: E402
 from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
+from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.regress import regression_environment  # noqa: E402
@@ -189,6 +190,31 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     )
     assert invalid.returncode != 0
     assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
+
+
+def test_format_file_scope_is_tracked_and_self_owned() -> None:
+    paths = [
+        Path("Makefile"),
+        Path("configs/ci/example.mk"),
+        Path("rtl/mini/top/retrosoc.sv"),
+        Path("rtl/ip/native/peripheral/sysctrl.sv"),
+        Path("rtl/tech/tc_clk.sv"),
+        Path("rtl/demo/reference.v"),
+        Path("rtl/managed/clusterip/common/rtl/utils/register.sv"),
+        Path("rtl/managed/third_party/core.v"),
+        Path("rtl/mini/filelist.f"),
+    ]
+
+    assert format_files(paths, "make") == [
+        Path("Makefile"),
+        Path("configs/ci/example.mk"),
+    ]
+    assert format_files(paths, "rtl") == [
+        Path("rtl/demo/reference.v"),
+        Path("rtl/ip/native/peripheral/sysctrl.sv"),
+        Path("rtl/mini/top/retrosoc.sv"),
+        Path("rtl/tech/tc_clk.sv"),
+    ]
 
 
 def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path) -> None:

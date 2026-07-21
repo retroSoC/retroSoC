@@ -100,9 +100,9 @@ module DVP_CAMERA (
 
   assign org_href = (s_h_cnt_q <= (12'(H_ACTIVE) - 12'd1)) &&
                    ((s_v_cnt_q >= 12'(V_SYNC + V_BACK)) && (s_v_cnt_q <= 12'(V_SYNC + V_BACK + V_ACTIVE - 12'd1)));
-  assign vsync    = s_v_cnt_q <= 12'(V_SYNC) - 12'd1;
+  assign vsync = s_v_cnt_q <= 12'(V_SYNC) - 12'd1;
   // tPHL or tPHH
-  always@(negedge pclk) href = #tpPHL org_href;
+  always @(negedge pclk) href = #tpPHL org_href;
 
   specify
     specparam tSU = 15.0;

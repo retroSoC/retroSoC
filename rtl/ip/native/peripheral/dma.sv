@@ -70,16 +70,16 @@ module nmi_dma (
   logic [1:0] s_xfer_fsm;
 
 
-  assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
-  assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
-  assign nmi.ready      = s_nmi_ready_q;
-  assign nmi.rdata      = s_nmi_rdata_q;
+  assign s_nmi_wr_hdshk  = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
+  assign s_nmi_rd_hdshk  = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
+  assign nmi.ready       = s_nmi_ready_q;
+  assign nmi.rdata       = s_nmi_rdata_q;
 
   assign dma_xfer_done_o = s_dma_status_q;
 
 
-  assign s_dma_mode_en  = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_MODE;
-  assign s_dma_mode_d   = nmi.wdata[2:0];
+  assign s_dma_mode_en   = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_MODE;
+  assign s_dma_mode_d    = nmi.wdata[2:0];
   dffer #(3) u_dma_mode_dffer (
       clk_i,
       rst_n_i,

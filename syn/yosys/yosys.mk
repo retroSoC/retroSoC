@@ -47,7 +47,7 @@ $(SV_FLIST): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
 gen_synth_filelist: $(SV_FLIST)
 
 ## Synthesize netlist using Yosys
-synth: $(NETLIST)
+synth: $(NETLIST) | manifest
 
 $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 	@mkdir -p $(YOSYS_OUT)
@@ -68,5 +68,3 @@ synth_clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(YOSYS_BUILD)
 
 .PHONY: gen_synth_filelist synth_clean synth
-
-synth: | manifest

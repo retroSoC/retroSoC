@@ -84,6 +84,13 @@
         "archive": "verilator-v5.046-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
       },
+      "verible": {
+        "version": "v0.0-3946-g851d3ff4",
+        "url": "https://github.com/chipsalliance/verible/releases/download/v0.0-3946-g851d3ff4/verible-v0.0-3946-g851d3ff4-linux-static-x86_64.tar.gz",
+        "sha256": "be81036ab5a3d5d5ba4ee677ebf9a09665779c3bd99ffe2e161c5025beaa1f16",
+        "archive": "verible-v0.0-3946-g851d3ff4-linux-static-x86_64.tar.gz",
+        "path": "verible-v0.0-3946-g851d3ff4/bin"
+      },
       "sv2v": {
         "version": "0.0.13-9-gd381209",
         "url": "https://github.com/retroSoC/artifact/releases/download/sv2v-v0.0.13-9-gd381209/sv2v-v0.0.13-9-gd381209-ubuntu-22.04-gcc.tar.gz",

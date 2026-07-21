@@ -20,7 +20,7 @@
 
 module spisd_data (
     input  logic        clk_i,
-    input  logic        rst_n_i,    
+    input  logic        rst_n_i,
     input  logic        fir_clk_edge_i,
     input  logic        init_done_i,
     output logic [31:0] sec_addr_o,

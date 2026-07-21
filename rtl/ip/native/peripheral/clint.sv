@@ -57,16 +57,16 @@ module nmi_clint (
   logic s_tmr_hi_gt, s_tmr_hi_eq, s_tmr_lo_ge;
   logic s_tmr_irq_d, s_tmr_irq_q;
 
-  assign s_nmi_wr_hdshk    = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
-  assign s_nmi_rd_hdshk    = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
-  assign nmi.ready         = s_nmi_ready_q;
-  assign nmi.rdata         = s_nmi_rdata_q;
+  assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
+  assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
+  assign nmi.ready      = s_nmi_ready_q;
+  assign nmi.rdata      = s_nmi_rdata_q;
 
   // pipelined 64-bit magnitude compare (registered output)
-  assign s_tmr_hi_gt       = s_clint_mtime_q[63:32] > s_clint_mtimecmp_q[63:32];
-  assign s_tmr_hi_eq       = s_clint_mtime_q[63:32] == s_clint_mtimecmp_q[63:32];
-  assign s_tmr_lo_ge       = s_clint_mtime_q[31:0] >= s_clint_mtimecmp_q[31:0];
-  assign s_tmr_irq_d       = s_tmr_hi_gt || (s_tmr_hi_eq && s_tmr_lo_ge);
+  assign s_tmr_hi_gt    = s_clint_mtime_q[63:32] > s_clint_mtimecmp_q[63:32];
+  assign s_tmr_hi_eq    = s_clint_mtime_q[63:32] == s_clint_mtimecmp_q[63:32];
+  assign s_tmr_lo_ge    = s_clint_mtime_q[31:0] >= s_clint_mtimecmp_q[31:0];
+  assign s_tmr_irq_d    = s_tmr_hi_gt || (s_tmr_hi_eq && s_tmr_lo_ge);
   dffr #(1) u_tmr_irq_dffr (
       clk_i,
       rst_n_i,
@@ -140,12 +140,12 @@ module nmi_clint (
 
   assign s_clint_msip_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_CLINT_MSIP;
   assign s_clint_msip_d  = nmi.wdata[0];
-  dffer #(1) u_clint_msip_dffer(
-    clk_i,
-    rst_n_i,
-    s_clint_msip_en,
-    s_clint_msip_d,
-    s_clint_msip_q
+  dffer #(1) u_clint_msip_dffer (
+      clk_i,
+      rst_n_i,
+      s_clint_msip_en,
+      s_clint_msip_d,
+      s_clint_msip_q
   );
 
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);

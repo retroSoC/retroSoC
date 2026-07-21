@@ -55,9 +55,11 @@ application, linker layout, and optional features as one reproducible configurat
 
 The prebuilt, locked toolchain bundles target Ubuntu 22.04. Install Python 3, GNU Make, a host
 C compiler, `clang-format-14`, a RISC-V bare-metal GNU toolchain, and the tools required by the
-flow you intend to run: Icarus Verilog, Verilator, sv2v, Yosys, and OpenSTA. The CI environment
-installs the exact versions from [`config/dependencies.lock.json`](config/dependencies.lock.json);
-local tools must be available on `PATH` before running `make doctor`.
+flow you intend to run: Icarus Verilog, Verilator, sv2v, Yosys, and OpenSTA. Source formatting
+also requires `mbake` 1.4.6 and the locked Verible formatter. The CI environment installs the
+exact versions from [`config/dependencies.lock.json`](config/dependencies.lock.json). Local flow
+tools must be available on `PATH` before running `make doctor`; the three formatters must be
+available before running `make format-check`.
 
 Install the Python build dependencies once per environment:
 
@@ -114,7 +116,9 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 | OpenSTA timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |
-| Script and policy checks | `make sw-format-check sw-policy-check sw-host-test` |
+| Format C, Makefile, and RTL sources | `make format` |
+| Check C, Makefile, and RTL formatting | `make format-check` |
+| Script and policy checks | `make sw-policy-check sw-host-test` |
 
 Build outputs are isolated below `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`. Each variant keeps its
 firmware, generated sources, simulator output, synthesis and timing reports, manifest, warning

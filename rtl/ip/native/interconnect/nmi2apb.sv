@@ -35,7 +35,9 @@ module nmi2apb (
   localparam FSM_ENAB = 2'd2;
 
   logic [31:0] s_rd_data;
+  logic [31:0] s_rd_data_base;
   logic s_xfer_valid, s_xfer_ready;
+  logic s_xfer_ready_base;
   logic s_mem_valid_re;
   logic [1:0] s_fsm_d, s_fsm_q;
 
@@ -145,8 +147,8 @@ module nmi2apb (
     unique case (s_fsm_q)
       FSM_IDLE: if (s_mem_valid_re) s_fsm_d = FSM_SETP;
       FSM_SETP: s_fsm_d = FSM_ENAB;
-      FSM_ENAB:  if (s_xfer_ready) s_fsm_d = FSM_IDLE;
-      default:   s_fsm_d = s_fsm_q;
+      FSM_ENAB: if (s_xfer_ready) s_fsm_d = FSM_IDLE;
+      default:  s_fsm_d = s_fsm_q;
     endcase
   end
   dffr #(2) u_fsm_dffr (
@@ -184,33 +186,32 @@ module nmi2apb (
   );
 
   // Response mux using registered slave-select (cleaner timing)
-  // verilog_format: off
-  assign s_rd_data = ({32{s_psel_q[0]}} & archinfo.prdata) |
-                     ({32{s_psel_q[1]}} & rng.prdata)      |
-                     ({32{s_psel_q[2]}} & uart.prdata)     |
-                     ({32{s_psel_q[3]}} & pwm.prdata)      |
-                     ({32{s_psel_q[4]}} & ps2.prdata)      |
-                     ({32{s_psel_q[5]}} & rtc.prdata)      |
-                     ({32{s_psel_q[6]}} & wdg.prdata)      |
-                     ({32{s_psel_q[7]}} & crc.prdata)      |
-`ifdef IP_MDD
-                     ({32{s_psel_q[9]}} & user_ip.prdata)  |
-`endif
-                     ({32{s_psel_q[8]}} & tmr.prdata);
+  assign s_rd_data_base = ({32{s_psel_q[0]}} & archinfo.prdata) |
+                          ({32{s_psel_q[1]}} & rng.prdata)      |
+                          ({32{s_psel_q[2]}} & uart.prdata)     |
+                          ({32{s_psel_q[3]}} & pwm.prdata)      |
+                          ({32{s_psel_q[4]}} & ps2.prdata)      |
+                          ({32{s_psel_q[5]}} & rtc.prdata)      |
+                          ({32{s_psel_q[6]}} & wdg.prdata)      |
+                          ({32{s_psel_q[7]}} & crc.prdata)      |
+                          ({32{s_psel_q[8]}} & tmr.prdata);
 
+  assign s_xfer_ready_base = (s_psel_q[0] & archinfo.pready) |
+                             (s_psel_q[1] & rng.pready)      |
+                             (s_psel_q[2] & uart.pready)     |
+                             (s_psel_q[3] & pwm.pready)      |
+                             (s_psel_q[4] & ps2.pready)      |
+                             (s_psel_q[5] & rtc.pready)      |
+                             (s_psel_q[6] & wdg.pready)      |
+                             (s_psel_q[7] & crc.pready)      |
+                             (s_psel_q[8] & tmr.pready);
 
-  assign s_xfer_ready = (s_psel_q[0] & archinfo.pready) |
-                        (s_psel_q[1] & rng.pready)      |
-                        (s_psel_q[2] & uart.pready)     |
-                        (s_psel_q[3] & pwm.pready)      |
-                        (s_psel_q[4] & ps2.pready)      |
-                        (s_psel_q[5] & rtc.pready)      |
-                        (s_psel_q[6] & wdg.pready)      |
-                        (s_psel_q[7] & crc.pready)      |
 `ifdef IP_MDD
-                        (s_psel_q[9] & user_ip.pready)  |
+  assign s_rd_data    = s_rd_data_base | ({32{s_psel_q[9]}} & user_ip.prdata);
+  assign s_xfer_ready = s_xfer_ready_base | (s_psel_q[9] & user_ip.pready);
+`else
+  assign s_rd_data    = s_rd_data_base;
+  assign s_xfer_ready = s_xfer_ready_base;
 `endif
-                        (s_psel_q[8] & tmr.pready);
-  // verilog_format: on
 
 endmodule

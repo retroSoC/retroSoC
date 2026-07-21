@@ -17,7 +17,7 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Simple 32-bit counter-timer for ravenna. */
- 
+
 // -- Adaptable modifications are redistributed under compatible License --
 //
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
@@ -70,7 +70,7 @@ module nmi_timer (
   logic s_bit_updown, s_bit_irq_en;
   // irq
   assign irq_o          = s_irq_q;
-  
+
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
   assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
   assign nmi.ready      = s_nmi_ready_q;
@@ -168,7 +168,7 @@ module nmi_timer (
       `NMI_TIMER_CFG: s_nmi_rdata_d = {28'd0, s_tim_cfg_q};
       `NMI_TIMER_RLD: s_nmi_rdata_d = s_tim_rld_q;
       `NMI_TIMER_VAL: s_nmi_rdata_d = s_tim_val_q;
-      default:         s_nmi_rdata_d = s_nmi_rdata_q;
+      default:        s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
   dffer #(32) u_nmi_rdata_dffer (

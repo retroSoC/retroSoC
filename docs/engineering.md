@@ -125,9 +125,10 @@ for diagnosis but is initially non-blocking.
 
 ## CI And Releases
 
-`quality.yml` validates Python, YAML, GitHub Actions, the dependency lock, and script tests.
-`regression.yml` runs verified configurations on pull requests and main branches. `nightly.yml` adds
-PICORV32. Source dependencies, locked tool archives, and Verilator `ccache` use separate cache keys.
+`quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
+Actions, the dependency lock, and script tests. `regression.yml` runs verified configurations on pull
+requests and main branches without repeating the format checks. `nightly.yml` adds PICORV32. Source
+dependencies, locked tool archives, and Verilator `ccache` use separate cache keys.
 
 Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source
 tarball, build manifest, dependency lock, CycloneDX SBOM, and `SHA256SUMS`. `make package` creates the

@@ -136,9 +136,9 @@ module sdram_core (
   logic [12:0] s_addr_d, s_addr_q;
   logic s_upd_ready_d, s_upd_ready_q;
   // Registered NMI inputs (captured at IDLE→ACT)
-  logic [24:0] s_nmi_addr_d, s_nmi_addr_q;   // addr[24:0] (relevant bits)
+  logic [24:0] s_nmi_addr_d, s_nmi_addr_q;  // addr[24:0] (relevant bits)
   logic [31:0] s_nmi_wdata_d, s_nmi_wdata_q;
-  logic [3:0]  s_nmi_wstrb_d, s_nmi_wstrb_q;
+  logic [3:0] s_nmi_wstrb_d, s_nmi_wstrb_q;
 
 
   // nmi

@@ -44,8 +44,8 @@ module ahbl2nmi (
   assign ahbl.hrdata = nmi.rdata;
 
   // nmi if
-  assign nmi.valid = s_fsm_q != STATE_IDLE;
-  assign nmi.addr  = {s_haddr_q[31:2], 2'b00};
+  assign nmi.valid   = s_fsm_q != STATE_IDLE;
+  assign nmi.addr    = {s_haddr_q[31:2], 2'b00};
   always_comb begin
     nmi.wstrb = '0;
     nmi.wdata = '0;
