@@ -8,22 +8,6 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef SYSCTEL_DEF_SV
-`define SYSCTEL_DEF_SV
-
-// verilog_format: off
-`define NATV_SYSCTRL_CORESEL 8'h00 // RO
-`define NATV_SYSCTRL_IPSEL   8'h04 // WR/RD
-`define NATV_SYSCTRL_PLL_CFG `SOC_SYSCTRL_PLL_CFG_OFFSET // WR/RD
-`define NATV_SYSCTRL_PLL_CMD `SOC_SYSCTRL_PLL_CMD_OFFSET // WO
-`define NATV_SYSCTRL_FAULT_STATUS `SOC_SYSCTRL_FAULT_STATUS_OFFSET // W1C/RD
-`define NATV_SYSCTRL_FAULT_ADDR   `SOC_SYSCTRL_FAULT_ADDR_OFFSET   // RD
-`define NATV_SYSCTRL_FAULT_COUNT  `SOC_SYSCTRL_FAULT_COUNT_OFFSET  // RD
-`define NATV_SYSCTRL_PLL_STATUS   `SOC_SYSCTRL_PLL_STATUS_OFFSET   // RD
-// verilog_format: on
-
-`endif
-
 `include "mdd_config.svh"
 `include "mmap_define.svh"
 
@@ -47,6 +31,17 @@ module nmi_sysctrl (
     pll_ctrl_if.sysctrl pll_ctrl
     // verilog_format: on
 );
+
+  typedef logic [7:0] sysctrl_offset_t;
+
+  localparam sysctrl_offset_t SYSCTRL_CORESEL_OFFSET = 8'h00;
+  localparam sysctrl_offset_t SYSCTRL_IPSEL_OFFSET = 8'h04;
+  localparam sysctrl_offset_t SYSCTRL_PLL_CFG_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CFG_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PLL_CMD_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CMD_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_FAULT_STATUS_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_STATUS_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_FAULT_ADDR_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_ADDR_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_FAULT_COUNT_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_COUNT_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PLL_STATUS_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_STATUS_OFFSET);
 
   logic s_nmi_wr_hdshk, s_nmi_rd_hdshk;
   logic s_nmi_ready_d, s_nmi_ready_q;
@@ -93,7 +88,7 @@ module nmi_sysctrl (
       s_sysctrl_coresel_q
   );
 
-  assign s_sysctrl_ipsel_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SYSCTRL_IPSEL;
+  assign s_sysctrl_ipsel_en = s_nmi_wr_hdshk && nmi.addr[7:0] == SYSCTRL_IPSEL_OFFSET;
   assign s_sysctrl_ipsel_d  = nmi.wdata[`USER_IPSEL_WIDTH-1:0];
   dffer #(`USER_IPSEL_WIDTH) u_sysctrl_ipsel_dffer (
       clk_i,
@@ -103,7 +98,7 @@ module nmi_sysctrl (
       s_sysctrl_ipsel_q
   );
 
-  assign s_pll_cfg_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SYSCTRL_PLL_CFG && nmi.wstrb[0];
+  assign s_pll_cfg_en = s_nmi_wr_hdshk && nmi.addr[7:0] == SYSCTRL_PLL_CFG_OFFSET && nmi.wstrb[0];
   assign s_pll_cfg_d  = nmi.wdata[2:0];
   dffer #(3) u_pll_cfg_dffer (
       clk_i,
@@ -113,9 +108,9 @@ module nmi_sysctrl (
       s_pll_cfg_q
   );
 
-  assign s_pll_apply = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SYSCTRL_PLL_CMD &&
+  assign s_pll_apply = s_nmi_wr_hdshk && nmi.addr[7:0] == SYSCTRL_PLL_CMD_OFFSET &&
                        nmi.wstrb[0] && nmi.wdata[0];
-  assign s_pll_clear_error = s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_SYSCTRL_PLL_CMD &&
+  assign s_pll_clear_error = s_nmi_wr_hdshk && nmi.addr[7:0] == SYSCTRL_PLL_CMD_OFFSET &&
                              nmi.wstrb[0] && nmi.wdata[1];
   assign s_pll_rsp_accept = pll_ctrl.rsp_valid_i && pll_ctrl.rsp_ready_o;
 
@@ -209,7 +204,7 @@ module nmi_sysctrl (
   );
 
   assign s_fault_status_clear = s_nmi_wr_hdshk &&
-                                nmi.addr[7:0] == `NATV_SYSCTRL_FAULT_STATUS &&
+                                nmi.addr[7:0] == SYSCTRL_FAULT_STATUS_OFFSET &&
                                 nmi.wstrb[0] && nmi.wdata[0];
   always_comb begin
     s_fault_pending_d = s_fault_pending_q;
@@ -274,13 +269,13 @@ module nmi_sysctrl (
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
       // verilog_format: off
-      `NATV_SYSCTRL_CORESEL: s_nmi_rdata_d = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
-      `NATV_SYSCTRL_IPSEL:   s_nmi_rdata_d = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
-      `NATV_SYSCTRL_PLL_CFG: s_nmi_rdata_d = {29'd0, s_pll_cfg_q};
-      `NATV_SYSCTRL_FAULT_STATUS: s_nmi_rdata_d = {28'd0, s_fault_reason_q, s_fault_write_q, s_fault_pending_q};
-      `NATV_SYSCTRL_FAULT_ADDR:   s_nmi_rdata_d = s_fault_addr_q;
-      `NATV_SYSCTRL_FAULT_COUNT:  s_nmi_rdata_d = s_fault_count_q;
-      `NATV_SYSCTRL_PLL_STATUS: s_nmi_rdata_d = {
+      SYSCTRL_CORESEL_OFFSET: s_nmi_rdata_d = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
+      SYSCTRL_IPSEL_OFFSET:   s_nmi_rdata_d = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
+      SYSCTRL_PLL_CFG_OFFSET: s_nmi_rdata_d = {29'd0, s_pll_cfg_q};
+      SYSCTRL_FAULT_STATUS_OFFSET: s_nmi_rdata_d = {28'd0, s_fault_reason_q, s_fault_write_q, s_fault_pending_q};
+      SYSCTRL_FAULT_ADDR_OFFSET:   s_nmi_rdata_d = s_fault_addr_q;
+      SYSCTRL_FAULT_COUNT_OFFSET:  s_nmi_rdata_d = s_fault_count_q;
+      SYSCTRL_PLL_STATUS_OFFSET: s_nmi_rdata_d = {
           21'd0,
           pll_ctrl.capable_i,
           s_pll_lock_q,
