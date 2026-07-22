@@ -15,25 +15,59 @@ sys.path.insert(0, str(ROOT))
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
+MDD_VERILATOR_SIM_TIME = 180
+
+
 PR_COMMANDS = (
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
     ("configs/ci/hazard3-rv32im-ihp130-shell.mk", ("firmware",)),
+    ("configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk", ("firmware",)),
+    (
+        "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
+        (
+            "SIMU=VERILATOR",
+            f"SOC_SIM_TIME={MDD_VERILATOR_SIM_TIME}",
+            "firmware",
+            "sim",
+        ),
+    ),
     (
         "configs/ci/mdd-rv32im-ihp130.mk",
-        ("SIMU=VERILATOR", "SOC_SIM_TIME=120", "firmware", "sim"),
+        (
+            "SIMU=VERILATOR",
+            f"SOC_SIM_TIME={MDD_VERILATOR_SIM_TIME}",
+            "firmware",
+            "sim",
+        ),
     ),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=VERILATOR", "sim")),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
+    (
+        "configs/ci/hazard3-rv32im-ihp130.mk",
+        ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
+    ),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("SYNTH=YOSYS", "synth")),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=IVERILOG", "SIM_FIRMWARE_NAME=retrosoc_asm", "SIM_SUCCESS_MARKER=Mem wr/rd test success", "RTL_SIM_TIMEOUT=5200000", "netsim")),
+    (
+        "configs/ci/hazard3-rv32im-ihp130.mk",
+        (
+            "SIMU=IVERILOG",
+            "SIM_FIRMWARE_NAME=retrosoc_asm",
+            "SIM_SUCCESS_MARKER=Mem wr/rd test success",
+            "RTL_SIM_TIMEOUT=5200000",
+            "netsim",
+        ),
+    ),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("STA=OPENSTA", "sta")),
 )
 NIGHTLY_COMMANDS = PR_COMMANDS + (
     ("configs/nightly/picorv32-rv32im-ihp130.mk", ("SIMU=VERILATOR", "firmware", "sim")),
-    ("configs/nightly/picorv32-rv32im-ihp130.mk", ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
+    (
+        "configs/nightly/picorv32-rv32im-ihp130.mk",
+        ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
+    ),
 )
 PR_PROFILES = (
     "configs/ci/hazard3-rv32im-ihp130.mk",
+    "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
     "configs/ci/mdd-rv32im-ihp130.mk",
 )
 NIGHTLY_PROFILES = PR_PROFILES + ("configs/nightly/picorv32-rv32im-ihp130.mk",)

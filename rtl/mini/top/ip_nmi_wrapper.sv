@@ -20,6 +20,7 @@ module ip_nmi_wrapper (
     // natv if
     nmi_if.slave       nmi,
     gpio_if.dut        gpio,
+    user_gpio_if.padctrl user_gpio,
     uart_if.dut        uart,
     psram_if.dut       psram,
     spi_if.dut         spisd,
@@ -282,10 +283,11 @@ module ip_nmi_wrapper (
 
 
   nmi_gpio u_nmi_gpio (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .nmi    (u_gpio_nmi_if),
-      .gpio   (gpio)
+      .clk_i    (clk_i),
+      .rst_n_i  (rst_n_i),
+      .nmi      (u_gpio_nmi_if),
+      .gpio     (gpio),
+      .user_gpio(user_gpio)
   );
 
 

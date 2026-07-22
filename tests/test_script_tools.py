@@ -25,8 +25,9 @@ from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
+from scripts.generate_mpw import migrate_user_gpio_interfaces  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
-from scripts.regress import regression_environment  # noqa: E402
+from scripts.regress import MDD_VERILATOR_SIM_TIME, PR_COMMANDS, regression_environment  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -87,6 +88,33 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
+
+
+def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
+    source = tmp_path / "user_ip_design.sv"
+    source.write_text(
+        """module user_ip_design (gpio_if.dut gpio);
+  logic value;
+  assign gpio.gpio_oe = value;
+  assign gpio.gpio_cs = value;
+  assign gpio.gpio_pu = value;
+  assign gpio.gpio_pd = value;
+  assign gpio.gpio_out = value;
+  always_comb value = gpio.gpio_in[0];
+endmodule
+""",
+        encoding="utf-8",
+    )
+
+    assert migrate_user_gpio_interfaces(tmp_path) == [source]
+
+    migrated = source.read_text(encoding="utf-8")
+    assert "gpio_if.dut" not in migrated
+    assert "gpio.gpio_" not in migrated
+    assert "user_gpio_if.user_ip gpio" in migrated
+    assert "gpio.oe_o" in migrated
+    assert "gpio.do_o" in migrated
+    assert "gpio.di_i" in migrated
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
@@ -270,6 +298,22 @@ def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
     )
 
 
+def test_mdd_regressions_allow_uart_boot_to_complete() -> None:
+    mdd_profiles = {
+        "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
+        "configs/ci/mdd-rv32im-ihp130.mk",
+    }
+    expected_values = (
+        "SIMU=VERILATOR",
+        f"SOC_SIM_TIME={MDD_VERILATOR_SIM_TIME}",
+        "firmware",
+        "sim",
+    )
+
+    assert MDD_VERILATOR_SIM_TIME == 180
+    assert {profile for profile, values in PR_COMMANDS if values == expected_values} == mdd_profiles
+
+
 def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
     log = tmp_path / "flow.log"
     result = tmp_path / "result.json"
@@ -442,8 +486,7 @@ def test_warning_normalization_keeps_ranges_and_removes_variant_hash(tmp_path: P
     )
     normalized = normalize(tmp_path, "WIDTH", message)
     assert normalized == (
-        "WIDTH:$BUILD/generated/core.sv:<line>: "
-        "Bit extraction of var[7:0] is too wide"
+        "WIDTH:$BUILD/generated/core.sv:<line>: Bit extraction of var[7:0] is too wide"
     )
 
 
@@ -473,8 +516,7 @@ def test_metrics_collection_and_observe_policy(tmp_path: Path) -> None:
     report_dir = variant / "syn/yosys/rpt"
     report_dir.mkdir(parents=True)
     (report_dir / "retrosoc_asic_area.rpt").write_text(
-        "  42 1.23E+02 retrosoc_asic\n"
-        "Chip area for top module '\\retrosoc_asic': 123.0\n",
+        "  42 1.23E+02 retrosoc_asic\nChip area for top module '\\retrosoc_asic': 123.0\n",
         encoding="utf-8",
     )
     (report_dir / "retrosoc_asic_area.json").write_text(
@@ -569,9 +611,7 @@ def test_ci_actions_are_pinned_to_commits() -> None:
         assert re.fullmatch(r"[^@]+@[0-9a-f]{40}", value), f"unpinned action in {path}: {value}"
 
 
-HASH_LOCKED_REQUIREMENT = re.compile(
-    r"[^\s=]+==[^\s]+(?:\s+--hash=sha256:[0-9a-f]{64})+"
-)
+HASH_LOCKED_REQUIREMENT = re.compile(r"[^\s=]+==[^\s]+(?:\s+--hash=sha256:[0-9a-f]{64})+")
 
 
 def hash_locked_requirement_lines(content: str) -> list[str]:

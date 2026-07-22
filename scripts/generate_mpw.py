@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import fcntl
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import tempfile
+import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import TextIO
+from typing import Iterator, TextIO
 
 
 def tree_digest(root: Path) -> str:
@@ -49,6 +53,58 @@ def rewrite_filelists(root: Path, replacements: tuple[tuple[Path, Path], ...]) -
         filelist.write_text(content, encoding="utf-8")
 
 
+def migrate_user_gpio_interfaces(root: Path) -> list[Path]:
+    """Migrate legacy MPW user-IP GPIO ports in isolated build sources."""
+    legacy_port = re.compile(r"\bgpio_if\.dut\s+gpio\b")
+    legacy_pad_control = re.compile(
+        r"^[ \t]*assign[ \t]+gpio\.gpio_(?:cs|pu|pd)[ \t]*=[^;]*;[^\n]*\n",
+        flags=re.MULTILINE,
+    )
+    migrated: list[Path] = []
+    for source in sorted(root.rglob("*.sv")):
+        content = source.read_text(encoding="utf-8")
+        if legacy_port.search(content) is None:
+            continue
+
+        content, port_count = legacy_port.subn("user_gpio_if.user_ip gpio", content)
+        if port_count != 1:
+            raise ValueError(f"expected one legacy GPIO port in {source}")
+        content = legacy_pad_control.sub("", content)
+        for legacy_name, interface_name in (
+            ("gpio.gpio_oe", "gpio.oe_o"),
+            ("gpio.gpio_out", "gpio.do_o"),
+            ("gpio.gpio_in", "gpio.di_i"),
+        ):
+            content = content.replace(legacy_name, interface_name)
+        if "gpio.gpio_" in content:
+            raise ValueError(f"unsupported legacy GPIO signal in {source}")
+        source.write_text(content, encoding="utf-8")
+        migrated.append(source)
+    return migrated
+
+
+def remove_tree(path: Path) -> None:
+    """Remove an MPW workspace, tolerating transient NFS directory entries."""
+    for attempt in range(3):
+        try:
+            shutil.rmtree(path)
+            return
+        except OSError as error:
+            if error.errno != errno.ENOTEMPTY or attempt == 2:
+                raise
+            time.sleep(0.1)
+
+
+@contextmanager
+def temporary_workspace(parent: Path, prefix: str) -> Iterator[Path]:
+    workspace = Path(tempfile.mkdtemp(prefix=prefix, dir=parent))
+    try:
+        yield workspace
+    finally:
+        if workspace.exists():
+            remove_tree(workspace)
+
+
 def prepare_legacy_mpw_workspace(root: Path, source: Path, workspace: Path) -> Path:
     legacy_mpw = workspace / "rtl" / "mini" / "mpw"
     legacy_mpw.mkdir(parents=True, exist_ok=True)
@@ -75,11 +131,10 @@ def generate(args: argparse.Namespace) -> None:
     log_path = output.parent / f"{output.name}-generation.log"
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("w", encoding="utf-8") as log, tempfile.TemporaryDirectory(
-        prefix=f".{output.name}.", dir=output.parent
-    ) as temp:
+    with log_path.open("w", encoding="utf-8") as log, temporary_workspace(
+        output.parent, f".{output.name}."
+    ) as workspace:
         log.write(f"simulator={args.simu} core={args.core} ip={args.ip}\n")
-        workspace = Path(temp)
         candidate = workspace / "output"
         candidate.mkdir()
         if not needs_core and not needs_ip:
@@ -100,6 +155,8 @@ def generate(args: argparse.Namespace) -> None:
             run(workspace, log, mpw / "ip.py")
             run(workspace, log, mpw / "info.py", "IP")
             shutil.copytree(shared / "ip", candidate / "ip")
+            migrated = migrate_user_gpio_interfaces(candidate / "ip")
+            log.write(f"migrated user GPIO interfaces: {len(migrated)}\n")
         if needs_core:
             run(workspace, log, mpw / "core.py", args.simu)
             run(workspace, log, mpw / "info.py", "CORE")

@@ -30,8 +30,6 @@ module retrosoc_tb;
 `endif
   reg  [ 4:0] r_core_sel;
   wire [ 4:0] s_core_sel;
-  wire        s_user_gpio_0_io;
-  reg         r_user_gpio_0_io;
   wire        s_uart0_tx;
   // for handle x-prop issue
   wire        s_uart0_rx = 1'b1;
@@ -84,11 +82,10 @@ module retrosoc_tb;
   always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk        = r_ext_clk;
-  assign s_aud_clk        = r_aud_clk;
-  assign s_rst_n          = r_rst_n;
-  assign s_core_sel       = r_core_sel;
-  assign s_user_gpio_0_io = r_user_gpio_0_io;
+  assign s_ext_clk  = r_ext_clk;
+  assign s_aud_clk  = r_aud_clk;
+  assign s_rst_n    = r_rst_n;
+  assign s_core_sel = r_core_sel;
 
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_tb_bindings.svh"
@@ -238,16 +235,6 @@ module retrosoc_tb;
         u_rs232_1.send(i + 8'd66);
         #500;
       end
-    end
-  end
-
-  initial begin : USER_GPIO_BLOCK
-    integer i;
-    #1000;
-    r_user_gpio_0_io = 1'b0;
-    while (1) begin
-      #150000;
-      r_user_gpio_0_io = ~r_user_gpio_0_io;
     end
   end
 

@@ -36,15 +36,6 @@
     {
       "kind": "full",
       "direction": "inout",
-      "feature": "IP_MDD",
-      "prefix": "user_gpio_",
-      "suffix": "_io_pad",
-      "count": 16,
-      "interface": "u_user_gpio_if"
-    },
-    {
-      "kind": "full",
-      "direction": "inout",
       "prefix": "gpio_",
       "suffix": "_io_pad",
       "count": 32,
@@ -247,7 +238,6 @@
         "core_sel_2_i_pad": "s_core_sel[2]",
         "core_sel_3_i_pad": "s_core_sel[3]",
         "core_sel_4_i_pad": "s_core_sel[4]",
-        "user_gpio_0_io_pad": "s_user_gpio_0_io",
         "gpio_0_io_pad": "s_gpio_0_io",
         "gpio_1_io_pad": "s_gpio_1_io",
         "gpio_7_io_pad": "s_i2c0_scl_io",

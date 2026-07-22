@@ -25,3 +25,25 @@ unsupported features, and unapproved connection syntax.
 SoC wrappers use the existing clusterIP interfaces for protocol boundaries.
 `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
 only exposes the pad-side subset of `gpio_if`; neither module contains state.
+
+## User IP GPIO ownership
+
+The IP=MDD configuration does not add dedicated user GPIO pads. A user IP can
+instead drive any of the 32 native GPIO pads through `user_gpio_if`. Software
+selects an owner per pin with the native GPIO `USER_SEL` register at offset
+`0x30`; clear selects the existing software/alternate GPIO path and set selects
+the user IP. `USER_LOCK` at `0x34` is write-one-set and prevents a selected
+owner bit from changing until reset. `USER_STATUS` at `0x38` reports the user
+IP pins that are actively connected.
+
+On every accepted ownership change, the pad output enable is forced low for one
+full system clock. The native GPIO block retains `CS`, `PU`, and `PD` control
+in all modes. User IPs provide only output data, output enable, and sampled pad
+input. Configure the target output data and enable before writing `USER_SEL`,
+then program `USER_LOCK` after the handoff when the assignment is permanent.
+
+User-IP RTL must declare its GPIO port as `user_gpio_if.user_ip gpio`; the only
+signals available through that port are `do_o`, `oe_o`, and `di_i`. The MPW
+generator migrates the locked legacy examples in its isolated build output, so
+they cannot drive native GPIO electrical controls. New IP submissions must use
+the `user_gpio_if` declaration directly.

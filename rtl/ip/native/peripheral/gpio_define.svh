@@ -25,5 +25,8 @@
 `define NMI_GPIO_ISTAT  8'h24 // ro
 `define NMI_GPIO_IOFCFG 8'h28 // rw
 `define NMI_GPIO_PINMUX 8'h2c // rw
+`define NMI_GPIO_USER_SEL 8'h30 // rw
+`define NMI_GPIO_USER_LOCK 8'h34 // rw1s
+`define NMI_GPIO_USER_STATUS 8'h38 // ro
 // verilog_format: on
 `endif

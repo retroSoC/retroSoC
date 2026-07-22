@@ -49,6 +49,9 @@
 #define reg_gpio_istat                   RS_SOC_REG32(RS_SOC_NMI_GPIO_BASE, UINT32_C(0x24))
 #define reg_gpio_iofcfg                  RS_SOC_REG32(RS_SOC_NMI_GPIO_BASE, UINT32_C(0x28))
 #define reg_gpio_pinmux                  RS_SOC_REG32(RS_SOC_NMI_GPIO_BASE, UINT32_C(0x2C))
+#define reg_gpio_user_sel                RS_SOC_REG32(RS_SOC_NMI_GPIO_BASE, UINT32_C(0x30))
+#define reg_gpio_user_lock               RS_SOC_REG32(RS_SOC_NMI_GPIO_BASE, UINT32_C(0x34))
+#define reg_gpio_user_status             RS_SOC_REG32(RS_SOC_NMI_GPIO_BASE, UINT32_C(0x38))
 // uart0
 #define reg_uart0_clkdiv                 RS_SOC_REG32(RS_SOC_NMI_UART0_BASE, UINT32_C(0x00))
 #define reg_uart0_data                   RS_SOC_REG32(RS_SOC_NMI_UART0_BASE, UINT32_C(0x04))

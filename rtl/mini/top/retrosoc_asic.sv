@@ -29,10 +29,6 @@ module retrosoc_asic (
   logic [`USER_CORESEL_WIDTH-1:0] s_core_sel;
 `endif
 
-`ifdef IP_MDD
-  gpio_if #(`USER_GPIO_NUM) u_user_gpio_if ();
-`endif
-
 `ifdef HAVE_SRAM_IF
   ram_if u_ram_if ();
 `endif
@@ -75,9 +71,6 @@ rcu u_rcu (
       .pll_ctrl   (u_pll_ctrl_if),
 `ifdef CORE_MDD
       .core_sel_i (s_core_sel),
-`endif
-`ifdef IP_MDD
-      .user_gpio  (u_user_gpio_if),
 `endif
 `ifdef HAVE_SRAM_IF
       .ram        (u_ram_if),

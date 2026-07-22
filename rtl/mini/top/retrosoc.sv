@@ -22,9 +22,6 @@ module retrosoc (
 `ifdef CORE_MDD
     input  logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
 `endif
-`ifdef IP_MDD
-    gpio_if.dut                            user_gpio,
-`endif
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
@@ -42,6 +39,7 @@ module retrosoc (
   nmi_if u_dma_nmi_if  ();
   nmi_if u_nmi_nmi_if  ();
   nmi_if u_apb_nmi_if  ();
+  user_gpio_if u_user_gpio_if ();
   // ip interface
   gpio_if     u_gpio_if     ();
   psram_if    u_psram_if    ();
@@ -72,6 +70,11 @@ module retrosoc (
       .inner(u_gpio_if),
       .outer(gpio)
   );
+
+`ifndef IP_MDD
+  assign u_user_gpio_if.do_o = '0;
+  assign u_user_gpio_if.oe_o = '0;
+`endif
 
 `ifdef CORE_MDD
   assign u_sysctrl_if.core_sel_i = core_sel_i;
@@ -395,6 +398,7 @@ module retrosoc (
       .rst_aud_n_i     (rst_aud_n_i),
       .nmi             (u_nmi_nmi_if),
       .gpio            (u_gpio_if),
+      .user_gpio       (u_user_gpio_if),
       .uart            (uart0),
       .psram           (u_psram_if),
       .spisd           (u_spisd_if),
@@ -430,7 +434,7 @@ module retrosoc (
       .ps2        (u_ps2_if),
 `ifdef IP_MDD
       .ip_sel_i   (u_sysctrl_if.ip_sel_o),
-      .gpio       (user_gpio),
+      .user_gpio  (u_user_gpio_if),
 `endif
       .irq_o      (s_apb_irq)
   );

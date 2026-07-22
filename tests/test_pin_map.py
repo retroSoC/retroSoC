@@ -60,6 +60,9 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert ".gpio_15_io_pad()" in fpga
     assert ".gpio_24_io_pad(s_psram_dat1)" in testbench
     assert testbench.count(".gpio_24_io_pad(") == 1
+    assert "user_gpio_" not in ports
+    assert "user_gpio_" not in pads
+    assert "user_gpio_" not in testbench
 
 
 def test_pin_map_rejects_duplicate_pads(tmp_path: Path) -> None:

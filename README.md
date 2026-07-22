@@ -47,6 +47,8 @@ application, linker layout, and optional features as one reproducible configurat
 | --- | --- | --- | --- |
 | [`configs/ci/hazard3-rv32im-ihp130.mk`](configs/ci/hazard3-rv32im-ihp130.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
 | [`configs/ci/hazard3-rv32im-ihp130-shell.mk`](configs/ci/hazard3-rv32im-ihp130-shell.mk) | HAZARD3 / RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
+| [`configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk) | HAZARD3 / RV32IM + MDD IP | `bringup` | Pull-request firmware and Verilator integration coverage for the user-IP GPIO ownership path. |
+| [`configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk) | HAZARD3 / RV32IM + MDD IP | `shell` | Pull-request firmware compilation coverage for the user-IP software command. |
 | [`configs/ci/mdd-rv32im-ihp130.mk`](configs/ci/mdd-rv32im-ihp130.mk) | MDD / RV32IM | `bringup` | Pull-request firmware and Verilator regression. |
 | [`configs/nightly/picorv32-rv32im-ihp130.mk`](configs/nightly/picorv32-rv32im-ihp130.mk) | PicoRV32 / RV32IM | `bringup` | Nightly firmware, Verilator, and Icarus regression. |
 | [`configs/cluster/hazard3-ics55.mk`](configs/cluster/hazard3-ics55.mk) | HAZARD3 / RV32IM | `bringup` | Cluster-only configuration; requires the site PDK and licensed-tool environment. |
