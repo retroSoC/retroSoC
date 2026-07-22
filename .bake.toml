@@ -1,0 +1,5 @@
+# Project formatting policy for mbake.
+[formatter]
+# Align adjacent assignments, but start a new alignment group at comments.
+align_variable_assignments = true
+align_across_comments = false

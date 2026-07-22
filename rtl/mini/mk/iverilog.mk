@@ -1,24 +1,24 @@
-IVERILOG       ?= iverilog
-VVP            ?= vvp
-GTKWAVE        ?= gtkwave
+IVERILOG ?= iverilog
+VVP      ?= vvp
+GTKWAVE  ?= gtkwave
 
-NETLIST_PATH   ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
-POST_PATH      ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
-SDF_PATH       ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
-SDF_SCOPE      ?= $(RTL_TOP).u_retrosoc_asic
+NETLIST_PATH ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
+POST_PATH    ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
+SDF_PATH     ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
+SDF_SCOPE    ?= $(RTL_TOP).u_retrosoc_asic
 
-IVERILOG_ROOT       := $(SIM_BUILD_ROOT)
-IVERILOG_BEHV_DIR   := $(IVERILOG_ROOT)/behv
-IVERILOG_NETL_DIR   := $(IVERILOG_ROOT)/netl
-IVERILOG_POST_DIR   := $(IVERILOG_ROOT)/post
-IVERILOG_BEHV_FLIST := $(IVERILOG_BEHV_DIR)/iverilog.fl
-IVERILOG_NETL_FLIST := $(IVERILOG_NETL_DIR)/iverilog.fl
-IVERILOG_POST_FLIST := $(IVERILOG_POST_DIR)/iverilog.fl
-CONVERTED_SOC       := $(IVERILOG_BEHV_DIR)/converted_soc.v
-CONVERTED_DEPFILE   := $(IVERILOG_BEHV_DIR)/converted_soc.d
-IVERILOG_BEHV_SIMV  := $(IVERILOG_BEHV_DIR)/simv
-IVERILOG_NETL_SIMV  := $(IVERILOG_NETL_DIR)/simv
-IVERILOG_POST_SIMV  := $(IVERILOG_POST_DIR)/simv
+IVERILOG_ROOT         := $(SIM_BUILD_ROOT)
+IVERILOG_BEHV_DIR     := $(IVERILOG_ROOT)/behv
+IVERILOG_NETL_DIR     := $(IVERILOG_ROOT)/netl
+IVERILOG_POST_DIR     := $(IVERILOG_ROOT)/post
+IVERILOG_BEHV_FLIST   := $(IVERILOG_BEHV_DIR)/iverilog.fl
+IVERILOG_NETL_FLIST   := $(IVERILOG_NETL_DIR)/iverilog.fl
+IVERILOG_POST_FLIST   := $(IVERILOG_POST_DIR)/iverilog.fl
+CONVERTED_SOC         := $(IVERILOG_BEHV_DIR)/converted_soc.v
+CONVERTED_DEPFILE     := $(IVERILOG_BEHV_DIR)/converted_soc.d
+IVERILOG_BEHV_SIMV    := $(IVERILOG_BEHV_DIR)/simv
+IVERILOG_NETL_SIMV    := $(IVERILOG_NETL_DIR)/simv
+IVERILOG_POST_SIMV    := $(IVERILOG_POST_DIR)/simv
 IVERILOG_BEHV_DEPFILE := $(IVERILOG_BEHV_DIR)/simv.d
 IVERILOG_NETL_DEPFILE := $(IVERILOG_NETL_DIR)/simv.d
 IVERILOG_POST_DEPFILE := $(IVERILOG_POST_DIR)/simv.d
@@ -28,8 +28,7 @@ IVERILOG_POST_DEPFILE := $(IVERILOG_POST_DIR)/simv.d
 IVERILOG_COMMON_OPTS := -g2012
 IVERILOG_TIME_OPTS   := -gno-specify
 IVERILOG_POST_OPTS   := -gspecify -Tmin
-IVERILOG_SIM_OPTS    := +$(RTL_SIM_PLLEN) +$(RTL_SIM_PLLCFG) \
-	+core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
+IVERILOG_SIM_OPTS    := +core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
 $(CONVERTED_SOC): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
 	@mkdir -p $(@D)
@@ -41,19 +40,19 @@ $(IVERILOG_BEHV_FLIST): $(FILELIST_STAMP) $(CONVERTED_SOC)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode behv --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
-		--output $@ --converted $(CONVERTED_SOC)
+		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --converted $(CONVERTED_SOC)
 
 $(IVERILOG_NETL_FLIST): $(FILELIST_STAMP) $(NETLIST_PATH)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode netl --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
-		--output $@ --netlist $(NETLIST_PATH)
+		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --netlist $(NETLIST_PATH)
 
 $(IVERILOG_POST_FLIST): $(FILELIST_STAMP) $(POST_PATH) $(SDF_PATH)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode post --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
-		--output $@ --netlist $(POST_PATH) --sdf $(SDF_PATH) \
+		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --netlist $(POST_PATH) --sdf $(SDF_PATH) \
 		--sdf-scope $(SDF_SCOPE)
 
 convt_sv2v: $(CONVERTED_SOC)

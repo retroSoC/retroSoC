@@ -56,12 +56,12 @@ static CORETIMETYPE barebones_clock(void) {
    does not occur. If there are issues with the return value overflowing,
    increase this value.
         */
-#define CLOCKS_PER_SEC 72000000
-#define GETMYTIME(_t) (*_t = barebones_clock())
-#define MYTIMEDIFF(fin, ini) ((fin) - (ini))
-#define TIMER_RES_DIVIDER 1
+#define CLOCKS_PER_SEC             72000000
+#define GETMYTIME(_t)              (*_t = barebones_clock())
+#define MYTIMEDIFF(fin, ini)       ((fin) - (ini))
+#define TIMER_RES_DIVIDER          1
 #define SAMPLE_TIME_IMPLEMENTATION 1
-#define EE_TICKS_PER_SEC (CLOCKS_PER_SEC / TIMER_RES_DIVIDER)
+#define EE_TICKS_PER_SEC           (CLOCKS_PER_SEC / TIMER_RES_DIVIDER)
 
 /** Define Host specific (POSIX), or target specific global time variables. */
 static CORETIMETYPE start_time_val, stop_time_val;

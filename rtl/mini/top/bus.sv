@@ -20,11 +20,15 @@ module bus (
     nmi_if.slave  core_nmi,
     nmi_if.slave  dma_nmi,
     nmi_if.master natv_nmi,
-    nmi_if.master apb_nmi
+    nmi_if.master apb_nmi,
+    output logic  fault_valid_o,
+    output logic [31:0] fault_addr_o,
+    output logic [3:0]  fault_wstrb_o,
+    output logic        fault_reserved_o
     // verilog_format: on
 );
 
-  logic s_natv_sel, s_apb_sel, s_ram_sel;
+  logic s_natv_sel, s_apb_sel, s_ram_sel, s_fault_sel;
   logic s_ram_valid, s_ram_ready;
   logic s_mstr_lock_d, s_mstr_lock_q;
   logic s_mstr_id_d, s_mstr_id_q;
@@ -84,40 +88,36 @@ module bus (
       u_mstr_rgsl_nmi_if
   );
 
-  // bus mux — hierarchical address decode (2-level)
+  // bus mux — address ownership comes from the generated address map.
   // verilog_format: off
-  logic s_natv_hi_sel;
-  // Level 1: fast 4-bit decode on addr[31:28]
-  assign s_natv_hi_sel = u_mstr_rgsl_nmi_if.addr[31:28] == `FLASH_START  ||
-                         u_mstr_rgsl_nmi_if.addr[31:28] == `NMI_IP_START ||
-                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START0 ||
-                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START1 ||
-                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START2 ||
-                         u_mstr_rgsl_nmi_if.addr[31:28] == `SPISD_START3;
-  // Level 2: memory-mapped ranges that need wider compare
-  assign s_natv_sel    = s_natv_hi_sel ||
-                        (u_mstr_rgsl_nmi_if.addr[31:24] >= `SDRAM_START    &&
-                         u_mstr_rgsl_nmi_if.addr[31:24] <= `SDRAM_END)     ||
-                         u_mstr_rgsl_nmi_if.addr[31:24] == `PSRAM_START    ||
-                         u_mstr_rgsl_nmi_if.addr[31:24] == `OPIPSRAM_START;
+  assign s_natv_sel      = `SOC_ADDR_IS_NATIVE(u_mstr_rgsl_nmi_if.addr);
   assign natv_nmi.valid  = u_mstr_rgsl_nmi_if.valid && s_natv_sel;
   assign natv_nmi.addr   = u_mstr_rgsl_nmi_if.addr;
   assign natv_nmi.wdata  = u_mstr_rgsl_nmi_if.wdata;
   assign natv_nmi.wstrb  = u_mstr_rgsl_nmi_if.wstrb;
 
-  assign s_apb_sel       = u_mstr_rgsl_nmi_if.addr[31:28] == `APB_IP_START;
+  assign s_apb_sel       = `SOC_ADDR_IS_APB(u_mstr_rgsl_nmi_if.addr);
   assign apb_nmi.valid   = u_mstr_rgsl_nmi_if.valid && s_apb_sel;
   assign apb_nmi.addr    = u_mstr_rgsl_nmi_if.addr;
   assign apb_nmi.wdata   = u_mstr_rgsl_nmi_if.wdata;
   assign apb_nmi.wstrb   = u_mstr_rgsl_nmi_if.wstrb;
 
 `ifdef HAVE_SRAM_IF
-  assign s_ram_sel     = u_mstr_rgsl_nmi_if.addr[31:24] >= `SRAM_START && u_mstr_rgsl_nmi_if.addr[31:24] <= `SRAM_END;
+  assign s_ram_sel     = `SOC_ADDR_IS_RAM(u_mstr_rgsl_nmi_if.addr);
   assign s_ram_valid   = u_mstr_rgsl_nmi_if.valid && s_ram_sel;
   assign ram.addr      = u_mstr_rgsl_nmi_if.addr[16:2];
   assign ram.wdata     = u_mstr_rgsl_nmi_if.wdata;
   assign ram.wstrb     = s_ram_valid ? u_mstr_rgsl_nmi_if.wstrb : '0;
+`else
+  assign s_ram_sel     = 1'b0;
 `endif
+
+  assign s_fault_sel      = u_mstr_rgsl_nmi_if.valid &&
+                            ~(s_natv_sel || s_apb_sel || s_ram_sel);
+  assign fault_valid_o    = s_fault_sel;
+  assign fault_addr_o     = u_mstr_rgsl_nmi_if.addr;
+  assign fault_wstrb_o    = u_mstr_rgsl_nmi_if.wstrb;
+  assign fault_reserved_o = `SOC_ADDR_IS_RESERVED(u_mstr_rgsl_nmi_if.addr);
   // verilog_format: on
 
 `ifdef HAVE_SRAM_MACRO
@@ -133,10 +133,10 @@ module bus (
 `ifdef HAVE_SRAM_IF
   assign u_mstr_rgsl_nmi_if.ready = (natv_nmi.valid && natv_nmi.ready) ||
                                     (apb_nmi.valid && apb_nmi.ready)   ||
-                                    s_ram_ready;
+                                    s_ram_ready || s_fault_sel;
 `else
   assign u_mstr_rgsl_nmi_if.ready = (natv_nmi.valid && natv_nmi.ready) ||
-                                    (apb_nmi.valid && apb_nmi.ready);
+                                    (apb_nmi.valid && apb_nmi.ready) || s_fault_sel;
 `endif
 
 

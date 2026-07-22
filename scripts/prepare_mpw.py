@@ -16,7 +16,7 @@ from scripts.dependency_lock import archive, source  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
-MPW_DIR = ROOT / "rtl/mini/mpw"
+MPW_DIR = ROOT / "rtl/managed/mpw"
 SERV_ARCHIVE = MPW_DIR / "serv-1.4.0.tar.gz"
 
 

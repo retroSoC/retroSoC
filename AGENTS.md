@@ -98,7 +98,7 @@ README that states its ownership, source of truth, and validation expectations.
 ## Build and Repository Safety
 
 - Start from a committed configuration profile. Build products belong below
-  `build/<profile>-<config-hash>/`; caches belong below `.cache/`. Do not
+  `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`; caches belong below `.cache/`. Do not
   commit generated outputs.
 - Preserve unrelated worktree changes. Do not reset, discard, or reformat files
   outside the requested scope.

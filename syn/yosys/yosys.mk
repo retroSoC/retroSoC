@@ -27,15 +27,15 @@ YOSYS_RPT   := $(YOSYS_BUILD)/rpt
 
 include $(YOSYS_DIR)/synth_config.mk
 
-TOP_DESIGN    ?= retrosoc_asic
-RTL_NAME      ?= retrosoc_asic
-SV_FLIST      := $(GENERATED_FL_DIR)/yosys.fl
+TOP_DESIGN ?= retrosoc_asic
+RTL_NAME   ?= retrosoc_asic
+SV_FLIST   := $(GENERATED_FL_DIR)/yosys.fl
 
-NETLIST       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
-NETLIST_DEBUG := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
+NETLIST        := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
+NETLIST_DEBUG  := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
 NETLIST_CONFIG := $(YOSYS_OUT)/$(RTL_NAME)_yosys.config
-YOSYS_DEPFILE := $(YOSYS_BUILD)/yosys.d
-YOSYS_SCRIPTS := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk $(YOSYS_DIR)/yosys.mk
+YOSYS_DEPFILE  := $(YOSYS_BUILD)/yosys.d
+YOSYS_SCRIPTS  := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk $(YOSYS_DIR)/yosys.mk
 
 -include $(YOSYS_DEPFILE)
 
@@ -47,7 +47,7 @@ $(SV_FLIST): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
 gen_synth_filelist: $(SV_FLIST)
 
 ## Synthesize netlist using Yosys
-synth: $(NETLIST)
+synth: $(NETLIST) | manifest
 
 $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 	@mkdir -p $(YOSYS_OUT)
@@ -68,5 +68,3 @@ synth_clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(YOSYS_BUILD)
 
 .PHONY: gen_synth_filelist synth_clean synth
-
-synth: | manifest

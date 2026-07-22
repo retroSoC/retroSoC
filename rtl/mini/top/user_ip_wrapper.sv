@@ -15,7 +15,7 @@ module user_ip_wrapper (
     input  logic                         clk_i,
     input  logic                         rst_n_i,
     input  logic [`USER_IPSEL_WIDTH-1:0] sel_i,
-    gpio_if.dut                          gpio,
+    user_gpio_if.user_ip                 gpio,
     apb4_if.slave                        apb
     // verilog_format: on
 );

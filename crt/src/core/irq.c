@@ -5,7 +5,7 @@
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/lib/printf.h>
 
-#define RS_TIMER_DELTA_VALUE 360000UL
+#define RS_TIMER_DELTA_VALUE   360000UL
 #define RS_IRQ_TEST_TIMEOUT_MS 6000U
 
 static volatile uint32_t timer_irq_count;

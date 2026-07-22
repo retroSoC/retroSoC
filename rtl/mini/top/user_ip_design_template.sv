@@ -25,7 +25,7 @@ module user_ip_design_template #(
     // verilog_format: off
     input logic   clk_i,
     input logic   rst_n_i,
-    gpio_if.dut   gpio,
+    user_gpio_if.user_ip gpio,
     apb4_if.slave apb
     // verilog_format: on
 );
@@ -67,13 +67,10 @@ module user_ip_design_template #(
 
   // ========== USER CUSTOM AREA ==============
   // NOTE: If needed, define io logic here.
-  // `gpio_oe` is active high, meaning gpio is
-  // output when `gpio_oe[x]` = 1'b1.
-  assign gpio.gpio_oe  = '1;
-  assign gpio.gpio_cs  = '1;  // 1: CMOS 0: SCHMI
-  assign gpio.gpio_pu  = '0;
-  assign gpio.gpio_pd  = '0;
-  assign gpio.gpio_out = '0;
+  // `oe_o` is active high, meaning GPIO is output when `oe_o[x]` is 1'b1.
+  // Pad electrical controls remain owned by the native GPIO controller.
+  assign gpio.oe_o = '0;
+  assign gpio.do_o = '0;
 
   // ========== USER CUSTOM AREA END ==========
 

@@ -47,6 +47,8 @@ application, linker layout, and optional features as one reproducible configurat
 | --- | --- | --- | --- |
 | [`configs/ci/hazard3-rv32im-ihp130.mk`](configs/ci/hazard3-rv32im-ihp130.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
 | [`configs/ci/hazard3-rv32im-ihp130-shell.mk`](configs/ci/hazard3-rv32im-ihp130-shell.mk) | HAZARD3 / RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
+| [`configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk) | HAZARD3 / RV32IM + MDD IP | `bringup` | Pull-request firmware and Verilator integration coverage for the user-IP GPIO ownership path. |
+| [`configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk) | HAZARD3 / RV32IM + MDD IP | `shell` | Pull-request firmware compilation coverage for the user-IP software command. |
 | [`configs/ci/mdd-rv32im-ihp130.mk`](configs/ci/mdd-rv32im-ihp130.mk) | MDD / RV32IM | `bringup` | Pull-request firmware and Verilator regression. |
 | [`configs/nightly/picorv32-rv32im-ihp130.mk`](configs/nightly/picorv32-rv32im-ihp130.mk) | PicoRV32 / RV32IM | `bringup` | Nightly firmware, Verilator, and Icarus regression. |
 | [`configs/cluster/hazard3-ics55.mk`](configs/cluster/hazard3-ics55.mk) | HAZARD3 / RV32IM | `bringup` | Cluster-only configuration; requires the site PDK and licensed-tool environment. |
@@ -55,9 +57,11 @@ application, linker layout, and optional features as one reproducible configurat
 
 The prebuilt, locked toolchain bundles target Ubuntu 22.04. Install Python 3, GNU Make, a host
 C compiler, `clang-format-14`, a RISC-V bare-metal GNU toolchain, and the tools required by the
-flow you intend to run: Icarus Verilog, Verilator, sv2v, Yosys, and OpenSTA. The CI environment
-installs the exact versions from [`config/dependencies.lock.json`](config/dependencies.lock.json);
-local tools must be available on `PATH` before running `make doctor`.
+flow you intend to run: Icarus Verilog, Verilator, sv2v, Yosys, and OpenSTA. Source formatting
+also requires `mbake` 1.4.6 and the locked Verible formatter. The CI environment installs the
+exact versions from [`config/dependencies.lock.json`](config/dependencies.lock.json). Local flow
+tools must be available on `PATH` before running `make doctor`; the three formatters must be
+available before running `make format-check`.
 
 Install the Python build dependencies once per environment:
 
@@ -114,13 +118,24 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 | OpenSTA timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |
-| Script and policy checks | `make sw-format-check sw-policy-check sw-host-test` |
+| Format C, Makefile, and RTL sources | `make format` |
+| Check C, Makefile, and RTL formatting | `make format-check` |
+| Script and policy checks | `make sw-policy-check sw-host-test` |
 
-Build outputs are isolated below `build/<profile>-<config-hash>/`. Each variant keeps its
+Build outputs are isolated below `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`. Each variant keeps its
 firmware, generated sources, simulator output, synthesis and timing reports, manifest, warning
 analysis, and metrics separate from other configurations. Use `make clean` to remove the
 selected backend, `make clean-all` to remove all build output, and `make purge-cache` to remove
 download and compiler caches.
+
+`BUILD_TIMESTAMP` defaults to the local build-start time. Set it explicitly when separate Make
+commands must reuse one variant:
+
+```sh
+export BUILD_TIMESTAMP=2026-07-21-10-39
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware
+make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim
+```
 
 ## Reproducibility And CI
 
