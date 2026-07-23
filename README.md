@@ -99,6 +99,9 @@ variant identifier; `make help` lists all available targets. Netlist simulation 
 analysis consume the Yosys netlist, so run the synthesis command first. The CI-proven netlist
 regression uses the assembly self-test image:
 
+Verilator simulations run for 180 seconds by default. Set `SOC_SIM_TIME` explicitly only when
+an exploratory local run needs a different limit.
+
 ```sh
 make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
 make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth

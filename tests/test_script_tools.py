@@ -27,7 +27,7 @@ from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
 from scripts.generate_mpw import migrate_user_gpio_interfaces  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
-from scripts.regress import MDD_VERILATOR_SIM_TIME, PR_COMMANDS, regression_environment  # noqa: E402
+from scripts.regress import NIGHTLY_COMMANDS, PR_COMMANDS, regression_environment  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -298,20 +298,14 @@ def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
     )
 
 
-def test_mdd_regressions_allow_uart_boot_to_complete() -> None:
-    mdd_profiles = {
-        "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
-        "configs/ci/mdd-rv32im-ihp130.mk",
-    }
-    expected_values = (
-        "SIMU=VERILATOR",
-        f"SOC_SIM_TIME={MDD_VERILATOR_SIM_TIME}",
-        "firmware",
-        "sim",
-    )
+def test_verilator_simulations_use_uniform_timeout() -> None:
+    verilator_makefile = ROOT / "rtl/mini/mk/verilator.mk"
+    assert "SOC_SIM_TIME            ?= 180" in verilator_makefile.read_text(encoding="utf-8")
 
-    assert MDD_VERILATOR_SIM_TIME == 180
-    assert {profile for profile, values in PR_COMMANDS if values == expected_values} == mdd_profiles
+    regression_commands = (*PR_COMMANDS, *NIGHTLY_COMMANDS)
+    for _, values in regression_commands:
+        if "SIMU=VERILATOR" in values:
+            assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
 
 
 def test_run_flow_writes_structured_result(tmp_path: Path) -> None:

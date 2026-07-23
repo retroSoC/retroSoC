@@ -15,30 +15,17 @@ sys.path.insert(0, str(ROOT))
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
-MDD_VERILATOR_SIM_TIME = 180
-
-
 PR_COMMANDS = (
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
     ("configs/ci/hazard3-rv32im-ihp130-shell.mk", ("firmware",)),
     ("configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk", ("firmware",)),
     (
         "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
-        (
-            "SIMU=VERILATOR",
-            f"SOC_SIM_TIME={MDD_VERILATOR_SIM_TIME}",
-            "firmware",
-            "sim",
-        ),
+        ("SIMU=VERILATOR", "firmware", "sim"),
     ),
     (
         "configs/ci/mdd-rv32im-ihp130.mk",
-        (
-            "SIMU=VERILATOR",
-            f"SOC_SIM_TIME={MDD_VERILATOR_SIM_TIME}",
-            "firmware",
-            "sim",
-        ),
+        ("SIMU=VERILATOR", "firmware", "sim"),
     ),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=VERILATOR", "sim")),
     (

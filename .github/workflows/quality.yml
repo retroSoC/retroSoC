@@ -44,6 +44,9 @@ jobs:
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock config/dependencies.lock.json
 
+      - name: Validate SoC integration topology
+        run: make check-soc-topology
+
       - name: Lint Python
         run: ruff check .
 

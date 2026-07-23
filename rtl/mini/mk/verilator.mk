@@ -27,7 +27,7 @@ VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
 VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
 VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
 
-SOC_SIM_TIME            ?= 40
+SOC_SIM_TIME            ?= 180
 VERILATOR_STAMP         := $(BUILD_DIR)/verilate.stamp
 VERILATOR_DEPFILE       := $(BUILD_DIR)/verilate.d
 VERILATOR_EMU           := $(BUILD_DIR)/emu

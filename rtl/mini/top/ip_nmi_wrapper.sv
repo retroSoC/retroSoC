@@ -5,10 +5,9 @@
 //             http://license.coscl.org.cn/MulanPSL2
 // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 // EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-// addr range: [31:28]: 4'h1(reg), 4'h4(psram), 4'h5(spisd)
 `include "mmap_define.svh"
 
 module ip_nmi_wrapper (
@@ -17,7 +16,6 @@ module ip_nmi_wrapper (
     input logic        rst_n_i,
     input logic        clk_aud_i,
     input logic        rst_aud_n_i,
-    // natv if
     nmi_if.slave       nmi,
     gpio_if.dut        gpio,
     user_gpio_if.padctrl user_gpio,
@@ -40,236 +38,29 @@ module ip_nmi_wrapper (
     input logic [31:0] fault_addr_i,
     input logic [3:0]  fault_wstrb_i,
     input logic        fault_reserved_i,
-    // irq
     output logic [9:0] irq_o
     // verilog_format: on
 );
 
-  // bus interface
-  nmi_if u_uart_nmi_if ();
-  nmi_if u_gpio_nmi_if ();
-  nmi_if u_tim0_nmi_if ();
-  nmi_if u_tim1_nmi_if ();
-  nmi_if u_psram_nmi_if ();
-  nmi_if u_spisd_nmi_if ();
-  nmi_if u_i2c0_nmi_if ();
-  nmi_if u_i2s_nmi_if ();
-  nmi_if u_onewire_nmi_if ();
-  nmi_if u_xpi_nmi_if ();
-  nmi_if u_dma_nmi_if ();
-  nmi_if u_sysctrl_nmi_if ();
-  nmi_if u_clint_nmi_if ();
-  nmi_if u_sdram_nmi_if ();
-  nmi_if u_dvp_nmi_if ();
-  nmi_if u_sdio_nmi_if ();
-  nmi_if u_opipsram_nmi_if ();
-  nmi_if u_i2c1_nmi_if ();
+  // Generated NMI target declarations preserve scalar-interface compatibility.
+  `include "soc_nmi_interfaces.svh"
 
-  // ip interface
-  simp_clint_if u_clint_if ();
+simp_clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
 
-  // cfg or mem
-  logic s_psram_cfg_sel, s_psram_mem_sel;
-  logic s_opipsram_cfg_sel, s_opipsram_mem_sel;
-  logic s_spisd_cfg_sel;
-  logic s_sdram_cfg_sel, s_sdram_mem_sel;
-  logic s_xpi_cfg_sel, s_xpi_mem_sel;
-  // dma
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
   logic s_dma_xfer_done;
-  // irq
   logic s_tim0_irq, s_tim1_irq;
 
-
-  // dma channel
-  assign u_dma_hw_trg_if.i2s_tx_proc = ~s_dma_i2s_tx_stall;
-  assign u_dma_hw_trg_if.i2s_rx_proc = ~s_dma_i2s_rx_stall;
+  assign u_dma_hw_trg_if.i2s_tx_proc  = ~s_dma_i2s_tx_stall;
+  assign u_dma_hw_trg_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
   assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
   assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
-  // gpio
-  assign u_gpio_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_GPIO(nmi.addr);
-  assign u_gpio_nmi_if.addr = nmi.addr;
-  assign u_gpio_nmi_if.wdata = nmi.wdata;
-  assign u_gpio_nmi_if.wstrb = nmi.wstrb;
-  // uart
-  assign u_uart_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_UART0(nmi.addr);
-  assign u_uart_nmi_if.addr = nmi.addr;
-  assign u_uart_nmi_if.wdata = nmi.wdata;
-  assign u_uart_nmi_if.wstrb = nmi.wstrb;
-  // tim0
-  assign u_tim0_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_TIM0(nmi.addr);
-  assign u_tim0_nmi_if.addr = nmi.addr;
-  assign u_tim0_nmi_if.wdata = nmi.wdata;
-  assign u_tim0_nmi_if.wstrb = nmi.wstrb;
-  // tim1
-  assign u_tim1_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_TIM1(nmi.addr);
-  assign u_tim1_nmi_if.addr = nmi.addr;
-  assign u_tim1_nmi_if.wdata = nmi.wdata;
-  assign u_tim1_nmi_if.wstrb = nmi.wstrb;
-  // psram
-  assign s_psram_cfg_sel = `SOC_ADDR_IS_NMI_PSRAM(nmi.addr);
-  assign s_psram_mem_sel = `SOC_ADDR_IS_PSRAM(nmi.addr);
-  assign u_psram_nmi_if.valid = nmi.valid && (s_psram_mem_sel || s_psram_cfg_sel);
-  assign u_psram_nmi_if.addr = nmi.addr;
-  assign u_psram_nmi_if.wdata = nmi.wdata;
-  assign u_psram_nmi_if.wstrb = nmi.wstrb;
-  // spisd
-  assign s_spisd_cfg_sel = `SOC_ADDR_IS_NMI_SPISD(nmi.addr);
-  assign u_spisd_nmi_if.valid = nmi.valid && (`SOC_ADDR_IS_SPISD(nmi.addr) || s_spisd_cfg_sel);
-  assign u_spisd_nmi_if.addr = nmi.addr;
-  assign u_spisd_nmi_if.wdata = nmi.wdata;
-  assign u_spisd_nmi_if.wstrb = nmi.wstrb;
-  // i2c0
-  assign u_i2c0_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_I2C0(nmi.addr);
-  assign u_i2c0_nmi_if.addr = nmi.addr;
-  assign u_i2c0_nmi_if.wdata = nmi.wdata;
-  assign u_i2c0_nmi_if.wstrb = nmi.wstrb;
-  // i2s
-  assign u_i2s_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_I2S(nmi.addr);
-  assign u_i2s_nmi_if.addr = nmi.addr;
-  assign u_i2s_nmi_if.wdata = nmi.wdata;
-  assign u_i2s_nmi_if.wstrb = nmi.wstrb;
-  // onewire
-  assign u_onewire_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_ONEWIRE(nmi.addr);
-  assign u_onewire_nmi_if.addr = nmi.addr;
-  assign u_onewire_nmi_if.wdata = nmi.wdata;
-  assign u_onewire_nmi_if.wstrb = nmi.wstrb;
-  // xpi
-  assign s_xpi_cfg_sel = `SOC_ADDR_IS_NMI_XPI(nmi.addr);
-  assign s_xpi_mem_sel = `SOC_ADDR_IS_FLASH(nmi.addr) || `SOC_ADDR_IS_XPI(nmi.addr);
-  assign u_xpi_nmi_if.valid = nmi.valid && (s_xpi_cfg_sel || s_xpi_mem_sel);
-  assign u_xpi_nmi_if.addr = nmi.addr;
-  assign u_xpi_nmi_if.wdata = nmi.wdata;
-  assign u_xpi_nmi_if.wstrb = nmi.wstrb;
-  // dma
-  assign u_dma_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_DMA(nmi.addr);
-  assign u_dma_nmi_if.addr = nmi.addr;
-  assign u_dma_nmi_if.wdata = nmi.wdata;
-  assign u_dma_nmi_if.wstrb = nmi.wstrb;
-  // sysctrl
-  assign u_sysctrl_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_SYSCTRL(nmi.addr);
-  assign u_sysctrl_nmi_if.addr = nmi.addr;
-  assign u_sysctrl_nmi_if.wdata = nmi.wdata;
-  assign u_sysctrl_nmi_if.wstrb = nmi.wstrb;
-  // clint
-  assign u_clint_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_CLINT(nmi.addr);
-  assign u_clint_nmi_if.addr = nmi.addr;
-  assign u_clint_nmi_if.wdata = nmi.wdata;
-  assign u_clint_nmi_if.wstrb = nmi.wstrb;
-  // sdram
-  assign s_sdram_cfg_sel = `SOC_ADDR_IS_NMI_SDRAM(nmi.addr);
-  assign s_sdram_mem_sel = `SOC_ADDR_IS_SDRAM(nmi.addr);
-  assign u_sdram_nmi_if.valid = nmi.valid && (s_sdram_cfg_sel || s_sdram_mem_sel);
-  assign u_sdram_nmi_if.addr = nmi.addr;
-  assign u_sdram_nmi_if.wdata = nmi.wdata;
-  assign u_sdram_nmi_if.wstrb = nmi.wstrb;
-  // dvp
-  assign u_dvp_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_DVP(nmi.addr);
-  assign u_dvp_nmi_if.addr = nmi.addr;
-  assign u_dvp_nmi_if.wdata = nmi.wdata;
-  assign u_dvp_nmi_if.wstrb = nmi.wstrb;
-  // sdio
-  assign u_sdio_nmi_if.valid = 1'b0;
-  assign u_sdio_nmi_if.addr = nmi.addr;
-  assign u_sdio_nmi_if.wdata = nmi.wdata;
-  assign u_sdio_nmi_if.wstrb = nmi.wstrb;
-  // opipsram
-  assign s_opipsram_cfg_sel = 1'b0;
-  assign s_opipsram_mem_sel = 1'b0;
-  assign u_opipsram_nmi_if.valid = 1'b0;
-  assign u_opipsram_nmi_if.addr = nmi.addr;
-  assign u_opipsram_nmi_if.wdata = nmi.wdata;
-  assign u_opipsram_nmi_if.wstrb = nmi.wstrb;
-  // i2c1
-  assign u_i2c1_nmi_if.valid = nmi.valid && `SOC_ADDR_IS_NMI_I2C1(nmi.addr);
-  assign u_i2c1_nmi_if.addr = nmi.addr;
-  assign u_i2c1_nmi_if.wdata = nmi.wdata;
-  assign u_i2c1_nmi_if.wstrb = nmi.wstrb;
 
-  // verilog_format: off
-  // Registered one-hot slave select for response mux (breaks comb fanin)
-  logic [17:0] s_slv_sel_d, s_slv_sel_q;
-  assign s_slv_sel_d = { u_i2c1_nmi_if.valid,
-                         u_opipsram_nmi_if.valid,
-                         u_sdio_nmi_if.valid,
-                         u_dvp_nmi_if.valid,
-                         u_sdram_nmi_if.valid,
-                         u_clint_nmi_if.valid,
-                         u_sysctrl_nmi_if.valid,
-                         u_dma_nmi_if.valid,
-                         u_xpi_nmi_if.valid,
-                         u_onewire_nmi_if.valid,
-                         u_i2s_nmi_if.valid,
-                         u_i2c0_nmi_if.valid,
-                         u_spisd_nmi_if.valid,
-                         u_psram_nmi_if.valid,
-                         u_tim1_nmi_if.valid,
-                         u_tim0_nmi_if.valid,
-                         u_gpio_nmi_if.valid,
-                         u_uart_nmi_if.valid };
-  dffr #(18) u_slv_sel_dffr (
-      clk_i,
-      rst_n_i,
-      s_slv_sel_d,
-      s_slv_sel_q
-  );
+  // Uses ClusterIP common nmi_if and register.sv dffr through generated bindings.
+  `include "soc_nmi_routes.svh"
 
-  // Collect per-slave ready signals into a vector
-  logic [17:0] s_slv_ready;
-  assign s_slv_ready = { u_i2c1_nmi_if.ready,
-                         u_opipsram_nmi_if.ready,
-                         u_sdio_nmi_if.ready,
-                         u_dvp_nmi_if.ready,
-                         u_sdram_nmi_if.ready,
-                         u_clint_nmi_if.ready,
-                         u_sysctrl_nmi_if.ready,
-                         u_dma_nmi_if.ready,
-                         u_xpi_nmi_if.ready,
-                         u_onewire_nmi_if.ready,
-                         u_i2s_nmi_if.ready,
-                         u_i2c0_nmi_if.ready,
-                         u_spisd_nmi_if.ready,
-                         u_psram_nmi_if.ready,
-                         u_tim1_nmi_if.ready,
-                         u_tim0_nmi_if.ready,
-                         u_gpio_nmi_if.ready,
-                         u_uart_nmi_if.ready };
-
-  assign nmi.ready = |(s_slv_sel_q & s_slv_ready);
-
-  // Registered select mux for rdata (reduces fanin from 18 to a clean one-hot mux)
-  logic [31:0] s_slv_rdata [0:17];
-  assign s_slv_rdata[0]  = u_uart_nmi_if.rdata;
-  assign s_slv_rdata[1]  = u_gpio_nmi_if.rdata;
-  assign s_slv_rdata[2]  = u_tim0_nmi_if.rdata;
-  assign s_slv_rdata[3]  = u_tim1_nmi_if.rdata;
-  assign s_slv_rdata[4]  = u_psram_nmi_if.rdata;
-  assign s_slv_rdata[5]  = u_spisd_nmi_if.rdata;
-  assign s_slv_rdata[6]  = u_i2c0_nmi_if.rdata;
-  assign s_slv_rdata[7]  = u_i2s_nmi_if.rdata;
-  assign s_slv_rdata[8]  = u_onewire_nmi_if.rdata;
-  assign s_slv_rdata[9]  = u_xpi_nmi_if.rdata;
-  assign s_slv_rdata[10] = u_dma_nmi_if.rdata;
-  assign s_slv_rdata[11] = u_sysctrl_nmi_if.rdata;
-  assign s_slv_rdata[12] = u_clint_nmi_if.rdata;
-  assign s_slv_rdata[13] = u_sdram_nmi_if.rdata;
-  assign s_slv_rdata[14] = u_dvp_nmi_if.rdata;
-  assign s_slv_rdata[15] = u_sdio_nmi_if.rdata;
-  assign s_slv_rdata[16] = u_opipsram_nmi_if.rdata;
-  assign s_slv_rdata[17] = u_i2c1_nmi_if.rdata;
-
-  // One-hot mux using registered slave select
-  always_comb begin
-    nmi.rdata = '0;
-    for (int i = 0; i < 18; i++) begin
-      if (s_slv_sel_q[i]) nmi.rdata = nmi.rdata | s_slv_rdata[i];
-    end
-  end
-  // verilog_format: on
-
-  // irq
   assign irq_o[0] = u_clint_if.sfr_irq_o;
   assign irq_o[1] = u_clint_if.tmr_irq_o;
   assign irq_o[2] = uart.irq_o;
@@ -281,7 +72,6 @@ module ip_nmi_wrapper (
   assign irq_o[8] = i2s.irq_o;
   assign irq_o[9] = xpi.irq_o;
 
-
   nmi_gpio u_nmi_gpio (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
@@ -290,14 +80,12 @@ module ip_nmi_wrapper (
       .user_gpio(user_gpio)
   );
 
-
   nmi_uart u_nmi_uart (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_uart_nmi_if),
       .uart   (uart)
   );
-
 
   nmi_timer u_nmi_timer0 (
       .clk_i  (clk_i),
@@ -306,14 +94,12 @@ module ip_nmi_wrapper (
       .irq_o  (s_tim0_irq)
   );
 
-
   nmi_timer u_nmi_timer1 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_tim1_nmi_if),
       .irq_o  (s_tim1_irq)
   );
-
 
   nmi_psram u_nmi_psram (
       .clk_i  (clk_i),
@@ -322,7 +108,6 @@ module ip_nmi_wrapper (
       .psram  (psram)
   );
 
-
   nmi_spisd u_nmi_spisd (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -330,14 +115,12 @@ module ip_nmi_wrapper (
       .spi    (spisd)
   );
 
-
   nmi_i2c u_nmi_i2c0 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_i2c0_nmi_if),
       .i2c    (i2c0)
   );
-
 
   nmi_i2s u_nmi_i2s (
       .clk_i         (clk_i),
@@ -349,7 +132,6 @@ module ip_nmi_wrapper (
       .nmi           (u_i2s_nmi_if),
       .i2s           (i2s)
   );
-
 
   nmi_onewire u_nmi_onewire (
       .clk_i  (clk_i),
@@ -396,14 +178,12 @@ module ip_nmi_wrapper (
       .clint  (u_clint_if)
   );
 
-
   nmi_sdram u_nmi_sdram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_sdram_nmi_if),
       .sdram  (sdram)
   );
-
 
   nmi_dvp u_nmi_dvp (
       .clk_i  (clk_i),
@@ -412,7 +192,6 @@ module ip_nmi_wrapper (
       .dvp    (dvp)
   );
 
-
   nmi_sdio u_nmi_sdio (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -420,14 +199,12 @@ module ip_nmi_wrapper (
       .sdio   (sdio)
   );
 
-
   nmi_opipsram u_nmi_opipsram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (u_opipsram_nmi_if),
       .psram  (opipsram)
   );
-
 
   nmi_i2c u_nmi_i2c1 (
       .clk_i  (clk_i),

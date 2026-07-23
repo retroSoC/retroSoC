@@ -12,6 +12,11 @@ PIN_MAP_SCRIPT        := $(RTL_PATH)/pin_map/generate_pin_map.py
 PIN_MAP_DIR           := $(VARIANT_ROOT)/generated/pin_map
 PIN_MAP_STAMP         := $(PIN_MAP_DIR)/.stamp
 PIN_MAP_FILELIST      := $(PIN_MAP_DIR)/pin_map.fl
+SOC_TOPOLOGY_SOURCE   := $(RTL_PATH)/integration/soc_topology.json
+SOC_TOPOLOGY_SCRIPT   := $(RTL_PATH)/integration/generate_soc_topology.py
+SOC_TOPOLOGY_DIR      := $(VARIANT_ROOT)/generated/soc_topology
+SOC_TOPOLOGY_STAMP    := $(SOC_TOPOLOGY_DIR)/.stamp
+SOC_TOPOLOGY_FILELIST := $(SOC_TOPOLOGY_DIR)/soc_topology.fl
 MPW_STAMP             := $(CACHE_ROOT)/stamps/mpw-$(LOCK_DIGEST).prepared
 MPW_OUTPUT_DIR        := $(VARIANT_ROOT)/generated/mpw/$(SIM_TOOL_NAME)
 MPW_VARIANT_STAMP     := $(MPW_OUTPUT_DIR)/.stamp
@@ -57,8 +62,19 @@ pin-map: $(PIN_MAP_STAMP)
 check-pin-map:
 	python3 $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --check
 
+$(SOC_TOPOLOGY_STAMP): $(SOC_TOPOLOGY_SOURCE) $(SOC_TOPOLOGY_SCRIPT) $(MEMORY_MAP_SOURCE)
+	python3 $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
+		--memory-map $(MEMORY_MAP_SOURCE) --output-dir $(SOC_TOPOLOGY_DIR)
+	@touch $@
+
+soc-topology: $(SOC_TOPOLOGY_STAMP)
+
+check-soc-topology:
+	python3 $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
+		--memory-map $(MEMORY_MAP_SOURCE) --check
+
 $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py \
-	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP)
+	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP) $(SOC_TOPOLOGY_STAMP)
 	python3 $(RTL_PATH)/script/generate_filelist.py \
 		--output-dir $(GENERATED_FL_DIR) \
 		$(foreach define,$(DEF_LIST),--define $(define))
@@ -85,7 +101,7 @@ NET_FLIST += -f $(GENERATED_FL_DIR)/sys_def.fl
 NET_FLIST += -f $(GENERATED_FL_DIR)/commonip.fl
 NET_FLIST += -f $(GENERATED_FL_DIR)/inc.fl
 
-RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(PIN_MAP_FILELIST) $(NET_FLIST)
+RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(PIN_MAP_FILELIST) -f $(SOC_TOPOLOGY_FILELIST) $(NET_FLIST)
 RTL_FLIST += -f $(GENERATED_FL_DIR)/clusterip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/ip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/tech.fl
@@ -113,4 +129,5 @@ else ifeq ($(SIMU), IVERILOG)
     include $(RTL_PATH)/mk/iverilog.mk
 endif
 
-.PHONY: gen_mpw_code generate_filelist memory-map check-memory-map pin-map check-pin-map firmware
+.PHONY: gen_mpw_code generate_filelist memory-map check-memory-map pin-map check-pin-map \
+	soc-topology check-soc-topology firmware
