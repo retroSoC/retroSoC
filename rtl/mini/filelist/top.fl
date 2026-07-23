@@ -15,3 +15,4 @@
 /top/user_ip_design_template.sv
 /top/user_ip_top.sv
 /top/user_ip_wrapper.sv
+/sva/soc_protocol_sva.sv

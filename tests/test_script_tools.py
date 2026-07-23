@@ -306,6 +306,7 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
     for _, values in regression_commands:
         if "SIMU=VERILATOR" in values:
             assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
+            assert "HAVE_SVA=YES" in values
 
 
 def test_run_flow_writes_structured_result(tmp_path: Path) -> None:

@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "domains": [
+    {
+      "name": "external",
+      "clock": "s_ext_clk_buf",
+      "reset": "s_ext_rst_n_sync",
+      "reset_source": "ext_rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_ext_rst_sync"
+    },
+    {
+      "name": "system",
+      "clock": "sys_clk_o",
+      "reset": "s_sys_rst_n_sync",
+      "reset_source": "ext_rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_sys_rst_sync"
+    },
+    {
+      "name": "audio",
+      "clock": "s_aud_clk_buf",
+      "reset": "s_aud_rst_n_sync",
+      "reset_source": "ext_rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_aud_rst_sync"
+    }
+  ],
+  "crossings": [
+    {
+      "name": "pll_request",
+      "source": "system",
+      "destination": "external",
+      "primitive": "cdc_2phase",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_pll_request_cdc"
+    },
+    {
+      "name": "pll_response",
+      "source": "external",
+      "destination": "system",
+      "primitive": "cdc_2phase",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_pll_response_cdc"
+    }
+  ]
+}

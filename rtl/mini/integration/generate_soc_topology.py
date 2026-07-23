@@ -14,9 +14,7 @@ from typing import Any
 
 
 SV_IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
-SV_REFERENCE_RE = re.compile(
-    r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[0-9]+\])?$"
-)
+SV_REFERENCE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[0-9]+\])?$")
 SV_CONSTANT_RE = re.compile(r"(?:1'[bB][01]|'[01])$")
 
 
@@ -27,6 +25,16 @@ class NativeTarget:
     interface: str
     regions: tuple[str, ...]
     disabled: bool
+
+
+@dataclass(frozen=True)
+class ApbTarget:
+    slot: int
+    name: str
+    timed_interface: str
+    pure_interface: str
+    region: str
+    requires_ip: str | None
 
 
 @dataclass(frozen=True)
@@ -114,7 +122,17 @@ def parse_regions(value: Any, field: str) -> tuple[str, ...]:
     return regions
 
 
-def parse_native_targets(value: Any, memory_regions: dict[str, dict[str, Any]]) -> list[NativeTarget]:
+def parse_requires_ip(value: Any, field: str) -> str | None:
+    if value is None:
+        return None
+    if value != "MDD":
+        raise ValueError(f"{field} must be MDD when present")
+    return value
+
+
+def parse_native_targets(
+    value: Any, memory_regions: dict[str, dict[str, Any]]
+) -> list[NativeTarget]:
     if not isinstance(value, list) or not value:
         raise ValueError("native_targets must be a non-empty list")
     targets: list[NativeTarget] = []
@@ -180,7 +198,92 @@ def parse_native_targets(value: Any, memory_regions: dict[str, dict[str, Any]]) 
             details.append(f"missing {', '.join(missing)}")
         if extra:
             details.append(f"extra {', '.join(extra)}")
-        raise ValueError(f"native target regions do not cover the memory map ({'; '.join(details)})")
+        raise ValueError(
+            f"native target regions do not cover the memory map ({'; '.join(details)})"
+        )
+    return ordered
+
+
+def parse_apb_targets(
+    value: Any, memory_regions: dict[str, dict[str, Any]], ip: str
+) -> list[ApbTarget]:
+    if not isinstance(value, list) or not value:
+        raise ValueError("apb_targets must be a non-empty list")
+    targets: list[ApbTarget] = []
+    names: set[str] = set()
+    timed_interfaces: set[str] = set()
+    pure_interfaces: set[str] = set()
+    regions: set[str] = set()
+    slots: set[int] = set()
+    for index, entry in enumerate(value):
+        target = require_object(entry, f"apb_targets[{index}]")
+        slot = target.get("slot")
+        if not isinstance(slot, int) or slot < 0:
+            raise ValueError(f"apb_targets[{index}].slot must be a non-negative integer")
+        name = require_identifier(target.get("name"), f"apb_targets[{index}].name")
+        timed_interface = require_identifier(
+            target.get("timed_interface"), f"apb_targets[{index}].timed_interface"
+        )
+        pure_interface = require_identifier(
+            target.get("pure_interface"), f"apb_targets[{index}].pure_interface"
+        )
+        region_name = require_identifier(target.get("region"), f"apb_targets[{index}].region")
+        requires_ip = parse_requires_ip(
+            target.get("requires_ip"), f"apb_targets[{index}].requires_ip"
+        )
+        region = memory_regions.get(region_name)
+        if region is None:
+            raise ValueError(f"apb_targets[{index}] references unknown region {region_name}")
+        if region.get("route") != "apb" or region.get("kind") != "active":
+            raise ValueError(
+                f"apb_targets[{index}] region {region_name} is not an active APB region"
+            )
+        if requires_ip != region.get("requires_ip"):
+            raise ValueError(
+                f"apb_targets[{index}] requires_ip does not match region {region_name}"
+            )
+        if name in names:
+            raise ValueError(f"APB target name {name} is duplicated")
+        if timed_interface in timed_interfaces:
+            raise ValueError(f"APB timed interface {timed_interface} is duplicated")
+        if pure_interface in pure_interfaces:
+            raise ValueError(f"APB pure interface {pure_interface} is duplicated")
+        if region_name in regions:
+            raise ValueError(f"APB region {region_name} has multiple targets")
+        if slot in slots:
+            raise ValueError(f"APB target slot {slot} is duplicated")
+        names.add(name)
+        timed_interfaces.add(timed_interface)
+        pure_interfaces.add(pure_interface)
+        regions.add(region_name)
+        slots.add(slot)
+        targets.append(
+            ApbTarget(slot, name, timed_interface, pure_interface, region_name, requires_ip)
+        )
+
+    enabled = [
+        target for target in targets if target.requires_ip is None or target.requires_ip == ip
+    ]
+    ordered = sorted(enabled, key=lambda item: item.slot)
+    if [target.slot for target in ordered] != list(range(len(ordered))):
+        raise ValueError("enabled APB target slots must be contiguous from zero")
+    active_regions = {
+        symbol
+        for symbol, region in memory_regions.items()
+        if region.get("route") == "apb"
+        and region.get("kind") == "active"
+        and (region.get("requires_ip") is None or region.get("requires_ip") == ip)
+    }
+    claimed_regions = {target.region for target in ordered}
+    if claimed_regions != active_regions:
+        missing = sorted(active_regions - claimed_regions)
+        extra = sorted(claimed_regions - active_regions)
+        details: list[str] = []
+        if missing:
+            details.append(f"missing {', '.join(missing)}")
+        if extra:
+            details.append(f"extra {', '.join(extra)}")
+        raise ValueError(f"APB target regions do not cover the memory map ({'; '.join(details)})")
     return ordered
 
 
@@ -228,8 +331,8 @@ def parse_gpio_functions(value: Any, gpio_pins: int) -> list[GpioFunction]:
 
 
 def read_topology(
-    topology_path: Path, memory_map_path: Path
-) -> tuple[list[NativeTarget], list[GpioFunction]]:
+    topology_path: Path, memory_map_path: Path, ip: str
+) -> tuple[list[NativeTarget], list[ApbTarget], list[GpioFunction]]:
     document = require_object(json.loads(topology_path.read_text(encoding="utf-8")), "topology")
     if document.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
@@ -239,6 +342,7 @@ def read_topology(
     memory_regions = read_memory_regions(memory_map_path)
     return (
         parse_native_targets(document.get("native_targets"), memory_regions),
+        parse_apb_targets(document.get("apb_targets"), memory_regions, ip),
         parse_gpio_functions(document.get("gpio_alt_functions"), gpio_pins),
     )
 
@@ -271,9 +375,7 @@ def render_nmi_routes(
     )
     for target in targets:
         if not target.disabled:
-            lines.append(
-                f"  logic [{len(target.regions) - 1}:0] s_{target.name}_region_sel;"
-            )
+            lines.append(f"  logic [{len(target.regions) - 1}:0] s_{target.name}_region_sel;")
     lines.append("")
     for target in targets:
         if target.disabled:
@@ -322,6 +424,100 @@ def render_nmi_routes(
     return "\n".join(lines) + "\n"
 
 
+def render_apb_interfaces(targets: list[ApbTarget]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    for target in targets:
+        lines.extend(
+            [
+                f"  apb4_if {target.timed_interface} (clk_i, rst_n_i);",
+                f"  apb4_pure_if {target.pure_interface} ();",
+            ]
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_apb_bridges(targets: list[ApbTarget]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    for target in targets:
+        lines.extend(
+            [
+                f"  apb4_if_bridge u_{target.name}_apb_bridge (",
+                f"      .apb_pure({target.pure_interface}),",
+                f"      .timed   ({target.timed_interface})",
+                "  );",
+                "",
+            ]
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_apb_ports(targets: list[ApbTarget]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    for index, target in enumerate(targets):
+        separator = "," if index != len(targets) - 1 else ""
+        lines.append(f"    apb4_pure_if.master {target.name}{separator}")
+    return "\n".join(lines) + "\n"
+
+
+def render_apb_connections(targets: list[ApbTarget]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    for index, target in enumerate(targets):
+        separator = "," if index != len(targets) - 1 else ""
+        lines.append(f"      .{target.name}({target.pure_interface}){separator}")
+    return "\n".join(lines) + "\n"
+
+
+def render_apb_declarations(targets: list[ApbTarget]) -> str:
+    count = len(targets)
+    return "\n".join(
+        [
+            "// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit.",
+            f"  localparam int NSLV = {count};",
+            "  logic [NSLV-1:0] s_psel_comb, s_psel_d, s_psel_q;",
+            "",
+        ]
+    )
+
+
+def render_apb_request_routes(targets: list[ApbTarget]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    for target in targets:
+        lines.extend(
+            [
+                f"  assign {target.name}.paddr = nmi.addr;",
+                f"  assign {target.name}.pprot = '0;",
+                f"  assign {target.name}.psel = s_xfer_valid && `SOC_ADDR_IS_{target.region}(nmi.addr);",
+                f"  assign {target.name}.penable = s_fsm_q == FSM_ENAB;",
+                f"  assign {target.name}.pwrite = |nmi.wstrb;",
+                f"  assign {target.name}.pwdata = nmi.wdata;",
+                f"  assign {target.name}.pstrb = nmi.wstrb;",
+                "",
+            ]
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_apb_select_routes(targets: list[ApbTarget]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    lines.extend(
+        f"  assign s_psel_comb[{target.slot}] = `SOC_ADDR_IS_{target.region}(nmi.addr);"
+        for target in targets
+    )
+    return "\n".join(lines) + "\n"
+
+
+def render_apb_response_mux(targets: list[ApbTarget]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    for signal, expression in (("s_rd_data", "prdata"), ("s_xfer_ready", "pready")):
+        terms = [
+            f"({{{'32' if signal == 's_rd_data' else '1'}{{s_psel_q[{target.slot}]}}}} & "
+            f"{target.name}.{expression})"
+            for target in targets
+        ]
+        lines.append(f"  assign {signal} = {' | '.join(terms)};")
+    return "\n".join(lines) + "\n"
+
+
 def render_gpio_bindings(functions: list[GpioFunction]) -> str:
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
     for function in functions:
@@ -341,12 +537,20 @@ def render_gpio_bindings(functions: list[GpioFunction]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> None:
-    targets, gpio_functions = read_topology(topology_path, memory_map_path)
+def generate(topology_path: Path, memory_map_path: Path, output_dir: Path, ip: str) -> None:
+    targets, apb_targets, gpio_functions = read_topology(topology_path, memory_map_path, ip)
     memory_regions = read_memory_regions(memory_map_path)
     rtl_dir = output_dir / "rtl"
     atomic_write(rtl_dir / "soc_nmi_interfaces.svh", render_nmi_interfaces(targets))
     atomic_write(rtl_dir / "soc_nmi_routes.svh", render_nmi_routes(targets, memory_regions))
+    atomic_write(rtl_dir / "soc_apb_interfaces.svh", render_apb_interfaces(apb_targets))
+    atomic_write(rtl_dir / "soc_apb_bridges.svh", render_apb_bridges(apb_targets))
+    atomic_write(rtl_dir / "soc_apb_ports.svh", render_apb_ports(apb_targets))
+    atomic_write(rtl_dir / "soc_apb_connections.svh", render_apb_connections(apb_targets))
+    atomic_write(rtl_dir / "soc_apb_declarations.svh", render_apb_declarations(apb_targets))
+    atomic_write(rtl_dir / "soc_apb_request_routes.svh", render_apb_request_routes(apb_targets))
+    atomic_write(rtl_dir / "soc_apb_select_routes.svh", render_apb_select_routes(apb_targets))
+    atomic_write(rtl_dir / "soc_apb_response_mux.svh", render_apb_response_mux(apb_targets))
     atomic_write(rtl_dir / "soc_gpio_alt_bindings.svh", render_gpio_bindings(gpio_functions))
     atomic_write(output_dir / "soc_topology.fl", f"+incdir+{rtl_dir}\n")
 
@@ -356,15 +560,16 @@ def main() -> int:
     parser.add_argument("--map", required=True, type=Path)
     parser.add_argument("--memory-map", required=True, type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--ip", choices=("NONE", "MDD"), default="NONE")
     parser.add_argument("--check", action="store_true", help="validate only; write nothing")
     arguments = parser.parse_args()
     try:
         if arguments.check:
-            read_topology(arguments.map, arguments.memory_map)
+            read_topology(arguments.map, arguments.memory_map, arguments.ip)
         else:
             if arguments.output_dir is None:
                 parser.error("--output-dir is required unless --check is used")
-            generate(arguments.map, arguments.memory_map, arguments.output_dir)
+            generate(arguments.map, arguments.memory_map, arguments.output_dir, arguments.ip)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         parser.error(str(error))
     return 0

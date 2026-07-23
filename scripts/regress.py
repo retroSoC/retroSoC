@@ -21,13 +21,13 @@ PR_COMMANDS = (
     ("configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk", ("firmware",)),
     (
         "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
-        ("SIMU=VERILATOR", "firmware", "sim"),
+        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
     ),
     (
         "configs/ci/mdd-rv32im-ihp130.mk",
-        ("SIMU=VERILATOR", "firmware", "sim"),
+        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
     ),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=VERILATOR", "sim")),
+    ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=VERILATOR", "HAVE_SVA=YES", "sim")),
     (
         "configs/ci/hazard3-rv32im-ihp130.mk",
         ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
@@ -46,7 +46,10 @@ PR_COMMANDS = (
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("STA=OPENSTA", "sta")),
 )
 NIGHTLY_COMMANDS = PR_COMMANDS + (
-    ("configs/nightly/picorv32-rv32im-ihp130.mk", ("SIMU=VERILATOR", "firmware", "sim")),
+    (
+        "configs/nightly/picorv32-rv32im-ihp130.mk",
+        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
+    ),
     (
         "configs/nightly/picorv32-rv32im-ihp130.mk",
         ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),

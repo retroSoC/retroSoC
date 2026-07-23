@@ -167,7 +167,8 @@ endif
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
-	pin-map check-pin-map soc-topology check-soc-topology
+	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
+	check-clock-reset-domains
 .NOTPARALLEL: setup
 
 help:
@@ -188,6 +189,9 @@ help:
 	  '  check-pin-map              validate the canonical SoC pin map' \
 	  '  soc-topology               generate the selected internal SoC integration artifacts' \
 	  '  check-soc-topology         validate the canonical internal SoC integration map' \
+	  '  user-extensions            generate the selected scalar user-extension bindings' \
+	  '  check-user-extensions      validate the canonical user-extension map' \
+	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \

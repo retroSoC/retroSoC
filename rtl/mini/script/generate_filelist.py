@@ -26,6 +26,7 @@ PATH_PREFIXES = {
     "picorv32": RTL_DIR / "managed" / "picorv32" / "rtl",
     "tb": MINI_DIR / "dv" / "tb",
     "model": MINI_DIR / "dv" / "model",
+    "sva": MINI_DIR / "dv" / "sva",
     "top": MINI_DIR / "top",
 }
 
@@ -101,9 +102,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="output directory"
     )
-    parser.add_argument(
-        "--define", action="append", default=[], help="filelist +define+ token"
-    )
+    parser.add_argument("--define", action="append", default=[], help="filelist +define+ token")
     return parser.parse_args()
 
 

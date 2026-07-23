@@ -16,7 +16,7 @@ MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
 MEMORY_MAP_GENERATOR = ROOT / "rtl/mini/address_map/generate_memory_map.py"
 
 
-def generate(output_dir: Path) -> None:
+def generate(output_dir: Path, ip: str = "NONE") -> None:
     subprocess.run(
         [
             sys.executable,
@@ -27,12 +27,14 @@ def generate(output_dir: Path) -> None:
             str(MEMORY_MAP),
             "--output-dir",
             str(output_dir),
+            "--ip",
+            ip,
         ],
         check=True,
     )
 
 
-def validate(topology: Path) -> subprocess.CompletedProcess[str]:
+def validate(topology: Path, ip: str = "NONE") -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -41,6 +43,8 @@ def validate(topology: Path) -> subprocess.CompletedProcess[str]:
             str(topology),
             "--memory-map",
             str(MEMORY_MAP),
+            "--ip",
+            ip,
             "--check",
         ],
         text=True,
@@ -54,12 +58,16 @@ def write_invalid_topology(tmp_path: Path, document: dict[str, object]) -> Path:
     return path
 
 
-def test_topology_generates_complete_native_and_gpio_bindings(tmp_path: Path) -> None:
+def test_topology_generates_complete_native_apb_and_gpio_bindings(tmp_path: Path) -> None:
     generate(tmp_path)
 
     interfaces = (tmp_path / "rtl/soc_nmi_interfaces.svh").read_text(encoding="utf-8")
     routes = (tmp_path / "rtl/soc_nmi_routes.svh").read_text(encoding="utf-8")
     gpio = (tmp_path / "rtl/soc_gpio_alt_bindings.svh").read_text(encoding="utf-8")
+    apb_interfaces = (tmp_path / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
+    apb_declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
+    apb_routes = (tmp_path / "rtl/soc_apb_request_routes.svh").read_text(encoding="utf-8")
+    apb_response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
     assert interfaces.count("nmi_if u_") == 18
@@ -69,7 +77,29 @@ def test_topology_generates_complete_native_and_gpio_bindings(tmp_path: Path) ->
     assert gpio.count("// GPIO") == 64
     assert "assign u_uart1_if.rx_i = u_gpio_if.di_i[0];" in gpio
     assert "assign u_gpio_if.alt1_do_i[22] = u_psram_if.nss_o[0];" in gpio
+    assert apb_interfaces.count("apb4_if u_") == 9
+    assert "apb4_pure_if u_archinfo_apb_pure_if ();" in apb_interfaces
+    assert "assign tmr.paddr = nmi.addr;" in apb_routes
+    assert "({32{s_psel_q[8]}} & tmr.prdata)" in apb_response
+    assert "localparam int NSLV = 9;" in apb_declarations
     assert filelist.startswith("+incdir+")
+
+
+def test_topology_adds_user_apb_only_for_the_mdd_ip(tmp_path: Path) -> None:
+    none_output = tmp_path / "none"
+    mdd_output = tmp_path / "mdd"
+    generate(none_output)
+    generate(mdd_output, ip="MDD")
+
+    none_interfaces = (none_output / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
+    mdd_interfaces = (mdd_output / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
+    mdd_declarations = (mdd_output / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
+    mdd_response = (mdd_output / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
+
+    assert "u_user_ip_apb_if" not in none_interfaces
+    assert "apb4_if u_user_ip_apb_if (clk_i, rst_n_i);" in mdd_interfaces
+    assert "localparam int NSLV = 10;" in mdd_declarations
+    assert "s_psel_q[9]" in mdd_response
 
 
 def test_topology_rejects_unknown_or_non_native_regions(tmp_path: Path) -> None:
@@ -98,6 +128,26 @@ def test_topology_rejects_duplicate_region_and_disabled_owner(tmp_path: Path) ->
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "disabled but declares regions" in result.stderr
+
+
+def test_topology_rejects_invalid_apb_target_ownership(tmp_path: Path) -> None:
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["apb_targets"][0]["region"] = "SRAM"
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "not an active APB region" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["apb_targets"][8]["slot"] = 0
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "APB target slot 0 is duplicated" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["apb_targets"][9]["requires_ip"] = None
+    result = validate(write_invalid_topology(tmp_path, document), ip="MDD")
+    assert result.returncode != 0
+    assert "requires_ip does not match" in result.stderr
 
 
 def test_topology_rejects_invalid_gpio_coverage_and_expression(tmp_path: Path) -> None:

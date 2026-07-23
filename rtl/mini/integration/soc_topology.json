@@ -21,6 +21,18 @@
     {"slot": 16, "name": "opipsram", "interface": "u_opipsram_nmi_if", "disabled": true},
     {"slot": 17, "name": "i2c1", "interface": "u_i2c1_nmi_if", "regions": ["NMI_I2C1"]}
   ],
+  "apb_targets": [
+    {"slot": 0, "name": "archinfo", "timed_interface": "u_archinfo_apb_if", "pure_interface": "u_archinfo_apb_pure_if", "region": "APB_ARCHINFO"},
+    {"slot": 1, "name": "rng", "timed_interface": "u_rng_apb_if", "pure_interface": "u_rng_apb_pure_if", "region": "APB_RNG"},
+    {"slot": 2, "name": "uart", "timed_interface": "u_uart1_apb_if", "pure_interface": "u_uart1_apb_pure_if", "region": "APB_UART1"},
+    {"slot": 3, "name": "pwm", "timed_interface": "u_pwm_apb_if", "pure_interface": "u_pwm_apb_pure_if", "region": "APB_PWM"},
+    {"slot": 4, "name": "ps2", "timed_interface": "u_ps2_apb_if", "pure_interface": "u_ps2_apb_pure_if", "region": "APB_PS2"},
+    {"slot": 5, "name": "rtc", "timed_interface": "u_rtc_apb_if", "pure_interface": "u_rtc_apb_pure_if", "region": "APB_RTC"},
+    {"slot": 6, "name": "wdg", "timed_interface": "u_wdg_apb_if", "pure_interface": "u_wdg_apb_pure_if", "region": "APB_WDG"},
+    {"slot": 7, "name": "crc", "timed_interface": "u_crc_apb_if", "pure_interface": "u_crc_apb_pure_if", "region": "APB_CRC"},
+    {"slot": 8, "name": "tmr", "timed_interface": "u_tmr_apb_if", "pure_interface": "u_tmr_apb_pure_if", "region": "APB_TMR"},
+    {"slot": 9, "name": "user_ip", "timed_interface": "u_user_ip_apb_if", "pure_interface": "u_user_ip_apb_pure_if", "region": "APB_USER_IP", "requires_ip": "MDD"}
+  ],
   "gpio_alt_functions": [
     {"pin": 0, "alt0": {"inputs": ["u_uart1_if.rx_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_ps2_if.ps2_clk_i"], "do": "1'b0", "oe": "1'b0"}},
     {"pin": 1, "alt0": {"inputs": [], "do": "u_uart1_if.tx_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_ps2_if.ps2_dat_i"], "do": "1'b0", "oe": "1'b0"}},
