@@ -20,6 +20,21 @@ on:
         required: false
         default: 30
         type: number
+      timeout_minutes:
+        description: Maximum job duration
+        required: false
+        default: 240
+        type: number
+      toolset:
+        description: Space-separated locked tools required by this suite
+        required: false
+        default: verilator sv2v iverilog yosys opensta riscv_gnu
+        type: string
+      full_flow_checks:
+        description: Check Yosys and OpenSTA environments before running the suite
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -27,7 +42,7 @@ permissions:
 jobs:
   regression:
     runs-on: ubuntu-22.04
-    timeout-minutes: 240
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
@@ -87,19 +102,25 @@ jobs:
       - name: Set up locked EDA and compiler tools
         uses: ./.github/actions/locked-tools
         with:
-          tools: verilator sv2v iverilog yosys opensta riscv_gnu
+          tools: ${{ inputs.toolset }}
 
       - name: Set up locked source dependencies
         run: make CONFIG=${{ inputs.profile }} setup
 
-      - name: Check environment
+      - name: Check behavioral environments
+        run: |
+          make CONFIG=${{ inputs.profile }} \
+            SIMU=IVERILOG SYNTH=NONE STA=NONE doctor
+          make CONFIG=${{ inputs.profile }} \
+            SIMU=VERILATOR SYNTH=NONE STA=NONE doctor
+
+      - name: Check synthesis and timing environments
+        if: inputs.full_flow_checks
         run: |
           make CONFIG=${{ inputs.profile }} \
             SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor
-          make CONFIG=${{ inputs.profile }} SIMU=VERILATOR doctor
-
-      - name: Check timing environment
-        run: make CONFIG=${{ inputs.profile }} SIMU=IVERILOG STA=OPENSTA doctor
+          make CONFIG=${{ inputs.profile }} \
+            SIMU=IVERILOG SYNTH=NONE STA=OPENSTA doctor
 
       - name: Run ${{ inputs.suite }} regression
         run: python3 scripts/regress.py --root . --suite "${{ inputs.suite }}" --pdk "${{ inputs.pdk }}"

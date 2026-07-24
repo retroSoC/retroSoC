@@ -4,6 +4,7 @@
 
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
+| Smoke | `configs/ci/hazard3-rv32im-ihp130.mk` | firmware, Verilator SVA compilation, Icarus assembly self-test |
 | Pull request | `configs/ci/hazard3-rv32im-ihp130.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Pull request | `configs/ci/hazard3-rv32im-gf180.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Pull request | `configs/ci/hazard3-rv32im-sky130.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
@@ -136,9 +137,10 @@ for diagnosis but is initially non-blocking.
 ## CI And Releases
 
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
-Actions, the dependency lock, and script tests. `regression.yml` runs verified configurations on pull
-requests and main branches without repeating the format checks. `nightly.yml` adds PICORV32. Source
-dependencies, locked tool archives, and Verilator `ccache` use separate cache keys.
+Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
+the three full PDK regression workflows remain required PR coverage and do not repeat the format checks.
+`nightly.yml` adds PICORV32. Source dependencies, locked tool archives, and Verilator `ccache` use
+separate cache keys.
 
 Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source
 tarball, build manifest, dependency lock, CycloneDX SBOM, and `SHA256SUMS`. `make package` creates the

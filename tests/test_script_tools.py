@@ -31,8 +31,10 @@ from scripts.regress import (  # noqa: E402
     NIGHTLY_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
+    SMOKE_COMMANDS,
     pdk_pr_commands,
     regression_environment,
+    select_regression,
 )
 from scripts import setup_helpers  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
@@ -360,11 +362,58 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
     verilator_makefile = ROOT / "rtl/mini/mk/verilator.mk"
     assert "SOC_SIM_TIME            ?= 180" in verilator_makefile.read_text(encoding="utf-8")
 
-    regression_commands = (*PR_COMMANDS, *NIGHTLY_COMMANDS)
+    regression_commands = (*SMOKE_COMMANDS, *PR_COMMANDS, *NIGHTLY_COMMANDS)
     for _, values in regression_commands:
         if "SIMU=VERILATOR" in values:
             assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
             assert "HAVE_SVA=YES" in values
+
+
+def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
+    commands, profiles = select_regression("smoke", "IHP130")
+
+    assert commands == SMOKE_COMMANDS
+    assert profiles == ()
+    command_values = [values for _, values in commands]
+    assert ("firmware",) in command_values
+    assert ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp") in command_values
+    assert ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm") in command_values
+    assert not any(
+        "synth" in values or "sta" in values or "netsim" in values
+        for values in command_values
+    )
+
+    dry_run = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "smoke",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware" in dry_run.stdout
+    assert "netsim" not in dry_run.stdout
+
+    invalid = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/regress.py"),
+            "--root",
+            str(ROOT),
+            "--suite",
+            "smoke",
+            "--pdk",
+            "GF180",
+            "--dry-run",
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert invalid.returncode != 0
+    assert "smoke regression supports only --pdk IHP130" in invalid.stderr
 
 
 def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:

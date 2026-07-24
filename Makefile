@@ -168,7 +168,7 @@ endif
 
 .PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
-	regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
+	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test
@@ -206,7 +206,8 @@ help:
 	  '  rtl-format | rtl-format-check apply/check self-owned RTL formatting' \
 	  '  sw-policy-check            check embedded C API and naming policy' \
 	  '  sw-host-test               run host tests for deterministic SDK utilities' \
-	  '  regress-pr | regress-nightly run supported regression suites' \
+	  '  regress-smoke              run the IHP130 fast regression suite' \
+	  '  regress-pr | regress-nightly run supported full regression suites' \
 	  '  package                    create checksummed source deliverables' \
 	  '  clean | clean-all          clean current flow or all build output' \
 	  '  purge-cache                remove dependency and compiler caches' \
@@ -316,6 +317,9 @@ sw-host-test:
 package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
 	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
 	  --variant-root $(VARIANT_ROOT) --output-dir $(ROOT_PATH)/dist/$(VARIANT_ID)
+
+regress-smoke:
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130
 
 regress-pr:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130

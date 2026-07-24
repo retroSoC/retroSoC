@@ -1,0 +1,27 @@
+name: regression-smoke
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regression-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ihp130-smoke:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: smoke
+      pdk: IHP130
+      profile: configs/ci/hazard3-rv32im-ihp130.mk
+      retention_days: 14
+      timeout_minutes: 60
+      toolset: verilator sv2v iverilog riscv_gnu
+      full_flow_checks: false

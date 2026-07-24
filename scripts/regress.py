@@ -48,6 +48,17 @@ PR_COMMANDS = (
     ),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("STA=OPENSTA", "sta")),
 )
+SMOKE_COMMANDS = (
+    ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
+    (
+        "configs/ci/hazard3-rv32im-ihp130.mk",
+        ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp"),
+    ),
+    (
+        "configs/ci/hazard3-rv32im-ihp130.mk",
+        ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
+    ),
+)
 NIGHTLY_COMMANDS = PR_COMMANDS + (
     (
         "configs/nightly/picorv32-rv32im-ihp130.mk",
@@ -63,6 +74,7 @@ PR_PROFILES = (
     "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
     "configs/ci/mdd-rv32im-ihp130.mk",
 )
+SMOKE_PROFILES: tuple[str, ...] = ()
 NIGHTLY_PROFILES = PR_PROFILES + ("configs/nightly/picorv32-rv32im-ihp130.mk",)
 
 PDK_PR_PROFILES = {
@@ -90,6 +102,27 @@ def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
             ),
         ),
     )
+
+
+def select_regression(
+    suite: str, pdk: str | None
+) -> tuple[tuple[tuple[str, tuple[str, ...]], ...], tuple[str, ...]]:
+    if suite == "smoke":
+        if pdk is not None and pdk != "IHP130":
+            raise ValueError("smoke regression supports only --pdk IHP130")
+        return SMOKE_COMMANDS, SMOKE_PROFILES
+    if pdk:
+        if suite == "nightly":
+            if pdk != "IHP130":
+                raise ValueError("nightly regression supports only --pdk IHP130")
+            return NIGHTLY_COMMANDS, NIGHTLY_PROFILES
+        if pdk == "IHP130":
+            return PR_COMMANDS, PR_PROFILES
+        profile = PDK_PR_PROFILES[pdk]
+        return pdk_pr_commands(profile), (profile,)
+    if suite == "pr":
+        return PR_COMMANDS, PR_PROFILES
+    return NIGHTLY_COMMANDS, NIGHTLY_PROFILES
 
 
 def regression_environment() -> dict[str, str]:
@@ -124,26 +157,14 @@ def run_command(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a supported retroSoC regression suite")
     parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--suite", choices=("pr", "nightly"), required=True)
-    parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PR PDK matrix")
+    parser.add_argument("--suite", choices=("smoke", "pr", "nightly"), required=True)
+    parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PDK matrix")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    if args.pdk:
-        if args.suite == "nightly":
-            if args.pdk != "IHP130":
-                parser.error("nightly regression supports only --pdk IHP130")
-            commands = NIGHTLY_COMMANDS
-            profiles = NIGHTLY_PROFILES
-        elif args.pdk == "IHP130":
-            commands = PR_COMMANDS
-            profiles = PR_PROFILES
-        else:
-            profile = PDK_PR_PROFILES[args.pdk]
-            commands = pdk_pr_commands(profile)
-            profiles = (profile,)
-    else:
-        commands = PR_COMMANDS if args.suite == "pr" else NIGHTLY_COMMANDS
-        profiles = PR_PROFILES if args.suite == "pr" else NIGHTLY_PROFILES
+    try:
+        commands, profiles = select_regression(args.suite, args.pdk)
+    except ValueError as error:
+        parser.error(str(error))
     environment = regression_environment()
     for profile, values in commands:
         command = ["make", f"CONFIG={profile}", *values]
