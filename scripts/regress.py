@@ -27,7 +27,10 @@ PR_COMMANDS = (
         "configs/ci/mdd-rv32im-ihp130.mk",
         ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
     ),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("SIMU=VERILATOR", "HAVE_SVA=YES", "sim")),
+    (
+        "configs/ci/hazard3-rv32im-ihp130.mk",
+        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
+    ),
     (
         "configs/ci/hazard3-rv32im-ihp130.mk",
         ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
@@ -61,6 +64,31 @@ PR_PROFILES = (
     "configs/ci/mdd-rv32im-ihp130.mk",
 )
 NIGHTLY_PROFILES = PR_PROFILES + ("configs/nightly/picorv32-rv32im-ihp130.mk",)
+
+PDK_PR_PROFILES = {
+    "GF180": "configs/ci/hazard3-rv32im-gf180.mk",
+    "IHP130": "configs/ci/hazard3-rv32im-ihp130.mk",
+    "SKY130": "configs/ci/hazard3-rv32im-sky130.mk",
+}
+
+
+def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    return (
+        (profile, ("firmware",)),
+        (profile, ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")),
+        (profile, ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
+        (profile, ("SYNTH=YOSYS", "synth")),
+        (
+            profile,
+            (
+                "SIMU=IVERILOG",
+                "SIM_FIRMWARE_NAME=retrosoc_asm",
+                "SIM_SUCCESS_MARKER=Mem wr/rd test success",
+                "RTL_SIM_TIMEOUT=5200000",
+                "netsim",
+            ),
+        ),
+    )
 
 
 def regression_environment() -> dict[str, str]:
@@ -96,10 +124,25 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run a supported retroSoC regression suite")
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--suite", choices=("pr", "nightly"), required=True)
+    parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PR PDK matrix")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    commands = PR_COMMANDS if args.suite == "pr" else NIGHTLY_COMMANDS
-    profiles = PR_PROFILES if args.suite == "pr" else NIGHTLY_PROFILES
+    if args.pdk:
+        if args.suite == "nightly":
+            if args.pdk != "IHP130":
+                parser.error("nightly regression supports only --pdk IHP130")
+            commands = NIGHTLY_COMMANDS
+            profiles = NIGHTLY_PROFILES
+        elif args.pdk == "IHP130":
+            commands = PR_COMMANDS
+            profiles = PR_PROFILES
+        else:
+            profile = PDK_PR_PROFILES[args.pdk]
+            commands = pdk_pr_commands(profile)
+            profiles = (profile,)
+    else:
+        commands = PR_COMMANDS if args.suite == "pr" else NIGHTLY_COMMANDS
+        profiles = PR_PROFILES if args.suite == "pr" else NIGHTLY_PROFILES
     environment = regression_environment()
     for profile, values in commands:
         command = ["make", f"CONFIG={profile}", *values]

@@ -67,7 +67,12 @@ def main() -> int:
         tools.append("sta")
 
     source_names = ["mpw", "cluster_common", "third_party_ip"]
-    pdk_names = {"IHP130": "pdk_ihp130", "ICS55": "pdk_ics55"}
+    pdk_names = {
+        "IHP130": "pdk_ihp130",
+        "ICS55": "pdk_ics55",
+        "GF180": "pdk_gf180",
+        "SKY130": "pdk_sky130",
+    }
     if args.pdk in pdk_names:
         source_names.append(pdk_names[args.pdk])
     paths = {

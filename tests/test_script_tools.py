@@ -27,7 +27,13 @@ from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
 from scripts.generate_mpw import migrate_user_gpio_interfaces  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
-from scripts.regress import NIGHTLY_COMMANDS, PR_COMMANDS, regression_environment  # noqa: E402
+from scripts.regress import (  # noqa: E402
+    NIGHTLY_COMMANDS,
+    PDK_PR_PROFILES,
+    PR_COMMANDS,
+    pdk_pr_commands,
+    regression_environment,
+)
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -307,6 +313,18 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
         if "SIMU=VERILATOR" in values:
             assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
             assert "HAVE_SVA=YES" in values
+
+
+def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
+    assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "SKY130"}
+    for profile in PDK_PR_PROFILES.values():
+        commands = pdk_pr_commands(profile)
+        command_values = [values for _, values in commands]
+        assert ("firmware",) in command_values
+        assert any("SIMU=VERILATOR" in values and "firmware" in values for values in command_values)
+        assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
+        assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
+        assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
 
 
 def test_run_flow_writes_structured_result(tmp_path: Path) -> None:

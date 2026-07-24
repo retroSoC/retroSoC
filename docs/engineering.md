@@ -5,9 +5,15 @@
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
 | Pull request | `configs/ci/hazard3-rv32im-ihp130.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/hazard3-rv32im-gf180.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus |
+| Pull request | `configs/ci/hazard3-rv32im-sky130.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus |
 | Pull request | `configs/ci/mdd-rv32im-ihp130.mk` | firmware and Verilator |
 | Nightly | `configs/nightly/picorv32-rv32im-ihp130.mk` | firmware, Verilator, and Icarus |
 | Cluster | `configs/cluster/hazard3-ics55.mk` | configuration only; run with site PDK/tool access |
+
+OpenSTA timing signoff remains IHP130-only. GF180 and SKY130 use their TT standard-cell libraries
+for synthesis and functional netlist simulation, but do not publish an STA result until their
+corner, SDC, and frequency policy have been independently qualified.
 
 VCS and ICS55 flows remain cluster-only because public runners do not have the licensed simulator or
 the validated site environment. They use the same variant layout, manifests, result JSON, warning

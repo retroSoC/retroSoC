@@ -1,7 +1,9 @@
 # retroSoC
 
 [![quality](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml)
-[![regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression.yml)
+[![IHP130 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression.yml)
+[![GF180 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml)
+[![SKY130 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml)
 [![nightly](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml)
 
 retroSoC is a fully open-source RISC-V SoC project. The repository brings together
@@ -12,8 +14,8 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 ## Highlights
 
 - Selectable RV32IM CPU configurations using HAZARD3, PicoRV32, or MDD cores.
-- Configurable IHP130 and ICS55 implementation targets, with open-source IHP130 flows
-  available in CI and ICS55 flows intended for a configured cluster environment.
+- Configurable GF180, SKY130, IHP130, and ICS55 implementation targets. GF180, SKY130,
+  and IHP130 have open-source CI coverage; ICS55 remains a configured cluster target.
 - A memory-mapped peripheral subsystem with GPIO, UART, timers, PWM, I2C, I2S, PS2,
   1-Wire, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
   support. Available interfaces depend on the selected SoC configuration.
@@ -46,6 +48,8 @@ application, linker layout, and optional features as one reproducible configurat
 | Profile | Core / ISA | Application | Coverage |
 | --- | --- | --- | --- |
 | [`configs/ci/hazard3-rv32im-ihp130.mk`](configs/ci/hazard3-rv32im-ihp130.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
+| [`configs/ci/hazard3-rv32im-gf180.mk`](configs/ci/hazard3-rv32im-gf180.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
+| [`configs/ci/hazard3-rv32im-sky130.mk`](configs/ci/hazard3-rv32im-sky130.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
 | [`configs/ci/hazard3-rv32im-ihp130-shell.mk`](configs/ci/hazard3-rv32im-ihp130-shell.mk) | HAZARD3 / RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk) | HAZARD3 / RV32IM + MDD IP | `bringup` | Pull-request firmware and Verilator integration coverage for the user-IP GPIO ownership path. |
 | [`configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk) | HAZARD3 / RV32IM + MDD IP | `shell` | Pull-request firmware compilation coverage for the user-IP software command. |
@@ -119,6 +123,8 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 | Yosys synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth` |
 | Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG netsim` |
 | OpenSTA timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
+`make regress-pr` runs the supported IHP130, GF180, and SKY130 PR matrices in
+sequence. IHP130 additionally covers OpenSTA timing analysis.
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |
 | Format C, Makefile, and RTL sources | `make format` |

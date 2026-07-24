@@ -77,5 +77,7 @@ jobs:
 
       - name: Validate regression definitions
         run: |
-          python3 scripts/regress.py --root . --suite pr --dry-run
-          python3 scripts/regress.py --root . --suite nightly --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk IHP130 --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk GF180 --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk SKY130 --dry-run
+          python3 scripts/regress.py --root . --suite nightly --pdk IHP130 --dry-run

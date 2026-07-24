@@ -166,7 +166,9 @@ yosys splitnets -ports -format __v
 yosys setundef -zero
 yosys clean -purge
 
-yosys hilomap -singleton -hicell {*}$tech_cell_tiehi -locell {*}$tech_cell_tielo
+if {[llength $tech_cell_tiehi] > 0 && [llength $tech_cell_tielo] > 0} {
+    yosys hilomap -singleton -hicell {*}$tech_cell_tiehi -locell {*}$tech_cell_tielo
+}
 
 # final reports
 yosys tee -q -o "${report_dir}/${proj_name}_synth.rpt" check

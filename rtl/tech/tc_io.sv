@@ -19,6 +19,14 @@ module tc_io_xtl_pad (
   assign clk    = en ? xi_pad : 1'b0;
   assign xo_pad = xi_pad;
 
+`elsif PDK_SKY130
+  assign clk    = en ? xi_pad : 1'b0;
+  assign xo_pad = xi_pad;
+
+`elsif PDK_GF180
+  assign clk    = en ? xi_pad : 1'b0;
+  assign xo_pad = xi_pad;
+
 `elsif PDK_IHP130
   wire s_xi_pad;
   assign s_xi_pad = xi_pad;
@@ -47,22 +55,6 @@ module tc_io_xtl_pad (
       .XC  (clk)
   );
 
-`elsif PDK_GF180
-  (* keep *) (* dont_touch = "true" *)
-  wire s_xi_pad;
-  assign s_xi_pad = xi_pad;
-  assign xo_pad   = xi_pad;
-  gf180mcu_fd_io__in_c u_gf180mcu_fd_io__in_c (
-      .PU  (1'b0),
-      .PD  (1'b0),
-      .PAD (s_xi_pad),
-      .Y   (clk),
-      .DVDD(),
-      .DVSS(),
-      .VDD (),
-      .VSS ()
-  );
-
 `endif
 
 endmodule
@@ -75,24 +67,17 @@ module tc_io_in_pad (
 `ifdef PDK_BEHAV
   assign p2c = pad;
 
+`elsif PDK_SKY130
+  assign p2c = pad;
+
+`elsif PDK_GF180
+  assign p2c = pad;
+
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadIn u_sg13g2_IOPadIn (
       .pad(pad),
       .p2c(p2c)
-  );
-
-`elsif PDK_GF180
-  (* keep *) (* dont_touch = "true" *)
-  gf180mcu_fd_io__in_c u_gf180mcu_fd_io__in_c (
-      .PU  (1'b0),
-      .PD  (1'b0),
-      .PAD (pad),
-      .Y   (c2p),
-      .DVDD(),
-      .DVSS(),
-      .VDD (),
-      .VSS ()
   );
 
 `endif
@@ -107,12 +92,19 @@ module tc_io_out_pad (
 `ifdef PDK_BEHAV
   assign pad = c2p;
 
+`elsif PDK_SKY130
+  assign pad = c2p;
+
+`elsif PDK_GF180
+  assign pad = c2p;
+
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadOut4mA u_sg13g2_IOPadOut4mA (
       .pad(pad),
       .c2p(c2p)
   );
+
 `endif
 
 endmodule
@@ -125,6 +117,14 @@ module tc_io_tri_pad (
 );
 
 `ifdef PDK_BEHAV
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+
+`elsif PDK_SKY130
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+
+`elsif PDK_GF180
   assign pad = c2p_en ? c2p : 1'bz;
   assign p2c = pad;
 
@@ -163,26 +163,6 @@ module tc_io_tri_pad (
       .DS1(1'b1)      // 8mA
   );
 
-`elsif PDK_GF180
-  (* keep *) (* dont_touch = "true" *)
-  gf180mcu_fd_io__bi_t u_gf180mcu_fd_io__bi_t (
-      .CS   (1'b0),     // 1: SCHMI 0: CMOS
-      .SL   (1'b0),     // 1: SLOW 0: FAST
-      .IE   (~c2p_en),
-      .OE   (c2p_en),
-      .PU   (1'b0),
-      .PD   (1'b0),
-      .A    (c2p),
-      .PDRV0(1'b0),
-      .PDRV1(1'b0),     // 4mA
-      .PAD  (pad),
-      .Y    (p2c),
-      .DVDD (),
-      .DVSS (),
-      .VDD  (),
-      .VSS  ()
-  );
-
 `endif
 
 endmodule
@@ -196,6 +176,14 @@ module tc_io_tri_schmitt_pad (
 );
 
 `ifdef PDK_BEHAV
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+
+`elsif PDK_SKY130
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+
+`elsif PDK_GF180
   assign pad = c2p_en ? c2p : 1'bz;
   assign p2c = pad;
 
@@ -234,26 +222,6 @@ module tc_io_tri_schmitt_pad (
       .DS1(1'b1)      // 8mA
   );
 
-`elsif PDK_GF180
-  (* keep *) (* dont_touch = "true" *)
-  gf180mcu_fd_io__bi_t u_gf180mcu_fd_io__bi_t (
-      .CS   (1'b1),     // 1: SCHMI 0: CMOS
-      .SL   (1'b0),     // 1: SLOW 0: FAST
-      .IE   (~c2p_en),
-      .OE   (c2p_en),
-      .PU   (1'b0),
-      .PD   (1'b0),
-      .A    (c2p),
-      .PDRV0(1'b0),
-      .PDRV1(1'b0),     // 4mA
-      .PAD  (pad),
-      .Y    (p2c),
-      .DVDD (),
-      .DVSS (),
-      .VDD  (),
-      .VSS  ()
-  );
-
 `endif
 
 endmodule
@@ -270,6 +238,14 @@ module tc_io_tri_full_pad (
 );
 
 `ifdef PDK_BEHAV
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+
+`elsif PDK_SKY130
+  assign pad = c2p_en ? c2p : 1'bz;
+  assign p2c = pad;
+
+`elsif PDK_GF180
   assign pad = c2p_en ? c2p : 1'bz;
   assign p2c = pad;
 
@@ -310,26 +286,6 @@ module tc_io_tri_full_pad (
       .PD (pd),       // active high
       .DS0(1'b0),
       .DS1(1'b1)      // 8mA
-  );
-
-`elsif PDK_GF180
-  (* keep *) (* dont_touch = "true" *)
-  gf180mcu_fd_io__bi_t u_gf180mcu_fd_io__bi_t (
-      .CS   (1'b1),     // 1: SCHMI 0: CMOS
-      .SL   (1'b0),     // 1: SLOW 0: FAST
-      .IE   (~c2p_en),
-      .OE   (c2p_en),
-      .PU   (1'b0),
-      .PD   (1'b0),
-      .A    (c2p),
-      .PDRV0(1'b0),
-      .PDRV1(1'b0),     // 4mA
-      .PAD  (pad),
-      .Y    (p2c),
-      .DVDD (),
-      .DVSS (),
-      .VDD  (),
-      .VSS  ()
   );
 
 `endif

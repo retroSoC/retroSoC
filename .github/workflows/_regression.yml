@@ -7,6 +7,14 @@ on:
         description: Regression suite from scripts/regress.py
         required: true
         type: string
+      pdk:
+        description: PDK matrix selected by scripts/regress.py
+        required: true
+        type: string
+      profile:
+        description: Primary profile used for setup and environment checks
+        required: true
+        type: string
       retention_days:
         description: Report artifact retention
         required: false
@@ -33,6 +41,8 @@ jobs:
             app/coremark/coremark-main
             app/fatfs/ff16
             pdk/IHP-Open-PDK
+            pdk/gf180mcu-pdk
+            pdk/skywater-pdk
             rtl/managed/clusterip/archinfo
             rtl/managed/clusterip/clint
             rtl/managed/clusterip/common
@@ -50,8 +60,9 @@ jobs:
             rtl/managed/clusterip/wdg
             rtl/managed/third_party
             rtl/managed/mpw
+            .cache/retrosoc/pdk
             .cache/retrosoc/stamps
-          key: sources-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+          key: sources-${{ inputs.pdk }}-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
 
       - name: Restore locked toolchains
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
@@ -79,16 +90,20 @@ jobs:
           tools: verilator sv2v iverilog yosys opensta riscv_gnu
 
       - name: Set up locked source dependencies
-        run: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk setup
+        run: make CONFIG=${{ inputs.profile }} setup
 
       - name: Check environment
         run: |
-          make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk \
-            SIMU=IVERILOG SYNTH=YOSYS STA=OPENSTA doctor
-          make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR doctor
+          make CONFIG=${{ inputs.profile }} \
+            SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor
+          make CONFIG=${{ inputs.profile }} SIMU=VERILATOR doctor
+
+      - name: Check IHP130 timing environment
+        if: inputs.pdk == 'IHP130'
+        run: make CONFIG=${{ inputs.profile }} STA=OPENSTA doctor
 
       - name: Run ${{ inputs.suite }} regression
-        run: python3 scripts/regress.py --root . --suite "${{ inputs.suite }}"
+        run: python3 scripts/regress.py --root . --suite "${{ inputs.suite }}" --pdk "${{ inputs.pdk }}"
 
       - name: Upload reports and structured results
         if: always()

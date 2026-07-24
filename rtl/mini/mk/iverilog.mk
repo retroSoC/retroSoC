@@ -22,6 +22,8 @@ IVERILOG_POST_SIMV    := $(IVERILOG_POST_DIR)/simv
 IVERILOG_BEHV_DEPFILE := $(IVERILOG_BEHV_DIR)/simv.d
 IVERILOG_NETL_DEPFILE := $(IVERILOG_NETL_DIR)/simv.d
 IVERILOG_POST_DEPFILE := $(IVERILOG_POST_DIR)/simv.d
+IVERILOG_FILELIST_GEN := $(RTL_PATH)/script/gen_iverilog_filelist.py
+NETLIST_SIM_MODELS    := $(ROOT_PATH)/rtl/tech/netlist_sim_cells.v $(ROOT_PATH)/rtl/tech/gf180_sim_cells.v
 
 -include $(CONVERTED_DEPFILE) $(IVERILOG_BEHV_DEPFILE) $(IVERILOG_NETL_DEPFILE) $(IVERILOG_POST_DEPFILE)
 
@@ -36,19 +38,19 @@ $(CONVERTED_SOC): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
 	python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) --target $@ \
 		--output $(CONVERTED_DEPFILE)
 
-$(IVERILOG_BEHV_FLIST): $(FILELIST_STAMP) $(CONVERTED_SOC)
+$(IVERILOG_BEHV_FLIST): $(FILELIST_STAMP) $(CONVERTED_SOC) $(IVERILOG_FILELIST_GEN)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode behv --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
 		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --converted $(CONVERTED_SOC)
 
-$(IVERILOG_NETL_FLIST): $(FILELIST_STAMP) $(NETLIST_PATH)
+$(IVERILOG_NETL_FLIST): $(FILELIST_STAMP) $(NETLIST_PATH) $(IVERILOG_FILELIST_GEN) $(NETLIST_SIM_MODELS)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode netl --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
 		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --netlist $(NETLIST_PATH)
 
-$(IVERILOG_POST_FLIST): $(FILELIST_STAMP) $(POST_PATH) $(SDF_PATH)
+$(IVERILOG_POST_FLIST): $(FILELIST_STAMP) $(POST_PATH) $(SDF_PATH) $(IVERILOG_FILELIST_GEN) $(NETLIST_SIM_MODELS)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode post --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \

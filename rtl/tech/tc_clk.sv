@@ -44,6 +44,12 @@ module tc_clk_inv (
       .A(clk_i),
       .Y(clk_o)
   );
+
+`elsif PDK_GF180
+  assign clk_o = ~clk_i;
+
+`elsif PDK_SKY130
+  assign clk_o = ~clk_i;
 `endif
 
 endmodule
@@ -76,6 +82,12 @@ module tc_clk_buf (
       .A(clk_i),
       .Y(clk_o)
   );
+
+`elsif PDK_GF180
+  assign clk_o = clk_i;
+
+`elsif PDK_SKY130
+  assign clk_o = clk_i;
 `endif
 endmodule
 
@@ -115,6 +127,12 @@ module tc_clk_mux2 (
       .B (clk1_i),
       .Y (clk_o)
   );
+
+`elsif PDK_GF180
+  assign clk_o = clk_sel_i ? clk1_i : clk0_i;
+
+`elsif PDK_SKY130
+  assign clk_o = clk_sel_i ? clk1_i : clk0_i;
 `endif
 endmodule
 
@@ -156,5 +174,11 @@ module tc_clk_xor2 (
       .B(clk1_i),
       .X(clk_o)
   );
+
+`elsif PDK_GF180
+  assign clk_o = clk0_i ^ clk1_i;
+
+`elsif PDK_SKY130
+  assign clk_o = clk0_i ^ clk1_i;
 `endif
 endmodule

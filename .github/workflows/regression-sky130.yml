@@ -1,4 +1,4 @@
-name: regression
+name: regression-sky130
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: regression-${{ github.workflow }}-${{ github.ref }}
+  group: regression-sky130-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,6 +19,6 @@ jobs:
     uses: ./.github/workflows/_regression.yml
     with:
       suite: pr
-      pdk: IHP130
-      profile: configs/ci/hazard3-rv32im-ihp130.mk
+      pdk: SKY130
+      profile: configs/ci/hazard3-rv32im-sky130.mk
       retention_days: 30

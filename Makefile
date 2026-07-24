@@ -117,8 +117,8 @@ $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 
 ifeq ($(SYNTH),YOSYS)
-ifeq ($(filter $(PDK),IHP130 ICS55),)
-$(error Yosys synthesis supports PDK=IHP130 or PDK=ICS55, not PDK=$(PDK))
+ifeq ($(filter $(PDK),IHP130 ICS55 GF180 SKY130),)
+$(error Yosys synthesis does not support PDK=$(PDK))
 endif
 endif
 
@@ -314,7 +314,9 @@ package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
 	  --variant-root $(VARIANT_ROOT) --output-dir $(ROOT_PATH)/dist/$(VARIANT_ID)
 
 regress-pr:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130
 
 regress-nightly:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly

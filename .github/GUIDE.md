@@ -4,8 +4,9 @@ This directory owns repository automation metadata: pull-request templates,
 CODEOWNERS, Dependabot configuration, reusable actions, and CI/release
 workflows.
 
-`workflows/quality.yml` runs the fast quality gate. `workflows/regression.yml`
-and `workflows/nightly.yml` call the reusable regression workflow;
+`workflows/quality.yml` runs the fast quality gate. `workflows/regression.yml`,
+`workflows/regression-gf180.yml`, `workflows/regression-sky130.yml`, and
+`workflows/nightly.yml` call the reusable regression workflow;
 `workflows/release.yml` packages tagged releases. `actions/locked-tools/`
 installs the locked open-source tools used by CI.
 
