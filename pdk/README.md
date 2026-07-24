@@ -11,12 +11,18 @@ work. PDK changes require the affected synthesis, timing, physical-design, or
 FPGA validation flow and the ownership review defined by `.github/CODEOWNERS`.
 
 The supported CI PDKs are IHP130, GF180, and SKY130. GF180 assembles its
-locked `gf180mcu_fd_sc_mcu7t5v0` TT 5.0 V cell fragments, and SKY130 generates
-its `sky130_fd_sc_hd` TT 1.8 V Liberty model from locked upstream JSON files.
-Both derived Liberty files are stored below `.cache/retrosoc/pdk/` and are not
-committed. SKY130 setup initializes only the locked HD library submodule;
-the remaining upstream libraries are outside the SoC integration boundary.
-OpenSTA timing remains IHP130-only.
+locked `gf180mcu_fd_sc_mcu7t5v0` Liberty fragments and the two SoC-used IO
+cells (`in_c` and `bi_t`) at both its TT and core-STA slow corners. SKY130
+generates its `sky130_fd_sc_hd` Liberty model from locked upstream JSON files
+at TT and slow corners. Derived Liberty files are stored below
+`.cache/retrosoc/pdk/` and are not committed. SKY130 setup initializes only
+the locked HD library submodule; the remaining upstream libraries are outside
+the SoC integration boundary.
+
+All three PDK profiles run slow-corner OpenSTA core timing in CI. The analysis
+uses the PDK standard-cell Liberty plus the linked IO-cell model required to
+read the synthesized top-level wrapper. It excludes board, pad-ring,
+extraction, and PLL timing and is therefore not a physical signoff result.
 
 The GF180 and SKY130 CI flows synth the digital core and run functional
 standard-cell netlist simulation. Their generic SoC wrappers explicitly use

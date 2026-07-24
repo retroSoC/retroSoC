@@ -1,0 +1,12 @@
+{
+  "entries": [
+    {
+      "count": 1,
+      "example": "1171:$ROOT/.cache/retrosoc/pdk/sky130/sky130_fd_sc_hd__ss_100C_1v40.lib line 24, default_fanout_load is 0.0.",
+      "signature": "3c380feb1d0cd00a"
+    }
+  ],
+  "profile": "hazard3-rv32im-sky130",
+  "schema_version": 1,
+  "tool": "opensta"
+}

@@ -13,6 +13,7 @@ from typing import Any
 RESET_PRIMITIVES = {"rst_sync"}
 CDC_PRIMITIVES = {"async_fifo", "cdc_2phase", "cdc_sync"}
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
+HIERARCHICAL_PIN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*/[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def require_object(value: Any, field: str) -> dict[str, Any]:
@@ -34,6 +35,19 @@ def require_identifier(value: Any, field: str) -> str:
     return identifier
 
 
+def require_positive_number(value: Any, field: str) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+        raise ValueError(f"{field} must be a positive number")
+    return float(value)
+
+
+def require_hierarchical_pin(value: Any, field: str) -> str:
+    pin = require_string(value, field)
+    if HIERARCHICAL_PIN_RE.fullmatch(pin) is None:
+        raise ValueError(f"{field} must be a hierarchical instance pin")
+    return pin
+
+
 def require_instance(path: Path, primitive: str, instance: str, field: str) -> None:
     if not path.is_file():
         raise ValueError(f"{field}.path does not exist: {path}")
@@ -45,13 +59,14 @@ def require_instance(path: Path, primitive: str, instance: str, field: str) -> N
 
 def validate(document_path: Path, root: Path) -> None:
     document = require_object(json.loads(document_path.read_text(encoding="utf-8")), "domain map")
-    if document.get("schema_version") != 1:
-        raise ValueError("schema_version must be 1")
+    if document.get("schema_version") != 2:
+        raise ValueError("schema_version must be 2")
 
     raw_domains = document.get("domains")
     if not isinstance(raw_domains, list) or not raw_domains:
         raise ValueError("domains must be a non-empty list")
     names: set[str] = set()
+    sta_sources: dict[str, str | None] = {}
     for index, value in enumerate(raw_domains):
         field = f"domains[{index}]"
         domain = require_object(value, field)
@@ -68,6 +83,23 @@ def validate(document_path: Path, root: Path) -> None:
         path = root / require_string(domain.get("path"), f"{field}.path")
         instance = require_identifier(domain.get("instance"), f"{field}.instance")
         require_instance(path, primitive, instance, field)
+        sta = require_object(domain.get("sta"), f"{field}.sta")
+        source_port = sta.get("source_port")
+        source_domain = sta.get("source_domain")
+        if (source_port is None) == (source_domain is None):
+            raise ValueError(f"{field}.sta must declare exactly one source")
+        if source_port is not None:
+            require_identifier(source_port, f"{field}.sta.source_port")
+            sta_sources[name] = None
+        else:
+            sta_sources[name] = require_identifier(source_domain, f"{field}.sta.source_domain")
+        require_hierarchical_pin(sta.get("pin"), f"{field}.sta.pin")
+        require_positive_number(sta.get("period_ns"), f"{field}.sta.period_ns")
+        require_identifier(sta.get("async_group"), f"{field}.sta.async_group")
+
+    for name, source_domain in sta_sources.items():
+        if source_domain is not None and source_domain not in names:
+            raise ValueError(f"domain {name} STA source references unknown domain {source_domain}")
 
     raw_crossings = document.get("crossings")
     if not isinstance(raw_crossings, list):

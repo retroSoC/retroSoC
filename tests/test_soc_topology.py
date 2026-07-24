@@ -68,6 +68,8 @@ def test_topology_generates_complete_native_apb_and_gpio_bindings(tmp_path: Path
     apb_declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
     apb_routes = (tmp_path / "rtl/soc_apb_request_routes.svh").read_text(encoding="utf-8")
     apb_response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
+    fabric = (tmp_path / "rtl/soc_fabric_interfaces.svh").read_text(encoding="utf-8")
+    bus_fabric = (tmp_path / "rtl/soc_bus_fabric.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
     assert interfaces.count("nmi_if u_") == 18
@@ -82,6 +84,9 @@ def test_topology_generates_complete_native_apb_and_gpio_bindings(tmp_path: Path
     assert "assign tmr.paddr = nmi.addr;" in apb_routes
     assert "({32{s_psel_q[8]}} & tmr.prdata)" in apb_response
     assert "localparam int NSLV = 9;" in apb_declarations
+    assert fabric.count("nmi_if u_") == 4
+    assert ".core_nmi(u_core_nmi_if)" in bus_fabric
+    assert ".apb_nmi(u_apb_nmi_if)" in bus_fabric
     assert filelist.startswith("+incdir+")
 
 
@@ -128,6 +133,12 @@ def test_topology_rejects_duplicate_region_and_disabled_owner(tmp_path: Path) ->
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "disabled but declares regions" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["fabric_links"][1]["name"] = "core"
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "fabric role core is duplicated" in result.stderr
 
 
 def test_topology_rejects_invalid_apb_target_ownership(tmp_path: Path) -> None:

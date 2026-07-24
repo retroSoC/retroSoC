@@ -1,0 +1,46 @@
+library (retrosoc_sky130_io_blackbox) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  capacitive_load_unit (1, pf);
+
+  type (DM_type) {
+    base_type : array;
+    data_type : bit;
+    bit_width : 3;
+    bit_from : 2;
+    bit_to : 0;
+  }
+
+  cell (sky130_fd_io__top_gpiov2) {
+    pin (OUT) { direction : input; }
+    pin (OE_N) { direction : input; }
+    pin (HLD_H_N) { direction : input; }
+    pin (INP_DIS) { direction : input; }
+    pin (IB_MODE_SEL) { direction : input; }
+    pin (ENABLE_H) { direction : input; }
+    pin (ENABLE_VDDA_H) { direction : input; }
+    pin (ENABLE_INP_H) { direction : input; }
+    pin (ENABLE_VDDIO) { direction : input; }
+    pin (ENABLE_VSWITCH_H) { direction : input; }
+    pin (SLOW) { direction : input; }
+    pin (VTRIP_SEL) { direction : input; }
+    pin (HLD_OVR) { direction : input; }
+    pin (ANALOG_EN) { direction : input; }
+    pin (ANALOG_SEL) { direction : input; }
+    pin (ANALOG_POL) { direction : input; }
+    bus (DM) {
+      bus_type : DM_type;
+      direction : input;
+    }
+    pin (PAD) { direction : inout; }
+    pin (PAD_A_NOESD_H) { direction : inout; }
+    pin (PAD_A_ESD_0_H) { direction : inout; }
+    pin (PAD_A_ESD_1_H) { direction : inout; }
+    pin (AMUXBUS_A) { direction : inout; }
+    pin (AMUXBUS_B) { direction : inout; }
+    pin (IN) { direction : output; }
+    pin (IN_H) { direction : output; }
+    pin (TIE_HI_ESD) { direction : output; }
+    pin (TIE_LO_ESD) { direction : output; }
+  }
+}

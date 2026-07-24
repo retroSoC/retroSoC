@@ -49,6 +49,44 @@ def main() -> int:
                 ),
                 check=True,
             )
+            subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "pdk/generate_gf180_liberty.py"),
+                    "--source",
+                    str(destination),
+                    "--output-dir",
+                    str(ROOT / ".cache/retrosoc/pdk/gf180"),
+                    "--revision",
+                    dependency["revision"],
+                    "--corner",
+                    "ss_125C_4v50",
+                ),
+                check=True,
+            )
+            subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "pdk/generate_gf180_liberty.py"),
+                    "--source",
+                    str(destination),
+                    "--output-dir",
+                    str(ROOT / ".cache/retrosoc/pdk/gf180"),
+                    "--revision",
+                    dependency["revision"],
+                    "--library",
+                    "gf180mcu_fd_io",
+                    "--cell",
+                    "bi_t",
+                    "--cell",
+                    "in_c",
+                    "--corner",
+                    "ss_125C_4v50",
+                    "--output-name",
+                    "gf180mcu_fd_io_retrosoc__ss_125C_4v50.lib",
+                ),
+                check=True,
+            )
         elif name == "pdk_sky130":
             subprocess.run(
                 (
@@ -60,6 +98,21 @@ def main() -> int:
                     str(ROOT / ".cache/retrosoc/pdk/sky130"),
                     "--revision",
                     dependency["revision"],
+                ),
+                check=True,
+            )
+            subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "pdk/generate_sky130_liberty.py"),
+                    "--source",
+                    str(destination),
+                    "--output-dir",
+                    str(ROOT / ".cache/retrosoc/pdk/sky130"),
+                    "--revision",
+                    dependency["revision"],
+                    "--corner",
+                    "ss_100C_1v40",
                 ),
                 check=True,
             )

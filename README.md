@@ -122,9 +122,9 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 | Assembly self-test with Icarus | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm` |
 | Yosys synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth` |
 | Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG netsim` |
-| OpenSTA timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
+| OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
 `make regress-pr` runs the supported IHP130, GF180, and SKY130 PR matrices in
-sequence. IHP130 additionally covers OpenSTA timing analysis.
+sequence, including slow-corner OpenSTA core timing analysis for each PDK.
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |
 | Format C, Makefile, and RTL sources | `make format` |

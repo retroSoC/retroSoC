@@ -33,11 +33,8 @@ module retrosoc (
 );
 
   // verilog_format: off
-  // bus interface
-  nmi_if u_core_nmi_if ();
-  nmi_if u_dma_nmi_if  ();
-  nmi_if u_nmi_nmi_if  ();
-  nmi_if u_apb_nmi_if  ();
+  // Generated fabric links reuse the common nmi_if contract.
+  `include "soc_fabric_interfaces.svh"
   user_gpio_if u_user_gpio_if ();
   // ip interface
   gpio_if     u_gpio_if     ();
@@ -94,7 +91,7 @@ core_wrapper u_core_wrapper (
 `ifdef CORE_MDD
       .core_sel_i(core_sel_i),
 `endif
-      .nmi       (u_core_nmi_if),
+      `include "soc_core_wrapper_fabric.svh"
       .irq_i     (s_irq)
   );
 
@@ -104,10 +101,7 @@ core_wrapper u_core_wrapper (
 `ifdef HAVE_SRAM_IF
       .ram             (ram),
 `endif
-      .core_nmi        (u_core_nmi_if),
-      .dma_nmi         (u_dma_nmi_if),
-      .natv_nmi        (u_nmi_nmi_if),
-      .apb_nmi         (u_apb_nmi_if),
+      `include "soc_bus_fabric.svh"
       .fault_valid_o   (s_bus_fault_valid),
       .fault_addr_o    (s_bus_fault_addr),
       .fault_wstrb_o   (s_bus_fault_wstrb),
@@ -119,7 +113,7 @@ core_wrapper u_core_wrapper (
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
-      .nmi             (u_nmi_nmi_if),
+      `include "soc_ip_nmi_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
       .uart            (uart0),
@@ -129,7 +123,6 @@ core_wrapper u_core_wrapper (
       .i2s             (u_i2s_if),
       .onewire         (u_onewire_if),
       .xpi             (xpi),
-      .dma_nmi         (u_dma_nmi_if),
       .sysctrl         (u_sysctrl_if),
       .pll_ctrl        (pll_ctrl),
       .sdram           (sdram),
@@ -150,7 +143,7 @@ core_wrapper u_core_wrapper (
       .clk_aud_i  (clk_aud_i),
       .rst_aud_n_i(rst_aud_n_i),
       .tmr_capch_i(s_tmr_capch),
-      .nmi        (u_apb_nmi_if),
+      `include "soc_ip_apb_wrapper_fabric.svh"
       .uart       (u_uart1_if),
       .pwm        (u_pwm_if),
       .ps2        (u_ps2_if),

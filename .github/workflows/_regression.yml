@@ -98,8 +98,7 @@ jobs:
             SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor
           make CONFIG=${{ inputs.profile }} SIMU=VERILATOR doctor
 
-      - name: Check IHP130 timing environment
-        if: inputs.pdk == 'IHP130'
+      - name: Check timing environment
         run: make CONFIG=${{ inputs.profile }} SIMU=IVERILOG STA=OPENSTA doctor
 
       - name: Run ${{ inputs.suite }} regression

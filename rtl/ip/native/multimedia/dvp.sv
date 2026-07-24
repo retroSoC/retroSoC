@@ -46,6 +46,7 @@ module nmi_dvp (
   // dvp clk
   logic s_dvp_pclk_buf;
   logic s_dvp_pclk_rst_n_sync;
+  logic s_dvp_recven_pclk_q;
   // rx fifo
   logic s_rx_push_valid, s_rx_full, s_rx_empty;
   logic s_rx_pop_valid, s_rx_pop_ready;
@@ -125,6 +126,17 @@ module nmi_dvp (
       .rst_n_o(s_dvp_pclk_rst_n_sync)
   );
 
+  // The software enable is stable while a frame is captured, but it originates
+  // in the system domain and must be synchronized before it gates DVP writes.
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_dvp_recven_cdc_sync (
+      .clk_i  (s_dvp_pclk_buf),
+      .rst_n_i(s_dvp_pclk_rst_n_sync),
+      .dat_i  (s_dvp_recven_q),
+      .dat_o  (s_dvp_recven_pclk_q)
+  );
 
   async_fifo #(
       .DATA_WIDTH (32),
@@ -132,7 +144,7 @@ module nmi_dvp (
   ) u_rx_async_fifo (
       .wr_clk_i  (s_dvp_pclk_buf),
       .wr_rst_n_i(s_dvp_pclk_rst_n_sync),
-      .wr_en_i   (s_rx_push_valid & s_dvp_recven_q),
+      .wr_en_i   (s_rx_push_valid & s_dvp_recven_pclk_q),
       .wr_data_i (s_rx_push_data),
       .wr_full_o (s_rx_full),
       .rd_clk_i  (clk_i),

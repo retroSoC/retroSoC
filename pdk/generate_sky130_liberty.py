@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
-CORNER = "tt_025C_1v80"
+DEFAULT_CORNER = "tt_025C_1v80"
 LIBRARY = "sky130_fd_sc_hd"
 
 
@@ -26,6 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--revision", required=True)
+    parser.add_argument("--corner", default=DEFAULT_CORNER)
     return parser.parse_args()
 
 
@@ -36,7 +37,7 @@ def main() -> int:
     generator_dir = source / "scripts" / "python-skywater-pdk"
     required = (
         library_dir / "timing" / f"{LIBRARY}__common.lib.json",
-        library_dir / "timing" / f"{LIBRARY}__{CORNER}.lib.json",
+        library_dir / "timing" / f"{LIBRARY}__{args.corner}.lib.json",
         generator_dir / "skywater_pdk" / "liberty.py",
     )
     missing = [str(path) for path in required if not path.is_file()]
@@ -44,7 +45,7 @@ def main() -> int:
         raise FileNotFoundError("missing SKY130 Liberty input(s): " + ", ".join(missing))
 
     output_dir = args.output_dir.resolve()
-    output = output_dir / f"{LIBRARY}__{CORNER}.lib"
+    output = output_dir / f"{LIBRARY}__{args.corner}.lib"
     revision = output.with_suffix(output.suffix + ".revision")
     if (
         output.is_file()
@@ -62,7 +63,7 @@ def main() -> int:
             "-m",
             "skywater_pdk.liberty",
             str(library_dir),
-            CORNER,
+            args.corner,
             "--output_directory",
             str(temporary_dir),
         )

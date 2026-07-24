@@ -123,8 +123,8 @@ endif
 endif
 
 ifeq ($(STA),OPENSTA)
-ifneq ($(PDK),IHP130)
-$(error OpenSTA currently supports PDK=IHP130 only)
+ifeq ($(HAVE_PLL),YES)
+$(error STA=OPENSTA requires a qualified PDK PLL timing profile; HAVE_PLL=YES is unsupported)
 endif
 endif
 

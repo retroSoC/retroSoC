@@ -21,6 +21,12 @@
     {"slot": 16, "name": "opipsram", "interface": "u_opipsram_nmi_if", "disabled": true},
     {"slot": 17, "name": "i2c1", "interface": "u_i2c1_nmi_if", "regions": ["NMI_I2C1"]}
   ],
+  "fabric_links": [
+    {"name": "core", "interface": "u_core_nmi_if"},
+    {"name": "dma", "interface": "u_dma_nmi_if"},
+    {"name": "native", "interface": "u_nmi_nmi_if"},
+    {"name": "apb", "interface": "u_apb_nmi_if"}
+  ],
   "apb_targets": [
     {"slot": 0, "name": "archinfo", "timed_interface": "u_archinfo_apb_if", "pure_interface": "u_archinfo_apb_pure_if", "region": "APB_ARCHINFO"},
     {"slot": 1, "name": "rng", "timed_interface": "u_rng_apb_if", "pure_interface": "u_rng_apb_pure_if", "region": "APB_RNG"},

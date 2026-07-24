@@ -376,6 +376,7 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
         assert any("SIMU=VERILATOR" in values and "firmware" in values for values in command_values)
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
+        assert ("STA=OPENSTA", "sta") in command_values
         assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
 
 

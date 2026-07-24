@@ -6,5 +6,6 @@
 # its own generated-clock period (24, 48, 72, 96, 120, 144, 168, 192 MHz),
 # and declare the external safe clock and PLL clock physically exclusive.
 #
-# The current IHP130 and ICS55 wrappers report PLL capability disabled, so
-# their valid signoff mode is sta/opensta/gen2.sdc.
+# The active core-STA flow generates its external-safe-clock constraints from
+# rtl/mini/integration/clock_reset_domains.json. The current IHP130 and ICS55
+# wrappers report PLL capability disabled, so this template remains unselected.

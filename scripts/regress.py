@@ -78,6 +78,7 @@ def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
         (profile, ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")),
         (profile, ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
         (profile, ("SYNTH=YOSYS", "synth")),
+        (profile, ("STA=OPENSTA", "sta")),
         (
             profile,
             (
