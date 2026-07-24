@@ -34,6 +34,7 @@ from scripts.regress import (  # noqa: E402
     pdk_pr_commands,
     regression_environment,
 )
+from scripts import setup_helpers  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -192,6 +193,44 @@ def test_dependency_helpers_are_idempotent(tmp_path: Path) -> None:
     assert downloaded.stat().st_mtime_ns == first_mtime
 
 
+def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Path) -> None:
+    commands: list[tuple[str, ...]] = []
+    revision = "a" * 40
+
+    def record(command, *, cwd=None) -> None:
+        del cwd
+        commands.append(tuple(command))
+
+    def git_output_stub(repo: Path, *args: str) -> str:
+        del repo
+        if args == ("rev-parse", "HEAD"):
+            return revision
+        if args == ("status", "--porcelain"):
+            return ""
+        raise AssertionError(f"unexpected git command: {args}")
+
+    monkeypatch.setattr(setup_helpers, "run", record)
+    monkeypatch.setattr(setup_helpers, "git_output", git_output_stub)
+    ensure_git_repo(
+        "https://example.com/pdk.git",
+        tmp_path / "pdk",
+        revision,
+        recursive=True,
+        submodules=("libraries/sky130_fd_sc_hd/latest",),
+    )
+
+    assert commands[-1] == (
+        "git",
+        "submodule",
+        "update",
+        "--init",
+        "--depth",
+        "1",
+        "--",
+        "libraries/sky130_fd_sc_hd/latest",
+    )
+
+
 def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     def build_state() -> dict[str, tuple[int, int]]:
         build = ROOT / "build"
@@ -255,6 +294,9 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     lock = load_lock(ROOT / "config/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
+    assert lock["sources"]["pdk_sky130"]["submodules"] == [
+        "libraries/sky130_fd_sc_hd/latest"
+    ]
 
     command = (
         sys.executable,
@@ -291,6 +333,16 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         assert "missing or empty" in str(error)
     else:
         raise AssertionError("invalid dependency lock was accepted")
+
+    invalid_submodules = json.loads(json.dumps(lock))
+    invalid_submodules["sources"]["pdk_sky130"]["submodules"] = ["../outside"]
+    broken.write_text(json.dumps(invalid_submodules), encoding="utf-8")
+    try:
+        load_lock(broken)
+    except LockError as error:
+        assert "submodule" in str(error)
+    else:
+        raise AssertionError("invalid submodule path was accepted")
 
 
 def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:

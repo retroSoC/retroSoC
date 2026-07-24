@@ -110,15 +110,16 @@ include $(RTL_PATH)/mk/software.mk
 
 #====================== filelist ======================
 ifeq ($(PDK), IHP130)
-    NET_FLIST := -f $(GENERATED_FL_DIR)/pdk_ihp130.fl
+    PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_ihp130.fl
 else ifeq ($(PDK), SKY130)
-    NET_FLIST := -f $(GENERATED_FL_DIR)/pdk_sky130.fl
+    PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_sky130.fl
 else ifeq ($(PDK), ICS55)
-    NET_FLIST := -f $(GENERATED_FL_DIR)/pdk_ics55.fl
+    PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_ics55.fl
 else ifeq ($(PDK), GF180)
-    NET_FLIST := -f $(GENERATED_FL_DIR)/pdk_gf180.fl
+    PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_gf180.fl
 endif
 
+NET_FLIST := -f $(PDK_FILELIST)
 NET_FLIST += -f $(GENERATED_FL_DIR)/def.fl
 NET_FLIST += -f $(GENERATED_FL_DIR)/sys_def.fl
 NET_FLIST += -f $(GENERATED_FL_DIR)/commonip.fl

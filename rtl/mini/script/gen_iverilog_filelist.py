@@ -63,9 +63,18 @@ def _standard_cell_models(pdk: str, netlist: Path | None = None) -> list[Path]:
             ROOT_DIR
             / "pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells"
         )
+        sequential_models = {
+            "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+            "gf180mcu_fd_sc_mcu7t5v0__dffrnq_1",
+            "gf180mcu_fd_sc_mcu7t5v0__dffsnq_1",
+        }
         return [
             ROOT_DIR / "rtl/tech/gf180_sim_cells.v",
-            *sorted(cells_dir.glob("*/*.functional.v")),
+            *sorted(
+                path
+                for path in cells_dir.glob("*/*.functional.v")
+                if path.name.removesuffix(".functional.v") not in sequential_models
+            ),
         ]
     if pdk == "SKY130":
         cells_dir = ROOT_DIR / "pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells"

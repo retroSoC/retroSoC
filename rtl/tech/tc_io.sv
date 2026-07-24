@@ -9,6 +9,92 @@
 // See the Mulan PSL v2 for more details.
 
 
+`ifdef PDK_GF180
+module tc_io_gf180_bi_pad (
+    inout  wire  pad,
+    input  logic c2p,
+    input  logic c2p_en,
+    output logic p2c,
+    input  logic cs,
+    input  logic pu,
+    input  logic pd
+);
+  logic s_p2c;
+  wire  s_dvdd = 1'b1;
+  wire  s_dvss = 1'b0;
+  wire  s_vdd = 1'b1;
+  wire  s_vss = 1'b0;
+
+  (* keep *) (* dont_touch = "true" *)
+  gf180mcu_fd_io__bi_t u_gf180mcu_fd_io__bi_t (
+      .CS   (cs),
+      .SL   (1'b0),
+      .IE   (~c2p_en),
+      .OE   (c2p_en),
+      .PU   (pu),
+      .PD   (pd),
+      .A    (c2p),
+      .PDRV0(1'b0),
+      .PDRV1(1'b0),
+      .PAD  (pad),
+      .Y    (s_p2c),
+      .DVDD (s_dvdd),
+      .DVSS (s_dvss),
+      .VDD  (s_vdd),
+      .VSS  (s_vss)
+  );
+
+  // gf180mcu_fd_io__bi_t forbids simultaneous input and output enable.
+  assign p2c = c2p_en ? c2p : s_p2c;
+endmodule
+`endif
+
+`ifdef PDK_SKY130
+module tc_io_sky130_pad (
+    inout  wire  pad,
+    input  logic c2p,
+    input  logic c2p_en,
+    output logic p2c,
+    input  logic cs
+);
+  logic s_p2c;
+
+  (* keep *) (* dont_touch = "true" *)
+  sky130_fd_io__top_gpiov2 u_sky130_fd_io__top_gpiov2 (
+      .OUT             (c2p),
+      .OE_N            (~c2p_en),
+      .HLD_H_N         (1'b1),
+      .INP_DIS         (1'b0),
+      .IB_MODE_SEL     (1'b0),
+      .ENABLE_H        (1'b1),
+      .ENABLE_VDDA_H   (1'b0),
+      .ENABLE_INP_H    (1'b0),
+      .ENABLE_VDDIO    (1'b1),
+      .ENABLE_VSWITCH_H(1'b0),
+      .TIE_HI_ESD      (),
+      .TIE_LO_ESD      (),
+      .SLOW            (1'b0),
+      .VTRIP_SEL       (cs),
+      .HLD_OVR         (1'b0),
+      .ANALOG_EN       (1'b0),
+      .ANALOG_SEL      (1'b0),
+      .ANALOG_POL      (1'b0),
+      .DM              (3'b110),
+      .PAD             (pad),
+      .PAD_A_NOESD_H   (),
+      .PAD_A_ESD_0_H   (),
+      .PAD_A_ESD_1_H   (),
+      .IN              (s_p2c),
+      .IN_H            (),
+      .AMUXBUS_A       (),
+      .AMUXBUS_B       ()
+  );
+
+  assign p2c = s_p2c;
+endmodule
+`endif
+
+
 module tc_io_xtl_pad (
     input  logic xi_pad,
     output logic xo_pad,
@@ -20,10 +106,12 @@ module tc_io_xtl_pad (
   assign xo_pad = xi_pad;
 
 `elsif PDK_SKY130
+  // No qualified SKY130 crystal pad is selected. The Makefile rejects HAVE_PLL=YES.
   assign clk    = en ? xi_pad : 1'b0;
   assign xo_pad = xi_pad;
 
 `elsif PDK_GF180
+  // No qualified GF180 crystal pad is selected. The Makefile rejects HAVE_PLL=YES.
   assign clk    = en ? xi_pad : 1'b0;
   assign xo_pad = xi_pad;
 
@@ -68,10 +156,30 @@ module tc_io_in_pad (
   assign p2c = pad;
 
 `elsif PDK_SKY130
-  assign p2c = pad;
+  tc_io_sky130_pad u_tc_io_sky130_pad (
+      .pad   (pad),
+      .c2p   (1'b0),
+      .c2p_en(1'b0),
+      .p2c   (p2c),
+      .cs    (1'b0)
+  );
 
 `elsif PDK_GF180
-  assign p2c = pad;
+  wire s_dvdd = 1'b1;
+  wire s_dvss = 1'b0;
+  wire s_vdd = 1'b1;
+  wire s_vss = 1'b0;
+  (* keep *) (* dont_touch = "true" *)
+  gf180mcu_fd_io__in_c u_gf180mcu_fd_io__in_c (
+      .PU  (1'b0),
+      .PD  (1'b0),
+      .PAD (pad),
+      .Y   (p2c),
+      .DVDD(s_dvdd),
+      .DVSS(s_dvss),
+      .VDD (s_vdd),
+      .VSS (s_vss)
+  );
 
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
@@ -93,10 +201,26 @@ module tc_io_out_pad (
   assign pad = c2p;
 
 `elsif PDK_SKY130
-  assign pad = c2p;
+  logic unused_p2c;
+  tc_io_sky130_pad u_tc_io_sky130_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(1'b1),
+      .p2c   (unused_p2c),
+      .cs    (1'b0)
+  );
 
 `elsif PDK_GF180
-  assign pad = c2p;
+  logic unused_p2c;
+  tc_io_gf180_bi_pad u_tc_io_gf180_bi_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(1'b1),
+      .p2c   (unused_p2c),
+      .cs    (1'b0),
+      .pu    (1'b0),
+      .pd    (1'b0)
+  );
 
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
@@ -121,12 +245,24 @@ module tc_io_tri_pad (
   assign p2c = pad;
 
 `elsif PDK_SKY130
-  assign pad = c2p_en ? c2p : 1'bz;
-  assign p2c = pad;
+  tc_io_sky130_pad u_tc_io_sky130_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(c2p_en),
+      .p2c   (p2c),
+      .cs    (1'b0)
+  );
 
 `elsif PDK_GF180
-  assign pad = c2p_en ? c2p : 1'bz;
-  assign p2c = pad;
+  tc_io_gf180_bi_pad u_tc_io_gf180_bi_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(c2p_en),
+      .p2c   (p2c),
+      .cs    (1'b0),
+      .pu    (1'b0),
+      .pd    (1'b0)
+  );
 
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
@@ -180,12 +316,24 @@ module tc_io_tri_schmitt_pad (
   assign p2c = pad;
 
 `elsif PDK_SKY130
-  assign pad = c2p_en ? c2p : 1'bz;
-  assign p2c = pad;
+  tc_io_sky130_pad u_tc_io_sky130_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(c2p_en),
+      .p2c   (p2c),
+      .cs    (1'b1)
+  );
 
 `elsif PDK_GF180
-  assign pad = c2p_en ? c2p : 1'bz;
-  assign p2c = pad;
+  tc_io_gf180_bi_pad u_tc_io_gf180_bi_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(c2p_en),
+      .p2c   (p2c),
+      .cs    (1'b1),
+      .pu    (1'b0),
+      .pd    (1'b0)
+  );
 
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
@@ -242,12 +390,26 @@ module tc_io_tri_full_pad (
   assign p2c = pad;
 
 `elsif PDK_SKY130
-  assign pad = c2p_en ? c2p : 1'bz;
-  assign p2c = pad;
+  logic [1:0] unused_pull;
+  assign unused_pull = {pu, pd};
+  tc_io_sky130_pad u_tc_io_sky130_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(c2p_en),
+      .p2c   (p2c),
+      .cs    (cs)
+  );
 
 `elsif PDK_GF180
-  assign pad = c2p_en ? c2p : 1'bz;
-  assign p2c = pad;
+  tc_io_gf180_bi_pad u_tc_io_gf180_bi_pad (
+      .pad   (pad),
+      .c2p   (c2p),
+      .c2p_en(c2p_en),
+      .p2c   (p2c),
+      .cs    (cs),
+      .pu    (pu),
+      .pd    (pd)
+  );
 
 `elsif PDK_IHP130
   logic [2:0] dum;

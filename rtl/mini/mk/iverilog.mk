@@ -24,6 +24,8 @@ IVERILOG_NETL_DEPFILE := $(IVERILOG_NETL_DIR)/simv.d
 IVERILOG_POST_DEPFILE := $(IVERILOG_POST_DIR)/simv.d
 IVERILOG_FILELIST_GEN := $(RTL_PATH)/script/gen_iverilog_filelist.py
 NETLIST_SIM_MODELS    := $(ROOT_PATH)/rtl/tech/netlist_sim_cells.v $(ROOT_PATH)/rtl/tech/gf180_sim_cells.v
+TECH_CELL_TEST        := $(ROOT_PATH)/tests/rtl/tc_pdk_cells_tb.sv
+TECH_CELL_TEST_DIR    := $(IVERILOG_ROOT)/tech-cells
 
 -include $(CONVERTED_DEPFILE) $(IVERILOG_BEHV_DEPFILE) $(IVERILOG_NETL_DEPFILE) $(IVERILOG_POST_DEPFILE)
 
@@ -59,6 +61,22 @@ $(IVERILOG_POST_FLIST): $(FILELIST_STAMP) $(POST_PATH) $(SDF_PATH) $(IVERILOG_FI
 
 convt_sv2v: $(CONVERTED_SOC)
 gen_iverilog_filelist: $(IVERILOG_BEHV_FLIST)
+
+tech-cell-test: $(FILELIST_STAMP) $(TECH_CELL_TEST) $(ROOT_PATH)/rtl/tech/tc_io.sv \
+	$(ROOT_PATH)/rtl/tech/tc_clk.sv
+	@case "$(PDK)" in \
+		GF180|SKY130) ;; \
+		*) echo "tech-cell-test supports PDK=GF180 or PDK=SKY130" >&2; exit 2 ;; \
+	esac
+	@mkdir -p $(TECH_CELL_TEST_DIR)
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-tech-cells \
+		--log $(TECH_CELL_TEST_DIR)/compile.log --result $(TECH_CELL_TEST_DIR)/result-compile.json \
+		--cwd $(TECH_CELL_TEST_DIR) -- $(IVERILOG) $(IVERILOG_COMMON_OPTS) $(IVERILOG_TIME_OPTS) \
+		-f $(GENERATED_FL_DIR)/def.fl -f $(PDK_FILELIST) $(ROOT_PATH)/rtl/tech/tc_io.sv \
+		$(ROOT_PATH)/rtl/tech/tc_clk.sv $(TECH_CELL_TEST) -o simv -s tc_pdk_cells_tb
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-tech-cells-sim \
+		--log $(TECH_CELL_TEST_DIR)/sim.log --result $(TECH_CELL_TEST_DIR)/result-sim.json \
+		--cwd $(TECH_CELL_TEST_DIR) -- $(VVP) simv
 
 $(IVERILOG_BEHV_SIMV): $(IVERILOG_BEHV_FLIST)
 	@mkdir -p $(IVERILOG_BEHV_DIR)
@@ -130,4 +148,4 @@ postwave:
 clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(IVERILOG_ROOT)
 
-.PHONY: convt_sv2v gen_iverilog_filelist comp netcomp postcomp sim netsim postsim wave netwave postwave clean
+.PHONY: convt_sv2v gen_iverilog_filelist tech-cell-test comp netcomp postcomp sim netsim postsim wave netwave postwave clean

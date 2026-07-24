@@ -32,6 +32,7 @@ def main() -> int:
             destination,
             dependency["revision"],
             recursive=dependency.get("recursive", False),
+            submodules=tuple(dependency.get("submodules", ())),
             update=args.update,
         )
         if name == "pdk_gf180":

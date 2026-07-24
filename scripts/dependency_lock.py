@@ -40,6 +40,7 @@ def validate_lock(data: dict[str, Any]) -> None:
             raise LockError(f"source {name} revision must be a full 40-character commit")
         _validate_url(f"source {name}", source["url"])
         _validate_relative_path(f"source {name} destination", source["destination"])
+        _validate_source_submodules(name, source)
     for name, archive in data["archives"].items():
         _validate_archive("archive", name, archive)
     for platform, tools in data["toolchains"].items():
@@ -58,6 +59,20 @@ def _validate_archive(kind: str, name: str, value: dict[str, Any]) -> None:
     _validate_sha(f"{kind} {name}", value["sha256"])
     _validate_url(f"{kind} {name}", value["url"])
     _validate_relative_path(f"{kind} {name} destination", value["destination"])
+
+
+def _validate_source_submodules(name: str, value: dict[str, Any]) -> None:
+    submodules = value.get("submodules")
+    if submodules is None:
+        return
+    if value.get("recursive") is not True:
+        raise LockError(f"source {name} submodules require recursive=true")
+    if not isinstance(submodules, list) or not submodules:
+        raise LockError(f"source {name} submodules must be a non-empty list")
+    for submodule in submodules:
+        if not isinstance(submodule, str):
+            raise LockError(f"source {name} submodules must contain paths")
+        _validate_relative_path(f"source {name} submodule", submodule)
 
 
 def _require_fields(kind: str, name: str, value: Any, fields: tuple[str, ...]) -> None:

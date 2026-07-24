@@ -46,10 +46,18 @@ module tc_clk_inv (
   );
 
 `elsif PDK_GF180
-  assign clk_o = ~clk_i;
+  (* keep *) (* dont_touch = "true" *)
+  gf180mcu_fd_sc_mcu7t5v0__clkinv_1 u_gf180mcu_fd_sc_mcu7t5v0__clkinv_1 (
+      .I (clk_i),
+      .ZN(clk_o)
+  );
 
 `elsif PDK_SKY130
-  assign clk_o = ~clk_i;
+  (* keep *) (* dont_touch = "true" *)
+  sky130_fd_sc_hd__clkinv_1 u_sky130_fd_sc_hd__clkinv_1 (
+      .A(clk_i),
+      .Y(clk_o)
+  );
 `endif
 
 endmodule
@@ -84,10 +92,18 @@ module tc_clk_buf (
   );
 
 `elsif PDK_GF180
-  assign clk_o = clk_i;
+  (* keep *) (* dont_touch = "true" *)
+  gf180mcu_fd_sc_mcu7t5v0__clkbuf_1 u_gf180mcu_fd_sc_mcu7t5v0__clkbuf_1 (
+      .I(clk_i),
+      .Z(clk_o)
+  );
 
 `elsif PDK_SKY130
-  assign clk_o = clk_i;
+  (* keep *) (* dont_touch = "true" *)
+  sky130_fd_sc_hd__clkbuf_1 u_sky130_fd_sc_hd__clkbuf_1 (
+      .A(clk_i),
+      .X(clk_o)
+  );
 `endif
 endmodule
 
@@ -129,10 +145,22 @@ module tc_clk_mux2 (
   );
 
 `elsif PDK_GF180
-  assign clk_o = clk_sel_i ? clk1_i : clk0_i;
+  (* keep *) (* dont_touch = "true" *)
+  gf180mcu_fd_sc_mcu7t5v0__mux2_1 u_gf180mcu_fd_sc_mcu7t5v0__mux2_1 (
+      .I0(clk0_i),
+      .I1(clk1_i),
+      .S (clk_sel_i),
+      .Z (clk_o)
+  );
 
 `elsif PDK_SKY130
-  assign clk_o = clk_sel_i ? clk1_i : clk0_i;
+  (* keep *) (* dont_touch = "true" *)
+  sky130_fd_sc_hd__mux2_1 u_sky130_fd_sc_hd__mux2_1 (
+      .A0(clk0_i),
+      .A1(clk1_i),
+      .S (clk_sel_i),
+      .X (clk_o)
+  );
 `endif
 endmodule
 
@@ -176,9 +204,19 @@ module tc_clk_xor2 (
   );
 
 `elsif PDK_GF180
-  assign clk_o = clk0_i ^ clk1_i;
+  (* keep *) (* dont_touch = "true" *)
+  gf180mcu_fd_sc_mcu7t5v0__xor2_1 u_gf180mcu_fd_sc_mcu7t5v0__xor2_1 (
+      .A1(clk0_i),
+      .A2(clk1_i),
+      .Z (clk_o)
+  );
 
 `elsif PDK_SKY130
-  assign clk_o = clk0_i ^ clk1_i;
+  (* keep *) (* dont_touch = "true" *)
+  sky130_fd_sc_hd__xor2_1 u_sky130_fd_sc_hd__xor2_1 (
+      .A(clk0_i),
+      .B(clk1_i),
+      .X(clk_o)
+  );
 `endif
 endmodule

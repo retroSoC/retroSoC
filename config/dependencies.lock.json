@@ -57,6 +57,7 @@
       "revision": "7198cf647113f56041e02abf3eb623692820c5e1",
       "destination": "pdk/skywater-pdk",
       "recursive": true,
+      "submodules": ["libraries/sky130_fd_sc_hd/latest"],
       "license": "Apache-2.0"
     },
     "cluster_archinfo": {"url": "https://github.com/retroSoC/archinfo.git", "revision": "d65dd13c83a1176668bf5178004814a1551bf6ba", "destination": "rtl/managed/clusterip/archinfo", "license": "NOASSERTION"},

@@ -34,6 +34,7 @@ def ensure_git_repo(
     revision: str,
     *,
     recursive: bool = False,
+    submodules: tuple[str, ...] = (),
     update: bool = False,
     allow_dirty: bool = False,
 ) -> None:
@@ -67,10 +68,12 @@ def ensure_git_repo(
         raise RuntimeError(f"pinned dependency has local changes: {destination}")
 
     if recursive:
-        run(
-            ("git", "submodule", "update", "--init", "--recursive", "--depth", "1"),
-            cwd=destination,
-        )
+        command: tuple[str, ...] = ("git", "submodule", "update", "--init", "--depth", "1")
+        if submodules:
+            command += ("--", *submodules)
+        else:
+            command += ("--recursive",)
+        run(command, cwd=destination)
     print(f"[dependency] {destination.name}: {revision}")
 
 

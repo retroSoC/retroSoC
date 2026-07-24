@@ -100,7 +100,7 @@ jobs:
 
       - name: Check IHP130 timing environment
         if: inputs.pdk == 'IHP130'
-        run: make CONFIG=${{ inputs.profile }} STA=OPENSTA doctor
+        run: make CONFIG=${{ inputs.profile }} SIMU=IVERILOG STA=OPENSTA doctor
 
       - name: Run ${{ inputs.suite }} regression
         run: python3 scripts/regress.py --root . --suite "${{ inputs.suite }}" --pdk "${{ inputs.pdk }}"

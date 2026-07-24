@@ -1,4 +1,4 @@
-name: regression
+name: regression-ihp130
 
 on:
   push:
