@@ -70,6 +70,11 @@ def test_topology_generates_complete_native_apb_and_gpio_bindings(tmp_path: Path
     apb_response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
     fabric = (tmp_path / "rtl/soc_fabric_interfaces.svh").read_text(encoding="utf-8")
     bus_fabric = (tmp_path / "rtl/soc_bus_fabric.svh").read_text(encoding="utf-8")
+    irq_config = (tmp_path / "rtl/soc_irq_config.svh").read_text(encoding="utf-8")
+    nmi_irq = (tmp_path / "rtl/soc_nmi_irq_bindings.svh").read_text(encoding="utf-8")
+    apb_irq = (tmp_path / "rtl/soc_apb_irq_bindings.svh").read_text(encoding="utf-8")
+    irq_wiring = (tmp_path / "rtl/soc_irq_wiring.svh").read_text(encoding="utf-8")
+    irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
     assert interfaces.count("nmi_if u_") == 18
@@ -87,7 +92,50 @@ def test_topology_generates_complete_native_apb_and_gpio_bindings(tmp_path: Path
     assert fabric.count("nmi_if u_") == 4
     assert ".core_nmi(u_core_nmi_if)" in bus_fabric
     assert ".apb_nmi(u_apb_nmi_if)" in bus_fabric
+    assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
+    assert "`define SOC_IRQ_NMI_WIDTH 10" in irq_config
+    assert "`define SOC_IRQ_APB_WIDTH 7" in irq_config
+    assert "assign irq_o[0] = u_clint_if.sfr_irq_o;" in nmi_irq
+    assert "assign irq_o[5] = u_tmr_if.irq_o;" in apb_irq
+    assert "s_irq[16] = s_apb_irq[6];" in irq_wiring
+    assert "irq_i[31] == 1'b0" in irq_sva
+    assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert filelist.startswith("+incdir+")
+
+
+def test_topology_preserves_default_irq_compatibility_mapping() -> None:
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    assert document["irq_vector_width"] == 32
+    mappings = [
+        (
+            interrupt["name"],
+            interrupt["group"],
+            interrupt["group_bit"],
+            interrupt["core_bit"],
+            interrupt["signal"],
+        )
+        for interrupt in document["interrupts"]
+    ]
+    assert mappings[:17] == [
+        ("clint_software", "nmi", 0, 0, "u_clint_if.sfr_irq_o"),
+        ("clint_timer", "nmi", 1, 1, "u_clint_if.tmr_irq_o"),
+        ("uart0", "nmi", 2, 2, "uart.irq_o"),
+        ("timer0", "nmi", 3, 3, "s_tim0_irq"),
+        ("timer1", "nmi", 4, 4, "s_tim1_irq"),
+        ("psram", "nmi", 5, 5, "psram.irq_o"),
+        ("spisd", "nmi", 6, 6, "spisd.irq_o"),
+        ("i2c0", "nmi", 7, 7, "i2c0.irq_o"),
+        ("i2s", "nmi", 8, 8, "i2s.irq_o"),
+        ("xpi", "nmi", 9, 9, "xpi.irq_o"),
+        ("uart1", "apb", 0, 10, "uart.irq_o"),
+        ("pwm", "apb", 1, 11, "pwm.irq_o"),
+        ("ps2", "apb", 2, 12, "ps2.irq_o"),
+        ("rtc", "apb", 3, 13, "u_rtc_if.irq_o"),
+        ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
+        ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
+        ("reserved", "apb", 6, 16, "1'b0"),
+    ]
+    assert all(mapping[3] >= 17 for mapping in mappings[17:])
 
 
 def test_topology_adds_user_apb_only_for_the_mdd_ip(tmp_path: Path) -> None:
@@ -179,6 +227,70 @@ def test_topology_rejects_invalid_gpio_coverage_and_expression(tmp_path: Path) -
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "scalar SystemVerilog reference or constant" in result.stderr
+
+def test_topology_rejects_invalid_irq_groups_and_bindings(tmp_path: Path) -> None:
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["irq_groups"][1]["name"] = "nmi"
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "interrupt group nmi is duplicated" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["interrupts"][1]["group_bit"] = 0
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "interrupt group nmi bit 0 is duplicated" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["interrupts"][1]["core_bit"] = 0
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "core interrupt bit 0 is duplicated" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["interrupts"].pop()
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "interrupt group apb does not cover every group bit" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["interrupts"][0]["signal"] = "left | right"
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "scalar SystemVerilog reference or constant" in result.stderr
+
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["interrupts"][0]["signal"] = "uart.irq_o"
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "core interrupt bit 0 must retain its compatibility binding" in result.stderr
+
+
+def test_generated_irq_wiring_preserves_the_expected_core_vector(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        return
+
+    topology_output = tmp_path / "topology"
+    generate(topology_output)
+    simulation = tmp_path / "soc_irq_topology_tb"
+    subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-I",
+            str(topology_output / "rtl"),
+            "-s",
+            "soc_irq_topology_tb",
+            "-o",
+            str(simulation),
+            str(ROOT / "tests/rtl/soc_irq_topology_tb.sv"),
+        ],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
+    assert "SoC topology IRQ routing test passed" in result.stdout
 
 
 def test_generated_nmi_routes_select_and_return_the_expected_target(tmp_path: Path) -> None:

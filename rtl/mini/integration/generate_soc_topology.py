@@ -17,6 +17,27 @@ SV_IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 SV_REFERENCE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[0-9]+\])?$")
 SV_CONSTANT_RE = re.compile(r"(?:1'[bB][01]|'[01])$")
 FABRIC_LINK_NAMES = ("core", "dma", "native", "apb")
+IRQ_GROUP_NAMES = ("nmi", "apb")
+IRQ_VECTOR_WIDTH = 32
+COMPATIBILITY_IRQ_BINDINGS = (
+    ("clint_software", "nmi", 0, 0, "u_clint_if.sfr_irq_o"),
+    ("clint_timer", "nmi", 1, 1, "u_clint_if.tmr_irq_o"),
+    ("uart0", "nmi", 2, 2, "uart.irq_o"),
+    ("timer0", "nmi", 3, 3, "s_tim0_irq"),
+    ("timer1", "nmi", 4, 4, "s_tim1_irq"),
+    ("psram", "nmi", 5, 5, "psram.irq_o"),
+    ("spisd", "nmi", 6, 6, "spisd.irq_o"),
+    ("i2c0", "nmi", 7, 7, "i2c0.irq_o"),
+    ("i2s", "nmi", 8, 8, "i2s.irq_o"),
+    ("xpi", "nmi", 9, 9, "xpi.irq_o"),
+    ("uart1", "apb", 0, 10, "uart.irq_o"),
+    ("pwm", "apb", 1, 11, "pwm.irq_o"),
+    ("ps2", "apb", 2, 12, "ps2.irq_o"),
+    ("rtc", "apb", 3, 13, "u_rtc_if.irq_o"),
+    ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
+    ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
+    ("reserved", "apb", 6, 16, "1'b0"),
+)
 
 
 @dataclass(frozen=True)
@@ -58,6 +79,23 @@ class GpioFunction:
     alt1: GpioMode
 
 
+@dataclass(frozen=True)
+class IrqGroup:
+    name: str
+    width: int
+    top_signal: str
+
+
+@dataclass(frozen=True)
+class Interrupt:
+    name: str
+    description: str
+    group: str
+    group_bit: int
+    core_bit: int
+    signal: str
+
+
 def atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8") == content:
@@ -82,6 +120,13 @@ def require_string(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"{field} must be a non-empty string")
     return value
+
+
+def require_comment_text(value: Any, field: str) -> str:
+    text = require_string(value, field)
+    if "\n" in text or "\r" in text:
+        raise ValueError(f"{field} must be a single-line string")
+    return text
 
 
 def require_identifier(value: Any, field: str) -> str:
@@ -362,21 +407,142 @@ def parse_gpio_functions(value: Any, gpio_pins: int) -> list[GpioFunction]:
     return sorted(parsed, key=lambda item: item.pin)
 
 
+def parse_irq_groups(value: Any) -> list[IrqGroup]:
+    if not isinstance(value, list) or len(value) != len(IRQ_GROUP_NAMES):
+        raise ValueError("irq_groups must define every supported interrupt group exactly once")
+    groups: list[IrqGroup] = []
+    names: set[str] = set()
+    top_signals: set[str] = set()
+    for index, entry in enumerate(value):
+        group = require_object(entry, f"irq_groups[{index}]")
+        name = require_identifier(group.get("name"), f"irq_groups[{index}].name")
+        width = group.get("width")
+        if not isinstance(width, int) or width <= 0:
+            raise ValueError(f"irq_groups[{index}].width must be a positive integer")
+        top_signal = require_identifier(
+            group.get("top_signal"), f"irq_groups[{index}].top_signal"
+        )
+        if name not in IRQ_GROUP_NAMES:
+            raise ValueError(f"irq_groups[{index}].name is not a supported interrupt group")
+        if name in names:
+            raise ValueError(f"interrupt group {name} is duplicated")
+        if top_signal in top_signals:
+            raise ValueError(f"interrupt group top signal {top_signal} is duplicated")
+        names.add(name)
+        top_signals.add(top_signal)
+        groups.append(IrqGroup(name, width, top_signal))
+    if names != set(IRQ_GROUP_NAMES):
+        missing = ", ".join(sorted(set(IRQ_GROUP_NAMES) - names))
+        raise ValueError(f"irq_groups does not cover required groups: {missing}")
+    return sorted(groups, key=lambda item: IRQ_GROUP_NAMES.index(item.name))
+
+
+def parse_interrupts(
+    value: Any, groups: list[IrqGroup], vector_width: int
+) -> list[Interrupt]:
+    if not isinstance(value, list) or not value:
+        raise ValueError("interrupts must be a non-empty list")
+    group_widths = {group.name: group.width for group in groups}
+    interrupts: list[Interrupt] = []
+    names: set[str] = set()
+    group_bits: dict[str, set[int]] = {group.name: set() for group in groups}
+    core_bits: set[int] = set()
+    for index, entry in enumerate(value):
+        interrupt = require_object(entry, f"interrupts[{index}]")
+        name = require_identifier(interrupt.get("name"), f"interrupts[{index}].name")
+        description = require_comment_text(
+            interrupt.get("description"), f"interrupts[{index}].description"
+        )
+        group = require_identifier(interrupt.get("group"), f"interrupts[{index}].group")
+        group_bit = interrupt.get("group_bit")
+        core_bit = interrupt.get("core_bit")
+        signal = require_value(interrupt.get("signal"), f"interrupts[{index}].signal")
+        if group not in group_widths:
+            raise ValueError(f"interrupts[{index}].group is not a supported interrupt group")
+        if not isinstance(group_bit, int) or not 0 <= group_bit < group_widths[group]:
+            raise ValueError(f"interrupts[{index}].group_bit is out of range")
+        if not isinstance(core_bit, int) or not 0 <= core_bit < vector_width:
+            raise ValueError(f"interrupts[{index}].core_bit is out of range")
+        if name in names:
+            raise ValueError(f"interrupt name {name} is duplicated")
+        if group_bit in group_bits[group]:
+            raise ValueError(f"interrupt group {group} bit {group_bit} is duplicated")
+        if core_bit in core_bits:
+            raise ValueError(f"core interrupt bit {core_bit} is duplicated")
+        names.add(name)
+        group_bits[group].add(group_bit)
+        core_bits.add(core_bit)
+        interrupts.append(Interrupt(name, description, group, group_bit, core_bit, signal))
+
+    for group in groups:
+        expected = set(range(group.width))
+        if group_bits[group.name] != expected:
+            missing = sorted(expected - group_bits[group.name])
+            extra = sorted(group_bits[group.name] - expected)
+            details: list[str] = []
+            if missing:
+                details.append(f"missing {', '.join(str(bit) for bit in missing)}")
+            if extra:
+                details.append(f"extra {', '.join(str(bit) for bit in extra)}")
+            raise ValueError(
+                f"interrupt group {group.name} does not cover every group bit "
+                f"({'; '.join(details)})"
+            )
+    return sorted(interrupts, key=lambda item: item.core_bit)
+
+
+def validate_compatibility_irq_bindings(interrupts: list[Interrupt]) -> None:
+    by_core_bit = {interrupt.core_bit: interrupt for interrupt in interrupts}
+    for name, group, group_bit, core_bit, signal in COMPATIBILITY_IRQ_BINDINGS:
+        interrupt = by_core_bit.get(core_bit)
+        actual = None
+        if interrupt is not None:
+            actual = (
+                interrupt.name,
+                interrupt.group,
+                interrupt.group_bit,
+                interrupt.core_bit,
+                interrupt.signal,
+            )
+        expected = (name, group, group_bit, core_bit, signal)
+        if actual != expected:
+            raise ValueError(
+                f"core interrupt bit {core_bit} must retain its compatibility binding"
+            )
+
+
 def read_topology(
     topology_path: Path, memory_map_path: Path, ip: str
-) -> tuple[list[NativeTarget], list[ApbTarget], list[FabricLink], list[GpioFunction]]:
+) -> tuple[
+    list[NativeTarget],
+    list[ApbTarget],
+    list[FabricLink],
+    list[GpioFunction],
+    int,
+    list[IrqGroup],
+    list[Interrupt],
+]:
     document = require_object(json.loads(topology_path.read_text(encoding="utf-8")), "topology")
     if document.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
     gpio_pins = document.get("gpio_pins")
     if not isinstance(gpio_pins, int) or gpio_pins <= 0:
         raise ValueError("gpio_pins must be a positive integer")
+    irq_vector_width = document.get("irq_vector_width")
+    if irq_vector_width != IRQ_VECTOR_WIDTH:
+        raise ValueError(f"irq_vector_width must be {IRQ_VECTOR_WIDTH}")
     memory_regions = read_memory_regions(memory_map_path)
+    irq_groups = parse_irq_groups(document.get("irq_groups"))
+    interrupts = parse_interrupts(document.get("interrupts"), irq_groups, irq_vector_width)
+    validate_compatibility_irq_bindings(interrupts)
     return (
         parse_native_targets(document.get("native_targets"), memory_regions),
         parse_apb_targets(document.get("apb_targets"), memory_regions, ip),
         parse_fabric_links(document.get("fabric_links")),
         parse_gpio_functions(document.get("gpio_alt_functions"), gpio_pins),
+        irq_vector_width,
+        irq_groups,
+        interrupts,
     )
 
 
@@ -600,8 +766,117 @@ def render_gpio_bindings(functions: list[GpioFunction]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def irq_width_macro(group: IrqGroup) -> str:
+    return f"SOC_IRQ_{group.name.upper()}_WIDTH"
+
+
+def render_irq_config(vector_width: int, groups: list[IrqGroup]) -> str:
+    lines = [
+        "// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit.",
+        "`ifndef RETROSOC_SOC_IRQ_CONFIG_SVH",
+        "`define RETROSOC_SOC_IRQ_CONFIG_SVH",
+        "",
+        f"`define SOC_IRQ_VECTOR_WIDTH {vector_width}",
+    ]
+    lines.extend(f"`define {irq_width_macro(group)} {group.width}" for group in groups)
+    lines.extend(["", "`endif"])
+    return "\n".join(lines) + "\n"
+
+
+def render_irq_group_bindings(group: IrqGroup, interrupts: list[Interrupt]) -> str:
+    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    for interrupt in interrupts:
+        if interrupt.group != group.name:
+            continue
+        lines.extend(
+            [
+                f"  // Core IRQ {interrupt.core_bit}: {interrupt.name} ({interrupt.description}).",
+                f"  assign irq_o[{interrupt.group_bit}] = {interrupt.signal};",
+            ]
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_irq_wiring(
+    vector_width: int, groups: list[IrqGroup], interrupts: list[Interrupt]
+) -> str:
+    group_signals = {group.name: group.top_signal for group in groups}
+    lines = [
+        "// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit.",
+        "  always_comb begin",
+        "    s_irq = '0;",
+    ]
+    for interrupt in interrupts:
+        lines.extend(
+            [
+                f"    // {interrupt.name}: {interrupt.description}",
+                f"    s_irq[{interrupt.core_bit}] = {group_signals[interrupt.group]}[{interrupt.group_bit}];",
+            ]
+        )
+    lines.extend(["  end", ""])
+    return "\n".join(lines)
+
+
+def render_irq_sva(vector_width: int, groups: list[IrqGroup], interrupts: list[Interrupt]) -> str:
+    group_signals = {group.name: group.top_signal for group in groups}
+    lines = [
+        "// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit.",
+        '`include "soc_irq_config.svh"',
+        "",
+        "module soc_irq_topology_sva (",
+        "    input logic                         clk_i,",
+        "    input logic                         rst_n_i,",
+        "    input logic [`SOC_IRQ_VECTOR_WIDTH-1:0] irq_i,",
+    ]
+    lines.extend(
+        f"    input logic [`{irq_width_macro(group)}-1:0] {group.name}_irq_i,"
+        for group in groups
+    )
+    lines[-1] = lines[-1].removesuffix(",")
+    lines.extend([");", ""])
+    for interrupt in interrupts:
+        lines.extend(
+            [
+                f"  // Core IRQ {interrupt.core_bit} remains bound to {interrupt.name}.",
+                "  assert property (@(posedge clk_i) disable iff (!rst_n_i)",
+                f"      irq_i[{interrupt.core_bit}] == {interrupt.group}_irq_i[{interrupt.group_bit}]);",
+            ]
+        )
+    used_core_bits = {interrupt.core_bit for interrupt in interrupts}
+    for core_bit in range(vector_width):
+        if core_bit not in used_core_bits:
+            lines.extend(
+                [
+                    f"  // Unallocated core IRQ {core_bit} must remain inactive.",
+                    "  assert property (@(posedge clk_i) disable iff (!rst_n_i)",
+                    f"      irq_i[{core_bit}] == 1'b0);",
+                ]
+            )
+    lines.extend(["", "endmodule", "", "bind retrosoc soc_irq_topology_sva u_soc_irq_topology_sva ("])
+    lines.extend(
+        [
+            "    .clk_i(clk_i),",
+            "    .rst_n_i(rst_n_i),",
+            "    .irq_i(s_irq),",
+        ]
+    )
+    for index, group in enumerate(groups):
+        separator = "," if index != len(groups) - 1 else ""
+        lines.append(f"    .{group.name}_irq_i({group_signals[group.name]}){separator}")
+    lines.append(");")
+    return "\n".join(lines) + "\n"
+
+
 def generate(topology_path: Path, memory_map_path: Path, output_dir: Path, ip: str) -> None:
-    targets, apb_targets, fabric_links, gpio_functions = read_topology(
+    (
+        targets,
+        apb_targets,
+        fabric_links,
+        gpio_functions,
+        irq_vector_width,
+        irq_groups,
+        interrupts,
+    ) = read_topology(
         topology_path, memory_map_path, ip
     )
     memory_regions = read_memory_regions(memory_map_path)
@@ -632,6 +907,20 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path, ip: s
         render_fabric_connection(fabric_links, "apb", "nmi"),
     )
     atomic_write(rtl_dir / "soc_gpio_alt_bindings.svh", render_gpio_bindings(gpio_functions))
+    atomic_write(rtl_dir / "soc_irq_config.svh", render_irq_config(irq_vector_width, irq_groups))
+    for group in irq_groups:
+        atomic_write(
+            rtl_dir / f"soc_{group.name}_irq_bindings.svh",
+            render_irq_group_bindings(group, interrupts),
+        )
+    atomic_write(
+        rtl_dir / "soc_irq_wiring.svh",
+        render_irq_wiring(irq_vector_width, irq_groups, interrupts),
+    )
+    atomic_write(
+        rtl_dir / "soc_irq_sva.svh",
+        render_irq_sva(irq_vector_width, irq_groups, interrupts),
+    )
     atomic_write(output_dir / "soc_topology.fl", f"+incdir+{rtl_dir}\n")
 
 

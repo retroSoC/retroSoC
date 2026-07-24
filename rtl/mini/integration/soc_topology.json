@@ -1,6 +1,30 @@
 {
   "schema_version": 1,
   "gpio_pins": 32,
+  "irq_vector_width": 32,
+  "irq_groups": [
+    {"name": "nmi", "width": 10, "top_signal": "s_nmi_irq"},
+    {"name": "apb", "width": 7, "top_signal": "s_apb_irq"}
+  ],
+  "interrupts": [
+    {"name": "clint_software", "description": "CLINT machine software interrupt", "group": "nmi", "group_bit": 0, "core_bit": 0, "signal": "u_clint_if.sfr_irq_o"},
+    {"name": "clint_timer", "description": "CLINT machine timer interrupt", "group": "nmi", "group_bit": 1, "core_bit": 1, "signal": "u_clint_if.tmr_irq_o"},
+    {"name": "uart0", "description": "Native UART0 interrupt", "group": "nmi", "group_bit": 2, "core_bit": 2, "signal": "uart.irq_o"},
+    {"name": "timer0", "description": "Native timer0 interrupt", "group": "nmi", "group_bit": 3, "core_bit": 3, "signal": "s_tim0_irq"},
+    {"name": "timer1", "description": "Native timer1 interrupt", "group": "nmi", "group_bit": 4, "core_bit": 4, "signal": "s_tim1_irq"},
+    {"name": "psram", "description": "PSRAM controller interrupt", "group": "nmi", "group_bit": 5, "core_bit": 5, "signal": "psram.irq_o"},
+    {"name": "spisd", "description": "SPI SD controller interrupt", "group": "nmi", "group_bit": 6, "core_bit": 6, "signal": "spisd.irq_o"},
+    {"name": "i2c0", "description": "Native I2C0 interrupt", "group": "nmi", "group_bit": 7, "core_bit": 7, "signal": "i2c0.irq_o"},
+    {"name": "i2s", "description": "Native I2S interrupt", "group": "nmi", "group_bit": 8, "core_bit": 8, "signal": "i2s.irq_o"},
+    {"name": "xpi", "description": "XPI controller interrupt", "group": "nmi", "group_bit": 9, "core_bit": 9, "signal": "xpi.irq_o"},
+    {"name": "uart1", "description": "APB UART1 interrupt", "group": "apb", "group_bit": 0, "core_bit": 10, "signal": "uart.irq_o"},
+    {"name": "pwm", "description": "APB PWM interrupt", "group": "apb", "group_bit": 1, "core_bit": 11, "signal": "pwm.irq_o"},
+    {"name": "ps2", "description": "APB PS2 interrupt", "group": "apb", "group_bit": 2, "core_bit": 12, "signal": "ps2.irq_o"},
+    {"name": "rtc", "description": "APB RTC interrupt", "group": "apb", "group_bit": 3, "core_bit": 13, "signal": "u_rtc_if.irq_o"},
+    {"name": "watchdog_reset", "description": "APB watchdog reset request", "group": "apb", "group_bit": 4, "core_bit": 14, "signal": "u_wdg_if.rst_o"},
+    {"name": "advanced_timer", "description": "APB advanced timer interrupt", "group": "apb", "group_bit": 5, "core_bit": 15, "signal": "u_tmr_if.irq_o"},
+    {"name": "reserved", "description": "Reserved interrupt slot", "group": "apb", "group_bit": 6, "core_bit": 16, "signal": "1'b0"}
+  ],
   "native_targets": [
     {"slot": 0, "name": "uart0", "interface": "u_uart_nmi_if", "regions": ["NMI_UART0"]},
     {"slot": 1, "name": "gpio", "interface": "u_gpio_nmi_if", "regions": ["NMI_GPIO"]},

@@ -13,6 +13,7 @@
 `include "pwm_define.svh"
 `include "ps2_define.svh"
 `include "mdd_config.svh"
+`include "soc_irq_config.svh"
 
 module ip_apb_wrapper (
     // verilog_format: off
@@ -29,7 +30,7 @@ module ip_apb_wrapper (
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
     user_gpio_if.user_ip                user_gpio,
 `endif
-    output logic [ 6:0]                 irq_o
+    output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
 
@@ -60,16 +61,10 @@ module ip_apb_wrapper (
   apb4_tmr                     u_apb4_tmr      (u_tmr_apb_if, u_tmr_if);
   // verilog_format: on
 
-  // handle irq signals
-  assign irq_o[0] = uart.irq_o;
-  assign irq_o[1] = pwm.irq_o;
-  assign irq_o[2] = ps2.irq_o;
-  assign irq_o[3] = u_rtc_if.irq_o;
-  assign irq_o[4] = u_wdg_if.rst_o;
-  assign irq_o[5] = u_tmr_if.irq_o;
-  assign irq_o[6] = 1'b0;
+  // Generated IRQ ownership and core-vector bit assignments are topology checked.
+  `include "soc_apb_irq_bindings.svh"
 
-  nmi2apb u_nmi2apb (
+nmi2apb u_nmi2apb (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .nmi    (nmi),

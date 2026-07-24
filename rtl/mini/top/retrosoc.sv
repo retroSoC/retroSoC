@@ -10,6 +10,7 @@
 
 `include "mmap_define.svh"
 `include "mdd_config.svh"
+`include "soc_irq_config.svh"
 
 module retrosoc (
     // verilog_format: off
@@ -53,14 +54,14 @@ module retrosoc (
   ps2_if      u_ps2_if      ();
   // verilog_format: on
 
-  logic        s_tmr_capch;
-  logic [31:0] s_irq;
-  logic [ 9:0] s_nmi_irq;
-  logic [ 6:0] s_apb_irq;
-  logic        s_bus_fault_valid;
-  logic [31:0] s_bus_fault_addr;
-  logic [ 3:0] s_bus_fault_wstrb;
-  logic        s_bus_fault_reserved;
+  logic                             s_tmr_capch;
+  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
+  logic [   `SOC_IRQ_NMI_WIDTH-1:0] s_nmi_irq;
+  logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
+  logic                             s_bus_fault_valid;
+  logic [                     31:0] s_bus_fault_addr;
+  logic [                      3:0] s_bus_fault_wstrb;
+  logic                             s_bus_fault_reserved;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
@@ -78,9 +79,8 @@ module retrosoc (
   assign u_sysctrl_if.core_sel_i = '0;
 `endif
 
-  assign s_irq[9:0]   = s_nmi_irq;
-  assign s_irq[16:10] = s_apb_irq;
-  assign s_irq[31:17] = 15'd0;
+  // Generated IRQ vector wiring defaults all unallocated core IRQ bits low.
+  `include "soc_irq_wiring.svh"
 
   // Generated GPIO alternate-function wiring is checked against soc_topology.json.
   `include "soc_gpio_alt_bindings.svh"

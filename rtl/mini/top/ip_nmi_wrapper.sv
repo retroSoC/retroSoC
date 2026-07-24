@@ -9,6 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
+`include "soc_irq_config.svh"
 
 module ip_nmi_wrapper (
     // verilog_format: off
@@ -38,7 +39,7 @@ module ip_nmi_wrapper (
     input logic [31:0] fault_addr_i,
     input logic [3:0]  fault_wstrb_i,
     input logic        fault_reserved_i,
-    output logic [9:0] irq_o
+    output logic [`SOC_IRQ_NMI_WIDTH-1:0] irq_o
     // verilog_format: on
 );
 
@@ -61,18 +62,10 @@ simp_clint_if u_clint_if ();
   // Uses ClusterIP common nmi_if and register.sv dffr through generated bindings.
   `include "soc_nmi_routes.svh"
 
-  assign irq_o[0] = u_clint_if.sfr_irq_o;
-  assign irq_o[1] = u_clint_if.tmr_irq_o;
-  assign irq_o[2] = uart.irq_o;
-  assign irq_o[3] = s_tim0_irq;
-  assign irq_o[4] = s_tim1_irq;
-  assign irq_o[5] = psram.irq_o;
-  assign irq_o[6] = spisd.irq_o;
-  assign irq_o[7] = i2c0.irq_o;
-  assign irq_o[8] = i2s.irq_o;
-  assign irq_o[9] = xpi.irq_o;
+  // Generated IRQ ownership and core-vector bit assignments are topology checked.
+  `include "soc_nmi_irq_bindings.svh"
 
-  nmi_gpio u_nmi_gpio (
+nmi_gpio u_nmi_gpio (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
       .nmi      (u_gpio_nmi_if),

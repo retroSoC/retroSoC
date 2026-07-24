@@ -148,6 +148,8 @@ bind nmi_gpio soc_gpio_user_handoff_sva #(
     .gpio_do_i     (gpio.do_o)
 );
 `endif
+
+`include "soc_irq_sva.svh"
 `endif
 
 `endif
