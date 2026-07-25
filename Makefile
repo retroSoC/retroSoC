@@ -30,6 +30,7 @@ HAVE_SRAM_IF    ?= NO
 HAVE_SRAM_MACRO ?= NO
 HAVE_SVA        ?= NO
 WAVE            ?= NO
+FORMAL          ?= NO
 
 RTL_SIM_CORESEL    ?= 0
 RTL_SIM_TIMEOUT    ?= -1
@@ -111,6 +112,7 @@ $(call validate_value,HAVE_SRAM_IF,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
+$(call validate_value,FORMAL,$(VALID_BOOL))
 $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
@@ -157,6 +159,7 @@ ifeq ($(SYNTH), YOSYS)
 endif
 
 include rtl/mini/Makefile
+include rtl/mini/mk/formal.mk
 
 ifeq ($(SYNTH), YOSYS)
 include syn/yosys/yosys.mk
@@ -171,7 +174,8 @@ endif
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
-	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint
+	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
+	formal formal-bus formal-nmi2apb formal-clean formal-doctor
 .NOTPARALLEL: setup
 
 help:
@@ -196,6 +200,8 @@ help:
 	  '  check-user-extensions      validate the canonical user-extension map' \
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
+	  '  formal | formal-bus | formal-nmi2apb prove Bus/NMI2APB protocol properties with SBY' \
+	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
@@ -221,7 +227,7 @@ config:
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
 	  SOC '$(SOC)' CORE '$(CORE)' IP '$(IP)' \
-	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' PDK '$(PDK)' \
+	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' HAVE_SVA '$(HAVE_SVA)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
@@ -230,7 +236,7 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --core $(CORE) --ip $(IP) --lock $(LOCK_FILE)
+	  --pdk $(PDK) --core $(CORE) --ip $(IP) --formal $(FORMAL) --lock $(LOCK_FILE)
 
 setup: setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app
 

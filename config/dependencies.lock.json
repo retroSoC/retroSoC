@@ -127,6 +127,20 @@
         "archive": "yosys-v0.58-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
       },
+      "sby": {
+        "version": "0.67",
+        "url": "https://github.com/retroSoC/artifact/releases/download/sby-v0.67/sby-v0.67-ubuntu-22.04.tar.gz",
+        "sha256": "f97053fa43d01e9e343fd459e9a42424d31277204f2b0f19f00bbead657a7e3a",
+        "archive": "sby-v0.67-ubuntu-22.04.tar.gz",
+        "path": "bin"
+      },
+      "bitwuzla": {
+        "version": "0.9.1",
+        "url": "https://github.com/retroSoC/artifact/releases/download/bitwuzla-0.9.1/bitwuzla-0.9.1-ubuntu-22.04-gcc.tar.gz",
+        "sha256": "1f4a4c3f173ebb398628a033a867e0370694151223f2761eaaf9cba9e83ff996",
+        "archive": "bitwuzla-0.9.1-ubuntu-22.04-gcc.tar.gz",
+        "path": "bin"
+      },
       "opensta": {
         "version": "2.2.0-1767-ga93b51ec",
         "url": "https://github.com/retroSoC/artifact/releases/download/opensta-v2.2.0-1767-ga93b51ec/opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz",

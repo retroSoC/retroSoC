@@ -35,6 +35,11 @@ on:
         required: false
         default: true
         type: boolean
+      formal_checks:
+        description: Run SBY-managed Yosys, sv2v, and Bitwuzla protocol proofs before the suite
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -122,6 +127,12 @@ jobs:
           make CONFIG=${{ inputs.profile }} \
             SIMU=IVERILOG SYNTH=NONE STA=OPENSTA doctor
 
+      - name: Check formal environment
+        if: inputs.formal_checks
+        run: |
+          make CONFIG=${{ inputs.profile }} formal-doctor
+          make CONFIG=${{ inputs.profile }} formal
+
       - name: Run ${{ inputs.suite }} regression
         run: python3 scripts/regress.py --root . --suite "${{ inputs.suite }}" --pdk "${{ inputs.pdk }}"
 
@@ -132,6 +143,11 @@ jobs:
           name: ${{ inputs.suite }}-regression-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             build/**/meta/*.json
+            build/**/formal/**/*.sby
+            build/**/formal/**/*.smt2
+            build/**/formal/**/*.vcd
+            build/**/formal/**/*.yw
+            build/**/formal/**/status
             build/**/*.log
             build/**/*.rpt
           if-no-files-found: warn

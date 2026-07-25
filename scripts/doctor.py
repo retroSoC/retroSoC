@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pdk", required=True)
     parser.add_argument("--core", required=True)
     parser.add_argument("--ip", required=True)
+    parser.add_argument("--formal", choices=("YES", "NO"), default="NO")
     parser.add_argument("--lock", type=Path, default=DEFAULT_LOCK)
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--output", type=Path)
@@ -65,6 +66,8 @@ def main() -> int:
         tools.append("yosys")
     if args.sta == "OPENSTA":
         tools.append("sta")
+    if args.formal == "YES":
+        tools.extend(("sby", "yosys", "yosys-smtbmc", "sv2v", "bitwuzla"))
 
     source_names = ["mpw", "cluster_common", "third_party_ip"]
     pdk_names = {
@@ -75,9 +78,7 @@ def main() -> int:
     }
     if args.pdk in pdk_names:
         source_names.append(pdk_names[args.pdk])
-    paths = {
-        name: root / lock["sources"][name]["destination"] for name in source_names
-    }
+    paths = {name: root / lock["sources"][name]["destination"] for name in source_names}
     tool_results = {
         tool: {"path": shutil.which(tool), "version": version(tool)}
         for tool in dict.fromkeys(tools)
@@ -108,7 +109,11 @@ def main() -> int:
         for name, value in path_results.items():
             suffix = "[ok]" if value["exists"] else "[MISSING]"
             print(f"  {name:<28} {value['path']} {suffix}")
-        print("doctor: all selected requirements are available" if not failures else f"doctor found {failures} missing requirement(s)")
+        print(
+            "doctor: all selected requirements are available"
+            if not failures
+            else f"doctor found {failures} missing requirement(s)"
+        )
     return int(failures != 0)
 
 

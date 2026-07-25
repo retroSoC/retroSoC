@@ -16,11 +16,16 @@ from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 FILELIST_SCRIPT_DIR = ROOT / "rtl/mini/script"
+FORMAL_SCRIPT_DIR = ROOT / "rtl/mini/formal"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(FILELIST_SCRIPT_DIR))
+sys.path.insert(0, str(FORMAL_SCRIPT_DIR))
 
 from filelist import atomic_write, parse_filelists, write_filelist  # noqa: E402
 from generate_filelist import generate_all  # noqa: E402
+from generate_formal_filelist import generate as generate_formal_filelist  # noqa: E402
+from generate_sby_config import render as render_sby_config  # noqa: E402
+from scripts.bitwuzla_smt2 import translate_arguments  # noqa: E402
 from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
@@ -98,6 +103,75 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
+
+
+def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> None:
+    memory_map = tmp_path / "memory_map"
+    topology = tmp_path / "soc_topology"
+    (memory_map / "rtl").mkdir(parents=True)
+    (topology / "rtl").mkdir(parents=True)
+
+    bus_filelist = tmp_path / "bus.fl"
+    nmi2apb_filelist = tmp_path / "nmi2apb.fl"
+    assert generate_formal_filelist("bus", bus_filelist, memory_map, topology)
+    assert generate_formal_filelist("nmi2apb", nmi2apb_filelist, memory_map, topology)
+
+    bus = parse_filelists([bus_filelist])
+    nmi2apb = parse_filelists([nmi2apb_filelist])
+    assert "+define+SV_ASSRT_DISABLE" in bus.defines
+    assert ROOT / "rtl/mini/top/bus.sv" in bus.files
+    assert ROOT / "rtl/ip/native/interconnect/nmi_regslice.sv" in bus.files
+    assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
+    assert ROOT / "rtl/ip/native/interconnect/nmi2apb.sv" in nmi2apb.files
+    assert ROOT / "rtl/mini/formal/nmi2apb_formal.sv" in nmi2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in nmi2apb.files
+
+
+def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
+    design = tmp_path / "design.v"
+    properties = tmp_path / "properties.v"
+    prove_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "prove", 20)
+    cover_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "cover", 20)
+
+    assert "mode prove" in prove_config
+    assert "mode cover" in cover_config
+    assert "depth 20" in prove_config
+    assert "smtbmc --presat --nounroll bitwuzla" in prove_config
+    assert f"design.v {design.resolve()}" in prove_config
+    assert f"properties.v {properties.resolve()}" in prove_config
+
+
+def test_bitwuzla_wrapper_translates_yosys_legacy_arguments() -> None:
+    assert translate_arguments(["--smt2", "-i", "--seed=1"]) == ["--lang", "smt2", "--seed=1"]
+
+
+def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
+    for proof in ("bus", "nmi2apb"):
+        directory = tmp_path / proof
+        directory.mkdir()
+        for step in ("sv2v", "prove", "cover"):
+            (directory / f"result-{step}.json").write_text(
+                json.dumps({"status": "passed", "tool": f"formal-{step}"}),
+                encoding="utf-8",
+            )
+        for step in ("prove", "cover"):
+            (directory / step).mkdir()
+            (directory / step / "status").write_text("PASS 0 1\n", encoding="utf-8")
+
+    output = tmp_path / "formal.json"
+    run(
+        sys.executable,
+        str(ROOT / "rtl/mini/formal/formal_results.py"),
+        "--output",
+        str(output),
+        "--proof",
+        f"bus={tmp_path / 'bus'}",
+        "--proof",
+        f"nmi2apb={tmp_path / 'nmi2apb'}",
+    )
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["status"] == "passed"
+    assert set(result["proofs"]) == {"bus", "nmi2apb"}
 
 
 def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
