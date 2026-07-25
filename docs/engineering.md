@@ -4,10 +4,10 @@
 
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
-| Smoke | `configs/ci/hazard3-rv32im-ihp130.mk` | firmware, Verilator SVA compilation, Icarus assembly self-test |
-| Pull request | `configs/ci/hazard3-rv32im-ihp130.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/hazard3-rv32im-gf180.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/hazard3-rv32im-sky130.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Smoke | `configs/ci/hazard3-rv32im-ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
+| Pull request | `configs/ci/hazard3-rv32im-ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/hazard3-rv32im-gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/hazard3-rv32im-sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Pull request | `configs/ci/mdd-rv32im-ihp130.mk` | firmware and Verilator |
 | Nightly | `configs/nightly/picorv32-rv32im-ihp130.mk` | firmware, Verilator, and Icarus |
 | Cluster | `configs/cluster/hazard3-ics55.mk` | configuration only; run with site PDK/tool access |

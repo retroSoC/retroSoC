@@ -171,7 +171,7 @@ endif
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
-	check-clock-reset-domains tech-cell-test
+	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint
 .NOTPARALLEL: setup
 
 help:
@@ -195,6 +195,7 @@ help:
 	  '  user-extensions            generate the selected scalar user-extension bindings' \
 	  '  check-user-extensions      validate the canonical user-extension map' \
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
+	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \

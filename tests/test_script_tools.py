@@ -31,6 +31,7 @@ from scripts.regress import (  # noqa: E402
     NIGHTLY_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
+    RTL_LINT_VALUES,
     SMOKE_COMMANDS,
     pdk_pr_commands,
     regression_environment,
@@ -296,9 +297,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     lock = load_lock(ROOT / "config/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
-    assert lock["sources"]["pdk_sky130"]["submodules"] == [
-        "libraries/sky130_fd_sc_hd/latest"
-    ]
+    assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
 
     command = (
         sys.executable,
@@ -360,7 +359,10 @@ def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
 
 def test_verilator_simulations_use_uniform_timeout() -> None:
     verilator_makefile = ROOT / "rtl/mini/mk/verilator.mk"
-    assert "SOC_SIM_TIME            ?= 180" in verilator_makefile.read_text(encoding="utf-8")
+    verilator_source = verilator_makefile.read_text(encoding="utf-8")
+    assert "SOC_SIM_TIME            ?= 180" in verilator_source
+    assert "RTL_LINT_FLAGS := --lint-only --no-timing" in verilator_source
+    assert "--assert --Wall" in verilator_source
 
     regression_commands = (*SMOKE_COMMANDS, *PR_COMMANDS, *NIGHTLY_COMMANDS)
     for _, values in regression_commands:
@@ -375,12 +377,12 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     assert commands == SMOKE_COMMANDS
     assert profiles == ()
     command_values = [values for _, values in commands]
+    assert command_values[0] == RTL_LINT_VALUES
     assert ("firmware",) in command_values
     assert ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp") in command_values
     assert ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm") in command_values
     assert not any(
-        "synth" in values or "sta" in values or "netsim" in values
-        for values in command_values
+        "synth" in values or "sta" in values or "netsim" in values for values in command_values
     )
 
     dry_run = run(
@@ -421,12 +423,83 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
     for profile in PDK_PR_PROFILES.values():
         commands = pdk_pr_commands(profile)
         command_values = [values for _, values in commands]
+        assert command_values[0] == RTL_LINT_VALUES
         assert ("firmware",) in command_values
         assert any("SIMU=VERILATOR" in values and "firmware" in values for values in command_values)
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert ("STA=OPENSTA", "sta") in command_values
         assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
+
+
+def test_rtl_lint_warning_baseline_is_independent(tmp_path: Path) -> None:
+    profile = "unit-profile"
+    lint_log = tmp_path / "variant/lint/verilator/lint.log"
+    lint_log.parent.mkdir(parents=True)
+    lint_log.write_text(
+        f"%Warning-WIDTH: {tmp_path}/rtl/top.sv:12: width mismatch\n",
+        encoding="utf-8",
+    )
+    baseline = tmp_path / f"quality/warnings/{profile}/rtl-lint.json"
+    run(
+        sys.executable,
+        str(ROOT / "scripts/analyze_warnings.py"),
+        "baseline",
+        "--root",
+        str(tmp_path),
+        "--profile",
+        profile,
+        "--tool",
+        "rtl-lint",
+        "--log",
+        str(lint_log),
+        "--output",
+        str(baseline),
+    )
+    report = tmp_path / "rtl-lint-warnings.json"
+    run(
+        sys.executable,
+        str(ROOT / "scripts/analyze_warnings.py"),
+        "check",
+        "--root",
+        str(tmp_path),
+        "--profile",
+        profile,
+        "--variant-root",
+        str(tmp_path / "variant"),
+        "--tool",
+        "rtl-lint",
+        "--output",
+        str(report),
+    )
+    assert json.loads(report.read_text(encoding="utf-8"))["status"] == "passed"
+
+    lint_log.write_text(
+        lint_log.read_text(encoding="utf-8")
+        + f"%Warning-UNUSED: {tmp_path}/rtl/top.sv:20: unused signal\n",
+        encoding="utf-8",
+    )
+    failed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/analyze_warnings.py"),
+            "check",
+            "--root",
+            str(tmp_path),
+            "--profile",
+            profile,
+            "--variant-root",
+            str(tmp_path / "variant"),
+            "--tool",
+            "rtl-lint",
+            "--output",
+            str(report),
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert failed.returncode != 0
+    assert json.loads(report.read_text(encoding="utf-8"))["failed_tools"] == ["rtl-lint"]
 
 
 def test_run_flow_writes_structured_result(tmp_path: Path) -> None:

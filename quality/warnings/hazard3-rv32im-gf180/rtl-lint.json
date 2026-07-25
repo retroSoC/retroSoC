@@ -1,0 +1,3022 @@
+{
+  "entries": [
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MULDIV_UNROLL'",
+      "signature": "000fbb263fb6f0cf"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'EXTENSION_ZBKC'",
+      "signature": "002c63eb2fa86403"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq15_io_pad'",
+      "signature": "0085cff8b584a52c"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'fence_i_vld'",
+      "signature": "009283cffcc61152"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_wr'",
+      "signature": "00a973459de28d6c"
+    },
+    {
+      "count": 1,
+      "example": "UNSIGNED:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Comparison is constant due to unsigned arithmetic",
+      "signature": "010491867f065cec"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/apb4_if.sv:<line>: Bits of signal are not used: 'paddr'[31:6,1:0]",
+      "signature": "0167c36768ae8fd4"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/utils/lfsr.sv:<line>: Filename 'lfsr' does not match MODULE name: 'lfsr_galois'",
+      "signature": "01c46f4bd15fd09d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ANDN'",
+      "signature": "01f337489dbf4dbb"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER25H'",
+      "signature": "0205608b6f934478"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT8'",
+      "signature": "026c0da571e71d5a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CPOP'",
+      "signature": "02dcf5e62b6e3f2f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_src_addr'",
+      "signature": "03612354c5ca0ec2"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT27'",
+      "signature": "0367679bcec778e0"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr11_o_pad'",
+      "signature": "03e06a9c58922131"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_9_io_pad'",
+      "signature": "04623a00dbe6e6aa"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'clk_en'",
+      "signature": "04d0a541fa4d59e1"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'hmaster'",
+      "signature": "05ae8a0f451bcd55"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/ps2/rtl/apb4_ps2.sv:<line>: Instance pin connected by name with empty reference: 'cnt_o'",
+      "signature": "06196c17d5f6490d"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Filename 'sdio' does not match IFACE name: 'sdio_if'",
+      "signature": "067021db5f45ba93"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SC_W'",
+      "signature": "06850f92da6fe987"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_LT'",
+      "signature": "06861df0045ed34a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT7'",
+      "signature": "06bc4952ad7ac951"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Bits of signal are not used: 's_xpi_mm_addr'[31:24]",
+      "signature": "06c16eec7d30d178"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/onewire.sv:<line>: Filename 'onewire' does not match IFACE name: 'onewire_if'",
+      "signature": "07371526750624ad"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_pmp_i_m_mode'",
+      "signature": "07d77525db138885"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'PRE_CHARGE_ALL'",
+      "signature": "07ea1319dbfa4709"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_REM'",
+      "signature": "0803ec15fd84a554"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER19'",
+      "signature": "08be18f77297cd1a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/crc/rtl/apb4_crc.sv:<line>: Signal is not driven, nor used: 's_crc_stat_en'",
+      "signature": "092fb17faa08b69c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_GRAIN'",
+      "signature": "094fc49f29ec512e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCONTEXT'",
+      "signature": "09674d10d7a91db6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'INSTRETH'",
+      "signature": "0a31569498745ec9"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_10_io_pad'",
+      "signature": "0ae233839a6211b2"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_13_io_pad'",
+      "signature": "0b156cf0a74776d8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/crc/rtl/apb4_crc.sv:<line>: Signal is not used: 's_bit_done'",
+      "signature": "0b902e996255b2e6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_target_addr'",
+      "signature": "0bcf88ea3d097106"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBKX'",
+      "signature": "0c60ea4fc09e3bce"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_cke_o_pad'",
+      "signature": "0ca15e2c821a8918"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'ovf_o'",
+      "signature": "0cd6ad0666cb4214"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
+      "signature": "0d06be595a08493b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_PACK'",
+      "signature": "0d11a19bca960201"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_15_io_pad'",
+      "signature": "0d25f4003bf6a215"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER24'",
+      "signature": "0db22af1f958ab62"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'CSR_M_MANDATORY'",
+      "signature": "0db9317fdfc322be"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq4_io_pad'",
+      "signature": "0e992c4e5771adce"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MCONFIGPTR_VAL'",
+      "signature": "0f67b26a541e6bbb"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3PMPM'",
+      "signature": "0fbca4196b735d31"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_ebreak'",
+      "signature": "1003bf751df8b9b9"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq13_io_pad'",
+      "signature": "100dec5a73c6be34"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER27H'",
+      "signature": "107d119265ce8e47"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_cs_n_o_pad'",
+      "signature": "10a9fd41de5394dd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER17'",
+      "signature": "114c9ea59ae86cbc"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MVENDORID_VAL'",
+      "signature": "128fdd0c8951eb2c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SHXADD'",
+      "signature": "1295dd129dd0c4b9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MIN'",
+      "signature": "12c29703d5b9d9c2"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq6_io_pad'",
+      "signature": "1330a5a5caa006fd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg_pkg.sv:<line>: Parameter is not used: 'ARCHINFO_IDH_ADDR'",
+      "signature": "1510a46d72b53794"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'dummy1'",
+      "signature": "1527ad15fac45ac0"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq8_io_pad'",
+      "signature": "15cbdbe962b43a28"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr0_o_pad'",
+      "signature": "16c77af886d80afe"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER27'",
+      "signature": "16e051bd3c337682"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_M'",
+      "signature": "1734fccc27a4b3bd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBB'",
+      "signature": "179127d1040c2955"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/uart/rtl/apb4_uart.sv:<line>: Signal is not used: 's_tx_push_ready'",
+      "signature": "180e0d114ef963d3"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR10'",
+      "signature": "18192774e79c45aa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER4'",
+      "signature": "1856e69276d2e085"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
+      "signature": "18dc57d578bf4b27"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'xpi_nss3_o_pad'",
+      "signature": "1906e34634cd1781"
+    },
+    {
+      "count": 3,
+      "example": "BLKSEQ:$ROOT/rtl/mini/dv/model/ESP_PSRAM64H.sv:<line>: Blocking assignment '=' in sequential logic process",
+      "signature": "193913def90badff"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/tech/gf180_seq_sim_cells.v:<line>: Filename 'gf180_seq_sim_cells' does not match MODULE name: 'gf180mcu_fd_sc_mcu7t5v0__dffq_1'",
+      "signature": "1965dcf5148ae0a5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT18'",
+      "signature": "198fa399891fc479"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_28_io_pad'",
+      "signature": "1a98ef9f57ed19a3"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_DIV'",
+      "signature": "1aa0ba744c7eade4"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT31'",
+      "signature": "1c01d149fa8e74b6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set'",
+      "signature": "1c1076b216369375"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/i2c/rtl/i2c_if.sv:<line>: Signal is not used: 'scl_i'",
+      "signature": "1c34583186130058"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr7_o_pad'",
+      "signature": "1ca03de09b0759a2"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SH'",
+      "signature": "1cbefa831435a7b8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT19'",
+      "signature": "1e18b6d3a54dddee"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
+      "signature": "1e835069bdd38609"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'CSR_COUNTER'",
+      "signature": "1f2f5a4caf5d3298"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_INSTR_ILLEGAL'",
+      "signature": "1f5d5a40b15e2c84"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'fd_cir_raw'",
+      "signature": "1fabd6a5204b6190"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_TRANS_SEQ'",
+      "signature": "2033cc92c7606f78"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'CSR_M_TRAP'",
+      "signature": "20a41f993661fb6f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_trigger_m_mode'",
+      "signature": "20f91e314a3fd132"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_wait'",
+      "signature": "2146d183f055e30e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_REMU'",
+      "signature": "2192b1007d928a34"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/mini/dv/sva/soc_protocol_sva.sv:<line>: Filename 'soc_protocol_sva' does not match MODULE name: 'soc_bus_sva'",
+      "signature": "21d1a7e0c5321740"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_ECALL_U'",
+      "signature": "2253ea5dd4037c02"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_27_io_pad'",
+      "signature": "22904cb738c777b2"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIDELEG'",
+      "signature": "22b2c96b9da7f838"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_err'",
+      "signature": "23b56d05c034f924"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG1'",
+      "signature": "23c6339c62d96319"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_wdata'",
+      "signature": "250fe0dddaad955d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER16'",
+      "signature": "25bbd4ce2873a510"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MARCHID'",
+      "signature": "25c1c1a6288d1447"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'W_DATA'",
+      "signature": "25fa536f7b20bc88"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER11H'",
+      "signature": "29345c7ca35fb3d3"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'DPC'",
+      "signature": "298e1351d8e3d0a9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altlen'",
+      "signature": "2a0535dd8802ff9b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER12'",
+      "signature": "2a2b804093a73c17"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT23'",
+      "signature": "2a6364420a98fa54"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/i2s.sv:<line>: Filename 'i2s' does not match IFACE name: 'i2s_if'",
+      "signature": "2a7506e23d86d774"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MTVEC'",
+      "signature": "2ae75384d27e6cfa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'FAST_BRANCHCMP'",
+      "signature": "2ae9468052acd64e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER25'",
+      "signature": "2b6907cefa7d6279"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_EXCEPT'",
+      "signature": "2bcc77cd14016aed"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr3_o_pad'",
+      "signature": "2c21c7a3ef586049"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCYCLEH'",
+      "signature": "2cae569236fed33c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER15H'",
+      "signature": "2cd0c7c16c56957e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER22H'",
+      "signature": "2cd7d4ccd934a02a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT25'",
+      "signature": "2d685c3f24a9be66"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT17'",
+      "signature": "2da871cd11707349"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SLL'",
+      "signature": "2e578c70a6897f08"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
+      "signature": "2e995f85d4f98f79"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'xm_rs1'",
+      "signature": "30190cccf8e828e5"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Filename 'opipsram' does not match IFACE name: 'opipsram_if'",
+      "signature": "3043c0e894f52612"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_ALUOP'",
+      "signature": "306cc1e0c894e60a"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdy'",
+      "signature": "307d6d56e2c1f7bd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_STEP'",
+      "signature": "308b134dddb5879a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_NZERO'",
+      "signature": "31784a057412750c"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'unblock_out'",
+      "signature": "31cc0ed109a9a8ce"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_ba1_o_pad'",
+      "signature": "32167204415424f4"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg_pkg.sv:<line>: Parameter is not used: 'ARCHINFO_IDL_ADDR'",
+      "signature": "322396a00ca3c09c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFGM0'",
+      "signature": "33a0dedc0f3d1e3d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT14'",
+      "signature": "33f2819fe9d680a5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'IRQ_INPUT_BYPASS'",
+      "signature": "3412de9ed0fd9ec9"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv:<line>: Filename 'cdc_2phase' does not match MODULE name: 'cdc_2phase_src'",
+      "signature": "34ac155b3b3991a1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'io_di_i'",
+      "signature": "35395ed01e48551e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MUL_FASTER'",
+      "signature": "3563fa228959526e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT24'",
+      "signature": "3596e03993ba3140"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT16'",
+      "signature": "36288a5abd640b55"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CLMUL'",
+      "signature": "36733e26ebf95100"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER8H'",
+      "signature": "368641a640cec647"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZCMP'",
+      "signature": "36a317bfdb4113fb"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_halted'",
+      "signature": "36f174a7e68bb44f"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
+      "signature": "371c638e15ec836e"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/clkrst/counter.sv:<line>: Filename 'counter' does not match MODULE name: 'rs_counter'",
+      "signature": "37b1af9450463346"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RD_LSB'",
+      "signature": "37beb41761368a88"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MTVAL'",
+      "signature": "38bbee797923a3f9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'BRANCH_PREDICTOR'",
+      "signature": "38eaac4a3b8b8be8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_INSTR_MISALIGN'",
+      "signature": "39077a685eab3b10"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_elem_num'",
+      "signature": "398a626b89f60834"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEPC'",
+      "signature": "39970739d1daa7db"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_8_io_pad'",
+      "signature": "39ad425791d14c56"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'U_MODE'",
+      "signature": "3a0d78620b525ec2"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LHU'",
+      "signature": "3a60d0558d8a102a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_LOAD_ALIGN'",
+      "signature": "3b276b1d194d9209"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER30'",
+      "signature": "3b4bff8ea4a7b801"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/top/bus.sv:<line>: Signal is not driven, nor used: 's_ram_ready'",
+      "signature": "3b85b72737634578"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'W_ADDR'",
+      "signature": "3c58d535772a362e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER31'",
+      "signature": "3d76a3759e78e293"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_30_io_pad'",
+      "signature": "3f1d0963252c64c8"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/crc/rtl/crc8_model.sv:<line>: Filename 'crc8_model' does not match MODULE name: 'crc8_07'",
+      "signature": "3f29990b3c40eff6"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'trace_data'",
+      "signature": "40c3eca5d0845fdb"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_MATCH_NAPOT'",
+      "signature": "41121cd47a5edfdc"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_xpi_if.io_di_i'",
+      "signature": "411d9ab46fef9d7d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT28'",
+      "signature": "42685c50fb096ec6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/arith/hazard3_alu.v:<line>: Bits of signal are not used: 'funct7_32b'[6:4,0]",
+      "signature": "4307919fcb72e0cb"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XNOR'",
+      "signature": "434da9d263ca34e1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED'",
+      "signature": "43d272e03b63e771"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER3H'",
+      "signature": "43db57d192244559"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Bits of signal are not used: 'btb_src_addr'[0]",
+      "signature": "44414cbe559d57bb"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_ready'",
+      "signature": "44ed9f98cb24e130"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_12_io_pad'",
+      "signature": "456b371e296b1f23"
+    },
+    {
+      "count": 2,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/interconnect/nmi2nmi.sv:<line>: Instance pin connected by name with empty reference: 'wr_full_o'",
+      "signature": "457ae62473e8112d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SB'",
+      "signature": "462a3dd64e104186"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SUB'",
+      "signature": "46f6c0957440b7c9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCA_PC'",
+      "signature": "473c3693b28e3392"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER16H'",
+      "signature": "4752010320d43ab2"
+    },
+    {
+      "count": 2,
+      "example": "GENUNNAMED:$ROOT/rtl/managed/clusterip/common/rtl/utils/lfsr.sv:<line>: Unnamed generate block 'genblk1' (IEEE 1800-2023 27.6)",
+      "signature": "477d20b9e229c6fd"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/spisd.sv:<line>: Filename 'spisd' does not match MODULE name: 'nmi_spisd'",
+      "signature": "4798ff8e7e27f8b6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBA'",
+      "signature": "47d2e8d6e3cb246f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT29'",
+      "signature": "4814406c7537c671"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg_pkg.sv:<line>: Parameter is not used: 'ARCHINFO_SYS_ADDR'",
+      "signature": "4817fb88856e974b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZILSD'",
+      "signature": "484514f8172240a1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT15'",
+      "signature": "489385f1339544f3"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_29_io_pad'",
+      "signature": "48c03f194a9399da"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCAUSE'",
+      "signature": "4903aad11dc837eb"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'audclk_i_pad'",
+      "signature": "49308ef54c516e86"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/storage/spisd_init.sv:<line>: Parameter is not used: 'DIV_FREQ'",
+      "signature": "49eede512b581164"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
+      "signature": "4a4ff64dc2adf3cc"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_2_io_pad'",
+      "signature": "4ae2caed82a929f4"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MINSTRETH'",
+      "signature": "4b35b61ad26a1f84"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'irq_o'",
+      "signature": "4bf5694e0ee9c8f0"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RD_BITS'",
+      "signature": "4c236d311c0c3d0d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS1_LSB'",
+      "signature": "4c25c0f410ddeefe"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_A'",
+      "signature": "4c4cedad22f2ee21"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_BCOND'",
+      "signature": "4c78aec59a2946dc"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Signal is not used: 's_bit_rsynf'",
+      "signature": "4d70669b8a494847"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_wen'",
+      "signature": "4de5925ec8de1ec1"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_rd'",
+      "signature": "4e6e812e8bbcda42"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/tech/tc_clk.sv:<line>: Filename 'tc_clk' does not match MODULE name: 'tc_clk_inv'",
+      "signature": "4ec048718bb177a1"
+    },
+    {
+      "count": 1,
+      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/rng/rtl/rng_define.svh:<line>: Missing newline at end of file (POSIX 3.206).",
+      "signature": "4eca5822dac20719"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER15'",
+      "signature": "4fb9b6ac0284b56f"
+    },
+    {
+      "count": 2,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'dst_data_o'",
+      "signature": "4fbad4a28d5694d0"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'LAST_STATE'",
+      "signature": "506dc044cc9c7643"
+    },
+    {
+      "count": 2,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'src_ready_o'",
+      "signature": "509303f3fb8f202d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'VDD'",
+      "signature": "50c50cea7e9e6c13"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq7_io_pad'",
+      "signature": "50cac798222635ab"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XPERM'",
+      "signature": "51557a0935cbde28"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_REV8'",
+      "signature": "516f38fbc4c9182a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCYCLE'",
+      "signature": "51b7ca9b23897452"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'trap'",
+      "signature": "51c5448220add1da"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
+      "signature": "5205bf154806930b"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/clint.sv:<line>: Filename 'clint' does not match IFACE name: 'simp_clint_if'",
+      "signature": "5214384f1aa96939"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Filename 'gf180_io_sim_cells' does not match MODULE name: 'gf180mcu_fd_io__in_c'",
+      "signature": "529ea1f136584d73"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'div_ready_o'",
+      "signature": "52d73b21d65ad255"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SRL'",
+      "signature": "531034cb9f963f9c"
+    },
+    {
+      "count": 1,
+      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/i2c/rtl/i2c_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
+      "signature": "54113bbce1e87b2a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_wen'",
+      "signature": "5495e56f0052bd11"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/sdram.sv:<line>: Filename 'sdram' does not match IFACE name: 'sdram_if'",
+      "signature": "54a96e98846305ff"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txlowb'",
+      "signature": "54fc1cef01466fd9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_SHAMT'",
+      "signature": "56828cda81e6c93b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_UNZIP'",
+      "signature": "5732cf935b266740"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq9_io_pad'",
+      "signature": "58cabd86de2ba6aa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER13'",
+      "signature": "590ec2bb1dea0297"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TIME'",
+      "signature": "59d856e8d8d063b5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBS'",
+      "signature": "59ff07394d8e4bd0"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/psram_core.sv:<line>: Bits of signal are not used: 'wr_data_i'[7:0]",
+      "signature": "5a331fec20250025"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_instr_decompress.v:<line>: Signal is not used: 'uop_ctr_nxt'",
+      "signature": "5ae8de3312d33d8e"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr1_o_pad'",
+      "signature": "5b70eb0678c9952b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCONFIGPTR'",
+      "signature": "5b9b9941443a3aef"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxlowb'",
+      "signature": "5bdba232647dc9e7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi_core.sv:<line>: Signal is not driven, nor used: 's_dma_xfer_start'",
+      "signature": "5be605958f867813"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq14_io_pad'",
+      "signature": "5c0bf136d87ce7f5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3IRQ'",
+      "signature": "5cd34ab459170ece"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR5'",
+      "signature": "5cfcc122afe6c28f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MUL_FAST'",
+      "signature": "5de922792a0627bb"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_ZERO'",
+      "signature": "5e591bccc9c3321a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER9H'",
+      "signature": "5e7ba9347ddf6cb5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not used: 's_xpi_alttyp'",
+      "signature": "5fa53a2f303a83f6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEDELEG'",
+      "signature": "5fc6cea330cd6a9c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ZIP'",
+      "signature": "5fdf60d5e7ce12f1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT13'",
+      "signature": "6043b8e825c747c1"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_read'",
+      "signature": "60bb138014b31580"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'AUTO_REFRESH'",
+      "signature": "60fbba587bbb3a21"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_14_io_pad'",
+      "signature": "610caf841b350b6b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER7'",
+      "signature": "61c408827737ed9e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MUL'",
+      "signature": "63796b4f8dff9063"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER24H'",
+      "signature": "63edc3164564cef1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'RESET_VECTOR'",
+      "signature": "647bca3f64628c0d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER18'",
+      "signature": "652ec0c951cd9c21"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/dv/verilator/rtl/QSPIFlash.sv:<line>: Bits of signal are not used: 's_raddr'[31:24]",
+      "signature": "658adb1a54f05dd5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_clear'",
+      "signature": "65a9be89b929737e"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/dma.sv:<line>: Filename 'dma' does not match IFACE name: 'dma_hw_trg_if'",
+      "signature": "65b90854e5d8b60b"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Filename 'xpi' does not match IFACE name: 'xpi_if'",
+      "signature": "667c008d1e2eacbc"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_tx_pop_ready'",
+      "signature": "676b49f2278fe989"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCOUNTINHIBIT'",
+      "signature": "6797d2935ac7c14b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT10'",
+      "signature": "6863587bca1f2db1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER26'",
+      "signature": "6868d449e96f2696"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'CSR_WTYPE_W'",
+      "signature": "68d96a5e7f02ae2d"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr10_o_pad'",
+      "signature": "69408581d639ed53"
+    },
+    {
+      "count": 1,
+      "example": "SYNCASYNCNET:$ROOT/rtl/managed/clusterip/common/rtl/utils/register.sv:<line>: Signal flopped as both synchronous and async: 'retrosoc_top.u_retrosoc_asic.u_rcu.u_sys_rst_sync.__Vcellout__RST_SYNC_BLOCK[4].RST_SYNC_N0_BLOCK.u_sync_dffr____pinNumber4'",
+      "signature": "69ad9c2d06349b9b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT22'",
+      "signature": "6b41ecfa7ce13125"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_instr_decompress.v:<line>: Signal is not used: 'rst_n'",
+      "signature": "6b52dc90eb0fbb84"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq12_io_pad'",
+      "signature": "6b893458c5051519"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/arith/hazard3_branchcmp.v:<line>: Bits of signal are not used: 'cir'[31:15,12:0]",
+      "signature": "6d416d34599d0335"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER20H'",
+      "signature": "6d4c5fc5579a3e1f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'DMDATA0'",
+      "signature": "6f0363493555b9bf"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/mini/top/rcu.sv:<line>: Filename 'rcu' does not match MODULE name: 'pll_rcu_controller'",
+      "signature": "6f97fc8d1bb13758"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_instr_decompress.v:<line>: Signal is not used: 'clk'",
+      "signature": "6fe1db6e2b365b89"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_OR'",
+      "signature": "700ec1e87db7ac95"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCB_IMM'",
+      "signature": "70364c3580577acf"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/i2c.sv:<line>: Filename 'i2c' does not match MODULE name: 'nmi_i2c'",
+      "signature": "707f8ef51312eefc"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SEXT_H'",
+      "signature": "70fd2715143bab31"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_addr'",
+      "signature": "710f53870da44fce"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SRA'",
+      "signature": "712d2b9ecb45e411"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER29H'",
+      "signature": "7166beaa8e6c8efd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/peripheral/dma_core.sv:<line>: Parameter is not used: 'SFT_TRG'",
+      "signature": "71d6e02f1f455b15"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBKB'",
+      "signature": "71ed3f99048e2c3b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'cmd_di_i'",
+      "signature": "721177b7dd90884c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS2_BITS'",
+      "signature": "725c854ff2bfc0f7"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dqm1_o_pad'",
+      "signature": "728c2b89caf441fd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR14'",
+      "signature": "73137ea44f8b0022"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/timer.sv:<line>: Filename 'timer' does not match MODULE name: 'nmi_timer'",
+      "signature": "7355b53d3ee72baa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_REGADDR'",
+      "signature": "73fedbe68f8d251e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxupb'",
+      "signature": "74ab66482544f43a"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_instr'",
+      "signature": "74d1f5df092ca9b5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_INSTR_FAULT'",
+      "signature": "75d3d08d1aa3ea8e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_AMO'",
+      "signature": "763af5848330cc11"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_EBREAK'",
+      "signature": "7643f46c079c60be"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'DVSS'",
+      "signature": "770aadb9c1cba9bf"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_ras_n_o_pad'",
+      "signature": "78ed4fde1cf1ad0e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altdat'",
+      "signature": "795dd682f2980a79"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'REDUCED_BYPASS'",
+      "signature": "7973fbdfa6482500"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'uart0_rx_i_pad'",
+      "signature": "799c249136a0a34b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'oe_o'",
+      "signature": "7a1fd6e737185a7f"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_exception'",
+      "signature": "7aa35a854398cb1a"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_0_io_pad'",
+      "signature": "7b105b7a92957ce9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER30H'",
+      "signature": "7b5e3643834b3585"
+    },
+    {
+      "count": 1,
+      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/wdg/rtl/wdg_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
+      "signature": "7b606887e11f2fa9"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_18_io_pad'",
+      "signature": "7be345de9e1435dd"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_rs1'",
+      "signature": "7c2bab7c2d7334a0"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LB'",
+      "signature": "7c337634bf81bef5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG2'",
+      "signature": "7c65ab0a2f205816"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_NONE'",
+      "signature": "7c86ac68a4de27c2"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq1_io_pad'",
+      "signature": "7cbdcdcd27cccaf7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Bits of signal are not used: 'jump_target'[0]",
+      "signature": "7cd6bb3e3f7a720e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER12H'",
+      "signature": "7cddccf3ce3f08bf"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'div_ready_o'",
+      "signature": "7d9b433540f8b3ae"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TIMEH'",
+      "signature": "7dcf8443ab23c657"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBC'",
+      "signature": "7def98eb3cda6ad3"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_31_io_pad'",
+      "signature": "7f2d0bba6b3013e0"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULHU'",
+      "signature": "7fa9cc5f70adf259"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSTATUSH'",
+      "signature": "7fb71898bd02fe32"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR7'",
+      "signature": "807fa7dfd2f493a1"
+    },
+    {
+      "count": 2,
+      "example": "CMPCONST:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Comparison is constant due to limited range",
+      "signature": "813090adc9f1e8a8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BEXT'",
+      "signature": "81638e4c60166069"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3POWER'",
+      "signature": "81c95f5cef53bf16"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'CSR_WTYPE_C'",
+      "signature": "8302f7bb8b16f27e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv:<line>: Signal is not driven, nor used: 's_ack_src_d'",
+      "signature": "83a2f710883a0dfd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZIFENCEI'",
+      "signature": "840267d45a83aab5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv:<line>: Signal is not driven, nor used: 's_ack_src_q'",
+      "signature": "84607651d384d0ee"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'PDRV0'",
+      "signature": "84f91be3700f01fd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_interrupt'",
+      "signature": "857dc6a3eeca83f5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER22'",
+      "signature": "85e76f3e4d29f680"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/ahbl_if.sv:<line>: Signal is not used: 'hburst'",
+      "signature": "86dee9662e8be179"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MAX'",
+      "signature": "87c94f4e1fbb3aca"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULH'",
+      "signature": "87f30a4eb222dabd"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq3_io_pad'",
+      "signature": "88e87253bf7282cf"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wdata'",
+      "signature": "893b8e0590d9ee83"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MULDIV'",
+      "signature": "895c67fe1ef69503"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'hexcl'",
+      "signature": "89825a0f5eed88b1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER5'",
+      "signature": "89a96aad4321fa4c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BREV8'",
+      "signature": "89ef333c4c6c331f"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$BUILD/generated/soc_topology/rtl/soc_irq_sva.svh:<line>: Filename 'soc_irq_sva' does not match MODULE name: 'soc_irq_topology_sva'",
+      "signature": "8a26d3d8b6031430"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_trap_cause'",
+      "signature": "8aa7467a0f75ed3c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/dv/verilator/rtl/retrosoc_top.sv:<line>: Signal is not used: 's_core_sel'",
+      "signature": "8b0a437023986bfa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'pmp_trigger_check_dph_m_mode'",
+      "signature": "8bc2d7e93c836d64"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'pmp_trigger_check_dph_addr'",
+      "signature": "8bef58faa818aa2f"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_we_n_o_pad'",
+      "signature": "8c915cb8d7f75b4b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'CYCLEH'",
+      "signature": "8d35b73a1d91ad6f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ORN'",
+      "signature": "8dc41a3103a03ba5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TDATA2'",
+      "signature": "8e621494bcc61ec1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT21'",
+      "signature": "8e7c2939f83bd235"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT3'",
+      "signature": "9123892c2d1a4a2e"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_20_io_pad'",
+      "signature": "91d173ea76bfbe4d"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr4_o_pad'",
+      "signature": "920d56dd1834fd12"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/crc/rtl/crc32_model.sv:<line>: Filename 'crc32_model' does not match MODULE name: 'crc32_04c11db7'",
+      "signature": "92b6ff76224f2d3e"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/clkrst/clk_int_div.sv:<line>: Filename 'clk_int_div' does not match MODULE name: 'clk_int_even_div_static'",
+      "signature": "94b1bc793fc29dbe"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER23'",
+      "signature": "94d28857d2fb0baa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'VSS'",
+      "signature": "94e44213ad64c4a7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TINFO'",
+      "signature": "95233adeb76589ad"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_16_io_pad'",
+      "signature": "95598327a2a371fe"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Signal is not used: 'match_urw'",
+      "signature": "95690e604469f035"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'xpi_nss2_o_pad'",
+      "signature": "95f6e45df454ca6c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER5H'",
+      "signature": "9696a0c495f6418b"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/xpi_mm.sv:<line>: Filename 'xpi_mm' does not match MODULE name: 'xfer_dispatcher'",
+      "signature": "96ad1cb84a559b13"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_REFETCH'",
+      "signature": "96d42d4ca626dbb9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'irq_o'",
+      "signature": "96dce0b808abd15f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LBU'",
+      "signature": "9756d46f3972e3c9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED_ADDR'",
+      "signature": "9772d113ea65cb57"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_full'",
+      "signature": "981340d759a74e2f"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_3_io_pad'",
+      "signature": "9893b007f511a231"
+    },
+    {
+      "count": 1,
+      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/pwm/rtl/pwm_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
+      "signature": "98ba924f79eb6e14"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_wdata'",
+      "signature": "98e4ee38d633a8d1"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'div_ready_o'",
+      "signature": "9952f0e7dc01fd38"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_insn'",
+      "signature": "9ae38a0348f02222"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSLEEP'",
+      "signature": "9b516a14e647b5a9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LR_W'",
+      "signature": "9b5ea524ef209c75"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSECCFGH'",
+      "signature": "9b73dd0a9f626296"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER20'",
+      "signature": "9c3279f8717c88e5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MINSTRET'",
+      "signature": "9d78d297b1e59a0f"
+    },
+    {
+      "count": 2,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/interconnect/nmi2nmi.sv:<line>: Instance pin connected by name with empty reference: 'elem_num_o'",
+      "signature": "9db1c0c27e26a274"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER21H'",
+      "signature": "9ddd4a5e5c8aadf2"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_wdata'",
+      "signature": "9e75074c85e8b8c7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER26H'",
+      "signature": "9f10c85345ee1eeb"
+    },
+    {
+      "count": 1,
+      "example": "UNSIGNED:$ROOT/rtl/mini/top/bus.sv:<line>: Comparison is constant due to unsigned arithmetic",
+      "signature": "9f53ff454a8648a4"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIE'",
+      "signature": "9f6cf09e1f359fc2"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SEXT_B'",
+      "signature": "9fa8c9a76ecdd14e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER21'",
+      "signature": "9fa9260b42b1e954"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/apb4_if.sv:<line>: Signal is not used: 'pprot'",
+      "signature": "9fca06dfbce15816"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_ALUSRC'",
+      "signature": "9fe1be8689f9cb92"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT30'",
+      "signature": "9fe7874583fb7290"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_m_en'",
+      "signature": "a002d3b128786f43"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'dummy1'",
+      "signature": "a0345ce073a0a572"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
+      "signature": "a0457f8cb83907ca"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr2_o_pad'",
+      "signature": "a065d89bafa7c253"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'BREAKPOINT_TRIGGERS'",
+      "signature": "a0dadaeef96f807a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi_reg.sv:<line>: Signal is not driven, nor used: 's_xpi_status_en'",
+      "signature": "a14ede02dc20a0ec"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_alu_cmp'",
+      "signature": "a1785177b01f8b5d"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Filename 'gpio' does not match IFACE name: 'gpio_if'",
+      "signature": "a1fdb02b904e11f3"
+    },
+    {
+      "count": 1,
+      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/timer/rtl/tmr_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
+      "signature": "a279807dd0b5fc33"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR3'",
+      "signature": "a2a9f7892749b0de"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_cas_n_o_pad'",
+      "signature": "a2b413acbc827d4b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER13H'",
+      "signature": "a3795040aa28903c"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_19_io_pad'",
+      "signature": "a3878db95710aec8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'irq_o'",
+      "signature": "a3e9267e6fddc3d7"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_11_io_pad'",
+      "signature": "a4fe4861aca999f6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'CYCLE'",
+      "signature": "a6c931478c0d8018"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_ba0_o_pad'",
+      "signature": "a6e285f0b2e4e7f9"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv:<line>: Filename 'cdc_sync' does not match MODULE name: 'cdc_sync_det'",
+      "signature": "a6f0024b7dbf24d8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER28H'",
+      "signature": "a6fe733ee3373c71"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR2'",
+      "signature": "a7293dc6f91e062f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Signal is not used: 'ip_sel_o'",
+      "signature": "a7a94cca997c0698"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER8'",
+      "signature": "a8696107f2fef9aa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ORC_B'",
+      "signature": "a86b37c49f0396bf"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MINU'",
+      "signature": "a89cf3a3a80d2d3e"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_addr'",
+      "signature": "a93c709f695abf63"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_TRANS_BUSY'",
+      "signature": "a9713690d71bc9bc"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LH'",
+      "signature": "a9813e1c39939c7f"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_rs2'",
+      "signature": "a9cf9009adcd20bd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER23H'",
+      "signature": "ab8441f7c03e2971"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_TRANS_IDLE'",
+      "signature": "ac2a6ee2c94d0000"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_MEMOP'",
+      "signature": "ac31b3848287d896"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_trigger_addr'",
+      "signature": "ac5fa91be7a1a560"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHARTID'",
+      "signature": "aca76df24c39fd31"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_irq_ctrl.v:<line>: Bits of signal are not used: 'wdata_raw'[31:7]",
+      "signature": "ad0a79c50b97ea8f"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Instance pin connected by name with empty reference: 'xpi_accmd_o'",
+      "signature": "ad0c3acaf1354927"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCOUNTEREN'",
+      "signature": "adc48ef7d8fe91db"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER4H'",
+      "signature": "ae74fded8de7ee18"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'CSR_WTYPE_S'",
+      "signature": "af00a138ef8aa41c"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_1_io_pad'",
+      "signature": "af455b0b2cff2ee2"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_exception'",
+      "signature": "af6260e45cd6273a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'PDRV1'",
+      "signature": "afc43f659eca658c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR8'",
+      "signature": "afd0ae1bf9ea0652"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_NONE'",
+      "signature": "b0e6990bee056194"
+    },
+    {
+      "count": 1,
+      "example": "IMPORTSTAR:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv:<line>: 'import::*' in $unit scope may pollute global namespace",
+      "signature": "b13fd37a1362d500"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/psram_core.sv:<line>: Filename 'psram_core' does not match MODULE name: 'load_new_byte'",
+      "signature": "b18736bea573c228"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_data_rdy'",
+      "signature": "b1f7cb21a2cfe275"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TCONTROL'",
+      "signature": "b2ec9a4fd3b189d3"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG3'",
+      "signature": "b3016723a5ab4521"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CTZ'",
+      "signature": "b36cc8cf06dcfd9d"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/crc/rtl/crc16_model.sv:<line>: Filename 'crc16_model' does not match MODULE name: 'crc16_1021'",
+      "signature": "b47f45226a43e65c"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_4_io_pad'",
+      "signature": "b484191be733e6cc"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr12_o_pad'",
+      "signature": "b4987b17fd59995a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3BEXTM'",
+      "signature": "b50d55b4d81dc7f2"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr5_o_pad'",
+      "signature": "b513017e084d8275"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_ECALL_M'",
+      "signature": "b58f890519b24692"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER14H'",
+      "signature": "b5bdd0b77c3c5e47"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/ps2/rtl/apb4_ps2.sv:<line>: Instance pin connected by name with empty reference: 'full_o'",
+      "signature": "b5e3e9fef2e40ff1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'CS'",
+      "signature": "b6335a379acf55e7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MTVEC_INIT'",
+      "signature": "b6486d4904b54267"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_MATCH_TOR'",
+      "signature": "b6babe06f50aa421"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'dummy0'",
+      "signature": "b752539a258e839a"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'xpi_nss1_o_pad'",
+      "signature": "b77f4ffe8d801781"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv:<line>: Signal is not used: 'pslverr'",
+      "signature": "b862aa3eb60be294"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv:<line>: Instance pin connected by name with empty reference: 'div_ready_o'",
+      "signature": "b883df02a09f3815"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'uart0_tx_o_pad'",
+      "signature": "b8e6c3c794a223bf"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_clk_o_pad'",
+      "signature": "b9102313d6df8b7b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZCLSD'",
+      "signature": "b997a00ad88267af"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT5'",
+      "signature": "b99f014da9fbbe01"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_pmp_i_addr'",
+      "signature": "ba1e30b13d9a1880"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XOR'",
+      "signature": "baffa3f3db7cfe1d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'dqs_di_i'",
+      "signature": "bb2363bbb7ad7368"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TSELECT'",
+      "signature": "bb42a942f34a4d34"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR13'",
+      "signature": "bb7d5a1d3a27bc6d"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq11_io_pad'",
+      "signature": "bbee6d143516dde2"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/tech/tc_sram.sv:<line>: Filename 'tc_sram' does not match MODULE name: 'tc_sram_1024x32'",
+      "signature": "bd588c86d64305d7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ROR'",
+      "signature": "be4d058065eb3190"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER14'",
+      "signature": "be92114e66ed6fae"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'SL'",
+      "signature": "bf48f9041f6b3b10"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BINV'",
+      "signature": "bf699b743af528c5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER29'",
+      "signature": "bf9673c3110c1e1e"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
+      "signature": "bfd3207837c35f83"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR15'",
+      "signature": "c248472229380983"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wen'",
+      "signature": "c32c694c98aec334"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_MRET'",
+      "signature": "c3864ddd5d00e335"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq5_io_pad'",
+      "signature": "c3ac524045d3765a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_LTU'",
+      "signature": "c3df779eaacf5f27"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/utils/register.sv:<line>: Filename 'register' does not match MODULE name: 'dff'",
+      "signature": "c42bbffb3fdc6f5f"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_7_io_pad'",
+      "signature": "c431f97525eeb8f1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER3'",
+      "signature": "c464ae3970f9b7f1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CLZ'",
+      "signature": "c52066bad57d6444"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_STORE_ALIGN'",
+      "signature": "c54201f705edb0b9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER11'",
+      "signature": "c55336cc92959dde"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'CMD_BST'",
+      "signature": "c5563396e2c64625"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER18H'",
+      "signature": "c5e09bfc3ad27dd6"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_5_io_pad'",
+      "signature": "c6838d7b98284986"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_HALTREQ'",
+      "signature": "c6ce9889672dc150"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Filename 'dvp' does not match IFACE name: 'dvp_if'",
+      "signature": "c7228ac7a89a77cd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR6'",
+      "signature": "c7dc9bbede71154e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSECCFG'",
+      "signature": "c86dcf593cdcd5fc"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
+      "signature": "c963ef155f9a032c"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/uart.sv:<line>: Filename 'uart' does not match MODULE name: 'nmi_uart'",
+      "signature": "c9bc4a6a971c796e"
+    },
+    {
+      "count": 2,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/uart/rtl/apb4_uart.sv:<line>: Instance pin connected by name with empty reference: 'busy_o'",
+      "signature": "ca99a5392993487e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MENVCFG'",
+      "signature": "caa757a785d859e0"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT6'",
+      "signature": "cb60ad6fb28b4e1d"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr8_o_pad'",
+      "signature": "cb914734c2323aaa"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'dat_o'",
+      "signature": "cbc24339ec49c826"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Signal is not used: 's_cap_in'",
+      "signature": "cc39d539774eec98"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BSET'",
+      "signature": "cd8568995114ca78"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'trigger_break_any'",
+      "signature": "ce1c417910600bd4"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT12'",
+      "signature": "ce2501468a1313b7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'SLEEP'",
+      "signature": "ce3c34eac49c0dce"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_PACKH'",
+      "signature": "ce726ca9b611b1fa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'IRQ_PRIORITY_BITS'",
+      "signature": "cea54fc18535046a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MAXU'",
+      "signature": "ceda843153cc4fb1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ZEXT_H'",
+      "signature": "cf22d80c62093513"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER6H'",
+      "signature": "d008552bdd803df5"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/mini/top/user_core_design_template.sv:<line>: Filename 'user_core_design_template' does not match MODULE name: 'user_core_design'",
+      "signature": "d00b4d58006976c6"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/psram.sv:<line>: Filename 'psram' does not match IFACE name: 'psram_if'",
+      "signature": "d00da1e8224c1921"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'DEBUG_SUPPORT'",
+      "signature": "d07a50ae905841cf"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_MULOP'",
+      "signature": "d0f4faa15f6563aa"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR0'",
+      "signature": "d2ab8df0de098f69"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
+      "signature": "d530c365aa32fb3d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_TRIGGER'",
+      "signature": "d5915c380ab7e708"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER6'",
+      "signature": "d5985c66044451d6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_E'",
+      "signature": "d5db1aabb075e604"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_valid'",
+      "signature": "d727c7973fe2e383"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/pll_ctrl_if.sv:<line>: Signal is not used: 'req_sel_o'",
+      "signature": "d73383c0abf82b14"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER28'",
+      "signature": "d819caeec263034b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS2_LSB'",
+      "signature": "d956d3fd2f353de1"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'fence_d_vld'",
+      "signature": "d992c35a2dfac67a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'pmp_i_kill'",
+      "signature": "d9f86148696a4c9b"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_6_io_pad'",
+      "signature": "da214ececa878a17"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BCLR'",
+      "signature": "dabe6f3d8d10f20a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIP'",
+      "signature": "db13eedecfd951b4"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txupb'",
+      "signature": "db1f73ac6cc5f094"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT26'",
+      "signature": "dbbaca1a6aa94f93"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'trace_valid'",
+      "signature": "dbe6263e51778dc5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_EBREAK'",
+      "signature": "dbfefc5baf13e768"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq2_io_pad'",
+      "signature": "dcd67f2de2f92844"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_C'",
+      "signature": "dd45c3176001f755"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSCRATCH'",
+      "signature": "dd90b88910df7621"
+    },
+    {
+      "count": 1,
+      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/ps2/rtl/ps2_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
+      "signature": "dede41f7cadcb4e8"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr6_o_pad'",
+      "signature": "defc7c6d763981d4"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR11'",
+      "signature": "df27f6f168192501"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT9'",
+      "signature": "df687fdd4db38ebf"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq10_io_pad'",
+      "signature": "df6dce1c46139627"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIMPID'",
+      "signature": "e04e876fa9c8bea4"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/utils/edge_det.sv:<line>: Filename 'edge_det' does not match MODULE name: 'edge_det_re'",
+      "signature": "e07cfa5b5444bc2b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'trigger_break_d_mode'",
+      "signature": "e0b429dd63fc8249"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS1_BITS'",
+      "signature": "e0e39069fc05aac2"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED_CFG'",
+      "signature": "e103eca0a2b7f233"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
+      "signature": "e12f263c34f144e9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR12'",
+      "signature": "e1947fc66a79f3be"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULHSU'",
+      "signature": "e21b0ca21b609a8e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'do_o'",
+      "signature": "e292443562cc3342"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR4'",
+      "signature": "e35b032fa4cdd3c3"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'eoi'",
+      "signature": "e3e36e4d7538a995"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'di_i'",
+      "signature": "e4f87731346f85f3"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCA_RS1'",
+      "signature": "e52f3eb8cec43d97"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG0'",
+      "signature": "e54f385481702f07"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TDATA1'",
+      "signature": "e60fb2e5ed225995"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MULH_FAST'",
+      "signature": "e624ba05cab5c289"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MVENDORID'",
+      "signature": "e66d05bc635aa0c8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER17H'",
+      "signature": "e6ba6ab75214631f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_DIVU'",
+      "signature": "e7295834cac1a99d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_RS2'",
+      "signature": "e7c22a3c40596cee"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT4'",
+      "signature": "e805cfed61a4fa94"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/ahbl_if.sv:<line>: Signal is not used: 'hprot'",
+      "signature": "e80611687718a746"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MISA'",
+      "signature": "e80f4b037c6feaae"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/ahbl_if.sv:<line>: Signal is not used: 'hmastlock'",
+      "signature": "e89ec00ecbba1b7c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER7H'",
+      "signature": "e8d8e1414672bca2"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Filename 'sysctrl' does not match IFACE name: 'sysctrl_if'",
+      "signature": "e99bbb0efa367a52"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_AND'",
+      "signature": "ea6d05586c018004"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SW'",
+      "signature": "ea91ca3691ef6c46"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZCB'",
+      "signature": "ea9c97fa2e1df574"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER19H'",
+      "signature": "eae13327831f7283"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR1'",
+      "signature": "eb0d976f55001b89"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'DCSR'",
+      "signature": "eb780b6d0a9d9a76"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/serial/onewire.sv:<line>: Instance pin connected by name with empty reference: 'cnt_o'",
+      "signature": "ec213572ad728944"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR9'",
+      "signature": "ec541543a37eb784"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER9'",
+      "signature": "eccf71b4acddf014"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'dummy0'",
+      "signature": "ecd36ebee2fd861b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_ALWAYS'",
+      "signature": "ecf80fe6ba9b93cf"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_STORE_FAULT'",
+      "signature": "ed95feadede80772"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TDATA3'",
+      "signature": "ee3b9619108b41cb"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dqm0_o_pad'",
+      "signature": "ef3eb99f09c1d834"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq0_io_pad'",
+      "signature": "ef63df90154636b5"
+    },
+    {
+      "count": 3,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
+      "signature": "ef9f314dab2ac31d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LW'",
+      "signature": "f02190d2ddc5a104"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_write'",
+      "signature": "f02d9e3c21c68641"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ROL'",
+      "signature": "f033f9bc7d481d0a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/top/bus.sv:<line>: Signal is not driven, nor used: 's_ram_valid'",
+      "signature": "f0f6238342ead48a"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_running'",
+      "signature": "f1843c8d60be8ef0"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ADD'",
+      "signature": "f1a8ae3153da3a8d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER31H'",
+      "signature": "f24f8909225b3e1b"
+    },
+    {
+      "count": 29,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_pad_bindings.svh:<line>: Instance pin connected by name with empty reference: 'p2c'",
+      "signature": "f2548a0d3b636cfb"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCB_RS2'",
+      "signature": "f264f9b6636136e7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'dat_di_i'",
+      "signature": "f275553c47efc840"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'DVDD'",
+      "signature": "f4d39e72d4872afe"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_17_io_pad'",
+      "signature": "f50aff9536b53280"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
+      "signature": "f586c67df6a90e51"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER10H'",
+      "signature": "f5bd95b5d4d88dbf"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
+      "signature": "f5c86d2641312606"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/tech/tc_io.sv:<line>: Filename 'tc_io' does not match MODULE name: 'tc_io_gf180_bi_pad'",
+      "signature": "f607b58f26e30bf8"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_wstrb'",
+      "signature": "f671be6848b7f176"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER10'",
+      "signature": "f6ab22e35e72500b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_LOAD_FAULT'",
+      "signature": "f79a742f6ab08d60"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BEXTM'",
+      "signature": "f7f2f18e81fb7c7f"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_src_size'",
+      "signature": "f8a190c8c461c43b"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr9_o_pad'",
+      "signature": "f90c5ec461987502"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSTATUS'",
+      "signature": "faa036cc07ce2c51"
+    },
+    {
+      "count": 1,
+      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/uart/rtl/uart_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
+      "signature": "fad478d50a43d7ce"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT11'",
+      "signature": "fb2788828c8462f7"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_cpu_2port.v:<line>: Instance pin connected by name with empty reference: 'bus_aph_panic_i'",
+      "signature": "fb59f24d3eaa83df"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'EXTENSION_ZCA'",
+      "signature": "fb8effc3e6867513"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdata'",
+      "signature": "fcfd224d8be95c70"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_RESP_EROR'",
+      "signature": "fd058edbfd57599d"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_addr'",
+      "signature": "fd1b2d596971513e"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
+      "signature": "fd5e8e149f4a4f56"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MTVEC_WMASK'",
+      "signature": "fdd7181a21322720"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'INSTRET'",
+      "signature": "fe3fc3e18a419022"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT20'",
+      "signature": "fe4573f1320fa491"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'RESET_REGFILE'",
+      "signature": "fe98320b4098ae16"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'H3MISA'",
+      "signature": "ff6ab3ad96461df5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MENVCFGH'",
+      "signature": "ffbadab14adcb23c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_NEVER'",
+      "signature": "ffd1d68a726cc2c7"
+    }
+  ],
+  "profile": "hazard3-rv32im-gf180",
+  "schema_version": 1,
+  "tool": "rtl-lint"
+}

@@ -15,7 +15,11 @@ sys.path.insert(0, str(ROOT))
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
+RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint", "check-rtl-lint")
+
+
 PR_COMMANDS = (
+    ("configs/ci/hazard3-rv32im-ihp130.mk", RTL_LINT_VALUES),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
     ("configs/ci/hazard3-rv32im-ihp130-shell.mk", ("firmware",)),
     ("configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk", ("firmware",)),
@@ -49,6 +53,7 @@ PR_COMMANDS = (
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("STA=OPENSTA", "sta")),
 )
 SMOKE_COMMANDS = (
+    ("configs/ci/hazard3-rv32im-ihp130.mk", RTL_LINT_VALUES),
     ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
     (
         "configs/ci/hazard3-rv32im-ihp130.mk",
@@ -86,6 +91,7 @@ PDK_PR_PROFILES = {
 
 def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
     return (
+        (profile, RTL_LINT_VALUES),
         (profile, ("firmware",)),
         (profile, ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")),
         (profile, ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),

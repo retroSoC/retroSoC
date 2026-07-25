@@ -123,6 +123,7 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 | Yosys synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth` |
 | Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG netsim` |
 | OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
+| Strict Verilator RTL lint | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
 | IHP130 fast smoke suite | `make regress-smoke` |
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |
@@ -131,7 +132,8 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 | Script and policy checks | `make sw-policy-check sw-host-test` |
 
 `make regress-smoke` builds the IHP130 firmware, compiles the Verilator SVA
-configuration, and runs the Icarus assembly self-test. It omits synthesis,
+configuration, and runs the Icarus assembly self-test. It runs strict RTL lint
+before those flows and omits synthesis,
 timing, and netlist simulation for fast feedback. `make regress-pr` runs the
 supported IHP130, GF180, and SKY130 PR matrices in sequence, including
 slow-corner OpenSTA core timing analysis for each PDK.

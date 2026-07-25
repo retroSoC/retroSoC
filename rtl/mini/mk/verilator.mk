@@ -1,4 +1,5 @@
 BUILD_DIR         := $(SIM_BUILD_ROOT)
+RTL_LINT_DIR      := $(VARIANT_ROOT)/lint/verilator
 SOC_CSRC_HOME     += $(RTL_PATH)/dv/verilator/csrc
 SOC_CSRC_LIB_HOME += $(RTL_PATH)/dv/verilator/csrc
 SOC_CXXFILES      += $(sort $(wildcard $(SOC_CSRC_HOME)/*.cpp))
@@ -27,10 +28,16 @@ VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
 VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
 VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
 
+RTL_LINT_FLAGS := --lint-only --no-timing --top-module $(SOC_VSRC_TOP)
+RTL_LINT_FLAGS += --assert --Wall --timescale "1ns/1ns" -Wno-fatal
+RTL_LINT_FLAGS += $(SOC_VSRC_INCLPATH) $(SOC_VXXFILES)
+
 SOC_SIM_TIME            ?= 180
 VERILATOR_STAMP         := $(BUILD_DIR)/verilate.stamp
 VERILATOR_DEPFILE       := $(BUILD_DIR)/verilate.d
 VERILATOR_EMU           := $(BUILD_DIR)/emu
+RTL_LINT_STAMP          := $(RTL_LINT_DIR)/rtl-lint.stamp
+RTL_LINT_DEPFILE        := $(RTL_LINT_DIR)/rtl-lint.d
 VERILATOR_EXTRA_SOURCES := $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv \
                            $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv \
                            $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv \
@@ -38,7 +45,7 @@ VERILATOR_EXTRA_SOURCES := $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv \
                            $(SOC_CXXFILES) $(wildcard $(SOC_CSRC_HOME)/*.h) \
                            $(wildcard $(SOC_CSRC_HOME)/*.hpp)
 
--include $(VERILATOR_DEPFILE)
+-include $(VERILATOR_DEPFILE) $(RTL_LINT_DEPFILE)
 
 CCACHE := $(shell command -v ccache 2>/dev/null)
 ifneq ($(CCACHE),)
@@ -64,7 +71,24 @@ $(VERILATOR_EMU): $(VERILATOR_STAMP)
 		-- make -j$(VERILATOR_JOBS) VM_PARALLEL_BUILDS=1 OPT_FAST=-O3 -C $(SOC_COMPILE_HOME) \
 		-f V$(SOC_VSRC_TOP).mk
 
-lint: $(VERILATOR_STAMP)
+$(RTL_LINT_STAMP): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
+	@mkdir -p $(RTL_LINT_DIR)
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool rtl-lint \
+		--log $(RTL_LINT_DIR)/lint.log --result $(RTL_LINT_DIR)/result-rtl-lint.json \
+		-- $(VERILATOR) $(RTL_LINT_FLAGS)
+	python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) \
+		$(foreach source,$(VERILATOR_EXTRA_SOURCES),--extra $(source)) \
+		--target $@ --output $(RTL_LINT_DEPFILE)
+	@touch $@
+
+rtl-lint: $(RTL_LINT_STAMP) | manifest
+
+check-rtl-lint: rtl-lint
+	python3 $(ROOT_PATH)/scripts/analyze_warnings.py check --root $(ROOT_PATH) \
+		--profile $(PROFILE_NAME) --variant-root $(VARIANT_ROOT) --tool rtl-lint \
+		--output $(META_DIR)/rtl-lint-warnings.json
+
+lint: rtl-lint
 comp: $(VERILATOR_EMU)
 
 sim: comp
@@ -83,5 +107,6 @@ wave:
 
 clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(BUILD_DIR)
+	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(RTL_LINT_DIR)
 
-.PHONY: comp sim clean
+.PHONY: lint rtl-lint check-rtl-lint comp sim clean
