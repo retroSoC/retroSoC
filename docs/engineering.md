@@ -108,8 +108,12 @@ marker is present. Icarus regressions use the assembly self-test as `retrosoc_as
 
 `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
-targets are `bus` and `nmi2apb`; each uses the SBY `prove` task for bounded
-model checking and k-induction, plus a `cover` task, at depth 20.
+targets are `bus`, `nmi2apb`, `sysctrl`, `pll_rcu`, and `gpio_mdd`; each uses
+the SBY `prove` task for bounded model checking and k-induction, plus a
+`cover` task, at depth 20. `sysctrl` checks register side effects, PLL request
+handling, and fault reporting. `pll_rcu` checks the clock-switch controller
+state machine. `gpio_mdd` checks MDD user-GPIO ownership, lock, handoff, and
+mux safety using the `IP_MDD` build definition.
 `FORMAL_DEPTH` and `FORMAL_TIMEOUT` set the proof bound and per-task
 wall-clock limit. Use `make CONFIG=<profile> formal-doctor` before a local
 proof to verify that the required tools are available.
@@ -128,6 +132,11 @@ The IHP130 smoke workflow enables this target; the full PDK regressions do not
 repeat PDK-independent protocol proofs. The reusable regression workflow runs
 the target only when its `formal_checks` input is enabled and its locked
 toolset provides SBY and Bitwuzla.
+
+The `pll_rcu` proof uses one formal clock for its system and external-clock
+inputs to verify the controller protocol independently of analogue clock
+behavior. It is not asynchronous CDC/RDC signoff; implementation timing,
+clock-tree checks, and the technology PLL model remain separate signoff work.
 
 `make check-warnings` normalizes tool messages and compares them with
 `quality/warnings/<profile>/<tool>.json`. New signatures and increased counts fail; resolved warnings

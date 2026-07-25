@@ -78,7 +78,7 @@
   },
   "archives": {
     "fatfs": {
-      "url": "https://elm-chan.org/fsw/ff/arc/ff16.zip",
+      "url": "https://github.com/retroSoC/artifact/releases/download/fatfs-r0.16/fatfs-r0.16.zip",
       "sha256": "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e",
       "destination": "app/fatfs/ff16/ff16.zip",
       "license": "LicenseRef-FatFs"

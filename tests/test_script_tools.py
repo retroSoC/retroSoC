@@ -113,11 +113,20 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
 
     bus_filelist = tmp_path / "bus.fl"
     nmi2apb_filelist = tmp_path / "nmi2apb.fl"
+    sysctrl_filelist = tmp_path / "sysctrl.fl"
+    pll_rcu_filelist = tmp_path / "pll_rcu.fl"
+    gpio_mdd_filelist = tmp_path / "gpio_mdd.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology)
     assert generate_formal_filelist("nmi2apb", nmi2apb_filelist, memory_map, topology)
+    assert generate_formal_filelist("sysctrl", sysctrl_filelist, memory_map, topology)
+    assert generate_formal_filelist("pll_rcu", pll_rcu_filelist, memory_map, topology)
+    assert generate_formal_filelist("gpio_mdd", gpio_mdd_filelist, memory_map, topology)
 
-    bus = parse_filelists([bus_filelist])
-    nmi2apb = parse_filelists([nmi2apb_filelist])
+    bus = parse_filelists([bus_filelist], require_files=False)
+    nmi2apb = parse_filelists([nmi2apb_filelist], require_files=False)
+    sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
+    pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
+    gpio_mdd = parse_filelists([gpio_mdd_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
     assert ROOT / "rtl/ip/native/interconnect/nmi_regslice.sv" in bus.files
@@ -125,6 +134,15 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/ip/native/interconnect/nmi2apb.sv" in nmi2apb.files
     assert ROOT / "rtl/mini/formal/nmi2apb_formal.sv" in nmi2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in nmi2apb.files
+    assert ROOT / "rtl/ip/native/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
+    assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
+    assert ROOT / "rtl/ip/native/peripheral/gpio.sv" in gpio_mdd.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_mdd.files
+    assert ROOT / "rtl/mini/formal/gpio_mdd_formal.sv" in gpio_mdd.files
+    assert "+define+IP_MDD" in gpio_mdd.defines
+    assert "+define+IP_MDD" not in sysctrl.defines
 
 
 def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
@@ -145,8 +163,20 @@ def test_bitwuzla_wrapper_translates_yosys_legacy_arguments() -> None:
     assert translate_arguments(["--smt2", "-i", "--seed=1"]) == ["--lang", "smt2", "--seed=1"]
 
 
+def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
+    script = ROOT / "scripts/publish_fatfs_artifact.sh"
+    content = script.read_text(encoding="utf-8")
+
+    assert script.stat().st_mode & 0o111
+    assert 'readonly RELEASE_TAG="fatfs-r0.16"' in content
+    assert 'readonly ASSET_NAME="fatfs-r0.16.zip"' in content
+    assert "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e" in content
+    assert 'gh release download "$RELEASE_TAG"' in content
+
+
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    for proof in ("bus", "nmi2apb"):
+    proofs = ("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_mdd")
+    for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
         for step in ("sv2v", "prove", "cover"):
@@ -168,10 +198,16 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         f"bus={tmp_path / 'bus'}",
         "--proof",
         f"nmi2apb={tmp_path / 'nmi2apb'}",
+        "--proof",
+        f"sysctrl={tmp_path / 'sysctrl'}",
+        "--proof",
+        f"pll_rcu={tmp_path / 'pll_rcu'}",
+        "--proof",
+        f"gpio_mdd={tmp_path / 'gpio_mdd'}",
     )
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["status"] == "passed"
-    assert set(result["proofs"]) == {"bus", "nmi2apb"}
+    assert set(result["proofs"]) == set(proofs)
 
 
 def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:

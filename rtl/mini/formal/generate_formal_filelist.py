@@ -18,7 +18,14 @@ from filelist import FileList, write_filelist  # noqa: E402
 
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
 INTERCONNECT = ROOT / "rtl/ip/native/interconnect"
+PERIPHERAL = ROOT / "rtl/ip/native/peripheral"
 TOP = ROOT / "rtl/mini/top"
+
+
+def target_defines(target: str) -> list[str]:
+    if target == "gpio_mdd":
+        return ["+define+SV_ASSRT_DISABLE", "+define+IP_MDD"]
+    return ["+define+SV_ASSRT_DISABLE"]
 
 
 def source_files(target: str) -> list[Path]:
@@ -42,12 +49,36 @@ def source_files(target: str) -> list[Path]:
             INTERCONNECT / "nmi2apb.sv",
             SCRIPT_DIR / "nmi2apb_formal.sv",
         ]
+    if target == "sysctrl":
+        return [
+            *common,
+            PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "sysctrl.sv",
+            SCRIPT_DIR / "sysctrl_formal.sv",
+        ]
+    if target == "pll_rcu":
+        return [
+            *common,
+            COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "cdc/cdc_2phase.sv",
+            PERIPHERAL / "pll_ctrl_if.sv",
+            TOP / "rcu.sv",
+            SCRIPT_DIR / "pll_rcu_formal.sv",
+        ]
+    if target == "gpio_mdd":
+        return [
+            *common,
+            COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "utils/edge_det.sv",
+            PERIPHERAL / "gpio.sv",
+            SCRIPT_DIR / "gpio_mdd_formal.sv",
+        ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
 def generate(target: str, output: Path, memory_map_dir: Path, soc_topology_dir: Path) -> bool:
     filelist = FileList(
-        defines=["+define+SV_ASSRT_DISABLE"],
+        defines=target_defines(target),
         incdirs=[
             memory_map_dir.resolve() / "rtl",
             soc_topology_dir.resolve() / "rtl",
@@ -56,6 +87,7 @@ def generate(target: str, output: Path, memory_map_dir: Path, soc_topology_dir: 
             COMMON_RTL / "interface",
             COMMON_RTL / "utils",
             INTERCONNECT,
+            PERIPHERAL,
         ],
         files=source_files(target),
     ).deduplicate()
@@ -64,7 +96,11 @@ def generate(target: str, output: Path, memory_map_dir: Path, soc_topology_dir: 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", choices=("bus", "nmi2apb"), required=True)
+    parser.add_argument(
+        "--target",
+        choices=("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_mdd"),
+        required=True,
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--memory-map-dir", type=Path, required=True)
     parser.add_argument("--soc-topology-dir", type=Path, required=True)
