@@ -166,7 +166,9 @@ yosys splitnets -ports -format __v
 yosys setundef -zero
 yosys clean -purge
 
-yosys hilomap -singleton -hicell {*}$tech_cell_tiehi -locell {*}$tech_cell_tielo
+if {[llength $tech_cell_tiehi] > 0 && [llength $tech_cell_tielo] > 0} {
+    yosys hilomap -singleton -hicell {*}$tech_cell_tiehi -locell {*}$tech_cell_tielo
+}
 
 # final reports
 yosys tee -q -o "${report_dir}/${proj_name}_synth.rpt" check
@@ -182,8 +184,6 @@ set config_tmp "${config}.tmp"
 set config_file [open $config_tmp "w"]
 puts $config_file "PDK=$pdk"
 puts $config_file "SOC=$soc"
-puts $config_file "CORE=$core"
-puts $config_file "IP=$ip"
 puts $config_file "TOP_DESIGN=$top_design"
 close $config_file
 file rename -force $config_tmp $config

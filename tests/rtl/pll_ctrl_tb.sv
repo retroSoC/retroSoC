@@ -98,11 +98,13 @@ module pll_ctrl_tb;
   endtask
 
   initial begin
-    nmi.valid          = 1'b0;
-    nmi.addr           = '0;
-    nmi.wdata          = '0;
-    nmi.wstrb          = '0;
-    sysctrl.core_sel_i = '0;
+    nmi.valid               = 1'b0;
+    nmi.addr                = '0;
+    nmi.wdata               = '0;
+    nmi.wstrb               = '0;
+    sysctrl.user_bus_idle_i = 1'b1;
+    sysctrl.fault_access_i  = 1'b0;
+    sysctrl.fault_master_i  = '0;
     #100;
     rst_n_i = 1'b1;
     repeat (12) @(posedge sys_clk_o);

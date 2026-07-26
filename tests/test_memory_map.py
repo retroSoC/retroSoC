@@ -12,9 +12,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "rtl/mini/address_map/generate_memory_map.py"
 MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
+USER_EXTENSIONS = ROOT / "rtl/mini/integration/user_extensions.json"
+USER_GENERATOR = ROOT / "rtl/mini/integration/generate_user_extensions.py"
 
 
-def generate(output_dir: Path, *, ip: str = "NONE", sram: str = "NO") -> None:
+def generate(output_dir: Path, *, sram: str = "NO") -> None:
     subprocess.run(
         [
             sys.executable,
@@ -25,8 +27,17 @@ def generate(output_dir: Path, *, ip: str = "NONE", sram: str = "NO") -> None:
             str(output_dir),
             "--have-sram-if",
             sram,
-            "--ip",
-            ip,
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            str(USER_GENERATOR),
+            "--map",
+            str(USER_EXTENSIONS),
+            "--output-dir",
+            str(output_dir / "user_extensions"),
         ],
         check=True,
     )
@@ -41,6 +52,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
 
     assert "`define SOC_ADDR_PSRAM_END  32'h407FFFFF" in rtl
     assert "`define SOC_ADDR_XPI_END  32'h5FFFFFFF" in rtl
+    assert "`define SOC_ADDR_IS_FLASH(addr) ((addr) <= `SOC_ADDR_FLASH_END)" in rtl
     assert "`define CPU_RESET_ADDR `SOC_CPU_RESET_ADDR" in rtl
     assert "`define SOC_ADDR_IS_RESERVED(addr)" in rtl
     assert "RS_SOC_PSRAM_SIZE UINT32_C(0x00800000)" in header
@@ -56,19 +68,14 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x00800000" in linker
 
 
-def test_user_ip_is_emitted_only_for_the_matching_profile(tmp_path: Path) -> None:
-    none_output = tmp_path / "none"
-    mdd_output = tmp_path / "mdd"
-    generate(none_output)
-    generate(mdd_output, ip="MDD")
+def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> None:
+    generate(tmp_path)
 
-    none_rtl = (none_output / "rtl/mmap_define.svh").read_text(encoding="utf-8")
-    mdd_header = (mdd_output / "include/retrosoc/generated/memory_map.h").read_text(
-        encoding="utf-8"
-    )
+    rtl = (tmp_path / "rtl/mmap_define.svh").read_text(encoding="utf-8")
+    header = (tmp_path / "include/retrosoc/generated/memory_map.h").read_text(encoding="utf-8")
 
-    assert "SOC_ADDR_APB_USER_IP_BASE" not in none_rtl
-    assert "RS_SOC_APB_USER_IP_BASE" in mdd_header
+    assert "SOC_ADDR_APB_USER_IP_BASE" in rtl
+    assert "RS_SOC_APB_USER_IP_BASE" in header
 
 
 def test_map_validation_rejects_overlaps(tmp_path: Path) -> None:
@@ -100,6 +107,7 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
             [
                 "+define+SV_ASSRT_DISABLE",
                 f"+incdir+{tmp_path / 'rtl'}",
+                f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
@@ -151,6 +159,7 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
             [
                 "+define+SV_ASSRT_DISABLE",
                 f"+incdir+{tmp_path / 'rtl'}",
+                f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
@@ -181,7 +190,7 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "sysctrl fault registers test passed" in result.stdout
+    assert "sysctrl fault and user core control test passed" in result.stdout
 
 
 def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: Path) -> None:
@@ -198,6 +207,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                 "+define+PDK_BEHAV",
                 "+define+HAVE_PLL",
                 f"+incdir+{tmp_path / 'rtl'}",
+                f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),

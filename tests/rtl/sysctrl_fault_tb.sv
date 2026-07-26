@@ -60,7 +60,9 @@ module sysctrl_fault_tb;
     nmi.addr                    = '0;
     nmi.wdata                   = '0;
     nmi.wstrb                   = '0;
-    sysctrl.core_sel_i          = '0;
+    sysctrl.user_bus_idle_i     = 1'b1;
+    sysctrl.fault_access_i      = 1'b0;
+    sysctrl.fault_master_i      = '0;
     pll_ctrl.req_ready_i        = 1'b1;
     pll_ctrl.rsp_active_sel_i   = '0;
     pll_ctrl.rsp_active_valid_i = 1'b0;
@@ -90,7 +92,27 @@ module sysctrl_fault_tb;
     read_register(32'h1000_B010, read_data);
     if (read_data !== 32'h0000_000A) $fatal(1, "fault W1C did not clear pending");
 
-    $display("sysctrl fault registers test passed");
+    read_register(32'h1000_B020, read_data);
+    if (read_data !== 32'h0000_003F) $fatal(1, "user cores were not held in reset");
+    write_register(32'h1000_B000, 32'h0000_0006);
+    read_register(32'h1000_B024, read_data);
+    if ((read_data & 32'h0000_081F) !== 32'h0000_0800) begin
+      $fatal(1, "out-of-range user core selection was accepted");
+    end
+    write_register(32'h1000_B024, 32'h0000_0800);
+    write_register(32'h1000_B000, 32'h0000_0001);
+    write_register(32'h1000_B020, 32'h0000_003D);
+    read_register(32'h1000_B024, read_data);
+    if ((read_data & 32'h0000_0300) !== 32'h0000_0300 || (read_data & 32'h1F) != 1) begin
+      $fatal(1, "user core start state was not recorded");
+    end
+    write_register(32'h1000_B020, 32'h0000_003F);
+    read_register(32'h1000_B024, read_data);
+    if ((read_data & 32'h0000_0300) !== 32'h0000_0200) begin
+      $fatal(1, "user core stop state was not recorded");
+    end
+
+    $display("sysctrl fault and user core control test passed");
     $finish;
   end
 endmodule

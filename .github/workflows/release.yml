@@ -47,10 +47,10 @@ jobs:
         run: python3 -m pip install --requirement requirements/build.txt
 
       - name: Set up locked source dependencies
-        run: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk setup
+        run: make CONFIG=configs/ci/ihp130.mk setup
 
       - name: Build checksummed source package and SBOM
-        run: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk package
+        run: make CONFIG=configs/ci/ihp130.mk package
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808  # v4.3.3

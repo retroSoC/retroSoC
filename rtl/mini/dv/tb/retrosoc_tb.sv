@@ -28,8 +28,6 @@ module retrosoc_tb;
 `ifdef HAVE_PLL
   reg r_xtal_clk;
 `endif
-  reg  [ 4:0] r_core_sel;
-  wire [ 4:0] s_core_sel;
   wire        s_uart0_tx;
   // for handle x-prop issue
   wire        s_uart0_rx = 1'b1;
@@ -82,10 +80,9 @@ module retrosoc_tb;
   always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk  = r_ext_clk;
-  assign s_aud_clk  = r_aud_clk;
-  assign s_rst_n    = r_rst_n;
-  assign s_core_sel = r_core_sel;
+  assign s_ext_clk = r_ext_clk;
+  assign s_aud_clk = r_aud_clk;
+  assign s_rst_n   = r_rst_n;
 
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_tb_bindings.svh"
@@ -268,11 +265,6 @@ module retrosoc_tb;
 
   initial begin
     $display("========================================================");
-`ifdef CORE_MDD
-    if (!$value$plusargs("core_sel=%d", r_core_sel)) r_core_sel = 5'd0;
-    $display("core_sel: %0d", r_core_sel);
-`endif
-
 `ifdef HAVE_PLL
     $display("pll clock control: sysctrl");
 `else

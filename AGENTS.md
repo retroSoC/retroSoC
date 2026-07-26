@@ -139,9 +139,12 @@ warning checks, and metric collection.
   configured success marker, and the log contains no `FAILED`, `FATAL`,
   `assertion failed`, or `%Error` marker.
 - New self-owned C compiler warnings fail the regression. New or increased EDA
-  warning signatures fail `check-warnings`; resolved warnings are reported.
+  warning signatures make `check-warnings` fail when invoked directly, but the
+  regression runner records them as non-blocking observations so CI uploads the
+  warning and metric reports; resolved warnings are reported.
 - `check-metrics` records firmware size, area, cell count, timing, and flow
-  duration, but its current policy is observational.
+  duration. It is non-blocking in the regression runner, including if a future
+  policy changes the standalone command into a gate.
 - Verilator currently runs through `scripts/run_flow.py`, which captures the
   emulator stdout in a pipe. UART output can therefore appear only after a
   newline or when simulation ends. Treat `sim.log` and `result-sim*.json` as

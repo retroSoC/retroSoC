@@ -11,23 +11,44 @@ import sys
 import tarfile
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from zipfile import ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[1]
 FILELIST_SCRIPT_DIR = ROOT / "rtl/mini/script"
+FORMAL_SCRIPT_DIR = ROOT / "rtl/mini/formal"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(FILELIST_SCRIPT_DIR))
+sys.path.insert(0, str(FORMAL_SCRIPT_DIR))
 
 from filelist import atomic_write, parse_filelists, write_filelist  # noqa: E402
 from generate_filelist import generate_all  # noqa: E402
+from generate_formal_filelist import generate as generate_formal_filelist  # noqa: E402
+from generate_sby_config import render as render_sby_config  # noqa: E402
+from scripts.bitwuzla_smt2 import translate_arguments  # noqa: E402
 from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
-from scripts.generate_mpw import migrate_user_gpio_interfaces  # noqa: E402
+from scripts.generate_mpw import (  # noqa: E402
+    migrate_user_extension_includes,
+    migrate_user_gpio_interfaces,
+    remove_legacy_picorv32_entry,
+)
 from scripts.install_toolchain import safe_extract  # noqa: E402
-from scripts.regress import MDD_VERILATOR_SIM_TIME, PR_COMMANDS, regression_environment  # noqa: E402
+from scripts import regress  # noqa: E402
+from scripts.regress import (  # noqa: E402
+    NIGHTLY_COMMANDS,
+    PDK_PR_PROFILES,
+    PR_COMMANDS,
+    RTL_LINT_VALUES,
+    SMOKE_COMMANDS,
+    pdk_pr_commands,
+    regression_environment,
+    select_regression,
+)
+from scripts import setup_helpers  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -80,7 +101,7 @@ def test_nested_filelist_and_space_path_round_trip(tmp_path: Path) -> None:
 
 
 def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
-    defines = ["+define+PDK_IHP130", "+define+CORE_HAZARD3"]
+    defines = ["+define+PDK_IHP130"]
     generated = generate_all(tmp_path, defines)
     mtimes = {path: path.stat().st_mtime_ns for path in generated}
     generate_all(tmp_path, defines)
@@ -88,12 +109,176 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
+    assert (tmp_path / "core_hazard3.fl").is_file()
+    assert (tmp_path / "core_picorv32.fl").is_file()
+
+
+def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> None:
+    module_path = ROOT / "syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_source_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    dynamic_core = tmp_path / "core.fl"
+    dynamic_ip = tmp_path / "ip.fl"
+    dynamic_core.write_text("", encoding="utf-8")
+    dynamic_ip.write_text("", encoding="utf-8")
+
+    for core, source_name in (
+        ("HAZARD3", "hazard3_cpu_1port.v"),
+        ("PICORV32", "picorv32_ver.v"),
+    ):
+        arguments = SimpleNamespace(
+            pdk="IHP130",
+            simu="IVERILOG",
+            core=core,
+            have_pll=False,
+            have_sram_if=False,
+            have_sram_macro=False,
+            have_sva=False,
+            dynamic_core_filelist=dynamic_core,
+            dynamic_ip_filelist=dynamic_ip,
+        )
+        generated_dir = tmp_path / core.lower()
+        user_extensions_dir = generated_dir / "user_extensions"
+        source_export.generate_all(generated_dir, source_export.build_defines(arguments))
+        source_export.generate_user_extensions(
+            ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
+        )
+        filelist = source_export.configured_filelist(
+            arguments, generated_dir, user_extensions_dir, require_files=False
+        )
+
+        assert f"+define+CORE_{core}" in filelist.defines
+        assert any(path.name == source_name for path in filelist.files)
+
+
+def test_package_forwards_manifest_management_core() -> None:
+    package_source = (ROOT / "scripts/package.py").read_text(encoding="utf-8")
+
+    assert '"--core"' in package_source
+    assert 'config.get("CORE", "HAZARD3")' in package_source
+
+
+def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> None:
+    memory_map = tmp_path / "memory_map"
+    topology = tmp_path / "soc_topology"
+    user_extensions = tmp_path / "user_extensions"
+    (memory_map / "rtl").mkdir(parents=True)
+    (topology / "rtl").mkdir(parents=True)
+    (user_extensions / "rtl").mkdir(parents=True)
+
+    bus_filelist = tmp_path / "bus.fl"
+    nmi2apb_filelist = tmp_path / "nmi2apb.fl"
+    sysctrl_filelist = tmp_path / "sysctrl.fl"
+    pll_rcu_filelist = tmp_path / "pll_rcu.fl"
+    gpio_user_filelist = tmp_path / "gpio_user.fl"
+    assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
+    assert generate_formal_filelist(
+        "nmi2apb", nmi2apb_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "pll_rcu", pll_rcu_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "gpio_user", gpio_user_filelist, memory_map, topology, user_extensions
+    )
+
+    bus = parse_filelists([bus_filelist], require_files=False)
+    nmi2apb = parse_filelists([nmi2apb_filelist], require_files=False)
+    sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
+    pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
+    gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
+    assert "+define+SV_ASSRT_DISABLE" in bus.defines
+    assert ROOT / "rtl/mini/top/bus.sv" in bus.files
+    assert ROOT / "rtl/ip/native/interconnect/nmi_regslice.sv" in bus.files
+    assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
+    assert ROOT / "rtl/ip/native/interconnect/nmi2apb.sv" in nmi2apb.files
+    assert ROOT / "rtl/mini/formal/nmi2apb_formal.sv" in nmi2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in nmi2apb.files
+    assert ROOT / "rtl/ip/native/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
+    assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
+    assert ROOT / "rtl/ip/native/peripheral/gpio.sv" in gpio_user.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
+    assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
+
+
+def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
+    design = tmp_path / "design.v"
+    properties = tmp_path / "properties.v"
+    prove_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "prove", 20)
+    cover_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "cover", 20)
+
+    assert "mode prove" in prove_config
+    assert "mode cover" in cover_config
+    assert "depth 20" in prove_config
+    assert "smtbmc --presat --nounroll bitwuzla" in prove_config
+    assert f"design.v {design.resolve()}" in prove_config
+    assert f"properties.v {properties.resolve()}" in prove_config
+
+
+def test_bitwuzla_wrapper_translates_yosys_legacy_arguments() -> None:
+    assert translate_arguments(["--smt2", "-i", "--seed=1"]) == ["--lang", "smt2", "--seed=1"]
+
+
+def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
+    script = ROOT / "scripts/publish_fatfs_artifact.sh"
+    content = script.read_text(encoding="utf-8")
+
+    assert script.stat().st_mode & 0o111
+    assert 'readonly RELEASE_TAG="fatfs-r0.16"' in content
+    assert 'readonly ASSET_NAME="fatfs-r0.16.zip"' in content
+    assert "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e" in content
+    assert 'gh release download "$RELEASE_TAG"' in content
+
+
+def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
+    proofs = ("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_user")
+    for proof in proofs:
+        directory = tmp_path / proof
+        directory.mkdir()
+        for step in ("sv2v", "prove", "cover"):
+            (directory / f"result-{step}.json").write_text(
+                json.dumps({"status": "passed", "tool": f"formal-{step}"}),
+                encoding="utf-8",
+            )
+        for step in ("prove", "cover"):
+            (directory / step).mkdir()
+            (directory / step / "status").write_text("PASS 0 1\n", encoding="utf-8")
+
+    output = tmp_path / "formal.json"
+    run(
+        sys.executable,
+        str(ROOT / "rtl/mini/formal/formal_results.py"),
+        "--output",
+        str(output),
+        "--proof",
+        f"bus={tmp_path / 'bus'}",
+        "--proof",
+        f"nmi2apb={tmp_path / 'nmi2apb'}",
+        "--proof",
+        f"sysctrl={tmp_path / 'sysctrl'}",
+        "--proof",
+        f"pll_rcu={tmp_path / 'pll_rcu'}",
+        "--proof",
+        f"gpio_user={tmp_path / 'gpio_user'}",
+    )
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["status"] == "passed"
+    assert set(result["proofs"]) == set(proofs)
 
 
 def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
     source = tmp_path / "user_ip_design.sv"
     source.write_text(
-        """module user_ip_design (gpio_if.dut gpio);
+        """`include "mdd_config.svh"
+module user_ip_design (gpio_if.dut gpio);
   logic value;
   assign gpio.gpio_oe = value;
   assign gpio.gpio_cs = value;
@@ -106,15 +291,38 @@ endmodule
         encoding="utf-8",
     )
 
+    assert migrate_user_extension_includes(tmp_path) == [source]
     assert migrate_user_gpio_interfaces(tmp_path) == [source]
 
     migrated = source.read_text(encoding="utf-8")
     assert "gpio_if.dut" not in migrated
     assert "gpio.gpio_" not in migrated
+    assert '`include "user_extensions.svh"' in migrated
     assert "user_gpio_if.user_ip gpio" in migrated
     assert "gpio.oe_o" in migrated
     assert "gpio.do_o" in migrated
     assert "gpio.di_i" in migrated
+
+
+def test_generated_user_core_filelist_excludes_the_legacy_picorv32_entry(
+    tmp_path: Path,
+) -> None:
+    management_core_dir = tmp_path / "rtl/managed/picorv32/rtl"
+    management_core_dir.mkdir(parents=True)
+    picorv32 = management_core_dir / "picorv32.v"
+    picorv32_ver = management_core_dir / "picorv32_ver.v"
+    picorv32.touch()
+    picorv32_ver.touch()
+    filelist = tmp_path / "generated/mpw/core/core.fl"
+    filelist.parent.mkdir(parents=True)
+    filelist.write_text(
+        f"{picorv32.resolve()}\n{picorv32_ver.resolve()}\nuser_core_design.sv\n",
+        encoding="utf-8",
+    )
+
+    remove_legacy_picorv32_entry(filelist, management_core_dir)
+
+    assert filelist.read_text(encoding="utf-8") == "user_core_design.sv\n"
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
@@ -186,6 +394,44 @@ def test_dependency_helpers_are_idempotent(tmp_path: Path) -> None:
     assert downloaded.stat().st_mtime_ns == first_mtime
 
 
+def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Path) -> None:
+    commands: list[tuple[str, ...]] = []
+    revision = "a" * 40
+
+    def record(command, *, cwd=None) -> None:
+        del cwd
+        commands.append(tuple(command))
+
+    def git_output_stub(repo: Path, *args: str) -> str:
+        del repo
+        if args == ("rev-parse", "HEAD"):
+            return revision
+        if args == ("status", "--porcelain"):
+            return ""
+        raise AssertionError(f"unexpected git command: {args}")
+
+    monkeypatch.setattr(setup_helpers, "run", record)
+    monkeypatch.setattr(setup_helpers, "git_output", git_output_stub)
+    ensure_git_repo(
+        "https://example.com/pdk.git",
+        tmp_path / "pdk",
+        revision,
+        recursive=True,
+        submodules=("libraries/sky130_fd_sc_hd/latest",),
+    )
+
+    assert commands[-1] == (
+        "git",
+        "submodule",
+        "update",
+        "--init",
+        "--depth",
+        "1",
+        "--",
+        "libraries/sky130_fd_sc_hd/latest",
+    )
+
+
 def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     def build_state() -> dict[str, tuple[int, int]]:
         build = ROOT / "build"
@@ -203,7 +449,7 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     run(
         "make",
         "-n",
-        "CONFIG=configs/ci/hazard3-rv32im-ihp130.mk",
+        "CONFIG=configs/ci/ihp130.mk",
         "SIMU=IVERILOG",
         "RTL_SIM_TIMEOUT=5200000",
         "sim-asm",
@@ -218,6 +464,30 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     )
     assert invalid.returncode != 0
     assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
+
+    invalid_core = subprocess.run(
+        ["make", "CORE=alternate", "config"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert invalid_core.returncode != 0
+    assert "Invalid CORE='alternate'" in invalid_core.stderr
+
+    default_core = run("make", "config").stdout
+    assert "CORE               HAZARD3" in default_core
+
+    picorv32_core = run("make", "CORE=PICORV32", "config").stdout
+    assert "CORE               PICORV32" in picorv32_core
+
+    removed_ip = subprocess.run(
+        ["make", "IP=MDD", "config"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert removed_ip.returncode != 0
+    assert "IP is no longer configurable" in removed_ip.stderr
 
 
 def test_format_file_scope_is_tracked_and_self_owned() -> None:
@@ -249,6 +519,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     lock = load_lock(ROOT / "config/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
+    assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
 
     command = (
         sys.executable,
@@ -260,7 +531,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         "--timestamp",
         "2026-07-21-10-39",
         "--value",
-        "CORE=HAZARD3",
+        "ARCHITECTURE=fixed-management-and-user-extensions",
         "--value",
         "PDK=IHP130",
     )
@@ -286,6 +557,16 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     else:
         raise AssertionError("invalid dependency lock was accepted")
 
+    invalid_submodules = json.loads(json.dumps(lock))
+    invalid_submodules["sources"]["pdk_sky130"]["submodules"] = ["../outside"]
+    broken.write_text(json.dumps(invalid_submodules), encoding="utf-8")
+    try:
+        load_lock(broken)
+    except LockError as error:
+        assert "submodule" in str(error)
+    else:
+        raise AssertionError("invalid submodule path was accepted")
+
 
 def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
     monkeypatch.setenv("BUILD_TIMESTAMP", "2026-07-21-10-39")
@@ -298,20 +579,203 @@ def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
     )
 
 
-def test_mdd_regressions_allow_uart_boot_to_complete() -> None:
-    mdd_profiles = {
-        "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
-        "configs/ci/mdd-rv32im-ihp130.mk",
-    }
-    expected_values = (
-        "SIMU=VERILATOR",
-        f"SOC_SIM_TIME={MDD_VERILATOR_SIM_TIME}",
-        "firmware",
-        "sim",
+def test_verilator_simulations_use_uniform_timeout() -> None:
+    verilator_makefile = ROOT / "rtl/mini/mk/verilator.mk"
+    verilator_source = verilator_makefile.read_text(encoding="utf-8")
+    assert "SOC_SIM_TIME            ?= 180" in verilator_source
+    assert "RTL_LINT_FLAGS := --lint-only --no-timing" in verilator_source
+    assert "--assert --Wall" in verilator_source
+
+    regression_commands = (*SMOKE_COMMANDS, *PR_COMMANDS, *NIGHTLY_COMMANDS)
+    for _, values in regression_commands:
+        if "SIMU=VERILATOR" in values:
+            assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
+            assert "HAVE_SVA=YES" in values
+
+
+def test_verilator_has_no_external_core_selection() -> None:
+    command_line = (ROOT / "rtl/mini/dv/verilator/csrc/main.cpp").read_text(encoding="utf-8")
+    wrapper = (ROOT / "rtl/mini/dv/verilator/rtl/retrosoc_top.sv").read_text(encoding="utf-8")
+    testbench = (ROOT / "rtl/mini/dv/tb/retrosoc_tb.sv").read_text(encoding="utf-8")
+
+    assert "core-sel" not in command_line
+    assert "core_sel_i" not in wrapper
+    assert "core_sel_i" not in testbench
+
+
+def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
+    wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    assert "VALID_CORE      := HAZARD3 PICORV32" in makefile
+    assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
+    assert "`ifdef CORE_PICORV32" in wrapper
+    assert "`elsif CORE_HAZARD3" in wrapper
+    assert "ahbl2nmi u_ahbl2nmi" in wrapper
+    assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
+
+
+def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
+    commands, profiles = select_regression("smoke", "IHP130")
+
+    assert commands == SMOKE_COMMANDS
+    assert profiles == ()
+    command_values = [values for _, values in commands]
+    assert command_values[0] == RTL_LINT_VALUES
+    assert ("firmware",) in command_values
+    assert ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp") in command_values
+    assert ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm") in command_values
+    assert not any(
+        "synth" in values or "sta" in values or "netsim" in values for values in command_values
     )
 
-    assert MDD_VERILATOR_SIM_TIME == 180
-    assert {profile for profile, values in PR_COMMANDS if values == expected_values} == mdd_profiles
+    dry_run = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "smoke",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/ci/ihp130.mk firmware" in dry_run.stdout
+    assert "netsim" not in dry_run.stdout
+
+    invalid = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/regress.py"),
+            "--root",
+            str(ROOT),
+            "--suite",
+            "smoke",
+            "--pdk",
+            "GF180",
+            "--dry-run",
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert invalid.returncode != 0
+    assert "smoke regression supports only --pdk IHP130" in invalid.stderr
+
+
+def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
+    assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "SKY130"}
+    for profile in PDK_PR_PROFILES.values():
+        commands = pdk_pr_commands(profile)
+        command_values = [values for _, values in commands]
+        assert command_values[0] == RTL_LINT_VALUES
+        assert ("firmware",) in command_values
+        assert any("SIMU=VERILATOR" in values and "firmware" in values for values in command_values)
+        assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
+        assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
+        assert ("STA=OPENSTA", "sta") in command_values
+        assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
+
+
+def test_regression_observations_do_not_block_or_skip_metrics(
+    monkeypatch, tmp_path: Path, capsys
+) -> None:
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr(regress, "select_regression", lambda _suite, _pdk: ((), ("unit-profile",)))
+    monkeypatch.setattr(regress, "regression_environment", lambda: {})
+
+    def fail_quality_check(
+        command: list[str], *, cwd: Path, env: dict[str, str], check: bool
+    ) -> subprocess.CompletedProcess[str]:
+        assert cwd == tmp_path
+        assert env == {}
+        assert check is False
+        calls.append(command)
+        return subprocess.CompletedProcess(command, returncode=1)
+
+    monkeypatch.setattr(regress.subprocess, "run", fail_quality_check)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["regress.py", "--root", str(tmp_path), "--suite", "pr"],
+    )
+
+    assert regress.main() == 0
+    assert calls == [
+        ["make", "CONFIG=unit-profile", "check-warnings"],
+        ["make", "CONFIG=unit-profile", "check-metrics"],
+    ]
+    assert capsys.readouterr().err.count("non-blocking observation failed") == 2
+
+
+def test_rtl_lint_warning_baseline_is_independent(tmp_path: Path) -> None:
+    profile = "unit-profile"
+    lint_log = tmp_path / "variant/lint/verilator/lint.log"
+    lint_log.parent.mkdir(parents=True)
+    lint_log.write_text(
+        f"%Warning-WIDTH: {tmp_path}/rtl/top.sv:12: width mismatch\n",
+        encoding="utf-8",
+    )
+    baseline = tmp_path / f"quality/warnings/{profile}/rtl-lint.json"
+    run(
+        sys.executable,
+        str(ROOT / "scripts/analyze_warnings.py"),
+        "baseline",
+        "--root",
+        str(tmp_path),
+        "--profile",
+        profile,
+        "--tool",
+        "rtl-lint",
+        "--log",
+        str(lint_log),
+        "--output",
+        str(baseline),
+    )
+    report = tmp_path / "rtl-lint-warnings.json"
+    run(
+        sys.executable,
+        str(ROOT / "scripts/analyze_warnings.py"),
+        "check",
+        "--root",
+        str(tmp_path),
+        "--profile",
+        profile,
+        "--variant-root",
+        str(tmp_path / "variant"),
+        "--tool",
+        "rtl-lint",
+        "--output",
+        str(report),
+    )
+    assert json.loads(report.read_text(encoding="utf-8"))["status"] == "passed"
+
+    lint_log.write_text(
+        lint_log.read_text(encoding="utf-8")
+        + f"%Warning-UNUSED: {tmp_path}/rtl/top.sv:20: unused signal\n",
+        encoding="utf-8",
+    )
+    failed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/analyze_warnings.py"),
+            "check",
+            "--root",
+            str(tmp_path),
+            "--profile",
+            profile,
+            "--variant-root",
+            str(tmp_path / "variant"),
+            "--tool",
+            "rtl-lint",
+            "--output",
+            str(report),
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert failed.returncode != 0
+    assert json.loads(report.read_text(encoding="utf-8"))["failed_tools"] == ["rtl-lint"]
 
 
 def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
@@ -487,6 +951,20 @@ def test_warning_normalization_keeps_ranges_and_removes_variant_hash(tmp_path: P
     normalized = normalize(tmp_path, "WIDTH", message)
     assert normalized == (
         "WIDTH:$BUILD/generated/core.sv:<line>: Bit extraction of var[7:0] is too wide"
+    )
+
+
+def test_warning_normalization_maps_isolated_mpw_sources_to_managed_sources(
+    tmp_path: Path,
+) -> None:
+    message = (
+        f"{tmp_path}/build/ihp130-deadbeef/generated/mpw/verilator/core/username3/"
+        "./Hazard3/hazard3_core_username3.v:42: unused signal"
+    )
+    normalized = normalize(tmp_path, "UNUSEDSIGNAL", message)
+    assert normalized == (
+        "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/"
+        "hazard3_core.v:<line>: unused signal"
     )
 
 

@@ -42,8 +42,8 @@ selected.
 Start from a committed configuration profile:
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk setup
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware
+make CONFIG=configs/ci/ihp130.mk setup
+make CONFIG=configs/ci/ihp130.mk firmware
 ```
 
 The resulting firmware and generated headers are isolated under

@@ -21,31 +21,27 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_top (
-    input wire       ext_clk_i,
-    input wire       rst_n_i,
-    input wire [4:0] core_sel_i
+    input wire ext_clk_i,
+    input wire rst_n_i
 );
 
-  wire       s_clk;
-  wire       s_rst_n;
-  wire [4:0] s_core_sel;
-  wire       s_psram_sck;
-  wire       s_psram_nss0;
-  wire       s_psram_dat0;
-  wire       s_psram_dat1;
-  wire       s_psram_dat2;
-  wire       s_psram_dat3;
-  wire       s_xpi_nss0_o;
-  wire       s_xpi_sck_o;
-  wire       s_xpi_dat0_io;
-  wire       s_xpi_dat1_io;
-  wire       s_xpi_dat2_io;
-  wire       s_xpi_dat3_io;
+  wire s_clk;
+  wire s_rst_n;
+  wire s_psram_sck;
+  wire s_psram_nss0;
+  wire s_psram_dat0;
+  wire s_psram_dat1;
+  wire s_psram_dat2;
+  wire s_psram_dat3;
+  wire s_xpi_nss0_o;
+  wire s_xpi_sck_o;
+  wire s_xpi_dat0_io;
+  wire s_xpi_dat1_io;
+  wire s_xpi_dat2_io;
+  wire s_xpi_dat3_io;
 
-  assign s_clk      = ext_clk_i;
-  assign s_rst_n    = rst_n_i;
-  assign s_core_sel = core_sel_i;
-
+  assign s_clk   = ext_clk_i;
+  assign s_rst_n = rst_n_i;
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_verilator_bindings.svh"
   );

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import sys
 from collections import Counter
@@ -16,6 +17,9 @@ sys.path.insert(0, str(ROOT))
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
+WARNING_TOOLS = ("iverilog", "verilator", "rtl-lint", "vcs", "yosys", "opensta")
+
+
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 TIMESTAMP_RE = re.compile(r"^\[[^]]+\]\s*")
 LOCATION_RE = re.compile(
@@ -23,11 +27,16 @@ LOCATION_RE = re.compile(
     r"(?:c|cc|cpp|cxx|h|hpp|py|sv|svh|tcl|v|vh)):\d+(?::\d+)?",
     re.IGNORECASE,
 )
+GENERATED_MPW_PATH_RE = re.compile(
+    r"\$BUILD/generated/mpw/[A-Za-z0-9_-]+/(?P<tree>core|ip)/(?P<path>[^\s:]+)"
+)
+MPW_INSTANCE_FILE_SUFFIX_RE = re.compile(r"_username[0-9]+(?=\.(?:sv|svh|v|vh)$)")
 
 
 def warning_line(tool: str, line: str) -> tuple[str, str] | None:
     patterns = {
         "verilator": re.compile(r"%Warning-([A-Z0-9_]+):\s*(.*)"),
+        "rtl-lint": re.compile(r"%Warning-([A-Z0-9_]+):\s*(.*)"),
         "iverilog": re.compile(r"\b(warning|sorry):\s*(.*)", re.IGNORECASE),
         "yosys": re.compile(r"\b(?:ABC:\s*)?Warning:\s*(.*)", re.IGNORECASE),
         "opensta": re.compile(r"\bWarning\s+(\d+):\s*(.*)", re.IGNORECASE),
@@ -36,7 +45,7 @@ def warning_line(tool: str, line: str) -> tuple[str, str] | None:
     match = patterns[tool].search(line)
     if not match:
         return None
-    if tool in ("verilator", "opensta"):
+    if tool in ("verilator", "rtl-lint", "opensta"):
         return match.group(1), match.group(2)
     if tool == "iverilog":
         return match.group(1).lower(), match.group(2)
@@ -54,9 +63,17 @@ def normalize(root: Path, identifier: str, message: str) -> str:
         value,
     )
     value = value.replace(resolved_root, "$ROOT")
+    value = GENERATED_MPW_PATH_RE.sub(_normalize_generated_mpw_path, value)
     value = LOCATION_RE.sub(lambda match: match.group("path") + ":<line>", value)
     value = re.sub(r"\s+", " ", value)
     return f"{identifier}:{value}"
+
+
+def _normalize_generated_mpw_path(match: re.Match[str]) -> str:
+    """Map isolated MPW copies back to their managed source locations."""
+    relative_path = posixpath.normpath(match.group("path"))
+    relative_path = MPW_INSTANCE_FILE_SUFFIX_RE.sub("", relative_path)
+    return f"$ROOT/rtl/managed/mpw/{match.group('tree')}/{relative_path}"
 
 
 def scan(tool: str, logs: list[Path], root: Path) -> dict[str, object]:
@@ -84,6 +101,7 @@ def discover(variant_root: Path) -> dict[str, list[Path]]:
     return {
         "iverilog": sorted((variant_root / "sim/iverilog").glob("*/*.log")),
         "verilator": sorted((variant_root / "sim/verilator").glob("*.log")),
+        "rtl-lint": sorted((variant_root / "lint/verilator").glob("lint.log")),
         "vcs": sorted((variant_root / "sim/vcs").glob("*/*.log")),
         "yosys": sorted((variant_root / "syn/yosys").glob("*.log")),
         "opensta": sorted((variant_root / "sta/opensta").glob("*.log")),
@@ -106,7 +124,7 @@ def write_baseline(args: argparse.Namespace) -> int:
 def check(args: argparse.Namespace) -> int:
     root = args.root.resolve()
     variant_root = args.variant_root.resolve()
-    tools = [args.tool] if args.tool else ["iverilog", "verilator", "vcs", "yosys", "opensta"]
+    tools = [args.tool] if args.tool else WARNING_TOOLS
     logs = discover(variant_root)
     reports: dict[str, object] = {}
     failures: list[str] = []
@@ -119,12 +137,8 @@ def check(args: argparse.Namespace) -> int:
         baseline_entries: dict[str, int] = {}
         if baseline_path.is_file():
             baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
-            baseline_entries = {
-                entry["signature"]: entry["count"] for entry in baseline["entries"]
-            }
-        current_entries = {
-            entry["signature"]: entry["count"] for entry in current["entries"]
-        }
+            baseline_entries = {entry["signature"]: entry["count"] for entry in baseline["entries"]}
+        current_entries = {entry["signature"]: entry["count"] for entry in current["entries"]}
         new = sorted(set(current_entries) - set(baseline_entries))
         increased = sorted(
             signature
@@ -159,14 +173,14 @@ def parse_args() -> argparse.Namespace:
     baseline = subparsers.add_parser("baseline")
     baseline.add_argument("--root", type=Path, default=ROOT)
     baseline.add_argument("--profile", required=True)
-    baseline.add_argument("--tool", choices=("iverilog", "verilator", "vcs", "yosys", "opensta"), required=True)
+    baseline.add_argument("--tool", choices=WARNING_TOOLS, required=True)
     baseline.add_argument("--log", type=Path, action="append", required=True)
     baseline.add_argument("--output", type=Path, required=True)
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("--root", type=Path, default=ROOT)
     check_parser.add_argument("--profile", required=True)
     check_parser.add_argument("--variant-root", type=Path, required=True)
-    check_parser.add_argument("--tool", choices=("iverilog", "verilator", "vcs", "yosys", "opensta"))
+    check_parser.add_argument("--tool", choices=WARNING_TOOLS)
     check_parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 

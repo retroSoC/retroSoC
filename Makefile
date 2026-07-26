@@ -18,7 +18,12 @@ CONFIG_PATH  :=
 PROFILE_NAME := manual
 endif
 
+ifneq ($(origin IP),undefined)
+$(error IP is no longer configurable; user IP integration is fixed)
+endif
+
 SOC   ?= MINI
+CORE  ?= HAZARD3
 SIMU  ?= VCS
 SYNTH ?= NONE
 STA   ?= NONE
@@ -30,16 +35,14 @@ HAVE_SRAM_IF    ?= NO
 HAVE_SRAM_MACRO ?= NO
 HAVE_SVA        ?= NO
 WAVE            ?= NO
+FORMAL          ?= NO
 
-RTL_SIM_CORESEL    ?= 0
 RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
 SIM_SUCCESS_MARKER ?= retroSoC: A Customized ASIC for Retro Stuff
 
 RTL_PATH := $(ROOT_PATH)/rtl/mini
 
-CORE    ?= HAZARD3
-IP      ?= NONE
 RTL_TOP ?= retrosoc_tb
 
 # SW
@@ -60,7 +63,7 @@ VERIBLE_FORMAT  ?= verible-verilog-format
 JOBS            ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
-CONFIG_KEY_VARS := SOC CORE IP PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
+CONFIG_KEY_VARS := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
                    ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
 VARIANT_ID      := $(strip $(shell python3 $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -84,8 +87,7 @@ FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
 endif
 
 VALID_SOC       := MINI
-VALID_CORE      := PICORV32 HAZARD3 MDD
-VALID_IP        := NONE MDD
+VALID_CORE      := HAZARD3 PICORV32
 VALID_SIMU      := VCS VERILATOR IVERILOG
 VALID_SYNTH     := NONE YOSYS
 VALID_STA       := NONE OPENSTA
@@ -101,7 +103,6 @@ endef
 
 $(call validate_value,SOC,$(VALID_SOC))
 $(call validate_value,CORE,$(VALID_CORE))
-$(call validate_value,IP,$(VALID_IP))
 $(call validate_value,SIMU,$(VALID_SIMU))
 $(call validate_value,SYNTH,$(VALID_SYNTH))
 $(call validate_value,STA,$(VALID_STA))
@@ -111,29 +112,32 @@ $(call validate_value,HAVE_SRAM_IF,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
+$(call validate_value,FORMAL,$(VALID_BOOL))
 $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 
 ifeq ($(SYNTH),YOSYS)
-ifeq ($(filter $(PDK),IHP130 ICS55),)
-$(error Yosys synthesis supports PDK=IHP130 or PDK=ICS55, not PDK=$(PDK))
+ifeq ($(filter $(PDK),IHP130 ICS55 GF180 SKY130),)
+$(error Yosys synthesis does not support PDK=$(PDK))
 endif
 endif
 
 ifeq ($(STA),OPENSTA)
-ifneq ($(PDK),IHP130)
-$(error OpenSTA currently supports PDK=IHP130 only)
+ifeq ($(HAVE_PLL),YES)
+$(error STA=OPENSTA requires a qualified PDK PLL timing profile; HAVE_PLL=YES is unsupported)
 endif
 endif
 
 DEF_LIST ?= +define+PDK_$(PDK)
-DEF_LIST += +define+CORE_$(CORE)
-DEF_LIST += +define+IP_$(IP)
 DEF_LIST += +define+SIMU_$(SIMU)
+DEF_LIST += +define+CORE_$(CORE)
 
 ifeq ($(HAVE_PLL), YES)
+ifneq ($(filter $(PDK),GF180 SKY130),)
+$(error HAVE_PLL=YES requires a qualified crystal pad and is unsupported for PDK=$(PDK))
+endif
     DEF_LIST += +define+HAVE_PLL
 endif
 
@@ -154,6 +158,7 @@ ifeq ($(SYNTH), YOSYS)
 endif
 
 include rtl/mini/Makefile
+include rtl/mini/mk/formal.mk
 
 ifeq ($(SYNTH), YOSYS)
 include syn/yosys/yosys.mk
@@ -165,9 +170,11 @@ endif
 
 .PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
-	regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
+	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
-	pin-map check-pin-map
+	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
+	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
+	formal formal-bus formal-nmi2apb formal-clean formal-doctor
 .NOTPARALLEL: setup
 
 help:
@@ -186,6 +193,15 @@ help:
 	  '  check-memory-map           validate the canonical address map' \
 	  '  pin-map                    generate the selected pin-map artifacts' \
 	  '  check-pin-map              validate the canonical SoC pin map' \
+	  '  soc-topology               generate the selected internal SoC integration artifacts' \
+	  '  check-soc-topology         validate the canonical internal SoC integration map' \
+	  '  user-extensions            generate the selected scalar user-extension bindings' \
+	  '  check-user-extensions      validate the canonical user-extension map' \
+	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
+	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
+	  '  formal | formal-bus | formal-nmi2apb | formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY protocol proofs' \
+	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
+	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
@@ -196,20 +212,21 @@ help:
 	  '  rtl-format | rtl-format-check apply/check self-owned RTL formatting' \
 	  '  sw-policy-check            check embedded C API and naming policy' \
 	  '  sw-host-test               run host tests for deterministic SDK utilities' \
-	  '  regress-pr | regress-nightly run supported regression suites' \
+	  '  regress-smoke              run the IHP130 fast regression suite' \
+	  '  regress-pr | regress-nightly run supported full regression suites' \
 	  '  package                    create checksummed source deliverables' \
 	  '  clean | clean-all          clean current flow or all build output' \
 	  '  purge-cache                remove dependency and compiler caches' \
 	  '' \
-	  'Usage: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim'
+	  'Usage: make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim'
 
 config:
 	@printf '%-18s %s\n' \
 	  ROOT_PATH '$(ROOT_PATH)' CONFIG '$(or $(CONFIG_PATH),<defaults>)' \
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
-	  SOC '$(SOC)' CORE '$(CORE)' IP '$(IP)' \
-	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' PDK '$(PDK)' \
+	  SOC '$(SOC)' CORE '$(CORE)' \
+	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' HAVE_SVA '$(HAVE_SVA)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
@@ -218,7 +235,7 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --core $(CORE) --ip $(IP) --lock $(LOCK_FILE)
+	  --pdk $(PDK) --formal $(FORMAL) --lock $(LOCK_FILE)
 
 setup: setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app
 
@@ -307,8 +324,13 @@ package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
 	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
 	  --variant-root $(VARIANT_ROOT) --output-dir $(ROOT_PATH)/dist/$(VARIANT_ID)
 
+regress-smoke:
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130
+
 regress-pr:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130
 
 regress-nightly:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly

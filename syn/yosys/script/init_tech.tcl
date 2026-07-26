@@ -44,6 +44,22 @@ if {$pdk == "IHP130"} {
     # for hilomap
     set tech_cell_tiehi {TIEHIH7H Y}
     set tech_cell_tielo {TIELOH7H Y}
+} elseif {$pdk == "GF180"} {
+    set pdk_cells_lib "$root_dir/.cache/retrosoc/pdk/gf180"
+    set tech_cells [list "$pdk_cells_lib/gf180mcu_fd_sc_mcu7t5v0__tt_025C_5v00.lib"]
+    set tech_macros [list]
+    # The aggregate GF180 Liberty does not characterize the available tie cells.
+    # Keep constants as logic instead of mapping them to an uncharacterized cell.
+    set tech_cell_tiehi {}
+    set tech_cell_tielo {}
+} elseif {$pdk == "SKY130"} {
+    set pdk_cells_lib "$root_dir/.cache/retrosoc/pdk/sky130"
+    set tech_cells [list "$pdk_cells_lib/sky130_fd_sc_hd__tt_025C_1v80.lib"]
+    set tech_macros [list]
+    set tech_cell_tiehi {sky130_fd_sc_hd__conb_1 HI}
+    set tech_cell_tielo {sky130_fd_sc_hd__conb_1 LO}
+} else {
+    error "unsupported PDK for Yosys: $pdk"
 }
 
 # pre-formated for easier use in yosys commands

@@ -38,10 +38,10 @@ Build and simulate the supported profiles from the repository root:
 
 ```sh
 # Bringup firmware and Verilator simulation
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR firmware sim
+make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR firmware sim
 
 # Shell firmware and Verilator simulation
-make CONFIG=configs/ci/hazard3-rv32im-ihp130-shell.mk SIMU=VERILATOR firmware sim
+make CONFIG=configs/ci/ihp130-shell.mk SIMU=VERILATOR firmware sim
 ```
 
 For a firmware-only build, omit `SIMU=VERILATOR sim`.
@@ -54,7 +54,7 @@ For a firmware-only build, omit `SIMU=VERILATOR sim`.
 3. Add `<name>` to the allowed `APP` values in the top-level `Makefile`; this
    keeps profile selection explicit and rejects misspellings.
 4. Add a committed configuration profile under `configs/` that selects
-   `APP := <name>` and the required core, ISA, CSR, and linker options.
+   `APP := <name>` and the required ISA, CSR, and linker options.
 5. Add host tests for deterministic parsing or utility code, and add a
    regression command when the application must execute in simulation.
 

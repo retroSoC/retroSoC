@@ -1,0 +1,17 @@
+{
+  "entries": [
+    {
+      "count": 2,
+      "example": "warning:Found both default and explicit timescale based delays. Use",
+      "signature": "aee22756a35889cc"
+    },
+    {
+      "count": 4,
+      "example": "sorry:ifnone with an edge-sensitive path is not supported.",
+      "signature": "c4297f454f443fed"
+    }
+  ],
+  "profile": "ihp130",
+  "schema_version": 1,
+  "tool": "iverilog"
+}

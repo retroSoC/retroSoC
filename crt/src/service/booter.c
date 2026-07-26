@@ -9,9 +9,7 @@
 #include <retrosoc/lib/string.h>
 #include <retrosoc/service/shell.h>
 #include <retrosoc/service/booter.h>
-#if defined(CORE_MDD) || defined(IP_MDD)
 #include <user_design_info.h>
-#endif
 
 void rs_app_info(void) {
     printf("#############################################################\n");
@@ -51,9 +49,6 @@ void rs_app_info(void) {
     printf("  version:      %s(commit: %s)\n\n", RETROSOC_BRANCH, RETROSOC_COMMIT);
 
     printf("User Processors:\n");
-#ifndef CORE_MDD
-    printf("  CORE:                %s\n", HW_CORE);
-#else
     uint32_t core_size = sizeof(user_core_info) / sizeof(user_core_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
     for (uint32_t i = 0; i < core_size; ++i) {
@@ -64,9 +59,7 @@ void rs_app_info(void) {
         printf("[%d]: %-15s %-12s %-12s %s\n", i, user_core_info[i].name, user_core_info[i].isa,
                user_core_info[i].maintainer, user_core_info[i].repo);
     }
-#endif
 
-#ifdef IP_MDD
     printf("\nUser IPs:\n");
     uint32_t ip_size = sizeof(user_ip_info) / sizeof(user_ip_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
@@ -78,7 +71,6 @@ void rs_app_info(void) {
         printf("[%d]: %-15s %-12s %-12s %s\n", i, user_ip_info[i].name, user_ip_info[i].isa,
                user_ip_info[i].maintainer, user_ip_info[i].repo);
     }
-#endif
 
     printf("\nSoftware:\n");
     printf("  COMPILER:            %s\n", COMPILER_NAME);
@@ -128,9 +120,7 @@ void rs_app_info(void) {
     printf("                       1 x WDG           @%p\n", (void *)&reg_wdg_ctrl);
     printf("                       1 x CRC           @%p\n", (void *)&reg_crc_ctrl);
     printf("                       1 x TIMER3(ADV)   @%p\n", (void *)&reg_tim3_ctrl);
-#ifdef IP_MDD
     printf("                       1 x USER_IP(4KiB) @%p\n", (void *)&reg_user_ip_reg0);
-#endif
     printf("\n");
     printf("#############################################################\n");
     printf("#############################################################\n");

@@ -17,4 +17,6 @@ jobs:
     uses: ./.github/workflows/_regression.yml
     with:
       suite: nightly
+      pdk: IHP130
+      profile: configs/ci/ihp130.mk
       retention_days: 90

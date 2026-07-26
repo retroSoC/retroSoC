@@ -4,10 +4,20 @@
 
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
-| Pull request | `configs/ci/hazard3-rv32im-ihp130.mk` | firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/mdd-rv32im-ihp130.mk` | firmware and Verilator |
-| Nightly | `configs/nightly/picorv32-rv32im-ihp130.mk` | firmware, Verilator, and Icarus |
-| Cluster | `configs/cluster/hazard3-ics55.mk` | configuration only; run with site PDK/tool access |
+| Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
+| Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Nightly | `configs/ci/ihp130.mk` | repeated full IHP130 regression |
+| Cluster | `configs/cluster/ics55.mk` | configuration only; run with site PDK/tool access |
+
+OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
+`slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, and SKY130 uses `ss_100C_1v40`.
+The SDC is generated from `rtl/mini/integration/clock_reset_domains.json`, applies
+the external, audio, and DVP clocks at their technology-buffer observation pins,
+and groups unrelated clocks asynchronously. It intentionally excludes package,
+board, pad-ring, extraction, and PLL timing, so it is a regression-quality core
+analysis rather than physical signoff.
 
 VCS and ICS55 flows remain cluster-only because public runners do not have the licensed simulator or
 the validated site environment. They use the same variant layout, manifests, result JSON, warning
@@ -73,6 +83,7 @@ build/<variant>/
   generated/pin_map/
   sw/
   sim/<simulator>/
+  formal/<proof>/
   syn/yosys/
   sta/opensta/
   meta/manifest.json
@@ -92,21 +103,58 @@ only when the command succeeds, its log contains the firmware startup marker, an
 marker is present. Icarus regressions use the assembly self-test as `retrosoc_asm`, while the normal
 `retrosoc_fw` image remains available for firmware size tracking and Verilator regressions.
 
+## Formal Protocol Proofs
+
+`make CONFIG=configs/ci/ihp130.mk formal` proves selected
+protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
+targets are `bus`, `nmi2apb`, `sysctrl`, `pll_rcu`, and `gpio_user`; each uses
+the SBY `prove` task for bounded model checking and k-induction, plus a
+`cover` task, at depth 20. `sysctrl` checks register side effects, PLL request
+handling, and fault reporting. `pll_rcu` checks the clock-switch controller
+state machine. `gpio_user` checks fixed user-GPIO ownership, lock, handoff,
+and mux safety.
+`FORMAL_DEPTH` and `FORMAL_TIMEOUT` set the proof bound and per-task
+wall-clock limit. Use `make CONFIG=<profile> formal-doctor` before a local
+proof to verify that the required tools are available.
+
+The locked Bitwuzla 0.9.1 CLI uses `--lang smt2`, while the selected Yosys
+version invokes legacy Bitwuzla options. `scripts/bitwuzla_smt2.py` is the
+single compatibility adapter used by SBY; it translates only solver startup
+arguments and does not modify the generated SMT2 model or proof properties.
+
+Proof environments instantiate the production protocol RTL and the shared
+ClusterIP interfaces, registers, and utility cells. The generated conversion,
+SBY configuration, SMT2 model, logs, traces, task status, and structured
+verdict are stored below
+`build/<variant>/formal/<proof>/` and `build/<variant>/meta/formal.json`.
+The IHP130 smoke workflow enables this target; the full PDK regressions do not
+repeat PDK-independent protocol proofs. The reusable regression workflow runs
+the target only when its `formal_checks` input is enabled and its locked
+toolset provides SBY and Bitwuzla.
+
+The `pll_rcu` proof uses one formal clock for its system and external-clock
+inputs to verify the controller protocol independently of analogue clock
+behavior. It is not asynchronous CDC/RDC signoff; implementation timing,
+clock-tree checks, and the technology PLL model remain separate signoff work.
+
 `make check-warnings` normalizes tool messages and compares them with
-`quality/warnings/<profile>/<tool>.json`. New signatures and increased counts fail; resolved warnings
-are reported but do not fail. To refresh one baseline after review:
+`quality/warnings/<profile>/<tool>.json`. New signatures and increased counts make the standalone
+command fail; resolved warnings are reported but do not fail. Regression suites run warning and
+metric checks as non-blocking observations so their JSON reports are generated and uploaded even
+when a baseline delta is present. Compilation, simulation, synthesis, and STA failures remain
+blocking. To refresh one baseline after review:
 
 ```sh
 python3 scripts/analyze_warnings.py baseline \
-  --root . --profile hazard3-rv32im-ihp130 --tool verilator \
+  --root . --profile ihp130 --tool verilator \
   --log build/<variant>/sim/verilator/verilating.log \
-  --output quality/warnings/hazard3-rv32im-ihp130/verilator.json
+  --output quality/warnings/ihp130/verilator.json
 ```
 
 ## Metrics Promotion
 
 `make check-metrics` currently uses `quality/metrics/policy.json` in `observe` mode. Regression
-artifacts retain the metrics from each successful run. After ten successful `main` runs for the same
+artifacts retain the metrics from every completed regression run. After ten successful `main` runs for the same
 profile and locked tools, create the median baseline:
 
 ```sh
@@ -126,9 +174,10 @@ for diagnosis but is initially non-blocking.
 ## CI And Releases
 
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
-Actions, the dependency lock, and script tests. `regression.yml` runs verified configurations on pull
-requests and main branches without repeating the format checks. `nightly.yml` adds PICORV32. Source
-dependencies, locked tool archives, and Verilator `ccache` use separate cache keys.
+Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
+the three full PDK regression workflows remain required PR coverage and do not repeat the format checks.
+`nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
+separate cache keys.
 
 Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source
 tarball, build manifest, dependency lock, CycloneDX SBOM, and `SHA256SUMS`. `make package` creates the

@@ -12,7 +12,8 @@
 `include "uart_define.svh"
 `include "pwm_define.svh"
 `include "ps2_define.svh"
-`include "mdd_config.svh"
+`include "user_extensions.svh"
+`include "soc_irq_config.svh"
 
 module ip_apb_wrapper (
     // verilog_format: off
@@ -25,93 +26,26 @@ module ip_apb_wrapper (
     uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
-`ifdef IP_MDD
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
     user_gpio_if.user_ip                user_gpio,
-`endif
-    output logic [ 6:0]                 irq_o
+    output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
 
-  // verilog_format: off
-  apb4_if      u_archinfo_apb_if (clk_i, rst_n_i);
-  apb4_if      u_rng_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_uart1_apb_if    (clk_i, rst_n_i);
-  apb4_if      u_pwm_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_ps2_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_rtc_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_wdg_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_crc_apb_if      (clk_i, rst_n_i);
-  apb4_if      u_tmr_apb_if      (clk_i, rst_n_i);
+  // Generated timed and pure scalar APB interfaces preserve FPGA compatibility.
+  `include "soc_apb_interfaces.svh"
 
-  // NOTE: for FPGA-compatible
-  apb4_pure_if u_archinfo_apb_pure_if ();
-  apb4_pure_if u_rng_apb_pure_if      ();
-  apb4_pure_if u_uart1_apb_pure_if    ();
-  apb4_pure_if u_pwm_apb_pure_if      ();
-  apb4_pure_if u_ps2_apb_pure_if      ();
-  apb4_pure_if u_rtc_apb_pure_if      ();
-  apb4_pure_if u_wdg_apb_pure_if      ();
-  apb4_pure_if u_crc_apb_pure_if      ();
-  apb4_pure_if u_tmr_apb_pure_if      ();
-
-  // low freq clock perip
-  rtc_if u_rtc_if (clk_aud_i, rst_aud_n_i);
+  // Low-frequency peripherals retain their dedicated interfaces.
+  rtc_if u_rtc_if (
+      clk_aud_i,
+      rst_aud_n_i
+  );
   wdg_if u_wdg_if (clk_aud_i);
   tmr_if u_tmr_if (clk_aud_i);
 
   assign u_tmr_if.capch_i = tmr_capch_i;
-  // verilog_format: on
 
-  // verilog_format: off
-`ifdef IP_MDD
-  apb4_if      u_user_ip_apb_if       (clk_i, rst_n_i);
-  apb4_pure_if u_user_ip_apb_pure_if  ();
-`endif
-  // verilog_format: on
-
-  apb4_if_bridge u_archinfo_apb_bridge (
-      .apb_pure(u_archinfo_apb_pure_if),
-      .timed   (u_archinfo_apb_if)
-  );
-  apb4_if_bridge u_rng_apb_bridge (
-      .apb_pure(u_rng_apb_pure_if),
-      .timed   (u_rng_apb_if)
-  );
-  apb4_if_bridge u_uart1_apb_bridge (
-      .apb_pure(u_uart1_apb_pure_if),
-      .timed   (u_uart1_apb_if)
-  );
-  apb4_if_bridge u_pwm_apb_bridge (
-      .apb_pure(u_pwm_apb_pure_if),
-      .timed   (u_pwm_apb_if)
-  );
-  apb4_if_bridge u_ps2_apb_bridge (
-      .apb_pure(u_ps2_apb_pure_if),
-      .timed   (u_ps2_apb_if)
-  );
-  apb4_if_bridge u_rtc_apb_bridge (
-      .apb_pure(u_rtc_apb_pure_if),
-      .timed   (u_rtc_apb_if)
-  );
-  apb4_if_bridge u_wdg_apb_bridge (
-      .apb_pure(u_wdg_apb_pure_if),
-      .timed   (u_wdg_apb_if)
-  );
-  apb4_if_bridge u_crc_apb_bridge (
-      .apb_pure(u_crc_apb_pure_if),
-      .timed   (u_crc_apb_if)
-  );
-  apb4_if_bridge u_tmr_apb_bridge (
-      .apb_pure(u_tmr_apb_pure_if),
-      .timed   (u_tmr_apb_if)
-  );
-`ifdef IP_MDD
-  apb4_if_bridge u_user_ip_apb_bridge (
-      .apb_pure(u_user_ip_apb_pure_if),
-      .timed   (u_user_ip_apb_if)
-  );
-`endif
+  `include "soc_apb_bridges.svh"
 
   // verilog_format: off
   apb4_archinfo                u_apb4_archinfo (u_archinfo_apb_if);
@@ -125,34 +59,16 @@ module ip_apb_wrapper (
   apb4_tmr                     u_apb4_tmr      (u_tmr_apb_if, u_tmr_if);
   // verilog_format: on
 
-  // handle irq signals
-  assign irq_o[0] = uart.irq_o;
-  assign irq_o[1] = pwm.irq_o;
-  assign irq_o[2] = ps2.irq_o;
-  assign irq_o[3] = u_rtc_if.irq_o;
-  assign irq_o[4] = u_wdg_if.rst_o;
-  assign irq_o[5] = u_tmr_if.irq_o;
-  assign irq_o[6] = 1'b0;
+  // Generated IRQ ownership and core-vector bit assignments are topology checked.
+  `include "soc_apb_irq_bindings.svh"
 
-  nmi2apb u_nmi2apb (
-      .clk_i   (clk_i),
-      .rst_n_i (rst_n_i),
-      .nmi     (nmi),
-`ifdef IP_MDD
-      .user_ip (u_user_ip_apb_pure_if),
-`endif
-      .archinfo(u_archinfo_apb_pure_if),
-      .rng     (u_rng_apb_pure_if),
-      .uart    (u_uart1_apb_pure_if),
-      .pwm     (u_pwm_apb_pure_if),
-      .ps2     (u_ps2_apb_pure_if),
-      .rtc     (u_rtc_apb_pure_if),
-      .wdg     (u_wdg_apb_pure_if),
-      .crc     (u_crc_apb_pure_if),
-      .tmr     (u_tmr_apb_pure_if)
+nmi2apb u_nmi2apb (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .nmi    (nmi),
+      `include "soc_apb_connections.svh"
   );
 
-`ifdef IP_MDD
   user_ip_wrapper u_user_ip_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -160,6 +76,5 @@ module ip_apb_wrapper (
       .gpio   (user_gpio),
       .apb    (u_user_ip_apb_if)
   );
-`endif
 
 endmodule

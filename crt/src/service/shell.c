@@ -11,9 +11,7 @@
 #include <core_portme.h>
 // #include <lvgl.h>
 // #include <lv_port_disp.h>
-#ifdef IP_MDD
 #include <userip.h>
-#endif
 
 static char sh_argv_buf[RS_SHELL_MAX_ARGC][RS_SHELL_MAX_COMMAND_LENGTH + 1U];
 static char *sh_argv[RS_SHELL_MAX_ARGC + 1U];
@@ -689,7 +687,6 @@ static void rs_shell_app_coremark_cmd(int argc, char **argv) {
     core_main();
 }
 
-#ifdef IP_MDD
 static void rs_shell_app_userip_cmd(int argc, char **argv) {
     if (argc != 1 && argc != 2) {
         printf("[userip] cmd param error\n");
@@ -713,7 +710,6 @@ static void rs_shell_app_userip_cmd(int argc, char **argv) {
     }
     // userip: list all info/current id
 }
-#endif
 
 void rs_shell_launch(void) {
     char type_res[RS_SHELL_MAX_COMMAND_LENGTH + 1U];
@@ -728,9 +724,7 @@ void rs_shell_launch(void) {
     (void)rs_shell_register("help", "help info", false, rs_shell_help);
     (void)rs_shell_register("history", "print history list", false, rs_shell_history_list);
     (void)rs_shell_register("coremark", "coremark test", false, rs_shell_app_coremark_cmd);
-#ifdef IP_MDD
     (void)rs_shell_register("userip", "run user ip program", false, rs_shell_app_userip_cmd);
-#endif
     if (fs_init_state == RS_OK) {
         (void)rs_shell_register("ls", "list directory contents", false, rs_shell_fat32_ls_cmd);
         (void)rs_shell_register("lsr", "list directory contents recursively", false,

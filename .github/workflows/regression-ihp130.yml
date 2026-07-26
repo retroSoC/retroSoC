@@ -1,0 +1,24 @@
+name: regression-ihp130
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regression-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verified-open-source-flows:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: IHP130
+      profile: configs/ci/ihp130.mk
+      retention_days: 30

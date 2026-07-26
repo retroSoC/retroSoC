@@ -1,0 +1,24 @@
+name: regression-gf180
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regression-gf180-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verified-open-source-flows:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: GF180
+      profile: configs/ci/gf180.mk
+      retention_days: 30

@@ -44,6 +44,9 @@ jobs:
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock config/dependencies.lock.json
 
+      - name: Validate SoC integration topology
+        run: make check-soc-topology check-user-extensions check-clock-reset-domains
+
       - name: Lint Python
         run: ruff check .
 
@@ -74,5 +77,8 @@ jobs:
 
       - name: Validate regression definitions
         run: |
-          python3 scripts/regress.py --root . --suite pr --dry-run
-          python3 scripts/regress.py --root . --suite nightly --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk IHP130 --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk GF180 --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk SKY130 --dry-run
+          python3 scripts/regress.py --root . --suite nightly --pdk IHP130 --dry-run
+          python3 scripts/regress.py --root . --suite smoke --pdk IHP130 --dry-run

@@ -1,0 +1,100 @@
+{
+  "schema_version": 2,
+  "reset_ports": ["ext_rst_n_i_pad"],
+  "domains": [
+    {
+      "name": "external",
+      "clock": "s_ext_clk_buf",
+      "reset": "s_ext_rst_n_sync",
+      "reset_source": "ext_rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_ext_rst_sync",
+      "sta": {
+        "source_port": "extclk_i_pad",
+        "pin": "u_rcu.u_ext_clk_buf/clk_o",
+        "period_ns": 13.888888889,
+        "async_group": "external"
+      }
+    },
+    {
+      "name": "system",
+      "clock": "sys_clk_o",
+      "reset": "s_sys_rst_n_sync",
+      "reset_source": "ext_rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_sys_rst_sync",
+      "sta": {
+        "source_domain": "external",
+        "pin": "u_rcu.u_sys_clk_buf/clk_o",
+        "period_ns": 13.888888889,
+        "async_group": "external"
+      }
+    },
+    {
+      "name": "audio",
+      "clock": "s_aud_clk_buf",
+      "reset": "s_aud_rst_n_sync",
+      "reset_source": "ext_rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_aud_rst_sync",
+      "sta": {
+        "source_port": "audclk_i_pad",
+        "pin": "u_rcu.u_aud_clk_buf/clk_o",
+        "period_ns": 54.253472222,
+        "async_group": "audio"
+      }
+    },
+    {
+      "name": "dvp",
+      "clock": "s_dvp_pclk_buf",
+      "reset": "s_dvp_pclk_rst_n_sync",
+      "reset_source": "rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/ip/native/multimedia/dvp.sv",
+      "instance": "u_dvp_pclk_rst_sync",
+      "sta": {
+        "source_port": "gpio_10_io_pad",
+        "pin": "u_retrosoc.u_ip_nmi_wrapper.u_nmi_dvp.u_dvp_pclk_clk_buf/clk_o",
+        "period_ns": 41.666666667,
+        "async_group": "dvp"
+      }
+    }
+  ],
+  "crossings": [
+    {
+      "name": "pll_request",
+      "source": "system",
+      "destination": "external",
+      "primitive": "cdc_2phase",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_pll_request_cdc"
+    },
+    {
+      "name": "pll_response",
+      "source": "external",
+      "destination": "system",
+      "primitive": "cdc_2phase",
+      "path": "rtl/mini/top/rcu.sv",
+      "instance": "u_pll_response_cdc"
+    },
+    {
+      "name": "dvp_enable",
+      "source": "system",
+      "destination": "dvp",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/native/multimedia/dvp.sv",
+      "instance": "u_dvp_recven_cdc_sync"
+    },
+    {
+      "name": "dvp_fifo",
+      "source": "dvp",
+      "destination": "system",
+      "primitive": "async_fifo",
+      "path": "rtl/ip/native/multimedia/dvp.sv",
+      "instance": "u_rx_async_fifo"
+    }
+  ]
+}

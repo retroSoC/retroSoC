@@ -55,7 +55,7 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 	@mkdir -p $(YOSYS_RPT)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool yosys \
 		--log $(YOSYS_BUILD)/$(RTL_NAME).log --result $(YOSYS_BUILD)/result-synth.json \
-		--env PDK=$(PDK) --env SOC=$(SOC) --env CORE=$(CORE) --env IP=$(IP) \
+		--env PDK=$(PDK) --env SOC=$(SOC) \
 		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
 		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \

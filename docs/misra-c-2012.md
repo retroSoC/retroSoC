@@ -55,7 +55,7 @@ Run the smallest relevant validation set in addition to a MISRA review:
 make sw-format-check
 make sw-policy-check
 make sw-host-test
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware
+make CONFIG=configs/ci/ihp130.mk firmware
 ```
 
 Use the affected profile and simulator for hardware-facing changes. See

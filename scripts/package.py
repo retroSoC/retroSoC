@@ -43,7 +43,9 @@ def make_sbom(lock: dict[str, object]) -> dict[str, object]:
     components = [component(name, "source", spec) for name, spec in lock["sources"].items()]
     components.extend(component(name, "archive", spec) for name, spec in lock["archives"].items())
     for platform, tools in lock["toolchains"].items():
-        components.extend(component(f"{platform}/{name}", "toolchain", spec) for name, spec in tools.items())
+        components.extend(
+            component(f"{platform}/{name}", "toolchain", spec) for name, spec in tools.items()
+        )
     return {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
@@ -66,19 +68,34 @@ def main() -> int:
     lock = load_lock(args.lock)
     args.output_dir.parent.mkdir(parents=True, exist_ok=True)
 
-    with tempfile.TemporaryDirectory(prefix="retrosoc-package-", dir=args.output_dir.parent) as temp:
+    with tempfile.TemporaryDirectory(
+        prefix="retrosoc-package-", dir=args.output_dir.parent
+    ) as temp:
         staging = Path(temp) / "package"
         staging.mkdir()
         command = [
-            "python3", str(root / "syn/tools/export_soc_sources.py"), "sv",
-            "--output-dir", str(staging), "--pdk", config["PDK"],
-            "--core", config["CORE"], "--ip", config["IP"], "--simu", config["SIMU"],
+            "python3",
+            str(root / "syn/tools/export_soc_sources.py"),
+            "sv",
+            "--output-dir",
+            str(staging),
+            "--pdk",
+            config["PDK"],
+            "--simu",
+            config["SIMU"],
+            "--core",
+            config.get("CORE", "HAZARD3"),
             "--dynamic-core-filelist",
             str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "core/core.fl"),
             "--dynamic-ip-filelist",
             str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "ip/ip.fl"),
         ]
-        for key, flag in (("HAVE_PLL", "--have-pll"), ("HAVE_SRAM_IF", "--have-sram-if"), ("HAVE_SRAM_MACRO", "--have-sram-macro"), ("HAVE_SVA", "--have-sva")):
+        for key, flag in (
+            ("HAVE_PLL", "--have-pll"),
+            ("HAVE_SRAM_IF", "--have-sram-if"),
+            ("HAVE_SRAM_MACRO", "--have-sram-macro"),
+            ("HAVE_SVA", "--have-sva"),
+        ):
             if config.get(key) == "YES":
                 command.append(flag)
         subprocess.run(command, cwd=root, check=True)
@@ -87,7 +104,9 @@ def main() -> int:
         shutil.rmtree(staging / "rtl")
         shutil.copy2(args.lock, staging / "dependencies.lock.json")
         shutil.copy2(manifest_path, staging / "manifest.json")
-        (staging / "sbom.cdx.json").write_text(json.dumps(make_sbom(lock), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        (staging / "sbom.cdx.json").write_text(
+            json.dumps(make_sbom(lock), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
         checksums = []
         for path in sorted(item for item in staging.iterdir() if item.is_file()):
             checksums.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}")
