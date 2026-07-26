@@ -37,6 +37,7 @@ from scripts.generate_mpw import (  # noqa: E402
     remove_legacy_picorv32_entry,
 )
 from scripts.install_toolchain import safe_extract  # noqa: E402
+from scripts import regress  # noqa: E402
 from scripts.regress import (  # noqa: E402
     NIGHTLY_COMMANDS,
     PDK_PR_PROFILES,
@@ -673,6 +674,38 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert ("STA=OPENSTA", "sta") in command_values
         assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
+
+
+def test_regression_observations_do_not_block_or_skip_metrics(
+    monkeypatch, tmp_path: Path, capsys
+) -> None:
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr(regress, "select_regression", lambda _suite, _pdk: ((), ("unit-profile",)))
+    monkeypatch.setattr(regress, "regression_environment", lambda: {})
+
+    def fail_quality_check(
+        command: list[str], *, cwd: Path, env: dict[str, str], check: bool
+    ) -> subprocess.CompletedProcess[str]:
+        assert cwd == tmp_path
+        assert env == {}
+        assert check is False
+        calls.append(command)
+        return subprocess.CompletedProcess(command, returncode=1)
+
+    monkeypatch.setattr(regress.subprocess, "run", fail_quality_check)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["regress.py", "--root", str(tmp_path), "--suite", "pr"],
+    )
+
+    assert regress.main() == 0
+    assert calls == [
+        ["make", "CONFIG=unit-profile", "check-warnings"],
+        ["make", "CONFIG=unit-profile", "check-metrics"],
+    ]
+    assert capsys.readouterr().err.count("non-blocking observation failed") == 2
 
 
 def test_rtl_lint_warning_baseline_is_independent(tmp_path: Path) -> None:

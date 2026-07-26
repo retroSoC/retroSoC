@@ -16,6 +16,7 @@ from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
 RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint", "check-rtl-lint")
+OBSERVATION_TARGETS = ("check-warnings", "check-metrics")
 
 
 PR_COMMANDS = (
@@ -132,6 +133,23 @@ def run_command(
     return result.stdout
 
 
+def run_observation(command: list[str], root: Path, environment: dict[str, str]) -> None:
+    """Run a report-producing quality check without changing the regression verdict."""
+    try:
+        result = subprocess.run(command, cwd=root, env=environment, check=False)
+    except OSError as error:
+        print(
+            f"non-blocking observation could not start: {error}: {' '.join(command)}",
+            file=sys.stderr,
+        )
+        return
+    if result.returncode:
+        print(
+            f"non-blocking observation failed (exit {result.returncode}): {' '.join(command)}",
+            file=sys.stderr,
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a supported retroSoC regression suite")
     parser.add_argument("--root", type=Path, required=True)
@@ -155,15 +173,11 @@ def main() -> int:
                 print("\n".join(warnings), flush=True)
                 return 1
     for profile in profiles:
-        command = [
-            "make",
-            f"CONFIG={profile}",
-            "check-warnings",
-            "check-metrics",
-        ]
-        print("+ " + " ".join(command), flush=True)
-        if not args.dry_run:
-            subprocess.run(command, cwd=args.root, env=environment, check=True)
+        for target in OBSERVATION_TARGETS:
+            command = ["make", f"CONFIG={profile}", target]
+            print("+ " + " ".join(command), flush=True)
+            if not args.dry_run:
+                run_observation(command, args.root, environment)
     return 0
 
 

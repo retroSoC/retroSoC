@@ -138,8 +138,11 @@ behavior. It is not asynchronous CDC/RDC signoff; implementation timing,
 clock-tree checks, and the technology PLL model remain separate signoff work.
 
 `make check-warnings` normalizes tool messages and compares them with
-`quality/warnings/<profile>/<tool>.json`. New signatures and increased counts fail; resolved warnings
-are reported but do not fail. To refresh one baseline after review:
+`quality/warnings/<profile>/<tool>.json`. New signatures and increased counts make the standalone
+command fail; resolved warnings are reported but do not fail. Regression suites run warning and
+metric checks as non-blocking observations so their JSON reports are generated and uploaded even
+when a baseline delta is present. Compilation, simulation, synthesis, and STA failures remain
+blocking. To refresh one baseline after review:
 
 ```sh
 python3 scripts/analyze_warnings.py baseline \
@@ -151,7 +154,7 @@ python3 scripts/analyze_warnings.py baseline \
 ## Metrics Promotion
 
 `make check-metrics` currently uses `quality/metrics/policy.json` in `observe` mode. Regression
-artifacts retain the metrics from each successful run. After ten successful `main` runs for the same
+artifacts retain the metrics from every completed regression run. After ten successful `main` runs for the same
 profile and locked tools, create the median baseline:
 
 ```sh
