@@ -13,7 +13,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 ## Highlights
 
-- Selectable RV32IM CPU configurations using HAZARD3, PicoRV32, or MDD cores.
+- A fixed architecture with a Hazard3 management core by default (PicoRV32 is
+  an explicit build option) and software-selected
+  user-core and user-IP extension slots.
 - Configurable GF180, SKY130, IHP130, and ICS55 implementation targets. GF180, SKY130,
   and IHP130 have open-source CI coverage; ICS55 remains a configured cluster target.
 - A memory-mapped peripheral subsystem with GPIO, UART, timers, PWM, I2C, I2S, PS2,
@@ -42,20 +44,18 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 ## Supported Configurations
 
-The committed profiles are the supported starting points. They select a core, ISA, PDK,
-application, linker layout, and optional features as one reproducible configuration.
+The committed profiles are the supported starting points. They select an ISA,
+PDK, application, linker layout, and optional features as one reproducible
+configuration. The user-extension fabric is fixed; `CORE` selects the management
+core and defaults to `HAZARD3`.
 
-| Profile | Core / ISA | Application | Coverage |
+| Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |
-| [`configs/ci/hazard3-rv32im-ihp130.mk`](configs/ci/hazard3-rv32im-ihp130.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
-| [`configs/ci/hazard3-rv32im-gf180.mk`](configs/ci/hazard3-rv32im-gf180.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
-| [`configs/ci/hazard3-rv32im-sky130.mk`](configs/ci/hazard3-rv32im-sky130.mk) | HAZARD3 / RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
-| [`configs/ci/hazard3-rv32im-ihp130-shell.mk`](configs/ci/hazard3-rv32im-ihp130-shell.mk) | HAZARD3 / RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
-| [`configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk) | HAZARD3 / RV32IM + MDD IP | `bringup` | Pull-request firmware and Verilator integration coverage for the user-IP GPIO ownership path. |
-| [`configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk`](configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk) | HAZARD3 / RV32IM + MDD IP | `shell` | Pull-request firmware compilation coverage for the user-IP software command. |
-| [`configs/ci/mdd-rv32im-ihp130.mk`](configs/ci/mdd-rv32im-ihp130.mk) | MDD / RV32IM | `bringup` | Pull-request firmware and Verilator regression. |
-| [`configs/nightly/picorv32-rv32im-ihp130.mk`](configs/nightly/picorv32-rv32im-ihp130.mk) | PicoRV32 / RV32IM | `bringup` | Nightly firmware, Verilator, and Icarus regression. |
-| [`configs/cluster/hazard3-ics55.mk`](configs/cluster/hazard3-ics55.mk) | HAZARD3 / RV32IM | `bringup` | Cluster-only configuration; requires the site PDK and licensed-tool environment. |
+| [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
+| [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
+| [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
+| [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
+| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Cluster-only configuration; requires the site PDK and licensed-tool environment. |
 
 ## Prerequisites
 
@@ -80,20 +80,20 @@ and dependency update procedure.
 
 ## Quick Start
 
-Start with the CI-verified HAZARD3/IHP130 `bringup` profile. `setup` retrieves the pinned
+Start with the CI-verified IHP130 `bringup` profile. `setup` retrieves the pinned
 source dependencies, and `doctor` reports any missing local executables or setup inputs.
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk setup
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG doctor
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim
+make CONFIG=configs/ci/ihp130.mk setup
+make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG doctor
+make CONFIG=configs/ci/ihp130.mk firmware
+make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim
 ```
 
 Select the interactive shell application without editing source files:
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130-shell.mk firmware
+make CONFIG=configs/ci/ihp130-shell.mk firmware
 ```
 
 ## Common Flows
@@ -107,9 +107,9 @@ Verilator simulations run for 180 seconds by default. Set `SOC_SIM_TIME` explici
 an exploratory local run needs a different limit.
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
+make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
   SIM_FIRMWARE_NAME=retrosoc_asm \
   SIM_SUCCESS_MARKER='Mem wr/rd test success' \
   RTL_SIM_TIMEOUT=5200000 netsim
@@ -117,13 +117,13 @@ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG \
 
 | Goal | Command |
 | --- | --- |
-| Icarus behavioral simulation | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim` |
-| Verilator behavioral simulation | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR sim` |
-| Assembly self-test with Icarus | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm` |
-| Yosys synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth` |
-| Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG netsim` |
-| OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta` |
-| Strict Verilator RTL lint | `make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
+| Icarus behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim` |
+| Verilator behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR sim` |
+| Assembly self-test with Icarus | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm` |
+| Yosys synthesis | `make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth` |
+| Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG netsim` |
+| OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta` |
+| Strict Verilator RTL lint | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
 | IHP130 fast smoke suite | `make regress-smoke` |
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |
@@ -149,8 +149,8 @@ commands must reuse one variant:
 
 ```sh
 export BUILD_TIMESTAMP=2026-07-21-10-39
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim
+make CONFIG=configs/ci/ihp130.mk firmware
+make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim
 ```
 
 ## Reproducibility And CI

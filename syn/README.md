@@ -7,7 +7,7 @@ export tooling. `yosys/` owns the supported open-source synthesis flow;
 Use a committed profile and run the supported flow:
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
 ```
 
 Synthesis outputs are generated below `build/` and must not be committed.

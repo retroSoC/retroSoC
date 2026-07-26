@@ -6,9 +6,6 @@
 #include <retrosoc/hal/qspi.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/dma.h>
-#ifdef CSR_ENABLE
-#include <retrosoc/arch/riscv/system_base.h>
-#endif
 // #include "image.h"
 // #include "video.h"
 
@@ -257,57 +254,65 @@ void lcd_fill_video(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, 
         lcd_wr_data32(data + j, (total_pixels - i) / 2U);
 }
 
+static uint64_t rs_lcd_read_cycle_counter(void) {
+    uint32_t high_before;
+    uint32_t low;
+    uint32_t high_after;
+
+    do {
+        __asm__ volatile("rdcycleh %0" : "=r"(high_before));
+        __asm__ volatile("rdcycle %0" : "=r"(low));
+        __asm__ volatile("rdcycleh %0" : "=r"(high_after));
+    } while (high_before != high_after);
+
+    return ((uint64_t)high_after << 32U) | (uint64_t)low;
+}
+
+static uint64_t rs_lcd_read_instret_counter(void) {
+    uint32_t high_before;
+    uint32_t low;
+    uint32_t high_after;
+
+    do {
+        __asm__ volatile("rdinstreth %0" : "=r"(high_before));
+        __asm__ volatile("rdinstret %0" : "=r"(low));
+        __asm__ volatile("rdinstreth %0" : "=r"(high_after));
+    } while (high_before != high_after);
+
+    return ((uint64_t)high_after << 32U) | (uint64_t)low;
+}
+
 static void lcd_frame(uint32_t first, uint32_t pref_cnt) {
-#ifdef CORE_PICORV32
-    static uint32_t cycle_start, cycle_end;
-    static uint32_t cycleh_start, cycleh_end;
-    static uint32_t inst_start, inst_end;
-    static uint32_t insth_start, insth_end;
-    if (first) {
-        __asm__ volatile("rdcycle %0" : "=r"(cycle_start));
-        __asm__ volatile("rdcycleh %0" : "=r"(cycleh_start));
-        __asm__ volatile("rdinstret %0" : "=r"(inst_start));
-        __asm__ volatile("rdinstreth %0" : "=r"(insth_start));
-    } else {
-        __asm__ volatile("rdcycle %0" : "=r"(cycle_end));
-        __asm__ volatile("rdcycleh %0" : "=r"(cycleh_end));
-        __asm__ volatile("rdinstret %0" : "=r"(inst_end));
-        __asm__ volatile("rdinstreth %0" : "=r"(insth_end));
+    static uint64_t cycle_start;
+    static uint64_t instret_start;
+    static bool measurement_active;
 
-        printf("cycles num: %d(high: %d)\n", cycle_end - cycle_start, cycleh_end - cycleh_start);
-        printf("insts  num: %d(high: %d)\n", inst_end - inst_start, insth_end - insth_start);
-        if (cycle_end > cycle_start) {
-            const uint32_t elapsed_us = (cycle_end - cycle_start) / CPU_FREQ;
-            if (elapsed_us != 0U) {
-                printf("flush rate: %dfps\n", (pref_cnt * 1000000U) / elapsed_us);
-            }
-        }
-    }
-#elif CORE_HAZARD3
-    static uint64_t cycle_start, cycle_end;
-    static uint64_t inst_start, inst_end;
-    if (first) {
-        // cycle_start = __get_rv_cycle();
-        // inst_start = __get_rv_instret();
-    } else {
-        // cycle_end = __get_rv_cycle();
-        // inst_end = __get_rv_instret();
-        if (cycle_end > cycle_start) {
-            const uint64_t elapsed_us = (cycle_end - cycle_start) / CPU_FREQ;
-            printf("cycles num: %lld\n", cycle_end - cycle_start);
-            printf("insts  num: %lld\n", inst_end - inst_start);
-            if (elapsed_us != 0U) {
-                printf("flush rate: %lldfps\n", ((uint64_t)pref_cnt * 1000000U) / elapsed_us);
-            }
-        } else {
-            printf("frame timing is unavailable on this core\n");
-        }
+    if (first != 0U) {
+        cycle_start = rs_lcd_read_cycle_counter();
+        instret_start = rs_lcd_read_instret_counter();
+        measurement_active = true;
+        return;
     }
 
-#else
-    (void)first;
-    (void)pref_cnt;
-#endif
+    if (!measurement_active) {
+        printf("lcd frame timing is unavailable\n");
+        return;
+    }
+
+    const uint64_t cycle_count = rs_lcd_read_cycle_counter() - cycle_start;
+    const uint64_t instret_count = rs_lcd_read_instret_counter() - instret_start;
+    const uint64_t elapsed_us = cycle_count / (uint64_t)CPU_FREQ;
+
+    measurement_active = false;
+    printf("cycles num: %llu\n", (unsigned long long)cycle_count);
+    printf("insts  num: %llu\n", (unsigned long long)instret_count);
+    if (elapsed_us == 0U) {
+        printf("lcd frame timing is unavailable\n");
+        return;
+    }
+
+    printf("flush rate: %llufps\n",
+           (unsigned long long)(((uint64_t)pref_cnt * UINT64_C(1000000)) / elapsed_us));
 }
 
 void ip_lcd_test(int argc, char **argv) {

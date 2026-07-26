@@ -40,9 +40,8 @@ ISA_FLAGS += -march=rv32im
 endif
 endif
 
-DEF_VAL += -DCORE_$(CORE)
-DEF_VAL += -DIP_$(IP)
 DEF_VAL += -DAPP_$(APP)
+DEF_VAL += -DRS_SOC_MGMT_CORE_$(CORE)
 DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
 DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS) $(SW_WARN_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
@@ -83,7 +82,8 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/lcd.c \
             $(ROOT_PATH)/crt/src/hal/psram.c \
             $(ROOT_PATH)/crt/src/hal/spisd.c \
-            $(ROOT_PATH)/crt/src/hal/qspi.c
+            $(ROOT_PATH)/crt/src/hal/qspi.c \
+            $(ROOT_PATH)/crt/src/hal/user_core.c
 
 ifeq ($(HAVE_CSR),YES)
 CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/system_irq.S
@@ -100,9 +100,7 @@ $(error Application profile not found: $(APP_MK))
 endif
 include $(APP_MK)
 
-ifneq ($(findstring MDD,$(CORE) $(IP)),)
 APP_INC_DIRS += $(MPW_OUTPUT_DIR)
-endif
 
 ifneq ($(filter RV32E RV32I,$(ISA)),)
 CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/libgcc/div.S
@@ -112,6 +110,7 @@ endif
 
 INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(MEMORY_MAP_C_DIR) \
+            -I$(USER_EXTENSIONS_DIR)/include \
             -I$(ROOT_PATH)/crt/include \
             $(addprefix -I,$(APP_INC_DIRS))
 SRC_PATH          := $(CRT_SRCS) $(APP_SRCS)
@@ -138,7 +137,7 @@ asm: $(MPW_VARIANT_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
-$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mini/mk/software.mk
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)

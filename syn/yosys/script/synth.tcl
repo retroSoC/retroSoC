@@ -184,8 +184,6 @@ set config_tmp "${config}.tmp"
 set config_file [open $config_tmp "w"]
 puts $config_file "PDK=$pdk"
 puts $config_file "SOC=$soc"
-puts $config_file "CORE=$core"
-puts $config_file "IP=$ip"
 puts $config_file "TOP_DESIGN=$top_design"
 close $config_file
 file rename -force $config_tmp $config

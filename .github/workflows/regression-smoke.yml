@@ -20,7 +20,7 @@ jobs:
     with:
       suite: smoke
       pdk: IHP130
-      profile: configs/ci/hazard3-rv32im-ihp130.mk
+      profile: configs/ci/ihp130.mk
       retention_days: 14
       timeout_minutes: 60
       toolset: verilator sv2v iverilog yosys sby bitwuzla riscv_gnu

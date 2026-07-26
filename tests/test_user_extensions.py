@@ -50,7 +50,9 @@ def test_extensions_generate_isolated_scalar_bindings(tmp_path: Path) -> None:
 
     assert core.count("nmi_if u_user_") == 6
     assert "nmi.valid = '0;" in core
-    assert "5'd6: begin" in core
+    assert "5'd0: begin" in core
+    assert "5'd5: begin" in core
+    assert "core_reset_i[0]" in core
     assert "user_core_design_username1 #(" in core
     assert ip.count("user_gpio_if #(`USER_GPIO_NUM)") == 2
     assert "gpio.do_o = '0;" in ip
@@ -64,7 +66,7 @@ def test_extensions_reject_noncontiguous_slots_and_invalid_modules(tmp_path: Pat
     document["core_targets"][2]["slot"] = 7
     result = validate(write_invalid_extensions(tmp_path, document))
     assert result.returncode != 0
-    assert "slots must be contiguous from one" in result.stderr
+    assert "slots must be contiguous from 0" in result.stderr
 
     document = json.loads(EXTENSIONS.read_text(encoding="utf-8"))
     document["ip_targets"][0]["module"] = "user-ip"

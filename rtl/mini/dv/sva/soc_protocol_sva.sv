@@ -12,26 +12,28 @@
 `ifndef SYNTHESIS
 
 module soc_bus_sva (
-    input logic clk_i,
-    input logic rst_n_i,
-    input logic fault_sel_i,
-    input logic fault_valid_i,
-    input logic arb_locked_i,
-    input logic arb_dma_owner_i,
-    input logic core_valid_i,
-    input logic dma_valid_i
+    input logic       clk_i,
+    input logic       rst_n_i,
+    input logic       fault_sel_i,
+    input logic       fault_valid_i,
+    input logic       access_denied_i,
+    input logic       arb_locked_i,
+    input logic [1:0] arb_owner_i,
+    input logic       mgmt_valid_i,
+    input logic       user_valid_i,
+    input logic       dma_valid_i
 );
 
   // A decode miss must be reported and terminate the transaction locally.
   assert property (@(posedge clk_i) disable iff (!rst_n_i) fault_sel_i |-> fault_valid_i);
 
-  // Retain the documented DMA-over-core arbitration policy while idle.
+  // A sole management request must acquire ownership rather than being dropped.
   assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      !arb_locked_i && dma_valid_i |=> arb_locked_i && arb_dma_owner_i);
+      !arb_locked_i && mgmt_valid_i && !user_valid_i && !dma_valid_i |=>
+          arb_locked_i && arb_owner_i == 2'd0);
 
-  // A sole core request must acquire ownership rather than being dropped.
-  assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      !arb_locked_i && core_valid_i && !dma_valid_i |=> arb_locked_i && !arb_dma_owner_i);
+  // A denied user request terminates locally and cannot reach a target.
+  assert property (@(posedge clk_i) disable iff (!rst_n_i) access_denied_i |-> fault_valid_i);
 
 endmodule
 
@@ -41,8 +43,10 @@ bind bus soc_bus_sva u_soc_bus_sva (
     .fault_sel_i    (s_fault_sel),
     .fault_valid_i  (fault_valid_o),
     .arb_locked_i   (s_mstr_lock_q),
-    .arb_dma_owner_i(s_mstr_id_q),
-    .core_valid_i   (core_nmi.valid),
+    .access_denied_i(s_access_denied),
+    .arb_owner_i    (s_mstr_id_q),
+    .mgmt_valid_i   (mgmt_nmi.valid),
+    .user_valid_i   (user_nmi.valid),
     .dma_valid_i    (dma_nmi.valid)
 );
 
@@ -108,7 +112,6 @@ bind pll_rcu_controller soc_pll_rcu_sva u_soc_pll_rcu_sva (
     .select_ext_clk_i(select_ext_clk_o)
 );
 
-`ifdef IP_MDD
 module soc_gpio_user_handoff_sva #(
     parameter int DATA_WIDTH = 1
 ) (
@@ -147,7 +150,6 @@ bind nmi_gpio soc_gpio_user_handoff_sva #(
     .gpio_oe_i     (gpio.oe_o),
     .gpio_do_i     (gpio.do_o)
 );
-`endif
 
 `include "soc_irq_sva.svh"
 `endif

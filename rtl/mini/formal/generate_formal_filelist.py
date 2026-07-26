@@ -23,8 +23,6 @@ TOP = ROOT / "rtl/mini/top"
 
 
 def target_defines(target: str) -> list[str]:
-    if target == "gpio_mdd":
-        return ["+define+SV_ASSRT_DISABLE", "+define+IP_MDD"]
     return ["+define+SV_ASSRT_DISABLE"]
 
 
@@ -65,23 +63,30 @@ def source_files(target: str) -> list[Path]:
             TOP / "rcu.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
         ]
-    if target == "gpio_mdd":
+    if target == "gpio_user":
         return [
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "utils/edge_det.sv",
             PERIPHERAL / "gpio.sv",
-            SCRIPT_DIR / "gpio_mdd_formal.sv",
+            SCRIPT_DIR / "gpio_user_formal.sv",
         ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
-def generate(target: str, output: Path, memory_map_dir: Path, soc_topology_dir: Path) -> bool:
+def generate(
+    target: str,
+    output: Path,
+    memory_map_dir: Path,
+    soc_topology_dir: Path,
+    user_extensions_dir: Path,
+) -> bool:
     filelist = FileList(
         defines=target_defines(target),
         incdirs=[
             memory_map_dir.resolve() / "rtl",
             soc_topology_dir.resolve() / "rtl",
+            user_extensions_dir.resolve() / "rtl",
             TOP,
             COMMON_RTL,
             COMMON_RTL / "interface",
@@ -98,12 +103,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--target",
-        choices=("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_mdd"),
+        choices=("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_user"),
         required=True,
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--memory-map-dir", type=Path, required=True)
     parser.add_argument("--soc-topology-dir", type=Path, required=True)
+    parser.add_argument("--user-extensions-dir", type=Path, required=True)
     return parser.parse_args()
 
 
@@ -114,6 +120,7 @@ def main() -> int:
         args.output,
         args.memory_map_dir,
         args.soc_topology_dir,
+        args.user_extensions_dir,
     )
     print(f"formal filelist {'updated' if changed else 'unchanged'}: {args.output.resolve()}")
     return 0

@@ -20,5 +20,5 @@ jobs:
     with:
       suite: pr
       pdk: GF180
-      profile: configs/ci/hazard3-rv32im-gf180.mk
+      profile: configs/ci/gf180.mk
       retention_days: 30

@@ -11,6 +11,7 @@ import sys
 import tarfile
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from zipfile import ZipFile
 
 
@@ -30,7 +31,10 @@ from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
-from scripts.generate_mpw import migrate_user_gpio_interfaces  # noqa: E402
+from scripts.generate_mpw import (  # noqa: E402
+    migrate_user_gpio_interfaces,
+    remove_legacy_picorv32_entry,
+)
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.regress import (  # noqa: E402
     NIGHTLY_COMMANDS,
@@ -95,7 +99,7 @@ def test_nested_filelist_and_space_path_round_trip(tmp_path: Path) -> None:
 
 
 def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
-    defines = ["+define+PDK_IHP130", "+define+CORE_HAZARD3"]
+    defines = ["+define+PDK_IHP130"]
     generated = generate_all(tmp_path, defines)
     mtimes = {path: path.stat().st_mtime_ns for path in generated}
     generate_all(tmp_path, defines)
@@ -103,30 +107,88 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
+    assert (tmp_path / "core_hazard3.fl").is_file()
+    assert (tmp_path / "core_picorv32.fl").is_file()
+
+
+def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> None:
+    module_path = ROOT / "syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_source_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    dynamic_core = tmp_path / "core.fl"
+    dynamic_ip = tmp_path / "ip.fl"
+    dynamic_core.write_text("", encoding="utf-8")
+    dynamic_ip.write_text("", encoding="utf-8")
+
+    for core, source_name in (
+        ("HAZARD3", "hazard3_cpu_1port.v"),
+        ("PICORV32", "picorv32_ver.v"),
+    ):
+        arguments = SimpleNamespace(
+            pdk="IHP130",
+            simu="IVERILOG",
+            core=core,
+            have_pll=False,
+            have_sram_if=False,
+            have_sram_macro=False,
+            have_sva=False,
+            dynamic_core_filelist=dynamic_core,
+            dynamic_ip_filelist=dynamic_ip,
+        )
+        generated_dir = tmp_path / core.lower()
+        user_extensions_dir = generated_dir / "user_extensions"
+        source_export.generate_all(generated_dir, source_export.build_defines(arguments))
+        source_export.generate_user_extensions(
+            ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
+        )
+        filelist = source_export.configured_filelist(arguments, generated_dir, user_extensions_dir)
+
+        assert f"+define+CORE_{core}" in filelist.defines
+        assert any(path.name == source_name for path in filelist.files)
+
+
+def test_package_forwards_manifest_management_core() -> None:
+    package_source = (ROOT / "scripts/package.py").read_text(encoding="utf-8")
+
+    assert '"--core"' in package_source
+    assert 'config.get("CORE", "HAZARD3")' in package_source
 
 
 def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> None:
     memory_map = tmp_path / "memory_map"
     topology = tmp_path / "soc_topology"
+    user_extensions = tmp_path / "user_extensions"
     (memory_map / "rtl").mkdir(parents=True)
     (topology / "rtl").mkdir(parents=True)
+    (user_extensions / "rtl").mkdir(parents=True)
 
     bus_filelist = tmp_path / "bus.fl"
     nmi2apb_filelist = tmp_path / "nmi2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
-    gpio_mdd_filelist = tmp_path / "gpio_mdd.fl"
-    assert generate_formal_filelist("bus", bus_filelist, memory_map, topology)
-    assert generate_formal_filelist("nmi2apb", nmi2apb_filelist, memory_map, topology)
-    assert generate_formal_filelist("sysctrl", sysctrl_filelist, memory_map, topology)
-    assert generate_formal_filelist("pll_rcu", pll_rcu_filelist, memory_map, topology)
-    assert generate_formal_filelist("gpio_mdd", gpio_mdd_filelist, memory_map, topology)
+    gpio_user_filelist = tmp_path / "gpio_user.fl"
+    assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
+    assert generate_formal_filelist(
+        "nmi2apb", nmi2apb_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "pll_rcu", pll_rcu_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "gpio_user", gpio_user_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     nmi2apb = parse_filelists([nmi2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
-    gpio_mdd = parse_filelists([gpio_mdd_filelist], require_files=False)
+    gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
     assert ROOT / "rtl/ip/native/interconnect/nmi_regslice.sv" in bus.files
@@ -138,11 +200,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/native/peripheral/gpio.sv" in gpio_mdd.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_mdd.files
-    assert ROOT / "rtl/mini/formal/gpio_mdd_formal.sv" in gpio_mdd.files
-    assert "+define+IP_MDD" in gpio_mdd.defines
-    assert "+define+IP_MDD" not in sysctrl.defines
+    assert ROOT / "rtl/ip/native/peripheral/gpio.sv" in gpio_user.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
+    assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
 
 
 def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
@@ -175,7 +235,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_mdd")
+    proofs = ("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_user")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -203,7 +263,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"pll_rcu={tmp_path / 'pll_rcu'}",
         "--proof",
-        f"gpio_mdd={tmp_path / 'gpio_mdd'}",
+        f"gpio_user={tmp_path / 'gpio_user'}",
     )
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["status"] == "passed"
@@ -213,7 +273,8 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
 def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
     source = tmp_path / "user_ip_design.sv"
     source.write_text(
-        """module user_ip_design (gpio_if.dut gpio);
+        """`include "user_extensions.svh"
+module user_ip_design (gpio_if.dut gpio);
   logic value;
   assign gpio.gpio_oe = value;
   assign gpio.gpio_cs = value;
@@ -231,10 +292,32 @@ endmodule
     migrated = source.read_text(encoding="utf-8")
     assert "gpio_if.dut" not in migrated
     assert "gpio.gpio_" not in migrated
+    assert '`include "user_extensions.svh"' in migrated
     assert "user_gpio_if.user_ip gpio" in migrated
     assert "gpio.oe_o" in migrated
     assert "gpio.do_o" in migrated
     assert "gpio.di_i" in migrated
+
+
+def test_generated_user_core_filelist_excludes_the_legacy_picorv32_entry(
+    tmp_path: Path,
+) -> None:
+    management_core_dir = tmp_path / "rtl/managed/picorv32/rtl"
+    management_core_dir.mkdir(parents=True)
+    picorv32 = management_core_dir / "picorv32.v"
+    picorv32_ver = management_core_dir / "picorv32_ver.v"
+    picorv32.touch()
+    picorv32_ver.touch()
+    filelist = tmp_path / "generated/mpw/core/core.fl"
+    filelist.parent.mkdir(parents=True)
+    filelist.write_text(
+        f"{picorv32.resolve()}\n{picorv32_ver.resolve()}\nuser_core_design.sv\n",
+        encoding="utf-8",
+    )
+
+    remove_legacy_picorv32_entry(filelist, management_core_dir)
+
+    assert filelist.read_text(encoding="utf-8") == "user_core_design.sv\n"
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
@@ -361,7 +444,7 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     run(
         "make",
         "-n",
-        "CONFIG=configs/ci/hazard3-rv32im-ihp130.mk",
+        "CONFIG=configs/ci/ihp130.mk",
         "SIMU=IVERILOG",
         "RTL_SIM_TIMEOUT=5200000",
         "sim-asm",
@@ -376,6 +459,30 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     )
     assert invalid.returncode != 0
     assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
+
+    invalid_core = subprocess.run(
+        ["make", "CORE=alternate", "config"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert invalid_core.returncode != 0
+    assert "Invalid CORE='alternate'" in invalid_core.stderr
+
+    default_core = run("make", "config").stdout
+    assert "CORE               HAZARD3" in default_core
+
+    picorv32_core = run("make", "CORE=PICORV32", "config").stdout
+    assert "CORE               PICORV32" in picorv32_core
+
+    removed_ip = subprocess.run(
+        ["make", "IP=MDD", "config"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert removed_ip.returncode != 0
+    assert "IP is no longer configurable" in removed_ip.stderr
 
 
 def test_format_file_scope_is_tracked_and_self_owned() -> None:
@@ -419,7 +526,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         "--timestamp",
         "2026-07-21-10-39",
         "--value",
-        "CORE=HAZARD3",
+        "ARCHITECTURE=fixed-management-and-user-extensions",
         "--value",
         "PDK=IHP130",
     )
@@ -481,6 +588,28 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
             assert "HAVE_SVA=YES" in values
 
 
+def test_verilator_has_no_external_core_selection() -> None:
+    command_line = (ROOT / "rtl/mini/dv/verilator/csrc/main.cpp").read_text(encoding="utf-8")
+    wrapper = (ROOT / "rtl/mini/dv/verilator/rtl/retrosoc_top.sv").read_text(encoding="utf-8")
+    testbench = (ROOT / "rtl/mini/dv/tb/retrosoc_tb.sv").read_text(encoding="utf-8")
+
+    assert "core-sel" not in command_line
+    assert "core_sel_i" not in wrapper
+    assert "core_sel_i" not in testbench
+
+
+def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
+    wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    assert "VALID_CORE      := HAZARD3 PICORV32" in makefile
+    assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
+    assert "`ifdef CORE_PICORV32" in wrapper
+    assert "`elsif CORE_HAZARD3" in wrapper
+    assert "ahbl2nmi u_ahbl2nmi" in wrapper
+    assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
+
+
 def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     commands, profiles = select_regression("smoke", "IHP130")
 
@@ -506,7 +635,7 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "+ make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk firmware" in dry_run.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk firmware" in dry_run.stdout
     assert "netsim" not in dry_run.stdout
 
     invalid = subprocess.run(
@@ -785,6 +914,20 @@ def test_warning_normalization_keeps_ranges_and_removes_variant_hash(tmp_path: P
     normalized = normalize(tmp_path, "WIDTH", message)
     assert normalized == (
         "WIDTH:$BUILD/generated/core.sv:<line>: Bit extraction of var[7:0] is too wide"
+    )
+
+
+def test_warning_normalization_maps_isolated_mpw_sources_to_managed_sources(
+    tmp_path: Path,
+) -> None:
+    message = (
+        f"{tmp_path}/build/ihp130-deadbeef/generated/mpw/verilator/core/username3/"
+        "./Hazard3/hazard3_core_username3.v:42: unused signal"
+    )
+    normalized = normalize(tmp_path, "UNUSEDSIGNAL", message)
+    assert normalized == (
+        "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/"
+        "hazard3_core.v:<line>: unused signal"
     )
 
 

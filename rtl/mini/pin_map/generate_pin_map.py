@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-VALID_FEATURES = {"HAVE_PLL", "CORE_MDD", "IP_MDD"}
+VALID_FEATURES = {"HAVE_PLL"}
 VALID_KINDS = {
     "full",
     "schmitt_input",
@@ -112,7 +112,11 @@ def parse_pad(entry: dict[str, Any], defaults: dict[str, Any], index: int | None
 def expand_group(group: Any, index: int) -> list[Pad]:
     if not isinstance(group, dict):
         raise ValueError(f"pads[{index}] must be an object")
-    defaults = {key: value for key, value in group.items() if key not in {"ports", "count", "prefix", "suffix"}}
+    defaults = {
+        key: value
+        for key, value in group.items()
+        if key not in {"ports", "count", "prefix", "suffix"}
+    }
     ports = group.get("ports")
     if ports is not None:
         if not isinstance(ports, list) or not ports:

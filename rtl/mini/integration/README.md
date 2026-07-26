@@ -19,9 +19,9 @@ peripheral output path. Values are restricted to scalar signal references and
 one-bit constants so malformed expressions are rejected before RTL generation.
 
 The `apb_targets` list defines the stable APB response slot, timed/pure APB
-interface names, and corresponding active APB address-map region. A target that
-declares `requires_ip: "MDD"` is generated only for `IP=MDD`; its presence is
-checked against the same condition in the canonical memory map.
+interface names, and corresponding active APB address-map region. The user-IP
+target is part of the fixed platform integration and its presence is checked
+against the canonical memory map.
 
 `irq_vector_width`, `irq_groups`, and `interrupts` define the complete core
 interrupt topology. `nmi` and `apb` group entries declare the wrapper output

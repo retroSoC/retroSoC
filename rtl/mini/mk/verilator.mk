@@ -97,7 +97,7 @@ sim: comp
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-sim \
 		--log $(BUILD_DIR)/sim.log --result $(BUILD_DIR)/result-sim.json \
 		--cwd $(BUILD_DIR) -- $(BUILD_DIR)/emu -i $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin \
-		-s $(RTL_SIM_CORESEL) -t $(SOC_SIM_TIME)
+		-t $(SOC_SIM_TIME)
 	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(BUILD_DIR)/sim.log \
 		--result $(BUILD_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 

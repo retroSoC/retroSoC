@@ -7,7 +7,11 @@ module bus_fault_tb;
   logic [31:0] fault_addr_o;
   logic [ 3:0] fault_wstrb_o;
   logic        fault_reserved_o;
-  nmi_if core_nmi ();
+  logic        fault_access_o;
+  logic [ 1:0] fault_master_o;
+  logic        user_bus_idle_o;
+  nmi_if mgmt_nmi ();
+  nmi_if user_nmi ();
   nmi_if dma_nmi ();
   nmi_if natv_nmi ();
   nmi_if apb_nmi ();
@@ -20,47 +24,76 @@ module bus_fault_tb;
   assign apb_nmi.rdata  = 32'h1234_5678;
 
   bus u_bus (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .core_nmi        (core_nmi),
-      .dma_nmi         (dma_nmi),
-      .natv_nmi        (natv_nmi),
-      .apb_nmi         (apb_nmi),
-      .fault_valid_o   (fault_valid_o),
-      .fault_addr_o    (fault_addr_o),
-      .fault_wstrb_o   (fault_wstrb_o),
-      .fault_reserved_o(fault_reserved_o)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .mgmt_nmi         (mgmt_nmi),
+      .user_nmi         (user_nmi),
+      .dma_nmi          (dma_nmi),
+      .user_bus_enable_i(1'b1),
+      .user_bus_idle_o  (user_bus_idle_o),
+      .natv_nmi         (natv_nmi),
+      .apb_nmi          (apb_nmi),
+      .fault_valid_o    (fault_valid_o),
+      .fault_addr_o     (fault_addr_o),
+      .fault_wstrb_o    (fault_wstrb_o),
+      .fault_reserved_o (fault_reserved_o),
+      .fault_access_o   (fault_access_o),
+      .fault_master_o   (fault_master_o)
   );
 
   task automatic expect_fault(input logic [31:0] address, input logic [3:0] write_strobes,
                               input logic reserved);
     begin
       @(negedge clk_i);
-      core_nmi.addr  = address;
-      core_nmi.wdata = 32'hA5A5_5A5A;
-      core_nmi.wstrb = write_strobes;
-      core_nmi.valid = 1'b1;
-
+      mgmt_nmi.addr  = address;
+      mgmt_nmi.wdata = 32'hA5A5_5A5A;
+      mgmt_nmi.wstrb = write_strobes;
+      mgmt_nmi.valid = 1'b1;
       while (!fault_valid_o) @(posedge clk_i);
       if (fault_addr_o !== address || fault_wstrb_o !== write_strobes ||
-          fault_reserved_o !== reserved || natv_nmi.valid || apb_nmi.valid) begin
+          fault_reserved_o !== reserved || fault_access_o || natv_nmi.valid || apb_nmi.valid) begin
         $fatal(1, "unexpected fault response for address %h", address);
       end
-      while (!core_nmi.ready) @(posedge clk_i);
-      if (core_nmi.rdata !== 32'd0) begin
+      while (!mgmt_nmi.ready) @(posedge clk_i);
+      if (mgmt_nmi.rdata !== 32'd0) begin
         $fatal(1, "fault response data must be zero");
       end
       @(negedge clk_i);
-      core_nmi.valid = 1'b0;
+      mgmt_nmi.valid = 1'b0;
+      while (fault_valid_o) @(posedge clk_i);
+    end
+  endtask
+
+  task automatic expect_user_denied(input logic [31:0] address, input logic [3:0] write_strobes);
+    begin
+      @(negedge clk_i);
+      user_nmi.addr  = address;
+      user_nmi.wdata = 32'h5A5A_A5A5;
+      user_nmi.wstrb = write_strobes;
+      user_nmi.valid = 1'b1;
+      while (!fault_valid_o) @(posedge clk_i);
+      if (!fault_access_o || fault_master_o != 2'd1 || natv_nmi.valid || apb_nmi.valid) begin
+        $fatal(1, "user access was not denied locally");
+      end
+      while (!user_nmi.ready) @(posedge clk_i);
+      if (user_nmi.rdata !== 32'd0) begin
+        $fatal(1, "denied user response data must be zero");
+      end
+      @(negedge clk_i);
+      user_nmi.valid = 1'b0;
       while (fault_valid_o) @(posedge clk_i);
     end
   endtask
 
   initial begin
-    core_nmi.valid = 1'b0;
-    core_nmi.addr  = '0;
-    core_nmi.wdata = '0;
-    core_nmi.wstrb = '0;
+    mgmt_nmi.valid = 1'b0;
+    mgmt_nmi.addr  = '0;
+    mgmt_nmi.wdata = '0;
+    mgmt_nmi.wstrb = '0;
+    user_nmi.valid = 1'b0;
+    user_nmi.addr  = '0;
+    user_nmi.wdata = '0;
+    user_nmi.wstrb = '0;
     dma_nmi.valid  = 1'b0;
     dma_nmi.addr   = '0;
     dma_nmi.wdata  = '0;
@@ -71,6 +104,7 @@ module bus_fault_tb;
 
     expect_fault(32'h1000_F000, 4'hF, 1'b1);
     expect_fault(32'hA000_0000, 4'h0, 1'b0);
+    expect_user_denied(32'h1000_B000, 4'hF);
     $display("bus fault responder test passed");
     $finish;
   end

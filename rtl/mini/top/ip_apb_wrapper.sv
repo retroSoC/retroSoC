@@ -12,7 +12,7 @@
 `include "uart_define.svh"
 `include "pwm_define.svh"
 `include "ps2_define.svh"
-`include "mdd_config.svh"
+`include "user_extensions.svh"
 `include "soc_irq_config.svh"
 
 module ip_apb_wrapper (
@@ -26,10 +26,8 @@ module ip_apb_wrapper (
     uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
-`ifdef IP_MDD
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
     user_gpio_if.user_ip                user_gpio,
-`endif
     output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -71,7 +69,6 @@ nmi2apb u_nmi2apb (
       `include "soc_apb_connections.svh"
   );
 
-`ifdef IP_MDD
   user_ip_wrapper u_user_ip_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -79,6 +76,5 @@ nmi2apb u_nmi2apb (
       .gpio   (user_gpio),
       .apb    (u_user_ip_apb_if)
   );
-`endif
 
 endmodule

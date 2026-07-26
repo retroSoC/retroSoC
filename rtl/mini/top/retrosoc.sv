@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-`include "mdd_config.svh"
+`include "user_extensions.svh"
 `include "soc_irq_config.svh"
 
 module retrosoc (
@@ -20,9 +20,6 @@ module retrosoc (
     input  logic                           rst_aud_n_i,
     input  logic                           clkdiv4_i,
     pll_ctrl_if.sysctrl                    pll_ctrl,
-`ifdef CORE_MDD
-    input  logic [`USER_CORESEL_WIDTH-1:0] core_sel_i,
-`endif
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
 `endif
@@ -62,22 +59,17 @@ module retrosoc (
   logic [                     31:0] s_bus_fault_addr;
   logic [                      3:0] s_bus_fault_wstrb;
   logic                             s_bus_fault_reserved;
+  logic                             s_bus_fault_access;
+  logic [                      1:0] s_bus_fault_master;
+  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
+
+  assign u_sysctrl_if.fault_access_i = s_bus_fault_access;
+  assign u_sysctrl_if.fault_master_i = s_bus_fault_master;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
       .outer(gpio)
   );
-
-`ifndef IP_MDD
-  assign u_user_gpio_if.do_o = '0;
-  assign u_user_gpio_if.oe_o = '0;
-`endif
-
-`ifdef CORE_MDD
-  assign u_sysctrl_if.core_sel_i = core_sel_i;
-`else
-  assign u_sysctrl_if.core_sel_i = '0;
-`endif
 
   // Generated IRQ vector wiring defaults all unallocated core IRQ bits low.
   `include "soc_irq_wiring.svh"
@@ -86,26 +78,37 @@ module retrosoc (
   `include "soc_gpio_alt_bindings.svh"
 
 core_wrapper u_core_wrapper (
-      .clk_i     (clk_i),
-      .rst_n_i   (rst_n_i),
-`ifdef CORE_MDD
-      .core_sel_i(core_sel_i),
-`endif
-      `include "soc_core_wrapper_fabric.svh"
-      .irq_i     (s_irq)
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      `include "soc_mgmt_core_wrapper_fabric.svh"
+      .irq_i  (s_irq)
+  );
+
+  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? s_irq : '0;
+  user_core_top u_user_core_top (
+      .clk_i       (clk_i),
+      .rst_n_i     (rst_n_i),
+      .irq_i       (s_user_irq),
+      .sel_i       (u_sysctrl_if.core_sel_o),
+      `include "soc_user_core_fabric.svh"
+      .core_reset_i(u_sysctrl_if.core_reset_o)
   );
 
   bus u_bus (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
 `ifdef HAVE_SRAM_IF
-      .ram             (ram),
+      .ram              (ram),
 `endif
+      .user_bus_enable_i(u_sysctrl_if.user_bus_enable_o),
+      .user_bus_idle_o  (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
-      .fault_valid_o   (s_bus_fault_valid),
-      .fault_addr_o    (s_bus_fault_addr),
-      .fault_wstrb_o   (s_bus_fault_wstrb),
-      .fault_reserved_o(s_bus_fault_reserved)
+      .fault_valid_o    (s_bus_fault_valid),
+      .fault_addr_o     (s_bus_fault_addr),
+      .fault_wstrb_o    (s_bus_fault_wstrb),
+      .fault_reserved_o (s_bus_fault_reserved),
+      .fault_access_o   (s_bus_fault_access),
+      .fault_master_o   (s_bus_fault_master)
   );
 
   ip_nmi_wrapper u_ip_nmi_wrapper (
@@ -147,10 +150,8 @@ core_wrapper u_core_wrapper (
       .uart       (u_uart1_if),
       .pwm        (u_pwm_if),
       .ps2        (u_ps2_if),
-`ifdef IP_MDD
       .ip_sel_i   (u_sysctrl_if.ip_sel_o),
       .user_gpio  (u_user_gpio_if),
-`endif
       .irq_o      (s_apb_irq)
   );
 

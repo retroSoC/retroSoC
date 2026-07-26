@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import sys
 from collections import Counter
@@ -26,6 +27,10 @@ LOCATION_RE = re.compile(
     r"(?:c|cc|cpp|cxx|h|hpp|py|sv|svh|tcl|v|vh)):\d+(?::\d+)?",
     re.IGNORECASE,
 )
+GENERATED_MPW_PATH_RE = re.compile(
+    r"\$BUILD/generated/mpw/[A-Za-z0-9_-]+/(?P<tree>core|ip)/(?P<path>[^\s:]+)"
+)
+MPW_INSTANCE_FILE_SUFFIX_RE = re.compile(r"_username[0-9]+(?=\.(?:sv|svh|v|vh)$)")
 
 
 def warning_line(tool: str, line: str) -> tuple[str, str] | None:
@@ -58,9 +63,17 @@ def normalize(root: Path, identifier: str, message: str) -> str:
         value,
     )
     value = value.replace(resolved_root, "$ROOT")
+    value = GENERATED_MPW_PATH_RE.sub(_normalize_generated_mpw_path, value)
     value = LOCATION_RE.sub(lambda match: match.group("path") + ":<line>", value)
     value = re.sub(r"\s+", " ", value)
     return f"{identifier}:{value}"
+
+
+def _normalize_generated_mpw_path(match: re.Match[str]) -> str:
+    """Map isolated MPW copies back to their managed source locations."""
+    relative_path = posixpath.normpath(match.group("path"))
+    relative_path = MPW_INSTANCE_FILE_SUFFIX_RE.sub("", relative_path)
+    return f"$ROOT/rtl/managed/mpw/{match.group('tree')}/{relative_path}"
 
 
 def scan(tool: str, logs: list[Path], root: Path) -> dict[str, object]:

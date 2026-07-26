@@ -5,13 +5,14 @@
 #include <stdbool.h>
 
 #include <retrosoc/generated/memory_map.h>
+#include <retrosoc/generated/user_extensions.h>
 
-#ifdef CORE_PICORV32
-#define HW_CORE "PicoRV32"
-#elif CORE_HAZARD3
-#define HW_CORE "HAZARD3"
+#if defined(RS_SOC_MGMT_CORE_HAZARD3)
+#define HW_CORE "Management Hazard3"
+#elif defined(RS_SOC_MGMT_CORE_PICORV32)
+#define HW_CORE "Management PicoRV32"
 #else
-#define HW_CORE "none"
+#error "Management core selection is missing"
 #endif
 
 #define CPU_FREQ                         72     // unit: MHz
@@ -158,6 +159,9 @@
 #define reg_sysctrl_bus_fault_addr       RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_FAULT_ADDR_OFFSET)
 #define reg_sysctrl_bus_fault_count      RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_FAULT_COUNT_OFFSET)
 #define reg_sysctrl_pll_status           RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PLL_STATUS_OFFSET)
+#define reg_sysctrl_user_core_reset      RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_USER_CORE_RESET_OFFSET)
+#define reg_sysctrl_user_core_status     RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_USER_CORE_STATUS_OFFSET)
+#define reg_sysctrl_bus_fault_master     RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_FAULT_MASTER_OFFSET)
 #define RS_SOC_BUS_FAULT_PENDING         UINT32_C(0x00000001)
 #define RS_SOC_BUS_FAULT_WRITE           UINT32_C(0x00000002)
 #define RS_SOC_BUS_FAULT_REASON_MASK     UINT32_C(0x0000000C)
@@ -241,13 +245,11 @@
 #define reg_tim3_cnt                     RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x08))
 #define reg_tim3_cmp                     RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x0C))
 #define reg_tim3_stat                    RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x10))
-#ifdef IP_MDD
-#define reg_user_ip_reg0 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x00))
-#define reg_user_ip_reg1 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x04))
-#define reg_user_ip_reg2 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x08))
-#define reg_user_ip_reg3 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x0C))
-#define reg_user_ip_reg4 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x10))
-#define reg_user_ip_reg5 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x14))
-#define reg_user_ip_reg6 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x18))
-#endif
+#define reg_user_ip_reg0                 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x00))
+#define reg_user_ip_reg1                 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x04))
+#define reg_user_ip_reg2                 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x08))
+#define reg_user_ip_reg3                 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x0C))
+#define reg_user_ip_reg4                 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x10))
+#define reg_user_ip_reg5                 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x14))
+#define reg_user_ip_reg6                 RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x18))
 #endif

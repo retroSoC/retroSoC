@@ -6,7 +6,7 @@ FORMAL_SOLVER_DIR         := $(FORMAL_DIR)/bin
 FORMAL_SOLVER_WRAPPER     := $(FORMAL_SOLVER_DIR)/bitwuzla
 FORMAL_DEPTH              ?= 20
 FORMAL_TIMEOUT            ?= 60
-FORMAL_TARGETS            := bus nmi2apb sysctrl pll_rcu gpio_mdd
+FORMAL_TARGETS            := bus nmi2apb sysctrl pll_rcu gpio_user
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
@@ -18,8 +18,8 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/sysctrl_formal_props.v \
                              $(RTL_PATH)/formal/pll_rcu_formal.sv \
                              $(RTL_PATH)/formal/pll_rcu_formal_props.v \
-                             $(RTL_PATH)/formal/gpio_mdd_formal.sv \
-                             $(RTL_PATH)/formal/gpio_mdd_formal_props.v \
+                             $(RTL_PATH)/formal/gpio_user_formal.sv \
+                             $(RTL_PATH)/formal/gpio_user_formal_props.v \
                              $(RTL_PATH)/top/bus.sv \
                              $(ROOT_PATH)/rtl/ip/native/interconnect/nmi2apb.sv \
                              $(ROOT_PATH)/rtl/ip/native/interconnect/nmi_regslice.sv \
@@ -45,10 +45,11 @@ FORMAL_RESULT             := $(META_DIR)/formal.json
 .SECONDARY: $(FORMAL_INTERMEDIATES)
 
 $(FORMAL_DIR)/%/formal.fl: $(FORMAL_FILELIST_GENERATOR) $(FORMAL_SOURCE_FILES) \
-	$(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP)
+	$(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(USER_EXTENSIONS_STAMP)
 	@mkdir -p $(@D)
 	python3 $(FORMAL_FILELIST_GENERATOR) --target $* --output $@ \
-		--memory-map-dir $(MEMORY_MAP_DIR) --soc-topology-dir $(SOC_TOPOLOGY_DIR)
+		--memory-map-dir $(MEMORY_MAP_DIR) --soc-topology-dir $(SOC_TOPOLOGY_DIR) \
+		--user-extensions-dir $(USER_EXTENSIONS_DIR)
 
 $(FORMAL_DIR)/%/design.v: $(FORMAL_DIR)/%/formal.fl $(RTL_PATH)/script/convt_sv2v.py \
 	$(RTL_PATH)/script/filelist.py
@@ -110,7 +111,7 @@ formal-sysctrl: $(FORMAL_DIR)/sysctrl/.stamp | manifest
 
 formal-pll-rcu: $(FORMAL_DIR)/pll_rcu/.stamp | manifest
 
-formal-gpio-mdd: $(FORMAL_DIR)/gpio_mdd/.stamp | manifest
+formal-gpio-user: $(FORMAL_DIR)/gpio_user/.stamp | manifest
 
 formal-doctor:
 	$(MAKE) FORMAL=YES SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor
@@ -118,4 +119,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-nmi2apb formal-sysctrl formal-pll-rcu formal-gpio-mdd formal-doctor formal-clean
+.PHONY: formal formal-bus formal-nmi2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-doctor formal-clean

@@ -40,6 +40,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="retrosoc-c-tests-") as temporary_directory:
         temporary_root = Path(temporary_directory)
         memory_map_root = temporary_root / "memory_map"
+        user_extensions_root = temporary_root / "user_extensions"
         subprocess.run(
             [
                 sys.executable,
@@ -51,6 +52,17 @@ def main() -> int:
             ],
             check=True,
         )
+        subprocess.run(
+            [
+                sys.executable,
+                str(root / "rtl/mini/integration/generate_user_extensions.py"),
+                "--map",
+                str(root / "rtl/mini/integration/user_extensions.json"),
+                "--output-dir",
+                str(user_extensions_root),
+            ],
+            check=True,
+        )
         executable = temporary_root / "runtime_tests"
         command = [
             compiler,
@@ -59,8 +71,11 @@ def main() -> int:
             "-Wextra",
             "-Werror",
             "-fno-builtin",
+            "-DRS_SOC_MGMT_CORE_HAZARD3",
             "-I",
             str(memory_map_root / "include"),
+            "-I",
+            str(user_extensions_root / "include"),
             "-I",
             str(root / "crt/include"),
             "-I",

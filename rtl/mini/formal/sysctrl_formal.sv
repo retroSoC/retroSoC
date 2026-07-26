@@ -12,6 +12,9 @@ module sysctrl_formal_design (
     output logic        nmi_ready,
     output logic [ 7:0] ip_sel,
     output logic [ 4:0] core_sel,
+    output logic [ 5:0] user_reset,
+    output logic        user_bus_enable,
+    output logic        user_config_error,
     output logic [ 2:0] pll_cfg,
     output logic        pll_req_valid,
     output logic        pll_req_ready,
@@ -25,7 +28,7 @@ module sysctrl_formal_design (
     output logic        fault_reserved,
     output logic        fault_pending,
     output logic        fault_write,
-    output logic [ 1:0] fault_reason,
+    output logic [ 2:0] fault_reason,
     output logic [31:0] fault_addr_q,
     output logic [31:0] fault_count
 );
@@ -38,7 +41,6 @@ module sysctrl_formal_design (
   (* anyseq *)logic [31:0] f_nmi_addr;
   (* anyseq *)logic [31:0] f_nmi_wdata;
   (* anyseq *)logic [ 3:0] f_nmi_wstrb;
-  (* anyseq *)logic [ 4:0] f_core_sel;
   (* anyseq *)logic        f_pll_req_ready;
   (* anyseq *)logic [ 2:0] f_pll_active_sel;
   (* anyseq *)logic        f_pll_active_valid;
@@ -56,7 +58,9 @@ module sysctrl_formal_design (
   assign nmi.addr                    = f_nmi_addr;
   assign nmi.wdata                   = f_nmi_wdata;
   assign nmi.wstrb                   = f_nmi_wstrb;
-  assign sysctrl.core_sel_i          = f_core_sel;
+  assign sysctrl.user_bus_idle_i     = 1'b1;
+  assign sysctrl.fault_access_i      = 1'b0;
+  assign sysctrl.fault_master_i      = '0;
   assign pll_ctrl.req_ready_i        = f_pll_req_ready;
   assign pll_ctrl.rsp_active_sel_i   = f_pll_active_sel;
   assign pll_ctrl.rsp_active_valid_i = f_pll_active_valid;
@@ -73,6 +77,9 @@ module sysctrl_formal_design (
   assign nmi_ready                   = nmi.ready;
   assign ip_sel                      = sysctrl.ip_sel_o;
   assign core_sel                    = u_dut.s_sysctrl_coresel_q;
+  assign user_reset                  = u_dut.s_user_reset_q;
+  assign user_bus_enable             = u_dut.s_user_running_q;
+  assign user_config_error           = u_dut.s_user_config_error_q;
   assign pll_cfg                     = u_dut.s_pll_cfg_q;
   assign pll_req_valid               = pll_ctrl.req_valid_o;
   assign pll_req_ready               = pll_ctrl.req_ready_i;

@@ -13,8 +13,8 @@ named-port binding. Do not edit generated files.
 Use the following commands after editing the map:
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk check-pin-map
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk pin-map
+make CONFIG=configs/ci/ihp130.mk check-pin-map
+make CONFIG=configs/ci/ihp130.mk pin-map
 ```
 
 When adding a pad, define its whitelisted pad template, direction, conditional
@@ -28,8 +28,8 @@ only exposes the pad-side subset of `gpio_if`; neither module contains state.
 
 ## User IP GPIO ownership
 
-The IP=MDD configuration does not add dedicated user GPIO pads. A user IP can
-instead drive any of the 32 native GPIO pads through `user_gpio_if`. Software
+The fixed user-IP integration does not add dedicated user GPIO pads. A user IP
+can instead drive any of the 32 native GPIO pads through `user_gpio_if`. Software
 selects an owner per pin with the native GPIO `USER_SEL` register at offset
 `0x30`; clear selects the existing software/alternate GPIO path and set selects
 the user IP. `USER_LOCK` at `0x34` is write-one-set and prevents a selected

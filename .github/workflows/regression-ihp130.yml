@@ -20,5 +20,5 @@ jobs:
     with:
       suite: pr
       pdk: IHP130
-      profile: configs/ci/hazard3-rv32im-ihp130.mk
+      profile: configs/ci/ihp130.mk
       retention_days: 30

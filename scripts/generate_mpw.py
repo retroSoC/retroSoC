@@ -83,6 +83,17 @@ def migrate_user_gpio_interfaces(root: Path) -> list[Path]:
     return migrated
 
 
+def remove_legacy_picorv32_entry(filelist: Path, management_core_dir: Path) -> None:
+    """Remove the PicoRV32 line emitted by the legacy user-core generator."""
+    excluded = {
+        str((management_core_dir / "picorv32.v").resolve()),
+        str((management_core_dir / "picorv32_ver.v").resolve()),
+    }
+    content = filelist.read_text(encoding="utf-8")
+    filtered = [line for line in content.splitlines() if line.strip() not in excluded]
+    filelist.write_text("\n".join(filtered) + "\n", encoding="utf-8")
+
+
 def remove_tree(path: Path) -> None:
     """Remove an MPW workspace, tolerating transient NFS directory entries."""
     for attempt in range(3):
@@ -126,41 +137,28 @@ def generate(args: argparse.Namespace) -> None:
     root = args.root.resolve()
     managed_mpw = root / "rtl/managed/mpw"
     output = args.output.resolve()
-    needs_core = args.core == "MDD"
-    needs_ip = args.ip == "MDD"
     log_path = output.parent / f"{output.name}-generation.log"
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("w", encoding="utf-8") as log, temporary_workspace(
-        output.parent, f".{output.name}."
-    ) as workspace:
-        log.write(f"simulator={args.simu} core={args.core} ip={args.ip}\n")
+    with (
+        log_path.open("w", encoding="utf-8") as log,
+        temporary_workspace(output.parent, f".{output.name}.") as workspace,
+    ):
+        log.write(f"simulator={args.simu} user-extensions=enabled\n")
         candidate = workspace / "output"
         candidate.mkdir()
-        if not needs_core and not needs_ip:
-            if tree_digest(candidate) == tree_digest(output):
-                print(f"[mpw] generated output unchanged: {output} (log: {log_path})")
-                return
-            if output.exists():
-                shutil.rmtree(output)
-            os.replace(candidate, output)
-            print(f"[mpw] generated isolated output: {output} (log: {log_path})")
-            return
-
         mpw = prepare_legacy_mpw_workspace(root, managed_mpw, workspace)
         shared = mpw / ".build"
         (shared / "user_design_info.h").unlink(missing_ok=True)
 
-        if needs_ip:
-            run(workspace, log, mpw / "ip.py")
-            run(workspace, log, mpw / "info.py", "IP")
-            shutil.copytree(shared / "ip", candidate / "ip")
-            migrated = migrate_user_gpio_interfaces(candidate / "ip")
-            log.write(f"migrated user GPIO interfaces: {len(migrated)}\n")
-        if needs_core:
-            run(workspace, log, mpw / "core.py", args.simu)
-            run(workspace, log, mpw / "info.py", "CORE")
-            shutil.copytree(shared / "core", candidate / "core")
+        run(workspace, log, mpw / "ip.py")
+        run(workspace, log, mpw / "info.py", "IP")
+        shutil.copytree(shared / "ip", candidate / "ip")
+        migrated = migrate_user_gpio_interfaces(candidate / "ip")
+        log.write(f"migrated user GPIO interfaces: {len(migrated)}\n")
+        run(workspace, log, mpw / "core.py", args.simu)
+        run(workspace, log, mpw / "info.py", "CORE")
+        shutil.copytree(shared / "core", candidate / "core")
         info = shared / "user_design_info.h"
         if info.is_file():
             shutil.copy2(info, candidate / info.name)
@@ -172,6 +170,7 @@ def generate(args: argparse.Namespace) -> None:
                 (workspace / "rtl" / "mini" / "core", root / "rtl/managed/picorv32/rtl"),
             ),
         )
+        remove_legacy_picorv32_entry(candidate / "core/core.fl", root / "rtl/managed/picorv32/rtl")
         if tree_digest(candidate) == tree_digest(output):
             print(f"[mpw] generated output unchanged: {output} (log: {log_path})")
             return
@@ -186,8 +185,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--simu", choices=("VCS", "VERILATOR", "IVERILOG"), required=True)
-    parser.add_argument("--core", choices=("PICORV32", "HAZARD3", "MDD"), required=True)
-    parser.add_argument("--ip", choices=("NONE", "MDD"), required=True)
     parser.add_argument("--lock-file", type=Path, required=True)
     return parser.parse_args()
 

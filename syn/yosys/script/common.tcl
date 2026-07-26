@@ -13,8 +13,6 @@ set variables {
     sv_flist    { SV_FLIST                 ""                       }
     pdk         { PDK                      ""                       }
     soc         { SOC                      ""                       }
-    core        { CORE                     ""                       }
-    ip          { IP                       ""                       }
     top_design  { TOP_DESIGN               ""                       }
     hier_depth  { HIER_DEPTH               0                        }
     period_ps   { YOSYS_TARGET_PERIOD_PS   5000                     }

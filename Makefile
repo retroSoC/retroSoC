@@ -18,7 +18,12 @@ CONFIG_PATH  :=
 PROFILE_NAME := manual
 endif
 
+ifneq ($(origin IP),undefined)
+$(error IP is no longer configurable; user IP integration is fixed)
+endif
+
 SOC   ?= MINI
+CORE  ?= HAZARD3
 SIMU  ?= VCS
 SYNTH ?= NONE
 STA   ?= NONE
@@ -32,15 +37,12 @@ HAVE_SVA        ?= NO
 WAVE            ?= NO
 FORMAL          ?= NO
 
-RTL_SIM_CORESEL    ?= 0
 RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
 SIM_SUCCESS_MARKER ?= retroSoC: A Customized ASIC for Retro Stuff
 
 RTL_PATH := $(ROOT_PATH)/rtl/mini
 
-CORE    ?= HAZARD3
-IP      ?= NONE
 RTL_TOP ?= retrosoc_tb
 
 # SW
@@ -61,7 +63,7 @@ VERIBLE_FORMAT  ?= verible-verilog-format
 JOBS            ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
-CONFIG_KEY_VARS := SOC CORE IP PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
+CONFIG_KEY_VARS := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
                    ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
 VARIANT_ID      := $(strip $(shell python3 $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -85,8 +87,7 @@ FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
 endif
 
 VALID_SOC       := MINI
-VALID_CORE      := PICORV32 HAZARD3 MDD
-VALID_IP        := NONE MDD
+VALID_CORE      := HAZARD3 PICORV32
 VALID_SIMU      := VCS VERILATOR IVERILOG
 VALID_SYNTH     := NONE YOSYS
 VALID_STA       := NONE OPENSTA
@@ -102,7 +103,6 @@ endef
 
 $(call validate_value,SOC,$(VALID_SOC))
 $(call validate_value,CORE,$(VALID_CORE))
-$(call validate_value,IP,$(VALID_IP))
 $(call validate_value,SIMU,$(VALID_SIMU))
 $(call validate_value,SYNTH,$(VALID_SYNTH))
 $(call validate_value,STA,$(VALID_STA))
@@ -131,9 +131,8 @@ endif
 endif
 
 DEF_LIST ?= +define+PDK_$(PDK)
-DEF_LIST += +define+CORE_$(CORE)
-DEF_LIST += +define+IP_$(IP)
 DEF_LIST += +define+SIMU_$(SIMU)
+DEF_LIST += +define+CORE_$(CORE)
 
 ifeq ($(HAVE_PLL), YES)
 ifneq ($(filter $(PDK),GF180 SKY130),)
@@ -200,7 +199,7 @@ help:
 	  '  check-user-extensions      validate the canonical user-extension map' \
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
-	  '  formal | formal-bus | formal-nmi2apb | formal-sysctrl | formal-pll-rcu | formal-gpio-mdd run SBY protocol proofs' \
+	  '  formal | formal-bus | formal-nmi2apb | formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY protocol proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
@@ -219,14 +218,14 @@ help:
 	  '  clean | clean-all          clean current flow or all build output' \
 	  '  purge-cache                remove dependency and compiler caches' \
 	  '' \
-	  'Usage: make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SIMU=IVERILOG sim'
+	  'Usage: make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim'
 
 config:
 	@printf '%-18s %s\n' \
 	  ROOT_PATH '$(ROOT_PATH)' CONFIG '$(or $(CONFIG_PATH),<defaults>)' \
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
-	  SOC '$(SOC)' CORE '$(CORE)' IP '$(IP)' \
+	  SOC '$(SOC)' CORE '$(CORE)' \
 	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' HAVE_SVA '$(HAVE_SVA)' \
@@ -236,7 +235,7 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --core $(CORE) --ip $(IP) --formal $(FORMAL) --lock $(LOCK_FILE)
+	  --pdk $(PDK) --formal $(FORMAL) --lock $(LOCK_FILE)
 
 setup: setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app
 

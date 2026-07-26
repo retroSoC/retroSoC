@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 `include "gpio_define.svh"
-`include "mdd_config.svh"
+`include "user_extensions.svh"
 
 module retrosoc_asic (
     `include "retrosoc_asic_ports.svh"
@@ -24,10 +24,6 @@ module retrosoc_asic (
   logic s_ext_rst_n;
   logic s_sys_rst_n;
   logic s_aud_rst_n;
-
-`ifdef CORE_MDD
-  logic [`USER_CORESEL_WIDTH-1:0] s_core_sel;
-`endif
 
 `ifdef HAVE_SRAM_IF
   ram_if u_ram_if ();
@@ -69,9 +65,6 @@ rcu u_rcu (
       .rst_aud_n_i(s_aud_rst_n),
       .clkdiv4_i  (s_sys_clkdiv4),
       .pll_ctrl   (u_pll_ctrl_if),
-`ifdef CORE_MDD
-      .core_sel_i (s_core_sel),
-`endif
 `ifdef HAVE_SRAM_IF
       .ram        (u_ram_if),
 `endif

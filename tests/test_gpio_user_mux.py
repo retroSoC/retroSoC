@@ -23,7 +23,6 @@ def test_user_ip_can_own_native_gpio_pads_with_a_safe_handoff(tmp_path: Path) ->
         "\n".join(
             [
                 "+define+SV_ASSRT_DISABLE",
-                "+define+IP_MDD",
                 f"+incdir+{ROOT / 'rtl/ip/native/peripheral'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),

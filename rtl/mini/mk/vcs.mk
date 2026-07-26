@@ -46,7 +46,7 @@ POST_OPTS := -sdf min:retrosoc_tb.u_retrosoc_asic:$(SDF_PATH) \
 
 TIME_OPTION := +notimingcheck +nospecify
 SIM_OPTS    := +vcs+loopreport+1000 -suppress=ASLR_DETECTED_INFO \
-               +core_sel=$(RTL_SIM_CORESEL) +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
+               +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
 VCS_BEHV_DIR     := $(SIM_BUILD_ROOT)/behv
 VCS_NETL_DIR     := $(SIM_BUILD_ROOT)/netl

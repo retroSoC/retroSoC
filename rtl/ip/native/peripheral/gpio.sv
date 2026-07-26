@@ -115,14 +115,12 @@ module nmi_gpio (
   logic [`NMI_GPIO_NUM-1:0] s_gpio_iofcfg_d, s_gpio_iofcfg_q;
   logic s_gpio_pinmux_en;
   logic [`NMI_GPIO_NUM-1:0] s_gpio_pinmux_d, s_gpio_pinmux_q;
-`ifdef IP_MDD
   logic s_gpio_user_sel_en;
   logic [`NMI_GPIO_NUM-1:0] s_gpio_user_sel_d, s_gpio_user_sel_q;
   logic s_gpio_user_lock_en;
   logic [`NMI_GPIO_NUM-1:0] s_gpio_user_lock_d, s_gpio_user_lock_q;
   logic [`NMI_GPIO_NUM-1:0] s_gpio_user_handoff_d, s_gpio_user_handoff_q;
   logic [`NMI_GPIO_NUM-1:0] s_gpio_user_status;
-`endif
   // irq
   logic [`NMI_GPIO_NUM-1:0] s_gpio_di_re, s_gpio_di_fe, s_gpio_irq;
   logic [`NMI_GPIO_NUM-1:0] s_irq_rise, s_irq_fall;
@@ -150,7 +148,6 @@ module nmi_gpio (
     assign s_gpio_native_oe[i]  = s_gpio_iofcfg_q[i] ? s_gpio_alt_oe[i] : s_gpio_oe_q[i];
     assign s_gpio_native_out[i] = s_gpio_iofcfg_q[i] ? s_gpio_alt_out[i] : s_gpio_do_q[i];
   end
-`ifdef IP_MDD
   assign user_gpio.di_i = gpio.di_i;
   for (genvar i = 0; i < `NMI_GPIO_NUM; i++) begin : USER_GPIO_MUX_BLOCK
     assign gpio.oe_o[i] = s_gpio_user_handoff_q[i]
@@ -158,11 +155,6 @@ module nmi_gpio (
                          : (s_gpio_user_sel_q[i] ? user_gpio.oe_o[i] : s_gpio_native_oe[i]);
     assign gpio.do_o[i] = s_gpio_user_sel_q[i] ? user_gpio.do_o[i] : s_gpio_native_out[i];
   end
-`else
-  assign gpio.oe_o      = s_gpio_native_oe;
-  assign gpio.do_o      = s_gpio_native_out;
-  assign user_gpio.di_i = '0;
-`endif
   assign s_irq_stat = |s_gpio_istat_q;
   assign gpio.irq_o = s_irq_stat;
 
@@ -320,7 +312,6 @@ module nmi_gpio (
       s_gpio_pinmux_q
   );
 
-`ifdef IP_MDD
   assign s_gpio_user_sel_en = s_nmi_wr_hdshk && nmi.addr[7:0] == `NMI_GPIO_USER_SEL;
   assign s_gpio_user_sel_d  = (s_gpio_user_sel_q & s_gpio_user_lock_q) |
                              (nmi.wdata[`NMI_GPIO_NUM-1:0] & ~s_gpio_user_lock_q);
@@ -350,11 +341,10 @@ module nmi_gpio (
       s_gpio_user_handoff_q
   );
   assign s_gpio_user_status = s_gpio_user_sel_q & ~s_gpio_user_handoff_q;
-`endif
 
 
   // nmi resp
-  assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
+  assign s_nmi_ready_d      = nmi.valid && (~s_nmi_ready_q);
   dffr #(1) u_nmi_ready_dffr (
       clk_i,
       rst_n_i,
@@ -378,11 +368,9 @@ module nmi_gpio (
       `NMI_GPIO_ISTAT:       s_nmi_rdata_d = {{(32 - `NMI_GPIO_NUM) {1'b0}}, s_gpio_istat_q};
       `NMI_GPIO_IOFCFG:      s_nmi_rdata_d = {{(32 - `NMI_GPIO_NUM) {1'b0}}, s_gpio_iofcfg_q};
       `NMI_GPIO_PINMUX:      s_nmi_rdata_d = {{(32 - `NMI_GPIO_NUM) {1'b0}}, s_gpio_pinmux_q};
-`ifdef IP_MDD
       `NMI_GPIO_USER_SEL:    s_nmi_rdata_d = {{(32 - `NMI_GPIO_NUM) {1'b0}}, s_gpio_user_sel_q};
       `NMI_GPIO_USER_LOCK:   s_nmi_rdata_d = {{(32 - `NMI_GPIO_NUM) {1'b0}}, s_gpio_user_lock_q};
       `NMI_GPIO_USER_STATUS: s_nmi_rdata_d = {{(32 - `NMI_GPIO_NUM) {1'b0}}, s_gpio_user_status};
-`endif
       default:               s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end

@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 
-`include "mdd_config.svh"
+`include "user_extensions.svh"
 
 module user_ip_top (
     // verilog_format: off

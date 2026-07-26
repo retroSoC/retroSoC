@@ -43,7 +43,7 @@ $(MPW_STAMP):
 
 $(MPW_VARIANT_STAMP): $(MPW_STAMP) $(ROOT_PATH)/scripts/generate_mpw.py
 	python3 $(ROOT_PATH)/scripts/generate_mpw.py --root $(ROOT_PATH) \
-		--output $(MPW_OUTPUT_DIR) --simu $(SIMU) --core $(CORE) --ip $(IP) \
+		--output $(MPW_OUTPUT_DIR) --simu $(SIMU) \
 		--lock-file $(CACHE_ROOT)/locks/mpw.lock
 	@mkdir -p $(@D)
 	@touch $@
@@ -52,7 +52,7 @@ gen_mpw_code: $(MPW_VARIANT_STAMP)
 
 $(MEMORY_MAP_STAMP): $(MEMORY_MAP_SOURCE) $(MEMORY_MAP_SCRIPT)
 	python3 $(MEMORY_MAP_SCRIPT) --map $(MEMORY_MAP_SOURCE) \
-		--output-dir $(MEMORY_MAP_DIR) --have-sram-if $(HAVE_SRAM_IF) --ip $(IP)
+		--output-dir $(MEMORY_MAP_DIR) --have-sram-if $(HAVE_SRAM_IF)
 	@touch $@
 
 memory-map: $(MEMORY_MAP_STAMP)
@@ -71,16 +71,14 @@ check-pin-map:
 
 $(SOC_TOPOLOGY_STAMP): $(SOC_TOPOLOGY_SOURCE) $(SOC_TOPOLOGY_SCRIPT) $(MEMORY_MAP_SOURCE)
 	python3 $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
-		--memory-map $(MEMORY_MAP_SOURCE) --ip $(IP) --output-dir $(SOC_TOPOLOGY_DIR)
+		--memory-map $(MEMORY_MAP_SOURCE) --output-dir $(SOC_TOPOLOGY_DIR)
 	@touch $@
 
 soc-topology: $(SOC_TOPOLOGY_STAMP)
 
 check-soc-topology:
 	python3 $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
-		--memory-map $(MEMORY_MAP_SOURCE) --ip NONE --check
-	python3 $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
-		--memory-map $(MEMORY_MAP_SOURCE) --ip MDD --check
+		--memory-map $(MEMORY_MAP_SOURCE) --check
 
 $(USER_EXTENSIONS_STAMP): $(USER_EXTENSIONS_SOURCE) $(USER_EXTENSIONS_SCRIPT)
 	python3 $(USER_EXTENSIONS_SCRIPT) --map $(USER_EXTENSIONS_SOURCE) \
@@ -130,18 +128,15 @@ RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(PIN_MAP_FILELIST) -f $(SOC_TOPOLOGY_
 RTL_FLIST += -f $(GENERATED_FL_DIR)/clusterip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/ip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/tech.fl
-
-ifeq ($(CORE), PICORV32)
-    RTL_FLIST += -f $(GENERATED_FL_DIR)/core_picorv32.fl
-else ifeq ($(CORE), HAZARD3)
-    RTL_FLIST += -f $(GENERATED_FL_DIR)/core_hazard3.fl
-else ifeq ($(CORE), MDD)
-    RTL_FLIST += -f $(MPW_OUTPUT_DIR)/core/core.fl
+ifeq ($(CORE),HAZARD3)
+MGMT_CORE_FILELIST := core_hazard3.fl
+else
+MGMT_CORE_FILELIST := core_picorv32.fl
 endif
+RTL_FLIST += -f $(GENERATED_FL_DIR)/$(MGMT_CORE_FILELIST)
 
-ifeq ($(IP), MDD)
-    RTL_FLIST += -f $(MPW_OUTPUT_DIR)/ip/ip.fl
-endif
+RTL_FLIST += -f $(MPW_OUTPUT_DIR)/core/core.fl
+RTL_FLIST += -f $(MPW_OUTPUT_DIR)/ip/ip.fl
 
 RTL_FLIST += -f $(GENERATED_FL_DIR)/top.fl
 #====================== end ======================

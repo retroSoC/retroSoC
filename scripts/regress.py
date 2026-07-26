@@ -19,29 +19,14 @@ RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint", "check-rtl-lint
 
 
 PR_COMMANDS = (
-    ("configs/ci/hazard3-rv32im-ihp130.mk", RTL_LINT_VALUES),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
-    ("configs/ci/hazard3-rv32im-ihp130-shell.mk", ("firmware",)),
-    ("configs/ci/hazard3-rv32im-ihp130-ip-mdd-shell.mk", ("firmware",)),
+    ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
+    ("configs/ci/ihp130.mk", ("firmware",)),
+    ("configs/ci/ihp130-shell.mk", ("firmware",)),
+    ("configs/ci/ihp130.mk", ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")),
+    ("configs/ci/ihp130.mk", ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
+    ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "synth")),
     (
-        "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
-        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
-    ),
-    (
-        "configs/ci/mdd-rv32im-ihp130.mk",
-        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
-    ),
-    (
-        "configs/ci/hazard3-rv32im-ihp130.mk",
-        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
-    ),
-    (
-        "configs/ci/hazard3-rv32im-ihp130.mk",
-        ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
-    ),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("SYNTH=YOSYS", "synth")),
-    (
-        "configs/ci/hazard3-rv32im-ihp130.mk",
+        "configs/ci/ihp130.mk",
         (
             "SIMU=IVERILOG",
             "SIM_FIRMWARE_NAME=retrosoc_asm",
@@ -50,42 +35,29 @@ PR_COMMANDS = (
             "netsim",
         ),
     ),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("STA=OPENSTA", "sta")),
+    ("configs/ci/ihp130.mk", ("STA=OPENSTA", "sta")),
 )
 SMOKE_COMMANDS = (
-    ("configs/ci/hazard3-rv32im-ihp130.mk", RTL_LINT_VALUES),
-    ("configs/ci/hazard3-rv32im-ihp130.mk", ("firmware",)),
+    ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
+    ("configs/ci/ihp130.mk", ("firmware",)),
     (
-        "configs/ci/hazard3-rv32im-ihp130.mk",
+        "configs/ci/ihp130.mk",
         ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp"),
     ),
     (
-        "configs/ci/hazard3-rv32im-ihp130.mk",
+        "configs/ci/ihp130.mk",
         ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
     ),
 )
-NIGHTLY_COMMANDS = PR_COMMANDS + (
-    (
-        "configs/nightly/picorv32-rv32im-ihp130.mk",
-        ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
-    ),
-    (
-        "configs/nightly/picorv32-rv32im-ihp130.mk",
-        ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
-    ),
-)
-PR_PROFILES = (
-    "configs/ci/hazard3-rv32im-ihp130.mk",
-    "configs/ci/hazard3-rv32im-ihp130-ip-mdd.mk",
-    "configs/ci/mdd-rv32im-ihp130.mk",
-)
+NIGHTLY_COMMANDS = PR_COMMANDS
+PR_PROFILES = ("configs/ci/ihp130.mk",)
 SMOKE_PROFILES: tuple[str, ...] = ()
-NIGHTLY_PROFILES = PR_PROFILES + ("configs/nightly/picorv32-rv32im-ihp130.mk",)
+NIGHTLY_PROFILES = PR_PROFILES
 
 PDK_PR_PROFILES = {
-    "GF180": "configs/ci/hazard3-rv32im-gf180.mk",
-    "IHP130": "configs/ci/hazard3-rv32im-ihp130.mk",
-    "SKY130": "configs/ci/hazard3-rv32im-sky130.mk",
+    "GF180": "configs/ci/gf180.mk",
+    "IHP130": "configs/ci/ihp130.mk",
+    "SKY130": "configs/ci/sky130.mk",
 }
 
 

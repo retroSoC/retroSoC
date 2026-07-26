@@ -16,7 +16,7 @@ from typing import Any
 SV_IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 SV_REFERENCE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[0-9]+\])?$")
 SV_CONSTANT_RE = re.compile(r"(?:1'[bB][01]|'[01])$")
-FABRIC_LINK_NAMES = ("core", "dma", "native", "apb")
+FABRIC_LINK_NAMES = ("mgmt", "user", "dma", "native", "apb")
 IRQ_GROUP_NAMES = ("nmi", "apb")
 IRQ_VECTOR_WIDTH = 32
 COMPATIBILITY_IRQ_BINDINGS = (
@@ -56,7 +56,6 @@ class ApbTarget:
     timed_interface: str
     pure_interface: str
     region: str
-    requires_ip: str | None
 
 
 @dataclass(frozen=True)
@@ -174,14 +173,6 @@ def parse_regions(value: Any, field: str) -> tuple[str, ...]:
     return regions
 
 
-def parse_requires_ip(value: Any, field: str) -> str | None:
-    if value is None:
-        return None
-    if value != "MDD":
-        raise ValueError(f"{field} must be MDD when present")
-    return value
-
-
 def parse_native_targets(
     value: Any, memory_regions: dict[str, dict[str, Any]]
 ) -> list[NativeTarget]:
@@ -256,9 +247,7 @@ def parse_native_targets(
     return ordered
 
 
-def parse_apb_targets(
-    value: Any, memory_regions: dict[str, dict[str, Any]], ip: str
-) -> list[ApbTarget]:
+def parse_apb_targets(value: Any, memory_regions: dict[str, dict[str, Any]]) -> list[ApbTarget]:
     if not isinstance(value, list) or not value:
         raise ValueError("apb_targets must be a non-empty list")
     targets: list[ApbTarget] = []
@@ -280,19 +269,12 @@ def parse_apb_targets(
             target.get("pure_interface"), f"apb_targets[{index}].pure_interface"
         )
         region_name = require_identifier(target.get("region"), f"apb_targets[{index}].region")
-        requires_ip = parse_requires_ip(
-            target.get("requires_ip"), f"apb_targets[{index}].requires_ip"
-        )
         region = memory_regions.get(region_name)
         if region is None:
             raise ValueError(f"apb_targets[{index}] references unknown region {region_name}")
         if region.get("route") != "apb" or region.get("kind") != "active":
             raise ValueError(
                 f"apb_targets[{index}] region {region_name} is not an active APB region"
-            )
-        if requires_ip != region.get("requires_ip"):
-            raise ValueError(
-                f"apb_targets[{index}] requires_ip does not match region {region_name}"
             )
         if name in names:
             raise ValueError(f"APB target name {name} is duplicated")
@@ -309,22 +291,15 @@ def parse_apb_targets(
         pure_interfaces.add(pure_interface)
         regions.add(region_name)
         slots.add(slot)
-        targets.append(
-            ApbTarget(slot, name, timed_interface, pure_interface, region_name, requires_ip)
-        )
+        targets.append(ApbTarget(slot, name, timed_interface, pure_interface, region_name))
 
-    enabled = [
-        target for target in targets if target.requires_ip is None or target.requires_ip == ip
-    ]
-    ordered = sorted(enabled, key=lambda item: item.slot)
+    ordered = sorted(targets, key=lambda item: item.slot)
     if [target.slot for target in ordered] != list(range(len(ordered))):
         raise ValueError("enabled APB target slots must be contiguous from zero")
     active_regions = {
         symbol
         for symbol, region in memory_regions.items()
-        if region.get("route") == "apb"
-        and region.get("kind") == "active"
-        and (region.get("requires_ip") is None or region.get("requires_ip") == ip)
+        if region.get("route") == "apb" and region.get("kind") == "active"
     }
     claimed_regions = {target.region for target in ordered}
     if claimed_regions != active_regions:
@@ -419,9 +394,7 @@ def parse_irq_groups(value: Any) -> list[IrqGroup]:
         width = group.get("width")
         if not isinstance(width, int) or width <= 0:
             raise ValueError(f"irq_groups[{index}].width must be a positive integer")
-        top_signal = require_identifier(
-            group.get("top_signal"), f"irq_groups[{index}].top_signal"
-        )
+        top_signal = require_identifier(group.get("top_signal"), f"irq_groups[{index}].top_signal")
         if name not in IRQ_GROUP_NAMES:
             raise ValueError(f"irq_groups[{index}].name is not a supported interrupt group")
         if name in names:
@@ -437,9 +410,7 @@ def parse_irq_groups(value: Any) -> list[IrqGroup]:
     return sorted(groups, key=lambda item: IRQ_GROUP_NAMES.index(item.name))
 
 
-def parse_interrupts(
-    value: Any, groups: list[IrqGroup], vector_width: int
-) -> list[Interrupt]:
+def parse_interrupts(value: Any, groups: list[IrqGroup], vector_width: int) -> list[Interrupt]:
     if not isinstance(value, list) or not value:
         raise ValueError("interrupts must be a non-empty list")
     group_widths = {group.name: group.width for group in groups}
@@ -506,13 +477,11 @@ def validate_compatibility_irq_bindings(interrupts: list[Interrupt]) -> None:
             )
         expected = (name, group, group_bit, core_bit, signal)
         if actual != expected:
-            raise ValueError(
-                f"core interrupt bit {core_bit} must retain its compatibility binding"
-            )
+            raise ValueError(f"core interrupt bit {core_bit} must retain its compatibility binding")
 
 
 def read_topology(
-    topology_path: Path, memory_map_path: Path, ip: str
+    topology_path: Path, memory_map_path: Path
 ) -> tuple[
     list[NativeTarget],
     list[ApbTarget],
@@ -537,7 +506,7 @@ def read_topology(
     validate_compatibility_irq_bindings(interrupts)
     return (
         parse_native_targets(document.get("native_targets"), memory_regions),
-        parse_apb_targets(document.get("apb_targets"), memory_regions, ip),
+        parse_apb_targets(document.get("apb_targets"), memory_regions),
         parse_fabric_links(document.get("fabric_links")),
         parse_gpio_functions(document.get("gpio_alt_functions"), gpio_pins),
         irq_vector_width,
@@ -736,7 +705,8 @@ def render_fabric_connection(links: list[FabricLink], name: str, port: str) -> s
 
 def render_bus_fabric_connections(links: list[FabricLink]) -> str:
     port_names = {
-        "core": "core_nmi",
+        "mgmt": "mgmt_nmi",
+        "user": "user_nmi",
         "dma": "dma_nmi",
         "native": "natv_nmi",
         "apb": "apb_nmi",
@@ -829,8 +799,7 @@ def render_irq_sva(vector_width: int, groups: list[IrqGroup], interrupts: list[I
         "    input logic [`SOC_IRQ_VECTOR_WIDTH-1:0] irq_i,",
     ]
     lines.extend(
-        f"    input logic [`{irq_width_macro(group)}-1:0] {group.name}_irq_i,"
-        for group in groups
+        f"    input logic [`{irq_width_macro(group)}-1:0] {group.name}_irq_i," for group in groups
     )
     lines[-1] = lines[-1].removesuffix(",")
     lines.extend([");", ""])
@@ -852,7 +821,9 @@ def render_irq_sva(vector_width: int, groups: list[IrqGroup], interrupts: list[I
                     f"      irq_i[{core_bit}] == 1'b0);",
                 ]
             )
-    lines.extend(["", "endmodule", "", "bind retrosoc soc_irq_topology_sva u_soc_irq_topology_sva ("])
+    lines.extend(
+        ["", "endmodule", "", "bind retrosoc soc_irq_topology_sva u_soc_irq_topology_sva ("]
+    )
     lines.extend(
         [
             "    .clk_i(clk_i),",
@@ -867,7 +838,7 @@ def render_irq_sva(vector_width: int, groups: list[IrqGroup], interrupts: list[I
     return "\n".join(lines) + "\n"
 
 
-def generate(topology_path: Path, memory_map_path: Path, output_dir: Path, ip: str) -> None:
+def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> None:
     (
         targets,
         apb_targets,
@@ -876,9 +847,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path, ip: s
         irq_vector_width,
         irq_groups,
         interrupts,
-    ) = read_topology(
-        topology_path, memory_map_path, ip
-    )
+    ) = read_topology(topology_path, memory_map_path)
     memory_regions = read_memory_regions(memory_map_path)
     rtl_dir = output_dir / "rtl"
     atomic_write(rtl_dir / "soc_nmi_interfaces.svh", render_nmi_interfaces(targets))
@@ -893,8 +862,12 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path, ip: s
     atomic_write(rtl_dir / "soc_apb_response_mux.svh", render_apb_response_mux(apb_targets))
     atomic_write(rtl_dir / "soc_fabric_interfaces.svh", render_fabric_interfaces(fabric_links))
     atomic_write(
-        rtl_dir / "soc_core_wrapper_fabric.svh",
-        render_fabric_connection(fabric_links, "core", "nmi"),
+        rtl_dir / "soc_mgmt_core_wrapper_fabric.svh",
+        render_fabric_connection(fabric_links, "mgmt", "nmi"),
+    )
+    atomic_write(
+        rtl_dir / "soc_user_core_fabric.svh",
+        render_fabric_connection(fabric_links, "user", "nmi"),
     )
     atomic_write(rtl_dir / "soc_bus_fabric.svh", render_bus_fabric_connections(fabric_links))
     atomic_write(
@@ -929,16 +902,15 @@ def main() -> int:
     parser.add_argument("--map", required=True, type=Path)
     parser.add_argument("--memory-map", required=True, type=Path)
     parser.add_argument("--output-dir", type=Path)
-    parser.add_argument("--ip", choices=("NONE", "MDD"), default="NONE")
     parser.add_argument("--check", action="store_true", help="validate only; write nothing")
     arguments = parser.parse_args()
     try:
         if arguments.check:
-            read_topology(arguments.map, arguments.memory_map, arguments.ip)
+            read_topology(arguments.map, arguments.memory_map)
         else:
             if arguments.output_dir is None:
                 parser.error("--output-dir is required unless --check is used")
-            generate(arguments.map, arguments.memory_map, arguments.output_dir, arguments.ip)
+            generate(arguments.map, arguments.memory_map, arguments.output_dir)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         parser.error(str(error))
     return 0

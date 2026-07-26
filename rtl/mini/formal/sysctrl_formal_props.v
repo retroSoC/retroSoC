@@ -7,6 +7,7 @@ module sysctrl_formal;
   localparam [7:0] SYSCTRL_PLL_CFG_OFFSET = 8'h08;
   localparam [7:0] SYSCTRL_PLL_CMD_OFFSET = 8'h0c;
   localparam [7:0] SYSCTRL_FAULT_STATUS_OFFSET = 8'h10;
+  localparam [7:0] SYSCTRL_USER_CORE_RESET_OFFSET = 8'h20;
 
   (* anyseq *) (* gclk *)reg         clk_i;
   wire        rst_n_i;
@@ -18,6 +19,9 @@ module sysctrl_formal;
   wire        nmi_ready;
   wire [ 7:0] ip_sel;
   wire [ 4:0] core_sel;
+  wire [ 5:0] user_reset;
+  wire        user_bus_enable;
+  wire        user_config_error;
   wire [ 2:0] pll_cfg;
   wire        pll_req_valid;
   wire        pll_req_ready;
@@ -31,37 +35,40 @@ module sysctrl_formal;
   wire        fault_reserved;
   wire        fault_pending;
   wire        fault_write;
-  wire [ 1:0] fault_reason;
+  wire [ 2:0] fault_reason;
   wire [31:0] fault_addr_q;
   wire [31:0] fault_count;
 
   sysctrl_formal_design u_design (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .f_past_valid    (f_past_valid),
-      .nmi_valid       (nmi_valid),
-      .nmi_addr        (nmi_addr),
-      .nmi_wdata       (nmi_wdata),
-      .nmi_wstrb       (nmi_wstrb),
-      .nmi_ready       (nmi_ready),
-      .ip_sel          (ip_sel),
-      .core_sel        (core_sel),
-      .pll_cfg         (pll_cfg),
-      .pll_req_valid   (pll_req_valid),
-      .pll_req_ready   (pll_req_ready),
-      .pll_busy        (pll_busy),
-      .pll_error       (pll_error),
-      .pll_error_reason(pll_error_reason),
-      .pll_rsp_valid   (pll_rsp_valid),
-      .fault_valid     (fault_valid),
-      .fault_addr      (fault_addr),
-      .fault_wstrb     (fault_wstrb),
-      .fault_reserved  (fault_reserved),
-      .fault_pending   (fault_pending),
-      .fault_write     (fault_write),
-      .fault_reason    (fault_reason),
-      .fault_addr_q    (fault_addr_q),
-      .fault_count     (fault_count)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .f_past_valid     (f_past_valid),
+      .nmi_valid        (nmi_valid),
+      .nmi_addr         (nmi_addr),
+      .nmi_wdata        (nmi_wdata),
+      .nmi_wstrb        (nmi_wstrb),
+      .nmi_ready        (nmi_ready),
+      .ip_sel           (ip_sel),
+      .core_sel         (core_sel),
+      .user_reset       (user_reset),
+      .user_bus_enable  (user_bus_enable),
+      .user_config_error(user_config_error),
+      .pll_cfg          (pll_cfg),
+      .pll_req_valid    (pll_req_valid),
+      .pll_req_ready    (pll_req_ready),
+      .pll_busy         (pll_busy),
+      .pll_error        (pll_error),
+      .pll_error_reason (pll_error_reason),
+      .pll_rsp_valid    (pll_rsp_valid),
+      .fault_valid      (fault_valid),
+      .fault_addr       (fault_addr),
+      .fault_wstrb      (fault_wstrb),
+      .fault_reserved   (fault_reserved),
+      .fault_pending    (fault_pending),
+      .fault_write      (fault_write),
+      .fault_reason     (fault_reason),
+      .fault_addr_q     (fault_addr_q),
+      .fault_count      (fault_count)
   );
 
   always @(posedge clk_i) begin
@@ -76,6 +83,27 @@ module sysctrl_formal;
     end
 
     if (rst_n_i && f_past_valid) begin
+      if ($past(
+              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] &&
+                nmi_addr[7:0] == 8'h00 && nmi_wdata[4:0] < 6 && user_reset == 6'h3f && !user_bus_enable
+          )) begin
+        assert (core_sel == $past(nmi_wdata[4:0]));
+      end
+      if ($past(
+              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] &&
+                nmi_addr[7:0] == 8'h00 && nmi_wdata[4:0] >= 6
+          )) begin
+        assert (core_sel == $past(core_sel));
+        assert (user_config_error);
+      end
+      if ($past(
+              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] &&
+                nmi_addr[7:0] == SYSCTRL_USER_CORE_RESET_OFFSET &&
+                nmi_wdata[5:0] == 6'h3f
+          )) begin
+        assert (user_reset == 6'h3f);
+        assert (!user_bus_enable);
+      end
       if ($past(
               rst_n_i && nmi_valid && !nmi_ready && |nmi_wstrb &&
                 nmi_addr[7:0] == SYSCTRL_IPSEL_OFFSET
@@ -106,7 +134,7 @@ module sysctrl_formal;
       if ($past(rst_n_i && fault_valid)) begin
         assert (fault_pending);
         assert (fault_write == (|$past(fault_wstrb)));
-        assert (fault_reason == ($past(fault_reserved) ? 2'd2 : 2'd1));
+        assert (fault_reason == ($past(fault_reserved) ? 3'd2 : 3'd1));
         assert (fault_addr_q == $past(fault_addr));
         if (!$past(&fault_count)) begin
           assert (fault_count == $past(fault_count) + 32'd1);

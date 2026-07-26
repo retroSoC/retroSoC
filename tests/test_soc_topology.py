@@ -16,7 +16,7 @@ MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
 MEMORY_MAP_GENERATOR = ROOT / "rtl/mini/address_map/generate_memory_map.py"
 
 
-def generate(output_dir: Path, ip: str = "NONE") -> None:
+def generate(output_dir: Path) -> None:
     subprocess.run(
         [
             sys.executable,
@@ -27,14 +27,12 @@ def generate(output_dir: Path, ip: str = "NONE") -> None:
             str(MEMORY_MAP),
             "--output-dir",
             str(output_dir),
-            "--ip",
-            ip,
         ],
         check=True,
     )
 
 
-def validate(topology: Path, ip: str = "NONE") -> subprocess.CompletedProcess[str]:
+def validate(topology: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -43,8 +41,6 @@ def validate(topology: Path, ip: str = "NONE") -> subprocess.CompletedProcess[st
             str(topology),
             "--memory-map",
             str(MEMORY_MAP),
-            "--ip",
-            ip,
             "--check",
         ],
         text=True,
@@ -84,13 +80,14 @@ def test_topology_generates_complete_native_apb_and_gpio_bindings(tmp_path: Path
     assert gpio.count("// GPIO") == 64
     assert "assign u_uart1_if.rx_i = u_gpio_if.di_i[0];" in gpio
     assert "assign u_gpio_if.alt1_do_i[22] = u_psram_if.nss_o[0];" in gpio
-    assert apb_interfaces.count("apb4_if u_") == 9
+    assert apb_interfaces.count("apb4_if u_") == 10
     assert "apb4_pure_if u_archinfo_apb_pure_if ();" in apb_interfaces
     assert "assign tmr.paddr = nmi.addr;" in apb_routes
     assert "({32{s_psel_q[8]}} & tmr.prdata)" in apb_response
-    assert "localparam int NSLV = 9;" in apb_declarations
-    assert fabric.count("nmi_if u_") == 4
-    assert ".core_nmi(u_core_nmi_if)" in bus_fabric
+    assert "localparam int NSLV = 10;" in apb_declarations
+    assert fabric.count("nmi_if u_") == 5
+    assert ".mgmt_nmi(u_mgmt_nmi_if)" in bus_fabric
+    assert ".user_nmi(u_user_nmi_if)" in bus_fabric
     assert ".apb_nmi(u_apb_nmi_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_IRQ_NMI_WIDTH 10" in irq_config
@@ -138,21 +135,16 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
     assert all(mapping[3] >= 17 for mapping in mappings[17:])
 
 
-def test_topology_adds_user_apb_only_for_the_mdd_ip(tmp_path: Path) -> None:
-    none_output = tmp_path / "none"
-    mdd_output = tmp_path / "mdd"
-    generate(none_output)
-    generate(mdd_output, ip="MDD")
+def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
+    generate(tmp_path)
 
-    none_interfaces = (none_output / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
-    mdd_interfaces = (mdd_output / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
-    mdd_declarations = (mdd_output / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
-    mdd_response = (mdd_output / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
+    interfaces = (tmp_path / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
+    declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
+    response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
 
-    assert "u_user_ip_apb_if" not in none_interfaces
-    assert "apb4_if u_user_ip_apb_if (clk_i, rst_n_i);" in mdd_interfaces
-    assert "localparam int NSLV = 10;" in mdd_declarations
-    assert "s_psel_q[9]" in mdd_response
+    assert "apb4_if u_user_ip_apb_if (clk_i, rst_n_i);" in interfaces
+    assert "localparam int NSLV = 10;" in declarations
+    assert "s_psel_q[9]" in response
 
 
 def test_topology_rejects_unknown_or_non_native_regions(tmp_path: Path) -> None:
@@ -183,10 +175,10 @@ def test_topology_rejects_duplicate_region_and_disabled_owner(tmp_path: Path) ->
     assert "disabled but declares regions" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["fabric_links"][1]["name"] = "core"
+    document["fabric_links"][1]["name"] = "mgmt"
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
-    assert "fabric role core is duplicated" in result.stderr
+    assert "fabric role mgmt is duplicated" in result.stderr
 
 
 def test_topology_rejects_invalid_apb_target_ownership(tmp_path: Path) -> None:
@@ -201,12 +193,6 @@ def test_topology_rejects_invalid_apb_target_ownership(tmp_path: Path) -> None:
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "APB target slot 0 is duplicated" in result.stderr
-
-    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb_targets"][9]["requires_ip"] = None
-    result = validate(write_invalid_topology(tmp_path, document), ip="MDD")
-    assert result.returncode != 0
-    assert "requires_ip does not match" in result.stderr
 
 
 def test_topology_rejects_invalid_gpio_coverage_and_expression(tmp_path: Path) -> None:
@@ -227,6 +213,7 @@ def test_topology_rejects_invalid_gpio_coverage_and_expression(tmp_path: Path) -
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "scalar SystemVerilog reference or constant" in result.stderr
+
 
 def test_topology_rejects_invalid_irq_groups_and_bindings(tmp_path: Path) -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
@@ -311,8 +298,6 @@ def test_generated_nmi_routes_select_and_return_the_expected_target(tmp_path: Pa
             str(memory_map_output),
             "--have-sram-if",
             "NO",
-            "--ip",
-            "NONE",
         ],
         check=True,
     )

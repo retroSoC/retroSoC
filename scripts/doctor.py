@@ -23,8 +23,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--synth", required=True)
     parser.add_argument("--sta", required=True)
     parser.add_argument("--pdk", required=True)
-    parser.add_argument("--core", required=True)
-    parser.add_argument("--ip", required=True)
     parser.add_argument("--formal", choices=("YES", "NO"), default="NO")
     parser.add_argument("--lock", type=Path, default=DEFAULT_LOCK)
     parser.add_argument("--format", choices=("text", "json"), default="text")

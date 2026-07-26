@@ -4,13 +4,12 @@
 
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
-| Smoke | `configs/ci/hazard3-rv32im-ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
-| Pull request | `configs/ci/hazard3-rv32im-ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/hazard3-rv32im-gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/hazard3-rv32im-sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/mdd-rv32im-ihp130.mk` | firmware and Verilator |
-| Nightly | `configs/nightly/picorv32-rv32im-ihp130.mk` | firmware, Verilator, and Icarus |
-| Cluster | `configs/cluster/hazard3-ics55.mk` | configuration only; run with site PDK/tool access |
+| Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
+| Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Nightly | `configs/ci/ihp130.mk` | repeated full IHP130 regression |
+| Cluster | `configs/cluster/ics55.mk` | configuration only; run with site PDK/tool access |
 
 OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
 `slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, and SKY130 uses `ss_100C_1v40`.
@@ -106,14 +105,14 @@ marker is present. Icarus regressions use the assembly self-test as `retrosoc_as
 
 ## Formal Protocol Proofs
 
-`make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk formal` proves selected
+`make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
-targets are `bus`, `nmi2apb`, `sysctrl`, `pll_rcu`, and `gpio_mdd`; each uses
+targets are `bus`, `nmi2apb`, `sysctrl`, `pll_rcu`, and `gpio_user`; each uses
 the SBY `prove` task for bounded model checking and k-induction, plus a
 `cover` task, at depth 20. `sysctrl` checks register side effects, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
-state machine. `gpio_mdd` checks MDD user-GPIO ownership, lock, handoff, and
-mux safety using the `IP_MDD` build definition.
+state machine. `gpio_user` checks fixed user-GPIO ownership, lock, handoff,
+and mux safety.
 `FORMAL_DEPTH` and `FORMAL_TIMEOUT` set the proof bound and per-task
 wall-clock limit. Use `make CONFIG=<profile> formal-doctor` before a local
 proof to verify that the required tools are available.
@@ -144,9 +143,9 @@ are reported but do not fail. To refresh one baseline after review:
 
 ```sh
 python3 scripts/analyze_warnings.py baseline \
-  --root . --profile hazard3-rv32im-ihp130 --tool verilator \
+  --root . --profile ihp130 --tool verilator \
   --log build/<variant>/sim/verilator/verilating.log \
-  --output quality/warnings/hazard3-rv32im-ihp130/verilator.json
+  --output quality/warnings/ihp130/verilator.json
 ```
 
 ## Metrics Promotion
@@ -174,7 +173,7 @@ for diagnosis but is initially non-blocking.
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
 Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
 the three full PDK regression workflows remain required PR coverage and do not repeat the format checks.
-`nightly.yml` adds PICORV32. Source dependencies, locked tool archives, and Verilator `ccache` use
+`nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 
 Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source

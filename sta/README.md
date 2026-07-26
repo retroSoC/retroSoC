@@ -8,12 +8,12 @@ Run synthesis before timing analysis, then invoke the supported OpenSTA flow.
 All CI PDK profiles are supported:
 
 ```sh
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/hazard3-rv32im-ihp130.mk STA=OPENSTA sta
-make CONFIG=configs/ci/hazard3-rv32im-gf180.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/hazard3-rv32im-gf180.mk STA=OPENSTA sta
-make CONFIG=configs/ci/hazard3-rv32im-sky130.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/hazard3-rv32im-sky130.mk STA=OPENSTA sta
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
+make CONFIG=configs/ci/gf180.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/gf180.mk STA=OPENSTA sta
+make CONFIG=configs/ci/sky130.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/sky130.mk STA=OPENSTA sta
 ```
 
 The generated SDC derives clock and reset objects from

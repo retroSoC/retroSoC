@@ -20,5 +20,5 @@ jobs:
     with:
       suite: pr
       pdk: SKY130
-      profile: configs/ci/hazard3-rv32im-sky130.mk
+      profile: configs/ci/sky130.mk
       retention_days: 30
