@@ -141,10 +141,18 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     interfaces = (tmp_path / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
     declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
     response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
+    formal_design = (ROOT / "rtl/mini/formal/nmi2apb_formal.sv").read_text(encoding="utf-8")
+    formal_properties = (ROOT / "rtl/mini/formal/nmi2apb_formal_props.v").read_text(
+        encoding="utf-8"
+    )
 
     assert "apb4_if u_user_ip_apb_if (clk_i, rst_n_i);" in interfaces
     assert "localparam int NSLV = 10;" in declarations
     assert "s_psel_q[9]" in response
+    assert "apb4_pure_if user_ip ();" in formal_design
+    assert ".user_ip (user_ip)" in formal_design
+    assert "logic [ 9:0] psel_comb" in formal_design
+    assert "wire [ 9:0] psel_comb" in formal_properties
 
 
 def test_topology_rejects_unknown_or_non_native_regions(tmp_path: Path) -> None:

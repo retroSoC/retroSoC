@@ -1,12 +1,12 @@
 {
   "entries": [
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MULDIV_UNROLL'",
       "signature": "000fbb263fb6f0cf"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'EXTENSION_ZBKC'",
       "signature": "002c63eb2fa86403"
     },
@@ -16,24 +16,14 @@
       "signature": "0085cff8b584a52c"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'fence_i_vld'",
-      "signature": "009283cffcc61152"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR3'",
+      "signature": "00a970bcc7157d36"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_wr'",
-      "signature": "00a973459de28d6c"
-    },
-    {
-      "count": 1,
-      "example": "UNSIGNED:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Comparison is constant due to unsigned arithmetic",
-      "signature": "010491867f065cec"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/apb4_if.sv:<line>: Bits of signal are not used: 'paddr'[31:6,1:0]",
-      "signature": "0167c36768ae8fd4"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_NONE'",
+      "signature": "017ea2fc8f056055"
     },
     {
       "count": 1,
@@ -41,32 +31,37 @@
       "signature": "01c46f4bd15fd09d"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ANDN'",
       "signature": "01f337489dbf4dbb"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER25H'",
       "signature": "0205608b6f934478"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT8'",
       "signature": "026c0da571e71d5a"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR12'",
+      "signature": "029378438a8cd502"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CPOP'",
       "signature": "02dcf5e62b6e3f2f"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_src_addr'",
       "signature": "03612354c5ca0ec2"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT27'",
       "signature": "0367679bcec778e0"
     },
@@ -76,19 +71,24 @@
       "signature": "03e06a9c58922131"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MTVEC'",
+      "signature": "0415cec3701a97c2"
+    },
+    {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_9_io_pad'",
       "signature": "04623a00dbe6e6aa"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'clk_en'",
-      "signature": "04d0a541fa4d59e1"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance pin connected by name with empty reference: 'o_ext_funct3'",
+      "signature": "0559d4e47c9ed9b2"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'hmaster'",
-      "signature": "05ae8a0f451bcd55"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TDATA3'",
+      "signature": "05c538dff56cf66e"
     },
     {
       "count": 1,
@@ -101,17 +101,22 @@
       "signature": "067021db5f45ba93"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SC_W'",
       "signature": "06850f92da6fe987"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_LT'",
       "signature": "06861df0045ed34a"
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'o_ext_funct3'",
+      "signature": "06ba677e8842590c"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT7'",
       "signature": "06bc4952ad7ac951"
     },
@@ -121,12 +126,22 @@
       "signature": "06c16eec7d30d178"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_MULHU'",
+      "signature": "06db7c92ca46cdc5"
+    },
+    {
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/onewire.sv:<line>: Filename 'onewire' does not match IFACE name: 'onewire_if'",
       "signature": "07371526750624ad"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_LOAD_FAULT'",
+      "signature": "07a1bfcefb14bbb3"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_pmp_i_m_mode'",
       "signature": "07d77525db138885"
     },
@@ -137,13 +152,23 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'CUS_username6'",
+      "signature": "08032633e9a76ef5"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_REM'",
       "signature": "0803ec15fd84a554"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER19'",
       "signature": "08be18f77297cd1a"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER31H'",
+      "signature": "08e8bc8a7749dde7"
     },
     {
       "count": 1,
@@ -151,19 +176,39 @@
       "signature": "092fb17faa08b69c"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_GRAIN'",
       "signature": "094fc49f29ec512e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCONTEXT'",
       "signature": "09674d10d7a91db6"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_INSTR_MISALIGN'",
+      "signature": "09725fff3c6ecf4d"
+    },
+    {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdata'",
+      "signature": "0999f857edb95cee"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT15'",
+      "signature": "09c8d9c6d26ae9d5"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'INSTRETH'",
       "signature": "0a31569498745ec9"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER20H'",
+      "signature": "0a6fc29874473f6b"
     },
     {
       "count": 1,
@@ -171,9 +216,29 @@
       "signature": "0ae233839a6211b2"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR15'",
+      "signature": "0af714962ab9ffe1"
+    },
+    {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_13_io_pad'",
       "signature": "0b156cf0a74776d8"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER17H'",
+      "signature": "0b34282e37455099"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_err'",
+      "signature": "0b67cdf44e1d5e09"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_BCLR'",
+      "signature": "0b894e075420e099"
     },
     {
       "count": 1,
@@ -181,14 +246,29 @@
       "signature": "0b902e996255b2e6"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_target_addr'",
       "signature": "0bcf88ea3d097106"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Signal is not used: 'IHLT'",
+      "signature": "0c45afa5fa8167e6"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBKX'",
       "signature": "0c60ea4fc09e3bce"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT23'",
+      "signature": "0c7f02f24e7bee6a"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER30H'",
+      "signature": "0c86b6149dd0fd4c"
     },
     {
       "count": 1,
@@ -206,7 +286,7 @@
       "signature": "0d06be595a08493b"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_PACK'",
       "signature": "0d11a19bca960201"
     },
@@ -216,14 +296,29 @@
       "signature": "0d25f4003bf6a215"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SHXADD'",
+      "signature": "0d4445ad4665a073"
+    },
+    {
       "count": 1,
+      "example": "PROCASSINIT:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Procedural assignment to declaration with initial value: 'XATAI2'",
+      "signature": "0d4d0917fa30b2f6"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER24'",
       "signature": "0db22af1f958ab62"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'CSR_M_MANDATORY'",
       "signature": "0db9317fdfc322be"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER19H'",
+      "signature": "0de0eadcfa28eae8"
     },
     {
       "count": 1,
@@ -232,18 +327,23 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_top.v:<line>: Bits of signal are not used: 'i_wb_rdt'[1:0]",
+      "signature": "0f1039a1cd65d8da"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MCONFIGPTR_VAL'",
       "signature": "0f67b26a541e6bbb"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3PMPM'",
       "signature": "0fbca4196b735d31"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_ebreak'",
-      "signature": "1003bf751df8b9b9"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TSELECT'",
+      "signature": "100c5f0dc685b660"
     },
     {
       "count": 1,
@@ -251,9 +351,14 @@
       "signature": "100dec5a73c6be34"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER27H'",
       "signature": "107d119265ce8e47"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER11'",
+      "signature": "1098a5326cda5656"
     },
     {
       "count": 1,
@@ -261,22 +366,37 @@
       "signature": "10a9fd41de5394dd"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER17'",
       "signature": "114c9ea59ae86cbc"
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEINEXT'",
+      "signature": "1156e58e358b0e27"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'o_ext_rs2'",
+      "signature": "11b526f4224f5f21"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR0'",
+      "signature": "125de8153301eea2"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MVENDORID_VAL'",
       "signature": "128fdd0c8951eb2c"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SHXADD'",
       "signature": "1295dd129dd0c4b9"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MIN'",
       "signature": "12c29703d5b9d9c2"
     },
@@ -284,6 +404,21 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq6_io_pad'",
       "signature": "1330a5a5caa006fd"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_exception'",
+      "signature": "13760a16c448cef6"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username2/kianV/datapath_unit.v:<line>: Parameter is not used: 'STACKADDR'",
+      "signature": "13a8f6ecfc20da70"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username1/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'PC'",
+      "signature": "14e5097879527589"
     },
     {
       "count": 1,
@@ -296,9 +431,39 @@
       "signature": "1527ad15fac45ac0"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SEXT_H'",
+      "signature": "159b15abb288ebd2"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT5'",
+      "signature": "15c9f6d05f5ea1e3"
+    },
+    {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq8_io_pad'",
       "signature": "15cbdbe962b43a28"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'IBER'",
+      "signature": "15d07ea9c5c923fe"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MIE'",
+      "signature": "166b1cac1d239ceb"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIEA'",
+      "signature": "167049e7e3a72e68"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_running'",
+      "signature": "1676cef830046be8"
     },
     {
       "count": 1,
@@ -306,19 +471,39 @@
       "signature": "16c77af886d80afe"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER27'",
       "signature": "16e051bd3c337682"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_UNZIP'",
+      "signature": "16e2befc83bb1eaa"
+    },
+    {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Signal is not used: 'DRW'",
+      "signature": "1701c0eb183d1202"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_M'",
       "signature": "1734fccc27a4b3bd"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER4H'",
+      "signature": "176830973d4c5b54"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBB'",
       "signature": "179127d1040c2955"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'o_mdu_valid'",
+      "signature": "17e052ff75056ffd"
     },
     {
       "count": 1,
@@ -326,14 +511,24 @@
       "signature": "180e0d114ef963d3"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR10'",
       "signature": "18192774e79c45aa"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER4'",
       "signature": "1856e69276d2e085"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Bits of signal are not used: 'ALL1'[7:0]",
+      "signature": "1865409fedcd4674"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER7'",
+      "signature": "18af7f8b952016d4"
     },
     {
       "count": 1,
@@ -341,9 +536,24 @@
       "signature": "18dc57d578bf4b27"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER13'",
+      "signature": "18f77a32744ea1e6"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_CLZ'",
+      "signature": "18ffcbd40f602edc"
+    },
+    {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'xpi_nss3_o_pad'",
       "signature": "1906e34634cd1781"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT26'",
+      "signature": "1927cc27b16d0519"
     },
     {
       "count": 3,
@@ -356,9 +566,19 @@
       "signature": "1965dcf5148ae0a5"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TIMEH'",
+      "signature": "198595e44b37904e"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT18'",
       "signature": "198fa399891fc479"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'unblock_out'",
+      "signature": "19952b366d20fca9"
     },
     {
       "count": 1,
@@ -366,17 +586,17 @@
       "signature": "1a98ef9f57ed19a3"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_DIV'",
       "signature": "1aa0ba744c7eade4"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT31'",
       "signature": "1c01d149fa8e74b6"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set'",
       "signature": "1c1076b216369375"
     },
@@ -387,16 +607,26 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username2/kianV/store_decoder.v:<line>: Bits of signal are not used: 'funct3'[2]",
+      "signature": "1c3cd31f811a5178"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'SLEEP'",
+      "signature": "1c4ffcb007de4496"
+    },
+    {
+      "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr7_o_pad'",
       "signature": "1ca03de09b0759a2"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SH'",
       "signature": "1cbefa831435a7b8"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT19'",
       "signature": "1e18b6d3a54dddee"
     },
@@ -406,17 +636,32 @@
       "signature": "1e835069bdd38609"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'CSR_COUNTER'",
       "signature": "1f2f5a4caf5d3298"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER14'",
+      "signature": "1f3bf86119c1c729"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_INSTR_ILLEGAL'",
       "signature": "1f5d5a40b15e2c84"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_EBREAK'",
+      "signature": "1f6e0e1a4fcc0a5c"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER30'",
+      "signature": "1f9f895fbd086c8d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'fd_cir_raw'",
       "signature": "1fabd6a5204b6190"
     },
@@ -426,24 +671,29 @@
       "signature": "2033cc92c7606f78"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'CSR_M_TRAP'",
       "signature": "20a41f993661fb6f"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_trigger_m_mode'",
       "signature": "20f91e314a3fd132"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_wait'",
-      "signature": "2146d183f055e30e"
+      "count": 2,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_REMU'",
+      "signature": "2192b1007d928a34"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_REMU'",
-      "signature": "2192b1007d928a34"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wen'",
+      "signature": "21c010a36c0ecebd"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'H3MISA'",
+      "signature": "21c7fae3e1191206"
     },
     {
       "count": 1,
@@ -451,7 +701,12 @@
       "signature": "21d1a7e0c5321740"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT18'",
+      "signature": "22539ddef4a8bc6b"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_ECALL_U'",
       "signature": "2253ea5dd4037c02"
     },
@@ -461,47 +716,82 @@
       "signature": "22904cb738c777b2"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIDELEG'",
       "signature": "22b2c96b9da7f838"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_err'",
-      "signature": "23b56d05c034f924"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG1'",
       "signature": "23c6339c62d96319"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MARCHID'",
+      "signature": "23fc20732000920f"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LW'",
+      "signature": "241631583109a0f6"
+    },
+    {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_bufreg.v:<line>: Signal is not used: 'i_cnt_done'",
+      "signature": "246708e110d4292d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER12H'",
+      "signature": "24d975b295a2afe9"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SUB'",
+      "signature": "24e3136711daedd3"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_wdata'",
       "signature": "250fe0dddaad955d"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER16'",
       "signature": "25bbd4ce2873a510"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MARCHID'",
       "signature": "25c1c1a6288d1447"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'W_DATA'",
       "signature": "25fa536f7b20bc88"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPCFG3'",
+      "signature": "27871b7cdfbf6028"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT12'",
+      "signature": "2898282fda0acaca"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_RS2'",
+      "signature": "28a886a4e404d10e"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER11H'",
       "signature": "29345c7ca35fb3d3"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'DPC'",
       "signature": "298e1351d8e3d0a9"
     },
@@ -511,12 +801,12 @@
       "signature": "2a0535dd8802ff9b"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER12'",
       "signature": "2a2b804093a73c17"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT23'",
       "signature": "2a6364420a98fa54"
     },
@@ -526,22 +816,57 @@
       "signature": "2a7506e23d86d774"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MTVAL'",
+      "signature": "2a954f311d964941"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEDELEG'",
+      "signature": "2adc97625d00cc9e"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MTVEC'",
       "signature": "2ae75384d27e6cfa"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'FAST_BRANCHCMP'",
       "signature": "2ae9468052acd64e"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_ECALL_M'",
+      "signature": "2afd40395078e522"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_INSTR_FAULT'",
+      "signature": "2b1fae1527c950cd"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'CYCLEH'",
+      "signature": "2b65590a6947bd78"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER25'",
       "signature": "2b6907cefa7d6279"
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'clk_en'",
+      "signature": "2baa6ddbb0347e03"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ZIP'",
+      "signature": "2bc7fdf9088adcab"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_EXCEPT'",
       "signature": "2bcc77cd14016aed"
     },
@@ -551,34 +876,49 @@
       "signature": "2c21c7a3ef586049"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCYCLEH'",
       "signature": "2cae569236fed33c"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER23H'",
+      "signature": "2cb01bfe02ab638a"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER15H'",
       "signature": "2cd0c7c16c56957e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER22H'",
       "signature": "2cd7d4ccd934a02a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT25'",
       "signature": "2d685c3f24a9be66"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT17'",
       "signature": "2da871cd11707349"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username5/user_core_design.sv:<line>: Bits of signal are not used: 's_mem_addr'[1:0]",
+      "signature": "2e2b226645c7351e"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SLL'",
       "signature": "2e578c70a6897f08"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER25'",
+      "signature": "2e779c42ab3028b4"
     },
     {
       "count": 1,
@@ -586,9 +926,19 @@
       "signature": "2e995f85d4f98f79"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MSECCFG'",
+      "signature": "2fe795b1e18f43d3"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'xm_rs1'",
       "signature": "30190cccf8e828e5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Signal is not used: 'KDEBUG'",
+      "signature": "3040a759cd8c1a09"
     },
     {
       "count": 1,
@@ -596,29 +946,29 @@
       "signature": "3043c0e894f52612"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_ALUOP'",
       "signature": "306cc1e0c894e60a"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdy'",
-      "signature": "307d6d56e2c1f7bd"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_STEP'",
       "signature": "308b134dddb5879a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_NZERO'",
       "signature": "31784a057412750c"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'unblock_out'",
-      "signature": "31cc0ed109a9a8ce"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_AMO'",
+      "signature": "31c43969193457ea"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR2'",
+      "signature": "31f16bee3d09fbd5"
     },
     {
       "count": 1,
@@ -632,18 +982,43 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_running'",
+      "signature": "325f409692811d44"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_DIV'",
+      "signature": "32a04c1444bcf7bb"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Filename 'user_core_design_username4' does not match MODULE name: 'serv_wb_arbiter_username4'",
+      "signature": "32ac4b0932c49f2e"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFGM0'",
       "signature": "33a0dedc0f3d1e3d"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER9'",
+      "signature": "33d9ea1c4995cfa1"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT14'",
       "signature": "33f2819fe9d680a5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'IRQ_INPUT_BYPASS'",
       "signature": "3412de9ed0fd9ec9"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username2/user_core_design.sv:<line>: Parameter is not used: 'ID'",
+      "signature": "34a9a5074715bf3d"
     },
     {
       "count": 1,
@@ -651,44 +1026,54 @@
       "signature": "34ac155b3b3991a1"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER27H'",
+      "signature": "34b7852eec9a8dc6"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER25H'",
+      "signature": "35306f8b527c8643"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_CLMUL'",
+      "signature": "3531eb386aacfd93"
+    },
+    {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'io_di_i'",
       "signature": "35395ed01e48551e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MUL_FASTER'",
       "signature": "3563fa228959526e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT24'",
       "signature": "3596e03993ba3140"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT16'",
       "signature": "36288a5abd640b55"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CLMUL'",
       "signature": "36733e26ebf95100"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER8H'",
       "signature": "368641a640cec647"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZCMP'",
       "signature": "36a317bfdb4113fb"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_halted'",
-      "signature": "36f174a7e68bb44f"
     },
     {
       "count": 1,
@@ -697,28 +1082,68 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance pin connected by name with empty reference: 'o_mdu_valid'",
+      "signature": "372fe9e8d0f6a290"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'EBRK'",
+      "signature": "374aade20038281d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER21'",
+      "signature": "37a00203504191fc"
+    },
+    {
+      "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/clkrst/counter.sv:<line>: Filename 'counter' does not match MODULE name: 'rs_counter'",
       "signature": "37b1af9450463346"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RD_LSB'",
       "signature": "37beb41761368a88"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Bits of signal are not used: 'FCT7'[6,4:0]",
+      "signature": "388500e3f3733c91"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MTVAL'",
       "signature": "38bbee797923a3f9"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_REM'",
+      "signature": "38cc21ecc749c912"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LR_W'",
+      "signature": "38dafd37d96fde0f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'BRANCH_PREDICTOR'",
       "signature": "38eaac4a3b8b8be8"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_INSTR_MISALIGN'",
       "signature": "39077a685eab3b10"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_XOR'",
+      "signature": "390c175e8743ac51"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_MULH'",
+      "signature": "39717a80c3c9cec3"
     },
     {
       "count": 1,
@@ -726,7 +1151,7 @@
       "signature": "398a626b89f60834"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEPC'",
       "signature": "39970739d1daa7db"
     },
@@ -736,22 +1161,37 @@
       "signature": "39ad425791d14c56"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MCONTEXT'",
+      "signature": "39f20d01c3a2c593"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ORC_B'",
+      "signature": "39f425dca18d707f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'U_MODE'",
       "signature": "3a0d78620b525ec2"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LHU'",
       "signature": "3a60d0558d8a102a"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER9H'",
+      "signature": "3add9267fe9cb5cd"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_LOAD_ALIGN'",
       "signature": "3b276b1d194d9209"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER30'",
       "signature": "3b4bff8ea4a7b801"
     },
@@ -761,14 +1201,59 @@
       "signature": "3b85b72737634578"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TDATA2'",
+      "signature": "3bd5160a3e264303"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'W_ADDR'",
       "signature": "3c58d535772a362e"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username5/user_core_design.sv:<line>: Signal is not used: 'irq_i'",
+      "signature": "3c6460566cfe3bd0"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LB'",
+      "signature": "3c64ea3c25907638"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER5H'",
+      "signature": "3cb1f6368d394475"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT19'",
+      "signature": "3d66f35e1dcf0913"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER31'",
       "signature": "3d76a3759e78e293"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_bufreg.v:<line>: Signal is not used: 'i_right_shift_op'",
+      "signature": "3d7c0a100266fdf0"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'BCOND_NZERO'",
+      "signature": "3dabab9ac93a6051"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER13H'",
+      "signature": "3ea8b0649cc07d43"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_halted'",
+      "signature": "3efc841792f6c49a"
     },
     {
       "count": 1,
@@ -781,12 +1266,17 @@
       "signature": "3f29990b3c40eff6"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'trace_data'",
-      "signature": "40c3eca5d0845fdb"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_BEXT'",
+      "signature": "3fbac593efee34f4"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RD_BITS'",
+      "signature": "40cf0d1f0eb5d9a6"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_MATCH_NAPOT'",
       "signature": "41121cd47a5edfdc"
     },
@@ -796,39 +1286,64 @@
       "signature": "411d9ab46fef9d7d"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT28'",
       "signature": "42685c50fb096ec6"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MSLEEP'",
+      "signature": "428b56b4e898ecd7"
+    },
+    {
       "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/username5/femtorv32_tachyon.v:<line>: Filename 'femtorv32_tachyon_username5' does not match MODULE name: 'FemtoRV32_username5'",
+      "signature": "42b2e0450659fad5"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MSTATUS'",
+      "signature": "42b6ae8352fc757e"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_BINV'",
+      "signature": "42bba78e03ef5a92"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/arith/hazard3_alu.v:<line>: Bits of signal are not used: 'funct7_32b'[6:4,0]",
       "signature": "4307919fcb72e0cb"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT6'",
+      "signature": "433d96f4e0a78293"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XNOR'",
       "signature": "434da9d263ca34e1"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED'",
       "signature": "43d272e03b63e771"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER3H'",
       "signature": "43db57d192244559"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Bits of signal are not used: 'btb_src_addr'[0]",
       "signature": "44414cbe559d57bb"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_ready'",
-      "signature": "44ed9f98cb24e130"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER14H'",
+      "signature": "454ea62643952602"
     },
     {
       "count": 1,
@@ -841,22 +1356,32 @@
       "signature": "457ae62473e8112d"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_CTZ'",
+      "signature": "45f0f77b031a941a"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER29'",
+      "signature": "46256e358a0343e9"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SB'",
       "signature": "462a3dd64e104186"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SUB'",
       "signature": "46f6c0957440b7c9"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCA_PC'",
       "signature": "473c3693b28e3392"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER16H'",
       "signature": "4752010320d43ab2"
     },
@@ -871,12 +1396,17 @@
       "signature": "4798ff8e7e27f8b6"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER23'",
+      "signature": "479dfe3e23d7fbb6"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBA'",
       "signature": "47d2e8d6e3cb246f"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT29'",
       "signature": "4814406c7537c671"
     },
@@ -886,12 +1416,17 @@
       "signature": "4817fb88856e974b"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZILSD'",
       "signature": "484514f8172240a1"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER3'",
+      "signature": "485b2221509da2b2"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT15'",
       "signature": "489385f1339544f3"
     },
@@ -901,14 +1436,29 @@
       "signature": "48c03f194a9399da"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR5'",
+      "signature": "48d18cbd4d125ecc"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCAUSE'",
       "signature": "4903aad11dc837eb"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'CYCLE'",
+      "signature": "490918858ac94bea"
     },
     {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'audclk_i_pad'",
       "signature": "49308ef54c516e86"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER26H'",
+      "signature": "4933185376b3abbd"
     },
     {
       "count": 1,
@@ -921,14 +1471,24 @@
       "signature": "4a4ff64dc2adf3cc"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ORN'",
+      "signature": "4a8150124865d2e4"
+    },
+    {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_2_io_pad'",
       "signature": "4ae2caed82a929f4"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MINSTRETH'",
       "signature": "4b35b61ad26a1f84"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT8'",
+      "signature": "4b3d66307ef4b125"
     },
     {
       "count": 1,
@@ -936,24 +1496,44 @@
       "signature": "4bf5694e0ee9c8f0"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RD_BITS'",
       "signature": "4c236d311c0c3d0d"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS1_LSB'",
       "signature": "4c25c0f410ddeefe"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_A'",
       "signature": "4c4cedad22f2ee21"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_BCOND'",
       "signature": "4c78aec59a2946dc"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIFA'",
+      "signature": "4c8b33c5eb5411c9"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'DCSR'",
+      "signature": "4c8f90017476a5a8"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_MULHSU'",
+      "signature": "4ce66fc6c4278690"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER29H'",
+      "signature": "4d62c872f45b320a"
     },
     {
       "count": 1,
@@ -961,14 +1541,9 @@
       "signature": "4d70669b8a494847"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_wen'",
       "signature": "4de5925ec8de1ec1"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_rd'",
-      "signature": "4e6e812e8bbcda42"
     },
     {
       "count": 1,
@@ -981,7 +1556,7 @@
       "signature": "4eca5822dac20719"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER15'",
       "signature": "4fb9b6ac0284b56f"
     },
@@ -1011,24 +1586,19 @@
       "signature": "50cac798222635ab"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XPERM'",
       "signature": "51557a0935cbde28"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_REV8'",
       "signature": "516f38fbc4c9182a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCYCLE'",
       "signature": "51b7ca9b23897452"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'trap'",
-      "signature": "51c5448220add1da"
     },
     {
       "count": 1,
@@ -1041,9 +1611,24 @@
       "signature": "5214384f1aa96939"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_SB'",
+      "signature": "524dd4f5a9e37ca8"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'DBER'",
+      "signature": "5268202e4d3238ad"
+    },
+    {
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Filename 'gf180_io_sim_cells' does not match MODULE name: 'gf180mcu_fd_io__in_c'",
       "signature": "529ea1f136584d73"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'hexcl'",
+      "signature": "52b2d2b0775ba94f"
     },
     {
       "count": 1,
@@ -1051,9 +1636,19 @@
       "signature": "52d73b21d65ad255"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SRL'",
       "signature": "531034cb9f963f9c"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RS1_LSB'",
+      "signature": "536e6043cb7502fc"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR6'",
+      "signature": "537eafa15f62809d"
     },
     {
       "count": 1,
@@ -1061,7 +1656,7 @@
       "signature": "54113bbce1e87b2a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_wen'",
       "signature": "5495e56f0052bd11"
     },
@@ -1077,13 +1672,53 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance pin connected by name with empty reference: 'o_ext_rs1'",
+      "signature": "553e8268df82c4cc"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Instance pin connected by name with empty reference: 'DLEN'",
+      "signature": "55511a8063d1ff1d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_REV8'",
+      "signature": "557c46a0d88e34b5"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'o_ext_rs1'",
+      "signature": "55a530aff0750331"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username6/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'HLT'",
+      "signature": "55e50d56e35f7607"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_SHAMT'",
       "signature": "56828cda81e6c93b"
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIPA'",
+      "signature": "56e38db692d982d9"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_UNZIP'",
       "signature": "5732cf935b266740"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_data_rdy'",
+      "signature": "5817d543a504142c"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_PACKH'",
+      "signature": "589b3729839e4f0b"
     },
     {
       "count": 1,
@@ -1091,17 +1726,22 @@
       "signature": "58cabd86de2ba6aa"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER13'",
       "signature": "590ec2bb1dea0297"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUSRCA_PC'",
+      "signature": "5924501c6f15b548"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TIME'",
       "signature": "59d856e8d8d063b5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBS'",
       "signature": "59ff07394d8e4bd0"
     },
@@ -1111,9 +1751,19 @@
       "signature": "5a331fec20250025"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_instr_decompress.v:<line>: Signal is not used: 'uop_ctr_nxt'",
       "signature": "5ae8de3312d33d8e"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER18H'",
+      "signature": "5aeb50a5f477ea83"
+    },
+    {
+      "count": 1,
+      "example": "PROCASSINIT:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Procedural assignment to declaration with initial value: 'IDATA2'",
+      "signature": "5b6b78ab13518b2d"
     },
     {
       "count": 1,
@@ -1121,7 +1771,7 @@
       "signature": "5b70eb0678c9952b"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCONFIGPTR'",
       "signature": "5b9b9941443a3aef"
     },
@@ -1141,29 +1791,54 @@
       "signature": "5c0bf136d87ce7f5"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_LT'",
+      "signature": "5cc229c3232e8c8a"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3IRQ'",
       "signature": "5cd34ab459170ece"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_BSET'",
+      "signature": "5cd61416bcf49890"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR5'",
       "signature": "5cfcc122afe6c28f"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER26'",
+      "signature": "5db6b9ecc4e1ce5d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MUL_FAST'",
       "signature": "5de922792a0627bb"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_ZERO'",
       "signature": "5e591bccc9c3321a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER9H'",
       "signature": "5e7ba9347ddf6cb5"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER31'",
+      "signature": "5f725cc1624201b3"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEICONTEXT'",
+      "signature": "5f7389491885aef8"
     },
     {
       "count": 1,
@@ -1171,24 +1846,19 @@
       "signature": "5fa53a2f303a83f6"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEDELEG'",
       "signature": "5fc6cea330cd6a9c"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ZIP'",
       "signature": "5fdf60d5e7ce12f1"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT13'",
       "signature": "6043b8e825c747c1"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_read'",
-      "signature": "60bb138014b31580"
     },
     {
       "count": 1,
@@ -1201,29 +1871,74 @@
       "signature": "610caf841b350b6b"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER12'",
+      "signature": "613aea31157cbd6d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SRL'",
+      "signature": "619fe61b41b22848"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER7'",
       "signature": "61c408827737ed9e"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_LOAD_ALIGN'",
+      "signature": "629b9867a508b07b"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_AND'",
+      "signature": "62a421e01d86bacb"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MUL'",
       "signature": "63796b4f8dff9063"
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdy'",
+      "signature": "63c469702eb1c598"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT21'",
+      "signature": "63c4babe4d1bae4c"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT7'",
+      "signature": "63e762b39099f76d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER24H'",
       "signature": "63edc3164564cef1"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT17'",
+      "signature": "64224792df2fc90b"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'RESET_VECTOR'",
       "signature": "647bca3f64628c0d"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER18'",
       "signature": "652ec0c951cd9c21"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT28'",
+      "signature": "6543964b4bb91fff"
     },
     {
       "count": 1,
@@ -1231,7 +1946,7 @@
       "signature": "658adb1a54f05dd5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_clear'",
       "signature": "65a9be89b929737e"
     },
@@ -1242,8 +1957,18 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wen'",
+      "signature": "65fc4f7356a25340"
+    },
+    {
+      "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Filename 'xpi' does not match IFACE name: 'xpi_if'",
       "signature": "667c008d1e2eacbc"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance pin connected by name with empty reference: 'o_ext_rs2'",
+      "signature": "66a889bdd0b77c06"
     },
     {
       "count": 1,
@@ -1251,22 +1976,32 @@
       "signature": "676b49f2278fe989"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCOUNTINHIBIT'",
       "signature": "6797d2935ac7c14b"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_MAXU'",
+      "signature": "683b52ae2822d1b7"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT10'",
       "signature": "6863587bca1f2db1"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER26'",
       "signature": "6868d449e96f2696"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MCOUNTEREN'",
+      "signature": "687edcbd42ce3e63"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'CSR_WTYPE_W'",
       "signature": "68d96a5e7f02ae2d"
     },
@@ -1277,18 +2012,43 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username2/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'PC'",
+      "signature": "697410d916d9e613"
+    },
+    {
+      "count": 1,
       "example": "SYNCASYNCNET:$ROOT/rtl/managed/clusterip/common/rtl/utils/register.sv:<line>: Signal flopped as both synchronous and async: 'retrosoc_top.u_retrosoc_asic.u_rcu.u_sys_rst_sync.__Vcellout__RST_SYNC_BLOCK[4].RST_SYNC_N0_BLOCK.u_sync_dffr____pinNumber4'",
       "signature": "69ad9c2d06349b9b"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT31'",
+      "signature": "6a17c709882525cb"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER6H'",
+      "signature": "6a4434e6b7b08c49"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_NONE'",
+      "signature": "6a5528701bf7767d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT22'",
       "signature": "6b41ecfa7ce13125"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_instr_decompress.v:<line>: Signal is not used: 'rst_n'",
       "signature": "6b52dc90eb0fbb84"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ROL'",
+      "signature": "6b7b9e28e3a8a94a"
     },
     {
       "count": 1,
@@ -1296,19 +2056,59 @@
       "signature": "6b893458c5051519"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_CPOP'",
+      "signature": "6bb9b2437fd771e0"
+    },
+    {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username6/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'DEBUG'",
+      "signature": "6ca8538551b94875"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_SH'",
+      "signature": "6ccc94b9c452c2f6"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/arith/hazard3_branchcmp.v:<line>: Bits of signal are not used: 'cir'[31:15,12:0]",
       "signature": "6d416d34599d0335"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER20H'",
       "signature": "6d4c5fc5579a3e1f"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'DAER'",
+      "signature": "6d957fa02b923d0d"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wdata'",
+      "signature": "6def5419f7bda56c"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_err'",
+      "signature": "6ee45b6539994edb"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'DMDATA0'",
       "signature": "6f0363493555b9bf"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEINEXT'",
+      "signature": "6f2a3f2ffd42918f"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MIP'",
+      "signature": "6f32e7c5de30093c"
     },
     {
       "count": 1,
@@ -1316,19 +2116,34 @@
       "signature": "6f97fc8d1bb13758"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_instr_decompress.v:<line>: Signal is not used: 'clk'",
       "signature": "6fe1db6e2b365b89"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR7'",
+      "signature": "6ff62ebec65ed60f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_OR'",
       "signature": "700ec1e87db7ac95"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCB_IMM'",
       "signature": "70364c3580577acf"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_LTU'",
+      "signature": "7043af6c92b01e79"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance has missing pin: 'o_ren'",
+      "signature": "704b76c39b529025"
     },
     {
       "count": 1,
@@ -1336,24 +2151,44 @@
       "signature": "707f8ef51312eefc"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SEXT_H'",
       "signature": "70fd2715143bab31"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_addr'",
       "signature": "710f53870da44fce"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'OPCODE'",
+      "signature": "711ab4c1ad9dab72"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT11'",
+      "signature": "7128d7ee31678ab0"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SRA'",
       "signature": "712d2b9ecb45e411"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER29H'",
       "signature": "7166beaa8e6c8efd"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_MUL'",
+      "signature": "716e71dbe0636a4f"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MCOUNTINHIBIT'",
+      "signature": "71a66f66bc24f729"
     },
     {
       "count": 1,
@@ -1361,7 +2196,12 @@
       "signature": "71d6e02f1f455b15"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER20'",
+      "signature": "71e0f3bea0da47d4"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBKB'",
       "signature": "71ed3f99048e2c3b"
     },
@@ -1371,7 +2211,7 @@
       "signature": "721177b7dd90884c"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS2_BITS'",
       "signature": "725c854ff2bfc0f7"
     },
@@ -1381,7 +2221,12 @@
       "signature": "728c2b89caf441fd"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MCONFIGPTR'",
+      "signature": "729809b6f017a22d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR14'",
       "signature": "73137ea44f8b0022"
     },
@@ -1392,8 +2237,23 @@
     },
     {
       "count": 1,
+      "example": "PROCASSINIT:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Procedural assignment to declaration with initial value: 'XSTATE'",
+      "signature": "73d2e8c4ba5befb6"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_REGADDR'",
       "signature": "73fedbe68f8d251e"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username2/kianV/alu.v:<line>: Bits of signal are not used: 'sra_srai_rslt'[63:32]",
+      "signature": "74778f55b58c59f1"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LH'",
+      "signature": "7489731a932ebc64"
     },
     {
       "count": 1,
@@ -1402,28 +2262,38 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_instr'",
-      "signature": "74d1f5df092ca9b5"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'unblock_out'",
+      "signature": "754cd97ce1fbe4b8"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_INSTR_FAULT'",
       "signature": "75d3d08d1aa3ea8e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_AMO'",
       "signature": "763af5848330cc11"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_EBREAK'",
       "signature": "7643f46c079c60be"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RS2_BITS'",
+      "signature": "769c4fbe9cbb4a10"
     },
     {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'DVSS'",
       "signature": "770aadb9c1cba9bf"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER24'",
+      "signature": "787618474ab4b869"
     },
     {
       "count": 1,
@@ -1436,7 +2306,7 @@
       "signature": "795dd682f2980a79"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'REDUCED_BYPASS'",
       "signature": "7973fbdfa6482500"
     },
@@ -1446,14 +2316,19 @@
       "signature": "799c249136a0a34b"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'oe_o'",
-      "signature": "7a1fd6e737185a7f"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT13'",
+      "signature": "7a840370af96f638"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_exception'",
-      "signature": "7aa35a854398cb1a"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_exception'",
+      "signature": "7aa1422f28590293"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username6/user_core_design.sv:<line>: Parameter is not used: 'ID'",
+      "signature": "7acc2c7f834eaffb"
     },
     {
       "count": 1,
@@ -1461,7 +2336,17 @@
       "signature": "7b105b7a92957ce9"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_PACK'",
+      "signature": "7b3277c78ed457a8"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_ECALL_U'",
+      "signature": "7b3b70fc9c78332d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER30H'",
       "signature": "7b5e3643834b3585"
     },
@@ -1476,22 +2361,17 @@
       "signature": "7be345de9e1435dd"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_rs1'",
-      "signature": "7c2bab7c2d7334a0"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LB'",
       "signature": "7c337634bf81bef5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG2'",
       "signature": "7c65ab0a2f205816"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_NONE'",
       "signature": "7c86ac68a4de27c2"
     },
@@ -1501,14 +2381,19 @@
       "signature": "7cbdcdcd27cccaf7"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Bits of signal are not used: 'jump_target'[0]",
       "signature": "7cd6bb3e3f7a720e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER12H'",
       "signature": "7cddccf3ce3f08bf"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_halted'",
+      "signature": "7cf54ebb1a500226"
     },
     {
       "count": 1,
@@ -1516,14 +2401,24 @@
       "signature": "7d9b433540f8b3ae"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TIMEH'",
       "signature": "7dcf8443ab23c657"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBC'",
       "signature": "7def98eb3cda6ad3"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR11'",
+      "signature": "7ee962607f7d029b"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEPC'",
+      "signature": "7f1d0781c7eb1c0e"
     },
     {
       "count": 1,
@@ -1532,16 +2427,21 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'hmaster'",
+      "signature": "7f49387306cb6245"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULHU'",
       "signature": "7fa9cc5f70adf259"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSTATUSH'",
       "signature": "7fb71898bd02fe32"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR7'",
       "signature": "807fa7dfd2f493a1"
     },
@@ -1551,17 +2451,22 @@
       "signature": "813090adc9f1e8a8"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BEXT'",
       "signature": "81638e4c60166069"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3POWER'",
       "signature": "81c95f5cef53bf16"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MIMPID'",
+      "signature": "827ab1a3098e7340"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'CSR_WTYPE_C'",
       "signature": "8302f7bb8b16f27e"
     },
@@ -1571,7 +2476,7 @@
       "signature": "83a2f710883a0dfd"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZIFENCEI'",
       "signature": "840267d45a83aab5"
     },
@@ -1581,19 +2486,49 @@
       "signature": "84607651d384d0ee"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEIEA'",
+      "signature": "84818041e631ef9b"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_SC_W'",
+      "signature": "84d6a0bf7a9506d8"
+    },
+    {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'PDRV0'",
       "signature": "84f91be3700f01fd"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_DIVU'",
+      "signature": "855416dfaf4afd22"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_interrupt'",
       "signature": "857dc6a3eeca83f5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER22'",
       "signature": "85e76f3e4d29f680"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'DMDATA0'",
+      "signature": "8654d482f72f9d3e"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT20'",
+      "signature": "8658293ff8af83e8"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_MINU'",
+      "signature": "8669b225d5f57867"
     },
     {
       "count": 1,
@@ -1601,14 +2536,54 @@
       "signature": "86dee9662e8be179"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER6'",
+      "signature": "86e6f97a2e30eddf"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ADD'",
+      "signature": "8705de8fb6df5302"
+    },
+    {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username1/user_core_design.sv:<line>: Signal is not used: 'irq_i'",
+      "signature": "87209cd7a71fa269"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MAX'",
       "signature": "87c94f4e1fbb3aca"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username1/user_core_design.sv:<line>: Bits of signal are not used: 's_nmi_addr'[1:0]",
+      "signature": "87d907f4cc8cf026"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEIPA'",
+      "signature": "87e30e4ac863f617"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULH'",
       "signature": "87f30a4eb222dabd"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT16'",
+      "signature": "8803f066230f54fa"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'CSR_WTYPE_S'",
+      "signature": "882dbd0d9ae661ba"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER16H'",
+      "signature": "8858400d7a709e9f"
     },
     {
       "count": 1,
@@ -1616,27 +2591,22 @@
       "signature": "88e87253bf7282cf"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wdata'",
-      "signature": "893b8e0590d9ee83"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MULDIV'",
       "signature": "895c67fe1ef69503"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'hexcl'",
-      "signature": "89825a0f5eed88b1"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER5'",
       "signature": "89a96aad4321fa4c"
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIPRA'",
+      "signature": "89bb6841bebffd2f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BREV8'",
       "signature": "89ef333c4c6c331f"
     },
@@ -1646,24 +2616,34 @@
       "signature": "8a26d3d8b6031430"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_BREV8'",
+      "signature": "8a5eb601e15211d5"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER27'",
+      "signature": "8a9ee50c9471287d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_trap_cause'",
       "signature": "8aa7467a0f75ed3c"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/dv/verilator/rtl/retrosoc_top.sv:<line>: Signal is not used: 's_core_sel'",
-      "signature": "8b0a437023986bfa"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'pmp_trigger_check_dph_m_mode'",
       "signature": "8bc2d7e93c836d64"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'pmp_trigger_check_dph_addr'",
       "signature": "8bef58faa818aa2f"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER22H'",
+      "signature": "8c4b7c38fe65e9c5"
     },
     {
       "count": 1,
@@ -1671,29 +2651,94 @@
       "signature": "8c915cb8d7f75b4b"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MCYCLE'",
+      "signature": "8c95879fd2035f0a"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT25'",
+      "signature": "8caa36a6485d1791"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER8H'",
+      "signature": "8cfc256a0770c579"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'CYCLEH'",
       "signature": "8d35b73a1d91ad6f"
     },
     {
       "count": 1,
+      "example": "PROCASSINIT:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Procedural assignment to declaration with initial value: 'XRES'",
+      "signature": "8d5f515aa1c7c41f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ORN'",
       "signature": "8dc41a3103a03ba5"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'CSR_WTYPE_W'",
+      "signature": "8e3e465b7e10a309"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUSRCB_IMM'",
+      "signature": "8e5f85706726ad2d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TDATA2'",
       "signature": "8e621494bcc61ec1"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT21'",
       "signature": "8e7c2939f83bd235"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER19'",
+      "signature": "8e8f53749e382fc8"
+    },
+    {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_ebreak'",
+      "signature": "8f145c7b719e7fc2"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER15H'",
+      "signature": "8f312cb5ed6263ee"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'BCOND_ALWAYS'",
+      "signature": "902118db64746d86"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MENVCFG'",
+      "signature": "90d3e8b68d04b67e"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT3'",
       "signature": "9123892c2d1a4a2e"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'fence_i_vld'",
+      "signature": "91ab8a02fe74bc67"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER24H'",
+      "signature": "91c94b873381b808"
     },
     {
       "count": 1,
@@ -1712,11 +2757,26 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username5/user_core_design.sv:<line>: Parameter is not used: 'ID'",
+      "signature": "92dd7ae25e6e9a6d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SEXT_B'",
+      "signature": "94338af708e81501"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TDATA1'",
+      "signature": "94a27c7aa222653c"
+    },
+    {
+      "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/clkrst/clk_int_div.sv:<line>: Filename 'clk_int_div' does not match MODULE name: 'clk_int_even_div_static'",
       "signature": "94b1bc793fc29dbe"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER23'",
       "signature": "94d28857d2fb0baa"
     },
@@ -1726,7 +2786,7 @@
       "signature": "94e44213ad64c4a7"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TINFO'",
       "signature": "95233adeb76589ad"
     },
@@ -1736,9 +2796,19 @@
       "signature": "95598327a2a371fe"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Signal is not used: 'match_urw'",
       "signature": "95690e604469f035"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER10'",
+      "signature": "95b527d6b62b8e27"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'IERR'",
+      "signature": "95d19a60f5d15df9"
     },
     {
       "count": 1,
@@ -1746,7 +2816,12 @@
       "signature": "95f6e45df454ca6c"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER5'",
+      "signature": "95f6ff845bb0a342"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER5H'",
       "signature": "9696a0c495f6418b"
     },
@@ -1756,7 +2831,7 @@
       "signature": "96ad1cb84a559b13"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_REFETCH'",
       "signature": "96d42d4ca626dbb9"
     },
@@ -1766,12 +2841,12 @@
       "signature": "96dce0b808abd15f"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LBU'",
       "signature": "9756d46f3972e3c9"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED_ADDR'",
       "signature": "9772d113ea65cb57"
     },
@@ -1779,6 +2854,16 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_full'",
       "signature": "981340d759a74e2f"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ANDN'",
+      "signature": "9871297e9beaff45"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR1'",
+      "signature": "987168e79dd3d645"
     },
     {
       "count": 1,
@@ -1791,7 +2876,7 @@
       "signature": "98ba924f79eb6e14"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_wdata'",
       "signature": "98e4ee38d633a8d1"
     },
@@ -1801,32 +2886,42 @@
       "signature": "9952f0e7dc01fd38"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_insn'",
-      "signature": "9ae38a0348f02222"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_INSTR_ILLEGAL'",
+      "signature": "99a48b4e5c125ddb"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RS2_LSB'",
+      "signature": "9a374fd2b69a9d76"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSLEEP'",
       "signature": "9b516a14e647b5a9"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LR_W'",
       "signature": "9b5ea524ef209c75"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSECCFGH'",
       "signature": "9b73dd0a9f626296"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER28'",
+      "signature": "9b8a57c1691012e8"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER20'",
       "signature": "9c3279f8717c88e5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MINSTRET'",
       "signature": "9d78d297b1e59a0f"
     },
@@ -1836,57 +2931,57 @@
       "signature": "9db1c0c27e26a274"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER3H'",
+      "signature": "9dcb35e2b848458f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER21H'",
       "signature": "9ddd4a5e5c8aadf2"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_wdata'",
-      "signature": "9e75074c85e8b8c7"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MINSTRET'",
+      "signature": "9e87741b81455823"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER26H'",
       "signature": "9f10c85345ee1eeb"
     },
     {
-      "count": 1,
-      "example": "UNSIGNED:$ROOT/rtl/mini/top/bus.sv:<line>: Comparison is constant due to unsigned arithmetic",
-      "signature": "9f53ff454a8648a4"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIE'",
       "signature": "9f6cf09e1f359fc2"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SEXT_B'",
       "signature": "9fa8c9a76ecdd14e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER21'",
       "signature": "9fa9260b42b1e954"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/apb4_if.sv:<line>: Signal is not used: 'pprot'",
-      "signature": "9fca06dfbce15816"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_STORE_FAULT'",
+      "signature": "9fd461edd5f0d0df"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_ALUSRC'",
       "signature": "9fe1be8689f9cb92"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT30'",
       "signature": "9fe7874583fb7290"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_m_en'",
       "signature": "a002d3b128786f43"
     },
@@ -1906,7 +3001,7 @@
       "signature": "a065d89bafa7c253"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'BREAKPOINT_TRIGGERS'",
       "signature": "a0dadaeef96f807a"
     },
@@ -1916,7 +3011,7 @@
       "signature": "a14ede02dc20a0ec"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_alu_cmp'",
       "signature": "a1785177b01f8b5d"
     },
@@ -1931,7 +3026,7 @@
       "signature": "a279807dd0b5fc33"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR3'",
       "signature": "a2a9f7892749b0de"
     },
@@ -1941,7 +3036,7 @@
       "signature": "a2b413acbc827d4b"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER13H'",
       "signature": "a3795040aa28903c"
     },
@@ -1956,12 +3051,22 @@
       "signature": "a3e9267e6fddc3d7"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT3'",
+      "signature": "a4c63e42c41acfa0"
+    },
+    {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_11_io_pad'",
       "signature": "a4fe4861aca999f6"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER4'",
+      "signature": "a67e2f69715befc8"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'CYCLE'",
       "signature": "a6c931478c0d8018"
     },
@@ -1976,39 +3081,34 @@
       "signature": "a6f0024b7dbf24d8"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER28H'",
       "signature": "a6fe733ee3373c71"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR2'",
       "signature": "a7293dc6f91e062f"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Signal is not used: 'ip_sel_o'",
-      "signature": "a7a94cca997c0698"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_MIN'",
+      "signature": "a80e52dfe32821d5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER8'",
       "signature": "a8696107f2fef9aa"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ORC_B'",
       "signature": "a86b37c49f0396bf"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MINU'",
       "signature": "a89cf3a3a80d2d3e"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_addr'",
-      "signature": "a93c709f695abf63"
     },
     {
       "count": 1,
@@ -2016,19 +3116,24 @@
       "signature": "a9713690d71bc9bc"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LH'",
       "signature": "a9813e1c39939c7f"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_rs2'",
-      "signature": "a9cf9009adcd20bd"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdy'",
+      "signature": "aa713625937bb26e"
+    },
+    {
+      "count": 2,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER23H'",
+      "signature": "ab8441f7c03e2971"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER23H'",
-      "signature": "ab8441f7c03e2971"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_data_rdy'",
+      "signature": "abd421d3a3f6f7bf"
     },
     {
       "count": 1,
@@ -2036,22 +3141,32 @@
       "signature": "ac2a6ee2c94d0000"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_MEMOP'",
       "signature": "ac31b3848287d896"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_trigger_addr'",
       "signature": "ac5fa91be7a1a560"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LBU'",
+      "signature": "ac6428c8ba5067cf"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHARTID'",
       "signature": "aca76df24c39fd31"
     },
     {
       "count": 1,
+      "example": "PROCASSINIT:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Procedural assignment to declaration with initial value: 'HLT2'",
+      "signature": "acfc5897884d7b71"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_irq_ctrl.v:<line>: Bits of signal are not used: 'wdata_raw'[31:7]",
       "signature": "ad0a79c50b97ea8f"
     },
@@ -2061,17 +3176,37 @@
       "signature": "ad0c3acaf1354927"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER16'",
+      "signature": "ad9d05ac0e2e307c"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCOUNTEREN'",
       "signature": "adc48ef7d8fe91db"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_MAX'",
+      "signature": "ae42f2d18ea5522d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT4'",
+      "signature": "ae4edaeeb9803ae0"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER4H'",
       "signature": "ae74fded8de7ee18"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER15'",
+      "signature": "aef542aefdb54353"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'CSR_WTYPE_S'",
       "signature": "af00a138ef8aa41c"
     },
@@ -2081,7 +3216,7 @@
       "signature": "af455b0b2cff2ee2"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_exception'",
       "signature": "af6260e45cd6273a"
     },
@@ -2091,12 +3226,27 @@
       "signature": "afc43f659eca658c"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR8'",
       "signature": "afd0ae1bf9ea0652"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_top.v:<line>: Signal is not used: 'i_ext_rd'",
+      "signature": "b011255cd35fc66c"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MSCRATCH'",
+      "signature": "b03e75fc420155d1"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'INSTRETH'",
+      "signature": "b0dfbe7e5254abb5"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_NONE'",
       "signature": "b0e6990bee056194"
     },
@@ -2106,27 +3256,32 @@
       "signature": "b13fd37a1362d500"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPCFG1'",
+      "signature": "b17a918d9eaf4763"
+    },
+    {
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/psram_core.sv:<line>: Filename 'psram_core' does not match MODULE name: 'load_new_byte'",
       "signature": "b18736bea573c228"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_data_rdy'",
-      "signature": "b1f7cb21a2cfe275"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username2/user_core_design.sv:<line>: Bits of signal are not used: 's_nmi_addr'[1:0]",
+      "signature": "b21e96aa3d9f350f"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TCONTROL'",
       "signature": "b2ec9a4fd3b189d3"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG3'",
       "signature": "b3016723a5ab4521"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CTZ'",
       "signature": "b36cc8cf06dcfd9d"
     },
@@ -2146,9 +3301,14 @@
       "signature": "b4987b17fd59995a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3BEXTM'",
       "signature": "b50d55b4d81dc7f2"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT27'",
+      "signature": "b510aded714486c4"
     },
     {
       "count": 1,
@@ -2156,12 +3316,17 @@
       "signature": "b513017e084d8275"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPCFG0'",
+      "signature": "b5640f2ac92ab7f3"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_ECALL_M'",
       "signature": "b58f890519b24692"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER14H'",
       "signature": "b5bdd0b77c3c5e47"
     },
@@ -2176,19 +3341,39 @@
       "signature": "b6335a379acf55e7"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MTVEC_INIT'",
       "signature": "b6486d4904b54267"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_MATCH_TOR'",
       "signature": "b6babe06f50aa421"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUSRCA_RS1'",
+      "signature": "b6fd6ab899226cfa"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RD_LSB'",
+      "signature": "b72ec9bfa3303630"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'hmaster'",
+      "signature": "b74039e6d6f9ab8b"
     },
     {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'dummy0'",
       "signature": "b752539a258e839a"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUSRCB_RS2'",
+      "signature": "b77e9524fb05ec55"
     },
     {
       "count": 1,
@@ -2206,6 +3391,16 @@
       "signature": "b883df02a09f3815"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MISA'",
+      "signature": "b88e25e8641ab6b2"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR4'",
+      "signature": "b8bd6d6f25a3b852"
+    },
+    {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'uart0_tx_o_pad'",
       "signature": "b8e6c3c794a223bf"
@@ -2216,22 +3411,47 @@
       "signature": "b9102313d6df8b7b"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT10'",
+      "signature": "b91636ae4f20f92f"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MSECCFGH'",
+      "signature": "b9508a2fe343033e"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TINFO'",
+      "signature": "b96ce40f41dabfa4"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_SW'",
+      "signature": "b980e5d9bb0dff37"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZCLSD'",
       "signature": "b997a00ad88267af"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT5'",
       "signature": "b99f014da9fbbe01"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_pmp_i_addr'",
       "signature": "ba1e30b13d9a1880"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPCFGM0'",
+      "signature": "baf05ca479954f41"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XOR'",
       "signature": "baffa3f3db7cfe1d"
     },
@@ -2241,12 +3461,17 @@
       "signature": "bb2363bbb7ad7368"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TSELECT'",
       "signature": "bb42a942f34a4d34"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_bufreg.v:<line>: Signal is not used: 'i_shift_op'",
+      "signature": "bb5cc884c9aa0ac9"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR13'",
       "signature": "bb7d5a1d3a27bc6d"
     },
@@ -2257,16 +3482,41 @@
     },
     {
       "count": 1,
+      "example": "SYNCASYNCNET:$ROOT/rtl/managed/mpw/core/username5/user_core_design.sv:<line>: Signal flopped as both synchronous and async: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_user_core_top.__Vcellinp__u_user_core_design_username5__rst_n_i'",
+      "signature": "bd0d6367fb5aef18"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/user_core_design.sv:<line>: Bits of signal are not used: 's_cpu_addr'[1:0]",
+      "signature": "bd561c5fe671c198"
+    },
+    {
+      "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/tech/tc_sram.sv:<line>: Filename 'tc_sram' does not match MODULE name: 'tc_sram_1024x32'",
       "signature": "bd588c86d64305d7"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER8'",
+      "signature": "bd742e55a0185575"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR8'",
+      "signature": "be4a870219d7f8a6"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ROR'",
       "signature": "be4d058065eb3190"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_XNOR'",
+      "signature": "be5bf8973c46f23b"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER14'",
       "signature": "be92114e66ed6fae"
     },
@@ -2276,12 +3526,12 @@
       "signature": "bf48f9041f6b3b10"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BINV'",
       "signature": "bf699b743af528c5"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER29'",
       "signature": "bf9673c3110c1e1e"
     },
@@ -2291,17 +3541,42 @@
       "signature": "bfd3207837c35f83"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TCONTROL'",
+      "signature": "c076332099ef5b22"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT22'",
+      "signature": "c0cd797700ac40f2"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEICONTEXT'",
+      "signature": "c105e3aa5b101f96"
+    },
+    {
       "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Operator COND expects 32 bits on the Conditional True, but Conditional True's LT generates 1 bits.",
+      "signature": "c1b20cb9d552ca20"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MVENDORID'",
+      "signature": "c1e4b65ffa8af9da"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RS1_BITS'",
+      "signature": "c236e5a3e48f25ed"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR15'",
       "signature": "c248472229380983"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wen'",
-      "signature": "c32c694c98aec334"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_MRET'",
       "signature": "c3864ddd5d00e335"
     },
@@ -2311,7 +3586,7 @@
       "signature": "c3ac524045d3765a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_LTU'",
       "signature": "c3df779eaacf5f27"
     },
@@ -2327,21 +3602,36 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_ebreak'",
+      "signature": "c45400200c6011f0"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER3'",
       "signature": "c464ae3970f9b7f1"
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Parameter is not used: 'ID'",
+      "signature": "c47cbf90783def6d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT9'",
+      "signature": "c4c1c3193ea0b7ef"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CLZ'",
       "signature": "c52066bad57d6444"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_STORE_ALIGN'",
       "signature": "c54201f705edb0b9"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER11'",
       "signature": "c55336cc92959dde"
     },
@@ -2351,7 +3641,7 @@
       "signature": "c5563396e2c64625"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER18H'",
       "signature": "c5e09bfc3ad27dd6"
     },
@@ -2361,7 +3651,7 @@
       "signature": "c6838d7b98284986"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_HALTREQ'",
       "signature": "c6ce9889672dc150"
     },
@@ -2371,14 +3661,34 @@
       "signature": "c7228ac7a89a77cd"
     },
     {
-      "count": 1,
+      "count": 14,
+      "example": "WIDTHTRUNC:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Logical operator COND expects 1 bit on the Conditional Test, but Conditional Test's VARREF 'FLUSH' generates 2 bits.",
+      "signature": "c7ca04782912d519"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR6'",
       "signature": "c7dc9bbede71154e"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER10H'",
+      "signature": "c7e8a0a64d5bfb8f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSECCFG'",
       "signature": "c86dcf593cdcd5fc"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER22'",
+      "signature": "c8ab32be77d1b052"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/username2/kianV/design_elements.v:<line>: Filename 'design_elements_username2' does not match MODULE name: 'mux2_username2'",
+      "signature": "c9606fa3c2b229a9"
     },
     {
       "count": 1,
@@ -2396,12 +3706,22 @@
       "signature": "ca99a5392993487e"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MENVCFG'",
       "signature": "caa757a785d859e0"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'BCOND_ZERO'",
+      "signature": "cafda5aaec3a4af4"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'CSR_WTYPE_C'",
+      "signature": "cb5880f558a55efc"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT6'",
       "signature": "cb60ad6fb28b4e1d"
     },
@@ -2412,8 +3732,18 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/user_core_design.sv:<line>: Signal is not used: 'irq_i'",
+      "signature": "cbc1e4736cc4a3ae"
+    },
+    {
+      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'dat_o'",
       "signature": "cbc24339ec49c826"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ZEXT_H'",
+      "signature": "cbc319ba32e62ebc"
     },
     {
       "count": 1,
@@ -2421,47 +3751,62 @@
       "signature": "cc39d539774eec98"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPCFG2'",
+      "signature": "cce18af34039afcf"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BSET'",
       "signature": "cd8568995114ca78"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'trigger_break_any'",
       "signature": "ce1c417910600bd4"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT12'",
       "signature": "ce2501468a1313b7"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'SLEEP'",
       "signature": "ce3c34eac49c0dce"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR9'",
+      "signature": "ce3cb5187ea417ad"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_PACKH'",
       "signature": "ce726ca9b611b1fa"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER18'",
+      "signature": "cea391a23be0224d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'IRQ_PRIORITY_BITS'",
       "signature": "cea54fc18535046a"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MAXU'",
       "signature": "ceda843153cc4fb1"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ZEXT_H'",
       "signature": "cf22d80c62093513"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER6H'",
       "signature": "d008552bdd803df5"
     },
@@ -2476,19 +3821,49 @@
       "signature": "d00da1e8224c1921"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'DEBUG_SUPPORT'",
       "signature": "d07a50ae905841cf"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_width_const.vh:<line>: Parameter is not used: 'W_MULOP'",
       "signature": "d0f4faa15f6563aa"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEIFA'",
+      "signature": "d1997c41e69a0abd"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT24'",
+      "signature": "d19a86929bfef2d1"
+    },
+    {
       "count": 1,
+      "example": "PROCASSINIT:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Procedural assignment to declaration with initial value: 'FLUSH'",
+      "signature": "d1ccf25ebda1a6c7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_decode.v:<line>: Bits of signal are not used: 'i_wb_rdt'[31,29:27,24:23,19:15,11:7]",
+      "signature": "d2430d4b811e6caa"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'fence_d_vld'",
+      "signature": "d253cb3cc4d59917"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR0'",
       "signature": "d2ab8df0de098f69"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SRA'",
+      "signature": "d444614a5f6eeeb6"
     },
     {
       "count": 1,
@@ -2497,23 +3872,38 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Parameter is not used: 'ID'",
+      "signature": "d54b5f5c52f03638"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_TRIGGER'",
       "signature": "d5915c380ab7e708"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER6'",
       "signature": "d5985c66044451d6"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_E'",
       "signature": "d5db1aabb075e604"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'pcpi_valid'",
-      "signature": "d727c7973fe2e383"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT30'",
+      "signature": "d5dfbbb0ab75d609"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT29'",
+      "signature": "d63cee81fed2a34d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_OR'",
+      "signature": "d653345ce7f6278b"
     },
     {
       "count": 1,
@@ -2521,22 +3911,27 @@
       "signature": "d73383c0abf82b14"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER28'",
       "signature": "d819caeec263034b"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TIME'",
+      "signature": "d8cdc5abd13cc2f6"
+    },
+    {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'hexcl'",
+      "signature": "d92b91d2e2895f82"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS2_LSB'",
       "signature": "d956d3fd2f353de1"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'fence_d_vld'",
-      "signature": "d992c35a2dfac67a"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'pmp_i_kill'",
       "signature": "d9f86148696a4c9b"
     },
@@ -2546,12 +3941,17 @@
       "signature": "da214ececa878a17"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BCLR'",
       "signature": "dabe6f3d8d10f20a"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHARTID'",
+      "signature": "db037a6424b507b5"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIP'",
       "signature": "db13eedecfd951b4"
     },
@@ -2561,17 +3961,12 @@
       "signature": "db1f73ac6cc5f094"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT26'",
       "signature": "dbbaca1a6aa94f93"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'trace_valid'",
-      "signature": "dbe6263e51778dc5"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_EBREAK'",
       "signature": "dbfefc5baf13e768"
     },
@@ -2581,14 +3976,24 @@
       "signature": "dcd67f2de2f92844"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_C'",
       "signature": "dd45c3176001f755"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSCRATCH'",
       "signature": "dd90b88910df7621"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER28H'",
+      "signature": "de3a270752fa4b81"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_XPERM'",
+      "signature": "ded69568fc975cd0"
     },
     {
       "count": 1,
@@ -2601,12 +4006,12 @@
       "signature": "defc7c6d763981d4"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR11'",
       "signature": "df27f6f168192501"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT9'",
       "signature": "df687fdd4db38ebf"
     },
@@ -2616,7 +4021,12 @@
       "signature": "df6dce1c46139627"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LHU'",
+      "signature": "dfa6e8bb3158a627"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MIMPID'",
       "signature": "e04e876fa9c8bea4"
     },
@@ -2627,16 +4037,26 @@
     },
     {
       "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/username1/kianV/design_elements.v:<line>: Filename 'design_elements_username1' does not match MODULE name: 'mux2_username1'",
+      "signature": "e0a74c502ef4880c"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'trigger_break_d_mode'",
       "signature": "e0b429dd63fc8249"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MINSTRETH'",
+      "signature": "e0c7a96f9acc38ae"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS1_BITS'",
       "signature": "e0e39069fc05aac2"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED_CFG'",
       "signature": "e103eca0a2b7f233"
     },
@@ -2647,76 +4067,111 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Bits of signal are not used: 'irq_i'[31:2,0]",
+      "signature": "e1858606a0ce7b70"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR12'",
       "signature": "e1947fc66a79f3be"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULHSU'",
       "signature": "e21b0ca21b609a8e"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'do_o'",
-      "signature": "e292443562cc3342"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MCYCLEH'",
+      "signature": "e3051345cd0e5beb"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR4'",
       "signature": "e35b032fa4cdd3c3"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'eoi'",
-      "signature": "e3e36e4d7538a995"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'di_i'",
-      "signature": "e4f87731346f85f3"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCA_RS1'",
       "signature": "e52f3eb8cec43d97"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG0'",
       "signature": "e54f385481702f07"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TDATA1'",
       "signature": "e60fb2e5ed225995"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MULH_FAST'",
       "signature": "e624ba05cab5c289"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT14'",
+      "signature": "e6549165b35b7441"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MVENDORID'",
       "signature": "e66d05bc635aa0c8"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'BCOND_NEVER'",
+      "signature": "e6951bdd590c0071"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER11H'",
+      "signature": "e69ea2d399f67e37"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'DPC'",
+      "signature": "e6a6a7f5c2617e4d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER17H'",
       "signature": "e6ba6ab75214631f"
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wdata'",
+      "signature": "e7168db9a10e1237"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MIDELEG'",
+      "signature": "e719ea925d01f3f5"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_DIVU'",
       "signature": "e7295834cac1a99d"
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username2/user_core_design.sv:<line>: Bits of signal are not used: 'irq_i'[31:2]",
+      "signature": "e73303528dfb4e3b"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/username1/kianV/cells.v:<line>: Filename 'cells_username1' does not match MODULE name: 'buffer_cell_username1'",
+      "signature": "e79dc5a5fd446bf2"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_RS2'",
       "signature": "e7c22a3c40596cee"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT4'",
       "signature": "e805cfed61a4fa94"
     },
@@ -2726,7 +4181,7 @@
       "signature": "e80611687718a746"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MISA'",
       "signature": "e80f4b037c6feaae"
     },
@@ -2736,9 +4191,14 @@
       "signature": "e89ec00ecbba1b7c"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER7H'",
       "signature": "e8d8e1414672bca2"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_STORE_ALIGN'",
+      "signature": "e91315e3c91c954b"
     },
     {
       "count": 1,
@@ -2746,34 +4206,39 @@
       "signature": "e99bbb0efa367a52"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_AND'",
       "signature": "ea6d05586c018004"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SW'",
       "signature": "ea91ca3691ef6c46"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZCB'",
       "signature": "ea9c97fa2e1df574"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER19H'",
       "signature": "eae13327831f7283"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR1'",
       "signature": "eb0d976f55001b89"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'DCSR'",
       "signature": "eb780b6d0a9d9a76"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR14'",
+      "signature": "ebe6add2c8f5f172"
     },
     {
       "count": 1,
@@ -2781,12 +4246,12 @@
       "signature": "ec213572ad728944"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR9'",
       "signature": "ec541543a37eb784"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER9'",
       "signature": "eccf71b4acddf014"
     },
@@ -2796,17 +4261,32 @@
       "signature": "ecd36ebee2fd861b"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_ALWAYS'",
       "signature": "ecf80fe6ba9b93cf"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MSTATUSH'",
+      "signature": "ed54c59c41b58f6d"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_STORE_FAULT'",
       "signature": "ed95feadede80772"
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'fence_i_vld'",
+      "signature": "eda82b3a5b117c8d"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER17'",
+      "signature": "edd4c7bdcdde786b"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TDATA3'",
       "signature": "ee3b9619108b41cb"
     },
@@ -2814,6 +4294,11 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dqm0_o_pad'",
       "signature": "ef3eb99f09c1d834"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SLL'",
+      "signature": "ef429e890f999137"
     },
     {
       "count": 1,
@@ -2826,17 +4311,22 @@
       "signature": "ef9f314dab2ac31d"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEIPRA'",
+      "signature": "efa70ea5bcd88989"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LW'",
       "signature": "f02190d2ddc5a104"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_write'",
-      "signature": "f02d9e3c21c68641"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MCAUSE'",
+      "signature": "f023d7f3a1ee1987"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ROL'",
       "signature": "f033f9bc7d481d0a"
     },
@@ -2846,17 +4336,22 @@
       "signature": "f0f6238342ead48a"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_running'",
-      "signature": "f1843c8d60be8ef0"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ADD'",
       "signature": "f1a8ae3153da3a8d"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER21H'",
+      "signature": "f1c2866fd113358b"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_REFETCH'",
+      "signature": "f2356cd21354262f"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER31H'",
       "signature": "f24f8909225b3e1b"
     },
@@ -2866,7 +4361,7 @@
       "signature": "f2548a0d3b636cfb"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCB_RS2'",
       "signature": "f264f9b6636136e7"
     },
@@ -2876,9 +4371,39 @@
       "signature": "f275553c47efc840"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MENVCFGH'",
+      "signature": "f2ddefed73eac497"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ROR'",
+      "signature": "f3933f53801ca444"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_MRET'",
+      "signature": "f3c83072a0f21063"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_REMU'",
+      "signature": "f3fb411fdfb9ba58"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'clk_en'",
+      "signature": "f47d3d0e2ee1e85b"
+    },
+    {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/gf180_io_sim_cells.v:<line>: Signal is not used: 'DVDD'",
       "signature": "f4d39e72d4872afe"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Operator COND expects 32 bits on the Conditional True, but Conditional True's LTS generates 1 bits.",
+      "signature": "f505968343b665e3"
     },
     {
       "count": 1,
@@ -2886,12 +4411,22 @@
       "signature": "f50aff9536b53280"
     },
     {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'INSTRET'",
+      "signature": "f55baa983884c1f5"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'IAER'",
+      "signature": "f5696b0fb63b8db2"
+    },
+    {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
       "signature": "f586c67df6a90e51"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER10H'",
       "signature": "f5bd95b5d4d88dbf"
     },
@@ -2907,28 +4442,53 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'mem_la_wstrb'",
-      "signature": "f671be6848b7f176"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_bufreg.v:<line>: Signal is not used: 'i_shamt'",
+      "signature": "f6a671d89f7bb0e8"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER10'",
       "signature": "f6ab22e35e72500b"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_LOAD_FAULT'",
       "signature": "f79a742f6ab08d60"
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username1/user_core_design.sv:<line>: Parameter is not used: 'ID'",
+      "signature": "f7a65e123b9e8e0b"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'fence_d_vld'",
+      "signature": "f7e297dc619ad647"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BEXTM'",
       "signature": "f7f2f18e81fb7c7f"
     },
     {
       "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/username2/kianV/cells.v:<line>: Filename 'cells_username2' does not match MODULE name: 'buffer_cell_username2'",
+      "signature": "f86ecfea60910922"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_MULDIV'",
+      "signature": "f89c77063cf53037"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_src_size'",
       "signature": "f8a190c8c461c43b"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR10'",
+      "signature": "f8c985b0566a4501"
     },
     {
       "count": 1,
@@ -2937,6 +4497,16 @@
     },
     {
       "count": 1,
+      "example": "PROCASSINIT:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Procedural assignment to declaration with initial value: 'XDACK2'",
+      "signature": "fa7edadfea4a2885"
+    },
+    {
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_BEXTM'",
+      "signature": "fa9c64fb8ff8a432"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSTATUS'",
       "signature": "faa036cc07ce2c51"
     },
@@ -2946,24 +4516,24 @@
       "signature": "fad478d50a43d7ce"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT11'",
       "signature": "fb2788828c8462f7"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_cpu_2port.v:<line>: Instance pin connected by name with empty reference: 'bus_aph_panic_i'",
       "signature": "fb59f24d3eaa83df"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'EXTENSION_ZCA'",
       "signature": "fb8effc3e6867513"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdata'",
-      "signature": "fcfd224d8be95c70"
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR13'",
+      "signature": "fc725397cbc46756"
     },
     {
       "count": 1,
@@ -2971,7 +4541,7 @@
       "signature": "fd058edbfd57599d"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_addr'",
       "signature": "fd1b2d596971513e"
     },
@@ -2981,37 +4551,52 @@
       "signature": "fd5e8e149f4a4f56"
     },
     {
-      "count": 1,
+      "count": 2,
+      "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER7H'",
+      "signature": "fd7e9748cbe09c28"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'MTVEC_WMASK'",
       "signature": "fdd7181a21322720"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'INSTRET'",
       "signature": "fe3fc3e18a419022"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT20'",
       "signature": "fe4573f1320fa491"
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdata'",
+      "signature": "fe5a379927d7a450"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'RESET_REGFILE'",
       "signature": "fe98320b4098ae16"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'H3MISA'",
       "signature": "ff6ab3ad96461df5"
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Parameter is not used: 'CPTR'",
+      "signature": "ffa9ba464f1f93ad"
+    },
+    {
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MENVCFGH'",
       "signature": "ffbadab14adcb23c"
     },
     {
-      "count": 1,
+      "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_NEVER'",
       "signature": "ffd1d68a726cc2c7"
     }

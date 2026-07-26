@@ -44,7 +44,11 @@ def build_defines(args: argparse.Namespace) -> list[str]:
 
 
 def configured_filelist(
-    args: argparse.Namespace, generated_dir: Path, user_extensions_dir: Path
+    args: argparse.Namespace,
+    generated_dir: Path,
+    user_extensions_dir: Path,
+    *,
+    require_files: bool = True,
 ) -> FileList:
     names = [
         "def.fl",
@@ -67,7 +71,7 @@ def configured_filelist(
     names.append(str(user_extensions_dir / "user_extensions.fl"))
     names.append("top.fl")
     paths = [Path(name) if Path(name).is_absolute() else generated_dir / name for name in names]
-    return parse_filelists(paths)
+    return parse_filelists(paths, require_files=require_files)
 
 
 def resolve_include(name: str, incdirs: list[Path], current_file: Path) -> Path | None:

@@ -53,6 +53,20 @@ def rewrite_filelists(root: Path, replacements: tuple[tuple[Path, Path], ...]) -
         filelist.write_text(content, encoding="utf-8")
 
 
+def migrate_user_extension_includes(root: Path) -> list[Path]:
+    """Migrate legacy user-extension includes in isolated MPW sources."""
+    legacy_include = re.compile(r'`include\s+"mdd_config\.svh"')
+    migrated: list[Path] = []
+    for source in sorted(root.rglob("*.sv")):
+        content = source.read_text(encoding="utf-8")
+        content, replacements = legacy_include.subn('`include "user_extensions.svh"', content)
+        if replacements == 0:
+            continue
+        source.write_text(content, encoding="utf-8")
+        migrated.append(source)
+    return migrated
+
+
 def migrate_user_gpio_interfaces(root: Path) -> list[Path]:
     """Migrate legacy MPW user-IP GPIO ports in isolated build sources."""
     legacy_port = re.compile(r"\bgpio_if\.dut\s+gpio\b")
@@ -154,8 +168,10 @@ def generate(args: argparse.Namespace) -> None:
         run(workspace, log, mpw / "ip.py")
         run(workspace, log, mpw / "info.py", "IP")
         shutil.copytree(shared / "ip", candidate / "ip")
-        migrated = migrate_user_gpio_interfaces(candidate / "ip")
-        log.write(f"migrated user GPIO interfaces: {len(migrated)}\n")
+        migrated_includes = migrate_user_extension_includes(candidate / "ip")
+        migrated_gpio = migrate_user_gpio_interfaces(candidate / "ip")
+        log.write(f"migrated user-extension includes: {len(migrated_includes)}\n")
+        log.write(f"migrated user GPIO interfaces: {len(migrated_gpio)}\n")
         run(workspace, log, mpw / "core.py", args.simu)
         run(workspace, log, mpw / "info.py", "CORE")
         shutil.copytree(shared / "core", candidate / "core")

@@ -32,6 +32,7 @@ from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
 from scripts.generate_mpw import (  # noqa: E402
+    migrate_user_extension_includes,
     migrate_user_gpio_interfaces,
     remove_legacy_picorv32_entry,
 )
@@ -144,7 +145,9 @@ def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> 
         source_export.generate_user_extensions(
             ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
         )
-        filelist = source_export.configured_filelist(arguments, generated_dir, user_extensions_dir)
+        filelist = source_export.configured_filelist(
+            arguments, generated_dir, user_extensions_dir, require_files=False
+        )
 
         assert f"+define+CORE_{core}" in filelist.defines
         assert any(path.name == source_name for path in filelist.files)
@@ -273,7 +276,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
 def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
     source = tmp_path / "user_ip_design.sv"
     source.write_text(
-        """`include "user_extensions.svh"
+        """`include "mdd_config.svh"
 module user_ip_design (gpio_if.dut gpio);
   logic value;
   assign gpio.gpio_oe = value;
@@ -287,6 +290,7 @@ endmodule
         encoding="utf-8",
     )
 
+    assert migrate_user_extension_includes(tmp_path) == [source]
     assert migrate_user_gpio_interfaces(tmp_path) == [source]
 
     migrated = source.read_text(encoding="utf-8")

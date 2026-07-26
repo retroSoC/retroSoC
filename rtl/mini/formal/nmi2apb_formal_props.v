@@ -21,8 +21,8 @@ module nmi2apb_formal;
   wire [31:0] nmi_wdata;
   wire [ 3:0] nmi_wstrb;
   wire        nmi_ready;
-  wire [ 8:0] psel_comb;
-  wire [ 8:0] psel_q;
+  wire [ 9:0] psel_comb;
+  wire [ 9:0] psel_q;
   wire        xfer_ready;
   wire [ 1:0] fsm_q;
 

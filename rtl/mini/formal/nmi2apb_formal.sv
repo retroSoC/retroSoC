@@ -31,8 +31,8 @@ module nmi2apb_formal_design (
     output logic [31:0] nmi_wdata,
     output logic [ 3:0] nmi_wstrb,
     output logic        nmi_ready,
-    output logic [ 8:0] psel_comb,
-    output logic [ 8:0] psel_q,
+    output logic [ 9:0] psel_comb,
+    output logic [ 9:0] psel_q,
     output logic        xfer_ready,
     output logic [ 1:0] fsm_q
 );
@@ -47,6 +47,7 @@ module nmi2apb_formal_design (
   apb4_pure_if wdg ();
   apb4_pure_if crc ();
   apb4_pure_if tmr ();
+  apb4_pure_if user_ip ();
 
   (* anyseq *)logic        f_nmi_valid;
   (* anyseq *)logic [31:0] f_nmi_addr;
@@ -72,6 +73,7 @@ module nmi2apb_formal_design (
   formal_apb_slave u_wdg_slave (.apb(wdg));
   formal_apb_slave u_crc_slave (.apb(crc));
   formal_apb_slave u_tmr_slave (.apb(tmr));
+  formal_apb_slave u_user_ip_slave (.apb(user_ip));
 
   nmi2apb u_dut (
       .clk_i   (clk_i),
@@ -85,7 +87,8 @@ module nmi2apb_formal_design (
       .rtc     (rtc),
       .wdg     (wdg),
       .crc     (crc),
-      .tmr     (tmr)
+      .tmr     (tmr),
+      .user_ip (user_ip)
   );
 
   assign psel_comb  = u_dut.s_psel_comb;
