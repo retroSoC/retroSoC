@@ -36,13 +36,13 @@ $(MPW_STAMP):
 		echo "missing $(ROOT_PATH)/rtl/managed/mpw; run 'make setup-mpw' first" >&2; \
 		exit 1; \
 		}
-	python3 $(ROOT_PATH)/scripts/prepare_mpw.py \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/prepare_mpw.py \
 		--lock-file $(CACHE_ROOT)/locks/mpw-prepare.lock
 	@mkdir -p $(@D)
 	@touch $@
 
 $(MPW_VARIANT_STAMP): $(MPW_STAMP) $(ROOT_PATH)/scripts/generate_mpw.py
-	python3 $(ROOT_PATH)/scripts/generate_mpw.py --root $(ROOT_PATH) \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/generate_mpw.py --root $(ROOT_PATH) \
 		--output $(MPW_OUTPUT_DIR) --simu $(SIMU) \
 		--lock-file $(CACHE_ROOT)/locks/mpw.lock
 	@mkdir -p $(@D)
@@ -51,52 +51,52 @@ $(MPW_VARIANT_STAMP): $(MPW_STAMP) $(ROOT_PATH)/scripts/generate_mpw.py
 gen_mpw_code: $(MPW_VARIANT_STAMP)
 
 $(MEMORY_MAP_STAMP): $(MEMORY_MAP_SOURCE) $(MEMORY_MAP_SCRIPT)
-	python3 $(MEMORY_MAP_SCRIPT) --map $(MEMORY_MAP_SOURCE) \
+	$(FLOW_PYTHON) $(MEMORY_MAP_SCRIPT) --map $(MEMORY_MAP_SOURCE) \
 		--output-dir $(MEMORY_MAP_DIR) --have-sram-if $(HAVE_SRAM_IF)
 	@touch $@
 
 memory-map: $(MEMORY_MAP_STAMP)
 
 check-memory-map:
-	python3 $(MEMORY_MAP_SCRIPT) --map $(MEMORY_MAP_SOURCE) --check
+	$(FLOW_PYTHON) $(MEMORY_MAP_SCRIPT) --map $(MEMORY_MAP_SOURCE) --check
 
 $(PIN_MAP_STAMP): $(PIN_MAP_SOURCE) $(PIN_MAP_SCRIPT)
-	python3 $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --output-dir $(PIN_MAP_DIR)
+	$(FLOW_PYTHON) $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --output-dir $(PIN_MAP_DIR)
 	@touch $@
 
 pin-map: $(PIN_MAP_STAMP)
 
 check-pin-map:
-	python3 $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --check
+	$(FLOW_PYTHON) $(PIN_MAP_SCRIPT) --map $(PIN_MAP_SOURCE) --check
 
 $(SOC_TOPOLOGY_STAMP): $(SOC_TOPOLOGY_SOURCE) $(SOC_TOPOLOGY_SCRIPT) $(MEMORY_MAP_SOURCE)
-	python3 $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
+	$(FLOW_PYTHON) $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
 		--memory-map $(MEMORY_MAP_SOURCE) --output-dir $(SOC_TOPOLOGY_DIR)
 	@touch $@
 
 soc-topology: $(SOC_TOPOLOGY_STAMP)
 
 check-soc-topology:
-	python3 $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
+	$(FLOW_PYTHON) $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
 		--memory-map $(MEMORY_MAP_SOURCE) --check
 
 $(USER_EXTENSIONS_STAMP): $(USER_EXTENSIONS_SOURCE) $(USER_EXTENSIONS_SCRIPT)
-	python3 $(USER_EXTENSIONS_SCRIPT) --map $(USER_EXTENSIONS_SOURCE) \
+	$(FLOW_PYTHON) $(USER_EXTENSIONS_SCRIPT) --map $(USER_EXTENSIONS_SOURCE) \
 		--output-dir $(USER_EXTENSIONS_DIR)
 	@touch $@
 
 user-extensions: $(USER_EXTENSIONS_STAMP)
 
 check-user-extensions:
-	python3 $(USER_EXTENSIONS_SCRIPT) --map $(USER_EXTENSIONS_SOURCE) --check
+	$(FLOW_PYTHON) $(USER_EXTENSIONS_SCRIPT) --map $(USER_EXTENSIONS_SOURCE) --check
 
 check-clock-reset-domains:
-	python3 $(CLOCK_RESET_DOMAINS_SCRIPT) --map $(CLOCK_RESET_DOMAINS_SOURCE) --root $(ROOT_PATH)
+	$(FLOW_PYTHON) $(CLOCK_RESET_DOMAINS_SCRIPT) --map $(CLOCK_RESET_DOMAINS_SOURCE) --root $(ROOT_PATH)
 
 $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py \
 	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) \
 	$(USER_EXTENSIONS_STAMP)
-	python3 $(RTL_PATH)/script/generate_filelist.py \
+	$(FLOW_PYTHON) $(RTL_PATH)/script/generate_filelist.py \
 		--output-dir $(GENERATED_FL_DIR) \
 		$(foreach define,$(DEF_LIST),--define $(define))
 	@touch $@
@@ -122,9 +122,10 @@ NET_FLIST += -f $(GENERATED_FL_DIR)/def.fl
 NET_FLIST += -f $(GENERATED_FL_DIR)/sys_def.fl
 NET_FLIST += -f $(GENERATED_FL_DIR)/commonip.fl
 NET_FLIST += -f $(GENERATED_FL_DIR)/inc.fl
+NET_FLIST += -f $(PIN_MAP_FILELIST)
 
-RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(PIN_MAP_FILELIST) -f $(SOC_TOPOLOGY_FILELIST) \
-	-f $(USER_EXTENSIONS_FILELIST) $(NET_FLIST)
+RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(SOC_TOPOLOGY_FILELIST) -f $(USER_EXTENSIONS_FILELIST) \
+	$(NET_FLIST)
 RTL_FLIST += -f $(GENERATED_FL_DIR)/clusterip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/ip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/tech.fl

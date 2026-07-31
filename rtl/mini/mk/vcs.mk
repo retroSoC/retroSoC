@@ -1,14 +1,14 @@
 # tools & paths
-NOVAS      ?= /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
-VCS_RUNNER ?= bsub -Is
-VCS        ?= vcs
-VERDI      ?= verdi
-EXTRA      ?= -P $(NOVAS)/novas.tab $(NOVAS)/pli.a
-SIM_TOOL   := $(VCS_RUNNER) $(VCS)
-SIM_BINY   := $(VCS_RUNNER) ./simv
-VERDI_TOOL := $(VCS_RUNNER) $(VERDI)
-COMP_LOG   := -l compile.log
-SIM_LOG    := -l sim.log
+NOVAS           ?= /nfs/tools/synopsys/verdi/V-2023.12-SP1-1/share/PLI/VCS/LINUX64
+VCS             ?= vcs
+VERDI           ?= verdi
+EXTRA           ?= -P $(NOVAS)/novas.tab $(NOVAS)/pli.a
+SIM_TOOL        := $(strip $(VCS_RUNNER) $(VCS))
+SIM_BINY        := $(strip $(VCS_RUNNER) ./simv)
+VERDI_TOOL      := $(strip $(VCS_RUNNER) $(VERDI))
+VCS_FLOW_PYTHON := $(strip $(VCS_RUNNER) $(PYTHON))
+COMP_LOG        := -l compile.log
+SIM_LOG         := -l sim.log
 # netlist file path
 NETLIST_PATH := -v $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 POST_PATH    := -v $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
@@ -93,24 +93,26 @@ sim: $(VCS_BEHV_SIMV)
 netsim: $(VCS_NETL_SIMV)
 postsim: $(VCS_POST_SIMV)
 
+comp netcomp postcomp sim netsim postsim: FLOW_PYTHON := $(VCS_FLOW_PYTHON)
+
 $(VCS_BEHV_SIMV) $(VCS_NETL_SIMV) $(VCS_POST_SIMV): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
 	@mkdir -p $(DIR)
-	python3 $(ROOT_PATH)/scripts/run_flow.py --tool vcs --log $(DIR)/driver-compile.log \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool vcs --log $(DIR)/driver-compile.log \
 		--result $(DIR)/result-compile.json --cwd $(DIR) -- \
 		$(SIM_TOOL) $(COMMON_OPTS) $(OPTS) $(FLIST) -top $(RTL_TOP) $(COMP_LOG)
-	python3 $(RTL_PATH)/script/filelist_deps.py $(DEPS_ARGS) --target $@ --output $(DEPFILE)
+	$(FLOW_PYTHON) $(RTL_PATH)/script/filelist_deps.py $(DEPS_ARGS) --target $@ --output $(DEPFILE)
 
 $(VCS_NETL_SIMV): $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 $(VCS_POST_SIMV): $(ROOT_PATH)/pd/sdf/retrosoc_asic.v $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
 
 sim netsim postsim:
-	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(DIR) \
+	$(FLOW_PYTHON) $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
-	python3 $(ROOT_PATH)/scripts/run_flow.py --tool vcs-sim --stream-bytes \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool vcs-sim --stream-bytes \
 		--log $(DIR)/driver-sim.log \
 		--result $(DIR)/result-sim.json --cwd $(DIR) -- \
 		$(SIM_BINY) $(SIM_OPTS) $(if $(filter netsim postsim,$@),+bus_conflict_off) $(SIM_LOG)
-	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(DIR)/driver-sim.log \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/check_simulation.py --log $(DIR)/driver-sim.log \
 		--result $(DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
 comp netcomp postcomp sim netsim postsim: | manifest

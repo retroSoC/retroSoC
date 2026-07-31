@@ -801,7 +801,8 @@ def render_irq_sva(vector_width: int, groups: list[IrqGroup], interrupts: list[I
     lines.extend(
         f"    input logic [`{irq_width_macro(group)}-1:0] {group.name}_irq_i," for group in groups
     )
-    lines[-1] = lines[-1].removesuffix(",")
+    if lines[-1].endswith(","):
+        lines[-1] = lines[-1][:-1]
     lines.extend([");", ""])
     for interrupt in interrupts:
         lines.extend(

@@ -36,6 +36,7 @@ HAVE_SRAM_MACRO ?= NO
 HAVE_SVA        ?= NO
 WAVE            ?= NO
 FORMAL          ?= NO
+VCS_USE_LSF     ?= YES
 
 RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
@@ -52,26 +53,33 @@ FIRMWARE_NAME ?= retrosoc_fw
 APP           ?= shell
 LINK_TYPE     ?= ld2_sram
 
-BUILD_ROOT      ?= $(ROOT_PATH)/build
-CACHE_ROOT      ?= $(ROOT_PATH)/.cache/retrosoc
-BUILD_TIMESTAMP ?= $(shell date '+%Y-%m-%d-%H-%M')
-MAX_JOBS        ?= 16
-HOST_CC         ?= cc
-CLANG_FORMAT    ?= clang-format-14
-MBAKE           ?= mbake
-VERIBLE_FORMAT  ?= verible-verilog-format
-JOBS            ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
+BUILD_ROOT         ?= $(ROOT_PATH)/build
+CACHE_ROOT         ?= $(ROOT_PATH)/.cache/retrosoc
+BUILD_TIMESTAMP    ?= $(shell date '+%Y-%m-%d-%H-%M')
+MAX_JOBS           ?= 16
+HOST_CC            ?= cc
+PYTHON             ?= python3
+FLOW_PYTHON        ?= $(PYTHON)
+CLANG_FORMAT       ?= clang-format-14
+MBAKE              ?= mbake
+VERIBLE_FORMAT     ?= verible-verilog-format
+VCS_DEFAULT_RUNNER := $(if $(filter YES,$(VCS_USE_LSF)),bsub -Is)
+VCS_RUNNER         ?= $(VCS_DEFAULT_RUNNER)
+VCS_SHELL_GOALS    := comp sim netcomp netsim postcomp postsim
+VCS_SHELL_PYTHON   := $(if $(filter VCS,$(SIMU)),$(if $(filter $(VCS_SHELL_GOALS),$(MAKECMDGOALS)),$(strip $(VCS_RUNNER) $(PYTHON)),$(PYTHON)),$(PYTHON))
+JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
-CONFIG_KEY_VARS := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
+CONFIG_KEY_VARS    := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
                    ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
-VARIANT_ID      := $(strip $(shell python3 $(ROOT_PATH)/scripts/config_key.py \
+VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
-    $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var)))))
+    $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
 ifeq ($(VARIANT_ID),)
 $(error Failed to calculate build variant ID)
 endif
-LOCK_DIGEST := $(strip $(shell python3 $(ROOT_PATH)/scripts/dependency_lock.py --lock $(LOCK_FILE) --digest))
+LOCK_DIGEST := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/dependency_lock.py \
+    --lock $(LOCK_FILE) --digest | tail -n 1))
 export BUILD_TIMESTAMP
 VARIANT_ROOT   := $(abspath $(BUILD_ROOT))/$(VARIANT_ID)
 SW_BUILD_DIR   := $(VARIANT_ROOT)/sw
@@ -113,6 +121,7 @@ $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
 $(call validate_value,FORMAL,$(VALID_BOOL))
+$(call validate_value,VCS_USE_LSF,$(VALID_BOOL))
 $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
@@ -226,7 +235,8 @@ config:
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
 	  SOC '$(SOC)' CORE '$(CORE)' \
-	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' PDK '$(PDK)' \
+	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' \
+	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' HAVE_SVA '$(HAVE_SVA)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
@@ -268,7 +278,7 @@ purge-cache:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(abspath $(CACHE_ROOT))
 
 manifest:
-	python3 $(ROOT_PATH)/scripts/manifest.py create --root $(ROOT_PATH) \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/manifest.py create --root $(ROOT_PATH) \
 	  --lock $(LOCK_FILE) --output $(META_DIR)/manifest.json --profile $(PROFILE_NAME) \
 	  $(foreach var,$(CONFIG_KEY_VARS),--config $(var)=$($(var))) \
 	  --config SIMU=$(SIMU) --config SYNTH=$(SYNTH) --config STA=$(STA)

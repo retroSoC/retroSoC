@@ -106,6 +106,16 @@ regression uses the assembly self-test image:
 Verilator simulations run for 180 seconds by default. Set `SOC_SIM_TIME` explicitly only when
 an exploratory local run needs a different limit.
 
+VCS flow commands use `bsub -Is` by default: this includes parse-time Python helpers used to
+calculate the variant and dependency-lock digest, generated-flow Python helpers, VCS, `simv`, and
+Verdi. In a licensed local VCS environment, run without LSF submission using `VCS_USE_LSF=NO`; an
+explicit `VCS_RUNNER` takes precedence when a site-specific queue or wrapper is required:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk SIMU=VCS VCS_USE_LSF=NO sim
+make CONFIG=configs/ci/ihp130.mk SIMU=VCS VCS_RUNNER='bsub -q vcs -Is' sim
+```
+
 ```sh
 make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
 make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
