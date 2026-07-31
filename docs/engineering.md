@@ -98,11 +98,12 @@ capped at 16 and can be set with `JOBS=<n>` or `MAX_JOBS=<n>`.
 ## Result Policy
 
 Every EDA and simulation flow command is run through `scripts/run_flow.py`, which streams a log and writes a
-result JSON containing the command, timestamps, duration, exit code, and status. The Verilator simulation
-path streams UART output to an interactive terminal byte-by-byte while preserving the raw output in `sim.log`.
-A simulation passes only when the command succeeds, its log contains the firmware startup marker, and no
-fatal/failure marker is present. Icarus regressions use the assembly self-test as `retrosoc_asm`, while the
-normal `retrosoc_fw` image remains available for firmware size tracking and Verilator regressions.
+result JSON containing the command, timestamps, duration, exit code, and status. The VCS and Verilator
+simulation paths stream UART output to an interactive terminal byte-by-byte while preserving the raw output
+in their simulation logs. A simulation passes only when the command succeeds, its log contains the firmware
+startup marker, and no fatal/failure marker is present. Icarus regressions use the assembly self-test as
+`retrosoc_asm`, while the normal `retrosoc_fw` image remains available for firmware size tracking and
+Verilator regressions.
 
 ## Formal Protocol Proofs
 

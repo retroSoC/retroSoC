@@ -106,7 +106,8 @@ $(VCS_POST_SIMV): $(ROOT_PATH)/pd/sdf/retrosoc_asic.v $(ROOT_PATH)/pd/sdf/retros
 sim netsim postsim:
 	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
-	python3 $(ROOT_PATH)/scripts/run_flow.py --tool vcs-sim --log $(DIR)/driver-sim.log \
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool vcs-sim --stream-bytes \
+		--log $(DIR)/driver-sim.log \
 		--result $(DIR)/result-sim.json --cwd $(DIR) -- \
 		$(SIM_BINY) $(SIM_OPTS) $(if $(filter netsim postsim,$@),+bus_conflict_off) $(SIM_LOG)
 	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(DIR)/driver-sim.log \
