@@ -1,4 +1,5 @@
 #include <csignal>
+#include <cstdio>
 #include <iostream>
 
 #include "verilated.h"
@@ -32,6 +33,10 @@ void parseArgs(int argc, char *argv[]) {
 
 extern void env_init();
 int main(int argc, char *argv[]) {
+    if (std::setvbuf(stdout, nullptr, _IONBF, 0) != 0) {
+        std::fputs("failed to disable Verilator stdout buffering\n", stderr);
+        return 1;
+    }
     env_init();
     atexit(release);
     parseArgs(argc, argv);

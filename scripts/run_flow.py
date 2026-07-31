@@ -65,6 +65,13 @@ def write_console_output(line: str) -> None:
     sys.stdout.flush()
 
 
+def write_console_bytes(chunk: bytes) -> None:
+    if terminal_requires_crlf():
+        chunk = chunk.replace(b"\n", b"\r\n")
+    sys.stdout.buffer.write(chunk)
+    sys.stdout.buffer.flush()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a flow command with structured results")
     parser.add_argument("--tool", required=True)
@@ -72,6 +79,11 @@ def main() -> int:
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--cwd", type=Path)
     parser.add_argument("--env", action="append", default=[])
+    parser.add_argument(
+        "--stream-bytes",
+        action="store_true",
+        help="stream child output byte-by-byte and preserve raw log bytes",
+    )
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
@@ -88,26 +100,36 @@ def main() -> int:
     start_clock = time.monotonic()
     returncode = 127
     error_message = None
-    process: subprocess.Popen[str] | None = None
+    process: subprocess.Popen[str] | subprocess.Popen[bytes] | None = None
     try:
-        with args.log.open("w", encoding="utf-8", errors="replace") as log:
+        if args.stream_bytes:
+            log_context = args.log.open("wb")
+        else:
+            log_context = args.log.open("w", encoding="utf-8", errors="replace")
+        with log_context as log:
             process = subprocess.Popen(
                 command,
                 cwd=args.cwd,
                 env=environment,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True,
-                errors="replace",
-                bufsize=1,
+                text=not args.stream_bytes,
+                errors=None if args.stream_bytes else "replace",
+                bufsize=0 if args.stream_bytes else 1,
                 pass_fds=jobserver_fds(),
             )
             assert process.stdout is not None
-            for line in process.stdout:
-                log.write(line)
-                log.flush()
-                if should_display(args.tool, line):
-                    write_console_output(line)
+            if args.stream_bytes:
+                while chunk := os.read(process.stdout.fileno(), 4096):
+                    log.write(chunk)
+                    log.flush()
+                    write_console_bytes(chunk)
+            else:
+                for line in process.stdout:
+                    log.write(line)
+                    log.flush()
+                    if should_display(args.tool, line):
+                        write_console_output(line)
             returncode = process.wait()
     except KeyboardInterrupt:
         error_message = "interrupted"

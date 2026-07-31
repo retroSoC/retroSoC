@@ -94,7 +94,7 @@ comp: $(VERILATOR_EMU)
 sim: comp
 	@test -f $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin || { \
 		echo "firmware image missing; run 'make firmware' first" >&2; exit 1; }
-	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-sim \
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-sim --stream-bytes \
 		--log $(BUILD_DIR)/sim.log --result $(BUILD_DIR)/result-sim.json \
 		--cwd $(BUILD_DIR) -- $(BUILD_DIR)/emu -i $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin \
 		-t $(SOC_SIM_TIME)

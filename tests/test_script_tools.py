@@ -845,6 +845,67 @@ def test_run_flow_keeps_newlines_when_terminal_maps_them_to_carriage_return(monk
     assert terminal.getvalue() == "first\nsecond\n"
 
 
+def test_run_flow_byte_output_adds_carriage_return_only_for_terminal(monkeypatch) -> None:
+    class Terminal(io.StringIO):
+        def __init__(self) -> None:
+            super().__init__()
+            self.buffer = io.BytesIO()
+
+        def isatty(self) -> bool:
+            return True
+
+        def fileno(self) -> int:
+            return 42
+
+    terminal = Terminal()
+    monkeypatch.setattr(run_flow.sys, "stdout", terminal)
+    monkeypatch.setattr(
+        run_flow.termios,
+        "tcgetattr",
+        lambda descriptor: [0, run_flow.termios.OPOST, 0, 0, 0, 0, 0],
+    )
+
+    run_flow.write_console_bytes(b"first\nsecond\n")
+
+    assert terminal.buffer.getvalue() == b"first\r\nsecond\r\n"
+
+
+def test_run_flow_streams_bytes_without_waiting_for_newline(tmp_path: Path) -> None:
+    log = tmp_path / "flow.log"
+    result = tmp_path / "result.json"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts/run_flow.py"),
+            "--tool",
+            "unit",
+            "--stream-bytes",
+            "--log",
+            str(log),
+            "--result",
+            str(result),
+            "--",
+            sys.executable,
+            "-c",
+            "import os, time; os.write(1, b'A'); time.sleep(2); os.write(1, b'\\xffB')",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert process.stdout is not None
+    started = time.monotonic()
+
+    assert process.stdout.read(1) == b"A"
+    assert time.monotonic() - started < 1
+
+    remaining, stderr = process.communicate(timeout=10)
+    assert process.returncode == 0
+    assert stderr == b""
+    assert remaining == b"\xffB"
+    assert log.read_bytes() == b"A\xffB"
+    assert json.loads(result.read_text(encoding="utf-8"))["status"] == "passed"
+
+
 def test_run_flow_records_interruption(tmp_path: Path) -> None:
     log = tmp_path / "interrupted.log"
     result = tmp_path / "interrupted.json"
