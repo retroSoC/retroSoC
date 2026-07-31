@@ -38,6 +38,7 @@ from scripts.generate_mpw import (  # noqa: E402
 )
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts import regress  # noqa: E402
+from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
     NIGHTLY_COMMANDS,
     PDK_PR_PROFILES,
@@ -800,6 +801,48 @@ def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
     assert data["exit_code"] == 0
     assert data["duration_seconds"] >= 0
     assert log.read_text(encoding="utf-8") == "flow output\n"
+
+
+def test_run_flow_adds_carriage_return_when_terminal_disables_onlcr(monkeypatch) -> None:
+    class Terminal(io.StringIO):
+        def isatty(self) -> bool:
+            return True
+
+        def fileno(self) -> int:
+            return 42
+
+    terminal = Terminal()
+    monkeypatch.setattr(run_flow.sys, "stdout", terminal)
+    monkeypatch.setattr(
+        run_flow.termios,
+        "tcgetattr",
+        lambda descriptor: [0, run_flow.termios.OPOST, 0, 0, 0, 0, 0],
+    )
+
+    run_flow.write_console_output("first\nsecond\n")
+
+    assert terminal.getvalue() == "first\r\nsecond\r\n"
+
+
+def test_run_flow_keeps_newlines_when_terminal_maps_them_to_carriage_return(monkeypatch) -> None:
+    class Terminal(io.StringIO):
+        def isatty(self) -> bool:
+            return True
+
+        def fileno(self) -> int:
+            return 42
+
+    terminal = Terminal()
+    monkeypatch.setattr(run_flow.sys, "stdout", terminal)
+    monkeypatch.setattr(
+        run_flow.termios,
+        "tcgetattr",
+        lambda descriptor: [0, run_flow.termios.OPOST | run_flow.termios.ONLCR, 0, 0, 0, 0, 0],
+    )
+
+    run_flow.write_console_output("first\nsecond\n")
+
+    assert terminal.getvalue() == "first\nsecond\n"
 
 
 def test_run_flow_records_interruption(tmp_path: Path) -> None:

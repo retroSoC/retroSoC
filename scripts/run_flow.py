@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import termios
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,6 +46,23 @@ def jobserver_fds() -> tuple[int, ...]:
     except OSError:
         return ()
     return descriptors
+
+
+def terminal_requires_crlf() -> bool:
+    if not sys.stdout.isatty():
+        return False
+    try:
+        output_flags = termios.tcgetattr(sys.stdout.fileno())[1]
+    except OSError:
+        return False
+    return not (output_flags & termios.OPOST and output_flags & termios.ONLCR)
+
+
+def write_console_output(line: str) -> None:
+    if terminal_requires_crlf():
+        line = line.replace("\n", "\r\n")
+    sys.stdout.write(line)
+    sys.stdout.flush()
 
 
 def main() -> int:
@@ -89,8 +107,7 @@ def main() -> int:
                 log.write(line)
                 log.flush()
                 if should_display(args.tool, line):
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
+                    write_console_output(line)
             returncode = process.wait()
     except KeyboardInterrupt:
         error_message = "interrupted"

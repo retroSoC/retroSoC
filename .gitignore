@@ -11,6 +11,7 @@
 *.ddb
 *.fst
 *.txt
+*.demo
 !requirements/
 !requirements/*.txt
 *.gtkw
