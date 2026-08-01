@@ -12,6 +12,8 @@ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
 make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
 make CONFIG=configs/ci/gf180.mk SYNTH=YOSYS synth
 make CONFIG=configs/ci/gf180.mk STA=OPENSTA sta
+make CONFIG=configs/ci/ics55.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/ics55.mk STA=OPENSTA sta
 make CONFIG=configs/ci/sky130.mk SYNTH=YOSYS synth
 make CONFIG=configs/ci/sky130.mk STA=OPENSTA sta
 ```

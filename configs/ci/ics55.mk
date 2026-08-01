@@ -1,0 +1,10 @@
+SOC             := MINI
+PDK             := ICS55
+HAVE_PLL        := NO
+HAVE_SRAM_IF    := NO
+HAVE_SRAM_MACRO := NO
+HAVE_SVA        := NO
+ISA             := RV32IM
+HAVE_CSR        := NO
+APP             := bringup
+LINK_TYPE       := ld2_psram

@@ -43,7 +43,7 @@
       "revision": "e696e093129ca2212487aa169af74d06ebd86eb6",
       "destination": "pdk/icsprout55-pdk",
       "recursive": true,
-      "license": "NOASSERTION"
+      "license": "Apache-2.0"
     },
     "pdk_gf180": {
       "url": "https://github.com/google/gf180mcu-pdk.git",
@@ -83,6 +83,12 @@
       "destination": "app/fatfs/ff16/ff16.zip",
       "license": "LicenseRef-FatFs"
     },
+    "pdk_ics55_h7cr_liberty": {
+      "url": "https://github.com/openecos-projects/icsprout55-pdk/releases/download/v1.10.100/ics55_LLSC_H7CR_liberty.tar.bz2",
+      "sha256": "faa3fc2f3ef8560c2d7cafc7800ecee39b69b8d177b14d098ed94062ba3f6e5c",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_LLSC_H7CR_liberty.tar.bz2",
+      "license": "Apache-2.0"
+    },
     "serv": {
       "url": "https://github.com/olofk/serv/archive/refs/tags/1.4.0.tar.gz",
       "sha256": "f81c37b9f9d548c658e23bb7eb90fbed8b54e2e9e51fa42b8cd2f34cecc472ab",
@@ -121,10 +127,10 @@
         "path": "bin"
       },
       "yosys": {
-        "version": "0.58",
-        "url": "https://github.com/retroSoC/artifact/releases/download/yosys-v0.58/yosys-v0.58-ubuntu-22.04-gcc.tar.gz",
-        "sha256": "54468eb1fe474b11b8014fcabb068bf1398eaa072fa724b26e09dd2df58c3386",
-        "archive": "yosys-v0.58-ubuntu-22.04-gcc.tar.gz",
+        "version": "0.67",
+        "url": "https://github.com/retroSoC/artifact/releases/download/yosys-v0.67/yosys-v0.67-ubuntu-22.04-gcc.tar.gz",
+        "sha256": "272b5060e5c5d8c8830e2d4efd8d88f388fe39e152136bd99c293e718a91c1a7",
+        "archive": "yosys-v0.67-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
       },
       "sby": {

@@ -203,6 +203,14 @@ module tc_clk_xor2 (
       .X(clk_o)
   );
 
+`elsif PDK_ICS55
+  (* keep *) (* dont_touch = "true" *)
+  XOR2X0P5H7R u_XOR2X0P5H7R (
+      .A(clk0_i),
+      .B(clk1_i),
+      .Y(clk_o)
+  );
+
 `elsif PDK_GF180
   (* keep *) (* dont_touch = "true" *)
   gf180mcu_fd_sc_mcu7t5v0__xor2_1 u_gf180mcu_fd_sc_mcu7t5v0__xor2_1 (

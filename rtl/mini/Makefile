@@ -112,7 +112,13 @@ ifeq ($(PDK), IHP130)
 else ifeq ($(PDK), SKY130)
     PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_sky130.fl
 else ifeq ($(PDK), ICS55)
+ifeq ($(SYNTH), YOSYS)
+    PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_ics55_yosys.fl
+else ifeq ($(SIMU), VERILATOR)
+    PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_ics55_verilator.fl
+else
     PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_ics55.fl
+endif
 else ifeq ($(PDK), GF180)
     PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_gf180.fl
 endif

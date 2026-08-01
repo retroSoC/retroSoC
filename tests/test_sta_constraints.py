@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import subprocess
 import sys
+import tarfile
 from pathlib import Path
 
 
@@ -13,6 +16,8 @@ DOMAINS = ROOT / "rtl/mini/integration/clock_reset_domains.json"
 PIN_MAP = ROOT / "rtl/mini/pin_map/pin_map.json"
 GENERATOR = ROOT / "sta/opensta/generate_sdc.py"
 GF180_GENERATOR = ROOT / "pdk/generate_gf180_liberty.py"
+ICS55_PREPARER = ROOT / "pdk/prepare_ics55_liberty.py"
+ICS55_SIM_MODEL_PREPARER = ROOT / "pdk/prepare_ics55_sim_model.py"
 
 
 def generate(domains: Path, output: Path) -> subprocess.CompletedProcess[str]:
@@ -113,3 +118,102 @@ def test_gf180_liberty_generator_assembles_requested_io_cells(tmp_path: Path) ->
     assert (output.with_suffix(".lib.revision")).read_text(encoding="utf-8") == (
         "locked-revision\ngf180mcu_fd_io\nbi_t,in_c\n"
     )
+
+
+def test_ics55_liberty_preparer_selects_stable_tt_and_ss_views(tmp_path: Path) -> None:
+    archive = tmp_path / "ics55_LLSC_H7CR_liberty.tar.bz2"
+    members = {
+        "liberty/ics55_LLSC_H7CR_tt_1p2_25c.lib": "library (ics55_tt) {}\n",
+        "liberty/ics55_LLSC_H7CR_ss_1p08_125c.lib": "library (ics55_ss) {}\n",
+    }
+    with tarfile.open(archive, "w:bz2") as bundle:
+        for name, content in members.items():
+            payload = content.encode("utf-8")
+            member = tarfile.TarInfo(name)
+            member.size = len(payload)
+            bundle.addfile(member, io.BytesIO(payload))
+
+    output = tmp_path / "output"
+    command = [
+        sys.executable,
+        str(ICS55_PREPARER),
+        "--archive",
+        str(archive),
+        "--output-dir",
+        str(output),
+        "--revision",
+        "locked-revision",
+    ]
+    first = subprocess.run(command, text=True, capture_output=True)
+
+    assert first.returncode == 0, first.stderr
+    assert (output / "ics55_h7cr_tt.lib").read_text(encoding="utf-8") == members[
+        "liberty/ics55_LLSC_H7CR_tt_1p2_25c.lib"
+    ]
+    assert (output / "ics55_h7cr_ss.lib").read_text(encoding="utf-8") == members[
+        "liberty/ics55_LLSC_H7CR_ss_1p08_125c.lib"
+    ]
+    assert (output / ".complete").read_text(encoding="utf-8") == (
+        "locked-revision\n" + hashlib.sha256(archive.read_bytes()).hexdigest() + "\n"
+    )
+
+    first_mtime = (output / "ics55_h7cr_tt.lib").stat().st_mtime_ns
+    second = subprocess.run(command, text=True, capture_output=True)
+    assert second.returncode == 0, second.stderr
+    assert (output / "ics55_h7cr_tt.lib").stat().st_mtime_ns == first_mtime
+
+
+def test_ics55_sim_model_preparer_patches_every_h7cr_muxi2_variant(tmp_path: Path) -> None:
+    cells = (
+        "MUXI2X0P5H7R",
+        "MUXI2X0P7H7R",
+        "MUXI2X1H7R",
+        "MUXI2X1P4H7R",
+        "MUXI2X2H7R",
+        "MUXI2X3H7R",
+        "MUXI2X4H7R",
+    )
+    source = tmp_path / "ics55_LLSC_H7CR.v"
+    source.write_text(
+        "".join(
+            f"module {cell} (Y, A, B, S0);\n"
+            "output Y;\n"
+            "input A, B, S0;\n\n"
+            "  udp_mux2 u0(Y, A, B, S0);\n"
+            "  not      u1(Y, Y);\n"
+            f"endmodule //{cell}\n"
+            for cell in cells
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "ics55_h7cr_functional.v"
+    command = [
+        sys.executable,
+        str(ICS55_SIM_MODEL_PREPARER),
+        "--source",
+        str(source),
+        "--output",
+        str(output),
+        "--revision",
+        "locked-revision",
+    ]
+
+    first = subprocess.run(command, text=True, capture_output=True)
+
+    assert first.returncode == 0, first.stderr
+    prepared = output.read_text(encoding="utf-8")
+    assert prepared.count("wire muxi2_y;") == len(cells)
+    assert prepared.count("udp_mux2 u0(muxi2_y, A, B, S0);") == len(cells)
+    assert "not      u1(Y, Y);" not in prepared
+    assert (output.with_suffix(".v.revision")).read_text(encoding="utf-8") == (
+        "locked-revision\n"
+        + hashlib.sha256(source.read_bytes()).hexdigest()
+        + "\n"
+        + ",".join(cells)
+        + "\n"
+    )
+
+    first_mtime = output.stat().st_mtime_ns
+    second = subprocess.run(command, text=True, capture_output=True)
+    assert second.returncode == 0, second.stderr
+    assert output.stat().st_mtime_ns == first_mtime

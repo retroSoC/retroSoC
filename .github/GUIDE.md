@@ -6,7 +6,8 @@ workflows.
 
 `workflows/quality.yml` runs the fast quality gate. `workflows/regression-smoke.yml`,
 `workflows/regression-ihp130.yml`, `workflows/regression-gf180.yml`,
-`workflows/regression-sky130.yml`, and `workflows/nightly.yml` call the reusable regression workflow;
+`workflows/regression-ics55.yml`, `workflows/regression-sky130.yml`, and
+`workflows/nightly.yml` call the reusable regression workflow;
 `workflows/release.yml` packages tagged releases. `actions/locked-tools/`
 installs the locked open-source tools used by CI.
 

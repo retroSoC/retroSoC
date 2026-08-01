@@ -664,7 +664,7 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
 
 
 def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
-    assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "SKY130"}
+    assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
     for profile in PDK_PR_PROFILES.values():
         commands = pdk_pr_commands(profile)
         command_values = [values for _, values in commands]

@@ -16,6 +16,7 @@ ROOT_DIR = RTL_DIR.parent
 DEFAULT_OUTPUT_DIR = MINI_DIR / ".generated_fl"
 
 PATH_PREFIXES = {
+    "cache": ROOT_DIR / ".cache",
     "pdk": ROOT_DIR / "pdk",
     "clusterip": RTL_DIR / "managed" / "clusterip",
     "ip": RTL_DIR / "ip",

@@ -41,8 +41,8 @@ module nmi_opipsram (
     // verilog_format: on
 );
 
-  logic dummy0 = clk_i;
-  logic dummy1 = rst_n_i;
+  wire dummy0 = clk_i;
+  wire dummy1 = rst_n_i;
 
   // nmi
   assign nmi.rdata      = '0;

@@ -62,6 +62,7 @@ jobs:
             app/fatfs/ff16
             pdk/IHP-Open-PDK
             pdk/gf180mcu-pdk
+            pdk/icsprout55-pdk
             pdk/skywater-pdk
             rtl/managed/clusterip/archinfo
             rtl/managed/clusterip/clint

@@ -8,8 +8,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.dependency_lock import source  # noqa: E402
-from scripts.setup_helpers import ensure_git_repo  # noqa: E402
+from scripts.dependency_lock import archive, source  # noqa: E402
+from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
 def main() -> int:
@@ -113,6 +113,46 @@ def main() -> int:
                     dependency["revision"],
                     "--corner",
                     "ss_100C_1v40",
+                ),
+                check=True,
+            )
+        elif name == "pdk_ics55":
+            liberty = archive("pdk_ics55_h7cr_liberty")
+            archive_path = ROOT / liberty["destination"]
+            download_file(
+                liberty["url"],
+                archive_path,
+                liberty["sha256"],
+                update=args.update,
+                timeout=120,
+            )
+            subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "pdk/prepare_ics55_liberty.py"),
+                    "--archive",
+                    str(archive_path),
+                    "--output-dir",
+                    str(ROOT / ".cache/retrosoc/pdk/ics55"),
+                    "--revision",
+                    dependency["revision"],
+                ),
+                check=True,
+            )
+            subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "pdk/prepare_ics55_sim_model.py"),
+                    "--source",
+                    str(
+                        destination
+                        / "IP/STD_cell/ics55_LLSC_H7C_V1p10C100"
+                        / "ics55_LLSC_H7CR/verilog/ics55_LLSC_H7CR.v"
+                    ),
+                    "--output",
+                    str(ROOT / ".cache/retrosoc/pdk/ics55/ics55_h7cr_functional.v"),
+                    "--revision",
+                    dependency["revision"],
                 ),
                 check=True,
             )
