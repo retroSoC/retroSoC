@@ -30,8 +30,8 @@ rs_status_t rs_perf_snapshot(rs_perf_snapshot_t *snapshot) {
         rs_perf_read_counter(&reg_sysctrl_perf_user_wait_lo, &reg_sysctrl_perf_user_wait_hi);
     snapshot->dma_wait =
         rs_perf_read_counter(&reg_sysctrl_perf_dma_wait_lo, &reg_sysctrl_perf_dma_wait_hi);
-    snapshot->native_wait =
-        rs_perf_read_counter(&reg_sysctrl_perf_natv_wait_lo, &reg_sysctrl_perf_natv_wait_hi);
+    snapshot->rib_wait =
+        rs_perf_read_counter(&reg_sysctrl_perf_rib_wait_lo, &reg_sysctrl_perf_rib_wait_hi);
     snapshot->apb_wait =
         rs_perf_read_counter(&reg_sysctrl_perf_apb_wait_lo, &reg_sysctrl_perf_apb_wait_hi);
     snapshot->sdram_wait =

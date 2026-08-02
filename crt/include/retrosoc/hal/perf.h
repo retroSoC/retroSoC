@@ -9,7 +9,7 @@ typedef struct {
     uint64_t mgmt_wait;
     uint64_t user_wait;
     uint64_t dma_wait;
-    uint64_t native_wait;
+    uint64_t rib_wait;
     uint64_t apb_wait;
     uint64_t sdram_wait;
     uint64_t psram_wait;

@@ -16,7 +16,7 @@ module bus_formal;
   wire        user_ready;
   wire        dma_valid;
   wire        dma_ready;
-  wire        natv_valid;
+  wire        rib_valid;
   wire        apb_valid;
   wire        fault_valid;
   wire        fault_access;
@@ -37,7 +37,7 @@ module bus_formal;
       .user_ready  (user_ready),
       .dma_valid   (dma_valid),
       .dma_ready   (dma_ready),
-      .natv_valid  (natv_valid),
+      .rib_valid   (rib_valid),
       .apb_valid   (apb_valid),
       .fault_valid (fault_valid),
       .fault_access(fault_access),
@@ -57,8 +57,8 @@ module bus_formal;
       assume (user_wstrb == $past(user_wstrb));
     end
     if (rst_n_i) begin
-      assert (!(natv_valid && apb_valid));
-      assert (!(fault_valid && (natv_valid || apb_valid)));
+      assert (!(rib_valid && apb_valid));
+      assert (!(fault_valid && (rib_valid || apb_valid)));
       if (fault_access) begin
         assert (fault_valid);
       end

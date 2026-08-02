@@ -19,7 +19,7 @@ REQUIRED_FIELDS = {
     "words",
     "checksum",
     "mgmt_wait",
-    "native_wait",
+    "rib_wait",
     "sdram_wait",
     "psram_wait",
     "flash_wait",

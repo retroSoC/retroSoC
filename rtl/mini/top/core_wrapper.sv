@@ -13,7 +13,7 @@ module core_wrapper (
     input logic     clk_i,
     input logic     rst_n_i,
     input logic [31:0] irq_i,
-    soc_nmi_if.master nmi
+    soc_rib_if.master rib
     // verilog_format: on
 );
 
@@ -21,7 +21,7 @@ module core_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .irq_i  (irq_i),
-      .nmi    (nmi)
+      .rib    (rib)
   );
 
 endmodule

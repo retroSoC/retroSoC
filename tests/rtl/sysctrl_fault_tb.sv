@@ -7,20 +7,20 @@ module sysctrl_fault_tb;
   logic [31:0] fault_addr_i = '0;
   logic [ 3:0] fault_wstrb_i = '0;
   logic        fault_reserved_i = 1'b0;
-  nmi_if nmi ();
+  rib_if rib ();
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
 
   always #5 clk_i = ~clk_i;
 
-  nmi_sysctrl u_sysctrl (
+  rib_sysctrl u_sysctrl (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .fault_valid_i   (fault_valid_i),
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .nmi             (nmi),
+      .rib             (rib),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );
@@ -28,46 +28,46 @@ module sysctrl_fault_tb;
   task automatic read_register(input logic [31:0] address, output logic [31:0] data);
     begin
       @(negedge clk_i);
-      nmi.addr  = address;
-      nmi.wdata = '0;
-      nmi.wstrb = '0;
-      nmi.valid = 1'b1;
-      while (!nmi.ready) @(posedge clk_i);
-      data = nmi.rdata;
+      rib.addr  = address;
+      rib.wdata = '0;
+      rib.wstrb = '0;
+      rib.valid = 1'b1;
+      while (!rib.ready) @(posedge clk_i);
+      data = rib.rdata;
       @(negedge clk_i);
-      nmi.valid = 1'b0;
-      while (nmi.ready) @(posedge clk_i);
+      rib.valid = 1'b0;
+      while (rib.ready) @(posedge clk_i);
     end
   endtask
 
   task automatic write_register(input logic [31:0] address, input logic [31:0] data);
     begin
       @(negedge clk_i);
-      nmi.addr  = address;
-      nmi.wdata = data;
-      nmi.wstrb = 4'hF;
-      nmi.valid = 1'b1;
-      while (!nmi.ready) @(posedge clk_i);
+      rib.addr  = address;
+      rib.wdata = data;
+      rib.wstrb = 4'hF;
+      rib.valid = 1'b1;
+      while (!rib.ready) @(posedge clk_i);
       @(negedge clk_i);
-      nmi.valid = 1'b0;
-      while (nmi.ready) @(posedge clk_i);
+      rib.valid = 1'b0;
+      while (rib.ready) @(posedge clk_i);
     end
   endtask
 
   logic [31:0] read_data;
   initial begin
-    nmi.valid                   = 1'b0;
-    nmi.addr                    = '0;
-    nmi.wdata                   = '0;
-    nmi.wstrb                   = '0;
+    rib.valid                   = 1'b0;
+    rib.addr                    = '0;
+    rib.wdata                   = '0;
+    rib.wstrb                   = '0;
     sysctrl.user_bus_idle_i     = 1'b1;
     sysctrl.fault_access_i      = 1'b0;
     sysctrl.fault_master_i      = '0;
-    sysctrl.fault_code_i        = `SOC_NMI_RESP_RESERVED;
+    sysctrl.fault_code_i        = `SOC_RIB_RESP_RESERVED;
     sysctrl.perf_mgmt_wait_i    = 64'd11;
     sysctrl.perf_user_wait_i    = 64'd12;
     sysctrl.perf_dma_wait_i     = 64'd13;
-    sysctrl.perf_natv_wait_i    = 64'd14;
+    sysctrl.perf_rib_wait_i    = 64'd14;
     sysctrl.perf_apb_wait_i     = 64'd15;
     sysctrl.perf_sdram_wait_i   = 64'd16;
     sysctrl.perf_psram_wait_i   = 64'd17;
@@ -98,10 +98,10 @@ module sysctrl_fault_tb;
     read_register(32'h1000_B018, read_data);
     if (read_data !== 32'h0000_0001) $fatal(1, "fault count was not incremented");
     read_register(32'h1000_B02C, read_data);
-    if (read_data !== `SOC_NMI_RESP_RESERVED) $fatal(1, "fault detail was not recorded");
+    if (read_data !== `SOC_RIB_RESP_RESERVED) $fatal(1, "fault detail was not recorded");
 
     @(negedge clk_i);
-    sysctrl.fault_code_i = `SOC_NMI_RESP_DECERR;
+    sysctrl.fault_code_i = `SOC_RIB_RESP_DECERR;
     fault_valid_i        = 1'b1;
     fault_addr_i         = 32'hA000_0000;
     fault_wstrb_i        = 4'h0;
@@ -113,7 +113,7 @@ module sysctrl_fault_tb;
     read_register(32'h1000_B018, read_data);
     if (read_data !== 32'h0000_0002) $fatal(1, "later fault did not increment count");
     read_register(32'h1000_B02C, read_data);
-    if (read_data !== `SOC_NMI_RESP_RESERVED) $fatal(1, "later fault overwrote first fault detail");
+    if (read_data !== `SOC_RIB_RESP_RESERVED) $fatal(1, "later fault overwrote first fault detail");
 
     write_register(32'h1000_B010, 32'h0000_0001);
     read_register(32'h1000_B010, read_data);

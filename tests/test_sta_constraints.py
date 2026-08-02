@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOMAINS = ROOT / "rtl/mini/integration/clock_reset_domains.json"
 PIN_MAP = ROOT / "rtl/mini/pin_map/pin_map.json"
 GENERATOR = ROOT / "sta/opensta/generate_sdc.py"
+OPENSTA_MAKEFILE = ROOT / "sta/opensta/opensta.mk"
 GF180_GENERATOR = ROOT / "pdk/generate_gf180_liberty.py"
 ICS55_PREPARER = ROOT / "pdk/prepare_ics55_liberty.py"
 ICS55_SIM_MODEL_PREPARER = ROOT / "pdk/prepare_ics55_sim_model.py"
@@ -47,11 +48,18 @@ def test_core_sdc_covers_current_clock_domains(tmp_path: Path) -> None:
     assert "create_generated_clock -name clk_system" in sdc
     assert "create_clock -name clk_audio -period 54.253472222" in sdc
     assert "create_clock -name clk_dvp -period 41.666666667" in sdc
-    assert "u_dvp_pclk_clk_buf/clk_o" in sdc
+    assert "get_pins -quiet" in sdc
+    assert "u_retrosoc.u_ip_rib_wrapper/u_rib_dvp.u_dvp_pclk_clk_buf/clk_o" in sdc
     assert "-group [get_clocks {clk_external clk_system}]" in sdc
     assert "set_clock_transition 0.1 [get_clocks {clk_dvp}]" in sdc
     assert "set_input_transition" not in sdc
     assert "set_false_path -from $reset_ext_rst_n_i_pad" in sdc
+
+
+def test_opensta_invocation_exits_after_a_tcl_error() -> None:
+    makefile = OPENSTA_MAKEFILE.read_text(encoding="utf-8")
+
+    assert "$(OPENSTA) -no_init -exit -threads $(OPENSTA_THREADS)" in makefile
 
 
 def test_core_sdc_rejects_pads_missing_from_the_pin_map(tmp_path: Path) -> None:

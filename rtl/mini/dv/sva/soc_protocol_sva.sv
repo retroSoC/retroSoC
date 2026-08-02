@@ -45,37 +45,37 @@ bind bus soc_bus_sva u_soc_bus_sva (
     .arb_locked_i   (s_mstr_lock_q),
     .access_denied_i(s_access_denied),
     .arb_owner_i    (s_mstr_id_q),
-    .mgmt_valid_i   (mgmt_nmi.valid),
-    .user_valid_i   (user_nmi.valid),
-    .dma_valid_i    (dma_nmi.valid)
+    .mgmt_valid_i   (mgmt_rib.valid),
+    .user_valid_i   (user_rib.valid),
+    .dma_valid_i    (dma_rib.valid)
 );
 
-module soc_nmi2apb_sva #(
+module soc_rib2apb_sva #(
     parameter int NSLV = 1
 ) (
     input logic            clk_i,
     input logic            rst_n_i,
     input logic [NSLV-1:0] psel_comb_i,
     input logic [NSLV-1:0] psel_q_i,
-    input logic            nmi_ready_i,
+    input logic            rib_ready_i,
     input logic            xfer_ready_i
 );
 
   // Address regions are disjoint and only the registered select drives a response.
   assert property (@(posedge clk_i) disable iff (!rst_n_i) $onehot0(psel_comb_i));
   assert property (@(posedge clk_i) disable iff (!rst_n_i) $onehot0(psel_q_i));
-  assert property (@(posedge clk_i) disable iff (!rst_n_i) nmi_ready_i |-> xfer_ready_i);
+  assert property (@(posedge clk_i) disable iff (!rst_n_i) rib_ready_i |-> xfer_ready_i);
 
 endmodule
 
-bind nmi2apb soc_nmi2apb_sva #(
+bind rib2apb soc_rib2apb_sva #(
     .NSLV(NSLV)
-) u_soc_nmi2apb_sva (
+) u_soc_rib2apb_sva (
     .clk_i       (clk_i),
     .rst_n_i     (rst_n_i),
     .psel_comb_i (s_psel_comb),
     .psel_q_i    (s_psel_q),
-    .nmi_ready_i (nmi.ready),
+    .rib_ready_i (rib.ready),
     .xfer_ready_i(s_xfer_ready)
 );
 
@@ -136,8 +136,8 @@ module soc_gpio_user_handoff_sva #(
 
 endmodule
 
-bind nmi_gpio soc_gpio_user_handoff_sva #(
-    .DATA_WIDTH(`NMI_GPIO_NUM)
+bind rib_gpio soc_gpio_user_handoff_sva #(
+    .DATA_WIDTH(`RIB_GPIO_NUM)
 ) u_soc_gpio_user_handoff_sva (
     .clk_i         (clk_i),
     .rst_n_i       (rst_n_i),

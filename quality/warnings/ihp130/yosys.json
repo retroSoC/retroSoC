@@ -1,39 +1,24 @@
 {
   "entries": [
     {
-      "count": 1,
-      "example": "warning:Wire hazard3_csr$retrosoc_asic.u_retrosoc.u_core_wrapper.u_hazard3_cpu_1port.core.csr_u.\\debug_mode is used but has no driver.",
-      "signature": "1097d6b92f19e707"
-    },
-    {
-      "count": 1,
+      "count": 2,
       "example": "warning:asynchronous load value missing for variable '\\update_irq_reg_arrays.i'",
       "signature": "56c5f69398be8d7b"
     },
     {
-      "count": 1,
-      "example": "warning:Wire hazard3_csr$retrosoc_asic.u_retrosoc.u_core_wrapper.u_hazard3_cpu_1port.core.csr_u.\\pending_dbg_resume_prev is used but has no driver.",
-      "signature": "5bbc6025e51705ec"
-    },
-    {
-      "count": 9,
+      "count": 11,
       "example": "warning:The network is combinational (run \"fraig\" or \"fraig_sweep\").",
       "signature": "62cc5ee554312205"
     },
     {
-      "count": 2,
+      "count": 4,
       "example": "warning:asynchronous load value missing for variable '\\update_nonconst.prev'",
       "signature": "a30df20b98d49196"
     },
     {
-      "count": 2,
+      "count": 4,
       "example": "warning:asynchronous load value missing for variable '\\update_nonconst.nonconst'",
       "signature": "d35463a1de40c7b2"
-    },
-    {
-      "count": 1,
-      "example": "warning:Wire hazard3_csr$retrosoc_asic.u_retrosoc.u_core_wrapper.u_hazard3_cpu_1port.core.csr_u.\\dbg_req_resume_prev is used but has no driver.",
-      "signature": "ef03dcca25b39dcb"
     }
   ],
   "profile": "ihp130",

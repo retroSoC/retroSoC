@@ -26,15 +26,15 @@ module user_core_design #(
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [31:0] irq_i,
-    nmi_if.master       nmi
+    rib_if.master       rib
     // verilog_format: on
 );
 
   // ========== USER CUSTOM AREA ==============
-  assign nmi.valid = '0;
-  assign nmi.addr  = '0;
-  assign nmi.wdata = '0;
-  assign nmi.wstrb = '0;
+  assign rib.valid = '0;
+  assign rib.addr  = '0;
+  assign rib.wdata = '0;
+  assign rib.wstrb = '0;
   // ========== USER CUSTOM AREA END ==========
 
   // ====== INSTANCE USER CUSTOM TOP DESIGN HERE ======

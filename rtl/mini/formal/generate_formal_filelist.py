@@ -17,8 +17,8 @@ from filelist import FileList, write_filelist  # noqa: E402
 
 
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
-INTERCONNECT = ROOT / "rtl/ip/native/interconnect"
-PERIPHERAL = ROOT / "rtl/ip/native/peripheral"
+INTERCONNECT = ROOT / "rtl/ip/rib/interconnect"
+PERIPHERAL = ROOT / "rtl/ip/rib/peripheral"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -28,25 +28,25 @@ def target_defines(target: str) -> list[str]:
 
 def source_files(target: str) -> list[Path]:
     common = [
-        COMMON_RTL / "interface/nmi_if.sv",
+        COMMON_RTL / "interface/rib_if.sv",
         COMMON_RTL / "utils/register.sv",
-        TOP / "soc_nmi_if.sv",
+        TOP / "soc_rib_if.sv",
     ]
     if target == "bus":
         return [
             *common,
-            TOP / "soc_nmi_regslice.sv",
+            TOP / "soc_rib_regslice.sv",
             TOP / "bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]
-    if target == "nmi2apb":
+    if target == "rib2apb":
         return [
-            COMMON_RTL / "interface/nmi_if.sv",
+            COMMON_RTL / "interface/rib_if.sv",
             COMMON_RTL / "interface/apb4_pure_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/edge_det.sv",
-            INTERCONNECT / "nmi2apb.sv",
-            SCRIPT_DIR / "nmi2apb_formal.sv",
+            INTERCONNECT / "rib2apb.sv",
+            SCRIPT_DIR / "rib2apb_formal.sv",
         ]
     if target == "sysctrl":
         return [
@@ -104,7 +104,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--target",
-        choices=("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_user"),
+        choices=("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user"),
         required=True,
     )
     parser.add_argument("--output", type=Path, required=True)

@@ -22,13 +22,13 @@ module ip_apb_wrapper (
     input  logic                        clk_aud_i,
     input  logic                        rst_aud_n_i,
     input  logic                        tmr_capch_i,
-    nmi_if.slave                        nmi,
+    rib_if.slave                        rib,
     uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
     user_gpio_if.user_ip                user_gpio,
-    output logic                        nmi_resp_err_o,
+    output logic                        rib_resp_err_o,
     output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -63,11 +63,11 @@ module ip_apb_wrapper (
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "soc_apb_irq_bindings.svh"
 
-nmi2apb u_nmi2apb (
+rib2apb u_rib2apb (
       .clk_i     (clk_i),
       .rst_n_i   (rst_n_i),
-      .nmi       (nmi),
-      .resp_err_o(nmi_resp_err_o),
+      .rib       (rib),
+      .resp_err_o(rib_resp_err_o),
       `include "soc_apb_connections.svh"
   );
 

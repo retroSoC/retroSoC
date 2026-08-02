@@ -11,11 +11,6 @@
       "signature": "002c63eb2fa86403"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq15_io_pad'",
-      "signature": "0085cff8b584a52c"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR3'",
       "signature": "00a970bcc7157d36"
@@ -66,11 +61,6 @@
       "signature": "0367679bcec778e0"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr11_o_pad'",
-      "signature": "03e06a9c58922131"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MTVEC'",
       "signature": "0415cec3701a97c2"
@@ -96,11 +86,6 @@
       "signature": "06196c17d5f6490d"
     },
     {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Filename 'sdio' does not match IFACE name: 'sdio_if'",
-      "signature": "067021db5f45ba93"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SC_W'",
       "signature": "06850f92da6fe987"
@@ -121,11 +106,6 @@
       "signature": "06bc4952ad7ac951"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Bits of signal are not used: 's_xpi_mm_addr'[31:24]",
-      "signature": "06c16eec7d30d178"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_MULHU'",
       "signature": "06db7c92ca46cdc5"
@@ -136,11 +116,6 @@
       "signature": "06df57600ba9d70b"
     },
     {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/onewire.sv:<line>: Filename 'onewire' does not match IFACE name: 'onewire_if'",
-      "signature": "07371526750624ad"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'EXCEPT_LOAD_FAULT'",
       "signature": "07a1bfcefb14bbb3"
@@ -149,11 +124,6 @@
       "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'f_pmp_i_m_mode'",
       "signature": "07d77525db138885"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'PRE_CHARGE_ALL'",
-      "signature": "07ea1319dbfa4709"
     },
     {
       "count": 1,
@@ -179,6 +149,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/crc/rtl/apb4_crc.sv:<line>: Signal is not driven, nor used: 's_crc_stat_en'",
       "signature": "092fb17faa08b69c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altdat'",
+      "signature": "094a92cd066fcbbf"
     },
     {
       "count": 2,
@@ -277,11 +252,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_cke_o_pad'",
-      "signature": "0ca15e2c821a8918"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'ovf_o'",
       "signature": "0cd6ad0666cb4214"
     },
@@ -327,11 +297,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq4_io_pad'",
-      "signature": "0e992c4e5771adce"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username4/serv/serv_top.v:<line>: Bits of signal are not used: 'i_wb_rdt'[1:0]",
       "signature": "0f1039a1cd65d8da"
     },
@@ -351,11 +316,6 @@
       "signature": "100c5f0dc685b660"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq13_io_pad'",
-      "signature": "100dec5a73c6be34"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER27H'",
       "signature": "107d119265ce8e47"
@@ -364,11 +324,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER11'",
       "signature": "1098a5326cda5656"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_cs_n_o_pad'",
-      "signature": "10a9fd41de5394dd"
     },
     {
       "count": 2,
@@ -384,6 +339,11 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'o_ext_rs2'",
       "signature": "11b526f4224f5f21"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Bits of signal are not used: 's_xpi_mm_addr'[31:24]",
+      "signature": "11d0af70268405b0"
     },
     {
       "count": 2,
@@ -407,13 +367,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq6_io_pad'",
-      "signature": "1330a5a5caa006fd"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_exception'",
+      "signature": "13760a16c448cef6"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_exception'",
-      "signature": "13760a16c448cef6"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altlen'",
+      "signature": "1399a2724128d80c"
     },
     {
       "count": 1,
@@ -431,11 +391,6 @@
       "signature": "1510a46d72b53794"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'dummy1'",
-      "signature": "1527ad15fac45ac0"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SEXT_H'",
       "signature": "159b15abb288ebd2"
@@ -444,11 +399,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT5'",
       "signature": "15c9f6d05f5ea1e3"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq8_io_pad'",
-      "signature": "15cbdbe962b43a28"
     },
     {
       "count": 1,
@@ -469,11 +419,6 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_running'",
       "signature": "1676cef830046be8"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr0_o_pad'",
-      "signature": "16c77af886d80afe"
     },
     {
       "count": 2,
@@ -509,6 +454,11 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'o_mdu_valid'",
       "signature": "17e052ff75056ffd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/sdio.sv:<line>: Signal is not used: 'dat_di_i'",
+      "signature": "17ea3ccb302612b7"
     },
     {
       "count": 1,
@@ -582,6 +532,16 @@
     },
     {
       "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Filename 'xpi' does not match IFACE name: 'xpi_if'",
+      "signature": "1a0bc769706d11bf"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/interconnect/ahbl2rib.sv:<line>: Parameter is not used: 'AHBL_TRANS_SEQ'",
+      "signature": "1a66e6f7349ba422"
+    },
+    {
+      "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_28_io_pad'",
       "signature": "1a98ef9f57ed19a3"
     },
@@ -619,11 +579,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'SLEEP'",
       "signature": "1c4ffcb007de4496"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr7_o_pad'",
-      "signature": "1ca03de09b0759a2"
     },
     {
       "count": 2,
@@ -671,11 +626,6 @@
       "signature": "1fabd6a5204b6190"
     },
     {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_TRANS_SEQ'",
-      "signature": "2033cc92c7606f78"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'CSR_M_TRAP'",
       "signature": "20a41f993661fb6f"
@@ -704,6 +654,11 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/mini/dv/sva/soc_protocol_sva.sv:<line>: Filename 'soc_protocol_sva' does not match MODULE name: 'soc_bus_sva'",
       "signature": "21d1a7e0c5321740"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/interconnect/ahbl2rib.sv:<line>: Parameter is not used: 'AHBL_TRANS_BUSY'",
+      "signature": "21e30afc0080b0ee"
     },
     {
       "count": 2,
@@ -801,11 +756,6 @@
       "signature": "298e1351d8e3d0a9"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altlen'",
-      "signature": "2a0535dd8802ff9b"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER12'",
       "signature": "2a2b804093a73c17"
@@ -814,11 +764,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT23'",
       "signature": "2a6364420a98fa54"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/i2s.sv:<line>: Filename 'i2s' does not match IFACE name: 'i2s_if'",
-      "signature": "2a7506e23d86d774"
     },
     {
       "count": 2,
@@ -876,11 +821,6 @@
       "signature": "2bcc77cd14016aed"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr3_o_pad'",
-      "signature": "2c21c7a3ef586049"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCYCLEH'",
       "signature": "2cae569236fed33c"
@@ -889,6 +829,11 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER23H'",
       "signature": "2cb01bfe02ab638a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_full'",
+      "signature": "2cc1e46b5db4046e"
     },
     {
       "count": 2,
@@ -921,6 +866,11 @@
       "signature": "2e578c70a6897f08"
     },
     {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/peripheral/sysctrl.sv:<line>: Filename 'sysctrl' does not match IFACE name: 'sysctrl_if'",
+      "signature": "2e671c5f03cb9fce"
+    },
+    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER25'",
       "signature": "2e779c42ab3028b4"
@@ -929,6 +879,11 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
       "signature": "2e995f85d4f98f79"
+    },
+    {
+      "count": 2,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/rib/interconnect/rib2rib.sv:<line>: Instance pin connected by name with empty reference: 'elem_num_o'",
+      "signature": "2fcd1047329ee806"
     },
     {
       "count": 2,
@@ -944,11 +899,6 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkbridge.v:<line>: Signal is not used: 'KDEBUG'",
       "signature": "3040a759cd8c1a09"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Filename 'opipsram' does not match IFACE name: 'opipsram_if'",
-      "signature": "3043c0e894f52612"
     },
     {
       "count": 2,
@@ -977,11 +927,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_ba1_o_pad'",
-      "signature": "32167204415424f4"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg_pkg.sv:<line>: Parameter is not used: 'ARCHINFO_IDL_ADDR'",
       "signature": "322396a00ca3c09c"
     },
@@ -1004,6 +949,11 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFGM0'",
       "signature": "33a0dedc0f3d1e3d"
+    },
+    {
+      "count": 3,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/rib/storage/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
+      "signature": "33bc6a7c95fedc7d"
     },
     {
       "count": 2,
@@ -1044,11 +994,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_CLMUL'",
       "signature": "3531eb386aacfd93"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'io_di_i'",
-      "signature": "35395ed01e48551e"
     },
     {
       "count": 2,
@@ -1112,6 +1057,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/sdio.sv:<line>: Signal is not used: 'irq_o'",
+      "signature": "3863296935b17336"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Bits of signal are not used: 'FCT7'[6,4:0]",
       "signature": "388500e3f3733c91"
     },
@@ -1149,11 +1099,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'M_OP_MULH'",
       "signature": "39717a80c3c9cec3"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_elem_num'",
-      "signature": "398a626b89f60834"
     },
     {
       "count": 2,
@@ -1201,11 +1146,6 @@
       "signature": "3b4bff8ea4a7b801"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/top/bus.sv:<line>: Signal is not driven, nor used: 's_ram_ready'",
-      "signature": "3b85b72737634578"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'TDATA2'",
       "signature": "3bd5160a3e264303"
@@ -1224,6 +1164,11 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LB'",
       "signature": "3c64ea3c25907638"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/memory/opipsram.sv:<line>: Signal is not used: 'dqs_di_i'",
+      "signature": "3c83c549037dbeaf"
     },
     {
       "count": 2,
@@ -1276,19 +1221,24 @@
       "signature": "3fbac593efee34f4"
     },
     {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/serial/uart.sv:<line>: Filename 'uart' does not match MODULE name: 'rib_uart'",
+      "signature": "3ff81258766b2c05"
+    },
+    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RD_BITS'",
       "signature": "40cf0d1f0eb5d9a6"
     },
     {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/sdio.sv:<line>: Signal is not used: 'dummy1'",
+      "signature": "40f6b0d85e58b070"
+    },
+    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_MATCH_NAPOT'",
       "signature": "41121cd47a5edfdc"
-    },
-    {
-      "count": 1,
-      "example": "UNOPTFLAT:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_xpi_if.io_di_i'",
-      "signature": "411d9ab46fef9d7d"
     },
     {
       "count": 2,
@@ -1321,6 +1271,11 @@
       "signature": "4307919fcb72e0cb"
     },
     {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/peripheral/dma.sv:<line>: Filename 'dma' does not match IFACE name: 'dma_hw_trg_if'",
+      "signature": "430c456548e65185"
+    },
+    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT6'",
       "signature": "433d96f4e0a78293"
@@ -1346,6 +1301,11 @@
       "signature": "44414cbe559d57bb"
     },
     {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/interconnect/ahbl2rib.sv:<line>: Parameter is not used: 'AHBL_TRANS_IDLE'",
+      "signature": "44f135c0325e0965"
+    },
+    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER14H'",
       "signature": "454ea62643952602"
@@ -1354,11 +1314,6 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_12_io_pad'",
       "signature": "456b371e296b1f23"
-    },
-    {
-      "count": 2,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/interconnect/nmi2nmi.sv:<line>: Instance pin connected by name with empty reference: 'wr_full_o'",
-      "signature": "457ae62473e8112d"
     },
     {
       "count": 2,
@@ -1394,11 +1349,6 @@
       "count": 2,
       "example": "GENUNNAMED:$ROOT/rtl/managed/clusterip/common/rtl/utils/lfsr.sv:<line>: Unnamed generate block 'genblk1' (IEEE 1800-2023 27.6)",
       "signature": "477d20b9e229c6fd"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/spisd.sv:<line>: Filename 'spisd' does not match MODULE name: 'nmi_spisd'",
-      "signature": "4798ff8e7e27f8b6"
     },
     {
       "count": 2,
@@ -1467,13 +1417,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/storage/spisd_init.sv:<line>: Parameter is not used: 'DIV_FREQ'",
-      "signature": "49eede512b581164"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
+      "signature": "4a4ff64dc2adf3cc"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
-      "signature": "4a4ff64dc2adf3cc"
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/peripheral/gpio.sv:<line>: Filename 'gpio' does not match IFACE name: 'gpio_if'",
+      "signature": "4a7786efb961f5ea"
     },
     {
       "count": 2,
@@ -1494,11 +1444,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT8'",
       "signature": "4b3d66307ef4b125"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'irq_o'",
-      "signature": "4bf5694e0ee9c8f0"
     },
     {
       "count": 2,
@@ -1572,8 +1517,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'LAST_STATE'",
-      "signature": "506dc044cc9c7643"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txlowb'",
+      "signature": "4fc8c7aeb19fdf09"
     },
     {
       "count": 2,
@@ -1582,8 +1527,8 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq7_io_pad'",
-      "signature": "50cac798222635ab"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/peripheral/pll_ctrl_if.sv:<line>: Signal is not used: 'req_sel_o'",
+      "signature": "50d4d1d0421f368d"
     },
     {
       "count": 2,
@@ -1604,11 +1549,6 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
       "signature": "5205bf154806930b"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/clint.sv:<line>: Filename 'clint' does not match IFACE name: 'simp_clint_if'",
-      "signature": "5214384f1aa96939"
     },
     {
       "count": 2,
@@ -1651,19 +1591,14 @@
       "signature": "54113bbce1e87b2a"
     },
     {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/serial/onewire.sv:<line>: Filename 'onewire' does not match IFACE name: 'onewire_if'",
+      "signature": "5475c1e97dbd8d01"
+    },
+    {
       "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_wen'",
       "signature": "5495e56f0052bd11"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/sdram.sv:<line>: Filename 'sdram' does not match IFACE name: 'sdram_if'",
-      "signature": "54a96e98846305ff"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txlowb'",
-      "signature": "54fc1cef01466fd9"
     },
     {
       "count": 1,
@@ -1707,6 +1642,11 @@
     },
     {
       "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/multimedia/dvp.sv:<line>: Filename 'dvp' does not match IFACE name: 'dvp_if'",
+      "signature": "5753c841b478d8e6"
+    },
+    {
+      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_data_rdy'",
       "signature": "5817d543a504142c"
     },
@@ -1714,11 +1654,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_PACKH'",
       "signature": "589b3729839e4f0b"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq9_io_pad'",
-      "signature": "58cabd86de2ba6aa"
     },
     {
       "count": 2,
@@ -1741,11 +1676,6 @@
       "signature": "59ff07394d8e4bd0"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/psram_core.sv:<line>: Bits of signal are not used: 'wr_data_i'[7:0]",
-      "signature": "5a331fec20250025"
-    },
-    {
       "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_instr_decompress.v:<line>: Signal is not used: 'uop_ctr_nxt'",
       "signature": "5ae8de3312d33d8e"
@@ -1761,29 +1691,9 @@
       "signature": "5b6b78ab13518b2d"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr1_o_pad'",
-      "signature": "5b70eb0678c9952b"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCONFIGPTR'",
       "signature": "5b9b9941443a3aef"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxlowb'",
-      "signature": "5bdba232647dc9e7"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi_core.sv:<line>: Signal is not driven, nor used: 's_dma_xfer_start'",
-      "signature": "5be605958f867813"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq14_io_pad'",
-      "signature": "5c0bf136d87ce7f5"
     },
     {
       "count": 2,
@@ -1816,6 +1726,11 @@
       "signature": "5de922792a0627bb"
     },
     {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_elem_num'",
+      "signature": "5e2d9c50c2783b0d"
+    },
+    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_ZERO'",
       "signature": "5e591bccc9c3321a"
@@ -1824,6 +1739,11 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER9H'",
       "signature": "5e7ba9347ddf6cb5"
+    },
+    {
+      "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/rib/serial/onewire.sv:<line>: Instance pin connected by name with empty reference: 'cnt_o'",
+      "signature": "5eae50ee4eee907a"
     },
     {
       "count": 2,
@@ -1836,11 +1756,6 @@
       "signature": "5f7389491885aef8"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not used: 's_xpi_alttyp'",
-      "signature": "5fa53a2f303a83f6"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEDELEG'",
       "signature": "5fc6cea330cd6a9c"
@@ -1851,19 +1766,34 @@
       "signature": "5fdf60d5e7ce12f1"
     },
     {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/memory/opipsram.sv:<line>: Filename 'opipsram' does not match IFACE name: 'opipsram_if'",
+      "signature": "5fe680a95d0b2098"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username2/user_core_design.sv:<line>: Bits of signal are not used: 's_rib_addr'[1:0]",
+      "signature": "6007d876d39bfc68"
+    },
+    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT13'",
       "signature": "6043b8e825c747c1"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'AUTO_REFRESH'",
-      "signature": "60fbba587bbb3a21"
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/storage/spisd.sv:<line>: Filename 'spisd' does not match MODULE name: 'rib_spisd'",
+      "signature": "6063d70652e7adf4"
     },
     {
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_14_io_pad'",
       "signature": "610caf841b350b6b"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/memory/sdram.sv:<line>: Filename 'sdram' does not match IFACE name: 'sdram_if'",
+      "signature": "610d26c2a9f316d6"
     },
     {
       "count": 2,
@@ -1947,28 +1877,18 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/dma.sv:<line>: Filename 'dma' does not match IFACE name: 'dma_hw_trg_if'",
-      "signature": "65b90854e5d8b60b"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username3/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wen'",
       "signature": "65fc4f7356a25340"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Filename 'xpi' does not match IFACE name: 'xpi_if'",
-      "signature": "667c008d1e2eacbc"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/memory/psram_core.sv:<line>: Bits of signal are not used: 'wr_data_i'[7:0]",
+      "signature": "660b231743df922d"
     },
     {
       "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance pin connected by name with empty reference: 'o_ext_rs2'",
       "signature": "66a889bdd0b77c06"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_tx_pop_ready'",
-      "signature": "676b49f2278fe989"
     },
     {
       "count": 2,
@@ -2002,11 +1922,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr10_o_pad'",
-      "signature": "69408581d639ed53"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/username2/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'PC'",
       "signature": "697410d916d9e613"
     },
@@ -2014,6 +1929,11 @@
       "count": 1,
       "example": "SYNCASYNCNET:$ROOT/rtl/managed/clusterip/common/rtl/utils/register.sv:<line>: Signal flopped as both synchronous and async: 'retrosoc_top.u_retrosoc_asic.u_rcu.u_sys_rst_sync.__Vcellout__RST_SYNC_BLOCK[4].RST_SYNC_N0_BLOCK.u_sync_dffr____pinNumber4'",
       "signature": "69ad9c2d06349b9b"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/memory/opipsram.sv:<line>: Signal is not used: 'dummy1'",
+      "signature": "69b748c7c306b52d"
     },
     {
       "count": 2,
@@ -2044,11 +1964,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ROL'",
       "signature": "6b7b9e28e3a8a94a"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq12_io_pad'",
-      "signature": "6b893458c5051519"
     },
     {
       "count": 2,
@@ -2107,6 +2022,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/storage/spisd_init.sv:<line>: Parameter is not used: 'DIV_FREQ'",
+      "signature": "6f593d3ce366d68c"
+    },
+    {
+      "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/mini/top/rcu.sv:<line>: Filename 'rcu' does not match MODULE name: 'pll_rcu_controller'",
       "signature": "6f97fc8d1bb13758"
     },
@@ -2139,11 +2059,6 @@
       "count": 1,
       "example": "PINMISSING:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance has missing pin: 'o_ren'",
       "signature": "704b76c39b529025"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/i2c.sv:<line>: Filename 'i2c' does not match MODULE name: 'nmi_i2c'",
-      "signature": "707f8ef51312eefc"
     },
     {
       "count": 2,
@@ -2186,11 +2101,6 @@
       "signature": "71a66f66bc24f729"
     },
     {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/peripheral/dma_core.sv:<line>: Parameter is not used: 'SFT_TRG'",
-      "signature": "71d6e02f1f455b15"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER20'",
       "signature": "71e0f3bea0da47d4"
@@ -2201,19 +2111,9 @@
       "signature": "71ed3f99048e2c3b"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'cmd_di_i'",
-      "signature": "721177b7dd90884c"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS2_BITS'",
       "signature": "725c854ff2bfc0f7"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dqm1_o_pad'",
-      "signature": "728c2b89caf441fd"
     },
     {
       "count": 2,
@@ -2224,11 +2124,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR14'",
       "signature": "73137ea44f8b0022"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/timer.sv:<line>: Filename 'timer' does not match MODULE name: 'nmi_timer'",
-      "signature": "7355b53d3ee72baa"
     },
     {
       "count": 1,
@@ -2249,11 +2144,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEMOP_LH'",
       "signature": "7489731a932ebc64"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxupb'",
-      "signature": "74ab66482544f43a"
     },
     {
       "count": 1,
@@ -2282,18 +2172,23 @@
     },
     {
       "count": 2,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/rib/interconnect/rib2rib.sv:<line>: Instance pin connected by name with empty reference: 'wr_full_o'",
+      "signature": "7847a8121d15820f"
+    },
+    {
+      "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER24'",
       "signature": "787618474ab4b869"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_ras_n_o_pad'",
-      "signature": "78ed4fde1cf1ad0e"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_tx_pop_ready'",
+      "signature": "78a50708583da31a"
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altdat'",
-      "signature": "795dd682f2980a79"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxupb'",
+      "signature": "78b4398e892eb282"
     },
     {
       "count": 2,
@@ -2371,11 +2266,6 @@
       "signature": "7c86ac68a4de27c2"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq1_io_pad'",
-      "signature": "7cbdcdcd27cccaf7"
-    },
-    {
       "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_frontend.v:<line>: Bits of signal are not used: 'jump_target'[0]",
       "signature": "7cd6bb3e3f7a720e"
@@ -2439,11 +2329,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR7'",
       "signature": "807fa7dfd2f493a1"
-    },
-    {
-      "count": 2,
-      "example": "CMPCONST:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Comparison is constant due to limited range",
-      "signature": "813090adc9f1e8a8"
     },
     {
       "count": 2,
@@ -2551,11 +2436,6 @@
       "signature": "87c94f4e1fbb3aca"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username1/user_core_design.sv:<line>: Bits of signal are not used: 's_nmi_addr'[1:0]",
-      "signature": "87d907f4cc8cf026"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MEIPA'",
       "signature": "87e30e4ac863f617"
@@ -2564,6 +2444,11 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULH'",
       "signature": "87f30a4eb222dabd"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/multimedia/dvp.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
+      "signature": "87fd66a096bc0949"
     },
     {
       "count": 2,
@@ -2579,11 +2464,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER16H'",
       "signature": "8858400d7a709e9f"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq3_io_pad'",
-      "signature": "88e87253bf7282cf"
     },
     {
       "count": 2,
@@ -2639,11 +2519,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER22H'",
       "signature": "8c4b7c38fe65e9c5"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_we_n_o_pad'",
-      "signature": "8c915cb8d7f75b4b"
     },
     {
       "count": 2,
@@ -2702,6 +2577,16 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi_reg.sv:<line>: Signal is not driven, nor used: 's_xpi_status_en'",
+      "signature": "8f04680ca57d8112"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username1/user_core_design.sv:<line>: Bits of signal are not used: 's_rib_addr'[1:0]",
+      "signature": "8f07dbd105c496fc"
+    },
+    {
+      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_ebreak'",
       "signature": "8f145c7b719e7fc2"
     },
@@ -2742,8 +2627,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr4_o_pad'",
-      "signature": "920d56dd1834fd12"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/memory/opipsram.sv:<line>: Signal is not used: 'irq_o'",
+      "signature": "9227d870aca3e13c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
+      "signature": "9250cc8dfaff703f"
     },
     {
       "count": 1,
@@ -2816,19 +2706,9 @@
       "signature": "9696a0c495f6418b"
     },
     {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/storage/xpi_mm.sv:<line>: Filename 'xpi_mm' does not match MODULE name: 'xfer_dispatcher'",
-      "signature": "96ad1cb84a559b13"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_REFETCH'",
       "signature": "96d42d4ca626dbb9"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Signal is not used: 'irq_o'",
-      "signature": "96dce0b808abd15f"
     },
     {
       "count": 2,
@@ -2839,11 +2719,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED_ADDR'",
       "signature": "9772d113ea65cb57"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_full'",
-      "signature": "981340d759a74e2f"
     },
     {
       "count": 2,
@@ -2891,6 +2766,11 @@
       "signature": "9a374fd2b69a9d76"
     },
     {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txupb'",
+      "signature": "9ae1361a9ea30572"
+    },
+    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSLEEP'",
       "signature": "9b516a14e647b5a9"
@@ -2922,11 +2802,6 @@
     },
     {
       "count": 2,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/interconnect/nmi2nmi.sv:<line>: Instance pin connected by name with empty reference: 'elem_num_o'",
-      "signature": "9db1c0c27e26a274"
-    },
-    {
-      "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMCOUNTER3H'",
       "signature": "9dcb35e2b848458f"
     },
@@ -2939,6 +2814,16 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MINSTRET'",
       "signature": "9e87741b81455823"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/rib/storage/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
+      "signature": "9e8e5bacae011e02"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/serial/i2c.sv:<line>: Filename 'i2c' does not match MODULE name: 'rib_i2c'",
+      "signature": "9ec77c94f232f39b"
     },
     {
       "count": 2,
@@ -2981,29 +2866,9 @@
       "signature": "a002d3b128786f43"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'dummy1'",
-      "signature": "a0345ce073a0a572"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
-      "signature": "a0457f8cb83907ca"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr2_o_pad'",
-      "signature": "a065d89bafa7c253"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'BREAKPOINT_TRIGGERS'",
       "signature": "a0dadaeef96f807a"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi_reg.sv:<line>: Signal is not driven, nor used: 's_xpi_status_en'",
-      "signature": "a14ede02dc20a0ec"
     },
     {
       "count": 2,
@@ -3012,8 +2877,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/gpio.sv:<line>: Filename 'gpio' does not match IFACE name: 'gpio_if'",
-      "signature": "a1fdb02b904e11f3"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/memory/opipsram.sv:<line>: Signal is not used: 'dummy0'",
+      "signature": "a263b9fb72f899f5"
     },
     {
       "count": 1,
@@ -3024,11 +2889,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR3'",
       "signature": "a2a9f7892749b0de"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_cas_n_o_pad'",
-      "signature": "a2b413acbc827d4b"
     },
     {
       "count": 2,
@@ -3042,8 +2902,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'irq_o'",
-      "signature": "a3e9267e6fddc3d7"
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/interconnect/ahbl2rib.sv:<line>: Parameter is not used: 'AHBL_RESP_EROR'",
+      "signature": "a3fbad6c35e0cc44"
     },
     {
       "count": 2,
@@ -3067,8 +2927,8 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_ba0_o_pad'",
-      "signature": "a6e285f0b2e4e7f9"
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/peripheral/timer.sv:<line>: Filename 'timer' does not match MODULE name: 'rib_timer'",
+      "signature": "a6ef4fedfca9d932"
     },
     {
       "count": 1,
@@ -3091,6 +2951,11 @@
       "signature": "a80e52dfe32821d5"
     },
     {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal is not used: 's_xpi_alttyp'",
+      "signature": "a831dd16e8d0d81b"
+    },
+    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER8'",
       "signature": "a8696107f2fef9aa"
@@ -3106,14 +2971,14 @@
       "signature": "a89cf3a3a80d2d3e"
     },
     {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_TRANS_BUSY'",
-      "signature": "a9713690d71bc9bc"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_LH'",
       "signature": "a9813e1c39939c7f"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/storage/xpi_mm.sv:<line>: Filename 'xpi_mm' does not match MODULE name: 'xfer_dispatcher'",
+      "signature": "a995fc85dfc03993"
     },
     {
       "count": 1,
@@ -3132,8 +2997,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_TRANS_IDLE'",
-      "signature": "ac2a6ee2c94d0000"
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/memory/sdram_core.sv:<line>: Parameter is not used: 'PRE_CHARGE_ALL'",
+      "signature": "abfddc8a718ca979"
     },
     {
       "count": 2,
@@ -3164,11 +3029,6 @@
       "count": 2,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_irq_ctrl.v:<line>: Bits of signal are not used: 'wdata_raw'[31:7]",
       "signature": "ad0a79c50b97ea8f"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Instance pin connected by name with empty reference: 'xpi_accmd_o'",
-      "signature": "ad0c3acaf1354927"
     },
     {
       "count": 2,
@@ -3251,16 +3111,6 @@
       "signature": "b17a918d9eaf4763"
     },
     {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/psram_core.sv:<line>: Filename 'psram_core' does not match MODULE name: 'load_new_byte'",
-      "signature": "b18736bea573c228"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username2/user_core_design.sv:<line>: Bits of signal are not used: 's_nmi_addr'[1:0]",
-      "signature": "b21e96aa3d9f350f"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TCONTROL'",
       "signature": "b2ec9a4fd3b189d3"
@@ -3276,6 +3126,11 @@
       "signature": "b36cc8cf06dcfd9d"
     },
     {
+      "count": 2,
+      "example": "CMPCONST:$ROOT/rtl/ip/rib/storage/spisd_write.sv:<line>: Comparison is constant due to limited range",
+      "signature": "b47c7435cfcca9e3"
+    },
+    {
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/crc/rtl/crc16_model.sv:<line>: Filename 'crc16_model' does not match MODULE name: 'crc16_1021'",
       "signature": "b47f45226a43e65c"
@@ -3286,11 +3141,6 @@
       "signature": "b484191be733e6cc"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr12_o_pad'",
-      "signature": "b4987b17fd59995a"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_XH3BEXTM'",
       "signature": "b50d55b4d81dc7f2"
@@ -3299,11 +3149,6 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'MHPMEVENT27'",
       "signature": "b510aded714486c4"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr5_o_pad'",
-      "signature": "b513017e084d8275"
     },
     {
       "count": 2,
@@ -3352,8 +3197,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'dummy0'",
-      "signature": "b752539a258e839a"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/sdio.sv:<line>: Signal is not used: 'cmd_di_i'",
+      "signature": "b74ed8f6000bc998"
     },
     {
       "count": 2,
@@ -3364,11 +3209,6 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'xpi_nss1_o_pad'",
       "signature": "b77f4ffe8d801781"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv:<line>: Signal is not used: 'pslverr'",
-      "signature": "b862aa3eb60be294"
     },
     {
       "count": 1,
@@ -3389,11 +3229,6 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'uart0_tx_o_pad'",
       "signature": "b8e6c3c794a223bf"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_clk_o_pad'",
-      "signature": "b9102313d6df8b7b"
     },
     {
       "count": 2,
@@ -3441,11 +3276,6 @@
       "signature": "baffa3f3db7cfe1d"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/memory/opipsram.sv:<line>: Signal is not used: 'dqs_di_i'",
-      "signature": "bb2363bbb7ad7368"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TSELECT'",
       "signature": "bb42a942f34a4d34"
@@ -3462,8 +3292,8 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq11_io_pad'",
-      "signature": "bbee6d143516dde2"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Instance pin connected by name with empty reference: 'xpi_accmd_o'",
+      "signature": "bba005daac60f4ae"
     },
     {
       "count": 1,
@@ -3546,6 +3376,11 @@
       "signature": "c1e4b65ffa8af9da"
     },
     {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxlowb'",
+      "signature": "c21e807651a0a8a0"
+    },
+    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Declaration of signal hides declaration in upper scope: 'RV_RS1_BITS'",
       "signature": "c236e5a3e48f25ed"
@@ -3556,14 +3391,14 @@
       "signature": "c248472229380983"
     },
     {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/memory/psram.sv:<line>: Filename 'psram' does not match IFACE name: 'psram_if'",
+      "signature": "c2cb8e16e7fc8a71"
+    },
+    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_MRET'",
       "signature": "c3864ddd5d00e335"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq5_io_pad'",
-      "signature": "c3ac524045d3765a"
     },
     {
       "count": 2,
@@ -3621,11 +3456,6 @@
       "signature": "c55336cc92959dde"
     },
     {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/memory/sdram_core.sv:<line>: Parameter is not used: 'CMD_BST'",
-      "signature": "c5563396e2c64625"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER18H'",
       "signature": "c5e09bfc3ad27dd6"
@@ -3642,8 +3472,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Filename 'dvp' does not match IFACE name: 'dvp_if'",
-      "signature": "c7228ac7a89a77cd"
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/memory/psram_core.sv:<line>: Filename 'psram_core' does not match MODULE name: 'load_new_byte'",
+      "signature": "c71de92501f3d64d"
     },
     {
       "count": 14,
@@ -3677,18 +3507,8 @@
     },
     {
       "count": 1,
-      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
-      "signature": "c963ef155f9a032c"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/tc_io.sv:<line>: Signal is not used: 'dum'",
       "signature": "c9712a26c3ee209d"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/serial/uart.sv:<line>: Filename 'uart' does not match MODULE name: 'nmi_uart'",
-      "signature": "c9bc4a6a971c796e"
     },
     {
       "count": 2,
@@ -3717,11 +3537,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr8_o_pad'",
-      "signature": "cb914734c2323aaa"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/user_core_design.sv:<line>: Signal is not used: 'irq_i'",
       "signature": "cbc1e4736cc4a3ae"
     },
@@ -3744,6 +3559,11 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPCFG2'",
       "signature": "cce18af34039afcf"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/sdio.sv:<line>: Signal is not used: 'dummy0'",
+      "signature": "cd54075082740b38"
     },
     {
       "count": 2,
@@ -3804,11 +3624,6 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/mini/top/user_core_design_template.sv:<line>: Filename 'user_core_design_template' does not match MODULE name: 'user_core_design'",
       "signature": "d00b4d58006976c6"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/memory/psram.sv:<line>: Filename 'psram' does not match IFACE name: 'psram_if'",
-      "signature": "d00da1e8224c1921"
     },
     {
       "count": 2,
@@ -3897,8 +3712,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/peripheral/pll_ctrl_if.sv:<line>: Signal is not used: 'req_sel_o'",
-      "signature": "d73383c0abf82b14"
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/peripheral/dma_core.sv:<line>: Parameter is not used: 'SFT_TRG'",
+      "signature": "d69a4f0723d14d9f"
     },
     {
       "count": 2,
@@ -3919,6 +3734,11 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS2_LSB'",
       "signature": "d956d3fd2f353de1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/memory/sdram_core.sv:<line>: Parameter is not used: 'AUTO_REFRESH'",
+      "signature": "d9e90abbefd25dc8"
     },
     {
       "count": 2,
@@ -3947,8 +3767,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txupb'",
-      "signature": "db1f73ac6cc5f094"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/peripheral/gpio.sv:<line>: Signal is not used: 'irq_o'",
+      "signature": "db4ca3b362c0f0fa"
     },
     {
       "count": 2,
@@ -3959,11 +3779,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr.v:<line>: Parameter is not used: 'DCSR_CAUSE_EBREAK'",
       "signature": "dbfefc5baf13e768"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq2_io_pad'",
-      "signature": "dcd67f2de2f92844"
     },
     {
       "count": 2,
@@ -3991,11 +3806,6 @@
       "signature": "dede41f7cadcb4e8"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr6_o_pad'",
-      "signature": "defc7c6d763981d4"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR11'",
       "signature": "df27f6f168192501"
@@ -4004,11 +3814,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT9'",
       "signature": "df687fdd4db38ebf"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq10_io_pad'",
-      "signature": "df6dce1c46139627"
     },
     {
       "count": 2,
@@ -4177,6 +3982,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/memory/sdram_core.sv:<line>: Parameter is not used: 'LAST_STATE'",
+      "signature": "e8406bfd3fbfd269"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/ahbl_if.sv:<line>: Signal is not used: 'hmastlock'",
       "signature": "e89ec00ecbba1b7c"
     },
@@ -4192,8 +4002,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/native/peripheral/sysctrl.sv:<line>: Filename 'sysctrl' does not match IFACE name: 'sysctrl_if'",
-      "signature": "e99bbb0efa367a52"
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/peripheral/clint.sv:<line>: Filename 'clint' does not match IFACE name: 'simp_clint_if'",
+      "signature": "e996017467405675"
     },
     {
       "count": 2,
@@ -4231,11 +4041,6 @@
       "signature": "ebe6add2c8f5f172"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/native/serial/onewire.sv:<line>: Instance pin connected by name with empty reference: 'cnt_o'",
-      "signature": "ec213572ad728944"
-    },
-    {
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR9'",
       "signature": "ec541543a37eb784"
@@ -4244,11 +4049,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER9'",
       "signature": "eccf71b4acddf014"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'dummy0'",
-      "signature": "ecd36ebee2fd861b"
     },
     {
       "count": 2,
@@ -4281,24 +4081,9 @@
       "signature": "ee3b9619108b41cb"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dqm0_o_pad'",
-      "signature": "ef3eb99f09c1d834"
-    },
-    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_SLL'",
       "signature": "ef429e890f999137"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_dq0_io_pad'",
-      "signature": "ef63df90154636b5"
-    },
-    {
-      "count": 3,
-      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
-      "signature": "ef9f314dab2ac31d"
     },
     {
       "count": 2,
@@ -4319,11 +4104,6 @@
       "count": 2,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ROL'",
       "signature": "f033f9bc7d481d0a"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/top/bus.sv:<line>: Signal is not driven, nor used: 's_ram_valid'",
-      "signature": "f0f6238342ead48a"
     },
     {
       "count": 2,
@@ -4357,8 +4137,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/storage/sdio.sv:<line>: Signal is not used: 'dat_di_i'",
-      "signature": "f275553c47efc840"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/memory/opipsram.sv:<line>: Signal is not used: 'io_di_i'",
+      "signature": "f297070afc3d39d1"
     },
     {
       "count": 2,
@@ -4369,6 +4149,16 @@
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_ops.vh:<line>: Declaration of signal hides declaration in upper scope: 'ALUOP_ROR'",
       "signature": "f3933f53801ca444"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/serial/i2s.sv:<line>: Filename 'i2s' does not match IFACE name: 'i2s_if'",
+      "signature": "f3996a89f2a2e2ed"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/rib/storage/sdio.sv:<line>: Filename 'sdio' does not match IFACE name: 'sdio_if'",
+      "signature": "f3b1444d56fc5880"
     },
     {
       "count": 2,
@@ -4384,6 +4174,11 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'clk_en'",
       "signature": "f47d3d0e2ee1e85b"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/ip/rib/storage/xpi.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_xpi_if.io_di_i'",
+      "signature": "f4c4c72efb327156"
     },
     {
       "count": 1,
@@ -4404,11 +4199,6 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Signal is not used: 'IAER'",
       "signature": "f5696b0fb63b8db2"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/native/multimedia/dvp.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
-      "signature": "f586c67df6a90e51"
     },
     {
       "count": 2,
@@ -4466,14 +4256,14 @@
       "signature": "f8a190c8c461c43b"
     },
     {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/rib/memory/sdram_core.sv:<line>: Parameter is not used: 'CMD_BST'",
+      "signature": "f8a301375a1aab79"
+    },
+    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR10'",
       "signature": "f8c985b0566a4501"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'sdram_addr9_o_pad'",
-      "signature": "f90c5ec461987502"
     },
     {
       "count": 1,
@@ -4516,14 +4306,14 @@
       "signature": "fb8effc3e6867513"
     },
     {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/rib/storage/xpi_core.sv:<line>: Signal is not driven, nor used: 's_dma_xfer_start'",
+      "signature": "fbc5eee15149bbb9"
+    },
+    {
       "count": 2,
       "example": "VARHIDDEN:$ROOT/rtl/managed/mpw/core/username3/Hazard3/hazard3_csr_addr.vh:<line>: Declaration of signal hides declaration in upper scope: 'PMPADDR13'",
       "signature": "fc725397cbc46756"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/native/interconnect/ahbl2nmi.sv:<line>: Parameter is not used: 'AHBL_RESP_EROR'",
-      "signature": "fd058edbfd57599d"
     },
     {
       "count": 2,

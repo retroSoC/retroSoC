@@ -29,7 +29,7 @@ void ip_tim_test(int argc, char **argv) {
     (void)argc;
     (void)argv;
 
-    printf("[NATV IP] counter timer test\n");
+    printf("[RIB IP] counter timer test\n");
     printf("[tim0 reload] %x\n", reg_tim0_rld);
     printf("[tim0 config] %x\n", reg_tim0_cfg);
     printf("[tim1 reload] %x\n", reg_tim1_rld);

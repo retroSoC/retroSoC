@@ -5,11 +5,11 @@ module sysctrl_formal_design (
     input  logic        clk_i,
     output logic        rst_n_i,
     output logic        f_past_valid,
-    output logic        nmi_valid,
-    output logic [31:0] nmi_addr,
-    output logic [31:0] nmi_wdata,
-    output logic [ 3:0] nmi_wstrb,
-    output logic        nmi_ready,
+    output logic        rib_valid,
+    output logic [31:0] rib_addr,
+    output logic [31:0] rib_wdata,
+    output logic [ 3:0] rib_wstrb,
+    output logic        rib_ready,
     output logic [ 7:0] ip_sel,
     output logic [ 4:0] core_sel,
     output logic [ 5:0] user_reset,
@@ -33,14 +33,14 @@ module sysctrl_formal_design (
     output logic [31:0] fault_count
 );
 
-  nmi_if nmi ();
+  rib_if rib ();
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
 
-  (* anyseq *)logic        f_nmi_valid;
-  (* anyseq *)logic [31:0] f_nmi_addr;
-  (* anyseq *)logic [31:0] f_nmi_wdata;
-  (* anyseq *)logic [ 3:0] f_nmi_wstrb;
+  (* anyseq *)logic        f_rib_valid;
+  (* anyseq *)logic [31:0] f_rib_addr;
+  (* anyseq *)logic [31:0] f_rib_wdata;
+  (* anyseq *)logic [ 3:0] f_rib_wstrb;
   (* anyseq *)logic        f_pll_req_ready;
   (* anyseq *)logic [ 2:0] f_pll_active_sel;
   (* anyseq *)logic        f_pll_active_valid;
@@ -54,18 +54,18 @@ module sysctrl_formal_design (
   (* anyseq *)logic [ 3:0] f_fault_wstrb;
   (* anyseq *)logic        f_fault_reserved;
 
-  assign nmi.valid = f_nmi_valid;
-  assign nmi.addr = f_nmi_addr;
-  assign nmi.wdata = f_nmi_wdata;
-  assign nmi.wstrb = f_nmi_wstrb;
+  assign rib.valid = f_rib_valid;
+  assign rib.addr = f_rib_addr;
+  assign rib.wdata = f_rib_wdata;
+  assign rib.wstrb = f_rib_wstrb;
   assign sysctrl.user_bus_idle_i = 1'b1;
   assign sysctrl.fault_access_i = 1'b0;
   assign sysctrl.fault_master_i = '0;
-  assign sysctrl.fault_code_i = f_fault_reserved ? `SOC_NMI_RESP_RESERVED : `SOC_NMI_RESP_DECERR;
+  assign sysctrl.fault_code_i = f_fault_reserved ? `SOC_RIB_RESP_RESERVED : `SOC_RIB_RESP_DECERR;
   assign sysctrl.perf_mgmt_wait_i = '0;
   assign sysctrl.perf_user_wait_i = '0;
   assign sysctrl.perf_dma_wait_i = '0;
-  assign sysctrl.perf_natv_wait_i = '0;
+  assign sysctrl.perf_rib_wait_i = '0;
   assign sysctrl.perf_apb_wait_i = '0;
   assign sysctrl.perf_sdram_wait_i = '0;
   assign sysctrl.perf_psram_wait_i = '0;
@@ -79,11 +79,11 @@ module sysctrl_formal_design (
   assign pll_ctrl.rsp_valid_i = f_pll_rsp_valid;
   assign pll_ctrl.capable_i = f_pll_capable;
 
-  assign nmi_valid = nmi.valid;
-  assign nmi_addr = nmi.addr;
-  assign nmi_wdata = nmi.wdata;
-  assign nmi_wstrb = nmi.wstrb;
-  assign nmi_ready = nmi.ready;
+  assign rib_valid = rib.valid;
+  assign rib_addr = rib.addr;
+  assign rib_wdata = rib.wdata;
+  assign rib_wstrb = rib.wstrb;
+  assign rib_ready = rib.ready;
   assign ip_sel = sysctrl.ip_sel_o;
   assign core_sel = u_dut.s_sysctrl_coresel_q;
   assign user_reset = u_dut.s_user_reset_q;
@@ -106,14 +106,14 @@ module sysctrl_formal_design (
   assign fault_addr_q = u_dut.s_fault_addr_q;
   assign fault_count = u_dut.s_fault_count_q;
 
-  nmi_sysctrl u_dut (
+  rib_sysctrl u_dut (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .fault_valid_i   (f_fault_valid),
       .fault_addr_i    (f_fault_addr),
       .fault_wstrb_i   (f_fault_wstrb),
       .fault_reserved_i(f_fault_reserved),
-      .nmi             (nmi),
+      .rib             (rib),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );

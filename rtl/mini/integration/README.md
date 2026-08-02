@@ -3,13 +3,13 @@
 `soc_topology.json` is the source of truth for internal Mini SoC integration
 that is not part of the software address-map ABI or the package pad map.
 
-The topology generator validates native NMI and APB target ownership against
+The topology generator validates rib RIB and APB target ownership against
 `../address_map/memory_map.json` and emits generated SystemVerilog include
-files for `ip_nmi_wrapper.sv`, `ip_apb_wrapper.sv`, `nmi2apb.sv`, and
+files for `ip_rib_wrapper.sv`, `ip_apb_wrapper.sv`, `rib2apb.sv`, and
 `retrosoc.sv`. The output retains scalar interface instances and ports, so it
 does not depend on interface-array support in FPGA or netlist simulation tools.
 
-The `native_targets` list uses stable response slots. Every active native
+The `rib_targets` list uses stable response slots. Every active rib
 memory-map region must appear exactly once. Disabled targets keep their slot
 and interface declaration but cannot own an address region.
 
@@ -24,7 +24,7 @@ target is part of the fixed platform integration and its presence is checked
 against the canonical memory map.
 
 `irq_vector_width`, `irq_groups`, and `interrupts` define the complete core
-interrupt topology. `nmi` and `apb` group entries declare the wrapper output
+interrupt topology. `rib` and `apb` group entries declare the wrapper output
 width and the associated `retrosoc.sv` signal. Every group bit must be present
 exactly once, each core-vector bit must have one source, and sources are limited
 to scalar signal references or one-bit constants. The generator emits the two

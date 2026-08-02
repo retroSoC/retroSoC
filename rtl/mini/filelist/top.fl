@@ -1,11 +1,11 @@
 /top/apb4_if_bridge.sv
 /top/gpio_pad_bridge.sv
-/top/soc_nmi_regslice.sv
+/top/soc_rib_regslice.sv
 /top/core_wrapper.sv
 /top/retrosoc.sv
 /top/retrosoc_asic.sv
 /top/onchip_ram.sv
-/top/ip_nmi_wrapper.sv
+/top/ip_rib_wrapper.sv
 /top/ip_apb_wrapper.sv
 /top/bus.sv
 /top/rcu.sv

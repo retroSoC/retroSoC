@@ -12,11 +12,11 @@ module sysctrl_formal;
   (* anyseq *) (* gclk *)reg         clk_i;
   wire        rst_n_i;
   wire        f_past_valid;
-  wire        nmi_valid;
-  wire [31:0] nmi_addr;
-  wire [31:0] nmi_wdata;
-  wire [ 3:0] nmi_wstrb;
-  wire        nmi_ready;
+  wire        rib_valid;
+  wire [31:0] rib_addr;
+  wire [31:0] rib_wdata;
+  wire [ 3:0] rib_wstrb;
+  wire        rib_ready;
   wire [ 7:0] ip_sel;
   wire [ 4:0] core_sel;
   wire [ 5:0] user_reset;
@@ -43,11 +43,11 @@ module sysctrl_formal;
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
       .f_past_valid     (f_past_valid),
-      .nmi_valid        (nmi_valid),
-      .nmi_addr         (nmi_addr),
-      .nmi_wdata        (nmi_wdata),
-      .nmi_wstrb        (nmi_wstrb),
-      .nmi_ready        (nmi_ready),
+      .rib_valid        (rib_valid),
+      .rib_addr         (rib_addr),
+      .rib_wdata        (rib_wdata),
+      .rib_wstrb        (rib_wstrb),
+      .rib_ready        (rib_ready),
       .ip_sel           (ip_sel),
       .core_sel         (core_sel),
       .user_reset       (user_reset),
@@ -72,11 +72,11 @@ module sysctrl_formal;
   );
 
   always @(posedge clk_i) begin
-    if (f_past_valid && $past(rst_n_i && nmi_valid && !nmi_ready)) begin
-      assume (nmi_valid);
-      assume (nmi_addr == $past(nmi_addr));
-      assume (nmi_wdata == $past(nmi_wdata));
-      assume (nmi_wstrb == $past(nmi_wstrb));
+    if (f_past_valid && $past(rst_n_i && rib_valid && !rib_ready)) begin
+      assume (rib_valid);
+      assume (rib_addr == $past(rib_addr));
+      assume (rib_wdata == $past(rib_wdata));
+      assume (rib_wstrb == $past(rib_wstrb));
     end
     if (rst_n_i && pll_rsp_valid) begin
       assume (pll_busy);
@@ -84,47 +84,47 @@ module sysctrl_formal;
 
     if (rst_n_i && f_past_valid) begin
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] &&
-                nmi_addr[7:0] == 8'h00 && nmi_wdata[4:0] < 6 && user_reset == 6'h3f && !user_bus_enable
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                rib_addr[7:0] == 8'h00 && rib_wdata[4:0] < 6 && user_reset == 6'h3f && !user_bus_enable
           )) begin
-        assert (core_sel == $past(nmi_wdata[4:0]));
+        assert (core_sel == $past(rib_wdata[4:0]));
       end
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] &&
-                nmi_addr[7:0] == 8'h00 && nmi_wdata[4:0] >= 6
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                rib_addr[7:0] == 8'h00 && rib_wdata[4:0] >= 6
           )) begin
         assert (core_sel == $past(core_sel));
         assert (user_config_error);
       end
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] &&
-                nmi_addr[7:0] == SYSCTRL_USER_CORE_RESET_OFFSET &&
-                nmi_wdata[5:0] == 6'h3f
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                rib_addr[7:0] == SYSCTRL_USER_CORE_RESET_OFFSET &&
+                rib_wdata[5:0] == 6'h3f
           )) begin
         assert (user_reset == 6'h3f);
         assert (!user_bus_enable);
       end
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && |nmi_wstrb &&
-                nmi_addr[7:0] == SYSCTRL_IPSEL_OFFSET
+              rst_n_i && rib_valid && !rib_ready && |rib_wstrb &&
+                rib_addr[7:0] == SYSCTRL_IPSEL_OFFSET
           )) begin
-        assert (ip_sel == $past(nmi_wdata[7:0]));
+        assert (ip_sel == $past(rib_wdata[7:0]));
       end
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] &&
-                nmi_addr[7:0] == SYSCTRL_PLL_CFG_OFFSET
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                rib_addr[7:0] == SYSCTRL_PLL_CFG_OFFSET
           )) begin
-        assert (pll_cfg == $past(nmi_wdata[2:0]));
+        assert (pll_cfg == $past(rib_wdata[2:0]));
       end
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] && nmi_wdata[0] &&
-                nmi_addr[7:0] == SYSCTRL_PLL_CMD_OFFSET && !pll_busy && !pll_req_valid
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] && rib_wdata[0] &&
+                rib_addr[7:0] == SYSCTRL_PLL_CMD_OFFSET && !pll_busy && !pll_req_valid
           )) begin
         assert (pll_busy);
       end
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] && nmi_wdata[0] &&
-                nmi_addr[7:0] == SYSCTRL_PLL_CMD_OFFSET && pll_busy
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] && rib_wdata[0] &&
+                rib_addr[7:0] == SYSCTRL_PLL_CMD_OFFSET && pll_busy
           )) begin
         assert (pll_error);
         if (!$past(pll_rsp_valid)) begin
@@ -143,8 +143,8 @@ module sysctrl_formal;
         end
       end
       if ($past(
-              rst_n_i && nmi_valid && !nmi_ready && nmi_wstrb[0] && nmi_wdata[0] &&
-                nmi_addr[7:0] == SYSCTRL_FAULT_STATUS_OFFSET && !fault_valid
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] && rib_wdata[0] &&
+                rib_addr[7:0] == SYSCTRL_FAULT_STATUS_OFFSET && !fault_valid
           )) begin
         assert (!fault_pending);
       end

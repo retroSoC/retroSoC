@@ -5,7 +5,7 @@ module sdram_data_tb;
   logic        rst_n_i = 1'b0;
   wire  [15:0] s_dq;
   logic [31:0] s_read_data;
-  nmi_if nmi ();
+  rib_if rib ();
   sdram_if sdram ();
 
   always #5 clk_i = ~clk_i;
@@ -13,10 +13,10 @@ module sdram_data_tb;
   assign s_dq       = sdram.oe_o ? sdram.dq_o : 'z;
   assign sdram.dq_i = s_dq;
 
-  nmi_sdram u_nmi_sdram (
+  rib_sdram u_rib_sdram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .nmi    (nmi),
+      .rib    (rib),
       .sdram  (sdram)
   );
 
@@ -52,40 +52,40 @@ module sdram_data_tb;
                             input logic [3:0] strobe);
     begin
       @(negedge clk_i);
-      nmi.addr  = address;
-      nmi.wdata = data;
-      nmi.wstrb = strobe;
-      nmi.valid = 1'b1;
+      rib.addr  = address;
+      rib.wdata = data;
+      rib.wstrb = strobe;
+      rib.valid = 1'b1;
       do begin
         @(posedge clk_i);
-      end while (!nmi.ready);
+      end while (!rib.ready);
       @(negedge clk_i);
-      nmi.valid = 1'b0;
-      nmi.wstrb = '0;
+      rib.valid = 1'b0;
+      rib.wstrb = '0;
     end
   endtask
 
   task automatic read_word(input logic [31:0] address);
     begin
       @(negedge clk_i);
-      nmi.addr  = address;
-      nmi.wdata = '0;
-      nmi.wstrb = '0;
-      nmi.valid = 1'b1;
+      rib.addr  = address;
+      rib.wdata = '0;
+      rib.wstrb = '0;
+      rib.valid = 1'b1;
       do begin
         @(posedge clk_i);
-      end while (!nmi.ready);
-      s_read_data = nmi.rdata;
+      end while (!rib.ready);
+      s_read_data = rib.rdata;
       @(negedge clk_i);
-      nmi.valid = 1'b0;
+      rib.valid = 1'b0;
     end
   endtask
 
   initial begin
-    nmi.addr  = '0;
-    nmi.valid = 1'b0;
-    nmi.wdata = '0;
-    nmi.wstrb = '0;
+    rib.addr  = '0;
+    rib.valid = 1'b0;
+    rib.wdata = '0;
+    rib.wstrb = '0;
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
 

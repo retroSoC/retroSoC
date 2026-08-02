@@ -31,7 +31,7 @@ module retrosoc (
 );
 
   // verilog_format: off
-  // Generated fabric links reuse the common nmi_if contract.
+  // Generated fabric links reuse the common rib_if contract.
   `include "soc_fabric_interfaces.svh"
   user_gpio_if u_user_gpio_if ();
   // ip interface
@@ -53,7 +53,7 @@ module retrosoc (
 
   logic                             s_tmr_capch;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
-  logic [   `SOC_IRQ_NMI_WIDTH-1:0] s_nmi_irq;
+  logic [   `SOC_IRQ_RIB_WIDTH-1:0] s_rib_irq;
   logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
   logic                             s_bus_fault_valid;
   logic [                     31:0] s_bus_fault_addr;
@@ -68,7 +68,7 @@ module retrosoc (
   logic [                     63:0] s_perf_mgmt_wait;
   logic [                     63:0] s_perf_user_wait;
   logic [                     63:0] s_perf_dma_wait;
-  logic [                     63:0] s_perf_natv_wait;
+  logic [                     63:0] s_perf_rib_wait;
   logic [                     63:0] s_perf_apb_wait;
   logic [                     63:0] s_perf_sdram_wait;
   logic [                     63:0] s_perf_psram_wait;
@@ -83,7 +83,7 @@ module retrosoc (
   assign u_sysctrl_if.perf_mgmt_wait_i  = s_perf_mgmt_wait;
   assign u_sysctrl_if.perf_user_wait_i  = s_perf_user_wait;
   assign u_sysctrl_if.perf_dma_wait_i   = s_perf_dma_wait;
-  assign u_sysctrl_if.perf_natv_wait_i  = s_perf_natv_wait;
+  assign u_sysctrl_if.perf_rib_wait_i   = s_perf_rib_wait;
   assign u_sysctrl_if.perf_apb_wait_i   = s_perf_apb_wait;
   assign u_sysctrl_if.perf_sdram_wait_i = s_perf_sdram_wait;
   assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
@@ -139,19 +139,19 @@ core_wrapper u_core_wrapper (
       .perf_mgmt_wait_o (s_perf_mgmt_wait),
       .perf_user_wait_o (s_perf_user_wait),
       .perf_dma_wait_o  (s_perf_dma_wait),
-      .perf_natv_wait_o (s_perf_natv_wait),
+      .perf_rib_wait_o  (s_perf_rib_wait),
       .perf_apb_wait_o  (s_perf_apb_wait),
       .perf_sdram_wait_o(s_perf_sdram_wait),
       .perf_psram_wait_o(s_perf_psram_wait),
       .perf_flash_wait_o(s_perf_flash_wait)
   );
 
-  ip_nmi_wrapper u_ip_nmi_wrapper (
+  ip_rib_wrapper u_ip_rib_wrapper (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
-      `include "soc_ip_nmi_wrapper_fabric.svh"
+      `include "soc_ip_rib_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
       .uart            (uart0),
@@ -172,7 +172,7 @@ core_wrapper u_core_wrapper (
       .fault_addr_i    (s_bus_fault_addr),
       .fault_wstrb_i   (s_bus_fault_wstrb),
       .fault_reserved_i(s_bus_fault_reserved),
-      .irq_o           (s_nmi_irq)
+      .irq_o           (s_rib_irq)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
@@ -187,7 +187,7 @@ core_wrapper u_core_wrapper (
       .ps2           (u_ps2_if),
       .ip_sel_i      (u_sysctrl_if.ip_sel_o),
       .user_gpio     (u_user_gpio_if),
-      .nmi_resp_err_o(s_apb_resp_err),
+      .rib_resp_err_o(s_apb_resp_err),
       .irq_o         (s_apb_irq)
   );
 

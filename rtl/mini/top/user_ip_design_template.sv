@@ -68,7 +68,7 @@ module user_ip_design_template #(
   // ========== USER CUSTOM AREA ==============
   // NOTE: If needed, define io logic here.
   // `oe_o` is active high, meaning GPIO is output when `oe_o[x]` is 1'b1.
-  // Pad electrical controls remain owned by the native GPIO controller.
+  // Pad electrical controls remain owned by the rib GPIO controller.
   assign gpio.oe_o = '0;
   assign gpio.do_o = '0;
 

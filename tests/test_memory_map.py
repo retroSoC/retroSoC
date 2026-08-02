@@ -58,11 +58,14 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_PSRAM_SIZE UINT32_C(0x00800000)" in header
     assert "RS_SOC_SDRAM_SIZE UINT32_C(0x02000000)" in header
     assert "RS_SOC_SPISD_SIZE UINT32_C(0x40000000)" in header
-    assert "RS_SOC_NMI_SDIO_BASE" not in header
+    assert "RS_SOC_RIB_SDIO_BASE" not in header
+    assert "RS_SOC_NMI_" not in header
     assert "RS_SOC_OPIPSRAM_BASE" not in header
     assert "RS_SOC_HAS_SRAM 1U" in header
     assert "SOC_SYSCTRL_PLL_CFG_OFFSET      32'h00000008" in rtl
     assert "SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C" in rtl
+    assert "SOC_ADDR_IS_RIB(addr)" in rtl
+    assert "SOC_ADDR_IS_NMI" not in rtl
     assert "RS_SOC_SYSCTRL_PLL_CFG_OFFSET UINT32_C(0x00000008)" in header
     assert "RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)" in header
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x00800000" in linker
@@ -109,10 +112,10 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
                 f"+incdir+{tmp_path / 'rtl'}",
                 f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
-                str(ROOT / "rtl/mini/top/soc_nmi_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/rib_if.sv"),
+                str(ROOT / "rtl/mini/top/soc_rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "rtl/mini/top/soc_nmi_regslice.sv"),
+                str(ROOT / "rtl/mini/top/soc_rib_regslice.sv"),
                 str(ROOT / "rtl/mini/top/bus.sv"),
                 str(ROOT / "tests/rtl/bus_fault_tb.sv"),
                 "",
@@ -163,11 +166,11 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
                 f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
-                str(ROOT / "rtl/mini/top/soc_nmi_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/rib_if.sv"),
+                str(ROOT / "rtl/mini/top/soc_rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "rtl/ip/native/peripheral/pll_ctrl_if.sv"),
-                str(ROOT / "rtl/ip/native/peripheral/sysctrl.sv"),
+                str(ROOT / "rtl/ip/rib/peripheral/pll_ctrl_if.sv"),
+                str(ROOT / "rtl/ip/rib/peripheral/sysctrl.sv"),
                 str(ROOT / "tests/rtl/sysctrl_fault_tb.sv"),
                 "",
             ]
@@ -212,14 +215,14 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                 f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
-                str(ROOT / "rtl/mini/top/soc_nmi_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/rib_if.sv"),
+                str(ROOT / "rtl/mini/top/soc_rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv"),
-                str(ROOT / "rtl/ip/native/peripheral/pll_ctrl_if.sv"),
-                str(ROOT / "rtl/ip/native/peripheral/sysctrl.sv"),
+                str(ROOT / "rtl/ip/rib/peripheral/pll_ctrl_if.sv"),
+                str(ROOT / "rtl/ip/rib/peripheral/sysctrl.sv"),
                 str(ROOT / "rtl/tech/tc_clk.sv"),
                 str(ROOT / "rtl/tech/tc_pll.sv"),
                 str(ROOT / "rtl/mini/top/rcu.sv"),
@@ -290,12 +293,12 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
 
 
 def test_sysctrl_does_not_expose_unused_i2c_or_qspi_select_registers() -> None:
-    rtl = (ROOT / "rtl/ip/native/peripheral/sysctrl.sv").read_text(encoding="utf-8")
+    rtl = (ROOT / "rtl/ip/rib/peripheral/sysctrl.sv").read_text(encoding="utf-8")
     header = (ROOT / "crt/include/retrosoc/core/soc.h").read_text(encoding="utf-8")
 
     for symbol in (
-        "NATV_SYSCTRL_I2CSEL",
-        "NATV_SYSCTRL_QSPISEL",
+        "RIB_SYSCTRL_I2CSEL",
+        "RIB_SYSCTRL_QSPISEL",
         "i2c_sel_o",
         "qspi_sel_o",
         "s_sysctrl_i2csel",

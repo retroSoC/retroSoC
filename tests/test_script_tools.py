@@ -179,13 +179,13 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     (user_extensions / "rtl").mkdir(parents=True)
 
     bus_filelist = tmp_path / "bus.fl"
-    nmi2apb_filelist = tmp_path / "nmi2apb.fl"
+    rib2apb_filelist = tmp_path / "rib2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
-        "nmi2apb", nmi2apb_filelist, memory_map, topology, user_extensions
+        "rib2apb", rib2apb_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
         "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
@@ -198,22 +198,22 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     )
 
     bus = parse_filelists([bus_filelist], require_files=False)
-    nmi2apb = parse_filelists([nmi2apb_filelist], require_files=False)
+    rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_nmi_regslice.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_regslice.sv" in bus.files
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
-    assert ROOT / "rtl/ip/native/interconnect/nmi2apb.sv" in nmi2apb.files
-    assert ROOT / "rtl/mini/formal/nmi2apb_formal.sv" in nmi2apb.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in nmi2apb.files
-    assert ROOT / "rtl/ip/native/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/rib/interconnect/rib2apb.sv" in rib2apb.files
+    assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
+    assert ROOT / "rtl/ip/rib/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/native/peripheral/gpio.sv" in gpio_user.files
+    assert ROOT / "rtl/ip/rib/peripheral/gpio.sv" in gpio_user.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
     assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
 
@@ -248,7 +248,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -270,7 +270,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"bus={tmp_path / 'bus'}",
         "--proof",
-        f"nmi2apb={tmp_path / 'nmi2apb'}",
+        f"rib2apb={tmp_path / 'rib2apb'}",
         "--proof",
         f"sysctrl={tmp_path / 'sysctrl'}",
         "--proof",
@@ -504,7 +504,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/native/peripheral/sysctrl.sv"),
+        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("rtl/managed/clusterip/common/rtl/utils/register.sv"),
@@ -518,7 +518,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/native/peripheral/sysctrl.sv"),
+        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
     ]
@@ -620,7 +620,7 @@ def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
     assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
     assert "`ifdef CORE_PICORV32" in wrapper
     assert "`elsif CORE_HAZARD3" in wrapper
-    assert "ahbl2soc_nmi u_ahbl2soc_nmi" in wrapper
+    assert "ahbl2soc_rib u_ahbl2soc_rib" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
 
 

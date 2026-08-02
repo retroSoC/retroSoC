@@ -20,17 +20,17 @@ module dma_error_tb;
   logic          error_mode = 1'b0;
   integer        write_count = 0;
   dma_hw_trg_if hw_trg ();
-  soc_nmi_if nmi ();
+  soc_rib_if rib ();
 
   always #5 clk_i = ~clk_i;
 
-  assign nmi.ready     = nmi.valid;
-  assign nmi.rdata     = 32'hA5A5_5A5A;
-  assign nmi.resp_err  = error_mode && nmi.valid;
-  assign nmi.resp_code = error_mode ? `SOC_NMI_RESP_DECERR : `SOC_NMI_RESP_OK;
+  assign rib.ready     = rib.valid;
+  assign rib.rdata     = 32'hA5A5_5A5A;
+  assign rib.resp_err  = error_mode && rib.valid;
+  assign rib.resp_code = error_mode ? `SOC_RIB_RESP_DECERR : `SOC_RIB_RESP_OK;
 
   always @(posedge clk_i) begin
-    if (nmi.valid && nmi.ready && (|nmi.wstrb)) begin
+    if (rib.valid && rib.ready && (|rib.wstrb)) begin
       write_count <= write_count + 1;
     end
   end
@@ -53,7 +53,7 @@ module dma_error_tb;
       .error_addr_o(error_addr_o),
       .fsm_o       (fsm_o),
       .hw_trg      (hw_trg),
-      .nmi         (nmi)
+      .rib         (rib)
   );
 
   task automatic start_transfer;
@@ -84,7 +84,7 @@ module dma_error_tb;
     start_transfer();
     wait (error_o);
     @(negedge clk_i);
-    if (error_code_o !== `SOC_NMI_RESP_DECERR || error_addr_o !== srcaddr_i) begin
+    if (error_code_o !== `SOC_RIB_RESP_DECERR || error_addr_o !== srcaddr_i) begin
       $fatal(1, "DMA error response was not propagated");
     end
     if (write_count != 1) begin

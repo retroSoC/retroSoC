@@ -53,11 +53,11 @@
       "reset": "s_dvp_pclk_rst_n_sync",
       "reset_source": "rst_n_i",
       "reset_primitive": "rst_sync",
-      "path": "rtl/ip/native/multimedia/dvp.sv",
+      "path": "rtl/ip/rib/multimedia/dvp.sv",
       "instance": "u_dvp_pclk_rst_sync",
       "sta": {
         "source_port": "gpio_10_io_pad",
-        "pin": "u_retrosoc.u_ip_nmi_wrapper.u_nmi_dvp.u_dvp_pclk_clk_buf/clk_o",
+        "pin": "u_retrosoc.u_ip_rib_wrapper/u_rib_dvp.u_dvp_pclk_clk_buf/clk_o",
         "period_ns": 41.666666667,
         "async_group": "dvp"
       }
@@ -85,7 +85,7 @@
       "source": "system",
       "destination": "dvp",
       "primitive": "cdc_sync",
-      "path": "rtl/ip/native/multimedia/dvp.sv",
+      "path": "rtl/ip/rib/multimedia/dvp.sv",
       "instance": "u_dvp_recven_cdc_sync"
     },
     {
@@ -93,7 +93,7 @@
       "source": "dvp",
       "destination": "system",
       "primitive": "async_fifo",
-      "path": "rtl/ip/native/multimedia/dvp.sv",
+      "path": "rtl/ip/rib/multimedia/dvp.sv",
       "instance": "u_rx_async_fifo"
     }
   ]

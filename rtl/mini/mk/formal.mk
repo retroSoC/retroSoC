@@ -6,14 +6,14 @@ FORMAL_SOLVER_DIR         := $(FORMAL_DIR)/bin
 FORMAL_SOLVER_WRAPPER     := $(FORMAL_SOLVER_DIR)/bitwuzla
 FORMAL_DEPTH              ?= 20
 FORMAL_TIMEOUT            ?= 60
-FORMAL_TARGETS            := bus nmi2apb sysctrl pll_rcu gpio_user
+FORMAL_TARGETS            := bus rib2apb sysctrl pll_rcu gpio_user
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
 FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/bus_formal_props.v \
-                             $(RTL_PATH)/formal/nmi2apb_formal.sv \
-                             $(RTL_PATH)/formal/nmi2apb_formal_props.v \
+                             $(RTL_PATH)/formal/rib2apb_formal.sv \
+                             $(RTL_PATH)/formal/rib2apb_formal_props.v \
                              $(RTL_PATH)/formal/sysctrl_formal.sv \
                              $(RTL_PATH)/formal/sysctrl_formal_props.v \
                              $(RTL_PATH)/formal/pll_rcu_formal.sv \
@@ -21,13 +21,13 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/gpio_user_formal.sv \
                              $(RTL_PATH)/formal/gpio_user_formal_props.v \
                              $(RTL_PATH)/top/bus.sv \
-                             $(ROOT_PATH)/rtl/ip/native/interconnect/nmi2apb.sv \
-                             $(ROOT_PATH)/rtl/ip/native/interconnect/nmi_regslice.sv \
-                             $(ROOT_PATH)/rtl/ip/native/peripheral/gpio.sv \
-                             $(ROOT_PATH)/rtl/ip/native/peripheral/pll_ctrl_if.sv \
-                             $(ROOT_PATH)/rtl/ip/native/peripheral/sysctrl.sv \
+                             $(ROOT_PATH)/rtl/ip/rib/interconnect/rib2apb.sv \
+                             $(ROOT_PATH)/rtl/ip/rib/interconnect/rib_regslice.sv \
+                             $(ROOT_PATH)/rtl/ip/rib/peripheral/gpio.sv \
+                             $(ROOT_PATH)/rtl/ip/rib/peripheral/pll_ctrl_if.sv \
+                             $(ROOT_PATH)/rtl/ip/rib/peripheral/sysctrl.sv \
                              $(RTL_PATH)/top/rcu.sv \
-                             $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/nmi_if.sv \
+                             $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/rib_if.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv \
@@ -105,7 +105,7 @@ formal: $(FORMAL_RESULT) | manifest
 
 formal-bus: $(FORMAL_DIR)/bus/.stamp | manifest
 
-formal-nmi2apb: $(FORMAL_DIR)/nmi2apb/.stamp | manifest
+formal-rib2apb: $(FORMAL_DIR)/rib2apb/.stamp | manifest
 
 formal-sysctrl: $(FORMAL_DIR)/sysctrl/.stamp | manifest
 
@@ -119,4 +119,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-nmi2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-doctor formal-clean
