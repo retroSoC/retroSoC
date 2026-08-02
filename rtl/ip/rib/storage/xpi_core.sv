@@ -77,6 +77,7 @@ module xpi_core (
   logic s_xfer_condi, s_xfer_sta_trg, s_xfer_end_trg;
   logic s_dma_xfer_start, s_dma_xfer_trg;
   logic [7:0] s_dma_xfer_datlen;
+  logic [3:0] s_xpi_io_oe, s_xpi_io_do;
 
 
   assign xpi.sck_o = s_sclk;
@@ -85,6 +86,8 @@ module xpi_core (
     xpi.nss_o[nss_i] = s_nss_q;
   end
   assign xpi.irq_o     = '0;
+  assign xpi.io_oe_o   = s_xpi_io_oe;
+  assign xpi.io_do_o   = s_xpi_io_do;
   assign tx_data_req_o = s_tx_data_req_q;
   assign rx_data_req_o = s_rx_data_req_q;
 
@@ -122,6 +125,82 @@ module xpi_core (
   );
 
 
+  // Keep pad drive independent from the receive-data path. This preserves the
+  // bidirectional pad readback model without creating an input-to-output loop.
+  always_comb begin
+    s_xpi_io_oe    = '0;
+    s_xpi_io_oe[0] = 1'b1;
+    s_xpi_io_do    = '0;
+    unique case (s_fsm_q)
+      FSM_CMD: begin
+        unique case (cmdtyp_i)
+          `XPI_TYPE_SNGL: begin
+            s_xpi_io_oe[0] = 1'b1;
+            s_xpi_io_do[0] = s_xfer_data_q[31];
+          end
+          `XPI_TYPE_DUAL: begin
+            s_xpi_io_oe[1:0] = 2'b11;
+            s_xpi_io_do[1:0] = s_xfer_data_q[31:30];
+          end
+          `XPI_TYPE_QUAD: begin
+            s_xpi_io_oe[3:0] = 4'b1111;
+            s_xpi_io_do[3:0] = s_xfer_data_q[31:28];
+          end
+          default: begin
+            s_xpi_io_oe[0] = 1'b1;
+            s_xpi_io_do[0] = s_xfer_data_q[31];
+          end
+        endcase
+      end
+      FSM_ADDR: begin
+        unique case (adrtyp_i)
+          `XPI_TYPE_SNGL: begin
+            s_xpi_io_oe[0] = 1'b1;
+            s_xpi_io_do[0] = s_xfer_data_q[31];
+          end
+          `XPI_TYPE_DUAL: begin
+            s_xpi_io_oe[1:0] = 2'b11;
+            s_xpi_io_do[1:0] = s_xfer_data_q[31:30];
+          end
+          `XPI_TYPE_QUAD: begin
+            s_xpi_io_oe[3:0] = 4'b1111;
+            s_xpi_io_do[3:0] = s_xfer_data_q[31:28];
+          end
+          default: begin
+            s_xpi_io_oe[0] = 1'b1;
+            s_xpi_io_do[0] = s_xfer_data_q[31];
+          end
+        endcase
+      end
+      FSM_DUM, FSM_RXDATA: begin
+        s_xpi_io_oe = '0;
+      end
+      FSM_TXDATA: begin
+        unique case (dattyp_i)
+          `XPI_TYPE_SNGL: begin
+            s_xpi_io_oe[0] = 1'b1;
+            s_xpi_io_do[0] = s_xfer_data_q[31];
+          end
+          `XPI_TYPE_DUAL: begin
+            s_xpi_io_oe[1:0] = 2'b11;
+            s_xpi_io_do[1:0] = s_xfer_data_q[31:30];
+          end
+          `XPI_TYPE_QUAD: begin
+            s_xpi_io_oe[3:0] = 4'b1111;
+            s_xpi_io_do[3:0] = s_xfer_data_q[31:28];
+          end
+          default: begin
+            s_xpi_io_oe[0] = 1'b1;
+            s_xpi_io_do[0] = s_xfer_data_q[31];
+          end
+        endcase
+      end
+      default: begin
+      end
+    endcase
+  end
+
+
   always_comb begin
     s_fsm_d           = s_fsm_q;
     s_nss_d           = s_nss_q;
@@ -134,10 +213,6 @@ module xpi_core (
     // system
     rx_data_o         = '0;
     done_o            = 1'b0;
-    // xpi if
-    xpi.io_oe_o       = '0;
-    xpi.io_oe_o[0]    = 1'b1;
-    xpi.io_do_o       = '0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
         if (s_xfer_condi) begin
@@ -176,26 +251,18 @@ module xpi_core (
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
-            xpi.io_oe_o[0]   = 1'b1;
-            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
           `XPI_TYPE_DUAL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
             s_xfer_data_d    = {s_xfer_data_q[29:0], 2'd0};
-            xpi.io_oe_o[1:0] = 2'b11;
-            xpi.io_do_o[1:0] = s_xfer_data_q[31:30];
           end
           `XPI_TYPE_QUAD: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
             s_xfer_data_d    = {s_xfer_data_q[27:0], 4'd0};
-            xpi.io_oe_o[3:0] = 4'b1111;
-            xpi.io_do_o[3:0] = s_xfer_data_q[31:28];
           end
           default: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
-            xpi.io_oe_o[0]   = 1'b1;
-            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
         endcase
 
@@ -231,26 +298,18 @@ module xpi_core (
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
-            xpi.io_oe_o[0]   = 1'b1;
-            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
           `XPI_TYPE_DUAL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
             s_xfer_data_d    = {s_xfer_data_q[29:0], 2'd0};
-            xpi.io_oe_o[1:0] = 2'b11;
-            xpi.io_do_o[1:0] = s_xfer_data_q[31:30];
           end
           `XPI_TYPE_QUAD: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
             s_xfer_data_d    = {s_xfer_data_q[27:0], 4'd0};
-            xpi.io_oe_o[3:0] = 4'b1111;
-            xpi.io_do_o[3:0] = s_xfer_data_q[31:28];
           end
           default: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
-            xpi.io_oe_o[0]   = 1'b1;
-            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
         endcase
 
@@ -278,7 +337,6 @@ module xpi_core (
         end
       end
       FSM_DUM: begin
-        xpi.io_oe_o      = '0;
         s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
 
         if (s_xfer_bit_cnt_q == 8'd1) begin
@@ -303,26 +361,18 @@ module xpi_core (
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
-            xpi.io_oe_o[0]   = 1'b1;
-            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
           `XPI_TYPE_DUAL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
             s_xfer_data_d    = {s_xfer_data_q[29:0], 2'd0};
-            xpi.io_oe_o[1:0] = 2'b11;
-            xpi.io_do_o[1:0] = s_xfer_data_q[31:30];
           end
           `XPI_TYPE_QUAD: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
             s_xfer_data_d    = {s_xfer_data_q[27:0], 4'd0};
-            xpi.io_oe_o[3:0] = 4'b1111;
-            xpi.io_do_o[3:0] = s_xfer_data_q[31:28];
           end
           default: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], 1'd0};
-            xpi.io_oe_o[0]   = 1'b1;
-            xpi.io_do_o[0]   = s_xfer_data_q[31];
           end
         endcase
 
@@ -349,22 +399,18 @@ module xpi_core (
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], xpi.io_di_i[1]};
-            xpi.io_oe_o      = '0;
           end
           `XPI_TYPE_DUAL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd2;
             s_xfer_data_d    = {s_xfer_data_q[29:0], xpi.io_di_i[1:0]};
-            xpi.io_oe_o      = '0;
           end
           `XPI_TYPE_QUAD: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd4;
             s_xfer_data_d    = {s_xfer_data_q[27:0], xpi.io_di_i[3:0]};
-            xpi.io_oe_o      = '0;
           end
           default: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
             s_xfer_data_d    = {s_xfer_data_q[30:0], xpi.io_di_i[1]};
-            xpi.io_oe_o      = '0;
           end
         endcase
 
@@ -448,10 +494,6 @@ module xpi_core (
         // system
         rx_data_o         = '0;
         done_o            = 1'b0;
-        // xpi if
-        xpi.io_oe_o       = '0;
-        xpi.io_oe_o[0]    = 1'b1;
-        xpi.io_do_o       = '0;
       end
     endcase
   end
@@ -523,5 +565,13 @@ module xpi_core (
       s_rx_data_req_d,
       s_rx_data_req_q
   );
+
+`ifndef SV_ASSRT_DISABLE
+`ifndef SYNTHESIS
+  a_xpi_read_pad_released :
+  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+      (s_fsm_q == FSM_DUM || s_fsm_q == FSM_RXDATA) |-> s_xpi_io_oe == '0);
+`endif
+`endif
 
 endmodule
