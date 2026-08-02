@@ -16,26 +16,26 @@ The header in rtl/tech/tc_clk.sv also states the Solderpad Hardware License, Ver
 
 The following RTL files retain the original header from the Ravenna example SoC project, which refers to a design using PicoRV32 in ASIC:
 
-- rtl/ip/native/peripheral/gpio.sv
-- rtl/ip/native/peripheral/timer.sv
-- rtl/ip/native/serial/uart.sv
+- rtl/ip/rib/peripheral/gpio.sv
+- rtl/ip/rib/peripheral/timer.sv
+- rtl/ip/rib/serial/uart.sv
 
 The preserved notice attributes the work to Clifford Wolf and Tim Edwards.
 
 ## 3. Hirosh Dabui
 
-The SDRAM controller implementation in rtl/ip/native/memory/sdram_core.sv retains the original copyright notice attributed to Hirosh Dabui.
+The SDRAM controller implementation in rtl/ip/rib/memory/sdram_core.sv retains the original copyright notice attributed to Hirosh Dabui.
 
 ## 4. EmbedFire
 
 Several SPI/I2C-related RTL files retain the original attribution to EmbedFire and refer to source files such as sd_init.v, sd_write.v, sd_read.v, data_rw_ctrl.v, and i2c_ctrl.v:
 
-- rtl/ip/native/serial/i2c_core.sv
-- rtl/ip/native/storage/spisd_core.sv
-- rtl/ip/native/storage/spisd_data.sv
-- rtl/ip/native/storage/spisd_init.sv
-- rtl/ip/native/storage/spisd_read.sv
-- rtl/ip/native/storage/spisd_write.sv
+- rtl/ip/rib/serial/i2c_core.sv
+- rtl/ip/rib/storage/spisd_core.sv
+- rtl/ip/rib/storage/spisd_data.sv
+- rtl/ip/rib/storage/spisd_init.sv
+- rtl/ip/rib/storage/spisd_read.sv
+- rtl/ip/rib/storage/spisd_write.sv
 
 These headers state that the original code was published on GitHub by EmbedFire, but that the original license was not specified in the retained header.
 

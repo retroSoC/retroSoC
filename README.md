@@ -3,6 +3,7 @@
 [![quality](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml)
 [![IHP130 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ihp130.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ihp130.yml)
 [![GF180 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml)
+[![ICS55 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ics55.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ics55.yml)
 [![SKY130 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml)
 [![nightly](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml)
 
@@ -16,8 +17,8 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 - A fixed architecture with a Hazard3 management core by default (PicoRV32 is
   an explicit build option) and software-selected
   user-core and user-IP extension slots.
-- Configurable GF180, SKY130, IHP130, and ICS55 implementation targets. GF180, SKY130,
-  and IHP130 have open-source CI coverage; ICS55 remains a configured cluster target.
+- Configurable GF180, SKY130, IHP130, and ICS55 implementation targets with
+  open-source CI coverage.
 - A memory-mapped peripheral subsystem with GPIO, UART, timers, PWM, I2C, I2S, PS2,
   1-Wire, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
   support. Available interfaces depend on the selected SoC configuration.
@@ -53,9 +54,10 @@ core and defaults to `HAZARD3`.
 | --- | --- | --- | --- |
 | [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
 | [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
+| [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist simulation, and OpenSTA core timing coverage. |
 | [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
-| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Cluster-only configuration; requires the site PDK and licensed-tool environment. |
+| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
 ## Prerequisites
 
@@ -106,6 +108,16 @@ regression uses the assembly self-test image:
 Verilator simulations run for 180 seconds by default. Set `SOC_SIM_TIME` explicitly only when
 an exploratory local run needs a different limit.
 
+VCS flow commands use `bsub -Is` by default: this includes parse-time Python helpers used to
+calculate the variant and dependency-lock digest, generated-flow Python helpers, VCS, `simv`, and
+Verdi. In a licensed local VCS environment, run without LSF submission using `VCS_USE_LSF=NO`; an
+explicit `VCS_RUNNER` takes precedence when a site-specific queue or wrapper is required:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk SIMU=VCS VCS_USE_LSF=NO sim
+make CONFIG=configs/ci/ihp130.mk SIMU=VCS VCS_RUNNER='bsub -q vcs -Is' sim
+```
+
 ```sh
 make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
 make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
@@ -135,7 +147,7 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
 configuration, and runs the Icarus assembly self-test. It runs strict RTL lint
 before those flows and omits synthesis,
 timing, and netlist simulation for fast feedback. `make regress-pr` runs the
-supported IHP130, GF180, and SKY130 PR matrices in sequence, including
+supported IHP130, GF180, ICS55, and SKY130 PR matrices in sequence, including
 slow-corner OpenSTA core timing analysis for each PDK.
 
 Build outputs are isolated below `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`. Each variant keeps its

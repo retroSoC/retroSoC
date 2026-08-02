@@ -13,6 +13,11 @@ FatFs R0.16 archive. It verifies the archive, GitHub authentication, release
 absence, and the published asset checksum before reporting the checksum-pinned
 URL.
 
+`parse_performance_log.py` converts the `APP=benchmark` UART `PERF` records
+into `meta/performance.json`. The parser requires the terminal
+`PERF_BENCHMARK_PASS` marker and deliberately does not alter the common
+simulation success-marker policy.
+
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the
 relevant dry-run or regression profile from [`AGENTS.md`](../AGENTS.md).

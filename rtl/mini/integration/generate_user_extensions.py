@@ -118,7 +118,7 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
     for target in extensions.core_targets:
         lines.extend(
             [
-                f"  nmi_if u_user_{target.slot}_nmi_if ();",
+                f"  rib_if u_user_{target.slot}_rib_if ();",
                 f"  logic [31:0] s_user_{target.slot}_irq;",
             ]
         )
@@ -126,17 +126,17 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
         [
             "",
             "  always_comb begin",
-            "    nmi.valid = '0;",
-            "    nmi.addr = '0;",
-            "    nmi.wdata = '0;",
-            "    nmi.wstrb = '0;",
+            "    rib.valid = '0;",
+            "    rib.addr = '0;",
+            "    rib.wdata = '0;",
+            "    rib.wstrb = '0;",
         ]
     )
     for target in extensions.core_targets:
         lines.extend(
             [
-                f"    u_user_{target.slot}_nmi_if.rdata = '0;",
-                f"    u_user_{target.slot}_nmi_if.ready = '0;",
+                f"    u_user_{target.slot}_rib_if.rdata = '0;",
+                f"    u_user_{target.slot}_rib_if.ready = '0;",
                 f"    s_user_{target.slot}_irq = '0;",
             ]
         )
@@ -145,12 +145,12 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
         lines.extend(
             [
                 f"      {extensions.core_selector_width}'d{target.slot}: begin",
-                f"        nmi.valid = u_user_{target.slot}_nmi_if.valid;",
-                f"        nmi.addr = u_user_{target.slot}_nmi_if.addr;",
-                f"        nmi.wdata = u_user_{target.slot}_nmi_if.wdata;",
-                f"        nmi.wstrb = u_user_{target.slot}_nmi_if.wstrb;",
-                f"        u_user_{target.slot}_nmi_if.rdata = nmi.rdata;",
-                f"        u_user_{target.slot}_nmi_if.ready = nmi.ready;",
+                f"        rib.valid = u_user_{target.slot}_rib_if.valid;",
+                f"        rib.addr = u_user_{target.slot}_rib_if.addr;",
+                f"        rib.wdata = u_user_{target.slot}_rib_if.wdata;",
+                f"        rib.wstrb = u_user_{target.slot}_rib_if.wstrb;",
+                f"        u_user_{target.slot}_rib_if.rdata = rib.rdata;",
+                f"        u_user_{target.slot}_rib_if.ready = rib.ready;",
                 f"        s_user_{target.slot}_irq = irq_i;",
                 "      end",
             ]
@@ -163,7 +163,7 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
                 "      .clk_i  (clk_i),",
                 f"      .rst_n_i(rst_n_i && ~core_reset_i[{target.slot}]),",
                 f"      .irq_i  (s_user_{target.slot}_irq),",
-                f"      .nmi    (u_user_{target.slot}_nmi_if)",
+                f"      .rib    (u_user_{target.slot}_rib_if)",
                 "  );",
                 "",
             ]

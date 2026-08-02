@@ -33,9 +33,11 @@ PDK             ?= IHP130
 HAVE_PLL        ?= NO
 HAVE_SRAM_IF    ?= NO
 HAVE_SRAM_MACRO ?= NO
+PDK_BEHAV       ?= NO
 HAVE_SVA        ?= NO
 WAVE            ?= NO
 FORMAL          ?= NO
+VCS_USE_LSF     ?= YES
 
 RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
@@ -52,26 +54,33 @@ FIRMWARE_NAME ?= retrosoc_fw
 APP           ?= shell
 LINK_TYPE     ?= ld2_sram
 
-BUILD_ROOT      ?= $(ROOT_PATH)/build
-CACHE_ROOT      ?= $(ROOT_PATH)/.cache/retrosoc
-BUILD_TIMESTAMP ?= $(shell date '+%Y-%m-%d-%H-%M')
-MAX_JOBS        ?= 16
-HOST_CC         ?= cc
-CLANG_FORMAT    ?= clang-format-14
-MBAKE           ?= mbake
-VERIBLE_FORMAT  ?= verible-verilog-format
-JOBS            ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
+BUILD_ROOT         ?= $(ROOT_PATH)/build
+CACHE_ROOT         ?= $(ROOT_PATH)/.cache/retrosoc
+BUILD_TIMESTAMP    ?= $(shell date '+%Y-%m-%d-%H-%M')
+MAX_JOBS           ?= 16
+HOST_CC            ?= cc
+PYTHON             ?= python3
+FLOW_PYTHON        ?= $(PYTHON)
+CLANG_FORMAT       ?= clang-format-14
+MBAKE              ?= mbake
+VERIBLE_FORMAT     ?= verible-verilog-format
+VCS_DEFAULT_RUNNER := $(if $(filter YES,$(VCS_USE_LSF)),bsub -Is)
+VCS_RUNNER         ?= $(VCS_DEFAULT_RUNNER)
+VCS_SHELL_GOALS    := comp sim netcomp netsim postcomp postsim
+VCS_SHELL_PYTHON   := $(if $(filter VCS,$(SIMU)),$(if $(filter $(VCS_SHELL_GOALS),$(MAKECMDGOALS)),$(strip $(VCS_RUNNER) $(PYTHON)),$(PYTHON)),$(PYTHON))
+JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
-CONFIG_KEY_VARS := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO HAVE_SVA \
+CONFIG_KEY_VARS    := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
                    ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
-VARIANT_ID      := $(strip $(shell python3 $(ROOT_PATH)/scripts/config_key.py \
+VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
-    $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var)))))
+    $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
 ifeq ($(VARIANT_ID),)
 $(error Failed to calculate build variant ID)
 endif
-LOCK_DIGEST := $(strip $(shell python3 $(ROOT_PATH)/scripts/dependency_lock.py --lock $(LOCK_FILE) --digest))
+LOCK_DIGEST := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/dependency_lock.py \
+    --lock $(LOCK_FILE) --digest | tail -n 1))
 export BUILD_TIMESTAMP
 VARIANT_ROOT   := $(abspath $(BUILD_ROOT))/$(VARIANT_ID)
 SW_BUILD_DIR   := $(VARIANT_ROOT)/sw
@@ -94,7 +103,7 @@ VALID_STA       := NONE OPENSTA
 VALID_PDK       := ICS55 IHP130 SKY130 GF180
 VALID_BOOL      := YES NO
 VALID_ISA       := RV32E RV32I RV32IM
-VALID_APP       := bringup shell
+VALID_APP       := benchmark bringup shell
 VALID_LINK_TYPE := xip ld2_sram ld2_psram ld2_sdram
 
 define validate_value
@@ -110,13 +119,24 @@ $(call validate_value,PDK,$(VALID_PDK))
 $(call validate_value,HAVE_PLL,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_IF,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
+$(call validate_value,PDK_BEHAV,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
 $(call validate_value,FORMAL,$(VALID_BOOL))
+$(call validate_value,VCS_USE_LSF,$(VALID_BOOL))
 $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
+
+ifneq ($(filter benchmark-report,$(MAKECMDGOALS)),)
+ifneq ($(APP),benchmark)
+$(error benchmark-report requires APP=benchmark)
+endif
+ifeq ($(RTL_SIM_TIMEOUT),-1)
+RTL_SIM_TIMEOUT := 20000000
+endif
+endif
 
 ifeq ($(SYNTH),YOSYS)
 ifeq ($(filter $(PDK),IHP130 ICS55 GF180 SKY130),)
@@ -149,6 +169,13 @@ ifeq ($(HAVE_SRAM_MACRO), YES)
     DEF_LIST += +define+HAVE_SRAM_MACRO
 endif
 
+ifeq ($(PDK_BEHAV), YES)
+ifeq ($(SYNTH), YOSYS)
+$(error PDK_BEHAV=YES is for functional simulation and cannot be synthesized)
+endif
+    DEF_LIST += +define+PDK_BEHAV
+endif
+
 ifeq ($(HAVE_SVA), NO)
     DEF_LIST += +define+SV_ASSRT_DISABLE
 endif
@@ -159,6 +186,12 @@ endif
 
 include rtl/mini/Makefile
 include rtl/mini/mk/formal.mk
+
+ifeq ($(SIMU),IVERILOG)
+PERF_LOG ?= $(IVERILOG_BEHV_DIR)/sim.log
+else
+PERF_LOG ?= $(SIM_BUILD_ROOT)/sim.log
+endif
 
 ifeq ($(SYNTH), YOSYS)
 include syn/yosys/yosys.mk
@@ -172,9 +205,10 @@ endif
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
+	benchmark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-nmi2apb formal-clean formal-doctor
+	formal formal-bus formal-rib2apb formal-clean formal-doctor
 .NOTPARALLEL: setup
 
 help:
@@ -199,8 +233,9 @@ help:
 	  '  check-user-extensions      validate the canonical user-extension map' \
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
-	  '  formal | formal-bus | formal-nmi2apb | formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY protocol proofs' \
+	  '  formal | formal-bus | formal-rib2apb | formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY protocol proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
+	  '  benchmark-report           run the benchmark profile and write meta/performance.json' \
 	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
@@ -226,9 +261,10 @@ config:
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
 	  SOC '$(SOC)' CORE '$(CORE)' \
-	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' PDK '$(PDK)' \
+	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' \
+	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
-	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' HAVE_SVA '$(HAVE_SVA)' \
+	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
 	  LINK_TYPE '$(LINK_TYPE)'
 
@@ -236,6 +272,12 @@ doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
 	  --pdk $(PDK) --formal $(FORMAL) --lock $(LOCK_FILE)
+
+benchmark-report: firmware
+
+	$(MAKE) RTL_SIM_TIMEOUT=$(RTL_SIM_TIMEOUT) sim
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/parse_performance_log.py --log $(PERF_LOG) \
+		--output $(META_DIR)/performance.json
 
 setup: setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app
 
@@ -268,7 +310,7 @@ purge-cache:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(abspath $(CACHE_ROOT))
 
 manifest:
-	python3 $(ROOT_PATH)/scripts/manifest.py create --root $(ROOT_PATH) \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/manifest.py create --root $(ROOT_PATH) \
 	  --lock $(LOCK_FILE) --output $(META_DIR)/manifest.json --profile $(PROFILE_NAME) \
 	  $(foreach var,$(CONFIG_KEY_VARS),--config $(var)=$($(var))) \
 	  --config SIMU=$(SIMU) --config SYNTH=$(SYNTH) --config STA=$(STA)
@@ -331,6 +373,7 @@ regress-pr:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk ICS55
 
 regress-nightly:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly

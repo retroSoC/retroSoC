@@ -73,7 +73,7 @@ def _standard_cell_models(pdk: str, netlist: Path | None = None) -> list[Path]:
             *sorted(
                 path
                 for path in cells_dir.glob("*/*.functional.v")
-                if path.name.removesuffix(".functional.v") not in sequential_models
+                if path.name[: -len(".functional.v")] not in sequential_models
             ),
         ]
     if pdk == "SKY130":

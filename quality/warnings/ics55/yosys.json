@@ -1,0 +1,62 @@
+{
+  "entries": [
+    {
+      "count": 1,
+      "example": "warning:Wire hazard3_csr_username3$retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username3.u_hazard3_cpu_1port.core.csr_u.\\dbg_req_resume_prev is used but has no driver.",
+      "signature": "0a782ef45c9a2826"
+    },
+    {
+      "count": 1,
+      "example": "warning:Wire hazard3_csr_username3$retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username3.u_hazard3_cpu_1port.core.csr_u.\\debug_mode is used but has no driver.",
+      "signature": "0b15e8e8ff1ec2e6"
+    },
+    {
+      "count": 1,
+      "example": "warning:Wire hazard3_csr_username3$retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username3.u_hazard3_cpu_1port.core.csr_u.\\pending_dbg_resume_prev is used but has no driver.",
+      "signature": "1b869cf19bdd0fc1"
+    },
+    {
+      "count": 2,
+      "example": "warning:asynchronous load value missing for variable '\\update_irq_reg_arrays.i'",
+      "signature": "56c5f69398be8d7b"
+    },
+    {
+      "count": 10,
+      "example": "warning:The network is combinational (run \"fraig\" or \"fraig_sweep\").",
+      "signature": "62cc5ee554312205"
+    },
+    {
+      "count": 4,
+      "example": "warning:asynchronous load value missing for variable '\\update_nonconst.prev'",
+      "signature": "a30df20b98d49196"
+    },
+    {
+      "count": 1,
+      "example": "warning:Wire hazard3_csr$retrosoc_asic.u_retrosoc.u_core_wrapper.u_mgmt_core_wrapper.u_hazard3_cpu_1port.core.csr_u.\\debug_mode is used but has no driver.",
+      "signature": "abc4bf82285e7e27"
+    },
+    {
+      "count": 1,
+      "example": "warning:Wire hazard3_csr$retrosoc_asic.u_retrosoc.u_core_wrapper.u_mgmt_core_wrapper.u_hazard3_cpu_1port.core.csr_u.\\dbg_req_resume_prev is used but has no driver.",
+      "signature": "b53fced7cd12c426"
+    },
+    {
+      "count": 4,
+      "example": "warning:asynchronous load value missing for variable '\\update_nonconst.nonconst'",
+      "signature": "d35463a1de40c7b2"
+    },
+    {
+      "count": 1,
+      "example": "warning:Wire hazard3_csr$retrosoc_asic.u_retrosoc.u_core_wrapper.u_mgmt_core_wrapper.u_hazard3_cpu_1port.core.csr_u.\\pending_dbg_resume_prev is used but has no driver.",
+      "signature": "dcbf3e1cbb359ba9"
+    },
+    {
+      "count": 10,
+      "example": "warning:Detected 6 multi-output cells (for example, \"ADDFX1H7R\").",
+      "signature": "efa45c73f40f4fe6"
+    }
+  ],
+  "profile": "ics55",
+  "schema_version": 1,
+  "tool": "yosys"
+}

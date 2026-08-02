@@ -7,21 +7,23 @@
 | Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
 | Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/ics55.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Nightly | `configs/ci/ihp130.mk` | repeated full IHP130 regression |
-| Cluster | `configs/cluster/ics55.mk` | configuration only; run with site PDK/tool access |
+| Cluster | `configs/cluster/ics55.mk` | compatibility profile for site-specific ICS55 runs |
 
 OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
-`slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, and SKY130 uses `ss_100C_1v40`.
+`slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, ICS55 uses the H7CR
+`ss_1p08_125C` view, and SKY130 uses `ss_100C_1v40`.
 The SDC is generated from `rtl/mini/integration/clock_reset_domains.json`, applies
 the external, audio, and DVP clocks at their technology-buffer observation pins,
 and groups unrelated clocks asynchronously. It intentionally excludes package,
 board, pad-ring, extraction, and PLL timing, so it is a regression-quality core
 analysis rather than physical signoff.
 
-VCS and ICS55 flows remain cluster-only because public runners do not have the licensed simulator or
-the validated site environment. They use the same variant layout, manifests, result JSON, warning
-scanner, and cleanup rules.
+VCS flows remain cluster-only because public runners do not have the licensed
+simulator. ICS55 uses the same variant layout, manifests, result JSON, warning
+scanner, and cleanup rules as the other open-source CI PDKs.
 
 ## Reproducible Inputs
 
@@ -98,16 +100,18 @@ capped at 16 and can be set with `JOBS=<n>` or `MAX_JOBS=<n>`.
 ## Result Policy
 
 Every EDA and simulation flow command is run through `scripts/run_flow.py`, which streams a log and writes a
-result JSON containing the command, timestamps, duration, exit code, and status. A simulation passes
-only when the command succeeds, its log contains the firmware startup marker, and no fatal/failure
-marker is present. Icarus regressions use the assembly self-test as `retrosoc_asm`, while the normal
-`retrosoc_fw` image remains available for firmware size tracking and Verilator regressions.
+result JSON containing the command, timestamps, duration, exit code, and status. The VCS and Verilator
+simulation paths stream UART output to an interactive terminal byte-by-byte while preserving the raw output
+in their simulation logs. A simulation passes only when the command succeeds, its log contains the firmware
+startup marker, and no fatal/failure marker is present. Icarus regressions use the assembly self-test as
+`retrosoc_asm`, while the normal `retrosoc_fw` image remains available for firmware size tracking and
+Verilator regressions.
 
 ## Formal Protocol Proofs
 
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
-targets are `bus`, `nmi2apb`, `sysctrl`, `pll_rcu`, and `gpio_user`; each uses
+targets are `bus`, `rib2apb`, `sysctrl`, `pll_rcu`, and `gpio_user`; each uses
 the SBY `prove` task for bounded model checking and k-induction, plus a
 `cover` task, at depth 20. `sysctrl` checks register side effects, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
@@ -175,7 +179,7 @@ for diagnosis but is initially non-blocking.
 
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
 Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
-the three full PDK regression workflows remain required PR coverage and do not repeat the format checks.
+the four full PDK regression workflows remain required PR coverage and do not repeat the format checks.
 `nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 

@@ -1,4 +1,4 @@
-"""RTL tests for user-IP ownership of the native GPIO pad bank."""
+"""RTL tests for user-IP ownership of the rib GPIO pad bank."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_user_ip_can_own_native_gpio_pads_with_a_safe_handoff(tmp_path: Path) -> None:
+def test_user_ip_can_own_rib_gpio_pads_with_a_safe_handoff(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     sv2v = shutil.which("sv2v")
     vvp = shutil.which("vvp")
@@ -23,13 +23,13 @@ def test_user_ip_can_own_native_gpio_pads_with_a_safe_handoff(tmp_path: Path) ->
         "\n".join(
             [
                 "+define+SV_ASSRT_DISABLE",
-                f"+incdir+{ROOT / 'rtl/ip/native/peripheral'}",
+                f"+incdir+{ROOT / 'rtl/ip/rib/peripheral'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/nmi_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/edge_det.sv"),
-                str(ROOT / "rtl/ip/native/peripheral/gpio.sv"),
+                str(ROOT / "rtl/ip/rib/peripheral/gpio.sv"),
                 str(ROOT / "tests/rtl/gpio_user_mux_tb.sv"),
                 "",
             ]

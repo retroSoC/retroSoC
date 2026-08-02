@@ -9,7 +9,7 @@ module pll_ctrl_tb;
   logic [31:0] fault_addr_i = '0;
   logic [ 3:0] fault_wstrb_i = '0;
   logic        fault_reserved_i = 1'b0;
-  nmi_if nmi ();
+  rib_if rib ();
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
   logic        sys_clk_o;
@@ -38,14 +38,14 @@ module pll_ctrl_tb;
       .sys_clkdiv4_o(sys_clkdiv4_o)
   );
 
-  nmi_sysctrl u_sysctrl (
+  rib_sysctrl u_sysctrl (
       .clk_i           (sys_clk_o),
       .rst_n_i         (sys_rst_n_o),
       .fault_valid_i   (fault_valid_i),
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .nmi             (nmi),
+      .rib             (rib),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );
@@ -53,29 +53,29 @@ module pll_ctrl_tb;
   task automatic read_register(input logic [31:0] address, output logic [31:0] data);
     begin
       @(negedge sys_clk_o);
-      nmi.addr  = address;
-      nmi.wdata = '0;
-      nmi.wstrb = '0;
-      nmi.valid = 1'b1;
-      while (!nmi.ready) @(posedge sys_clk_o);
-      data = nmi.rdata;
+      rib.addr  = address;
+      rib.wdata = '0;
+      rib.wstrb = '0;
+      rib.valid = 1'b1;
+      while (!rib.ready) @(posedge sys_clk_o);
+      data = rib.rdata;
       @(negedge sys_clk_o);
-      nmi.valid = 1'b0;
-      while (nmi.ready) @(posedge sys_clk_o);
+      rib.valid = 1'b0;
+      while (rib.ready) @(posedge sys_clk_o);
     end
   endtask
 
   task automatic write_register(input logic [31:0] address, input logic [31:0] data);
     begin
       @(negedge sys_clk_o);
-      nmi.addr  = address;
-      nmi.wdata = data;
-      nmi.wstrb = 4'hF;
-      nmi.valid = 1'b1;
-      while (!nmi.ready) @(posedge sys_clk_o);
+      rib.addr  = address;
+      rib.wdata = data;
+      rib.wstrb = 4'hF;
+      rib.valid = 1'b1;
+      while (!rib.ready) @(posedge sys_clk_o);
       @(negedge sys_clk_o);
-      nmi.valid = 1'b0;
-      while (nmi.ready) @(posedge sys_clk_o);
+      rib.valid = 1'b0;
+      while (rib.ready) @(posedge sys_clk_o);
     end
   endtask
 
@@ -98,10 +98,10 @@ module pll_ctrl_tb;
   endtask
 
   initial begin
-    nmi.valid               = 1'b0;
-    nmi.addr                = '0;
-    nmi.wdata               = '0;
-    nmi.wstrb               = '0;
+    rib.valid               = 1'b0;
+    rib.addr                = '0;
+    rib.wdata               = '0;
+    rib.wstrb               = '0;
     sysctrl.user_bus_idle_i = 1'b1;
     sysctrl.fault_access_i  = 1'b0;
     sysctrl.fault_master_i  = '0;

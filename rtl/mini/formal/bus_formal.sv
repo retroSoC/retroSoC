@@ -15,7 +15,7 @@ module bus_formal_design (
     output logic        user_ready,
     output logic        dma_valid,
     output logic        dma_ready,
-    output logic        natv_valid,
+    output logic        rib_valid,
     output logic        apb_valid,
     output logic        fault_valid,
     output logic        fault_access,
@@ -23,11 +23,11 @@ module bus_formal_design (
     output logic [ 1:0] arb_owner
 );
 
-  nmi_if mgmt_nmi ();
-  nmi_if user_nmi ();
-  nmi_if dma_nmi ();
-  nmi_if natv_nmi ();
-  nmi_if apb_nmi ();
+  soc_rib_if mgmt_rib ();
+  soc_rib_if user_rib ();
+  soc_rib_if dma_rib ();
+  rib_if rib ();
+  rib_if apb_rib ();
 
   (* anyseq *)logic        f_mgmt_valid;
   (* anyseq *)logic [31:0] f_mgmt_addr;
@@ -41,8 +41,8 @@ module bus_formal_design (
   (* anyseq *)logic [31:0] f_dma_addr;
   (* anyseq *)logic [31:0] f_dma_wdata;
   (* anyseq *)logic [ 3:0] f_dma_wstrb;
-  (* anyseq *)logic        f_natv_ready;
-  (* anyseq *)logic [31:0] f_natv_rdata;
+  (* anyseq *)logic        f_rib_ready;
+  (* anyseq *)logic [31:0] f_rib_rdata;
   (* anyseq *)logic        f_apb_ready;
   (* anyseq *)logic [31:0] f_apb_rdata;
   logic [31:0] fault_addr;
@@ -51,46 +51,49 @@ module bus_formal_design (
   logic [ 1:0] fault_master;
   logic        user_idle;
 
-  assign mgmt_nmi.valid = f_mgmt_valid;
-  assign mgmt_nmi.addr  = f_mgmt_addr;
-  assign mgmt_nmi.wdata = f_mgmt_wdata;
-  assign mgmt_nmi.wstrb = f_mgmt_wstrb;
-  assign user_nmi.valid = f_user_valid;
-  assign user_nmi.addr  = f_user_addr;
-  assign user_nmi.wdata = f_user_wdata;
-  assign user_nmi.wstrb = f_user_wstrb;
-  assign dma_nmi.valid  = f_dma_valid;
-  assign dma_nmi.addr   = f_dma_addr;
-  assign dma_nmi.wdata  = f_dma_wdata;
-  assign dma_nmi.wstrb  = f_dma_wstrb;
-  assign natv_nmi.ready = f_natv_ready;
-  assign natv_nmi.rdata = f_natv_rdata;
-  assign apb_nmi.ready  = f_apb_ready;
-  assign apb_nmi.rdata  = f_apb_rdata;
+  assign mgmt_rib.valid = f_mgmt_valid;
+  assign mgmt_rib.addr  = f_mgmt_addr;
+  assign mgmt_rib.wdata = f_mgmt_wdata;
+  assign mgmt_rib.wstrb = f_mgmt_wstrb;
+  assign user_rib.valid = f_user_valid;
+  assign user_rib.addr  = f_user_addr;
+  assign user_rib.wdata = f_user_wdata;
+  assign user_rib.wstrb = f_user_wstrb;
+  assign dma_rib.valid  = f_dma_valid;
+  assign dma_rib.addr   = f_dma_addr;
+  assign dma_rib.wdata  = f_dma_wdata;
+  assign dma_rib.wstrb  = f_dma_wstrb;
+  assign rib.ready      = f_rib_ready;
+  assign rib.rdata      = f_rib_rdata;
+  assign apb_rib.ready  = f_apb_ready;
+  assign apb_rib.rdata  = f_apb_rdata;
 
-  assign mgmt_valid     = mgmt_nmi.valid;
-  assign mgmt_addr      = mgmt_nmi.addr;
-  assign mgmt_wstrb     = mgmt_nmi.wstrb;
-  assign mgmt_ready     = mgmt_nmi.ready;
-  assign user_valid     = user_nmi.valid;
-  assign user_addr      = user_nmi.addr;
-  assign user_wstrb     = user_nmi.wstrb;
-  assign user_ready     = user_nmi.ready;
-  assign dma_valid      = dma_nmi.valid;
-  assign dma_ready      = dma_nmi.ready;
-  assign natv_valid     = natv_nmi.valid;
-  assign apb_valid      = apb_nmi.valid;
+  assign mgmt_valid     = mgmt_rib.valid;
+  assign mgmt_addr      = mgmt_rib.addr;
+  assign mgmt_wstrb     = mgmt_rib.wstrb;
+  assign mgmt_ready     = mgmt_rib.ready;
+  assign user_valid     = user_rib.valid;
+  assign user_addr      = user_rib.addr;
+  assign user_wstrb     = user_rib.wstrb;
+  assign user_ready     = user_rib.ready;
+  assign dma_valid      = dma_rib.valid;
+  assign dma_ready      = dma_rib.ready;
+  assign rib_valid      = rib.valid;
+  assign apb_valid      = apb_rib.valid;
 
   bus u_dut (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .mgmt_nmi         (mgmt_nmi),
-      .user_nmi         (user_nmi),
-      .dma_nmi          (dma_nmi),
+      .mgmt_rib         (mgmt_rib),
+      .user_rib         (user_rib),
+      .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_idle),
-      .natv_nmi         (natv_nmi),
-      .apb_nmi          (apb_nmi),
+      .rib              (rib),
+      .apb_rib          (apb_rib),
+      .apb_resp_err_i   (1'b0),
+      .perf_enable_i    (1'b0),
+      .perf_clear_i     (1'b0),
       .fault_valid_o    (fault_valid),
       .fault_addr_o     (fault_addr),
       .fault_wstrb_o    (fault_wstrb),

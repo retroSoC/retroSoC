@@ -15,6 +15,7 @@ SOC_VXXFILES      += $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/retrosoc_top.sv
+SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/sdram_verilator_model.sv
 SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
 
 VERILATOR          ?= verilator
@@ -42,6 +43,7 @@ VERILATOR_EXTRA_SOURCES := $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv \
                            $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv \
                            $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv \
                            $(RTL_PATH)/dv/verilator/rtl/retrosoc_top.sv \
+                           $(RTL_PATH)/dv/verilator/rtl/sdram_verilator_model.sv \
                            $(SOC_CXXFILES) $(wildcard $(SOC_CSRC_HOME)/*.h) \
                            $(wildcard $(SOC_CSRC_HOME)/*.hpp)
 
@@ -94,7 +96,7 @@ comp: $(VERILATOR_EMU)
 sim: comp
 	@test -f $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin || { \
 		echo "firmware image missing; run 'make firmware' first" >&2; exit 1; }
-	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-sim \
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-sim --stream-bytes \
 		--log $(BUILD_DIR)/sim.log --result $(BUILD_DIR)/result-sim.json \
 		--cwd $(BUILD_DIR) -- $(BUILD_DIR)/emu -i $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin \
 		-t $(SOC_SIM_TIME)

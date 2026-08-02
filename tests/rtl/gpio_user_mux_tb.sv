@@ -3,17 +3,17 @@
 module gpio_user_mux_tb;
   logic clk_i = 1'b0;
   logic rst_n_i = 1'b0;
-  nmi_if nmi ();
+  rib_if rib ();
   gpio_if gpio ();
   user_gpio_if user_gpio ();
   logic [31:0] read_data;
 
   always #5 clk_i = ~clk_i;
 
-  nmi_gpio dut (
+  rib_gpio dut (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
-      .nmi      (nmi),
+      .rib      (rib),
       .gpio     (gpio),
       .user_gpio(user_gpio)
   );
@@ -21,14 +21,14 @@ module gpio_user_mux_tb;
   task automatic write_register(input logic [7:0] address, input logic [31:0] data);
     begin
       @(negedge clk_i);
-      nmi.addr  = {24'd0, address};
-      nmi.wdata = data;
-      nmi.wstrb = 4'hF;
-      nmi.valid = 1'b1;
+      rib.addr  = {24'd0, address};
+      rib.wdata = data;
+      rib.wstrb = 4'hF;
+      rib.valid = 1'b1;
       @(posedge clk_i);
       #1;
       @(negedge clk_i);
-      nmi.valid = 1'b0;
+      rib.valid = 1'b0;
       @(posedge clk_i);
       #1;
     end
@@ -37,15 +37,15 @@ module gpio_user_mux_tb;
   task automatic read_register(input logic [7:0] address, output logic [31:0] data);
     begin
       @(negedge clk_i);
-      nmi.addr  = {24'd0, address};
-      nmi.wdata = '0;
-      nmi.wstrb = '0;
-      nmi.valid = 1'b1;
+      rib.addr  = {24'd0, address};
+      rib.wdata = '0;
+      rib.wstrb = '0;
+      rib.valid = 1'b1;
       @(posedge clk_i);
       #1;
-      data = nmi.rdata;
+      data = rib.rdata;
       @(negedge clk_i);
-      nmi.valid = 1'b0;
+      rib.valid = 1'b0;
       @(posedge clk_i);
       #1;
     end
@@ -54,25 +54,25 @@ module gpio_user_mux_tb;
   task automatic select_user_gpio(input logic [31:0] selection);
     begin
       @(negedge clk_i);
-      nmi.addr  = 32'h0000_0030;
-      nmi.wdata = selection;
-      nmi.wstrb = 4'hF;
-      nmi.valid = 1'b1;
+      rib.addr  = 32'h0000_0030;
+      rib.wdata = selection;
+      rib.wstrb = 4'hF;
+      rib.valid = 1'b1;
       @(posedge clk_i);
       #1;
       if (gpio.oe_o[0] !== 1'b0) $fatal(1, "GPIO handoff did not drive high impedance");
       @(negedge clk_i);
-      nmi.valid = 1'b0;
+      rib.valid = 1'b0;
       @(posedge clk_i);
       #1;
     end
   endtask
 
   initial begin
-    nmi.valid      = 1'b0;
-    nmi.addr       = '0;
-    nmi.wdata      = '0;
-    nmi.wstrb      = '0;
+    rib.valid      = 1'b0;
+    rib.addr       = '0;
+    rib.wdata      = '0;
+    rib.wstrb      = '0;
     gpio.di_i      = '0;
     gpio.alt0_do_i = '0;
     gpio.alt0_oe_i = '0;
@@ -87,7 +87,7 @@ module gpio_user_mux_tb;
 
     write_register(8'h00, 32'h0000_0001);
     write_register(8'h10, 32'h0000_0001);
-    if ({gpio.oe_o[0], gpio.do_o[0]} !== 2'b11) $fatal(1, "native software GPIO is not active");
+    if ({gpio.oe_o[0], gpio.do_o[0]} !== 2'b11) $fatal(1, "rib software GPIO is not active");
 
     user_gpio.do_o[0] = 1'b0;
     user_gpio.oe_o[0] = 1'b1;
@@ -119,7 +119,7 @@ module gpio_user_mux_tb;
     write_register(8'h08, 32'h0000_0001);
     write_register(8'h0C, 32'h0000_0001);
     if ({gpio.cs_o[0], gpio.pu_o[0], gpio.pd_o[0]} !== 3'b111)
-      $fatal(1, "native GPIO electrical controls changed under user ownership");
+      $fatal(1, "rib GPIO electrical controls changed under user ownership");
 
     $display("GPIO user ownership test passed");
     $finish;

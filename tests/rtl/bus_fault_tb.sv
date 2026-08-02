@@ -9,57 +9,64 @@ module bus_fault_tb;
   logic        fault_reserved_o;
   logic        fault_access_o;
   logic [ 1:0] fault_master_o;
+  logic [ 2:0] fault_code_o;
   logic        user_bus_idle_o;
-  nmi_if mgmt_nmi ();
-  nmi_if user_nmi ();
-  nmi_if dma_nmi ();
-  nmi_if natv_nmi ();
-  nmi_if apb_nmi ();
+  soc_rib_if mgmt_rib ();
+  soc_rib_if user_rib ();
+  soc_rib_if dma_rib ();
+  rib_if rib ();
+  rib_if apb_rib ();
 
   always #5 clk_i = ~clk_i;
 
-  assign natv_nmi.ready = 1'b1;
-  assign natv_nmi.rdata = 32'hCAFE_BABE;
-  assign apb_nmi.ready  = 1'b1;
-  assign apb_nmi.rdata  = 32'h1234_5678;
+  assign rib.ready = 1'b1;
+  assign rib.rdata = 32'hCAFE_BABE;
+  assign apb_rib.ready  = 1'b1;
+  assign apb_rib.rdata  = 32'h1234_5678;
 
   bus u_bus (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .mgmt_nmi         (mgmt_nmi),
-      .user_nmi         (user_nmi),
-      .dma_nmi          (dma_nmi),
+      .mgmt_rib         (mgmt_rib),
+      .user_rib         (user_rib),
+      .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_bus_idle_o),
-      .natv_nmi         (natv_nmi),
-      .apb_nmi          (apb_nmi),
+      .rib         (rib),
+      .apb_rib          (apb_rib),
+      .apb_resp_err_i   (1'b0),
+      .perf_enable_i    (1'b0),
+      .perf_clear_i     (1'b0),
       .fault_valid_o    (fault_valid_o),
       .fault_addr_o     (fault_addr_o),
       .fault_wstrb_o    (fault_wstrb_o),
       .fault_reserved_o (fault_reserved_o),
       .fault_access_o   (fault_access_o),
-      .fault_master_o   (fault_master_o)
+      .fault_master_o   (fault_master_o),
+      .fault_code_o     (fault_code_o)
   );
 
   task automatic expect_fault(input logic [31:0] address, input logic [3:0] write_strobes,
-                              input logic reserved);
+                              input logic reserved, input logic [2:0] expected_code);
     begin
       @(negedge clk_i);
-      mgmt_nmi.addr  = address;
-      mgmt_nmi.wdata = 32'hA5A5_5A5A;
-      mgmt_nmi.wstrb = write_strobes;
-      mgmt_nmi.valid = 1'b1;
+      mgmt_rib.addr  = address;
+      mgmt_rib.wdata = 32'hA5A5_5A5A;
+      mgmt_rib.wstrb = write_strobes;
+      mgmt_rib.valid = 1'b1;
       while (!fault_valid_o) @(posedge clk_i);
       if (fault_addr_o !== address || fault_wstrb_o !== write_strobes ||
-          fault_reserved_o !== reserved || fault_access_o || natv_nmi.valid || apb_nmi.valid) begin
+          fault_reserved_o !== reserved || fault_access_o || fault_code_o !== expected_code ||
+          rib.valid || apb_rib.valid) begin
         $fatal(1, "unexpected fault response for address %h", address);
       end
-      while (!mgmt_nmi.ready) @(posedge clk_i);
-      if (mgmt_nmi.rdata !== 32'd0) begin
+      while (!mgmt_rib.ready) @(posedge clk_i);
+      if (mgmt_rib.rdata !== 32'd0 || !mgmt_rib.resp_err ||
+          mgmt_rib.resp_code !== expected_code) begin
         $fatal(1, "fault response data must be zero");
       end
       @(negedge clk_i);
-      mgmt_nmi.valid = 1'b0;
+      mgmt_rib.valid = 1'b0;
       while (fault_valid_o) @(posedge clk_i);
     end
   endtask
@@ -67,43 +74,44 @@ module bus_fault_tb;
   task automatic expect_user_denied(input logic [31:0] address, input logic [3:0] write_strobes);
     begin
       @(negedge clk_i);
-      user_nmi.addr  = address;
-      user_nmi.wdata = 32'h5A5A_A5A5;
-      user_nmi.wstrb = write_strobes;
-      user_nmi.valid = 1'b1;
+      user_rib.addr  = address;
+      user_rib.wdata = 32'h5A5A_A5A5;
+      user_rib.wstrb = write_strobes;
+      user_rib.valid = 1'b1;
       while (!fault_valid_o) @(posedge clk_i);
-      if (!fault_access_o || fault_master_o != 2'd1 || natv_nmi.valid || apb_nmi.valid) begin
+      if (!fault_access_o || fault_master_o != 2'd1 || rib.valid || apb_rib.valid) begin
         $fatal(1, "user access was not denied locally");
       end
-      while (!user_nmi.ready) @(posedge clk_i);
-      if (user_nmi.rdata !== 32'd0) begin
+      while (!user_rib.ready) @(posedge clk_i);
+      if (user_rib.rdata !== 32'd0 || !user_rib.resp_err ||
+          user_rib.resp_code !== `SOC_RIB_RESP_PROTERR) begin
         $fatal(1, "denied user response data must be zero");
       end
       @(negedge clk_i);
-      user_nmi.valid = 1'b0;
+      user_rib.valid = 1'b0;
       while (fault_valid_o) @(posedge clk_i);
     end
   endtask
 
   initial begin
-    mgmt_nmi.valid = 1'b0;
-    mgmt_nmi.addr  = '0;
-    mgmt_nmi.wdata = '0;
-    mgmt_nmi.wstrb = '0;
-    user_nmi.valid = 1'b0;
-    user_nmi.addr  = '0;
-    user_nmi.wdata = '0;
-    user_nmi.wstrb = '0;
-    dma_nmi.valid  = 1'b0;
-    dma_nmi.addr   = '0;
-    dma_nmi.wdata  = '0;
-    dma_nmi.wstrb  = '0;
+    mgmt_rib.valid = 1'b0;
+    mgmt_rib.addr  = '0;
+    mgmt_rib.wdata = '0;
+    mgmt_rib.wstrb = '0;
+    user_rib.valid = 1'b0;
+    user_rib.addr  = '0;
+    user_rib.wdata = '0;
+    user_rib.wstrb = '0;
+    dma_rib.valid  = 1'b0;
+    dma_rib.addr   = '0;
+    dma_rib.wdata  = '0;
+    dma_rib.wstrb  = '0;
 
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 
-    expect_fault(32'h1000_F000, 4'hF, 1'b1);
-    expect_fault(32'hA000_0000, 4'h0, 1'b0);
+    expect_fault(32'h1000_F000, 4'hF, 1'b1, `SOC_RIB_RESP_RESERVED);
+    expect_fault(32'hA000_0000, 4'h0, 1'b0, `SOC_RIB_RESP_DECERR);
     expect_user_denied(32'h1000_B000, 4'hF);
     $display("bus fault responder test passed");
     $finish;

@@ -7,7 +7,7 @@ void ip_gpio_test(int argc, char **argv) {
     (void)argc;
     (void)argv;
 
-    printf("[NATV IP] gpio test\n");
+    printf("[RIB IP] gpio test\n");
 
     printf("[GPIO OE] %x\n", reg_gpio_oe);
     reg_gpio_oe = (uint32_t)0b1111;

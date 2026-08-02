@@ -1,0 +1,4 @@
+# Verilator uses functional standard-cell and IO models for ICS55.
++define+functional
+/cache/retrosoc/pdk/ics55/ics55_h7cr_functional.v
+/tech/ics55_io_sim_cells.sv

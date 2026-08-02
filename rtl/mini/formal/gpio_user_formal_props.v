@@ -6,11 +6,11 @@ module gpio_user_formal;
   (* anyseq *) (* gclk *)reg         clk_i;
   wire        rst_n_i;
   wire        f_past_valid;
-  wire        nmi_valid;
-  wire [31:0] nmi_addr;
-  wire [31:0] nmi_wdata;
-  wire [ 3:0] nmi_wstrb;
-  wire        nmi_ready;
+  wire        rib_valid;
+  wire [31:0] rib_addr;
+  wire [31:0] rib_wdata;
+  wire [ 3:0] rib_wstrb;
+  wire        rib_ready;
   wire [31:0] gpio_di;
   wire [31:0] gpio_oe;
   wire [31:0] gpio_do;
@@ -28,11 +28,11 @@ module gpio_user_formal;
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
       .f_past_valid(f_past_valid),
-      .nmi_valid   (nmi_valid),
-      .nmi_addr    (nmi_addr),
-      .nmi_wdata   (nmi_wdata),
-      .nmi_wstrb   (nmi_wstrb),
-      .nmi_ready   (nmi_ready),
+      .rib_valid   (rib_valid),
+      .rib_addr    (rib_addr),
+      .rib_wdata   (rib_wdata),
+      .rib_wstrb   (rib_wstrb),
+      .rib_ready   (rib_ready),
       .gpio_di     (gpio_di),
       .gpio_oe     (gpio_oe),
       .gpio_do     (gpio_do),
@@ -48,11 +48,11 @@ module gpio_user_formal;
   );
 
   always @(posedge clk_i) begin
-    if (f_past_valid && $past(rst_n_i && nmi_valid && !nmi_ready)) begin
-      assume (nmi_valid);
-      assume (nmi_addr == $past(nmi_addr));
-      assume (nmi_wdata == $past(nmi_wdata));
-      assume (nmi_wstrb == $past(nmi_wstrb));
+    if (f_past_valid && $past(rst_n_i && rib_valid && !rib_ready)) begin
+      assume (rib_valid);
+      assume (rib_addr == $past(rib_addr));
+      assume (rib_wdata == $past(rib_wdata));
+      assume (rib_wstrb == $past(rib_wstrb));
     end
 
     if (rst_n_i) begin

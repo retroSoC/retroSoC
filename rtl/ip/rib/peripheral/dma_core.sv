@@ -1,0 +1,282 @@
+// Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
+`include "soc_rib_defs.svh"
+
+module dma_core (
+    // verilog_format: off
+    input logic        clk_i,
+    input logic        rst_n_i,
+    input logic [2:0]  mode_i,
+    input logic [31:0] srcaddr_i,
+    input logic        srcincr_i,
+    input logic [31:0] dstaddr_i,
+    input logic        dstincr_i,
+    input logic [31:0] xferlen_i,
+    input logic        start_i,
+    input logic        stop_i,
+    input logic        reset_i,
+    output logic       done_o,
+    output logic       error_o,
+    output logic [2:0] error_code_o,
+    output logic [31:0] error_addr_o,
+    output logic [1:0] fsm_o,
+    dma_hw_trg_if.dut  hw_trg,
+    soc_rib_if.master  rib
+    // verilog_format: on
+);
+
+  // mode val
+  // 7-5: resv
+  // 4:   xpi rx fifo trg
+  // 3:   xpi tx fifo trg
+  // 2:   i2s  rx fifo trg
+  // 1:   i2s  tx fifo trg
+  // 0:   sft trg
+  localparam SFT_TRG = 3'd0;
+  localparam HWT_I2S_TX_TRG = 3'd1;
+  localparam HWT_I2S_RX_TRG = 3'd2;
+  localparam HWT_QSPI_TX_TRG = 3'd3;
+  localparam HWT_QSPI_RX_TRG = 3'd4;
+
+  localparam FSM_IDLE = 2'd0;
+  localparam FSM_XFER = 2'd1;
+  localparam FSM_DONE = 2'd2;
+
+  logic [1:0] s_fsm_d, s_fsm_q;
+  logic [31:0] s_xfer_cnt_d, s_xfer_cnt_q;
+  logic [31:0] s_src_addr_d, s_src_addr_q;
+  logic [31:0] s_dst_addr_d, s_dst_addr_q;
+  logic [31:0] s_rd_data_d, s_rd_data_q;
+  logic s_xfer_type_d, s_xfer_type_q;  // 0: rd 1: wr
+  logic s_xfer_done_d, s_xfer_done_q;
+  logic s_ctrl_stop_d, s_ctrl_stop_q;
+  // Registered RIB master outputs
+  logic s_rib_valid_d, s_rib_valid_q;
+  logic [31:0] s_rib_addr_d, s_rib_addr_q;
+  logic [31:0] s_rib_wdata_d, s_rib_wdata_q;
+  logic [3:0] s_rib_wstrb_d, s_rib_wstrb_q;
+
+  assign fsm_o     = s_fsm_q;
+  assign rib.valid = s_rib_valid_q;
+  assign rib.addr  = s_rib_addr_q;
+  assign rib.wdata = s_rib_wdata_q;
+  assign rib.wstrb = s_rib_wstrb_q;
+  always_comb begin
+    s_fsm_d       = s_fsm_q;
+    s_src_addr_d  = s_src_addr_q;
+    s_dst_addr_d  = s_dst_addr_q;
+    s_rd_data_d   = s_rd_data_q;
+    s_xfer_cnt_d  = s_xfer_cnt_q;
+    s_xfer_type_d = s_xfer_type_q;
+    s_xfer_done_d = s_xfer_done_q;
+    // rib if (registered outputs)
+    s_rib_valid_d = '0;
+    s_rib_addr_d  = s_rib_addr_q;
+    s_rib_wdata_d = s_rib_wdata_q;
+    s_rib_wstrb_d = '0;
+    // common
+    done_o        = '0;
+    error_o       = 1'b0;
+    error_code_o  = `SOC_RIB_RESP_OK;
+    error_addr_o  = s_rib_addr_q;
+    unique case (s_fsm_q)
+      FSM_IDLE: begin
+        if (start_i) begin
+          s_fsm_d       = FSM_XFER;
+          s_src_addr_d  = srcaddr_i;
+          s_dst_addr_d  = dstaddr_i;
+          s_xfer_cnt_d  = '0;
+          s_xfer_type_d = 1'b0;
+          s_xfer_done_d = 1'b1;
+        end
+      end
+      FSM_XFER: begin
+        if (~s_ctrl_stop_q) begin
+          if (~s_xfer_type_q) begin
+            unique case (mode_i)
+              HWT_I2S_RX_TRG: begin
+                if (~hw_trg.i2s_rx_proc && s_xfer_done_q) s_rib_valid_d = 1'b0;
+                else s_rib_valid_d = 1'b1;
+              end
+              HWT_QSPI_RX_TRG: begin
+                if (~hw_trg.qspi_rx_proc && s_xfer_done_q) s_rib_valid_d = 1'b0;
+                else s_rib_valid_d = 1'b1;
+              end
+              default: s_rib_valid_d = 1'b1;
+            endcase
+            s_rib_addr_d = s_src_addr_q;
+            if (rib.valid && rib.ready) begin
+              s_rib_valid_d = 1'b0;
+              if (rib.resp_err) begin
+                s_fsm_d      = FSM_IDLE;
+                error_o      = 1'b1;
+                error_code_o = rib.resp_code;
+              end else begin
+                s_xfer_type_d = 1'b1;
+                s_xfer_done_d = 1'b1;
+                s_rd_data_d   = rib.rdata;
+              end
+            end else if (rib.valid) begin
+              s_xfer_done_d = 1'b0;
+            end
+          end else begin
+            unique case (mode_i)
+              HWT_I2S_TX_TRG: begin
+                if (~hw_trg.i2s_tx_proc && s_xfer_done_q) s_rib_valid_d = 1'b0;
+                else s_rib_valid_d = 1'b1;
+              end
+              HWT_QSPI_TX_TRG: begin
+                if (~hw_trg.qspi_tx_proc && s_xfer_done_q) s_rib_valid_d = 1'b0;
+                else s_rib_valid_d = 1'b1;
+              end
+              default: s_rib_valid_d = 1'b1;
+            endcase
+            s_rib_addr_d  = s_dst_addr_q;
+            s_rib_wdata_d = s_rd_data_q;
+            s_rib_wstrb_d = '1;
+            if (rib.valid && rib.ready) begin
+              s_rib_valid_d = 1'b0;
+              if (rib.resp_err) begin
+                s_fsm_d      = FSM_IDLE;
+                error_o      = 1'b1;
+                error_code_o = rib.resp_code;
+              end else begin
+                s_xfer_type_d = 1'b0;
+                s_xfer_done_d = 1'b1;
+                // when src rd+wr xfer done
+                if ((s_xfer_cnt_q + 32'd1) == xferlen_i) begin
+                  s_xfer_cnt_d = '0;
+                  s_fsm_d      = FSM_DONE;
+                end else begin
+                  s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
+                  if (srcincr_i) s_src_addr_d = s_src_addr_q + 32'd4;
+                  if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 32'd4;
+                end
+              end
+            end else if (rib.valid) s_xfer_done_d = 1'b0;
+          end
+        end else begin
+          if (reset_i) s_fsm_d = FSM_IDLE;
+        end
+      end
+      FSM_DONE: begin
+        done_o  = 1'b1;
+        s_fsm_d = FSM_IDLE;
+      end
+      default: begin
+        s_fsm_d       = s_fsm_q;
+        s_src_addr_d  = s_src_addr_q;
+        s_dst_addr_d  = s_dst_addr_q;
+        s_rd_data_d   = s_rd_data_q;
+        s_xfer_cnt_d  = s_xfer_cnt_q;
+        s_xfer_type_d = s_xfer_type_q;
+        s_xfer_done_d = s_xfer_done_q;
+        // rib if
+        s_rib_valid_d = '0;
+        s_rib_addr_d  = '0;
+        s_rib_wdata_d = '0;
+        s_rib_wstrb_d = '0;
+        // common
+        done_o        = '0;
+        error_o       = 1'b0;
+        error_code_o  = `SOC_RIB_RESP_OK;
+        error_addr_o  = s_rib_addr_q;
+      end
+    endcase
+  end
+  dffr #(2) u_fsm_dffr (
+      clk_i,
+      rst_n_i,
+      s_fsm_d,
+      s_fsm_q
+  );
+
+  dffr #(32) u_xfer_cnt_dffr (
+      clk_i,
+      rst_n_i,
+      s_xfer_cnt_d,
+      s_xfer_cnt_q
+  );
+
+  dffr #(32) u_src_addr_dffr (
+      clk_i,
+      rst_n_i,
+      s_src_addr_d,
+      s_src_addr_q
+  );
+
+  dffr #(32) u_dst_addr_dffr (
+      clk_i,
+      rst_n_i,
+      s_dst_addr_d,
+      s_dst_addr_q
+  );
+
+  dffr #(32) u_rd_data_dffr (
+      clk_i,
+      rst_n_i,
+      s_rd_data_d,
+      s_rd_data_q
+  );
+
+  dffr #(1) u_xfer_type_dffr (
+      clk_i,
+      rst_n_i,
+      s_xfer_type_d,
+      s_xfer_type_q
+  );
+
+  dffr #(1) u_xfer_done_dffr (
+      clk_i,
+      rst_n_i,
+      s_xfer_done_d,
+      s_xfer_done_q
+  );
+
+  // control the xfer
+  always_comb begin
+    s_ctrl_stop_d = s_ctrl_stop_q;
+    if (stop_i) s_ctrl_stop_d = ~s_ctrl_stop_q;
+  end
+  dffr #(1) u_ctrl_stop_dffr (
+      clk_i,
+      rst_n_i,
+      s_ctrl_stop_d,
+      s_ctrl_stop_q
+  );
+
+  // Registered RIB master outputs
+  dffr #(1) u_rib_valid_dffr (
+      clk_i,
+      rst_n_i,
+      s_rib_valid_d,
+      s_rib_valid_q
+  );
+  dffr #(32) u_rib_addr_dffr (
+      clk_i,
+      rst_n_i,
+      s_rib_addr_d,
+      s_rib_addr_q
+  );
+  dffr #(32) u_rib_wdata_dffr (
+      clk_i,
+      rst_n_i,
+      s_rib_wdata_d,
+      s_rib_wdata_q
+  );
+  dffr #(4) u_rib_wstrb_dffr (
+      clk_i,
+      rst_n_i,
+      s_rib_wstrb_d,
+      s_rib_wstrb_q
+  );
+
+endmodule

@@ -50,6 +50,9 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     testbench = (tmp_path / "rtl/retrosoc_asic_tb_bindings.svh").read_text(
         encoding="utf-8"
     )
+    verilator = (tmp_path / "rtl/retrosoc_asic_verilator_bindings.svh").read_text(
+        encoding="utf-8"
+    )
 
     assert "inout extclk_i_pad," in ports
     assert "input xi_i_pad," in ports
@@ -60,6 +63,8 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert ".gpio_15_io_pad()" in fpga
     assert ".gpio_24_io_pad(s_psram_dat1)" in testbench
     assert testbench.count(".gpio_24_io_pad(") == 1
+    assert ".sdram_clk_o_pad(s_sdram_clk)" in verilator
+    assert ".sdram_dq15_io_pad(s_sdram_dq[15])" in verilator
     assert "user_gpio_" not in ports
     assert "user_gpio_" not in pads
     assert "user_gpio_" not in testbench

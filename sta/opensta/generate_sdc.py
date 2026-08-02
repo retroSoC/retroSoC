@@ -63,7 +63,7 @@ def render(domains: list[dict[str, Any]], reset_ports: list[str]) -> str:
         "# Core-STA baseline: pad/package timing is intentionally excluded.",
         "",
         "proc require_pins {label name} {",
-        "  set objects [get_pins $name]",
+        "  set objects [get_pins -quiet $name]",
         "  if {$objects eq \"\"} {",
         "    error \"required SDC object is missing: $label ($name)\"",
         "  }",

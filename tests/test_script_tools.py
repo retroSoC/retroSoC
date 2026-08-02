@@ -38,6 +38,7 @@ from scripts.generate_mpw import (  # noqa: E402
 )
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts import regress  # noqa: E402
+from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
     NIGHTLY_COMMANDS,
     PDK_PR_PROFILES,
@@ -111,6 +112,14 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert str(ROOT / "rtl/managed/clusterip") in cluster
     assert (tmp_path / "core_hazard3.fl").is_file()
     assert (tmp_path / "core_picorv32.fl").is_file()
+    assert {
+        "pdk_gf180.fl",
+        "pdk_ics55.fl",
+        "pdk_ics55_verilator.fl",
+        "pdk_ics55_yosys.fl",
+        "pdk_ihp130.fl",
+        "pdk_sky130.fl",
+    }.issubset({path.name for path in generated})
 
 
 def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> None:
@@ -170,13 +179,13 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     (user_extensions / "rtl").mkdir(parents=True)
 
     bus_filelist = tmp_path / "bus.fl"
-    nmi2apb_filelist = tmp_path / "nmi2apb.fl"
+    rib2apb_filelist = tmp_path / "rib2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
-        "nmi2apb", nmi2apb_filelist, memory_map, topology, user_extensions
+        "rib2apb", rib2apb_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
         "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
@@ -189,22 +198,22 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     )
 
     bus = parse_filelists([bus_filelist], require_files=False)
-    nmi2apb = parse_filelists([nmi2apb_filelist], require_files=False)
+    rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
-    assert ROOT / "rtl/ip/native/interconnect/nmi_regslice.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_regslice.sv" in bus.files
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
-    assert ROOT / "rtl/ip/native/interconnect/nmi2apb.sv" in nmi2apb.files
-    assert ROOT / "rtl/mini/formal/nmi2apb_formal.sv" in nmi2apb.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in nmi2apb.files
-    assert ROOT / "rtl/ip/native/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/rib/interconnect/rib2apb.sv" in rib2apb.files
+    assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
+    assert ROOT / "rtl/ip/rib/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/native/peripheral/gpio.sv" in gpio_user.files
+    assert ROOT / "rtl/ip/rib/peripheral/gpio.sv" in gpio_user.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
     assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
 
@@ -239,7 +248,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "nmi2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -261,7 +270,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"bus={tmp_path / 'bus'}",
         "--proof",
-        f"nmi2apb={tmp_path / 'nmi2apb'}",
+        f"rib2apb={tmp_path / 'rib2apb'}",
         "--proof",
         f"sysctrl={tmp_path / 'sysctrl'}",
         "--proof",
@@ -495,7 +504,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/native/peripheral/sysctrl.sv"),
+        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("rtl/managed/clusterip/common/rtl/utils/register.sv"),
@@ -509,7 +518,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/native/peripheral/sysctrl.sv"),
+        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
     ]
@@ -611,8 +620,21 @@ def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
     assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
     assert "`ifdef CORE_PICORV32" in wrapper
     assert "`elsif CORE_HAZARD3" in wrapper
-    assert "ahbl2nmi u_ahbl2nmi" in wrapper
+    assert "ahbl2soc_rib u_ahbl2soc_rib" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
+
+
+def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    profile = (ROOT / "configs/benchmark/ihp130-hazard3.mk").read_text(encoding="utf-8")
+    benchmark = (ROOT / "app/apps/benchmark/main.c").read_text(encoding="utf-8")
+
+    assert "PDK_BEHAV       ?= NO" in makefile
+    assert "PDK_BEHAV HAVE_SVA" in makefile
+    assert "PDK_BEHAV=YES is for functional simulation" in makefile
+    assert "HAVE_SRAM_MACRO := YES" in profile
+    assert "PDK_BEHAV       := YES" in profile
+    assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
 
 
 def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
@@ -663,7 +685,7 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
 
 
 def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
-    assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "SKY130"}
+    assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
     for profile in PDK_PR_PROFILES.values():
         commands = pdk_pr_commands(profile)
         command_values = [values for _, values in commands]
@@ -800,6 +822,109 @@ def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
     assert data["exit_code"] == 0
     assert data["duration_seconds"] >= 0
     assert log.read_text(encoding="utf-8") == "flow output\n"
+
+
+def test_run_flow_adds_carriage_return_when_terminal_disables_onlcr(monkeypatch) -> None:
+    class Terminal(io.StringIO):
+        def isatty(self) -> bool:
+            return True
+
+        def fileno(self) -> int:
+            return 42
+
+    terminal = Terminal()
+    monkeypatch.setattr(run_flow.sys, "stdout", terminal)
+    monkeypatch.setattr(
+        run_flow.termios,
+        "tcgetattr",
+        lambda descriptor: [0, run_flow.termios.OPOST, 0, 0, 0, 0, 0],
+    )
+
+    run_flow.write_console_output("first\nsecond\n")
+
+    assert terminal.getvalue() == "first\r\nsecond\r\n"
+
+
+def test_run_flow_keeps_newlines_when_terminal_maps_them_to_carriage_return(monkeypatch) -> None:
+    class Terminal(io.StringIO):
+        def isatty(self) -> bool:
+            return True
+
+        def fileno(self) -> int:
+            return 42
+
+    terminal = Terminal()
+    monkeypatch.setattr(run_flow.sys, "stdout", terminal)
+    monkeypatch.setattr(
+        run_flow.termios,
+        "tcgetattr",
+        lambda descriptor: [0, run_flow.termios.OPOST | run_flow.termios.ONLCR, 0, 0, 0, 0, 0],
+    )
+
+    run_flow.write_console_output("first\nsecond\n")
+
+    assert terminal.getvalue() == "first\nsecond\n"
+
+
+def test_run_flow_byte_output_adds_carriage_return_only_for_terminal(monkeypatch) -> None:
+    class Terminal(io.StringIO):
+        def __init__(self) -> None:
+            super().__init__()
+            self.buffer = io.BytesIO()
+
+        def isatty(self) -> bool:
+            return True
+
+        def fileno(self) -> int:
+            return 42
+
+    terminal = Terminal()
+    monkeypatch.setattr(run_flow.sys, "stdout", terminal)
+    monkeypatch.setattr(
+        run_flow.termios,
+        "tcgetattr",
+        lambda descriptor: [0, run_flow.termios.OPOST, 0, 0, 0, 0, 0],
+    )
+
+    run_flow.write_console_bytes(b"first\nsecond\n")
+
+    assert terminal.buffer.getvalue() == b"first\r\nsecond\r\n"
+
+
+def test_run_flow_streams_bytes_without_waiting_for_newline(tmp_path: Path) -> None:
+    log = tmp_path / "flow.log"
+    result = tmp_path / "result.json"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts/run_flow.py"),
+            "--tool",
+            "unit",
+            "--stream-bytes",
+            "--log",
+            str(log),
+            "--result",
+            str(result),
+            "--",
+            sys.executable,
+            "-c",
+            "import os, time; os.write(1, b'A'); time.sleep(2); os.write(1, b'\\xffB')",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert process.stdout is not None
+    started = time.monotonic()
+
+    assert process.stdout.read(1) == b"A"
+    assert time.monotonic() - started < 1
+
+    remaining, stderr = process.communicate(timeout=10)
+    assert process.returncode == 0
+    assert stderr == b""
+    assert remaining == b"\xffB"
+    assert log.read_bytes() == b"A\xffB"
+    assert json.loads(result.read_text(encoding="utf-8"))["status"] == "passed"
 
 
 def test_run_flow_records_interruption(tmp_path: Path) -> None:

@@ -73,6 +73,39 @@ module tc_pdk_cells_tb;
   );
 `endif
 
+`ifdef PDK_ICS55
+  logic ics55_od_i;
+  logic ics55_od_oe;
+  logic ics55_od_mode;
+  logic ics55_pu;
+  logic ics55_pd;
+  tri   ics55_pad;
+  logic [2:0] ics55_mux_inputs;
+  logic       ics55_mux_y;
+
+  P65_1233_PBMUX u_ics55_open_drain_pad (
+      .C  (),
+      .A  (),
+      .PAD(ics55_pad),
+      .IE (1'b0),
+      .CS (1'b1),
+      .I  (ics55_od_i),
+      .OE (ics55_od_oe),
+      .OD (ics55_od_mode),
+      .PU (ics55_pu),
+      .PD (ics55_pd),
+      .DS0(1'b0),
+      .DS1(1'b1)
+  );
+
+  MUXI2X0P5H7R u_ics55_muxi2 (
+      .A (ics55_mux_inputs[0]),
+      .B (ics55_mux_inputs[1]),
+      .S0(ics55_mux_inputs[2]),
+      .Y (ics55_mux_y)
+  );
+`endif
+
   assign in_pad      = in_drive_en ? in_drive : 1'bz;
   assign tri_pad     = tri_drive_en ? tri_drive : 1'bz;
   assign schmitt_pad = schmitt_drive_en ? schmitt_drive : 1'bz;
@@ -168,6 +201,14 @@ module tc_pdk_cells_tb;
     gf180_seq_d       = 1'b0;
     gf180_seq_reset_n = 1'b0;
 `endif
+`ifdef PDK_ICS55
+    ics55_od_i    = 1'b1;
+    ics55_od_oe   = 1'b0;
+    ics55_od_mode = 1'b1;
+    ics55_pu      = 1'b0;
+    ics55_pd      = 1'b0;
+    ics55_mux_inputs = 3'b000;
+`endif
 
     #5;
     in_drive_en = 1'b1;
@@ -191,7 +232,11 @@ module tc_pdk_cells_tb;
     tri_c2p_en   = 1'b1;
     #5;
     expect_bit(tri_pad, 1'b1, "tri-state pad output");
+`ifdef PDK_ICS55
+    expect_bit(tri_p2c, 1'b0, "ICS55 tri-state output disables input receiver");
+`else
     expect_bit(tri_p2c, 1'b1, "tri-state output readback");
+`endif
     tri_c2p_en = 1'b0;
     #5;
     if (tri_pad !== 1'bz) begin
@@ -243,6 +288,33 @@ module tc_pdk_cells_tb;
     expect_bit(gf180_dffq_q, 1'b1, "GF180 DFF clock capture");
     expect_bit(gf180_dffrnq_q, 1'b1, "GF180 reset-low DFF clock capture");
     expect_bit(gf180_dffsnq_q, 1'b1, "GF180 reset-high DFF clock capture");
+`endif
+`ifdef PDK_ICS55
+    ics55_od_oe = 1'b1;
+    #5;
+    if (ics55_pad !== 1'bz) begin
+      $fatal(1, "ICS55 open-drain pad did not release high data");
+    end
+    ics55_od_i = 1'b0;
+    #5;
+    expect_bit(ics55_pad, 1'b0, "ICS55 open-drain low drive");
+    ics55_od_oe = 1'b0;
+    ics55_pu    = 1'b1;
+    #5;
+    expect_bit(ics55_pad, 1'b1, "ICS55 pull-up");
+    ics55_pu = 1'b0;
+    ics55_pd = 1'b1;
+    #5;
+    expect_bit(ics55_pad, 1'b0, "ICS55 pull-down");
+    for (int mux_vector = 0; mux_vector < 8; mux_vector++) begin
+      ics55_mux_inputs = mux_vector[2:0];
+      #1;
+      expect_bit(
+          ics55_mux_y,
+          ~(ics55_mux_inputs[2] ? ics55_mux_inputs[1] : ics55_mux_inputs[0]),
+          $sformatf("ICS55 MUXI2 vector %0d", mux_vector)
+      );
+    end
 `endif
 
     $display("technology IO and clock cell test passed");

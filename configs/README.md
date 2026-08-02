@@ -5,10 +5,16 @@ selects SoC, PDK, ISA, CSR support, application, linker layout, and the
 supported validation tier. The user-extension fabric is fixed; the management
 core defaults to `HAZARD3` and may be set to `PICORV32` with `CORE`.
 
-`ci/` contains pull-request profiles and `cluster/` contains configurations
-requiring site tools or PDKs. The nightly workflow reuses the IHP130 CI profile.
+`ci/` contains pull-request profiles, `cluster/` contains configurations
+requiring site tools or PDKs, and `benchmark/` contains fixed-workload baseline
+profiles. The nightly workflow reuses the IHP130 CI profile.
 Start builds from a committed profile rather than setting an unreviewed mix of
 variables on the command line.
+
+`PDK_BEHAV=YES` selects technology-wrapper functional models for behavioral
+simulation. It is a simulation-only setting, participates in the build variant
+key, and is invalid with Yosys synthesis. Profiles that execute from an SRAM
+macro must select either this mode or a qualified macro timing model.
 
 For supported profiles and commands, see the root [README](../README.md) and
 [agent contract](../AGENTS.md).

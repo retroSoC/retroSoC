@@ -1,0 +1,114 @@
+// Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
+`include "mmap_define.svh"
+
+interface sdram_if ();
+  logic        clk_o;
+  logic        cke_o;
+  logic        cs_n_o;
+  logic        ras_n_o;
+  logic        cas_n_o;
+  logic        we_n_o;
+  logic [ 1:0] ba_o;
+  logic [12:0] addr_o;
+  logic [ 1:0] dqm_o;
+  logic        oe_o;
+  logic [15:0] dq_i;
+  logic [15:0] dq_o;
+
+  modport dut(
+      output clk_o,
+      output cke_o,
+      output cs_n_o,
+      output ras_n_o,
+      output cas_n_o,
+      output we_n_o,
+      output ba_o,
+      output addr_o,
+      output dqm_o,
+      output oe_o,
+      input dq_i,
+      output dq_o
+  );
+  // verilog_format: on
+endinterface
+
+
+module rib_sdram (
+    // verilog_format: off
+    input logic  clk_i,
+    input logic  rst_n_i,
+    rib_if.slave rib,
+    sdram_if.dut sdram
+    // verilog_format: on
+);
+
+  logic       s_sdram_reg_sel;
+  logic [1:0] s_sdram_clkdiv;
+  logic       s_sdram_clk;
+  logic       s_fir_edge;
+  logic       s_sec_edge;
+
+  // interface
+  rib_if u_reg_rib_if ();
+  rib_if u_mem_rib_if ();
+
+  // rib mux
+  assign s_sdram_reg_sel    = `SOC_ADDR_IS_RIB_SDRAM(rib.addr);
+  assign u_reg_rib_if.valid = rib.valid && s_sdram_reg_sel;
+  assign u_reg_rib_if.addr  = rib.addr;
+  assign u_reg_rib_if.wdata = rib.wdata;
+  assign u_reg_rib_if.wstrb = rib.wstrb;
+
+  assign u_mem_rib_if.valid = rib.valid && (~s_sdram_reg_sel);
+  assign u_mem_rib_if.addr  = rib.addr;
+  assign u_mem_rib_if.wdata = rib.wdata;
+  assign u_mem_rib_if.wstrb = rib.wstrb;
+
+  // verilog_format: off
+  assign rib.ready = (u_reg_rib_if.valid & u_reg_rib_if.ready) |
+                     (u_mem_rib_if.valid  & u_mem_rib_if.ready);
+
+  assign rib.rdata = ({32{(u_reg_rib_if.valid & u_reg_rib_if.ready)}}  & u_reg_rib_if.rdata) |
+                     ({32{(u_mem_rib_if.valid  & u_mem_rib_if.ready)}} & u_mem_rib_if.rdata);
+  // verilog_format: on
+
+
+  sdram_reg u_sdram_reg (
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .rib     (u_reg_rib_if),
+      .clkdiv_o(s_sdram_clkdiv)
+  );
+
+
+  sdram_clkgen u_sdram_clkgen (
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
+      .div_i     (s_sdram_clkdiv),
+      .clk_o     (s_sdram_clk),
+      .fir_edge_o(s_fir_edge),
+      .sec_edge_o(s_sec_edge)
+  );
+
+
+  sdram_core u_sdram_core (
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .fir_edge_i (s_fir_edge),
+      .sec_edge_i (s_sec_edge),
+      .sdram_clk_i(s_sdram_clk),
+      .rib        (u_mem_rib_if),
+      .sdram      (sdram)
+  );
+
+
+endmodule

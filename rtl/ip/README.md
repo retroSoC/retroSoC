@@ -1,8 +1,8 @@
-# Native and Experimental IP
+# RIB and Experimental IP
 
 This directory owns project RTL IP.
 
-native groups maintained blocks by function: interconnect, util, memory,
+rib groups maintained blocks by function: interconnect, util, memory,
 storage, serial, multimedia, and peripheral. The Mini SoC selects active
 sources explicitly in rtl/mini/filelist/ip.fl, whose source order is part of
 the build contract.

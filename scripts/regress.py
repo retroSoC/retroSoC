@@ -58,6 +58,7 @@ NIGHTLY_PROFILES = PR_PROFILES
 PDK_PR_PROFILES = {
     "GF180": "configs/ci/gf180.mk",
     "IHP130": "configs/ci/ihp130.mk",
+    "ICS55": "configs/ci/ics55.mk",
     "SKY130": "configs/ci/sky130.mk",
 }
 

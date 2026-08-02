@@ -283,7 +283,7 @@ void ip_norflash_test(int argc, char **argv) {
     (void)argc;
     (void)argv;
 
-    printf("[NATV IP] qspi nor flash test\n");
+    printf("[RIB IP] qspi nor flash test\n");
 
     QSPI0_InitStruct_t qspi0 = {
         (uint32_t)0,   (uint32_t)0b0001, (uint32_t)0,  (uint32_t)250,

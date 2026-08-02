@@ -11,6 +11,7 @@
 *.ddb
 *.fst
 *.txt
+*.demo
 !requirements/
 !requirements/*.txt
 *.gtkw
@@ -61,6 +62,8 @@ hazard3
 def.fl
 *yosys*.fl
 *verilator*.fl
+!rtl/filelist/pdk_ics55_yosys.fl
+!rtl/filelist/pdk_ics55_verilator.fl
 minirv.sv
 user_design
 *.zip

@@ -33,12 +33,9 @@ set abc_comb_script   [processAbcScript $abc_combinational_script]
 # read liberty files and prepare some variables
 source $script_dir/init_tech.tcl
 
-yosys plugin -i slang
-
 # # read design
 yosys read_slang --top $top_design -F $sv_flist \
-        --compat-mode --keep-hierarchy \
-        --allow-use-before-declare --ignore-timing --ignore-unknown-modules
+        --keep-hierarchy --allow-use-before-declare --ignore-initial --ignore-timing
 
 # # blackbox requested modules
 # if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {

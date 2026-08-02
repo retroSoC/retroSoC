@@ -65,8 +65,8 @@ gen_iverilog_filelist: $(IVERILOG_BEHV_FLIST)
 tech-cell-test: $(FILELIST_STAMP) $(TECH_CELL_TEST) $(ROOT_PATH)/rtl/tech/tc_io.sv \
 	$(ROOT_PATH)/rtl/tech/tc_clk.sv
 	@case "$(PDK)" in \
-		GF180|SKY130) ;; \
-		*) echo "tech-cell-test supports PDK=GF180 or PDK=SKY130" >&2; exit 2 ;; \
+		GF180|SKY130|ICS55) ;; \
+		*) echo "tech-cell-test supports PDK=GF180, SKY130, or ICS55" >&2; exit 2 ;; \
 	esac
 	@mkdir -p $(TECH_CELL_TEST_DIR)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-tech-cells \

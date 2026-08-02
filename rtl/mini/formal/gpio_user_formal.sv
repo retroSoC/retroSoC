@@ -5,11 +5,11 @@ module gpio_user_formal_design (
     input  logic        clk_i,
     output logic        rst_n_i,
     output logic        f_past_valid,
-    output logic        nmi_valid,
-    output logic [31:0] nmi_addr,
-    output logic [31:0] nmi_wdata,
-    output logic [ 3:0] nmi_wstrb,
-    output logic        nmi_ready,
+    output logic        rib_valid,
+    output logic [31:0] rib_addr,
+    output logic [31:0] rib_wdata,
+    output logic [ 3:0] rib_wstrb,
+    output logic        rib_ready,
     output logic [31:0] gpio_di,
     output logic [31:0] gpio_oe,
     output logic [31:0] gpio_do,
@@ -24,14 +24,14 @@ module gpio_user_formal_design (
     output logic [31:0] native_do
 );
 
-  nmi_if nmi ();
+  rib_if rib ();
   gpio_if gpio ();
   user_gpio_if user_gpio ();
 
-  (* anyseq *)logic        f_nmi_valid;
-  (* anyseq *)logic [31:0] f_nmi_addr;
-  (* anyseq *)logic [31:0] f_nmi_wdata;
-  (* anyseq *)logic [ 3:0] f_nmi_wstrb;
+  (* anyseq *)logic        f_rib_valid;
+  (* anyseq *)logic [31:0] f_rib_addr;
+  (* anyseq *)logic [31:0] f_rib_wdata;
+  (* anyseq *)logic [ 3:0] f_rib_wstrb;
   (* anyseq *)logic [31:0] f_gpio_di;
   (* anyseq *)logic [31:0] f_alt0_do;
   (* anyseq *)logic [31:0] f_alt0_oe;
@@ -40,10 +40,10 @@ module gpio_user_formal_design (
   (* anyseq *)logic [31:0] f_user_do;
   (* anyseq *)logic [31:0] f_user_oe;
 
-  assign nmi.valid      = f_nmi_valid;
-  assign nmi.addr       = f_nmi_addr;
-  assign nmi.wdata      = f_nmi_wdata;
-  assign nmi.wstrb      = f_nmi_wstrb;
+  assign rib.valid      = f_rib_valid;
+  assign rib.addr       = f_rib_addr;
+  assign rib.wdata      = f_rib_wdata;
+  assign rib.wstrb      = f_rib_wstrb;
   assign gpio.di_i      = f_gpio_di;
   assign gpio.alt0_do_i = f_alt0_do;
   assign gpio.alt0_oe_i = f_alt0_oe;
@@ -52,11 +52,11 @@ module gpio_user_formal_design (
   assign user_gpio.do_o = f_user_do;
   assign user_gpio.oe_o = f_user_oe;
 
-  assign nmi_valid      = nmi.valid;
-  assign nmi_addr       = nmi.addr;
-  assign nmi_wdata      = nmi.wdata;
-  assign nmi_wstrb      = nmi.wstrb;
-  assign nmi_ready      = nmi.ready;
+  assign rib_valid      = rib.valid;
+  assign rib_addr       = rib.addr;
+  assign rib_wdata      = rib.wdata;
+  assign rib_wstrb      = rib.wstrb;
+  assign rib_ready      = rib.ready;
   assign gpio_di        = gpio.di_i;
   assign gpio_oe        = gpio.oe_o;
   assign gpio_do        = gpio.do_o;
@@ -70,10 +70,10 @@ module gpio_user_formal_design (
   assign native_oe      = u_dut.s_gpio_native_oe;
   assign native_do      = u_dut.s_gpio_native_out;
 
-  nmi_gpio u_dut (
+  rib_gpio u_dut (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
-      .nmi      (nmi),
+      .rib      (rib),
       .gpio     (gpio),
       .user_gpio(user_gpio)
   );

@@ -32,6 +32,6 @@ sta: $(OPENSTA_SDC) | manifest
 		--env 'OPENSTA_LINK_LIBS=$(OPENSTA_LINK_LIBS)' --env 'OPENSTA_SRAM_LIBS=$(OPENSTA_SRAM_LIBS)' \
 		--env OPENSTA_SDC=$(OPENSTA_SDC) --env OPENSTA_REPORT=$(OPENSTA_REPORT) \
 		--env OPENSTA_METRICS=$(OPENSTA_METRICS) -- \
-		$(OPENSTA) $(ROOT_PATH)/sta/opensta/opensta.tcl -threads $(OPENSTA_THREADS)
+		$(OPENSTA) -no_init -exit -threads $(OPENSTA_THREADS) $(ROOT_PATH)/sta/opensta/opensta.tcl
 
 .PHONY: sta

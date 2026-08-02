@@ -1,0 +1,77 @@
+{
+  "entries": [
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/managed/mpw/core/username1/kianV/kianv_harris_mc_edition.v:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username1.u_kianv_harris_mc_edition.alu_valid'",
+      "signature": "1558b81c8599cb8f"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/ip/native/storage/xpi.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_xpi_if.io_di_i'",
+      "signature": "411d9ab46fef9d7d"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/managed/mpw/core/username1/kianV/kianv_harris_mc_edition.v:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username1.u_kianv_harris_mc_edition.ALUSrcA'",
+      "signature": "5b2c034f9f3213b7"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/managed/mpw/core/username4/serv/serv_synth_wrapper.v:<line>: Instance has missing pin: 'o_ren'",
+      "signature": "704b76c39b529025"
+    },
+    {
+      "count": 2,
+      "example": "CMPCONST:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Comparison is constant due to limited range",
+      "signature": "813090adc9f1e8a8"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/managed/mpw/core/username1/kianV/kianv_harris_mc_edition.v:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username1.u_kianv_harris_mc_edition.ALUSrcB'",
+      "signature": "8c87143c9aa63807"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/managed/mpw/core/username1/kianV/alu_decoder.v:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username1.u_kianv_harris_mc_edition.control_unit_I.alu_decoder_I.ALUControl'",
+      "signature": "a7cc0b675cb3537c"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/managed/mpw/core/username1/kianV/alu.v:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_user_core_top.u_user_core_design_username1.u_kianv_harris_mc_edition.datapath_unit_I.alu_I.is_sub'",
+      "signature": "b808f41166ecb8fb"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Operator COND expects 32 bits on the Conditional True, but Conditional True's LT generates 1 bits.",
+      "signature": "c1b20cb9d552ca20"
+    },
+    {
+      "count": 14,
+      "example": "WIDTHTRUNC:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Logical operator COND expects 1 bit on the Conditional Test, but Conditional Test's VARREF 'FLUSH' generates 2 bits.",
+      "signature": "c7ca04782912d519"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
+      "signature": "c963ef155f9a032c"
+    },
+    {
+      "count": 3,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/native/storage/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
+      "signature": "ef9f314dab2ac31d"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHEXPAND:$ROOT/rtl/managed/mpw/core/username6/darkriscv/darkriscv.v:<line>: Operator COND expects 32 bits on the Conditional True, but Conditional True's LTS generates 1 bits.",
+      "signature": "f505968343b665e3"
+    },
+    {
+      "count": 35,
+      "example": "SPECIFYIGN:$ROOT/pdk/icsprout55-pdk/IP/STD_cell/ics55_LLSC_H7C_V1p10C100/ics55_LLSC_H7CR/verilog/ics55_LLSC_H7CR.v:<line>: Ignoring unsupported: specify block construct",
+      "signature": "fda0ac7e720e6088"
+    }
+  ],
+  "profile": "ics55",
+  "schema_version": 1,
+  "tool": "verilator"
+}

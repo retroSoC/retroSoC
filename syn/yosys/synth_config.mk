@@ -21,7 +21,7 @@ export YOSYS_KEEP_HIER_INST :=  "t:tc_clk*$$*" \
 								"t:tc_sram*$$*" \
 								"t:core_*$$*" \
 								"t:bus*$$*" \
-								"t:ip_natv_wrapper*$$*" \
+								"t:ip_rib_wrapper*$$*" \
 								"t:ip_apb_wrapper*$$*" \
 								"t:apb_spi_master*$$*" \
 								"t:spi_flash*$$*" \
