@@ -15,6 +15,7 @@ module nmi2apb (
     input  logic       clk_i,
     input  logic       rst_n_i,
     nmi_if.slave       nmi,
+    output logic       resp_err_o,
 `include "soc_apb_ports.svh"
     // verilog_format: on
 );
@@ -24,7 +25,7 @@ module nmi2apb (
   localparam FSM_ENAB = 2'd2;
 
   logic [31:0] s_rd_data;
-  logic s_xfer_valid, s_xfer_ready;
+  logic s_xfer_valid, s_xfer_ready, s_xfer_error;
   logic s_mem_valid_re;
   logic [1:0] s_fsm_d, s_fsm_q;
 
@@ -63,8 +64,9 @@ module nmi2apb (
       s_fsm_q
   );
 
-  assign nmi.ready = nmi.valid && (s_fsm_q == FSM_ENAB) && s_xfer_ready;
-  assign nmi.rdata = {32{nmi.ready}} & s_rd_data;
+  assign nmi.ready  = nmi.valid && (s_fsm_q == FSM_ENAB) && s_xfer_ready;
+  assign nmi.rdata  = {32{nmi.ready}} & s_rd_data;
+  assign resp_err_o = nmi.ready && s_xfer_error;
 
   // Capture slave-select one-hot at FSM_SETP for cleaner response mux.
   `include "soc_apb_select_routes.svh"

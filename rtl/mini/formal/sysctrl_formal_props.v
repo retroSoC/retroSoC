@@ -133,9 +133,11 @@ module sysctrl_formal;
       end
       if ($past(rst_n_i && fault_valid)) begin
         assert (fault_pending);
-        assert (fault_write == (|$past(fault_wstrb)));
-        assert (fault_reason == ($past(fault_reserved) ? 3'd2 : 3'd1));
-        assert (fault_addr_q == $past(fault_addr));
+        if (!$past(fault_pending)) begin
+          assert (fault_write == (|$past(fault_wstrb)));
+          assert (fault_reason == ($past(fault_reserved) ? 3'd2 : 3'd1));
+          assert (fault_addr_q == $past(fault_addr));
+        end
         if (!$past(&fault_count)) begin
           assert (fault_count == $past(fault_count) + 32'd1);
         end

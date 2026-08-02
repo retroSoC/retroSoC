@@ -15,7 +15,7 @@ module mgmt_core_wrapper (
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [31:0] irq_i,
-    nmi_if.master       nmi
+    soc_nmi_if.master   nmi
     // verilog_format: on
 );
 
@@ -62,7 +62,7 @@ module mgmt_core_wrapper (
   logic s_pwrup_req;
   // verilog_format: off
   ahbl_if u_ahbl_if (clk_i, rst_n_i);
-  ahbl2nmi u_ahbl2nmi (u_ahbl_if, nmi);
+  ahbl2soc_nmi u_ahbl2soc_nmi (u_ahbl_if, nmi);
   // verilog_format: on
 
   hazard3_cpu_1port #(

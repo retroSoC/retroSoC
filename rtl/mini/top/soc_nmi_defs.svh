@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 // You can use this software according to the terms and conditions of the Mulan PSL v2.
 // You may obtain a copy of Mulan PSL v2 at:
@@ -8,20 +8,14 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module core_wrapper (
-    // verilog_format: off
-    input logic     clk_i,
-    input logic     rst_n_i,
-    input logic [31:0] irq_i,
-    soc_nmi_if.master nmi
-    // verilog_format: on
-);
+`ifndef RETROSOC_SOC_NMI_DEFS_SVH
+`define RETROSOC_SOC_NMI_DEFS_SVH
 
-  mgmt_core_wrapper u_mgmt_core_wrapper (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .irq_i  (irq_i),
-      .nmi    (nmi)
-  );
+`define SOC_NMI_RESP_OK 3'd0
+`define SOC_NMI_RESP_DECERR 3'd1
+`define SOC_NMI_RESP_PROTERR 3'd2
+`define SOC_NMI_RESP_SLVERR 3'd3
+`define SOC_NMI_RESP_TIMEOUT 3'd4
+`define SOC_NMI_RESP_RESERVED 3'd5
 
-endmodule
+`endif

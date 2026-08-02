@@ -25,20 +25,30 @@ module retrosoc_top (
     input wire rst_n_i
 );
 
-  wire s_clk;
-  wire s_rst_n;
-  wire s_psram_sck;
-  wire s_psram_nss0;
-  wire s_psram_dat0;
-  wire s_psram_dat1;
-  wire s_psram_dat2;
-  wire s_psram_dat3;
-  wire s_xpi_nss0_o;
-  wire s_xpi_sck_o;
-  wire s_xpi_dat0_io;
-  wire s_xpi_dat1_io;
-  wire s_xpi_dat2_io;
-  wire s_xpi_dat3_io;
+  wire        s_clk;
+  wire        s_rst_n;
+  wire        s_psram_sck;
+  wire        s_psram_nss0;
+  wire        s_psram_dat0;
+  wire        s_psram_dat1;
+  wire        s_psram_dat2;
+  wire        s_psram_dat3;
+  wire        s_xpi_nss0_o;
+  wire        s_xpi_sck_o;
+  wire        s_xpi_dat0_io;
+  wire        s_xpi_dat1_io;
+  wire        s_xpi_dat2_io;
+  wire        s_xpi_dat3_io;
+  wire        s_sdram_clk;
+  wire        s_sdram_cke;
+  wire        s_sdram_cs_n;
+  wire        s_sdram_ras_n;
+  wire        s_sdram_cas_n;
+  wire        s_sdram_we_n;
+  wire [ 1:0] s_sdram_ba;
+  wire [12:0] s_sdram_addr;
+  wire [ 1:0] s_sdram_dqm;
+  wire [15:0] s_sdram_dq;
 
   assign s_clk   = ext_clk_i;
   assign s_rst_n = rst_n_i;
@@ -59,6 +69,19 @@ module retrosoc_top (
       .sclk(s_psram_sck),
       .csn (s_psram_nss0),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
+  );
+
+  sdram_verilator_model u_sdram_verilator_model (
+      .clk_i  (s_sdram_clk),
+      .cke_i  (s_sdram_cke),
+      .cs_n_i (s_sdram_cs_n),
+      .ras_n_i(s_sdram_ras_n),
+      .cas_n_i(s_sdram_cas_n),
+      .we_n_i (s_sdram_we_n),
+      .ba_i   (s_sdram_ba),
+      .addr_i (s_sdram_addr),
+      .dqm_i  (s_sdram_dqm),
+      .dq_io  (s_sdram_dq)
   );
 
 endmodule

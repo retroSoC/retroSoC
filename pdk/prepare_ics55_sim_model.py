@@ -25,10 +25,10 @@ EXPECTED_MUXI2_CELLS = {
 }
 BROKEN_IMPLEMENTATION = "  udp_mux2 u0(Y, A, B, S0);\n  not      u1(Y, Y);"
 FIXED_IMPLEMENTATION = (
-    "  wire muxi2_y;\n\n"
-    "  udp_mux2 u0(muxi2_y, A, B, S0);\n"
-    "  not      u1(Y, muxi2_y);"
+    "  wire muxi2_y;\n\n  udp_mux2 u0(muxi2_y, A, B, S0);\n  not      u1(Y, muxi2_y);"
 )
+VERILATOR_LINT_OFF = "/* verilator lint_off DECLFILENAME */\n/* verilator lint_off SPECIFYIGN */\n"
+VERILATOR_LINT_ON = "/* verilator lint_on SPECIFYIGN */\n/* verilator lint_on DECLFILENAME */\n"
 MUXI2_MODULE = re.compile(
     r"(?P<header>\bmodule\s+(?P<name>MUXI2X[A-Za-z0-9]+H7R)"
     r"\s*\(Y,\s*A,\s*B,\s*S0\);)"
@@ -75,9 +75,10 @@ def prepare(source: Path, output: Path, revision: str) -> None:
         raise FileNotFoundError(f"ICS55 H7CR Verilog model not found: {source}")
 
     patched, cells = patch_muxi2_models(source.read_text(encoding="utf-8"))
+    verilator_model = VERILATOR_LINT_OFF + patched.rstrip() + "\n" + VERILATOR_LINT_ON
     output = output.resolve()
     metadata = f"{revision}\n{sha256(source)}\n{','.join(cells)}\n"
-    changed = atomic_write(output, patched)
+    changed = atomic_write(output, verilator_model)
     atomic_write(output.with_suffix(output.suffix + ".revision"), metadata)
     state = "prepared" if changed else "ready"
     print(f"ICS55 H7CR functional model {state}: {output}")

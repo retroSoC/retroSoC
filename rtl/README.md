@@ -13,3 +13,8 @@ rather than editing generated MPW output.
 RTL changes require an affected firmware build and simulation. Use
 `make regress-pr` or `make regress-nightly` for supported regression coverage;
 see [Engineering Workflow](../docs/engineering.md) for results and artifacts.
+
+The Verilator harness uses a zero-delay SDRAM protocol model because Verilator
+does not elaborate the tri-state delays in the Micron model. The Icarus
+testbench retains that Micron timing model, so it is the reference for SDRAM
+command timing while Verilator provides fast functional coverage.

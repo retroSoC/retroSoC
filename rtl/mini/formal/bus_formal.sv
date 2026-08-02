@@ -23,9 +23,9 @@ module bus_formal_design (
     output logic [ 1:0] arb_owner
 );
 
-  nmi_if mgmt_nmi ();
-  nmi_if user_nmi ();
-  nmi_if dma_nmi ();
+  soc_nmi_if mgmt_nmi ();
+  soc_nmi_if user_nmi ();
+  soc_nmi_if dma_nmi ();
   nmi_if natv_nmi ();
   nmi_if apb_nmi ();
 
@@ -91,6 +91,9 @@ module bus_formal_design (
       .user_bus_idle_o  (user_idle),
       .natv_nmi         (natv_nmi),
       .apb_nmi          (apb_nmi),
+      .apb_resp_err_i   (1'b0),
+      .perf_enable_i    (1'b0),
+      .perf_clear_i     (1'b0),
       .fault_valid_o    (fault_valid),
       .fault_addr_o     (fault_addr),
       .fault_wstrb_o    (fault_wstrb),

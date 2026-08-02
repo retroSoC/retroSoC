@@ -112,6 +112,14 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert str(ROOT / "rtl/managed/clusterip") in cluster
     assert (tmp_path / "core_hazard3.fl").is_file()
     assert (tmp_path / "core_picorv32.fl").is_file()
+    assert {
+        "pdk_gf180.fl",
+        "pdk_ics55.fl",
+        "pdk_ics55_verilator.fl",
+        "pdk_ics55_yosys.fl",
+        "pdk_ihp130.fl",
+        "pdk_sky130.fl",
+    }.issubset({path.name for path in generated})
 
 
 def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> None:
@@ -196,7 +204,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
-    assert ROOT / "rtl/ip/native/interconnect/nmi_regslice.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_nmi_regslice.sv" in bus.files
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
     assert ROOT / "rtl/ip/native/interconnect/nmi2apb.sv" in nmi2apb.files
     assert ROOT / "rtl/mini/formal/nmi2apb_formal.sv" in nmi2apb.files
@@ -612,8 +620,21 @@ def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
     assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
     assert "`ifdef CORE_PICORV32" in wrapper
     assert "`elsif CORE_HAZARD3" in wrapper
-    assert "ahbl2nmi u_ahbl2nmi" in wrapper
+    assert "ahbl2soc_nmi u_ahbl2soc_nmi" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
+
+
+def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    profile = (ROOT / "configs/benchmark/ihp130-hazard3.mk").read_text(encoding="utf-8")
+    benchmark = (ROOT / "app/apps/benchmark/main.c").read_text(encoding="utf-8")
+
+    assert "PDK_BEHAV       ?= NO" in makefile
+    assert "PDK_BEHAV HAVE_SVA" in makefile
+    assert "PDK_BEHAV=YES is for functional simulation" in makefile
+    assert "HAVE_SRAM_MACRO := YES" in profile
+    assert "PDK_BEHAV       := YES" in profile
+    assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
 
 
 def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:

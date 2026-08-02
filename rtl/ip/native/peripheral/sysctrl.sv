@@ -10,6 +10,7 @@
 
 `include "user_extensions.svh"
 `include "mmap_define.svh"
+`include "soc_nmi_defs.svh"
 
 interface sysctrl_if ();
   logic [`USER_CORESEL_WIDTH-1:0] core_sel_o;
@@ -18,16 +19,38 @@ interface sysctrl_if ();
   logic                           user_bus_idle_i;
   logic                           fault_access_i;
   logic [                    1:0] fault_master_i;
+  logic [                    2:0] fault_code_i;
+  logic                           perf_enable_o;
+  logic                           perf_clear_o;
+  logic [                   63:0] perf_mgmt_wait_i;
+  logic [                   63:0] perf_user_wait_i;
+  logic [                   63:0] perf_dma_wait_i;
+  logic [                   63:0] perf_natv_wait_i;
+  logic [                   63:0] perf_apb_wait_i;
+  logic [                   63:0] perf_sdram_wait_i;
+  logic [                   63:0] perf_psram_wait_i;
+  logic [                   63:0] perf_flash_wait_i;
   logic [  `USER_IPSEL_WIDTH-1:0] ip_sel_o;
 
   modport dut(
       input user_bus_idle_i,
       input fault_access_i,
       input fault_master_i,
+      input fault_code_i,
+      input perf_mgmt_wait_i,
+      input perf_user_wait_i,
+      input perf_dma_wait_i,
+      input perf_natv_wait_i,
+      input perf_apb_wait_i,
+      input perf_sdram_wait_i,
+      input perf_psram_wait_i,
+      input perf_flash_wait_i,
       output core_sel_o,
       output core_reset_o,
       output user_bus_enable_o,
-      output ip_sel_o
+      output ip_sel_o,
+      output perf_enable_o,
+      output perf_clear_o
   );
 endinterface
 
@@ -47,8 +70,8 @@ module nmi_sysctrl (
 
   typedef logic [7:0] sysctrl_offset_t;
 
-  localparam sysctrl_offset_t SYSCTRL_CORESEL_OFFSET = 8'h00;
-  localparam sysctrl_offset_t SYSCTRL_IPSEL_OFFSET = 8'h04;
+  localparam sysctrl_offset_t SYSCTRL_CORESEL_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_CORESEL_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_IPSEL_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_IPSEL_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_PLL_CFG_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CFG_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_PLL_CMD_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CMD_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_FAULT_STATUS_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_STATUS_OFFSET);
@@ -61,6 +84,41 @@ module nmi_sysctrl (
       sysctrl_offset_t'(`SOC_SYSCTRL_USER_CORE_STATUS_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_FAULT_MASTER_OFFSET =
       sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_MASTER_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_FAULT_DETAIL_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_DETAIL_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_CTRL_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PERF_CTRL_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_MGMT_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_MGMT_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_MGMT_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_MGMT_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_USER_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_USER_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_USER_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_USER_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_DMA_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_DMA_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_DMA_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_DMA_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_NATV_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_NATV_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_NATV_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_NATV_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_APB_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_APB_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_APB_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_APB_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_SDRAM_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_SDRAM_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_SDRAM_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_SDRAM_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_PSRAM_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_PSRAM_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_PSRAM_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_PSRAM_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_FLASH_WAIT_LO_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_FLASH_WAIT_LO_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET);
 
   logic s_nmi_wr_hdshk, s_nmi_rd_hdshk;
   logic s_nmi_ready_d, s_nmi_ready_q;
@@ -96,9 +154,20 @@ module nmi_sysctrl (
   logic s_fault_pending_d, s_fault_pending_q;
   logic s_fault_write_d, s_fault_write_q;
   logic [2:0] s_fault_reason_d, s_fault_reason_q;
+  logic [2:0] s_fault_detail_d, s_fault_detail_q;
   logic [31:0] s_fault_addr_d, s_fault_addr_q;
   logic [31:0] s_fault_count_d, s_fault_count_q;
   logic [1:0] s_fault_master_d, s_fault_master_q;
+  logic s_perf_enable_d, s_perf_enable_q;
+  logic s_perf_enable_en, s_perf_clear, s_perf_snapshot;
+  logic [63:0] s_perf_mgmt_wait_q;
+  logic [63:0] s_perf_user_wait_q;
+  logic [63:0] s_perf_dma_wait_q;
+  logic [63:0] s_perf_natv_wait_q;
+  logic [63:0] s_perf_apb_wait_q;
+  logic [63:0] s_perf_sdram_wait_q;
+  logic [63:0] s_perf_psram_wait_q;
+  logic [63:0] s_perf_flash_wait_q;
 
   assign s_nmi_wr_hdshk = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
   assign s_nmi_rd_hdshk = nmi.valid && (~s_nmi_ready_q) && (~(|nmi.wstrb));
@@ -109,6 +178,8 @@ module nmi_sysctrl (
   assign sysctrl.core_sel_o = s_sysctrl_coresel_q;
   assign sysctrl.core_reset_o = s_user_reset_q;
   assign sysctrl.user_bus_enable_o = s_user_running_q;
+  assign sysctrl.perf_enable_o = s_perf_enable_q;
+  assign sysctrl.perf_clear_o = s_perf_clear;
   assign pll_ctrl.req_sel_o = s_pll_cfg_q;
   assign pll_ctrl.req_valid_o = s_pll_req_valid_q;
   assign pll_ctrl.rsp_ready_o = 1'b1;
@@ -311,6 +382,75 @@ module nmi_sysctrl (
       s_pll_lock_q
   );
 
+  assign s_perf_enable_en = s_nmi_wr_hdshk && nmi.addr[7:0] == SYSCTRL_PERF_CTRL_OFFSET &&
+                            nmi.wstrb[0];
+  assign s_perf_enable_d = nmi.wdata[0];
+  assign s_perf_clear = s_perf_enable_en && nmi.wdata[1];
+  assign s_perf_snapshot = s_perf_enable_en && nmi.wdata[2];
+  dffer #(1) u_perf_enable_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_enable_en,
+      s_perf_enable_d,
+      s_perf_enable_q
+  );
+  dffer #(64) u_perf_mgmt_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_mgmt_wait_i,
+      s_perf_mgmt_wait_q
+  );
+  dffer #(64) u_perf_user_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_user_wait_i,
+      s_perf_user_wait_q
+  );
+  dffer #(64) u_perf_dma_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_dma_wait_i,
+      s_perf_dma_wait_q
+  );
+  dffer #(64) u_perf_natv_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_natv_wait_i,
+      s_perf_natv_wait_q
+  );
+  dffer #(64) u_perf_apb_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_apb_wait_i,
+      s_perf_apb_wait_q
+  );
+  dffer #(64) u_perf_sdram_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_sdram_wait_i,
+      s_perf_sdram_wait_q
+  );
+  dffer #(64) u_perf_psram_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_psram_wait_i,
+      s_perf_psram_wait_q
+  );
+  dffer #(64) u_perf_flash_wait_dffer (
+      clk_i,
+      rst_n_i,
+      s_perf_snapshot,
+      sysctrl.perf_flash_wait_i,
+      s_perf_flash_wait_q
+  );
+
   assign s_fault_status_clear = s_nmi_wr_hdshk &&
                                 nmi.addr[7:0] == SYSCTRL_FAULT_STATUS_OFFSET &&
                                 nmi.wstrb[0] && nmi.wdata[0];
@@ -318,6 +458,7 @@ module nmi_sysctrl (
     s_fault_pending_d = s_fault_pending_q;
     s_fault_write_d   = s_fault_write_q;
     s_fault_reason_d  = s_fault_reason_q;
+    s_fault_detail_d  = s_fault_detail_q;
     s_fault_addr_d    = s_fault_addr_q;
     s_fault_count_d   = s_fault_count_q;
     if (s_fault_status_clear) begin
@@ -325,9 +466,20 @@ module nmi_sysctrl (
     end
     if (fault_valid_i) begin
       s_fault_pending_d = 1'b1;
-      s_fault_write_d   = |fault_wstrb_i;
-      s_fault_reason_d  = sysctrl.fault_access_i ? 3'd3 : (fault_reserved_i ? 3'd2 : 3'd1);
-      s_fault_addr_d    = fault_addr_i;
+      if (~s_fault_pending_q || s_fault_status_clear) begin
+        s_fault_write_d = |fault_wstrb_i;
+        s_fault_detail_d = |sysctrl.fault_code_i ? sysctrl.fault_code_i :
+                           sysctrl.fault_access_i ? `SOC_NMI_RESP_PROTERR :
+                           fault_reserved_i ? `SOC_NMI_RESP_RESERVED : `SOC_NMI_RESP_DECERR;
+        unique case (s_fault_detail_d)
+          `SOC_NMI_RESP_RESERVED: s_fault_reason_d = 3'd2;
+          `SOC_NMI_RESP_PROTERR:  s_fault_reason_d = 3'd3;
+          `SOC_NMI_RESP_SLVERR:   s_fault_reason_d = 3'd4;
+          `SOC_NMI_RESP_TIMEOUT:  s_fault_reason_d = 3'd5;
+          default:                s_fault_reason_d = 3'd1;
+        endcase
+        s_fault_addr_d = fault_addr_i;
+      end
       if (~(&s_fault_count_q)) begin
         s_fault_count_d = s_fault_count_q + 32'd1;
       end
@@ -351,6 +503,12 @@ module nmi_sysctrl (
       s_fault_reason_d,
       s_fault_reason_q
   );
+  dffr #(3) u_fault_detail_dffr (
+      clk_i,
+      rst_n_i,
+      s_fault_detail_d,
+      s_fault_detail_q
+  );
   dffr #(32) u_fault_addr_dffr (
       clk_i,
       rst_n_i,
@@ -363,11 +521,15 @@ module nmi_sysctrl (
       s_fault_count_d,
       s_fault_count_q
   );
-  assign s_fault_master_d = sysctrl.fault_master_i;
-  dffer #(2) u_fault_master_dffer (
+  always_comb begin
+    s_fault_master_d = s_fault_master_q;
+    if (fault_valid_i && (~s_fault_pending_q || s_fault_status_clear)) begin
+      s_fault_master_d = sysctrl.fault_master_i;
+    end
+  end
+  dffr #(2) u_fault_master_dffr (
       clk_i,
       rst_n_i,
-      fault_valid_i,
       s_fault_master_d,
       s_fault_master_q
   );
@@ -413,6 +575,24 @@ module nmi_sysctrl (
           s_sysctrl_coresel_q
       };
       SYSCTRL_FAULT_MASTER_OFFSET: s_nmi_rdata_d = {30'd0, s_fault_master_q};
+      SYSCTRL_FAULT_DETAIL_OFFSET: s_nmi_rdata_d = {29'd0, s_fault_detail_q};
+      SYSCTRL_PERF_CTRL_OFFSET: s_nmi_rdata_d = {31'd0, s_perf_enable_q};
+      SYSCTRL_PERF_MGMT_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_mgmt_wait_q[31:0];
+      SYSCTRL_PERF_MGMT_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_mgmt_wait_q[63:32];
+      SYSCTRL_PERF_USER_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_user_wait_q[31:0];
+      SYSCTRL_PERF_USER_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_user_wait_q[63:32];
+      SYSCTRL_PERF_DMA_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_dma_wait_q[31:0];
+      SYSCTRL_PERF_DMA_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_dma_wait_q[63:32];
+      SYSCTRL_PERF_NATV_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_natv_wait_q[31:0];
+      SYSCTRL_PERF_NATV_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_natv_wait_q[63:32];
+      SYSCTRL_PERF_APB_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_apb_wait_q[31:0];
+      SYSCTRL_PERF_APB_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_apb_wait_q[63:32];
+      SYSCTRL_PERF_SDRAM_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_sdram_wait_q[31:0];
+      SYSCTRL_PERF_SDRAM_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_sdram_wait_q[63:32];
+      SYSCTRL_PERF_PSRAM_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_psram_wait_q[31:0];
+      SYSCTRL_PERF_PSRAM_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_psram_wait_q[63:32];
+      SYSCTRL_PERF_FLASH_WAIT_LO_OFFSET: s_nmi_rdata_d = s_perf_flash_wait_q[31:0];
+      SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET: s_nmi_rdata_d = s_perf_flash_wait_q[63:32];
       default: s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
       // verilog_format: on

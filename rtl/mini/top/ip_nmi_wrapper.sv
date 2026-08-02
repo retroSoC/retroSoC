@@ -27,7 +27,7 @@ module ip_nmi_wrapper (
     i2s_if.dut         i2s,
     onewire_if.dut     onewire,
     xpi_if.dut         xpi,
-    nmi_if.master      dma_nmi,
+    soc_nmi_if.master  dma_nmi,
     sysctrl_if.dut     sysctrl,
     pll_ctrl_if.sysctrl pll_ctrl,
     sdram_if.dut       sdram,

@@ -42,6 +42,7 @@
 /ip/native/peripheral/gpio.sv
 /ip/native/interconnect/nmi2apb.sv
 /ip/native/interconnect/ahbl2nmi.sv
+/top/ahbl2soc_nmi.sv
 /ip/native/interconnect/axi4l2nmi.sv
 /ip/native/util/async_fifo.sv
 /ip/native/util/fifo.sv

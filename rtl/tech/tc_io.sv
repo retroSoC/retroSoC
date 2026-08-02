@@ -195,14 +195,14 @@ module tc_io_in_pad (
       .A  (),
       .PAD(pad),
       .IE (1'b1),
-      .CS (1'b1),     // 1: CMOS 0: SCHMI
+      .CS (1'b1),  // 1: CMOS 0: SCHMI
       .I  (1'b0),
       .OE (1'b0),
       .OD (1'b0),
       .PU (1'b0),
       .PD (1'b0),
       .DS0(1'b0),
-      .DS1(1'b1)      // 8mA
+      .DS1(1'b1)   // 8mA
   );
 
 `endif

@@ -27,6 +27,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 
 | Profile | Description |
 | --- | --- |
+| `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
 | `bringup` | Minimal firmware used for startup and basic SoC regression. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 
@@ -42,9 +43,16 @@ make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR firmware sim
 
 # Shell firmware and Verilator simulation
 make CONFIG=configs/ci/ihp130-shell.mk SIMU=VERILATOR firmware sim
+
+# IHP130/Hazard3 Verilator baseline; result is written below build/*/meta/
+make CONFIG=configs/benchmark/ihp130-hazard3.mk SIMU=VERILATOR benchmark-report
 ```
 
 For a firmware-only build, omit `SIMU=VERILATOR sim`.
+
+The Verilator harness uses a zero-delay SDRAM protocol model so that memory
+and DMA readback are checked in the fast emulator. The Icarus testbench keeps
+the Micron SDRAM timing model and remains the timing-oriented behavioral flow.
 
 ## Adding an Application
 

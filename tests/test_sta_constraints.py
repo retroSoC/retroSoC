@@ -202,6 +202,12 @@ def test_ics55_sim_model_preparer_patches_every_h7cr_muxi2_variant(tmp_path: Pat
 
     assert first.returncode == 0, first.stderr
     prepared = output.read_text(encoding="utf-8")
+    assert prepared.startswith(
+        "/* verilator lint_off DECLFILENAME */\n/* verilator lint_off SPECIFYIGN */\n"
+    )
+    assert prepared.endswith(
+        "/* verilator lint_on SPECIFYIGN */\n/* verilator lint_on DECLFILENAME */\n"
+    )
     assert prepared.count("wire muxi2_y;") == len(cells)
     assert prepared.count("udp_mux2 u0(muxi2_y, A, B, S0);") == len(cells)
     assert "not      u1(Y, Y);" not in prepared

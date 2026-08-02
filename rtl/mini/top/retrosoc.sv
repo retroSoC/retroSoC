@@ -61,10 +61,33 @@ module retrosoc (
   logic                             s_bus_fault_reserved;
   logic                             s_bus_fault_access;
   logic [                      1:0] s_bus_fault_master;
+  logic [                      2:0] s_bus_fault_code;
+  logic                             s_apb_resp_err;
+  logic                             s_perf_enable;
+  logic                             s_perf_clear;
+  logic [                     63:0] s_perf_mgmt_wait;
+  logic [                     63:0] s_perf_user_wait;
+  logic [                     63:0] s_perf_dma_wait;
+  logic [                     63:0] s_perf_natv_wait;
+  logic [                     63:0] s_perf_apb_wait;
+  logic [                     63:0] s_perf_sdram_wait;
+  logic [                     63:0] s_perf_psram_wait;
+  logic [                     63:0] s_perf_flash_wait;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
 
-  assign u_sysctrl_if.fault_access_i = s_bus_fault_access;
-  assign u_sysctrl_if.fault_master_i = s_bus_fault_master;
+  assign u_sysctrl_if.fault_access_i    = s_bus_fault_access;
+  assign u_sysctrl_if.fault_master_i    = s_bus_fault_master;
+  assign u_sysctrl_if.fault_code_i      = s_bus_fault_code;
+  assign s_perf_enable                  = u_sysctrl_if.perf_enable_o;
+  assign s_perf_clear                   = u_sysctrl_if.perf_clear_o;
+  assign u_sysctrl_if.perf_mgmt_wait_i  = s_perf_mgmt_wait;
+  assign u_sysctrl_if.perf_user_wait_i  = s_perf_user_wait;
+  assign u_sysctrl_if.perf_dma_wait_i   = s_perf_dma_wait;
+  assign u_sysctrl_if.perf_natv_wait_i  = s_perf_natv_wait;
+  assign u_sysctrl_if.perf_apb_wait_i   = s_perf_apb_wait;
+  assign u_sysctrl_if.perf_sdram_wait_i = s_perf_sdram_wait;
+  assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
+  assign u_sysctrl_if.perf_flash_wait_i = s_perf_flash_wait;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
@@ -103,12 +126,24 @@ core_wrapper u_core_wrapper (
       .user_bus_enable_i(u_sysctrl_if.user_bus_enable_o),
       .user_bus_idle_o  (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
+      .apb_resp_err_i   (s_apb_resp_err),
+      .perf_enable_i    (s_perf_enable),
+      .perf_clear_i     (s_perf_clear),
       .fault_valid_o    (s_bus_fault_valid),
       .fault_addr_o     (s_bus_fault_addr),
       .fault_wstrb_o    (s_bus_fault_wstrb),
       .fault_reserved_o (s_bus_fault_reserved),
       .fault_access_o   (s_bus_fault_access),
-      .fault_master_o   (s_bus_fault_master)
+      .fault_master_o   (s_bus_fault_master),
+      .fault_code_o     (s_bus_fault_code),
+      .perf_mgmt_wait_o (s_perf_mgmt_wait),
+      .perf_user_wait_o (s_perf_user_wait),
+      .perf_dma_wait_o  (s_perf_dma_wait),
+      .perf_natv_wait_o (s_perf_natv_wait),
+      .perf_apb_wait_o  (s_perf_apb_wait),
+      .perf_sdram_wait_o(s_perf_sdram_wait),
+      .perf_psram_wait_o(s_perf_psram_wait),
+      .perf_flash_wait_o(s_perf_flash_wait)
   );
 
   ip_nmi_wrapper u_ip_nmi_wrapper (
@@ -141,18 +176,19 @@ core_wrapper u_core_wrapper (
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .clk_aud_i  (clk_aud_i),
-      .rst_aud_n_i(rst_aud_n_i),
-      .tmr_capch_i(s_tmr_capch),
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .clk_aud_i     (clk_aud_i),
+      .rst_aud_n_i   (rst_aud_n_i),
+      .tmr_capch_i   (s_tmr_capch),
       `include "soc_ip_apb_wrapper_fabric.svh"
-      .uart       (u_uart1_if),
-      .pwm        (u_pwm_if),
-      .ps2        (u_ps2_if),
-      .ip_sel_i   (u_sysctrl_if.ip_sel_o),
-      .user_gpio  (u_user_gpio_if),
-      .irq_o      (s_apb_irq)
+      .uart          (u_uart1_if),
+      .pwm           (u_pwm_if),
+      .ps2           (u_ps2_if),
+      .ip_sel_i      (u_sysctrl_if.ip_sel_o),
+      .user_gpio     (u_user_gpio_if),
+      .nmi_resp_err_o(s_apb_resp_err),
+      .irq_o         (s_apb_irq)
   );
 
 endmodule

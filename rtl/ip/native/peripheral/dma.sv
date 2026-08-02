@@ -23,6 +23,8 @@
 `define NATV_DMA_RESET   8'h20
 `define NATV_DMA_STATUS  8'h24
 `define NATV_DMA_FSM     8'h28
+`define NATV_DMA_ERROR_STATUS 8'h2C
+`define NATV_DMA_ERROR_ADDR   8'h30
 // verilog_format: on
 
 interface dma_hw_trg_if ();
@@ -43,7 +45,7 @@ module nmi_dma (
     output logic      dma_xfer_done_o,
     dma_hw_trg_if.dut hw_trg,
     nmi_if.slave      nmi,
-    nmi_if.master     nmi_dma
+    soc_nmi_if.master nmi_dma
     // verilog_format: on
 );
 
@@ -65,9 +67,15 @@ module nmi_dma (
   logic s_dma_xferlen_en;
   logic [31:0] s_dma_xferlen_d, s_dma_xferlen_q;
   logic s_dma_status_d, s_dma_status_q;
+  logic s_dma_error_status_d, s_dma_error_status_q;
+  logic [2:0] s_dma_error_code_d, s_dma_error_code_q;
+  logic [31:0] s_dma_error_addr_d, s_dma_error_addr_q;
   // common
   logic s_xfer_start, s_xfer_stop, s_xfer_reset, s_xfer_done;
-  logic [1:0] s_xfer_fsm;
+  logic [ 1:0] s_xfer_fsm;
+  logic        s_xfer_error;
+  logic [ 2:0] s_xfer_error_code;
+  logic [31:0] s_xfer_error_addr;
 
 
   assign s_nmi_wr_hdshk  = nmi.valid && (~s_nmi_ready_q) && (|nmi.wstrb);
@@ -180,6 +188,38 @@ module nmi_dma (
       s_dma_status_q
   );
 
+  always_comb begin
+    s_dma_error_status_d = s_dma_error_status_q;
+    if (s_nmi_wr_hdshk && nmi.addr[7:0] == `NATV_DMA_ERROR_STATUS && nmi.wstrb[0] &&
+        nmi.wdata[0]) begin
+      s_dma_error_status_d = 1'b0;
+    end else if (s_xfer_error) begin
+      s_dma_error_status_d = 1'b1;
+    end
+  end
+  dffr #(1) u_dma_error_status_dffr (
+      clk_i,
+      rst_n_i,
+      s_dma_error_status_d,
+      s_dma_error_status_q
+  );
+  assign s_dma_error_code_d = s_xfer_error_code;
+  dffer #(3) u_dma_error_code_dffer (
+      clk_i,
+      rst_n_i,
+      s_xfer_error,
+      s_dma_error_code_d,
+      s_dma_error_code_q
+  );
+  assign s_dma_error_addr_d = s_xfer_error_addr;
+  dffer #(32) u_dma_error_addr_dffer (
+      clk_i,
+      rst_n_i,
+      s_xfer_error,
+      s_dma_error_addr_d,
+      s_dma_error_addr_q
+  );
+
 
   assign s_nmi_ready_d = nmi.valid && (~s_nmi_ready_q);
   dffr #(1) u_nmi_ready_dffr (
@@ -193,15 +233,17 @@ module nmi_dma (
   always_comb begin
     s_nmi_rdata_d = s_nmi_rdata_q;
     unique case (nmi.addr[7:0])
-      `NATV_DMA_MODE:    s_nmi_rdata_d = {29'd0, s_dma_mode_q};
-      `NATV_DMA_SRCADDR: s_nmi_rdata_d = s_dma_srcaddr_q;
-      `NATV_DMA_SRCINCR: s_nmi_rdata_d = {31'd0, s_dma_srcincr_q};
-      `NATV_DMA_DSTADDR: s_nmi_rdata_d = s_dma_dstaddr_q;
-      `NATV_DMA_DSTINCR: s_nmi_rdata_d = {31'd0, s_dma_dstincr_q};
-      `NATV_DMA_XFERLEN: s_nmi_rdata_d = s_dma_xferlen_q;
-      `NATV_DMA_STATUS:  s_nmi_rdata_d = {31'd0, s_dma_status_q};
-      `NATV_DMA_FSM:     s_nmi_rdata_d = {30'd0, s_xfer_fsm};
-      default:           s_nmi_rdata_d = s_nmi_rdata_q;
+      `NATV_DMA_MODE:         s_nmi_rdata_d = {29'd0, s_dma_mode_q};
+      `NATV_DMA_SRCADDR:      s_nmi_rdata_d = s_dma_srcaddr_q;
+      `NATV_DMA_SRCINCR:      s_nmi_rdata_d = {31'd0, s_dma_srcincr_q};
+      `NATV_DMA_DSTADDR:      s_nmi_rdata_d = s_dma_dstaddr_q;
+      `NATV_DMA_DSTINCR:      s_nmi_rdata_d = {31'd0, s_dma_dstincr_q};
+      `NATV_DMA_XFERLEN:      s_nmi_rdata_d = s_dma_xferlen_q;
+      `NATV_DMA_STATUS:       s_nmi_rdata_d = {31'd0, s_dma_status_q};
+      `NATV_DMA_FSM:          s_nmi_rdata_d = {30'd0, s_xfer_fsm};
+      `NATV_DMA_ERROR_STATUS: s_nmi_rdata_d = {28'd0, s_dma_error_code_q, s_dma_error_status_q};
+      `NATV_DMA_ERROR_ADDR:   s_nmi_rdata_d = s_dma_error_addr_q;
+      default:                s_nmi_rdata_d = s_nmi_rdata_q;
     endcase
   end
   dffer #(32) u_nmi_rdata_dffer (
@@ -214,21 +256,24 @@ module nmi_dma (
 
 
   dma_core u_dma_core (
-      .clk_i    (clk_i),
-      .rst_n_i  (rst_n_i),
-      .mode_i   (s_dma_mode_q),
-      .srcaddr_i(s_dma_srcaddr_q),
-      .srcincr_i(s_dma_srcincr_q),
-      .dstaddr_i(s_dma_dstaddr_q),
-      .dstincr_i(s_dma_dstincr_q),
-      .xferlen_i(s_dma_xferlen_q),
-      .start_i  (s_xfer_start),
-      .stop_i   (s_xfer_stop),
-      .reset_i  (s_xfer_reset),
-      .done_o   (s_xfer_done),
-      .fsm_o    (s_xfer_fsm),
-      .hw_trg   (hw_trg),
-      .nmi      (nmi_dma)
+      .clk_i       (clk_i),
+      .rst_n_i     (rst_n_i),
+      .mode_i      (s_dma_mode_q),
+      .srcaddr_i   (s_dma_srcaddr_q),
+      .srcincr_i   (s_dma_srcincr_q),
+      .dstaddr_i   (s_dma_dstaddr_q),
+      .dstincr_i   (s_dma_dstincr_q),
+      .xferlen_i   (s_dma_xferlen_q),
+      .start_i     (s_xfer_start),
+      .stop_i      (s_xfer_stop),
+      .reset_i     (s_xfer_reset),
+      .done_o      (s_xfer_done),
+      .error_o     (s_xfer_error),
+      .error_code_o(s_xfer_error_code),
+      .error_addr_o(s_xfer_error_addr),
+      .fsm_o       (s_xfer_fsm),
+      .hw_trg      (hw_trg),
+      .nmi         (nmi_dma)
   );
 
 endmodule

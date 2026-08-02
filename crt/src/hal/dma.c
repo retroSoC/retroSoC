@@ -6,7 +6,8 @@
 rs_status_t rs_dma_config(uint32_t mode, uintptr_t source, uint32_t source_increment,
                           uintptr_t destination, uint32_t destination_increment,
                           uint32_t transfer_words) {
-    if ((source == 0U) || (destination == 0U) || (transfer_words == 0U)) {
+    if ((mode > 4U) || (source == 0U) || (destination == 0U) || (transfer_words == 0U) ||
+        (source_increment > 1U) || (destination_increment > 1U)) {
         return RS_EINVAL;
     }
 
@@ -20,6 +21,7 @@ rs_status_t rs_dma_config(uint32_t mode, uintptr_t source, uint32_t source_incre
 }
 
 rs_status_t rs_dma_start(void) {
+    reg_dma_error_status = RS_SOC_DMA_ERROR_PENDING;
     reg_dma_start = 1U;
     return RS_OK;
 }
@@ -37,7 +39,33 @@ rs_status_t rs_dma_reset(void) {
 }
 
 rs_status_t rs_dma_wait(rs_timeout_t timeout) {
-    return rs_wait_mask(&reg_dma_status, UINT32_MAX, 1U, timeout);
+    while (timeout-- != 0U) {
+        if ((reg_dma_error_status & RS_SOC_DMA_ERROR_PENDING) != 0U) {
+            return RS_EIO;
+        }
+        if (reg_dma_status == 1U) {
+            return RS_OK;
+        }
+    }
+    return RS_ETIMEOUT;
+}
+
+rs_status_t rs_dma_get_error(rs_dma_error_t *error) {
+    uint32_t status;
+
+    if (error == NULL) {
+        return RS_EINVAL;
+    }
+
+    status = reg_dma_error_status;
+    error->response_code =
+        (status & RS_SOC_DMA_ERROR_RESPONSE_MASK) >> RS_SOC_DMA_ERROR_RESPONSE_SHIFT;
+    error->address = (uintptr_t)reg_dma_error_addr;
+    if ((status & RS_SOC_DMA_ERROR_PENDING) != 0U) {
+        reg_dma_error_status = RS_SOC_DMA_ERROR_PENDING;
+        return RS_EIO;
+    }
+    return RS_OK;
 }
 
 void ip_dma_test(void) {

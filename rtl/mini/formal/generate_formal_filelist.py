@@ -30,11 +30,12 @@ def source_files(target: str) -> list[Path]:
     common = [
         COMMON_RTL / "interface/nmi_if.sv",
         COMMON_RTL / "utils/register.sv",
+        TOP / "soc_nmi_if.sv",
     ]
     if target == "bus":
         return [
             *common,
-            INTERCONNECT / "nmi_regslice.sv",
+            TOP / "soc_nmi_regslice.sv",
             TOP / "bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]

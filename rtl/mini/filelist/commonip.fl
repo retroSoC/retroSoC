@@ -3,6 +3,7 @@
 /clusterip/common/rtl/interface/ahbl_if.sv
 /clusterip/common/rtl/interface/nmi_if.sv
 /clusterip/common/rtl/interface/ram_if.sv
+/top/soc_nmi_if.sv
 /clusterip/common/rtl/utils/register.sv
 /clusterip/common/rtl/utils/lfsr.sv
 /clusterip/common/rtl/utils/gray2bin.sv

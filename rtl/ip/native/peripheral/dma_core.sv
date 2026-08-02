@@ -8,6 +8,8 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
+`include "soc_nmi_defs.svh"
+
 module dma_core (
     // verilog_format: off
     input logic        clk_i,
@@ -22,9 +24,12 @@ module dma_core (
     input logic        stop_i,
     input logic        reset_i,
     output logic       done_o,
+    output logic       error_o,
+    output logic [2:0] error_code_o,
+    output logic [31:0] error_addr_o,
     output logic [1:0] fsm_o,
     dma_hw_trg_if.dut  hw_trg,
-    nmi_if.master      nmi
+    soc_nmi_if.master  nmi
     // verilog_format: on
 );
 
@@ -79,6 +84,9 @@ module dma_core (
     s_nmi_wstrb_d = '0;
     // common
     done_o        = '0;
+    error_o       = 1'b0;
+    error_code_o  = `SOC_NMI_RESP_OK;
+    error_addr_o  = s_nmi_addr_q;
     unique case (s_fsm_q)
       FSM_IDLE: begin
         if (start_i) begin
@@ -105,10 +113,17 @@ module dma_core (
               default: s_nmi_valid_d = 1'b1;
             endcase
             s_nmi_addr_d = s_src_addr_q;
-            if (nmi.ready) begin
-              s_xfer_type_d = 1'b1;
-              s_xfer_done_d = 1'b1;
-              s_rd_data_d   = nmi.rdata;
+            if (nmi.valid && nmi.ready) begin
+              s_nmi_valid_d = 1'b0;
+              if (nmi.resp_err) begin
+                s_fsm_d      = FSM_IDLE;
+                error_o      = 1'b1;
+                error_code_o = nmi.resp_code;
+              end else begin
+                s_xfer_type_d = 1'b1;
+                s_xfer_done_d = 1'b1;
+                s_rd_data_d   = nmi.rdata;
+              end
             end else if (nmi.valid) begin
               s_xfer_done_d = 1'b0;
             end
@@ -127,17 +142,24 @@ module dma_core (
             s_nmi_addr_d  = s_dst_addr_q;
             s_nmi_wdata_d = s_rd_data_q;
             s_nmi_wstrb_d = '1;
-            if (nmi.ready) begin
-              s_xfer_type_d = 1'b0;
-              s_xfer_done_d = 1'b1;
-              // when src rd+wr xfer done
-              if (s_xfer_cnt_q == xferlen_i) begin
-                s_xfer_cnt_d = '0;
-                s_fsm_d      = FSM_DONE;
+            if (nmi.valid && nmi.ready) begin
+              s_nmi_valid_d = 1'b0;
+              if (nmi.resp_err) begin
+                s_fsm_d      = FSM_IDLE;
+                error_o      = 1'b1;
+                error_code_o = nmi.resp_code;
               end else begin
-                s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
-                if (srcincr_i) s_src_addr_d = s_src_addr_q + 32'd4;
-                if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 32'd4;
+                s_xfer_type_d = 1'b0;
+                s_xfer_done_d = 1'b1;
+                // when src rd+wr xfer done
+                if ((s_xfer_cnt_q + 32'd1) == xferlen_i) begin
+                  s_xfer_cnt_d = '0;
+                  s_fsm_d      = FSM_DONE;
+                end else begin
+                  s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
+                  if (srcincr_i) s_src_addr_d = s_src_addr_q + 32'd4;
+                  if (dstincr_i) s_dst_addr_d = s_dst_addr_q + 32'd4;
+                end
               end
             end else if (nmi.valid) s_xfer_done_d = 1'b0;
           end
@@ -164,6 +186,9 @@ module dma_core (
         s_nmi_wstrb_d = '0;
         // common
         done_o        = '0;
+        error_o       = 1'b0;
+        error_code_o  = `SOC_NMI_RESP_OK;
+        error_addr_o  = s_nmi_addr_q;
       end
     endcase
   end

@@ -1,5 +1,6 @@
 /top/apb4_if_bridge.sv
 /top/gpio_pad_bridge.sv
+/top/soc_nmi_regslice.sv
 /top/core_wrapper.sv
 /top/retrosoc.sv
 /top/retrosoc_asic.sv

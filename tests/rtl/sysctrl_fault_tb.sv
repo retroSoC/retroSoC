@@ -63,6 +63,15 @@ module sysctrl_fault_tb;
     sysctrl.user_bus_idle_i     = 1'b1;
     sysctrl.fault_access_i      = 1'b0;
     sysctrl.fault_master_i      = '0;
+    sysctrl.fault_code_i        = `SOC_NMI_RESP_RESERVED;
+    sysctrl.perf_mgmt_wait_i    = 64'd11;
+    sysctrl.perf_user_wait_i    = 64'd12;
+    sysctrl.perf_dma_wait_i     = 64'd13;
+    sysctrl.perf_natv_wait_i    = 64'd14;
+    sysctrl.perf_apb_wait_i     = 64'd15;
+    sysctrl.perf_sdram_wait_i   = 64'd16;
+    sysctrl.perf_psram_wait_i   = 64'd17;
+    sysctrl.perf_flash_wait_i   = 64'd18;
     pll_ctrl.req_ready_i        = 1'b1;
     pll_ctrl.rsp_active_sel_i   = '0;
     pll_ctrl.rsp_active_valid_i = 1'b0;
@@ -88,9 +97,31 @@ module sysctrl_fault_tb;
     if (read_data !== 32'h1000_F000) $fatal(1, "fault address was not recorded");
     read_register(32'h1000_B018, read_data);
     if (read_data !== 32'h0000_0001) $fatal(1, "fault count was not incremented");
+    read_register(32'h1000_B02C, read_data);
+    if (read_data !== `SOC_NMI_RESP_RESERVED) $fatal(1, "fault detail was not recorded");
+
+    @(negedge clk_i);
+    sysctrl.fault_code_i = `SOC_NMI_RESP_DECERR;
+    fault_valid_i        = 1'b1;
+    fault_addr_i         = 32'hA000_0000;
+    fault_wstrb_i        = 4'h0;
+    fault_reserved_i     = 1'b0;
+    @(negedge clk_i);
+    fault_valid_i = 1'b0;
+    read_register(32'h1000_B014, read_data);
+    if (read_data !== 32'h1000_F000) $fatal(1, "later fault overwrote first fault address");
+    read_register(32'h1000_B018, read_data);
+    if (read_data !== 32'h0000_0002) $fatal(1, "later fault did not increment count");
+    read_register(32'h1000_B02C, read_data);
+    if (read_data !== `SOC_NMI_RESP_RESERVED) $fatal(1, "later fault overwrote first fault detail");
+
     write_register(32'h1000_B010, 32'h0000_0001);
     read_register(32'h1000_B010, read_data);
     if (read_data !== 32'h0000_000A) $fatal(1, "fault W1C did not clear pending");
+
+    write_register(32'h1000_B040, 32'h0000_0005);
+    read_register(32'h1000_B044, read_data);
+    if (read_data !== 32'd11) $fatal(1, "performance snapshot was not recorded");
 
     read_register(32'h1000_B020, read_data);
     if (read_data !== 32'h0000_003F) $fatal(1, "user cores were not held in reset");

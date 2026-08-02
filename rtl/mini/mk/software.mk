@@ -79,6 +79,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/i2c.c \
             $(ROOT_PATH)/crt/src/hal/onewire.c \
             $(ROOT_PATH)/crt/src/hal/dma.c \
+            $(ROOT_PATH)/crt/src/hal/perf.c \
             $(ROOT_PATH)/crt/src/hal/lcd.c \
             $(ROOT_PATH)/crt/src/hal/psram.c \
             $(ROOT_PATH)/crt/src/hal/spisd.c \
@@ -93,6 +94,7 @@ endif
 
 APP_SRCS     :=
 APP_INC_DIRS :=
+APP_CFLAGS   :=
 APP_MK       := $(ROOT_PATH)/app/apps/$(APP)/app.mk
 
 ifeq ($(wildcard $(APP_MK)),)
@@ -100,6 +102,7 @@ $(error Application profile not found: $(APP_MK))
 endif
 include $(APP_MK)
 
+CFLAGS       += $(APP_CFLAGS)
 APP_INC_DIRS += $(MPW_OUTPUT_DIR)
 
 ifneq ($(filter RV32E RV32I,$(ISA)),)
