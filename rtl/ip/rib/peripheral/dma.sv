@@ -45,7 +45,7 @@ module rib_dma (
     output logic      dma_xfer_done_o,
     dma_hw_trg_if.dut hw_trg,
     rib_if.slave      rib,
-    soc_rib_if.master rib_dma
+    soc_rib_burst_if.master rib_dma
     // verilog_format: on
 );
 

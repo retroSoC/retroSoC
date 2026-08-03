@@ -87,7 +87,9 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign tmr.paddr = rib.addr;" in apb_routes
     assert "({32{s_psel_q[8]}} & tmr.prdata)" in apb_response
     assert "localparam int NSLV = 10;" in apb_declarations
-    assert fabric.count("rib_if u_") == 5
+    assert fabric.count("soc_rib_if u_") == 1
+    assert fabric.count("soc_rib_burst_if u_") == 3
+    assert fabric.count("rib_if u_") == 2
     assert ".mgmt_rib(u_mgmt_rib_if)" in bus_fabric
     assert ".user_rib(u_user_rib_if)" in bus_fabric
     assert ".apb_rib(u_apb_rib_if)" in bus_fabric

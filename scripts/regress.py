@@ -113,6 +113,25 @@ def regression_environment() -> dict[str, str]:
     return environment
 
 
+def with_netsim_boot_only(
+    commands: tuple[tuple[str, tuple[str, ...]], ...],
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Replace only the local netlist target and retain its selected firmware image."""
+    transformed: list[tuple[str, tuple[str, ...]]] = []
+    for profile, values in commands:
+        if "netsim" not in values:
+            transformed.append((profile, values))
+            continue
+        filtered = tuple(
+            value
+            for value in values
+            if not value.startswith("SIM_SUCCESS_MARKER=")
+            and value != "netsim"
+        )
+        transformed.append((profile, (*filtered, "netsim-boot")))
+    return tuple(transformed)
+
+
 def run_command(
     command: list[str], root: Path, capture_output: bool, environment: dict[str, str]
 ) -> str:
@@ -157,11 +176,18 @@ def main() -> int:
     parser.add_argument("--suite", choices=("smoke", "pr", "nightly"), required=True)
     parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PDK matrix")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--netsim-boot-only",
+        action="store_true",
+        help="locally stop each Icarus assembly netlist run after Hello retroSoC!",
+    )
     args = parser.parse_args()
     try:
         commands, profiles = select_regression(args.suite, args.pdk)
     except ValueError as error:
         parser.error(str(error))
+    if args.netsim_boot_only:
+        commands = with_netsim_boot_only(commands)
     environment = regression_environment()
     for profile, values in commands:
         command = ["make", f"CONFIG={profile}", *values]

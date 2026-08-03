@@ -1,6 +1,10 @@
 /top/apb4_if_bridge.sv
 /top/gpio_pad_bridge.sv
-/top/soc_rib_regslice.sv
+/top/soc_rib_legacy_to_burst.sv
+/top/rib_legacy_to_burst.sv
+/top/soc_rib_burst_to_legacy.sv
+/top/soc_rib_burst_error_slave.sv
+/top/soc_rib_burst_ram.sv
 /top/core_wrapper.sv
 /top/retrosoc.sv
 /top/retrosoc_asic.sv

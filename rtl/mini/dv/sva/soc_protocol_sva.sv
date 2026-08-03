@@ -14,9 +14,10 @@
 module soc_bus_sva (
     input logic       clk_i,
     input logic       rst_n_i,
-    input logic       fault_sel_i,
+    input logic       fault_cmd_accept_i,
     input logic       fault_valid_i,
     input logic       access_denied_i,
+    input logic       cmd_accepted_i,
     input logic       arb_locked_i,
     input logic [1:0] arb_owner_i,
     input logic       mgmt_valid_i,
@@ -24,30 +25,33 @@ module soc_bus_sva (
     input logic       dma_valid_i
 );
 
-  // A decode miss must be reported and terminate the transaction locally.
-  assert property (@(posedge clk_i) disable iff (!rst_n_i) fault_sel_i |-> fault_valid_i);
+  // Fault commands remain active until their local terminal response.
+  assert property (@(posedge clk_i) disable iff (!rst_n_i) fault_cmd_accept_i |=> cmd_accepted_i);
+  assert property (@(posedge clk_i) disable iff (!rst_n_i) fault_valid_i |-> cmd_accepted_i);
 
   // A sole management request must acquire ownership rather than being dropped.
   assert property (@(posedge clk_i) disable iff (!rst_n_i)
       !arb_locked_i && mgmt_valid_i && !user_valid_i && !dma_valid_i |=>
           arb_locked_i && arb_owner_i == 2'd0);
 
-  // A denied user request terminates locally and cannot reach a target.
-  assert property (@(posedge clk_i) disable iff (!rst_n_i) access_denied_i |-> fault_valid_i);
+  // A denied user command can only be accepted by the local error responder.
+  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+      access_denied_i && !cmd_accepted_i |-> fault_cmd_accept_i);
 
 endmodule
 
 bind bus soc_bus_sva u_soc_bus_sva (
-    .clk_i          (clk_i),
-    .rst_n_i        (rst_n_i),
-    .fault_sel_i    (s_fault_sel),
-    .fault_valid_i  (fault_valid_o),
-    .arb_locked_i   (s_mstr_lock_q),
-    .access_denied_i(s_access_denied),
-    .arb_owner_i    (s_mstr_id_q),
-    .mgmt_valid_i   (mgmt_rib.valid),
-    .user_valid_i   (user_rib.valid),
-    .dma_valid_i    (dma_rib.valid)
+    .clk_i             (clk_i),
+    .rst_n_i           (rst_n_i),
+    .fault_cmd_accept_i(s_fault_cmd_hdshk),
+    .fault_valid_i     (fault_valid_o),
+    .arb_locked_i      (s_mstr_lock_q),
+    .access_denied_i   (s_access_denied),
+    .cmd_accepted_i    (s_cmd_accepted_q),
+    .arb_owner_i       (s_mstr_id_q),
+    .mgmt_valid_i      (mgmt_rib.valid),
+    .user_valid_i      (user_rib.cmd_valid),
+    .dma_valid_i       (dma_rib.cmd_valid)
 );
 
 module soc_rib2apb_sva #(

@@ -10,6 +10,7 @@
 
 `include "mmap_define.svh"
 `include "soc_irq_config.svh"
+`include "soc_rib_defs.svh"
 
 module ip_rib_wrapper (
     // verilog_format: off
@@ -17,7 +18,7 @@ module ip_rib_wrapper (
     input logic              rst_n_i,
     input logic              clk_aud_i,
     input logic              rst_aud_n_i,
-    rib_if.slave             rib,
+    soc_rib_burst_if.slave   burst_rib,
     gpio_if.dut              gpio,
     user_gpio_if.padctrl     user_gpio,
     uart_if.dut              uart,
@@ -27,9 +28,9 @@ module ip_rib_wrapper (
     i2s_if.dut               i2s,
     onewire_if.dut           onewire,
     xpi_if.dut               xpi,
-    soc_rib_if.master        dma_rib,
+    soc_rib_burst_if.master  dma_rib,
     sysctrl_if.dut           sysctrl,
-    pll_ctrl_if.sysctrl pll_ctrl,
+    pll_ctrl_if.sysctrl      pll_ctrl,
     sdram_if.dut             sdram,
     dvp_if.dut               dvp,
     sdio_if.dut              sdio,
@@ -43,16 +44,32 @@ module ip_rib_wrapper (
     // verilog_format: on
 );
 
+  // verilog_format: off
   // Generated RIB target declarations preserve scalar-interface compatibility.
   `include "soc_rib_interfaces.svh"
 
-simp_clint_if u_clint_if ();
+  rib_if rib ();
+  // verilog_format: on
+
+  simp_clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
 
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
   logic s_dma_xfer_done;
   logic s_tim0_irq, s_tim1_irq;
+
+  soc_rib_burst_to_legacy u_rib_burst_to_legacy (
+      .clk_i             (clk_i),
+      .rst_n_i           (rst_n_i),
+      .legacy_resp_err_i (1'b0),
+      .legacy_resp_code_i(`SOC_RIB_RESP_OK),
+      .burst             (burst_rib),
+      .legacy            (rib)
+  );
+
+  // Generated target routing operates on the legacy boundary behind the
+  // burst adapter. Register targets therefore remain INCR1-only.
 
   assign u_dma_hw_trg_if.i2s_tx_proc  = ~s_dma_i2s_tx_stall;
   assign u_dma_hw_trg_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
@@ -62,16 +79,18 @@ simp_clint_if u_clint_if ();
   // Uses ClusterIP common rib_if and register.sv dffr through generated bindings.
   `include "soc_rib_routes.svh"
 
+  // verilog_format: off
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "soc_rib_irq_bindings.svh"
 
-rib_gpio u_rib_gpio (
+  rib_gpio u_rib_gpio (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
       .rib      (u_gpio_rib_if),
       .gpio     (gpio),
       .user_gpio(user_gpio)
   );
+  // verilog_format: on
 
   rib_uart u_rib_uart (
       .clk_i  (clk_i),

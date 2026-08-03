@@ -29,15 +29,34 @@ def target_defines(target: str) -> list[str]:
 def source_files(target: str) -> list[Path]:
     common = [
         COMMON_RTL / "interface/rib_if.sv",
+        COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",
         TOP / "soc_rib_if.sv",
+        TOP / "soc_rib_burst_if.sv",
     ]
     if target == "bus":
         return [
             *common,
-            TOP / "soc_rib_regslice.sv",
+            COMMON_RTL / "utils/spill_register.sv",
+            TOP / "soc_rib_legacy_to_burst.sv",
+            TOP / "soc_rib_burst_to_legacy.sv",
+            TOP / "soc_rib_burst_error_slave.sv",
+            TOP / "soc_rib_burst_ram.sv",
             TOP / "bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
+        ]
+    if target == "rib_adapter":
+        return [
+            *common,
+            TOP / "soc_rib_legacy_to_burst.sv",
+            TOP / "soc_rib_burst_to_legacy.sv",
+            SCRIPT_DIR / "rib_adapter_formal.sv",
+        ]
+    if target == "spill_register":
+        return [
+            *common,
+            COMMON_RTL / "utils/spill_register.sv",
+            SCRIPT_DIR / "spill_register_formal.sv",
         ]
     if target == "rib2apb":
         return [
@@ -104,7 +123,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--target",
-        choices=("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user"),
+        choices=(
+            "bus",
+            "rib_adapter",
+            "spill_register",
+            "rib2apb",
+            "sysctrl",
+            "pll_rcu",
+            "gpio_user",
+        ),
         required=True,
     )
     parser.add_argument("--output", type=Path, required=True)

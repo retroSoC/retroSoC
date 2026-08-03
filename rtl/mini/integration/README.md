@@ -39,8 +39,10 @@ controller.
 user-IP slots. `generate_user_extensions.py` creates isolated default routing
 and one explicit instance per selected slot for `user_core_top.sv` and
 `user_ip_top.sv`. Adding an extension therefore requires a reviewed JSON entry
-rather than manual edits to the SoC muxes. The module port contract remains the
-existing user design template contract.
+rather than manual edits to the SoC muxes. Each core declares whether its reset
+is synchronous or asynchronous so a generated legacy RIB adapter uses the same
+reset style and does not introduce mixed-reset paths. The module port contract
+remains the existing user design template contract.
 
 `clock_reset_domains.json` is the checked inventory of root clock domains,
 reset synchronizers, and RCU PLL control crossings. It records the primitive,

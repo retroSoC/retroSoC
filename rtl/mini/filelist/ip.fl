@@ -45,6 +45,5 @@
 /top/ahbl2soc_rib.sv
 /ip/rib/interconnect/axi4l2rib.sv
 /ip/rib/util/async_fifo.sv
-/ip/rib/util/fifo.sv
 /ip/rib/interconnect/rib_regslice.sv
 /ip/rib/interconnect/rib2rib.sv

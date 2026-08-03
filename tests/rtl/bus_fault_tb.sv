@@ -12,17 +12,23 @@ module bus_fault_tb;
   logic [ 2:0] fault_code_o;
   logic        user_bus_idle_o;
   soc_rib_if mgmt_rib ();
-  soc_rib_if user_rib ();
-  soc_rib_if dma_rib ();
-  rib_if rib ();
+  soc_rib_burst_if user_rib ();
+  soc_rib_burst_if dma_rib ();
+  soc_rib_burst_if rib ();
   rib_if apb_rib ();
 
   always #5 clk_i = ~clk_i;
 
-  assign rib.ready = 1'b1;
-  assign rib.rdata = 32'hCAFE_BABE;
-  assign apb_rib.ready  = 1'b1;
-  assign apb_rib.rdata  = 32'h1234_5678;
+  assign rib.cmd_ready = 1'b1;
+  assign rib.w_ready   = 1'b1;
+  assign rib.rsp_valid = 1'b0;
+  assign rib.rdata     = 32'hCAFE_BABE;
+  assign rib.resp_err  = 1'b0;
+  assign rib.resp_code = `SOC_RIB_RESP_OK;
+  assign rib.rsp_beat  = '0;
+  assign rib.rsp_last  = 1'b0;
+  assign apb_rib.ready = 1'b1;
+  assign apb_rib.rdata = 32'h1234_5678;
 
   bus u_bus (
       .clk_i            (clk_i),
@@ -32,7 +38,7 @@ module bus_fault_tb;
       .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_bus_idle_o),
-      .rib         (rib),
+      .rib              (rib),
       .apb_rib          (apb_rib),
       .apb_resp_err_i   (1'b0),
       .perf_enable_i    (1'b0),
@@ -57,12 +63,11 @@ module bus_fault_tb;
       while (!fault_valid_o) @(posedge clk_i);
       if (fault_addr_o !== address || fault_wstrb_o !== write_strobes ||
           fault_reserved_o !== reserved || fault_access_o || fault_code_o !== expected_code ||
-          rib.valid || apb_rib.valid) begin
+          rib.cmd_valid || apb_rib.valid) begin
         $fatal(1, "unexpected fault response for address %h", address);
       end
       while (!mgmt_rib.ready) @(posedge clk_i);
-      if (mgmt_rib.rdata !== 32'd0 || !mgmt_rib.resp_err ||
-          mgmt_rib.resp_code !== expected_code) begin
+      if (mgmt_rib.rdata !== 32'd0 || !mgmt_rib.resp_err) begin
         $fatal(1, "fault response data must be zero");
       end
       @(negedge clk_i);
@@ -74,38 +79,57 @@ module bus_fault_tb;
   task automatic expect_user_denied(input logic [31:0] address, input logic [3:0] write_strobes);
     begin
       @(negedge clk_i);
-      user_rib.addr  = address;
-      user_rib.wdata = 32'h5A5A_A5A5;
-      user_rib.wstrb = write_strobes;
-      user_rib.valid = 1'b1;
+      user_rib.cmd_addr  = address;
+      user_rib.cmd_write = |write_strobes;
+      user_rib.cmd_len   = `SOC_RIB_BURST_INCR1;
+      user_rib.cmd_valid = 1'b1;
+      while (!user_rib.cmd_ready) @(posedge clk_i);
+      @(negedge clk_i);
+      user_rib.cmd_valid = 1'b0;
+      if (|write_strobes) begin
+        user_rib.wdata   = 32'h5A5A_A5A5;
+        user_rib.wstrb   = write_strobes;
+        user_rib.wlast   = 1'b1;
+        user_rib.w_valid = 1'b1;
+        while (!user_rib.w_ready) @(posedge clk_i);
+        @(negedge clk_i);
+        user_rib.w_valid = 1'b0;
+      end
       while (!fault_valid_o) @(posedge clk_i);
-      if (!fault_access_o || fault_master_o != 2'd1 || rib.valid || apb_rib.valid) begin
+      if (!fault_access_o || fault_master_o != 2'd1 || rib.cmd_valid || apb_rib.valid) begin
         $fatal(1, "user access was not denied locally");
       end
-      while (!user_rib.ready) @(posedge clk_i);
-      if (user_rib.rdata !== 32'd0 || !user_rib.resp_err ||
+      if (user_rib.rdata !== 32'd0 || !user_rib.resp_err || !user_rib.rsp_last ||
           user_rib.resp_code !== `SOC_RIB_RESP_PROTERR) begin
         $fatal(1, "denied user response data must be zero");
       end
-      @(negedge clk_i);
-      user_rib.valid = 1'b0;
       while (fault_valid_o) @(posedge clk_i);
     end
   endtask
 
   initial begin
-    mgmt_rib.valid = 1'b0;
-    mgmt_rib.addr  = '0;
-    mgmt_rib.wdata = '0;
-    mgmt_rib.wstrb = '0;
-    user_rib.valid = 1'b0;
-    user_rib.addr  = '0;
-    user_rib.wdata = '0;
-    user_rib.wstrb = '0;
-    dma_rib.valid  = 1'b0;
-    dma_rib.addr   = '0;
-    dma_rib.wdata  = '0;
-    dma_rib.wstrb  = '0;
+    mgmt_rib.valid     = 1'b0;
+    mgmt_rib.addr      = '0;
+    mgmt_rib.wdata     = '0;
+    mgmt_rib.wstrb     = '0;
+    user_rib.cmd_valid = 1'b0;
+    user_rib.cmd_addr  = '0;
+    user_rib.cmd_write = 1'b0;
+    user_rib.cmd_len   = `SOC_RIB_BURST_INCR1;
+    user_rib.w_valid   = 1'b0;
+    user_rib.wdata     = '0;
+    user_rib.wstrb     = '0;
+    user_rib.wlast     = 1'b0;
+    user_rib.rsp_ready = 1'b1;
+    dma_rib.cmd_valid  = 1'b0;
+    dma_rib.cmd_addr   = '0;
+    dma_rib.cmd_write  = 1'b0;
+    dma_rib.cmd_len    = `SOC_RIB_BURST_INCR1;
+    dma_rib.w_valid    = 1'b0;
+    dma_rib.wdata      = '0;
+    dma_rib.wstrb      = '0;
+    dma_rib.wlast      = 1'b0;
+    dma_rib.rsp_ready  = 1'b1;
 
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;

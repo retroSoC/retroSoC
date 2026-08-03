@@ -31,7 +31,6 @@ module soc_rib_regslice (
   logic [31:0] s_rib_mst_rdata_d, s_rib_mst_rdata_q;
   logic s_rib_mst_ready_d, s_rib_mst_ready_q;
   logic s_rib_mst_resp_err_d, s_rib_mst_resp_err_q;
-  logic [2:0] s_rib_mst_resp_code_d, s_rib_mst_resp_code_q;
 
   assign rib_mst.valid = s_rib_mst_valid_q;
   assign rib_mst.addr  = s_rib_mst_addr_q;
@@ -39,19 +38,17 @@ module soc_rib_regslice (
   assign rib_mst.wstrb = s_rib_mst_wstrb_q;
 
   always_comb begin
-    s_fsm_d               = s_fsm_q;
-    s_rib_mst_valid_d     = s_rib_mst_valid_q;
-    s_rib_mst_addr_d      = s_rib_mst_addr_q;
-    s_rib_mst_wdata_d     = s_rib_mst_wdata_q;
-    s_rib_mst_wstrb_d     = s_rib_mst_wstrb_q;
-    s_rib_mst_ready_d     = s_rib_mst_ready_q;
-    s_rib_mst_rdata_d     = s_rib_mst_rdata_q;
-    s_rib_mst_resp_err_d  = s_rib_mst_resp_err_q;
-    s_rib_mst_resp_code_d = s_rib_mst_resp_code_q;
-    rib_slv.ready         = 1'b0;
-    rib_slv.rdata         = '0;
-    rib_slv.resp_err      = 1'b0;
-    rib_slv.resp_code     = `SOC_RIB_RESP_OK;
+    s_fsm_d              = s_fsm_q;
+    s_rib_mst_valid_d    = s_rib_mst_valid_q;
+    s_rib_mst_addr_d     = s_rib_mst_addr_q;
+    s_rib_mst_wdata_d    = s_rib_mst_wdata_q;
+    s_rib_mst_wstrb_d    = s_rib_mst_wstrb_q;
+    s_rib_mst_ready_d    = s_rib_mst_ready_q;
+    s_rib_mst_rdata_d    = s_rib_mst_rdata_q;
+    s_rib_mst_resp_err_d = s_rib_mst_resp_err_q;
+    rib_slv.ready        = 1'b0;
+    rib_slv.rdata        = '0;
+    rib_slv.resp_err     = 1'b0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
         if (rib_slv.valid) begin
@@ -64,20 +61,18 @@ module soc_rib_regslice (
       end
       FSM_REQ: begin
         if (rib_mst.ready) begin
-          s_fsm_d               = FSM_RESP;
-          s_rib_mst_valid_d     = 1'b0;
-          s_rib_mst_ready_d     = 1'b1;
-          s_rib_mst_rdata_d     = rib_mst.rdata;
-          s_rib_mst_resp_err_d  = rib_mst.resp_err;
-          s_rib_mst_resp_code_d = rib_mst.resp_code;
+          s_fsm_d              = FSM_RESP;
+          s_rib_mst_valid_d    = 1'b0;
+          s_rib_mst_ready_d    = 1'b1;
+          s_rib_mst_rdata_d    = rib_mst.rdata;
+          s_rib_mst_resp_err_d = rib_mst.resp_err;
         end
       end
       FSM_RESP: begin
-        s_fsm_d           = FSM_IDLE;
-        rib_slv.ready     = s_rib_mst_ready_q;
-        rib_slv.rdata     = s_rib_mst_rdata_q;
-        rib_slv.resp_err  = s_rib_mst_resp_err_q;
-        rib_slv.resp_code = s_rib_mst_resp_code_q;
+        s_fsm_d          = FSM_IDLE;
+        rib_slv.ready    = s_rib_mst_ready_q;
+        rib_slv.rdata    = s_rib_mst_rdata_q;
+        rib_slv.resp_err = s_rib_mst_resp_err_q;
       end
       default: s_fsm_d = FSM_IDLE;
     endcase
@@ -130,12 +125,6 @@ module soc_rib_regslice (
       rst_n_i,
       s_rib_mst_resp_err_d,
       s_rib_mst_resp_err_q
-  );
-  dffr #(3) u_rib_mst_resp_code_dffr (
-      clk_i,
-      rst_n_i,
-      s_rib_mst_resp_code_d,
-      s_rib_mst_resp_code_q
   );
 
 endmodule

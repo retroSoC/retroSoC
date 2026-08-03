@@ -179,11 +179,19 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     (user_extensions / "rtl").mkdir(parents=True)
 
     bus_filelist = tmp_path / "bus.fl"
+    rib_adapter_filelist = tmp_path / "rib_adapter.fl"
+    spill_register_filelist = tmp_path / "spill_register.fl"
     rib2apb_filelist = tmp_path / "rib2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
+    assert generate_formal_filelist(
+        "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "spill_register", spill_register_filelist, memory_map, topology, user_extensions
+    )
     assert generate_formal_filelist(
         "rib2apb", rib2apb_filelist, memory_map, topology, user_extensions
     )
@@ -198,14 +206,25 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     )
 
     bus = parse_filelists([bus_filelist], require_files=False)
+    rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
+    spill_register = parse_filelists([spill_register_filelist], require_files=False)
     rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_regslice.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_burst_if.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_legacy_to_burst.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_burst_error_slave.sv" in bus.files
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_burst_to_legacy.sv" in rib_adapter.files
+    assert ROOT / "rtl/mini/formal/rib_adapter_formal.sv" in rib_adapter.files
+    assert (
+        ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"
+        in spill_register.files
+    )
+    assert ROOT / "rtl/mini/formal/spill_register_formal.sv" in spill_register.files
     assert ROOT / "rtl/ip/rib/interconnect/rib2apb.sv" in rib2apb.files
     assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
@@ -629,7 +648,7 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     profile = (ROOT / "configs/benchmark/ihp130-hazard3.mk").read_text(encoding="utf-8")
     benchmark = (ROOT / "app/apps/benchmark/main.c").read_text(encoding="utf-8")
 
-    assert "PDK_BEHAV       ?= NO" in makefile
+    assert re.search(r"^PDK_BEHAV\s+\?= NO$", makefile, re.MULTILINE)
     assert "PDK_BEHAV HAVE_SVA" in makefile
     assert "PDK_BEHAV=YES is for functional simulation" in makefile
     assert "HAVE_SRAM_MACRO := YES" in profile
@@ -822,6 +841,49 @@ def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
     assert data["exit_code"] == 0
     assert data["duration_seconds"] >= 0
     assert log.read_text(encoding="utf-8") == "flow output\n"
+
+
+def test_run_flow_can_terminate_an_opt_in_local_flow_at_success_marker(tmp_path: Path) -> None:
+    log = tmp_path / "marker.log"
+    result = tmp_path / "marker.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/run_flow.py"),
+            "--tool",
+            "test",
+            "--log",
+            str(log),
+            "--result",
+            str(result),
+            "--success-marker",
+            "Hello retroSoC!",
+            "--terminate-on-success-marker",
+            "--",
+            sys.executable,
+            "-c",
+            "import time; print('Hello retroSoC!', flush=True); time.sleep(30)",
+        ],
+        text=True,
+        capture_output=True,
+        timeout=10,
+    )
+    report = json.loads(result.read_text(encoding="utf-8"))
+    assert completed.returncode == 0
+    assert report["status"] == "passed"
+    assert report["completion_mode"] == "success_marker"
+    assert report["success_marker_seen"] is True
+    assert "Hello retroSoC!" in log.read_text(encoding="utf-8")
+
+
+def test_regression_boot_only_mode_replaces_only_netsim_command() -> None:
+    transformed = regress.with_netsim_boot_only(PR_COMMANDS)
+    flattened = [value for _, values in transformed for value in values]
+    assert "netsim" not in flattened
+    assert "netsim-boot" in flattened
+    assert "SIM_FIRMWARE_NAME=retrosoc_asm" in flattened
+    assert not any(value.startswith("SIM_SUCCESS_MARKER=") for value in flattened)
+    assert any("sta" in values for _, values in transformed)
 
 
 def test_run_flow_adds_carriage_return_when_terminal_disables_onlcr(monkeypatch) -> None:

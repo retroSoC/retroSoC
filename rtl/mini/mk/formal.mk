@@ -6,12 +6,16 @@ FORMAL_SOLVER_DIR         := $(FORMAL_DIR)/bin
 FORMAL_SOLVER_WRAPPER     := $(FORMAL_SOLVER_DIR)/bitwuzla
 FORMAL_DEPTH              ?= 20
 FORMAL_TIMEOUT            ?= 60
-FORMAL_TARGETS            := bus rib2apb sysctrl pll_rcu gpio_user
+FORMAL_TARGETS            := bus rib_adapter spill_register rib2apb sysctrl pll_rcu gpio_user
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
 FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/bus_formal_props.v \
+                             $(RTL_PATH)/formal/rib_adapter_formal.sv \
+                             $(RTL_PATH)/formal/rib_adapter_formal_props.v \
+                             $(RTL_PATH)/formal/spill_register_formal.sv \
+                             $(RTL_PATH)/formal/spill_register_formal_props.v \
                              $(RTL_PATH)/formal/rib2apb_formal.sv \
                              $(RTL_PATH)/formal/rib2apb_formal_props.v \
                              $(RTL_PATH)/formal/sysctrl_formal.sv \
@@ -21,6 +25,11 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/gpio_user_formal.sv \
                              $(RTL_PATH)/formal/gpio_user_formal_props.v \
                              $(RTL_PATH)/top/bus.sv \
+                             $(RTL_PATH)/top/soc_rib_burst_error_slave.sv \
+                             $(RTL_PATH)/top/soc_rib_burst_if.sv \
+                             $(RTL_PATH)/top/soc_rib_burst_ram.sv \
+                             $(RTL_PATH)/top/soc_rib_burst_to_legacy.sv \
+                             $(RTL_PATH)/top/soc_rib_legacy_to_burst.sv \
                              $(ROOT_PATH)/rtl/ip/rib/interconnect/rib2apb.sv \
                              $(ROOT_PATH)/rtl/ip/rib/interconnect/rib_regslice.sv \
                              $(ROOT_PATH)/rtl/ip/rib/peripheral/gpio.sv \
@@ -33,6 +42,7 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/edge_det.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/register.sv \
+                             $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/spill_register.sv \
                              $(ROOT_PATH)/scripts/bitwuzla_smt2.py
 FORMAL_STAMPS             := $(addsuffix /.stamp,$(addprefix $(FORMAL_DIR)/,$(FORMAL_TARGETS)))
 FORMAL_INTERMEDIATES      := $(foreach target,$(FORMAL_TARGETS), \
@@ -105,6 +115,10 @@ formal: $(FORMAL_RESULT) | manifest
 
 formal-bus: $(FORMAL_DIR)/bus/.stamp | manifest
 
+formal-rib-adapter: $(FORMAL_DIR)/rib_adapter/.stamp | manifest
+
+formal-spill-register: $(FORMAL_DIR)/spill_register/.stamp | manifest
+
 formal-rib2apb: $(FORMAL_DIR)/rib2apb/.stamp | manifest
 
 formal-sysctrl: $(FORMAL_DIR)/sysctrl/.stamp | manifest
@@ -119,4 +133,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-spill-register formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-doctor formal-clean

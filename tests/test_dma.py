@@ -17,16 +17,33 @@ def test_dma_reports_bus_errors_and_transfers_exact_word_count(tmp_path: Path) -
     if iverilog is None or vvp is None:
         return
 
+    memory_map = tmp_path / "memory_map"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            "--map",
+            str(ROOT / "rtl/mini/address_map/memory_map.json"),
+            "--output-dir",
+            str(memory_map),
+            "--have-sram-if",
+            "NO",
+        ],
+        check=True,
+    )
     source_list = tmp_path / "dma_error.fl"
     source_list.write_text(
         "\n".join(
             [
                 "+define+SV_ASSRT_DISABLE",
+                f"+incdir+{memory_map / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/rib_if.sv"),
                 str(ROOT / "rtl/mini/top/soc_rib_if.sv"),
+                str(ROOT / "rtl/mini/top/soc_rib_burst_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv"),
                 str(ROOT / "rtl/ip/rib/peripheral/dma.sv"),
                 str(ROOT / "rtl/ip/rib/peripheral/dma_core.sv"),
                 str(ROOT / "tests/rtl/dma_error_tb.sv"),
@@ -53,4 +70,4 @@ def test_dma_reports_bus_errors_and_transfers_exact_word_count(tmp_path: Path) -
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "dma error responder test passed" in result.stdout
+    assert "dma error and burst performance test passed" in result.stdout

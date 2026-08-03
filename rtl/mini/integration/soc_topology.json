@@ -46,11 +46,11 @@
     {"slot": 17, "name": "i2c1", "interface": "u_i2c1_rib_if", "regions": ["RIB_I2C1"]}
   ],
   "fabric_links": [
-    {"name": "mgmt", "interface": "u_mgmt_rib_if"},
-    {"name": "user", "interface": "u_user_rib_if"},
-    {"name": "dma", "interface": "u_dma_rib_if"},
-    {"name": "rib", "interface": "u_rib_if"},
-    {"name": "apb", "interface": "u_apb_rib_if"}
+    {"name": "mgmt", "interface": "u_mgmt_rib_if", "protocol": "soc_legacy"},
+    {"name": "user", "interface": "u_user_rib_if", "protocol": "burst"},
+    {"name": "dma", "interface": "u_dma_rib_if", "protocol": "burst"},
+    {"name": "rib", "interface": "u_rib_if", "protocol": "burst"},
+    {"name": "apb", "interface": "u_apb_rib_if", "protocol": "legacy"}
   ],
   "apb_targets": [
     {"slot": 0, "name": "archinfo", "timed_interface": "u_archinfo_apb_if", "pure_interface": "u_archinfo_apb_pure_if", "region": "APB_ARCHINFO"},

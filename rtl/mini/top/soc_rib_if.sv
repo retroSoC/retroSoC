@@ -24,7 +24,6 @@ interface soc_rib_if ();
   logic [31:0] rdata;
   logic        ready;
   logic        resp_err;
-  logic [ 2:0] resp_code;
 
   modport slave(
       input valid,
@@ -33,8 +32,7 @@ interface soc_rib_if ();
       input wstrb,
       output rdata,
       output ready,
-      output resp_err,
-      output resp_code
+      output resp_err
   );
   modport master(
       output valid,
@@ -43,8 +41,7 @@ interface soc_rib_if ();
       output wstrb,
       input rdata,
       input ready,
-      input resp_err,
-      input resp_code
+      input resp_err
   );
 
 endinterface

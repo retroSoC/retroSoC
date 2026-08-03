@@ -4,12 +4,12 @@
   "ip_selector_width": 8,
   "gpio_width": 32,
   "core_targets": [
-    {"slot": 0, "module": "user_core_design_username1", "instance": "u_user_core_design_username1"},
-    {"slot": 1, "module": "user_core_design_username2", "instance": "u_user_core_design_username2"},
-    {"slot": 2, "module": "user_core_design_username3", "instance": "u_user_core_design_username3"},
-    {"slot": 3, "module": "user_core_design_username4", "instance": "u_user_core_design_username4"},
-    {"slot": 4, "module": "user_core_design_username5", "instance": "u_user_core_design_username5"},
-    {"slot": 5, "module": "user_core_design_username6", "instance": "u_user_core_design_username6"}
+    {"slot": 0, "module": "user_core_design_username1", "instance": "u_user_core_design_username1", "bus": "legacy", "reset": "sync"},
+    {"slot": 1, "module": "user_core_design_username2", "instance": "u_user_core_design_username2", "bus": "legacy", "reset": "sync"},
+    {"slot": 2, "module": "user_core_design_username3", "instance": "u_user_core_design_username3", "bus": "legacy", "reset": "async"},
+    {"slot": 3, "module": "user_core_design_username4", "instance": "u_user_core_design_username4", "bus": "legacy", "reset": "async"},
+    {"slot": 4, "module": "user_core_design_username5", "instance": "u_user_core_design_username5", "bus": "legacy", "reset": "async"},
+    {"slot": 5, "module": "user_core_design_username6", "instance": "u_user_core_design_username6", "bus": "legacy", "reset": "async"}
   ],
   "ip_targets": [
     {"slot": 1, "module": "user_ip_design_username1", "instance": "u_user_ip_design_username1"},

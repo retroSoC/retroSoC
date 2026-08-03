@@ -34,6 +34,21 @@ static void rs_benchmark_put_dec(uint32_t value) {
     } while (digit_count != 0U);
 }
 
+static void rs_benchmark_put_dec64(uint64_t value) {
+    char digits[20];
+    uint32_t digit_count = 0U;
+
+    do {
+        digits[digit_count] = (char)('0' + (value % 10U));
+        value /= 10U;
+        ++digit_count;
+    } while (value != 0U);
+    do {
+        --digit_count;
+        putch(digits[digit_count]);
+    } while (digit_count != 0U);
+}
+
 static void rs_benchmark_put_hex(uint32_t value) {
     static const char digits[] = "0123456789abcdef";
     uint32_t nibble_index;
@@ -47,7 +62,21 @@ static void rs_benchmark_put_hex(uint32_t value) {
 
 static void rs_benchmark_put_counter(const char *name, uint64_t value) {
     rs_benchmark_puts(name);
-    rs_benchmark_put_dec((uint32_t)value);
+    rs_benchmark_put_dec64(value);
+}
+
+static uint64_t rs_benchmark_read_cycle_counter(void) {
+    uint32_t high_before;
+    uint32_t low;
+    uint32_t high_after;
+
+    do {
+        __asm__ volatile("rdcycleh %0" : "=r"(high_before));
+        __asm__ volatile("rdcycle %0" : "=r"(low));
+        __asm__ volatile("rdcycleh %0" : "=r"(high_after));
+    } while (high_before != high_after);
+
+    return ((uint64_t)high_after << 32U) | (uint64_t)low;
 }
 
 static uint32_t rs_benchmark_write(volatile uint32_t *memory, uint32_t seed) {
@@ -74,7 +103,7 @@ static uint32_t rs_benchmark_read(volatile const uint32_t *memory) {
 }
 
 static void rs_benchmark_report(const char *region, const char *operation, uint32_t checksum,
-                                const rs_perf_snapshot_t *snapshot) {
+                                uint64_t cycles, const rs_perf_snapshot_t *snapshot) {
     rs_benchmark_puts("PERF region=");
     rs_benchmark_puts(region);
     rs_benchmark_puts(" op=");
@@ -83,6 +112,7 @@ static void rs_benchmark_report(const char *region, const char *operation, uint3
     rs_benchmark_put_dec(RS_BENCHMARK_WORDS);
     rs_benchmark_puts(" checksum=");
     rs_benchmark_put_hex(checksum);
+    rs_benchmark_put_counter(" cycles=", cycles);
     rs_benchmark_put_counter(" mgmt_wait=", snapshot->mgmt_wait);
     rs_benchmark_put_counter(" rib_wait=", snapshot->rib_wait);
     rs_benchmark_put_counter(" sdram_wait=", snapshot->sdram_wait);
@@ -113,24 +143,30 @@ static void rs_benchmark_report_data_failure(const char *region, uint32_t expect
 
 static bool rs_benchmark_memory(const char *region, volatile uint32_t *memory, uint32_t seed) {
     rs_perf_snapshot_t snapshot;
+    uint64_t cycle_start;
+    uint64_t cycles;
     uint32_t expected_checksum;
     uint32_t actual_checksum;
 
     (void)rs_perf_start();
+    cycle_start = rs_benchmark_read_cycle_counter();
     expected_checksum = rs_benchmark_write(memory, seed);
+    cycles = rs_benchmark_read_cycle_counter() - cycle_start;
     if (rs_perf_snapshot(&snapshot) != RS_OK) {
         rs_benchmark_report_snapshot_failure(region, "write");
         return false;
     }
-    rs_benchmark_report(region, "write", expected_checksum, &snapshot);
+    rs_benchmark_report(region, "write", expected_checksum, cycles, &snapshot);
 
     (void)rs_perf_start();
+    cycle_start = rs_benchmark_read_cycle_counter();
     actual_checksum = rs_benchmark_read(memory);
+    cycles = rs_benchmark_read_cycle_counter() - cycle_start;
     if (rs_perf_snapshot(&snapshot) != RS_OK) {
         rs_benchmark_report_snapshot_failure(region, "read");
         return false;
     }
-    rs_benchmark_report(region, "read", actual_checksum, &snapshot);
+    rs_benchmark_report(region, "read", actual_checksum, cycles, &snapshot);
     if (actual_checksum != expected_checksum) {
         rs_benchmark_report_data_failure(region, expected_checksum, actual_checksum);
         return false;
@@ -143,12 +179,15 @@ static bool rs_benchmark_dma(volatile uint32_t *source, volatile uint32_t *desti
     rs_dma_error_t error;
     rs_perf_snapshot_t snapshot;
     rs_status_t status;
+    uint64_t cycle_start;
+    uint64_t cycles;
     uint32_t checksum;
 
     error.response_code = 0U;
     error.address = 0U;
 
     (void)rs_perf_start();
+    cycle_start = rs_benchmark_read_cycle_counter();
     status =
         rs_dma_config(0U, (uintptr_t)source, 1U, (uintptr_t)destination, 1U, RS_BENCHMARK_WORDS);
     if (status == RS_OK) {
@@ -162,13 +201,14 @@ static bool rs_benchmark_dma(volatile uint32_t *source, volatile uint32_t *desti
         rs_benchmark_puts("PERF_FAIL region=dma op=copy\n");
         return false;
     }
+    cycles = rs_benchmark_read_cycle_counter() - cycle_start;
 
     if (rs_perf_snapshot(&snapshot) != RS_OK) {
         rs_benchmark_report_snapshot_failure("dma", "copy");
         return false;
     }
     checksum = rs_benchmark_read(destination);
-    rs_benchmark_report("dma", "copy", checksum, &snapshot);
+    rs_benchmark_report("dma", "copy", checksum, cycles, &snapshot);
     if (checksum != expected_checksum) {
         rs_benchmark_report_data_failure("dma", expected_checksum, checksum);
         return false;
@@ -183,6 +223,8 @@ int main(void) {
     volatile uint32_t *const psram = (volatile uint32_t *)(uintptr_t)RS_SOC_PSRAM_BASE;
     volatile uint32_t *const flash = (volatile uint32_t *)(uintptr_t)(RS_SOC_FLASH_BASE + 0x10000U);
     uint32_t checksum;
+    uint64_t cycle_start;
+    uint64_t cycles;
 
     uart0_init(CPU_FREQ, UART_BPS);
     rs_benchmark_puts("retroSoC: A Customized ASIC for Retro Stuff\n");
@@ -198,7 +240,9 @@ int main(void) {
     }
 
     (void)rs_perf_start();
+    cycle_start = rs_benchmark_read_cycle_counter();
     checksum = rs_benchmark_read(flash);
+    cycles = rs_benchmark_read_cycle_counter() - cycle_start;
     {
         rs_perf_snapshot_t snapshot;
 
@@ -206,7 +250,7 @@ int main(void) {
             rs_benchmark_report_snapshot_failure("flash", "read");
             return 1;
         }
-        rs_benchmark_report("flash", "read", checksum, &snapshot);
+        rs_benchmark_report("flash", "read", checksum, cycles, &snapshot);
     }
 
     if (!rs_benchmark_dma(psram, sdram + RS_BENCHMARK_WORDS, rs_benchmark_read(psram))) {

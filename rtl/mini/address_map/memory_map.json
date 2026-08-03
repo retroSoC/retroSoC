@@ -33,7 +33,7 @@
     {"symbol": "PERF_FLASH_WAIT_HI", "offset": "0x80"}
   ],
   "regions": [
-    {"symbol": "FLASH", "base": "0x00000000", "size": "0x01000000", "route": "rib", "kind": "active", "public": true, "linker": "FLASH", "user_access": "ro"},
+    {"symbol": "FLASH", "base": "0x00000000", "size": "0x01000000", "route": "rib", "kind": "active", "public": true, "linker": "FLASH", "user_access": "ro", "burst": "incr4"},
     {"symbol": "RIB_GPIO", "base": "0x10000000", "size": "0x00001000", "route": "rib", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "RIB_UART0", "base": "0x10001000", "size": "0x00001000", "route": "rib", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "RIB_TIM0", "base": "0x10002000", "size": "0x00001000", "route": "rib", "kind": "active", "public": true, "user_access": "rw"},
@@ -64,11 +64,11 @@
     {"symbol": "APB_CRC", "base": "0x20007000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "APB_TMR", "base": "0x20008000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "APB_USER_IP", "base": "0x2000F000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "SRAM", "base": "0x30000000", "size": "0x00020000", "route": "ram", "kind": "active", "public": true, "linker": "SRAM", "user_access": "rw"},
-    {"symbol": "SDRAM", "base": "0x38000000", "size": "0x02000000", "route": "rib", "kind": "active", "public": true, "linker": "SDRAM", "user_access": "rw"},
-    {"symbol": "PSRAM", "base": "0x40000000", "size": "0x00800000", "route": "rib", "kind": "active", "public": true, "linker": "PSRAM", "user_access": "rw"},
+    {"symbol": "SRAM", "base": "0x30000000", "size": "0x00020000", "route": "ram", "kind": "active", "public": true, "linker": "SRAM", "user_access": "rw", "burst": "incr4"},
+    {"symbol": "SDRAM", "base": "0x38000000", "size": "0x02000000", "route": "rib", "kind": "active", "public": true, "linker": "SDRAM", "user_access": "rw", "burst": "incr4"},
+    {"symbol": "PSRAM", "base": "0x40000000", "size": "0x00800000", "route": "rib", "kind": "active", "public": true, "linker": "PSRAM", "user_access": "rw", "burst": "incr4"},
     {"symbol": "OPIPSRAM", "base": "0x48000000", "size": "0x08000000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
-    {"symbol": "XPI", "base": "0x50000000", "size": "0x10000000", "route": "rib", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "SPISD", "base": "0x60000000", "size": "0x40000000", "route": "rib", "kind": "active", "public": true, "user_access": "rw"}
+    {"symbol": "XPI", "base": "0x50000000", "size": "0x10000000", "route": "rib", "kind": "active", "public": true, "user_access": "rw", "burst": "incr4"},
+    {"symbol": "SPISD", "base": "0x60000000", "size": "0x40000000", "route": "rib", "kind": "active", "public": true, "user_access": "rw", "burst": "incr4"}
   ]
 }

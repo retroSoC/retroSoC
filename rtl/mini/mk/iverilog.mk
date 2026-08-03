@@ -127,6 +127,16 @@ netsim: netcomp
 	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(IVERILOG_NETL_DIR)/sim.log \
 		--result $(IVERILOG_NETL_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
+netsim-boot: netcomp
+	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_NETL_DIR) \
+		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-sim \
+		--log $(IVERILOG_NETL_DIR)/sim.log --result $(IVERILOG_NETL_DIR)/result-sim.json \
+		--success-marker 'Hello retroSoC!' --terminate-on-success-marker \
+		--cwd $(IVERILOG_NETL_DIR) -- stdbuf -oL -eL $(VVP) simv -fst $(IVERILOG_SIM_OPTS)
+	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(IVERILOG_NETL_DIR)/sim.log \
+		--result $(IVERILOG_NETL_DIR)/result-sim-check.json --require 'Hello retroSoC!'
+
 postsim: postcomp
 	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_POST_DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
@@ -136,7 +146,7 @@ postsim: postcomp
 	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(IVERILOG_POST_DIR)/sim.log \
 		--result $(IVERILOG_POST_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
-comp netcomp postcomp sim netsim postsim: | manifest
+comp netcomp postcomp sim netsim netsim-boot postsim: | manifest
 
 wave:
 	cd $(IVERILOG_BEHV_DIR) && $(GTKWAVE) $(RTL_TOP).fst &
@@ -148,4 +158,4 @@ postwave:
 clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(IVERILOG_ROOT)
 
-.PHONY: convt_sv2v gen_iverilog_filelist tech-cell-test comp netcomp postcomp sim netsim postsim wave netwave postwave clean
+.PHONY: convt_sv2v gen_iverilog_filelist tech-cell-test comp netcomp postcomp sim netsim netsim-boot postsim wave netwave postwave clean

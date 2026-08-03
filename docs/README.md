@@ -9,6 +9,8 @@ the root README and subsystem guides.
   baseline, scope, partial automation, and deviation process.
 - [pll-clock-control.md](pll-clock-control.md) describes the SYSCTRL PLL
   register protocol and software quiesce contract.
+- [rib-interconnect.md](rib-interconnect.md) defines the RIB v1 linear-burst
+  contract, compatibility boundaries, target status, and verification.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 

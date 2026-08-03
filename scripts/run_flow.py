@@ -18,6 +18,9 @@ sys.path.insert(0, str(ROOT))
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
+FAILURE_MARKER = re.compile(r"(?:\bFAILED?\b|\bFATAL\b|assertion failed|%Error)", re.IGNORECASE)
+
+
 def parse_env(values: list[str]) -> dict[str, str]:
     environment = os.environ.copy()
     for item in values:
@@ -84,11 +87,21 @@ def main() -> int:
         action="store_true",
         help="stream child output byte-by-byte and preserve raw log bytes",
     )
+    parser.add_argument("--success-marker", help="marker used by an opt-in early-stop flow")
+    parser.add_argument(
+        "--terminate-on-success-marker",
+        action="store_true",
+        help="terminate the child successfully after --success-marker is logged",
+    )
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
     if not command:
         parser.error("a command is required after --")
+    if args.terminate_on_success_marker and not args.success_marker:
+        parser.error("--terminate-on-success-marker requires --success-marker")
+    if args.terminate_on_success_marker and args.stream_bytes:
+        parser.error("success-marker termination is unsupported with --stream-bytes")
     try:
         environment = parse_env(args.env)
     except ValueError as error:
@@ -101,6 +114,8 @@ def main() -> int:
     returncode = 127
     error_message = None
     process: subprocess.Popen[str] | subprocess.Popen[bytes] | None = None
+    marker_seen = False
+    rejected_matches: list[str] = []
     try:
         if args.stream_bytes:
             log_context = args.log.open("wb")
@@ -128,9 +143,23 @@ def main() -> int:
                 for line in process.stdout:
                     log.write(line)
                     log.flush()
+                    match = FAILURE_MARKER.search(line)
+                    if match:
+                        rejected_matches.append(match.group(0))
                     if should_display(args.tool, line):
                         write_console_output(line)
-            returncode = process.wait()
+                    if args.terminate_on_success_marker and args.success_marker in line:
+                        marker_seen = True
+                        process.terminate()
+                        try:
+                            process.wait(timeout=5)
+                        except subprocess.TimeoutExpired:
+                            process.kill()
+                            process.wait()
+                        returncode = 1 if rejected_matches else 0
+                        break
+            if not marker_seen:
+                returncode = process.wait()
     except KeyboardInterrupt:
         error_message = "interrupted"
         if process is not None and process.poll() is None:
@@ -159,6 +188,13 @@ def main() -> int:
     }
     if error_message:
         result["error"] = error_message
+    if args.success_marker:
+        result["success_marker"] = args.success_marker
+        result["success_marker_seen"] = marker_seen
+    if marker_seen:
+        result["completion_mode"] = "success_marker"
+    if rejected_matches:
+        result["rejected_matches"] = sorted(set(rejected_matches))
     atomic_write(args.result, json.dumps(result, indent=2, sort_keys=True) + "\n")
     return returncode
 
