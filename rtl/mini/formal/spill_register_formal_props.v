@@ -9,8 +9,8 @@ module spill_register_formal;
   wire [31:0] data_i, data_o;
   reg  [1:0] count;
 
-  wire       push = valid_i && ready_o;
-  wire       pop = valid_o && ready_i;
+  wire       push = valid_i && ready_o && !flush_i;
+  wire       pop = valid_o && ready_i && !flush_i;
 
   spill_register_formal_design u_design (.*);
 
@@ -22,16 +22,19 @@ module spill_register_formal;
     if (!rst_n_i) begin
       count <= 2'd0;
     end else begin
-      assume (!(flush_i && valid_i));
       if (f_past_valid && $past(rst_n_i && valid_i && !ready_o)) begin
         assume (valid_i);
         assume (data_i == $past(data_i));
       end
 
       assert (count <= 2'd2);
-      assert (valid_o == (count != 2'd0));
-      assert (ready_o == (count != 2'd2));
-      if (f_past_valid && $past(rst_n_i && valid_o && !ready_i && !flush_i)) begin
+      assert (valid_o == (!flush_i && (count != 2'd0)));
+      assert (ready_o == (!flush_i && (count != 2'd2)));
+      if (flush_i) begin
+        assert (!valid_o);
+        assert (!ready_o);
+      end
+      if (f_past_valid && !flush_i && $past(rst_n_i && valid_o && !ready_i && !flush_i)) begin
         assert (valid_o);
         assert (data_o == $past(data_o));
       end

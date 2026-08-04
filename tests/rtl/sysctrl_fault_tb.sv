@@ -7,20 +7,20 @@ module sysctrl_fault_tb;
   logic [31:0] fault_addr_i = '0;
   logic [ 3:0] fault_wstrb_i = '0;
   logic        fault_reserved_i = 1'b0;
-  rib_if rib ();
+  ribp_if rib ();
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
 
   always #5 clk_i = ~clk_i;
 
-  rib_sysctrl u_sysctrl (
+  ribp_sysctrl u_sysctrl (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .fault_valid_i   (fault_valid_i),
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .rib             (rib),
+      .ribp            (rib),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );
@@ -67,7 +67,7 @@ module sysctrl_fault_tb;
     sysctrl.perf_mgmt_wait_i    = 64'd11;
     sysctrl.perf_user_wait_i    = 64'd12;
     sysctrl.perf_dma_wait_i     = 64'd13;
-    sysctrl.perf_rib_wait_i    = 64'd14;
+    sysctrl.perf_ribp_wait_i    = 64'd14;
     sysctrl.perf_apb_wait_i     = 64'd15;
     sysctrl.perf_sdram_wait_i   = 64'd16;
     sysctrl.perf_psram_wait_i   = 64'd17;

@@ -15,9 +15,9 @@ module rib_adapter_formal;
   wire [31:0] rsp_rdata;
   wire [ 2:0] rsp_code;
   wire [ 1:0] rsp_beat;
-  wire legacy_valid, legacy_ready;
-  wire [31:0] legacy_addr, legacy_wdata;
-  wire [3:0] legacy_wstrb;
+  wire ribp_valid, ribp_ready;
+  wire [31:0] ribp_addr, ribp_wdata;
+  wire [3:0] ribp_wstrb;
   wire source_valid, source_ready;
   wire [31:0] source_addr;
   wire [ 3:0] source_wstrb;
@@ -49,11 +49,11 @@ module rib_adapter_formal;
       assume (source_wstrb == $past(source_wstrb));
     end
     if (rst_n_i) begin
-      if (f_past_valid && $past(rst_n_i && legacy_valid && !legacy_ready)) begin
-        assert (legacy_valid);
-        assert (legacy_addr == $past(legacy_addr));
-        assert (legacy_wdata == $past(legacy_wdata));
-        assert (legacy_wstrb == $past(legacy_wstrb));
+      if (f_past_valid && $past(rst_n_i && ribp_valid && !ribp_ready)) begin
+        assert (ribp_valid);
+        assert (ribp_addr == $past(ribp_addr));
+        assert (ribp_wdata == $past(ribp_wdata));
+        assert (ribp_wstrb == $past(ribp_wstrb));
       end
       if (f_past_valid && $past(rst_n_i && rsp_valid && !rsp_ready)) begin
         assert (rsp_valid);
@@ -75,7 +75,7 @@ module rib_adapter_formal;
         assert (adapted_wstrb == $past(adapted_wstrb));
         assert (adapted_wlast);
       end
-      cover (legacy_valid && cmd_len == 2'd3 && legacy_addr == cmd_addr + 32'd12);
+      cover (ribp_valid && cmd_len == 2'd3 && ribp_addr == cmd_addr + 32'd12);
       cover (rsp_valid && rsp_last && rsp_beat == 2'd3);
       cover (adapted_w_valid && adapted_wlast);
     end

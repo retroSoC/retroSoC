@@ -49,7 +49,7 @@ bind bus soc_bus_sva u_soc_bus_sva (
     .access_denied_i   (s_access_denied),
     .cmd_accepted_i    (s_cmd_accepted_q),
     .arb_owner_i       (s_mstr_id_q),
-    .mgmt_valid_i      (mgmt_rib.valid),
+    .mgmt_valid_i      (mgmt_ribl.valid),
     .user_valid_i      (user_rib.cmd_valid),
     .dma_valid_i       (dma_rib.cmd_valid)
 );
@@ -72,14 +72,14 @@ module soc_rib2apb_sva #(
 
 endmodule
 
-bind rib2apb soc_rib2apb_sva #(
+bind ribp2apb soc_rib2apb_sva #(
     .NSLV(NSLV)
 ) u_soc_rib2apb_sva (
     .clk_i       (clk_i),
     .rst_n_i     (rst_n_i),
     .psel_comb_i (s_psel_comb),
     .psel_q_i    (s_psel_q),
-    .rib_ready_i (rib.ready),
+    .rib_ready_i (ribp.ready),
     .xfer_ready_i(s_xfer_ready)
 );
 
@@ -140,8 +140,8 @@ module soc_gpio_user_handoff_sva #(
 
 endmodule
 
-bind rib_gpio soc_gpio_user_handoff_sva #(
-    .DATA_WIDTH(`RIB_GPIO_NUM)
+bind ribp_gpio soc_gpio_user_handoff_sva #(
+    .DATA_WIDTH(`RIBP_GPIO_NUM)
 ) u_soc_gpio_user_handoff_sva (
     .clk_i         (clk_i),
     .rst_n_i       (rst_n_i),

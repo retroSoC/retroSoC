@@ -23,13 +23,13 @@ def test_user_ip_can_own_rib_gpio_pads_with_a_safe_handoff(tmp_path: Path) -> No
         "\n".join(
             [
                 "+define+SV_ASSRT_DISABLE",
-                f"+incdir+{ROOT / 'rtl/ip/rib/peripheral'}",
+                f"+incdir+{ROOT / 'rtl/ip/ribp/peripheral'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/rib_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/edge_det.sv"),
-                str(ROOT / "rtl/ip/rib/peripheral/gpio.sv"),
+                str(ROOT / "rtl/ip/ribp/peripheral/gpio.sv"),
                 str(ROOT / "tests/rtl/gpio_user_mux_tb.sv"),
                 "",
             ]

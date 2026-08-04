@@ -32,6 +32,7 @@ from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
 from scripts.generate_mpw import (  # noqa: E402
+    migrate_user_core_ribp_interfaces,
     migrate_user_extension_includes,
     migrate_user_gpio_interfaces,
     remove_legacy_picorv32_entry,
@@ -181,7 +182,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     bus_filelist = tmp_path / "bus.fl"
     rib_adapter_filelist = tmp_path / "rib_adapter.fl"
     spill_register_filelist = tmp_path / "spill_register.fl"
-    rib2apb_filelist = tmp_path / "rib2apb.fl"
+    rib2apb_filelist = tmp_path / "ribp2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
@@ -193,7 +194,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
         "spill_register", spill_register_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
-        "rib2apb", rib2apb_filelist, memory_map, topology, user_extensions
+        "ribp2apb", rib2apb_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
         "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
@@ -208,31 +209,31 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
     spill_register = parse_filelists([spill_register_filelist], require_files=False)
-    rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
+    ribp2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_burst_if.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_legacy_to_burst.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_burst_error_slave.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_if.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_ribl2rib.sv" in bus.files
+    assert ROOT / "rtl/mini/top/soc_rib_error_slave.sv" in bus.files
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_burst_to_legacy.sv" in rib_adapter.files
+    assert ROOT / "rtl/mini/top/soc_rib2ribp.sv" in rib_adapter.files
     assert ROOT / "rtl/mini/formal/rib_adapter_formal.sv" in rib_adapter.files
     assert (
         ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"
         in spill_register.files
     )
     assert ROOT / "rtl/mini/formal/spill_register_formal.sv" in spill_register.files
-    assert ROOT / "rtl/ip/rib/interconnect/rib2apb.sv" in rib2apb.files
-    assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
-    assert ROOT / "rtl/ip/rib/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/ribp/interconnect/ribp2apb.sv" in ribp2apb.files
+    assert ROOT / "rtl/mini/formal/ribp2apb_formal.sv" in ribp2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in ribp2apb.files
+    assert ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/rib/peripheral/gpio.sv" in gpio_user.files
+    assert ROOT / "rtl/ip/ribp/peripheral/gpio.sv" in gpio_user.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
     assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
 
@@ -267,7 +268,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "ribp2apb", "sysctrl", "pll_rcu", "gpio_user")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -289,7 +290,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"bus={tmp_path / 'bus'}",
         "--proof",
-        f"rib2apb={tmp_path / 'rib2apb'}",
+        f"ribp2apb={tmp_path / 'ribp2apb'}",
         "--proof",
         f"sysctrl={tmp_path / 'sysctrl'}",
         "--proof",
@@ -330,6 +331,27 @@ endmodule
     assert "gpio.oe_o" in migrated
     assert "gpio.do_o" in migrated
     assert "gpio.di_i" in migrated
+
+
+def test_user_core_ribp_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
+    source = tmp_path / "user_core_design.sv"
+    source.write_text(
+        """module user_core_design (rib_if.master rib);
+  ahbl2rib u_bridge (ahbl, rib);
+  assign rib.addr = 32'h0;
+endmodule
+""",
+        encoding="utf-8",
+    )
+
+    assert migrate_user_core_ribp_interfaces(tmp_path) == [source]
+
+    migrated = source.read_text(encoding="utf-8")
+    assert "rib_if" not in migrated
+    assert "ribp_if.master ribp" in migrated
+    assert "ahbl2ribp" in migrated
+    assert "ahbl, ribp" in migrated
+    assert "ribp.addr" in migrated
 
 
 def test_generated_user_core_filelist_excludes_the_legacy_picorv32_entry(
@@ -523,7 +545,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
+        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("rtl/managed/clusterip/common/rtl/utils/register.sv"),
@@ -537,7 +559,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
+        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
     ]
@@ -639,7 +661,7 @@ def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
     assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
     assert "`ifdef CORE_PICORV32" in wrapper
     assert "`elsif CORE_HAZARD3" in wrapper
-    assert "ahbl2soc_rib u_ahbl2soc_rib" in wrapper
+    assert "ahbl2soc_ribl u_ahbl2soc_rib" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
 
 
@@ -722,8 +744,28 @@ def test_regression_observations_do_not_block_or_skip_metrics(
 ) -> None:
     calls: list[list[str]] = []
 
-    monkeypatch.setattr(regress, "select_regression", lambda _suite, _pdk: ((), ("unit-profile",)))
+    monkeypatch.setattr(
+        regress,
+        "select_regression",
+        lambda _suite, _pdk: (
+            (("unit-profile", ("rtl-lint",)),),
+            ("unit-profile",),
+        ),
+    )
     monkeypatch.setattr(regress, "regression_environment", lambda: {})
+    monkeypatch.setattr(regress, "self_owned_warnings", lambda _root, _output: [])
+    strict_calls: list[list[str]] = []
+
+    def pass_blocking_check(
+        command: list[str], root: Path, capture_output: bool, environment: dict[str, str]
+    ) -> str:
+        assert root == tmp_path
+        assert capture_output is False
+        assert environment == {}
+        strict_calls.append(command)
+        return ""
+
+    monkeypatch.setattr(regress, "run_command", pass_blocking_check)
 
     def fail_quality_check(
         command: list[str], *, cwd: Path, env: dict[str, str], check: bool
@@ -742,11 +784,19 @@ def test_regression_observations_do_not_block_or_skip_metrics(
     )
 
     assert regress.main() == 0
+    assert strict_calls == [["make", "CONFIG=unit-profile", "rtl-lint"]]
     assert calls == [
+        [
+            "make",
+            "CONFIG=unit-profile",
+            "SIMU=VERILATOR",
+            "HAVE_SVA=YES",
+            "check-rtl-lint",
+        ],
         ["make", "CONFIG=unit-profile", "check-warnings"],
         ["make", "CONFIG=unit-profile", "check-metrics"],
     ]
-    assert capsys.readouterr().err.count("non-blocking observation failed") == 2
+    assert capsys.readouterr().err.count("non-blocking observation failed") == 3
 
 
 def test_rtl_lint_warning_baseline_is_independent(tmp_path: Path) -> None:

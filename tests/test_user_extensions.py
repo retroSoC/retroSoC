@@ -48,9 +48,9 @@ def test_extensions_generate_isolated_scalar_bindings(tmp_path: Path) -> None:
     ip = (tmp_path / "rtl/user_ip_bindings.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "user_extensions.fl").read_text(encoding="utf-8")
 
-    assert core.count("soc_rib_burst_if u_user_") == 6
-    assert core.count("rib_if u_user_") == 6
-    assert core.count("rib_legacy_to_burst #(") == 6
+    assert core.count("soc_rib_if u_user_") == 6
+    assert core.count("ribp_if u_user_") == 6
+    assert core.count("ribp2rib #(") == 6
     assert core.count(".SYNC_RESET(1'b1)") == 2
     assert core.count(".SYNC_RESET(1'b0)") == 4
     assert "rib.cmd_valid = '0;" in core
@@ -58,7 +58,7 @@ def test_extensions_generate_isolated_scalar_bindings(tmp_path: Path) -> None:
     assert "5'd5: begin" in core
     assert "core_reset_i[0]" in core
     assert "user_core_design_username1 #(" in core
-    assert "User core 0 uses the legacy RIB contract" in core
+    assert "User core 0 uses the RIBP contract" in core
     assert ip.count("user_gpio_if #(`USER_GPIO_NUM)") == 2
     assert "gpio.do_o = '0;" in ip
     assert "8'd2: begin" in ip

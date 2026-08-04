@@ -15,7 +15,12 @@ sys.path.insert(0, str(ROOT))
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
-RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint", "check-rtl-lint")
+RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint")
+RTL_LINT_OBSERVATION_VALUES = (
+    "SIMU=VERILATOR",
+    "HAVE_SVA=YES",
+    "check-rtl-lint",
+)
 OBSERVATION_TARGETS = ("check-warnings", "check-metrics")
 
 
@@ -200,6 +205,10 @@ def main() -> int:
                 print("\n".join(warnings), flush=True)
                 return 1
     for profile in profiles:
+        command = ["make", f"CONFIG={profile}", *RTL_LINT_OBSERVATION_VALUES]
+        print("+ " + " ".join(command), flush=True)
+        if not args.dry_run:
+            run_observation(command, args.root, environment)
         for target in OBSERVATION_TARGETS:
             command = ["make", f"CONFIG={profile}", target]
             print("+ " + " ".join(command), flush=True)

@@ -24,7 +24,7 @@ module gpio_user_formal_design (
     output logic [31:0] native_do
 );
 
-  rib_if rib ();
+  ribp_if rib ();
   gpio_if gpio ();
   user_gpio_if user_gpio ();
 
@@ -70,10 +70,10 @@ module gpio_user_formal_design (
   assign native_oe      = u_dut.s_gpio_native_oe;
   assign native_do      = u_dut.s_gpio_native_out;
 
-  rib_gpio u_dut (
+  ribp_gpio u_dut (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
-      .rib      (rib),
+      .ribp     (rib),
       .gpio     (gpio),
       .user_gpio(user_gpio)
   );

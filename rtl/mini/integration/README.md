@@ -5,11 +5,11 @@ that is not part of the software address-map ABI or the package pad map.
 
 The topology generator validates rib RIB and APB target ownership against
 `../address_map/memory_map.json` and emits generated SystemVerilog include
-files for `ip_rib_wrapper.sv`, `ip_apb_wrapper.sv`, `rib2apb.sv`, and
+files for `ip_ribp_wrapper.sv`, `ip_apb_wrapper.sv`, `ribp2apb.sv`, and
 `retrosoc.sv`. The output retains scalar interface instances and ports, so it
 does not depend on interface-array support in FPGA or netlist simulation tools.
 
-The `rib_targets` list uses stable response slots. Every active rib
+The `ribp_targets` list uses stable response slots. Every active RIBP
 memory-map region must appear exactly once. Disabled targets keep their slot
 and interface declaration but cannot own an address region.
 

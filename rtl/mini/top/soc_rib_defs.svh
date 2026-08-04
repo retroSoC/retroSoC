@@ -19,7 +19,7 @@
 `define SOC_RIB_RESP_RESERVED 3'd5
 `define SOC_RIB_RESP_BURSTERR 3'd6
 
-`define SOC_RIB_BURST_INCR1 2'd0
-`define SOC_RIB_BURST_INCR4 2'd3
+`define SOC_RIB_LEN_INCR1 2'd0
+`define SOC_RIB_LEN_INCR4 2'd3
 
 `endif

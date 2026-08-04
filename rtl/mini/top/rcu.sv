@@ -55,17 +55,53 @@ module rcu (
   logic       s_pll_capable;
   logic [2:0] s_pll_sel;
   logic       s_pll_apply;
-  logic       s_select_ext_clk;
+  logic [2:0] s_pll_cfg_sel;
+  logic       s_pll_cfg_valid;
+  logic       s_pll_cfg_ready;
+  logic       s_pll_cfg_req;
+  logic s_pll_cfg_sent_d, s_pll_cfg_sent_q;
+  logic s_select_ext_clk;
 
   tc_clk_buf u_xtal_buf (
       .clk_i(xtal_clk_i),
       .clk_o(s_xtal_clk_buf)
   );
+  // ext_clk_i and the PLL reference clock are unrelated. A pulse generated
+  // by the controller must cross this boundary through a handshake.
+  cdc_2phase #(
+      .DATA_WIDTH(3)
+  ) u_pll_config_cdc (
+      .src_clk_i  (s_ext_clk_buf),
+      .src_rst_n_i(s_ext_rst_n_sync),
+      .src_data_i (s_pll_sel),
+      .src_valid_i(s_pll_cfg_req),
+      .src_ready_o(s_pll_cfg_ready),
+      .dst_clk_i  (s_xtal_clk_buf),
+      .dst_rst_n_i(s_ext_rst_n_sync),
+      .dst_data_o (s_pll_cfg_sel),
+      .dst_valid_o(s_pll_cfg_valid),
+      .dst_ready_i(1'b1)
+  );
+  assign s_pll_cfg_req = s_pll_apply && ~s_pll_cfg_sent_q;
+  always_comb begin
+    s_pll_cfg_sent_d = s_pll_cfg_sent_q;
+    if (!s_pll_apply) begin
+      s_pll_cfg_sent_d = 1'b0;
+    end else if (s_pll_cfg_req && s_pll_cfg_ready) begin
+      s_pll_cfg_sent_d = 1'b1;
+    end
+  end
+  dffr #(1) u_pll_cfg_sent_dffr (
+      s_ext_clk_buf,
+      s_ext_rst_n_sync,
+      s_pll_cfg_sent_d,
+      s_pll_cfg_sent_q
+  );
   tc_pll u_tc_pll (
       .fref_i       (s_xtal_clk_buf),
       .rst_n_i      (s_ext_rst_n_sync),
-      .cfg_sel_i    (s_pll_sel),
-      .cfg_apply_i  (s_pll_apply),
+      .cfg_sel_i    (s_pll_cfg_sel),
+      .cfg_apply_i  (s_pll_cfg_valid),
       .pll_capable_o(s_pll_capable),
       .pll_lock_o   (s_pll_lock),
       .pll_clk_o    (s_pll_clk)
@@ -199,6 +235,7 @@ module pll_rcu_controller #(
   logic s_active_valid_d, s_active_valid_q;
   logic s_safe_clk_d, s_safe_clk_q;
   logic s_lock_d, s_lock_q;
+  logic s_lock_seen_low_d, s_lock_seen_low_q;
   logic [1:0] s_error_d, s_error_q;
   logic s_rsp_valid_d, s_rsp_valid_q;
 
@@ -254,11 +291,13 @@ module pll_rcu_controller #(
     s_active_valid_d   = s_active_valid_q;
     s_safe_clk_d       = s_safe_clk_q;
     s_lock_d           = s_lock_q;
+    s_lock_seen_low_d  = s_lock_seen_low_q;
     s_error_d          = s_error_q;
     s_rsp_valid_d      = s_rsp_valid_q;
 
     unique case (s_state_q)
       PLL_IDLE: begin
+        s_lock_seen_low_d = 1'b0;
         if (s_req_valid) begin
           s_pll_sel_d        = s_req_sel;
           s_select_ext_clk_d = 1'b1;
@@ -267,6 +306,7 @@ module pll_rcu_controller #(
         end
       end
       PLL_SAFE: begin
+        s_lock_seen_low_d  = 1'b0;
         s_select_ext_clk_d = 1'b1;
         s_safe_clk_d       = 1'b1;
         s_lock_d           = 1'b0;
@@ -279,11 +319,15 @@ module pll_rcu_controller #(
         end
       end
       PLL_APPLY: begin
-        s_lock_count_d = '0;
-        s_state_d      = PLL_WAIT_LOCK;
+        s_lock_count_d    = '0;
+        s_lock_seen_low_d = 1'b0;
+        s_state_d         = PLL_WAIT_LOCK;
       end
       PLL_WAIT_LOCK: begin
-        if (pll_lock_i) begin
+        if (!pll_lock_i) begin
+          s_lock_seen_low_d = 1'b1;
+        end
+        if (s_lock_seen_low_q && pll_lock_i) begin
           s_active_sel_d   = s_pll_sel_q;
           s_active_valid_d = 1'b1;
           s_safe_clk_d     = 1'b0;
@@ -370,6 +414,12 @@ module pll_rcu_controller #(
       ext_rst_n_i,
       s_lock_d,
       s_lock_q
+  );
+  dffr #(1) u_lock_seen_low_dffr (
+      ext_clk_i,
+      ext_rst_n_i,
+      s_lock_seen_low_d,
+      s_lock_seen_low_q
   );
   dffr #(2) u_error_dffr (
       ext_clk_i,

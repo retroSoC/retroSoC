@@ -30,11 +30,11 @@ module bus_formal_design (
     output logic        terminal_rsp
 );
 
-  soc_rib_if mgmt_rib ();
-  soc_rib_burst_if user_rib ();
-  soc_rib_burst_if dma_rib ();
-  soc_rib_burst_if rib ();
-  rib_if apb_rib ();
+  soc_ribl_if mgmt_ribl ();
+  soc_rib_if user_rib ();
+  soc_rib_if dma_rib ();
+  soc_rib_if rib ();
+  ribp_if apb_ribp ();
 
   (* anyseq *)logic        f_mgmt_valid;
   (* anyseq *)logic [31:0] f_mgmt_addr;
@@ -71,10 +71,10 @@ module bus_formal_design (
   logic [ 2:0] fault_code;
   logic        user_idle;
 
-  assign mgmt_rib.valid     = f_mgmt_valid;
-  assign mgmt_rib.addr      = f_mgmt_addr;
-  assign mgmt_rib.wdata     = f_mgmt_wdata;
-  assign mgmt_rib.wstrb     = f_mgmt_wstrb;
+  assign mgmt_ribl.valid    = f_mgmt_valid;
+  assign mgmt_ribl.addr     = f_mgmt_addr;
+  assign mgmt_ribl.wdata    = f_mgmt_wdata;
+  assign mgmt_ribl.wstrb    = f_mgmt_wstrb;
 
   assign user_rib.cmd_valid = f_user_cmd_valid;
   assign user_rib.cmd_addr  = f_user_cmd_addr;
@@ -138,13 +138,13 @@ module bus_formal_design (
     end
   end
 
-  assign apb_rib.ready  = apb_rib.valid;
-  assign apb_rib.rdata  = 32'h1234_5678;
+  assign apb_ribp.ready = apb_ribp.valid;
+  assign apb_ribp.rdata = 32'h1234_5678;
 
-  assign mgmt_valid     = mgmt_rib.valid;
-  assign mgmt_addr      = mgmt_rib.addr;
-  assign mgmt_wstrb     = mgmt_rib.wstrb;
-  assign mgmt_ready     = mgmt_rib.ready;
+  assign mgmt_valid     = mgmt_ribl.valid;
+  assign mgmt_addr      = mgmt_ribl.addr;
+  assign mgmt_wstrb     = mgmt_ribl.wstrb;
+  assign mgmt_ready     = mgmt_ribl.ready;
   assign user_cmd_valid = user_rib.cmd_valid;
   assign user_cmd_ready = user_rib.cmd_ready;
   assign user_cmd_addr  = user_rib.cmd_addr;
@@ -157,18 +157,18 @@ module bus_formal_design (
   assign dma_cmd_len    = dma_rib.cmd_len;
   assign rib_cmd_valid  = rib.cmd_valid;
   assign rib_cmd_len    = rib.cmd_len;
-  assign apb_valid      = apb_rib.valid;
+  assign apb_valid      = apb_ribp.valid;
 
   bus u_dut (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .mgmt_rib         (mgmt_rib),
+      .mgmt_ribl        (mgmt_ribl),
       .user_rib         (user_rib),
       .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_idle),
       .rib              (rib),
-      .apb_rib          (apb_rib),
+      .apb_ribp         (apb_ribp),
       .apb_resp_err_i   (1'b0),
       .perf_enable_i    (1'b0),
       .perf_clear_i     (1'b0),
@@ -182,7 +182,7 @@ module bus_formal_design (
       .perf_mgmt_wait_o (),
       .perf_user_wait_o (),
       .perf_dma_wait_o  (),
-      .perf_rib_wait_o  (),
+      .perf_ribp_wait_o (),
       .perf_apb_wait_o  (),
       .perf_sdram_wait_o(),
       .perf_psram_wait_o(),

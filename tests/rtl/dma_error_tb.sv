@@ -33,7 +33,7 @@ module dma_error_tb;
   logic          model_write_q = 1'b0;
   logic          model_error_q = 1'b0;
   dma_hw_trg_if hw_trg ();
-  soc_rib_burst_if rib ();
+  soc_rib_if rib ();
 
   always #5 clk_i = ~clk_i;
 
@@ -63,10 +63,10 @@ module dma_error_tb;
             model_write_q <= rib.cmd_write;
             model_error_q <= error_mode && !rib.cmd_write;
             model_state_q <= rib.cmd_write ? MODEL_WDATA : MODEL_RESP;
-            if (rib.cmd_len == `SOC_RIB_BURST_INCR4 && rib.cmd_write) begin
+            if (rib.cmd_len == `SOC_RIB_LEN_INCR4 && rib.cmd_write) begin
               incr4_write_count <= incr4_write_count + 1;
             end
-            if (rib.cmd_len == `SOC_RIB_BURST_INCR4 && !rib.cmd_write) begin
+            if (rib.cmd_len == `SOC_RIB_LEN_INCR4 && !rib.cmd_write) begin
               incr4_read_count <= incr4_read_count + 1;
             end
           end

@@ -8,5 +8,5 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module rib_gpu ();
+module ribp_gpu ();
 endmodule

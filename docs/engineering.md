@@ -111,7 +111,7 @@ Verilator regressions.
 
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
-targets are `bus`, `rib_adapter`, `spill_register`, `rib2apb`, `sysctrl`,
+targets are `bus`, `rib_adapter`, `spill_register`, `ribp2apb`, `sysctrl`,
 `pll_rcu`, and `gpio_user`; each uses
 the SBY `prove` task for bounded model checking and k-induction, plus a
 `cover` task, at depth 20. `sysctrl` checks register side effects, PLL request

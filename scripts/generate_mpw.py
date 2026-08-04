@@ -97,6 +97,28 @@ def migrate_user_gpio_interfaces(root: Path) -> list[Path]:
     return migrated
 
 
+def migrate_user_core_ribp_interfaces(root: Path) -> list[Path]:
+    """Migrate isolated user-core sources from the retired RIB spelling."""
+    migrated: list[Path] = []
+    for source in sorted(
+        path for path in root.rglob("*") if path.is_file() and path.suffix in {".sv", ".fl"}
+    ):
+        content = source.read_text(encoding="utf-8")
+        updated = content.replace("rib_if", "ribp_if")
+        updated = re.sub(
+            r"\bribp_if\.(master|slave)\s+rib\b", r"ribp_if.\1 ribp", updated
+        )
+        updated = re.sub(r"\brib\.", "ribp.", updated)
+        updated = re.sub(r"\.rib(\s*\()", r".ribp\1", updated)
+        updated = re.sub(r"\bahbl2rib\b", "ahbl2ribp", updated)
+        updated = re.sub(r"\brib\b", "ribp", updated)
+        if updated == content:
+            continue
+        source.write_text(updated, encoding="utf-8")
+        migrated.append(source)
+    return migrated
+
+
 def remove_legacy_picorv32_entry(filelist: Path, management_core_dir: Path) -> None:
     """Remove the PicoRV32 line emitted by the legacy user-core generator."""
     excluded = {
@@ -175,6 +197,8 @@ def generate(args: argparse.Namespace) -> None:
         run(workspace, log, mpw / "core.py", args.simu)
         run(workspace, log, mpw / "info.py", "CORE")
         shutil.copytree(shared / "core", candidate / "core")
+        migrated_core_ribp = migrate_user_core_ribp_interfaces(candidate / "core")
+        log.write(f"migrated user-core RIBP interfaces: {len(migrated_core_ribp)}\n")
         info = shared / "user_design_info.h"
         if info.is_file():
             shutil.copy2(info, candidate / info.name)

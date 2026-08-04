@@ -33,7 +33,7 @@ module sysctrl_formal_design (
     output logic [31:0] fault_count
 );
 
-  rib_if rib ();
+  ribp_if rib ();
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
 
@@ -65,7 +65,7 @@ module sysctrl_formal_design (
   assign sysctrl.perf_mgmt_wait_i = '0;
   assign sysctrl.perf_user_wait_i = '0;
   assign sysctrl.perf_dma_wait_i = '0;
-  assign sysctrl.perf_rib_wait_i = '0;
+  assign sysctrl.perf_ribp_wait_i = '0;
   assign sysctrl.perf_apb_wait_i = '0;
   assign sysctrl.perf_sdram_wait_i = '0;
   assign sysctrl.perf_psram_wait_i = '0;
@@ -106,14 +106,14 @@ module sysctrl_formal_design (
   assign fault_addr_q = u_dut.s_fault_addr_q;
   assign fault_count = u_dut.s_fault_count_q;
 
-  rib_sysctrl u_dut (
+  ribp_sysctrl u_dut (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .fault_valid_i   (f_fault_valid),
       .fault_addr_i    (f_fault_addr),
       .fault_wstrb_i   (f_fault_wstrb),
       .fault_reserved_i(f_fault_reserved),
-      .rib             (rib),
+      .ribp            (rib),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );

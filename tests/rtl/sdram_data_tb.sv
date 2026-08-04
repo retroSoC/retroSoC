@@ -5,7 +5,7 @@ module sdram_data_tb;
   logic        rst_n_i = 1'b0;
   wire  [15:0] s_dq;
   logic [31:0] s_read_data;
-  rib_if rib ();
+  ribp_if rib ();
   sdram_if sdram ();
 
   always #5 clk_i = ~clk_i;
@@ -13,10 +13,10 @@ module sdram_data_tb;
   assign s_dq       = sdram.oe_o ? sdram.dq_o : 'z;
   assign sdram.dq_i = s_dq;
 
-  rib_sdram u_rib_sdram (
+  ribp_sdram u_ribp_sdram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .rib    (rib),
+      .ribp   (rib),
       .sdram  (sdram)
   );
 

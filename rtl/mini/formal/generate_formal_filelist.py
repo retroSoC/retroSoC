@@ -17,8 +17,8 @@ from filelist import FileList, write_filelist  # noqa: E402
 
 
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
-INTERCONNECT = ROOT / "rtl/ip/rib/interconnect"
-PERIPHERAL = ROOT / "rtl/ip/rib/peripheral"
+INTERCONNECT = ROOT / "rtl/ip/ribp/interconnect"
+PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -28,28 +28,28 @@ def target_defines(target: str) -> list[str]:
 
 def source_files(target: str) -> list[Path]:
     common = [
-        COMMON_RTL / "interface/rib_if.sv",
+        COMMON_RTL / "interface/ribp_if.sv",
         COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",
+        TOP / "soc_ribl_if.sv",
         TOP / "soc_rib_if.sv",
-        TOP / "soc_rib_burst_if.sv",
     ]
     if target == "bus":
         return [
             *common,
             COMMON_RTL / "utils/spill_register.sv",
-            TOP / "soc_rib_legacy_to_burst.sv",
-            TOP / "soc_rib_burst_to_legacy.sv",
-            TOP / "soc_rib_burst_error_slave.sv",
-            TOP / "soc_rib_burst_ram.sv",
+            TOP / "soc_ribl2rib.sv",
+            TOP / "soc_rib2ribp.sv",
+            TOP / "soc_rib_error_slave.sv",
+            TOP / "soc_rib_ram.sv",
             TOP / "bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]
     if target == "rib_adapter":
         return [
             *common,
-            TOP / "soc_rib_legacy_to_burst.sv",
-            TOP / "soc_rib_burst_to_legacy.sv",
+            TOP / "soc_ribl2rib.sv",
+            TOP / "soc_rib2ribp.sv",
             SCRIPT_DIR / "rib_adapter_formal.sv",
         ]
     if target == "spill_register":
@@ -58,14 +58,14 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "utils/spill_register.sv",
             SCRIPT_DIR / "spill_register_formal.sv",
         ]
-    if target == "rib2apb":
+    if target == "ribp2apb":
         return [
-            COMMON_RTL / "interface/rib_if.sv",
+            COMMON_RTL / "interface/ribp_if.sv",
             COMMON_RTL / "interface/apb4_pure_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/edge_det.sv",
-            INTERCONNECT / "rib2apb.sv",
-            SCRIPT_DIR / "rib2apb_formal.sv",
+            INTERCONNECT / "ribp2apb.sv",
+            SCRIPT_DIR / "ribp2apb_formal.sv",
         ]
     if target == "sysctrl":
         return [
@@ -78,6 +78,7 @@ def source_files(target: str) -> list[Path]:
         return [
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
             COMMON_RTL / "cdc/cdc_2phase.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
             TOP / "rcu.sv",
@@ -87,6 +88,7 @@ def source_files(target: str) -> list[Path]:
         return [
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
             COMMON_RTL / "utils/edge_det.sv",
             PERIPHERAL / "gpio.sv",
             SCRIPT_DIR / "gpio_user_formal.sv",
@@ -127,7 +129,7 @@ def parse_args() -> argparse.Namespace:
             "bus",
             "rib_adapter",
             "spill_register",
-            "rib2apb",
+            "ribp2apb",
             "sysctrl",
             "pll_rcu",
             "gpio_user",

@@ -11,35 +11,35 @@ module bus_fault_tb;
   logic [ 1:0] fault_master_o;
   logic [ 2:0] fault_code_o;
   logic        user_bus_idle_o;
-  soc_rib_if mgmt_rib ();
-  soc_rib_burst_if user_rib ();
-  soc_rib_burst_if dma_rib ();
-  soc_rib_burst_if rib ();
-  rib_if apb_rib ();
+  soc_ribl_if mgmt_ribl ();
+  soc_rib_if user_rib ();
+  soc_rib_if dma_rib ();
+  soc_rib_if rib ();
+  ribp_if apb_ribp ();
 
   always #5 clk_i = ~clk_i;
 
-  assign rib.cmd_ready = 1'b1;
-  assign rib.w_ready   = 1'b1;
-  assign rib.rsp_valid = 1'b0;
-  assign rib.rdata     = 32'hCAFE_BABE;
-  assign rib.resp_err  = 1'b0;
-  assign rib.resp_code = `SOC_RIB_RESP_OK;
-  assign rib.rsp_beat  = '0;
-  assign rib.rsp_last  = 1'b0;
-  assign apb_rib.ready = 1'b1;
-  assign apb_rib.rdata = 32'h1234_5678;
+  assign rib.cmd_ready  = 1'b1;
+  assign rib.w_ready    = 1'b1;
+  assign rib.rsp_valid  = 1'b0;
+  assign rib.rdata      = 32'hCAFE_BABE;
+  assign rib.resp_err   = 1'b0;
+  assign rib.resp_code  = `SOC_RIB_RESP_OK;
+  assign rib.rsp_beat   = '0;
+  assign rib.rsp_last   = 1'b0;
+  assign apb_ribp.ready = 1'b1;
+  assign apb_ribp.rdata = 32'h1234_5678;
 
   bus u_bus (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .mgmt_rib         (mgmt_rib),
+      .mgmt_ribl        (mgmt_ribl),
       .user_rib         (user_rib),
       .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_bus_idle_o),
       .rib              (rib),
-      .apb_rib          (apb_rib),
+      .apb_ribp         (apb_ribp),
       .apb_resp_err_i   (1'b0),
       .perf_enable_i    (1'b0),
       .perf_clear_i     (1'b0),
@@ -56,22 +56,22 @@ module bus_fault_tb;
                               input logic reserved, input logic [2:0] expected_code);
     begin
       @(negedge clk_i);
-      mgmt_rib.addr  = address;
-      mgmt_rib.wdata = 32'hA5A5_5A5A;
-      mgmt_rib.wstrb = write_strobes;
-      mgmt_rib.valid = 1'b1;
+      mgmt_ribl.addr  = address;
+      mgmt_ribl.wdata = 32'hA5A5_5A5A;
+      mgmt_ribl.wstrb = write_strobes;
+      mgmt_ribl.valid = 1'b1;
       while (!fault_valid_o) @(posedge clk_i);
       if (fault_addr_o !== address || fault_wstrb_o !== write_strobes ||
           fault_reserved_o !== reserved || fault_access_o || fault_code_o !== expected_code ||
-          rib.cmd_valid || apb_rib.valid) begin
+          rib.cmd_valid || apb_ribp.valid) begin
         $fatal(1, "unexpected fault response for address %h", address);
       end
-      while (!mgmt_rib.ready) @(posedge clk_i);
-      if (mgmt_rib.rdata !== 32'd0 || !mgmt_rib.resp_err) begin
+      while (!mgmt_ribl.ready) @(posedge clk_i);
+      if (mgmt_ribl.rdata !== 32'd0 || !mgmt_ribl.resp_err) begin
         $fatal(1, "fault response data must be zero");
       end
       @(negedge clk_i);
-      mgmt_rib.valid = 1'b0;
+      mgmt_ribl.valid = 1'b0;
       while (fault_valid_o) @(posedge clk_i);
     end
   endtask
@@ -81,7 +81,7 @@ module bus_fault_tb;
       @(negedge clk_i);
       user_rib.cmd_addr  = address;
       user_rib.cmd_write = |write_strobes;
-      user_rib.cmd_len   = `SOC_RIB_BURST_INCR1;
+      user_rib.cmd_len   = `SOC_RIB_LEN_INCR1;
       user_rib.cmd_valid = 1'b1;
       while (!user_rib.cmd_ready) @(posedge clk_i);
       @(negedge clk_i);
@@ -96,7 +96,7 @@ module bus_fault_tb;
         user_rib.w_valid = 1'b0;
       end
       while (!fault_valid_o) @(posedge clk_i);
-      if (!fault_access_o || fault_master_o != 2'd1 || rib.cmd_valid || apb_rib.valid) begin
+      if (!fault_access_o || fault_master_o != 2'd1 || rib.cmd_valid || apb_ribp.valid) begin
         $fatal(1, "user access was not denied locally");
       end
       if (user_rib.rdata !== 32'd0 || !user_rib.resp_err || !user_rib.rsp_last ||
@@ -108,14 +108,14 @@ module bus_fault_tb;
   endtask
 
   initial begin
-    mgmt_rib.valid     = 1'b0;
-    mgmt_rib.addr      = '0;
-    mgmt_rib.wdata     = '0;
-    mgmt_rib.wstrb     = '0;
+    mgmt_ribl.valid    = 1'b0;
+    mgmt_ribl.addr     = '0;
+    mgmt_ribl.wdata    = '0;
+    mgmt_ribl.wstrb    = '0;
     user_rib.cmd_valid = 1'b0;
     user_rib.cmd_addr  = '0;
     user_rib.cmd_write = 1'b0;
-    user_rib.cmd_len   = `SOC_RIB_BURST_INCR1;
+    user_rib.cmd_len   = `SOC_RIB_LEN_INCR1;
     user_rib.w_valid   = 1'b0;
     user_rib.wdata     = '0;
     user_rib.wstrb     = '0;
@@ -124,7 +124,7 @@ module bus_fault_tb;
     dma_rib.cmd_valid  = 1'b0;
     dma_rib.cmd_addr   = '0;
     dma_rib.cmd_write  = 1'b0;
-    dma_rib.cmd_len    = `SOC_RIB_BURST_INCR1;
+    dma_rib.cmd_len    = `SOC_RIB_LEN_INCR1;
     dma_rib.w_valid    = 1'b0;
     dma_rib.wdata      = '0;
     dma_rib.wstrb      = '0;

@@ -20,7 +20,7 @@ REQUIRED_FIELDS = {
     "checksum",
     "cycles",
     "mgmt_wait",
-    "rib_wait",
+    "ribp_wait",
     "sdram_wait",
     "psram_wait",
     "flash_wait",

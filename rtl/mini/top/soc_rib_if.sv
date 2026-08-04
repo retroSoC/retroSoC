@@ -11,37 +11,68 @@
 `ifndef RETROSOC_SOC_RIB_IF_SV
 `define RETROSOC_SOC_RIB_IF_SV
 
-`include "soc_rib_defs.svh"
-
-// SoC-owned RIB fabric contract. RIB IP remains on ClusterIP's rib_if;
-// this interface adds a response status only on the SoC master side.
+// SoC-owned split-channel RIB contract. Version 1 supports one outstanding
+// 32-bit INCR1 or INCR4 transaction and does not carry transaction IDs.
 interface soc_rib_if ();
 
-  logic        valid;
-  logic [31:0] addr;
+  logic        cmd_valid;
+  logic        cmd_ready;
+  logic [31:0] cmd_addr;
+  logic        cmd_write;
+  logic [ 1:0] cmd_len;
+
+  logic        w_valid;
+  logic        w_ready;
   logic [31:0] wdata;
   logic [ 3:0] wstrb;
+  logic        wlast;
+
+  logic        rsp_valid;
+  logic        rsp_ready;
   logic [31:0] rdata;
-  logic        ready;
   logic        resp_err;
+  logic [ 2:0] resp_code;
+  logic [ 1:0] rsp_beat;
+  logic        rsp_last;
 
   modport slave(
-      input valid,
-      input addr,
+      input cmd_valid,
+      output cmd_ready,
+      input cmd_addr,
+      input cmd_write,
+      input cmd_len,
+      input w_valid,
+      output w_ready,
       input wdata,
       input wstrb,
+      input wlast,
+      output rsp_valid,
+      input rsp_ready,
       output rdata,
-      output ready,
-      output resp_err
+      output resp_err,
+      output resp_code,
+      output rsp_beat,
+      output rsp_last
   );
+
   modport master(
-      output valid,
-      output addr,
+      output cmd_valid,
+      input cmd_ready,
+      output cmd_addr,
+      output cmd_write,
+      output cmd_len,
+      output w_valid,
+      input w_ready,
       output wdata,
       output wstrb,
+      output wlast,
+      input rsp_valid,
+      output rsp_ready,
       input rdata,
-      input ready,
-      input resp_err
+      input resp_err,
+      input resp_code,
+      input rsp_beat,
+      input rsp_last
   );
 
 endinterface

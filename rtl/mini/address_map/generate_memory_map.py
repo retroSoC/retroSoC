@@ -12,7 +12,7 @@ from typing import Any
 
 
 MAX_ADDRESS = 1 << 32
-VALID_ROUTES = {"rib", "apb", "ram", "reserved"}
+VALID_ROUTES = {"ribp", "apb", "ram", "reserved"}
 VALID_KINDS = {"active", "reserved"}
 VALID_USER_ACCESS = {"none", "ro", "rw"}
 VALID_BURST = {"incr1", "incr4"}
@@ -160,7 +160,7 @@ def render_rtl(
             f"{range_expression(symbol, region['base'], region['end'])}",
         ]
     lines.append("")
-    for route in ("rib", "apb", "ram", "reserved"):
+    for route in ("ribp", "apb", "ram", "reserved"):
         selected = [
             f"`SOC_ADDR_IS_{region['symbol']}(addr)"
             for region in regions

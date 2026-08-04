@@ -39,7 +39,7 @@ module spill_register_tb;
   task automatic check_cycle;
     begin
       @(posedge clk_i);
-      if (held_valid && (!valid_o || (data_o !== held_data))) begin
+      if (held_valid && !flush_i && (!valid_o || (data_o !== held_data))) begin
         $fatal(1, "spill register changed output while stalled");
       end
       if (valid_o && ready_i) begin
@@ -83,9 +83,13 @@ module spill_register_tb;
       @(negedge clk_i);
     end
 
-    valid_i = 1'b0;
+    valid_i = 1'b1;
+    data_i  = 32'hDEAD_BEEF;
     flush_i = 1'b1;
     check_cycle();
+    if (valid_o || ready_o) begin
+      $fatal(1, "spill register accepted a transfer while flushing");
+    end
     @(negedge clk_i);
     flush_i = 1'b0;
 

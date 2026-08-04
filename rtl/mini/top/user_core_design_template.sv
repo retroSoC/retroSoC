@@ -26,15 +26,15 @@ module user_core_design #(
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [31:0] irq_i,
-    rib_if.master       rib
+    ribp_if.master       ribp
     // verilog_format: on
 );
 
   // ========== USER CUSTOM AREA ==============
-  assign rib.valid = '0;
-  assign rib.addr  = '0;
-  assign rib.wdata = '0;
-  assign rib.wstrb = '0;
+  assign ribp.valid = '0;
+  assign ribp.addr  = '0;
+  assign ribp.wdata = '0;
+  assign ribp.wstrb = '0;
   // ========== USER CUSTOM AREA END ==========
 
   // ====== INSTANCE USER CUSTOM TOP DESIGN HERE ======
