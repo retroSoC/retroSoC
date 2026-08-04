@@ -9,9 +9,9 @@
 // See the Mulan PSL v2 for more details.
 
 module rib_error_slave (
-    input logic                  clk_i,
-    input logic                  rst_n_i,
-    input logic            [2:0] error_code_i,
+    input logic              clk_i,
+    input logic              rst_n_i,
+    input logic        [2:0] error_code_i,
           rib_if.slave       rib
 );
 

@@ -11,10 +11,10 @@
 `include "rib_defs.svh"
 
 module rib2ram (
-    input logic            clk_i,
-    input logic            rst_n_i,
-          rib_if.slave rib,
-          ram_if.master    ram
+    input logic         clk_i,
+    input logic         rst_n_i,
+          rib_if.slave  rib,
+          ram_if.master ram
 );
 
   localparam int RSP_WIDTH = 39;

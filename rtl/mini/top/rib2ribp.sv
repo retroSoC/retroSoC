@@ -11,10 +11,10 @@
 `include "rib_defs.svh"
 
 module rib2ribp (
-    input logic                  clk_i,
-    input logic                  rst_n_i,
-          rib_if.slave           rib,
-          ribp_if.master         ribp
+    input logic          clk_i,
+    input logic          rst_n_i,
+          rib_if.slave   rib,
+          ribp_if.master ribp
 );
 
   localparam logic [2:0] FSM_CMD = 3'd0;

@@ -12,7 +12,7 @@
 
 // Management-core AHB-Lite to scalar RIBP bridge.
 module ahbl2ribp (
-    ahbl_if.slave      ahbl,
+    ahbl_if.slave  ahbl,
     ribp_if.master ribp
 );
 
