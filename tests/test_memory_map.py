@@ -121,7 +121,7 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
                 str(ROOT / "rtl/mini/top/soc_ribl2rib.sv"),
                 str(ROOT / "rtl/mini/top/soc_rib2ribp.sv"),
                 str(ROOT / "rtl/mini/top/soc_rib_error_slave.sv"),
-                str(ROOT / "rtl/mini/top/soc_rib_ram.sv"),
+                str(ROOT / "rtl/mini/top/soc_rib2ram.sv"),
                 str(ROOT / "rtl/mini/top/bus.sv"),
                 str(ROOT / "tests/rtl/bus_fault_tb.sv"),
                 "",

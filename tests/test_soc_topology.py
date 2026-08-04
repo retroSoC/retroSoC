@@ -147,7 +147,7 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
     response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
     formal_design = (ROOT / "rtl/mini/formal/ribp2apb_formal.sv").read_text(encoding="utf-8")
-    formal_properties = (ROOT / "rtl/mini/formal/ribp2apb_formal_props.v").read_text(
+    formal_properties = (ROOT / "rtl/mini/formal/ribp2apb_formal_props.sv").read_text(
         encoding="utf-8"
     )
 

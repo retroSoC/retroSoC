@@ -26,6 +26,7 @@ module pll_rcu_formal;
   wire       active_valid;
   wire       safe_clk;
   wire       active_lock;
+  wire       lock_seen_low;
   wire [1:0] error;
 
   pll_rcu_formal_design u_design (
@@ -45,6 +46,7 @@ module pll_rcu_formal;
       .active_valid  (active_valid),
       .safe_clk      (safe_clk),
       .active_lock   (active_lock),
+      .lock_seen_low (lock_seen_low),
       .error         (error)
   );
 
@@ -64,7 +66,7 @@ module pll_rcu_formal;
         assert (!active_valid);
         assert (error == 2'd1);
       end
-      if (f_past_valid && $past(state == PLL_WAIT_LOCK && pll_lock)) begin
+      if (f_past_valid && $past(state == PLL_WAIT_LOCK && pll_lock && lock_seen_low)) begin
         assert (state == PLL_SWITCH);
         assert (active_valid);
         assert (!safe_clk);

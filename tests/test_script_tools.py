@@ -181,7 +181,6 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
 
     bus_filelist = tmp_path / "bus.fl"
     rib_adapter_filelist = tmp_path / "rib_adapter.fl"
-    spill_register_filelist = tmp_path / "spill_register.fl"
     rib2apb_filelist = tmp_path / "ribp2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
@@ -189,9 +188,6 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
-    )
-    assert generate_formal_filelist(
-        "spill_register", spill_register_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
         "ribp2apb", rib2apb_filelist, memory_map, topology, user_extensions
@@ -208,7 +204,6 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
-    spill_register = parse_filelists([spill_register_filelist], require_files=False)
     ribp2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
@@ -221,11 +216,6 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
     assert ROOT / "rtl/mini/top/soc_rib2ribp.sv" in rib_adapter.files
     assert ROOT / "rtl/mini/formal/rib_adapter_formal.sv" in rib_adapter.files
-    assert (
-        ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"
-        in spill_register.files
-    )
-    assert ROOT / "rtl/mini/formal/spill_register_formal.sv" in spill_register.files
     assert ROOT / "rtl/ip/ribp/interconnect/ribp2apb.sv" in ribp2apb.files
     assert ROOT / "rtl/mini/formal/ribp2apb_formal.sv" in ribp2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in ribp2apb.files
@@ -233,6 +223,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
     assert ROOT / "rtl/ip/ribp/peripheral/gpio.sv" in gpio_user.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
     assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
@@ -548,6 +539,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
+        Path("tests/rtl/bus_fault_tb.sv"),
         Path("rtl/managed/clusterip/common/rtl/utils/register.sv"),
         Path("rtl/managed/third_party/core.v"),
         Path("rtl/mini/filelist.f"),
@@ -562,6 +554,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
+        Path("tests/rtl/bus_fault_tb.sv"),
     ]
 
 

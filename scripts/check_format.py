@@ -18,6 +18,7 @@ SELF_OWNED_RTL_ROOTS = {
     ("rtl", "ip"),
     ("rtl", "mini"),
     ("rtl", "tech"),
+    ("tests", "rtl"),
 }
 
 
@@ -109,7 +110,11 @@ def main() -> int:
     args = parser.parse_args()
 
     root = args.root.resolve()
-    files = format_files(tracked_files(root), args.kind)
+    files = [
+        path
+        for path in format_files(tracked_files(root), args.kind)
+        if (root / path).is_file()
+    ]
     if not files:
         print(f"no tracked {args.kind} files selected")
         return 0

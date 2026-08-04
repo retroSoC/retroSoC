@@ -10,7 +10,7 @@
 
 `include "soc_rib_defs.svh"
 
-module soc_rib_ram (
+module soc_rib2ram (
     input logic            clk_i,
     input logic            rst_n_i,
           soc_rib_if.slave rib,

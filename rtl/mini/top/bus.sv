@@ -115,7 +115,7 @@ module bus (
   );
 
 `ifdef HAVE_SRAM_IF
-  soc_rib_ram u_ram_slave (
+  soc_rib2ram u_rib2ram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .rib    (u_ram_rib_if),

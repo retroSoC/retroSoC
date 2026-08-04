@@ -210,7 +210,7 @@ endif
 	benchmark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-spill-register formal-ribp2apb formal-clean formal-doctor
+	formal formal-bus formal-rib-adapter formal-ribp2apb formal-clean formal-doctor
 .NOTPARALLEL: setup
 
 help:
@@ -235,7 +235,7 @@ help:
 	  '  check-user-extensions      validate the canonical user-extension map' \
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
-	  '  formal | formal-bus | formal-rib-adapter | formal-spill-register | formal-ribp2apb run SBY protocol proofs' \
+	  '  formal | formal-bus | formal-rib-adapter | formal-ribp2apb run SBY protocol proofs' \
 	  '  formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY peripheral-control proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the benchmark profile and write meta/performance.json' \

@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module soc_rib_ram_tb;
+module soc_rib2ram_tb;
   logic          clk_i = 1'b0;
   logic          rst_n_i = 1'b0;
   logic   [31:0] memory         [0:31];
@@ -19,7 +19,7 @@ module soc_rib_ram_tb;
     if (ram.wstrb[3]) memory[ram.addr][31:24] <= ram.wdata[31:24];
   end
 
-  soc_rib_ram u_dut (
+  soc_rib2ram u_dut (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .rib    (rib),

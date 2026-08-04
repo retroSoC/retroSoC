@@ -1,39 +1,74 @@
-# RIB Interconnect Protocol
+# RIB Family Protocols
 
-RIB is the retroSoC Interconnect Bus. The SoC-owned version 1 transport uses
-separate command, write-data, and response channels. It supports one
-outstanding 32-bit transaction per master and two linear lengths:
+retroSoC uses three related protocols. The interface declarations and the
+generated address map are the executable source of truth; this document fixes
+the ownership, ordering, and adaptation rules at each boundary.
 
-- `INCR1` transfers one word.
-- `INCR4` transfers four words at `address + 0`, `+4`, `+8`, and `+12`.
+| Protocol | Interface | Purpose | Transfer shape |
+| --- | --- | --- | --- |
+| RIBL | `soc_ribl_if` | Legacy SoC master compatibility | One scalar word request and response |
+| RIB | `soc_rib_if` | Native retroSoC interconnect | Split command, write-data, and response channels |
+| RIBP | ClusterIP `ribp_if` | Peripheral and IP compatibility | One scalar word request and response |
 
-`INCR4` commands must be 16-byte aligned. They may not cross a generated
-address-map capability boundary. There are no IDs, wrapping bursts, narrow
-read beats, reordering, or multiple outstanding transactions in version 1.
-The response carries a beat index, terminal marker, error flag, and response
-code. `BURSTERR` reports an unsupported length, bad alignment, unsupported
-target, or malformed write-last sequence.
+## RIBL
+
+RIBL is the SoC-owned scalar compatibility protocol. A master presents
+`valid`, `addr`, `wdata`, and `wstrb`; a slave completes the request with
+`ready`, `rdata`, and `resp_err`. `wstrb == 0` denotes a read. There is no
+burst metadata, response code, ID, reordering, or more than one transaction
+in flight through the RIBL adapter.
+
+`soc_ribl2rib` converts RIBL requests to native `INCR1` RIB transactions. It
+maps the terminal RIB response to the RIBL `ready` handshake and propagates
+the RIB error flag as `resp_err`.
+
+## RIB
+
+RIB is the retroSoC Interconnect Bus. Version 1 has independent command,
+write-data, and response channels and permits one outstanding 32-bit
+transaction per master.
+
+- A command transfers `cmd_addr`, `cmd_write`, and `cmd_len` with
+  `cmd_valid/cmd_ready`.
+- Write beats transfer `wdata`, `wstrb`, and `wlast` with `w_valid/w_ready`.
+- Responses transfer `rdata`, `resp_err`, `resp_code`, `rsp_beat`, and
+  `rsp_last` with `rsp_valid/rsp_ready`.
+- `INCR1` transfers one word. `INCR4` transfers four ascending words at
+  `address + 0`, `+4`, `+8`, and `+12` and requires a 16-byte aligned address.
+
+RIB has no IDs, narrow read beats, wrapping bursts, reordering, or multiple
+outstanding transactions. `BURSTERR` reports an unsupported length, bad
+alignment, unsupported target, or malformed write-last sequence. The response
+code definitions are in `soc_rib_defs.svh`.
 
 The generated address map is the capability source of truth. Register and APB
 regions remain `INCR1` only. SRAM, SDRAM, PSRAM, flash/XPI, and SPI-SD memory
 windows accept `INCR4`; the interconnect validates both the first and last
-address before forwarding a command. A DMA transfer falls back to `INCR1`
-unless both endpoints, including their fourth words, support `INCR4`.
+address before forwarding a command. DMA falls back to `INCR1` unless both
+endpoints, including their fourth words, support `INCR4`.
 
-## Compatibility and Performance
+## RIBP
 
-The management core and the currently integrated user cores retain their
-single-word interfaces through SoC-owned legacy-to-burst adapters. A future
-user core can select the burst interface in `user_extensions.json`. DMA is a
-native burst master and uses the common four-entry FIFO for each chunk.
+RIBP is the scalar ClusterIP protocol defined by `ribp_if`. It transfers
+`addr`, `wdata`, and `wstrb` with `valid/ready`; `wstrb == 0` denotes a read
+and `rdata` is returned with the completing `ready` handshake. RIBP carries no
+burst length, beat index, terminal marker, response code, or error signal.
 
-The SRAM target is native burst RTL. It pipelines synchronous reads and uses
-the common two-entry spill register to absorb response backpressure. The spill
-register contract assumes that `flush_i` and `valid_i` are not asserted
-together. When both entries are full it does not accept a replacement item in
-the same cycle as a downstream pop, so recovery from a full stall contains one
-refill bubble. This does not affect the no-bubble four-beat path when the
-response consumer remains ready.
+`soc_rib2ribp` serializes legal RIB beats into RIBP accesses and reconstructs
+ordered RIB responses. Target-side error sideband inputs are converted to RIB
+response status at this boundary. `ribp2rib` is the inverse compatibility
+adapter for a scalar RIBP initiator that must access a native RIB target.
+
+## Targets and Performance
+
+Management and current user cores use RIBL through the SoC adapters. Future
+user cores can select native RIB in `user_extensions.json`. DMA is a native
+RIB master and uses the common four-entry FIFO for each chunk.
+
+`soc_rib2ram` is the native RIB SRAM target. It pipelines synchronous reads
+and uses the Common two-entry spill register for response backpressure. The
+Common repository owns direct verification of that utility; retroSoC verifies
+the RIB target behavior and its integration contract.
 
 The current external-memory boundary accepts one `INCR4` command and converts
 it into ordered legacy word accesses. This reduces upstream command and
@@ -52,12 +87,10 @@ and error termination.
 
 ## Verification
 
-`make CONFIG=configs/ci/ihp130.mk FORMAL=YES formal` checks the arbiter and both
-compatibility adapters. It also proves the common spill register's externally
-observable occupancy, ready/valid, flush, and stalled-output contracts. The
-deterministic Icarus scoreboard additionally checks spill-register data order,
-and the SRAM test covers INCR4 reads, writes, no-bubble responses, and prolonged
-backpressure.
+`make CONFIG=configs/ci/ihp130.mk FORMAL=YES formal` checks the arbiter and
+both compatibility adapters. The SRAM test covers INCR4 reads, writes,
+no-bubble responses, and prolonged backpressure. Direct spill-register
+simulation and formal coverage is maintained by the Common repository.
 
 The `APP=benchmark` UART records include `cycles` and interconnect wait
 counters. `make CONFIG=configs/benchmark/ihp130-hazard3.mk SIMU=VERILATOR

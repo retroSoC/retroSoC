@@ -41,7 +41,7 @@ def source_files(target: str) -> list[Path]:
             TOP / "soc_ribl2rib.sv",
             TOP / "soc_rib2ribp.sv",
             TOP / "soc_rib_error_slave.sv",
-            TOP / "soc_rib_ram.sv",
+            TOP / "soc_rib2ram.sv",
             TOP / "bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]
@@ -51,12 +51,6 @@ def source_files(target: str) -> list[Path]:
             TOP / "soc_ribl2rib.sv",
             TOP / "soc_rib2ribp.sv",
             SCRIPT_DIR / "rib_adapter_formal.sv",
-        ]
-    if target == "spill_register":
-        return [
-            *common,
-            COMMON_RTL / "utils/spill_register.sv",
-            SCRIPT_DIR / "spill_register_formal.sv",
         ]
     if target == "ribp2apb":
         return [
@@ -80,6 +74,7 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
             COMMON_RTL / "cdc/cdc_2phase.sv",
+            COMMON_RTL / "clkrst/rst_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
             TOP / "rcu.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
@@ -128,7 +123,6 @@ def parse_args() -> argparse.Namespace:
         choices=(
             "bus",
             "rib_adapter",
-            "spill_register",
             "ribp2apb",
             "sysctrl",
             "pll_rcu",

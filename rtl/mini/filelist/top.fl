@@ -4,7 +4,7 @@
 /top/ribp2rib.sv
 /top/soc_rib2ribp.sv
 /top/soc_rib_error_slave.sv
-/top/soc_rib_ram.sv
+/top/soc_rib2ram.sv
 /top/core_wrapper.sv
 /top/retrosoc.sv
 /top/retrosoc_asic.sv
