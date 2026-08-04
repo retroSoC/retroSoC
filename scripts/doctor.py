@@ -67,7 +67,7 @@ def main() -> int:
     if args.formal == "YES":
         tools.extend(("sby", "yosys", "yosys-smtbmc", "sv2v", "bitwuzla"))
 
-    source_names = ["mpw", "cluster_common", "third_party_ip"]
+    source_names = ["mpw", "hazard3", "cluster_common", "third_party_ip"]
     pdk_names = {
         "IHP130": "pdk_ihp130",
         "ICS55": "pdk_ics55",

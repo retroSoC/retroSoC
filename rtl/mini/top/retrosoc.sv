@@ -31,7 +31,7 @@ module retrosoc (
 );
 
   // verilog_format: off
-  // Generated fabric links reuse the common rib_if contract.
+  // Generated fabric links reuse the common ribp_if contract.
   `include "soc_fabric_interfaces.svh"
   user_gpio_if u_user_gpio_if ();
   // ip interface
@@ -53,7 +53,7 @@ module retrosoc (
 
   logic                             s_tmr_capch;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
-  logic [   `SOC_IRQ_RIB_WIDTH-1:0] s_rib_irq;
+  logic [  `SOC_IRQ_RIBP_WIDTH-1:0] s_ribp_irq;
   logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
   logic                             s_bus_fault_valid;
   logic [                     31:0] s_bus_fault_addr;
@@ -62,13 +62,12 @@ module retrosoc (
   logic                             s_bus_fault_access;
   logic [                      1:0] s_bus_fault_master;
   logic [                      2:0] s_bus_fault_code;
-  logic                             s_apb_resp_err;
   logic                             s_perf_enable;
   logic                             s_perf_clear;
   logic [                     63:0] s_perf_mgmt_wait;
   logic [                     63:0] s_perf_user_wait;
   logic [                     63:0] s_perf_dma_wait;
-  logic [                     63:0] s_perf_rib_wait;
+  logic [                     63:0] s_perf_ribp_wait;
   logic [                     63:0] s_perf_apb_wait;
   logic [                     63:0] s_perf_sdram_wait;
   logic [                     63:0] s_perf_psram_wait;
@@ -83,7 +82,7 @@ module retrosoc (
   assign u_sysctrl_if.perf_mgmt_wait_i  = s_perf_mgmt_wait;
   assign u_sysctrl_if.perf_user_wait_i  = s_perf_user_wait;
   assign u_sysctrl_if.perf_dma_wait_i   = s_perf_dma_wait;
-  assign u_sysctrl_if.perf_rib_wait_i   = s_perf_rib_wait;
+  assign u_sysctrl_if.perf_ribp_wait_i  = s_perf_ribp_wait;
   assign u_sysctrl_if.perf_apb_wait_i   = s_perf_apb_wait;
   assign u_sysctrl_if.perf_sdram_wait_i = s_perf_sdram_wait;
   assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
@@ -126,7 +125,6 @@ core_wrapper u_core_wrapper (
       .user_bus_enable_i(u_sysctrl_if.user_bus_enable_o),
       .user_bus_idle_o  (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
-      .apb_resp_err_i   (s_apb_resp_err),
       .perf_enable_i    (s_perf_enable),
       .perf_clear_i     (s_perf_clear),
       .fault_valid_o    (s_bus_fault_valid),
@@ -139,19 +137,19 @@ core_wrapper u_core_wrapper (
       .perf_mgmt_wait_o (s_perf_mgmt_wait),
       .perf_user_wait_o (s_perf_user_wait),
       .perf_dma_wait_o  (s_perf_dma_wait),
-      .perf_rib_wait_o  (s_perf_rib_wait),
+      .perf_ribp_wait_o (s_perf_ribp_wait),
       .perf_apb_wait_o  (s_perf_apb_wait),
       .perf_sdram_wait_o(s_perf_sdram_wait),
       .perf_psram_wait_o(s_perf_psram_wait),
       .perf_flash_wait_o(s_perf_flash_wait)
   );
 
-  ip_rib_wrapper u_ip_rib_wrapper (
+  ip_ribp_wrapper u_ip_ribp_wrapper (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
-      `include "soc_ip_rib_wrapper_fabric.svh"
+      `include "ip_ribp_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
       .uart            (uart0),
@@ -172,23 +170,22 @@ core_wrapper u_core_wrapper (
       .fault_addr_i    (s_bus_fault_addr),
       .fault_wstrb_i   (s_bus_fault_wstrb),
       .fault_reserved_i(s_bus_fault_reserved),
-      .irq_o           (s_rib_irq)
+      .irq_o           (s_ribp_irq)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .clk_aud_i     (clk_aud_i),
-      .rst_aud_n_i   (rst_aud_n_i),
-      .tmr_capch_i   (s_tmr_capch),
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .clk_aud_i  (clk_aud_i),
+      .rst_aud_n_i(rst_aud_n_i),
+      .tmr_capch_i(s_tmr_capch),
       `include "soc_ip_apb_wrapper_fabric.svh"
-      .uart          (u_uart1_if),
-      .pwm           (u_pwm_if),
-      .ps2           (u_ps2_if),
-      .ip_sel_i      (u_sysctrl_if.ip_sel_o),
-      .user_gpio     (u_user_gpio_if),
-      .rib_resp_err_o(s_apb_resp_err),
-      .irq_o         (s_apb_irq)
+      .uart       (u_uart1_if),
+      .pwm        (u_pwm_if),
+      .ps2        (u_ps2_if),
+      .ip_sel_i   (u_sysctrl_if.ip_sel_o),
+      .user_gpio  (u_user_gpio_if),
+      .irq_o      (s_apb_irq)
   );
 
 endmodule

@@ -193,12 +193,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dynamic-core-filelist",
         type=Path,
-        default=REPO_ROOT / "rtl/managed/mpw/.build/core/core.fl",
+        required=True,
     )
     parser.add_argument(
         "--dynamic-ip-filelist",
         type=Path,
-        default=REPO_ROOT / "rtl/managed/mpw/.build/ip/ip.fl",
+        required=True,
     )
     parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "export")
     return parser.parse_args()

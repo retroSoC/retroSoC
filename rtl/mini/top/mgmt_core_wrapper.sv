@@ -15,7 +15,7 @@ module mgmt_core_wrapper (
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [31:0] irq_i,
-    soc_rib_if.master   rib
+    ribp_if.master   ribp
     // verilog_format: on
 );
 
@@ -33,13 +33,13 @@ module mgmt_core_wrapper (
       .clk         (clk_i),
       .resetn      (rst_n_i),
       .trap        (),
-      .mem_valid   (rib.valid),
+      .mem_valid   (ribp.valid),
       .mem_instr   (),
-      .mem_addr    (rib.addr),
-      .mem_wdata   (rib.wdata),
-      .mem_wstrb   (rib.wstrb),
-      .mem_rdata   (rib.rdata),
-      .mem_ready   (rib.ready),
+      .mem_addr    (ribp.addr),
+      .mem_wdata   (ribp.wdata),
+      .mem_wstrb   (ribp.wstrb),
+      .mem_rdata   (ribp.rdata),
+      .mem_ready   (ribp.ready),
       .mem_la_read (),
       .mem_la_write(),
       .mem_la_addr (),
@@ -62,7 +62,7 @@ module mgmt_core_wrapper (
   logic s_pwrup_req;
   // verilog_format: off
   ahbl_if u_ahbl_if (clk_i, rst_n_i);
-  ahbl2soc_rib u_ahbl2soc_rib (u_ahbl_if, rib);
+  ahbl2ribp u_ahbl2ribp (u_ahbl_if, ribp);
   // verilog_format: on
 
   hazard3_cpu_1port #(

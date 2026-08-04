@@ -26,7 +26,7 @@ def render(top: str, design: Path, properties: Path, solver: str, mode: str, dep
             "",
             "[script]",
             "read_verilog -formal -sv design.v",
-            "read_verilog -formal properties.v",
+            "read_verilog -formal -sv properties.v",
             f"prep -top {top}",
             "async2sync",
             "dffunmap",

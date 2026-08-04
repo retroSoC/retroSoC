@@ -17,20 +17,26 @@ SV_IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 SV_REFERENCE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[0-9]+\])?$")
 SV_CONSTANT_RE = re.compile(r"(?:1'[bB][01]|'[01])$")
 FABRIC_LINK_NAMES = ("mgmt", "user", "dma", "rib", "apb")
-SOC_RIB_MASTER_LINK_NAMES = ("mgmt", "user", "dma")
-IRQ_GROUP_NAMES = ("rib", "apb")
+FABRIC_PROTOCOLS = {
+    "mgmt": "ribp",
+    "user": "rib",
+    "dma": "rib",
+    "rib": "rib",
+    "apb": "ribp",
+}
+IRQ_GROUP_NAMES = ("ribp", "apb")
 IRQ_VECTOR_WIDTH = 32
 COMPATIBILITY_IRQ_BINDINGS = (
-    ("clint_software", "rib", 0, 0, "u_clint_if.sfr_irq_o"),
-    ("clint_timer", "rib", 1, 1, "u_clint_if.tmr_irq_o"),
-    ("uart0", "rib", 2, 2, "uart.irq_o"),
-    ("timer0", "rib", 3, 3, "s_tim0_irq"),
-    ("timer1", "rib", 4, 4, "s_tim1_irq"),
-    ("psram", "rib", 5, 5, "psram.irq_o"),
-    ("spisd", "rib", 6, 6, "spisd.irq_o"),
-    ("i2c0", "rib", 7, 7, "i2c0.irq_o"),
-    ("i2s", "rib", 8, 8, "i2s.irq_o"),
-    ("xpi", "rib", 9, 9, "xpi.irq_o"),
+    ("clint_software", "ribp", 0, 0, "u_clint_if.sfr_irq_o"),
+    ("clint_timer", "ribp", 1, 1, "u_clint_if.tmr_irq_o"),
+    ("uart0", "ribp", 2, 2, "uart.irq_o"),
+    ("timer0", "ribp", 3, 3, "s_tim0_irq"),
+    ("timer1", "ribp", 4, 4, "s_tim1_irq"),
+    ("psram", "ribp", 5, 5, "psram.irq_o"),
+    ("spisd", "ribp", 6, 6, "spisd.irq_o"),
+    ("i2c0", "ribp", 7, 7, "i2c0.irq_o"),
+    ("i2s", "ribp", 8, 8, "i2s.irq_o"),
+    ("xpi", "ribp", 9, 9, "xpi.irq_o"),
     ("uart1", "apb", 0, 10, "uart.irq_o"),
     ("pwm", "apb", 1, 11, "pwm.irq_o"),
     ("ps2", "apb", 2, 12, "ps2.irq_o"),
@@ -42,7 +48,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
 
 
 @dataclass(frozen=True)
-class RIBTarget:
+class RIBPTarget:
     slot: int
     name: str
     interface: str
@@ -63,6 +69,7 @@ class ApbTarget:
 class FabricLink:
     name: str
     interface: str
+    protocol: str
 
 
 @dataclass(frozen=True)
@@ -174,76 +181,76 @@ def parse_regions(value: Any, field: str) -> tuple[str, ...]:
     return regions
 
 
-def parse_rib_targets(
+def parse_ribp_targets(
     value: Any, memory_regions: dict[str, dict[str, Any]]
-) -> list[RIBTarget]:
+) -> list[RIBPTarget]:
     if not isinstance(value, list) or not value:
-        raise ValueError("rib_targets must be a non-empty list")
-    targets: list[RIBTarget] = []
+        raise ValueError("ribp_targets must be a non-empty list")
+    targets: list[RIBPTarget] = []
     claimed_regions: set[str] = set()
     names: set[str] = set()
     interfaces: set[str] = set()
     slots: set[int] = set()
     for index, entry in enumerate(value):
-        target = require_object(entry, f"rib_targets[{index}]")
+        target = require_object(entry, f"ribp_targets[{index}]")
         slot = target.get("slot")
         if not isinstance(slot, int) or slot < 0:
-            raise ValueError(f"rib_targets[{index}].slot must be a non-negative integer")
-        name = require_identifier(target.get("name"), f"rib_targets[{index}].name")
+            raise ValueError(f"ribp_targets[{index}].slot must be a non-negative integer")
+        name = require_identifier(target.get("name"), f"ribp_targets[{index}].name")
         interface = require_identifier(
-            target.get("interface"), f"rib_targets[{index}].interface"
+            target.get("interface"), f"ribp_targets[{index}].interface"
         )
         disabled = target.get("disabled", False)
         if not isinstance(disabled, bool):
-            raise ValueError(f"rib_targets[{index}].disabled must be boolean")
+            raise ValueError(f"ribp_targets[{index}].disabled must be boolean")
         if disabled:
             if "regions" in target:
-                raise ValueError(f"rib_targets[{index}] is disabled but declares regions")
+                raise ValueError(f"ribp_targets[{index}] is disabled but declares regions")
             regions: tuple[str, ...] = ()
         else:
-            regions = parse_regions(target.get("regions"), f"rib_targets[{index}].regions")
+            regions = parse_regions(target.get("regions"), f"ribp_targets[{index}].regions")
             for region_name in regions:
                 region = memory_regions.get(region_name)
                 if region is None:
                     raise ValueError(
-                        f"rib_targets[{index}] references unknown region {region_name}"
+                        f"ribp_targets[{index}] references unknown region {region_name}"
                     )
-                if region.get("route") != "rib" or region.get("kind") != "active":
+                if region.get("route") != "ribp" or region.get("kind") != "active":
                     raise ValueError(
-                        f"rib_targets[{index}] region {region_name} is not an active rib region"
+                        f"ribp_targets[{index}] region {region_name} is not an active RIBP region"
                     )
                 if region_name in claimed_regions:
-                    raise ValueError(f"rib region {region_name} has multiple targets")
+                    raise ValueError(f"RIBP region {region_name} has multiple targets")
                 claimed_regions.add(region_name)
         if name in names:
-            raise ValueError(f"rib target name {name} is duplicated")
+            raise ValueError(f"RIBP target name {name} is duplicated")
         if interface in interfaces:
-            raise ValueError(f"rib target interface {interface} is duplicated")
+            raise ValueError(f"RIBP target interface {interface} is duplicated")
         if slot in slots:
-            raise ValueError(f"rib target slot {slot} is duplicated")
+            raise ValueError(f"RIBP target slot {slot} is duplicated")
         names.add(name)
         interfaces.add(interface)
         slots.add(slot)
-        targets.append(RIBTarget(slot, name, interface, regions, disabled))
+        targets.append(RIBPTarget(slot, name, interface, regions, disabled))
 
     ordered = sorted(targets, key=lambda item: item.slot)
     if [target.slot for target in ordered] != list(range(len(ordered))):
-        raise ValueError("rib target slots must be contiguous from zero")
-    active_rib_regions = {
+        raise ValueError("RIBP target slots must be contiguous from zero")
+    active_ribp_regions = {
         symbol
         for symbol, region in memory_regions.items()
-        if region.get("route") == "rib" and region.get("kind") == "active"
+        if region.get("route") == "ribp" and region.get("kind") == "active"
     }
-    if claimed_regions != active_rib_regions:
-        missing = sorted(active_rib_regions - claimed_regions)
-        extra = sorted(claimed_regions - active_rib_regions)
+    if claimed_regions != active_ribp_regions:
+        missing = sorted(active_ribp_regions - claimed_regions)
+        extra = sorted(claimed_regions - active_ribp_regions)
         details: list[str] = []
         if missing:
             details.append(f"missing {', '.join(missing)}")
         if extra:
             details.append(f"extra {', '.join(extra)}")
         raise ValueError(
-            f"rib target regions do not cover the memory map ({'; '.join(details)})"
+            f"RIBP target regions do not cover the memory map ({'; '.join(details)})"
         )
     return ordered
 
@@ -325,15 +332,20 @@ def parse_fabric_links(value: Any) -> list[FabricLink]:
         link = require_object(entry, f"fabric_links[{index}]")
         name = require_identifier(link.get("name"), f"fabric_links[{index}].name")
         interface = require_identifier(link.get("interface"), f"fabric_links[{index}].interface")
+        protocol = require_string(link.get("protocol"), f"fabric_links[{index}].protocol")
         if name not in FABRIC_LINK_NAMES:
             raise ValueError(f"fabric_links[{index}].name is not a supported SoC fabric role")
         if name in names:
             raise ValueError(f"SoC fabric role {name} is duplicated")
         if interface in interfaces:
             raise ValueError(f"SoC fabric interface {interface} is duplicated")
+        if protocol != FABRIC_PROTOCOLS[name]:
+            raise ValueError(
+                f"fabric_links[{index}].protocol must be {FABRIC_PROTOCOLS[name]} for {name}"
+            )
         names.add(name)
         interfaces.add(interface)
-        links.append(FabricLink(name, interface))
+        links.append(FabricLink(name, interface, protocol))
     if names != set(FABRIC_LINK_NAMES):
         missing = ", ".join(sorted(set(FABRIC_LINK_NAMES) - names))
         raise ValueError(f"fabric_links does not cover required roles: {missing}")
@@ -484,7 +496,7 @@ def validate_compatibility_irq_bindings(interrupts: list[Interrupt]) -> None:
 def read_topology(
     topology_path: Path, memory_map_path: Path
 ) -> tuple[
-    list[RIBTarget],
+    list[RIBPTarget],
     list[ApbTarget],
     list[FabricLink],
     list[GpioFunction],
@@ -506,7 +518,7 @@ def read_topology(
     interrupts = parse_interrupts(document.get("interrupts"), irq_groups, irq_vector_width)
     validate_compatibility_irq_bindings(interrupts)
     return (
-        parse_rib_targets(document.get("rib_targets"), memory_regions),
+        parse_ribp_targets(document.get("ribp_targets"), memory_regions),
         parse_apb_targets(document.get("apb_targets"), memory_regions),
         parse_fabric_links(document.get("fabric_links")),
         parse_gpio_functions(document.get("gpio_alt_functions"), gpio_pins),
@@ -516,21 +528,21 @@ def read_topology(
     )
 
 
-def render_rib_interfaces(targets: list[RIBTarget]) -> str:
+def render_ribp_interfaces(targets: list[RIBPTarget]) -> str:
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
-    lines.extend(f"  rib_if {target.interface} ();" for target in targets)
+    lines.extend(f"  ribp_if {target.interface} ();" for target in targets)
     return "\n".join(lines) + "\n"
 
 
 def render_region_select(region: str, memory_region: dict[str, Any]) -> str:
     base = int(require_string(memory_region.get("base"), f"memory map region {region}.base"), 0)
     if base == 0:
-        return f"(rib.addr <= `SOC_ADDR_{region}_END)"
-    return f"`SOC_ADDR_IS_{region}(rib.addr)"
+        return f"(ribp.addr <= `SOC_ADDR_{region}_END)"
+    return f"`SOC_ADDR_IS_{region}(ribp.addr)"
 
 
-def render_rib_routes(
-    targets: list[RIBTarget], memory_regions: dict[str, dict[str, Any]]
+def render_ribp_routes(
+    targets: list[RIBPTarget], memory_regions: dict[str, dict[str, Any]]
 ) -> str:
     count = len(targets)
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
@@ -538,6 +550,7 @@ def render_rib_routes(
         [
             f"  logic [{count - 1}:0] s_slv_sel_d, s_slv_sel_q;",
             f"  logic [{count - 1}:0] s_slv_ready;",
+            f"  logic [{count - 1}:0] s_slv_resp_err;",
             f"  logic [31:0] s_slv_rdata [0:{count - 1}];",
             "",
         ]
@@ -556,15 +569,16 @@ def render_rib_routes(
                     f"{render_region_select(region, memory_regions[region])};"
                 )
             lines.append(
-                f"  assign {target.interface}.valid = rib.valid && (|s_{target.name}_region_sel);"
+                f"  assign {target.interface}.valid = ribp.valid && (|s_{target.name}_region_sel);"
             )
         lines.extend(
             [
-                f"  assign {target.interface}.addr = rib.addr;",
-                f"  assign {target.interface}.wdata = rib.wdata;",
-                f"  assign {target.interface}.wstrb = rib.wstrb;",
+                f"  assign {target.interface}.addr = ribp.addr;",
+                f"  assign {target.interface}.wdata = ribp.wdata;",
+                f"  assign {target.interface}.wstrb = ribp.wstrb;",
                 f"  assign s_slv_sel_d[{target.slot}] = {target.interface}.valid;",
                 f"  assign s_slv_ready[{target.slot}] = {target.interface}.ready;",
+                f"  assign s_slv_resp_err[{target.slot}] = {target.interface}.resp_err;",
                 f"  assign s_slv_rdata[{target.slot}] = {target.interface}.rdata;",
                 "",
             ]
@@ -578,13 +592,14 @@ def render_rib_routes(
             "      s_slv_sel_q",
             "  );",
             "",
-            "  assign rib.ready = |(s_slv_sel_q & s_slv_ready);",
+            "  assign ribp.ready = |(s_slv_sel_q & s_slv_ready);",
+            "  assign ribp.resp_err = |(s_slv_sel_q & s_slv_ready & s_slv_resp_err);",
             "",
             "  always_comb begin",
-            "    rib.rdata = '0;",
+            "    ribp.rdata = '0;",
             f"    for (int index = 0; index < {count}; index++) begin",
             "      if (s_slv_sel_q[index]) begin",
-            "        rib.rdata = rib.rdata | s_slv_rdata[index];",
+            "        ribp.rdata = ribp.rdata | s_slv_rdata[index];",
             "      end",
             "    end",
             "  end",
@@ -653,13 +668,13 @@ def render_apb_request_routes(targets: list[ApbTarget]) -> str:
     for target in targets:
         lines.extend(
             [
-                f"  assign {target.name}.paddr = rib.addr;",
+                f"  assign {target.name}.paddr = ribp.addr;",
                 f"  assign {target.name}.pprot = '0;",
-                f"  assign {target.name}.psel = s_xfer_valid && `SOC_ADDR_IS_{target.region}(rib.addr);",
+                f"  assign {target.name}.psel = s_xfer_valid && `SOC_ADDR_IS_{target.region}(ribp.addr);",
                 f"  assign {target.name}.penable = s_fsm_q == FSM_ENAB;",
-                f"  assign {target.name}.pwrite = |rib.wstrb;",
-                f"  assign {target.name}.pwdata = rib.wdata;",
-                f"  assign {target.name}.pstrb = rib.wstrb;",
+                f"  assign {target.name}.pwrite = |ribp.wstrb;",
+                f"  assign {target.name}.pwdata = ribp.wdata;",
+                f"  assign {target.name}.pstrb = ribp.wstrb;",
                 "",
             ]
         )
@@ -669,7 +684,7 @@ def render_apb_request_routes(targets: list[ApbTarget]) -> str:
 def render_apb_select_routes(targets: list[ApbTarget]) -> str:
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
     lines.extend(
-        f"  assign s_psel_comb[{target.slot}] = `SOC_ADDR_IS_{target.region}(rib.addr);"
+        f"  assign s_psel_comb[{target.slot}] = `SOC_ADDR_IS_{target.region}(ribp.addr);"
         for target in targets
     )
     return "\n".join(lines) + "\n"
@@ -693,9 +708,12 @@ def render_apb_response_mux(targets: list[ApbTarget]) -> str:
 
 def render_fabric_interfaces(links: list[FabricLink]) -> str:
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
+    interface_types = {
+        "ribp": "ribp_if",
+        "rib": "rib_if",
+    }
     lines.extend(
-        f"  {'soc_rib_if' if link.name in SOC_RIB_MASTER_LINK_NAMES else 'rib_if'} "
-        f"{link.interface} ();"
+        f"  {interface_types[link.protocol]} {link.interface} ();"
         for link in links
     )
     return "\n".join(lines) + "\n"
@@ -714,11 +732,11 @@ def render_fabric_connection(links: list[FabricLink], name: str, port: str) -> s
 
 def render_bus_fabric_connections(links: list[FabricLink]) -> str:
     port_names = {
-        "mgmt": "mgmt_rib",
+        "mgmt": "mgmt_ribp",
         "user": "user_rib",
         "dma": "dma_rib",
         "rib": "rib",
-        "apb": "apb_rib",
+        "apb": "apb_ribp",
     }
     interfaces = {link.name: link.interface for link in links}
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
@@ -860,8 +878,8 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
     ) = read_topology(topology_path, memory_map_path)
     memory_regions = read_memory_regions(memory_map_path)
     rtl_dir = output_dir / "rtl"
-    atomic_write(rtl_dir / "soc_rib_interfaces.svh", render_rib_interfaces(targets))
-    atomic_write(rtl_dir / "soc_rib_routes.svh", render_rib_routes(targets, memory_regions))
+    atomic_write(rtl_dir / "ribp_interfaces.svh", render_ribp_interfaces(targets))
+    atomic_write(rtl_dir / "ribp_routes.svh", render_ribp_routes(targets, memory_regions))
     atomic_write(rtl_dir / "soc_apb_interfaces.svh", render_apb_interfaces(apb_targets))
     atomic_write(rtl_dir / "soc_apb_bridges.svh", render_apb_bridges(apb_targets))
     atomic_write(rtl_dir / "soc_apb_ports.svh", render_apb_ports(apb_targets))
@@ -873,7 +891,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
     atomic_write(rtl_dir / "soc_fabric_interfaces.svh", render_fabric_interfaces(fabric_links))
     atomic_write(
         rtl_dir / "soc_mgmt_core_wrapper_fabric.svh",
-        render_fabric_connection(fabric_links, "mgmt", "rib"),
+        render_fabric_connection(fabric_links, "mgmt", "ribp"),
     )
     atomic_write(
         rtl_dir / "soc_user_core_fabric.svh",
@@ -881,19 +899,22 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
     )
     atomic_write(rtl_dir / "soc_bus_fabric.svh", render_bus_fabric_connections(fabric_links))
     atomic_write(
-        rtl_dir / "soc_ip_rib_wrapper_fabric.svh",
+        rtl_dir / "ip_ribp_wrapper_fabric.svh",
         render_fabric_connection(fabric_links, "rib", "rib")
         + render_fabric_connection(fabric_links, "dma", "dma_rib"),
     )
     atomic_write(
         rtl_dir / "soc_ip_apb_wrapper_fabric.svh",
-        render_fabric_connection(fabric_links, "apb", "rib"),
+        render_fabric_connection(fabric_links, "apb", "ribp"),
     )
     atomic_write(rtl_dir / "soc_gpio_alt_bindings.svh", render_gpio_bindings(gpio_functions))
     atomic_write(rtl_dir / "soc_irq_config.svh", render_irq_config(irq_vector_width, irq_groups))
     for group in irq_groups:
+        filename = f"{group.name}_irq_bindings.svh"
+        if group.name != "ribp":
+            filename = f"soc_{group.name}_irq_bindings.svh"
         atomic_write(
-            rtl_dir / f"soc_{group.name}_irq_bindings.svh",
+            rtl_dir / filename,
             render_irq_group_bindings(group, interrupts),
         )
     atomic_write(

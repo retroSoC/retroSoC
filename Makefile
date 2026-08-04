@@ -29,15 +29,16 @@ SYNTH ?= NONE
 STA   ?= NONE
 
 # HW
-PDK             ?= IHP130
-HAVE_PLL        ?= NO
-HAVE_SRAM_IF    ?= NO
-HAVE_SRAM_MACRO ?= NO
-PDK_BEHAV       ?= NO
-HAVE_SVA        ?= NO
-WAVE            ?= NO
-FORMAL          ?= NO
-VCS_USE_LSF     ?= YES
+PDK                      ?= IHP130
+HAVE_PLL                 ?= NO
+HAVE_SRAM_IF             ?= NO
+HAVE_SRAM_MACRO          ?= NO
+PDK_BEHAV                ?= NO
+HAVE_SVA                 ?= NO
+WAVE                     ?= NO
+FORMAL                   ?= NO
+VCS_USE_LSF              ?= YES
+REGRESS_NETSIM_BOOT_ONLY ?= NO
 
 RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
@@ -124,6 +125,7 @@ $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
 $(call validate_value,FORMAL,$(VALID_BOOL))
 $(call validate_value,VCS_USE_LSF,$(VALID_BOOL))
+$(call validate_value,REGRESS_NETSIM_BOOT_ONLY,$(VALID_BOOL))
 $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
@@ -208,7 +210,7 @@ endif
 	benchmark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib2apb formal-clean formal-doctor
+	formal formal-bus formal-rib-adapter formal-ribp2apb formal-clean formal-doctor
 .NOTPARALLEL: setup
 
 help:
@@ -233,7 +235,8 @@ help:
 	  '  check-user-extensions      validate the canonical user-extension map' \
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
-	  '  formal | formal-bus | formal-rib2apb | formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY protocol proofs' \
+	  '  formal | formal-bus | formal-rib-adapter | formal-ribp2apb run SBY protocol proofs' \
+	  '  formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY peripheral-control proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the benchmark profile and write meta/performance.json' \
 	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
@@ -370,10 +373,10 @@ regress-smoke:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130
 
 regress-pr:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk ICS55
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk ICS55 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 
 regress-nightly:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly

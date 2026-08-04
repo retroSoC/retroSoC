@@ -3,17 +3,17 @@
 module gpio_user_mux_tb;
   logic clk_i = 1'b0;
   logic rst_n_i = 1'b0;
-  rib_if rib ();
+  ribp_if rib ();
   gpio_if gpio ();
   user_gpio_if user_gpio ();
   logic [31:0] read_data;
 
   always #5 clk_i = ~clk_i;
 
-  rib_gpio dut (
+  ribp_gpio dut (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
-      .rib      (rib),
+      .ribp     (rib),
       .gpio     (gpio),
       .user_gpio(user_gpio)
   );

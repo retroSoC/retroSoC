@@ -17,8 +17,8 @@ from filelist import FileList, write_filelist  # noqa: E402
 
 
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
-INTERCONNECT = ROOT / "rtl/ip/rib/interconnect"
-PERIPHERAL = ROOT / "rtl/ip/rib/peripheral"
+INTERCONNECT = ROOT / "rtl/ip/ribp/interconnect"
+PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -28,25 +28,37 @@ def target_defines(target: str) -> list[str]:
 
 def source_files(target: str) -> list[Path]:
     common = [
-        COMMON_RTL / "interface/rib_if.sv",
+        COMMON_RTL / "interface/ribp_if.sv",
+        COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",
-        TOP / "soc_rib_if.sv",
+        TOP / "rib_if.sv",
     ]
     if target == "bus":
         return [
             *common,
-            TOP / "soc_rib_regslice.sv",
+            COMMON_RTL / "utils/spill_register.sv",
+            TOP / "ribp2rib.sv",
+            TOP / "rib2ribp.sv",
+            TOP / "rib_error_slave.sv",
+            TOP / "rib2ram.sv",
             TOP / "bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]
-    if target == "rib2apb":
+    if target == "rib_adapter":
         return [
-            COMMON_RTL / "interface/rib_if.sv",
+            *common,
+            TOP / "ribp2rib.sv",
+            TOP / "rib2ribp.sv",
+            SCRIPT_DIR / "rib_adapter_formal.sv",
+        ]
+    if target == "ribp2apb":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
             COMMON_RTL / "interface/apb4_pure_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/edge_det.sv",
-            INTERCONNECT / "rib2apb.sv",
-            SCRIPT_DIR / "rib2apb_formal.sv",
+            INTERCONNECT / "ribp2apb.sv",
+            SCRIPT_DIR / "ribp2apb_formal.sv",
         ]
     if target == "sysctrl":
         return [
@@ -59,7 +71,9 @@ def source_files(target: str) -> list[Path]:
         return [
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
             COMMON_RTL / "cdc/cdc_2phase.sv",
+            COMMON_RTL / "clkrst/rst_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
             TOP / "rcu.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
@@ -68,6 +82,7 @@ def source_files(target: str) -> list[Path]:
         return [
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
             COMMON_RTL / "utils/edge_det.sv",
             PERIPHERAL / "gpio.sv",
             SCRIPT_DIR / "gpio_user_formal.sv",
@@ -104,7 +119,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--target",
-        choices=("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user"),
+        choices=(
+            "bus",
+            "rib_adapter",
+            "ribp2apb",
+            "sysctrl",
+            "pll_rcu",
+            "gpio_user",
+        ),
         required=True,
     )
     parser.add_argument("--output", type=Path, required=True)

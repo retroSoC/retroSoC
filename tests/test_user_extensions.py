@@ -48,12 +48,19 @@ def test_extensions_generate_isolated_scalar_bindings(tmp_path: Path) -> None:
     ip = (tmp_path / "rtl/user_ip_bindings.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "user_extensions.fl").read_text(encoding="utf-8")
 
-    assert core.count("rib_if u_user_") == 6
-    assert "rib.valid = '0;" in core
+    assert core.count("rib_if u_user_") == 5
+    assert core.count("ribp_if u_user_") == 5
+    assert core.count("ribp2rib #(") == 5
+    assert core.count(".SYNC_RESET(1'b1)") == 2
+    assert core.count(".SYNC_RESET(1'b0)") == 3
+    assert "rib.cmd_valid = '0;" in core
     assert "5'd0: begin" in core
-    assert "5'd5: begin" in core
+    assert "5'd4: begin" in core
+    assert "5'd5: begin" not in core
     assert "core_reset_i[0]" in core
-    assert "user_core_design_username1 #(" in core
+    assert "mpw_c0 #(0)" in core
+    assert "mpw_i1 #(1)" in ip
+    assert "User core 0 uses the RIBP contract" in core
     assert ip.count("user_gpio_if #(`USER_GPIO_NUM)") == 2
     assert "gpio.do_o = '0;" in ip
     assert "8'd2: begin" in ip
@@ -73,3 +80,11 @@ def test_extensions_reject_noncontiguous_slots_and_invalid_modules(tmp_path: Pat
     result = validate(write_invalid_extensions(tmp_path, document))
     assert result.returncode != 0
     assert "must be a SystemVerilog identifier" in result.stderr
+
+
+def test_extensions_reject_invalid_core_reset_style(tmp_path: Path) -> None:
+    document = json.loads(EXTENSIONS.read_text(encoding="utf-8"))
+    document["core_targets"][0]["reset"] = "mixed"
+    result = validate(write_invalid_extensions(tmp_path, document))
+    assert result.returncode != 0
+    assert ".reset must be sync or async" in result.stderr

@@ -111,12 +111,15 @@ Verilator regressions.
 
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
-targets are `bus`, `rib2apb`, `sysctrl`, `pll_rcu`, and `gpio_user`; each uses
+targets are `bus`, `rib_adapter`, `ribp2apb`, `sysctrl`, `pll_rcu`, and
+`gpio_user`; each uses
 the SBY `prove` task for bounded model checking and k-induction, plus a
 `cover` task, at depth 20. `sysctrl` checks register side effects, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
 state machine. `gpio_user` checks fixed user-GPIO ownership, lock, handoff,
-and mux safety.
+and mux safety. `rib_adapter` checks both single-word compatibility adapters
+under backpressure. Direct Common utility proofs, including `spill_register`,
+are maintained in the Common repository.
 `FORMAL_DEPTH` and `FORMAL_TIMEOUT` set the proof bound and per-task
 wall-clock limit. Use `make CONFIG=<profile> formal-doctor` before a local
 proof to verify that the required tools are available.

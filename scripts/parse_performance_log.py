@@ -18,8 +18,9 @@ REQUIRED_FIELDS = {
     "op",
     "words",
     "checksum",
+    "cycles",
     "mgmt_wait",
-    "rib_wait",
+    "ribp_wait",
     "sdram_wait",
     "psram_wait",
     "flash_wait",
@@ -46,8 +47,11 @@ def parse_log(content: str) -> dict[str, object]:
             "operation": fields["op"],
             "words": parse_number(fields["words"]),
             "checksum": int(fields["checksum"], 16),
+            "cycles": parse_number(fields["cycles"]),
         }
-        for counter in sorted(REQUIRED_FIELDS - {"region", "op", "words", "checksum"}):
+        for counter in sorted(
+            REQUIRED_FIELDS - {"region", "op", "words", "checksum", "cycles"}
+        ):
             sample[counter] = parse_number(fields[counter])
         samples.append(sample)
     passed = PASS_MARKER in content

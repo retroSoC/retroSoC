@@ -12,9 +12,10 @@ from typing import Any
 
 
 MAX_ADDRESS = 1 << 32
-VALID_ROUTES = {"rib", "apb", "ram", "reserved"}
+VALID_ROUTES = {"ribp", "apb", "ram", "reserved"}
 VALID_KINDS = {"active", "reserved"}
 VALID_USER_ACCESS = {"none", "ro", "rw"}
+VALID_BURST = {"incr1", "incr4"}
 
 
 def parse_integer(value: Any, field: str) -> int:
@@ -81,6 +82,11 @@ def read_map(path: Path) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]
             )
         if kind == "reserved" and user_access != "none":
             raise ValueError(f"regions[{index}] reserved regions must deny user access")
+        burst = region.get("burst", "incr1")
+        if burst not in VALID_BURST:
+            raise ValueError(f"regions[{index}].burst must be one of {sorted(VALID_BURST)}")
+        if kind == "reserved" and burst != "incr1":
+            raise ValueError(f"regions[{index}] reserved regions cannot support INCR4")
         base = parse_integer(region.get("base"), f"regions[{index}].base")
         size = parse_integer(region.get("size"), f"regions[{index}].size")
         if base < 0 or size <= 0 or base + size > MAX_ADDRESS:
@@ -98,6 +104,7 @@ def read_map(path: Path) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]
                 "public": region.get("public", False) is True,
                 "linker": region.get("linker"),
                 "user_access": user_access,
+                "burst": burst,
             }
         )
     previous: dict[str, Any] | None = None
@@ -153,7 +160,7 @@ def render_rtl(
             f"{range_expression(symbol, region['base'], region['end'])}",
         ]
     lines.append("")
-    for route in ("rib", "apb", "ram", "reserved"):
+    for route in ("ribp", "apb", "ram", "reserved"):
         selected = [
             f"`SOC_ADDR_IS_{region['symbol']}(addr)"
             for region in regions
@@ -175,6 +182,12 @@ def render_rtl(
         f"`define SOC_USER_ADDR_READABLE(addr) ({join_or(user_readable)})",
         f"`define SOC_USER_ADDR_WRITABLE(addr) ({join_or(user_writable)})",
     ]
+    incr4_regions = [
+        f"`SOC_ADDR_IS_{region['symbol']}(addr)"
+        for region in regions
+        if region["burst"] == "incr4"
+    ]
+    lines.append(f"`define SOC_ADDR_SUPPORTS_INCR4(addr) ({join_or(incr4_regions)})")
     lines.append("")
     for register in sysctrl_registers:
         macro = f"SOC_SYSCTRL_{register['symbol']}_OFFSET"

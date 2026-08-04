@@ -1,11 +1,14 @@
 /top/apb4_if_bridge.sv
 /top/gpio_pad_bridge.sv
-/top/soc_rib_regslice.sv
+/top/ribp2rib.sv
+/top/rib2ribp.sv
+/top/rib_error_slave.sv
+/top/rib2ram.sv
 /top/core_wrapper.sv
 /top/retrosoc.sv
 /top/retrosoc_asic.sv
 /top/onchip_ram.sv
-/top/ip_rib_wrapper.sv
+/top/ip_ribp_wrapper.sv
 /top/ip_apb_wrapper.sv
 /top/bus.sv
 /top/rcu.sv
@@ -15,4 +18,4 @@
 /top/user_ip_design_template.sv
 /top/user_ip_top.sv
 /top/user_ip_wrapper.sv
-/sva/soc_protocol_sva.sv
+/sva/rib_protocol_sva.sv

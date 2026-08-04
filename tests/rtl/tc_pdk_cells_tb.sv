@@ -74,12 +74,12 @@ module tc_pdk_cells_tb;
 `endif
 
 `ifdef PDK_ICS55
-  logic ics55_od_i;
-  logic ics55_od_oe;
-  logic ics55_od_mode;
-  logic ics55_pu;
-  logic ics55_pd;
-  tri   ics55_pad;
+  logic       ics55_od_i;
+  logic       ics55_od_oe;
+  logic       ics55_od_mode;
+  logic       ics55_pu;
+  logic       ics55_pd;
+  tri         ics55_pad;
   logic [2:0] ics55_mux_inputs;
   logic       ics55_mux_y;
 
@@ -202,11 +202,11 @@ module tc_pdk_cells_tb;
     gf180_seq_reset_n = 1'b0;
 `endif
 `ifdef PDK_ICS55
-    ics55_od_i    = 1'b1;
-    ics55_od_oe   = 1'b0;
-    ics55_od_mode = 1'b1;
-    ics55_pu      = 1'b0;
-    ics55_pd      = 1'b0;
+    ics55_od_i       = 1'b1;
+    ics55_od_oe      = 1'b0;
+    ics55_od_mode    = 1'b1;
+    ics55_pu         = 1'b0;
+    ics55_pd         = 1'b0;
     ics55_mux_inputs = 3'b000;
 `endif
 
@@ -309,11 +309,8 @@ module tc_pdk_cells_tb;
     for (int mux_vector = 0; mux_vector < 8; mux_vector++) begin
       ics55_mux_inputs = mux_vector[2:0];
       #1;
-      expect_bit(
-          ics55_mux_y,
-          ~(ics55_mux_inputs[2] ? ics55_mux_inputs[1] : ics55_mux_inputs[0]),
-          $sformatf("ICS55 MUXI2 vector %0d", mux_vector)
-      );
+      expect_bit(ics55_mux_y, ~(ics55_mux_inputs[2] ? ics55_mux_inputs[1] : ics55_mux_inputs[0]),
+                 $sformatf("ICS55 MUXI2 vector %0d", mux_vector));
     end
 `endif
 

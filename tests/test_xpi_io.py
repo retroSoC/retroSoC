@@ -35,13 +35,13 @@ def test_xpi_releases_data_pads_while_receiving(tmp_path: Path) -> None:
             [
                 "+define+SV_ASSRT_DISABLE",
                 f"+incdir+{generated / 'rtl'}",
-                f"+incdir+{ROOT / 'rtl/ip/rib/storage'}",
+                f"+incdir+{ROOT / 'rtl/ip/ribp/storage'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/rib_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "rtl/ip/rib/storage/xpi.sv"),
-                str(ROOT / "rtl/ip/rib/storage/xpi_clkgen.sv"),
-                str(ROOT / "rtl/ip/rib/storage/xpi_core.sv"),
+                str(ROOT / "rtl/ip/ribp/storage/xpi.sv"),
+                str(ROOT / "rtl/ip/ribp/storage/xpi_clkgen.sv"),
+                str(ROOT / "rtl/ip/ribp/storage/xpi_core.sv"),
                 str(ROOT / "tests/rtl/xpi_io_tb.sv"),
                 "",
             ]

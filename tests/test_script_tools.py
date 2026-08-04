@@ -14,6 +14,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from zipfile import ZipFile
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FILELIST_SCRIPT_DIR = ROOT / "rtl/mini/script"
@@ -31,11 +33,7 @@ from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
-from scripts.generate_mpw import (  # noqa: E402
-    migrate_user_extension_includes,
-    migrate_user_gpio_interfaces,
-    remove_legacy_picorv32_entry,
-)
+from scripts.generate_mpw import validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts import regress  # noqa: E402
 from scripts import run_flow  # noqa: E402
@@ -109,7 +107,10 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert {path: path.stat().st_mtime_ns for path in generated} == mtimes
     assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
+    hazard3 = (tmp_path / "core_hazard3.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
+    assert str(ROOT / "rtl/managed/hazard3/hdl") in hazard3
+    assert "rtl/managed/mpw/core/username3" not in hazard3
     assert (tmp_path / "core_hazard3.fl").is_file()
     assert (tmp_path / "core_picorv32.fl").is_file()
     assert {
@@ -179,13 +180,17 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     (user_extensions / "rtl").mkdir(parents=True)
 
     bus_filelist = tmp_path / "bus.fl"
-    rib2apb_filelist = tmp_path / "rib2apb.fl"
+    rib_adapter_filelist = tmp_path / "rib_adapter.fl"
+    rib2apb_filelist = tmp_path / "ribp2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
-        "rib2apb", rib2apb_filelist, memory_map, topology, user_extensions
+        "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "ribp2apb", rib2apb_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
         "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
@@ -198,24 +203,41 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     )
 
     bus = parse_filelists([bus_filelist], require_files=False)
-    rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
+    rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
+    ribp2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_regslice.sv" in bus.files
+    assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
+    assert ROOT / "rtl/mini/top/ribp2rib.sv" in bus.files
+    assert ROOT / "rtl/mini/top/rib_error_slave.sv" in bus.files
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
-    assert ROOT / "rtl/ip/rib/interconnect/rib2apb.sv" in rib2apb.files
-    assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
-    assert ROOT / "rtl/ip/rib/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/mini/top/rib2ribp.sv" in rib_adapter.files
+    assert ROOT / "rtl/mini/formal/rib_adapter_formal.sv" in rib_adapter.files
+    assert ROOT / "rtl/ip/ribp/interconnect/ribp2apb.sv" in ribp2apb.files
+    assert ROOT / "rtl/mini/formal/ribp2apb_formal.sv" in ribp2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in ribp2apb.files
+    assert ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/rib/peripheral/gpio.sv" in gpio_user.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
+    assert ROOT / "rtl/ip/ribp/peripheral/gpio.sv" in gpio_user.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
     assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
+
+
+def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
+    design = (ROOT / "rtl/mini/formal/sysctrl_formal.sv").read_text(encoding="utf-8")
+    properties = (ROOT / "rtl/mini/formal/sysctrl_formal_props.sv").read_text(encoding="utf-8")
+
+    assert "user_reset_mask" in design
+    assert "user_core_count" in design
+    assert "`USER_CORE_COUNT" not in properties
+    assert "rib_wdata[4:0] < user_core_count" in properties
+    assert "user_reset == user_reset_mask" in properties
 
 
 def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
@@ -248,7 +270,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "ribp2apb", "sysctrl", "pll_rcu", "gpio_user")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -270,7 +292,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"bus={tmp_path / 'bus'}",
         "--proof",
-        f"rib2apb={tmp_path / 'rib2apb'}",
+        f"ribp2apb={tmp_path / 'ribp2apb'}",
         "--proof",
         f"sysctrl={tmp_path / 'sysctrl'}",
         "--proof",
@@ -283,55 +305,42 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
     assert set(result["proofs"]) == set(proofs)
 
 
-def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
-    source = tmp_path / "user_ip_design.sv"
-    source.write_text(
-        """`include "mdd_config.svh"
-module user_ip_design (gpio_if.dut gpio);
-  logic value;
-  assign gpio.gpio_oe = value;
-  assign gpio.gpio_cs = value;
-  assign gpio.gpio_pu = value;
-  assign gpio.gpio_pd = value;
-  assign gpio.gpio_out = value;
-  always_comb value = gpio.gpio_in[0];
-endmodule
-""",
-        encoding="utf-8",
-    )
+def test_mpw_generator_uses_only_the_native_v2_contract() -> None:
+    source = (ROOT / "scripts/generate_mpw.py").read_text(encoding="utf-8")
 
-    assert migrate_user_extension_includes(tmp_path) == [source]
-    assert migrate_user_gpio_interfaces(tmp_path) == [source]
-
-    migrated = source.read_text(encoding="utf-8")
-    assert "gpio_if.dut" not in migrated
-    assert "gpio.gpio_" not in migrated
-    assert '`include "user_extensions.svh"' in migrated
-    assert "user_gpio_if.user_ip gpio" in migrated
-    assert "gpio.oe_o" in migrated
-    assert "gpio.do_o" in migrated
-    assert "gpio.di_i" in migrated
+    assert "migrate_user_" not in source
+    assert "prepare_legacy_mpw_workspace" not in source
+    assert '"-m",\n        "mpwgen"' in source
 
 
-def test_generated_user_core_filelist_excludes_the_legacy_picorv32_entry(
-    tmp_path: Path,
-) -> None:
-    management_core_dir = tmp_path / "rtl/managed/picorv32/rtl"
-    management_core_dir.mkdir(parents=True)
-    picorv32 = management_core_dir / "picorv32.v"
-    picorv32_ver = management_core_dir / "picorv32_ver.v"
-    picorv32.touch()
-    picorv32_ver.touch()
-    filelist = tmp_path / "generated/mpw/core/core.fl"
-    filelist.parent.mkdir(parents=True)
-    filelist.write_text(
-        f"{picorv32.resolve()}\n{picorv32_ver.resolve()}\nuser_core_design.sv\n",
-        encoding="utf-8",
-    )
+def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None:
+    extensions_path = tmp_path / "rtl/mini/integration/user_extensions.json"
+    extensions_path.parent.mkdir(parents=True)
+    extensions = {
+        "core_targets": [
+            {"slot": 0, "module": "mpw_core_zero", "reset": "sync"},
+        ],
+        "ip_targets": [
+            {"slot": 1, "module": "mpw_ip_one"},
+        ],
+    }
+    extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
+    output = tmp_path / "output"
+    output.mkdir()
+    manifest = {
+        "designs": [
+            {"kind": "core", "slot": 0, "top": "mpw_core_zero", "reset": "sync"},
+            {"kind": "ip", "slot": 1, "top": "mpw_ip_one"},
+        ]
+    }
+    (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
-    remove_legacy_picorv32_entry(filelist, management_core_dir)
+    validate_extension_bindings(tmp_path, output)
 
-    assert filelist.read_text(encoding="utf-8") == "user_core_design.sv\n"
+    extensions["core_targets"][0]["module"] = "wrong_core"
+    extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
+    with pytest.raises(ValueError, match="does not match"):
+        validate_extension_bindings(tmp_path, output)
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
@@ -504,9 +513,10 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
+        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
+        Path("tests/rtl/bus_fault_tb.sv"),
         Path("rtl/managed/clusterip/common/rtl/utils/register.sv"),
         Path("rtl/managed/third_party/core.v"),
         Path("rtl/mini/filelist.f"),
@@ -518,9 +528,10 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/rib/peripheral/sysctrl.sv"),
+        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
+        Path("tests/rtl/bus_fault_tb.sv"),
     ]
 
 
@@ -528,6 +539,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     lock = load_lock(ROOT / "config/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
+    assert lock["sources"]["hazard3"]["destination"] == "rtl/managed/hazard3"
     assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
 
     command = (
@@ -620,7 +632,7 @@ def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
     assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
     assert "`ifdef CORE_PICORV32" in wrapper
     assert "`elsif CORE_HAZARD3" in wrapper
-    assert "ahbl2soc_rib u_ahbl2soc_rib" in wrapper
+    assert "ahbl2ribp u_ahbl2ribp" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
 
 
@@ -629,7 +641,7 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     profile = (ROOT / "configs/benchmark/ihp130-hazard3.mk").read_text(encoding="utf-8")
     benchmark = (ROOT / "app/apps/benchmark/main.c").read_text(encoding="utf-8")
 
-    assert "PDK_BEHAV       ?= NO" in makefile
+    assert re.search(r"^PDK_BEHAV\s+\?= NO$", makefile, re.MULTILINE)
     assert "PDK_BEHAV HAVE_SVA" in makefile
     assert "PDK_BEHAV=YES is for functional simulation" in makefile
     assert "HAVE_SRAM_MACRO := YES" in profile
@@ -703,8 +715,28 @@ def test_regression_observations_do_not_block_or_skip_metrics(
 ) -> None:
     calls: list[list[str]] = []
 
-    monkeypatch.setattr(regress, "select_regression", lambda _suite, _pdk: ((), ("unit-profile",)))
+    monkeypatch.setattr(
+        regress,
+        "select_regression",
+        lambda _suite, _pdk: (
+            (("unit-profile", ("rtl-lint",)),),
+            ("unit-profile",),
+        ),
+    )
     monkeypatch.setattr(regress, "regression_environment", lambda: {})
+    monkeypatch.setattr(regress, "self_owned_warnings", lambda _root, _output: [])
+    strict_calls: list[list[str]] = []
+
+    def pass_blocking_check(
+        command: list[str], root: Path, capture_output: bool, environment: dict[str, str]
+    ) -> str:
+        assert root == tmp_path
+        assert capture_output is False
+        assert environment == {}
+        strict_calls.append(command)
+        return ""
+
+    monkeypatch.setattr(regress, "run_command", pass_blocking_check)
 
     def fail_quality_check(
         command: list[str], *, cwd: Path, env: dict[str, str], check: bool
@@ -723,11 +755,19 @@ def test_regression_observations_do_not_block_or_skip_metrics(
     )
 
     assert regress.main() == 0
+    assert strict_calls == [["make", "CONFIG=unit-profile", "rtl-lint"]]
     assert calls == [
+        [
+            "make",
+            "CONFIG=unit-profile",
+            "SIMU=VERILATOR",
+            "HAVE_SVA=YES",
+            "check-rtl-lint",
+        ],
         ["make", "CONFIG=unit-profile", "check-warnings"],
         ["make", "CONFIG=unit-profile", "check-metrics"],
     ]
-    assert capsys.readouterr().err.count("non-blocking observation failed") == 2
+    assert capsys.readouterr().err.count("non-blocking observation failed") == 3
 
 
 def test_rtl_lint_warning_baseline_is_independent(tmp_path: Path) -> None:
@@ -822,6 +862,49 @@ def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
     assert data["exit_code"] == 0
     assert data["duration_seconds"] >= 0
     assert log.read_text(encoding="utf-8") == "flow output\n"
+
+
+def test_run_flow_can_terminate_an_opt_in_local_flow_at_success_marker(tmp_path: Path) -> None:
+    log = tmp_path / "marker.log"
+    result = tmp_path / "marker.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/run_flow.py"),
+            "--tool",
+            "test",
+            "--log",
+            str(log),
+            "--result",
+            str(result),
+            "--success-marker",
+            "Hello retroSoC!",
+            "--terminate-on-success-marker",
+            "--",
+            sys.executable,
+            "-c",
+            "import time; print('Hello retroSoC!', flush=True); time.sleep(30)",
+        ],
+        text=True,
+        capture_output=True,
+        timeout=10,
+    )
+    report = json.loads(result.read_text(encoding="utf-8"))
+    assert completed.returncode == 0
+    assert report["status"] == "passed"
+    assert report["completion_mode"] == "success_marker"
+    assert report["success_marker_seen"] is True
+    assert "Hello retroSoC!" in log.read_text(encoding="utf-8")
+
+
+def test_regression_boot_only_mode_replaces_only_netsim_command() -> None:
+    transformed = regress.with_netsim_boot_only(PR_COMMANDS)
+    flattened = [value for _, values in transformed for value in values]
+    assert "netsim" not in flattened
+    assert "netsim-boot" in flattened
+    assert "SIM_FIRMWARE_NAME=retrosoc_asm" in flattened
+    assert not any(value.startswith("SIM_SUCCESS_MARKER=") for value in flattened)
+    assert any("sta" in values for _, values in transformed)
 
 
 def test_run_flow_adds_carriage_return_when_terminal_disables_onlcr(monkeypatch) -> None:
@@ -1083,13 +1166,13 @@ def test_warning_normalization_maps_isolated_mpw_sources_to_managed_sources(
     tmp_path: Path,
 ) -> None:
     message = (
-        f"{tmp_path}/build/ihp130-deadbeef/generated/mpw/verilator/core/username3/"
-        "./Hazard3/hazard3_core_username3.v:42: unused signal"
+        f"{tmp_path}/build/ihp130-deadbeef/generated/mpw/verilator/core/username1/"
+        "./kianV/kianv_harris_mc_edition_username1.v:42: unused signal"
     )
     normalized = normalize(tmp_path, "UNUSEDSIGNAL", message)
     assert normalized == (
-        "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/"
-        "hazard3_core.v:<line>: unused signal"
+        "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username1/kianV/"
+        "kianv_harris_mc_edition.v:<line>: unused signal"
     )
 
 

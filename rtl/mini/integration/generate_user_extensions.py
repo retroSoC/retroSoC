@@ -22,6 +22,8 @@ class ExtensionTarget:
     slot: int
     module: str
     instance: str
+    bus: str
+    reset: str
 
 
 @dataclass(frozen=True)
@@ -80,13 +82,23 @@ def parse_targets(
             raise ValueError(f"{field}[{index}].slot must be within the selector range")
         module = require_identifier(target.get("module"), f"{field}[{index}].module")
         instance = require_identifier(target.get("instance"), f"{field}[{index}].instance")
+        if field == "core_targets":
+            bus = target.get("bus")
+            if bus not in {"ribp", "rib"}:
+                raise ValueError(f"{field}[{index}].bus must be ribp or rib")
+            reset = target.get("reset")
+            if reset not in {"sync", "async"}:
+                raise ValueError(f"{field}[{index}].reset must be sync or async")
+        else:
+            bus = "apb"
+            reset = "async"
         if slot in slots:
             raise ValueError(f"{field} slot {slot} is duplicated")
         if instance in instances:
             raise ValueError(f"{field} instance {instance} is duplicated")
         slots.add(slot)
         instances.add(instance)
-        targets.append(ExtensionTarget(slot, module, instance))
+        targets.append(ExtensionTarget(slot, module, instance, bus, reset))
     ordered = tuple(sorted(targets, key=lambda item: item.slot))
     if [target.slot for target in ordered] != list(range(first_slot, first_slot + len(ordered))):
         raise ValueError(f"{field} slots must be contiguous from {first_slot}")
@@ -122,21 +134,46 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
                 f"  logic [31:0] s_user_{target.slot}_irq;",
             ]
         )
+        if target.bus == "ribp":
+            lines.extend(
+                [
+                    f"  ribp_if u_user_{target.slot}_ribp_if ();",
+                    "  ribp2rib #(",
+                    f"      .SYNC_RESET(1'b{int(target.reset == 'sync')})",
+                    f"  ) u_user_{target.slot}_ribp2rib (",
+                    "      .clk_i (clk_i),",
+                    f"      .rst_n_i(rst_n_i && ~core_reset_i[{target.slot}]),",
+                    f"      .ribp  (u_user_{target.slot}_ribp_if),",
+                    f"      .rib   (u_user_{target.slot}_rib_if)",
+                    "  );",
+                ]
+            )
     lines.extend(
         [
             "",
             "  always_comb begin",
-            "    rib.valid = '0;",
-            "    rib.addr = '0;",
+            "    rib.cmd_valid = '0;",
+            "    rib.cmd_addr = '0;",
+            "    rib.cmd_write = '0;",
+            "    rib.cmd_len = '0;",
+            "    rib.w_valid = '0;",
             "    rib.wdata = '0;",
             "    rib.wstrb = '0;",
+            "    rib.wlast = '0;",
+            "    rib.rsp_ready = '0;",
         ]
     )
     for target in extensions.core_targets:
         lines.extend(
             [
+                f"    u_user_{target.slot}_rib_if.cmd_ready = '0;",
+                f"    u_user_{target.slot}_rib_if.w_ready = '0;",
+                f"    u_user_{target.slot}_rib_if.rsp_valid = '0;",
                 f"    u_user_{target.slot}_rib_if.rdata = '0;",
-                f"    u_user_{target.slot}_rib_if.ready = '0;",
+                f"    u_user_{target.slot}_rib_if.resp_err = '0;",
+                f"    u_user_{target.slot}_rib_if.resp_code = '0;",
+                f"    u_user_{target.slot}_rib_if.rsp_beat = '0;",
+                f"    u_user_{target.slot}_rib_if.rsp_last = '0;",
                 f"    s_user_{target.slot}_irq = '0;",
             ]
         )
@@ -145,25 +182,42 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
         lines.extend(
             [
                 f"      {extensions.core_selector_width}'d{target.slot}: begin",
-                f"        rib.valid = u_user_{target.slot}_rib_if.valid;",
-                f"        rib.addr = u_user_{target.slot}_rib_if.addr;",
+                f"        rib.cmd_valid = u_user_{target.slot}_rib_if.cmd_valid;",
+                f"        rib.cmd_addr = u_user_{target.slot}_rib_if.cmd_addr;",
+                f"        rib.cmd_write = u_user_{target.slot}_rib_if.cmd_write;",
+                f"        rib.cmd_len = u_user_{target.slot}_rib_if.cmd_len;",
+                f"        rib.w_valid = u_user_{target.slot}_rib_if.w_valid;",
                 f"        rib.wdata = u_user_{target.slot}_rib_if.wdata;",
                 f"        rib.wstrb = u_user_{target.slot}_rib_if.wstrb;",
+                f"        rib.wlast = u_user_{target.slot}_rib_if.wlast;",
+                f"        rib.rsp_ready = u_user_{target.slot}_rib_if.rsp_ready;",
+                f"        u_user_{target.slot}_rib_if.cmd_ready = rib.cmd_ready;",
+                f"        u_user_{target.slot}_rib_if.w_ready = rib.w_ready;",
+                f"        u_user_{target.slot}_rib_if.rsp_valid = rib.rsp_valid;",
                 f"        u_user_{target.slot}_rib_if.rdata = rib.rdata;",
-                f"        u_user_{target.slot}_rib_if.ready = rib.ready;",
+                f"        u_user_{target.slot}_rib_if.resp_err = rib.resp_err;",
+                f"        u_user_{target.slot}_rib_if.resp_code = rib.resp_code;",
+                f"        u_user_{target.slot}_rib_if.rsp_beat = rib.rsp_beat;",
+                f"        u_user_{target.slot}_rib_if.rsp_last = rib.rsp_last;",
                 f"        s_user_{target.slot}_irq = irq_i;",
                 "      end",
             ]
         )
     lines.extend(["      default: ;", "    endcase", "  end", ""])
     for target in extensions.core_targets:
+        interface = (
+            f"u_user_{target.slot}_ribp_if"
+            if target.bus == "ribp"
+            else f"u_user_{target.slot}_rib_if"
+        )
         lines.extend(
             [
+                f"  // User core {target.slot} uses the {target.bus.upper()} contract.",
                 f"  {target.module} #({target.slot}) {target.instance} (",
                 "      .clk_i  (clk_i),",
                 f"      .rst_n_i(rst_n_i && ~core_reset_i[{target.slot}]),",
                 f"      .irq_i  (s_user_{target.slot}_irq),",
-                f"      .rib    (u_user_{target.slot}_rib_if)",
+                f"      .{target.bus} ({interface})",
                 "  );",
                 "",
             ]

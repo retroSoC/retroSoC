@@ -18,6 +18,7 @@ module pll_rcu_formal_design (
     output logic       active_valid,
     output logic       safe_clk,
     output logic       active_lock,
+    output logic       lock_seen_low,
     output logic [1:0] error
 );
 
@@ -45,6 +46,7 @@ module pll_rcu_formal_design (
   assign active_valid         = u_dut.s_active_valid_q;
   assign safe_clk             = u_dut.s_safe_clk_q;
   assign active_lock          = u_dut.s_lock_q;
+  assign lock_seen_low        = u_dut.s_lock_seen_low_q;
   assign error                = u_dut.s_error_q;
 
   // Both controller domains share the formal clock. This proves the control

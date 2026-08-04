@@ -9,7 +9,7 @@ module pll_ctrl_tb;
   logic [31:0] fault_addr_i = '0;
   logic [ 3:0] fault_wstrb_i = '0;
   logic        fault_reserved_i = 1'b0;
-  rib_if rib ();
+  ribp_if rib ();
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
   logic        sys_clk_o;
@@ -38,14 +38,14 @@ module pll_ctrl_tb;
       .sys_clkdiv4_o(sys_clkdiv4_o)
   );
 
-  rib_sysctrl u_sysctrl (
+  ribp_sysctrl u_sysctrl (
       .clk_i           (sys_clk_o),
       .rst_n_i         (sys_rst_n_o),
       .fault_valid_i   (fault_valid_i),
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .rib             (rib),
+      .ribp            (rib),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );

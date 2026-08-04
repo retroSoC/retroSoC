@@ -7,20 +7,20 @@ module sysctrl_fault_tb;
   logic [31:0] fault_addr_i = '0;
   logic [ 3:0] fault_wstrb_i = '0;
   logic        fault_reserved_i = 1'b0;
-  rib_if rib ();
+  ribp_if rib ();
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
 
   always #5 clk_i = ~clk_i;
 
-  rib_sysctrl u_sysctrl (
+  ribp_sysctrl u_sysctrl (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .fault_valid_i   (fault_valid_i),
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .rib             (rib),
+      .ribp            (rib),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );
@@ -63,11 +63,11 @@ module sysctrl_fault_tb;
     sysctrl.user_bus_idle_i     = 1'b1;
     sysctrl.fault_access_i      = 1'b0;
     sysctrl.fault_master_i      = '0;
-    sysctrl.fault_code_i        = `SOC_RIB_RESP_RESERVED;
+    sysctrl.fault_code_i        = `RIB_RESP_RESERVED;
     sysctrl.perf_mgmt_wait_i    = 64'd11;
     sysctrl.perf_user_wait_i    = 64'd12;
     sysctrl.perf_dma_wait_i     = 64'd13;
-    sysctrl.perf_rib_wait_i    = 64'd14;
+    sysctrl.perf_ribp_wait_i    = 64'd14;
     sysctrl.perf_apb_wait_i     = 64'd15;
     sysctrl.perf_sdram_wait_i   = 64'd16;
     sysctrl.perf_psram_wait_i   = 64'd17;
@@ -98,10 +98,10 @@ module sysctrl_fault_tb;
     read_register(32'h1000_B018, read_data);
     if (read_data !== 32'h0000_0001) $fatal(1, "fault count was not incremented");
     read_register(32'h1000_B02C, read_data);
-    if (read_data !== `SOC_RIB_RESP_RESERVED) $fatal(1, "fault detail was not recorded");
+    if (read_data !== `RIB_RESP_RESERVED) $fatal(1, "fault detail was not recorded");
 
     @(negedge clk_i);
-    sysctrl.fault_code_i = `SOC_RIB_RESP_DECERR;
+    sysctrl.fault_code_i = `RIB_RESP_DECERR;
     fault_valid_i        = 1'b1;
     fault_addr_i         = 32'hA000_0000;
     fault_wstrb_i        = 4'h0;
@@ -113,7 +113,7 @@ module sysctrl_fault_tb;
     read_register(32'h1000_B018, read_data);
     if (read_data !== 32'h0000_0002) $fatal(1, "later fault did not increment count");
     read_register(32'h1000_B02C, read_data);
-    if (read_data !== `SOC_RIB_RESP_RESERVED) $fatal(1, "later fault overwrote first fault detail");
+    if (read_data !== `RIB_RESP_RESERVED) $fatal(1, "later fault overwrote first fault detail");
 
     write_register(32'h1000_B010, 32'h0000_0001);
     read_register(32'h1000_B010, read_data);
@@ -124,7 +124,7 @@ module sysctrl_fault_tb;
     if (read_data !== 32'd11) $fatal(1, "performance snapshot was not recorded");
 
     read_register(32'h1000_B020, read_data);
-    if (read_data !== 32'h0000_003F) $fatal(1, "user cores were not held in reset");
+    if (read_data !== 32'h0000_001F) $fatal(1, "user cores were not held in reset");
     write_register(32'h1000_B000, 32'h0000_0006);
     read_register(32'h1000_B024, read_data);
     if ((read_data & 32'h0000_081F) !== 32'h0000_0800) begin
