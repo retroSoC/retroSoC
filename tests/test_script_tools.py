@@ -107,7 +107,10 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert {path: path.stat().st_mtime_ns for path in generated} == mtimes
     assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
+    hazard3 = (tmp_path / "core_hazard3.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
+    assert str(ROOT / "rtl/managed/hazard3/hdl") in hazard3
+    assert "rtl/managed/mpw/core/username3" not in hazard3
     assert (tmp_path / "core_hazard3.fl").is_file()
     assert (tmp_path / "core_picorv32.fl").is_file()
     assert {
@@ -525,6 +528,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     lock = load_lock(ROOT / "config/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
+    assert lock["sources"]["hazard3"]["destination"] == "rtl/managed/hazard3"
     assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
 
     command = (
@@ -1151,13 +1155,13 @@ def test_warning_normalization_maps_isolated_mpw_sources_to_managed_sources(
     tmp_path: Path,
 ) -> None:
     message = (
-        f"{tmp_path}/build/ihp130-deadbeef/generated/mpw/verilator/core/username3/"
-        "./Hazard3/hazard3_core_username3.v:42: unused signal"
+        f"{tmp_path}/build/ihp130-deadbeef/generated/mpw/verilator/core/username1/"
+        "./kianV/kianv_harris_mc_edition_username1.v:42: unused signal"
     )
     normalized = normalize(tmp_path, "UNUSEDSIGNAL", message)
     assert normalized == (
-        "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username3/Hazard3/"
-        "hazard3_core.v:<line>: unused signal"
+        "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/username1/kianV/"
+        "kianv_harris_mc_edition.v:<line>: unused signal"
     )
 
 

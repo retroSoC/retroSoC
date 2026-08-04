@@ -17,8 +17,8 @@ except ModuleNotFoundError:  # Python 3.10
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.dependency_lock import archive, source  # noqa: E402
-from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
+from scripts.dependency_lock import archive  # noqa: E402
+from scripts.setup_helpers import download_file  # noqa: E402
 
 
 MPW_DIR = ROOT / "rtl/managed/mpw"
@@ -74,11 +74,6 @@ def prepare(update: bool) -> None:
     if not (MPW_DIR / ".git").is_dir():
         raise SystemExit("MPW generator is missing; run 'python3 setup.py' first")
 
-    hazard3 = source("hazard3")
-    ensure_git_repo(
-        hazard3["url"], ROOT / hazard3["destination"], hazard3["revision"],
-        update=update,
-    )
     serv_archive = archive("serv")
     download_file(
         serv_archive["url"], ROOT / serv_archive["destination"],
@@ -86,7 +81,6 @@ def prepare(update: bool) -> None:
     )
     serv = extract_serv()
 
-    sync_tree(MPW_DIR / "Hazard3/hdl", manifest_design_dir("hazard3") / "Hazard3")
     sync_tree(serv / "rtl", manifest_design_dir("serv") / "serv")
     print("pinned MPW core sources are ready")
 

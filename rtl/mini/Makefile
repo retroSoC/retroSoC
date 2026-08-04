@@ -31,11 +31,19 @@ FILELIST_STAMP             := $(GENERATED_FL_DIR)/.stamp
 FILELIST_TEMPLATES         := $(sort $(wildcard $(ROOT_PATH)/rtl/filelist/pdk_*.fl) \
                       $(wildcard $(RTL_PATH)/filelist/*.fl) $(RTL_PATH)/lint.msg)
 
+ifeq ($(CORE),HAZARD3)
+MPW_MANAGEMENT_CORE_CHECK := @test -d $(ROOT_PATH)/rtl/managed/hazard3/hdl || { \
+	echo "missing $(ROOT_PATH)/rtl/managed/hazard3; run 'make setup-mpw' first" >&2; \
+	exit 1; \
+	}
+endif
+
 $(MPW_STAMP):
 	@test -d $(ROOT_PATH)/rtl/managed/mpw/.git || { \
 		echo "missing $(ROOT_PATH)/rtl/managed/mpw; run 'make setup-mpw' first" >&2; \
 		exit 1; \
 		}
+	$(MPW_MANAGEMENT_CORE_CHECK)
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/prepare_mpw.py \
 		--lock-file $(CACHE_ROOT)/locks/mpw-prepare.lock
 	@mkdir -p $(@D)

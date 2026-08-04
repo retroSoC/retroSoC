@@ -23,6 +23,7 @@ PATH_PREFIXES = {
     "third_party": RTL_DIR / "managed" / "third_party",
     "tech": RTL_DIR / "tech",
     "core": MINI_DIR / "core",
+    "hazard3": RTL_DIR / "managed" / "hazard3" / "hdl",
     "mpw": RTL_DIR / "managed" / "mpw",
     "picorv32": RTL_DIR / "managed" / "picorv32" / "rtl",
     "tb": MINI_DIR / "dv" / "tb",

@@ -124,7 +124,7 @@ module sysctrl_fault_tb;
     if (read_data !== 32'd11) $fatal(1, "performance snapshot was not recorded");
 
     read_register(32'h1000_B020, read_data);
-    if (read_data !== 32'h0000_003F) $fatal(1, "user cores were not held in reset");
+    if (read_data !== 32'h0000_001F) $fatal(1, "user cores were not held in reset");
     write_register(32'h1000_B000, 32'h0000_0006);
     read_register(32'h1000_B024, read_data);
     if ((read_data & 32'h0000_081F) !== 32'h0000_0800) begin

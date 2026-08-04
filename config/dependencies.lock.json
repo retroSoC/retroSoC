@@ -3,14 +3,14 @@
   "sources": {
     "mpw": {
       "url": "https://github.com/retroSoC/mini-ver-mpw.git",
-      "revision": "08ad5eecb469e7b25c9a4165982925b965745ae7",
+      "revision": "14dc77916c090c0ec780589c3da03a0803367818",
       "destination": "rtl/managed/mpw",
       "license": "NOASSERTION"
     },
     "hazard3": {
       "url": "https://github.com/Wren6991/Hazard3.git",
       "revision": "5b3a34f6955e50e03bdcb964201c91462f7078c3",
-      "destination": "rtl/managed/mpw/Hazard3",
+      "destination": "rtl/managed/hazard3",
       "license": "NOASSERTION"
     },
     "ibex": {
