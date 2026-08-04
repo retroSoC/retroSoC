@@ -16,10 +16,10 @@ module rib_bus_tb;
   logic         fault_valid_o;
   logic   [2:0] fault_code_o;
   logic         user_bus_idle_o;
-  soc_ribl_if mgmt_ribl ();
-  soc_rib_if user_rib ();
-  soc_rib_if dma_rib ();
-  soc_rib_if rib ();
+  ribp_if mgmt_ribp ();
+  rib_if user_rib ();
+  rib_if dma_rib ();
+  rib_if rib ();
   ribp_if apb_ribp ();
 
   always #5 clk_i = ~clk_i;
@@ -30,7 +30,7 @@ module rib_bus_tb;
   assign rib.rsp_valid = target_state_q == TARGET_RESP;
   assign rib.rdata     = 32'hCAFE_0000 + target_beat_q;
   assign rib.resp_err  = 1'b0;
-  assign rib.resp_code = `SOC_RIB_RESP_OK;
+  assign rib.resp_code = `RIB_RESP_OK;
   assign rib.rsp_beat  = target_beat_q;
   assign rib.rsp_last  = target_beat_q == target_len_q;
 
@@ -63,14 +63,13 @@ module rib_bus_tb;
   bus u_bus (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .mgmt_ribl        (mgmt_ribl),
+      .mgmt_ribp        (mgmt_ribp),
       .user_rib         (user_rib),
       .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_bus_idle_o),
       .rib              (rib),
       .apb_ribp         (apb_ribp),
-      .apb_resp_err_i   (1'b0),
       .perf_enable_i    (1'b0),
       .perf_clear_i     (1'b0),
       .fault_valid_o    (fault_valid_o),
@@ -109,7 +108,7 @@ module rib_bus_tb;
           $fatal(1, "unexpected response status for %h", address);
         end
         if (expect_error) begin
-          if (dma_rib.resp_code !== `SOC_RIB_RESP_BURSTERR || !dma_rib.rsp_last) begin
+          if (dma_rib.resp_code !== `RIB_RESP_BURSTERR || !dma_rib.rsp_last) begin
             $fatal(1, "illegal burst did not return terminal BURSTERR");
           end
           response_count = length + 1;
@@ -130,10 +129,10 @@ module rib_bus_tb;
   endtask
 
   initial begin
-    mgmt_ribl.valid    = 1'b0;
-    mgmt_ribl.addr     = '0;
-    mgmt_ribl.wdata    = '0;
-    mgmt_ribl.wstrb    = '0;
+    mgmt_ribp.valid    = 1'b0;
+    mgmt_ribp.addr     = '0;
+    mgmt_ribp.wdata    = '0;
+    mgmt_ribp.wstrb    = '0;
     user_rib.cmd_valid = 1'b0;
     user_rib.cmd_addr  = '0;
     user_rib.cmd_write = 1'b0;
@@ -156,13 +155,13 @@ module rib_bus_tb;
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 
-    issue_read(32'h3800_1000, `SOC_RIB_LEN_INCR4, 1'b0);
+    issue_read(32'h3800_1000, `RIB_LEN_INCR4, 1'b0);
     if (rib_command_count != 1) begin
       $fatal(1, "INCR4 was split before reaching the burst RIB target");
     end
-    issue_read(32'h3800_1004, `SOC_RIB_LEN_INCR4, 1'b1);
-    issue_read(32'h1000_0000, `SOC_RIB_LEN_INCR4, 1'b1);
-    issue_read(32'h2000_0000, `SOC_RIB_LEN_INCR4, 1'b1);
+    issue_read(32'h3800_1004, `RIB_LEN_INCR4, 1'b1);
+    issue_read(32'h1000_0000, `RIB_LEN_INCR4, 1'b1);
+    issue_read(32'h2000_0000, `RIB_LEN_INCR4, 1'b1);
     issue_read(32'h3800_1000, 2'd2, 1'b1);
     if (rib_command_count != 1 || apb_ribp.valid) begin
       $fatal(1, "illegal burst reached a downstream target");

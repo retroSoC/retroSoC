@@ -59,6 +59,8 @@ module ribp_spisd (
 
   assign ribp.ready                = s_cfg_reg_sel ? u_cfg_ribp_if.ready : u_cache_mem_ribp_if.ready;
   assign ribp.rdata                = s_cfg_reg_sel ? u_cfg_ribp_if.rdata : u_cache_mem_ribp_if.rdata;
+  assign ribp.resp_err             = s_cfg_reg_sel ? u_cfg_ribp_if.resp_err :
+                                                      u_cache_mem_ribp_if.resp_err;
  // verilog_format: on
 
   spisd_reg u_spisd_reg (
@@ -74,15 +76,17 @@ module ribp_spisd (
   );
 
 
-  assign u_cache_ribp_if.valid     = s_mode ? u_cache_byp_ribp_if.valid : u_cache_mem_ribp_if.valid;
-  assign u_cache_ribp_if.addr      = s_mode ? u_cache_byp_ribp_if.addr : u_cache_mem_ribp_if.addr;
-  assign u_cache_ribp_if.wdata     = s_mode ? u_cache_byp_ribp_if.wdata : u_cache_mem_ribp_if.wdata;
-  assign u_cache_ribp_if.wstrb     = s_mode ? u_cache_byp_ribp_if.wstrb : u_cache_mem_ribp_if.wstrb;
+  assign u_cache_ribp_if.valid = s_mode ? u_cache_byp_ribp_if.valid : u_cache_mem_ribp_if.valid;
+  assign u_cache_ribp_if.addr = s_mode ? u_cache_byp_ribp_if.addr : u_cache_mem_ribp_if.addr;
+  assign u_cache_ribp_if.wdata = s_mode ? u_cache_byp_ribp_if.wdata : u_cache_mem_ribp_if.wdata;
+  assign u_cache_ribp_if.wstrb = s_mode ? u_cache_byp_ribp_if.wstrb : u_cache_mem_ribp_if.wstrb;
 
   assign u_cache_byp_ribp_if.ready = s_mode ? u_cache_ribp_if.ready : '0;
   assign u_cache_byp_ribp_if.rdata = s_mode ? u_cache_ribp_if.rdata : '0;
+  assign u_cache_byp_ribp_if.resp_err = s_mode ? u_cache_ribp_if.resp_err : 1'b0;
   assign u_cache_mem_ribp_if.ready = ~s_mode ? u_cache_ribp_if.ready : '0;
   assign u_cache_mem_ribp_if.rdata = ~s_mode ? u_cache_ribp_if.rdata : '0;
+  assign u_cache_mem_ribp_if.resp_err = ~s_mode ? u_cache_ribp_if.resp_err : 1'b0;
   spisd_cache u_spisd_cache (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),

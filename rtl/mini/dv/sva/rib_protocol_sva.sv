@@ -11,7 +11,7 @@
 `ifndef SV_ASSRT_DISABLE
 `ifndef SYNTHESIS
 
-module soc_bus_sva (
+module rib_bus_sva (
     input logic       clk_i,
     input logic       rst_n_i,
     input logic       fault_cmd_accept_i,
@@ -40,7 +40,7 @@ module soc_bus_sva (
 
 endmodule
 
-bind bus soc_bus_sva u_soc_bus_sva (
+bind bus rib_bus_sva u_rib_bus_sva (
     .clk_i             (clk_i),
     .rst_n_i           (rst_n_i),
     .fault_cmd_accept_i(s_fault_cmd_hdshk),
@@ -49,12 +49,12 @@ bind bus soc_bus_sva u_soc_bus_sva (
     .access_denied_i   (s_access_denied),
     .cmd_accepted_i    (s_cmd_accepted_q),
     .arb_owner_i       (s_mstr_id_q),
-    .mgmt_valid_i      (mgmt_ribl.valid),
+    .mgmt_valid_i      (mgmt_ribp.valid),
     .user_valid_i      (user_rib.cmd_valid),
     .dma_valid_i       (dma_rib.cmd_valid)
 );
 
-module soc_rib2apb_sva #(
+module rib2apb_sva #(
     parameter int NSLV = 1
 ) (
     input logic            clk_i,
@@ -72,9 +72,9 @@ module soc_rib2apb_sva #(
 
 endmodule
 
-bind ribp2apb soc_rib2apb_sva #(
+bind ribp2apb rib2apb_sva #(
     .NSLV(NSLV)
-) u_soc_rib2apb_sva (
+) u_rib2apb_sva (
     .clk_i       (clk_i),
     .rst_n_i     (rst_n_i),
     .psel_comb_i (s_psel_comb),

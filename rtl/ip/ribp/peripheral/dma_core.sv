@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-`include "soc_rib_defs.svh"
+`include "rib_defs.svh"
 
 module dma_core (
     // verilog_format: off
@@ -30,7 +30,7 @@ module dma_core (
     output logic [31:0]       error_addr_o,
     output logic [1:0]        fsm_o,
     dma_hw_trg_if.dut         hw_trg,
-    soc_rib_if.master   rib
+    rib_if.master   rib
     // verilog_format: on
 );
 
@@ -78,7 +78,7 @@ module dma_core (
       `SOC_ADDR_SUPPORTS_INCR4(s_dst_addr_q) &&
       `SOC_ADDR_SUPPORTS_INCR4(s_dst_addr_q + 32'd12);
   // verilog_format: on
-  assign s_chunk_len = s_use_burst ? `SOC_RIB_LEN_INCR4 : `SOC_RIB_LEN_INCR1;
+  assign s_chunk_len = s_use_burst ? `RIB_LEN_INCR4 : `RIB_LEN_INCR1;
   assign s_chunk_words = s_use_burst ? 32'd4 : 32'd1;
 
   always_comb begin
@@ -148,7 +148,7 @@ module dma_core (
     s_wr_beat_d  = s_wr_beat_q;
     done_o       = 1'b0;
     error_o      = 1'b0;
-    error_code_o = `SOC_RIB_RESP_OK;
+    error_code_o = `RIB_RESP_OK;
     error_addr_o = s_src_addr_q;
 
     if (reset_i) begin

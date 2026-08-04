@@ -33,7 +33,7 @@ module dma_error_tb;
   logic          model_write_q = 1'b0;
   logic          model_error_q = 1'b0;
   dma_hw_trg_if hw_trg ();
-  soc_rib_if rib ();
+  rib_if rib ();
 
   always #5 clk_i = ~clk_i;
 
@@ -42,7 +42,7 @@ module dma_error_tb;
   assign rib.rsp_valid = model_state_q == MODEL_RESP;
   assign rib.rdata     = 32'hA5A5_5A5A + model_beat_q;
   assign rib.resp_err  = model_error_q;
-  assign rib.resp_code = model_error_q ? `SOC_RIB_RESP_DECERR : `SOC_RIB_RESP_OK;
+  assign rib.resp_code = model_error_q ? `RIB_RESP_DECERR : `RIB_RESP_OK;
   assign rib.rsp_beat  = model_beat_q;
   assign rib.rsp_last  = model_write_q || model_error_q || (model_beat_q == model_len_q);
 
@@ -63,10 +63,10 @@ module dma_error_tb;
             model_write_q <= rib.cmd_write;
             model_error_q <= error_mode && !rib.cmd_write;
             model_state_q <= rib.cmd_write ? MODEL_WDATA : MODEL_RESP;
-            if (rib.cmd_len == `SOC_RIB_LEN_INCR4 && rib.cmd_write) begin
+            if (rib.cmd_len == `RIB_LEN_INCR4 && rib.cmd_write) begin
               incr4_write_count <= incr4_write_count + 1;
             end
-            if (rib.cmd_len == `SOC_RIB_LEN_INCR4 && !rib.cmd_write) begin
+            if (rib.cmd_len == `RIB_LEN_INCR4 && !rib.cmd_write) begin
               incr4_read_count <= incr4_read_count + 1;
             end
           end
@@ -157,7 +157,7 @@ module dma_error_tb;
     start_transfer();
     wait (error_o);
     @(negedge clk_i);
-    if (error_code_o !== `SOC_RIB_RESP_DECERR || error_addr_o !== srcaddr_i) begin
+    if (error_code_o !== `RIB_RESP_DECERR || error_addr_o !== srcaddr_i) begin
       $fatal(1, "DMA error response was not propagated");
     end
     if (write_count != 1) begin

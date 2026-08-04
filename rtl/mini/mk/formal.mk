@@ -23,12 +23,11 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/gpio_user_formal.sv \
                              $(RTL_PATH)/formal/gpio_user_formal_props.sv \
                              $(RTL_PATH)/top/bus.sv \
-                             $(RTL_PATH)/top/soc_rib_error_slave.sv \
-                             $(RTL_PATH)/top/soc_ribl_if.sv \
-                             $(RTL_PATH)/top/soc_rib_if.sv \
-                             $(RTL_PATH)/top/soc_rib2ram.sv \
-                             $(RTL_PATH)/top/soc_rib2ribp.sv \
-                             $(RTL_PATH)/top/soc_ribl2rib.sv \
+                             $(RTL_PATH)/top/rib_error_slave.sv \
+                             $(RTL_PATH)/top/rib_if.sv \
+                             $(RTL_PATH)/top/rib2ram.sv \
+                             $(RTL_PATH)/top/rib2ribp.sv \
+                             $(RTL_PATH)/top/ribp2rib.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/interconnect/ribp2apb.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/interconnect/ribp_regslice.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/gpio.sv \

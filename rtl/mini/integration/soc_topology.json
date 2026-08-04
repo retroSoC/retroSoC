@@ -46,7 +46,7 @@
     {"slot": 17, "name": "i2c1", "interface": "u_i2c1_ribp_if", "regions": ["RIBP_I2C1"]}
   ],
   "fabric_links": [
-    {"name": "mgmt", "interface": "u_mgmt_ribl_if", "protocol": "ribl"},
+    {"name": "mgmt", "interface": "u_mgmt_ribp_if", "protocol": "ribp"},
     {"name": "user", "interface": "u_user_rib_if", "protocol": "rib"},
     {"name": "dma", "interface": "u_dma_rib_if", "protocol": "rib"},
     {"name": "rib", "interface": "u_rib_if", "protocol": "rib"},

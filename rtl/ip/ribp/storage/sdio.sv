@@ -45,6 +45,7 @@ module ribp_sdio (
   // ribp
   assign ribp.rdata    = '0;
   assign ribp.ready    = '0;
+  assign ribp.resp_err = 1'b0;
   // sdio
   assign sdio.sck_o    = '0;
   assign sdio.cmd_oe_o = '0;

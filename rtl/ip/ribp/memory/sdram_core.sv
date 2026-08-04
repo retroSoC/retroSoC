@@ -143,6 +143,7 @@ module sdram_core (
 
   // ribp
   assign ribp.ready                                                 = s_ready_q;
+  assign ribp.resp_err                                              = 1'b0;
   assign ribp.rdata                                                 = s_rdata_q;
   // sdram
   assign sdram.clk_o                                                = sdram_clk_i;

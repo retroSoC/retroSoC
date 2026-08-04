@@ -28,6 +28,7 @@ module ribp_regslice (
   logic [3:0] s_ribp_mst_wstrb_d, s_ribp_mst_wstrb_q;
   logic [31:0] s_ribp_mst_rdata_d, s_ribp_mst_rdata_q;
   logic s_ribp_mst_ready_d, s_ribp_mst_ready_q;
+  logic s_ribp_mst_resp_err_d, s_ribp_mst_resp_err_q;
   // ribp mst if
   assign ribp_mst.valid = s_ribp_mst_valid_q;
   assign ribp_mst.addr  = s_ribp_mst_addr_q;
@@ -36,15 +37,17 @@ module ribp_regslice (
 
 
   always_comb begin
-    s_fsm_d            = s_fsm_q;
-    s_ribp_mst_valid_d = s_ribp_mst_valid_q;
-    s_ribp_mst_addr_d  = s_ribp_mst_addr_q;
-    s_ribp_mst_wdata_d = s_ribp_mst_wdata_q;
-    s_ribp_mst_wstrb_d = s_ribp_mst_wstrb_q;
-    s_ribp_mst_ready_d = s_ribp_mst_ready_q;
-    s_ribp_mst_rdata_d = s_ribp_mst_rdata_q;
-    ribp_slv.ready     = '0;
-    ribp_slv.rdata     = '0;
+    s_fsm_d               = s_fsm_q;
+    s_ribp_mst_valid_d    = s_ribp_mst_valid_q;
+    s_ribp_mst_addr_d     = s_ribp_mst_addr_q;
+    s_ribp_mst_wdata_d    = s_ribp_mst_wdata_q;
+    s_ribp_mst_wstrb_d    = s_ribp_mst_wstrb_q;
+    s_ribp_mst_ready_d    = s_ribp_mst_ready_q;
+    s_ribp_mst_rdata_d    = s_ribp_mst_rdata_q;
+    s_ribp_mst_resp_err_d = s_ribp_mst_resp_err_q;
+    ribp_slv.ready        = '0;
+    ribp_slv.rdata        = '0;
+    ribp_slv.resp_err     = 1'b0;
     unique case (s_fsm_q)
       FSM_IDLE: begin
         if (ribp_slv.valid) begin
@@ -57,27 +60,31 @@ module ribp_regslice (
       end
       FSM_REQ: begin
         if (ribp_mst.ready) begin
-          s_fsm_d            = FSM_RESP;
-          s_ribp_mst_valid_d = 1'b0;
-          s_ribp_mst_ready_d = ribp_mst.ready;
-          s_ribp_mst_rdata_d = ribp_mst.rdata;
+          s_fsm_d               = FSM_RESP;
+          s_ribp_mst_valid_d    = 1'b0;
+          s_ribp_mst_ready_d    = ribp_mst.ready;
+          s_ribp_mst_rdata_d    = ribp_mst.rdata;
+          s_ribp_mst_resp_err_d = ribp_mst.resp_err;
         end
       end
       FSM_RESP: begin
-        s_fsm_d        = FSM_IDLE;
-        ribp_slv.ready = s_ribp_mst_ready_q;
-        ribp_slv.rdata = s_ribp_mst_rdata_q;
+        s_fsm_d           = FSM_IDLE;
+        ribp_slv.ready    = s_ribp_mst_ready_q;
+        ribp_slv.rdata    = s_ribp_mst_rdata_q;
+        ribp_slv.resp_err = s_ribp_mst_resp_err_q;
       end
       default: begin
-        s_fsm_d            = s_fsm_q;
-        s_ribp_mst_valid_d = s_ribp_mst_valid_q;
-        s_ribp_mst_addr_d  = s_ribp_mst_addr_q;
-        s_ribp_mst_wdata_d = s_ribp_mst_wdata_q;
-        s_ribp_mst_wstrb_d = s_ribp_mst_wstrb_q;
-        s_ribp_mst_ready_d = s_ribp_mst_ready_q;
-        s_ribp_mst_rdata_d = s_ribp_mst_rdata_q;
-        ribp_slv.ready     = '0;
-        ribp_slv.rdata     = '0;
+        s_fsm_d               = s_fsm_q;
+        s_ribp_mst_valid_d    = s_ribp_mst_valid_q;
+        s_ribp_mst_addr_d     = s_ribp_mst_addr_q;
+        s_ribp_mst_wdata_d    = s_ribp_mst_wdata_q;
+        s_ribp_mst_wstrb_d    = s_ribp_mst_wstrb_q;
+        s_ribp_mst_ready_d    = s_ribp_mst_ready_q;
+        s_ribp_mst_rdata_d    = s_ribp_mst_rdata_q;
+        s_ribp_mst_resp_err_d = s_ribp_mst_resp_err_q;
+        ribp_slv.ready        = '0;
+        ribp_slv.rdata        = '0;
+        ribp_slv.resp_err     = 1'b0;
       end
     endcase
   end
@@ -131,6 +138,13 @@ module ribp_regslice (
       rst_n_i,
       s_ribp_mst_ready_d,
       s_ribp_mst_ready_q
+  );
+
+  dffr #(1) u_ribp_mst_resp_err_dffr (
+      clk_i,
+      rst_n_i,
+      s_ribp_mst_resp_err_d,
+      s_ribp_mst_resp_err_q
   );
 
 endmodule

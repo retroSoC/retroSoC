@@ -31,9 +31,11 @@ module ribp2apb_formal_design (
     output logic [31:0] rib_wdata,
     output logic [ 3:0] rib_wstrb,
     output logic        rib_ready,
+    output logic        rib_resp_err,
     output logic [ 9:0] psel_comb,
     output logic [ 9:0] psel_q,
     output logic        xfer_ready,
+    output logic        xfer_error,
     output logic [ 1:0] fsm_q
 );
 
@@ -54,15 +56,16 @@ module ribp2apb_formal_design (
   (* anyseq *)logic [31:0] f_rib_wdata;
   (* anyseq *)logic [ 3:0] f_rib_wstrb;
 
-  assign rib.valid = f_rib_valid;
-  assign rib.addr  = f_rib_addr;
-  assign rib.wdata = f_rib_wdata;
-  assign rib.wstrb = f_rib_wstrb;
-  assign rib_valid = rib.valid;
-  assign rib_addr  = rib.addr;
-  assign rib_wdata = rib.wdata;
-  assign rib_wstrb = rib.wstrb;
-  assign rib_ready = rib.ready;
+  assign rib.valid    = f_rib_valid;
+  assign rib.addr     = f_rib_addr;
+  assign rib.wdata    = f_rib_wdata;
+  assign rib.wstrb    = f_rib_wstrb;
+  assign rib_valid    = rib.valid;
+  assign rib_addr     = rib.addr;
+  assign rib_wdata    = rib.wdata;
+  assign rib_wstrb    = rib.wstrb;
+  assign rib_ready    = rib.ready;
+  assign rib_resp_err = rib.resp_err;
 
   formal_apb_slave u_archinfo_slave (.apb(archinfo));
   formal_apb_slave u_rng_slave (.apb(rng));
@@ -94,6 +97,7 @@ module ribp2apb_formal_design (
   assign psel_comb  = u_dut.s_psel_comb;
   assign psel_q     = u_dut.s_psel_q;
   assign xfer_ready = u_dut.s_xfer_ready;
+  assign xfer_error = u_dut.s_xfer_error;
   assign fsm_q      = u_dut.s_fsm_q;
 
   initial begin

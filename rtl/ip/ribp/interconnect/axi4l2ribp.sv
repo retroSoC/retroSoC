@@ -41,6 +41,8 @@ module axi4l2ribp (
   localparam [1:0] WR_DATA = 2'd1;
   localparam [1:0] WR_WAIT = 2'd2;
   localparam [1:0] WR_RESP = 2'd3;
+  localparam [1:0] AXI_RESP_OKAY = 2'b00;
+  localparam [1:0] AXI_RESP_SLVERR = 2'b10;
 
   logic [1:0] s_rd_fsm_d, s_rd_fsm_q;
   logic [1:0] s_wr_fsm_d, s_wr_fsm_q;
@@ -49,6 +51,8 @@ module axi4l2ribp (
   logic [31:0] s_rdata_d, s_rdata_q;
   logic [31:0] s_wdata_d, s_wdata_q;
   logic [3:0] s_wstrb_d, s_wstrb_q;
+  logic [1:0] s_rresp_d, s_rresp_q;
+  logic [1:0] s_bresp_d, s_bresp_q;
   logic s_rd_req, s_wr_req;
 
   always_comb begin
@@ -125,6 +129,15 @@ module axi4l2ribp (
       s_rdata_q
   );
 
+  assign s_rresp_d = ribp.resp_err ? AXI_RESP_SLVERR : AXI_RESP_OKAY;
+  dffer #(2) u_rresp_dffer (
+      aclk_i,
+      aresetn_i,
+      s_rd_fsm_q == RD_DATA && ribp.ready,
+      s_rresp_d,
+      s_rresp_q
+  );
+
   assign s_wdata_d = wdata_i;
   dffer #(32) u_wdata_dffer (
       aclk_i,
@@ -143,16 +156,25 @@ module axi4l2ribp (
       s_wstrb_q
   );
 
+  assign s_bresp_d = ribp.resp_err ? AXI_RESP_SLVERR : AXI_RESP_OKAY;
+  dffer #(2) u_bresp_dffer (
+      aclk_i,
+      aresetn_i,
+      s_wr_fsm_q == WR_WAIT && ribp.ready,
+      s_bresp_d,
+      s_bresp_q
+  );
+
   // axil
   assign arready_o  = s_rd_fsm_q == RD_IDLE && arvalid_i;
   assign rvalid_o   = s_rd_fsm_q == RD_WAIT;
-  assign rresp_o    = '0;
+  assign rresp_o    = s_rresp_q;
   assign rdata_o    = s_rdata_q;
 
   assign awready_o  = s_wr_fsm_q == WR_IDLE && awvalid_i;
   assign wready_o   = s_wr_fsm_q == WR_DATA && wvalid_i;
   assign bvalid_o   = s_wr_fsm_q == WR_RESP;
-  assign bresp_o    = '0;
+  assign bresp_o    = s_bresp_q;
 
   assign s_rd_req   = (s_rd_fsm_q == RD_DATA || s_rd_fsm_q == RD_WAIT);
   assign s_wr_req   = s_wr_fsm_q == WR_WAIT;

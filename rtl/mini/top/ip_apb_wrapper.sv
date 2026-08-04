@@ -28,7 +28,6 @@ module ip_apb_wrapper (
     ps2_if.dut                          ps2,
     input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
     user_gpio_if.user_ip                user_gpio,
-    output logic                        ribp_resp_err_o,
     output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -64,10 +63,9 @@ module ip_apb_wrapper (
   `include "soc_apb_irq_bindings.svh"
 
 ribp2apb u_ribp2apb (
-      .clk_i     (clk_i),
-      .rst_n_i   (rst_n_i),
-      .ribp      (ribp),
-      .resp_err_o(ribp_resp_err_o),
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .ribp   (ribp),
       `include "soc_apb_connections.svh"
   );
 

@@ -2,13 +2,13 @@
 
 `include "mmap_define.svh"
 
-module soc_topology_ribp_tb;
+module ribp_topology_tb;
   logic clk_i = 1'b0;
   logic rst_n_i = 1'b0;
   ribp_if ribp ();
 
-  `include "soc_ribp_interfaces.svh"
-  `include "soc_ribp_routes.svh"
+  `include "ribp_interfaces.svh"
+  `include "ribp_routes.svh"
 
   always #5 clk_i = ~clk_i;
 
@@ -46,6 +46,26 @@ module soc_topology_ribp_tb;
       #1;
       if (ribp.ready || ribp.rdata !== 32'd0) begin
         $fatal(1, "disabled target responded to %h", address);
+      end
+      @(negedge clk_i);
+      ribp.valid = 1'b0;
+      @(posedge clk_i);
+    end
+  endtask
+
+  task automatic expect_error_route(input logic [31:0] address, input integer slot);
+    begin
+      @(negedge clk_i);
+      ribp.addr  = address;
+      ribp.valid = 1'b1;
+      #1;
+      if (s_slv_sel_d !== (18'd1 << slot)) begin
+        $fatal(1, "unexpected error target slot for %h", address);
+      end
+      @(posedge clk_i);
+      #1;
+      if (!ribp.ready || !ribp.resp_err) begin
+        $fatal(1, "error response was not propagated for %h", address);
       end
       @(negedge clk_i);
       ribp.valid = 1'b0;
@@ -97,6 +117,25 @@ module soc_topology_ribp_tb;
     u_opipsram_ribp_if.rdata = 32'h0F0F_0F0F;
     u_i2c1_ribp_if.rdata     = 32'h1234_5678;
 
+    u_uart_ribp_if.resp_err     = 1'b0;
+    u_gpio_ribp_if.resp_err     = 1'b0;
+    u_tim0_ribp_if.resp_err     = 1'b0;
+    u_tim1_ribp_if.resp_err     = 1'b0;
+    u_psram_ribp_if.resp_err    = 1'b0;
+    u_spisd_ribp_if.resp_err    = 1'b0;
+    u_i2c0_ribp_if.resp_err     = 1'b0;
+    u_i2s_ribp_if.resp_err      = 1'b0;
+    u_onewire_ribp_if.resp_err  = 1'b0;
+    u_xpi_ribp_if.resp_err      = 1'b0;
+    u_dma_ribp_if.resp_err      = 1'b0;
+    u_sysctrl_ribp_if.resp_err  = 1'b0;
+    u_clint_ribp_if.resp_err    = 1'b0;
+    u_sdram_ribp_if.resp_err    = 1'b0;
+    u_dvp_ribp_if.resp_err      = 1'b0;
+    u_sdio_ribp_if.resp_err     = 1'b0;
+    u_opipsram_ribp_if.resp_err = 1'b0;
+    u_i2c1_ribp_if.resp_err     = 1'b0;
+
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 
@@ -105,6 +144,9 @@ module soc_topology_ribp_tb;
     expect_route(`SOC_ADDR_FLASH_BASE, 9, 32'h9999_9999);
     expect_route(`SOC_ADDR_RIBP_I2C1_BASE, 17, 32'h1234_5678);
     expect_disabled(`SOC_ADDR_RIBP_SDIO_BASE);
+    u_gpio_ribp_if.resp_err = 1'b1;
+    expect_error_route(`SOC_ADDR_RIBP_GPIO_BASE, 1);
+    u_gpio_ribp_if.resp_err = 1'b0;
 
     $display("SoC topology RIBP routing test passed");
     $finish;

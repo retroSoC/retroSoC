@@ -31,25 +31,24 @@ def source_files(target: str) -> list[Path]:
         COMMON_RTL / "interface/ribp_if.sv",
         COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",
-        TOP / "soc_ribl_if.sv",
-        TOP / "soc_rib_if.sv",
+        TOP / "rib_if.sv",
     ]
     if target == "bus":
         return [
             *common,
             COMMON_RTL / "utils/spill_register.sv",
-            TOP / "soc_ribl2rib.sv",
-            TOP / "soc_rib2ribp.sv",
-            TOP / "soc_rib_error_slave.sv",
-            TOP / "soc_rib2ram.sv",
+            TOP / "ribp2rib.sv",
+            TOP / "rib2ribp.sv",
+            TOP / "rib_error_slave.sv",
+            TOP / "rib2ram.sv",
             TOP / "bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]
     if target == "rib_adapter":
         return [
             *common,
-            TOP / "soc_ribl2rib.sv",
-            TOP / "soc_rib2ribp.sv",
+            TOP / "ribp2rib.sv",
+            TOP / "rib2ribp.sv",
             SCRIPT_DIR / "rib_adapter_formal.sv",
         ]
     if target == "ribp2apb":

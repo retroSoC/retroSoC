@@ -130,7 +130,7 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
     for target in extensions.core_targets:
         lines.extend(
             [
-                f"  soc_rib_if u_user_{target.slot}_rib_if ();",
+                f"  rib_if u_user_{target.slot}_rib_if ();",
                 f"  logic [31:0] s_user_{target.slot}_irq;",
             ]
         )

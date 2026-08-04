@@ -8,12 +8,12 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`include "soc_rib_defs.svh"
+`include "rib_defs.svh"
 
-module soc_rib2ram (
+module rib2ram (
     input logic            clk_i,
     input logic            rst_n_i,
-          soc_rib_if.slave rib,
+          rib_if.slave rib,
           ram_if.master    ram
 );
 
@@ -66,9 +66,9 @@ module soc_rib2ram (
   assign s_rsp_input_valid = s_write_q ? s_write_rsp_valid : s_read_pending_q;
   assign s_rsp_input_data = s_write_q ?
       {1'b1, s_write_beat_q,
-       s_write_rsp_error ? `SOC_RIB_RESP_BURSTERR : `SOC_RIB_RESP_OK,
+       s_write_rsp_error ? `RIB_RESP_BURSTERR : `RIB_RESP_OK,
        s_write_rsp_error, 32'd0} :
-      {s_read_last_q, s_read_beat_q, `SOC_RIB_RESP_OK, 1'b0, ram.rdata};
+      {s_read_last_q, s_read_beat_q, `RIB_RESP_OK, 1'b0, ram.rdata};
 
   spill_register #(
       .DATA_WIDTH(RSP_WIDTH),

@@ -127,7 +127,8 @@ module ribp_psram (
 
   assign s_mem_sel     = `SOC_ADDR_IS_PSRAM(ribp.addr);
   assign s_cfg_reg_sel = `SOC_ADDR_IS_RIBP_PSRAM(ribp.addr);
-  assign ribp.ready     = s_mem_sel ? s_mem_ready : 1'b1;
+  assign ribp.ready = s_mem_sel ? s_mem_ready : 1'b1;
+  assign ribp.resp_err = 1'b0;
   always_comb begin
     ribp.rdata = '0;
     if (s_mem_sel) begin

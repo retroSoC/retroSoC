@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-`include "soc_rib_defs.svh"
+`include "rib_defs.svh"
 
 module bus (
     // verilog_format: off
@@ -18,14 +18,13 @@ module bus (
 `ifdef HAVE_SRAM_IF
     ram_if.master            ram,
 `endif
-    soc_ribl_if.slave         mgmt_ribl,
-    soc_rib_if.slave   user_rib,
-    soc_rib_if.slave   dma_rib,
+    ribp_if.slave         mgmt_ribp,
+    rib_if.slave   user_rib,
+    rib_if.slave   dma_rib,
     input logic              user_bus_enable_i,
     output logic             user_bus_idle_o,
-    soc_rib_if.master  rib,
+    rib_if.master  rib,
     ribp_if.master            apb_ribp,
-    input logic              apb_resp_err_i,
     input logic              perf_enable_i,
     input logic              perf_clear_i,
     output logic             fault_valid_o,
@@ -55,11 +54,11 @@ module bus (
   localparam logic [1:0] TARGET_RAM = 2'd2;
   localparam logic [1:0] TARGET_FAULT = 2'd3;
 
-  soc_rib_if u_mgmt_rib_if ();
-  soc_rib_if u_mstr_rib_if ();
-  soc_rib_if u_apb_rib_if ();
-  soc_rib_if u_ram_rib_if ();
-  soc_rib_if u_fault_rib_if ();
+  rib_if u_mgmt_rib_if ();
+  rib_if u_mstr_rib_if ();
+  rib_if u_apb_rib_if ();
+  rib_if u_ram_rib_if ();
+  rib_if u_fault_rib_if ();
 
   logic s_mstr_lock_d, s_mstr_lock_q;
   logic s_cmd_accepted_d, s_cmd_accepted_q;
@@ -91,23 +90,21 @@ module bus (
   logic [63:0] s_perf_psram_wait_d, s_perf_psram_wait_q;
   logic [63:0] s_perf_flash_wait_d, s_perf_flash_wait_q;
 
-  soc_ribl2rib u_mgmt_ribl2rib (
+  ribp2rib u_mgmt_ribp2rib (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribl   (mgmt_ribl),
+      .ribp   (mgmt_ribp),
       .rib    (u_mgmt_rib_if)
   );
 
-  soc_rib2ribp u_apb_rib2ribp (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .ribp_resp_err_i (apb_resp_err_i),
-      .ribp_resp_code_i(`SOC_RIB_RESP_SLVERR),
-      .rib             (u_apb_rib_if),
-      .ribp            (apb_ribp)
+  rib2ribp u_apb_rib2ribp (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .rib    (u_apb_rib_if),
+      .ribp   (apb_ribp)
   );
 
-  soc_rib_error_slave u_fault_slave (
+  rib_error_slave u_fault_slave (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
       .error_code_i(s_fault_code),
@@ -115,7 +112,7 @@ module bus (
   );
 
 `ifdef HAVE_SRAM_IF
-  soc_rib2ram u_rib2ram (
+  rib2ram u_rib2ram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .rib    (u_ram_rib_if),
@@ -127,7 +124,7 @@ module bus (
   assign u_ram_rib_if.rsp_valid = 1'b0;
   assign u_ram_rib_if.rdata     = '0;
   assign u_ram_rib_if.resp_err  = 1'b0;
-  assign u_ram_rib_if.resp_code = `SOC_RIB_RESP_OK;
+  assign u_ram_rib_if.resp_code = `RIB_RESP_OK;
   assign u_ram_rib_if.rsp_beat  = '0;
   assign u_ram_rib_if.rsp_last  = 1'b0;
 `endif
@@ -230,7 +227,7 @@ module bus (
     u_mstr_rib_if.cmd_valid = 1'b0;
     u_mstr_rib_if.cmd_addr  = '0;
     u_mstr_rib_if.cmd_write = 1'b0;
-    u_mstr_rib_if.cmd_len   = `SOC_RIB_LEN_INCR1;
+    u_mstr_rib_if.cmd_len   = `RIB_LEN_INCR1;
     u_mstr_rib_if.w_valid   = 1'b0;
     u_mstr_rib_if.wdata     = '0;
     u_mstr_rib_if.wstrb     = '0;
@@ -314,13 +311,13 @@ module bus (
 
   // verilog_format: off
   assign s_last_addr = u_mstr_rib_if.cmd_addr +
-      (u_mstr_rib_if.cmd_len == `SOC_RIB_LEN_INCR4 ? 32'd12 : 32'd0);
+      (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR4 ? 32'd12 : 32'd0);
   assign s_length_legal =
-      (u_mstr_rib_if.cmd_len == `SOC_RIB_LEN_INCR1) ||
-      (u_mstr_rib_if.cmd_len == `SOC_RIB_LEN_INCR4);
+      (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) ||
+      (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR4);
   assign s_burst_legal =
       s_length_legal &&
-      ((u_mstr_rib_if.cmd_len == `SOC_RIB_LEN_INCR1) ||
+      ((u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) ||
        ((u_mstr_rib_if.cmd_addr[3:0] == 4'b0000) &&
         `SOC_ADDR_SUPPORTS_INCR4(u_mstr_rib_if.cmd_addr) &&
         `SOC_ADDR_SUPPORTS_INCR4(s_last_addr)));
@@ -336,7 +333,7 @@ module bus (
   assign s_ribp_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
                      s_burst_legal && `SOC_ADDR_IS_RIBP(u_mstr_rib_if.cmd_addr);
   assign s_apb_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
-                     (u_mstr_rib_if.cmd_len == `SOC_RIB_LEN_INCR1) &&
+                     (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) &&
                      `SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr);
 `ifdef HAVE_SRAM_IF
   assign s_ram_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
@@ -349,20 +346,20 @@ module bus (
   // verilog_format: on
 
   always_comb begin
-    s_fault_code = `SOC_RIB_RESP_DECERR;
+    s_fault_code = `RIB_RESP_DECERR;
     if (s_access_denied) begin
-      s_fault_code = `SOC_RIB_RESP_PROTERR;
+      s_fault_code = `RIB_RESP_PROTERR;
     end else if (`SOC_ADDR_IS_RESERVED(u_mstr_rib_if.cmd_addr)) begin
-      s_fault_code = `SOC_RIB_RESP_RESERVED;
+      s_fault_code = `RIB_RESP_RESERVED;
       // verilog_format: off
     end else if ((`SOC_ADDR_IS_RIBP(u_mstr_rib_if.cmd_addr) ||
                   `SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr) ||
                   `SOC_ADDR_IS_RAM(u_mstr_rib_if.cmd_addr)) &&
                  (~s_burst_legal ||
                   (`SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr) &&
-                   (u_mstr_rib_if.cmd_len != `SOC_RIB_LEN_INCR1)))) begin
+                   (u_mstr_rib_if.cmd_len != `RIB_LEN_INCR1)))) begin
       // verilog_format: on
-      s_fault_code = `SOC_RIB_RESP_BURSTERR;
+      s_fault_code = `RIB_RESP_BURSTERR;
     end
   end
 
@@ -462,7 +459,7 @@ module bus (
     u_mstr_rib_if.rsp_valid = 1'b0;
     u_mstr_rib_if.rdata     = '0;
     u_mstr_rib_if.resp_err  = 1'b0;
-    u_mstr_rib_if.resp_code = `SOC_RIB_RESP_OK;
+    u_mstr_rib_if.resp_code = `RIB_RESP_OK;
     u_mstr_rib_if.rsp_beat  = '0;
     u_mstr_rib_if.rsp_last  = 1'b0;
     unique case (s_target_q)
@@ -555,8 +552,8 @@ module bus (
                          u_fault_rib_if.rsp_valid && u_fault_rib_if.rsp_ready;
   assign fault_addr_o = s_fault_addr_q;
   assign fault_wstrb_o = s_fault_wstrb_q;
-  assign fault_reserved_o = s_fault_code_q == `SOC_RIB_RESP_RESERVED;
-  assign fault_access_o = s_fault_code_q == `SOC_RIB_RESP_PROTERR;
+  assign fault_reserved_o = s_fault_code_q == `RIB_RESP_RESERVED;
+  assign fault_access_o = s_fault_code_q == `RIB_RESP_PROTERR;
   assign fault_master_o = s_fault_master_q;
   assign fault_code_o = s_fault_code_q;
 

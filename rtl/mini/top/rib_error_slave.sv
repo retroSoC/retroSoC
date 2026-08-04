@@ -8,11 +8,11 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module soc_rib_error_slave (
+module rib_error_slave (
     input logic                  clk_i,
     input logic                  rst_n_i,
     input logic            [2:0] error_code_i,
-          soc_rib_if.slave       rib
+          rib_if.slave       rib
 );
 
   localparam logic [1:0] FSM_CMD = 2'd0;

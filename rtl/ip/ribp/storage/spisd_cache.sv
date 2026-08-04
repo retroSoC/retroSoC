@@ -80,6 +80,7 @@ module spisd_cache (
     sd_addr_o       = '0;
     // mem_if
     ribp.ready      = '0;
+    ribp.resp_err   = 1'b0;
     // wr sync
     wr_sync_done_o  = '0;
     unique case (s_cache_fsm_q)

@@ -3,8 +3,7 @@
 /clusterip/common/rtl/interface/ahbl_if.sv
 /clusterip/common/rtl/interface/ribp_if.sv
 /clusterip/common/rtl/interface/ram_if.sv
-/top/soc_ribl_if.sv
-/top/soc_rib_if.sv
+/top/rib_if.sv
 /clusterip/common/rtl/utils/register.sv
 /top/soc_common_fifo.sv
 /clusterip/common/rtl/utils/spill_register.sv

@@ -59,6 +59,7 @@ module spisd_reg (
   assign s_rd_byp        = s_ribp_rd_hdshk && ribp.addr[7:0] == `RIBP_SPISD_RXDATA;
   assign ribp.ready      = (s_wr_byp || s_rd_byp) ? byp_rib.ready : s_ribp_ready_q;
   assign ribp.rdata      = (s_wr_byp || s_rd_byp) ? byp_rib.rdata : s_ribp_rdata_q;
+  assign ribp.resp_err   = (s_wr_byp || s_rd_byp) ? byp_rib.resp_err : 1'b0;
   // common
   assign mode_o          = s_spisd_mode_q;
   assign clkdiv_o        = s_spisd_clkdiv_q;

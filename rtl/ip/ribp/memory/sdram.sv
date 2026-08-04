@@ -76,6 +76,8 @@ module ribp_sdram (
   // verilog_format: off
   assign ribp.ready = (u_reg_ribp_if.valid & u_reg_ribp_if.ready) |
                      (u_mem_ribp_if.valid  & u_mem_ribp_if.ready);
+  assign ribp.resp_err = (u_reg_ribp_if.valid & u_reg_ribp_if.ready & u_reg_ribp_if.resp_err) |
+                         (u_mem_ribp_if.valid  & u_mem_ribp_if.ready & u_mem_ribp_if.resp_err);
 
   assign ribp.rdata = ({32{(u_reg_ribp_if.valid & u_reg_ribp_if.ready)}}  & u_reg_ribp_if.rdata) |
                      ({32{(u_mem_ribp_if.valid  & u_mem_ribp_if.ready)}} & u_mem_ribp_if.rdata);

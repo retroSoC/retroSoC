@@ -64,6 +64,7 @@ module ribp_onewire (
   assign s_ribp_wr_hdshk     = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
   assign s_ribp_rd_hdshk     = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
   assign ribp.ready          = s_ribp_ready_q;
+  assign ribp.resp_err       = 1'b0;
   assign ribp.rdata          = s_ribp_rdata_q;
 
 

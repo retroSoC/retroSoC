@@ -17,7 +17,7 @@ module user_core_top (
     input  logic [                   31:0] irq_i,
     input  logic [`USER_CORESEL_WIDTH-1:0] sel_i,
     input  logic [`USER_CORE_COUNT-1:0]    core_reset_i,
-    soc_rib_if.master                rib
+    rib_if.master                rib
     // verilog_format: on
 );
 

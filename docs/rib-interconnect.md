@@ -1,26 +1,32 @@
 # RIB Family Protocols
 
-retroSoC uses three related protocols. The interface declarations and the
-generated address map are the executable source of truth; this document fixes
-the ownership, ordering, and adaptation rules at each boundary.
+retroSoC uses a scalar peripheral protocol and a native burst interconnect.
+The interface declarations and generated address map are the executable source
+of truth; this document fixes the ownership, ordering, and adaptation rules at
+each boundary.
 
 | Protocol | Interface | Purpose | Transfer shape |
 | --- | --- | --- | --- |
-| RIBL | `soc_ribl_if` | Legacy SoC master compatibility | One scalar word request and response |
-| RIB | `soc_rib_if` | Native retroSoC interconnect | Split command, write-data, and response channels |
-| RIBP | ClusterIP `ribp_if` | Peripheral and IP compatibility | One scalar word request and response |
+| RIBP | Common `ribp_if` | Scalar core and peripheral compatibility | One scalar word request and response |
+| RIB | `rib_if` | Native retroSoC interconnect | Split command, write-data, and response channels |
 
-## RIBL
+## RIBP
 
-RIBL is the SoC-owned scalar compatibility protocol. A master presents
+RIBP is the scalar Common protocol used at every core and peripheral boundary.
+A master presents
 `valid`, `addr`, `wdata`, and `wstrb`; a slave completes the request with
 `ready`, `rdata`, and `resp_err`. `wstrb == 0` denotes a read. There is no
 burst metadata, response code, ID, reordering, or more than one transaction
-in flight through the RIBL adapter.
+in flight through the RIBP adapter.
 
-`soc_ribl2rib` converts RIBL requests to native `INCR1` RIB transactions. It
-maps the terminal RIB response to the RIBL `ready` handshake and propagates
+`ribp2rib` converts RIBP requests to native `INCR1` RIB transactions. It
+maps the terminal RIB response to the RIBP `ready` handshake and propagates
 the RIB error flag as `resp_err`.
+
+Leaf RIBP IP currently responds with `resp_err == 0`. RIBP multiplexers,
+register slices, and bypass paths preserve a selected downstream error. The
+APB bridge maps `PSLVERR` directly to `resp_err`; this is the only current
+RIBP error producer.
 
 ## RIB
 
@@ -39,7 +45,7 @@ transaction per master.
 RIB has no IDs, narrow read beats, wrapping bursts, reordering, or multiple
 outstanding transactions. `BURSTERR` reports an unsupported length, bad
 alignment, unsupported target, or malformed write-last sequence. The response
-code definitions are in `soc_rib_defs.svh`.
+code definitions are in `rib_defs.svh`.
 
 The generated address map is the capability source of truth. Register and APB
 regions remain `INCR1` only. SRAM, SDRAM, PSRAM, flash/XPI, and SPI-SD memory
@@ -47,25 +53,17 @@ windows accept `INCR4`; the interconnect validates both the first and last
 address before forwarding a command. DMA falls back to `INCR1` unless both
 endpoints, including their fourth words, support `INCR4`.
 
-## RIBP
-
-RIBP is the scalar ClusterIP protocol defined by `ribp_if`. It transfers
-`addr`, `wdata`, and `wstrb` with `valid/ready`; `wstrb == 0` denotes a read
-and `rdata` is returned with the completing `ready` handshake. RIBP carries no
-burst length, beat index, terminal marker, response code, or error signal.
-
-`soc_rib2ribp` serializes legal RIB beats into RIBP accesses and reconstructs
-ordered RIB responses. Target-side error sideband inputs are converted to RIB
-response status at this boundary. `ribp2rib` is the inverse compatibility
-adapter for a scalar RIBP initiator that must access a native RIB target.
+`rib2ribp` serializes legal RIB beats into RIBP accesses and reconstructs
+ordered RIB responses. An asserted RIBP `resp_err` is mapped to native RIB
+`SLVERR`; RIBP intentionally carries no response-code field.
 
 ## Targets and Performance
 
-Management and current user cores use RIBL through the SoC adapters. Future
+Management and current user cores use RIBP through the SoC adapters. Future
 user cores can select native RIB in `user_extensions.json`. DMA is a native
 RIB master and uses the common four-entry FIFO for each chunk.
 
-`soc_rib2ram` is the native RIB SRAM target. It pipelines synchronous reads
+`rib2ram` is the native RIB SRAM target. It pipelines synchronous reads
 and uses the Common two-entry spill register for response backpressure. The
 Common repository owns direct verification of that utility; retroSoC verifies
 the RIB target behavior and its integration contract.

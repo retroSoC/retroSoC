@@ -47,6 +47,7 @@ module ribp_opipsram (
   // ribp
   assign ribp.rdata     = '0;
   assign ribp.ready     = '0;
+  assign ribp.resp_err  = 1'b0;
   // psram
   assign psram.sck_o    = '0;
   assign psram.ce_o     = '0;

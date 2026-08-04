@@ -41,8 +41,7 @@
 /ip/ribp/serial/uart.sv
 /ip/ribp/peripheral/gpio.sv
 /ip/ribp/interconnect/ribp2apb.sv
-/ip/ribp/interconnect/ahbl2ribp.sv
-/top/ahbl2soc_ribl.sv
+/top/ahbl2ribp.sv
 /ip/ribp/interconnect/axi4l2ribp.sv
 /ip/ribp/util/async_fifo.sv
 /ip/ribp/interconnect/ribp_regslice.sv

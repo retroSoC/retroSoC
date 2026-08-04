@@ -8,13 +8,12 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`include "soc_rib_defs.svh"
+`include "rib_defs.svh"
 
-// Management-core AHB-Lite to SoC RIB bridge. It is intentionally separate
-// from the managed-compatible ahbl2ribp used by externally supplied user cores.
-module ahbl2soc_ribl (
+// Management-core AHB-Lite to scalar RIBP bridge.
+module ahbl2ribp (
     ahbl_if.slave      ahbl,
-    soc_ribl_if.master ribl
+    ribp_if.master ribp
 );
 
   localparam logic [1:0] AHBL_TRANS_NSEQ = 2'b10;
@@ -31,49 +30,49 @@ module ahbl2soc_ribl (
   logic s_hwrite_d, s_hwrite_q;
   logic [2:0] s_hsize_d, s_hsize_q;
 
-  assign ahbl.hready = s_fsm_q == STATE_IDLE || ribl.ready;
-  assign ahbl.hresp  = ribl.ready && ribl.resp_err ? AHBL_RESP_ERROR : AHBL_RESP_OKAY;
-  assign ahbl.hrdata = ribl.rdata;
-  assign ribl.valid  = s_fsm_q != STATE_IDLE;
-  assign ribl.addr   = {s_haddr_q[31:2], 2'b00};
+  assign ahbl.hready = s_fsm_q == STATE_IDLE || ribp.ready;
+  assign ahbl.hresp  = ribp.ready && ribp.resp_err ? AHBL_RESP_ERROR : AHBL_RESP_OKAY;
+  assign ahbl.hrdata = ribp.rdata;
+  assign ribp.valid  = s_fsm_q != STATE_IDLE;
+  assign ribp.addr   = {s_haddr_q[31:2], 2'b00};
 
   always_comb begin
-    ribl.wstrb = '0;
-    ribl.wdata = '0;
+    ribp.wstrb = '0;
+    ribp.wdata = '0;
     if (s_hwrite_q) begin
       unique case (s_hsize_q)
         AHBL_SIZE_BYTE: begin
           unique case (s_haddr_q[1:0])
             2'd0: begin
-              ribl.wstrb = 4'b0001;
-              ribl.wdata = {24'd0, ahbl.hwdata[7:0]};
+              ribp.wstrb = 4'b0001;
+              ribp.wdata = {24'd0, ahbl.hwdata[7:0]};
             end
             2'd1: begin
-              ribl.wstrb = 4'b0010;
-              ribl.wdata = {16'd0, ahbl.hwdata[7:0], 8'd0};
+              ribp.wstrb = 4'b0010;
+              ribp.wdata = {16'd0, ahbl.hwdata[7:0], 8'd0};
             end
             2'd2: begin
-              ribl.wstrb = 4'b0100;
-              ribl.wdata = {8'd0, ahbl.hwdata[7:0], 16'd0};
+              ribp.wstrb = 4'b0100;
+              ribp.wdata = {8'd0, ahbl.hwdata[7:0], 16'd0};
             end
             default: begin
-              ribl.wstrb = 4'b1000;
-              ribl.wdata = {ahbl.hwdata[7:0], 24'd0};
+              ribp.wstrb = 4'b1000;
+              ribp.wdata = {ahbl.hwdata[7:0], 24'd0};
             end
           endcase
         end
         AHBL_SIZE_HWRD: begin
           if (s_haddr_q[1]) begin
-            ribl.wstrb = 4'b1100;
-            ribl.wdata = {ahbl.hwdata[15:0], 16'd0};
+            ribp.wstrb = 4'b1100;
+            ribp.wdata = {ahbl.hwdata[15:0], 16'd0};
           end else begin
-            ribl.wstrb = 4'b0011;
-            ribl.wdata = {16'd0, ahbl.hwdata[15:0]};
+            ribp.wstrb = 4'b0011;
+            ribp.wdata = {16'd0, ahbl.hwdata[15:0]};
           end
         end
         default: begin
-          ribl.wstrb = 4'b1111;
-          ribl.wdata = ahbl.hwdata;
+          ribp.wstrb = 4'b1111;
+          ribp.wdata = ahbl.hwdata;
         end
       endcase
     end
@@ -94,7 +93,7 @@ module ahbl2soc_ribl (
         end
       end
       STATE_DATA: begin
-        if (!ribl.ready) begin
+        if (!ribp.ready) begin
           s_fsm_d = STATE_WAIT;
         end else if (ahbl.htrans == AHBL_TRANS_NSEQ) begin
           s_haddr_d  = ahbl.haddr;
@@ -105,7 +104,7 @@ module ahbl2soc_ribl (
         end
       end
       STATE_WAIT: begin
-        if (ribl.ready) begin
+        if (ribp.ready) begin
           if (ahbl.htrans == AHBL_TRANS_NSEQ) begin
             s_fsm_d    = STATE_DATA;
             s_haddr_d  = ahbl.haddr;

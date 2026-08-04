@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 
-module soc_rib2ram_tb;
+module rib2ram_tb;
   logic          clk_i = 1'b0;
   logic          rst_n_i = 1'b0;
   logic   [31:0] memory         [0:31];
   logic   [31:0] expected       [ 0:3];
   integer        index;
-  soc_rib_if rib ();
+  rib_if rib ();
   ram_if ram ();
 
   always #5 clk_i = ~clk_i;
@@ -19,7 +19,7 @@ module soc_rib2ram_tb;
     if (ram.wstrb[3]) memory[ram.addr][31:24] <= ram.wdata[31:24];
   end
 
-  soc_rib2ram u_dut (
+  rib2ram u_dut (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .rib    (rib),
@@ -31,7 +31,7 @@ module soc_rib2ram_tb;
       @(negedge clk_i);
       rib.cmd_addr  = 32'h3000_0000;
       rib.cmd_write = write;
-      rib.cmd_len   = `SOC_RIB_LEN_INCR4;
+      rib.cmd_len   = `RIB_LEN_INCR4;
       rib.cmd_valid = 1'b1;
       while (!rib.cmd_ready) @(posedge clk_i);
       @(negedge clk_i);

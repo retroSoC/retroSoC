@@ -20,11 +20,11 @@ module ribp2apb_formal;
   wire [31:0] rib_addr;
   wire [31:0] rib_wdata;
   wire [ 3:0] rib_wstrb;
-  wire        rib_ready;
-  wire [ 9:0] psel_comb;
-  wire [ 9:0] psel_q;
-  wire        xfer_ready;
-  wire [ 1:0] fsm_q;
+  wire rib_ready, rib_resp_err;
+  wire [9:0] psel_comb;
+  wire [9:0] psel_q;
+  wire xfer_ready, xfer_error;
+  wire [1:0] fsm_q;
 
   ribp2apb_formal_design u_design (
       .clk_i       (clk_i),
@@ -35,9 +35,11 @@ module ribp2apb_formal;
       .rib_wdata   (rib_wdata),
       .rib_wstrb   (rib_wstrb),
       .rib_ready   (rib_ready),
+      .rib_resp_err(rib_resp_err),
       .psel_comb   (psel_comb),
       .psel_q      (psel_q),
       .xfer_ready  (xfer_ready),
+      .xfer_error  (xfer_error),
       .fsm_q       (fsm_q)
   );
 
@@ -55,6 +57,9 @@ module ribp2apb_formal;
       if (rib_ready) begin
         assert (xfer_ready);
         assert (fsm_q == FSM_ENAB);
+        assert (rib_resp_err == xfer_error);
+      end else begin
+        assert (!rib_resp_err);
       end
       if (f_past_valid && $past(rst_n_i && fsm_q == FSM_SETP)) begin
         assert (psel_q == $past(psel_q));

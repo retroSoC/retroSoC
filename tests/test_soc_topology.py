@@ -57,8 +57,8 @@ def write_invalid_topology(tmp_path: Path, document: dict[str, object]) -> Path:
 def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -> None:
     generate(tmp_path)
 
-    interfaces = (tmp_path / "rtl/soc_ribp_interfaces.svh").read_text(encoding="utf-8")
-    routes = (tmp_path / "rtl/soc_ribp_routes.svh").read_text(encoding="utf-8")
+    interfaces = (tmp_path / "rtl/ribp_interfaces.svh").read_text(encoding="utf-8")
+    routes = (tmp_path / "rtl/ribp_routes.svh").read_text(encoding="utf-8")
     gpio = (tmp_path / "rtl/soc_gpio_alt_bindings.svh").read_text(encoding="utf-8")
     apb_interfaces = (tmp_path / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
     apb_declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
@@ -67,7 +67,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     fabric = (tmp_path / "rtl/soc_fabric_interfaces.svh").read_text(encoding="utf-8")
     bus_fabric = (tmp_path / "rtl/soc_bus_fabric.svh").read_text(encoding="utf-8")
     irq_config = (tmp_path / "rtl/soc_irq_config.svh").read_text(encoding="utf-8")
-    rib_irq = (tmp_path / "rtl/soc_ribp_irq_bindings.svh").read_text(encoding="utf-8")
+    rib_irq = (tmp_path / "rtl/ribp_irq_bindings.svh").read_text(encoding="utf-8")
     apb_irq = (tmp_path / "rtl/soc_apb_irq_bindings.svh").read_text(encoding="utf-8")
     irq_wiring = (tmp_path / "rtl/soc_irq_wiring.svh").read_text(encoding="utf-8")
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
@@ -77,6 +77,8 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "nmi_if" not in interfaces
     assert "soc_nmi" not in interfaces
     assert "assign s_slv_sel_d[17] = u_i2c1_ribp_if.valid;" in routes
+    assert "assign s_slv_resp_err[17] = u_i2c1_ribp_if.resp_err;" in routes
+    assert "assign ribp.resp_err = |(s_slv_sel_q & s_slv_ready & s_slv_resp_err);" in routes
     assert "assign s_xpi_region_sel[1] = (ribp.addr <= `SOC_ADDR_FLASH_END);" in routes
     assert "assign u_sdio_ribp_if.valid = 1'b0;" in routes
     assert gpio.count("// GPIO") == 64
@@ -87,10 +89,9 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign tmr.paddr = ribp.addr;" in apb_routes
     assert "({32{s_psel_q[8]}} & tmr.prdata)" in apb_response
     assert "localparam int NSLV = 10;" in apb_declarations
-    assert fabric.count("soc_ribl_if u_") == 1
-    assert fabric.count("soc_rib_if u_") == 3
-    assert fabric.count("ribp_if u_") == 1
-    assert ".mgmt_ribl(u_mgmt_ribl_if)" in bus_fabric
+    assert fabric.count("ribp_if u_") == 2
+    assert fabric.count("rib_if u_") == 3
+    assert ".mgmt_ribp(u_mgmt_ribp_if)" in bus_fabric
     assert ".user_rib(u_user_rib_if)" in bus_fabric
     assert ".apb_ribp(u_apb_ribp_if)" in bus_fabric
     assert ".rib(u_rib_if)" in bus_fabric
@@ -157,7 +158,7 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     assert "apb4_pure_if user_ip ();" in formal_design
     assert ".user_ip (user_ip)" in formal_design
     assert "logic [ 9:0] psel_comb" in formal_design
-    assert "wire [ 9:0] psel_comb" in formal_properties
+    assert "wire [9:0] psel_comb" in formal_properties
 
 
 def test_topology_rejects_unknown_or_non_rib_regions(tmp_path: Path) -> None:
@@ -317,7 +318,7 @@ def test_generated_rib_routes_select_and_return_the_expected_target(tmp_path: Pa
     topology_output = tmp_path / "topology"
     generate(topology_output)
 
-    source_list = tmp_path / "soc_topology_ribp.fl"
+    source_list = tmp_path / "ribp_topology.fl"
     source_list.write_text(
         "\n".join(
             [
@@ -327,13 +328,13 @@ def test_generated_rib_routes_select_and_return_the_expected_target(tmp_path: Pa
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "tests/rtl/soc_topology_ribp_tb.sv"),
+                str(ROOT / "tests/rtl/ribp_topology_tb.sv"),
                 "",
             ]
         ),
         encoding="utf-8",
     )
-    converted = tmp_path / "soc_topology_ribp_tb.v"
+    converted = tmp_path / "ribp_topology_tb.v"
     subprocess.run(
         [
             sys.executable,
@@ -345,13 +346,13 @@ def test_generated_rib_routes_select_and_return_the_expected_target(tmp_path: Pa
         ],
         check=True,
     )
-    simulation = tmp_path / "soc_topology_ribp_tb"
+    simulation = tmp_path / "ribp_topology_tb"
     subprocess.run(
         [
             iverilog,
             "-g2012",
             "-s",
-            "soc_topology_ribp_tb",
+            "ribp_topology_tb",
             "-o",
             str(simulation),
             str(converted),

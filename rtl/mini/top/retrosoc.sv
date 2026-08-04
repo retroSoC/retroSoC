@@ -62,7 +62,6 @@ module retrosoc (
   logic                             s_bus_fault_access;
   logic [                      1:0] s_bus_fault_master;
   logic [                      2:0] s_bus_fault_code;
-  logic                             s_apb_resp_err;
   logic                             s_perf_enable;
   logic                             s_perf_clear;
   logic [                     63:0] s_perf_mgmt_wait;
@@ -126,7 +125,6 @@ core_wrapper u_core_wrapper (
       .user_bus_enable_i(u_sysctrl_if.user_bus_enable_o),
       .user_bus_idle_o  (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
-      .apb_resp_err_i   (s_apb_resp_err),
       .perf_enable_i    (s_perf_enable),
       .perf_clear_i     (s_perf_clear),
       .fault_valid_o    (s_bus_fault_valid),
@@ -151,7 +149,7 @@ core_wrapper u_core_wrapper (
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
-      `include "soc_ip_ribp_wrapper_fabric.svh"
+      `include "ip_ribp_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
       .uart            (uart0),
@@ -176,19 +174,18 @@ core_wrapper u_core_wrapper (
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .clk_aud_i      (clk_aud_i),
-      .rst_aud_n_i    (rst_aud_n_i),
-      .tmr_capch_i    (s_tmr_capch),
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .clk_aud_i  (clk_aud_i),
+      .rst_aud_n_i(rst_aud_n_i),
+      .tmr_capch_i(s_tmr_capch),
       `include "soc_ip_apb_wrapper_fabric.svh"
-      .uart           (u_uart1_if),
-      .pwm            (u_pwm_if),
-      .ps2            (u_ps2_if),
-      .ip_sel_i       (u_sysctrl_if.ip_sel_o),
-      .user_gpio      (u_user_gpio_if),
-      .ribp_resp_err_o(s_apb_resp_err),
-      .irq_o          (s_apb_irq)
+      .uart       (u_uart1_if),
+      .pwm        (u_pwm_if),
+      .ps2        (u_ps2_if),
+      .ip_sel_i   (u_sysctrl_if.ip_sel_o),
+      .user_gpio  (u_user_gpio_if),
+      .irq_o      (s_apb_irq)
   );
 
 endmodule

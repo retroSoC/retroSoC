@@ -41,14 +41,13 @@ def test_bus_preserves_incr4_and_rejects_illegal_bursts(tmp_path: Path) -> None:
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ram_if.sv"),
-                str(ROOT / "rtl/mini/top/soc_ribl_if.sv"),
-                str(ROOT / "rtl/mini/top/soc_rib_if.sv"),
+                str(ROOT / "rtl/mini/top/rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"),
-                str(ROOT / "rtl/mini/top/soc_ribl2rib.sv"),
-                str(ROOT / "rtl/mini/top/soc_rib2ribp.sv"),
-                str(ROOT / "rtl/mini/top/soc_rib_error_slave.sv"),
-                str(ROOT / "rtl/mini/top/soc_rib2ram.sv"),
+                str(ROOT / "rtl/mini/top/ribp2rib.sv"),
+                str(ROOT / "rtl/mini/top/rib2ribp.sv"),
+                str(ROOT / "rtl/mini/top/rib_error_slave.sv"),
+                str(ROOT / "rtl/mini/top/rib2ram.sv"),
                 str(ROOT / "rtl/mini/top/bus.sv"),
                 str(ROOT / "tests/rtl/rib_bus_tb.sv"),
                 "",
@@ -83,7 +82,7 @@ def test_burst_sram_preserves_data_and_backpressure(tmp_path: Path) -> None:
     if iverilog is None or vvp is None:
         return
 
-    source_list = tmp_path / "soc_rib2ram.fl"
+    source_list = tmp_path / "rib2ram.fl"
     source_list.write_text(
         "\n".join(
             [
@@ -91,17 +90,17 @@ def test_burst_sram_preserves_data_and_backpressure(tmp_path: Path) -> None:
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ram_if.sv"),
-                str(ROOT / "rtl/mini/top/soc_rib_if.sv"),
+                str(ROOT / "rtl/mini/top/rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"),
-                str(ROOT / "rtl/mini/top/soc_rib2ram.sv"),
-                str(ROOT / "tests/rtl/soc_rib2ram_tb.sv"),
+                str(ROOT / "rtl/mini/top/rib2ram.sv"),
+                str(ROOT / "tests/rtl/rib2ram_tb.sv"),
                 "",
             ]
         ),
         encoding="utf-8",
     )
-    converted = tmp_path / "soc_rib2ram_tb.v"
+    converted = tmp_path / "rib2ram_tb.v"
     subprocess.run(
         [
             sys.executable,
@@ -113,9 +112,9 @@ def test_burst_sram_preserves_data_and_backpressure(tmp_path: Path) -> None:
         ],
         check=True,
     )
-    simulation = tmp_path / "soc_rib2ram_tb"
+    simulation = tmp_path / "rib2ram_tb"
     subprocess.run(
-        [iverilog, "-g2012", "-s", "soc_rib2ram_tb", "-o", str(simulation), str(converted)],
+        [iverilog, "-g2012", "-s", "rib2ram_tb", "-o", str(simulation), str(converted)],
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)

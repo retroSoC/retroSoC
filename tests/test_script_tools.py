@@ -210,11 +210,11 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_if.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_ribl2rib.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib_error_slave.sv" in bus.files
+    assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
+    assert ROOT / "rtl/mini/top/ribp2rib.sv" in bus.files
+    assert ROOT / "rtl/mini/top/rib_error_slave.sv" in bus.files
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
-    assert ROOT / "rtl/mini/top/soc_rib2ribp.sv" in rib_adapter.files
+    assert ROOT / "rtl/mini/top/rib2ribp.sv" in rib_adapter.files
     assert ROOT / "rtl/mini/formal/rib_adapter_formal.sv" in rib_adapter.files
     assert ROOT / "rtl/ip/ribp/interconnect/ribp2apb.sv" in ribp2apb.files
     assert ROOT / "rtl/mini/formal/ribp2apb_formal.sv" in ribp2apb.files
@@ -654,7 +654,7 @@ def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
     assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
     assert "`ifdef CORE_PICORV32" in wrapper
     assert "`elsif CORE_HAZARD3" in wrapper
-    assert "ahbl2soc_ribl u_ahbl2soc_rib" in wrapper
+    assert "ahbl2ribp u_ahbl2ribp" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
 
 

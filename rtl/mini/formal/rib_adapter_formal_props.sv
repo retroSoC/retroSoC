@@ -2,6 +2,7 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module rib_adapter_formal;
+  localparam logic [2:0] RIB_RESP_SLVERR = 3'd3;
   (* anyseq *) (* gclk *)reg  clk_i;
   wire rst_n_i;
   wire f_past_valid;
@@ -11,20 +12,20 @@ module rib_adapter_formal;
   wire w_valid, w_ready, wlast;
   wire [31:0] wdata;
   wire [ 3:0] wstrb;
-  wire rsp_valid, rsp_ready, rsp_last;
+  wire rsp_valid, rsp_ready, rsp_last, rsp_error;
   wire [31:0] rsp_rdata;
   wire [ 2:0] rsp_code;
   wire [ 1:0] rsp_beat;
-  wire ribp_valid, ribp_ready;
+  wire ribp_valid, ribp_ready, ribp_resp_err;
   wire [31:0] ribp_addr, ribp_wdata;
   wire [3:0] ribp_wstrb;
-  wire source_valid, source_ready;
+  wire source_valid, source_ready, source_resp_err;
   wire [31:0] source_addr;
   wire [ 3:0] source_wstrb;
   wire adapted_cmd_valid, adapted_cmd_ready;
   wire [31:0] adapted_cmd_addr;
   wire [ 1:0] adapted_cmd_len;
-  wire adapted_w_valid, adapted_w_ready, adapted_wlast;
+  wire adapted_w_valid, adapted_w_ready, adapted_wlast, adapted_rsp_error;
   wire [31:0] adapted_wdata;
   wire [ 3:0] adapted_wstrb;
 
@@ -62,6 +63,12 @@ module rib_adapter_formal;
         assert (rsp_beat == $past(rsp_beat));
         assert (rsp_last == $past(rsp_last));
       end
+      if (f_past_valid && $past(rst_n_i && ribp_valid && ribp_ready && ribp_resp_err)) begin
+        assert (rsp_valid);
+        assert (rsp_error);
+        assert (rsp_code == RIB_RESP_SLVERR);
+      end
+      if (source_ready) assert (source_resp_err == adapted_rsp_error);
       assert (rsp_beat <= 2'd3);
       if (adapted_cmd_valid) assert (adapted_cmd_len == 2'd0);
       if (adapted_w_valid) assert (adapted_wlast);

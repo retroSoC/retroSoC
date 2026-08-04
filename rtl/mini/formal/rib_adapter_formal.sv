@@ -18,16 +18,19 @@ module rib_adapter_formal_design (
     output logic        rsp_valid,
     output logic        rsp_ready,
     output logic [31:0] rsp_rdata,
+    output logic        rsp_error,
     output logic [ 2:0] rsp_code,
     output logic [ 1:0] rsp_beat,
     output logic        rsp_last,
     output logic        ribp_valid,
     output logic        ribp_ready,
+    output logic        ribp_resp_err,
     output logic [31:0] ribp_addr,
     output logic [31:0] ribp_wdata,
     output logic [ 3:0] ribp_wstrb,
     output logic        source_valid,
     output logic        source_ready,
+    output logic        source_resp_err,
     output logic [31:0] source_addr,
     output logic [ 3:0] source_wstrb,
     output logic        adapted_cmd_valid,
@@ -38,13 +41,14 @@ module rib_adapter_formal_design (
     output logic        adapted_w_ready,
     output logic [31:0] adapted_wdata,
     output logic [ 3:0] adapted_wstrb,
-    output logic        adapted_wlast
+    output logic        adapted_wlast,
+    output logic        adapted_rsp_error
 );
 
-  soc_rib_if rib_source ();
+  rib_if rib_source ();
   ribp_if ribp_target ();
-  soc_ribl_if ribl_source ();
-  soc_rib_if rib_target ();
+  ribp_if ribp_source ();
+  rib_if rib_target ();
 
   (* anyseq *)logic        f_cmd_valid;
   (* anyseq *)logic [31:0] f_cmd_addr;
@@ -58,7 +62,6 @@ module rib_adapter_formal_design (
   (* anyseq *)logic        f_ribp_ready;
   (* anyseq *)logic [31:0] f_ribp_rdata;
   (* anyseq *)logic        f_ribp_error;
-  (* anyseq *)logic [ 2:0] f_ribp_code;
 
   (* anyseq *)logic        f_source_valid;
   (* anyseq *)logic [31:0] f_source_addr;
@@ -82,20 +85,19 @@ module rib_adapter_formal_design (
   assign rib_source.rsp_ready = f_rsp_ready;
   assign ribp_target.ready    = f_ribp_ready;
   assign ribp_target.rdata    = f_ribp_rdata;
+  assign ribp_target.resp_err = f_ribp_error;
 
-  soc_rib2ribp u_rib2ribp (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .ribp_resp_err_i (f_ribp_error),
-      .ribp_resp_code_i(f_ribp_code),
-      .rib             (rib_source),
-      .ribp            (ribp_target)
+  rib2ribp u_rib2ribp (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .rib    (rib_source),
+      .ribp   (ribp_target)
   );
 
-  assign ribl_source.valid    = f_source_valid;
-  assign ribl_source.addr     = f_source_addr;
-  assign ribl_source.wdata    = f_source_wdata;
-  assign ribl_source.wstrb    = f_source_wstrb;
+  assign ribp_source.valid    = f_source_valid;
+  assign ribp_source.addr     = f_source_addr;
+  assign ribp_source.wdata    = f_source_wdata;
+  assign ribp_source.wstrb    = f_source_wstrb;
   assign rib_target.cmd_ready = f_target_cmd_ready;
   assign rib_target.w_ready   = f_target_w_ready;
   assign rib_target.rsp_valid = f_target_rsp_valid;
@@ -105,10 +107,10 @@ module rib_adapter_formal_design (
   assign rib_target.rsp_beat  = '0;
   assign rib_target.rsp_last  = 1'b1;
 
-  soc_ribl2rib u_ribl2rib (
+  ribp2rib u_ribp2rib (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribl   (ribl_source),
+      .ribp   (ribp_source),
       .rib    (rib_target)
   );
 
@@ -125,19 +127,22 @@ module rib_adapter_formal_design (
   assign rsp_valid         = rib_source.rsp_valid;
   assign rsp_ready         = rib_source.rsp_ready;
   assign rsp_rdata         = rib_source.rdata;
+  assign rsp_error         = rib_source.resp_err;
   assign rsp_code          = rib_source.resp_code;
   assign rsp_beat          = rib_source.rsp_beat;
   assign rsp_last          = rib_source.rsp_last;
   assign ribp_valid        = ribp_target.valid;
   assign ribp_ready        = ribp_target.ready;
+  assign ribp_resp_err     = ribp_target.resp_err;
   assign ribp_addr         = ribp_target.addr;
   assign ribp_wdata        = ribp_target.wdata;
   assign ribp_wstrb        = ribp_target.wstrb;
 
-  assign source_valid      = ribl_source.valid;
-  assign source_ready      = ribl_source.ready;
-  assign source_addr       = ribl_source.addr;
-  assign source_wstrb      = ribl_source.wstrb;
+  assign source_valid      = ribp_source.valid;
+  assign source_ready      = ribp_source.ready;
+  assign source_resp_err   = ribp_source.resp_err;
+  assign source_addr       = ribp_source.addr;
+  assign source_wstrb      = ribp_source.wstrb;
   assign adapted_cmd_valid = rib_target.cmd_valid;
   assign adapted_cmd_ready = rib_target.cmd_ready;
   assign adapted_cmd_addr  = rib_target.cmd_addr;
@@ -147,6 +152,7 @@ module rib_adapter_formal_design (
   assign adapted_wdata     = rib_target.wdata;
   assign adapted_wstrb     = rib_target.wstrb;
   assign adapted_wlast     = rib_target.wlast;
+  assign adapted_rsp_error = rib_target.resp_err;
 
   initial begin
     rst_n_i      = 1'b0;

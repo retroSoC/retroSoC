@@ -45,7 +45,7 @@ module ribp_dma (
     output logic      dma_xfer_done_o,
     dma_hw_trg_if.dut hw_trg,
     ribp_if.slave      ribp,
-    soc_rib_if.master  rib
+    rib_if.master  rib
     // verilog_format: on
 );
 
@@ -81,6 +81,7 @@ module ribp_dma (
   assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
   assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
   assign ribp.ready      = s_ribp_ready_q;
+  assign ribp.resp_err   = 1'b0;
   assign ribp.rdata      = s_ribp_rdata_q;
 
   assign dma_xfer_done_o = s_dma_status_q;

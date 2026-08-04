@@ -8,14 +8,12 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`include "soc_rib_defs.svh"
+`include "rib_defs.svh"
 
-module soc_rib2ribp (
+module rib2ribp (
     input logic                  clk_i,
     input logic                  rst_n_i,
-    input logic                  ribp_resp_err_i,
-    input logic            [2:0] ribp_resp_code_i,
-          soc_rib_if.slave       rib,
+          rib_if.slave           rib,
           ribp_if.master         ribp
 );
 
@@ -38,8 +36,8 @@ module soc_rib2ribp (
   logic s_cmd_legal;
   logic s_cmd_hdshk, s_w_hdshk, s_ribp_hdshk, s_rsp_hdshk;
 
-  assign s_cmd_legal = (rib.cmd_len == `SOC_RIB_LEN_INCR1) ||
-                       ((rib.cmd_len == `SOC_RIB_LEN_INCR4) &&
+  assign s_cmd_legal = (rib.cmd_len == `RIB_LEN_INCR1) ||
+                       ((rib.cmd_len == `RIB_LEN_INCR4) &&
                         (rib.cmd_addr[3:0] == 4'b0000));
   assign s_cmd_hdshk = rib.cmd_valid && rib.cmd_ready;
   assign s_w_hdshk = rib.w_valid && rib.w_ready;
@@ -51,7 +49,7 @@ module soc_rib2ribp (
   assign rib.rsp_valid = s_fsm_q == FSM_RESP;
   assign rib.rdata = s_rdata_q;
   assign rib.resp_err = s_error_q;
-  assign rib.resp_code = s_error_q ? s_error_code_q : `SOC_RIB_RESP_OK;
+  assign rib.resp_code = s_error_q ? s_error_code_q : `RIB_RESP_OK;
   assign rib.rsp_beat = s_beat_q;
   assign rib.rsp_last = s_write_q || (s_beat_q == s_len_q) || s_error_q;
 
@@ -76,7 +74,7 @@ module soc_rib2ribp (
           s_beat_d       = '0;
           s_write_d      = rib.cmd_write;
           s_error_d      = ~s_cmd_legal;
-          s_error_code_d = s_cmd_legal ? `SOC_RIB_RESP_OK : `SOC_RIB_RESP_BURSTERR;
+          s_error_code_d = s_cmd_legal ? `RIB_RESP_OK : `RIB_RESP_BURSTERR;
           if (~s_cmd_legal) begin
             s_fsm_d = rib.cmd_write ? FSM_DROP_WDATA : FSM_RESP;
           end else begin
@@ -88,7 +86,7 @@ module soc_rib2ribp (
         if (s_w_hdshk) begin
           if (rib.wlast != (s_beat_q == s_len_q)) begin
             s_error_d      = 1'b1;
-            s_error_code_d = `SOC_RIB_RESP_BURSTERR;
+            s_error_code_d = `RIB_RESP_BURSTERR;
             s_fsm_d        = FSM_RESP;
           end else begin
             s_fsm_d = FSM_RIBP;
@@ -97,9 +95,9 @@ module soc_rib2ribp (
       end
       FSM_RIBP: begin
         if (s_ribp_hdshk) begin
-          if (ribp_resp_err_i) begin
+          if (ribp.resp_err) begin
             s_error_d      = 1'b1;
-            s_error_code_d = ribp_resp_code_i;
+            s_error_code_d = `RIB_RESP_SLVERR;
             s_fsm_d        = FSM_RESP;
           end else if (s_write_q) begin
             if (s_beat_q == s_len_q) begin

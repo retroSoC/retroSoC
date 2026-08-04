@@ -62,7 +62,7 @@
     },
     "cluster_archinfo": {"url": "https://github.com/retroSoC/archinfo.git", "revision": "d65dd13c83a1176668bf5178004814a1551bf6ba", "destination": "rtl/managed/clusterip/archinfo", "license": "NOASSERTION"},
     "cluster_clint": {"url": "https://github.com/retroSoC/clint.git", "revision": "ce49f1a5501c0a9f18c0e3f358417648f3f2fb18", "destination": "rtl/managed/clusterip/clint", "license": "NOASSERTION"},
-    "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "f666d8f04977157fe282ca9873c45aad6757c37f", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
+    "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "16ee9a5cfdc1248f35f0993710e3cb89464c19d9", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
     "cluster_crc": {"url": "https://github.com/retroSoC/crc.git", "revision": "4654a63d06d487b5b9fe22af228c36c736b90bad", "destination": "rtl/managed/clusterip/crc", "license": "NOASSERTION"},
     "cluster_i2c": {"url": "https://github.com/retroSoC/i2c.git", "revision": "73b024547c5cd70fb8bf801cc7757db2536c604f", "destination": "rtl/managed/clusterip/i2c", "license": "NOASSERTION"},
     "cluster_i2s": {"url": "https://github.com/retroSoC/i2s.git", "revision": "bd0978e8b45e4cf4c1335a1fa7311385d2a4e805", "destination": "rtl/managed/clusterip/i2s", "license": "NOASSERTION"},

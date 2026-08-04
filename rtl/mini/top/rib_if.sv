@@ -8,12 +8,12 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef RETROSOC_SOC_RIB_IF_SV
-`define RETROSOC_SOC_RIB_IF_SV
+`ifndef RETROSOC_RIB_IF_SV
+`define RETROSOC_RIB_IF_SV
 
 // SoC-owned split-channel RIB contract. Version 1 supports one outstanding
 // 32-bit INCR1 or INCR4 transaction and does not carry transaction IDs.
-interface soc_rib_if ();
+interface rib_if ();
 
   logic        cmd_valid;
   logic        cmd_ready;

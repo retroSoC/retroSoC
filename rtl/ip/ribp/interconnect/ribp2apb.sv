@@ -15,7 +15,6 @@ module ribp2apb (
     input  logic       clk_i,
     input  logic       rst_n_i,
     ribp_if.slave       ribp,
-    output logic       resp_err_o,
 `include "soc_apb_ports.svh"
     // verilog_format: on
 );
@@ -64,9 +63,9 @@ module ribp2apb (
       s_fsm_q
   );
 
-  assign ribp.ready = ribp.valid && (s_fsm_q == FSM_ENAB) && s_xfer_ready;
-  assign ribp.rdata = {32{ribp.ready}} & s_rd_data;
-  assign resp_err_o = ribp.ready && s_xfer_error;
+  assign ribp.ready    = ribp.valid && (s_fsm_q == FSM_ENAB) && s_xfer_ready;
+  assign ribp.rdata    = {32{ribp.ready}} & s_rd_data;
+  assign ribp.resp_err = ribp.ready && s_xfer_error;
 
   // Capture slave-select one-hot at FSM_SETP for cleaner response mux.
   `include "soc_apb_select_routes.svh"

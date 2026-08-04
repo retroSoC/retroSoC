@@ -10,7 +10,7 @@
 
 `include "user_extensions.svh"
 `include "mmap_define.svh"
-`include "soc_rib_defs.svh"
+`include "rib_defs.svh"
 
 interface sysctrl_if ();
   logic [`USER_CORESEL_WIDTH-1:0] core_sel_o;
@@ -172,6 +172,7 @@ module ribp_sysctrl (
   assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
   assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
   assign ribp.ready = s_ribp_ready_q;
+  assign ribp.resp_err = 1'b0;
   assign ribp.rdata = s_ribp_rdata_q;
 
   assign sysctrl.ip_sel_o = s_sysctrl_ipsel_q;
@@ -469,14 +470,14 @@ module ribp_sysctrl (
       if (~s_fault_pending_q || s_fault_status_clear) begin
         s_fault_write_d = |fault_wstrb_i;
         s_fault_detail_d = |sysctrl.fault_code_i ? sysctrl.fault_code_i :
-                           sysctrl.fault_access_i ? `SOC_RIB_RESP_PROTERR :
-                           fault_reserved_i ? `SOC_RIB_RESP_RESERVED : `SOC_RIB_RESP_DECERR;
+                           sysctrl.fault_access_i ? `RIB_RESP_PROTERR :
+                           fault_reserved_i ? `RIB_RESP_RESERVED : `RIB_RESP_DECERR;
         unique case (s_fault_detail_d)
-          `SOC_RIB_RESP_RESERVED: s_fault_reason_d = 3'd2;
-          `SOC_RIB_RESP_PROTERR:  s_fault_reason_d = 3'd3;
-          `SOC_RIB_RESP_SLVERR:   s_fault_reason_d = 3'd4;
-          `SOC_RIB_RESP_TIMEOUT:  s_fault_reason_d = 3'd5;
-          default:                s_fault_reason_d = 3'd1;
+          `RIB_RESP_RESERVED: s_fault_reason_d = 3'd2;
+          `RIB_RESP_PROTERR:  s_fault_reason_d = 3'd3;
+          `RIB_RESP_SLVERR:   s_fault_reason_d = 3'd4;
+          `RIB_RESP_TIMEOUT:  s_fault_reason_d = 3'd5;
+          default:            s_fault_reason_d = 3'd1;
         endcase
         s_fault_addr_d = fault_addr_i;
       end
