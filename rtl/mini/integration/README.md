@@ -35,14 +35,15 @@ without an interrupt entry are driven low. Firmware does not expose a generic
 external interrupt API until the SoC includes a claim/complete interrupt
 controller.
 
-`user_extensions.json` separately defines the supported scalar user-core and
-user-IP slots. `generate_user_extensions.py` creates isolated default routing
-and one explicit instance per selected slot for `user_core_top.sv` and
-`user_ip_top.sv`. Adding an extension therefore requires a reviewed JSON entry
-rather than manual edits to the SoC muxes. Each core declares whether its reset
-is synchronous or asynchronous so a generated legacy RIB adapter uses the same
-reset style and does not introduce mixed-reset paths. The module port contract
-remains the existing user design template contract.
+`user_extensions.json` defines the SoC-level user-core and user-IP slots.
+The locked mini-ver-mpw `mpw.toml` remains the source of truth for enabled
+design IDs, module names, slots, and reset type. `scripts/generate_mpw.py`
+verifies that both descriptions agree before RTL generation.
+`generate_user_extensions.py` then creates isolated default routing and one
+explicit instance per selected slot for `user_core_top.sv` and `user_ip_top.sv`.
+User cores use `ribp_if.master ribp`; user IPs use `user_gpio_if.user_ip gpio`
+and APB4. This prevents legacy RIB/NMI and electrical pad-control contracts
+from entering the SoC muxes.
 
 `clock_reset_domains.json` is the checked inventory of root clock domains,
 reset synchronizers, and RCU PLL control crossings. It records the primitive,

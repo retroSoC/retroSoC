@@ -14,6 +14,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from zipfile import ZipFile
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FILELIST_SCRIPT_DIR = ROOT / "rtl/mini/script"
@@ -31,12 +33,7 @@ from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
 from scripts.dependency_lock import LockError, load_lock  # noqa: E402
-from scripts.generate_mpw import (  # noqa: E402
-    migrate_user_core_ribp_interfaces,
-    migrate_user_extension_includes,
-    migrate_user_gpio_interfaces,
-    remove_legacy_picorv32_entry,
-)
+from scripts.generate_mpw import validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts import regress  # noqa: E402
 from scripts import run_flow  # noqa: E402
@@ -294,76 +291,42 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
     assert set(result["proofs"]) == set(proofs)
 
 
-def test_legacy_user_gpio_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
-    source = tmp_path / "user_ip_design.sv"
-    source.write_text(
-        """`include "mdd_config.svh"
-module user_ip_design (gpio_if.dut gpio);
-  logic value;
-  assign gpio.gpio_oe = value;
-  assign gpio.gpio_cs = value;
-  assign gpio.gpio_pu = value;
-  assign gpio.gpio_pd = value;
-  assign gpio.gpio_out = value;
-  always_comb value = gpio.gpio_in[0];
-endmodule
-""",
-        encoding="utf-8",
-    )
+def test_mpw_generator_uses_only_the_native_v2_contract() -> None:
+    source = (ROOT / "scripts/generate_mpw.py").read_text(encoding="utf-8")
 
-    assert migrate_user_extension_includes(tmp_path) == [source]
-    assert migrate_user_gpio_interfaces(tmp_path) == [source]
-
-    migrated = source.read_text(encoding="utf-8")
-    assert "gpio_if.dut" not in migrated
-    assert "gpio.gpio_" not in migrated
-    assert '`include "user_extensions.svh"' in migrated
-    assert "user_gpio_if.user_ip gpio" in migrated
-    assert "gpio.oe_o" in migrated
-    assert "gpio.do_o" in migrated
-    assert "gpio.di_i" in migrated
+    assert "migrate_user_" not in source
+    assert "prepare_legacy_mpw_workspace" not in source
+    assert '"-m",\n        "mpwgen"' in source
 
 
-def test_user_core_ribp_interface_is_migrated_in_generated_source(tmp_path: Path) -> None:
-    source = tmp_path / "user_core_design.sv"
-    source.write_text(
-        """module user_core_design (rib_if.master rib);
-  ahbl2rib u_bridge (ahbl, rib);
-  assign rib.addr = 32'h0;
-endmodule
-""",
-        encoding="utf-8",
-    )
+def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None:
+    extensions_path = tmp_path / "rtl/mini/integration/user_extensions.json"
+    extensions_path.parent.mkdir(parents=True)
+    extensions = {
+        "core_targets": [
+            {"slot": 0, "module": "mpw_core_zero", "reset": "sync"},
+        ],
+        "ip_targets": [
+            {"slot": 1, "module": "mpw_ip_one"},
+        ],
+    }
+    extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
+    output = tmp_path / "output"
+    output.mkdir()
+    manifest = {
+        "designs": [
+            {"kind": "core", "slot": 0, "top": "mpw_core_zero", "reset": "sync"},
+            {"kind": "ip", "slot": 1, "top": "mpw_ip_one"},
+        ]
+    }
+    (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
-    assert migrate_user_core_ribp_interfaces(tmp_path) == [source]
+    validate_extension_bindings(tmp_path, output)
 
-    migrated = source.read_text(encoding="utf-8")
-    assert "rib_if" not in migrated
-    assert "ribp_if.master ribp" in migrated
-    assert "ahbl2ribp" in migrated
-    assert "ahbl, ribp" in migrated
-    assert "ribp.addr" in migrated
-
-
-def test_generated_user_core_filelist_excludes_the_legacy_picorv32_entry(
-    tmp_path: Path,
-) -> None:
-    management_core_dir = tmp_path / "rtl/managed/picorv32/rtl"
-    management_core_dir.mkdir(parents=True)
-    picorv32 = management_core_dir / "picorv32.v"
-    picorv32_ver = management_core_dir / "picorv32_ver.v"
-    picorv32.touch()
-    picorv32_ver.touch()
-    filelist = tmp_path / "generated/mpw/core/core.fl"
-    filelist.parent.mkdir(parents=True)
-    filelist.write_text(
-        f"{picorv32.resolve()}\n{picorv32_ver.resolve()}\nuser_core_design.sv\n",
-        encoding="utf-8",
-    )
-
-    remove_legacy_picorv32_entry(filelist, management_core_dir)
-
-    assert filelist.read_text(encoding="utf-8") == "user_core_design.sv\n"
+    extensions["core_targets"][0]["module"] = "wrong_core"
+    extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
+    with pytest.raises(ValueError, match="does not match"):
+        validate_extension_bindings(tmp_path, output)
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:

@@ -10,6 +10,11 @@ import sys
 import tarfile
 from pathlib import Path
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.dependency_lock import archive, source  # noqa: E402
@@ -53,6 +58,18 @@ def extract_serv() -> Path:
     return extracted
 
 
+def manifest_design_dir(identifier: str) -> Path:
+    manifest = MPW_DIR / "mpw.toml"
+    document = tomllib.loads(manifest.read_text(encoding="utf-8"))
+    for design in document.get("design", []):
+        if design.get("id") == identifier:
+            source_dir = Path(design["source_dir"])
+            if source_dir.is_absolute() or ".." in source_dir.parts:
+                raise RuntimeError(f"unsafe source directory for MPW design {identifier}")
+            return MPW_DIR / source_dir
+    raise RuntimeError(f"MPW manifest does not define {identifier}")
+
+
 def prepare(update: bool) -> None:
     if not (MPW_DIR / ".git").is_dir():
         raise SystemExit("MPW generator is missing; run 'python3 setup.py' first")
@@ -62,11 +79,6 @@ def prepare(update: bool) -> None:
         hazard3["url"], ROOT / hazard3["destination"], hazard3["revision"],
         update=update,
     )
-    ibex = source("ibex")
-    ensure_git_repo(
-        ibex["url"], ROOT / ibex["destination"], ibex["revision"],
-        update=update,
-    )
     serv_archive = archive("serv")
     download_file(
         serv_archive["url"], ROOT / serv_archive["destination"],
@@ -74,10 +86,8 @@ def prepare(update: bool) -> None:
     )
     serv = extract_serv()
 
-    sync_tree(MPW_DIR / "Hazard3/hdl", MPW_DIR / "core/username3/Hazard3")
-    sync_tree(serv / "rtl", MPW_DIR / "core/username4/serv")
-    sync_tree(MPW_DIR / "ibex/rtl", MPW_DIR / "core/username7/ibex")
-    (MPW_DIR / ".build").mkdir(exist_ok=True)
+    sync_tree(MPW_DIR / "Hazard3/hdl", manifest_design_dir("hazard3") / "Hazard3")
+    sync_tree(serv / "rtl", manifest_design_dir("serv") / "serv")
     print("pinned MPW core sources are ready")
 
 

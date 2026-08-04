@@ -4,15 +4,15 @@
   "ip_selector_width": 8,
   "gpio_width": 32,
   "core_targets": [
-    {"slot": 0, "module": "user_core_design_username1", "instance": "u_user_core_design_username1", "bus": "ribp", "reset": "sync"},
-    {"slot": 1, "module": "user_core_design_username2", "instance": "u_user_core_design_username2", "bus": "ribp", "reset": "sync"},
-    {"slot": 2, "module": "user_core_design_username3", "instance": "u_user_core_design_username3", "bus": "ribp", "reset": "async"},
-    {"slot": 3, "module": "user_core_design_username4", "instance": "u_user_core_design_username4", "bus": "ribp", "reset": "async"},
-    {"slot": 4, "module": "user_core_design_username5", "instance": "u_user_core_design_username5", "bus": "ribp", "reset": "async"},
-    {"slot": 5, "module": "user_core_design_username6", "instance": "u_user_core_design_username6", "bus": "ribp", "reset": "async"}
+    {"slot": 0, "module": "mpw_core_kianv_rv32i_user_core_design", "instance": "u_mpw_core_kianv_rv32i", "bus": "ribp", "reset": "sync"},
+    {"slot": 1, "module": "mpw_core_kianv_rv32ima_user_core_design", "instance": "u_mpw_core_kianv_rv32ima", "bus": "ribp", "reset": "sync"},
+    {"slot": 2, "module": "mpw_core_hazard3_user_core_design", "instance": "u_mpw_core_hazard3", "bus": "ribp", "reset": "async"},
+    {"slot": 3, "module": "mpw_core_serv_user_core_design", "instance": "u_mpw_core_serv", "bus": "ribp", "reset": "async"},
+    {"slot": 4, "module": "mpw_core_femtorv32_user_core_design", "instance": "u_mpw_core_femtorv32", "bus": "ribp", "reset": "async"},
+    {"slot": 5, "module": "mpw_core_darkriscv_user_core_design", "instance": "u_mpw_core_darkriscv", "bus": "ribp", "reset": "async"}
   ],
   "ip_targets": [
-    {"slot": 1, "module": "user_ip_design_username1", "instance": "u_user_ip_design_username1"},
-    {"slot": 2, "module": "user_ip_design_username2", "instance": "u_user_ip_design_username2"}
+    {"slot": 1, "module": "mpw_ip_tiny_timer_user_ip_design", "instance": "u_mpw_ip_tiny_timer"},
+    {"slot": 2, "module": "mpw_ip_tiny_gpio_user_ip_design", "instance": "u_mpw_ip_tiny_gpio"}
   ]
 }

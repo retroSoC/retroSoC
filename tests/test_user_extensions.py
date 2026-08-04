@@ -57,7 +57,8 @@ def test_extensions_generate_isolated_scalar_bindings(tmp_path: Path) -> None:
     assert "5'd0: begin" in core
     assert "5'd5: begin" in core
     assert "core_reset_i[0]" in core
-    assert "user_core_design_username1 #(" in core
+    assert "mpw_core_kianv_rv32i_user_core_design #(0)" in core
+    assert "mpw_ip_tiny_timer_user_ip_design #(1)" in ip
     assert "User core 0 uses the RIBP contract" in core
     assert ip.count("user_gpio_if #(`USER_GPIO_NUM)") == 2
     assert "gpio.do_o = '0;" in ip

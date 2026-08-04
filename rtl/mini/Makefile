@@ -43,7 +43,7 @@ $(MPW_STAMP):
 
 $(MPW_VARIANT_STAMP): $(MPW_STAMP) $(ROOT_PATH)/scripts/generate_mpw.py
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/generate_mpw.py --root $(ROOT_PATH) \
-		--output $(MPW_OUTPUT_DIR) --simu $(SIMU) \
+		--output $(MPW_OUTPUT_DIR) \
 		--lock-file $(CACHE_ROOT)/locks/mpw.lock
 	@mkdir -p $(@D)
 	@touch $@

@@ -3,7 +3,7 @@
   "sources": {
     "mpw": {
       "url": "https://github.com/retroSoC/mini-ver-mpw.git",
-      "revision": "41955b19fe17d8adbb4b6634ae59709e118f70f9",
+      "revision": "08ad5eecb469e7b25c9a4165982925b965745ae7",
       "destination": "rtl/managed/mpw",
       "license": "NOASSERTION"
     },
