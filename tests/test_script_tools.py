@@ -229,6 +229,17 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
 
 
+def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
+    design = (ROOT / "rtl/mini/formal/sysctrl_formal.sv").read_text(encoding="utf-8")
+    properties = (ROOT / "rtl/mini/formal/sysctrl_formal_props.sv").read_text(encoding="utf-8")
+
+    assert "user_reset_mask" in design
+    assert "user_core_count" in design
+    assert "`USER_CORE_COUNT" not in properties
+    assert "rib_wdata[4:0] < user_core_count" in properties
+    assert "user_reset == user_reset_mask" in properties
+
+
 def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     design = tmp_path / "design.v"
     properties = tmp_path / "properties.v"

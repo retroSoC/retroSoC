@@ -12,7 +12,9 @@ module sysctrl_formal_design (
     output logic        rib_ready,
     output logic [ 7:0] ip_sel,
     output logic [ 4:0] core_sel,
-    output logic [ 5:0] user_reset,
+    output logic [31:0] user_reset,
+    output logic [31:0] user_reset_mask,
+    output logic [ 5:0] user_core_count,
     output logic        user_bus_enable,
     output logic        user_config_error,
     output logic [ 2:0] pll_cfg,
@@ -86,7 +88,9 @@ module sysctrl_formal_design (
   assign rib_ready                   = rib.ready;
   assign ip_sel                      = sysctrl.ip_sel_o;
   assign core_sel                    = u_dut.s_sysctrl_coresel_q;
-  assign user_reset                  = u_dut.s_user_reset_q;
+  assign user_reset                  = {{(32 - `USER_CORE_COUNT) {1'b0}}, u_dut.s_user_reset_q};
+  assign user_reset_mask             = {{(32 - `USER_CORE_COUNT) {1'b0}}, {`USER_CORE_COUNT{1'b1}}};
+  assign user_core_count             = `USER_CORE_COUNT;
   assign user_bus_enable             = u_dut.s_user_running_q;
   assign user_config_error           = u_dut.s_user_config_error_q;
   assign pll_cfg                     = u_dut.s_pll_cfg_q;

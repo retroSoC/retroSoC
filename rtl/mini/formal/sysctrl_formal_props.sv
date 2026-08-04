@@ -19,7 +19,9 @@ module sysctrl_formal;
   wire        rib_ready;
   wire [ 7:0] ip_sel;
   wire [ 4:0] core_sel;
-  wire [ 5:0] user_reset;
+  wire [31:0] user_reset;
+  wire [31:0] user_reset_mask;
+  wire [ 5:0] user_core_count;
   wire        user_bus_enable;
   wire        user_config_error;
   wire [ 2:0] pll_cfg;
@@ -51,6 +53,8 @@ module sysctrl_formal;
       .ip_sel           (ip_sel),
       .core_sel         (core_sel),
       .user_reset       (user_reset),
+      .user_reset_mask  (user_reset_mask),
+      .user_core_count  (user_core_count),
       .user_bus_enable  (user_bus_enable),
       .user_config_error(user_config_error),
       .pll_cfg          (pll_cfg),
@@ -85,13 +89,14 @@ module sysctrl_formal;
     if (rst_n_i && f_past_valid) begin
       if ($past(
               rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
-                rib_addr[7:0] == 8'h00 && rib_wdata[4:0] < 6 && user_reset == 6'h3f && !user_bus_enable
+                rib_addr[7:0] == 8'h00 && rib_wdata[4:0] < user_core_count &&
+                user_reset == user_reset_mask && !user_bus_enable
           )) begin
         assert (core_sel == $past(rib_wdata[4:0]));
       end
       if ($past(
               rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
-                rib_addr[7:0] == 8'h00 && rib_wdata[4:0] >= 6
+                rib_addr[7:0] == 8'h00 && rib_wdata[4:0] >= user_core_count
           )) begin
         assert (core_sel == $past(core_sel));
         assert (user_config_error);
@@ -99,9 +104,9 @@ module sysctrl_formal;
       if ($past(
               rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
                 rib_addr[7:0] == SYSCTRL_USER_CORE_RESET_OFFSET &&
-                rib_wdata[5:0] == 6'h3f
+                (rib_wdata & user_reset_mask) == user_reset_mask
           )) begin
-        assert (user_reset == 6'h3f);
+        assert (user_reset == user_reset_mask);
         assert (!user_bus_enable);
       end
       if ($past(
