@@ -86,14 +86,14 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign u_gpio_if.alt1_do_i[22] = u_psram_if.nss_o[0];" in gpio
     assert apb_interfaces.count("apb4_if u_") == 10
     assert "apb4_pure_if u_archinfo_apb_pure_if ();" in apb_interfaces
-    assert "assign tmr.paddr = ribp.addr;" in apb_routes
+    assert "assign tmr.paddr = s_addr_q;" in apb_routes
     assert "({32{s_psel_q[8]}} & tmr.prdata)" in apb_response
     assert "localparam int NSLV = 10;" in apb_declarations
-    assert fabric.count("ribp_if u_") == 2
-    assert fabric.count("rib_if u_") == 3
+    assert fabric.count("ribp_if u_") == 1
+    assert fabric.count("rib_if u_") == 4
     assert ".mgmt_ribp(u_mgmt_ribp_if)" in bus_fabric
     assert ".user_rib(u_user_rib_if)" in bus_fabric
-    assert ".apb_ribp(u_apb_ribp_if)" in bus_fabric
+    assert ".apb_rib(u_apb_rib_if)" in bus_fabric
     assert ".rib(u_rib_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_IRQ_RIBP_WIDTH 10" in irq_config
@@ -147,8 +147,8 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     interfaces = (tmp_path / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
     declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
     response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
-    formal_design = (ROOT / "rtl/mini/formal/ribp2apb_formal.sv").read_text(encoding="utf-8")
-    formal_properties = (ROOT / "rtl/mini/formal/ribp2apb_formal_props.sv").read_text(
+    formal_design = (ROOT / "rtl/mini/formal/rib2apb_formal.sv").read_text(encoding="utf-8")
+    formal_properties = (ROOT / "rtl/mini/formal/rib2apb_formal_props.sv").read_text(
         encoding="utf-8"
     )
 
@@ -158,7 +158,7 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     assert "apb4_pure_if user_ip ();" in formal_design
     assert ".user_ip (user_ip)" in formal_design
     assert "logic [ 9:0] psel_comb" in formal_design
-    assert "wire [9:0] psel_comb" in formal_properties
+    assert "wire [ 9:0] psel_comb" in formal_properties
 
 
 def test_topology_rejects_unknown_or_non_rib_regions(tmp_path: Path) -> None:

@@ -181,7 +181,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
 
     bus_filelist = tmp_path / "bus.fl"
     rib_adapter_filelist = tmp_path / "rib_adapter.fl"
-    rib2apb_filelist = tmp_path / "ribp2apb.fl"
+    rib2apb_filelist = tmp_path / "rib2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
@@ -190,7 +190,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
-        "ribp2apb", rib2apb_filelist, memory_map, topology, user_extensions
+        "rib2apb", rib2apb_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
         "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
@@ -204,7 +204,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
-    ribp2apb = parse_filelists([rib2apb_filelist], require_files=False)
+    rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
@@ -216,9 +216,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib2ribp.sv" in rib_adapter.files
     assert ROOT / "rtl/mini/formal/rib_adapter_formal.sv" in rib_adapter.files
-    assert ROOT / "rtl/ip/ribp/interconnect/ribp2apb.sv" in ribp2apb.files
-    assert ROOT / "rtl/mini/formal/ribp2apb_formal.sv" in ribp2apb.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in ribp2apb.files
+    assert ROOT / "rtl/mini/top/rib2apb.sv" in rib2apb.files
+    assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
     assert ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
@@ -270,7 +270,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "ribp2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -292,7 +292,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"bus={tmp_path / 'bus'}",
         "--proof",
-        f"ribp2apb={tmp_path / 'ribp2apb'}",
+        f"rib2apb={tmp_path / 'rib2apb'}",
         "--proof",
         f"sysctrl={tmp_path / 'sysctrl'}",
         "--proof",

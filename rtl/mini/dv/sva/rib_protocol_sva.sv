@@ -61,25 +61,34 @@ module rib2apb_sva #(
     input logic            rst_n_i,
     input logic [NSLV-1:0] psel_comb_i,
     input logic [NSLV-1:0] psel_q_i,
-    input logic            rib_ready_i,
+    input logic [     2:0] fsm_q_i,
+    input logic            rsp_valid_i,
+    input logic [     1:0] rsp_beat_i,
+    input logic            rsp_last_i,
     input logic            xfer_ready_i
 );
 
   // Address regions are disjoint and only the registered select drives a response.
   assert property (@(posedge clk_i) disable iff (!rst_n_i) $onehot0(psel_comb_i));
   assert property (@(posedge clk_i) disable iff (!rst_n_i) $onehot0(psel_q_i));
-  assert property (@(posedge clk_i) disable iff (!rst_n_i) rib_ready_i |-> xfer_ready_i);
+  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+      fsm_q_i == 3'd3 && !xfer_ready_i |=> fsm_q_i == 3'd3);
+  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+      rsp_valid_i |-> rsp_beat_i == 2'd0 && rsp_last_i);
 
 endmodule
 
-bind ribp2apb rib2apb_sva #(
+bind rib2apb rib2apb_sva #(
     .NSLV(NSLV)
 ) u_rib2apb_sva (
     .clk_i       (clk_i),
     .rst_n_i     (rst_n_i),
     .psel_comb_i (s_psel_comb),
     .psel_q_i    (s_psel_q),
-    .rib_ready_i (ribp.ready),
+    .fsm_q_i     (s_fsm_q),
+    .rsp_valid_i (rib.rsp_valid),
+    .rsp_beat_i  (rib.rsp_beat),
+    .rsp_last_i  (rib.rsp_last),
     .xfer_ready_i(s_xfer_ready)
 );
 

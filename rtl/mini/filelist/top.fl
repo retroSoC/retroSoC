@@ -2,6 +2,7 @@
 /top/gpio_pad_bridge.sv
 /top/ribp2rib.sv
 /top/rib2ribp.sv
+/top/rib2apb.sv
 /top/rib_error_slave.sv
 /top/rib2ram.sv
 /top/core_wrapper.sv

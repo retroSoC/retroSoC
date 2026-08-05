@@ -6,7 +6,7 @@ FORMAL_SOLVER_DIR         := $(FORMAL_DIR)/bin
 FORMAL_SOLVER_WRAPPER     := $(FORMAL_SOLVER_DIR)/bitwuzla
 FORMAL_DEPTH              ?= 20
 FORMAL_TIMEOUT            ?= 60
-FORMAL_TARGETS            := bus rib_adapter ribp2apb sysctrl pll_rcu gpio_user
+FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio_user
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
@@ -14,8 +14,8 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/bus_formal_props.sv \
                              $(RTL_PATH)/formal/rib_adapter_formal.sv \
                              $(RTL_PATH)/formal/rib_adapter_formal_props.sv \
-                             $(RTL_PATH)/formal/ribp2apb_formal.sv \
-                             $(RTL_PATH)/formal/ribp2apb_formal_props.sv \
+                             $(RTL_PATH)/formal/rib2apb_formal.sv \
+                             $(RTL_PATH)/formal/rib2apb_formal_props.sv \
                              $(RTL_PATH)/formal/sysctrl_formal.sv \
                              $(RTL_PATH)/formal/sysctrl_formal_props.sv \
                              $(RTL_PATH)/formal/pll_rcu_formal.sv \
@@ -27,8 +27,8 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/top/rib_if.sv \
                              $(RTL_PATH)/top/rib2ram.sv \
                              $(RTL_PATH)/top/rib2ribp.sv \
+                             $(RTL_PATH)/top/rib2apb.sv \
                              $(RTL_PATH)/top/ribp2rib.sv \
-                             $(ROOT_PATH)/rtl/ip/ribp/interconnect/ribp2apb.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/interconnect/ribp_regslice.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/gpio.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/pll_ctrl_if.sv \
@@ -117,7 +117,7 @@ formal-bus: $(FORMAL_DIR)/bus/.stamp | manifest
 
 formal-rib-adapter: $(FORMAL_DIR)/rib_adapter/.stamp | manifest
 
-formal-ribp2apb: $(FORMAL_DIR)/ribp2apb/.stamp | manifest
+formal-rib2apb: $(FORMAL_DIR)/rib2apb/.stamp | manifest
 
 formal-sysctrl: $(FORMAL_DIR)/sysctrl/.stamp | manifest
 
@@ -131,4 +131,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib-adapter formal-ribp2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-doctor formal-clean

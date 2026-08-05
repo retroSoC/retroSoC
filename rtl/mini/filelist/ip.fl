@@ -40,7 +40,6 @@
 /ip/ribp/peripheral/timer.sv
 /ip/ribp/serial/uart.sv
 /ip/ribp/peripheral/gpio.sv
-/ip/ribp/interconnect/ribp2apb.sv
 /top/ahbl2ribp.sv
 /ip/ribp/interconnect/axi4l2ribp.sv
 /ip/ribp/util/async_fifo.sv

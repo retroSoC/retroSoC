@@ -18,13 +18,13 @@ module bus (
 `ifdef HAVE_SRAM_IF
     ram_if.master            ram,
 `endif
-    ribp_if.slave         mgmt_ribp,
-    rib_if.slave   user_rib,
-    rib_if.slave   dma_rib,
+    ribp_if.slave          mgmt_ribp,
+    rib_if.slave           user_rib,
+    rib_if.slave           dma_rib,
     input logic              user_bus_enable_i,
     output logic             user_bus_idle_o,
-    rib_if.master  rib,
-    ribp_if.master            apb_ribp,
+    rib_if.master          rib,
+    rib_if.master          apb_rib,
     input logic              perf_enable_i,
     input logic              perf_clear_i,
     output logic             fault_valid_o,
@@ -56,7 +56,6 @@ module bus (
 
   rib_if u_mgmt_rib_if ();
   rib_if u_mstr_rib_if ();
-  rib_if u_apb_rib_if ();
   rib_if u_ram_rib_if ();
   rib_if u_fault_rib_if ();
 
@@ -95,13 +94,6 @@ module bus (
       .rst_n_i(rst_n_i),
       .ribp   (mgmt_ribp),
       .rib    (u_mgmt_rib_if)
-  );
-
-  rib2ribp u_apb_rib2ribp (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .rib    (u_apb_rib_if),
-      .ribp   (apb_ribp)
   );
 
   rib_error_slave u_fault_slave (
@@ -368,10 +360,10 @@ module bus (
   assign rib.cmd_addr             = u_mstr_rib_if.cmd_addr;
   assign rib.cmd_write            = u_mstr_rib_if.cmd_write;
   assign rib.cmd_len              = u_mstr_rib_if.cmd_len;
-  assign u_apb_rib_if.cmd_valid   = s_apb_sel;
-  assign u_apb_rib_if.cmd_addr    = u_mstr_rib_if.cmd_addr;
-  assign u_apb_rib_if.cmd_write   = u_mstr_rib_if.cmd_write;
-  assign u_apb_rib_if.cmd_len     = u_mstr_rib_if.cmd_len;
+  assign apb_rib.cmd_valid        = s_apb_sel;
+  assign apb_rib.cmd_addr         = u_mstr_rib_if.cmd_addr;
+  assign apb_rib.cmd_write        = u_mstr_rib_if.cmd_write;
+  assign apb_rib.cmd_len          = u_mstr_rib_if.cmd_len;
   assign u_ram_rib_if.cmd_valid   = s_ram_sel;
   assign u_ram_rib_if.cmd_addr    = u_mstr_rib_if.cmd_addr;
   assign u_ram_rib_if.cmd_write   = u_mstr_rib_if.cmd_write;
@@ -386,7 +378,7 @@ module bus (
     if (s_ribp_sel) begin
       u_mstr_rib_if.cmd_ready = rib.cmd_ready;
     end else if (s_apb_sel) begin
-      u_mstr_rib_if.cmd_ready = u_apb_rib_if.cmd_ready;
+      u_mstr_rib_if.cmd_ready = apb_rib.cmd_ready;
     end else if (s_ram_sel) begin
       u_mstr_rib_if.cmd_ready = u_ram_rib_if.cmd_ready;
     end else if (s_fault_sel) begin
@@ -424,15 +416,13 @@ module bus (
   assign rib.rsp_ready = s_mstr_lock_q && s_cmd_accepted_q && (s_target_q == TARGET_RIBP) ?
                          u_mstr_rib_if.rsp_ready : 1'b0;
 
-  assign u_apb_rib_if.w_valid = s_mstr_lock_q && s_cmd_accepted_q &&
-                                  (s_target_q == TARGET_APB) ?
-                                  u_mstr_rib_if.w_valid : 1'b0;
-  assign u_apb_rib_if.wdata = u_mstr_rib_if.wdata;
-  assign u_apb_rib_if.wstrb = u_mstr_rib_if.wstrb;
-  assign u_apb_rib_if.wlast = u_mstr_rib_if.wlast;
-  assign u_apb_rib_if.rsp_ready = s_mstr_lock_q && s_cmd_accepted_q &&
-                                    (s_target_q == TARGET_APB) ?
-                                    u_mstr_rib_if.rsp_ready : 1'b0;
+  assign apb_rib.w_valid = s_mstr_lock_q && s_cmd_accepted_q &&
+                            (s_target_q == TARGET_APB) ? u_mstr_rib_if.w_valid : 1'b0;
+  assign apb_rib.wdata = u_mstr_rib_if.wdata;
+  assign apb_rib.wstrb = u_mstr_rib_if.wstrb;
+  assign apb_rib.wlast = u_mstr_rib_if.wlast;
+  assign apb_rib.rsp_ready = s_mstr_lock_q && s_cmd_accepted_q &&
+                              (s_target_q == TARGET_APB) ? u_mstr_rib_if.rsp_ready : 1'b0;
 
   assign u_ram_rib_if.w_valid = s_mstr_lock_q && s_cmd_accepted_q &&
                                   (s_target_q == TARGET_RAM) ?
@@ -473,13 +463,13 @@ module bus (
         u_mstr_rib_if.rsp_last  = rib.rsp_last;
       end
       TARGET_APB: begin
-        u_mstr_rib_if.w_ready   = s_cmd_accepted_q && u_apb_rib_if.w_ready;
-        u_mstr_rib_if.rsp_valid = s_cmd_accepted_q && u_apb_rib_if.rsp_valid;
-        u_mstr_rib_if.rdata     = u_apb_rib_if.rdata;
-        u_mstr_rib_if.resp_err  = u_apb_rib_if.resp_err;
-        u_mstr_rib_if.resp_code = u_apb_rib_if.resp_code;
-        u_mstr_rib_if.rsp_beat  = u_apb_rib_if.rsp_beat;
-        u_mstr_rib_if.rsp_last  = u_apb_rib_if.rsp_last;
+        u_mstr_rib_if.w_ready   = s_cmd_accepted_q && apb_rib.w_ready;
+        u_mstr_rib_if.rsp_valid = s_cmd_accepted_q && apb_rib.rsp_valid;
+        u_mstr_rib_if.rdata     = apb_rib.rdata;
+        u_mstr_rib_if.resp_err  = apb_rib.resp_err;
+        u_mstr_rib_if.resp_code = apb_rib.resp_code;
+        u_mstr_rib_if.rsp_beat  = apb_rib.rsp_beat;
+        u_mstr_rib_if.rsp_last  = apb_rib.rsp_last;
       end
       TARGET_RAM: begin
         u_mstr_rib_if.w_ready   = s_cmd_accepted_q && u_ram_rib_if.w_ready;

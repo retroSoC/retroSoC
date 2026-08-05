@@ -104,7 +104,7 @@ digraph mini_soc_block_diagram {
       ];
       apb_adapter [
         fillcolor="#E5E7EB",
-        label="RIB2RIBP\nAPB bridge"
+        label="RIB2APB\ndirect APB bridge"
       ];
       sysctrl [
         fillcolor="#F9E1E7",
@@ -124,7 +124,7 @@ digraph mini_soc_block_diagram {
       ];
       irq [
         fillcolor="#FCE7F3",
-        label="Interrupt aggregation\nRIBP and APB sources to management core"
+        label="Interrupt aggregation\nRIBP and APB target IRQs to management core"
       ];
     }
   }
@@ -149,7 +149,7 @@ digraph mini_soc_block_diagram {
   fabric -> apb_adapter [label="RIB"];
   ribp_adapter -> sysctrl [label="RIBP"];
   ribp_adapter -> ribp_targets [label="RIBP"];
-  apb_adapter -> apb_targets [label="RIBP / APB"];
+  apb_adapter -> apb_targets [label="APB"];
 
   ribp_targets -> gpio_bridge [label="GPIO alternate functions"];
   apb_targets -> gpio_bridge [label="user_gpio"];
