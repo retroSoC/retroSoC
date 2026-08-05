@@ -1,0 +1,158 @@
+// Mini SoC architecture overview.
+// Render with: dot -Tsvg docs/mini-soc-block-diagram.dot -o docs/mini-soc-block-diagram.svg
+// Sources of truth: rtl/mini/top/{retrosoc_asic,retrosoc,bus}.sv and
+// rtl/mini/integration/{soc_topology,user_extensions,clock_reset_domains}.json.
+digraph mini_soc_block_diagram {
+  graph [
+    bgcolor="transparent",
+    compound=true,
+    fontname="Arial",
+    fontsize=18,
+    label="retroSoC Mini SoC Architecture",
+    labelloc="t",
+    labeljust="l",
+    newrank=true,
+    nodesep=0.38,
+    rankdir=TB,
+    ranksep=0.62,
+    splines=polyline
+  ];
+
+  node [
+    color="#4B5563",
+    fontcolor="#111827",
+    fontname="Arial",
+    fontsize=10,
+    margin="0.12,0.08",
+    penwidth=1.1,
+    shape=box,
+    style="rounded,filled"
+  ];
+  edge [
+    arrowsize=0.7,
+    color="#4B5563",
+    fontcolor="#374151",
+    fontname="Arial",
+    fontsize=8,
+    penwidth=1.2
+  ];
+
+  ext_clock [
+    fillcolor="#F3F4F6",
+    label="External clocks and reset\next_clk, aud_clk, reset"
+  ];
+  ext_io [
+    fillcolor="#F3F4F6",
+    label="External I/O and memory\nGPIO, UART0, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP and serial I/O"
+  ];
+
+  subgraph cluster_asic {
+    color="#111827";
+    fontcolor="#111827";
+    fontname="Arial";
+    fontsize=14;
+    label="retrosoc_asic";
+    margin=18;
+    style="rounded";
+
+    rcu [
+      fillcolor="#EDE9FE",
+      label="RCU\nclock buffering and reset synchronization\nPLL request/acknowledgment CDC"
+    ];
+
+    subgraph cluster_soc {
+      color="#94A3B8";
+      fontcolor="#334155";
+      fontname="Arial";
+      fontsize=12;
+      label="retrosoc";
+      margin=16;
+      style="rounded,dashed";
+
+      mgmt_core [
+        fillcolor="#DDF2E3",
+        label="Management core\nHazard3 by default\nPicoRV32 build option"
+      ];
+      mgmt_adapter [
+        fillcolor="#E5E7EB",
+        label="RIBP2RIB"
+      ];
+      user_core [
+        fillcolor="#DDF2E3",
+        label="Selected user core\nC0-C4, one active"
+      ];
+      dma [
+        fillcolor="#DDF2E3",
+        label="DMA\nRIB master and RIBP target"
+      ];
+      fabric [
+        fillcolor="#DCECF8",
+        label="RIB fabric\n3-master round-robin arbitration\nINCR1 / INCR4, access policy, fault reporting",
+        shape=hexagon
+      ];
+      fault [
+        fillcolor="#FCE7F3",
+        label="Error slave\naccess and protocol faults"
+      ];
+      sram [
+        fillcolor="#FFF3C9",
+        label="On-chip SRAM\noptional RIB2RAM path"
+      ];
+      ribp_adapter [
+        fillcolor="#E5E7EB",
+        label="RIB2RIBP"
+      ];
+      apb_adapter [
+        fillcolor="#E5E7EB",
+        label="RIB2RIBP\nAPB bridge"
+      ];
+      sysctrl [
+        fillcolor="#F9E1E7",
+        label="SYSCTRL and CLINT\nPLL, user-core select/reset/bus enable\nfault and performance control"
+      ];
+      ribp_targets [
+        fillcolor="#F9E1E7",
+        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD, DVP\nGPIO, UART0, timers, I2C, I2S and 1-Wire"
+      ];
+      apb_targets [
+        fillcolor="#E6F4EA",
+        label="APB target wrapper\nArchinfo, RNG, UART1, PWM, PS/2, RTC\nwatchdog, CRC, advanced timer and user IP"
+      ];
+      gpio_bridge [
+        fillcolor="#E5E7EB",
+        label="GPIO pad bridge\nsoftware, alternate and user modes"
+      ];
+      irq [
+        fillcolor="#FCE7F3",
+        label="Interrupt aggregation\nRIBP and APB sources to management core"
+      ];
+    }
+  }
+
+  { rank=same; mgmt_core; user_core; dma; }
+  { rank=same; fault; fabric; sram; }
+  { rank=same; ribp_adapter; apb_adapter; }
+  { rank=same; sysctrl; ribp_targets; apb_targets; }
+  { rank=same; gpio_bridge; irq; }
+
+  ext_clock -> rcu [label="clock / reset"];
+  rcu -> fabric [label="system clock / reset", style=dashed];
+
+  mgmt_core -> mgmt_adapter [label="RIBP"];
+  mgmt_adapter -> fabric [label="RIB"];
+  user_core -> fabric [label="RIB"];
+  dma -> fabric [label="RIB"];
+
+  fabric -> fault [label="invalid / denied", dir=both];
+  fabric -> sram [label="RIB"];
+  fabric -> ribp_adapter [label="RIB"];
+  fabric -> apb_adapter [label="RIB"];
+  ribp_adapter -> sysctrl [label="RIBP"];
+  ribp_adapter -> ribp_targets [label="RIBP"];
+  apb_adapter -> apb_targets [label="RIBP / APB"];
+
+  ribp_targets -> gpio_bridge [label="GPIO alternate functions"];
+  apb_targets -> gpio_bridge [label="user_gpio"];
+  ribp_targets -> ext_io [dir=both, label="device interfaces"];
+  gpio_bridge -> ext_io [dir=both, label="pad control"];
+}

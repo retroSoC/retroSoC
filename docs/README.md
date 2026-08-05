@@ -13,6 +13,9 @@ the root README and subsystem guides.
   contract, compatibility boundaries, target status, and verification.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
+- [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC
+  architecture overview. Its Graphviz source is
+  [mini-soc-block-diagram.dot](mini-soc-block-diagram.dot).
 
 Keep policy descriptions here concise and link to executable configuration as
 the source of truth. Changes that alter process requirements must also update

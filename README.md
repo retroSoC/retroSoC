@@ -12,6 +12,8 @@ SystemVerilog RTL, a freestanding embedded C SDK and applications, simulation, s
 static timing analysis, reproducible dependencies, and release packaging. It is licensed
 under the [Mulan Permissive Software License, Version 2](LICENSE).
 
+![Mini SoC block diagram](docs/mini-soc-block-diagram.svg)
+
 ## Highlights
 
 - A fixed architecture with a Hazard3 management core by default (PicoRV32 is
