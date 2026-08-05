@@ -62,7 +62,7 @@ module ip_apb_wrapper (
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "soc_apb_irq_bindings.svh"
 
-  rib2apb u_rib2apb (
+rib2apb u_rib2apb (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .rib    (rib),
