@@ -26,7 +26,12 @@ module retrosoc (
     gpio_if.soc_pad                        gpio,
     uart_if.dut                            uart0,
     xpi_if.dut                             xpi,
-    sdram_if.dut                           sdram
+    sdram_if.dut                           sdram,
+    input  logic                           jtag_tck_i,
+    input  logic                           jtag_tms_i,
+    input  logic                           jtag_tdi_i,
+    input  logic                           jtag_trst_n_i,
+    output logic                           jtag_tdo_o
     // verilog_format: on
 );
 
@@ -100,10 +105,15 @@ module retrosoc (
   `include "soc_gpio_alt_bindings.svh"
 
 core_wrapper u_core_wrapper (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
       `include "soc_mgmt_core_wrapper_fabric.svh"
-      .irq_i  (s_irq)
+      .irq_i        (s_irq),
+      .jtag_tck_i   (jtag_tck_i),
+      .jtag_tms_i   (jtag_tms_i),
+      .jtag_tdi_i   (jtag_tdi_i),
+      .jtag_trst_n_i(jtag_trst_n_i),
+      .jtag_tdo_o   (jtag_tdo_o)
   );
 
   assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? s_irq : '0;

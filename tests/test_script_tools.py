@@ -129,6 +129,21 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     }.issubset({path.name for path in generated})
 
 
+def test_filelist_round_trips_verilog_define_values(tmp_path: Path) -> None:
+    generate_all(tmp_path, ["+define+SOC_JTAG_IDCODE=32'hDEADBEEF"])
+
+    assert (tmp_path / "def.fl").read_text(encoding="utf-8") == (
+        "+define+SOC_JTAG_IDCODE=32'hDEADBEEF\n"
+    )
+    parsed = parse_filelists([tmp_path / "def.fl"])
+    output = tmp_path / "round-trip.fl"
+    write_filelist(output, parsed)
+    assert output.read_text(encoding="utf-8") == (
+        "+define+SOC_JTAG_IDCODE=32'hDEADBEEF\n"
+    )
+    assert parse_filelists([output]) == parsed
+
+
 def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> None:
     module_path = ROOT / "syn/tools/export_soc_sources.py"
     spec = importlib.util.spec_from_file_location("retrosoc_source_export", module_path)
@@ -153,6 +168,8 @@ def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> 
             have_sram_if=False,
             have_sram_macro=False,
             have_sva=False,
+            have_debug="YES" if core == "HAZARD3" else "NO",
+            jtag_idcode="DEADBEEF",
             dynamic_core_filelist=dynamic_core,
             dynamic_ip_filelist=dynamic_ip,
         )
@@ -167,6 +184,8 @@ def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> 
         )
 
         assert f"+define+CORE_{core}" in filelist.defines
+        assert "+define+SOC_JTAG_IDCODE=-559038737" in filelist.defines
+        assert ("+define+HAVE_DEBUG" in filelist.defines) == (core == "HAZARD3")
         assert any(path.name == source_name for path in filelist.files)
 
 
@@ -605,6 +624,7 @@ def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None
     stamp = stamp_data(ROOT, cache, DEFAULT_TOOLS, lock, lock_path)
 
     assert stamp["tools"]["verilator"] == lock["toolchains"]["ubuntu-22.04"]["verilator"]["version"]
+    assert stamp["tools"]["openocd"] == lock["toolchains"]["ubuntu-22.04"]["openocd"]["version"]
     assert set(stamp["python_requirements"]) == {"requirements/build.txt", "requirements/ci.txt"}
     activation = render_activation(cache, [cache / "venv/bin", cache / "toolchains/verilator/bin"])
     assert "export RETROSOC_DEVELOPMENT_CACHE=" in activation
@@ -671,6 +691,35 @@ def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
     assert "`elsif CORE_HAZARD3" in wrapper
     assert "ahbl2ribp u_ahbl2ribp" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
+
+
+def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
+    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
+    debug_wrapper = (ROOT / "rtl/mini/top/mgmt_debug_wrapper.sv").read_text(encoding="utf-8")
+    verilator_makefile = (ROOT / "rtl/mini/mk/verilator.mk").read_text(encoding="utf-8")
+    driver = (ROOT / "scripts/run_debug_session.py").read_text(encoding="utf-8")
+    openocd = (ROOT / "rtl/mini/dv/verilator/openocd/retrosoc_hazard3.cfg").read_text(
+        encoding="utf-8"
+    )
+
+    assert "HAVE_DEBUG               ?= YES" in makefile
+    assert "JTAG_IDCODE              ?= DEADBEEF" in makefile
+    assert "if [ $$value -gt 2147483647 ]" in makefile
+    assert "HAVE_DEBUG=YES requires CORE=HAZARD3" in makefile
+    assert ".MULDIV_UNROLL      (2)" in wrapper
+    assert ".BRANCH_PREDICTOR   (1)" in wrapper
+    assert ".BREAKPOINT_TRIGGERS(2)" in wrapper
+    assert ".HAVE_SBA(0)" in debug_wrapper
+    assert "mgmt_debug_reset u_mgmt_debug_reset" in debug_wrapper
+    assert "--timeout $(SOC_SIM_TIME)" in verilator_makefile
+    assert "DEBUG_GDB_PASS" in driver
+    assert "break *0x30000008" in driver
+    assert "adapter driver remote_bitbang" in openocd
+    assert "-expected-id 0xdeadbeef" in openocd
+    assert lock["toolchains"]["ubuntu-22.04"]["openocd"]["version"] == "0.12.0-1"
+    assert any(profile == "configs/ci/ihp130-debug.mk" for profile, _ in PR_COMMANDS)
 
 
 def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:

@@ -32,6 +32,7 @@ DEFAULT_TOOLS = (
     "sby",
     "bitwuzla",
     "opensta",
+    "openocd",
     "riscv_gnu",
 )
 TOOL_EXECUTABLES = {
@@ -43,7 +44,8 @@ TOOL_EXECUTABLES = {
     "sby": ("sby",),
     "bitwuzla": ("bitwuzla",),
     "opensta": ("sta",),
-    "riscv_gnu": ("riscv32-unknown-elf-gcc",),
+    "openocd": ("openocd",),
+    "riscv_gnu": ("riscv32-unknown-elf-gcc", "riscv32-unknown-elf-gdb"),
 }
 PYTHON_IMPORTS = ("pytest", "ruff", "yamllint")
 PYTHON_EXECUTABLES = ("mbake",)

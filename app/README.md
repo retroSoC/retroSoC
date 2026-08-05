@@ -29,6 +29,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | --- | --- |
 | `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
 | `bringup` | Minimal firmware used for startup and basic SoC regression. |
+| `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 
 The application manifest is loaded from `app/apps/<name>/app.mk`. It appends
@@ -46,6 +47,9 @@ make CONFIG=configs/ci/ihp130-shell.mk SIMU=VERILATOR firmware sim
 
 # IHP130/Hazard3 Verilator baseline; result is written below build/*/meta/
 make CONFIG=configs/benchmark/ihp130-hazard3.mk SIMU=VERILATOR benchmark-report
+
+# Hazard3 remote-bitbang, OpenOCD, and GDB acceptance flow
+make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim
 ```
 
 For a firmware-only build, omit `SIMU=VERILATOR sim`.

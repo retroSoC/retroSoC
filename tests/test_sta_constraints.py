@@ -47,8 +47,11 @@ def test_core_sdc_covers_current_clock_domains(tmp_path: Path) -> None:
     assert "create_clock -name clk_external -period 13.888888889" in sdc
     assert "create_generated_clock -name clk_system" in sdc
     assert "create_clock -name clk_audio -period 54.253472222" in sdc
+    assert "create_clock -name clk_jtag -period 100" in sdc
     assert "create_clock -name clk_dvp -period 41.666666667" in sdc
     assert "get_pins -quiet" in sdc
+    assert "get_ports -quiet" in sdc
+    assert "set clk_jtag_port [require_ports \"clock jtag\" {jtag_tck_i_pad}]" in sdc
     assert "u_retrosoc.u_ip_ribp_wrapper.u_rib_dvp.u_dvp_pclk_clk_buf/clk_o" in sdc
     assert "-group [get_clocks {clk_external clk_system}]" in sdc
     assert "set_clock_transition 0.1 [get_clocks {clk_dvp}]" in sdc

@@ -45,6 +45,10 @@ digraph mini_soc_block_diagram {
     fillcolor="#F3F4F6",
     label="External I/O and memory\nGPIO, UART0, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP and serial I/O"
   ];
+  ext_jtag [
+    fillcolor="#F3F4F6",
+    label="Management JTAG\nTCK, TMS, TDI, TRST_n, TDO"
+  ];
 
   subgraph cluster_asic {
     color="#111827";
@@ -71,7 +75,15 @@ digraph mini_soc_block_diagram {
 
       mgmt_core [
         fillcolor="#DDF2E3",
-        label="Management core\nHazard3 by default\nPicoRV32 build option"
+        label="Management core\nHazard3 by default, branch predictor\nPicoRV32 build option without debug"
+      ];
+      jtag_dtm [
+        fillcolor="#E5E7EB",
+        label="Hazard3 JTAG DTM\n10 MHz asynchronous TCK domain"
+      ];
+      debug_module [
+        fillcolor="#FCE7F3",
+        label="Hazard3 Debug Module\nabstract commands, no SBA\nmanagement-hart-only reset"
       ];
       mgmt_adapter [
         fillcolor="#E5E7EB",
@@ -129,14 +141,20 @@ digraph mini_soc_block_diagram {
     }
   }
 
-  { rank=same; mgmt_core; user_core; dma; }
+  { rank=same; jtag_dtm; debug_module; mgmt_core; }
+  { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
   { rank=same; sysctrl; ribp_targets; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
+  ext_jtag -> jtag_dtm [label="JTAG pads"];
   rcu -> fabric [label="system clock / reset", style=dashed];
+
+  jtag_dtm -> debug_module [label="DMI, asynchronous CDC"];
+  debug_module -> mgmt_core [label="halt, resume, abstract commands"];
+  debug_module -> mgmt_adapter [label="reset after bridge idle", style=dashed];
 
   mgmt_core -> mgmt_adapter [label="RIBP"];
   mgmt_adapter -> fabric [label="RIB"];

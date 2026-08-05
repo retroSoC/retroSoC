@@ -5,9 +5,11 @@
 The Docker image, Nix application, and manual bootstrap expose one Linux x86_64
 open-source development environment. It includes the locked Ubuntu 22.04 tool
 bundles for Verilator, Verible, sv2v, Icarus Verilog, Yosys, SymbiYosys,
-Bitwuzla, OpenSTA, and the RISC-V GNU toolchain. It also installs the locked
-Python build and quality dependencies, clang-format-14, GNU Make, C/C++ build
-tools, and runtime libraries required by those binaries.
+Bitwuzla, OpenSTA, OpenOCD, and the RISC-V GNU toolchain. The GNU bundle
+includes `riscv32-unknown-elf-gdb`, which is used with OpenOCD by the Hazard3
+remote-bitbang debug acceptance flow. It also installs the locked Python build
+and quality dependencies, clang-format-14, GNU Make, C/C++ build tools, and
+runtime libraries required by those binaries.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are

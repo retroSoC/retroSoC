@@ -95,12 +95,17 @@ endif
 APP_SRCS     :=
 APP_INC_DIRS :=
 APP_CFLAGS   :=
+APP_CRT_SRCS :=
 APP_MK       := $(ROOT_PATH)/app/apps/$(APP)/app.mk
 
 ifeq ($(wildcard $(APP_MK)),)
 $(error Application profile not found: $(APP_MK))
 endif
 include $(APP_MK)
+
+ifneq ($(strip $(APP_CRT_SRCS)),)
+CRT_SRCS := $(APP_CRT_SRCS)
+endif
 
 CFLAGS       += $(APP_CFLAGS)
 APP_INC_DIRS += $(MPW_OUTPUT_DIR)

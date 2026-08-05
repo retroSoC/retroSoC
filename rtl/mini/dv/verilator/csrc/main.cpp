@@ -26,6 +26,7 @@ void parseArgs(int argc, char *argv[]) {
         ("b, log-begin", "display log from [NUM] th cycle", cxxopts::value<unsigned long>()->default_value("0"))
         ("e, log-end", "stop display log at [NUM] th cycle", cxxopts::value<unsigned long>()->default_value("0"))
         ("t, sim-time", "stop simulation after [NUM] seconds", cxxopts::value<unsigned long>()->default_value("0"))
+        ("j, jtag-port", "listen for an OpenOCD remote-bitbang client on this TCP port", cxxopts::value<unsigned long>()->default_value("0"))
         ("i, image", "run with this image file", cxxopts::value<std::string>());
     // clang-format on
     Verilated::commandArgs(argc, argv);

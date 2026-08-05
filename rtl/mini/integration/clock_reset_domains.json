@@ -48,6 +48,21 @@
       }
     },
     {
+      "name": "jtag",
+      "clock": "s_jtag_tck_buf",
+      "reset": "s_jtag_trst_n_sync",
+      "reset_source": "jtag_trst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/mini/top/mgmt_debug_wrapper.sv",
+      "instance": "u_jtag_rst_sync",
+      "sta": {
+        "source_port": "jtag_tck_i_pad",
+        "object_type": "port",
+        "period_ns": 100.0,
+        "async_group": "jtag"
+      }
+    },
+    {
       "name": "dvp",
       "clock": "s_dvp_pclk_buf",
       "reset": "s_dvp_pclk_rst_n_sync",
@@ -95,6 +110,14 @@
       "primitive": "async_fifo",
       "path": "rtl/ip/ribp/multimedia/dvp.sv",
       "instance": "u_rx_async_fifo"
+    },
+    {
+      "name": "jtag_dmi",
+      "source": "jtag",
+      "destination": "system",
+      "primitive": "hazard3_apb_async_bridge",
+      "path": "rtl/managed/hazard3/hdl/debug/dtm/hazard3_jtag_dtm_core.v",
+      "instance": "inst_hazard3_apb_async_bridge"
     }
   ]
 }

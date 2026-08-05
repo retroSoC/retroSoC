@@ -28,6 +28,12 @@ module retrosoc_tb;
 `ifdef HAVE_PLL
   reg r_xtal_clk;
 `endif
+`ifdef HAVE_DEBUG
+  wire s_jtag_tck;
+  wire s_jtag_tms;
+  wire s_jtag_tdi;
+  wire s_jtag_trst_n;
+`endif
   wire        s_uart0_tx;
   // for handle x-prop issue
   wire        s_uart0_rx = 1'b1;
@@ -83,6 +89,12 @@ module retrosoc_tb;
   assign s_ext_clk = r_ext_clk;
   assign s_aud_clk = r_aud_clk;
   assign s_rst_n   = r_rst_n;
+`ifdef HAVE_DEBUG
+  assign s_jtag_tck    = 1'b0;
+  assign s_jtag_tms    = 1'b0;
+  assign s_jtag_tdi    = 1'b0;
+  assign s_jtag_trst_n = 1'b0;
+`endif
 
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_tb_bindings.svh"

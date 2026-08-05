@@ -19,13 +19,15 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 - A fixed architecture with a Hazard3 management core by default (PicoRV32 is
   an explicit build option) and software-selected
   user-core and user-IP extension slots.
+- A standard five-pad JTAG Debug Transport Module for the Hazard3 management
+  core, with a reproducible Verilator, OpenOCD, and GDB acceptance flow.
 - Configurable GF180, SKY130, IHP130, and ICS55 implementation targets with
   open-source CI coverage.
 - A memory-mapped peripheral subsystem with GPIO, UART, timers, PWM, I2C, I2S, PS2,
   1-Wire, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
   support. Available interfaces depend on the selected SoC configuration.
-- A standalone RISC-V runtime, HAL, board support, middleware, and `bringup` and `shell`
-  applications.
+- A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
+  `debug`, and `shell` applications.
 - Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
   Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
 - Checksum-verified dependency and toolchain locks, structured flow results, warning
@@ -59,6 +61,7 @@ core and defaults to `HAZARD3`.
 | [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist simulation, and OpenSTA core timing coverage. |
 | [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
+| [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
 ## Prerequisites
@@ -178,6 +181,7 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
 | --- | --- |
 | Icarus behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim` |
 | Verilator behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR sim` |
+| Hazard3 JTAG debug acceptance | `make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim` |
 | Assembly self-test with Icarus | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm` |
 | Yosys synthesis | `make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth` |
 | Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG netsim` |

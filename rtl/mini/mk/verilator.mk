@@ -21,19 +21,27 @@ SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
 VERILATOR          ?= verilator
 VERILATOR_JOBS     ?= $(JOBS)
 VERILATOR_CXXFLAGS += -std=c++17 -Wall $(SOC_CSRC_INCLPATH) -DDUMP_WAVE_FST
-VERILATOR_FLAGS    += --cc --exe --no-timing --top-module $(SOC_VSRC_TOP)
-VERILATOR_FLAGS    += --x-assign unique -O3 -CFLAGS "$(VERILATOR_CXXFLAGS)"
-VERILATOR_FLAGS    += --trace-fst --assert --stats-vars --output-split 30000 --output-split-cfuncs 30000
-VERILATOR_FLAGS    += --timescale "1ns/1ns" -Wno-fatal
-VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
-VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
-VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
+ifeq ($(HAVE_DEBUG),YES)
+VERILATOR_CXXFLAGS += -DHAVE_DEBUG
+endif
+VERILATOR_FLAGS += --cc --exe --no-timing --top-module $(SOC_VSRC_TOP)
+VERILATOR_FLAGS += --x-assign unique -O3 -CFLAGS "$(VERILATOR_CXXFLAGS)"
+VERILATOR_FLAGS += --trace-fst --assert --stats-vars --output-split 30000 --output-split-cfuncs 30000
+VERILATOR_FLAGS += --timescale "1ns/1ns" -Wno-fatal
+VERILATOR_FLAGS += -o $(BUILD_DIR)/emu
+VERILATOR_FLAGS += -Mdir $(SOC_COMPILE_HOME)
+VERILATOR_FLAGS += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
 
 RTL_LINT_FLAGS := --lint-only --no-timing --top-module $(SOC_VSRC_TOP)
 RTL_LINT_FLAGS += --assert --Wall --timescale "1ns/1ns" -Wno-fatal
 RTL_LINT_FLAGS += $(SOC_VSRC_INCLPATH) $(SOC_VXXFILES)
 
 SOC_SIM_TIME            ?= 180
+OPENOCD                 ?= openocd
+RISCV_GDB               ?= riscv32-unknown-elf-gdb
+DEBUG_SIM_DIR           := $(SIM_BUILD_ROOT)/debug
+DEBUG_OPENOCD_CONFIG    := $(RTL_PATH)/dv/verilator/openocd/retrosoc_hazard3.cfg
+DEBUG_SIM_SESSION       := $(ROOT_PATH)/scripts/run_debug_session.py
 VERILATOR_STAMP         := $(BUILD_DIR)/verilate.stamp
 VERILATOR_DEPFILE       := $(BUILD_DIR)/verilate.d
 VERILATOR_EMU           := $(BUILD_DIR)/emu
@@ -103,6 +111,21 @@ sim: comp
 	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(BUILD_DIR)/sim.log \
 		--result $(BUILD_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
+debug-sim: comp firmware
+	@test "$(HAVE_DEBUG)" = YES || { echo "debug-sim requires HAVE_DEBUG=YES" >&2; exit 2; }
+	@test "$(CORE)" = HAZARD3 || { echo "debug-sim requires CORE=HAZARD3" >&2; exit 2; }
+	python3 $(DEBUG_SIM_SESSION) \
+		--emulator $(VERILATOR_EMU) \
+		--image $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \
+		--elf $(SW_BUILD_DIR)/firmware \
+		--openocd $(OPENOCD) \
+		--gdb $(RISCV_GDB) \
+		--openocd-config $(DEBUG_OPENOCD_CONFIG) \
+		--log-dir $(DEBUG_SIM_DIR) \
+		--result $(DEBUG_SIM_DIR)/result-debug-sim.json \
+		--timeout $(SOC_SIM_TIME) \
+		--sim-time $(SOC_SIM_TIME)
+
 comp sim: | manifest
 
 wave:
@@ -111,4 +134,4 @@ clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(BUILD_DIR)
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(RTL_LINT_DIR)
 
-.PHONY: lint rtl-lint check-rtl-lint comp sim clean
+.PHONY: lint rtl-lint check-rtl-lint comp sim debug-sim clean

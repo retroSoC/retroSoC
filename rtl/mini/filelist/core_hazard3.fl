@@ -19,4 +19,10 @@
 /hazard3/hazard3_power_ctrl.v
 /hazard3/hazard3_regfile_1w2r.v
 /hazard3/hazard3_triggers.v
+/hazard3/debug/cdc/hazard3_apb_async_bridge.v
+/hazard3/debug/cdc/hazard3_reset_sync.v
+/hazard3/debug/cdc/hazard3_sync_1bit.v
+/hazard3/debug/dtm/hazard3_jtag_dtm_core.v
+/hazard3/debug/dtm/hazard3_jtag_dtm.v
+/hazard3/debug/dm/hazard3_dm.v
 +incdir+/hazard3/

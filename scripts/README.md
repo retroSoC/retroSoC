@@ -23,6 +23,13 @@ into `meta/performance.json`. The parser requires the terminal
 `PERF_BENCHMARK_PASS` marker and deliberately does not alter the common
 simulation success-marker policy.
 
+`run_debug_session.py` is the local Hazard3 debug acceptance driver. It starts
+the Verilator remote-bitbang endpoint, the lock-pinned OpenOCD binary, and
+RISC-V GDB, then records their logs and a structured result. Invoke it through
+`make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim`; see
+[`../docs/hazard3-debug.md`](../docs/hazard3-debug.md) for its scope and
+limitations.
+
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the
 relevant dry-run or regression profile from [`AGENTS.md`](../AGENTS.md).

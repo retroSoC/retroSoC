@@ -63,8 +63,10 @@ README that states its ownership, source of truth, and validation expectations.
   `media`, `middleware`, `network`, `ports`, and `benchmark`.
 - Consume SDK interfaces through `<retrosoc/...>` public headers. Use the
   `rs_` API namespace and `rs_status_t` for operations that can fail.
-- Applications are selected by `APP`. The supported values are `bringup` and
-  `shell`; each profile is declared in `app/apps/<name>/app.mk`.
+- Applications are selected by `APP`. The supported values are `benchmark`,
+  `bringup`, `debug`, and `shell`; each profile is declared in
+  `app/apps/<name>/app.mk`. The `debug` application is an RTL debug-transport
+  acceptance image, not a user-facing firmware profile.
 - Do not add new dependencies on `crt/inc`, retired `tiny` names, or legacy
   `rs_*.h`/`tiny*.h` include paths.
 - Treat `app/coremark/coremark-main`, `app/fatfs/ff16`, `app/lvgl/lvgl-main`,

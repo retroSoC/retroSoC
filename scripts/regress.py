@@ -29,6 +29,7 @@ PR_COMMANDS = (
     ("configs/ci/ihp130.mk", ("firmware",)),
     ("configs/ci/ihp130-shell.mk", ("firmware",)),
     ("configs/ci/ihp130.mk", ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")),
+    ("configs/ci/ihp130-debug.mk", ("SIMU=VERILATOR", "debug-sim")),
     ("configs/ci/ihp130.mk", ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
     ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "synth")),
     (

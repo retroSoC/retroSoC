@@ -35,6 +35,8 @@ HAVE_SRAM_IF             ?= NO
 HAVE_SRAM_MACRO          ?= NO
 PDK_BEHAV                ?= NO
 HAVE_SVA                 ?= NO
+HAVE_DEBUG               ?= YES
+JTAG_IDCODE              ?= DEADBEEF
 WAVE                     ?= NO
 FORMAL                   ?= NO
 VCS_USE_LSF              ?= YES
@@ -73,7 +75,7 @@ JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
 CONFIG_KEY_VARS    := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
-                   ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
+                   HAVE_DEBUG JTAG_IDCODE ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -104,7 +106,7 @@ VALID_STA       := NONE OPENSTA
 VALID_PDK       := ICS55 IHP130 SKY130 GF180
 VALID_BOOL      := YES NO
 VALID_ISA       := RV32E RV32I RV32IM
-VALID_APP       := benchmark bringup shell
+VALID_APP       := benchmark bringup debug shell
 VALID_LINK_TYPE := xip ld2_sram ld2_psram ld2_sdram
 
 define validate_value
@@ -122,6 +124,7 @@ $(call validate_value,HAVE_SRAM_IF,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
 $(call validate_value,PDK_BEHAV,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
+$(call validate_value,HAVE_DEBUG,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
 $(call validate_value,FORMAL,$(VALID_BOOL))
 $(call validate_value,VCS_USE_LSF,$(VALID_BOOL))
@@ -130,6 +133,19 @@ $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
+
+JTAG_IDCODE_VALID := $(shell printf '%s' '$(JTAG_IDCODE)' | grep -E '^[[:xdigit:]]{8}$$')
+ifneq ($(JTAG_IDCODE_VALID),$(JTAG_IDCODE))
+$(error JTAG_IDCODE='$(JTAG_IDCODE)' must be exactly eight hexadecimal digits)
+endif
+JTAG_IDCODE_DEC := $(shell value=$$(printf '%u' 0x$(JTAG_IDCODE)); \
+	if [ $$value -gt 2147483647 ]; then echo $$((value - 4294967296)); else echo $$value; fi)
+
+ifeq ($(HAVE_DEBUG),YES)
+ifneq ($(CORE),HAZARD3)
+$(error HAVE_DEBUG=YES requires CORE=HAZARD3; set HAVE_DEBUG=NO for CORE=$(CORE))
+endif
+endif
 
 ifneq ($(filter benchmark-report,$(MAKECMDGOALS)),)
 ifneq ($(APP),benchmark)
@@ -155,6 +171,7 @@ endif
 DEF_LIST ?= +define+PDK_$(PDK)
 DEF_LIST += +define+SIMU_$(SIMU)
 DEF_LIST += +define+CORE_$(CORE)
+DEF_LIST += +define+SOC_JTAG_IDCODE=$(JTAG_IDCODE_DEC)
 
 ifeq ($(HAVE_PLL), YES)
 ifneq ($(filter $(PDK),GF180 SKY130),)
@@ -180,6 +197,10 @@ endif
 
 ifeq ($(HAVE_SVA), NO)
     DEF_LIST += +define+SV_ASSRT_DISABLE
+endif
+
+ifeq ($(HAVE_DEBUG), YES)
+    DEF_LIST += +define+HAVE_DEBUG
 endif
 
 ifeq ($(SYNTH), YOSYS)
@@ -219,6 +240,7 @@ help:
 	  '  firmware | asm             build firmware' \
 	  '  comp | sim                 behavioral simulation' \
 	  '  sim-asm                    build/run the assembly self-test' \
+	  '  debug-sim                  run the Hazard3 Verilator/OpenOCD/GDB acceptance flow' \
 	  '  netcomp | netsim           synthesized-netlist simulation' \
 	  '  postcomp | postsim         post-layout simulation' \
 	  '  synth | sta                synthesis and timing analysis' \
@@ -269,13 +291,14 @@ config:
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
+	  HAVE_DEBUG '$(HAVE_DEBUG)' JTAG_IDCODE '$(JTAG_IDCODE)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
 	  LINK_TYPE '$(LINK_TYPE)'
 
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --formal $(FORMAL) --lock $(LOCK_FILE)
+	  --pdk $(PDK) --formal $(FORMAL) --debug $(HAVE_DEBUG) --lock $(LOCK_FILE)
 
 benchmark-report: firmware
 

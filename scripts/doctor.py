@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sta", required=True)
     parser.add_argument("--pdk", required=True)
     parser.add_argument("--formal", choices=("YES", "NO"), default="NO")
+    parser.add_argument("--debug", choices=("YES", "NO"), default="NO")
     parser.add_argument("--lock", type=Path, default=DEFAULT_LOCK)
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--output", type=Path)
@@ -66,6 +67,8 @@ def main() -> int:
         tools.append("sta")
     if args.formal == "YES":
         tools.extend(("sby", "yosys", "yosys-smtbmc", "sv2v", "bitwuzla"))
+    if args.debug == "YES":
+        tools.extend(("openocd", "riscv32-unknown-elf-gdb"))
 
     source_names = ["mpw", "hazard3", "cluster_common", "third_party_ip"]
     pdk_names = {

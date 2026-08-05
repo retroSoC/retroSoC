@@ -15,11 +15,17 @@ module mgmt_core_wrapper (
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [31:0] irq_i,
+    input  logic        jtag_tck_i,
+    input  logic        jtag_tms_i,
+    input  logic        jtag_tdi_i,
+    input  logic        jtag_trst_n_i,
+    output logic        jtag_tdo_o,
     ribp_if.master   ribp
     // verilog_format: on
 );
 
 `ifdef CORE_PICORV32
+  assign jtag_tdo_o = 1'b0;
   picorv32 #(
       .BARREL_SHIFTER (1),
       .COMPRESSED_ISA (1),
@@ -59,11 +65,85 @@ module mgmt_core_wrapper (
       .trace_data  ()
   );
 `elsif CORE_HAZARD3
-  logic s_pwrup_req;
+  logic        s_pwrup_req;
+  logic        s_ahbl_idle;
+  logic        s_core_rst_n;
+  logic        s_dbg_req_halt;
+  logic        s_dbg_req_halt_on_reset;
+  logic        s_dbg_req_resume;
+  logic        s_dbg_halted;
+  logic        s_dbg_running;
+  logic [31:0] s_dbg_data0_rdata;
+  logic [31:0] s_dbg_data0_wdata;
+  logic        s_dbg_data0_wen;
+  logic [31:0] s_dbg_instr_data;
+  logic        s_dbg_instr_data_vld;
+  logic        s_dbg_instr_data_rdy;
+  logic        s_dbg_instr_caught_exception;
+  logic        s_dbg_instr_caught_ebreak;
+  logic [31:0] s_dbg_sbus_addr;
+  logic        s_dbg_sbus_write;
+  logic [ 1:0] s_dbg_sbus_size;
+  logic        s_dbg_sbus_vld;
+  logic        s_dbg_sbus_rdy;
+  logic        s_dbg_sbus_err;
+  logic [31:0] s_dbg_sbus_wdata;
+  logic [31:0] s_dbg_sbus_rdata;
   // verilog_format: off
-  ahbl_if u_ahbl_if (clk_i, rst_n_i);
-  ahbl2ribp u_ahbl2ribp (u_ahbl_if, ribp);
+  ahbl_if u_ahbl_if (clk_i, s_core_rst_n);
+  ahbl2ribp u_ahbl2ribp (u_ahbl_if, ribp, s_ahbl_idle);
   // verilog_format: on
+
+`ifdef HAVE_DEBUG
+  mgmt_debug_wrapper #(
+      .JTAG_IDCODE(`SOC_JTAG_IDCODE)
+  ) u_mgmt_debug_wrapper (
+      .clk_i                       (clk_i),
+      .rst_n_i                     (rst_n_i),
+      .bridge_idle_i               (s_ahbl_idle),
+      .jtag_tck_i                  (jtag_tck_i),
+      .jtag_tms_i                  (jtag_tms_i),
+      .jtag_tdi_i                  (jtag_tdi_i),
+      .jtag_trst_n_i               (jtag_trst_n_i),
+      .jtag_tdo_o                  (jtag_tdo_o),
+      .core_rst_n_o                (s_core_rst_n),
+      .dbg_req_halt_o              (s_dbg_req_halt),
+      .dbg_req_halt_on_reset_o     (s_dbg_req_halt_on_reset),
+      .dbg_req_resume_o            (s_dbg_req_resume),
+      .dbg_halted_i                (s_dbg_halted),
+      .dbg_running_i               (s_dbg_running),
+      .dbg_data0_rdata_o           (s_dbg_data0_rdata),
+      .dbg_data0_wdata_i           (s_dbg_data0_wdata),
+      .dbg_data0_wen_i             (s_dbg_data0_wen),
+      .dbg_instr_data_o            (s_dbg_instr_data),
+      .dbg_instr_data_vld_o        (s_dbg_instr_data_vld),
+      .dbg_instr_data_rdy_i        (s_dbg_instr_data_rdy),
+      .dbg_instr_caught_exception_i(s_dbg_instr_caught_exception),
+      .dbg_instr_caught_ebreak_i   (s_dbg_instr_caught_ebreak),
+      .dbg_sbus_addr_o             (s_dbg_sbus_addr),
+      .dbg_sbus_write_o            (s_dbg_sbus_write),
+      .dbg_sbus_size_o             (s_dbg_sbus_size),
+      .dbg_sbus_vld_o              (s_dbg_sbus_vld),
+      .dbg_sbus_rdy_i              (s_dbg_sbus_rdy),
+      .dbg_sbus_err_i              (s_dbg_sbus_err),
+      .dbg_sbus_wdata_o            (s_dbg_sbus_wdata),
+      .dbg_sbus_rdata_i            (s_dbg_sbus_rdata)
+  );
+`else
+  assign s_core_rst_n            = rst_n_i;
+  assign s_dbg_req_halt          = 1'b0;
+  assign s_dbg_req_halt_on_reset = 1'b0;
+  assign s_dbg_req_resume        = 1'b0;
+  assign s_dbg_data0_rdata       = '0;
+  assign s_dbg_instr_data        = '0;
+  assign s_dbg_instr_data_vld    = 1'b0;
+  assign s_dbg_sbus_addr         = '0;
+  assign s_dbg_sbus_write        = 1'b0;
+  assign s_dbg_sbus_size         = '0;
+  assign s_dbg_sbus_vld          = 1'b0;
+  assign s_dbg_sbus_wdata        = '0;
+  assign jtag_tdo_o              = 1'b0;
+`endif
 
   hazard3_cpu_1port #(
       .RESET_VECTOR       (`SOC_CPU_RESET_ADDR),
@@ -98,26 +178,30 @@ module mgmt_core_wrapper (
       .PMP_HARDWIRED      (0),
       .PMP_HARDWIRED_ADDR (0),
       .PMP_HARDWIRED_CFG  (0),
+`ifdef HAVE_DEBUG
+      .DEBUG_SUPPORT      (1),
+`else
       .DEBUG_SUPPORT      (0),
-      .BREAKPOINT_TRIGGERS(0),
+`endif
+      .BREAKPOINT_TRIGGERS(2),
       .NUM_IRQS           (30),
       .IRQ_PRIORITY_BITS  (2),
       .IRQ_INPUT_BYPASS   (30'h0),
       .MVENDORID_VAL      (32'h0),
       .MCONFIGPTR_VAL     (32'h0),
       .REDUCED_BYPASS     (0),
-      .MULDIV_UNROLL      (1),
+      .MULDIV_UNROLL      (2),
       .MUL_FAST           (1),
       .MUL_FASTER         (1),
       .MULH_FAST          (1),
       .FAST_BRANCHCMP     (1),
       .RESET_REGFILE      (1),
-      .BRANCH_PREDICTOR   (0),
+      .BRANCH_PREDICTOR   (1),
       .MTVEC_WMASK        (32'hfffffffd)
   ) u_hazard3_cpu_1port (
       .clk                       (clk_i),
       .clk_always_on             (clk_i),
-      .rst_n                     (rst_n_i),
+      .rst_n                     (s_core_rst_n),
       .pwrup_req                 (s_pwrup_req),
       .pwrup_ack                 (s_pwrup_req),
       .clk_en                    (),
@@ -140,27 +224,27 @@ module mgmt_core_wrapper (
       .fence_i_vld               (),
       .fence_d_vld               (),
       .fence_rdy                 (1'b1),
-      .dbg_req_halt              (1'b0),
-      .dbg_req_halt_on_reset     (1'b0),
-      .dbg_req_resume            (1'b0),
-      .dbg_halted                (),
-      .dbg_running               (),
-      .dbg_data0_rdata           ('0),
-      .dbg_data0_wdata           (),
-      .dbg_data0_wen             (),
-      .dbg_instr_data            ('0),
-      .dbg_instr_data_vld        ('0),
-      .dbg_instr_data_rdy        (),
-      .dbg_instr_caught_exception(),
-      .dbg_instr_caught_ebreak   (),
-      .dbg_sbus_addr             ('0),
-      .dbg_sbus_write            ('0),
-      .dbg_sbus_size             ('0),
-      .dbg_sbus_vld              ('0),
-      .dbg_sbus_rdy              (),
-      .dbg_sbus_err              (),
-      .dbg_sbus_wdata            ('0),
-      .dbg_sbus_rdata            (),
+      .dbg_req_halt              (s_dbg_req_halt),
+      .dbg_req_halt_on_reset     (s_dbg_req_halt_on_reset),
+      .dbg_req_resume            (s_dbg_req_resume),
+      .dbg_halted                (s_dbg_halted),
+      .dbg_running               (s_dbg_running),
+      .dbg_data0_rdata           (s_dbg_data0_rdata),
+      .dbg_data0_wdata           (s_dbg_data0_wdata),
+      .dbg_data0_wen             (s_dbg_data0_wen),
+      .dbg_instr_data            (s_dbg_instr_data),
+      .dbg_instr_data_vld        (s_dbg_instr_data_vld),
+      .dbg_instr_data_rdy        (s_dbg_instr_data_rdy),
+      .dbg_instr_caught_exception(s_dbg_instr_caught_exception),
+      .dbg_instr_caught_ebreak   (s_dbg_instr_caught_ebreak),
+      .dbg_sbus_addr             (s_dbg_sbus_addr),
+      .dbg_sbus_write            (s_dbg_sbus_write),
+      .dbg_sbus_size             (s_dbg_sbus_size),
+      .dbg_sbus_vld              (s_dbg_sbus_vld),
+      .dbg_sbus_rdy              (s_dbg_sbus_rdy),
+      .dbg_sbus_err              (s_dbg_sbus_err),
+      .dbg_sbus_wdata            (s_dbg_sbus_wdata),
+      .dbg_sbus_rdata            (s_dbg_sbus_rdata),
       .mhartid_val               ('0),
       .eco_version               ('0),
       .irq                       (irq_i[31:2]),

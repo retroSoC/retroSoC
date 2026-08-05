@@ -39,6 +39,12 @@ def build_defines(args: argparse.Namespace) -> list[str]:
         defines.append("+define+HAVE_SRAM_MACRO")
     if not args.have_sva:
         defines.append("+define+SV_ASSRT_DISABLE")
+    if args.have_debug == "YES":
+        defines.append("+define+HAVE_DEBUG")
+    idcode = int(args.jtag_idcode, 16)
+    if idcode >= (1 << 31):
+        idcode -= 1 << 32
+    defines.append(f"+define+SOC_JTAG_IDCODE={idcode}")
     defines.append(f"+define+CORE_{args.core}")
     return defines
 
@@ -190,6 +196,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--have-sram-if", action="store_true")
     parser.add_argument("--have-sram-macro", action="store_true")
     parser.add_argument("--have-sva", action="store_true")
+    parser.add_argument("--have-debug", choices=("YES", "NO"), default="YES")
+    parser.add_argument("--jtag-idcode", default="DEADBEEF")
     parser.add_argument(
         "--dynamic-core-filelist",
         type=Path,
@@ -206,6 +214,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if not re.fullmatch(r"[0-9a-fA-F]{8}", args.jtag_idcode):
+        raise SystemExit("--jtag-idcode must be exactly eight hexadecimal digits")
+    if args.have_debug == "YES" and args.core != "HAZARD3":
+        raise SystemExit("--have-debug YES requires --core HAZARD3")
     export_dir = args.output_dir.resolve()
     export_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="retrosoc-filelists-") as temporary:

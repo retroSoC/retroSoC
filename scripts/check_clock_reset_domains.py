@@ -11,7 +11,7 @@ from typing import Any
 
 
 RESET_PRIMITIVES = {"rst_sync"}
-CDC_PRIMITIVES = {"async_fifo", "cdc_2phase", "cdc_sync"}
+CDC_PRIMITIVES = {"async_fifo", "cdc_2phase", "cdc_sync", "hazard3_apb_async_bridge"}
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 HIERARCHICAL_PIN_RE = re.compile(
     r"[A-Za-z_][A-Za-z0-9_.]*(?:/[A-Za-z_][A-Za-z0-9_.]*)+$"
@@ -95,7 +95,13 @@ def validate(document_path: Path, root: Path) -> None:
             sta_sources[name] = None
         else:
             sta_sources[name] = require_identifier(source_domain, f"{field}.sta.source_domain")
-        require_hierarchical_pin(sta.get("pin"), f"{field}.sta.pin")
+        object_type = sta.get("object_type", "pin")
+        if object_type not in {"pin", "port"}:
+            raise ValueError(f"{field}.sta.object_type must be pin or port")
+        if object_type == "pin":
+            require_hierarchical_pin(sta.get("pin"), f"{field}.sta.pin")
+        elif source_port is None:
+            raise ValueError(f"{field}.sta port object requires source_port")
         require_positive_number(sta.get("period_ns"), f"{field}.sta.period_ns")
         require_identifier(sta.get("async_group"), f"{field}.sta.async_group")
 

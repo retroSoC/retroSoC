@@ -57,6 +57,9 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert "inout extclk_i_pad," in ports
     assert "input xi_i_pad," in ports
     assert "inout sdram_dq15_io_pad" in ports
+    assert "inout jtag_tck_i_pad" in ports
+    assert "inout jtag_trst_n_i_pad" in ports
+    assert "output jtag_tdo_o_pad" in ports
     assert "u_gpio_31_io_pad" in pads
     assert "u_sdram_dq15_io_pad" in pads
     assert ".gpio_30_io_pad(gpio_io30)" in fpga
@@ -65,6 +68,9 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert testbench.count(".gpio_24_io_pad(") == 1
     assert ".sdram_clk_o_pad(s_sdram_clk)" in verilator
     assert ".sdram_dq15_io_pad(s_sdram_dq[15])" in verilator
+    assert ".jtag_tck_i_pad(s_jtag_tck)" in verilator
+    assert ".jtag_tdo_o_pad(s_jtag_tdo)" in verilator
+    assert ".jtag_tck_i_pad(s_jtag_tck)" in testbench
     assert "user_gpio_" not in ports
     assert "user_gpio_" not in pads
     assert "user_gpio_" not in testbench
