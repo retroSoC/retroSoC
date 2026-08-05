@@ -63,24 +63,69 @@ core and defaults to `HAZARD3`.
 
 ## Prerequisites
 
-The prebuilt, locked toolchain bundles target Ubuntu 22.04. Install Python 3, GNU Make, a host
-C compiler, `clang-format-14`, a RISC-V bare-metal GNU toolchain, and the tools required by the
-flow you intend to run: Icarus Verilog, Verilator, sv2v, Yosys, and OpenSTA. Source formatting
-also requires `mbake` 1.4.6 and the locked Verible formatter. The CI environment installs the
-exact versions from [`config/dependencies.lock.json`](config/dependencies.lock.json). Local flow
-tools must be available on `PATH` before running `make doctor`; the three formatters must be
-available before running `make format-check`.
+The open-source development environment contains the exact Ubuntu 22.04 tool bundles, Python
+quality tools, compiler, formatters, simulators, synthesis, STA, and formal tools used by the
+current regression. It does not contain PDKs, managed RTL, or application archives; those remain
+checkout-local inputs installed and verified through the existing setup targets. Linux x86_64 is
+the supported host for the full native environment. On macOS, use Docker with linux/amd64
+emulation. Nix support is Linux x86_64 only.
 
-Install the Python build dependencies once per environment:
+Choose one of the following installation methods. Each uses the locked versions in
+[config/dependencies.lock.json](config/dependencies.lock.json) and creates or reuses the local
+cache at .cache/retrosoc/development.
 
-```sh
-python3 -m pip install --requirement requirements/build.txt
-```
+### Nix
 
-The lock file also pins external RTL, PDK, benchmark, and application sources. Their setup
-scripts verify full Git revisions or SHA-256 checksums before use. See the
-[engineering workflow](docs/engineering.md#reproducible-inputs) for the locked-tool installer
-and dependency update procedure.
+Install Nix with flakes enabled, then run the development application from the repository root.
+It builds a Linux FHS environment and invokes the same locked bootstrap script as Docker and the
+manual method.
+
+~~~sh
+nix run .#dev -- make setup-regression
+nix run .#dev -- make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG doctor
+nix run .#dev -- make regress-pr
+~~~
+
+Use nix run .#dev without a command to open an interactive shell. The pinned nixpkgs revision is
+recorded in flake.lock and cross-checked against the dependency lock.
+
+### Docker
+
+Build the local image once. The base image is immutable by digest and the image bootstrap installs
+the same locked tools into an image-local cache. Mount the checkout so generated files, PDKs, and
+managed sources remain on the host volume.
+
+~~~sh
+docker build --tag retrosoc-dev --file docker/Dockerfile .
+docker run --rm --init --platform linux/amd64 --user "$(id -u):$(id -g)" -it \
+  -v "$PWD:/workspace/retrosoc" retrosoc-dev \
+  make setup-regression
+docker run --rm --init --platform linux/amd64 --user "$(id -u):$(id -g)" -it \
+  -v "$PWD:/workspace/retrosoc" retrosoc-dev \
+  make regress-pr
+~~~
+
+### Manual Installation
+
+On Ubuntu 22.04, install the host packages used by CI, then run the shared bootstrap script. It
+downloads only checksum-verified tool bundles and Python packages pinned by the repository.
+
+~~~sh
+sudo apt-get update
+sudo apt-get install --no-install-recommends --yes \
+  bzip2 ca-certificates ccache clang-format-14 g++ git libfl2 libgoogle-perftools4 \
+  libunwind8 make mold numactl python3 python3-pip python3-venv xz-utils zlib1g
+python3 scripts/development_environment.py bootstrap
+source .cache/retrosoc/development/activate.sh
+make setup-regression
+make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG doctor
+~~~
+
+Run python3 scripts/development_environment.py check after a lock update or when diagnosing a
+local tool issue. The lock file also pins external RTL, PDK, benchmark, and application sources.
+Their setup scripts verify full Git revisions or SHA-256 checksums before use. See the
+[engineering workflow](docs/engineering.md#reproducible-inputs) for the dependency update
+procedure.
 
 ## Quick Start
 

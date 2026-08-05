@@ -1,0 +1,14 @@
+.cache/
+.git/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+pdk/IHP-Open-PDK/
+pdk/gf180mcu-pdk/
+pdk/icsprout55-pdk/
+pdk/skywater-pdk/
+rtl/managed/clusterip/
+rtl/managed/hazard3/
+rtl/managed/mpw/
+rtl/managed/third_party/

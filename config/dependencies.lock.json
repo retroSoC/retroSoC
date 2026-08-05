@@ -96,6 +96,22 @@
       "license": "ISC"
     }
   },
+  "container_images": {
+    "ubuntu_22_04": {
+      "image": "ubuntu",
+      "digest": "sha256:0d779ea97881505f5ef0039336ee85edba27519bdba968c284c86ee066a973c8",
+      "url": "https://hub.docker.com/_/ubuntu",
+      "license": "NOASSERTION"
+    }
+  },
+  "nix_inputs": {
+    "nixpkgs": {
+      "url": "https://github.com/NixOS/nixpkgs",
+      "revision": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
+      "nar_hash": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
+      "license": "MIT"
+    }
+  },
   "toolchains": {
     "ubuntu-22.04": {
       "verilator": {

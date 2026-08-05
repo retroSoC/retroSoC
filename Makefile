@@ -203,7 +203,7 @@ ifeq ($(STA), OPENSTA)
     include sta/opensta/opensta.mk
 endif
 
-.PHONY: help config doctor setup setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
@@ -223,6 +223,7 @@ help:
 	  '  postcomp | postsim         post-layout simulation' \
 	  '  synth | sta                synthesis and timing analysis' \
 	  '  setup                      install pinned external dependencies' \
+	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  doctor                     check tools, paths, and selected configuration' \
 	  '  config | manifest          print/write the effective configuration' \
 	  '  memory-map                 generate the selected address-map artifacts' \
@@ -283,6 +284,12 @@ benchmark-report: firmware
 		--output $(META_DIR)/performance.json
 
 setup: setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app
+
+setup-regression:
+	$(MAKE) CONFIG=configs/ci/ihp130.mk setup
+	$(MAKE) CONFIG=configs/ci/gf180.mk setup
+	$(MAKE) CONFIG=configs/ci/ics55.mk setup
+	$(MAKE) CONFIG=configs/ci/sky130.mk setup
 
 setup-mpw:
 	python3 $(ROOT_PATH)/setup.py

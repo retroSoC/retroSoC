@@ -32,9 +32,15 @@ from scripts.bitwuzla_smt2 import translate_arguments  # noqa: E402
 from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
-from scripts.dependency_lock import LockError, load_lock  # noqa: E402
+from scripts.dependency_lock import LockError, load_lock, validate_flake_lock  # noqa: E402
+from scripts.development_environment import (  # noqa: E402
+    DEFAULT_TOOLS,
+    render_activation,
+    stamp_data,
+)
 from scripts.generate_mpw import validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
+from scripts.package import make_sbom  # noqa: E402
 from scripts import regress  # noqa: E402
 from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
@@ -541,6 +547,9 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     assert len(lock["sources"]["mpw"]["revision"]) == 40
     assert lock["sources"]["hazard3"]["destination"] == "rtl/managed/hazard3"
     assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
+    assert lock["container_images"]["ubuntu_22_04"]["image"] == "ubuntu"
+    assert lock["nix_inputs"]["nixpkgs"]["revision"] == "50ab793786d9de88ee30ec4e4c24fb4236fc2674"
+    validate_flake_lock(lock, ROOT / "flake.lock")
 
     command = (
         sys.executable,
@@ -587,6 +596,34 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         assert "submodule" in str(error)
     else:
         raise AssertionError("invalid submodule path was accepted")
+
+
+def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None:
+    lock_path = ROOT / "config/dependencies.lock.json"
+    lock = load_lock(lock_path)
+    cache = tmp_path / "development"
+    stamp = stamp_data(ROOT, cache, DEFAULT_TOOLS, lock, lock_path)
+
+    assert stamp["tools"]["verilator"] == lock["toolchains"]["ubuntu-22.04"]["verilator"]["version"]
+    assert set(stamp["python_requirements"]) == {"requirements/build.txt", "requirements/ci.txt"}
+    activation = render_activation(cache, [cache / "venv/bin", cache / "toolchains/verilator/bin"])
+    assert "export RETROSOC_DEVELOPMENT_CACHE=" in activation
+    assert "toolchains/verilator/bin" in activation
+
+
+def test_container_and_nix_environment_files_use_locked_inputs() -> None:
+    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    dockerfile = (ROOT / "docker/Dockerfile").read_text(encoding="utf-8")
+    flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
+    sbom = make_sbom(lock)
+
+    assert f"ubuntu@{lock['container_images']['ubuntu_22_04']['digest']}" in dockerfile
+    assert "scripts/development_environment.py" in dockerfile
+    assert "scripts/development_environment.py" in flake
+    assert "buildFHSEnv" in flake
+    assert "retrosoc-development retrosoc-dev" in flake
+    assert any(component["name"] == "container/ubuntu_22_04" for component in sbom["components"])
+    assert any(component["name"] == "nix/nixpkgs" for component in sbom["components"])
 
 
 def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:

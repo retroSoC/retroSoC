@@ -28,8 +28,15 @@ scanner, and cleanup rules as the other open-source CI PDKs.
 ## Reproducible Inputs
 
 `config/dependencies.lock.json` is the source of truth for external Git repositories, downloaded
-archives, and Ubuntu 22.04 toolchain bundles. Git checkouts use full 40-character revisions. Archive
-downloads are accepted only after SHA-256 verification. CI actions are pinned to commit IDs.
+archives, OCI container base images, Nix inputs, and Ubuntu 22.04 toolchain bundles. Git checkouts
+use full 40-character revisions. Archive downloads are accepted only after SHA-256 verification.
+The Docker image uses an immutable OCI digest. The flake lock and dependency lock must agree on
+each Nix input revision and NAR hash. CI actions are pinned to commit IDs.
+
+The [development environment guide](development-environment.md) defines the Docker, Nix, and
+manual entry points. All three use scripts/development_environment.py to install the same
+checksum-verified open-source tools. PDK and managed-source setup deliberately remains a checkout
+operation through make setup or make setup-regression, rather than a container or Nix image layer.
 
 To update a dependency:
 

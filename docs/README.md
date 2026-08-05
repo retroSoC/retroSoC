@@ -5,6 +5,8 @@ the root README and subsystem guides.
 
 - [engineering.md](engineering.md) describes reproducible inputs, build
   artifacts, result policy, warning baselines, metrics, CI, and releases.
+- [development-environment.md](development-environment.md) describes the
+  Docker, Nix, and manual open-source regression environments.
 - [misra-c-2012.md](misra-c-2012.md) defines the MISRA C:2012 Amendment 2
   baseline, scope, partial automation, and deviation process.
 - [pll-clock-control.md](pll-clock-control.md) describes the SYSCTRL PLL
