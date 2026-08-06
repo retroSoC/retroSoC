@@ -34,6 +34,11 @@ RTL_LINT_FLAGS += --assert --Wall --timescale "1ns/1ns" -Wno-fatal
 RTL_LINT_FLAGS += $(SOC_VSRC_INCLPATH) $(SOC_VXXFILES)
 
 SOC_SIM_TIME            ?= 180
+OPENOCD                 ?= openocd
+RISCV_GDB               ?= riscv32-unknown-elf-gdb
+DEBUG_SIM_DIR           := $(SIM_BUILD_ROOT)/debug
+DEBUG_OPENOCD_CONFIG    := $(RTL_PATH)/dv/verilator/openocd/retrosoc_hazard3.cfg
+DEBUG_SIM_SESSION       := $(ROOT_PATH)/scripts/run_debug_session.py
 VERILATOR_STAMP         := $(BUILD_DIR)/verilate.stamp
 VERILATOR_DEPFILE       := $(BUILD_DIR)/verilate.d
 VERILATOR_EMU           := $(BUILD_DIR)/emu
@@ -103,6 +108,23 @@ sim: comp
 	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(BUILD_DIR)/sim.log \
 		--result $(BUILD_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
+debug-sim: comp firmware
+	@test "$(SIMU)" = VERILATOR || { echo "debug-sim requires SIMU=VERILATOR" >&2; exit 2; }
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/doctor.py --root $(ROOT_PATH) --simu $(SIMU) \
+		--synth $(SYNTH) --sta $(STA) --pdk $(PDK) --formal $(FORMAL) \
+		--require-debug-tools --lock $(LOCK_FILE)
+	python3 $(DEBUG_SIM_SESSION) \
+		--emulator $(VERILATOR_EMU) \
+		--image $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \
+		--elf $(SW_BUILD_DIR)/firmware \
+		--openocd $(OPENOCD) \
+		--gdb $(RISCV_GDB) \
+		--openocd-config $(DEBUG_OPENOCD_CONFIG) \
+		--log-dir $(DEBUG_SIM_DIR) \
+		--result $(DEBUG_SIM_DIR)/result-debug-sim.json \
+		--timeout $(SOC_SIM_TIME) \
+		--sim-time $(SOC_SIM_TIME)
+
 comp sim: | manifest
 
 wave:
@@ -111,4 +133,4 @@ clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(BUILD_DIR)
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(RTL_LINT_DIR)
 
-.PHONY: lint rtl-lint check-rtl-lint comp sim clean
+.PHONY: lint rtl-lint check-rtl-lint comp sim debug-sim clean

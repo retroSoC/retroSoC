@@ -124,10 +124,10 @@ module sysctrl_fault_tb;
     if (read_data !== 32'd11) $fatal(1, "performance snapshot was not recorded");
 
     read_register(32'h1000_B020, read_data);
-    if (read_data !== 32'h0000_001F) $fatal(1, "user cores were not held in reset");
+    if (read_data !== 32'h0000_003F) $fatal(1, "user cores were not held in reset");
     write_register(32'h1000_B000, 32'h0000_0006);
     read_register(32'h1000_B024, read_data);
-    if ((read_data & 32'h0000_081F) !== 32'h0000_0800) begin
+    if ((read_data & 32'h0000_083F) !== 32'h0000_0800) begin
       $fatal(1, "out-of-range user core selection was accepted");
     end
     write_register(32'h1000_B024, 32'h0000_0800);
@@ -141,6 +141,26 @@ module sysctrl_fault_tb;
     read_register(32'h1000_B024, read_data);
     if ((read_data & 32'h0000_0300) !== 32'h0000_0200) begin
       $fatal(1, "user core stop state was not recorded");
+    end
+
+    read_register(32'h1000_B084, read_data);
+    if (read_data !== 32'h0000_0000) begin
+      $fatal(1, "test status did not reset");
+    end
+    write_register(32'h1000_B084, 32'h0000_5A01);
+    read_register(32'h1000_B084, read_data);
+    if (read_data !== 32'h0000_0000) begin
+      $fatal(1, "invalid test status write was accepted");
+    end
+    write_register(32'h1000_B084, 32'h8000_5A01);
+    read_register(32'h1000_B084, read_data);
+    if (read_data !== 32'h8000_5A01) begin
+      $fatal(1, "test pass status was not recorded");
+    end
+    write_register(32'h1000_B084, 32'h8000_0B00);
+    read_register(32'h1000_B084, read_data);
+    if (read_data !== 32'h8000_5A01) begin
+      $fatal(1, "terminal test status was overwritten");
     end
 
     $display("sysctrl fault and user core control test passed");

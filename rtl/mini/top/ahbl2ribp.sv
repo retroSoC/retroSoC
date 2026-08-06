@@ -12,8 +12,9 @@
 
 // Management-core AHB-Lite to scalar RIBP bridge.
 module ahbl2ribp (
-    ahbl_if.slave  ahbl,
-    ribp_if.master ribp
+           ahbl_if.slave  ahbl,
+           ribp_if.master ribp,
+    output logic          idle_o
 );
 
   localparam logic [1:0] AHBL_TRANS_NSEQ = 2'b10;
@@ -35,6 +36,7 @@ module ahbl2ribp (
   assign ahbl.hrdata = ribp.rdata;
   assign ribp.valid  = s_fsm_q != STATE_IDLE;
   assign ribp.addr   = {s_haddr_q[31:2], 2'b00};
+  assign idle_o      = s_fsm_q == STATE_IDLE;
 
   always_comb begin
     ribp.wstrb = '0;

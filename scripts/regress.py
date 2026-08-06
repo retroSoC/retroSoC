@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
+CI_SMOKE_APP_VALUE = "APP=ci_smoke"
 RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint")
 RTL_LINT_OBSERVATION_VALUES = (
     "SIMU=VERILATOR",
@@ -26,9 +27,13 @@ OBSERVATION_TARGETS = ("check-warnings", "check-metrics")
 
 PR_COMMANDS = (
     ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
-    ("configs/ci/ihp130.mk", ("firmware",)),
+    ("configs/ci/ihp130.mk", (CI_SMOKE_APP_VALUE, "firmware")),
     ("configs/ci/ihp130-shell.mk", ("firmware",)),
-    ("configs/ci/ihp130.mk", ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")),
+    (
+        "configs/ci/ihp130.mk",
+        (CI_SMOKE_APP_VALUE, "SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
+    ),
+    ("configs/ci/ihp130-debug.mk", ("SIMU=VERILATOR", "debug-sim")),
     ("configs/ci/ihp130.mk", ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
     ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "synth")),
     (
@@ -36,7 +41,6 @@ PR_COMMANDS = (
         (
             "SIMU=IVERILOG",
             "SIM_FIRMWARE_NAME=retrosoc_asm",
-            "SIM_SUCCESS_MARKER=Mem wr/rd test success",
             "RTL_SIM_TIMEOUT=5200000",
             "netsim",
         ),
@@ -45,7 +49,7 @@ PR_COMMANDS = (
 )
 SMOKE_COMMANDS = (
     ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
-    ("configs/ci/ihp130.mk", ("firmware",)),
+    ("configs/ci/ihp130.mk", (CI_SMOKE_APP_VALUE, "firmware")),
     (
         "configs/ci/ihp130.mk",
         ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp"),
@@ -55,7 +59,13 @@ SMOKE_COMMANDS = (
         ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
     ),
 )
-NIGHTLY_COMMANDS = PR_COMMANDS
+NIGHTLY_COMMANDS = (
+    *PR_COMMANDS,
+    (
+        "configs/benchmark/ihp130-hazard3-coremark.mk",
+        ("SIMU=VERILATOR", "HAVE_SVA=YES", "coremark-report"),
+    ),
+)
 PR_PROFILES = ("configs/ci/ihp130.mk",)
 SMOKE_PROFILES: tuple[str, ...] = ()
 NIGHTLY_PROFILES = PR_PROFILES
@@ -71,8 +81,11 @@ PDK_PR_PROFILES = {
 def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
     return (
         (profile, RTL_LINT_VALUES),
-        (profile, ("firmware",)),
-        (profile, ("SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")),
+        (profile, (CI_SMOKE_APP_VALUE, "firmware")),
+        (
+            profile,
+            (CI_SMOKE_APP_VALUE, "SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
+        ),
         (profile, ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
         (profile, ("SYNTH=YOSYS", "synth")),
         (profile, ("STA=OPENSTA", "sta")),
@@ -81,7 +94,6 @@ def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
             (
                 "SIMU=IVERILOG",
                 "SIM_FIRMWARE_NAME=retrosoc_asm",
-                "SIM_SUCCESS_MARKER=Mem wr/rd test success",
                 "RTL_SIM_TIMEOUT=5200000",
                 "netsim",
             ),

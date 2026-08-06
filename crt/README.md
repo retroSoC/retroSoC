@@ -39,6 +39,11 @@ RISC-V ISA, optional CSR interrupt support, linker layout, and the application
 profile. Applications add their own sources after the common runtime is
 selected.
 
+`<retrosoc/service/test.h>` provides `rs_test_finish()`, the terminal-result
+service used by automated firmware. It writes the sticky SYSCTRL test-status
+register and does not return. It is for finite regression applications, not
+interactive firmware such as the shell.
+
 Start from a committed configuration profile:
 
 ```sh

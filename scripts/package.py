@@ -33,15 +33,42 @@ def component(name: str, kind: str, spec: dict[str, object]) -> dict[str, object
     if "revision" in spec:
         item["version"] = spec["revision"]
         item["properties"] = [{"name": "vcs:revision", "value": spec["revision"]}]
+        if "nar_hash" in spec:
+            item["properties"].append({"name": "nix:narHash", "value": spec["nar_hash"]})
     else:
         item["version"] = spec.get("version", spec.get("sha256", "unknown"))
         item["hashes"] = [{"alg": "SHA-256", "content": spec["sha256"]}]
     return item
 
 
+def container_component(name: str, spec: dict[str, object]) -> dict[str, object]:
+    license_name = str(spec.get("license", "NOASSERTION"))
+    license_value = (
+        {"name": license_name}
+        if license_name == "NOASSERTION" or license_name.startswith("LicenseRef-")
+        else {"id": license_name}
+    )
+    digest = str(spec["digest"])
+    return {
+        "type": "container",
+        "name": f"container/{name}",
+        "version": digest.removeprefix("sha256:"),
+        "licenses": [{"license": license_value}],
+        "externalReferences": [{"type": "distribution", "url": spec["url"]}],
+        "hashes": [{"alg": "SHA-256", "content": digest.removeprefix("sha256:")}],
+        "properties": [{"name": "oci:image", "value": spec["image"]}],
+    }
+
+
 def make_sbom(lock: dict[str, object]) -> dict[str, object]:
     components = [component(name, "source", spec) for name, spec in lock["sources"].items()]
     components.extend(component(name, "archive", spec) for name, spec in lock["archives"].items())
+    components.extend(
+        container_component(name, spec) for name, spec in lock["container_images"].items()
+    )
+    components.extend(
+        component(f"nix/{name}", "source", spec) for name, spec in lock["nix_inputs"].items()
+    )
     for platform, tools in lock["toolchains"].items():
         components.extend(
             component(f"{platform}/{name}", "toolchain", spec) for name, spec in tools.items()
@@ -83,8 +110,8 @@ def main() -> int:
             config["PDK"],
             "--simu",
             config["SIMU"],
-            "--core",
-            config.get("CORE", "HAZARD3"),
+            "--jtag-idcode",
+            config.get("JTAG_IDCODE", "DEADBEEF"),
             "--dynamic-core-filelist",
             str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "core/core.fl"),
             "--dynamic-ip-filelist",

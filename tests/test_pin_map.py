@@ -44,19 +44,18 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
 
     ports = (tmp_path / "rtl/retrosoc_asic_ports.svh").read_text(encoding="utf-8")
     pads = (tmp_path / "rtl/retrosoc_asic_pad_bindings.svh").read_text(encoding="utf-8")
-    fpga = (tmp_path / "rtl/retrosoc_asic_fpga_mini_bindings.svh").read_text(
-        encoding="utf-8"
-    )
-    testbench = (tmp_path / "rtl/retrosoc_asic_tb_bindings.svh").read_text(
-        encoding="utf-8"
-    )
-    verilator = (tmp_path / "rtl/retrosoc_asic_verilator_bindings.svh").read_text(
-        encoding="utf-8"
-    )
+    fpga = (tmp_path / "rtl/retrosoc_asic_fpga_mini_bindings.svh").read_text(encoding="utf-8")
+    testbench = (tmp_path / "rtl/retrosoc_asic_tb_bindings.svh").read_text(encoding="utf-8")
+    verilator = (tmp_path / "rtl/retrosoc_asic_verilator_bindings.svh").read_text(encoding="utf-8")
 
     assert "inout extclk_i_pad," in ports
     assert "input xi_i_pad," in ports
     assert "inout sdram_dq15_io_pad" in ports
+    assert "inout jtag_tck_i_pad" in ports
+    assert "inout jtag_trst_n_i_pad" in ports
+    assert "output jtag_tdo_o_pad" in ports
+    assert "HAVE_DEBUG" not in ports
+    assert "HAVE_DEBUG" not in pads
     assert "u_gpio_31_io_pad" in pads
     assert "u_sdram_dq15_io_pad" in pads
     assert ".gpio_30_io_pad(gpio_io30)" in fpga
@@ -65,6 +64,9 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert testbench.count(".gpio_24_io_pad(") == 1
     assert ".sdram_clk_o_pad(s_sdram_clk)" in verilator
     assert ".sdram_dq15_io_pad(s_sdram_dq[15])" in verilator
+    assert ".jtag_tck_i_pad(s_jtag_tck)" in verilator
+    assert ".jtag_tdo_o_pad(s_jtag_tdo)" in verilator
+    assert ".jtag_tck_i_pad(s_jtag_tck)" in testbench
     assert "user_gpio_" not in ports
     assert "user_gpio_" not in pads
     assert "user_gpio_" not in testbench
@@ -72,9 +74,7 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
 
 def test_pin_map_rejects_duplicate_pads(tmp_path: Path) -> None:
     document = json.loads(PIN_MAP.read_text(encoding="utf-8"))
-    document["pads"][0]["ports"].append(
-        {"name": "extclk_i_pad", "signal": "s_duplicate_clock"}
-    )
+    document["pads"][0]["ports"].append({"name": "extclk_i_pad", "signal": "s_duplicate_clock"})
     invalid_map = tmp_path / "duplicate.json"
     invalid_map.write_text(json.dumps(document), encoding="utf-8")
 
@@ -109,8 +109,18 @@ def test_pin_map_rejects_unknown_profile_pad(tmp_path: Path) -> None:
 
 
 def test_fpga_constraints_reference_declared_top_ports() -> None:
-    top_ports = set(re.findall(r"^\s*(?:input|output|inout)\s+([A-Za-z_][A-Za-z0-9_]*)", FPGA_TOP.read_text(encoding="utf-8"), re.MULTILINE))
-    xdc_ports = set(re.findall(r"\[get_ports\s+([A-Za-z_][A-Za-z0-9_]*)\]", FPGA_XDC.read_text(encoding="utf-8")))
+    top_ports = set(
+        re.findall(
+            r"^\s*(?:input|output|inout)\s+([A-Za-z_][A-Za-z0-9_]*)",
+            FPGA_TOP.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+    )
+    xdc_ports = set(
+        re.findall(
+            r"\[get_ports\s+([A-Za-z_][A-Za-z0-9_]*)\]", FPGA_XDC.read_text(encoding="utf-8")
+        )
+    )
 
     assert xdc_ports
     assert xdc_ports <= top_ports

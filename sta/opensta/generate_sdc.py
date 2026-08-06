@@ -70,16 +70,32 @@ def render(domains: list[dict[str, Any]], reset_ports: list[str]) -> str:
         "  return $objects",
         "}",
         "",
+        "proc require_ports {label name} {",
+        "  set objects [get_ports -quiet $name]",
+        "  if {$objects eq \"\"} {",
+        "    error \"required SDC object is missing: $label ($name)\"",
+        "  }",
+        "  return $objects",
+        "}",
+        "",
     ]
     pin_variables: dict[str, str] = {}
     for domain in domains:
         name = domain["name"]
         sta = domain["sta"]
-        pin_variable = f"clk_{name}_pin"
+        object_type = sta.get("object_type", "pin")
+        if object_type == "port":
+            pin_variable = f"clk_{name}_port"
+            object_name = sta["source_port"]
+            lines.append(
+                f"set {pin_variable} [require_ports \"clock {name}\" {{{object_name}}}]"
+            )
+        else:
+            pin_variable = f"clk_{name}_pin"
+            lines.append(
+                f"set {pin_variable} [require_pins \"clock {name}\" {{{sta['pin']}}}]"
+            )
         pin_variables[name] = pin_variable
-        lines.append(
-            f"set {pin_variable} [require_pins \"clock {name}\" {{{sta['pin']}}}]"
-        )
         period = f"{float(sta['period_ns']):.12g}"
         source_domain = sta.get("source_domain")
         if source_domain is None:

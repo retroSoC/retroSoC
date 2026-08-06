@@ -80,7 +80,10 @@ def tokenize_filelist(path: Path) -> list[str]:
         if not stripped or stripped.startswith("//"):
             continue
         try:
-            tokens.extend(shlex.split(raw_line, comments=True, posix=True))
+            lexer = shlex.shlex(raw_line, posix=True)
+            lexer.whitespace_split = True
+            lexer.quotes = '"'
+            tokens.extend(lexer)
         except ValueError as error:
             raise ValueError(f"{path}:{line_number}: {error}") from error
     return tokens

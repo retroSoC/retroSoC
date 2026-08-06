@@ -25,6 +25,29 @@
       ]
     },
     {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {"name": "jtag_tck_i_pad", "signal": "s_jtag_tck"},
+        {"name": "jtag_tms_i_pad", "signal": "s_jtag_tms"},
+        {"name": "jtag_tdi_i_pad", "signal": "s_jtag_tdi"}
+      ]
+    },
+    {
+      "kind": "schmitt_input",
+      "direction": "inout",
+      "ports": [
+        {"name": "jtag_trst_n_i_pad", "signal": "s_jtag_trst_n"}
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {"name": "jtag_tdo_o_pad", "signal": "s_jtag_tdo"}
+      ]
+    },
+    {
       "kind": "full",
       "direction": "inout",
       "prefix": "gpio_",
@@ -119,6 +142,11 @@
         "audclk_i_pad": "s_aud_clk",
         "ext_rst_n_i_pad": "rst_n_i",
         "xi_i_pad": "s_sys_clk",
+        "jtag_tck_i_pad": "s_jtag_tck",
+        "jtag_tms_i_pad": "s_jtag_tms",
+        "jtag_tdi_i_pad": "s_jtag_tdi",
+        "jtag_trst_n_i_pad": "s_jtag_trst_n",
+        "jtag_tdo_o_pad": null,
         "gpio_0_io_pad": "ps2_clk_i",
         "gpio_1_io_pad": "ps2_dat_i",
         "gpio_2_io_pad": "onewire_dat_o",
@@ -194,6 +222,11 @@
       "bindings": {
         "extclk_i_pad": "s_clk",
         "ext_rst_n_i_pad": "s_rst_n",
+        "jtag_tck_i_pad": "s_jtag_tck",
+        "jtag_tms_i_pad": "s_jtag_tms",
+        "jtag_tdi_i_pad": "s_jtag_tdi",
+        "jtag_trst_n_i_pad": "s_jtag_trst_n",
+        "jtag_tdo_o_pad": "s_jtag_tdo",
         "gpio_21_io_pad": "s_psram_sck",
         "gpio_22_io_pad": "s_psram_nss0",
         "gpio_23_io_pad": "s_psram_dat0",
@@ -253,6 +286,11 @@
         "audclk_i_pad": "s_aud_clk",
         "ext_rst_n_i_pad": "s_rst_n",
         "xi_i_pad": "r_xtal_clk",
+        "jtag_tck_i_pad": "s_jtag_tck",
+        "jtag_tms_i_pad": "s_jtag_tms",
+        "jtag_tdi_i_pad": "s_jtag_tdi",
+        "jtag_trst_n_i_pad": "s_jtag_trst_n",
+        "jtag_tdo_o_pad": null,
         "gpio_0_io_pad": "s_gpio_0_io",
         "gpio_1_io_pad": "s_gpio_1_io",
         "gpio_7_io_pad": "s_i2c0_scl_io",

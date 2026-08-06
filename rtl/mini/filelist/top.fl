@@ -2,6 +2,7 @@
 /top/gpio_pad_bridge.sv
 /top/ribp2rib.sv
 /top/rib2ribp.sv
+/top/rib2apb.sv
 /top/rib_error_slave.sv
 /top/rib2ram.sv
 /top/core_wrapper.sv
@@ -12,6 +13,8 @@
 /top/ip_apb_wrapper.sv
 /top/bus.sv
 /top/rcu.sv
+/top/mgmt_debug_reset.sv
+/top/mgmt_debug_wrapper.sv
 /top/mgmt_core_wrapper.sv
 /top/user_core_design_template.sv
 /top/user_core_top.sv

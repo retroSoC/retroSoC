@@ -64,10 +64,12 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_HAS_SRAM 1U" in header
     assert "SOC_SYSCTRL_PLL_CFG_OFFSET      32'h00000008" in rtl
     assert "SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C" in rtl
+    assert "SOC_SYSCTRL_TEST_STATUS_OFFSET  32'h00000084" in rtl
     assert "SOC_ADDR_IS_RIBP(addr)" in rtl
     assert "SOC_ADDR_IS_NMI" not in rtl
     assert "RS_SOC_SYSCTRL_PLL_CFG_OFFSET UINT32_C(0x00000008)" in header
     assert "RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)" in header
+    assert "RS_SOC_SYSCTRL_TEST_STATUS_OFFSET UINT32_C(0x00000084)" in header
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x00800000" in linker
 
 

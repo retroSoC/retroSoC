@@ -35,6 +35,8 @@ Emulator::Emulator(cxxopts::ParseResult &res) {
     if (tmp > 0)
         args.simTime = tmp;
 
+    args.jtagPort = res["jtag-port"].as<unsigned long>();
+
     args.image = res["image"].as<std::string>();
 
     startTime = chrono::system_clock::now();
@@ -50,6 +52,17 @@ Emulator::Emulator(cxxopts::ParseResult &res) {
 
     dutPtr = new Vretrosoc_top;
     reset();
+
+    if (args.jtagPort > 0) {
+        if (args.jtagPort > 65535UL) {
+            std::cerr << "remote-bitbang port is outside the TCP range" << std::endl;
+            exit(1);
+        }
+        remoteBitbang = std::make_unique<RemoteBitbang>(static_cast<std::uint16_t>(args.jtagPort));
+        if (!remoteBitbang->start()) {
+            exit(1);
+        }
+    }
 
     if (args.dumpWave) {
 #ifdef DUMP_WAVE_FST
@@ -84,6 +97,10 @@ void Emulator::reset() {
               << std::endl;
     dutPtr->rst_n_i = 1;
     dutPtr->ext_clk_i = 0;
+    dutPtr->jtag_tck_i = 0;
+    dutPtr->jtag_tms_i = 0;
+    dutPtr->jtag_tdi_i = 0;
+    dutPtr->jtag_trst_n_i = 0;
     dutPtr->eval();
     // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " <<
     // static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
@@ -104,6 +121,7 @@ void Emulator::reset() {
     }
 
     dutPtr->rst_n_i = 1;
+    dutPtr->jtag_trst_n_i = 1;
     for (int i = 0; i < 5; i++) {
         dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
         dutPtr->eval();
@@ -140,10 +158,30 @@ bool Emulator::getArriveTime() {
         return false;
 }
 
-void Emulator::runSim() {
+int Emulator::runSim() {
     std::cout << rang::fg::yellow << "Running DUT simulation..." << rang::fg::reset << std::endl;
     while (!Verilated::gotFinish() && signal_received == 0 && !getArriveTime()) {
+        // TCP polling need not occur on every simulation half-cycle. A JTAG
+        // command is still evaluated one-by-one by RemoteBitbang::service().
+        if (remoteBitbang && (cycle & 0x3fU) == 0U && !remoteBitbang->service(*dutPtr)) {
+            break;
+        }
         step();
+        if (dutPtr->test_done_o != 0U) {
+            const auto code = static_cast<unsigned>(dutPtr->test_code_o);
+            if (dutPtr->test_pass_o != 0U) {
+                std::cout << "\nSIM_TEST_PASS code=" << code << std::endl;
+                dutPtr->final();
+                return 0;
+            }
+            std::cerr << "\nSIM_TEST_FAIL code=" << code << std::endl;
+            dutPtr->final();
+            return 1;
+        }
+    }
+    if (getArriveTime()) {
+        std::cerr << "SIM_TEST_TIMEOUT" << std::endl;
     }
     dutPtr->final();
+    return 0;
 }

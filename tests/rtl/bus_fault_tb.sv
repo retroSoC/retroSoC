@@ -15,20 +15,26 @@ module bus_fault_tb;
   rib_if user_rib ();
   rib_if dma_rib ();
   rib_if rib ();
-  ribp_if apb_ribp ();
+  rib_if apb_rib ();
 
   always #5 clk_i = ~clk_i;
 
-  assign rib.cmd_ready  = 1'b1;
-  assign rib.w_ready    = 1'b1;
-  assign rib.rsp_valid  = 1'b0;
-  assign rib.rdata      = 32'hCAFE_BABE;
-  assign rib.resp_err   = 1'b0;
-  assign rib.resp_code  = `RIB_RESP_OK;
-  assign rib.rsp_beat   = '0;
-  assign rib.rsp_last   = 1'b0;
-  assign apb_ribp.ready = 1'b1;
-  assign apb_ribp.rdata = 32'h1234_5678;
+  assign rib.cmd_ready     = 1'b1;
+  assign rib.w_ready       = 1'b1;
+  assign rib.rsp_valid     = 1'b0;
+  assign rib.rdata         = 32'hCAFE_BABE;
+  assign rib.resp_err      = 1'b0;
+  assign rib.resp_code     = `RIB_RESP_OK;
+  assign rib.rsp_beat      = '0;
+  assign rib.rsp_last      = 1'b0;
+  assign apb_rib.cmd_ready = 1'b1;
+  assign apb_rib.w_ready   = 1'b1;
+  assign apb_rib.rsp_valid = 1'b0;
+  assign apb_rib.rdata     = 32'h1234_5678;
+  assign apb_rib.resp_err  = 1'b0;
+  assign apb_rib.resp_code = `RIB_RESP_OK;
+  assign apb_rib.rsp_beat  = '0;
+  assign apb_rib.rsp_last  = 1'b1;
 
   bus u_bus (
       .clk_i            (clk_i),
@@ -39,7 +45,7 @@ module bus_fault_tb;
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_bus_idle_o),
       .rib              (rib),
-      .apb_ribp         (apb_ribp),
+      .apb_rib          (apb_rib),
       .perf_enable_i    (1'b0),
       .perf_clear_i     (1'b0),
       .fault_valid_o    (fault_valid_o),
@@ -62,7 +68,7 @@ module bus_fault_tb;
       while (!fault_valid_o) @(posedge clk_i);
       if (fault_addr_o !== address || fault_wstrb_o !== write_strobes ||
           fault_reserved_o !== reserved || fault_access_o || fault_code_o !== expected_code ||
-          rib.cmd_valid || apb_ribp.valid) begin
+          rib.cmd_valid || apb_rib.cmd_valid) begin
         $fatal(1, "unexpected fault response for address %h", address);
       end
       while (!mgmt_ribp.ready) @(posedge clk_i);
@@ -95,7 +101,7 @@ module bus_fault_tb;
         user_rib.w_valid = 1'b0;
       end
       while (!fault_valid_o) @(posedge clk_i);
-      if (!fault_access_o || fault_master_o != 2'd1 || rib.cmd_valid || apb_ribp.valid) begin
+      if (!fault_access_o || fault_master_o != 2'd1 || rib.cmd_valid || apb_rib.cmd_valid) begin
         $fatal(1, "user access was not denied locally");
       end
       if (user_rib.rdata !== 32'd0 || !user_rib.resp_err || !user_rib.rsp_last ||

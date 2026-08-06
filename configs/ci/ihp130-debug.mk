@@ -1,0 +1,12 @@
+SOC             := MINI
+PDK             := IHP130
+HAVE_PLL        := NO
+HAVE_SRAM_IF    := YES
+HAVE_SRAM_MACRO := YES
+PDK_BEHAV       := YES
+HAVE_SVA        := NO
+ISA             := RV32IM
+HAVE_CSR        := NO
+APP             := debug
+FIRMWARE_NAME   := retrosoc_debug
+LINK_TYPE       := ld2_sram

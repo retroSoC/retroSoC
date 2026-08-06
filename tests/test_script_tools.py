@@ -32,12 +32,19 @@ from scripts.bitwuzla_smt2 import translate_arguments  # noqa: E402
 from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 from scripts.check_format import format_files  # noqa: E402
-from scripts.dependency_lock import LockError, load_lock  # noqa: E402
+from scripts.dependency_lock import LockError, load_lock, validate_flake_lock  # noqa: E402
+from scripts.development_environment import (  # noqa: E402
+    DEFAULT_TOOLS,
+    render_activation,
+    stamp_data,
+)
 from scripts.generate_mpw import validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
+from scripts.package import make_sbom  # noqa: E402
 from scripts import regress  # noqa: E402
 from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
+    CI_SMOKE_APP_VALUE,
     NIGHTLY_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
@@ -112,7 +119,7 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert str(ROOT / "rtl/managed/hazard3/hdl") in hazard3
     assert "rtl/managed/mpw/core/username3" not in hazard3
     assert (tmp_path / "core_hazard3.fl").is_file()
-    assert (tmp_path / "core_picorv32.fl").is_file()
+    assert not (tmp_path / "core_picorv32.fl").exists()
     assert {
         "pdk_gf180.fl",
         "pdk_ics55.fl",
@@ -123,7 +130,20 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     }.issubset({path.name for path in generated})
 
 
-def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> None:
+def test_filelist_round_trips_verilog_define_values(tmp_path: Path) -> None:
+    generate_all(tmp_path, ["+define+SOC_JTAG_IDCODE=32'hDEADBEEF"])
+
+    assert (tmp_path / "def.fl").read_text(encoding="utf-8") == (
+        "+define+SOC_JTAG_IDCODE=32'hDEADBEEF\n"
+    )
+    parsed = parse_filelists([tmp_path / "def.fl"])
+    output = tmp_path / "round-trip.fl"
+    write_filelist(output, parsed)
+    assert output.read_text(encoding="utf-8") == ("+define+SOC_JTAG_IDCODE=32'hDEADBEEF\n")
+    assert parse_filelists([output]) == parsed
+
+
+def test_source_export_uses_the_fixed_hazard3_management_core(tmp_path: Path) -> None:
     module_path = ROOT / "syn/tools/export_soc_sources.py"
     spec = importlib.util.spec_from_file_location("retrosoc_source_export", module_path)
     assert spec is not None and spec.loader is not None
@@ -135,40 +155,39 @@ def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> 
     dynamic_core.write_text("", encoding="utf-8")
     dynamic_ip.write_text("", encoding="utf-8")
 
-    for core, source_name in (
-        ("HAZARD3", "hazard3_cpu_1port.v"),
-        ("PICORV32", "picorv32_ver.v"),
-    ):
-        arguments = SimpleNamespace(
-            pdk="IHP130",
-            simu="IVERILOG",
-            core=core,
-            have_pll=False,
-            have_sram_if=False,
-            have_sram_macro=False,
-            have_sva=False,
-            dynamic_core_filelist=dynamic_core,
-            dynamic_ip_filelist=dynamic_ip,
-        )
-        generated_dir = tmp_path / core.lower()
-        user_extensions_dir = generated_dir / "user_extensions"
-        source_export.generate_all(generated_dir, source_export.build_defines(arguments))
-        source_export.generate_user_extensions(
-            ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
-        )
-        filelist = source_export.configured_filelist(
-            arguments, generated_dir, user_extensions_dir, require_files=False
-        )
+    arguments = SimpleNamespace(
+        pdk="IHP130",
+        simu="IVERILOG",
+        have_pll=False,
+        have_sram_if=False,
+        have_sram_macro=False,
+        have_sva=False,
+        jtag_idcode="DEADBEEF",
+        dynamic_core_filelist=dynamic_core,
+        dynamic_ip_filelist=dynamic_ip,
+    )
+    generated_dir = tmp_path / "hazard3"
+    user_extensions_dir = generated_dir / "user_extensions"
+    source_export.generate_all(generated_dir, source_export.build_defines(arguments))
+    source_export.generate_user_extensions(
+        ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
+    )
+    filelist = source_export.configured_filelist(
+        arguments, generated_dir, user_extensions_dir, require_files=False
+    )
 
-        assert f"+define+CORE_{core}" in filelist.defines
-        assert any(path.name == source_name for path in filelist.files)
+    assert "+define+SOC_JTAG_IDCODE=-559038737" in filelist.defines
+    assert not any(item.startswith("+define+CORE_") for item in filelist.defines)
+    assert "+define+HAVE_DEBUG" not in filelist.defines
+    assert any(path.name == "hazard3_cpu_1port.v" for path in filelist.files)
 
 
-def test_package_forwards_manifest_management_core() -> None:
+def test_package_forwards_manifest_jtag_idcode() -> None:
     package_source = (ROOT / "scripts/package.py").read_text(encoding="utf-8")
 
-    assert '"--core"' in package_source
-    assert 'config.get("CORE", "HAZARD3")' in package_source
+    assert '"--jtag-idcode"' in package_source
+    assert 'config.get("JTAG_IDCODE", "DEADBEEF")' in package_source
+    assert '"--core"' not in package_source
 
 
 def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> None:
@@ -181,7 +200,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
 
     bus_filelist = tmp_path / "bus.fl"
     rib_adapter_filelist = tmp_path / "rib_adapter.fl"
-    rib2apb_filelist = tmp_path / "ribp2apb.fl"
+    rib2apb_filelist = tmp_path / "rib2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
@@ -190,7 +209,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
-        "ribp2apb", rib2apb_filelist, memory_map, topology, user_extensions
+        "rib2apb", rib2apb_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
         "sysctrl", sysctrl_filelist, memory_map, topology, user_extensions
@@ -204,7 +223,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
-    ribp2apb = parse_filelists([rib2apb_filelist], require_files=False)
+    rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
@@ -216,9 +235,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/bus_formal.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib2ribp.sv" in rib_adapter.files
     assert ROOT / "rtl/mini/formal/rib_adapter_formal.sv" in rib_adapter.files
-    assert ROOT / "rtl/ip/ribp/interconnect/ribp2apb.sv" in ribp2apb.files
-    assert ROOT / "rtl/mini/formal/ribp2apb_formal.sv" in ribp2apb.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in ribp2apb.files
+    assert ROOT / "rtl/mini/top/rib2apb.sv" in rib2apb.files
+    assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
     assert ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
@@ -238,6 +257,8 @@ def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
     assert "`USER_CORE_COUNT" not in properties
     assert "rib_wdata[4:0] < user_core_count" in properties
     assert "user_reset == user_reset_mask" in properties
+    assert "SYSCTRL_TEST_STATUS_OFFSET" in properties
+    assert "test_done" in design
 
 
 def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
@@ -270,7 +291,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "ribp2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -292,7 +313,7 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"bus={tmp_path / 'bus'}",
         "--proof",
-        f"ribp2apb={tmp_path / 'ribp2apb'}",
+        f"rib2apb={tmp_path / 'rib2apb'}",
         "--proof",
         f"sysctrl={tmp_path / 'sysctrl'}",
         "--proof",
@@ -483,20 +504,29 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     assert invalid.returncode != 0
     assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
 
-    invalid_core = subprocess.run(
+    removed_core = subprocess.run(
         ["make", "CORE=alternate", "config"],
         cwd=ROOT,
         text=True,
         capture_output=True,
     )
-    assert invalid_core.returncode != 0
-    assert "Invalid CORE='alternate'" in invalid_core.stderr
+    assert removed_core.returncode != 0
+    assert "CORE has been removed" in removed_core.stderr
 
     default_core = run("make", "config").stdout
-    assert "CORE               HAZARD3" in default_core
+    assert any(
+        line.startswith("MGMT_CORE") and line.rstrip().endswith("HAZARD3")
+        for line in default_core.splitlines()
+    )
 
-    picorv32_core = run("make", "CORE=PICORV32", "config").stdout
-    assert "CORE               PICORV32" in picorv32_core
+    removed_debug = subprocess.run(
+        ["make", "HAVE_DEBUG=NO", "config"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert removed_debug.returncode != 0
+    assert "HAVE_DEBUG has been removed" in removed_debug.stderr
 
     removed_ip = subprocess.run(
         ["make", "IP=MDD", "config"],
@@ -541,6 +571,9 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     assert len(lock["sources"]["mpw"]["revision"]) == 40
     assert lock["sources"]["hazard3"]["destination"] == "rtl/managed/hazard3"
     assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
+    assert lock["container_images"]["ubuntu_22_04"]["image"] == "ubuntu"
+    assert lock["nix_inputs"]["nixpkgs"]["revision"] == "50ab793786d9de88ee30ec4e4c24fb4236fc2674"
+    validate_flake_lock(lock, ROOT / "flake.lock")
 
     command = (
         sys.executable,
@@ -589,6 +622,35 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         raise AssertionError("invalid submodule path was accepted")
 
 
+def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None:
+    lock_path = ROOT / "config/dependencies.lock.json"
+    lock = load_lock(lock_path)
+    cache = tmp_path / "development"
+    stamp = stamp_data(ROOT, cache, DEFAULT_TOOLS, lock, lock_path)
+
+    assert stamp["tools"]["verilator"] == lock["toolchains"]["ubuntu-22.04"]["verilator"]["version"]
+    assert stamp["tools"]["openocd"] == lock["toolchains"]["ubuntu-22.04"]["openocd"]["version"]
+    assert set(stamp["python_requirements"]) == {"requirements/build.txt", "requirements/ci.txt"}
+    activation = render_activation(cache, [cache / "venv/bin", cache / "toolchains/verilator/bin"])
+    assert "export RETROSOC_DEVELOPMENT_CACHE=" in activation
+    assert "toolchains/verilator/bin" in activation
+
+
+def test_container_and_nix_environment_files_use_locked_inputs() -> None:
+    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    dockerfile = (ROOT / "docker/Dockerfile").read_text(encoding="utf-8")
+    flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
+    sbom = make_sbom(lock)
+
+    assert f"ubuntu@{lock['container_images']['ubuntu_22_04']['digest']}" in dockerfile
+    assert "scripts/development_environment.py" in dockerfile
+    assert "scripts/development_environment.py" in flake
+    assert "buildFHSEnv" in flake
+    assert "retrosoc-development retrosoc-dev" in flake
+    assert any(component["name"] == "container/ubuntu_22_04" for component in sbom["components"])
+    assert any(component["name"] == "nix/nixpkgs" for component in sbom["components"])
+
+
 def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
     monkeypatch.setenv("BUILD_TIMESTAMP", "2026-07-21-10-39")
     assert regression_environment()["BUILD_TIMESTAMP"] == "2026-07-21-10-39"
@@ -611,7 +673,8 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
     for _, values in regression_commands:
         if "SIMU=VERILATOR" in values:
             assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
-            assert "HAVE_SVA=YES" in values
+            if "debug-sim" not in values:
+                assert "HAVE_SVA=YES" in values
 
 
 def test_verilator_has_no_external_core_selection() -> None:
@@ -624,16 +687,50 @@ def test_verilator_has_no_external_core_selection() -> None:
     assert "core_sel_i" not in testbench
 
 
-def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
+def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
     wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
 
-    assert "VALID_CORE      := HAZARD3 PICORV32" in makefile
-    assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
-    assert "`ifdef CORE_PICORV32" in wrapper
-    assert "`elsif CORE_HAZARD3" in wrapper
+    assert "CORE has been removed" in makefile
+    assert "HAVE_DEBUG has been removed" in makefile
+    assert "CORE_$(CORE)" not in makefile
+    assert "`ifdef CORE_" not in wrapper
+    assert "`ifdef HAVE_DEBUG" not in wrapper
     assert "ahbl2ribp u_ahbl2ribp" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
+    assert ".DEBUG_SUPPORT      (1)" in wrapper
+
+
+def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
+    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
+    debug_wrapper = (ROOT / "rtl/mini/top/mgmt_debug_wrapper.sv").read_text(encoding="utf-8")
+    verilator_makefile = (ROOT / "rtl/mini/mk/verilator.mk").read_text(encoding="utf-8")
+    driver = (ROOT / "scripts/run_debug_session.py").read_text(encoding="utf-8")
+    openocd = (ROOT / "rtl/mini/dv/verilator/openocd/retrosoc_hazard3.cfg").read_text(
+        encoding="utf-8"
+    )
+
+    assert "JTAG_IDCODE              ?= DEADBEEF" in makefile
+    assert "if [ $$value -gt 2147483647 ]" in makefile
+    assert "HAVE_DEBUG               ?=" not in makefile
+    assert ".MULDIV_UNROLL      (2)" in wrapper
+    assert ".BRANCH_PREDICTOR   (1)" in wrapper
+    assert ".BREAKPOINT_TRIGGERS(2)" in wrapper
+    assert ".HAVE_SBA(0)" in debug_wrapper
+    assert "mgmt_debug_reset u_mgmt_debug_reset" in debug_wrapper
+    assert "--timeout $(SOC_SIM_TIME)" in verilator_makefile
+    assert "--require-debug-tools" in verilator_makefile
+    assert "HAVE_DEBUG" not in verilator_makefile
+    assert "DEBUG_GDB_PASS" in driver
+    assert "break *0x30000008" in driver
+    assert "adapter driver remote_bitbang" in openocd
+    assert "catch {remote_bitbang port $jtag_port}" in openocd
+    assert "remote_bitbang_port $jtag_port" in openocd
+    assert "-expected-id 0xdeadbeef" in openocd
+    assert lock["toolchains"]["ubuntu-22.04"]["openocd"]["version"] == "0.12.0-1"
+    assert any(profile == "configs/ci/ihp130-debug.mk" for profile, _ in PR_COMMANDS)
 
 
 def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
@@ -656,7 +753,7 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     assert profiles == ()
     command_values = [values for _, values in commands]
     assert command_values[0] == RTL_LINT_VALUES
-    assert ("firmware",) in command_values
+    assert (CI_SMOKE_APP_VALUE, "firmware") in command_values
     assert ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp") in command_values
     assert ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm") in command_values
     assert not any(
@@ -674,7 +771,9 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "+ make CONFIG=configs/ci/ihp130.mk firmware" in dry_run.stdout
+    assert (
+        "+ make CONFIG=configs/ci/ihp130.mk APP=ci_smoke firmware" in dry_run.stdout
+    )
     assert "netsim" not in dry_run.stdout
 
     invalid = subprocess.run(
@@ -702,8 +801,11 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
         commands = pdk_pr_commands(profile)
         command_values = [values for _, values in commands]
         assert command_values[0] == RTL_LINT_VALUES
-        assert ("firmware",) in command_values
-        assert any("SIMU=VERILATOR" in values and "firmware" in values for values in command_values)
+        assert (CI_SMOKE_APP_VALUE, "firmware") in command_values
+        assert any(
+            CI_SMOKE_APP_VALUE in values and "SIMU=VERILATOR" in values and "firmware" in values
+            for values in command_values
+        )
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert ("STA=OPENSTA", "sta") in command_values
@@ -1049,7 +1151,7 @@ def test_simulation_success_marker_and_failure_detection(tmp_path: Path) -> None
     log = tmp_path / "sim.log"
     result = tmp_path / "result.json"
     log.write_text(
-        "retroSoC: A Customized ASIC for Retro Stuff\nSimulation complete\n",
+        "SIM_TEST_PASS code=0\nSimulation complete\n",
         encoding="utf-8",
     )
     run(
@@ -1063,7 +1165,7 @@ def test_simulation_success_marker_and_failure_detection(tmp_path: Path) -> None
     assert json.loads(result.read_text(encoding="utf-8"))["status"] == "passed"
 
     log.write_text(
-        "retroSoC: A Customized ASIC for Retro Stuff\nTEST FAILED\n",
+        "SIM_TEST_PASS code=0\nSIM_TEST_FAIL code=1\n",
         encoding="utf-8",
     )
     failed = subprocess.run(
@@ -1279,6 +1381,39 @@ def test_fatfs_update_reextracts_downloaded_archive(tmp_path: Path) -> None:
 
     app_setup.extract_fatfs(archive, source, update=True)
     assert (source / "ff.c").read_text(encoding="utf-8") == "new archive contents\n"
+
+
+def test_coremark_setup_patch_is_idempotent(tmp_path: Path) -> None:
+    module_path = ROOT / "app/setup.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_app_setup", module_path)
+    assert spec is not None and spec.loader is not None
+    app_setup = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(app_setup)
+
+    coremark = tmp_path / "coremark"
+    coremark.mkdir()
+    (coremark / "coremark.h").write_text('#include "core_portme.h"\n', encoding="utf-8")
+    (coremark / "core_main.c").write_text(
+        "/* Function: main */\nmain(void) {\n"
+        "  if (time_in_secs(total_time) < 10) {\n  }\n"
+        "    return MAIN_RETURN_VAL;\n}\n",
+        encoding="utf-8",
+    )
+    previous_coremark_dir = app_setup.COREMARK_DIR
+    try:
+        app_setup.COREMARK_DIR = coremark
+        app_setup.patch_coremark()
+        first = (coremark / "core_main.c").read_text(encoding="utf-8")
+        app_setup.patch_coremark()
+        second = (coremark / "core_main.c").read_text(encoding="utf-8")
+    finally:
+        app_setup.COREMARK_DIR = previous_coremark_dir
+
+    assert first == second
+    assert "core_main(void)" in first
+    assert "COREMARK_MIN_RUN_SECS" in first
+    assert "#if COREMARK_MIN_RUN_SECS > 0" in first
+    assert "return total_errors == 0 ? 0 : 1;" in first
 
 
 def test_ci_actions_are_pinned_to_commits() -> None:

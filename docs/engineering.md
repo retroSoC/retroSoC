@@ -6,11 +6,18 @@
 | --- | --- | --- |
 | Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
 | Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/ihp130-debug.mk` | Verilator remote-bitbang JTAG DTM, Debug Module, OpenOCD, and GDB acceptance |
 | Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Pull request | `configs/ci/ics55.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
 | Nightly | `configs/ci/ihp130.mk` | repeated full IHP130 regression |
 | Cluster | `configs/cluster/ics55.mk` | compatibility profile for site-specific ICS55 runs |
+
+Regression Verilator firmware simulations override the profiles' manual
+`bringup` default with `APP=ci_smoke`. This application verifies UART output,
+archinfo APB readback, and test-status completion within the CI time budget;
+`bringup` retains the full automatic application-information report for
+manual runs.
 
 OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
 `slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, ICS55 uses the H7CR
@@ -28,8 +35,15 @@ scanner, and cleanup rules as the other open-source CI PDKs.
 ## Reproducible Inputs
 
 `config/dependencies.lock.json` is the source of truth for external Git repositories, downloaded
-archives, and Ubuntu 22.04 toolchain bundles. Git checkouts use full 40-character revisions. Archive
-downloads are accepted only after SHA-256 verification. CI actions are pinned to commit IDs.
+archives, OCI container base images, Nix inputs, and Ubuntu 22.04 toolchain bundles. Git checkouts
+use full 40-character revisions. Archive downloads are accepted only after SHA-256 verification.
+The Docker image uses an immutable OCI digest. The flake lock and dependency lock must agree on
+each Nix input revision and NAR hash. CI actions are pinned to commit IDs.
+
+The [development environment guide](development-environment.md) defines the Docker, Nix, and
+manual entry points. All three use scripts/development_environment.py to install the same
+checksum-verified open-source tools. PDK and managed-source setup deliberately remains a checkout
+operation through make setup or make setup-regression, rather than a container or Nix image layer.
 
 To update a dependency:
 
@@ -100,10 +114,15 @@ capped at 16 and can be set with `JOBS=<n>` or `MAX_JOBS=<n>`.
 ## Result Policy
 
 Every EDA and simulation flow command is run through `scripts/run_flow.py`, which streams a log and writes a
-result JSON containing the command, timestamps, duration, exit code, and status. The VCS and Verilator
-simulation paths stream UART output to an interactive terminal byte-by-byte while preserving the raw output
-in their simulation logs. A simulation passes only when the command succeeds, its log contains the firmware
-startup marker, and no fatal/failure marker is present. Icarus regressions use the assembly self-test as
+result JSON containing the command, timestamps, duration, exit code, and status. Automated firmware signals a
+terminal result by writing SYSCTRL `TEST_STATUS` at offset `0x84`: bit 31 is `VALID`, bit 0 is `PASS`, and
+bits 15:8 are an implementation-defined result code. The first valid full-word write after reset is sticky.
+The testbench and Verilator harness translate the valid/pass bits into `SIM_TEST_PASS` or `SIM_TEST_FAIL`;
+the Verilator harness additionally prints the result code.
+A simulation passes only when its command succeeds, the pass marker is present, and no fatal, failure, or
+timeout marker is present. UART startup text is diagnostic only; it is not a verdict. The local
+`netsim-boot` shortcut remains explicitly scoped to stopping Icarus assembly netlist simulation at
+`Hello retroSoC!`; CI uses the terminal software status. Icarus regressions use the assembly self-test as
 `retrosoc_asm`, while the normal `retrosoc_fw` image remains available for firmware size tracking and
 Verilator regressions.
 
@@ -111,10 +130,10 @@ Verilator regressions.
 
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
-targets are `bus`, `rib_adapter`, `ribp2apb`, `sysctrl`, `pll_rcu`, and
+targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`, and
 `gpio_user`; each uses
 the SBY `prove` task for bounded model checking and k-induction, plus a
-`cover` task, at depth 20. `sysctrl` checks register side effects, PLL request
+`cover` task, at depth 20. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
 state machine. `gpio_user` checks fixed user-GPIO ownership, lock, handoff,
 and mux safety. `rib_adapter` checks both single-word compatibility adapters

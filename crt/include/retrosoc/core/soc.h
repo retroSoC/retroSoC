@@ -7,13 +7,7 @@
 #include <retrosoc/generated/memory_map.h>
 #include <retrosoc/generated/user_extensions.h>
 
-#if defined(RS_SOC_MGMT_CORE_HAZARD3)
-#define HW_CORE "Management Hazard3"
-#elif defined(RS_SOC_MGMT_CORE_PICORV32)
-#define HW_CORE "Management PicoRV32"
-#else
-#error "Management core selection is missing"
-#endif
+#define HW_CORE                         "Management Hazard3"
 
 #define CPU_FREQ                        72     // unit: MHz
 #define UART_BPS                        921600 // unit: bps
@@ -191,6 +185,10 @@
     RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PERF_FLASH_WAIT_LO_OFFSET)
 #define reg_sysctrl_perf_flash_wait_hi                                                             \
     RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET)
+#define reg_sysctrl_test_status            RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_TEST_STATUS_OFFSET)
+#define RS_SOC_TEST_STATUS_VALID           UINT32_C(0x80000000)
+#define RS_SOC_TEST_STATUS_CODE_SHIFT      8U
+#define RS_SOC_TEST_STATUS_PASS            UINT32_C(0x00000001)
 #define RS_SOC_BUS_FAULT_PENDING           UINT32_C(0x00000001)
 #define RS_SOC_BUS_FAULT_WRITE             UINT32_C(0x00000002)
 #define RS_SOC_BUS_FAULT_REASON_MASK       UINT32_C(0x0000000C)

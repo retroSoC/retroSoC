@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <string>
 namespace chrono = std::chrono;
 
@@ -12,9 +13,10 @@ namespace chrono = std::chrono;
 #endif
 #include "cxxopts.hpp"
 
-class Emulator
-{
-public:
+#include "RemoteBitbang.hpp"
+
+class Emulator {
+  public:
     Emulator(cxxopts::ParseResult &res);
     ~Emulator();
     void wave();
@@ -23,21 +25,23 @@ public:
     void state();
     std::string getAppName(std::string str);
     bool getArriveTime();
-    void runSim();
+    int runSim();
 
-private:
+  private:
     unsigned long long cycle = 0;
     chrono::system_clock::time_point startTime;
     Vretrosoc_top *dutPtr = nullptr;
-    struct Args
-    {
+    struct Args {
         bool dumpWave = false;
         unsigned long dumpBegin = 0UL;
         unsigned long dumpEnd = -1UL;
         unsigned long simTime = -1UL;
+        unsigned long jtagPort = 0UL;
         std::string simMode = "";
         std::string image = "";
     } args;
+
+    std::unique_ptr<RemoteBitbang> remoteBitbang;
 
 #ifdef DUMP_WAVE_FST
     VerilatedFstC *wavePtr = nullptr;

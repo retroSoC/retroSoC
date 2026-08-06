@@ -22,7 +22,7 @@ module ip_apb_wrapper (
     input  logic                        clk_aud_i,
     input  logic                        rst_aud_n_i,
     input  logic                        tmr_capch_i,
-    ribp_if.slave                        ribp,
+    rib_if.slave                        rib,
     uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
@@ -62,10 +62,10 @@ module ip_apb_wrapper (
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "soc_apb_irq_bindings.svh"
 
-ribp2apb u_ribp2apb (
+rib2apb u_rib2apb (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (ribp),
+      .rib    (rib),
       `include "soc_apb_connections.svh"
   );
 

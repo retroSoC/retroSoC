@@ -1,5 +1,4 @@
 SOC             := MINI
-CORE            := HAZARD3
 PDK             := IHP130
 HAVE_PLL        := NO
 HAVE_SRAM_IF    := YES

@@ -21,8 +21,16 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_top (
-    input wire ext_clk_i,
-    input wire rst_n_i
+    input  wire       ext_clk_i,
+    input  wire       rst_n_i,
+    input  wire       jtag_tck_i,
+    input  wire       jtag_tms_i,
+    input  wire       jtag_tdi_i,
+    input  wire       jtag_trst_n_i,
+    output wire       jtag_tdo_o,
+    output wire       test_done_o,
+    output wire       test_pass_o,
+    output wire [7:0] test_code_o
 );
 
   wire        s_clk;
@@ -49,9 +57,22 @@ module retrosoc_top (
   wire [12:0] s_sdram_addr;
   wire [ 1:0] s_sdram_dqm;
   wire [15:0] s_sdram_dq;
+  wire        s_jtag_tck;
+  wire        s_jtag_tms;
+  wire        s_jtag_tdi;
+  wire        s_jtag_trst_n;
+  wire        s_jtag_tdo;
 
-  assign s_clk   = ext_clk_i;
-  assign s_rst_n = rst_n_i;
+  assign s_clk         = ext_clk_i;
+  assign s_rst_n       = rst_n_i;
+  assign s_jtag_tck    = jtag_tck_i;
+  assign s_jtag_tms    = jtag_tms_i;
+  assign s_jtag_tdi    = jtag_tdi_i;
+  assign s_jtag_trst_n = jtag_trst_n_i;
+  assign jtag_tdo_o    = s_jtag_tdo;
+  assign test_done_o   = u_retrosoc_asic.s_test_done;
+  assign test_pass_o   = u_retrosoc_asic.s_test_pass;
+  assign test_code_o   = u_retrosoc_asic.s_test_code;
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_verilator_bindings.svh"
   );

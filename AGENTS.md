@@ -63,8 +63,10 @@ README that states its ownership, source of truth, and validation expectations.
   `media`, `middleware`, `network`, `ports`, and `benchmark`.
 - Consume SDK interfaces through `<retrosoc/...>` public headers. Use the
   `rs_` API namespace and `rs_status_t` for operations that can fail.
-- Applications are selected by `APP`. The supported values are `bringup` and
-  `shell`; each profile is declared in `app/apps/<name>/app.mk`.
+- Applications are selected by `APP`. The supported values are `benchmark`,
+  `bringup`, `debug`, and `shell`; each profile is declared in
+  `app/apps/<name>/app.mk`. The `debug` application is an RTL debug-transport
+  acceptance image, not a user-facing firmware profile.
 - Do not add new dependencies on `crt/inc`, retired `tiny` names, or legacy
   `rs_*.h`/`tiny*.h` include paths.
 - Treat `app/coremark/coremark-main`, `app/fatfs/ff16`, `app/lvgl/lvgl-main`,
@@ -135,9 +137,13 @@ warning checks, and metric collection.
 
 ## Regression Verdicts and Known Conditions
 
-- A simulation passes only when its command succeeds, its log contains the
-  configured success marker, and the log contains no `FAILED`, `FATAL`,
-  `assertion failed`, or `%Error` marker.
+- Automated firmware completes by writing SYSCTRL `TEST_STATUS`: bit 31 is
+  valid, bit 0 is pass, and bits 15:8 contain a result code. The first valid
+  full-word write is sticky until reset. Testbenches emit `SIM_TEST_PASS` or
+  `SIM_TEST_FAIL`; UART startup output is diagnostic only. A simulation passes
+  only when its command succeeds, its log contains the configured success
+  marker, and the log contains no `FAILED`, `FATAL`, `assertion failed`,
+  `%Error`, `SIM_TEST_FAIL`, or `SIM_TEST_TIMEOUT` marker.
 - New self-owned C compiler warnings fail the regression. New or increased EDA
   warning signatures make `check-warnings` fail when invoked directly, but the
   regression runner records them as non-blocking observations so CI uploads the

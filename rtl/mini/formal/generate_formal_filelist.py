@@ -51,14 +51,14 @@ def source_files(target: str) -> list[Path]:
             TOP / "rib2ribp.sv",
             SCRIPT_DIR / "rib_adapter_formal.sv",
         ]
-    if target == "ribp2apb":
+    if target == "rib2apb":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
             COMMON_RTL / "interface/apb4_pure_if.sv",
             COMMON_RTL / "utils/register.sv",
-            COMMON_RTL / "utils/edge_det.sv",
-            INTERCONNECT / "ribp2apb.sv",
-            SCRIPT_DIR / "ribp2apb_formal.sv",
+            COMMON_RTL / "utils/spill_register.sv",
+            TOP / "rib_if.sv",
+            TOP / "rib2apb.sv",
+            SCRIPT_DIR / "rib2apb_formal.sv",
         ]
     if target == "sysctrl":
         return [
@@ -122,7 +122,7 @@ def parse_args() -> argparse.Namespace:
         choices=(
             "bus",
             "rib_adapter",
-            "ribp2apb",
+            "rib2apb",
             "sysctrl",
             "pll_rcu",
             "gpio_user",

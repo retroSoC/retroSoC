@@ -39,7 +39,10 @@ def build_defines(args: argparse.Namespace) -> list[str]:
         defines.append("+define+HAVE_SRAM_MACRO")
     if not args.have_sva:
         defines.append("+define+SV_ASSRT_DISABLE")
-    defines.append(f"+define+CORE_{args.core}")
+    idcode = int(args.jtag_idcode, 16)
+    if idcode >= (1 << 31):
+        idcode -= 1 << 32
+    defines.append(f"+define+SOC_JTAG_IDCODE={idcode}")
     return defines
 
 
@@ -59,7 +62,7 @@ def configured_filelist(
         "ip.fl",
         "tech.fl",
     ]
-    names.append(f"core_{args.core.lower()}.fl")
+    names.append("core_hazard3.fl")
     dynamic_core = args.dynamic_core_filelist
     if not dynamic_core.is_file():
         raise FileNotFoundError(f"user core filelist is not generated: {dynamic_core}")
@@ -183,13 +186,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export configured retroSoC RTL sources")
     parser.add_argument("mode", choices=("tar", "sv"))
     parser.add_argument("--soc", default="MINI", choices=("MINI",))
-    parser.add_argument("--core", default="HAZARD3", choices=("HAZARD3", "PICORV32"))
     parser.add_argument("--pdk", default="IHP130", choices=("IHP130", "ICS55", "SKY130", "GF180"))
     parser.add_argument("--simu", default="VCS", choices=("VCS", "VERILATOR", "IVERILOG"))
     parser.add_argument("--have-pll", action="store_true")
     parser.add_argument("--have-sram-if", action="store_true")
     parser.add_argument("--have-sram-macro", action="store_true")
     parser.add_argument("--have-sva", action="store_true")
+    parser.add_argument("--jtag-idcode", default="DEADBEEF")
     parser.add_argument(
         "--dynamic-core-filelist",
         type=Path,
@@ -206,6 +209,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if not re.fullmatch(r"[0-9a-fA-F]{8}", args.jtag_idcode):
+        raise SystemExit("--jtag-idcode must be exactly eight hexadecimal digits")
     export_dir = args.output_dir.resolve()
     export_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="retrosoc-filelists-") as temporary:

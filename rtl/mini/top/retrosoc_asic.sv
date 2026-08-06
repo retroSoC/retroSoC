@@ -20,10 +20,18 @@ module retrosoc_asic (
 `ifdef HAVE_PLL
   logic s_xtal_io;
 `endif
-  logic s_sys_clk;
-  logic s_ext_rst_n;
-  logic s_sys_rst_n;
-  logic s_aud_rst_n;
+  logic       s_sys_clk;
+  logic       s_ext_rst_n;
+  logic       s_sys_rst_n;
+  logic       s_aud_rst_n;
+  logic       s_jtag_tck;
+  logic       s_jtag_tms;
+  logic       s_jtag_tdi;
+  logic       s_jtag_trst_n;
+  logic       s_jtag_tdo;
+  (* keep = "true" *)logic       s_test_done;
+  (* keep = "true" *)logic       s_test_pass;
+  (* keep = "true" *)logic [7:0] s_test_code;
 
 `ifdef HAVE_SRAM_IF
   ram_if u_ram_if ();
@@ -59,19 +67,27 @@ rcu u_rcu (
 `endif
 
   retrosoc u_retrosoc (
-      .clk_i      (s_sys_clk),
-      .rst_n_i    (s_sys_rst_n),
-      .clk_aud_i  (s_aud_clk),
-      .rst_aud_n_i(s_aud_rst_n),
-      .clkdiv4_i  (s_sys_clkdiv4),
-      .pll_ctrl   (u_pll_ctrl_if),
+      .clk_i        (s_sys_clk),
+      .rst_n_i      (s_sys_rst_n),
+      .clk_aud_i    (s_aud_clk),
+      .rst_aud_n_i  (s_aud_rst_n),
+      .clkdiv4_i    (s_sys_clkdiv4),
+      .pll_ctrl     (u_pll_ctrl_if),
 `ifdef HAVE_SRAM_IF
-      .ram        (u_ram_if),
+      .ram          (u_ram_if),
 `endif
-      .gpio       (u_gpio_if),
-      .uart0      (u_uart0_if),
-      .xpi        (u_xpi_if),
-      .sdram      (u_sdram_if)
+      .gpio         (u_gpio_if),
+      .uart0        (u_uart0_if),
+      .xpi          (u_xpi_if),
+      .sdram        (u_sdram_if),
+      .jtag_tck_i   (s_jtag_tck),
+      .jtag_tms_i   (s_jtag_tms),
+      .jtag_tdi_i   (s_jtag_tdi),
+      .jtag_trst_n_i(s_jtag_trst_n),
+      .jtag_tdo_o   (s_jtag_tdo),
+      .test_done_o  (s_test_done),
+      .test_pass_o  (s_test_pass),
+      .test_code_o  (s_test_code)
   );
 
 endmodule

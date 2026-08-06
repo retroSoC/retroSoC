@@ -12,18 +12,26 @@ SystemVerilog RTL, a freestanding embedded C SDK and applications, simulation, s
 static timing analysis, reproducible dependencies, and release packaging. It is licensed
 under the [Mulan Permissive Software License, Version 2](LICENSE).
 
+![Mini SoC block diagram](docs/mini-soc-block-diagram.svg)
+
 ## Highlights
 
-- A fixed architecture with a Hazard3 management core by default (PicoRV32 is
-  an explicit build option) and software-selected
-  user-core and user-IP extension slots.
+- A fixed Hazard3 management core with a permanent JTAG Debug Module, plus
+  software-selected user-core and user-IP extension slots, including PicoRV32
+  at user-core slot C5.
+- A documented [Tiny/Mini/Std/Pro product direction](docs/soc-family-positioning.md)
+  anchored by Mini and a trusted Hazard3 management model. The higher Linux,
+  graphics, AI, and RV64 configurations are roadmap targets, not supported
+  build profiles.
+- A standard five-pad JTAG Debug Transport Module for the Hazard3 management
+  core, with a reproducible Verilator, OpenOCD, and GDB acceptance flow.
 - Configurable GF180, SKY130, IHP130, and ICS55 implementation targets with
   open-source CI coverage.
 - A memory-mapped peripheral subsystem with GPIO, UART, timers, PWM, I2C, I2S, PS2,
   1-Wire, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
   support. Available interfaces depend on the selected SoC configuration.
-- A standalone RISC-V runtime, HAL, board support, middleware, and `bringup` and `shell`
-  applications.
+- A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
+  `coremark`, `debug`, and `shell` applications.
 - Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
   Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
 - Checksum-verified dependency and toolchain locks, structured flow results, warning
@@ -47,8 +55,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 The committed profiles are the supported starting points. They select an ISA,
 PDK, application, linker layout, and optional features as one reproducible
-configuration. The user-extension fabric is fixed; `CORE` selects the management
-core and defaults to `HAZARD3`.
+configuration. The management core is fixed to Hazard3. The user-extension
+fabric exposes stable C0-C5 user-core slots and software selects one active
+user core.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |
@@ -57,28 +66,85 @@ core and defaults to `HAZARD3`.
 | [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist simulation, and OpenSTA core timing coverage. |
 | [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
+| [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
+| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | RV32IM | `coremark` | Fixed four-iteration SRAM CoreMark quick measurement, recorded by nightly IHP130 regression. |
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
+
+CI Verilator firmware simulations explicitly select the `ci_smoke`
+application, which checks UART, archinfo APB readback, and test-status
+completion without the verbose startup report. The profiles retain `bringup`
+as their default for manual diagnostics. To run the full report in Verilator,
+use:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk APP=bringup SIMU=VERILATOR SOC_SIM_TIME=300 firmware sim
+```
 
 ## Prerequisites
 
-The prebuilt, locked toolchain bundles target Ubuntu 22.04. Install Python 3, GNU Make, a host
-C compiler, `clang-format-14`, a RISC-V bare-metal GNU toolchain, and the tools required by the
-flow you intend to run: Icarus Verilog, Verilator, sv2v, Yosys, and OpenSTA. Source formatting
-also requires `mbake` 1.4.6 and the locked Verible formatter. The CI environment installs the
-exact versions from [`config/dependencies.lock.json`](config/dependencies.lock.json). Local flow
-tools must be available on `PATH` before running `make doctor`; the three formatters must be
-available before running `make format-check`.
+The open-source development environment contains the exact Ubuntu 22.04 tool bundles, Python
+quality tools, compiler, formatters, simulators, synthesis, STA, and formal tools used by the
+current regression. It does not contain PDKs, managed RTL, or application archives; those remain
+checkout-local inputs installed and verified through the existing setup targets. Linux x86_64 is
+the supported host for the full native environment. On macOS, use Docker with linux/amd64
+emulation. Nix support is Linux x86_64 only.
 
-Install the Python build dependencies once per environment:
+Choose one of the following installation methods. Each uses the locked versions in
+[config/dependencies.lock.json](config/dependencies.lock.json) and creates or reuses the local
+cache at .cache/retrosoc/development.
 
-```sh
-python3 -m pip install --requirement requirements/build.txt
-```
+### Nix
 
-The lock file also pins external RTL, PDK, benchmark, and application sources. Their setup
-scripts verify full Git revisions or SHA-256 checksums before use. See the
-[engineering workflow](docs/engineering.md#reproducible-inputs) for the locked-tool installer
-and dependency update procedure.
+Install Nix with flakes enabled, then run the development application from the repository root.
+It builds a Linux FHS environment and invokes the same locked bootstrap script as Docker and the
+manual method.
+
+~~~sh
+nix run .#dev -- make setup-regression
+nix run .#dev -- make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG doctor
+nix run .#dev -- make regress-pr
+~~~
+
+Use nix run .#dev without a command to open an interactive shell. The pinned nixpkgs revision is
+recorded in flake.lock and cross-checked against the dependency lock.
+
+### Docker
+
+Build the local image once. The base image is immutable by digest and the image bootstrap installs
+the same locked tools into an image-local cache. Mount the checkout so generated files, PDKs, and
+managed sources remain on the host volume.
+
+~~~sh
+docker build --tag retrosoc-dev --file docker/Dockerfile .
+docker run --rm --init --platform linux/amd64 --user "$(id -u):$(id -g)" -it \
+  -v "$PWD:/workspace/retrosoc" retrosoc-dev \
+  make setup-regression
+docker run --rm --init --platform linux/amd64 --user "$(id -u):$(id -g)" -it \
+  -v "$PWD:/workspace/retrosoc" retrosoc-dev \
+  make regress-pr
+~~~
+
+### Manual Installation
+
+On Ubuntu 22.04, install the host packages used by CI, then run the shared bootstrap script. It
+downloads only checksum-verified tool bundles and Python packages pinned by the repository.
+
+~~~sh
+sudo apt-get update
+sudo apt-get install --no-install-recommends --yes \
+  bzip2 ca-certificates ccache clang-format-14 g++ git libfl2 libgoogle-perftools4 \
+  libunwind8 make mold numactl python3 python3-pip python3-venv xz-utils zlib1g
+python3 scripts/development_environment.py bootstrap
+source .cache/retrosoc/development/activate.sh
+make setup-regression
+make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG doctor
+~~~
+
+Run python3 scripts/development_environment.py check after a lock update or when diagnosing a
+local tool issue. The lock file also pins external RTL, PDK, benchmark, and application sources.
+Their setup scripts verify full Git revisions or SHA-256 checksums before use. See the
+[engineering workflow](docs/engineering.md#reproducible-inputs) for the dependency update
+procedure.
 
 ## Quick Start
 
@@ -123,7 +189,6 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm
 make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
 make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
   SIM_FIRMWARE_NAME=retrosoc_asm \
-  SIM_SUCCESS_MARKER='Mem wr/rd test success' \
   RTL_SIM_TIMEOUT=5200000 netsim
 ```
 
@@ -131,11 +196,13 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
 | --- | --- |
 | Icarus behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim` |
 | Verilator behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR sim` |
+| Hazard3 JTAG debug acceptance | `make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim` |
 | Assembly self-test with Icarus | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm` |
 | Yosys synthesis | `make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth` |
 | Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG netsim` |
 | OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta` |
 | Strict Verilator RTL lint | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
+| Hazard3 CoreMark quick report | `make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report` |
 | IHP130 fast smoke suite | `make regress-smoke` |
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |

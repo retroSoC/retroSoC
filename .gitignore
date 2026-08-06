@@ -77,4 +77,3 @@ socver.*
 !/rtl/managed/clusterip/setup.py
 /rtl/managed/mpw/
 /rtl/managed/third_party/
-/rtl/managed/picorv32/rtl/picorv32_ver.v

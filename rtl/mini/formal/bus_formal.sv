@@ -34,7 +34,7 @@ module bus_formal_design (
   rib_if user_rib ();
   rib_if dma_rib ();
   rib_if rib ();
-  ribp_if apb_ribp ();
+  rib_if apb_rib ();
 
   (* anyseq *)logic        f_mgmt_valid;
   (* anyseq *)logic [31:0] f_mgmt_addr;
@@ -64,6 +64,9 @@ module bus_formal_design (
   logic        target_write_done_q;
   logic [ 1:0] target_len_q;
   logic [ 1:0] target_beat_q;
+  logic        apb_active_q;
+  logic        apb_write_q;
+  logic        apb_write_done_q;
   logic [31:0] fault_addr;
   logic [ 3:0] fault_wstrb;
   logic        fault_reserved;
@@ -138,27 +141,52 @@ module bus_formal_design (
     end
   end
 
-  assign apb_ribp.ready    = apb_ribp.valid;
-  assign apb_ribp.rdata    = 32'h1234_5678;
-  assign apb_ribp.resp_err = 1'b0;
+  assign apb_rib.cmd_ready = ~apb_active_q;
+  assign apb_rib.w_ready   = apb_active_q && apb_write_q && ~apb_write_done_q;
+  assign apb_rib.rsp_valid = apb_active_q && (~apb_write_q || apb_write_done_q);
+  assign apb_rib.rdata     = 32'h1234_5678;
+  assign apb_rib.resp_err  = 1'b0;
+  assign apb_rib.resp_code = `RIB_RESP_OK;
+  assign apb_rib.rsp_beat  = '0;
+  assign apb_rib.rsp_last  = 1'b1;
 
-  assign mgmt_valid        = mgmt_ribp.valid;
-  assign mgmt_addr         = mgmt_ribp.addr;
-  assign mgmt_wstrb        = mgmt_ribp.wstrb;
-  assign mgmt_ready        = mgmt_ribp.ready;
-  assign user_cmd_valid    = user_rib.cmd_valid;
-  assign user_cmd_ready    = user_rib.cmd_ready;
-  assign user_cmd_addr     = user_rib.cmd_addr;
-  assign user_cmd_write    = user_rib.cmd_write;
-  assign user_cmd_len      = user_rib.cmd_len;
-  assign dma_cmd_valid     = dma_rib.cmd_valid;
-  assign dma_cmd_ready     = dma_rib.cmd_ready;
-  assign dma_cmd_addr      = dma_rib.cmd_addr;
-  assign dma_cmd_write     = dma_rib.cmd_write;
-  assign dma_cmd_len       = dma_rib.cmd_len;
-  assign rib_cmd_valid     = rib.cmd_valid;
-  assign rib_cmd_len       = rib.cmd_len;
-  assign apb_valid         = apb_ribp.valid;
+  always_ff @(posedge clk_i) begin
+    if (!rst_n_i) begin
+      apb_active_q     <= 1'b0;
+      apb_write_q      <= 1'b0;
+      apb_write_done_q <= 1'b0;
+    end else begin
+      if (apb_rib.cmd_valid && apb_rib.cmd_ready) begin
+        apb_active_q     <= 1'b1;
+        apb_write_q      <= apb_rib.cmd_write;
+        apb_write_done_q <= 1'b0;
+      end
+      if (apb_rib.w_valid && apb_rib.w_ready && apb_rib.wlast) begin
+        apb_write_done_q <= 1'b1;
+      end
+      if (apb_rib.rsp_valid && apb_rib.rsp_ready) begin
+        apb_active_q <= 1'b0;
+      end
+    end
+  end
+
+  assign mgmt_valid     = mgmt_ribp.valid;
+  assign mgmt_addr      = mgmt_ribp.addr;
+  assign mgmt_wstrb     = mgmt_ribp.wstrb;
+  assign mgmt_ready     = mgmt_ribp.ready;
+  assign user_cmd_valid = user_rib.cmd_valid;
+  assign user_cmd_ready = user_rib.cmd_ready;
+  assign user_cmd_addr  = user_rib.cmd_addr;
+  assign user_cmd_write = user_rib.cmd_write;
+  assign user_cmd_len   = user_rib.cmd_len;
+  assign dma_cmd_valid  = dma_rib.cmd_valid;
+  assign dma_cmd_ready  = dma_rib.cmd_ready;
+  assign dma_cmd_addr   = dma_rib.cmd_addr;
+  assign dma_cmd_write  = dma_rib.cmd_write;
+  assign dma_cmd_len    = dma_rib.cmd_len;
+  assign rib_cmd_valid  = rib.cmd_valid;
+  assign rib_cmd_len    = rib.cmd_len;
+  assign apb_valid      = apb_rib.cmd_valid;
 
   bus u_dut (
       .clk_i            (clk_i),
@@ -169,7 +197,7 @@ module bus_formal_design (
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_idle),
       .rib              (rib),
-      .apb_ribp         (apb_ribp),
+      .apb_rib          (apb_rib),
       .perf_enable_i    (1'b0),
       .perf_clear_i     (1'b0),
       .fault_valid_o    (fault_valid),

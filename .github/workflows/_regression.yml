@@ -28,7 +28,7 @@ on:
       toolset:
         description: Space-separated locked tools required by this suite
         required: false
-        default: verilator sv2v iverilog yosys opensta riscv_gnu
+        default: verilator sv2v iverilog yosys opensta openocd riscv_gnu
         type: string
       full_flow_checks:
         description: Check Yosys and OpenSTA environments before running the suite

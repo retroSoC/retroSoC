@@ -28,7 +28,10 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | Profile | Description |
 | --- | --- |
 | `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
-| `bringup` | Minimal firmware used for startup and basic SoC regression. |
+| `bringup` | Manual startup diagnostic that prints complete application and archinfo details. |
+| `ci_smoke` | Fast deterministic CI smoke test for UART, archinfo APB readback, and test-status completion. |
+| `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
+| `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 
 The application manifest is loaded from `app/apps/<name>/app.mk`. It appends
@@ -41,11 +44,20 @@ Build and simulate the supported profiles from the repository root:
 # Bringup firmware and Verilator simulation
 make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR firmware sim
 
+# Explicitly run the CI smoke firmware used by regressions
+make CONFIG=configs/ci/ihp130.mk APP=ci_smoke SIMU=VERILATOR firmware sim
+
 # Shell firmware and Verilator simulation
 make CONFIG=configs/ci/ihp130-shell.mk SIMU=VERILATOR firmware sim
 
 # IHP130/Hazard3 Verilator baseline; result is written below build/*/meta/
 make CONFIG=configs/benchmark/ihp130-hazard3.mk SIMU=VERILATOR benchmark-report
+
+# IHP130/Hazard3 fixed-workload CoreMark; result is written to meta/coremark.json
+make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report
+
+# Hazard3 remote-bitbang, OpenOCD, and GDB acceptance flow
+make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim
 ```
 
 For a firmware-only build, omit `SIMU=VERILATOR sim`.

@@ -20,7 +20,7 @@ module rib_bus_tb;
   rib_if user_rib ();
   rib_if dma_rib ();
   rib_if rib ();
-  ribp_if apb_ribp ();
+  rib_if apb_rib ();
 
   always #5 clk_i = ~clk_i;
   always @(posedge clk_i) cycle_count <= cycle_count + 1;
@@ -57,8 +57,14 @@ module rib_bus_tb;
     end
   end
 
-  assign apb_ribp.ready = apb_ribp.valid;
-  assign apb_ribp.rdata = 32'h1234_5678;
+  assign apb_rib.cmd_ready = 1'b1;
+  assign apb_rib.w_ready   = 1'b1;
+  assign apb_rib.rsp_valid = 1'b0;
+  assign apb_rib.rdata     = 32'h1234_5678;
+  assign apb_rib.resp_err  = 1'b0;
+  assign apb_rib.resp_code = `RIB_RESP_OK;
+  assign apb_rib.rsp_beat  = '0;
+  assign apb_rib.rsp_last  = 1'b1;
 
   bus u_bus (
       .clk_i            (clk_i),
@@ -69,7 +75,7 @@ module rib_bus_tb;
       .user_bus_enable_i(1'b1),
       .user_bus_idle_o  (user_bus_idle_o),
       .rib              (rib),
-      .apb_ribp         (apb_ribp),
+      .apb_rib          (apb_rib),
       .perf_enable_i    (1'b0),
       .perf_clear_i     (1'b0),
       .fault_valid_o    (fault_valid_o),
@@ -163,7 +169,7 @@ module rib_bus_tb;
     issue_read(32'h1000_0000, `RIB_LEN_INCR4, 1'b1);
     issue_read(32'h2000_0000, `RIB_LEN_INCR4, 1'b1);
     issue_read(32'h3800_1000, 2'd2, 1'b1);
-    if (rib_command_count != 1 || apb_ribp.valid) begin
+    if (rib_command_count != 1 || apb_rib.cmd_valid) begin
       $fatal(1, "illegal burst reached a downstream target");
     end
 

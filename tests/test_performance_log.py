@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from scripts.parse_coremark_log import parse_log as parse_coremark_log
 from scripts.parse_performance_log import parse_log
 
 
@@ -51,3 +52,42 @@ def test_parse_log_rejects_report_with_performance_failure() -> None:
 
     assert report["status"] == "failed"
     assert report["failure_marker"] is True
+
+
+def test_parse_coremark_quick_report() -> None:
+    report = parse_coremark_log(
+        "COREMARK_RESULT mode=quick qualified=0 memory=sram iterations=4 cycles=2000 "
+        "cpu_hz=72000000\nCOREMARK_PASS\n"
+    )
+
+    assert report["status"] == "passed"
+    assert report["results"] == [
+        {
+            "coremark_per_mhz": "2000.000",
+            "cpu_hz": 72000000,
+            "cycles": 2000,
+            "iterations": 4,
+            "memory": "sram",
+            "mode": "quick",
+            "qualified": False,
+        }
+    ]
+
+
+def test_parse_coremark_rejects_failure_or_non_sram_result() -> None:
+    report = parse_coremark_log(
+        "COREMARK_RESULT mode=quick qualified=0 memory=sram iterations=36 cycles=1800 "
+        "cpu_hz=72000000\nCOREMARK_FAIL result=1\n"
+    )
+    assert report["status"] == "failed"
+    assert report["failure_marker"] is True
+
+    try:
+        parse_coremark_log(
+            "COREMARK_RESULT mode=quick qualified=0 memory=psram iterations=36 cycles=1800 "
+            "cpu_hz=72000000\nCOREMARK_PASS\n"
+        )
+    except ValueError as error:
+        assert "SRAM" in str(error)
+    else:
+        raise AssertionError("non-SRAM CoreMark result was accepted")

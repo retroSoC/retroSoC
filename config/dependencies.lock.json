@@ -3,7 +3,7 @@
   "sources": {
     "mpw": {
       "url": "https://github.com/retroSoC/mini-ver-mpw.git",
-      "revision": "14dc77916c090c0ec780589c3da03a0803367818",
+      "revision": "e63d5cd71ffd912ad4f901e59f7f848c1a8bbfbd",
       "destination": "rtl/managed/mpw",
       "license": "NOASSERTION"
     },
@@ -96,6 +96,22 @@
       "license": "ISC"
     }
   },
+  "container_images": {
+    "ubuntu_22_04": {
+      "image": "ubuntu",
+      "digest": "sha256:0d779ea97881505f5ef0039336ee85edba27519bdba968c284c86ee066a973c8",
+      "url": "https://hub.docker.com/_/ubuntu",
+      "license": "NOASSERTION"
+    }
+  },
+  "nix_inputs": {
+    "nixpkgs": {
+      "url": "https://github.com/NixOS/nixpkgs",
+      "revision": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
+      "nar_hash": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
+      "license": "MIT"
+    }
+  },
   "toolchains": {
     "ubuntu-22.04": {
       "verilator": {
@@ -153,6 +169,13 @@
         "sha256": "ab9f023eb46ed6197f8bd88584e77c26c31a728640db02b50908fac5bf9f279a",
         "archive": "opensta-v2.2.0-1767-ga93b51ec-ubuntu-22.04-gcc.tar.gz",
         "path": "bin"
+      },
+      "openocd": {
+        "version": "0.12.0-1",
+        "url": "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-1/xpack-openocd-0.12.0-1-linux-x64.tar.gz",
+        "sha256": "940f22eccddb0946b69149d227948f77d5917a2c5f1ab68e5d84d614c2ceed20",
+        "archive": "xpack-openocd-0.12.0-1-linux-x64.tar.gz",
+        "path": "xpack-openocd-0.12.0-1/bin"
       },
       "riscv_gnu": {
         "version": "2025.05.01",

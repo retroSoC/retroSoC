@@ -41,7 +41,6 @@ endif
 endif
 
 DEF_VAL += -DAPP_$(APP)
-DEF_VAL += -DRS_SOC_MGMT_CORE_$(CORE)
 DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
 DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS) $(SW_WARN_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
@@ -64,6 +63,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/core/archinfo.c \
             $(ROOT_PATH)/crt/src/service/bench.c \
             $(ROOT_PATH)/crt/src/service/booter.c \
+            $(ROOT_PATH)/crt/src/service/test.c \
             $(ROOT_PATH)/crt/src/hal/clock.c \
             $(ROOT_PATH)/crt/src/hal/uart.c \
             $(ROOT_PATH)/crt/src/hal/gpio.c \
@@ -95,12 +95,17 @@ endif
 APP_SRCS     :=
 APP_INC_DIRS :=
 APP_CFLAGS   :=
+APP_CRT_SRCS :=
 APP_MK       := $(ROOT_PATH)/app/apps/$(APP)/app.mk
 
 ifeq ($(wildcard $(APP_MK)),)
 $(error Application profile not found: $(APP_MK))
 endif
 include $(APP_MK)
+
+ifneq ($(strip $(APP_CRT_SRCS)),)
+CRT_SRCS := $(APP_CRT_SRCS)
+endif
 
 CFLAGS       += $(APP_CFLAGS)
 APP_INC_DIRS += $(MPW_OUTPUT_DIR)

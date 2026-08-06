@@ -8,6 +8,7 @@ module sysctrl_formal;
   localparam [7:0] SYSCTRL_PLL_CMD_OFFSET = 8'h0c;
   localparam [7:0] SYSCTRL_FAULT_STATUS_OFFSET = 8'h10;
   localparam [7:0] SYSCTRL_USER_CORE_RESET_OFFSET = 8'h20;
+  localparam [7:0] SYSCTRL_TEST_STATUS_OFFSET = 8'h84;
 
   (* anyseq *) (* gclk *)reg         clk_i;
   wire        rst_n_i;
@@ -40,6 +41,9 @@ module sysctrl_formal;
   wire [ 2:0] fault_reason;
   wire [31:0] fault_addr_q;
   wire [31:0] fault_count;
+  wire        test_done;
+  wire        test_pass;
+  wire [ 7:0] test_code;
 
   sysctrl_formal_design u_design (
       .clk_i            (clk_i),
@@ -72,7 +76,10 @@ module sysctrl_formal;
       .fault_write      (fault_write),
       .fault_reason     (fault_reason),
       .fault_addr_q     (fault_addr_q),
-      .fault_count      (fault_count)
+      .fault_count      (fault_count),
+      .test_done        (test_done),
+      .test_pass        (test_pass),
+      .test_code        (test_code)
   );
 
   always @(posedge clk_i) begin
@@ -152,6 +159,26 @@ module sysctrl_formal;
                 rib_addr[7:0] == SYSCTRL_FAULT_STATUS_OFFSET && !fault_valid
           )) begin
         assert (!fault_pending);
+      end
+      if ($past(
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb == 4'hF && rib_wdata[31] &&
+                rib_addr[7:0] == SYSCTRL_TEST_STATUS_OFFSET && !test_done
+          )) begin
+        assert (test_done);
+        assert (test_pass == $past(rib_wdata[0]));
+        assert (test_code == $past(rib_wdata[15:8]));
+      end
+      if ($past(
+              rst_n_i && !test_done &&
+                !(rib_valid && !rib_ready && rib_wstrb == 4'hF && rib_wdata[31] &&
+                    rib_addr[7:0] == SYSCTRL_TEST_STATUS_OFFSET)
+          )) begin
+        assert (!test_done);
+      end
+      if ($past(rst_n_i && test_done)) begin
+        assert (test_done);
+        assert (test_pass == $past(test_pass));
+        assert (test_code == $past(test_code));
       end
     end
 
