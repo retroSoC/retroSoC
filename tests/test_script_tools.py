@@ -44,6 +44,7 @@ from scripts.package import make_sbom  # noqa: E402
 from scripts import regress  # noqa: E402
 from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
+    CI_SMOKE_APP_VALUE,
     NIGHTLY_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
@@ -752,7 +753,7 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     assert profiles == ()
     command_values = [values for _, values in commands]
     assert command_values[0] == RTL_LINT_VALUES
-    assert ("firmware",) in command_values
+    assert (CI_SMOKE_APP_VALUE, "firmware") in command_values
     assert ("SIMU=VERILATOR", "HAVE_SVA=YES", "comp") in command_values
     assert ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm") in command_values
     assert not any(
@@ -770,7 +771,9 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "+ make CONFIG=configs/ci/ihp130.mk firmware" in dry_run.stdout
+    assert (
+        "+ make CONFIG=configs/ci/ihp130.mk APP=ci_smoke firmware" in dry_run.stdout
+    )
     assert "netsim" not in dry_run.stdout
 
     invalid = subprocess.run(
@@ -798,8 +801,11 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
         commands = pdk_pr_commands(profile)
         command_values = [values for _, values in commands]
         assert command_values[0] == RTL_LINT_VALUES
-        assert ("firmware",) in command_values
-        assert any("SIMU=VERILATOR" in values and "firmware" in values for values in command_values)
+        assert (CI_SMOKE_APP_VALUE, "firmware") in command_values
+        assert any(
+            CI_SMOKE_APP_VALUE in values and "SIMU=VERILATOR" in values and "firmware" in values
+            for values in command_values
+        )
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert ("STA=OPENSTA", "sta") in command_values
