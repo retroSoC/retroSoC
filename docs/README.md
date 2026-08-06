@@ -13,6 +13,14 @@ the root README and subsystem guides.
   register protocol and software quiesce contract.
 - [hazard3-debug.md](hazard3-debug.md) defines the management Hazard3 JTAG
   Debug Module integration, reset boundary, and Verilator/OpenOCD/GDB flow.
+- [coremark.md](coremark.md) defines the SRAM-resident Hazard3 CoreMark quick
+  measurement, optional standard hardware run, and structured result format.
+- [soc-family-positioning.md](soc-family-positioning.md) defines the planned
+  Tiny, Mini, Std, and Pro product ladder, target capabilities, claim gates,
+  and commercial reference points.
+- [mini-product-positioning.md](mini-product-positioning.md) separates the
+  implemented Mini baseline from the planned VexiiRiscv Linux product target
+  and its commercial reference points.
 - [rib-interconnect.md](rib-interconnect.md) defines the RIB v1 linear-burst
   contract, compatibility boundaries, target status, and verification.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated

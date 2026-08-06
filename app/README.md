@@ -29,6 +29,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | --- | --- |
 | `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
 | `bringup` | Minimal firmware used for startup and basic SoC regression. |
+| `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 
@@ -47,6 +48,9 @@ make CONFIG=configs/ci/ihp130-shell.mk SIMU=VERILATOR firmware sim
 
 # IHP130/Hazard3 Verilator baseline; result is written below build/*/meta/
 make CONFIG=configs/benchmark/ihp130-hazard3.mk SIMU=VERILATOR benchmark-report
+
+# IHP130/Hazard3 fixed-workload CoreMark; result is written to meta/coremark.json
+make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report
 
 # Hazard3 remote-bitbang, OpenOCD, and GDB acceptance flow
 make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim

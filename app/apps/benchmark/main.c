@@ -5,6 +5,7 @@
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/perf.h>
 #include <retrosoc/hal/uart.h>
+#include <retrosoc/service/test.h>
 
 #define RS_BENCHMARK_WORDS       UINT32_C(64)
 #define RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)
@@ -230,13 +231,13 @@ int main(void) {
     rs_benchmark_puts("retroSoC: A Customized ASIC for Retro Stuff\n");
 
     if (!rs_benchmark_memory("sram", sram, RS_BENCHMARK_SRAM_SEED)) {
-        return 1;
+        rs_test_finish(RS_TEST_FAILED, 1U);
     }
     if (!rs_benchmark_memory("sdram", sdram, RS_BENCHMARK_SDRAM_SEED)) {
-        return 1;
+        rs_test_finish(RS_TEST_FAILED, 2U);
     }
     if (!rs_benchmark_memory("psram", psram, RS_BENCHMARK_PSRAM_SEED)) {
-        return 1;
+        rs_test_finish(RS_TEST_FAILED, 3U);
     }
 
     (void)rs_perf_start();
@@ -248,15 +249,16 @@ int main(void) {
 
         if (rs_perf_snapshot(&snapshot) != RS_OK) {
             rs_benchmark_report_snapshot_failure("flash", "read");
-            return 1;
+            rs_test_finish(RS_TEST_FAILED, 4U);
         }
         rs_benchmark_report("flash", "read", checksum, cycles, &snapshot);
     }
 
     if (!rs_benchmark_dma(psram, sdram + RS_BENCHMARK_WORDS, rs_benchmark_read(psram))) {
-        return 1;
+        rs_test_finish(RS_TEST_FAILED, 5U);
     }
     (void)rs_perf_stop();
     rs_benchmark_puts("PERF_BENCHMARK_PASS\n");
+    rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

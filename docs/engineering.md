@@ -108,10 +108,15 @@ capped at 16 and can be set with `JOBS=<n>` or `MAX_JOBS=<n>`.
 ## Result Policy
 
 Every EDA and simulation flow command is run through `scripts/run_flow.py`, which streams a log and writes a
-result JSON containing the command, timestamps, duration, exit code, and status. The VCS and Verilator
-simulation paths stream UART output to an interactive terminal byte-by-byte while preserving the raw output
-in their simulation logs. A simulation passes only when the command succeeds, its log contains the firmware
-startup marker, and no fatal/failure marker is present. Icarus regressions use the assembly self-test as
+result JSON containing the command, timestamps, duration, exit code, and status. Automated firmware signals a
+terminal result by writing SYSCTRL `TEST_STATUS` at offset `0x84`: bit 31 is `VALID`, bit 0 is `PASS`, and
+bits 15:8 are an implementation-defined result code. The first valid full-word write after reset is sticky.
+The testbench and Verilator harness translate the valid/pass bits into `SIM_TEST_PASS` or `SIM_TEST_FAIL`;
+the Verilator harness additionally prints the result code.
+A simulation passes only when its command succeeds, the pass marker is present, and no fatal, failure, or
+timeout marker is present. UART startup text is diagnostic only; it is not a verdict. The local
+`netsim-boot` shortcut remains explicitly scoped to stopping Icarus assembly netlist simulation at
+`Hello retroSoC!`; CI uses the terminal software status. Icarus regressions use the assembly self-test as
 `retrosoc_asm`, while the normal `retrosoc_fw` image remains available for firmware size tracking and
 Verilator regressions.
 
@@ -122,7 +127,7 @@ protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
 targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`, and
 `gpio_user`; each uses
 the SBY `prove` task for bounded model checking and k-induction, plus a
-`cover` task, at depth 20. `sysctrl` checks register side effects, PLL request
+`cover` task, at depth 20. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
 state machine. `gpio_user` checks fixed user-GPIO ownership, lock, handoff,
 and mux safety. `rib_adapter` checks both single-word compatibility adapters

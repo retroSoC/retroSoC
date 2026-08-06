@@ -158,7 +158,7 @@ bool Emulator::getArriveTime() {
         return false;
 }
 
-void Emulator::runSim() {
+int Emulator::runSim() {
     std::cout << rang::fg::yellow << "Running DUT simulation..." << rang::fg::reset << std::endl;
     while (!Verilated::gotFinish() && signal_received == 0 && !getArriveTime()) {
         // TCP polling need not occur on every simulation half-cycle. A JTAG
@@ -167,6 +167,21 @@ void Emulator::runSim() {
             break;
         }
         step();
+        if (dutPtr->test_done_o != 0U) {
+            const auto code = static_cast<unsigned>(dutPtr->test_code_o);
+            if (dutPtr->test_pass_o != 0U) {
+                std::cout << "\nSIM_TEST_PASS code=" << code << std::endl;
+                dutPtr->final();
+                return 0;
+            }
+            std::cerr << "\nSIM_TEST_FAIL code=" << code << std::endl;
+            dutPtr->final();
+            return 1;
+        }
+    }
+    if (getArriveTime()) {
+        std::cerr << "SIM_TEST_TIMEOUT" << std::endl;
     }
     dutPtr->final();
+    return 0;
 }

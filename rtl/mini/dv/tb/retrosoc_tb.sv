@@ -260,15 +260,23 @@ module retrosoc_tb;
   end
 
   initial begin
-    // sim_runtime = -1;
-    // check for +TIMEOUT=xxx in the command line
-    if ($value$plusargs("sim_timeout=%d", sim_runtime)) begin
+    if ($value$plusargs("sim_timeout=%d", sim_runtime) && sim_runtime > 0) begin
       $display("Simulation timeout set to: %0dns", sim_runtime);
+      #sim_runtime;
+      $fatal(1, "SIM_TEST_TIMEOUT");
     end
+    $display("Simulation timeout disabled; waiting for terminal software status");
+  end
 
-    #sim_runtime;
-    $display("Simulation reached timeout. Finishing...");
-    $finish;
+  always @(posedge u_retrosoc_asic.s_sys_clk) begin
+    if (u_retrosoc_asic.s_test_done) begin
+      if (u_retrosoc_asic.s_test_pass) begin
+        $display("\nSIM_TEST_PASS");
+        $finish;
+      end else begin
+        $fatal(1, "\nSIM_TEST_FAIL");
+      end
+    end
   end
 
   initial begin

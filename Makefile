@@ -48,7 +48,7 @@ REGRESS_NETSIM_BOOT_ONLY ?= NO
 
 RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
-SIM_SUCCESS_MARKER ?= retroSoC: A Customized ASIC for Retro Stuff
+SIM_SUCCESS_MARKER ?= SIM_TEST_PASS
 
 RTL_PATH := $(ROOT_PATH)/rtl/mini
 
@@ -60,6 +60,7 @@ HAVE_CSR      ?= NO
 FIRMWARE_NAME ?= retrosoc_fw
 APP           ?= shell
 LINK_TYPE     ?= ld2_sram
+COREMARK_MODE ?= quick
 
 BUILD_ROOT         ?= $(ROOT_PATH)/build
 CACHE_ROOT         ?= $(ROOT_PATH)/.cache/retrosoc
@@ -79,7 +80,7 @@ JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
 CONFIG_KEY_VARS    := SOC PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
-                   JTAG_IDCODE ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
+                   JTAG_IDCODE ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -102,15 +103,16 @@ else
 FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
 endif
 
-VALID_SOC       := MINI
-VALID_SIMU      := VCS VERILATOR IVERILOG
-VALID_SYNTH     := NONE YOSYS
-VALID_STA       := NONE OPENSTA
-VALID_PDK       := ICS55 IHP130 SKY130 GF180
-VALID_BOOL      := YES NO
-VALID_ISA       := RV32E RV32I RV32IM
-VALID_APP       := benchmark bringup debug shell
-VALID_LINK_TYPE := xip ld2_sram ld2_psram ld2_sdram
+VALID_SOC           := MINI
+VALID_SIMU          := VCS VERILATOR IVERILOG
+VALID_SYNTH         := NONE YOSYS
+VALID_STA           := NONE OPENSTA
+VALID_PDK           := ICS55 IHP130 SKY130 GF180
+VALID_BOOL          := YES NO
+VALID_ISA           := RV32E RV32I RV32IM
+VALID_APP           := benchmark bringup coremark debug shell
+VALID_LINK_TYPE     := xip ld2_all_sram ld2_sram ld2_psram ld2_sdram
+VALID_COREMARK_MODE := quick standard
 
 define validate_value
 $(if $(filter $($(1)),$(2)),,$(error Invalid $(1)='$($(1))'; expected one of: $(2)))
@@ -134,6 +136,7 @@ $(call validate_value,ISA,$(VALID_ISA))
 $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
+$(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
 
 JTAG_IDCODE_VALID := $(shell printf '%s' '$(JTAG_IDCODE)' | grep -E '^[[:xdigit:]]{8}$$')
 ifneq ($(JTAG_IDCODE_VALID),$(JTAG_IDCODE))
@@ -145,6 +148,15 @@ JTAG_IDCODE_DEC := $(shell value=$$(printf '%u' 0x$(JTAG_IDCODE)); \
 ifneq ($(filter benchmark-report,$(MAKECMDGOALS)),)
 ifneq ($(APP),benchmark)
 $(error benchmark-report requires APP=benchmark)
+endif
+
+ifneq ($(filter coremark-report,$(MAKECMDGOALS)),)
+ifneq ($(APP),coremark)
+$(error coremark-report requires APP=coremark)
+endif
+ifneq ($(COREMARK_MODE),quick)
+$(error coremark-report requires COREMARK_MODE=quick)
+endif
 endif
 ifeq ($(RTL_SIM_TIMEOUT),-1)
 RTL_SIM_TIMEOUT := 20000000
@@ -218,7 +230,7 @@ endif
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
-	benchmark-report \
+	benchmark-report coremark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-clean formal-doctor
@@ -251,7 +263,8 @@ help:
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
 	  '  formal-sysctrl | formal-pll-rcu | formal-gpio-user run SBY peripheral-control proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
-	  '  benchmark-report           run the benchmark profile and write meta/performance.json' \
+	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
+	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
 	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
@@ -283,7 +296,7 @@ config:
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
 	  JTAG_IDCODE '$(JTAG_IDCODE)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
-	  LINK_TYPE '$(LINK_TYPE)'
+	  LINK_TYPE '$(LINK_TYPE)' COREMARK_MODE '$(COREMARK_MODE)'
 
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
@@ -295,6 +308,12 @@ benchmark-report: firmware
 	$(MAKE) RTL_SIM_TIMEOUT=$(RTL_SIM_TIMEOUT) sim
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/parse_performance_log.py --log $(PERF_LOG) \
 		--output $(META_DIR)/performance.json
+
+coremark-report: firmware
+
+	$(MAKE) RTL_SIM_TIMEOUT=$(RTL_SIM_TIMEOUT) sim
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/parse_coremark_log.py --log $(PERF_LOG) \
+		--output $(META_DIR)/coremark.json
 
 setup: setup-mpw setup-clusterip setup-ip setup-pdk setup-app
 
@@ -399,5 +418,4 @@ regress-nightly:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly
 
 sim-asm: asm
-	$(MAKE) SIM_FIRMWARE_NAME=$(ASM_FIRMWARE_NAME) \
-	  SIM_SUCCESS_MARKER='Mem wr/rd test success' sim
+	$(MAKE) SIM_FIRMWARE_NAME=$(ASM_FIRMWARE_NAME) sim

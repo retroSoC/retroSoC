@@ -185,6 +185,10 @@
     RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PERF_FLASH_WAIT_LO_OFFSET)
 #define reg_sysctrl_perf_flash_wait_hi                                                             \
     RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET)
+#define reg_sysctrl_test_status            RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_TEST_STATUS_OFFSET)
+#define RS_SOC_TEST_STATUS_VALID           UINT32_C(0x80000000)
+#define RS_SOC_TEST_STATUS_CODE_SHIFT      8U
+#define RS_SOC_TEST_STATUS_PASS            UINT32_C(0x00000001)
 #define RS_SOC_BUS_FAULT_PENDING           UINT32_C(0x00000001)
 #define RS_SOC_BUS_FAULT_WRITE             UINT32_C(0x00000002)
 #define RS_SOC_BUS_FAULT_REASON_MASK       UINT32_C(0x0000000C)

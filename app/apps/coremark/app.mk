@@ -1,0 +1,9 @@
+APP_SRCS += $(ROOT_PATH)/app/apps/coremark/main.c
+
+include $(ROOT_PATH)/app/benchmark/coremark/coremark.mk
+
+ifeq ($(COREMARK_MODE),quick)
+APP_CFLAGS += -DCOREMARK_MIN_RUN_SECS=0 -DITERATIONS=4 -DCOREMARK_QUICK_MODE
+else
+APP_CFLAGS += -DCOREMARK_MIN_RUN_SECS=10 -DITERATIONS=0 -DCOREMARK_STANDARD_MODE
+endif

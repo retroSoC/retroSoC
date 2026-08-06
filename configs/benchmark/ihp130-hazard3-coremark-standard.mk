@@ -1,0 +1,12 @@
+SOC             := MINI
+PDK             := IHP130
+HAVE_PLL        := NO
+HAVE_SRAM_IF    := YES
+HAVE_SRAM_MACRO := YES
+PDK_BEHAV       := YES
+HAVE_SVA        := NO
+ISA             := RV32IM
+HAVE_CSR        := YES
+APP             := coremark
+COREMARK_MODE   := standard
+LINK_TYPE       := ld2_all_sram

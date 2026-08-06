@@ -23,7 +23,12 @@ Original Author: Shay Gal-on
 #define CORE_PORTME_H
 
 #include <stddef.h>
+#ifndef ITERATIONS
 #define ITERATIONS 36
+#endif
+#ifndef COREMARK_MIN_RUN_SECS
+#define COREMARK_MIN_RUN_SECS 10
+#endif
 #define STANDALONE
 #define VALIDATION_RUN 1
 int core_main(void);
@@ -79,7 +84,7 @@ int core_main(void);
 #define COMPILER_FLAGS "-o3" /* "Please put compiler flags here (e.g. -o3)" */
 #endif
 #ifndef MEM_LOCATION
-#define MEM_LOCATION "STACK"
+#define MEM_LOCATION "SRAM"
 #endif
 
 /* Data Types :

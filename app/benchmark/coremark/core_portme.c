@@ -18,7 +18,8 @@ Original Author: Shay Gal-on
 #include "coremark.h"
 #include "core_portme.h"
 #include <stdint.h>
-#include <retrosoc/hal/timer.h>
+
+#include <retrosoc/arch/riscv/system_base.h>
 
 #if VALIDATION_RUN
 volatile ee_s32 seed1_volatile = 0x3415;
@@ -44,9 +45,7 @@ volatile ee_s32 seed5_volatile = 0;
    time.h and windows.h definitions included.
 */
 static CORETIMETYPE barebones_clock(void) {
-    return tim1_get_value();
-    // #error // "You must implement a method to measure time in barebones_clock()! This function
-    // should return current time.\n"
+    return (CORETIMETYPE)__RV_CSR_READ(CSR_MCYCLE);
 }
 /* Define : TIMER_RES_DIVIDER
         Divider to trade off timer resolution and total time that can be
@@ -126,8 +125,7 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
 
     (void)argc; // prevent unused warning
     (void)argv; // prevent unused warning
-    tim1_init();
-
+    __enable_mcycle_counter();
     if (sizeof(ee_ptr_int) != sizeof(ee_u8 *)) {
         ee_printf("ERROR! Please define ee_ptr_int to a type that holds a "
                   "pointer!\n");

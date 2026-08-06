@@ -31,7 +31,10 @@ module retrosoc (
     input  logic                           jtag_tms_i,
     input  logic                           jtag_tdi_i,
     input  logic                           jtag_trst_n_i,
-    output logic                           jtag_tdo_o
+    output logic                           jtag_tdo_o,
+    output logic                           test_done_o,
+    output logic                           test_pass_o,
+    output logic [7:0]                     test_code_o
     // verilog_format: on
 );
 
@@ -84,6 +87,9 @@ module retrosoc (
   assign u_sysctrl_if.fault_code_i      = s_bus_fault_code;
   assign s_perf_enable                  = u_sysctrl_if.perf_enable_o;
   assign s_perf_clear                   = u_sysctrl_if.perf_clear_o;
+  assign test_done_o                    = u_sysctrl_if.test_done_o;
+  assign test_pass_o                    = u_sysctrl_if.test_pass_o;
+  assign test_code_o                    = u_sysctrl_if.test_code_o;
   assign u_sysctrl_if.perf_mgmt_wait_i  = s_perf_mgmt_wait;
   assign u_sysctrl_if.perf_user_wait_i  = s_perf_user_wait;
   assign u_sysctrl_if.perf_dma_wait_i   = s_perf_dma_wait;

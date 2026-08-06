@@ -37,7 +37,6 @@ PR_COMMANDS = (
         (
             "SIMU=IVERILOG",
             "SIM_FIRMWARE_NAME=retrosoc_asm",
-            "SIM_SUCCESS_MARKER=Mem wr/rd test success",
             "RTL_SIM_TIMEOUT=5200000",
             "netsim",
         ),
@@ -56,7 +55,13 @@ SMOKE_COMMANDS = (
         ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
     ),
 )
-NIGHTLY_COMMANDS = PR_COMMANDS
+NIGHTLY_COMMANDS = (
+    *PR_COMMANDS,
+    (
+        "configs/benchmark/ihp130-hazard3-coremark.mk",
+        ("SIMU=VERILATOR", "HAVE_SVA=YES", "coremark-report"),
+    ),
+)
 PR_PROFILES = ("configs/ci/ihp130.mk",)
 SMOKE_PROFILES: tuple[str, ...] = ()
 NIGHTLY_PROFILES = PR_PROFILES
@@ -82,7 +87,6 @@ def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
             (
                 "SIMU=IVERILOG",
                 "SIM_FIRMWARE_NAME=retrosoc_asm",
-                "SIM_SUCCESS_MARKER=Mem wr/rd test success",
                 "RTL_SIM_TIMEOUT=5200000",
                 "netsim",
             ),

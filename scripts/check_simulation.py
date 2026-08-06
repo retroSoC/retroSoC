@@ -14,9 +14,10 @@ sys.path.insert(0, str(ROOT))
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
-DEFAULT_SUCCESS = "retroSoC: A Customized ASIC for Retro Stuff"
+DEFAULT_SUCCESS = "SIM_TEST_PASS"
 DEFAULT_FAILURE = re.compile(
-    r"(?:\bFAILED?\b|\bFATAL\b|assertion failed|%Error)", re.IGNORECASE
+    r"(?:\bFAILED?\b|\bFATAL\b|assertion failed|%Error|SIM_TEST_FAIL|SIM_TEST_TIMEOUT)",
+    re.IGNORECASE,
 )
 
 

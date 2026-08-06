@@ -145,6 +145,9 @@ TEST_FAIL_LOOP:
     jal ra, PUTC
     lbu a0, 0(s0)
     bnez a0, TEST_FAIL_LOOP
+    li t0, 0x1000B084
+    li t1, 0x80000100
+    sw t1, 0(t0)
     j END
 
 
@@ -156,6 +159,9 @@ TEST_SUCCESS_LOOP:
     jal ra, PUTC
     lbu a0, 0(s0)
     bnez a0, TEST_SUCCESS_LOOP
+    li t0, 0x1000B084
+    li t1, 0x80000001
+    sw t1, 0(t0)
 
 END:
     j END

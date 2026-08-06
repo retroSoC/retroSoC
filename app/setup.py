@@ -60,11 +60,55 @@ def patch_coremark() -> None:
 
     source = COREMARK_DIR / "core_main.c"
     content = source.read_text(encoding="utf-8")
+    original_content = content
     if "core_main(" not in content:
         if "main(" not in content:
             raise RuntimeError(f"CoreMark entry point not found in {source}")
         content = content.replace("/* Function: main", "/* Function: core_main", 1)
         content = content.replace("\nmain(", "\ncore_main(")
+    legacy_duration_check = "if (time_in_secs(total_time) < 10)"
+    duration_check = "if (time_in_secs(total_time) < COREMARK_MIN_RUN_SECS)"
+    if legacy_duration_check in content:
+        content = content.replace(legacy_duration_check, duration_check, 1)
+    elif duration_check not in content:
+        raise RuntimeError(f"CoreMark duration check missing in {source}")
+    if "#if COREMARK_MIN_RUN_SECS > 0" not in content:
+        duration_index = content.find(duration_check)
+        duration_line_start = content.rfind("\n", 0, duration_index) + 1
+        duration_body_start = content.find("{", duration_index)
+        if duration_body_start < 0:
+            raise RuntimeError(f"CoreMark duration check body missing in {source}")
+        depth = 0
+        duration_body_end = -1
+        for index in range(duration_body_start, len(content)):
+            if content[index] == "{":
+                depth += 1
+            elif content[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    duration_body_end = index
+                    break
+        if duration_body_end < 0:
+            raise RuntimeError(f"CoreMark duration check body is unbalanced in {source}")
+        content = (
+            content[:duration_line_start]
+            + "#if COREMARK_MIN_RUN_SECS > 0\n"
+            + content[duration_line_start : duration_body_end + 1]
+            + "\n#endif\n"
+            + content[duration_body_end + 1 :]
+        )
+    final_return = "    return MAIN_RETURN_VAL;"
+    final_return_index = content.rfind(final_return)
+    if final_return_index < 0:
+        if "return total_errors == 0 ? 0 : 1;" not in content:
+            raise RuntimeError(f"CoreMark result return missing in {source}")
+    else:
+        content = (
+            content[:final_return_index]
+            + "    return total_errors == 0 ? 0 : 1;"
+            + content[final_return_index + len(final_return) :]
+        )
+    if content != original_content:
         atomic_write(source, content)
 
 

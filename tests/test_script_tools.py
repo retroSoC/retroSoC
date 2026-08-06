@@ -256,6 +256,8 @@ def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
     assert "`USER_CORE_COUNT" not in properties
     assert "rib_wdata[4:0] < user_core_count" in properties
     assert "user_reset == user_reset_mask" in properties
+    assert "SYSCTRL_TEST_STATUS_OFFSET" in properties
+    assert "test_done" in design
 
 
 def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
@@ -1143,7 +1145,7 @@ def test_simulation_success_marker_and_failure_detection(tmp_path: Path) -> None
     log = tmp_path / "sim.log"
     result = tmp_path / "result.json"
     log.write_text(
-        "retroSoC: A Customized ASIC for Retro Stuff\nSimulation complete\n",
+        "SIM_TEST_PASS code=0\nSimulation complete\n",
         encoding="utf-8",
     )
     run(
@@ -1157,7 +1159,7 @@ def test_simulation_success_marker_and_failure_detection(tmp_path: Path) -> None
     assert json.loads(result.read_text(encoding="utf-8"))["status"] == "passed"
 
     log.write_text(
-        "retroSoC: A Customized ASIC for Retro Stuff\nTEST FAILED\n",
+        "SIM_TEST_PASS code=0\nSIM_TEST_FAIL code=1\n",
         encoding="utf-8",
     )
     failed = subprocess.run(
@@ -1373,6 +1375,39 @@ def test_fatfs_update_reextracts_downloaded_archive(tmp_path: Path) -> None:
 
     app_setup.extract_fatfs(archive, source, update=True)
     assert (source / "ff.c").read_text(encoding="utf-8") == "new archive contents\n"
+
+
+def test_coremark_setup_patch_is_idempotent(tmp_path: Path) -> None:
+    module_path = ROOT / "app/setup.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_app_setup", module_path)
+    assert spec is not None and spec.loader is not None
+    app_setup = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(app_setup)
+
+    coremark = tmp_path / "coremark"
+    coremark.mkdir()
+    (coremark / "coremark.h").write_text('#include "core_portme.h"\n', encoding="utf-8")
+    (coremark / "core_main.c").write_text(
+        "/* Function: main */\nmain(void) {\n"
+        "  if (time_in_secs(total_time) < 10) {\n  }\n"
+        "    return MAIN_RETURN_VAL;\n}\n",
+        encoding="utf-8",
+    )
+    previous_coremark_dir = app_setup.COREMARK_DIR
+    try:
+        app_setup.COREMARK_DIR = coremark
+        app_setup.patch_coremark()
+        first = (coremark / "core_main.c").read_text(encoding="utf-8")
+        app_setup.patch_coremark()
+        second = (coremark / "core_main.c").read_text(encoding="utf-8")
+    finally:
+        app_setup.COREMARK_DIR = previous_coremark_dir
+
+    assert first == second
+    assert "core_main(void)" in first
+    assert "COREMARK_MIN_RUN_SECS" in first
+    assert "#if COREMARK_MIN_RUN_SECS > 0" in first
+    assert "return total_errors == 0 ? 0 : 1;" in first
 
 
 def test_ci_actions_are_pinned_to_commits() -> None:

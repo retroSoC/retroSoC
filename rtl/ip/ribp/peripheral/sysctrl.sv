@@ -30,6 +30,9 @@ interface sysctrl_if ();
   logic [                   63:0] perf_sdram_wait_i;
   logic [                   63:0] perf_psram_wait_i;
   logic [                   63:0] perf_flash_wait_i;
+  logic                           test_done_o;
+  logic                           test_pass_o;
+  logic [                    7:0] test_code_o;
   logic [  `USER_IPSEL_WIDTH-1:0] ip_sel_o;
 
   modport dut(
@@ -50,7 +53,10 @@ interface sysctrl_if ();
       output user_bus_enable_o,
       output ip_sel_o,
       output perf_enable_o,
-      output perf_clear_o
+      output perf_clear_o,
+      output test_done_o,
+      output test_pass_o,
+      output test_code_o
   );
 endinterface
 
@@ -119,6 +125,8 @@ module ribp_sysctrl (
       sysctrl_offset_t'(`SOC_SYSCTRL_PERF_FLASH_WAIT_LO_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET =
       sysctrl_offset_t'(`SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_TEST_STATUS_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_TEST_STATUS_OFFSET);
 
   logic s_ribp_wr_hdshk, s_ribp_rd_hdshk;
   logic s_ribp_ready_d, s_ribp_ready_q;
@@ -168,6 +176,10 @@ module ribp_sysctrl (
   logic [63:0] s_perf_sdram_wait_q;
   logic [63:0] s_perf_psram_wait_q;
   logic [63:0] s_perf_flash_wait_q;
+  logic s_test_done_d, s_test_done_q;
+  logic s_test_pass_d, s_test_pass_q;
+  logic [7:0] s_test_code_d, s_test_code_q;
+  logic s_test_status_write;
 
   assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
   assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
@@ -181,6 +193,9 @@ module ribp_sysctrl (
   assign sysctrl.user_bus_enable_o = s_user_running_q;
   assign sysctrl.perf_enable_o = s_perf_enable_q;
   assign sysctrl.perf_clear_o = s_perf_clear;
+  assign sysctrl.test_done_o = s_test_done_q;
+  assign sysctrl.test_pass_o = s_test_pass_q;
+  assign sysctrl.test_code_o = s_test_code_q;
   assign pll_ctrl.req_sel_o = s_pll_cfg_q;
   assign pll_ctrl.req_valid_o = s_pll_req_valid_q;
   assign pll_ctrl.rsp_ready_o = 1'b1;
@@ -452,6 +467,33 @@ module ribp_sysctrl (
       s_perf_flash_wait_q
   );
 
+  assign s_test_status_write = s_ribp_wr_hdshk && ribp.addr[7:0] == SYSCTRL_TEST_STATUS_OFFSET &&
+                               ribp.wstrb == 4'hF && ribp.wdata[31] && ~s_test_done_q;
+  assign s_test_done_d = 1'b1;
+  dffer #(1) u_test_done_dffer (
+      clk_i,
+      rst_n_i,
+      s_test_status_write,
+      s_test_done_d,
+      s_test_done_q
+  );
+  assign s_test_pass_d = ribp.wdata[0];
+  dffer #(1) u_test_pass_dffer (
+      clk_i,
+      rst_n_i,
+      s_test_status_write,
+      s_test_pass_d,
+      s_test_pass_q
+  );
+  assign s_test_code_d = ribp.wdata[15:8];
+  dffer #(8) u_test_code_dffer (
+      clk_i,
+      rst_n_i,
+      s_test_status_write,
+      s_test_code_d,
+      s_test_code_q
+  );
+
   assign s_fault_status_clear = s_ribp_wr_hdshk &&
                                 ribp.addr[7:0] == SYSCTRL_FAULT_STATUS_OFFSET &&
                                 ribp.wstrb[0] && ribp.wdata[0];
@@ -594,6 +636,9 @@ module ribp_sysctrl (
       SYSCTRL_PERF_PSRAM_WAIT_HI_OFFSET: s_ribp_rdata_d = s_perf_psram_wait_q[63:32];
       SYSCTRL_PERF_FLASH_WAIT_LO_OFFSET: s_ribp_rdata_d = s_perf_flash_wait_q[31:0];
       SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET: s_ribp_rdata_d = s_perf_flash_wait_q[63:32];
+      SYSCTRL_TEST_STATUS_OFFSET:         s_ribp_rdata_d = {
+          s_test_done_q, 15'd0, s_test_code_q, 7'd0, s_test_pass_q
+      };
       default:                            s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
       // verilog_format: on

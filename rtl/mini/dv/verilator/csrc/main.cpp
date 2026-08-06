@@ -50,7 +50,5 @@ int main(int argc, char *argv[]) {
     emu = new Emulator(res);
     std::cout << rang::fg::yellow << "[verilator]start simulating ..." << rang::fg::reset
               << std::endl;
-    emu->runSim();
-
-    return 0;
+    return emu->runSim();
 }

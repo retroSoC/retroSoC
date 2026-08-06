@@ -25,7 +25,7 @@ class Emulator {
     void state();
     std::string getAppName(std::string str);
     bool getArriveTime();
-    void runSim();
+    int runSim();
 
   private:
     unsigned long long cycle = 0;

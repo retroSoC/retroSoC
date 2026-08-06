@@ -32,7 +32,10 @@ module sysctrl_formal_design (
     output logic        fault_write,
     output logic [ 2:0] fault_reason,
     output logic [31:0] fault_addr_q,
-    output logic [31:0] fault_count
+    output logic [31:0] fault_count,
+    output logic        test_done,
+    output logic        test_pass,
+    output logic [ 7:0] test_code
 );
 
   ribp_if rib ();
@@ -109,6 +112,9 @@ module sysctrl_formal_design (
   assign fault_reason                = u_dut.s_fault_reason_q;
   assign fault_addr_q                = u_dut.s_fault_addr_q;
   assign fault_count                 = u_dut.s_fault_count_q;
+  assign test_done                   = sysctrl.test_done_o;
+  assign test_pass                   = sysctrl.test_pass_o;
+  assign test_code                   = sysctrl.test_code_o;
 
   ribp_sysctrl u_dut (
       .clk_i           (clk_i),

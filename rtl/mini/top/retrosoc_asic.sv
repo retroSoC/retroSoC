@@ -20,15 +20,18 @@ module retrosoc_asic (
 `ifdef HAVE_PLL
   logic s_xtal_io;
 `endif
-  logic s_sys_clk;
-  logic s_ext_rst_n;
-  logic s_sys_rst_n;
-  logic s_aud_rst_n;
-  logic s_jtag_tck;
-  logic s_jtag_tms;
-  logic s_jtag_tdi;
-  logic s_jtag_trst_n;
-  logic s_jtag_tdo;
+  logic       s_sys_clk;
+  logic       s_ext_rst_n;
+  logic       s_sys_rst_n;
+  logic       s_aud_rst_n;
+  logic       s_jtag_tck;
+  logic       s_jtag_tms;
+  logic       s_jtag_tdi;
+  logic       s_jtag_trst_n;
+  logic       s_jtag_tdo;
+  (* keep = "true" *)logic       s_test_done;
+  (* keep = "true" *)logic       s_test_pass;
+  (* keep = "true" *)logic [7:0] s_test_code;
 
 `ifdef HAVE_SRAM_IF
   ram_if u_ram_if ();
@@ -81,7 +84,10 @@ rcu u_rcu (
       .jtag_tms_i   (s_jtag_tms),
       .jtag_tdi_i   (s_jtag_tdi),
       .jtag_trst_n_i(s_jtag_trst_n),
-      .jtag_tdo_o   (s_jtag_tdo)
+      .jtag_tdo_o   (s_jtag_tdo),
+      .test_done_o  (s_test_done),
+      .test_pass_o  (s_test_pass),
+      .test_code_o  (s_test_code)
   );
 
 endmodule

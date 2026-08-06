@@ -20,8 +20,10 @@ URL.
 
 `parse_performance_log.py` converts the `APP=benchmark` UART `PERF` records
 into `meta/performance.json`. The parser requires the terminal
-`PERF_BENCHMARK_PASS` marker and deliberately does not alter the common
-simulation success-marker policy.
+`PERF_BENCHMARK_PASS` marker. `parse_coremark_log.py` converts the fixed
+SRAM CoreMark quick report into `meta/coremark.json`; it requires one valid
+`COREMARK_RESULT` record and `COREMARK_PASS`. Both reports complement, rather
+than replace, the common `SIM_TEST_PASS` simulation verdict.
 
 `run_debug_session.py` is the local Hazard3 debug acceptance driver. It starts
 the Verilator remote-bitbang endpoint, the lock-pinned OpenOCD binary, and
