@@ -70,6 +70,16 @@ user core.
 | [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | RV32IM | `coremark` | Fixed four-iteration SRAM CoreMark quick measurement, recorded by nightly IHP130 regression. |
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
+CI Verilator firmware simulations explicitly select the `ci_smoke`
+application, which checks UART, archinfo APB readback, and test-status
+completion without the verbose startup report. The profiles retain `bringup`
+as their default for manual diagnostics. To run the full report in Verilator,
+use:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk APP=bringup SIMU=VERILATOR SOC_SIM_TIME=300 firmware sim
+```
+
 ## Prerequisites
 
 The open-source development environment contains the exact Ubuntu 22.04 tool bundles, Python

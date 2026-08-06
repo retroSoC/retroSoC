@@ -13,6 +13,12 @@
 | Nightly | `configs/ci/ihp130.mk` | repeated full IHP130 regression |
 | Cluster | `configs/cluster/ics55.mk` | compatibility profile for site-specific ICS55 runs |
 
+Regression Verilator firmware simulations override the profiles' manual
+`bringup` default with `APP=ci_smoke`. This application verifies UART output,
+archinfo APB readback, and test-status completion within the CI time budget;
+`bringup` retains the full automatic application-information report for
+manual runs.
+
 OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
 `slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, ICS55 uses the H7CR
 `ss_1p08_125C` view, and SKY130 uses `ss_100C_1v40`.
