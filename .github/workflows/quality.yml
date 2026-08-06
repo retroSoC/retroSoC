@@ -44,6 +44,9 @@ jobs:
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock config/dependencies.lock.json
 
+      - name: Set up management-core dependencies
+        run: python3 setup.py
+
       - name: Validate SoC integration topology
         run: make check-soc-topology check-user-extensions check-clock-reset-domains
 
