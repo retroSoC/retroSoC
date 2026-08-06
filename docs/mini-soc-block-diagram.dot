@@ -75,7 +75,7 @@ digraph mini_soc_block_diagram {
 
       mgmt_core [
         fillcolor="#DDF2E3",
-        label="Management core\nHazard3 by default, branch predictor\nPicoRV32 build option without debug"
+        label="Management core\nFixed Hazard3, branch predictor\nJTAG Debug Module always present"
       ];
       jtag_dtm [
         fillcolor="#E5E7EB",
@@ -91,7 +91,7 @@ digraph mini_soc_block_diagram {
       ];
       user_core [
         fillcolor="#DDF2E3",
-        label="Selected user core\nC0-C4, one active"
+        label="Selected user core\nC0-C5, one active\nPicoRV32 at C5"
       ];
       dma [
         fillcolor="#DDF2E3",

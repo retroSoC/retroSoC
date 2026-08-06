@@ -16,9 +16,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 ## Highlights
 
-- A fixed architecture with a Hazard3 management core by default (PicoRV32 is
-  an explicit build option) and software-selected
-  user-core and user-IP extension slots.
+- A fixed Hazard3 management core with a permanent JTAG Debug Module, plus
+  software-selected user-core and user-IP extension slots, including PicoRV32
+  at user-core slot C5.
 - A standard five-pad JTAG Debug Transport Module for the Hazard3 management
   core, with a reproducible Verilator, OpenOCD, and GDB acceptance flow.
 - Configurable GF180, SKY130, IHP130, and ICS55 implementation targets with
@@ -51,8 +51,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 The committed profiles are the supported starting points. They select an ISA,
 PDK, application, linker layout, and optional features as one reproducible
-configuration. The user-extension fabric is fixed; `CORE` selects the management
-core and defaults to `HAZARD3`.
+configuration. The management core is fixed to Hazard3. The user-extension
+fabric exposes stable C0-C5 user-core slots and software selects one active
+user core.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |

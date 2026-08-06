@@ -28,17 +28,15 @@ only exposes the pad-side subset of `gpio_if`; neither module contains state.
 
 ## Management JTAG
 
-`HAVE_DEBUG=YES` is the default for the Hazard3 management-core configuration.
-It adds five conditional ASIC pads: `jtag_tck_i_pad`, `jtag_tms_i_pad`,
-`jtag_tdi_i_pad`, `jtag_trst_n_i_pad`, and `jtag_tdo_o_pad`. The default DTM
-ID code is `0xDEADBEEF` and can be changed with the eight-hex-digit
-`JTAG_IDCODE` Make variable. `HAVE_DEBUG=YES` is invalid with `CORE=PICORV32`;
-select `HAVE_DEBUG=NO` for that explicit alternative core.
+The fixed Hazard3 management core always exposes five ASIC pads:
+`jtag_tck_i_pad`, `jtag_tms_i_pad`, `jtag_tdi_i_pad`, `jtag_trst_n_i_pad`, and
+`jtag_tdo_o_pad`. The default DTM ID code is `0xDEADBEEF` and can be changed
+with the eight-hex-digit `JTAG_IDCODE` Make variable.
 
 The JTAG TCK is an asynchronous clock domain. The canonical clock/reset map
 declares a 10 MHz TCK constraint and an asynchronous DMI crossing into the
 system clock domain through Hazard3's APB async bridge. FPGA and RTL-testbench
-profiles tie the optional JTAG inputs inactive. The Verilator wrapper exposes
+profiles tie the JTAG inputs inactive. The Verilator wrapper exposes
 them to the local remote-bitbang server used by the debug acceptance flow.
 
 ## User IP GPIO ownership

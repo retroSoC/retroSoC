@@ -53,7 +53,6 @@ Emulator::Emulator(cxxopts::ParseResult &res) {
     dutPtr = new Vretrosoc_top;
     reset();
 
-#ifdef HAVE_DEBUG
     if (args.jtagPort > 0) {
         if (args.jtagPort > 65535UL) {
             std::cerr << "remote-bitbang port is outside the TCP range" << std::endl;
@@ -64,7 +63,6 @@ Emulator::Emulator(cxxopts::ParseResult &res) {
             exit(1);
         }
     }
-#endif
 
     if (args.dumpWave) {
 #ifdef DUMP_WAVE_FST
@@ -99,12 +97,10 @@ void Emulator::reset() {
               << std::endl;
     dutPtr->rst_n_i = 1;
     dutPtr->ext_clk_i = 0;
-#ifdef HAVE_DEBUG
     dutPtr->jtag_tck_i = 0;
     dutPtr->jtag_tms_i = 0;
     dutPtr->jtag_tdi_i = 0;
     dutPtr->jtag_trst_n_i = 0;
-#endif
     dutPtr->eval();
     // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " <<
     // static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
@@ -125,9 +121,7 @@ void Emulator::reset() {
     }
 
     dutPtr->rst_n_i = 1;
-#ifdef HAVE_DEBUG
     dutPtr->jtag_trst_n_i = 1;
-#endif
     for (int i = 0; i < 5; i++) {
         dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
         dutPtr->eval();
@@ -167,13 +161,11 @@ bool Emulator::getArriveTime() {
 void Emulator::runSim() {
     std::cout << rang::fg::yellow << "Running DUT simulation..." << rang::fg::reset << std::endl;
     while (!Verilated::gotFinish() && signal_received == 0 && !getArriveTime()) {
-#ifdef HAVE_DEBUG
         // TCP polling need not occur on every simulation half-cycle. A JTAG
         // command is still evaluated one-by-one by RemoteBitbang::service().
         if (remoteBitbang && (cycle & 0x3fU) == 0U && !remoteBitbang->service(*dutPtr)) {
             break;
         }
-#endif
         step();
     }
     dutPtr->final();

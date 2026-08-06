@@ -71,7 +71,6 @@ def main() -> int:
             "-Wextra",
             "-Werror",
             "-fno-builtin",
-            "-DRS_SOC_MGMT_CORE_HAZARD3",
             "-I",
             str(memory_map_root / "include"),
             "-I",

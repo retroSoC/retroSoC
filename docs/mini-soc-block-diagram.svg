@@ -90,8 +90,8 @@
 <title>mgmt_core</title>
 <path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M1141,-674.48C1141,-674.48 987,-674.48 987,-674.48 981,-674.48 975,-668.48 975,-662.48 975,-662.48 975,-641.48 975,-641.48 975,-635.48 981,-629.48 987,-629.48 987,-629.48 1141,-629.48 1141,-629.48 1147,-629.48 1153,-635.48 1153,-641.48 1153,-641.48 1153,-662.48 1153,-662.48 1153,-668.48 1147,-674.48 1141,-674.48"/>
 <text text-anchor="middle" x="1064" y="-660.48" font-family="Arial" font-size="10.00" fill="#111827">Management core</text>
-<text text-anchor="middle" x="1064" y="-649.48" font-family="Arial" font-size="10.00" fill="#111827">Hazard3 by default, branch predictor</text>
-<text text-anchor="middle" x="1064" y="-638.48" font-family="Arial" font-size="10.00" fill="#111827">PicoRV32 build option without debug</text>
+<text text-anchor="middle" x="1064" y="-649.48" font-family="Arial" font-size="10.00" fill="#111827">Fixed Hazard3, branch predictor</text>
+<text text-anchor="middle" x="1064" y="-638.48" font-family="Arial" font-size="10.00" fill="#111827">JTAG Debug Module always present</text>
 </g>
 <!-- mgmt_adapter -->
 <g id="node8" class="node">
@@ -145,15 +145,16 @@
 <!-- user_core -->
 <g id="node9" class="node">
 <title>user_core</title>
-<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M680,-569.98C680,-569.98 604,-569.98 604,-569.98 598,-569.98 592,-563.98 592,-557.98 592,-557.98 592,-545.98 592,-545.98 592,-539.98 598,-533.98 604,-533.98 604,-533.98 680,-533.98 680,-533.98 686,-533.98 692,-539.98 692,-545.98 692,-545.98 692,-557.98 692,-557.98 692,-563.98 686,-569.98 680,-569.98"/>
-<text text-anchor="middle" x="642" y="-554.98" font-family="Arial" font-size="10.00" fill="#111827">Selected user core</text>
-<text text-anchor="middle" x="642" y="-543.98" font-family="Arial" font-size="10.00" fill="#111827">C0&#45;C4, one active</text>
+<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M680,-574.48C680,-574.48 604,-574.48 604,-574.48 598,-574.48 592,-568.48 592,-562.48 592,-562.48 592,-541.48 592,-541.48 592,-535.48 598,-529.48 604,-529.48 604,-529.48 680,-529.48 680,-529.48 686,-529.48 692,-535.48 692,-541.48 692,-541.48 692,-562.48 692,-562.48 692,-568.48 686,-574.48 680,-574.48"/>
+<text text-anchor="middle" x="642" y="-560.48" font-family="Arial" font-size="10.00" fill="#111827">Selected user core</text>
+<text text-anchor="middle" x="642" y="-549.48" font-family="Arial" font-size="10.00" fill="#111827">C0&#45;C5, one active</text>
+<text text-anchor="middle" x="642" y="-538.48" font-family="Arial" font-size="10.00" fill="#111827">PicoRV32 at C5</text>
 </g>
 <!-- user_core&#45;&gt;fabric -->
 <g id="edge9" class="edge">
 <title>user_core&#45;&gt;fabric</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M636.53,-533.94C632.09,-520.08 625.62,-499.91 619.78,-481.69"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="621.96,-480.48 617.49,-474.57 617.29,-481.98 621.96,-480.48"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M635.06,-529.34C630.73,-515.85 625.01,-498.03 619.8,-481.75"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="622.07,-480.81 617.59,-474.89 617.4,-482.31 622.07,-480.81"/>
 <text text-anchor="middle" x="634" y="-500.08" font-family="Arial" font-size="8.00" fill="#374151">RIB</text>
 </g>
 <!-- dma -->

@@ -2,10 +2,10 @@
 
 ## Scope
 
-The default `CORE=HAZARD3` configuration enables `HAVE_DEBUG=YES` and exposes
-a standard RISC-V JTAG Debug Transport Module (DTM) on five conditional pads:
-TCK, TMS, TDI, TRST_n, and TDO. The default JTAG ID code is `0xDEADBEEF`.
-Set `JTAG_IDCODE=<eight hexadecimal digits>` to use a board-specific value.
+The fixed Hazard3 management core always exposes a standard RISC-V JTAG Debug
+Transport Module (DTM) on five ASIC pads: TCK, TMS, TDI, TRST_n, and TDO. The
+default JTAG ID code is `0xDEADBEEF`. Set
+`JTAG_IDCODE=<eight hexadecimal digits>` to use a board-specific value.
 
 The Debug Module (DM) controls only the management Hazard3 hart. It supports
 abstract register and memory commands and has `HAVE_SBA=0`, so it never becomes
@@ -13,8 +13,8 @@ a second SoC bus master. Debugger memory operations execute through the halted
 hart and remain subject to the existing RIB access policy. User cores,
 peripherals, clocks, and pad control stay outside the debug-reset scope.
 
-`CORE=PICORV32` does not implement this integration. Select
-`HAVE_DEBUG=NO CORE=PICORV32` when building that management-core option.
+PicoRV32 is available as software-selected user core C5 through mini-ver-mpw;
+it is not a management-core option and has no management Debug Module.
 
 ## Reset And Clocking
 

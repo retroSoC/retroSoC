@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-VALID_FEATURES = {"HAVE_DEBUG", "HAVE_PLL"}
+VALID_FEATURES = {"HAVE_PLL"}
 VALID_KINDS = {
     "full",
     "schmitt_input",

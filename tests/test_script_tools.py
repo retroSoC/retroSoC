@@ -118,7 +118,7 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     assert str(ROOT / "rtl/managed/hazard3/hdl") in hazard3
     assert "rtl/managed/mpw/core/username3" not in hazard3
     assert (tmp_path / "core_hazard3.fl").is_file()
-    assert (tmp_path / "core_picorv32.fl").is_file()
+    assert not (tmp_path / "core_picorv32.fl").exists()
     assert {
         "pdk_gf180.fl",
         "pdk_ics55.fl",
@@ -138,13 +138,11 @@ def test_filelist_round_trips_verilog_define_values(tmp_path: Path) -> None:
     parsed = parse_filelists([tmp_path / "def.fl"])
     output = tmp_path / "round-trip.fl"
     write_filelist(output, parsed)
-    assert output.read_text(encoding="utf-8") == (
-        "+define+SOC_JTAG_IDCODE=32'hDEADBEEF\n"
-    )
+    assert output.read_text(encoding="utf-8") == ("+define+SOC_JTAG_IDCODE=32'hDEADBEEF\n")
     assert parse_filelists([output]) == parsed
 
 
-def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> None:
+def test_source_export_uses_the_fixed_hazard3_management_core(tmp_path: Path) -> None:
     module_path = ROOT / "syn/tools/export_soc_sources.py"
     spec = importlib.util.spec_from_file_location("retrosoc_source_export", module_path)
     assert spec is not None and spec.loader is not None
@@ -156,44 +154,39 @@ def test_source_export_selects_the_requested_management_core(tmp_path: Path) -> 
     dynamic_core.write_text("", encoding="utf-8")
     dynamic_ip.write_text("", encoding="utf-8")
 
-    for core, source_name in (
-        ("HAZARD3", "hazard3_cpu_1port.v"),
-        ("PICORV32", "picorv32_ver.v"),
-    ):
-        arguments = SimpleNamespace(
-            pdk="IHP130",
-            simu="IVERILOG",
-            core=core,
-            have_pll=False,
-            have_sram_if=False,
-            have_sram_macro=False,
-            have_sva=False,
-            have_debug="YES" if core == "HAZARD3" else "NO",
-            jtag_idcode="DEADBEEF",
-            dynamic_core_filelist=dynamic_core,
-            dynamic_ip_filelist=dynamic_ip,
-        )
-        generated_dir = tmp_path / core.lower()
-        user_extensions_dir = generated_dir / "user_extensions"
-        source_export.generate_all(generated_dir, source_export.build_defines(arguments))
-        source_export.generate_user_extensions(
-            ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
-        )
-        filelist = source_export.configured_filelist(
-            arguments, generated_dir, user_extensions_dir, require_files=False
-        )
+    arguments = SimpleNamespace(
+        pdk="IHP130",
+        simu="IVERILOG",
+        have_pll=False,
+        have_sram_if=False,
+        have_sram_macro=False,
+        have_sva=False,
+        jtag_idcode="DEADBEEF",
+        dynamic_core_filelist=dynamic_core,
+        dynamic_ip_filelist=dynamic_ip,
+    )
+    generated_dir = tmp_path / "hazard3"
+    user_extensions_dir = generated_dir / "user_extensions"
+    source_export.generate_all(generated_dir, source_export.build_defines(arguments))
+    source_export.generate_user_extensions(
+        ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
+    )
+    filelist = source_export.configured_filelist(
+        arguments, generated_dir, user_extensions_dir, require_files=False
+    )
 
-        assert f"+define+CORE_{core}" in filelist.defines
-        assert "+define+SOC_JTAG_IDCODE=-559038737" in filelist.defines
-        assert ("+define+HAVE_DEBUG" in filelist.defines) == (core == "HAZARD3")
-        assert any(path.name == source_name for path in filelist.files)
+    assert "+define+SOC_JTAG_IDCODE=-559038737" in filelist.defines
+    assert not any(item.startswith("+define+CORE_") for item in filelist.defines)
+    assert "+define+HAVE_DEBUG" not in filelist.defines
+    assert any(path.name == "hazard3_cpu_1port.v" for path in filelist.files)
 
 
-def test_package_forwards_manifest_management_core() -> None:
+def test_package_forwards_manifest_jtag_idcode() -> None:
     package_source = (ROOT / "scripts/package.py").read_text(encoding="utf-8")
 
-    assert '"--core"' in package_source
-    assert 'config.get("CORE", "HAZARD3")' in package_source
+    assert '"--jtag-idcode"' in package_source
+    assert 'config.get("JTAG_IDCODE", "DEADBEEF")' in package_source
+    assert '"--core"' not in package_source
 
 
 def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> None:
@@ -508,20 +501,29 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
     assert invalid.returncode != 0
     assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
 
-    invalid_core = subprocess.run(
+    removed_core = subprocess.run(
         ["make", "CORE=alternate", "config"],
         cwd=ROOT,
         text=True,
         capture_output=True,
     )
-    assert invalid_core.returncode != 0
-    assert "Invalid CORE='alternate'" in invalid_core.stderr
+    assert removed_core.returncode != 0
+    assert "CORE has been removed" in removed_core.stderr
 
     default_core = run("make", "config").stdout
-    assert "CORE               HAZARD3" in default_core
+    assert any(
+        line.startswith("MGMT_CORE") and line.rstrip().endswith("HAZARD3")
+        for line in default_core.splitlines()
+    )
 
-    picorv32_core = run("make", "CORE=PICORV32", "config").stdout
-    assert "CORE               PICORV32" in picorv32_core
+    removed_debug = subprocess.run(
+        ["make", "HAVE_DEBUG=NO", "config"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert removed_debug.returncode != 0
+    assert "HAVE_DEBUG has been removed" in removed_debug.stderr
 
     removed_ip = subprocess.run(
         ["make", "IP=MDD", "config"],
@@ -668,7 +670,8 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
     for _, values in regression_commands:
         if "SIMU=VERILATOR" in values:
             assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
-            assert "HAVE_SVA=YES" in values
+            if "debug-sim" not in values:
+                assert "HAVE_SVA=YES" in values
 
 
 def test_verilator_has_no_external_core_selection() -> None:
@@ -681,16 +684,18 @@ def test_verilator_has_no_external_core_selection() -> None:
     assert "core_sel_i" not in testbench
 
 
-def test_management_core_selection_is_limited_to_hazard3_and_picorv32() -> None:
+def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
     wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
 
-    assert "VALID_CORE      := HAZARD3 PICORV32" in makefile
-    assert "DEF_LIST += +define+CORE_$(CORE)" in makefile
-    assert "`ifdef CORE_PICORV32" in wrapper
-    assert "`elsif CORE_HAZARD3" in wrapper
+    assert "CORE has been removed" in makefile
+    assert "HAVE_DEBUG has been removed" in makefile
+    assert "CORE_$(CORE)" not in makefile
+    assert "`ifdef CORE_" not in wrapper
+    assert "`ifdef HAVE_DEBUG" not in wrapper
     assert "ahbl2ribp u_ahbl2ribp" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
+    assert ".DEBUG_SUPPORT      (1)" in wrapper
 
 
 def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
@@ -704,19 +709,22 @@ def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
         encoding="utf-8"
     )
 
-    assert "HAVE_DEBUG               ?= YES" in makefile
     assert "JTAG_IDCODE              ?= DEADBEEF" in makefile
     assert "if [ $$value -gt 2147483647 ]" in makefile
-    assert "HAVE_DEBUG=YES requires CORE=HAZARD3" in makefile
+    assert "HAVE_DEBUG               ?=" not in makefile
     assert ".MULDIV_UNROLL      (2)" in wrapper
     assert ".BRANCH_PREDICTOR   (1)" in wrapper
     assert ".BREAKPOINT_TRIGGERS(2)" in wrapper
     assert ".HAVE_SBA(0)" in debug_wrapper
     assert "mgmt_debug_reset u_mgmt_debug_reset" in debug_wrapper
     assert "--timeout $(SOC_SIM_TIME)" in verilator_makefile
+    assert "--require-debug-tools" in verilator_makefile
+    assert "HAVE_DEBUG" not in verilator_makefile
     assert "DEBUG_GDB_PASS" in driver
     assert "break *0x30000008" in driver
     assert "adapter driver remote_bitbang" in openocd
+    assert "catch {remote_bitbang port $jtag_port}" in openocd
+    assert "remote_bitbang_port $jtag_port" in openocd
     assert "-expected-id 0xdeadbeef" in openocd
     assert lock["toolchains"]["ubuntu-22.04"]["openocd"]["version"] == "0.12.0-1"
     assert any(profile == "configs/ci/ihp130-debug.mk" for profile, _ in PR_COMMANDS)

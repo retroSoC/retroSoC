@@ -66,7 +66,9 @@ def make_sbom(lock: dict[str, object]) -> dict[str, object]:
     components.extend(
         container_component(name, spec) for name, spec in lock["container_images"].items()
     )
-    components.extend(component(f"nix/{name}", "source", spec) for name, spec in lock["nix_inputs"].items())
+    components.extend(
+        component(f"nix/{name}", "source", spec) for name, spec in lock["nix_inputs"].items()
+    )
     for platform, tools in lock["toolchains"].items():
         components.extend(
             component(f"{platform}/{name}", "toolchain", spec) for name, spec in tools.items()
@@ -108,8 +110,8 @@ def main() -> int:
             config["PDK"],
             "--simu",
             config["SIMU"],
-            "--core",
-            config.get("CORE", "HAZARD3"),
+            "--jtag-idcode",
+            config.get("JTAG_IDCODE", "DEADBEEF"),
             "--dynamic-core-filelist",
             str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "core/core.fl"),
             "--dynamic-ip-filelist",

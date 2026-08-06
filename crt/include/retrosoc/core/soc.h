@@ -7,13 +7,7 @@
 #include <retrosoc/generated/memory_map.h>
 #include <retrosoc/generated/user_extensions.h>
 
-#if defined(RS_SOC_MGMT_CORE_HAZARD3)
-#define HW_CORE "Management Hazard3"
-#elif defined(RS_SOC_MGMT_CORE_PICORV32)
-#define HW_CORE "Management PicoRV32"
-#else
-#error "Management core selection is missing"
-#endif
+#define HW_CORE                         "Management Hazard3"
 
 #define CPU_FREQ                        72     // unit: MHz
 #define UART_BPS                        921600 // unit: bps

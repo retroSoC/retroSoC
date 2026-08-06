@@ -21,9 +21,14 @@ endif
 ifneq ($(origin IP),undefined)
 $(error IP is no longer configurable; user IP integration is fixed)
 endif
+ifneq ($(origin CORE),undefined)
+$(error CORE has been removed; the management core is fixed to Hazard3)
+endif
+ifneq ($(origin HAVE_DEBUG),undefined)
+$(error HAVE_DEBUG has been removed; the Hazard3 Debug Module is always enabled)
+endif
 
 SOC   ?= MINI
-CORE  ?= HAZARD3
 SIMU  ?= VCS
 SYNTH ?= NONE
 STA   ?= NONE
@@ -35,7 +40,6 @@ HAVE_SRAM_IF             ?= NO
 HAVE_SRAM_MACRO          ?= NO
 PDK_BEHAV                ?= NO
 HAVE_SVA                 ?= NO
-HAVE_DEBUG               ?= YES
 JTAG_IDCODE              ?= DEADBEEF
 WAVE                     ?= NO
 FORMAL                   ?= NO
@@ -74,8 +78,8 @@ VCS_SHELL_PYTHON   := $(if $(filter VCS,$(SIMU)),$(if $(filter $(VCS_SHELL_GOALS
 JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
-CONFIG_KEY_VARS    := SOC CORE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
-                   HAVE_DEBUG JTAG_IDCODE ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
+CONFIG_KEY_VARS    := SOC PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
+                   JTAG_IDCODE ISA HAVE_CSR APP LINK_TYPE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -99,7 +103,6 @@ FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
 endif
 
 VALID_SOC       := MINI
-VALID_CORE      := HAZARD3 PICORV32
 VALID_SIMU      := VCS VERILATOR IVERILOG
 VALID_SYNTH     := NONE YOSYS
 VALID_STA       := NONE OPENSTA
@@ -114,7 +117,6 @@ $(if $(filter $($(1)),$(2)),,$(error Invalid $(1)='$($(1))'; expected one of: $(
 endef
 
 $(call validate_value,SOC,$(VALID_SOC))
-$(call validate_value,CORE,$(VALID_CORE))
 $(call validate_value,SIMU,$(VALID_SIMU))
 $(call validate_value,SYNTH,$(VALID_SYNTH))
 $(call validate_value,STA,$(VALID_STA))
@@ -124,7 +126,6 @@ $(call validate_value,HAVE_SRAM_IF,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
 $(call validate_value,PDK_BEHAV,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
-$(call validate_value,HAVE_DEBUG,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
 $(call validate_value,FORMAL,$(VALID_BOOL))
 $(call validate_value,VCS_USE_LSF,$(VALID_BOOL))
@@ -140,12 +141,6 @@ $(error JTAG_IDCODE='$(JTAG_IDCODE)' must be exactly eight hexadecimal digits)
 endif
 JTAG_IDCODE_DEC := $(shell value=$$(printf '%u' 0x$(JTAG_IDCODE)); \
 	if [ $$value -gt 2147483647 ]; then echo $$((value - 4294967296)); else echo $$value; fi)
-
-ifeq ($(HAVE_DEBUG),YES)
-ifneq ($(CORE),HAZARD3)
-$(error HAVE_DEBUG=YES requires CORE=HAZARD3; set HAVE_DEBUG=NO for CORE=$(CORE))
-endif
-endif
 
 ifneq ($(filter benchmark-report,$(MAKECMDGOALS)),)
 ifneq ($(APP),benchmark)
@@ -170,7 +165,6 @@ endif
 
 DEF_LIST ?= +define+PDK_$(PDK)
 DEF_LIST += +define+SIMU_$(SIMU)
-DEF_LIST += +define+CORE_$(CORE)
 DEF_LIST += +define+SOC_JTAG_IDCODE=$(JTAG_IDCODE_DEC)
 
 ifeq ($(HAVE_PLL), YES)
@@ -199,10 +193,6 @@ ifeq ($(HAVE_SVA), NO)
     DEF_LIST += +define+SV_ASSRT_DISABLE
 endif
 
-ifeq ($(HAVE_DEBUG), YES)
-    DEF_LIST += +define+HAVE_DEBUG
-endif
-
 ifeq ($(SYNTH), YOSYS)
     DEF_LIST += +define+SYNTHESIS
 endif
@@ -224,7 +214,7 @@ ifeq ($(STA), OPENSTA)
     include sta/opensta/opensta.mk
 endif
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
@@ -286,19 +276,19 @@ config:
 	  ROOT_PATH '$(ROOT_PATH)' CONFIG '$(or $(CONFIG_PATH),<defaults>)' \
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
-	  SOC '$(SOC)' CORE '$(CORE)' \
+	  SOC '$(SOC)' MGMT_CORE 'HAZARD3' \
 	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' \
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
-	  HAVE_DEBUG '$(HAVE_DEBUG)' JTAG_IDCODE '$(JTAG_IDCODE)' \
+	  JTAG_IDCODE '$(JTAG_IDCODE)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
 	  LINK_TYPE '$(LINK_TYPE)'
 
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --formal $(FORMAL) --debug $(HAVE_DEBUG) --lock $(LOCK_FILE)
+	  --pdk $(PDK) --formal $(FORMAL) --lock $(LOCK_FILE)
 
 benchmark-report: firmware
 
@@ -306,7 +296,7 @@ benchmark-report: firmware
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/parse_performance_log.py --log $(PERF_LOG) \
 		--output $(META_DIR)/performance.json
 
-setup: setup-mpw setup-core setup-clusterip setup-ip setup-pdk setup-app
+setup: setup-mpw setup-clusterip setup-ip setup-pdk setup-app
 
 setup-regression:
 	$(MAKE) CONFIG=configs/ci/ihp130.mk setup
@@ -320,9 +310,6 @@ setup-mpw:
 	  --lock-file $(CACHE_ROOT)/locks/mpw-prepare.lock
 	@mkdir -p $(dir $(MPW_STAMP))
 	@touch $(MPW_STAMP)
-
-setup-core: setup-mpw
-	python3 $(ROOT_PATH)/rtl/mini/script/prepare_picorv32.py
 
 setup-clusterip:
 	python3 $(ROOT_PATH)/rtl/managed/clusterip/setup.py

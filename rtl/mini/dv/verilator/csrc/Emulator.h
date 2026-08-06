@@ -13,9 +13,7 @@ namespace chrono = std::chrono;
 #endif
 #include "cxxopts.hpp"
 
-#ifdef HAVE_DEBUG
 #include "RemoteBitbang.hpp"
-#endif
 
 class Emulator {
   public:
@@ -43,9 +41,7 @@ class Emulator {
         std::string image = "";
     } args;
 
-#ifdef HAVE_DEBUG
     std::unique_ptr<RemoteBitbang> remoteBitbang;
-#endif
 
 #ifdef DUMP_WAVE_FST
     VerilatedFstC *wavePtr = nullptr;

@@ -24,47 +24,6 @@ module mgmt_core_wrapper (
     // verilog_format: on
 );
 
-`ifdef CORE_PICORV32
-  assign jtag_tdo_o = 1'b0;
-  picorv32 #(
-      .BARREL_SHIFTER (1),
-      .COMPRESSED_ISA (1),
-      .ENABLE_MUL     (1),
-      .ENABLE_FAST_MUL(1),
-      .ENABLE_DIV     (1),
-      .ENABLE_IRQ     (0),
-      .PROGADDR_RESET (`SOC_CPU_RESET_ADDR),
-      .PROGADDR_IRQ   (`SOC_IRQ_START_ADDR)
-  ) u_picorv32 (
-      .clk         (clk_i),
-      .resetn      (rst_n_i),
-      .trap        (),
-      .mem_valid   (ribp.valid),
-      .mem_instr   (),
-      .mem_addr    (ribp.addr),
-      .mem_wdata   (ribp.wdata),
-      .mem_wstrb   (ribp.wstrb),
-      .mem_rdata   (ribp.rdata),
-      .mem_ready   (ribp.ready),
-      .mem_la_read (),
-      .mem_la_write(),
-      .mem_la_addr (),
-      .mem_la_wdata(),
-      .mem_la_wstrb(),
-      .pcpi_valid  (),
-      .pcpi_insn   (),
-      .pcpi_rs1    (),
-      .pcpi_rs2    (),
-      .pcpi_wr     (),
-      .pcpi_rd     (),
-      .pcpi_wait   (),
-      .pcpi_ready  (),
-      .irq         (irq_i),
-      .eoi         (),
-      .trace_valid (),
-      .trace_data  ()
-  );
-`elsif CORE_HAZARD3
   logic        s_pwrup_req;
   logic        s_ahbl_idle;
   logic        s_core_rst_n;
@@ -94,7 +53,6 @@ module mgmt_core_wrapper (
   ahbl2ribp u_ahbl2ribp (u_ahbl_if, ribp, s_ahbl_idle);
   // verilog_format: on
 
-`ifdef HAVE_DEBUG
   mgmt_debug_wrapper #(
       .JTAG_IDCODE(`SOC_JTAG_IDCODE)
   ) u_mgmt_debug_wrapper (
@@ -129,21 +87,6 @@ module mgmt_core_wrapper (
       .dbg_sbus_wdata_o            (s_dbg_sbus_wdata),
       .dbg_sbus_rdata_i            (s_dbg_sbus_rdata)
   );
-`else
-  assign s_core_rst_n            = rst_n_i;
-  assign s_dbg_req_halt          = 1'b0;
-  assign s_dbg_req_halt_on_reset = 1'b0;
-  assign s_dbg_req_resume        = 1'b0;
-  assign s_dbg_data0_rdata       = '0;
-  assign s_dbg_instr_data        = '0;
-  assign s_dbg_instr_data_vld    = 1'b0;
-  assign s_dbg_sbus_addr         = '0;
-  assign s_dbg_sbus_write        = 1'b0;
-  assign s_dbg_sbus_size         = '0;
-  assign s_dbg_sbus_vld          = 1'b0;
-  assign s_dbg_sbus_wdata        = '0;
-  assign jtag_tdo_o              = 1'b0;
-`endif
 
   hazard3_cpu_1port #(
       .RESET_VECTOR       (`SOC_CPU_RESET_ADDR),
@@ -178,11 +121,7 @@ module mgmt_core_wrapper (
       .PMP_HARDWIRED      (0),
       .PMP_HARDWIRED_ADDR (0),
       .PMP_HARDWIRED_CFG  (0),
-`ifdef HAVE_DEBUG
       .DEBUG_SUPPORT      (1),
-`else
-      .DEBUG_SUPPORT      (0),
-`endif
       .BREAKPOINT_TRIGGERS(2),
       .NUM_IRQS           (30),
       .IRQ_PRIORITY_BITS  (2),
@@ -251,9 +190,4 @@ module mgmt_core_wrapper (
       .soft_irq                  (irq_i[0]),
       .timer_irq                 (irq_i[1])
   );
-`else
-  initial begin
-    $error("exactly one management core macro must be defined");
-  end
-`endif
 endmodule

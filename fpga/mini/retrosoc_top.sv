@@ -76,24 +76,20 @@ module retrosoc_top (
 
   wire s_sys_clk;
   wire s_aud_clk;
-`ifdef HAVE_DEBUG
   wire s_jtag_tck;
   wire s_jtag_tms;
   wire s_jtag_tdi;
   wire s_jtag_trst_n;
-`endif
   clk_wiz_0 u_clk_wiz_0 (
       .clk_in1 (clk_i),
       .clk_out1(s_sys_clk),
       .clk_out2(s_aud_clk)
   );
 
-`ifdef HAVE_DEBUG
   assign s_jtag_tck    = 1'b0;
   assign s_jtag_tms    = 1'b0;
   assign s_jtag_tdi    = 1'b0;
   assign s_jtag_trst_n = 1'b0;
-`endif
 
   retrosoc_asic u_retrosoc (
       `include "retrosoc_asic_fpga_mini_bindings.svh"

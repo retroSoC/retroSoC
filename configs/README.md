@@ -2,8 +2,9 @@
 
 This directory contains committed Make configuration profiles. Each profile
 selects SoC, PDK, ISA, CSR support, application, linker layout, and the
-supported validation tier. The user-extension fabric is fixed; the management
-core defaults to `HAZARD3` and may be set to `PICORV32` with `CORE`.
+supported validation tier. The management core is fixed to Hazard3 with its
+JTAG Debug Module enabled. The user-extension fabric exposes stable C0-C5
+slots, with PicoRV32 at C5.
 
 `ci/` contains pull-request profiles, `cluster/` contains configurations
 requiring site tools or PDKs, and `benchmark/` contains fixed-workload baseline

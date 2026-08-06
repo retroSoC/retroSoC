@@ -21,16 +21,13 @@ SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
 VERILATOR          ?= verilator
 VERILATOR_JOBS     ?= $(JOBS)
 VERILATOR_CXXFLAGS += -std=c++17 -Wall $(SOC_CSRC_INCLPATH) -DDUMP_WAVE_FST
-ifeq ($(HAVE_DEBUG),YES)
-VERILATOR_CXXFLAGS += -DHAVE_DEBUG
-endif
-VERILATOR_FLAGS += --cc --exe --no-timing --top-module $(SOC_VSRC_TOP)
-VERILATOR_FLAGS += --x-assign unique -O3 -CFLAGS "$(VERILATOR_CXXFLAGS)"
-VERILATOR_FLAGS += --trace-fst --assert --stats-vars --output-split 30000 --output-split-cfuncs 30000
-VERILATOR_FLAGS += --timescale "1ns/1ns" -Wno-fatal
-VERILATOR_FLAGS += -o $(BUILD_DIR)/emu
-VERILATOR_FLAGS += -Mdir $(SOC_COMPILE_HOME)
-VERILATOR_FLAGS += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
+VERILATOR_FLAGS    += --cc --exe --no-timing --top-module $(SOC_VSRC_TOP)
+VERILATOR_FLAGS    += --x-assign unique -O3 -CFLAGS "$(VERILATOR_CXXFLAGS)"
+VERILATOR_FLAGS    += --trace-fst --assert --stats-vars --output-split 30000 --output-split-cfuncs 30000
+VERILATOR_FLAGS    += --timescale "1ns/1ns" -Wno-fatal
+VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
+VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
+VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
 
 RTL_LINT_FLAGS := --lint-only --no-timing --top-module $(SOC_VSRC_TOP)
 RTL_LINT_FLAGS += --assert --Wall --timescale "1ns/1ns" -Wno-fatal
@@ -112,8 +109,10 @@ sim: comp
 		--result $(BUILD_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
 debug-sim: comp firmware
-	@test "$(HAVE_DEBUG)" = YES || { echo "debug-sim requires HAVE_DEBUG=YES" >&2; exit 2; }
-	@test "$(CORE)" = HAZARD3 || { echo "debug-sim requires CORE=HAZARD3" >&2; exit 2; }
+	@test "$(SIMU)" = VERILATOR || { echo "debug-sim requires SIMU=VERILATOR" >&2; exit 2; }
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/doctor.py --root $(ROOT_PATH) --simu $(SIMU) \
+		--synth $(SYNTH) --sta $(STA) --pdk $(PDK) --formal $(FORMAL) \
+		--require-debug-tools --lock $(LOCK_FILE)
 	python3 $(DEBUG_SIM_SESSION) \
 		--emulator $(VERILATOR_EMU) \
 		--image $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \

@@ -27,7 +27,6 @@
     {
       "kind": "tri_input",
       "direction": "inout",
-      "feature": "HAVE_DEBUG",
       "ports": [
         {"name": "jtag_tck_i_pad", "signal": "s_jtag_tck"},
         {"name": "jtag_tms_i_pad", "signal": "s_jtag_tms"},
@@ -37,7 +36,6 @@
     {
       "kind": "schmitt_input",
       "direction": "inout",
-      "feature": "HAVE_DEBUG",
       "ports": [
         {"name": "jtag_trst_n_i_pad", "signal": "s_jtag_trst_n"}
       ]
@@ -45,7 +43,6 @@
     {
       "kind": "tri_output",
       "direction": "output",
-      "feature": "HAVE_DEBUG",
       "ports": [
         {"name": "jtag_tdo_o_pad", "signal": "s_jtag_tdo"}
       ]

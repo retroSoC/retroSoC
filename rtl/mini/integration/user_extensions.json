@@ -8,7 +8,8 @@
     {"slot": 1, "module": "mpw_c1", "instance": "u_mpw_core_kianv_rv32ima", "bus": "ribp", "reset": "sync"},
     {"slot": 2, "module": "mpw_c2", "instance": "u_mpw_core_serv", "bus": "ribp", "reset": "async"},
     {"slot": 3, "module": "mpw_c3", "instance": "u_mpw_core_femtorv32", "bus": "ribp", "reset": "async"},
-    {"slot": 4, "module": "mpw_c4", "instance": "u_mpw_core_darkriscv", "bus": "ribp", "reset": "async"}
+    {"slot": 4, "module": "mpw_c4", "instance": "u_mpw_core_darkriscv", "bus": "ribp", "reset": "async"},
+    {"slot": 5, "module": "mpw_c5", "instance": "u_mpw_core_picorv32", "bus": "ribp", "reset": "sync"}
   ],
   "ip_targets": [
     {"slot": 1, "module": "mpw_i1", "instance": "u_mpw_ip_tiny_timer"},

@@ -31,12 +31,10 @@ FILELIST_STAMP             := $(GENERATED_FL_DIR)/.stamp
 FILELIST_TEMPLATES         := $(sort $(wildcard $(ROOT_PATH)/rtl/filelist/pdk_*.fl) \
                       $(wildcard $(RTL_PATH)/filelist/*.fl) $(RTL_PATH)/lint.msg)
 
-ifeq ($(CORE),HAZARD3)
 MPW_MANAGEMENT_CORE_CHECK := @test -d $(ROOT_PATH)/rtl/managed/hazard3/hdl || { \
 	echo "missing $(ROOT_PATH)/rtl/managed/hazard3; run 'make setup-mpw' first" >&2; \
 	exit 1; \
 	}
-endif
 
 $(MPW_STAMP):
 	@test -d $(ROOT_PATH)/rtl/managed/mpw/.git || { \
@@ -143,12 +141,7 @@ RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(SOC_TOPOLOGY_FILELIST) -f $(USER_EXT
 RTL_FLIST += -f $(GENERATED_FL_DIR)/clusterip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/ip.fl
 RTL_FLIST += -f $(GENERATED_FL_DIR)/tech.fl
-ifeq ($(CORE),HAZARD3)
-MGMT_CORE_FILELIST := core_hazard3.fl
-else
-MGMT_CORE_FILELIST := core_picorv32.fl
-endif
-RTL_FLIST += -f $(GENERATED_FL_DIR)/$(MGMT_CORE_FILELIST)
+RTL_FLIST += -f $(GENERATED_FL_DIR)/core_hazard3.fl
 
 RTL_FLIST += -f $(MPW_OUTPUT_DIR)/core/core.fl
 RTL_FLIST += -f $(MPW_OUTPUT_DIR)/ip/ip.fl
