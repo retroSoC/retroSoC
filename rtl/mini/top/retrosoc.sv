@@ -48,7 +48,7 @@ module retrosoc (
   spi_if      u_spisd_if    ();
   i2c_if      u_i2c0_if     ();
   i2s_if      u_i2s_if      ();
-  onewire_if  u_onewire_if  ();
+  ws2812_if   u_ws2812_if   ();
   sysctrl_if  u_sysctrl_if  ();
   dvp_if      u_dvp_if      ();
   sdio_if     u_sdio_if     ();
@@ -173,7 +173,7 @@ core_wrapper u_core_wrapper (
       .spisd           (u_spisd_if),
       .i2c0            (u_i2c0_if),
       .i2s             (u_i2s_if),
-      .onewire         (u_onewire_if),
+      .ws2812          (u_ws2812_if),
       .xpi             (xpi),
       .sysctrl         (u_sysctrl_if),
       .pll_ctrl        (pll_ctrl),

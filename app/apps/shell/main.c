@@ -9,7 +9,7 @@
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/lcd.h>
-#include <retrosoc/hal/onewire.h>
+#include <retrosoc/hal/ws2812.h>
 #include <retrosoc/hal/ps2.h>
 #include <retrosoc/hal/pwm.h>
 #include <retrosoc/hal/qspi.h>
@@ -56,7 +56,7 @@ int main(void) {
     rs_shell_init();
     (void)rs_shell_register("app", "app info", true, rs_app_info_command);
     (void)rs_shell_register("arch", "archinfo test", true, ip_archinfo_test);
-    (void)rs_shell_register("1wire", "1wire test", true, ip_1wire_test);
+    (void)rs_shell_register("ws2812", "ws2812 test", true, ip_ws2812_test);
     (void)rs_shell_register("tim", "timer test", true, ip_tim_test);
     (void)rs_shell_register("gpio", "gpio test", true, ip_gpio_test);
     (void)rs_shell_register("pwm", "pwm test", true, ip_pwm_test);

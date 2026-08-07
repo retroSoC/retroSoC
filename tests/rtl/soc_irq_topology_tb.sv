@@ -23,12 +23,16 @@ module soc_irq_topology_tb;
     s_apb_irq  = '0;
     expect_irq('0);
 
-    for (int bit_index = 0; bit_index < `SOC_IRQ_RIBP_WIDTH; bit_index++) begin
+    for (int bit_index = 0; bit_index < 10; bit_index++) begin
       s_ribp_irq            = '0;
       s_ribp_irq[bit_index] = 1'b1;
       s_apb_irq             = '0;
       expect_irq(32'd1 << bit_index);
     end
+
+    s_ribp_irq     = '0;
+    s_ribp_irq[10] = 1'b1;
+    expect_irq(32'd1 << 17);
 
     for (int bit_index = 0; bit_index < `SOC_IRQ_APB_WIDTH; bit_index++) begin
       s_ribp_irq           = '0;
@@ -37,8 +41,8 @@ module soc_irq_topology_tb;
       expect_irq(32'd1 << (10 + bit_index));
     end
 
-    if (s_irq[31:17] !== '0) begin
-      $fatal(1, "unallocated core IRQ bits are not low: %h", s_irq[31:17]);
+    if (s_irq[31:18] !== '0) begin
+      $fatal(1, "unallocated core IRQ bits are not low: %h", s_irq[31:18]);
     end
 
     $display("SoC topology IRQ routing test passed");

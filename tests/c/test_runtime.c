@@ -5,6 +5,7 @@
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/spisd.h>
+#include <retrosoc/hal/ws2812.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/lib/stdlib.h>
 #include <retrosoc/lib/string.h>
@@ -152,6 +153,39 @@ static int test_wait_helper(void)
     return 0;
 }
 
+static int test_ws2812_helpers(void)
+{
+    const rs_ws2812_config_t config = {
+        72000000U,
+        RS_WS2812_DEFAULT_BIT_PERIOD_NS,
+        RS_WS2812_DEFAULT_T0H_NS,
+        RS_WS2812_DEFAULT_T1H_NS,
+        RS_WS2812_DEFAULT_RESET_NS,
+        4U,
+    };
+    rs_ws2812_config_t invalid = config;
+    rs_ws2812_timing_t timing;
+
+    if ((rs_ws2812_pack_grb(0x12U, 0x34U, 0x56U) != UINT32_C(0x341256)) ||
+        (rs_ws2812_timing_from_ns(&config, &timing) != RS_OK) ||
+        (timing.bit_cycles != 90U) || (timing.t0h_cycles != 25U) ||
+        (timing.t1h_cycles != 50U) || (timing.reset_cycles != 21600U)) {
+        return 1;
+    }
+    invalid.t0h_ns = invalid.t1h_ns;
+    if ((rs_ws2812_timing_from_ns(&invalid, &timing) != RS_EINVAL) ||
+        (rs_ws2812_timing_from_ns(NULL, &timing) != RS_EINVAL) ||
+        (rs_ws2812_timing_from_ns(&config, NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    invalid = config;
+    invalid.source_clock_hz = 1U;
+    if (rs_ws2812_timing_from_ns(&invalid, &timing) != RS_EINVAL) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_wav_parser(void)
 {
     static const uint8_t wav[] = {
@@ -200,6 +234,7 @@ int main(void)
         test_formatter(),
         test_compiler_helpers(),
         test_wait_helper(),
+        test_ws2812_helpers(),
         test_wav_parser(),
         test_video_parser(),
     };

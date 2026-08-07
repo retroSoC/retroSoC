@@ -77,7 +77,8 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/hpuart.c \
             $(ROOT_PATH)/crt/src/hal/ps2.c \
             $(ROOT_PATH)/crt/src/hal/i2c.c \
-            $(ROOT_PATH)/crt/src/hal/onewire.c \
+            $(ROOT_PATH)/crt/src/hal/ws2812_math.c \
+            $(ROOT_PATH)/crt/src/hal/ws2812.c \
             $(ROOT_PATH)/crt/src/hal/dma.c \
             $(ROOT_PATH)/crt/src/hal/perf.c \
             $(ROOT_PATH)/crt/src/hal/lcd.c \

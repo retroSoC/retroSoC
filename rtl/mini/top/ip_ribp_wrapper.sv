@@ -26,7 +26,7 @@ module ip_ribp_wrapper (
     spi_if.dut               spisd,
     i2c_if.dut               i2c0,
     i2s_if.dut               i2s,
-    onewire_if.dut           onewire,
+    ws2812_if.dut            ws2812,
     xpi_if.dut               xpi,
     rib_if.master  dma_rib,
     sysctrl_if.dut           sysctrl,
@@ -143,11 +143,11 @@ module ip_ribp_wrapper (
       .i2s           (i2s)
   );
 
-  ribp_onewire u_rib_onewire (
+  ribp_ws2812 u_rib_ws2812 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_onewire_ribp_if),
-      .onewire(onewire)
+      .ribp   (u_ws2812_ribp_if),
+      .ws2812 (ws2812)
   );
 
   ribp_xpi u_rib_xpi (

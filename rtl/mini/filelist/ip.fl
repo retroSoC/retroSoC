@@ -19,8 +19,10 @@
 /ip/ribp/serial/i2s_send.sv
 /ip/ribp/serial/i2s_core.sv
 /ip/ribp/serial/i2s.sv
-/ip/ribp/serial/onewire_core.sv
-/ip/ribp/serial/onewire.sv
+/ip/ribp/serial/ws2812_if.sv
+/ip/ribp/serial/ws2812_reg.sv
+/ip/ribp/serial/ws2812_core.sv
+/ip/ribp/serial/ribp_ws2812.sv
 /ip/ribp/storage/xpi_reg.sv
 /ip/ribp/storage/xpi_mm.sv
 /ip/ribp/storage/xpi_clkgen.sv

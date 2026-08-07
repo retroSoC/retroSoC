@@ -26,6 +26,19 @@ SoC wrappers use the existing clusterIP interfaces for protocol boundaries.
 `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
 only exposes the pad-side subset of `gpio_if`; neither module contains state.
 
+## WS2812 output
+
+The single-channel WS2812 transmitter occupies RIBP address `0x10008000` and
+drives GPIO2 alternate function 1. Software must configure GPIO2 for ALT1
+before starting a frame. The transmitter interrupt is RIBP group bit 10 and
+management-core interrupt 17. The data pin is forced low while idle, during
+reset/latch time, after abort, and after underflow.
+
+The RIBP TX FIFO is also a fixed-address target for the generic DMA engine.
+DMA remains a normal RIB master and receives RIBP backpressure when the FIFO
+is full; the transmitter does not own a private DMA request channel. See
+[ws2812.md](ws2812.md) for the register and transfer contract.
+
 ## Management JTAG
 
 The fixed Hazard3 management core always exposes five ASIC pads:

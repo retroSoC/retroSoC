@@ -5,7 +5,7 @@ module retrosoc_top (
     inout  rst_n_i,
     inout  ps2_clk_i,
     inout  ps2_dat_i,
-    output onewire_dat_o,
+    output ws2812_dat_o,
     inout  i2c_scl_io,
     inout  i2c_sda_io,
     output pwm_2_o,

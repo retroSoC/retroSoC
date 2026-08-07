@@ -43,7 +43,7 @@ digraph mini_soc_block_diagram {
   ];
   ext_io [
     fillcolor="#F3F4F6",
-    label="External I/O and memory\nGPIO, UART0, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP and serial I/O"
+    label="External I/O and memory\nGPIO, UART0, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP and WS2812"
   ];
   ext_jtag [
     fillcolor="#F3F4F6",
@@ -124,7 +124,11 @@ digraph mini_soc_block_diagram {
       ];
       ribp_targets [
         fillcolor="#F9E1E7",
-        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD, DVP\nGPIO, UART0, timers, I2C, I2S and 1-Wire"
+        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD and DVP\nGPIO, UART0, timers, I2C and I2S"
+      ];
+      ws2812 [
+        fillcolor="#F9E1E7",
+        label="WS2812 TX\n24-bit MSB-first serializer\n16-word FIFO, IRQ17, DMA-fed"
       ];
       apb_targets [
         fillcolor="#E6F4EA",
@@ -145,7 +149,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; ribp_targets; apb_targets; }
+  { rank=same; sysctrl; ribp_targets; ws2812; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -167,9 +171,13 @@ digraph mini_soc_block_diagram {
   fabric -> apb_adapter [label="RIB"];
   ribp_adapter -> sysctrl [label="RIBP"];
   ribp_adapter -> ribp_targets [label="RIBP"];
+  ribp_adapter -> ws2812 [label="RIBP"];
   apb_adapter -> apb_targets [label="APB"];
 
   ribp_targets -> gpio_bridge [label="GPIO alternate functions"];
+  ws2812 -> gpio_bridge [label="GPIO2 ALT1"];
+  dma -> ws2812 [label="TXDATA writes", style=dashed];
+  ws2812 -> irq [label="IRQ17"];
   apb_targets -> gpio_bridge [label="user_gpio"];
   ribp_targets -> ext_io [dir=both, label="device interfaces"];
   gpio_bridge -> ext_io [dir=both, label="pad control"];

@@ -44,6 +44,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
     ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
     ("reserved", "apb", 6, 16, "1'b0"),
+    ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
 )
 
 

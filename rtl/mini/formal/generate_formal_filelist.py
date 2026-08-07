@@ -19,6 +19,7 @@ from filelist import FileList, write_filelist  # noqa: E402
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
 INTERCONNECT = ROOT / "rtl/ip/ribp/interconnect"
 PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
+SERIAL = ROOT / "rtl/ip/ribp/serial"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -87,6 +88,17 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "gpio.sv",
             SCRIPT_DIR / "gpio_user_formal.sv",
         ]
+    if target == "ws2812":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            SERIAL / "ws2812_if.sv",
+            SERIAL / "ws2812_reg.sv",
+            SERIAL / "ws2812_core.sv",
+            SERIAL / "ribp_ws2812.sv",
+            SCRIPT_DIR / "ws2812_formal.sv",
+        ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
@@ -109,6 +121,7 @@ def generate(
             COMMON_RTL / "utils",
             INTERCONNECT,
             PERIPHERAL,
+            SERIAL,
         ],
         files=source_files(target),
     ).deduplicate()
@@ -126,6 +139,7 @@ def parse_args() -> argparse.Namespace:
             "sysctrl",
             "pll_rcu",
             "gpio_user",
+            "ws2812",
         ),
         required=True,
     )

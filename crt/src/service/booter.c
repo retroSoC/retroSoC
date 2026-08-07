@@ -103,7 +103,7 @@ void rs_app_info(void) {
     printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
     printf("                       1 x I2C0          @%p\n", (void *)&reg_i2c0_clkdiv);
     printf("                       1 x I2S           @%p\n", (void *)&reg_i2s_mode);
-    printf("                       1 x ONEWIRE       @%p\n", (void *)&reg_onewire_clkdiv);
+    printf("                       1 x WS2812        @%p\n", (void *)&reg_ws2812_bit_cycles);
     printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
     printf("                       1 x DMA           @%p\n", (void *)&reg_dma_mode);
     printf("                       1 x SYSCTRL       @%p\n", (void *)&reg_sysctrl_coresel);

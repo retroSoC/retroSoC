@@ -204,6 +204,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
+    ws2812_filelist = tmp_path / "ws2812.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -220,6 +221,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "gpio_user", gpio_user_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist(
+        "ws2812", ws2812_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -227,6 +231,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
+    ws2812 = parse_filelists([ws2812_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
@@ -246,6 +251,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/ip/ribp/peripheral/gpio.sv" in gpio_user.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
     assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
+    assert ROOT / "rtl/ip/ribp/serial/ribp_ws2812.sv" in ws2812.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
+    assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
@@ -291,7 +299,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user", "ws2812")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -320,6 +328,8 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         f"pll_rcu={tmp_path / 'pll_rcu'}",
         "--proof",
         f"gpio_user={tmp_path / 'gpio_user'}",
+        "--proof",
+        f"ws2812={tmp_path / 'ws2812'}",
     )
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["status"] == "passed"
