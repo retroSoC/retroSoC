@@ -97,8 +97,8 @@ void rs_app_info(void) {
     printf("Memory Map IO Device:\n");
     printf("                       1 x GPIO(32PIN)   @%p\n", (void *)&reg_gpio_oe);
     printf("                       1 x UART0         @%p\n", (void *)&reg_uart0_clkdiv);
-    printf("                       2 x TIMER(0,1)    @%p,%p\n", (void *)&reg_tim0_cfg,
-           (void *)&reg_tim1_cfg);
+    printf("                       2 x TIMER(0,1)    @%p,%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_TIM0_BASE, (void *)(uintptr_t)RS_SOC_RIBP_TIM1_BASE);
     printf("                       1 x PSRAM         @%p\n", (void *)&reg_psram_wait);
     printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
     printf("                       1 x I2C0          @%p\n", (void *)&reg_i2c0_clkdiv);
@@ -181,7 +181,10 @@ static uint8_t rs_booter_check_key(void) {
     uint8_t enter_boot_delay = 6, enter_shell = 0;
     for (uint8_t i = 1; i <= enter_boot_delay; ++i) {
         printf("delay %ds...[all %ds]\n", i, enter_boot_delay);
-        delay_ms(1000);
+        if (rs_timer_delay_ms(RS_TIMER_0, 1000U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+            printf("booter timer delay failed\n");
+            return 0U;
+        }
         // if(i == 5) enter_shell = 1; // mock the oper
         if (enter_shell) {
             printf("\n");

@@ -38,7 +38,6 @@ int main(void) {
     lcd_init();
 
     // lv_init();
-    // tim1_init();
     // lv_tick_set_cb(my_get_millis);
 
     // lv_port_disp_init();
@@ -49,7 +48,6 @@ int main(void) {
 
     // while(1) {
     //     lv_timer_handler();
-    //     delay_ms(5);
     //     printf("hello\n");
     // }
 
@@ -57,7 +55,7 @@ int main(void) {
     (void)rs_shell_register("app", "app info", true, rs_app_info_command);
     (void)rs_shell_register("arch", "archinfo test", true, ip_archinfo_test);
     (void)rs_shell_register("ws2812", "ws2812 test", true, ip_ws2812_test);
-    (void)rs_shell_register("tim", "timer test", true, ip_tim_test);
+    (void)rs_shell_register("tim", "timer test", true, rs_timer_shell_test);
     (void)rs_shell_register("gpio", "gpio test", true, ip_gpio_test);
     (void)rs_shell_register("pwm", "pwm test", true, ip_pwm_test);
     (void)rs_shell_register("rtc", "rtc test", true, ip_rtc_test);

@@ -22,7 +22,10 @@ void userip_main(int argc, char **argv) {
         reg_user_ip_reg1 = (uint32_t)0xfffe;
         printf("do val: %x\n", reg_user_ip_reg5);
         for (int i = 0; i < 3; ++i) {
-            delay_ms(1);
+            if (rs_timer_delay_ms(RS_TIMER_0, 1U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+                printf("timer delay failed\n");
+                return;
+            }
             reg_user_ip_reg5 = ~reg_user_ip_reg5;
             printf("[%d]do val: %x\n", i, reg_user_ip_reg5);
         }

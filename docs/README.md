@@ -23,8 +23,10 @@ the root README and subsystem guides.
   and its commercial reference points.
 - [rib-interconnect.md](rib-interconnect.md) defines the RIB v1 linear-burst
   contract, compatibility boundaries, target status, and verification.
-- [ws2812.md](ws2812.md) defines the WS2812 transmitter register ABI,
+- [ip/ws2812.md](ip/ws2812.md) defines the WS2812 transmitter register ABI,
   timing, FIFO, interrupt, DMA, and integration contracts.
+- [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,
+  counting modes, interrupt, debug-freeze, HAL, and verification contracts.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 - [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC

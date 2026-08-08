@@ -5,6 +5,7 @@
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/spisd.h>
+#include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/ws2812.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/lib/stdlib.h>
@@ -186,6 +187,27 @@ static int test_ws2812_helpers(void)
     return 0;
 }
 
+static int test_timer_helpers(void)
+{
+    rs_timer_period_t period;
+
+    if ((rs_timer_period_from_ms(72000000U, 1U, &period) != RS_OK) ||
+        (period.prescale != 0U) || (period.load != 71999U)) {
+        return 1;
+    }
+    if ((rs_timer_period_from_ms(72000000U, 1000U, &period) != RS_OK) ||
+        (period.prescale != 0U) || (period.load != 71999999U)) {
+        return 2;
+    }
+    if ((rs_timer_period_from_ms(0U, 1U, &period) != RS_EINVAL) ||
+        (rs_timer_period_from_ms(72000000U, 0U, &period) != RS_EINVAL) ||
+        (rs_timer_period_from_ms(72000000U, 1U, NULL) != RS_EINVAL) ||
+        (rs_timer_period_from_ms(UINT32_MAX, UINT32_MAX, &period) != RS_EINVAL)) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_wav_parser(void)
 {
     static const uint8_t wav[] = {
@@ -235,6 +257,7 @@ int main(void)
         test_compiler_helpers(),
         test_wait_helper(),
         test_ws2812_helpers(),
+        test_timer_helpers(),
         test_wav_parser(),
         test_video_parser(),
     };

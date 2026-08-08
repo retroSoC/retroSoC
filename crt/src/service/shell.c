@@ -629,7 +629,10 @@ static void rs_shell_app_image_cmd(int argc, char **argv) {
         uint32_t *frame_data = file_buffer_words + (video_info.payload_offset / sizeof(uint32_t)) +
                                (frame * frame_words);
         lcd_fill_image(0U, 0U, (uint16_t)video_info.width, (uint16_t)video_info.height, frame_data);
-        delay_ms(3000U);
+        if (rs_timer_delay_ms(RS_TIMER_0, 3000U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+            printf("video frame delay failed\n");
+            return;
+        }
     }
 }
 
@@ -645,17 +648,11 @@ static void rs_shell_app_audio_cmd(int argc, char **argv) {
     (void)argv;
 }
 
-// val * 1000 / CPU_FREQ / 1000 / 1000
-// uint32_t my_get_millis(void) {
-//     return reg_tim1_val / CPU_FREQ / 1000;
-// }
-
 static void rs_shell_app_lvgl_cmd(int argc, char **argv) {
     (void)argc;
     (void)argv;
 
     // lv_init();
-    // tim1_init();
     // lv_tick_set_cb(my_get_millis);
 
     // lv_port_disp_init();
@@ -666,7 +663,6 @@ static void rs_shell_app_lvgl_cmd(int argc, char **argv) {
 
     // while(1) {
     //     lv_timer_handler();
-    //     delay_ms(5);
     //     printf("hello\n");
     // }
 }

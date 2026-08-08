@@ -20,7 +20,10 @@ void ip_pwm_test(int argc, char **argv) {
             reg_pwm_cr0 = j;
             reg_pwm_ctrl = (uint32_t)3;
             reg_pwm_pscr = 49;
-            delay_ms(1);
+            if (rs_timer_delay_ms(RS_TIMER_0, 1U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+                printf("timer delay failed\n");
+                return;
+            }
         }
 
         for (int j = 990; j >= 10; --j) {
@@ -28,7 +31,10 @@ void ip_pwm_test(int argc, char **argv) {
             reg_pwm_cr0 = j;
             reg_pwm_ctrl = (uint32_t)3;
             reg_pwm_pscr = 49;
-            delay_ms(1);
+            if (rs_timer_delay_ms(RS_TIMER_0, 1U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+                printf("timer delay failed\n");
+                return;
+            }
         }
         printf("[PWM]: %d/6\n", i + 1);
     }

@@ -22,7 +22,10 @@ void ip_gpio_test(int argc, char **argv) {
 
     printf("led output test\n");
     for (int i = 0; i < 50; ++i) {
-        delay_ms(300);
+        if (rs_timer_delay_ms(RS_TIMER_0, 300U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+            printf("timer delay failed\n");
+            return;
+        }
         if (reg_gpio_do == 0b00)
             reg_gpio_do = (uint32_t)0b01;
         else
@@ -38,7 +41,10 @@ void ip_gpio_test(int argc, char **argv) {
     for (int i = 0; i < 60; ++i) {
         uint32_t led_val = 0b00;
         if (((reg_gpio_do & 0b10) >> 1) == 0b0) {
-            delay_ms(100); // debouncing
+            if (rs_timer_delay_ms(RS_TIMER_0, 100U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+                printf("timer delay failed\n");
+                return;
+            }
             if (((reg_gpio_do & 0b10) >> 1) == 0b0) {
                 printf("key detect\n");
                 if (led_val == 0b00) {

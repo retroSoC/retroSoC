@@ -78,7 +78,10 @@ void pcf8563b_test(int argc, char **argv) {
         printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
                rd_info.date.day, rd_info.date.weekday, rd_info.time.hour, rd_info.time.minute,
                rd_info.time.second);
-        delay_ms(1000);
+        if (rs_timer_delay_ms(RS_TIMER_0, 1000U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+            printf("PCF8563B timer delay failed\n");
+            return;
+        }
     }
 
     PCF8563B_info_t init2_info = {.time.second = 23,
@@ -94,7 +97,10 @@ void pcf8563b_test(int argc, char **argv) {
         printf("[PCF8563B] %d-%d-%d %d %d:%d:%d\n", rd_info.date.year, rd_info.date.month,
                rd_info.date.day, rd_info.date.weekday, rd_info.time.hour, rd_info.time.minute,
                rd_info.time.second);
-        delay_ms(1000);
+        if (rs_timer_delay_ms(RS_TIMER_0, 1000U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+            printf("PCF8563B timer delay failed\n");
+            return;
+        }
     }
 
     printf("PCF8563B test done\n");

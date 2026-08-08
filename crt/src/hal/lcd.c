@@ -75,9 +75,15 @@ static void lcd_wr_data32(uint32_t *dat, uint32_t len) {
 }
 
 void lcd_init(void) {
-    delay_ms(500);
+    if (rs_timer_delay_ms(RS_TIMER_0, 500U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+        printf("LCD reset delay failed\n");
+        return;
+    }
     lcd_wr_dc_cmd(0x11);
-    delay_ms(120);
+    if (rs_timer_delay_ms(RS_TIMER_0, 120U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+        printf("LCD sleep-exit delay failed\n");
+        return;
+    }
     lcd_wr_dc_cmd(0x36);
     if (USE_HORIZONTAL == 0)
         lcd_wr_dc_data8(0x00);
@@ -343,8 +349,6 @@ void ip_lcd_test(int argc, char **argv) {
     //     pref_cnt += 2;
     // }
     // lcd_frame(0, pref_cnt);
-
-    // delay_ms(1000);
 
     // for (int i = 0; i < 100; ++i)
     // {

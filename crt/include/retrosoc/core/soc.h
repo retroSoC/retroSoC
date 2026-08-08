@@ -50,14 +50,6 @@
 // uart0
 #define reg_uart0_clkdiv                RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0x00))
 #define reg_uart0_data                  RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0x04))
-// tim0
-#define reg_tim0_cfg                    RS_SOC_REG32(RS_SOC_RIBP_TIM0_BASE, UINT32_C(0x00))
-#define reg_tim0_rld                    RS_SOC_REG32(RS_SOC_RIBP_TIM0_BASE, UINT32_C(0x04))
-#define reg_tim0_val                    RS_SOC_REG32(RS_SOC_RIBP_TIM0_BASE, UINT32_C(0x08))
-// tim1
-#define reg_tim1_cfg                    RS_SOC_REG32(RS_SOC_RIBP_TIM1_BASE, UINT32_C(0x00))
-#define reg_tim1_rld                    RS_SOC_REG32(RS_SOC_RIBP_TIM1_BASE, UINT32_C(0x04))
-#define reg_tim1_val                    RS_SOC_REG32(RS_SOC_RIBP_TIM1_BASE, UINT32_C(0x08))
 // psram
 #define reg_psram_wait                  RS_SOC_REG32(RS_SOC_RIBP_PSRAM_BASE, UINT32_C(0x00))
 #define reg_psram_chd                   RS_SOC_REG32(RS_SOC_RIBP_PSRAM_BASE, UINT32_C(0x04))

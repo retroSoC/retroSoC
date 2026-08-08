@@ -39,7 +39,9 @@
 /ip/ribp/memory/sdram.sv
 /ip/ribp/multimedia/dvp_core.sv
 /ip/ribp/multimedia/dvp.sv
-/ip/ribp/peripheral/timer.sv
+/ip/ribp/peripheral/timer_core.sv
+/ip/ribp/peripheral/timer_reg.sv
+/ip/ribp/peripheral/ribp_timer.sv
 /ip/ribp/serial/uart.sv
 /ip/ribp/peripheral/gpio.sv
 /top/ahbl2ribp.sv

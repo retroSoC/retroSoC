@@ -99,6 +99,16 @@ def source_files(target: str) -> list[Path]:
             SERIAL / "ribp_ws2812.sv",
             SCRIPT_DIR / "ws2812_formal.sv",
         ]
+    if target == "timer":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "clkrst/counter.sv",
+            PERIPHERAL / "timer_core.sv",
+            PERIPHERAL / "timer_reg.sv",
+            PERIPHERAL / "ribp_timer.sv",
+            SCRIPT_DIR / "timer_formal.sv",
+        ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
@@ -140,6 +150,7 @@ def parse_args() -> argparse.Namespace:
             "pll_rcu",
             "gpio_user",
             "ws2812",
+            "timer",
         ),
         required=True,
     )

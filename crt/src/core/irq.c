@@ -35,7 +35,9 @@ static rs_status_t rs_irq_wait_for_count(volatile uint32_t *counter, uint32_t ta
         if (*counter >= target) {
             return RS_OK;
         }
-        delay_ms(1U);
+        if (rs_timer_delay_ms(RS_TIMER_0, 1U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+            return RS_ETIMEOUT;
+        }
     }
     return RS_ETIMEOUT;
 }

@@ -37,7 +37,7 @@ reset/latch time, after abort, and after underflow.
 The RIBP TX FIFO is also a fixed-address target for the generic DMA engine.
 DMA remains a normal RIB master and receives RIBP backpressure when the FIFO
 is full; the transmitter does not own a private DMA request channel. See
-[ws2812.md](ws2812.md) for the register and transfer contract.
+[ws2812.md](ip/ws2812.md) for the register and transfer contract.
 
 ## Management JTAG
 

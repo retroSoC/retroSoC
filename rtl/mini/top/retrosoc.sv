@@ -60,6 +60,7 @@ module retrosoc (
   // verilog_format: on
 
   logic                             s_tmr_capch;
+  logic                             s_mgmt_debug_halted;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
   logic [  `SOC_IRQ_RIBP_WIDTH-1:0] s_ribp_irq;
   logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
@@ -111,15 +112,16 @@ module retrosoc (
   `include "soc_gpio_alt_bindings.svh"
 
 core_wrapper u_core_wrapper (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
       `include "soc_mgmt_core_wrapper_fabric.svh"
-      .irq_i        (s_irq),
-      .jtag_tck_i   (jtag_tck_i),
-      .jtag_tms_i   (jtag_tms_i),
-      .jtag_tdi_i   (jtag_tdi_i),
-      .jtag_trst_n_i(jtag_trst_n_i),
-      .jtag_tdo_o   (jtag_tdo_o)
+      .irq_i         (s_irq),
+      .jtag_tck_i    (jtag_tck_i),
+      .jtag_tms_i    (jtag_tms_i),
+      .jtag_tdi_i    (jtag_tdi_i),
+      .jtag_trst_n_i (jtag_trst_n_i),
+      .jtag_tdo_o    (jtag_tdo_o),
+      .debug_halted_o(s_mgmt_debug_halted)
   );
 
   assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? s_irq : '0;
@@ -165,6 +167,7 @@ core_wrapper u_core_wrapper (
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
+      .debug_halted_i  (s_mgmt_debug_halted),
       `include "ip_ribp_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),

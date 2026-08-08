@@ -18,20 +18,22 @@ module core_wrapper (
     input logic     jtag_tdi_i,
     input logic     jtag_trst_n_i,
     output logic    jtag_tdo_o,
+    output logic    debug_halted_o,
     ribp_if.master ribp
     // verilog_format: on
 );
 
   mgmt_core_wrapper u_mgmt_core_wrapper (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .irq_i        (irq_i),
-      .jtag_tck_i   (jtag_tck_i),
-      .jtag_tms_i   (jtag_tms_i),
-      .jtag_tdi_i   (jtag_tdi_i),
-      .jtag_trst_n_i(jtag_trst_n_i),
-      .jtag_tdo_o   (jtag_tdo_o),
-      .ribp         (ribp)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .irq_i         (irq_i),
+      .jtag_tck_i    (jtag_tck_i),
+      .jtag_tms_i    (jtag_tms_i),
+      .jtag_tdi_i    (jtag_tdi_i),
+      .jtag_trst_n_i (jtag_trst_n_i),
+      .jtag_tdo_o    (jtag_tdo_o),
+      .debug_halted_o(debug_halted_o),
+      .ribp          (ribp)
   );
 
 endmodule

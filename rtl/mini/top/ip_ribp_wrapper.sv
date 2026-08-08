@@ -18,6 +18,7 @@ module ip_ribp_wrapper (
     input logic              rst_n_i,
     input logic              clk_aud_i,
     input logic              rst_aud_n_i,
+    input logic              debug_halted_i,
     rib_if.slave   rib,
     gpio_if.dut              gpio,
     user_gpio_if.padctrl     user_gpio,
@@ -98,17 +99,19 @@ module ip_ribp_wrapper (
   );
 
   ribp_timer u_rib_timer0 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_tim0_ribp_if),
-      .irq_o  (s_tim0_irq)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .debug_halted_i(debug_halted_i),
+      .ribp          (u_tim0_ribp_if),
+      .irq_o         (s_tim0_irq)
   );
 
   ribp_timer u_rib_timer1 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_tim1_ribp_if),
-      .irq_o  (s_tim1_irq)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .debug_halted_i(debug_halted_i),
+      .ribp          (u_tim1_ribp_if),
+      .irq_o         (s_tim1_irq)
   );
 
   ribp_psram u_rib_psram (
