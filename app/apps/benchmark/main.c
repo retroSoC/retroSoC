@@ -227,7 +227,9 @@ int main(void) {
     uint64_t cycle_start;
     uint64_t cycles;
 
-    uart0_init(CPU_FREQ, UART_BPS);
+    if (rs_uart_init(CPU_FREQ * UINT32_C(1000000), UART_BPS) != RS_OK) {
+        rs_test_finish(RS_TEST_FAILED, 5U);
+    }
     rs_benchmark_puts("retroSoC: A Customized ASIC for Retro Stuff\n");
 
     if (!rs_benchmark_memory("sram", sram, RS_BENCHMARK_SRAM_SEED)) {

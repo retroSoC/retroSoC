@@ -9,7 +9,7 @@ FORMAL_WS2812_DEPTH       ?= 120
 FORMAL_CLINT_DEPTH        ?= 32
 FORMAL_TIMEOUT            ?= 60
 FORMAL_WS2812_TIMEOUT     ?= 120
-FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 timer clint
+FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart timer clint
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
@@ -27,6 +27,8 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/gpio_formal_props.sv \
                              $(RTL_PATH)/formal/ws2812_formal.sv \
                              $(RTL_PATH)/formal/ws2812_formal_props.sv \
+                             $(RTL_PATH)/formal/uart_formal.sv \
+                             $(RTL_PATH)/formal/uart_formal_props.sv \
                              $(RTL_PATH)/formal/timer_formal.sv \
                              $(RTL_PATH)/formal/timer_formal_props.sv \
                              $(RTL_PATH)/formal/clint_formal.sv \
@@ -50,6 +52,13 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ws2812_reg.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ws2812_core.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_ws2812.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/uart_baudgen.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_uart_tx.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_uart_rx.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/uart_core.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/uart_reg.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_uart.sv \
+                             $(ROOT_PATH)/rtl/managed/clusterip/uart/rtl/uart_if.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/timer_core.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/timer_define.svh \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/timer_reg.sv \
@@ -154,6 +163,8 @@ formal-gpio: $(FORMAL_DIR)/gpio/.stamp | manifest
 
 formal-ws2812: $(FORMAL_DIR)/ws2812/.stamp | manifest
 
+formal-uart: $(FORMAL_DIR)/uart/.stamp | manifest
+
 formal-timer: $(FORMAL_DIR)/timer/.stamp | manifest
 
 formal-clint: $(FORMAL_DIR)/clint/.stamp | manifest
@@ -164,4 +175,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-timer formal-clint formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-timer formal-clint formal-doctor formal-clean

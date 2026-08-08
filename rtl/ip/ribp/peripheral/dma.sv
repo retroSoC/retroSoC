@@ -32,8 +32,17 @@ interface dma_hw_trg_if ();
   logic i2s_rx_proc;
   logic qspi_tx_proc;
   logic qspi_rx_proc;
+  logic uart_tx_proc;
+  logic uart_rx_proc;
 
-  modport dut(input i2s_tx_proc, input i2s_rx_proc, input qspi_tx_proc, input qspi_rx_proc);
+  modport dut(
+      input i2s_tx_proc,
+      input i2s_rx_proc,
+      input qspi_tx_proc,
+      input qspi_rx_proc,
+      input uart_tx_proc,
+      input uart_rx_proc
+  );
 endinterface
 
 `endif

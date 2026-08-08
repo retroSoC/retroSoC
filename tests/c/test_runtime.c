@@ -7,6 +7,7 @@
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
+#include <retrosoc/hal/uart.h>
 #include <retrosoc/hal/ws2812.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/lib/stdlib.h>
@@ -190,6 +191,26 @@ static int test_timer_helpers(void) {
     return 0;
 }
 
+static int test_uart_helpers(void) {
+    rs_uart_timing_t timing;
+
+    if ((rs_uart_timing_calculate(72000000U, 921600U, &timing) != RS_OK) ||
+        (timing.baud_integer != 78U) || (timing.baud_fraction != 32U)) {
+        return 1;
+    }
+    if ((rs_uart_timing_calculate(16000000U, 1000000U, &timing) != RS_OK) ||
+        (timing.baud_integer != 16U) || (timing.baud_fraction != 0U)) {
+        return 2;
+    }
+    if ((rs_uart_timing_calculate(0U, 115200U, &timing) != RS_EINVAL) ||
+        (rs_uart_timing_calculate(72000000U, 0U, &timing) != RS_EINVAL) ||
+        (rs_uart_timing_calculate(1000000U, 1000000U, &timing) != RS_EINVAL) ||
+        (rs_uart_timing_calculate(72000000U, 115200U, NULL) != RS_EINVAL)) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_gpio_helpers(void) {
     rs_gpio_filter_timing_t timing;
 
@@ -252,7 +273,8 @@ int main(void) {
     const int results[] = {
         test_string_helpers(), test_formatter(),      test_compiler_helpers(),
         test_wait_helper(),    test_ws2812_helpers(), test_timer_helpers(),
-        test_gpio_helpers(),   test_wav_parser(),     test_video_parser(),
+        test_uart_helpers(),   test_gpio_helpers(),   test_wav_parser(),
+        test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

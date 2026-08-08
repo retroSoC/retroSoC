@@ -67,6 +67,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/service/test.c \
             $(ROOT_PATH)/crt/src/hal/clint.c \
             $(ROOT_PATH)/crt/src/hal/clock.c \
+            $(ROOT_PATH)/crt/src/hal/uart_math.c \
             $(ROOT_PATH)/crt/src/hal/uart.c \
             $(ROOT_PATH)/crt/src/hal/gpio_math.c \
             $(ROOT_PATH)/crt/src/hal/gpio.c \

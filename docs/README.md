@@ -28,6 +28,8 @@ the root README and subsystem guides.
   timebase, RV32 access rules, interrupt behavior, and verification contract.
 - [ip/gpio.md](ip/gpio.md) defines the GPIO V2 dual-window ABI, pad ownership,
   filtering, interrupts, PDK capabilities, HAL, and verification contract.
+- [ip/uart.md](ip/uart.md) defines the UART V2 framing, FIFO, error, interrupt,
+  DMA, HAL, and verification contracts.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 - [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC

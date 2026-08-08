@@ -39,6 +39,8 @@ module dma_core (
   localparam logic [2:0] HWT_I2S_RX_TRG = 3'd2;
   localparam logic [2:0] HWT_QSPI_TX_TRG = 3'd3;
   localparam logic [2:0] HWT_QSPI_RX_TRG = 3'd4;
+  localparam logic [2:0] HWT_UART_TX_TRG = 3'd5;
+  localparam logic [2:0] HWT_UART_RX_TRG = 3'd6;
 
   localparam logic [2:0] FSM_IDLE = 3'd0;
   localparam logic [2:0] FSM_RD_CMD = 3'd1;
@@ -86,6 +88,7 @@ module dma_core (
     unique case (mode_i)
       HWT_I2S_RX_TRG:  s_read_trigger = hw_trg.i2s_rx_proc;
       HWT_QSPI_RX_TRG: s_read_trigger = hw_trg.qspi_rx_proc;
+      HWT_UART_RX_TRG: s_read_trigger = hw_trg.uart_rx_proc;
       default:         s_read_trigger = 1'b1;
     endcase
   end
@@ -95,6 +98,7 @@ module dma_core (
     unique case (mode_i)
       HWT_I2S_TX_TRG:  s_write_trigger = hw_trg.i2s_tx_proc;
       HWT_QSPI_TX_TRG: s_write_trigger = hw_trg.qspi_tx_proc;
+      HWT_UART_TX_TRG: s_write_trigger = hw_trg.uart_tx_proc;
       default:         s_write_trigger = 1'b1;
     endcase
   end

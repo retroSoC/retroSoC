@@ -136,8 +136,42 @@ static bool rs_ci_smoke_gpio_v2(void) {
     return rs_gpio_write(31U, false) == RS_OK;
 }
 
+static bool rs_ci_smoke_uart_v2(void) {
+    const rs_uart_config_t config = {
+        .source_clock_hz = CPU_FREQ * UINT32_C(1000000),
+        .baud_rate = UART_BPS,
+        .data_bits = 8U,
+        .stop_bits = 1U,
+        .parity = RS_UART_PARITY_NONE,
+        .tx_watermark = 16U,
+        .rx_watermark = 1U,
+        .rx_timeout_bits = 32U,
+        .tx_enable = true,
+        .rx_enable = true,
+        .loopback_enable = true,
+    };
+    const uint8_t transmitted = UINT8_C(0xA5);
+    rs_uart_rx_data_t received;
+
+    if ((RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0xF8)) != UINT32_C(0x00020000)) ||
+        (RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0xFC)) != UINT32_C(0x00FF4040)) ||
+        (rs_uart_configure(&config, RS_TIMEOUT_DEFAULT) != RS_OK) ||
+        (rs_uart_write(&transmitted, 1U, RS_TIMEOUT_DEFAULT) != RS_OK) ||
+        (rs_uart_read(&received, 1U, RS_TIMEOUT_DEFAULT) != RS_OK) ||
+        (received.data != transmitted) || (received.errors != 0U)) {
+        return false;
+    }
+    return rs_uart_init(CPU_FREQ * UINT32_C(1000000), UART_BPS) == RS_OK;
+}
+
 int main(void) {
-    uart0_init(CPU_FREQ, UART_BPS);
+    if (rs_uart_init(CPU_FREQ * UINT32_C(1000000), UART_BPS) != RS_OK) {
+        rs_test_finish(RS_TEST_FAILED, 6U);
+    }
+
+    if (!rs_ci_smoke_uart_v2()) {
+        rs_test_finish(RS_TEST_FAILED, 7U);
+    }
 
     if (!rs_ci_smoke_archinfo_matches_reset_values()) {
         rs_test_finish(RS_TEST_FAILED, 1U);
@@ -159,7 +193,7 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 5U);
     }
 
-    printf("ci_smoke: archinfo, CLINT, timer, and GPIO tests passed\n");
+    printf("ci_smoke: UART, archinfo, CLINT, timer, and GPIO tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

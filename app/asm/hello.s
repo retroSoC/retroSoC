@@ -3,10 +3,15 @@
 .global _start
 _start:
 UART_INIT:
-    lui a4, 0x10001
-    # li a5, 625 # 72M 115200bps
-    li a5, 78 # 72M 921600ps
+    li a4, RS_SOC_RIBP_UART0_BASE
+    li a5, 78 # 72 MHz / 921600 baud = 78.125 clocks
     sw a5, 0(a4)
+    li a5, 32
+    sw a5, 4(a4)
+    li a5, 3 # 8 data bits, no parity, one stop bit
+    sw a5, 8(a4)
+    li a5, 3 # Enable TX and RX
+    sw a5, 12(a4)
 HELLO_INIT:
     la s0, msg_hello
     li a0, 72
@@ -169,8 +174,8 @@ END:
     j END
 
 PUTC:
-    lui a4, 0x10001
-    sw a0, 4(a4)
+    li a4, RS_SOC_RIBP_UART0_BASE
+    sw a0, 16(a4)
     ret
 
 .section .data

@@ -97,7 +97,8 @@ void rs_app_info(void) {
     printf("Memory Map IO Device:\n");
     printf("                       1 x GPIO(32PIN)   @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_GPIO_ADMIN_BASE);
-    printf("                       1 x UART0         @%p\n", (void *)&reg_uart0_clkdiv);
+    printf("                       1 x UART0         @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_UART0_BASE);
     printf("                       2 x TIMER(0,1)    @%p,%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_TIM0_BASE, (void *)(uintptr_t)RS_SOC_RIBP_TIM1_BASE);
     printf("                       1 x PSRAM         @%p\n", (void *)&reg_psram_wait);

@@ -22,6 +22,7 @@ TEST_SOURCES = (
     "crt/src/lib/string.c",
     "crt/src/hal/gpio_math.c",
     "crt/src/hal/ws2812_math.c",
+    "crt/src/hal/uart_math.c",
     "crt/src/hal/timer_math.c",
     "app/media/src/video_player.c",
     "app/media/src/wav_audio.c",

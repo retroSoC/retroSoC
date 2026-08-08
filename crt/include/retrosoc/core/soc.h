@@ -31,9 +31,6 @@
 
 #define RS_SOC_REG32(base, offset)      (*(volatile uint32_t *)(uintptr_t)((base) + (offset)))
 
-// uart0
-#define reg_uart0_clkdiv                RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0x00))
-#define reg_uart0_data                  RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0x04))
 // psram
 #define reg_psram_wait                  RS_SOC_REG32(RS_SOC_RIBP_PSRAM_BASE, UINT32_C(0x00))
 #define reg_psram_chd                   RS_SOC_REG32(RS_SOC_RIBP_PSRAM_BASE, UINT32_C(0x04))

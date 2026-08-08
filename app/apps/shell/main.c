@@ -29,7 +29,9 @@ static void rs_app_info_command(int argc, char **argv) {
 }
 
 int main(void) {
-    uart0_init(CPU_FREQ, UART_BPS);
+    if (rs_uart_init(CPU_FREQ * UINT32_C(1000000), UART_BPS) != RS_OK) {
+        return 1;
+    }
     rs_booter();
     if (rs_i2c0_init((uint8_t)(CPU_FREQ / 2 - 1)) != RS_OK) {
         return 1;

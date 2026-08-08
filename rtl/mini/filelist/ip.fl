@@ -23,6 +23,12 @@
 /ip/ribp/serial/ws2812_reg.sv
 /ip/ribp/serial/ws2812_core.sv
 /ip/ribp/serial/ribp_ws2812.sv
+/ip/ribp/serial/uart_baudgen.sv
+/ip/ribp/serial/ribp_uart_tx.sv
+/ip/ribp/serial/ribp_uart_rx.sv
+/ip/ribp/serial/uart_core.sv
+/ip/ribp/serial/uart_reg.sv
+/ip/ribp/serial/ribp_uart.sv
 /ip/ribp/storage/xpi_reg.sv
 /ip/ribp/storage/xpi_mm.sv
 /ip/ribp/storage/xpi_clkgen.sv
@@ -46,7 +52,6 @@
 /ip/ribp/peripheral/timer_core.sv
 /ip/ribp/peripheral/timer_reg.sv
 /ip/ribp/peripheral/ribp_timer.sv
-/ip/ribp/serial/uart.sv
 /ip/ribp/peripheral/gpio_if.sv
 /ip/ribp/peripheral/user_gpio_if.sv
 /ip/ribp/peripheral/gpio_core.sv

@@ -58,6 +58,7 @@ module ip_ribp_wrapper (
 
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
+  logic s_dma_uart_tx_stall, s_dma_uart_rx_stall;
   logic s_dma_xfer_done;
   logic s_tim0_irq, s_tim1_irq;
 
@@ -93,6 +94,8 @@ module ip_ribp_wrapper (
   assign u_dma_hw_trg_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
   assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
   assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
+  assign u_dma_hw_trg_if.uart_tx_proc = ~s_dma_uart_tx_stall;
+  assign u_dma_hw_trg_if.uart_rx_proc = ~s_dma_uart_rx_stall;
 
   // Uses ClusterIP common ribp_if and register.sv dffr through generated bindings.
   `include "ribp_routes.svh"
@@ -117,10 +120,12 @@ module ip_ribp_wrapper (
   // verilog_format: on
 
   ribp_uart u_rib_uart (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_uart_ribp_if),
-      .uart   (uart)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(s_dma_uart_tx_stall),
+      .dma_rx_stall_o(s_dma_uart_rx_stall),
+      .ribp          (u_uart_ribp_if),
+      .uart          (uart)
   );
 
   ribp_timer u_rib_timer0 (

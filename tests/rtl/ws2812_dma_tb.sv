@@ -217,6 +217,8 @@ module ws2812_dma_tb;
     hw_trg.i2s_rx_proc  = 1'b0;
     hw_trg.qspi_tx_proc = 1'b0;
     hw_trg.qspi_rx_proc = 1'b0;
+    hw_trg.uart_tx_proc = 1'b0;
+    hw_trg.uart_rx_proc = 1'b0;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;

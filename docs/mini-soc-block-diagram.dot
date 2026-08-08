@@ -128,7 +128,11 @@ digraph mini_soc_block_diagram {
       ];
       ribp_targets [
         fillcolor="#F9E1E7",
-        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD and DVP\nUART0, I2C and I2S"
+        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD and DVP\nI2C and I2S"
+      ];
+      uart0 [
+        fillcolor="#F9E1E7",
+        label="UART0 V2\n64-byte TX/RX FIFOs, fractional baud\nframing/errors, IRQ2, DMA-paced"
       ];
       gpio_controller [
         fillcolor="#F9E1E7",
@@ -161,7 +165,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; gpio_controller; timers; ws2812; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; uart0; gpio_controller; timers; ws2812; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -186,6 +190,7 @@ digraph mini_soc_block_diagram {
   ribp_adapter -> sysctrl [label="RIBP"];
   ribp_adapter -> clint [label="RIBP"];
   ribp_adapter -> ribp_targets [label="RIBP"];
+  ribp_adapter -> uart0 [label="RIBP"];
   ribp_adapter -> gpio_controller [label="RIBP\nuser/admin"];
   ribp_adapter -> timers [label="RIBP"];
   ribp_adapter -> ws2812 [label="RIBP"];
@@ -199,7 +204,10 @@ digraph mini_soc_block_diagram {
   ws2812 -> gpio_bridge [label="GPIO2 ALT1"];
   dma -> ws2812 [label="TXDATA writes", style=dashed];
   ws2812 -> irq [label="IRQ17"];
+  dma -> uart0 [label="TX/RX data", style=dashed];
+  uart0 -> irq [label="IRQ2"];
   apb_targets -> gpio_controller [label="user_gpio"];
   ribp_targets -> ext_io [dir=both, label="device interfaces"];
+  uart0 -> ext_io [dir=both, label="UART pads"];
   gpio_bridge -> ext_io [dir=both, label="pad control"];
 }
