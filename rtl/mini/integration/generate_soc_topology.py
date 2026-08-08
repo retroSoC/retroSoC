@@ -45,6 +45,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
     ("reserved", "apb", 6, 16, "1'b0"),
     ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
+    ("gpio", "ribp", 11, 18, "gpio.irq_o"),
 )
 
 

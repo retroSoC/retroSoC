@@ -97,11 +97,12 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".apb_rib(u_apb_rib_if)" in bus_fabric
     assert ".rib(u_rib_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
-    assert "`define SOC_USER_IRQ_MASK 32'h0003FFFC" in irq_config
-    assert "`define SOC_IRQ_RIBP_WIDTH 11" in irq_config
+    assert "`define SOC_USER_IRQ_MASK 32'h0007FFFC" in irq_config
+    assert "`define SOC_IRQ_RIBP_WIDTH 12" in irq_config
     assert "`define SOC_IRQ_APB_WIDTH 7" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
+    assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
     assert "assign irq_o[5] = u_tmr_if.irq_o;" in apb_irq
     assert "s_irq[16] = s_apb_irq[6];" in irq_wiring
     assert "irq_i[31] == 1'b0" in irq_sva
@@ -122,7 +123,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         )
         for interrupt in document["interrupts"]
     ]
-    assert mappings[:18] == [
+    assert mappings[:19] == [
         ("clint_software", "ribp", 0, 0, "u_clint_if.software_irq_o[0]"),
         ("clint_timer", "ribp", 1, 1, "u_clint_if.timer_irq_o[0]"),
         ("uart0", "ribp", 2, 2, "uart.irq_o"),
@@ -141,8 +142,9 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
         ("reserved", "apb", 6, 16, "1'b0"),
         ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
+        ("gpio", "ribp", 11, 18, "gpio.irq_o"),
     ]
-    assert all(mapping[3] >= 18 for mapping in mappings[18:])
+    assert all(mapping[3] >= 19 for mapping in mappings[19:])
 
 
 def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:

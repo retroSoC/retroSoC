@@ -56,7 +56,7 @@ int main(void) {
     (void)rs_shell_register("arch", "archinfo test", true, ip_archinfo_test);
     (void)rs_shell_register("ws2812", "ws2812 test", true, ip_ws2812_test);
     (void)rs_shell_register("tim", "timer test", true, rs_timer_shell_test);
-    (void)rs_shell_register("gpio", "gpio test", true, ip_gpio_test);
+    (void)rs_shell_register("gpio", "gpio test", true, rs_gpio_shell_test);
     (void)rs_shell_register("pwm", "pwm test", true, ip_pwm_test);
     (void)rs_shell_register("rtc", "rtc test", true, ip_rtc_test);
     (void)rs_shell_register("wdg", "wdg test", true, ip_wdg_test);

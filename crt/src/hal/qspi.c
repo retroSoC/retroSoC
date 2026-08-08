@@ -1,5 +1,6 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/core/wait.h>
+#include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/qspi.h>
 #include <retrosoc/hal/dma.h>
@@ -16,7 +17,18 @@ static bool rs_qspi_wait(uint32_t mask, uint32_t expected) {
 }
 
 void qspi0_init(QSPI0_InitStruct_t val) {
-    reg_gpio_oe = (uint32_t)0b100;
+    const rs_gpio_config_t gpio_config = {
+        .mode = RS_GPIO_MODE_OUTPUT,
+        .pull = RS_GPIO_PULL_NONE,
+        .trigger = RS_GPIO_TRIGGER_NONE,
+        .output_high = false,
+        .open_drain = false,
+        .input_cmos = false,
+        .filter_enable = false,
+        .interrupt_enable = false,
+    };
+
+    (void)rs_gpio_configure(2U, &gpio_config);
     reg_xpi_mode = val.mode;
     reg_xpi_nss = val.nss;
     reg_xpi_clkdiv = val.clkdiv;

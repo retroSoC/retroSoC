@@ -47,7 +47,11 @@
 /ip/ribp/peripheral/timer_reg.sv
 /ip/ribp/peripheral/ribp_timer.sv
 /ip/ribp/serial/uart.sv
-/ip/ribp/peripheral/gpio.sv
+/ip/ribp/peripheral/gpio_if.sv
+/ip/ribp/peripheral/user_gpio_if.sv
+/ip/ribp/peripheral/gpio_core.sv
+/ip/ribp/peripheral/gpio_reg.sv
+/ip/ribp/peripheral/ribp_gpio.sv
 /top/ahbl2ribp.sv
 /ip/ribp/interconnect/axi4l2ribp.sv
 /ip/ribp/util/async_fifo.sv

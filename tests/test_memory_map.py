@@ -58,6 +58,8 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_PSRAM_SIZE UINT32_C(0x00800000)" in header
     assert "RS_SOC_SDRAM_SIZE UINT32_C(0x02000000)" in header
     assert "RS_SOC_SPISD_SIZE UINT32_C(0x40000000)" in header
+    assert "#ifdef __ASSEMBLER__" in header
+    assert "#define UINT32_C(value) value" in header
     assert "RS_SOC_RIBP_SDIO_BASE" not in header
     assert "RS_SOC_NMI_" not in header
     assert "RS_SOC_OPIPSRAM_BASE" not in header
@@ -81,6 +83,17 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
 
     assert "SOC_ADDR_APB_USER_IP_BASE" in rtl
     assert "RS_SOC_APB_USER_IP_BASE" in header
+
+
+def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:
+    for source in (ROOT / "crt/arch/riscv/startup.S", ROOT / "app/asm/hello.s"):
+        text = source.read_text(encoding="utf-8")
+        assert '#include "retrosoc/generated/memory_map.h"' in text
+        assert "RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x34" in text
+        assert "RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x38" in text
+        assert "RS_SOC_RIBP_PSRAM_BASE + 0x08" in text
+        assert "0x10000028" not in text
+        assert "0x1000002c" not in text
 
 
 def test_map_validation_rejects_overlaps(tmp_path: Path) -> None:

@@ -20,6 +20,7 @@ TEST_SOURCES = (
     "crt/src/lib/printf.c",
     "crt/src/lib/stdlib.c",
     "crt/src/lib/string.c",
+    "crt/src/hal/gpio_math.c",
     "crt/src/hal/ws2812_math.c",
     "crt/src/hal/timer_math.c",
     "app/media/src/video_player.c",

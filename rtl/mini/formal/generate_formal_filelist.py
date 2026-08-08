@@ -82,14 +82,19 @@ def source_files(target: str) -> list[Path]:
             TOP / "rcu.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
         ]
-    if target == "gpio_user":
+    if target == "gpio":
         return [
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
+            COMMON_RTL / "clkrst/counter.sv",
             COMMON_RTL / "utils/edge_det.sv",
-            PERIPHERAL / "gpio.sv",
-            SCRIPT_DIR / "gpio_user_formal.sv",
+            PERIPHERAL / "gpio_if.sv",
+            PERIPHERAL / "user_gpio_if.sv",
+            PERIPHERAL / "gpio_core.sv",
+            PERIPHERAL / "gpio_reg.sv",
+            PERIPHERAL / "ribp_gpio.sv",
+            SCRIPT_DIR / "gpio_formal.sv",
         ]
     if target == "ws2812":
         return [
@@ -162,7 +167,7 @@ def parse_args() -> argparse.Namespace:
             "rib2apb",
             "sysctrl",
             "pll_rcu",
-            "gpio_user",
+            "gpio",
             "ws2812",
             "timer",
             "clint",

@@ -130,14 +130,15 @@ Verilator regressions.
 
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
-targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`,
-`gpio_user`, and `ws2812`; each uses the SBY `prove` task for bounded model
+targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`, `gpio`,
+and `ws2812`; each uses the SBY `prove` task for bounded model
 checking and k-induction, plus a `cover` task. The default depth is 20;
 `ws2812` uses depth 120 and a 120-second per-task limit to cover a complete
 serialized word and reset path. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
-state machine. `gpio_user` checks fixed user-GPIO ownership, lock, handoff,
-and mux safety. `rib_adapter` checks both single-word compatibility adapters
+state machine. `gpio` checks dual-window access isolation, fixed user-GPIO
+ownership, locks, handoff, open-drain safety, and mux behavior. `rib_adapter`
+checks both single-word compatibility adapters
 under backpressure. `ws2812` checks RIBP response stability, FIFO bounds,
 waveform idle safety, sticky error and interrupt propagation, abort, and
 underflow preconditions. Direct Common utility proofs, including `spill_register`,

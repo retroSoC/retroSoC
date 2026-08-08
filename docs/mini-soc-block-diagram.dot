@@ -128,7 +128,11 @@ digraph mini_soc_block_diagram {
       ];
       ribp_targets [
         fillcolor="#F9E1E7",
-        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD and DVP\nGPIO, UART0, I2C and I2S"
+        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD and DVP\nUART0, I2C and I2S"
+      ];
+      gpio_controller [
+        fillcolor="#F9E1E7",
+        label="GPIO V2\nuser + management RIBP windows\natomic I/O, filter, locks, IRQ18"
       ];
       timers [
         fillcolor="#F9E1E7",
@@ -144,7 +148,7 @@ digraph mini_soc_block_diagram {
       ];
       gpio_bridge [
         fillcolor="#E5E7EB",
-        label="GPIO pad bridge\nsoftware, alternate and user modes"
+        label="GPIO pad bridge\nPDK capability-adapted controls"
       ];
       irq [
         fillcolor="#FCE7F3",
@@ -157,7 +161,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; timers; ws2812; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; gpio_controller; timers; ws2812; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -182,17 +186,20 @@ digraph mini_soc_block_diagram {
   ribp_adapter -> sysctrl [label="RIBP"];
   ribp_adapter -> clint [label="RIBP"];
   ribp_adapter -> ribp_targets [label="RIBP"];
+  ribp_adapter -> gpio_controller [label="RIBP\nuser/admin"];
   ribp_adapter -> timers [label="RIBP"];
   ribp_adapter -> ws2812 [label="RIBP"];
   apb_adapter -> apb_targets [label="APB"];
 
-  ribp_targets -> gpio_bridge [label="GPIO alternate functions"];
+  ribp_targets -> gpio_controller [label="alternate functions"];
+  gpio_controller -> gpio_bridge [label="pad control"];
+  gpio_controller -> irq [label="IRQ18"];
   timers -> irq [label="IRQ3 / IRQ4"];
   clint -> irq [label="machine IRQ0 / IRQ1"];
   ws2812 -> gpio_bridge [label="GPIO2 ALT1"];
   dma -> ws2812 [label="TXDATA writes", style=dashed];
   ws2812 -> irq [label="IRQ17"];
-  apb_targets -> gpio_bridge [label="user_gpio"];
+  apb_targets -> gpio_controller [label="user_gpio"];
   ribp_targets -> ext_io [dir=both, label="device interfaces"];
   gpio_bridge -> ext_io [dir=both, label="pad control"];
 }

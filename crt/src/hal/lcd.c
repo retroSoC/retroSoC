@@ -55,22 +55,22 @@ static bool rs_lcd_region_valid(uint16_t x_start, uint16_t y_start, uint16_t x_e
 }
 
 static void lcd_wr_dc_cmd(uint8_t cmd) {
-    lcd_dc_clr;
+    (void)rs_gpio_port_clear(UINT32_C(1) << 2U);
     qspi0_wr_dat8(cmd);
 }
 
 static void lcd_wr_dc_data8(uint8_t dat) {
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     qspi0_wr_dat8(dat);
 }
 
 static void lcd_wr_dc_data16(uint16_t dat) {
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     qspi0_wr_dat16(dat);
 }
 
 static void lcd_wr_data32(uint32_t *dat, uint32_t len) {
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     qspi0_wr_data32(dat, len);
 }
 
@@ -228,7 +228,7 @@ void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, 
     uint32_t total_pixels = (uint32_t)(xend - xsta) * (uint32_t)(yend - ysta);
 
 #ifdef USE_QSPI0_DMA
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     uintptr_t addr = (uintptr_t)data;
     // printf("addr: %x\n\n", addr);
     qspi0_dma_xfer(addr, total_pixels / 2U); // every xfer contains two RGB565 pixels

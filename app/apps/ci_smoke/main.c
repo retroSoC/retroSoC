@@ -1,5 +1,6 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
+#include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
 #include <retrosoc/lib/printf.h>
@@ -111,23 +112,54 @@ static bool rs_ci_smoke_timer_periodic(void) {
     return passed;
 }
 
+static bool rs_ci_smoke_gpio_v2(void) {
+    const rs_gpio_config_t config = {
+        .mode = RS_GPIO_MODE_OUTPUT,
+        .pull = RS_GPIO_PULL_NONE,
+        .trigger = RS_GPIO_TRIGGER_NONE,
+        .output_high = false,
+        .open_drain = false,
+        .input_cmos = false,
+        .filter_enable = false,
+        .interrupt_enable = false,
+    };
+    rs_gpio_capabilities_t capabilities;
+
+    if ((rs_gpio_get_capabilities(&capabilities) != RS_OK) ||
+        (capabilities.version != UINT32_C(0x00020000)) ||
+        ((capabilities.features & UINT32_C(0xFF)) != RS_GPIO_PIN_COUNT) ||
+        ((capabilities.features & RS_GPIO_CAP_ATOMIC_OUT) == 0U) ||
+        (rs_gpio_configure(31U, &config) != RS_OK) || (rs_gpio_write(31U, true) != RS_OK) ||
+        (rs_gpio_toggle(31U) != RS_OK)) {
+        return false;
+    }
+    return rs_gpio_write(31U, false) == RS_OK;
+}
+
 int main(void) {
     uart0_init(CPU_FREQ, UART_BPS);
 
     if (!rs_ci_smoke_archinfo_matches_reset_values()) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
+    printf("ci_smoke: archinfo passed\n");
     if (!rs_ci_smoke_clint_standard_map()) {
         rs_test_finish(RS_TEST_FAILED, 2U);
     }
+    printf("ci_smoke: CLINT passed\n");
     if (!rs_ci_smoke_timer_one_shot()) {
         rs_test_finish(RS_TEST_FAILED, 3U);
     }
+    printf("ci_smoke: timer0 passed\n");
     if (!rs_ci_smoke_timer_periodic()) {
         rs_test_finish(RS_TEST_FAILED, 4U);
     }
+    printf("ci_smoke: timer1 passed\n");
+    if (!rs_ci_smoke_gpio_v2()) {
+        rs_test_finish(RS_TEST_FAILED, 5U);
+    }
 
-    printf("ci_smoke: archinfo, CLINT, and timer tests passed\n");
+    printf("ci_smoke: archinfo, CLINT, timer, and GPIO tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

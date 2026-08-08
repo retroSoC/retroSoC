@@ -3,7 +3,7 @@
   "gpio_pins": 32,
   "irq_vector_width": 32,
   "irq_groups": [
-    {"name": "ribp", "width": 11, "top_signal": "s_ribp_irq"},
+    {"name": "ribp", "width": 12, "top_signal": "s_ribp_irq"},
     {"name": "apb", "width": 7, "top_signal": "s_apb_irq"}
   ],
   "interrupts": [
@@ -24,11 +24,12 @@
     {"name": "watchdog_reset", "description": "APB watchdog reset request", "group": "apb", "group_bit": 4, "core_bit": 14, "signal": "u_wdg_if.rst_o"},
     {"name": "advanced_timer", "description": "APB advanced timer interrupt", "group": "apb", "group_bit": 5, "core_bit": 15, "signal": "u_tmr_if.irq_o"},
     {"name": "reserved", "description": "Reserved interrupt slot", "group": "apb", "group_bit": 6, "core_bit": 16, "signal": "1'b0"},
-    {"name": "ws2812", "description": "WS2812 transmitter interrupt", "group": "ribp", "group_bit": 10, "core_bit": 17, "signal": "ws2812.irq_o"}
+    {"name": "ws2812", "description": "WS2812 transmitter interrupt", "group": "ribp", "group_bit": 10, "core_bit": 17, "signal": "ws2812.irq_o"},
+    {"name": "gpio", "description": "RIBP GPIO combined interrupt", "group": "ribp", "group_bit": 11, "core_bit": 18, "signal": "gpio.irq_o"}
   ],
   "ribp_targets": [
     {"slot": 0, "name": "uart0", "interface": "u_uart_ribp_if", "regions": ["RIBP_UART0"]},
-    {"slot": 1, "name": "gpio", "interface": "u_gpio_ribp_if", "regions": ["RIBP_GPIO"]},
+    {"slot": 1, "name": "gpio", "interface": "u_gpio_ribp_if", "regions": ["RIBP_GPIO", "RIBP_GPIO_ADMIN"]},
     {"slot": 2, "name": "tim0", "interface": "u_tim0_ribp_if", "regions": ["RIBP_TIM0"]},
     {"slot": 3, "name": "tim1", "interface": "u_tim1_ribp_if", "regions": ["RIBP_TIM1"]},
     {"slot": 4, "name": "psram", "interface": "u_psram_ribp_if", "regions": ["RIBP_PSRAM", "PSRAM"]},

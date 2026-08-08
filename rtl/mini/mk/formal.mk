@@ -9,7 +9,7 @@ FORMAL_WS2812_DEPTH       ?= 120
 FORMAL_CLINT_DEPTH        ?= 32
 FORMAL_TIMEOUT            ?= 60
 FORMAL_WS2812_TIMEOUT     ?= 120
-FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio_user ws2812 timer clint
+FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 timer clint
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
@@ -23,8 +23,8 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/sysctrl_formal_props.sv \
                              $(RTL_PATH)/formal/pll_rcu_formal.sv \
                              $(RTL_PATH)/formal/pll_rcu_formal_props.sv \
-                             $(RTL_PATH)/formal/gpio_user_formal.sv \
-                             $(RTL_PATH)/formal/gpio_user_formal_props.sv \
+                             $(RTL_PATH)/formal/gpio_formal.sv \
+                             $(RTL_PATH)/formal/gpio_formal_props.sv \
                              $(RTL_PATH)/formal/ws2812_formal.sv \
                              $(RTL_PATH)/formal/ws2812_formal_props.sv \
                              $(RTL_PATH)/formal/timer_formal.sv \
@@ -39,7 +39,11 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/top/rib2apb.sv \
                              $(RTL_PATH)/top/ribp2rib.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/interconnect/ribp_regslice.sv \
-                             $(ROOT_PATH)/rtl/ip/ribp/peripheral/gpio.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/peripheral/gpio_if.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/peripheral/user_gpio_if.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/peripheral/gpio_core.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/peripheral/gpio_reg.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/peripheral/ribp_gpio.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/pll_ctrl_if.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/sysctrl.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ws2812_if.sv \
@@ -146,7 +150,7 @@ formal-sysctrl: $(FORMAL_DIR)/sysctrl/.stamp | manifest
 
 formal-pll-rcu: $(FORMAL_DIR)/pll_rcu/.stamp | manifest
 
-formal-gpio-user: $(FORMAL_DIR)/gpio_user/.stamp | manifest
+formal-gpio: $(FORMAL_DIR)/gpio/.stamp | manifest
 
 formal-ws2812: $(FORMAL_DIR)/ws2812/.stamp | manifest
 
@@ -160,4 +164,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio-user formal-ws2812 formal-timer formal-clint formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-timer formal-clint formal-doctor formal-clean

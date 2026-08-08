@@ -56,17 +56,24 @@ them to the local remote-bitbang server used by the debug acceptance flow.
 
 The fixed user-IP integration does not add dedicated user GPIO pads. A user IP
 can instead drive any of the 32 rib GPIO pads through `user_gpio_if`. Software
-selects an owner per pin with the rib GPIO `USER_SEL` register at offset
-`0x30`; clear selects the existing software/alternate GPIO path and set selects
-the user IP. `USER_LOCK` at `0x34` is write-one-set and prevents a selected
-owner bit from changing until reset. `USER_STATUS` at `0x38` reports the user
-IP pins that are actively connected.
+selects an owner per pin with `USER_SELECT` at management-window offset
+`0x03C`; clear selects the existing software/alternate GPIO path and set
+selects the user IP. `USER_LOCK` at `0x040` is write-one-set and prevents a
+selected owner bit from changing until reset. `USER_STATUS` at `0x044` reports
+the user-IP pins that are actively connected.
 
 On every accepted ownership change, the pad output enable is forced low for one
-full system clock. The rib GPIO block retains `CS`, `PU`, and `PD` control
-in all modes. User IPs provide only output data, output enable, and sampled pad
-input. Configure the target output data and enable before writing `USER_SEL`,
-then program `USER_LOCK` after the handoff when the assignment is permanent.
+full system clock. The GPIO block retains input-mode, pull, open-drain, filter,
+and interrupt control in all modes. User IPs provide only output data, output
+enable, and synchronized/filtered pad input. Configure the target output data
+and enable before writing `USER_SELECT`, then program `USER_LOCK` after the
+handoff when the assignment is permanent.
+
+The user core accesses only the data and interrupt window at `0x10000000`, and
+only bits permitted by management `USER_ACCESS_MASK`. Configuration remains in
+the management-only window at `0x10014000`; the SoC access firewall denies user
+transactions to that region. See [gpio.md](ip/gpio.md) for the complete ABI,
+PDK capabilities, and lock semantics.
 
 User-IP RTL must declare its GPIO port as `user_gpio_if.user_ip gpio`; the only
 signals available through that port are `do_o`, `oe_o`, and `di_i`. The MPW

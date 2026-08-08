@@ -26,6 +26,8 @@ the root README and subsystem guides.
   counting modes, interrupt, debug-freeze, HAL, and verification contracts.
 - [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed
   timebase, RV32 access rules, interrupt behavior, and verification contract.
+- [ip/gpio.md](ip/gpio.md) defines the GPIO V2 dual-window ABI, pad ownership,
+  filtering, interrupts, PDK capabilities, HAL, and verification contract.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 - [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC

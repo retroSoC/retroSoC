@@ -61,6 +61,24 @@ module ip_ribp_wrapper (
   logic s_dma_xfer_done;
   logic s_tim0_irq, s_tim1_irq;
 
+`ifdef PDK_GF180
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
+  localparam bit GPIO_HAS_PULL_UP = 1'b1;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b1;
+`elsif PDK_ICS55
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
+  localparam bit GPIO_HAS_PULL_UP = 1'b1;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b1;
+`elsif PDK_SKY130
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
+  localparam bit GPIO_HAS_PULL_UP = 1'b0;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
+`else
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b0;
+  localparam bit GPIO_HAS_PULL_UP = 1'b0;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
+`endif
+
   rib2ribp u_rib2ribp (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -83,12 +101,18 @@ module ip_ribp_wrapper (
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "ribp_irq_bindings.svh"
 
-  ribp_gpio u_rib_gpio (
-      .clk_i    (clk_i),
-      .rst_n_i  (rst_n_i),
-      .ribp(u_gpio_ribp_if),
-      .gpio     (gpio),
-      .user_gpio(user_gpio)
+  ribp_gpio #(
+      .USER_BASE_ADDR (`SOC_ADDR_RIBP_GPIO_BASE),
+      .ADMIN_BASE_ADDR(`SOC_ADDR_RIBP_GPIO_ADMIN_BASE),
+      .HAS_INPUT_CMOS (GPIO_HAS_INPUT_CMOS),
+      .HAS_PULL_UP    (GPIO_HAS_PULL_UP),
+      .HAS_PULL_DOWN  (GPIO_HAS_PULL_DOWN)
+  ) u_rib_gpio (
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
+      .ribp      (u_gpio_ribp_if),
+      .gpio      (gpio),
+      .user_gpio (user_gpio)
   );
   // verilog_format: on
 

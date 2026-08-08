@@ -55,6 +55,7 @@
     {"symbol": "RIBP_I2C1", "base": "0x10011000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "RIBP_GA", "base": "0x10012000", "size": "0x00001000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
     {"symbol": "RIBP_APU", "base": "0x10013000", "size": "0x00001000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
+    {"symbol": "RIBP_GPIO_ADMIN", "base": "0x10014000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
     {"symbol": "APB_ARCHINFO", "base": "0x20000000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "ro"},
     {"symbol": "APB_RNG", "base": "0x20001000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "APB_UART1", "base": "0x20002000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},

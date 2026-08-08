@@ -68,6 +68,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/clint.c \
             $(ROOT_PATH)/crt/src/hal/clock.c \
             $(ROOT_PATH)/crt/src/hal/uart.c \
+            $(ROOT_PATH)/crt/src/hal/gpio_math.c \
             $(ROOT_PATH)/crt/src/hal/gpio.c \
             $(ROOT_PATH)/crt/src/hal/timer_math.c \
             $(ROOT_PATH)/crt/src/hal/timer.c \
@@ -142,9 +143,10 @@ FORCE_VERSION:
 
 upd_ver_info: $(VERSION_HEADER)
 
-asm: $(MPW_VARIANT_STAMP)
+asm: $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP)
 	@mkdir -p $(SW_BUILD_DIR)/asm
-	$(MAKE) -C $(ROOT_PATH)/app/asm OUT_DIR=$(SW_BUILD_DIR)/asm
+	$(MAKE) -C $(ROOT_PATH)/app/asm OUT_DIR=$(SW_BUILD_DIR)/asm \
+		GENERATED_INCLUDE=$(MEMORY_MAP_C_DIR)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.flash $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).hex
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt

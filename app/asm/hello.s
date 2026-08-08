@@ -1,3 +1,5 @@
+#include "retrosoc/generated/memory_map.h"
+
 .global _start
 _start:
 UART_INIT:
@@ -30,17 +32,17 @@ CHECK:
     ble t1, t2, APP_LOOP
 
 
-.equ GPIO_IOFCFG, 0x10000028
-.equ GPIO_PINMUX, 0x1000002C
-.equ BIT_MASK,    0x3FE00000  # Bits 21 to 29 set to 1
-.equ PSRAM_INIT,  0x10004008
+.equ GPIO_ALT_ENABLE, RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x34
+.equ GPIO_ALT_SELECT, RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x38
+.equ BIT_MASK,        0x3FE00000  # Bits 21 to 29 set to 1
+.equ PSRAM_INIT,      RS_SOC_RIBP_PSRAM_BASE + 0x08
 PINMUX_PSRAM:
-    li t0, GPIO_IOFCFG
+    li t0, GPIO_ALT_ENABLE
     lw t1, 0(t0)
     li t2, BIT_MASK
     or t1, t1, t2
     sw t1, 0(t0)
-    li t0, GPIO_PINMUX
+    li t0, GPIO_ALT_SELECT
     lw t1, 0(t0)
     or t1, t1, t2
     sw t1, 0(t0)

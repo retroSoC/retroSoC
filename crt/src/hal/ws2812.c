@@ -3,6 +3,7 @@
 
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/dma.h>
+#include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/ws2812.h>
 #include <retrosoc/lib/printf.h>
 
@@ -18,8 +19,6 @@
 #define RS_WS2812_IP_FIFO_DEPTH_MASK  UINT32_C(0xFF)
 #define RS_WS2812_PIXEL_MASK          UINT32_C(0x00FFFFFF)
 #define RS_WS2812_DMA_SOFTWARE_MODE   UINT32_C(0)
-#define RS_WS2812_GPIO_MASK           (UINT32_C(1) << 2U)
-
 static uint32_t rs_ws2812_fifo_depth(void) {
     return (reg_ws2812_ip_info >> RS_WS2812_IP_FIFO_DEPTH_SHIFT) & RS_WS2812_IP_FIFO_DEPTH_MASK;
 }
@@ -253,14 +252,21 @@ void ip_ws2812_test(int argc, char **argv) {
         rs_ws2812_pack_grb(0x00U, 0x00U, 0x20U),
         rs_ws2812_pack_grb(0x10U, 0x10U, 0x10U),
     };
+    const rs_gpio_config_t gpio_config = {
+        .mode = RS_GPIO_MODE_ALT1,
+        .pull = RS_GPIO_PULL_NONE,
+        .trigger = RS_GPIO_TRIGGER_NONE,
+        .output_high = false,
+        .open_drain = false,
+        .input_cmos = false,
+        .filter_enable = false,
+        .interrupt_enable = false,
+    };
 
     (void)argc;
     (void)argv;
     printf("ws2812 test\n");
-    reg_gpio_user_sel &= ~RS_WS2812_GPIO_MASK;
-    reg_gpio_pinmux |= RS_WS2812_GPIO_MASK;
-    reg_gpio_iofcfg |= RS_WS2812_GPIO_MASK;
-    if ((rs_ws2812_init(&config) != RS_OK) ||
+    if ((rs_gpio_configure(2U, &gpio_config) != RS_OK) || (rs_ws2812_init(&config) != RS_OK) ||
         (rs_ws2812_write(pixels, sizeof(pixels) / sizeof(pixels[0]), RS_TIMEOUT_DEFAULT) !=
          RS_OK)) {
         printf("ws2812 transfer failed\n");
