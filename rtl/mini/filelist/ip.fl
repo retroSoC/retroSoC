@@ -32,7 +32,11 @@
 /ip/ribp/peripheral/dma.sv
 /ip/ribp/peripheral/pll_ctrl_if.sv
 /ip/ribp/peripheral/sysctrl.sv
-/ip/ribp/peripheral/clint.sv
+/ip/ribp/peripheral/clint_if.sv
+/ip/ribp/peripheral/clint_timebase.sv
+/ip/ribp/peripheral/clint_reg.sv
+/ip/ribp/peripheral/clint_core.sv
+/ip/ribp/peripheral/ribp_clint.sv
 /ip/ribp/memory/sdram_clkgen.sv
 /ip/ribp/memory/sdram_reg.sv
 /ip/ribp/memory/sdram_core.sv

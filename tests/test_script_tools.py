@@ -205,6 +205,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_user_filelist = tmp_path / "gpio_user.fl"
     ws2812_filelist = tmp_path / "ws2812.fl"
+    clint_filelist = tmp_path / "clint.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -224,6 +225,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "ws2812", ws2812_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist(
+        "clint", clint_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -232,6 +236,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
     ws2812 = parse_filelists([ws2812_filelist], require_files=False)
+    clint = parse_filelists([clint_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
@@ -254,6 +259,8 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/ip/ribp/serial/ribp_ws2812.sv" in ws2812.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
     assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
+    assert ROOT / "rtl/ip/ribp/peripheral/ribp_clint.sv" in clint.files
+    assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
@@ -751,8 +758,8 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert re.search(r"^PDK_BEHAV\s+\?= NO$", makefile, re.MULTILINE)
     assert "PDK_BEHAV HAVE_SVA" in makefile
     assert "PDK_BEHAV=YES is for functional simulation" in makefile
-    assert "HAVE_SRAM_MACRO := YES" in profile
-    assert "PDK_BEHAV       := YES" in profile
+    assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
+    assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
     assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
 
 

@@ -8,7 +8,10 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module rcu (
+module rcu #(
+    parameter int EXT_CLK_HZ        = 72_000_000,
+    parameter int CLINT_TIMEBASE_HZ = 1_000_000
+) (
     input  logic           ext_clk_i,
     input  logic           aud_clk_i,
     input  logic           ext_rst_n_i,
@@ -19,7 +22,8 @@ module rcu (
     output logic           sys_clk_o,
     output logic           sys_rst_n_o,
     output logic           aud_rst_n_o,
-    output logic           sys_clkdiv4_o
+    output logic           sys_clkdiv4_o,
+    output logic           timebase_tick_o
 );
   logic s_ext_clk_buf;
   logic s_aud_clk_buf;
@@ -183,7 +187,18 @@ module rcu (
   assign aud_rst_n_o   = s_aud_rst_n_sync;
   assign sys_clkdiv4_o = s_sys_clkdiv4_q;
 
-  assign s_div_cnt_d   = (s_div_cnt_q == 4'd1) ? '0 : s_div_cnt_q + 1'b1;
+  clint_timebase #(
+      .REF_CLK_HZ (EXT_CLK_HZ),
+      .TIMEBASE_HZ(CLINT_TIMEBASE_HZ)
+  ) u_clint_timebase (
+      .ref_clk_i  (s_ext_clk_buf),
+      .ref_rst_n_i(s_ext_rst_n_sync),
+      .sys_clk_i  (sys_clk_o),
+      .sys_rst_n_i(sys_rst_n_o),
+      .tick_o     (timebase_tick_o)
+  );
+
+  assign s_div_cnt_d = (s_div_cnt_q == 4'd1) ? '0 : s_div_cnt_q + 1'b1;
   dffr #(4) u_div_cnt_dffr (
       sys_clk_o,
       sys_rst_n_o,

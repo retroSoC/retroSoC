@@ -47,7 +47,7 @@
     {"symbol": "RIBP_XPI", "base": "0x10009000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
     {"symbol": "RIBP_DMA", "base": "0x1000A000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
     {"symbol": "RIBP_SYSCTRL", "base": "0x1000B000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "RIBP_CLINT", "base": "0x1000C000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
+    {"symbol": "RIBP_CLINT", "base": "0x10020000", "size": "0x00010000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
     {"symbol": "RIBP_SDRAM", "base": "0x1000D000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
     {"symbol": "RIBP_DVP", "base": "0x1000E000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "RIBP_SDIO", "base": "0x1000F000", "size": "0x00001000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},

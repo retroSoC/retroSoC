@@ -204,13 +204,6 @@
 #define RS_SOC_PERF_CTRL_ENABLE            UINT32_C(0x00000001)
 #define RS_SOC_PERF_CTRL_CLEAR             UINT32_C(0x00000002)
 #define RS_SOC_PERF_CTRL_SNAPSHOT          UINT32_C(0x00000004)
-// clint
-#define reg_clint_mtimel                   RS_SOC_REG32(RS_SOC_RIBP_CLINT_BASE, UINT32_C(0x00))
-#define reg_clint_mtimeh                   RS_SOC_REG32(RS_SOC_RIBP_CLINT_BASE, UINT32_C(0x04))
-#define reg_clint_mtimecmpl                RS_SOC_REG32(RS_SOC_RIBP_CLINT_BASE, UINT32_C(0x08))
-#define reg_clint_mtimecmph                RS_SOC_REG32(RS_SOC_RIBP_CLINT_BASE, UINT32_C(0x0C))
-#define reg_clint_msip                     RS_SOC_REG32(RS_SOC_RIBP_CLINT_BASE, UINT32_C(0x10))
-#define reg_clint_clkdiv                   RS_SOC_REG32(RS_SOC_RIBP_CLINT_BASE, UINT32_C(0x14))
 // sdram
 #define reg_sdram_clkdiv                   RS_SOC_REG32(RS_SOC_RIBP_SDRAM_BASE, UINT32_C(0x00))
 #define reg_sdram_cfg                      RS_SOC_REG32(RS_SOC_RIBP_SDRAM_BASE, UINT32_C(0x04))

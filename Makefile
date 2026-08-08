@@ -41,6 +41,8 @@ HAVE_SRAM_MACRO          ?= NO
 PDK_BEHAV                ?= NO
 HAVE_SVA                 ?= NO
 JTAG_IDCODE              ?= DEADBEEF
+EXT_CLK_HZ               ?= 72000000
+CLINT_TIMEBASE_HZ        ?= 1000000
 WAVE                     ?= NO
 FORMAL                   ?= NO
 VCS_USE_LSF              ?= YES
@@ -80,7 +82,8 @@ JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
 CONFIG_KEY_VARS    := SOC PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
-                   JTAG_IDCODE ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
+                   JTAG_IDCODE EXT_CLK_HZ CLINT_TIMEBASE_HZ ISA HAVE_CSR APP LINK_TYPE \
+                   COREMARK_MODE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -145,6 +148,20 @@ endif
 JTAG_IDCODE_DEC := $(shell value=$$(printf '%u' 0x$(JTAG_IDCODE)); \
 	if [ $$value -gt 2147483647 ]; then echo $$((value - 4294967296)); else echo $$value; fi)
 
+EXT_CLK_HZ_VALID := $(shell printf '%s' '$(EXT_CLK_HZ)' | grep -E '^[1-9][[:digit:]]*$$')
+ifneq ($(EXT_CLK_HZ_VALID),$(EXT_CLK_HZ))
+$(error EXT_CLK_HZ='$(EXT_CLK_HZ)' must be a positive integer)
+endif
+CLINT_TIMEBASE_HZ_VALID := $(shell printf '%s' '$(CLINT_TIMEBASE_HZ)' | grep -E '^[1-9][[:digit:]]*$$')
+ifneq ($(CLINT_TIMEBASE_HZ_VALID),$(CLINT_TIMEBASE_HZ))
+$(error CLINT_TIMEBASE_HZ='$(CLINT_TIMEBASE_HZ)' must be a positive integer)
+endif
+CLINT_TIMEBASE_RATIO_VALID := $(shell if [ '$(EXT_CLK_HZ)' -ge '$(CLINT_TIMEBASE_HZ)' ] && \
+	[ $$(( $(EXT_CLK_HZ) % $(CLINT_TIMEBASE_HZ) )) -eq 0 ]; then printf YES; fi)
+ifneq ($(CLINT_TIMEBASE_RATIO_VALID),YES)
+$(error EXT_CLK_HZ must be an integer multiple of CLINT_TIMEBASE_HZ)
+endif
+
 ifneq ($(filter benchmark-report,$(MAKECMDGOALS)),)
 ifneq ($(APP),benchmark)
 $(error benchmark-report requires APP=benchmark)
@@ -178,6 +195,8 @@ endif
 DEF_LIST ?= +define+PDK_$(PDK)
 DEF_LIST += +define+SIMU_$(SIMU)
 DEF_LIST += +define+SOC_JTAG_IDCODE=$(JTAG_IDCODE_DEC)
+DEF_LIST += +define+SOC_EXT_CLK_HZ=$(EXT_CLK_HZ)
+DEF_LIST += +define+SOC_CLINT_TIMEBASE_HZ=$(CLINT_TIMEBASE_HZ)
 
 ifeq ($(HAVE_PLL), YES)
 ifneq ($(filter $(PDK),GF180 SKY130),)
@@ -261,7 +280,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  '  formal-sysctrl | formal-pll-rcu | formal-gpio-user | formal-ws2812 | formal-timer run peripheral proofs' \
+	  '  formal-sysctrl | formal-pll-rcu | formal-gpio-user | formal-ws2812 | formal-timer | formal-clint run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -294,7 +313,8 @@ config:
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
-	  JTAG_IDCODE '$(JTAG_IDCODE)' \
+	  JTAG_IDCODE '$(JTAG_IDCODE)' EXT_CLK_HZ '$(EXT_CLK_HZ)' \
+	  CLINT_TIMEBASE_HZ '$(CLINT_TIMEBASE_HZ)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
 	  LINK_TYPE '$(LINK_TYPE)' COREMARK_MODE '$(COREMARK_MODE)'
 

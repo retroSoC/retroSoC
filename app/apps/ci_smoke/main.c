@@ -1,4 +1,5 @@
 #include <retrosoc/core/soc.h>
+#include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
 #include <retrosoc/lib/printf.h>
@@ -11,6 +12,34 @@ static bool rs_ci_smoke_archinfo_matches_reset_values(void) {
 
     return (archinfo_sys == UINT32_C(0x000F1010)) && (archinfo_idl == UINT32_C(0xFFFF2022)) &&
            (archinfo_idh == UINT32_C(0x00FFFFFF));
+}
+
+static bool rs_ci_smoke_clint_standard_map(void) {
+    uint64_t first;
+    uint64_t current;
+    uint64_t compare;
+    bool pending;
+
+    if (rs_clint_get_time(&first) != RS_OK) {
+        return false;
+    }
+    current = first;
+    for (rs_timeout_t timeout = 512U; (timeout != 0U) && (current == first); --timeout) {
+        if (rs_clint_get_time(&current) != RS_OK) {
+            return false;
+        }
+    }
+    if ((current <= first) || (rs_clint_set_compare(0U, current + UINT64_C(1000)) != RS_OK) ||
+        (rs_clint_get_compare(0U, &compare) != RS_OK) || (compare != (current + UINT64_C(1000)))) {
+        return false;
+    }
+    if ((rs_clint_set_software_interrupt(0U, true) != RS_OK) ||
+        (rs_clint_get_software_interrupt(0U, &pending) != RS_OK) || !pending ||
+        (rs_clint_set_software_interrupt(0U, false) != RS_OK) ||
+        (rs_clint_get_software_interrupt(0U, &pending) != RS_OK) || pending) {
+        return false;
+    }
+    return rs_clint_set_compare(0U, UINT64_MAX) == RS_OK;
 }
 
 static bool rs_ci_smoke_timer_one_shot(void) {
@@ -88,14 +117,17 @@ int main(void) {
     if (!rs_ci_smoke_archinfo_matches_reset_values()) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
-    if (!rs_ci_smoke_timer_one_shot()) {
+    if (!rs_ci_smoke_clint_standard_map()) {
         rs_test_finish(RS_TEST_FAILED, 2U);
     }
-    if (!rs_ci_smoke_timer_periodic()) {
+    if (!rs_ci_smoke_timer_one_shot()) {
         rs_test_finish(RS_TEST_FAILED, 3U);
     }
+    if (!rs_ci_smoke_timer_periodic()) {
+        rs_test_finish(RS_TEST_FAILED, 4U);
+    }
 
-    printf("ci_smoke: archinfo and timer tests passed\n");
+    printf("ci_smoke: archinfo, CLINT, and timer tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

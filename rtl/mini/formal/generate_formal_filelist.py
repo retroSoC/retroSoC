@@ -75,7 +75,10 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
             COMMON_RTL / "cdc/cdc_2phase.sv",
             COMMON_RTL / "clkrst/rst_sync.sv",
+            COMMON_RTL / "clkrst/counter.sv",
+            COMMON_RTL / "utils/edge_det.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "clint_timebase.sv",
             TOP / "rcu.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
         ]
@@ -108,6 +111,17 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "timer_reg.sv",
             PERIPHERAL / "ribp_timer.sv",
             SCRIPT_DIR / "timer_formal.sv",
+        ]
+    if target == "clint":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "clkrst/counter.sv",
+            PERIPHERAL / "clint_if.sv",
+            PERIPHERAL / "clint_reg.sv",
+            PERIPHERAL / "clint_core.sv",
+            PERIPHERAL / "ribp_clint.sv",
+            SCRIPT_DIR / "clint_formal.sv",
         ]
     raise ValueError(f"unsupported formal target: {target}")
 
@@ -151,6 +165,7 @@ def parse_args() -> argparse.Namespace:
             "gpio_user",
             "ws2812",
             "timer",
+            "clint",
         ),
         required=True,
     )

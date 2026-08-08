@@ -7,8 +7,8 @@
     {"name": "apb", "width": 7, "top_signal": "s_apb_irq"}
   ],
   "interrupts": [
-    {"name": "clint_software", "description": "CLINT machine software interrupt", "group": "ribp", "group_bit": 0, "core_bit": 0, "signal": "u_clint_if.sfr_irq_o"},
-    {"name": "clint_timer", "description": "CLINT machine timer interrupt", "group": "ribp", "group_bit": 1, "core_bit": 1, "signal": "u_clint_if.tmr_irq_o"},
+    {"name": "clint_software", "description": "CLINT machine software interrupt", "group": "ribp", "group_bit": 0, "core_bit": 0, "signal": "u_clint_if.software_irq_o[0]", "user_visible": false},
+    {"name": "clint_timer", "description": "CLINT machine timer interrupt", "group": "ribp", "group_bit": 1, "core_bit": 1, "signal": "u_clint_if.timer_irq_o[0]", "user_visible": false},
     {"name": "uart0", "description": "RIBP UART0 interrupt", "group": "ribp", "group_bit": 2, "core_bit": 2, "signal": "uart.irq_o"},
     {"name": "timer0", "description": "RIBP timer0 interrupt", "group": "ribp", "group_bit": 3, "core_bit": 3, "signal": "s_tim0_irq"},
     {"name": "timer1", "description": "RIBP timer1 interrupt", "group": "ribp", "group_bit": 4, "core_bit": 4, "signal": "s_tim1_irq"},

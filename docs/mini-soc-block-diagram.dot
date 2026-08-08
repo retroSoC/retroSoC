@@ -61,7 +61,7 @@ digraph mini_soc_block_diagram {
 
     rcu [
       fillcolor="#EDE9FE",
-      label="RCU\nclock buffering and reset synchronization\nPLL request/acknowledgment CDC"
+      label="RCU\nclock buffering and reset synchronization\nPLL CDC and fixed 1 MHz timebase"
     ];
 
     subgraph cluster_soc {
@@ -120,7 +120,11 @@ digraph mini_soc_block_diagram {
       ];
       sysctrl [
         fillcolor="#F9E1E7",
-        label="SYSCTRL and CLINT\nPLL, user-core select/reset/bus enable\nfault and performance control"
+        label="SYSCTRL\nPLL, user-core select/reset/bus enable\nfault and performance control"
+      ];
+      clint [
+        fillcolor="#F9E1E7",
+        label="CLINT\nstandard 64 KiB register map\nmtime, mtimecmp and MSIP"
       ];
       ribp_targets [
         fillcolor="#F9E1E7",
@@ -153,7 +157,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; ribp_targets; timers; ws2812; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; timers; ws2812; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -164,6 +168,7 @@ digraph mini_soc_block_diagram {
   debug_module -> mgmt_core [label="halt, resume, abstract commands"];
   debug_module -> mgmt_adapter [label="reset after bridge idle", style=dashed];
   debug_module -> timers [label="halted", style=dashed];
+  rcu -> clint [label="1 MHz tick", style=dashed];
 
   mgmt_core -> mgmt_adapter [label="RIBP"];
   mgmt_adapter -> fabric [label="RIB"];
@@ -175,6 +180,7 @@ digraph mini_soc_block_diagram {
   fabric -> ribp_adapter [label="RIB"];
   fabric -> apb_adapter [label="RIB"];
   ribp_adapter -> sysctrl [label="RIBP"];
+  ribp_adapter -> clint [label="RIBP"];
   ribp_adapter -> ribp_targets [label="RIBP"];
   ribp_adapter -> timers [label="RIBP"];
   ribp_adapter -> ws2812 [label="RIBP"];
@@ -182,6 +188,7 @@ digraph mini_soc_block_diagram {
 
   ribp_targets -> gpio_bridge [label="GPIO alternate functions"];
   timers -> irq [label="IRQ3 / IRQ4"];
+  clint -> irq [label="machine IRQ0 / IRQ1"];
   ws2812 -> gpio_bridge [label="GPIO2 ALT1"];
   dma -> ws2812 [label="TXDATA writes", style=dashed];
   ws2812 -> irq [label="IRQ17"];

@@ -1,11 +1,11 @@
 #include <retrosoc/arch/riscv/system_base.h>
 #include <retrosoc/arch/riscv/system_csr.h>
-#include <retrosoc/arch/riscv/system_timer.h>
 #include <retrosoc/core/irq.h>
+#include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/lib/printf.h>
 
-#define RS_TIMER_DELTA_VALUE   360000UL
+#define RS_TIMER_DELTA_VALUE   (RS_CLINT_TIMEBASE_HZ / UINT32_C(200))
 #define RS_IRQ_TEST_TIMEOUT_MS 6000U
 
 static volatile uint32_t timer_irq_count;
@@ -18,14 +18,15 @@ static void rs_timer_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
     (void)mcause;
     (void)stack_pointer;
     ++timer_irq_count;
-    now = SysTimer_GetMtimeValue();
-    SysTimer_SetMtimecmpValue(now + RS_TIMER_DELTA_VALUE);
+    if (rs_clint_get_time(&now) == RS_OK) {
+        (void)rs_clint_set_compare(0U, now + RS_TIMER_DELTA_VALUE);
+    }
 }
 
 static void rs_software_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
     (void)mcause;
     (void)stack_pointer;
-    SysTimer_ClearSoftwareIRQ();
+    (void)rs_clint_set_software_interrupt(0U, false);
     ++software_irq_count;
     software_irq_ready = 1U;
 }
@@ -56,8 +57,12 @@ void irq_test(int argc, char **argv) {
         return;
     }
     __enable_irq();
-    now = SysTimer_GetMtimeValue();
-    SysTimer_SetMtimecmpValue(now + RS_TIMER_DELTA_VALUE);
+    if ((rs_clint_get_time(&now) != RS_OK) ||
+        (rs_clint_set_compare(0U, now + RS_TIMER_DELTA_VALUE) != RS_OK)) {
+        printf("unable to configure machine timer\n");
+        __disable_core_irq(IRQ_M_TIMER);
+        return;
+    }
 
     if (rs_irq_wait_for_count(&timer_irq_count, 6U) != RS_OK) {
         printf("timer irq timed out\n");
@@ -76,7 +81,10 @@ void irq_test(int argc, char **argv) {
             return;
         }
         software_irq_ready = 0U;
-        SysTimer_SetSoftwareIRQ();
+        if (rs_clint_set_software_interrupt(0U, true) != RS_OK) {
+            printf("unable to trigger software irq\n");
+            return;
+        }
         if (rs_irq_wait_for_count(&software_irq_count, attempt + 1U) != RS_OK) {
             printf("software irq timed out\n");
             return;

@@ -19,6 +19,7 @@ module ip_ribp_wrapper (
     input logic              clk_aud_i,
     input logic              rst_aud_n_i,
     input logic              debug_halted_i,
+    input logic              timebase_tick_i,
     rib_if.slave   rib,
     gpio_if.dut              gpio,
     user_gpio_if.padctrl     user_gpio,
@@ -52,7 +53,7 @@ module ip_ribp_wrapper (
   ribp_if ribp ();
   // verilog_format: on
 
-  simp_clint_if u_clint_if ();
+  clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
 
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
@@ -185,10 +186,11 @@ module ip_ribp_wrapper (
   );
 
   ribp_clint u_rib_clint (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_clint_ribp_if),
-      .clint  (u_clint_if)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .timebase_tick_i(timebase_tick_i),
+      .ribp           (u_clint_ribp_if),
+      .clint          (u_clint_if)
   );
 
   ribp_sdram u_rib_sdram (

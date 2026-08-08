@@ -44,6 +44,7 @@ DEF_VAL += -DAPP_$(APP)
 DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
 DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS) $(SW_WARN_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
+DEF_VAL += -DRS_CLINT_TIMEBASE_HZ=$(CLINT_TIMEBASE_HZ)U
 ifeq ($(HAVE_CSR),YES)
 DEF_VAL += -DCSR_ENABLE
 endif
@@ -64,6 +65,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/service/bench.c \
             $(ROOT_PATH)/crt/src/service/booter.c \
             $(ROOT_PATH)/crt/src/service/test.c \
+            $(ROOT_PATH)/crt/src/hal/clint.c \
             $(ROOT_PATH)/crt/src/hal/clock.c \
             $(ROOT_PATH)/crt/src/hal/uart.c \
             $(ROOT_PATH)/crt/src/hal/gpio.c \

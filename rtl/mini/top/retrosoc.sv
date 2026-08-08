@@ -19,6 +19,7 @@ module retrosoc (
     input  logic                           clk_aud_i,
     input  logic                           rst_aud_n_i,
     input  logic                           clkdiv4_i,
+    input  logic                           timebase_tick_i,
     pll_ctrl_if.sysctrl                    pll_ctrl,
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
@@ -124,7 +125,7 @@ core_wrapper u_core_wrapper (
       .debug_halted_o(s_mgmt_debug_halted)
   );
 
-  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? s_irq : '0;
+  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq & `SOC_USER_IRQ_MASK) : '0;
   user_core_top u_user_core_top (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
@@ -168,6 +169,7 @@ core_wrapper u_core_wrapper (
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
       .debug_halted_i  (s_mgmt_debug_halted),
+      .timebase_tick_i (timebase_tick_i),
       `include "ip_ribp_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
