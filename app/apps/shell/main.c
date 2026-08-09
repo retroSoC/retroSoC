@@ -33,7 +33,7 @@ int main(void) {
         return 1;
     }
     rs_booter();
-    if (rs_i2c0_init((uint8_t)(CPU_FREQ / 2 - 1)) != RS_OK) {
+    if (rs_i2c_init(RS_I2C_BUS_0, CPU_FREQ * UINT32_C(1000000), UINT32_C(400000)) != RS_OK) {
         return 1;
     }
     qspi_dev_init();

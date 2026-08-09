@@ -21,6 +21,7 @@ TEST_SOURCES = (
     "crt/src/lib/stdlib.c",
     "crt/src/lib/string.c",
     "crt/src/hal/gpio_math.c",
+    "crt/src/hal/i2c_math.c",
     "crt/src/hal/ws2812_math.c",
     "crt/src/hal/uart_math.c",
     "crt/src/hal/timer_math.c",

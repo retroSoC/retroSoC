@@ -28,7 +28,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 - Configurable GF180, SKY130, IHP130, and ICS55 implementation targets with
   open-source CI coverage.
 - A memory-mapped peripheral subsystem with GPIO, UART,
-  [dual general timers](docs/ip/timer.md), PWM, I2C, I2S, PS2,
+  [dual general timers](docs/ip/timer.md), PWM, [dual I2C controllers](docs/ip/i2c.md), I2S, PS2,
   WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,

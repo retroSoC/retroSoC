@@ -4,6 +4,7 @@
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
@@ -211,6 +212,30 @@ static int test_uart_helpers(void) {
     return 0;
 }
 
+static int test_i2c_helpers(void) {
+    rs_i2c_timing_t timing;
+
+    if ((rs_i2c_timing_calculate(72000000U, 400000U, &timing) != RS_OK) ||
+        (timing.scl_low_cycles != 136U) || (timing.scl_high_cycles != 44U) ||
+        (timing.start_hold_cycles != 44U) || (timing.start_setup_cycles != 44U) ||
+        (timing.data_setup_cycles != 8U) || (timing.stop_setup_cycles != 44U) ||
+        (timing.bus_free_cycles != 94U)) {
+        return 1;
+    }
+    if ((rs_i2c_timing_calculate(72000000U, 1000000U, &timing) != RS_OK) ||
+        (timing.scl_low_cycles != 53U) || (timing.scl_high_cycles != 19U) ||
+        (timing.data_setup_cycles != 4U)) {
+        return 2;
+    }
+    if ((rs_i2c_timing_calculate(0U, 400000U, &timing) != RS_EINVAL) ||
+        (rs_i2c_timing_calculate(72000000U, 0U, &timing) != RS_EINVAL) ||
+        (rs_i2c_timing_calculate(72000000U, 1000001U, &timing) != RS_EINVAL) ||
+        (rs_i2c_timing_calculate(72000000U, 400000U, NULL) != RS_EINVAL)) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_gpio_helpers(void) {
     rs_gpio_filter_timing_t timing;
 
@@ -271,10 +296,9 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(), test_formatter(),      test_compiler_helpers(),
-        test_wait_helper(),    test_ws2812_helpers(), test_timer_helpers(),
-        test_uart_helpers(),   test_gpio_helpers(),   test_wav_parser(),
-        test_video_parser(),
+        test_string_helpers(), test_formatter(),     test_compiler_helpers(), test_wait_helper(),
+        test_ws2812_helpers(), test_timer_helpers(), test_uart_helpers(),     test_i2c_helpers(),
+        test_gpio_helpers(),   test_wav_parser(),    test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

@@ -13,34 +13,38 @@
 
 module dma_core (
     // verilog_format: off
-    input logic               clk_i,
-    input logic               rst_n_i,
-    input logic [2:0]         mode_i,
-    input logic [31:0]        srcaddr_i,
-    input logic               srcincr_i,
-    input logic [31:0]        dstaddr_i,
-    input logic               dstincr_i,
-    input logic [31:0]        xferlen_i,
-    input logic               start_i,
-    input logic               stop_i,
-    input logic               reset_i,
-    output logic              done_o,
-    output logic              error_o,
-    output logic [2:0]        error_code_o,
-    output logic [31:0]       error_addr_o,
-    output logic [1:0]        fsm_o,
-    dma_hw_trg_if.dut         hw_trg,
-    rib_if.master   rib
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    input  logic [3:0]  mode_i,
+    input  logic [31:0] srcaddr_i,
+    input  logic        srcincr_i,
+    input  logic [31:0] dstaddr_i,
+    input  logic        dstincr_i,
+    input  logic [31:0] xferlen_i,
+    input  logic        start_i,
+    input  logic        stop_i,
+    input  logic        reset_i,
+    output logic        done_o,
+    output logic        error_o,
+    output logic [2:0]  error_code_o,
+    output logic [31:0] error_addr_o,
+    output logic [1:0]  fsm_o,
+    dma_hw_trg_if.dut   hw_trg,
+    rib_if.master       rib
     // verilog_format: on
 );
 
-  localparam logic [2:0] SFT_TRG = 3'd0;
-  localparam logic [2:0] HWT_I2S_TX_TRG = 3'd1;
-  localparam logic [2:0] HWT_I2S_RX_TRG = 3'd2;
-  localparam logic [2:0] HWT_QSPI_TX_TRG = 3'd3;
-  localparam logic [2:0] HWT_QSPI_RX_TRG = 3'd4;
-  localparam logic [2:0] HWT_UART_TX_TRG = 3'd5;
-  localparam logic [2:0] HWT_UART_RX_TRG = 3'd6;
+  localparam logic [3:0] SFT_TRG = 4'd0;
+  localparam logic [3:0] HWT_I2S_TX_TRG = 4'd1;
+  localparam logic [3:0] HWT_I2S_RX_TRG = 4'd2;
+  localparam logic [3:0] HWT_QSPI_TX_TRG = 4'd3;
+  localparam logic [3:0] HWT_QSPI_RX_TRG = 4'd4;
+  localparam logic [3:0] HWT_UART_TX_TRG = 4'd5;
+  localparam logic [3:0] HWT_UART_RX_TRG = 4'd6;
+  localparam logic [3:0] HWT_I2C0_TX_TRG = 4'd7;
+  localparam logic [3:0] HWT_I2C0_RX_TRG = 4'd8;
+  localparam logic [3:0] HWT_I2C1_TX_TRG = 4'd9;
+  localparam logic [3:0] HWT_I2C1_RX_TRG = 4'd10;
 
   localparam logic [2:0] FSM_IDLE = 3'd0;
   localparam logic [2:0] FSM_RD_CMD = 3'd1;
@@ -89,6 +93,8 @@ module dma_core (
       HWT_I2S_RX_TRG:  s_read_trigger = hw_trg.i2s_rx_proc;
       HWT_QSPI_RX_TRG: s_read_trigger = hw_trg.qspi_rx_proc;
       HWT_UART_RX_TRG: s_read_trigger = hw_trg.uart_rx_proc;
+      HWT_I2C0_RX_TRG: s_read_trigger = hw_trg.i2c0_rx_proc;
+      HWT_I2C1_RX_TRG: s_read_trigger = hw_trg.i2c1_rx_proc;
       default:         s_read_trigger = 1'b1;
     endcase
   end
@@ -99,6 +105,8 @@ module dma_core (
       HWT_I2S_TX_TRG:  s_write_trigger = hw_trg.i2s_tx_proc;
       HWT_QSPI_TX_TRG: s_write_trigger = hw_trg.qspi_tx_proc;
       HWT_UART_TX_TRG: s_write_trigger = hw_trg.uart_tx_proc;
+      HWT_I2C0_TX_TRG: s_write_trigger = hw_trg.i2c0_tx_proc;
+      HWT_I2C1_TX_TRG: s_write_trigger = hw_trg.i2c1_tx_proc;
       default:         s_write_trigger = 1'b1;
     endcase
   end
@@ -231,34 +239,34 @@ module dma_core (
   end
 
   dffr #(3) u_fsm_dffr (
-      clk_i,
-      rst_n_i,
-      s_fsm_d,
-      s_fsm_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
   dffr #(32) u_xfer_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_xfer_cnt_d,
-      s_xfer_cnt_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_xfer_cnt_d),
+      .dat_o  (s_xfer_cnt_q)
   );
   dffr #(32) u_src_addr_dffr (
-      clk_i,
-      rst_n_i,
-      s_src_addr_d,
-      s_src_addr_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_src_addr_d),
+      .dat_o  (s_src_addr_q)
   );
   dffr #(32) u_dst_addr_dffr (
-      clk_i,
-      rst_n_i,
-      s_dst_addr_d,
-      s_dst_addr_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_dst_addr_d),
+      .dat_o  (s_dst_addr_q)
   );
   dffr #(2) u_wr_beat_dffr (
-      clk_i,
-      rst_n_i,
-      s_wr_beat_d,
-      s_wr_beat_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_wr_beat_d),
+      .dat_o  (s_wr_beat_q)
   );
 
   always_comb begin
@@ -267,10 +275,10 @@ module dma_core (
     if (reset_i) s_ctrl_stop_d = 1'b0;
   end
   dffr #(1) u_ctrl_stop_dffr (
-      clk_i,
-      rst_n_i,
-      s_ctrl_stop_d,
-      s_ctrl_stop_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ctrl_stop_d),
+      .dat_o  (s_ctrl_stop_q)
   );
 
 endmodule

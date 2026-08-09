@@ -4,6 +4,13 @@
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/board/pcf8563b.h>
 
+static const rs_i2c_register_access_t pcf8563b_time_access = {
+    .address = PCF8563B_DEV_ADDR,
+    .ten_bit_address = false,
+    .register_address = PCF8563B_SECOND_REG,
+    .register_address_width = RS_I2C_REGISTER_ADDRESS_8_BIT,
+};
+
 uint8_t pcf8563b_bin2bcd(uint8_t val) {
     uint8_t bcdhigh = 0;
     while (val >= 10) {
@@ -33,8 +40,8 @@ void pcf8563b_wr_reg(PCF8563B_info_t *info) {
     *(wr_data + 4) = pcf8563b_bin2bcd(info->date.weekday);
     *(wr_data + 5) = pcf8563b_bin2bcd(info->date.month);
     *(wr_data + 6) = pcf8563b_bin2bcd(info->date.year);
-    if (rs_i2c0_write(PCF8563B_DEV_ADDR, PCF8563B_SECOND_REG, RS_I2C_DEVICE_ADDRESS_8BIT, 7U,
-                      wr_data, RS_TIMEOUT_DEFAULT) != RS_OK) {
+    if (rs_i2c_register_write(RS_I2C_BUS_0, &pcf8563b_time_access, wr_data, 7U,
+                              RS_TIMEOUT_DEFAULT) != RS_OK) {
         printf("[PCF8563B] write failed\n");
     }
 }
@@ -43,8 +50,8 @@ PCF8563B_info_t pcf8563b_rd_reg(void) {
     uint8_t rd_data[7] = {0};
     PCF8563B_info_t info = {0};
 
-    if (rs_i2c0_read(PCF8563B_DEV_ADDR, PCF8563B_SECOND_REG, RS_I2C_DEVICE_ADDRESS_8BIT, 7U,
-                     rd_data, RS_TIMEOUT_DEFAULT) != RS_OK) {
+    if (rs_i2c_register_read(RS_I2C_BUS_0, &pcf8563b_time_access, rd_data, 7U,
+                             RS_TIMEOUT_DEFAULT) != RS_OK) {
         printf("[PCF8563B] read failed\n");
         return info;
     }

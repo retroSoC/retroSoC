@@ -127,7 +127,7 @@ module ws2812_dma_tb;
   dma_core u_dma_core (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
-      .mode_i      (3'd0),
+      .mode_i      (4'd0),
       .srcaddr_i   (SOURCE_BASE + 32'd4),
       .srcincr_i   (1'b1),
       .dstaddr_i   (WS2812_TXDATA),
@@ -219,6 +219,10 @@ module ws2812_dma_tb;
     hw_trg.qspi_rx_proc = 1'b0;
     hw_trg.uart_tx_proc = 1'b0;
     hw_trg.uart_rx_proc = 1'b0;
+    hw_trg.i2c0_tx_proc = 1'b0;
+    hw_trg.i2c0_rx_proc = 1'b0;
+    hw_trg.i2c1_tx_proc = 1'b0;
+    hw_trg.i2c1_rx_proc = 1'b0;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;

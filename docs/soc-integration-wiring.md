@@ -26,6 +26,16 @@ SoC wrappers use the existing clusterIP interfaces for protocol boundaries.
 `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
 only exposes the pad-side subset of `gpio_if`; neither module contains state.
 
+## I2C alternate functions
+
+The two I2C V2 controllers reuse GPIO pads rather than dedicated package pins.
+I2C0 uses GPIO7 for SCL and GPIO8 for SDA on ALT0. I2C1 uses GPIO3 for SCL and
+GPIO4 for SDA on ALT1. Both controller outputs are constant zero; the GPIO
+alternate-function output enable pulls a line low and releases it for high.
+Board-level pull-ups are therefore required. I2C0 uses management-core IRQ7
+and generic-DMA modes 7/8; I2C1 uses IRQ19 and DMA modes 9/10. See
+[i2c.md](ip/i2c.md) for the register and transfer contract.
+
 ## WS2812 output
 
 The single-channel WS2812 transmitter occupies RIBP address `0x10008000` and

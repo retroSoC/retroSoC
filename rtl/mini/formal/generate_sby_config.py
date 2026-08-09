@@ -14,12 +14,21 @@ sys.path.insert(0, str(ROOT))
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
-def render(top: str, design: Path, properties: Path, solver: str, mode: str, depth: int) -> str:
+def render(
+    top: str,
+    design: Path,
+    properties: Path,
+    solver: str,
+    mode: str,
+    depth: int,
+    vcd: bool = True,
+) -> str:
+    options = ["[options]", f"mode {mode}", f"depth {depth}"]
+    if not vcd:
+        options.append("vcd off")
     return "\n".join(
-        (
-            "[options]",
-            f"mode {mode}",
-            f"depth {depth}",
+        tuple(options)
+        + (
             "",
             "[engines]",
             f"smtbmc --presat --nounroll {solver}",
@@ -55,6 +64,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--solver", required=True)
     parser.add_argument("--mode", choices=("prove", "cover"), required=True)
     parser.add_argument("--depth", type=positive_int, required=True)
+    parser.add_argument("--no-vcd", action="store_false", dest="vcd")
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -63,7 +73,7 @@ def main() -> int:
     args = parse_args()
     atomic_write(
         args.output.resolve(),
-        render(args.top, args.input, args.properties, args.solver, args.mode, args.depth),
+        render(args.top, args.input, args.properties, args.solver, args.mode, args.depth, args.vcd),
     )
     return 0
 

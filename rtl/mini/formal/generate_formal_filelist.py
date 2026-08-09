@@ -121,6 +121,19 @@ def source_files(target: str) -> list[Path]:
             SERIAL / "ribp_uart.sv",
             SCRIPT_DIR / "uart_formal.sv",
         ]
+    if target == "i2c":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            COMMON_RTL / "cdc/cdc_sync.sv",
+            ROOT / "rtl/managed/clusterip/i2c/rtl/i2c_if.sv",
+            SERIAL / "i2c_filter.sv",
+            SERIAL / "i2c_core.sv",
+            SERIAL / "i2c_reg.sv",
+            SERIAL / "ribp_i2c.sv",
+            SCRIPT_DIR / "i2c_formal.sv",
+        ]
     if target == "timer":
         return [
             COMMON_RTL / "interface/ribp_if.sv",
@@ -184,6 +197,7 @@ def parse_args() -> argparse.Namespace:
             "gpio",
             "ws2812",
             "uart",
+            "i2c",
             "timer",
             "clint",
         ),

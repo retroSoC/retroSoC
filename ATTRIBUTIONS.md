@@ -28,9 +28,8 @@ The SDRAM controller implementation in rtl/ip/ribp/memory/sdram_core.sv retains 
 
 ## 4. EmbedFire
 
-Several SPI/I2C-related RTL files retain the original attribution to EmbedFire and refer to source files such as sd_init.v, sd_write.v, sd_read.v, data_rw_ctrl.v, and i2c_ctrl.v:
+Several SPI SD card related RTL files retain the original attribution to EmbedFire and refer to source files such as sd_init.v, sd_write.v, sd_read.v, and data_rw_ctrl.v:
 
-- rtl/ip/ribp/serial/i2c_core.sv
 - rtl/ip/ribp/storage/spisd_core.sv
 - rtl/ip/ribp/storage/spisd_data.sv
 - rtl/ip/ribp/storage/spisd_init.sv

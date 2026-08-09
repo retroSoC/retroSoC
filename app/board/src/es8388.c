@@ -40,19 +40,26 @@ static const uint8_t es8388_init_cfg[] = {
 
 void es8388_init(void) {
     const uint32_t init_cfg_len = sizeof(es8388_init_cfg) / sizeof(es8388_init_cfg[0]);
+    rs_i2c_register_access_t access = {
+        .address = ES8388_DEV_ADDR,
+        .ten_bit_address = false,
+        .register_address = 0U,
+        .register_address_width = RS_I2C_REGISTER_ADDRESS_8_BIT,
+    };
 
     printf("[ES8388] init cfg len: %u\n", init_cfg_len);
     for (uint32_t i = 0U; i < init_cfg_len; i += 2U) {
-        if (rs_i2c0_write(ES8388_DEV_ADDR, (uint16_t)es8388_init_cfg[i], RS_I2C_DEVICE_ADDRESS_8BIT,
-                          1U, es8388_init_cfg + i + 1, RS_TIMEOUT_DEFAULT) != RS_OK) {
+        access.register_address = es8388_init_cfg[i];
+        if (rs_i2c_register_write(RS_I2C_BUS_0, &access, es8388_init_cfg + i + 1, 1U,
+                                  RS_TIMEOUT_DEFAULT) != RS_OK) {
             printf("[ES8388] write failed at register %d\n", es8388_init_cfg[i]);
             return;
         }
     }
 
     uint8_t rxdata[60] = {0};
-    if (rs_i2c0_read(ES8388_DEV_ADDR, 0U, RS_I2C_DEVICE_ADDRESS_8BIT, 53U, rxdata,
-                     RS_TIMEOUT_DEFAULT) != RS_OK) {
+    access.register_address = 0U;
+    if (rs_i2c_register_read(RS_I2C_BUS_0, &access, rxdata, 53U, RS_TIMEOUT_DEFAULT) != RS_OK) {
         printf("[ES8388] read failed\n");
         return;
     }

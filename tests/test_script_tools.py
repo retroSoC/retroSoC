@@ -205,6 +205,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
     gpio_filelist = tmp_path / "gpio.fl"
     ws2812_filelist = tmp_path / "ws2812.fl"
+    i2c_filelist = tmp_path / "i2c.fl"
     clint_filelist = tmp_path / "clint.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
@@ -225,6 +226,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "ws2812", ws2812_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist("i2c", i2c_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "clint", clint_filelist, memory_map, topology, user_extensions
     )
@@ -236,6 +238,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
     gpio = parse_filelists([gpio_filelist], require_files=False)
     ws2812 = parse_filelists([ws2812_filelist], require_files=False)
+    i2c = parse_filelists([i2c_filelist], require_files=False)
     clint = parse_filelists([clint_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
@@ -262,6 +265,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/ip/ribp/serial/ribp_ws2812.sv" in ws2812.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
     assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
+    assert ROOT / "rtl/ip/ribp/serial/ribp_i2c.sv" in i2c.files
+    assert ROOT / "rtl/ip/ribp/serial/i2c_filter.sv" in i2c.files
+    assert ROOT / "rtl/mini/formal/i2c_formal.sv" in i2c.files
     assert ROOT / "rtl/ip/ribp/peripheral/ribp_clint.sv" in clint.files
     assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
 
@@ -284,6 +290,9 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     properties = tmp_path / "properties.v"
     prove_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "prove", 20)
     cover_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "cover", 20)
+    compact_cover_config = render_sby_config(
+        "i2c_formal", design, properties, "bitwuzla", "cover", 80, vcd=False
+    )
 
     assert "mode prove" in prove_config
     assert "mode cover" in cover_config
@@ -291,6 +300,8 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     assert "smtbmc --presat --nounroll bitwuzla" in prove_config
     assert f"design.v {design.resolve()}" in prove_config
     assert f"properties.v {properties.resolve()}" in prove_config
+    assert "vcd off" not in cover_config
+    assert "vcd off" in compact_cover_config
 
 
 def test_bitwuzla_wrapper_translates_yosys_legacy_arguments() -> None:

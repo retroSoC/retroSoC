@@ -30,6 +30,8 @@ the root README and subsystem guides.
   filtering, interrupts, PDK capabilities, HAL, and verification contract.
 - [ip/uart.md](ip/uart.md) defines the UART V2 framing, FIFO, error, interrupt,
   DMA, HAL, and verification contracts.
+- [ip/i2c.md](ip/i2c.md) defines the dual I2C V2 command, timing, error,
+  recovery, DMA, HAL, and verification contracts.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 - [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC

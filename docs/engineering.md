@@ -131,10 +131,11 @@ Verilator regressions.
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
 targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`, `gpio`,
-`ws2812`, `uart`, `timer`, and `clint`; each uses the SBY `prove` task for bounded model
+`ws2812`, `uart`, `i2c`, `timer`, and `clint`; each uses the SBY `prove` task for bounded model
 checking and k-induction, plus a `cover` task. The default depth is 20;
 `ws2812` uses depth 120 and a 120-second per-task limit to cover a complete
-serialized word and reset path. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
+serialized word and reset path. `i2c` uses depth 80 and a 300-second per-task
+limit to reach a complete receive path and export its witness. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
 state machine. `gpio` checks dual-window access isolation, fixed user-GPIO
 ownership, locks, handoff, open-drain safety, and mux behavior. `rib_adapter`
@@ -142,11 +143,19 @@ checks both single-word compatibility adapters
 under backpressure. `ws2812` checks RIBP response stability, FIFO bounds,
 waveform idle safety, sticky error and interrupt propagation, abort, and
 underflow preconditions. `uart` checks FIFO bounds, interrupt composition,
-DMA gating, and idle/break line safety. Direct Common utility proofs, including `spill_register`,
+DMA gating, and idle/break line safety. `i2c` checks FIFO bounds, interrupt
+composition, valid command consumption, open-drain idle safety, and recovery
+state consistency. Direct Common utility proofs, including `spill_register`,
 are maintained in the Common repository.
 `FORMAL_DEPTH` and `FORMAL_TIMEOUT` set the proof bound and per-task
 wall-clock limit. Use `make CONFIG=<profile> formal-doctor` before a local
 proof to verify that the required tools are available.
+
+The I2C cover task stores the compact Yosys witness, constraints, and Verilog
+testbench but disables direct VCD output. Expanding the 70-cycle receive cover
+to VCD produces hundreds of MiB and can exceed the task limit on networked
+filesystems; the witness remains available for an explicit trace conversion
+when waveform inspection is required.
 
 The locked Bitwuzla 0.9.1 CLI uses `--lang smt2`, while the selected Yosys
 version invokes legacy Bitwuzla options. `scripts/bitwuzla_smt2.py` is the

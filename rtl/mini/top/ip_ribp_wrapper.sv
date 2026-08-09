@@ -59,6 +59,8 @@ module ip_ribp_wrapper (
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
   logic s_dma_uart_tx_stall, s_dma_uart_rx_stall;
+  logic s_dma_i2c0_tx_stall, s_dma_i2c0_rx_stall;
+  logic s_dma_i2c1_tx_stall, s_dma_i2c1_rx_stall;
   logic s_dma_xfer_done;
   logic s_tim0_irq, s_tim1_irq;
 
@@ -96,6 +98,10 @@ module ip_ribp_wrapper (
   assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
   assign u_dma_hw_trg_if.uart_tx_proc = ~s_dma_uart_tx_stall;
   assign u_dma_hw_trg_if.uart_rx_proc = ~s_dma_uart_rx_stall;
+  assign u_dma_hw_trg_if.i2c0_tx_proc = ~s_dma_i2c0_tx_stall;
+  assign u_dma_hw_trg_if.i2c0_rx_proc = ~s_dma_i2c0_rx_stall;
+  assign u_dma_hw_trg_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
+  assign u_dma_hw_trg_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
 
   // Uses ClusterIP common ribp_if and register.sv dffr through generated bindings.
   `include "ribp_routes.svh"
@@ -159,10 +165,12 @@ module ip_ribp_wrapper (
   );
 
   ribp_i2c u_rib_i2c0 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_i2c0_ribp_if),
-      .i2c    (i2c0)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(s_dma_i2c0_tx_stall),
+      .dma_rx_stall_o(s_dma_i2c0_rx_stall),
+      .ribp          (u_i2c0_ribp_if),
+      .i2c           (i2c0)
   );
 
   ribp_i2s u_rib_i2s (
@@ -251,10 +259,12 @@ module ip_ribp_wrapper (
   );
 
   ribp_i2c u_rib_i2c1 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_i2c1_ribp_if),
-      .i2c    (i2c1)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(s_dma_i2c1_tx_stall),
+      .dma_rx_stall_o(s_dma_i2c1_rx_stall),
+      .ribp          (u_i2c1_ribp_if),
+      .i2c           (i2c1)
   );
 
 endmodule

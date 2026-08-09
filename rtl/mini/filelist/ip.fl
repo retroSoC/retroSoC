@@ -11,8 +11,10 @@
 /ip/ribp/storage/spisd_data.sv
 /ip/ribp/storage/spisd.sv
 /ip/ribp/storage/sdio.sv
+/ip/ribp/serial/i2c_filter.sv
 /ip/ribp/serial/i2c_core.sv
-/ip/ribp/serial/i2c.sv
+/ip/ribp/serial/i2c_reg.sv
+/ip/ribp/serial/ribp_i2c.sv
 /ip/ribp/serial/i2s_reg.sv
 /ip/ribp/serial/i2s_clkgen.sv
 /ip/ribp/serial/i2s_recv.sv

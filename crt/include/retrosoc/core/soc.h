@@ -43,15 +43,6 @@
 #define reg_spisd_rxdata                RS_SOC_REG32(RS_SOC_RIBP_SPISD_BASE, UINT32_C(0x10))
 #define reg_spisd_status                RS_SOC_REG32(RS_SOC_RIBP_SPISD_BASE, UINT32_C(0x14))
 #define reg_spisd_sync                  RS_SOC_REG32(RS_SOC_RIBP_SPISD_BASE, UINT32_C(0x18))
-// i2c0
-#define reg_i2c0_clkdiv                 RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x00))
-#define reg_i2c0_devaddr                RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x04))
-#define reg_i2c0_regaddr                RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x08))
-#define reg_i2c0_txdata                 RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x0C))
-#define reg_i2c0_rxdata                 RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x10))
-#define reg_i2c0_xfer                   RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x14))
-#define reg_i2c0_cfg                    RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x18))
-#define reg_i2c0_status                 RS_SOC_REG32(RS_SOC_RIBP_I2C0_BASE, UINT32_C(0x1C))
 // i2s
 #define reg_i2s_mode                    RS_SOC_REG32(RS_SOC_RIBP_I2S_BASE, UINT32_C(0x00))
 #define reg_i2s_format                  RS_SOC_REG32(RS_SOC_RIBP_I2S_BASE, UINT32_C(0x04))
@@ -192,15 +183,6 @@
 #define reg_dvp_recven                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x00))
 #define reg_dvp_rxdata                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x04))
 #define reg_dvp_status                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x08))
-// i2c1
-#define reg_i2c1_clkdiv                    RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x00))
-#define reg_i2c1_devaddr                   RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x04))
-#define reg_i2c1_regaddr                   RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x08))
-#define reg_i2c1_txdata                    RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x0C))
-#define reg_i2c1_rxdata                    RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x10))
-#define reg_i2c1_xfer                      RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x14))
-#define reg_i2c1_cfg                       RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x18))
-#define reg_i2c1_status                    RS_SOC_REG32(RS_SOC_RIBP_I2C1_BASE, UINT32_C(0x1C))
 // archinfo
 #define reg_archinfo_sys                   RS_SOC_REG32(RS_SOC_APB_ARCHINFO_BASE, UINT32_C(0x00))
 #define reg_archinfo_idl                   RS_SOC_REG32(RS_SOC_APB_ARCHINFO_BASE, UINT32_C(0x04))
