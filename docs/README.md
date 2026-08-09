@@ -16,13 +16,22 @@ the root README and subsystem guides.
 - [coremark.md](coremark.md) defines the SRAM-resident Hazard3 CoreMark quick
   measurement, optional standard hardware run, and structured result format.
 - [soc-family-positioning.md](soc-family-positioning.md) defines the planned
-  Tiny, Mini, Std, and Pro product ladder, target capabilities, claim gates,
-  and commercial reference points.
-- [mini-product-positioning.md](mini-product-positioning.md) separates the
-  implemented Mini baseline from the planned VexiiRiscv Linux product target
-  and its commercial reference points.
+  Tiny, Mini, Std, and Pro product ladder, the implemented Mini baseline,
+  planned product targets, claim gates, and commercial reference points.
 - [rib-interconnect.md](rib-interconnect.md) defines the RIB v1 linear-burst
   contract, compatibility boundaries, target status, and verification.
+- [ip/ws2812.md](ip/ws2812.md) defines the WS2812 transmitter register ABI,
+  timing, FIFO, interrupt, DMA, and integration contracts.
+- [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,
+  counting modes, interrupt, debug-freeze, HAL, and verification contracts.
+- [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed
+  timebase, RV32 access rules, interrupt behavior, and verification contract.
+- [ip/gpio.md](ip/gpio.md) defines the GPIO V2 dual-window ABI, pad ownership,
+  filtering, interrupts, PDK capabilities, HAL, and verification contract.
+- [ip/uart.md](ip/uart.md) defines the UART V2 framing, FIFO, error, interrupt,
+  DMA, HAL, and verification contracts.
+- [ip/i2c.md](ip/i2c.md) defines the dual I2C V2 command, timing, error,
+  recovery, DMA, HAL, and verification contracts.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 - [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC

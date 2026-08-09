@@ -108,11 +108,14 @@ def test_nested_filelist_and_space_path_round_trip(tmp_path: Path) -> None:
 
 def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     defines = ["+define+PDK_IHP130"]
-    generated = generate_all(tmp_path, defines)
+    generated_include = tmp_path / "archinfo metadata"
+    generated = generate_all(tmp_path, defines, [generated_include])
     mtimes = {path: path.stat().st_mtime_ns for path in generated}
-    generate_all(tmp_path, defines)
+    generate_all(tmp_path, defines, [generated_include])
     assert {path: path.stat().st_mtime_ns for path in generated} == mtimes
-    assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
+    assert (tmp_path / "def.fl").read_text(encoding="utf-8") == (
+        f"+incdir+{generated_include.resolve()} " + " ".join(defines) + "\n"
+    )
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     hazard3 = (tmp_path / "core_hazard3.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
@@ -203,7 +206,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     rib2apb_filelist = tmp_path / "rib2apb.fl"
     sysctrl_filelist = tmp_path / "sysctrl.fl"
     pll_rcu_filelist = tmp_path / "pll_rcu.fl"
-    gpio_user_filelist = tmp_path / "gpio_user.fl"
+    gpio_filelist = tmp_path / "gpio.fl"
+    ws2812_filelist = tmp_path / "ws2812.fl"
+    i2c_filelist = tmp_path / "i2c.fl"
+    clint_filelist = tmp_path / "clint.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -218,7 +224,14 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
         "pll_rcu", pll_rcu_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
-        "gpio_user", gpio_user_filelist, memory_map, topology, user_extensions
+        "gpio", gpio_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "ws2812", ws2812_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist("i2c", i2c_filelist, memory_map, topology, user_extensions)
+    assert generate_formal_filelist(
+        "clint", clint_filelist, memory_map, topology, user_extensions
     )
 
     bus = parse_filelists([bus_filelist], require_files=False)
@@ -226,7 +239,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     rib2apb = parse_filelists([rib2apb_filelist], require_files=False)
     sysctrl = parse_filelists([sysctrl_filelist], require_files=False)
     pll_rcu = parse_filelists([pll_rcu_filelist], require_files=False)
-    gpio_user = parse_filelists([gpio_user_filelist], require_files=False)
+    gpio = parse_filelists([gpio_filelist], require_files=False)
+    ws2812 = parse_filelists([ws2812_filelist], require_files=False)
+    i2c = parse_filelists([i2c_filelist], require_files=False)
+    clint = parse_filelists([clint_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert ROOT / "rtl/mini/top/bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
@@ -243,9 +259,20 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/ribp/peripheral/gpio.sv" in gpio_user.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio_user.files
-    assert ROOT / "rtl/mini/formal/gpio_user_formal.sv" in gpio_user.files
+    assert ROOT / "rtl/ip/ribp/peripheral/gpio_core.sv" in gpio.files
+    assert ROOT / "rtl/ip/ribp/peripheral/gpio_reg.sv" in gpio.files
+    assert ROOT / "rtl/ip/ribp/peripheral/ribp_gpio.sv" in gpio.files
+    assert ROOT / "rtl/ip/ribp/peripheral/user_gpio_if.sv" in gpio.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio.files
+    assert ROOT / "rtl/mini/formal/gpio_formal.sv" in gpio.files
+    assert ROOT / "rtl/ip/ribp/serial/ribp_ws2812.sv" in ws2812.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
+    assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
+    assert ROOT / "rtl/ip/ribp/serial/ribp_i2c.sv" in i2c.files
+    assert ROOT / "rtl/ip/ribp/serial/i2c_filter.sv" in i2c.files
+    assert ROOT / "rtl/mini/formal/i2c_formal.sv" in i2c.files
+    assert ROOT / "rtl/ip/ribp/peripheral/ribp_clint.sv" in clint.files
+    assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
@@ -266,6 +293,9 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     properties = tmp_path / "properties.v"
     prove_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "prove", 20)
     cover_config = render_sby_config("bus_formal", design, properties, "bitwuzla", "cover", 20)
+    compact_cover_config = render_sby_config(
+        "i2c_formal", design, properties, "bitwuzla", "cover", 80, vcd=False
+    )
 
     assert "mode prove" in prove_config
     assert "mode cover" in cover_config
@@ -273,6 +303,8 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     assert "smtbmc --presat --nounroll bitwuzla" in prove_config
     assert f"design.v {design.resolve()}" in prove_config
     assert f"properties.v {properties.resolve()}" in prove_config
+    assert "vcd off" not in cover_config
+    assert "vcd off" in compact_cover_config
 
 
 def test_bitwuzla_wrapper_translates_yosys_legacy_arguments() -> None:
@@ -291,7 +323,7 @@ def test_fatfs_release_script_uses_the_locked_archive_contract() -> None:
 
 
 def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> None:
-    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio_user")
+    proofs = ("bus", "rib2apb", "sysctrl", "pll_rcu", "gpio", "ws2812")
     for proof in proofs:
         directory = tmp_path / proof
         directory.mkdir()
@@ -319,7 +351,9 @@ def test_formal_result_summary_requires_every_passing_step(tmp_path: Path) -> No
         "--proof",
         f"pll_rcu={tmp_path / 'pll_rcu'}",
         "--proof",
-        f"gpio_user={tmp_path / 'gpio_user'}",
+        f"gpio={tmp_path / 'gpio'}",
+        "--proof",
+        f"ws2812={tmp_path / 'ws2812'}",
     )
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["status"] == "passed"
@@ -741,8 +775,8 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert re.search(r"^PDK_BEHAV\s+\?= NO$", makefile, re.MULTILINE)
     assert "PDK_BEHAV HAVE_SVA" in makefile
     assert "PDK_BEHAV=YES is for functional simulation" in makefile
-    assert "HAVE_SRAM_MACRO := YES" in profile
-    assert "PDK_BEHAV       := YES" in profile
+    assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
+    assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
     assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
 
 

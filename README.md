@@ -27,13 +27,16 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   core, with a reproducible Verilator, OpenOCD, and GDB acceptance flow.
 - Configurable GF180, SKY130, IHP130, and ICS55 implementation targets with
   open-source CI coverage.
-- A memory-mapped peripheral subsystem with GPIO, UART, timers, PWM, I2C, I2S, PS2,
-  1-Wire, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
+- A memory-mapped peripheral subsystem with GPIO, UART,
+  [dual general timers](docs/ip/timer.md), PWM, [dual I2C controllers](docs/ip/i2c.md), I2S, PS2,
+  WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
   `coremark`, `debug`, and `shell` applications.
 - Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
   Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
+- Read-only ARCHINFO ABI V2 discovery for build/configuration provenance, SoC
+  topology, technology capabilities, and lifecycle-gated device identity.
 - Checksum-verified dependency and toolchain locks, structured flow results, warning
   baselines, metrics collection, SBOM generation, and checksummed release packages.
 
@@ -72,7 +75,8 @@ user core.
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
 application, which checks UART, archinfo APB readback, and test-status
-completion without the verbose startup report. The profiles retain `bringup`
+completion without the verbose startup report. ARCHINFO checks include its V2
+ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,
 use:
 

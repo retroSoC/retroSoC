@@ -12,8 +12,8 @@ set_property -dict {PACKAGE_PIN AB11 IOSTANDARD LVCMOS18} [get_ports rst_n_i]
 # ps2
 set_property -dict {PACKAGE_PIN AB4  IOSTANDARD LVCMOS18} [get_ports ps2_clk_i]
 set_property -dict {PACKAGE_PIN AB5  IOSTANDARD LVCMOS18} [get_ports ps2_dat_i]
-#onewire
-set_property -dict {PACKAGE_PIN AB10 IOSTANDARD LVCMOS18} [get_ports onewire_dat_o]
+# ws2812
+set_property -dict {PACKAGE_PIN AB10 IOSTANDARD LVCMOS18} [get_ports ws2812_dat_o]
 # i2c1
 set_property -dict {PACKAGE_PIN W15  IOSTANDARD LVCMOS18} [get_ports i2c_scl_io]
 set_property -dict {PACKAGE_PIN Y15  IOSTANDARD LVCMOS18} [get_ports i2c_sda_io]

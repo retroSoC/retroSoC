@@ -19,6 +19,7 @@ module retrosoc (
     input  logic                           clk_aud_i,
     input  logic                           rst_aud_n_i,
     input  logic                           clkdiv4_i,
+    input  logic                           timebase_tick_i,
     pll_ctrl_if.sysctrl                    pll_ctrl,
 `ifdef HAVE_SRAM_IF
     ram_if.master                          ram,
@@ -48,7 +49,7 @@ module retrosoc (
   spi_if      u_spisd_if    ();
   i2c_if      u_i2c0_if     ();
   i2s_if      u_i2s_if      ();
-  onewire_if  u_onewire_if  ();
+  ws2812_if   u_ws2812_if   ();
   sysctrl_if  u_sysctrl_if  ();
   dvp_if      u_dvp_if      ();
   sdio_if     u_sdio_if     ();
@@ -60,6 +61,7 @@ module retrosoc (
   // verilog_format: on
 
   logic                             s_tmr_capch;
+  logic                             s_mgmt_debug_halted;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
   logic [  `SOC_IRQ_RIBP_WIDTH-1:0] s_ribp_irq;
   logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
@@ -111,18 +113,19 @@ module retrosoc (
   `include "soc_gpio_alt_bindings.svh"
 
 core_wrapper u_core_wrapper (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
       `include "soc_mgmt_core_wrapper_fabric.svh"
-      .irq_i        (s_irq),
-      .jtag_tck_i   (jtag_tck_i),
-      .jtag_tms_i   (jtag_tms_i),
-      .jtag_tdi_i   (jtag_tdi_i),
-      .jtag_trst_n_i(jtag_trst_n_i),
-      .jtag_tdo_o   (jtag_tdo_o)
+      .irq_i         (s_irq),
+      .jtag_tck_i    (jtag_tck_i),
+      .jtag_tms_i    (jtag_tms_i),
+      .jtag_tdi_i    (jtag_tdi_i),
+      .jtag_trst_n_i (jtag_trst_n_i),
+      .jtag_tdo_o    (jtag_tdo_o),
+      .debug_halted_o(s_mgmt_debug_halted)
   );
 
-  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? s_irq : '0;
+  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq & `SOC_USER_IRQ_MASK) : '0;
   user_core_top u_user_core_top (
       .clk_i       (clk_i),
       .rst_n_i     (rst_n_i),
@@ -165,6 +168,8 @@ core_wrapper u_core_wrapper (
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
+      .debug_halted_i  (s_mgmt_debug_halted),
+      .timebase_tick_i (timebase_tick_i),
       `include "ip_ribp_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
@@ -173,7 +178,7 @@ core_wrapper u_core_wrapper (
       .spisd           (u_spisd_if),
       .i2c0            (u_i2c0_if),
       .i2s             (u_i2s_if),
-      .onewire         (u_onewire_if),
+      .ws2812          (u_ws2812_if),
       .xpi             (xpi),
       .sysctrl         (u_sysctrl_if),
       .pll_ctrl        (pll_ctrl),

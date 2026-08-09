@@ -9,7 +9,7 @@
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/lcd.h>
-#include <retrosoc/hal/onewire.h>
+#include <retrosoc/hal/ws2812.h>
 #include <retrosoc/hal/ps2.h>
 #include <retrosoc/hal/pwm.h>
 #include <retrosoc/hal/qspi.h>
@@ -29,16 +29,17 @@ static void rs_app_info_command(int argc, char **argv) {
 }
 
 int main(void) {
-    uart0_init(CPU_FREQ, UART_BPS);
+    if (rs_uart_init(CPU_FREQ * UINT32_C(1000000), UART_BPS) != RS_OK) {
+        return 1;
+    }
     rs_booter();
-    if (rs_i2c0_init((uint8_t)(CPU_FREQ / 2 - 1)) != RS_OK) {
+    if (rs_i2c_init(RS_I2C_BUS_0, CPU_FREQ * UINT32_C(1000000), UINT32_C(400000)) != RS_OK) {
         return 1;
     }
     qspi_dev_init();
     lcd_init();
 
     // lv_init();
-    // tim1_init();
     // lv_tick_set_cb(my_get_millis);
 
     // lv_port_disp_init();
@@ -49,16 +50,15 @@ int main(void) {
 
     // while(1) {
     //     lv_timer_handler();
-    //     delay_ms(5);
     //     printf("hello\n");
     // }
 
     rs_shell_init();
     (void)rs_shell_register("app", "app info", true, rs_app_info_command);
     (void)rs_shell_register("arch", "archinfo test", true, ip_archinfo_test);
-    (void)rs_shell_register("1wire", "1wire test", true, ip_1wire_test);
-    (void)rs_shell_register("tim", "timer test", true, ip_tim_test);
-    (void)rs_shell_register("gpio", "gpio test", true, ip_gpio_test);
+    (void)rs_shell_register("ws2812", "ws2812 test", true, ip_ws2812_test);
+    (void)rs_shell_register("tim", "timer test", true, rs_timer_shell_test);
+    (void)rs_shell_register("gpio", "gpio test", true, rs_gpio_shell_test);
     (void)rs_shell_register("pwm", "pwm test", true, ip_pwm_test);
     (void)rs_shell_register("rtc", "rtc test", true, ip_rtc_test);
     (void)rs_shell_register("wdg", "wdg test", true, ip_wdg_test);

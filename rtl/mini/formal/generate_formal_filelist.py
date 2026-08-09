@@ -19,6 +19,7 @@ from filelist import FileList, write_filelist  # noqa: E402
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
 INTERCONNECT = ROOT / "rtl/ip/ribp/interconnect"
 PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
+SERIAL = ROOT / "rtl/ip/ribp/serial"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -74,18 +75,85 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
             COMMON_RTL / "cdc/cdc_2phase.sv",
             COMMON_RTL / "clkrst/rst_sync.sv",
+            COMMON_RTL / "clkrst/counter.sv",
+            COMMON_RTL / "utils/edge_det.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "clint_timebase.sv",
             TOP / "rcu.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
         ]
-    if target == "gpio_user":
+    if target == "gpio":
         return [
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
+            COMMON_RTL / "clkrst/counter.sv",
             COMMON_RTL / "utils/edge_det.sv",
-            PERIPHERAL / "gpio.sv",
-            SCRIPT_DIR / "gpio_user_formal.sv",
+            PERIPHERAL / "gpio_if.sv",
+            PERIPHERAL / "user_gpio_if.sv",
+            PERIPHERAL / "gpio_core.sv",
+            PERIPHERAL / "gpio_reg.sv",
+            PERIPHERAL / "ribp_gpio.sv",
+            SCRIPT_DIR / "gpio_formal.sv",
+        ]
+    if target == "ws2812":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            SERIAL / "ws2812_if.sv",
+            SERIAL / "ws2812_reg.sv",
+            SERIAL / "ws2812_core.sv",
+            SERIAL / "ribp_ws2812.sv",
+            SCRIPT_DIR / "ws2812_formal.sv",
+        ]
+    if target == "uart":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            ROOT / "rtl/managed/clusterip/uart/rtl/uart_if.sv",
+            SERIAL / "uart_baudgen.sv",
+            SERIAL / "ribp_uart_tx.sv",
+            SERIAL / "ribp_uart_rx.sv",
+            SERIAL / "uart_core.sv",
+            SERIAL / "uart_reg.sv",
+            SERIAL / "ribp_uart.sv",
+            SCRIPT_DIR / "uart_formal.sv",
+        ]
+    if target == "i2c":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            COMMON_RTL / "cdc/cdc_sync.sv",
+            ROOT / "rtl/managed/clusterip/i2c/rtl/i2c_if.sv",
+            SERIAL / "i2c_filter.sv",
+            SERIAL / "i2c_core.sv",
+            SERIAL / "i2c_reg.sv",
+            SERIAL / "ribp_i2c.sv",
+            SCRIPT_DIR / "i2c_formal.sv",
+        ]
+    if target == "timer":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "clkrst/counter.sv",
+            PERIPHERAL / "timer_core.sv",
+            PERIPHERAL / "timer_reg.sv",
+            PERIPHERAL / "ribp_timer.sv",
+            SCRIPT_DIR / "timer_formal.sv",
+        ]
+    if target == "clint":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "clkrst/counter.sv",
+            PERIPHERAL / "clint_if.sv",
+            PERIPHERAL / "clint_reg.sv",
+            PERIPHERAL / "clint_core.sv",
+            PERIPHERAL / "ribp_clint.sv",
+            SCRIPT_DIR / "clint_formal.sv",
         ]
     raise ValueError(f"unsupported formal target: {target}")
 
@@ -109,6 +177,7 @@ def generate(
             COMMON_RTL / "utils",
             INTERCONNECT,
             PERIPHERAL,
+            SERIAL,
         ],
         files=source_files(target),
     ).deduplicate()
@@ -125,7 +194,12 @@ def parse_args() -> argparse.Namespace:
             "rib2apb",
             "sysctrl",
             "pll_rcu",
-            "gpio_user",
+            "gpio",
+            "ws2812",
+            "uart",
+            "i2c",
+            "timer",
+            "clint",
         ),
         required=True,
     )

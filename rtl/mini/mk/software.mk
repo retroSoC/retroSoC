@@ -44,6 +44,7 @@ DEF_VAL += -DAPP_$(APP)
 DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
 DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS) $(SW_WARN_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
+DEF_VAL += -DRS_CLINT_TIMEBASE_HZ=$(CLINT_TIMEBASE_HZ)U
 ifeq ($(HAVE_CSR),YES)
 DEF_VAL += -DCSR_ENABLE
 endif
@@ -60,13 +61,18 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/lib/string.c \
             $(ROOT_PATH)/crt/src/lib/console.c \
             $(ROOT_PATH)/crt/src/lib/printf.c \
+            $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/src/archinfo.c \
             $(ROOT_PATH)/crt/src/core/archinfo.c \
             $(ROOT_PATH)/crt/src/service/bench.c \
             $(ROOT_PATH)/crt/src/service/booter.c \
             $(ROOT_PATH)/crt/src/service/test.c \
+            $(ROOT_PATH)/crt/src/hal/clint.c \
             $(ROOT_PATH)/crt/src/hal/clock.c \
+            $(ROOT_PATH)/crt/src/hal/uart_math.c \
             $(ROOT_PATH)/crt/src/hal/uart.c \
+            $(ROOT_PATH)/crt/src/hal/gpio_math.c \
             $(ROOT_PATH)/crt/src/hal/gpio.c \
+            $(ROOT_PATH)/crt/src/hal/timer_math.c \
             $(ROOT_PATH)/crt/src/hal/timer.c \
             $(ROOT_PATH)/crt/src/hal/pwm.c \
             $(ROOT_PATH)/crt/src/hal/rtc.c \
@@ -76,8 +82,10 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/advanced_timer.c \
             $(ROOT_PATH)/crt/src/hal/hpuart.c \
             $(ROOT_PATH)/crt/src/hal/ps2.c \
+            $(ROOT_PATH)/crt/src/hal/i2c_math.c \
             $(ROOT_PATH)/crt/src/hal/i2c.c \
-            $(ROOT_PATH)/crt/src/hal/onewire.c \
+            $(ROOT_PATH)/crt/src/hal/ws2812_math.c \
+            $(ROOT_PATH)/crt/src/hal/ws2812.c \
             $(ROOT_PATH)/crt/src/hal/dma.c \
             $(ROOT_PATH)/crt/src/hal/perf.c \
             $(ROOT_PATH)/crt/src/hal/lcd.c \
@@ -119,6 +127,8 @@ endif
 INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(MEMORY_MAP_C_DIR) \
             -I$(USER_EXTENSIONS_DIR)/include \
+            -I$(ARCHINFO_METADATA_DIR) \
+            -I$(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
             -I$(ROOT_PATH)/crt/include \
             $(addprefix -I,$(APP_INC_DIRS))
 SRC_PATH          := $(CRT_SRCS) $(APP_SRCS)
@@ -129,6 +139,8 @@ FIRMWARE_ELF      := $(SW_BUILD_DIR)/firmware
 ASM_FIRMWARE_NAME ?= retrosoc_asm
 SW_HEADERS        := $(shell find $(ROOT_PATH)/crt/include $(ROOT_PATH)/app -type f \
                       \( -name '*.h' -o -name '*.hpp' \) 2>/dev/null)
+SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
+                      -type f -name '*.h' 2>/dev/null)
 
 $(VERSION_HEADER): FORCE_VERSION $(ROOT_PATH)/crt/ver.py $(ROOT_PATH)/crt/ver.tmpl
 	@mkdir -p $(dir $@)
@@ -138,14 +150,15 @@ FORCE_VERSION:
 
 upd_ver_info: $(VERSION_HEADER)
 
-asm: $(MPW_VARIANT_STAMP)
+asm: $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP)
 	@mkdir -p $(SW_BUILD_DIR)/asm
-	$(MAKE) -C $(ROOT_PATH)/app/asm OUT_DIR=$(SW_BUILD_DIR)/asm
+	$(MAKE) -C $(ROOT_PATH)/app/asm OUT_DIR=$(SW_BUILD_DIR)/asm \
+		GENERATED_INCLUDE=$(MEMORY_MAP_C_DIR)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.flash $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).hex
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
-$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mini/mk/software.mk
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)

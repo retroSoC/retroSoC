@@ -29,6 +29,8 @@ typedef struct {
 } rs_clock_status_t;
 
 rs_status_t rs_clock_get_status(rs_clock_status_t *status);
+rs_status_t rs_clock_frequency_hz(rs_clock_frequency_t frequency, uint32_t *frequency_hz);
+rs_status_t rs_clock_get_active_hz(uint32_t *frequency_hz);
 rs_status_t rs_clock_set_frequency(rs_clock_frequency_t frequency, rs_timeout_t timeout);
 
 #endif

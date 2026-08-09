@@ -95,23 +95,29 @@ void rs_app_info(void) {
            TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
 
     printf("Memory Map IO Device:\n");
-    printf("                       1 x GPIO(32PIN)   @%p\n", (void *)&reg_gpio_oe);
-    printf("                       1 x UART0         @%p\n", (void *)&reg_uart0_clkdiv);
-    printf("                       2 x TIMER(0,1)    @%p,%p\n", (void *)&reg_tim0_cfg,
-           (void *)&reg_tim1_cfg);
+    printf("                       1 x GPIO(32PIN)   @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_GPIO_ADMIN_BASE);
+    printf("                       1 x UART0         @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_UART0_BASE);
+    printf("                       2 x TIMER(0,1)    @%p,%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_TIM0_BASE, (void *)(uintptr_t)RS_SOC_RIBP_TIM1_BASE);
     printf("                       1 x PSRAM         @%p\n", (void *)&reg_psram_wait);
     printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
-    printf("                       1 x I2C0          @%p\n", (void *)&reg_i2c0_clkdiv);
+    printf("                       1 x I2C0          @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_I2C0_BASE);
     printf("                       1 x I2S           @%p\n", (void *)&reg_i2s_mode);
-    printf("                       1 x ONEWIRE       @%p\n", (void *)&reg_onewire_clkdiv);
+    printf("                       1 x WS2812        @%p\n", (void *)&reg_ws2812_bit_cycles);
     printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
     printf("                       1 x DMA           @%p\n", (void *)&reg_dma_mode);
     printf("                       1 x SYSCTRL       @%p\n", (void *)&reg_sysctrl_coresel);
-    printf("                       1 x CLINT         @%p\n", (void *)&reg_clint_mtimel);
+    printf("                       1 x CLINT         @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_CLINT_BASE);
     printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);
     printf("                       1 x DVP           @%p\n", (void *)&reg_dvp_recven);
-    printf("                       1 x I2C1          @%p\n", (void *)&reg_i2c1_clkdiv);
-    printf("                       1 x ARCHINFO      @%p\n", (void *)&reg_archinfo_sys);
+    printf("                       1 x I2C1          @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_I2C1_BASE);
+    printf("                       1 x ARCHINFO      @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB_ARCHINFO_BASE);
     printf("                       1 x RNG           @%p\n", (void *)&reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @%p\n", (void *)&reg_uart1_lcr);
     printf("                       1 x PWM(4CHNL)    @%p\n", (void *)&reg_pwm_ctrl);
@@ -181,7 +187,10 @@ static uint8_t rs_booter_check_key(void) {
     uint8_t enter_boot_delay = 6, enter_shell = 0;
     for (uint8_t i = 1; i <= enter_boot_delay; ++i) {
         printf("delay %ds...[all %ds]\n", i, enter_boot_delay);
-        delay_ms(1000);
+        if (rs_timer_delay_ms(RS_TIMER_0, 1000U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+            printf("booter timer delay failed\n");
+            return 0U;
+        }
         // if(i == 5) enter_shell = 1; // mock the oper
         if (enter_shell) {
             printf("\n");

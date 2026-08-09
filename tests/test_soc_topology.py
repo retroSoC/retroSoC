@@ -83,6 +83,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign u_sdio_ribp_if.valid = 1'b0;" in routes
     assert gpio.count("// GPIO") == 64
     assert "assign u_uart1_if.rx_i = u_gpio_if.di_i[0];" in gpio
+    assert "assign u_gpio_if.alt1_do_i[2] = u_ws2812_if.dat_o;" in gpio
     assert "assign u_gpio_if.alt1_do_i[22] = u_psram_if.nss_o[0];" in gpio
     assert apb_interfaces.count("apb4_if u_") == 10
     assert "apb4_pure_if u_archinfo_apb_pure_if ();" in apb_interfaces
@@ -96,9 +97,13 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".apb_rib(u_apb_rib_if)" in bus_fabric
     assert ".rib(u_rib_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
-    assert "`define SOC_IRQ_RIBP_WIDTH 10" in irq_config
+    assert "`define SOC_USER_IRQ_MASK 32'h000FFFFC" in irq_config
+    assert "`define SOC_IRQ_RIBP_WIDTH 13" in irq_config
     assert "`define SOC_IRQ_APB_WIDTH 7" in irq_config
-    assert "assign irq_o[0] = u_clint_if.sfr_irq_o;" in rib_irq
+    assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
+    assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
+    assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
+    assert "assign irq_o[12] = i2c1.irq_o;" in rib_irq
     assert "assign irq_o[5] = u_tmr_if.irq_o;" in apb_irq
     assert "s_irq[16] = s_apb_irq[6];" in irq_wiring
     assert "irq_i[31] == 1'b0" in irq_sva
@@ -119,9 +124,9 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         )
         for interrupt in document["interrupts"]
     ]
-    assert mappings[:17] == [
-        ("clint_software", "ribp", 0, 0, "u_clint_if.sfr_irq_o"),
-        ("clint_timer", "ribp", 1, 1, "u_clint_if.tmr_irq_o"),
+    assert mappings[:20] == [
+        ("clint_software", "ribp", 0, 0, "u_clint_if.software_irq_o[0]"),
+        ("clint_timer", "ribp", 1, 1, "u_clint_if.timer_irq_o[0]"),
         ("uart0", "ribp", 2, 2, "uart.irq_o"),
         ("timer0", "ribp", 3, 3, "s_tim0_irq"),
         ("timer1", "ribp", 4, 4, "s_tim1_irq"),
@@ -137,8 +142,11 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
         ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
         ("reserved", "apb", 6, 16, "1'b0"),
+        ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
+        ("gpio", "ribp", 11, 18, "gpio.irq_o"),
+        ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),
     ]
-    assert all(mapping[3] >= 17 for mapping in mappings[17:])
+    assert all(mapping[3] >= 20 for mapping in mappings[20:])
 
 
 def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
@@ -249,7 +257,7 @@ def test_topology_rejects_invalid_irq_groups_and_bindings(tmp_path: Path) -> Non
     assert "core interrupt bit 0 is duplicated" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["interrupts"].pop()
+    document["interrupts"].pop(16)
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "interrupt group apb does not cover every group bit" in result.stderr

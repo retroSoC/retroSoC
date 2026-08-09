@@ -38,6 +38,33 @@ rs_status_t rs_clock_get_status(rs_clock_status_t *status) {
     return RS_OK;
 }
 
+rs_status_t rs_clock_frequency_hz(rs_clock_frequency_t frequency, uint32_t *frequency_hz) {
+    if (!rs_clock_frequency_valid(frequency) || (frequency_hz == NULL)) {
+        return RS_EINVAL;
+    }
+    *frequency_hz = ((uint32_t)frequency + 1U) * UINT32_C(24000000);
+    return RS_OK;
+}
+
+rs_status_t rs_clock_get_active_hz(uint32_t *frequency_hz) {
+    rs_clock_status_t status;
+
+    if (frequency_hz == NULL) {
+        return RS_EINVAL;
+    }
+    if (rs_clock_get_status(&status) != RS_OK) {
+        return RS_EIO;
+    }
+    if (!status.capable) {
+        *frequency_hz = CPU_FREQ * UINT32_C(1000000);
+        return RS_OK;
+    }
+    if (!status.active_valid || status.busy) {
+        return RS_EIO;
+    }
+    return rs_clock_frequency_hz(status.active_frequency, frequency_hz);
+}
+
 rs_status_t rs_clock_set_frequency(rs_clock_frequency_t frequency, rs_timeout_t timeout) {
     rs_clock_status_t status;
     bool busy_observed = false;

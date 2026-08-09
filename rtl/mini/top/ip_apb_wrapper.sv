@@ -14,6 +14,7 @@
 `include "ps2_define.svh"
 `include "user_extensions.svh"
 `include "soc_irq_config.svh"
+`include "archinfo_integration_metadata.svh"
 
 module ip_apb_wrapper (
     // verilog_format: off
@@ -32,32 +33,118 @@ module ip_apb_wrapper (
     // verilog_format: on
 );
 
+  localparam logic [7:0] ARCHINFO_MGMT_HART_COUNT = 8'd1;
+  localparam logic [7:0] ARCHINFO_USER_CORE_COUNT = `USER_CORE_COUNT;
+  localparam logic [7:0] ARCHINFO_GPIO_COUNT = 8'd32;
+  localparam logic [7:0] ARCHINFO_IRQ_COUNT = `SOC_IRQ_VECTOR_WIDTH;
+  localparam logic [31:0] ARCHINFO_TOPOLOGY = {
+    ARCHINFO_IRQ_COUNT, ARCHINFO_GPIO_COUNT, ARCHINFO_USER_CORE_COUNT, ARCHINFO_MGMT_HART_COUNT
+  };
+
+`ifdef HAVE_PLL
+  localparam logic ARCHINFO_HAVE_PLL = 1'b1;
+`else
+  localparam logic ARCHINFO_HAVE_PLL = 1'b0;
+`endif
+`ifdef HAVE_SRAM_IF
+  localparam logic ARCHINFO_HAVE_SRAM_IF = 1'b1;
+  localparam logic [31:0] ARCHINFO_SRAM_BYTES = 32'd131_072;
+`else
+  localparam logic ARCHINFO_HAVE_SRAM_IF = 1'b0;
+  localparam logic [31:0] ARCHINFO_SRAM_BYTES = 32'd0;
+`endif
+`ifdef HAVE_SRAM_MACRO
+  localparam logic ARCHINFO_HAVE_SRAM_MACRO = 1'b1;
+`else
+  localparam logic ARCHINFO_HAVE_SRAM_MACRO = 1'b0;
+`endif
+
+  localparam logic [31:0] ARCHINFO_FEATURES0 =
+      32'h0000_FFF8 | {31'd0, ARCHINFO_HAVE_PLL} |
+      ({31'd0, ARCHINFO_HAVE_SRAM_IF} << 1) | ({31'd0, ARCHINFO_HAVE_SRAM_MACRO} << 2);
+
+`ifdef PDK_IHP130
+  localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0201_0082;
+`elsif PDK_GF180
+  localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0202_00B4;
+`elsif PDK_SKY130
+  localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0203_0082;
+`elsif PDK_ICS55
+  localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0204_0037;
+`else
+  localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0000_0000;
+`endif
+
   // Generated timed and pure scalar APB interfaces preserve FPGA compatibility.
   `include "soc_apb_interfaces.svh"
 
   // Low-frequency peripherals retain their dedicated interfaces.
   rtc_if u_rtc_if (
-      clk_aud_i,
-      rst_aud_n_i
+      .rtc_clk_i  (clk_aud_i),
+      .rtc_rst_n_i(rst_aud_n_i)
   );
-  wdg_if u_wdg_if (clk_aud_i);
-  tmr_if u_tmr_if (clk_aud_i);
+  wdg_if u_wdg_if (.rtc_clk_i(clk_aud_i));
+  tmr_if u_tmr_if (.exclk_i(clk_aud_i));
 
   assign u_tmr_if.capch_i = tmr_capch_i;
 
   `include "soc_apb_bridges.svh"
 
   // verilog_format: off
-  apb4_archinfo                u_apb4_archinfo (u_archinfo_apb_if);
-  apb4_rng                     u_apb4_rng      (u_rng_apb_if);
-  apb4_uart #(.FIFO_DEPTH(32)) u_apb4_uart     (u_uart1_apb_if, uart);
-  apb4_pwm                     u_apb4_pwm      (u_pwm_apb_if, pwm);
-  apb4_ps2                     u_apb4_ps2      (u_ps2_apb_if, ps2);
-  apb4_rtc                     u_apb4_rtc      (u_rtc_apb_if, u_rtc_if);
-  apb4_wdg                     u_apb4_wdg      (u_wdg_apb_if, u_wdg_if);
-  apb4_crc                     u_apb4_crc      (u_crc_apb_if);
-  apb4_tmr                     u_apb4_tmr      (u_tmr_apb_if, u_tmr_if);
+  apb4_archinfo #(
+      .VENDOR_ID         (32'h0000_0000),
+      .SOC_REVISION      (32'h0001_0000),
+      .BUILD_ID          (`ARCHINFO_INTEGRATION_BUILD_ID),
+      .CONFIG_ID         (`ARCHINFO_INTEGRATION_CONFIG_ID),
+      .BUILD_STATUS      (`ARCHINFO_INTEGRATION_BUILD_STATUS),
+      .REFERENCE_CLOCK_HZ(`SOC_EXT_CLK_HZ),
+      .SRAM_BYTES        (ARCHINFO_SRAM_BYTES),
+      .TOPOLOGY          (ARCHINFO_TOPOLOGY),
+      .FEATURES0         (ARCHINFO_FEATURES0),
+      .TECHNOLOGY        (ARCHINFO_TECHNOLOGY)
+  ) u_apb4_archinfo (
+      .device_id_i            (128'h0000_0000_0000_0000_0000_0000_0000_0000),
+      .device_id_valid_i      (1'b0),
+      .device_id_read_enable_i(1'b0),
+      .apb4                   (u_archinfo_apb_if)
+  );
   // verilog_format: on
+
+  apb4_rng u_apb4_rng (.apb4(u_rng_apb_if));
+
+  apb4_uart #(
+      .FIFO_DEPTH(32)
+  ) u_apb4_uart (
+      .apb4(u_uart1_apb_if),
+      .uart(uart)
+  );
+
+  apb4_pwm u_apb4_pwm (
+      .apb4(u_pwm_apb_if),
+      .pwm (pwm)
+  );
+
+  apb4_ps2 u_apb4_ps2 (
+      .apb4(u_ps2_apb_if),
+      .ps2 (ps2)
+  );
+
+  apb4_rtc u_apb4_rtc (
+      .apb4(u_rtc_apb_if),
+      .rtc (u_rtc_if)
+  );
+
+  apb4_wdg u_apb4_wdg (
+      .apb4(u_wdg_apb_if),
+      .wdg (u_wdg_if)
+  );
+
+  apb4_crc u_apb4_crc (.apb4(u_crc_apb_if));
+
+  apb4_tmr u_apb4_tmr (
+      .apb4(u_tmr_apb_if),
+      .tmr (u_tmr_if)
+  );
 
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "soc_apb_irq_bindings.svh"

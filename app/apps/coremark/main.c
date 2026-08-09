@@ -19,7 +19,9 @@ int main(void) {
     int result;
     uint32_t cycles;
 
-    uart0_init(CPU_FREQ, UART_BPS);
+    if (rs_uart_init(CPU_FREQ * UINT32_C(1000000), UART_BPS) != RS_OK) {
+        rs_test_finish(RS_TEST_FAILED, 2U);
+    }
     result = core_main();
     cycles = (uint32_t)get_time();
     printf("COREMARK_RESULT mode=%s qualified=%u memory=sram iterations=%u cycles=%u cpu_hz=%u\n",

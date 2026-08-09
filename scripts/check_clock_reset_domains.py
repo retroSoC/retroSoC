@@ -11,7 +11,13 @@ from typing import Any
 
 
 RESET_PRIMITIVES = {"rst_sync"}
-CDC_PRIMITIVES = {"async_fifo", "cdc_2phase", "cdc_sync", "hazard3_apb_async_bridge"}
+CDC_PRIMITIVES = {
+    "async_fifo",
+    "cdc_2phase",
+    "cdc_sync",
+    "edge_det",
+    "hazard3_apb_async_bridge",
+}
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 HIERARCHICAL_PIN_RE = re.compile(
     r"[A-Za-z_][A-Za-z0-9_.]*(?:/[A-Za-z_][A-Za-z0-9_.]*)+$"

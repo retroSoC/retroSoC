@@ -6,8 +6,8 @@
 rs_status_t rs_dma_config(uint32_t mode, uintptr_t source, uint32_t source_increment,
                           uintptr_t destination, uint32_t destination_increment,
                           uint32_t transfer_words) {
-    if ((mode > 4U) || (source == 0U) || (destination == 0U) || (transfer_words == 0U) ||
-        (source_increment > 1U) || (destination_increment > 1U)) {
+    if ((mode > RS_DMA_MODE_I2C1_RX) || (source == 0U) || (destination == 0U) ||
+        (transfer_words == 0U) || (source_increment > 1U) || (destination_increment > 1U)) {
         return RS_EINVAL;
     }
 

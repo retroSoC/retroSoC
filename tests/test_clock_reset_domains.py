@@ -42,7 +42,14 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
     assert {
         (crossing["name"], crossing["source"], crossing["destination"])
         for crossing in document["crossings"]
-    } >= {("jtag_dmi", "jtag", "system")}
+    } >= {
+        ("clint_timebase", "external", "system"),
+        ("jtag_dmi", "jtag", "system"),
+    }
+    clint = next(
+        crossing for crossing in document["crossings"] if crossing["name"] == "clint_timebase"
+    )
+    assert clint["primitive"] == "edge_det"
 
 
 def test_clock_reset_domain_inventory_rejects_unknown_domain_and_instance(tmp_path: Path) -> None:

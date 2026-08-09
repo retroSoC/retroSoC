@@ -7,7 +7,7 @@ module dma_error_tb;
 
   logic          clk_i = 1'b0;
   logic          rst_n_i = 1'b0;
-  logic   [ 2:0] mode_i = 3'd0;
+  logic   [ 3:0] mode_i = 4'd0;
   logic   [31:0] srcaddr_i = 32'h3800_1000;
   logic          srcincr_i = 1'b1;
   logic   [31:0] dstaddr_i = 32'h4000_1000;
@@ -143,6 +143,12 @@ module dma_error_tb;
     hw_trg.i2s_rx_proc  = 1'b0;
     hw_trg.qspi_tx_proc = 1'b0;
     hw_trg.qspi_rx_proc = 1'b0;
+    hw_trg.uart_tx_proc = 1'b0;
+    hw_trg.uart_rx_proc = 1'b0;
+    hw_trg.i2c0_tx_proc = 1'b0;
+    hw_trg.i2c0_rx_proc = 1'b0;
+    hw_trg.i2c1_tx_proc = 1'b0;
+    hw_trg.i2c1_rx_proc = 1'b0;
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 

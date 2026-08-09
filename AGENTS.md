@@ -20,6 +20,8 @@ truth wins.
   GitHub workflows define the active build and regression behavior.
 - `quality/embedded_c_policy.json`, `quality/warnings/`, and
   `quality/metrics/policy.json` define the active quality policy.
+- [rtl/README.md](rtl/README.md) defines the self-owned SystemVerilog naming,
+  register-state, macro, and formatting conventions.
 
 Do not guess a profile, tool version, dependency revision, or generated-file
 location. Inspect the corresponding source of truth first.

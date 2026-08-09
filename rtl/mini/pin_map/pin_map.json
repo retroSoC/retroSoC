@@ -149,7 +149,7 @@
         "jtag_tdo_o_pad": null,
         "gpio_0_io_pad": "ps2_clk_i",
         "gpio_1_io_pad": "ps2_dat_i",
-        "gpio_2_io_pad": "onewire_dat_o",
+        "gpio_2_io_pad": "ws2812_dat_o",
         "gpio_3_io_pad": "i2c_scl_io",
         "gpio_4_io_pad": "i2c_sda_io",
         "gpio_5_io_pad": "pwm_2_o",

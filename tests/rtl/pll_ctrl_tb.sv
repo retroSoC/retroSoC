@@ -25,17 +25,18 @@ module pll_ctrl_tb;
   always #27 aud_clk_i = ~aud_clk_i;
 
   rcu u_rcu (
-      .ext_clk_i    (ext_clk_i),
-      .aud_clk_i    (aud_clk_i),
-      .ext_rst_n_i  (rst_n_i),
+      .ext_clk_i      (ext_clk_i),
+      .aud_clk_i      (aud_clk_i),
+      .ext_rst_n_i    (rst_n_i),
 `ifdef HAVE_PLL
-      .xtal_clk_i   (xtal_clk_i),
+      .xtal_clk_i     (xtal_clk_i),
 `endif
-      .pll_ctrl     (pll_ctrl),
-      .sys_clk_o    (sys_clk_o),
-      .sys_rst_n_o  (sys_rst_n_o),
-      .aud_rst_n_o  (aud_rst_n_o),
-      .sys_clkdiv4_o(sys_clkdiv4_o)
+      .pll_ctrl       (pll_ctrl),
+      .sys_clk_o      (sys_clk_o),
+      .sys_rst_n_o    (sys_rst_n_o),
+      .aud_rst_n_o    (aud_rst_n_o),
+      .sys_clkdiv4_o  (sys_clkdiv4_o),
+      .timebase_tick_o()
   );
 
   ribp_sysctrl u_sysctrl (

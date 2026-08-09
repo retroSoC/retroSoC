@@ -26,6 +26,29 @@ SoC wrappers use the existing clusterIP interfaces for protocol boundaries.
 `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
 only exposes the pad-side subset of `gpio_if`; neither module contains state.
 
+## I2C alternate functions
+
+The two I2C V2 controllers reuse GPIO pads rather than dedicated package pins.
+I2C0 uses GPIO7 for SCL and GPIO8 for SDA on ALT0. I2C1 uses GPIO3 for SCL and
+GPIO4 for SDA on ALT1. Both controller outputs are constant zero; the GPIO
+alternate-function output enable pulls a line low and releases it for high.
+Board-level pull-ups are therefore required. I2C0 uses management-core IRQ7
+and generic-DMA modes 7/8; I2C1 uses IRQ19 and DMA modes 9/10. See
+[i2c.md](ip/i2c.md) for the register and transfer contract.
+
+## WS2812 output
+
+The single-channel WS2812 transmitter occupies RIBP address `0x10008000` and
+drives GPIO2 alternate function 1. Software must configure GPIO2 for ALT1
+before starting a frame. The transmitter interrupt is RIBP group bit 10 and
+management-core interrupt 17. The data pin is forced low while idle, during
+reset/latch time, after abort, and after underflow.
+
+The RIBP TX FIFO is also a fixed-address target for the generic DMA engine.
+DMA remains a normal RIB master and receives RIBP backpressure when the FIFO
+is full; the transmitter does not own a private DMA request channel. See
+[ws2812.md](ip/ws2812.md) for the register and transfer contract.
+
 ## Management JTAG
 
 The fixed Hazard3 management core always exposes five ASIC pads:
@@ -43,17 +66,24 @@ them to the local remote-bitbang server used by the debug acceptance flow.
 
 The fixed user-IP integration does not add dedicated user GPIO pads. A user IP
 can instead drive any of the 32 rib GPIO pads through `user_gpio_if`. Software
-selects an owner per pin with the rib GPIO `USER_SEL` register at offset
-`0x30`; clear selects the existing software/alternate GPIO path and set selects
-the user IP. `USER_LOCK` at `0x34` is write-one-set and prevents a selected
-owner bit from changing until reset. `USER_STATUS` at `0x38` reports the user
-IP pins that are actively connected.
+selects an owner per pin with `USER_SELECT` at management-window offset
+`0x03C`; clear selects the existing software/alternate GPIO path and set
+selects the user IP. `USER_LOCK` at `0x040` is write-one-set and prevents a
+selected owner bit from changing until reset. `USER_STATUS` at `0x044` reports
+the user-IP pins that are actively connected.
 
 On every accepted ownership change, the pad output enable is forced low for one
-full system clock. The rib GPIO block retains `CS`, `PU`, and `PD` control
-in all modes. User IPs provide only output data, output enable, and sampled pad
-input. Configure the target output data and enable before writing `USER_SEL`,
-then program `USER_LOCK` after the handoff when the assignment is permanent.
+full system clock. The GPIO block retains input-mode, pull, open-drain, filter,
+and interrupt control in all modes. User IPs provide only output data, output
+enable, and synchronized/filtered pad input. Configure the target output data
+and enable before writing `USER_SELECT`, then program `USER_LOCK` after the
+handoff when the assignment is permanent.
+
+The user core accesses only the data and interrupt window at `0x10000000`, and
+only bits permitted by management `USER_ACCESS_MASK`. Configuration remains in
+the management-only window at `0x10014000`; the SoC access firewall denies user
+transactions to that region. See [gpio.md](ip/gpio.md) for the complete ABI,
+PDK capabilities, and lock semantics.
 
 User-IP RTL must declare its GPIO port as `user_gpio_if.user_ip gpio`; the only
 signals available through that port are `do_o`, `oe_o`, and `di_i`. The MPW

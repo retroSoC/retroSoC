@@ -18,6 +18,8 @@ module ip_ribp_wrapper (
     input logic              rst_n_i,
     input logic              clk_aud_i,
     input logic              rst_aud_n_i,
+    input logic              debug_halted_i,
+    input logic              timebase_tick_i,
     rib_if.slave   rib,
     gpio_if.dut              gpio,
     user_gpio_if.padctrl     user_gpio,
@@ -26,7 +28,7 @@ module ip_ribp_wrapper (
     spi_if.dut               spisd,
     i2c_if.dut               i2c0,
     i2s_if.dut               i2s,
-    onewire_if.dut           onewire,
+    ws2812_if.dut            ws2812,
     xpi_if.dut               xpi,
     rib_if.master  dma_rib,
     sysctrl_if.dut           sysctrl,
@@ -51,13 +53,34 @@ module ip_ribp_wrapper (
   ribp_if ribp ();
   // verilog_format: on
 
-  simp_clint_if u_clint_if ();
+  clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
 
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
+  logic s_dma_uart_tx_stall, s_dma_uart_rx_stall;
+  logic s_dma_i2c0_tx_stall, s_dma_i2c0_rx_stall;
+  logic s_dma_i2c1_tx_stall, s_dma_i2c1_rx_stall;
   logic s_dma_xfer_done;
   logic s_tim0_irq, s_tim1_irq;
+
+`ifdef PDK_GF180
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
+  localparam bit GPIO_HAS_PULL_UP = 1'b1;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b1;
+`elsif PDK_ICS55
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
+  localparam bit GPIO_HAS_PULL_UP = 1'b1;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b1;
+`elsif PDK_SKY130
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
+  localparam bit GPIO_HAS_PULL_UP = 1'b0;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
+`else
+  localparam bit GPIO_HAS_INPUT_CMOS = 1'b0;
+  localparam bit GPIO_HAS_PULL_UP = 1'b0;
+  localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
+`endif
 
   rib2ribp u_rib2ribp (
       .clk_i  (clk_i),
@@ -73,6 +96,12 @@ module ip_ribp_wrapper (
   assign u_dma_hw_trg_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
   assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
   assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
+  assign u_dma_hw_trg_if.uart_tx_proc = ~s_dma_uart_tx_stall;
+  assign u_dma_hw_trg_if.uart_rx_proc = ~s_dma_uart_rx_stall;
+  assign u_dma_hw_trg_if.i2c0_tx_proc = ~s_dma_i2c0_tx_stall;
+  assign u_dma_hw_trg_if.i2c0_rx_proc = ~s_dma_i2c0_rx_stall;
+  assign u_dma_hw_trg_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
+  assign u_dma_hw_trg_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
 
   // Uses ClusterIP common ribp_if and register.sv dffr through generated bindings.
   `include "ribp_routes.svh"
@@ -81,34 +110,44 @@ module ip_ribp_wrapper (
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "ribp_irq_bindings.svh"
 
-  ribp_gpio u_rib_gpio (
-      .clk_i    (clk_i),
-      .rst_n_i  (rst_n_i),
-      .ribp(u_gpio_ribp_if),
-      .gpio     (gpio),
-      .user_gpio(user_gpio)
+  ribp_gpio #(
+      .USER_BASE_ADDR (`SOC_ADDR_RIBP_GPIO_BASE),
+      .ADMIN_BASE_ADDR(`SOC_ADDR_RIBP_GPIO_ADMIN_BASE),
+      .HAS_INPUT_CMOS (GPIO_HAS_INPUT_CMOS),
+      .HAS_PULL_UP    (GPIO_HAS_PULL_UP),
+      .HAS_PULL_DOWN  (GPIO_HAS_PULL_DOWN)
+  ) u_rib_gpio (
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
+      .ribp      (u_gpio_ribp_if),
+      .gpio      (gpio),
+      .user_gpio (user_gpio)
   );
   // verilog_format: on
 
   ribp_uart u_rib_uart (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_uart_ribp_if),
-      .uart   (uart)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(s_dma_uart_tx_stall),
+      .dma_rx_stall_o(s_dma_uart_rx_stall),
+      .ribp          (u_uart_ribp_if),
+      .uart          (uart)
   );
 
   ribp_timer u_rib_timer0 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_tim0_ribp_if),
-      .irq_o  (s_tim0_irq)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .debug_halted_i(debug_halted_i),
+      .ribp          (u_tim0_ribp_if),
+      .irq_o         (s_tim0_irq)
   );
 
   ribp_timer u_rib_timer1 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_tim1_ribp_if),
-      .irq_o  (s_tim1_irq)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .debug_halted_i(debug_halted_i),
+      .ribp          (u_tim1_ribp_if),
+      .irq_o         (s_tim1_irq)
   );
 
   ribp_psram u_rib_psram (
@@ -126,10 +165,12 @@ module ip_ribp_wrapper (
   );
 
   ribp_i2c u_rib_i2c0 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_i2c0_ribp_if),
-      .i2c    (i2c0)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(s_dma_i2c0_tx_stall),
+      .dma_rx_stall_o(s_dma_i2c0_rx_stall),
+      .ribp          (u_i2c0_ribp_if),
+      .i2c           (i2c0)
   );
 
   ribp_i2s u_rib_i2s (
@@ -143,11 +184,11 @@ module ip_ribp_wrapper (
       .i2s           (i2s)
   );
 
-  ribp_onewire u_rib_onewire (
+  ribp_ws2812 u_rib_ws2812 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_onewire_ribp_if),
-      .onewire(onewire)
+      .ribp   (u_ws2812_ribp_if),
+      .ws2812 (ws2812)
   );
 
   ribp_xpi u_rib_xpi (
@@ -182,10 +223,11 @@ module ip_ribp_wrapper (
   );
 
   ribp_clint u_rib_clint (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_clint_ribp_if),
-      .clint  (u_clint_if)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .timebase_tick_i(timebase_tick_i),
+      .ribp           (u_clint_ribp_if),
+      .clint          (u_clint_if)
   );
 
   ribp_sdram u_rib_sdram (
@@ -217,10 +259,12 @@ module ip_ribp_wrapper (
   );
 
   ribp_i2c u_rib_i2c1 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_i2c1_ribp_if),
-      .i2c    (i2c1)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(s_dma_i2c1_tx_stall),
+      .dma_rx_stall_o(s_dma_i2c1_rx_stall),
+      .ribp          (u_i2c1_ribp_if),
+      .i2c           (i2c1)
   );
 
 endmodule

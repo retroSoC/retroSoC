@@ -136,30 +136,40 @@ module soc_gpio_user_handoff_sva #(
     input logic [DATA_WIDTH-1:0] user_do_i,
     input logic [DATA_WIDTH-1:0] native_oe_i,
     input logic [DATA_WIDTH-1:0] native_do_i,
+    input logic [DATA_WIDTH-1:0] open_drain_i,
+    input logic [DATA_WIDTH-1:0] selected_oe_i,
+    input logic [DATA_WIDTH-1:0] selected_do_i,
     input logic [DATA_WIDTH-1:0] gpio_oe_i,
     input logic [DATA_WIDTH-1:0] gpio_do_i
 );
 
   // A changing owner first drives output-enable low for a full handoff cycle.
   assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      gpio_oe_i == ((~user_handoff_i & user_sel_i & user_oe_i) |
-                    (~user_handoff_i & ~user_sel_i & native_oe_i)));
+      selected_oe_i == ((user_sel_i & user_oe_i) | (~user_sel_i & native_oe_i)));
   assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      gpio_do_i == ((user_sel_i & user_do_i) | (~user_sel_i & native_do_i)));
+      selected_do_i == ((user_sel_i & user_do_i) | (~user_sel_i & native_do_i)));
+  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+      gpio_do_i == (selected_do_i & ~open_drain_i));
+  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+      gpio_oe_i == (~user_handoff_i & selected_oe_i &
+                    ~(open_drain_i & selected_do_i)));
 
 endmodule
 
-bind ribp_gpio soc_gpio_user_handoff_sva #(
-    .DATA_WIDTH(`RIBP_GPIO_NUM)
+bind gpio_core soc_gpio_user_handoff_sva #(
+    .DATA_WIDTH(PIN_NUM)
 ) u_soc_gpio_user_handoff_sva (
     .clk_i         (clk_i),
     .rst_n_i       (rst_n_i),
-    .user_sel_i    (s_gpio_user_sel_q),
-    .user_handoff_i(s_gpio_user_handoff_q),
+    .user_sel_i    (user_select_i),
+    .user_handoff_i(user_handoff_i),
     .user_oe_i     (user_gpio.oe_o),
     .user_do_i     (user_gpio.do_o),
-    .native_oe_i   (s_gpio_native_oe),
-    .native_do_i   (s_gpio_native_out),
+    .native_oe_i   (s_native_oe),
+    .native_do_i   (s_native_data),
+    .open_drain_i  (open_drain_i),
+    .selected_oe_i (s_selected_oe),
+    .selected_do_i (s_selected_data),
     .gpio_oe_i     (gpio.oe_o),
     .gpio_do_i     (gpio.do_o)
 );

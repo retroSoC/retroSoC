@@ -96,6 +96,14 @@
       "instance": "u_pll_response_cdc"
     },
     {
+      "name": "clint_timebase",
+      "source": "external",
+      "destination": "system",
+      "primitive": "edge_det",
+      "path": "rtl/ip/ribp/peripheral/clint_timebase.sv",
+      "instance": "u_tick_edge_det"
+    },
+    {
       "name": "dvp_enable",
       "source": "system",
       "destination": "dvp",

@@ -22,6 +22,11 @@ USER_EXTENSIONS_SCRIPT     := $(RTL_PATH)/integration/generate_user_extensions.p
 USER_EXTENSIONS_DIR        := $(VARIANT_ROOT)/generated/user_extensions
 USER_EXTENSIONS_STAMP      := $(USER_EXTENSIONS_DIR)/.stamp
 USER_EXTENSIONS_FILELIST   := $(USER_EXTENSIONS_DIR)/user_extensions.fl
+ARCHINFO_METADATA_SCRIPT   := $(ROOT_PATH)/rtl/managed/clusterip/archinfo/scripts/generate_metadata.py
+ARCHINFO_METADATA_DIR      := $(VARIANT_ROOT)/generated/archinfo
+ARCHINFO_METADATA_STAMP    := $(ARCHINFO_METADATA_DIR)/.stamp
+ARCHINFO_METADATA_SV       := $(ARCHINFO_METADATA_DIR)/archinfo_integration_metadata.svh
+ARCHINFO_METADATA_C        := $(ARCHINFO_METADATA_DIR)/archinfo_integration_metadata.h
 CLOCK_RESET_DOMAINS_SOURCE := $(RTL_PATH)/integration/clock_reset_domains.json
 CLOCK_RESET_DOMAINS_SCRIPT := $(ROOT_PATH)/scripts/check_clock_reset_domains.py
 MPW_STAMP                  := $(CACHE_ROOT)/stamps/mpw-$(LOCK_DIGEST).prepared
@@ -96,14 +101,23 @@ user-extensions: $(USER_EXTENSIONS_STAMP)
 check-user-extensions:
 	$(FLOW_PYTHON) $(USER_EXTENSIONS_SCRIPT) --map $(USER_EXTENSIONS_SOURCE) --check
 
+$(ARCHINFO_METADATA_STAMP): $(ARCHINFO_METADATA_SCRIPT) $(LOCK_FILE)
+	$(FLOW_PYTHON) $(ARCHINFO_METADATA_SCRIPT) --repo-root $(ROOT_PATH) --lock $(LOCK_FILE) \
+		--config-digest $(CONFIG_DIGEST) $(if $(filter YES,$(BUILD_RELEASE)),--release) \
+		--output-sv $(ARCHINFO_METADATA_SV) --output-c $(ARCHINFO_METADATA_C)
+	@touch $@
+
+archinfo-metadata: $(ARCHINFO_METADATA_STAMP)
+
 check-clock-reset-domains:
 	$(FLOW_PYTHON) $(CLOCK_RESET_DOMAINS_SCRIPT) --map $(CLOCK_RESET_DOMAINS_SOURCE) --root $(ROOT_PATH)
 
 $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py \
 	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) \
-	$(USER_EXTENSIONS_STAMP)
+	$(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP)
 	$(FLOW_PYTHON) $(RTL_PATH)/script/generate_filelist.py \
 		--output-dir $(GENERATED_FL_DIR) \
+		--incdir $(ARCHINFO_METADATA_DIR) \
 		$(foreach define,$(DEF_LIST),--define $(define))
 	@touch $@
 
@@ -159,4 +173,4 @@ endif
 
 .PHONY: gen_mpw_code generate_filelist memory-map check-memory-map pin-map check-pin-map \
 	soc-topology check-soc-topology user-extensions check-user-extensions \
-	check-clock-reset-domains firmware
+	archinfo-metadata check-clock-reset-domains firmware

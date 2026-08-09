@@ -55,29 +55,35 @@ static bool rs_lcd_region_valid(uint16_t x_start, uint16_t y_start, uint16_t x_e
 }
 
 static void lcd_wr_dc_cmd(uint8_t cmd) {
-    lcd_dc_clr;
+    (void)rs_gpio_port_clear(UINT32_C(1) << 2U);
     qspi0_wr_dat8(cmd);
 }
 
 static void lcd_wr_dc_data8(uint8_t dat) {
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     qspi0_wr_dat8(dat);
 }
 
 static void lcd_wr_dc_data16(uint16_t dat) {
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     qspi0_wr_dat16(dat);
 }
 
 static void lcd_wr_data32(uint32_t *dat, uint32_t len) {
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     qspi0_wr_data32(dat, len);
 }
 
 void lcd_init(void) {
-    delay_ms(500);
+    if (rs_timer_delay_ms(RS_TIMER_0, 500U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+        printf("LCD reset delay failed\n");
+        return;
+    }
     lcd_wr_dc_cmd(0x11);
-    delay_ms(120);
+    if (rs_timer_delay_ms(RS_TIMER_0, 120U, RS_TIMER_DELAY_TIMEOUT) != RS_OK) {
+        printf("LCD sleep-exit delay failed\n");
+        return;
+    }
     lcd_wr_dc_cmd(0x36);
     if (USE_HORIZONTAL == 0)
         lcd_wr_dc_data8(0x00);
@@ -222,7 +228,7 @@ void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, 
     uint32_t total_pixels = (uint32_t)(xend - xsta) * (uint32_t)(yend - ysta);
 
 #ifdef USE_QSPI0_DMA
-    lcd_dc_set;
+    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
     uintptr_t addr = (uintptr_t)data;
     // printf("addr: %x\n\n", addr);
     qspi0_dma_xfer(addr, total_pixels / 2U); // every xfer contains two RGB565 pixels
@@ -343,8 +349,6 @@ void ip_lcd_test(int argc, char **argv) {
     //     pref_cnt += 2;
     // }
     // lcd_frame(0, pref_cnt);
-
-    // delay_ms(1000);
 
     // for (int i = 0; i < 100; ++i)
     // {

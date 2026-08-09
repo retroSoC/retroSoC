@@ -9,6 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 `include "gpio_define.svh"
+`include "soc_clock_config.svh"
 `include "user_extensions.svh"
 
 module retrosoc_asic (
@@ -17,6 +18,7 @@ module retrosoc_asic (
   logic s_ext_clk;
   logic s_aud_clk;
   logic s_sys_clkdiv4;
+  logic s_timebase_tick;
 `ifdef HAVE_PLL
   logic s_xtal_io;
 `endif
@@ -45,18 +47,22 @@ module retrosoc_asic (
 
   `include "retrosoc_asic_pad_bindings.svh"
 
-rcu u_rcu (
-      .ext_clk_i    (s_ext_clk),
-      .aud_clk_i    (s_aud_clk),
-      .ext_rst_n_i  (s_ext_rst_n),
+rcu #(
+      .EXT_CLK_HZ       (`SOC_EXT_CLK_HZ),
+      .CLINT_TIMEBASE_HZ(`SOC_CLINT_TIMEBASE_HZ)
+  ) u_rcu (
+      .ext_clk_i      (s_ext_clk),
+      .aud_clk_i      (s_aud_clk),
+      .ext_rst_n_i    (s_ext_rst_n),
 `ifdef HAVE_PLL
-      .xtal_clk_i   (s_xtal_io),
+      .xtal_clk_i     (s_xtal_io),
 `endif
-      .pll_ctrl     (u_pll_ctrl_if),
-      .sys_clk_o    (s_sys_clk),
-      .sys_rst_n_o  (s_sys_rst_n),
-      .aud_rst_n_o  (s_aud_rst_n),
-      .sys_clkdiv4_o(s_sys_clkdiv4)
+      .pll_ctrl       (u_pll_ctrl_if),
+      .sys_clk_o      (s_sys_clk),
+      .sys_rst_n_o    (s_sys_rst_n),
+      .aud_rst_n_o    (s_aud_rst_n),
+      .sys_clkdiv4_o  (s_sys_clkdiv4),
+      .timebase_tick_o(s_timebase_tick)
   );
 
 `ifdef HAVE_SRAM_IF
@@ -67,27 +73,28 @@ rcu u_rcu (
 `endif
 
   retrosoc u_retrosoc (
-      .clk_i        (s_sys_clk),
-      .rst_n_i      (s_sys_rst_n),
-      .clk_aud_i    (s_aud_clk),
-      .rst_aud_n_i  (s_aud_rst_n),
-      .clkdiv4_i    (s_sys_clkdiv4),
-      .pll_ctrl     (u_pll_ctrl_if),
+      .clk_i          (s_sys_clk),
+      .rst_n_i        (s_sys_rst_n),
+      .clk_aud_i      (s_aud_clk),
+      .rst_aud_n_i    (s_aud_rst_n),
+      .clkdiv4_i      (s_sys_clkdiv4),
+      .timebase_tick_i(s_timebase_tick),
+      .pll_ctrl       (u_pll_ctrl_if),
 `ifdef HAVE_SRAM_IF
-      .ram          (u_ram_if),
+      .ram            (u_ram_if),
 `endif
-      .gpio         (u_gpio_if),
-      .uart0        (u_uart0_if),
-      .xpi          (u_xpi_if),
-      .sdram        (u_sdram_if),
-      .jtag_tck_i   (s_jtag_tck),
-      .jtag_tms_i   (s_jtag_tms),
-      .jtag_tdi_i   (s_jtag_tdi),
-      .jtag_trst_n_i(s_jtag_trst_n),
-      .jtag_tdo_o   (s_jtag_tdo),
-      .test_done_o  (s_test_done),
-      .test_pass_o  (s_test_pass),
-      .test_code_o  (s_test_code)
+      .gpio           (u_gpio_if),
+      .uart0          (u_uart0_if),
+      .xpi            (u_xpi_if),
+      .sdram          (u_sdram_if),
+      .jtag_tck_i     (s_jtag_tck),
+      .jtag_tms_i     (s_jtag_tms),
+      .jtag_tdi_i     (s_jtag_tdi),
+      .jtag_trst_n_i  (s_jtag_trst_n),
+      .jtag_tdo_o     (s_jtag_tdo),
+      .test_done_o    (s_test_done),
+      .test_pass_o    (s_test_pass),
+      .test_code_o    (s_test_code)
   );
 
 endmodule
