@@ -97,7 +97,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".apb_rib(u_apb_rib_if)" in bus_fabric
     assert ".rib(u_rib_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
-    assert "`define SOC_USER_IRQ_MASK 32'h000FFFFC" in irq_config
+    assert "`define SOC_USER_IRQ_MASK 32'h000EFFFC" in irq_config
     assert "`define SOC_IRQ_RIBP_WIDTH 13" in irq_config
     assert "`define SOC_IRQ_APB_WIDTH 7" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
@@ -105,6 +105,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
     assert "assign irq_o[12] = i2c1.irq_o;" in rib_irq
     assert "assign irq_o[5] = u_tmr_if.irq_o;" in apb_irq
+    assert "assign irq_o[6] = s_rng_irq;" in apb_irq
     assert "s_irq[16] = s_apb_irq[6];" in irq_wiring
     assert "irq_i[31] == 1'b0" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
@@ -141,7 +142,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("rtc", "apb", 3, 13, "u_rtc_if.irq_o"),
         ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
         ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
-        ("reserved", "apb", 6, 16, "1'b0"),
+        ("rng", "apb", 6, 16, "s_rng_irq"),
         ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
         ("gpio", "ribp", 11, 18, "gpio.irq_o"),
         ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),

@@ -1,5 +1,8 @@
 /clusterip/archinfo/rtl/archinfo_reg.sv
 /clusterip/archinfo/rtl/apb4_archinfo.sv
+/clusterip/rng/rtl/rng_core.sv
+/clusterip/rng/rtl/rng_reg.sv
+/clusterip/rng/rtl/rng_deterministic_source.sv
 /clusterip/rng/rtl/apb4_rng.sv
 /clusterip/uart/rtl/uart_if.sv
 /clusterip/uart/rtl/uart_tx.sv

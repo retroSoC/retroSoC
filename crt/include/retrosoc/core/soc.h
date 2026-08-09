@@ -183,10 +183,6 @@
 #define reg_dvp_recven                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x00))
 #define reg_dvp_rxdata                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x04))
 #define reg_dvp_status                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x08))
-// rng
-#define reg_rng_ctrl                       RS_SOC_REG32(RS_SOC_APB_RNG_BASE, UINT32_C(0x00))
-#define reg_rng_seed                       RS_SOC_REG32(RS_SOC_APB_RNG_BASE, UINT32_C(0x04))
-#define reg_rng_val                        RS_SOC_REG32(RS_SOC_APB_RNG_BASE, UINT32_C(0x08))
 // uart
 #define reg_uart1_lcr                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x00))
 #define reg_uart1_div                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x04))

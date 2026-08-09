@@ -43,7 +43,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("rtc", "apb", 3, 13, "u_rtc_if.irq_o"),
     ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
     ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
-    ("reserved", "apb", 6, 16, "1'b0"),
+    ("rng", "apb", 6, 16, "s_rng_irq"),
     ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
     ("gpio", "ribp", 11, 18, "gpio.irq_o"),
     ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),

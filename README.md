@@ -29,7 +29,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   open-source CI coverage.
 - A memory-mapped peripheral subsystem with GPIO, UART,
   [dual general timers](docs/ip/timer.md), PWM, [dual I2C controllers](docs/ip/i2c.md), I2S, PS2,
-  WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
+  WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, CRC, and a
+  management-only RNG V2 entropy controller. The current deterministic RNG integration source is
+  explicitly unqualified and intended only for diagnostics until a PDK-qualified entropy source is integrated.
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
   `coremark`, `debug`, and `shell` applications.
@@ -74,7 +76,7 @@ user core.
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
-application, which checks UART, archinfo APB readback, and test-status
+application, which checks UART, archinfo APB readback, RNG V2 fail-closed behavior, and test-status
 completion without the verbose startup report. ARCHINFO checks include its V2
 ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,

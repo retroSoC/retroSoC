@@ -152,11 +152,15 @@ digraph mini_soc_block_diagram {
       ];
       apb_targets [
         fillcolor="#E6F4EA",
-        label="APB target wrapper\nRNG, UART1, PWM, PS/2, RTC\nwatchdog, CRC, advanced timer and user IP"
+        label="APB target wrapper\nUART1, PWM, PS/2, RTC\nwatchdog, CRC, advanced timer and user IP"
       ];
       archinfo [
         fillcolor="#E6F4EA",
         label="ARCHINFO V2\nread-only build, topology and technology identity\nlifecycle-gated 128-bit device ID"
+      ];
+      rng [
+        fillcolor="#E6F4EA",
+        label="RNG V2 entropy controller\n8-word FIFO, fail-closed monitoring, IRQ16\nmanagement-only, deterministic source unqualified"
       ];
       gpio_bridge [
         fillcolor="#E5E7EB",
@@ -173,7 +177,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -204,6 +208,7 @@ digraph mini_soc_block_diagram {
   ribp_adapter -> timers [label="RIBP"];
   ribp_adapter -> ws2812 [label="RIBP"];
   apb_adapter -> archinfo [label="APB"];
+  apb_adapter -> rng [label="APB"];
   apb_adapter -> apb_targets [label="APB"];
 
   ribp_targets -> gpio_controller [label="alternate functions"];
@@ -219,6 +224,7 @@ digraph mini_soc_block_diagram {
   i2c_controllers -> gpio_controller [label="GPIO3/4 ALT1\nGPIO7/8 ALT0"];
   dma -> i2c_controllers [label="DATA_CMD / RXDATA", style=dashed];
   i2c_controllers -> irq [label="IRQ7 / IRQ19"];
+  rng -> irq [label="IRQ16"];
   apb_targets -> gpio_controller [label="user_gpio"];
   ribp_targets -> ext_io [dir=both, label="device interfaces"];
   uart0 -> ext_io [dir=both, label="UART pads"];

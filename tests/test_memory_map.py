@@ -69,6 +69,10 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "SOC_SYSCTRL_TEST_STATUS_OFFSET  32'h00000084" in rtl
     assert "SOC_ADDR_IS_RIBP(addr)" in rtl
     assert "SOC_ADDR_IS_NMI" not in rtl
+    user_policy = rtl.split("`define SOC_USER_ADDR_READABLE", 1)[1].split(
+        "`define SOC_ADDR_INCR4_CAPABLE", 1
+    )[0]
+    assert "SOC_ADDR_IS_APB_RNG" not in user_policy
     assert "RS_SOC_SYSCTRL_PLL_CFG_OFFSET UINT32_C(0x00000008)" in header
     assert "RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)" in header
     assert "RS_SOC_SYSCTRL_TEST_STATUS_OFFSET UINT32_C(0x00000084)" in header

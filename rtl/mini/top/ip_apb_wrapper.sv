@@ -63,6 +63,14 @@ module ip_apb_wrapper (
       32'h0000_FFF8 | {31'd0, ARCHINFO_HAVE_PLL} |
       ({31'd0, ARCHINFO_HAVE_SRAM_IF} << 1) | ({31'd0, ARCHINFO_HAVE_SRAM_MACRO} << 2);
 
+  logic        s_rng_entropy_enable;
+  logic        s_rng_entropy_ready;
+  logic        s_rng_entropy_valid;
+  logic [31:0] s_rng_entropy_data;
+  logic        s_rng_entropy_qualified;
+  logic        s_rng_entropy_fault;
+  logic        s_rng_irq;
+
 `ifdef PDK_IHP130
   localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0201_0082;
 `elsif PDK_GF180
@@ -110,7 +118,29 @@ module ip_apb_wrapper (
   );
   // verilog_format: on
 
-  apb4_rng u_apb4_rng (.apb4(u_rng_apb_if));
+  rng_deterministic_source u_rng_deterministic_source (
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .enable_i   (s_rng_entropy_enable),
+      .ready_i    (s_rng_entropy_ready),
+      .valid_o    (s_rng_entropy_valid),
+      .data_o     (s_rng_entropy_data),
+      .qualified_o(s_rng_entropy_qualified),
+      .fault_o    (s_rng_entropy_fault)
+  );
+
+  apb4_rng #(
+      .FIFO_DEPTH(8)
+  ) u_apb4_rng (
+      .entropy_enable_o   (s_rng_entropy_enable),
+      .entropy_ready_o    (s_rng_entropy_ready),
+      .entropy_valid_i    (s_rng_entropy_valid),
+      .entropy_data_i     (s_rng_entropy_data),
+      .entropy_qualified_i(s_rng_entropy_qualified),
+      .entropy_fault_i    (s_rng_entropy_fault),
+      .irq_o              (s_rng_irq),
+      .apb4               (u_rng_apb_if)
+  );
 
   apb4_uart #(
       .FIFO_DEPTH(32)

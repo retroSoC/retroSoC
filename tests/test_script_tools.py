@@ -505,7 +505,7 @@ def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Pa
     )
 
 
-def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
+def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> None:
     def build_state() -> dict[str, tuple[int, int]]:
         build = ROOT / "build"
         if not build.exists():
@@ -518,7 +518,13 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
 
     before = build_state()
     run("make", "-n", "help")
-    run("make", "-n", "SIMU=IVERILOG", "comp")
+    run(
+        "make",
+        "-n",
+        f"ARCHINFO_METADATA_SCRIPT={tmp_path / 'missing-generate-metadata.py'}",
+        "SIMU=IVERILOG",
+        "comp",
+    )
     run(
         "make",
         "-n",

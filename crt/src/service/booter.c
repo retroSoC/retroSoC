@@ -118,7 +118,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_RIBP_I2C1_BASE);
     printf("                       1 x ARCHINFO      @%p\n",
            (void *)(uintptr_t)RS_SOC_APB_ARCHINFO_BASE);
-    printf("                       1 x RNG           @%p\n", (void *)&reg_rng_ctrl);
+    printf("                       1 x RNG           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB_RNG_BASE);
     printf("                       1 x UART1(ADV)    @%p\n", (void *)&reg_uart1_lcr);
     printf("                       1 x PWM(4CHNL)    @%p\n", (void *)&reg_pwm_ctrl);
     printf("                       1 x PS2           @%p\n", (void *)&reg_ps2_ctrl);
