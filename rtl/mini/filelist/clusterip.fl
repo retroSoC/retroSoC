@@ -11,6 +11,11 @@
 /clusterip/uart/rtl/apb4_uart.sv
 /clusterip/pwm/rtl/pwm_if.sv
 /clusterip/pwm/rtl/apb4_pwm.sv
+/clusterip/ps2/rtl/ps2_filter.sv
+/clusterip/ps2/rtl/ps2_rx.sv
+/clusterip/ps2/rtl/ps2_tx.sv
+/clusterip/ps2/rtl/ps2_core.sv
+/clusterip/ps2/rtl/ps2_reg.sv
 /clusterip/ps2/rtl/ps2_if.sv
 /clusterip/ps2/rtl/apb4_ps2.sv
 /clusterip/i2c/rtl/i2c_if.sv

@@ -199,10 +199,6 @@
 #define reg_pwm_cr2                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x18))
 #define reg_pwm_cr3                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x1C))
 #define reg_pwm_stat                       RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x20))
-// ps2
-#define reg_ps2_ctrl                       RS_SOC_REG32(RS_SOC_APB_PS2_BASE, UINT32_C(0x00))
-#define reg_ps2_data                       RS_SOC_REG32(RS_SOC_APB_PS2_BASE, UINT32_C(0x04))
-#define reg_ps2_stat                       RS_SOC_REG32(RS_SOC_APB_PS2_BASE, UINT32_C(0x08))
 // rtc
 #define reg_rtc_ctrl                       RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x00))
 #define reg_rtc_pscr                       RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x04))

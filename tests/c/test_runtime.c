@@ -1,6 +1,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <ps2_keyboard.h>
+#include <ps2_mouse.h>
+
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/gpio.h>
@@ -257,6 +260,36 @@ static int test_gpio_helpers(void) {
     return 0;
 }
 
+static int test_ps2_decoders(void) {
+    ps2_keyboard_decoder_t keyboard;
+    ps2_mouse_decoder_t mouse;
+    ps2_key_event_t key_event;
+    ps2_mouse_event_t mouse_event;
+
+    ps2_keyboard_decoder_init(&keyboard);
+    if (!ps2_keyboard_decode_byte(&keyboard, UINT8_C(0x1C), &key_event) ||
+        !key_event.pressed || key_event.extended || (key_event.scan_code != UINT16_C(0x001C))) {
+        return 1;
+    }
+    if (ps2_keyboard_decode_byte(&keyboard, UINT8_C(0xE0), &key_event) ||
+        ps2_keyboard_decode_byte(&keyboard, UINT8_C(0xF0), &key_event) ||
+        !ps2_keyboard_decode_byte(&keyboard, UINT8_C(0x75), &key_event) || key_event.pressed ||
+        !key_event.extended || (key_event.scan_code != UINT16_C(0xE075))) {
+        return 2;
+    }
+
+    ps2_mouse_decoder_init(&mouse, UINT8_C(4));
+    if (ps2_mouse_decode_byte(&mouse, UINT8_C(0x08), &mouse_event) ||
+        ps2_mouse_decode_byte(&mouse, UINT8_C(0x02), &mouse_event) ||
+        ps2_mouse_decode_byte(&mouse, UINT8_C(0x01), &mouse_event) ||
+        !ps2_mouse_decode_byte(&mouse, UINT8_C(0x3F), &mouse_event) ||
+        (mouse_event.dx != 2) || (mouse_event.dy != 1) || (mouse_event.wheel != -1) ||
+        ((mouse_event.buttons & UINT8_C(0x18)) != UINT8_C(0x18))) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_wav_parser(void) {
     static const uint8_t wav[] = {
         'R', 'I', 'F', 'F', 40U, 0U,  0U,  0U,  'W',   'A',   'V', 'E', 'f',   'm',   't', ' ',
@@ -298,7 +331,8 @@ int main(void) {
     const int results[] = {
         test_string_helpers(), test_formatter(),     test_compiler_helpers(), test_wait_helper(),
         test_ws2812_helpers(), test_timer_helpers(), test_uart_helpers(),     test_i2c_helpers(),
-        test_gpio_helpers(),   test_wav_parser(),    test_video_parser(),
+        test_gpio_helpers(),   test_ps2_decoders(),  test_wav_parser(),
+        test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

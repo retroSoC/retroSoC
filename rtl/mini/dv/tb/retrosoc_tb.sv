@@ -35,8 +35,8 @@ module retrosoc_tb;
   wire        s_uart0_tx;
   // for handle x-prop issue
   wire        s_uart0_rx = 1'b1;
-  wire        s_gpio_0_io;
-  wire        s_gpio_1_ip;
+  tri1        s_gpio_0_io;
+  tri1        s_gpio_1_io;
   wire        s_psram_sck;
   wire        s_psram_nss0;
   wire        s_psram_nss1;
@@ -74,8 +74,6 @@ module retrosoc_tb;
 
   wire        s_uart1_tx;
   wire        s_uart1_rx;
-  wire        s_ps2_clk;
-  wire        s_ps2_dat;
 
 `ifdef HAVE_PLL
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
@@ -156,15 +154,9 @@ module retrosoc_tb;
   );
 
 
-  kdb_model u_kdb_model_0 (
-      .ps2_clk_o(s_gpio_0_io),
-      .ps2_dat_o(s_gpio_1_io)
-  );
-
-
-  kdb_model u_kdb_model_1 (
-      .ps2_clk_o(s_ps2_clk),
-      .ps2_dat_o(s_ps2_dat)
+  ps2_device_model u_ps2_device_model (
+      .ps2_clk_io(s_gpio_0_io),
+      .ps2_dat_io(s_gpio_1_io)
   );
 
 
@@ -207,25 +199,13 @@ module retrosoc_tb;
     r_rst_n = 1;
   end
 
-  initial begin : KDB_MODEL_0_BLOCK
+  initial begin : PS2_DEVICE_MODEL_BLOCK
     integer i;
     #1000;
     while (1) begin
       #1000;
       for (i = 0; i < 26; ++i) begin
-        u_kdb_model_0.send_code(i + 8'd65);
-        #500;
-      end
-    end
-  end
-
-  initial begin : KDB_MODEL_1_BLOCK
-    integer i;
-    #1000;
-    while (1) begin
-      #1000;
-      for (i = 0; i < 26; ++i) begin
-        u_kdb_model_1.send_code(i + 8'd65);
+        u_ps2_device_model.send_byte(i + 8'd65, 3'b000);
         #500;
       end
     end

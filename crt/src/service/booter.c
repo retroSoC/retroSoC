@@ -122,7 +122,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB_RNG_BASE);
     printf("                       1 x UART1(ADV)    @%p\n", (void *)&reg_uart1_lcr);
     printf("                       1 x PWM(4CHNL)    @%p\n", (void *)&reg_pwm_ctrl);
-    printf("                       1 x PS2           @%p\n", (void *)&reg_ps2_ctrl);
+    printf("                       1 x PS2           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB_PS2_BASE);
     printf("                       1 x RTC           @%p\n", (void *)&reg_rtc_ctrl);
     printf("                       1 x WDG           @%p\n", (void *)&reg_wdg_ctrl);
     printf("                       1 x CRC           @%p\n", (void *)&reg_crc_ctrl);
