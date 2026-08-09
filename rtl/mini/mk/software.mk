@@ -61,6 +61,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/lib/string.c \
             $(ROOT_PATH)/crt/src/lib/console.c \
             $(ROOT_PATH)/crt/src/lib/printf.c \
+            $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/src/archinfo.c \
             $(ROOT_PATH)/crt/src/core/archinfo.c \
             $(ROOT_PATH)/crt/src/service/bench.c \
             $(ROOT_PATH)/crt/src/service/booter.c \
@@ -126,6 +127,8 @@ endif
 INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(MEMORY_MAP_C_DIR) \
             -I$(USER_EXTENSIONS_DIR)/include \
+            -I$(ARCHINFO_METADATA_DIR) \
+            -I$(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
             -I$(ROOT_PATH)/crt/include \
             $(addprefix -I,$(APP_INC_DIRS))
 SRC_PATH          := $(CRT_SRCS) $(APP_SRCS)
@@ -136,6 +139,8 @@ FIRMWARE_ELF      := $(SW_BUILD_DIR)/firmware
 ASM_FIRMWARE_NAME ?= retrosoc_asm
 SW_HEADERS        := $(shell find $(ROOT_PATH)/crt/include $(ROOT_PATH)/app -type f \
                       \( -name '*.h' -o -name '*.hpp' \) 2>/dev/null)
+SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
+                      -type f -name '*.h' 2>/dev/null)
 
 $(VERSION_HEADER): FORCE_VERSION $(ROOT_PATH)/crt/ver.py $(ROOT_PATH)/crt/ver.tmpl
 	@mkdir -p $(dir $@)
@@ -153,7 +158,7 @@ asm: $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
-$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mini/mk/software.mk
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)

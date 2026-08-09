@@ -116,7 +116,8 @@ void rs_app_info(void) {
     printf("                       1 x DVP           @%p\n", (void *)&reg_dvp_recven);
     printf("                       1 x I2C1          @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_I2C1_BASE);
-    printf("                       1 x ARCHINFO      @%p\n", (void *)&reg_archinfo_sys);
+    printf("                       1 x ARCHINFO      @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB_ARCHINFO_BASE);
     printf("                       1 x RNG           @%p\n", (void *)&reg_rng_ctrl);
     printf("                       1 x UART1(ADV)    @%p\n", (void *)&reg_uart1_lcr);
     printf("                       1 x PWM(4CHNL)    @%p\n", (void *)&reg_pwm_ctrl);

@@ -108,11 +108,14 @@ def test_nested_filelist_and_space_path_round_trip(tmp_path: Path) -> None:
 
 def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     defines = ["+define+PDK_IHP130"]
-    generated = generate_all(tmp_path, defines)
+    generated_include = tmp_path / "archinfo metadata"
+    generated = generate_all(tmp_path, defines, [generated_include])
     mtimes = {path: path.stat().st_mtime_ns for path in generated}
-    generate_all(tmp_path, defines)
+    generate_all(tmp_path, defines, [generated_include])
     assert {path: path.stat().st_mtime_ns for path in generated} == mtimes
-    assert (tmp_path / "def.fl").read_text(encoding="utf-8") == " ".join(defines) + "\n"
+    assert (tmp_path / "def.fl").read_text(encoding="utf-8") == (
+        f"+incdir+{generated_include.resolve()} " + " ".join(defines) + "\n"
+    )
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     hazard3 = (tmp_path / "core_hazard3.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster

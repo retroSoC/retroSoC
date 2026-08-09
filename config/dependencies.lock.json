@@ -60,7 +60,7 @@
       "submodules": ["libraries/sky130_fd_sc_hd/latest"],
       "license": "Apache-2.0"
     },
-    "cluster_archinfo": {"url": "https://github.com/retroSoC/archinfo.git", "revision": "d65dd13c83a1176668bf5178004814a1551bf6ba", "destination": "rtl/managed/clusterip/archinfo", "license": "NOASSERTION"},
+    "cluster_archinfo": {"url": "https://github.com/retroSoC/archinfo.git", "revision": "78505969a0afdbc887cdd9b36eda228b4afb616e", "destination": "rtl/managed/clusterip/archinfo", "license": "MulanPSL-2.0"},
     "cluster_clint": {"url": "https://github.com/retroSoC/clint.git", "revision": "ce49f1a5501c0a9f18c0e3f358417648f3f2fb18", "destination": "rtl/managed/clusterip/clint", "license": "NOASSERTION"},
     "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "16ee9a5cfdc1248f35f0993710e3cb89464c19d9", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
     "cluster_crc": {"url": "https://github.com/retroSoC/crc.git", "revision": "4654a63d06d487b5b9fe22af228c36c736b90bad", "destination": "rtl/managed/clusterip/crc", "license": "NOASSERTION"},

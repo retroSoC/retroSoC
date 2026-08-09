@@ -20,11 +20,21 @@ module user_ip_wrapper (
     // verilog_format: on
 );
 
-  // verilog_format: off
-  apb4_if       u_demo_apb4_if(clk_i, rst_n_i);
-  apb4_if       u_user_apb4_if(clk_i, rst_n_i);
-  apb4_archinfo u_apb4_archinfo_ip(u_demo_apb4_if);
-  // verilog_format: on
+  apb4_if u_demo_apb4_if (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
+  apb4_if u_user_apb4_if (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
+
+  apb4_archinfo u_apb4_archinfo_ip (
+      .device_id_i            (128'h0000_0000_0000_0000_0000_0000_0000_0000),
+      .device_id_valid_i      (1'b0),
+      .device_id_read_enable_i(1'b0),
+      .apb4                   (u_demo_apb4_if)
+  );
 
   assign apb.pready             = ~(|sel_i) ? u_demo_apb4_if.pready : u_user_apb4_if.pready;
   assign apb.prdata             = ~(|sel_i) ? u_demo_apb4_if.prdata : u_user_apb4_if.prdata;

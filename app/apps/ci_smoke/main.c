@@ -1,3 +1,4 @@
+#include <retrosoc/core/archinfo.h>
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/gpio.h>
@@ -6,13 +7,12 @@
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/service/test.h>
 
-static bool rs_ci_smoke_archinfo_matches_reset_values(void) {
-    const uint32_t archinfo_sys = reg_archinfo_sys;
-    const uint32_t archinfo_idl = reg_archinfo_idl;
-    const uint32_t archinfo_idh = reg_archinfo_idh;
+static bool rs_ci_smoke_archinfo_v2(void) {
+    rs_archinfo_t info;
+    uint32_t device_id[4];
 
-    return (archinfo_sys == UINT32_C(0x000F1010)) && (archinfo_idl == UINT32_C(0xFFFF2022)) &&
-           (archinfo_idh == UINT32_C(0x00FFFFFF));
+    return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
+           (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP);
 }
 
 static bool rs_ci_smoke_clint_standard_map(void) {
@@ -173,7 +173,7 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 7U);
     }
 
-    if (!rs_ci_smoke_archinfo_matches_reset_values()) {
+    if (!rs_ci_smoke_archinfo_v2()) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");

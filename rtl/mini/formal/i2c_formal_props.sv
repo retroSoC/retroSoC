@@ -2,6 +2,7 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module i2c_formal;
+  // verilog_format: off
   (* anyseq, gclk *) logic clk_i;
   wire        rst_n_i;
   wire        f_past_valid;
@@ -29,6 +30,7 @@ module i2c_formal;
   wire        tx_dma_stall;
   wire        rx_dma_stall;
   wire        irq;
+  // verilog_format: on
 
   i2c_formal_design u_design (
       .clk_i          (clk_i),

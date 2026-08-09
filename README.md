@@ -35,6 +35,8 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   `coremark`, `debug`, and `shell` applications.
 - Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
   Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
+- Read-only ARCHINFO ABI V2 discovery for build/configuration provenance, SoC
+  topology, technology capabilities, and lifecycle-gated device identity.
 - Checksum-verified dependency and toolchain locks, structured flow results, warning
   baselines, metrics collection, SBOM generation, and checksummed release packages.
 
@@ -73,7 +75,8 @@ user core.
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
 application, which checks UART, archinfo APB readback, and test-status
-completion without the verbose startup report. The profiles retain `bringup`
+completion without the verbose startup report. ARCHINFO checks include its V2
+ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,
 use:
 

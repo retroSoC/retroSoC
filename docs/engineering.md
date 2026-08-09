@@ -19,6 +19,15 @@ archinfo APB readback, and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 
+ARCHINFO ABI V2 exposes immutable build, configuration, topology, feature, and
+technology identity. Its register specification, driver, standalone tests, and
+formal properties are delivered by the
+[archinfo IP repository](https://github.com/retroSoC/archinfo). The integration
+generates matching RTL and C metadata headers from the source revision,
+dependency lock, and canonical configuration digest.
+Normal builds clear the release flag; an audited release flow sets
+`BUILD_RELEASE=YES`, which is part of the canonical configuration digest.
+
 OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
 `slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, ICS55 uses the H7CR
 `ss_1p08_125C` view, and SKY130 uses `ss_100C_1v40`.
@@ -96,6 +105,7 @@ one timestamp to all of its child Make commands.
 ```text
 build/<variant>/
   generated/mpw/<simulator>/
+  generated/archinfo/
   generated/pin_map/
   sw/
   sim/<simulator>/

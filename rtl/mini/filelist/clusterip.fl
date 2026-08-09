@@ -1,4 +1,3 @@
-/clusterip/archinfo/rtl/archinfo_reg_pkg.sv
 /clusterip/archinfo/rtl/archinfo_reg.sv
 /clusterip/archinfo/rtl/apb4_archinfo.sv
 /clusterip/rng/rtl/apb4_rng.sv
