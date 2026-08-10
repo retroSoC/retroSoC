@@ -43,7 +43,7 @@ digraph mini_soc_block_diagram {
   ];
   ext_io [
     fillcolor="#F3F4F6",
-    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP and WS2812"
+    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP, WS2812 and PWM V2"
   ];
   ext_jtag [
     fillcolor="#F3F4F6",
@@ -152,7 +152,11 @@ digraph mini_soc_block_diagram {
       ];
       apb_targets [
         fillcolor="#E6F4EA",
-        label="APB target wrapper\nUART1, PWM, advanced timer\nand user IP"
+        label="APB target wrapper\nUART1, advanced timer\nand user IP"
+      ];
+      pwm [
+        fillcolor="#E6F4EA",
+        label="PWM V2\n2 timers, 4 action channels, 2 operators\nfades, dead time, carrier, fault and capture, IRQ11"
       ];
       wdg [
         fillcolor="#FDE68A",
@@ -193,7 +197,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -229,6 +233,7 @@ digraph mini_soc_block_diagram {
   apb_adapter -> rtc [label="APB"];
   apb_adapter -> wdg [label="APB"];
   apb_adapter -> crc [label="APB"];
+  apb_adapter -> pwm [label="APB"];
   apb_adapter -> apb_targets [label="APB"];
 
   ribp_targets -> gpio_controller [label="alternate functions"];
@@ -247,6 +252,8 @@ digraph mini_soc_block_diagram {
   rng -> irq [label="IRQ16"];
   ps2 -> gpio_controller [label="GPIO0/1 ALT1\nopen drain"];
   ps2 -> irq [label="IRQ12"];
+  pwm -> gpio_controller [dir=both, label="GPIO3-6 output\nGPIO2 sync, GPIO9 fault\nGPIO30/31 capture"];
+  pwm -> irq [label="IRQ11"];
   rcu -> rtc [label="18.432 MHz audio clock", style=dashed];
   rtc -> irq [label="IRQ13"];
   rtc -> sysctrl [label="wake live / sticky", style=dashed];

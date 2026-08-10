@@ -67,6 +67,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/rtl/managed/clusterip/rng/sw/src/rng.c \
             $(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/src/rtc.c \
             $(ROOT_PATH)/rtl/managed/clusterip/wdg/sw/src/wdg.c \
+            $(ROOT_PATH)/rtl/managed/clusterip/pwm/sw/src/pwm.c \
             $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/src/ps2.c \
             $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/src/ps2_keyboard.c \
             $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/src/ps2_mouse.c \
@@ -141,6 +142,7 @@ INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(ROOT_PATH)/rtl/managed/clusterip/rng/sw/include \
             -I$(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/include \
             -I$(ROOT_PATH)/rtl/managed/clusterip/wdg/sw/include \
+            -I$(ROOT_PATH)/rtl/managed/clusterip/pwm/sw/include \
             -I$(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/include \
             -I$(ROOT_PATH)/crt/include \
             $(addprefix -I,$(APP_INC_DIRS))
@@ -161,6 +163,8 @@ SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rng/sw/incl
 SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/include \
                       -type f -name '*.h' 2>/dev/null)
 SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/wdg/sw/include \
+                      -type f -name '*.h' 2>/dev/null)
+SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/pwm/sw/include \
                       -type f -name '*.h' 2>/dev/null)
 SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/include \
                       -type f -name '*.h' 2>/dev/null)

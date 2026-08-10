@@ -12,6 +12,45 @@
 `include "soc_clock_config.svh"
 `include "user_extensions.svh"
 
+// GPIO mux reference. The executable source of truth is
+// rtl/mini/integration/soc_topology.json. ALT_ENABLE selects the alternate
+// path, ALT_SELECT chooses ALT0/ALT1, and USER_SELECT gives the pin to User IP.
+//
+// GPIO    ALT0                         DIR     ALT1                    DIR
+// ------  ---------------------------  ------  ----------------------  ------
+// GPIO00  UART1_RX                     IN      PS2_CLK                 BIDI
+// GPIO01  UART1_TX                     OUT     PS2_DATA                BIDI
+// GPIO02  TMR_CAPTURE + PWM_SYNC       IN      WS2812_DATA             OUT
+// GPIO03  PWM0                         OUT     I2C1_SCL                BIDI
+// GPIO04  PWM1                         OUT     I2C1_SDA                BIDI
+// GPIO05  PWM2                         OUT     CLKDIV4                 OUT
+// GPIO06  PWM3                         OUT     SPISD_SCK               OUT
+// GPIO07  I2C0_SCL                     BIDI    SPISD_NSS               OUT
+// GPIO08  I2C0_SDA                     BIDI    SPISD_MOSI              OUT
+// GPIO09  PWM_FAULT                    IN      SPISD_MISO              IN
+// GPIO10  I2S_MCLK                     OUT     DVP_PCLK                IN
+// GPIO11  I2S_SCLK                     OUT     DVP_HREF                IN
+// GPIO12  I2S_LRCK                     OUT     DVP_VSYNC               IN
+// GPIO13  I2S_DAC_DATA                 OUT     DVP_DATA0               IN
+// GPIO14  I2S_ADC_DATA                 IN      DVP_DATA1               IN
+// GPIO15  SDIO_SCK                     OUT     DVP_DATA2               IN
+// GPIO16  SDIO_CMD                     BIDI    DVP_DATA3               IN
+// GPIO17  SDIO_DATA0                   BIDI    DVP_DATA4               IN
+// GPIO18  SDIO_DATA1                   BIDI    DVP_DATA5               IN
+// GPIO19  SDIO_DATA2                   BIDI    DVP_DATA6               IN
+// GPIO20  SDIO_DATA3                   BIDI    DVP_DATA7               IN
+// GPIO21  OPI_PSRAM_SCK                OUT     QSPI_PSRAM_SCK          OUT
+// GPIO22  OPI_PSRAM_CE                 OUT     QSPI_PSRAM_NSS0         OUT
+// GPIO23  OPI_PSRAM_IO0                BIDI    QSPI_PSRAM_IO0          BIDI
+// GPIO24  OPI_PSRAM_IO1                BIDI    QSPI_PSRAM_IO1          BIDI
+// GPIO25  OPI_PSRAM_IO2                BIDI    QSPI_PSRAM_IO2          BIDI
+// GPIO26  OPI_PSRAM_IO3                BIDI    QSPI_PSRAM_IO3          BIDI
+// GPIO27  OPI_PSRAM_IO4                BIDI    QSPI_PSRAM_NSS1         OUT
+// GPIO28  OPI_PSRAM_IO5                BIDI    QSPI_PSRAM_NSS2         OUT
+// GPIO29  OPI_PSRAM_IO6                BIDI    QSPI_PSRAM_NSS3         OUT
+// GPIO30  OPI_PSRAM_IO7                BIDI    PWM_CAPTURE0            IN
+// GPIO31  OPI_PSRAM_DQS                BIDI    PWM_CAPTURE1            IN
+
 module retrosoc_asic (
     `include "retrosoc_asic_ports.svh"
 );

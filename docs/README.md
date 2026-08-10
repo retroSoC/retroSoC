@@ -38,6 +38,9 @@ the root README and subsystem guides.
   defines Epoch time, alarms, periodic wake, calibration, CDC, and software.
 - The managed [CRC V2 datasheet](../rtl/managed/clusterip/crc/doc/datasheet.md)
   defines the programmable streaming CRC engine, APB ABI, errors, and software.
+- The managed [PWM V2 datasheet](../rtl/managed/clusterip/pwm/doc/datasheet.md)
+  defines the dual-timer/four-channel LED and motor PWM controller, fault,
+  synchronization, dead-time, carrier, fade, and capture contracts.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 - [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC

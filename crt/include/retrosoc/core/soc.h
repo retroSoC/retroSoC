@@ -192,16 +192,6 @@
 #define reg_uart1_trx                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x08))
 #define reg_uart1_fcr                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x0C))
 #define reg_uart1_lsr                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x10))
-// pwm
-#define reg_pwm_ctrl                       RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x00))
-#define reg_pwm_pscr                       RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x04))
-#define reg_pwm_cnt                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x08))
-#define reg_pwm_cmp                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x0C))
-#define reg_pwm_cr0                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x10))
-#define reg_pwm_cr1                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x14))
-#define reg_pwm_cr2                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x18))
-#define reg_pwm_cr3                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x1C))
-#define reg_pwm_stat                       RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x20))
 // tim3
 #define reg_tim3_ctrl                      RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x00))
 #define reg_tim3_pscr                      RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x04))

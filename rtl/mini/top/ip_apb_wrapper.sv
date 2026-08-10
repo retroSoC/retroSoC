@@ -156,9 +156,12 @@ module ip_apb_wrapper (
       .uart(uart)
   );
 
-  apb4_pwm u_apb4_pwm (
-      .apb4(u_pwm_apb_if),
-      .pwm (pwm)
+  apb4_pwm #(
+      .PCLK_HZ(`SOC_EXT_CLK_HZ)
+  ) u_apb4_pwm (
+      .debug_halted_i(debug_halted_i),
+      .apb4          (u_pwm_apb_if),
+      .pwm           (pwm)
   );
 
   apb4_ps2 #(

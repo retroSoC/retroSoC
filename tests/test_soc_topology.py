@@ -88,6 +88,12 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign u_gpio_if.alt1_do_i[1] = u_ps2_if.ps2_dat_o;" in gpio
     assert "assign u_gpio_if.alt1_oe_i[1] = u_ps2_if.ps2_dat_oe_o;" in gpio
     assert "assign u_gpio_if.alt1_do_i[2] = u_ws2812_if.dat_o;" in gpio
+    assert "assign u_pwm_if.sync_i = u_gpio_if.di_i[2];" in gpio
+    assert "assign u_gpio_if.alt0_do_i[3] = u_pwm_if.pwm_o[0];" in gpio
+    assert "assign u_gpio_if.alt0_oe_i[3] = u_pwm_if.oe_o[0];" in gpio
+    assert "assign u_pwm_if.fault_i = u_gpio_if.di_i[9];" in gpio
+    assert "assign u_pwm_if.capture_i[0] = u_gpio_if.di_i[30];" in gpio
+    assert "assign u_pwm_if.capture_i[1] = u_gpio_if.di_i[31];" in gpio
     assert "assign u_gpio_if.alt1_do_i[22] = u_psram_if.nss_o[0];" in gpio
     assert apb_interfaces.count("apb4_if u_") == 10
     assert "apb4_pure_if u_archinfo_apb_pure_if ();" in apb_interfaces

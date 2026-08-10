@@ -73,14 +73,14 @@
   "gpio_alt_functions": [
     {"pin": 0, "alt0": {"inputs": ["u_uart1_if.rx_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_ps2_if.ps2_clk_i"], "do": "u_ps2_if.ps2_clk_o", "oe": "u_ps2_if.ps2_clk_oe_o"}},
     {"pin": 1, "alt0": {"inputs": [], "do": "u_uart1_if.tx_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_ps2_if.ps2_dat_i"], "do": "u_ps2_if.ps2_dat_o", "oe": "u_ps2_if.ps2_dat_oe_o"}},
-    {"pin": 2, "alt0": {"inputs": ["s_tmr_capch"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": [], "do": "u_ws2812_if.dat_o", "oe": "1'b1"}},
-    {"pin": 3, "alt0": {"inputs": [], "do": "u_pwm_if.do_o[0]", "oe": "1'b1"}, "alt1": {"inputs": ["u_i2c1_if.scl_i"], "do": "u_i2c1_if.scl_o", "oe": "u_i2c1_if.scl_oe_o"}},
-    {"pin": 4, "alt0": {"inputs": [], "do": "u_pwm_if.do_o[1]", "oe": "1'b1"}, "alt1": {"inputs": ["u_i2c1_if.sda_i"], "do": "u_i2c1_if.sda_o", "oe": "u_i2c1_if.sda_oe_o"}},
-    {"pin": 5, "alt0": {"inputs": [], "do": "u_pwm_if.do_o[2]", "oe": "1'b1"}, "alt1": {"inputs": [], "do": "clkdiv4_i", "oe": "1'b1"}},
-    {"pin": 6, "alt0": {"inputs": [], "do": "u_pwm_if.do_o[3]", "oe": "1'b1"}, "alt1": {"inputs": [], "do": "u_spisd_if.sck_o", "oe": "1'b1"}},
+    {"pin": 2, "alt0": {"inputs": ["s_tmr_capch", "u_pwm_if.sync_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": [], "do": "u_ws2812_if.dat_o", "oe": "1'b1"}},
+    {"pin": 3, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[0]", "oe": "u_pwm_if.oe_o[0]"}, "alt1": {"inputs": ["u_i2c1_if.scl_i"], "do": "u_i2c1_if.scl_o", "oe": "u_i2c1_if.scl_oe_o"}},
+    {"pin": 4, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[1]", "oe": "u_pwm_if.oe_o[1]"}, "alt1": {"inputs": ["u_i2c1_if.sda_i"], "do": "u_i2c1_if.sda_o", "oe": "u_i2c1_if.sda_oe_o"}},
+    {"pin": 5, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[2]", "oe": "u_pwm_if.oe_o[2]"}, "alt1": {"inputs": [], "do": "clkdiv4_i", "oe": "1'b1"}},
+    {"pin": 6, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[3]", "oe": "u_pwm_if.oe_o[3]"}, "alt1": {"inputs": [], "do": "u_spisd_if.sck_o", "oe": "1'b1"}},
     {"pin": 7, "alt0": {"inputs": ["u_i2c0_if.scl_i"], "do": "u_i2c0_if.scl_o", "oe": "u_i2c0_if.scl_oe_o"}, "alt1": {"inputs": [], "do": "u_spisd_if.nss_o", "oe": "1'b1"}},
     {"pin": 8, "alt0": {"inputs": ["u_i2c0_if.sda_i"], "do": "u_i2c0_if.sda_o", "oe": "u_i2c0_if.sda_oe_o"}, "alt1": {"inputs": [], "do": "u_spisd_if.mosi_o", "oe": "1'b1"}},
-    {"pin": 9, "alt0": {"inputs": [], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_spisd_if.miso_i"], "do": "1'b0", "oe": "1'b0"}},
+    {"pin": 9, "alt0": {"inputs": ["u_pwm_if.fault_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_spisd_if.miso_i"], "do": "1'b0", "oe": "1'b0"}},
     {"pin": 10, "alt0": {"inputs": [], "do": "u_i2s_if.mclk_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.pclk_i"], "do": "1'b0", "oe": "1'b0"}},
     {"pin": 11, "alt0": {"inputs": [], "do": "u_i2s_if.sclk_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.href_i"], "do": "1'b0", "oe": "1'b0"}},
     {"pin": 12, "alt0": {"inputs": [], "do": "u_i2s_if.lrck_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.vsync_i"], "do": "1'b0", "oe": "1'b0"}},
@@ -101,7 +101,7 @@
     {"pin": 27, "alt0": {"inputs": ["u_opipsram_if.io_di_i[4]"], "do": "u_opipsram_if.io_do_o[4]", "oe": "u_opipsram_if.io_oe_o[4]"}, "alt1": {"inputs": [], "do": "u_psram_if.nss_o[1]", "oe": "1'b1"}},
     {"pin": 28, "alt0": {"inputs": ["u_opipsram_if.io_di_i[5]"], "do": "u_opipsram_if.io_do_o[5]", "oe": "u_opipsram_if.io_oe_o[5]"}, "alt1": {"inputs": [], "do": "u_psram_if.nss_o[2]", "oe": "1'b1"}},
     {"pin": 29, "alt0": {"inputs": ["u_opipsram_if.io_di_i[6]"], "do": "u_opipsram_if.io_do_o[6]", "oe": "u_opipsram_if.io_oe_o[6]"}, "alt1": {"inputs": [], "do": "u_psram_if.nss_o[3]", "oe": "1'b1"}},
-    {"pin": 30, "alt0": {"inputs": ["u_opipsram_if.io_di_i[7]"], "do": "u_opipsram_if.io_do_o[7]", "oe": "u_opipsram_if.io_oe_o[7]"}, "alt1": {"inputs": [], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 31, "alt0": {"inputs": ["u_opipsram_if.dqs_di_i"], "do": "u_opipsram_if.dqs_do_o", "oe": "u_opipsram_if.dqs_oe_o"}, "alt1": {"inputs": [], "do": "1'b0", "oe": "1'b0"}}
+    {"pin": 30, "alt0": {"inputs": ["u_opipsram_if.io_di_i[7]"], "do": "u_opipsram_if.io_do_o[7]", "oe": "u_opipsram_if.io_oe_o[7]"}, "alt1": {"inputs": ["u_pwm_if.capture_i[0]"], "do": "1'b0", "oe": "1'b0"}},
+    {"pin": 31, "alt0": {"inputs": ["u_opipsram_if.dqs_di_i"], "do": "u_opipsram_if.dqs_do_o", "oe": "u_opipsram_if.dqs_oe_o"}, "alt1": {"inputs": ["u_pwm_if.capture_i[1]"], "do": "1'b0", "oe": "1'b0"}}
   ]
 }
