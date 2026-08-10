@@ -63,7 +63,7 @@ int main(void) {
     (void)rs_shell_register("rtc", "rtc test", true, rs_rtc_shell_test);
     (void)rs_shell_register("wdg", "wdg test", true, ip_wdg_test);
     (void)rs_shell_register("rng", "rng test", true, rs_rng_shell_test);
-    (void)rs_shell_register("crc", "crc test", true, ip_crc_test);
+    (void)rs_shell_register("crc", "crc test", true, rs_crc_shell_test);
     (void)rs_shell_register("ps2", "ps2 test", false, rs_ps2_shell_test);
     (void)rs_shell_register("lcd", "lcd test", true, ip_lcd_test);
     (void)rs_shell_register("i2s", "i2s test", false, ip_i2s_test);

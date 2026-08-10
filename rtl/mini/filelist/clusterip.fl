@@ -28,9 +28,8 @@
 /clusterip/rtc/rtl/apb4_rtc.sv
 /clusterip/wdg/rtl/wdg_if.sv
 /clusterip/wdg/rtl/apb4_wdg.sv
-/clusterip/crc/rtl/crc8_model.sv
-/clusterip/crc/rtl/crc16_model.sv
-/clusterip/crc/rtl/crc32_model.sv
+/clusterip/crc/rtl/crc_core.sv
+/clusterip/crc/rtl/crc_reg.sv
 /clusterip/crc/rtl/apb4_crc.sv
 /clusterip/timer/rtl/tmr_if.sv
 /clusterip/timer/rtl/apb4_tmr.sv

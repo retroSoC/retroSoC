@@ -152,7 +152,11 @@ digraph mini_soc_block_diagram {
       ];
       apb_targets [
         fillcolor="#E6F4EA",
-        label="APB target wrapper\nUART1, PWM, watchdog, CRC\nadvanced timer and user IP"
+        label="APB target wrapper\nUART1, PWM, watchdog\nadvanced timer and user IP"
+      ];
+      crc [
+        fillcolor="#E6F4EA",
+        label="CRC V2\nprogrammable 7/8/16/32-bit streaming CRC\nbyte, halfword and word APB feed"
       ];
       rtc [
         fillcolor="#E6F4EA",
@@ -185,7 +189,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; crc; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -219,6 +223,7 @@ digraph mini_soc_block_diagram {
   apb_adapter -> rng [label="APB"];
   apb_adapter -> ps2 [label="APB"];
   apb_adapter -> rtc [label="APB"];
+  apb_adapter -> crc [label="APB"];
   apb_adapter -> apb_targets [label="APB"];
 
   ribp_targets -> gpio_controller [label="alternate functions"];

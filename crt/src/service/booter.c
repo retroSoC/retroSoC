@@ -127,7 +127,8 @@ void rs_app_info(void) {
     printf("                       1 x RTC           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB_RTC_BASE);
     printf("                       1 x WDG           @%p\n", (void *)&reg_wdg_ctrl);
-    printf("                       1 x CRC           @%p\n", (void *)&reg_crc_ctrl);
+    printf("                       1 x CRC           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB_CRC_BASE);
     printf("                       1 x TIMER3(ADV)   @%p\n", (void *)&reg_tim3_ctrl);
     printf("                       1 x USER_IP(4KiB) @%p\n", (void *)&reg_user_ip_reg0);
     printf("\n");
