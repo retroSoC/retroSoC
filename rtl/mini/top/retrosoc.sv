@@ -83,6 +83,7 @@ module retrosoc (
   logic [                     63:0] s_perf_psram_wait;
   logic [                     63:0] s_perf_flash_wait;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
+  logic                             s_rtc_wake;
 
   assign u_sysctrl_if.fault_access_i    = s_bus_fault_access;
   assign u_sysctrl_if.fault_master_i    = s_bus_fault_master;
@@ -100,6 +101,7 @@ module retrosoc (
   assign u_sysctrl_if.perf_sdram_wait_i = s_perf_sdram_wait;
   assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
   assign u_sysctrl_if.perf_flash_wait_i = s_perf_flash_wait;
+  assign u_sysctrl_if.rtc_wake_i        = s_rtc_wake;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
@@ -206,6 +208,7 @@ core_wrapper u_core_wrapper (
       .ps2        (u_ps2_if),
       .ip_sel_i   (u_sysctrl_if.ip_sel_o),
       .user_gpio  (u_user_gpio_if),
+      .rtc_wake_o (s_rtc_wake),
       .irq_o      (s_apb_irq)
   );
 

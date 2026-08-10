@@ -5,6 +5,7 @@ HAVE_SRAM_IF      := NO
 HAVE_SRAM_MACRO   := NO
 HAVE_SVA          := NO
 EXT_CLK_HZ        := 72000000
+AUD_CLK_HZ        := 18432000
 CLINT_TIMEBASE_HZ := 1000000
 ISA               := RV32IM
 HAVE_CSR          := NO

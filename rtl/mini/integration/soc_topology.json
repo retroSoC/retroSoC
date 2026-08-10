@@ -28,6 +28,9 @@
     {"name": "gpio", "description": "RIBP GPIO combined interrupt", "group": "ribp", "group_bit": 11, "core_bit": 18, "signal": "gpio.irq_o"},
     {"name": "i2c1", "description": "RIBP I2C1 interrupt", "group": "ribp", "group_bit": 12, "core_bit": 19, "signal": "i2c1.irq_o"}
   ],
+  "wake_sources": [
+    {"name": "rtc", "signal": "u_rtc_if.wake_o", "observer": "sysctrl.rtc_wake_i", "retained": false}
+  ],
   "ribp_targets": [
     {"slot": 0, "name": "uart0", "interface": "u_uart_ribp_if", "regions": ["RIBP_UART0"]},
     {"slot": 1, "name": "gpio", "interface": "u_gpio_ribp_if", "regions": ["RIBP_GPIO", "RIBP_GPIO_ADMIN"]},

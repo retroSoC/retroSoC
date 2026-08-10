@@ -27,8 +27,9 @@ module ip_apb_wrapper (
     uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
-    input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
-    user_gpio_if.user_ip                user_gpio,
+    input  logic [`USER_IPSEL_WIDTH-1:0]  ip_sel_i,
+    user_gpio_if.user_ip                  user_gpio,
+    output logic                          rtc_wake_o,
     output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -163,10 +164,14 @@ module ip_apb_wrapper (
       .ps2 (ps2)
   );
 
-  apb4_rtc u_apb4_rtc (
+  apb4_rtc #(
+      .RTC_CLOCK_HZ(`SOC_AUD_CLK_HZ)
+  ) u_apb4_rtc (
       .apb4(u_rtc_apb_if),
       .rtc (u_rtc_if)
   );
+
+  assign rtc_wake_o = u_rtc_if.wake_o;
 
   apb4_wdg u_apb4_wdg (
       .apb4(u_wdg_apb_if),

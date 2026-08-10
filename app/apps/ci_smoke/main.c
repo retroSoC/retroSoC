@@ -3,6 +3,7 @@
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/rng.h>
+#include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
 #include <retrosoc/lib/printf.h>
@@ -13,7 +14,7 @@ static bool rs_ci_smoke_archinfo_v2(void) {
     uint32_t device_id[4];
 
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
-           (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP);
+           (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
 }
 
 static bool rs_ci_smoke_rng_v2(void) {

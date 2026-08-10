@@ -45,6 +45,7 @@ DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
 DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS) $(SW_WARN_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
 DEF_VAL += -DRS_CLINT_TIMEBASE_HZ=$(CLINT_TIMEBASE_HZ)U
+DEF_VAL += -DRS_RTC_CLOCK_HZ=$(AUD_CLK_HZ)U
 ifeq ($(HAVE_CSR),YES)
 DEF_VAL += -DCSR_ENABLE
 endif
@@ -63,6 +64,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/lib/printf.c \
             $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/src/archinfo.c \
             $(ROOT_PATH)/rtl/managed/clusterip/rng/sw/src/rng.c \
+            $(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/src/rtc.c \
             $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/src/ps2.c \
             $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/src/ps2_keyboard.c \
             $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/src/ps2_mouse.c \
@@ -134,6 +136,7 @@ INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(ARCHINFO_METADATA_DIR) \
             -I$(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
             -I$(ROOT_PATH)/rtl/managed/clusterip/rng/sw/include \
+            -I$(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/include \
             -I$(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/include \
             -I$(ROOT_PATH)/crt/include \
             $(addprefix -I,$(APP_INC_DIRS))
@@ -148,6 +151,8 @@ SW_HEADERS        := $(shell find $(ROOT_PATH)/crt/include $(ROOT_PATH)/app -typ
 SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
                       -type f -name '*.h' 2>/dev/null)
 SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rng/sw/include \
+                      -type f -name '*.h' 2>/dev/null)
+SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/include \
                       -type f -name '*.h' 2>/dev/null)
 SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/include \
                       -type f -name '*.h' 2>/dev/null)

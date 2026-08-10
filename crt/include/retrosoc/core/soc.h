@@ -159,6 +159,7 @@
 #define reg_sysctrl_perf_flash_wait_hi                                                             \
     RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET)
 #define reg_sysctrl_test_status            RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_TEST_STATUS_OFFSET)
+#define reg_sysctrl_rtc_wake_status        RS_SOC_SYSCTRL_REG32(RS_SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET)
 #define RS_SOC_TEST_STATUS_VALID           UINT32_C(0x80000000)
 #define RS_SOC_TEST_STATUS_CODE_SHIFT      8U
 #define RS_SOC_TEST_STATUS_PASS            UINT32_C(0x00000001)
@@ -176,6 +177,8 @@
 #define RS_SOC_PERF_CTRL_ENABLE            UINT32_C(0x00000001)
 #define RS_SOC_PERF_CTRL_CLEAR             UINT32_C(0x00000002)
 #define RS_SOC_PERF_CTRL_SNAPSHOT          UINT32_C(0x00000004)
+#define RS_SOC_RTC_WAKE_LIVE               UINT32_C(0x00000001)
+#define RS_SOC_RTC_WAKE_SEEN               UINT32_C(0x00000002)
 // sdram
 #define reg_sdram_clkdiv                   RS_SOC_REG32(RS_SOC_RIBP_SDRAM_BASE, UINT32_C(0x00))
 #define reg_sdram_cfg                      RS_SOC_REG32(RS_SOC_RIBP_SDRAM_BASE, UINT32_C(0x04))
@@ -199,13 +202,6 @@
 #define reg_pwm_cr2                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x18))
 #define reg_pwm_cr3                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x1C))
 #define reg_pwm_stat                       RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x20))
-// rtc
-#define reg_rtc_ctrl                       RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x00))
-#define reg_rtc_pscr                       RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x04))
-#define reg_rtc_cnt                        RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x08))
-#define reg_rtc_alrm                       RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x0C))
-#define reg_rtc_ista                       RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x10))
-#define reg_rtc_ssta                       RS_SOC_REG32(RS_SOC_APB_RTC_BASE, UINT32_C(0x14))
 // wdg
 #define reg_wdg_ctrl                       RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x00))
 #define reg_wdg_pscr                       RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x04))

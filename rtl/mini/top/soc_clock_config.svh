@@ -12,4 +12,8 @@
 `define SOC_CLINT_TIMEBASE_HZ 1000000
 `endif
 
+`ifndef SOC_AUD_CLK_HZ
+`define SOC_AUD_CLK_HZ 18432000
+`endif
+
 `endif

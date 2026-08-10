@@ -106,6 +106,7 @@ module pll_ctrl_tb;
     sysctrl.user_bus_idle_i = 1'b1;
     sysctrl.fault_access_i  = 1'b0;
     sysctrl.fault_master_i  = '0;
+    sysctrl.rtc_wake_i      = 1'b0;
     #100;
     rst_n_i = 1'b1;
     repeat (12) @(posedge sys_clk_o);

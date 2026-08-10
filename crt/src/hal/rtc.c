@@ -1,57 +1,99 @@
-#include <retrosoc/core/soc.h>
-#include <retrosoc/core/wait.h>
-#include <retrosoc/lib/printf.h>
 #include <retrosoc/hal/rtc.h>
 
-#define RS_RTC_WAIT_TIMEOUT (RS_TIMEOUT_DEFAULT * 16U)
+#include <retrosoc/core/soc.h>
+#include <retrosoc/lib/printf.h>
 
-// 12.288M/256=48K
-// apb4 clk: 'CPU_FREQ' MHz
-// rtc_clk:  12.288     MHz
-void ip_rtc_test(int argc, char **argv) {
+static rs_status_t rs_rtc_status(rtc_status_t status) {
+    rs_status_t result;
+
+    switch (status) {
+    case RTC_STATUS_OK:
+        result = RS_OK;
+        break;
+    case RTC_STATUS_INVALID_ARGUMENT:
+        result = RS_EINVAL;
+        break;
+    case RTC_STATUS_TIMEOUT:
+        result = RS_ETIMEOUT;
+        break;
+    case RTC_STATUS_NOT_INITIALIZED:
+        result = RS_EFORMAT;
+        break;
+    case RTC_STATUS_IO_ERROR:
+    default:
+        result = RS_EIO;
+        break;
+    }
+    return result;
+}
+
+rs_status_t rs_rtc_probe(void) {
+    return rs_rtc_status(rtc_probe((uintptr_t)RS_SOC_APB_RTC_BASE));
+}
+
+rs_status_t rs_rtc_configure(const rs_rtc_config_t *config, rs_timeout_t timeout) {
+    return rs_rtc_status(rtc_configure((uintptr_t)RS_SOC_APB_RTC_BASE, config, timeout));
+}
+
+rs_status_t rs_rtc_set_time(const rs_rtc_time_t *time, rs_timeout_t timeout) {
+    return rs_rtc_status(rtc_set_time((uintptr_t)RS_SOC_APB_RTC_BASE, time, timeout));
+}
+
+rs_status_t rs_rtc_get_time(rs_rtc_time_t *time, rs_timeout_t timeout) {
+    return rs_rtc_status(rtc_get_time((uintptr_t)RS_SOC_APB_RTC_BASE, time, timeout));
+}
+
+rs_status_t rs_rtc_configure_alarm(uint32_t channel, const rs_rtc_alarm_t *alarm,
+                                   rs_timeout_t timeout) {
+    return rs_rtc_status(
+        rtc_configure_alarm((uintptr_t)RS_SOC_APB_RTC_BASE, channel, alarm, timeout));
+}
+
+rs_status_t rs_rtc_configure_periodic(const rs_rtc_periodic_t *periodic, rs_timeout_t timeout) {
+    return rs_rtc_status(rtc_configure_periodic((uintptr_t)RS_SOC_APB_RTC_BASE, periodic, timeout));
+}
+
+uint32_t rs_rtc_get_events(void) {
+    return rtc_get_events((uintptr_t)RS_SOC_APB_RTC_BASE);
+}
+
+rs_status_t rs_rtc_clear_events(uint32_t mask, rs_timeout_t timeout) {
+    return rs_rtc_status(rtc_clear_events((uintptr_t)RS_SOC_APB_RTC_BASE, mask, timeout));
+}
+
+void rs_rtc_shell_test(int argc, char **argv) {
+    const rs_rtc_config_t config = {
+        .second_cycles = RS_RTC_CLOCK_HZ,
+        .calibration_ppm = 0,
+        .interrupt_enable = 0U,
+        .wake_enable = 0U,
+        .enable = true,
+    };
+    const rs_rtc_time_t initial_time = {
+        .seconds = UINT64_C(1767225600),
+        .subsecond = 0U,
+    };
+    rs_rtc_time_t snapshot;
+    rs_status_t status;
+
     (void)argc;
     (void)argv;
 
-    printf("rtc test\n");
-
-    reg_rtc_ctrl = (uint32_t)1;             // enter config mode
-    reg_rtc_pscr = (uint32_t)(1000000 - 1); // div1000000 for 'CPU_FREQ' Hz
-
-    printf("CTRL: %d PSCR: %d\n", reg_rtc_ctrl, reg_rtc_pscr);
-    for (uint32_t i = 0U; i < 6U; ++i) {
-        reg_rtc_cnt = (uint32_t)(123 * i);
-        reg_rtc_alrm = reg_rtc_cnt + 10;
-        printf("[static]CNT: %d ALRM: %d\n", reg_rtc_cnt, reg_rtc_alrm);
-        if (reg_rtc_cnt != (uint32_t)(123 * i))
-            printf("error\n");
+    status = rs_rtc_probe();
+    if (status == RS_OK) {
+        status = rs_rtc_configure(&config, RS_TIMEOUT_DEFAULT);
     }
-
-    reg_rtc_cnt = (uint32_t)0;
-    reg_rtc_ctrl = (uint32_t)0b0010010; // core and inc trg en
-    printf("CTRL: %d PSCR: %d\n", reg_rtc_ctrl, reg_rtc_pscr);
-    printf("cnt inc test\n");
-    for (uint32_t i = 0U; i < 6U; ++i) {
-        if (rs_wait_value(&reg_rtc_ista, 1U, RS_RTC_WAIT_TIMEOUT) != RS_OK) {
-            printf("rtc increment timed out\n");
-            return;
-        }
-        printf("reg_rtc_cnt: %d\n", reg_rtc_cnt); // inc 1 in 1/'CPU_FREQ' s
+    if (status == RS_OK) {
+        status = rs_rtc_set_time(&initial_time, RS_TIMEOUT_DEFAULT);
     }
-    printf("cnt inc test done\n");
-    printf("alrm trigger test\n");
-
-    reg_rtc_ctrl = (uint32_t)1; // enter config mode
-    reg_rtc_cnt = (uint32_t)0;
-    reg_rtc_alrm = reg_rtc_cnt + 6;
-    // for(int i = 0; i < 6; ++i) {
-    //     reg_rtc_ctrl = (uint32_t)0b0010100;       // core and alrm trg en
-    //     while(reg_rtc_ista != (uint32_t)2);       // wait alrm irq flag
-    //     reg_rtc_ctrl = (uint32_t)1;               // enter config mode
-    //     while(reg_rtc_ista != (uint32_t)0);       // clear the all irq flag
-    //     printf("reg_rtc_cnt: %d\n", reg_rtc_cnt); // alrm trg every 1s
-    //     reg_rtc_alrm = reg_rtc_cnt + 6;
-    // }
-    printf("CTRL: %d PSCR: %d\n", reg_rtc_ctrl, reg_rtc_pscr);
-    printf("alrm trigger test done\n");
-    printf("rtc test done\n");
+    if (status == RS_OK) {
+        status = rs_rtc_get_time(&snapshot, RS_TIMEOUT_DEFAULT);
+    }
+    if (status != RS_OK) {
+        printf("[RTC] V2 test failed: %d\n", status);
+        return;
+    }
+    printf("[APB IP] RTC V2\n");
+    printf("[RTC epoch/subsecond] %u/%u\n", (uint32_t)snapshot.seconds,
+           (uint32_t)snapshot.subsecond);
 }

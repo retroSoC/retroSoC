@@ -30,6 +30,7 @@ interface sysctrl_if ();
   logic [                   63:0] perf_sdram_wait_i;
   logic [                   63:0] perf_psram_wait_i;
   logic [                   63:0] perf_flash_wait_i;
+  logic                           rtc_wake_i;
   logic                           test_done_o;
   logic                           test_pass_o;
   logic [                    7:0] test_code_o;
@@ -48,6 +49,7 @@ interface sysctrl_if ();
       input perf_sdram_wait_i,
       input perf_psram_wait_i,
       input perf_flash_wait_i,
+      input rtc_wake_i,
       output core_sel_o,
       output core_reset_o,
       output user_bus_enable_o,
@@ -127,6 +129,8 @@ module ribp_sysctrl (
       sysctrl_offset_t'(`SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_TEST_STATUS_OFFSET =
       sysctrl_offset_t'(`SOC_SYSCTRL_TEST_STATUS_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_RTC_WAKE_STATUS_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET);
 
   logic s_ribp_wr_hdshk, s_ribp_rd_hdshk;
   logic s_ribp_ready_d, s_ribp_ready_q;
@@ -180,25 +184,58 @@ module ribp_sysctrl (
   logic s_test_pass_d, s_test_pass_q;
   logic [7:0] s_test_code_d, s_test_code_q;
   logic s_test_status_write;
+  logic s_rtc_wake_sync;
+  logic s_rtc_wake_clear;
+  logic s_rtc_wake_seen_d, s_rtc_wake_seen_q;
 
-  assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
-  assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
-  assign ribp.ready = s_ribp_ready_q;
-  assign ribp.resp_err = 1'b0;
-  assign ribp.rdata = s_ribp_rdata_q;
+  assign s_ribp_wr_hdshk           = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
+  assign s_ribp_rd_hdshk           = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
+  assign ribp.ready                = s_ribp_ready_q;
+  assign ribp.resp_err             = 1'b0;
+  assign ribp.rdata                = s_ribp_rdata_q;
 
-  assign sysctrl.ip_sel_o = s_sysctrl_ipsel_q;
-  assign sysctrl.core_sel_o = s_sysctrl_coresel_q;
-  assign sysctrl.core_reset_o = s_user_reset_q;
+  assign sysctrl.ip_sel_o          = s_sysctrl_ipsel_q;
+  assign sysctrl.core_sel_o        = s_sysctrl_coresel_q;
+  assign sysctrl.core_reset_o      = s_user_reset_q;
   assign sysctrl.user_bus_enable_o = s_user_running_q;
-  assign sysctrl.perf_enable_o = s_perf_enable_q;
-  assign sysctrl.perf_clear_o = s_perf_clear;
-  assign sysctrl.test_done_o = s_test_done_q;
-  assign sysctrl.test_pass_o = s_test_pass_q;
-  assign sysctrl.test_code_o = s_test_code_q;
-  assign pll_ctrl.req_sel_o = s_pll_cfg_q;
-  assign pll_ctrl.req_valid_o = s_pll_req_valid_q;
-  assign pll_ctrl.rsp_ready_o = 1'b1;
+  assign sysctrl.perf_enable_o     = s_perf_enable_q;
+  assign sysctrl.perf_clear_o      = s_perf_clear;
+  assign sysctrl.test_done_o       = s_test_done_q;
+  assign sysctrl.test_pass_o       = s_test_pass_q;
+  assign sysctrl.test_code_o       = s_test_code_q;
+  assign pll_ctrl.req_sel_o        = s_pll_cfg_q;
+  assign pll_ctrl.req_valid_o      = s_pll_req_valid_q;
+  assign pll_ctrl.rsp_ready_o      = 1'b1;
+
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_rtc_wake_sync (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (sysctrl.rtc_wake_i),
+      .dat_o  (s_rtc_wake_sync)
+  );
+
+  assign s_rtc_wake_clear = s_ribp_wr_hdshk &&
+      (ribp.addr[7:0] == SYSCTRL_RTC_WAKE_STATUS_OFFSET) && ribp.wstrb[0] && ribp.wdata[1];
+  always_comb begin
+    s_rtc_wake_seen_d = s_rtc_wake_seen_q;
+    if (s_rtc_wake_clear) begin
+      s_rtc_wake_seen_d = 1'b0;
+    end
+    if (s_rtc_wake_sync) begin
+      s_rtc_wake_seen_d = 1'b1;
+    end
+  end
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rtc_wake_seen_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_rtc_wake_seen_d),
+      .dat_o  (s_rtc_wake_seen_q)
+  );
 
   assign s_sysctrl_coresel_write_valid = ribp.wdata[`USER_CORESEL_WIDTH-1:0] < `USER_CORE_COUNT;
   assign s_sysctrl_coresel_en = s_ribp_wr_hdshk && ribp.addr[7:0] == SYSCTRL_CORESEL_OFFSET &&
@@ -638,6 +675,9 @@ module ribp_sysctrl (
       SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET: s_ribp_rdata_d = s_perf_flash_wait_q[63:32];
       SYSCTRL_TEST_STATUS_OFFSET:         s_ribp_rdata_d = {
           s_test_done_q, 15'd0, s_test_code_q, 7'd0, s_test_pass_q
+      };
+      SYSCTRL_RTC_WAKE_STATUS_OFFSET:     s_ribp_rdata_d = {
+          30'd0, s_rtc_wake_seen_q, s_rtc_wake_sync
       };
       default:                            s_ribp_rdata_d = s_ribp_rdata_q;
     endcase

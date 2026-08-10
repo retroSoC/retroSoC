@@ -34,6 +34,8 @@ the root README and subsystem guides.
   recovery, DMA, HAL, and verification contracts.
 - [ip/ps2.md](ip/ps2.md) defines the Mini SoC PS/2 V2 APB, GPIO pad,
   interrupt, SDK, and managed-IP integration contract.
+- The managed [RTC V2 datasheet](../rtl/managed/clusterip/rtc/doc/datasheet.md)
+  defines Epoch time, alarms, periodic wake, calibration, CDC, and software.
 - [soc-integration-wiring.md](soc-integration-wiring.md) defines the generated
   pin-map workflow and SoC integration boundary.
 - [mini-soc-block-diagram.svg](mini-soc-block-diagram.svg) is the Mini SoC

@@ -31,7 +31,8 @@
     {"symbol": "PERF_PSRAM_WAIT_HI", "offset": "0x78"},
     {"symbol": "PERF_FLASH_WAIT_LO", "offset": "0x7C"},
     {"symbol": "PERF_FLASH_WAIT_HI", "offset": "0x80"},
-    {"symbol": "TEST_STATUS", "offset": "0x84"}
+    {"symbol": "TEST_STATUS", "offset": "0x84"},
+    {"symbol": "RTC_WAKE_STATUS", "offset": "0x88"}
   ],
   "regions": [
     {"symbol": "FLASH", "base": "0x00000000", "size": "0x01000000", "route": "ribp", "kind": "active", "public": true, "linker": "FLASH", "user_access": "ro", "burst": "incr4"},

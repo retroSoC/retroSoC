@@ -20,7 +20,11 @@
 /clusterip/ps2/rtl/apb4_ps2.sv
 /clusterip/i2c/rtl/i2c_if.sv
 /clusterip/spi/rtl/spi_if.sv
+/clusterip/rtc/rtl/rtc_pkg.sv
 /clusterip/rtc/rtl/rtc_if.sv
+/clusterip/rtc/rtl/rtc_tickgen.sv
+/clusterip/rtc/rtl/rtc_core.sv
+/clusterip/rtc/rtl/rtc_reg.sv
 /clusterip/rtc/rtl/apb4_rtc.sv
 /clusterip/wdg/rtl/wdg_if.sv
 /clusterip/wdg/rtl/apb4_wdg.sv

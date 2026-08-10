@@ -72,6 +72,7 @@ module sysctrl_fault_tb;
     sysctrl.perf_sdram_wait_i   = 64'd16;
     sysctrl.perf_psram_wait_i   = 64'd17;
     sysctrl.perf_flash_wait_i   = 64'd18;
+    sysctrl.rtc_wake_i          = 1'b0;
     pll_ctrl.req_ready_i        = 1'b1;
     pll_ctrl.rsp_active_sel_i   = '0;
     pll_ctrl.rsp_active_valid_i = 1'b0;
@@ -163,7 +164,29 @@ module sysctrl_fault_tb;
       $fatal(1, "terminal test status was overwritten");
     end
 
-    $display("sysctrl fault and user core control test passed");
+    read_register(32'h1000_B088, read_data);
+    if (read_data !== 32'h0000_0000) begin
+      $fatal(1, "RTC wake status did not reset");
+    end
+    sysctrl.rtc_wake_i = 1'b1;
+    repeat (4) @(posedge clk_i);
+    read_register(32'h1000_B088, read_data);
+    if (read_data !== 32'h0000_0003) begin
+      $fatal(1, "RTC wake live and sticky status was not recorded");
+    end
+    sysctrl.rtc_wake_i = 1'b0;
+    repeat (4) @(posedge clk_i);
+    read_register(32'h1000_B088, read_data);
+    if (read_data !== 32'h0000_0002) begin
+      $fatal(1, "RTC wake sticky status was not retained");
+    end
+    write_register(32'h1000_B088, 32'h0000_0002);
+    read_register(32'h1000_B088, read_data);
+    if (read_data !== 32'h0000_0000) begin
+      $fatal(1, "RTC wake sticky status W1C failed");
+    end
+
+    $display("sysctrl fault, user core control, and RTC wake test passed");
     $finish;
   end
 endmodule
