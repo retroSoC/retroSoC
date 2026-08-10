@@ -21,7 +21,7 @@
       "name": "system",
       "clock": "sys_clk_o",
       "reset": "s_sys_rst_n_sync",
-      "reset_source": "ext_rst_n_i",
+      "reset_source": "s_sys_reset_source_n",
       "reset_primitive": "rst_sync",
       "path": "rtl/mini/top/rcu.sv",
       "instance": "u_sys_rst_sync",
@@ -182,6 +182,46 @@
       "primitive": "hazard3_apb_async_bridge",
       "path": "rtl/managed/hazard3/hdl/debug/dtm/hazard3_jtag_dtm_core.v",
       "instance": "inst_hazard3_apb_async_bridge"
+    },
+    {
+      "name": "wdg_command",
+      "source": "system",
+      "destination": "audio",
+      "primitive": "async_reqack",
+      "path": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+      "instance": "u_command_mailbox"
+    },
+    {
+      "name": "wdg_response",
+      "source": "audio",
+      "destination": "system",
+      "primitive": "async_reqack",
+      "path": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+      "instance": "u_response_mailbox"
+    },
+    {
+      "name": "wdg_debug_halted",
+      "source": "system",
+      "destination": "audio",
+      "primitive": "cdc_sync",
+      "path": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+      "instance": "u_debug_halted_sync"
+    },
+    {
+      "name": "wdg_status",
+      "source": "audio",
+      "destination": "system",
+      "primitive": "cdc_sync",
+      "path": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+      "instance": "u_status_sync"
+    },
+    {
+      "name": "wdg_reset_cause",
+      "source": "audio",
+      "destination": "system",
+      "primitive": "cdc_sync",
+      "path": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+      "instance": "u_reset_cause_sync"
     }
   ]
 }

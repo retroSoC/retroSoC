@@ -21,7 +21,7 @@
     {"name": "pwm", "description": "APB PWM interrupt", "group": "apb", "group_bit": 1, "core_bit": 11, "signal": "pwm.irq_o"},
     {"name": "ps2", "description": "APB PS2 interrupt", "group": "apb", "group_bit": 2, "core_bit": 12, "signal": "ps2.irq_o"},
     {"name": "rtc", "description": "APB RTC interrupt", "group": "apb", "group_bit": 3, "core_bit": 13, "signal": "u_rtc_if.irq_o"},
-    {"name": "watchdog_reset", "description": "APB watchdog reset request", "group": "apb", "group_bit": 4, "core_bit": 14, "signal": "u_wdg_if.rst_o"},
+    {"name": "watchdog_early_warning", "description": "APB watchdog early-warning interrupt", "group": "apb", "group_bit": 4, "core_bit": 14, "signal": "u_wdg_if.irq_o"},
     {"name": "advanced_timer", "description": "APB advanced timer interrupt", "group": "apb", "group_bit": 5, "core_bit": 15, "signal": "u_tmr_if.irq_o"},
     {"name": "rng", "description": "APB RNG data/error interrupt", "group": "apb", "group_bit": 6, "core_bit": 16, "signal": "s_rng_irq", "user_visible": false},
     {"name": "ws2812", "description": "WS2812 transmitter interrupt", "group": "ribp", "group_bit": 10, "core_bit": 17, "signal": "ws2812.irq_o"},

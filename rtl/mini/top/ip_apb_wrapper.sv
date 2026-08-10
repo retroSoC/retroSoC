@@ -22,6 +22,7 @@ module ip_apb_wrapper (
     input  logic                        rst_n_i,
     input  logic                        clk_aud_i,
     input  logic                        rst_aud_n_i,
+    input  logic                        debug_halted_i,
     input  logic                        tmr_capch_i,
     rib_if.slave                        rib,
     uart_if.dut                         uart,
@@ -30,6 +31,7 @@ module ip_apb_wrapper (
     input  logic [`USER_IPSEL_WIDTH-1:0]  ip_sel_i,
     user_gpio_if.user_ip                  user_gpio,
     output logic                          rtc_wake_o,
+    output logic                          wdg_reset_req_o,
     output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -92,7 +94,11 @@ module ip_apb_wrapper (
       .rtc_clk_i  (clk_aud_i),
       .rtc_rst_n_i(rst_aud_n_i)
   );
-  wdg_if u_wdg_if (.rtc_clk_i(clk_aud_i));
+  wdg_if u_wdg_if (
+      .wdg_clk_i     (clk_aud_i),
+      .wdg_rst_n_i   (rst_aud_n_i),
+      .debug_halted_i(debug_halted_i)
+  );
   tmr_if u_tmr_if (.exclk_i(clk_aud_i));
 
   assign u_tmr_if.capch_i = tmr_capch_i;
@@ -173,10 +179,15 @@ module ip_apb_wrapper (
 
   assign rtc_wake_o = u_rtc_if.wake_o;
 
-  apb4_wdg u_apb4_wdg (
+  apb4_wdg #(
+      .WDG_CLOCK_HZ      (`SOC_AUD_CLK_HZ),
+      .RESET_PULSE_CYCLES(8)
+  ) u_apb4_wdg (
       .apb4(u_wdg_apb_if),
       .wdg (u_wdg_if)
   );
+
+  assign wdg_reset_req_o = u_wdg_if.reset_req_o;
 
   apb4_crc u_apb4_crc (.apb4(u_crc_apb_if));
 

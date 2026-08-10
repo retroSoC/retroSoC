@@ -1,47 +1,46 @@
 #include <retrosoc/core/soc.h>
-#include <retrosoc/core/wait.h>
-#include <retrosoc/lib/printf.h>
 #include <retrosoc/hal/watchdog.h>
+#include <retrosoc/lib/printf.h>
 
-#define RS_WDG_WAIT_TIMEOUT (RS_TIMEOUT_DEFAULT * 16U)
+#include <wdg.h>
+#include <wdg_regs.h>
+
+#define RS_WDG_COMMAND_TIMEOUT UINT32_C(1024)
 
 void ip_wdg_test(int argc, char **argv) {
+    static const wdg_config_t config = {
+        .prescale_divider = 1U,
+        .timeout_ticks = 1024U,
+        .window_min_ticks = 0U,
+        .early_warning_ticks = 128U,
+        .window_enable = false,
+        .early_warning_enable = true,
+        .debug_freeze_enable = true,
+    };
+    wdg_snapshot_t snapshot = {0};
+    wdg_status_t status;
+
     (void)argc;
     (void)argv;
 
-    printf("[APB IP] wdg test\n");
-
-    reg_wdg_key = WDG_MAGIC_NUM;
-    reg_wdg_ctrl = (uint32_t)0x0;
-
-    // feed wdg in every 50ms
-    reg_wdg_key = WDG_MAGIC_NUM;
-    reg_wdg_pscr = (uint32_t)(CPU_FREQ - 1); // div/'CPU_FREQ' for 1MHz
-
-    reg_wdg_key = WDG_MAGIC_NUM;
-
-    reg_wdg_cmp = (uint32_t)(50000 - 1); // overflow in every 50ms
-    // reg_wdg_cmp = (uint32_t)(500 - 1);  // overflow in every 500ns
-
-    if (rs_wait_not_value(&reg_wdg_stat, 1U, RS_TIMEOUT_DEFAULT) != RS_OK) {
-        printf("watchdog status did not clear\n");
+    printf("[APB IP] wdg V2 test\n");
+    status = wdg_configure((uintptr_t)RS_SOC_APB_WDG_BASE, &config);
+    if (status != WDG_STATUS_OK) {
+        printf("watchdog configure failed: %d\n", (int)status);
         return;
     }
-
-    reg_wdg_key = WDG_MAGIC_NUM;
-    reg_wdg_ctrl = (uint32_t)0b101; // core and ov trg en
-
-    reg_wdg_key = WDG_MAGIC_NUM;
-    reg_wdg_feed = (uint32_t)0x1;
-    reg_wdg_key = WDG_MAGIC_NUM;
-    reg_wdg_feed = (uint32_t)0x0;
-
-    for (uint32_t i = 0U; i < 10U; ++i) {
-        printf("reg_wdg_pscr: %d\n", reg_wdg_pscr);
-        if (rs_wait_not_value(&reg_wdg_stat, 0U, RS_WDG_WAIT_TIMEOUT) != RS_OK) {
-            printf("watchdog test timed out\n");
-            return;
-        }
-        printf("%d wdg reset trigger\n", i);
+    status = wdg_interrupt_test((uintptr_t)RS_SOC_APB_WDG_BASE, WDG_INTR_WARNING_MASK);
+    if (status == WDG_STATUS_OK) {
+        status = wdg_snapshot((uintptr_t)RS_SOC_APB_WDG_BASE, &snapshot, RS_WDG_COMMAND_TIMEOUT);
     }
+    if ((status != WDG_STATUS_OK) || ((snapshot.interrupt_state & WDG_INTR_WARNING_MASK) == 0U)) {
+        printf("watchdog interrupt self-test failed: %d\n", (int)status);
+        return;
+    }
+    status = wdg_interrupt_clear((uintptr_t)RS_SOC_APB_WDG_BASE, WDG_INTR_WARNING_MASK);
+    if (status != WDG_STATUS_OK) {
+        printf("watchdog interrupt clear failed: %d\n", (int)status);
+        return;
+    }
+    printf("watchdog V2 ID/config/interrupt test passed\n");
 }

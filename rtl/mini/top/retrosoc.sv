@@ -33,6 +33,7 @@ module retrosoc (
     input  logic                           jtag_tdi_i,
     input  logic                           jtag_trst_n_i,
     output logic                           jtag_tdo_o,
+    output logic                           wdg_reset_req_o,
     output logic                           test_done_o,
     output logic                           test_pass_o,
     output logic [7:0]                     test_code_o
@@ -197,19 +198,21 @@ core_wrapper u_core_wrapper (
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .clk_aud_i  (clk_aud_i),
-      .rst_aud_n_i(rst_aud_n_i),
-      .tmr_capch_i(s_tmr_capch),
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .clk_aud_i      (clk_aud_i),
+      .rst_aud_n_i    (rst_aud_n_i),
+      .debug_halted_i (s_mgmt_debug_halted),
+      .tmr_capch_i    (s_tmr_capch),
       `include "soc_ip_apb_wrapper_fabric.svh"
-      .uart       (u_uart1_if),
-      .pwm        (u_pwm_if),
-      .ps2        (u_ps2_if),
-      .ip_sel_i   (u_sysctrl_if.ip_sel_o),
-      .user_gpio  (u_user_gpio_if),
-      .rtc_wake_o (s_rtc_wake),
-      .irq_o      (s_apb_irq)
+      .uart           (u_uart1_if),
+      .pwm            (u_pwm_if),
+      .ps2            (u_ps2_if),
+      .ip_sel_i       (u_sysctrl_if.ip_sel_o),
+      .user_gpio      (u_user_gpio_if),
+      .rtc_wake_o     (s_rtc_wake),
+      .wdg_reset_req_o(wdg_reset_req_o),
+      .irq_o          (s_apb_irq)
   );
 
 endmodule

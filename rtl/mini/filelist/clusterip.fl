@@ -26,7 +26,10 @@
 /clusterip/rtc/rtl/rtc_core.sv
 /clusterip/rtc/rtl/rtc_reg.sv
 /clusterip/rtc/rtl/apb4_rtc.sv
+/clusterip/wdg/rtl/wdg_pkg.sv
 /clusterip/wdg/rtl/wdg_if.sv
+/clusterip/wdg/rtl/wdg_core.sv
+/clusterip/wdg/rtl/wdg_reg.sv
 /clusterip/wdg/rtl/apb4_wdg.sv
 /clusterip/crc/rtl/crc_core.sv
 /clusterip/crc/rtl/crc_reg.sv

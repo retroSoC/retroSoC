@@ -30,7 +30,8 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 - A memory-mapped peripheral subsystem with GPIO, UART,
   [dual general timers](docs/ip/timer.md), PWM, [dual I2C controllers](docs/ip/i2c.md), I2S,
   [bidirectional PS/2 V2](docs/ip/ps2.md),
-  WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, CRC, and a
+  WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, an
+  independent-clock window watchdog, CRC, and a
   management-only RNG V2 entropy controller. The current deterministic RNG integration source is
   explicitly unqualified and intended only for diagnostics until a PDK-qualified entropy source is integrated.
   support. Available interfaces depend on the selected SoC configuration.

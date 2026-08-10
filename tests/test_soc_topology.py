@@ -144,7 +144,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("pwm", "apb", 1, 11, "pwm.irq_o"),
         ("ps2", "apb", 2, 12, "ps2.irq_o"),
         ("rtc", "apb", 3, 13, "u_rtc_if.irq_o"),
-        ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
+        ("watchdog_early_warning", "apb", 4, 14, "u_wdg_if.irq_o"),
         ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
         ("rng", "apb", 6, 16, "s_rng_irq"),
         ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),

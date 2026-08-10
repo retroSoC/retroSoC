@@ -202,14 +202,6 @@
 #define reg_pwm_cr2                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x18))
 #define reg_pwm_cr3                        RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x1C))
 #define reg_pwm_stat                       RS_SOC_REG32(RS_SOC_APB_PWM_BASE, UINT32_C(0x20))
-// wdg
-#define reg_wdg_ctrl                       RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x00))
-#define reg_wdg_pscr                       RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x04))
-#define reg_wdg_cnt                        RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x08))
-#define reg_wdg_cmp                        RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x0C))
-#define reg_wdg_stat                       RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x10))
-#define reg_wdg_key                        RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x14))
-#define reg_wdg_feed                       RS_SOC_REG32(RS_SOC_APB_WDG_BASE, UINT32_C(0x18))
 // tim3
 #define reg_tim3_ctrl                      RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x00))
 #define reg_tim3_pscr                      RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x04))

@@ -152,7 +152,11 @@ digraph mini_soc_block_diagram {
       ];
       apb_targets [
         fillcolor="#E6F4EA",
-        label="APB target wrapper\nUART1, PWM, watchdog\nadvanced timer and user IP"
+        label="APB target wrapper\nUART1, PWM, advanced timer\nand user IP"
+      ];
+      wdg [
+        fillcolor="#FDE68A",
+        label="WDG V2\nindependent-clock window watchdog\nearly IRQ14, retained cause/count"
       ];
       crc [
         fillcolor="#E6F4EA",
@@ -189,7 +193,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; crc; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -223,6 +227,7 @@ digraph mini_soc_block_diagram {
   apb_adapter -> rng [label="APB"];
   apb_adapter -> ps2 [label="APB"];
   apb_adapter -> rtc [label="APB"];
+  apb_adapter -> wdg [label="APB"];
   apb_adapter -> crc [label="APB"];
   apb_adapter -> apb_targets [label="APB"];
 
@@ -245,6 +250,9 @@ digraph mini_soc_block_diagram {
   rcu -> rtc [label="18.432 MHz audio clock", style=dashed];
   rtc -> irq [label="IRQ13"];
   rtc -> sysctrl [label="wake live / sticky", style=dashed];
+  rcu -> wdg [label="independent 18.432 MHz clock", style=dashed];
+  wdg -> irq [label="early warning IRQ14"];
+  wdg -> rcu [label="system reset request", color="#B91C1C", penwidth=2];
   apb_targets -> gpio_controller [label="user_gpio"];
   ribp_targets -> ext_io [dir=both, label="device interfaces"];
   uart0 -> ext_io [dir=both, label="UART pads"];

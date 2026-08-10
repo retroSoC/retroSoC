@@ -26,6 +26,7 @@ module retrosoc_asic (
   logic       s_ext_rst_n;
   logic       s_sys_rst_n;
   logic       s_aud_rst_n;
+  logic       s_wdg_reset_req;
   logic       s_jtag_tck;
   logic       s_jtag_tms;
   logic       s_jtag_tdi;
@@ -54,6 +55,7 @@ rcu #(
       .ext_clk_i      (s_ext_clk),
       .aud_clk_i      (s_aud_clk),
       .ext_rst_n_i    (s_ext_rst_n),
+      .wdg_reset_req_i(s_wdg_reset_req),
 `ifdef HAVE_PLL
       .xtal_clk_i     (s_xtal_io),
 `endif
@@ -92,6 +94,7 @@ rcu #(
       .jtag_tdi_i     (s_jtag_tdi),
       .jtag_trst_n_i  (s_jtag_trst_n),
       .jtag_tdo_o     (s_jtag_tdo),
+      .wdg_reset_req_o(s_wdg_reset_req),
       .test_done_o    (s_test_done),
       .test_pass_o    (s_test_pass),
       .test_code_o    (s_test_code)
