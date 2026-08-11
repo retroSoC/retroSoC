@@ -15,7 +15,7 @@
 
 Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. This application verifies UART output,
-archinfo APB readback, and test-status completion within the CI time budget;
+archinfo APB readback, RNG V2 integration, and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 
@@ -27,6 +27,16 @@ generates matching RTL and C metadata headers from the source revision,
 dependency lock, and canonical configuration digest.
 Normal builds clear the release flag; an audited release flow sets
 `BUILD_RELEASE=YES`, which is part of the canonical configuration digest.
+
+RNG V2 is a management-only APB entropy-controller integration. Its register
+specification, portable driver, standalone simulation, synthesis, formal
+properties, security boundary, and delivery checklist are owned by the
+[RNG IP repository](https://github.com/retroSoC/rng). The SoC currently feeds
+it from an explicitly unqualified deterministic source for reproducible
+bring-up and regression. Consequently `rs_rng_read_entropy()` fails closed
+with `RS_ENOTSUP`; only the diagnostic API returns words. Production use
+requires replacing that source with a PDK-qualified entropy macro and
+completing the source-specific characterization and NIST SP 800-90B evidence.
 
 OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
 `slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, ICS55 uses the H7CR

@@ -13,6 +13,7 @@ from typing import Any
 RESET_PRIMITIVES = {"rst_sync"}
 CDC_PRIMITIVES = {
     "async_fifo",
+    "async_reqack",
     "cdc_2phase",
     "cdc_sync",
     "edge_det",

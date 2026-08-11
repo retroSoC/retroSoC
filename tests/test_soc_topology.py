@@ -82,14 +82,29 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign s_xpi_region_sel[1] = (ribp.addr <= `SOC_ADDR_FLASH_END);" in routes
     assert "assign u_sdio_ribp_if.valid = 1'b0;" in routes
     assert gpio.count("// GPIO") == 64
-    assert "assign u_uart1_if.rx_i = u_gpio_if.di_i[0];" in gpio
+    assert "u_uart1_if" not in gpio
+    assert "assign u_gpio_if.alt0_do_i[0] = 1'b0;" in gpio
+    assert "assign u_gpio_if.alt0_oe_i[0] = 1'b0;" in gpio
+    assert "assign u_gpio_if.alt0_do_i[1] = 1'b0;" in gpio
+    assert "assign u_gpio_if.alt0_oe_i[1] = 1'b0;" in gpio
+    assert "assign u_gpio_if.alt1_do_i[0] = u_ps2_if.ps2_clk_o;" in gpio
+    assert "assign u_gpio_if.alt1_oe_i[0] = u_ps2_if.ps2_clk_oe_o;" in gpio
+    assert "assign u_gpio_if.alt1_do_i[1] = u_ps2_if.ps2_dat_o;" in gpio
+    assert "assign u_gpio_if.alt1_oe_i[1] = u_ps2_if.ps2_dat_oe_o;" in gpio
     assert "assign u_gpio_if.alt1_do_i[2] = u_ws2812_if.dat_o;" in gpio
+    assert "assign u_pwm_if.sync_i = u_gpio_if.di_i[2];" in gpio
+    assert "assign u_gpio_if.alt0_do_i[3] = u_pwm_if.pwm_o[0];" in gpio
+    assert "assign u_gpio_if.alt0_oe_i[3] = u_pwm_if.oe_o[0];" in gpio
+    assert "assign u_pwm_if.fault_i = u_gpio_if.di_i[9];" in gpio
+    assert "assign u_pwm_if.capture_i[0] = u_gpio_if.di_i[30];" in gpio
+    assert "assign u_pwm_if.capture_i[1] = u_gpio_if.di_i[31];" in gpio
     assert "assign u_gpio_if.alt1_do_i[22] = u_psram_if.nss_o[0];" in gpio
-    assert apb_interfaces.count("apb4_if u_") == 10
+    assert "s_tmr_capch" not in gpio
+    assert apb_interfaces.count("apb4_if u_") == 8
     assert "apb4_pure_if u_archinfo_apb_pure_if ();" in apb_interfaces
-    assert "assign tmr.paddr = s_addr_q;" in apb_routes
-    assert "({32{s_psel_q[8]}} & tmr.prdata)" in apb_response
-    assert "localparam int NSLV = 10;" in apb_declarations
+    assert "assign user_ip.paddr = s_addr_q;" in apb_routes
+    assert "({32{s_psel_q[7]}} & user_ip.prdata)" in apb_response
+    assert "localparam int NSLV = 8;" in apb_declarations
     assert fabric.count("ribp_if u_") == 1
     assert fabric.count("rib_if u_") == 4
     assert ".mgmt_ribp(u_mgmt_ribp_if)" in bus_fabric
@@ -97,15 +112,20 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".apb_rib(u_apb_rib_if)" in bus_fabric
     assert ".rib(u_rib_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
-    assert "`define SOC_USER_IRQ_MASK 32'h000FFFFC" in irq_config
+    assert "`define SOC_USER_IRQ_MASK 32'h000E7BFC" in irq_config
     assert "`define SOC_IRQ_RIBP_WIDTH 13" in irq_config
-    assert "`define SOC_IRQ_APB_WIDTH 7" in irq_config
+    assert "`define SOC_IRQ_APB_WIDTH 5" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
     assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
     assert "assign irq_o[12] = i2c1.irq_o;" in rib_irq
-    assert "assign irq_o[5] = u_tmr_if.irq_o;" in apb_irq
-    assert "s_irq[16] = s_apb_irq[6];" in irq_wiring
+    assert "assign irq_o[0] = pwm.irq_o;" in apb_irq
+    assert "assign irq_o[4] = s_rng_irq;" in apb_irq
+    assert "s_irq[10]" not in irq_wiring
+    assert "s_irq[15]" not in irq_wiring
+    assert "s_irq[16] = s_apb_irq[4];" in irq_wiring
+    assert "irq_i[10] == 1'b0" in irq_sva
+    assert "irq_i[15] == 1'b0" in irq_sva
     assert "irq_i[31] == 1'b0" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert filelist.startswith("+incdir+")
@@ -124,7 +144,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         )
         for interrupt in document["interrupts"]
     ]
-    assert mappings[:20] == [
+    assert mappings == [
         ("clint_software", "ribp", 0, 0, "u_clint_if.software_irq_o[0]"),
         ("clint_timer", "ribp", 1, 1, "u_clint_if.timer_irq_o[0]"),
         ("uart0", "ribp", 2, 2, "uart.irq_o"),
@@ -135,18 +155,15 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("i2c0", "ribp", 7, 7, "i2c0.irq_o"),
         ("i2s", "ribp", 8, 8, "i2s.irq_o"),
         ("xpi", "ribp", 9, 9, "xpi.irq_o"),
-        ("uart1", "apb", 0, 10, "uart.irq_o"),
-        ("pwm", "apb", 1, 11, "pwm.irq_o"),
-        ("ps2", "apb", 2, 12, "ps2.irq_o"),
-        ("rtc", "apb", 3, 13, "u_rtc_if.irq_o"),
-        ("watchdog_reset", "apb", 4, 14, "u_wdg_if.rst_o"),
-        ("advanced_timer", "apb", 5, 15, "u_tmr_if.irq_o"),
-        ("reserved", "apb", 6, 16, "1'b0"),
+        ("pwm", "apb", 0, 11, "pwm.irq_o"),
+        ("ps2", "apb", 1, 12, "ps2.irq_o"),
+        ("rtc", "apb", 2, 13, "u_rtc_if.irq_o"),
+        ("watchdog_early_warning", "apb", 3, 14, "u_wdg_if.irq_o"),
+        ("rng", "apb", 4, 16, "s_rng_irq"),
         ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
         ("gpio", "ribp", 11, 18, "gpio.irq_o"),
         ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),
     ]
-    assert all(mapping[3] >= 20 for mapping in mappings[20:])
 
 
 def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
@@ -161,12 +178,12 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     )
 
     assert "apb4_if u_user_ip_apb_if (clk_i, rst_n_i);" in interfaces
-    assert "localparam int NSLV = 10;" in declarations
-    assert "s_psel_q[9]" in response
+    assert "localparam int NSLV = 8;" in declarations
+    assert "s_psel_q[7]" in response
     assert "apb4_pure_if user_ip ();" in formal_design
     assert ".user_ip (user_ip)" in formal_design
-    assert "logic [ 9:0] psel_comb" in formal_design
-    assert "wire [ 9:0] psel_comb" in formal_properties
+    assert "logic [ 7:0] psel_comb" in formal_design
+    assert "wire [ 7:0] psel_comb" in formal_properties
 
 
 def test_topology_rejects_unknown_or_non_rib_regions(tmp_path: Path) -> None:
@@ -211,7 +228,7 @@ def test_topology_rejects_invalid_apb_target_ownership(tmp_path: Path) -> None:
     assert "not an active APB region" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb_targets"][8]["slot"] = 0
+    document["apb_targets"][7]["slot"] = 0
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "APB target slot 0 is duplicated" in result.stderr
@@ -257,7 +274,12 @@ def test_topology_rejects_invalid_irq_groups_and_bindings(tmp_path: Path) -> Non
     assert "core interrupt bit 0 is duplicated" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["interrupts"].pop(16)
+    rng_index = next(
+        index
+        for index, interrupt in enumerate(document["interrupts"])
+        if interrupt["name"] == "rng"
+    )
+    document["interrupts"].pop(rng_index)
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "interrupt group apb does not cover every group bit" in result.stderr

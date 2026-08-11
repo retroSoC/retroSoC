@@ -33,6 +33,7 @@ module retrosoc (
     input  logic                           jtag_tdi_i,
     input  logic                           jtag_trst_n_i,
     output logic                           jtag_tdo_o,
+    output logic                           wdg_reset_req_o,
     output logic                           test_done_o,
     output logic                           test_pass_o,
     output logic [7:0]                     test_code_o
@@ -55,12 +56,10 @@ module retrosoc (
   sdio_if     u_sdio_if     ();
   opipsram_if u_opipsram_if ();
   i2c_if      u_i2c1_if     ();
-  uart_if     u_uart1_if    ();
   pwm_if      u_pwm_if      ();
   ps2_if      u_ps2_if      ();
   // verilog_format: on
 
-  logic                             s_tmr_capch;
   logic                             s_mgmt_debug_halted;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
   logic [  `SOC_IRQ_RIBP_WIDTH-1:0] s_ribp_irq;
@@ -83,6 +82,7 @@ module retrosoc (
   logic [                     63:0] s_perf_psram_wait;
   logic [                     63:0] s_perf_flash_wait;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
+  logic                             s_rtc_wake;
 
   assign u_sysctrl_if.fault_access_i    = s_bus_fault_access;
   assign u_sysctrl_if.fault_master_i    = s_bus_fault_master;
@@ -100,6 +100,7 @@ module retrosoc (
   assign u_sysctrl_if.perf_sdram_wait_i = s_perf_sdram_wait;
   assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
   assign u_sysctrl_if.perf_flash_wait_i = s_perf_flash_wait;
+  assign u_sysctrl_if.rtc_wake_i        = s_rtc_wake;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
@@ -195,18 +196,19 @@ core_wrapper u_core_wrapper (
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .clk_aud_i  (clk_aud_i),
-      .rst_aud_n_i(rst_aud_n_i),
-      .tmr_capch_i(s_tmr_capch),
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .clk_aud_i      (clk_aud_i),
+      .rst_aud_n_i    (rst_aud_n_i),
+      .debug_halted_i (s_mgmt_debug_halted),
       `include "soc_ip_apb_wrapper_fabric.svh"
-      .uart       (u_uart1_if),
-      .pwm        (u_pwm_if),
-      .ps2        (u_ps2_if),
-      .ip_sel_i   (u_sysctrl_if.ip_sel_o),
-      .user_gpio  (u_user_gpio_if),
-      .irq_o      (s_apb_irq)
+      .pwm            (u_pwm_if),
+      .ps2            (u_ps2_if),
+      .ip_sel_i       (u_sysctrl_if.ip_sel_o),
+      .user_gpio      (u_user_gpio_if),
+      .rtc_wake_o     (s_rtc_wake),
+      .wdg_reset_req_o(wdg_reset_req_o),
+      .irq_o          (s_apb_irq)
   );
 
 endmodule

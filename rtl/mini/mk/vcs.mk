@@ -40,7 +40,6 @@ POST_OPTS := -sdf min:retrosoc_tb.u_retrosoc_asic:$(SDF_PATH) \
                +sdfverbose \
                +neg_tchk \
                -negdelay \
-               +optconfigfile+$(RTL_PATH)/disable_timing_checklist \
                -diag=sdf:verbose \
                +warn=OPD:10,IWNF:10,SDFCOM_UHICD:10,SDFCOM_ANICD:10,SDFCOM_NICD:10,DRTZ:10,SDFCOM_UHICD:10,SDFCOM_NTCDTL:10
 

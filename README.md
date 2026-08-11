@@ -1,18 +1,20 @@
 # retroSoC
 
-[![quality](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml)
-[![IHP130 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ihp130.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ihp130.yml)
-[![GF180 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml)
-[![ICS55 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ics55.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ics55.yml)
-[![SKY130 regression](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml)
-[![nightly](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml/badge.svg)](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml)
+[![License](https://img.shields.io/badge/License-Mulan%20PSL%20v2-d4a72c?style=flat-square&labelColor=3b301a&logo=github&logoColor=f6d365)](LICENSE)
+[![RTL](https://img.shields.io/badge/RTL-SystemVerilog-d4a72c?style=flat-square&labelColor=3b301a&logo=devbox&logoColor=f6d365)](rtl)
+[![ISA](https://img.shields.io/badge/ISA-RV32IM-d4a72c?style=flat-square&labelColor=3b301a&logo=riscv&logoColor=f6d365)](configs/ci/ihp130.mk)
+[![RISC-V GCC](https://img.shields.io/badge/RISC--V%20GCC-2025.05.01-d4a72c?style=flat-square&labelColor=3b301a&logo=c&logoColor=f6d365)](config/dependencies.lock.json)<br>
+[![IHP130 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-ihp130.yml?branch=main&style=flat-square&label=IHP130&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ihp130.yml)
+[![GF180 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-gf180.yml?branch=main&style=flat-square&label=GF180&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml)
+[![ICS55 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-ics55.yml?branch=main&style=flat-square&label=ICS55&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ics55.yml)
+[![SKY130 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-sky130.yml?branch=main&style=flat-square&label=SKY130&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml)
+[![Quality](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/quality.yml?branch=main&style=flat-square&label=Quality&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml)
+[![Nightly](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/nightly.yml?branch=main&style=flat-square&label=Nightly&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml)
 
 retroSoC is a fully open-source RISC-V SoC project. The repository brings together
 SystemVerilog RTL, a freestanding embedded C SDK and applications, simulation, synthesis,
 static timing analysis, reproducible dependencies, and release packaging. It is licensed
 under the [Mulan Permissive Software License, Version 2](LICENSE).
-
-![Mini SoC block diagram](docs/mini-soc-block-diagram.svg)
 
 ## Highlights
 
@@ -28,8 +30,14 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 - Configurable GF180, SKY130, IHP130, and ICS55 implementation targets with
   open-source CI coverage.
 - A memory-mapped peripheral subsystem with GPIO, UART,
-  [dual general timers](docs/ip/timer.md), PWM, [dual I2C controllers](docs/ip/i2c.md), I2S, PS2,
-  WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, watchdog, RNG, and CRC
+  [dual general timers](docs/ip/timer.md),
+  [PWM V2](rtl/managed/clusterip/pwm/doc/datasheet.md),
+  [dual I2C controllers](docs/ip/i2c.md), I2S,
+  [bidirectional PS/2 V2](docs/ip/ps2.md),
+  WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, an
+  independent-clock window watchdog, CRC, and a
+  management-only RNG V2 entropy controller. The current deterministic RNG integration source is
+  explicitly unqualified and intended only for diagnostics until a PDK-qualified entropy source is integrated.
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
   `coremark`, `debug`, and `shell` applications.
@@ -74,7 +82,7 @@ user core.
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
-application, which checks UART, archinfo APB readback, and test-status
+application, which checks UART, archinfo APB readback, RNG V2 fail-closed behavior, and test-status
 completion without the verbose startup report. ARCHINFO checks include its V2
 ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,
@@ -253,10 +261,19 @@ same local deliverables under `dist/<variant>/`.
 See [`docs/engineering.md`](docs/engineering.md) for supported-flow details, artifact layout,
 warning and metric policy, CI behavior, and release contents.
 
-## Contributing And Security
+## Contributing
 
-- Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting changes.
+Contributions are welcome. If you want to improve the RTL, software, verification,
+documentation, or development flows, open an issue or submit a pull request after
+reading [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 - Report vulnerabilities according to [`Security.md`](Security.md).
 - Review retained third-party notices in [`NOTICE`](NOTICE) and
   [`ATTRIBUTIONS.md`](ATTRIBUTIONS.md).
 - The project is distributed under [Mulan PSL v2](LICENSE).
+
+A big **thank you** goes out to everyone who has contributed to retroSoC:
+
+<a href="https://github.com/retroSoC/retroSoC/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=retroSoC/retroSoC" alt="retroSoC contributors" />
+</a>

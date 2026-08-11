@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +51,19 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
         crossing for crossing in document["crossings"] if crossing["name"] == "clint_timebase"
     )
     assert clint["primitive"] == "edge_det"
+    assert {
+        "rtc_command",
+        "rtc_response",
+        "rtc_event",
+        "rtc_status",
+        "rtc_interrupt_enable",
+        "rtc_wake_enable",
+        "rtc_wake_status",
+    } <= {crossing["name"] for crossing in document["crossings"]}
+    audio = next(domain for domain in document["domains"] if domain["name"] == "audio")
+    assert math.isclose(audio["sta"]["period_ns"], 1_000_000_000 / 18_432_000)
+    for profile in (ROOT / "configs").rglob("*.mk"):
+        assert "AUD_CLK_HZ" in profile.read_text(encoding="utf-8")
 
 
 def test_clock_reset_domain_inventory_rejects_unknown_domain_and_instance(tmp_path: Path) -> None:

@@ -9,7 +9,6 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-`include "uart_define.svh"
 `include "pwm_define.svh"
 `include "ps2_define.svh"
 `include "user_extensions.svh"
@@ -22,13 +21,14 @@ module ip_apb_wrapper (
     input  logic                        rst_n_i,
     input  logic                        clk_aud_i,
     input  logic                        rst_aud_n_i,
-    input  logic                        tmr_capch_i,
+    input  logic                        debug_halted_i,
     rib_if.slave                        rib,
-    uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
-    input logic [`USER_IPSEL_WIDTH-1:0] ip_sel_i,
-    user_gpio_if.user_ip                user_gpio,
+    input  logic [`USER_IPSEL_WIDTH-1:0]  ip_sel_i,
+    user_gpio_if.user_ip                  user_gpio,
+    output logic                          rtc_wake_o,
+    output logic                          wdg_reset_req_o,
     output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -63,6 +63,14 @@ module ip_apb_wrapper (
       32'h0000_FFF8 | {31'd0, ARCHINFO_HAVE_PLL} |
       ({31'd0, ARCHINFO_HAVE_SRAM_IF} << 1) | ({31'd0, ARCHINFO_HAVE_SRAM_MACRO} << 2);
 
+  logic        s_rng_entropy_enable;
+  logic        s_rng_entropy_ready;
+  logic        s_rng_entropy_valid;
+  logic [31:0] s_rng_entropy_data;
+  logic        s_rng_entropy_qualified;
+  logic        s_rng_entropy_fault;
+  logic        s_rng_irq;
+
 `ifdef PDK_IHP130
   localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0201_0082;
 `elsif PDK_GF180
@@ -83,11 +91,11 @@ module ip_apb_wrapper (
       .rtc_clk_i  (clk_aud_i),
       .rtc_rst_n_i(rst_aud_n_i)
   );
-  wdg_if u_wdg_if (.rtc_clk_i(clk_aud_i));
-  tmr_if u_tmr_if (.exclk_i(clk_aud_i));
-
-  assign u_tmr_if.capch_i = tmr_capch_i;
-
+  wdg_if u_wdg_if (
+      .wdg_clk_i     (clk_aud_i),
+      .wdg_rst_n_i   (rst_aud_n_i),
+      .debug_halted_i(debug_halted_i)
+  );
   `include "soc_apb_bridges.svh"
 
   // verilog_format: off
@@ -110,41 +118,67 @@ module ip_apb_wrapper (
   );
   // verilog_format: on
 
-  apb4_rng u_apb4_rng (.apb4(u_rng_apb_if));
-
-  apb4_uart #(
-      .FIFO_DEPTH(32)
-  ) u_apb4_uart (
-      .apb4(u_uart1_apb_if),
-      .uart(uart)
+  rng_deterministic_source u_rng_deterministic_source (
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .enable_i   (s_rng_entropy_enable),
+      .ready_i    (s_rng_entropy_ready),
+      .valid_o    (s_rng_entropy_valid),
+      .data_o     (s_rng_entropy_data),
+      .qualified_o(s_rng_entropy_qualified),
+      .fault_o    (s_rng_entropy_fault)
   );
 
-  apb4_pwm u_apb4_pwm (
-      .apb4(u_pwm_apb_if),
-      .pwm (pwm)
+  apb4_rng #(
+      .FIFO_DEPTH(8)
+  ) u_apb4_rng (
+      .entropy_enable_o   (s_rng_entropy_enable),
+      .entropy_ready_o    (s_rng_entropy_ready),
+      .entropy_valid_i    (s_rng_entropy_valid),
+      .entropy_data_i     (s_rng_entropy_data),
+      .entropy_qualified_i(s_rng_entropy_qualified),
+      .entropy_fault_i    (s_rng_entropy_fault),
+      .irq_o              (s_rng_irq),
+      .apb4               (u_rng_apb_if)
   );
 
-  apb4_ps2 u_apb4_ps2 (
+  apb4_pwm #(
+      .PCLK_HZ(`SOC_EXT_CLK_HZ)
+  ) u_apb4_pwm (
+      .debug_halted_i(debug_halted_i),
+      .apb4          (u_pwm_apb_if),
+      .pwm           (pwm)
+  );
+
+  apb4_ps2 #(
+      .PCLK_HZ      (`SOC_EXT_CLK_HZ),
+      .RX_FIFO_DEPTH(16),
+      .TX_FIFO_DEPTH(16)
+  ) u_apb4_ps2 (
       .apb4(u_ps2_apb_if),
       .ps2 (ps2)
   );
 
-  apb4_rtc u_apb4_rtc (
+  apb4_rtc #(
+      .RTC_CLOCK_HZ(`SOC_AUD_CLK_HZ)
+  ) u_apb4_rtc (
       .apb4(u_rtc_apb_if),
       .rtc (u_rtc_if)
   );
 
-  apb4_wdg u_apb4_wdg (
+  assign rtc_wake_o = u_rtc_if.wake_o;
+
+  apb4_wdg #(
+      .WDG_CLOCK_HZ      (`SOC_AUD_CLK_HZ),
+      .RESET_PULSE_CYCLES(8)
+  ) u_apb4_wdg (
       .apb4(u_wdg_apb_if),
       .wdg (u_wdg_if)
   );
 
-  apb4_crc u_apb4_crc (.apb4(u_crc_apb_if));
+  assign wdg_reset_req_o = u_wdg_if.reset_req_o;
 
-  apb4_tmr u_apb4_tmr (
-      .apb4(u_tmr_apb_if),
-      .tmr (u_tmr_if)
-  );
+  apb4_crc u_apb4_crc (.apb4(u_crc_apb_if));
 
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "soc_apb_irq_bindings.svh"

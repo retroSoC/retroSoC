@@ -1,4 +1,4 @@
-/clusterip/ps2/tb/kdb_model.sv
+/clusterip/ps2/dv/model/ps2_device_model.sv
 /clusterip/i2c/model/at24cxxx.sv
 /clusterip/uart/model/rs232.sv
 /clusterip/i2s/model/mic.sv

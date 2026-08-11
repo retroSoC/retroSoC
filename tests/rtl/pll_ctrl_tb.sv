@@ -5,6 +5,7 @@ module pll_ctrl_tb;
   logic        xtal_clk_i = 1'b0;
   logic        aud_clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
+  logic        wdg_reset_req_i = 1'b0;
   logic        fault_valid_i = 1'b0;
   logic [31:0] fault_addr_i = '0;
   logic [ 3:0] fault_wstrb_i = '0;
@@ -28,6 +29,7 @@ module pll_ctrl_tb;
       .ext_clk_i      (ext_clk_i),
       .aud_clk_i      (aud_clk_i),
       .ext_rst_n_i    (rst_n_i),
+      .wdg_reset_req_i(wdg_reset_req_i),
 `ifdef HAVE_PLL
       .xtal_clk_i     (xtal_clk_i),
 `endif
@@ -106,9 +108,22 @@ module pll_ctrl_tb;
     sysctrl.user_bus_idle_i = 1'b1;
     sysctrl.fault_access_i  = 1'b0;
     sysctrl.fault_master_i  = '0;
+    sysctrl.rtc_wake_i      = 1'b0;
     #100;
     rst_n_i = 1'b1;
+    wait (aud_rst_n_o);
     repeat (12) @(posedge sys_clk_o);
+
+    wdg_reset_req_i = 1'b1;
+    #1;
+    if (sys_rst_n_o || !aud_rst_n_o) begin
+      $fatal(1, "watchdog reset did not isolate system and audio reset domains");
+    end
+    wdg_reset_req_i = 1'b0;
+    repeat (8) @(posedge sys_clk_o);
+    if (!sys_rst_n_o || !aud_rst_n_o) begin
+      $fatal(1, "watchdog system reset did not deassert synchronously");
+    end
 
     read_register(32'h1000_B01C, read_data);
 `ifdef HAVE_PLL

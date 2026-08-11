@@ -13,6 +13,7 @@
 /clusterip/common/rtl/cdc/cdc_sync.sv
 /clusterip/common/rtl/cdc/cdc_rst_ctrlr.sv
 /clusterip/common/rtl/cdc/cdc_2phase.sv
+/top/soc_common_cdc.sv
 /clusterip/common/rtl/clkrst/clk_int_div.sv
 /clusterip/common/rtl/clkrst/rst_sync.sv
 /clusterip/common/rtl/clkrst/counter.sv

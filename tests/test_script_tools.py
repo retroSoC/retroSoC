@@ -255,6 +255,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
     assert ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
@@ -505,7 +506,7 @@ def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Pa
     )
 
 
-def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
+def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> None:
     def build_state() -> dict[str, tuple[int, int]]:
         build = ROOT / "build"
         if not build.exists():
@@ -518,7 +519,13 @@ def test_make_dry_run_and_validation_do_not_write_filelists() -> None:
 
     before = build_state()
     run("make", "-n", "help")
-    run("make", "-n", "SIMU=IVERILOG", "comp")
+    run(
+        "make",
+        "-n",
+        f"ARCHINFO_METADATA_SCRIPT={tmp_path / 'missing-generate-metadata.py'}",
+        "SIMU=IVERILOG",
+        "comp",
+    )
     run(
         "make",
         "-n",

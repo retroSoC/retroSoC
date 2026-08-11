@@ -75,6 +75,7 @@ module sysctrl_formal_design (
   assign sysctrl.perf_sdram_wait_i   = '0;
   assign sysctrl.perf_psram_wait_i   = '0;
   assign sysctrl.perf_flash_wait_i   = '0;
+  assign sysctrl.rtc_wake_i          = 1'b0;
   assign pll_ctrl.req_ready_i        = f_pll_req_ready;
   assign pll_ctrl.rsp_active_sel_i   = f_pll_active_sel;
   assign pll_ctrl.rsp_active_valid_i = f_pll_active_valid;

@@ -43,7 +43,7 @@ digraph mini_soc_block_diagram {
   ];
   ext_io [
     fillcolor="#F3F4F6",
-    label="External I/O and memory\nGPIO, UART0, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP and WS2812"
+    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP, WS2812 and PWM V2"
   ];
   ext_jtag [
     fillcolor="#F3F4F6",
@@ -152,11 +152,35 @@ digraph mini_soc_block_diagram {
       ];
       apb_targets [
         fillcolor="#E6F4EA",
-        label="APB target wrapper\nRNG, UART1, PWM, PS/2, RTC\nwatchdog, CRC, advanced timer and user IP"
+        label="APB target wrapper\nUser IP target"
+      ];
+      pwm [
+        fillcolor="#E6F4EA",
+        label="PWM V2\n2 timers, 4 action channels, 2 operators\nfades, dead time, carrier, fault and capture, IRQ11"
+      ];
+      wdg [
+        fillcolor="#FDE68A",
+        label="WDG V2\nindependent-clock window watchdog\nearly IRQ14, retained cause/count"
+      ];
+      crc [
+        fillcolor="#E6F4EA",
+        label="CRC V2\nprogrammable 7/8/16/32-bit streaming CRC\nbyte, halfword and word APB feed"
+      ];
+      rtc [
+        fillcolor="#E6F4EA",
+        label="RTC V2\n64-bit Epoch + 1/256-second time\ndual alarm, periodic wake, calibration, IRQ13"
       ];
       archinfo [
         fillcolor="#E6F4EA",
         label="ARCHINFO V2\nread-only build, topology and technology identity\nlifecycle-gated 128-bit device ID"
+      ];
+      rng [
+        fillcolor="#E6F4EA",
+        label="RNG V2 entropy controller\n8-word FIFO, fail-closed monitoring, IRQ16\nmanagement-only, deterministic source unqualified"
+      ];
+      ps2 [
+        fillcolor="#E6F4EA",
+        label="PS/2 host V2\nbidirectional open-drain transport\n16-byte RX/TX FIFOs, errors, IRQ12"
       ];
       gpio_bridge [
         fillcolor="#E5E7EB",
@@ -173,7 +197,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -204,6 +228,12 @@ digraph mini_soc_block_diagram {
   ribp_adapter -> timers [label="RIBP"];
   ribp_adapter -> ws2812 [label="RIBP"];
   apb_adapter -> archinfo [label="APB"];
+  apb_adapter -> rng [label="APB"];
+  apb_adapter -> ps2 [label="APB"];
+  apb_adapter -> rtc [label="APB"];
+  apb_adapter -> wdg [label="APB"];
+  apb_adapter -> crc [label="APB"];
+  apb_adapter -> pwm [label="APB"];
   apb_adapter -> apb_targets [label="APB"];
 
   ribp_targets -> gpio_controller [label="alternate functions"];
@@ -219,6 +249,17 @@ digraph mini_soc_block_diagram {
   i2c_controllers -> gpio_controller [label="GPIO3/4 ALT1\nGPIO7/8 ALT0"];
   dma -> i2c_controllers [label="DATA_CMD / RXDATA", style=dashed];
   i2c_controllers -> irq [label="IRQ7 / IRQ19"];
+  rng -> irq [label="IRQ16"];
+  ps2 -> gpio_controller [label="GPIO0/1 ALT1\nopen drain"];
+  ps2 -> irq [label="IRQ12"];
+  pwm -> gpio_controller [dir=both, label="GPIO3-6 output\nGPIO2 sync, GPIO9 fault\nGPIO30/31 capture"];
+  pwm -> irq [label="IRQ11"];
+  rcu -> rtc [label="18.432 MHz audio clock", style=dashed];
+  rtc -> irq [label="IRQ13"];
+  rtc -> sysctrl [label="wake live / sticky", style=dashed];
+  rcu -> wdg [label="independent 18.432 MHz clock", style=dashed];
+  wdg -> irq [label="early warning IRQ14"];
+  wdg -> rcu [label="system reset request", color="#B91C1C", penwidth=2];
   apb_targets -> gpio_controller [label="user_gpio"];
   ribp_targets -> ext_io [dir=both, label="device interfaces"];
   uart0 -> ext_io [dir=both, label="UART pads"];

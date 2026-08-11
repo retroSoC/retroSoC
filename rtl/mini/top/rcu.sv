@@ -15,6 +15,7 @@ module rcu #(
     input  logic           ext_clk_i,
     input  logic           aud_clk_i,
     input  logic           ext_rst_n_i,
+    input  logic           wdg_reset_req_i,
 `ifdef HAVE_PLL
     input  logic           xtal_clk_i,
 `endif
@@ -31,6 +32,7 @@ module rcu #(
   logic s_ext_rst_n_sync;
   logic s_sys_rst_n_sync;
   logic s_aud_rst_n_sync;
+  logic s_sys_reset_source_n;
   logic [3:0] s_div_cnt_d, s_div_cnt_q;
   logic s_sys_clkdiv4_d, s_sys_clkdiv4_q;
 
@@ -172,7 +174,7 @@ module rcu #(
       .STAGE(5)
   ) u_sys_rst_sync (
       .clk_i  (sys_clk_o),
-      .rst_n_i(ext_rst_n_i),
+      .rst_n_i(s_sys_reset_source_n),
       .rst_n_o(s_sys_rst_n_sync)
   );
   rst_sync #(
@@ -183,9 +185,10 @@ module rcu #(
       .rst_n_o(s_aud_rst_n_sync)
   );
 
-  assign sys_rst_n_o   = s_sys_rst_n_sync;
-  assign aud_rst_n_o   = s_aud_rst_n_sync;
-  assign sys_clkdiv4_o = s_sys_clkdiv4_q;
+  assign sys_rst_n_o          = s_sys_rst_n_sync;
+  assign aud_rst_n_o          = s_aud_rst_n_sync;
+  assign sys_clkdiv4_o        = s_sys_clkdiv4_q;
+  assign s_sys_reset_source_n = ext_rst_n_i && !wdg_reset_req_i;
 
   clint_timebase #(
       .REF_CLK_HZ (EXT_CLK_HZ),

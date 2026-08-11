@@ -12,13 +12,11 @@ module rib2apb_tb;
   rib_if rib ();
   apb4_pure_if archinfo ();
   apb4_pure_if rng ();
-  apb4_pure_if uart ();
   apb4_pure_if pwm ();
   apb4_pure_if ps2 ();
   apb4_pure_if rtc ();
   apb4_pure_if wdg ();
   apb4_pure_if crc ();
-  apb4_pure_if tmr ();
   apb4_pure_if user_ip ();
 
   always #5 clk_i = ~clk_i;
@@ -29,9 +27,6 @@ module rib2apb_tb;
   assign rng.pready       = rng_ready;
   assign rng.prdata       = rng_rdata;
   assign rng.pslverr      = rng_slverr;
-  assign uart.pready      = 1'b0;
-  assign uart.prdata      = '0;
-  assign uart.pslverr     = 1'b0;
   assign pwm.pready       = 1'b0;
   assign pwm.prdata       = '0;
   assign pwm.pslverr      = 1'b0;
@@ -47,9 +42,6 @@ module rib2apb_tb;
   assign crc.pready       = 1'b0;
   assign crc.prdata       = '0;
   assign crc.pslverr      = 1'b0;
-  assign tmr.pready       = 1'b0;
-  assign tmr.prdata       = '0;
-  assign tmr.pslverr      = 1'b0;
   assign user_ip.pready   = 1'b0;
   assign user_ip.prdata   = '0;
   assign user_ip.pslverr  = 1'b0;
@@ -60,13 +52,11 @@ module rib2apb_tb;
       .rib     (rib),
       .archinfo(archinfo),
       .rng     (rng),
-      .uart    (uart),
       .pwm     (pwm),
       .ps2     (ps2),
       .rtc     (rtc),
       .wdg     (wdg),
       .crc     (crc),
-      .tmr     (tmr),
       .user_ip (user_ip)
   );
 

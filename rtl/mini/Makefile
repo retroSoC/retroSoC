@@ -23,6 +23,7 @@ USER_EXTENSIONS_DIR        := $(VARIANT_ROOT)/generated/user_extensions
 USER_EXTENSIONS_STAMP      := $(USER_EXTENSIONS_DIR)/.stamp
 USER_EXTENSIONS_FILELIST   := $(USER_EXTENSIONS_DIR)/user_extensions.fl
 ARCHINFO_METADATA_SCRIPT   := $(ROOT_PATH)/rtl/managed/clusterip/archinfo/scripts/generate_metadata.py
+ARCHINFO_METADATA_DEPS     := $(wildcard $(ARCHINFO_METADATA_SCRIPT))
 ARCHINFO_METADATA_DIR      := $(VARIANT_ROOT)/generated/archinfo
 ARCHINFO_METADATA_STAMP    := $(ARCHINFO_METADATA_DIR)/.stamp
 ARCHINFO_METADATA_SV       := $(ARCHINFO_METADATA_DIR)/archinfo_integration_metadata.svh
@@ -101,7 +102,13 @@ user-extensions: $(USER_EXTENSIONS_STAMP)
 check-user-extensions:
 	$(FLOW_PYTHON) $(USER_EXTENSIONS_SCRIPT) --map $(USER_EXTENSIONS_SOURCE) --check
 
-$(ARCHINFO_METADATA_STAMP): $(ARCHINFO_METADATA_SCRIPT) $(LOCK_FILE)
+check-archinfo-source:
+	@test -f $(ARCHINFO_METADATA_SCRIPT) || { \
+		echo "missing $(ARCHINFO_METADATA_SCRIPT); run 'make setup-clusterip' first" >&2; \
+		exit 1; \
+		}
+
+$(ARCHINFO_METADATA_STAMP): $(ARCHINFO_METADATA_DEPS) $(LOCK_FILE) | check-archinfo-source
 	$(FLOW_PYTHON) $(ARCHINFO_METADATA_SCRIPT) --repo-root $(ROOT_PATH) --lock $(LOCK_FILE) \
 		--config-digest $(CONFIG_DIGEST) $(if $(filter YES,$(BUILD_RELEASE)),--release) \
 		--output-sv $(ARCHINFO_METADATA_SV) --output-c $(ARCHINFO_METADATA_C)
@@ -173,4 +180,4 @@ endif
 
 .PHONY: gen_mpw_code generate_filelist memory-map check-memory-map pin-map check-pin-map \
 	soc-topology check-soc-topology user-extensions check-user-extensions \
-	archinfo-metadata check-clock-reset-domains firmware
+	archinfo-metadata check-archinfo-source check-clock-reset-domains firmware

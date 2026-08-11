@@ -64,6 +64,7 @@ def source_files(target: str) -> list[Path]:
     if target == "sysctrl":
         return [
             *common,
+            COMMON_RTL / "cdc/cdc_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
             PERIPHERAL / "sysctrl.sv",
             SCRIPT_DIR / "sysctrl_formal.sv",

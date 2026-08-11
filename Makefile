@@ -43,6 +43,7 @@ HAVE_SVA                 ?= NO
 BUILD_RELEASE            ?= NO
 JTAG_IDCODE              ?= DEADBEEF
 EXT_CLK_HZ               ?= 72000000
+AUD_CLK_HZ               ?= 18432000
 CLINT_TIMEBASE_HZ        ?= 1000000
 WAVE                     ?= NO
 FORMAL                   ?= NO
@@ -83,7 +84,7 @@ JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
 CONFIG_KEY_VARS    := SOC PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
-                   BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ CLINT_TIMEBASE_HZ ISA HAVE_CSR APP LINK_TYPE \
+                   BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ ISA HAVE_CSR APP LINK_TYPE \
                    COREMARK_MODE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -155,6 +156,10 @@ EXT_CLK_HZ_VALID := $(shell printf '%s' '$(EXT_CLK_HZ)' | grep -E '^[1-9][[:digi
 ifneq ($(EXT_CLK_HZ_VALID),$(EXT_CLK_HZ))
 $(error EXT_CLK_HZ='$(EXT_CLK_HZ)' must be a positive integer)
 endif
+AUD_CLK_HZ_VALID := $(shell printf '%s' '$(AUD_CLK_HZ)' | grep -E '^[1-9][[:digit:]]*$$')
+ifneq ($(AUD_CLK_HZ_VALID),$(AUD_CLK_HZ))
+$(error AUD_CLK_HZ='$(AUD_CLK_HZ)' must be a positive integer)
+endif
 CLINT_TIMEBASE_HZ_VALID := $(shell printf '%s' '$(CLINT_TIMEBASE_HZ)' | grep -E '^[1-9][[:digit:]]*$$')
 ifneq ($(CLINT_TIMEBASE_HZ_VALID),$(CLINT_TIMEBASE_HZ))
 $(error CLINT_TIMEBASE_HZ='$(CLINT_TIMEBASE_HZ)' must be a positive integer)
@@ -199,6 +204,7 @@ DEF_LIST ?= +define+PDK_$(PDK)
 DEF_LIST += +define+SIMU_$(SIMU)
 DEF_LIST += +define+SOC_JTAG_IDCODE=$(JTAG_IDCODE_DEC)
 DEF_LIST += +define+SOC_EXT_CLK_HZ=$(EXT_CLK_HZ)
+DEF_LIST += +define+SOC_AUD_CLK_HZ=$(AUD_CLK_HZ)
 DEF_LIST += +define+SOC_CLINT_TIMEBASE_HZ=$(CLINT_TIMEBASE_HZ)
 
 ifeq ($(HAVE_PLL), YES)
@@ -317,7 +323,7 @@ config:
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
 	  BUILD_RELEASE '$(BUILD_RELEASE)' \
-	  JTAG_IDCODE '$(JTAG_IDCODE)' EXT_CLK_HZ '$(EXT_CLK_HZ)' \
+	  JTAG_IDCODE '$(JTAG_IDCODE)' EXT_CLK_HZ '$(EXT_CLK_HZ)' AUD_CLK_HZ '$(AUD_CLK_HZ)' \
 	  CLINT_TIMEBASE_HZ '$(CLINT_TIMEBASE_HZ)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
 	  LINK_TYPE '$(LINK_TYPE)' COREMARK_MODE '$(COREMARK_MODE)'

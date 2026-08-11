@@ -19,21 +19,21 @@ peripheral output path. Values are restricted to scalar signal references and
 one-bit constants so malformed expressions are rejected before RTL generation.
 
 The `apb_targets` list defines the stable APB response slot, timed/pure APB
-interface names, and corresponding active APB address-map region. The user-IP
-target is part of the fixed platform integration and its presence is checked
-against the canonical memory map.
+interface names, and corresponding active APB address-map region. APB slots are
+contiguous from zero. The user-IP target is part of the fixed platform
+integration and its presence is checked against the canonical memory map.
 
 `irq_vector_width`, `irq_groups`, and `interrupts` define the complete core
 interrupt topology. `rib` and `apb` group entries declare the wrapper output
 width and the associated `retrosoc.sv` signal. Every group bit must be present
 exactly once, each core-vector bit must have one source, and sources are limited
 to scalar signal references or one-bit constants. The generator emits the two
-wrapper bindings, the core-vector wiring, and simulation-only assertions. Core
-IRQ bits 0 through 16 retain their current compatibility mapping; additions
-must use currently unallocated bits and preserve the existing entries. Bits
-without an interrupt entry are driven low. Firmware does not expose a generic
-external interrupt API until the SoC includes a claim/complete interrupt
-controller.
+wrapper bindings, the core-vector wiring, and simulation-only assertions.
+Existing allocated core IRQ bits retain their compatibility mapping; additions
+must use currently unallocated bits and preserve the existing entries. Removing
+a source leaves its core IRQ bit unallocated and driven low. Firmware does not
+expose a generic external interrupt API until the SoC includes a claim/complete
+interrupt controller.
 
 `user_extensions.json` defines the SoC-level user-core and user-IP slots.
 The locked mini-ver-mpw `mpw.toml` remains the source of truth for enabled

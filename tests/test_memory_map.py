@@ -67,11 +67,17 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "SOC_SYSCTRL_PLL_CFG_OFFSET      32'h00000008" in rtl
     assert "SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C" in rtl
     assert "SOC_SYSCTRL_TEST_STATUS_OFFSET  32'h00000084" in rtl
+    assert "SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET 32'h00000088" in rtl
     assert "SOC_ADDR_IS_RIBP(addr)" in rtl
     assert "SOC_ADDR_IS_NMI" not in rtl
+    user_policy = rtl.split("`define SOC_USER_ADDR_READABLE", 1)[1].split(
+        "`define SOC_ADDR_INCR4_CAPABLE", 1
+    )[0]
+    assert "SOC_ADDR_IS_APB_RNG" not in user_policy
     assert "RS_SOC_SYSCTRL_PLL_CFG_OFFSET UINT32_C(0x00000008)" in header
     assert "RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)" in header
     assert "RS_SOC_SYSCTRL_TEST_STATUS_OFFSET UINT32_C(0x00000084)" in header
+    assert "RS_SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET UINT32_C(0x00000088)" in header
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x00800000" in linker
 
 
@@ -81,8 +87,23 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
     rtl = (tmp_path / "rtl/mmap_define.svh").read_text(encoding="utf-8")
     header = (tmp_path / "include/retrosoc/generated/memory_map.h").read_text(encoding="utf-8")
 
-    assert "SOC_ADDR_APB_USER_IP_BASE" in rtl
-    assert "RS_SOC_APB_USER_IP_BASE" in header
+    expected_apb_bases = {
+        "ARCHINFO": "20000000",
+        "RNG": "20001000",
+        "PWM": "20002000",
+        "PS2": "20003000",
+        "RTC": "20004000",
+        "WDG": "20005000",
+        "CRC": "20006000",
+        "USER_IP": "20007000",
+    }
+    for symbol, base in expected_apb_bases.items():
+        assert f"`define SOC_ADDR_APB_{symbol}_BASE 32'h{base}" in rtl
+        assert f"#define RS_SOC_APB_{symbol}_BASE UINT32_C(0x{base})" in header
+    assert "APB_UART1" not in rtl
+    assert "APB_UART1" not in header
+    assert "APB_TMR" not in rtl
+    assert "APB_TMR" not in header
 
 
 def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:
@@ -188,6 +209,7 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
                 str(ROOT / "rtl/ip/ribp/peripheral/pll_ctrl_if.sv"),
                 str(ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv"),
                 str(ROOT / "tests/rtl/sysctrl_fault_tb.sv"),
@@ -214,7 +236,7 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "sysctrl fault and user core control test passed" in result.stdout
+    assert "sysctrl fault, user core control, and RTC wake test passed" in result.stdout
 
 
 def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: Path) -> None:

@@ -2,6 +2,8 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/rng.h>
+#include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
 #include <retrosoc/lib/printf.h>
@@ -12,7 +14,29 @@ static bool rs_ci_smoke_archinfo_v2(void) {
     uint32_t device_id[4];
 
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
-           (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP);
+           (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
+}
+
+static bool rs_ci_smoke_rng_v2(void) {
+    const rs_rng_config_t config = {
+        .fifo_watermark = 1U,
+        .interrupt_enable = 0U,
+        .lock_config = true,
+    };
+    rs_rng_snapshot_t snapshot;
+    uint32_t first;
+    uint32_t second;
+    uint32_t entropy;
+
+    if ((rs_rng_init(&config) != RS_OK) ||
+        (rs_rng_read_diagnostic(&first, RS_TIMEOUT_DEFAULT) != RS_OK) ||
+        (rs_rng_read_diagnostic(&second, RS_TIMEOUT_DEFAULT) != RS_OK) || (first == second) ||
+        (rs_rng_get_status(&snapshot) != RS_OK) || snapshot.source_qualified ||
+        snapshot.fatal_error) {
+        return false;
+    }
+
+    return rs_rng_read_entropy(&entropy, RS_TIMEOUT_DEFAULT) == RS_ENOTSUP;
 }
 
 static bool rs_ci_smoke_clint_standard_map(void) {
@@ -177,6 +201,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_rng_v2()) {
+        rs_test_finish(RS_TEST_FAILED, 8U);
+    }
+    printf("ci_smoke: RNG V2 passed\n");
     if (!rs_ci_smoke_clint_standard_map()) {
         rs_test_finish(RS_TEST_FAILED, 2U);
     }
@@ -193,7 +221,7 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 5U);
     }
 
-    printf("ci_smoke: UART, archinfo, CLINT, timer, and GPIO tests passed\n");
+    printf("ci_smoke: UART, archinfo, RNG, CLINT, timer, and GPIO tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

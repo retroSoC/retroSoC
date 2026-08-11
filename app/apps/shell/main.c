@@ -5,7 +5,6 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/crc.h>
 #include <retrosoc/hal/gpio.h>
-#include <retrosoc/hal/hpuart.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/lcd.h>
@@ -59,16 +58,15 @@ int main(void) {
     (void)rs_shell_register("ws2812", "ws2812 test", true, ip_ws2812_test);
     (void)rs_shell_register("tim", "timer test", true, rs_timer_shell_test);
     (void)rs_shell_register("gpio", "gpio test", true, rs_gpio_shell_test);
-    (void)rs_shell_register("pwm", "pwm test", true, ip_pwm_test);
-    (void)rs_shell_register("rtc", "rtc test", true, ip_rtc_test);
+    (void)rs_shell_register("pwm", "pwm test", true, rs_pwm_shell_test);
+    (void)rs_shell_register("rtc", "rtc test", true, rs_rtc_shell_test);
     (void)rs_shell_register("wdg", "wdg test", true, ip_wdg_test);
-    (void)rs_shell_register("rng", "rng test", true, ip_rng_test);
-    (void)rs_shell_register("crc", "crc test", true, ip_crc_test);
-    (void)rs_shell_register("ps2", "ps2 test", false, ip_ps2_test);
+    (void)rs_shell_register("rng", "rng test", true, rs_rng_shell_test);
+    (void)rs_shell_register("crc", "crc test", true, rs_crc_shell_test);
+    (void)rs_shell_register("ps2", "ps2 test", false, rs_ps2_shell_test);
     (void)rs_shell_register("lcd", "lcd test", true, ip_lcd_test);
     (void)rs_shell_register("i2s", "i2s test", false, ip_i2s_test);
     (void)rs_shell_register("nor", "nor flash test", false, ip_norflash_test);
-    (void)rs_shell_register("uart1", "uart1 test", false, ip_hpuart_test);
     (void)rs_shell_register("pcf", "pcf8563b test", true, pcf8563b_test);
 #ifdef CSR_ENABLE
     (void)rs_shell_register("irq", "tmr/sw irq test", true, irq_test);
