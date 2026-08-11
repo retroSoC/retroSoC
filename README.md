@@ -1,15 +1,15 @@
 # retroSoC
 
-[![License](https://img.shields.io/badge/License-Mulan%20PSL%20v2-d4a72c?style=flat-square&labelColor=3b301a&logo=opensourceinitiative&logoColor=f6d365)](LICENSE)
-[![RTL](https://img.shields.io/badge/RTL-SystemVerilog-d4a72c?style=flat-square&labelColor=3b301a)](rtl)
+[![License](https://img.shields.io/badge/License-Mulan%20PSL%20v2-d4a72c?style=flat-square&labelColor=3b301a&logo=github&logoColor=f6d365)](LICENSE)
+[![RTL](https://img.shields.io/badge/RTL-SystemVerilog-d4a72c?style=flat-square&labelColor=3b301a&logo=devbox&logoColor=f6d365)](rtl)
 [![ISA](https://img.shields.io/badge/ISA-RV32IM-d4a72c?style=flat-square&labelColor=3b301a&logo=riscv&logoColor=f6d365)](configs/ci/ihp130.mk)
-[![RISC-V GCC](https://img.shields.io/badge/RISC--V%20GCC-2025.05.01-d4a72c?style=flat-square&labelColor=3b301a&logo=gnu&logoColor=f6d365)](config/dependencies.lock.json)
-[![Quality](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/quality.yml?branch=main&style=flat-square&label=Quality&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml)
-[![Nightly](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/nightly.yml?branch=main&style=flat-square&label=Nightly&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml)<br>
+[![RISC-V GCC](https://img.shields.io/badge/RISC--V%20GCC-2025.05.01-d4a72c?style=flat-square&labelColor=3b301a&logo=c&logoColor=f6d365)](config/dependencies.lock.json)<br>
 [![IHP130 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-ihp130.yml?branch=main&style=flat-square&label=IHP130&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ihp130.yml)
 [![GF180 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-gf180.yml?branch=main&style=flat-square&label=GF180&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml)
 [![ICS55 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-ics55.yml?branch=main&style=flat-square&label=ICS55&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ics55.yml)
 [![SKY130 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-sky130.yml?branch=main&style=flat-square&label=SKY130&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-sky130.yml)
+[![Quality](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/quality.yml?branch=main&style=flat-square&label=Quality&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/quality.yml)
+[![Nightly](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/nightly.yml?branch=main&style=flat-square&label=Nightly&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/nightly.yml)
 
 retroSoC is a fully open-source RISC-V SoC project. The repository brings together
 SystemVerilog RTL, a freestanding embedded C SDK and applications, simulation, synthesis,
