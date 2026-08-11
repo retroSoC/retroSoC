@@ -18,8 +18,8 @@
 //
 // GPIO    ALT0                         DIR     ALT1                    DIR
 // ------  ---------------------------  ------  ----------------------  ------
-// GPIO00  TIE_OFF                      -       PS2_CLK                 BIDI
-// GPIO01  TIE_OFF                      -       PS2_DATA                BIDI
+// GPIO00  UART0_CTS_N                  IN      PS2_CLK                 BIDI
+// GPIO01  UART0_RTS_N                  OUT     PS2_DATA                BIDI
 // GPIO02  PWM_SYNC                     IN      WS2812_DATA             OUT
 // GPIO03  PWM0                         OUT     I2C1_SCL                BIDI
 // GPIO04  PWM1                         OUT     I2C1_SDA                BIDI
@@ -71,6 +71,8 @@ module retrosoc_asic (
   logic       s_jtag_tdi;
   logic       s_jtag_trst_n;
   logic       s_jtag_tdo;
+  logic       s_uart0_rx;
+  logic       s_uart0_tx;
   (* keep = "true" *)logic       s_test_done;
   (* keep = "true" *)logic       s_test_pass;
   (* keep = "true" *)logic [7:0] s_test_code;
@@ -80,7 +82,6 @@ module retrosoc_asic (
 `endif
 
   gpio_if u_gpio_if ();
-  uart_if u_uart0_if ();
   xpi_if u_xpi_if ();
   sdram_if u_sdram_if ();
   pll_ctrl_if u_pll_ctrl_if ();
@@ -125,7 +126,8 @@ rcu #(
       .ram            (u_ram_if),
 `endif
       .gpio           (u_gpio_if),
-      .uart0          (u_uart0_if),
+      .uart_rx_i      (s_uart0_rx),
+      .uart_tx_o      (s_uart0_tx),
       .xpi            (u_xpi_if),
       .sdram          (u_sdram_if),
       .jtag_tck_i     (s_jtag_tck),

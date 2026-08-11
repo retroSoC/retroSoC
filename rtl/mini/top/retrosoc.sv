@@ -25,7 +25,8 @@ module retrosoc (
     ram_if.master                          ram,
 `endif
     gpio_if.soc_pad                        gpio,
-    uart_if.dut                            uart0,
+    input  logic                           uart_rx_i,
+    output logic                           uart_tx_o,
     xpi_if.dut                             xpi,
     sdram_if.dut                           sdram,
     input  logic                           jtag_tck_i,
@@ -46,6 +47,7 @@ module retrosoc (
   user_gpio_if u_user_gpio_if ();
   // ip interface
   gpio_if     u_gpio_if     ();
+  uart_if     u_uart0_if    ();
   psram_if    u_psram_if    ();
   spi_if      u_spisd_if    ();
   i2c_if      u_i2c0_if     ();
@@ -101,6 +103,8 @@ module retrosoc (
   assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
   assign u_sysctrl_if.perf_flash_wait_i = s_perf_flash_wait;
   assign u_sysctrl_if.rtc_wake_i        = s_rtc_wake;
+  assign u_uart0_if.rx_i                = uart_rx_i;
+  assign uart_tx_o                      = u_uart0_if.tx_o;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
@@ -174,7 +178,7 @@ core_wrapper u_core_wrapper (
       `include "ip_ribp_wrapper_fabric.svh"
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
-      .uart            (uart0),
+      .uart            (u_uart0_if),
       .psram           (u_psram_if),
       .spisd           (u_spisd_if),
       .i2c0            (u_i2c0_if),

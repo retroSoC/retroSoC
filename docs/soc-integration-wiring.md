@@ -22,9 +22,25 @@ feature, and every profile binding in the JSON map. Use `null` for an open
 binding. The generator rejects duplicate pad names, unknown profile bindings,
 unsupported features, and unapproved connection syntax.
 
-SoC wrappers use the existing clusterIP interfaces for protocol boundaries.
+SoC wrappers use the existing clusterIP interfaces for protocol boundaries,
+except for the self-owned UART0 `uart_if` under `rtl/ip/ribp/serial`.
 `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
 only exposes the pad-side subset of `gpio_if`; neither module contains state.
+
+## UART flow-control alternate functions
+
+UART0 keeps dedicated RX and TX package pads. Optional active-low hardware flow
+control uses GPIO0 ALT0 for the CTS input and GPIO1 ALT0 for the RTS output.
+The UART owns synchronization and fail-safe CTS behavior; GPIO supplies only
+the pad mux and resolved pad input. GPIO0/1 ALT1 remains assigned to the PS/2
+clock/data pair, so software cannot use PS/2 and UART0 flow control on the same
+pins simultaneously.
+
+`rs_uart_configure()` selects each ALT0 route when the corresponding automatic
+flow-control function is enabled. Disabling UART flow control does not reclaim
+the GPIO pin. Software must explicitly choose a new GPIO mode before assigning
+that physical pad to another function. See [uart.md](ip/uart.md) for the V3
+register and timing contract.
 
 ## I2C alternate functions
 

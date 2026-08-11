@@ -67,8 +67,8 @@
     {"slot": 7, "name": "user_ip", "timed_interface": "u_user_ip_apb_if", "pure_interface": "u_user_ip_apb_pure_if", "region": "APB_USER_IP"}
   ],
   "gpio_alt_functions": [
-    {"pin": 0, "alt0": {"inputs": [], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_ps2_if.ps2_clk_i"], "do": "u_ps2_if.ps2_clk_o", "oe": "u_ps2_if.ps2_clk_oe_o"}},
-    {"pin": 1, "alt0": {"inputs": [], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_ps2_if.ps2_dat_i"], "do": "u_ps2_if.ps2_dat_o", "oe": "u_ps2_if.ps2_dat_oe_o"}},
+    {"pin": 0, "alt0": {"inputs": ["u_uart0_if.cts_n_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_ps2_if.ps2_clk_i"], "do": "u_ps2_if.ps2_clk_o", "oe": "u_ps2_if.ps2_clk_oe_o"}},
+    {"pin": 1, "alt0": {"inputs": [], "do": "u_uart0_if.rts_n_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_ps2_if.ps2_dat_i"], "do": "u_ps2_if.ps2_dat_o", "oe": "u_ps2_if.ps2_dat_oe_o"}},
     {"pin": 2, "alt0": {"inputs": ["u_pwm_if.sync_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": [], "do": "u_ws2812_if.dat_o", "oe": "1'b1"}},
     {"pin": 3, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[0]", "oe": "u_pwm_if.oe_o[0]"}, "alt1": {"inputs": ["u_i2c1_if.scl_i"], "do": "u_i2c1_if.scl_o", "oe": "u_i2c1_if.scl_oe_o"}},
     {"pin": 4, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[1]", "oe": "u_pwm_if.oe_o[1]"}, "alt1": {"inputs": ["u_i2c1_if.sda_i"], "do": "u_i2c1_if.sda_o", "oe": "u_i2c1_if.sda_oe_o"}},

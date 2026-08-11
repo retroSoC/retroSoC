@@ -7,6 +7,7 @@ module ribp_uart_tx (
     input  logic       rst_n_i,
     input  logic       sample_tick_i,
     input  logic       enable_i,
+    input  logic       start_allowed_i,
     input  logic       break_i,
     input  logic [1:0] data_bits_i,
     input  logic       stop2_i,
@@ -68,7 +69,8 @@ module ribp_uart_tx (
     data_pop_o = 1'b0;
     done_o     = 1'b0;
 
-    if ((s_state_q == STATE_IDLE) && enable_i && !break_i && data_valid_i && sample_tick_i) begin
+    if ((s_state_q == STATE_IDLE) && enable_i && start_allowed_i && !break_i && data_valid_i &&
+        sample_tick_i) begin
       s_state_d  = STATE_START;
       s_sample_d = '0;
       s_bit_d    = '0;

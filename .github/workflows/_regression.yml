@@ -76,7 +76,6 @@ jobs:
             rtl/managed/clusterip/rng
             rtl/managed/clusterip/rtc
             rtl/managed/clusterip/spi
-            rtl/managed/clusterip/uart
             rtl/managed/clusterip/wdg
             rtl/managed/third_party
             rtl/managed/mpw

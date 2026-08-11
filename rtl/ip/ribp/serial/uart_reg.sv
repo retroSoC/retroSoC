@@ -22,8 +22,13 @@ module uart_reg #(
     output logic        rx_enable_o,
     output logic        loopback_o,
     output logic        break_o,
+    output logic        auto_cts_enable_o,
+    output logic        auto_rts_enable_o,
+    output logic [ 6:0] rts_assert_level_o,
+    output logic [ 6:0] rts_deassert_level_o,
     output logic        tx_data_valid_o,
     output logic [ 7:0] tx_data_o,
+    output logic [ 6:0] rx_level_o,
     input  logic        tx_data_pop_i,
     input  logic        tx_busy_i,
     input  logic        tx_done_i,
@@ -31,6 +36,10 @@ module uart_reg #(
     input  logic        rx_data_valid_i,
     input  logic [11:0] rx_data_i,
     input  logic        bit_tick_i,
+    input  logic        cts_asserted_i,
+    input  logic        rts_asserted_i,
+    input  logic        tx_flow_blocked_i,
+    input  logic        cts_change_i,
     output logic        dma_tx_stall_o,
     output logic        dma_rx_stall_o,
     output logic        irq_o
@@ -41,8 +50,10 @@ module uart_reg #(
   localparam logic [31:0] RX_WATERMARK_RESET = 32'd32;
   localparam logic [31:0] RX_TIMEOUT_RESET = 32'd32;
   localparam logic [31:0] LINE_CTRL_RESET = 32'd3;
-  localparam logic [31:0] IP_VERSION = 32'h0002_0000;
-  localparam logic [31:0] CAPABILITY = 32'h00FF_4040;
+  localparam logic [31:0] RTS_ASSERT_LEVEL_RESET = 32'd32;
+  localparam logic [31:0] RTS_DEASSERT_LEVEL_RESET = 32'd48;
+  localparam logic [31:0] IP_VERSION = 32'h0003_0000;
+  localparam logic [31:0] CAPABILITY = 32'h03FF_4040;
 
   logic s_req;
   logic s_write;
@@ -67,9 +78,14 @@ module uart_reg #(
   logic s_rx_timeout_en;
   logic [15:0] s_rx_timeout_d, s_rx_timeout_q;
   logic s_intr_enable_en;
-  logic [5:0] s_intr_enable_d, s_intr_enable_q;
+  logic [6:0] s_intr_enable_d, s_intr_enable_q;
   logic s_dma_ctrl_en;
   logic [1:0] s_dma_ctrl_d, s_dma_ctrl_q;
+  logic s_flow_ctrl_en;
+  logic [1:0] s_flow_ctrl_d, s_flow_ctrl_q;
+  logic s_rts_watermark_en;
+  logic [6:0] s_rts_assert_level_d, s_rts_assert_level_q;
+  logic [6:0] s_rts_deassert_level_d, s_rts_deassert_level_q;
 
   logic                       s_tx_flush;
   logic                       s_tx_push;
@@ -86,10 +102,10 @@ module uart_reg #(
   logic [RX_FIFO_LOG_DEPTH:0] s_rx_count;
 
   logic [6:0] s_error_status_d, s_error_status_q;
-  logic [5:0] s_intr_state_d, s_intr_state_q;
+  logic [6:0] s_intr_state_d, s_intr_state_q;
   logic [6:0] s_error_clear;
-  logic [5:0] s_intr_clear;
-  logic [5:0] s_intr_test;
+  logic [6:0] s_intr_clear;
+  logic [6:0] s_intr_test;
   logic       s_config_error_event;
   logic       s_command_error_event;
   logic       s_overrun_event;
@@ -123,7 +139,7 @@ module uart_reg #(
 
   initial begin
     if ((TX_FIFO_DEPTH != 64) || (RX_FIFO_DEPTH != 64)) begin
-      $fatal(1, "uart_reg: UART V2 requires 64-entry FIFOs");
+      $fatal(1, "uart_reg: UART V3 requires 64-entry FIFOs");
     end
   end
 
@@ -142,8 +158,13 @@ module uart_reg #(
   assign rx_enable_o = s_ctrl_q[`UART_CTRL_RX_ENABLE];
   assign loopback_o = s_ctrl_q[`UART_CTRL_LOOPBACK];
   assign break_o = s_ctrl_q[`UART_CTRL_TX_BREAK];
+  assign auto_cts_enable_o = s_flow_ctrl_q[`UART_FLOW_AUTO_CTS_ENABLE];
+  assign auto_rts_enable_o = s_flow_ctrl_q[`UART_FLOW_AUTO_RTS_ENABLE];
+  assign rts_assert_level_o = s_rts_assert_level_q;
+  assign rts_deassert_level_o = s_rts_deassert_level_q;
   assign tx_data_valid_o = !s_tx_empty;
   assign tx_data_o = s_tx_pop_data;
+  assign rx_level_o = 7'(s_rx_count);
 
   assign s_config_valid = (s_baud_int_q >= 24'd16) && (s_line_ctrl_q[4:3] != 2'd3);
   assign s_tx_dma_req = s_dma_ctrl_q[`UART_DMA_TX_ENABLE] && tx_enable_o &&
@@ -156,56 +177,64 @@ module uart_reg #(
   assign irq_o = |(s_intr_state_q & s_intr_enable_q);
 
   always_comb begin
-    s_status                            = '0;
-    s_status[`UART_STATUS_TX_ENABLED]   = tx_enable_o;
-    s_status[`UART_STATUS_RX_ENABLED]   = rx_enable_o;
-    s_status[`UART_STATUS_TX_BUSY]      = tx_busy_i;
-    s_status[`UART_STATUS_RX_ACTIVE]    = rx_active_i;
-    s_status[`UART_STATUS_TX_EMPTY]     = s_tx_empty;
-    s_status[`UART_STATUS_TX_FULL]      = s_tx_full;
-    s_status[`UART_STATUS_RX_EMPTY]     = s_rx_empty;
-    s_status[`UART_STATUS_RX_FULL]      = s_rx_full;
-    s_status[`UART_STATUS_CONFIG_VALID] = s_config_valid;
-    s_status[`UART_STATUS_BREAK_ACTIVE] = break_o;
-    s_status[`UART_STATUS_TX_DMA_REQ]   = s_tx_dma_req;
-    s_status[`UART_STATUS_RX_DMA_REQ]   = s_rx_dma_req;
-    s_fifo_level                        = '0;
-    s_fifo_level[6:0]                   = 7'(s_tx_count);
-    s_fifo_level[22:16]                 = 7'(s_rx_count);
+    s_status                               = '0;
+    s_status[`UART_STATUS_TX_ENABLED]      = tx_enable_o;
+    s_status[`UART_STATUS_RX_ENABLED]      = rx_enable_o;
+    s_status[`UART_STATUS_TX_BUSY]         = tx_busy_i;
+    s_status[`UART_STATUS_RX_ACTIVE]       = rx_active_i;
+    s_status[`UART_STATUS_TX_EMPTY]        = s_tx_empty;
+    s_status[`UART_STATUS_TX_FULL]         = s_tx_full;
+    s_status[`UART_STATUS_RX_EMPTY]        = s_rx_empty;
+    s_status[`UART_STATUS_RX_FULL]         = s_rx_full;
+    s_status[`UART_STATUS_CONFIG_VALID]    = s_config_valid;
+    s_status[`UART_STATUS_BREAK_ACTIVE]    = break_o;
+    s_status[`UART_STATUS_TX_DMA_REQ]      = s_tx_dma_req;
+    s_status[`UART_STATUS_RX_DMA_REQ]      = s_rx_dma_req;
+    s_status[`UART_STATUS_CTS_ASSERTED]    = cts_asserted_i;
+    s_status[`UART_STATUS_RTS_ASSERTED]    = rts_asserted_i;
+    s_status[`UART_STATUS_TX_FLOW_BLOCKED] = tx_flow_blocked_i;
+    s_fifo_level                           = '0;
+    s_fifo_level[6:0]                      = 7'(s_tx_count);
+    s_fifo_level[22:16]                    = 7'(s_rx_count);
   end
 
   always_comb begin
-    s_req_accept          = s_req;
-    s_access_error        = 1'b0;
-    s_baud_int_en         = 1'b0;
-    s_baud_frac_en        = 1'b0;
-    s_line_ctrl_en        = 1'b0;
-    s_ctrl_en             = 1'b0;
-    s_tx_watermark_en     = 1'b0;
-    s_rx_watermark_en     = 1'b0;
-    s_rx_timeout_en       = 1'b0;
-    s_intr_enable_en      = 1'b0;
-    s_dma_ctrl_en         = 1'b0;
-    s_baud_int_d          = s_baud_int_q;
-    s_baud_frac_d         = s_baud_frac_q;
-    s_line_ctrl_d         = s_line_ctrl_q;
-    s_ctrl_d              = s_ctrl_q;
-    s_tx_watermark_d      = s_tx_watermark_q;
-    s_rx_watermark_d      = s_rx_watermark_q;
-    s_rx_timeout_d        = s_rx_timeout_q;
-    s_intr_enable_d       = s_intr_enable_q;
-    s_dma_ctrl_d          = s_dma_ctrl_q;
-    s_tx_flush            = 1'b0;
-    s_rx_flush            = 1'b0;
-    s_tx_push             = 1'b0;
-    s_rx_pop              = 1'b0;
-    s_error_clear         = '0;
-    s_intr_clear          = '0;
-    s_intr_test           = '0;
-    s_config_error_event  = 1'b0;
-    s_command_error_event = 1'b0;
-    s_ribp_rdata_d        = '0;
-    s_merge_value         = '0;
+    s_req_accept           = s_req;
+    s_access_error         = 1'b0;
+    s_baud_int_en          = 1'b0;
+    s_baud_frac_en         = 1'b0;
+    s_line_ctrl_en         = 1'b0;
+    s_ctrl_en              = 1'b0;
+    s_tx_watermark_en      = 1'b0;
+    s_rx_watermark_en      = 1'b0;
+    s_rx_timeout_en        = 1'b0;
+    s_intr_enable_en       = 1'b0;
+    s_dma_ctrl_en          = 1'b0;
+    s_flow_ctrl_en         = 1'b0;
+    s_rts_watermark_en     = 1'b0;
+    s_baud_int_d           = s_baud_int_q;
+    s_baud_frac_d          = s_baud_frac_q;
+    s_line_ctrl_d          = s_line_ctrl_q;
+    s_ctrl_d               = s_ctrl_q;
+    s_tx_watermark_d       = s_tx_watermark_q;
+    s_rx_watermark_d       = s_rx_watermark_q;
+    s_rx_timeout_d         = s_rx_timeout_q;
+    s_intr_enable_d        = s_intr_enable_q;
+    s_dma_ctrl_d           = s_dma_ctrl_q;
+    s_flow_ctrl_d          = s_flow_ctrl_q;
+    s_rts_assert_level_d   = s_rts_assert_level_q;
+    s_rts_deassert_level_d = s_rts_deassert_level_q;
+    s_tx_flush             = 1'b0;
+    s_rx_flush             = 1'b0;
+    s_tx_push              = 1'b0;
+    s_rx_pop               = 1'b0;
+    s_error_clear          = '0;
+    s_intr_clear           = '0;
+    s_intr_test            = '0;
+    s_config_error_event   = 1'b0;
+    s_command_error_event  = 1'b0;
+    s_ribp_rdata_d         = '0;
+    s_merge_value          = '0;
 
     if (s_req) begin
       if ((ribp.addr[11:8] != 4'd0) || (ribp.addr[1:0] != 2'b00)) begin
@@ -325,26 +354,26 @@ module uart_reg #(
             end
           end
           `RIBP_UART_INTR_STATE: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:6] != 26'd0)) begin
+            if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
               s_access_error = 1'b1;
             end else begin
-              s_intr_clear = ribp.wdata[5:0];
+              s_intr_clear = ribp.wdata[6:0];
             end
           end
           `RIBP_UART_INTR_ENABLE: begin
-            s_merge_value = merge_wstrb({26'd0, s_intr_enable_q}, ribp.wdata, ribp.wstrb);
-            if (s_merge_value[31:6] != 26'd0) begin
+            s_merge_value = merge_wstrb({25'd0, s_intr_enable_q}, ribp.wdata, ribp.wstrb);
+            if (s_merge_value[31:7] != 25'd0) begin
               s_access_error = 1'b1;
             end else begin
               s_intr_enable_en = 1'b1;
-              s_intr_enable_d  = s_merge_value[5:0];
+              s_intr_enable_d  = s_merge_value[6:0];
             end
           end
           `RIBP_UART_INTR_TEST: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:6] != 26'd0)) begin
+            if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
               s_access_error = 1'b1;
             end else begin
-              s_intr_test = ribp.wdata[5:0];
+              s_intr_test = ribp.wdata[6:0];
             end
           end
           `RIBP_UART_DMA_CTRL: begin
@@ -357,14 +386,40 @@ module uart_reg #(
               s_dma_ctrl_d  = s_merge_value[1:0];
             end
           end
+          `RIBP_UART_FLOW_CTRL: begin
+            s_merge_value = merge_wstrb({30'd0, s_flow_ctrl_q}, ribp.wdata, ribp.wstrb);
+            if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
+                (s_merge_value[31:2] != 30'd0)) begin
+              s_access_error       = 1'b1;
+              s_config_error_event = 1'b1;
+            end else begin
+              s_flow_ctrl_en = 1'b1;
+              s_flow_ctrl_d  = s_merge_value[1:0];
+            end
+          end
+          `RIBP_UART_RTS_WATERMARK: begin
+            s_merge_value = merge_wstrb({9'd0, s_rts_deassert_level_q, 9'd0, s_rts_assert_level_q},
+                                        ribp.wdata, ribp.wstrb);
+            if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
+                (s_merge_value[31:23] != 9'd0) || (s_merge_value[15:7] != 9'd0) ||
+                (s_merge_value[22:16] > 7'(RX_FIFO_DEPTH)) ||
+                (s_merge_value[6:0] >= s_merge_value[22:16])) begin
+              s_access_error       = 1'b1;
+              s_config_error_event = 1'b1;
+            end else begin
+              s_rts_watermark_en     = 1'b1;
+              s_rts_assert_level_d   = s_merge_value[6:0];
+              s_rts_deassert_level_d = s_merge_value[22:16];
+            end
+          end
           default: s_access_error = 1'b1;
         endcase
       end else begin
         unique case (ribp.addr[7:0])
-          `RIBP_UART_BAUD_INT:        s_ribp_rdata_d = {8'd0, s_baud_int_q};
-          `RIBP_UART_BAUD_FRAC:       s_ribp_rdata_d = {24'd0, s_baud_frac_q};
-          `RIBP_UART_LINE_CTRL:       s_ribp_rdata_d = {27'd0, s_line_ctrl_q};
-          `RIBP_UART_CTRL:            s_ribp_rdata_d = {28'd0, s_ctrl_q};
+          `RIBP_UART_BAUD_INT: s_ribp_rdata_d = {8'd0, s_baud_int_q};
+          `RIBP_UART_BAUD_FRAC: s_ribp_rdata_d = {24'd0, s_baud_frac_q};
+          `RIBP_UART_LINE_CTRL: s_ribp_rdata_d = {27'd0, s_line_ctrl_q};
+          `RIBP_UART_CTRL: s_ribp_rdata_d = {28'd0, s_ctrl_q};
           `RIBP_UART_RXDATA: begin
             if (s_rx_empty) begin
               s_access_error        = 1'b1;
@@ -374,18 +429,21 @@ module uart_reg #(
               s_rx_pop       = 1'b1;
             end
           end
-          `RIBP_UART_STATUS:          s_ribp_rdata_d = s_status;
-          `RIBP_UART_FIFO_LEVEL:      s_ribp_rdata_d = s_fifo_level;
-          `RIBP_UART_TX_WATERMARK:    s_ribp_rdata_d = {25'd0, s_tx_watermark_q};
-          `RIBP_UART_RX_WATERMARK:    s_ribp_rdata_d = {25'd0, s_rx_watermark_q};
+          `RIBP_UART_STATUS: s_ribp_rdata_d = s_status;
+          `RIBP_UART_FIFO_LEVEL: s_ribp_rdata_d = s_fifo_level;
+          `RIBP_UART_TX_WATERMARK: s_ribp_rdata_d = {25'd0, s_tx_watermark_q};
+          `RIBP_UART_RX_WATERMARK: s_ribp_rdata_d = {25'd0, s_rx_watermark_q};
           `RIBP_UART_RX_TIMEOUT_BITS: s_ribp_rdata_d = {16'd0, s_rx_timeout_q};
-          `RIBP_UART_ERROR_STATUS:    s_ribp_rdata_d = {25'd0, s_error_status_q};
-          `RIBP_UART_INTR_STATE:      s_ribp_rdata_d = {26'd0, s_intr_state_q};
-          `RIBP_UART_INTR_ENABLE:     s_ribp_rdata_d = {26'd0, s_intr_enable_q};
-          `RIBP_UART_INTR_STATUS:     s_ribp_rdata_d = {26'd0, (s_intr_state_q & s_intr_enable_q)};
-          `RIBP_UART_DMA_CTRL:        s_ribp_rdata_d = {30'd0, s_dma_ctrl_q};
-          `RIBP_UART_IP_VERSION:      s_ribp_rdata_d = IP_VERSION;
-          `RIBP_UART_CAPABILITY:      s_ribp_rdata_d = CAPABILITY;
+          `RIBP_UART_ERROR_STATUS: s_ribp_rdata_d = {25'd0, s_error_status_q};
+          `RIBP_UART_INTR_STATE: s_ribp_rdata_d = {25'd0, s_intr_state_q};
+          `RIBP_UART_INTR_ENABLE: s_ribp_rdata_d = {25'd0, s_intr_enable_q};
+          `RIBP_UART_INTR_STATUS: s_ribp_rdata_d = {25'd0, (s_intr_state_q & s_intr_enable_q)};
+          `RIBP_UART_DMA_CTRL: s_ribp_rdata_d = {30'd0, s_dma_ctrl_q};
+          `RIBP_UART_FLOW_CTRL: s_ribp_rdata_d = {30'd0, s_flow_ctrl_q};
+          `RIBP_UART_RTS_WATERMARK:
+          s_ribp_rdata_d = {9'd0, s_rts_deassert_level_q, 9'd0, s_rts_assert_level_q};
+          `RIBP_UART_IP_VERSION: s_ribp_rdata_d = IP_VERSION;
+          `RIBP_UART_CAPABILITY: s_ribp_rdata_d = CAPABILITY;
           default: begin
             s_access_error = 1'b1;
             s_ribp_rdata_d = '0;
@@ -483,7 +541,7 @@ module uart_reg #(
       .dat_i  (s_rx_timeout_d),
       .dat_o  (s_rx_timeout_q)
   );
-  dffer #(6) u_intr_enable_dffer (
+  dffer #(7) u_intr_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_intr_enable_en),
@@ -496,6 +554,33 @@ module uart_reg #(
       .en_i   (s_dma_ctrl_en),
       .dat_i  (s_dma_ctrl_d),
       .dat_o  (s_dma_ctrl_q)
+  );
+  dffer #(2) u_flow_ctrl_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_flow_ctrl_en),
+      .dat_i  (s_flow_ctrl_d),
+      .dat_o  (s_flow_ctrl_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(7),
+      .RESET_VAL (7'(RTS_ASSERT_LEVEL_RESET))
+  ) u_rts_assert_level_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_rts_watermark_en),
+      .dat_i  (s_rts_assert_level_d),
+      .dat_o  (s_rts_assert_level_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(7),
+      .RESET_VAL (7'(RTS_DEASSERT_LEVEL_RESET))
+  ) u_rts_deassert_level_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_rts_watermark_en),
+      .dat_i  (s_rts_deassert_level_d),
+      .dat_o  (s_rts_deassert_level_q)
   );
 
   fifo #(
@@ -580,8 +665,9 @@ module uart_reg #(
     if (tx_done_i && s_tx_empty) s_intr_state_d[`UART_INTR_TX_DONE] = 1'b1;
     if (s_rx_error_event || s_overrun_event) s_intr_state_d[`UART_INTR_RX_ERROR] = 1'b1;
     if (s_rx_push && rx_data_i[`UART_RXDATA_BREAK]) s_intr_state_d[`UART_INTR_BREAK] = 1'b1;
+    if (cts_change_i) s_intr_state_d[`UART_INTR_CTS_CHANGE] = 1'b1;
   end
-  dffr #(6) u_intr_state_dffr (
+  dffr #(7) u_intr_state_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_intr_state_d),

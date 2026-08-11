@@ -111,12 +111,15 @@ def source_files(target: str) -> list[Path]:
     if target == "uart":
         return [
             COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/edge_det.sv",
             COMMON_RTL / "utils/fifo.sv",
-            ROOT / "rtl/managed/clusterip/uart/rtl/uart_if.sv",
+            SERIAL / "uart_if.sv",
             SERIAL / "uart_baudgen.sv",
             SERIAL / "ribp_uart_tx.sv",
             SERIAL / "ribp_uart_rx.sv",
+            SERIAL / "uart_flow_ctrl.sv",
             SERIAL / "uart_core.sv",
             SERIAL / "uart_reg.sv",
             SERIAL / "ribp_uart.sv",

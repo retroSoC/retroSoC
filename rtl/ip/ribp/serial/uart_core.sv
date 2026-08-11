@@ -13,6 +13,7 @@ module uart_core (
     input  logic        tx_enable_i,
     input  logic        rx_enable_i,
     input  logic        loopback_i,
+    input  logic        tx_start_allowed_i,
     input  logic        break_i,
     input  logic        tx_data_valid_i,
     input  logic [ 7:0] tx_data_i,
@@ -46,20 +47,21 @@ module uart_core (
   );
 
   ribp_uart_tx u_ribp_uart_tx (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .sample_tick_i(s_sample_tick),
-      .enable_i     (tx_enable_i),
-      .break_i      (break_i),
-      .data_bits_i  (data_bits_i),
-      .stop2_i      (stop2_i),
-      .parity_i     (parity_i),
-      .data_valid_i (tx_data_valid_i),
-      .data_i       (tx_data_i),
-      .data_pop_o   (tx_data_pop_o),
-      .busy_o       (tx_busy_o),
-      .done_o       (tx_done_o),
-      .tx_o         (s_tx)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .sample_tick_i  (s_sample_tick),
+      .enable_i       (tx_enable_i),
+      .start_allowed_i(tx_start_allowed_i),
+      .break_i        (break_i),
+      .data_bits_i    (data_bits_i),
+      .stop2_i        (stop2_i),
+      .parity_i       (parity_i),
+      .data_valid_i   (tx_data_valid_i),
+      .data_i         (tx_data_i),
+      .data_pop_o     (tx_data_pop_o),
+      .busy_o         (tx_busy_o),
+      .done_o         (tx_done_o),
+      .tx_o           (s_tx)
   );
 
   ribp_uart_rx u_ribp_uart_rx (

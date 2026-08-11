@@ -56,13 +56,14 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ws2812_reg.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ws2812_core.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_ws2812.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/uart_if.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/uart_baudgen.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_uart_tx.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_uart_rx.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/serial/uart_flow_ctrl.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/uart_core.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/uart_reg.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/ribp_uart.sv \
-                             $(ROOT_PATH)/rtl/managed/clusterip/uart/rtl/uart_if.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/i2c_filter.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/i2c_core.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/serial/i2c_reg.sv \

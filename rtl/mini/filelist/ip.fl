@@ -25,9 +25,11 @@
 /ip/ribp/serial/ws2812_reg.sv
 /ip/ribp/serial/ws2812_core.sv
 /ip/ribp/serial/ribp_ws2812.sv
+/ip/ribp/serial/uart_if.sv
 /ip/ribp/serial/uart_baudgen.sv
 /ip/ribp/serial/ribp_uart_tx.sv
 /ip/ribp/serial/ribp_uart_rx.sv
+/ip/ribp/serial/uart_flow_ctrl.sv
 /ip/ribp/serial/uart_core.sv
 /ip/ribp/serial/uart_reg.sv
 /ip/ribp/serial/ribp_uart.sv

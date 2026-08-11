@@ -7,18 +7,23 @@
 
 #include <retrosoc/core/status.h>
 
-#define RS_UART_ERROR_PARITY      UINT32_C(0x01)
-#define RS_UART_ERROR_FRAME       UINT32_C(0x02)
-#define RS_UART_ERROR_BREAK       UINT32_C(0x04)
-#define RS_UART_ERROR_NOISE       UINT32_C(0x08)
+#define RS_UART_ERROR_PARITY           UINT32_C(0x01)
+#define RS_UART_ERROR_FRAME            UINT32_C(0x02)
+#define RS_UART_ERROR_BREAK            UINT32_C(0x04)
+#define RS_UART_ERROR_NOISE            UINT32_C(0x08)
 
-#define RS_UART_INTR_RX_WATERMARK UINT32_C(0x01)
-#define RS_UART_INTR_RX_TIMEOUT   UINT32_C(0x02)
-#define RS_UART_INTR_TX_WATERMARK UINT32_C(0x04)
-#define RS_UART_INTR_TX_DONE      UINT32_C(0x08)
-#define RS_UART_INTR_RX_ERROR     UINT32_C(0x10)
-#define RS_UART_INTR_BREAK        UINT32_C(0x20)
-#define RS_UART_INTR_ALL          UINT32_C(0x3F)
+#define RS_UART_INTR_RX_WATERMARK      UINT32_C(0x01)
+#define RS_UART_INTR_RX_TIMEOUT        UINT32_C(0x02)
+#define RS_UART_INTR_TX_WATERMARK      UINT32_C(0x04)
+#define RS_UART_INTR_TX_DONE           UINT32_C(0x08)
+#define RS_UART_INTR_RX_ERROR          UINT32_C(0x10)
+#define RS_UART_INTR_BREAK             UINT32_C(0x20)
+#define RS_UART_INTR_CTS_CHANGE        UINT32_C(0x40)
+#define RS_UART_INTR_ALL               UINT32_C(0x7F)
+
+#define RS_UART_STATUS_CTS_ASSERTED    (UINT32_C(1) << 12U)
+#define RS_UART_STATUS_RTS_ASSERTED    (UINT32_C(1) << 13U)
+#define RS_UART_STATUS_TX_FLOW_BLOCKED (UINT32_C(1) << 14U)
 
 typedef enum {
     RS_UART_PARITY_NONE = 0,
@@ -38,6 +43,10 @@ typedef struct {
     bool tx_enable;
     bool rx_enable;
     bool loopback_enable;
+    bool auto_cts_enable;
+    bool auto_rts_enable;
+    uint8_t rts_assert_level;
+    uint8_t rts_deassert_level;
 } rs_uart_config_t;
 
 typedef struct {

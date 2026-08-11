@@ -28,8 +28,8 @@ the root README and subsystem guides.
   timebase, RV32 access rules, interrupt behavior, and verification contract.
 - [ip/gpio.md](ip/gpio.md) defines the GPIO V2 dual-window ABI, pad ownership,
   filtering, interrupts, PDK capabilities, HAL, and verification contract.
-- [ip/uart.md](ip/uart.md) defines the UART V2 framing, FIFO, error, interrupt,
-  DMA, HAL, and verification contracts.
+- [ip/uart.md](ip/uart.md) defines the UART V3 framing, FIFO, RTS/CTS flow
+  control, error, interrupt, DMA, HAL, and verification contracts.
 - [ip/i2c.md](ip/i2c.md) defines the dual I2C V2 command, timing, error,
   recovery, DMA, HAL, and verification contracts.
 - [ip/ps2.md](ip/ps2.md) defines the Mini SoC PS/2 V2 APB, GPIO pad,

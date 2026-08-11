@@ -83,10 +83,11 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign u_sdio_ribp_if.valid = 1'b0;" in routes
     assert gpio.count("// GPIO") == 64
     assert "u_uart1_if" not in gpio
+    assert "assign u_uart0_if.cts_n_i = u_gpio_if.di_i[0];" in gpio
     assert "assign u_gpio_if.alt0_do_i[0] = 1'b0;" in gpio
     assert "assign u_gpio_if.alt0_oe_i[0] = 1'b0;" in gpio
-    assert "assign u_gpio_if.alt0_do_i[1] = 1'b0;" in gpio
-    assert "assign u_gpio_if.alt0_oe_i[1] = 1'b0;" in gpio
+    assert "assign u_gpio_if.alt0_do_i[1] = u_uart0_if.rts_n_o;" in gpio
+    assert "assign u_gpio_if.alt0_oe_i[1] = 1'b1;" in gpio
     assert "assign u_gpio_if.alt1_do_i[0] = u_ps2_if.ps2_clk_o;" in gpio
     assert "assign u_gpio_if.alt1_oe_i[0] = u_ps2_if.ps2_clk_oe_o;" in gpio
     assert "assign u_gpio_if.alt1_do_i[1] = u_ps2_if.ps2_dat_o;" in gpio

@@ -4,7 +4,6 @@
 /clusterip/rng/rtl/rng_reg.sv
 /clusterip/rng/rtl/rng_deterministic_source.sv
 /clusterip/rng/rtl/apb4_rng.sv
-/clusterip/uart/rtl/uart_if.sv
 /clusterip/pwm/rtl/pwm_pkg.sv
 /clusterip/pwm/rtl/pwm_tickgen.sv
 /clusterip/pwm/rtl/pwm_timer.sv

@@ -1,10 +1,10 @@
-# RIBP UART V2
+# RIBP UART V3
 
 UART0 is the Mini SoC management console and a general-purpose full-duplex
-serial port. UART V2 provides independent 64-byte transmit and receive FIFOs,
+serial port. UART V3 provides independent 64-byte transmit and receive FIFOs,
 fractional baud-rate generation, configurable framing, receive diagnostics,
-watermark and timeout interrupts, internal loopback, break generation, and
-generic-DMA request pacing.
+watermark and timeout interrupts, internal loopback, break generation,
+generic-DMA request pacing, and automatic active-low RTS/CTS flow control.
 
 ## Integration
 
@@ -15,11 +15,13 @@ generic-DMA request pacing.
 | RIBP interrupt group bit | 2 |
 | Management-core interrupt | 2 |
 | DMA modes | 5 UART TX, 6 UART RX |
-| External signals | `uart0_tx`, `uart0_rx` |
+| Dedicated signals | `uart0_tx`, `uart0_rx` |
+| Flow-control signals | GPIO0 ALT0 `uart0_cts_n`, GPIO1 ALT0 `uart0_rts_n` |
 
-UART0 and the generic DMA share the SoC clock domain. The existing `uart_if`
-continues to own the physical RX, TX, and IRQ signals; DMA readiness is a
-separate internal connection.
+UART0 and the generic DMA share the SoC clock domain. The self-owned `uart_if`
+contains RX, TX, active-low CTS/RTS, and IRQ. RX/TX retain their dedicated
+package pads. CTS/RTS reuse GPIO0/1 ALT0, while GPIO0/1 ALT1 remains the PS/2
+clock/data route. DMA readiness is a separate internal connection.
 
 ## Register ABI
 
@@ -43,13 +45,15 @@ require the low byte lane; selected upper lanes must contain zero.
 | `0x028` | `RX_WATERMARK` | RW | High-water threshold, 1 through 64; reset value 32. |
 | `0x02C` | `RX_TIMEOUT_BITS` | RW | Idle bit periods before timeout; zero disables, reset value 32. |
 | `0x030` | `ERROR_STATUS` | RW1C | Overrun, parity, frame, break, noise, config, command. |
-| `0x034` | `INTR_STATE` | RW1C | RX water/timeout, TX water/done, RX error, break. |
+| `0x034` | `INTR_STATE` | RW1C | RX water/timeout, TX water/done, RX error, break, CTS change. |
 | `0x038` | `INTR_ENABLE` | RW | Interrupt enable mask. |
 | `0x03C` | `INTR_STATUS` | RO | `INTR_STATE & INTR_ENABLE`. |
 | `0x040` | `INTR_TEST` | WO | Write-one interrupt injection. |
 | `0x044` | `DMA_CTRL` | RW | TX and RX DMA request enables. |
-| `0x0F8` | `IP_VERSION` | RO | `0x00020000`, ABI 2.0. |
-| `0x0FC` | `CAPABILITY` | RO | `0x00FF4040`, depths and implemented features. |
+| `0x048` | `FLOW_CTRL` | RW | Bit 0 enables automatic CTS; bit 1 enables automatic RTS. |
+| `0x04C` | `RTS_WATERMARK` | RW | Assert/ready level at bits 6:0 and deassert/halt level at bits 22:16. |
+| `0x0F8` | `IP_VERSION` | RO | `0x00030000`, ABI 3.0. |
+| `0x0FC` | `CAPABILITY` | RO | `0x03FF4040`, depths and implemented features. |
 
 `LINE_CTRL.DATA_BITS` values 0 through 3 select 5 through 8 bits. Bit 2
 selects two stop bits. Bits 4:3 select none, even, or odd parity; value 3 is
@@ -59,6 +63,18 @@ break.
 `RXDATA[7:0]` is the character. Bits 8 through 11 report parity error, frame
 error, break, and inconsistent majority samples. A full RX FIFO drops the new
 character and sets global overrun. An empty `RXDATA` read returns `resp_err`.
+
+`STATUS[12]` reports synchronized CTS asserted, `STATUS[13]` reports RTS
+asserted, and `STATUS[14]` reports that queued TX data is waiting for CTS.
+Interrupt bit 6 is sticky on either synchronized CTS edge while automatic CTS
+is enabled. All interrupt state, enable, status, test, and clear masks are
+seven bits in V3.
+
+`RTS_WATERMARK` resets to assert/ready level 32 and deassert/halt level 48.
+Software must program `assert < deassert <= 64`. UART configuration registers,
+including both flow-control registers, can change only while TX/RX are disabled
+and both engines are idle. Illegal thresholds or an active-engine update return
+`resp_err` and set the configuration error bit.
 
 ## Timing and transfer behavior
 
@@ -73,6 +89,20 @@ machines are idle. Clearing TX enable prevents a new character from starting
 but lets the current frame finish; clearing RX enable aborts a partial frame.
 TX break is accepted only while the transmitter is idle. FIFO contents are
 preserved by enable changes and are discarded only by an accepted flush.
+
+With automatic CTS enabled, synchronized low `cts_n` permits the transmitter
+to remove a character from the TX FIFO and start a frame. CTS deassertion never
+truncates an active frame; it prevents only the next frame. Internal loopback
+bypasses CTS so production test cannot deadlock on an unconnected pad. The CTS
+synchronizer resets to not-clear-to-send, which is fail-safe when flow control
+is enabled before a valid external level arrives.
+
+With automatic RTS enabled and RX enabled, `rts_n` is low while the receiver can
+accept data. At or above the deassert watermark it rises to request that the
+peer stop. It remains high until software drains the FIFO to or below the
+assert watermark, providing hysteresis. The output releases high immediately
+when automatic RTS or RX is disabled. FIFO push/pop changes affect the
+registered hysteresis state at the following SoC-clock boundary.
 
 A full `TXDATA` write applies RIBP backpressure while the enabled transmitter
 can make progress. A full write while disabled is rejected, avoiding an
@@ -94,16 +124,24 @@ status and interrupt control, FIFO flush, and UART-paced DMA transfers.
 `putch()` remains the internal formatted-output sink, while applications use
 `rs_uart_init()` or `rs_uart_configure()` instead of raw registers.
 
+Enabling automatic CTS or RTS through `rs_uart_configure()` selects GPIO0 or
+GPIO1 ALT0 respectively. Disabling flow control leaves that GPIO mux selection
+unchanged so another driver is never enabled implicitly; software must
+explicitly reconfigure a pin before reusing it. Default initialization leaves
+both automatic functions disabled, preserving console behavior on boards that
+do not route flow-control signals.
+
 ## Verification and current scope
 
 The self-checking RTL test covers the versioned ABI, access errors, FIFO depth,
-8N1 loopback, external frame errors, W1C interrupt behavior, and DMA request
-gating. The SBY target proves FIFO bounds, IRQ composition, disabled-DMA
-gating, and TX idle/break levels, and covers bus error, TX/RX activity, error,
-and IRQ paths. Host tests cover exact fractional timing and invalid ranges;
-the CI smoke firmware verifies capability registers and loopback through the
-public HAL.
+8N1 loopback, external frame errors, CTS frame-boundary gating, loopback bypass,
+RTS hysteresis, CTS-change interrupt behavior, and DMA request gating. The SBY
+target proves FIFO bounds, IRQ composition, disabled-DMA gating, RTS release,
+flow-block consistency, forbidden TX FIFO pops, and TX idle/break levels, and
+covers bus error, TX/RX activity, flow blocking, RTS assertion, error, and IRQ
+paths. Host tests cover exact fractional timing and invalid ranges; the CI smoke
+firmware verifies V3 capability registers and loopback through the public HAL.
 
-Hardware RTS/CTS, IrDA, RS485 direction control, automatic baud detection, and
-low-power wakeup are outside UART V2. Adding one requires a versioned ABI and,
-where applicable, explicit pad and clock/reset integration.
+IrDA, RS485 direction control, automatic baud detection, modem-status inputs,
+and low-power wakeup are outside UART V3. Adding one requires a versioned ABI
+and, where applicable, explicit pad and clock/reset integration.

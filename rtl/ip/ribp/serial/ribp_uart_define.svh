@@ -23,6 +23,8 @@
 `define RIBP_UART_INTR_STATUS       8'h3C
 `define RIBP_UART_INTR_TEST         8'h40
 `define RIBP_UART_DMA_CTRL          8'h44
+`define RIBP_UART_FLOW_CTRL         8'h48
+`define RIBP_UART_RTS_WATERMARK     8'h4C
 `define RIBP_UART_IP_VERSION        8'hF8
 `define RIBP_UART_CAPABILITY        8'hFC
 
@@ -50,6 +52,9 @@
 `define UART_STATUS_BREAK_ACTIVE    9
 `define UART_STATUS_TX_DMA_REQ      10
 `define UART_STATUS_RX_DMA_REQ      11
+`define UART_STATUS_CTS_ASSERTED    12
+`define UART_STATUS_RTS_ASSERTED    13
+`define UART_STATUS_TX_FLOW_BLOCKED 14
 
 `define UART_RXDATA_PARITY_ERROR    8
 `define UART_RXDATA_FRAME_ERROR     9
@@ -70,9 +75,16 @@
 `define UART_INTR_TX_DONE           3
 `define UART_INTR_RX_ERROR          4
 `define UART_INTR_BREAK             5
+`define UART_INTR_CTS_CHANGE        6
 
 `define UART_DMA_TX_ENABLE          0
 `define UART_DMA_RX_ENABLE          1
+
+`define UART_FLOW_AUTO_CTS_ENABLE   0
+`define UART_FLOW_AUTO_RTS_ENABLE   1
+
+`define UART_RTS_ASSERT_LEVEL       0
+`define UART_RTS_DEASSERT_LEVEL     16
 // verilog_format: on
 
 `endif

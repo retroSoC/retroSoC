@@ -59,14 +59,14 @@
       "kind": "tri_output",
       "direction": "output",
       "ports": [
-        {"name": "uart0_tx_o_pad", "signal": "u_uart0_if.tx_o"}
+        {"name": "uart0_tx_o_pad", "signal": "s_uart0_tx"}
       ]
     },
     {
       "kind": "tri_input",
       "direction": "inout",
       "ports": [
-        {"name": "uart0_rx_i_pad", "signal": "u_uart0_if.rx_i"}
+        {"name": "uart0_rx_i_pad", "signal": "s_uart0_rx"}
       ]
     },
     {

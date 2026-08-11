@@ -132,7 +132,7 @@ digraph mini_soc_block_diagram {
       ];
       uart0 [
         fillcolor="#F9E1E7",
-        label="UART0 V2\n64-byte TX/RX FIFOs, fractional baud\nframing/errors, IRQ2, DMA-paced"
+        label="UART0 V3\n64-byte TX/RX FIFOs, fractional baud\nauto RTS/CTS, framing/errors, IRQ2, DMA-paced"
       ];
       i2c_controllers [
         fillcolor="#F9E1E7",
@@ -245,6 +245,7 @@ digraph mini_soc_block_diagram {
   dma -> ws2812 [label="TXDATA writes", style=dashed];
   ws2812 -> irq [label="IRQ17"];
   dma -> uart0 [label="TX/RX data", style=dashed];
+  uart0 -> gpio_controller [dir=both, label="GPIO0/1 ALT0\nCTS_n / RTS_n"];
   uart0 -> irq [label="IRQ2"];
   i2c_controllers -> gpio_controller [label="GPIO3/4 ALT1\nGPIO7/8 ALT0"];
   dma -> i2c_controllers [label="DATA_CMD / RXDATA", style=dashed];
