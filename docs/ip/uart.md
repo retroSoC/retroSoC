@@ -19,8 +19,7 @@ generic-DMA request pacing.
 
 UART0 and the generic DMA share the SoC clock domain. The existing `uart_if`
 continues to own the physical RX, TX, and IRQ signals; DMA readiness is a
-separate internal connection. APB UART1 is independent and is not affected by
-this ABI.
+separate internal connection.
 
 ## Register ABI
 

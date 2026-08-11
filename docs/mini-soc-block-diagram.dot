@@ -152,7 +152,7 @@ digraph mini_soc_block_diagram {
       ];
       apb_targets [
         fillcolor="#E6F4EA",
-        label="APB target wrapper\nUART1, advanced timer\nand user IP"
+        label="APB target wrapper\nUser IP target"
       ];
       pwm [
         fillcolor="#E6F4EA",

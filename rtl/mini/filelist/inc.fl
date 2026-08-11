@@ -15,7 +15,6 @@
 +incdir+/clusterip/rtc/rtl
 +incdir+/clusterip/wdg/rtl
 +incdir+/clusterip/crc/rtl
-+incdir+/clusterip/timer/rtl
 +incdir+/ip/ribp/interconnect
 +incdir+/ip/ribp/util
 +incdir+/ip/ribp/memory

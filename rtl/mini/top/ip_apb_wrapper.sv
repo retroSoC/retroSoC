@@ -9,7 +9,6 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-`include "uart_define.svh"
 `include "pwm_define.svh"
 `include "ps2_define.svh"
 `include "user_extensions.svh"
@@ -23,9 +22,7 @@ module ip_apb_wrapper (
     input  logic                        clk_aud_i,
     input  logic                        rst_aud_n_i,
     input  logic                        debug_halted_i,
-    input  logic                        tmr_capch_i,
     rib_if.slave                        rib,
-    uart_if.dut                         uart,
     pwm_if.dut                          pwm,
     ps2_if.dut                          ps2,
     input  logic [`USER_IPSEL_WIDTH-1:0]  ip_sel_i,
@@ -99,10 +96,6 @@ module ip_apb_wrapper (
       .wdg_rst_n_i   (rst_aud_n_i),
       .debug_halted_i(debug_halted_i)
   );
-  tmr_if u_tmr_if (.exclk_i(clk_aud_i));
-
-  assign u_tmr_if.capch_i = tmr_capch_i;
-
   `include "soc_apb_bridges.svh"
 
   // verilog_format: off
@@ -149,13 +142,6 @@ module ip_apb_wrapper (
       .apb4               (u_rng_apb_if)
   );
 
-  apb4_uart #(
-      .FIFO_DEPTH(32)
-  ) u_apb4_uart (
-      .apb4(u_uart1_apb_if),
-      .uart(uart)
-  );
-
   apb4_pwm #(
       .PCLK_HZ(`SOC_EXT_CLK_HZ)
   ) u_apb4_pwm (
@@ -193,11 +179,6 @@ module ip_apb_wrapper (
   assign wdg_reset_req_o = u_wdg_if.reset_req_o;
 
   apb4_crc u_apb4_crc (.apb4(u_crc_apb_if));
-
-  apb4_tmr u_apb4_tmr (
-      .apb4(u_tmr_apb_if),
-      .tmr (u_tmr_if)
-  );
 
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "soc_apb_irq_bindings.svh"

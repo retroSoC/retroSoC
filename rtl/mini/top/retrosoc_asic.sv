@@ -18,9 +18,9 @@
 //
 // GPIO    ALT0                         DIR     ALT1                    DIR
 // ------  ---------------------------  ------  ----------------------  ------
-// GPIO00  UART1_RX                     IN      PS2_CLK                 BIDI
-// GPIO01  UART1_TX                     OUT     PS2_DATA                BIDI
-// GPIO02  TMR_CAPTURE + PWM_SYNC       IN      WS2812_DATA             OUT
+// GPIO00  TIE_OFF                      -       PS2_CLK                 BIDI
+// GPIO01  TIE_OFF                      -       PS2_DATA                BIDI
+// GPIO02  PWM_SYNC                     IN      WS2812_DATA             OUT
 // GPIO03  PWM0                         OUT     I2C1_SCL                BIDI
 // GPIO04  PWM1                         OUT     I2C1_SDA                BIDI
 // GPIO05  PWM2                         OUT     CLKDIV4                 OUT

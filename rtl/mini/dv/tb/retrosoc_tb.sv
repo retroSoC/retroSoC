@@ -72,9 +72,6 @@ module retrosoc_tb;
   wire        s_dvp_vsync;
   wire [ 7:0] s_dvp_data;
 
-  wire        s_uart1_tx;
-  wire        s_uart1_rx;
-
 `ifdef HAVE_PLL
   always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
 `endif
@@ -146,14 +143,6 @@ module retrosoc_tb;
   );
 
 
-  rs232 #(
-      .BAUD_RATE(115200)
-  ) u_rs232_1 (
-      .rs232_rx_i(s_uart1_tx),
-      .rs232_tx_o(s_uart1_rx)
-  );
-
-
   ps2_device_model u_ps2_device_model (
       .ps2_clk_io(s_gpio_0_io),
       .ps2_dat_io(s_gpio_1_io)
@@ -206,18 +195,6 @@ module retrosoc_tb;
       #1000;
       for (i = 0; i < 26; ++i) begin
         u_ps2_device_model.send_byte(i + 8'd65, 3'b000);
-        #500;
-      end
-    end
-  end
-
-  initial begin : UART_RX_BLOCK
-    integer i;
-    #1000;
-    while (1) begin
-      #1000;
-      for (i = 0; i < 26; ++i) begin
-        u_rs232_1.send(i + 8'd66);
         #500;
       end
     end

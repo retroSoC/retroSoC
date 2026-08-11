@@ -44,8 +44,8 @@ module rib2apb_formal_design (
     output logic [ 1:0] rib_rsp_beat,
     output logic        rib_rsp_last,
     output logic        rib_rsp_ready,
-    output logic [ 9:0] psel_comb,
-    output logic [ 9:0] psel_q,
+    output logic [ 7:0] psel_comb,
+    output logic [ 7:0] psel_q,
     output logic        xfer_ready,
     output logic        xfer_error,
     output logic        rsp_input_valid,
@@ -57,13 +57,11 @@ module rib2apb_formal_design (
   rib_if rib ();
   apb4_pure_if archinfo ();
   apb4_pure_if rng ();
-  apb4_pure_if uart ();
   apb4_pure_if pwm ();
   apb4_pure_if ps2 ();
   apb4_pure_if rtc ();
   apb4_pure_if wdg ();
   apb4_pure_if crc ();
-  apb4_pure_if tmr ();
   apb4_pure_if user_ip ();
 
   (* anyseq *)logic        f_rib_cmd_valid;
@@ -106,13 +104,11 @@ module rib2apb_formal_design (
 
   formal_apb_slave u_archinfo_slave (.apb(archinfo));
   formal_apb_slave u_rng_slave (.apb(rng));
-  formal_apb_slave u_uart_slave (.apb(uart));
   formal_apb_slave u_pwm_slave (.apb(pwm));
   formal_apb_slave u_ps2_slave (.apb(ps2));
   formal_apb_slave u_rtc_slave (.apb(rtc));
   formal_apb_slave u_wdg_slave (.apb(wdg));
   formal_apb_slave u_crc_slave (.apb(crc));
-  formal_apb_slave u_tmr_slave (.apb(tmr));
   formal_apb_slave u_user_ip_slave (.apb(user_ip));
 
   rib2apb u_dut (
@@ -121,13 +117,11 @@ module rib2apb_formal_design (
       .rib     (rib),
       .archinfo(archinfo),
       .rng     (rng),
-      .uart    (uart),
       .pwm     (pwm),
       .ps2     (ps2),
       .rtc     (rtc),
       .wdg     (wdg),
       .crc     (crc),
-      .tmr     (tmr),
       .user_ip (user_ip)
   );
 

@@ -56,12 +56,10 @@ module retrosoc (
   sdio_if     u_sdio_if     ();
   opipsram_if u_opipsram_if ();
   i2c_if      u_i2c1_if     ();
-  uart_if     u_uart1_if    ();
   pwm_if      u_pwm_if      ();
   ps2_if      u_ps2_if      ();
   // verilog_format: on
 
-  logic                             s_tmr_capch;
   logic                             s_mgmt_debug_halted;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
   logic [  `SOC_IRQ_RIBP_WIDTH-1:0] s_ribp_irq;
@@ -203,9 +201,7 @@ core_wrapper u_core_wrapper (
       .clk_aud_i      (clk_aud_i),
       .rst_aud_n_i    (rst_aud_n_i),
       .debug_halted_i (s_mgmt_debug_halted),
-      .tmr_capch_i    (s_tmr_capch),
       `include "soc_ip_apb_wrapper_fabric.svh"
-      .uart           (u_uart1_if),
       .pwm            (u_pwm_if),
       .ps2            (u_ps2_if),
       .ip_sel_i       (u_sysctrl_if.ip_sel_o),

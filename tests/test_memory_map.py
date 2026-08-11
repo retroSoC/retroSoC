@@ -87,8 +87,23 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
     rtl = (tmp_path / "rtl/mmap_define.svh").read_text(encoding="utf-8")
     header = (tmp_path / "include/retrosoc/generated/memory_map.h").read_text(encoding="utf-8")
 
-    assert "SOC_ADDR_APB_USER_IP_BASE" in rtl
-    assert "RS_SOC_APB_USER_IP_BASE" in header
+    expected_apb_bases = {
+        "ARCHINFO": "20000000",
+        "RNG": "20001000",
+        "PWM": "20002000",
+        "PS2": "20003000",
+        "RTC": "20004000",
+        "WDG": "20005000",
+        "CRC": "20006000",
+        "USER_IP": "20007000",
+    }
+    for symbol, base in expected_apb_bases.items():
+        assert f"`define SOC_ADDR_APB_{symbol}_BASE 32'h{base}" in rtl
+        assert f"#define RS_SOC_APB_{symbol}_BASE UINT32_C(0x{base})" in header
+    assert "APB_UART1" not in rtl
+    assert "APB_UART1" not in header
+    assert "APB_TMR" not in rtl
+    assert "APB_TMR" not in header
 
 
 def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:

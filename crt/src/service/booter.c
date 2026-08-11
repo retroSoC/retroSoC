@@ -120,7 +120,6 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB_ARCHINFO_BASE);
     printf("                       1 x RNG           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB_RNG_BASE);
-    printf("                       1 x UART1(ADV)    @%p\n", (void *)&reg_uart1_lcr);
     printf("                       1 x PWM V2(4CH)   @%p\n",
            (void *)(uintptr_t)RS_SOC_APB_PWM_BASE);
     printf("                       1 x PS2           @%p\n",
@@ -131,7 +130,6 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB_WDG_BASE);
     printf("                       1 x CRC           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB_CRC_BASE);
-    printf("                       1 x TIMER3(ADV)   @%p\n", (void *)&reg_tim3_ctrl);
     printf("                       1 x USER_IP(4KiB) @%p\n", (void *)&reg_user_ip_reg0);
     printf("\n");
     printf("#############################################################\n");

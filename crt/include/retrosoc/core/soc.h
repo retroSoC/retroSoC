@@ -186,18 +186,6 @@
 #define reg_dvp_recven                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x00))
 #define reg_dvp_rxdata                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x04))
 #define reg_dvp_status                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x08))
-// uart
-#define reg_uart1_lcr                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x00))
-#define reg_uart1_div                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x04))
-#define reg_uart1_trx                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x08))
-#define reg_uart1_fcr                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x0C))
-#define reg_uart1_lsr                      RS_SOC_REG32(RS_SOC_APB_UART1_BASE, UINT32_C(0x10))
-// tim3
-#define reg_tim3_ctrl                      RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x00))
-#define reg_tim3_pscr                      RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x04))
-#define reg_tim3_cnt                       RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x08))
-#define reg_tim3_cmp                       RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x0C))
-#define reg_tim3_stat                      RS_SOC_REG32(RS_SOC_APB_TMR_BASE, UINT32_C(0x10))
 #define reg_user_ip_reg0                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x00))
 #define reg_user_ip_reg1                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x04))
 #define reg_user_ip_reg2                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x08))

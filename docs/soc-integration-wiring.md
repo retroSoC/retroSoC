@@ -43,14 +43,13 @@ and output enable come from the PWM interface, so a fault-configured high-Z
 state reaches the GPIO pad bridge instead of being overridden by a constant
 enable. PWM uses management-core IRQ11.
 
-GPIO2 ALT0 feeds the external synchronization input while retaining its
-existing advanced-timer capture binding. GPIO9 ALT0 feeds the asynchronous
-fault input. GPIO30 and GPIO31 ALT1 feed capture channels 0 and 1. Software must
-select the corresponding alternate function and input mode before relying on
-these paths. GPIO9 fault shutdown includes an immediate asynchronous safe-state
-path plus synchronized filtering/status inside the IP; technology sign-off must
-verify external pulse width and pad-disable latency. The complete programming,
-safety, and verification contract is in the managed
+GPIO2 ALT0 feeds the external synchronization input. GPIO9 ALT0 feeds the
+asynchronous fault input. GPIO30 and GPIO31 ALT1 feed capture channels 0 and 1.
+Software must select the corresponding alternate function and input mode before
+relying on these paths. GPIO9 fault shutdown includes an immediate asynchronous
+safe-state path plus synchronized filtering/status inside the IP; technology
+sign-off must verify external pulse width and pad-disable latency. The complete
+programming, safety, and verification contract is in the managed
 [PWM V2 datasheet](../rtl/managed/clusterip/pwm/doc/datasheet.md).
 
 ## WS2812 output

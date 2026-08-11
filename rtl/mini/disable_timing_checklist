@@ -1,1 +1,0 @@
-instance { retrosoc_tb.u_retrosoc_asic.\u_retrosoc.u_axil_ip_wrapper.u_apb4_uart.u_uart_rx.reg_rx_sync_0__reg } { noTiming };

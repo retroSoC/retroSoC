@@ -88,8 +88,6 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/watchdog.c \
             $(ROOT_PATH)/crt/src/hal/crc.c \
             $(ROOT_PATH)/crt/src/hal/rng.c \
-            $(ROOT_PATH)/crt/src/hal/advanced_timer.c \
-            $(ROOT_PATH)/crt/src/hal/hpuart.c \
             $(ROOT_PATH)/crt/src/hal/ps2.c \
             $(ROOT_PATH)/crt/src/hal/i2c_math.c \
             $(ROOT_PATH)/crt/src/hal/i2c.c \

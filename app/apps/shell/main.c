@@ -5,7 +5,6 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/crc.h>
 #include <retrosoc/hal/gpio.h>
-#include <retrosoc/hal/hpuart.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/lcd.h>
@@ -68,7 +67,6 @@ int main(void) {
     (void)rs_shell_register("lcd", "lcd test", true, ip_lcd_test);
     (void)rs_shell_register("i2s", "i2s test", false, ip_i2s_test);
     (void)rs_shell_register("nor", "nor flash test", false, ip_norflash_test);
-    (void)rs_shell_register("uart1", "uart1 test", false, ip_hpuart_test);
     (void)rs_shell_register("pcf", "pcf8563b test", true, pcf8563b_test);
 #ifdef CSR_ENABLE
     (void)rs_shell_register("irq", "tmr/sw irq test", true, irq_test);
