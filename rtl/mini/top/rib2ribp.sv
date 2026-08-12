@@ -137,67 +137,67 @@ module rib2ribp (
   end
 
   dffr #(3) u_fsm_dffr (
-      clk_i,
-      rst_n_i,
-      s_fsm_d,
-      s_fsm_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
   dffr #(32) u_addr_dffr (
-      clk_i,
-      rst_n_i,
-      s_addr_d,
-      s_addr_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_addr_d),
+      .dat_o  (s_addr_q)
   );
   dffr #(2) u_len_dffr (
-      clk_i,
-      rst_n_i,
-      s_len_d,
-      s_len_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_len_d),
+      .dat_o  (s_len_q)
   );
   dffr #(2) u_beat_dffr (
-      clk_i,
-      rst_n_i,
-      s_beat_d,
-      s_beat_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_beat_d),
+      .dat_o  (s_beat_q)
   );
   dffr #(1) u_write_dffr (
-      clk_i,
-      rst_n_i,
-      s_write_d,
-      s_write_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_write_d),
+      .dat_o  (s_write_q)
   );
   dffer #(32) u_wdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_w_hdshk && s_fsm_q == FSM_WDATA,
-      rib.wdata,
-      s_wdata_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_w_hdshk && s_fsm_q == FSM_WDATA),
+      .dat_i  (rib.wdata),
+      .dat_o  (s_wdata_q)
   );
   dffer #(4) u_wstrb_dffer (
-      clk_i,
-      rst_n_i,
-      s_w_hdshk && s_fsm_q == FSM_WDATA,
-      rib.wstrb,
-      s_wstrb_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_w_hdshk && s_fsm_q == FSM_WDATA),
+      .dat_i  (rib.wstrb),
+      .dat_o  (s_wstrb_q)
   );
   dffer #(32) u_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_ribp_hdshk && ~s_write_q,
-      ribp.rdata,
-      s_rdata_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_ribp_hdshk && ~s_write_q),
+      .dat_i  (ribp.rdata),
+      .dat_o  (s_rdata_q)
   );
   dffr #(1) u_error_dffr (
-      clk_i,
-      rst_n_i,
-      s_error_d,
-      s_error_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_error_d),
+      .dat_o  (s_error_q)
   );
   dffr #(3) u_error_code_dffr (
-      clk_i,
-      rst_n_i,
-      s_error_code_d,
-      s_error_code_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_error_code_d),
+      .dat_o  (s_error_code_q)
   );
 
 endmodule

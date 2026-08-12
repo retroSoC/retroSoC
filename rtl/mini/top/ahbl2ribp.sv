@@ -122,28 +122,28 @@ module ahbl2ribp (
   end
 
   dffr #(2) u_fsm_dffr (
-      ahbl.hclk,
-      ahbl.hresetn,
-      s_fsm_d,
-      s_fsm_q
+      .clk_i  (ahbl.hclk),
+      .rst_n_i(ahbl.hresetn),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
   dffr #(32) u_haddr_dffr (
-      ahbl.hclk,
-      ahbl.hresetn,
-      s_haddr_d,
-      s_haddr_q
+      .clk_i  (ahbl.hclk),
+      .rst_n_i(ahbl.hresetn),
+      .dat_i  (s_haddr_d),
+      .dat_o  (s_haddr_q)
   );
   dffr #(1) u_hwrite_dffr (
-      ahbl.hclk,
-      ahbl.hresetn,
-      s_hwrite_d,
-      s_hwrite_q
+      .clk_i  (ahbl.hclk),
+      .rst_n_i(ahbl.hresetn),
+      .dat_i  (s_hwrite_d),
+      .dat_o  (s_hwrite_q)
   );
   dffr #(3) u_hsize_dffr (
-      ahbl.hclk,
-      ahbl.hresetn,
-      s_hsize_d,
-      s_hsize_q
+      .clk_i  (ahbl.hclk),
+      .rst_n_i(ahbl.hresetn),
+      .dat_i  (s_hsize_d),
+      .dat_o  (s_hsize_q)
   );
 
 endmodule

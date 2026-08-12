@@ -236,6 +236,12 @@ for diagnosis but is initially non-blocking.
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
 Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
 the four full PDK regression workflows remain required PR coverage and do not repeat the format checks.
+
+Self-owned RTL also passes `rtl-style-check`, which applies the ownership-aware
+rules in `rtl/rtl_style_manifest.json`. New positional module connections,
+legacy `always @` blocks, and unjustified explicit nets are rejected in changed
+self-owned RTL. Formal/DV, PDK, generated, and managed RTL use separate
+validation profiles and are not mechanically rewritten by the root formatter.
 `nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 

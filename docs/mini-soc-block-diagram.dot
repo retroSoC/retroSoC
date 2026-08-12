@@ -50,6 +50,34 @@ digraph mini_soc_block_diagram {
     label="Management JTAG\nTCK, TMS, TDI, TRST_n, TDO"
   ];
 
+  subgraph cluster_rtl_ownership {
+    color="#CBD5E1";
+    fontcolor="#334155";
+    fontname="Arial";
+    fontsize=10;
+    label="RTL ownership and validation profiles";
+    margin=12;
+    rank=sink;
+    style="rounded,dashed";
+
+    rtl_owned [
+      fillcolor="#DCECF8",
+      label="Self-owned RTL\nVerible format + strict style"
+    ];
+    rtl_verif [
+      fillcolor="#FCE7F3",
+      label="Formal and DV RTL\nverification lint profile"
+    ];
+    rtl_tech [
+      fillcolor="#FFF3C9",
+      label="PDK and technology wrappers\ncompile/elaboration profile"
+    ];
+    rtl_generated [
+      fillcolor="#E5E7EB",
+      label="Generated and managed RTL\nlocked source and regeneration flow"
+    ];
+  }
+
   subgraph cluster_asic {
     color="#111827";
     fontcolor="#111827";

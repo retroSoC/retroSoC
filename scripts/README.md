@@ -32,6 +32,12 @@ RISC-V GDB, then records their logs and a structured result. Invoke it through
 [`../docs/hazard3-debug.md`](../docs/hazard3-debug.md) for its scope and
 limitations.
 
+`check_rtl_style.py` applies the ownership-aware RTL style rules from
+[`../rtl/rtl_style_manifest.json`](../rtl/rtl_style_manifest.json). The CI
+target checks changed self-owned RTL for positional module connections and
+legacy constructs. Existing findings are migrated in module-sized batches and
+must not be expanded by a new change.
+
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the
 relevant dry-run or regression profile from [`AGENTS.md`](../AGENTS.md).

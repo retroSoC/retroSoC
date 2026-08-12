@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "owned": {
+      "roots": [
+        "rtl/ip",
+        "rtl/mini/top"
+      ],
+      "suffixes": [
+        ".sv",
+        ".svh"
+      ],
+      "format": "verible",
+      "lint": "strict"
+    },
+    "verification": {
+      "roots": [
+        "rtl/mini/formal",
+        "rtl/mini/dv"
+      ],
+      "suffixes": [
+        ".sv",
+        ".svh",
+        ".v"
+      ],
+      "format": "verible",
+      "lint": "verification"
+    },
+    "technology": {
+      "roots": [
+        "rtl/tech"
+      ],
+      "suffixes": [
+        ".sv",
+        ".svh",
+        ".v"
+      ],
+      "format": "compile-only",
+      "lint": "technology"
+    }
+  },
+  "excluded_prefixes": [
+    "rtl/managed",
+    "rtl/mini/core/minirv.sv"
+  ],
+  "abbreviations": {
+    "command": "cmd",
+    "request": "req",
+    "response": "resp",
+    "address": "addr",
+    "enable": "en",
+    "error": "err",
+    "status": "stat",
+    "counter": "cnt",
+    "configuration": "cfg",
+    "select": "sel",
+    "length": "len"
+  },
+  "reset_suffix": "rst_n_i"
+}

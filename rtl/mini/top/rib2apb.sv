@@ -130,50 +130,50 @@ module rib2apb (
   end
 
   dffr #(3) u_fsm_dffr (
-      clk_i,
-      rst_n_i,
-      s_fsm_d,
-      s_fsm_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
   dffer #(32) u_addr_dffer (
-      clk_i,
-      rst_n_i,
-      s_cmd_hdshk,
-      rib.cmd_addr,
-      s_addr_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_cmd_hdshk),
+      .dat_i  (rib.cmd_addr),
+      .dat_o  (s_addr_q)
   );
   dffer #(1) u_write_dffer (
-      clk_i,
-      rst_n_i,
-      s_cmd_hdshk,
-      rib.cmd_write,
-      s_write_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_cmd_hdshk),
+      .dat_i  (rib.cmd_write),
+      .dat_o  (s_write_q)
   );
   dffer #(32) u_wdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_w_hdshk && (s_fsm_q == FSM_WDATA),
-      rib.wdata,
-      s_wdata_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_w_hdshk && (s_fsm_q == FSM_WDATA)),
+      .dat_i  (rib.wdata),
+      .dat_o  (s_wdata_q)
   );
   dffer #(4) u_wstrb_dffer (
-      clk_i,
-      rst_n_i,
-      s_w_hdshk && (s_fsm_q == FSM_WDATA),
-      rib.wstrb,
-      s_wstrb_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_w_hdshk && (s_fsm_q == FSM_WDATA)),
+      .dat_i  (rib.wstrb),
+      .dat_o  (s_wstrb_q)
   );
   dffr #(3) u_error_code_dffr (
-      clk_i,
-      rst_n_i,
-      s_error_code_d,
-      s_error_code_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_error_code_d),
+      .dat_o  (s_error_code_q)
   );
   dffr #(NSLV) u_psel_dffr (
-      clk_i,
-      rst_n_i,
-      s_cmd_hdshk ? s_psel_comb : s_psel_q,
-      s_psel_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cmd_hdshk ? s_psel_comb : s_psel_q),
+      .dat_o  (s_psel_q)
   );
 
 endmodule

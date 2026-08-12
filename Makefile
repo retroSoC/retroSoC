@@ -76,6 +76,7 @@ FLOW_PYTHON        ?= $(PYTHON)
 CLANG_FORMAT       ?= clang-format-14
 MBAKE              ?= mbake
 VERIBLE_FORMAT     ?= verible-verilog-format
+VERIBLE_LINT       ?= verible-verilog-lint
 VCS_DEFAULT_RUNNER := $(if $(filter YES,$(VCS_USE_LSF)),bsub -Is)
 VCS_RUNNER         ?= $(VCS_DEFAULT_RUNNER)
 VCS_SHELL_GOALS    := comp sim netcomp netsim postcomp postsim
@@ -257,7 +258,7 @@ endif
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
-	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
+	mk-format-check rtl-format rtl-format-check rtl-style-check sw-policy-check sw-host-test \
 	benchmark-report coremark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
@@ -302,6 +303,7 @@ help:
 	  '  sw-format-check            check embedded C whitespace and line-ending policy' \
 	  '  mk-format | mk-format-check apply/check tracked Makefile formatting' \
 	  '  rtl-format | rtl-format-check apply/check self-owned RTL formatting' \
+	  '  rtl-style-check            check changed self-owned RTL naming and connections' \
 	  '  sw-policy-check            check embedded C API and naming policy' \
 	  '  sw-host-test               run host tests for deterministic SDK utilities' \
 	  '  regress-smoke              run the IHP130 fast regression suite' \
@@ -407,7 +409,7 @@ sw-format-check:
 
 format: sw-format mk-format rtl-format
 
-format-check: sw-format-check mk-format-check rtl-format-check
+format-check: sw-format-check mk-format-check rtl-format-check rtl-style-check
 
 mk-format:
 	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind make --apply \
@@ -424,6 +426,10 @@ rtl-format:
 rtl-format-check:
 	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind rtl \
 	  --verible-verilog-format $(VERIBLE_FORMAT)
+
+rtl-style-check:
+	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
+	  --profile owned --changed-only --verible-verilog-lint $(VERIBLE_LINT)
 
 sw-policy-check:
 	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) --policy-check

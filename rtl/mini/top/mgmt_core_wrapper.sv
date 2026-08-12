@@ -52,7 +52,10 @@ module mgmt_core_wrapper (
 
   assign debug_halted_o = s_dbg_halted;
   // verilog_format: off
-  ahbl_if u_ahbl_if (clk_i, s_core_rst_n);
+  ahbl_if u_ahbl_if (
+      .hclk(clk_i),
+      .hresetn(s_core_rst_n)
+  );
   ahbl2axi4 u_ahbl2axi4 (
       .ahbl  (u_ahbl_if),
       .axi4  (axi4),

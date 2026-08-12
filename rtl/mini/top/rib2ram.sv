@@ -141,73 +141,73 @@ module rib2ram (
   end
 
   dffr #(1) u_active_dffr (
-      clk_i,
-      rst_n_i,
-      s_active_d,
-      s_active_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_active_d),
+      .dat_o  (s_active_q)
   );
   dffer #(1) u_write_dffer (
-      clk_i,
-      rst_n_i,
-      rib.cmd_valid && rib.cmd_ready,
-      rib.cmd_write,
-      s_write_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (rib.cmd_valid && rib.cmd_ready),
+      .dat_i  (rib.cmd_write),
+      .dat_o  (s_write_q)
   );
   dffer #(32) u_addr_dffer (
-      clk_i,
-      rst_n_i,
-      rib.cmd_valid && rib.cmd_ready,
-      rib.cmd_addr,
-      s_addr_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (rib.cmd_valid && rib.cmd_ready),
+      .dat_i  (rib.cmd_addr),
+      .dat_o  (s_addr_q)
   );
   dffer #(2) u_len_dffer (
-      clk_i,
-      rst_n_i,
-      rib.cmd_valid && rib.cmd_ready,
-      rib.cmd_len,
-      s_len_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (rib.cmd_valid && rib.cmd_ready),
+      .dat_i  (rib.cmd_len),
+      .dat_o  (s_len_q)
   );
   dffr #(2) u_issue_beat_dffr (
-      clk_i,
-      rst_n_i,
-      s_issue_beat_d,
-      s_issue_beat_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_issue_beat_d),
+      .dat_o  (s_issue_beat_q)
   );
   dffr #(1) u_issue_valid_dffr (
-      clk_i,
-      rst_n_i,
-      s_issue_valid_d,
-      s_issue_valid_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_issue_valid_d),
+      .dat_o  (s_issue_valid_q)
   );
   dffr #(2) u_write_beat_dffr (
-      clk_i,
-      rst_n_i,
-      s_write_beat_d,
-      s_write_beat_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_write_beat_d),
+      .dat_o  (s_write_beat_q)
   );
   dffr #(1) u_write_done_dffr (
-      clk_i,
-      rst_n_i,
-      s_write_done_d,
-      s_write_done_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_write_done_d),
+      .dat_o  (s_write_done_q)
   );
   dffr #(1) u_read_pending_dffr (
-      clk_i,
-      rst_n_i,
-      s_read_pending_d,
-      s_read_pending_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_read_pending_d),
+      .dat_o  (s_read_pending_q)
   );
   dffr #(2) u_read_beat_dffr (
-      clk_i,
-      rst_n_i,
-      s_read_beat_d,
-      s_read_beat_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_read_beat_d),
+      .dat_o  (s_read_beat_q)
   );
   dffr #(1) u_read_last_dffr (
-      clk_i,
-      rst_n_i,
-      s_read_last_d,
-      s_read_last_q
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_read_last_d),
+      .dat_o  (s_read_last_q)
   );
 
 endmodule

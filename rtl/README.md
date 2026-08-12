@@ -43,6 +43,12 @@ the formatter cannot preserve required macro or port-column alignment, use a
 narrow `// verilog_format: off/on` region and align the enclosed declarations
 manually.
 
+The complete ownership-aware rules, short-name abbreviations, and migration
+policy are documented in [RTL Coding Style](../docs/rtl-coding-style.md).
+`make rtl-style-check` rejects new positional connections and legacy
+constructs in changed self-owned RTL while the existing migration backlog is
+handled separately.
+
 The Verilator harness uses a zero-delay SDRAM protocol model because Verilator
 does not elaborate the tri-state delays in the Micron model. The Icarus
 testbench retains that Micron timing model, so it is the reference for SDRAM

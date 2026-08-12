@@ -1,0 +1,12 @@
+# Strict rules for self-owned RTL. Verification and technology wrappers use
+# their profile-specific checks from scripts/check_rtl_style.py.
+module-port
+module-parameter
+always-comb
+always-ff-non-blocking
+case-missing-default
+macro-name-style=style_regex:[A-Z_0-9]+
+interface-name-style=style_regex:[a-z_0-9]+(_if)
+port-name-suffix
+no-tabs
+no-trailing-spaces
