@@ -134,15 +134,17 @@ capabilities:
 - The canonical address map exposes 128 KiB of on-chip SRAM, a 32 MiB SDRAM
   window, and an 8 MiB PSRAM window. Address-window capacity does not guarantee
   that every implementation includes the corresponding physical memory.
-- RIB v1 is a 32-bit interconnect with `INCR1` and aligned four-word `INCR4`
-  transfers and one outstanding transaction per master.
-- Current external-memory targets serialize an accepted RIB burst into ordered
-  scalar RIBP accesses. They do not yet combine an `INCR4` request into a native
-  SDRAM, PSRAM, or flash streaming transaction.
+- AXI4 is the active 32-bit interconnect. It supports linear one- through
+  sixteen-beat transfers, one transaction per master, and concurrent accesses
+  to different targets.
+- Current external-memory targets serialize accepted AXI4 bursts into ordered
+  scalar engine accesses. They do not yet combine a burst into a native SDRAM,
+  PSRAM, flash, or SPI-SD physical transaction.
 
-The generated address map, user-extension map, and
-[RIB protocol contract](rib-interconnect.md) remain the executable sources of
-truth for the implemented baseline.
+The generated address map, user-extension map,
+[AXI4 contract](axi4-interconnect.md), and retained
+[RIB protocol contract](rib-interconnect.md) remain the integration references
+for the implemented baseline.
 
 ### Planned Linux Configuration
 

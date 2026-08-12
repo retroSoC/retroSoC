@@ -57,12 +57,15 @@ endinterface
 
 module ribp_dma (
     // verilog_format: off
-    input  logic          clk_i,
-    input  logic          rst_n_i,
-    output logic          dma_xfer_done_o,
-    dma_hw_trg_if.dut hw_trg,
-    ribp_if.slave     ribp,
-    rib_if.master     rib
+    input  logic                  clk_i,
+    input  logic                  rst_n_i,
+    output logic                  dma_xfer_done_o,
+    dma_hw_trg_if.dut             hw_trg,
+    ribp_if.slave                 ribp,
+    rib_if.master                 rib,
+    axi4_stream_if.source         i2s_tx_axis,
+    axi4_stream_if.sink           i2s_rx_axis,
+    axi4_stream_if.sink           dvp_rx_axis
     // verilog_format: on
 );
 
@@ -291,7 +294,10 @@ module ribp_dma (
       .error_addr_o(s_xfer_error_addr),
       .fsm_o       (s_xfer_fsm),
       .hw_trg      (hw_trg),
-      .rib         (rib)
+      .rib         (rib),
+      .i2s_tx_axis (i2s_tx_axis),
+      .i2s_rx_axis (i2s_rx_axis),
+      .dvp_rx_axis (dvp_rx_axis)
   );
 
 endmodule

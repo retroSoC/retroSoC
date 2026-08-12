@@ -20,6 +20,10 @@ the root README and subsystem guides.
   planned product targets, claim gates, and commercial reference points.
 - [rib-interconnect.md](rib-interconnect.md) defines the RIB v1 linear-burst
   contract, compatibility boundaries, target status, and verification.
+- [axi4-interconnect.md](axi4-interconnect.md) defines the active Mini SoC AXI4
+  subset, arbitration, target, access-control, error, and performance contract.
+- [axi4-stream.md](axi4-stream.md) defines the DMA, I2S, and DVP AXI4-Stream
+  data paths, PIO fallback, register controls, and backpressure contract.
 - [ip/ws2812.md](ip/ws2812.md) defines the WS2812 transmitter register ABI,
   timing, FIFO, interrupt, DMA, and integration contracts.
 - [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,

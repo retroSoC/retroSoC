@@ -29,6 +29,7 @@ def target_defines(target: str) -> list[str]:
 
 def source_files(target: str) -> list[Path]:
     common = [
+        COMMON_RTL / "interface/axi4_if.sv",
         COMMON_RTL / "interface/ribp_if.sv",
         COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",

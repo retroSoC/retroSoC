@@ -31,50 +31,72 @@ endinterface
 
 module ribp_i2s (
     // verilog_format: off
-    input logic   clk_i,
-    input logic   rst_n_i,
-    input logic   clk_aud_i,
-    input logic   rst_aud_n_i,
-    output logic  dma_tx_stall_o,
-    output logic  dma_rx_stall_o,
-    ribp_if.slave  ribp,
-    i2s_if.dut    i2s
+    input  logic                 clk_i,
+    input  logic                 rst_n_i,
+    input  logic                 clk_aud_i,
+    input  logic                 rst_aud_n_i,
+    output logic                 dma_tx_stall_o,
+    output logic                 dma_rx_stall_o,
+    ribp_if.slave                 ribp,
+    axi4_stream_if.sink           tx_axis,
+    axi4_stream_if.source         rx_axis,
+    i2s_if.dut                   i2s
     // verilog_format: on
 );
 
   logic       s_i2s_mode;
   logic [1:0] s_i2s_format;
   logic       s_i2s_recven;
+  logic       s_i2s_stream_tx_enable;
+  logic       s_i2s_stream_rx_enable;
   // tx fifo
-  logic s_tx_push_valid, s_tx_full, s_tx_empty;
+  logic s_tx_push_valid, s_tx_pio_push_valid, s_tx_full, s_tx_empty;
   logic s_tx_pop_valid, s_tx_pop_ready;
-  logic [31:0] s_tx_push_data, s_tx_pop_data;
+  logic [31:0] s_tx_push_data, s_tx_pio_push_data, s_tx_pop_data;
   logic [7:0] s_tx_elem_num;
   // rx fifo
   logic s_rx_push_valid, s_rx_full, s_rx_empty;
-  logic s_rx_pop_valid, s_rx_pop_ready;
+  logic s_rx_pop_valid, s_rx_pio_pop_valid, s_rx_pop_ready;
   logic [31:0] s_rx_push_data, s_rx_pop_data;
   logic [7:0] s_rx_elem_num;
 
 
   i2s_reg u_i2s_reg (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .ribp           (ribp),
-      .mode_o         (s_i2s_mode),
-      .format_o       (s_i2s_format),
-      .recven_o       (s_i2s_recven),
-      .tx_push_valid_o(s_tx_push_valid),
-      .tx_push_data_o (s_tx_push_data),
-      .tx_full_i      (s_tx_full),
-      .tx_elem_num_i  (s_tx_elem_num),
-      .rx_pop_valid_o (s_rx_pop_valid),
-      .rx_pop_data_i  (s_rx_pop_data),
-      .rx_empty_i     (s_rx_empty),
-      .rx_elem_num_i  (s_rx_elem_num),
-      .dma_tx_stall_o (dma_tx_stall_o),
-      .dma_rx_stall_o (dma_rx_stall_o)
+      .clk_i             (clk_i),
+      .rst_n_i           (rst_n_i),
+      .ribp              (ribp),
+      .mode_o            (s_i2s_mode),
+      .format_o          (s_i2s_format),
+      .recven_o          (s_i2s_recven),
+      .stream_tx_enable_o(s_i2s_stream_tx_enable),
+      .stream_rx_enable_o(s_i2s_stream_rx_enable),
+      .tx_push_valid_o   (s_tx_pio_push_valid),
+      .tx_push_data_o    (s_tx_pio_push_data),
+      .tx_full_i         (s_tx_full),
+      .tx_elem_num_i     (s_tx_elem_num),
+      .rx_pop_valid_o    (s_rx_pio_pop_valid),
+      .rx_pop_data_i     (s_rx_pop_data),
+      .rx_empty_i        (s_rx_empty),
+      .rx_elem_num_i     (s_rx_elem_num),
+      .dma_tx_stall_o    (dma_tx_stall_o),
+      .dma_rx_stall_o    (dma_rx_stall_o)
   );
+
+  assign tx_axis.tready = s_i2s_stream_tx_enable && !s_tx_full;
+  assign s_tx_push_valid = s_i2s_stream_tx_enable ?
+                           (tx_axis.tvalid && tx_axis.tready) : s_tx_pio_push_valid;
+  assign s_tx_push_data = s_i2s_stream_tx_enable ? tx_axis.tdata : s_tx_pio_push_data;
+
+  assign rx_axis.tdata = s_rx_pop_data;
+  assign rx_axis.tkeep = '1;
+  assign rx_axis.tstrb = '1;
+  assign rx_axis.tlast = 1'b0;
+  assign rx_axis.tid = '0;
+  assign rx_axis.tdest = '0;
+  assign rx_axis.tuser = '0;
+  assign rx_axis.tvalid = s_i2s_stream_rx_enable && !s_rx_empty;
+  assign s_rx_pop_valid = s_i2s_stream_rx_enable ?
+                          (rx_axis.tvalid && rx_axis.tready) : s_rx_pio_pop_valid;
 
 
   async_fifo #(

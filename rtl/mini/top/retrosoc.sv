@@ -42,8 +42,16 @@ module retrosoc (
 );
 
   // verilog_format: off
-  // Generated fabric links reuse the common ribp_if contract.
+  // Generated fabric links use the common 32-bit AXI4 contract.
   `include "soc_fabric_interfaces.svh"
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_sdram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_psram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_xpi_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_spisd_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   user_gpio_if u_user_gpio_if ();
   // ip interface
   gpio_if     u_gpio_if     ();
@@ -140,7 +148,7 @@ core_wrapper u_core_wrapper (
       .core_reset_i(u_sysctrl_if.core_reset_o)
   );
 
-  bus u_bus (
+  axi4_bus u_bus (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
 `ifdef HAVE_SRAM_IF
@@ -149,6 +157,10 @@ core_wrapper u_core_wrapper (
       .user_bus_enable_i(u_sysctrl_if.user_bus_enable_o),
       .user_bus_idle_o  (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
+      .sdram_axi4       (u_sdram_axi4_if),
+      .psram_axi4       (u_psram_axi4_if),
+      .xpi_axi4         (u_xpi_axi4_if),
+      .spisd_axi4       (u_spisd_axi4_if),
       .perf_enable_i    (s_perf_enable),
       .perf_clear_i     (s_perf_clear),
       .fault_valid_o    (s_bus_fault_valid),
@@ -176,6 +188,10 @@ core_wrapper u_core_wrapper (
       .debug_halted_i  (s_mgmt_debug_halted),
       .timebase_tick_i (timebase_tick_i),
       `include "ip_ribp_wrapper_fabric.svh"
+      .sdram_axi4      (u_sdram_axi4_if),
+      .psram_axi4      (u_psram_axi4_if),
+      .xpi_axi4        (u_xpi_axi4_if),
+      .spisd_axi4      (u_spisd_axi4_if),
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
       .uart            (u_uart0_if),

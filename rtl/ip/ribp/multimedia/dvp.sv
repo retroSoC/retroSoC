@@ -11,9 +11,12 @@
 `ifndef RIBP_DVP_DEF_SV
 `define RIBP_DVP_DEF_SV
 
-`define RIBP_DVP_RECVEN 8'h00
-`define RIBP_DVP_RXDATA 8'h04
-`define RIBP_DVP_STATUS 8'h08
+// verilog_format: off
+`define RIBP_DVP_RECVEN     8'h00
+`define RIBP_DVP_RXDATA     8'h04
+`define RIBP_DVP_STATUS     8'h08
+`define RIBP_DVP_STREAM_CTRL 8'h0C
+// verilog_format: on
 
 `endif
 
@@ -28,10 +31,11 @@ endinterface
 
 module ribp_dvp (
     // verilog_format: off
-    input logic  clk_i,
-    input logic  rst_n_i,
-    ribp_if.slave ribp,
-    dvp_if.dut   dvp
+    input  logic                 clk_i,
+    input  logic                 rst_n_i,
+    ribp_if.slave                 ribp,
+    axi4_stream_if.source         rx_axis,
+    dvp_if.dut                   dvp
     // verilog_format: on
 );
   // ribp
@@ -43,6 +47,8 @@ module ribp_dvp (
   logic s_dvp_recven_en;
   logic s_dvp_recven_d, s_dvp_recven_q;
   logic s_dvp_status_d, s_dvp_status_q;
+  logic s_dvp_stream_en;
+  logic s_dvp_stream_d, s_dvp_stream_q;
   // dvp clk
   logic s_dvp_pclk_buf;
   logic s_dvp_pclk_rst_n_sync;
@@ -71,6 +77,16 @@ module ribp_dvp (
       s_dvp_recven_q
   );
 
+  assign s_dvp_stream_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DVP_STREAM_CTRL;
+  assign s_dvp_stream_d  = ribp.wdata[0];
+  dffer #(1) u_dvp_stream_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_dvp_stream_en),
+      .dat_i  (s_dvp_stream_d),
+      .dat_o  (s_dvp_stream_q)
+  );
+
   assign s_dvp_status_d = s_rx_empty;
   dffr #(1) u_dvp_status_dffr (
       clk_i,
@@ -89,19 +105,20 @@ module ribp_dvp (
 
   assign s_ribp_rdata_en = s_ribp_rd_hdshk;
   always_comb begin
-    s_rx_pop_valid = '0;
+    s_rx_pop_valid = s_dvp_stream_q && rx_axis.tvalid && rx_axis.tready;
     s_ribp_rdata_d = s_ribp_rdata_q;
     unique case (ribp.addr[7:0])
-      `RIBP_DVP_RECVEN: s_ribp_rdata_d = {31'd0, s_dvp_recven_q};
+      `RIBP_DVP_RECVEN:      s_ribp_rdata_d = {31'd0, s_dvp_recven_q};
       `RIBP_DVP_RXDATA: begin
-        if (s_ribp_rd_hdshk) begin
+        if (s_ribp_rd_hdshk && !s_dvp_stream_q) begin
           s_rx_pop_valid = 1'b1;
           if (!s_rx_empty) s_ribp_rdata_d = s_rx_pop_data;
           else s_ribp_rdata_d = '0;
         end
       end
-      `RIBP_DVP_STATUS: s_ribp_rdata_d = {31'd0, s_dvp_status_q};
-      default:          s_ribp_rdata_d = s_ribp_rdata_q;
+      `RIBP_DVP_STATUS:      s_ribp_rdata_d = {31'd0, s_dvp_status_q};
+      `RIBP_DVP_STREAM_CTRL: s_ribp_rdata_d = {31'd0, s_dvp_stream_q};
+      default:               s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
   end
   dffer #(32) u_ribp_rdata_dffer (
@@ -111,6 +128,15 @@ module ribp_dvp (
       s_ribp_rdata_d,
       s_ribp_rdata_q
   );
+
+  assign rx_axis.tdata  = s_rx_pop_data;
+  assign rx_axis.tkeep  = '1;
+  assign rx_axis.tstrb  = '1;
+  assign rx_axis.tlast  = 1'b0;
+  assign rx_axis.tid    = '0;
+  assign rx_axis.tdest  = '0;
+  assign rx_axis.tuser  = '0;
+  assign rx_axis.tvalid = s_dvp_stream_q && !s_rx_empty;
 
 
   // clk buffer

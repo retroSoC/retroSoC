@@ -77,9 +77,13 @@ management-core interrupt 17. The data pin is forced low while idle, during
 reset/latch time, after abort, and after underflow.
 
 The RIBP TX FIFO is also a fixed-address target for the generic DMA engine.
-DMA remains a normal RIB master and receives RIBP backpressure when the FIFO
+DMA is an AXI4 master and receives RIBP backpressure when the FIFO
 is full; the transmitter does not own a private DMA request channel. See
 [ws2812.md](ip/ws2812.md) for the register and transfer contract.
+
+I2S and DVP use dedicated 32-bit AXI4-Stream data links to DMA while retaining
+RIBP for configuration and PIO fallback. Their stream selection, backpressure,
+and transfer-boundary rules are defined in [axi4-stream.md](axi4-stream.md).
 
 ## Management JTAG
 

@@ -79,7 +79,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign s_slv_sel_d[17] = u_i2c1_ribp_if.valid;" in routes
     assert "assign s_slv_resp_err[17] = u_i2c1_ribp_if.resp_err;" in routes
     assert "assign ribp.resp_err = |(s_slv_sel_q & s_slv_ready & s_slv_resp_err);" in routes
-    assert "assign s_xpi_region_sel[1] = (ribp.addr <= `SOC_ADDR_FLASH_END);" in routes
+    assert "SOC_ADDR_FLASH" not in routes
     assert "assign u_sdio_ribp_if.valid = 1'b0;" in routes
     assert gpio.count("// GPIO") == 64
     assert "u_uart1_if" not in gpio
@@ -106,12 +106,12 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign user_ip.paddr = s_addr_q;" in apb_routes
     assert "({32{s_psel_q[7]}} & user_ip.prdata)" in apb_response
     assert "localparam int NSLV = 8;" in apb_declarations
-    assert fabric.count("ribp_if u_") == 1
-    assert fabric.count("rib_if u_") == 4
-    assert ".mgmt_ribp(u_mgmt_ribp_if)" in bus_fabric
-    assert ".user_rib(u_user_rib_if)" in bus_fabric
-    assert ".apb_rib(u_apb_rib_if)" in bus_fabric
-    assert ".rib(u_rib_if)" in bus_fabric
+    assert fabric.count("axi4_if #(") == 5
+    assert ".mgmt_axi4(u_mgmt_axi4_if)" in bus_fabric
+    assert ".user_axi4(u_user_axi4_if)" in bus_fabric
+    assert ".dma_axi4(u_dma_axi4_if)" in bus_fabric
+    assert ".cfg_axi4(u_cfg_axi4_if)" in bus_fabric
+    assert ".apb_axi4(u_apb_axi4_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_USER_IRQ_MASK 32'h000E7BFC" in irq_config
     assert "`define SOC_IRQ_RIBP_WIDTH 13" in irq_config

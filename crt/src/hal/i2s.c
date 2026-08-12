@@ -12,6 +12,7 @@ static uint32_t audio_idx;
 
 static void i2s_init(uint32_t mode) {
     reg_i2s_mode = (uint32_t)mode;
+    reg_i2s_stream_ctrl = (mode == 0U) ? 0U : 1U;
     reg_i2s_upbound = (uint32_t)120;
     // NOTE: larger than 'clk/clk_aud 'size of i2x tx fifo
     reg_i2s_lowbound = (uint32_t)80;
@@ -28,7 +29,8 @@ static void i2s_audio_load(void) {
     if ((available_size == 0U) ||
         (rs_wav_parse_spisd(start_address, available_size, &info) != RS_OK) ||
         ((info.data_size % sizeof(uint32_t)) != 0U) ||
-        (rs_dma_config(1U, start_address + info.data_offset, 1U, (uintptr_t)&reg_i2s_txdata, 0U,
+        (rs_dma_config(RS_DMA_MODE_I2S_TX, start_address + info.data_offset, 1U,
+                       (uintptr_t)&reg_i2s_txdata, 0U,
                        info.data_size / sizeof(uint32_t)) != RS_OK)) {
         printf("wav file parse/configuration error\n");
     }

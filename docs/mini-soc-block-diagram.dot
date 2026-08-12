@@ -87,7 +87,7 @@ digraph mini_soc_block_diagram {
       ];
       mgmt_adapter [
         fillcolor="#E5E7EB",
-        label="RIBP2RIB"
+        label="AHB-Lite2AXI4\nsingle-beat adapter"
       ];
       user_core [
         fillcolor="#DDF2E3",
@@ -95,11 +95,11 @@ digraph mini_soc_block_diagram {
       ];
       dma [
         fillcolor="#DDF2E3",
-        label="DMA\nRIB master and RIBP target"
+        label="DMA\nAXI4 burst master and RIBP target"
       ];
       fabric [
         fillcolor="#DCECF8",
-        label="RIB fabric\n3-master round-robin arbitration\nINCR1 / INCR4, access policy, fault reporting",
+        label="AXI4 fabric\n3 masters / 9 targets, per-target round robin\nINCR1-16, access policy, fault reporting",
         shape=hexagon
       ];
       fault [
@@ -108,15 +108,15 @@ digraph mini_soc_block_diagram {
       ];
       sram [
         fillcolor="#FFF3C9",
-        label="On-chip SRAM\noptional RIB2RAM path"
+        label="On-chip SRAM\noptional pipelined AXI42RAM path"
       ];
       ribp_adapter [
         fillcolor="#E5E7EB",
-        label="RIB2RIBP"
+        label="AXI42RIBP\nconfiguration plane"
       ];
       apb_adapter [
         fillcolor="#E5E7EB",
-        label="RIB2APB\ndirect APB bridge"
+        label="AXI42APB\ndirect APB bridge"
       ];
       sysctrl [
         fillcolor="#F9E1E7",
@@ -128,7 +128,15 @@ digraph mini_soc_block_diagram {
       ];
       ribp_targets [
         fillcolor="#F9E1E7",
-        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD and DVP\nI2S"
+        label="RIBP configuration targets\nXPI, SDRAM, PSRAM, SPI-SD, DVP and I2S"
+      ];
+      memory_targets [
+        fillcolor="#FFF3C9",
+        label="AXI4 data targets\nXPI/Flash, SDRAM, PSRAM and SPI-SD\nINCR1-16 compatibility engines"
+      ];
+      stream_io [
+        fillcolor="#FFF3C9",
+        label="AXI4-Stream data endpoints\nI2S TX/RX and DVP RX\nRIBP configuration with PIO fallback"
       ];
       uart0 [
         fillcolor="#F9E1E7",
@@ -197,7 +205,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; memory_targets; stream_io; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -210,15 +218,17 @@ digraph mini_soc_block_diagram {
   debug_module -> timers [label="halted", style=dashed];
   rcu -> clint [label="1 MHz tick", style=dashed];
 
-  mgmt_core -> mgmt_adapter [label="RIBP"];
-  mgmt_adapter -> fabric [label="RIB"];
-  user_core -> fabric [label="RIB"];
-  dma -> fabric [label="RIB"];
+  mgmt_core -> mgmt_adapter [label="AHB-Lite"];
+  mgmt_adapter -> fabric [label="AXI4"];
+  user_core -> fabric [label="RIBP2AXI4"];
+  dma -> fabric [label="AXI4"];
+  dma -> stream_io [dir=both, label="AXI4-Stream"];
 
   fabric -> fault [label="invalid / denied", dir=both];
-  fabric -> sram [label="RIB"];
-  fabric -> ribp_adapter [label="RIB"];
-  fabric -> apb_adapter [label="RIB"];
+  fabric -> sram [label="AXI4"];
+  fabric -> memory_targets [label="AXI4 data"];
+  fabric -> ribp_adapter [label="AXI4 config"];
+  fabric -> apb_adapter [label="AXI4"];
   ribp_adapter -> sysctrl [label="RIBP"];
   ribp_adapter -> clint [label="RIBP"];
   ribp_adapter -> ribp_targets [label="RIBP"];
@@ -262,7 +272,10 @@ digraph mini_soc_block_diagram {
   wdg -> irq [label="early warning IRQ14"];
   wdg -> rcu [label="system reset request", color="#B91C1C", penwidth=2];
   apb_targets -> gpio_controller [label="user_gpio"];
-  ribp_targets -> ext_io [dir=both, label="device interfaces"];
+  ribp_targets -> memory_targets [label="RIBP configuration", style=dashed];
+  ribp_targets -> stream_io [label="RIBP configuration", style=dashed];
+  memory_targets -> ext_io [dir=both, label="device interfaces"];
+  stream_io -> ext_io [dir=both, label="I2S / DVP signals"];
   uart0 -> ext_io [dir=both, label="UART pads"];
   gpio_bridge -> ext_io [dir=both, label="pad control"];
 }

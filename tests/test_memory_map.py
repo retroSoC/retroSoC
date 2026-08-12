@@ -148,6 +148,7 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
                 f"+incdir+{tmp_path / 'rtl'}",
                 f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ram_if.sv"),
                 str(ROOT / "rtl/mini/top/rib_if.sv"),

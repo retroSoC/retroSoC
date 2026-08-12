@@ -141,8 +141,8 @@ module ribp_topology_tb;
 
     expect_route(`SOC_ADDR_RIBP_GPIO_BASE, 1, 32'h1111_1111);
     expect_route(`SOC_ADDR_RIBP_GPIO_ADMIN_BASE, 1, 32'h1111_1111);
-    expect_route(`SOC_ADDR_PSRAM_BASE, 4, 32'h4444_4444);
-    expect_route(`SOC_ADDR_FLASH_BASE, 9, 32'h9999_9999);
+    expect_route(`SOC_ADDR_RIBP_PSRAM_BASE, 4, 32'h4444_4444);
+    expect_route(`SOC_ADDR_RIBP_XPI_BASE, 9, 32'h9999_9999);
     expect_route(`SOC_ADDR_RIBP_I2C1_BASE, 17, 32'h1234_5678);
     expect_disabled(`SOC_ADDR_RIBP_SDIO_BASE);
     u_gpio_ribp_if.resp_err = 1'b1;

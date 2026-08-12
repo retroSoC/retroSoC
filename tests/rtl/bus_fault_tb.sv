@@ -36,7 +36,7 @@ module bus_fault_tb;
   assign apb_rib.rsp_beat  = '0;
   assign apb_rib.rsp_last  = 1'b1;
 
-  bus u_bus (
+  rib_bus u_bus (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
       .mgmt_ribp        (mgmt_ribp),

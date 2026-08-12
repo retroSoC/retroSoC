@@ -737,7 +737,7 @@ def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
     assert "CORE_$(CORE)" not in makefile
     assert "`ifdef CORE_" not in wrapper
     assert "`ifdef HAVE_DEBUG" not in wrapper
-    assert "ahbl2ribp u_ahbl2ribp" in wrapper
+    assert "ahbl2axi4 u_ahbl2axi4" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
     assert ".DEBUG_SUPPORT      (1)" in wrapper
 

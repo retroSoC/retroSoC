@@ -13,24 +13,27 @@
 
 module dma_core (
     // verilog_format: off
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic [3:0]  mode_i,
-    input  logic [31:0] srcaddr_i,
-    input  logic        srcincr_i,
-    input  logic [31:0] dstaddr_i,
-    input  logic        dstincr_i,
-    input  logic [31:0] xferlen_i,
-    input  logic        start_i,
-    input  logic        stop_i,
-    input  logic        reset_i,
-    output logic        done_o,
-    output logic        error_o,
-    output logic [2:0]  error_code_o,
-    output logic [31:0] error_addr_o,
-    output logic [1:0]  fsm_o,
-    dma_hw_trg_if.dut   hw_trg,
-    rib_if.master       rib
+    input  logic                  clk_i,
+    input  logic                  rst_n_i,
+    input  logic [3:0]            mode_i,
+    input  logic [31:0]           srcaddr_i,
+    input  logic                  srcincr_i,
+    input  logic [31:0]           dstaddr_i,
+    input  logic                  dstincr_i,
+    input  logic [31:0]           xferlen_i,
+    input  logic                  start_i,
+    input  logic                  stop_i,
+    input  logic                  reset_i,
+    output logic                  done_o,
+    output logic                  error_o,
+    output logic [2:0]            error_code_o,
+    output logic [31:0]           error_addr_o,
+    output logic [1:0]            fsm_o,
+    dma_hw_trg_if.dut             hw_trg,
+    rib_if.master                 rib,
+    axi4_stream_if.source         i2s_tx_axis,
+    axi4_stream_if.sink           i2s_rx_axis,
+    axi4_stream_if.sink           dvp_rx_axis
     // verilog_format: on
 );
 
@@ -45,6 +48,7 @@ module dma_core (
   localparam logic [3:0] HWT_I2C0_RX_TRG = 4'd8;
   localparam logic [3:0] HWT_I2C1_TX_TRG = 4'd9;
   localparam logic [3:0] HWT_I2C1_RX_TRG = 4'd10;
+  localparam logic [3:0] HWT_DVP_RX_TRG = 4'd11;
 
   localparam logic [2:0] FSM_IDLE = 3'd0;
   localparam logic [2:0] FSM_RD_CMD = 3'd1;
@@ -72,6 +76,11 @@ module dma_core (
   logic [ 2:0] s_fifo_count;
   logic [31:0] s_fifo_rdata;
   logic        s_rsp_error;
+  logic        s_i2s_tx_stream;
+  logic        s_i2s_rx_stream;
+  logic        s_dvp_rx_stream;
+  logic        s_stream_rx_hdshk;
+  logic        s_stream_tx_hdshk;
 
   assign s_remaining_words = xferlen_i - s_xfer_cnt_q;
   // verilog_format: off
@@ -86,6 +95,26 @@ module dma_core (
   // verilog_format: on
   assign s_chunk_len = s_use_burst ? `RIB_LEN_INCR4 : `RIB_LEN_INCR1;
   assign s_chunk_words = s_use_burst ? 32'd4 : 32'd1;
+  assign s_i2s_tx_stream = mode_i == HWT_I2S_TX_TRG;
+  assign s_i2s_rx_stream = mode_i == HWT_I2S_RX_TRG;
+  assign s_dvp_rx_stream = mode_i == HWT_DVP_RX_TRG;
+
+  assign i2s_tx_axis.tdata = s_fifo_rdata;
+  assign i2s_tx_axis.tkeep = '1;
+  assign i2s_tx_axis.tstrb = '1;
+  assign i2s_tx_axis.tlast = (s_xfer_cnt_q + 1'b1) >= xferlen_i;
+  assign i2s_tx_axis.tid = '0;
+  assign i2s_tx_axis.tdest = '0;
+  assign i2s_tx_axis.tuser = '0;
+  assign i2s_tx_axis.tvalid = (s_fsm_q == FSM_WR_DATA) && s_i2s_tx_stream &&
+                              !s_fifo_empty;
+  assign i2s_rx_axis.tready = (s_fsm_q == FSM_RD_RESP) && s_i2s_rx_stream &&
+                              !s_fifo_full;
+  assign dvp_rx_axis.tready = (s_fsm_q == FSM_RD_RESP) && s_dvp_rx_stream &&
+                             !s_fifo_full;
+  assign s_stream_tx_hdshk = i2s_tx_axis.tvalid && i2s_tx_axis.tready;
+  assign s_stream_rx_hdshk = (i2s_rx_axis.tvalid && i2s_rx_axis.tready) ||
+                             (dvp_rx_axis.tvalid && dvp_rx_axis.tready);
 
   always_comb begin
     s_read_trigger = 1'b1;
@@ -117,11 +146,12 @@ module dma_core (
   assign rib.cmd_addr = s_fsm_q == FSM_WR_CMD ? s_dst_addr_q : s_src_addr_q;
   assign rib.cmd_write = s_fsm_q == FSM_WR_CMD;
   assign rib.cmd_len = s_chunk_len;
-  assign rib.w_valid = (s_fsm_q == FSM_WR_DATA) && ~s_fifo_empty && (s_fifo_count != 3'd0);
+  assign rib.w_valid = (s_fsm_q == FSM_WR_DATA) && !s_i2s_tx_stream &&
+                       ~s_fifo_empty && (s_fifo_count != 3'd0);
   assign rib.wdata = s_fifo_rdata;
   assign rib.wstrb = '1;
   assign rib.wlast = s_wr_beat_q == s_chunk_len;
-  assign rib.rsp_ready = (s_fsm_q == FSM_RD_RESP) ?
+  assign rib.rsp_ready = (s_fsm_q == FSM_RD_RESP) && !(s_i2s_rx_stream || s_dvp_rx_stream) ?
                          (~s_fifo_full && (s_fifo_count != 3'd4)) :
                          (s_fsm_q == FSM_WR_RESP);
 
@@ -131,23 +161,24 @@ module dma_core (
   assign s_rsp_error = s_rsp_hdshk && rib.resp_err;
 
   assign s_fifo_flush = reset_i || start_i || s_rsp_error;
-  assign s_fifo_push = (s_fsm_q == FSM_RD_RESP) && s_rsp_hdshk && ~rib.resp_err;
-  assign s_fifo_pop = (s_fsm_q == FSM_WR_DATA) && s_w_hdshk;
+  assign s_fifo_push = (s_i2s_rx_stream || s_dvp_rx_stream) ? s_stream_rx_hdshk :
+                       ((s_fsm_q == FSM_RD_RESP) && s_rsp_hdshk && ~rib.resp_err);
+  assign s_fifo_pop = s_i2s_tx_stream ? s_stream_tx_hdshk : ((s_fsm_q == FSM_WR_DATA) && s_w_hdshk);
 
   fifo #(
       .DATA_WIDTH  (32),
       .BUFFER_DEPTH(4)
   ) u_data_fifo (
-      .clk_i  (clk_i),
+      .clk_i(clk_i),
       .rst_n_i(rst_n_i),
       .flush_i(s_fifo_flush),
-      .push_i (s_fifo_push),
-      .full_o (s_fifo_full),
-      .dat_i  (rib.rdata),
-      .pop_i  (s_fifo_pop),
+      .push_i(s_fifo_push),
+      .full_o(s_fifo_full),
+      .dat_i(s_i2s_rx_stream ? i2s_rx_axis.tdata : s_dvp_rx_stream ? dvp_rx_axis.tdata : rib.rdata),
+      .pop_i(s_fifo_pop),
       .empty_o(s_fifo_empty),
-      .dat_o  (s_fifo_rdata),
-      .cnt_o  (s_fifo_count)
+      .dat_o(s_fifo_rdata),
+      .cnt_o(s_fifo_count)
   );
 
   assign fsm_o = s_fsm_q == FSM_IDLE ? 2'd0 : s_fsm_q == FSM_DONE ? 2'd2 : 2'd1;
@@ -174,8 +205,9 @@ module dma_core (
             s_src_addr_d = srcaddr_i;
             s_dst_addr_d = dstaddr_i;
             s_xfer_cnt_d = '0;
-            s_wr_beat_d  = '0;
-            s_fsm_d      = xferlen_i == 32'd0 ? FSM_DONE : FSM_RD_CMD;
+            s_wr_beat_d = '0;
+            s_fsm_d      = xferlen_i == 32'd0 ? FSM_DONE :
+                           (s_i2s_rx_stream || s_dvp_rx_stream) ? FSM_RD_RESP : FSM_RD_CMD;
           end
         end
         FSM_RD_CMD: begin
@@ -184,7 +216,10 @@ module dma_core (
           end
         end
         FSM_RD_RESP: begin
-          if (s_rsp_hdshk) begin
+          if ((s_i2s_rx_stream || s_dvp_rx_stream) && s_stream_rx_hdshk) begin
+            s_wr_beat_d = '0;
+            s_fsm_d     = FSM_WR_CMD;
+          end else if (s_rsp_hdshk) begin
             if (rib.resp_err) begin
               s_fsm_d      = FSM_IDLE;
               error_o      = 1'b1;
@@ -192,7 +227,7 @@ module dma_core (
               error_addr_o = s_src_addr_q + {28'd0, rib.rsp_beat, 2'b00};
             end else if (rib.rsp_last) begin
               s_wr_beat_d = '0;
-              s_fsm_d     = FSM_WR_CMD;
+              s_fsm_d     = s_i2s_tx_stream ? FSM_WR_DATA : FSM_WR_CMD;
             end
           end
         end
@@ -202,7 +237,15 @@ module dma_core (
           end
         end
         FSM_WR_DATA: begin
-          if (s_w_hdshk) begin
+          if (s_i2s_tx_stream && s_stream_tx_hdshk) begin
+            s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
+            if (srcincr_i) s_src_addr_d = s_src_addr_q + 32'd4;
+            if ((s_xfer_cnt_q + 1'b1) >= xferlen_i) begin
+              s_fsm_d = FSM_DONE;
+            end else begin
+              s_fsm_d = FSM_RD_CMD;
+            end
+          end else if (s_w_hdshk) begin
             if (rib.wlast) begin
               s_fsm_d = FSM_WR_RESP;
             end else begin
@@ -224,7 +267,7 @@ module dma_core (
               if ((s_xfer_cnt_q + s_chunk_words) >= xferlen_i) begin
                 s_fsm_d = FSM_DONE;
               end else begin
-                s_fsm_d = FSM_RD_CMD;
+                s_fsm_d = (s_i2s_rx_stream || s_dvp_rx_stream) ? FSM_RD_RESP : FSM_RD_CMD;
               end
             end
           end

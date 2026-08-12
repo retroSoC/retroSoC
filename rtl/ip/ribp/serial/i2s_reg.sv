@@ -18,6 +18,8 @@ module i2s_reg (
     output logic        mode_o,
     output logic [ 1:0] format_o,
     output logic        recven_o,
+    output logic        stream_tx_enable_o,
+    output logic        stream_rx_enable_o,
     output logic        tx_push_valid_o,
     output logic [31:0] tx_push_data_o,
     input  logic        tx_full_i,
@@ -48,28 +50,32 @@ module i2s_reg (
   logic s_i2s_recven_en;
   logic s_i2s_recven_d, s_i2s_recven_q;
   logic [1:0] s_i2s_status_d, s_i2s_status_q;
+  logic s_i2s_stream_en;
+  logic [1:0] s_i2s_stream_d, s_i2s_stream_q;
   // common
   logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
 
 
   // ribp
-  assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
-  assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
-  assign ribp.ready      = s_ribp_ready_q;
-  assign ribp.resp_err   = 1'b0;
-  assign ribp.rdata      = s_ribp_rdata_q;
+  assign s_ribp_wr_hdshk    = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
+  assign s_ribp_rd_hdshk    = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
+  assign ribp.ready         = s_ribp_ready_q;
+  assign ribp.resp_err      = 1'b0;
+  assign ribp.rdata         = s_ribp_rdata_q;
   // reg
-  assign mode_o          = s_i2s_mode_q;
-  assign format_o        = s_i2s_format_q;
-  assign recven_o        = s_i2s_recven_q;
+  assign mode_o             = s_i2s_mode_q;
+  assign format_o           = s_i2s_format_q;
+  assign recven_o           = s_i2s_recven_q;
+  assign stream_tx_enable_o = s_i2s_stream_q[0];
+  assign stream_rx_enable_o = s_i2s_stream_q[1];
   // dma
-  assign dma_tx_stall_o  = s_tx_fifo_stall_q;
-  assign dma_rx_stall_o  = s_rx_fifo_stall_q;
+  assign dma_tx_stall_o     = s_tx_fifo_stall_q;
+  assign dma_rx_stall_o     = s_rx_fifo_stall_q;
 
 
-  assign s_i2s_mode_en   = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_MODE;
-  assign s_i2s_mode_d    = ribp.wdata[0];
+  assign s_i2s_mode_en      = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_MODE;
+  assign s_i2s_mode_d       = ribp.wdata[0];
   dffer #(1) u_i2s_mode_dffer (
       clk_i,
       rst_n_i,
@@ -120,6 +126,16 @@ module i2s_reg (
       s_i2s_recven_en,
       s_i2s_recven_d,
       s_i2s_recven_q
+  );
+
+  assign s_i2s_stream_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_STREAM_CTRL;
+  assign s_i2s_stream_d  = ribp.wdata[1:0];
+  dffer #(2) u_i2s_stream_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_i2s_stream_en),
+      .dat_i  (s_i2s_stream_d),
+      .dat_o  (s_i2s_stream_q)
   );
 
 
@@ -193,8 +209,8 @@ module i2s_reg (
     rx_pop_valid_o = 1'b0;
     s_ribp_rdata_d = s_ribp_rdata_q;
     unique case (ribp.addr[7:0])
-      `RIBP_I2S_MODE:   s_ribp_rdata_d = {31'd0, s_i2s_mode_q};
-      `RIBP_I2S_FORMAT: s_ribp_rdata_d = {30'd0, s_i2s_format_q};
+      `RIBP_I2S_MODE:        s_ribp_rdata_d = {31'd0, s_i2s_mode_q};
+      `RIBP_I2S_FORMAT:      s_ribp_rdata_d = {30'd0, s_i2s_format_q};
       `RIBP_I2S_RXDATA: begin
         if (s_ribp_rd_hdshk) begin
           rx_pop_valid_o = 1'b1;
@@ -202,8 +218,9 @@ module i2s_reg (
           else s_ribp_rdata_d = '0;
         end
       end
-      `RIBP_I2S_STATUS: s_ribp_rdata_d = {30'd0, s_i2s_status_q};
-      default:          s_ribp_rdata_d = s_ribp_rdata_q;
+      `RIBP_I2S_STATUS:      s_ribp_rdata_d = {30'd0, s_i2s_status_q};
+      `RIBP_I2S_STREAM_CTRL: s_ribp_rdata_d = {30'd0, s_i2s_stream_q};
+      default:               s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
   end
   dffer #(32) u_ribp_rdata_dffer (

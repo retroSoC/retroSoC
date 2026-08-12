@@ -15,7 +15,7 @@ retroSoC RIBP target protocol.
 | RTL hart parameter range | 1 through 4095 |
 | Timebase frequency | 1 MHz |
 | Management-core interrupts | software IRQ 0, timer IRQ 1 |
-| User-core access | denied by the RIB access policy |
+| User-core access | denied by the AXI4 interconnect access policy |
 | User-core interrupt visibility | masked |
 
 The timebase divider runs from the buffered external reference clock, not the

@@ -1,6 +1,8 @@
 # RIB Family Protocols
 
-retroSoC uses a scalar peripheral protocol and a native burst interconnect.
+retroSoC retains a scalar peripheral protocol and the RIB burst protocol as an
+independently verified compatibility family. AXI4 is now the active Mini SoC
+interconnect; see [AXI4 Interconnect Contract](axi4-interconnect.md).
 The interface declarations and generated address map are the executable source
 of truth; this document fixes the ownership, ordering, and adaptation rules at
 each boundary.
@@ -59,9 +61,10 @@ ordered RIB responses. An asserted RIBP `resp_err` is mapped to native RIB
 
 ## Targets and Performance
 
-Management and current user cores use RIBP through the SoC adapters. Future
-user cores can select native RIB in `user_extensions.json`. DMA is a native
-RIB master and uses the common four-entry FIFO for each chunk.
+The active Mini SoC no longer selects RIB as a fabric link. Current user cores
+retain their RIBP ABI and use a RIBP-to-AXI4 adapter. DMA retains its proven RIB
+chunk engine behind a RIB-to-AXI4 adapter. The RIB modules, protocol tests, and
+formal targets remain available for independent reuse and maintenance.
 
 `rib2ram` is the native RIB SRAM target. It pipelines synchronous reads
 and uses the Common two-entry spill register for response backpressure. The

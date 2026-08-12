@@ -40,7 +40,7 @@ module rib_bus_sva (
 
 endmodule
 
-bind bus rib_bus_sva u_rib_bus_sva (
+bind rib_bus rib_bus_sva u_rib_bus_sva (
     .clk_i             (clk_i),
     .rst_n_i           (rst_n_i),
     .fault_cmd_accept_i(s_fault_cmd_hdshk),

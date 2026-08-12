@@ -12,14 +12,15 @@
 `define RIBP_I2S_DEF_SV
 
 // verilog_format: off
-`define RIBP_I2S_MODE     8'h00
-`define RIBP_I2S_FORMAT   8'h04
-`define RIBP_I2S_UPBOUND  8'h08
-`define RIBP_I2S_LOWBOUND 8'h0C
-`define RIBP_I2S_RECVEN   8'h10
-`define RIBP_I2S_TXDATA   8'h14
-`define RIBP_I2S_RXDATA   8'h18
-`define RIBP_I2S_STATUS   8'h1C
+`define RIBP_I2S_MODE        8'h00
+`define RIBP_I2S_FORMAT      8'h04
+`define RIBP_I2S_UPBOUND     8'h08
+`define RIBP_I2S_LOWBOUND    8'h0C
+`define RIBP_I2S_RECVEN      8'h10
+`define RIBP_I2S_TXDATA      8'h14
+`define RIBP_I2S_RXDATA      8'h18
+`define RIBP_I2S_STATUS      8'h1C
+`define RIBP_I2S_STREAM_CTRL 8'h20
 // verilog_format: on
 
 `define I2S_16b_48K 2'd0

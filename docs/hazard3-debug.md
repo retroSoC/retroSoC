@@ -10,7 +10,7 @@ default JTAG ID code is `0xDEADBEEF`. Set
 The Debug Module (DM) controls only the management Hazard3 hart. It supports
 abstract register and memory commands and has `HAVE_SBA=0`, so it never becomes
 a second SoC bus master. Debugger memory operations execute through the halted
-hart and remain subject to the existing RIB access policy. User cores,
+hart and remain subject to the AXI4 interconnect access policy. User cores,
 peripherals, clocks, and pad control stay outside the debug-reset scope.
 
 PicoRV32 is available as software-selected user core C5 through mini-ver-mpw;
@@ -23,7 +23,7 @@ transactions into the system-clock DM domain. The canonical clock/reset map
 constrains TCK at 10 MHz and declares the JTAG/system clock groups asynchronous.
 
 The DM `ndmreset` and hart-reset requests pass through `mgmt_debug_reset`.
-It waits until the management AHB-Lite-to-RIBP bridge is idle, then resets only
+It waits until the management AHB-Lite-to-AXI4 bridge is idle, then resets only
 that bridge and the management hart. The DTM, DM, RCU, user cores, and all
 peripherals remain live. Reset release is synchronized with the common
 `rst_sync` cell and acknowledged only after the local reset is released.

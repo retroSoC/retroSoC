@@ -21,6 +21,7 @@ typedef struct {
 #define RS_DMA_MODE_I2C0_RX  UINT32_C(8)
 #define RS_DMA_MODE_I2C1_TX  UINT32_C(9)
 #define RS_DMA_MODE_I2C1_RX  UINT32_C(10)
+#define RS_DMA_MODE_DVP_RX   UINT32_C(11)
 
 rs_status_t rs_dma_config(uint32_t mode, uintptr_t source, uint32_t source_increment,
                           uintptr_t destination, uint32_t destination_increment,

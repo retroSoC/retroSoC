@@ -52,6 +52,7 @@
 #define reg_i2s_txdata                  RS_SOC_REG32(RS_SOC_RIBP_I2S_BASE, UINT32_C(0x14))
 #define reg_i2s_rxdata                  RS_SOC_REG32(RS_SOC_RIBP_I2S_BASE, UINT32_C(0x18))
 #define reg_i2s_status                  RS_SOC_REG32(RS_SOC_RIBP_I2S_BASE, UINT32_C(0x1C))
+#define reg_i2s_stream_ctrl             RS_SOC_REG32(RS_SOC_RIBP_I2S_BASE, UINT32_C(0x20))
 // ws2812
 #define reg_ws2812_bit_cycles           RS_SOC_REG32(RS_SOC_RIBP_WS2812_BASE, UINT32_C(0x00))
 #define reg_ws2812_t0h_cycles           RS_SOC_REG32(RS_SOC_RIBP_WS2812_BASE, UINT32_C(0x04))
@@ -186,6 +187,7 @@
 #define reg_dvp_recven                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x00))
 #define reg_dvp_rxdata                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x04))
 #define reg_dvp_status                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x08))
+#define reg_dvp_stream_ctrl                RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x0C))
 #define reg_user_ip_reg0                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x00))
 #define reg_user_ip_reg1                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x04))
 #define reg_user_ip_reg2                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x08))

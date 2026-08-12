@@ -12,10 +12,10 @@ from typing import Any
 
 
 MAX_ADDRESS = 1 << 32
-VALID_ROUTES = {"ribp", "apb", "ram", "reserved"}
+VALID_ROUTES = {"ribp", "axi4", "apb", "ram", "reserved"}
 VALID_KINDS = {"active", "reserved"}
 VALID_USER_ACCESS = {"none", "ro", "rw"}
-VALID_BURST = {"incr1", "incr4"}
+VALID_BURST = {"incr1", "incr4", "incr16"}
 
 
 def parse_integer(value: Any, field: str) -> int:
@@ -32,8 +32,8 @@ def parse_integer(value: Any, field: str) -> int:
 def read_map(path: Path) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
     with path.open(encoding="utf-8") as source:
         document = json.load(source)
-    if document.get("schema_version") != 1:
-        raise ValueError("schema_version must be 1")
+    if document.get("schema_version") != 2:
+        raise ValueError("schema_version must be 2")
     cpu_reset = parse_integer(document.get("cpu_reset"), "cpu_reset")
     registers = document.get("sysctrl_registers")
     if not isinstance(registers, list) or not registers:
@@ -86,7 +86,7 @@ def read_map(path: Path) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]
         if burst not in VALID_BURST:
             raise ValueError(f"regions[{index}].burst must be one of {sorted(VALID_BURST)}")
         if kind == "reserved" and burst != "incr1":
-            raise ValueError(f"regions[{index}] reserved regions cannot support INCR4")
+            raise ValueError(f"regions[{index}] reserved regions cannot support bursts")
         base = parse_integer(region.get("base"), f"regions[{index}].base")
         size = parse_integer(region.get("size"), f"regions[{index}].size")
         if base < 0 or size <= 0 or base + size > MAX_ADDRESS:
@@ -160,13 +160,21 @@ def render_rtl(
             f"{range_expression(symbol, region['base'], region['end'])}",
         ]
     lines.append("")
-    for route in ("ribp", "apb", "ram", "reserved"):
+    for route in ("ribp", "axi4", "apb", "ram", "reserved"):
         selected = [
             f"`SOC_ADDR_IS_{region['symbol']}(addr)"
             for region in regions
             if region["route"] == route
         ]
         lines.append(f"`define SOC_ADDR_IS_{route.upper()}(addr) ({join_or(selected)})")
+    legacy_rib_targets = [
+        f"`SOC_ADDR_IS_{region['symbol']}(addr)"
+        for region in regions
+        if region["route"] in {"ribp", "axi4"}
+    ]
+    lines.append(
+        f"`define SOC_ADDR_IS_RIB_LEGACY_TARGET(addr) ({join_or(legacy_rib_targets)})"
+    )
     user_readable = [
         f"`SOC_ADDR_IS_{region['symbol']}(addr)"
         for region in regions
@@ -185,9 +193,15 @@ def render_rtl(
     incr4_regions = [
         f"`SOC_ADDR_IS_{region['symbol']}(addr)"
         for region in regions
-        if region["burst"] == "incr4"
+        if region["burst"] in {"incr4", "incr16"}
     ]
     lines.append(f"`define SOC_ADDR_SUPPORTS_INCR4(addr) ({join_or(incr4_regions)})")
+    incr16_regions = [
+        f"`SOC_ADDR_IS_{region['symbol']}(addr)"
+        for region in regions
+        if region["burst"] == "incr16"
+    ]
+    lines.append(f"`define SOC_ADDR_SUPPORTS_INCR16(addr) ({join_or(incr16_regions)})")
     lines.append("")
     for register in sysctrl_registers:
         macro = f"SOC_SYSCTRL_{register['symbol']}_OFFSET"

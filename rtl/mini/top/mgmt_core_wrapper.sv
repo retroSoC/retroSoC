@@ -21,7 +21,7 @@ module mgmt_core_wrapper (
     input  logic        jtag_trst_n_i,
     output logic        jtag_tdo_o,
     output logic        debug_halted_o,
-    ribp_if.master      ribp
+    axi4_if.master      axi4
     // verilog_format: on
 );
 
@@ -53,7 +53,11 @@ module mgmt_core_wrapper (
   assign debug_halted_o = s_dbg_halted;
   // verilog_format: off
   ahbl_if u_ahbl_if (clk_i, s_core_rst_n);
-  ahbl2ribp u_ahbl2ribp (u_ahbl_if, ribp, s_ahbl_idle);
+  ahbl2axi4 u_ahbl2axi4 (
+      .ahbl  (u_ahbl_if),
+      .axi4  (axi4),
+      .idle_o(s_ahbl_idle)
+  );
   // verilog_format: on
 
   mgmt_debug_wrapper #(

@@ -20,7 +20,11 @@ module ip_ribp_wrapper (
     input logic              rst_aud_n_i,
     input logic              debug_halted_i,
     input logic              timebase_tick_i,
-    rib_if.slave   rib,
+    axi4_if.slave            cfg_axi4,
+    axi4_if.slave            sdram_axi4,
+    axi4_if.slave            psram_axi4,
+    axi4_if.slave            xpi_axi4,
+    axi4_if.slave            spisd_axi4,
     gpio_if.dut              gpio,
     user_gpio_if.padctrl     user_gpio,
     uart_if.dut              uart,
@@ -30,7 +34,7 @@ module ip_ribp_wrapper (
     i2s_if.dut               i2s,
     ws2812_if.dut            ws2812,
     xpi_if.dut               xpi,
-    rib_if.master  dma_rib,
+    axi4_if.master           dma_axi4,
     sysctrl_if.dut           sysctrl,
     pll_ctrl_if.sysctrl      pll_ctrl,
     sdram_if.dut             sdram,
@@ -51,6 +55,21 @@ module ip_ribp_wrapper (
   `include "ribp_interfaces.svh"
 
   ribp_if ribp ();
+  ribp_if u_sdram_data_ribp_if ();
+  ribp_if u_sdram_target_ribp_if ();
+  ribp_if u_psram_data_ribp_if ();
+  ribp_if u_psram_target_ribp_if ();
+  ribp_if u_xpi_data_ribp_if ();
+  ribp_if u_xpi_target_ribp_if ();
+  ribp_if u_spisd_data_ribp_if ();
+  ribp_if u_spisd_target_ribp_if ();
+  rib_if  u_dma_rib_if ();
+  axi4_stream_if #(.DATA_WIDTH(32), .ID_WIDTH(1), .DEST_WIDTH(1), .USER_WIDTH(1))
+      u_i2s_tx_axis_if (.aclk(clk_i), .aresetn(rst_n_i));
+  axi4_stream_if #(.DATA_WIDTH(32), .ID_WIDTH(1), .DEST_WIDTH(1), .USER_WIDTH(1))
+      u_i2s_rx_axis_if (.aclk(clk_i), .aresetn(rst_n_i));
+  axi4_stream_if #(.DATA_WIDTH(32), .ID_WIDTH(1), .DEST_WIDTH(1), .USER_WIDTH(1))
+      u_dvp_rx_axis_if (.aclk(clk_i), .aresetn(rst_n_i));
   // verilog_format: on
 
   clint_if u_clint_if ();
@@ -82,15 +101,82 @@ module ip_ribp_wrapper (
   localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
 `endif
 
-  rib2ribp u_rib2ribp (
+  axi42ribp u_axi42ribp (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .rib    (rib),
+      .axi4   (cfg_axi4),
       .ribp   (ribp)
   );
 
-  // Generated target routing operates on the RIBP boundary behind the RIB
-  // adapter. Register targets therefore remain INCR1-only.
+  axi42ribp_burst u_sdram_axi42ribp (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (sdram_axi4),
+      .ribp   (u_sdram_data_ribp_if)
+  );
+
+  axi42ribp_burst u_psram_axi42ribp (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (psram_axi4),
+      .ribp   (u_psram_data_ribp_if)
+  );
+
+  axi42ribp_burst u_xpi_axi42ribp (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (xpi_axi4),
+      .ribp   (u_xpi_data_ribp_if)
+  );
+
+  axi42ribp_burst u_spisd_axi42ribp (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (spisd_axi4),
+      .ribp   (u_spisd_data_ribp_if)
+  );
+
+  ribp_arbiter2 u_sdram_ribp_arbiter (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .cfg    (u_sdram_ribp_if),
+      .data   (u_sdram_data_ribp_if),
+      .target (u_sdram_target_ribp_if)
+  );
+
+  ribp_arbiter2 u_psram_ribp_arbiter (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .cfg    (u_psram_ribp_if),
+      .data   (u_psram_data_ribp_if),
+      .target (u_psram_target_ribp_if)
+  );
+
+  ribp_arbiter2 u_xpi_ribp_arbiter (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .cfg    (u_xpi_ribp_if),
+      .data   (u_xpi_data_ribp_if),
+      .target (u_xpi_target_ribp_if)
+  );
+
+  ribp_arbiter2 u_spisd_ribp_arbiter (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .cfg    (u_spisd_ribp_if),
+      .data   (u_spisd_data_ribp_if),
+      .target (u_spisd_target_ribp_if)
+  );
+
+  rib2axi4 u_dma_rib2axi4 (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .rib    (u_dma_rib_if),
+      .axi4   (dma_axi4)
+  );
+
+  // Generated target routing operates on the RIBP configuration boundary
+  // behind the AXI4 adapter. Register targets therefore remain INCR1-only.
 
   assign u_dma_hw_trg_if.i2s_tx_proc  = ~s_dma_i2s_tx_stall;
   assign u_dma_hw_trg_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
@@ -153,14 +239,14 @@ module ip_ribp_wrapper (
   ribp_psram u_rib_psram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_psram_ribp_if),
+      .ribp   (u_psram_target_ribp_if),
       .psram  (psram)
   );
 
   ribp_spisd u_rib_spisd (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_spisd_ribp_if),
+      .ribp   (u_spisd_target_ribp_if),
       .spi    (spisd)
   );
 
@@ -181,6 +267,8 @@ module ip_ribp_wrapper (
       .dma_tx_stall_o(s_dma_i2s_tx_stall),
       .dma_rx_stall_o(s_dma_i2s_rx_stall),
       .ribp          (u_i2s_ribp_if),
+      .tx_axis       (u_i2s_tx_axis_if),
+      .rx_axis       (u_i2s_rx_axis_if),
       .i2s           (i2s)
   );
 
@@ -197,7 +285,7 @@ module ip_ribp_wrapper (
       .dma_xfer_done_i(s_dma_xfer_done),
       .dma_tx_stall_o (s_dma_xpi_tx_stall),
       .dma_rx_stall_o (s_dma_xpi_rx_stall),
-      .ribp           (u_xpi_ribp_if),
+      .ribp           (u_xpi_target_ribp_if),
       .xpi            (xpi)
   );
 
@@ -207,7 +295,10 @@ module ip_ribp_wrapper (
       .dma_xfer_done_o(s_dma_xfer_done),
       .hw_trg         (u_dma_hw_trg_if),
       .ribp           (u_dma_ribp_if),
-      .rib            (dma_rib)
+      .rib            (u_dma_rib_if),
+      .i2s_tx_axis    (u_i2s_tx_axis_if),
+      .i2s_rx_axis    (u_i2s_rx_axis_if),
+      .dvp_rx_axis    (u_dvp_rx_axis_if)
   );
 
   ribp_sysctrl u_rib_sysctrl (
@@ -233,7 +324,7 @@ module ip_ribp_wrapper (
   ribp_sdram u_rib_sdram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_sdram_ribp_if),
+      .ribp   (u_sdram_target_ribp_if),
       .sdram  (sdram)
   );
 
@@ -241,6 +332,7 @@ module ip_ribp_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .ribp   (u_dvp_ribp_if),
+      .rx_axis(u_dvp_rx_axis_if),
       .dvp    (dvp)
   );
 

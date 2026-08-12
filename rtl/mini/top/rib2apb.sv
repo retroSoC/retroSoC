@@ -32,8 +32,9 @@ module rib2apb (
   logic s_xfer_valid, s_xfer_ready, s_xfer_error;
   logic [2:0] s_fsm_d, s_fsm_q;
   logic [31:0] s_addr_q, s_wdata_q;
-  logic [3:0] s_wstrb_q;
-  logic       s_write_q;
+  logic [31:0] s_decode_addr;
+  logic [ 3:0] s_wstrb_q;
+  logic        s_write_q;
   logic [2:0] s_error_code_d, s_error_code_q;
   logic s_cmd_hdshk, s_w_hdshk, s_rsp_hdshk;
   logic s_psel_valid;
@@ -44,6 +45,7 @@ module rib2apb (
   `include "soc_apb_declarations.svh"
 
   assign s_cmd_hdshk   = rib.cmd_valid && rib.cmd_ready;
+  assign s_decode_addr = rib.cmd_addr;
   assign s_w_hdshk     = rib.w_valid && rib.w_ready;
 
   assign rib.cmd_ready = (s_fsm_q == FSM_CMD) && !rib.rsp_valid;
