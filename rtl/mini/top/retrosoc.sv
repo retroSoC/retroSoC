@@ -81,7 +81,7 @@ module retrosoc (
   logic                             s_bus_fault_access;
   logic [                      1:0] s_bus_fault_master;
   logic [                      2:0] s_bus_fault_code;
-  logic                             s_perf_enable;
+  logic                             s_perf_en;
   logic                             s_perf_clear;
   logic [                     63:0] s_perf_mgmt_wait;
   logic [                     63:0] s_perf_user_wait;
@@ -97,7 +97,7 @@ module retrosoc (
   assign u_sysctrl_if.fault_access_i    = s_bus_fault_access;
   assign u_sysctrl_if.fault_master_i    = s_bus_fault_master;
   assign u_sysctrl_if.fault_code_i      = s_bus_fault_code;
-  assign s_perf_enable                  = u_sysctrl_if.perf_enable_o;
+  assign s_perf_en                      = u_sysctrl_if.perf_enable_o;
   assign s_perf_clear                   = u_sysctrl_if.perf_clear_o;
   assign test_done_o                    = u_sysctrl_if.test_done_o;
   assign test_pass_o                    = u_sysctrl_if.test_pass_o;
@@ -161,7 +161,7 @@ core_wrapper u_core_wrapper (
       .psram_axi4       (u_psram_axi4_if),
       .xpi_axi4         (u_xpi_axi4_if),
       .spisd_axi4       (u_spisd_axi4_if),
-      .perf_enable_i    (s_perf_enable),
+      .perf_enable_i    (s_perf_en),
       .perf_clear_i     (s_perf_clear),
       .fault_valid_o    (s_bus_fault_valid),
       .fault_addr_o     (s_bus_fault_addr),

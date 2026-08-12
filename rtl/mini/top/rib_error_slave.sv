@@ -22,14 +22,14 @@ module rib_error_slave (
   logic [1:0] s_fsm_d, s_fsm_q;
   logic [1:0] s_len_q;
   logic [1:0] s_beat_d, s_beat_q;
-  logic [2:0] s_error_code_q;
+  logic [2:0] s_err_code_q;
 
   assign rib.cmd_ready = s_fsm_q == FSM_CMD;
   assign rib.w_ready   = s_fsm_q == FSM_WDATA;
   assign rib.rsp_valid = s_fsm_q == FSM_RESP;
   assign rib.rdata     = '0;
   assign rib.resp_err  = 1'b1;
-  assign rib.resp_code = s_error_code_q;
+  assign rib.resp_code = s_err_code_q;
   assign rib.rsp_beat  = s_beat_q;
   assign rib.rsp_last  = 1'b1;
 
@@ -61,31 +61,39 @@ module rib_error_slave (
     endcase
   end
 
-  dffr #(2) u_fsm_dffr (
-      clk_i,
-      rst_n_i,
-      s_fsm_d,
-      s_fsm_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_fsm_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
-  dffer #(2) u_len_dffer (
-      clk_i,
-      rst_n_i,
-      rib.cmd_valid && rib.cmd_ready,
-      rib.cmd_len,
-      s_len_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_len_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (rib.cmd_valid && rib.cmd_ready),
+      .dat_i  (rib.cmd_len),
+      .dat_o  (s_len_q)
   );
-  dffer #(3) u_error_code_dffer (
-      clk_i,
-      rst_n_i,
-      rib.cmd_valid && rib.cmd_ready,
-      error_code_i,
-      s_error_code_q
+  dffer #(
+      .DATA_WIDTH(3)
+  ) u_error_code_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (rib.cmd_valid && rib.cmd_ready),
+      .dat_i  (error_code_i),
+      .dat_o  (s_err_code_q)
   );
-  dffr #(2) u_beat_dffr (
-      clk_i,
-      rst_n_i,
-      s_beat_d,
-      s_beat_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_beat_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_beat_d),
+      .dat_o  (s_beat_q)
   );
 
 endmodule

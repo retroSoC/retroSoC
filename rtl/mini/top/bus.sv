@@ -64,10 +64,10 @@ module rib_bus (
   logic [1:0] s_mstr_id_d, s_mstr_id_q;
   logic [1:0] s_mstr_rr_d, s_mstr_rr_q;
   logic [1:0] s_target_d, s_target_q;
-  logic s_user_request;
+  logic s_user_req;
   logic s_terminal_rsp;
   logic s_ribp_sel, s_apb_sel, s_ram_sel, s_fault_sel;
-  logic s_access_denied, s_burst_legal, s_length_legal;
+  logic s_access_denied, s_burst_legal, s_len_legal;
   logic        s_user_access_allowed;
   logic [31:0] s_last_addr;
   logic [ 2:0] s_fault_code;
@@ -121,7 +121,7 @@ module rib_bus (
   assign u_ram_rib_if.rsp_last  = 1'b0;
 `endif
 
-  assign s_user_request = user_bus_enable_i && user_rib.cmd_valid;
+  assign s_user_req = user_bus_enable_i && user_rib.cmd_valid;
   assign user_bus_idle_o = ~s_mstr_lock_q || (s_mstr_id_q != MSTR_USER);
   assign s_terminal_rsp  = s_cmd_accepted_q && u_mstr_rib_if.rsp_valid &&
                            u_mstr_rib_if.rsp_ready &&
@@ -137,7 +137,7 @@ module rib_bus (
           if (u_mgmt_rib_if.cmd_valid) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_MGMT;
-          end else if (s_user_request) begin
+          end else if (s_user_req) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_USER;
           end else if (dma_rib.cmd_valid) begin
@@ -146,7 +146,7 @@ module rib_bus (
           end
         end
         MSTR_USER: begin
-          if (s_user_request) begin
+          if (s_user_req) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_USER;
           end else if (dma_rib.cmd_valid) begin
@@ -164,7 +164,7 @@ module rib_bus (
           end else if (u_mgmt_rib_if.cmd_valid) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_MGMT;
-          end else if (s_user_request) begin
+          end else if (s_user_req) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_USER;
           end
@@ -180,23 +180,29 @@ module rib_bus (
     end
   end
 
-  dffr #(1) u_mstr_lock_dffr (
-      clk_i,
-      rst_n_i,
-      s_mstr_lock_d,
-      s_mstr_lock_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_mstr_lock_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_mstr_lock_d),
+      .dat_o  (s_mstr_lock_q)
   );
-  dffr #(2) u_mstr_id_dffr (
-      clk_i,
-      rst_n_i,
-      s_mstr_id_d,
-      s_mstr_id_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_mstr_id_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_mstr_id_d),
+      .dat_o  (s_mstr_id_q)
   );
-  dffr #(2) u_mstr_rr_dffr (
-      clk_i,
-      rst_n_i,
-      s_mstr_rr_d,
-      s_mstr_rr_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_mstr_rr_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_mstr_rr_d),
+      .dat_o  (s_mstr_rr_q)
   );
 
   always_comb begin
@@ -207,11 +213,13 @@ module rib_bus (
       s_cmd_accepted_d = 1'b0;
     end
   end
-  dffr #(1) u_cmd_accepted_dffr (
-      clk_i,
-      rst_n_i,
-      s_cmd_accepted_d,
-      s_cmd_accepted_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_cmd_accepted_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cmd_accepted_d),
+      .dat_o  (s_cmd_accepted_q)
   );
 
   // Master mux. The grant is held until the terminal response is consumed.
@@ -304,11 +312,11 @@ module rib_bus (
   // verilog_format: off
   assign s_last_addr = u_mstr_rib_if.cmd_addr +
       (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR4 ? 32'd12 : 32'd0);
-  assign s_length_legal =
+  assign s_len_legal =
       (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) ||
       (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR4);
   assign s_burst_legal =
-      s_length_legal &&
+      s_len_legal &&
       ((u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) ||
        ((u_mstr_rib_if.cmd_addr[3:0] == 4'b0000) &&
         `SOC_ADDR_SUPPORTS_INCR4(u_mstr_rib_if.cmd_addr) &&
@@ -400,11 +408,13 @@ module rib_bus (
       end
     end
   end
-  dffr #(2) u_target_dffr (
-      clk_i,
-      rst_n_i,
-      s_target_d,
-      s_target_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_target_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_target_d),
+      .dat_o  (s_target_q)
   );
 
   // Write-data and response routing uses the captured target.
@@ -503,39 +513,49 @@ module rib_bus (
       s_fault_wstrb_d = u_fault_rib_if.wstrb;
     end
   end
-  dffr #(4) u_fault_wstrb_dffr (
-      clk_i,
-      rst_n_i,
-      s_fault_wstrb_d,
-      s_fault_wstrb_q
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_fault_wstrb_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_fault_wstrb_d),
+      .dat_o  (s_fault_wstrb_q)
   );
-  dffer #(32) u_fault_addr_dffer (
-      clk_i,
-      rst_n_i,
-      s_fault_cmd_hdshk,
-      u_mstr_rib_if.cmd_addr,
-      s_fault_addr_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_fault_addr_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fault_cmd_hdshk),
+      .dat_i  (u_mstr_rib_if.cmd_addr),
+      .dat_o  (s_fault_addr_q)
   );
-  dffer #(2) u_fault_master_dffer (
-      clk_i,
-      rst_n_i,
-      s_fault_cmd_hdshk,
-      s_mstr_id_q,
-      s_fault_master_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_fault_master_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fault_cmd_hdshk),
+      .dat_i  (s_mstr_id_q),
+      .dat_o  (s_fault_master_q)
   );
-  dffer #(3) u_fault_code_dffer (
-      clk_i,
-      rst_n_i,
-      s_fault_cmd_hdshk,
-      s_fault_code,
-      s_fault_code_q
+  dffer #(
+      .DATA_WIDTH(3)
+  ) u_fault_code_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fault_cmd_hdshk),
+      .dat_i  (s_fault_code),
+      .dat_o  (s_fault_code_q)
   );
-  dffer #(32) u_xfer_addr_dffer (
-      clk_i,
-      rst_n_i,
-      u_mstr_rib_if.cmd_valid && u_mstr_rib_if.cmd_ready,
-      u_mstr_rib_if.cmd_addr,
-      s_xfer_addr_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_xfer_addr_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (u_mstr_rib_if.cmd_valid && u_mstr_rib_if.cmd_ready),
+      .dat_i  (u_mstr_rib_if.cmd_addr),
+      .dat_o  (s_xfer_addr_q)
   );
 
   assign fault_valid_o = s_cmd_accepted_q && (s_target_q == TARGET_FAULT) &&
@@ -591,53 +611,69 @@ module rib_bus (
     end
   end
 
-  dffr #(64) u_perf_mgmt_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_mgmt_wait_d,
-      s_perf_mgmt_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_mgmt_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_mgmt_wait_d),
+      .dat_o  (s_perf_mgmt_wait_q)
   );
-  dffr #(64) u_perf_user_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_user_wait_d,
-      s_perf_user_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_user_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_user_wait_d),
+      .dat_o  (s_perf_user_wait_q)
   );
-  dffr #(64) u_perf_dma_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_dma_wait_d,
-      s_perf_dma_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_dma_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_dma_wait_d),
+      .dat_o  (s_perf_dma_wait_q)
   );
-  dffr #(64) u_perf_ribp_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_ribp_wait_d,
-      s_perf_ribp_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_ribp_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_ribp_wait_d),
+      .dat_o  (s_perf_ribp_wait_q)
   );
-  dffr #(64) u_perf_apb_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_apb_wait_d,
-      s_perf_apb_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_apb_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_apb_wait_d),
+      .dat_o  (s_perf_apb_wait_q)
   );
-  dffr #(64) u_perf_sdram_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_sdram_wait_d,
-      s_perf_sdram_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_sdram_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_sdram_wait_d),
+      .dat_o  (s_perf_sdram_wait_q)
   );
-  dffr #(64) u_perf_psram_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_psram_wait_d,
-      s_perf_psram_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_psram_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_psram_wait_d),
+      .dat_o  (s_perf_psram_wait_q)
   );
-  dffr #(64) u_perf_flash_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_flash_wait_d,
-      s_perf_flash_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_flash_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_flash_wait_d),
+      .dat_o  (s_perf_flash_wait_q)
   );
 
   assign perf_mgmt_wait_o  = s_perf_mgmt_wait_q;

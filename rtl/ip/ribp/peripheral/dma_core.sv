@@ -75,7 +75,7 @@ module dma_core (
   logic s_fifo_full, s_fifo_empty;
   logic [ 2:0] s_fifo_count;
   logic [31:0] s_fifo_rdata;
-  logic        s_rsp_error;
+  logic        s_rsp_err;
   logic        s_i2s_tx_stream;
   logic        s_i2s_rx_stream;
   logic        s_dvp_rx_stream;
@@ -158,9 +158,9 @@ module dma_core (
   assign s_cmd_hdshk = rib.cmd_valid && rib.cmd_ready;
   assign s_rsp_hdshk = rib.rsp_valid && rib.rsp_ready;
   assign s_w_hdshk = rib.w_valid && rib.w_ready;
-  assign s_rsp_error = s_rsp_hdshk && rib.resp_err;
+  assign s_rsp_err = s_rsp_hdshk && rib.resp_err;
 
-  assign s_fifo_flush = reset_i || start_i || s_rsp_error;
+  assign s_fifo_flush = reset_i || start_i || s_rsp_err;
   assign s_fifo_push = (s_i2s_rx_stream || s_dvp_rx_stream) ? s_stream_rx_hdshk :
                        ((s_fsm_q == FSM_RD_RESP) && s_rsp_hdshk && ~rib.resp_err);
   assign s_fifo_pop = s_i2s_tx_stream ? s_stream_tx_hdshk : ((s_fsm_q == FSM_WR_DATA) && s_w_hdshk);
@@ -281,31 +281,41 @@ module dma_core (
     end
   end
 
-  dffr #(3) u_fsm_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_fsm_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_fsm_d),
       .dat_o  (s_fsm_q)
   );
-  dffr #(32) u_xfer_cnt_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_xfer_cnt_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_xfer_cnt_d),
       .dat_o  (s_xfer_cnt_q)
   );
-  dffr #(32) u_src_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_src_addr_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_src_addr_d),
       .dat_o  (s_src_addr_q)
   );
-  dffr #(32) u_dst_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_dst_addr_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_dst_addr_d),
       .dat_o  (s_dst_addr_q)
   );
-  dffr #(2) u_wr_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_wr_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_wr_beat_d),
@@ -317,7 +327,9 @@ module dma_core (
     if (stop_i) s_ctrl_stop_d = ~s_ctrl_stop_q;
     if (reset_i) s_ctrl_stop_d = 1'b0;
   end
-  dffr #(1) u_ctrl_stop_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ctrl_stop_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_ctrl_stop_d),

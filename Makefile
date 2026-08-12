@@ -258,7 +258,7 @@ endif
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
-	mk-format-check rtl-format rtl-format-check rtl-style-check sw-policy-check sw-host-test \
+	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
 	benchmark-report coremark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
@@ -303,6 +303,8 @@ help:
 	  '  sw-format-check            check embedded C whitespace and line-ending policy' \
 	  '  mk-format | mk-format-check apply/check tracked Makefile formatting' \
 	  '  rtl-format | rtl-format-check apply/check self-owned RTL formatting' \
+	  '  rtl-migrate-connections  convert provably positional RTL instances to named ports' \
+	  '  rtl-migrate-names        shorten local RTL identifier names' \
 	  '  rtl-style-check            check changed self-owned RTL naming and connections' \
 	  '  sw-policy-check            check embedded C API and naming policy' \
 	  '  sw-host-test               run host tests for deterministic SDK utilities' \
@@ -426,6 +428,12 @@ rtl-format:
 rtl-format-check:
 	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind rtl \
 	  --verible-verilog-format $(VERIBLE_FORMAT)
+
+rtl-migrate-connections:
+	python3 $(ROOT_PATH)/scripts/migrate_rtl_connections.py --root $(ROOT_PATH) --apply
+
+rtl-migrate-names:
+	python3 $(ROOT_PATH)/scripts/migrate_rtl_names.py --root $(ROOT_PATH) --apply
 
 rtl-style-check:
 	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \

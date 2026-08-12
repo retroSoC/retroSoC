@@ -34,8 +34,8 @@ module ribp_uart_rx (
   logic s_sample_or_d, s_sample_or_q;
   logic s_sample_value_d, s_sample_value_q;
   logic [7:0] s_data_d, s_data_q;
-  logic s_parity_error_d, s_parity_error_q;
-  logic s_frame_error_d, s_frame_error_q;
+  logic s_parity_err_d, s_parity_err_q;
+  logic s_frame_err_d, s_frame_err_q;
   logic s_noise_d, s_noise_q;
   logic [2:0] s_last_bit;
   logic [7:0] s_data_mask;
@@ -70,33 +70,29 @@ module ribp_uart_rx (
     s_sample_or_d = s_sample_or_q;
     s_sample_value_d = s_sample_value_q;
     s_data_d = s_data_q;
-    s_parity_error_d = s_parity_error_q;
-    s_frame_error_d = s_frame_error_q;
+    s_parity_err_d = s_parity_err_q;
+    s_frame_err_d = s_frame_err_q;
     s_noise_d = s_noise_q;
     data_valid_o = 1'b0;
     data_o = {
-      s_noise_q,
-      (s_frame_error_q && (s_data_q == 8'd0)),
-      s_frame_error_q,
-      s_parity_error_q,
-      s_data_q
+      s_noise_q, (s_frame_err_q && (s_data_q == 8'd0)), s_frame_err_q, s_parity_err_q, s_data_q
     };
 
     if (!enable_i) begin
-      s_state_d        = STATE_IDLE;
-      s_sample_d       = '0;
-      s_bit_d          = '0;
-      s_parity_error_d = 1'b0;
-      s_frame_error_d  = 1'b0;
-      s_noise_d        = 1'b0;
+      s_state_d      = STATE_IDLE;
+      s_sample_d     = '0;
+      s_bit_d        = '0;
+      s_parity_err_d = 1'b0;
+      s_frame_err_d  = 1'b0;
+      s_noise_d      = 1'b0;
     end else if ((s_state_q == STATE_IDLE) && !s_rx_sync_q) begin
-      s_state_d        = STATE_START;
-      s_sample_d       = '0;
-      s_bit_d          = '0;
-      s_data_d         = '0;
-      s_parity_error_d = 1'b0;
-      s_frame_error_d  = 1'b0;
-      s_noise_d        = 1'b0;
+      s_state_d      = STATE_START;
+      s_sample_d     = '0;
+      s_bit_d        = '0;
+      s_data_d       = '0;
+      s_parity_err_d = 1'b0;
+      s_frame_err_d  = 1'b0;
+      s_noise_d      = 1'b0;
     end else if ((s_state_q != STATE_IDLE) && sample_tick_i) begin
       if (s_sample_q == 4'd7) begin
         s_sample_sum_d = {1'b0, s_rx_sync_q};
@@ -111,9 +107,9 @@ module ribp_uart_rx (
         s_noise_d        = s_noise_q | s_samples_mixed;
         unique case (s_state_q)
           STATE_DATA:   s_data_d[s_bit_q] = s_majority;
-          STATE_PARITY: s_parity_error_d = s_majority != s_expected_parity;
-          STATE_STOP1:  s_frame_error_d = !s_majority;
-          STATE_STOP2:  s_frame_error_d = s_frame_error_q | !s_majority;
+          STATE_PARITY: s_parity_err_d = s_majority != s_expected_parity;
+          STATE_STOP1:  s_frame_err_d = !s_majority;
+          STATE_STOP2:  s_frame_err_d = s_frame_err_q | !s_majority;
           default: begin
           end
         endcase
@@ -157,79 +153,105 @@ module ribp_uart_rx (
     end
   end
 
-  dffr #(1) u_rx_meta_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rx_meta_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_rx_meta_d),
       .dat_o  (s_rx_meta_q)
   );
-  dffr #(1) u_rx_sync_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rx_sync_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_rx_sync_d),
       .dat_o  (s_rx_sync_q)
   );
-  dffr #(3) u_state_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_state_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_state_d),
       .dat_o  (s_state_q)
   );
-  dffr #(4) u_sample_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_sample_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sample_d),
       .dat_o  (s_sample_q)
   );
-  dffr #(3) u_bit_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_bit_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_bit_d),
       .dat_o  (s_bit_q)
   );
-  dffr #(2) u_sample_sum_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_sample_sum_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sample_sum_d),
       .dat_o  (s_sample_sum_q)
   );
-  dffr #(1) u_sample_and_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_sample_and_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sample_and_d),
       .dat_o  (s_sample_and_q)
   );
-  dffr #(1) u_sample_or_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_sample_or_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sample_or_d),
       .dat_o  (s_sample_or_q)
   );
-  dffr #(1) u_sample_value_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_sample_value_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sample_value_d),
       .dat_o  (s_sample_value_q)
   );
-  dffr #(8) u_data_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_data_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_data_d),
       .dat_o  (s_data_q)
   );
-  dffr #(1) u_parity_error_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_parity_error_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_parity_error_d),
-      .dat_o  (s_parity_error_q)
+      .dat_i  (s_parity_err_d),
+      .dat_o  (s_parity_err_q)
   );
-  dffr #(1) u_frame_error_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_frame_error_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_frame_error_d),
-      .dat_o  (s_frame_error_q)
+      .dat_i  (s_frame_err_d),
+      .dat_o  (s_frame_err_q)
   );
-  dffr #(1) u_noise_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_noise_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_noise_d),

@@ -18,8 +18,9 @@ INSTANCE_RE = re.compile(
 )
 LEGACY_ALWAYS_RE = re.compile(r"\balways\s*@")
 DECL_RE = re.compile(r"\b(?:wire|tri|wand|wor)\b")
-LONG_NAME_DECL_RE = re.compile(
-    r"\b(?:logic|wire|reg)\b[^;\n]*\b(?:command|request|response|address|enable|error|status|counter|configuration|select|length)\b"
+LONG_LOCAL_RE = re.compile(
+    r"\b[sr]_[A-Za-z0-9_$]*(?:command|request|response|address|enable|error|status|"
+    r"counter|configuration|select|length)(?:_|$)"
 )
 
 
@@ -79,7 +80,12 @@ def instance_issues(path: Path, source: str) -> list[str]:
         cursor = index + 1
         while cursor < len(lines) and ");" not in lines[cursor]:
             text = lines[cursor].strip()
-            if text and not text.startswith(".") and not text.startswith("//"):
+            if (
+                text
+                and not text.startswith(".")
+                and not text.startswith("//")
+                and not text.startswith("`")
+            ):
                 issues.append(f"{path}:{cursor + 1}: positional port connection")
                 break
             cursor += 1
@@ -95,7 +101,7 @@ def check_file(path: Path, source: str, profile: str) -> list[str]:
                 issues.append(f"{path}:{number}: use always_ff/always_comb in owned RTL")
             if re.search(r"\bwire\b", line) and not re.search(r"\binout\s+wire\b", line):
                 issues.append(f"{path}:{number}: explicit wire in owned RTL; justify net semantics")
-            if LONG_NAME_DECL_RE.search(line) and not line.lstrip().startswith("//"):
+            if LONG_LOCAL_RE.search(line) and not line.lstrip().startswith("//"):
                 issues.append(f"{path}:{number}: prefer the local short-name abbreviation")
     return issues
 

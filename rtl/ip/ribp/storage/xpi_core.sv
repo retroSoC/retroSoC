@@ -497,73 +497,89 @@ module xpi_core (
       end
     endcase
   end
-  dffer #(3) u_fsm_dffer (
-      clk_i,
-      rst_n_i,
-      s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg,
-      s_fsm_d,
-      s_fsm_q
+  dffer #(
+      .DATA_WIDTH(3)
+  ) u_fsm_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
 
-  dfferh #(1) u_nss_dfferh (
-      clk_i,
-      rst_n_i,
-      s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg,
-      s_nss_d,
-      s_nss_q
+  dfferh #(
+      .DATA_WIDTH(1)
+  ) u_nss_dfferh (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg),
+      .dat_i  (s_nss_d),
+      .dat_o  (s_nss_q)
   );
 
-  dffer #(1) u_sclk_en_dffer (
-      clk_i,
-      rst_n_i,
-      s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg,
-      s_sclk_en_d,
-      s_sclk_en_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_sclk_en_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg),
+      .dat_i  (s_sclk_en_d),
+      .dat_o  (s_sclk_en_q)
   );
 
-  dffer #(8) u_xfer_bit_cnt_dffer (
-      clk_i,
-      rst_n_i,
-      s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg,
-      s_xfer_bit_cnt_d,
-      s_xfer_bit_cnt_q
+  dffer #(
+      .DATA_WIDTH(8)
+  ) u_xfer_bit_cnt_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg),
+      .dat_i  (s_xfer_bit_cnt_d),
+      .dat_o  (s_xfer_bit_cnt_q)
   );
 
 
-  dffer #(8) u_xfer_byte_cnt_dffer (
-      clk_i,
-      rst_n_i,
-      s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg,
-      s_xfer_byte_cnt_d,
-      s_xfer_byte_cnt_q
+  dffer #(
+      .DATA_WIDTH(8)
+  ) u_xfer_byte_cnt_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg),
+      .dat_i  (s_xfer_byte_cnt_d),
+      .dat_o  (s_xfer_byte_cnt_q)
   );
 
-  dffer #(32) u_xfer_data_dffer (
-      clk_i,
-      rst_n_i,
-      s_xfer_sta_trg | 
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_xfer_data_dffer (
+      .clk_i(clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i(s_xfer_sta_trg |
       (s_fsm_q != FSM_RXDATA && s_sec_clk_edge) |
       (s_fsm_q == FSM_RXDATA && s_fir_clk_edge) |
-      s_xfer_end_trg,
-      s_xfer_data_d,
-      s_xfer_data_q
+      s_xfer_end_trg),
+      .dat_i(s_xfer_data_d),
+      .dat_o(s_xfer_data_q)
   );
 
-  dffer #(1) u_tx_data_req_dffer (
-      clk_i,
-      rst_n_i,
-      s_xfer_sta_trg | s_sec_clk_edge | s_tx_data_req_q,
-      s_tx_data_req_d,
-      s_tx_data_req_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_tx_data_req_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xfer_sta_trg | s_sec_clk_edge | s_tx_data_req_q),
+      .dat_i  (s_tx_data_req_d),
+      .dat_o  (s_tx_data_req_q)
   );
 
 
-  dffer #(1) u_rx_data_req_dffer (
-      clk_i,
-      rst_n_i,
-      (s_fsm_q == FSM_RXDATA && s_fir_clk_edge) | s_rx_data_req_q,
-      s_rx_data_req_d,
-      s_rx_data_req_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_rx_data_req_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   ((s_fsm_q == FSM_RXDATA && s_fir_clk_edge) | s_rx_data_req_q),
+      .dat_i  (s_rx_data_req_d),
+      .dat_o  (s_rx_data_req_q)
   );
 
 `ifndef SV_ASSRT_DISABLE

@@ -38,6 +38,18 @@ target checks changed self-owned RTL for positional module connections and
 legacy constructs. Existing findings are migrated in module-sized batches and
 must not be expanded by a new change.
 
+`migrate_rtl_connections.py` is the conservative migration helper for legacy
+positional instances. It discovers ANSI-style module declarations in the
+production RTL and locked technology/IP trees, rewrites only exact positional
+parameter and port lists to named connections, and reports ambiguous instances
+without modifying them. Run `make rtl-migrate-connections`, then
+`make rtl-format rtl-style-check`; review the generated diff before committing.
+
+`migrate_rtl_names.py` shortens only local identifiers beginning with `s_` or
+`r_` (plus local automatic variables such as `read_request`). Public module
+ports and interface fields are intentionally unchanged. Run
+`make rtl-migrate-names`, then format and lint the resulting diff.
+
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the
 relevant dry-run or regression profile from [`AGENTS.md`](../AGENTS.md).

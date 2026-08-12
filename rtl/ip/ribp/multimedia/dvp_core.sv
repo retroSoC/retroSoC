@@ -39,51 +39,61 @@ module dvp_core (
   assign rgb_dat_o = s_rgb_data_q;
 
 
-  edge_det_sync_re #(1) u_dvp_vsync_edge_det_sync_re (
-      clk_i,
-      rst_n_i,
-      dvp_vsync_i,
-      s_dvp_vsync_re
+  edge_det_sync_re #(
+      .DATA_WIDTH(1)
+  ) u_dvp_vsync_edge_det_sync_re (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (dvp_vsync_i),
+      .re_o   (s_dvp_vsync_re)
   );
 
 
   assign s_frame_cnt_en = (s_frame_cnt_q < FRAME_WAIT) && s_dvp_vsync_re;
   assign s_frame_cnt_d  = s_frame_cnt_q + 4'd1;
-  dffer #(4) u_frame_cnt_dffer (
-      clk_i,
-      rst_n_i,
-      s_frame_cnt_en,
-      s_frame_cnt_d,
-      s_frame_cnt_q
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_frame_cnt_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_frame_cnt_en),
+      .dat_i  (s_frame_cnt_d),
+      .dat_o  (s_frame_cnt_q)
   );
 
 
   assign s_frame_valid_en = (s_frame_cnt_q == FRAME_WAIT) && s_dvp_vsync_re;
   assign s_frame_valid_d  = 1'b1;
-  dffer #(1) u_frame_valid_dffer (
-      clk_i,
-      rst_n_i,
-      s_frame_valid_en,
-      s_frame_valid_d,
-      s_frame_valid_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_frame_valid_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_frame_valid_en),
+      .dat_i  (s_frame_valid_d),
+      .dat_o  (s_frame_valid_q)
   );
 
 
   assign s_pix_cnt_d = dvp_href_i ? s_pix_cnt_q + 2'd1 : '0;
-  dffr #(2) u_pix_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_pix_cnt_d,
-      s_pix_cnt_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_pix_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_pix_cnt_d),
+      .dat_o  (s_pix_cnt_q)
   );
 
 
   assign s_rgb_flag_d = s_pix_cnt_q == 2'd3;
-  dffr #(1) u_rgb_flag_dffr (
-      clk_i,
-      rst_n_i,
-      s_rgb_flag_d,
-      s_rgb_flag_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rgb_flag_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_rgb_flag_d),
+      .dat_o  (s_rgb_flag_q)
   );
 
 
@@ -95,12 +105,14 @@ module dvp_core (
     else if (s_pix_cnt_q == 2'd2) s_rgb_data_d[31:24] = dvp_dat_i;
     else if (s_pix_cnt_q == 2'd3) s_rgb_data_d[23:16] = dvp_dat_i;
   end
-  dffer #(32) u_rgb_data_dffer (
-      clk_i,
-      rst_n_i,
-      s_rgb_data_en,
-      s_rgb_data_d,
-      s_rgb_data_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_rgb_data_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_rgb_data_en),
+      .dat_i  (s_rgb_data_d),
+      .dat_o  (s_rgb_data_q)
   );
 
 

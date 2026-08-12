@@ -696,7 +696,7 @@ def render_apb_response_mux(targets: list[ApbTarget]) -> str:
     for signal, expression, width in (
         ("s_rd_data", "prdata", "32"),
         ("s_xfer_ready", "pready", "1"),
-        ("s_xfer_error", "pslverr", "1"),
+        ("s_xfer_err", "pslverr", "1"),
     ):
         terms = [
             f"({{{width}{{s_psel_q[{target.slot}]}}}} & "

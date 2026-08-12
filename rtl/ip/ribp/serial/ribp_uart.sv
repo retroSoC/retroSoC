@@ -20,12 +20,12 @@ module ribp_uart #(
   logic [ 1:0] s_data_bits;
   logic        s_stop2;
   logic [ 1:0] s_parity;
-  logic        s_tx_enable;
-  logic        s_rx_enable;
+  logic        s_tx_en;
+  logic        s_rx_en;
   logic        s_loopback;
   logic        s_break;
-  logic        s_auto_cts_enable;
-  logic        s_auto_rts_enable;
+  logic        s_auto_cts_en;
+  logic        s_auto_rts_en;
   logic [ 6:0] s_rts_assert_level;
   logic [ 6:0] s_rts_deassert_level;
   logic        s_tx_data_valid;
@@ -61,12 +61,12 @@ module ribp_uart #(
       .data_bits_o         (s_data_bits),
       .stop2_o             (s_stop2),
       .parity_o            (s_parity),
-      .tx_enable_o         (s_tx_enable),
-      .rx_enable_o         (s_rx_enable),
+      .tx_enable_o         (s_tx_en),
+      .rx_enable_o         (s_rx_en),
       .loopback_o          (s_loopback),
       .break_o             (s_break),
-      .auto_cts_enable_o   (s_auto_cts_enable),
-      .auto_rts_enable_o   (s_auto_rts_enable),
+      .auto_cts_enable_o   (s_auto_cts_en),
+      .auto_rts_enable_o   (s_auto_rts_en),
       .rts_assert_level_o  (s_rts_assert_level),
       .rts_deassert_level_o(s_rts_deassert_level),
       .tx_data_valid_o     (s_tx_data_valid),
@@ -96,8 +96,8 @@ module ribp_uart #(
       .data_bits_i       (s_data_bits),
       .stop2_i           (s_stop2),
       .parity_i          (s_parity),
-      .tx_enable_i       (s_tx_enable),
-      .rx_enable_i       (s_rx_enable),
+      .tx_enable_i       (s_tx_en),
+      .rx_enable_i       (s_rx_en),
       .loopback_i        (s_loopback),
       .tx_start_allowed_i(s_tx_start_allowed),
       .break_i           (s_break),
@@ -118,10 +118,10 @@ module ribp_uart #(
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),
       .cts_n_async_i       (uart.cts_n_i),
-      .auto_cts_enable_i   (s_auto_cts_enable),
-      .auto_rts_enable_i   (s_auto_rts_enable),
-      .tx_enable_i         (s_tx_enable),
-      .rx_enable_i         (s_rx_enable),
+      .auto_cts_enable_i   (s_auto_cts_en),
+      .auto_rts_enable_i   (s_auto_rts_en),
+      .tx_enable_i         (s_tx_en),
+      .rx_enable_i         (s_rx_en),
       .loopback_i          (s_loopback),
       .tx_data_valid_i     (s_tx_data_valid),
       .tx_busy_i           (s_tx_busy),

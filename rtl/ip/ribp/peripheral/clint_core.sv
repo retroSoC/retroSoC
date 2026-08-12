@@ -46,7 +46,9 @@ module clint_core #(
       s_timer_irq_d[hart] = mtime_o >= mtimecmp_i[hart];
     end
   end
-  dffr #(HART_NUM) u_timer_irq_dffr (
+  dffr #(
+      .DATA_WIDTH(HART_NUM)
+  ) u_timer_irq_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_timer_irq_d),

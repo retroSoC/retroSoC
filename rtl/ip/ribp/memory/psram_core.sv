@@ -309,6 +309,11 @@ module psram_core (
             r_cfg_chd <= r_cfg_chd + 1'b1;
           end
         end
+        default: begin
+          r_fsm_state  <= FSM_INIT;
+          psram_sclk_o <= 1'b0;
+          psram_ce_o   <= 1'b1;
+        end
       endcase
     end
   end

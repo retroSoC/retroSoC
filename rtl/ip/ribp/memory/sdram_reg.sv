@@ -47,22 +47,26 @@ module sdram_reg (
 
   assign s_sdram_clkdiv_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_SDRAM_CLKDIV;
   assign s_sdram_clkdiv_d  = ribp.wdata[1:0];
-  dffer #(2) u_sdram_clkdiv_dffer (
-      clk_i,
-      rst_n_i,
-      s_sdram_clkdiv_en,
-      s_sdram_clkdiv_d,
-      s_sdram_clkdiv_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_sdram_clkdiv_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_sdram_clkdiv_en),
+      .dat_i  (s_sdram_clkdiv_d),
+      .dat_o  (s_sdram_clkdiv_q)
   );
 
 
   // ribp resp
   assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
-  dffr #(1) u_ribp_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_ready_d,
-      s_ribp_ready_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_ready_d),
+      .dat_o  (s_ribp_ready_q)
   );
 
 
@@ -74,12 +78,14 @@ module sdram_reg (
       default:            s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
   end
-  dffer #(32) u_ribp_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_ribp_rdata_en,
-      s_ribp_rdata_d,
-      s_ribp_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_ribp_rdata_en),
+      .dat_i  (s_ribp_rdata_d),
+      .dat_o  (s_ribp_rdata_q)
   );
 
 endmodule

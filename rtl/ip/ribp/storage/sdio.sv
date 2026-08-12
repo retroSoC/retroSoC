@@ -40,8 +40,11 @@ module ribp_sdio (
     // verilog_format: on
 );
 
-  wire dummy0 = clk_i;
-  wire dummy1 = rst_n_i;
+  logic dummy0;
+  logic dummy1;
+
+  assign dummy0        = clk_i;
+  assign dummy1        = rst_n_i;
   // ribp
   assign ribp.rdata    = '0;
   assign ribp.ready    = '0;

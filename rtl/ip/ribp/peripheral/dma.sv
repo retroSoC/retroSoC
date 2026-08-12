@@ -86,16 +86,16 @@ module ribp_dma (
   logic s_dma_dstincr_d, s_dma_dstincr_q;
   logic s_dma_xferlen_en;
   logic [31:0] s_dma_xferlen_d, s_dma_xferlen_q;
-  logic s_dma_status_d, s_dma_status_q;
-  logic s_dma_error_status_d, s_dma_error_status_q;
-  logic [2:0] s_dma_error_code_d, s_dma_error_code_q;
-  logic [31:0] s_dma_error_addr_d, s_dma_error_addr_q;
+  logic s_dma_stat_d, s_dma_stat_q;
+  logic s_dma_err_stat_d, s_dma_err_stat_q;
+  logic [2:0] s_dma_err_code_d, s_dma_err_code_q;
+  logic [31:0] s_dma_err_addr_d, s_dma_err_addr_q;
   // common
   logic s_xfer_start, s_xfer_stop, s_xfer_reset, s_xfer_done;
   logic [ 1:0] s_xfer_fsm;
-  logic        s_xfer_error;
-  logic [ 2:0] s_xfer_error_code;
-  logic [31:0] s_xfer_error_addr;
+  logic        s_xfer_err;
+  logic [ 2:0] s_xfer_err_code;
+  logic [31:0] s_xfer_err_addr;
 
 
   assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
@@ -104,12 +104,14 @@ module ribp_dma (
   assign ribp.resp_err   = 1'b0;
   assign ribp.rdata      = s_ribp_rdata_q;
 
-  assign dma_xfer_done_o = s_dma_status_q;
+  assign dma_xfer_done_o = s_dma_stat_q;
 
 
   assign s_dma_mode_en   = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_MODE;
   assign s_dma_mode_d    = ribp.wdata[3:0];
-  dffer #(4) u_dma_mode_dffer (
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_dma_mode_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_dma_mode_en),
@@ -126,7 +128,9 @@ module ribp_dma (
     if (ribp.wstrb[2]) s_dma_srcaddr_d[23:16] = ribp.wdata[23:16];
     if (ribp.wstrb[3]) s_dma_srcaddr_d[31:24] = ribp.wdata[31:24];
   end
-  dffer #(32) u_dma_srcaddr_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_dma_srcaddr_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_dma_srcaddr_en),
@@ -137,7 +141,9 @@ module ribp_dma (
 
   assign s_dma_srcincr_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_SRCINCR;
   assign s_dma_srcincr_d  = ribp.wdata[0];
-  dffer #(1) u_dma_srcincr_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_dma_srcincr_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_dma_srcincr_en),
@@ -154,7 +160,9 @@ module ribp_dma (
     if (ribp.wstrb[2]) s_dma_dstaddr_d[23:16] = ribp.wdata[23:16];
     if (ribp.wstrb[3]) s_dma_dstaddr_d[31:24] = ribp.wdata[31:24];
   end
-  dffer #(32) u_dma_dstaddr_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_dma_dstaddr_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_dma_dstaddr_en),
@@ -164,7 +172,9 @@ module ribp_dma (
 
   assign s_dma_dstincr_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_DSTINCR;
   assign s_dma_dstincr_d  = ribp.wdata[0];
-  dffer #(1) u_dma_dstincr_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_dma_dstincr_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_dma_dstincr_en),
@@ -180,7 +190,9 @@ module ribp_dma (
     if (ribp.wstrb[2]) s_dma_xferlen_d[23:16] = ribp.wdata[23:16];
     if (ribp.wstrb[3]) s_dma_xferlen_d[31:24] = ribp.wdata[31:24];
   end
-  dffer #(32) u_dma_xferlen_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_dma_xferlen_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_dma_xferlen_en),
@@ -195,55 +207,65 @@ module ribp_dma (
 
 
   always_comb begin
-    s_dma_status_d = s_dma_status_q;
+    s_dma_stat_d = s_dma_stat_q;
     if (s_ribp_rd_hdshk && ribp.addr[7:0] == `RIBP_DMA_STATUS) begin
-      s_dma_status_d = '0;
+      s_dma_stat_d = '0;
     end else if (s_xfer_done) begin
-      s_dma_status_d = 1'b1;
+      s_dma_stat_d = 1'b1;
     end
   end
-  dffr #(1) u_dma_status_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_dma_status_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_dma_status_d),
-      .dat_o  (s_dma_status_q)
+      .dat_i  (s_dma_stat_d),
+      .dat_o  (s_dma_stat_q)
   );
 
   always_comb begin
-    s_dma_error_status_d = s_dma_error_status_q;
+    s_dma_err_stat_d = s_dma_err_stat_q;
     if (s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_ERROR_STATUS && ribp.wstrb[0] &&
         ribp.wdata[0]) begin
-      s_dma_error_status_d = 1'b0;
-    end else if (s_xfer_error) begin
-      s_dma_error_status_d = 1'b1;
+      s_dma_err_stat_d = 1'b0;
+    end else if (s_xfer_err) begin
+      s_dma_err_stat_d = 1'b1;
     end
   end
-  dffr #(1) u_dma_error_status_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_dma_error_status_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_dma_error_status_d),
-      .dat_o  (s_dma_error_status_q)
+      .dat_i  (s_dma_err_stat_d),
+      .dat_o  (s_dma_err_stat_q)
   );
-  assign s_dma_error_code_d = s_xfer_error_code;
-  dffer #(3) u_dma_error_code_dffer (
+  assign s_dma_err_code_d = s_xfer_err_code;
+  dffer #(
+      .DATA_WIDTH(3)
+  ) u_dma_error_code_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_xfer_error),
-      .dat_i  (s_dma_error_code_d),
-      .dat_o  (s_dma_error_code_q)
+      .en_i   (s_xfer_err),
+      .dat_i  (s_dma_err_code_d),
+      .dat_o  (s_dma_err_code_q)
   );
-  assign s_dma_error_addr_d = s_xfer_error_addr;
-  dffer #(32) u_dma_error_addr_dffer (
+  assign s_dma_err_addr_d = s_xfer_err_addr;
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_dma_error_addr_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_xfer_error),
-      .dat_i  (s_dma_error_addr_d),
-      .dat_o  (s_dma_error_addr_q)
+      .en_i   (s_xfer_err),
+      .dat_i  (s_dma_err_addr_d),
+      .dat_o  (s_dma_err_addr_q)
   );
 
 
   assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
-  dffr #(1) u_ribp_ready_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_ribp_ready_d),
@@ -260,14 +282,16 @@ module ribp_dma (
       `RIBP_DMA_DSTADDR:      s_ribp_rdata_d = s_dma_dstaddr_q;
       `RIBP_DMA_DSTINCR:      s_ribp_rdata_d = {31'd0, s_dma_dstincr_q};
       `RIBP_DMA_XFERLEN:      s_ribp_rdata_d = s_dma_xferlen_q;
-      `RIBP_DMA_STATUS:       s_ribp_rdata_d = {31'd0, s_dma_status_q};
+      `RIBP_DMA_STATUS:       s_ribp_rdata_d = {31'd0, s_dma_stat_q};
       `RIBP_DMA_FSM:          s_ribp_rdata_d = {30'd0, s_xfer_fsm};
-      `RIBP_DMA_ERROR_STATUS: s_ribp_rdata_d = {28'd0, s_dma_error_code_q, s_dma_error_status_q};
-      `RIBP_DMA_ERROR_ADDR:   s_ribp_rdata_d = s_dma_error_addr_q;
+      `RIBP_DMA_ERROR_STATUS: s_ribp_rdata_d = {28'd0, s_dma_err_code_q, s_dma_err_stat_q};
+      `RIBP_DMA_ERROR_ADDR:   s_ribp_rdata_d = s_dma_err_addr_q;
       default:                s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
   end
-  dffer #(32) u_ribp_rdata_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_ribp_rdata_en),
@@ -289,9 +313,9 @@ module ribp_dma (
       .stop_i      (s_xfer_stop),
       .reset_i     (s_xfer_reset),
       .done_o      (s_xfer_done),
-      .error_o     (s_xfer_error),
-      .error_code_o(s_xfer_error_code),
-      .error_addr_o(s_xfer_error_addr),
+      .error_o     (s_xfer_err),
+      .error_code_o(s_xfer_err_code),
+      .error_addr_o(s_xfer_err_addr),
       .fsm_o       (s_xfer_fsm),
       .hw_trg      (hw_trg),
       .rib         (rib),

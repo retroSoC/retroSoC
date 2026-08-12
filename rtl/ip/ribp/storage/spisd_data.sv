@@ -33,13 +33,13 @@ module spisd_data (
     input  logic        wr_busy_i
 );
 
-  reg          sd_init_done_d0;
-  reg          sd_init_done_d1;
-  reg          wr_busy_d0;
-  reg          wr_busy_d1;
-  reg   [ 7:0] wr_data_t;
-  reg   [ 7:0] rd_comp_data;
-  reg   [ 8:0] rd_right_cnt;
+  logic        sd_init_done_d0;
+  logic        sd_init_done_d1;
+  logic        wr_busy_d0;
+  logic        wr_busy_d1;
+  logic [ 7:0] wr_data_t;
+  logic [ 7:0] rd_comp_data;
+  logic [ 8:0] rd_right_cnt;
   logic        s_pos_init_done;
   logic        s_neg_wr_busy;
 
@@ -57,7 +57,7 @@ module spisd_data (
   assign s_neg_wr_busy   = wr_busy_d1 & (~wr_busy_d0);
   assign wr_data_o       = wr_data_t;
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
       sd_init_done_d0 <= 1'b0;
       sd_init_done_d1 <= 1'b0;
@@ -69,7 +69,7 @@ module spisd_data (
     end
   end
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
       r_wr_req   <= 1'b0;
       r_rd_req   <= 1'b0;
@@ -90,13 +90,13 @@ module spisd_data (
     end
   end
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) wr_data_t <= '1;
     else if (fir_clk_edge_i && wr_data_req_i) wr_data_t <= wr_data_t + 1'b1;
   end
 
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
       wr_busy_d0 <= 1'b0;
       wr_busy_d1 <= 1'b0;
@@ -108,7 +108,7 @@ module spisd_data (
     end
   end
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
       rd_comp_data <= '0;
       rd_right_cnt <= '0;

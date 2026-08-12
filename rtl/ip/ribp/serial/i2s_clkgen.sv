@@ -60,17 +60,21 @@ module i2s_clkgen (
       s_sclk_div_cnt_d = s_sclk_div_cnt_q + 3'd1;
     end
   end
-  dffr #(3) u_sclk_div_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_sclk_div_cnt_d,
-      s_sclk_div_cnt_q
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_sclk_div_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_sclk_div_cnt_d),
+      .dat_o  (s_sclk_div_cnt_q)
   );
-  dffr #(1) u_sclk_dffr (
-      clk_i,
-      rst_n_i,
-      s_sclk_d,
-      s_sclk_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_sclk_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_sclk_d),
+      .dat_o  (s_sclk_q)
   );
 
 
@@ -95,19 +99,23 @@ module i2s_clkgen (
       s_lrck_div_cnt_d = s_lrck_div_cnt_q + 5'd1;
     end
   end
-  dffer #(5) u_lrck_div_cnt_dffer (
-      clk_i,
-      rst_n_i,
-      s_sclk_fall,
-      s_lrck_div_cnt_d,
-      s_lrck_div_cnt_q
+  dffer #(
+      .DATA_WIDTH(5)
+  ) u_lrck_div_cnt_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_sclk_fall),
+      .dat_i  (s_lrck_div_cnt_d),
+      .dat_o  (s_lrck_div_cnt_q)
   );
-  dffer #(1) u_lrck_dffer (
-      clk_i,
-      rst_n_i,
-      s_sclk_fall,
-      s_lrck_d,
-      s_lrck_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_lrck_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_sclk_fall),
+      .dat_i  (s_lrck_d),
+      .dat_o  (s_lrck_q)
   );
 
 

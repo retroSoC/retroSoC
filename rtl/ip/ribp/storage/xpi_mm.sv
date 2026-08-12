@@ -74,23 +74,27 @@ module xpi_mm (
     else if (s_ribp_wr_hdshk) s_ribp_ready_d = xfer_done_i;
     else s_ribp_ready_d = 1'b0;
   end
-  dffr #(1) u_ribp_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_ready_d,
-      s_ribp_ready_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_ready_d),
+      .dat_o  (s_ribp_ready_q)
   );
 
 
   assign rx_pop_valid_o  = s_ribp_rd_hdshk;
   assign s_ribp_rdata_en = s_ribp_rd_hdshk;
   assign s_ribp_rdata_d  = (ribp.valid && rx_pop_ready_i) ? rx_pop_data_i : s_ribp_rdata_q;
-  dffer #(32) u_ribp_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_ribp_rdata_en,
-      s_ribp_rdata_d,
-      s_ribp_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_ribp_rdata_en),
+      .dat_i  (s_ribp_rdata_d),
+      .dat_o  (s_ribp_rdata_q)
   );
 
 
@@ -116,21 +120,25 @@ module xpi_mm (
       end
     end
   end
-  dffer #(`XPI_LNS_NUM) u_accid_dffer (
-      clk_i,
-      rst_n_i,
-      s_mem_valid_re,
-      s_nss_d,
-      s_nss_q
+  dffer #(
+      .DATA_WIDTH(`XPI_LNS_NUM)
+  ) u_accid_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_mem_valid_re),
+      .dat_i  (s_nss_d),
+      .dat_o  (s_nss_q)
   );
 
 
   // memory-mapped mode
-  edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
-      clk_i,
-      rst_n_i,
-      ribp.valid,
-      s_mem_valid_re
+  edge_det_sync_re #(
+      .DATA_WIDTH(1)
+  ) u_mem_valid_edge_det_sync_re (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (ribp.valid),
+      .re_o   (s_mem_valid_re)
   );
 
   always_ff @(posedge clk_i, negedge rst_n_i) begin

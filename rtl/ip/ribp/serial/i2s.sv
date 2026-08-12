@@ -47,8 +47,8 @@ module ribp_i2s (
   logic       s_i2s_mode;
   logic [1:0] s_i2s_format;
   logic       s_i2s_recven;
-  logic       s_i2s_stream_tx_enable;
-  logic       s_i2s_stream_rx_enable;
+  logic       s_i2s_stream_tx_en;
+  logic       s_i2s_stream_rx_en;
   // tx fifo
   logic s_tx_push_valid, s_tx_pio_push_valid, s_tx_full, s_tx_empty;
   logic s_tx_pop_valid, s_tx_pop_ready;
@@ -68,8 +68,8 @@ module ribp_i2s (
       .mode_o            (s_i2s_mode),
       .format_o          (s_i2s_format),
       .recven_o          (s_i2s_recven),
-      .stream_tx_enable_o(s_i2s_stream_tx_enable),
-      .stream_rx_enable_o(s_i2s_stream_rx_enable),
+      .stream_tx_enable_o(s_i2s_stream_tx_en),
+      .stream_rx_enable_o(s_i2s_stream_rx_en),
       .tx_push_valid_o   (s_tx_pio_push_valid),
       .tx_push_data_o    (s_tx_pio_push_data),
       .tx_full_i         (s_tx_full),
@@ -82,10 +82,10 @@ module ribp_i2s (
       .dma_rx_stall_o    (dma_rx_stall_o)
   );
 
-  assign tx_axis.tready = s_i2s_stream_tx_enable && !s_tx_full;
-  assign s_tx_push_valid = s_i2s_stream_tx_enable ?
+  assign tx_axis.tready = s_i2s_stream_tx_en && !s_tx_full;
+  assign s_tx_push_valid = s_i2s_stream_tx_en ?
                            (tx_axis.tvalid && tx_axis.tready) : s_tx_pio_push_valid;
-  assign s_tx_push_data = s_i2s_stream_tx_enable ? tx_axis.tdata : s_tx_pio_push_data;
+  assign s_tx_push_data = s_i2s_stream_tx_en ? tx_axis.tdata : s_tx_pio_push_data;
 
   assign rx_axis.tdata = s_rx_pop_data;
   assign rx_axis.tkeep = '1;
@@ -94,8 +94,8 @@ module ribp_i2s (
   assign rx_axis.tid = '0;
   assign rx_axis.tdest = '0;
   assign rx_axis.tuser = '0;
-  assign rx_axis.tvalid = s_i2s_stream_rx_enable && !s_rx_empty;
-  assign s_rx_pop_valid = s_i2s_stream_rx_enable ?
+  assign rx_axis.tvalid = s_i2s_stream_rx_en && !s_rx_empty;
+  assign s_rx_pop_valid = s_i2s_stream_rx_en ?
                           (rx_axis.tvalid && rx_axis.tready) : s_rx_pio_pop_valid;
 
 

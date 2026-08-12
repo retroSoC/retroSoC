@@ -51,7 +51,9 @@ module clint_timebase #(
   /* verilator lint_on PINCONNECTEMPTY */
 
   assign s_tick_toggle_d = s_div_terminal ? ~s_tick_toggle_q : s_tick_toggle_q;
-  dffr #(1) u_tick_toggle_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_tick_toggle_dffr (
       .clk_i  (ref_clk_i),
       .rst_n_i(ref_rst_n_i),
       .dat_i  (s_tick_toggle_d),

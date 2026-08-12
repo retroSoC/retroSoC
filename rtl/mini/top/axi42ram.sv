@@ -151,85 +151,113 @@ module axi42ram (
     end
   end
 
-  dffr #(1) u_active_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_active_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_active_d),
       .dat_o  (s_active_q)
   );
-  dffr #(1) u_write_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_write_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_write_d),
       .dat_o  (s_write_q)
   );
-  dffr #(1) u_id_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_id_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_id_d),
       .dat_o  (s_id_q)
   );
-  dffr #(32) u_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_addr_d),
       .dat_o  (s_addr_q)
   );
-  dffr #(8) u_len_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_len_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_len_d),
       .dat_o  (s_len_q)
   );
-  dffr #(3) u_size_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_size_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_size_d),
       .dat_o  (s_size_q)
   );
-  dffr #(8) u_issue_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_issue_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_issue_beat_d),
       .dat_o  (s_issue_beat_q)
   );
-  dffr #(1) u_issue_valid_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_issue_valid_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_issue_valid_d),
       .dat_o  (s_issue_valid_q)
   );
-  dffr #(8) u_write_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_write_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_write_beat_d),
       .dat_o  (s_write_beat_q)
   );
-  dffr #(1) u_bvalid_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_bvalid_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_bvalid_d),
       .dat_o  (s_bvalid_q)
   );
-  dffr #(2) u_bresp_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_bresp_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_bresp_d),
       .dat_o  (s_bresp_q)
   );
-  dffr #(1) u_read_pending_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_read_pending_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_read_pending_d),
       .dat_o  (s_read_pending_q)
   );
-  dffr #(8) u_read_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_read_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_read_beat_d),
       .dat_o  (s_read_beat_q)
   );
-  dffr #(1) u_read_last_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_read_last_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_read_last_d),

@@ -41,18 +41,22 @@ module xpi_clkgen (
       s_sclk_d       = '0;
     end
   end
-  dffr #(8) u_clkdiv_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_clkdiv_cnt_d,
-      s_clkdiv_cnt_q
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_clkdiv_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_clkdiv_cnt_d),
+      .dat_o  (s_clkdiv_cnt_q)
   );
 
-  dffr #(1) u_sclk_dffr (
-      clk_i,
-      rst_n_i,
-      s_sclk_d,
-      s_sclk_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_sclk_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_sclk_d),
+      .dat_o  (s_sclk_q)
   );
 
 

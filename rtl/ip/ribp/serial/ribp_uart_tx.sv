@@ -111,31 +111,41 @@ module ribp_uart_tx (
     end
   end
 
-  dffr #(3) u_state_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_state_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_state_d),
       .dat_o  (s_state_q)
   );
-  dffr #(4) u_sample_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_sample_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sample_d),
       .dat_o  (s_sample_q)
   );
-  dffr #(3) u_bit_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_bit_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_bit_d),
       .dat_o  (s_bit_q)
   );
-  dffr #(8) u_shift_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_shift_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_shift_d),
       .dat_o  (s_shift_q)
   );
-  dffr #(1) u_parity_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_parity_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_parity_d),

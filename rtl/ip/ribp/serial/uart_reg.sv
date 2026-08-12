@@ -58,7 +58,7 @@ module uart_reg #(
   logic s_req;
   logic s_write;
   logic s_req_accept;
-  logic s_access_error;
+  logic s_access_err;
   logic s_ribp_ready_d, s_ribp_ready_q;
   logic s_ribp_resp_err_d, s_ribp_resp_err_q;
   logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
@@ -77,8 +77,8 @@ module uart_reg #(
   logic [6:0] s_rx_watermark_d, s_rx_watermark_q;
   logic s_rx_timeout_en;
   logic [15:0] s_rx_timeout_d, s_rx_timeout_q;
-  logic s_intr_enable_en;
-  logic [6:0] s_intr_enable_d, s_intr_enable_q;
+  logic s_intr_en_en;
+  logic [6:0] s_intr_en_d, s_intr_en_q;
   logic s_dma_ctrl_en;
   logic [1:0] s_dma_ctrl_d, s_dma_ctrl_q;
   logic s_flow_ctrl_en;
@@ -101,19 +101,19 @@ module uart_reg #(
   logic [               11:0] s_rx_pop_data;
   logic [RX_FIFO_LOG_DEPTH:0] s_rx_count;
 
-  logic [6:0] s_error_status_d, s_error_status_q;
+  logic [6:0] s_err_stat_d, s_err_stat_q;
   logic [6:0] s_intr_state_d, s_intr_state_q;
-  logic [6:0] s_error_clear;
+  logic [6:0] s_err_clear;
   logic [6:0] s_intr_clear;
   logic [6:0] s_intr_test;
-  logic       s_config_error_event;
-  logic       s_command_error_event;
+  logic       s_config_err_event;
+  logic       s_cmd_err_event;
   logic       s_overrun_event;
-  logic       s_rx_error_event;
+  logic       s_rx_err_event;
   logic       s_rx_timeout_event;
   logic [15:0] s_rx_timeout_count_d, s_rx_timeout_count_q;
 
-  logic [31:0] s_status;
+  logic [31:0] s_stat;
   logic [31:0] s_fifo_level;
   logic [31:0] s_merge_value;
   logic        s_config_valid;
@@ -174,33 +174,33 @@ module uart_reg #(
   assign dma_rx_stall_o = !s_rx_dma_req;
   assign s_tx_watermark_active = tx_enable_o && (s_tx_count <= s_tx_watermark_q);
   assign s_rx_watermark_active = rx_enable_o && (s_rx_count >= s_rx_watermark_q);
-  assign irq_o = |(s_intr_state_q & s_intr_enable_q);
+  assign irq_o = |(s_intr_state_q & s_intr_en_q);
 
   always_comb begin
-    s_status                               = '0;
-    s_status[`UART_STATUS_TX_ENABLED]      = tx_enable_o;
-    s_status[`UART_STATUS_RX_ENABLED]      = rx_enable_o;
-    s_status[`UART_STATUS_TX_BUSY]         = tx_busy_i;
-    s_status[`UART_STATUS_RX_ACTIVE]       = rx_active_i;
-    s_status[`UART_STATUS_TX_EMPTY]        = s_tx_empty;
-    s_status[`UART_STATUS_TX_FULL]         = s_tx_full;
-    s_status[`UART_STATUS_RX_EMPTY]        = s_rx_empty;
-    s_status[`UART_STATUS_RX_FULL]         = s_rx_full;
-    s_status[`UART_STATUS_CONFIG_VALID]    = s_config_valid;
-    s_status[`UART_STATUS_BREAK_ACTIVE]    = break_o;
-    s_status[`UART_STATUS_TX_DMA_REQ]      = s_tx_dma_req;
-    s_status[`UART_STATUS_RX_DMA_REQ]      = s_rx_dma_req;
-    s_status[`UART_STATUS_CTS_ASSERTED]    = cts_asserted_i;
-    s_status[`UART_STATUS_RTS_ASSERTED]    = rts_asserted_i;
-    s_status[`UART_STATUS_TX_FLOW_BLOCKED] = tx_flow_blocked_i;
-    s_fifo_level                           = '0;
-    s_fifo_level[6:0]                      = 7'(s_tx_count);
-    s_fifo_level[22:16]                    = 7'(s_rx_count);
+    s_stat                               = '0;
+    s_stat[`UART_STATUS_TX_ENABLED]      = tx_enable_o;
+    s_stat[`UART_STATUS_RX_ENABLED]      = rx_enable_o;
+    s_stat[`UART_STATUS_TX_BUSY]         = tx_busy_i;
+    s_stat[`UART_STATUS_RX_ACTIVE]       = rx_active_i;
+    s_stat[`UART_STATUS_TX_EMPTY]        = s_tx_empty;
+    s_stat[`UART_STATUS_TX_FULL]         = s_tx_full;
+    s_stat[`UART_STATUS_RX_EMPTY]        = s_rx_empty;
+    s_stat[`UART_STATUS_RX_FULL]         = s_rx_full;
+    s_stat[`UART_STATUS_CONFIG_VALID]    = s_config_valid;
+    s_stat[`UART_STATUS_BREAK_ACTIVE]    = break_o;
+    s_stat[`UART_STATUS_TX_DMA_REQ]      = s_tx_dma_req;
+    s_stat[`UART_STATUS_RX_DMA_REQ]      = s_rx_dma_req;
+    s_stat[`UART_STATUS_CTS_ASSERTED]    = cts_asserted_i;
+    s_stat[`UART_STATUS_RTS_ASSERTED]    = rts_asserted_i;
+    s_stat[`UART_STATUS_TX_FLOW_BLOCKED] = tx_flow_blocked_i;
+    s_fifo_level                         = '0;
+    s_fifo_level[6:0]                    = 7'(s_tx_count);
+    s_fifo_level[22:16]                  = 7'(s_rx_count);
   end
 
   always_comb begin
     s_req_accept           = s_req;
-    s_access_error         = 1'b0;
+    s_access_err           = 1'b0;
     s_baud_int_en          = 1'b0;
     s_baud_frac_en         = 1'b0;
     s_line_ctrl_en         = 1'b0;
@@ -208,7 +208,7 @@ module uart_reg #(
     s_tx_watermark_en      = 1'b0;
     s_rx_watermark_en      = 1'b0;
     s_rx_timeout_en        = 1'b0;
-    s_intr_enable_en       = 1'b0;
+    s_intr_en_en           = 1'b0;
     s_dma_ctrl_en          = 1'b0;
     s_flow_ctrl_en         = 1'b0;
     s_rts_watermark_en     = 1'b0;
@@ -219,7 +219,7 @@ module uart_reg #(
     s_tx_watermark_d       = s_tx_watermark_q;
     s_rx_watermark_d       = s_rx_watermark_q;
     s_rx_timeout_d         = s_rx_timeout_q;
-    s_intr_enable_d        = s_intr_enable_q;
+    s_intr_en_d            = s_intr_en_q;
     s_dma_ctrl_d           = s_dma_ctrl_q;
     s_flow_ctrl_d          = s_flow_ctrl_q;
     s_rts_assert_level_d   = s_rts_assert_level_q;
@@ -228,25 +228,25 @@ module uart_reg #(
     s_rx_flush             = 1'b0;
     s_tx_push              = 1'b0;
     s_rx_pop               = 1'b0;
-    s_error_clear          = '0;
+    s_err_clear            = '0;
     s_intr_clear           = '0;
     s_intr_test            = '0;
-    s_config_error_event   = 1'b0;
-    s_command_error_event  = 1'b0;
+    s_config_err_event     = 1'b0;
+    s_cmd_err_event        = 1'b0;
     s_ribp_rdata_d         = '0;
     s_merge_value          = '0;
 
     if (s_req) begin
       if ((ribp.addr[11:8] != 4'd0) || (ribp.addr[1:0] != 2'b00)) begin
-        s_access_error = 1'b1;
+        s_access_err = 1'b1;
       end else if (s_write) begin
         unique case (ribp.addr[7:0])
           `RIBP_UART_BAUD_INT: begin
             s_merge_value = merge_wstrb({8'd0, s_baud_int_q}, ribp.wdata, ribp.wstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:24] != 8'd0) || (s_merge_value[23:0] < 24'd16)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_baud_int_en = 1'b1;
               s_baud_int_d  = s_merge_value[23:0];
@@ -256,8 +256,8 @@ module uart_reg #(
             s_merge_value = merge_wstrb({24'd0, s_baud_frac_q}, ribp.wdata, ribp.wstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:8] != 24'd0)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_baud_frac_en = 1'b1;
               s_baud_frac_d  = s_merge_value[7:0];
@@ -267,8 +267,8 @@ module uart_reg #(
             s_merge_value = merge_wstrb({27'd0, s_line_ctrl_q}, ribp.wdata, ribp.wstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:5] != 27'd0) || (s_merge_value[4:3] == 2'd3)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_line_ctrl_en = 1'b1;
               s_line_ctrl_d  = s_merge_value[4:0];
@@ -281,8 +281,8 @@ module uart_reg #(
                 (s_merge_value[`UART_CTRL_TX_BREAK] && tx_busy_i) ||
                 ((s_merge_value[`UART_CTRL_LOOPBACK] != loopback_o) &&
                  (tx_busy_i || rx_active_i))) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_ctrl_en = 1'b1;
               s_ctrl_d  = s_merge_value[3:0];
@@ -292,13 +292,13 @@ module uart_reg #(
             if (!ribp.wstrb[0] ||
                 (|(ribp.wdata[31:8] & {{8{ribp.wstrb[3]}}, {8{ribp.wstrb[2]}},
                                         {8{ribp.wstrb[1]}}}))) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else if (s_tx_full && tx_enable_o && s_config_valid) begin
               s_req_accept = 1'b0;
             end else if (s_tx_full) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_tx_push = 1'b1;
             end
@@ -308,8 +308,8 @@ module uart_reg #(
                 (ribp.wdata[1:0] == 2'd0) ||
                 (ribp.wdata[`UART_FIFO_CTRL_TX_FLUSH] && (tx_enable_o || tx_busy_i)) ||
                 (ribp.wdata[`UART_FIFO_CTRL_RX_FLUSH] && (rx_enable_o || rx_active_i))) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_tx_flush = ribp.wdata[`UART_FIFO_CTRL_TX_FLUSH];
               s_rx_flush = ribp.wdata[`UART_FIFO_CTRL_RX_FLUSH];
@@ -318,8 +318,8 @@ module uart_reg #(
           `RIBP_UART_TX_WATERMARK: begin
             s_merge_value = merge_wstrb({25'd0, s_tx_watermark_q}, ribp.wdata, ribp.wstrb);
             if ((s_merge_value[31:7] != 25'd0) || (s_merge_value[6:0] >= 7'(TX_FIFO_DEPTH))) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_tx_watermark_en = 1'b1;
               s_tx_watermark_d  = s_merge_value[6:0];
@@ -329,8 +329,8 @@ module uart_reg #(
             s_merge_value = merge_wstrb({25'd0, s_rx_watermark_q}, ribp.wdata, ribp.wstrb);
             if ((s_merge_value[31:7] != 25'd0) || (s_merge_value[6:0] == 7'd0) ||
                 (s_merge_value[6:0] > 7'(RX_FIFO_DEPTH))) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_rx_watermark_en = 1'b1;
               s_rx_watermark_d  = s_merge_value[6:0];
@@ -339,8 +339,8 @@ module uart_reg #(
           `RIBP_UART_RX_TIMEOUT_BITS: begin
             s_merge_value = merge_wstrb({16'd0, s_rx_timeout_q}, ribp.wdata, ribp.wstrb);
             if (s_merge_value[31:16] != 16'd0) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_rx_timeout_en = 1'b1;
               s_rx_timeout_d  = s_merge_value[15:0];
@@ -348,30 +348,30 @@ module uart_reg #(
           end
           `RIBP_UART_ERROR_STATUS: begin
             if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
-              s_error_clear = ribp.wdata[6:0];
+              s_err_clear = ribp.wdata[6:0];
             end
           end
           `RIBP_UART_INTR_STATE: begin
             if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
               s_intr_clear = ribp.wdata[6:0];
             end
           end
           `RIBP_UART_INTR_ENABLE: begin
-            s_merge_value = merge_wstrb({25'd0, s_intr_enable_q}, ribp.wdata, ribp.wstrb);
+            s_merge_value = merge_wstrb({25'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb);
             if (s_merge_value[31:7] != 25'd0) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
-              s_intr_enable_en = 1'b1;
-              s_intr_enable_d  = s_merge_value[6:0];
+              s_intr_en_en = 1'b1;
+              s_intr_en_d  = s_merge_value[6:0];
             end
           end
           `RIBP_UART_INTR_TEST: begin
             if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
               s_intr_test = ribp.wdata[6:0];
             end
@@ -379,8 +379,8 @@ module uart_reg #(
           `RIBP_UART_DMA_CTRL: begin
             s_merge_value = merge_wstrb({30'd0, s_dma_ctrl_q}, ribp.wdata, ribp.wstrb);
             if (s_merge_value[31:2] != 30'd0) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_dma_ctrl_en = 1'b1;
               s_dma_ctrl_d  = s_merge_value[1:0];
@@ -390,8 +390,8 @@ module uart_reg #(
             s_merge_value = merge_wstrb({30'd0, s_flow_ctrl_q}, ribp.wdata, ribp.wstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:2] != 30'd0)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_flow_ctrl_en = 1'b1;
               s_flow_ctrl_d  = s_merge_value[1:0];
@@ -404,15 +404,15 @@ module uart_reg #(
                 (s_merge_value[31:23] != 9'd0) || (s_merge_value[15:7] != 9'd0) ||
                 (s_merge_value[22:16] > 7'(RX_FIFO_DEPTH)) ||
                 (s_merge_value[6:0] >= s_merge_value[22:16])) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_rts_watermark_en     = 1'b1;
               s_rts_assert_level_d   = s_merge_value[6:0];
               s_rts_deassert_level_d = s_merge_value[22:16];
             end
           end
-          default: s_access_error = 1'b1;
+          default: s_access_err = 1'b1;
         endcase
       end else begin
         unique case (ribp.addr[7:0])
@@ -422,22 +422,22 @@ module uart_reg #(
           `RIBP_UART_CTRL: s_ribp_rdata_d = {28'd0, s_ctrl_q};
           `RIBP_UART_RXDATA: begin
             if (s_rx_empty) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_ribp_rdata_d = {20'd0, s_rx_pop_data};
               s_rx_pop       = 1'b1;
             end
           end
-          `RIBP_UART_STATUS: s_ribp_rdata_d = s_status;
+          `RIBP_UART_STATUS: s_ribp_rdata_d = s_stat;
           `RIBP_UART_FIFO_LEVEL: s_ribp_rdata_d = s_fifo_level;
           `RIBP_UART_TX_WATERMARK: s_ribp_rdata_d = {25'd0, s_tx_watermark_q};
           `RIBP_UART_RX_WATERMARK: s_ribp_rdata_d = {25'd0, s_rx_watermark_q};
           `RIBP_UART_RX_TIMEOUT_BITS: s_ribp_rdata_d = {16'd0, s_rx_timeout_q};
-          `RIBP_UART_ERROR_STATUS: s_ribp_rdata_d = {25'd0, s_error_status_q};
+          `RIBP_UART_ERROR_STATUS: s_ribp_rdata_d = {25'd0, s_err_stat_q};
           `RIBP_UART_INTR_STATE: s_ribp_rdata_d = {25'd0, s_intr_state_q};
-          `RIBP_UART_INTR_ENABLE: s_ribp_rdata_d = {25'd0, s_intr_enable_q};
-          `RIBP_UART_INTR_STATUS: s_ribp_rdata_d = {25'd0, (s_intr_state_q & s_intr_enable_q)};
+          `RIBP_UART_INTR_ENABLE: s_ribp_rdata_d = {25'd0, s_intr_en_q};
+          `RIBP_UART_INTR_STATUS: s_ribp_rdata_d = {25'd0, (s_intr_state_q & s_intr_en_q)};
           `RIBP_UART_DMA_CTRL: s_ribp_rdata_d = {30'd0, s_dma_ctrl_q};
           `RIBP_UART_FLOW_CTRL: s_ribp_rdata_d = {30'd0, s_flow_ctrl_q};
           `RIBP_UART_RTS_WATERMARK:
@@ -445,7 +445,7 @@ module uart_reg #(
           `RIBP_UART_IP_VERSION: s_ribp_rdata_d = IP_VERSION;
           `RIBP_UART_CAPABILITY: s_ribp_rdata_d = CAPABILITY;
           default: begin
-            s_access_error = 1'b1;
+            s_access_err   = 1'b1;
             s_ribp_rdata_d = '0;
           end
         endcase
@@ -454,25 +454,31 @@ module uart_reg #(
   end
 
   assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_error;
+  assign s_ribp_resp_err_d = s_access_err;
   assign s_rx_push         = rx_data_valid_i && !s_rx_full;
   assign s_overrun_event   = rx_data_valid_i && s_rx_full;
-  assign s_rx_error_event  = s_rx_push && (|rx_data_i[11:8]);
+  assign s_rx_err_event    = s_rx_push && (|rx_data_i[11:8]);
 
-  dffr #(1) u_ribp_ready_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_ribp_ready_d),
       .dat_o  (s_ribp_ready_q)
   );
-  dffer #(1) u_ribp_resp_err_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_ribp_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
       .dat_i  (s_ribp_resp_err_d),
       .dat_o  (s_ribp_resp_err_q)
   );
-  dffer #(32) u_ribp_rdata_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
@@ -480,14 +486,18 @@ module uart_reg #(
       .dat_o  (s_ribp_rdata_q)
   );
 
-  dffer #(24) u_baud_int_dffer (
+  dffer #(
+      .DATA_WIDTH(24)
+  ) u_baud_int_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_baud_int_en),
       .dat_i  (s_baud_int_d),
       .dat_o  (s_baud_int_q)
   );
-  dffer #(8) u_baud_frac_dffer (
+  dffer #(
+      .DATA_WIDTH(8)
+  ) u_baud_frac_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_baud_frac_en),
@@ -504,7 +514,9 @@ module uart_reg #(
       .dat_i  (s_line_ctrl_d),
       .dat_o  (s_line_ctrl_q)
   );
-  dffer #(4) u_ctrl_dffer (
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_ctrl_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_ctrl_en),
@@ -541,21 +553,27 @@ module uart_reg #(
       .dat_i  (s_rx_timeout_d),
       .dat_o  (s_rx_timeout_q)
   );
-  dffer #(7) u_intr_enable_dffer (
+  dffer #(
+      .DATA_WIDTH(7)
+  ) u_intr_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_intr_enable_en),
-      .dat_i  (s_intr_enable_d),
-      .dat_o  (s_intr_enable_q)
+      .en_i   (s_intr_en_en),
+      .dat_i  (s_intr_en_d),
+      .dat_o  (s_intr_en_q)
   );
-  dffer #(2) u_dma_ctrl_dffer (
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_dma_ctrl_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_dma_ctrl_en),
       .dat_i  (s_dma_ctrl_d),
       .dat_o  (s_dma_ctrl_q)
   );
-  dffer #(2) u_flow_ctrl_dffer (
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_flow_ctrl_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_flow_ctrl_en),
@@ -631,7 +649,9 @@ module uart_reg #(
       end
     end
   end
-  dffr #(16) u_rx_timeout_count_dffr (
+  dffr #(
+      .DATA_WIDTH(16)
+  ) u_rx_timeout_count_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_rx_timeout_count_d),
@@ -639,22 +659,22 @@ module uart_reg #(
   );
 
   always_comb begin
-    s_error_status_d = s_error_status_q & ~s_error_clear;
-    if (s_overrun_event) s_error_status_d[`UART_ERROR_OVERRUN] = 1'b1;
-    if (s_rx_push && rx_data_i[`UART_RXDATA_PARITY_ERROR])
-      s_error_status_d[`UART_ERROR_PARITY] = 1'b1;
-    if (s_rx_push && rx_data_i[`UART_RXDATA_FRAME_ERROR])
-      s_error_status_d[`UART_ERROR_FRAME] = 1'b1;
-    if (s_rx_push && rx_data_i[`UART_RXDATA_BREAK]) s_error_status_d[`UART_ERROR_BREAK] = 1'b1;
-    if (s_rx_push && rx_data_i[`UART_RXDATA_NOISE]) s_error_status_d[`UART_ERROR_NOISE] = 1'b1;
-    if (s_config_error_event) s_error_status_d[`UART_ERROR_CONFIG] = 1'b1;
-    if (s_command_error_event) s_error_status_d[`UART_ERROR_COMMAND] = 1'b1;
+    s_err_stat_d = s_err_stat_q & ~s_err_clear;
+    if (s_overrun_event) s_err_stat_d[`UART_ERROR_OVERRUN] = 1'b1;
+    if (s_rx_push && rx_data_i[`UART_RXDATA_PARITY_ERROR]) s_err_stat_d[`UART_ERROR_PARITY] = 1'b1;
+    if (s_rx_push && rx_data_i[`UART_RXDATA_FRAME_ERROR]) s_err_stat_d[`UART_ERROR_FRAME] = 1'b1;
+    if (s_rx_push && rx_data_i[`UART_RXDATA_BREAK]) s_err_stat_d[`UART_ERROR_BREAK] = 1'b1;
+    if (s_rx_push && rx_data_i[`UART_RXDATA_NOISE]) s_err_stat_d[`UART_ERROR_NOISE] = 1'b1;
+    if (s_config_err_event) s_err_stat_d[`UART_ERROR_CONFIG] = 1'b1;
+    if (s_cmd_err_event) s_err_stat_d[`UART_ERROR_COMMAND] = 1'b1;
   end
-  dffr #(7) u_error_status_dffr (
+  dffr #(
+      .DATA_WIDTH(7)
+  ) u_error_status_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_error_status_d),
-      .dat_o  (s_error_status_q)
+      .dat_i  (s_err_stat_d),
+      .dat_o  (s_err_stat_q)
   );
 
   always_comb begin
@@ -663,11 +683,13 @@ module uart_reg #(
     if (s_rx_timeout_event) s_intr_state_d[`UART_INTR_RX_TIMEOUT] = 1'b1;
     if (s_tx_watermark_active) s_intr_state_d[`UART_INTR_TX_WATERMARK] = 1'b1;
     if (tx_done_i && s_tx_empty) s_intr_state_d[`UART_INTR_TX_DONE] = 1'b1;
-    if (s_rx_error_event || s_overrun_event) s_intr_state_d[`UART_INTR_RX_ERROR] = 1'b1;
+    if (s_rx_err_event || s_overrun_event) s_intr_state_d[`UART_INTR_RX_ERROR] = 1'b1;
     if (s_rx_push && rx_data_i[`UART_RXDATA_BREAK]) s_intr_state_d[`UART_INTR_BREAK] = 1'b1;
     if (cts_change_i) s_intr_state_d[`UART_INTR_CTS_CHANGE] = 1'b1;
   end
-  dffr #(7) u_intr_state_dffr (
+  dffr #(
+      .DATA_WIDTH(7)
+  ) u_intr_state_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_intr_state_d),

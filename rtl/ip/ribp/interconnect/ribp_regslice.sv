@@ -88,63 +88,79 @@ module ribp_regslice (
       end
     endcase
   end
-  dffr #(2) u_fsm_dffr (
-      clk_i,
-      rst_n_i,
-      s_fsm_d,
-      s_fsm_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_fsm_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
 
-  dffr #(1) u_ribp_mstr_valid_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_mst_valid_d,
-      s_ribp_mst_valid_q
-  );
-
-
-  dffr #(32) u_ribp_mst_addr_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_mst_addr_d,
-      s_ribp_mst_addr_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_mstr_valid_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_mst_valid_d),
+      .dat_o  (s_ribp_mst_valid_q)
   );
 
 
-  dffr #(32) u_ribp_mst_wdata_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_mst_wdata_d,
-      s_ribp_mst_wdata_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_ribp_mst_addr_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_mst_addr_d),
+      .dat_o  (s_ribp_mst_addr_q)
   );
 
 
-  dffr #(4) u_ribp_mst_wstrb_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_mst_wstrb_d,
-      s_ribp_mst_wstrb_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_ribp_mst_wdata_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_mst_wdata_d),
+      .dat_o  (s_ribp_mst_wdata_q)
   );
 
-  dffr #(32) u_ribp_mst_rdata_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_mst_rdata_d,
-      s_ribp_mst_rdata_q
+
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_ribp_mst_wstrb_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_mst_wstrb_d),
+      .dat_o  (s_ribp_mst_wstrb_q)
   );
 
-  dffr #(1) u_ribp_mst_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_mst_ready_d,
-      s_ribp_mst_ready_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_ribp_mst_rdata_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_mst_rdata_d),
+      .dat_o  (s_ribp_mst_rdata_q)
   );
 
-  dffr #(1) u_ribp_mst_resp_err_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_mst_resp_err_d,
-      s_ribp_mst_resp_err_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_mst_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_mst_ready_d),
+      .dat_o  (s_ribp_mst_ready_q)
+  );
+
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_mst_resp_err_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_mst_resp_err_d),
+      .dat_o  (s_ribp_mst_resp_err_q)
   );
 
 endmodule

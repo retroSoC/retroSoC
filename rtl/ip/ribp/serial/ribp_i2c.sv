@@ -15,7 +15,7 @@ module ribp_i2c #(
     // verilog_format: on
 );
 
-  logic        s_enable;
+  logic        s_en;
   logic [15:0] s_scl_low_cycles;
   logic [15:0] s_scl_high_cycles;
   logic [15:0] s_start_hold_cycles;
@@ -28,7 +28,7 @@ module ribp_i2c #(
   logic [ 3:0] s_sda_filter_cycles;
   logic [23:0] s_stretch_timeout;
   logic [23:0] s_bus_idle_timeout;
-  logic [23:0] s_command_timeout;
+  logic [23:0] s_cmd_timeout;
   logic [ 9:0] s_target_addr;
   logic        s_ten_bit;
   logic        s_abort;
@@ -51,8 +51,8 @@ module ribp_i2c #(
   logic        s_arb_lost_event;
   logic        s_stretch_timeout_event;
   logic        s_bus_timeout_event;
-  logic        s_command_timeout_event;
-  logic        s_command_error_event;
+  logic        s_cmd_timeout_event;
+  logic        s_cmd_err_event;
   logic        s_rx_overflow_event;
   logic        s_aborted_event;
   logic        s_recovery_done_event;
@@ -82,7 +82,7 @@ module ribp_i2c #(
       .clk_i                  (clk_i),
       .rst_n_i                (rst_n_i),
       .ribp                   (ribp),
-      .enable_o               (s_enable),
+      .enable_o               (s_en),
       .scl_low_cycles_o       (s_scl_low_cycles),
       .scl_high_cycles_o      (s_scl_high_cycles),
       .start_hold_cycles_o    (s_start_hold_cycles),
@@ -95,7 +95,7 @@ module ribp_i2c #(
       .sda_filter_cycles_o    (s_sda_filter_cycles),
       .stretch_timeout_o      (s_stretch_timeout),
       .bus_idle_timeout_o     (s_bus_idle_timeout),
-      .command_timeout_o      (s_command_timeout),
+      .command_timeout_o      (s_cmd_timeout),
       .target_addr_o          (s_target_addr),
       .ten_bit_o              (s_ten_bit),
       .abort_o                (s_abort),
@@ -117,8 +117,8 @@ module ribp_i2c #(
       .arb_lost_event_i       (s_arb_lost_event),
       .stretch_timeout_event_i(s_stretch_timeout_event),
       .bus_timeout_event_i    (s_bus_timeout_event),
-      .command_timeout_event_i(s_command_timeout_event),
-      .command_error_event_i  (s_command_error_event),
+      .command_timeout_event_i(s_cmd_timeout_event),
+      .command_error_event_i  (s_cmd_err_event),
       .rx_overflow_event_i    (s_rx_overflow_event),
       .aborted_event_i        (s_aborted_event),
       .recovery_done_event_i  (s_recovery_done_event),
@@ -131,7 +131,7 @@ module ribp_i2c #(
   i2c_core u_i2c_core (
       .clk_i                  (clk_i),
       .rst_n_i                (rst_n_i),
-      .enable_i               (s_enable),
+      .enable_i               (s_en),
       .scl_low_cycles_i       (s_scl_low_cycles),
       .scl_high_cycles_i      (s_scl_high_cycles),
       .start_hold_cycles_i    (s_start_hold_cycles),
@@ -142,7 +142,7 @@ module ribp_i2c #(
       .bus_free_cycles_i      (s_bus_free_cycles),
       .stretch_timeout_i      (s_stretch_timeout),
       .bus_idle_timeout_i     (s_bus_idle_timeout),
-      .command_timeout_i      (s_command_timeout),
+      .command_timeout_i      (s_cmd_timeout),
       .target_addr_i          (s_target_addr),
       .ten_bit_i              (s_ten_bit),
       .abort_i                (s_abort),
@@ -166,8 +166,8 @@ module ribp_i2c #(
       .arb_lost_event_o       (s_arb_lost_event),
       .stretch_timeout_event_o(s_stretch_timeout_event),
       .bus_timeout_event_o    (s_bus_timeout_event),
-      .command_timeout_event_o(s_command_timeout_event),
-      .command_error_event_o  (s_command_error_event),
+      .command_timeout_event_o(s_cmd_timeout_event),
+      .command_error_event_o  (s_cmd_err_event),
       .rx_overflow_event_o    (s_rx_overflow_event),
       .aborted_event_o        (s_aborted_event),
       .recovery_done_event_o  (s_recovery_done_event),

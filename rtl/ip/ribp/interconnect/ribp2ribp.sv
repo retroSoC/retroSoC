@@ -47,35 +47,43 @@ module ribp2ribp (
   assign slvr_wdata_o = ~s_req_empty_q ? s_req_rdata_q[35:4] : '0;
   assign slvr_wstrb_o = ~s_req_empty_q ? s_req_rdata_q[3:0] : '0;
 
-  edge_det_sync_re #(1) u_mstr_valid_det_sync_re (
-      mstr_clk_i,
-      mstr_rst_n_i,
-      mstr_valid_i,
-      s_mstr_valid_re
+  edge_det_sync_re #(
+      .DATA_WIDTH(1)
+  ) u_mstr_valid_det_sync_re (
+      .clk_i  (mstr_clk_i),
+      .rst_n_i(mstr_rst_n_i),
+      .dat_i  (mstr_valid_i),
+      .re_o   (s_mstr_valid_re)
   );
 
   assign s_req_rdata_d = s_req_rdata;
-  dffr #(69) u_req_rdata_dffr (
-      slvr_clk_i,
-      slvr_rst_n_i,
-      s_req_rdata_d,
-      s_req_rdata_q
+  dffr #(
+      .DATA_WIDTH(69)
+  ) u_req_rdata_dffr (
+      .clk_i  (slvr_clk_i),
+      .rst_n_i(slvr_rst_n_i),
+      .dat_i  (s_req_rdata_d),
+      .dat_o  (s_req_rdata_q)
   );
 
   assign s_req_empty_d = s_req_empty;
-  dffr #(1) u_req_empty_dffr (
-      slvr_clk_i,
-      slvr_rst_n_i,
-      s_req_empty_d,
-      s_req_empty_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_req_empty_dffr (
+      .clk_i  (slvr_clk_i),
+      .rst_n_i(slvr_rst_n_i),
+      .dat_i  (s_req_empty_d),
+      .dat_o  (s_req_empty_q)
   );
 
   assign s_resp_empty_d = s_resp_empty;
-  dffr #(1) u_resp_empty_dffr (
-      mstr_clk_i,
-      mstr_rst_n_i,
-      s_resp_empty_d,
-      s_resp_empty_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_resp_empty_dffr (
+      .clk_i  (mstr_clk_i),
+      .rst_n_i(mstr_rst_n_i),
+      .dat_i  (s_resp_empty_d),
+      .dat_o  (s_resp_empty_q)
   );
 
   // req frame: valid[1] addr[32], wdata[32], wstrb[4]

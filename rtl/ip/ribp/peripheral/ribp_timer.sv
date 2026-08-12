@@ -11,12 +11,12 @@ module ribp_timer (
     // verilog_format: on
 );
 
-  logic        s_enable;
+  logic        s_en;
   logic [ 1:0] s_mode;
   logic        s_direction;
-  logic        s_debug_freeze_enable;
-  logic        s_compare0_enable;
-  logic        s_compare1_enable;
+  logic        s_debug_freeze_en;
+  logic        s_compare0_en;
+  logic        s_compare1_en;
   logic [15:0] s_prescale;
   logic [31:0] s_load;
   logic [31:0] s_compare0;
@@ -41,12 +41,12 @@ module ribp_timer (
       .compare0_event_i     (s_compare0_event),
       .compare1_event_i     (s_compare1_event),
       .one_shot_done_i      (s_one_shot_done),
-      .enable_o             (s_enable),
+      .enable_o             (s_en),
       .mode_o               (s_mode),
       .direction_o          (s_direction),
-      .debug_freeze_enable_o(s_debug_freeze_enable),
-      .compare0_enable_o    (s_compare0_enable),
-      .compare1_enable_o    (s_compare1_enable),
+      .debug_freeze_enable_o(s_debug_freeze_en),
+      .compare0_enable_o    (s_compare0_en),
+      .compare1_enable_o    (s_compare1_en),
       .prescale_o           (s_prescale),
       .load_o               (s_load),
       .compare0_o           (s_compare0),
@@ -60,13 +60,13 @@ module ribp_timer (
   timer_core u_timer_core (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
-      .enable_i             (s_enable),
+      .enable_i             (s_en),
       .mode_i               (s_mode),
       .direction_i          (s_direction),
-      .debug_freeze_enable_i(s_debug_freeze_enable),
+      .debug_freeze_enable_i(s_debug_freeze_en),
       .debug_halted_i       (debug_halted_i),
-      .compare0_enable_i    (s_compare0_enable),
-      .compare1_enable_i    (s_compare1_enable),
+      .compare0_enable_i    (s_compare0_en),
+      .compare1_enable_i    (s_compare1_en),
       .prescale_i           (s_prescale),
       .load_i               (s_load),
       .compare0_i           (s_compare0),

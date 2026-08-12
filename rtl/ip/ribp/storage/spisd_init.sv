@@ -79,18 +79,22 @@ module spisd_init (
       s_div_cnt_d = s_div_cnt_q - 1'b1;
     end
   end
-  dffrh #(8) u_div_cnt_dffrh (
-      clk_i,
-      rst_n_i,
-      s_div_cnt_d,
-      s_div_cnt_q
+  dffrh #(
+      .DATA_WIDTH(8)
+  ) u_div_cnt_dffrh (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_div_cnt_d),
+      .dat_o  (s_div_cnt_q)
   );
 
-  dffrh #(1) u_div_clk_dffrh (
-      clk_i,
-      rst_n_i,
-      s_div_clk_d,
-      s_div_clk_q
+  dffrh #(
+      .DATA_WIDTH(1)
+  ) u_div_clk_dffrh (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_div_clk_d),
+      .dat_o  (s_div_clk_q)
   );
 
   always_comb begin
@@ -103,12 +107,14 @@ module spisd_init (
       end
     end
   end
-  dfferh #(7) u_boot_cnt_dfferh (
-      clk_i,
-      rst_n_i,
-      s_fir_clk_edge,
-      s_boot_cnt_d,
-      s_boot_cnt_q
+  dfferh #(
+      .DATA_WIDTH(7)
+  ) u_boot_cnt_dfferh (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fir_clk_edge),
+      .dat_i  (s_boot_cnt_d),
+      .dat_o  (s_boot_cnt_q)
   );
 
 
@@ -175,15 +181,17 @@ module spisd_init (
       default:       s_fsm_d = FSM_IDLE;
     endcase
   end
-  dffer #(3) u_fsm_dffer (
-      clk_i,
-      rst_n_i,
-      s_fir_clk_edge,
-      s_fsm_d,
-      s_fsm_q
+  dffer #(
+      .DATA_WIDTH(3)
+  ) u_fsm_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fir_clk_edge),
+      .dat_i  (s_fsm_d),
+      .dat_o  (s_fsm_q)
   );
 
-  always @(posedge clk_i or negedge rst_n_i) begin
+  always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (!rst_n_i) begin
       r_init_done    <= '0;
       r_spisd_cs     <= '1;

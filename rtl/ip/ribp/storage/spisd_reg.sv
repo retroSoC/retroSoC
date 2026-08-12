@@ -48,7 +48,7 @@ module spisd_reg (
   logic [1:0] s_spisd_clkdiv_d, s_spisd_clkdiv_q;
   logic s_spisd_addr_en;
   logic [31:0] s_spisd_addr_d, s_spisd_addr_q;
-  logic [1:0] s_spisd_status_d, s_spisd_status_q;
+  logic [1:0] s_spisd_stat_d, s_spisd_stat_q;
   // common
   logic s_wr_byp, s_rd_byp;
 
@@ -72,22 +72,26 @@ module spisd_reg (
 
   assign s_spisd_mode_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_SPISD_MODE;
   assign s_spisd_mode_d  = ribp.wdata[0];
-  dffer #(1) u_spisd_mode_dffer (
-      clk_i,
-      rst_n_i,
-      s_spisd_mode_en,
-      s_spisd_mode_d,
-      s_spisd_mode_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_spisd_mode_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_spisd_mode_en),
+      .dat_i  (s_spisd_mode_d),
+      .dat_o  (s_spisd_mode_q)
   );
 
   assign s_spisd_clkdiv_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_SPISD_CLKDIV;
   assign s_spisd_clkdiv_d  = ribp.wdata[1:0];
-  dffer #(2) u_spisd_clkdiv_dffer (
-      clk_i,
-      rst_n_i,
-      s_spisd_clkdiv_en,
-      s_spisd_clkdiv_d,
-      s_spisd_clkdiv_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_spisd_clkdiv_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_spisd_clkdiv_en),
+      .dat_i  (s_spisd_clkdiv_d),
+      .dat_o  (s_spisd_clkdiv_q)
   );
 
   assign s_spisd_addr_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_SPISD_ADDR;
@@ -98,30 +102,34 @@ module spisd_reg (
     if (ribp.wstrb[2]) s_spisd_addr_d[23:16] = ribp.wdata[23:16];
     if (ribp.wstrb[3]) s_spisd_addr_d[31:24] = ribp.wdata[31:24];
   end
-  dffer #(32) u_spisd_addr_dffer (
-      clk_i,
-      rst_n_i,
-      s_spisd_addr_en,
-      s_spisd_addr_d,
-      s_spisd_addr_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_spisd_addr_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_spisd_addr_en),
+      .dat_i  (s_spisd_addr_d),
+      .dat_o  (s_spisd_addr_q)
   );
 
   // 0: init done
   // 1: wr sync done
   always_comb begin
-    s_spisd_status_d    = s_spisd_status_q;
-    s_spisd_status_d[0] = init_done_i;
-    if (wr_sync_done_i && ~s_spisd_status_q[1]) begin
-      s_spisd_status_d[1] = 1'b1;
-    end else if (s_spisd_status_q[1] && s_ribp_rd_hdshk && ribp.addr[7:0] == `RIBP_SPISD_STATUS) begin
-      s_spisd_status_d[1] = 1'b0;
+    s_spisd_stat_d    = s_spisd_stat_q;
+    s_spisd_stat_d[0] = init_done_i;
+    if (wr_sync_done_i && ~s_spisd_stat_q[1]) begin
+      s_spisd_stat_d[1] = 1'b1;
+    end else if (s_spisd_stat_q[1] && s_ribp_rd_hdshk && ribp.addr[7:0] == `RIBP_SPISD_STATUS) begin
+      s_spisd_stat_d[1] = 1'b0;
     end
   end
-  dffr #(2) u_spisd_status_dffr (
-      clk_i,
-      rst_n_i,
-      s_spisd_status_d,
-      s_spisd_status_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_spisd_status_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_spisd_stat_d),
+      .dat_o  (s_spisd_stat_q)
   );
 
   // software wr sync
@@ -129,11 +137,13 @@ module spisd_reg (
 
 
   assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
-  dffr #(1) u_ribp_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_ready_d,
-      s_ribp_ready_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_ready_d),
+      .dat_o  (s_ribp_ready_q)
   );
 
   assign s_ribp_rdata_en = s_ribp_rd_hdshk;
@@ -143,16 +153,18 @@ module spisd_reg (
       `RIBP_SPISD_MODE:   s_ribp_rdata_d = {31'd0, s_spisd_mode_q};
       `RIBP_SPISD_CLKDIV: s_ribp_rdata_d = {30'd0, s_spisd_clkdiv_q};
       `RIBP_SPISD_ADDR:   s_ribp_rdata_d = s_spisd_addr_q;
-      `RIBP_SPISD_STATUS: s_ribp_rdata_d = {30'd0, s_spisd_status_q};
+      `RIBP_SPISD_STATUS: s_ribp_rdata_d = {30'd0, s_spisd_stat_q};
       default:            s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
   end
-  dffer #(32) u_ribp_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_ribp_rdata_en,
-      s_ribp_rdata_d,
-      s_ribp_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_ribp_rdata_en),
+      .dat_i  (s_ribp_rdata_d),
+      .dat_o  (s_ribp_rdata_q)
   );
 
 endmodule

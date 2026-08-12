@@ -36,12 +36,14 @@ module i2s_recv (
 
 
   assign s_lrck_dely_d = lrck_i;
-  dffer #(1) u_lrck_dely_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_lrck_dely_d,
-      s_lrck_dely_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_lrck_dely_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_lrck_dely_d),
+      .dat_o  (s_lrck_dely_q)
   );
 
 
@@ -52,12 +54,14 @@ module i2s_recv (
       s_bit_cnt_d = s_bit_cnt_q + 1'b1;
     end
   end
-  dffer #(5) u_bit_cnt_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_bit_cnt_d,
-      s_bit_cnt_q
+  dffer #(
+      .DATA_WIDTH(5)
+  ) u_bit_cnt_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_bit_cnt_d),
+      .dat_o  (s_bit_cnt_q)
   );
 
 
@@ -74,12 +78,14 @@ module i2s_recv (
       end
     end
   end
-  dffer #(24) u_recv_data_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_recv_data_d,
-      s_recv_data_q
+  dffer #(
+      .DATA_WIDTH(24)
+  ) u_recv_data_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_recv_data_d),
+      .dat_o  (s_recv_data_q)
   );
 
 
@@ -87,12 +93,14 @@ module i2s_recv (
     s_first_bit_d = s_first_bit_q;
     if (s_lrck_trg) s_first_bit_d = adcdat_i;
   end
-  dffer #(1) u_first_bit_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_first_bit_d,
-      s_first_bit_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_first_bit_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_first_bit_d),
+      .dat_o  (s_first_bit_q)
   );
 
 
@@ -103,12 +111,14 @@ module i2s_recv (
       else s_data_d = {8'd0, s_recv_data_d[14:0], s_first_bit_q};
     end
   end
-  dffer #(24) u_data_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_data_d,
-      s_data_q
+  dffer #(
+      .DATA_WIDTH(24)
+  ) u_data_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_data_d),
+      .dat_o  (s_data_q)
   );
 
 endmodule

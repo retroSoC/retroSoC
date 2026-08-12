@@ -34,7 +34,7 @@ module rib2ram (
   logic [          1:0] s_read_addr_beat;
   logic                 s_write_hdshk;
   logic                 s_write_rsp_valid;
-  logic                 s_write_rsp_error;
+  logic                 s_write_rsp_err;
   logic                 s_rsp_input_valid;
   logic                 s_rsp_input_ready;
   logic [RSP_WIDTH-1:0] s_rsp_input_data;
@@ -45,12 +45,12 @@ module rib2ram (
                          ((s_write_beat_q != s_len_q) || s_rsp_input_ready);
   assign s_write_hdshk = rib.w_valid && rib.w_ready;
   assign s_write_rsp_valid = s_write_hdshk && ((s_write_beat_q == s_len_q) || rib.wlast);
-  assign s_write_rsp_error = s_write_rsp_valid && (rib.wlast != (s_write_beat_q == s_len_q));
+  assign s_write_rsp_err = s_write_rsp_valid && (rib.wlast != (s_write_beat_q == s_len_q));
 
   assign s_read_issue = s_active_q && ~s_write_q && s_issue_valid_q &&
                         (~s_read_pending_q || s_rsp_input_ready);
 
-  // ram_if has no read enable. Keep the address on a blocked pending beat so
+  // ram_if has no read enable. Keep the addr on a blocked pending beat so
   // a synchronous RAM cannot overwrite ram.rdata before it enters the spill.
   always_comb begin
     s_read_addr_beat = s_issue_beat_q;
@@ -66,8 +66,8 @@ module rib2ram (
   assign s_rsp_input_valid = s_write_q ? s_write_rsp_valid : s_read_pending_q;
   assign s_rsp_input_data = s_write_q ?
       {1'b1, s_write_beat_q,
-       s_write_rsp_error ? `RIB_RESP_BURSTERR : `RIB_RESP_OK,
-       s_write_rsp_error, 32'd0} :
+       s_write_rsp_err ? `RIB_RESP_BURSTERR : `RIB_RESP_OK,
+       s_write_rsp_err, 32'd0} :
       {s_read_last_q, s_read_beat_q, `RIB_RESP_OK, 1'b0, ram.rdata};
 
   spill_register #(
@@ -140,70 +140,92 @@ module rib2ram (
     end
   end
 
-  dffr #(1) u_active_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_active_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_active_d),
       .dat_o  (s_active_q)
   );
-  dffer #(1) u_write_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_write_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (rib.cmd_valid && rib.cmd_ready),
       .dat_i  (rib.cmd_write),
       .dat_o  (s_write_q)
   );
-  dffer #(32) u_addr_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (rib.cmd_valid && rib.cmd_ready),
       .dat_i  (rib.cmd_addr),
       .dat_o  (s_addr_q)
   );
-  dffer #(2) u_len_dffer (
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_len_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (rib.cmd_valid && rib.cmd_ready),
       .dat_i  (rib.cmd_len),
       .dat_o  (s_len_q)
   );
-  dffr #(2) u_issue_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_issue_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_issue_beat_d),
       .dat_o  (s_issue_beat_q)
   );
-  dffr #(1) u_issue_valid_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_issue_valid_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_issue_valid_d),
       .dat_o  (s_issue_valid_q)
   );
-  dffr #(2) u_write_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_write_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_write_beat_d),
       .dat_o  (s_write_beat_q)
   );
-  dffr #(1) u_write_done_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_write_done_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_write_done_d),
       .dat_o  (s_write_done_q)
   );
-  dffr #(1) u_read_pending_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_read_pending_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_read_pending_d),
       .dat_o  (s_read_pending_q)
   );
-  dffr #(2) u_read_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_read_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_read_beat_d),
       .dat_o  (s_read_beat_q)
   );
-  dffr #(1) u_read_last_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_read_last_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_read_last_d),

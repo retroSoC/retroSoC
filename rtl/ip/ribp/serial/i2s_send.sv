@@ -35,12 +35,14 @@ module i2s_send (
 
 
   assign s_lrck_dely_d = lrck_i;
-  dffer #(1) u_lrck_dely_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_lrck_dely_d,
-      s_lrck_dely_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_lrck_dely_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_lrck_dely_d),
+      .dat_o  (s_lrck_dely_q)
   );
 
 
@@ -53,12 +55,14 @@ module i2s_send (
       end
     end
   end
-  dffer #(5) u_bit_cnt_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_bit_cnt_d,
-      s_bit_cnt_q
+  dffer #(
+      .DATA_WIDTH(5)
+  ) u_bit_cnt_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_bit_cnt_d),
+      .dat_o  (s_bit_cnt_q)
   );
 
 
@@ -75,12 +79,14 @@ module i2s_send (
       end
     end
   end
-  dffer #(24) u_xfer_data_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_pos_i,
-      s_xfer_data_d,
-      s_xfer_data_q
+  dffer #(
+      .DATA_WIDTH(24)
+  ) u_xfer_data_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_pos_i),
+      .dat_i  (s_xfer_data_d),
+      .dat_o  (s_xfer_data_q)
   );
 
 
@@ -91,12 +97,14 @@ module i2s_send (
       else s_dacdat_d = s_xfer_data_q[15];
     end
   end
-  dffer #(1) u_dacdat_dffer (
-      clk_i,
-      rst_n_i,
-      sclk_fall_i,
-      s_dacdat_d,
-      s_dacdat_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_dacdat_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (sclk_fall_i),
+      .dat_i  (s_dacdat_d),
+      .dat_o  (s_dacdat_q)
   );
 
 endmodule

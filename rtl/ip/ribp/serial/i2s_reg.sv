@@ -49,7 +49,7 @@ module i2s_reg (
   logic [7:0] s_i2s_lowbound_d, s_i2s_lowbound_q;
   logic s_i2s_recven_en;
   logic s_i2s_recven_d, s_i2s_recven_q;
-  logic [1:0] s_i2s_status_d, s_i2s_status_q;
+  logic [1:0] s_i2s_stat_d, s_i2s_stat_q;
   logic s_i2s_stream_en;
   logic [1:0] s_i2s_stream_d, s_i2s_stream_q;
   // common
@@ -76,61 +76,73 @@ module i2s_reg (
 
   assign s_i2s_mode_en      = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_MODE;
   assign s_i2s_mode_d       = ribp.wdata[0];
-  dffer #(1) u_i2s_mode_dffer (
-      clk_i,
-      rst_n_i,
-      s_i2s_mode_en,
-      s_i2s_mode_d,
-      s_i2s_mode_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_i2s_mode_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_i2s_mode_en),
+      .dat_i  (s_i2s_mode_d),
+      .dat_o  (s_i2s_mode_q)
   );
 
 
   assign s_i2s_format_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_FORMAT;
   assign s_i2s_format_d  = ribp.wdata[1:0];
-  dffer #(2) u_i2s_format_dffer (
-      clk_i,
-      rst_n_i,
-      s_i2s_format_en,
-      s_i2s_format_d,
-      s_i2s_format_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_i2s_format_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_i2s_format_en),
+      .dat_i  (s_i2s_format_d),
+      .dat_o  (s_i2s_format_q)
   );
 
 
   assign s_i2s_upbound_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_UPBOUND;
   assign s_i2s_upbound_d  = ribp.wdata[7:0];
-  dfferh #(8) u_i2s_upbound_dfferh (
-      clk_i,
-      rst_n_i,
-      s_i2s_upbound_en,
-      s_i2s_upbound_d,
-      s_i2s_upbound_q
+  dfferh #(
+      .DATA_WIDTH(8)
+  ) u_i2s_upbound_dfferh (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_i2s_upbound_en),
+      .dat_i  (s_i2s_upbound_d),
+      .dat_o  (s_i2s_upbound_q)
   );
 
 
   assign s_i2s_lowbound_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_LOWBOUND;
   assign s_i2s_lowbound_d  = ribp.wdata[7:0];
-  dffer #(8) u_i2s_lowbound_dffer (
-      clk_i,
-      rst_n_i,
-      s_i2s_lowbound_en,
-      s_i2s_lowbound_d,
-      s_i2s_lowbound_q
+  dffer #(
+      .DATA_WIDTH(8)
+  ) u_i2s_lowbound_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_i2s_lowbound_en),
+      .dat_i  (s_i2s_lowbound_d),
+      .dat_o  (s_i2s_lowbound_q)
   );
 
 
   assign s_i2s_recven_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_RECVEN;
   assign s_i2s_recven_d  = ribp.wdata[0];
-  dffer #(1) u_i2s_recven_dffer (
-      clk_i,
-      rst_n_i,
-      s_i2s_recven_en,
-      s_i2s_recven_d,
-      s_i2s_recven_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_i2s_recven_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_i2s_recven_en),
+      .dat_i  (s_i2s_recven_d),
+      .dat_o  (s_i2s_recven_q)
   );
 
   assign s_i2s_stream_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_STREAM_CTRL;
   assign s_i2s_stream_d  = ribp.wdata[1:0];
-  dffer #(2) u_i2s_stream_dffer (
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_i2s_stream_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_i2s_stream_en),
@@ -147,11 +159,13 @@ module i2s_reg (
       s_tx_fifo_stall_d = 1'b0;
     end
   end
-  dffr #(1) u_tx_fifo_stall_dffr (
-      clk_i,
-      rst_n_i,
-      s_tx_fifo_stall_d,
-      s_tx_fifo_stall_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_tx_fifo_stall_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_tx_fifo_stall_d),
+      .dat_o  (s_tx_fifo_stall_q)
   );
 
 
@@ -163,11 +177,13 @@ module i2s_reg (
       s_rx_fifo_stall_d = 1'b0;
     end
   end
-  dffr #(1) u_rx_fifo_stall_dffr (
-      clk_i,
-      rst_n_i,
-      s_rx_fifo_stall_d,
-      s_rx_fifo_stall_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rx_fifo_stall_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_rx_fifo_stall_d),
+      .dat_o  (s_rx_fifo_stall_q)
   );
 
 
@@ -186,22 +202,26 @@ module i2s_reg (
 
 
   always_comb begin
-    s_i2s_status_d[0] = tx_full_i;
-    s_i2s_status_d[1] = rx_empty_i;
+    s_i2s_stat_d[0] = tx_full_i;
+    s_i2s_stat_d[1] = rx_empty_i;
   end
-  dffr #(2) u_i2s_status_dffr (
-      clk_i,
-      rst_n_i,
-      s_i2s_status_d,
-      s_i2s_status_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_i2s_status_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_i2s_stat_d),
+      .dat_o  (s_i2s_stat_q)
   );
 
   assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
-  dffr #(1) u_ribp_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_ready_d,
-      s_ribp_ready_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_ready_d),
+      .dat_o  (s_ribp_ready_q)
   );
 
   assign s_ribp_rdata_en = s_ribp_rd_hdshk;
@@ -218,17 +238,19 @@ module i2s_reg (
           else s_ribp_rdata_d = '0;
         end
       end
-      `RIBP_I2S_STATUS:      s_ribp_rdata_d = {30'd0, s_i2s_status_q};
+      `RIBP_I2S_STATUS:      s_ribp_rdata_d = {30'd0, s_i2s_stat_q};
       `RIBP_I2S_STREAM_CTRL: s_ribp_rdata_d = {30'd0, s_i2s_stream_q};
       default:               s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
   end
-  dffer #(32) u_ribp_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_ribp_rdata_en,
-      s_ribp_rdata_d,
-      s_ribp_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_ribp_rdata_en),
+      .dat_i  (s_ribp_rdata_d),
+      .dat_o  (s_ribp_rdata_q)
   );
 
 endmodule

@@ -32,6 +32,10 @@ New local signals use concise industry-standard abbreviations:
 Do not change an external protocol field only to shorten its name. Use a local
 alias at the boundary when a legacy or third-party interface uses a long name.
 
+The checked-in [`scripts/migrate_rtl_names.py`](../scripts/migrate_rtl_names.py)
+helper applies this rule mechanically: it shortens only `s_`/`r_` locals and
+known automatic variables, never a public port or interface member.
+
 ## Structure
 
 Keep each module in this order: module header, parameters, ports, localparams,
@@ -49,6 +53,12 @@ explicit `default`. Reuse the ClusterIP Common register cells (`dffr`, `dffer`,
 Every module instance in self-owned RTL must use named parameter and port
 connections. Empty connections are permitted only for intentionally unused
 technology pins or interface fields and must be documented.
+
+For existing positional instances, use the conservative
+[`scripts/migrate_rtl_connections.py`](../scripts/migrate_rtl_connections.py)
+helper. It only changes an instance when the declaration and argument counts
+are unambiguous. Instances it reports as ambiguous require manual conversion;
+the helper never guesses across duplicate or non-ANSI module declarations.
 
 ## Formatting
 

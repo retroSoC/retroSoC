@@ -31,8 +31,8 @@ module rib2ribp (
   logic [1:0] s_beat_d, s_beat_q;
   logic s_write_d, s_write_q;
   logic [31:0] s_rdata_q;
-  logic s_error_d, s_error_q;
-  logic [2:0] s_error_code_d, s_error_code_q;
+  logic s_err_d, s_err_q;
+  logic [2:0] s_err_code_d, s_err_code_q;
   logic s_cmd_legal;
   logic s_cmd_hdshk, s_w_hdshk, s_ribp_hdshk, s_rsp_hdshk;
 
@@ -48,10 +48,10 @@ module rib2ribp (
   assign rib.w_ready = (s_fsm_q == FSM_WDATA) || (s_fsm_q == FSM_DROP_WDATA);
   assign rib.rsp_valid = s_fsm_q == FSM_RESP;
   assign rib.rdata = s_rdata_q;
-  assign rib.resp_err = s_error_q;
-  assign rib.resp_code = s_error_q ? s_error_code_q : `RIB_RESP_OK;
+  assign rib.resp_err = s_err_q;
+  assign rib.resp_code = s_err_q ? s_err_code_q : `RIB_RESP_OK;
   assign rib.rsp_beat = s_beat_q;
-  assign rib.rsp_last = s_write_q || (s_beat_q == s_len_q) || s_error_q;
+  assign rib.rsp_last = s_write_q || (s_beat_q == s_len_q) || s_err_q;
 
   assign ribp.valid = s_fsm_q == FSM_RIBP;
   assign ribp.addr = s_addr_q;
@@ -59,22 +59,22 @@ module rib2ribp (
   assign ribp.wstrb = s_write_q ? s_wstrb_q : '0;
 
   always_comb begin
-    s_fsm_d        = s_fsm_q;
-    s_addr_d       = s_addr_q;
-    s_len_d        = s_len_q;
-    s_beat_d       = s_beat_q;
-    s_write_d      = s_write_q;
-    s_error_d      = s_error_q;
-    s_error_code_d = s_error_code_q;
+    s_fsm_d      = s_fsm_q;
+    s_addr_d     = s_addr_q;
+    s_len_d      = s_len_q;
+    s_beat_d     = s_beat_q;
+    s_write_d    = s_write_q;
+    s_err_d      = s_err_q;
+    s_err_code_d = s_err_code_q;
     unique case (s_fsm_q)
       FSM_CMD: begin
         if (s_cmd_hdshk) begin
-          s_addr_d       = rib.cmd_addr;
-          s_len_d        = rib.cmd_len;
-          s_beat_d       = '0;
-          s_write_d      = rib.cmd_write;
-          s_error_d      = ~s_cmd_legal;
-          s_error_code_d = s_cmd_legal ? `RIB_RESP_OK : `RIB_RESP_BURSTERR;
+          s_addr_d     = rib.cmd_addr;
+          s_len_d      = rib.cmd_len;
+          s_beat_d     = '0;
+          s_write_d    = rib.cmd_write;
+          s_err_d      = ~s_cmd_legal;
+          s_err_code_d = s_cmd_legal ? `RIB_RESP_OK : `RIB_RESP_BURSTERR;
           if (~s_cmd_legal) begin
             s_fsm_d = rib.cmd_write ? FSM_DROP_WDATA : FSM_RESP;
           end else begin
@@ -85,9 +85,9 @@ module rib2ribp (
       FSM_WDATA: begin
         if (s_w_hdshk) begin
           if (rib.wlast != (s_beat_q == s_len_q)) begin
-            s_error_d      = 1'b1;
-            s_error_code_d = `RIB_RESP_BURSTERR;
-            s_fsm_d        = FSM_RESP;
+            s_err_d      = 1'b1;
+            s_err_code_d = `RIB_RESP_BURSTERR;
+            s_fsm_d      = FSM_RESP;
           end else begin
             s_fsm_d = FSM_RIBP;
           end
@@ -96,9 +96,9 @@ module rib2ribp (
       FSM_RIBP: begin
         if (s_ribp_hdshk) begin
           if (ribp.resp_err) begin
-            s_error_d      = 1'b1;
-            s_error_code_d = `RIB_RESP_SLVERR;
-            s_fsm_d        = FSM_RESP;
+            s_err_d      = 1'b1;
+            s_err_code_d = `RIB_RESP_SLVERR;
+            s_fsm_d      = FSM_RESP;
           end else if (s_write_q) begin
             if (s_beat_q == s_len_q) begin
               s_fsm_d = FSM_RESP;
@@ -114,7 +114,7 @@ module rib2ribp (
       end
       FSM_RESP: begin
         if (s_rsp_hdshk) begin
-          if (~s_write_q && ~s_error_q && (s_beat_q != s_len_q)) begin
+          if (~s_write_q && ~s_err_q && (s_beat_q != s_len_q)) begin
             s_addr_d = s_addr_q + 32'd4;
             s_beat_d = s_beat_q + 1'b1;
             s_fsm_d  = FSM_RIBP;
@@ -136,68 +136,88 @@ module rib2ribp (
     endcase
   end
 
-  dffr #(3) u_fsm_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_fsm_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_fsm_d),
       .dat_o  (s_fsm_q)
   );
-  dffr #(32) u_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_addr_d),
       .dat_o  (s_addr_q)
   );
-  dffr #(2) u_len_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_len_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_len_d),
       .dat_o  (s_len_q)
   );
-  dffr #(2) u_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_beat_d),
       .dat_o  (s_beat_q)
   );
-  dffr #(1) u_write_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_write_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_write_d),
       .dat_o  (s_write_q)
   );
-  dffer #(32) u_wdata_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_wdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_w_hdshk && s_fsm_q == FSM_WDATA),
       .dat_i  (rib.wdata),
       .dat_o  (s_wdata_q)
   );
-  dffer #(4) u_wstrb_dffer (
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_wstrb_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_w_hdshk && s_fsm_q == FSM_WDATA),
       .dat_i  (rib.wstrb),
       .dat_o  (s_wstrb_q)
   );
-  dffer #(32) u_rdata_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_ribp_hdshk && ~s_write_q),
       .dat_i  (ribp.rdata),
       .dat_o  (s_rdata_q)
   );
-  dffr #(1) u_error_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_error_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_error_d),
-      .dat_o  (s_error_q)
+      .dat_i  (s_err_d),
+      .dat_o  (s_err_q)
   );
-  dffr #(3) u_error_code_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_error_code_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_error_code_d),
-      .dat_o  (s_error_code_q)
+      .dat_i  (s_err_code_d),
+      .dat_o  (s_err_code_q)
   );
 
 endmodule

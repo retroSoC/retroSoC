@@ -37,7 +37,7 @@ module timer_core #(
 
   logic [PRESCALE_WIDTH-1:0] s_prescale_count;
   logic                      s_prescale_load;
-  logic                      s_prescale_enable;
+  logic                      s_prescale_en;
   logic                      s_tick;
   logic                      s_terminal;
   logic                      s_prescale_overflow;
@@ -54,7 +54,7 @@ module timer_core #(
   assign s_tick          = enable_i && !debug_frozen_o && !start_i && !stop_i && !load_now_i &&
                            (s_prescale_count == '0) && !s_prescale_overflow;
   assign s_prescale_load = start_i || (enable_i && load_now_i) || s_tick;
-  assign s_prescale_enable = enable_i && !debug_frozen_o && !start_i && !stop_i && !load_now_i &&
+  assign s_prescale_en = enable_i && !debug_frozen_o && !start_i && !stop_i && !load_now_i &&
                              !s_tick;
 
   rs_counter #(
@@ -63,7 +63,7 @@ module timer_core #(
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .clr_i  (1'b0),
-      .en_i   (s_prescale_enable),
+      .en_i   (s_prescale_en),
       .load_i (s_prescale_load),
       .down_i (1'b1),
       .dat_i  (prescale_i),
@@ -114,7 +114,9 @@ module timer_core #(
     end
   end
 
-  dffr #(COUNTER_WIDTH) u_value_dffr (
+  dffr #(
+      .DATA_WIDTH(COUNTER_WIDTH)
+  ) u_value_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_value_d),

@@ -39,14 +39,18 @@ module uart_baudgen (
     end
   end
 
-  dffr #(32) u_phase_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_phase_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_phase_d),
       .dat_o  (s_phase_q)
   );
 
-  dffr #(4) u_sample_count_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_sample_count_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sample_count_d),

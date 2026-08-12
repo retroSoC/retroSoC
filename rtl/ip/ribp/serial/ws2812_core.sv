@@ -191,89 +191,117 @@ module ws2812_core (
       .dat_o  (s_state_q)
   );
 
-  dffr #(16) u_bit_cycles_dffr (
-      clk_i,
-      rst_n_i,
-      s_bit_cycles_d,
-      s_bit_cycles_q
+  dffr #(
+      .DATA_WIDTH(16)
+  ) u_bit_cycles_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_bit_cycles_d),
+      .dat_o  (s_bit_cycles_q)
   );
-  dffr #(16) u_t0h_cycles_dffr (
-      clk_i,
-      rst_n_i,
-      s_t0h_cycles_d,
-      s_t0h_cycles_q
+  dffr #(
+      .DATA_WIDTH(16)
+  ) u_t0h_cycles_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_t0h_cycles_d),
+      .dat_o  (s_t0h_cycles_q)
   );
-  dffr #(16) u_t1h_cycles_dffr (
-      clk_i,
-      rst_n_i,
-      s_t1h_cycles_d,
-      s_t1h_cycles_q
+  dffr #(
+      .DATA_WIDTH(16)
+  ) u_t1h_cycles_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_t1h_cycles_d),
+      .dat_o  (s_t1h_cycles_q)
   );
-  dffr #(32) u_reset_cycles_dffr (
-      clk_i,
-      rst_n_i,
-      s_reset_cycles_d,
-      s_reset_cycles_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_reset_cycles_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_reset_cycles_d),
+      .dat_o  (s_reset_cycles_q)
   );
-  dffr #(16) u_bit_cycle_dffr (
-      clk_i,
-      rst_n_i,
-      s_bit_cycle_d,
-      s_bit_cycle_q
+  dffr #(
+      .DATA_WIDTH(16)
+  ) u_bit_cycle_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_bit_cycle_d),
+      .dat_o  (s_bit_cycle_q)
   );
-  dffr #(5) u_bit_index_dffr (
-      clk_i,
-      rst_n_i,
-      s_bit_index_d,
-      s_bit_index_q
+  dffr #(
+      .DATA_WIDTH(5)
+  ) u_bit_index_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_bit_index_d),
+      .dat_o  (s_bit_index_q)
   );
-  dffr #(32) u_reset_cycle_dffr (
-      clk_i,
-      rst_n_i,
-      s_reset_cycle_d,
-      s_reset_cycle_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_reset_cycle_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_reset_cycle_d),
+      .dat_o  (s_reset_cycle_q)
   );
-  dffr #(32) u_remaining_words_dffr (
-      clk_i,
-      rst_n_i,
-      s_remaining_words_d,
-      s_remaining_words_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_remaining_words_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_remaining_words_d),
+      .dat_o  (s_remaining_words_q)
   );
-  dffr #(24) u_xfer_data_dffr (
-      clk_i,
-      rst_n_i,
-      s_xfer_data_d,
-      s_xfer_data_q
+  dffr #(
+      .DATA_WIDTH(24)
+  ) u_xfer_data_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_xfer_data_d),
+      .dat_o  (s_xfer_data_q)
   );
-  dffr #(1) u_success_pending_dffr (
-      clk_i,
-      rst_n_i,
-      s_success_pending_d,
-      s_success_pending_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_success_pending_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_success_pending_d),
+      .dat_o  (s_success_pending_q)
   );
-  dffr #(1) u_abort_pending_dffr (
-      clk_i,
-      rst_n_i,
-      s_abort_pending_d,
-      s_abort_pending_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_abort_pending_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_abort_pending_d),
+      .dat_o  (s_abort_pending_q)
   );
-  dffr #(1) u_done_dffr (
-      clk_i,
-      rst_n_i,
-      s_done_d,
-      s_done_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_done_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_done_d),
+      .dat_o  (s_done_q)
   );
-  dffr #(1) u_underflow_dffr (
-      clk_i,
-      rst_n_i,
-      s_underflow_d,
-      s_underflow_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_underflow_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_underflow_d),
+      .dat_o  (s_underflow_q)
   );
-  dffr #(1) u_aborted_dffr (
-      clk_i,
-      rst_n_i,
-      s_aborted_d,
-      s_aborted_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_aborted_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_aborted_d),
+      .dat_o  (s_aborted_q)
   );
 
 endmodule

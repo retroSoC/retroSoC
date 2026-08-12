@@ -53,7 +53,9 @@ module uart_flow_ctrl (
     end
   end
 
-  dffr #(1) u_rts_asserted_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rts_asserted_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_rts_asserted_d),

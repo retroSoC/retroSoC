@@ -95,14 +95,18 @@ module gpio_core #(
     end
   end
 
-  dffr #(PIN_NUM) u_input_filtered_dffr (
+  dffr #(
+      .DATA_WIDTH(PIN_NUM)
+  ) u_input_filtered_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_input_filtered_d),
       .dat_o  (s_input_filtered_q)
   );
   for (genvar pin = 0; pin < PIN_NUM; pin++) begin : gen_stable_count
-    dffr #(4) u_stable_count_dffr (
+    dffr #(
+        .DATA_WIDTH(4)
+    ) u_stable_count_dffr (
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),
         .dat_i  (s_stable_count_d[pin]),

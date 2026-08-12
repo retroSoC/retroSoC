@@ -164,11 +164,13 @@ module ribp_psram (
     end
   end
 
-  edge_det_sync_re #(1) u_mem_valid_edge_det_sync_re (
-      clk_i,
-      rst_n_i,
-      ribp.valid,
-      s_mem_valid_re
+  edge_det_sync_re #(
+      .DATA_WIDTH(1)
+  ) u_mem_valid_edge_det_sync_re (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (ribp.valid),
+      .re_o   (s_mem_valid_re)
   );
 
   always_ff @(posedge clk_i, negedge rst_n_i) begin
@@ -215,6 +217,11 @@ module ribp_psram (
           FSM_RD: begin
             r_rd_st <= 1'b0;
             if (s_mem_ready) r_fsm_state <= FSM_IDLE;
+          end
+          default: begin
+            r_fsm_state <= FSM_IDLE;
+            r_rd_st     <= 1'b0;
+            r_wr_st     <= 1'b0;
           end
         endcase
       end

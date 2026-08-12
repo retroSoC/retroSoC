@@ -33,7 +33,7 @@ module axi42apb (
   logic [31:0] s_rdata_d, s_rdata_q;
   logic [1:0] s_resp_d, s_resp_q;
   logic [31:0] s_rd_data;
-  logic s_xfer_valid, s_xfer_ready, s_xfer_error;
+  logic s_xfer_valid, s_xfer_ready, s_xfer_err;
   logic s_psel_valid;
 
   `include "soc_apb_declarations.svh"
@@ -123,7 +123,7 @@ module axi42apb (
       FSM_SETP: s_fsm_d = FSM_ENAB;
       FSM_ENAB: begin
         if (s_xfer_ready) begin
-          s_resp_d = s_xfer_error ? `AXI4_RESP_SLAVE_ERROR : `AXI4_RESP_OKAY;
+          s_resp_d = s_xfer_err ? `AXI4_RESP_SLAVE_ERROR : `AXI4_RESP_OKAY;
           if (s_write_q) begin
             s_fsm_d = FSM_WR_RESP;
           end else begin
@@ -163,67 +163,89 @@ module axi42apb (
     endcase
   end
 
-  dffr #(4) u_fsm_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_fsm_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_fsm_d),
       .dat_o  (s_fsm_q)
   );
-  dffr #(32) u_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_addr_d),
       .dat_o  (s_addr_q)
   );
-  dffr #(32) u_wdata_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_wdata_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_wdata_d),
       .dat_o  (s_wdata_q)
   );
-  dffr #(4) u_wstrb_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_wstrb_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_wstrb_d),
       .dat_o  (s_wstrb_q)
   );
-  dffr #(1) u_write_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_write_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_write_d),
       .dat_o  (s_write_q)
   );
-  dffr #(1) u_id_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_id_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_id_d),
       .dat_o  (s_id_q)
   );
-  dffr #(8) u_len_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_len_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_len_d),
       .dat_o  (s_len_q)
   );
-  dffr #(8) u_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_beat_d),
       .dat_o  (s_beat_q)
   );
-  dffr #(32) u_rdata_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_rdata_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_rdata_d),
       .dat_o  (s_rdata_q)
   );
-  dffr #(2) u_resp_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_resp_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_resp_d),
       .dat_o  (s_resp_q)
   );
-  dffr #(NSLV) u_psel_dffr (
+  dffr #(
+      .DATA_WIDTH(NSLV)
+  ) u_psel_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  ((s_fsm_q == FSM_DECODE) ? s_psel_comb : s_psel_q),

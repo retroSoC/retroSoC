@@ -46,7 +46,7 @@ module ws2812_reg #(
   logic s_req;
   logic s_write;
   logic s_req_accept;
-  logic s_access_error;
+  logic s_access_err;
   logic s_ribp_ready_d, s_ribp_ready_q;
   logic s_ribp_resp_err_d, s_ribp_resp_err_q;
   logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
@@ -63,8 +63,8 @@ module ws2812_reg #(
   logic [31:0] s_frame_words_d, s_frame_words_q;
   logic s_fifo_watermark_en;
   logic [31:0] s_fifo_watermark_d, s_fifo_watermark_q;
-  logic s_intr_enable_en;
-  logic [3:0] s_intr_enable_d, s_intr_enable_q;
+  logic s_intr_en_en;
+  logic [3:0] s_intr_en_d, s_intr_en_q;
 
   logic        s_fifo_flush_cmd;
   logic        s_tx_push;
@@ -74,16 +74,16 @@ module ws2812_reg #(
   logic [TX_FIFO_LOG_DEPTH:0] s_tx_count;
 
   logic [31:0] s_load_remaining_d, s_load_remaining_q;
-  logic [2:0] s_error_status_d, s_error_status_q;
+  logic [2:0] s_err_stat_d, s_err_stat_q;
   logic [3:0] s_intr_state_d, s_intr_state_q;
-  logic [ 2:0] s_error_clear;
+  logic [ 2:0] s_err_clear;
   logic [ 3:0] s_intr_clear;
   logic [ 3:0] s_intr_test;
-  logic        s_config_error_event;
-  logic        s_command_error_event;
+  logic        s_config_err_event;
+  logic        s_cmd_err_event;
   logic        s_fifo_low;
   logic        s_config_valid;
-  logic [31:0] s_status;
+  logic [31:0] s_stat;
   logic [31:0] s_fifo_level;
   logic [31:0] s_watermark_write_value;
 
@@ -114,7 +114,7 @@ module ws2812_reg #(
   assign frame_words_o = s_frame_words_q;
   assign data_valid_o = !s_tx_empty;
   assign data_o = s_tx_pop_data;
-  assign irq_o = |(s_intr_state_q & s_intr_enable_q);
+  assign irq_o = |(s_intr_state_q & s_intr_en_q);
   assign s_fifo_level = {{(31 - TX_FIFO_LOG_DEPTH) {1'b0}}, s_tx_count};
   assign s_watermark_write_value = merge_wstrb(s_fifo_watermark_q, ribp.wdata, ribp.wstrb);
   assign s_config_valid            = (s_bit_cycles_q != 16'd0) &&
@@ -127,46 +127,46 @@ module ws2812_reg #(
                                      (s_fifo_level <= s_fifo_watermark_q);
 
   always_comb begin
-    s_status                              = '0;
-    s_status[`WS2812_STATUS_BUSY]         = core_busy_i;
-    s_status[`WS2812_STATUS_FIFO_EMPTY]   = s_tx_empty;
-    s_status[`WS2812_STATUS_FIFO_FULL]    = s_tx_full;
-    s_status[`WS2812_STATUS_CONFIG_VALID] = s_config_valid;
-    s_status[`WS2812_STATUS_RESET_ACTIVE] = core_reset_active_i;
+    s_stat                              = '0;
+    s_stat[`WS2812_STATUS_BUSY]         = core_busy_i;
+    s_stat[`WS2812_STATUS_FIFO_EMPTY]   = s_tx_empty;
+    s_stat[`WS2812_STATUS_FIFO_FULL]    = s_tx_full;
+    s_stat[`WS2812_STATUS_CONFIG_VALID] = s_config_valid;
+    s_stat[`WS2812_STATUS_RESET_ACTIVE] = core_reset_active_i;
   end
 
   always_comb begin
-    s_req_accept          = s_req;
-    s_access_error        = 1'b0;
-    s_bit_cycles_en       = 1'b0;
-    s_t0h_cycles_en       = 1'b0;
-    s_t1h_cycles_en       = 1'b0;
-    s_reset_cycles_en     = 1'b0;
-    s_frame_words_en      = 1'b0;
-    s_fifo_watermark_en   = 1'b0;
-    s_intr_enable_en      = 1'b0;
-    s_bit_cycles_d        = s_bit_cycles_q;
-    s_t0h_cycles_d        = s_t0h_cycles_q;
-    s_t1h_cycles_d        = s_t1h_cycles_q;
-    s_reset_cycles_d      = s_reset_cycles_q;
-    s_frame_words_d       = s_frame_words_q;
-    s_fifo_watermark_d    = s_fifo_watermark_q;
-    s_intr_enable_d       = s_intr_enable_q;
-    s_fifo_flush_cmd      = 1'b0;
-    s_tx_push             = 1'b0;
-    s_tx_push_data        = ribp.wdata[23:0];
-    start_o               = 1'b0;
-    abort_o               = 1'b0;
-    s_error_clear         = '0;
-    s_intr_clear          = '0;
-    s_intr_test           = '0;
-    s_config_error_event  = 1'b0;
-    s_command_error_event = 1'b0;
-    s_ribp_rdata_d        = '0;
+    s_req_accept        = s_req;
+    s_access_err        = 1'b0;
+    s_bit_cycles_en     = 1'b0;
+    s_t0h_cycles_en     = 1'b0;
+    s_t1h_cycles_en     = 1'b0;
+    s_reset_cycles_en   = 1'b0;
+    s_frame_words_en    = 1'b0;
+    s_fifo_watermark_en = 1'b0;
+    s_intr_en_en        = 1'b0;
+    s_bit_cycles_d      = s_bit_cycles_q;
+    s_t0h_cycles_d      = s_t0h_cycles_q;
+    s_t1h_cycles_d      = s_t1h_cycles_q;
+    s_reset_cycles_d    = s_reset_cycles_q;
+    s_frame_words_d     = s_frame_words_q;
+    s_fifo_watermark_d  = s_fifo_watermark_q;
+    s_intr_en_d         = s_intr_en_q;
+    s_fifo_flush_cmd    = 1'b0;
+    s_tx_push           = 1'b0;
+    s_tx_push_data      = ribp.wdata[23:0];
+    start_o             = 1'b0;
+    abort_o             = 1'b0;
+    s_err_clear         = '0;
+    s_intr_clear        = '0;
+    s_intr_test         = '0;
+    s_config_err_event  = 1'b0;
+    s_cmd_err_event     = 1'b0;
+    s_ribp_rdata_d      = '0;
 
     if (s_req) begin
       if ((ribp.addr[11:8] != 4'd0) || (ribp.addr[1:0] != 2'b00)) begin
-        s_access_error = 1'b1;
+        s_access_err = 1'b1;
       end else if (s_write) begin
         unique case (ribp.addr[7:0])
           `RIBP_WS2812_BIT_CYCLES: begin
@@ -187,54 +187,54 @@ module ws2812_reg #(
           end
           `RIBP_WS2812_TXDATA: begin
             if (ribp.wstrb != 4'hF || (core_busy_i && (s_load_remaining_q == 32'd0))) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else if (s_tx_full && core_busy_i) begin
               s_req_accept = 1'b0;
             end else if (s_tx_full && !core_busy_i) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_tx_push = 1'b1;
             end
           end
           `RIBP_WS2812_CTRL: begin
             if (!ribp.wstrb[0]) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               unique case (ribp.wdata[2:0])
                 3'b001: begin
                   if (core_busy_i || (s_frame_words_q == 32'd0) || s_tx_empty ||
                       (s_fifo_level > s_frame_words_q)) begin
-                    s_access_error        = 1'b1;
-                    s_command_error_event = 1'b1;
+                    s_access_err    = 1'b1;
+                    s_cmd_err_event = 1'b1;
                   end else if (!s_config_valid) begin
-                    s_access_error       = 1'b1;
-                    s_config_error_event = 1'b1;
+                    s_access_err       = 1'b1;
+                    s_config_err_event = 1'b1;
                   end else begin
                     start_o = 1'b1;
                   end
                 end
                 3'b010: begin
                   if (!core_busy_i) begin
-                    s_access_error        = 1'b1;
-                    s_command_error_event = 1'b1;
+                    s_access_err    = 1'b1;
+                    s_cmd_err_event = 1'b1;
                   end else begin
                     abort_o = 1'b1;
                   end
                 end
                 3'b100: begin
                   if (core_busy_i) begin
-                    s_access_error        = 1'b1;
-                    s_command_error_event = 1'b1;
+                    s_access_err    = 1'b1;
+                    s_cmd_err_event = 1'b1;
                   end else begin
                     s_fifo_flush_cmd = 1'b1;
                   end
                 end
                 default: begin
-                  s_access_error        = 1'b1;
-                  s_command_error_event = 1'b1;
+                  s_access_err    = 1'b1;
+                  s_cmd_err_event = 1'b1;
                 end
               endcase
             end
@@ -245,8 +245,8 @@ module ws2812_reg #(
           end
           `RIBP_WS2812_FIFO_WATERMARK: begin
             if (s_watermark_write_value >= TX_FIFO_DEPTH) begin
-              s_access_error        = 1'b1;
-              s_command_error_event = 1'b1;
+              s_access_err    = 1'b1;
+              s_cmd_err_event = 1'b1;
             end else begin
               s_fifo_watermark_en = 1'b1;
               s_fifo_watermark_d  = s_watermark_write_value;
@@ -254,30 +254,30 @@ module ws2812_reg #(
           end
           `RIBP_WS2812_ERROR_STATUS: begin
             if (!ribp.wstrb[0]) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
-              s_error_clear = ribp.wdata[2:0];
+              s_err_clear = ribp.wdata[2:0];
             end
           end
           `RIBP_WS2812_INTR_STATE: begin
             if (!ribp.wstrb[0]) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
               s_intr_clear = ribp.wdata[3:0];
             end
           end
           `RIBP_WS2812_INTR_ENABLE: begin
-            s_intr_enable_en = 1'b1;
-            s_intr_enable_d  = 4'(merge_wstrb({28'd0, s_intr_enable_q}, ribp.wdata, ribp.wstrb));
+            s_intr_en_en = 1'b1;
+            s_intr_en_d  = 4'(merge_wstrb({28'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb));
           end
           `RIBP_WS2812_INTR_TEST: begin
             if (!ribp.wstrb[0]) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
               s_intr_test = ribp.wdata[3:0];
             end
           end
-          default: s_access_error = 1'b1;
+          default: s_access_err = 1'b1;
         endcase
       end else begin
         unique case (ribp.addr[7:0])
@@ -285,18 +285,18 @@ module ws2812_reg #(
           `RIBP_WS2812_T0H_CYCLES:      s_ribp_rdata_d = {16'd0, s_t0h_cycles_q};
           `RIBP_WS2812_T1H_CYCLES:      s_ribp_rdata_d = {16'd0, s_t1h_cycles_q};
           `RIBP_WS2812_RESET_CYCLES:    s_ribp_rdata_d = s_reset_cycles_q;
-          `RIBP_WS2812_STATUS:          s_ribp_rdata_d = s_status;
+          `RIBP_WS2812_STATUS:          s_ribp_rdata_d = s_stat;
           `RIBP_WS2812_FRAME_WORDS:     s_ribp_rdata_d = s_frame_words_q;
           `RIBP_WS2812_FIFO_LEVEL:      s_ribp_rdata_d = s_fifo_level;
           `RIBP_WS2812_FIFO_WATERMARK:  s_ribp_rdata_d = s_fifo_watermark_q;
           `RIBP_WS2812_REMAINING_WORDS: s_ribp_rdata_d = core_remaining_words_i;
-          `RIBP_WS2812_ERROR_STATUS:    s_ribp_rdata_d = {29'd0, s_error_status_q};
+          `RIBP_WS2812_ERROR_STATUS:    s_ribp_rdata_d = {29'd0, s_err_stat_q};
           `RIBP_WS2812_INTR_STATE:      s_ribp_rdata_d = {28'd0, s_intr_state_q};
-          `RIBP_WS2812_INTR_ENABLE:     s_ribp_rdata_d = {28'd0, s_intr_enable_q};
+          `RIBP_WS2812_INTR_ENABLE:     s_ribp_rdata_d = {28'd0, s_intr_en_q};
           `RIBP_WS2812_IP_INFO:         s_ribp_rdata_d = IP_INFO;
           default: begin
             s_ribp_rdata_d = '0;
-            s_access_error = 1'b1;
+            s_access_err   = 1'b1;
           end
         endcase
       end
@@ -304,63 +304,79 @@ module ws2812_reg #(
   end
 
   assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_error;
+  assign s_ribp_resp_err_d = s_access_err;
 
-  dffr #(1) u_ribp_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_ready_d,
-      s_ribp_ready_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_ready_d),
+      .dat_o  (s_ribp_ready_q)
   );
-  dffer #(1) u_ribp_resp_err_dffer (
-      clk_i,
-      rst_n_i,
-      s_req_accept,
-      s_ribp_resp_err_d,
-      s_ribp_resp_err_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_ribp_resp_err_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_req_accept),
+      .dat_i  (s_ribp_resp_err_d),
+      .dat_o  (s_ribp_resp_err_q)
   );
-  dffer #(32) u_ribp_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_req_accept,
-      s_ribp_rdata_d,
-      s_ribp_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_req_accept),
+      .dat_i  (s_ribp_rdata_d),
+      .dat_o  (s_ribp_rdata_q)
   );
 
-  dffer #(16) u_bit_cycles_dffer (
-      clk_i,
-      rst_n_i,
-      s_bit_cycles_en,
-      s_bit_cycles_d,
-      s_bit_cycles_q
+  dffer #(
+      .DATA_WIDTH(16)
+  ) u_bit_cycles_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_bit_cycles_en),
+      .dat_i  (s_bit_cycles_d),
+      .dat_o  (s_bit_cycles_q)
   );
-  dffer #(16) u_t0h_cycles_dffer (
-      clk_i,
-      rst_n_i,
-      s_t0h_cycles_en,
-      s_t0h_cycles_d,
-      s_t0h_cycles_q
+  dffer #(
+      .DATA_WIDTH(16)
+  ) u_t0h_cycles_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_t0h_cycles_en),
+      .dat_i  (s_t0h_cycles_d),
+      .dat_o  (s_t0h_cycles_q)
   );
-  dffer #(16) u_t1h_cycles_dffer (
-      clk_i,
-      rst_n_i,
-      s_t1h_cycles_en,
-      s_t1h_cycles_d,
-      s_t1h_cycles_q
+  dffer #(
+      .DATA_WIDTH(16)
+  ) u_t1h_cycles_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_t1h_cycles_en),
+      .dat_i  (s_t1h_cycles_d),
+      .dat_o  (s_t1h_cycles_q)
   );
-  dffer #(32) u_reset_cycles_dffer (
-      clk_i,
-      rst_n_i,
-      s_reset_cycles_en,
-      s_reset_cycles_d,
-      s_reset_cycles_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_reset_cycles_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_reset_cycles_en),
+      .dat_i  (s_reset_cycles_d),
+      .dat_o  (s_reset_cycles_q)
   );
-  dffer #(32) u_frame_words_dffer (
-      clk_i,
-      rst_n_i,
-      s_frame_words_en,
-      s_frame_words_d,
-      s_frame_words_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_frame_words_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_frame_words_en),
+      .dat_i  (s_frame_words_d),
+      .dat_o  (s_frame_words_q)
   );
   dfferc #(
       .DATA_WIDTH(32),
@@ -372,12 +388,14 @@ module ws2812_reg #(
       .dat_i  (s_fifo_watermark_d),
       .dat_o  (s_fifo_watermark_q)
   );
-  dffer #(4) u_intr_enable_dffer (
-      clk_i,
-      rst_n_i,
-      s_intr_enable_en,
-      s_intr_enable_d,
-      s_intr_enable_q
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_intr_enable_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_intr_en_en),
+      .dat_i  (s_intr_en_d),
+      .dat_o  (s_intr_en_q)
   );
 
   fifo #(
@@ -407,30 +425,34 @@ module ws2812_reg #(
       s_load_remaining_d = s_load_remaining_q - 1'b1;
     end
   end
-  dffr #(32) u_load_remaining_dffr (
-      clk_i,
-      rst_n_i,
-      s_load_remaining_d,
-      s_load_remaining_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_load_remaining_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_load_remaining_d),
+      .dat_o  (s_load_remaining_q)
   );
 
   always_comb begin
-    s_error_status_d = s_error_status_q & ~s_error_clear;
-    if (s_config_error_event) begin
-      s_error_status_d[`WS2812_ERROR_CONFIG] = 1'b1;
+    s_err_stat_d = s_err_stat_q & ~s_err_clear;
+    if (s_config_err_event) begin
+      s_err_stat_d[`WS2812_ERROR_CONFIG] = 1'b1;
     end
     if (core_underflow_i) begin
-      s_error_status_d[`WS2812_ERROR_UNDERFLOW] = 1'b1;
+      s_err_stat_d[`WS2812_ERROR_UNDERFLOW] = 1'b1;
     end
-    if (s_command_error_event) begin
-      s_error_status_d[`WS2812_ERROR_COMMAND] = 1'b1;
+    if (s_cmd_err_event) begin
+      s_err_stat_d[`WS2812_ERROR_COMMAND] = 1'b1;
     end
   end
-  dffr #(3) u_error_status_dffr (
-      clk_i,
-      rst_n_i,
-      s_error_status_d,
-      s_error_status_q
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_error_status_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_err_stat_d),
+      .dat_o  (s_err_stat_q)
   );
 
   always_comb begin
@@ -441,18 +463,20 @@ module ws2812_reg #(
     if (s_fifo_low) begin
       s_intr_state_d[`WS2812_INTR_FIFO_LOW] = 1'b1;
     end
-    if (s_config_error_event || s_command_error_event || core_underflow_i) begin
+    if (s_config_err_event || s_cmd_err_event || core_underflow_i) begin
       s_intr_state_d[`WS2812_INTR_ERROR] = 1'b1;
     end
     if (core_aborted_i) begin
       s_intr_state_d[`WS2812_INTR_ABORTED] = 1'b1;
     end
   end
-  dffr #(4) u_intr_state_dffr (
-      clk_i,
-      rst_n_i,
-      s_intr_state_d,
-      s_intr_state_q
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_intr_state_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_intr_state_d),
+      .dat_o  (s_intr_state_q)
   );
 
 endmodule

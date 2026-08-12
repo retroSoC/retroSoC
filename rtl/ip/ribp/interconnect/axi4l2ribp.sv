@@ -70,11 +70,13 @@ module axi4l2ribp (
       default: s_rd_fsm_d = RD_IDLE;
     endcase
   end
-  dffr #(2) u_rd_fsm_dffr (
-      aclk_i,
-      aresetn_i,
-      s_rd_fsm_d,
-      s_rd_fsm_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_rd_fsm_dffr (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .dat_i  (s_rd_fsm_d),
+      .dat_o  (s_rd_fsm_q)
   );
 
   always_comb begin
@@ -95,11 +97,13 @@ module axi4l2ribp (
       default: s_wr_fsm_d = WR_IDLE;
     endcase
   end
-  dffr #(2) u_wr_fsm_dffr (
-      aclk_i,
-      aresetn_i,
-      s_wr_fsm_d,
-      s_wr_fsm_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_wr_fsm_dffr (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .dat_i  (s_wr_fsm_d),
+      .dat_o  (s_wr_fsm_q)
   );
 
   always_comb begin
@@ -112,57 +116,69 @@ module axi4l2ribp (
       s_addr_d  = awaddr_i;
     end
   end
-  dffer #(32) u_addr_dffer (
-      aclk_i,
-      aresetn_i,
-      (s_rd_fsm_q == RD_IDLE && arvalid_i) || (s_wr_fsm_q == WR_IDLE && awvalid_i),
-      s_addr_d,
-      s_addr_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffer (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .en_i   ((s_rd_fsm_q == RD_IDLE && arvalid_i) || (s_wr_fsm_q == WR_IDLE && awvalid_i)),
+      .dat_i  (s_addr_d),
+      .dat_o  (s_addr_q)
   );
 
   assign s_rdata_d = ribp.rdata;
-  dffer #(32) u_rdata_dffer (
-      aclk_i,
-      aresetn_i,
-      s_rd_fsm_q == RD_DATA && ribp.ready,
-      s_rdata_d,
-      s_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_rdata_dffer (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .en_i   (s_rd_fsm_q == RD_DATA && ribp.ready),
+      .dat_i  (s_rdata_d),
+      .dat_o  (s_rdata_q)
   );
 
   assign s_rresp_d = ribp.resp_err ? AXI_RESP_SLVERR : AXI_RESP_OKAY;
-  dffer #(2) u_rresp_dffer (
-      aclk_i,
-      aresetn_i,
-      s_rd_fsm_q == RD_DATA && ribp.ready,
-      s_rresp_d,
-      s_rresp_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_rresp_dffer (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .en_i   (s_rd_fsm_q == RD_DATA && ribp.ready),
+      .dat_i  (s_rresp_d),
+      .dat_o  (s_rresp_q)
   );
 
   assign s_wdata_d = wdata_i;
-  dffer #(32) u_wdata_dffer (
-      aclk_i,
-      aresetn_i,
-      s_wr_fsm_q == WR_DATA && wvalid_i,
-      s_wdata_d,
-      s_wdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_wdata_dffer (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .en_i   (s_wr_fsm_q == WR_DATA && wvalid_i),
+      .dat_i  (s_wdata_d),
+      .dat_o  (s_wdata_q)
   );
 
   assign s_wstrb_d = wstrb_i;
-  dffer #(4) u_wstrb_dffer (
-      aclk_i,
-      aresetn_i,
-      s_wr_fsm_q == WR_DATA && wvalid_i,
-      s_wstrb_d,
-      s_wstrb_q
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_wstrb_dffer (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .en_i   (s_wr_fsm_q == WR_DATA && wvalid_i),
+      .dat_i  (s_wstrb_d),
+      .dat_o  (s_wstrb_q)
   );
 
   assign s_bresp_d = ribp.resp_err ? AXI_RESP_SLVERR : AXI_RESP_OKAY;
-  dffer #(2) u_bresp_dffer (
-      aclk_i,
-      aresetn_i,
-      s_wr_fsm_q == WR_WAIT && ribp.ready,
-      s_bresp_d,
-      s_bresp_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_bresp_dffer (
+      .clk_i  (aclk_i),
+      .rst_n_i(aresetn_i),
+      .en_i   (s_wr_fsm_q == WR_WAIT && ribp.ready),
+      .dat_i  (s_bresp_d),
+      .dat_o  (s_bresp_q)
   );
 
   // axil

@@ -78,25 +78,33 @@ module axi4_error_slave #(
     endcase
   end
 
-  dffr #(2) u_fsm_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_fsm_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_fsm_d),
       .dat_o  (s_fsm_q)
   );
-  dffr #(1) u_id_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_id_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_id_d),
       .dat_o  (s_id_q)
   );
-  dffr #(8) u_len_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_len_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_len_d),
       .dat_o  (s_len_q)
   );
-  dffr #(8) u_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_beat_d),

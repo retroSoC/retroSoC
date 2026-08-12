@@ -78,14 +78,18 @@ module i2c_filter (
       .dat_o  (s_sda_q)
   );
 
-  dffr #(4) u_scl_count_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_scl_count_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_scl_count_d),
       .dat_o  (s_scl_count_q)
   );
 
-  dffr #(4) u_sda_count_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_sda_count_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sda_count_d),

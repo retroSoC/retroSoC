@@ -182,9 +182,9 @@ module xpi_reg (
   logic [             7:0] s_xpi_hlvlen_d  [0:`XPI_NSS_NUM-1];
   logic [             7:0] s_xpi_hlvlen_q  [0:`XPI_NSS_NUM-1];
   // status
-  logic                    s_xpi_status_en;
-  logic [            20:0] s_xpi_status_d;
-  logic [            20:0] s_xpi_status_q;
+  logic                    s_xpi_stat_en;
+  logic [            20:0] s_xpi_stat_d;
+  logic [            20:0] s_xpi_stat_q;
   // flow ctrl
   logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
@@ -228,12 +228,14 @@ module xpi_reg (
 
   assign s_xpi_cfgidx_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CFGIDX;
   assign s_xpi_cfgidx_d  = ribp.wdata[`XPI_LNS_NUM-1:0];
-  dffer #(`XPI_LNS_NUM) u_xpi_cfgidx_dffer (
-      clk_i,
-      rst_n_i,
-      s_xpi_cfgidx_en,
-      s_xpi_cfgidx_d,
-      s_xpi_cfgidx_q
+  dffer #(
+      .DATA_WIDTH(`XPI_LNS_NUM)
+  ) u_xpi_cfgidx_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_cfgidx_en),
+      .dat_i  (s_xpi_cfgidx_d),
+      .dat_o  (s_xpi_cfgidx_q)
   );
 
 
@@ -241,12 +243,16 @@ module xpi_reg (
     assign s_xpi_accmd_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ACCMD && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_accmd_d[i] = ribp.wdata[0];
   end
-  dfferm #(`XPI_NSS_NUM, 1, 1'b1) u_xpi_accmd_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_accmd_en,
-      s_xpi_accmd_d,
-      s_xpi_accmd_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(1),
+      .INIT_VAL  (1'b1)
+  ) u_xpi_accmd_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_accmd_en),
+      .dat_i  (s_xpi_accmd_d),
+      .dat_o  (s_xpi_accmd_q)
   );
 
 
@@ -261,12 +267,16 @@ module xpi_reg (
       if (ribp.wstrb[3]) s_xpi_mmstad_d[i][31:24] = ribp.wdata[31:24];
     end
   end
-  dfferm #(`XPI_NSS_NUM, 32, 32'd0) u_xpi_mmdstad_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_mmstad_en,
-      s_xpi_mmstad_d,
-      s_xpi_mmstad_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(32),
+      .INIT_VAL  (32'd0)
+  ) u_xpi_mmdstad_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_mmstad_en),
+      .dat_i  (s_xpi_mmstad_d),
+      .dat_o  (s_xpi_mmstad_q)
   );
 
 
@@ -280,12 +290,16 @@ module xpi_reg (
       if (ribp.wstrb[3]) s_xpi_mmoffst_d[i][31:24] = ribp.wdata[31:24];
     end
   end
-  dfferm #(`XPI_NSS_NUM, 32, 32'h0200_0000) u_xpi_mmoffst_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_mmoffst_en,
-      s_xpi_mmoffst_d,
-      s_xpi_mmoffst_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(32),
+      .INIT_VAL  (32'h0200_0000)
+  ) u_xpi_mmoffst_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_mmoffst_en),
+      .dat_i  (s_xpi_mmoffst_d),
+      .dat_o  (s_xpi_mmoffst_q)
   );
 
 
@@ -293,23 +307,29 @@ module xpi_reg (
     assign s_xpi_mode_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_MODE && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_mode_d[i] = ribp.wdata[0];
   end
-  dfferm #(`XPI_NSS_NUM, 1, 1'b0) u_xpi_mode_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_mode_en,
-      s_xpi_mode_d,
-      s_xpi_mode_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(1),
+      .INIT_VAL  (1'b0)
+  ) u_xpi_mode_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_mode_en),
+      .dat_i  (s_xpi_mode_d),
+      .dat_o  (s_xpi_mode_q)
   );
 
 
   assign s_xpi_nss_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_NSS;
   assign s_xpi_nss_d  = ribp.wdata[`XPI_LNS_NUM-1:0];
-  dffer #(`XPI_LNS_NUM) u_xpi_nss_dffer (
-      clk_i,
-      rst_n_i,
-      s_xpi_nss_en,
-      s_xpi_nss_d,
-      s_xpi_nss_q
+  dffer #(
+      .DATA_WIDTH(`XPI_LNS_NUM)
+  ) u_xpi_nss_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_nss_en),
+      .dat_i  (s_xpi_nss_d),
+      .dat_o  (s_xpi_nss_q)
   );
 
 
@@ -317,12 +337,16 @@ module xpi_reg (
     assign s_xpi_clkdiv_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CLKDIV && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_clkdiv_d[i] = ribp.wdata[7:0];
   end
-  dfferm #(`XPI_NSS_NUM, 8, 8'd0) u_xpi_clkdiv_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_clkdiv_en,
-      s_xpi_clkdiv_d,
-      s_xpi_clkdiv_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(8),
+      .INIT_VAL  (8'd0)
+  ) u_xpi_clkdiv_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_clkdiv_en),
+      .dat_i  (s_xpi_clkdiv_d),
+      .dat_o  (s_xpi_clkdiv_q)
   );
 
 
@@ -330,12 +354,16 @@ module xpi_reg (
     assign s_xpi_rdwr_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RDWR && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_rdwr_d[i] = ribp.wdata[0];
   end
-  dfferm #(`XPI_NSS_NUM, 1, 1'b1) u_xpi_rdwr_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_rdwr_en,
-      s_xpi_rdwr_d,
-      s_xpi_rdwr_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(1),
+      .INIT_VAL  (1'b1)
+  ) u_xpi_rdwr_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_rdwr_en),
+      .dat_i  (s_xpi_rdwr_d),
+      .dat_o  (s_xpi_rdwr_q)
   );
 
 
@@ -343,12 +371,16 @@ module xpi_reg (
     assign s_xpi_revdat_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_REVDAT && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_revdat_d[i] = ribp.wdata[0];
   end
-  dfferm #(`XPI_NSS_NUM, 1, 1'b0) u_xpi_revdat_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_revdat_en,
-      s_xpi_revdat_d,
-      s_xpi_revdat_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(1),
+      .INIT_VAL  (1'b0)
+  ) u_xpi_revdat_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_revdat_en),
+      .dat_i  (s_xpi_revdat_d),
+      .dat_o  (s_xpi_revdat_q)
   );
 
 
@@ -356,12 +388,16 @@ module xpi_reg (
     assign s_xpi_txupb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_TXUPB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_txupb_d[i] = ribp.wdata[7:0];
   end
-  dfferm #(`XPI_NSS_NUM, 8, 8'd0) u_xpi_txupb_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_txupb_en,
-      s_xpi_txupb_d,
-      s_xpi_txupb_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(8),
+      .INIT_VAL  (8'd0)
+  ) u_xpi_txupb_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_txupb_en),
+      .dat_i  (s_xpi_txupb_d),
+      .dat_o  (s_xpi_txupb_q)
   );
 
 
@@ -369,12 +405,16 @@ module xpi_reg (
     assign s_xpi_txlowb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_TXLOWB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_txlowb_d[i] = ribp.wdata[7:0];
   end
-  dfferm #(`XPI_NSS_NUM, 8, 8'd0) u_xpi_txlowb_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_txlowb_en,
-      s_xpi_txlowb_d,
-      s_xpi_txlowb_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(8),
+      .INIT_VAL  (8'd0)
+  ) u_xpi_txlowb_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_txlowb_en),
+      .dat_i  (s_xpi_txlowb_d),
+      .dat_o  (s_xpi_txlowb_q)
   );
 
 
@@ -382,12 +422,16 @@ module xpi_reg (
     assign s_xpi_rxupb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RXUPB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_rxupb_d[i] = ribp.wdata[5:0];
   end
-  dfferm #(`XPI_NSS_NUM, 6, 6'd0) u_xpi_rxupb_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_rxupb_en,
-      s_xpi_rxupb_d,
-      s_xpi_rxupb_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(6),
+      .INIT_VAL  (6'd0)
+  ) u_xpi_rxupb_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_rxupb_en),
+      .dat_i  (s_xpi_rxupb_d),
+      .dat_o  (s_xpi_rxupb_q)
   );
 
 
@@ -395,12 +439,16 @@ module xpi_reg (
     assign s_xpi_rxlowb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RXLOWB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_rxlowb_d[i] = ribp.wdata[5:0];
   end
-  dfferm #(`XPI_NSS_NUM, 6, 6'd0) u_xpi_rxlowb_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_rxlowb_en,
-      s_xpi_rxlowb_d,
-      s_xpi_rxlowb_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(6),
+      .INIT_VAL  (6'd0)
+  ) u_xpi_rxlowb_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_rxlowb_en),
+      .dat_i  (s_xpi_rxlowb_d),
+      .dat_o  (s_xpi_rxlowb_q)
   );
 
 
@@ -412,12 +460,16 @@ module xpi_reg (
     assign s_xpi_cmdtyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CMDTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_cmdtyp_d[i] = ribp.wdata[1:0];
   end
-  dfferm #(`XPI_NSS_NUM, 2, 2'd1) u_xpi_cmdtyp_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_cmdtyp_en,
-      s_xpi_cmdtyp_d,
-      s_xpi_cmdtyp_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(2),
+      .INIT_VAL  (2'd1)
+  ) u_xpi_cmdtyp_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_cmdtyp_en),
+      .dat_i  (s_xpi_cmdtyp_d),
+      .dat_o  (s_xpi_cmdtyp_q)
   );
 
 
@@ -425,12 +477,16 @@ module xpi_reg (
     assign s_xpi_cmdlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CMDLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_cmdlen_d[i] = ribp.wdata[2:0];
   end
-  dfferm #(`XPI_NSS_NUM, 3, 3'd1) u_xpi_cmdlen_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_cmdlen_en,
-      s_xpi_cmdlen_d,
-      s_xpi_cmdlen_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(3),
+      .INIT_VAL  (3'd1)
+  ) u_xpi_cmdlen_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_cmdlen_en),
+      .dat_i  (s_xpi_cmdlen_d),
+      .dat_o  (s_xpi_cmdlen_q)
   );
 
 
@@ -444,12 +500,16 @@ module xpi_reg (
       if (ribp.wstrb[3]) s_xpi_cmddat_d[i][31:24] = ribp.wdata[31:24];
     end
   end
-  dfferm #(`XPI_NSS_NUM, 32, 32'hEB00_0000) u_xpi_cmddat_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_cmddat_en,
-      s_xpi_cmddat_d,
-      s_xpi_cmddat_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(32),
+      .INIT_VAL  (32'hEB00_0000)
+  ) u_xpi_cmddat_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_cmddat_en),
+      .dat_i  (s_xpi_cmddat_d),
+      .dat_o  (s_xpi_cmddat_q)
   );
 
 
@@ -457,12 +517,16 @@ module xpi_reg (
     assign s_xpi_adrtyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ADRTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_adrtyp_d[i] = ribp.wdata[1:0];
   end
-  dfferm #(`XPI_NSS_NUM, 2, 2'd3) u_xpi_adrtyp_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_adrtyp_en,
-      s_xpi_adrtyp_d,
-      s_xpi_adrtyp_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(2),
+      .INIT_VAL  (2'd3)
+  ) u_xpi_adrtyp_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_adrtyp_en),
+      .dat_i  (s_xpi_adrtyp_d),
+      .dat_o  (s_xpi_adrtyp_q)
   );
 
 
@@ -470,12 +534,16 @@ module xpi_reg (
     assign s_xpi_adrlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ADRLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_adrlen_d[i] = ribp.wdata[2:0];
   end
-  dfferm #(`XPI_NSS_NUM, 3, 3'd4) u_xpi_adrlen_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_adrlen_en,
-      s_xpi_adrlen_d,
-      s_xpi_adrlen_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(3),
+      .INIT_VAL  (3'd4)
+  ) u_xpi_adrlen_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_adrlen_en),
+      .dat_i  (s_xpi_adrlen_d),
+      .dat_o  (s_xpi_adrlen_q)
   );
 
 
@@ -489,12 +557,16 @@ module xpi_reg (
       if (ribp.wstrb[3]) s_xpi_adrdat_d[i][31:24] = ribp.wdata[31:24];
     end
   end
-  dfferm #(`XPI_NSS_NUM, 32, 32'd0) u_xpi_adrdat_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_adrdat_en,
-      s_xpi_adrdat_d,
-      s_xpi_adrdat_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(32),
+      .INIT_VAL  (32'd0)
+  ) u_xpi_adrdat_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_adrdat_en),
+      .dat_i  (s_xpi_adrdat_d),
+      .dat_o  (s_xpi_adrdat_q)
   );
 
 
@@ -502,12 +574,16 @@ module xpi_reg (
     assign s_xpi_alttyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ALTTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_alttyp_d[i] = ribp.wdata[1:0];
   end
-  dfferm #(`XPI_NSS_NUM, 2, 2'd0) u_xpi_alttyp_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_alttyp_en,
-      s_xpi_alttyp_d,
-      s_xpi_alttyp_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(2),
+      .INIT_VAL  (2'd0)
+  ) u_xpi_alttyp_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_alttyp_en),
+      .dat_i  (s_xpi_alttyp_d),
+      .dat_o  (s_xpi_alttyp_q)
   );
 
 
@@ -515,12 +591,16 @@ module xpi_reg (
     assign s_xpi_altlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ALTLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_altlen_d[i] = ribp.wdata[2:0];
   end
-  dfferm #(`XPI_NSS_NUM, 3, 3'd0) u_xpi_altlen_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_altlen_en,
-      s_xpi_altlen_d,
-      s_xpi_altlen_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(3),
+      .INIT_VAL  (3'd0)
+  ) u_xpi_altlen_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_altlen_en),
+      .dat_i  (s_xpi_altlen_d),
+      .dat_o  (s_xpi_altlen_q)
   );
 
 
@@ -534,12 +614,16 @@ module xpi_reg (
       if (ribp.wstrb[3]) s_xpi_altdat_d[i][31:24] = ribp.wdata[31:24];
     end
   end
-  dfferm #(`XPI_NSS_NUM, 32, 32'd0) u_xpi_altdat_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_altdat_en,
-      s_xpi_altdat_d,
-      s_xpi_altdat_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(32),
+      .INIT_VAL  (32'd0)
+  ) u_xpi_altdat_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_altdat_en),
+      .dat_i  (s_xpi_altdat_d),
+      .dat_o  (s_xpi_altdat_q)
   );
 
 
@@ -547,12 +631,16 @@ module xpi_reg (
     assign s_xpi_tdulen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_TDULEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_tdulen_d[i] = ribp.wdata[7:0];
   end
-  dfferm #(`XPI_NSS_NUM, 8, 8'd4) u_xpi_tdulen_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_tdulen_en,
-      s_xpi_tdulen_d,
-      s_xpi_tdulen_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(8),
+      .INIT_VAL  (8'd4)
+  ) u_xpi_tdulen_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_tdulen_en),
+      .dat_i  (s_xpi_tdulen_d),
+      .dat_o  (s_xpi_tdulen_q)
   );
 
 
@@ -560,12 +648,16 @@ module xpi_reg (
     assign s_xpi_rdulen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RDULEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_rdulen_d[i] = ribp.wdata[7:0];
   end
-  dfferm #(`XPI_NSS_NUM, 8, 8'd4) u_xpi_rdulen_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_rdulen_en,
-      s_xpi_rdulen_d,
-      s_xpi_rdulen_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(8),
+      .INIT_VAL  (8'd4)
+  ) u_xpi_rdulen_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_rdulen_en),
+      .dat_i  (s_xpi_rdulen_d),
+      .dat_o  (s_xpi_rdulen_q)
   );
 
 
@@ -573,12 +665,16 @@ module xpi_reg (
     assign s_xpi_dattyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_DATTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_dattyp_d[i] = ribp.wdata[1:0];
   end
-  dfferm #(`XPI_NSS_NUM, 2, 2'd3) u_xpi_dattyp_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_dattyp_en,
-      s_xpi_dattyp_d,
-      s_xpi_dattyp_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(2),
+      .INIT_VAL  (2'd3)
+  ) u_xpi_dattyp_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_dattyp_en),
+      .dat_i  (s_xpi_dattyp_d),
+      .dat_o  (s_xpi_dattyp_q)
   );
 
 
@@ -586,12 +682,16 @@ module xpi_reg (
     assign s_xpi_datlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_DATLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_datlen_d[i] = ribp.wdata[7:0];
   end
-  dfferm #(`XPI_NSS_NUM, 8, 8'd1) u_xpi_datlen_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_datlen_en,
-      s_xpi_datlen_d,
-      s_xpi_datlen_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(8),
+      .INIT_VAL  (8'd1)
+  ) u_xpi_datlen_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_datlen_en),
+      .dat_i  (s_xpi_datlen_d),
+      .dat_o  (s_xpi_datlen_q)
   );
 
 
@@ -599,12 +699,16 @@ module xpi_reg (
     assign s_xpi_datbit_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_DATBIT && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_datbit_d[i] = ribp.wdata[2:0];
   end
-  dfferm #(`XPI_NSS_NUM, 3, 3'd4) u_xpi_datbit_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_datbit_en,
-      s_xpi_datbit_d,
-      s_xpi_datbit_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(3),
+      .INIT_VAL  (3'd4)
+  ) u_xpi_datbit_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_datbit_en),
+      .dat_i  (s_xpi_datbit_d),
+      .dat_o  (s_xpi_datbit_q)
   );
 
 
@@ -612,12 +716,16 @@ module xpi_reg (
     assign s_xpi_hlvlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_HLVLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
     assign s_xpi_hlvlen_d[i] = ribp.wdata[7:0];
   end
-  dfferm #(`XPI_NSS_NUM, 8, 8'd2) u_xpi_hlvlen_dfferm (
-      clk_i,
-      rst_n_i,
-      s_xpi_hlvlen_en,
-      s_xpi_hlvlen_d,
-      s_xpi_hlvlen_q
+  dfferm #(
+      .DATA_NUM  (`XPI_NSS_NUM),
+      .DATA_WIDTH(8),
+      .INIT_VAL  (8'd2)
+  ) u_xpi_hlvlen_dfferm (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_xpi_hlvlen_en),
+      .dat_i  (s_xpi_hlvlen_d),
+      .dat_o  (s_xpi_hlvlen_q)
   );
 
 
@@ -646,24 +754,26 @@ module xpi_reg (
   // [1]     tx fifo full
   // [0]     xfer done
   always_comb begin
-    s_xpi_status_d        = s_xpi_status_q;
-    s_xpi_status_d[1]     = tx_full_i;
-    s_xpi_status_d[2]     = tx_empty_i;
-    s_xpi_status_d[3]     = rx_full_i;
-    s_xpi_status_d[4]     = rx_empty_i;
-    s_xpi_status_d[13:5]  = tx_elem_num_i;
-    s_xpi_status_d[20:14] = rx_elem_num_i;
+    s_xpi_stat_d        = s_xpi_stat_q;
+    s_xpi_stat_d[1]     = tx_full_i;
+    s_xpi_stat_d[2]     = tx_empty_i;
+    s_xpi_stat_d[3]     = rx_full_i;
+    s_xpi_stat_d[4]     = rx_empty_i;
+    s_xpi_stat_d[13:5]  = tx_elem_num_i;
+    s_xpi_stat_d[20:14] = rx_elem_num_i;
     if (xfer_done_i) begin
-      s_xpi_status_d[0] = 1'b1;
+      s_xpi_stat_d[0] = 1'b1;
     end else if (s_ribp_rd_hdshk && ribp.addr[7:0] == `RIBP_XPI_STATUS) begin
-      s_xpi_status_d[0] = 1'b0;
+      s_xpi_stat_d[0] = 1'b0;
     end
   end
-  dffr #(21) u_xpi_status_dffr (
-      clk_i,
-      rst_n_i,
-      s_xpi_status_d,
-      s_xpi_status_q
+  dffr #(
+      .DATA_WIDTH(21)
+  ) u_xpi_status_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_xpi_stat_d),
+      .dat_o  (s_xpi_stat_q)
   );
 
 
@@ -676,11 +786,13 @@ module xpi_reg (
       s_tx_fifo_stall_d = 1'b0;
     end
   end
-  dffr #(1) u_tx_fifo_stall_dffr (
-      clk_i,
-      rst_n_i,
-      s_tx_fifo_stall_d,
-      s_tx_fifo_stall_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_tx_fifo_stall_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_tx_fifo_stall_d),
+      .dat_o  (s_tx_fifo_stall_q)
   );
 
   // dma rx flow ctrl
@@ -692,21 +804,25 @@ module xpi_reg (
       s_rx_fifo_stall_d = 1'b0;
     end
   end
-  dffr #(1) u_rx_fifo_stall_dffr (
-      clk_i,
-      rst_n_i,
-      s_rx_fifo_stall_d,
-      s_rx_fifo_stall_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rx_fifo_stall_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_rx_fifo_stall_d),
+      .dat_o  (s_rx_fifo_stall_q)
   );
 
 
   // ribp rd
   assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
-  dffr #(1) u_ribp_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_ready_d,
-      s_ribp_ready_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_ready_d),
+      .dat_o  (s_ribp_ready_q)
   );
 
   // verilog_format: off
@@ -750,17 +866,19 @@ module xpi_reg (
           else s_ribp_rdata_d = '0;
         end
       end
-      `RIBP_XPI_STATUS:  s_ribp_rdata_d = {11'd0, s_xpi_status_q};
+      `RIBP_XPI_STATUS:  s_ribp_rdata_d = {11'd0, s_xpi_stat_q};
       default:            s_ribp_rdata_d = s_ribp_rdata_q;
     endcase
   end
   // verilog_format: on
-  dffer #(32) u_ribp_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_ribp_rdata_en,
-      s_ribp_rdata_d,
-      s_ribp_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_ribp_rdata_en),
+      .dat_i  (s_ribp_rdata_d),
+      .dat_o  (s_ribp_rdata_q)
   );
 
 endmodule

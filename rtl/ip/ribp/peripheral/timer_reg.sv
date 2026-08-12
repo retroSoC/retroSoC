@@ -49,7 +49,7 @@ module timer_reg (
   logic        s_req_accept;
   logic [11:0] s_offset;
   logic        s_aligned;
-  logic        s_access_error;
+  logic        s_access_err;
   logic s_ribp_ready_d, s_ribp_ready_q;
   logic s_ribp_resp_err_d, s_ribp_resp_err_q;
   logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
@@ -60,13 +60,13 @@ module timer_reg (
   logic [15:0] s_prescale_write_value;
   logic [31:0] s_compare0_write_value;
   logic [31:0] s_compare1_write_value;
-  logic [ 2:0] s_intr_enable_write_value;
+  logic [ 2:0] s_intr_en_write_value;
   logic [ 2:0] s_intr_clear;
   logic [ 2:0] s_intr_set;
   logic [ 2:0] s_intr_state_d;
   logic [ 2:0] s_intr_state_q;
-  logic [ 2:0] s_intr_enable_d;
-  logic [ 2:0] s_intr_enable_q;
+  logic [ 2:0] s_intr_en_d;
+  logic [ 2:0] s_intr_en_q;
   logic [31:0] s_ctrl_d, s_ctrl_q;
   logic [31:0] s_load_d, s_load_q;
   logic [15:0] s_prescale_d, s_prescale_q;
@@ -103,19 +103,17 @@ module timer_reg (
   assign s_prescale_write_value = 16'(merge_wstrb({16'd0, s_prescale_q}, ribp.wdata, ribp.wstrb));
   assign s_compare0_write_value = merge_wstrb(s_compare0_q, ribp.wdata, ribp.wstrb);
   assign s_compare1_write_value = merge_wstrb(s_compare1_q, ribp.wdata, ribp.wstrb);
-  assign s_intr_enable_write_value = 3'(merge_wstrb(
-      {29'd0, s_intr_enable_q}, ribp.wdata, ribp.wstrb
-  ));
+  assign s_intr_en_write_value = 3'(merge_wstrb({29'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb));
 
   always_comb begin
-    s_access_error = !s_aligned;
+    s_access_err   = !s_aligned;
     s_ribp_rdata_d = '0;
     if (s_aligned) begin
       unique case (s_offset)
         `RIBP_TIMER_CTRL: begin
           s_ribp_rdata_d = s_ctrl_q;
           if (s_write) begin
-            s_access_error =
+            s_access_err =
                 (s_ctrl_write_value[2:1] == MODE_RESERVED) ||
                 (enable_o && (|((s_ctrl_write_value ^ s_ctrl_q) & CTRL_ACTIVE_IMMUTABLE_MASK)));
           end
@@ -123,57 +121,59 @@ module timer_reg (
         `RIBP_TIMER_LOAD:        s_ribp_rdata_d = s_load_q;
         `RIBP_TIMER_VALUE: begin
           s_ribp_rdata_d = value_i;
-          s_access_error = s_write;
+          s_access_err   = s_write;
         end
         `RIBP_TIMER_BGLOAD:      s_ribp_rdata_d = s_load_q;
         `RIBP_TIMER_PRESCALE: begin
           s_ribp_rdata_d = {16'd0, s_prescale_q};
-          s_access_error = s_write && enable_o;
+          s_access_err   = s_write && enable_o;
         end
         `RIBP_TIMER_COMPARE0:    s_ribp_rdata_d = s_compare0_q;
         `RIBP_TIMER_COMPARE1:    s_ribp_rdata_d = s_compare1_q;
         `RIBP_TIMER_STATUS: begin
           s_ribp_rdata_d = {30'd0, debug_frozen_i, enable_o};
-          s_access_error = s_write;
+          s_access_err   = s_write;
         end
         `RIBP_TIMER_INTR_STATE:  s_ribp_rdata_d = {29'd0, s_intr_state_q};
-        `RIBP_TIMER_INTR_ENABLE: s_ribp_rdata_d = {29'd0, s_intr_enable_q};
+        `RIBP_TIMER_INTR_ENABLE: s_ribp_rdata_d = {29'd0, s_intr_en_q};
         `RIBP_TIMER_INTR_STATUS: begin
-          s_ribp_rdata_d = {29'd0, s_intr_state_q & s_intr_enable_q};
-          s_access_error = s_write;
+          s_ribp_rdata_d = {29'd0, s_intr_state_q & s_intr_en_q};
+          s_access_err   = s_write;
         end
-        `RIBP_TIMER_INTR_TEST:   s_access_error = !s_write;
+        `RIBP_TIMER_INTR_TEST:   s_access_err = !s_write;
         `RIBP_TIMER_IP_VERSION: begin
           s_ribp_rdata_d = IP_VERSION;
-          s_access_error = s_write;
+          s_access_err   = s_write;
         end
         `RIBP_TIMER_CAPABILITY: begin
           s_ribp_rdata_d = CAPABILITY;
-          s_access_error = s_write;
+          s_access_err   = s_write;
         end
-        default:                 s_access_error = 1'b1;
+        default:                 s_access_err = 1'b1;
       endcase
     end
   end
 
-  assign start_o = s_req_accept && s_write && !s_access_error &&
+  assign start_o = s_req_accept && s_write && !s_access_err &&
                    (s_offset == `RIBP_TIMER_CTRL) && !enable_o &&
                    s_ctrl_write_value[`TIMER_CTRL_ENABLE];
-  assign stop_o = s_req_accept && s_write && !s_access_error &&
+  assign stop_o = s_req_accept && s_write && !s_access_err &&
                   (s_offset == `RIBP_TIMER_CTRL) && enable_o &&
                   !s_ctrl_write_value[`TIMER_CTRL_ENABLE];
-  assign load_now_o = s_req_accept && s_write && !s_access_error && (s_offset == `RIBP_TIMER_LOAD);
+  assign load_now_o = s_req_accept && s_write && !s_access_err && (s_offset == `RIBP_TIMER_LOAD);
 
   always_comb begin
     s_ctrl_d = s_ctrl_q;
-    if (s_req_accept && s_write && !s_access_error && (s_offset == `RIBP_TIMER_CTRL)) begin
+    if (s_req_accept && s_write && !s_access_err && (s_offset == `RIBP_TIMER_CTRL)) begin
       s_ctrl_d = s_ctrl_write_value;
     end
     if (one_shot_done_i) begin
       s_ctrl_d[`TIMER_CTRL_ENABLE] = 1'b0;
     end
   end
-  dffr #(32) u_ctrl_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_ctrl_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_ctrl_d),
@@ -182,12 +182,14 @@ module timer_reg (
 
   always_comb begin
     s_load_d = s_load_q;
-    if (s_req_accept && s_write && !s_access_error) begin
+    if (s_req_accept && s_write && !s_access_err) begin
       if (s_offset == `RIBP_TIMER_LOAD) s_load_d = s_load_write_value;
       else if (s_offset == `RIBP_TIMER_BGLOAD) s_load_d = s_bgload_write_value;
     end
   end
-  dffr #(32) u_load_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_load_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_load_d),
@@ -196,11 +198,13 @@ module timer_reg (
 
   always_comb begin
     s_prescale_d = s_prescale_q;
-    if (s_req_accept && s_write && !s_access_error && (s_offset == `RIBP_TIMER_PRESCALE)) begin
+    if (s_req_accept && s_write && !s_access_err && (s_offset == `RIBP_TIMER_PRESCALE)) begin
       s_prescale_d = s_prescale_write_value;
     end
   end
-  dffr #(16) u_prescale_dffr (
+  dffr #(
+      .DATA_WIDTH(16)
+  ) u_prescale_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_prescale_d),
@@ -210,18 +214,22 @@ module timer_reg (
   always_comb begin
     s_compare0_d = s_compare0_q;
     s_compare1_d = s_compare1_q;
-    if (s_req_accept && s_write && !s_access_error) begin
+    if (s_req_accept && s_write && !s_access_err) begin
       if (s_offset == `RIBP_TIMER_COMPARE0) s_compare0_d = s_compare0_write_value;
       if (s_offset == `RIBP_TIMER_COMPARE1) s_compare1_d = s_compare1_write_value;
     end
   end
-  dffr #(32) u_compare0_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_compare0_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_compare0_d),
       .dat_o  (s_compare0_q)
   );
-  dffr #(32) u_compare1_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_compare1_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_compare1_d),
@@ -229,22 +237,24 @@ module timer_reg (
   );
 
   always_comb begin
-    s_intr_enable_d = s_intr_enable_q;
-    if (s_req_accept && s_write && !s_access_error && (s_offset == `RIBP_TIMER_INTR_ENABLE)) begin
-      s_intr_enable_d = s_intr_enable_write_value;
+    s_intr_en_d = s_intr_en_q;
+    if (s_req_accept && s_write && !s_access_err && (s_offset == `RIBP_TIMER_INTR_ENABLE)) begin
+      s_intr_en_d = s_intr_en_write_value;
     end
   end
-  dffr #(3) u_intr_enable_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_intr_enable_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_intr_enable_d),
-      .dat_o  (s_intr_enable_q)
+      .dat_i  (s_intr_en_d),
+      .dat_o  (s_intr_en_q)
   );
 
   always_comb begin
     s_intr_clear = '0;
     s_intr_set   = {compare1_event_i, compare0_event_i, timeout_event_i};
-    if (s_req_accept && s_write && !s_access_error) begin
+    if (s_req_accept && s_write && !s_access_err) begin
       if ((s_offset == `RIBP_TIMER_INTR_STATE) && ribp.wstrb[0]) begin
         s_intr_clear = ribp.wdata[2:0];
       end
@@ -254,7 +264,9 @@ module timer_reg (
     end
     s_intr_state_d = (s_intr_state_q & ~s_intr_clear) | s_intr_set;
   end
-  dffr #(3) u_intr_state_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_intr_state_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_intr_state_d),
@@ -268,7 +280,7 @@ module timer_reg (
   assign compare0_enable_o = s_ctrl_q[`TIMER_CTRL_COMPARE0_ENABLE];
   assign compare1_enable_o = s_ctrl_q[`TIMER_CTRL_COMPARE1_ENABLE];
   assign prescale_o = s_prescale_q;
-  assign load_o = (s_req_accept && s_write && !s_access_error &&
+  assign load_o = (s_req_accept && s_write && !s_access_err &&
                    ((s_offset == `RIBP_TIMER_LOAD) ||
                     (s_offset == `RIBP_TIMER_BGLOAD))) ?
                       (s_offset == `RIBP_TIMER_LOAD ?
@@ -276,30 +288,36 @@ module timer_reg (
                       s_load_q;
   assign compare0_o = s_compare0_q;
   assign compare1_o = s_compare1_q;
-  assign irq_o = |(s_intr_state_q & s_intr_enable_q);
+  assign irq_o = |(s_intr_state_q & s_intr_en_q);
 
   assign s_ribp_ready_d = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_error;
+  assign s_ribp_resp_err_d = s_access_err;
 
-  dffr #(1) u_ribp_ready_dffr (
-      clk_i,
-      rst_n_i,
-      s_ribp_ready_d,
-      s_ribp_ready_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_ribp_ready_d),
+      .dat_o  (s_ribp_ready_q)
   );
-  dffer #(1) u_ribp_resp_err_dffer (
-      clk_i,
-      rst_n_i,
-      s_req_accept,
-      s_ribp_resp_err_d,
-      s_ribp_resp_err_q
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_ribp_resp_err_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_req_accept),
+      .dat_i  (s_ribp_resp_err_d),
+      .dat_o  (s_ribp_resp_err_q)
   );
-  dffer #(32) u_ribp_rdata_dffer (
-      clk_i,
-      rst_n_i,
-      s_req_accept,
-      s_ribp_rdata_d,
-      s_ribp_rdata_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_req_accept),
+      .dat_i  (s_ribp_rdata_d),
+      .dat_o  (s_ribp_rdata_q)
   );
 
 endmodule

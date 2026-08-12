@@ -26,11 +26,11 @@ module clint_reg #(
   logic        s_req_accept;
   logic [15:0] s_offset;
   logic        s_aligned;
-  logic        s_access_error;
-  logic        s_msip_select;
-  logic        s_mtimecmp_select;
+  logic        s_access_err;
+  logic        s_msip_sel;
+  logic        s_mtimecmp_sel;
   logic        s_mtimecmp_high;
-  logic        s_mtime_select;
+  logic        s_mtime_sel;
   logic        s_mtime_high;
   logic [11:0] s_msip_hart;
   logic [11:0] s_mtimecmp_hart;
@@ -74,12 +74,12 @@ module clint_reg #(
 
   assign s_msip_hart = s_offset[13:2];
   assign s_mtimecmp_hart = s_offset[14:3] - 12'h800;
-  assign s_msip_select = (s_offset < `RIBP_CLINT_MTIMECMP) && (s_msip_hart < HART_COUNT);
-  assign s_mtimecmp_select = (s_offset >= `RIBP_CLINT_MTIMECMP) &&
+  assign s_msip_sel = (s_offset < `RIBP_CLINT_MTIMECMP) && (s_msip_hart < HART_COUNT);
+  assign s_mtimecmp_sel = (s_offset >= `RIBP_CLINT_MTIMECMP) &&
                              (s_offset < `RIBP_CLINT_MTIME) &&
                              (s_mtimecmp_hart < HART_COUNT);
   assign s_mtimecmp_high = s_offset[2];
-  assign s_mtime_select = (s_offset == `RIBP_CLINT_MTIME) || (s_offset == `RIBP_CLINT_MTIMEH);
+  assign s_mtime_sel = (s_offset == `RIBP_CLINT_MTIME) || (s_offset == `RIBP_CLINT_MTIMEH);
   assign s_mtime_high = s_offset == `RIBP_CLINT_MTIMEH;
 
   assign ribp.ready = s_ribp_ready_q;
@@ -87,18 +87,18 @@ module clint_reg #(
   assign ribp.resp_err = s_ribp_resp_err_q;
 
   always_comb begin
-    s_access_error = !s_aligned || !(s_msip_select || s_mtimecmp_select || s_mtime_select);
+    s_access_err   = !s_aligned || !(s_msip_sel || s_mtimecmp_sel || s_mtime_sel);
     s_ribp_rdata_d = '0;
     if (s_aligned) begin
-      if (s_msip_select) begin
+      if (s_msip_sel) begin
         s_ribp_rdata_d = {31'd0, s_msip_q[s_msip_hart[HART_INDEX_WIDTH-1:0]]};
-      end else if (s_mtimecmp_select) begin
+      end else if (s_mtimecmp_sel) begin
         if (s_mtimecmp_high) begin
           s_ribp_rdata_d = s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][63:32];
         end else begin
           s_ribp_rdata_d = s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][31:0];
         end
-      end else if (s_mtime_select) begin
+      end else if (s_mtime_sel) begin
         s_ribp_rdata_d = s_mtime_high ? mtime_i[63:32] : mtime_i[31:0];
       end
     end
@@ -107,13 +107,15 @@ module clint_reg #(
   always_comb begin
     s_msip_en = '0;
     s_msip_d  = s_msip_q;
-    if (s_req_accept && s_write && !s_access_error && s_msip_select && ribp.wstrb[0]) begin
+    if (s_req_accept && s_write && !s_access_err && s_msip_sel && ribp.wstrb[0]) begin
       s_msip_en[s_msip_hart[HART_INDEX_WIDTH-1:0]] = 1'b1;
       s_msip_d[s_msip_hart[HART_INDEX_WIDTH-1:0]]  = ribp.wdata[0];
     end
   end
   for (genvar hart = 0; hart < HART_NUM; hart++) begin : gen_msip
-    dffer #(1) u_msip_dffer (
+    dffer #(
+        .DATA_WIDTH(1)
+    ) u_msip_dffer (
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),
         .en_i   (s_msip_en[hart]),
@@ -127,7 +129,7 @@ module clint_reg #(
     for (int hart = 0; hart < HART_NUM; hart++) begin
       s_mtimecmp_d[hart] = s_mtimecmp_q[hart];
     end
-    if (s_req_accept && s_write && !s_access_error && s_mtimecmp_select) begin
+    if (s_req_accept && s_write && !s_access_err && s_mtimecmp_sel) begin
       s_mtimecmp_en[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]] = 1'b1;
       if (s_mtimecmp_high) begin
         s_mtimecmp_d[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][63:32] = merge_wstrb(
@@ -139,7 +141,9 @@ module clint_reg #(
     end
   end
   for (genvar hart = 0; hart < HART_NUM; hart++) begin : gen_mtimecmp
-    dfferh #(64) u_mtimecmp_dfferh (
+    dfferh #(
+        .DATA_WIDTH(64)
+    ) u_mtimecmp_dfferh (
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),
         .en_i   (s_mtimecmp_en[hart]),
@@ -151,7 +155,7 @@ module clint_reg #(
   always_comb begin
     mtime_load_o       = 1'b0;
     mtime_load_value_o = mtime_i;
-    if (s_req_accept && s_write && !s_access_error && s_mtime_select) begin
+    if (s_req_accept && s_write && !s_access_err && s_mtime_sel) begin
       mtime_load_o = 1'b1;
       if (s_mtime_high) begin
         mtime_load_value_o[63:32] = merge_wstrb(mtime_i[63:32], ribp.wdata, ribp.wstrb);
@@ -165,22 +169,28 @@ module clint_reg #(
   assign mtimecmp_o        = s_mtimecmp_q;
 
   assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_error;
+  assign s_ribp_resp_err_d = s_access_err;
 
-  dffr #(1) u_ribp_ready_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_ribp_ready_d),
       .dat_o  (s_ribp_ready_q)
   );
-  dffer #(1) u_ribp_resp_err_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_ribp_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
       .dat_i  (s_ribp_resp_err_d),
       .dat_o  (s_ribp_resp_err_q)
   );
-  dffer #(32) u_ribp_rdata_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),

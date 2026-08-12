@@ -69,18 +69,22 @@ module spisd_core (
       s_nor_clkdiv_cnt_d = s_nor_clkdiv_cnt_q + 1'b1;
     end
   end
-  dffr #(2) u_nor_clkdiv_dffr (
-      clk_i,
-      rst_n_i,
-      s_nor_clkdiv_cnt_d,
-      s_nor_clkdiv_cnt_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_nor_clkdiv_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_nor_clkdiv_cnt_d),
+      .dat_o  (s_nor_clkdiv_cnt_q)
   );
 
-  dffrh #(1) u_nor_clk_dffrh (
-      clk_i,
-      rst_n_i,
-      s_nor_clk_d,
-      s_nor_clk_q
+  dffrh #(
+      .DATA_WIDTH(1)
+  ) u_nor_clk_dffrh (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_nor_clk_d),
+      .dat_o  (s_nor_clk_q)
   );
 
 

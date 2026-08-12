@@ -26,20 +26,24 @@ module sdram_clkgen (
   assign sec_edge_o  = s_div_clk_q & (s_div_cnt_q == div_i);
 
   assign s_div_cnt_d = s_div_cnt_q == div_i ? '0 : s_div_cnt_q + 2'd1;
-  dffr #(2) u_div_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_div_cnt_d,
-      s_div_cnt_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_div_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_div_cnt_d),
+      .dat_o  (s_div_cnt_q)
   );
 
 
   assign s_div_clk_d = s_div_cnt_q == div_i ? ~s_div_clk_q : s_div_clk_q;
-  dffr #(1) u_div_clk_dffr (
-      clk_i,
-      rst_n_i,
-      s_div_clk_d,
-      s_div_clk_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_div_clk_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_div_clk_d),
+      .dat_o  (s_div_clk_q)
   );
 
 endmodule

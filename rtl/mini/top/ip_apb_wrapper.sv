@@ -63,7 +63,7 @@ module ip_apb_wrapper (
       32'h0000_FFF8 | {31'd0, ARCHINFO_HAVE_PLL} |
       ({31'd0, ARCHINFO_HAVE_SRAM_IF} << 1) | ({31'd0, ARCHINFO_HAVE_SRAM_MACRO} << 2);
 
-  logic        s_rng_entropy_enable;
+  logic        s_rng_entropy_en;
   logic        s_rng_entropy_ready;
   logic        s_rng_entropy_valid;
   logic [31:0] s_rng_entropy_data;
@@ -121,7 +121,7 @@ module ip_apb_wrapper (
   rng_deterministic_source u_rng_deterministic_source (
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
-      .enable_i   (s_rng_entropy_enable),
+      .enable_i   (s_rng_entropy_en),
       .ready_i    (s_rng_entropy_ready),
       .valid_o    (s_rng_entropy_valid),
       .data_o     (s_rng_entropy_data),
@@ -132,7 +132,7 @@ module ip_apb_wrapper (
   apb4_rng #(
       .FIFO_DEPTH(8)
   ) u_apb4_rng (
-      .entropy_enable_o   (s_rng_entropy_enable),
+      .entropy_enable_o   (s_rng_entropy_en),
       .entropy_ready_o    (s_rng_entropy_ready),
       .entropy_valid_i    (s_rng_entropy_valid),
       .entropy_data_i     (s_rng_entropy_data),

@@ -20,22 +20,22 @@ module ribp_gpio #(
 
   logic [PIN_NUM-1:0] s_data_in;
   logic [PIN_NUM-1:0] s_data_out;
-  logic [PIN_NUM-1:0] s_output_enable;
+  logic [PIN_NUM-1:0] s_output_en;
   logic [PIN_NUM-1:0] s_open_drain;
   logic [PIN_NUM-1:0] s_input_cmos;
   logic [PIN_NUM-1:0] s_pull_up;
   logic [PIN_NUM-1:0] s_pull_down;
-  logic [PIN_NUM-1:0] s_alt_enable;
-  logic [PIN_NUM-1:0] s_alt_select;
-  logic [PIN_NUM-1:0] s_user_select;
+  logic [PIN_NUM-1:0] s_alt_en;
+  logic [PIN_NUM-1:0] s_alt_sel;
+  logic [PIN_NUM-1:0] s_user_sel;
   logic [PIN_NUM-1:0] s_user_handoff;
-  logic [PIN_NUM-1:0] s_filter_enable;
+  logic [PIN_NUM-1:0] s_filter_en;
   logic [       15:0] s_filter_div;
   logic [        3:0] s_filter_count;
-  logic [PIN_NUM-1:0] s_intr_rise_enable;
-  logic [PIN_NUM-1:0] s_intr_fall_enable;
-  logic [PIN_NUM-1:0] s_intr_high_enable;
-  logic [PIN_NUM-1:0] s_intr_low_enable;
+  logic [PIN_NUM-1:0] s_intr_rise_en;
+  logic [PIN_NUM-1:0] s_intr_fall_en;
+  logic [PIN_NUM-1:0] s_intr_high_en;
+  logic [PIN_NUM-1:0] s_intr_low_en;
   logic [PIN_NUM-1:0] s_intr_event;
   logic               s_irq;
 
@@ -53,22 +53,22 @@ module ribp_gpio #(
       .data_in_i         (s_data_in),
       .intr_event_i      (s_intr_event),
       .data_out_o        (s_data_out),
-      .output_enable_o   (s_output_enable),
+      .output_enable_o   (s_output_en),
       .open_drain_o      (s_open_drain),
       .input_cmos_o      (s_input_cmos),
       .pull_up_o         (s_pull_up),
       .pull_down_o       (s_pull_down),
-      .alt_enable_o      (s_alt_enable),
-      .alt_select_o      (s_alt_select),
-      .user_select_o     (s_user_select),
+      .alt_enable_o      (s_alt_en),
+      .alt_select_o      (s_alt_sel),
+      .user_select_o     (s_user_sel),
       .user_handoff_o    (s_user_handoff),
-      .filter_enable_o   (s_filter_enable),
+      .filter_enable_o   (s_filter_en),
       .filter_div_o      (s_filter_div),
       .filter_count_o    (s_filter_count),
-      .intr_rise_enable_o(s_intr_rise_enable),
-      .intr_fall_enable_o(s_intr_fall_enable),
-      .intr_high_enable_o(s_intr_high_enable),
-      .intr_low_enable_o (s_intr_low_enable),
+      .intr_rise_enable_o(s_intr_rise_en),
+      .intr_fall_enable_o(s_intr_fall_en),
+      .intr_high_enable_o(s_intr_high_en),
+      .intr_low_enable_o (s_intr_low_en),
       .irq_o             (s_irq)
   );
 
@@ -78,22 +78,22 @@ module ribp_gpio #(
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
       .data_out_i        (s_data_out),
-      .output_enable_i   (s_output_enable),
+      .output_enable_i   (s_output_en),
       .open_drain_i      (s_open_drain),
       .input_cmos_i      (s_input_cmos),
       .pull_up_i         (s_pull_up),
       .pull_down_i       (s_pull_down),
-      .alt_enable_i      (s_alt_enable),
-      .alt_select_i      (s_alt_select),
-      .user_select_i     (s_user_select),
+      .alt_enable_i      (s_alt_en),
+      .alt_select_i      (s_alt_sel),
+      .user_select_i     (s_user_sel),
       .user_handoff_i    (s_user_handoff),
-      .filter_enable_i   (s_filter_enable),
+      .filter_enable_i   (s_filter_en),
       .filter_div_i      (s_filter_div),
       .filter_count_i    (s_filter_count),
-      .intr_rise_enable_i(s_intr_rise_enable),
-      .intr_fall_enable_i(s_intr_fall_enable),
-      .intr_high_enable_i(s_intr_high_enable),
-      .intr_low_enable_i (s_intr_low_enable),
+      .intr_rise_enable_i(s_intr_rise_en),
+      .intr_fall_enable_i(s_intr_fall_en),
+      .intr_high_enable_i(s_intr_high_en),
+      .intr_low_enable_i (s_intr_low_en),
       .irq_i             (s_irq),
       .data_in_o         (s_data_in),
       .intr_event_o      (s_intr_event),

@@ -154,37 +154,49 @@ module ahbl2axi4 (
     end
   end
 
-  dffr #(3) u_fsm_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_fsm_dffr (
       .clk_i  (ahbl.hclk),
       .rst_n_i(ahbl.hresetn),
       .dat_i  (s_fsm_d),
       .dat_o  (s_fsm_q)
   );
-  dffr #(32) u_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffr (
       .clk_i  (ahbl.hclk),
       .rst_n_i(ahbl.hresetn),
       .dat_i  (s_addr_d),
       .dat_o  (s_addr_q)
   );
-  dffr #(1) u_write_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_write_dffr (
       .clk_i  (ahbl.hclk),
       .rst_n_i(ahbl.hresetn),
       .dat_i  (s_write_d),
       .dat_o  (s_write_q)
   );
-  dffr #(3) u_size_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_size_dffr (
       .clk_i  (ahbl.hclk),
       .rst_n_i(ahbl.hresetn),
       .dat_i  (s_size_d),
       .dat_o  (s_size_q)
   );
-  dffr #(1) u_aw_done_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_aw_done_dffr (
       .clk_i  (ahbl.hclk),
       .rst_n_i(ahbl.hresetn),
       .dat_i  (s_aw_done_d),
       .dat_o  (s_aw_done_q)
   );
-  dffr #(1) u_w_done_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_w_done_dffr (
       .clk_i  (ahbl.hclk),
       .rst_n_i(ahbl.hresetn),
       .dat_i  (s_w_done_d),

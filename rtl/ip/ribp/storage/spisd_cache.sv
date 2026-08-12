@@ -173,60 +173,76 @@ module spisd_cache (
     endcase
   end
 
-  dffr #(2) u_cache_fsm_dffr (
-      clk_i,
-      rst_n_i,
-      s_cache_fsm_d,
-      s_cache_fsm_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_cache_fsm_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cache_fsm_d),
+      .dat_o  (s_cache_fsm_q)
   );
 
-  dffr #(1) u_cache_valid_dffr (
-      clk_i,
-      rst_n_i,
-      s_cache_valid_d,
-      s_cache_valid_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_cache_valid_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cache_valid_d),
+      .dat_o  (s_cache_valid_q)
   );
 
-  dffr #(1) u_cache_dirty_dffr (
-      clk_i,
-      rst_n_i,
-      s_cache_dirty_d,
-      s_cache_dirty_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_cache_dirty_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cache_dirty_d),
+      .dat_o  (s_cache_dirty_q)
   );
 
-  dffr #(32) u_cache_tag_dffr (
-      clk_i,
-      rst_n_i,
-      s_cache_tag_d,
-      s_cache_tag_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_cache_tag_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cache_tag_d),
+      .dat_o  (s_cache_tag_q)
   );
 
-  dffr #(7) u_line_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_line_cnt_d,
-      s_line_cnt_q
+  dffr #(
+      .DATA_WIDTH(7)
+  ) u_line_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_line_cnt_d),
+      .dat_o  (s_line_cnt_q)
   );
 
-  dffr #(2) u_word_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_word_cnt_d,
-      s_word_cnt_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_word_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_word_cnt_d),
+      .dat_o  (s_word_cnt_q)
   );
 
-  dffr #(8) u_s_sd_wr_data_dffr (
-      clk_i,
-      rst_n_i,
-      s_sd_wr_data_d,
-      s_sd_wr_data_q
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_s_sd_wr_data_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_sd_wr_data_d),
+      .dat_o  (s_sd_wr_data_q)
   );
 
-  dffr #(32) u_word_data_dffr (
-      clk_i,
-      rst_n_i,
-      s_word_data_d,
-      s_word_data_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_word_data_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_word_data_d),
+      .dat_o  (s_word_data_q)
   );
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
@@ -241,11 +257,13 @@ module spisd_cache (
     if (wr_sync_i) s_wr_sync_d = 1'b1;
     else if (wr_sync_done_o) s_wr_sync_d = 1'b0;
   end
-  dffr #(1) u_wr_sync_dffr (
-      clk_i,
-      rst_n_i,
-      s_wr_sync_d,
-      s_wr_sync_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_wr_sync_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_wr_sync_d),
+      .dat_o  (s_wr_sync_q)
   );
 
 endmodule

@@ -70,13 +70,13 @@ module i2c_reg #(
   logic s_req;
   logic s_write;
   logic s_req_accept;
-  logic s_access_error;
+  logic s_access_err;
   logic s_ribp_ready_d, s_ribp_ready_q;
   logic s_ribp_resp_err_d, s_ribp_resp_err_q;
   logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
 
-  logic s_enable_en;
-  logic s_enable_d, s_enable_q;
+  logic s_en_en;
+  logic s_en_d, s_en_q;
   logic s_scl_timing_en;
   logic [31:0] s_scl_timing_d, s_scl_timing_q;
   logic s_start_timing_en;
@@ -91,16 +91,16 @@ module i2c_reg #(
   logic [23:0] s_stretch_timeout_d, s_stretch_timeout_q;
   logic s_bus_idle_timeout_en;
   logic [23:0] s_bus_idle_timeout_d, s_bus_idle_timeout_q;
-  logic s_command_timeout_en;
-  logic [23:0] s_command_timeout_d, s_command_timeout_q;
+  logic s_cmd_timeout_en;
+  logic [23:0] s_cmd_timeout_d, s_cmd_timeout_q;
   logic s_target_addr_en;
   logic [10:0] s_target_addr_d, s_target_addr_q;
   logic s_cmd_watermark_en;
   logic [7:0] s_cmd_watermark_d, s_cmd_watermark_q;
   logic s_rx_watermark_en;
   logic [7:0] s_rx_watermark_d, s_rx_watermark_q;
-  logic s_intr_enable_en;
-  logic [7:0] s_intr_enable_d, s_intr_enable_q;
+  logic s_intr_en_en;
+  logic [7:0] s_intr_en_d, s_intr_en_q;
 
   logic                        s_cmd_push;
   logic                        s_cmd_flush_cmd;
@@ -115,21 +115,21 @@ module i2c_reg #(
   logic [                 7:0] s_rx_pop_data;
   logic [ RX_FIFO_LOG_DEPTH:0] s_rx_count;
 
-  logic [10:0] s_error_status_d, s_error_status_q;
+  logic [10:0] s_err_stat_d, s_err_stat_q;
   logic [7:0] s_intr_state_d, s_intr_state_q;
-  logic [10:0] s_error_clear;
+  logic [10:0] s_err_clear;
   logic [ 7:0] s_intr_clear;
   logic [ 7:0] s_intr_test;
-  logic        s_config_error_event;
-  logic        s_sw_command_error_event;
+  logic        s_config_err_event;
+  logic        s_sw_cmd_err_event;
   logic        s_timeout_event;
-  logic        s_error_event;
+  logic        s_err_event;
   logic        s_cmd_watermark_active;
   logic        s_rx_watermark_active;
   logic        s_tx_dma_req;
   logic        s_rx_dma_req;
   logic        s_config_valid;
-  logic [31:0] s_status;
+  logic [31:0] s_stat;
   logic [31:0] s_fifo_level;
   logic [31:0] s_line_state;
   logic [31:0] s_merge_value;
@@ -160,7 +160,7 @@ module i2c_reg #(
   assign ribp.ready = s_ribp_ready_q;
   assign ribp.resp_err = s_ribp_resp_err_q;
   assign ribp.rdata = s_ribp_rdata_q;
-  assign enable_o = s_enable_q;
+  assign enable_o = s_en_q;
   assign scl_low_cycles_o = s_scl_timing_q[15:0];
   assign scl_high_cycles_o = s_scl_timing_q[31:16];
   assign start_hold_cycles_o = s_start_timing_q[15:0];
@@ -173,7 +173,7 @@ module i2c_reg #(
   assign sda_filter_cycles_o = s_filter_q[11:8];
   assign stretch_timeout_o = s_stretch_timeout_q;
   assign bus_idle_timeout_o = s_bus_idle_timeout_q;
-  assign command_timeout_o = s_command_timeout_q;
+  assign command_timeout_o = s_cmd_timeout_q;
   assign target_addr_o = s_target_addr_q[9:0];
   assign ten_bit_o = s_target_addr_q[10];
   assign cmd_valid_o = !s_cmd_empty;
@@ -190,129 +190,129 @@ module i2c_reg #(
                           (s_stop_timing_q[15:0] != 16'd0) &&
                           (s_stop_timing_q[31:16] != 16'd0) &&
                           (s_target_addr_q[10] || (s_target_addr_q[9:7] == 3'd0));
-  assign s_cmd_watermark_active = s_enable_q && (8'(s_cmd_count) <= s_cmd_watermark_q);
-  assign s_rx_watermark_active = s_enable_q && (8'(s_rx_count) >= s_rx_watermark_q);
-  assign s_tx_dma_req = s_enable_q && s_config_valid && !s_cmd_full;
-  assign s_rx_dma_req = s_enable_q && !s_rx_empty;
+  assign s_cmd_watermark_active = s_en_q && (8'(s_cmd_count) <= s_cmd_watermark_q);
+  assign s_rx_watermark_active = s_en_q && (8'(s_rx_count) >= s_rx_watermark_q);
+  assign s_tx_dma_req = s_en_q && s_config_valid && !s_cmd_full;
+  assign s_rx_dma_req = s_en_q && !s_rx_empty;
   assign dma_tx_stall_o = !s_tx_dma_req;
   assign dma_rx_stall_o = !s_rx_dma_req;
-  assign irq_o = |(s_intr_state_q & s_intr_enable_q);
+  assign irq_o = |(s_intr_state_q & s_intr_en_q);
 
   always_comb begin
-    s_status                              = '0;
-    s_status[`I2C_STATUS_ENABLE]          = s_enable_q;
-    s_status[`I2C_STATUS_BUSY]            = busy_i;
-    s_status[`I2C_STATUS_BUS_BUSY]        = !(scl_i && sda_i);
-    s_status[`I2C_STATUS_CMD_EMPTY]       = s_cmd_empty;
-    s_status[`I2C_STATUS_CMD_FULL]        = s_cmd_full;
-    s_status[`I2C_STATUS_RX_EMPTY]        = s_rx_empty;
-    s_status[`I2C_STATUS_RX_FULL]         = s_rx_full;
-    s_status[`I2C_STATUS_CONFIG_VALID]    = s_config_valid;
-    s_status[`I2C_STATUS_RECOVERY_ACTIVE] = recovery_active_i;
-    s_status[`I2C_STATUS_SCL]             = scl_i;
-    s_status[`I2C_STATUS_SDA]             = sda_i;
-    s_status[`I2C_STATUS_TX_DMA_REQ]      = s_tx_dma_req;
-    s_status[`I2C_STATUS_RX_DMA_REQ]      = s_rx_dma_req;
-    s_fifo_level                          = '0;
-    s_fifo_level[7:0]                     = 8'(s_cmd_count);
-    s_fifo_level[23:16]                   = 8'(s_rx_count);
-    s_line_state                          = '0;
-    s_line_state[`I2C_LINE_SCL]           = scl_i;
-    s_line_state[`I2C_LINE_SDA]           = sda_i;
-    s_line_state[`I2C_LINE_BUS_FREE]      = scl_i && sda_i;
+    s_stat                              = '0;
+    s_stat[`I2C_STATUS_ENABLE]          = s_en_q;
+    s_stat[`I2C_STATUS_BUSY]            = busy_i;
+    s_stat[`I2C_STATUS_BUS_BUSY]        = !(scl_i && sda_i);
+    s_stat[`I2C_STATUS_CMD_EMPTY]       = s_cmd_empty;
+    s_stat[`I2C_STATUS_CMD_FULL]        = s_cmd_full;
+    s_stat[`I2C_STATUS_RX_EMPTY]        = s_rx_empty;
+    s_stat[`I2C_STATUS_RX_FULL]         = s_rx_full;
+    s_stat[`I2C_STATUS_CONFIG_VALID]    = s_config_valid;
+    s_stat[`I2C_STATUS_RECOVERY_ACTIVE] = recovery_active_i;
+    s_stat[`I2C_STATUS_SCL]             = scl_i;
+    s_stat[`I2C_STATUS_SDA]             = sda_i;
+    s_stat[`I2C_STATUS_TX_DMA_REQ]      = s_tx_dma_req;
+    s_stat[`I2C_STATUS_RX_DMA_REQ]      = s_rx_dma_req;
+    s_fifo_level                        = '0;
+    s_fifo_level[7:0]                   = 8'(s_cmd_count);
+    s_fifo_level[23:16]                 = 8'(s_rx_count);
+    s_line_state                        = '0;
+    s_line_state[`I2C_LINE_SCL]         = scl_i;
+    s_line_state[`I2C_LINE_SDA]         = sda_i;
+    s_line_state[`I2C_LINE_BUS_FREE]    = scl_i && sda_i;
   end
 
   always_comb begin
-    s_req_accept             = s_req;
-    s_access_error           = 1'b0;
-    s_enable_en              = 1'b0;
-    s_scl_timing_en          = 1'b0;
-    s_start_timing_en        = 1'b0;
-    s_data_timing_en         = 1'b0;
-    s_stop_timing_en         = 1'b0;
-    s_filter_en              = 1'b0;
-    s_stretch_timeout_en     = 1'b0;
-    s_bus_idle_timeout_en    = 1'b0;
-    s_command_timeout_en     = 1'b0;
-    s_target_addr_en         = 1'b0;
-    s_cmd_watermark_en       = 1'b0;
-    s_rx_watermark_en        = 1'b0;
-    s_intr_enable_en         = 1'b0;
-    s_enable_d               = s_enable_q;
-    s_scl_timing_d           = s_scl_timing_q;
-    s_start_timing_d         = s_start_timing_q;
-    s_data_timing_d          = s_data_timing_q;
-    s_stop_timing_d          = s_stop_timing_q;
-    s_filter_d               = s_filter_q;
-    s_stretch_timeout_d      = s_stretch_timeout_q;
-    s_bus_idle_timeout_d     = s_bus_idle_timeout_q;
-    s_command_timeout_d      = s_command_timeout_q;
-    s_target_addr_d          = s_target_addr_q;
-    s_cmd_watermark_d        = s_cmd_watermark_q;
-    s_rx_watermark_d         = s_rx_watermark_q;
-    s_intr_enable_d          = s_intr_enable_q;
-    s_cmd_push               = 1'b0;
-    s_rx_pop                 = 1'b0;
-    s_cmd_flush_cmd          = 1'b0;
-    s_rx_flush_cmd           = 1'b0;
-    abort_o                  = 1'b0;
-    recover_o                = 1'b0;
-    s_error_clear            = '0;
-    s_intr_clear             = '0;
-    s_intr_test              = '0;
-    s_config_error_event     = 1'b0;
-    s_sw_command_error_event = 1'b0;
-    s_ribp_rdata_d           = '0;
-    s_merge_value            = '0;
+    s_req_accept          = s_req;
+    s_access_err          = 1'b0;
+    s_en_en               = 1'b0;
+    s_scl_timing_en       = 1'b0;
+    s_start_timing_en     = 1'b0;
+    s_data_timing_en      = 1'b0;
+    s_stop_timing_en      = 1'b0;
+    s_filter_en           = 1'b0;
+    s_stretch_timeout_en  = 1'b0;
+    s_bus_idle_timeout_en = 1'b0;
+    s_cmd_timeout_en      = 1'b0;
+    s_target_addr_en      = 1'b0;
+    s_cmd_watermark_en    = 1'b0;
+    s_rx_watermark_en     = 1'b0;
+    s_intr_en_en          = 1'b0;
+    s_en_d                = s_en_q;
+    s_scl_timing_d        = s_scl_timing_q;
+    s_start_timing_d      = s_start_timing_q;
+    s_data_timing_d       = s_data_timing_q;
+    s_stop_timing_d       = s_stop_timing_q;
+    s_filter_d            = s_filter_q;
+    s_stretch_timeout_d   = s_stretch_timeout_q;
+    s_bus_idle_timeout_d  = s_bus_idle_timeout_q;
+    s_cmd_timeout_d       = s_cmd_timeout_q;
+    s_target_addr_d       = s_target_addr_q;
+    s_cmd_watermark_d     = s_cmd_watermark_q;
+    s_rx_watermark_d      = s_rx_watermark_q;
+    s_intr_en_d           = s_intr_en_q;
+    s_cmd_push            = 1'b0;
+    s_rx_pop              = 1'b0;
+    s_cmd_flush_cmd       = 1'b0;
+    s_rx_flush_cmd        = 1'b0;
+    abort_o               = 1'b0;
+    recover_o             = 1'b0;
+    s_err_clear           = '0;
+    s_intr_clear          = '0;
+    s_intr_test           = '0;
+    s_config_err_event    = 1'b0;
+    s_sw_cmd_err_event    = 1'b0;
+    s_ribp_rdata_d        = '0;
+    s_merge_value         = '0;
 
     if (s_req) begin
       if ((ribp.addr[11:8] != 4'd0) || (ribp.addr[1:0] != 2'b00)) begin
-        s_access_error = 1'b1;
+        s_access_err = 1'b1;
       end else if (s_write) begin
         unique case (ribp.addr[7:0])
           `RIBP_I2C_CTRL: begin
-            s_merge_value = merge_wstrb({31'd0, s_enable_q}, ribp.wdata, ribp.wstrb);
+            s_merge_value = merge_wstrb({31'd0, s_en_q}, ribp.wdata, ribp.wstrb);
             if ((s_merge_value[31:1] != 31'd0) ||
                 (s_merge_value[0] && !s_config_valid) ||
                 (!s_merge_value[0] && (busy_i || recovery_active_i))) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
-              s_enable_en = 1'b1;
-              s_enable_d  = s_merge_value[0];
+              s_en_en = 1'b1;
+              s_en_d  = s_merge_value[0];
             end
           end
           `RIBP_I2C_SCL_TIMING: begin
-            if (s_enable_q || busy_i || recovery_active_i) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+            if (s_en_q || busy_i || recovery_active_i) begin
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_scl_timing_en = 1'b1;
               s_scl_timing_d  = merge_wstrb(s_scl_timing_q, ribp.wdata, ribp.wstrb);
             end
           end
           `RIBP_I2C_START_TIMING: begin
-            if (s_enable_q || busy_i || recovery_active_i) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+            if (s_en_q || busy_i || recovery_active_i) begin
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_start_timing_en = 1'b1;
               s_start_timing_d  = merge_wstrb(s_start_timing_q, ribp.wdata, ribp.wstrb);
             end
           end
           `RIBP_I2C_DATA_TIMING: begin
-            if (s_enable_q || busy_i || recovery_active_i) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+            if (s_en_q || busy_i || recovery_active_i) begin
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_data_timing_en = 1'b1;
               s_data_timing_d  = merge_wstrb(s_data_timing_q, ribp.wdata, ribp.wstrb);
             end
           end
           `RIBP_I2C_STOP_TIMING: begin
-            if (s_enable_q || busy_i || recovery_active_i) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+            if (s_en_q || busy_i || recovery_active_i) begin
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_stop_timing_en = 1'b1;
               s_stop_timing_d  = merge_wstrb(s_stop_timing_q, ribp.wdata, ribp.wstrb);
@@ -320,10 +320,10 @@ module i2c_reg #(
           end
           `RIBP_I2C_FILTER: begin
             s_merge_value = merge_wstrb({20'd0, s_filter_q}, ribp.wdata, ribp.wstrb);
-            if (s_enable_q || busy_i || recovery_active_i ||
+            if (s_en_q || busy_i || recovery_active_i ||
                 (s_merge_value[31:12] != 20'd0) || (s_merge_value[7:4] != 4'd0)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_filter_en = 1'b1;
               s_filter_d  = s_merge_value[11:0];
@@ -331,9 +331,9 @@ module i2c_reg #(
           end
           `RIBP_I2C_STRETCH_TIMEOUT: begin
             s_merge_value = merge_wstrb({8'd0, s_stretch_timeout_q}, ribp.wdata, ribp.wstrb);
-            if (s_enable_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+            if (s_en_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_stretch_timeout_en = 1'b1;
               s_stretch_timeout_d  = s_merge_value[23:0];
@@ -341,22 +341,22 @@ module i2c_reg #(
           end
           `RIBP_I2C_BUS_IDLE_TIMEOUT: begin
             s_merge_value = merge_wstrb({8'd0, s_bus_idle_timeout_q}, ribp.wdata, ribp.wstrb);
-            if (s_enable_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+            if (s_en_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_bus_idle_timeout_en = 1'b1;
               s_bus_idle_timeout_d  = s_merge_value[23:0];
             end
           end
           `RIBP_I2C_COMMAND_TIMEOUT: begin
-            s_merge_value = merge_wstrb({8'd0, s_command_timeout_q}, ribp.wdata, ribp.wstrb);
-            if (s_enable_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+            s_merge_value = merge_wstrb({8'd0, s_cmd_timeout_q}, ribp.wdata, ribp.wstrb);
+            if (s_en_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
-              s_command_timeout_en = 1'b1;
-              s_command_timeout_d  = s_merge_value[23:0];
+              s_cmd_timeout_en = 1'b1;
+              s_cmd_timeout_d  = s_merge_value[23:0];
             end
           end
           `RIBP_I2C_TARGET_ADDR: begin
@@ -364,8 +364,8 @@ module i2c_reg #(
             if (busy_i || recovery_active_i || !s_cmd_empty ||
                 (s_merge_value[31:11] != 21'd0) ||
                 (!s_merge_value[10] && (s_merge_value[9:7] != 3'd0))) begin
-              s_access_error       = 1'b1;
-              s_config_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_config_err_event = 1'b1;
             end else begin
               s_target_addr_en = 1'b1;
               s_target_addr_d  = s_merge_value[10:0];
@@ -377,39 +377,39 @@ module i2c_reg #(
                  ribp.wdata[`I2C_DATA_CMD_NACK_LAST]) ||
                 (ribp.wdata[`I2C_DATA_CMD_READ] && ribp.wdata[`I2C_DATA_CMD_STOP] &&
                  !ribp.wdata[`I2C_DATA_CMD_NACK_LAST])) begin
-              s_access_error           = 1'b1;
-              s_sw_command_error_event = 1'b1;
-            end else if (s_cmd_full && s_enable_q && s_config_valid) begin
+              s_access_err       = 1'b1;
+              s_sw_cmd_err_event = 1'b1;
+            end else if (s_cmd_full && s_en_q && s_config_valid) begin
               s_req_accept = 1'b0;
             end else if (s_cmd_full) begin
-              s_access_error           = 1'b1;
-              s_sw_command_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_sw_cmd_err_event = 1'b1;
             end else begin
               s_cmd_push = 1'b1;
             end
           end
           `RIBP_I2C_COMMAND: begin
             if (!ribp.wstrb[0] || (ribp.wdata[31:4] != 28'd0) || (ribp.wdata[3:0] == 4'd0)) begin
-              s_access_error           = 1'b1;
-              s_sw_command_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_sw_cmd_err_event = 1'b1;
             end else if (ribp.wdata[`I2C_COMMAND_ABORT]) begin
               if ((ribp.wdata[3:0] != 4'b0001) || (!busy_i && !recovery_active_i)) begin
-                s_access_error           = 1'b1;
-                s_sw_command_error_event = 1'b1;
+                s_access_err       = 1'b1;
+                s_sw_cmd_err_event = 1'b1;
               end else begin
                 abort_o = 1'b1;
               end
             end else if (ribp.wdata[`I2C_COMMAND_RECOVER]) begin
-              if ((ribp.wdata[3:0] != 4'b0010) || !s_enable_q || !s_config_valid ||
+              if ((ribp.wdata[3:0] != 4'b0010) || !s_en_q || !s_config_valid ||
                   busy_i || recovery_active_i || !s_cmd_empty) begin
-                s_access_error           = 1'b1;
-                s_sw_command_error_event = 1'b1;
+                s_access_err       = 1'b1;
+                s_sw_cmd_err_event = 1'b1;
               end else begin
                 recover_o = 1'b1;
               end
             end else if (busy_i || recovery_active_i || (ribp.wdata[1:0] != 2'd0)) begin
-              s_access_error           = 1'b1;
-              s_sw_command_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_sw_cmd_err_event = 1'b1;
             end else begin
               s_cmd_flush_cmd = ribp.wdata[`I2C_COMMAND_CMD_FLUSH];
               s_rx_flush_cmd  = ribp.wdata[`I2C_COMMAND_RX_FLUSH];
@@ -418,8 +418,8 @@ module i2c_reg #(
           `RIBP_I2C_CMD_WATERMARK: begin
             s_merge_value = merge_wstrb({24'd0, s_cmd_watermark_q}, ribp.wdata, ribp.wstrb);
             if ((s_merge_value[31:8] != 24'd0) || (s_merge_value[7:0] >= CMD_DEPTH_INFO)) begin
-              s_access_error           = 1'b1;
-              s_sw_command_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_sw_cmd_err_event = 1'b1;
             end else begin
               s_cmd_watermark_en = 1'b1;
               s_cmd_watermark_d  = s_merge_value[7:0];
@@ -429,8 +429,8 @@ module i2c_reg #(
             s_merge_value = merge_wstrb({24'd0, s_rx_watermark_q}, ribp.wdata, ribp.wstrb);
             if ((s_merge_value[31:8] != 24'd0) || (s_merge_value[7:0] == 8'd0) ||
                 (s_merge_value[7:0] > RX_DEPTH_INFO)) begin
-              s_access_error           = 1'b1;
-              s_sw_command_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_sw_cmd_err_event = 1'b1;
             end else begin
               s_rx_watermark_en = 1'b1;
               s_rx_watermark_d  = s_merge_value[7:0];
@@ -438,39 +438,39 @@ module i2c_reg #(
           end
           `RIBP_I2C_ERROR_STATUS: begin
             if (!ribp.wstrb[0] || (ribp.wdata[31:11] != 21'd0)) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
-              s_error_clear = ribp.wdata[10:0];
+              s_err_clear = ribp.wdata[10:0];
             end
           end
           `RIBP_I2C_INTR_STATE: begin
             if (!ribp.wstrb[0] || (ribp.wdata[31:8] != 24'd0)) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
               s_intr_clear = ribp.wdata[7:0];
             end
           end
           `RIBP_I2C_INTR_ENABLE: begin
-            s_merge_value = merge_wstrb({24'd0, s_intr_enable_q}, ribp.wdata, ribp.wstrb);
+            s_merge_value = merge_wstrb({24'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb);
             if (s_merge_value[31:8] != 24'd0) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
-              s_intr_enable_en = 1'b1;
-              s_intr_enable_d  = s_merge_value[7:0];
+              s_intr_en_en = 1'b1;
+              s_intr_en_d  = s_merge_value[7:0];
             end
           end
           `RIBP_I2C_INTR_TEST: begin
             if (!ribp.wstrb[0] || (ribp.wdata[31:8] != 24'd0)) begin
-              s_access_error = 1'b1;
+              s_access_err = 1'b1;
             end else begin
               s_intr_test = ribp.wdata[7:0];
             end
           end
-          default: s_access_error = 1'b1;
+          default: s_access_err = 1'b1;
         endcase
       end else begin
         unique case (ribp.addr[7:0])
-          `RIBP_I2C_CTRL:             s_ribp_rdata_d = {31'd0, s_enable_q};
+          `RIBP_I2C_CTRL:             s_ribp_rdata_d = {31'd0, s_en_q};
           `RIBP_I2C_SCL_TIMING:       s_ribp_rdata_d = s_scl_timing_q;
           `RIBP_I2C_START_TIMING:     s_ribp_rdata_d = s_start_timing_q;
           `RIBP_I2C_DATA_TIMING:      s_ribp_rdata_d = s_data_timing_q;
@@ -478,30 +478,30 @@ module i2c_reg #(
           `RIBP_I2C_FILTER:           s_ribp_rdata_d = {20'd0, s_filter_q};
           `RIBP_I2C_STRETCH_TIMEOUT:  s_ribp_rdata_d = {8'd0, s_stretch_timeout_q};
           `RIBP_I2C_BUS_IDLE_TIMEOUT: s_ribp_rdata_d = {8'd0, s_bus_idle_timeout_q};
-          `RIBP_I2C_COMMAND_TIMEOUT:  s_ribp_rdata_d = {8'd0, s_command_timeout_q};
+          `RIBP_I2C_COMMAND_TIMEOUT:  s_ribp_rdata_d = {8'd0, s_cmd_timeout_q};
           `RIBP_I2C_TARGET_ADDR:      s_ribp_rdata_d = {21'd0, s_target_addr_q};
           `RIBP_I2C_RXDATA: begin
             if (s_rx_empty) begin
-              s_access_error           = 1'b1;
-              s_sw_command_error_event = 1'b1;
+              s_access_err       = 1'b1;
+              s_sw_cmd_err_event = 1'b1;
             end else begin
               s_ribp_rdata_d = {24'd0, s_rx_pop_data};
               s_rx_pop       = 1'b1;
             end
           end
-          `RIBP_I2C_STATUS:           s_ribp_rdata_d = s_status;
+          `RIBP_I2C_STATUS:           s_ribp_rdata_d = s_stat;
           `RIBP_I2C_FIFO_LEVEL:       s_ribp_rdata_d = s_fifo_level;
           `RIBP_I2C_CMD_WATERMARK:    s_ribp_rdata_d = {24'd0, s_cmd_watermark_q};
           `RIBP_I2C_RX_WATERMARK:     s_ribp_rdata_d = {24'd0, s_rx_watermark_q};
-          `RIBP_I2C_ERROR_STATUS:     s_ribp_rdata_d = {21'd0, s_error_status_q};
+          `RIBP_I2C_ERROR_STATUS:     s_ribp_rdata_d = {21'd0, s_err_stat_q};
           `RIBP_I2C_INTR_STATE:       s_ribp_rdata_d = {24'd0, s_intr_state_q};
-          `RIBP_I2C_INTR_ENABLE:      s_ribp_rdata_d = {24'd0, s_intr_enable_q};
-          `RIBP_I2C_INTR_STATUS:      s_ribp_rdata_d = {24'd0, (s_intr_state_q & s_intr_enable_q)};
+          `RIBP_I2C_INTR_ENABLE:      s_ribp_rdata_d = {24'd0, s_intr_en_q};
+          `RIBP_I2C_INTR_STATUS:      s_ribp_rdata_d = {24'd0, (s_intr_state_q & s_intr_en_q)};
           `RIBP_I2C_LINE_STATE:       s_ribp_rdata_d = s_line_state;
           `RIBP_I2C_IP_VERSION:       s_ribp_rdata_d = IP_VERSION;
           `RIBP_I2C_CAPABILITY:       s_ribp_rdata_d = CAPABILITY;
           default: begin
-            s_access_error = 1'b1;
+            s_access_err   = 1'b1;
             s_ribp_rdata_d = '0;
           end
         endcase
@@ -510,22 +510,28 @@ module i2c_reg #(
   end
 
   assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_error;
+  assign s_ribp_resp_err_d = s_access_err;
 
-  dffr #(1) u_ribp_ready_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ribp_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_ribp_ready_d),
       .dat_o  (s_ribp_ready_q)
   );
-  dffer #(1) u_ribp_resp_err_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_ribp_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
       .dat_i  (s_ribp_resp_err_d),
       .dat_o  (s_ribp_resp_err_q)
   );
-  dffer #(32) u_ribp_rdata_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_ribp_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
@@ -533,35 +539,45 @@ module i2c_reg #(
       .dat_o  (s_ribp_rdata_q)
   );
 
-  dffer #(1) u_enable_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_enable_en),
-      .dat_i  (s_enable_d),
-      .dat_o  (s_enable_q)
+      .en_i   (s_en_en),
+      .dat_i  (s_en_d),
+      .dat_o  (s_en_q)
   );
-  dffer #(32) u_scl_timing_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_scl_timing_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_scl_timing_en),
       .dat_i  (s_scl_timing_d),
       .dat_o  (s_scl_timing_q)
   );
-  dffer #(32) u_start_timing_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_start_timing_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_start_timing_en),
       .dat_i  (s_start_timing_d),
       .dat_o  (s_start_timing_q)
   );
-  dffer #(32) u_data_timing_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_data_timing_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_data_timing_en),
       .dat_i  (s_data_timing_d),
       .dat_o  (s_data_timing_q)
   );
-  dffer #(32) u_stop_timing_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_stop_timing_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_stop_timing_en),
@@ -578,28 +594,36 @@ module i2c_reg #(
       .dat_i  (s_filter_d),
       .dat_o  (s_filter_q)
   );
-  dffer #(24) u_stretch_timeout_dffer (
+  dffer #(
+      .DATA_WIDTH(24)
+  ) u_stretch_timeout_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_stretch_timeout_en),
       .dat_i  (s_stretch_timeout_d),
       .dat_o  (s_stretch_timeout_q)
   );
-  dffer #(24) u_bus_idle_timeout_dffer (
+  dffer #(
+      .DATA_WIDTH(24)
+  ) u_bus_idle_timeout_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_bus_idle_timeout_en),
       .dat_i  (s_bus_idle_timeout_d),
       .dat_o  (s_bus_idle_timeout_q)
   );
-  dffer #(24) u_command_timeout_dffer (
+  dffer #(
+      .DATA_WIDTH(24)
+  ) u_command_timeout_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_command_timeout_en),
-      .dat_i  (s_command_timeout_d),
-      .dat_o  (s_command_timeout_q)
+      .en_i   (s_cmd_timeout_en),
+      .dat_i  (s_cmd_timeout_d),
+      .dat_o  (s_cmd_timeout_q)
   );
-  dffer #(11) u_target_addr_dffer (
+  dffer #(
+      .DATA_WIDTH(11)
+  ) u_target_addr_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_target_addr_en),
@@ -626,12 +650,14 @@ module i2c_reg #(
       .dat_i  (s_rx_watermark_d),
       .dat_o  (s_rx_watermark_q)
   );
-  dffer #(8) u_intr_enable_dffer (
+  dffer #(
+      .DATA_WIDTH(8)
+  ) u_intr_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_intr_enable_en),
-      .dat_i  (s_intr_enable_d),
-      .dat_o  (s_intr_enable_q)
+      .en_i   (s_intr_en_en),
+      .dat_i  (s_intr_en_d),
+      .dat_o  (s_intr_en_q)
   );
 
   fifo #(
@@ -670,31 +696,32 @@ module i2c_reg #(
 
   assign s_timeout_event = stretch_timeout_event_i || bus_timeout_event_i ||
                            command_timeout_event_i;
-  assign s_error_event = addr_nack_event_i || data_nack_event_i || arb_lost_event_i ||
+  assign s_err_event = addr_nack_event_i || data_nack_event_i || arb_lost_event_i ||
                          s_timeout_event || command_error_event_i ||
-                         s_sw_command_error_event || rx_overflow_event_i ||
-                         s_config_error_event || aborted_event_i || recovery_failed_event_i;
+                         s_sw_cmd_err_event || rx_overflow_event_i ||
+                         s_config_err_event || aborted_event_i || recovery_failed_event_i;
 
   always_comb begin
-    s_error_status_d = s_error_status_q & ~s_error_clear;
-    if (addr_nack_event_i) s_error_status_d[`I2C_ERROR_ADDR_NACK] = 1'b1;
-    if (data_nack_event_i) s_error_status_d[`I2C_ERROR_DATA_NACK] = 1'b1;
-    if (arb_lost_event_i) s_error_status_d[`I2C_ERROR_ARB_LOST] = 1'b1;
-    if (stretch_timeout_event_i) s_error_status_d[`I2C_ERROR_STRETCH_TIMEOUT] = 1'b1;
-    if (bus_timeout_event_i) s_error_status_d[`I2C_ERROR_BUS_TIMEOUT] = 1'b1;
-    if (command_timeout_event_i) s_error_status_d[`I2C_ERROR_COMMAND_TIMEOUT] = 1'b1;
-    if (command_error_event_i || s_sw_command_error_event)
-      s_error_status_d[`I2C_ERROR_COMMAND] = 1'b1;
-    if (rx_overflow_event_i) s_error_status_d[`I2C_ERROR_RX_OVERFLOW] = 1'b1;
-    if (s_config_error_event) s_error_status_d[`I2C_ERROR_CONFIG] = 1'b1;
-    if (aborted_event_i) s_error_status_d[`I2C_ERROR_ABORTED] = 1'b1;
-    if (recovery_failed_event_i) s_error_status_d[`I2C_ERROR_RECOVERY_FAILED] = 1'b1;
+    s_err_stat_d = s_err_stat_q & ~s_err_clear;
+    if (addr_nack_event_i) s_err_stat_d[`I2C_ERROR_ADDR_NACK] = 1'b1;
+    if (data_nack_event_i) s_err_stat_d[`I2C_ERROR_DATA_NACK] = 1'b1;
+    if (arb_lost_event_i) s_err_stat_d[`I2C_ERROR_ARB_LOST] = 1'b1;
+    if (stretch_timeout_event_i) s_err_stat_d[`I2C_ERROR_STRETCH_TIMEOUT] = 1'b1;
+    if (bus_timeout_event_i) s_err_stat_d[`I2C_ERROR_BUS_TIMEOUT] = 1'b1;
+    if (command_timeout_event_i) s_err_stat_d[`I2C_ERROR_COMMAND_TIMEOUT] = 1'b1;
+    if (command_error_event_i || s_sw_cmd_err_event) s_err_stat_d[`I2C_ERROR_COMMAND] = 1'b1;
+    if (rx_overflow_event_i) s_err_stat_d[`I2C_ERROR_RX_OVERFLOW] = 1'b1;
+    if (s_config_err_event) s_err_stat_d[`I2C_ERROR_CONFIG] = 1'b1;
+    if (aborted_event_i) s_err_stat_d[`I2C_ERROR_ABORTED] = 1'b1;
+    if (recovery_failed_event_i) s_err_stat_d[`I2C_ERROR_RECOVERY_FAILED] = 1'b1;
   end
-  dffr #(11) u_error_status_dffr (
+  dffr #(
+      .DATA_WIDTH(11)
+  ) u_error_status_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_error_status_d),
-      .dat_o  (s_error_status_q)
+      .dat_i  (s_err_stat_d),
+      .dat_o  (s_err_stat_q)
   );
 
   always_comb begin
@@ -705,10 +732,12 @@ module i2c_reg #(
     if (addr_nack_event_i || data_nack_event_i) s_intr_state_d[`I2C_INTR_NACK] = 1'b1;
     if (arb_lost_event_i) s_intr_state_d[`I2C_INTR_ARB_LOST] = 1'b1;
     if (s_timeout_event) s_intr_state_d[`I2C_INTR_TIMEOUT] = 1'b1;
-    if (s_error_event) s_intr_state_d[`I2C_INTR_ERROR] = 1'b1;
+    if (s_err_event) s_intr_state_d[`I2C_INTR_ERROR] = 1'b1;
     if (recovery_done_event_i) s_intr_state_d[`I2C_INTR_RECOVERY_DONE] = 1'b1;
   end
-  dffr #(8) u_intr_state_dffr (
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_intr_state_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_intr_state_d),

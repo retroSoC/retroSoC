@@ -50,17 +50,17 @@ module i2s_core (
 
 
   edge_det_sync_re u_recv_done_edge_det_sync_re (
-      clk_i,
-      rst_n_i,
-      s_recv_done,
-      s_recv_done_re
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_recv_done),
+      .re_o   (s_recv_done_re)
   );
 
   edge_det_sync_re u_send_done_edge_det_sync_re (
-      clk_i,
-      rst_n_i,
-      s_send_done,
-      s_send_done_re
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_send_done),
+      .re_o   (s_send_done_re)
   );
 
   always_comb begin
@@ -91,17 +91,21 @@ module i2s_core (
       end
     end
   end
-  dffr #(1) u_recv_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_recv_cnt_d,
-      s_recv_cnt_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_recv_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_recv_cnt_d),
+      .dat_o  (s_recv_cnt_q)
   );
-  dffr #(24) u_recv_data_dffr (
-      clk_i,
-      rst_n_i,
-      s_recv_data_d,
-      s_recv_data_q
+  dffr #(
+      .DATA_WIDTH(24)
+  ) u_recv_data_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_recv_data_d),
+      .dat_o  (s_recv_data_q)
   );
 
 
@@ -135,17 +139,21 @@ module i2s_core (
       end
     end
   end
-  dffr #(1) u_send_cnt_dffr (
-      clk_i,
-      rst_n_i,
-      s_send_cnt_d,
-      s_send_cnt_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_send_cnt_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_send_cnt_d),
+      .dat_o  (s_send_cnt_q)
   );
-  dffr #(32) u_send_data_dffr (
-      clk_i,
-      rst_n_i,
-      s_send_data_d,
-      s_send_data_q
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_send_data_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_send_data_d),
+      .dat_o  (s_send_data_q)
   );
 
 

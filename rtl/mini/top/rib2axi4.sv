@@ -124,31 +124,41 @@ module rib2axi4 (
     endcase
   end
 
-  dffr #(3) u_fsm_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_fsm_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_fsm_d),
       .dat_o  (s_fsm_q)
   );
-  dffr #(32) u_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_addr_d),
       .dat_o  (s_addr_q)
   );
-  dffr #(2) u_len_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_len_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_len_d),
       .dat_o  (s_len_q)
   );
-  dffr #(2) u_beat_dffr (
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_beat_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_beat_d),
       .dat_o  (s_beat_q)
   );
-  dffr #(1) u_aw_done_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_aw_done_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_aw_done_d),

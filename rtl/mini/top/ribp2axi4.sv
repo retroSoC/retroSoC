@@ -23,7 +23,7 @@ module ribp2axi4 (
   logic s_aw_done_d, s_aw_done_q;
   logic s_w_done_d, s_w_done_q;
   logic [31:0] s_rdata_d, s_rdata_q;
-  logic s_error_d, s_error_q;
+  logic s_err_d, s_err_q;
 
   assign ribp.ready = ((s_fsm_q == FSM_WR_RESP) && axi4.bvalid) ||
                       ((s_fsm_q == FSM_RD_RESP) && axi4.rvalid);
@@ -31,7 +31,7 @@ module ribp2axi4 (
   assign ribp.resp_err = ((s_fsm_q == FSM_WR_RESP) && axi4.bvalid) ?
                          (axi4.bresp != `AXI4_RESP_OKAY) :
                          ((s_fsm_q == FSM_RD_RESP) && axi4.rvalid) ?
-                         (axi4.rresp != `AXI4_RESP_OKAY) : s_error_q;
+                         (axi4.rresp != `AXI4_RESP_OKAY) : s_err_q;
 
   assign axi4.awid = '0;
   assign axi4.awaddr = s_addr_q;
@@ -73,12 +73,12 @@ module ribp2axi4 (
     s_aw_done_d = s_aw_done_q;
     s_w_done_d  = s_w_done_q;
     s_rdata_d   = s_rdata_q;
-    s_error_d   = s_error_q;
+    s_err_d     = s_err_q;
     unique case (s_fsm_q)
       FSM_IDLE: begin
         s_aw_done_d = 1'b0;
         s_w_done_d  = 1'b0;
-        s_error_d   = 1'b0;
+        s_err_d     = 1'b0;
         if (ribp.valid) begin
           s_addr_d  = {ribp.addr[31:2], 2'b00};
           s_wdata_d = ribp.wdata;
@@ -96,8 +96,8 @@ module ribp2axi4 (
       end
       FSM_WR_RESP: begin
         if (axi4.bvalid && ribp.valid) begin
-          s_error_d = axi4.bresp != `AXI4_RESP_OKAY;
-          s_fsm_d   = FSM_IDLE;
+          s_err_d = axi4.bresp != `AXI4_RESP_OKAY;
+          s_fsm_d = FSM_IDLE;
         end
       end
       FSM_RD_ADDR: begin
@@ -106,7 +106,7 @@ module ribp2axi4 (
       FSM_RD_RESP: begin
         if (axi4.rvalid && ribp.valid) begin
           s_rdata_d = axi4.rdata;
-          s_error_d = axi4.rresp != `AXI4_RESP_OKAY;
+          s_err_d   = axi4.rresp != `AXI4_RESP_OKAY;
           s_fsm_d   = FSM_IDLE;
         end
       end
@@ -114,52 +114,68 @@ module ribp2axi4 (
     endcase
   end
 
-  dffr #(3) u_fsm_dffr (
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_fsm_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_fsm_d),
       .dat_o  (s_fsm_q)
   );
-  dffr #(32) u_addr_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_addr_d),
       .dat_o  (s_addr_q)
   );
-  dffr #(32) u_wdata_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_wdata_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_wdata_d),
       .dat_o  (s_wdata_q)
   );
-  dffr #(4) u_wstrb_dffr (
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_wstrb_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_wstrb_d),
       .dat_o  (s_wstrb_q)
   );
-  dffr #(1) u_aw_done_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_aw_done_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_aw_done_d),
       .dat_o  (s_aw_done_q)
   );
-  dffr #(1) u_w_done_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_w_done_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_w_done_d),
       .dat_o  (s_w_done_q)
   );
-  dffr #(32) u_rdata_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_rdata_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_rdata_d),
       .dat_o  (s_rdata_q)
   );
-  dffr #(1) u_error_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_error_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_error_d),
-      .dat_o  (s_error_q)
+      .dat_i  (s_err_d),
+      .dat_o  (s_err_q)
   );
 endmodule
