@@ -168,7 +168,7 @@ module gpio_tb;
     write_register(ADMIN_BASE + `RIBP_GPIO_ADMIN_OE_CLEAR, 32'h1, 1'b1);
     if (gpio.oe_o[0] !== 1'b1) $fatal(1, "configuration lock did not protect OE");
 
-    $display("GPIO V2 directed test passed");
+    $display("GPIO directed test passed");
     $finish;
   end
 endmodule

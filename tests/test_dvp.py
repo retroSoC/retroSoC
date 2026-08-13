@@ -1,4 +1,4 @@
-"""RIBP DVP V2 register, CDC, framing, and packing regression."""
+"""RIBP DVP register, CDC, framing, and packing regression."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def test_dvp_capture_framing(tmp_path: Path) -> None:
     if iverilog is None or vvp is None:
         return
     common = ROOT / "rtl/managed/clusterip/common/rtl"
-    ip = ROOT / "rtl/ip/ribp/multimedia"
+    ip = ROOT / "rtl/ip/multimedia"
     defines = [
         "+define+PDK_BEHAV",
         "+define+SV_ASSRT_DISABLE",
@@ -60,4 +60,4 @@ def test_dvp_capture_framing(tmp_path: Path) -> None:
     simulation = tmp_path / "dvp_tb"
     subprocess.run([iverilog, "-g2012", "-s", "dvp_tb", "-o", str(simulation), str(converted)], check=True)
     result = subprocess.run([vvp, str(simulation)], check=True, capture_output=True, text=True)
-    assert "RIBP DVP V2 capture test passed" in result.stdout
+    assert "RIBP DVP capture test passed" in result.stdout

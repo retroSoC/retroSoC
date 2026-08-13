@@ -6,7 +6,7 @@ quality checks, metrics, packaging, and cleanup.
 
 Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
-behavior controlled by `config/dependencies.lock.json`.
+behavior controlled by `dependencies/dependencies.lock.json`.
 
 `development_environment.py` is the shared Docker, Nix, and manual bootstrap
 entry point. It installs only the checksum-verified open-source tool bundles and

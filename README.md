@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/License-Mulan%20PSL%20v2-d4a72c?style=flat-square&labelColor=3b301a&logo=github&logoColor=f6d365)](LICENSE)
 [![RTL](https://img.shields.io/badge/RTL-SystemVerilog-d4a72c?style=flat-square&labelColor=3b301a&logo=devbox&logoColor=f6d365)](rtl)
 [![ISA](https://img.shields.io/badge/ISA-RV32IM-d4a72c?style=flat-square&labelColor=3b301a&logo=riscv&logoColor=f6d365)](configs/ci/ihp130.mk)
-[![RISC-V GCC](https://img.shields.io/badge/RISC--V%20GCC-2025.05.01-d4a72c?style=flat-square&labelColor=3b301a&logo=c&logoColor=f6d365)](config/dependencies.lock.json)<br>
+[![RISC-V GCC](https://img.shields.io/badge/RISC--V%20GCC-2025.05.01-d4a72c?style=flat-square&labelColor=3b301a&logo=c&logoColor=f6d365)](dependencies/dependencies.lock.json)<br>
 [![IHP130 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-ihp130.yml?branch=main&style=flat-square&label=IHP130&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ihp130.yml)
 [![GF180 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-gf180.yml?branch=main&style=flat-square&label=GF180&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-gf180.yml)
 [![ICS55 regression](https://img.shields.io/github/actions/workflow/status/retroSoC/retroSoC/regression-ics55.yml?branch=main&style=flat-square&label=ICS55&labelColor=3b301a&logo=githubactions&logoColor=f6d365)](https://github.com/retroSoC/retroSoC/actions/workflows/regression-ics55.yml)
@@ -33,17 +33,17 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   [dual general timers](docs/ip/timer.md),
   [PWM V2](rtl/managed/clusterip/pwm/doc/datasheet.md),
   [dual I2C controllers](docs/ip/i2c.md), I2S,
-  [bidirectional PS/2 V2](docs/ip/ps2.md),
+  [bidirectional PS/2](docs/ip/ps2.md),
   WS2812, SPI/QSPI, SDIO, PSRAM/OPI-PSRAM, SDRAM, DMA, LCD, RTC, an
   independent-clock window watchdog, CRC, and a
-  management-only RNG V2 entropy controller. The current deterministic RNG integration source is
+  management-only RNG entropy controller. The current deterministic RNG integration source is
   explicitly unqualified and intended only for diagnostics until a PDK-qualified entropy source is integrated.
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
   `coremark`, `debug`, and `shell` applications.
 - Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
   Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
-- Read-only ARCHINFO ABI V2 discovery for build/configuration provenance, SoC
+- Read-only ARCHINFO ABI discovery for build/configuration provenance, SoC
   topology, technology capabilities, and lifecycle-gated device identity.
 - Checksum-verified dependency and toolchain locks, structured flow results, warning
   baselines, metrics collection, SBOM generation, and checksummed release packages.
@@ -53,6 +53,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 | Path | Contents |
 | --- | --- |
 | [`rtl/`](rtl) | SoC RTL, CPU integration, peripherals, interfaces, testbenches, and technology wrappers. |
+| [`dependencies/`](dependencies) | Locked external repositories, archives, toolchains, and environment inputs. |
 | [`crt/`](crt) | Freestanding RISC-V startup code, linker scripts, runtime library, core services, and HAL headers. |
 | [`app/`](app) | Applications, board support, media, middleware, networking, ports, and benchmarks. |
 | [`configs/`](configs) | Versioned build profiles for CI, nightly, and cluster flows. |
@@ -82,8 +83,8 @@ user core.
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
-application, which checks UART, archinfo APB readback, RNG V2 fail-closed behavior, and test-status
-completion without the verbose startup report. ARCHINFO checks include its V2
+application, which checks UART, archinfo APB readback, RNG fail-closed behavior, and test-status
+completion without the verbose startup report. ARCHINFO checks include its
 ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,
 use:
@@ -102,7 +103,7 @@ the supported host for the full native environment. On macOS, use Docker with li
 emulation. Nix support is Linux x86_64 only.
 
 Choose one of the following installation methods. Each uses the locked versions in
-[config/dependencies.lock.json](config/dependencies.lock.json) and creates or reuses the local
+[dependencies/dependencies.lock.json](dependencies/dependencies.lock.json) and creates or reuses the local
 cache at .cache/retrosoc/development.
 
 ### Nix
@@ -246,7 +247,7 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim
 
 ## Reproducibility And CI
 
-[`config/dependencies.lock.json`](config/dependencies.lock.json) is the source of truth for
+[`dependencies/dependencies.lock.json`](dependencies/dependencies.lock.json) is the source of truth for
 external repositories, application archives, and Ubuntu 22.04 toolchain bundles. The lock digest
 is part of each build variant, and every download is checksum verified. GitHub Actions pins its
 actions by commit, validates the lock and engineering scripts, and runs pull-request and nightly

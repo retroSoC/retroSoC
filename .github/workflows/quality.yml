@@ -42,7 +42,7 @@ jobs:
           tools: verible
 
       - name: Validate dependency lock
-        run: python3 scripts/dependency_lock.py --lock config/dependencies.lock.json
+        run: python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 
       - name: Set up locked RTL dependencies
         run: |

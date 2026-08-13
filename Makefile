@@ -4,7 +4,7 @@ SHELL := /bin/bash
 
 ROOT_PATH ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 CONFIG    ?=
-LOCK_FILE ?= $(ROOT_PATH)/config/dependencies.lock.json
+LOCK_FILE ?= $(ROOT_PATH)/dependencies/dependencies.lock.json
 
 ifneq ($(strip $(CONFIG)),)
 CONFIG_PATH := $(if $(filter /%,$(CONFIG)),$(CONFIG),$(ROOT_PATH)/$(CONFIG))

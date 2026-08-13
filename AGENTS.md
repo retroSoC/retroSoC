@@ -35,7 +35,7 @@ and validation boundary.
 | --- | --- | --- |
 | `.github/` | [.github/GUIDE.md](.github/GUIDE.md) | CI, release automation, reusable actions, and ownership metadata. |
 | `app/` | [app/README.md](app/README.md) | Firmware applications and integrations. |
-| `config/` | [config/README.md](config/README.md) | Locked external inputs and checksums. |
+| `dependencies/` | [dependencies/README.md](dependencies/README.md) | Locked external inputs and checksums. |
 | `configs/` | [configs/README.md](configs/README.md) | Reproducible build profiles. |
 | `crt/` | [crt/README.md](crt/README.md) | Freestanding runtime and SDK. |
 | `docs/` | [docs/README.md](docs/README.md) | Engineering and MISRA policy. |
@@ -107,7 +107,7 @@ README that states its ownership, source of truth, and validation expectations.
 - Preserve unrelated worktree changes. Do not reset, discard, or reformat files
   outside the requested scope.
 - All external repositories, archives, checksums, and locked tool versions are
-  controlled by `config/dependencies.lock.json`. Do not add direct downloads to
+  controlled by `dependencies/dependencies.lock.json`. Do not add direct downloads to
   workflows or setup scripts. Use the shared dependency helpers and review a
   full Git revision or SHA-256 checksum when updating the lock.
 - Do not hand-edit warning baseline signatures. Regenerate only an affected
@@ -127,7 +127,7 @@ and why. CI is authoritative for toolchain-dependent flows.
 | Self-owned `crt/` or `app/` C/H | Review applicable MISRA rules and deviations; run `make sw-format-check sw-policy-check sw-host-test`; build an affected committed profile with `make CONFIG=<profile> firmware`. |
 | Deterministic SDK or media logic | Extend `tests/c/test_runtime.c` and run `make sw-host-test`. |
 | Python/build tooling | `ruff check .` and `python3 -m pytest -q`. |
-| Dependency-lock or setup changes | `python3 scripts/dependency_lock.py --lock config/dependencies.lock.json`, affected setup update/doctor flow, Pytest, and affected regression. |
+| Dependency-lock or setup changes | `python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json`, affected setup update/doctor flow, Pytest, and affected regression. |
 | GitHub Actions or CI definitions | `yamllint .github .yamllint.yml`, `actionlint`, and `python3 scripts/regress.py --root . --suite pr --dry-run` plus `--suite nightly --dry-run`. |
 | RTL, configuration, linker, or hardware-facing changes | Run the affected firmware build and simulator; use `make regress-pr` for the supported PR matrix and `make regress-nightly` for extended coverage. |
 

@@ -68,7 +68,7 @@
       "reset": "s_dvp_pclk_rst_n_sync",
       "reset_source": "rst_n_i",
       "reset_primitive": "rst_sync",
-      "path": "rtl/ip/ribp/multimedia/dvp.sv",
+      "path": "rtl/ip/multimedia/dvp.sv",
       "instance": "u_dvp_pclk_rst_sync",
       "sta": {
         "source_port": "gpio_10_io_pad",
@@ -100,7 +100,7 @@
       "source": "external",
       "destination": "system",
       "primitive": "edge_det",
-      "path": "rtl/ip/ribp/peripheral/clint_timebase.sv",
+      "path": "rtl/ip/peripheral/clint_timebase.sv",
       "instance": "u_tick_edge_det"
     },
     {
@@ -108,7 +108,7 @@
       "source": "system",
       "destination": "dvp",
       "primitive": "cdc_2phase",
-      "path": "rtl/ip/ribp/multimedia/dvp.sv",
+      "path": "rtl/ip/multimedia/dvp.sv",
       "instance": "u_dvp_config_cdc"
     },
     {
@@ -116,7 +116,7 @@
       "source": "dvp",
       "destination": "system",
       "primitive": "cdc_fifo_warm_flush",
-      "path": "rtl/ip/ribp/multimedia/dvp.sv",
+      "path": "rtl/ip/multimedia/dvp.sv",
       "instance": "u_dvp_payload_fifo"
     },
     {
@@ -172,7 +172,7 @@
       "source": "audio",
       "destination": "system",
       "primitive": "cdc_sync",
-      "path": "rtl/ip/ribp/peripheral/sysctrl.sv",
+      "path": "rtl/ip/peripheral/sysctrl.sv",
       "instance": "u_rtc_wake_sync"
     },
     {

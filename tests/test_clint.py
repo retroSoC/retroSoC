@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
+PERIPHERAL = ROOT / "rtl/ip/peripheral"
 
 
 def test_clint_standard_map_multi_hart_and_timebase(tmp_path: Path) -> None:

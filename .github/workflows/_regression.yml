@@ -81,7 +81,7 @@ jobs:
             rtl/managed/mpw
             .cache/retrosoc/pdk
             .cache/retrosoc/stamps
-          key: sources-${{ inputs.pdk }}-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+          key: sources-${{ inputs.pdk }}-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Restore locked toolchains
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
@@ -89,16 +89,16 @@ jobs:
           path: |
             .cache/retrosoc/downloads
             .cache/retrosoc/toolchains
-          key: tools-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+          key: tools-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Restore Verilator compiler cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: .cache/retrosoc/ccache
-          key: ccache-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ccache-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ccache-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}-${{ github.sha }}-
-            ccache-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}-
+            ccache-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}-${{ github.sha }}-
+            ccache-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}-
 
       - name: Install build Python dependency
         run: python3 -m pip install --requirement requirements/build.txt

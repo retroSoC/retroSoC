@@ -234,7 +234,7 @@ module uart_tb;
     write_ok(`RIBP_UART_DMA_CTRL, 3);
     if (!dma_tx_stall || !dma_rx_stall) $fatal(1, "Disabled UART asserted a DMA request");
 
-    $display("UART V3 register, FIFO, loopback, flow-control, interrupt, and DMA test passed");
+    $display("UART register, FIFO, loopback, flow-control, interrupt, and DMA test passed");
     $finish;
   end
 

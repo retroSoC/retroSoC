@@ -52,7 +52,7 @@
 <path fill="#f3f4f6" stroke="#4b5563" stroke-width="1.1" d="M3855,-45C3855,-45 3635,-45 3635,-45 3629,-45 3623,-39 3623,-33 3623,-33 3623,-12 3623,-12 3623,-6 3629,0 3635,0 3635,0 3855,0 3855,0 3861,0 3867,-6 3867,-12 3867,-12 3867,-33 3867,-33 3867,-39 3861,-45 3855,-45"/>
 <text text-anchor="middle" x="3745" y="-31" font-family="Arial" font-size="10.00" fill="#111827">External I/O and memory</text>
 <text text-anchor="middle" x="3745" y="-20" font-family="Arial" font-size="10.00" fill="#111827">GPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM</text>
-<text text-anchor="middle" x="3745" y="-9" font-family="Arial" font-size="10.00" fill="#111827">SD card, I2C, I2S, DVP, WS2812 and PWM V2</text>
+<text text-anchor="middle" x="3745" y="-9" font-family="Arial" font-size="10.00" fill="#111827">SD card, I2C, I2S, DVP, WS2812 and PWM</text>
 </g>
 <!-- ext_jtag -->
 <g id="node3" class="node">
@@ -137,7 +137,7 @@
 <g id="node32" class="node">
 <title>wdg</title>
 <path fill="#fde68a" stroke="#4b5563" stroke-width="1.1" d="M733,-260.5C733,-260.5 579,-260.5 579,-260.5 573,-260.5 567,-254.5 567,-248.5 567,-248.5 567,-227.5 567,-227.5 567,-221.5 573,-215.5 579,-215.5 579,-215.5 733,-215.5 733,-215.5 739,-215.5 745,-221.5 745,-227.5 745,-227.5 745,-248.5 745,-248.5 745,-254.5 739,-260.5 733,-260.5"/>
-<text text-anchor="middle" x="656" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">WDG V2</text>
+<text text-anchor="middle" x="656" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">WDG</text>
 <text text-anchor="middle" x="656" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">independent&#45;clock window watchdog</text>
 <text text-anchor="middle" x="656" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">early IRQ14, retained cause/count</text>
 </g>
@@ -152,7 +152,7 @@
 <g id="node34" class="node">
 <title>rtc</title>
 <path fill="#e6f4ea" stroke="#4b5563" stroke-width="1.1" d="M1206,-260.5C1206,-260.5 1016,-260.5 1016,-260.5 1010,-260.5 1004,-254.5 1004,-248.5 1004,-248.5 1004,-227.5 1004,-227.5 1004,-221.5 1010,-215.5 1016,-215.5 1016,-215.5 1206,-215.5 1206,-215.5 1212,-215.5 1218,-221.5 1218,-227.5 1218,-227.5 1218,-248.5 1218,-248.5 1218,-254.5 1212,-260.5 1206,-260.5"/>
-<text text-anchor="middle" x="1111" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">RTC V2</text>
+<text text-anchor="middle" x="1111" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">RTC</text>
 <text text-anchor="middle" x="1111" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">64&#45;bit Epoch + 1/256&#45;second time</text>
 <text text-anchor="middle" x="1111" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">dual alarm, periodic wake, calibration, IRQ13</text>
 </g>
@@ -286,7 +286,7 @@
 <g id="node25" class="node">
 <title>uart0</title>
 <path fill="#f9e1e7" stroke="#4b5563" stroke-width="1.1" d="M1706,-260.5C1706,-260.5 1494,-260.5 1494,-260.5 1488,-260.5 1482,-254.5 1482,-248.5 1482,-248.5 1482,-227.5 1482,-227.5 1482,-221.5 1488,-215.5 1494,-215.5 1494,-215.5 1706,-215.5 1706,-215.5 1712,-215.5 1718,-221.5 1718,-227.5 1718,-227.5 1718,-248.5 1718,-248.5 1718,-254.5 1712,-260.5 1706,-260.5"/>
-<text text-anchor="middle" x="1600" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">UART0 V3</text>
+<text text-anchor="middle" x="1600" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">UART0</text>
 <text text-anchor="middle" x="1600" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">64&#45;byte TX/RX FIFOs, fractional baud</text>
 <text text-anchor="middle" x="1600" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">auto RTS/CTS, framing/errors, IRQ2, DMA&#45;paced</text>
 </g>
@@ -301,7 +301,7 @@
 <g id="node26" class="node">
 <title>i2c_controllers</title>
 <path fill="#f9e1e7" stroke="#4b5563" stroke-width="1.1" d="M1442.5,-260.5C1442.5,-260.5 1257.5,-260.5 1257.5,-260.5 1251.5,-260.5 1245.5,-254.5 1245.5,-248.5 1245.5,-248.5 1245.5,-227.5 1245.5,-227.5 1245.5,-221.5 1251.5,-215.5 1257.5,-215.5 1257.5,-215.5 1442.5,-215.5 1442.5,-215.5 1448.5,-215.5 1454.5,-221.5 1454.5,-227.5 1454.5,-227.5 1454.5,-248.5 1454.5,-248.5 1454.5,-254.5 1448.5,-260.5 1442.5,-260.5"/>
-<text text-anchor="middle" x="1350" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">I2C0 / I2C1 V2</text>
+<text text-anchor="middle" x="1350" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">I2C0 / I2C1</text>
 <text text-anchor="middle" x="1350" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">16&#45;entry command/RX FIFOs, Sm/Fm/Fm+</text>
 <text text-anchor="middle" x="1350" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">7/10&#45;bit, IRQ7/19, DMA&#45;paced</text>
 </g>
@@ -453,7 +453,7 @@
 <g id="node27" class="node">
 <title>gpio_controller</title>
 <path fill="#f9e1e7" stroke="#4b5563" stroke-width="1.1" d="M2556,-260.5C2556,-260.5 2406,-260.5 2406,-260.5 2400,-260.5 2394,-254.5 2394,-248.5 2394,-248.5 2394,-227.5 2394,-227.5 2394,-221.5 2400,-215.5 2406,-215.5 2406,-215.5 2556,-215.5 2556,-215.5 2562,-215.5 2568,-221.5 2568,-227.5 2568,-227.5 2568,-248.5 2568,-248.5 2568,-254.5 2562,-260.5 2556,-260.5"/>
-<text text-anchor="middle" x="2481" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">GPIO V2</text>
+<text text-anchor="middle" x="2481" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">GPIO</text>
 <text text-anchor="middle" x="2481" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">user + management RIBP windows</text>
 <text text-anchor="middle" x="2481" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">atomic I/O, filter, locks, IRQ18</text>
 </g>
@@ -497,7 +497,7 @@
 <g id="node31" class="node">
 <title>pwm</title>
 <path fill="#e6f4ea" stroke="#4b5563" stroke-width="1.1" d="M3386,-260.5C3386,-260.5 3172,-260.5 3172,-260.5 3166,-260.5 3160,-254.5 3160,-248.5 3160,-248.5 3160,-227.5 3160,-227.5 3160,-221.5 3166,-215.5 3172,-215.5 3172,-215.5 3386,-215.5 3386,-215.5 3392,-215.5 3398,-221.5 3398,-227.5 3398,-227.5 3398,-248.5 3398,-248.5 3398,-254.5 3392,-260.5 3386,-260.5"/>
-<text text-anchor="middle" x="3279" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">PWM V2</text>
+<text text-anchor="middle" x="3279" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">PWM</text>
 <text text-anchor="middle" x="3279" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">2 timers, 4 action channels, 2 operators</text>
 <text text-anchor="middle" x="3279" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">fades, dead time, carrier, fault and capture, IRQ11</text>
 </g>
@@ -519,7 +519,7 @@
 <g id="node33" class="node">
 <title>crc</title>
 <path fill="#e6f4ea" stroke="#4b5563" stroke-width="1.1" d="M4007,-260.5C4007,-260.5 3823,-260.5 3823,-260.5 3817,-260.5 3811,-254.5 3811,-248.5 3811,-248.5 3811,-227.5 3811,-227.5 3811,-221.5 3817,-215.5 3823,-215.5 3823,-215.5 4007,-215.5 4007,-215.5 4013,-215.5 4019,-221.5 4019,-227.5 4019,-227.5 4019,-248.5 4019,-248.5 4019,-254.5 4013,-260.5 4007,-260.5"/>
-<text text-anchor="middle" x="3915" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">CRC V2</text>
+<text text-anchor="middle" x="3915" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">CRC</text>
 <text text-anchor="middle" x="3915" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">programmable 7/8/16/32&#45;bit streaming CRC</text>
 <text text-anchor="middle" x="3915" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">byte, halfword and word APB feed</text>
 </g>
@@ -541,7 +541,7 @@
 <g id="node35" class="node">
 <title>archinfo</title>
 <path fill="#e6f4ea" stroke="#4b5563" stroke-width="1.1" d="M3641,-260.5C3641,-260.5 3437,-260.5 3437,-260.5 3431,-260.5 3425,-254.5 3425,-248.5 3425,-248.5 3425,-227.5 3425,-227.5 3425,-221.5 3431,-215.5 3437,-215.5 3437,-215.5 3641,-215.5 3641,-215.5 3647,-215.5 3653,-221.5 3653,-227.5 3653,-227.5 3653,-248.5 3653,-248.5 3653,-254.5 3647,-260.5 3641,-260.5"/>
-<text text-anchor="middle" x="3539" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">ARCHINFO V2</text>
+<text text-anchor="middle" x="3539" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">ARCHINFO</text>
 <text text-anchor="middle" x="3539" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">read&#45;only build, topology and technology identity</text>
 <text text-anchor="middle" x="3539" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">lifecycle&#45;gated 128&#45;bit device ID</text>
 </g>
@@ -556,7 +556,7 @@
 <g id="node36" class="node">
 <title>rng</title>
 <path fill="#e6f4ea" stroke="#4b5563" stroke-width="1.1" d="M2867,-260.5C2867,-260.5 2653,-260.5 2653,-260.5 2647,-260.5 2641,-254.5 2641,-248.5 2641,-248.5 2641,-227.5 2641,-227.5 2641,-221.5 2647,-215.5 2653,-215.5 2653,-215.5 2867,-215.5 2867,-215.5 2873,-215.5 2879,-221.5 2879,-227.5 2879,-227.5 2879,-248.5 2879,-248.5 2879,-254.5 2873,-260.5 2867,-260.5"/>
-<text text-anchor="middle" x="2760" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">RNG V2 entropy controller</text>
+<text text-anchor="middle" x="2760" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">RNG entropy controller</text>
 <text text-anchor="middle" x="2760" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">8&#45;word FIFO, fail&#45;closed monitoring, IRQ16</text>
 <text text-anchor="middle" x="2760" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">management&#45;only, deterministic source unqualified</text>
 </g>
@@ -571,7 +571,7 @@
 <g id="node37" class="node">
 <title>ps2</title>
 <path fill="#e6f4ea" stroke="#4b5563" stroke-width="1.1" d="M3121,-260.5C3121,-260.5 2965,-260.5 2965,-260.5 2959,-260.5 2953,-254.5 2953,-248.5 2953,-248.5 2953,-227.5 2953,-227.5 2953,-221.5 2959,-215.5 2965,-215.5 2965,-215.5 3121,-215.5 3121,-215.5 3127,-215.5 3133,-221.5 3133,-227.5 3133,-227.5 3133,-248.5 3133,-248.5 3133,-254.5 3127,-260.5 3121,-260.5"/>
-<text text-anchor="middle" x="3043" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">PS/2 host V2</text>
+<text text-anchor="middle" x="3043" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">PS/2 host</text>
 <text text-anchor="middle" x="3043" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">bidirectional open&#45;drain transport</text>
 <text text-anchor="middle" x="3043" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">16&#45;byte RX/TX FIFOs, errors, IRQ12</text>
 </g>

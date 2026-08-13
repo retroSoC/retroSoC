@@ -23,7 +23,7 @@ binding. The generator rejects duplicate pad names, unknown profile bindings,
 unsupported features, and unapproved connection syntax.
 
 SoC wrappers use the existing clusterIP interfaces for protocol boundaries,
-except for the self-owned UART0 `uart_if` under `rtl/ip/ribp/serial`.
+except for the self-owned UART0 `uart_if` under `rtl/ip/serial`.
 `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
 only exposes the pad-side subset of `gpio_if`; neither module contains state.
 
@@ -39,12 +39,12 @@ pins simultaneously.
 `rs_uart_configure()` selects each ALT0 route when the corresponding automatic
 flow-control function is enabled. Disabling UART flow control does not reclaim
 the GPIO pin. Software must explicitly choose a new GPIO mode before assigning
-that physical pad to another function. See [uart.md](ip/uart.md) for the V3
+that physical pad to another function. See [uart.md](ip/uart.md) for the UART
 register and timing contract.
 
 ## I2C alternate functions
 
-The two I2C V2 controllers reuse GPIO pads rather than dedicated package pins.
+The two I2C controllers reuse GPIO pads rather than dedicated package pins.
 I2C0 uses GPIO7 for SCL and GPIO8 for SDA on ALT0. I2C1 uses GPIO3 for SCL and
 GPIO4 for SDA on ALT1. Both controller outputs are constant zero; the GPIO
 alternate-function output enable pulls a line low and releases it for high.
@@ -52,9 +52,9 @@ Board-level pull-ups are therefore required. I2C0 uses management-core IRQ7
 and generic-DMA modes 7/8; I2C1 uses IRQ19 and DMA modes 9/10. See
 [i2c.md](ip/i2c.md) for the register and transfer contract.
 
-## PWM V2 alternate functions
+## PWM alternate functions
 
-The APB PWM V2 controller drives GPIO3 through GPIO6 on ALT0. Both output data
+The APB PWM controller drives GPIO3 through GPIO6 on ALT0. Both output data
 and output enable come from the PWM interface, so a fault-configured high-Z
 state reaches the GPIO pad bridge instead of being overridden by a constant
 enable. PWM uses management-core IRQ11.

@@ -139,7 +139,7 @@ module uart_reg #(
 
   initial begin
     if ((TX_FIFO_DEPTH != 64) || (RX_FIFO_DEPTH != 64)) begin
-      $fatal(1, "uart_reg: UART V3 requires 64-entry FIFOs");
+      $fatal(1, "uart_reg: 64-entry FIFOs are required");
     end
   end
 

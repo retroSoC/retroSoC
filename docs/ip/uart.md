@@ -1,7 +1,7 @@
-# RIBP UART V3
+# RIBP UART
 
 UART0 is the Mini SoC management console and a general-purpose full-duplex
-serial port. UART V3 provides independent 64-byte transmit and receive FIFOs,
+serial port. The UART provides independent 64-byte transmit and receive FIFOs,
 fractional baud-rate generation, configurable framing, receive diagnostics,
 watermark and timeout interrupts, internal loopback, break generation,
 generic-DMA request pacing, and automatic active-low RTS/CTS flow control.
@@ -68,7 +68,7 @@ character and sets global overrun. An empty `RXDATA` read returns `resp_err`.
 asserted, and `STATUS[14]` reports that queued TX data is waiting for CTS.
 Interrupt bit 6 is sticky on either synchronized CTS edge while automatic CTS
 is enabled. All interrupt state, enable, status, test, and clear masks are
-seven bits in V3.
+seven bits in the configured frame format.
 
 `RTS_WATERMARK` resets to assert/ready level 32 and deassert/halt level 48.
 Software must program `assert < deassert <= 64`. UART configuration registers,
@@ -140,8 +140,8 @@ target proves FIFO bounds, IRQ composition, disabled-DMA gating, RTS release,
 flow-block consistency, forbidden TX FIFO pops, and TX idle/break levels, and
 covers bus error, TX/RX activity, flow blocking, RTS assertion, error, and IRQ
 paths. Host tests cover exact fractional timing and invalid ranges; the CI smoke
-firmware verifies V3 capability registers and loopback through the public HAL.
+firmware verifies capability registers and loopback through the public HAL.
 
 IrDA, RS485 direction control, automatic baud detection, modem-status inputs,
-and low-power wakeup are outside UART V3. Adding one requires a versioned ABI
+and low-power wakeup are outside the UART scope. Adding one requires an ABI
 and, where applicable, explicit pad and clock/reset integration.

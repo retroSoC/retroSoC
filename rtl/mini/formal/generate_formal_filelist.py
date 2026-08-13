@@ -17,9 +17,9 @@ from filelist import FileList, write_filelist  # noqa: E402
 
 
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
-INTERCONNECT = ROOT / "rtl/ip/ribp/interconnect"
-PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
-SERIAL = ROOT / "rtl/ip/ribp/serial"
+INTERCONNECT = ROOT / "rtl/ip/interconnect"
+PERIPHERAL = ROOT / "rtl/ip/peripheral"
+SERIAL = ROOT / "rtl/ip/serial"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -163,8 +163,8 @@ def source_files(target: str) -> list[Path]:
     if target == "dvp":
         return [
             COMMON_RTL / "interface/ribp_if.sv", COMMON_RTL / "utils/register.sv",
-            ROOT / "rtl/ip/ribp/multimedia/dvp_define.svh",
-            ROOT / "rtl/ip/ribp/multimedia/dvp_reg.sv",
+            ROOT / "rtl/ip/multimedia/dvp_define.svh",
+            ROOT / "rtl/ip/multimedia/dvp_reg.sv",
             SCRIPT_DIR / "dvp_formal.sv",
         ]
     raise ValueError(f"unsupported formal target: {target}")

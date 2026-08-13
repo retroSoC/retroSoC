@@ -1,6 +1,6 @@
-# RIBP I2C V2
+# RIBP I2C
 
-The Mini SoC provides two independent controller-mode I2C instances. I2C V2
+The Mini SoC provides two independent controller-mode I2C instances. The I2C
 implements 7-bit and 10-bit addressing, queued write and read commands,
 repeated START, clock stretching, multi-controller arbitration detection,
 programmable digital input filtering, bounded waits, bus recovery, interrupts,
@@ -154,5 +154,5 @@ timing ranges.
 
 Target/peripheral mode, SMBus/PMBus extensions, High-speed mode, wakeup from a
 separate low-power clock, and multi-controller fairness policy are outside I2C
-V2. Adding one requires a versioned ABI, explicit clock/reset and pad review,
+Adding one requires an ABI, explicit clock/reset and pad review,
 and dedicated protocol verification.

@@ -18,7 +18,7 @@ def test_ws2812_register_waveform_streaming_and_errors(tmp_path: Path) -> None:
         return
 
     common = ROOT / "rtl/managed/clusterip/common/rtl"
-    serial = ROOT / "rtl/ip/ribp/serial"
+    serial = ROOT / "rtl/ip/serial"
     source_list = tmp_path / "ws2812.fl"
     source_list.write_text(
         "\n".join(
@@ -83,7 +83,7 @@ def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> No
         check=True,
     )
     common = ROOT / "rtl/managed/clusterip/common/rtl"
-    serial = ROOT / "rtl/ip/ribp/serial"
+    serial = ROOT / "rtl/ip/serial"
     source_list = tmp_path / "ws2812_dma.fl"
     source_list.write_text(
         "\n".join(
@@ -100,8 +100,8 @@ def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> No
                 str(ROOT / "rtl/mini/top/rib_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "utils/fifo.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/dma.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/dma_core.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_core.sv"),
                 str(serial / "ws2812_if.sv"),
                 str(serial / "ws2812_reg.sv"),
                 str(serial / "ws2812_core.sv"),

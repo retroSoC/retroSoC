@@ -39,7 +39,7 @@ jobs:
             rtl/managed/third_party
             rtl/managed/mpw
             .cache/retrosoc/stamps
-          key: sources-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+          key: sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Install build Python dependency
         run: python3 -m pip install --requirement requirements/build.txt

@@ -43,7 +43,7 @@ digraph mini_soc_block_diagram {
   ];
   ext_io [
     fillcolor="#F3F4F6",
-    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP, WS2812 and PWM V2"
+    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP, WS2812 and PWM"
   ];
   ext_jtag [
     fillcolor="#F3F4F6",
@@ -168,15 +168,15 @@ digraph mini_soc_block_diagram {
       ];
       uart0 [
         fillcolor="#F9E1E7",
-        label="UART0 V3\n64-byte TX/RX FIFOs, fractional baud\nauto RTS/CTS, framing/errors, IRQ2, DMA-paced"
+        label="UART0\n64-byte TX/RX FIFOs, fractional baud\nauto RTS/CTS, framing/errors, IRQ2, DMA-paced"
       ];
       i2c_controllers [
         fillcolor="#F9E1E7",
-        label="I2C0 / I2C1 V2\n16-entry command/RX FIFOs, Sm/Fm/Fm+\n7/10-bit, IRQ7/19, DMA-paced"
+        label="I2C0 / I2C1\n16-entry command/RX FIFOs, Sm/Fm/Fm+\n7/10-bit, IRQ7/19, DMA-paced"
       ];
       gpio_controller [
         fillcolor="#F9E1E7",
-        label="GPIO V2\nuser + management RIBP windows\natomic I/O, filter, locks, IRQ18"
+        label="GPIO\nuser + management RIBP windows\natomic I/O, filter, locks, IRQ18"
       ];
       timers [
         fillcolor="#F9E1E7",
@@ -192,31 +192,31 @@ digraph mini_soc_block_diagram {
       ];
       pwm [
         fillcolor="#E6F4EA",
-        label="PWM V2\n2 timers, 4 action channels, 2 operators\nfades, dead time, carrier, fault and capture, IRQ11"
+        label="PWM\n2 timers, 4 action channels, 2 operators\nfades, dead time, carrier, fault and capture, IRQ11"
       ];
       wdg [
         fillcolor="#FDE68A",
-        label="WDG V2\nindependent-clock window watchdog\nearly IRQ14, retained cause/count"
+        label="WDG\nindependent-clock window watchdog\nearly IRQ14, retained cause/count"
       ];
       crc [
         fillcolor="#E6F4EA",
-        label="CRC V2\nprogrammable 7/8/16/32-bit streaming CRC\nbyte, halfword and word APB feed"
+        label="CRC\nprogrammable 7/8/16/32-bit streaming CRC\nbyte, halfword and word APB feed"
       ];
       rtc [
         fillcolor="#E6F4EA",
-        label="RTC V2\n64-bit Epoch + 1/256-second time\ndual alarm, periodic wake, calibration, IRQ13"
+        label="RTC\n64-bit Epoch + 1/256-second time\ndual alarm, periodic wake, calibration, IRQ13"
       ];
       archinfo [
         fillcolor="#E6F4EA",
-        label="ARCHINFO V2\nread-only build, topology and technology identity\nlifecycle-gated 128-bit device ID"
+        label="ARCHINFO\nread-only build, topology and technology identity\nlifecycle-gated 128-bit device ID"
       ];
       rng [
         fillcolor="#E6F4EA",
-        label="RNG V2 entropy controller\n8-word FIFO, fail-closed monitoring, IRQ16\nmanagement-only, deterministic source unqualified"
+        label="RNG entropy controller\n8-word FIFO, fail-closed monitoring, IRQ16\nmanagement-only, deterministic source unqualified"
       ];
       ps2 [
         fillcolor="#E6F4EA",
-        label="PS/2 host V2\nbidirectional open-drain transport\n16-byte RX/TX FIFOs, errors, IRQ12"
+        label="PS/2 host\nbidirectional open-drain transport\n16-byte RX/TX FIFOs, errors, IRQ12"
       ];
       gpio_bridge [
         fillcolor="#E5E7EB",

@@ -254,25 +254,25 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/top/rib2apb.sv" in rib2apb.files
     assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
-    assert ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/ribp/peripheral/gpio_core.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/peripheral/gpio_reg.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/peripheral/ribp_gpio.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/peripheral/user_gpio_if.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/gpio_core.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/gpio_reg.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/ribp_gpio.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/user_gpio_if.sv" in gpio.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio.files
     assert ROOT / "rtl/mini/formal/gpio_formal.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/serial/ribp_ws2812.sv" in ws2812.files
+    assert ROOT / "rtl/ip/serial/ribp_ws2812.sv" in ws2812.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
     assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
-    assert ROOT / "rtl/ip/ribp/serial/ribp_i2c.sv" in i2c.files
-    assert ROOT / "rtl/ip/ribp/serial/i2c_filter.sv" in i2c.files
+    assert ROOT / "rtl/ip/serial/ribp_i2c.sv" in i2c.files
+    assert ROOT / "rtl/ip/serial/i2c_filter.sv" in i2c.files
     assert ROOT / "rtl/mini/formal/i2c_formal.sv" in i2c.files
-    assert ROOT / "rtl/ip/ribp/peripheral/ribp_clint.sv" in clint.files
+    assert ROOT / "rtl/ip/peripheral/ribp_clint.sv" in clint.files
     assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
 
 
@@ -584,7 +584,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -599,7 +599,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -607,7 +607,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
 
 
 def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path) -> None:
-    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    lock = load_lock(ROOT / "dependencies/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
     assert lock["sources"]["hazard3"]["destination"] == "rtl/managed/hazard3"
@@ -620,7 +620,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         sys.executable,
         str(ROOT / "scripts/config_key.py"),
         "--lock",
-        str(ROOT / "config/dependencies.lock.json"),
+        str(ROOT / "dependencies/dependencies.lock.json"),
         "--profile",
         "unit",
         "--timestamp",
@@ -664,7 +664,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
 
 
 def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None:
-    lock_path = ROOT / "config/dependencies.lock.json"
+    lock_path = ROOT / "dependencies/dependencies.lock.json"
     lock = load_lock(lock_path)
     cache = tmp_path / "development"
     stamp = stamp_data(ROOT, cache, DEFAULT_TOOLS, lock, lock_path)
@@ -678,7 +678,7 @@ def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None
 
 
 def test_container_and_nix_environment_files_use_locked_inputs() -> None:
-    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    lock = load_lock(ROOT / "dependencies/dependencies.lock.json")
     dockerfile = (ROOT / "docker/Dockerfile").read_text(encoding="utf-8")
     flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
     sbom = make_sbom(lock)
@@ -743,7 +743,7 @@ def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
 
 
 def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
-    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    lock = load_lock(ROOT / "dependencies/dependencies.lock.json")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
     debug_wrapper = (ROOT / "rtl/mini/top/mgmt_debug_wrapper.sv").read_text(encoding="utf-8")

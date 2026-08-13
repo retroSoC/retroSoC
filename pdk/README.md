@@ -12,7 +12,7 @@ FPGA validation flow and the ownership review defined by `.github/CODEOWNERS`.
 
 The supported CI PDKs are IHP130, GF180, ICS55, and SKY130. ICS55 obtains its
 locked H7CR standard-cell Liberty archive through
-`config/dependencies.lock.json` and materializes normalized TT and SS views
+`dependencies/dependencies.lock.json` and materializes normalized TT and SS views
 below `.cache/retrosoc/pdk/ics55/`; its IO Liberty is part of the locked
 source checkout. PDK setup also generates a cached copy of the H7CR
 functional standard-cell model that corrects the seven upstream `MUXI2`

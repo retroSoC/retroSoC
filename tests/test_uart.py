@@ -1,4 +1,4 @@
-"""UART V3 register, FIFO, framing, flow-control, interrupt, and DMA tests."""
+"""UART register, FIFO, framing, flow-control, interrupt, and DMA tests."""
 
 from __future__ import annotations
 
@@ -11,14 +11,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_uart_v3_register_fifo_loopback_flow_control_and_errors(tmp_path: Path) -> None:
+def test_uart_register_fifo_loopback_flow_control_and_errors(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
     if iverilog is None or vvp is None:
         return
 
     common = ROOT / "rtl/managed/clusterip/common/rtl"
-    serial = ROOT / "rtl/ip/ribp/serial"
+    serial = ROOT / "rtl/ip/serial"
     source_list = tmp_path / "uart.fl"
     source_list.write_text(
         "\n".join(
@@ -66,4 +66,4 @@ def test_uart_v3_register_fifo_loopback_flow_control_and_errors(tmp_path: Path) 
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "UART V3 register, FIFO, loopback, flow-control, interrupt, and DMA test passed" in result.stdout
+    assert "UART register, FIFO, loopback, flow-control, interrupt, and DMA test passed" in result.stdout

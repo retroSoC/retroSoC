@@ -15,11 +15,11 @@
 
 Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. This application verifies UART output,
-archinfo APB readback, RNG V2 integration, and test-status completion within the CI time budget;
+archinfo APB readback, RNG integration, and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 
-ARCHINFO ABI V2 exposes immutable build, configuration, topology, feature, and
+ARCHINFO ABI exposes immutable build, configuration, topology, feature, and
 technology identity. Its register specification, driver, standalone tests, and
 formal properties are delivered by the
 [archinfo IP repository](https://github.com/retroSoC/archinfo). The integration
@@ -28,7 +28,7 @@ dependency lock, and canonical configuration digest.
 Normal builds clear the release flag; an audited release flow sets
 `BUILD_RELEASE=YES`, which is part of the canonical configuration digest.
 
-RNG V2 is a management-only APB entropy-controller integration. Its register
+RNG is a management-only APB entropy-controller integration. Its register
 specification, portable driver, standalone simulation, synthesis, formal
 properties, security boundary, and delivery checklist are owned by the
 [RNG IP repository](https://github.com/retroSoC/rng). The SoC currently feeds
@@ -53,7 +53,7 @@ scanner, and cleanup rules as the other open-source CI PDKs.
 
 ## Reproducible Inputs
 
-`config/dependencies.lock.json` is the source of truth for external Git repositories, downloaded
+`dependencies/dependencies.lock.json` is the source of truth for external Git repositories, downloaded
 archives, OCI container base images, Nix inputs, and Ubuntu 22.04 toolchain bundles. Git checkouts
 use full 40-character revisions. Archive downloads are accepted only after SHA-256 verification.
 The Docker image uses an immutable OCI digest. The flake lock and dependency lock must agree on
@@ -83,7 +83,7 @@ against an empty cache. This is the same checksum and safe-extraction path exerc
 
 ```sh
 python3 scripts/install_toolchain.py \
-  --lock config/dependencies.lock.json --platform ubuntu-22.04 \
+  --lock dependencies/dependencies.lock.json --platform ubuntu-22.04 \
   --cache /tmp/retrosoc-toolchain-verify \
   --tool verilator --tool sv2v --tool iverilog \
   --tool yosys --tool opensta --tool riscv_gnu

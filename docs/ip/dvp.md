@@ -1,6 +1,6 @@
-# RIBP DVP V2
+# RIBP DVP
 
-The DVP V2 block captures an 8-bit parallel camera stream and presents the
+The DVP block captures an 8-bit parallel camera stream and presents the
 captured pixels through an AXI4-Stream source. RIBP is used for configuration,
 status, statistics, error reporting, and interrupts. The existing DMA engine
 can transfer the AXI4-Stream payload into AXI4 memory using DVP receive mode.
@@ -75,7 +75,7 @@ simultaneous software clear so that an event cannot be lost. The external
 interrupt is the reduction OR of `INTR_STATE & INTR_ENABLE`.
 
 The RTL ABI constants are maintained directly in
-`rtl/ip/ribp/multimedia/dvp_define.svh`. Matching HAL offsets and masks are
+`rtl/ip/multimedia/dvp_define.svh`. Matching HAL offsets and masks are
 maintained directly in `crt/src/hal/dvp.c`. Changes to either definition must
 update the other definition, this document, and the RTL/software tests in the
 same change.

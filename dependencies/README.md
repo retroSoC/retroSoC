@@ -9,7 +9,7 @@ Do not add direct downloads to setup scripts or workflow YAML. Update the lock
 with a full Git revision or verified SHA-256 checksum, validate it with:
 
 ```sh
-python3 scripts/dependency_lock.py --lock config/dependencies.lock.json
+python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 ```
 
 Then run the affected setup, doctor, test, and regression flow described in

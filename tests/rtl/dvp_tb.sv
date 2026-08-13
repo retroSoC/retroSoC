@@ -128,7 +128,7 @@ module dvp_tb;
     write(32'h0000_0048, 32'h0000_0004);
     read(32'h0000_003c, value);
     if (ribp.resp_err) $fatal(1, "DVP interrupt read failed");
-    $display("RIBP DVP V2 capture test passed");
+    $display("RIBP DVP capture test passed");
     $finish;
   end
 endmodule

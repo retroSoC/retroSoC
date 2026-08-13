@@ -44,8 +44,8 @@ def test_dma_reports_bus_errors_and_transfers_exact_word_count(tmp_path: Path) -
                 str(ROOT / "rtl/mini/top/rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/dma.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/dma_core.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_core.sv"),
                 str(ROOT / "tests/rtl/dma_error_tb.sv"),
                 "",
             ]

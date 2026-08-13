@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish the archive pinned by config/dependencies.lock.json to retroSoC/artifact.
+# Publish the archive pinned by dependencies/dependencies.lock.json to retroSoC/artifact.
 
 set -euo pipefail
 
