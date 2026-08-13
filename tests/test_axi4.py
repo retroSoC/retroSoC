@@ -33,6 +33,7 @@ def test_axi42ribp_supports_bursts_backpressure_and_errors(tmp_path: Path) -> No
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_addr_gen.sv"),
             str(ROOT / "rtl/mini/top/axi42ribp_burst.sv"),
             str(ROOT / "tests/rtl/axi42ribp_burst_tb.sv"),
             "-Mdir",

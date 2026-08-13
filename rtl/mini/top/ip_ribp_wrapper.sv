@@ -21,7 +21,6 @@ module ip_ribp_wrapper (
     input logic              debug_halted_i,
     input logic              timebase_tick_i,
     axi4_if.slave            cfg_axi4,
-    axi4_if.slave            sdram_axi4,
     axi4_if.slave            psram_axi4,
     axi4_if.slave            xpi_axi4,
     axi4_if.slave            spisd_axi4,
@@ -37,7 +36,7 @@ module ip_ribp_wrapper (
     axi4_if.master           dma_axi4,
     sysctrl_if.dut           sysctrl,
     pll_ctrl_if.sysctrl      pll_ctrl,
-    sdram_if.dut             sdram,
+    ribp_if.master           sdram_cfg_ribp,
     dvp_if.dut               dvp,
     sdio_if.dut              sdio,
     opipsram_if.dut          opipsram,
@@ -55,8 +54,6 @@ module ip_ribp_wrapper (
   `include "ribp_interfaces.svh"
 
   ribp_if ribp ();
-  ribp_if u_sdram_data_ribp_if ();
-  ribp_if u_sdram_target_ribp_if ();
   ribp_if u_psram_data_ribp_if ();
   ribp_if u_psram_target_ribp_if ();
   ribp_if u_xpi_data_ribp_if ();
@@ -109,13 +106,6 @@ module ip_ribp_wrapper (
       .ribp   (ribp)
   );
 
-  axi42ribp_burst u_sdram_axi42ribp (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (sdram_axi4),
-      .ribp   (u_sdram_data_ribp_if)
-  );
-
   axi42ribp_burst u_psram_axi42ribp (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -135,14 +125,6 @@ module ip_ribp_wrapper (
       .rst_n_i(rst_n_i),
       .axi4   (spisd_axi4),
       .ribp   (u_spisd_data_ribp_if)
-  );
-
-  ribp_arbiter2 u_sdram_ribp_arbiter (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .cfg    (u_sdram_ribp_if),
-      .data   (u_sdram_data_ribp_if),
-      .target (u_sdram_target_ribp_if)
   );
 
   ribp_arbiter2 u_psram_ribp_arbiter (
@@ -320,13 +302,6 @@ module ip_ribp_wrapper (
       .timebase_tick_i(timebase_tick_i),
       .ribp           (u_clint_ribp_if),
       .clint          (u_clint_if)
-  );
-
-  ribp_sdram u_rib_sdram (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_sdram_target_ribp_if),
-      .sdram  (sdram)
   );
 
   axi4s_dvp u_axi4_dvp (

@@ -27,22 +27,51 @@ module axi42ribp_burst (
   logic [7:0] s_len_d, s_len_q;
   logic [7:0] s_beat_d, s_beat_q;
   logic [2:0] s_size_d, s_size_q;
+  logic [1:0] s_burst_d, s_burst_q;
   logic s_id_d, s_id_q;
   logic [31:0] s_rdata_d, s_rdata_q;
   logic [1:0] s_resp_d, s_resp_q;
   logic s_legal_write, s_legal_read;
   logic [32:0] s_write_last_addr, s_read_last_addr;
+  logic [31:0] s_next_addr;
 
-  assign s_write_last_addr = {1'b0, axi4.awaddr} + ((33'(axi4.awlen) + 1'b1) << axi4.awsize) - 1'b1;
-  assign s_read_last_addr = {1'b0, axi4.araddr} + ((33'(axi4.arlen) + 1'b1) << axi4.arsize) - 1'b1;
+  function automatic logic [32:0] burst_last_addr(input logic [31:0] addr, input logic [7:0] len,
+                                                  input logic [2:0] size, input logic [1:0] burst);
+    logic [32:0] beat_bytes;
+    logic [32:0] burst_bytes;
+    logic [32:0] wrap_base;
+    begin
+      beat_bytes  = 33'd1 << size;
+      burst_bytes = beat_bytes * (33'(len) + 1'b1);
+      wrap_base   = {1'b0, addr} & ~(burst_bytes - 1'b1);
+      case (burst)
+        `AXI4_BURST_TYPE_FIXED: burst_last_addr = {1'b0, addr} + beat_bytes - 1'b1;
+        `AXI4_BURST_TYPE_WRAP:  burst_last_addr = wrap_base + burst_bytes - 1'b1;
+        default:                burst_last_addr = {1'b0, addr} + burst_bytes - 1'b1;
+      endcase
+    end
+  endfunction
+
+  assign s_write_last_addr = burst_last_addr(axi4.awaddr, axi4.awlen, axi4.awsize, axi4.awburst);
+  assign s_read_last_addr = burst_last_addr(axi4.araddr, axi4.arlen, axi4.arsize, axi4.arburst);
   assign s_legal_write = (axi4.awlen <= 8'd15) &&
-                         (axi4.awburst == `AXI4_BURST_TYPE_INCR) && !axi4.awlock &&
+                         ((axi4.awburst == `AXI4_BURST_TYPE_FIXED) ||
+                          (axi4.awburst == `AXI4_BURST_TYPE_INCR) ||
+                          ((axi4.awburst == `AXI4_BURST_TYPE_WRAP) &&
+                           ((axi4.awlen == 8'd1) || (axi4.awlen == 8'd3) ||
+                            (axi4.awlen == 8'd7) || (axi4.awlen == 8'd15)))) &&
+                         !axi4.awlock &&
                          (axi4.awsize <= `AXI4_BURST_SIZE_4BYTES) &&
                          ((axi4.awaddr & ((32'd1 << axi4.awsize) - 1'b1)) == '0) &&
                          !s_write_last_addr[32] &&
                          (axi4.awaddr[31:12] == s_write_last_addr[31:12]);
   assign s_legal_read = (axi4.arlen <= 8'd15) &&
-                        (axi4.arburst == `AXI4_BURST_TYPE_INCR) && !axi4.arlock &&
+                        ((axi4.arburst == `AXI4_BURST_TYPE_FIXED) ||
+                         (axi4.arburst == `AXI4_BURST_TYPE_INCR) ||
+                         ((axi4.arburst == `AXI4_BURST_TYPE_WRAP) &&
+                          ((axi4.arlen == 8'd1) || (axi4.arlen == 8'd3) ||
+                           (axi4.arlen == 8'd7) || (axi4.arlen == 8'd15)))) &&
+                        !axi4.arlock &&
                         (axi4.arsize <= `AXI4_BURST_SIZE_4BYTES) &&
                         ((axi4.araddr & ((32'd1 << axi4.arsize) - 1'b1)) == '0) &&
                         !s_read_last_addr[32] &&
@@ -75,6 +104,7 @@ module axi42ribp_burst (
     s_len_d   = s_len_q;
     s_beat_d  = s_beat_q;
     s_size_d  = s_size_q;
+    s_burst_d = s_burst_q;
     s_id_d    = s_id_q;
     s_rdata_d = s_rdata_q;
     s_resp_d  = s_resp_q;
@@ -84,18 +114,20 @@ module axi42ribp_burst (
         s_beat_d = '0;
         s_resp_d = `AXI4_RESP_OKAY;
         if (axi4.arvalid && axi4.arready) begin
-          s_addr_d = axi4.araddr;
-          s_len_d  = axi4.arlen;
-          s_size_d = axi4.arsize;
-          s_id_d   = axi4.arid;
-          s_fsm_d  = s_legal_read ? FSM_RD_REQ : FSM_ERR_RD_RESP;
+          s_addr_d  = axi4.araddr;
+          s_len_d   = axi4.arlen;
+          s_size_d  = axi4.arsize;
+          s_burst_d = axi4.arburst;
+          s_id_d    = axi4.arid;
+          s_fsm_d   = s_legal_read ? FSM_RD_REQ : FSM_ERR_RD_RESP;
           if (!s_legal_read) s_resp_d = `AXI4_RESP_SLAVE_ERROR;
         end else if (axi4.awvalid && axi4.awready) begin
-          s_addr_d = axi4.awaddr;
-          s_len_d  = axi4.awlen;
-          s_size_d = axi4.awsize;
-          s_id_d   = axi4.awid;
-          s_fsm_d  = s_legal_write ? FSM_WR_DATA : FSM_ERR_WR_DRAIN;
+          s_addr_d  = axi4.awaddr;
+          s_len_d   = axi4.awlen;
+          s_size_d  = axi4.awsize;
+          s_burst_d = axi4.awburst;
+          s_id_d    = axi4.awid;
+          s_fsm_d   = s_legal_write ? FSM_WR_DATA : FSM_ERR_WR_DRAIN;
           if (!s_legal_write) s_resp_d = `AXI4_RESP_SLAVE_ERROR;
         end
       end
@@ -113,7 +145,7 @@ module axi42ribp_burst (
           if ((s_beat_q == s_len_q) || (s_resp_q != `AXI4_RESP_OKAY)) begin
             s_fsm_d = FSM_WR_RESP;
           end else begin
-            s_addr_d = s_addr_q + (32'd1 << s_size_q);
+            s_addr_d = s_next_addr;
             s_beat_d = s_beat_q + 1'b1;
             s_fsm_d  = FSM_WR_DATA;
           end
@@ -134,7 +166,7 @@ module axi42ribp_burst (
           if (s_beat_q == s_len_q) begin
             s_fsm_d = FSM_IDLE;
           end else begin
-            s_addr_d = s_addr_q + (32'd1 << s_size_q);
+            s_addr_d = s_next_addr;
             s_beat_d = s_beat_q + 1'b1;
             s_fsm_d  = FSM_RD_REQ;
           end
@@ -158,6 +190,16 @@ module axi42ribp_burst (
       default: s_fsm_d = FSM_IDLE;
     endcase
   end
+
+  axi4_addr_gen #(
+      .ADDR_WIDTH(32)
+  ) u_addr_gen (
+      .alen_i  (s_len_q),
+      .asize_i (s_size_q),
+      .aburst_i(s_burst_q),
+      .addr_i  (s_addr_q),
+      .addr_o  (s_next_addr)
+  );
 
   dffr #(
       .DATA_WIDTH(4)
@@ -214,6 +256,14 @@ module axi42ribp_burst (
       .rst_n_i(rst_n_i),
       .dat_i  (s_size_d),
       .dat_o  (s_size_q)
+  );
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_burst_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_burst_d),
+      .dat_o  (s_burst_q)
   );
   dffr #(
       .DATA_WIDTH(1)

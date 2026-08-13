@@ -56,7 +56,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "`define CPU_RESET_ADDR `SOC_CPU_RESET_ADDR" in rtl
     assert "`define SOC_ADDR_IS_RESERVED(addr)" in rtl
     assert "RS_SOC_PSRAM_SIZE UINT32_C(0x00800000)" in header
-    assert "RS_SOC_SDRAM_SIZE UINT32_C(0x02000000)" in header
+    assert "RS_SOC_SDRAM_SIZE UINT32_C(0x04000000)" in header
     assert "RS_SOC_SPISD_SIZE UINT32_C(0x40000000)" in header
     assert "#ifdef __ASSEMBLER__" in header
     assert "#define UINT32_C(value) value" in header

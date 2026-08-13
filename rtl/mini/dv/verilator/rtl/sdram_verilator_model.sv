@@ -30,19 +30,19 @@ module sdram_verilator_model (
     inout wire  [15:0] dq_io
 );
 
-  localparam int unsigned MEMORY_WORDS = 1 << 24;
+  localparam int unsigned MEMORY_WORDS = 1 << 25;
   localparam logic [3:0] CMD_ACTIVE = 4'b0011;
   localparam logic [3:0] CMD_READ = 4'b0101;
   localparam logic [3:0] CMD_WRITE = 4'b0100;
 
-  logic [11:0] s_row_q           [             0:3];
+  logic [12:0] s_row_q           [             0:3];
   logic [15:0] s_memory          [0:MEMORY_WORDS-1];
   logic        s_write_pending_q;
-  logic [23:0] s_write_addr_q;
+  logic [24:0] s_write_addr_q;
   logic        s_read_pending_q;
   logic        s_read_drive_q;
   logic        s_read_second_q;
-  logic [23:0] s_read_addr_q;
+  logic [24:0] s_read_addr_q;
   logic [15:0] s_read_data_q;
   logic [ 3:0] s_command;
 
@@ -62,12 +62,12 @@ module sdram_verilator_model (
     end
   end
 
-  function automatic logic [23:0] sdram_address(input logic [1:0] bank, input logic [11:0] row,
+  function automatic logic [24:0] sdram_address(input logic [1:0] bank, input logic [12:0] row,
                                                 input logic [9:0] column);
     sdram_address = {bank, row, column};
   endfunction
 
-  task automatic write_beat(input logic [23:0] address);
+  task automatic write_beat(input logic [24:0] address);
     begin
       if (!dqm_i[0]) s_memory[address][7:0] <= dq_io[7:0];
       if (!dqm_i[1]) s_memory[address][15:8] <= dq_io[15:8];
@@ -97,7 +97,7 @@ module sdram_verilator_model (
 
       unique case (s_command)
         CMD_ACTIVE: begin
-          s_row_q[ba_i] <= addr_i[11:0];
+          s_row_q[ba_i] <= addr_i[12:0];
         end
         CMD_READ: begin
           s_read_addr_q    <= sdram_address(ba_i, s_row_q[ba_i], addr_i[9:0]);

@@ -235,6 +235,46 @@ module axi42ribp_burst_tb;
     end
   endtask
 
+  task automatic issue_address_pattern_read(input logic [31:0] address, input logic [7:0] length,
+                                            input logic [1:0] burst);
+    integer        beat;
+    logic   [31:0] expected_address;
+    logic   [31:0] burst_bytes;
+    begin
+      burst_bytes = (length + 1) * 4;
+      @(negedge clk_i);
+      axi4.araddr  = address;
+      axi4.arlen   = length;
+      axi4.arburst = burst;
+      axi4.arvalid = 1'b1;
+      do @(posedge clk_i); while (!axi4.arready);
+      @(negedge clk_i);
+      axi4.arvalid = 1'b0;
+      axi4.rready  = 1'b1;
+      beat         = 0;
+      while (beat <= length) begin
+        @(posedge clk_i);
+        if (axi4.rvalid) begin
+          if (burst == `AXI4_BURST_TYPE_FIXED) begin
+            expected_address = address;
+          end else begin
+            expected_address = (address & ~(burst_bytes - 1)) |
+                               ((address + (beat * 4)) & (burst_bytes - 1));
+          end
+          if (axi4.rdata != memory[expected_address[7:2]] ||
+              axi4.rresp != `AXI4_RESP_OKAY || axi4.rlast != (beat == length)) begin
+            $fatal(1, "address pattern mismatch beat=%0d addr=%08x data=%08x", beat,
+                   expected_address, axi4.rdata);
+          end
+          beat = beat + 1;
+        end
+      end
+      @(negedge clk_i);
+      axi4.rready  = 1'b0;
+      axi4.arburst = `AXI4_BURST_TYPE_INCR;
+    end
+  endtask
+
   initial begin
     init_axi4();
     for (int index = 0; index < 64; index++) memory[index] = '0;
@@ -242,6 +282,9 @@ module axi42ribp_burst_tb;
     rst_n_i = 1'b1;
     issue_write4(32'h0000_0040);
     issue_read4(32'h0000_0040);
+    for (int index = 0; index < 64; index++) memory[index] = 32'h5000_0000 + index;
+    issue_address_pattern_read(32'h0000_0020, 8'd3, `AXI4_BURST_TYPE_FIXED);
+    issue_address_pattern_read(32'h0000_002C, 8'd3, `AXI4_BURST_TYPE_WRAP);
     issue_illegal_read(32'h0000_0080);
     issue_early_last_write(32'h0000_00C0);
     burst_cycles = cycle_count;
@@ -256,7 +299,7 @@ module axi42ribp_burst_tb;
       $fatal(1, "16-beat burst improvement is below 20%%: burst=%0d single=%0d", burst_cycles,
              single_cycles);
     end
-    if (target_accesses != 41) $fatal(1, "unexpected RIBP access count");
+    if (target_accesses != 49) $fatal(1, "unexpected RIBP access count");
     $display("AXI4 to RIBP burst bridge test passed");
     $finish;
   end

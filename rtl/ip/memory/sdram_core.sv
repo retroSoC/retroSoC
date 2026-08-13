@@ -29,6 +29,8 @@
 // See the Mulan PSL v2 for more details.
 
 
+`include "mmap_define.svh"
+
 module sdram_core (
     // verilog_format: off
     input logic  clk_i,
@@ -136,24 +138,28 @@ module sdram_core (
   logic [12:0] s_addr_d, s_addr_q;
   logic s_upd_ready_d, s_upd_ready_q;
   // Registered RIB inputs (captured at IDLE-to-ACT)
-  logic [24:0] s_ribp_addr_d, s_ribp_addr_q;  // addr[24:0] (relevant bits)
+  logic [31:0] s_ribp_addr_d, s_ribp_addr_q;
+  logic [25:0] s_mem_addr;
+  logic [31:0] s_req_addr_rel;
   logic [31:0] s_ribp_wdata_d, s_ribp_wdata_q;
   logic [3:0] s_ribp_wstrb_d, s_ribp_wstrb_q;
 
 
   // ribp
-  assign ribp.ready                                                 = s_ready_q;
-  assign ribp.resp_err                                              = 1'b0;
-  assign ribp.rdata                                                 = s_rdata_q;
+  assign ribp.ready = s_ready_q;
+  assign ribp.resp_err = 1'b0;
+  assign ribp.rdata = s_rdata_q;
   // sdram
-  assign sdram.clk_o                                                = sdram_clk_i;
-  assign sdram.cke_o                                                = s_cke_q;
-  assign sdram.addr_o                                               = s_addr_q;
-  assign sdram.dqm_o                                                = s_dqm_q;
+  assign sdram.clk_o = sdram_clk_i;
+  assign sdram.cke_o = s_cke_q;
+  assign sdram.addr_o = s_addr_q;
+  assign sdram.dqm_o = s_dqm_q;
   assign {sdram.cs_n_o, sdram.ras_n_o, sdram.cas_n_o, sdram.we_n_o} = s_cmd_q;
-  assign sdram.ba_o                                                 = s_ba_q;
-  assign sdram.dq_o                                                 = s_dq_q;
-  assign sdram.oe_o                                                 = s_oe_q;
+  assign sdram.ba_o = s_ba_q;
+  assign sdram.dq_o = s_dq_q;
+  assign sdram.oe_o = s_oe_q;
+  assign s_mem_addr = s_ribp_addr_q - `SOC_ADDR_SDRAM_BASE;
+  assign s_req_addr_rel = ribp.addr - `SOC_ADDR_SDRAM_BASE;
 
 
 
@@ -221,12 +227,12 @@ module sdram_core (
         s_ready_d = 1'b0;
         if (ribp.valid && !s_ready_q) begin
           // Capture RIB inputs into holding registers
-          s_ribp_addr_d  = ribp.addr[24:0];
+          s_ribp_addr_d  = ribp.addr;
           s_ribp_wdata_d = ribp.wdata;
           s_ribp_wstrb_d = ribp.wstrb;
           s_cmd_d        = CMD_ACT;
-          s_ba_d         = ribp.addr[22:21];
-          s_addr_d       = {ribp.addr[24:23], ribp.addr[20:10]};
+          s_ba_d         = s_req_addr_rel[25:24];
+          s_addr_d       = s_req_addr_rel[23:11];
           s_state_d      = WAIT_STATE;
           s_ret_state_d  = |ribp.wstrb ? COL_WRITEL : COL_READ;
           s_wait_cnt_d   = 16'(TRCD);
@@ -247,8 +253,8 @@ module sdram_core (
         s_cmd_d       = CMD_READ;
         s_dqm_d       = 2'b00;
         // autoprecharge and column (use registered addr)
-        s_ba_d        = s_ribp_addr_q[22:21];
-        s_addr_d      = {3'b001, s_ribp_addr_q[10:2], 1'b0};
+        s_ba_d        = s_mem_addr[25:24];
+        s_addr_d      = {3'b001, s_mem_addr[10:2], 1'b0};
         // $display("rd col addr: %0x", s_addr_d);
         s_state_d     = WAIT_STATE;
         s_ret_state_d = COL_READL;
@@ -272,8 +278,8 @@ module sdram_core (
         s_cmd_d   = CMD_WRITE;
         s_dqm_d   = ~s_ribp_wstrb_q[1:0];
         // autoprecharge and column (use registered addr)
-        s_ba_d    = s_ribp_addr_q[22:21];
-        s_addr_d  = {3'b001, s_ribp_addr_q[10:2], 1'b0};
+        s_ba_d    = s_mem_addr[25:24];
+        s_addr_d  = {3'b001, s_mem_addr[10:2], 1'b0};
         s_dq_d    = s_ribp_wdata_q[15:0];
         s_oe_d    = 1'b1;
         s_state_d = COL_WRITEH;

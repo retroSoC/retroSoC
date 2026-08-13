@@ -7,10 +7,12 @@ protocol; it is not an active Mini SoC fabric link.
 
 ## Supported Subset
 
-The interconnect has 32-bit addresses and 32-bit data. It supports only linear
-`INCR` transfers with one through sixteen beats (`AxLEN` 0 through 15), natural
-1-, 2-, or 4-byte alignment, and no 4 KiB boundary crossing. `FIXED`, `WRAP`,
-locked, wider, misaligned, and cross-target transactions receive `SLVERR`.
+The interconnect has 32-bit addresses and 32-bit data. It supports `INCR` and
+`FIXED` transfers with one through sixteen beats (`AxLEN` 0 through 15), and
+AXI-legal `WRAP` transfers with two, four, eight, or sixteen beats
+(`AxLEN` 1, 3, 7, or 15). All transfers require natural 1-, 2-, or 4-byte
+alignment and must remain inside one 4 KiB page and one decoded target.
+Locked, wider, misaligned, and cross-target transactions receive `SLVERR`.
 Unmapped addresses receive `DECERR`.
 
 Each master may own at most one read or write transaction. IDs and user fields
@@ -31,8 +33,9 @@ The fixed targets are the RIBP configuration plane, APB, SRAM, SDRAM, PSRAM,
 XPI/Flash, SPI-SD, `DECERR`, and `SLVERR`. RIBP and APB accept only single-beat
 transactions. SRAM uses a direct AXI4 target with pipelined synchronous reads
 and response buffering. External-memory data windows accept up to sixteen
-beats; their current compatibility bridge serializes each beat into the
-existing controller data engine. Register configuration remains on RIBP.
+beats; their current compatibility bridges serialize each beat into the
+existing controller data engine while preserving FIXED/INCR/WRAP beat
+addresses. Register configuration remains on RIBP.
 
 The user-core firewall validates both the first and last byte before target
 arbitration. User access to SYSCTRL, CLINT, DMA configuration, and other
@@ -59,7 +62,9 @@ access-control rejection to `PROTERR`.
 
 `tests/test_axi4.py` covers a four-beat write/read, response backpressure, and
 rejection of a seventeen-beat request without touching the RIBP target. The
-IHP130 `ci_smoke` regression is the end-to-end boot and configuration check.
+bridge unit test also covers Common address generation for FIXED and WRAP
+sequencing. The IHP130 `ci_smoke` regression is the end-to-end boot and
+configuration check.
 CoreMark uses SRAM and must not regress more than five percent from the recorded
 7,620,324-cycle baseline. A controller may be promoted to a native burst target
 only after aligned sixteen-word tests show at least twenty percent improvement

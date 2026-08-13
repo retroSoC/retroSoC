@@ -44,6 +44,7 @@ module retrosoc (
   // verilog_format: off
   // Generated fabric links use the common 32-bit AXI4 contract.
   `include "soc_fabric_interfaces.svh"
+  ribp_if u_sdram_cfg_ribp_if ();
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_sdram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
@@ -188,7 +189,6 @@ core_wrapper u_core_wrapper (
       .debug_halted_i  (s_mgmt_debug_halted),
       .timebase_tick_i (timebase_tick_i),
       `include "ip_ribp_wrapper_fabric.svh"
-      .sdram_axi4      (u_sdram_axi4_if),
       .psram_axi4      (u_psram_axi4_if),
       .xpi_axi4        (u_xpi_axi4_if),
       .spisd_axi4      (u_spisd_axi4_if),
@@ -203,7 +203,7 @@ core_wrapper u_core_wrapper (
       .xpi             (xpi),
       .sysctrl         (u_sysctrl_if),
       .pll_ctrl        (pll_ctrl),
-      .sdram           (sdram),
+      .sdram_cfg_ribp  (u_sdram_cfg_ribp_if),
       .dvp             (u_dvp_if),
       .sdio            (u_sdio_if),
       .opipsram        (u_opipsram_if),
@@ -213,6 +213,14 @@ core_wrapper u_core_wrapper (
       .fault_wstrb_i   (s_bus_fault_wstrb),
       .fault_reserved_i(s_bus_fault_reserved),
       .irq_o           (s_ribp_irq)
+  );
+
+  axi4_sdram u_axi4_sdram (
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .axi4    (u_sdram_axi4_if),
+      .cfg_ribp(u_sdram_cfg_ribp_if),
+      .sdram   (sdram)
   );
 
   ip_apb_wrapper u_ip_apb_wrapper (

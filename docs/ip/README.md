@@ -10,6 +10,7 @@ verification documentation for self-owned retroSoC peripheral IP.
 - [uart.md](uart.md) defines the RIBP UART controller.
 - [i2c.md](i2c.md) defines the dual RIBP I2C controllers.
 - [dvp.md](dvp.md) defines the RIBP DVP capture controller.
+- [sdram.md](sdram.md) defines the AXI4 SDRAM data controller and RIBP configuration window.
 
 The corresponding RTL and HAL implementations remain the executable sources
 of truth. Update the affected document whenever an IP interface or register ABI

@@ -42,12 +42,13 @@ interface sdram_if ();
 endinterface
 
 
-module ribp_sdram (
+module axi4_sdram (
     // verilog_format: off
-    input logic  clk_i,
-    input logic  rst_n_i,
-    ribp_if.slave ribp,
-    sdram_if.dut sdram
+    input  logic       clk_i,
+    input  logic       rst_n_i,
+    axi4_if.slave      axi4,
+    ribp_if.slave      cfg_ribp,
+    sdram_if.dut       sdram
     // verilog_format: on
 );
 
@@ -58,29 +59,48 @@ module ribp_sdram (
   logic       s_sec_edge;
 
   // interface
+  ribp_if u_data_ribp_if ();
+  ribp_if u_merged_ribp_if ();
   ribp_if u_reg_ribp_if ();
   ribp_if u_mem_ribp_if ();
 
-  // ribp mux
-  assign s_sdram_reg_sel    = `SOC_ADDR_IS_RIBP_SDRAM(ribp.addr);
-  assign u_reg_ribp_if.valid = ribp.valid && s_sdram_reg_sel;
-  assign u_reg_ribp_if.addr  = ribp.addr;
-  assign u_reg_ribp_if.wdata = ribp.wdata;
-  assign u_reg_ribp_if.wstrb = ribp.wstrb;
+  axi42ribp_burst u_axi42ribp_burst (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (axi4),
+      .ribp   (u_data_ribp_if)
+  );
 
-  assign u_mem_ribp_if.valid = ribp.valid && (~s_sdram_reg_sel);
-  assign u_mem_ribp_if.addr  = ribp.addr;
-  assign u_mem_ribp_if.wdata = ribp.wdata;
-  assign u_mem_ribp_if.wstrb = ribp.wstrb;
+  ribp_arbiter2 u_ribp_arbiter (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .cfg    (cfg_ribp),
+      .data   (u_data_ribp_if),
+      .target (u_merged_ribp_if)
+  );
+
+  // ribp mux
+  assign s_sdram_reg_sel     = `SOC_ADDR_IS_RIBP_SDRAM(u_merged_ribp_if.addr);
+  assign u_reg_ribp_if.valid = u_merged_ribp_if.valid && s_sdram_reg_sel;
+  assign u_reg_ribp_if.addr  = u_merged_ribp_if.addr;
+  assign u_reg_ribp_if.wdata = u_merged_ribp_if.wdata;
+  assign u_reg_ribp_if.wstrb = u_merged_ribp_if.wstrb;
+
+  assign u_mem_ribp_if.valid = u_merged_ribp_if.valid && !s_sdram_reg_sel;
+  assign u_mem_ribp_if.addr  = u_merged_ribp_if.addr;
+  assign u_mem_ribp_if.wdata = u_merged_ribp_if.wdata;
+  assign u_mem_ribp_if.wstrb = u_merged_ribp_if.wstrb;
 
   // verilog_format: off
-  assign ribp.ready = (u_reg_ribp_if.valid & u_reg_ribp_if.ready) |
-                     (u_mem_ribp_if.valid  & u_mem_ribp_if.ready);
-  assign ribp.resp_err = (u_reg_ribp_if.valid & u_reg_ribp_if.ready & u_reg_ribp_if.resp_err) |
-                         (u_mem_ribp_if.valid  & u_mem_ribp_if.ready & u_mem_ribp_if.resp_err);
+  assign u_merged_ribp_if.ready = (u_reg_ribp_if.valid & u_reg_ribp_if.ready) |
+                                  (u_mem_ribp_if.valid & u_mem_ribp_if.ready);
+  assign u_merged_ribp_if.resp_err =
+      (u_reg_ribp_if.valid & u_reg_ribp_if.ready & u_reg_ribp_if.resp_err) |
+      (u_mem_ribp_if.valid & u_mem_ribp_if.ready & u_mem_ribp_if.resp_err);
 
-  assign ribp.rdata = ({32{(u_reg_ribp_if.valid & u_reg_ribp_if.ready)}}  & u_reg_ribp_if.rdata) |
-                     ({32{(u_mem_ribp_if.valid  & u_mem_ribp_if.ready)}} & u_mem_ribp_if.rdata);
+  assign u_merged_ribp_if.rdata =
+      ({32{(u_reg_ribp_if.valid & u_reg_ribp_if.ready)}} & u_reg_ribp_if.rdata) |
+      ({32{(u_mem_ribp_if.valid & u_mem_ribp_if.ready)}} & u_mem_ribp_if.rdata);
   // verilog_format: on
 
 

@@ -127,7 +127,7 @@ digraph mini_soc_block_diagram {
       ];
       fabric [
         fillcolor="#DCECF8",
-        label="AXI4 fabric\n3 masters / 9 targets, per-target round robin\nINCR1-16, access policy, fault reporting",
+        label="AXI4 fabric\n3 masters / 9 targets, per-target round robin\nFIXED/INCR/WRAP1-16, access policy, fault reporting",
         shape=hexagon
       ];
       fault [
@@ -156,11 +156,11 @@ digraph mini_soc_block_diagram {
       ];
       ribp_targets [
         fillcolor="#F9E1E7",
-        label="RIBP configuration targets\nXPI, SDRAM, PSRAM, SPI-SD, DVP and I2S"
+        label="RIBP configuration targets\nXPI, SDRAM, PSRAM, SPI-SD, DVP and I2S\nSDRAM config is a dedicated top-level port"
       ];
       memory_targets [
         fillcolor="#FFF3C9",
-        label="AXI4 data targets\nXPI/Flash, SDRAM, PSRAM and SPI-SD\nINCR1-16 compatibility engines"
+        label="AXI4 data targets\nXPI/Flash, SDRAM, PSRAM and SPI-SD\nFIXED/INCR/WRAP compatibility engines"
       ];
       stream_io [
         fillcolor="#FFF3C9",

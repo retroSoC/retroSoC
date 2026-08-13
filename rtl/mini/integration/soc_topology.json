@@ -44,7 +44,7 @@
     {"slot": 10, "name": "dma", "interface": "u_dma_ribp_if", "regions": ["RIBP_DMA"]},
     {"slot": 11, "name": "sysctrl", "interface": "u_sysctrl_ribp_if", "regions": ["RIBP_SYSCTRL"]},
     {"slot": 12, "name": "clint", "interface": "u_clint_ribp_if", "regions": ["RIBP_CLINT"]},
-    {"slot": 13, "name": "sdram", "interface": "u_sdram_ribp_if", "regions": ["RIBP_SDRAM"]},
+    {"slot": 13, "name": "sdram", "interface": "sdram_cfg_ribp", "regions": ["RIBP_SDRAM"], "external": true},
     {"slot": 14, "name": "dvp", "interface": "u_dvp_ribp_if", "regions": ["RIBP_DVP"]},
     {"slot": 15, "name": "sdio", "interface": "u_sdio_ribp_if", "disabled": true},
     {"slot": 16, "name": "opipsram", "interface": "u_opipsram_ribp_if", "disabled": true},

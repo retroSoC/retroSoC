@@ -398,17 +398,32 @@ module axi4_interconnect #(
 
   always_comb begin
     for (int master = 0; master < NumMasters; master++) begin
-      automatic logic        read_req = m_arvalid[master];
-      automatic logic        write_req = !read_req && m_awvalid[master];
+      automatic logic read_req = m_arvalid[master];
+      automatic logic write_req = !read_req && m_awvalid[master];
       automatic logic [31:0] addr = read_req ? m_araddr[master] : m_awaddr[master];
-      automatic logic [ 7:0] len = read_req ? m_arlen[master] : m_awlen[master];
-      automatic logic [ 2:0] size = read_req ? m_arsize[master] : m_awsize[master];
-      automatic logic [ 1:0] burst = read_req ? m_arburst[master] : m_awburst[master];
-      automatic logic        lock = read_req ? m_arlock[master] : m_awlock[master];
-      automatic logic [32:0] bytes = 33'(len + 1'b1) << size;
-      s_last_addr[master] = {1'b0, addr} + bytes - 1'b1;
+      automatic logic [7:0] len = read_req ? m_arlen[master] : m_awlen[master];
+      automatic logic [2:0] size = read_req ? m_arsize[master] : m_awsize[master];
+      automatic logic [1:0] burst = read_req ? m_arburst[master] : m_awburst[master];
+      automatic logic lock = read_req ? m_arlock[master] : m_awlock[master];
+      automatic logic [32:0] beat_bytes = 33'd1 << size;
+      automatic logic [32:0] burst_bytes = beat_bytes * (33'(len) + 1'b1);
+      automatic logic [32:0] wrap_base = {1'b0, addr} & ~(burst_bytes - 1'b1);
+      automatic
+      logic
+      burst_legal =
+          (burst == `AXI4_BURST_TYPE_FIXED) ||
+          (burst == `AXI4_BURST_TYPE_INCR) ||
+          ((burst == `AXI4_BURST_TYPE_WRAP) &&
+           ((len == 8'd1) || (len == 8'd3) || (len == 8'd7) || (len == 8'd15)));
+      if (burst == `AXI4_BURST_TYPE_FIXED) begin
+        s_last_addr[master] = {1'b0, addr} + beat_bytes - 1'b1;
+      end else if (burst == `AXI4_BURST_TYPE_WRAP) begin
+        s_last_addr[master] = wrap_base + burst_bytes - 1'b1;
+      end else begin
+        s_last_addr[master] = {1'b0, addr} + burst_bytes - 1'b1;
+      end
       s_protocol_legal[master] = (len <= 8'd15) &&
-                                 (burst == `AXI4_BURST_TYPE_INCR) && !lock && (size <= 3'd2) &&
+                                 burst_legal && !lock && (size <= 3'd2) &&
                                  ((addr & ((32'd1 << size) - 1'b1)) == '0) &&
                                  (s_last_addr[master][32] == 1'b0) &&
                                  (addr[31:12] == s_last_addr[master][31:12]) &&

@@ -18,6 +18,7 @@ module axi42ram (
   logic [31:0] s_addr_d, s_addr_q;
   logic [7:0] s_len_d, s_len_q;
   logic [2:0] s_size_d, s_size_q;
+  logic [1:0] s_burst_d, s_burst_q;
   logic [7:0] s_issue_beat_d, s_issue_beat_q;
   logic s_issue_valid_d, s_issue_valid_q;
   logic [7:0] s_write_beat_d, s_write_beat_q;
@@ -28,6 +29,10 @@ module axi42ram (
   logic s_read_last_d, s_read_last_q;
   logic [14:0] s_read_addr;
   logic [31:0] s_read_issue_addr, s_read_hold_addr, s_write_addr;
+  logic [31:0] s_read_issue_addr_d, s_read_issue_addr_q;
+  logic [31:0] s_read_hold_addr_d, s_read_hold_addr_q;
+  logic [31:0] s_write_addr_d, s_write_addr_q;
+  logic [31:0] s_read_next_addr, s_write_next_addr;
   logic s_read_issue, s_write_hdshk;
   logic s_rsp_input_valid, s_rsp_input_ready;
   logic [RSP_WIDTH-1:0] s_rsp_input_data, s_rsp_output_data;
@@ -48,9 +53,9 @@ module axi42ram (
   assign s_read_issue = s_active_q && !s_write_q && s_issue_valid_q &&
                         (!s_read_pending_q || s_rsp_input_ready);
 
-  assign s_read_issue_addr = s_addr_q + (32'(s_issue_beat_q) << s_size_q);
-  assign s_read_hold_addr = s_addr_q + (32'(s_read_beat_q) << s_size_q);
-  assign s_write_addr = s_addr_q + (32'(s_write_beat_q) << s_size_q);
+  assign s_read_issue_addr = s_read_issue_addr_q;
+  assign s_read_hold_addr = s_read_hold_addr_q;
+  assign s_write_addr = s_write_addr_q;
 
   always_comb begin
     s_read_addr = s_read_issue_addr[16:2];
@@ -82,31 +87,37 @@ module axi42ram (
   );
 
   always_comb begin
-    s_active_d       = s_active_q;
-    s_write_d        = s_write_q;
-    s_id_d           = s_id_q;
-    s_addr_d         = s_addr_q;
-    s_len_d          = s_len_q;
-    s_size_d         = s_size_q;
-    s_issue_beat_d   = s_issue_beat_q;
-    s_issue_valid_d  = s_issue_valid_q;
-    s_write_beat_d   = s_write_beat_q;
-    s_bvalid_d       = s_bvalid_q;
-    s_bresp_d        = s_bresp_q;
-    s_read_pending_d = s_read_pending_q;
-    s_read_beat_d    = s_read_beat_q;
-    s_read_last_d    = s_read_last_q;
+    s_active_d          = s_active_q;
+    s_write_d           = s_write_q;
+    s_id_d              = s_id_q;
+    s_addr_d            = s_addr_q;
+    s_len_d             = s_len_q;
+    s_size_d            = s_size_q;
+    s_burst_d           = s_burst_q;
+    s_read_issue_addr_d = s_read_issue_addr_q;
+    s_read_hold_addr_d  = s_read_hold_addr_q;
+    s_write_addr_d      = s_write_addr_q;
+    s_issue_beat_d      = s_issue_beat_q;
+    s_issue_valid_d     = s_issue_valid_q;
+    s_write_beat_d      = s_write_beat_q;
+    s_bvalid_d          = s_bvalid_q;
+    s_bresp_d           = s_bresp_q;
+    s_read_pending_d    = s_read_pending_q;
+    s_read_beat_d       = s_read_beat_q;
+    s_read_last_d       = s_read_last_q;
 
     if (axi4.arvalid && axi4.arready) begin
-      s_active_d       = 1'b1;
-      s_write_d        = 1'b0;
-      s_id_d           = axi4.arid;
-      s_addr_d         = axi4.araddr;
-      s_len_d          = axi4.arlen;
-      s_size_d         = axi4.arsize;
-      s_issue_beat_d   = '0;
-      s_issue_valid_d  = 1'b1;
-      s_read_pending_d = 1'b0;
+      s_active_d          = 1'b1;
+      s_write_d           = 1'b0;
+      s_id_d              = axi4.arid;
+      s_addr_d            = axi4.araddr;
+      s_len_d             = axi4.arlen;
+      s_size_d            = axi4.arsize;
+      s_burst_d           = axi4.arburst;
+      s_read_issue_addr_d = axi4.araddr;
+      s_issue_beat_d      = '0;
+      s_issue_valid_d     = 1'b1;
+      s_read_pending_d    = 1'b0;
     end else if (axi4.awvalid && axi4.awready) begin
       s_active_d     = 1'b1;
       s_write_d      = 1'b1;
@@ -114,6 +125,8 @@ module axi42ram (
       s_addr_d       = axi4.awaddr;
       s_len_d        = axi4.awlen;
       s_size_d       = axi4.awsize;
+      s_burst_d      = axi4.awburst;
+      s_write_addr_d = axi4.awaddr;
       s_write_beat_d = '0;
       s_bvalid_d     = 1'b0;
       s_bresp_d      = `AXI4_RESP_OKAY;
@@ -121,13 +134,15 @@ module axi42ram (
 
     if (s_read_pending_q && s_rsp_input_ready) s_read_pending_d = 1'b0;
     if (s_read_issue) begin
-      s_read_pending_d = 1'b1;
-      s_read_beat_d    = s_issue_beat_q;
-      s_read_last_d    = s_issue_beat_q == s_len_q;
+      s_read_pending_d   = 1'b1;
+      s_read_beat_d      = s_issue_beat_q;
+      s_read_hold_addr_d = s_read_issue_addr_q;
+      s_read_last_d      = s_issue_beat_q == s_len_q;
       if (s_issue_beat_q == s_len_q) begin
         s_issue_valid_d = 1'b0;
       end else begin
-        s_issue_beat_d = s_issue_beat_q + 1'b1;
+        s_issue_beat_d      = s_issue_beat_q + 1'b1;
+        s_read_issue_addr_d = s_read_next_addr;
       end
     end
 
@@ -138,6 +153,7 @@ module axi42ram (
                     `AXI4_RESP_OKAY : `AXI4_RESP_SLAVE_ERROR;
       end else begin
         s_write_beat_d = s_write_beat_q + 1'b1;
+        s_write_addr_d = s_write_next_addr;
       end
     end
     if (axi4.bvalid && axi4.bready) begin
@@ -150,6 +166,26 @@ module axi42ram (
       s_read_pending_d = 1'b0;
     end
   end
+
+  axi4_addr_gen #(
+      .ADDR_WIDTH(32)
+  ) u_read_addr_gen (
+      .alen_i  (s_len_q),
+      .asize_i (s_size_q),
+      .aburst_i(s_burst_q),
+      .addr_i  (s_read_issue_addr_q),
+      .addr_o  (s_read_next_addr)
+  );
+
+  axi4_addr_gen #(
+      .ADDR_WIDTH(32)
+  ) u_write_addr_gen (
+      .alen_i  (s_len_q),
+      .asize_i (s_size_q),
+      .aburst_i(s_burst_q),
+      .addr_i  (s_write_addr_q),
+      .addr_o  (s_write_next_addr)
+  );
 
   dffr #(
       .DATA_WIDTH(1)
@@ -198,6 +234,38 @@ module axi42ram (
       .rst_n_i(rst_n_i),
       .dat_i  (s_size_d),
       .dat_o  (s_size_q)
+  );
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_burst_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_burst_d),
+      .dat_o  (s_burst_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_read_issue_addr_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_read_issue_addr_d),
+      .dat_o  (s_read_issue_addr_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_read_hold_addr_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_read_hold_addr_d),
+      .dat_o  (s_read_hold_addr_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_write_addr_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_write_addr_d),
+      .dat_o  (s_write_addr_q)
   );
   dffr #(
       .DATA_WIDTH(8)

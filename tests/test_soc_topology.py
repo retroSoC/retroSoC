@@ -73,7 +73,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
-    assert interfaces.count("ribp_if u_") == 18
+    assert interfaces.count("ribp_if u_") == 17
     assert "nmi_if" not in interfaces
     assert "soc_nmi" not in interfaces
     assert "assign s_slv_sel_d[17] = u_i2c1_ribp_if.valid;" in routes
@@ -359,6 +359,7 @@ def test_generated_rib_routes_select_and_return_the_expected_target(tmp_path: Pa
                 f"+incdir+{memory_map_output / 'rtl'}",
                 f"+incdir+{topology_output / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/interface'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "tests/rtl/ribp_topology_tb.sv"),
