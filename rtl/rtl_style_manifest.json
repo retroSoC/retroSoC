@@ -58,5 +58,59 @@
     "select": "sel",
     "length": "len"
   },
-  "reset_suffix": "rst_n_i"
+  "reset_suffix": "rst_n_i",
+  "naming": {
+    "signal_case": "lower_snake_case",
+    "port_suffixes": [
+      "_i",
+      "_o",
+      "_io"
+    ],
+    "active_low_suffixes": [
+      "_n_i",
+      "_n_o",
+      "_n_io"
+    ],
+    "internal_prefix": "s_",
+    "instance_prefix": "u_",
+    "state_suffixes": [
+      "_d",
+      "_q",
+      "_q2",
+      "_q3"
+    ],
+    "typedef_suffixes": {
+      "enum": "_e",
+      "other": "_t"
+    },
+    "parameter_case": "UpperCamelCase",
+    "macro_prefix": "RETROSOC_",
+    "macro_namespace_separator": "__",
+    "interface_name_exceptions": [
+      "rib",
+      "ribp",
+      "axi4",
+      "apb",
+      "gpio",
+      "uart",
+      "spi",
+      "i2c",
+      "i2s",
+      "ws2812",
+      "sysctrl",
+      "pll_ctrl",
+      "sdram",
+      "sdio",
+      "dvp",
+      "psram",
+      "opipsram"
+    ],
+    "macro_namespace_exceptions": [
+      "SOC_",
+      "RIB_",
+      "RIBP_",
+      "AXI4_",
+      "APB_"
+    ]
+  }
 }

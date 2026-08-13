@@ -37,9 +37,9 @@ module ws2812_core (
     WS_IDLE,
     WS_XFER,
     WS_RESET
-  } ws_state_t;
+  } ws_state_e;
 
-  ws_state_t s_state_d, s_state_q;
+  ws_state_e s_state_d, s_state_q;
   logic [15:0] s_bit_cycles_d, s_bit_cycles_q;
   logic [15:0] s_t0h_cycles_d, s_t0h_cycles_q;
   logic [15:0] s_t1h_cycles_d, s_t1h_cycles_q;
@@ -181,7 +181,7 @@ module ws2812_core (
   end
 
   dffercn #(
-      .REG_TYPE (ws_state_t),
+      .REG_TYPE (ws_state_e),
       .RESET_VAL(WS_IDLE)
   ) u_state_dffercn (
       .clk_i  (clk_i),

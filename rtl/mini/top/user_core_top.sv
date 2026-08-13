@@ -21,7 +21,7 @@ module user_core_top (
     // verilog_format: on
 );
 
-  rib_if rib ();
+  rib_if u_user_rib_if ();
 
   // Generated bindings preserve scalar user-core interfaces and isolation.
   `include "user_core_bindings.svh"
@@ -30,7 +30,7 @@ module user_core_top (
   rib2axi4 u_rib2axi4 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .rib    (rib),
+      .rib    (u_user_rib_if),
       .axi4   (axi4)
   );
   // verilog_format: on

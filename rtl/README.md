@@ -38,12 +38,20 @@ RTL and local changes to existing RTL must preserve them:
   or `_VALUE` suffixes; keep implementation-only masks and constant values as
   typed `localparam` declarations in the owning module.
 
+Changed owned RTL is also checked for module lower snake case, `u_` instance
+names, port direction suffixes, `_d/_q` state pairs, `_e/_t` typedef suffixes,
+typed UpperCamelCase parameters, and namespaced macros. This staged check does
+not apply mechanically to protocol fields, PDK pins, generated bindings, or
+managed/third-party sources. Use compatibility wrappers for public renames.
+
 Run `verible-verilog-format --flagfile=.verible-format` on changed RTL. Where
 the formatter cannot preserve required macro or port-column alignment, use a
 narrow `// verilog_format: off/on` region and align the enclosed declarations
 manually.
 
-The complete ownership-aware rules, short-name abbreviations, and migration
+The complete ownership-aware rules, including semantic signal grammar,
+handshake/error vocabulary, module/interface/instance suffixes, parameter and
+macro namespaces, FSM examples, compatibility boundaries, and migration
 policy are documented in [RTL Coding Style](../docs/rtl-coding-style.md).
 `make rtl-style-check` rejects new positional connections and legacy
 constructs in changed self-owned RTL while the existing migration backlog is

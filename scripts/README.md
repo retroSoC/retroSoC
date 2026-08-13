@@ -34,9 +34,10 @@ limitations.
 
 `check_rtl_style.py` applies the ownership-aware RTL style rules from
 [`../rtl/rtl_style_manifest.json`](../rtl/rtl_style_manifest.json). The CI
-target checks changed self-owned RTL for positional module connections and
-legacy constructs. Existing findings are migrated in module-sized batches and
-must not be expanded by a new change.
+target checks changed self-owned RTL for positional module connections, legacy
+constructs, and the staged naming contract. `rtl-style-check-all` retains the
+historical full-tree structural baseline while naming debt is migrated in
+module-sized batches. Existing findings must not be expanded by a new change.
 
 `migrate_rtl_connections.py` is the conservative migration helper for legacy
 positional instances. It discovers ANSI-style module declarations in the

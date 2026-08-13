@@ -66,14 +66,14 @@ module i2c_core (
     FSM_RECOVERY_LOW,
     FSM_RECOVERY_HIGH_WAIT,
     FSM_RECOVERY_HIGH
-  } i2c_fsm_t;
+  } i2c_fsm_e;
 
   typedef enum logic [1:0] {
     BIT_TX,
     BIT_RX,
     BIT_TARGET_ACK,
     BIT_CONTROLLER_ACK
-  } i2c_bit_action_t;
+  } i2c_bit_action_e;
 
   typedef enum logic [2:0] {
     BYTE_ADDR_7,
@@ -82,16 +82,16 @@ module i2c_core (
     BYTE_ADDR_10_HEADER_R,
     BYTE_WRITE,
     BYTE_READ
-  } i2c_byte_role_t;
+  } i2c_byte_role_e;
 
-  localparam int unsigned COUNTER_WIDTH = 24;
+  localparam int unsigned CounterWidth = 24;
 
-  i2c_fsm_t s_fsm_d, s_fsm_q;
-  i2c_bit_action_t s_bit_action_d, s_bit_action_q;
-  i2c_byte_role_t s_byte_role_d, s_byte_role_q;
-  logic [$bits(i2c_fsm_t)-1:0] s_fsm_d_raw, s_fsm_q_raw;
-  logic [$bits(i2c_bit_action_t)-1:0] s_bit_action_d_raw, s_bit_action_q_raw;
-  logic [$bits(i2c_byte_role_t)-1:0] s_byte_role_d_raw, s_byte_role_q_raw;
+  i2c_fsm_e s_fsm_d, s_fsm_q;
+  i2c_bit_action_e s_bit_action_d, s_bit_action_q;
+  i2c_byte_role_e s_byte_role_d, s_byte_role_q;
+  logic [$bits(i2c_fsm_e)-1:0] s_fsm_d_raw, s_fsm_q_raw;
+  logic [$bits(i2c_bit_action_e)-1:0] s_bit_action_d_raw, s_bit_action_q_raw;
+  logic [$bits(i2c_byte_role_e)-1:0] s_byte_role_d_raw, s_byte_role_q_raw;
   logic [23:0] s_phase_count_d, s_phase_count_q;
   logic [23:0] s_stretch_count_d, s_stretch_count_q;
   logic [23:0] s_cmd_count_d, s_cmd_count_q;
@@ -124,11 +124,11 @@ module i2c_core (
 
   assign s_data_low_cycles = {1'b0, data_hold_cycles_i} + {1'b0, data_setup_cycles_i};
   assign s_fsm_d_raw = s_fsm_d;
-  assign s_fsm_q = i2c_fsm_t'(s_fsm_q_raw);
+  assign s_fsm_q = i2c_fsm_e'(s_fsm_q_raw);
   assign s_bit_action_d_raw = s_bit_action_d;
-  assign s_bit_action_q = i2c_bit_action_t'(s_bit_action_q_raw);
+  assign s_bit_action_q = i2c_bit_action_e'(s_bit_action_q_raw);
   assign s_byte_role_d_raw = s_byte_role_d;
-  assign s_byte_role_q = i2c_byte_role_t'(s_byte_role_q_raw);
+  assign s_byte_role_q = i2c_byte_role_e'(s_byte_role_q_raw);
   assign s_tx_bit = s_tx_byte_q[s_bit_index_q];
   assign s_phase_done = timing_expired(s_phase_count_q, scl_high_cycles_i);
   assign s_low_phase_done = timing_expired(
@@ -670,7 +670,7 @@ module i2c_core (
   end
 
   dffr #(
-      .DATA_WIDTH($bits(i2c_fsm_t))
+      .DATA_WIDTH($bits(i2c_fsm_e))
   ) u_fsm_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -679,7 +679,7 @@ module i2c_core (
   );
 
   dffr #(
-      .DATA_WIDTH($bits(i2c_bit_action_t))
+      .DATA_WIDTH($bits(i2c_bit_action_e))
   ) u_bit_action_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -688,7 +688,7 @@ module i2c_core (
   );
 
   dffr #(
-      .DATA_WIDTH($bits(i2c_byte_role_t))
+      .DATA_WIDTH($bits(i2c_byte_role_e))
   ) u_byte_role_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -697,7 +697,7 @@ module i2c_core (
   );
 
   dffr #(
-      .DATA_WIDTH(COUNTER_WIDTH)
+      .DATA_WIDTH(CounterWidth)
   ) u_phase_count_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -706,7 +706,7 @@ module i2c_core (
   );
 
   dffr #(
-      .DATA_WIDTH(COUNTER_WIDTH)
+      .DATA_WIDTH(CounterWidth)
   ) u_stretch_count_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -715,7 +715,7 @@ module i2c_core (
   );
 
   dffr #(
-      .DATA_WIDTH(COUNTER_WIDTH)
+      .DATA_WIDTH(CounterWidth)
   ) u_command_count_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

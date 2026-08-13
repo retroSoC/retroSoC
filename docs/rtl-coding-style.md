@@ -61,6 +61,152 @@ Use `clk_i`, `rst_n_i`, `_i`, `_o`, and `_io` for ports; `s_` for local signals;
 `u_` for instances; and adjacent `s_<name>_d`/`s_<name>_q` for state. A state
 write enable is `s_<name>_en`.
 
+The staged naming contract is checked for changed owned RTL by
+`rtl-style-check`. It is intentionally stricter for new code than the
+historical baseline:
+
+| Object | Required form | Example |
+| --- | --- | --- |
+| module | lower snake case | `axi4_interconnect` |
+| port | semantic name plus direction suffix | `addr_i`, `resp_err_o`, `data_io` |
+| low-active port | polarity before direction | `irq_n_o`; project reset spelling is `rst_n_i` |
+| local signal | `s_` plus semantic name | `s_cmd_valid`, `s_timeout_q` |
+| instance | `u_` plus role or function | `u_rx_fifo`, `u_cfg_ribp` |
+| next/current state | `_d` / `_q` | `s_state_d`, `s_state_q` |
+| pipeline state | `_q2` / `_q3` | `s_addr_q2` |
+| enum typedef | lower snake case plus `_e` | `uart_state_e` |
+| other typedef | lower snake case plus `_t` | `sysctrl_offset_t` |
+| parameter | typed UpperCamelCase | `DataWidth`, `TimeoutCycles` |
+| global macro | namespaced ALL_CAPS | `RETROSOC_UART__BAUD` |
+
+Protocol and technology names are stable interface vocabulary, not local
+abbreviations. Keep standard AXI/APB/RIBP fields such as `valid`, `ready`,
+`wdata`, `wstrb`, `rdata`, and `resp` unchanged. Do not mechanically rename
+software-visible register macros, PDK pins, generated bindings, or managed IP.
+A public rename requires a compatibility wrapper, a filelist update, and an
+affected simulation/formal review.
+
+Use the approved local aliases in `rtl/rtl_style_manifest.json` only when they
+remain unambiguous (`cmd`, `req`, `resp`, `addr`, `cfg`, `stat`, `cnt`, and
+similar). New aliases require a manifest update and review. Instance names
+must identify their function rather than their order: use `cfg_ribp` or
+`u_sdram_data_ribp_if`, not `if0` or `bus1`.
+
+New FSMs use a typed enum with an `_e` type and descriptive values; opcode,
+response, register offset, and field constants remain ALL_CAPS because they
+are protocol or software-facing values. Existing `FSM_*`, `SOC_*`, `RIB_*`,
+and `RIBP_*` names are compatibility baseline and migrate only in isolated,
+reviewed batches.
+
+### 4.1 Identifier grammar and semantic order
+
+For a new internal identifier, construct the name from the meaningful parts in
+this order: `<block>_<channel>_<role>_<property>_<state>_<latency>_<polarity>_<direction>`.
+Only include parts that add information. For example, use
+`s_uart_rx_fifo_full`, `s_sdram_read_pending_q`, or `irq_n_o`; do not create
+names such as `signal_a`, `tmp2`, or `data_new_new`.
+
+The following rules are normative:
+
+1. Use lower snake case for RTL identifiers. Do not mix camel case, hyphens,
+   or arbitrary capitalization in a single naming family.
+2. Use the same name at adjacent hierarchy boundaries when a signal is passed
+   through unchanged. Rename only at a semantic conversion boundary.
+3. Put polarity before direction: `ready_n_o`, `reset_n_i`, and
+   `data_io`. The project exception is the established spelling `rst_n_i`;
+   do not introduce `rst_ni`.
+4. Name clocks `clk_i` for the default domain and `clk_<domain>_i` for other
+   domains, such as `clk_axi_i` or `clk_aud_i`. Name their resets
+   `rst_n_i` or `rst_<domain>_n_i`.
+5. Use `_d` for next-state combinational storage and `_q` for registered
+   current state. Use `_q2` and `_q3` for explicit pipeline stages, not for
+   arbitrary copies. Pair declarations adjacently.
+6. Use `_en` only for a state/register update enable. Use `_pulse` or `_evt`
+   for a one-cycle event, `_sticky_q` for software-cleared sticky state,
+   `_pending_q` for an issued-but-not-completed transaction, `_busy_q` for a
+   resource that cannot accept work, and `_cnt_q` or `_idx_q` for counters and
+   indices.
+7. Keep `valid`, `ready`, `accept`, `pending`, `busy`, `pulse`, and `sticky`
+   distinct. For a handshake, prefer `s_req_valid`, `s_req_ready`, and
+   `s_req_accept` (`valid && ready`) over an ambiguous `s_req` signal.
+8. Use full words in public APIs and the approved short aliases only for local
+   signals. The whitelist is `cmd`, `req`, `resp`, `addr`, `en`, `err`,
+   `stat`, `cnt`, `cfg`, `src`, `dst`, `evt`, `tgt`, `sel`, and `len`.
+9. Name errors by the failing contract: `cfg_err`, `access_err`, `resp_err`,
+   `timeout_err`, `pll_err`, and `overflow_err` are different conditions and
+   MUST NOT be collapsed into a generic `error` signal.
+
+### 4.2 Modules, interfaces, and instances
+
+1. Use lower snake case for modules and keep the source file and primary
+   module aligned. Use established functional suffixes: `_wrapper`, `_ctrl`
+   or `_controller`, `_reg`, `_core`, `_if`, `_pkg`, `_formal`,
+   `_formal_props`, and `_tb`.
+2. Name bus adapters with the repository's numeric `2` convention:
+   `rib2apb`, `rib2ram`, `ribp2axi4`, `axi42ribp`, and `axi42ram`. New code
+   MUST NOT introduce another `_to_` spelling for the same conversion.
+3. Use function-qualified interface instances such as `cfg_ribp`,
+   `mem_ribp`, `dma_axi`, and `apb_periph`. Do not use `if0`, `bus0`,
+   `interface_a`, or names based only on declaration order.
+4. Keep standard protocol field names unchanged. AXI, APB, RIB, and RIBP
+   fields such as `valid`, `ready`, `wdata`, `wstrb`, `rdata`, `resp`, and
+   `resp_err` are interoperability vocabulary, not local style debt.
+5. Existing generic public modules such as `rcu` or `bus` are not renamed in
+   place. New functionality should use a qualified name such as
+   `soc_rcu`, `pll_rcu_controller`, `rib_bus`, or `axi4_bus`; migrate an
+   existing public name only through a wrapper and a reviewed filelist change.
+
+### 4.3 Parameters, types, FSMs, and constants
+
+1. Name module parameters with typed UpperCamelCase: `DataWidth`, `AddrWidth`,
+   `NumMasters`, `NumTargets`, `FifoDepth`, `TimeoutCycles`, `ExtClkHz`, and
+   `ResetValue`. Do not use unqualified `DW`, `AW`, `N`, `NUM`, or `PARAM1`.
+2. Use UpperCamelCase for module-private `localparam` values as well. Put
+   protocol ABI and register-map constants in a package or reviewed header;
+   keep implementation-only masks and timing constants local.
+3. Name typedefs with lower snake case and `_t`; name enum typedefs with `_e`.
+   New FSMs use a distinct typed enum for each state machine, for example:
+
+   ```systemverilog
+   typedef enum logic [2:0] {
+     Idle,
+     ReadReq,
+     ReadResp,
+     ErrorResp
+   } state_e;
+   state_e s_state_d, s_state_q;
+   ```
+
+   Use descriptive UpperCamelCase values for states. Use ALL_CAPS for
+   opcodes, response codes, register offsets, field positions, and other
+   protocol/software-visible constants.
+4. Name global macros with a block namespace and a double underscore, such as
+   `RETROSOC_RIB__RESP_OK`, `RETROSOC_RIBP_UART__BAUD`, and
+   `RETROSOC_GPIO__PIN_COUNT`. Use include guards such as
+   `RETROSOC_<FILE>_SVH`. Local macros use a single leading underscore and
+   MUST be undefined after use.
+5. Do not use a macro for a value that can be expressed as a parameter,
+   localparam, package constant, function, or enum. Existing `SOC_*`,
+   `RIB_*`, `RIBP_*`, and standard protocol macro names remain compatibility
+   exceptions until their consumers are migrated.
+
+### 4.4 Compatibility and migration boundaries
+
+1. Apply the strict naming rules to new or modified self-owned RTL first. The
+   existing tree is migrated in module-sized batches with a reviewed baseline;
+   a new change MUST NOT increase the legacy naming debt.
+2. Do not mechanically rename ClusterIP Common, PDK, generated, managed,
+   vendored, or third-party sources. Update those through their upstream or
+   locked integration flow.
+3. Do not change software-visible register macros, memory-map symbols,
+   protocol fields, module filelist entries, or technology pin names as part of
+   a local style cleanup. Preserve the old public name with a compatibility
+   wrapper or alias until every consumer has moved.
+4. A public rename is complete only after the wrapper/filelist migration,
+   Verible and Verilator checks, affected simulation and formal proofs, and a
+   review of generated artifacts. Keep public renames separate from functional
+   changes so equivalence and regression failures are attributable.
+
 Public interfaces, protocol fields, register fields, and technology pins keep
 their required names. Local signals MAY use only approved concise aliases:
 
@@ -83,8 +229,11 @@ their required names. Local signals MAY use only approved concise aliases:
 | length | `len` |
 
 New abbreviations require review and an update to `rtl/rtl_style_manifest.json`.
-Use `_t` for typedefs, `_e` for enum types, `ALL_CAPS` for macros, and the
-repository's established parameter naming convention.
+Use `_t` for typedefs, `_e` for enum types, `ALL_CAPS` for macros, and typed
+UpperCamelCase for new parameters. Global macros use the
+`RETROSOC_<BLOCK>__<NAME>` namespace; IP register macros use
+`RIBP_<IP>__<REGISTER>`. Prefer a package, enum, localparam, or parameter over
+a macro when the value does not cross a preprocessing boundary.
 
 Declare explicit widths and signedness for parameters, ports, constants, and
 internal signals. Use sized literals such as `8'h00` and `16'd42`. Do not rely

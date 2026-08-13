@@ -13,22 +13,22 @@ module uart_baudgen (
     // verilog_format: on
 );
 
-  localparam logic [31:0] SAMPLE_STEP = 32'd4096;
+  localparam logic [31:0] SampleStep = 32'd4096;
 
   logic [31:0] s_period;
   logic [31:0] s_phase_d, s_phase_q;
   logic [3:0] s_sample_count_d, s_sample_count_q;
   logic [32:0] s_phase_sum;
 
-  assign s_period = {baud_int_i, baud_frac_i};
-  assign s_phase_sum = {1'b0, s_phase_q} + {1'b0, SAMPLE_STEP};
-  assign sample_tick_o = enable_i && (s_period >= SAMPLE_STEP) && (s_phase_sum >= {1'b0, s_period});
-  assign bit_tick_o = sample_tick_o && (s_sample_count_q == 4'd15);
+  assign s_period      = {baud_int_i, baud_frac_i};
+  assign s_phase_sum   = {1'b0, s_phase_q} + {1'b0, SampleStep};
+  assign sample_tick_o = enable_i && (s_period >= SampleStep) && (s_phase_sum >= {1'b0, s_period});
+  assign bit_tick_o    = sample_tick_o && (s_sample_count_q == 4'd15);
 
   always_comb begin
     s_phase_d        = s_phase_q;
     s_sample_count_d = s_sample_count_q;
-    if (!enable_i || (s_period < SAMPLE_STEP)) begin
+    if (!enable_i || (s_period < SampleStep)) begin
       s_phase_d        = '0;
       s_sample_count_d = '0;
     end else if (sample_tick_o) begin

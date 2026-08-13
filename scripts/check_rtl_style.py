@@ -37,6 +37,22 @@ LONG_LOCAL_RE = re.compile(
     r"\b[sr]_[A-Za-z0-9_$]*(?:command|request|response|address|enable|error|status|"
     r"counter|configuration|select|length)(?:_|$)"
 )
+MODULE_RE = re.compile(r"^\s*module\s+(?P<name>[A-Za-z_][A-Za-z0-9_$]*)\b")
+PORT_RE = re.compile(
+    r"^\s*(?:input|output|inout)\b.*?\b(?P<name>[A-Za-z_][A-Za-z0-9_$]*)\s*(?:[,)]|$)"
+)
+INTERFACE_INSTANCE_RE = re.compile(
+    r"^\s*(?:[A-Za-z_][A-Za-z0-9_$]*_if|axi4_if|axi4_stream_if)\s+"
+    r"(?P<name>[A-Za-z_][A-Za-z0-9_$]*)\s*\("
+)
+MACRO_RE = re.compile(r"^\s*`define\s+(?P<name>[A-Za-z_][A-Za-z0-9_$]*)\b")
+ENUM_TYPE_RE = re.compile(r"typedef\s+enum\b[\s\S]*?}\s*(?P<name>[A-Za-z_][A-Za-z0-9_$]*)\s*;")
+PARAM_RE = re.compile(
+    r"\b(?:localparam|parameter)\b(?:\s+(?:bit|logic|int|integer|unsigned|signed)"
+    r"|\s*\[[^\]]+\])*\s+(?P<name>[A-Za-z_][A-Za-z0-9_$]*)\s*(?:=|,|$)"
+)
+UPPER_CAMEL_RE = re.compile(r"^[A-Z][A-Za-z0-9]*$")
+LOWER_SNAKE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 
 
 def tracked_files(root: Path) -> list[Path]:
@@ -49,7 +65,7 @@ def tracked_files(root: Path) -> list[Path]:
 
 
 def changed_files(root: Path) -> set[Path]:
-    """Return tracked RTL files changed in the worktree or current commit."""
+    """Return RTL files changed in the worktree, including untracked files."""
     names = subprocess.run(
         ["git", "-C", str(root), "diff", "--name-only", "--diff-filter=ACMR"],
         check=True,
@@ -58,6 +74,12 @@ def changed_files(root: Path) -> set[Path]:
     ).stdout.splitlines()
     names += subprocess.run(
         ["git", "-C", str(root), "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+    ).stdout.splitlines()
+    names += subprocess.run(
+        ["git", "-C", str(root), "ls-files", "--others", "--exclude-standard"],
         check=True,
         text=True,
         stdout=subprocess.PIPE,
@@ -83,6 +105,23 @@ def selected_files(root: Path, manifest: dict[str, object]) -> dict[str, list[Pa
             and (root / path).is_file()
         )
     return files
+
+
+def add_changed_profile_files(
+    root: Path, profile_files: list[Path], profile: dict[str, object], changed: set[Path]
+) -> list[Path]:
+    """Include new, untracked owned sources in changed-only checks."""
+    roots = profile.get("roots", [])
+    suffixes = set(profile.get("suffixes", []))
+    root_paths = [Path(item) for item in roots]
+    candidates = {
+        path
+        for path in changed
+        if path.suffix in suffixes
+        and any(path == candidate or candidate in path.parents for candidate in root_paths)
+        and (root / path).is_file()
+    }
+    return sorted(set(profile_files) | candidates)
 
 
 def instance_issues(path: Path, source: str) -> list[str]:
@@ -144,6 +183,53 @@ def check_file(path: Path, source: str, profile: str) -> list[str]:
     return issues
 
 
+def naming_issues(path: Path, source: str, manifest: dict[str, object]) -> list[str]:
+    """Check the staged naming contract without touching protocol ABI fields."""
+    naming = manifest.get("naming", {})
+    if not isinstance(naming, dict):
+        return []
+    issues: list[str] = []
+    lines = source.splitlines()
+    for number, line in enumerate(lines, start=1):
+        code = line.split("//", 1)[0]
+        module_match = MODULE_RE.match(code)
+        if module_match and not LOWER_SNAKE_RE.fullmatch(module_match.group("name")):
+            issues.append(f"{path}:{number}: module name must use lower_snake_case")
+        port_match = PORT_RE.match(code)
+        if port_match:
+            name = port_match.group("name")
+            if not name.endswith(("_i", "_o", "_io")):
+                issues.append(f"{path}:{number}: port '{name}' needs _i, _o, or _io suffix")
+        interface_match = INTERFACE_INSTANCE_RE.match(code)
+        if interface_match and not interface_match.group("name").startswith("u_"):
+            issues.append(f"{path}:{number}: interface instance must start with u_")
+        macro_match = MACRO_RE.match(code)
+        if macro_match:
+            name = macro_match.group("name")
+            exceptions = naming.get("macro_namespace_exceptions", [])
+            if not isinstance(exceptions, list):
+                exceptions = []
+            if not name.startswith("RETROSOC_") and not any(
+                name.startswith(str(prefix)) for prefix in exceptions
+            ):
+                issues.append(f"{path}:{number}: macro '{name}' needs a reviewed namespace")
+        if re.search(r"\brst_ni\b", code):
+            issues.append(f"{path}:{number}: use project reset spelling rst_n_i")
+    for match in ENUM_TYPE_RE.finditer(source):
+        if not match.group("name").endswith("_e"):
+            line = source.count("\n", 0, match.start()) + 1
+            issues.append(f"{path}:{line}: enum typedef must end in _e")
+    for number, line in enumerate(lines, start=1):
+        code = line.split("//", 1)[0]
+        if re.search(r"\b(?:parameter|localparam)\b", code):
+            for match in PARAM_RE.finditer(code):
+                if not UPPER_CAMEL_RE.fullmatch(match.group("name")):
+                    issues.append(
+                        f"{path}:{number}: parameter '{match.group('name')}' must use UpperCamelCase"
+                    )
+    return issues
+
+
 def verible_issues(tool: str, paths: list[Path], root: Path) -> list[str]:
     if not paths:
         return []
@@ -177,6 +263,11 @@ def main() -> int:
         action="store_true",
         help="check only files changed in the worktree or current commit",
     )
+    parser.add_argument(
+        "--enforce-naming",
+        action="store_true",
+        help="enforce the staged naming rules for the selected files",
+    )
     args = parser.parse_args()
     root = args.root.resolve()
     manifest_path = args.manifest or root / "rtl/rtl_style_manifest.json"
@@ -184,12 +275,21 @@ def main() -> int:
     profile_files = selected_files(root, manifest)[args.profile]
     if args.changed_only:
         changed = changed_files(root)
+        raw_profile = manifest["profiles"][args.profile]
+        assert isinstance(raw_profile, dict)
+        profile_files = add_changed_profile_files(root, profile_files, raw_profile, changed)
         profile_files = [path for path in profile_files if path in changed]
     issues = [
         issue
         for path in profile_files
         for issue in check_file(path, (root / path).read_text(encoding="utf-8"), args.profile)
     ]
+    if args.profile == "owned" and (args.changed_only or args.enforce_naming):
+        issues.extend(
+            naming_issues(path, (root / path).read_text(encoding="utf-8"), manifest)
+            for path in profile_files
+        )
+        issues = [issue for group in issues for issue in (group if isinstance(group, list) else [group])]
     if args.profile == "owned":
         issues.extend(verible_issues(args.verible_verilog_lint, profile_files, root))
     baseline: set[str] = set()

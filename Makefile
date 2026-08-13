@@ -441,7 +441,7 @@ rtl-migrate-names:
 
 rtl-style-check:
 	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
-	  --profile owned --changed-only --verible-verilog-lint $(VERIBLE_LINT)
+	  --profile owned --changed-only --enforce-naming --verible-verilog-lint $(VERIBLE_LINT)
 
 rtl-style-check-all:
 	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
