@@ -37,7 +37,7 @@ module psram_core (
 );
   // sclk(max: 144MHz ~ 6.94ns)
   // 6.94 * 50000 = 347us / 2 = 174us > 150us
-  `define BOOT_COUNTER 18'd50_000
+  `define RETROSOC_PSRAM__BOOT_COUNTER 18'd50_000
 
   // verilog_format: off
   localparam FSM_INIT       = 5'd0;
@@ -118,7 +118,7 @@ module psram_core (
     if (~rst_n_i) begin
       r_fsm_state         <= FSM_INIT;
       r_fsm_state_tgt     <= FSM_INIT;
-      r_boot_cnt          <= `BOOT_COUNTER;
+      r_boot_cnt          <= `RETROSOC_PSRAM__BOOT_COUNTER;
       r_xfer_ca           <= 32'd0;
       r_xfer_data         <= 32'd0;
       r_xfer_ca_bit_cnt   <= 8'd0;

@@ -4,11 +4,11 @@
 `include "gpio_define.svh"
 
 interface user_gpio_if #(
-    parameter int DATA_WIDTH = `RIBP_GPIO_NUM
+    parameter int DataWidth = `RIBP_GPIO_NUM
 ) ();
-  logic [DATA_WIDTH-1:0] do_o;
-  logic [DATA_WIDTH-1:0] oe_o;
-  logic [DATA_WIDTH-1:0] di_i;
+  logic [DataWidth-1:0] do_o;
+  logic [DataWidth-1:0] oe_o;
+  logic [DataWidth-1:0] di_i;
 
   modport user_ip(output do_o, output oe_o, input di_i);
   modport padctrl(input do_o, input oe_o, output di_i);

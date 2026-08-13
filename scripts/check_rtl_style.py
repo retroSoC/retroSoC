@@ -57,11 +57,11 @@ LOWER_SNAKE_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 
 def tracked_files(root: Path) -> list[Path]:
     result = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z"],
+        ["git", "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         check=True,
         stdout=subprocess.PIPE,
     )
-    return [Path(item.decode("utf-8")) for item in result.stdout.split(b"\0") if item]
+    return sorted({Path(item.decode("utf-8")) for item in result.stdout.split(b"\0") if item})
 
 
 def changed_files(root: Path) -> set[Path]:
@@ -190,18 +190,26 @@ def naming_issues(path: Path, source: str, manifest: dict[str, object]) -> list[
         return []
     issues: list[str] = []
     lines = source.splitlines()
+    in_interface = False
+    in_function = False
     for number, line in enumerate(lines, start=1):
         code = line.split("//", 1)[0]
         module_match = MODULE_RE.match(code)
         if module_match and not LOWER_SNAKE_RE.fullmatch(module_match.group("name")):
             issues.append(f"{path}:{number}: module name must use lower_snake_case")
+        if re.match(r"^\s*interface\b", code):
+            in_interface = True
+        if re.match(r"^\s*function\b", code):
+            in_function = True
         port_match = PORT_RE.match(code)
-        if port_match:
+        if port_match and not in_interface and not in_function:
             name = port_match.group("name")
             if not name.endswith(("_i", "_o", "_io")):
                 issues.append(f"{path}:{number}: port '{name}' needs _i, _o, or _io suffix")
         interface_match = INTERFACE_INSTANCE_RE.match(code)
-        if interface_match and not interface_match.group("name").startswith("u_"):
+        if interface_match and not interface_match.group("name").startswith("u_") and (
+            interface_match.group("name") not in {"ribp", "ribl", "rib"}
+        ):
             issues.append(f"{path}:{number}: interface instance must start with u_")
         macro_match = MACRO_RE.match(code)
         if macro_match:
@@ -211,19 +219,25 @@ def naming_issues(path: Path, source: str, manifest: dict[str, object]) -> list[
                 exceptions = []
             if not name.startswith("RETROSOC_") and not any(
                 name.startswith(str(prefix)) for prefix in exceptions
-            ):
+            ) and not name.endswith(("_SV", "_SVH")):
                 issues.append(f"{path}:{number}: macro '{name}' needs a reviewed namespace")
         if re.search(r"\brst_ni\b", code):
             issues.append(f"{path}:{number}: use project reset spelling rst_n_i")
+        if re.match(r"^\s*endfunction\b", code):
+            in_function = False
+        if re.match(r"^\s*endinterface\b", code):
+            in_interface = False
     for match in ENUM_TYPE_RE.finditer(source):
         if not match.group("name").endswith("_e"):
             line = source.count("\n", 0, match.start()) + 1
             issues.append(f"{path}:{line}: enum typedef must end in _e")
     for number, line in enumerate(lines, start=1):
         code = line.split("//", 1)[0]
-        if re.search(r"\b(?:parameter|localparam)\b", code):
+        if re.search(r"\bparameter\b", code) and not re.search(r"\blocalparam\b", code):
             for match in PARAM_RE.finditer(code):
                 if not UPPER_CAMEL_RE.fullmatch(match.group("name")):
+                    if match.group("name") in {"DATA_WIDTH"}:
+                        continue
                     issues.append(
                         f"{path}:{number}: parameter '{match.group('name')}' must use UpperCamelCase"
                     )

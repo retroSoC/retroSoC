@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 module ribp_ws2812 #(
-    parameter int TX_FIFO_DEPTH = 16
+    parameter int TxFifoDepth = 16
 ) (
     // verilog_format: off
     input logic    clk_i,
@@ -37,7 +37,7 @@ module ribp_ws2812 #(
   assign ws2812.irq_o = s_irq;
 
   ws2812_reg #(
-      .TX_FIFO_DEPTH(TX_FIFO_DEPTH)
+      .TxFifoDepth(TxFifoDepth)
   ) u_ws2812_reg (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),

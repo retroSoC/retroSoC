@@ -2,8 +2,8 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module ribp_i2c #(
-    parameter int CMD_FIFO_DEPTH = 16,
-    parameter int RX_FIFO_DEPTH  = 16
+    parameter int CmdFifoDepth = 16,
+    parameter int RxFifoDepth  = 16
 ) (
     // verilog_format: off
     input  logic  clk_i,
@@ -76,8 +76,8 @@ module ribp_i2c #(
   );
 
   i2c_reg #(
-      .CMD_FIFO_DEPTH(CMD_FIFO_DEPTH),
-      .RX_FIFO_DEPTH (RX_FIFO_DEPTH)
+      .CmdFifoDepth(CmdFifoDepth),
+      .RxFifoDepth (RxFifoDepth)
   ) u_i2c_reg (
       .clk_i                  (clk_i),
       .rst_n_i                (rst_n_i),

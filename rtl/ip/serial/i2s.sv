@@ -100,8 +100,8 @@ module ribp_i2s (
 
 
   async_fifo #(
-      .DATA_WIDTH (32),
-      .DEPTH_POWER(7)
+      .DataWidth (32),
+      .DepthPower(7)
   ) u_tx_async_fifo (
       .wr_clk_i  (clk_i),
       .wr_rst_n_i(rst_n_i),
@@ -118,8 +118,8 @@ module ribp_i2s (
 
 
   async_fifo #(
-      .DATA_WIDTH (32),
-      .DEPTH_POWER(7)
+      .DataWidth (32),
+      .DepthPower(7)
   ) u_rx_async_fifo (
       .wr_clk_i  (clk_aud_i),
       .wr_rst_n_i(rst_aud_n_i),

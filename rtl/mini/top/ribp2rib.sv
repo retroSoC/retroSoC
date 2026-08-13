@@ -11,7 +11,7 @@
 `include "rib_defs.svh"
 
 module ribp2rib #(
-    parameter bit SYNC_RESET = 1'b0
+    parameter bit SyncReset = 1'b0
 ) (
     input logic         clk_i,
     input logic         rst_n_i,
@@ -66,7 +66,7 @@ module ribp2rib #(
     endcase
   end
 
-  if (SYNC_RESET) begin : GEN_SYNC_RESET
+  if (SyncReset) begin : GEN_SYNC_RESET
     dffsr #(
         .DATA_WIDTH(2)
     ) u_fsm_dffsr (

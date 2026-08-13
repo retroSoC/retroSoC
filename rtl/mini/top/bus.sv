@@ -724,15 +724,15 @@ module axi4_bus (
     output logic [63:0]   perf_flash_wait_o
     // verilog_format: on
 );
-  localparam int NUM_MASTERS = 3;
-  localparam int NUM_TARGETS = 9;
+  localparam int NumMasters = 3;
+  localparam int NumTargets = 9;
 
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) u_master_axi4_if[NUM_MASTERS] (
+  ) u_master_axi4_if[NumMasters] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -742,7 +742,7 @@ module axi4_bus (
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) u_target_axi4_if[NUM_TARGETS] (
+  ) u_target_axi4_if[NumTargets] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -808,8 +808,8 @@ module axi4_bus (
   );
 
   axi4_interconnect #(
-      .NUM_MASTERS(NUM_MASTERS),
-      .NUM_TARGETS(NUM_TARGETS)
+      .NumMasters(NumMasters),
+      .NumTargets(NumTargets)
   ) u_axi4_interconnect (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
@@ -845,7 +845,7 @@ module axi4_bus (
   );
 `else
   axi4_error_slave #(
-      .RESPONSE(2'b11)
+      .Response(2'b11)
   ) u_ram_error_slave (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -854,7 +854,7 @@ module axi4_bus (
 `endif
 
   axi4_error_slave #(
-      .RESPONSE(2'b11)
+      .Response(2'b11)
   ) u_decode_error_slave (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -862,7 +862,7 @@ module axi4_bus (
   );
 
   axi4_error_slave #(
-      .RESPONSE(2'b10)
+      .Response(2'b10)
   ) u_slave_error_slave (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

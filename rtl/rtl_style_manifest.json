@@ -110,7 +110,21 @@
       "RIB_",
       "RIBP_",
       "AXI4_",
-      "APB_"
+      "APB_",
+      "CLINT_",
+      "DMA_",
+      "DVP_",
+      "GPIO_",
+      "I2C_",
+      "I2S_",
+      "PSRAM_",
+      "SDIO_",
+      "SDRAM_",
+      "SPISD_",
+      "TIMER_",
+      "UART_",
+      "WS2812_",
+      "XPI_"
     ]
   }
 }

@@ -178,7 +178,7 @@ module ws2812_dma_tb;
   );
 
   ribp_ws2812 #(
-      .TX_FIFO_DEPTH(4)
+      .TxFifoDepth(4)
   ) u_ws2812 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

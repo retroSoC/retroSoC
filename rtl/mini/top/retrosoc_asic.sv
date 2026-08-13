@@ -89,8 +89,8 @@ module retrosoc_asic (
   `include "retrosoc_asic_pad_bindings.svh"
 
 rcu #(
-      .EXT_CLK_HZ       (`SOC_EXT_CLK_HZ),
-      .CLINT_TIMEBASE_HZ(`SOC_CLINT_TIMEBASE_HZ)
+      .ExtClkHz       (`SOC_EXT_CLK_HZ),
+      .ClintTimebaseHz(`SOC_CLINT_TIMEBASE_HZ)
   ) u_rcu (
       .ext_clk_i      (s_ext_clk),
       .aud_clk_i      (s_aud_clk),

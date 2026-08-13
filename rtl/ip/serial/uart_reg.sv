@@ -4,10 +4,10 @@
 `include "ribp_uart_define.svh"
 
 module uart_reg #(
-    parameter int TX_FIFO_DEPTH     = 64,
-    parameter int RX_FIFO_DEPTH     = 64,
-    parameter int TX_FIFO_LOG_DEPTH = $clog2(TX_FIFO_DEPTH),
-    parameter int RX_FIFO_LOG_DEPTH = $clog2(RX_FIFO_DEPTH)
+    parameter int TxFifoDepth    = 64,
+    parameter int RxFifoDepth    = 64,
+    parameter int TxFifoLogDepth = $clog2(TxFifoDepth),
+    parameter int RxFifoLogDepth = $clog2(RxFifoDepth)
 ) (
     // verilog_format: off
     input  logic        clk_i,
@@ -87,19 +87,19 @@ module uart_reg #(
   logic [6:0] s_rts_assert_level_d, s_rts_assert_level_q;
   logic [6:0] s_rts_deassert_level_d, s_rts_deassert_level_q;
 
-  logic                       s_tx_flush;
-  logic                       s_tx_push;
-  logic                       s_tx_empty;
-  logic                       s_tx_full;
-  logic [                7:0] s_tx_pop_data;
-  logic [TX_FIFO_LOG_DEPTH:0] s_tx_count;
-  logic                       s_rx_flush;
-  logic                       s_rx_push;
-  logic                       s_rx_pop;
-  logic                       s_rx_empty;
-  logic                       s_rx_full;
-  logic [               11:0] s_rx_pop_data;
-  logic [RX_FIFO_LOG_DEPTH:0] s_rx_count;
+  logic                    s_tx_flush;
+  logic                    s_tx_push;
+  logic                    s_tx_empty;
+  logic                    s_tx_full;
+  logic [             7:0] s_tx_pop_data;
+  logic [TxFifoLogDepth:0] s_tx_count;
+  logic                    s_rx_flush;
+  logic                    s_rx_push;
+  logic                    s_rx_pop;
+  logic                    s_rx_empty;
+  logic                    s_rx_full;
+  logic [            11:0] s_rx_pop_data;
+  logic [RxFifoLogDepth:0] s_rx_count;
 
   logic [6:0] s_err_stat_d, s_err_stat_q;
   logic [6:0] s_intr_state_d, s_intr_state_q;
@@ -138,7 +138,7 @@ module uart_reg #(
   endfunction
 
   initial begin
-    if ((TX_FIFO_DEPTH != 64) || (RX_FIFO_DEPTH != 64)) begin
+    if ((TxFifoDepth != 64) || (RxFifoDepth != 64)) begin
       $fatal(1, "uart_reg: 64-entry FIFOs are required");
     end
   end
@@ -317,7 +317,7 @@ module uart_reg #(
           end
           `RIBP_UART_TX_WATERMARK: begin
             s_merge_value = merge_wstrb({25'd0, s_tx_watermark_q}, ribp.wdata, ribp.wstrb);
-            if ((s_merge_value[31:7] != 25'd0) || (s_merge_value[6:0] >= 7'(TX_FIFO_DEPTH))) begin
+            if ((s_merge_value[31:7] != 25'd0) || (s_merge_value[6:0] >= 7'(TxFifoDepth))) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else begin
@@ -328,7 +328,7 @@ module uart_reg #(
           `RIBP_UART_RX_WATERMARK: begin
             s_merge_value = merge_wstrb({25'd0, s_rx_watermark_q}, ribp.wdata, ribp.wstrb);
             if ((s_merge_value[31:7] != 25'd0) || (s_merge_value[6:0] == 7'd0) ||
-                (s_merge_value[6:0] > 7'(RX_FIFO_DEPTH))) begin
+                (s_merge_value[6:0] > 7'(RxFifoDepth))) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else begin
@@ -402,7 +402,7 @@ module uart_reg #(
                                         ribp.wdata, ribp.wstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:23] != 9'd0) || (s_merge_value[15:7] != 9'd0) ||
-                (s_merge_value[22:16] > 7'(RX_FIFO_DEPTH)) ||
+                (s_merge_value[22:16] > 7'(RxFifoDepth)) ||
                 (s_merge_value[6:0] >= s_merge_value[22:16])) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
@@ -603,8 +603,8 @@ module uart_reg #(
 
   fifo #(
       .DATA_WIDTH      (8),
-      .BUFFER_DEPTH    (TX_FIFO_DEPTH),
-      .LOG_BUFFER_DEPTH(TX_FIFO_LOG_DEPTH)
+      .BUFFER_DEPTH    (TxFifoDepth),
+      .LOG_BUFFER_DEPTH(TxFifoLogDepth)
   ) u_tx_fifo (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -620,8 +620,8 @@ module uart_reg #(
 
   fifo #(
       .DATA_WIDTH      (12),
-      .BUFFER_DEPTH    (RX_FIFO_DEPTH),
-      .LOG_BUFFER_DEPTH(RX_FIFO_LOG_DEPTH)
+      .BUFFER_DEPTH    (RxFifoDepth),
+      .LOG_BUFFER_DEPTH(RxFifoLogDepth)
   ) u_rx_fifo (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

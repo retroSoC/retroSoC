@@ -64,7 +64,7 @@ module mgmt_core_wrapper (
   // verilog_format: on
 
   mgmt_debug_wrapper #(
-      .JTAG_IDCODE(`SOC_JTAG_IDCODE)
+      .JtagIdcode(`SOC_JTAG_IDCODE)
   ) u_mgmt_debug_wrapper (
       .clk_i                       (clk_i),
       .rst_n_i                     (rst_n_i),

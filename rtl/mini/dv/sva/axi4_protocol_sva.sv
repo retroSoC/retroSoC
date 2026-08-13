@@ -10,26 +10,26 @@
 /* verilator lint_off SYNCASYNCNET */
 
 module axi4_interconnect_sva #(
-    parameter int NUM_MASTERS  = 3,
-    parameter int NUM_TARGETS  = 9,
-    parameter int MASTER_WIDTH = $clog2(NUM_MASTERS),
-    parameter int TARGET_WIDTH = $clog2(NUM_TARGETS)
+    parameter int NumMasters   = 3,
+    parameter int NumTargets   = 9,
+    parameter int MASTER_WIDTH = $clog2(NumMasters),
+    parameter int TARGET_WIDTH = $clog2(NumTargets)
 ) (
-    input logic                                     clk_i,
-    input logic                                     rst_n_i,
-    input logic [NUM_MASTERS-1:0][             1:0] master_state_i,
-    input logic [NUM_MASTERS-1:0][TARGET_WIDTH-1:0] master_target_i,
-    input logic [NUM_TARGETS-1:0]                   target_valid_i,
-    input logic [NUM_TARGETS-1:0]                   target_addr_sent_i,
-    input logic [NUM_TARGETS-1:0][MASTER_WIDTH-1:0] target_owner_i,
-    input logic                                     user_bus_enable_i,
-    input logic                                     user_awready_i,
-    input logic                                     user_arready_i
+    input logic                                    clk_i,
+    input logic                                    rst_n_i,
+    input logic [NumMasters-1:0][             1:0] master_state_i,
+    input logic [NumMasters-1:0][TARGET_WIDTH-1:0] master_target_i,
+    input logic [NumTargets-1:0]                   target_valid_i,
+    input logic [NumTargets-1:0]                   target_addr_sent_i,
+    input logic [NumTargets-1:0][MASTER_WIDTH-1:0] target_owner_i,
+    input logic                                    user_bus_enable_i,
+    input logic                                    user_awready_i,
+    input logic                                    user_arready_i
 );
   localparam logic [1:0] MASTER_IDLE = 2'd0;
   localparam logic [1:0] MASTER_ACTIVE = 2'd2;
 
-  for (genvar target = 0; target < NUM_TARGETS; target++) begin : GEN_TARGET_OWNERSHIP
+  for (genvar target = 0; target < NumTargets; target++) begin : GEN_TARGET_OWNERSHIP
     assert property (@(posedge clk_i) disable iff (!rst_n_i)
         target_addr_sent_i[target] |-> target_valid_i[target]);
     assert property (@(posedge clk_i) disable iff (!rst_n_i)
@@ -37,7 +37,7 @@ module axi4_interconnect_sva #(
             master_state_i[target_owner_i[target]] == MASTER_ACTIVE &&
             master_target_i[target_owner_i[target]] == TARGET_WIDTH'(target));
 
-    for (genvar other = target + 1; other < NUM_TARGETS; other++) begin : GEN_UNIQUE_OWNER
+    for (genvar other = target + 1; other < NumTargets; other++) begin : GEN_UNIQUE_OWNER
       assert property (@(posedge clk_i) disable iff (!rst_n_i)
           target_valid_i[target] && target_valid_i[other] |->
               target_owner_i[target] != target_owner_i[other]);
@@ -50,8 +50,8 @@ module axi4_interconnect_sva #(
 endmodule
 
 bind axi4_interconnect axi4_interconnect_sva #(
-    .NUM_MASTERS(NUM_MASTERS),
-    .NUM_TARGETS(NUM_TARGETS)
+    .NumMasters(NumMasters),
+    .NumTargets(NumTargets)
 ) u_axi4_interconnect_sva (
     .clk_i             (clk_i),
     .rst_n_i           (rst_n_i),

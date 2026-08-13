@@ -3,26 +3,26 @@
 `include "gpio_define.svh"
 
 module gpio_tb;
-  localparam int PIN_NUM = 4;
+  localparam int PinNum = 4;
   localparam logic [31:0] USER_BASE = 32'h1000_0000;
   localparam logic [31:0] ADMIN_BASE = 32'h1001_4000;
 
   logic clk_i = 1'b0;
   logic rst_n_i = 1'b0;
   ribp_if ribp ();
-  gpio_if #(PIN_NUM) gpio ();
-  user_gpio_if #(PIN_NUM) user_gpio ();
+  gpio_if #(PinNum) gpio ();
+  user_gpio_if #(PinNum) user_gpio ();
   logic [31:0] read_data;
 
   always #5 clk_i = ~clk_i;
 
   ribp_gpio #(
-      .PIN_NUM        (PIN_NUM),
-      .USER_BASE_ADDR (USER_BASE),
-      .ADMIN_BASE_ADDR(ADMIN_BASE),
-      .HAS_INPUT_CMOS (1'b1),
-      .HAS_PULL_UP    (1'b1),
-      .HAS_PULL_DOWN  (1'b1)
+      .PinNum       (PinNum),
+      .UserBaseAddr (USER_BASE),
+      .AdminBaseAddr(ADMIN_BASE),
+      .HasInputCmos (1'b1),
+      .HasPullUp    (1'b1),
+      .HasPullDown  (1'b1)
   ) dut (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),

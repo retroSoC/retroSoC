@@ -9,26 +9,26 @@
 // See the Mulan PSL v2 for more details.
 
 module async_fifo #(
-    parameter int DATA_WIDTH  = 32,
-    parameter int DEPTH_POWER = 4
+    parameter int DataWidth  = 32,
+    parameter int DepthPower = 4
 ) (
-    input  logic                  wr_clk_i,
-    input  logic                  wr_rst_n_i,
-    input  logic                  wr_en_i,
-    input  logic [DATA_WIDTH-1:0] wr_data_i,
-    output logic                  wr_full_o,
-    input  logic                  rd_clk_i,
-    input  logic                  rd_rst_n_i,
-    input  logic                  rd_en_i,
-    output logic [DATA_WIDTH-1:0] rd_data_o,
-    output logic                  rd_empty_o,
-    output logic [ DEPTH_POWER:0] elem_num_o
+    input  logic                 wr_clk_i,
+    input  logic                 wr_rst_n_i,
+    input  logic                 wr_en_i,
+    input  logic [DataWidth-1:0] wr_data_i,
+    output logic                 wr_full_o,
+    input  logic                 rd_clk_i,
+    input  logic                 rd_rst_n_i,
+    input  logic                 rd_en_i,
+    output logic [DataWidth-1:0] rd_data_o,
+    output logic                 rd_empty_o,
+    output logic [ DepthPower:0] elem_num_o
 );
 
-  localparam int FIFO_DEPTH = 2 ** DEPTH_POWER;
-  localparam int PTR_WIDTH = DEPTH_POWER + 1;  // extra bit for empty/full check
+  localparam int FIFO_DEPTH = 2 ** DepthPower;
+  localparam int PTR_WIDTH = DepthPower + 1;  // extra bit for empty/full check
 
-  logic [DATA_WIDTH-1:0] r_mem[0:FIFO_DEPTH-1];
+  logic [DataWidth-1:0] r_mem[0:FIFO_DEPTH-1];
   logic [PTR_WIDTH-1:0] r_wr_ptr_bin, r_rd_ptr_bin;
   logic [PTR_WIDTH-1:0] r_wr_ptr_gray, r_rd_ptr_gray;
   logic [PTR_WIDTH-1:0] r_wr_ptr_gray_sync[0:1];
@@ -38,7 +38,7 @@ module async_fifo #(
   // wr logic
   always_ff @(posedge wr_clk_i) begin
     if (wr_en_i && !wr_full_o) begin
-      r_mem[r_wr_ptr_bin[DEPTH_POWER-1:0]] <= wr_data_i;
+      r_mem[r_wr_ptr_bin[DepthPower-1:0]] <= wr_data_i;
     end
   end
   always_ff @(posedge wr_clk_i or negedge wr_rst_n_i) begin
@@ -56,7 +56,7 @@ module async_fifo #(
     if (!rd_rst_n_i) begin
       rd_data_o <= '0;
     end else if (rd_en_i && !rd_empty_o) begin
-      rd_data_o <= r_mem[r_rd_ptr_bin[DEPTH_POWER-1:0]];
+      rd_data_o <= r_mem[r_rd_ptr_bin[DepthPower-1:0]];
     end
   end
   always_ff @(posedge rd_clk_i or negedge rd_rst_n_i) begin
@@ -110,8 +110,8 @@ module async_fifo #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (DEPTH_POWER < 1 || DEPTH_POWER > 10) $error("DEPTH_POWER ERROR");
-    if (DATA_WIDTH < 1 || DATA_WIDTH > 256) $error("DATA_WIDTH ERROR");
+    if (DepthPower < 1 || DepthPower > 10) $error("DepthPower ERROR");
+    if (DataWidth < 1 || DataWidth > 256) $error("DataWidth ERROR");
   end
 `endif
 

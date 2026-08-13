@@ -2,57 +2,57 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module gpio_core #(
-    parameter int PIN_NUM = 32
+    parameter int PinNum = 32
 ) (
     // verilog_format: off
     input  logic               clk_i,
     input  logic               rst_n_i,
-    input  logic [PIN_NUM-1:0] data_out_i,
-    input  logic [PIN_NUM-1:0] output_enable_i,
-    input  logic [PIN_NUM-1:0] open_drain_i,
-    input  logic [PIN_NUM-1:0] input_cmos_i,
-    input  logic [PIN_NUM-1:0] pull_up_i,
-    input  logic [PIN_NUM-1:0] pull_down_i,
-    input  logic [PIN_NUM-1:0] alt_enable_i,
-    input  logic [PIN_NUM-1:0] alt_select_i,
-    input  logic [PIN_NUM-1:0] user_select_i,
-    input  logic [PIN_NUM-1:0] user_handoff_i,
-    input  logic [PIN_NUM-1:0] filter_enable_i,
+    input  logic [PinNum-1:0] data_out_i,
+    input  logic [PinNum-1:0] output_enable_i,
+    input  logic [PinNum-1:0] open_drain_i,
+    input  logic [PinNum-1:0] input_cmos_i,
+    input  logic [PinNum-1:0] pull_up_i,
+    input  logic [PinNum-1:0] pull_down_i,
+    input  logic [PinNum-1:0] alt_enable_i,
+    input  logic [PinNum-1:0] alt_select_i,
+    input  logic [PinNum-1:0] user_select_i,
+    input  logic [PinNum-1:0] user_handoff_i,
+    input  logic [PinNum-1:0] filter_enable_i,
     input  logic [15:0]        filter_div_i,
     input  logic [3:0]         filter_count_i,
-    input  logic [PIN_NUM-1:0] intr_rise_enable_i,
-    input  logic [PIN_NUM-1:0] intr_fall_enable_i,
-    input  logic [PIN_NUM-1:0] intr_high_enable_i,
-    input  logic [PIN_NUM-1:0] intr_low_enable_i,
+    input  logic [PinNum-1:0] intr_rise_enable_i,
+    input  logic [PinNum-1:0] intr_fall_enable_i,
+    input  logic [PinNum-1:0] intr_high_enable_i,
+    input  logic [PinNum-1:0] intr_low_enable_i,
     input  logic               irq_i,
-    output logic [PIN_NUM-1:0] data_in_o,
-    output logic [PIN_NUM-1:0] intr_event_o,
+    output logic [PinNum-1:0] data_in_o,
+    output logic [PinNum-1:0] intr_event_o,
     gpio_if.dut                gpio,
     user_gpio_if.padctrl       user_gpio
     // verilog_format: on
 );
 
-  logic [       15:0] s_sample_count;
-  logic               s_sample_tick;
-  logic               s_sample_overflow;
-  logic [PIN_NUM-1:0] s_input_sync;
-  logic [PIN_NUM-1:0] s_input_filtered_d, s_input_filtered_q;
-  logic [3:0] s_stable_count_d[0:PIN_NUM-1];
-  logic [3:0] s_stable_count_q[0:PIN_NUM-1];
-  logic [PIN_NUM-1:0] s_input_rise, s_input_fall;
-  logic [PIN_NUM-1:0] s_alt_data, s_alt_oe;
-  logic [PIN_NUM-1:0] s_native_data, s_native_oe;
-  logic [PIN_NUM-1:0] s_selected_data, s_selected_oe;
+  logic [      15:0] s_sample_count;
+  logic              s_sample_tick;
+  logic              s_sample_overflow;
+  logic [PinNum-1:0] s_input_sync;
+  logic [PinNum-1:0] s_input_filtered_d, s_input_filtered_q;
+  logic [3:0] s_stable_count_d[0:PinNum-1];
+  logic [3:0] s_stable_count_q[0:PinNum-1];
+  logic [PinNum-1:0] s_input_rise, s_input_fall;
+  logic [PinNum-1:0] s_alt_data, s_alt_oe;
+  logic [PinNum-1:0] s_native_data, s_native_oe;
+  logic [PinNum-1:0] s_selected_data, s_selected_oe;
 
   initial begin
-    if ((PIN_NUM < 1) || (PIN_NUM > 32)) begin
-      $fatal(1, "gpio_core: PIN_NUM must be between 1 and 32");
+    if ((PinNum < 1) || (PinNum > 32)) begin
+      $fatal(1, "gpio_core: PinNum must be between 1 and 32");
     end
   end
 
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_input_cdc_sync (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -77,7 +77,7 @@ module gpio_core #(
 
   always_comb begin
     s_input_filtered_d = s_input_filtered_q;
-    for (int pin = 0; pin < PIN_NUM; pin++) begin
+    for (int pin = 0; pin < PinNum; pin++) begin
       s_stable_count_d[pin] = s_stable_count_q[pin];
       if (!filter_enable_i[pin]) begin
         s_input_filtered_d[pin] = s_input_sync[pin];
@@ -96,14 +96,14 @@ module gpio_core #(
   end
 
   dffr #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_input_filtered_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_input_filtered_d),
       .dat_o  (s_input_filtered_q)
   );
-  for (genvar pin = 0; pin < PIN_NUM; pin++) begin : gen_stable_count
+  for (genvar pin = 0; pin < PinNum; pin++) begin : gen_stable_count
     dffr #(
         .DATA_WIDTH(4)
     ) u_stable_count_dffr (
@@ -115,7 +115,7 @@ module gpio_core #(
   end
 
   edge_det_sync #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_filtered_edge_det (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -131,7 +131,7 @@ module gpio_core #(
                         (s_input_filtered_q & intr_high_enable_i) |
                         (~s_input_filtered_q & intr_low_enable_i);
 
-  for (genvar pin = 0; pin < PIN_NUM; pin++) begin : gen_output_mux
+  for (genvar pin = 0; pin < PinNum; pin++) begin : gen_output_mux
     assign s_alt_data[pin] = alt_select_i[pin] ? gpio.alt1_do_i[pin] : gpio.alt0_do_i[pin];
     assign s_alt_oe[pin] = alt_select_i[pin] ? gpio.alt1_oe_i[pin] : gpio.alt0_oe_i[pin];
     assign s_native_data[pin] = alt_enable_i[pin] ? s_alt_data[pin] : data_out_i[pin];

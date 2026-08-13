@@ -9,8 +9,8 @@
 // See the Mulan PSL v2 for more details.
 
 module rcu #(
-    parameter int EXT_CLK_HZ        = 72_000_000,
-    parameter int CLINT_TIMEBASE_HZ = 1_000_000
+    parameter int ExtClkHz        = 72_000_000,
+    parameter int ClintTimebaseHz = 1_000_000
 ) (
     input  logic           ext_clk_i,
     input  logic           aud_clk_i,
@@ -195,8 +195,8 @@ module rcu #(
   assign s_sys_reset_source_n = ext_rst_n_i && !wdg_reset_req_i;
 
   clint_timebase #(
-      .REF_CLK_HZ (EXT_CLK_HZ),
-      .TIMEBASE_HZ(CLINT_TIMEBASE_HZ)
+      .RefClkHz  (ExtClkHz),
+      .TimebaseHz(ClintTimebaseHz)
   ) u_clint_timebase (
       .ref_clk_i  (s_ext_clk_buf),
       .ref_rst_n_i(s_ext_rst_n_sync),
@@ -226,7 +226,7 @@ module rcu #(
 endmodule
 
 module pll_rcu_controller #(
-    parameter int LOCK_TIMEOUT = 1024
+    parameter int LockTimeout = 1024
 ) (
     input  logic                 sys_clk_i,
     input  logic                 sys_rst_n_i,
@@ -360,7 +360,7 @@ module pll_rcu_controller #(
           s_lock_d         = 1'b1;
           s_err_d          = 2'd0;
           s_state_d        = PLL_SWITCH;
-        end else if (s_lock_count_q == LOCK_TIMEOUT - 1) begin
+        end else if (s_lock_count_q == LockTimeout - 1) begin
           s_active_valid_d = 1'b0;
           s_safe_clk_d     = 1'b1;
           s_lock_d         = 1'b0;

@@ -4,76 +4,75 @@
 `include "gpio_define.svh"
 
 module gpio_reg #(
-    parameter int          PIN_NUM         = 32,
-    parameter logic [31:0] USER_BASE_ADDR  = 32'h1000_0000,
-    parameter logic [31:0] ADMIN_BASE_ADDR = 32'h1001_4000,
-    parameter bit          HAS_INPUT_CMOS  = 1'b0,
-    parameter bit          HAS_PULL_UP     = 1'b0,
-    parameter bit          HAS_PULL_DOWN   = 1'b0
+    parameter int          PinNum        = 32,
+    parameter logic [31:0] UserBaseAddr  = 32'h1000_0000,
+    parameter logic [31:0] AdminBaseAddr = 32'h1001_4000,
+    parameter bit          HasInputCmos  = 1'b0,
+    parameter bit          HasPullUp     = 1'b0,
+    parameter bit          HasPullDown   = 1'b0
 ) (
     // verilog_format: off
     input  logic               clk_i,
     input  logic               rst_n_i,
     ribp_if.slave              ribp,
-    input  logic [PIN_NUM-1:0] data_in_i,
-    input  logic [PIN_NUM-1:0] intr_event_i,
-    output logic [PIN_NUM-1:0] data_out_o,
-    output logic [PIN_NUM-1:0] output_enable_o,
-    output logic [PIN_NUM-1:0] open_drain_o,
-    output logic [PIN_NUM-1:0] input_cmos_o,
-    output logic [PIN_NUM-1:0] pull_up_o,
-    output logic [PIN_NUM-1:0] pull_down_o,
-    output logic [PIN_NUM-1:0] alt_enable_o,
-    output logic [PIN_NUM-1:0] alt_select_o,
-    output logic [PIN_NUM-1:0] user_select_o,
-    output logic [PIN_NUM-1:0] user_handoff_o,
-    output logic [PIN_NUM-1:0] filter_enable_o,
+    input  logic [PinNum-1:0] data_in_i,
+    input  logic [PinNum-1:0] intr_event_i,
+    output logic [PinNum-1:0] data_out_o,
+    output logic [PinNum-1:0] output_enable_o,
+    output logic [PinNum-1:0] open_drain_o,
+    output logic [PinNum-1:0] input_cmos_o,
+    output logic [PinNum-1:0] pull_up_o,
+    output logic [PinNum-1:0] pull_down_o,
+    output logic [PinNum-1:0] alt_enable_o,
+    output logic [PinNum-1:0] alt_select_o,
+    output logic [PinNum-1:0] user_select_o,
+    output logic [PinNum-1:0] user_handoff_o,
+    output logic [PinNum-1:0] filter_enable_o,
     output logic [15:0]        filter_div_o,
     output logic [3:0]         filter_count_o,
-    output logic [PIN_NUM-1:0] intr_rise_enable_o,
-    output logic [PIN_NUM-1:0] intr_fall_enable_o,
-    output logic [PIN_NUM-1:0] intr_high_enable_o,
-    output logic [PIN_NUM-1:0] intr_low_enable_o,
+    output logic [PinNum-1:0] intr_rise_enable_o,
+    output logic [PinNum-1:0] intr_fall_enable_o,
+    output logic [PinNum-1:0] intr_high_enable_o,
+    output logic [PinNum-1:0] intr_low_enable_o,
     output logic               irq_o
     // verilog_format: on
 );
 
   localparam logic [31:0] IP_VERSION = 32'h0002_0000;
-  localparam logic [31:0] CAPABILITY = 32'h007F_0000 | (32'(4) << 12) |
-      (32'(2) << 8) | 32'(PIN_NUM);
-  localparam logic [31:0] PAD_CAPABILITY = {29'd0, HAS_PULL_DOWN, HAS_PULL_UP, HAS_INPUT_CMOS};
+  localparam logic [31:0] CAPABILITY = 32'h007F_0000 | (32'(4) << 12) | (32'(2) << 8) | 32'(PinNum);
+  localparam logic [31:0] PAD_CAPABILITY = {29'd0, HasPullDown, HasPullUp, HasInputCmos};
 
   logic s_req, s_write, s_req_accept;
   logic s_public_window, s_admin_window, s_aligned;
-  logic [       11:0] s_offset;
-  logic [       31:0] s_byte_mask;
-  logic [       31:0] s_write_word;
-  logic [PIN_NUM-1:0] s_write_bits;
-  logic               s_access_err;
+  logic [      11:0] s_offset;
+  logic [      31:0] s_byte_mask;
+  logic [      31:0] s_write_word;
+  logic [PinNum-1:0] s_write_bits;
+  logic              s_access_err;
   logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
   logic s_ribp_ready_q;
   logic s_ribp_resp_err_d, s_ribp_resp_err_q;
 
-  logic [PIN_NUM-1:0] s_data_out_d, s_data_out_q;
-  logic [PIN_NUM-1:0] s_output_en_d, s_output_en_q;
-  logic [PIN_NUM-1:0] s_open_drain_d, s_open_drain_q;
-  logic [PIN_NUM-1:0] s_input_cmos_d, s_input_cmos_q;
-  logic [PIN_NUM-1:0] s_pull_up_d, s_pull_up_q;
-  logic [PIN_NUM-1:0] s_pull_down_d, s_pull_down_q;
-  logic [PIN_NUM-1:0] s_alt_en_d, s_alt_en_q;
-  logic [PIN_NUM-1:0] s_alt_sel_d, s_alt_sel_q;
-  logic [PIN_NUM-1:0] s_user_sel_d, s_user_sel_q;
-  logic [PIN_NUM-1:0] s_user_lock_d, s_user_lock_q;
-  logic [PIN_NUM-1:0] s_user_handoff_d, s_user_handoff_q;
-  logic [PIN_NUM-1:0] s_user_access_d, s_user_access_q;
-  logic [PIN_NUM-1:0] s_intr_rise_d, s_intr_rise_q;
-  logic [PIN_NUM-1:0] s_intr_fall_d, s_intr_fall_q;
-  logic [PIN_NUM-1:0] s_intr_high_d, s_intr_high_q;
-  logic [PIN_NUM-1:0] s_intr_low_d, s_intr_low_q;
-  logic [PIN_NUM-1:0] s_intr_en_d, s_intr_en_q;
-  logic [PIN_NUM-1:0] s_intr_state_d, s_intr_state_q;
-  logic [PIN_NUM-1:0] s_filter_en_d, s_filter_en_q;
-  logic [PIN_NUM-1:0] s_config_lock_d, s_config_lock_q;
+  logic [PinNum-1:0] s_data_out_d, s_data_out_q;
+  logic [PinNum-1:0] s_output_en_d, s_output_en_q;
+  logic [PinNum-1:0] s_open_drain_d, s_open_drain_q;
+  logic [PinNum-1:0] s_input_cmos_d, s_input_cmos_q;
+  logic [PinNum-1:0] s_pull_up_d, s_pull_up_q;
+  logic [PinNum-1:0] s_pull_down_d, s_pull_down_q;
+  logic [PinNum-1:0] s_alt_en_d, s_alt_en_q;
+  logic [PinNum-1:0] s_alt_sel_d, s_alt_sel_q;
+  logic [PinNum-1:0] s_user_sel_d, s_user_sel_q;
+  logic [PinNum-1:0] s_user_lock_d, s_user_lock_q;
+  logic [PinNum-1:0] s_user_handoff_d, s_user_handoff_q;
+  logic [PinNum-1:0] s_user_access_d, s_user_access_q;
+  logic [PinNum-1:0] s_intr_rise_d, s_intr_rise_q;
+  logic [PinNum-1:0] s_intr_fall_d, s_intr_fall_q;
+  logic [PinNum-1:0] s_intr_high_d, s_intr_high_q;
+  logic [PinNum-1:0] s_intr_low_d, s_intr_low_q;
+  logic [PinNum-1:0] s_intr_en_d, s_intr_en_q;
+  logic [PinNum-1:0] s_intr_state_d, s_intr_state_q;
+  logic [PinNum-1:0] s_filter_en_d, s_filter_en_q;
+  logic [PinNum-1:0] s_config_lock_d, s_config_lock_q;
   logic [15:0] s_filter_div_d, s_filter_div_q;
   logic [3:0] s_filter_count_d, s_filter_count_q;
 
@@ -83,7 +82,7 @@ module gpio_reg #(
   logic s_intr_rise_en, s_intr_fall_en, s_intr_high_en, s_intr_low_en;
   logic s_intr_en_en, s_intr_state_en, s_filter_en_en, s_config_lock_en;
   logic s_filter_div_en, s_filter_count_en;
-  logic [PIN_NUM-1:0] s_intr_clear, s_intr_test;
+  logic [PinNum-1:0] s_intr_clear, s_intr_test;
 
   function automatic logic [31:0] merge_wstrb(input logic [31:0] current, input logic [31:0] value,
                                               input logic [3:0] strobe);
@@ -94,32 +93,32 @@ module gpio_reg #(
     end
   endfunction
 
-  function automatic logic [PIN_NUM-1:0] merge_pins(
-      input logic [PIN_NUM-1:0] current, input logic [31:0] value, input logic [3:0] strobe);
+  function automatic logic [PinNum-1:0] merge_pins(
+      input logic [PinNum-1:0] current, input logic [31:0] value, input logic [3:0] strobe);
     logic [31:0] current_word;
     logic [31:0] merged_word;
     begin
-      current_word              = '0;
-      current_word[PIN_NUM-1:0] = current;
-      merged_word               = merge_wstrb(current_word, value, strobe);
-      return merged_word[PIN_NUM-1:0];
+      current_word             = '0;
+      current_word[PinNum-1:0] = current;
+      merged_word              = merge_wstrb(current_word, value, strobe);
+      return merged_word[PinNum-1:0];
     end
   endfunction
 
-  function automatic logic [31:0] extend_pins(input logic [PIN_NUM-1:0] value);
+  function automatic logic [31:0] extend_pins(input logic [PinNum-1:0] value);
     logic [31:0] result;
     begin
-      result              = '0;
-      result[PIN_NUM-1:0] = value;
+      result             = '0;
+      result[PinNum-1:0] = value;
       return result;
     end
   endfunction
 
   function automatic logic irq_config_valid(
-      input logic [PIN_NUM-1:0] rise, input logic [PIN_NUM-1:0] fall,
-      input logic [PIN_NUM-1:0] high, input logic [PIN_NUM-1:0] low);
-    logic [PIN_NUM-1:0] edge_mode;
-    logic [PIN_NUM-1:0] level_mode;
+      input logic [PinNum-1:0] rise, input logic [PinNum-1:0] fall, input logic [PinNum-1:0] high,
+      input logic [PinNum-1:0] low);
+    logic [PinNum-1:0] edge_mode;
+    logic [PinNum-1:0] level_mode;
     begin
       edge_mode  = rise | fall;
       level_mode = high | low;
@@ -128,11 +127,11 @@ module gpio_reg #(
   endfunction
 
   initial begin
-    if ((PIN_NUM < 1) || (PIN_NUM > 32)) begin
-      $fatal(1, "gpio_reg: PIN_NUM must be between 1 and 32");
+    if ((PinNum < 1) || (PinNum > 32)) begin
+      $fatal(1, "gpio_reg: PinNum must be between 1 and 32");
     end
-    if ((USER_BASE_ADDR[11:0] != 12'd0) || (ADMIN_BASE_ADDR[11:0] != 12'd0) ||
-        (USER_BASE_ADDR == ADMIN_BASE_ADDR)) begin
+    if ((UserBaseAddr[11:0] != 12'd0) || (AdminBaseAddr[11:0] != 12'd0) ||
+        (UserBaseAddr == AdminBaseAddr)) begin
       $fatal(1, "gpio_reg: register window bases must be distinct and 4 KiB aligned");
     end
   end
@@ -140,15 +139,15 @@ module gpio_reg #(
   assign s_req = ribp.valid && !s_ribp_ready_q;
   assign s_write = |ribp.wstrb;
   assign s_req_accept = s_req;
-  assign s_public_window = ribp.addr[31:12] == USER_BASE_ADDR[31:12];
-  assign s_admin_window = ribp.addr[31:12] == ADMIN_BASE_ADDR[31:12];
+  assign s_public_window = ribp.addr[31:12] == UserBaseAddr[31:12];
+  assign s_admin_window = ribp.addr[31:12] == AdminBaseAddr[31:12];
   assign s_aligned = ribp.addr[1:0] == 2'b00;
   assign s_offset = ribp.addr[11:0];
   assign s_byte_mask = {
     {8{ribp.wstrb[3]}}, {8{ribp.wstrb[2]}}, {8{ribp.wstrb[1]}}, {8{ribp.wstrb[0]}}
   };
   assign s_write_word = ribp.wdata & s_byte_mask;
-  assign s_write_bits = s_write_word[PIN_NUM-1:0];
+  assign s_write_bits = s_write_word[PinNum-1:0];
 
   assign ribp.ready = s_ribp_ready_q;
   assign ribp.rdata = s_ribp_rdata_q;
@@ -298,21 +297,21 @@ module gpio_reg #(
           end
           `RIBP_GPIO_ADMIN_INPUT_CMOS: begin
             s_input_cmos_d = merge_pins(s_input_cmos_q, ribp.wdata, ribp.wstrb);
-            if ((!HAS_INPUT_CMOS && (|s_input_cmos_d)) ||
+            if ((!HasInputCmos && (|s_input_cmos_d)) ||
                 (|((s_input_cmos_d ^ s_input_cmos_q) & s_config_lock_q))) begin
               s_access_err = 1'b1;
             end else s_input_cmos_en = 1'b1;
           end
           `RIBP_GPIO_ADMIN_PULL_UP: begin
             s_pull_up_d = merge_pins(s_pull_up_q, ribp.wdata, ribp.wstrb);
-            if ((!HAS_PULL_UP && (|s_pull_up_d)) || (|(s_pull_up_d & s_pull_down_q)) ||
+            if ((!HasPullUp && (|s_pull_up_d)) || (|(s_pull_up_d & s_pull_down_q)) ||
                 (|((s_pull_up_d ^ s_pull_up_q) & s_config_lock_q))) begin
               s_access_err = 1'b1;
             end else s_pull_up_en = 1'b1;
           end
           `RIBP_GPIO_ADMIN_PULL_DOWN: begin
             s_pull_down_d = merge_pins(s_pull_down_q, ribp.wdata, ribp.wstrb);
-            if ((!HAS_PULL_DOWN && (|s_pull_down_d)) || (|(s_pull_down_d & s_pull_up_q)) ||
+            if ((!HasPullDown && (|s_pull_down_d)) || (|(s_pull_down_d & s_pull_up_q)) ||
                 (|((s_pull_down_d ^ s_pull_down_q) & s_config_lock_q))) begin
               s_access_err = 1'b1;
             end else s_pull_down_en = 1'b1;
@@ -452,7 +451,7 @@ module gpio_reg #(
   assign s_intr_state_en  = (|s_intr_clear) || (|intr_event_i) || (|s_intr_test);
 
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_data_out_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -461,7 +460,7 @@ module gpio_reg #(
       .dat_o  (s_data_out_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_output_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -470,7 +469,7 @@ module gpio_reg #(
       .dat_o  (s_output_en_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_open_drain_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -479,7 +478,7 @@ module gpio_reg #(
       .dat_o  (s_open_drain_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_input_cmos_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -488,7 +487,7 @@ module gpio_reg #(
       .dat_o  (s_input_cmos_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_pull_up_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -497,7 +496,7 @@ module gpio_reg #(
       .dat_o  (s_pull_up_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_pull_down_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -506,7 +505,7 @@ module gpio_reg #(
       .dat_o  (s_pull_down_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_alt_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -515,7 +514,7 @@ module gpio_reg #(
       .dat_o  (s_alt_en_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_alt_select_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -524,7 +523,7 @@ module gpio_reg #(
       .dat_o  (s_alt_sel_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_user_select_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -533,7 +532,7 @@ module gpio_reg #(
       .dat_o  (s_user_sel_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_user_lock_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -542,7 +541,7 @@ module gpio_reg #(
       .dat_o  (s_user_lock_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_user_access_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -551,7 +550,7 @@ module gpio_reg #(
       .dat_o  (s_user_access_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_intr_rise_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -560,7 +559,7 @@ module gpio_reg #(
       .dat_o  (s_intr_rise_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_intr_fall_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -569,7 +568,7 @@ module gpio_reg #(
       .dat_o  (s_intr_fall_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_intr_high_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -578,7 +577,7 @@ module gpio_reg #(
       .dat_o  (s_intr_high_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_intr_low_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -587,7 +586,7 @@ module gpio_reg #(
       .dat_o  (s_intr_low_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_intr_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -596,7 +595,7 @@ module gpio_reg #(
       .dat_o  (s_intr_en_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_intr_state_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -605,7 +604,7 @@ module gpio_reg #(
       .dat_o  (s_intr_state_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_filter_enable_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -614,7 +613,7 @@ module gpio_reg #(
       .dat_o  (s_filter_en_q)
   );
   dffer #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_config_lock_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -642,7 +641,7 @@ module gpio_reg #(
   );
 
   dffr #(
-      .DATA_WIDTH(PIN_NUM)
+      .DATA_WIDTH(PinNum)
   ) u_user_handoff_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

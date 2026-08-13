@@ -35,7 +35,7 @@ module ws2812_tb;
   end
 
   ribp_ws2812 #(
-      .TX_FIFO_DEPTH(FIFO_DEPTH)
+      .TxFifoDepth(FIFO_DEPTH)
   ) u_dut (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

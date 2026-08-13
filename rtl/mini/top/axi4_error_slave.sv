@@ -5,7 +5,7 @@
 `include "axi4_define.svh"
 
 module axi4_error_slave #(
-    parameter logic [1:0] RESPONSE = `AXI4_RESP_DECODE_ERROR
+    parameter logic [1:0] Response = `AXI4_RESP_DECODE_ERROR
 ) (
     input logic         clk_i,
     input logic         rst_n_i,
@@ -25,12 +25,12 @@ module axi4_error_slave #(
   assign axi4.arready = (s_fsm_q == FSM_IDLE);
   assign axi4.wready  = (s_fsm_q == FSM_WRITE);
   assign axi4.bid     = s_id_q;
-  assign axi4.bresp   = RESPONSE;
+  assign axi4.bresp   = Response;
   assign axi4.buser   = '0;
   assign axi4.bvalid  = (s_fsm_q == FSM_WRITE_RESP);
   assign axi4.rid     = s_id_q;
   assign axi4.rdata   = '0;
-  assign axi4.rresp   = RESPONSE;
+  assign axi4.rresp   = Response;
   assign axi4.rlast   = (s_beat_q == s_len_q);
   assign axi4.ruser   = '0;
   assign axi4.rvalid  = (s_fsm_q == FSM_READ_RESP);

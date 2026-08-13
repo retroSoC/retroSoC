@@ -2,8 +2,8 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module ribp_uart #(
-    parameter int TX_FIFO_DEPTH = 64,
-    parameter int RX_FIFO_DEPTH = 64
+    parameter int TxFifoDepth = 64,
+    parameter int RxFifoDepth = 64
 ) (
     // verilog_format: off
     input  logic  clk_i,
@@ -50,8 +50,8 @@ module ribp_uart #(
   assign uart.irq_o = s_irq;
 
   uart_reg #(
-      .TX_FIFO_DEPTH(TX_FIFO_DEPTH),
-      .RX_FIFO_DEPTH(RX_FIFO_DEPTH)
+      .TxFifoDepth(TxFifoDepth),
+      .RxFifoDepth(RxFifoDepth)
   ) u_uart_reg (
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),

@@ -4,7 +4,7 @@
 `include "clint_define.svh"
 
 module clint_reg #(
-    parameter int HART_NUM = 1
+    parameter int HartNum = 1
 ) (
     // verilog_format: off
     input  logic                clk_i,
@@ -13,13 +13,13 @@ module clint_reg #(
     input  logic [63:0]         mtime_i,
     output logic                mtime_load_o,
     output logic [63:0]         mtime_load_value_o,
-    output logic [HART_NUM-1:0] msip_o,
-    output logic [63:0]         mtimecmp_o [0:HART_NUM-1]
+    output logic [HartNum-1:0] msip_o,
+    output logic [63:0]         mtimecmp_o [0:HartNum-1]
     // verilog_format: on
 );
 
-  localparam int HART_INDEX_WIDTH = HART_NUM > 1 ? $clog2(HART_NUM) : 1;
-  localparam logic [11:0] HART_COUNT = 12'(HART_NUM);
+  localparam int HART_INDEX_WIDTH = HartNum > 1 ? $clog2(HartNum) : 1;
+  localparam logic [11:0] HART_COUNT = 12'(HartNum);
 
   logic        s_req;
   logic        s_write;
@@ -39,11 +39,11 @@ module clint_reg #(
   logic s_ribp_resp_err_d, s_ribp_resp_err_q;
   logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
 
-  logic [HART_NUM-1:0] s_msip_en;
-  logic [HART_NUM-1:0] s_msip_d, s_msip_q;
-  logic [HART_NUM-1:0] s_mtimecmp_en;
-  logic [        63:0] s_mtimecmp_d  [0:HART_NUM-1];
-  logic [        63:0] s_mtimecmp_q  [0:HART_NUM-1];
+  logic [HartNum-1:0] s_msip_en;
+  logic [HartNum-1:0] s_msip_d, s_msip_q;
+  logic [HartNum-1:0] s_mtimecmp_en;
+  logic [       63:0] s_mtimecmp_d  [0:HartNum-1];
+  logic [       63:0] s_mtimecmp_q  [0:HartNum-1];
 
   function automatic logic [31:0] merge_wstrb(input logic [31:0] current, input logic [31:0] value,
                                               input logic [3:0] strobe);
@@ -61,8 +61,8 @@ module clint_reg #(
   endfunction
 
   initial begin
-    if ((HART_NUM < 1) || (HART_NUM > 4095)) begin
-      $fatal(1, "clint_reg: HART_NUM must be between 1 and 4095");
+    if ((HartNum < 1) || (HartNum > 4095)) begin
+      $fatal(1, "clint_reg: HartNum must be between 1 and 4095");
     end
   end
 
@@ -112,7 +112,7 @@ module clint_reg #(
       s_msip_d[s_msip_hart[HART_INDEX_WIDTH-1:0]]  = ribp.wdata[0];
     end
   end
-  for (genvar hart = 0; hart < HART_NUM; hart++) begin : gen_msip
+  for (genvar hart = 0; hart < HartNum; hart++) begin : gen_msip
     dffer #(
         .DATA_WIDTH(1)
     ) u_msip_dffer (
@@ -126,7 +126,7 @@ module clint_reg #(
 
   always_comb begin
     s_mtimecmp_en = '0;
-    for (int hart = 0; hart < HART_NUM; hart++) begin
+    for (int hart = 0; hart < HartNum; hart++) begin
       s_mtimecmp_d[hart] = s_mtimecmp_q[hart];
     end
     if (s_req_accept && s_write && !s_access_err && s_mtimecmp_sel) begin
@@ -140,7 +140,7 @@ module clint_reg #(
       end
     end
   end
-  for (genvar hart = 0; hart < HART_NUM; hart++) begin : gen_mtimecmp
+  for (genvar hart = 0; hart < HartNum; hart++) begin : gen_mtimecmp
     dfferh #(
         .DATA_WIDTH(64)
     ) u_mtimecmp_dfferh (

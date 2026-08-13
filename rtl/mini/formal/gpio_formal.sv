@@ -81,12 +81,12 @@ module gpio_formal_design (
   assign irq            = gpio.irq_o;
 
   ribp_gpio #(
-      .PIN_NUM        (4),
-      .USER_BASE_ADDR (32'h1000_0000),
-      .ADMIN_BASE_ADDR(32'h1001_4000),
-      .HAS_INPUT_CMOS (1'b1),
-      .HAS_PULL_UP    (1'b1),
-      .HAS_PULL_DOWN  (1'b1)
+      .PinNum       (4),
+      .UserBaseAddr (32'h1000_0000),
+      .AdminBaseAddr(32'h1001_4000),
+      .HasInputCmos (1'b1),
+      .HasPullUp    (1'b1),
+      .HasPullDown  (1'b1)
   ) u_dut (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),

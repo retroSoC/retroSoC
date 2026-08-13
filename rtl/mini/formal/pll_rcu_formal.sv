@@ -52,7 +52,7 @@ module pll_rcu_formal_design (
   // Both controller domains share the formal clock. This proves the control
   // FSM and the production cdc_2phase composition, not asynchronous CDC timing.
   pll_rcu_controller #(
-      .LOCK_TIMEOUT(4)
+      .LockTimeout(4)
   ) u_dut (
       .sys_clk_i       (clk_i),
       .sys_rst_n_i     (rst_n_i),

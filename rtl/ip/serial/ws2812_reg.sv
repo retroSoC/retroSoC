@@ -11,8 +11,8 @@
 `include "ws2812_define.svh"
 
 module ws2812_reg #(
-    parameter int TX_FIFO_DEPTH     = 16,
-    parameter int TX_FIFO_LOG_DEPTH = $clog2(TX_FIFO_DEPTH)
+    parameter int TxFifoDepth    = 16,
+    parameter int TxFifoLogDepth = $clog2(TxFifoDepth)
 ) (
     // verilog_format: off
     input  logic        clk_i,
@@ -39,8 +39,8 @@ module ws2812_reg #(
     // verilog_format: on
 );
 
-  localparam logic [31:0] FIFO_WATERMARK_RESET = (TX_FIFO_DEPTH > 4) ? 32'd4 : TX_FIFO_DEPTH - 1;
-  localparam logic [7:0] FIFO_DEPTH_INFO = TX_FIFO_DEPTH[7:0];
+  localparam logic [31:0] FIFO_WATERMARK_RESET = (TxFifoDepth > 4) ? 32'd4 : TxFifoDepth - 1;
+  localparam logic [7:0] FIFO_DEPTH_INFO = TxFifoDepth[7:0];
   localparam logic [31:0] IP_INFO = {8'd24, FIFO_DEPTH_INFO, 8'd1, 8'd0};
 
   logic s_req;
@@ -70,8 +70,8 @@ module ws2812_reg #(
   logic        s_tx_push;
   logic [23:0] s_tx_push_data;
   logic s_tx_empty, s_tx_full;
-  logic [               23:0] s_tx_pop_data;
-  logic [TX_FIFO_LOG_DEPTH:0] s_tx_count;
+  logic [            23:0] s_tx_pop_data;
+  logic [TxFifoLogDepth:0] s_tx_count;
 
   logic [31:0] s_load_remaining_d, s_load_remaining_q;
   logic [2:0] s_err_stat_d, s_err_stat_q;
@@ -115,7 +115,7 @@ module ws2812_reg #(
   assign data_valid_o = !s_tx_empty;
   assign data_o = s_tx_pop_data;
   assign irq_o = |(s_intr_state_q & s_intr_en_q);
-  assign s_fifo_level = {{(31 - TX_FIFO_LOG_DEPTH) {1'b0}}, s_tx_count};
+  assign s_fifo_level = {{(31 - TxFifoLogDepth) {1'b0}}, s_tx_count};
   assign s_watermark_write_value = merge_wstrb(s_fifo_watermark_q, ribp.wdata, ribp.wstrb);
   assign s_config_valid            = (s_bit_cycles_q != 16'd0) &&
                                      (s_t0h_cycles_q != 16'd0) &&
@@ -244,7 +244,7 @@ module ws2812_reg #(
             s_frame_words_d  = merge_wstrb(s_frame_words_q, ribp.wdata, ribp.wstrb);
           end
           `RIBP_WS2812_FIFO_WATERMARK: begin
-            if (s_watermark_write_value >= TX_FIFO_DEPTH) begin
+            if (s_watermark_write_value >= TxFifoDepth) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else begin
@@ -400,8 +400,8 @@ module ws2812_reg #(
 
   fifo #(
       .DATA_WIDTH      (24),
-      .BUFFER_DEPTH    (TX_FIFO_DEPTH),
-      .LOG_BUFFER_DEPTH(TX_FIFO_LOG_DEPTH)
+      .BUFFER_DEPTH    (TxFifoDepth),
+      .LOG_BUFFER_DEPTH(TxFifoLogDepth)
   ) u_tx_fifo (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

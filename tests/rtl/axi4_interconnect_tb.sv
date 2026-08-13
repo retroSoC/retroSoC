@@ -4,8 +4,8 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect_tb;
-  localparam int NUM_MASTERS = 3;
-  localparam int NUM_TARGETS = 9;
+  localparam int NumMasters = 3;
+  localparam int NumTargets = 9;
 
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
@@ -23,7 +23,7 @@ module axi4_interconnect_tb;
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) masters[NUM_MASTERS] (
+  ) masters[NumMasters] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -33,7 +33,7 @@ module axi4_interconnect_tb;
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) targets[NUM_TARGETS] (
+  ) targets[NumTargets] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -41,8 +41,8 @@ module axi4_interconnect_tb;
   always #5 clk_i = ~clk_i;
 
   axi4_interconnect #(
-      .NUM_MASTERS(NUM_MASTERS),
-      .NUM_TARGETS(NUM_TARGETS)
+      .NumMasters(NumMasters),
+      .NumTargets(NumTargets)
   ) u_dut (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
@@ -69,12 +69,12 @@ module axi4_interconnect_tb;
       .perf_flash_wait_o()
   );
 
-  for (genvar target = 0; target < NUM_TARGETS; target++) begin : GEN_TARGETS
-    localparam logic [1:0] RESPONSE =
+  for (genvar target = 0; target < NumTargets; target++) begin : GEN_TARGETS
+    localparam logic [1:0] Response =
         (target == 7) ? `AXI4_RESP_DECODE_ERROR :
         (target == 8) ? `AXI4_RESP_SLAVE_ERROR : `AXI4_RESP_OKAY;
     axi4_error_slave #(
-        .RESPONSE(RESPONSE)
+        .Response(Response)
     ) u_target (
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),

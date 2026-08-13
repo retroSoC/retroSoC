@@ -4,10 +4,10 @@
 `include "ribp_i2c_define.svh"
 
 module i2c_reg #(
-    parameter int CMD_FIFO_DEPTH     = 16,
-    parameter int RX_FIFO_DEPTH      = 16,
-    parameter int CMD_FIFO_LOG_DEPTH = $clog2(CMD_FIFO_DEPTH),
-    parameter int RX_FIFO_LOG_DEPTH  = $clog2(RX_FIFO_DEPTH)
+    parameter int CmdFifoDepth    = 16,
+    parameter int RxFifoDepth     = 16,
+    parameter int CmdFifoLogDepth = $clog2(CmdFifoDepth),
+    parameter int RxFifoLogDepth  = $clog2(RxFifoDepth)
 ) (
     // verilog_format: off
     input  logic        clk_i,
@@ -61,11 +61,11 @@ module i2c_reg #(
 );
 
   localparam logic [31:0] IP_VERSION = 32'h0002_0000;
-  localparam logic [7:0] CMD_DEPTH_INFO = 8'(CMD_FIFO_DEPTH);
-  localparam logic [7:0] RX_DEPTH_INFO = 8'(RX_FIFO_DEPTH);
+  localparam logic [7:0] CMD_DEPTH_INFO = 8'(CmdFifoDepth);
+  localparam logic [7:0] RX_DEPTH_INFO = 8'(RxFifoDepth);
   localparam logic [31:0] CAPABILITY = {9'd0, 7'h7F, RX_DEPTH_INFO, CMD_DEPTH_INFO};
-  localparam logic [31:0] CMD_WATERMARK_RESET = (CMD_FIFO_DEPTH > 4) ? 32'd4 : CMD_FIFO_DEPTH - 1;
-  localparam logic [31:0] RX_WATERMARK_RESET = (RX_FIFO_DEPTH > 8) ? 32'd8 : RX_FIFO_DEPTH;
+  localparam logic [31:0] CMD_WATERMARK_RESET = (CmdFifoDepth > 4) ? 32'd4 : CmdFifoDepth - 1;
+  localparam logic [31:0] RX_WATERMARK_RESET = (RxFifoDepth > 8) ? 32'd8 : RxFifoDepth;
 
   logic s_req;
   logic s_write;
@@ -102,18 +102,18 @@ module i2c_reg #(
   logic s_intr_en_en;
   logic [7:0] s_intr_en_d, s_intr_en_q;
 
-  logic                        s_cmd_push;
-  logic                        s_cmd_flush_cmd;
-  logic                        s_cmd_empty;
-  logic                        s_cmd_full;
-  logic [                11:0] s_cmd_pop_data;
-  logic [CMD_FIFO_LOG_DEPTH:0] s_cmd_count;
-  logic                        s_rx_pop;
-  logic                        s_rx_flush_cmd;
-  logic                        s_rx_empty;
-  logic                        s_rx_full;
-  logic [                 7:0] s_rx_pop_data;
-  logic [ RX_FIFO_LOG_DEPTH:0] s_rx_count;
+  logic                     s_cmd_push;
+  logic                     s_cmd_flush_cmd;
+  logic                     s_cmd_empty;
+  logic                     s_cmd_full;
+  logic [             11:0] s_cmd_pop_data;
+  logic [CmdFifoLogDepth:0] s_cmd_count;
+  logic                     s_rx_pop;
+  logic                     s_rx_flush_cmd;
+  logic                     s_rx_empty;
+  logic                     s_rx_full;
+  logic [              7:0] s_rx_pop_data;
+  logic [ RxFifoLogDepth:0] s_rx_count;
 
   logic [10:0] s_err_stat_d, s_err_stat_q;
   logic [7:0] s_intr_state_d, s_intr_state_q;
@@ -150,7 +150,7 @@ module i2c_reg #(
   endfunction
 
   initial begin
-    if ((CMD_FIFO_DEPTH > 255) || (RX_FIFO_DEPTH > 255)) begin
+    if ((CmdFifoDepth > 255) || (RxFifoDepth > 255)) begin
       $fatal(1, "i2c_reg: FIFO depths must fit CAPABILITY fields");
     end
   end
@@ -662,8 +662,8 @@ module i2c_reg #(
 
   fifo #(
       .DATA_WIDTH      (12),
-      .BUFFER_DEPTH    (CMD_FIFO_DEPTH),
-      .LOG_BUFFER_DEPTH(CMD_FIFO_LOG_DEPTH)
+      .BUFFER_DEPTH    (CmdFifoDepth),
+      .LOG_BUFFER_DEPTH(CmdFifoLogDepth)
   ) u_cmd_fifo (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -679,8 +679,8 @@ module i2c_reg #(
 
   fifo #(
       .DATA_WIDTH      (8),
-      .BUFFER_DEPTH    (RX_FIFO_DEPTH),
-      .LOG_BUFFER_DEPTH(RX_FIFO_LOG_DEPTH)
+      .BUFFER_DEPTH    (RxFifoDepth),
+      .LOG_BUFFER_DEPTH(RxFifoLogDepth)
   ) u_rx_fifo (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

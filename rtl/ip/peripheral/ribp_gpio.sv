@@ -2,12 +2,12 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module ribp_gpio #(
-    parameter int          PIN_NUM         = 32,
-    parameter logic [31:0] USER_BASE_ADDR  = 32'h1000_0000,
-    parameter logic [31:0] ADMIN_BASE_ADDR = 32'h1001_4000,
-    parameter bit          HAS_INPUT_CMOS  = 1'b0,
-    parameter bit          HAS_PULL_UP     = 1'b0,
-    parameter bit          HAS_PULL_DOWN   = 1'b0
+    parameter int          PinNum        = 32,
+    parameter logic [31:0] UserBaseAddr  = 32'h1000_0000,
+    parameter logic [31:0] AdminBaseAddr = 32'h1001_4000,
+    parameter bit          HasInputCmos  = 1'b0,
+    parameter bit          HasPullUp     = 1'b0,
+    parameter bit          HasPullDown   = 1'b0
 ) (
     // verilog_format: off
     input  logic             clk_i,
@@ -18,34 +18,34 @@ module ribp_gpio #(
     // verilog_format: on
 );
 
-  logic [PIN_NUM-1:0] s_data_in;
-  logic [PIN_NUM-1:0] s_data_out;
-  logic [PIN_NUM-1:0] s_output_en;
-  logic [PIN_NUM-1:0] s_open_drain;
-  logic [PIN_NUM-1:0] s_input_cmos;
-  logic [PIN_NUM-1:0] s_pull_up;
-  logic [PIN_NUM-1:0] s_pull_down;
-  logic [PIN_NUM-1:0] s_alt_en;
-  logic [PIN_NUM-1:0] s_alt_sel;
-  logic [PIN_NUM-1:0] s_user_sel;
-  logic [PIN_NUM-1:0] s_user_handoff;
-  logic [PIN_NUM-1:0] s_filter_en;
-  logic [       15:0] s_filter_div;
-  logic [        3:0] s_filter_count;
-  logic [PIN_NUM-1:0] s_intr_rise_en;
-  logic [PIN_NUM-1:0] s_intr_fall_en;
-  logic [PIN_NUM-1:0] s_intr_high_en;
-  logic [PIN_NUM-1:0] s_intr_low_en;
-  logic [PIN_NUM-1:0] s_intr_event;
-  logic               s_irq;
+  logic [PinNum-1:0] s_data_in;
+  logic [PinNum-1:0] s_data_out;
+  logic [PinNum-1:0] s_output_en;
+  logic [PinNum-1:0] s_open_drain;
+  logic [PinNum-1:0] s_input_cmos;
+  logic [PinNum-1:0] s_pull_up;
+  logic [PinNum-1:0] s_pull_down;
+  logic [PinNum-1:0] s_alt_en;
+  logic [PinNum-1:0] s_alt_sel;
+  logic [PinNum-1:0] s_user_sel;
+  logic [PinNum-1:0] s_user_handoff;
+  logic [PinNum-1:0] s_filter_en;
+  logic [      15:0] s_filter_div;
+  logic [       3:0] s_filter_count;
+  logic [PinNum-1:0] s_intr_rise_en;
+  logic [PinNum-1:0] s_intr_fall_en;
+  logic [PinNum-1:0] s_intr_high_en;
+  logic [PinNum-1:0] s_intr_low_en;
+  logic [PinNum-1:0] s_intr_event;
+  logic              s_irq;
 
   gpio_reg #(
-      .PIN_NUM        (PIN_NUM),
-      .USER_BASE_ADDR (USER_BASE_ADDR),
-      .ADMIN_BASE_ADDR(ADMIN_BASE_ADDR),
-      .HAS_INPUT_CMOS (HAS_INPUT_CMOS),
-      .HAS_PULL_UP    (HAS_PULL_UP),
-      .HAS_PULL_DOWN  (HAS_PULL_DOWN)
+      .PinNum       (PinNum),
+      .UserBaseAddr (UserBaseAddr),
+      .AdminBaseAddr(AdminBaseAddr),
+      .HasInputCmos (HasInputCmos),
+      .HasPullUp    (HasPullUp),
+      .HasPullDown  (HasPullDown)
   ) u_gpio_reg (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
@@ -73,7 +73,7 @@ module ribp_gpio #(
   );
 
   gpio_core #(
-      .PIN_NUM(PIN_NUM)
+      .PinNum(PinNum)
   ) u_gpio_core (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),

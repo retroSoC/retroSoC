@@ -130,3 +130,32 @@ def test_owned_style_accepts_project_naming_contract(tmp_path: Path) -> None:
         enforce_naming=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_owned_style_allows_protocol_localparams(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test_module #(parameter int DataWidth = 32) ("
+        "input logic clk_i, output logic data_o);\n"
+        "  localparam logic [1:0] FSM_IDLE = 2'd0;\n"
+        "  localparam logic [1:0] FSM_RESP = 2'd1;\n"
+        "  assign data_o = clk_i;\n"
+        "endmodule\n",
+        enforce_naming=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_owned_style_allows_interface_members_and_include_guards(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "`ifndef GPIO_DEFINE_SVH\n"
+        "`define GPIO_DEFINE_SVH\n"
+        "interface test_if ();\n"
+        "  logic cmd_valid;\n"
+        "  modport dut(input cmd_valid);\n"
+        "endinterface\n"
+        "`endif\n",
+        enforce_naming=True,
+    )
+    assert result.returncode == 0, result.stderr

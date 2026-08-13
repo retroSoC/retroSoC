@@ -52,8 +52,8 @@ def test_extensions_generate_isolated_scalar_bindings(tmp_path: Path) -> None:
     assert core.count("rib_if u_user_") == 6
     assert core.count("ribp_if u_user_") == 6
     assert core.count("ribp2rib #(") == 6
-    assert core.count(".SYNC_RESET(1'b1)") == 3
-    assert core.count(".SYNC_RESET(1'b0)") == 3
+    assert core.count(".SyncReset(1'b1)") == 3
+    assert core.count(".SyncReset(1'b0)") == 3
     assert "u_user_rib_if.cmd_valid = '0;" in core
     assert "5'd0: begin" in core
     assert "5'd4: begin" in core

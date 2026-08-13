@@ -7,13 +7,13 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect #(
-    parameter int NUM_MASTERS = 3,
-    parameter int NUM_TARGETS = 9
+    parameter int NumMasters = 3,
+    parameter int NumTargets = 9
 ) (
     input  logic                 clk_i,
     input  logic                 rst_n_i,
-           axi4_if.slave         masters          [NUM_MASTERS],
-           axi4_if.master        targets          [NUM_TARGETS],
+           axi4_if.slave         masters          [NumMasters],
+           axi4_if.master        targets          [NumTargets],
     input  logic                 user_bus_enable_i,
     output logic                 user_bus_idle_o,
     input  logic                 perf_enable_i,
@@ -34,8 +34,8 @@ module axi4_interconnect #(
     output logic          [63:0] perf_psram_wait_o,
     output logic          [63:0] perf_flash_wait_o
 );
-  localparam int MASTER_WIDTH = $clog2(NUM_MASTERS);
-  localparam int TARGET_WIDTH = $clog2(NUM_TARGETS);
+  localparam int MASTER_WIDTH = $clog2(NumMasters);
+  localparam int TARGET_WIDTH = $clog2(NumTargets);
 
   localparam logic [TARGET_WIDTH-1:0] TARGET_CFG = TARGET_WIDTH'(0);
   localparam logic [TARGET_WIDTH-1:0] TARGET_APB = TARGET_WIDTH'(1);
@@ -51,96 +51,96 @@ module axi4_interconnect #(
   localparam logic [1:0] MASTER_PENDING = 2'd1;
   localparam logic [1:0] MASTER_ACTIVE = 2'd2;
 
-  logic [NUM_MASTERS-1:0] m_awvalid, m_awready;
-  logic [NUM_MASTERS-1:0][31:0] m_awaddr;
-  logic [NUM_MASTERS-1:0][ 7:0] m_awlen;
-  logic [NUM_MASTERS-1:0][ 2:0] m_awsize;
-  logic [NUM_MASTERS-1:0][ 1:0] m_awburst;
-  logic [NUM_MASTERS-1:0]       m_awlock;
-  logic [NUM_MASTERS-1:0][ 3:0] m_awcache;
-  logic [NUM_MASTERS-1:0][ 2:0] m_awprot;
-  logic [NUM_MASTERS-1:0][3:0] m_awqos, m_awregion;
-  logic [NUM_MASTERS-1:0] m_awid, m_awuser;
-  logic [NUM_MASTERS-1:0] m_wvalid, m_wready, m_wlast;
-  logic [NUM_MASTERS-1:0][31:0] m_wdata;
-  logic [NUM_MASTERS-1:0][ 3:0] m_wstrb;
-  logic [NUM_MASTERS-1:0]       m_wuser;
-  logic [NUM_MASTERS-1:0] m_bvalid, m_bready, m_bid, m_buser;
-  logic [NUM_MASTERS-1:0][1:0] m_bresp;
-  logic [NUM_MASTERS-1:0] m_arvalid, m_arready;
-  logic [NUM_MASTERS-1:0][31:0] m_araddr;
-  logic [NUM_MASTERS-1:0][ 7:0] m_arlen;
-  logic [NUM_MASTERS-1:0][ 2:0] m_arsize;
-  logic [NUM_MASTERS-1:0][ 1:0] m_arburst;
-  logic [NUM_MASTERS-1:0]       m_arlock;
-  logic [NUM_MASTERS-1:0][ 3:0] m_arcache;
-  logic [NUM_MASTERS-1:0][ 2:0] m_arprot;
-  logic [NUM_MASTERS-1:0][3:0] m_arqos, m_arregion;
-  logic [NUM_MASTERS-1:0] m_arid, m_aruser;
-  logic [NUM_MASTERS-1:0] m_rvalid, m_rready, m_rid, m_rlast, m_ruser;
-  logic [NUM_MASTERS-1:0][31:0] m_rdata;
-  logic [NUM_MASTERS-1:0][ 1:0] m_rresp;
+  logic [NumMasters-1:0] m_awvalid, m_awready;
+  logic [NumMasters-1:0][31:0] m_awaddr;
+  logic [NumMasters-1:0][ 7:0] m_awlen;
+  logic [NumMasters-1:0][ 2:0] m_awsize;
+  logic [NumMasters-1:0][ 1:0] m_awburst;
+  logic [NumMasters-1:0]       m_awlock;
+  logic [NumMasters-1:0][ 3:0] m_awcache;
+  logic [NumMasters-1:0][ 2:0] m_awprot;
+  logic [NumMasters-1:0][3:0] m_awqos, m_awregion;
+  logic [NumMasters-1:0] m_awid, m_awuser;
+  logic [NumMasters-1:0] m_wvalid, m_wready, m_wlast;
+  logic [NumMasters-1:0][31:0] m_wdata;
+  logic [NumMasters-1:0][ 3:0] m_wstrb;
+  logic [NumMasters-1:0]       m_wuser;
+  logic [NumMasters-1:0] m_bvalid, m_bready, m_bid, m_buser;
+  logic [NumMasters-1:0][1:0] m_bresp;
+  logic [NumMasters-1:0] m_arvalid, m_arready;
+  logic [NumMasters-1:0][31:0] m_araddr;
+  logic [NumMasters-1:0][ 7:0] m_arlen;
+  logic [NumMasters-1:0][ 2:0] m_arsize;
+  logic [NumMasters-1:0][ 1:0] m_arburst;
+  logic [NumMasters-1:0]       m_arlock;
+  logic [NumMasters-1:0][ 3:0] m_arcache;
+  logic [NumMasters-1:0][ 2:0] m_arprot;
+  logic [NumMasters-1:0][3:0] m_arqos, m_arregion;
+  logic [NumMasters-1:0] m_arid, m_aruser;
+  logic [NumMasters-1:0] m_rvalid, m_rready, m_rid, m_rlast, m_ruser;
+  logic [NumMasters-1:0][31:0] m_rdata;
+  logic [NumMasters-1:0][ 1:0] m_rresp;
 
-  logic [NUM_TARGETS-1:0] t_awvalid, t_awready;
-  logic [NUM_TARGETS-1:0][31:0] t_awaddr;
-  logic [NUM_TARGETS-1:0][ 7:0] t_awlen;
-  logic [NUM_TARGETS-1:0][ 2:0] t_awsize;
-  logic [NUM_TARGETS-1:0][ 1:0] t_awburst;
-  logic [NUM_TARGETS-1:0]       t_awlock;
-  logic [NUM_TARGETS-1:0][ 3:0] t_awcache;
-  logic [NUM_TARGETS-1:0][ 2:0] t_awprot;
-  logic [NUM_TARGETS-1:0][3:0] t_awqos, t_awregion;
-  logic [NUM_TARGETS-1:0] t_awid, t_awuser;
-  logic [NUM_TARGETS-1:0] t_wvalid, t_wready, t_wlast;
-  logic [NUM_TARGETS-1:0][31:0] t_wdata;
-  logic [NUM_TARGETS-1:0][ 3:0] t_wstrb;
-  logic [NUM_TARGETS-1:0]       t_wuser;
-  logic [NUM_TARGETS-1:0] t_bvalid, t_bready, t_bid, t_buser;
-  logic [NUM_TARGETS-1:0][1:0] t_bresp;
-  logic [NUM_TARGETS-1:0] t_arvalid, t_arready;
-  logic [NUM_TARGETS-1:0][31:0] t_araddr;
-  logic [NUM_TARGETS-1:0][ 7:0] t_arlen;
-  logic [NUM_TARGETS-1:0][ 2:0] t_arsize;
-  logic [NUM_TARGETS-1:0][ 1:0] t_arburst;
-  logic [NUM_TARGETS-1:0]       t_arlock;
-  logic [NUM_TARGETS-1:0][ 3:0] t_arcache;
-  logic [NUM_TARGETS-1:0][ 2:0] t_arprot;
-  logic [NUM_TARGETS-1:0][3:0] t_arqos, t_arregion;
-  logic [NUM_TARGETS-1:0] t_arid, t_aruser;
-  logic [NUM_TARGETS-1:0] t_rvalid, t_rready, t_rid, t_rlast, t_ruser;
-  logic [NUM_TARGETS-1:0][            31:0] t_rdata;
-  logic [NUM_TARGETS-1:0][             1:0] t_rresp;
+  logic [NumTargets-1:0] t_awvalid, t_awready;
+  logic [NumTargets-1:0][31:0] t_awaddr;
+  logic [NumTargets-1:0][ 7:0] t_awlen;
+  logic [NumTargets-1:0][ 2:0] t_awsize;
+  logic [NumTargets-1:0][ 1:0] t_awburst;
+  logic [NumTargets-1:0]       t_awlock;
+  logic [NumTargets-1:0][ 3:0] t_awcache;
+  logic [NumTargets-1:0][ 2:0] t_awprot;
+  logic [NumTargets-1:0][3:0] t_awqos, t_awregion;
+  logic [NumTargets-1:0] t_awid, t_awuser;
+  logic [NumTargets-1:0] t_wvalid, t_wready, t_wlast;
+  logic [NumTargets-1:0][31:0] t_wdata;
+  logic [NumTargets-1:0][ 3:0] t_wstrb;
+  logic [NumTargets-1:0]       t_wuser;
+  logic [NumTargets-1:0] t_bvalid, t_bready, t_bid, t_buser;
+  logic [NumTargets-1:0][1:0] t_bresp;
+  logic [NumTargets-1:0] t_arvalid, t_arready;
+  logic [NumTargets-1:0][31:0] t_araddr;
+  logic [NumTargets-1:0][ 7:0] t_arlen;
+  logic [NumTargets-1:0][ 2:0] t_arsize;
+  logic [NumTargets-1:0][ 1:0] t_arburst;
+  logic [NumTargets-1:0]       t_arlock;
+  logic [NumTargets-1:0][ 3:0] t_arcache;
+  logic [NumTargets-1:0][ 2:0] t_arprot;
+  logic [NumTargets-1:0][3:0] t_arqos, t_arregion;
+  logic [NumTargets-1:0] t_arid, t_aruser;
+  logic [NumTargets-1:0] t_rvalid, t_rready, t_rid, t_rlast, t_ruser;
+  logic [NumTargets-1:0][            31:0] t_rdata;
+  logic [NumTargets-1:0][             1:0] t_rresp;
 
-  logic [NUM_MASTERS-1:0][             1:0] r_master_state;
-  logic [NUM_MASTERS-1:0]                   r_master_write;
-  logic [NUM_MASTERS-1:0][TARGET_WIDTH-1:0] r_master_target;
-  logic [NUM_MASTERS-1:0][            31:0] r_master_addr;
-  logic [NUM_MASTERS-1:0][             7:0] r_master_len;
-  logic [NUM_MASTERS-1:0][             2:0] r_master_size;
-  logic [NUM_MASTERS-1:0][             1:0] r_master_burst;
-  logic [NUM_MASTERS-1:0]                   r_master_lock;
-  logic [NUM_MASTERS-1:0][             3:0] r_master_cache;
-  logic [NUM_MASTERS-1:0][             2:0] r_master_prot;
-  logic [NUM_MASTERS-1:0][3:0] r_master_qos, r_master_region;
-  logic [NUM_MASTERS-1:0] r_master_id, r_master_user;
-  logic [NUM_MASTERS-1:0]      r_master_access_err;
-  logic [NUM_MASTERS-1:0][3:0] r_master_first_wstrb;
+  logic [NumMasters-1:0][             1:0] r_master_state;
+  logic [NumMasters-1:0]                   r_master_write;
+  logic [NumMasters-1:0][TARGET_WIDTH-1:0] r_master_target;
+  logic [NumMasters-1:0][            31:0] r_master_addr;
+  logic [NumMasters-1:0][             7:0] r_master_len;
+  logic [NumMasters-1:0][             2:0] r_master_size;
+  logic [NumMasters-1:0][             1:0] r_master_burst;
+  logic [NumMasters-1:0]                   r_master_lock;
+  logic [NumMasters-1:0][             3:0] r_master_cache;
+  logic [NumMasters-1:0][             2:0] r_master_prot;
+  logic [NumMasters-1:0][3:0] r_master_qos, r_master_region;
+  logic [NumMasters-1:0] r_master_id, r_master_user;
+  logic [NumMasters-1:0]      r_master_access_err;
+  logic [NumMasters-1:0][3:0] r_master_first_wstrb;
 
-  logic [NUM_TARGETS-1:0] r_target_valid, r_target_addr_sent;
-  logic [NUM_TARGETS-1:0][MASTER_WIDTH-1:0] r_target_owner;
-  logic [NUM_TARGETS-1:0][ NUM_MASTERS-1:0] s_target_req;
-  logic [NUM_TARGETS-1:0][ NUM_MASTERS-1:0] s_target_grant;
-  logic [NUM_TARGETS-1:0][MASTER_WIDTH-1:0] s_target_selected;
-  logic [NUM_TARGETS-1:0] s_target_grant_valid, s_target_advance;
-  logic [NUM_TARGETS-1:0] s_target_terminal;
-  logic [NUM_MASTERS-1:0] s_master_terminal, s_master_fault;
-  logic [NUM_MASTERS-1:0][ 2:0] s_master_fault_code;
-  logic [NUM_MASTERS-1:0][32:0] s_last_addr;
-  logic [NUM_MASTERS-1:0] s_protocol_legal, s_access_allowed;
-  logic [NUM_MASTERS-1:0][TARGET_WIDTH-1:0] s_capture_target;
+  logic [NumTargets-1:0] r_target_valid, r_target_addr_sent;
+  logic [NumTargets-1:0][MASTER_WIDTH-1:0] r_target_owner;
+  logic [NumTargets-1:0][  NumMasters-1:0] s_target_req;
+  logic [NumTargets-1:0][  NumMasters-1:0] s_target_grant;
+  logic [NumTargets-1:0][MASTER_WIDTH-1:0] s_target_selected;
+  logic [NumTargets-1:0] s_target_grant_valid, s_target_advance;
+  logic [NumTargets-1:0] s_target_terminal;
+  logic [NumMasters-1:0] s_master_terminal, s_master_fault;
+  logic [NumMasters-1:0][ 2:0] s_master_fault_code;
+  logic [NumMasters-1:0][32:0] s_last_addr;
+  logic [NumMasters-1:0] s_protocol_legal, s_access_allowed;
+  logic [NumMasters-1:0][TARGET_WIDTH-1:0] s_capture_target;
 
-  logic [           63:0]                   r_perf_master_wait[NUM_MASTERS];
-  logic [           63:0]                   r_perf_target_wait[NUM_TARGETS];
+  logic [          63:0]                   r_perf_master_wait[NumMasters];
+  logic [          63:0]                   r_perf_target_wait[NumTargets];
 
   function automatic logic [TARGET_WIDTH-1:0] decode_target(input logic [31:0] addr);
     if (`SOC_ADDR_IS_SDRAM(addr)) return TARGET_SDRAM;
@@ -153,7 +153,7 @@ module axi4_interconnect #(
     return TARGET_DECERR;
   endfunction
 
-  for (genvar master = 0; master < NUM_MASTERS; master++) begin : GEN_MASTER_PORTS
+  for (genvar master = 0; master < NumMasters; master++) begin : GEN_MASTER_PORTS
     assign m_awvalid[master]       = masters[master].awvalid;
     assign m_awaddr[master]        = masters[master].awaddr;
     assign m_awlen[master]         = masters[master].awlen;
@@ -200,7 +200,7 @@ module axi4_interconnect #(
     assign m_rready[master]        = masters[master].rready;
   end
 
-  for (genvar target = 0; target < NUM_TARGETS; target++) begin : GEN_TARGET_PORTS
+  for (genvar target = 0; target < NumTargets; target++) begin : GEN_TARGET_PORTS
     assign targets[target].awid     = t_awid[target];
     assign targets[target].awaddr   = t_awaddr[target];
     assign targets[target].awlen    = t_awlen[target];
@@ -247,7 +247,7 @@ module axi4_interconnect #(
     assign targets[target].rready   = t_rready[target];
 
     round_robin_arbiter #(
-        .CLIENTS(NUM_MASTERS)
+        .CLIENTS(NumMasters)
     ) u_target_arbiter (
         .clk_i     (clk_i),
         .rst_n_i   (rst_n_i),
@@ -311,7 +311,7 @@ module axi4_interconnect #(
     s_master_fault      = '0;
     s_master_fault_code = '0;
 
-    for (int master = 0; master < NUM_MASTERS; master++) begin
+    for (int master = 0; master < NumMasters; master++) begin
       if (r_master_state[master] == MASTER_IDLE) begin
         m_arready[master] = (master != 1) || user_bus_enable_i;
         m_awready[master] = ((master != 1) || user_bus_enable_i) && !m_arvalid[master];
@@ -325,7 +325,7 @@ module axi4_interconnect #(
       end
     end
 
-    for (int target = 0; target < NUM_TARGETS; target++) begin
+    for (int target = 0; target < NumTargets; target++) begin
       s_target_advance[target] = !r_target_valid[target] && s_target_grant_valid[target];
       if (r_target_valid[target]) begin
         automatic logic [MASTER_WIDTH-1:0] owner = r_target_owner[target];
@@ -397,7 +397,7 @@ module axi4_interconnect #(
   end
 
   always_comb begin
-    for (int master = 0; master < NUM_MASTERS; master++) begin
+    for (int master = 0; master < NumMasters; master++) begin
       automatic logic        read_req = m_arvalid[master];
       automatic logic        write_req = !read_req && m_awvalid[master];
       automatic logic [31:0] addr = read_req ? m_araddr[master] : m_awaddr[master];
@@ -443,7 +443,7 @@ module axi4_interconnect #(
     fault_access_o   = 1'b0;
     fault_master_o   = '0;
     fault_code_o     = `RIB_RESP_OK;
-    for (int master = NUM_MASTERS - 1; master >= 0; master--) begin
+    for (int master = NumMasters - 1; master >= 0; master--) begin
       if (s_master_fault[master]) begin
         fault_valid_o    = 1'b1;
         fault_addr_o     = r_master_addr[master];
@@ -478,7 +478,7 @@ module axi4_interconnect #(
       r_target_addr_sent   <= '0;
       r_target_owner       <= '0;
     end else begin
-      for (int master = 0; master < NUM_MASTERS; master++) begin
+      for (int master = 0; master < NumMasters; master++) begin
         if (r_master_state[master] == MASTER_IDLE &&
             ((m_arvalid[master] && m_arready[master]) ||
              (m_awvalid[master] && m_awready[master]))) begin
@@ -507,7 +507,7 @@ module axi4_interconnect #(
         if (s_master_terminal[master]) r_master_state[master] <= MASTER_IDLE;
       end
 
-      for (int target = 0; target < NUM_TARGETS; target++) begin
+      for (int target = 0; target < NumTargets; target++) begin
         if (!r_target_valid[target] && s_target_grant_valid[target]) begin
           r_target_valid[target]                    <= 1'b1;
           r_target_addr_sent[target]                <= 1'b0;
@@ -530,19 +530,19 @@ module axi4_interconnect #(
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      for (int master = 0; master < NUM_MASTERS; master++) r_perf_master_wait[master] <= '0;
-      for (int target = 0; target < NUM_TARGETS; target++) r_perf_target_wait[target] <= '0;
+      for (int master = 0; master < NumMasters; master++) r_perf_master_wait[master] <= '0;
+      for (int target = 0; target < NumTargets; target++) r_perf_target_wait[target] <= '0;
     end else if (perf_clear_i) begin
-      for (int master = 0; master < NUM_MASTERS; master++) r_perf_master_wait[master] <= '0;
-      for (int target = 0; target < NUM_TARGETS; target++) r_perf_target_wait[target] <= '0;
+      for (int master = 0; master < NumMasters; master++) r_perf_master_wait[master] <= '0;
+      for (int target = 0; target < NumTargets; target++) r_perf_target_wait[target] <= '0;
     end else if (perf_enable_i) begin
-      for (int master = 0; master < NUM_MASTERS; master++) begin
+      for (int master = 0; master < NumMasters; master++) begin
         if ((r_master_state[master] != MASTER_IDLE) && !s_master_terminal[master] &&
             !(&r_perf_master_wait[master])) begin
           r_perf_master_wait[master] <= r_perf_master_wait[master] + 1'b1;
         end
       end
-      for (int target = 0; target < NUM_TARGETS; target++) begin
+      for (int target = 0; target < NumTargets; target++) begin
         if (r_target_valid[target] && !s_target_terminal[target] &&
             !(&r_perf_target_wait[target])) begin
           r_perf_target_wait[target] <= r_perf_target_wait[target] + 1'b1;
@@ -561,7 +561,7 @@ module axi4_interconnect #(
   assign perf_flash_wait_o = r_perf_target_wait[TARGET_XPI];
 
   initial begin
-    if (NUM_MASTERS != 3 || NUM_TARGETS != 9) begin
+    if (NumMasters != 3 || NumTargets != 9) begin
       $fatal(1, "axi4_interconnect: retroSoC topology requires three masters and nine targets");
     end
   end

@@ -157,7 +157,7 @@ module soc_gpio_user_handoff_sva #(
 endmodule
 
 bind gpio_core soc_gpio_user_handoff_sva #(
-    .DATA_WIDTH(PIN_NUM)
+    .DATA_WIDTH(PinNum)
 ) u_soc_gpio_user_handoff_sva (
     .clk_i         (clk_i),
     .rst_n_i       (rst_n_i),

@@ -139,7 +139,7 @@ def render_core_bindings(extensions: ExtensionMap) -> str:
                 [
                     f"  ribp_if u_user_{target.slot}_ribp_if ();",
                     "  ribp2rib #(",
-                    f"      .SYNC_RESET(1'b{int(target.reset == 'sync')})",
+                    f"      .SyncReset(1'b{int(target.reset == 'sync')})",
                     f"  ) u_user_{target.slot}_ribp2rib (",
                     "      .clk_i (clk_i),",
                     f"      .rst_n_i(rst_n_i && ~core_reset_i[{target.slot}]),",

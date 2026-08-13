@@ -2,7 +2,7 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module ribp_clint #(
-    parameter int HART_NUM = 1
+    parameter int HartNum = 1
 ) (
     // verilog_format: off
     input  logic       clk_i,
@@ -13,15 +13,15 @@ module ribp_clint #(
     // verilog_format: on
 );
 
-  logic                s_mtime_load;
-  logic [        63:0] s_mtime_load_value;
-  logic [        63:0] s_mtime;
-  logic [HART_NUM-1:0] s_msip;
-  logic [        63:0] s_mtimecmp         [0:HART_NUM-1];
-  logic [HART_NUM-1:0] s_timer_irq;
+  logic               s_mtime_load;
+  logic [       63:0] s_mtime_load_value;
+  logic [       63:0] s_mtime;
+  logic [HartNum-1:0] s_msip;
+  logic [       63:0] s_mtimecmp         [0:HartNum-1];
+  logic [HartNum-1:0] s_timer_irq;
 
   clint_reg #(
-      .HART_NUM(HART_NUM)
+      .HartNum(HartNum)
   ) u_clint_reg (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
@@ -34,7 +34,7 @@ module ribp_clint #(
   );
 
   clint_core #(
-      .HART_NUM(HART_NUM)
+      .HartNum(HartNum)
   ) u_clint_core (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),

@@ -23,13 +23,13 @@ SELF_OWNED_RTL_ROOTS = {
 
 
 def tracked_files(root: Path) -> list[Path]:
-    """Return paths tracked by Git, relative to *root*."""
+    """Return repository files, including worktree files after directory moves."""
     result = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z"],
+        ["git", "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         check=True,
         stdout=subprocess.PIPE,
     )
-    return [Path(path.decode("utf-8")) for path in result.stdout.split(b"\0") if path]
+    return sorted({Path(path.decode("utf-8")) for path in result.stdout.split(b"\0") if path})
 
 
 def format_files(paths: Iterable[Path], kind: str) -> list[Path]:

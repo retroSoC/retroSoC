@@ -2,8 +2,8 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module timer_core #(
-    parameter int COUNTER_WIDTH  = 32,
-    parameter int PRESCALE_WIDTH = 16
+    parameter int CounterWidth  = 32,
+    parameter int PrescaleWidth = 16
 ) (
     // verilog_format: off
     input  logic                      clk_i,
@@ -15,14 +15,14 @@ module timer_core #(
     input  logic                      debug_halted_i,
     input  logic                      compare0_enable_i,
     input  logic                      compare1_enable_i,
-    input  logic [PRESCALE_WIDTH-1:0] prescale_i,
-    input  logic [COUNTER_WIDTH-1:0]  load_i,
-    input  logic [COUNTER_WIDTH-1:0]  compare0_i,
-    input  logic [COUNTER_WIDTH-1:0]  compare1_i,
+    input  logic [PrescaleWidth-1:0] prescale_i,
+    input  logic [CounterWidth-1:0]  load_i,
+    input  logic [CounterWidth-1:0]  compare0_i,
+    input  logic [CounterWidth-1:0]  compare1_i,
     input  logic                      start_i,
     input  logic                      stop_i,
     input  logic                      load_now_i,
-    output logic [COUNTER_WIDTH-1:0]  value_o,
+    output logic [CounterWidth-1:0]  value_o,
     output logic                      debug_frozen_o,
     output logic                      timeout_event_o,
     output logic                      compare0_event_o,
@@ -35,16 +35,16 @@ module timer_core #(
   localparam logic [1:0] MODE_PERIODIC = 2'b01;
   localparam logic [1:0] MODE_ONE_SHOT = 2'b10;
 
-  logic [PRESCALE_WIDTH-1:0] s_prescale_count;
-  logic                      s_prescale_load;
-  logic                      s_prescale_en;
-  logic                      s_tick;
-  logic                      s_terminal;
-  logic                      s_prescale_overflow;
-  logic [COUNTER_WIDTH-1:0] s_value_d, s_value_q;
+  logic [PrescaleWidth-1:0] s_prescale_count;
+  logic                     s_prescale_load;
+  logic                     s_prescale_en;
+  logic                     s_tick;
+  logic                     s_terminal;
+  logic                     s_prescale_overflow;
+  logic [CounterWidth-1:0] s_value_d, s_value_q;
 
   initial begin
-    if (COUNTER_WIDTH < 1 || PRESCALE_WIDTH < 1) begin
+    if (CounterWidth < 1 || PrescaleWidth < 1) begin
       $fatal(1, "timer_core: parameter widths must be positive");
     end
   end
@@ -58,7 +58,7 @@ module timer_core #(
                              !s_tick;
 
   rs_counter #(
-      .DATA_WIDTH(PRESCALE_WIDTH)
+      .DATA_WIDTH(PrescaleWidth)
   ) u_prescale_counter (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -115,7 +115,7 @@ module timer_core #(
   end
 
   dffr #(
-      .DATA_WIDTH(COUNTER_WIDTH)
+      .DATA_WIDTH(CounterWidth)
   ) u_value_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

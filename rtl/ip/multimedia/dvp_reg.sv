@@ -199,49 +199,65 @@ module dvp_reg (
     end
   end
 
-  dffr #(32) u_ctrl_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_ctrl_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_ctrl_d),
       .dat_o  (s_ctrl_q)
   );
-  dffr #(32) u_stream_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_stream_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_stream_d),
       .dat_o  (s_stream_q)
   );
-  dffr #(32) u_format_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_format_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_format_d),
       .dat_o  (s_format_q)
   );
-  dffr #(32) u_sync_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_sync_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_sync_d),
       .dat_o  (s_sync_q)
   );
-  dffr #(32) u_frame_size_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_frame_size_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_frame_size_d),
       .dat_o  (s_frame_size_q)
   );
-  dffr #(32) u_crop_start_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_crop_start_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_crop_start_d),
       .dat_o  (s_crop_start_q)
   );
-  dffr #(32) u_crop_size_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_crop_size_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_crop_size_d),
       .dat_o  (s_crop_size_q)
   );
-  dffr #(32) u_config_seq_dffr (
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_config_seq_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_cfg_seq_d),
@@ -290,20 +306,26 @@ module dvp_reg (
     end
   end
 
-  dffr #(1) u_ready_dffr (
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (ribp.valid && !s_ready_q),
       .dat_o  (s_ready_q)
   );
-  dffer #(32) u_rdata_dffer (
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_accept && !s_write),
       .dat_i  (s_rdata_d),
       .dat_o  (s_rdata_q)
   );
-  dffer #(1) u_resp_err_dffer (
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_accept),

@@ -2,9 +2,9 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module clint_timebase #(
-    parameter int REF_CLK_HZ  = 72_000_000,
-    parameter int TIMEBASE_HZ = 1_000_000,
-    parameter int CDC_STAGE   = 2
+    parameter int RefClkHz   = 72_000_000,
+    parameter int TimebaseHz = 1_000_000,
+    parameter int CdcStage   = 2
 ) (
     // verilog_format: off
     input  logic ref_clk_i,
@@ -15,7 +15,7 @@ module clint_timebase #(
     // verilog_format: on
 );
 
-  localparam int DIVISOR = REF_CLK_HZ / TIMEBASE_HZ;
+  localparam int DIVISOR = RefClkHz / TimebaseHz;
   localparam int DIV_WIDTH = DIVISOR > 1 ? $clog2(DIVISOR) : 1;
 
   logic [DIV_WIDTH-1:0] s_div_count;
@@ -25,9 +25,9 @@ module clint_timebase #(
   logic s_tick_re, s_tick_fe;
 
   initial begin
-    if ((REF_CLK_HZ <= 0) || (TIMEBASE_HZ <= 0) || (REF_CLK_HZ < TIMEBASE_HZ) ||
-        ((REF_CLK_HZ % TIMEBASE_HZ) != 0)) begin
-      $fatal(1, "clint_timebase: REF_CLK_HZ must be a positive multiple of TIMEBASE_HZ");
+    if ((RefClkHz <= 0) || (TimebaseHz <= 0) || (RefClkHz < TimebaseHz) ||
+        ((RefClkHz % TimebaseHz) != 0)) begin
+      $fatal(1, "clint_timebase: RefClkHz must be a positive multiple of TimebaseHz");
     end
   end
 
@@ -61,7 +61,7 @@ module clint_timebase #(
   );
 
   edge_det #(
-      .STAGE(CDC_STAGE)
+      .STAGE(CdcStage)
   ) u_tick_edge_det (
       .clk_i  (sys_clk_i),
       .rst_n_i(sys_rst_n_i),

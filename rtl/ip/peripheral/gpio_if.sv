@@ -4,19 +4,19 @@
 `include "gpio_define.svh"
 
 interface gpio_if #(
-    parameter int DATA_WIDTH = `RIBP_GPIO_NUM
+    parameter int DataWidth = `RIBP_GPIO_NUM
 ) ();
-  logic [DATA_WIDTH-1:0] oe_o;
-  logic [DATA_WIDTH-1:0] cs_o;
-  logic [DATA_WIDTH-1:0] pu_o;
-  logic [DATA_WIDTH-1:0] pd_o;
-  logic [DATA_WIDTH-1:0] do_o;
-  logic [DATA_WIDTH-1:0] di_i;
-  logic [DATA_WIDTH-1:0] alt0_do_i;
-  logic [DATA_WIDTH-1:0] alt0_oe_i;
-  logic [DATA_WIDTH-1:0] alt1_do_i;
-  logic [DATA_WIDTH-1:0] alt1_oe_i;
-  logic                  irq_o;
+  logic [DataWidth-1:0] oe_o;
+  logic [DataWidth-1:0] cs_o;
+  logic [DataWidth-1:0] pu_o;
+  logic [DataWidth-1:0] pd_o;
+  logic [DataWidth-1:0] do_o;
+  logic [DataWidth-1:0] di_i;
+  logic [DataWidth-1:0] alt0_do_i;
+  logic [DataWidth-1:0] alt0_oe_i;
+  logic [DataWidth-1:0] alt1_do_i;
+  logic [DataWidth-1:0] alt1_oe_i;
+  logic                 irq_o;
 
   modport dut(
       output oe_o,
