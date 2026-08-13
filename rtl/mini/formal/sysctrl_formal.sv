@@ -96,13 +96,13 @@ module sysctrl_formal_design (
   assign user_reset_mask             = {{(32 - `USER_CORE_COUNT) {1'b0}}, {`USER_CORE_COUNT{1'b1}}};
   assign user_core_count             = `USER_CORE_COUNT;
   assign user_bus_enable             = u_dut.s_user_running_q;
-  assign user_config_error           = u_dut.s_user_config_error_q;
+  assign user_config_error           = u_dut.s_user_config_err_q;
   assign pll_cfg                     = u_dut.s_pll_cfg_q;
   assign pll_req_valid               = pll_ctrl.req_valid_o;
   assign pll_req_ready               = pll_ctrl.req_ready_i;
   assign pll_busy                    = u_dut.s_pll_busy_q;
-  assign pll_error                   = u_dut.s_pll_error_q;
-  assign pll_error_reason            = u_dut.s_pll_error_reason_q;
+  assign pll_error                   = u_dut.s_pll_err_q;
+  assign pll_error_reason            = u_dut.s_pll_err_reason_q;
   assign pll_rsp_valid               = pll_ctrl.rsp_valid_i;
   assign fault_valid                 = f_fault_valid;
   assign fault_addr                  = f_fault_addr;

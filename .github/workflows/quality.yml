@@ -61,6 +61,9 @@ jobs:
       - name: Check all self-owned RTL style rules
         run: make rtl-style-check-all
 
+      - name: Check RTL readiness records
+        run: make rtl-readiness-check-all
+
       - name: Check embedded C safety policy
         run: make sw-policy-check
 

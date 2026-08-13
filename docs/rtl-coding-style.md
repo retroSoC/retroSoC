@@ -173,6 +173,34 @@ results, lint/format results, and an affected synthesis/STA result. A
 `tapeout-ready` label additionally requires reviewed warnings, filelists, PDK
 mapping, and release artifacts.
 
+### Design maturity and RTL freeze
+
+The machine-readable record in [`rtl/rtl_readiness.json`](../rtl/rtl_readiness.json)
+uses four states:
+
+- `prototype`: interfaces and implementation may change; no compatibility claim
+  is made.
+- `verified`: interfaces, registers, reset behavior, timing intent, and the
+  applicable simulation, lint, formal, synthesis, and STA evidence are reviewed.
+- `rtl-freeze`: only formatting, comments, or changes proven logically
+  equivalent to the recorded baseline are allowed.
+- `tapeout-ready`: freeze evidence is complete and PDK mapping, warning/metric
+  baselines, SDC, filelists, and release artifacts are reviewed.
+
+A change to an interface, register map, reset, timing contract, or CDC behavior
+is not a style-only change. Freeze and release records must include the baseline
+revision, configuration digest, evidence paths, and reviewed waivers. Run
+`make rtl-readiness-check-all` before promoting a target.
+
+### Synthesis intent audit
+
+The readiness record captures the expected storage primitive, reset precedence,
+clock-enable behavior, memory inference/instantiation policy, and pipeline
+boundaries. The expectation must be checked against the actual Yosys/library
+reports and OpenSTA results; an RTL pattern alone is not evidence that the
+intended cell or memory was inferred. Area, cell count, WNS/TNS, and firmware
+size remain sourced from `meta/metrics.json` and the existing metrics policy.
+
 ## 10. Formatting, comments, and tools
 
 Owned RTL uses ASCII, Unix line endings, a 100-column limit, spaces instead of
@@ -197,6 +225,11 @@ owned RTL and is used by nightly/release flows. Verilator performs semantic
 linting for width, signedness, implicit conversion, and driven-signal issues;
 Verible performs style linting. Fix findings before waiving them, and review
 every waiver in the pull request.
+
+`rtl-readiness-check` validates the maturity and synthesis-intent record;
+`rtl-readiness-check-all` is the release/nightly form. It checks metadata and
+evidence paths, not RTL behavior, and therefore complements rather than replaces
+simulation, formal, synthesis, STA, CDC, warning, and metric checks.
 
 ## Reference
 

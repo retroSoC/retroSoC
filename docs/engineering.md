@@ -231,6 +231,21 @@ Review the medians, commit the baseline, then change policy mode to `gate`. The 
 limits are 5% firmware growth, 3% top area/cell growth, and 0.05 ns WNS regression. TNS is recorded
 for diagnosis but is initially non-blocking.
 
+## RTL Maturity and Synthesis Intent
+
+`rtl/rtl_readiness.json` is the machine-readable status record for self-owned
+RTL. `prototype`, `verified`, `rtl-freeze`, and `tapeout-ready` describe
+increasing evidence requirements; the readiness checker validates the status,
+configuration digest, baseline revision, evidence paths, synthesis intent, and
+waivers. The checker does not replace the actual flows.
+
+For a freeze or release review, compare the recorded synthesis intent with the
+Yosys/library reports and OpenSTA result: Common register or inferred register
+type, reset and enable precedence, RAM/FIFO or macro mapping, pipeline boundary,
+area/cell count, and WNS/TNS. A change that affects an interface, register map,
+reset, timing contract, or CDC is not a formatting-only change. Logical-equivalent
+changes after freeze must retain the baseline revision and equivalence evidence.
+
 ## CI And Releases
 
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
@@ -242,6 +257,9 @@ rules in `rtl/rtl_style_manifest.json`. New positional module connections,
 legacy `always @` blocks, and unjustified explicit nets are rejected in changed
 self-owned RTL. Formal/DV, PDK, generated, and managed RTL use separate
 validation profiles and are not mechanically rewritten by the root formatter.
+Quality CI also runs `rtl-readiness-check-all` to validate the maturity record;
+regression continues to provide the behavioral, synthesis, netlist, timing,
+warning, and metric evidence referenced by that record.
 `nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 
