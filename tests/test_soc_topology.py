@@ -113,20 +113,21 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".cfg_axi4(u_cfg_axi4_if)" in bus_fabric
     assert ".apb_axi4(u_apb_axi4_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
-    assert "`define SOC_USER_IRQ_MASK 32'h000E7BFC" in irq_config
-    assert "`define SOC_IRQ_RIBP_WIDTH 13" in irq_config
+    assert "`define SOC_USER_IRQ_MASK 32'h000EFBFC" in irq_config
+    assert "`define SOC_IRQ_RIBP_WIDTH 14" in irq_config
     assert "`define SOC_IRQ_APB_WIDTH 5" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
     assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
     assert "assign irq_o[12] = i2c1.irq_o;" in rib_irq
+    assert "assign irq_o[13] = s_dvp_irq;" in rib_irq
     assert "assign irq_o[0] = pwm.irq_o;" in apb_irq
     assert "assign irq_o[4] = s_rng_irq;" in apb_irq
     assert "s_irq[10]" not in irq_wiring
-    assert "s_irq[15]" not in irq_wiring
+    assert "s_irq[15] = s_ribp_irq[13];" in irq_wiring
     assert "s_irq[16] = s_apb_irq[4];" in irq_wiring
     assert "irq_i[10] == 1'b0" in irq_sva
-    assert "irq_i[15] == 1'b0" in irq_sva
+    assert "irq_i[15] == ribp_irq_i[13]" in irq_sva
     assert "irq_i[31] == 1'b0" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert filelist.startswith("+incdir+")
@@ -164,6 +165,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
         ("gpio", "ribp", 11, 18, "gpio.irq_o"),
         ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),
+        ("dvp", "ribp", 13, 15, "s_dvp_irq"),
     ]
 
 

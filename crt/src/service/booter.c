@@ -113,7 +113,8 @@ void rs_app_info(void) {
     printf("                       1 x CLINT         @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_CLINT_BASE);
     printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);
-    printf("                       1 x DVP           @%p\n", (void *)&reg_dvp_recven);
+    printf("                       1 x DVP           @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_DVP_BASE);
     printf("                       1 x I2C1          @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_I2C1_BASE);
     printf("                       1 x ARCHINFO      @%p\n",

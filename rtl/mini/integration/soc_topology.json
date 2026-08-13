@@ -3,7 +3,7 @@
   "gpio_pins": 32,
   "irq_vector_width": 32,
   "irq_groups": [
-    {"name": "ribp", "width": 13, "top_signal": "s_ribp_irq"},
+    {"name": "ribp", "width": 14, "top_signal": "s_ribp_irq"},
     {"name": "apb", "width": 5, "top_signal": "s_apb_irq"}
   ],
   "interrupts": [
@@ -24,7 +24,8 @@
     {"name": "rng", "description": "APB RNG data/error interrupt", "group": "apb", "group_bit": 4, "core_bit": 16, "signal": "s_rng_irq", "user_visible": false},
     {"name": "ws2812", "description": "WS2812 transmitter interrupt", "group": "ribp", "group_bit": 10, "core_bit": 17, "signal": "ws2812.irq_o"},
     {"name": "gpio", "description": "RIBP GPIO combined interrupt", "group": "ribp", "group_bit": 11, "core_bit": 18, "signal": "gpio.irq_o"},
-    {"name": "i2c1", "description": "RIBP I2C1 interrupt", "group": "ribp", "group_bit": 12, "core_bit": 19, "signal": "i2c1.irq_o"}
+    {"name": "i2c1", "description": "RIBP I2C1 interrupt", "group": "ribp", "group_bit": 12, "core_bit": 19, "signal": "i2c1.irq_o"},
+    {"name": "dvp", "description": "RIBP DVP capture interrupt", "group": "ribp", "group_bit": 13, "core_bit": 15, "signal": "s_dvp_irq"}
   ],
   "wake_sources": [
     {"name": "rtc", "signal": "u_rtc_if.wake_o", "observer": "sysctrl.rtc_wake_i", "retained": false}

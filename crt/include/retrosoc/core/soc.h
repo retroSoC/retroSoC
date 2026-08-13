@@ -183,11 +183,6 @@
 // sdram
 #define reg_sdram_clkdiv                   RS_SOC_REG32(RS_SOC_RIBP_SDRAM_BASE, UINT32_C(0x00))
 #define reg_sdram_cfg                      RS_SOC_REG32(RS_SOC_RIBP_SDRAM_BASE, UINT32_C(0x04))
-// dvp
-#define reg_dvp_recven                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x00))
-#define reg_dvp_rxdata                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x04))
-#define reg_dvp_status                     RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x08))
-#define reg_dvp_stream_ctrl                RS_SOC_REG32(RS_SOC_RIBP_DVP_BASE, UINT32_C(0x0C))
 #define reg_user_ip_reg0                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x00))
 #define reg_user_ip_reg1                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x04))
 #define reg_user_ip_reg2                   RS_SOC_REG32(RS_SOC_APB_USER_IP_BASE, UINT32_C(0x08))

@@ -64,7 +64,7 @@
     },
     {
       "name": "dvp",
-      "clock": "s_dvp_pclk_buf",
+      "clock": "s_pclk_sel",
       "reset": "s_dvp_pclk_rst_n_sync",
       "reset_source": "rst_n_i",
       "reset_primitive": "rst_sync",
@@ -107,17 +107,17 @@
       "name": "dvp_enable",
       "source": "system",
       "destination": "dvp",
-      "primitive": "cdc_sync",
+      "primitive": "cdc_2phase",
       "path": "rtl/ip/ribp/multimedia/dvp.sv",
-      "instance": "u_dvp_recven_cdc_sync"
+      "instance": "u_dvp_config_cdc"
     },
     {
       "name": "dvp_fifo",
       "source": "dvp",
       "destination": "system",
-      "primitive": "async_fifo",
+      "primitive": "cdc_fifo_warm_flush",
       "path": "rtl/ip/ribp/multimedia/dvp.sv",
-      "instance": "u_rx_async_fifo"
+      "instance": "u_dvp_payload_fifo"
     },
     {
       "name": "rtc_command",

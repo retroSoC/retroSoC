@@ -11,7 +11,7 @@ FORMAL_CLINT_DEPTH        ?= 32
 FORMAL_TIMEOUT            ?= 60
 FORMAL_WS2812_TIMEOUT     ?= 120
 FORMAL_I2C_TIMEOUT        ?= 300
-FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint
+FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
@@ -37,6 +37,8 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/timer_formal_props.sv \
                              $(RTL_PATH)/formal/clint_formal.sv \
                              $(RTL_PATH)/formal/clint_formal_props.sv \
+                             $(RTL_PATH)/formal/dvp_formal.sv \
+                             $(RTL_PATH)/formal/dvp_formal_props.sv \
                              $(RTL_PATH)/top/bus.sv \
                              $(RTL_PATH)/top/rib_error_slave.sv \
                              $(RTL_PATH)/top/rib_if.sv \
@@ -78,6 +80,10 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/clint_reg.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/clint_core.sv \
                              $(ROOT_PATH)/rtl/ip/ribp/peripheral/ribp_clint.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/multimedia/dvp_define.svh \
+                             $(ROOT_PATH)/rtl/ip/ribp/multimedia/dvp_core.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/multimedia/dvp_reg.sv \
+                             $(ROOT_PATH)/rtl/ip/ribp/multimedia/dvp.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/clkrst/counter.sv \
                              $(RTL_PATH)/top/rcu.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/ribp_if.sv \
@@ -182,10 +188,12 @@ formal-timer: $(FORMAL_DIR)/timer/.stamp | manifest
 
 formal-clint: $(FORMAL_DIR)/clint/.stamp | manifest
 
+formal-dvp: $(FORMAL_DIR)/dvp/.stamp | manifest
+
 formal-doctor:
 	$(MAKE) FORMAL=YES SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor
 
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-dvp formal-doctor formal-clean

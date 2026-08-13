@@ -51,7 +51,9 @@
 /ip/ribp/memory/sdram_reg.sv
 /ip/ribp/memory/sdram_core.sv
 /ip/ribp/memory/sdram.sv
+/ip/ribp/multimedia/dvp_define.svh
 /ip/ribp/multimedia/dvp_core.sv
+/ip/ribp/multimedia/dvp_reg.sv
 /ip/ribp/multimedia/dvp.sv
 /ip/ribp/peripheral/timer_core.sv
 /ip/ribp/peripheral/timer_reg.sv

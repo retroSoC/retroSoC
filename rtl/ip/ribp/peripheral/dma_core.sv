@@ -74,7 +74,7 @@ module dma_core (
   logic s_fifo_flush, s_fifo_push, s_fifo_pop;
   logic s_fifo_full, s_fifo_empty;
   logic [ 2:0] s_fifo_count;
-  logic [31:0] s_fifo_rdata;
+  logic [35:0] s_fifo_rdata;
   logic        s_rsp_err;
   logic        s_i2s_tx_stream;
   logic        s_i2s_rx_stream;
@@ -99,7 +99,7 @@ module dma_core (
   assign s_i2s_rx_stream = mode_i == HWT_I2S_RX_TRG;
   assign s_dvp_rx_stream = mode_i == HWT_DVP_RX_TRG;
 
-  assign i2s_tx_axis.tdata = s_fifo_rdata;
+  assign i2s_tx_axis.tdata = s_fifo_rdata[31:0];
   assign i2s_tx_axis.tkeep = '1;
   assign i2s_tx_axis.tstrb = '1;
   assign i2s_tx_axis.tlast = (s_xfer_cnt_q + 1'b1) >= xferlen_i;
@@ -148,8 +148,8 @@ module dma_core (
   assign rib.cmd_len = s_chunk_len;
   assign rib.w_valid = (s_fsm_q == FSM_WR_DATA) && !s_i2s_tx_stream &&
                        ~s_fifo_empty && (s_fifo_count != 3'd0);
-  assign rib.wdata = s_fifo_rdata;
-  assign rib.wstrb = '1;
+  assign rib.wdata = s_fifo_rdata[31:0];
+  assign rib.wstrb = s_dvp_rx_stream ? s_fifo_rdata[35:32] : '1;
   assign rib.wlast = s_wr_beat_q == s_chunk_len;
   assign rib.rsp_ready = (s_fsm_q == FSM_RD_RESP) && !(s_i2s_rx_stream || s_dvp_rx_stream) ?
                          (~s_fifo_full && (s_fifo_count != 3'd4)) :
@@ -166,7 +166,7 @@ module dma_core (
   assign s_fifo_pop = s_i2s_tx_stream ? s_stream_tx_hdshk : ((s_fsm_q == FSM_WR_DATA) && s_w_hdshk);
 
   fifo #(
-      .DATA_WIDTH  (32),
+      .DATA_WIDTH  (36),
       .BUFFER_DEPTH(4)
   ) u_data_fifo (
       .clk_i(clk_i),
@@ -174,7 +174,9 @@ module dma_core (
       .flush_i(s_fifo_flush),
       .push_i(s_fifo_push),
       .full_o(s_fifo_full),
-      .dat_i(s_i2s_rx_stream ? i2s_rx_axis.tdata : s_dvp_rx_stream ? dvp_rx_axis.tdata : rib.rdata),
+      .dat_i(s_i2s_rx_stream ? {4'b1111, i2s_rx_axis.tdata} :
+             s_dvp_rx_stream ? {dvp_rx_axis.tkeep, dvp_rx_axis.tdata} :
+             {4'b1111, rib.rdata}),
       .pop_i(s_fifo_pop),
       .empty_o(s_fifo_empty),
       .dat_o(s_fifo_rdata),

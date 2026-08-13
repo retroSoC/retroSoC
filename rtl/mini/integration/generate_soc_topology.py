@@ -39,6 +39,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
     ("gpio", "ribp", 11, 18, "gpio.irq_o"),
     ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),
+    ("dvp", "ribp", 13, 15, "s_dvp_irq"),
 )
 
 

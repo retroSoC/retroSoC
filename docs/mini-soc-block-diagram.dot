@@ -164,7 +164,7 @@ digraph mini_soc_block_diagram {
       ];
       stream_io [
         fillcolor="#FFF3C9",
-        label="AXI4-Stream data endpoints\nI2S TX/RX and DVP RX\nRIBP configuration with PIO fallback"
+        label="AXI4-Stream data endpoints\nI2S TX/RX and DVP RX\nSOF/EOL/TKEEP framing"
       ];
       uart0 [
         fillcolor="#F9E1E7",

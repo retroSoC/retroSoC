@@ -160,6 +160,13 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "ribp_clint.sv",
             SCRIPT_DIR / "clint_formal.sv",
         ]
+    if target == "dvp":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv", COMMON_RTL / "utils/register.sv",
+            ROOT / "rtl/ip/ribp/multimedia/dvp_define.svh",
+            ROOT / "rtl/ip/ribp/multimedia/dvp_reg.sv",
+            SCRIPT_DIR / "dvp_formal.sv",
+        ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
@@ -205,6 +212,7 @@ def parse_args() -> argparse.Namespace:
             "i2c",
             "timer",
             "clint",
+            "dvp",
         ),
         required=True,
     )

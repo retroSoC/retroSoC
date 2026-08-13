@@ -1,25 +1,9 @@
-// Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
-// You can use this software according to the terms and conditions of the Mulan PSL v2.
-// You may obtain a copy of Mulan PSL v2 at:
-//             http://license.coscl.org.cn/MulanPSL2
-// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-// See the Mulan PSL v2 for more details.
 
-`ifndef RIBP_DVP_DEF_SV
-`define RIBP_DVP_DEF_SV
+`include "dvp_define.svh"
 
-// verilog_format: off
-`define RIBP_DVP_RECVEN     8'h00
-`define RIBP_DVP_RXDATA     8'h04
-`define RIBP_DVP_STATUS     8'h08
-`define RIBP_DVP_STREAM_CTRL 8'h0C
-// verilog_format: on
-
-`endif
-
+/* verilator lint_off DECLFILENAME */
 interface dvp_if ();
   logic       pclk_i;
   logic       href_i;
@@ -28,178 +12,288 @@ interface dvp_if ();
 
   modport dut(input pclk_i, input href_i, input vsync_i, input dat_i);
 endinterface
+/* verilator lint_on DECLFILENAME */
 
 module ribp_dvp (
     // verilog_format: off
-    input  logic                 clk_i,
-    input  logic                 rst_n_i,
-    ribp_if.slave                 ribp,
-    axi4_stream_if.source         rx_axis,
-    dvp_if.dut                   dvp
+    input  logic                           clk_i,
+    input  logic                           rst_n_i,
+    ribp_if.slave                          ribp,
+    axi4_stream_if.source                  rx_axis,
+    dvp_if.dut                             dvp,
+    output logic                           irq_o
     // verilog_format: on
 );
-  // ribp
-  logic s_ribp_wr_hdshk, s_ribp_rd_hdshk;
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_rdata_en;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
-  // register
-  logic s_dvp_recven_en;
-  logic s_dvp_recven_d, s_dvp_recven_q;
-  logic s_dvp_stat_d, s_dvp_stat_q;
-  logic s_dvp_stream_en;
-  logic s_dvp_stream_d, s_dvp_stream_q;
-  // dvp clk
-  logic s_dvp_pclk_buf;
-  logic s_dvp_pclk_rst_n_sync;
-  logic s_dvp_recven_pclk_q;
-  // rx fifo
-  logic s_rx_push_valid, s_rx_full, s_rx_empty;
-  logic s_rx_pop_valid, s_rx_pop_ready;
-  logic [31:0] s_rx_push_data, s_rx_pop_data;
-  logic [7:0] s_rx_elem_num;
+  localparam int DVP_PAYLOAD_WIDTH = 42;
 
-  // ribp
-  assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && ribp.wstrb[0];
-  assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
-  assign ribp.ready      = s_ribp_ready_q;
-  assign ribp.resp_err   = 1'b0;
-  assign ribp.rdata      = s_ribp_rdata_q;
+  logic [                127:0] s_config_sys;
+  logic                         s_cfg_v_sys;
+  logic                         s_cfg_rdy_sys;
+  logic [                127:0] s_cfg_pclk_q;
+  logic                         s_cfg_v_pclk;
+  logic                         s_cfg_rdy_pclk;
+  logic [                  1:0] s_cmd_sys;
+  logic [                  1:0] s_cmd_pclk;
+  logic                         s_cmd_v_pclk;
+  logic                         s_cmd_rdy_pclk;
+  logic                         s_cmd_rdy_sys;
+  logic                         s_cmd_v_sys;
+  logic [                  1:0] s_cmd_core;
+  logic                         s_cmd_abort_sys;
+  logic                         s_cmd_flush_sys;
 
+  logic                         s_pclk_inv;
+  logic                         s_pclk_buf;
+  logic                         s_pclk_rst_n;
+  logic                         s_pclk_sel;
+  logic                         s_pclk_falling;
+  logic                         s_active;
+  logic                         s_stream_en;
+  logic                         s_fifo_src_ready;
+  logic                         s_fifo_dst_valid;
+  logic [DVP_PAYLOAD_WIDTH-1:0] s_fifo_dst_data;
+  logic                         s_fifo_dst_ready;
+  logic                         s_fifo_src_clear;
+  logic                         s_fifo_src_clear_busy;
+  logic                         s_fifo_dst_clear_busy;
+  logic [                 31:0] s_fifo_rx_data;
+  logic                         s_rx_pop;
+  logic                         s_fifo_full_sys;
+  logic                         s_fifo_empty_sys;
+  logic                         s_frm_start_tgl;
+  logic                         s_line_done_tgl;
+  logic                         s_frm_done_tgl;
+  logic                         s_err_tgl;
+  logic                         s_frame_start_event;
+  logic                         s_line_done_event;
+  logic                         s_frame_done_event;
+  logic                         s_err_evt;
+  logic [                  5:0] s_err_flags_pclk;
+  logic [                  5:0] s_err_flags_sys;
+  logic [                127:0] s_frm_stats_pclk;
+  logic                         s_frm_stats_v_pclk;
+  logic                         s_frm_stats_rdy_pclk;
+  logic [                127:0] s_frm_stats_sys;
+  logic                         s_frm_stats_v_sys;
 
-  assign s_dvp_recven_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DVP_RECVEN;
-  assign s_dvp_recven_d  = ribp.wdata[0];
-  dffer #(
-      .DATA_WIDTH(1)
-  ) u_dvp_recven_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dvp_recven_en),
-      .dat_i  (s_dvp_recven_d),
-      .dat_o  (s_dvp_recven_q)
-  );
+  assign s_cmd_sys        = {s_cmd_flush_sys, s_cmd_abort_sys};
+  // Commands are consumed in the pixel domain as soon as they cross the CDC.
+  assign s_cmd_rdy_pclk   = !s_fifo_src_clear_busy;
+  assign s_pclk_falling   = s_config_sys[106];
+  assign s_fifo_src_clear = s_cmd_pclk[`DVP_COMMAND_FLUSH] || s_cmd_pclk[`DVP_COMMAND_ABORT];
+  assign s_fifo_dst_ready = !s_fifo_dst_clear_busy && (s_stream_en ? rx_axis.tready : s_rx_pop);
+  assign s_fifo_rx_data   = s_fifo_dst_data[31:0];
+  assign s_fifo_empty_sys = !s_fifo_dst_valid;
 
-  assign s_dvp_stream_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DVP_STREAM_CTRL;
-  assign s_dvp_stream_d  = ribp.wdata[0];
-  dffer #(
-      .DATA_WIDTH(1)
-  ) u_dvp_stream_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dvp_stream_en),
-      .dat_i  (s_dvp_stream_d),
-      .dat_o  (s_dvp_stream_q)
-  );
-
-  assign s_dvp_stat_d = s_rx_empty;
-  dffr #(
-      .DATA_WIDTH(1)
-  ) u_dvp_status_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_dvp_stat_d),
-      .dat_o  (s_dvp_stat_q)
-  );
-
-  assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
-  dffr #(
-      .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
-  );
-
-  assign s_ribp_rdata_en = s_ribp_rd_hdshk;
-  always_comb begin
-    s_rx_pop_valid = s_dvp_stream_q && rx_axis.tvalid && rx_axis.tready;
-    s_ribp_rdata_d = s_ribp_rdata_q;
-    unique case (ribp.addr[7:0])
-      `RIBP_DVP_RECVEN:      s_ribp_rdata_d = {31'd0, s_dvp_recven_q};
-      `RIBP_DVP_RXDATA: begin
-        if (s_ribp_rd_hdshk && !s_dvp_stream_q) begin
-          s_rx_pop_valid = 1'b1;
-          if (!s_rx_empty) s_ribp_rdata_d = s_rx_pop_data;
-          else s_ribp_rdata_d = '0;
-        end
-      end
-      `RIBP_DVP_STATUS:      s_ribp_rdata_d = {31'd0, s_dvp_stat_q};
-      `RIBP_DVP_STREAM_CTRL: s_ribp_rdata_d = {31'd0, s_dvp_stream_q};
-      default:               s_ribp_rdata_d = s_ribp_rdata_q;
-    endcase
-  end
-  dffer #(
-      .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_ribp_rdata_en),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
-  );
-
-  assign rx_axis.tdata  = s_rx_pop_data;
-  assign rx_axis.tkeep  = '1;
-  assign rx_axis.tstrb  = '1;
-  assign rx_axis.tlast  = 1'b0;
-  assign rx_axis.tid    = '0;
-  assign rx_axis.tdest  = '0;
-  assign rx_axis.tuser  = '0;
-  assign rx_axis.tvalid = s_dvp_stream_q && !s_rx_empty;
-
-
-  // clk buffer
   tc_clk_buf u_dvp_pclk_clk_buf (
       .clk_i(dvp.pclk_i),
-      .clk_o(s_dvp_pclk_buf)
+      .clk_o(s_pclk_buf)
+  );
+  tc_clk_inv u_dvp_pclk_inv (
+      .clk_i(s_pclk_buf),
+      .clk_o(s_pclk_inv)
+  );
+  tc_clk_mux2 u_dvp_pclk_mux (
+      .clk0_i   (s_pclk_buf),
+      .clk1_i   (s_pclk_inv),
+      .clk_sel_i(s_pclk_falling),
+      .clk_o    (s_pclk_sel)
   );
 
   rst_sync #(
       .STAGE(5)
   ) u_dvp_pclk_rst_sync (
-      .clk_i  (s_dvp_pclk_buf),
+      .clk_i  (s_pclk_sel),
       .rst_n_i(rst_n_i),
-      .rst_n_o(s_dvp_pclk_rst_n_sync)
+      .rst_n_o(s_pclk_rst_n)
   );
 
-  // The software enable is stable while a frame is captured, but it originates
-  // in the system domain and must be synchronized before it gates DVP writes.
+  dvp_reg u_dvp_reg (
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .ribp               (ribp),
+      .active_i           (s_active),
+      .fifo_empty_i       (s_fifo_empty_sys),
+      .fifo_full_i        (s_fifo_full_sys),
+      .rx_data_i          (s_fifo_rx_data),
+      .frame_start_i      (s_frame_start_event),
+      .line_done_i        (s_line_done_event),
+      .frame_done_i       (s_frame_done_event),
+      .error_event_i      (s_err_evt),
+      .error_flags_i      (s_err_flags_sys),
+      .frame_stats_i      (s_frm_stats_sys),
+      .frame_stats_valid_i(s_frm_stats_v_sys),
+      .config_o           (s_config_sys),
+      .config_valid_o     (s_cfg_v_sys),
+      .config_ready_i     (s_cfg_rdy_sys),
+      .command_abort_o    (s_cmd_abort_sys),
+      .command_flush_o    (s_cmd_flush_sys),
+      .command_valid_o    (s_cmd_v_sys),
+      .command_ready_i    (s_cmd_rdy_sys),
+      .rx_pop_o           (s_rx_pop),
+      .stream_enable_o    (s_stream_en),
+      .irq_o              (irq_o)
+  );
+
+  cdc_2phase #(
+      .DATA_WIDTH(128)
+  ) u_dvp_config_cdc (
+      .src_clk_i  (clk_i),
+      .src_rst_n_i(rst_n_i),
+      .src_data_i (s_config_sys),
+      .src_valid_i(s_cfg_v_sys),
+      .src_ready_o(s_cfg_rdy_sys),
+      .dst_clk_i  (s_pclk_sel),
+      .dst_rst_n_i(s_pclk_rst_n),
+      .dst_data_o (s_cfg_pclk_q),
+      .dst_valid_o(s_cfg_v_pclk),
+      .dst_ready_i(s_cfg_rdy_pclk)
+  );
+
+  cdc_2phase #(
+      .DATA_WIDTH(2)
+  ) u_dvp_command_cdc (
+      .src_clk_i  (clk_i),
+      .src_rst_n_i(rst_n_i),
+      .src_data_i (s_cmd_sys),
+      .src_valid_i(s_cmd_v_sys),
+      .src_ready_o(s_cmd_rdy_sys),
+      .dst_clk_i  (s_pclk_sel),
+      .dst_rst_n_i(s_pclk_rst_n),
+      .dst_data_o (s_cmd_pclk),
+      .dst_valid_o(s_cmd_v_pclk),
+      .dst_ready_i(s_cmd_rdy_pclk)
+  );
+
+  cdc_fifo_warm_flush #(
+      .DATA_WIDTH  (DVP_PAYLOAD_WIDTH),
+      .BUFFER_DEPTH(128)
+  ) u_dvp_payload_fifo (
+      .src_clk_i       (s_pclk_sel),
+      .src_rst_n_i     (s_pclk_rst_n),
+      .src_clear_i     (s_fifo_src_clear),
+      .src_clear_busy_o(s_fifo_src_clear_busy),
+      .src_data_i      (s_core_push_data),
+      .src_valid_i     (s_core_push_valid),
+      .src_ready_o     (s_fifo_src_ready),
+      .dst_clk_i       (clk_i),
+      .dst_rst_n_i     (rst_n_i),
+      .dst_clear_busy_o(s_fifo_dst_clear_busy),
+      .dst_data_o      (s_fifo_dst_data),
+      .dst_valid_o     (s_fifo_dst_valid),
+      .dst_ready_i     (s_fifo_dst_ready)
+  );
+  logic [DVP_PAYLOAD_WIDTH-1:0] s_core_push_data;
+  logic                         s_core_push_valid;
+  assign s_cmd_core = s_cmd_v_pclk ? s_cmd_pclk : 2'b00;
+
   cdc_sync #(
       .STAGE     (2),
       .DATA_WIDTH(1)
-  ) u_dvp_recven_cdc_sync (
-      .clk_i  (s_dvp_pclk_buf),
-      .rst_n_i(s_dvp_pclk_rst_n_sync),
-      .dat_i  (s_dvp_recven_q),
-      .dat_o  (s_dvp_recven_pclk_q)
+  ) u_fifo_full_sync (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (!s_fifo_src_ready),
+      .dat_o  (s_fifo_full_sys)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(6)
+  ) u_error_flags_sync (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_err_flags_pclk),
+      .dat_o  (s_err_flags_sys)
   );
 
-  async_fifo #(
-      .DATA_WIDTH (32),
-      .DEPTH_POWER(7)
-  ) u_rx_async_fifo (
-      .wr_clk_i  (s_dvp_pclk_buf),
-      .wr_rst_n_i(s_dvp_pclk_rst_n_sync),
-      .wr_en_i   (s_rx_push_valid & s_dvp_recven_pclk_q),
-      .wr_data_i (s_rx_push_data),
-      .wr_full_o (s_rx_full),
-      .rd_clk_i  (clk_i),
-      .rd_rst_n_i(rst_n_i),
-      .rd_en_i   (s_rx_pop_valid),
-      .rd_data_o (s_rx_pop_data),
-      .rd_empty_o(s_rx_empty),
-      .elem_num_o(s_rx_elem_num)
+  /* verilator lint_off PINCONNECTEMPTY */
+  edge_det #(
+      .STAGE(2)
+  ) u_frame_start_event (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_frm_start_tgl),
+      .dat_o  (),
+      .re_o   (s_frame_start_event),
+      .fe_o   ()
+  );
+  edge_det #(
+      .STAGE(2)
+  ) u_line_done_event (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_line_done_tgl),
+      .dat_o  (),
+      .re_o   (s_line_done_event),
+      .fe_o   ()
+  );
+  edge_det #(
+      .STAGE(2)
+  ) u_frame_done_event (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_frm_done_tgl),
+      .dat_o  (),
+      .re_o   (s_frame_done_event),
+      .fe_o   ()
+  );
+  edge_det #(
+      .STAGE(2)
+  ) u_error_event (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_err_tgl),
+      .dat_o  (),
+      .re_o   (s_err_evt),
+      .fe_o   ()
+  );
+  /* verilator lint_on PINCONNECTEMPTY */
+
+  cdc_2phase #(
+      .DATA_WIDTH(128)
+  ) u_dvp_stats_cdc (
+      .src_clk_i  (s_pclk_sel),
+      .src_rst_n_i(s_pclk_rst_n),
+      .src_data_i (s_frm_stats_pclk),
+      .src_valid_i(s_frm_stats_v_pclk),
+      .src_ready_o(s_frm_stats_rdy_pclk),
+      .dst_clk_i  (clk_i),
+      .dst_rst_n_i(rst_n_i),
+      .dst_data_o (s_frm_stats_sys),
+      .dst_valid_o(s_frm_stats_v_sys),
+      .dst_ready_i(1'b1)
   );
 
+  assign rx_axis.tdata  = s_fifo_dst_data[31:0];
+  assign rx_axis.tkeep  = s_fifo_dst_data[39:36];
+  assign rx_axis.tstrb  = s_fifo_dst_data[35:32];
+  assign rx_axis.tlast  = s_fifo_dst_data[40];
+  assign rx_axis.tid    = '0;
+  assign rx_axis.tdest  = '0;
+  assign rx_axis.tuser  = s_fifo_dst_data[41];
+  assign rx_axis.tvalid = s_stream_en && s_fifo_dst_valid;
 
   dvp_core u_dvp_core (
-      .clk_i      (s_dvp_pclk_buf),
-      .rst_n_i    (s_dvp_pclk_rst_n_sync),
-      .dvp_href_i (dvp.href_i),
-      .dvp_vsync_i(dvp.vsync_i),
-      .dvp_dat_i  (dvp.dat_i),
-      .wr_en_o    (s_rx_push_valid),
-      .rgb_dat_o  (s_rx_push_data)
+      .clk_i               (s_pclk_sel),
+      .rst_n_i             (s_pclk_rst_n),
+      .config_i            (s_cfg_pclk_q),
+      .config_valid_i      (s_cfg_v_pclk),
+      .command_i           (s_cmd_core),
+      .config_ready_o      (s_cfg_rdy_pclk),
+      .push_ready_i        (s_fifo_src_ready),
+      .push_valid_o        (s_core_push_valid),
+      .push_data_o         (s_core_push_data),
+      .active_o            (s_active),
+      .frame_start_toggle_o(s_frm_start_tgl),
+      .line_done_toggle_o  (s_line_done_tgl),
+      .frame_done_toggle_o (s_frm_done_tgl),
+      .error_toggle_o      (s_err_tgl),
+      .error_flags_o       (s_err_flags_pclk),
+      .frame_stats_o       (s_frm_stats_pclk),
+      .frame_stats_valid_o (s_frm_stats_v_pclk),
+      .frame_stats_ready_i (s_frm_stats_rdy_pclk),
+      .href_i              (dvp.href_i),
+      .vsync_i             (dvp.vsync_i),
+      .dat_i               (dvp.dat_i)
   );
 endmodule

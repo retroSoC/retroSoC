@@ -82,6 +82,7 @@ module ip_ribp_wrapper (
   logic s_dma_i2c1_tx_stall, s_dma_i2c1_rx_stall;
   logic s_dma_xfer_done;
   logic s_tim0_irq, s_tim1_irq;
+  logic s_dvp_irq;
 
 `ifdef PDK_GF180
   localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
@@ -333,7 +334,8 @@ module ip_ribp_wrapper (
       .rst_n_i(rst_n_i),
       .ribp   (u_dvp_ribp_if),
       .rx_axis(u_dvp_rx_axis_if),
-      .dvp    (dvp)
+      .dvp    (dvp),
+      .irq_o  (s_dvp_irq)
   );
 
   ribp_sdio u_rib_sdio (
