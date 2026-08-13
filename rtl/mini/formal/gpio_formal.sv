@@ -68,13 +68,13 @@ module gpio_formal_design (
   assign gpio_do        = gpio.do_o;
   assign user_oe        = user_gpio.oe_o;
   assign user_do        = user_gpio.do_o;
-  assign user_select    = u_dut.u_gpio_reg.s_user_select_q;
+  assign user_select    = u_dut.u_gpio_reg.s_user_sel_q;
   assign user_lock      = u_dut.u_gpio_reg.s_user_lock_q;
   assign user_handoff   = u_dut.u_gpio_reg.s_user_handoff_q;
   assign user_access    = u_dut.u_gpio_reg.s_user_access_q;
   assign config_lock    = u_dut.u_gpio_reg.s_config_lock_q;
   assign data_out       = u_dut.u_gpio_reg.s_data_out_q;
-  assign output_enable  = u_dut.u_gpio_reg.s_output_enable_q;
+  assign output_enable  = u_dut.u_gpio_reg.s_output_en_q;
   assign open_drain     = u_dut.u_gpio_reg.s_open_drain_q;
   assign selected_data  = u_dut.u_gpio_core.s_selected_data;
   assign intr_state     = u_dut.u_gpio_reg.s_intr_state_q;

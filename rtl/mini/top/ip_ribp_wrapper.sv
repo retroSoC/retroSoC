@@ -329,7 +329,7 @@ module ip_ribp_wrapper (
       .sdram  (sdram)
   );
 
-  ribp_dvp u_rib_dvp (
+  axi4s_dvp u_axi4_dvp (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .ribp   (u_dvp_ribp_if),

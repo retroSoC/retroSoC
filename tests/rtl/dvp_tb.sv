@@ -29,7 +29,7 @@ module dvp_tb;
   always #5 clk_i = ~clk_i;
   always #10 pclk_i = ~pclk_i;
 
-  ribp_dvp u_dut (
+  axi4s_dvp u_dut (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .ribp   (ribp),

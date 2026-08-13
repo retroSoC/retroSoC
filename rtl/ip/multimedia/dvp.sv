@@ -14,7 +14,7 @@ interface dvp_if ();
 endinterface
 /* verilator lint_on DECLFILENAME */
 
-module ribp_dvp (
+module axi4s_dvp (
     // verilog_format: off
     input  logic                           clk_i,
     input  logic                           rst_n_i,
