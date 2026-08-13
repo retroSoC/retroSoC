@@ -48,7 +48,7 @@ module spisd_init (
   logic [6:0] s_boot_cnt_d, s_boot_cnt_q;  // count 128
   logic [2:0] s_fsm_d, s_fsm_q;
   logic s_fir_clk_edge, s_sec_clk_edge;
-  // resp 
+  // Response signals.
   logic        r_resp_en;
   logic [47:0] r_resp_data;
   logic        r_resp_flag;

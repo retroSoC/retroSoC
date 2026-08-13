@@ -58,6 +58,9 @@ jobs:
       - name: Check source formatting
         run: make format-check
 
+      - name: Check all self-owned RTL style rules
+        run: make rtl-style-check-all
+
       - name: Check embedded C safety policy
         run: make sw-policy-check
 

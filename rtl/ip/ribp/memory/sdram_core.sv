@@ -135,7 +135,7 @@ module sdram_core (
   logic s_cke_q, s_cke_d;
   logic [12:0] s_addr_d, s_addr_q;
   logic s_upd_ready_d, s_upd_ready_q;
-  // Registered RIB inputs (captured at IDLE→ACT)
+  // Registered RIB inputs (captured at IDLE-to-ACT)
   logic [24:0] s_ribp_addr_d, s_ribp_addr_q;  // addr[24:0] (relevant bits)
   logic [31:0] s_ribp_wdata_d, s_ribp_wdata_q;
   logic [3:0] s_ribp_wstrb_d, s_ribp_wstrb_q;

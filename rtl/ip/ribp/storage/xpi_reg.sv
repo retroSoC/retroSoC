@@ -240,7 +240,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_ACCMD_BLOCK
-    assign s_xpi_accmd_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ACCMD && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_accmd_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ACCMD) &&
+                               (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_accmd_d[i] = ribp.wdata[0];
   end
   dfferm #(
@@ -258,7 +259,8 @@ module xpi_reg (
 
   // 5000_0000 - 5FFF_FFFF
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_MMSTAD_BLOCK
-    assign s_xpi_mmstad_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_MMSTAD && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_mmstad_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_MMSTAD) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_mmstad_d[i] = s_xpi_mmstad_q[i];
       if (ribp.wstrb[0]) s_xpi_mmstad_d[i][7:0] = ribp.wdata[7:0];
@@ -281,7 +283,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_MMOFFST_BLOCK
-    assign s_xpi_mmoffst_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_MMOFFST && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_mmoffst_en[i] = s_ribp_wr_hdshk &&
+                                 (ribp.addr[7:0] == `RIBP_XPI_MMOFFST) &&
+                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_mmoffst_d[i] = s_xpi_mmoffst_q[i];
       if (ribp.wstrb[0]) s_xpi_mmoffst_d[i][7:0] = ribp.wdata[7:0];
@@ -304,7 +308,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_MODE_BLOCK
-    assign s_xpi_mode_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_MODE && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_mode_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_MODE) &&
+                              (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_mode_d[i] = ribp.wdata[0];
   end
   dfferm #(
@@ -334,7 +339,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_CLKDIV_BLOCK
-    assign s_xpi_clkdiv_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CLKDIV && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_clkdiv_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CLKDIV) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_clkdiv_d[i] = ribp.wdata[7:0];
   end
   dfferm #(
@@ -351,7 +357,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_RDWR_BLOCK
-    assign s_xpi_rdwr_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RDWR && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_rdwr_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RDWR) &&
+                              (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_rdwr_d[i] = ribp.wdata[0];
   end
   dfferm #(
@@ -368,7 +375,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_REVDAT_BLOCK
-    assign s_xpi_revdat_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_REVDAT && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_revdat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_REVDAT) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_revdat_d[i] = ribp.wdata[0];
   end
   dfferm #(
@@ -385,7 +393,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_TXUPB_BLOCK
-    assign s_xpi_txupb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_TXUPB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_txupb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_TXUPB) &&
+                               (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_txupb_d[i] = ribp.wdata[7:0];
   end
   dfferm #(
@@ -402,7 +411,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_TXLOWB_BLOCK
-    assign s_xpi_txlowb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_TXLOWB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_txlowb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_TXLOWB) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_txlowb_d[i] = ribp.wdata[7:0];
   end
   dfferm #(
@@ -419,7 +429,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_RXUPB_BLOCK
-    assign s_xpi_rxupb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RXUPB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_rxupb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RXUPB) &&
+                               (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_rxupb_d[i] = ribp.wdata[5:0];
   end
   dfferm #(
@@ -436,7 +447,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_RXLOWB_BLOCK
-    assign s_xpi_rxlowb_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RXLOWB && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_rxlowb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RXLOWB) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_rxlowb_d[i] = ribp.wdata[5:0];
   end
   dfferm #(
@@ -457,7 +469,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_CMDTYP_BLOCK
-    assign s_xpi_cmdtyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CMDTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_cmdtyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CMDTYP) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_cmdtyp_d[i] = ribp.wdata[1:0];
   end
   dfferm #(
@@ -474,7 +487,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_CMDLEN_BLOCK
-    assign s_xpi_cmdlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CMDLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_cmdlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CMDLEN) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_cmdlen_d[i] = ribp.wdata[2:0];
   end
   dfferm #(
@@ -491,7 +505,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_CMDDAT_BLOCK
-    assign s_xpi_cmddat_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CMDDAT && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_cmddat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CMDDAT) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_cmddat_d[i] = s_xpi_cmddat_q[i];
       if (ribp.wstrb[0]) s_xpi_cmddat_d[i][7:0] = ribp.wdata[7:0];
@@ -514,7 +529,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_ADRTYP_BLOCK
-    assign s_xpi_adrtyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ADRTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_adrtyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ADRTYP) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_adrtyp_d[i] = ribp.wdata[1:0];
   end
   dfferm #(
@@ -531,7 +547,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_ADRLEN_BLOCK
-    assign s_xpi_adrlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ADRLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_adrlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ADRLEN) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_adrlen_d[i] = ribp.wdata[2:0];
   end
   dfferm #(
@@ -548,7 +565,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_ADRDAT_BLOCK
-    assign s_xpi_adrdat_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ADRDAT && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_adrdat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ADRDAT) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_adrdat_d[i] = s_xpi_adrdat_q[i];
       if (ribp.wstrb[0]) s_xpi_adrdat_d[i][7:0] = ribp.wdata[7:0];
@@ -571,7 +589,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_ALTTYP_BLOCK
-    assign s_xpi_alttyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ALTTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_alttyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ALTTYP) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_alttyp_d[i] = ribp.wdata[1:0];
   end
   dfferm #(
@@ -588,7 +607,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_ALTLEN_BLOCK
-    assign s_xpi_altlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ALTLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_altlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ALTLEN) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_altlen_d[i] = ribp.wdata[2:0];
   end
   dfferm #(
@@ -605,7 +625,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_ALTDAT_BLOCK
-    assign s_xpi_altdat_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_ALTDAT && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_altdat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ALTDAT) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_altdat_d[i] = s_xpi_altdat_q[i];
       if (ribp.wstrb[0]) s_xpi_altdat_d[i][7:0] = ribp.wdata[7:0];
@@ -628,7 +649,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_TDULEN_BLOCK
-    assign s_xpi_tdulen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_TDULEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_tdulen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_TDULEN) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_tdulen_d[i] = ribp.wdata[7:0];
   end
   dfferm #(
@@ -645,7 +667,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_RDULEN_BLOCK
-    assign s_xpi_rdulen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_RDULEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_rdulen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RDULEN) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_rdulen_d[i] = ribp.wdata[7:0];
   end
   dfferm #(
@@ -662,7 +685,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_DATTYP_BLOCK
-    assign s_xpi_dattyp_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_DATTYP && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_dattyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_DATTYP) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_dattyp_d[i] = ribp.wdata[1:0];
   end
   dfferm #(
@@ -679,7 +703,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_DATLEN_BLOCK
-    assign s_xpi_datlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_DATLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_datlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_DATLEN) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_datlen_d[i] = ribp.wdata[7:0];
   end
   dfferm #(
@@ -696,7 +721,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_DATBIT_BLOCK
-    assign s_xpi_datbit_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_DATBIT && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_datbit_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_DATBIT) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_datbit_d[i] = ribp.wdata[2:0];
   end
   dfferm #(
@@ -713,7 +739,8 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : XPI_HLVLEN_BLOCK
-    assign s_xpi_hlvlen_en[i] = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_HLVLEN && `XPI_LNS_NUM'(i) == s_xpi_cfgidx_q;
+    assign s_xpi_hlvlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_HLVLEN) &&
+                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     assign s_xpi_hlvlen_d[i] = ribp.wdata[7:0];
   end
   dfferm #(

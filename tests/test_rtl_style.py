@@ -58,3 +58,33 @@ def test_owned_style_allows_named_connections(tmp_path: Path) -> None:
         "endmodule\n",
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_owned_style_rejects_forbidden_constructs(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test(input logic clk_i, output logic data_o);\n"
+        "  always_comb begin\n"
+        "    data_o = 1'b0;\n"
+        "    casex (data_o)\n"
+        "      1'bx: data_o = 1'b1;\n"
+        "    endcase\n"
+        "  end\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 1
+    assert "casex" in result.stderr
+
+
+def test_owned_style_rejects_non_ascii_and_long_lines(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test(input logic clk_i, output logic data_o);\n"
+        "  logic data_q;\n"
+        "  // 非 ASCII comment\n"
+        "  assign data_o = data_q; // " + ("x" * 101) + "\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 1
+    assert "non-ASCII" in result.stderr
+    assert "100 characters" in result.stderr

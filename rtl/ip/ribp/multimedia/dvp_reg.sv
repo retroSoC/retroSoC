@@ -266,7 +266,10 @@ module dvp_reg (
       if (s_accept && s_write && !s_access_err && (s_offset == `RIBP_DVP_COMMAND)) begin
         s_cmd_q <= s_cmd_q | ribp.wdata[1:0];
       end
-      s_err_q <= (s_err_q | error_flags_i) & ~((s_accept && s_write && (s_offset == `RIBP_DVP_ERROR_STATUS)) ? ribp.wdata[5:0] : 6'd0);
+      s_err_q <= (s_err_q | error_flags_i) &
+                 ~((s_accept && s_write && (s_offset == `RIBP_DVP_ERROR_STATUS))
+                       ? ribp.wdata[5:0]
+                       : 6'd0);
       if (frame_start_i) s_intr_stat_q[`DVP_INTR_FRAME_START] <= 1'b1;
       if (line_done_i) s_intr_stat_q[`DVP_INTR_LINE_DONE] <= 1'b1;
       if (frame_done_i) s_intr_stat_q[`DVP_INTR_FRAME_DONE] <= 1'b1;

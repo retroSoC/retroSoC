@@ -11,7 +11,9 @@
         ".svh"
       ],
       "format": "verible",
-      "lint": "strict"
+      "lint": "strict",
+      "max_line_length": 100,
+      "language": "systemverilog-2017-restricted"
     },
     "verification": {
       "roots": [

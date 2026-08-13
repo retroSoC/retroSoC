@@ -145,21 +145,24 @@ module ribp_psram (
   // wait cycles(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_wait <= 5'd18;
-    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel && ribp.addr[7:0] == `RIBP_PSRAM_WAIT) begin
+    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
+             (ribp.addr[7:0] == `RIBP_PSRAM_WAIT)) begin
       r_cfg_wait <= ribp.wdata[4:0];
     end
   end
   // extra cycle for tCHD(mmio)
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_chd <= 3'd4;
-    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel && ribp.addr[7:0] == `RIBP_PSRAM_CHD) begin
+    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
+             (ribp.addr[7:0] == `RIBP_PSRAM_CHD)) begin
       r_cfg_chd <= ribp.wdata[2:0];
     end
   end
   // init device/switch qpi mode
   always_ff @(posedge clk_i, negedge rst_n_i) begin
     if (~rst_n_i) r_cfg_init <= '0;
-    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel && ribp.addr[7:0] == `RIBP_PSRAM_INIT) begin
+    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
+             (ribp.addr[7:0] == `RIBP_PSRAM_INIT)) begin
       r_cfg_init <= ribp.wdata[0];
     end
   end

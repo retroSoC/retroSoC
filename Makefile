@@ -262,7 +262,8 @@ endif
 	benchmark-report coremark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-clean formal-doctor
+	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-clean formal-doctor \
+	rtl-style-check-all
 .NOTPARALLEL: setup
 
 help:
@@ -303,6 +304,7 @@ help:
 	  '  sw-format-check            check embedded C whitespace and line-ending policy' \
 	  '  mk-format | mk-format-check apply/check tracked Makefile formatting' \
 	  '  rtl-format | rtl-format-check apply/check self-owned RTL formatting' \
+	  '  rtl-style-check-all        check all self-owned RTL naming and language rules' \
 	  '  rtl-migrate-connections  convert provably positional RTL instances to named ports' \
 	  '  rtl-migrate-names        shorten local RTL identifier names' \
 	  '  rtl-style-check            check changed self-owned RTL naming and connections' \
@@ -438,6 +440,10 @@ rtl-migrate-names:
 rtl-style-check:
 	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
 	  --profile owned --changed-only --verible-verilog-lint $(VERIBLE_LINT)
+
+rtl-style-check-all:
+	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
+	  --profile owned --verible-verilog-lint $(VERIBLE_LINT)
 
 sw-policy-check:
 	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) --policy-check

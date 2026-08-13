@@ -18,6 +18,21 @@ INSTANCE_RE = re.compile(
 )
 LEGACY_ALWAYS_RE = re.compile(r"\balways\s*@")
 DECL_RE = re.compile(r"\b(?:wire|tri|wand|wor)\b")
+FORBIDDEN_TOKEN_RE = {
+    "wildcard instance connection": re.compile(r"\.\*\s*\)"),
+    "defparam": re.compile(r"\bdefparam\b"),
+    "casex": re.compile(r"\bcasex\b"),
+    "full_case pragma": re.compile(r"\bfull_case\b"),
+    "parallel_case pragma": re.compile(r"\bparallel_case\b"),
+    "synthesizable delay": re.compile(r"#\s*\d"),
+    "task declaration": re.compile(r"\btask(?:\s+automatic)?\s+[A-Za-z_]"),
+    "hierarchical reference": re.compile(r"\b[A-Za-z_]\w*(?:\.[A-Za-z_]\w*){2,}\b"),
+}
+UNNAMED_GENERATE_RE = re.compile(
+    r"\bgenerate\b(?:(?!\bendgenerate\b).)*?"
+    r"\b(?:if|for)\b(?:(?!\bbegin\b).)*?\bbegin\s*(?!:)",
+    re.DOTALL,
+)
 LONG_LOCAL_RE = re.compile(
     r"\b[sr]_[A-Za-z0-9_$]*(?:command|request|response|address|enable|error|status|"
     r"counter|configuration|select|length)(?:_|$)"
@@ -96,13 +111,36 @@ def check_file(path: Path, source: str, profile: str) -> list[str]:
     issues: list[str] = []
     if profile == "owned":
         issues.extend(instance_issues(path, source))
+        format_disabled = False
         for number, line in enumerate(source.splitlines(), start=1):
-            if LEGACY_ALWAYS_RE.search(line):
+            code = line.split("//", 1)[0]
+            if "verilog_format: off" in line:
+                format_disabled = True
+            format_exception = format_disabled
+            if LEGACY_ALWAYS_RE.search(code):
                 issues.append(f"{path}:{number}: use always_ff/always_comb in owned RTL")
-            if re.search(r"\bwire\b", line) and not re.search(r"\binout\s+wire\b", line):
+            if re.search(r"\bwire\b", code) and not re.search(r"\binout\s+wire\b", code):
                 issues.append(f"{path}:{number}: explicit wire in owned RTL; justify net semantics")
-            if LONG_LOCAL_RE.search(line) and not line.lstrip().startswith("//"):
+            if LONG_LOCAL_RE.search(code):
                 issues.append(f"{path}:{number}: prefer the local short-name abbreviation")
+            if not format_exception:
+                if any(character == "\t" for character in line):
+                    issues.append(f"{path}:{number}: tabs are not permitted in owned RTL")
+                if line.rstrip() != line:
+                    issues.append(f"{path}:{number}: trailing whitespace")
+                if any(ord(character) > 127 for character in line):
+                    issues.append(f"{path}:{number}: non-ASCII character")
+                if len(line) > 100:
+                    issues.append(f"{path}:{number}: line exceeds 100 characters")
+            for description, pattern in FORBIDDEN_TOKEN_RE.items():
+                if pattern.search(code):
+                    issues.append(f"{path}:{number}: {description} is not permitted")
+            if "verilog_format: on" in line:
+                format_disabled = False
+        if source and not source.endswith("\n"):
+            issues.append(f"{path}: missing final newline")
+        if UNNAMED_GENERATE_RE.search(source):
+            issues.append(f"{path}: generated if/for block must have a label")
     return issues
 
 

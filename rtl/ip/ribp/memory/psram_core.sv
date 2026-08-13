@@ -91,9 +91,10 @@ module psram_core (
         psram_mosi_o                               = r_xfer_ca[31];
         {psram_sio3_o, psram_sio2_o, psram_miso_o} = 3'd0;
       end else begin  // qpi mode
-        {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} = r_fsm_state == FSM_WR_QPI ? 
-        {r_xfer_byte_data[7], r_xfer_byte_data[6], r_xfer_byte_data[5], r_xfer_byte_data[4]} :
-        {r_xfer_ca[31], r_xfer_ca[30], r_xfer_ca[29], r_xfer_ca[28]};
+        {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} =
+            r_fsm_state == FSM_WR_QPI
+                ? {r_xfer_byte_data[7:4]}
+                : {r_xfer_ca[31], r_xfer_ca[30], r_xfer_ca[29], r_xfer_ca[28]};
       end
     end else begin
       {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} = 4'd0;

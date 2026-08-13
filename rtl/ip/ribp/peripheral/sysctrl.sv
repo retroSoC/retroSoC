@@ -78,14 +78,21 @@ module ribp_sysctrl (
 
   typedef logic [7:0] sysctrl_offset_t;
 
-  localparam sysctrl_offset_t SYSCTRL_CORESEL_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_CORESEL_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_CORESEL_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_CORESEL_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_IPSEL_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_IPSEL_OFFSET);
-  localparam sysctrl_offset_t SYSCTRL_PLL_CFG_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CFG_OFFSET);
-  localparam sysctrl_offset_t SYSCTRL_PLL_CMD_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CMD_OFFSET);
-  localparam sysctrl_offset_t SYSCTRL_FAULT_STATUS_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_STATUS_OFFSET);
-  localparam sysctrl_offset_t SYSCTRL_FAULT_ADDR_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_ADDR_OFFSET);
-  localparam sysctrl_offset_t SYSCTRL_FAULT_COUNT_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_COUNT_OFFSET);
-  localparam sysctrl_offset_t SYSCTRL_PLL_STATUS_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PLL_STATUS_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PLL_CFG_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CFG_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PLL_CMD_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PLL_CMD_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_FAULT_STATUS_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_STATUS_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_FAULT_ADDR_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_ADDR_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_FAULT_COUNT_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_COUNT_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PLL_STATUS_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PLL_STATUS_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_USER_CORE_RESET_OFFSET =
       sysctrl_offset_t'(`SOC_SYSCTRL_USER_CORE_RESET_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_USER_CORE_STATUS_OFFSET =
@@ -94,7 +101,8 @@ module ribp_sysctrl (
       sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_MASTER_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_FAULT_DETAIL_OFFSET =
       sysctrl_offset_t'(`SOC_SYSCTRL_FAULT_DETAIL_OFFSET);
-  localparam sysctrl_offset_t SYSCTRL_PERF_CTRL_OFFSET = sysctrl_offset_t'(`SOC_SYSCTRL_PERF_CTRL_OFFSET);
+  localparam sysctrl_offset_t SYSCTRL_PERF_CTRL_OFFSET =
+      sysctrl_offset_t'(`SOC_SYSCTRL_PERF_CTRL_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_PERF_MGMT_WAIT_LO_OFFSET =
       sysctrl_offset_t'(`SOC_SYSCTRL_PERF_MGMT_WAIT_LO_OFFSET);
   localparam sysctrl_offset_t SYSCTRL_PERF_MGMT_WAIT_HI_OFFSET =
@@ -343,7 +351,8 @@ module ribp_sysctrl (
       .dat_o  (s_sysctrl_ipsel_q)
   );
 
-  assign s_pll_cfg_en = s_ribp_wr_hdshk && ribp.addr[7:0] == SYSCTRL_PLL_CFG_OFFSET && ribp.wstrb[0];
+  assign s_pll_cfg_en = s_ribp_wr_hdshk &&
+                        (ribp.addr[7:0] == SYSCTRL_PLL_CFG_OFFSET) && ribp.wstrb[0];
   assign s_pll_cfg_d = ribp.wdata[2:0];
   dffer #(
       .DATA_WIDTH(3)
