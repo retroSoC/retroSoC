@@ -8,11 +8,11 @@ module dvp_core (
     input  logic         clk_i,
     input  logic         rst_n_i,
     /* verilator lint_off UNUSEDSIGNAL */
-    input  logic [127:0] config_i,
+    input  logic [127:0] cfg_i,
     /* verilator lint_on UNUSEDSIGNAL */
-    input  logic         config_valid_i,
-    input  logic [  1:0] command_i,
-    output logic         config_ready_o,
+    input  logic         cfg_valid_i,
+    input  logic [  1:0] cmd_i,
+    output logic         cfg_ready_o,
     input  logic         push_ready_i,
     output logic         push_valid_o,
     output logic [ 41:0] push_data_o,
@@ -92,26 +92,26 @@ module dvp_core (
                               (s_byte_swap ? {dat_i, s_first_byte_q} :
                                               {s_first_byte_q, dat_i});
 
-  assign config_ready_o = !s_stat_pending_q;
+  assign cfg_ready_o = !s_stat_pending_q;
   assign push_valid_o = s_out_valid_q;
   assign push_data_o = s_out_data_q;
   assign active_o = s_frm_active_q;
 
   always_comb begin
-    s_en          = config_i[96];
-    s_snap        = config_i[97];
-    s_crop_en     = config_i[98];
-    s_byte_swap   = config_i[102];
-    s_vsync_low   = config_i[104];
-    s_href_low    = config_i[105];
-    s_frm_width   = config_i[15:0];
-    s_frm_height  = config_i[31:16];
-    s_crop_x      = config_i[47:32];
-    s_crop_y      = config_i[63:48];
-    s_crop_width  = config_i[79:64];
-    s_crop_height = config_i[95:80];
-    s_format      = config_i[101:100];
-    s_pixel_swap  = config_i[103];
+    s_en          = cfg_i[96];
+    s_snap        = cfg_i[97];
+    s_crop_en     = cfg_i[98];
+    s_byte_swap   = cfg_i[102];
+    s_vsync_low   = cfg_i[104];
+    s_href_low    = cfg_i[105];
+    s_frm_width   = cfg_i[15:0];
+    s_frm_height  = cfg_i[31:16];
+    s_crop_x      = cfg_i[47:32];
+    s_crop_y      = cfg_i[63:48];
+    s_crop_width  = cfg_i[79:64];
+    s_crop_height = cfg_i[95:80];
+    s_format      = cfg_i[101:100];
+    s_pixel_swap  = cfg_i[103];
   end
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
@@ -151,20 +151,20 @@ module dvp_core (
         frame_stats_valid_o <= 1'b1;
       end
 
-      if (config_valid_i && !s_frm_active_q) begin
+      if (cfg_valid_i && !s_frm_active_q) begin
         if ((s_frm_width == 0) || (s_frm_height == 0) || (s_format > 2'd1) ||
             (s_crop_en && ((s_crop_width == 0) || (s_crop_height == 0)))) begin
-          s_err_flags_q[`DVP_ERROR_CONFIG] <= 1'b1;
-          error_toggle_o                   <= ~error_toggle_o;
+          s_err_flags_q[`RIBP_DVP__ERROR_CONFIG] <= 1'b1;
+          error_toggle_o                         <= ~error_toggle_o;
         end
         if (!s_en) s_frm_active_q <= 1'b0;
       end
-      if (command_i[`DVP_COMMAND_ABORT]) begin
-        s_frm_active_q                  <= 1'b0;
-        s_err_flags_q[`DVP_ERROR_ABORT] <= 1'b1;
-        error_toggle_o                  <= ~error_toggle_o;
+      if (cmd_i[`RIBP_DVP__COMMAND_ABORT]) begin
+        s_frm_active_q                        <= 1'b0;
+        s_err_flags_q[`RIBP_DVP__ERROR_ABORT] <= 1'b1;
+        error_toggle_o                        <= ~error_toggle_o;
       end
-      if (command_i[`DVP_COMMAND_FLUSH]) begin
+      if (cmd_i[`RIBP_DVP__COMMAND_FLUSH]) begin
         s_out_valid_q  <= 1'b0;
         s_byte_phase_q <= 1'b0;
         s_word_phase_q <= 1'b0;
@@ -215,10 +215,10 @@ module dvp_core (
               s_word_phase_q <= 1'b0;
               s_word_total_q <= s_word_total_q + 1'b1;
             end else begin
-              s_err_flags_q[`DVP_ERROR_OVERFLOW] <= 1'b1;
-              s_drop_count_q                     <= s_drop_count_q + 1'b1;
-              error_toggle_o                     <= ~error_toggle_o;
-              s_frm_active_q                     <= 1'b0;
+              s_err_flags_q[`RIBP_DVP__ERROR_OVERFLOW] <= 1'b1;
+              s_drop_count_q                           <= s_drop_count_q + 1'b1;
+              error_toggle_o                           <= ~error_toggle_o;
+              s_frm_active_q                           <= 1'b0;
             end
             s_pixel_total_q <= s_pixel_total_q + 1'b1;
           end
@@ -239,9 +239,9 @@ module dvp_core (
           s_word_phase_q <= 1'b0;
           s_word_total_q <= s_word_total_q + 1'b1;
         end else if (s_word_phase_q) begin
-          s_err_flags_q[`DVP_ERROR_OVERFLOW] <= 1'b1;
-          error_toggle_o                     <= ~error_toggle_o;
-          s_frm_active_q                     <= 1'b0;
+          s_err_flags_q[`RIBP_DVP__ERROR_OVERFLOW] <= 1'b1;
+          error_toggle_o                           <= ~error_toggle_o;
+          s_frm_active_q                           <= 1'b0;
         end
       end
     end

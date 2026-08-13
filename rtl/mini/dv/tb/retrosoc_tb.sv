@@ -175,11 +175,11 @@ module retrosoc_tb;
   );
 
 
-  DVP_CAMERA u_DVP_CAMERA (
-      .pclk (s_dvp_pclk),
-      .href (s_dvp_href),
-      .vsync(s_dvp_vsync),
-      .data (s_dvp_data)
+  dvp_camera u_dvp_camera (
+      .pclk_o (s_dvp_pclk),
+      .href_o (s_dvp_href),
+      .vsync_o(s_dvp_vsync),
+      .dat_o  (s_dvp_data)
   );
 
 

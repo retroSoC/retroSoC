@@ -24,65 +24,66 @@ module ribp_dvp (
     output logic                           irq_o
     // verilog_format: on
 );
-  localparam int DVP_PAYLOAD_WIDTH = 42;
+  localparam int DvpPayloadWidth = 42;
 
-  logic [                127:0] s_config_sys;
-  logic                         s_cfg_v_sys;
-  logic                         s_cfg_rdy_sys;
-  logic [                127:0] s_cfg_pclk_q;
-  logic                         s_cfg_v_pclk;
-  logic                         s_cfg_rdy_pclk;
-  logic [                  1:0] s_cmd_sys;
-  logic [                  1:0] s_cmd_pclk;
-  logic                         s_cmd_v_pclk;
-  logic                         s_cmd_rdy_pclk;
-  logic                         s_cmd_rdy_sys;
-  logic                         s_cmd_v_sys;
-  logic [                  1:0] s_cmd_core;
-  logic                         s_cmd_abort_sys;
-  logic                         s_cmd_flush_sys;
+  logic [              127:0] s_cfg_sys;
+  logic                       s_cfg_v_sys;
+  logic                       s_cfg_rdy_sys;
+  logic [              127:0] s_cfg_pclk_q;
+  logic                       s_cfg_v_pclk;
+  logic                       s_cfg_rdy_pclk;
+  logic [                1:0] s_cmd_sys;
+  logic [                1:0] s_cmd_pclk;
+  logic                       s_cmd_v_pclk;
+  logic                       s_cmd_rdy_pclk;
+  logic                       s_cmd_rdy_sys;
+  logic                       s_cmd_v_sys;
+  logic [                1:0] s_cmd_core;
+  logic                       s_cmd_abort_sys;
+  logic                       s_cmd_flush_sys;
 
-  logic                         s_pclk_inv;
-  logic                         s_pclk_buf;
-  logic                         s_pclk_rst_n;
-  logic                         s_pclk_sel;
-  logic                         s_pclk_falling;
-  logic                         s_active;
-  logic                         s_stream_en;
-  logic                         s_fifo_src_ready;
-  logic                         s_fifo_dst_valid;
-  logic [DVP_PAYLOAD_WIDTH-1:0] s_fifo_dst_data;
-  logic                         s_fifo_dst_ready;
-  logic                         s_fifo_src_clear;
-  logic                         s_fifo_src_clear_busy;
-  logic                         s_fifo_dst_clear_busy;
-  logic [                 31:0] s_fifo_rx_data;
-  logic                         s_rx_pop;
-  logic                         s_fifo_full_sys;
-  logic                         s_fifo_empty_sys;
-  logic                         s_frm_start_tgl;
-  logic                         s_line_done_tgl;
-  logic                         s_frm_done_tgl;
-  logic                         s_err_tgl;
-  logic                         s_frame_start_event;
-  logic                         s_line_done_event;
-  logic                         s_frame_done_event;
-  logic                         s_err_evt;
-  logic [                  5:0] s_err_flags_pclk;
-  logic [                  5:0] s_err_flags_sys;
-  logic [                127:0] s_frm_stats_pclk;
-  logic                         s_frm_stats_v_pclk;
-  logic                         s_frm_stats_rdy_pclk;
-  logic [                127:0] s_frm_stats_sys;
-  logic                         s_frm_stats_v_sys;
+  logic                       s_pclk_inv;
+  logic                       s_pclk_buf;
+  logic                       s_pclk_rst_n;
+  logic                       s_pclk_sel;
+  logic                       s_pclk_falling;
+  logic                       s_active;
+  logic                       s_stream_en;
+  logic                       s_fifo_src_ready;
+  logic                       s_fifo_dst_valid;
+  logic [DvpPayloadWidth-1:0] s_fifo_dst_data;
+  logic                       s_fifo_dst_ready;
+  logic                       s_fifo_src_clear;
+  logic                       s_fifo_src_clear_busy;
+  logic                       s_fifo_dst_clear_busy;
+  logic [               31:0] s_fifo_rx_data;
+  logic                       s_rx_pop;
+  logic                       s_fifo_full_sys;
+  logic                       s_fifo_empty_sys;
+  logic                       s_frm_start_tgl;
+  logic                       s_line_done_tgl;
+  logic                       s_frm_done_tgl;
+  logic                       s_err_tgl;
+  logic                       s_frame_start_event;
+  logic                       s_line_done_event;
+  logic                       s_frame_done_event;
+  logic                       s_err_evt;
+  logic [                5:0] s_err_flags_pclk;
+  logic [                5:0] s_err_flags_sys;
+  logic [              127:0] s_frm_stats_pclk;
+  logic                       s_frm_stats_v_pclk;
+  logic                       s_frm_stats_rdy_pclk;
+  logic [              127:0] s_frm_stats_sys;
+  logic                       s_frm_stats_v_sys;
 
-  assign s_cmd_sys        = {s_cmd_flush_sys, s_cmd_abort_sys};
+  assign s_cmd_sys = {s_cmd_flush_sys, s_cmd_abort_sys};
   // Commands are consumed in the pixel domain as soon as they cross the CDC.
-  assign s_cmd_rdy_pclk   = !s_fifo_src_clear_busy;
-  assign s_pclk_falling   = s_config_sys[106];
-  assign s_fifo_src_clear = s_cmd_pclk[`DVP_COMMAND_FLUSH] || s_cmd_pclk[`DVP_COMMAND_ABORT];
+  assign s_cmd_rdy_pclk = !s_fifo_src_clear_busy;
+  assign s_pclk_falling = s_cfg_sys[106];
+  assign s_fifo_src_clear = s_cmd_pclk[`RIBP_DVP__COMMAND_FLUSH] ||
+                            s_cmd_pclk[`RIBP_DVP__COMMAND_ABORT];
   assign s_fifo_dst_ready = !s_fifo_dst_clear_busy && (s_stream_en ? rx_axis.tready : s_rx_pop);
-  assign s_fifo_rx_data   = s_fifo_dst_data[31:0];
+  assign s_fifo_rx_data = s_fifo_dst_data[31:0];
   assign s_fifo_empty_sys = !s_fifo_dst_valid;
 
   tc_clk_buf u_dvp_pclk_clk_buf (
@@ -123,13 +124,13 @@ module ribp_dvp (
       .error_flags_i      (s_err_flags_sys),
       .frame_stats_i      (s_frm_stats_sys),
       .frame_stats_valid_i(s_frm_stats_v_sys),
-      .config_o           (s_config_sys),
-      .config_valid_o     (s_cfg_v_sys),
-      .config_ready_i     (s_cfg_rdy_sys),
-      .command_abort_o    (s_cmd_abort_sys),
-      .command_flush_o    (s_cmd_flush_sys),
-      .command_valid_o    (s_cmd_v_sys),
-      .command_ready_i    (s_cmd_rdy_sys),
+      .cfg_o              (s_cfg_sys),
+      .cfg_valid_o        (s_cfg_v_sys),
+      .cfg_ready_i        (s_cfg_rdy_sys),
+      .cmd_abort_o        (s_cmd_abort_sys),
+      .cmd_flush_o        (s_cmd_flush_sys),
+      .cmd_valid_o        (s_cmd_v_sys),
+      .cmd_ready_i        (s_cmd_rdy_sys),
       .rx_pop_o           (s_rx_pop),
       .stream_enable_o    (s_stream_en),
       .irq_o              (irq_o)
@@ -140,7 +141,7 @@ module ribp_dvp (
   ) u_dvp_config_cdc (
       .src_clk_i  (clk_i),
       .src_rst_n_i(rst_n_i),
-      .src_data_i (s_config_sys),
+      .src_data_i (s_cfg_sys),
       .src_valid_i(s_cfg_v_sys),
       .src_ready_o(s_cfg_rdy_sys),
       .dst_clk_i  (s_pclk_sel),
@@ -166,7 +167,7 @@ module ribp_dvp (
   );
 
   cdc_fifo_warm_flush #(
-      .DATA_WIDTH  (DVP_PAYLOAD_WIDTH),
+      .DATA_WIDTH  (DvpPayloadWidth),
       .BUFFER_DEPTH(128)
   ) u_dvp_payload_fifo (
       .src_clk_i       (s_pclk_sel),
@@ -183,8 +184,8 @@ module ribp_dvp (
       .dst_valid_o     (s_fifo_dst_valid),
       .dst_ready_i     (s_fifo_dst_ready)
   );
-  logic [DVP_PAYLOAD_WIDTH-1:0] s_core_push_data;
-  logic                         s_core_push_valid;
+  logic [DvpPayloadWidth-1:0] s_core_push_data;
+  logic                       s_core_push_valid;
   assign s_cmd_core = s_cmd_v_pclk ? s_cmd_pclk : 2'b00;
 
   cdc_sync #(
@@ -276,10 +277,10 @@ module ribp_dvp (
   dvp_core u_dvp_core (
       .clk_i               (s_pclk_sel),
       .rst_n_i             (s_pclk_rst_n),
-      .config_i            (s_cfg_pclk_q),
-      .config_valid_i      (s_cfg_v_pclk),
-      .command_i           (s_cmd_core),
-      .config_ready_o      (s_cfg_rdy_pclk),
+      .cfg_i               (s_cfg_pclk_q),
+      .cfg_valid_i         (s_cfg_v_pclk),
+      .cmd_i               (s_cmd_core),
+      .cfg_ready_o         (s_cfg_rdy_pclk),
       .push_ready_i        (s_fifo_src_ready),
       .push_valid_o        (s_core_push_valid),
       .push_data_o         (s_core_push_data),

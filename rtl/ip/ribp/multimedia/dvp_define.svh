@@ -28,36 +28,36 @@
 `define RIBP_DVP_IP_VERSION              12'h0F8
 `define RIBP_DVP_CAPABILITY              12'h0FC
 
-`define DVP_CTRL_ENABLE                  0
-`define DVP_CTRL_SNAPSHOT                1
-`define DVP_CTRL_CROP_ENABLE             2
-`define DVP_STREAM_ENABLE                0
-`define DVP_FORMAT_SELECT                1:0
-`define DVP_FORMAT_BYTE_SWAP             2
-`define DVP_FORMAT_PIXEL_SWAP            3
-`define DVP_SYNC_VSYNC_LOW               0
-`define DVP_SYNC_HREF_LOW                1
-`define DVP_SYNC_PCLK_FALLING             2
+`define RIBP_DVP__CTRL_ENABLE            0
+`define RIBP_DVP__CTRL_SNAPSHOT          1
+`define RIBP_DVP__CTRL_CROP_ENABLE       2
+`define RIBP_DVP__STREAM_ENABLE          0
+`define RIBP_DVP__FORMAT_SELECT           1:0
+`define RIBP_DVP__FORMAT_BYTE_SWAP       2
+`define RIBP_DVP__FORMAT_PIXEL_SWAP      3
+`define RIBP_DVP__SYNC_VSYNC_LOW          0
+`define RIBP_DVP__SYNC_HREF_LOW           1
+`define RIBP_DVP__SYNC_PCLK_FALLING       2
 
-`define DVP_INTR_FRAME_START             0
-`define DVP_INTR_LINE_DONE               1
-`define DVP_INTR_FRAME_DONE              2
-`define DVP_INTR_OVERFLOW                3
-`define DVP_INTR_SYNC_ERROR              4
-`define DVP_INTR_CONFIG_ERROR            5
-`define DVP_INTR_ABORTED                 6
-`define DVP_INTR_ALL                     7'h7F
+`define RIBP_DVP__INTR_FRAME_START       0
+`define RIBP_DVP__INTR_LINE_DONE         1
+`define RIBP_DVP__INTR_FRAME_DONE        2
+`define RIBP_DVP__INTR_OVERFLOW          3
+`define RIBP_DVP__INTR_SYNC_ERROR        4
+`define RIBP_DVP__INTR_CONFIG_ERROR      5
+`define RIBP_DVP__INTR_ABORTED           6
+`define RIBP_DVP__INTR_ALL               7'h7F
 
-`define DVP_ERROR_OVERFLOW               0
-`define DVP_ERROR_SYNC                   1
-`define DVP_ERROR_SIZE                   2
-`define DVP_ERROR_PARTIAL                3
-`define DVP_ERROR_CONFIG                 4
-`define DVP_ERROR_ABORT                  5
-`define DVP_ERROR_ALL                    6'h3F
+`define RIBP_DVP__ERROR_OVERFLOW         0
+`define RIBP_DVP__ERROR_SYNC             1
+`define RIBP_DVP__ERROR_SIZE             2
+`define RIBP_DVP__ERROR_PARTIAL          3
+`define RIBP_DVP__ERROR_CONFIG           4
+`define RIBP_DVP__ERROR_ABORT            5
+`define RIBP_DVP__ERROR_ALL              6'h3F
 
-`define DVP_COMMAND_ABORT                0
-`define DVP_COMMAND_FLUSH                1
+`define RIBP_DVP__COMMAND_ABORT          0
+`define RIBP_DVP__COMMAND_FLUSH          1
 // verilog_format: on
 
 `endif

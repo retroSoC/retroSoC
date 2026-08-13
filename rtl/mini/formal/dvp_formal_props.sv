@@ -3,12 +3,25 @@
 
 module dvp_formal;
   (* anyseq *) (* gclk *) reg clk_i;
-  wire rst_n_i, f_past_valid, rib_valid, rib_ready, rib_resp_err, irq;
-  wire [31:0] rib_addr, rib_wdata;
-  wire [3:0] rib_wstrb;
-  wire [6:0] intr_state, intr_enable;
-  dvp_formal_design u_design (.*);
-  always @(posedge clk_i) begin
+  logic rst_n_i, f_past_valid, rib_valid, rib_ready, rib_resp_err, irq;
+  logic [31:0] rib_addr, rib_wdata;
+  logic [3:0] rib_wstrb;
+  logic [6:0] intr_state, intr_enable;
+  dvp_formal_design u_design (
+      .clk_i       (clk_i),
+      .rst_n_i     (rst_n_i),
+      .f_past_valid(f_past_valid),
+      .rib_valid   (rib_valid),
+      .rib_addr    (rib_addr),
+      .rib_wdata   (rib_wdata),
+      .rib_wstrb   (rib_wstrb),
+      .rib_ready   (rib_ready),
+      .rib_resp_err(rib_resp_err),
+      .intr_state  (intr_state),
+      .intr_enable (intr_enable),
+      .irq         (irq)
+  );
+  always_ff @(posedge clk_i) begin
     if (rst_n_i) begin
       if (f_past_valid && $past(rst_n_i && rib_valid && !rib_ready)) begin
         assume (rib_valid);

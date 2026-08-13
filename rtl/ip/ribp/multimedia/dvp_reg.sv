@@ -19,24 +19,24 @@ module dvp_reg (
     input  logic [ 5:0]  error_flags_i,
     input  logic [127:0] frame_stats_i,
     input  logic         frame_stats_valid_i,
-    output logic [127:0] config_o,
-    output logic         config_valid_o,
-    output logic         command_abort_o,
-    output logic         command_flush_o,
-    output logic         command_valid_o,
-    input  logic         command_ready_i,
+    output logic [127:0] cfg_o,
+    output logic         cfg_valid_o,
+    output logic         cmd_abort_o,
+    output logic         cmd_flush_o,
+    output logic         cmd_valid_o,
+    input  logic         cmd_ready_i,
     output logic         rx_pop_o,
-    input  logic         config_ready_i,
+    input  logic         cfg_ready_i,
     output logic         stream_enable_o,
     output logic         irq_o
     // verilog_format: on
 );
-  localparam logic [31:0] IP_VERSION = 32'h0002_0000;
-  localparam logic [31:0] CAPABILITY = 32'h0000_3F7F;
-  localparam logic [31:0] CTRL_MASK = 32'h0000_0007;
-  localparam logic [31:0] STREAM_MASK = 32'h0000_0001;
-  localparam logic [31:0] FORMAT_MASK = 32'h0000_000F;
-  localparam logic [31:0] SYNC_MASK = 32'h0000_0007;
+  localparam logic [31:0] IpVersion = 32'h0002_0000;
+  localparam logic [31:0] Capability = 32'h0000_3F7F;
+  localparam logic [31:0] CtrlMask = 32'h0000_0007;
+  localparam logic [31:0] StreamMask = 32'h0000_0001;
+  localparam logic [31:0] FormatMask = 32'h0000_000F;
+  localparam logic [31:0] SyncMask = 32'h0000_0007;
 
   logic        s_req;
   logic        s_write;
@@ -63,13 +63,13 @@ module dvp_reg (
   logic [31:0] s_cfg_sent_q;
   logic [ 1:0] s_cmd_q;
 
-  function automatic logic [31:0] merge_wstrb(input logic [31:0] current, input logic [31:0] value,
-                                              input logic [3:0] strobe);
+  function automatic logic [31:0] merge_wstrb(
+      input logic [31:0] current_i, input logic [31:0] value_i, input logic [3:0] strobe_i);
     logic [31:0] merged;
     begin
-      merged = current;
+      merged = current_i;
       for (int index = 0; index < 4; index++) begin
-        if (strobe[index]) merged[index*8+:8] = value[index*8+:8];
+        if (strobe_i[index]) merged[index*8+:8] = value_i[index*8+:8];
       end
       return merged;
     end
@@ -83,25 +83,25 @@ module dvp_reg (
   assign ribp.ready      = s_ready_q;
   assign ribp.rdata      = s_rdata_q;
   assign ribp.resp_err   = s_resp_err_q;
-  assign stream_enable_o = s_stream_q[`DVP_STREAM_ENABLE];
+  assign stream_enable_o = s_stream_q[`RIBP_DVP__STREAM_ENABLE];
   always_comb begin
-    config_o          = '0;
-    config_o[15:0]    = s_frame_size_q[15:0];
-    config_o[31:16]   = s_frame_size_q[31:16];
-    config_o[47:32]   = s_crop_start_q[15:0];
-    config_o[63:48]   = s_crop_start_q[31:16];
-    config_o[79:64]   = s_crop_size_q[15:0];
-    config_o[95:80]   = s_crop_size_q[31:16];
-    config_o[96]      = s_ctrl_q[`DVP_CTRL_ENABLE];
-    config_o[97]      = s_ctrl_q[`DVP_CTRL_SNAPSHOT];
-    config_o[98]      = s_ctrl_q[`DVP_CTRL_CROP_ENABLE];
-    config_o[99]      = s_stream_q[`DVP_STREAM_ENABLE];
-    config_o[103:100] = s_format_q[3:0];
-    config_o[106:104] = s_sync_q[2:0];
+    cfg_o          = '0;
+    cfg_o[15:0]    = s_frame_size_q[15:0];
+    cfg_o[31:16]   = s_frame_size_q[31:16];
+    cfg_o[47:32]   = s_crop_start_q[15:0];
+    cfg_o[63:48]   = s_crop_start_q[31:16];
+    cfg_o[79:64]   = s_crop_size_q[15:0];
+    cfg_o[95:80]   = s_crop_size_q[31:16];
+    cfg_o[96]      = s_ctrl_q[`RIBP_DVP__CTRL_ENABLE];
+    cfg_o[97]      = s_ctrl_q[`RIBP_DVP__CTRL_SNAPSHOT];
+    cfg_o[98]      = s_ctrl_q[`RIBP_DVP__CTRL_CROP_ENABLE];
+    cfg_o[99]      = s_stream_q[`RIBP_DVP__STREAM_ENABLE];
+    cfg_o[103:100] = s_format_q[3:0];
+    cfg_o[106:104] = s_sync_q[2:0];
   end
-  assign config_valid_o = s_cfg_seq_q != s_cfg_sent_q;
-  assign rx_pop_o = s_accept && !s_write && !stream_enable_o && (s_offset == `RIBP_DVP_RXDATA);
-  assign irq_o = |(s_intr_stat_q & s_intr_en_q);
+  assign cfg_valid_o = s_cfg_seq_q != s_cfg_sent_q;
+  assign rx_pop_o    = s_accept && !s_write && !stream_enable_o && (s_offset == `RIBP_DVP_RXDATA);
+  assign irq_o       = |(s_intr_stat_q & s_intr_en_q);
 
   always_comb begin
     s_access_err = !s_aligned;
@@ -130,8 +130,8 @@ module dvp_reg (
         `RIBP_DVP_INTR_ENABLE: s_rdata_d = {25'd0, s_intr_en_q};
         `RIBP_DVP_INTR_STATUS: s_rdata_d = {25'd0, s_intr_stat_q & s_intr_en_q};
         `RIBP_DVP_INTR_TEST: s_access_err = !s_write;
-        `RIBP_DVP_IP_VERSION: s_rdata_d = IP_VERSION;
-        `RIBP_DVP_CAPABILITY: s_rdata_d = CAPABILITY;
+        `RIBP_DVP_IP_VERSION: s_rdata_d = IpVersion;
+        `RIBP_DVP_CAPABILITY: s_rdata_d = Capability;
         `RIBP_DVP_COMMAND: s_access_err = !s_write;
         default: s_access_err = 1'b1;
       endcase
@@ -150,9 +150,9 @@ module dvp_reg (
     s_resp_err_d = s_accept && s_access_err;
   end
 
-  assign command_valid_o = |s_cmd_q;
-  assign command_abort_o = s_cmd_q[`DVP_COMMAND_ABORT];
-  assign command_flush_o = s_cmd_q[`DVP_COMMAND_FLUSH];
+  assign cmd_valid_o = |s_cmd_q;
+  assign cmd_abort_o = s_cmd_q[`RIBP_DVP__COMMAND_ABORT];
+  assign cmd_flush_o = s_cmd_q[`RIBP_DVP__COMMAND_FLUSH];
 
   always_comb begin
     s_ctrl_d       = s_ctrl_q;
@@ -166,19 +166,19 @@ module dvp_reg (
     if (s_accept && s_write && !s_access_err) begin
       unique case (s_offset)
         `RIBP_DVP_CTRL: begin
-          s_ctrl_d    = merge_wstrb(s_ctrl_q, ribp.wdata, ribp.wstrb) & CTRL_MASK;
+          s_ctrl_d    = merge_wstrb(s_ctrl_q, ribp.wdata, ribp.wstrb) & CtrlMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
         `RIBP_DVP_STREAM_CTRL: begin
-          s_stream_d  = merge_wstrb(s_stream_q, ribp.wdata, ribp.wstrb) & STREAM_MASK;
+          s_stream_d  = merge_wstrb(s_stream_q, ribp.wdata, ribp.wstrb) & StreamMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
         `RIBP_DVP_FORMAT: begin
-          s_format_d  = merge_wstrb(s_format_q, ribp.wdata, ribp.wstrb) & FORMAT_MASK;
+          s_format_d  = merge_wstrb(s_format_q, ribp.wdata, ribp.wstrb) & FormatMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
         `RIBP_DVP_SYNC_CFG: begin
-          s_sync_d    = merge_wstrb(s_sync_q, ribp.wdata, ribp.wstrb) & SYNC_MASK;
+          s_sync_d    = merge_wstrb(s_sync_q, ribp.wdata, ribp.wstrb) & SyncMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
         `RIBP_DVP_FRAME_SIZE: begin
@@ -261,8 +261,8 @@ module dvp_reg (
       s_word_cnt_q  <= '0;
       s_drop_cnt_q  <= '0;
     end else begin
-      if (config_valid_o && config_ready_i) s_cfg_sent_q <= s_cfg_seq_q;
-      if (command_valid_o && command_ready_i) s_cmd_q <= '0;
+      if (cfg_valid_o && cfg_ready_i) s_cfg_sent_q <= s_cfg_seq_q;
+      if (cmd_valid_o && cmd_ready_i) s_cmd_q <= '0;
       if (s_accept && s_write && !s_access_err && (s_offset == `RIBP_DVP_COMMAND)) begin
         s_cmd_q <= s_cmd_q | ribp.wdata[1:0];
       end
@@ -270,10 +270,10 @@ module dvp_reg (
                  ~((s_accept && s_write && (s_offset == `RIBP_DVP_ERROR_STATUS))
                        ? ribp.wdata[5:0]
                        : 6'd0);
-      if (frame_start_i) s_intr_stat_q[`DVP_INTR_FRAME_START] <= 1'b1;
-      if (line_done_i) s_intr_stat_q[`DVP_INTR_LINE_DONE] <= 1'b1;
-      if (frame_done_i) s_intr_stat_q[`DVP_INTR_FRAME_DONE] <= 1'b1;
-      if (error_event_i) s_intr_stat_q[`DVP_INTR_OVERFLOW] <= 1'b1;
+      if (frame_start_i) s_intr_stat_q[`RIBP_DVP__INTR_FRAME_START] <= 1'b1;
+      if (line_done_i) s_intr_stat_q[`RIBP_DVP__INTR_LINE_DONE] <= 1'b1;
+      if (frame_done_i) s_intr_stat_q[`RIBP_DVP__INTR_FRAME_DONE] <= 1'b1;
+      if (error_event_i) s_intr_stat_q[`RIBP_DVP__INTR_OVERFLOW] <= 1'b1;
       if (s_accept && s_write && (s_offset == `RIBP_DVP_INTR_STATE))
         s_intr_stat_q <= s_intr_stat_q & ~ribp.wdata[6:0];
       if (s_accept && s_write && (s_offset == `RIBP_DVP_INTR_ENABLE))

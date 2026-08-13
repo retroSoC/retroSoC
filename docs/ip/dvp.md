@@ -136,3 +136,30 @@ AXI transactions, frame descriptor rings, line stride configuration, JPEG or
 other compressed formats, external sync metadata, or multiple camera clocks.
 Those features require a versioned ABI extension and explicit SoC routing;
 existing register fields must not be repurposed for them.
+
+## RTL Coding-Style Migration
+
+The current DVP maintenance pass is limited to source organization and naming;
+it does not change the register ABI, RIBP timing, AXI4-Stream framing, CDC
+topology, pixel packing, interrupt behavior, or error semantics. Register
+address macros retain their `RIBP_DVP_*` names so the software HAL remains
+compatible. Internal field macros use the `RIBP_DVP__*` namespace, and local
+parameters use UpperCamelCase. Internal configuration and command paths use
+the project abbreviations `cfg` and `cmd`, while public RIBP and AXI4-Stream
+interfaces remain unchanged.
+
+Owned DVP modules use explicit named-port connections. Module ports and macro
+definitions are manually column-aligned only inside narrow
+`verilog_format: off/on` regions where Verible cannot preserve the alignment;
+ordinary declarations, assignments, and instances remain formatter-managed.
+The `dvp_camera` simulation model follows the same naming and named-port
+rules. Its delayed falling-edge assignment is intentionally retained because
+it models camera HREF timing and is not synthesizable IP behavior.
+
+The local validation entry points are:
+
+```sh
+python3 -m pytest -q tests/test_dvp.py
+make CONFIG=configs/ci/ihp130.mk formal-dvp
+make format-check rtl-style-check-all rtl-readiness-check-all
+```
