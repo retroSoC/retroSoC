@@ -122,8 +122,7 @@ module dvp_tb;
     repeat (50) @(posedge pclk_i);
     check_frame(2, 4, 4);
     read(32'h0000_0024, value);
-    if (value == 0)
-      $fatal(1, "frame count/beats invalid count=%h beats=%0d", value, beats);
+    if (value == 0) $fatal(1, "frame count/beats invalid count=%h beats=%0d", value, beats);
     write(32'h0000_0018, {16'd2, 16'd3});
     check_frame(1, 3, 2);
     write(32'h0000_0048, 32'h0000_0004);
