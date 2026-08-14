@@ -6,6 +6,7 @@ module ribp_topology_tb;
   logic clk_i = 1'b0;
   logic rst_n_i = 1'b0;
   ribp_if ribp ();
+  ribp_if sdram_cfg_ribp ();
 
   `include "ribp_interfaces.svh"
   `include "ribp_routes.svh"
@@ -92,7 +93,7 @@ module ribp_topology_tb;
     u_dma_ribp_if.ready         = 1'b1;
     u_sysctrl_ribp_if.ready     = 1'b1;
     u_clint_ribp_if.ready       = 1'b1;
-    u_sdram_ribp_if.ready       = 1'b1;
+    sdram_cfg_ribp.ready        = 1'b1;
     u_dvp_ribp_if.ready         = 1'b1;
     u_sdio_ribp_if.ready        = 1'b1;
     u_opipsram_ribp_if.ready    = 1'b1;
@@ -111,7 +112,7 @@ module ribp_topology_tb;
     u_dma_ribp_if.rdata         = 32'hAAAA_AAAA;
     u_sysctrl_ribp_if.rdata     = 32'hBBBB_BBBB;
     u_clint_ribp_if.rdata       = 32'hCCCC_CCCC;
-    u_sdram_ribp_if.rdata       = 32'hDDDD_DDDD;
+    sdram_cfg_ribp.rdata        = 32'hDDDD_DDDD;
     u_dvp_ribp_if.rdata         = 32'hEEEE_EEEE;
     u_sdio_ribp_if.rdata        = 32'hF0F0_F0F0;
     u_opipsram_ribp_if.rdata    = 32'h0F0F_0F0F;
@@ -130,7 +131,7 @@ module ribp_topology_tb;
     u_dma_ribp_if.resp_err      = 1'b0;
     u_sysctrl_ribp_if.resp_err  = 1'b0;
     u_clint_ribp_if.resp_err    = 1'b0;
-    u_sdram_ribp_if.resp_err    = 1'b0;
+    sdram_cfg_ribp.resp_err     = 1'b0;
     u_dvp_ribp_if.resp_err      = 1'b0;
     u_sdio_ribp_if.resp_err     = 1'b0;
     u_opipsram_ribp_if.resp_err = 1'b0;
@@ -141,8 +142,8 @@ module ribp_topology_tb;
 
     expect_route(`SOC_ADDR_RIBP_GPIO_BASE, 1, 32'h1111_1111);
     expect_route(`SOC_ADDR_RIBP_GPIO_ADMIN_BASE, 1, 32'h1111_1111);
-    expect_route(`SOC_ADDR_PSRAM_BASE, 4, 32'h4444_4444);
-    expect_route(`SOC_ADDR_FLASH_BASE, 9, 32'h9999_9999);
+    expect_route(`SOC_ADDR_RIBP_PSRAM_BASE, 4, 32'h4444_4444);
+    expect_route(`SOC_ADDR_RIBP_XPI_BASE, 9, 32'h9999_9999);
     expect_route(`SOC_ADDR_RIBP_I2C1_BASE, 17, 32'h1234_5678);
     expect_disabled(`SOC_ADDR_RIBP_SDIO_BASE);
     u_gpio_ribp_if.resp_err = 1'b1;

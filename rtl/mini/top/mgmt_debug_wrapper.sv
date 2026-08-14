@@ -11,7 +11,7 @@
 // Hazard3 JTAG-DTM and Debug Module integration. The Debug Module is in the
 // management-core clock domain and exposes abstract commands only (no SBA).
 module mgmt_debug_wrapper #(
-    parameter logic [31:0] JTAG_IDCODE = 32'hDEAD_BEEF
+    parameter logic [31:0] JtagIdcode = 32'hDEAD_BEEF
 ) (
     input  logic clk_i,
     input  logic rst_n_i,
@@ -85,7 +85,7 @@ module mgmt_debug_wrapper #(
   );
 
   hazard3_jtag_dtm #(
-      .IDCODE(JTAG_IDCODE)
+      .IDCODE(JtagIdcode)
   ) u_hazard3_jtag_dtm (
       .tck             (s_jtag_tck_buf),
       .trst_n          (s_jtag_trst_n_sync),

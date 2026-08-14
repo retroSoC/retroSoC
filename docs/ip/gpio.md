@@ -1,6 +1,6 @@
 # GPIO Controller
 
-The Mini SoC GPIO V2 block controls 32 bidirectional pads. It provides
+The Mini SoC GPIO block controls 32 bidirectional pads. It provides
 software, alternate-function, and user-IP ownership modes, atomic output and
 output-enable commands, open-drain operation, synchronized and optionally
 filtered inputs, per-pin interrupts, irreversible configuration locks, and

@@ -22,7 +22,7 @@ baseline. Required-rule deviations need reviewed records in
 
 For build changes, use a committed profile and keep generated files below `build/` or `.cache/`.
 Do not add new downloads directly to workflow YAML or setup scripts. Add the source or archive to
-`config/dependencies.lock.json`, use the shared dependency helpers, and include a full Git commit or
+`dependencies/dependencies.lock.json`, use the shared dependency helpers, and include a full Git commit or
 SHA-256 checksum.
 
 The supported pull-request regression is:

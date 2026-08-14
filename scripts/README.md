@@ -6,7 +6,7 @@ quality checks, metrics, packaging, and cleanup.
 
 Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
-behavior controlled by `config/dependencies.lock.json`.
+behavior controlled by `dependencies/dependencies.lock.json`.
 
 `development_environment.py` is the shared Docker, Nix, and manual bootstrap
 entry point. It installs only the checksum-verified open-source tool bundles and
@@ -31,6 +31,25 @@ RISC-V GDB, then records their logs and a structured result. Invoke it through
 `make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim`; see
 [`../docs/hazard3-debug.md`](../docs/hazard3-debug.md) for its scope and
 limitations.
+
+`check_rtl_style.py` applies the ownership-aware RTL style rules from
+[`../rtl/rtl_style_manifest.json`](../rtl/rtl_style_manifest.json). The CI
+target checks changed self-owned RTL for positional module connections, legacy
+constructs, and the staged naming contract. `rtl-style-check-all` retains the
+historical full-tree structural baseline while naming debt is migrated in
+module-sized batches. Existing findings must not be expanded by a new change.
+
+`migrate_rtl_connections.py` is the conservative migration helper for legacy
+positional instances. It discovers ANSI-style module declarations in the
+production RTL and locked technology/IP trees, rewrites only exact positional
+parameter and port lists to named connections, and reports ambiguous instances
+without modifying them. Run `make rtl-migrate-connections`, then
+`make rtl-format rtl-style-check`; review the generated diff before committing.
+
+`migrate_rtl_names.py` shortens only local identifiers beginning with `s_` or
+`r_` (plus local automatic variables such as `read_request`). Public module
+ports and interface fields are intentionally unchanged. Run
+`make rtl-migrate-names`, then format and lint the resulting diff.
 
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the

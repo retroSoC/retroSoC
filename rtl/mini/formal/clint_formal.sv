@@ -56,7 +56,7 @@ module clint_formal_design (
   assign timer_irq         = s_timer_irq;
 
   clint_reg #(
-      .HART_NUM(2)
+      .HartNum(2)
   ) u_clint_reg (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
@@ -69,7 +69,7 @@ module clint_formal_design (
   );
 
   clint_core #(
-      .HART_NUM(2)
+      .HartNum(2)
   ) u_clint_core (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),

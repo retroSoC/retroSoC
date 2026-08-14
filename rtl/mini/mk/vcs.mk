@@ -11,8 +11,8 @@ COMP_LOG        := -l compile.log
 SIM_LOG         := -l sim.log
 # netlist file path
 NETLIST_PATH := -v $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
-POST_PATH    := -v $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
-SDF_PATH     := "$(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz"
+POST_PATH    := -v $(ROOT_PATH)/physical/sdf/retrosoc_asic.v
+SDF_PATH     := "$(ROOT_PATH)/physical/sdf/retrosoc_asic_CTS_MIN.sdf.gz"
 # testbench filelist
 TB_FLIST := -f $(GENERATED_FL_DIR)/tb.fl
 
@@ -75,7 +75,7 @@ $(VCS_POST_SIMV): DIR   := $(VCS_POST_DIR)
 $(VCS_POST_SIMV): FLIST := $(POST_PATH) $(NET_FLIST) $(TB_FLIST)
 $(VCS_POST_SIMV): OPTS  := $(POST_OPTS)
 $(VCS_POST_SIMV): DEPFILE := $(VCS_POST_DEPFILE)
-$(VCS_POST_SIMV): DEPS_ARGS := $(NET_FLIST) -f $(GENERATED_FL_DIR)/tb.fl --extra $(ROOT_PATH)/pd/sdf/retrosoc_asic.v --extra $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
+$(VCS_POST_SIMV): DEPS_ARGS := $(NET_FLIST) -f $(GENERATED_FL_DIR)/tb.fl --extra $(ROOT_PATH)/physical/sdf/retrosoc_asic.v --extra $(ROOT_PATH)/physical/sdf/retrosoc_asic_CTS_MIN.sdf.gz
 
 sim:      DIR   := $(VCS_BEHV_DIR)
 netsim:   DIR   := $(VCS_NETL_DIR)
@@ -102,7 +102,7 @@ $(VCS_BEHV_SIMV) $(VCS_NETL_SIMV) $(VCS_POST_SIMV): $(MPW_VARIANT_STAMP) $(FILEL
 	$(FLOW_PYTHON) $(RTL_PATH)/script/filelist_deps.py $(DEPS_ARGS) --target $@ --output $(DEPFILE)
 
 $(VCS_NETL_SIMV): $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
-$(VCS_POST_SIMV): $(ROOT_PATH)/pd/sdf/retrosoc_asic.v $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
+$(VCS_POST_SIMV): $(ROOT_PATH)/physical/sdf/retrosoc_asic.v $(ROOT_PATH)/physical/sdf/retrosoc_asic_CTS_MIN.sdf.gz
 
 sim netsim postsim:
 	$(FLOW_PYTHON) $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(DIR) \

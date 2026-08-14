@@ -56,7 +56,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "`define CPU_RESET_ADDR `SOC_CPU_RESET_ADDR" in rtl
     assert "`define SOC_ADDR_IS_RESERVED(addr)" in rtl
     assert "RS_SOC_PSRAM_SIZE UINT32_C(0x00800000)" in header
-    assert "RS_SOC_SDRAM_SIZE UINT32_C(0x02000000)" in header
+    assert "RS_SOC_SDRAM_SIZE UINT32_C(0x04000000)" in header
     assert "RS_SOC_SPISD_SIZE UINT32_C(0x40000000)" in header
     assert "#ifdef __ASSEMBLER__" in header
     assert "#define UINT32_C(value) value" in header
@@ -148,6 +148,7 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
                 f"+incdir+{tmp_path / 'rtl'}",
                 f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ram_if.sv"),
                 str(ROOT / "rtl/mini/top/rib_if.sv"),
@@ -210,8 +211,8 @@ def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> Non
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/pll_ctrl_if.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv"),
+                str(ROOT / "rtl/ip/peripheral/pll_ctrl_if.sv"),
+                str(ROOT / "rtl/ip/peripheral/sysctrl.sv"),
                 str(ROOT / "tests/rtl/sysctrl_fault_tb.sv"),
                 "",
             ]
@@ -264,9 +265,9 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                 str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/counter.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/edge_det.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/pll_ctrl_if.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/clint_timebase.sv"),
-                str(ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv"),
+                str(ROOT / "rtl/ip/peripheral/pll_ctrl_if.sv"),
+                str(ROOT / "rtl/ip/peripheral/clint_timebase.sv"),
+                str(ROOT / "rtl/ip/peripheral/sysctrl.sv"),
                 str(ROOT / "rtl/tech/tc_clk.sv"),
                 str(ROOT / "rtl/tech/tc_pll.sv"),
                 str(ROOT / "rtl/mini/top/rcu.sv"),
@@ -337,7 +338,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
 
 
 def test_sysctrl_does_not_expose_unused_i2c_or_qspi_select_registers() -> None:
-    rtl = (ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv").read_text(encoding="utf-8")
+    rtl = (ROOT / "rtl/ip/peripheral/sysctrl.sv").read_text(encoding="utf-8")
     header = (ROOT / "crt/include/retrosoc/core/soc.h").read_text(encoding="utf-8")
 
     for symbol in (

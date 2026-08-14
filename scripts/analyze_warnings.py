@@ -63,6 +63,7 @@ def normalize(root: Path, identifier: str, message: str) -> str:
         value,
     )
     value = value.replace(resolved_root, "$ROOT")
+    value = value.replace("$ROOT/physical/pdk/", "$ROOT/pdk/")
     value = GENERATED_MPW_PATH_RE.sub(_normalize_generated_mpw_path, value)
     value = LOCATION_RE.sub(lambda match: match.group("path") + ":<line>", value)
     value = re.sub(r"\s+", " ", value)

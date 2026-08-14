@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "name": "owned-rtl",
+      "paths": [
+        "rtl/ip",
+        "rtl/mini/top"
+      ],
+      "status": "prototype",
+      "baseline_revision": null,
+      "configuration_digest": null,
+      "configuration_profiles": [
+        "all"
+      ],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "ClusterIP Common register primitives are the default storage boundary",
+        "reset": "rst_n_i is active-low; reset and enable precedence is documented per module",
+        "clock_enable": "register enables are explicit and visible to synthesis",
+        "memory": "infer or instantiate memories according to the selected PDK profile",
+        "pipeline": "critical pipeline boundaries are documented by the owning IP"
+      },
+      "waivers": []
+    }
+  ]
+}

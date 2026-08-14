@@ -22,7 +22,7 @@ jobs:
           path: |
             app/coremark/coremark-main
             app/fatfs/ff16
-            pdk/IHP-Open-PDK
+            physical/pdk/IHP-Open-PDK
             rtl/managed/clusterip/archinfo
             rtl/managed/clusterip/clint
             rtl/managed/clusterip/common
@@ -35,12 +35,11 @@ jobs:
             rtl/managed/clusterip/rng
             rtl/managed/clusterip/rtc
             rtl/managed/clusterip/spi
-            rtl/managed/clusterip/uart
             rtl/managed/clusterip/wdg
             rtl/managed/third_party
             rtl/managed/mpw
             .cache/retrosoc/stamps
-          key: sources-${{ runner.os }}-${{ hashFiles('config/dependencies.lock.json') }}
+          key: sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Install build Python dependency
         run: python3 -m pip install --requirement requirements/build.txt

@@ -20,19 +20,26 @@ the root README and subsystem guides.
   planned product targets, claim gates, and commercial reference points.
 - [rib-interconnect.md](rib-interconnect.md) defines the RIB v1 linear-burst
   contract, compatibility boundaries, target status, and verification.
+- [axi4-interconnect.md](axi4-interconnect.md) defines the active Mini SoC AXI4
+  subset, arbitration, target, access-control, error, and performance contract.
+- [axi4-sdram-performance.md](axi4-sdram-performance.md) describes common
+  high-performance AXI4 SDRAM optimization techniques and the recommended
+  evolution path for retroSoC.
+- [axi4-stream.md](axi4-stream.md) defines the DMA, I2S, and DVP AXI4-Stream
+  data paths, PIO fallback, register controls, and backpressure contract.
 - [ip/ws2812.md](ip/ws2812.md) defines the WS2812 transmitter register ABI,
   timing, FIFO, interrupt, DMA, and integration contracts.
 - [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,
   counting modes, interrupt, debug-freeze, HAL, and verification contracts.
 - [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed
   timebase, RV32 access rules, interrupt behavior, and verification contract.
-- [ip/gpio.md](ip/gpio.md) defines the GPIO V2 dual-window ABI, pad ownership,
+- [ip/gpio.md](ip/gpio.md) defines the GPIO dual-window ABI, pad ownership,
   filtering, interrupts, PDK capabilities, HAL, and verification contract.
-- [ip/uart.md](ip/uart.md) defines the UART V2 framing, FIFO, error, interrupt,
-  DMA, HAL, and verification contracts.
-- [ip/i2c.md](ip/i2c.md) defines the dual I2C V2 command, timing, error,
+- [ip/uart.md](ip/uart.md) defines the UART framing, FIFO, RTS/CTS flow
+  control, error, interrupt, DMA, HAL, and verification contracts.
+- [ip/i2c.md](ip/i2c.md) defines the dual I2C command, timing, error,
   recovery, DMA, HAL, and verification contracts.
-- [ip/ps2.md](ip/ps2.md) defines the Mini SoC PS/2 V2 APB, GPIO pad,
+- [ip/ps2.md](ip/ps2.md) defines the Mini SoC PS/2 APB, GPIO pad,
   interrupt, SDK, and managed-IP integration contract.
 - The managed [RTC V2 datasheet](../rtl/managed/clusterip/rtc/doc/datasheet.md)
   defines Epoch time, alarms, periodic wake, calibration, CDC, and software.

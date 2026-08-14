@@ -58,9 +58,9 @@ module i2c_formal_design (
   assign rib_resp_err    = ribp.resp_err;
   assign command_count   = u_dut.u_i2c_reg.s_cmd_count;
   assign rx_count        = u_dut.u_i2c_reg.s_rx_count;
-  assign error_status    = u_dut.u_i2c_reg.s_error_status_q;
+  assign error_status    = u_dut.u_i2c_reg.s_err_stat_q;
   assign intr_state      = u_dut.u_i2c_reg.s_intr_state_q;
-  assign intr_enable     = u_dut.u_i2c_reg.s_intr_enable_q;
+  assign intr_enable     = u_dut.u_i2c_reg.s_intr_en_q;
   assign command_valid   = u_dut.s_cmd_valid;
   assign command_pop     = u_dut.s_cmd_pop;
   assign rx_full         = u_dut.s_rx_full;

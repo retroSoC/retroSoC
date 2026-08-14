@@ -33,8 +33,7 @@ module retrosoc_tb;
   wire        s_jtag_tdi;
   wire        s_jtag_trst_n;
   wire        s_uart0_tx;
-  // for handle x-prop issue
-  wire        s_uart0_rx = 1'b1;
+  wire        s_uart0_rx;
   tri1        s_gpio_0_io;
   tri1        s_gpio_1_io;
   wire        s_psram_sck;
@@ -135,11 +134,15 @@ module retrosoc_tb;
   );
 
 
-  rs232 #(
-      .BAUD_RATE(921600)
-  ) u_rs232_0 (
-      .rs232_rx_i(s_uart0_tx),
-      .rs232_tx_o()
+  uart_model #(
+      .BAUD_RATE   (921600),
+      .LOOPBACK    (1'b0),
+      .FLOW_CONTROL(1'b0)
+  ) u_uart_model_0 (
+      .uart_tx_i   (s_uart0_tx),
+      .uart_rts_n_i(s_gpio_1_io),
+      .uart_rx_o   (s_uart0_rx),
+      .uart_cts_n_o(s_gpio_0_io)
   );
 
 
@@ -172,11 +175,11 @@ module retrosoc_tb;
   );
 
 
-  DVP_CAMERA u_DVP_CAMERA (
-      .pclk (s_dvp_pclk),
-      .href (s_dvp_href),
-      .vsync(s_dvp_vsync),
-      .data (s_dvp_data)
+  dvp_camera u_dvp_camera (
+      .pclk_o (s_dvp_pclk),
+      .href_o (s_dvp_href),
+      .vsync_o(s_dvp_vsync),
+      .dat_o  (s_dvp_data)
   );
 
 

@@ -1,4 +1,4 @@
-"""RIBP Timer V2 RTL regression tests."""
+"""RIBP Timer RTL regression tests."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
+PERIPHERAL = ROOT / "rtl/ip/peripheral"
 def test_timer_modes_interrupts_and_errors(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
@@ -57,4 +57,4 @@ def test_timer_modes_interrupts_and_errors(tmp_path: Path) -> None:
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "RIBP Timer V2 register, mode, interrupt, and error test passed" in result.stdout
+    assert "RIBP Timer register, mode, interrupt, and error test passed" in result.stdout

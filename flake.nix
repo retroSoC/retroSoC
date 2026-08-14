@@ -17,7 +17,7 @@
         runtimeInputs = [ pkgs.coreutils ];
         text = ''
           root="$PWD"
-          if [ ! -f "$root/config/dependencies.lock.json" ]; then
+          if [ ! -f "$root/dependencies/dependencies.lock.json" ]; then
             echo "retrosoc-dev: run this command from a retroSoC checkout" >&2
             exit 2
           fi

@@ -9,7 +9,7 @@ module clint_tb;
   logic   [31:0] value;
   integer        timebase_tick_count = 0;
   ribp_if ribp ();
-  clint_if #(.HART_NUM(2)) clint ();
+  clint_if #(.HartNum(2)) clint ();
 
   always #5 clk_i = ~clk_i;
   always #2 ref_clk_i = ~ref_clk_i;
@@ -19,8 +19,8 @@ module clint_tb;
   end
 
   clint_timebase #(
-      .REF_CLK_HZ (4),
-      .TIMEBASE_HZ(1)
+      .RefClkHz  (4),
+      .TimebaseHz(1)
   ) u_timebase (
       .ref_clk_i  (ref_clk_i),
       .ref_rst_n_i(rst_n_i),
@@ -30,7 +30,7 @@ module clint_tb;
   );
 
   ribp_clint #(
-      .HART_NUM(2)
+      .HartNum(2)
   ) u_dut (
       .clk_i,
       .rst_n_i,

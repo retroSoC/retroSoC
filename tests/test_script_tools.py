@@ -118,8 +118,10 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     )
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     hazard3 = (tmp_path / "core_hazard3.fl").read_text(encoding="utf-8")
+    ihp130 = (tmp_path / "pdk_ihp130.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
     assert str(ROOT / "rtl/managed/hazard3/hdl") in hazard3
+    assert str(ROOT / "physical/pdk/IHP-Open-PDK") in ihp130
     assert "rtl/managed/mpw/core/username3" not in hazard3
     assert (tmp_path / "core_hazard3.fl").is_file()
     assert not (tmp_path / "core_picorv32.fl").exists()
@@ -147,7 +149,7 @@ def test_filelist_round_trips_verilog_define_values(tmp_path: Path) -> None:
 
 
 def test_source_export_uses_the_fixed_hazard3_management_core(tmp_path: Path) -> None:
-    module_path = ROOT / "syn/tools/export_soc_sources.py"
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
     spec = importlib.util.spec_from_file_location("retrosoc_source_export", module_path)
     assert spec is not None and spec.loader is not None
     source_export = importlib.util.module_from_spec(spec)
@@ -254,25 +256,25 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/top/rib2apb.sv" in rib2apb.files
     assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
-    assert ROOT / "rtl/ip/ribp/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
-    assert ROOT / "rtl/ip/ribp/peripheral/gpio_core.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/peripheral/gpio_reg.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/peripheral/ribp_gpio.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/peripheral/user_gpio_if.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/gpio_core.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/gpio_reg.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/ribp_gpio.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/user_gpio_if.sv" in gpio.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio.files
     assert ROOT / "rtl/mini/formal/gpio_formal.sv" in gpio.files
-    assert ROOT / "rtl/ip/ribp/serial/ribp_ws2812.sv" in ws2812.files
+    assert ROOT / "rtl/ip/serial/ribp_ws2812.sv" in ws2812.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
     assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
-    assert ROOT / "rtl/ip/ribp/serial/ribp_i2c.sv" in i2c.files
-    assert ROOT / "rtl/ip/ribp/serial/i2c_filter.sv" in i2c.files
+    assert ROOT / "rtl/ip/serial/ribp_i2c.sv" in i2c.files
+    assert ROOT / "rtl/ip/serial/i2c_filter.sv" in i2c.files
     assert ROOT / "rtl/mini/formal/i2c_formal.sv" in i2c.files
-    assert ROOT / "rtl/ip/ribp/peripheral/ribp_clint.sv" in clint.files
+    assert ROOT / "rtl/ip/peripheral/ribp_clint.sv" in clint.files
     assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
 
 
@@ -584,7 +586,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -599,7 +601,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/ribp/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -607,7 +609,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
 
 
 def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path) -> None:
-    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    lock = load_lock(ROOT / "dependencies/dependencies.lock.json")
     assert lock["schema_version"] == 1
     assert len(lock["sources"]["mpw"]["revision"]) == 40
     assert lock["sources"]["hazard3"]["destination"] == "rtl/managed/hazard3"
@@ -620,7 +622,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         sys.executable,
         str(ROOT / "scripts/config_key.py"),
         "--lock",
-        str(ROOT / "config/dependencies.lock.json"),
+        str(ROOT / "dependencies/dependencies.lock.json"),
         "--profile",
         "unit",
         "--timestamp",
@@ -664,7 +666,7 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
 
 
 def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None:
-    lock_path = ROOT / "config/dependencies.lock.json"
+    lock_path = ROOT / "dependencies/dependencies.lock.json"
     lock = load_lock(lock_path)
     cache = tmp_path / "development"
     stamp = stamp_data(ROOT, cache, DEFAULT_TOOLS, lock, lock_path)
@@ -678,7 +680,7 @@ def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None
 
 
 def test_container_and_nix_environment_files_use_locked_inputs() -> None:
-    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    lock = load_lock(ROOT / "dependencies/dependencies.lock.json")
     dockerfile = (ROOT / "docker/Dockerfile").read_text(encoding="utf-8")
     flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
     sbom = make_sbom(lock)
@@ -737,13 +739,13 @@ def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
     assert "CORE_$(CORE)" not in makefile
     assert "`ifdef CORE_" not in wrapper
     assert "`ifdef HAVE_DEBUG" not in wrapper
-    assert "ahbl2ribp u_ahbl2ribp" in wrapper
+    assert "ahbl2axi4 u_ahbl2axi4" in wrapper
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
     assert ".DEBUG_SUPPORT      (1)" in wrapper
 
 
 def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
-    lock = load_lock(ROOT / "config/dependencies.lock.json")
+    lock = load_lock(ROOT / "dependencies/dependencies.lock.json")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
     debug_wrapper = (ROOT / "rtl/mini/top/mgmt_debug_wrapper.sv").read_text(encoding="utf-8")
@@ -1302,6 +1304,22 @@ def test_warning_normalization_keeps_ranges_and_removes_variant_hash(tmp_path: P
     normalized = normalize(tmp_path, "WIDTH", message)
     assert normalized == (
         "WIDTH:$BUILD/generated/core.sv:<line>: Bit extraction of var[7:0] is too wide"
+    )
+
+
+def test_warning_normalization_preserves_pdk_signatures(tmp_path: Path) -> None:
+    message = (
+        f"{tmp_path}/physical/pdk/IHP-Open-PDK/ihp-sg13g2/"
+        "libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v:42: "
+        "Ignoring unsupported specify block"
+    )
+
+    normalized = normalize(tmp_path, "SPECIFYIGN", message)
+
+    assert normalized == (
+        "SPECIFYIGN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/"
+        "libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v:<line>: "
+        "Ignoring unsupported specify block"
     )
 
 

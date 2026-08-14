@@ -302,7 +302,7 @@ module i2c_tb;
     if (i2c.scl_o !== 1'b0 || i2c.sda_o !== 1'b0) begin
       $fatal(1, "I2C pads are not open-drain constants");
     end
-    $display("I2C V2 transfer, error, stretch, arbitration, and recovery test passed");
+    $display("I2C transfer, error, stretch, arbitration, and recovery test passed");
     $finish;
   end
 

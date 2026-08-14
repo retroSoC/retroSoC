@@ -6,6 +6,9 @@
 // waiver at the SoC integration boundary without modifying the dependency.
 
 /* verilator lint_off DECLFILENAME */
+/* verilator lint_off SYNCASYNCNET */
 `include "cdc_fifo.sv"
 `include "async_reqack.sv"
+`include "cdc_warm_flush.sv"
+/* verilator lint_on SYNCASYNCNET */
 /* verilator lint_on DECLFILENAME */

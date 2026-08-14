@@ -3,11 +3,12 @@
 `soc_topology.json` is the source of truth for internal Mini SoC integration
 that is not part of the software address-map ABI or the package pad map.
 
-The topology generator validates rib RIB and APB target ownership against
+The topology generator validates RIBP configuration and APB target ownership against
 `../address_map/memory_map.json` and emits generated SystemVerilog include
-files for `ip_ribp_wrapper.sv`, `ip_apb_wrapper.sv`, `rib2apb.sv`, and
-`retrosoc.sv`. The output retains scalar interface instances and ports, so it
-does not depend on interface-array support in FPGA or netlist simulation tools.
+files for `ip_ribp_wrapper.sv`, `ip_apb_wrapper.sv`, `axi42apb.sv`, and
+`retrosoc.sv`. Generated fabric links are explicit 32-bit AXI4 interfaces.
+Interface arrays are confined to the AXI4 bus implementation and flattened by
+the existing synthesis/export flow before FPGA or netlist simulation.
 
 The `ribp_targets` list uses stable response slots. Every active RIBP
 memory-map region must appear exactly once. Disabled targets keep their slot
@@ -41,9 +42,10 @@ design IDs, module names, slots, and reset type. `scripts/generate_mpw.py`
 verifies that both descriptions agree before RTL generation.
 `generate_user_extensions.py` then creates isolated default routing and one
 explicit instance per selected slot for `user_core_top.sv` and `user_ip_top.sv`.
-User cores use `ribp_if.master ribp`; user IPs use `user_gpio_if.user_ip gpio`
-and APB4. This prevents legacy RIB/NMI and electrical pad-control contracts
-from entering the SoC muxes.
+User cores keep `ribp_if.master ribp` at the extension ABI and are converted to
+AXI4 after selection; user IPs use `user_gpio_if.user_ip gpio` and APB4. This
+prevents system-fabric and electrical pad-control contracts from entering the
+extension muxes.
 
 `clock_reset_domains.json` is the checked inventory of root clock domains,
 reset synchronizers, and RCU PLL control crossings. It records the primitive,

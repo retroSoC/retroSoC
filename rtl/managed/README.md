@@ -3,7 +3,7 @@
 This directory contains RTL whose source lifecycle is controlled outside the
 ordinary self-owned IP workflow.
 
-- clusterip contains repositories locked by config/dependencies.lock.json.
+- clusterip contains repositories locked by dependencies/dependencies.lock.json.
 - mpw contains the locked Mini-ver-MPW generator and its prepared core inputs.
 - third_party contains the locked external IP repository.
 - picorv32 contains the repository-vendored PicoRV32 source and its

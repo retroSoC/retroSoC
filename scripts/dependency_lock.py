@@ -11,7 +11,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_LOCK = ROOT / "config/dependencies.lock.json"
+DEFAULT_LOCK = ROOT / "dependencies/dependencies.lock.json"
 DEFAULT_FLAKE_LOCK = ROOT / "flake.lock"
 NIX_SRI_HASH = re.compile(r"sha256-[A-Za-z0-9+/]{43}=")
 OCI_DIGEST = re.compile(r"sha256:[0-9a-f]{64}")

@@ -43,12 +43,40 @@ digraph mini_soc_block_diagram {
   ];
   ext_io [
     fillcolor="#F3F4F6",
-    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP, WS2812 and PWM V2"
+    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP, WS2812 and PWM"
   ];
   ext_jtag [
     fillcolor="#F3F4F6",
     label="Management JTAG\nTCK, TMS, TDI, TRST_n, TDO"
   ];
+
+  subgraph cluster_rtl_ownership {
+    color="#CBD5E1";
+    fontcolor="#334155";
+    fontname="Arial";
+    fontsize=10;
+    label="RTL ownership and validation profiles";
+    margin=12;
+    rank=sink;
+    style="rounded,dashed";
+
+    rtl_owned [
+      fillcolor="#DCECF8",
+      label="Self-owned RTL\nVerible format + strict style"
+    ];
+    rtl_verif [
+      fillcolor="#FCE7F3",
+      label="Formal and DV RTL\nverification lint profile"
+    ];
+    rtl_tech [
+      fillcolor="#FFF3C9",
+      label="PDK and technology wrappers\ncompile/elaboration profile"
+    ];
+    rtl_generated [
+      fillcolor="#E5E7EB",
+      label="Generated and managed RTL\nlocked source and regeneration flow"
+    ];
+  }
 
   subgraph cluster_asic {
     color="#111827";
@@ -87,7 +115,7 @@ digraph mini_soc_block_diagram {
       ];
       mgmt_adapter [
         fillcolor="#E5E7EB",
-        label="RIBP2RIB"
+        label="AHB-Lite2AXI4\nsingle-beat adapter"
       ];
       user_core [
         fillcolor="#DDF2E3",
@@ -95,11 +123,11 @@ digraph mini_soc_block_diagram {
       ];
       dma [
         fillcolor="#DDF2E3",
-        label="DMA\nRIB master and RIBP target"
+        label="DMA\nAXI4 burst master and RIBP target"
       ];
       fabric [
         fillcolor="#DCECF8",
-        label="RIB fabric\n3-master round-robin arbitration\nINCR1 / INCR4, access policy, fault reporting",
+        label="AXI4 fabric\n3 masters / 9 targets, per-target round robin\nFIXED/INCR/WRAP1-16, access policy, fault reporting",
         shape=hexagon
       ];
       fault [
@@ -108,15 +136,15 @@ digraph mini_soc_block_diagram {
       ];
       sram [
         fillcolor="#FFF3C9",
-        label="On-chip SRAM\noptional RIB2RAM path"
+        label="On-chip SRAM\noptional pipelined AXI42RAM path"
       ];
       ribp_adapter [
         fillcolor="#E5E7EB",
-        label="RIB2RIBP"
+        label="AXI42RIBP\nconfiguration plane"
       ];
       apb_adapter [
         fillcolor="#E5E7EB",
-        label="RIB2APB\ndirect APB bridge"
+        label="AXI42APB\ndirect APB bridge"
       ];
       sysctrl [
         fillcolor="#F9E1E7",
@@ -128,19 +156,27 @@ digraph mini_soc_block_diagram {
       ];
       ribp_targets [
         fillcolor="#F9E1E7",
-        label="RIBP target wrapper\nXPI/Flash, SDRAM, PSRAM, SPI-SD and DVP\nI2S"
+        label="RIBP configuration targets\nXPI, SDRAM, PSRAM, SPI-SD, DVP and I2S\nSDRAM config is a dedicated top-level port"
+      ];
+      memory_targets [
+        fillcolor="#FFF3C9",
+        label="AXI4 data targets\nXPI/Flash, SDRAM, PSRAM and SPI-SD\nFIXED/INCR/WRAP compatibility engines"
+      ];
+      stream_io [
+        fillcolor="#FFF3C9",
+        label="AXI4-Stream data endpoints\nI2S TX/RX and DVP RX\nSOF/EOL/TKEEP framing\nDVP RIBP cfg + CDC pixel input"
       ];
       uart0 [
         fillcolor="#F9E1E7",
-        label="UART0 V2\n64-byte TX/RX FIFOs, fractional baud\nframing/errors, IRQ2, DMA-paced"
+        label="UART0\n64-byte TX/RX FIFOs, fractional baud\nauto RTS/CTS, framing/errors, IRQ2, DMA-paced"
       ];
       i2c_controllers [
         fillcolor="#F9E1E7",
-        label="I2C0 / I2C1 V2\n16-entry command/RX FIFOs, Sm/Fm/Fm+\n7/10-bit, IRQ7/19, DMA-paced"
+        label="I2C0 / I2C1\n16-entry command/RX FIFOs, Sm/Fm/Fm+\n7/10-bit, IRQ7/19, DMA-paced"
       ];
       gpio_controller [
         fillcolor="#F9E1E7",
-        label="GPIO V2\nuser + management RIBP windows\natomic I/O, filter, locks, IRQ18"
+        label="GPIO\nuser + management RIBP windows\natomic I/O, filter, locks, IRQ18"
       ];
       timers [
         fillcolor="#F9E1E7",
@@ -156,31 +192,31 @@ digraph mini_soc_block_diagram {
       ];
       pwm [
         fillcolor="#E6F4EA",
-        label="PWM V2\n2 timers, 4 action channels, 2 operators\nfades, dead time, carrier, fault and capture, IRQ11"
+        label="PWM\n2 timers, 4 action channels, 2 operators\nfades, dead time, carrier, fault and capture, IRQ11"
       ];
       wdg [
         fillcolor="#FDE68A",
-        label="WDG V2\nindependent-clock window watchdog\nearly IRQ14, retained cause/count"
+        label="WDG\nindependent-clock window watchdog\nearly IRQ14, retained cause/count"
       ];
       crc [
         fillcolor="#E6F4EA",
-        label="CRC V2\nprogrammable 7/8/16/32-bit streaming CRC\nbyte, halfword and word APB feed"
+        label="CRC\nprogrammable 7/8/16/32-bit streaming CRC\nbyte, halfword and word APB feed"
       ];
       rtc [
         fillcolor="#E6F4EA",
-        label="RTC V2\n64-bit Epoch + 1/256-second time\ndual alarm, periodic wake, calibration, IRQ13"
+        label="RTC\n64-bit Epoch + 1/256-second time\ndual alarm, periodic wake, calibration, IRQ13"
       ];
       archinfo [
         fillcolor="#E6F4EA",
-        label="ARCHINFO V2\nread-only build, topology and technology identity\nlifecycle-gated 128-bit device ID"
+        label="ARCHINFO\nread-only build, topology and technology identity\nlifecycle-gated 128-bit device ID"
       ];
       rng [
         fillcolor="#E6F4EA",
-        label="RNG V2 entropy controller\n8-word FIFO, fail-closed monitoring, IRQ16\nmanagement-only, deterministic source unqualified"
+        label="RNG entropy controller\n8-word FIFO, fail-closed monitoring, IRQ16\nmanagement-only, deterministic source unqualified"
       ];
       ps2 [
         fillcolor="#E6F4EA",
-        label="PS/2 host V2\nbidirectional open-drain transport\n16-byte RX/TX FIFOs, errors, IRQ12"
+        label="PS/2 host\nbidirectional open-drain transport\n16-byte RX/TX FIFOs, errors, IRQ12"
       ];
       gpio_bridge [
         fillcolor="#E5E7EB",
@@ -197,7 +233,7 @@ digraph mini_soc_block_diagram {
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
   { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb_targets; }
+  { rank=same; sysctrl; clint; ribp_targets; memory_targets; stream_io; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -210,15 +246,17 @@ digraph mini_soc_block_diagram {
   debug_module -> timers [label="halted", style=dashed];
   rcu -> clint [label="1 MHz tick", style=dashed];
 
-  mgmt_core -> mgmt_adapter [label="RIBP"];
-  mgmt_adapter -> fabric [label="RIB"];
-  user_core -> fabric [label="RIB"];
-  dma -> fabric [label="RIB"];
+  mgmt_core -> mgmt_adapter [label="AHB-Lite"];
+  mgmt_adapter -> fabric [label="AXI4"];
+  user_core -> fabric [label="RIBP2AXI4"];
+  dma -> fabric [label="AXI4"];
+  dma -> stream_io [dir=both, label="AXI4-Stream"];
 
   fabric -> fault [label="invalid / denied", dir=both];
-  fabric -> sram [label="RIB"];
-  fabric -> ribp_adapter [label="RIB"];
-  fabric -> apb_adapter [label="RIB"];
+  fabric -> sram [label="AXI4"];
+  fabric -> memory_targets [label="AXI4 data"];
+  fabric -> ribp_adapter [label="AXI4 config"];
+  fabric -> apb_adapter [label="AXI4"];
   ribp_adapter -> sysctrl [label="RIBP"];
   ribp_adapter -> clint [label="RIBP"];
   ribp_adapter -> ribp_targets [label="RIBP"];
@@ -245,6 +283,7 @@ digraph mini_soc_block_diagram {
   dma -> ws2812 [label="TXDATA writes", style=dashed];
   ws2812 -> irq [label="IRQ17"];
   dma -> uart0 [label="TX/RX data", style=dashed];
+  uart0 -> gpio_controller [dir=both, label="GPIO0/1 ALT0\nCTS_n / RTS_n"];
   uart0 -> irq [label="IRQ2"];
   i2c_controllers -> gpio_controller [label="GPIO3/4 ALT1\nGPIO7/8 ALT0"];
   dma -> i2c_controllers [label="DATA_CMD / RXDATA", style=dashed];
@@ -261,7 +300,10 @@ digraph mini_soc_block_diagram {
   wdg -> irq [label="early warning IRQ14"];
   wdg -> rcu [label="system reset request", color="#B91C1C", penwidth=2];
   apb_targets -> gpio_controller [label="user_gpio"];
-  ribp_targets -> ext_io [dir=both, label="device interfaces"];
+  ribp_targets -> memory_targets [label="RIBP configuration", style=dashed];
+  ribp_targets -> stream_io [label="RIBP configuration", style=dashed];
+  memory_targets -> ext_io [dir=both, label="device interfaces"];
+  stream_io -> ext_io [dir=both, label="I2S / DVP signals"];
   uart0 -> ext_io [dir=both, label="UART pads"];
   gpio_bridge -> ext_io [dir=both, label="pad control"];
 }

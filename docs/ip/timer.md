@@ -57,7 +57,7 @@ events from being lost. The external interrupt is the reduction OR of
 `INTR_STATE & INTR_ENABLE`.
 
 The RTL ABI constants are maintained directly in
-`rtl/ip/ribp/peripheral/timer_define.svh`. The matching HAL offsets and masks
+`rtl/ip/peripheral/timer_define.svh`. The matching HAL offsets and masks
 are maintained directly in `crt/src/hal/timer.c`. Changes to either definition
 must update the other definition, this document, and the RTL/software tests in
 the same change.

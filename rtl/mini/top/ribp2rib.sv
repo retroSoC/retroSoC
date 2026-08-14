@@ -11,7 +11,7 @@
 `include "rib_defs.svh"
 
 module ribp2rib #(
-    parameter bit SYNC_RESET = 1'b0
+    parameter bit SyncReset = 1'b0
 ) (
     input logic         clk_i,
     input logic         rst_n_i,
@@ -66,47 +66,59 @@ module ribp2rib #(
     endcase
   end
 
-  if (SYNC_RESET) begin : GEN_SYNC_RESET
-    dffsr #(2) u_fsm_dffsr (
-        clk_i,
-        rst_n_i,
-        s_fsm_d,
-        s_fsm_q
+  if (SyncReset) begin : GEN_SYNC_RESET
+    dffsr #(
+        .DATA_WIDTH(2)
+    ) u_fsm_dffsr (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .dat_i  (s_fsm_d),
+        .dat_o  (s_fsm_q)
     );
-    dffesr #(32) u_wdata_dffesr (
-        clk_i,
-        rst_n_i,
-        s_cmd_hdshk,
-        ribp.wdata,
-        s_wdata_q
+    dffesr #(
+        .DATA_WIDTH(32)
+    ) u_wdata_dffesr (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .en_i   (s_cmd_hdshk),
+        .dat_i  (ribp.wdata),
+        .dat_o  (s_wdata_q)
     );
-    dffesr #(4) u_wstrb_dffesr (
-        clk_i,
-        rst_n_i,
-        s_cmd_hdshk,
-        ribp.wstrb,
-        s_wstrb_q
+    dffesr #(
+        .DATA_WIDTH(4)
+    ) u_wstrb_dffesr (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .en_i   (s_cmd_hdshk),
+        .dat_i  (ribp.wstrb),
+        .dat_o  (s_wstrb_q)
     );
   end else begin : GEN_ASYNC_RESET
-    dffr #(2) u_fsm_dffr (
-        clk_i,
-        rst_n_i,
-        s_fsm_d,
-        s_fsm_q
+    dffr #(
+        .DATA_WIDTH(2)
+    ) u_fsm_dffr (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .dat_i  (s_fsm_d),
+        .dat_o  (s_fsm_q)
     );
-    dffer #(32) u_wdata_dffer (
-        clk_i,
-        rst_n_i,
-        s_cmd_hdshk,
-        ribp.wdata,
-        s_wdata_q
+    dffer #(
+        .DATA_WIDTH(32)
+    ) u_wdata_dffer (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .en_i   (s_cmd_hdshk),
+        .dat_i  (ribp.wdata),
+        .dat_o  (s_wdata_q)
     );
-    dffer #(4) u_wstrb_dffer (
-        clk_i,
-        rst_n_i,
-        s_cmd_hdshk,
-        ribp.wstrb,
-        s_wstrb_q
+    dffer #(
+        .DATA_WIDTH(4)
+    ) u_wstrb_dffer (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .en_i   (s_cmd_hdshk),
+        .dat_i  (ribp.wstrb),
+        .dat_o  (s_wstrb_q)
     );
   end
 

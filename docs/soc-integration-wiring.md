@@ -22,13 +22,29 @@ feature, and every profile binding in the JSON map. Use `null` for an open
 binding. The generator rejects duplicate pad names, unknown profile bindings,
 unsupported features, and unapproved connection syntax.
 
-SoC wrappers use the existing clusterIP interfaces for protocol boundaries.
+SoC wrappers use the existing clusterIP interfaces for protocol boundaries,
+except for the self-owned UART0 `uart_if` under `rtl/ip/serial`.
 `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
 only exposes the pad-side subset of `gpio_if`; neither module contains state.
 
+## UART flow-control alternate functions
+
+UART0 keeps dedicated RX and TX package pads. Optional active-low hardware flow
+control uses GPIO0 ALT0 for the CTS input and GPIO1 ALT0 for the RTS output.
+The UART owns synchronization and fail-safe CTS behavior; GPIO supplies only
+the pad mux and resolved pad input. GPIO0/1 ALT1 remains assigned to the PS/2
+clock/data pair, so software cannot use PS/2 and UART0 flow control on the same
+pins simultaneously.
+
+`rs_uart_configure()` selects each ALT0 route when the corresponding automatic
+flow-control function is enabled. Disabling UART flow control does not reclaim
+the GPIO pin. Software must explicitly choose a new GPIO mode before assigning
+that physical pad to another function. See [uart.md](ip/uart.md) for the UART
+register and timing contract.
+
 ## I2C alternate functions
 
-The two I2C V2 controllers reuse GPIO pads rather than dedicated package pins.
+The two I2C controllers reuse GPIO pads rather than dedicated package pins.
 I2C0 uses GPIO7 for SCL and GPIO8 for SDA on ALT0. I2C1 uses GPIO3 for SCL and
 GPIO4 for SDA on ALT1. Both controller outputs are constant zero; the GPIO
 alternate-function output enable pulls a line low and releases it for high.
@@ -36,9 +52,9 @@ Board-level pull-ups are therefore required. I2C0 uses management-core IRQ7
 and generic-DMA modes 7/8; I2C1 uses IRQ19 and DMA modes 9/10. See
 [i2c.md](ip/i2c.md) for the register and transfer contract.
 
-## PWM V2 alternate functions
+## PWM alternate functions
 
-The APB PWM V2 controller drives GPIO3 through GPIO6 on ALT0. Both output data
+The APB PWM controller drives GPIO3 through GPIO6 on ALT0. Both output data
 and output enable come from the PWM interface, so a fault-configured high-Z
 state reaches the GPIO pad bridge instead of being overridden by a constant
 enable. PWM uses management-core IRQ11.
@@ -61,9 +77,13 @@ management-core interrupt 17. The data pin is forced low while idle, during
 reset/latch time, after abort, and after underflow.
 
 The RIBP TX FIFO is also a fixed-address target for the generic DMA engine.
-DMA remains a normal RIB master and receives RIBP backpressure when the FIFO
+DMA is an AXI4 master and receives RIBP backpressure when the FIFO
 is full; the transmitter does not own a private DMA request channel. See
 [ws2812.md](ip/ws2812.md) for the register and transfer contract.
+
+I2S and DVP use dedicated 32-bit AXI4-Stream data links to DMA while retaining
+RIBP for configuration and PIO fallback. Their stream selection, backpressure,
+and transfer-boundary rules are defined in [axi4-stream.md](axi4-stream.md).
 
 ## Management JTAG
 

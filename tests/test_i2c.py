@@ -1,4 +1,4 @@
-"""Directed I2C V2 controller, FIFO, error, timeout, and recovery tests."""
+"""Directed I2C controller, FIFO, error, timeout, and recovery tests."""
 
 from __future__ import annotations
 
@@ -11,14 +11,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_i2c_v2_controller_and_recovery_contract(tmp_path: Path) -> None:
+def test_i2c_controller_and_recovery_contract(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
     if iverilog is None or vvp is None:
         return
 
     common = ROOT / "rtl/managed/clusterip/common/rtl"
-    serial = ROOT / "rtl/ip/ribp/serial"
+    serial = ROOT / "rtl/ip/serial"
     cluster_i2c = ROOT / "rtl/managed/clusterip/i2c/rtl"
     source_list = tmp_path / "i2c.fl"
     source_list.write_text(
@@ -63,4 +63,4 @@ def test_i2c_v2_controller_and_recovery_contract(tmp_path: Path) -> None:
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "I2C V2 transfer, error, stretch, arbitration, and recovery test passed" in result.stdout
+    assert "I2C transfer, error, stretch, arbitration, and recovery test passed" in result.stdout

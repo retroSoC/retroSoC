@@ -128,7 +128,7 @@ module rib2apb_formal_design (
   assign psel_comb       = u_dut.s_psel_comb;
   assign psel_q          = u_dut.s_psel_q;
   assign xfer_ready      = u_dut.s_xfer_ready;
-  assign xfer_error      = u_dut.s_xfer_error;
+  assign xfer_error      = u_dut.s_xfer_err;
   assign rsp_input_valid = u_dut.s_rsp_input_valid;
   assign rsp_input_ready = u_dut.s_rsp_input_ready;
   assign rsp_input_data  = u_dut.s_rsp_input_data;

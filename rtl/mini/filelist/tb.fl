@@ -1,6 +1,6 @@
 /clusterip/ps2/dv/model/ps2_device_model.sv
 /clusterip/i2c/model/at24cxxx.sv
-/clusterip/uart/model/rs232.sv
+/model/uart_model.sv
 /clusterip/i2s/model/mic.sv
 /clusterip/spi/model/w25q128jvxim.sv
 /model/ESP_PSRAM64H.sv

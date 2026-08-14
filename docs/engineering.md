@@ -15,11 +15,11 @@
 
 Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. This application verifies UART output,
-archinfo APB readback, RNG V2 integration, and test-status completion within the CI time budget;
+archinfo APB readback, RNG integration, and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 
-ARCHINFO ABI V2 exposes immutable build, configuration, topology, feature, and
+ARCHINFO ABI exposes immutable build, configuration, topology, feature, and
 technology identity. Its register specification, driver, standalone tests, and
 formal properties are delivered by the
 [archinfo IP repository](https://github.com/retroSoC/archinfo). The integration
@@ -28,7 +28,7 @@ dependency lock, and canonical configuration digest.
 Normal builds clear the release flag; an audited release flow sets
 `BUILD_RELEASE=YES`, which is part of the canonical configuration digest.
 
-RNG V2 is a management-only APB entropy-controller integration. Its register
+RNG is a management-only APB entropy-controller integration. Its register
 specification, portable driver, standalone simulation, synthesis, formal
 properties, security boundary, and delivery checklist are owned by the
 [RNG IP repository](https://github.com/retroSoC/rng). The SoC currently feeds
@@ -53,7 +53,7 @@ scanner, and cleanup rules as the other open-source CI PDKs.
 
 ## Reproducible Inputs
 
-`config/dependencies.lock.json` is the source of truth for external Git repositories, downloaded
+`dependencies/dependencies.lock.json` is the source of truth for external Git repositories, downloaded
 archives, OCI container base images, Nix inputs, and Ubuntu 22.04 toolchain bundles. Git checkouts
 use full 40-character revisions. Archive downloads are accepted only after SHA-256 verification.
 The Docker image uses an immutable OCI digest. The flake lock and dependency lock must agree on
@@ -83,7 +83,7 @@ against an empty cache. This is the same checksum and safe-extraction path exerc
 
 ```sh
 python3 scripts/install_toolchain.py \
-  --lock config/dependencies.lock.json --platform ubuntu-22.04 \
+  --lock dependencies/dependencies.lock.json --platform ubuntu-22.04 \
   --cache /tmp/retrosoc-toolchain-verify \
   --tool verilator --tool sv2v --tool iverilog \
   --tool yosys --tool opensta --tool riscv_gnu
@@ -231,11 +231,35 @@ Review the medians, commit the baseline, then change policy mode to `gate`. The 
 limits are 5% firmware growth, 3% top area/cell growth, and 0.05 ns WNS regression. TNS is recorded
 for diagnosis but is initially non-blocking.
 
+## RTL Maturity and Synthesis Intent
+
+`rtl/rtl_readiness.json` is the machine-readable status record for self-owned
+RTL. `prototype`, `verified`, `rtl-freeze`, and `tapeout-ready` describe
+increasing evidence requirements; the readiness checker validates the status,
+configuration digest, baseline revision, evidence paths, synthesis intent, and
+waivers. The checker does not replace the actual flows.
+
+For a freeze or release review, compare the recorded synthesis intent with the
+Yosys/library reports and OpenSTA result: Common register or inferred register
+type, reset and enable precedence, RAM/FIFO or macro mapping, pipeline boundary,
+area/cell count, and WNS/TNS. A change that affects an interface, register map,
+reset, timing contract, or CDC is not a formatting-only change. Logical-equivalent
+changes after freeze must retain the baseline revision and equivalence evidence.
+
 ## CI And Releases
 
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
 Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
 the four full PDK regression workflows remain required PR coverage and do not repeat the format checks.
+
+Self-owned RTL also passes `rtl-style-check`, which applies the ownership-aware
+rules in `rtl/rtl_style_manifest.json`. New positional module connections,
+legacy `always @` blocks, and unjustified explicit nets are rejected in changed
+self-owned RTL. Formal/DV, PDK, generated, and managed RTL use separate
+validation profiles and are not mechanically rewritten by the root formatter.
+Quality CI also runs `rtl-readiness-check-all` to validate the maturity record;
+regression continues to provide the behavioral, synthesis, netlist, timing,
+warning, and metric evidence referenced by that record.
 `nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 

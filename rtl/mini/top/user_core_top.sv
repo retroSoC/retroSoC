@@ -17,11 +17,22 @@ module user_core_top (
     input  logic [                   31:0] irq_i,
     input  logic [`USER_CORESEL_WIDTH-1:0] sel_i,
     input  logic [`USER_CORE_COUNT-1:0]    core_reset_i,
-    rib_if.master                rib
+    axi4_if.master                         axi4
     // verilog_format: on
 );
 
+  rib_if u_user_rib_if ();
+
   // Generated bindings preserve scalar user-core interfaces and isolation.
   `include "user_core_bindings.svh"
+
+  // verilog_format: off
+  rib2axi4 u_rib2axi4 (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .rib    (u_user_rib_if),
+      .axi4   (axi4)
+  );
+  // verilog_format: on
 
 endmodule

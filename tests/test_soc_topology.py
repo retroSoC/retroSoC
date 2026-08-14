@@ -73,20 +73,21 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
-    assert interfaces.count("ribp_if u_") == 18
+    assert interfaces.count("ribp_if u_") == 17
     assert "nmi_if" not in interfaces
     assert "soc_nmi" not in interfaces
     assert "assign s_slv_sel_d[17] = u_i2c1_ribp_if.valid;" in routes
     assert "assign s_slv_resp_err[17] = u_i2c1_ribp_if.resp_err;" in routes
     assert "assign ribp.resp_err = |(s_slv_sel_q & s_slv_ready & s_slv_resp_err);" in routes
-    assert "assign s_xpi_region_sel[1] = (ribp.addr <= `SOC_ADDR_FLASH_END);" in routes
+    assert "SOC_ADDR_FLASH" not in routes
     assert "assign u_sdio_ribp_if.valid = 1'b0;" in routes
     assert gpio.count("// GPIO") == 64
     assert "u_uart1_if" not in gpio
+    assert "assign u_uart0_if.cts_n_i = u_gpio_if.di_i[0];" in gpio
     assert "assign u_gpio_if.alt0_do_i[0] = 1'b0;" in gpio
     assert "assign u_gpio_if.alt0_oe_i[0] = 1'b0;" in gpio
-    assert "assign u_gpio_if.alt0_do_i[1] = 1'b0;" in gpio
-    assert "assign u_gpio_if.alt0_oe_i[1] = 1'b0;" in gpio
+    assert "assign u_gpio_if.alt0_do_i[1] = u_uart0_if.rts_n_o;" in gpio
+    assert "assign u_gpio_if.alt0_oe_i[1] = 1'b1;" in gpio
     assert "assign u_gpio_if.alt1_do_i[0] = u_ps2_if.ps2_clk_o;" in gpio
     assert "assign u_gpio_if.alt1_oe_i[0] = u_ps2_if.ps2_clk_oe_o;" in gpio
     assert "assign u_gpio_if.alt1_do_i[1] = u_ps2_if.ps2_dat_o;" in gpio
@@ -105,27 +106,28 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign user_ip.paddr = s_addr_q;" in apb_routes
     assert "({32{s_psel_q[7]}} & user_ip.prdata)" in apb_response
     assert "localparam int NSLV = 8;" in apb_declarations
-    assert fabric.count("ribp_if u_") == 1
-    assert fabric.count("rib_if u_") == 4
-    assert ".mgmt_ribp(u_mgmt_ribp_if)" in bus_fabric
-    assert ".user_rib(u_user_rib_if)" in bus_fabric
-    assert ".apb_rib(u_apb_rib_if)" in bus_fabric
-    assert ".rib(u_rib_if)" in bus_fabric
+    assert fabric.count("axi4_if #(") == 5
+    assert ".mgmt_axi4(u_mgmt_axi4_if)" in bus_fabric
+    assert ".user_axi4(u_user_axi4_if)" in bus_fabric
+    assert ".dma_axi4(u_dma_axi4_if)" in bus_fabric
+    assert ".cfg_axi4(u_cfg_axi4_if)" in bus_fabric
+    assert ".apb_axi4(u_apb_axi4_if)" in bus_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
-    assert "`define SOC_USER_IRQ_MASK 32'h000E7BFC" in irq_config
-    assert "`define SOC_IRQ_RIBP_WIDTH 13" in irq_config
+    assert "`define SOC_USER_IRQ_MASK 32'h000EFBFC" in irq_config
+    assert "`define SOC_IRQ_RIBP_WIDTH 14" in irq_config
     assert "`define SOC_IRQ_APB_WIDTH 5" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
     assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
     assert "assign irq_o[12] = i2c1.irq_o;" in rib_irq
+    assert "assign irq_o[13] = s_dvp_irq;" in rib_irq
     assert "assign irq_o[0] = pwm.irq_o;" in apb_irq
     assert "assign irq_o[4] = s_rng_irq;" in apb_irq
     assert "s_irq[10]" not in irq_wiring
-    assert "s_irq[15]" not in irq_wiring
+    assert "s_irq[15] = s_ribp_irq[13];" in irq_wiring
     assert "s_irq[16] = s_apb_irq[4];" in irq_wiring
     assert "irq_i[10] == 1'b0" in irq_sva
-    assert "irq_i[15] == 1'b0" in irq_sva
+    assert "irq_i[15] == ribp_irq_i[13]" in irq_sva
     assert "irq_i[31] == 1'b0" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert filelist.startswith("+incdir+")
@@ -163,6 +165,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
         ("gpio", "ribp", 11, 18, "gpio.irq_o"),
         ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),
+        ("dvp", "ribp", 13, 15, "s_dvp_irq"),
     ]
 
 
@@ -356,6 +359,7 @@ def test_generated_rib_routes_select_and_return_the_expected_target(tmp_path: Pa
                 f"+incdir+{memory_map_output / 'rtl'}",
                 f"+incdir+{topology_output / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/interface'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "tests/rtl/ribp_topology_tb.sv"),

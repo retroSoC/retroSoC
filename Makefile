@@ -4,7 +4,7 @@ SHELL := /bin/bash
 
 ROOT_PATH ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 CONFIG    ?=
-LOCK_FILE ?= $(ROOT_PATH)/config/dependencies.lock.json
+LOCK_FILE ?= $(ROOT_PATH)/dependencies/dependencies.lock.json
 
 ifneq ($(strip $(CONFIG)),)
 CONFIG_PATH := $(if $(filter /%,$(CONFIG)),$(CONFIG),$(ROOT_PATH)/$(CONFIG))
@@ -76,6 +76,7 @@ FLOW_PYTHON        ?= $(PYTHON)
 CLANG_FORMAT       ?= clang-format-14
 MBAKE              ?= mbake
 VERIBLE_FORMAT     ?= verible-verilog-format
+VERIBLE_LINT       ?= verible-verilog-lint
 VCS_DEFAULT_RUNNER := $(if $(filter YES,$(VCS_USE_LSF)),bsub -Is)
 VCS_RUNNER         ?= $(VCS_DEFAULT_RUNNER)
 VCS_SHELL_GOALS    := comp sim netcomp netsim postcomp postsim
@@ -247,21 +248,22 @@ PERF_LOG ?= $(SIM_BUILD_ROOT)/sim.log
 endif
 
 ifeq ($(SYNTH), YOSYS)
-include syn/yosys/yosys.mk
+include physical/smoke/syn/yosys/yosys.mk
 endif
 
 ifeq ($(STA), OPENSTA)
-    include sta/opensta/opensta.mk
+    include physical/smoke/sta/opensta/opensta.mk
 endif
 
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
-	mk-format-check rtl-format rtl-format-check sw-policy-check sw-host-test \
+	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
 	benchmark-report coremark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clean formal-doctor
+	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-clean formal-doctor \
+	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all
 .NOTPARALLEL: setup
 
 help:
@@ -289,7 +291,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  '  formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint run peripheral proofs' \
+	  '  formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -302,6 +304,12 @@ help:
 	  '  sw-format-check            check embedded C whitespace and line-ending policy' \
 	  '  mk-format | mk-format-check apply/check tracked Makefile formatting' \
 	  '  rtl-format | rtl-format-check apply/check self-owned RTL formatting' \
+	  '  rtl-style-check-all        check all self-owned RTL naming and language rules' \
+	  '  rtl-readiness-check        validate affected RTL readiness records' \
+	  '  rtl-readiness-check-all    validate all RTL readiness records' \
+	  '  rtl-migrate-connections  convert provably positional RTL instances to named ports' \
+	  '  rtl-migrate-names        shorten local RTL identifier names' \
+	  '  rtl-style-check            check changed self-owned RTL naming and connections' \
 	  '  sw-policy-check            check embedded C API and naming policy' \
 	  '  sw-host-test               run host tests for deterministic SDK utilities' \
 	  '  regress-smoke              run the IHP130 fast regression suite' \
@@ -367,7 +375,7 @@ setup-ip:
 	python3 $(ROOT_PATH)/rtl/ip/setup.py
 
 setup-pdk:
-	python3 $(ROOT_PATH)/pdk/setup.py --pdk $(PDK)
+	python3 $(ROOT_PATH)/physical/pdk/setup.py --pdk $(PDK)
 
 setup-app:
 	python3 $(ROOT_PATH)/app/setup.py
@@ -407,7 +415,7 @@ sw-format-check:
 
 format: sw-format mk-format rtl-format
 
-format-check: sw-format-check mk-format-check rtl-format-check
+format-check: sw-format-check mk-format-check rtl-format-check rtl-style-check
 
 mk-format:
 	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind make --apply \
@@ -424,6 +432,25 @@ rtl-format:
 rtl-format-check:
 	python3 $(ROOT_PATH)/scripts/check_format.py --root $(ROOT_PATH) --kind rtl \
 	  --verible-verilog-format $(VERIBLE_FORMAT)
+
+rtl-migrate-connections:
+	python3 $(ROOT_PATH)/scripts/migrate_rtl_connections.py --root $(ROOT_PATH) --apply
+
+rtl-migrate-names:
+	python3 $(ROOT_PATH)/scripts/migrate_rtl_names.py --root $(ROOT_PATH) --apply
+
+rtl-style-check:
+	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
+	  --profile owned --changed-only --enforce-naming --verible-verilog-lint $(VERIBLE_LINT)
+
+rtl-style-check-all:
+	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
+	  --profile owned --verible-verilog-lint $(VERIBLE_LINT)
+
+rtl-readiness-check:
+	python3 $(ROOT_PATH)/scripts/check_rtl_readiness.py --root $(ROOT_PATH)
+
+rtl-readiness-check-all: rtl-readiness-check
 
 sw-policy-check:
 	python3 $(ROOT_PATH)/scripts/check_embedded_c.py --root $(ROOT_PATH) --policy-check

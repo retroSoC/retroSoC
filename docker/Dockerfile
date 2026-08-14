@@ -1,4 +1,4 @@
-# Pinned in config/dependencies.lock.json: container_images.ubuntu_22_04.
+# Pinned in dependencies/dependencies.lock.json: container_images.ubuntu_22_04.
 FROM ubuntu@sha256:0d779ea97881505f5ef0039336ee85edba27519bdba968c284c86ee066a973c8
 
 LABEL org.opencontainers.image.title="retroSoC development environment"
@@ -31,7 +31,7 @@ RUN apt-get update -qq \
 
 WORKDIR /opt/retrosoc
 
-COPY config/dependencies.lock.json config/dependencies.lock.json
+COPY dependencies/dependencies.lock.json dependencies/dependencies.lock.json
 COPY requirements/build.txt requirements/build.txt
 COPY requirements/ci.txt requirements/ci.txt
 COPY scripts/dependency_lock.py scripts/dependency_lock.py

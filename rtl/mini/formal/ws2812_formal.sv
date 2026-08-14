@@ -61,9 +61,9 @@ module ws2812_formal_design (
   assign aborted        = u_dut.s_aborted;
   assign fifo_level     = u_dut.u_ws2812_reg.s_tx_count;
   assign load_remaining = u_dut.u_ws2812_reg.s_load_remaining_q;
-  assign error_status   = u_dut.u_ws2812_reg.s_error_status_q;
+  assign error_status   = u_dut.u_ws2812_reg.s_err_stat_q;
   assign intr_state     = u_dut.u_ws2812_reg.s_intr_state_q;
-  assign intr_enable    = u_dut.u_ws2812_reg.s_intr_enable_q;
+  assign intr_enable    = u_dut.u_ws2812_reg.s_intr_en_q;
 
   ribp_ws2812 u_dut (
       .clk_i  (clk_i),

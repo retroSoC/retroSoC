@@ -9,8 +9,8 @@
 // See the Mulan PSL v2 for more details.
 
 module rcu #(
-    parameter int EXT_CLK_HZ        = 72_000_000,
-    parameter int CLINT_TIMEBASE_HZ = 1_000_000
+    parameter int ExtClkHz        = 72_000_000,
+    parameter int ClintTimebaseHz = 1_000_000
 ) (
     input  logic           ext_clk_i,
     input  logic           aud_clk_i,
@@ -66,7 +66,7 @@ module rcu #(
   logic       s_pll_cfg_ready;
   logic       s_pll_cfg_req;
   logic s_pll_cfg_sent_d, s_pll_cfg_sent_q;
-  logic s_select_ext_clk;
+  logic s_sel_ext_clk;
 
   tc_clk_buf u_xtal_buf (
       .clk_i(xtal_clk_i),
@@ -97,11 +97,13 @@ module rcu #(
       s_pll_cfg_sent_d = 1'b1;
     end
   end
-  dffr #(1) u_pll_cfg_sent_dffr (
-      s_ext_clk_buf,
-      s_ext_rst_n_sync,
-      s_pll_cfg_sent_d,
-      s_pll_cfg_sent_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_pll_cfg_sent_dffr (
+      .clk_i  (s_ext_clk_buf),
+      .rst_n_i(s_ext_rst_n_sync),
+      .dat_i  (s_pll_cfg_sent_d),
+      .dat_o  (s_pll_cfg_sent_q)
   );
   tc_pll u_tc_pll (
       .fref_i       (s_xtal_clk_buf),
@@ -119,7 +121,7 @@ module rcu #(
   tc_clk_switch2 u_sys_clk_switch (
       .clk0_i   (s_pll_clk_buf),
       .clk1_i   (s_ext_clk_buf),
-      .clk_sel_i(s_select_ext_clk),
+      .clk_sel_i(s_sel_ext_clk),
       .clk_o    (s_sys_clk)
   );
 
@@ -132,7 +134,7 @@ module rcu #(
       .pll_capable_i   (s_pll_capable),
       .pll_sel_o       (s_pll_sel),
       .pll_apply_o     (s_pll_apply),
-      .select_ext_clk_o(s_select_ext_clk),
+      .select_ext_clk_o(s_sel_ext_clk),
       .pll_ctrl        (pll_ctrl)
   );
 `else
@@ -157,11 +159,13 @@ module rcu #(
       s_no_pll_rsp_valid_d = 1'b0;
     end
   end
-  dffr #(1) u_no_pll_rsp_valid_dffr (
-      s_ext_clk_buf,
-      s_ext_rst_n_sync,
-      s_no_pll_rsp_valid_d,
-      s_no_pll_rsp_valid_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_no_pll_rsp_valid_dffr (
+      .clk_i  (s_ext_clk_buf),
+      .rst_n_i(s_ext_rst_n_sync),
+      .dat_i  (s_no_pll_rsp_valid_d),
+      .dat_o  (s_no_pll_rsp_valid_q)
   );
 `endif
 
@@ -191,8 +195,8 @@ module rcu #(
   assign s_sys_reset_source_n = ext_rst_n_i && !wdg_reset_req_i;
 
   clint_timebase #(
-      .REF_CLK_HZ (EXT_CLK_HZ),
-      .TIMEBASE_HZ(CLINT_TIMEBASE_HZ)
+      .RefClkHz  (ExtClkHz),
+      .TimebaseHz(ClintTimebaseHz)
   ) u_clint_timebase (
       .ref_clk_i  (s_ext_clk_buf),
       .ref_rst_n_i(s_ext_rst_n_sync),
@@ -202,23 +206,27 @@ module rcu #(
   );
 
   assign s_div_cnt_d = (s_div_cnt_q == 4'd1) ? '0 : s_div_cnt_q + 1'b1;
-  dffr #(4) u_div_cnt_dffr (
-      sys_clk_o,
-      sys_rst_n_o,
-      s_div_cnt_d,
-      s_div_cnt_q
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_div_cnt_dffr (
+      .clk_i  (sys_clk_o),
+      .rst_n_i(sys_rst_n_o),
+      .dat_i  (s_div_cnt_d),
+      .dat_o  (s_div_cnt_q)
   );
   assign s_sys_clkdiv4_d = (s_div_cnt_q == 4'd1) ? ~s_sys_clkdiv4_q : s_sys_clkdiv4_q;
-  dffr #(1) u_sys_clkdiv4_dffr (
-      sys_clk_o,
-      sys_rst_n_o,
-      s_sys_clkdiv4_d,
-      s_sys_clkdiv4_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_sys_clkdiv4_dffr (
+      .clk_i  (sys_clk_o),
+      .rst_n_i(sys_rst_n_o),
+      .dat_i  (s_sys_clkdiv4_d),
+      .dat_o  (s_sys_clkdiv4_q)
   );
 endmodule
 
 module pll_rcu_controller #(
-    parameter int LOCK_TIMEOUT = 1024
+    parameter int LockTimeout = 1024
 ) (
     input  logic                 sys_clk_i,
     input  logic                 sys_rst_n_i,
@@ -247,14 +255,14 @@ module pll_rcu_controller #(
   logic [2:0] s_state_d, s_state_q;
   logic [2:0] s_pll_sel_d, s_pll_sel_q;
   logic s_pll_apply_d, s_pll_apply_q;
-  logic s_select_ext_clk_d, s_select_ext_clk_q;
+  logic s_sel_ext_clk_d, s_sel_ext_clk_q;
   logic [15:0] s_lock_count_d, s_lock_count_q;
   logic [2:0] s_active_sel_d, s_active_sel_q;
   logic s_active_valid_d, s_active_valid_q;
   logic s_safe_clk_d, s_safe_clk_q;
   logic s_lock_d, s_lock_q;
   logic s_lock_seen_low_d, s_lock_seen_low_q;
-  logic [1:0] s_error_d, s_error_q;
+  logic [1:0] s_err_d, s_err_q;
   logic s_rsp_valid_d, s_rsp_valid_q;
 
   cdc_2phase #(
@@ -294,45 +302,45 @@ module pll_rcu_controller #(
   assign pll_ctrl.rsp_valid_i = s_rsp_sys_valid;
   assign pll_ctrl.capable_i = pll_capable_i;
   assign s_req_ready = s_state_q == PLL_IDLE;
-  assign s_rsp_data = {s_error_q, s_lock_q, s_safe_clk_q, s_active_valid_q, s_active_sel_q};
+  assign s_rsp_data = {s_err_q, s_lock_q, s_safe_clk_q, s_active_valid_q, s_active_sel_q};
   assign pll_sel_o = s_pll_sel_q;
   assign pll_apply_o = s_pll_apply_q;
-  assign select_ext_clk_o = s_select_ext_clk_q;
+  assign select_ext_clk_o = s_sel_ext_clk_q;
 
   always_comb begin
-    s_state_d          = s_state_q;
-    s_pll_sel_d        = s_pll_sel_q;
-    s_pll_apply_d      = (s_state_q == PLL_APPLY) || (s_state_q == PLL_WAIT_LOCK);
-    s_select_ext_clk_d = s_select_ext_clk_q;
-    s_lock_count_d     = s_lock_count_q;
-    s_active_sel_d     = s_active_sel_q;
-    s_active_valid_d   = s_active_valid_q;
-    s_safe_clk_d       = s_safe_clk_q;
-    s_lock_d           = s_lock_q;
-    s_lock_seen_low_d  = s_lock_seen_low_q;
-    s_error_d          = s_error_q;
-    s_rsp_valid_d      = s_rsp_valid_q;
+    s_state_d         = s_state_q;
+    s_pll_sel_d       = s_pll_sel_q;
+    s_pll_apply_d     = (s_state_q == PLL_APPLY) || (s_state_q == PLL_WAIT_LOCK);
+    s_sel_ext_clk_d   = s_sel_ext_clk_q;
+    s_lock_count_d    = s_lock_count_q;
+    s_active_sel_d    = s_active_sel_q;
+    s_active_valid_d  = s_active_valid_q;
+    s_safe_clk_d      = s_safe_clk_q;
+    s_lock_d          = s_lock_q;
+    s_lock_seen_low_d = s_lock_seen_low_q;
+    s_err_d           = s_err_q;
+    s_rsp_valid_d     = s_rsp_valid_q;
 
     unique case (s_state_q)
       PLL_IDLE: begin
         s_lock_seen_low_d = 1'b0;
         if (s_req_valid) begin
-          s_pll_sel_d        = s_req_sel;
-          s_select_ext_clk_d = 1'b1;
-          s_error_d          = 2'd0;
-          s_state_d          = PLL_SAFE;
+          s_pll_sel_d     = s_req_sel;
+          s_sel_ext_clk_d = 1'b1;
+          s_err_d         = 2'd0;
+          s_state_d       = PLL_SAFE;
         end
       end
       PLL_SAFE: begin
-        s_lock_seen_low_d  = 1'b0;
-        s_select_ext_clk_d = 1'b1;
-        s_safe_clk_d       = 1'b1;
-        s_lock_d           = 1'b0;
+        s_lock_seen_low_d = 1'b0;
+        s_sel_ext_clk_d   = 1'b1;
+        s_safe_clk_d      = 1'b1;
+        s_lock_d          = 1'b0;
         if (pll_capable_i) begin
           s_state_d = PLL_APPLY;
         end else begin
           s_active_valid_d = 1'b0;
-          s_error_d        = 2'd1;
+          s_err_d          = 2'd1;
           s_state_d        = PLL_RESPOND;
         end
       end
@@ -350,21 +358,21 @@ module pll_rcu_controller #(
           s_active_valid_d = 1'b1;
           s_safe_clk_d     = 1'b0;
           s_lock_d         = 1'b1;
-          s_error_d        = 2'd0;
+          s_err_d          = 2'd0;
           s_state_d        = PLL_SWITCH;
-        end else if (s_lock_count_q == LOCK_TIMEOUT - 1) begin
+        end else if (s_lock_count_q == LockTimeout - 1) begin
           s_active_valid_d = 1'b0;
           s_safe_clk_d     = 1'b1;
           s_lock_d         = 1'b0;
-          s_error_d        = 2'd2;
+          s_err_d          = 2'd2;
           s_state_d        = PLL_RESPOND;
         end else begin
           s_lock_count_d = s_lock_count_q + 1'b1;
         end
       end
       PLL_SWITCH: begin
-        s_select_ext_clk_d = 1'b0;
-        s_state_d          = PLL_RESPOND;
+        s_sel_ext_clk_d = 1'b0;
+        s_state_d       = PLL_RESPOND;
       end
       PLL_RESPOND: begin
         s_rsp_valid_d = 1'b1;
@@ -379,76 +387,103 @@ module pll_rcu_controller #(
     endcase
   end
 
-  dffrc #(3, PLL_IDLE) u_state_dffrc (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_state_d,
-      s_state_q
+  dffrc #(
+      .DATA_WIDTH(3),
+      .RESET_VAL (PLL_IDLE)
+  ) u_state_dffrc (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_state_d),
+      .dat_o  (s_state_q)
   );
-  dffr #(3) u_pll_sel_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_pll_sel_d,
-      s_pll_sel_q
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_pll_sel_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_pll_sel_d),
+      .dat_o  (s_pll_sel_q)
   );
-  dffr #(1) u_pll_apply_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_pll_apply_d,
-      s_pll_apply_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_pll_apply_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_pll_apply_d),
+      .dat_o  (s_pll_apply_q)
   );
-  dffrc #(1, 1'b1) u_select_ext_clk_dffrc (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_select_ext_clk_d,
-      s_select_ext_clk_q
+  dffrc #(
+      .DATA_WIDTH(1),
+      .RESET_VAL (1'b1)
+  ) u_select_ext_clk_dffrc (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_sel_ext_clk_d),
+      .dat_o  (s_sel_ext_clk_q)
   );
-  dffr #(16) u_lock_count_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_lock_count_d,
-      s_lock_count_q
+  dffr #(
+      .DATA_WIDTH(16)
+  ) u_lock_count_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_lock_count_d),
+      .dat_o  (s_lock_count_q)
   );
-  dffr #(3) u_active_sel_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_active_sel_d,
-      s_active_sel_q
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_active_sel_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_active_sel_d),
+      .dat_o  (s_active_sel_q)
   );
-  dffr #(1) u_active_valid_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_active_valid_d,
-      s_active_valid_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_active_valid_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_active_valid_d),
+      .dat_o  (s_active_valid_q)
   );
-  dffrc #(1, 1'b1) u_safe_clk_dffrc (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_safe_clk_d,
-      s_safe_clk_q
+  dffrc #(
+      .DATA_WIDTH(1),
+      .RESET_VAL (1'b1)
+  ) u_safe_clk_dffrc (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_safe_clk_d),
+      .dat_o  (s_safe_clk_q)
   );
-  dffr #(1) u_lock_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_lock_d,
-      s_lock_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_lock_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_lock_d),
+      .dat_o  (s_lock_q)
   );
-  dffr #(1) u_lock_seen_low_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_lock_seen_low_d,
-      s_lock_seen_low_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_lock_seen_low_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_lock_seen_low_d),
+      .dat_o  (s_lock_seen_low_q)
   );
-  dffr #(2) u_error_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_error_d,
-      s_error_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_error_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_err_d),
+      .dat_o  (s_err_q)
   );
-  dffr #(1) u_rsp_valid_dffr (
-      ext_clk_i,
-      ext_rst_n_i,
-      s_rsp_valid_d,
-      s_rsp_valid_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_rsp_valid_dffr (
+      .clk_i  (ext_clk_i),
+      .rst_n_i(ext_rst_n_i),
+      .dat_i  (s_rsp_valid_d),
+      .dat_o  (s_rsp_valid_q)
   );
 endmodule

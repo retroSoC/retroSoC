@@ -39,17 +39,21 @@ module mgmt_debug_reset (
     end
   end
 
-  dffr #(1) u_pending_dffr (
-      clk_i,
-      rst_n_i,
-      s_pending_d,
-      s_pending_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_pending_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_pending_d),
+      .dat_o  (s_pending_q)
   );
-  dffr #(1) u_reset_active_dffr (
-      clk_i,
-      rst_n_i,
-      s_reset_active_d,
-      s_reset_active_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_reset_active_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_reset_active_d),
+      .dat_o  (s_reset_active_q)
   );
   rst_sync u_core_rst_sync (
       .clk_i  (clk_i),

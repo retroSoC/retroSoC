@@ -20,7 +20,7 @@ in a fixed order.
 ## Shared Bootstrap
 
 scripts/development_environment.py is the only tool installer for the three
-entry points. It reads config/dependencies.lock.json, verifies every tool
+entry points. It reads dependencies/dependencies.lock.json, verifies every tool
 archive checksum, creates a virtual environment, installs the hash-pinned
 Python requirements, and writes:
 
@@ -45,7 +45,7 @@ revision and lock file.
 ## Docker
 
 docker/Dockerfile pins its Ubuntu 22.04 base image by OCI digest. The digest
-is recorded as a container_images entry in config/dependencies.lock.json.
+is recorded as a container_images entry in dependencies/dependencies.lock.json.
 Build it from the repository root so the Docker build receives the exact lock,
 bootstrap scripts, and requirement files.
 
@@ -73,7 +73,7 @@ nix run .#dev -- make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim
 ~~~
 
 flake.lock pins nixpkgs. scripts/dependency_lock.py compares its resolved
-revision and NAR hash with config/dependencies.lock.json, so a Nix input update
+revision and NAR hash with dependencies/dependencies.lock.json, so a Nix input update
 requires an explicit lock review.
 
 ## Validation

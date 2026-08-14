@@ -3,7 +3,7 @@ description: Install checksum-verified retroSoC tool archives and their runtime 
 
 inputs:
   tools:
-    description: Space-separated tool names from config/dependencies.lock.json
+    description: Space-separated tool names from dependencies/dependencies.lock.json
     required: true
 
 runs:
@@ -27,7 +27,7 @@ runs:
           args+=(--tool "${tool}")
         done
         python3 scripts/install_toolchain.py \
-          --lock config/dependencies.lock.json \
+          --lock dependencies/dependencies.lock.json \
           --platform ubuntu-22.04 \
           --cache .cache/retrosoc \
           --github-path "${GITHUB_PATH}" \

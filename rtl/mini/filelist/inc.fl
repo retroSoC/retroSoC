@@ -7,7 +7,6 @@
 +incdir+/clusterip/common/rtl/utils
 +incdir+/clusterip/archinfo/rtl
 +incdir+/clusterip/rng/rtl
-+incdir+/clusterip/uart/rtl
 +incdir+/clusterip/pwm/rtl
 +incdir+/clusterip/ps2/rtl
 +incdir+/clusterip/i2c/rtl
@@ -15,11 +14,11 @@
 +incdir+/clusterip/rtc/rtl
 +incdir+/clusterip/wdg/rtl
 +incdir+/clusterip/crc/rtl
-+incdir+/ip/ribp/interconnect
-+incdir+/ip/ribp/util
-+incdir+/ip/ribp/memory
-+incdir+/ip/ribp/storage
-+incdir+/ip/ribp/serial
-+incdir+/ip/ribp/multimedia
-+incdir+/ip/ribp/peripheral
++incdir+/ip/interconnect
++incdir+/ip/util
++incdir+/ip/memory
++incdir+/ip/storage
++incdir+/ip/serial
++incdir+/ip/multimedia
++incdir+/ip/peripheral
 +incdir+/third_party/model/sdram/

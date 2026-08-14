@@ -1,4 +1,4 @@
-"""Directed RTL tests for the GPIO V2 register and pad-control contract."""
+"""Directed RTL tests for the GPIO register and pad-control contract."""
 
 from __future__ import annotations
 
@@ -11,14 +11,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_gpio_v2_register_pad_interrupt_and_filter_contract(tmp_path: Path) -> None:
+def test_gpio_register_pad_interrupt_and_filter_contract(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     sv2v = shutil.which("sv2v")
     vvp = shutil.which("vvp")
     if iverilog is None or sv2v is None or vvp is None:
         return
 
-    peripheral = ROOT / "rtl/ip/ribp/peripheral"
+    peripheral = ROOT / "rtl/ip/peripheral"
     common = ROOT / "rtl/managed/clusterip/common/rtl"
     source_list = tmp_path / "gpio.fl"
     source_list.write_text(
@@ -62,4 +62,4 @@ def test_gpio_v2_register_pad_interrupt_and_filter_contract(tmp_path: Path) -> N
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
 
-    assert "GPIO V2 directed test passed" in result.stdout
+    assert "GPIO directed test passed" in result.stdout

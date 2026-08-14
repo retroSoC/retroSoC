@@ -49,7 +49,7 @@ module timer_formal_design (
   assign rib_ready      = rib.ready;
   assign rib_resp_err   = rib.resp_err;
   assign debug_halted   = f_debug_halted;
-  assign active         = u_dut.s_enable;
+  assign active         = u_dut.s_en;
   assign debug_frozen   = u_dut.s_debug_frozen;
   assign value          = u_dut.s_value;
   assign start          = u_dut.s_start;
@@ -60,7 +60,7 @@ module timer_formal_design (
   assign compare1_event = u_dut.s_compare1_event;
   assign one_shot_done  = u_dut.s_one_shot_done;
   assign intr_state     = u_dut.u_timer_reg.s_intr_state_q;
-  assign intr_enable    = u_dut.u_timer_reg.s_intr_enable_q;
+  assign intr_enable    = u_dut.u_timer_reg.s_intr_en_q;
 
   ribp_timer u_dut (
       .clk_i         (clk_i),

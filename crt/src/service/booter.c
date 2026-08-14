@@ -106,14 +106,16 @@ void rs_app_info(void) {
     printf("                       1 x I2C0          @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_I2C0_BASE);
     printf("                       1 x I2S           @%p\n", (void *)&reg_i2s_mode);
-    printf("                       1 x WS2812        @%p\n", (void *)&reg_ws2812_bit_cycles);
+    printf("                       1 x WS2812        @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_WS2812_BASE);
     printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
     printf("                       1 x DMA           @%p\n", (void *)&reg_dma_mode);
     printf("                       1 x SYSCTRL       @%p\n", (void *)&reg_sysctrl_coresel);
     printf("                       1 x CLINT         @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_CLINT_BASE);
     printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);
-    printf("                       1 x DVP           @%p\n", (void *)&reg_dvp_recven);
+    printf("                       1 x DVP           @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_DVP_BASE);
     printf("                       1 x I2C1          @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_I2C1_BASE);
     printf("                       1 x ARCHINFO      @%p\n",

@@ -27,6 +27,10 @@ module dma_error_tb;
   integer        incr4_write_count = 0;
   integer        legacy_cycles;
   integer        burst_cycles;
+  integer        stream_tx_count = 0;
+  integer        stream_rx_count = 0;
+  logic          stream_tx_ready = 1'b0;
+  logic          stream_rx_valid = 1'b0;
   logic   [ 1:0] model_state_q = MODEL_IDLE;
   logic   [ 1:0] model_len_q = '0;
   logic   [ 1:0] model_beat_q = '0;
@@ -34,17 +38,59 @@ module dma_error_tb;
   logic          model_error_q = 1'b0;
   dma_hw_trg_if hw_trg ();
   rib_if rib ();
+  axi4_stream_if i2s_tx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if i2s_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if dvp_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   always #5 clk_i = ~clk_i;
 
-  assign rib.cmd_ready = model_state_q == MODEL_IDLE;
-  assign rib.w_ready   = model_state_q == MODEL_WDATA;
-  assign rib.rsp_valid = model_state_q == MODEL_RESP;
-  assign rib.rdata     = 32'hA5A5_5A5A + model_beat_q;
-  assign rib.resp_err  = model_error_q;
-  assign rib.resp_code = model_error_q ? `RIB_RESP_DECERR : `RIB_RESP_OK;
-  assign rib.rsp_beat  = model_beat_q;
-  assign rib.rsp_last  = model_write_q || model_error_q || (model_beat_q == model_len_q);
+  assign rib.cmd_ready      = model_state_q == MODEL_IDLE;
+  assign rib.w_ready        = model_state_q == MODEL_WDATA;
+  assign rib.rsp_valid      = model_state_q == MODEL_RESP;
+  assign rib.rdata          = 32'hA5A5_5A5A + model_beat_q;
+  assign rib.resp_err       = model_error_q;
+  assign rib.resp_code      = model_error_q ? `RIB_RESP_DECERR : `RIB_RESP_OK;
+  assign rib.rsp_beat       = model_beat_q;
+  assign rib.rsp_last       = model_write_q || model_error_q || (model_beat_q == model_len_q);
+  assign i2s_tx_axis.tready = stream_tx_ready;
+  assign i2s_rx_axis.tdata  = 32'h5100_0000 + stream_rx_count;
+  assign i2s_rx_axis.tkeep  = '1;
+  assign i2s_rx_axis.tstrb  = '1;
+  assign i2s_rx_axis.tlast  = stream_rx_count == 1;
+  assign i2s_rx_axis.tid    = '0;
+  assign i2s_rx_axis.tdest  = '0;
+  assign i2s_rx_axis.tuser  = '0;
+  assign i2s_rx_axis.tvalid = stream_rx_valid;
+  assign dvp_rx_axis.tdata  = '0;
+  assign dvp_rx_axis.tkeep  = '0;
+  assign dvp_rx_axis.tstrb  = '0;
+  assign dvp_rx_axis.tlast  = 1'b0;
+  assign dvp_rx_axis.tid    = '0;
+  assign dvp_rx_axis.tdest  = '0;
+  assign dvp_rx_axis.tuser  = '0;
+  assign dvp_rx_axis.tvalid = 1'b0;
+
+  always @(posedge clk_i) begin
+    if (i2s_tx_axis.tvalid && i2s_tx_axis.tready) begin
+      if (i2s_tx_axis.tdata !== 32'hA5A5_5A5A) begin
+        $fatal(1, "I2S TX stream data mismatch");
+      end
+      stream_tx_count <= stream_tx_count + 1;
+    end
+    if (i2s_rx_axis.tvalid && i2s_rx_axis.tready) begin
+      stream_rx_count <= stream_rx_count + 1;
+      if (stream_rx_count == 1) stream_rx_valid <= 1'b0;
+    end
+  end
 
   always @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -114,7 +160,10 @@ module dma_error_tb;
       .error_addr_o(error_addr_o),
       .fsm_o       (fsm_o),
       .hw_trg      (hw_trg),
-      .rib         (rib)
+      .rib         (rib),
+      .i2s_tx_axis (i2s_tx_axis),
+      .i2s_rx_axis (i2s_rx_axis),
+      .dvp_rx_axis (dvp_rx_axis)
   );
 
   task automatic start_transfer;
@@ -193,7 +242,34 @@ module dma_error_tb;
       $fatal(1, "DMA did not fall back to INCR1 for a register window");
     end
 
-    $display("dma error and burst performance test passed");
+    mode_i          = 4'd1;
+    srcaddr_i       = 32'h3800_2000;
+    srcincr_i       = 1'b1;
+    xferlen_i       = 32'd2;
+    stream_tx_ready = 1'b0;
+    start_transfer();
+    repeat (3) @(posedge clk_i);
+    @(negedge clk_i);
+    stream_tx_ready = 1'b1;
+    wait (done_o);
+    @(negedge clk_i);
+    if (stream_tx_count != 2) begin
+      $fatal(1, "I2S TX stream transferred %0d words", stream_tx_count);
+    end
+
+    mode_i          = 4'd2;
+    dstaddr_i       = 32'h4000_2000;
+    dstincr_i       = 1'b1;
+    xferlen_i       = 32'd2;
+    stream_rx_valid = 1'b1;
+    start_transfer();
+    wait (done_o);
+    @(negedge clk_i);
+    if (stream_rx_count != 2) begin
+      $fatal(1, "I2S RX stream transferred %0d words", stream_rx_count);
+    end
+
+    $display("dma error, burst performance, and AXI4-Stream test passed");
     $finish;
   end
 endmodule

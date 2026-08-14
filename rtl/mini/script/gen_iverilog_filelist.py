@@ -61,7 +61,7 @@ def _standard_cell_models(pdk: str, netlist: Path | None = None) -> list[Path]:
     if pdk == "GF180":
         cells_dir = (
             ROOT_DIR
-            / "pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells"
+            / "physical/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells"
         )
         sequential_models = {
             "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
@@ -77,7 +77,9 @@ def _standard_cell_models(pdk: str, netlist: Path | None = None) -> list[Path]:
             ),
         ]
     if pdk == "SKY130":
-        cells_dir = ROOT_DIR / "pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells"
+        cells_dir = (
+            ROOT_DIR / "physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells"
+        )
         if netlist is None:
             raise ValueError("SKY130 standard-cell models require a netlist")
         cell_models = {

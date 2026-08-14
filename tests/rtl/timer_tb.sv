@@ -169,7 +169,7 @@ module timer_tb;
     if ((intr_state[2:1] != 2'b11) || !irq_o) $fatal(1, "interrupt test failed");
     ribp_write(32'h0000_0020, 32'h0000_0007, 4'h1, 1'b0);
 
-    $display("RIBP Timer V2 register, mode, interrupt, and error test passed");
+    $display("RIBP Timer register, mode, interrupt, and error test passed");
     $finish;
   end
 endmodule

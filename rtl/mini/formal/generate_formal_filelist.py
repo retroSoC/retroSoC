@@ -17,9 +17,9 @@ from filelist import FileList, write_filelist  # noqa: E402
 
 
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
-INTERCONNECT = ROOT / "rtl/ip/ribp/interconnect"
-PERIPHERAL = ROOT / "rtl/ip/ribp/peripheral"
-SERIAL = ROOT / "rtl/ip/ribp/serial"
+INTERCONNECT = ROOT / "rtl/ip/interconnect"
+PERIPHERAL = ROOT / "rtl/ip/peripheral"
+SERIAL = ROOT / "rtl/ip/serial"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -29,6 +29,7 @@ def target_defines(target: str) -> list[str]:
 
 def source_files(target: str) -> list[Path]:
     common = [
+        COMMON_RTL / "interface/axi4_if.sv",
         COMMON_RTL / "interface/ribp_if.sv",
         COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",
@@ -111,12 +112,15 @@ def source_files(target: str) -> list[Path]:
     if target == "uart":
         return [
             COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/edge_det.sv",
             COMMON_RTL / "utils/fifo.sv",
-            ROOT / "rtl/managed/clusterip/uart/rtl/uart_if.sv",
+            SERIAL / "uart_if.sv",
             SERIAL / "uart_baudgen.sv",
             SERIAL / "ribp_uart_tx.sv",
             SERIAL / "ribp_uart_rx.sv",
+            SERIAL / "uart_flow_ctrl.sv",
             SERIAL / "uart_core.sv",
             SERIAL / "uart_reg.sv",
             SERIAL / "ribp_uart.sv",
@@ -155,6 +159,13 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "clint_core.sv",
             PERIPHERAL / "ribp_clint.sv",
             SCRIPT_DIR / "clint_formal.sv",
+        ]
+    if target == "dvp":
+        return [
+            COMMON_RTL / "interface/ribp_if.sv", COMMON_RTL / "utils/register.sv",
+            ROOT / "rtl/ip/multimedia/dvp_define.svh",
+            ROOT / "rtl/ip/multimedia/dvp_reg.sv",
+            SCRIPT_DIR / "dvp_formal.sv",
         ]
     raise ValueError(f"unsupported formal target: {target}")
 
@@ -201,6 +212,7 @@ def parse_args() -> argparse.Namespace:
             "i2c",
             "timer",
             "clint",
+            "dvp",
         ),
         required=True,
     )

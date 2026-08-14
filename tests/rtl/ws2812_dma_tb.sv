@@ -46,6 +46,18 @@ module ws2812_dma_tb;
   rib_if dma_rib ();
   ribp_if ws_ribp ();
   ws2812_if ws2812 ();
+  axi4_stream_if i2s_tx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if i2s_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if dvp_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   always #5 clk_i = ~clk_i;
 
@@ -54,20 +66,37 @@ module ws2812_dma_tb;
     $fatal(1, "WS2812 DMA integration test timeout");
   end
 
-  assign ws_ribp.valid     = host_active ? host_valid : dma_ws_valid;
-  assign ws_ribp.addr      = host_active ? host_addr : bus_addr_q;
-  assign ws_ribp.wdata     = host_active ? host_wdata : dma_rib.wdata;
-  assign ws_ribp.wstrb     = host_active ? host_wstrb : dma_rib.wstrb;
+  assign ws_ribp.valid      = host_active ? host_valid : dma_ws_valid;
+  assign ws_ribp.addr       = host_active ? host_addr : bus_addr_q;
+  assign ws_ribp.wdata      = host_active ? host_wdata : dma_rib.wdata;
+  assign ws_ribp.wstrb      = host_active ? host_wstrb : dma_rib.wstrb;
 
-  assign dma_rib.cmd_ready = bus_state_q == BUS_IDLE;
-  assign dma_rib.w_ready   = (bus_state_q == BUS_WRITE_DATA) && ws_ribp.ready;
-  assign dma_rib.rsp_valid = (bus_state_q == BUS_READ_RESP) || (bus_state_q == BUS_WRITE_RESP);
-  assign dma_rib.rdata     = pixels[bus_addr_q[4:2]];
-  assign dma_rib.resp_err  = 1'b0;
-  assign dma_rib.resp_code = `RIB_RESP_OK;
-  assign dma_rib.rsp_beat  = 2'd0;
-  assign dma_rib.rsp_last  = 1'b1;
-  assign dma_ws_valid      = (bus_state_q == BUS_WRITE_DATA) && dma_rib.w_valid;
+  assign dma_rib.cmd_ready  = bus_state_q == BUS_IDLE;
+  assign dma_rib.w_ready    = (bus_state_q == BUS_WRITE_DATA) && ws_ribp.ready;
+  assign dma_rib.rsp_valid  = (bus_state_q == BUS_READ_RESP) || (bus_state_q == BUS_WRITE_RESP);
+  assign dma_rib.rdata      = pixels[bus_addr_q[4:2]];
+  assign dma_rib.resp_err   = 1'b0;
+  assign dma_rib.resp_code  = `RIB_RESP_OK;
+  assign dma_rib.rsp_beat   = 2'd0;
+  assign dma_rib.rsp_last   = 1'b1;
+  assign dma_ws_valid       = (bus_state_q == BUS_WRITE_DATA) && dma_rib.w_valid;
+  assign i2s_tx_axis.tready = 1'b0;
+  assign i2s_rx_axis.tdata  = '0;
+  assign i2s_rx_axis.tkeep  = '0;
+  assign i2s_rx_axis.tstrb  = '0;
+  assign i2s_rx_axis.tlast  = 1'b0;
+  assign i2s_rx_axis.tid    = '0;
+  assign i2s_rx_axis.tdest  = '0;
+  assign i2s_rx_axis.tuser  = '0;
+  assign i2s_rx_axis.tvalid = 1'b0;
+  assign dvp_rx_axis.tdata  = '0;
+  assign dvp_rx_axis.tkeep  = '0;
+  assign dvp_rx_axis.tstrb  = '0;
+  assign dvp_rx_axis.tlast  = 1'b0;
+  assign dvp_rx_axis.tid    = '0;
+  assign dvp_rx_axis.tdest  = '0;
+  assign dvp_rx_axis.tuser  = '0;
+  assign dvp_rx_axis.tvalid = 1'b0;
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -142,11 +171,14 @@ module ws2812_dma_tb;
       .error_addr_o(dma_error_addr),
       .fsm_o       (dma_fsm),
       .hw_trg      (hw_trg),
-      .rib         (dma_rib)
+      .rib         (dma_rib),
+      .i2s_tx_axis (i2s_tx_axis),
+      .i2s_rx_axis (i2s_rx_axis),
+      .dvp_rx_axis (dvp_rx_axis)
   );
 
   ribp_ws2812 #(
-      .TX_FIFO_DEPTH(4)
+      .TxFifoDepth(4)
   ) u_ws2812 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

@@ -102,7 +102,7 @@ def main() -> int:
         staging.mkdir()
         command = [
             "python3",
-            str(root / "syn/tools/export_soc_sources.py"),
+            str(root / "physical/smoke/syn/tools/export_soc_sources.py"),
             "sv",
             "--output-dir",
             str(staging),

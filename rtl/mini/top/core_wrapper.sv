@@ -10,16 +10,16 @@
 
 module core_wrapper (
     // verilog_format: off
-    input logic     clk_i,
-    input logic     rst_n_i,
-    input logic [31:0] irq_i,
-    input logic     jtag_tck_i,
-    input logic     jtag_tms_i,
-    input logic     jtag_tdi_i,
-    input logic     jtag_trst_n_i,
-    output logic    jtag_tdo_o,
-    output logic    debug_halted_o,
-    ribp_if.master ribp
+    input  logic          clk_i,
+    input  logic          rst_n_i,
+    input  logic [31:0]   irq_i,
+    input  logic          jtag_tck_i,
+    input  logic          jtag_tms_i,
+    input  logic          jtag_tdi_i,
+    input  logic          jtag_trst_n_i,
+    output logic          jtag_tdo_o,
+    output logic          debug_halted_o,
+    axi4_if.master        axi4
     // verilog_format: on
 );
 
@@ -33,7 +33,7 @@ module core_wrapper (
       .jtag_trst_n_i (jtag_trst_n_i),
       .jtag_tdo_o    (jtag_tdo_o),
       .debug_halted_o(debug_halted_o),
-      .ribp          (ribp)
+      .axi4          (axi4)
   );
 
 endmodule

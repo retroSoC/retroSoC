@@ -188,7 +188,7 @@ module bus_formal_design (
   assign rib_cmd_len    = rib.cmd_len;
   assign apb_valid      = apb_rib.cmd_valid;
 
-  bus u_dut (
+  rib_bus u_dut (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
       .mgmt_ribp        (mgmt_ribp),

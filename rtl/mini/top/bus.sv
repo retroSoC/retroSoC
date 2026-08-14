@@ -11,7 +11,7 @@
 `include "mmap_define.svh"
 `include "rib_defs.svh"
 
-module bus (
+module rib_bus (
     // verilog_format: off
     input logic              clk_i,
     input logic              rst_n_i,
@@ -64,10 +64,10 @@ module bus (
   logic [1:0] s_mstr_id_d, s_mstr_id_q;
   logic [1:0] s_mstr_rr_d, s_mstr_rr_q;
   logic [1:0] s_target_d, s_target_q;
-  logic s_user_request;
+  logic s_user_req;
   logic s_terminal_rsp;
   logic s_ribp_sel, s_apb_sel, s_ram_sel, s_fault_sel;
-  logic s_access_denied, s_burst_legal, s_length_legal;
+  logic s_access_denied, s_burst_legal, s_len_legal;
   logic        s_user_access_allowed;
   logic [31:0] s_last_addr;
   logic [ 2:0] s_fault_code;
@@ -121,7 +121,7 @@ module bus (
   assign u_ram_rib_if.rsp_last  = 1'b0;
 `endif
 
-  assign s_user_request = user_bus_enable_i && user_rib.cmd_valid;
+  assign s_user_req = user_bus_enable_i && user_rib.cmd_valid;
   assign user_bus_idle_o = ~s_mstr_lock_q || (s_mstr_id_q != MSTR_USER);
   assign s_terminal_rsp  = s_cmd_accepted_q && u_mstr_rib_if.rsp_valid &&
                            u_mstr_rib_if.rsp_ready &&
@@ -137,7 +137,7 @@ module bus (
           if (u_mgmt_rib_if.cmd_valid) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_MGMT;
-          end else if (s_user_request) begin
+          end else if (s_user_req) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_USER;
           end else if (dma_rib.cmd_valid) begin
@@ -146,7 +146,7 @@ module bus (
           end
         end
         MSTR_USER: begin
-          if (s_user_request) begin
+          if (s_user_req) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_USER;
           end else if (dma_rib.cmd_valid) begin
@@ -164,7 +164,7 @@ module bus (
           end else if (u_mgmt_rib_if.cmd_valid) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_MGMT;
-          end else if (s_user_request) begin
+          end else if (s_user_req) begin
             s_mstr_lock_d = 1'b1;
             s_mstr_id_d   = MSTR_USER;
           end
@@ -180,23 +180,29 @@ module bus (
     end
   end
 
-  dffr #(1) u_mstr_lock_dffr (
-      clk_i,
-      rst_n_i,
-      s_mstr_lock_d,
-      s_mstr_lock_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_mstr_lock_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_mstr_lock_d),
+      .dat_o  (s_mstr_lock_q)
   );
-  dffr #(2) u_mstr_id_dffr (
-      clk_i,
-      rst_n_i,
-      s_mstr_id_d,
-      s_mstr_id_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_mstr_id_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_mstr_id_d),
+      .dat_o  (s_mstr_id_q)
   );
-  dffr #(2) u_mstr_rr_dffr (
-      clk_i,
-      rst_n_i,
-      s_mstr_rr_d,
-      s_mstr_rr_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_mstr_rr_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_mstr_rr_d),
+      .dat_o  (s_mstr_rr_q)
   );
 
   always_comb begin
@@ -207,11 +213,13 @@ module bus (
       s_cmd_accepted_d = 1'b0;
     end
   end
-  dffr #(1) u_cmd_accepted_dffr (
-      clk_i,
-      rst_n_i,
-      s_cmd_accepted_d,
-      s_cmd_accepted_q
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_cmd_accepted_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cmd_accepted_d),
+      .dat_o  (s_cmd_accepted_q)
   );
 
   // Master mux. The grant is held until the terminal response is consumed.
@@ -304,11 +312,11 @@ module bus (
   // verilog_format: off
   assign s_last_addr = u_mstr_rib_if.cmd_addr +
       (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR4 ? 32'd12 : 32'd0);
-  assign s_length_legal =
+  assign s_len_legal =
       (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) ||
       (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR4);
   assign s_burst_legal =
-      s_length_legal &&
+      s_len_legal &&
       ((u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) ||
        ((u_mstr_rib_if.cmd_addr[3:0] == 4'b0000) &&
         `SOC_ADDR_SUPPORTS_INCR4(u_mstr_rib_if.cmd_addr) &&
@@ -323,7 +331,7 @@ module bus (
 
   // verilog_format: off
   assign s_ribp_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
-                     s_burst_legal && `SOC_ADDR_IS_RIBP(u_mstr_rib_if.cmd_addr);
+                     s_burst_legal && `SOC_ADDR_IS_RIB_LEGACY_TARGET(u_mstr_rib_if.cmd_addr);
   assign s_apb_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
                      (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) &&
                      `SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr);
@@ -344,7 +352,7 @@ module bus (
     end else if (`SOC_ADDR_IS_RESERVED(u_mstr_rib_if.cmd_addr)) begin
       s_fault_code = `RIB_RESP_RESERVED;
       // verilog_format: off
-    end else if ((`SOC_ADDR_IS_RIBP(u_mstr_rib_if.cmd_addr) ||
+    end else if ((`SOC_ADDR_IS_RIB_LEGACY_TARGET(u_mstr_rib_if.cmd_addr) ||
                   `SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr) ||
                   `SOC_ADDR_IS_RAM(u_mstr_rib_if.cmd_addr)) &&
                  (~s_burst_legal ||
@@ -400,11 +408,13 @@ module bus (
       end
     end
   end
-  dffr #(2) u_target_dffr (
-      clk_i,
-      rst_n_i,
-      s_target_d,
-      s_target_q
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_target_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_target_d),
+      .dat_o  (s_target_q)
   );
 
   // Write-data and response routing uses the captured target.
@@ -503,39 +513,49 @@ module bus (
       s_fault_wstrb_d = u_fault_rib_if.wstrb;
     end
   end
-  dffr #(4) u_fault_wstrb_dffr (
-      clk_i,
-      rst_n_i,
-      s_fault_wstrb_d,
-      s_fault_wstrb_q
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_fault_wstrb_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_fault_wstrb_d),
+      .dat_o  (s_fault_wstrb_q)
   );
-  dffer #(32) u_fault_addr_dffer (
-      clk_i,
-      rst_n_i,
-      s_fault_cmd_hdshk,
-      u_mstr_rib_if.cmd_addr,
-      s_fault_addr_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_fault_addr_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fault_cmd_hdshk),
+      .dat_i  (u_mstr_rib_if.cmd_addr),
+      .dat_o  (s_fault_addr_q)
   );
-  dffer #(2) u_fault_master_dffer (
-      clk_i,
-      rst_n_i,
-      s_fault_cmd_hdshk,
-      s_mstr_id_q,
-      s_fault_master_q
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_fault_master_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fault_cmd_hdshk),
+      .dat_i  (s_mstr_id_q),
+      .dat_o  (s_fault_master_q)
   );
-  dffer #(3) u_fault_code_dffer (
-      clk_i,
-      rst_n_i,
-      s_fault_cmd_hdshk,
-      s_fault_code,
-      s_fault_code_q
+  dffer #(
+      .DATA_WIDTH(3)
+  ) u_fault_code_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fault_cmd_hdshk),
+      .dat_i  (s_fault_code),
+      .dat_o  (s_fault_code_q)
   );
-  dffer #(32) u_xfer_addr_dffer (
-      clk_i,
-      rst_n_i,
-      u_mstr_rib_if.cmd_valid && u_mstr_rib_if.cmd_ready,
-      u_mstr_rib_if.cmd_addr,
-      s_xfer_addr_q
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_xfer_addr_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (u_mstr_rib_if.cmd_valid && u_mstr_rib_if.cmd_ready),
+      .dat_i  (u_mstr_rib_if.cmd_addr),
+      .dat_o  (s_xfer_addr_q)
   );
 
   assign fault_valid_o = s_cmd_accepted_q && (s_target_q == TARGET_FAULT) &&
@@ -591,53 +611,69 @@ module bus (
     end
   end
 
-  dffr #(64) u_perf_mgmt_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_mgmt_wait_d,
-      s_perf_mgmt_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_mgmt_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_mgmt_wait_d),
+      .dat_o  (s_perf_mgmt_wait_q)
   );
-  dffr #(64) u_perf_user_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_user_wait_d,
-      s_perf_user_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_user_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_user_wait_d),
+      .dat_o  (s_perf_user_wait_q)
   );
-  dffr #(64) u_perf_dma_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_dma_wait_d,
-      s_perf_dma_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_dma_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_dma_wait_d),
+      .dat_o  (s_perf_dma_wait_q)
   );
-  dffr #(64) u_perf_ribp_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_ribp_wait_d,
-      s_perf_ribp_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_ribp_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_ribp_wait_d),
+      .dat_o  (s_perf_ribp_wait_q)
   );
-  dffr #(64) u_perf_apb_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_apb_wait_d,
-      s_perf_apb_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_apb_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_apb_wait_d),
+      .dat_o  (s_perf_apb_wait_q)
   );
-  dffr #(64) u_perf_sdram_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_sdram_wait_d,
-      s_perf_sdram_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_sdram_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_sdram_wait_d),
+      .dat_o  (s_perf_sdram_wait_q)
   );
-  dffr #(64) u_perf_psram_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_psram_wait_d,
-      s_perf_psram_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_psram_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_psram_wait_d),
+      .dat_o  (s_perf_psram_wait_q)
   );
-  dffr #(64) u_perf_flash_wait_dffr (
-      clk_i,
-      rst_n_i,
-      s_perf_flash_wait_d,
-      s_perf_flash_wait_q
+  dffr #(
+      .DATA_WIDTH(64)
+  ) u_perf_flash_wait_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_flash_wait_d),
+      .dat_o  (s_perf_flash_wait_q)
   );
 
   assign perf_mgmt_wait_o  = s_perf_mgmt_wait_q;
@@ -649,4 +685,187 @@ module bus (
   assign perf_psram_wait_o = s_perf_psram_wait_q;
   assign perf_flash_wait_o = s_perf_flash_wait_q;
 
+endmodule
+
+module axi4_bus (
+    // verilog_format: off
+    input  logic          clk_i,
+    input  logic          rst_n_i,
+    axi4_if.slave         mgmt_axi4,
+    axi4_if.slave         user_axi4,
+    axi4_if.slave         dma_axi4,
+    axi4_if.master        cfg_axi4,
+    axi4_if.master        apb_axi4,
+`ifdef HAVE_SRAM_IF
+    ram_if.master         ram,
+`endif
+    axi4_if.master        sdram_axi4,
+    axi4_if.master        psram_axi4,
+    axi4_if.master        xpi_axi4,
+    axi4_if.master        spisd_axi4,
+    input  logic          user_bus_enable_i,
+    output logic          user_bus_idle_o,
+    input  logic          perf_enable_i,
+    input  logic          perf_clear_i,
+    output logic          fault_valid_o,
+    output logic [31:0]   fault_addr_o,
+    output logic [3:0]    fault_wstrb_o,
+    output logic          fault_reserved_o,
+    output logic          fault_access_o,
+    output logic [1:0]    fault_master_o,
+    output logic [2:0]    fault_code_o,
+    output logic [63:0]   perf_mgmt_wait_o,
+    output logic [63:0]   perf_user_wait_o,
+    output logic [63:0]   perf_dma_wait_o,
+    output logic [63:0]   perf_ribp_wait_o,
+    output logic [63:0]   perf_apb_wait_o,
+    output logic [63:0]   perf_sdram_wait_o,
+    output logic [63:0]   perf_psram_wait_o,
+    output logic [63:0]   perf_flash_wait_o
+    // verilog_format: on
+);
+  localparam int NumMasters = 3;
+  localparam int NumTargets = 9;
+
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_master_axi4_if[NumMasters] (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_target_axi4_if[NumTargets] (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_ram_axi4_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+
+  axi4_connector u_mgmt_connector (
+      .source(mgmt_axi4),
+      .sink  (u_master_axi4_if[0])
+  );
+
+  axi4_connector u_user_connector (
+      .source(user_axi4),
+      .sink  (u_master_axi4_if[1])
+  );
+
+  axi4_connector u_dma_connector (
+      .source(dma_axi4),
+      .sink  (u_master_axi4_if[2])
+  );
+
+  axi4_connector u_cfg_connector (
+      .source(u_target_axi4_if[0]),
+      .sink  (cfg_axi4)
+  );
+
+  axi4_connector u_apb_connector (
+      .source(u_target_axi4_if[1]),
+      .sink  (apb_axi4)
+  );
+
+  axi4_connector u_ram_connector (
+      .source(u_target_axi4_if[2]),
+      .sink  (u_ram_axi4_if)
+  );
+
+  axi4_connector u_sdram_connector (
+      .source(u_target_axi4_if[3]),
+      .sink  (sdram_axi4)
+  );
+
+  axi4_connector u_psram_connector (
+      .source(u_target_axi4_if[4]),
+      .sink  (psram_axi4)
+  );
+
+  axi4_connector u_xpi_connector (
+      .source(u_target_axi4_if[5]),
+      .sink  (xpi_axi4)
+  );
+
+  axi4_connector u_spisd_connector (
+      .source(u_target_axi4_if[6]),
+      .sink  (spisd_axi4)
+  );
+
+  axi4_interconnect #(
+      .NumMasters(NumMasters),
+      .NumTargets(NumTargets)
+  ) u_axi4_interconnect (
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .masters          (u_master_axi4_if),
+      .targets          (u_target_axi4_if),
+      .user_bus_enable_i(user_bus_enable_i),
+      .user_bus_idle_o  (user_bus_idle_o),
+      .perf_enable_i    (perf_enable_i),
+      .perf_clear_i     (perf_clear_i),
+      .fault_valid_o    (fault_valid_o),
+      .fault_addr_o     (fault_addr_o),
+      .fault_wstrb_o    (fault_wstrb_o),
+      .fault_reserved_o (fault_reserved_o),
+      .fault_access_o   (fault_access_o),
+      .fault_master_o   (fault_master_o),
+      .fault_code_o     (fault_code_o),
+      .perf_mgmt_wait_o (perf_mgmt_wait_o),
+      .perf_user_wait_o (perf_user_wait_o),
+      .perf_dma_wait_o  (perf_dma_wait_o),
+      .perf_ribp_wait_o (perf_ribp_wait_o),
+      .perf_apb_wait_o  (perf_apb_wait_o),
+      .perf_sdram_wait_o(perf_sdram_wait_o),
+      .perf_psram_wait_o(perf_psram_wait_o),
+      .perf_flash_wait_o(perf_flash_wait_o)
+  );
+
+`ifdef HAVE_SRAM_IF
+  axi42ram u_axi42ram (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (u_ram_axi4_if),
+      .ram    (ram)
+  );
+`else
+  axi4_error_slave #(
+      .Response(2'b11)
+  ) u_ram_error_slave (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (u_ram_axi4_if)
+  );
+`endif
+
+  axi4_error_slave #(
+      .Response(2'b11)
+  ) u_decode_error_slave (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (u_target_axi4_if[7])
+  );
+
+  axi4_error_slave #(
+      .Response(2'b10)
+  ) u_slave_error_slave (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (u_target_axi4_if[8])
+  );
 endmodule

@@ -1,4 +1,4 @@
-# PS/2 V2 SoC Integration
+# PS/2 SoC Integration
 
 The Mini SoC integrates the managed PS/2 host controller at
 `RS_SOC_APB_PS2_BASE`. The standalone IP owns the transport RTL, register ABI,

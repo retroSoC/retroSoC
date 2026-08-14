@@ -39,6 +39,7 @@ def test_bus_preserves_incr4_and_rejects_illegal_bursts(tmp_path: Path) -> None:
                 f"+incdir+{memory_map / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ram_if.sv"),
                 str(ROOT / "rtl/mini/top/rib_if.sv"),
