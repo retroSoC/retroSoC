@@ -48,6 +48,7 @@
 /ip/peripheral/clint_core.sv
 /ip/peripheral/ribp_clint.sv
 /ip/memory/sdram_clkgen.sv
+/ip/memory/sdram_define.svh
 /ip/memory/sdram_reg.sv
 /ip/memory/sdram_core.sv
 /ip/memory/sdram.sv
