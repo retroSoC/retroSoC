@@ -41,14 +41,11 @@ and validation boundary.
 | `docs/` | [docs/README.md](docs/README.md) | Engineering and MISRA policy. |
 | `fpga/` | [fpga/README.md](fpga/README.md) | FPGA wrapper and board constraints. |
 | `licenses/` | [licenses/README.md](licenses/README.md) | Third-party notices and license texts. |
-| `pd/` | [pd/README.md](pd/README.md) | Physical-design entry points. |
-| `pdk/` | [pdk/README.md](pdk/README.md) | Managed PDK and technology inputs. |
+| `physical/` | [physical/README.md](physical/README.md) | Physical design, managed PDK inputs, and smoke synthesis/STA flows. |
 | `quality/` | [quality/README.md](quality/README.md) | Executable quality policy and baselines. |
 | `requirements/` | [requirements/README.md](requirements/README.md) | Pinned Python tool requirements. |
 | `rtl/` | [rtl/README.md](rtl/README.md) | RTL, testbench, and SoC integration. |
 | `scripts/` | [scripts/README.md](scripts/README.md) | Build, setup, regression, and quality helpers. |
-| `sta/` | [sta/README.md](sta/README.md) | Static timing analysis. |
-| `syn/` | [syn/README.md](syn/README.md) | Synthesis and source export. |
 | `tests/` | [tests/README.md](tests/README.md) | Host C and Python test suites. |
 
 Do not create project documentation inside generated/local roots such as

@@ -6,7 +6,8 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
+PDK_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 from scripts.dependency_lock import archive, source  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
@@ -39,7 +40,7 @@ def main() -> int:
             subprocess.run(
                 (
                     sys.executable,
-                    str(ROOT / "pdk/generate_gf180_liberty.py"),
+                    str(PDK_DIR / "generate_gf180_liberty.py"),
                     "--source",
                     str(destination),
                     "--output-dir",
@@ -52,7 +53,7 @@ def main() -> int:
             subprocess.run(
                 (
                     sys.executable,
-                    str(ROOT / "pdk/generate_gf180_liberty.py"),
+                    str(PDK_DIR / "generate_gf180_liberty.py"),
                     "--source",
                     str(destination),
                     "--output-dir",
@@ -67,7 +68,7 @@ def main() -> int:
             subprocess.run(
                 (
                     sys.executable,
-                    str(ROOT / "pdk/generate_gf180_liberty.py"),
+                    str(PDK_DIR / "generate_gf180_liberty.py"),
                     "--source",
                     str(destination),
                     "--output-dir",
@@ -91,7 +92,7 @@ def main() -> int:
             subprocess.run(
                 (
                     sys.executable,
-                    str(ROOT / "pdk/generate_sky130_liberty.py"),
+                    str(PDK_DIR / "generate_sky130_liberty.py"),
                     "--source",
                     str(destination),
                     "--output-dir",
@@ -104,7 +105,7 @@ def main() -> int:
             subprocess.run(
                 (
                     sys.executable,
-                    str(ROOT / "pdk/generate_sky130_liberty.py"),
+                    str(PDK_DIR / "generate_sky130_liberty.py"),
                     "--source",
                     str(destination),
                     "--output-dir",
@@ -129,7 +130,7 @@ def main() -> int:
             subprocess.run(
                 (
                     sys.executable,
-                    str(ROOT / "pdk/prepare_ics55_liberty.py"),
+                    str(PDK_DIR / "prepare_ics55_liberty.py"),
                     "--archive",
                     str(archive_path),
                     "--output-dir",
@@ -142,7 +143,7 @@ def main() -> int:
             subprocess.run(
                 (
                     sys.executable,
-                    str(ROOT / "pdk/prepare_ics55_sim_model.py"),
+                    str(PDK_DIR / "prepare_ics55_sim_model.py"),
                     "--source",
                     str(
                         destination

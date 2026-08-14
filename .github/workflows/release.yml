@@ -22,7 +22,7 @@ jobs:
           path: |
             app/coremark/coremark-main
             app/fatfs/ff16
-            pdk/IHP-Open-PDK
+            physical/pdk/IHP-Open-PDK
             rtl/managed/clusterip/archinfo
             rtl/managed/clusterip/clint
             rtl/managed/clusterip/common

@@ -118,8 +118,10 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     )
     cluster = (tmp_path / "clusterip.fl").read_text(encoding="utf-8")
     hazard3 = (tmp_path / "core_hazard3.fl").read_text(encoding="utf-8")
+    ihp130 = (tmp_path / "pdk_ihp130.fl").read_text(encoding="utf-8")
     assert str(ROOT / "rtl/managed/clusterip") in cluster
     assert str(ROOT / "rtl/managed/hazard3/hdl") in hazard3
+    assert str(ROOT / "physical/pdk/IHP-Open-PDK") in ihp130
     assert "rtl/managed/mpw/core/username3" not in hazard3
     assert (tmp_path / "core_hazard3.fl").is_file()
     assert not (tmp_path / "core_picorv32.fl").exists()
@@ -147,7 +149,7 @@ def test_filelist_round_trips_verilog_define_values(tmp_path: Path) -> None:
 
 
 def test_source_export_uses_the_fixed_hazard3_management_core(tmp_path: Path) -> None:
-    module_path = ROOT / "syn/tools/export_soc_sources.py"
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
     spec = importlib.util.spec_from_file_location("retrosoc_source_export", module_path)
     assert spec is not None and spec.loader is not None
     source_export = importlib.util.module_from_spec(spec)
@@ -1302,6 +1304,22 @@ def test_warning_normalization_keeps_ranges_and_removes_variant_hash(tmp_path: P
     normalized = normalize(tmp_path, "WIDTH", message)
     assert normalized == (
         "WIDTH:$BUILD/generated/core.sv:<line>: Bit extraction of var[7:0] is too wide"
+    )
+
+
+def test_warning_normalization_preserves_pdk_signatures(tmp_path: Path) -> None:
+    message = (
+        f"{tmp_path}/physical/pdk/IHP-Open-PDK/ihp-sg13g2/"
+        "libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v:42: "
+        "Ignoring unsupported specify block"
+    )
+
+    normalized = normalize(tmp_path, "SPECIFYIGN", message)
+
+    assert normalized == (
+        "SPECIFYIGN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/"
+        "libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v:<line>: "
+        "Ignoring unsupported specify block"
     )
 
 

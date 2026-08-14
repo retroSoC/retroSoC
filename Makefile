@@ -248,11 +248,11 @@ PERF_LOG ?= $(SIM_BUILD_ROOT)/sim.log
 endif
 
 ifeq ($(SYNTH), YOSYS)
-include syn/yosys/yosys.mk
+include physical/smoke/syn/yosys/yosys.mk
 endif
 
 ifeq ($(STA), OPENSTA)
-    include sta/opensta/opensta.mk
+    include physical/smoke/sta/opensta/opensta.mk
 endif
 
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
@@ -375,7 +375,7 @@ setup-ip:
 	python3 $(ROOT_PATH)/rtl/ip/setup.py
 
 setup-pdk:
-	python3 $(ROOT_PATH)/pdk/setup.py --pdk $(PDK)
+	python3 $(ROOT_PATH)/physical/pdk/setup.py --pdk $(PDK)
 
 setup-app:
 	python3 $(ROOT_PATH)/app/setup.py

@@ -57,8 +57,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 | [`crt/`](crt) | Freestanding RISC-V startup code, linker scripts, runtime library, core services, and HAL headers. |
 | [`app/`](app) | Applications, board support, media, middleware, networking, ports, and benchmarks. |
 | [`configs/`](configs) | Versioned build profiles for CI, nightly, and cluster flows. |
-| [`pdk/`](pdk) | PDK setup entry points and technology-specific integration. |
-| [`syn/`](syn) and [`sta/`](sta) | Synthesis and static timing analysis flows. |
+| [`physical/`](physical) | Physical-design entry points, managed PDK integration, and smoke synthesis/STA flows. |
 | [`scripts/`](scripts) and [`quality/`](quality) | Build helpers, regression orchestration, checks, warning baselines, and metric policy. |
 | [`.github/`](.github) | GitHub automation, Dependabot configuration, and CI/release workflows; see [`GUIDE.md`](.github/GUIDE.md). |
 | [`docs/`](docs) | Engineering workflow and release-process documentation. |

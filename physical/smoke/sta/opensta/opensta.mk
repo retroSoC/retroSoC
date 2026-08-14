@@ -7,11 +7,11 @@ OPENSTA_LOG        ?= $(STA_BUILD_ROOT)/opensta.log
 OPENSTA_METRICS    ?= $(STA_BUILD_ROOT)/timing_metrics.rpt
 OPENSTA_CONFIG     ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.config
 OPENSTA_SDC        ?= $(STA_BUILD_ROOT)/retrosoc_core.sdc
-OPENSTA_SDC_GEN    := $(ROOT_PATH)/sta/opensta/generate_sdc.py
+OPENSTA_SDC_GEN    := $(ROOT_PATH)/physical/smoke/sta/opensta/generate_sdc.py
 OPENSTA_DOMAIN_MAP := $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json
 OPENSTA_PIN_MAP    := $(ROOT_PATH)/rtl/mini/pin_map/pin_map.json
 
-include $(ROOT_PATH)/sta/opensta/pdk_timing.mk
+include $(ROOT_PATH)/physical/smoke/sta/opensta/pdk_timing.mk
 
 $(OPENSTA_SDC): $(OPENSTA_SDC_GEN) $(OPENSTA_DOMAIN_MAP) $(OPENSTA_PIN_MAP) | manifest
 	@mkdir -p $(dir $@)
@@ -32,6 +32,6 @@ sta: $(OPENSTA_SDC) | manifest
 		--env 'OPENSTA_LINK_LIBS=$(OPENSTA_LINK_LIBS)' --env 'OPENSTA_SRAM_LIBS=$(OPENSTA_SRAM_LIBS)' \
 		--env OPENSTA_SDC=$(OPENSTA_SDC) --env OPENSTA_REPORT=$(OPENSTA_REPORT) \
 		--env OPENSTA_METRICS=$(OPENSTA_METRICS) -- \
-		$(OPENSTA) -no_init -exit -threads $(OPENSTA_THREADS) $(ROOT_PATH)/sta/opensta/opensta.tcl
+		$(OPENSTA) -no_init -exit -threads $(OPENSTA_THREADS) $(ROOT_PATH)/physical/smoke/sta/opensta/opensta.tcl
 
 .PHONY: sta

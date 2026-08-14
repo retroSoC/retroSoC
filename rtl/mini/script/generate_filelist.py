@@ -17,7 +17,7 @@ DEFAULT_OUTPUT_DIR = MINI_DIR / ".generated_fl"
 
 PATH_PREFIXES = {
     "cache": ROOT_DIR / ".cache",
-    "pdk": ROOT_DIR / "pdk",
+    "physical": ROOT_DIR / "physical",
     "clusterip": RTL_DIR / "managed" / "clusterip",
     "ip": RTL_DIR / "ip",
     "third_party": RTL_DIR / "managed" / "third_party",

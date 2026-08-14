@@ -8,7 +8,8 @@ source.
 Use the dependency lock and PDK setup targets to acquire or update managed
 inputs. Do not reformat, patch, or delete vendor content as part of unrelated
 work. PDK changes require the affected synthesis, timing, physical-design, or
-FPGA validation flow and the ownership review defined by `.github/CODEOWNERS`.
+FPGA validation flow and the ownership review defined by
+[`../../.github/CODEOWNERS`](../../.github/CODEOWNERS).
 
 The supported CI PDKs are IHP130, GF180, ICS55, and SKY130. ICS55 obtains its
 locked H7CR standard-cell Liberty archive through

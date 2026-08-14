@@ -34,28 +34,28 @@
     "pdk_ihp130": {
       "url": "https://github.com/IHP-GmbH/IHP-Open-PDK.git",
       "revision": "68eebafcd9b2f5e92c69d37a8d3d90eb266550f5",
-      "destination": "pdk/IHP-Open-PDK",
+      "destination": "physical/pdk/IHP-Open-PDK",
       "recursive": true,
       "license": "Apache-2.0"
     },
     "pdk_ics55": {
       "url": "https://github.com/openecos-projects/icsprout55-pdk.git",
       "revision": "e696e093129ca2212487aa169af74d06ebd86eb6",
-      "destination": "pdk/icsprout55-pdk",
+      "destination": "physical/pdk/icsprout55-pdk",
       "recursive": true,
       "license": "Apache-2.0"
     },
     "pdk_gf180": {
       "url": "https://github.com/google/gf180mcu-pdk.git",
       "revision": "de3240d7529a6970437ac3344820aaae7839f215",
-      "destination": "pdk/gf180mcu-pdk",
+      "destination": "physical/pdk/gf180mcu-pdk",
       "recursive": true,
       "license": "Apache-2.0"
     },
     "pdk_sky130": {
       "url": "https://github.com/google/skywater-pdk.git",
       "revision": "7198cf647113f56041e02abf3eb623692820c5e1",
-      "destination": "pdk/skywater-pdk",
+      "destination": "physical/pdk/skywater-pdk",
       "recursive": true,
       "submodules": ["libraries/sky130_fd_sc_hd/latest"],
       "license": "Apache-2.0"

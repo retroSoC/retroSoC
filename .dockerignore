@@ -4,10 +4,10 @@
 .ruff_cache/
 build/
 dist/
-pdk/IHP-Open-PDK/
-pdk/gf180mcu-pdk/
-pdk/icsprout55-pdk/
-pdk/skywater-pdk/
+physical/pdk/IHP-Open-PDK/
+physical/pdk/gf180mcu-pdk/
+physical/pdk/icsprout55-pdk/
+physical/pdk/skywater-pdk/
 rtl/managed/clusterip/
 rtl/managed/hazard3/
 rtl/managed/mpw/

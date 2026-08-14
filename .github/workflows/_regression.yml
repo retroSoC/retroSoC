@@ -60,10 +60,10 @@ jobs:
           path: |
             app/coremark/coremark-main
             app/fatfs/ff16
-            pdk/IHP-Open-PDK
-            pdk/gf180mcu-pdk
-            pdk/icsprout55-pdk
-            pdk/skywater-pdk
+            physical/pdk/IHP-Open-PDK
+            physical/pdk/gf180mcu-pdk
+            physical/pdk/icsprout55-pdk
+            physical/pdk/skywater-pdk
             rtl/managed/clusterip/archinfo
             rtl/managed/clusterip/clint
             rtl/managed/clusterip/common

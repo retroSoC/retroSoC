@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.setup_helpers import atomic_write, sha256  # noqa: E402

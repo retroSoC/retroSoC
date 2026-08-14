@@ -3,8 +3,8 @@ VVP      ?= vvp
 GTKWAVE  ?= gtkwave
 
 NETLIST_PATH ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
-POST_PATH    ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic.v
-SDF_PATH     ?= $(ROOT_PATH)/pd/sdf/retrosoc_asic_CTS_MIN.sdf.gz
+POST_PATH    ?= $(ROOT_PATH)/physical/sdf/retrosoc_asic.v
+SDF_PATH     ?= $(ROOT_PATH)/physical/sdf/retrosoc_asic_CTS_MIN.sdf.gz
 SDF_SCOPE    ?= $(RTL_TOP).u_retrosoc_asic
 
 IVERILOG_ROOT         := $(SIM_BUILD_ROOT)

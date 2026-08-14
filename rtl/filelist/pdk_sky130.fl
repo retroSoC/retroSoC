@@ -1,12 +1,12 @@
 # SKY130 standard-cell models are selected by gen_iverilog_filelist.py.
 # Technology wrappers instantiate these functional models directly in RTL simulation.
 +define+FUNCTIONAL
-+incdir+/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkbuf
-+incdir+/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkinv
-+incdir+/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/mux2
-+incdir+/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/xor2
++incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkbuf
++incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkinv
++incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/mux2
++incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/xor2
 /tech/sky130_io_sim_cells.v
-/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkbuf/sky130_fd_sc_hd__clkbuf_1.v
-/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkinv/sky130_fd_sc_hd__clkinv_1.v
-/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/mux2/sky130_fd_sc_hd__mux2_1.v
-/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/xor2/sky130_fd_sc_hd__xor2_1.v
+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkbuf/sky130_fd_sc_hd__clkbuf_1.v
+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkinv/sky130_fd_sc_hd__clkinv_1.v
+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/mux2/sky130_fd_sc_hd__mux2_1.v
+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/xor2/sky130_fd_sc_hd__xor2_1.v

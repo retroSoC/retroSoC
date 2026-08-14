@@ -2,7 +2,7 @@
 # Technology wrappers instantiate these models directly in RTL simulation.
 /tech/gf180_io_sim_cells.v
 /tech/gf180_seq_sim_cells.v
-/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/clkbuf/gf180mcu_fd_sc_mcu7t5v0__clkbuf_1.functional.v
-/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/clkinv/gf180mcu_fd_sc_mcu7t5v0__clkinv_1.functional.v
-/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/mux2/gf180mcu_fd_sc_mcu7t5v0__mux2_1.functional.v
-/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/xor2/gf180mcu_fd_sc_mcu7t5v0__xor2_1.functional.v
+/physical/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/clkbuf/gf180mcu_fd_sc_mcu7t5v0__clkbuf_1.functional.v
+/physical/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/clkinv/gf180mcu_fd_sc_mcu7t5v0__clkinv_1.functional.v
+/physical/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/mux2/gf180mcu_fd_sc_mcu7t5v0__mux2_1.functional.v
+/physical/pdk/gf180mcu-pdk/libraries/gf180mcu_fd_sc_mcu7t5v0/latest/cells/xor2/gf180mcu_fd_sc_mcu7t5v0__xor2_1.functional.v

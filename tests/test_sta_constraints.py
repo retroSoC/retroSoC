@@ -14,11 +14,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOMAINS = ROOT / "rtl/mini/integration/clock_reset_domains.json"
 PIN_MAP = ROOT / "rtl/mini/pin_map/pin_map.json"
-GENERATOR = ROOT / "sta/opensta/generate_sdc.py"
-OPENSTA_MAKEFILE = ROOT / "sta/opensta/opensta.mk"
-GF180_GENERATOR = ROOT / "pdk/generate_gf180_liberty.py"
-ICS55_PREPARER = ROOT / "pdk/prepare_ics55_liberty.py"
-ICS55_SIM_MODEL_PREPARER = ROOT / "pdk/prepare_ics55_sim_model.py"
+GENERATOR = ROOT / "physical/smoke/sta/opensta/generate_sdc.py"
+OPENSTA_MAKEFILE = ROOT / "physical/smoke/sta/opensta/opensta.mk"
+GF180_GENERATOR = ROOT / "physical/pdk/generate_gf180_liberty.py"
+ICS55_PREPARER = ROOT / "physical/pdk/prepare_ics55_liberty.py"
+ICS55_SIM_MODEL_PREPARER = ROOT / "physical/pdk/prepare_ics55_sim_model.py"
 
 
 def generate(domains: Path, output: Path) -> subprocess.CompletedProcess[str]:
