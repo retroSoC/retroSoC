@@ -39,10 +39,12 @@ module retrosoc_tb;
   wire        s_psram_sck;
   wire        s_psram_nss0;
   wire        s_psram_nss1;
-  wire        s_psram_dat0;
-  wire        s_psram_dat1;
-  wire        s_psram_dat2;
-  wire        s_psram_dat3;
+  wire        s_psram_nss2;
+  wire        s_psram_nss3;
+  tri1        s_psram_dat0;
+  tri1        s_psram_dat1;
+  tri1        s_psram_dat2;
+  tri1        s_psram_dat3;
   wire        s_i2c0_sda_io;
   wire        s_i2c0_scl_io;
   wire        s_xpi_sck_o;
@@ -164,6 +166,20 @@ module retrosoc_tb;
   ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss1),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
+  );
+
+  pullup u_psram_nss2_pullup (s_psram_nss2);
+  ESP_PSRAM64H #(2) u_ESP_PSRAM64H_2 (
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss2),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
+  );
+
+  pullup u_psram_nss3_pullup (s_psram_nss3);
+  ESP_PSRAM64H #(3) u_ESP_PSRAM64H_3 (
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss3),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 

@@ -27,6 +27,12 @@ the `retrosoc` namespace, for example:
 #include <retrosoc/lib/printf.h>
 ```
 
+`<retrosoc/hal/psram.h>` provides timing calculation, configuration,
+initialization, per-chip recovery, status/ID, restricted indirect commands,
+interrupts, and bounded self-test for the four-chip ESP-PSRAM64H controller.
+See the [controller contract](../docs/ip/psram.md) before using its destructive
+self-test or changing the memory timing.
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

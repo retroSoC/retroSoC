@@ -50,12 +50,12 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     header = (tmp_path / "include/retrosoc/generated/memory_map.h").read_text(encoding="utf-8")
     linker = (tmp_path / "linker/memory_regions.ld").read_text(encoding="utf-8")
 
-    assert "`define SOC_ADDR_PSRAM_END  32'h407FFFFF" in rtl
+    assert "`define SOC_ADDR_PSRAM_END  32'h41FFFFFF" in rtl
     assert "`define SOC_ADDR_XPI_END  32'h5FFFFFFF" in rtl
     assert "`define SOC_ADDR_IS_FLASH(addr) ((addr) <= `SOC_ADDR_FLASH_END)" in rtl
     assert "`define CPU_RESET_ADDR `SOC_CPU_RESET_ADDR" in rtl
     assert "`define SOC_ADDR_IS_RESERVED(addr)" in rtl
-    assert "RS_SOC_PSRAM_SIZE UINT32_C(0x00800000)" in header
+    assert "RS_SOC_PSRAM_SIZE UINT32_C(0x02000000)" in header
     assert "RS_SOC_SDRAM_SIZE UINT32_C(0x04000000)" in header
     assert "RS_SOC_SPISD_SIZE UINT32_C(0x40000000)" in header
     assert "#ifdef __ASSEMBLER__" in header
@@ -78,7 +78,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)" in header
     assert "RS_SOC_SYSCTRL_TEST_STATUS_OFFSET UINT32_C(0x00000084)" in header
     assert "RS_SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET UINT32_C(0x00000088)" in header
-    assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x00800000" in linker
+    assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x02000000" in linker
 
 
 def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> None:

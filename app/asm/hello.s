@@ -40,7 +40,9 @@ CHECK:
 .equ GPIO_ALT_ENABLE, RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x34
 .equ GPIO_ALT_SELECT, RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x38
 .equ BIT_MASK,        0x3FE00000  # Bits 21 to 29 set to 1
-.equ PSRAM_INIT,      RS_SOC_RIBP_PSRAM_BASE + 0x08
+.equ PSRAM_COMMAND,   RS_SOC_RIBP_PSRAM_BASE + 0x04
+.equ PSRAM_STATUS,    RS_SOC_RIBP_PSRAM_BASE + 0x08
+.equ PSRAM_READY,     0x20
 PINMUX_PSRAM:
     li t0, GPIO_ALT_ENABLE
     lw t1, 0(t0)
@@ -52,17 +54,14 @@ PINMUX_PSRAM:
     or t1, t1, t2
     sw t1, 0(t0)
 PSRAM_INIT_TRG:
-    li t0, PSRAM_INIT
+    li t0, PSRAM_COMMAND
     li t1, 1
     sw t1, 0(t0)
-
-# NEW ===========================
-    la a0, 0x0
-    la a1, 2000
-WAIT_PSRAM_RESET:
-    lw   t0, 0(a0)
-    addi a0, a0, 4
-    blt  a0, a1, WAIT_PSRAM_RESET
+    li t0, PSRAM_STATUS
+WAIT_PSRAM_READY:
+    lw t1, 0(t0)
+    andi t1, t1, PSRAM_READY
+    beqz t1, WAIT_PSRAM_READY
 
 LDSD_TEST:
     jal ra, WR_8B_TEST

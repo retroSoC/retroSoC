@@ -1,4 +1,8 @@
+/ip/memory/psram_pkg.sv
+/ip/memory/psram_phy.sv
 /ip/memory/psram_core.sv
+/ip/memory/psram_axi4.sv
+/ip/memory/psram_reg.sv
 /ip/memory/ribp_psram.sv
 /ip/memory/ribp_opipsram.sv
 /ip/storage/spisd_init.sv

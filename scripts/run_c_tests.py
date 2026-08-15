@@ -25,6 +25,7 @@ TEST_SOURCES = (
     "crt/src/hal/ws2812_math.c",
     "crt/src/hal/uart_math.c",
     "crt/src/hal/timer_math.c",
+    "crt/src/hal/psram_math.c",
     "rtl/managed/clusterip/ps2/sw/src/ps2.c",
     "rtl/managed/clusterip/ps2/sw/src/ps2_keyboard.c",
     "rtl/managed/clusterip/ps2/sw/src/ps2_mouse.c",

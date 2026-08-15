@@ -1,347 +1,640 @@
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
-// You can use this software according to the terms and conditions of the Mulan PSL v2.
-// You may obtain a copy of Mulan PSL v2 at:
-//             http://license.coscl.org.cn/MulanPSL2
-// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-// See the Mulan PSL v2 for more details.
 
 module psram_core (
-    input  logic        clk_i,
-    input  logic        rst_n_i,
-    input  logic [ 4:0] cfg_wait_i,
-    input  logic [ 2:0] cfg_chd_i,
-    input  logic        cfg_init_i,
-    output logic        mem_ready_o,
-    input  logic [23:0] mem_addr_i,
-    input  logic [31:0] mem_wdata_i,
-    output logic [31:0] mem_rdata_o,
-    input  logic [ 7:0] xfer_data_bit_cnt_i,
-    input  logic        rd_st_i,
-    input  logic        wr_st_i,
-    output logic        init_done_o,
-    output logic        idle_o,
-    output logic        psram_sclk_o,
-    output logic        psram_ce_o,
-    input  logic        psram_mosi_i,
-    input  logic        psram_miso_i,
-    input  logic        psram_sio2_i,
-    input  logic        psram_sio3_i,
-    output logic        psram_mosi_o,
-    output logic        psram_miso_o,
-    output logic        psram_sio2_o,
-    output logic        psram_sio3_o,
-    output logic        psram_sio_oen_o
+    // verilog_format: off -- preserve reviewed port alignment
+    input  logic                     clk_i,
+    input  logic                     rst_n_i,
+    input  logic                     controller_enable_i,
+    input  logic                     memory_enable_i,
+    input  logic                     auto_init_i,
+    input  logic                     wrap32_i,
+    input  logic [3:0]               chip_enable_i,
+    input  logic [31:0]              powerup_cycles_i,
+    input  logic                     init_start_i,
+    input  logic                     recover_start_i,
+    input  logic [1:0]               recover_chip_i,
+    input  logic                     abort_i,
+    input  logic [3:0]               chip_error_clear_i,
+    output logic                     init_busy_o,
+    output logic                     indirect_busy_o,
+    output logic                     quiesced_o,
+    output logic                     global_ready_o,
+    output logic [3:0]               chip_present_o,
+    output logic [3:0]               chip_ready_o,
+    output logic [3:0]               chip_qpi_o,
+    output logic [3:0]               chip_wrap32_o,
+    output logic [3:0]               chip_error_o,
+    output logic [47:0]              chip0_id_o,
+    output logic [47:0]              chip1_id_o,
+    output logic [47:0]              chip2_id_o,
+    output logic [47:0]              chip3_id_o,
+    output psram_pkg::psram_error_e  last_error_o,
+    output logic [1:0]               last_error_chip_o,
+    output logic [31:0]              last_error_addr_o,
+    output logic                     init_done_event_o,
+    output logic                     indirect_done_event_o,
+    output logic                     error_event_o,
+    output logic                     timeout_event_o,
+    input  logic                     indirect_start_i,
+    input  psram_pkg::psram_cmd_e    indirect_command_i,
+    input  logic [1:0]               indirect_chip_i,
+    input  logic [22:0]              indirect_addr_i,
+    input  logic [3:0]               indirect_length_i,
+    input  logic [63:0]              indirect_wdata_i,
+    output logic [63:0]              indirect_rdata_o,
+    input  logic                     mem_req_valid_i,
+    output logic                     mem_req_ready_o,
+    input  logic                     mem_req_write_i,
+    input  logic [1:0]               mem_req_chip_i,
+    input  logic [22:0]              mem_req_addr_i,
+    input  logic [2:0]               mem_req_len_i,
+    input  logic [31:0]              mem_req_wdata_i,
+    output logic                     mem_rsp_valid_o,
+    input  logic                     mem_rsp_ready_i,
+    output logic                     mem_rsp_error_o,
+    output logic [31:0]              mem_rsp_rdata_o,
+    output logic [2:0]               perf_read_byte_event_o,
+    output logic [2:0]               perf_write_byte_event_o,
+    output logic                     perf_command_event_o,
+    output logic                     perf_error_event_o,
+    input  logic                     axi_busy_i,
+    output logic                     phy_req_valid_o,
+    input  logic                     phy_req_ready_i,
+    output psram_pkg::psram_cmd_e    phy_req_command_o,
+    output logic [1:0]               phy_req_chip_o,
+    output logic                     phy_req_qpi_o,
+    output logic [22:0]              phy_req_addr_o,
+    output logic [5:0]               phy_req_length_o,
+    output logic [63:0]              phy_req_wdata_o,
+    input  logic                     phy_busy_i,
+    input  logic                     phy_done_i,
+    input  logic                     phy_error_i,
+    input  logic [255:0]             phy_rdata_i
+    // verilog_format: on
 );
-  // sclk(max: 144MHz ~ 6.94ns)
-  // 6.94 * 50000 = 347us / 2 = 174us > 150us
-  localparam logic [17:0] BootCounter = 18'd50_000;
 
-  typedef enum logic [4:0] {
-    Init               = 5'd0,
-    ResetEnable        = 5'd1,
-    ResetEnableToReset = 5'd2,
-    Reset              = 5'd3,
-    ResetToQuadEnable  = 5'd4,
-    QuadEnable         = 5'd5,
-    QuadEnableToIdle   = 5'd6,
-    Idle               = 5'd7,
-    Send               = 5'd8,
-    SendQpi            = 5'd9,
-    ReadPreQpi         = 5'd10,
-    ReadQpi            = 5'd11,
-    WriteQpi           = 5'd12,
-    ReadToIdle         = 5'd13,
-    WriteToIdle        = 5'd14
-  } psram_state_e;
+  import psram_pkg::*;
 
-  psram_state_e        s_fsm_state;
-  psram_state_e        s_fsm_state_tgt;
-  logic         [17:0] s_boot_cnt;
-  // ca mean: cmd + addr
-  logic         [31:0] s_xfer_ca;
-  logic         [31:0] s_xfer_data;
-  logic         [ 7:0] s_xfer_ca_bit_cnt;
-  logic         [ 7:0] s_xfer_data_bit_cnt;
-  logic         [ 7:0] s_xfer_byte_data;
-  logic         [ 4:0] s_ce_cnt;
-  logic         [ 3:0] s_rd_wait_cnt;
-  logic         [ 2:0] s_cfg_chd;
-  logic                s_dev_rst;
-  logic                s_wr_st;
-  logic                s_rd_st;
-  logic                s_init_done;
+  typedef enum logic [3:0] {
+    CoreIdle          = 4'd0,
+    CoreInitNext      = 4'd1,
+    CoreInitIssue     = 4'd2,
+    CoreInitWait      = 4'd3,
+    CoreMemIssue      = 4'd4,
+    CoreMemWait       = 4'd5,
+    CoreMemResponse   = 4'd6,
+    CoreIndirectIssue = 4'd7,
+    CoreIndirectWait  = 4'd8
+  } psram_core_state_e;
 
-  logic                s_xfer_new_byte_upd;
-  logic         [ 7:0] s_xfer_new_byte;
+  typedef enum logic [2:0] {
+    InitQpiResetEnable = 3'd0,
+    InitQpiReset       = 3'd1,
+    InitSpiResetEnable = 3'd2,
+    InitSpiReset       = 3'd3,
+    InitReadId         = 3'd4,
+    InitEnterQpi       = 3'd5,
+    InitToggleWrap     = 3'd6
+  } psram_init_phase_e;
 
+  psram_core_state_e         s_state_q;
+  psram_init_phase_e         s_init_phase_q;
+  logic              [ 31:0] s_powerup_count_q;
+  logic                      s_powerup_done_q;
+  logic                      s_auto_init_started_q;
+  logic                      s_init_pending_q;
+  logic              [  3:0] s_init_target_q;
+  logic              [  1:0] s_init_chip_q;
 
-  assign init_done_o     = s_init_done;
-  assign idle_o          = s_fsm_state == Idle;
-  assign psram_sio_oen_o = (s_fsm_state == ReadPreQpi) | (s_fsm_state == ReadQpi);
-  assign mem_rdata_o     = s_xfer_data;
+  logic              [  3:0] s_chip_present_q;
+  logic              [  3:0] s_chip_ready_q;
+  logic              [  3:0] s_chip_qpi_q;
+  logic              [  3:0] s_chip_wrap32_q;
+  logic              [  3:0] s_chip_err_q;
+  logic              [ 47:0] s_chip_id_q            [4];
+  psram_error_e              s_last_err_q;
+  logic              [  1:0] s_last_err_chip_q;
+  logic              [ 31:0] s_last_err_addr_q;
+
+  logic                      s_mem_write_q;
+  logic              [  1:0] s_mem_chip_q;
+  logic              [ 22:0] s_mem_addr_q;
+  logic              [  2:0] s_mem_len_q;
+  logic              [ 31:0] s_mem_wdata_q;
+  logic                      s_mem_rsp_err_q;
+  logic              [ 31:0] s_mem_rsp_rdata_q;
+  logic              [  3:0] s_read_cache_valid_q;
+  logic              [  1:0] s_read_cache_chip_q    [4];
+  logic              [ 17:0] s_read_cache_base_q    [4];
+  logic              [255:0] s_read_cache_data_q    [4];
+  logic              [  1:0] s_read_cache_replace_q;
+  logic              [  3:0] s_read_cache_hit;
+  logic              [  1:0] s_read_cache_hit_index;
+
+  logic                      s_indirect_pending_q;
+  psram_cmd_e                s_indirect_cmd_q;
+  logic              [  1:0] s_indirect_chip_q;
+  logic              [ 22:0] s_indirect_addr_q;
+  logic              [  3:0] s_indirect_len_q;
+  logic              [ 63:0] s_indirect_wdata_q;
+  logic              [ 63:0] s_indirect_rdata_q;
+
+  function automatic logic indirect_is_legal(input psram_cmd_e command, input logic chip_qpi,
+                                             input logic chip_enabled, input logic chip_present,
+                                             input logic [3:0] length);
+    logic data_command;
+    begin
+      data_command = psram_command_is_read(command) || psram_command_is_write(command);
+      indirect_is_legal =
+          chip_enabled && (length >= 4'd1) && (length <= 4'd8) &&
+          (command <= PsramCmdReadId) &&
+          (!data_command || chip_present) &&
+          !(((command == PsramCmdRead) || (command == PsramCmdFastRead) ||
+             (command == PsramCmdReadId) || (command == PsramCmdEnterQpi)) &&
+            chip_qpi) &&
+          !((command == PsramCmdExitQpi) && !chip_qpi);
+    end
+  endfunction
+
+  assign init_busy_o = (s_state_q == CoreInitNext) || (s_state_q == CoreInitIssue) ||
+                       (s_state_q == CoreInitWait);
+  assign indirect_busy_o = s_indirect_pending_q ||
+                           (s_state_q == CoreIndirectIssue) ||
+                           (s_state_q == CoreIndirectWait);
+  assign quiesced_o = init_busy_o || indirect_busy_o;
+  assign global_ready_o = controller_enable_i && memory_enable_i && (|s_chip_ready_q);
+  assign chip_present_o = s_chip_present_q;
+  assign chip_ready_o = s_chip_ready_q;
+  assign chip_qpi_o = s_chip_qpi_q;
+  assign chip_wrap32_o = s_chip_wrap32_q;
+  assign chip_error_o = s_chip_err_q;
+  assign chip0_id_o = s_chip_id_q[0];
+  assign chip1_id_o = s_chip_id_q[1];
+  assign chip2_id_o = s_chip_id_q[2];
+  assign chip3_id_o = s_chip_id_q[3];
+  assign last_error_o = s_last_err_q;
+  assign last_error_chip_o = s_last_err_chip_q;
+  assign last_error_addr_o = s_last_err_addr_q;
+  assign indirect_rdata_o = s_indirect_rdata_q;
+
+  assign mem_req_ready_o = (s_state_q == CoreIdle) &&
+                           (!s_indirect_pending_q || axi_busy_i) &&
+                           !init_start_i && !recover_start_i;
+  assign mem_rsp_valid_o = s_state_q == CoreMemResponse;
+  assign mem_rsp_error_o = s_mem_rsp_err_q;
+  assign mem_rsp_rdata_o = s_mem_rsp_rdata_q;
 
   always_comb begin
-    if (s_fsm_state == Init) begin
-      {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} = 4'd0;
-    end else if (s_fsm_state != Idle) begin
-      if (s_fsm_state < SendQpi) begin  // spi mode
-        psram_mosi_o                               = s_xfer_ca[31];
-        {psram_sio3_o, psram_sio2_o, psram_miso_o} = 3'd0;
-      end else begin  // qpi mode
-        {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} =
-            s_fsm_state == WriteQpi
-                ? {s_xfer_byte_data[7:4]}
-                : {s_xfer_ca[31], s_xfer_ca[30], s_xfer_ca[29], s_xfer_ca[28]};
+    for (int cache_index = 0; cache_index < 4; cache_index++) begin
+      s_read_cache_hit[cache_index] =
+          s_read_cache_valid_q[cache_index] &&
+          (s_read_cache_chip_q[cache_index] == mem_req_chip_i) &&
+          (s_read_cache_base_q[cache_index] == mem_req_addr_i[22:5]);
+    end
+    unique casez (s_read_cache_hit)
+      4'b???1: s_read_cache_hit_index = 2'd0;
+      4'b??10: s_read_cache_hit_index = 2'd1;
+      4'b?100: s_read_cache_hit_index = 2'd2;
+      default: s_read_cache_hit_index = 2'd3;
+    endcase
+  end
+
+  always_comb begin
+    phy_req_valid_o   = 1'b0;
+    phy_req_command_o = PsramCmdRead;
+    phy_req_chip_o    = '0;
+    phy_req_qpi_o     = 1'b0;
+    phy_req_addr_o    = '0;
+    phy_req_length_o  = 6'd1;
+    phy_req_wdata_o   = '0;
+    unique case (s_state_q)
+      CoreInitIssue: begin
+        phy_req_valid_o = 1'b1;
+        phy_req_chip_o  = s_init_chip_q;
+        unique case (s_init_phase_q)
+          InitQpiResetEnable: begin
+            phy_req_command_o = PsramCmdResetEnable;
+            phy_req_qpi_o     = 1'b1;
+          end
+          InitQpiReset: begin
+            phy_req_command_o = PsramCmdReset;
+            phy_req_qpi_o     = 1'b1;
+          end
+          InitSpiResetEnable: phy_req_command_o = PsramCmdResetEnable;
+          InitSpiReset:       phy_req_command_o = PsramCmdReset;
+          InitReadId: begin
+            phy_req_command_o = PsramCmdReadId;
+            phy_req_length_o  = 6'd6;
+          end
+          InitEnterQpi:       phy_req_command_o = PsramCmdEnterQpi;
+          default: begin
+            phy_req_command_o = PsramCmdToggleWrap;
+            phy_req_qpi_o     = 1'b1;
+          end
+        endcase
+      end
+      CoreMemIssue: begin
+        phy_req_valid_o   = 1'b1;
+        phy_req_command_o = s_mem_write_q ? PsramCmdQuadWrite : PsramCmdQuadRead;
+        phy_req_chip_o    = s_mem_chip_q;
+        phy_req_qpi_o     = 1'b1;
+        phy_req_addr_o    = s_mem_write_q ? s_mem_addr_q : {s_mem_addr_q[22:5], 5'd0};
+        phy_req_length_o  = s_mem_write_q ? {3'd0, s_mem_len_q} : 6'd32;
+        phy_req_wdata_o   = {32'd0, s_mem_wdata_q};
+      end
+      CoreIndirectIssue: begin
+        phy_req_valid_o   = 1'b1;
+        phy_req_command_o = s_indirect_cmd_q;
+        phy_req_chip_o    = s_indirect_chip_q;
+        phy_req_qpi_o     = s_chip_qpi_q[s_indirect_chip_q];
+        phy_req_addr_o    = s_indirect_addr_q;
+        phy_req_length_o  = {2'd0, s_indirect_len_q};
+        phy_req_wdata_o   = s_indirect_wdata_q;
+      end
+      default: begin
+      end
+    endcase
+  end
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      s_state_q               <= CoreIdle;
+      s_init_phase_q          <= InitQpiResetEnable;
+      s_powerup_count_q       <= '0;
+      s_powerup_done_q        <= 1'b0;
+      s_auto_init_started_q   <= 1'b0;
+      s_init_pending_q        <= 1'b0;
+      s_init_target_q         <= '0;
+      s_init_chip_q           <= '0;
+      s_chip_present_q        <= '0;
+      s_chip_ready_q          <= '0;
+      s_chip_qpi_q            <= '0;
+      s_chip_wrap32_q         <= '0;
+      s_chip_err_q            <= '0;
+      s_last_err_q            <= PsramErrorNone;
+      s_last_err_chip_q       <= '0;
+      s_last_err_addr_q       <= '0;
+      s_mem_write_q           <= 1'b0;
+      s_mem_chip_q            <= '0;
+      s_mem_addr_q            <= '0;
+      s_mem_len_q             <= 3'd1;
+      s_mem_wdata_q           <= '0;
+      s_mem_rsp_err_q         <= 1'b0;
+      s_mem_rsp_rdata_q       <= '0;
+      s_read_cache_valid_q    <= '0;
+      s_read_cache_replace_q  <= '0;
+      s_indirect_pending_q    <= 1'b0;
+      s_indirect_cmd_q        <= PsramCmdRead;
+      s_indirect_chip_q       <= '0;
+      s_indirect_addr_q       <= '0;
+      s_indirect_len_q        <= 4'd1;
+      s_indirect_wdata_q      <= '0;
+      s_indirect_rdata_q      <= '0;
+      init_done_event_o       <= 1'b0;
+      indirect_done_event_o   <= 1'b0;
+      error_event_o           <= 1'b0;
+      timeout_event_o         <= 1'b0;
+      perf_read_byte_event_o  <= '0;
+      perf_write_byte_event_o <= '0;
+      perf_command_event_o    <= 1'b0;
+      perf_error_event_o      <= 1'b0;
+      for (int chip_index = 0; chip_index < 4; chip_index++) begin
+        s_chip_id_q[chip_index] <= '0;
+      end
+      for (int cache_index = 0; cache_index < 4; cache_index++) begin
+        s_read_cache_chip_q[cache_index] <= '0;
+        s_read_cache_base_q[cache_index] <= '0;
+        s_read_cache_data_q[cache_index] <= '0;
       end
     end else begin
-      {psram_sio3_o, psram_sio2_o, psram_miso_o, psram_mosi_o} = 4'd0;
+      init_done_event_o       <= 1'b0;
+      indirect_done_event_o   <= 1'b0;
+      error_event_o           <= 1'b0;
+      timeout_event_o         <= 1'b0;
+      perf_read_byte_event_o  <= '0;
+      perf_write_byte_event_o <= '0;
+      perf_command_event_o    <= 1'b0;
+      perf_error_event_o      <= 1'b0;
+      s_chip_err_q            <= s_chip_err_q & ~chip_error_clear_i;
+
+      if (!s_powerup_done_q) begin
+        if (s_powerup_count_q >= powerup_cycles_i) begin
+          s_powerup_done_q <= 1'b1;
+        end else begin
+          s_powerup_count_q <= s_powerup_count_q + 1'b1;
+        end
+      end
+
+      if (indirect_start_i && !s_indirect_pending_q && !indirect_busy_o) begin
+        s_indirect_pending_q <= 1'b1;
+        s_indirect_cmd_q     <= indirect_command_i;
+        s_indirect_chip_q    <= indirect_chip_i;
+        s_indirect_addr_q    <= indirect_addr_i;
+        s_indirect_len_q     <= indirect_length_i;
+        s_indirect_wdata_q   <= indirect_wdata_i;
+      end
+
+      if (init_start_i) begin
+        s_init_pending_q <= 1'b1;
+      end
+      if (init_start_i || recover_start_i || abort_i || indirect_start_i) begin
+        s_read_cache_valid_q <= '0;
+      end
+      if (abort_i && (s_state_q == CoreIdle)) begin
+        s_init_pending_q <= 1'b0;
+      end
+
+      if ((s_state_q == CoreInitIssue) || (s_state_q == CoreMemIssue) ||
+          (s_state_q == CoreIndirectIssue)) begin
+        if (phy_req_valid_o && phy_req_ready_i) begin
+          perf_command_event_o <= 1'b1;
+        end
+      end
+
+      if (abort_i && (s_state_q != CoreIdle)) begin
+        s_last_err_q       <= PsramErrorAborted;
+        error_event_o      <= 1'b1;
+        perf_error_event_o <= 1'b1;
+        if ((s_state_q == CoreMemIssue) || (s_state_q == CoreMemWait)) begin
+          s_mem_rsp_err_q <= 1'b1;
+          s_state_q       <= CoreMemResponse;
+        end else begin
+          if ((s_state_q == CoreIndirectIssue) || (s_state_q == CoreIndirectWait)) begin
+            s_indirect_pending_q  <= 1'b0;
+            indirect_done_event_o <= 1'b1;
+          end
+          s_state_q <= CoreIdle;
+        end
+      end else begin
+        unique case (s_state_q)
+          CoreIdle: begin
+            if (!abort_i &&
+                ((s_init_pending_q && s_powerup_done_q) || recover_start_i ||
+                 (controller_enable_i && auto_init_i && s_powerup_done_q &&
+                  !s_auto_init_started_q))) begin
+              s_init_target_q  <= recover_start_i ? (4'b0001 << recover_chip_i) : chip_enable_i;
+              s_init_chip_q    <= '0;
+              s_init_phase_q   <= InitQpiResetEnable;
+              s_init_pending_q <= 1'b0;
+              if (!recover_start_i) begin
+                s_chip_present_q <= '0;
+                s_chip_ready_q   <= '0;
+                s_chip_qpi_q     <= '0;
+                s_chip_wrap32_q  <= '0;
+                s_chip_err_q     <= '0;
+              end else begin
+                s_chip_present_q[recover_chip_i] <= 1'b0;
+                s_chip_ready_q[recover_chip_i]   <= 1'b0;
+                s_chip_qpi_q[recover_chip_i]     <= 1'b0;
+                s_chip_wrap32_q[recover_chip_i]  <= 1'b0;
+                s_chip_err_q[recover_chip_i]     <= 1'b0;
+              end
+              s_auto_init_started_q <= s_auto_init_started_q || (!init_start_i && !recover_start_i);
+              s_state_q <= CoreInitNext;
+            end else if (s_indirect_pending_q && !axi_busy_i) begin
+              if (!controller_enable_i || !indirect_is_legal(
+                      s_indirect_cmd_q,
+                      s_chip_qpi_q[s_indirect_chip_q],
+                      chip_enable_i[s_indirect_chip_q],
+                      s_chip_present_q[s_indirect_chip_q],
+                      s_indirect_len_q
+                  )) begin
+                s_last_err_q          <= PsramErrorIllegal;
+                s_last_err_chip_q     <= s_indirect_chip_q;
+                s_last_err_addr_q     <= {9'd0, s_indirect_addr_q};
+                s_indirect_pending_q  <= 1'b0;
+                indirect_done_event_o <= 1'b1;
+                error_event_o         <= 1'b1;
+                perf_error_event_o    <= 1'b1;
+              end else begin
+                s_state_q <= CoreIndirectIssue;
+              end
+            end else if (mem_req_valid_i && mem_req_ready_o) begin
+              s_mem_write_q     <= mem_req_write_i;
+              s_mem_chip_q      <= mem_req_chip_i;
+              s_mem_addr_q      <= mem_req_addr_i;
+              s_mem_len_q       <= mem_req_len_i;
+              s_mem_wdata_q     <= mem_req_wdata_i;
+              s_mem_rsp_err_q   <= 1'b0;
+              s_mem_rsp_rdata_q <= '0;
+              if (!controller_enable_i || !memory_enable_i || !s_chip_ready_q[mem_req_chip_i]) begin
+                s_mem_rsp_err_q              <= 1'b1;
+                s_last_err_q                 <= PsramErrorUnavailable;
+                s_last_err_chip_q            <= mem_req_chip_i;
+                s_last_err_addr_q            <= {7'd0, mem_req_chip_i, mem_req_addr_i};
+                s_chip_err_q[mem_req_chip_i] <= 1'b1;
+                error_event_o                <= 1'b1;
+                perf_error_event_o           <= 1'b1;
+                s_state_q                    <= CoreMemResponse;
+              end else if (!mem_req_write_i && (|s_read_cache_hit)) begin
+                s_mem_rsp_rdata_q <= 32'(s_read_cache_data_q[s_read_cache_hit_index] >>
+                                         (mem_req_addr_i[4:0] * 8));
+                perf_read_byte_event_o <= mem_req_len_i;
+                s_state_q <= CoreMemResponse;
+              end else begin
+                if (mem_req_write_i) begin
+                  for (int cache_index = 0; cache_index < 4; cache_index++) begin
+                    if (s_read_cache_valid_q[cache_index] &&
+                        (s_read_cache_chip_q[cache_index] == mem_req_chip_i) &&
+                        (s_read_cache_base_q[cache_index] == mem_req_addr_i[22:5])) begin
+                      s_read_cache_valid_q[cache_index] <= 1'b0;
+                    end
+                  end
+                end
+                s_state_q <= CoreMemIssue;
+              end
+            end
+          end
+
+          CoreInitNext: begin
+            if (s_init_target_q[s_init_chip_q]) begin
+              s_init_phase_q <= InitQpiResetEnable;
+              s_state_q      <= CoreInitIssue;
+            end else if (s_init_chip_q == 2'd3) begin
+              init_done_event_o <= 1'b1;
+              s_state_q         <= CoreIdle;
+            end else begin
+              s_init_chip_q <= s_init_chip_q + 1'b1;
+            end
+          end
+
+          CoreInitIssue: begin
+            if (phy_req_valid_o && phy_req_ready_i) begin
+              s_state_q <= CoreInitWait;
+            end
+          end
+
+          CoreInitWait: begin
+            if (phy_done_i) begin
+              if (phy_error_i) begin
+                s_chip_err_q[s_init_chip_q]   <= 1'b1;
+                s_chip_ready_q[s_init_chip_q] <= 1'b0;
+                s_last_err_q                  <= PsramErrorTimeout;
+                s_last_err_chip_q             <= s_init_chip_q;
+                s_last_err_addr_q             <= {7'd0, s_init_chip_q, 23'd0};
+                error_event_o                 <= 1'b1;
+                timeout_event_o               <= 1'b1;
+                perf_error_event_o            <= 1'b1;
+                if (s_init_chip_q == 2'd3) begin
+                  init_done_event_o <= 1'b1;
+                  s_state_q         <= CoreIdle;
+                end else begin
+                  s_init_chip_q <= s_init_chip_q + 1'b1;
+                  s_state_q     <= CoreInitNext;
+                end
+              end else if (s_init_phase_q == InitReadId) begin
+                s_chip_id_q[s_init_chip_q] <= phy_rdata_i[47:0];
+                if ((phy_rdata_i[15:8] !== PSRAM_KGD_PASS) ||
+                    (phy_rdata_i[23:16] !== PSRAM_DENSITY_64MBIT)) begin
+                  s_chip_err_q[s_init_chip_q]   <= 1'b1;
+                  s_chip_ready_q[s_init_chip_q] <= 1'b0;
+                  s_last_err_q                  <= PsramErrorId;
+                  s_last_err_chip_q             <= s_init_chip_q;
+                  s_last_err_addr_q             <= {7'd0, s_init_chip_q, 23'd0};
+                  error_event_o                 <= 1'b1;
+                  perf_error_event_o            <= 1'b1;
+                  if (s_init_chip_q == 2'd3) begin
+                    init_done_event_o <= 1'b1;
+                    s_state_q         <= CoreIdle;
+                  end else begin
+                    s_init_chip_q <= s_init_chip_q + 1'b1;
+                    s_state_q     <= CoreInitNext;
+                  end
+                end else begin
+                  s_chip_present_q[s_init_chip_q] <= 1'b1;
+                  s_init_phase_q                  <= InitEnterQpi;
+                  s_state_q                       <= CoreInitIssue;
+                end
+              end else if (s_init_phase_q == InitEnterQpi) begin
+                s_chip_qpi_q[s_init_chip_q] <= 1'b1;
+                if (wrap32_i) begin
+                  s_init_phase_q <= InitToggleWrap;
+                  s_state_q      <= CoreInitIssue;
+                end else begin
+                  s_chip_ready_q[s_init_chip_q] <= 1'b1;
+                  if (s_init_chip_q == 2'd3) begin
+                    init_done_event_o <= 1'b1;
+                    s_state_q         <= CoreIdle;
+                  end else begin
+                    s_init_chip_q <= s_init_chip_q + 1'b1;
+                    s_state_q     <= CoreInitNext;
+                  end
+                end
+              end else if (s_init_phase_q == InitToggleWrap) begin
+                s_chip_wrap32_q[s_init_chip_q] <= 1'b1;
+                s_chip_ready_q[s_init_chip_q]  <= 1'b1;
+                if (s_init_chip_q == 2'd3) begin
+                  init_done_event_o <= 1'b1;
+                  s_state_q         <= CoreIdle;
+                end else begin
+                  s_init_chip_q <= s_init_chip_q + 1'b1;
+                  s_state_q     <= CoreInitNext;
+                end
+              end else begin
+                s_init_phase_q <= psram_init_phase_e'(s_init_phase_q + 1'b1);
+                s_state_q      <= CoreInitIssue;
+              end
+            end
+          end
+
+          CoreMemIssue: begin
+            if (phy_req_valid_o && phy_req_ready_i) begin
+              s_state_q <= CoreMemWait;
+            end
+          end
+
+          CoreMemWait: begin
+            if (phy_done_i) begin
+              s_mem_rsp_err_q <= phy_error_i;
+              s_mem_rsp_rdata_q <= s_mem_write_q ?
+                                   32'd0 :
+                                   32'(phy_rdata_i >> (s_mem_addr_q[4:0] * 8));
+              if (phy_error_i) begin
+                s_chip_err_q[s_mem_chip_q]   <= 1'b1;
+                s_chip_ready_q[s_mem_chip_q] <= 1'b0;
+                s_last_err_q                 <= PsramErrorTimeout;
+                s_last_err_chip_q            <= s_mem_chip_q;
+                s_last_err_addr_q            <= {7'd0, s_mem_chip_q, s_mem_addr_q};
+                error_event_o                <= 1'b1;
+                timeout_event_o              <= 1'b1;
+                perf_error_event_o           <= 1'b1;
+              end else if (s_mem_write_q) begin
+                perf_write_byte_event_o <= s_mem_len_q;
+              end else begin
+                s_read_cache_valid_q[s_read_cache_replace_q] <= 1'b1;
+                s_read_cache_chip_q[s_read_cache_replace_q]  <= s_mem_chip_q;
+                s_read_cache_base_q[s_read_cache_replace_q]  <= s_mem_addr_q[22:5];
+                s_read_cache_data_q[s_read_cache_replace_q]  <= phy_rdata_i;
+                s_read_cache_replace_q                       <= s_read_cache_replace_q + 1'b1;
+                perf_read_byte_event_o                       <= s_mem_len_q;
+              end
+              s_state_q <= CoreMemResponse;
+            end
+          end
+
+          CoreMemResponse: begin
+            if (mem_rsp_valid_o && mem_rsp_ready_i) begin
+              s_state_q <= CoreIdle;
+            end
+          end
+
+          CoreIndirectIssue: begin
+            if (phy_req_valid_o && phy_req_ready_i) begin
+              s_state_q <= CoreIndirectWait;
+            end
+          end
+
+          CoreIndirectWait: begin
+            if (phy_done_i) begin
+              s_indirect_pending_q  <= 1'b0;
+              s_indirect_rdata_q    <= phy_rdata_i[63:0];
+              indirect_done_event_o <= 1'b1;
+              if (phy_error_i) begin
+                s_chip_err_q[s_indirect_chip_q]   <= 1'b1;
+                s_chip_ready_q[s_indirect_chip_q] <= 1'b0;
+                s_last_err_q                      <= PsramErrorTimeout;
+                s_last_err_chip_q                 <= s_indirect_chip_q;
+                s_last_err_addr_q                 <= {7'd0, s_indirect_chip_q, s_indirect_addr_q};
+                error_event_o                     <= 1'b1;
+                timeout_event_o                   <= 1'b1;
+                perf_error_event_o                <= 1'b1;
+              end else begin
+                unique case (s_indirect_cmd_q)
+                  PsramCmdEnterQpi: begin
+                    s_chip_qpi_q[s_indirect_chip_q]   <= 1'b1;
+                    s_chip_ready_q[s_indirect_chip_q] <= 1'b1;
+                  end
+                  PsramCmdExitQpi: begin
+                    s_chip_qpi_q[s_indirect_chip_q]   <= 1'b0;
+                    s_chip_ready_q[s_indirect_chip_q] <= 1'b0;
+                  end
+                  PsramCmdReset: begin
+                    s_chip_qpi_q[s_indirect_chip_q]    <= 1'b0;
+                    s_chip_wrap32_q[s_indirect_chip_q] <= 1'b0;
+                    s_chip_ready_q[s_indirect_chip_q]  <= 1'b0;
+                  end
+                  PsramCmdToggleWrap: begin
+                    s_chip_wrap32_q[s_indirect_chip_q] <= ~s_chip_wrap32_q[s_indirect_chip_q];
+                  end
+                  PsramCmdReadId: begin
+                    s_chip_id_q[s_indirect_chip_q] <= phy_rdata_i[47:0];
+                  end
+                  default: begin
+                  end
+                endcase
+              end
+              s_state_q <= CoreIdle;
+            end
+          end
+
+          default: s_state_q <= CoreIdle;
+        endcase
+      end
     end
   end
 
-  // These protocol-state processes retain ordered update and reset priority;
-  // decomposing them into Common DFFs would risk changing same-cycle behavior.
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) s_rd_st <= 1'b0;
-    else if (rd_st_i) s_rd_st <= 1'b1;
-    else if (s_fsm_state == ReadToIdle) s_rd_st <= 1'b0;
-  end
+  logic unused_phy_busy;
+  assign unused_phy_busy = phy_busy_i;
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) s_wr_st <= 1'b0;
-    else if (wr_st_i) s_wr_st <= 1'b1;
-    else if (s_fsm_state == WriteToIdle) s_wr_st <= 1'b0;
-  end
-
-  // >150us, ce high, sclk low, si/so/sio[3:0] low
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) begin
-      s_fsm_state         <= Init;
-      s_fsm_state_tgt     <= Init;
-      s_boot_cnt          <= BootCounter;
-      s_xfer_ca           <= 32'd0;
-      s_xfer_data         <= 32'd0;
-      s_xfer_ca_bit_cnt   <= 8'd0;
-      s_xfer_data_bit_cnt <= 8'd0;
-      s_xfer_byte_data    <= 8'd0;
-      s_ce_cnt            <= 5'd0;
-      s_rd_wait_cnt       <= 4'd0;
-      s_cfg_chd           <= 3'd0;
-      s_dev_rst           <= 1'b1;
-      s_init_done         <= 1'b0;
-      mem_ready_o         <= 1'b0;
-      psram_sclk_o        <= 1'b0;
-      psram_ce_o          <= 1'b1;
-    end else begin
-      mem_ready_o <= 1'b0;
-      /* verilator lint_off CASEINCOMPLETE */
-      case (s_fsm_state)
-        Init: begin
-          if (s_boot_cnt != '0) s_boot_cnt <= s_boot_cnt - 1'b1;
-          else if (cfg_init_i) s_fsm_state <= ResetEnable;
-        end
-        ResetEnable: begin
-          s_xfer_ca         <= {8'h66, 24'd0};
-          s_xfer_ca_bit_cnt <= 8'd8;
-          s_cfg_chd         <= 3'd0;
-          psram_ce_o        <= 1'b0;
-          s_ce_cnt          <= cfg_wait_i;
-          s_fsm_state       <= Send;
-          s_fsm_state_tgt   <= ResetEnableToReset;
-        end
-        ResetEnableToReset: begin  // tCPH >= 50ns, when 192MHz, ce need keep high(>=10 cycles)
-          if (s_cfg_chd == cfg_chd_i) begin
-            if (s_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
-            if (s_ce_cnt == 5'd0) s_fsm_state <= Reset;
-            s_ce_cnt <= s_ce_cnt - 1'b1;
-          end else begin
-            s_cfg_chd <= s_cfg_chd + 1'b1;
-          end
-        end
-        Reset: begin
-          s_xfer_ca         <= {8'h99, 24'd0};
-          s_xfer_ca_bit_cnt <= 8'd8;
-          s_cfg_chd         <= 3'd0;
-          psram_ce_o        <= 1'b0;
-          s_ce_cnt          <= cfg_wait_i;
-          s_fsm_state       <= Send;
-          s_fsm_state_tgt   <= ResetToQuadEnable;
-        end
-        ResetToQuadEnable: begin
-          if (s_cfg_chd == cfg_chd_i) begin
-            if (s_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
-            if (s_ce_cnt == 5'd0) s_fsm_state <= QuadEnable;
-            s_ce_cnt <= s_ce_cnt - 1'b1;
-          end else begin
-            s_cfg_chd <= s_cfg_chd + 1'b1;
-          end
-        end
-        QuadEnable: begin
-          s_xfer_ca         <= {8'h35, 24'd0};
-          s_xfer_ca_bit_cnt <= 8'd8;
-          s_cfg_chd         <= 3'd0;
-          psram_ce_o        <= 1'b0;
-          s_ce_cnt          <= cfg_wait_i;
-          s_fsm_state       <= Send;
-          s_fsm_state_tgt   <= QuadEnableToIdle;
-        end
-        QuadEnableToIdle: begin
-          if (s_cfg_chd == cfg_chd_i) begin
-            if (s_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
-            if (s_ce_cnt == 5'd0) begin
-              s_fsm_state <= Idle;
-              s_init_done <= 1'b1;
-            end
-            s_ce_cnt <= s_ce_cnt - 1'b1;
-          end else begin
-            s_cfg_chd <= s_cfg_chd + 1'b1;
-          end
-        end
-        Idle: begin
-          psram_sclk_o <= 1'b0;
-          // release dev rst ctrl signal
-          if (s_dev_rst) begin
-            s_dev_rst  <= 1'b0;
-            psram_ce_o <= 1'b1;
-          end else if (s_wr_st) begin
-            s_xfer_ca           <= {8'h38, mem_addr_i[23:0]};
-            s_xfer_ca_bit_cnt   <= 8'd32;
-            s_fsm_state         <= SendQpi;
-            s_fsm_state_tgt     <= WriteQpi;
-            s_xfer_data_bit_cnt <= 8'd0;
-            s_cfg_chd           <= 3'd0;
-            psram_ce_o          <= 1'b0;
-          end else if (s_rd_st) begin
-            s_xfer_ca           <= {8'hEB, mem_addr_i[23:0]};
-            s_xfer_ca_bit_cnt   <= 8'd32;
-            s_fsm_state         <= SendQpi;
-            s_fsm_state_tgt     <= ReadPreQpi;
-            s_rd_wait_cnt       <= 4'd12;  // wait 6 cycle afer cmd+addr accrondig to TRM
-            s_xfer_data_bit_cnt <= 8'd0;
-            s_cfg_chd           <= 3'd0;
-            psram_ce_o          <= 1'b0;
-          end else begin
-            psram_ce_o <= 1'b1;
-          end
-        end
-        Send: begin
-          psram_sclk_o <= ~psram_sclk_o;
-          if (psram_sclk_o) begin
-            s_xfer_ca_bit_cnt <= s_xfer_ca_bit_cnt - 1'b1;
-            s_xfer_ca         <= {s_xfer_ca[30:0], 1'b1};
-            if (s_xfer_ca_bit_cnt == 8'd1) begin
-              s_fsm_state <= s_fsm_state_tgt;
-            end
-          end
-        end
-        SendQpi: begin
-          psram_sclk_o <= ~psram_sclk_o;
-          if (psram_sclk_o) begin
-            s_xfer_ca_bit_cnt <= s_xfer_ca_bit_cnt - 8'd4;
-            s_xfer_ca         <= {s_xfer_ca[27:0], 4'd1};
-            if (s_xfer_ca_bit_cnt == 8'd4) begin
-              s_fsm_state      <= s_fsm_state_tgt;
-              s_xfer_data      <= mem_wdata_i;
-              s_xfer_byte_data <= mem_wdata_i[7:0];
-            end
-          end
-        end
-        ReadPreQpi: begin
-          // 6 cycles
-          psram_sclk_o  <= ~psram_sclk_o;
-          s_rd_wait_cnt <= s_rd_wait_cnt - 1'b1;
-          if (s_rd_wait_cnt == 4'd0) s_fsm_state <= ReadQpi;
-        end
-        ReadQpi: begin
-          // the first 'psram_sclk_o' is 0 in this state
-          psram_sclk_o <= ~psram_sclk_o;
-          if (psram_sclk_o) begin
-            if (s_xfer_data_bit_cnt == 8'd8) s_xfer_data[7:0] <= s_xfer_byte_data;
-            else if (s_xfer_data_bit_cnt == 8'd16) s_xfer_data[15:8] <= s_xfer_byte_data;
-            else if (s_xfer_data_bit_cnt == 8'd24) s_xfer_data[23:16] <= s_xfer_byte_data;
-            s_xfer_byte_data <= {
-              s_xfer_byte_data[3:0], psram_sio3_i, psram_sio2_i, psram_miso_i, psram_mosi_i
-            };
-            s_xfer_data_bit_cnt <= s_xfer_data_bit_cnt + 8'd4;
-            if (s_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
-              s_fsm_state <= ReadToIdle;
-              s_ce_cnt    <= cfg_wait_i;
-            end
-          end
-        end
-        WriteQpi: begin
-          // the first 'psram_sclk_o' is 0 in this state
-          psram_sclk_o <= ~psram_sclk_o;
-          if (psram_sclk_o) begin
-            if (s_xfer_new_byte_upd) s_xfer_byte_data <= s_xfer_new_byte;
-            else s_xfer_byte_data <= {s_xfer_byte_data[3:0], 4'hF};
-
-            s_xfer_data_bit_cnt <= s_xfer_data_bit_cnt + 8'd4;
-            if (s_xfer_data_bit_cnt == xfer_data_bit_cnt_i - 8'd4) begin
-              s_fsm_state <= WriteToIdle;
-              s_ce_cnt    <= cfg_wait_i;
-            end
-          end
-        end
-        ReadToIdle: begin
-          if (s_cfg_chd == cfg_chd_i) begin
-            if (s_ce_cnt != cfg_wait_i) begin
-              psram_ce_o         <= 1'b1;
-              s_xfer_data[31:24] <= s_xfer_byte_data;  // HACK:
-            end
-            if (s_ce_cnt == 5'd0) begin
-              s_fsm_state <= Idle;
-              mem_ready_o <= 1'b1;
-            end
-            s_ce_cnt <= s_ce_cnt - 1'b1;
-          end else begin
-            s_cfg_chd <= s_cfg_chd + 1'b1;
-          end
-        end
-        WriteToIdle: begin
-          if (s_cfg_chd == cfg_chd_i) begin
-            if (s_ce_cnt != cfg_wait_i) psram_ce_o <= 1'b1;
-            if (s_ce_cnt == 5'd0) begin
-              s_fsm_state <= Idle;
-              mem_ready_o <= 1'b1;
-            end
-            s_ce_cnt <= s_ce_cnt - 1'b1;
-          end else begin
-            s_cfg_chd <= s_cfg_chd + 1'b1;
-          end
-        end
-        default: begin
-          s_fsm_state  <= Init;
-          psram_sclk_o <= 1'b0;
-          psram_ce_o   <= 1'b1;
-        end
-      endcase
-    end
-  end
-
-  load_new_byte u_load_new_byte (
-      .xfer_data_bit_cnt_i(s_xfer_data_bit_cnt),
-      .wr_data_i          (s_xfer_data),
-      .xfer_new_byte_upd_o(s_xfer_new_byte_upd),
-      .xfer_new_byte_o    (s_xfer_new_byte)
-  );
-
-endmodule
-
-
-module load_new_byte (
-    input  logic [ 7:0] xfer_data_bit_cnt_i,
-    input  logic [31:0] wr_data_i,
-    output logic        xfer_new_byte_upd_o,
-    output logic [ 7:0] xfer_new_byte_o
-);
-  assign xfer_new_byte_upd_o = (xfer_data_bit_cnt_i == 8'd4)  |
-                               (xfer_data_bit_cnt_i == 8'd12) |
-                               (xfer_data_bit_cnt_i == 8'd20);
-
-  assign xfer_new_byte_o = ({8{xfer_data_bit_cnt_i == 8'd4} } & wr_data_i[15:8])  |
-                           ({8{xfer_data_bit_cnt_i == 8'd12}} & wr_data_i[23:16]) |
-                           ({8{xfer_data_bit_cnt_i == 8'd20}} & wr_data_i[31:24]);
 endmodule

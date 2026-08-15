@@ -54,8 +54,6 @@ module ip_ribp_wrapper (
   `include "ribp_interfaces.svh"
 
   ribp_if ribp ();
-  ribp_if u_psram_data_ribp_if ();
-  ribp_if u_psram_target_ribp_if ();
   ribp_if u_xpi_data_ribp_if ();
   ribp_if u_xpi_target_ribp_if ();
   ribp_if u_spisd_data_ribp_if ();
@@ -106,13 +104,6 @@ module ip_ribp_wrapper (
       .ribp   (ribp)
   );
 
-  axi42ribp_burst u_psram_axi42ribp (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (psram_axi4),
-      .ribp   (u_psram_data_ribp_if)
-  );
-
   axi42ribp_burst u_xpi_axi42ribp (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -125,14 +116,6 @@ module ip_ribp_wrapper (
       .rst_n_i(rst_n_i),
       .axi4   (spisd_axi4),
       .ribp   (u_spisd_data_ribp_if)
-  );
-
-  ribp_arbiter2 u_psram_ribp_arbiter (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .cfg    (u_psram_ribp_if),
-      .data   (u_psram_data_ribp_if),
-      .target (u_psram_target_ribp_if)
   );
 
   ribp_arbiter2 u_xpi_ribp_arbiter (
@@ -220,10 +203,11 @@ module ip_ribp_wrapper (
   );
 
   ribp_psram u_rib_psram (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_psram_target_ribp_if),
-      .psram  (psram)
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .cfg_ribp(u_psram_ribp_if),
+      .mem_axi4(psram_axi4),
+      .psram   (psram)
   );
 
   ribp_spisd u_rib_spisd (

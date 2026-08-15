@@ -37,10 +37,13 @@ module retrosoc_top (
   wire        s_rst_n;
   wire        s_psram_sck;
   wire        s_psram_nss0;
-  wire        s_psram_dat0;
-  wire        s_psram_dat1;
-  wire        s_psram_dat2;
-  wire        s_psram_dat3;
+  wire        s_psram_nss1;
+  wire        s_psram_nss2;
+  wire        s_psram_nss3;
+  tri1        s_psram_dat0;
+  tri1        s_psram_dat1;
+  tri1        s_psram_dat2;
+  tri1        s_psram_dat3;
   wire        s_xpi_nss0_o;
   wire        s_xpi_sck_o;
   wire        s_xpi_dat0_io;
@@ -86,9 +89,43 @@ module retrosoc_top (
       .io3(s_xpi_dat3_io)
   );
 
-  ESP_PSRAM64H u_ESP_PSRAM64H (
+  ESP_PSRAM64H #(
+      .ID            (0),
+      .POWER_UP_CHECK(0),
+      .TIMING_CHECK  (0)
+  ) u_ESP_PSRAM64H_0 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss0),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
+  );
+
+  ESP_PSRAM64H #(
+      .ID            (1),
+      .POWER_UP_CHECK(0),
+      .TIMING_CHECK  (0)
+  ) u_ESP_PSRAM64H_1 (
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss1),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
+  );
+
+  ESP_PSRAM64H #(
+      .ID            (2),
+      .POWER_UP_CHECK(0),
+      .TIMING_CHECK  (0)
+  ) u_ESP_PSRAM64H_2 (
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss2),
+      .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
+  );
+
+  ESP_PSRAM64H #(
+      .ID            (3),
+      .POWER_UP_CHECK(0),
+      .TIMING_CHECK  (0)
+  ) u_ESP_PSRAM64H_3 (
+      .sclk(s_psram_sck),
+      .csn (s_psram_nss3),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 

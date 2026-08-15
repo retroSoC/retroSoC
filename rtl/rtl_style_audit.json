@@ -88,7 +88,12 @@
     ],
     "rtl/ip/memory": [
       "axi4_sdram.sv",
+      "psram_axi4.sv",
       "psram_core.sv",
+      "psram_define.svh",
+      "psram_phy.sv",
+      "psram_pkg.sv",
+      "psram_reg.sv",
       "ribp_opipsram.sv",
       "ribp_psram.sv",
       "sdram_clkgen.sv",

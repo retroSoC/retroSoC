@@ -101,7 +101,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_RIBP_UART0_BASE);
     printf("                       2 x TIMER(0,1)    @%p,%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_TIM0_BASE, (void *)(uintptr_t)RS_SOC_RIBP_TIM1_BASE);
-    printf("                       1 x PSRAM         @%p\n", (void *)&reg_psram_wait);
+    printf("                       1 x PSRAM         @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_PSRAM_BASE);
     printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
     printf("                       1 x I2C0          @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_I2C0_BASE);

@@ -11,11 +11,6 @@
 
 #define CPU_FREQ                        72     // unit: MHz
 #define UART_BPS                        921600 // unit: bps
-#define PSRAM_NUM                       4
-#define PSRAM_SCLK_MIN_FREQ             12  // unit: MHz
-#define PSRAM_SCLK_MAX_FREQ             133 // unit: MHz
-#define PSRAM_SCLK_FREQ                 (CPU_FREQ / 2)
-
 #define SPFS_MEM_START                  RS_SOC_FLASH_BASE
 #define SPFS_MEM_OFFST                  RS_SOC_FLASH_SIZE
 #define SRAM_MEM_START                  RS_SOC_SRAM_BASE
@@ -31,10 +26,6 @@
 
 #define RS_SOC_REG32(base, offset)      (*(volatile uint32_t *)(uintptr_t)((base) + (offset)))
 
-// psram
-#define reg_psram_wait                  RS_SOC_REG32(RS_SOC_RIBP_PSRAM_BASE, UINT32_C(0x00))
-#define reg_psram_chd                   RS_SOC_REG32(RS_SOC_RIBP_PSRAM_BASE, UINT32_C(0x04))
-#define reg_psram_init                  RS_SOC_REG32(RS_SOC_RIBP_PSRAM_BASE, UINT32_C(0x08))
 // spisd
 #define reg_spisd_mode                  RS_SOC_REG32(RS_SOC_RIBP_SPISD_BASE, UINT32_C(0x00))
 #define reg_spisd_clkdiv                RS_SOC_REG32(RS_SOC_RIBP_SPISD_BASE, UINT32_C(0x04))

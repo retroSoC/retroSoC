@@ -9,6 +9,7 @@
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
+#include <retrosoc/hal/psram.h>
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
@@ -182,6 +183,7 @@ static int test_timer_helpers(void) {
         (period.load != 71999U)) {
         return 1;
     }
+
     if ((rs_timer_period_from_ms(72000000U, 1000U, &period) != RS_OK) || (period.prescale != 0U) ||
         (period.load != 71999999U)) {
         return 2;
@@ -190,6 +192,30 @@ static int test_timer_helpers(void) {
         (rs_timer_period_from_ms(72000000U, 0U, &period) != RS_EINVAL) ||
         (rs_timer_period_from_ms(72000000U, 1U, NULL) != RS_EINVAL) ||
         (rs_timer_period_from_ms(UINT32_MAX, UINT32_MAX, &period) != RS_EINVAL)) {
+        return 3;
+    }
+    return 0;
+}
+
+static int test_psram_helpers(void) {
+    rs_psram_timing_t timing;
+
+    if ((rs_psram_timing_from_hz(72000000U, 36000000U, &timing) != RS_OK) ||
+        (timing.half_period_cycles != 1U) || (timing.cs_setup_cycles != 1U) ||
+        (timing.cs_high_cycles != 4U) || (timing.cs_hold_cycles != 3U) ||
+        (timing.powerup_cycles != 10800U) || (timing.cs_max_low_cycles != 576U) ||
+        (timing.actual_sclk_hz != 36000000U) || timing.above_84mhz) {
+        return 1;
+    }
+    if ((rs_psram_timing_from_hz(192000000U, 133000000U, &timing) != RS_OK) ||
+        (timing.half_period_cycles != 1U) || (timing.actual_sclk_hz != 96000000U) ||
+        !timing.above_84mhz) {
+        return 2;
+    }
+    if ((rs_psram_timing_from_hz(0U, 36000000U, &timing) != RS_EINVAL) ||
+        (rs_psram_timing_from_hz(72000000U, 0U, &timing) != RS_EINVAL) ||
+        (rs_psram_timing_from_hz(72000000U, 134000000U, &timing) != RS_EINVAL) ||
+        (rs_psram_timing_from_hz(72000000U, 36000000U, NULL) != RS_EINVAL)) {
         return 3;
     }
     return 0;
@@ -267,8 +293,8 @@ static int test_ps2_decoders(void) {
     ps2_mouse_event_t mouse_event;
 
     ps2_keyboard_decoder_init(&keyboard);
-    if (!ps2_keyboard_decode_byte(&keyboard, UINT8_C(0x1C), &key_event) ||
-        !key_event.pressed || key_event.extended || (key_event.scan_code != UINT16_C(0x001C))) {
+    if (!ps2_keyboard_decode_byte(&keyboard, UINT8_C(0x1C), &key_event) || !key_event.pressed ||
+        key_event.extended || (key_event.scan_code != UINT16_C(0x001C))) {
         return 1;
     }
     if (ps2_keyboard_decode_byte(&keyboard, UINT8_C(0xE0), &key_event) ||
@@ -282,8 +308,8 @@ static int test_ps2_decoders(void) {
     if (ps2_mouse_decode_byte(&mouse, UINT8_C(0x08), &mouse_event) ||
         ps2_mouse_decode_byte(&mouse, UINT8_C(0x02), &mouse_event) ||
         ps2_mouse_decode_byte(&mouse, UINT8_C(0x01), &mouse_event) ||
-        !ps2_mouse_decode_byte(&mouse, UINT8_C(0x3F), &mouse_event) ||
-        (mouse_event.dx != 2) || (mouse_event.dy != 1) || (mouse_event.wheel != -1) ||
+        !ps2_mouse_decode_byte(&mouse, UINT8_C(0x3F), &mouse_event) || (mouse_event.dx != 2) ||
+        (mouse_event.dy != 1) || (mouse_event.wheel != -1) ||
         ((mouse_event.buttons & UINT8_C(0x18)) != UINT8_C(0x18))) {
         return 3;
     }
@@ -330,8 +356,8 @@ static int test_video_parser(void) {
 int main(void) {
     const int results[] = {
         test_string_helpers(), test_formatter(),     test_compiler_helpers(), test_wait_helper(),
-        test_ws2812_helpers(), test_timer_helpers(), test_uart_helpers(),     test_i2c_helpers(),
-        test_gpio_helpers(),   test_ps2_decoders(),  test_wav_parser(),
+        test_ws2812_helpers(), test_timer_helpers(), test_psram_helpers(),    test_uart_helpers(),
+        test_i2c_helpers(),    test_gpio_helpers(),  test_ps2_decoders(),     test_wav_parser(),
         test_video_parser(),
     };
 

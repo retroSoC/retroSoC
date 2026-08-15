@@ -1,53 +1,5 @@
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
-// You can use this software according to the terms and conditions of the Mulan PSL v2.
-// You may obtain a copy of Mulan PSL v2 at:
-//             http://license.coscl.org.cn/MulanPSL2
-// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-// See the Mulan PSL v2 for more details.
-//
-// NOTE: for supporting cross page xfer, the max freq of 'sclk' is 84MHz
-// when 'sclk' is 144MHz(max, ~6.94ns), according to TRM:
-//
-// tCLK(min: 6.94ns) is meet, dont have 8'h03 rd oper(min: 30.3ns)
-//
-// tCH/tCL(min:0.45%, max: 0.55%) tCLK is meet
-//
-// tKHKL(max: 1.5ns) is meet
-//
-// tCPH(min: 50ns) -> 50 / 6.94 = ~7.2 so wait cycles need to >= ceil(7.2) = 8,
-// so 's_cfg_wait' = 8 * 2 >= 16 in default, reset value is '18'
-// for lower freq, can modify this value for performance tuning
-//
-// tCEM(max: 8us) is enough long for just 32bits xfer:
-// QPI mode: (32(cmd+addr) + 32(data)) / 4 = 16 cycles + 6 wait cycles = 22 cycles
-// for min sclk 12MHz, ~83ns * 22 = 1826ns = 1.826us
-//
-// tCSP(min: 2.5ns) is meet
-// sclk keeps 6.94 / 2 = 3.47ns low at least after ce activing
-//
-// tCHD(min: 20ns) > tACLK + tCLK
-// sclk keep 6.94 * 1.5 = 10.41 at least(no meet!)
-// need to set 's_cfg_chd' = ceil(ceil(20 / 6.94) - 1.5) * 2 = 3, reset value is '4'
-// for lower freq, can modify this value for performance tuning
-//
-// tSP(min: 2ns) is meet
-// data keeps 6.94 / 2 = 3.47ns low at least befer sclk
-
-`ifndef RIBP_PSRAM_DEF_SV
-`define RIBP_PSRAM_DEF_SV
-
-// verilog_format: off -- preserve reviewed column alignment
-`define RIBP_PSRAM_WAIT 8'h00
-`define RIBP_PSRAM_CHD  8'h04
-`define RIBP_PSRAM_INIT 8'h08
-// verilog_format: on
-
-`endif
-
-`include "mmap_define.svh"
 
 interface psram_if ();
   logic       sck_o;
@@ -65,265 +17,283 @@ interface psram_if ();
       output io_do_o,
       output irq_o
   );
-
 endinterface
 
-
 module ribp_psram (
-    // verilog_format: off -- preserve reviewed column alignment
-    input logic   clk_i,
-    input logic   rst_n_i,
-    ribp_if.slave ribp,
-    psram_if.dut  psram
+    // verilog_format: off -- preserve reviewed port alignment
+    input logic    clk_i,
+    input logic    rst_n_i,
+    ribp_if.slave  cfg_ribp,
+    axi4_if.slave  mem_axi4,
+    psram_if.dut   psram
     // verilog_format: on
 );
 
-  // clk_i/rst_n_i drive configuration and memory transfers. Configuration
-  // accesses respond immediately; one memory transaction remains outstanding
-  // until the PSRAM core asserts ready, and no response errors are generated.
-  typedef enum logic [5:0] {
-    Idle       = 6'd0,
-    WriteStart = 6'd1,
-    Write      = 6'd2,
-    ReadStart  = 6'd3,
-    Read       = 6'd4
-  } psram_state_e;
+  import psram_pkg::*;
 
-  // reg
-  logic         [ 4:0] s_cfg_wait;
-  logic         [ 2:0] s_cfg_chd;
-  logic                s_cfg_init;
-  logic                s_cfg_reg_sel;
-  logic                s_mem_sel;
-  logic                s_mem_ready;
-  logic         [31:0] s_mem_rdata;
+  logic                 s_controller_en;
+  logic                 s_memory_en;
+  logic                 s_auto_init;
+  logic                 s_wrap32;
+  logic         [  3:0] s_chip_en;
+  logic         [ 15:0] s_half_period;
+  logic                 s_above_84mhz;
+  logic         [ 31:0] s_powerup_cycles;
+  logic         [ 15:0] s_cs_setup_cycles;
+  logic         [ 15:0] s_cs_high_cycles;
+  logic         [ 15:0] s_cs_hold_cycles;
+  logic         [ 31:0] s_cs_max_low_cycles;
+  logic         [ 31:0] s_access_timeout_cycles;
+  logic                 s_init_start;
+  logic                 s_recover_start;
+  logic         [  1:0] s_recover_chip;
+  logic                 s_abort;
+  logic         [  3:0] s_chip_err_clear;
 
-  logic                s_rd_st;
-  logic                s_wr_st;
-  logic         [ 7:0] s_xfer_data_bit_cnt;
-  psram_state_e        s_fsm_state;
-  logic         [23:0] s_mem_addr;
-  logic         [31:0] s_mem_wdata;
+  logic                 s_init_busy;
+  logic                 s_axi_busy;
+  logic                 s_indirect_busy;
+  logic                 s_phy_busy;
+  logic                 s_quiesced;
+  logic                 s_global_ready;
+  logic         [  3:0] s_chip_present;
+  logic         [  3:0] s_chip_ready;
+  logic         [  3:0] s_chip_qpi;
+  logic         [  3:0] s_chip_wrap32;
+  logic         [  3:0] s_chip_err;
+  logic         [ 47:0] s_chip0_id;
+  logic         [ 47:0] s_chip1_id;
+  logic         [ 47:0] s_chip2_id;
+  logic         [ 47:0] s_chip3_id;
+  psram_error_e         s_last_err;
+  logic         [  1:0] s_last_err_chip;
+  logic         [ 31:0] s_last_err_addr;
 
-  logic                s_psram_ce;
-  logic                s_psram_sio_oen;
-  logic         [ 1:0] s_disp_addr_ofst;
-  logic         [ 7:0] s_disp_xfer_bit_cnt;
-  logic         [31:0] s_disp_wdata;
-  logic                s_init_done;
-  logic                s_core_idle;
-  logic                s_mem_valid_re;
+  logic                 s_indirect_start;
+  psram_cmd_e           s_indirect_cmd;
+  logic         [  1:0] s_indirect_chip;
+  logic         [ 22:0] s_indirect_addr;
+  logic         [  3:0] s_indirect_len;
+  logic         [ 63:0] s_indirect_wdata;
+  logic         [ 63:0] s_indirect_rdata;
 
+  logic                 s_mem_req_valid;
+  logic                 s_mem_req_ready;
+  logic                 s_mem_req_write;
+  logic         [  1:0] s_mem_req_chip;
+  logic         [ 22:0] s_mem_req_addr;
+  logic         [  2:0] s_mem_req_len;
+  logic         [ 31:0] s_mem_req_wdata;
+  logic                 s_mem_rsp_valid;
+  logic                 s_mem_rsp_ready;
+  logic                 s_mem_rsp_err;
+  logic         [ 31:0] s_mem_rsp_rdata;
 
-  // verilog_format: off -- preserve reviewed column alignment
-  assign psram.nss_o[0]   = (~s_init_done) || (s_init_done && ribp.addr[24:23] == 2'd0) ? s_psram_ce : 1'b1;
-  assign psram.nss_o[1]   = (~s_init_done) || (s_init_done && ribp.addr[24:23] == 2'd1) ? s_psram_ce : 1'b1;
-  assign psram.nss_o[2]   = (~s_init_done) || (s_init_done && ribp.addr[24:23] == 2'd2) ? s_psram_ce : 1'b1;
-  assign psram.nss_o[3]   = (~s_init_done) || (s_init_done && ribp.addr[24:23] == 2'd3) ? s_psram_ce : 1'b1;
-  assign psram.io_oe_o[0] = ~s_psram_sio_oen;
-  assign psram.io_oe_o[1] = ~s_psram_sio_oen;
-  assign psram.io_oe_o[2] = ~s_psram_sio_oen;
-  assign psram.io_oe_o[3] = ~s_psram_sio_oen;
-  assign psram.irq_o      = 1'b0;
-  // verilog_format: on
+  logic                 s_phy_req_valid;
+  logic                 s_phy_req_ready;
+  psram_cmd_e           s_phy_req_cmd;
+  logic         [  1:0] s_phy_req_chip;
+  logic                 s_phy_req_qpi;
+  logic         [ 22:0] s_phy_req_addr;
+  logic         [  5:0] s_phy_req_len;
+  logic         [ 63:0] s_phy_req_wdata;
+  logic                 s_phy_done;
+  logic                 s_phy_err;
+  logic         [255:0] s_phy_rdata;
 
+  logic                 s_init_done_event;
+  logic                 s_indirect_done_event;
+  logic                 s_err_event;
+  logic                 s_timeout_event;
+  logic         [  2:0] s_perf_read_byte_event;
+  logic         [  2:0] s_perf_write_byte_event;
+  logic                 s_perf_cmd_event;
+  logic                 s_perf_split_event;
+  logic                 s_perf_stall_event;
+  logic                 s_perf_err_event;
 
-  assign s_mem_sel     = `SOC_ADDR_IS_PSRAM(ribp.addr);
-  assign s_cfg_reg_sel = `SOC_ADDR_IS_RIBP_PSRAM(ribp.addr);
-  assign ribp.ready = s_mem_sel ? s_mem_ready : 1'b1;
-  assign ribp.resp_err = 1'b0;
-  always_comb begin
-    ribp.rdata = '0;
-    if (s_mem_sel) begin
-      ribp.rdata = s_mem_rdata;
-    end else if (ribp.addr[7:0] == `RIBP_PSRAM_WAIT) begin
-      ribp.rdata = {27'd0, s_cfg_wait};
-    end else if (ribp.addr[7:0] == `RIBP_PSRAM_CHD) begin
-      ribp.rdata = {29'd0, s_cfg_chd};
-    end else if (ribp.addr[7:0] == `RIBP_PSRAM_INIT) begin
-      ribp.rdata = {31'd0, s_cfg_init};
-    end
-  end
-
-  // wait cycles(mmio)
-  // Configuration and transfer state share ordered request/reset priority, so
-  // these processes remain intact rather than splitting behavior across DFFs.
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) s_cfg_wait <= 5'd18;
-    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
-             (ribp.addr[7:0] == `RIBP_PSRAM_WAIT)) begin
-      s_cfg_wait <= ribp.wdata[4:0];
-    end
-  end
-  // extra cycle for tCHD(mmio)
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) s_cfg_chd <= 3'd4;
-    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
-             (ribp.addr[7:0] == `RIBP_PSRAM_CHD)) begin
-      s_cfg_chd <= ribp.wdata[2:0];
-    end
-  end
-  // init device/switch qpi mode
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) s_cfg_init <= '0;
-    else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
-             (ribp.addr[7:0] == `RIBP_PSRAM_INIT)) begin
-      s_cfg_init <= ribp.wdata[0];
-    end
-  end
-
-  edge_det_sync_re #(
-      .DATA_WIDTH(1)
-  ) u_mem_valid_edge_det_sync_re (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (ribp.valid),
-      .re_o   (s_mem_valid_re)
+  psram_reg u_psram_reg (
+      .clk_i                  (clk_i),
+      .rst_n_i                (rst_n_i),
+      .ribp                   (cfg_ribp),
+      .init_busy_i            (s_init_busy),
+      .axi_busy_i             (s_axi_busy),
+      .indirect_busy_i        (s_indirect_busy),
+      .phy_busy_i             (s_phy_busy),
+      .quiesced_i             (s_quiesced),
+      .global_ready_i         (s_global_ready),
+      .chip_present_i         (s_chip_present),
+      .chip_ready_i           (s_chip_ready),
+      .chip_qpi_i             (s_chip_qpi),
+      .chip_wrap32_i          (s_chip_wrap32),
+      .chip_error_i           (s_chip_err),
+      .chip0_id_i             (s_chip0_id),
+      .chip1_id_i             (s_chip1_id),
+      .chip2_id_i             (s_chip2_id),
+      .chip3_id_i             (s_chip3_id),
+      .last_error_i           (s_last_err),
+      .last_error_chip_i      (s_last_err_chip),
+      .last_error_addr_i      (s_last_err_addr),
+      .indirect_rdata_i       (s_indirect_rdata),
+      .init_done_event_i      (s_init_done_event),
+      .indirect_done_event_i  (s_indirect_done_event),
+      .error_event_i          (s_err_event),
+      .timeout_event_i        (s_timeout_event),
+      .perf_read_byte_event_i (s_perf_read_byte_event),
+      .perf_write_byte_event_i(s_perf_write_byte_event),
+      .perf_command_event_i   (s_perf_cmd_event),
+      .perf_split_event_i     (s_perf_split_event),
+      .perf_stall_event_i     (s_perf_stall_event),
+      .perf_error_event_i     (s_perf_err_event),
+      .controller_enable_o    (s_controller_en),
+      .memory_enable_o        (s_memory_en),
+      .auto_init_o            (s_auto_init),
+      .wrap32_o               (s_wrap32),
+      .chip_enable_o          (s_chip_en),
+      .half_period_o          (s_half_period),
+      .above_84mhz_o          (s_above_84mhz),
+      .powerup_cycles_o       (s_powerup_cycles),
+      .cs_setup_cycles_o      (s_cs_setup_cycles),
+      .cs_high_cycles_o       (s_cs_high_cycles),
+      .cs_hold_cycles_o       (s_cs_hold_cycles),
+      .cs_max_low_cycles_o    (s_cs_max_low_cycles),
+      .access_timeout_cycles_o(s_access_timeout_cycles),
+      .init_start_o           (s_init_start),
+      .recover_start_o        (s_recover_start),
+      .recover_chip_o         (s_recover_chip),
+      .abort_o                (s_abort),
+      .chip_error_clear_o     (s_chip_err_clear),
+      .indirect_start_o       (s_indirect_start),
+      .indirect_command_o     (s_indirect_cmd),
+      .indirect_chip_o        (s_indirect_chip),
+      .indirect_addr_o        (s_indirect_addr),
+      .indirect_length_o      (s_indirect_len),
+      .indirect_wdata_o       (s_indirect_wdata),
+      .irq_o                  (psram.irq_o)
   );
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (~rst_n_i) begin
-      s_rd_st             <= '0;
-      s_wr_st             <= '0;
-      s_xfer_data_bit_cnt <= '0;
-      s_fsm_state         <= Idle;
-      s_mem_addr          <= '0;
-      s_mem_wdata         <= '0;
-    end else begin
-      if (s_mem_sel) begin
-        /* verilator lint_off CASEINCOMPLETE */
-        case (s_fsm_state)
-          Idle: begin
-            if (s_mem_valid_re && (|ribp.wstrb)) begin
-              s_fsm_state         <= WriteStart;
-              s_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
-              s_mem_addr          <= {1'b0, ribp.addr[22:0]} + {22'd0, s_disp_addr_ofst};
-              s_mem_wdata         <= s_disp_wdata;
-            end else if (s_mem_valid_re && (~(|ribp.wstrb))) begin
-              s_fsm_state         <= ReadStart;
-              s_xfer_data_bit_cnt <= 8'd32;
-              s_mem_addr          <= {1'b0, ribp.addr[22:0]};
-              s_mem_wdata         <= ribp.wdata;  // NOTE: no used
-            end
-          end
-          WriteStart: begin
-            if (s_core_idle) begin
-              s_wr_st     <= 1'b1;
-              s_fsm_state <= Write;
-            end
-          end
-          Write: begin
-            s_wr_st <= 1'b0;
-            if (s_mem_ready) s_fsm_state <= Idle;
-          end
-          ReadStart: begin
-            if (s_core_idle) begin
-              s_rd_st     <= 1'b1;
-              s_fsm_state <= Read;
-            end
-          end
-          Read: begin
-            s_rd_st <= 1'b0;
-            if (s_mem_ready) s_fsm_state <= Idle;
-          end
-          default: begin
-            s_fsm_state <= Idle;
-            s_rd_st     <= 1'b0;
-            s_wr_st     <= 1'b0;
-          end
-        endcase
-      end
-    end
-  end
+  psram_axi4 u_psram_axi4 (
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .accept_enable_i(!s_quiesced),
+      .busy_o         (s_axi_busy),
+      .stall_event_o  (s_perf_stall_event),
+      .split_event_o  (s_perf_split_event),
+      .axi4           (mem_axi4),
+      .mem_req_valid_o(s_mem_req_valid),
+      .mem_req_ready_i(s_mem_req_ready),
+      .mem_req_write_o(s_mem_req_write),
+      .mem_req_chip_o (s_mem_req_chip),
+      .mem_req_addr_o (s_mem_req_addr),
+      .mem_req_len_o  (s_mem_req_len),
+      .mem_req_wdata_o(s_mem_req_wdata),
+      .mem_rsp_valid_i(s_mem_rsp_valid),
+      .mem_rsp_ready_o(s_mem_rsp_ready),
+      .mem_rsp_error_i(s_mem_rsp_err),
+      .mem_rsp_rdata_i(s_mem_rsp_rdata)
+  );
+
   psram_core u_psram_core (
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .cfg_wait_i         (s_cfg_wait),
-      .cfg_chd_i          (s_cfg_chd),
-      .cfg_init_i         (s_cfg_init),
-      .mem_ready_o        (s_mem_ready),
-      .mem_addr_i         (s_mem_addr),
-      .mem_wdata_i        (s_mem_wdata),
-      .mem_rdata_o        (s_mem_rdata),
-      .xfer_data_bit_cnt_i(s_xfer_data_bit_cnt),
-      .rd_st_i            (s_rd_st),
-      .wr_st_i            (s_wr_st),
-      .init_done_o        (s_init_done),
-      .idle_o             (s_core_idle),
-      .psram_sclk_o       (psram.sck_o),
-      .psram_ce_o         (s_psram_ce),
-      .psram_mosi_i       (psram.io_di_i[0]),
-      .psram_miso_i       (psram.io_di_i[1]),
-      .psram_sio2_i       (psram.io_di_i[2]),
-      .psram_sio3_i       (psram.io_di_i[3]),
-      .psram_mosi_o       (psram.io_do_o[0]),
-      .psram_miso_o       (psram.io_do_o[1]),
-      .psram_sio2_o       (psram.io_do_o[2]),
-      .psram_sio3_o       (psram.io_do_o[3]),
-      .psram_sio_oen_o    (s_psram_sio_oen)
+      .clk_i                  (clk_i),
+      .rst_n_i                (rst_n_i),
+      .controller_enable_i    (s_controller_en),
+      .memory_enable_i        (s_memory_en),
+      .auto_init_i            (s_auto_init),
+      .wrap32_i               (s_wrap32),
+      .chip_enable_i          (s_chip_en),
+      .powerup_cycles_i       (s_powerup_cycles),
+      .init_start_i           (s_init_start),
+      .recover_start_i        (s_recover_start),
+      .recover_chip_i         (s_recover_chip),
+      .abort_i                (s_abort),
+      .chip_error_clear_i     (s_chip_err_clear),
+      .init_busy_o            (s_init_busy),
+      .indirect_busy_o        (s_indirect_busy),
+      .quiesced_o             (s_quiesced),
+      .global_ready_o         (s_global_ready),
+      .chip_present_o         (s_chip_present),
+      .chip_ready_o           (s_chip_ready),
+      .chip_qpi_o             (s_chip_qpi),
+      .chip_wrap32_o          (s_chip_wrap32),
+      .chip_error_o           (s_chip_err),
+      .chip0_id_o             (s_chip0_id),
+      .chip1_id_o             (s_chip1_id),
+      .chip2_id_o             (s_chip2_id),
+      .chip3_id_o             (s_chip3_id),
+      .last_error_o           (s_last_err),
+      .last_error_chip_o      (s_last_err_chip),
+      .last_error_addr_o      (s_last_err_addr),
+      .init_done_event_o      (s_init_done_event),
+      .indirect_done_event_o  (s_indirect_done_event),
+      .error_event_o          (s_err_event),
+      .timeout_event_o        (s_timeout_event),
+      .indirect_start_i       (s_indirect_start),
+      .indirect_command_i     (s_indirect_cmd),
+      .indirect_chip_i        (s_indirect_chip),
+      .indirect_addr_i        (s_indirect_addr),
+      .indirect_length_i      (s_indirect_len),
+      .indirect_wdata_i       (s_indirect_wdata),
+      .indirect_rdata_o       (s_indirect_rdata),
+      .mem_req_valid_i        (s_mem_req_valid),
+      .mem_req_ready_o        (s_mem_req_ready),
+      .mem_req_write_i        (s_mem_req_write),
+      .mem_req_chip_i         (s_mem_req_chip),
+      .mem_req_addr_i         (s_mem_req_addr),
+      .mem_req_len_i          (s_mem_req_len),
+      .mem_req_wdata_i        (s_mem_req_wdata),
+      .mem_rsp_valid_o        (s_mem_rsp_valid),
+      .mem_rsp_ready_i        (s_mem_rsp_ready),
+      .mem_rsp_error_o        (s_mem_rsp_err),
+      .mem_rsp_rdata_o        (s_mem_rsp_rdata),
+      .perf_read_byte_event_o (s_perf_read_byte_event),
+      .perf_write_byte_event_o(s_perf_write_byte_event),
+      .perf_command_event_o   (s_perf_cmd_event),
+      .perf_error_event_o     (s_perf_err_event),
+      .axi_busy_i             (s_axi_busy),
+      .phy_req_valid_o        (s_phy_req_valid),
+      .phy_req_ready_i        (s_phy_req_ready),
+      .phy_req_command_o      (s_phy_req_cmd),
+      .phy_req_chip_o         (s_phy_req_chip),
+      .phy_req_qpi_o          (s_phy_req_qpi),
+      .phy_req_addr_o         (s_phy_req_addr),
+      .phy_req_length_o       (s_phy_req_len),
+      .phy_req_wdata_o        (s_phy_req_wdata),
+      .phy_busy_i             (s_phy_busy),
+      .phy_done_i             (s_phy_done),
+      .phy_error_i            (s_phy_err),
+      .phy_rdata_i            (s_phy_rdata)
   );
 
-  wr_dispatcher u_wr_dispatcher (
-      .wstrb_i       (ribp.wstrb),
-      .wdata_i       (ribp.wdata),
-      .addr_ofst_o   (s_disp_addr_ofst),
-      .xfer_bit_cnt_o(s_disp_xfer_bit_cnt),
-      .wdata_o       (s_disp_wdata)
+  psram_phy u_psram_phy (
+      .clk_i               (clk_i),
+      .rst_n_i             (rst_n_i),
+      .abort_i             (s_abort),
+      .req_valid_i         (s_phy_req_valid),
+      .req_ready_o         (s_phy_req_ready),
+      .req_command_i       (s_phy_req_cmd),
+      .req_chip_i          (s_phy_req_chip),
+      .req_qpi_i           (s_phy_req_qpi),
+      .req_addr_i          (s_phy_req_addr),
+      .req_length_i        (s_phy_req_len),
+      .req_wdata_i         (s_phy_req_wdata),
+      .busy_o              (s_phy_busy),
+      .done_o              (s_phy_done),
+      .error_o             (s_phy_err),
+      .rdata_o             (s_phy_rdata),
+      .cfg_half_period_i   (s_half_period),
+      .cfg_cs_setup_i      (s_cs_setup_cycles),
+      .cfg_cs_high_i       (s_cs_high_cycles),
+      .cfg_cs_hold_i       (s_cs_hold_cycles),
+      .cfg_cs_max_low_i    (s_cs_max_low_cycles),
+      .cfg_access_timeout_i(s_access_timeout_cycles),
+      .psram_sclk_o        (psram.sck_o),
+      .psram_nss_o         (psram.nss_o),
+      .psram_io_oe_o       (psram.io_oe_o),
+      .psram_io_di_i       (psram.io_di_i),
+      .psram_io_do_o       (psram.io_do_o)
   );
 
-endmodule
+  logic unused_above_84mhz;
+  assign unused_above_84mhz = s_above_84mhz;
 
-
-module wr_dispatcher (
-    input  logic [ 3:0] wstrb_i,
-    input  logic [31:0] wdata_i,
-    output logic [ 1:0] addr_ofst_o,
-    output logic [ 7:0] xfer_bit_cnt_o,
-    output logic [31:0] wdata_o
-);
-  always_comb begin
-    wdata_o = wdata_i;
-    case (wstrb_i)
-      4'b0001: begin
-        addr_ofst_o    = 2'd0;
-        xfer_bit_cnt_o = 8'd8;
-        wdata_o[7:0]   = wdata_i[7:0];
-      end
-      4'b0010: begin
-        addr_ofst_o    = 2'd1;
-        xfer_bit_cnt_o = 8'd8;
-        wdata_o[7:0]   = wdata_i[15:8];
-      end
-      4'b0100: begin
-        addr_ofst_o    = 2'd2;
-        xfer_bit_cnt_o = 8'd8;
-        wdata_o[7:0]   = wdata_i[23:16];
-      end
-      4'b1000: begin
-        addr_ofst_o    = 2'd3;
-        xfer_bit_cnt_o = 8'd8;
-        wdata_o[7:0]   = wdata_i[31:24];
-      end
-      4'b0011: begin
-        addr_ofst_o    = 2'd0;
-        xfer_bit_cnt_o = 8'd16;
-        wdata_o[15:0]  = wdata_i[15:0];
-      end
-      4'b1100: begin
-        addr_ofst_o    = 2'd2;
-        xfer_bit_cnt_o = 8'd16;
-        wdata_o[15:0]  = wdata_i[31:16];
-      end
-      4'b1111: begin
-        addr_ofst_o    = 2'd0;
-        xfer_bit_cnt_o = 8'd32;
-        wdata_o[31:0]  = wdata_i[31:0];
-      end
-      default: begin
-        addr_ofst_o    = 2'd0;
-        xfer_bit_cnt_o = 8'd32;
-        wdata_o        = wdata_i[31:0];
-      end
-    endcase
-  end
 endmodule

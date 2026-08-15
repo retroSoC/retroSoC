@@ -67,7 +67,7 @@
     {"symbol": "APB_USER_IP", "base": "0x20007000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
     {"symbol": "SRAM", "base": "0x30000000", "size": "0x00020000", "route": "ram", "kind": "active", "public": true, "linker": "SRAM", "user_access": "rw", "burst": "incr16"},
     {"symbol": "SDRAM", "base": "0x38000000", "size": "0x04000000", "route": "axi4", "kind": "active", "public": true, "linker": "SDRAM", "user_access": "rw", "burst": "incr16"},
-    {"symbol": "PSRAM", "base": "0x40000000", "size": "0x00800000", "route": "axi4", "kind": "active", "public": true, "linker": "PSRAM", "user_access": "rw", "burst": "incr16"},
+    {"symbol": "PSRAM", "base": "0x40000000", "size": "0x02000000", "route": "axi4", "kind": "active", "public": true, "linker": "PSRAM", "user_access": "rw", "burst": "incr16"},
     {"symbol": "OPIPSRAM", "base": "0x48000000", "size": "0x08000000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
     {"symbol": "XPI", "base": "0x50000000", "size": "0x10000000", "route": "axi4", "kind": "active", "public": true, "user_access": "rw", "burst": "incr16"},
     {"symbol": "SPISD", "base": "0x60000000", "size": "0x40000000", "route": "axi4", "kind": "active", "public": true, "user_access": "rw", "burst": "incr16"}

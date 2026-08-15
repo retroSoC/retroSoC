@@ -20,6 +20,7 @@ COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
 INTERCONNECT = ROOT / "rtl/ip/interconnect"
 PERIPHERAL = ROOT / "rtl/ip/peripheral"
 SERIAL = ROOT / "rtl/ip/serial"
+MEMORY = ROOT / "rtl/ip/memory"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -168,6 +169,15 @@ def source_files(target: str) -> list[Path]:
             ROOT / "rtl/ip/multimedia/dvp_reg.sv",
             SCRIPT_DIR / "dvp_formal.sv",
         ]
+    if target == "psram":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/axi4_addr_gen.sv",
+            MEMORY / "psram_pkg.sv",
+            MEMORY / "psram_axi4.sv",
+            MEMORY / "psram_phy.sv",
+            SCRIPT_DIR / "psram_formal.sv",
+        ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
@@ -191,6 +201,7 @@ def generate(
             INTERCONNECT,
             PERIPHERAL,
             SERIAL,
+            MEMORY,
         ],
         files=source_files(target),
     ).deduplicate()
@@ -214,6 +225,7 @@ def parse_args() -> argparse.Namespace:
             "timer",
             "clint",
             "dvp",
+            "psram",
         ),
         required=True,
     )

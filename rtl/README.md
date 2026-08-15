@@ -66,3 +66,9 @@ The Verilator harness uses a zero-delay SDRAM protocol model because Verilator
 does not elaborate the tri-state delays in the Micron model. The Icarus
 testbench retains that Micron timing model, so it is the reference for SDRAM
 command timing while Verilator provides fast functional coverage.
+
+The self-owned ESP-PSRAM64H controller exposes a 32-bit AXI4 data window and a
+separate RIBP management plane across four independently isolated 8 MiB chips.
+Its frozen architecture, register ABI, timing limits, model, formal target, and
+verification evidence are documented in
+[ESP-PSRAM64H Controller](../docs/ip/psram.md).
