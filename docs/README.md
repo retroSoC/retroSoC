@@ -34,6 +34,8 @@ the root README and subsystem guides.
   timing, FIFO, interrupt, DMA, and integration contracts.
 - [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,
   counting modes, interrupt, debug-freeze, HAL, and verification contracts.
+- [ip/sysctrl.md](ip/sysctrl.md) defines the SystemCtrl register ABI, user-core
+  lifecycle, PLL/fault/performance/RTC/test contracts, HAL, and verification.
 - [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed
   timebase, RV32 access rules, interrupt behavior, and verification contract.
 - [ip/gpio.md](ip/gpio.md) defines the GPIO dual-window ABI, pad ownership,

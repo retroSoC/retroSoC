@@ -256,6 +256,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/top/rib2apb.sv" in rib2apb.files
     assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_if.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_define.svh" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_reg.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_core.sv" in sysctrl.files
     assert ROOT / "rtl/ip/peripheral/ribp_sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files

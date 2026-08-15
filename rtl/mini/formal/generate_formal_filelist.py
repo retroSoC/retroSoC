@@ -68,6 +68,10 @@ def source_files(target: str) -> list[Path]:
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "sysctrl_if.sv",
+            PERIPHERAL / "sysctrl_define.svh",
+            PERIPHERAL / "sysctrl_reg.sv",
+            PERIPHERAL / "sysctrl_core.sv",
             PERIPHERAL / "ribp_sysctrl.sv",
             SCRIPT_DIR / "sysctrl_formal.sv",
         ]

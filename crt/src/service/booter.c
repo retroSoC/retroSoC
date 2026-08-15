@@ -4,6 +4,7 @@
 #include <retrosoc/lib/printf.h>
 #include <socver.h>
 #include <retrosoc/hal/psram.h>
+#include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/lib/console.h>
 #include <retrosoc/lib/string.h>
@@ -12,6 +13,13 @@
 #include <user_design_info.h>
 
 void rs_app_info(void) {
+    uint8_t selected_core;
+    uint8_t selected_ip;
+
+    selected_core = 0U;
+    selected_ip = 0U;
+    (void)rs_sysctrl_get_core_select(&selected_core);
+    (void)rs_sysctrl_get_ip_select(&selected_ip);
     printf("#############################################################\n");
     printf("#############################################################\n");
     printf("compile date: %s %s\n", __DATE__, __TIME__);
@@ -52,7 +60,7 @@ void rs_app_info(void) {
     uint32_t core_size = sizeof(user_core_info) / sizeof(user_core_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
     for (uint32_t i = 0; i < core_size; ++i) {
-        if (reg_sysctrl_coresel == i)
+        if (selected_core == i)
             printf("=>");
         else
             printf("  ");
@@ -64,7 +72,7 @@ void rs_app_info(void) {
     uint32_t ip_size = sizeof(user_ip_info) / sizeof(user_ip_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
     for (uint32_t i = 0; i < ip_size; ++i) {
-        if (reg_sysctrl_ipsel == i)
+        if (selected_ip == i)
             printf("=>");
         else
             printf("  ");
@@ -111,7 +119,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_RIBP_WS2812_BASE);
     printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
     printf("                       1 x DMA           @%p\n", (void *)&reg_dma_mode);
-    printf("                       1 x SYSCTRL       @%p\n", (void *)&reg_sysctrl_coresel);
+    printf("                       1 x SYSCTRL       @%p\n",
+           (void *)(uintptr_t)RS_SOC_RIBP_SYSCTRL_BASE);
     printf("                       1 x CLINT         @%p\n",
            (void *)(uintptr_t)RS_SOC_RIBP_CLINT_BASE);
     printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);

@@ -172,7 +172,7 @@
       "source": "audio",
       "destination": "system",
       "primitive": "cdc_sync",
-      "path": "rtl/ip/peripheral/ribp_sysctrl.sv",
+      "path": "rtl/ip/peripheral/sysctrl_core.sv",
       "instance": "u_rtc_wake_sync"
     },
     {

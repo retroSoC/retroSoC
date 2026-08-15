@@ -44,6 +44,10 @@
 /ip/peripheral/dma_core.sv
 /ip/peripheral/ribp_dma.sv
 /ip/peripheral/pll_ctrl_if.sv
+/ip/peripheral/sysctrl_if.sv
+/ip/peripheral/sysctrl_define.svh
+/ip/peripheral/sysctrl_reg.sv
+/ip/peripheral/sysctrl_core.sv
 /ip/peripheral/ribp_sysctrl.sv
 /ip/peripheral/clint_if.sv
 /ip/peripheral/clint_timebase.sv

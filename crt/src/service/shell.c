@@ -5,6 +5,7 @@
 #include <retrosoc/lib/string.h>
 #include <retrosoc/service/shell.h>
 #include <retrosoc/hal/lcd.h>
+#include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/timer.h>
 #include <ff.h>
 #include <retrosoc/media/video_player.h>
@@ -684,20 +685,29 @@ static void rs_shell_app_coremark_cmd(int argc, char **argv) {
 }
 
 static void rs_shell_app_userip_cmd(int argc, char **argv) {
+    uint8_t current_user_id;
+
     if (argc != 1 && argc != 2) {
         printf("[userip] cmd param error\n");
         return;
     }
 
     if (argc == 1) {
-        printf("current user ip id: %03d\n", reg_sysctrl_ipsel);
+        if (rs_sysctrl_get_ip_select(&current_user_id) != RS_OK) {
+            printf("user ip selection read failed\n");
+            return;
+        }
+        printf("current user ip id: %03d\n", current_user_id);
         userip_main(0, NULL);
     } else if (argc == 2) {
         int32_t user_id;
 
         if ((rs_strtoi32(argv[1], &user_id) == RS_OK) && (user_id >= 0) && (user_id <= 255)) {
             printf("switch to user ip id to [%03d...]\n", user_id);
-            reg_sysctrl_ipsel = (uint8_t)user_id;
+            if (rs_sysctrl_set_ip_select((uint8_t)user_id) != RS_OK) {
+                printf("user ip selection write failed\n");
+                return;
+            }
             userip_main((int)user_id, NULL); // HACK:
         } else {
             printf("error use id: %d\n", user_id);

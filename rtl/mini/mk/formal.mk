@@ -56,6 +56,10 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/gpio_reg.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/ribp_gpio.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/pll_ctrl_if.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_if.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_define.svh \
+                             $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_reg.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_core.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/ribp_sysctrl.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_if.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_reg.sv \

@@ -72,3 +72,9 @@ separate RIBP management plane across four independently isolated 8 MiB chips.
 Its frozen architecture, register ABI, timing limits, model, formal target, and
 verification evidence are documented in
 [ESP-PSRAM64H Controller](../docs/ip/psram.md).
+
+SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
+`sysctrl_core.sv` behind the stable `ribp_sysctrl` integration wrapper. Its
+generated register offsets, RIBP timing, control-plane behavior, and
+verification contract are documented in
+[RIBP System Control](../docs/ip/sysctrl.md).

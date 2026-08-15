@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module sysctrl_fault_tb;
+module sysctrl_tb;
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
   logic        fault_valid_i = 1'b0;
@@ -186,7 +186,7 @@ module sysctrl_fault_tb;
       $fatal(1, "RTC wake sticky status W1C failed");
     end
 
-    $display("sysctrl fault, user core control, and RTC wake test passed");
+    $display("SystemCtrl register, lifecycle, fault, performance, and RTC wake test passed");
     $finish;
   end
 endmodule

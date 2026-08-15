@@ -2,39 +2,34 @@
 
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clock.h>
+#include <retrosoc/hal/sysctrl.h>
 
-#define RS_CLOCK_CMD_APPLY           UINT32_C(0x00000001)
-#define RS_CLOCK_CMD_CLEAR_ERROR     UINT32_C(0x00000002)
-#define RS_CLOCK_STATUS_ACTIVE_MASK  UINT32_C(0x00000007)
-#define RS_CLOCK_STATUS_ACTIVE_VALID UINT32_C(0x00000008)
-#define RS_CLOCK_STATUS_BUSY         UINT32_C(0x00000010)
-#define RS_CLOCK_STATUS_ERROR_SHIFT  6U
-#define RS_CLOCK_STATUS_SAFE_CLOCK   UINT32_C(0x00000100)
-#define RS_CLOCK_STATUS_PLL_LOCKED   UINT32_C(0x00000200)
-#define RS_CLOCK_STATUS_CAPABLE      UINT32_C(0x00000400)
-#define RS_CLOCK_ERROR_UNSUPPORTED   1U
-#define RS_CLOCK_ERROR_LOCK_TIMEOUT  2U
+#define RS_CLOCK_ERROR_UNSUPPORTED  1U
+#define RS_CLOCK_ERROR_LOCK_TIMEOUT 2U
 
 static bool rs_clock_frequency_valid(rs_clock_frequency_t frequency) {
     return (uint32_t)frequency <= (uint32_t)RS_CLOCK_FREQ_192MHZ;
 }
 
 rs_status_t rs_clock_get_status(rs_clock_status_t *status) {
-    uint32_t value;
+    rs_sysctrl_pll_status_t sysctrl_status;
+    uint8_t requested_frequency;
 
     if (status == NULL) {
         return RS_EINVAL;
     }
-    value = reg_sysctrl_pll_status;
-    status->requested_frequency =
-        (rs_clock_frequency_t)(reg_sysctrl_pll_cfg & RS_CLOCK_STATUS_ACTIVE_MASK);
-    status->active_frequency = (rs_clock_frequency_t)(value & RS_CLOCK_STATUS_ACTIVE_MASK);
-    status->error_reason = (uint8_t)((value >> RS_CLOCK_STATUS_ERROR_SHIFT) & UINT32_C(0x3));
-    status->active_valid = (value & RS_CLOCK_STATUS_ACTIVE_VALID) != 0U;
-    status->busy = (value & RS_CLOCK_STATUS_BUSY) != 0U;
-    status->safe_clock = (value & RS_CLOCK_STATUS_SAFE_CLOCK) != 0U;
-    status->pll_locked = (value & RS_CLOCK_STATUS_PLL_LOCKED) != 0U;
-    status->capable = (value & RS_CLOCK_STATUS_CAPABLE) != 0U;
+    if ((rs_sysctrl_get_pll_config(&requested_frequency) != RS_OK) ||
+        (rs_sysctrl_get_pll_status(&sysctrl_status) != RS_OK)) {
+        return RS_EIO;
+    }
+    status->requested_frequency = (rs_clock_frequency_t)requested_frequency;
+    status->active_frequency = (rs_clock_frequency_t)sysctrl_status.active_selection;
+    status->error_reason = sysctrl_status.error_reason;
+    status->active_valid = sysctrl_status.active_valid;
+    status->busy = sysctrl_status.busy;
+    status->safe_clock = sysctrl_status.safe_clock;
+    status->pll_locked = sysctrl_status.pll_locked;
+    status->capable = sysctrl_status.capable;
     return RS_OK;
 }
 
@@ -82,9 +77,11 @@ rs_status_t rs_clock_set_frequency(rs_clock_frequency_t frequency, rs_timeout_t 
         return RS_EIO;
     }
 
-    reg_sysctrl_pll_cmd = RS_CLOCK_CMD_CLEAR_ERROR;
-    reg_sysctrl_pll_cfg = (uint32_t)frequency;
-    reg_sysctrl_pll_cmd = RS_CLOCK_CMD_APPLY;
+    if ((rs_sysctrl_clear_pll_error() != RS_OK) ||
+        (rs_sysctrl_set_pll_config((uint8_t)frequency) != RS_OK) ||
+        (rs_sysctrl_apply_pll_config() != RS_OK)) {
+        return RS_EIO;
+    }
 
     while (timeout-- != 0U) {
         if (rs_clock_get_status(&status) != RS_OK) {

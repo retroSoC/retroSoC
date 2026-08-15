@@ -33,6 +33,12 @@ interrupts, and bounded self-test for the four-chip ESP-PSRAM64H controller.
 See the [controller contract](../docs/ip/psram.md) before using its destructive
 self-test or changing the memory timing.
 
+`<retrosoc/hal/sysctrl.h>` owns typed access to SystemCtrl user-core/IP,
+PLL, fault, performance, RTC-wake, and terminal-test functions. Existing
+clock, user-core, performance, and test-service APIs use this HAL; direct
+`reg_sysctrl_*` register macros are not public SDK interfaces. See the
+[SystemCtrl contract](../docs/ip/sysctrl.md).
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

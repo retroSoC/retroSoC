@@ -193,53 +193,6 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
     assert "bus fault responder test passed" in result.stdout
 
 
-def test_sysctrl_fault_registers_record_and_clear_pending(tmp_path: Path) -> None:
-    iverilog = shutil.which("iverilog")
-    vvp = shutil.which("vvp")
-    if iverilog is None or vvp is None:
-        return
-    generate(tmp_path)
-    source_list = tmp_path / "sysctrl_fault.fl"
-    source_list.write_text(
-        "\n".join(
-            [
-                "+define+SV_ASSRT_DISABLE",
-                f"+incdir+{tmp_path / 'rtl'}",
-                f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
-                f"+incdir+{ROOT / 'rtl/mini/top'}",
-                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
-                str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
-                str(ROOT / "rtl/ip/peripheral/pll_ctrl_if.sv"),
-                str(ROOT / "rtl/ip/peripheral/ribp_sysctrl.sv"),
-                str(ROOT / "tests/rtl/sysctrl_fault_tb.sv"),
-                "",
-            ]
-        ),
-        encoding="utf-8",
-    )
-    converted = tmp_path / "sysctrl_fault_tb.v"
-    subprocess.run(
-        [
-            sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
-            "-f",
-            str(source_list),
-            "--output",
-            str(converted),
-        ],
-        check=True,
-    )
-    simulation = tmp_path / "sysctrl_fault_tb"
-    subprocess.run(
-        [iverilog, "-g2012", "-s", "sysctrl_fault_tb", "-o", str(simulation), str(converted)],
-        check=True,
-    )
-    result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "sysctrl fault, user core control, and RTC wake test passed" in result.stdout
-
-
 def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
@@ -267,6 +220,10 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/edge_det.sv"),
                 str(ROOT / "rtl/ip/peripheral/pll_ctrl_if.sv"),
                 str(ROOT / "rtl/ip/peripheral/clint_timebase.sv"),
+                str(ROOT / "rtl/ip/peripheral/sysctrl_if.sv"),
+                str(ROOT / "rtl/ip/peripheral/sysctrl_define.svh"),
+                str(ROOT / "rtl/ip/peripheral/sysctrl_reg.sv"),
+                str(ROOT / "rtl/ip/peripheral/sysctrl_core.sv"),
                 str(ROOT / "rtl/ip/peripheral/ribp_sysctrl.sv"),
                 str(ROOT / "rtl/tech/tc_clk.sv"),
                 str(ROOT / "rtl/tech/tc_pll.sv"),
@@ -339,8 +296,8 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
 
 
 def test_sysctrl_does_not_expose_unused_i2c_or_qspi_select_registers() -> None:
-    rtl = (ROOT / "rtl/ip/peripheral/ribp_sysctrl.sv").read_text(encoding="utf-8")
-    header = (ROOT / "crt/include/retrosoc/core/soc.h").read_text(encoding="utf-8")
+    rtl = (ROOT / "rtl/ip/peripheral/sysctrl_core.sv").read_text(encoding="utf-8")
+    header = (ROOT / "crt/include/retrosoc/hal/sysctrl.h").read_text(encoding="utf-8")
 
     for symbol in (
         "SYSCTRL_I2CSEL",
@@ -351,5 +308,4 @@ def test_sysctrl_does_not_expose_unused_i2c_or_qspi_select_registers() -> None:
         "s_sysctrl_qspisel",
     ):
         assert symbol not in rtl
-    assert "reg_sysctrl_i2csel" not in header
-    assert "reg_sysctrl_qspicsel" not in header
+    assert "reg_sysctrl_" not in header
