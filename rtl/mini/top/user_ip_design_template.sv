@@ -22,11 +22,11 @@
 module user_ip_design_template #(
     parameter int ID = 8'd255
 ) (
-    // verilog_format: off
-    input logic   clk_i,
-    input logic   rst_n_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic          clk_i,
+    input logic          rst_n_i,
     user_gpio_if.user_ip gpio,
-    apb4_if.slave apb
+    apb4_if.slave        apb
     // verilog_format: on
 );
 

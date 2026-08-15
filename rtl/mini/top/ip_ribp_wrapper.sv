@@ -13,43 +13,43 @@
 `include "rib_defs.svh"
 
 module ip_ribp_wrapper (
-    // verilog_format: off
-    input logic              clk_i,
-    input logic              rst_n_i,
-    input logic              clk_aud_i,
-    input logic              rst_aud_n_i,
-    input logic              debug_halted_i,
-    input logic              timebase_tick_i,
-    axi4_if.slave            cfg_axi4,
-    axi4_if.slave            psram_axi4,
-    axi4_if.slave            xpi_axi4,
-    axi4_if.slave            spisd_axi4,
-    gpio_if.dut              gpio,
-    user_gpio_if.padctrl     user_gpio,
-    uart_if.dut              uart,
-    psram_if.dut             psram,
-    spi_if.dut               spisd,
-    i2c_if.dut               i2c0,
-    i2s_if.dut               i2s,
-    ws2812_if.dut            ws2812,
-    xpi_if.dut               xpi,
-    axi4_if.master           dma_axi4,
-    sysctrl_if.dut           sysctrl,
-    pll_ctrl_if.sysctrl      pll_ctrl,
-    ribp_if.master           sdram_cfg_ribp,
-    dvp_if.dut               dvp,
-    sdio_if.dut              sdio,
-    opipsram_if.dut          opipsram,
-    i2c_if.dut               i2c1,
-    input logic              fault_valid_i,
-    input logic [31:0]       fault_addr_i,
-    input logic [3:0]        fault_wstrb_i,
-    input logic              fault_reserved_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic                            clk_i,
+    input logic                            rst_n_i,
+    input logic                            clk_aud_i,
+    input logic                            rst_aud_n_i,
+    input logic                            debug_halted_i,
+    input logic                            timebase_tick_i,
+    axi4_if.slave                          cfg_axi4,
+    axi4_if.slave                          psram_axi4,
+    axi4_if.slave                          xpi_axi4,
+    axi4_if.slave                          spisd_axi4,
+    gpio_if.dut                            gpio,
+    user_gpio_if.padctrl                   user_gpio,
+    uart_if.dut                            uart,
+    psram_if.dut                           psram,
+    spi_if.dut                             spisd,
+    i2c_if.dut                             i2c0,
+    i2s_if.dut                             i2s,
+    ws2812_if.dut                          ws2812,
+    xpi_if.dut                             xpi,
+    axi4_if.master                         dma_axi4,
+    sysctrl_if.dut                         sysctrl,
+    pll_ctrl_if.sysctrl                    pll_ctrl,
+    ribp_if.master                         sdram_cfg_ribp,
+    dvp_if.dut                             dvp,
+    sdio_if.dut                            sdio,
+    opipsram_if.dut                        opipsram,
+    i2c_if.dut                             i2c1,
+    input logic                            fault_valid_i,
+    input logic [31:0]                     fault_addr_i,
+    input logic [3:0]                      fault_wstrb_i,
+    input logic                            fault_reserved_i,
     output logic [`SOC_IRQ_RIBP_WIDTH-1:0] irq_o
     // verilog_format: on
 );
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   // Generated RIBP target declarations preserve scalar-interface compatibility.
   `include "ribp_interfaces.svh"
 
@@ -175,7 +175,7 @@ module ip_ribp_wrapper (
   // Uses ClusterIP common ribp_if and register.sv dffr through generated bindings.
   `include "ribp_routes.svh"
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
   `include "ribp_irq_bindings.svh"
 

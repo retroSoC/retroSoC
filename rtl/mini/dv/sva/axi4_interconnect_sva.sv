@@ -55,11 +55,11 @@ bind axi4_interconnect axi4_interconnect_sva #(
 ) u_axi4_interconnect_sva (
     .clk_i             (clk_i),
     .rst_n_i           (rst_n_i),
-    .master_state_i    (r_master_state),
-    .master_target_i   (r_master_target),
-    .target_valid_i    (r_target_valid),
-    .target_addr_sent_i(r_target_addr_sent),
-    .target_owner_i    (r_target_owner),
+    .master_state_i    (s_master_state),
+    .master_target_i   (s_master_target),
+    .target_valid_i    (s_target_valid),
+    .target_addr_sent_i(s_target_addr_sent),
+    .target_owner_i    (s_target_owner),
     .user_bus_enable_i (user_bus_enable_i),
     .user_awready_i    (m_awready[1]),
     .user_arready_i    (m_arready[1])

@@ -11,7 +11,7 @@
 `ifndef RIBP_SDRAM_DEF_SV
 `define RIBP_SDRAM_DEF_SV
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_SDRAM_CLKDIV 8'h00
 `define RIBP_SDRAM_CFG    8'h04
 // verilog_format: on
@@ -19,10 +19,10 @@
 `endif
 
 module sdram_reg (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic       clk_i,
     input  logic       rst_n_i,
-    ribp_if.slave       ribp,
+    ribp_if.slave      ribp,
     output logic [1:0] clkdiv_o
     // verilog_format: on
 );

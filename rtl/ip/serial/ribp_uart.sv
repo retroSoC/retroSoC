@@ -5,7 +5,7 @@ module ribp_uart #(
     parameter int TxFifoDepth = 64,
     parameter int RxFifoDepth = 64
 ) (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic  clk_i,
     input  logic  rst_n_i,
     output logic  dma_tx_stall_o,

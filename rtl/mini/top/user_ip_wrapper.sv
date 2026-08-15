@@ -11,7 +11,7 @@
 `include "user_extensions.svh"
 
 module user_ip_wrapper (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic                         clk_i,
     input  logic                         rst_n_i,
     input  logic [`USER_IPSEL_WIDTH-1:0] sel_i,

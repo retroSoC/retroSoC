@@ -11,7 +11,7 @@
 `ifndef RIBP_XPI_DEF_SV
 `define RIBP_XPI_DEF_SV
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_XPI_CFGIDX  8'h00
 `define RIBP_XPI_ACCMD   8'h04
 `define RIBP_XPI_MMSTAD  8'h08

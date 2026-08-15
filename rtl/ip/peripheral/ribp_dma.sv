@@ -11,7 +11,7 @@
 `ifndef RIBP_DMA_DEF_SV
 `define RIBP_DMA_DEF_SV
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_DMA_MODE         8'h00
 `define RIBP_DMA_SRCADDR      8'h04
 `define RIBP_DMA_SRCINCR      8'h08
@@ -56,16 +56,16 @@ endinterface
 `endif
 
 module ribp_dma (
-    // verilog_format: off
-    input  logic                  clk_i,
-    input  logic                  rst_n_i,
-    output logic                  dma_xfer_done_o,
-    dma_hw_trg_if.dut             hw_trg,
-    ribp_if.slave                 ribp,
-    rib_if.master                 rib,
-    axi4_stream_if.source         i2s_tx_axis,
-    axi4_stream_if.sink           i2s_rx_axis,
-    axi4_stream_if.sink           dvp_rx_axis
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic          clk_i,
+    input  logic          rst_n_i,
+    output logic          dma_xfer_done_o,
+    dma_hw_trg_if.dut     hw_trg,
+    ribp_if.slave         ribp,
+    rib_if.master         rib,
+    axi4_stream_if.source i2s_tx_axis,
+    axi4_stream_if.sink   i2s_rx_axis,
+    axi4_stream_if.sink   dvp_rx_axis
     // verilog_format: on
 );
 

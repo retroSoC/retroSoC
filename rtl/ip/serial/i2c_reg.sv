@@ -9,7 +9,7 @@ module i2c_reg #(
     parameter int CmdFifoLogDepth = $clog2(CmdFifoDepth),
     parameter int RxFifoLogDepth  = $clog2(RxFifoDepth)
 ) (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
     ribp_if.slave       ribp,
@@ -149,11 +149,13 @@ module i2c_reg #(
     end
   endfunction
 
+`ifndef SYNTHESIS
   initial begin
     if ((CmdFifoDepth > 255) || (RxFifoDepth > 255)) begin
       $fatal(1, "i2c_reg: FIFO depths must fit CAPABILITY fields");
     end
   end
+`endif
 
   assign s_req = ribp.valid && !s_ribp_ready_q;
   assign s_write = |ribp.wstrb;

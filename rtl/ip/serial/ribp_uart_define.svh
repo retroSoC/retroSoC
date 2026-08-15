@@ -4,7 +4,7 @@
 `ifndef RIBP_UART_DEFINE_SVH
 `define RIBP_UART_DEFINE_SVH
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_UART_BAUD_INT          8'h00
 `define RIBP_UART_BAUD_FRAC         8'h04
 `define RIBP_UART_LINE_CTRL         8'h08

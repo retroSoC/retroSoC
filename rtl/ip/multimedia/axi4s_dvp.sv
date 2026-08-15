@@ -14,14 +14,17 @@ interface dvp_if ();
 endinterface
 /* verilator lint_on DECLFILENAME */
 
+// Configuration and commands cross from clk_i into the selected pixel clock;
+// captured payloads return through the warm-flush FIFO. The FIFO backpressures
+// the pixel core, and reset clears both transfer domains before streaming resumes.
 module axi4s_dvp (
-    // verilog_format: off
-    input  logic                           clk_i,
-    input  logic                           rst_n_i,
-    ribp_if.slave                          ribp,
-    axi4_stream_if.source                  rx_axis,
-    dvp_if.dut                             dvp,
-    output logic                           irq_o
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic          clk_i,
+    input  logic          rst_n_i,
+    ribp_if.slave         ribp,
+    axi4_stream_if.source rx_axis,
+    dvp_if.dut            dvp,
+    output logic          irq_o
     // verilog_format: on
 );
   localparam int DvpPayloadWidth = 42;
@@ -56,6 +59,8 @@ module axi4s_dvp (
   logic                       s_fifo_src_clear;
   logic                       s_fifo_src_clear_busy;
   logic                       s_fifo_dst_clear_busy;
+  logic [DvpPayloadWidth-1:0] s_core_push_data;
+  logic                       s_core_push_valid;
   logic [               31:0] s_fifo_rx_data;
   logic                       s_rx_pop;
   logic                       s_fifo_full_sys;
@@ -184,8 +189,6 @@ module axi4s_dvp (
       .dst_valid_o     (s_fifo_dst_valid),
       .dst_ready_i     (s_fifo_dst_ready)
   );
-  logic [DvpPayloadWidth-1:0] s_core_push_data;
-  logic                       s_core_push_valid;
   assign s_cmd_core = s_cmd_v_pclk ? s_cmd_pclk : 2'b00;
 
   cdc_sync #(
@@ -211,42 +214,42 @@ module axi4s_dvp (
   edge_det #(
       .STAGE(2)
   ) u_frame_start_event (
-      .clk_i  (clk_i),
+      .clk_i(clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_frm_start_tgl),
-      .dat_o  (),
-      .re_o   (s_frame_start_event),
-      .fe_o   ()
+      .dat_i(s_frm_start_tgl),
+      .dat_o(),  // Synchronized level is intentionally unused; only the rising edge is consumed.
+      .re_o(s_frame_start_event),
+      .fe_o()  // Falling edge is intentionally unused.
   );
   edge_det #(
       .STAGE(2)
   ) u_line_done_event (
-      .clk_i  (clk_i),
+      .clk_i(clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_line_done_tgl),
-      .dat_o  (),
-      .re_o   (s_line_done_event),
-      .fe_o   ()
+      .dat_i(s_line_done_tgl),
+      .dat_o(),  // Synchronized level is intentionally unused; only the rising edge is consumed.
+      .re_o(s_line_done_event),
+      .fe_o()  // Falling edge is intentionally unused.
   );
   edge_det #(
       .STAGE(2)
   ) u_frame_done_event (
-      .clk_i  (clk_i),
+      .clk_i(clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_frm_done_tgl),
-      .dat_o  (),
-      .re_o   (s_frame_done_event),
-      .fe_o   ()
+      .dat_i(s_frm_done_tgl),
+      .dat_o(),  // Synchronized level is intentionally unused; only the rising edge is consumed.
+      .re_o(s_frame_done_event),
+      .fe_o()  // Falling edge is intentionally unused.
   );
   edge_det #(
       .STAGE(2)
   ) u_error_event (
-      .clk_i  (clk_i),
+      .clk_i(clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_err_tgl),
-      .dat_o  (),
-      .re_o   (s_err_evt),
-      .fe_o   ()
+      .dat_i(s_err_tgl),
+      .dat_o(),  // Synchronized level is intentionally unused; only the rising edge is consumed.
+      .re_o(s_err_evt),
+      .fe_o()  // Falling edge is intentionally unused.
   );
   /* verilator lint_on PINCONNECTEMPTY */
 

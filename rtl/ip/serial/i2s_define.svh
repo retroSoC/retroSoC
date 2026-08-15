@@ -11,7 +11,7 @@
 `ifndef RIBP_I2S_DEF_SV
 `define RIBP_I2S_DEF_SV
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_I2S_MODE        8'h00
 `define RIBP_I2S_FORMAT      8'h04
 `define RIBP_I2S_UPBOUND     8'h08

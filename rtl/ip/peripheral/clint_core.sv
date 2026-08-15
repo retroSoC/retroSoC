@@ -4,25 +4,27 @@
 module clint_core #(
     parameter int HartNum = 1
 ) (
-    // verilog_format: off
-    input  logic                clk_i,
-    input  logic                rst_n_i,
-    input  logic                tick_i,
-    input  logic                mtime_load_i,
-    input  logic [63:0]         mtime_load_value_i,
-    input  logic [63:0]         mtimecmp_i [0:HartNum-1],
-    output logic [63:0]         mtime_o,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic               clk_i,
+    input  logic               rst_n_i,
+    input  logic               tick_i,
+    input  logic               mtime_load_i,
+    input  logic [63:0]        mtime_load_value_i,
+    input  logic [63:0]        mtimecmp_i [0:HartNum-1],
+    output logic [63:0]        mtime_o,
     output logic [HartNum-1:0] timer_irq_o
     // verilog_format: on
 );
 
   logic [HartNum-1:0] s_timer_irq_d, s_timer_irq_q;
 
+`ifndef SYNTHESIS
   initial begin
     if ((HartNum < 1) || (HartNum > 4095)) begin
       $fatal(1, "clint_core: HartNum must be between 1 and 4095");
     end
   end
+`endif
 
   // MTIME wraps modulo 2^64, so the Common carry output is intentionally unused.
   /* verilator lint_off PINCONNECTEMPTY */

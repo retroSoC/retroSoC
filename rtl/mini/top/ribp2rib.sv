@@ -66,7 +66,7 @@ module ribp2rib #(
     endcase
   end
 
-  if (SyncReset) begin : GEN_SYNC_RESET
+  if (SyncReset) begin : gen_sync_reset
     dffsr #(
         .DATA_WIDTH(2)
     ) u_fsm_dffsr (
@@ -93,7 +93,7 @@ module ribp2rib #(
         .dat_i  (ribp.wstrb),
         .dat_o  (s_wstrb_q)
     );
-  end else begin : GEN_ASYNC_RESET
+  end else begin : gen_async_reset
     dffr #(
         .DATA_WIDTH(2)
     ) u_fsm_dffr (

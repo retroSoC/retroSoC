@@ -28,46 +28,50 @@ module spisd_init (
     input  logic spisd_miso_i
 );
 
-  localparam CMD0 = {8'h40, 8'h00, 8'h00, 8'h00, 8'h00, 8'h95};
-  localparam CMD8 = {8'h48, 8'h00, 8'h00, 8'h01, 8'hAA, 8'h87};
-  localparam CMD55 = {8'h77, 8'h00, 8'h00, 8'h00, 8'h00, 8'hFF};
-  localparam ACMD41 = {8'h69, 8'h40, 8'h00, 8'h00, 8'h00, 8'hFF};
-  localparam DIV_FREQ = 200;
-  localparam OVER_TIME_NUM = 25000;
+  localparam logic [47:0] Cmd0 = {8'h40, 8'h00, 8'h00, 8'h00, 8'h00, 8'h95};
+  localparam logic [47:0] Cmd8 = {8'h48, 8'h00, 8'h00, 8'h01, 8'hAA, 8'h87};
+  localparam logic [47:0] Cmd55 = {8'h77, 8'h00, 8'h00, 8'h00, 8'h00, 8'hFF};
+  localparam logic [47:0] Acmd41 = {8'h69, 8'h40, 8'h00, 8'h00, 8'h00, 8'hFF};
+  localparam int signed DivFreq = 32'sd200;
+  localparam int signed OverTimeNum = 32'sd25000;
 
-  localparam FSM_IDLE = 3'd0;
-  localparam FSM_SEND_CMD0 = 3'd1;
-  localparam FSM_WAIT_CMD0 = 3'd2;
-  localparam FSM_SEND_CMD8 = 3'd3;
-  localparam FSM_SEND_CMD55 = 3'd4;
-  localparam FSM_SEND_ACMD41 = 3'd5;
-  localparam FSM_INIT_DONE = 3'd6;
+  typedef enum logic [2:0] {
+    Idle       = 3'd0,
+    SendCmd0   = 3'd1,
+    WaitCmd0   = 3'd2,
+    SendCmd8   = 3'd3,
+    SendCmd55  = 3'd4,
+    SendAcmd41 = 3'd5,
+    InitDone   = 3'd6
+  } spisd_init_state_e;
 
   logic s_div_clk_d, s_div_clk_q;
   logic [7:0] s_div_cnt_d, s_div_cnt_q;  // 512 div
   logic [6:0] s_boot_cnt_d, s_boot_cnt_q;  // count 128
-  logic [2:0] s_fsm_d, s_fsm_q;
+  spisd_init_state_e s_fsm_d, s_fsm_q;
+  logic [2:0] s_fsm_bits_q;
   logic s_fir_clk_edge, s_sec_clk_edge;
   // Response signals.
-  logic        r_resp_en;
-  logic [47:0] r_resp_data;
-  logic        r_resp_flag;
-  logic [ 5:0] r_resp_bit_cnt;
+  logic        s_resp_en;
+  logic [47:0] s_resp_data;
+  logic        s_resp_flag;
+  logic [ 5:0] s_resp_bit_cnt;
   // utils
-  logic [ 5:0] r_cmd_bit_cnt;
-  logic [15:0] r_overflow_cnt;
-  logic        r_overflow_en;
+  logic [ 5:0] s_cmd_bit_cnt;
+  logic [15:0] s_overflow_cnt;
+  logic        s_overflow_en;
   // spi if
-  logic        r_init_done;
-  logic r_spisd_cs, r_spisd_mosi;
+  logic        s_init_done;
+  logic s_spisd_cs, s_spisd_mosi;
 
-  assign init_done_o    = r_init_done;
+  assign init_done_o    = s_init_done;
   assign spisd_clk_o    = s_div_clk_q;
-  assign spisd_cs_o     = r_spisd_cs;
-  assign spisd_mosi_o   = r_spisd_mosi;
+  assign spisd_cs_o     = s_spisd_cs;
+  assign spisd_mosi_o   = s_spisd_mosi;
   // fir: fall sec: pos
   assign s_fir_clk_edge = s_div_clk_q && (s_div_cnt_q == '0);
   assign s_sec_clk_edge = (~s_div_clk_q) && (s_div_cnt_q == '0);
+  assign s_fsm_q        = spisd_init_state_e'(s_fsm_bits_q);
 
   always_comb begin
     s_div_cnt_d = s_div_cnt_q;
@@ -100,7 +104,7 @@ module spisd_init (
   always_comb begin
     s_boot_cnt_d = s_boot_cnt_q;
     if (s_fir_clk_edge) begin
-      if (s_fsm_q == FSM_IDLE) begin
+      if (s_fsm_q == Idle) begin
         if (s_boot_cnt_q != '0) s_boot_cnt_d = s_boot_cnt_q - 1'b1;
       end else begin
         s_boot_cnt_d = '1;
@@ -118,28 +122,30 @@ module spisd_init (
   );
 
 
+  // Response capture and command sequencing depend on edge-qualified ordered
+  // updates, so the processes remain intact to preserve SPI timing exactly.
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      r_resp_en      <= '0;
-      r_resp_data    <= '0;
-      r_resp_flag    <= '0;
-      r_resp_bit_cnt <= '0;
+      s_resp_en      <= '0;
+      s_resp_data    <= '0;
+      s_resp_flag    <= '0;
+      s_resp_bit_cnt <= '0;
     end else begin
       if (s_sec_clk_edge) begin
-        if (spisd_miso_i == 1'b0 && r_resp_flag == 1'b0) begin
-          r_resp_flag    <= 1'b1;
-          r_resp_data    <= {r_resp_data[46:0], spisd_miso_i};
-          r_resp_bit_cnt <= r_resp_bit_cnt + 6'd1;
-          r_resp_en      <= 1'b0;
-        end else if (r_resp_flag) begin
-          r_resp_data    <= {r_resp_data[46:0], spisd_miso_i};
-          r_resp_bit_cnt <= r_resp_bit_cnt + 6'd1;
-          if (r_resp_bit_cnt == 6'd47) begin
-            r_resp_flag    <= 1'b0;
-            r_resp_bit_cnt <= '0;
-            r_resp_en      <= 1'b1;
+        if (spisd_miso_i == 1'b0 && s_resp_flag == 1'b0) begin
+          s_resp_flag    <= 1'b1;
+          s_resp_data    <= {s_resp_data[46:0], spisd_miso_i};
+          s_resp_bit_cnt <= s_resp_bit_cnt + 6'd1;
+          s_resp_en      <= 1'b0;
+        end else if (s_resp_flag) begin
+          s_resp_data    <= {s_resp_data[46:0], spisd_miso_i};
+          s_resp_bit_cnt <= s_resp_bit_cnt + 6'd1;
+          if (s_resp_bit_cnt == 6'd47) begin
+            s_resp_flag    <= 1'b0;
+            s_resp_bit_cnt <= '0;
+            s_resp_en      <= 1'b1;
           end
-        end else r_resp_en <= 1'b0;
+        end else s_resp_en <= 1'b0;
       end
     end
   end
@@ -147,38 +153,38 @@ module spisd_init (
   always_comb begin
     s_fsm_d = s_fsm_q;
     case (s_fsm_q)
-      FSM_IDLE: begin
-        if (s_boot_cnt_q == '0) s_fsm_d = FSM_SEND_CMD0;
+      Idle: begin
+        if (s_boot_cnt_q == '0) s_fsm_d = SendCmd0;
       end
-      FSM_SEND_CMD0: begin
-        if (r_cmd_bit_cnt == 6'd47) s_fsm_d = FSM_WAIT_CMD0;
+      SendCmd0: begin
+        if (s_cmd_bit_cnt == 6'd47) s_fsm_d = WaitCmd0;
       end
-      FSM_WAIT_CMD0: begin
-        if (r_resp_en) begin
-          if (r_resp_data[47:40] == 8'h01) s_fsm_d = FSM_SEND_CMD8;
-          else s_fsm_d = FSM_IDLE;
-        end else if (r_overflow_en) s_fsm_d = FSM_IDLE;
+      WaitCmd0: begin
+        if (s_resp_en) begin
+          if (s_resp_data[47:40] == 8'h01) s_fsm_d = SendCmd8;
+          else s_fsm_d = Idle;
+        end else if (s_overflow_en) s_fsm_d = Idle;
       end
 
-      FSM_SEND_CMD8: begin
-        if (r_resp_en) begin
-          if (r_resp_data[19:16] == 4'b0001) s_fsm_d = FSM_SEND_CMD55;
-          else s_fsm_d = FSM_IDLE;
+      SendCmd8: begin
+        if (s_resp_en) begin
+          if (s_resp_data[19:16] == 4'b0001) s_fsm_d = SendCmd55;
+          else s_fsm_d = Idle;
         end
       end
-      FSM_SEND_CMD55: begin
-        if (r_resp_en) begin
-          if (r_resp_data[47:40] == 8'h01) s_fsm_d = FSM_SEND_ACMD41;
+      SendCmd55: begin
+        if (s_resp_en) begin
+          if (s_resp_data[47:40] == 8'h01) s_fsm_d = SendAcmd41;
         end
       end
-      FSM_SEND_ACMD41: begin
-        if (r_resp_en) begin
-          if (r_resp_data[47:40] == 8'h00) s_fsm_d = FSM_INIT_DONE;
-          else s_fsm_d = FSM_SEND_CMD55;
+      SendAcmd41: begin
+        if (s_resp_en) begin
+          if (s_resp_data[47:40] == 8'h00) s_fsm_d = InitDone;
+          else s_fsm_d = SendCmd55;
         end
       end
-      FSM_INIT_DONE: s_fsm_d = FSM_INIT_DONE;
-      default:       s_fsm_d = FSM_IDLE;
+      InitDone: s_fsm_d = InitDone;
+      default:  s_fsm_d = Idle;
     endcase
   end
   dffer #(
@@ -188,87 +194,87 @@ module spisd_init (
       .rst_n_i(rst_n_i),
       .en_i   (s_fir_clk_edge),
       .dat_i  (s_fsm_d),
-      .dat_o  (s_fsm_q)
+      .dat_o  (s_fsm_bits_q)
   );
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      r_init_done    <= '0;
-      r_spisd_cs     <= '1;
-      r_spisd_mosi   <= '1;
+      s_init_done    <= '0;
+      s_spisd_cs     <= '1;
+      s_spisd_mosi   <= '1;
 
-      r_cmd_bit_cnt  <= '0;
-      r_overflow_cnt <= '0;
-      r_overflow_en  <= '0;
+      s_cmd_bit_cnt  <= '0;
+      s_overflow_cnt <= '0;
+      s_overflow_en  <= '0;
     end else begin
       if (s_fir_clk_edge) begin
-        r_overflow_en <= 1'b0;
+        s_overflow_en <= 1'b0;
         case (s_fsm_q)
-          FSM_IDLE: begin
-            r_spisd_cs   <= 1'b1;
-            r_spisd_mosi <= 1'b1;
+          Idle: begin
+            s_spisd_cs   <= 1'b1;
+            s_spisd_mosi <= 1'b1;
           end
-          FSM_SEND_CMD0: begin
-            r_spisd_cs    <= 1'b0;
-            r_spisd_mosi  <= CMD0[6'd47-r_cmd_bit_cnt];
-            r_cmd_bit_cnt <= r_cmd_bit_cnt + 6'd1;
-            if (r_cmd_bit_cnt == 6'd47) r_cmd_bit_cnt <= '0;
+          SendCmd0: begin
+            s_spisd_cs    <= 1'b0;
+            s_spisd_mosi  <= Cmd0[6'd47-s_cmd_bit_cnt];
+            s_cmd_bit_cnt <= s_cmd_bit_cnt + 6'd1;
+            if (s_cmd_bit_cnt == 6'd47) s_cmd_bit_cnt <= '0;
           end
-          FSM_WAIT_CMD0: begin
-            r_spisd_mosi <= 1'b1;
-            if (r_resp_en) r_spisd_cs <= 1'b1;
+          WaitCmd0: begin
+            s_spisd_mosi <= 1'b1;
+            if (s_resp_en) s_spisd_cs <= 1'b1;
 
-            r_overflow_cnt <= r_overflow_cnt + 1'b1;
-            if (r_overflow_cnt == OVER_TIME_NUM) r_overflow_en <= 1'b1;
-            if (r_overflow_en) r_overflow_cnt <= '0;
+            s_overflow_cnt <= s_overflow_cnt + 1'b1;
+            if (s_overflow_cnt == OverTimeNum) s_overflow_en <= 1'b1;
+            if (s_overflow_en) s_overflow_cnt <= '0;
           end
-          FSM_SEND_CMD8: begin
-            if (r_cmd_bit_cnt <= 6'd47) begin
-              r_cmd_bit_cnt <= r_cmd_bit_cnt + 6'd1;
-              r_spisd_cs    <= 1'b0;
-              r_spisd_mosi  <= CMD8[6'd47-r_cmd_bit_cnt];
+          SendCmd8: begin
+            if (s_cmd_bit_cnt <= 6'd47) begin
+              s_cmd_bit_cnt <= s_cmd_bit_cnt + 6'd1;
+              s_spisd_cs    <= 1'b0;
+              s_spisd_mosi  <= Cmd8[6'd47-s_cmd_bit_cnt];
             end else begin
-              r_spisd_mosi <= 1'b1;
-              if (r_resp_en) begin
-                r_spisd_cs    <= 1'b1;
-                r_cmd_bit_cnt <= '0;
+              s_spisd_mosi <= 1'b1;
+              if (s_resp_en) begin
+                s_spisd_cs    <= 1'b1;
+                s_cmd_bit_cnt <= '0;
               end
             end
           end
-          FSM_SEND_CMD55: begin
-            if (r_cmd_bit_cnt <= 6'd47) begin
-              r_cmd_bit_cnt <= r_cmd_bit_cnt + 6'd1;
-              r_spisd_cs    <= 1'b0;
-              r_spisd_mosi  <= CMD55[6'd47-r_cmd_bit_cnt];
+          SendCmd55: begin
+            if (s_cmd_bit_cnt <= 6'd47) begin
+              s_cmd_bit_cnt <= s_cmd_bit_cnt + 6'd1;
+              s_spisd_cs    <= 1'b0;
+              s_spisd_mosi  <= Cmd55[6'd47-s_cmd_bit_cnt];
             end else begin
-              r_spisd_mosi <= 1'b1;
-              if (r_resp_en) begin
-                r_spisd_cs    <= 1'b1;
-                r_cmd_bit_cnt <= '0;
+              s_spisd_mosi <= 1'b1;
+              if (s_resp_en) begin
+                s_spisd_cs    <= 1'b1;
+                s_cmd_bit_cnt <= '0;
               end
             end
           end
-          FSM_SEND_ACMD41: begin
-            if (r_cmd_bit_cnt <= 6'd47) begin
-              r_cmd_bit_cnt <= r_cmd_bit_cnt + 6'd1;
-              r_spisd_cs    <= 1'b0;
-              r_spisd_mosi  <= ACMD41[6'd47-r_cmd_bit_cnt];
+          SendAcmd41: begin
+            if (s_cmd_bit_cnt <= 6'd47) begin
+              s_cmd_bit_cnt <= s_cmd_bit_cnt + 6'd1;
+              s_spisd_cs    <= 1'b0;
+              s_spisd_mosi  <= Acmd41[6'd47-s_cmd_bit_cnt];
             end else begin
-              r_spisd_mosi <= 1'b1;
-              if (r_resp_en) begin
-                r_spisd_cs    <= 1'b1;
-                r_cmd_bit_cnt <= '0;
+              s_spisd_mosi <= 1'b1;
+              if (s_resp_en) begin
+                s_spisd_cs    <= 1'b1;
+                s_cmd_bit_cnt <= '0;
               end
             end
           end
-          FSM_INIT_DONE: begin
-            r_init_done  <= 1'b1;
-            r_spisd_cs   <= 1'b1;
-            r_spisd_mosi <= 1'b1;
+          InitDone: begin
+            s_init_done  <= 1'b1;
+            s_spisd_cs   <= 1'b1;
+            s_spisd_mosi <= 1'b1;
           end
           default: begin
-            r_spisd_cs   <= 1'b1;
-            r_spisd_mosi <= 1'b1;
+            s_spisd_cs   <= 1'b1;
+            s_spisd_mosi <= 1'b1;
           end
         endcase
       end

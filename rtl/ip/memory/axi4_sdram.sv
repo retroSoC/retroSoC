@@ -38,20 +38,21 @@ interface sdram_if ();
       input dq_i,
       output dq_o
   );
-  // verilog_format: on
 endinterface
 
 
 module axi4_sdram (
-    // verilog_format: off
-    input  logic       clk_i,
-    input  logic       rst_n_i,
-    axi4_if.slave      axi4,
-    ribp_if.slave      cfg_ribp,
-    sdram_if.dut       sdram
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic  clk_i,
+    input  logic  rst_n_i,
+    axi4_if.slave axi4,
+    ribp_if.slave cfg_ribp,
+    sdram_if.dut  sdram
     // verilog_format: on
 );
 
+  // clk_i/rst_n_i drive all logic. Configuration and AXI traffic arbitrate onto
+  // one RIBP path; ready/resp_err return only from the selected target.
   logic       s_sdram_reg_sel;
   logic [1:0] s_sdram_clkdiv;
   logic       s_sdram_clk;
@@ -91,7 +92,7 @@ module axi4_sdram (
   assign u_mem_ribp_if.wdata = u_merged_ribp_if.wdata;
   assign u_mem_ribp_if.wstrb = u_merged_ribp_if.wstrb;
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   assign u_merged_ribp_if.ready = (u_reg_ribp_if.valid & u_reg_ribp_if.ready) |
                                   (u_mem_ribp_if.valid & u_mem_ribp_if.ready);
   assign u_merged_ribp_if.resp_err =

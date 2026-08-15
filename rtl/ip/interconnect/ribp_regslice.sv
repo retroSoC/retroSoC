@@ -9,19 +9,23 @@
 // See the Mulan PSL v2 for more details.
 
 module ribp_regslice (
-    // verilog_format: off
-    input logic   clk_i,
-    input logic   rst_n_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic    clk_i,
+    input logic    rst_n_i,
     ribp_if.slave  ribp_slv,
     ribp_if.master ribp_mst
     // verilog_format: on
 );
 
-  localparam FSM_IDLE = 2'd0;
-  localparam FSM_REQ = 2'd1;
-  localparam FSM_RESP = 2'd2;
+  // One RIBP request is buffered until its response returns; backpressure is
+  // applied while it is outstanding, and response error/data are replayed.
+  typedef enum logic [1:0] {
+    Idle     = 2'd0,
+    Request  = 2'd1,
+    Response = 2'd2
+  } regslice_state_e;
 
-  logic [1:0] s_fsm_d, s_fsm_q;
+  regslice_state_e s_fsm_d, s_fsm_q;
   logic s_ribp_mst_valid_d, s_ribp_mst_valid_q;
   logic [31:0] s_ribp_mst_addr_d, s_ribp_mst_addr_q;
   logic [31:0] s_ribp_mst_wdata_d, s_ribp_mst_wdata_q;
@@ -49,26 +53,26 @@ module ribp_regslice (
     ribp_slv.rdata        = '0;
     ribp_slv.resp_err     = 1'b0;
     unique case (s_fsm_q)
-      FSM_IDLE: begin
+      Idle: begin
         if (ribp_slv.valid) begin
-          s_fsm_d            = FSM_REQ;
+          s_fsm_d            = Request;
           s_ribp_mst_valid_d = ribp_slv.valid;
           s_ribp_mst_addr_d  = ribp_slv.addr;
           s_ribp_mst_wdata_d = ribp_slv.wdata;
           s_ribp_mst_wstrb_d = ribp_slv.wstrb;
         end
       end
-      FSM_REQ: begin
+      Request: begin
         if (ribp_mst.ready) begin
-          s_fsm_d               = FSM_RESP;
+          s_fsm_d               = Response;
           s_ribp_mst_valid_d    = 1'b0;
           s_ribp_mst_ready_d    = ribp_mst.ready;
           s_ribp_mst_rdata_d    = ribp_mst.rdata;
           s_ribp_mst_resp_err_d = ribp_mst.resp_err;
         end
       end
-      FSM_RESP: begin
-        s_fsm_d           = FSM_IDLE;
+      Response: begin
+        s_fsm_d           = Idle;
         ribp_slv.ready    = s_ribp_mst_ready_q;
         ribp_slv.rdata    = s_ribp_mst_rdata_q;
         ribp_slv.resp_err = s_ribp_mst_resp_err_q;

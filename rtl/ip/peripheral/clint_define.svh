@@ -4,7 +4,7 @@
 `ifndef CLINT_DEFINE_SVH
 `define CLINT_DEFINE_SVH
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_CLINT_MSIP             16'h0000
 `define RIBP_CLINT_MTIMECMP         16'h4000
 `define RIBP_CLINT_MTIME            16'hBFF8

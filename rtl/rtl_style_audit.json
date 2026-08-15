@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "policy": "docs/rtl-coding-style.md",
+  "profile": "owned",
+  "review_methods": [
+    "automated static checks",
+    "tool-assisted source review",
+    "targeted simulation and formal source-list review"
+  ],
+  "reviewed_boundary_record": {
+    "owner": "retroSoC RTL maintainers",
+    "related_commit": "7a7c0b2973d3bbe92bb3c2bbb9808edc5181b641",
+    "expiry": "Expires before a behavior-changing or sequential-equivalence-verified refactor of an affected module.",
+    "removal_plan": "Use an isolated change with named validation evidence; do not treat this audit record as a warning baseline or a blanket waiver."
+  },
+  "rules": [
+    {
+      "id": "RTL-FILE",
+      "sections": [2],
+      "result": "compliant",
+      "evidence": "Primary-unit/file-name checks and canonical filelist review."
+    },
+    {
+      "id": "RTL-SV",
+      "sections": [3],
+      "result": "compliant",
+      "evidence": "Restricted-SystemVerilog static checks and Verible lint."
+    },
+    {
+      "id": "RTL-NAME",
+      "sections": [4],
+      "result": "compliant",
+      "evidence": "Full-profile naming enforcement and boundary review."
+    },
+    {
+      "id": "RTL-STRUCT",
+      "sections": [5],
+      "result": "compliant",
+      "evidence": "Named-connection, generate-label, one-primary-unit, and filelist checks."
+    },
+    {
+      "id": "RTL-COMB",
+      "sections": [6],
+      "result": "reviewed",
+      "evidence": "Combinational defaults and protocol-path source review."
+    },
+    {
+      "id": "RTL-SEQ",
+      "sections": [6],
+      "result": "reviewed",
+      "evidence": "Reset, enable, FSM, inferred-memory, and sequential-priority review."
+    },
+    {
+      "id": "RTL-WIDTH",
+      "sections": [7],
+      "result": "reviewed",
+      "evidence": "Verilator lint and width, signedness, and X/Z source review."
+    },
+    {
+      "id": "RTL-CDC",
+      "sections": [8],
+      "result": "reviewed",
+      "evidence": "Clock/reset-domain metadata, CDC primitive review, and targeted tests."
+    },
+    {
+      "id": "RTL-VERIFY",
+      "sections": [9],
+      "result": "reviewed",
+      "evidence": "Formal source-list checks, readiness checks, and directed simulations."
+    },
+    {
+      "id": "RTL-FMT",
+      "sections": [10],
+      "result": "compliant",
+      "evidence": "Verible format, ASCII, whitespace, line-length, and paired-directive checks."
+    }
+  ],
+  "inventory": {
+    "rtl/ip/experimental": [
+      "axi4f2ribp.sv",
+      "ribp_gpu.sv",
+      "wb2ribp.sv"
+    ],
+    "rtl/ip/interconnect": [
+      "axi4l2ribp.sv",
+      "ribp2ribp.sv",
+      "ribp_regslice.sv"
+    ],
+    "rtl/ip/memory": [
+      "axi4_sdram.sv",
+      "psram_core.sv",
+      "ribp_opipsram.sv",
+      "ribp_psram.sv",
+      "sdram_clkgen.sv",
+      "sdram_core.sv",
+      "sdram_reg.sv"
+    ],
+    "rtl/ip/multimedia": [
+      "axi4s_dvp.sv",
+      "dvp_core.sv",
+      "dvp_define.svh",
+      "dvp_reg.sv"
+    ],
+    "rtl/ip/peripheral": [
+      "clint_core.sv",
+      "clint_define.svh",
+      "clint_if.sv",
+      "clint_reg.sv",
+      "clint_timebase.sv",
+      "dma_core.sv",
+      "gpio_core.sv",
+      "gpio_define.svh",
+      "gpio_if.sv",
+      "gpio_reg.sv",
+      "pll_ctrl_if.sv",
+      "ribp_clint.sv",
+      "ribp_dma.sv",
+      "ribp_gpio.sv",
+      "ribp_sysctrl.sv",
+      "ribp_timer.sv",
+      "timer_core.sv",
+      "timer_define.svh",
+      "timer_reg.sv",
+      "user_gpio_if.sv"
+    ],
+    "rtl/ip/serial": [
+      "i2c_core.sv",
+      "i2c_filter.sv",
+      "i2c_reg.sv",
+      "i2s_clkgen.sv",
+      "i2s_core.sv",
+      "i2s_define.svh",
+      "i2s_recv.sv",
+      "i2s_reg.sv",
+      "i2s_send.sv",
+      "ribp_i2c.sv",
+      "ribp_i2c_define.svh",
+      "ribp_i2s.sv",
+      "ribp_uart.sv",
+      "ribp_uart_define.svh",
+      "ribp_uart_rx.sv",
+      "ribp_uart_tx.sv",
+      "ribp_ws2812.sv",
+      "uart_baudgen.sv",
+      "uart_core.sv",
+      "uart_flow_ctrl.sv",
+      "uart_if.sv",
+      "uart_reg.sv",
+      "ws2812_core.sv",
+      "ws2812_define.svh",
+      "ws2812_if.sv",
+      "ws2812_reg.sv"
+    ],
+    "rtl/ip/storage": [
+      "ribp_sdio.sv",
+      "ribp_spisd.sv",
+      "ribp_xpi.sv",
+      "spisd_cache.sv",
+      "spisd_core.sv",
+      "spisd_data.sv",
+      "spisd_init.sv",
+      "spisd_read.sv",
+      "spisd_reg.sv",
+      "spisd_write.sv",
+      "xpi_clkgen.sv",
+      "xpi_core.sv",
+      "xpi_define.svh",
+      "xpi_mm.sv",
+      "xpi_reg.sv"
+    ],
+    "rtl/ip/util": [
+      "async_fifo.sv"
+    ],
+    "rtl/mini/top": [
+      "ahbl2axi4.sv",
+      "ahbl2ribp.sv",
+      "apb4_if_bridge.sv",
+      "axi4_bus.sv",
+      "axi4_connector.sv",
+      "axi4_error_slave.sv",
+      "axi4_interconnect.sv",
+      "axi42apb.sv",
+      "axi42ram.sv",
+      "axi42ribp.sv",
+      "axi42ribp_burst.sv",
+      "core_wrapper.sv",
+      "gpio_pad_bridge.sv",
+      "ip_apb_wrapper.sv",
+      "ip_ribp_wrapper.sv",
+      "mgmt_core_wrapper.sv",
+      "mgmt_debug_reset.sv",
+      "mgmt_debug_wrapper.sv",
+      "onchip_ram.sv",
+      "pll_rcu_controller.sv",
+      "rcu.sv",
+      "retrosoc.sv",
+      "retrosoc_asic.sv",
+      "rib2apb.sv",
+      "rib2axi4.sv",
+      "rib2ram.sv",
+      "rib2ribp.sv",
+      "rib_bus.sv",
+      "rib_defs.svh",
+      "rib_error_slave.sv",
+      "rib_if.sv",
+      "ribp2axi4.sv",
+      "ribp2rib.sv",
+      "ribp_arbiter2.sv",
+      "soc_clock_config.svh",
+      "soc_common_cdc.sv",
+      "soc_common_fifo.sv",
+      "user_core_design.sv",
+      "user_core_top.sv",
+      "user_extensions.svh",
+      "user_ip_design_template.sv",
+      "user_ip_top.sv",
+      "user_ip_wrapper.sv"
+    ]
+  },
+  "reviewed_boundaries": [
+    {
+      "paths": [
+        "rtl/ip/experimental/axi4f2ribp.sv",
+        "rtl/ip/experimental/ribp_gpu.sv",
+        "rtl/ip/experimental/wb2ribp.sv"
+      ],
+      "result": "inactive experimental source",
+      "rationale": "The modules remain primary-unit-aligned but are not active filelist inputs. Incomplete protocol behavior was not changed by style work."
+    },
+    {
+      "paths": [
+        "rtl/ip/memory/psram_core.sv",
+        "rtl/ip/memory/sdram_core.sv",
+        "rtl/ip/multimedia/dvp_core.sv",
+        "rtl/ip/multimedia/dvp_reg.sv",
+        "rtl/ip/storage/spisd_cache.sv",
+        "rtl/ip/storage/spisd_data.sv",
+        "rtl/ip/storage/spisd_init.sv",
+        "rtl/ip/storage/spisd_read.sv",
+        "rtl/ip/storage/spisd_write.sv",
+        "rtl/ip/storage/xpi_mm.sv"
+      ],
+      "result": "raw sequential storage retained",
+      "rationale": "Reset and update priorities, SPI/SDRAM timing, or inferred-memory behavior are cycle-sensitive. Replacing these processes with Common register primitives requires a separate sequential-equivalence proof and affected protocol simulation."
+    },
+    {
+      "paths": [
+        "rtl/ip/util/async_fifo.sv"
+      ],
+      "result": "retained implementation",
+      "rationale": "Dual-clock storage, Gray-pointer synchronization, and inferred-memory behavior cannot be replaced by single-clock Common registers without equivalence evidence."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/axi4_interconnect.sv"
+      ],
+      "result": "retained implementation",
+      "rationale": "Priority-sensitive master, target, and performance state arrays remain unchanged pending separate sequential-equivalence proof."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/onchip_ram.sv"
+      ],
+      "result": "technology boundary retained",
+      "rationale": "PDK SRAM cell and pin names remain compatible with the technology library."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/soc_common_cdc.sv",
+        "rtl/mini/top/soc_common_fifo.sv"
+      ],
+      "result": "managed compatibility wrapper retained",
+      "rationale": "The narrow self-owned wrappers preserve required Verilator filename behavior while including managed Common source."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/user_core_design.sv",
+        "rtl/mini/top/user_ip_design_template.sv"
+      ],
+      "result": "external template compatibility retained",
+      "rationale": "Template interfaces remain stable for externally distributed user designs."
+    }
+  ]
+}

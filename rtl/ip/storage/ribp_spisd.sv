@@ -15,14 +15,17 @@
 `include "mmap_define.svh"
 
 module ribp_spisd (
-    // verilog_format: off
-    input  logic clk_i,
-    input  logic rst_n_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic  clk_i,
+    input  logic  rst_n_i,
     ribp_if.slave ribp,
-    spi_if.dut   spi
+    spi_if.dut    spi
     // verilog_format: on
 );
 
+  // clk_i/rst_n_i control configuration and media traffic. Requests route to
+  // either configuration or cache mode; each selected child supplies ready,
+  // data, and resp_err, with one cache operation outstanding at a time.
   logic        s_cfg_reg_sel;
   logic        s_init_done;
   logic        s_wr_sync;
@@ -45,7 +48,7 @@ module ribp_spisd (
   ribp_if u_cache_mem_ribp_if ();
   ribp_if u_cache_byp_ribp_if ();
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   assign s_cfg_reg_sel            = `SOC_ADDR_IS_RIBP_SPISD(ribp.addr);
   assign u_cfg_ribp_if.valid       = ribp.valid && s_cfg_reg_sel;
   assign u_cfg_ribp_if.addr        = ribp.addr;

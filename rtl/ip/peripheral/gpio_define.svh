@@ -4,7 +4,7 @@
 `ifndef RIBP_GPIO_DEFINE_SVH
 `define RIBP_GPIO_DEFINE_SVH
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_GPIO_NUM                         32
 
 `define RIBP_GPIO_USER_DATA_IN                12'h000

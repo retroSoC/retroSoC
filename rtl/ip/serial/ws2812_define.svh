@@ -5,7 +5,7 @@
 `ifndef WS2812_DEFINE_SVH
 `define WS2812_DEFINE_SVH
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_WS2812_BIT_CYCLES       8'h00
 `define RIBP_WS2812_T0H_CYCLES       8'h04
 `define RIBP_WS2812_T1H_CYCLES       8'h08

@@ -246,7 +246,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     i2c = parse_filelists([i2c_filelist], require_files=False)
     clint = parse_filelists([clint_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
-    assert ROOT / "rtl/mini/top/bus.sv" in bus.files
+    assert ROOT / "rtl/mini/top/rib_bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
     assert ROOT / "rtl/mini/top/ribp2rib.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_error_slave.sv" in bus.files
@@ -256,10 +256,11 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/top/rib2apb.sv" in rib2apb.files
     assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
-    assert ROOT / "rtl/ip/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/ribp_sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
+    assert ROOT / "rtl/mini/top/pll_rcu_controller.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
     assert ROOT / "rtl/ip/peripheral/gpio_core.sv" in gpio.files
@@ -586,7 +587,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/ribp_sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -601,7 +602,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/ribp_sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("tests/rtl/bus_fault_tb.sv"),

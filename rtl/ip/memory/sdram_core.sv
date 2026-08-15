@@ -32,99 +32,104 @@
 `include "mmap_define.svh"
 
 module sdram_core (
-    // verilog_format: off
-    input logic  clk_i,
-    input logic  rst_n_i,
-    input logic  sdram_clk_i,
-    input logic  fir_edge_i,
-    input logic  sec_edge_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic   clk_i,
+    input logic   rst_n_i,
+    input logic   sdram_clk_i,
+    input logic   fir_edge_i,
+    input logic   sec_edge_i,
     ribp_if.slave ribp,
-    sdram_if.dut sdram
+    sdram_if.dut  sdram
     // verilog_format: on
 );
 
-  localparam CLK_FREQ = 36;
-  localparam TRP_NS = 20;
-  localparam TRC_NS = 66;
-  localparam TRCD_NS = 20;
-  localparam TCH_NS = 2;
-  localparam CAS = 3'd2;
+  // clk_i/rst_n_i control the scheduler; SDRAM commands advance only on the
+  // supplied phase edges. RIBP accepts one captured request and never reports
+  // resp_err; ready is asserted when that request's response is available.
+  localparam int signed ClkFreq = 32'sd36;
+  localparam int signed TrpNs = 32'sd20;
+  localparam int signed TrcNs = 32'sd66;
+  localparam int signed TrcdNs = 32'sd20;
+  localparam int signed TchNs = 32'sd2;
+  localparam logic [2:0] Cas = 3'd2;
 
-  // CLK_FREQ * 1/CLK_FREQe6s = 1us
-  localparam ONE_OVER_MICROSECOND = CLK_FREQ;
-  localparam WAIT_100US = 100 * ONE_OVER_MICROSECOND;
-  // command period; PRE to ACT in ns, e.g. 20ns
-  localparam TRP = (TRP_NS * ONE_OVER_MICROSECOND / 1000) + 1;
-  // tRC command period (REF to REF/ACT TO ACT) in ns
-  localparam TRC = (TRC_NS * ONE_OVER_MICROSECOND / 1000) + 1;
-  // tRCD active command to read/write command delay; row-col-delay in ns
-  localparam TRCD = (TRCD_NS * ONE_OVER_MICROSECOND / 1000) + 1;
-  // tCH command hold time
-  localparam TCH = (TCH_NS * ONE_OVER_MICROSECOND / 1000) + 1;
+  // ClkFreq * 1/CLK_FREQe6s = 1us
+  localparam int signed OneOverMicrosecond = ClkFreq;
+  localparam int signed Wait100Us = 32'sd100 * OneOverMicrosecond;
+  // Command period: PRE to ACT in ns, e.g. 20 ns.
+  localparam int signed Trp = (TrpNs * OneOverMicrosecond / 32'sd1000) + 32'sd1;
+  // tRC command period (REF to REF/ACT to ACT) in ns.
+  localparam int signed Trc = (TrcNs * OneOverMicrosecond / 32'sd1000) + 32'sd1;
+  // tRCD active-command to read/write-command delay in ns.
+  localparam int signed Trcd = (TrcdNs * OneOverMicrosecond / 32'sd1000) + 32'sd1;
+  // tCH command hold time.
+  localparam int signed Tch = (TchNs * OneOverMicrosecond / 32'sd1000) + 32'sd1;
   // 000: 1-burst, 001: 2-burst
   // 010: 4-burst, 011: 8-burst
-  localparam BURST_LENGTH = 3'b001;
+  localparam logic [2:0] BurstLength = 3'b001;
   // 0: sequential, 1: interleaved
-  localparam ACCESS_TYPE = 1'b0;
-  // 2/3 allowed, tRCD=20ns -> 3 cycles@128MHz
-  localparam CAS_LATENCY = CAS;
-  // only 00 (standard operation) allowed
-  localparam OP_MODE = 2'b00;
-  // 0: write burst enabled, 1: only single access write
-  localparam NO_WRITE_BURST = 1'b0;
-  // (CS, RAS, CAS, WE)
+  localparam logic AccessType = 1'b0;
+  // 2/3 allowed, tRCD=20 ns -> 3 cycles@128 MHz
+  localparam logic [2:0] CasLatency = Cas;
+  // Only 00 (standard operation) is allowed.
+  localparam logic [1:0] OpMode = 2'b00;
+  // 0: write burst enabled, 1: only single-access write.
+  localparam logic NoWriteBurst = 1'b0;
+  // (CS, RAS, Cas, WE)
   // mode register set
-  localparam CMD_MRS = 4'b0000;
-  // bank active
-  localparam CMD_ACT = 4'b0011;
-  // have read variant with autoprecharge set A10=H
-  localparam CMD_READ = 4'b0101;
-  // A10=H to have autoprecharge
-  localparam CMD_WRITE = 4'b0100;
-  // burst stop
-  localparam CMD_BST = 4'b0110;
-  // precharge selected bank, A10=H both banks
-  localparam CMD_PRER = 4'b0010;
-  // auto refresh (cke=H), selfrefresh assign cke=L
-  localparam CMD_RFSH = 4'b0001;
-  localparam CMD_NOP = 4'b0111;
-  // sdram mode NOTE: can config
-  localparam SDRAM_MODE = {3'b0, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
+  localparam logic [3:0] CmdMrs = 4'b0000;
+  // Bank active.
+  localparam logic [3:0] CmdAct = 4'b0011;
+  // Read variant with auto-precharge set A10=H.
+  localparam logic [3:0] CmdRead = 4'b0101;
+  // A10=H selects auto-precharge.
+  localparam logic [3:0] CmdWrite = 4'b0100;
+  // Burst stop.
+  localparam logic [3:0] CmdBst = 4'b0110;
+  // Precharge selected bank; A10=H selects both banks.
+  localparam logic [3:0] CmdPrer = 4'b0010;
+  // Auto refresh (cke=H); self refresh assigns cke=L.
+  localparam logic [3:0] CmdRfsh = 4'b0001;
+  localparam logic [3:0] CmdNop = 4'b0111;
+  // SDRAM mode; this implementation does not configure it dynamically.
+  localparam logic [12:0] SdramMode = {
+    3'b0, NoWriteBurst, OpMode, CasLatency, AccessType, BurstLength
+  };
 
-  // verilog_format: off
-  localparam RESET                   = 4'd0;
-  localparam ASSERT_CKE              = 4'd1;
-  localparam INIT_SEQ_PRE_CHARGE_ALL = 4'd2;
-  localparam INIT_SEQ_AUTO_REFRESH0  = 4'd3;
-  localparam INIT_SEQ_AUTO_REFRESH1  = 4'd4;
-  localparam INIT_SEQ_LOAD_MODE      = 4'd5;
-  localparam IDLE                    = 4'd6;
-  localparam COL_READ                = 4'd7;
-  localparam COL_READL               = 4'd8;
-  localparam COL_READH               = 4'd9;
-  localparam COL_WRITEL              = 4'd10;
-  localparam COL_WRITEH              = 4'd11;
-  localparam AUTO_REFRESH            = 4'd12;
-  localparam PRE_CHARGE_ALL          = 4'd13;
-  localparam WAIT_STATE              = 4'd14;
-  localparam LAST_STATE              = 4'd15;
-  // verilog_format: on
+  typedef enum logic [3:0] {
+    Reset               = 4'd0,
+    AssertCke           = 4'd1,
+    InitSeqPreChargeAll = 4'd2,
+    InitSeqAutoRefresh0 = 4'd3,
+    InitSeqAutoRefresh1 = 4'd4,
+    InitSeqLoadMode     = 4'd5,
+    Idle                = 4'd6,
+    ColRead             = 4'd7,
+    ColReadLow          = 4'd8,
+    ColReadHigh         = 4'd9,
+    ColWriteLow         = 4'd10,
+    ColWriteHigh        = 4'd11,
+    AutoRefresh         = 4'd12,
+    PreChargeAll        = 4'd13,
+    WaitState           = 4'd14,
+    LastState           = 4'd15
+  } sdram_state_e;
 
 
 `ifndef SYNTHESIS
   initial begin
-    $display("Clk frequence: %6d MHz", CLK_FREQ);
-    $display("WAIT_100US:    %6d cycles", WAIT_100US);
-    $display("TRP:           %6d cycles", TRP);
-    $display("TRC:           %6d cycles", TRC);
-    $display("TRCD:          %6d cycles", TRCD);
-    $display("TCH:           %6d cycles", TCH);
-    $display("CAS_LATENCY:   %6d cycles", CAS_LATENCY);
+    $display("Clk frequence: %6d MHz", ClkFreq);
+    $display("Wait100Us:    %6d cycles", Wait100Us);
+    $display("Trp:           %6d cycles", Trp);
+    $display("Trc:           %6d cycles", Trc);
+    $display("Trcd:          %6d cycles", Trcd);
+    $display("Tch:           %6d cycles", Tch);
+    $display("CasLatency:   %6d cycles", CasLatency);
   end
 `endif
 
-  logic [3:0] s_state_d, s_state_q;
-  logic [3:0] s_ret_state_d, s_ret_state_q;
+  sdram_state_e s_state_d, s_state_q;
+  sdram_state_e s_ret_state_d, s_ret_state_q;
   logic [15:0] s_wait_cnt_d, s_wait_cnt_q;
   logic [3:0] s_cmd_d, s_cmd_q;
   logic s_ready_d, s_ready_q;
@@ -137,7 +142,7 @@ module sdram_core (
   logic s_cke_q, s_cke_d;
   logic [12:0] s_addr_d, s_addr_q;
   logic s_upd_ready_d, s_upd_ready_q;
-  // Registered RIB inputs (captured at IDLE-to-ACT)
+  // Registered RIB inputs (captured at Idle-to-ACT)
   logic [31:0] s_ribp_addr_d, s_ribp_addr_q;
   logic [25:0] s_mem_addr;
   logic [31:0] s_req_addr_rel;
@@ -182,46 +187,46 @@ module sdram_core (
     s_ribp_wdata_d = s_ribp_wdata_q;
     s_ribp_wstrb_d = s_ribp_wstrb_q;
     case (s_state_q)
-      RESET: begin
+      Reset: begin
         s_cke_d       = 1'b0;
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = ASSERT_CKE;
-        s_wait_cnt_d  = 16'(WAIT_100US);
+        s_state_d     = WaitState;
+        s_ret_state_d = AssertCke;
+        s_wait_cnt_d  = 16'(Wait100Us);
       end
-      ASSERT_CKE: begin
+      AssertCke: begin
         s_cke_d       = 1'b1;
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = INIT_SEQ_PRE_CHARGE_ALL;
+        s_state_d     = WaitState;
+        s_ret_state_d = InitSeqPreChargeAll;
         s_wait_cnt_d  = 16'd2;
       end
-      INIT_SEQ_PRE_CHARGE_ALL: begin
+      InitSeqPreChargeAll: begin
         s_cke_d       = 1'b1;
-        s_cmd_d       = CMD_PRER;
+        s_cmd_d       = CmdPrer;
         s_addr_d[10]  = 1'b1;
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = INIT_SEQ_AUTO_REFRESH0;
-        s_wait_cnt_d  = 16'(TRP);
+        s_state_d     = WaitState;
+        s_ret_state_d = InitSeqAutoRefresh0;
+        s_wait_cnt_d  = 16'(Trp);
       end
-      INIT_SEQ_AUTO_REFRESH0: begin
-        s_cmd_d       = CMD_RFSH;
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = INIT_SEQ_AUTO_REFRESH1;
-        s_wait_cnt_d  = 16'(TRC);
+      InitSeqAutoRefresh0: begin
+        s_cmd_d       = CmdRfsh;
+        s_state_d     = WaitState;
+        s_ret_state_d = InitSeqAutoRefresh1;
+        s_wait_cnt_d  = 16'(Trc);
       end
-      INIT_SEQ_AUTO_REFRESH1: begin
-        s_cmd_d       = CMD_RFSH;
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = INIT_SEQ_LOAD_MODE;
-        s_wait_cnt_d  = 16'(TRC);
+      InitSeqAutoRefresh1: begin
+        s_cmd_d       = CmdRfsh;
+        s_state_d     = WaitState;
+        s_ret_state_d = InitSeqLoadMode;
+        s_wait_cnt_d  = 16'(Trc);
       end
-      INIT_SEQ_LOAD_MODE: begin
-        s_cmd_d       = CMD_MRS;
-        s_addr_d      = SDRAM_MODE;
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = IDLE;
-        s_wait_cnt_d  = 16'(TCH);
+      InitSeqLoadMode: begin
+        s_cmd_d       = CmdMrs;
+        s_addr_d      = SdramMode;
+        s_state_d     = WaitState;
+        s_ret_state_d = Idle;
+        s_wait_cnt_d  = 16'(Tch);
       end
-      IDLE: begin
+      Idle: begin
         s_oe_d    = 1'b0;
         s_dqm_d   = 2'b11;
         s_ready_d = 1'b0;
@@ -230,103 +235,106 @@ module sdram_core (
           s_ribp_addr_d  = ribp.addr;
           s_ribp_wdata_d = ribp.wdata;
           s_ribp_wstrb_d = ribp.wstrb;
-          s_cmd_d        = CMD_ACT;
+          s_cmd_d        = CmdAct;
           s_ba_d         = s_req_addr_rel[25:24];
           s_addr_d       = s_req_addr_rel[23:11];
-          s_state_d      = WAIT_STATE;
-          s_ret_state_d  = |ribp.wstrb ? COL_WRITEL : COL_READ;
-          s_wait_cnt_d   = 16'(TRCD);
+          s_state_d      = WaitState;
+          s_ret_state_d  = |ribp.wstrb ? ColWriteLow : ColRead;
+          s_wait_cnt_d   = 16'(Trcd);
           s_upd_ready_d  = 1'b1;
         end else begin
           // autorefresh
-          s_cmd_d       = CMD_RFSH;
+          s_cmd_d       = CmdRfsh;
           s_addr_d      = '0;
           s_ba_d        = '0;
-          // TRC
-          s_state_d     = WAIT_STATE;
-          s_ret_state_d = IDLE;
-          s_wait_cnt_d  = 16'(TRC);
+          // Trc
+          s_state_d     = WaitState;
+          s_ret_state_d = Idle;
+          s_wait_cnt_d  = 16'(Trc);
           s_upd_ready_d = 1'b0;
         end
       end
-      COL_READ: begin
-        s_cmd_d       = CMD_READ;
+      ColRead: begin
+        s_cmd_d       = CmdRead;
         s_dqm_d       = 2'b00;
         // autoprecharge and column (use registered addr)
         s_ba_d        = s_mem_addr[25:24];
         s_addr_d      = {3'b001, s_mem_addr[10:2], 1'b0};
         // $display("rd col addr: %0x", s_addr_d);
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = COL_READL;
-        s_wait_cnt_d  = 16'(CAS_LATENCY);
+        s_state_d     = WaitState;
+        s_ret_state_d = ColReadLow;
+        s_wait_cnt_d  = 16'(CasLatency);
       end
-      COL_READL: begin
-        s_cmd_d         = CMD_NOP;
+      ColReadLow: begin
+        s_cmd_d         = CmdNop;
         s_dqm_d         = 2'b00;
         s_rdata_d[15:0] = sdram.dq_i;
-        s_state_d       = COL_READH;
+        s_state_d       = ColReadHigh;
       end
-      COL_READH: begin
-        s_cmd_d          = CMD_NOP;
+      ColReadHigh: begin
+        s_cmd_d          = CmdNop;
         s_dqm_d          = 2'b00;
         s_rdata_d[31:16] = sdram.dq_i;
-        s_state_d        = WAIT_STATE;
-        s_ret_state_d    = IDLE;
-        s_wait_cnt_d     = 16'(TRP);
+        s_state_d        = WaitState;
+        s_ret_state_d    = Idle;
+        s_wait_cnt_d     = 16'(Trp);
       end
-      COL_WRITEL: begin
-        s_cmd_d   = CMD_WRITE;
+      ColWriteLow: begin
+        s_cmd_d   = CmdWrite;
         s_dqm_d   = ~s_ribp_wstrb_q[1:0];
         // autoprecharge and column (use registered addr)
         s_ba_d    = s_mem_addr[25:24];
         s_addr_d  = {3'b001, s_mem_addr[10:2], 1'b0};
         s_dq_d    = s_ribp_wdata_q[15:0];
         s_oe_d    = 1'b1;
-        s_state_d = COL_WRITEH;
+        s_state_d = ColWriteHigh;
       end
-      COL_WRITEH: begin
-        s_cmd_d       = CMD_NOP;
+      ColWriteHigh: begin
+        s_cmd_d       = CmdNop;
         s_dqm_d       = ~s_ribp_wstrb_q[3:2];
         // autoprecharge and column (use registered wdata)
         s_dq_d        = s_ribp_wdata_q[31:16];
         s_oe_d        = 1'b1;
-        s_state_d     = WAIT_STATE;
-        s_ret_state_d = IDLE;
-        s_wait_cnt_d  = 16'(TRP);
+        s_state_d     = WaitState;
+        s_ret_state_d = Idle;
+        s_wait_cnt_d  = 16'(Trp);
       end
       // NOTE: notused
-      // PRE_CHARGE_ALL: begin
-      //   s_cmd_d     = CMD_PRER;
+      // PreChargeAll: begin
+      //   s_cmd_d     = CmdPrer;
       //   // select all banks
       //   s_addr_d[10]   = 1'b1;
       //   s_ba_d          = 0;
-      //   s_state_d       = WAIT_STATE;
-      //   s_ret_state_d   = IDLE;
-      //   s_wait_cnt_d = TRP;
+      //   s_state_d       = WaitState;
+      //   s_ret_state_d   = Idle;
+      //   s_wait_cnt_d = Trp;
       // end
-      WAIT_STATE: begin
-        s_cmd_d      = CMD_NOP;
+      WaitState: begin
+        s_cmd_d      = CmdNop;
         s_wait_cnt_d = s_wait_cnt_q - 1'b1;
         if (s_wait_cnt_q == 16'd1) begin
           s_state_d = s_ret_state_q;
-          if (s_ret_state_q == IDLE && s_upd_ready_q) begin
+          if (s_ret_state_q == Idle && s_upd_ready_q) begin
             s_upd_ready_d = 1'b0;
             s_ready_d     = 1'b1;
           end
         end
       end
       default: begin
+        // Preserve the legacy illegal-state hold rather than adding recovery.
         s_state_d = s_state_q;
       end
     endcase
   end
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  // The fir/sec edge-qualified state updates share reset and update priority.
+  // Retain this process to preserve the SDRAM cycle schedule exactly.
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (~rst_n_i) begin
-      s_state_q      <= RESET;
-      s_ret_state_q  <= RESET;
+      s_state_q      <= Reset;
+      s_ret_state_q  <= Reset;
       s_wait_cnt_q   <= '0;
-      s_cmd_q        <= CMD_NOP;
+      s_cmd_q        <= CmdNop;
       s_ready_q      <= '0;
       s_rdata_q      <= '0;
       // sdram

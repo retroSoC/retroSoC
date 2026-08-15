@@ -4,7 +4,7 @@
 `include "timer_define.svh"
 
 module timer_reg (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
     ribp_if.slave       ribp,

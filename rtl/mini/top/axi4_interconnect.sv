@@ -111,23 +111,26 @@ module axi4_interconnect #(
   logic [NumTargets-1:0][            31:0] t_rdata;
   logic [NumTargets-1:0][             1:0] t_rresp;
 
-  logic [NumMasters-1:0][             1:0] r_master_state;
-  logic [NumMasters-1:0]                   r_master_write;
-  logic [NumMasters-1:0][TARGET_WIDTH-1:0] r_master_target;
-  logic [NumMasters-1:0][            31:0] r_master_addr;
-  logic [NumMasters-1:0][             7:0] r_master_len;
-  logic [NumMasters-1:0][             2:0] r_master_size;
-  logic [NumMasters-1:0][             1:0] r_master_burst;
-  logic [NumMasters-1:0]                   r_master_lock;
-  logic [NumMasters-1:0][             3:0] r_master_cache;
-  logic [NumMasters-1:0][             2:0] r_master_prot;
-  logic [NumMasters-1:0][3:0] r_master_qos, r_master_region;
-  logic [NumMasters-1:0] r_master_id, r_master_user;
-  logic [NumMasters-1:0]      r_master_access_err;
-  logic [NumMasters-1:0][3:0] r_master_first_wstrb;
+  // These arrays encode coupled master/target arbitration priorities. Their
+  // consolidated sequential process preserves the established update order.
+  // Convert them to Common registers only with sequential-equivalence proof.
+  logic [NumMasters-1:0][             1:0] s_master_state;
+  logic [NumMasters-1:0]                   s_master_write;
+  logic [NumMasters-1:0][TARGET_WIDTH-1:0] s_master_target;
+  logic [NumMasters-1:0][            31:0] s_master_addr;
+  logic [NumMasters-1:0][             7:0] s_master_len;
+  logic [NumMasters-1:0][             2:0] s_master_size;
+  logic [NumMasters-1:0][             1:0] s_master_burst;
+  logic [NumMasters-1:0]                   s_master_lock;
+  logic [NumMasters-1:0][             3:0] s_master_cache;
+  logic [NumMasters-1:0][             2:0] s_master_prot;
+  logic [NumMasters-1:0][3:0] s_master_qos, s_master_region;
+  logic [NumMasters-1:0] s_master_id, s_master_user;
+  logic [NumMasters-1:0]      s_master_access_err;
+  logic [NumMasters-1:0][3:0] s_master_first_wstrb;
 
-  logic [NumTargets-1:0] r_target_valid, r_target_addr_sent;
-  logic [NumTargets-1:0][MASTER_WIDTH-1:0] r_target_owner;
+  logic [NumTargets-1:0] s_target_valid, s_target_addr_sent;
+  logic [NumTargets-1:0][MASTER_WIDTH-1:0] s_target_owner;
   logic [NumTargets-1:0][  NumMasters-1:0] s_target_req;
   logic [NumTargets-1:0][  NumMasters-1:0] s_target_grant;
   logic [NumTargets-1:0][MASTER_WIDTH-1:0] s_target_selected;
@@ -139,8 +142,8 @@ module axi4_interconnect #(
   logic [NumMasters-1:0] s_protocol_legal, s_access_allowed;
   logic [NumMasters-1:0][TARGET_WIDTH-1:0] s_capture_target;
 
-  logic [          63:0]                   r_perf_master_wait[NumMasters];
-  logic [          63:0]                   r_perf_target_wait[NumTargets];
+  logic [          63:0]                   s_perf_master_wait[NumMasters];
+  logic [          63:0]                   s_perf_target_wait[NumTargets];
 
   function automatic logic [TARGET_WIDTH-1:0] decode_target(input logic [31:0] addr);
     if (`SOC_ADDR_IS_SDRAM(addr)) return TARGET_SDRAM;
@@ -153,7 +156,7 @@ module axi4_interconnect #(
     return TARGET_DECERR;
   endfunction
 
-  for (genvar master = 0; master < NumMasters; master++) begin : GEN_MASTER_PORTS
+  for (genvar master = 0; master < NumMasters; master++) begin : gen_master_ports
     assign m_awvalid[master]       = masters[master].awvalid;
     assign m_awaddr[master]        = masters[master].awaddr;
     assign m_awlen[master]         = masters[master].awlen;
@@ -200,7 +203,7 @@ module axi4_interconnect #(
     assign m_rready[master]        = masters[master].rready;
   end
 
-  for (genvar target = 0; target < NumTargets; target++) begin : GEN_TARGET_PORTS
+  for (genvar target = 0; target < NumTargets; target++) begin : gen_target_ports
     assign targets[target].awid     = t_awid[target];
     assign targets[target].awaddr   = t_awaddr[target];
     assign targets[target].awlen    = t_awlen[target];
@@ -312,7 +315,7 @@ module axi4_interconnect #(
     s_master_fault_code = '0;
 
     for (int master = 0; master < NumMasters; master++) begin
-      if (r_master_state[master] == MASTER_IDLE) begin
+      if (s_master_state[master] == MASTER_IDLE) begin
         m_arready[master] = (master != 1) || user_bus_enable_i;
         m_awready[master] = ((master != 1) || user_bus_enable_i) && !m_arvalid[master];
         if ((m_arvalid[master] && m_arready[master]) ||
@@ -320,44 +323,44 @@ module axi4_interconnect #(
           s_target_req[s_capture_target[master]][master] = 1'b1;
         end
       end
-      if (r_master_state[master] == MASTER_PENDING) begin
-        s_target_req[r_master_target[master]][master] = 1'b1;
+      if (s_master_state[master] == MASTER_PENDING) begin
+        s_target_req[s_master_target[master]][master] = 1'b1;
       end
     end
 
     for (int target = 0; target < NumTargets; target++) begin
-      s_target_advance[target] = !r_target_valid[target] && s_target_grant_valid[target];
-      if (r_target_valid[target]) begin
-        automatic logic [MASTER_WIDTH-1:0] owner = r_target_owner[target];
-        if (!r_target_addr_sent[target]) begin
-          if (r_master_write[owner]) begin
+      s_target_advance[target] = !s_target_valid[target] && s_target_grant_valid[target];
+      if (s_target_valid[target]) begin
+        automatic logic [MASTER_WIDTH-1:0] owner = s_target_owner[target];
+        if (!s_target_addr_sent[target]) begin
+          if (s_master_write[owner]) begin
             t_awvalid[target]  = 1'b1;
-            t_awaddr[target]   = r_master_addr[owner];
-            t_awlen[target]    = r_master_len[owner];
-            t_awsize[target]   = r_master_size[owner];
-            t_awburst[target]  = r_master_burst[owner];
-            t_awlock[target]   = r_master_lock[owner];
-            t_awcache[target]  = r_master_cache[owner];
-            t_awprot[target]   = r_master_prot[owner];
-            t_awqos[target]    = r_master_qos[owner];
-            t_awregion[target] = r_master_region[owner];
-            t_awid[target]     = r_master_id[owner];
-            t_awuser[target]   = r_master_user[owner];
+            t_awaddr[target]   = s_master_addr[owner];
+            t_awlen[target]    = s_master_len[owner];
+            t_awsize[target]   = s_master_size[owner];
+            t_awburst[target]  = s_master_burst[owner];
+            t_awlock[target]   = s_master_lock[owner];
+            t_awcache[target]  = s_master_cache[owner];
+            t_awprot[target]   = s_master_prot[owner];
+            t_awqos[target]    = s_master_qos[owner];
+            t_awregion[target] = s_master_region[owner];
+            t_awid[target]     = s_master_id[owner];
+            t_awuser[target]   = s_master_user[owner];
           end else begin
             t_arvalid[target]  = 1'b1;
-            t_araddr[target]   = r_master_addr[owner];
-            t_arlen[target]    = r_master_len[owner];
-            t_arsize[target]   = r_master_size[owner];
-            t_arburst[target]  = r_master_burst[owner];
-            t_arlock[target]   = r_master_lock[owner];
-            t_arcache[target]  = r_master_cache[owner];
-            t_arprot[target]   = r_master_prot[owner];
-            t_arqos[target]    = r_master_qos[owner];
-            t_arregion[target] = r_master_region[owner];
-            t_arid[target]     = r_master_id[owner];
-            t_aruser[target]   = r_master_user[owner];
+            t_araddr[target]   = s_master_addr[owner];
+            t_arlen[target]    = s_master_len[owner];
+            t_arsize[target]   = s_master_size[owner];
+            t_arburst[target]  = s_master_burst[owner];
+            t_arlock[target]   = s_master_lock[owner];
+            t_arcache[target]  = s_master_cache[owner];
+            t_arprot[target]   = s_master_prot[owner];
+            t_arqos[target]    = s_master_qos[owner];
+            t_arregion[target] = s_master_region[owner];
+            t_arid[target]     = s_master_id[owner];
+            t_aruser[target]   = s_master_user[owner];
           end
-        end else if (r_master_write[owner]) begin
+        end else if (s_master_write[owner]) begin
           t_wvalid[target]          = m_wvalid[owner];
           t_wdata[target]           = m_wdata[owner];
           t_wstrb[target]           = m_wstrb[owner];
@@ -382,13 +385,13 @@ module axi4_interconnect #(
         end
         if (s_target_terminal[target]) begin
           s_master_terminal[owner] = 1'b1;
-          if ((r_master_write[owner] && (t_bresp[target] != `AXI4_RESP_OKAY)) ||
-              (!r_master_write[owner] && (t_rresp[target] != `AXI4_RESP_OKAY))) begin
+          if ((s_master_write[owner] && (t_bresp[target] != `AXI4_RESP_OKAY)) ||
+              (!s_master_write[owner] && (t_rresp[target] != `AXI4_RESP_OKAY))) begin
             s_master_fault[owner] = 1'b1;
             s_master_fault_code[owner] =
                 (TARGET_WIDTH'(target) == TARGET_DECERR) ? `RIB_RESP_DECERR :
                 (TARGET_WIDTH'(target) == TARGET_SLVERR) ?
-                (r_master_access_err[owner] ? `RIB_RESP_PROTERR : `RIB_RESP_BURSTERR) :
+                (s_master_access_err[owner] ? `RIB_RESP_PROTERR : `RIB_RESP_BURSTERR) :
                 `RIB_RESP_SLVERR;
           end
         end
@@ -448,7 +451,7 @@ module axi4_interconnect #(
     end
   end
 
-  assign user_bus_idle_o = r_master_state[1] == MASTER_IDLE;
+  assign user_bus_idle_o = s_master_state[1] == MASTER_IDLE;
 
   always_comb begin
     fault_valid_o    = 1'b0;
@@ -461,10 +464,10 @@ module axi4_interconnect #(
     for (int master = NumMasters - 1; master >= 0; master--) begin
       if (s_master_fault[master]) begin
         fault_valid_o    = 1'b1;
-        fault_addr_o     = r_master_addr[master];
-        fault_wstrb_o    = r_master_first_wstrb[master];
-        fault_reserved_o = `SOC_ADDR_IS_RESERVED(r_master_addr[master]);
-        fault_access_o   = r_master_access_err[master];
+        fault_addr_o     = s_master_addr[master];
+        fault_wstrb_o    = s_master_first_wstrb[master];
+        fault_reserved_o = `SOC_ADDR_IS_RESERVED(s_master_addr[master]);
+        fault_access_o   = s_master_access_err[master];
         fault_master_o   = 2'(master);
         fault_code_o     = s_master_fault_code[master];
       end
@@ -473,71 +476,71 @@ module axi4_interconnect #(
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      r_master_state       <= '0;
-      r_master_write       <= '0;
-      r_master_target      <= '0;
-      r_master_addr        <= '0;
-      r_master_len         <= '0;
-      r_master_size        <= '0;
-      r_master_burst       <= '0;
-      r_master_lock        <= '0;
-      r_master_cache       <= '0;
-      r_master_prot        <= '0;
-      r_master_qos         <= '0;
-      r_master_region      <= '0;
-      r_master_id          <= '0;
-      r_master_user        <= '0;
-      r_master_access_err  <= '0;
-      r_master_first_wstrb <= '0;
-      r_target_valid       <= '0;
-      r_target_addr_sent   <= '0;
-      r_target_owner       <= '0;
+      s_master_state       <= '0;
+      s_master_write       <= '0;
+      s_master_target      <= '0;
+      s_master_addr        <= '0;
+      s_master_len         <= '0;
+      s_master_size        <= '0;
+      s_master_burst       <= '0;
+      s_master_lock        <= '0;
+      s_master_cache       <= '0;
+      s_master_prot        <= '0;
+      s_master_qos         <= '0;
+      s_master_region      <= '0;
+      s_master_id          <= '0;
+      s_master_user        <= '0;
+      s_master_access_err  <= '0;
+      s_master_first_wstrb <= '0;
+      s_target_valid       <= '0;
+      s_target_addr_sent   <= '0;
+      s_target_owner       <= '0;
     end else begin
       for (int master = 0; master < NumMasters; master++) begin
-        if (r_master_state[master] == MASTER_IDLE &&
+        if (s_master_state[master] == MASTER_IDLE &&
             ((m_arvalid[master] && m_arready[master]) ||
              (m_awvalid[master] && m_awready[master]))) begin
           automatic logic read_req = m_arvalid[master] && m_arready[master];
-          r_master_state[master]       <= MASTER_PENDING;
-          r_master_write[master]       <= !read_req;
-          r_master_target[master]      <= s_capture_target[master];
-          r_master_addr[master]        <= read_req ? m_araddr[master] : m_awaddr[master];
-          r_master_len[master]         <= read_req ? m_arlen[master] : m_awlen[master];
-          r_master_size[master]        <= read_req ? m_arsize[master] : m_awsize[master];
-          r_master_burst[master]       <= read_req ? m_arburst[master] : m_awburst[master];
-          r_master_lock[master]        <= read_req ? m_arlock[master] : m_awlock[master];
-          r_master_cache[master]       <= read_req ? m_arcache[master] : m_awcache[master];
-          r_master_prot[master]        <= read_req ? m_arprot[master] : m_awprot[master];
-          r_master_qos[master]         <= read_req ? m_arqos[master] : m_awqos[master];
-          r_master_region[master]      <= read_req ? m_arregion[master] : m_awregion[master];
-          r_master_id[master]          <= read_req ? m_arid[master] : m_awid[master];
-          r_master_user[master]        <= read_req ? m_aruser[master] : m_awuser[master];
-          r_master_access_err[master]  <= !s_access_allowed[master];
-          r_master_first_wstrb[master] <= '0;
+          s_master_state[master]       <= MASTER_PENDING;
+          s_master_write[master]       <= !read_req;
+          s_master_target[master]      <= s_capture_target[master];
+          s_master_addr[master]        <= read_req ? m_araddr[master] : m_awaddr[master];
+          s_master_len[master]         <= read_req ? m_arlen[master] : m_awlen[master];
+          s_master_size[master]        <= read_req ? m_arsize[master] : m_awsize[master];
+          s_master_burst[master]       <= read_req ? m_arburst[master] : m_awburst[master];
+          s_master_lock[master]        <= read_req ? m_arlock[master] : m_awlock[master];
+          s_master_cache[master]       <= read_req ? m_arcache[master] : m_awcache[master];
+          s_master_prot[master]        <= read_req ? m_arprot[master] : m_awprot[master];
+          s_master_qos[master]         <= read_req ? m_arqos[master] : m_awqos[master];
+          s_master_region[master]      <= read_req ? m_arregion[master] : m_awregion[master];
+          s_master_id[master]          <= read_req ? m_arid[master] : m_awid[master];
+          s_master_user[master]        <= read_req ? m_aruser[master] : m_awuser[master];
+          s_master_access_err[master]  <= !s_access_allowed[master];
+          s_master_first_wstrb[master] <= '0;
         end
-        if ((r_master_state[master] == MASTER_ACTIVE) && r_master_write[master] &&
-            m_wvalid[master] && m_wready[master] && (r_master_first_wstrb[master] == '0)) begin
-          r_master_first_wstrb[master] <= m_wstrb[master];
+        if ((s_master_state[master] == MASTER_ACTIVE) && s_master_write[master] &&
+            m_wvalid[master] && m_wready[master] && (s_master_first_wstrb[master] == '0)) begin
+          s_master_first_wstrb[master] <= m_wstrb[master];
         end
-        if (s_master_terminal[master]) r_master_state[master] <= MASTER_IDLE;
+        if (s_master_terminal[master]) s_master_state[master] <= MASTER_IDLE;
       end
 
       for (int target = 0; target < NumTargets; target++) begin
-        if (!r_target_valid[target] && s_target_grant_valid[target]) begin
-          r_target_valid[target]                    <= 1'b1;
-          r_target_addr_sent[target]                <= 1'b0;
-          r_target_owner[target]                    <= s_target_selected[target];
-          r_master_state[s_target_selected[target]] <= MASTER_ACTIVE;
-        end else if (r_target_valid[target] && !r_target_addr_sent[target]) begin
-          automatic logic [MASTER_WIDTH-1:0] owner = r_target_owner[target];
-          if ((r_master_write[owner] && t_awvalid[target] && t_awready[target]) ||
-              (!r_master_write[owner] && t_arvalid[target] && t_arready[target])) begin
-            r_target_addr_sent[target] <= 1'b1;
+        if (!s_target_valid[target] && s_target_grant_valid[target]) begin
+          s_target_valid[target]                    <= 1'b1;
+          s_target_addr_sent[target]                <= 1'b0;
+          s_target_owner[target]                    <= s_target_selected[target];
+          s_master_state[s_target_selected[target]] <= MASTER_ACTIVE;
+        end else if (s_target_valid[target] && !s_target_addr_sent[target]) begin
+          automatic logic [MASTER_WIDTH-1:0] owner = s_target_owner[target];
+          if ((s_master_write[owner] && t_awvalid[target] && t_awready[target]) ||
+              (!s_master_write[owner] && t_arvalid[target] && t_arready[target])) begin
+            s_target_addr_sent[target] <= 1'b1;
           end
         end
         if (s_target_terminal[target]) begin
-          r_target_valid[target]     <= 1'b0;
-          r_target_addr_sent[target] <= 1'b0;
+          s_target_valid[target]     <= 1'b0;
+          s_target_addr_sent[target] <= 1'b0;
         end
       end
     end
@@ -545,39 +548,41 @@ module axi4_interconnect #(
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      for (int master = 0; master < NumMasters; master++) r_perf_master_wait[master] <= '0;
-      for (int target = 0; target < NumTargets; target++) r_perf_target_wait[target] <= '0;
+      for (int master = 0; master < NumMasters; master++) s_perf_master_wait[master] <= '0;
+      for (int target = 0; target < NumTargets; target++) s_perf_target_wait[target] <= '0;
     end else if (perf_clear_i) begin
-      for (int master = 0; master < NumMasters; master++) r_perf_master_wait[master] <= '0;
-      for (int target = 0; target < NumTargets; target++) r_perf_target_wait[target] <= '0;
+      for (int master = 0; master < NumMasters; master++) s_perf_master_wait[master] <= '0;
+      for (int target = 0; target < NumTargets; target++) s_perf_target_wait[target] <= '0;
     end else if (perf_enable_i) begin
       for (int master = 0; master < NumMasters; master++) begin
-        if ((r_master_state[master] != MASTER_IDLE) && !s_master_terminal[master] &&
-            !(&r_perf_master_wait[master])) begin
-          r_perf_master_wait[master] <= r_perf_master_wait[master] + 1'b1;
+        if ((s_master_state[master] != MASTER_IDLE) && !s_master_terminal[master] &&
+            !(&s_perf_master_wait[master])) begin
+          s_perf_master_wait[master] <= s_perf_master_wait[master] + 1'b1;
         end
       end
       for (int target = 0; target < NumTargets; target++) begin
-        if (r_target_valid[target] && !s_target_terminal[target] &&
-            !(&r_perf_target_wait[target])) begin
-          r_perf_target_wait[target] <= r_perf_target_wait[target] + 1'b1;
+        if (s_target_valid[target] && !s_target_terminal[target] &&
+            !(&s_perf_target_wait[target])) begin
+          s_perf_target_wait[target] <= s_perf_target_wait[target] + 1'b1;
         end
       end
     end
   end
 
-  assign perf_mgmt_wait_o  = r_perf_master_wait[0];
-  assign perf_user_wait_o  = r_perf_master_wait[1];
-  assign perf_dma_wait_o   = r_perf_master_wait[2];
-  assign perf_ribp_wait_o  = r_perf_target_wait[TARGET_CFG];
-  assign perf_apb_wait_o   = r_perf_target_wait[TARGET_APB];
-  assign perf_sdram_wait_o = r_perf_target_wait[TARGET_SDRAM];
-  assign perf_psram_wait_o = r_perf_target_wait[TARGET_PSRAM];
-  assign perf_flash_wait_o = r_perf_target_wait[TARGET_XPI];
+  assign perf_mgmt_wait_o  = s_perf_master_wait[0];
+  assign perf_user_wait_o  = s_perf_master_wait[1];
+  assign perf_dma_wait_o   = s_perf_master_wait[2];
+  assign perf_ribp_wait_o  = s_perf_target_wait[TARGET_CFG];
+  assign perf_apb_wait_o   = s_perf_target_wait[TARGET_APB];
+  assign perf_sdram_wait_o = s_perf_target_wait[TARGET_SDRAM];
+  assign perf_psram_wait_o = s_perf_target_wait[TARGET_PSRAM];
+  assign perf_flash_wait_o = s_perf_target_wait[TARGET_XPI];
 
+`ifndef SYNTHESIS
   initial begin
     if (NumMasters != 3 || NumTargets != 9) begin
       $fatal(1, "axi4_interconnect: retroSoC topology requires three masters and nine targets");
     end
   end
+`endif
 endmodule

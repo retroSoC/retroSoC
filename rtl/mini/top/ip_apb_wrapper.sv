@@ -16,7 +16,7 @@
 `include "archinfo_integration_metadata.svh"
 
 module ip_apb_wrapper (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic                          clk_i,
     input  logic                          rst_n_i,
     input  logic                          clk_aud_i,
@@ -98,7 +98,7 @@ module ip_apb_wrapper (
   );
   `include "soc_apb_bridges.svh"
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   apb4_archinfo #(
       .VENDOR_ID         (32'h0000_0000),
       .SOC_REVISION      (32'h0001_0000),

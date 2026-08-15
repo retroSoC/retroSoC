@@ -11,10 +11,10 @@
 module ribp_ws2812 #(
     parameter int TxFifoDepth = 16
 ) (
-    // verilog_format: off
-    input logic    clk_i,
-    input logic    rst_n_i,
-    ribp_if.slave  ribp,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic   clk_i,
+    input logic   rst_n_i,
+    ribp_if.slave ribp,
     ws2812_if.dut ws2812
     // verilog_format: on
 );

@@ -6,15 +6,15 @@
 module clint_reg #(
     parameter int HartNum = 1
 ) (
-    // verilog_format: off
-    input  logic                clk_i,
-    input  logic                rst_n_i,
-    ribp_if.slave               ribp,
-    input  logic [63:0]         mtime_i,
-    output logic                mtime_load_o,
-    output logic [63:0]         mtime_load_value_o,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic               clk_i,
+    input  logic               rst_n_i,
+    ribp_if.slave              ribp,
+    input  logic [63:0]        mtime_i,
+    output logic               mtime_load_o,
+    output logic [63:0]        mtime_load_value_o,
     output logic [HartNum-1:0] msip_o,
-    output logic [63:0]         mtimecmp_o [0:HartNum-1]
+    output logic [63:0]        mtimecmp_o [0:HartNum-1]
     // verilog_format: on
 );
 
@@ -60,11 +60,13 @@ module clint_reg #(
     end
   endfunction
 
+`ifndef SYNTHESIS
   initial begin
     if ((HartNum < 1) || (HartNum > 4095)) begin
       $fatal(1, "clint_reg: HartNum must be between 1 and 4095");
     end
   end
+`endif
 
   assign s_req = ribp.valid && !s_ribp_ready_q;
   assign s_write = |ribp.wstrb;

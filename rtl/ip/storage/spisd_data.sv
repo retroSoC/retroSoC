@@ -43,21 +43,23 @@ module spisd_data (
   logic        s_pos_init_done;
   logic        s_neg_wr_busy;
 
-  logic        r_wr_req;
-  logic        r_rd_req;
-  logic [31:0] r_sec_addr;
+  logic        s_wr_req;
+  logic        s_rd_req;
+  logic [31:0] s_sec_addr;
 
 
-  assign wr_req_o        = r_wr_req;
-  assign rd_req_o        = r_rd_req;
-  assign sec_addr_o      = r_sec_addr;
+  assign wr_req_o        = s_wr_req;
+  assign rd_req_o        = s_rd_req;
+  assign sec_addr_o      = s_sec_addr;
 
 
   assign s_pos_init_done = (~sd_init_done_d1) & sd_init_done_d0;
   assign s_neg_wr_busy   = wr_busy_d1 & (~wr_busy_d0);
   assign wr_data_o       = wr_data_t;
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  // These edge-qualified protocol monitors retain their ordered reset/update
+  // behavior; splitting them into DFF primitives would not improve storage intent.
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
       sd_init_done_d0 <= 1'b0;
       sd_init_done_d1 <= 1'b0;
@@ -69,34 +71,34 @@ module spisd_data (
     end
   end
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      r_wr_req   <= 1'b0;
-      r_rd_req   <= 1'b0;
-      r_sec_addr <= '0;
+      s_wr_req   <= 1'b0;
+      s_rd_req   <= 1'b0;
+      s_sec_addr <= '0;
     end else begin
       if (fir_clk_edge_i) begin
         if (s_pos_init_done) begin
-          r_wr_req   <= 1'b1;
-          r_sec_addr <= 32'd20000;
+          s_wr_req   <= 1'b1;
+          s_sec_addr <= 32'd20000;
         end else if (s_neg_wr_busy) begin
-          r_rd_req   <= 1'b1;
-          r_sec_addr <= 32'd20000;
+          s_rd_req   <= 1'b1;
+          s_sec_addr <= 32'd20000;
         end else begin
-          r_wr_req <= 1'b0;
-          r_rd_req <= 1'b0;
+          s_wr_req <= 1'b0;
+          s_rd_req <= 1'b0;
         end
       end
     end
   end
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) wr_data_t <= '1;
     else if (fir_clk_edge_i && wr_data_req_i) wr_data_t <= wr_data_t + 1'b1;
   end
 
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
       wr_busy_d0 <= 1'b0;
       wr_busy_d1 <= 1'b0;
@@ -108,7 +110,7 @@ module spisd_data (
     end
   end
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
       rd_comp_data <= '0;
       rd_right_cnt <= '0;

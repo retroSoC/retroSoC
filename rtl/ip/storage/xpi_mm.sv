@@ -11,7 +11,7 @@
 `include "xpi_define.svh"
 
 module xpi_mm (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic                     clk_i,
     input  logic                     rst_n_i,
     input  logic [             31:0] xpi_mmstad_i  [0:`XPI_NSS_NUM-1],
@@ -32,16 +32,16 @@ module xpi_mm (
     input  logic                     rx_pop_ready_i,
     // ctrl
     input  logic                     xfer_done_i,
-    ribp_if.slave                     ribp
+    ribp_if.slave                    ribp
     // verilog_format: on
 );
-  // verilog_format: off
-  localparam FSM_IDLE  = 3'd0;
-  localparam FSM_WE_ST = 3'd1;
-  localparam FSM_WE    = 3'd2;
-  localparam FSM_RD_ST = 3'd3;
-  localparam FSM_RD    = 3'd4;
-  // verilog_format: on
+  typedef enum logic [2:0] {
+    Idle       = 3'd0,
+    WriteStart = 3'd1,
+    Write      = 3'd2,
+    ReadStart  = 3'd3,
+    Read       = 3'd4
+  } xpi_mm_state_e;
 
   // ribp
   logic s_ribp_wr_hdshk, s_ribp_rd_hdshk;
@@ -49,17 +49,17 @@ module xpi_mm (
   logic s_ribp_rdata_en;
   logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
   // ctrl
-  logic        r_rd_st;
-  logic        r_wr_st;
-  logic        r_rdwr;
-  logic [ 2:0] r_fsm_state;
-  logic [31:0] r_addr;
-  logic [31:0] r_wr_data;
-  logic [ 2:0] r_xfer_byte_cnt;
-  logic [ 1:0] s_disp_addr_ofst;
-  logic [ 2:0] s_disp_byte_cnt;
-  logic [31:0] s_disp_wdata;
-  logic        s_mem_valid_re;
+  logic                 s_rd_st;
+  logic                 s_wr_st;
+  logic                 s_rdwr;
+  xpi_mm_state_e        s_fsm_state;
+  logic          [31:0] s_addr;
+  logic          [31:0] s_wr_data;
+  logic          [ 2:0] s_xfer_byte_cnt;
+  logic          [ 1:0] s_disp_addr_ofst;
+  logic          [ 2:0] s_disp_byte_cnt;
+  logic          [31:0] s_disp_wdata;
+  logic                 s_mem_valid_re;
   logic [`XPI_LNS_NUM-1:0] s_nss_d, s_nss_q;
 
   // ribp
@@ -100,14 +100,14 @@ module xpi_mm (
 
   // ctrl
   assign nss_o           = s_nss_q;
-  assign rd_st_o         = r_rd_st;
-  assign wr_st_o         = r_wr_st;
-  assign rdwr_o          = r_rdwr;
-  assign addr_o          = r_addr;
-  assign xfer_byte_o     = r_xfer_byte_cnt;
+  assign rd_st_o         = s_rd_st;
+  assign wr_st_o         = s_wr_st;
+  assign rdwr_o          = s_rdwr;
+  assign addr_o          = s_addr;
+  assign xfer_byte_o     = s_xfer_byte_cnt;
   // tx fifo
-  assign tx_push_valid_o = r_fsm_state == FSM_WE_ST && tx_push_ready_i;
-  assign tx_push_data_o  = r_wr_data;
+  assign tx_push_valid_o = s_fsm_state == WriteStart && tx_push_ready_i;
+  assign tx_push_data_o  = s_wr_data;
 
 
   // HACK:
@@ -141,60 +141,62 @@ module xpi_mm (
       .re_o   (s_mem_valid_re)
   );
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  // The transfer state has ordered request/reset updates in one process; retain
+  // it to preserve the current request-to-command cycle behavior exactly.
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (~rst_n_i) begin
-      r_fsm_state     <= FSM_IDLE;
-      r_rd_st         <= '0;
-      r_wr_st         <= '0;
-      r_rdwr          <= 1'b1;
-      r_addr          <= '0;
-      r_wr_data       <= '0;
-      r_xfer_byte_cnt <= '0;
+      s_fsm_state     <= Idle;
+      s_rd_st         <= '0;
+      s_wr_st         <= '0;
+      s_rdwr          <= 1'b1;
+      s_addr          <= '0;
+      s_wr_data       <= '0;
+      s_xfer_byte_cnt <= '0;
     end else begin
-      unique case (r_fsm_state)
-        FSM_IDLE: begin
+      unique case (s_fsm_state)
+        Idle: begin
           if (s_mem_valid_re) begin
             if (|ribp.wstrb) begin
-              r_fsm_state     <= FSM_WE_ST;
-              r_addr          <= {4'd0, ribp.addr[27:0]} + {30'd0, s_disp_addr_ofst};
-              r_wr_data       <= s_disp_wdata;
-              r_xfer_byte_cnt <= s_disp_byte_cnt;
+              s_fsm_state     <= WriteStart;
+              s_addr          <= {4'd0, ribp.addr[27:0]} + {30'd0, s_disp_addr_ofst};
+              s_wr_data       <= s_disp_wdata;
+              s_xfer_byte_cnt <= s_disp_byte_cnt;
             end else begin
-              r_fsm_state     <= FSM_RD_ST;
-              r_addr          <= {4'd0, ribp.addr[27:0]};
-              r_wr_data       <= ribp.wdata;  // NOTE: no used
-              r_xfer_byte_cnt <= 3'd4;
+              s_fsm_state     <= ReadStart;
+              s_addr          <= {4'd0, ribp.addr[27:0]};
+              s_wr_data       <= ribp.wdata;  // NOTE: no used
+              s_xfer_byte_cnt <= 3'd4;
             end
           end
         end
-        FSM_WE_ST: begin
+        WriteStart: begin
           if (tx_push_ready_i) begin
-            r_wr_st     <= 1'b1;
-            r_rdwr      <= 1'b0;
-            r_fsm_state <= FSM_WE;
+            s_wr_st     <= 1'b1;
+            s_rdwr      <= 1'b0;
+            s_fsm_state <= Write;
           end
         end
-        FSM_WE: begin
-          r_wr_st <= 1'b0;
-          if (xfer_done_i) r_fsm_state <= FSM_IDLE;
+        Write: begin
+          s_wr_st <= 1'b0;
+          if (xfer_done_i) s_fsm_state <= Idle;
         end
-        FSM_RD_ST: begin
-          r_rd_st     <= 1'b1;
-          r_rdwr      <= 1'b1;
-          r_fsm_state <= FSM_RD;
+        ReadStart: begin
+          s_rd_st     <= 1'b1;
+          s_rdwr      <= 1'b1;
+          s_fsm_state <= Read;
         end
-        FSM_RD: begin
-          r_rd_st <= 1'b0;
-          if (rx_pop_ready_i) r_fsm_state <= FSM_IDLE;
+        Read: begin
+          s_rd_st <= 1'b0;
+          if (rx_pop_ready_i) s_fsm_state <= Idle;
         end
         default: begin
-          r_fsm_state     <= FSM_IDLE;
-          r_rd_st         <= '0;
-          r_wr_st         <= '0;
-          r_rdwr          <= 1'b1;
-          r_addr          <= '0;
-          r_wr_data       <= '0;
-          r_xfer_byte_cnt <= '0;
+          s_fsm_state     <= Idle;
+          s_rd_st         <= '0;
+          s_wr_st         <= '0;
+          s_rdwr          <= 1'b1;
+          s_addr          <= '0;
+          s_wr_data       <= '0;
+          s_xfer_byte_cnt <= '0;
         end
       endcase
     end

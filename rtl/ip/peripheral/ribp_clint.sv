@@ -4,12 +4,12 @@
 module ribp_clint #(
     parameter int HartNum = 1
 ) (
-    // verilog_format: off
-    input  logic       clk_i,
-    input  logic       rst_n_i,
-    input  logic       timebase_tick_i,
-    ribp_if.slave      ribp,
-    clint_if.dut       clint
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic  clk_i,
+    input  logic  rst_n_i,
+    input  logic  timebase_tick_i,
+    ribp_if.slave ribp,
+    clint_if.dut  clint
     // verilog_format: on
 );
 

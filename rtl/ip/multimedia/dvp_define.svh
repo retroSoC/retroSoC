@@ -4,7 +4,7 @@
 `ifndef RIBP_DVP_DEFINE_SVH
 `define RIBP_DVP_DEFINE_SVH
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_DVP_CTRL                    12'h000
 `define RIBP_DVP_RXDATA                  12'h004
 `define RIBP_DVP_STATUS                  12'h008
@@ -32,12 +32,12 @@
 `define RIBP_DVP__CTRL_SNAPSHOT          1
 `define RIBP_DVP__CTRL_CROP_ENABLE       2
 `define RIBP_DVP__STREAM_ENABLE          0
-`define RIBP_DVP__FORMAT_SELECT           1:0
+`define RIBP_DVP__FORMAT_SELECT          1:0
 `define RIBP_DVP__FORMAT_BYTE_SWAP       2
 `define RIBP_DVP__FORMAT_PIXEL_SWAP      3
-`define RIBP_DVP__SYNC_VSYNC_LOW          0
-`define RIBP_DVP__SYNC_HREF_LOW           1
-`define RIBP_DVP__SYNC_PCLK_FALLING       2
+`define RIBP_DVP__SYNC_VSYNC_LOW         0
+`define RIBP_DVP__SYNC_HREF_LOW          1
+`define RIBP_DVP__SYNC_PCLK_FALLING      2
 
 `define RIBP_DVP__INTR_FRAME_START       0
 `define RIBP_DVP__INTR_LINE_DONE         1

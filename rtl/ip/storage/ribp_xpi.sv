@@ -30,17 +30,20 @@ interface xpi_if ();
 endinterface
 
 module ribp_xpi (
-    // verilog_format: off
-    input  logic clk_i,
-    input  logic rst_n_i,
-    input  logic dma_xfer_done_i,
-    output logic dma_tx_stall_o,
-    output logic dma_rx_stall_o,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic  clk_i,
+    input  logic  rst_n_i,
+    input  logic  dma_xfer_done_i,
+    output logic  dma_tx_stall_o,
+    output logic  dma_rx_stall_o,
     ribp_if.slave ribp,
-    xpi_if.dut  xpi
+    xpi_if.dut    xpi
     // verilog_format: on
 );
 
+  // clk_i/rst_n_i drive register and memory-mapped transfers. The selected
+  // path supplies response data/errors; FIFO limits apply backpressure through
+  // its ready signals while an XPI transfer is in progress.
   // nss
   logic [`XPI_LNS_NUM-1:0] s_xpi_nss;
   // reg mode
@@ -118,7 +121,7 @@ module ribp_xpi (
   assign u_mm_ribp_if.wdata  = ribp.wdata;
   assign u_mm_ribp_if.wstrb  = ribp.wstrb;
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   assign ribp.ready = (u_reg_ribp_if.valid & u_reg_ribp_if.ready) |
                      (u_mm_ribp_if.valid  & u_mm_ribp_if.ready);
   assign ribp.resp_err = (u_reg_ribp_if.valid & u_reg_ribp_if.ready & u_reg_ribp_if.resp_err) |
@@ -137,53 +140,53 @@ module ribp_xpi (
 
 
   xpi_reg u_xpi_reg (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
+      .clk_i(clk_i),
+      .rst_n_i(rst_n_i),
       // reg
-      .xpi_accmd_o    (),
-      .xpi_mmstad_o   (s_xpi_mmstad),
-      .xpi_mmoffst_o  (s_xpi_mmoffst),
-      .xpi_mode_o     (s_xpi_mode),
-      .xpi_regnss_o   (s_xpi_regnss),
-      .xpi_clkdiv_o   (s_xpi_clkdiv),
-      .xpi_rdwr_o     (s_xpi_rdwr),
-      .xpi_revdat_o   (s_xpi_revdat),
-      .xpi_tx_flush_o (s_tx_flush),
-      .xpi_rx_flush_o (s_rx_flush),
-      .xpi_cmdtyp_o   (s_xpi_cmdtyp),
-      .xpi_cmdlen_o   (s_xpi_cmdlen),
-      .xpi_cmddat_o   (s_xpi_cmddat),
-      .xpi_adrtyp_o   (s_xpi_adrtyp),
-      .xpi_adrlen_o   (s_xpi_adrlen),
-      .xpi_adrdat_o   (s_xpi_adrdat),
-      .xpi_alttyp_o   (s_xpi_alttyp),
-      .xpi_altlen_o   (s_xpi_altlen),
-      .xpi_altdat_o   (s_xpi_altdat),
-      .xpi_tdulen_o   (s_xpi_tdulen),
-      .xpi_rdulen_o   (s_xpi_rdulen),
-      .xpi_dattyp_o   (s_xpi_dattyp),
-      .xpi_datlen_o   (s_xpi_datlen),
-      .xpi_datbit_o   (s_xpi_datbit),
-      .xpi_hlvlen_o   (s_xpi_hlvlen),
+      .xpi_accmd_o(),  // The software-visible accumulated command is not used here.
+      .xpi_mmstad_o(s_xpi_mmstad),
+      .xpi_mmoffst_o(s_xpi_mmoffst),
+      .xpi_mode_o(s_xpi_mode),
+      .xpi_regnss_o(s_xpi_regnss),
+      .xpi_clkdiv_o(s_xpi_clkdiv),
+      .xpi_rdwr_o(s_xpi_rdwr),
+      .xpi_revdat_o(s_xpi_revdat),
+      .xpi_tx_flush_o(s_tx_flush),
+      .xpi_rx_flush_o(s_rx_flush),
+      .xpi_cmdtyp_o(s_xpi_cmdtyp),
+      .xpi_cmdlen_o(s_xpi_cmdlen),
+      .xpi_cmddat_o(s_xpi_cmddat),
+      .xpi_adrtyp_o(s_xpi_adrtyp),
+      .xpi_adrlen_o(s_xpi_adrlen),
+      .xpi_adrdat_o(s_xpi_adrdat),
+      .xpi_alttyp_o(s_xpi_alttyp),
+      .xpi_altlen_o(s_xpi_altlen),
+      .xpi_altdat_o(s_xpi_altdat),
+      .xpi_tdulen_o(s_xpi_tdulen),
+      .xpi_rdulen_o(s_xpi_rdulen),
+      .xpi_dattyp_o(s_xpi_dattyp),
+      .xpi_datlen_o(s_xpi_datlen),
+      .xpi_datbit_o(s_xpi_datbit),
+      .xpi_hlvlen_o(s_xpi_hlvlen),
       // tx fifo
       .tx_push_valid_o(s_reg_tx_push_valid),
-      .tx_push_data_o (s_reg_tx_push_data),
-      .tx_full_i      (s_tx_full),
-      .tx_empty_i     (s_tx_empty),
-      .tx_elem_num_i  (s_tx_elem_num),
+      .tx_push_data_o(s_reg_tx_push_data),
+      .tx_full_i(s_tx_full),
+      .tx_empty_i(s_tx_empty),
+      .tx_elem_num_i(s_tx_elem_num),
       // rx fifo
-      .rx_pop_valid_o (s_reg_rx_pop_valid),
-      .rx_pop_data_i  (s_rx_pop_data),
-      .rx_full_i      (s_rx_full),
-      .rx_empty_i     (s_rx_empty),
-      .rx_elem_num_i  (s_rx_elem_num),
+      .rx_pop_valid_o(s_reg_rx_pop_valid),
+      .rx_pop_data_i(s_rx_pop_data),
+      .rx_full_i(s_rx_full),
+      .rx_empty_i(s_rx_empty),
+      .rx_elem_num_i(s_rx_elem_num),
       // ctrl
-      .xfer_start_o   (s_reg_xfer_start),
-      .xfer_done_i    (s_xfer_done),
+      .xfer_start_o(s_reg_xfer_start),
+      .xfer_done_i(s_xfer_done),
       // dma
-      .dma_tx_stall_o (dma_tx_stall_o),
-      .dma_rx_stall_o (dma_rx_stall_o),
-      .ribp           (u_reg_ribp_if)
+      .dma_tx_stall_o(dma_tx_stall_o),
+      .dma_rx_stall_o(dma_rx_stall_o),
+      .ribp(u_reg_ribp_if)
   );
 
 

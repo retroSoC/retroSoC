@@ -5,29 +5,29 @@ module timer_core #(
     parameter int CounterWidth  = 32,
     parameter int PrescaleWidth = 16
 ) (
-    // verilog_format: off
-    input  logic                      clk_i,
-    input  logic                      rst_n_i,
-    input  logic                      enable_i,
-    input  logic [1:0]                mode_i,
-    input  logic                      direction_i,
-    input  logic                      debug_freeze_enable_i,
-    input  logic                      debug_halted_i,
-    input  logic                      compare0_enable_i,
-    input  logic                      compare1_enable_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic                     clk_i,
+    input  logic                     rst_n_i,
+    input  logic                     enable_i,
+    input  logic [1:0]               mode_i,
+    input  logic                     direction_i,
+    input  logic                     debug_freeze_enable_i,
+    input  logic                     debug_halted_i,
+    input  logic                     compare0_enable_i,
+    input  logic                     compare1_enable_i,
     input  logic [PrescaleWidth-1:0] prescale_i,
     input  logic [CounterWidth-1:0]  load_i,
     input  logic [CounterWidth-1:0]  compare0_i,
     input  logic [CounterWidth-1:0]  compare1_i,
-    input  logic                      start_i,
-    input  logic                      stop_i,
-    input  logic                      load_now_i,
+    input  logic                     start_i,
+    input  logic                     stop_i,
+    input  logic                     load_now_i,
     output logic [CounterWidth-1:0]  value_o,
-    output logic                      debug_frozen_o,
-    output logic                      timeout_event_o,
-    output logic                      compare0_event_o,
-    output logic                      compare1_event_o,
-    output logic                      one_shot_done_o
+    output logic                     debug_frozen_o,
+    output logic                     timeout_event_o,
+    output logic                     compare0_event_o,
+    output logic                     compare1_event_o,
+    output logic                     one_shot_done_o
     // verilog_format: on
 );
 
@@ -43,11 +43,13 @@ module timer_core #(
   logic                     s_prescale_overflow;
   logic [CounterWidth-1:0] s_value_d, s_value_q;
 
+`ifndef SYNTHESIS
   initial begin
     if (CounterWidth < 1 || PrescaleWidth < 1) begin
       $fatal(1, "timer_core: parameter widths must be positive");
     end
   end
+`endif
 
   assign debug_frozen_o = enable_i && debug_freeze_enable_i && debug_halted_i;
   assign value_o = s_value_q;

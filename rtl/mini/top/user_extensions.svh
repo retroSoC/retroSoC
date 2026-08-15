@@ -9,8 +9,8 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef USER_EXTENSIONS_DEF_SVH
-`define USER_EXTENSIONS_DEF_SVH
+`ifndef RETROSOC_USER_EXTENSIONS_SVH
+`define RETROSOC_USER_EXTENSIONS_SVH
 
 `include "user_extensions_config.svh"
 

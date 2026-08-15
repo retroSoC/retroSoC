@@ -9,7 +9,7 @@ module uart_reg #(
     parameter int TxFifoLogDepth = $clog2(TxFifoDepth),
     parameter int RxFifoLogDepth = $clog2(RxFifoDepth)
 ) (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
     ribp_if.slave       ribp,
@@ -137,11 +137,13 @@ module uart_reg #(
     end
   endfunction
 
+`ifndef SYNTHESIS
   initial begin
     if ((TxFifoDepth != 64) || (RxFifoDepth != 64)) begin
       $fatal(1, "uart_reg: 64-entry FIFOs are required");
     end
   end
+`endif
 
   assign s_req = ribp.valid && !s_ribp_ready_q;
   assign s_write = |ribp.wstrb;

@@ -11,7 +11,7 @@
 `ifndef RIBP_SPISD_DEF_SV
 `define RIBP_SPISD_DEF_SV
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_SPISD_MODE   8'h00
 `define RIBP_SPISD_CLKDIV 8'h04
 `define RIBP_SPISD_ADDR   8'h08
@@ -24,7 +24,7 @@
 `endif
 
 module spisd_reg (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input logic        clk_i,
     input logic        rst_n_i,
     input logic        init_done_i,
@@ -32,8 +32,8 @@ module spisd_reg (
     input logic        wr_sync_done_i,
     output logic       mode_o,
     output logic [1:0] clkdiv_o,
-    ribp_if.slave       ribp,
-    ribp_if.master      byp_rib
+    ribp_if.slave      ribp,
+    ribp_if.master     byp_rib
     // verilog_format: on
 );
   // ribp

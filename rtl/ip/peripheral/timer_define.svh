@@ -4,7 +4,7 @@
 `ifndef RIBP_TIMER_DEFINE_SVH
 `define RIBP_TIMER_DEFINE_SVH
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_TIMER_CTRL                      12'h000
 `define RIBP_TIMER_LOAD                      12'h004
 `define RIBP_TIMER_VALUE                     12'h008

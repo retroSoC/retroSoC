@@ -11,10 +11,10 @@
 `include "i2s_define.svh"
 
 module i2s_reg (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
-    ribp_if.slave        ribp,
+    ribp_if.slave       ribp,
     output logic        mode_o,
     output logic [ 1:0] format_o,
     output logic        recven_o,

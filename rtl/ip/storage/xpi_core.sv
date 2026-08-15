@@ -11,7 +11,7 @@
 `include "xpi_define.svh"
 
 module xpi_core (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic                     clk_i,
     input  logic                     rst_n_i,
     input  logic                     mode_i,
@@ -48,16 +48,18 @@ module xpi_core (
 );
   // verilog_format: on
 
-  // verilog_format: off
-  localparam FSM_IDLE   = 3'd0;
-  localparam FSM_CMD    = 3'd1;
-  localparam FSM_ADDR   = 3'd2;
-  localparam FSM_DUM    = 3'd3;
-  localparam FSM_TXDATA = 3'd4;
-  localparam FSM_RXDATA = 3'd5;
-  localparam FSM_DONE   = 3'd6;
-  localparam FSM_HLVD   = 3'd7;
-  // verilog_format: on
+  // One XPI transfer is active at a time. start_i or DMA flow control begins a
+  // transfer; done_o marks completion, while FIFO ready inputs provide pacing.
+  typedef enum logic [2:0] {
+    Idle      = 3'd0,
+    Command   = 3'd1,
+    Address   = 3'd2,
+    Dummy     = 3'd3,
+    TxData    = 3'd4,
+    RxData    = 3'd5,
+    Done      = 3'd6,
+    HoldValid = 3'd7
+  } xpi_state_e;
 
   // sclk
   logic s_sclk, s_sclk_en_d, s_sclk_en_q;
@@ -73,7 +75,8 @@ module xpi_core (
   logic s_tx_data_req_d, s_tx_data_req_q;
   logic s_rx_data_req_d, s_rx_data_req_q;
   // common
-  logic [2:0] s_fsm_d, s_fsm_q;
+  xpi_state_e s_fsm_d, s_fsm_q;
+  logic [2:0] s_fsm_bits_q;
   logic s_xfer_condi, s_xfer_sta_trg, s_xfer_end_trg;
   logic s_dma_xfer_start, s_dma_xfer_trg;
   logic [7:0] s_dma_xfer_datlen;
@@ -81,6 +84,7 @@ module xpi_core (
 
 
   assign xpi.sck_o = s_sclk;
+  assign s_fsm_q   = xpi_state_e'(s_fsm_bits_q);
   always_comb begin
     xpi.nss_o        = 4'b1111;
     xpi.nss_o[nss_i] = s_nss_q;
@@ -109,8 +113,8 @@ module xpi_core (
 
 
   assign s_xfer_condi   = (~mode_i && start_i) || (mode_i && s_dma_xfer_trg);
-  assign s_xfer_sta_trg = s_fsm_q == FSM_IDLE && s_xfer_condi;
-  assign s_xfer_end_trg = s_fsm_q == FSM_DONE || s_fsm_q == FSM_HLVD;
+  assign s_xfer_sta_trg = s_fsm_q == Idle && s_xfer_condi;
+  assign s_xfer_end_trg = s_fsm_q == Done || s_fsm_q == HoldValid;
   assign s_dumlen       = rdwr_i ? rdulen_i : tdulen_i;
 
 
@@ -132,7 +136,7 @@ module xpi_core (
     s_xpi_io_oe[0] = 1'b1;
     s_xpi_io_do    = '0;
     unique case (s_fsm_q)
-      FSM_CMD: begin
+      Command: begin
         unique case (cmdtyp_i)
           `XPI_TYPE_SNGL: begin
             s_xpi_io_oe[0] = 1'b1;
@@ -152,7 +156,7 @@ module xpi_core (
           end
         endcase
       end
-      FSM_ADDR: begin
+      Address: begin
         unique case (adrtyp_i)
           `XPI_TYPE_SNGL: begin
             s_xpi_io_oe[0] = 1'b1;
@@ -172,10 +176,10 @@ module xpi_core (
           end
         endcase
       end
-      FSM_DUM, FSM_RXDATA: begin
+      Dummy, RxData: begin
         s_xpi_io_oe = '0;
       end
-      FSM_TXDATA: begin
+      TxData: begin
         unique case (dattyp_i)
           `XPI_TYPE_SNGL: begin
             s_xpi_io_oe[0] = 1'b1;
@@ -214,25 +218,25 @@ module xpi_core (
     rx_data_o         = '0;
     done_o            = 1'b0;
     unique case (s_fsm_q)
-      FSM_IDLE: begin
+      Idle: begin
         if (s_xfer_condi) begin
           s_nss_d     = 1'b0;
           s_sclk_en_d = 1'b1;
           if (cmdtyp_i != `XPI_TYPE_NONE) begin
-            s_fsm_d          = FSM_CMD;
+            s_fsm_d          = Command;
             s_xfer_bit_cnt_d = {2'd0, cmdlen_i, 3'd0};
             s_xfer_data_d    = cmddat_i;
           end else if (adrtyp_i != `XPI_TYPE_NONE) begin
-            s_fsm_d          = FSM_ADDR;
+            s_fsm_d          = Address;
             s_xfer_bit_cnt_d = {2'd0, adrlen_i, 3'd0};
             s_xfer_data_d    = adrdat_i;
           end else if (s_dumlen != '0) begin
-            s_fsm_d          = FSM_DUM;
+            s_fsm_d          = Dummy;
             s_xfer_bit_cnt_d = s_dumlen;
             s_xfer_data_d    = '0;
           end else if (dattyp_i != `XPI_TYPE_NONE) begin
-            if (rdwr_i) s_fsm_d = FSM_RXDATA;
-            else s_fsm_d = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = RxData;
+            else s_fsm_d = TxData;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
             s_xfer_byte_cnt_d = s_xfer_datlen;
             if (tx_data_rdy_i) begin
@@ -241,12 +245,12 @@ module xpi_core (
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
-            s_fsm_d     = FSM_DONE;
+            s_fsm_d     = Done;
             s_sclk_en_d = 1'b0;
           end
         end
       end
-      FSM_CMD: begin
+      Command: begin
         unique case (cmdtyp_i)
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
@@ -270,16 +274,16 @@ module xpi_core (
             (cmdtyp_i == `XPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
             (cmdtyp_i == `XPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (adrtyp_i != `XPI_TYPE_NONE) begin
-            s_fsm_d          = FSM_ADDR;
+            s_fsm_d          = Address;
             s_xfer_bit_cnt_d = {2'd0, adrlen_i, 3'd0};
             s_xfer_data_d    = adrdat_i;
           end else if (s_dumlen != '0) begin
-            s_fsm_d          = FSM_DUM;
+            s_fsm_d          = Dummy;
             s_xfer_bit_cnt_d = s_dumlen;
             s_xfer_data_d    = '0;
           end else if (dattyp_i != `XPI_TYPE_NONE) begin
-            if (rdwr_i) s_fsm_d = FSM_RXDATA;
-            else s_fsm_d = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = RxData;
+            else s_fsm_d = TxData;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
             s_xfer_byte_cnt_d = s_xfer_datlen;
             if (tx_data_rdy_i) begin
@@ -288,12 +292,12 @@ module xpi_core (
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
-            s_fsm_d     = FSM_DONE;
+            s_fsm_d     = Done;
             s_sclk_en_d = 1'b0;
           end
         end
       end
-      FSM_ADDR: begin
+      Address: begin
         unique case (adrtyp_i)
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
@@ -317,12 +321,12 @@ module xpi_core (
             (adrtyp_i == `XPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
             (adrtyp_i == `XPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (s_dumlen != '0) begin
-            s_fsm_d          = FSM_DUM;
+            s_fsm_d          = Dummy;
             s_xfer_bit_cnt_d = s_dumlen;
             s_xfer_data_d    = '0;
           end else if (dattyp_i != `XPI_TYPE_NONE) begin
-            if (rdwr_i) s_fsm_d = FSM_RXDATA;
-            else s_fsm_d = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = RxData;
+            else s_fsm_d = TxData;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
             s_xfer_byte_cnt_d = s_xfer_datlen;
             if (tx_data_rdy_i) begin
@@ -331,18 +335,18 @@ module xpi_core (
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
-            s_fsm_d     = FSM_DONE;
+            s_fsm_d     = Done;
             s_sclk_en_d = 1'b0;
           end
         end
       end
-      FSM_DUM: begin
+      Dummy: begin
         s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
 
         if (s_xfer_bit_cnt_q == 8'd1) begin
           if (dattyp_i != `XPI_TYPE_NONE) begin
-            if (rdwr_i) s_fsm_d = FSM_RXDATA;
-            else s_fsm_d = FSM_TXDATA;
+            if (rdwr_i) s_fsm_d = RxData;
+            else s_fsm_d = TxData;
             s_xfer_bit_cnt_d  = {2'd0, datbit_i, 3'd0};
             s_xfer_byte_cnt_d = s_xfer_datlen;
             if (tx_data_rdy_i) begin
@@ -351,12 +355,12 @@ module xpi_core (
               s_tx_data_req_d = 1'b1;
             end else s_xfer_data_d = '0;
           end else begin
-            s_fsm_d     = FSM_DONE;
+            s_fsm_d     = Done;
             s_sclk_en_d = 1'b0;
           end
         end
       end
-      FSM_TXDATA: begin
+      TxData: begin
         unique case (dattyp_i)
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
@@ -380,7 +384,7 @@ module xpi_core (
             (dattyp_i == `XPI_TYPE_DUAL && s_xfer_bit_cnt_q == 8'd2) ||
             (dattyp_i == `XPI_TYPE_QUAD && s_xfer_bit_cnt_q == 8'd4)) begin
           if (s_xfer_byte_cnt_q == 8'd1) begin
-            s_fsm_d          = FSM_DONE;
+            s_fsm_d          = Done;
             s_sclk_en_d      = 1'b0;
             s_xfer_bit_cnt_d = 8'd2;  // TODO: can config
           end else begin
@@ -394,7 +398,7 @@ module xpi_core (
           end
         end
       end
-      FSM_RXDATA: begin
+      RxData: begin
         unique case (dattyp_i)
           `XPI_TYPE_SNGL: begin
             s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 8'd1;
@@ -455,7 +459,7 @@ module xpi_core (
           end
           // xfer done
           if (s_xfer_byte_cnt_q == 8'd1) begin
-            s_fsm_d          = FSM_DONE;
+            s_fsm_d          = Done;
             s_sclk_en_d      = 1'b0;
             s_xfer_bit_cnt_d = 8'd2;  // TODO: can config
           end else begin
@@ -464,9 +468,9 @@ module xpi_core (
           end
         end
       end
-      FSM_DONE: begin
+      Done: begin
         if (s_xfer_bit_cnt_q == '0) begin
-          s_fsm_d          = FSM_HLVD;
+          s_fsm_d          = HoldValid;
           s_nss_d          = 1'b1;
           s_xfer_bit_cnt_d = hlvlen_i;
           s_xfer_data_d    = '0;
@@ -474,9 +478,9 @@ module xpi_core (
           s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 1'b1;
         end
       end
-      FSM_HLVD: begin
+      HoldValid: begin
         if (s_xfer_bit_cnt_q == '0) begin
-          s_fsm_d = FSM_IDLE;
+          s_fsm_d = Idle;
           done_o  = 1'b1;
         end else begin
           s_xfer_bit_cnt_d = s_xfer_bit_cnt_q - 1'b1;
@@ -504,7 +508,7 @@ module xpi_core (
       .rst_n_i(rst_n_i),
       .en_i   (s_xfer_sta_trg | s_sec_clk_edge | s_xfer_end_trg),
       .dat_i  (s_fsm_d),
-      .dat_o  (s_fsm_q)
+      .dat_o  (s_fsm_bits_q)
   );
 
   dfferh #(
@@ -554,8 +558,8 @@ module xpi_core (
       .clk_i(clk_i),
       .rst_n_i(rst_n_i),
       .en_i(s_xfer_sta_trg |
-      (s_fsm_q != FSM_RXDATA && s_sec_clk_edge) |
-      (s_fsm_q == FSM_RXDATA && s_fir_clk_edge) |
+      (s_fsm_q != RxData && s_sec_clk_edge) |
+      (s_fsm_q == RxData && s_fir_clk_edge) |
       s_xfer_end_trg),
       .dat_i(s_xfer_data_d),
       .dat_o(s_xfer_data_q)
@@ -577,7 +581,7 @@ module xpi_core (
   ) u_rx_data_req_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   ((s_fsm_q == FSM_RXDATA && s_fir_clk_edge) | s_rx_data_req_q),
+      .en_i   ((s_fsm_q == RxData && s_fir_clk_edge) | s_rx_data_req_q),
       .dat_i  (s_rx_data_req_d),
       .dat_o  (s_rx_data_req_q)
   );
@@ -586,7 +590,7 @@ module xpi_core (
 `ifndef SYNTHESIS
   a_xpi_read_pad_released :
   assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      (s_fsm_q == FSM_DUM || s_fsm_q == FSM_RXDATA) |-> s_xpi_io_oe == '0);
+      (s_fsm_q == Dummy || s_fsm_q == RxData) |-> s_xpi_io_oe == '0);
 `endif
 `endif
 

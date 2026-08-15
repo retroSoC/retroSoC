@@ -33,19 +33,21 @@ interface opipsram_if ();
 endinterface
 
 module ribp_opipsram (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input logic     clk_i,
     input logic     rst_n_i,
-    ribp_if.slave    ribp,
+    ribp_if.slave   ribp,
     opipsram_if.dut psram
     // verilog_format: on
 );
 
-  logic dummy0;
-  logic dummy1;
+  // This placeholder accepts no RIBP requests (ready remains low) and reports
+  // no errors; all external memory outputs are deliberately held inactive.
+  logic s_dummy_clk;
+  logic s_dummy_rst_n;
 
-  assign dummy0         = clk_i;
-  assign dummy1         = rst_n_i;
+  assign s_dummy_clk    = clk_i;
+  assign s_dummy_rst_n  = rst_n_i;
 
   // ribp
   assign ribp.rdata     = '0;

@@ -53,6 +53,11 @@ The complete ownership-aware rules, including semantic signal grammar,
 handshake/error vocabulary, module/interface/instance suffixes, parameter and
 macro namespaces, FSM examples, compatibility boundaries, and migration
 policy are documented in [RTL Coding Style](../docs/rtl-coding-style.md).
+The behavior-preserving audit process, rule matrix, formatter-exception
+requirements, and required validation are documented in
+[RTL Coding Style Compliance](../docs/rtl-coding-style-compliance.md);
+[`rtl_style_audit.json`](rtl_style_audit.json) records the reviewed owned
+source inventory.
 `make rtl-style-check` rejects new positional connections and legacy
 constructs in changed self-owned RTL while the existing migration backlog is
 handled separately.

@@ -63,15 +63,15 @@ interface sysctrl_if ();
 endinterface
 
 module ribp_sysctrl (
-    // verilog_format: off
-    input logic    clk_i,
-    input logic    rst_n_i,
-    input logic    fault_valid_i,
-    input logic [31:0] fault_addr_i,
-    input logic [3:0]  fault_wstrb_i,
-    input logic        fault_reserved_i,
-    ribp_if.slave   ribp,
-    sysctrl_if.dut sysctrl,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic         clk_i,
+    input logic         rst_n_i,
+    input logic         fault_valid_i,
+    input logic [31:0]  fault_addr_i,
+    input logic [3:0]   fault_wstrb_i,
+    input logic         fault_reserved_i,
+    ribp_if.slave       ribp,
+    sysctrl_if.dut      sysctrl,
     pll_ctrl_if.sysctrl pll_ctrl
     // verilog_format: on
 );
@@ -707,11 +707,14 @@ module ribp_sysctrl (
   always_comb begin
     s_ribp_rdata_d = s_ribp_rdata_q;
     unique case (ribp.addr[7:0])
-      // verilog_format: off
-      SYSCTRL_CORESEL_OFFSET:            s_ribp_rdata_d = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
-      SYSCTRL_IPSEL_OFFSET:              s_ribp_rdata_d = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
+      // verilog_format: off -- preserve reviewed column alignment
+      SYSCTRL_CORESEL_OFFSET:
+          s_ribp_rdata_d = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
+      SYSCTRL_IPSEL_OFFSET:
+          s_ribp_rdata_d = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
       SYSCTRL_PLL_CFG_OFFSET:            s_ribp_rdata_d = {29'd0, s_pll_cfg_q};
-      SYSCTRL_FAULT_STATUS_OFFSET:       s_ribp_rdata_d = {27'd0, s_fault_reason_q, s_fault_write_q, s_fault_pending_q};
+      SYSCTRL_FAULT_STATUS_OFFSET:
+          s_ribp_rdata_d = {27'd0, s_fault_reason_q, s_fault_write_q, s_fault_pending_q};
       SYSCTRL_FAULT_ADDR_OFFSET:         s_ribp_rdata_d = s_fault_addr_q;
       SYSCTRL_FAULT_COUNT_OFFSET:        s_ribp_rdata_d = s_fault_count_q;
       SYSCTRL_PLL_STATUS_OFFSET:         s_ribp_rdata_d = {
@@ -725,7 +728,8 @@ module ribp_sysctrl (
           s_pll_active_valid_q,
           s_pll_active_sel_q
       };
-      SYSCTRL_USER_CORE_RESET_OFFSET:    s_ribp_rdata_d = {{(32 - `USER_CORE_COUNT) {1'b0}}, s_user_reset_q};
+      SYSCTRL_USER_CORE_RESET_OFFSET:
+          s_ribp_rdata_d = {{(32 - `USER_CORE_COUNT) {1'b0}}, s_user_reset_q};
       SYSCTRL_USER_CORE_STATUS_OFFSET:   s_ribp_rdata_d = {
           20'd0,
           s_user_config_err_q,

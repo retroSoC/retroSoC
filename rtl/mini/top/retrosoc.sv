@@ -13,35 +13,35 @@
 `include "soc_irq_config.svh"
 
 module retrosoc (
-    // verilog_format: off
-    input  logic                           clk_i,
-    input  logic                           rst_n_i,
-    input  logic                           clk_aud_i,
-    input  logic                           rst_aud_n_i,
-    input  logic                           clkdiv4_i,
-    input  logic                           timebase_tick_i,
-    pll_ctrl_if.sysctrl                    pll_ctrl,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    input  logic        clk_aud_i,
+    input  logic        rst_aud_n_i,
+    input  logic        clkdiv4_i,
+    input  logic        timebase_tick_i,
+    pll_ctrl_if.sysctrl pll_ctrl,
 `ifdef HAVE_SRAM_IF
-    ram_if.master                          ram,
+    ram_if.master        ram,
 `endif
-    gpio_if.soc_pad                        gpio,
-    input  logic                           uart_rx_i,
-    output logic                           uart_tx_o,
-    xpi_if.dut                             xpi,
-    sdram_if.dut                           sdram,
-    input  logic                           jtag_tck_i,
-    input  logic                           jtag_tms_i,
-    input  logic                           jtag_tdi_i,
-    input  logic                           jtag_trst_n_i,
-    output logic                           jtag_tdo_o,
-    output logic                           wdg_reset_req_o,
-    output logic                           test_done_o,
-    output logic                           test_pass_o,
-    output logic [7:0]                     test_code_o
+    gpio_if.soc_pad      gpio,
+    input  logic         uart_rx_i,
+    output logic         uart_tx_o,
+    xpi_if.dut           xpi,
+    sdram_if.dut         sdram,
+    input  logic         jtag_tck_i,
+    input  logic         jtag_tms_i,
+    input  logic         jtag_tdi_i,
+    input  logic         jtag_trst_n_i,
+    output logic         jtag_tdo_o,
+    output logic         wdg_reset_req_o,
+    output logic         test_done_o,
+    output logic         test_pass_o,
+    output logic [7:0]   test_code_o
     // verilog_format: on
 );
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   // Generated fabric links use the common 32-bit AXI4 contract.
   `include "soc_fabric_interfaces.svh"
   ribp_if u_sdram_cfg_ribp_if ();

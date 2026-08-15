@@ -30,17 +30,17 @@ endinterface
 
 
 module ribp_i2s (
-    // verilog_format: off
-    input  logic                 clk_i,
-    input  logic                 rst_n_i,
-    input  logic                 clk_aud_i,
-    input  logic                 rst_aud_n_i,
-    output logic                 dma_tx_stall_o,
-    output logic                 dma_rx_stall_o,
-    ribp_if.slave                 ribp,
-    axi4_stream_if.sink           tx_axis,
-    axi4_stream_if.source         rx_axis,
-    i2s_if.dut                   i2s
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic          clk_i,
+    input  logic          rst_n_i,
+    input  logic          clk_aud_i,
+    input  logic          rst_aud_n_i,
+    output logic          dma_tx_stall_o,
+    output logic          dma_rx_stall_o,
+    ribp_if.slave         ribp,
+    axi4_stream_if.sink   tx_axis,
+    axi4_stream_if.source rx_axis,
+    i2s_if.dut            i2s
     // verilog_format: on
 );
 

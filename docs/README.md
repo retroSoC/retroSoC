@@ -9,6 +9,9 @@ the root README and subsystem guides.
   Docker, Nix, and manual open-source regression environments.
 - [misra-c-2012.md](misra-c-2012.md) defines the MISRA C:2012 Amendment 2
   baseline, scope, partial automation, and deviation process.
+- [rtl-coding-style.md](rtl-coding-style.md) is the normative self-owned RTL
+  policy; [rtl-coding-style-compliance.md](rtl-coding-style-compliance.md)
+  defines its executable audit and behavior-preserving migration process.
 - [pll-clock-control.md](pll-clock-control.md) describes the SYSCTRL PLL
   register protocol and software quiesce contract.
 - [hazard3-debug.md](hazard3-debug.md) defines the management Hazard3 JTAG

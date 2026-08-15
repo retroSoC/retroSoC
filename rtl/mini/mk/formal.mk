@@ -39,7 +39,7 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/clint_formal_props.sv \
                              $(RTL_PATH)/formal/dvp_formal.sv \
                              $(RTL_PATH)/formal/dvp_formal_props.sv \
-                             $(RTL_PATH)/top/bus.sv \
+                             $(RTL_PATH)/top/rib_bus.sv \
                              $(RTL_PATH)/top/rib_error_slave.sv \
                              $(RTL_PATH)/top/rib_if.sv \
                              $(RTL_PATH)/top/rib2ram.sv \
@@ -53,7 +53,7 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/gpio_reg.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/ribp_gpio.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/pll_ctrl_if.sv \
-                             $(ROOT_PATH)/rtl/ip/peripheral/sysctrl.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/ribp_sysctrl.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_if.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_reg.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_core.sv \
@@ -83,9 +83,10 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/multimedia/dvp_define.svh \
                              $(ROOT_PATH)/rtl/ip/multimedia/dvp_core.sv \
                              $(ROOT_PATH)/rtl/ip/multimedia/dvp_reg.sv \
-                             $(ROOT_PATH)/rtl/ip/multimedia/dvp.sv \
+                             $(ROOT_PATH)/rtl/ip/multimedia/axi4s_dvp.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/clkrst/counter.sv \
                              $(RTL_PATH)/top/rcu.sv \
+                             $(RTL_PATH)/top/pll_rcu_controller.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/ribp_if.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv \

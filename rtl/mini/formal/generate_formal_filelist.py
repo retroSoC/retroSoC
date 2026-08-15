@@ -43,7 +43,7 @@ def source_files(target: str) -> list[Path]:
             TOP / "rib2ribp.sv",
             TOP / "rib_error_slave.sv",
             TOP / "rib2ram.sv",
-            TOP / "bus.sv",
+            TOP / "rib_bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]
     if target == "rib_adapter":
@@ -67,7 +67,7 @@ def source_files(target: str) -> list[Path]:
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
-            PERIPHERAL / "sysctrl.sv",
+            PERIPHERAL / "ribp_sysctrl.sv",
             SCRIPT_DIR / "sysctrl_formal.sv",
         ]
     if target == "pll_rcu":
@@ -82,6 +82,7 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "pll_ctrl_if.sv",
             PERIPHERAL / "clint_timebase.sv",
             TOP / "rcu.sv",
+            TOP / "pll_rcu_controller.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
         ]
     if target == "gpio":

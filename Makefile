@@ -445,7 +445,8 @@ rtl-style-check:
 
 rtl-style-check-all:
 	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
-	  --profile owned --verible-verilog-lint $(VERIBLE_LINT)
+	  --profile owned --enforce-naming --audit $(ROOT_PATH)/rtl/rtl_style_audit.json \
+	  --verible-verilog-lint $(VERIBLE_LINT)
 
 rtl-readiness-check:
 	python3 $(ROOT_PATH)/scripts/check_rtl_readiness.py --root $(ROOT_PATH)

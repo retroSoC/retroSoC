@@ -18,7 +18,7 @@
 // tKHKL(max: 1.5ns) is meet
 //
 // tCPH(min: 50ns) -> 50 / 6.94 = ~7.2 so wait cycles need to >= ceil(7.2) = 8,
-// so 'r_cfg_wait' = 8 * 2 >= 16 in default, reset value is '18'
+// so 's_cfg_wait' = 8 * 2 >= 16 in default, reset value is '18'
 // for lower freq, can modify this value for performance tuning
 //
 // tCEM(max: 8us) is enough long for just 32bits xfer:
@@ -30,7 +30,7 @@
 //
 // tCHD(min: 20ns) > tACLK + tCLK
 // sclk keep 6.94 * 1.5 = 10.41 at least(no meet!)
-// need to set 'r_cfg_chd' = ceil(ceil(20 / 6.94) - 1.5) * 2 = 3, reset value is '4'
+// need to set 's_cfg_chd' = ceil(ceil(20 / 6.94) - 1.5) * 2 = 3, reset value is '4'
 // for lower freq, can modify this value for performance tuning
 //
 // tSP(min: 2ns) is meet
@@ -39,7 +39,7 @@
 `ifndef RIBP_PSRAM_DEF_SV
 `define RIBP_PSRAM_DEF_SV
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_PSRAM_WAIT 8'h00
 `define RIBP_PSRAM_CHD  8'h04
 `define RIBP_PSRAM_INIT 8'h08
@@ -70,49 +70,52 @@ endinterface
 
 
 module ribp_psram (
-    // verilog_format: off
-    input logic  clk_i,
-    input logic  rst_n_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic   clk_i,
+    input logic   rst_n_i,
     ribp_if.slave ribp,
-    psram_if.dut psram
+    psram_if.dut  psram
     // verilog_format: on
 );
 
-  // verilog_format: off
-  localparam FSM_IDLE  = 6'd0;
-  localparam FSM_WE_ST = 6'd1;
-  localparam FSM_WE    = 6'd2;
-  localparam FSM_RD_ST = 6'd3;
-  localparam FSM_RD    = 6'd4;
-  // verilog_format: on
+  // clk_i/rst_n_i drive configuration and memory transfers. Configuration
+  // accesses respond immediately; one memory transaction remains outstanding
+  // until the PSRAM core asserts ready, and no response errors are generated.
+  typedef enum logic [5:0] {
+    Idle       = 6'd0,
+    WriteStart = 6'd1,
+    Write      = 6'd2,
+    ReadStart  = 6'd3,
+    Read       = 6'd4
+  } psram_state_e;
 
   // reg
-  logic [ 4:0] r_cfg_wait;
-  logic [ 2:0] r_cfg_chd;
-  logic        r_cfg_init;
-  logic        s_cfg_reg_sel;
-  logic        s_mem_sel;
-  logic        s_mem_ready;
-  logic [31:0] s_mem_rdata;
+  logic         [ 4:0] s_cfg_wait;
+  logic         [ 2:0] s_cfg_chd;
+  logic                s_cfg_init;
+  logic                s_cfg_reg_sel;
+  logic                s_mem_sel;
+  logic                s_mem_ready;
+  logic         [31:0] s_mem_rdata;
 
-  logic        r_rd_st;
-  logic        r_wr_st;
-  logic [ 7:0] r_xfer_data_bit_cnt;
-  logic [ 5:0] r_fsm_state;
-  logic [23:0] r_mem_addr;
-  logic [31:0] r_mem_wdata;
+  logic                s_rd_st;
+  logic                s_wr_st;
+  logic         [ 7:0] s_xfer_data_bit_cnt;
+  psram_state_e        s_fsm_state;
+  logic         [23:0] s_mem_addr;
+  logic         [31:0] s_mem_wdata;
 
-  logic        s_psram_ce;
-  logic        s_psram_sio_oen;
-  logic [ 1:0] s_disp_addr_ofst;
-  logic [ 7:0] s_disp_xfer_bit_cnt;
-  logic [31:0] s_disp_wdata;
-  logic        s_init_done;
-  logic        s_core_idle;
-  logic        s_mem_valid_re;
+  logic                s_psram_ce;
+  logic                s_psram_sio_oen;
+  logic         [ 1:0] s_disp_addr_ofst;
+  logic         [ 7:0] s_disp_xfer_bit_cnt;
+  logic         [31:0] s_disp_wdata;
+  logic                s_init_done;
+  logic                s_core_idle;
+  logic                s_mem_valid_re;
 
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   assign psram.nss_o[0]   = (~s_init_done) || (s_init_done && ribp.addr[24:23] == 2'd0) ? s_psram_ce : 1'b1;
   assign psram.nss_o[1]   = (~s_init_done) || (s_init_done && ribp.addr[24:23] == 2'd1) ? s_psram_ce : 1'b1;
   assign psram.nss_o[2]   = (~s_init_done) || (s_init_done && ribp.addr[24:23] == 2'd2) ? s_psram_ce : 1'b1;
@@ -134,36 +137,38 @@ module ribp_psram (
     if (s_mem_sel) begin
       ribp.rdata = s_mem_rdata;
     end else if (ribp.addr[7:0] == `RIBP_PSRAM_WAIT) begin
-      ribp.rdata = {27'd0, r_cfg_wait};
+      ribp.rdata = {27'd0, s_cfg_wait};
     end else if (ribp.addr[7:0] == `RIBP_PSRAM_CHD) begin
-      ribp.rdata = {29'd0, r_cfg_chd};
+      ribp.rdata = {29'd0, s_cfg_chd};
     end else if (ribp.addr[7:0] == `RIBP_PSRAM_INIT) begin
-      ribp.rdata = {31'd0, r_cfg_init};
+      ribp.rdata = {31'd0, s_cfg_init};
     end
   end
 
   // wait cycles(mmio)
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
-    if (~rst_n_i) r_cfg_wait <= 5'd18;
+  // Configuration and transfer state share ordered request/reset priority, so
+  // these processes remain intact rather than splitting behavior across DFFs.
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (~rst_n_i) s_cfg_wait <= 5'd18;
     else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
              (ribp.addr[7:0] == `RIBP_PSRAM_WAIT)) begin
-      r_cfg_wait <= ribp.wdata[4:0];
+      s_cfg_wait <= ribp.wdata[4:0];
     end
   end
   // extra cycle for tCHD(mmio)
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
-    if (~rst_n_i) r_cfg_chd <= 3'd4;
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (~rst_n_i) s_cfg_chd <= 3'd4;
     else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
              (ribp.addr[7:0] == `RIBP_PSRAM_CHD)) begin
-      r_cfg_chd <= ribp.wdata[2:0];
+      s_cfg_chd <= ribp.wdata[2:0];
     end
   end
   // init device/switch qpi mode
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
-    if (~rst_n_i) r_cfg_init <= '0;
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (~rst_n_i) s_cfg_init <= '0;
     else if (ribp.valid && ribp.wstrb[0] && s_cfg_reg_sel &&
              (ribp.addr[7:0] == `RIBP_PSRAM_INIT)) begin
-      r_cfg_init <= ribp.wdata[0];
+      s_cfg_init <= ribp.wdata[0];
     end
   end
 
@@ -176,55 +181,55 @@ module ribp_psram (
       .re_o   (s_mem_valid_re)
   );
 
-  always_ff @(posedge clk_i, negedge rst_n_i) begin
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (~rst_n_i) begin
-      r_rd_st             <= '0;
-      r_wr_st             <= '0;
-      r_xfer_data_bit_cnt <= '0;
-      r_fsm_state         <= FSM_IDLE;
-      r_mem_addr          <= '0;
-      r_mem_wdata         <= '0;
+      s_rd_st             <= '0;
+      s_wr_st             <= '0;
+      s_xfer_data_bit_cnt <= '0;
+      s_fsm_state         <= Idle;
+      s_mem_addr          <= '0;
+      s_mem_wdata         <= '0;
     end else begin
       if (s_mem_sel) begin
         /* verilator lint_off CASEINCOMPLETE */
-        case (r_fsm_state)
-          FSM_IDLE: begin
+        case (s_fsm_state)
+          Idle: begin
             if (s_mem_valid_re && (|ribp.wstrb)) begin
-              r_fsm_state         <= FSM_WE_ST;
-              r_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
-              r_mem_addr          <= {1'b0, ribp.addr[22:0]} + {22'd0, s_disp_addr_ofst};
-              r_mem_wdata         <= s_disp_wdata;
+              s_fsm_state         <= WriteStart;
+              s_xfer_data_bit_cnt <= s_disp_xfer_bit_cnt;
+              s_mem_addr          <= {1'b0, ribp.addr[22:0]} + {22'd0, s_disp_addr_ofst};
+              s_mem_wdata         <= s_disp_wdata;
             end else if (s_mem_valid_re && (~(|ribp.wstrb))) begin
-              r_fsm_state         <= FSM_RD_ST;
-              r_xfer_data_bit_cnt <= 8'd32;
-              r_mem_addr          <= {1'b0, ribp.addr[22:0]};
-              r_mem_wdata         <= ribp.wdata;  // NOTE: no used
+              s_fsm_state         <= ReadStart;
+              s_xfer_data_bit_cnt <= 8'd32;
+              s_mem_addr          <= {1'b0, ribp.addr[22:0]};
+              s_mem_wdata         <= ribp.wdata;  // NOTE: no used
             end
           end
-          FSM_WE_ST: begin
+          WriteStart: begin
             if (s_core_idle) begin
-              r_wr_st     <= 1'b1;
-              r_fsm_state <= FSM_WE;
+              s_wr_st     <= 1'b1;
+              s_fsm_state <= Write;
             end
           end
-          FSM_WE: begin
-            r_wr_st <= 1'b0;
-            if (s_mem_ready) r_fsm_state <= FSM_IDLE;
+          Write: begin
+            s_wr_st <= 1'b0;
+            if (s_mem_ready) s_fsm_state <= Idle;
           end
-          FSM_RD_ST: begin
+          ReadStart: begin
             if (s_core_idle) begin
-              r_rd_st     <= 1'b1;
-              r_fsm_state <= FSM_RD;
+              s_rd_st     <= 1'b1;
+              s_fsm_state <= Read;
             end
           end
-          FSM_RD: begin
-            r_rd_st <= 1'b0;
-            if (s_mem_ready) r_fsm_state <= FSM_IDLE;
+          Read: begin
+            s_rd_st <= 1'b0;
+            if (s_mem_ready) s_fsm_state <= Idle;
           end
           default: begin
-            r_fsm_state <= FSM_IDLE;
-            r_rd_st     <= 1'b0;
-            r_wr_st     <= 1'b0;
+            s_fsm_state <= Idle;
+            s_rd_st     <= 1'b0;
+            s_wr_st     <= 1'b0;
           end
         endcase
       end
@@ -233,16 +238,16 @@ module ribp_psram (
   psram_core u_psram_core (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
-      .cfg_wait_i         (r_cfg_wait),
-      .cfg_chd_i          (r_cfg_chd),
-      .cfg_init_i         (r_cfg_init),
+      .cfg_wait_i         (s_cfg_wait),
+      .cfg_chd_i          (s_cfg_chd),
+      .cfg_init_i         (s_cfg_init),
       .mem_ready_o        (s_mem_ready),
-      .mem_addr_i         (r_mem_addr),
-      .mem_wdata_i        (r_mem_wdata),
+      .mem_addr_i         (s_mem_addr),
+      .mem_wdata_i        (s_mem_wdata),
       .mem_rdata_o        (s_mem_rdata),
-      .xfer_data_bit_cnt_i(r_xfer_data_bit_cnt),
-      .rd_st_i            (r_rd_st),
-      .wr_st_i            (r_wr_st),
+      .xfer_data_bit_cnt_i(s_xfer_data_bit_cnt),
+      .rd_st_i            (s_rd_st),
+      .wr_st_i            (s_wr_st),
       .init_done_o        (s_init_done),
       .idle_o             (s_core_idle),
       .psram_sclk_o       (psram.sck_o),

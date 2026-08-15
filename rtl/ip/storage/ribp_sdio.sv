@@ -32,19 +32,21 @@ endinterface
 
 
 module ribp_sdio (
-    // verilog_format: off
-    input logic  clk_i,
-    input logic  rst_n_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input logic   clk_i,
+    input logic   rst_n_i,
     ribp_if.slave ribp,
-    sdio_if.dut  sdio
+    sdio_if.dut   sdio
     // verilog_format: on
 );
 
-  logic dummy0;
-  logic dummy1;
+  // This placeholder accepts no RIBP requests (ready remains low) and reports
+  // no errors; all SDIO outputs are deliberately held inactive.
+  logic s_dummy_clk;
+  logic s_dummy_rst_n;
 
-  assign dummy0        = clk_i;
-  assign dummy1        = rst_n_i;
+  assign s_dummy_clk   = clk_i;
+  assign s_dummy_rst_n = rst_n_i;
   // ribp
   assign ribp.rdata    = '0;
   assign ribp.ready    = '0;

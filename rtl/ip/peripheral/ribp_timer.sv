@@ -2,7 +2,7 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module ribp_timer (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic  clk_i,
     input  logic  rst_n_i,
     input  logic  debug_halted_i,

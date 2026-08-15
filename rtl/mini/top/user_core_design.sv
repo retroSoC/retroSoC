@@ -22,11 +22,11 @@
 module user_core_design #(
     parameter int ID = 5'd31
 ) (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [31:0] irq_i,
-    ribp_if.master       ribp
+    ribp_if.master      ribp
     // verilog_format: on
 );
 

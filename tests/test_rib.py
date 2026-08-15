@@ -49,7 +49,7 @@ def test_bus_preserves_incr4_and_rejects_illegal_bursts(tmp_path: Path) -> None:
                 str(ROOT / "rtl/mini/top/rib2ribp.sv"),
                 str(ROOT / "rtl/mini/top/rib_error_slave.sv"),
                 str(ROOT / "rtl/mini/top/rib2ram.sv"),
-                str(ROOT / "rtl/mini/top/bus.sv"),
+                str(ROOT / "rtl/mini/top/rib_bus.sv"),
                 str(ROOT / "tests/rtl/rib_bus_tb.sv"),
                 "",
             ]

@@ -12,7 +12,7 @@
 `include "rib_defs.svh"
 
 module rib2apb (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic       clk_i,
     input  logic       rst_n_i,
     rib_if.slave       rib,

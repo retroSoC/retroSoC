@@ -47,7 +47,7 @@ def test_dvp_capture_framing(tmp_path: Path) -> None:
         str(ROOT / "rtl/tech/tc_clk.sv"),
         str(ip / "dvp_core.sv"),
         str(ip / "dvp_reg.sv"),
-        str(ip / "dvp.sv"),
+        str(ip / "axi4s_dvp.sv"),
         str(ROOT / "tests/rtl/dvp_tb.sv"),
     ]
     source_list = tmp_path / "dvp.fl"

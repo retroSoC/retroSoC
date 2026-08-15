@@ -4,7 +4,7 @@
 `ifndef RETROSOC_RIBP_I2C_DEFINE_SVH
 `define RETROSOC_RIBP_I2C_DEFINE_SVH
 
-// verilog_format: off
+// verilog_format: off -- preserve reviewed column alignment
 `define RIBP_I2C_CTRL                 8'h00
 `define RIBP_I2C_SCL_TIMING           8'h04
 `define RIBP_I2C_START_TIMING         8'h08

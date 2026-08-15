@@ -11,10 +11,10 @@ module gpio_reg #(
     parameter bit          HasPullUp     = 1'b0,
     parameter bit          HasPullDown   = 1'b0
 ) (
-    // verilog_format: off
-    input  logic               clk_i,
-    input  logic               rst_n_i,
-    ribp_if.slave              ribp,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic              clk_i,
+    input  logic              rst_n_i,
+    ribp_if.slave             ribp,
     input  logic [PinNum-1:0] data_in_i,
     input  logic [PinNum-1:0] intr_event_i,
     output logic [PinNum-1:0] data_out_o,
@@ -28,13 +28,13 @@ module gpio_reg #(
     output logic [PinNum-1:0] user_select_o,
     output logic [PinNum-1:0] user_handoff_o,
     output logic [PinNum-1:0] filter_enable_o,
-    output logic [15:0]        filter_div_o,
-    output logic [3:0]         filter_count_o,
+    output logic [15:0]       filter_div_o,
+    output logic [3:0]        filter_count_o,
     output logic [PinNum-1:0] intr_rise_enable_o,
     output logic [PinNum-1:0] intr_fall_enable_o,
     output logic [PinNum-1:0] intr_high_enable_o,
     output logic [PinNum-1:0] intr_low_enable_o,
-    output logic               irq_o
+    output logic              irq_o
     // verilog_format: on
 );
 
@@ -126,6 +126,7 @@ module gpio_reg #(
     end
   endfunction
 
+`ifndef SYNTHESIS
   initial begin
     if ((PinNum < 1) || (PinNum > 32)) begin
       $fatal(1, "gpio_reg: PinNum must be between 1 and 32");
@@ -135,6 +136,7 @@ module gpio_reg #(
       $fatal(1, "gpio_reg: register window bases must be distinct and 4 KiB aligned");
     end
   end
+`endif
 
   assign s_req = ribp.valid && !s_ribp_ready_q;
   assign s_write = |ribp.wstrb;

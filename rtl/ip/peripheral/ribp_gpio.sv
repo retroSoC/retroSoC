@@ -9,12 +9,12 @@ module ribp_gpio #(
     parameter bit          HasPullUp     = 1'b0,
     parameter bit          HasPullDown   = 1'b0
 ) (
-    // verilog_format: off
-    input  logic             clk_i,
-    input  logic             rst_n_i,
-    ribp_if.slave            ribp,
-    gpio_if.dut              gpio,
-    user_gpio_if.padctrl     user_gpio
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic         clk_i,
+    input  logic         rst_n_i,
+    ribp_if.slave        ribp,
+    gpio_if.dut          gpio,
+    user_gpio_if.padctrl user_gpio
     // verilog_format: on
 );
 

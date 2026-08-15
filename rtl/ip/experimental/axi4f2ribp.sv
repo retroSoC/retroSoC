@@ -8,8 +8,11 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
+// Inactive AXI-to-RIBP prototype. Its protocol behavior is intentionally
+// unimplemented and must not be enabled without a separate interface contract
+// and AXI/RIBP verification project.
 module axi4f2ribp (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        aclk_i,
     input  logic        aresetn_i,
     input  logic [31:0] awaddr_i,

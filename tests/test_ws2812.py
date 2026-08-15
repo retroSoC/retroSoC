@@ -100,7 +100,7 @@ def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> No
                 str(ROOT / "rtl/mini/top/rib_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "utils/fifo.sv"),
-                str(ROOT / "rtl/ip/peripheral/dma.sv"),
+                str(ROOT / "rtl/ip/peripheral/ribp_dma.sv"),
                 str(ROOT / "rtl/ip/peripheral/dma_core.sv"),
                 str(serial / "ws2812_if.sv"),
                 str(serial / "ws2812_reg.sv"),
