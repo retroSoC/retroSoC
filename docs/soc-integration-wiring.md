@@ -24,8 +24,10 @@ unsupported features, and unapproved connection syntax.
 
 SoC wrappers use the existing clusterIP interfaces for protocol boundaries,
 except for the self-owned UART0 `uart_if` under `rtl/ip/serial`.
-`apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
-only exposes the pad-side subset of `gpio_if`; neither module contains state.
+`apb4_system` is the APB4 platform subsystem (`u_apb4_system`); it is not a
+protocol bridge. `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and
+`gpio_pad_bridge` only exposes the pad-side subset of `gpio_if`; neither
+adapter contains state.
 
 ## UART flow-control alternate functions
 

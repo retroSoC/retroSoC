@@ -22,7 +22,7 @@ export YOSYS_KEEP_HIER_INST :=  "t:tc_clk*$$*" \
 								"t:core_*$$*" \
 								"t:bus*$$*" \
 								"t:ip_rib_wrapper*$$*" \
-								"t:ip_apb_wrapper*$$*" \
+								"t:apb4_system*$$*" \
 								"t:apb_spi_master*$$*" \
 								"t:spi_flash*$$*" \
 								"t:mem2apb*$$*" \

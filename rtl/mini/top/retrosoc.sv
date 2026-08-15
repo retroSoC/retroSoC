@@ -223,13 +223,13 @@ core_wrapper u_core_wrapper (
       .sdram   (sdram)
   );
 
-  ip_apb_wrapper u_ip_apb_wrapper (
+  apb4_system u_apb4_system (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .clk_aud_i      (clk_aud_i),
       .rst_aud_n_i    (rst_aud_n_i),
       .debug_halted_i (s_mgmt_debug_halted),
-      `include "soc_ip_apb_wrapper_fabric.svh"
+      `include "soc_apb4_system_fabric.svh"
       .pwm            (u_pwm_if),
       .ps2            (u_ps2_if),
       .ip_sel_i       (u_sysctrl_if.ip_sel_o),

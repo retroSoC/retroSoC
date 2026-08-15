@@ -66,6 +66,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     apb_response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
     fabric = (tmp_path / "rtl/soc_fabric_interfaces.svh").read_text(encoding="utf-8")
     bus_fabric = (tmp_path / "rtl/soc_bus_fabric.svh").read_text(encoding="utf-8")
+    apb_system_fabric = (tmp_path / "rtl/soc_apb4_system_fabric.svh").read_text(encoding="utf-8")
     irq_config = (tmp_path / "rtl/soc_irq_config.svh").read_text(encoding="utf-8")
     rib_irq = (tmp_path / "rtl/ribp_irq_bindings.svh").read_text(encoding="utf-8")
     apb_irq = (tmp_path / "rtl/soc_apb_irq_bindings.svh").read_text(encoding="utf-8")
@@ -112,6 +113,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".dma_axi4(u_dma_axi4_if)" in bus_fabric
     assert ".cfg_axi4(u_cfg_axi4_if)" in bus_fabric
     assert ".apb_axi4(u_apb_axi4_if)" in bus_fabric
+    assert ".axi4(u_apb_axi4_if)" in apb_system_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_USER_IRQ_MASK 32'h000EFBFC" in irq_config
     assert "`define SOC_IRQ_RIBP_WIDTH 14" in irq_config

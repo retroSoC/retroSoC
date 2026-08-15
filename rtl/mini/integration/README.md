@@ -5,8 +5,11 @@ that is not part of the software address-map ABI or the package pad map.
 
 The topology generator validates RIBP configuration and APB target ownership against
 `../address_map/memory_map.json` and emits generated SystemVerilog include
-files for `ip_ribp_wrapper.sv`, `ip_apb_wrapper.sv`, `axi42apb.sv`, and
-`retrosoc.sv`. Generated fabric links are explicit 32-bit AXI4 interfaces.
+files for `ip_ribp_wrapper.sv`, `apb4_system.sv`, `axi42apb.sv`, and
+`retrosoc.sv`. The APB4 platform subsystem is `apb4_system`, instantiated as
+`u_apb4_system`; its AXI4 configuration port is wired by generated
+`soc_apb4_system_fabric.svh`. `ip_ribp_wrapper` remains the RIBP peripheral
+container. Generated fabric links are explicit 32-bit AXI4 interfaces.
 Interface arrays are confined to the AXI4 bus implementation and flattened by
 the existing synthesis/export flow before FPGA or netlist simulation.
 

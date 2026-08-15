@@ -15,7 +15,7 @@
 `include "soc_irq_config.svh"
 `include "archinfo_integration_metadata.svh"
 
-module ip_apb_wrapper (
+module apb4_system (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic                          clk_i,
     input  logic                          rst_n_i,

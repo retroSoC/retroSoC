@@ -934,7 +934,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
         + render_fabric_connection(fabric_links, "dma", "dma_axi4"),
     )
     atomic_write(
-        rtl_dir / "soc_ip_apb_wrapper_fabric.svh",
+        rtl_dir / "soc_apb4_system_fabric.svh",
         render_fabric_connection(fabric_links, "apb", "axi4"),
     )
     atomic_write(rtl_dir / "soc_gpio_alt_bindings.svh", render_gpio_bindings(gpio_functions))

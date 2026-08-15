@@ -21,7 +21,7 @@
 /top/retrosoc_asic.sv
 /top/onchip_ram.sv
 /top/ip_ribp_wrapper.sv
-/top/ip_apb_wrapper.sv
+/top/apb4_system.sv
 /top/rib_bus.sv
 /top/axi4_bus.sv
 /top/rcu.sv

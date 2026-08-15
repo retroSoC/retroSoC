@@ -78,3 +78,9 @@ SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 generated register offsets, RIBP timing, control-plane behavior, and
 verification contract are documented in
 [RIBP System Control](../docs/ip/sysctrl.md).
+
+The Mini SoC APB4 platform block is `apb4_system` in `rtl/mini/top`. It owns
+archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, and the user-IP APB window.
+`ip_ribp_wrapper` remains the RIBP peripheral container. Topology generation
+and the `soc_apb4_system_fabric.svh` include are documented in
+[Mini SoC Topology](mini/integration/README.md).
