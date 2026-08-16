@@ -22,11 +22,14 @@ module clint_formal_design (
     // verilog_format: on
 );
 
-  ribp_if ribp ();
-  (* anyseq *)logic        f_rib_valid;
-  (* anyseq *)logic [31:0] f_rib_addr;
-  (* anyseq *)logic [31:0] f_rib_wdata;
-  (* anyseq *)logic [ 3:0] f_rib_wstrb;
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
+  (* anyseq *)logic        f_apb_sel;
+  (* anyseq *)logic [31:0] f_apb_addr;
+  (* anyseq *)logic [31:0] f_apb_wdata;
+  (* anyseq *)logic [ 3:0] f_apb_pstrb;
   (* anyseq *)logic        f_tick;
   logic        s_mtime_load;
   logic [63:0] s_mtime_load_value;
@@ -35,17 +38,20 @@ module clint_formal_design (
   logic [63:0] s_mtimecmp         [0:1];
   logic [ 1:0] s_timer_irq;
 
-  assign ribp.valid        = f_rib_valid;
-  assign ribp.addr         = f_rib_addr;
-  assign ribp.wdata        = f_rib_wdata;
-  assign ribp.wstrb        = f_rib_wstrb;
+  assign apb4.psel         = f_apb_sel;
+  assign apb4.penable      = f_apb_sel;
+  assign apb4.pwrite       = |f_apb_pstrb;
+  assign apb4.paddr        = f_apb_addr;
+  assign apb4.pwdata       = f_apb_wdata;
+  assign apb4.pstrb        = f_apb_pstrb;
+  assign apb4.pprot        = 3'b000;
 
-  assign rib_valid         = ribp.valid;
-  assign rib_addr          = ribp.addr;
-  assign rib_wdata         = ribp.wdata;
-  assign rib_wstrb         = ribp.wstrb;
-  assign rib_ready         = ribp.ready;
-  assign rib_resp_err      = ribp.resp_err;
+  assign rib_valid         = apb4.psel;
+  assign rib_addr          = apb4.paddr;
+  assign rib_wdata         = apb4.pwdata;
+  assign rib_wstrb         = apb4.pstrb;
+  assign rib_ready         = apb4.pready;
+  assign rib_resp_err      = apb4.pslverr;
   assign tick              = f_tick;
   assign mtime             = s_mtime;
   assign mtime_load        = s_mtime_load;
@@ -60,7 +66,7 @@ module clint_formal_design (
   ) u_clint_reg (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
-      .ribp              (ribp),
+      .apb4              (apb4),
       .mtime_i           (s_mtime),
       .mtime_load_o      (s_mtime_load),
       .mtime_load_value_o(s_mtime_load_value),

@@ -38,14 +38,17 @@ module sysctrl_formal_design (
     output logic [ 7:0] test_code
 );
 
-  ribp_if rib ();
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
 
-  (* anyseq *)logic        f_rib_valid;
-  (* anyseq *)logic [31:0] f_rib_addr;
-  (* anyseq *)logic [31:0] f_rib_wdata;
-  (* anyseq *)logic [ 3:0] f_rib_wstrb;
+  (* anyseq *)logic        f_apb_sel;
+  (* anyseq *)logic [31:0] f_apb_addr;
+  (* anyseq *)logic [31:0] f_apb_wdata;
+  (* anyseq *)logic [ 3:0] f_apb_pstrb;
   (* anyseq *)logic        f_pll_req_ready;
   (* anyseq *)logic [ 2:0] f_pll_active_sel;
   (* anyseq *)logic        f_pll_active_valid;
@@ -59,10 +62,13 @@ module sysctrl_formal_design (
   (* anyseq *)logic [ 3:0] f_fault_wstrb;
   (* anyseq *)logic        f_fault_reserved;
 
-  assign rib.valid = f_rib_valid;
-  assign rib.addr = f_rib_addr;
-  assign rib.wdata = f_rib_wdata;
-  assign rib.wstrb = f_rib_wstrb;
+  assign apb4.psel = f_apb_sel;
+  assign apb4.penable = f_apb_sel;
+  assign apb4.pwrite = |f_apb_pstrb;
+  assign apb4.paddr = f_apb_addr;
+  assign apb4.pwdata = f_apb_wdata;
+  assign apb4.pstrb = f_apb_pstrb;
+  assign apb4.pprot = 3'b000;
   assign sysctrl.user_bus_idle_i = 1'b1;
   assign sysctrl.fault_access_i = 1'b0;
   assign sysctrl.fault_master_i = '0;
@@ -70,7 +76,7 @@ module sysctrl_formal_design (
   assign sysctrl.perf_mgmt_wait_i = '0;
   assign sysctrl.perf_user_wait_i = '0;
   assign sysctrl.perf_dma_wait_i = '0;
-  assign sysctrl.perf_ribp_wait_i = '0;
+  assign sysctrl.perf_apb4_wait_i = '0;
   assign sysctrl.perf_apb_wait_i = '0;
   assign sysctrl.perf_sdram_wait_i = '0;
   assign sysctrl.perf_psram_wait_i = '0;
@@ -85,11 +91,11 @@ module sysctrl_formal_design (
   assign pll_ctrl.rsp_valid_i = f_pll_rsp_valid;
   assign pll_ctrl.capable_i = f_pll_capable;
 
-  assign rib_valid = rib.valid;
-  assign rib_addr = rib.addr;
-  assign rib_wdata = rib.wdata;
-  assign rib_wstrb = rib.wstrb;
-  assign rib_ready = rib.ready;
+  assign rib_valid = apb4.psel;
+  assign rib_addr = apb4.paddr;
+  assign rib_wdata = apb4.pwdata;
+  assign rib_wstrb = apb4.pstrb;
+  assign rib_ready = apb4.pready;
   assign ip_sel = sysctrl.ip_sel_o;
   assign core_sel = u_dut.u_sysctrl_core.s_sysctrl_coresel_q;
   assign user_reset = {{(32 - `USER_CORE_COUNT) {1'b0}}, u_dut.u_sysctrl_core.s_user_reset_q};
@@ -117,14 +123,14 @@ module sysctrl_formal_design (
   assign test_pass = sysctrl.test_pass_o;
   assign test_code = sysctrl.test_code_o;
 
-  ribp_sysctrl u_dut (
+  apb4_sysctrl u_dut (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .fault_valid_i   (f_fault_valid),
       .fault_addr_i    (f_fault_addr),
       .fault_wstrb_i   (f_fault_wstrb),
       .fault_reserved_i(f_fault_reserved),
-      .ribp            (rib),
+      .apb4            (apb4),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );

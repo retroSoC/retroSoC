@@ -97,6 +97,7 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/clkrst/counter.sv \
                              $(RTL_PATH)/top/rcu.sv \
                              $(RTL_PATH)/top/pll_rcu_controller.sv \
+                             $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/apb4_if.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/ribp_if.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv \

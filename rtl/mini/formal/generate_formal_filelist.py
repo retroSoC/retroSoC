@@ -31,6 +31,7 @@ def target_defines(target: str) -> list[str]:
 def source_files(target: str) -> list[Path]:
     common = [
         COMMON_RTL / "interface/axi4_if.sv",
+        COMMON_RTL / "interface/apb4_if.sv",
         COMMON_RTL / "interface/ribp_if.sv",
         COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",
@@ -106,7 +107,7 @@ def source_files(target: str) -> list[Path]:
         ]
     if target == "ws2812":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/fifo.sv",
             SERIAL / "ws2812_if.sv",
@@ -117,7 +118,7 @@ def source_files(target: str) -> list[Path]:
         ]
     if target == "uart":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/edge_det.sv",
@@ -134,7 +135,7 @@ def source_files(target: str) -> list[Path]:
         ]
     if target == "i2c":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/fifo.sv",
             COMMON_RTL / "cdc/cdc_sync.sv",
@@ -147,7 +148,7 @@ def source_files(target: str) -> list[Path]:
         ]
     if target == "timer":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "clkrst/counter.sv",
             PERIPHERAL / "timer_core.sv",
@@ -157,7 +158,7 @@ def source_files(target: str) -> list[Path]:
         ]
     if target == "clint":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "clkrst/counter.sv",
             PERIPHERAL / "clint_if.sv",
@@ -168,7 +169,8 @@ def source_files(target: str) -> list[Path]:
         ]
     if target == "dvp":
         return [
-            COMMON_RTL / "interface/ribp_if.sv", COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "utils/register.sv",
             ROOT / "rtl/ip/multimedia/dvp_define.svh",
             ROOT / "rtl/ip/multimedia/dvp_reg.sv",
             SCRIPT_DIR / "dvp_formal.sv",

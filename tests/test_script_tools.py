@@ -267,12 +267,14 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/top/pll_rcu_controller.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/gpio_core.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/gpio_reg.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/apb4_gpio.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/user_gpio_if.sv" in gpio.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio.files
     assert ROOT / "rtl/mini/formal/gpio_formal.sv" in gpio.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv" in ws2812.files
     assert ROOT / "rtl/ip/serial/apb4_ws2812.sv" in ws2812.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
     assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files

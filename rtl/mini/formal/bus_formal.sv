@@ -31,6 +31,7 @@ module bus_formal_design (
 );
 
   ribp_if mgmt_ribp ();
+  rib_if mgmt_rib ();
   rib_if user_rib ();
   rib_if dma_rib ();
   rib_if rib ();
@@ -188,10 +189,17 @@ module bus_formal_design (
   assign rib_cmd_len    = rib.cmd_len;
   assign apb_valid      = apb_rib.cmd_valid;
 
+  ribp2rib u_mgmt_ribp2rib (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .ribp   (mgmt_ribp),
+      .rib    (mgmt_rib)
+  );
+
   rib_bus u_dut (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .mgmt_ribp        (mgmt_ribp),
+      .mgmt_rib         (mgmt_rib),
       .user_rib         (user_rib),
       .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
@@ -210,7 +218,7 @@ module bus_formal_design (
       .perf_mgmt_wait_o (),
       .perf_user_wait_o (),
       .perf_dma_wait_o  (),
-      .perf_ribp_wait_o (),
+      .perf_apb4_wait_o (),
       .perf_apb_wait_o  (),
       .perf_sdram_wait_o(),
       .perf_psram_wait_o(),
