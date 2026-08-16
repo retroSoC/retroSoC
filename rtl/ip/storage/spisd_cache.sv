@@ -26,11 +26,17 @@ module spisd_cache (
     input logic         sd_wr_data_req_i,
     output logic [7:0]  sd_wr_data_o,
     input logic         sd_wr_busy_i,
-    ribp_if.slave       ribp
+    input  logic        req_valid_i,
+    output logic        req_ready_o,
+    input  logic [31:0] req_addr_i,
+    input  logic [31:0] req_wdata_i,
+    input  logic [ 3:0] req_wstrb_i,
+    output logic [31:0] req_rdata_o,
+    output logic        req_resp_err_o
     // verilog_format: on
 );
 
-  // This single-clock cache accepts one RIBP request through its state machine;
+  // This single-clock cache accepts one word request through its state machine;
   // cache misses backpressure until media fill/writeback completes. It reports
   // no response errors.
   typedef enum logic [1:0] {
@@ -60,11 +66,11 @@ module spisd_cache (
 
   // io
   assign sd_wr_data_o    = s_sd_wr_data_q;
-  assign ribp.rdata      = s_cache_data_q[s_cache_index];
+  assign req_rdata_o     = s_cache_data_q[s_cache_index];
   // cache
-  assign s_cache_index   = ribp.addr[8:2];
-  assign s_cache_mem_hit = ~mode_i && (ribp.addr[27:9] == s_cache_tag_q[18:0]);
-  assign s_cache_byp_hit = mode_i && (ribp.addr == s_cache_tag_q);
+  assign s_cache_index   = req_addr_i[8:2];
+  assign s_cache_mem_hit = ~mode_i && (req_addr_i[27:9] == s_cache_tag_q[18:0]);
+  assign s_cache_byp_hit = mode_i && (req_addr_i == s_cache_tag_q);
   assign s_cache_fsm_q   = cache_state_e'(s_cache_fsm_bits_q);
 
   always_comb begin
@@ -84,14 +90,14 @@ module spisd_cache (
     s_sd_wr_data_d  = s_sd_wr_data_q;
     sd_addr_o       = '0;
     // mem_if
-    ribp.ready      = '0;
-    ribp.resp_err   = 1'b0;
+    req_ready_o     = '0;
+    req_resp_err_o  = 1'b0;
     // wr sync
     wr_sync_done_o  = '0;
     unique case (s_cache_fsm_q)
       Idle: begin
         if (init_done_i) begin
-          if (ribp.valid) s_cache_fsm_d = CompareTag;
+          if (req_valid_i) s_cache_fsm_d = CompareTag;
           // sw wr sync
           else if (wr_sync_i && s_cache_dirty_q) begin
             s_cache_fsm_d   = WriteBack;
@@ -104,26 +110,26 @@ module spisd_cache (
         if ((s_cache_mem_hit || s_cache_byp_hit) && s_cache_valid_q) begin
           if (s_wr_sync_q) wr_sync_done_o = 1'b1;  // wr sync oper
           else begin
-            ribp.ready = 1'b1;  // nomral oper
+            req_ready_o = 1'b1;  // nomral oper
             // write oper, set dirty
-            if (|ribp.wstrb) begin
+            if (|req_wstrb_i) begin
               s_cache_dirty_d = 1'b1;
-              if (ribp.wstrb[0]) s_cache_data_d[s_cache_index][7:0] = ribp.wdata[7:0];
-              if (ribp.wstrb[1]) s_cache_data_d[s_cache_index][15:8] = ribp.wdata[15:8];
-              if (ribp.wstrb[2]) s_cache_data_d[s_cache_index][23:16] = ribp.wdata[23:16];
-              if (ribp.wstrb[3]) s_cache_data_d[s_cache_index][31:24] = ribp.wdata[31:24];
+              if (req_wstrb_i[0]) s_cache_data_d[s_cache_index][7:0] = req_wdata_i[7:0];
+              if (req_wstrb_i[1]) s_cache_data_d[s_cache_index][15:8] = req_wdata_i[15:8];
+              if (req_wstrb_i[2]) s_cache_data_d[s_cache_index][23:16] = req_wdata_i[23:16];
+              if (req_wstrb_i[3]) s_cache_data_d[s_cache_index][31:24] = req_wdata_i[31:24];
             end
           end
           s_cache_fsm_d = Idle;
         end else begin
           // need to update tag line info
           s_cache_valid_d = 1'b1;
-          s_cache_dirty_d = |ribp.wstrb;
+          s_cache_dirty_d = |req_wstrb_i;
           // tag line is clean
           if (s_cache_valid_q == 1'b0 || s_cache_dirty_q == 1'b0) begin
             s_cache_fsm_d = Allocate;
-            if (~mode_i) s_cache_tag_d = {13'd0, ribp.addr[27:9]};
-            else s_cache_tag_d = ribp.addr;
+            if (~mode_i) s_cache_tag_d = {13'd0, req_addr_i[27:9]};
+            else s_cache_tag_d = req_addr_i;
           end else begin
             // need to flush data into sd card sectors
             s_cache_fsm_d = WriteBack;
@@ -165,8 +171,8 @@ module spisd_cache (
               s_word_data_d = s_cache_data_q[s_line_cnt_d];
               if (s_line_cnt_q == 7'd127) begin
                 s_cache_fsm_d = Allocate;
-                if (~mode_i) s_cache_tag_d = {13'd0, ribp.addr[27:9]};
-                else s_cache_tag_d = ribp.addr;
+                if (~mode_i) s_cache_tag_d = {13'd0, req_addr_i[27:9]};
+                else s_cache_tag_d = req_addr_i;
               end
             end else begin
               s_word_cnt_d  = s_word_cnt_q + 1'b1;

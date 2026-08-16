@@ -48,14 +48,14 @@ def test_psram_controller_data_integrity_and_fault_isolation(tmp_path: Path) -> 
             "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),
             "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl/interface"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
-            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_addr_gen.sv"),
             str(ROOT / "rtl/ip/memory/psram_pkg.sv"),
             str(ROOT / "rtl/ip/memory/psram_axi4.sv"),
             str(ROOT / "rtl/ip/memory/psram_core.sv"),
             str(ROOT / "rtl/ip/memory/psram_phy.sv"),
             str(ROOT / "rtl/ip/memory/psram_reg.sv"),
-            str(ROOT / "rtl/ip/memory/ribp_psram.sv"),
+            str(ROOT / "rtl/ip/memory/apb4_psram.sv"),
             str(ROOT / "rtl/mini/dv/model/ESP_PSRAM64H.sv"),
             str(ROOT / "tests/rtl/psram_tb.sv"),
             "-Mdir",
@@ -82,7 +82,7 @@ def test_psram_handwritten_register_offsets_match_hal() -> None:
     rtl_offsets = {
         name: int(value, 16)
         for name, value in re.findall(
-            r"`define\s+RIBP_PSRAM_([A-Z0-9_]+)\s+12'h([0-9A-Fa-f]+)",
+            r"`define\s+APB4_PSRAM_([A-Z0-9_]+)\s+12'h([0-9A-Fa-f]+)",
             rtl_text,
         )
     }

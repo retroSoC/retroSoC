@@ -1,7 +1,7 @@
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-module ribp_sysctrl (
+module apb4_sysctrl (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic         clk_i,
     input  logic         rst_n_i,
@@ -9,7 +9,7 @@ module ribp_sysctrl (
     input  logic [31:0]  fault_addr_i,
     input  logic [3:0]   fault_wstrb_i,
     input  logic         fault_reserved_i,
-    ribp_if.slave        ribp,
+    apb4_if.slave        apb4,
     sysctrl_if.dut       sysctrl,
     pll_ctrl_if.sysctrl  pll_ctrl
     // verilog_format: on
@@ -26,7 +26,7 @@ module ribp_sysctrl (
   sysctrl_reg u_sysctrl_reg (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .ribp             (ribp),
+      .apb4             (apb4),
       .write_valid_o    (s_write_valid),
       .write_offset_o   (s_write_offset),
       .write_data_o     (s_write_data),

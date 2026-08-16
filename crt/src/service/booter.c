@@ -104,30 +104,30 @@ void rs_app_info(void) {
 
     printf("Memory Map IO Device:\n");
     printf("                       1 x GPIO(32PIN)   @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_GPIO_ADMIN_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_GPIO_ADMIN_BASE);
     printf("                       1 x UART0         @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_UART0_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_UART0_BASE);
     printf("                       2 x TIMER(0,1)    @%p,%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_TIM0_BASE, (void *)(uintptr_t)RS_SOC_RIBP_TIM1_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_TIM0_BASE, (void *)(uintptr_t)RS_SOC_APB4_TIM1_BASE);
     printf("                       1 x PSRAM         @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_PSRAM_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_PSRAM_BASE);
     printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
     printf("                       1 x I2C0          @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_I2C0_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_I2C0_BASE);
     printf("                       1 x I2S           @%p\n", (void *)&reg_i2s_mode);
     printf("                       1 x WS2812        @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_WS2812_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
     printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
     printf("                       1 x DMA           @%p\n", (void *)&reg_dma_mode);
     printf("                       1 x SYSCTRL       @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_SYSCTRL_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_SYSCTRL_BASE);
     printf("                       1 x CLINT         @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_CLINT_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
     printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);
     printf("                       1 x DVP           @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_DVP_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_DVP_BASE);
     printf("                       1 x I2C1          @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_I2C1_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_I2C1_BASE);
     printf("                       1 x ARCHINFO      @%p\n",
            (void *)(uintptr_t)RS_SOC_APB_ARCHINFO_BASE);
     printf("                       1 x RNG           @%p\n",

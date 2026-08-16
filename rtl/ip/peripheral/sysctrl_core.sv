@@ -27,43 +27,43 @@ module sysctrl_core (
 
   typedef logic [7:0] sysctrl_offset_t;
 
-  localparam sysctrl_offset_t CoreSel = sysctrl_offset_t'(`RIBP_SYSCTRL__CORESEL);
-  localparam sysctrl_offset_t IpSel = sysctrl_offset_t'(`RIBP_SYSCTRL__IPSEL);
-  localparam sysctrl_offset_t PllCfg = sysctrl_offset_t'(`RIBP_SYSCTRL__PLL_CFG);
-  localparam sysctrl_offset_t PllCmd = sysctrl_offset_t'(`RIBP_SYSCTRL__PLL_CMD);
-  localparam sysctrl_offset_t FaultStatus = sysctrl_offset_t'(`RIBP_SYSCTRL__FAULT_STATUS);
-  localparam sysctrl_offset_t FaultAddr = sysctrl_offset_t'(`RIBP_SYSCTRL__FAULT_ADDR);
-  localparam sysctrl_offset_t FaultCount = sysctrl_offset_t'(`RIBP_SYSCTRL__FAULT_COUNT);
-  localparam sysctrl_offset_t PllStatus = sysctrl_offset_t'(`RIBP_SYSCTRL__PLL_STATUS);
-  localparam sysctrl_offset_t UserCoreReset = sysctrl_offset_t'(`RIBP_SYSCTRL__USER_CORE_RESET);
-  localparam sysctrl_offset_t UserCoreStatus = sysctrl_offset_t'(`RIBP_SYSCTRL__USER_CORE_STATUS);
-  localparam sysctrl_offset_t FaultMaster = sysctrl_offset_t'(`RIBP_SYSCTRL__FAULT_MASTER);
-  localparam sysctrl_offset_t FaultDetail = sysctrl_offset_t'(`RIBP_SYSCTRL__FAULT_DETAIL);
-  localparam sysctrl_offset_t PerfCtrl = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_CTRL);
-  localparam sysctrl_offset_t PerfMgmtWaitLo = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_MGMT_WAIT_LO);
-  localparam sysctrl_offset_t PerfMgmtWaitHi = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_MGMT_WAIT_HI);
-  localparam sysctrl_offset_t PerfUserWaitLo = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_USER_WAIT_LO);
-  localparam sysctrl_offset_t PerfUserWaitHi = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_USER_WAIT_HI);
-  localparam sysctrl_offset_t PerfDmaWaitLo = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_DMA_WAIT_LO);
-  localparam sysctrl_offset_t PerfDmaWaitHi = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_DMA_WAIT_HI);
-  localparam sysctrl_offset_t PerfRibpWaitLo = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_RIBP_WAIT_LO);
-  localparam sysctrl_offset_t PerfRibpWaitHi = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_RIBP_WAIT_HI);
-  localparam sysctrl_offset_t PerfApbWaitLo = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_APB_WAIT_LO);
-  localparam sysctrl_offset_t PerfApbWaitHi = sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_APB_WAIT_HI);
+  localparam sysctrl_offset_t CoreSel = sysctrl_offset_t'(`APB4_SYSCTRL__CORESEL);
+  localparam sysctrl_offset_t IpSel = sysctrl_offset_t'(`APB4_SYSCTRL__IPSEL);
+  localparam sysctrl_offset_t PllCfg = sysctrl_offset_t'(`APB4_SYSCTRL__PLL_CFG);
+  localparam sysctrl_offset_t PllCmd = sysctrl_offset_t'(`APB4_SYSCTRL__PLL_CMD);
+  localparam sysctrl_offset_t FaultStatus = sysctrl_offset_t'(`APB4_SYSCTRL__FAULT_STATUS);
+  localparam sysctrl_offset_t FaultAddr = sysctrl_offset_t'(`APB4_SYSCTRL__FAULT_ADDR);
+  localparam sysctrl_offset_t FaultCount = sysctrl_offset_t'(`APB4_SYSCTRL__FAULT_COUNT);
+  localparam sysctrl_offset_t PllStatus = sysctrl_offset_t'(`APB4_SYSCTRL__PLL_STATUS);
+  localparam sysctrl_offset_t UserCoreReset = sysctrl_offset_t'(`APB4_SYSCTRL__USER_CORE_RESET);
+  localparam sysctrl_offset_t UserCoreStatus = sysctrl_offset_t'(`APB4_SYSCTRL__USER_CORE_STATUS);
+  localparam sysctrl_offset_t FaultMaster = sysctrl_offset_t'(`APB4_SYSCTRL__FAULT_MASTER);
+  localparam sysctrl_offset_t FaultDetail = sysctrl_offset_t'(`APB4_SYSCTRL__FAULT_DETAIL);
+  localparam sysctrl_offset_t PerfCtrl = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_CTRL);
+  localparam sysctrl_offset_t PerfMgmtWaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_MGMT_WAIT_LO);
+  localparam sysctrl_offset_t PerfMgmtWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_MGMT_WAIT_HI);
+  localparam sysctrl_offset_t PerfUserWaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_USER_WAIT_LO);
+  localparam sysctrl_offset_t PerfUserWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_USER_WAIT_HI);
+  localparam sysctrl_offset_t PerfDmaWaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_DMA_WAIT_LO);
+  localparam sysctrl_offset_t PerfDmaWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_DMA_WAIT_HI);
+  localparam sysctrl_offset_t PerfApb4WaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_WAIT_LO);
+  localparam sysctrl_offset_t PerfApb4WaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_WAIT_HI);
+  localparam sysctrl_offset_t PerfApbWaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB_WAIT_LO);
+  localparam sysctrl_offset_t PerfApbWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB_WAIT_HI);
   localparam sysctrl_offset_t PerfSdramWaitLo =
-      sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_SDRAM_WAIT_LO);
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDRAM_WAIT_LO);
   localparam sysctrl_offset_t PerfSdramWaitHi =
-      sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_SDRAM_WAIT_HI);
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDRAM_WAIT_HI);
   localparam sysctrl_offset_t PerfPsramWaitLo =
-      sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_PSRAM_WAIT_LO);
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_PSRAM_WAIT_LO);
   localparam sysctrl_offset_t PerfPsramWaitHi =
-      sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_PSRAM_WAIT_HI);
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_PSRAM_WAIT_HI);
   localparam sysctrl_offset_t PerfFlashWaitLo =
-      sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_FLASH_WAIT_LO);
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_FLASH_WAIT_LO);
   localparam sysctrl_offset_t PerfFlashWaitHi =
-      sysctrl_offset_t'(`RIBP_SYSCTRL__PERF_FLASH_WAIT_HI);
-  localparam sysctrl_offset_t TestStatus = sysctrl_offset_t'(`RIBP_SYSCTRL__TEST_STATUS);
-  localparam sysctrl_offset_t RtcWakeStatus = sysctrl_offset_t'(`RIBP_SYSCTRL__RTC_WAKE_STATUS);
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_FLASH_WAIT_HI);
+  localparam sysctrl_offset_t TestStatus = sysctrl_offset_t'(`APB4_SYSCTRL__TEST_STATUS);
+  localparam sysctrl_offset_t RtcWakeStatus = sysctrl_offset_t'(`APB4_SYSCTRL__RTC_WAKE_STATUS);
 
   logic [`USER_CORESEL_WIDTH-1:0] s_sysctrl_coresel_d, s_sysctrl_coresel_q;
   logic [`USER_CORE_COUNT-1:0] s_user_reset_d, s_user_reset_q;
@@ -91,7 +91,7 @@ module sysctrl_core (
   logic [63:0] s_perf_mgmt_wait_d, s_perf_mgmt_wait_q;
   logic [63:0] s_perf_user_wait_d, s_perf_user_wait_q;
   logic [63:0] s_perf_dma_wait_d, s_perf_dma_wait_q;
-  logic [63:0] s_perf_ribp_wait_d, s_perf_ribp_wait_q;
+  logic [63:0] s_perf_apb4_wait_d, s_perf_apb4_wait_q;
   logic [63:0] s_perf_apb_wait_d, s_perf_apb_wait_q;
   logic [63:0] s_perf_sdram_wait_d, s_perf_sdram_wait_q;
   logic [63:0] s_perf_psram_wait_d, s_perf_psram_wait_q;
@@ -199,9 +199,9 @@ module sysctrl_core (
 
   assign s_pll_cfg_write_en = write_valid_i && (write_offset_i == PllCfg) && write_strobe_i[0];
   assign s_pll_apply = write_valid_i && (write_offset_i == PllCmd) && write_strobe_i[0] &&
-                       write_data_i[`RIBP_SYSCTRL__PLL_CMD_APPLY];
+                       write_data_i[`APB4_SYSCTRL__PLL_CMD_APPLY];
   assign s_pll_clear_err = write_valid_i && (write_offset_i == PllCmd) && write_strobe_i[0] &&
-                           write_data_i[`RIBP_SYSCTRL__PLL_CMD_CLEAR_ERROR];
+                           write_data_i[`APB4_SYSCTRL__PLL_CMD_CLEAR_ERROR];
   assign s_pll_rsp_accept = pll_ctrl.rsp_valid_i;
 
   always_comb begin
@@ -251,7 +251,7 @@ module sysctrl_core (
 
   assign s_fault_stat_clear = write_valid_i && (write_offset_i == FaultStatus) &&
                               write_strobe_i[0] &&
-                              write_data_i[`RIBP_SYSCTRL__FAULT_STATUS_PENDING];
+                              write_data_i[`APB4_SYSCTRL__FAULT_STATUS_PENDING];
   always_comb begin
     s_fault_pending_d = s_fault_pending_q;
     s_fault_write_d   = s_fault_write_q;
@@ -287,26 +287,26 @@ module sysctrl_core (
   end
 
   assign s_perf_write_en = write_valid_i && (write_offset_i == PerfCtrl) && write_strobe_i[0];
-  assign s_perf_clear    = s_perf_write_en && write_data_i[`RIBP_SYSCTRL__PERF_CTRL_CLEAR];
-  assign s_perf_snapshot = s_perf_write_en && write_data_i[`RIBP_SYSCTRL__PERF_CTRL_SNAPSHOT];
+  assign s_perf_clear    = s_perf_write_en && write_data_i[`APB4_SYSCTRL__PERF_CTRL_CLEAR];
+  assign s_perf_snapshot = s_perf_write_en && write_data_i[`APB4_SYSCTRL__PERF_CTRL_SNAPSHOT];
   always_comb begin
     s_perf_en_d         = s_perf_en_q;
     s_perf_mgmt_wait_d  = s_perf_mgmt_wait_q;
     s_perf_user_wait_d  = s_perf_user_wait_q;
     s_perf_dma_wait_d   = s_perf_dma_wait_q;
-    s_perf_ribp_wait_d  = s_perf_ribp_wait_q;
+    s_perf_apb4_wait_d  = s_perf_apb4_wait_q;
     s_perf_apb_wait_d   = s_perf_apb_wait_q;
     s_perf_sdram_wait_d = s_perf_sdram_wait_q;
     s_perf_psram_wait_d = s_perf_psram_wait_q;
     s_perf_flash_wait_d = s_perf_flash_wait_q;
     if (s_perf_write_en) begin
-      s_perf_en_d = write_data_i[`RIBP_SYSCTRL__PERF_CTRL_ENABLE];
+      s_perf_en_d = write_data_i[`APB4_SYSCTRL__PERF_CTRL_ENABLE];
     end
     if (s_perf_snapshot) begin
       s_perf_mgmt_wait_d  = sysctrl.perf_mgmt_wait_i;
       s_perf_user_wait_d  = sysctrl.perf_user_wait_i;
       s_perf_dma_wait_d   = sysctrl.perf_dma_wait_i;
-      s_perf_ribp_wait_d  = sysctrl.perf_ribp_wait_i;
+      s_perf_apb4_wait_d  = sysctrl.perf_apb4_wait_i;
       s_perf_apb_wait_d   = sysctrl.perf_apb_wait_i;
       s_perf_sdram_wait_d = sysctrl.perf_sdram_wait_i;
       s_perf_psram_wait_d = sysctrl.perf_psram_wait_i;
@@ -316,10 +316,10 @@ module sysctrl_core (
 
   assign s_test_stat_write = write_valid_i && (write_offset_i == TestStatus) &&
                              (write_strobe_i == 4'hF) &&
-                             write_data_i[`RIBP_SYSCTRL__TEST_STATUS_VALID] && !s_test_done_q;
+                             write_data_i[`APB4_SYSCTRL__TEST_STATUS_VALID] && !s_test_done_q;
   assign s_rtc_wake_clear = write_valid_i && (write_offset_i == RtcWakeStatus) &&
                             write_strobe_i[0] &&
-                            write_data_i[`RIBP_SYSCTRL__RTC_WAKE_STATUS_SEEN];
+                            write_data_i[`APB4_SYSCTRL__RTC_WAKE_STATUS_SEEN];
   always_comb begin
     s_test_done_d     = s_test_done_q;
     s_test_pass_d     = s_test_pass_q;
@@ -327,8 +327,8 @@ module sysctrl_core (
     s_rtc_wake_seen_d = s_rtc_wake_seen_q;
     if (s_test_stat_write) begin
       s_test_done_d = 1'b1;
-      s_test_pass_d = write_data_i[`RIBP_SYSCTRL__TEST_STATUS_PASS];
-      s_test_code_d = write_data_i[`RIBP_SYSCTRL__TEST_STATUS_CODE+:8];
+      s_test_pass_d = write_data_i[`APB4_SYSCTRL__TEST_STATUS_PASS];
+      s_test_code_d = write_data_i[`APB4_SYSCTRL__TEST_STATUS_CODE+:8];
     end
     if (s_rtc_wake_clear) begin
       s_rtc_wake_seen_d = 1'b0;
@@ -366,7 +366,7 @@ module sysctrl_core (
       s_perf_mgmt_wait_q   <= '0;
       s_perf_user_wait_q   <= '0;
       s_perf_dma_wait_q    <= '0;
-      s_perf_ribp_wait_q   <= '0;
+      s_perf_apb4_wait_q   <= '0;
       s_perf_apb_wait_q    <= '0;
       s_perf_sdram_wait_q  <= '0;
       s_perf_psram_wait_q  <= '0;
@@ -402,7 +402,7 @@ module sysctrl_core (
       s_perf_mgmt_wait_q   <= s_perf_mgmt_wait_d;
       s_perf_user_wait_q   <= s_perf_user_wait_d;
       s_perf_dma_wait_q    <= s_perf_dma_wait_d;
-      s_perf_ribp_wait_q   <= s_perf_ribp_wait_d;
+      s_perf_apb4_wait_q   <= s_perf_apb4_wait_d;
       s_perf_apb_wait_q    <= s_perf_apb_wait_d;
       s_perf_sdram_wait_q  <= s_perf_sdram_wait_d;
       s_perf_psram_wait_q  <= s_perf_psram_wait_d;
@@ -456,8 +456,8 @@ module sysctrl_core (
       PerfUserWaitHi: read_data_o = s_perf_user_wait_q[63:32];
       PerfDmaWaitLo: read_data_o = s_perf_dma_wait_q[31:0];
       PerfDmaWaitHi: read_data_o = s_perf_dma_wait_q[63:32];
-      PerfRibpWaitLo: read_data_o = s_perf_ribp_wait_q[31:0];
-      PerfRibpWaitHi: read_data_o = s_perf_ribp_wait_q[63:32];
+      PerfApb4WaitLo: read_data_o = s_perf_apb4_wait_q[31:0];
+      PerfApb4WaitHi: read_data_o = s_perf_apb4_wait_q[63:32];
       PerfApbWaitLo: read_data_o = s_perf_apb_wait_q[31:0];
       PerfApbWaitHi: read_data_o = s_perf_apb_wait_q[63:32];
       PerfSdramWaitLo: read_data_o = s_perf_sdram_wait_q[31:0];

@@ -1,14 +1,14 @@
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-module ribp_clint #(
+module apb4_clint #(
     parameter int HartNum = 1
 ) (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic  clk_i,
     input  logic  rst_n_i,
     input  logic  timebase_tick_i,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
     clint_if.dut  clint
     // verilog_format: on
 );
@@ -25,7 +25,7 @@ module ribp_clint #(
   ) u_clint_reg (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
-      .ribp              (ribp),
+      .apb4              (apb4),
       .mtime_i           (s_mtime),
       .mtime_load_o      (s_mtime_load),
       .mtime_load_value_o(s_mtime_load_value),

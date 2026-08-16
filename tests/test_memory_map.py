@@ -60,7 +60,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_SPISD_SIZE UINT32_C(0x40000000)" in header
     assert "#ifdef __ASSEMBLER__" in header
     assert "#define UINT32_C(value) value" in header
-    assert "RS_SOC_RIBP_SDIO_BASE" not in header
+    assert "RS_SOC_APB4_SDIO_BASE" not in header
     assert "RS_SOC_NMI_" not in header
     assert "RS_SOC_OPIPSRAM_BASE" not in header
     assert "RS_SOC_HAS_SRAM 1U" in header
@@ -68,7 +68,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C" in rtl
     assert "SOC_SYSCTRL_TEST_STATUS_OFFSET  32'h00000084" in rtl
     assert "SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET 32'h00000088" in rtl
-    assert "SOC_ADDR_IS_RIBP(addr)" in rtl
+    assert "SOC_ADDR_IS_APB4(addr)" in rtl
     assert "SOC_ADDR_IS_NMI" not in rtl
     user_policy = rtl.split("`define SOC_USER_ADDR_READABLE", 1)[1].split(
         "`define SOC_ADDR_INCR4_CAPABLE", 1
@@ -110,9 +110,9 @@ def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:
     for source in (ROOT / "crt/arch/riscv/startup.S", ROOT / "app/asm/hello.s"):
         text = source.read_text(encoding="utf-8")
         assert '#include "retrosoc/generated/memory_map.h"' in text
-        assert "RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x34" in text
-        assert "RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x38" in text
-        assert "RS_SOC_RIBP_PSRAM_BASE + 0x08" in text
+        assert "RS_SOC_APB4_GPIO_ADMIN_BASE + 0x34" in text
+        assert "RS_SOC_APB4_GPIO_ADMIN_BASE + 0x38" in text
+        assert "RS_SOC_APB4_PSRAM_BASE + 0x08" in text
         assert "0x10000028" not in text
         assert "0x1000002c" not in text
 
@@ -149,13 +149,10 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
                 f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ram_if.sv"),
                 str(ROOT / "rtl/mini/top/rib_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"),
-                str(ROOT / "rtl/mini/top/ribp2rib.sv"),
-                str(ROOT / "rtl/mini/top/rib2ribp.sv"),
                 str(ROOT / "rtl/mini/top/rib_error_slave.sv"),
                 str(ROOT / "rtl/mini/top/rib2ram.sv"),
                 str(ROOT / "rtl/mini/top/rib_bus.sv"),
@@ -210,7 +207,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                 f"+incdir+{tmp_path / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_rst_ctrlr.sv"),
@@ -224,7 +221,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                 str(ROOT / "rtl/ip/peripheral/sysctrl_define.svh"),
                 str(ROOT / "rtl/ip/peripheral/sysctrl_reg.sv"),
                 str(ROOT / "rtl/ip/peripheral/sysctrl_core.sv"),
-                str(ROOT / "rtl/ip/peripheral/ribp_sysctrl.sv"),
+                str(ROOT / "rtl/ip/peripheral/apb4_sysctrl.sv"),
                 str(ROOT / "rtl/tech/tc_clk.sv"),
                 str(ROOT / "rtl/tech/tc_pll.sv"),
                 str(ROOT / "rtl/mini/top/rcu.sv"),

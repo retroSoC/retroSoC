@@ -160,7 +160,7 @@ handling, and fault reporting. `pll_rcu` checks the clock-switch controller
 state machine. `gpio` checks dual-window access isolation, fixed user-GPIO
 ownership, locks, handoff, open-drain safety, and mux behavior. `rib_adapter`
 checks both single-word compatibility adapters
-under backpressure. `ws2812` checks RIBP response stability, FIFO bounds,
+under backpressure. `ws2812` checks APB4 response stability, FIFO bounds,
 waveform idle safety, sticky error and interrupt propagation, abort, and
 underflow preconditions. `uart` checks FIFO bounds, interrupt composition,
 DMA gating, and idle/break line safety. `i2c` checks FIFO bounds, interrupt

@@ -31,26 +31,26 @@ interface sdio_if ();
 endinterface
 
 
-module ribp_sdio (
+module apb4_sdio (
     // verilog_format: off -- preserve reviewed column alignment
     input logic   clk_i,
     input logic   rst_n_i,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
     sdio_if.dut   sdio
     // verilog_format: on
 );
 
-  // This placeholder accepts no RIBP requests (ready remains low) and reports
+  // This placeholder accepts no APB4 requests (ready remains low) and reports
   // no errors; all SDIO outputs are deliberately held inactive.
   logic s_dummy_clk;
   logic s_dummy_rst_n;
 
   assign s_dummy_clk   = clk_i;
   assign s_dummy_rst_n = rst_n_i;
-  // ribp
-  assign ribp.rdata    = '0;
-  assign ribp.ready    = '0;
-  assign ribp.resp_err = 1'b0;
+  // apb4
+  assign apb4.prdata   = '0;
+  assign apb4.pready   = '0;
+  assign apb4.pslverr  = 1'b0;
   // sdio
   assign sdio.sck_o    = '0;
   assign sdio.cmd_oe_o = '0;

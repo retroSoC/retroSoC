@@ -22,8 +22,8 @@
 #define RS_SYSCTRL_PERF_USER_WAIT_HI_OFFSET  RS_SOC_SYSCTRL_PERF_USER_WAIT_HI_OFFSET
 #define RS_SYSCTRL_PERF_DMA_WAIT_LO_OFFSET   RS_SOC_SYSCTRL_PERF_DMA_WAIT_LO_OFFSET
 #define RS_SYSCTRL_PERF_DMA_WAIT_HI_OFFSET   RS_SOC_SYSCTRL_PERF_DMA_WAIT_HI_OFFSET
-#define RS_SYSCTRL_PERF_RIBP_WAIT_LO_OFFSET  RS_SOC_SYSCTRL_PERF_RIBP_WAIT_LO_OFFSET
-#define RS_SYSCTRL_PERF_RIBP_WAIT_HI_OFFSET  RS_SOC_SYSCTRL_PERF_RIBP_WAIT_HI_OFFSET
+#define RS_SYSCTRL_PERF_APB4_WAIT_LO_OFFSET  RS_SOC_SYSCTRL_PERF_APB4_WAIT_LO_OFFSET
+#define RS_SYSCTRL_PERF_APB4_WAIT_HI_OFFSET  RS_SOC_SYSCTRL_PERF_APB4_WAIT_HI_OFFSET
 #define RS_SYSCTRL_PERF_APB_WAIT_LO_OFFSET   RS_SOC_SYSCTRL_PERF_APB_WAIT_LO_OFFSET
 #define RS_SYSCTRL_PERF_APB_WAIT_HI_OFFSET   RS_SOC_SYSCTRL_PERF_APB_WAIT_HI_OFFSET
 #define RS_SYSCTRL_PERF_SDRAM_WAIT_LO_OFFSET RS_SOC_SYSCTRL_PERF_SDRAM_WAIT_LO_OFFSET
@@ -62,7 +62,7 @@
 #define RS_SYSCTRL_RTC_WAKE_SEEN             UINT32_C(0x00000002)
 
 static volatile uint32_t *rs_sysctrl_register(uint32_t offset) {
-    return (volatile uint32_t *)(RS_SOC_RIBP_SYSCTRL_BASE + (uintptr_t)offset);
+    return (volatile uint32_t *)(RS_SOC_APB4_SYSCTRL_BASE + (uintptr_t)offset);
 }
 
 static rs_status_t rs_sysctrl_perf_offsets(rs_sysctrl_perf_counter_t counter, uint32_t *low_offset,
@@ -84,9 +84,9 @@ static rs_status_t rs_sysctrl_perf_offsets(rs_sysctrl_perf_counter_t counter, ui
         *low_offset = RS_SYSCTRL_PERF_DMA_WAIT_LO_OFFSET;
         *high_offset = RS_SYSCTRL_PERF_DMA_WAIT_HI_OFFSET;
         break;
-    case RS_SYSCTRL_PERF_RIBP_WAIT:
-        *low_offset = RS_SYSCTRL_PERF_RIBP_WAIT_LO_OFFSET;
-        *high_offset = RS_SYSCTRL_PERF_RIBP_WAIT_HI_OFFSET;
+    case RS_SYSCTRL_PERF_APB4_WAIT:
+        *low_offset = RS_SYSCTRL_PERF_APB4_WAIT_LO_OFFSET;
+        *high_offset = RS_SYSCTRL_PERF_APB4_WAIT_HI_OFFSET;
         break;
     case RS_SYSCTRL_PERF_APB_WAIT:
         *low_offset = RS_SYSCTRL_PERF_APB_WAIT_LO_OFFSET;

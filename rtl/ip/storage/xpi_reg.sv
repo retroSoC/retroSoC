@@ -58,15 +58,15 @@ module xpi_reg (
     // dma
     output logic                     dma_tx_stall_o,
     output logic                     dma_rx_stall_o,
-    ribp_if.slave                     ribp
+    apb4_if.slave                    apb4
     // verilog_format: on
 );
 
-  // ribp
-  logic s_ribp_wr_hdshk, s_ribp_rd_hdshk;
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_rdata_en;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
+  // apb4
+  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
+  logic s_apb4_ready_d, s_apb4_ready_q;
+  logic s_apb4_rdata_en;
+  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
   // cfgidx
   logic                    s_xpi_cfgidx_en;
   logic [`XPI_LNS_NUM-1:0] s_xpi_cfgidx_d;
@@ -189,12 +189,12 @@ module xpi_reg (
   logic s_tx_fifo_stall_d, s_tx_fifo_stall_q;
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
 
-  // ribp
-  assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
-  assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
-  assign ribp.ready      = s_ribp_ready_q;
-  assign ribp.resp_err   = 1'b0;
-  assign ribp.rdata      = s_ribp_rdata_q;
+  // apb4
+  assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && (~s_apb4_ready_q) && apb4.pwrite;
+  assign s_apb4_rd_hdshk = apb4.psel && apb4.penable && (~s_apb4_ready_q) && (~apb4.pwrite);
+  assign apb4.pready     = s_apb4_ready_q;
+  assign apb4.pslverr    = 1'b0;
+  assign apb4.prdata     = s_apb4_rdata_q;
   // reg
   assign xpi_accmd_o     = s_xpi_accmd_q;
   assign xpi_mmstad_o    = s_xpi_mmstad_q;
@@ -226,8 +226,8 @@ module xpi_reg (
   assign dma_rx_stall_o  = s_rx_fifo_stall_q;
 
 
-  assign s_xpi_cfgidx_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_CFGIDX;
-  assign s_xpi_cfgidx_d  = ribp.wdata[`XPI_LNS_NUM-1:0];
+  assign s_xpi_cfgidx_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_XPI_CFGIDX;
+  assign s_xpi_cfgidx_d  = apb4.pwdata[`XPI_LNS_NUM-1:0];
   dffer #(
       .DATA_WIDTH(`XPI_LNS_NUM)
   ) u_xpi_cfgidx_dffer (
@@ -240,9 +240,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_accmd_block
-    assign s_xpi_accmd_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ACCMD) &&
+    assign s_xpi_accmd_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_ACCMD) &&
                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_accmd_d[i] = ribp.wdata[0];
+    assign s_xpi_accmd_d[i] = apb4.pwdata[0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -259,14 +259,14 @@ module xpi_reg (
 
   // 5000_0000 - 5FFF_FFFF
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_mmstad_block
-    assign s_xpi_mmstad_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_MMSTAD) &&
+    assign s_xpi_mmstad_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_MMSTAD) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_mmstad_d[i] = s_xpi_mmstad_q[i];
-      if (ribp.wstrb[0]) s_xpi_mmstad_d[i][7:0] = ribp.wdata[7:0];
-      if (ribp.wstrb[1]) s_xpi_mmstad_d[i][15:8] = ribp.wdata[15:8];
-      if (ribp.wstrb[2]) s_xpi_mmstad_d[i][23:16] = ribp.wdata[23:16];
-      if (ribp.wstrb[3]) s_xpi_mmstad_d[i][31:24] = ribp.wdata[31:24];
+      if (apb4.pstrb[0]) s_xpi_mmstad_d[i][7:0] = apb4.pwdata[7:0];
+      if (apb4.pstrb[1]) s_xpi_mmstad_d[i][15:8] = apb4.pwdata[15:8];
+      if (apb4.pstrb[2]) s_xpi_mmstad_d[i][23:16] = apb4.pwdata[23:16];
+      if (apb4.pstrb[3]) s_xpi_mmstad_d[i][31:24] = apb4.pwdata[31:24];
     end
   end
   dfferm #(
@@ -283,15 +283,15 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_mmoffst_block
-    assign s_xpi_mmoffst_en[i] = s_ribp_wr_hdshk &&
-                                 (ribp.addr[7:0] == `RIBP_XPI_MMOFFST) &&
+    assign s_xpi_mmoffst_en[i] = s_apb4_wr_hdshk &&
+                                 (apb4.paddr[7:0] == `APB4_XPI_MMOFFST) &&
                                  (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_mmoffst_d[i] = s_xpi_mmoffst_q[i];
-      if (ribp.wstrb[0]) s_xpi_mmoffst_d[i][7:0] = ribp.wdata[7:0];
-      if (ribp.wstrb[1]) s_xpi_mmoffst_d[i][15:8] = ribp.wdata[15:8];
-      if (ribp.wstrb[2]) s_xpi_mmoffst_d[i][23:16] = ribp.wdata[23:16];
-      if (ribp.wstrb[3]) s_xpi_mmoffst_d[i][31:24] = ribp.wdata[31:24];
+      if (apb4.pstrb[0]) s_xpi_mmoffst_d[i][7:0] = apb4.pwdata[7:0];
+      if (apb4.pstrb[1]) s_xpi_mmoffst_d[i][15:8] = apb4.pwdata[15:8];
+      if (apb4.pstrb[2]) s_xpi_mmoffst_d[i][23:16] = apb4.pwdata[23:16];
+      if (apb4.pstrb[3]) s_xpi_mmoffst_d[i][31:24] = apb4.pwdata[31:24];
     end
   end
   dfferm #(
@@ -308,9 +308,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_mode_block
-    assign s_xpi_mode_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_MODE) &&
+    assign s_xpi_mode_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_MODE) &&
                               (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_mode_d[i] = ribp.wdata[0];
+    assign s_xpi_mode_d[i] = apb4.pwdata[0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -325,8 +325,8 @@ module xpi_reg (
   );
 
 
-  assign s_xpi_nss_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_NSS;
-  assign s_xpi_nss_d  = ribp.wdata[`XPI_LNS_NUM-1:0];
+  assign s_xpi_nss_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_XPI_NSS;
+  assign s_xpi_nss_d  = apb4.pwdata[`XPI_LNS_NUM-1:0];
   dffer #(
       .DATA_WIDTH(`XPI_LNS_NUM)
   ) u_xpi_nss_dffer (
@@ -339,9 +339,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_clkdiv_block
-    assign s_xpi_clkdiv_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CLKDIV) &&
+    assign s_xpi_clkdiv_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_CLKDIV) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_clkdiv_d[i] = ribp.wdata[7:0];
+    assign s_xpi_clkdiv_d[i] = apb4.pwdata[7:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -357,9 +357,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_rdwr_block
-    assign s_xpi_rdwr_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RDWR) &&
+    assign s_xpi_rdwr_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_RDWR) &&
                               (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_rdwr_d[i] = ribp.wdata[0];
+    assign s_xpi_rdwr_d[i] = apb4.pwdata[0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -375,9 +375,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_revdat_block
-    assign s_xpi_revdat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_REVDAT) &&
+    assign s_xpi_revdat_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_REVDAT) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_revdat_d[i] = ribp.wdata[0];
+    assign s_xpi_revdat_d[i] = apb4.pwdata[0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -393,9 +393,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_txupb_block
-    assign s_xpi_txupb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_TXUPB) &&
+    assign s_xpi_txupb_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_TXUPB) &&
                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_txupb_d[i] = ribp.wdata[7:0];
+    assign s_xpi_txupb_d[i] = apb4.pwdata[7:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -411,9 +411,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_txlowb_block
-    assign s_xpi_txlowb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_TXLOWB) &&
+    assign s_xpi_txlowb_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_TXLOWB) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_txlowb_d[i] = ribp.wdata[7:0];
+    assign s_xpi_txlowb_d[i] = apb4.pwdata[7:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -429,9 +429,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_rxupb_block
-    assign s_xpi_rxupb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RXUPB) &&
+    assign s_xpi_rxupb_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_RXUPB) &&
                                (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_rxupb_d[i] = ribp.wdata[5:0];
+    assign s_xpi_rxupb_d[i] = apb4.pwdata[5:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -447,9 +447,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_rxlowb_block
-    assign s_xpi_rxlowb_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RXLOWB) &&
+    assign s_xpi_rxlowb_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_RXLOWB) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_rxlowb_d[i] = ribp.wdata[5:0];
+    assign s_xpi_rxlowb_d[i] = apb4.pwdata[5:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -464,14 +464,14 @@ module xpi_reg (
   );
 
 
-  assign s_xpi_flush     = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_FLUSH;
-  assign s_xpi_flush_val = ribp.wdata[0];
+  assign s_xpi_flush     = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_XPI_FLUSH;
+  assign s_xpi_flush_val = apb4.pwdata[0];
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_cmdtyp_block
-    assign s_xpi_cmdtyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CMDTYP) &&
+    assign s_xpi_cmdtyp_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_CMDTYP) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_cmdtyp_d[i] = ribp.wdata[1:0];
+    assign s_xpi_cmdtyp_d[i] = apb4.pwdata[1:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -487,9 +487,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_cmdlen_block
-    assign s_xpi_cmdlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CMDLEN) &&
+    assign s_xpi_cmdlen_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_CMDLEN) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_cmdlen_d[i] = ribp.wdata[2:0];
+    assign s_xpi_cmdlen_d[i] = apb4.pwdata[2:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -505,14 +505,14 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_cmddat_block
-    assign s_xpi_cmddat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_CMDDAT) &&
+    assign s_xpi_cmddat_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_CMDDAT) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_cmddat_d[i] = s_xpi_cmddat_q[i];
-      if (ribp.wstrb[0]) s_xpi_cmddat_d[i][7:0] = ribp.wdata[7:0];
-      if (ribp.wstrb[1]) s_xpi_cmddat_d[i][15:8] = ribp.wdata[15:8];
-      if (ribp.wstrb[2]) s_xpi_cmddat_d[i][23:16] = ribp.wdata[23:16];
-      if (ribp.wstrb[3]) s_xpi_cmddat_d[i][31:24] = ribp.wdata[31:24];
+      if (apb4.pstrb[0]) s_xpi_cmddat_d[i][7:0] = apb4.pwdata[7:0];
+      if (apb4.pstrb[1]) s_xpi_cmddat_d[i][15:8] = apb4.pwdata[15:8];
+      if (apb4.pstrb[2]) s_xpi_cmddat_d[i][23:16] = apb4.pwdata[23:16];
+      if (apb4.pstrb[3]) s_xpi_cmddat_d[i][31:24] = apb4.pwdata[31:24];
     end
   end
   dfferm #(
@@ -529,9 +529,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_adrtyp_block
-    assign s_xpi_adrtyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ADRTYP) &&
+    assign s_xpi_adrtyp_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_ADRTYP) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_adrtyp_d[i] = ribp.wdata[1:0];
+    assign s_xpi_adrtyp_d[i] = apb4.pwdata[1:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -547,9 +547,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_adrlen_block
-    assign s_xpi_adrlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ADRLEN) &&
+    assign s_xpi_adrlen_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_ADRLEN) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_adrlen_d[i] = ribp.wdata[2:0];
+    assign s_xpi_adrlen_d[i] = apb4.pwdata[2:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -565,14 +565,14 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_adrdat_block
-    assign s_xpi_adrdat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ADRDAT) &&
+    assign s_xpi_adrdat_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_ADRDAT) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_adrdat_d[i] = s_xpi_adrdat_q[i];
-      if (ribp.wstrb[0]) s_xpi_adrdat_d[i][7:0] = ribp.wdata[7:0];
-      if (ribp.wstrb[1]) s_xpi_adrdat_d[i][15:8] = ribp.wdata[15:8];
-      if (ribp.wstrb[2]) s_xpi_adrdat_d[i][23:16] = ribp.wdata[23:16];
-      if (ribp.wstrb[3]) s_xpi_adrdat_d[i][31:24] = ribp.wdata[31:24];
+      if (apb4.pstrb[0]) s_xpi_adrdat_d[i][7:0] = apb4.pwdata[7:0];
+      if (apb4.pstrb[1]) s_xpi_adrdat_d[i][15:8] = apb4.pwdata[15:8];
+      if (apb4.pstrb[2]) s_xpi_adrdat_d[i][23:16] = apb4.pwdata[23:16];
+      if (apb4.pstrb[3]) s_xpi_adrdat_d[i][31:24] = apb4.pwdata[31:24];
     end
   end
   dfferm #(
@@ -589,9 +589,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_alttyp_block
-    assign s_xpi_alttyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ALTTYP) &&
+    assign s_xpi_alttyp_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_ALTTYP) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_alttyp_d[i] = ribp.wdata[1:0];
+    assign s_xpi_alttyp_d[i] = apb4.pwdata[1:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -607,9 +607,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_altlen_block
-    assign s_xpi_altlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ALTLEN) &&
+    assign s_xpi_altlen_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_ALTLEN) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_altlen_d[i] = ribp.wdata[2:0];
+    assign s_xpi_altlen_d[i] = apb4.pwdata[2:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -625,14 +625,14 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_altdat_block
-    assign s_xpi_altdat_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_ALTDAT) &&
+    assign s_xpi_altdat_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_ALTDAT) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
     always_comb begin
       s_xpi_altdat_d[i] = s_xpi_altdat_q[i];
-      if (ribp.wstrb[0]) s_xpi_altdat_d[i][7:0] = ribp.wdata[7:0];
-      if (ribp.wstrb[1]) s_xpi_altdat_d[i][15:8] = ribp.wdata[15:8];
-      if (ribp.wstrb[2]) s_xpi_altdat_d[i][23:16] = ribp.wdata[23:16];
-      if (ribp.wstrb[3]) s_xpi_altdat_d[i][31:24] = ribp.wdata[31:24];
+      if (apb4.pstrb[0]) s_xpi_altdat_d[i][7:0] = apb4.pwdata[7:0];
+      if (apb4.pstrb[1]) s_xpi_altdat_d[i][15:8] = apb4.pwdata[15:8];
+      if (apb4.pstrb[2]) s_xpi_altdat_d[i][23:16] = apb4.pwdata[23:16];
+      if (apb4.pstrb[3]) s_xpi_altdat_d[i][31:24] = apb4.pwdata[31:24];
     end
   end
   dfferm #(
@@ -649,9 +649,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_tdulen_block
-    assign s_xpi_tdulen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_TDULEN) &&
+    assign s_xpi_tdulen_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_TDULEN) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_tdulen_d[i] = ribp.wdata[7:0];
+    assign s_xpi_tdulen_d[i] = apb4.pwdata[7:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -667,9 +667,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_rdulen_block
-    assign s_xpi_rdulen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_RDULEN) &&
+    assign s_xpi_rdulen_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_RDULEN) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_rdulen_d[i] = ribp.wdata[7:0];
+    assign s_xpi_rdulen_d[i] = apb4.pwdata[7:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -685,9 +685,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_dattyp_block
-    assign s_xpi_dattyp_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_DATTYP) &&
+    assign s_xpi_dattyp_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_DATTYP) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_dattyp_d[i] = ribp.wdata[1:0];
+    assign s_xpi_dattyp_d[i] = apb4.pwdata[1:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -703,9 +703,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_datlen_block
-    assign s_xpi_datlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_DATLEN) &&
+    assign s_xpi_datlen_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_DATLEN) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_datlen_d[i] = ribp.wdata[7:0];
+    assign s_xpi_datlen_d[i] = apb4.pwdata[7:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -721,9 +721,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_datbit_block
-    assign s_xpi_datbit_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_DATBIT) &&
+    assign s_xpi_datbit_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_DATBIT) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_datbit_d[i] = ribp.wdata[2:0];
+    assign s_xpi_datbit_d[i] = apb4.pwdata[2:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -739,9 +739,9 @@ module xpi_reg (
 
 
   for (genvar i = 0; i < `XPI_NSS_NUM; i++) begin : xpi_hlvlen_block
-    assign s_xpi_hlvlen_en[i] = s_ribp_wr_hdshk && (ribp.addr[7:0] == `RIBP_XPI_HLVLEN) &&
+    assign s_xpi_hlvlen_en[i] = s_apb4_wr_hdshk && (apb4.paddr[7:0] == `APB4_XPI_HLVLEN) &&
                                 (`XPI_LNS_NUM'(i) == s_xpi_cfgidx_q);
-    assign s_xpi_hlvlen_d[i] = ribp.wdata[7:0];
+    assign s_xpi_hlvlen_d[i] = apb4.pwdata[7:0];
   end
   dfferm #(
       .DATA_NUM  (`XPI_NSS_NUM),
@@ -760,17 +760,17 @@ module xpi_reg (
   always_comb begin
     tx_push_valid_o = 1'b0;
     tx_push_data_o  = '0;
-    if (s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_TXDATA) begin
+    if (s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_XPI_TXDATA) begin
       tx_push_valid_o = 1'b1;
-      if (ribp.wstrb[0]) tx_push_data_o[7:0] = ribp.wdata[7:0];
-      if (ribp.wstrb[1]) tx_push_data_o[15:8] = ribp.wdata[15:8];
-      if (ribp.wstrb[2]) tx_push_data_o[23:16] = ribp.wdata[23:16];
-      if (ribp.wstrb[3]) tx_push_data_o[31:24] = ribp.wdata[31:24];
+      if (apb4.pstrb[0]) tx_push_data_o[7:0] = apb4.pwdata[7:0];
+      if (apb4.pstrb[1]) tx_push_data_o[15:8] = apb4.pwdata[15:8];
+      if (apb4.pstrb[2]) tx_push_data_o[23:16] = apb4.pwdata[23:16];
+      if (apb4.pstrb[3]) tx_push_data_o[31:24] = apb4.pwdata[31:24];
     end
   end
 
   // start
-  assign xfer_start_o = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_XPI_XST;
+  assign xfer_start_o = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_XPI_XST;
 
   // status
   // [20:14] rx elem num
@@ -790,7 +790,7 @@ module xpi_reg (
     s_xpi_stat_d[20:14] = rx_elem_num_i;
     if (xfer_done_i) begin
       s_xpi_stat_d[0] = 1'b1;
-    end else if (s_ribp_rd_hdshk && ribp.addr[7:0] == `RIBP_XPI_STATUS) begin
+    end else if (s_apb4_rd_hdshk && apb4.paddr[7:0] == `APB4_XPI_STATUS) begin
       s_xpi_stat_d[0] = 1'b0;
     end
   end
@@ -841,71 +841,71 @@ module xpi_reg (
   );
 
 
-  // ribp rd
-  assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
+  // apb4 rd
+  assign s_apb4_ready_d = apb4.psel && apb4.penable && (~s_apb4_ready_q);
   dffr #(
       .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
+  ) u_apb4_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
+      .dat_i  (s_apb4_ready_d),
+      .dat_o  (s_apb4_ready_q)
   );
 
   // verilog_format: off -- preserve reviewed column alignment
-  assign s_ribp_rdata_en = s_ribp_rd_hdshk;
+  assign s_apb4_rdata_en = s_apb4_rd_hdshk;
   always_comb begin
     rx_pop_valid_o = '0;
-    s_ribp_rdata_d  = s_ribp_rdata_q;
-    unique case (ribp.addr[7:0])
-      `RIBP_XPI_CFGIDX:  s_ribp_rdata_d = {{(32 - `XPI_LNS_NUM) {1'b0}}, s_xpi_cfgidx_q};
-      `RIBP_XPI_ACCMD:   s_ribp_rdata_d = {31'd0, s_xpi_accmd_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_MMSTAD:  s_ribp_rdata_d = s_xpi_mmstad_q[s_xpi_cfgidx_q];
-      `RIBP_XPI_MMOFFST: s_ribp_rdata_d = s_xpi_mmoffst_q[s_xpi_cfgidx_q];
-      `RIBP_XPI_MODE:    s_ribp_rdata_d = {31'd0, s_xpi_mode_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_NSS:     s_ribp_rdata_d = {{(32 - `XPI_LNS_NUM) {1'b0}}, s_xpi_nss_q};
-      `RIBP_XPI_CLKDIV:  s_ribp_rdata_d = {24'd0, s_xpi_clkdiv_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_RDWR:    s_ribp_rdata_d = {31'd0, s_xpi_rdwr_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_REVDAT:  s_ribp_rdata_d = {31'd0, s_xpi_revdat_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_TXUPB:   s_ribp_rdata_d = {24'd0, s_xpi_txupb_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_TXLOWB:  s_ribp_rdata_d = {24'd0, s_xpi_txlowb_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_RXUPB:   s_ribp_rdata_d = {26'd0, s_xpi_rxupb_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_RXLOWB:  s_ribp_rdata_d = {26'd0, s_xpi_rxlowb_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_CMDTYP:  s_ribp_rdata_d = {30'd0, s_xpi_cmdtyp_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_CMDLEN:  s_ribp_rdata_d = {29'd0, s_xpi_cmdlen_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_CMDDAT:  s_ribp_rdata_d = s_xpi_cmddat_q[s_xpi_cfgidx_q];
-      `RIBP_XPI_ADRTYP:  s_ribp_rdata_d = {30'd0, s_xpi_adrtyp_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_ADRLEN:  s_ribp_rdata_d = {29'd0, s_xpi_adrlen_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_ADRDAT:  s_ribp_rdata_d = s_xpi_adrdat_q[s_xpi_cfgidx_q];
-      `RIBP_XPI_ALTTYP:  s_ribp_rdata_d = {30'd0, s_xpi_alttyp_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_ALTLEN:  s_ribp_rdata_d = {29'd0, s_xpi_altlen_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_ALTDAT:  s_ribp_rdata_d = s_xpi_altdat_q[s_xpi_cfgidx_q];
-      `RIBP_XPI_TDULEN:  s_ribp_rdata_d = {24'd0, s_xpi_tdulen_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_RDULEN:  s_ribp_rdata_d = {24'd0, s_xpi_rdulen_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_DATTYP:  s_ribp_rdata_d = {30'd0, s_xpi_dattyp_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_DATLEN:  s_ribp_rdata_d = {24'd0, s_xpi_datlen_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_DATBIT:  s_ribp_rdata_d = {29'd0, s_xpi_datbit_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_HLVLEN:  s_ribp_rdata_d = {24'd0, s_xpi_hlvlen_q[s_xpi_cfgidx_q]};
-      `RIBP_XPI_RXDATA: begin
-        if (s_ribp_rd_hdshk) begin
+    s_apb4_rdata_d  = s_apb4_rdata_q;
+    unique case (apb4.paddr[7:0])
+      `APB4_XPI_CFGIDX:  s_apb4_rdata_d = {{(32 - `XPI_LNS_NUM) {1'b0}}, s_xpi_cfgidx_q};
+      `APB4_XPI_ACCMD:   s_apb4_rdata_d = {31'd0, s_xpi_accmd_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_MMSTAD:  s_apb4_rdata_d = s_xpi_mmstad_q[s_xpi_cfgidx_q];
+      `APB4_XPI_MMOFFST: s_apb4_rdata_d = s_xpi_mmoffst_q[s_xpi_cfgidx_q];
+      `APB4_XPI_MODE:    s_apb4_rdata_d = {31'd0, s_xpi_mode_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_NSS:     s_apb4_rdata_d = {{(32 - `XPI_LNS_NUM) {1'b0}}, s_xpi_nss_q};
+      `APB4_XPI_CLKDIV:  s_apb4_rdata_d = {24'd0, s_xpi_clkdiv_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_RDWR:    s_apb4_rdata_d = {31'd0, s_xpi_rdwr_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_REVDAT:  s_apb4_rdata_d = {31'd0, s_xpi_revdat_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_TXUPB:   s_apb4_rdata_d = {24'd0, s_xpi_txupb_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_TXLOWB:  s_apb4_rdata_d = {24'd0, s_xpi_txlowb_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_RXUPB:   s_apb4_rdata_d = {26'd0, s_xpi_rxupb_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_RXLOWB:  s_apb4_rdata_d = {26'd0, s_xpi_rxlowb_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_CMDTYP:  s_apb4_rdata_d = {30'd0, s_xpi_cmdtyp_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_CMDLEN:  s_apb4_rdata_d = {29'd0, s_xpi_cmdlen_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_CMDDAT:  s_apb4_rdata_d = s_xpi_cmddat_q[s_xpi_cfgidx_q];
+      `APB4_XPI_ADRTYP:  s_apb4_rdata_d = {30'd0, s_xpi_adrtyp_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_ADRLEN:  s_apb4_rdata_d = {29'd0, s_xpi_adrlen_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_ADRDAT:  s_apb4_rdata_d = s_xpi_adrdat_q[s_xpi_cfgidx_q];
+      `APB4_XPI_ALTTYP:  s_apb4_rdata_d = {30'd0, s_xpi_alttyp_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_ALTLEN:  s_apb4_rdata_d = {29'd0, s_xpi_altlen_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_ALTDAT:  s_apb4_rdata_d = s_xpi_altdat_q[s_xpi_cfgidx_q];
+      `APB4_XPI_TDULEN:  s_apb4_rdata_d = {24'd0, s_xpi_tdulen_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_RDULEN:  s_apb4_rdata_d = {24'd0, s_xpi_rdulen_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_DATTYP:  s_apb4_rdata_d = {30'd0, s_xpi_dattyp_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_DATLEN:  s_apb4_rdata_d = {24'd0, s_xpi_datlen_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_DATBIT:  s_apb4_rdata_d = {29'd0, s_xpi_datbit_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_HLVLEN:  s_apb4_rdata_d = {24'd0, s_xpi_hlvlen_q[s_xpi_cfgidx_q]};
+      `APB4_XPI_RXDATA: begin
+        if (s_apb4_rd_hdshk) begin
           rx_pop_valid_o = 1'b1;
-          if (~rx_empty_i) s_ribp_rdata_d = rx_pop_data_i;
-          else s_ribp_rdata_d = '0;
+          if (~rx_empty_i) s_apb4_rdata_d = rx_pop_data_i;
+          else s_apb4_rdata_d = '0;
         end
       end
-      `RIBP_XPI_STATUS:  s_ribp_rdata_d = {11'd0, s_xpi_stat_q};
-      default:            s_ribp_rdata_d = s_ribp_rdata_q;
+      `APB4_XPI_STATUS:  s_apb4_rdata_d = {11'd0, s_xpi_stat_q};
+      default:            s_apb4_rdata_d = s_apb4_rdata_q;
     endcase
   end
   // verilog_format: on
   dffer #(
       .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
+  ) u_apb4_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_ribp_rdata_en),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
+      .en_i   (s_apb4_rdata_en),
+      .dat_i  (s_apb4_rdata_d),
+      .dat_o  (s_apb4_rdata_q)
   );
 
 endmodule

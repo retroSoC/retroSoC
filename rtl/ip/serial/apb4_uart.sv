@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-module ribp_uart #(
+module apb4_uart #(
     parameter int TxFifoDepth = 64,
     parameter int RxFifoDepth = 64
 ) (
@@ -10,7 +10,7 @@ module ribp_uart #(
     input  logic  rst_n_i,
     output logic  dma_tx_stall_o,
     output logic  dma_rx_stall_o,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
     uart_if.dut   uart
     // verilog_format: on
 );
@@ -55,7 +55,7 @@ module ribp_uart #(
   ) u_uart_reg (
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),
-      .ribp                (ribp),
+      .apb4                (apb4),
       .baud_int_o          (s_baud_int),
       .baud_frac_o         (s_baud_frac),
       .data_bits_o         (s_data_bits),

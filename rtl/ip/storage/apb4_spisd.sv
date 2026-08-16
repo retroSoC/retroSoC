@@ -14,11 +14,12 @@
 
 `include "mmap_define.svh"
 
-module ribp_spisd (
+module apb4_spisd (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic  clk_i,
     input  logic  rst_n_i,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
+    axi4_if.slave mem_axi4,
     spi_if.dut    spi
     // verilog_format: on
 );
@@ -43,28 +44,40 @@ module ribp_spisd (
   logic [ 7:0] s_sd_wr_data;
   logic        s_sd_wr_busy;
 
-  ribp_if u_cfg_ribp_if ();
-  ribp_if u_cache_ribp_if ();
-  ribp_if u_cache_mem_ribp_if ();
-  ribp_if u_cache_byp_ribp_if ();
+  logic        s_mem_req_valid;
+  logic        s_mem_req_ready;
+  logic [31:0] s_mem_req_addr;
+  logic [31:0] s_mem_req_wdata;
+  logic [ 3:0] s_mem_req_wstrb;
+  logic [31:0] s_mem_req_rdata;
+  logic        s_mem_req_resp_err;
+  logic        s_byp_valid;
+  logic        s_byp_ready;
+  logic [31:0] s_byp_addr;
+  logic [31:0] s_byp_wdata;
+  logic [ 3:0] s_byp_wstrb;
+  logic [31:0] s_byp_rdata;
+  logic        s_byp_resp_err;
+  logic        s_cache_valid;
+  logic        s_cache_ready;
+  logic [31:0] s_cache_addr;
+  logic [31:0] s_cache_wdata;
+  logic [ 3:0] s_cache_wstrb;
+  logic [31:0] s_cache_rdata;
+  logic        s_cache_resp_err;
 
-  // verilog_format: off -- preserve reviewed column alignment
-  assign s_cfg_reg_sel            = `SOC_ADDR_IS_RIBP_SPISD(ribp.addr);
-  assign u_cfg_ribp_if.valid       = ribp.valid && s_cfg_reg_sel;
-  assign u_cfg_ribp_if.addr        = ribp.addr;
-  assign u_cfg_ribp_if.wdata       = ribp.wdata;
-  assign u_cfg_ribp_if.wstrb       = ribp.wstrb;
-
-  assign u_cache_mem_ribp_if.valid = ribp.valid && (~s_cfg_reg_sel);
-  assign u_cache_mem_ribp_if.addr  = ribp.addr;
-  assign u_cache_mem_ribp_if.wdata = ribp.wdata;
-  assign u_cache_mem_ribp_if.wstrb = ribp.wstrb;
-
-  assign ribp.ready                = s_cfg_reg_sel ? u_cfg_ribp_if.ready : u_cache_mem_ribp_if.ready;
-  assign ribp.rdata                = s_cfg_reg_sel ? u_cfg_ribp_if.rdata : u_cache_mem_ribp_if.rdata;
-  assign ribp.resp_err             = s_cfg_reg_sel ? u_cfg_ribp_if.resp_err :
-                                                      u_cache_mem_ribp_if.resp_err;
- // verilog_format: on
+  axi4_word_bridge u_mem_bridge (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .axi4          (mem_axi4),
+      .req_valid_o   (s_mem_req_valid),
+      .req_ready_i   (s_mem_req_ready),
+      .req_addr_o    (s_mem_req_addr),
+      .req_wdata_o   (s_mem_req_wdata),
+      .req_wstrb_o   (s_mem_req_wstrb),
+      .req_rdata_i   (s_mem_req_rdata),
+      .req_resp_err_i(s_mem_req_resp_err)
+  );
 
   spisd_reg u_spisd_reg (
       .clk_i         (clk_i),
@@ -74,22 +87,27 @@ module ribp_spisd (
       .wr_sync_done_i(s_wr_sync_done),
       .mode_o        (s_mode),
       .clkdiv_o      (s_clkdiv),
-      .ribp          (u_cfg_ribp_if),
-      .byp_rib       (u_cache_byp_ribp_if)
+      .apb4          (apb4),
+      .byp_valid_o   (s_byp_valid),
+      .byp_ready_i   (s_byp_ready),
+      .byp_addr_o    (s_byp_addr),
+      .byp_wdata_o   (s_byp_wdata),
+      .byp_wstrb_o   (s_byp_wstrb),
+      .byp_rdata_i   (s_byp_rdata),
+      .byp_resp_err_i(s_byp_resp_err)
   );
 
+  assign s_cache_valid      = s_mode ? s_byp_valid : s_mem_req_valid;
+  assign s_cache_addr       = s_mode ? s_byp_addr : s_mem_req_addr;
+  assign s_cache_wdata      = s_mode ? s_byp_wdata : s_mem_req_wdata;
+  assign s_cache_wstrb      = s_mode ? s_byp_wstrb : s_mem_req_wstrb;
+  assign s_byp_ready        = s_mode ? s_cache_ready : 1'b0;
+  assign s_byp_rdata        = s_mode ? s_cache_rdata : '0;
+  assign s_byp_resp_err     = s_mode ? s_cache_resp_err : 1'b0;
+  assign s_mem_req_ready    = ~s_mode ? s_cache_ready : 1'b0;
+  assign s_mem_req_rdata    = ~s_mode ? s_cache_rdata : '0;
+  assign s_mem_req_resp_err = ~s_mode ? s_cache_resp_err : 1'b0;
 
-  assign u_cache_ribp_if.valid = s_mode ? u_cache_byp_ribp_if.valid : u_cache_mem_ribp_if.valid;
-  assign u_cache_ribp_if.addr = s_mode ? u_cache_byp_ribp_if.addr : u_cache_mem_ribp_if.addr;
-  assign u_cache_ribp_if.wdata = s_mode ? u_cache_byp_ribp_if.wdata : u_cache_mem_ribp_if.wdata;
-  assign u_cache_ribp_if.wstrb = s_mode ? u_cache_byp_ribp_if.wstrb : u_cache_mem_ribp_if.wstrb;
-
-  assign u_cache_byp_ribp_if.ready = s_mode ? u_cache_ribp_if.ready : '0;
-  assign u_cache_byp_ribp_if.rdata = s_mode ? u_cache_ribp_if.rdata : '0;
-  assign u_cache_byp_ribp_if.resp_err = s_mode ? u_cache_ribp_if.resp_err : 1'b0;
-  assign u_cache_mem_ribp_if.ready = ~s_mode ? u_cache_ribp_if.ready : '0;
-  assign u_cache_mem_ribp_if.rdata = ~s_mode ? u_cache_ribp_if.rdata : '0;
-  assign u_cache_mem_ribp_if.resp_err = ~s_mode ? u_cache_ribp_if.resp_err : 1'b0;
   spisd_cache u_spisd_cache (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
@@ -107,7 +125,13 @@ module ribp_spisd (
       .sd_wr_data_req_i(s_sd_wr_data_req),
       .sd_wr_data_o    (s_sd_wr_data),
       .sd_wr_busy_i    (s_sd_wr_busy),
-      .ribp            (u_cache_ribp_if)
+      .req_valid_i     (s_cache_valid),
+      .req_ready_o     (s_cache_ready),
+      .req_addr_i      (s_cache_addr),
+      .req_wdata_i     (s_cache_wdata),
+      .req_wstrb_i     (s_cache_wstrb),
+      .req_rdata_o     (s_cache_rdata),
+      .req_resp_err_o  (s_cache_resp_err)
   );
 
   assign spi.irq_o = 1'b0;  // TODO:

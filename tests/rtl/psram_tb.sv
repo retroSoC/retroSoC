@@ -17,7 +17,10 @@ module psram_tb;
   logic [ 1:0] held_resp;
   logic        held_last;
 
-  ribp_if cfg_ribp ();
+  apb4_if cfg_apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
@@ -38,10 +41,10 @@ module psram_tb;
   end
   assign psram.io_di_i = psram_sio;
 
-  ribp_psram u_dut (
+  apb4_psram u_dut (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
-      .cfg_ribp(cfg_ribp),
+      .cfg_apb4(cfg_apb4),
       .mem_axi4(mem_axi4),
       .psram   (psram)
   );
@@ -131,39 +134,48 @@ module psram_tb;
     end
   endtask
 
-  task automatic ribp_write(input logic [31:0] offset, input logic [31:0] data,
+  task automatic apb4_write(input logic [31:0] offset, input logic [31:0] data,
                             input logic [3:0] strobe, input logic expected_error);
     begin
       @(negedge clk_i);
-      cfg_ribp.addr  = offset;
-      cfg_ribp.wdata = data;
-      cfg_ribp.wstrb = strobe;
-      cfg_ribp.valid = 1'b1;
-      do @(negedge clk_i); while (!cfg_ribp.ready);
-      if (cfg_ribp.resp_err != expected_error) begin
-        $fatal(1, "RIBP write response mismatch at %08x", offset);
-      end
-      cfg_ribp.valid = 1'b0;
-      cfg_ribp.wstrb = '0;
+      cfg_apb4.paddr   = offset;
+      cfg_apb4.pwdata  = data;
+      cfg_apb4.pstrb   = strobe;
+      cfg_apb4.pwrite  = 1'b1;
+      cfg_apb4.psel    = 1'b1;
+      cfg_apb4.penable = 1'b0;
       @(negedge clk_i);
+      cfg_apb4.penable = 1'b1;
+      while (!cfg_apb4.pready) @(negedge clk_i);
+      if (cfg_apb4.pslverr !== expected_error) begin
+        $fatal(1, "write %h error=%b expected=%b", offset, cfg_apb4.pslverr, expected_error);
+      end
+      cfg_apb4.psel    = 1'b0;
+      cfg_apb4.penable = 1'b0;
+      cfg_apb4.pwrite  = 1'b0;
+      cfg_apb4.pstrb   = '0;
     end
   endtask
 
-  task automatic ribp_read(input logic [31:0] offset, input logic expected_error,
+  task automatic apb4_read(input logic [31:0] offset, input logic expected_error,
                            output logic [31:0] data);
     begin
       @(negedge clk_i);
-      cfg_ribp.addr  = offset;
-      cfg_ribp.wdata = '0;
-      cfg_ribp.wstrb = '0;
-      cfg_ribp.valid = 1'b1;
-      do @(negedge clk_i); while (!cfg_ribp.ready);
-      if (cfg_ribp.resp_err != expected_error) begin
-        $fatal(1, "RIBP read response mismatch at %08x", offset);
-      end
-      data           = cfg_ribp.rdata;
-      cfg_ribp.valid = 1'b0;
+      cfg_apb4.paddr   = offset;
+      cfg_apb4.pwdata  = '0;
+      cfg_apb4.pstrb   = '0;
+      cfg_apb4.pwrite  = 1'b0;
+      cfg_apb4.psel    = 1'b1;
+      cfg_apb4.penable = 1'b0;
       @(negedge clk_i);
+      cfg_apb4.penable = 1'b1;
+      while (!cfg_apb4.pready) @(negedge clk_i);
+      if (cfg_apb4.pslverr !== expected_error) begin
+        $fatal(1, "read %h error=%b expected=%b", offset, cfg_apb4.pslverr, expected_error);
+      end
+      data             = cfg_apb4.prdata;
+      cfg_apb4.psel    = 1'b0;
+      cfg_apb4.penable = 1'b0;
     end
   endtask
 
@@ -172,7 +184,7 @@ module psram_tb;
       reg_data = '0;
       for (int poll = 0; poll < 200; poll++) begin
         repeat (20) @(posedge clk_i);
-        ribp_read(`RIBP_PSRAM_INTR_STATE, 1'b0, reg_data);
+        apb4_read(`APB4_PSRAM_INTR_STATE, 1'b0, reg_data);
         if (reg_data[`PSRAM_INTR_INIT_DONE]) return;
       end
       $fatal(1, "PSRAM initialization timed out");
@@ -184,7 +196,7 @@ module psram_tb;
       reg_data = '0;
       for (int poll = 0; poll < 100; poll++) begin
         repeat (10) @(posedge clk_i);
-        ribp_read(`RIBP_PSRAM_INTR_STATE, 1'b0, reg_data);
+        apb4_read(`APB4_PSRAM_INTR_STATE, 1'b0, reg_data);
         if (reg_data[`PSRAM_INTR_INDIRECT_DONE]) return;
       end
       $fatal(1, "PSRAM indirect command timed out");
@@ -343,39 +355,39 @@ module psram_tb;
   endtask
 
   initial begin
-    cfg_ribp.valid = 1'b0;
-    cfg_ribp.addr  = '0;
-    cfg_ribp.wdata = '0;
-    cfg_ribp.wstrb = '0;
+    cfg_apb4.psel   = 1'b0;
+    cfg_apb4.paddr  = '0;
+    cfg_apb4.pwdata = '0;
+    cfg_apb4.pstrb  = '0;
     init_axi4();
 
     repeat (5) @(posedge clk_i);
     rst_n_i = 1'b1;
 
     $display("PSRAM_TB_STAGE register_setup");
-    ribp_write(`RIBP_PSRAM_POWERUP_CYCLES, 32'd1, 4'hF, 1'b0);
-    ribp_write(`RIBP_PSRAM_CS_HIGH_CYCLES, 32'd2, 4'hF, 1'b0);
-    ribp_write(`RIBP_PSRAM_CS_HOLD_CYCLES, 32'd3, 4'hF, 1'b0);
-    ribp_write(`RIBP_PSRAM_CS_MAX_LOW_CYCLES, 32'd512, 4'hF, 1'b0);
-    ribp_write(`RIBP_PSRAM_ACCESS_TIMEOUT_CYCLES, 32'd1024, 4'hF, 1'b0);
-    ribp_write(`RIBP_PSRAM_PERF_CTRL, 32'd1, 4'h1, 1'b0);
-    ribp_write(`RIBP_PSRAM_STATUS, 32'd1, 4'h1, 1'b1);
-    ribp_read(32'h0000_0002, 1'b1, reg_data);
-    ribp_read(32'h0000_00B0, 1'b1, reg_data);
-    ribp_write(`RIBP_PSRAM_COMMAND, 32'h0000_0003, 4'h1, 1'b1);
+    apb4_write(`APB4_PSRAM_POWERUP_CYCLES, 32'd1, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_CS_HIGH_CYCLES, 32'd2, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_CS_HOLD_CYCLES, 32'd3, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_CS_MAX_LOW_CYCLES, 32'd512, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_ACCESS_TIMEOUT_CYCLES, 32'd1024, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_PERF_CTRL, 32'd1, 4'h1, 1'b0);
+    apb4_write(`APB4_PSRAM_STATUS, 32'd1, 4'h1, 1'b1);
+    apb4_read(32'h0000_0002, 1'b1, reg_data);
+    apb4_read(32'h0000_00B0, 1'b1, reg_data);
+    apb4_write(`APB4_PSRAM_COMMAND, 32'h0000_0003, 4'h1, 1'b1);
 
     $display("PSRAM_TB_STAGE initialization");
-    ribp_write(`RIBP_PSRAM_COMMAND, 32'h0000_0001, 4'h1, 1'b0);
+    apb4_write(`APB4_PSRAM_COMMAND, 32'h0000_0001, 4'h1, 1'b0);
     wait_for_init();
-    ribp_read(`RIBP_PSRAM_CHIP_PRESENT, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_CHIP_PRESENT, 1'b0, reg_data);
     if (reg_data[3:0] != 4'b1011) $fatal(1, "unexpected present mask");
-    ribp_read(`RIBP_PSRAM_CHIP_READY, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_CHIP_READY, 1'b0, reg_data);
     if (reg_data[3:0] != 4'b1011) $fatal(1, "unexpected ready mask");
-    ribp_read(`RIBP_PSRAM_CHIP_ERROR, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_CHIP_ERROR, 1'b0, reg_data);
     if (reg_data[3:0] != 4'b0100) $fatal(1, "missing-device error not isolated");
-    ribp_read(`RIBP_PSRAM_CHIP0_ID_LO, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_CHIP0_ID_LO, 1'b0, reg_data);
     if (reg_data != 32'h0026_5D0D) $fatal(1, "chip ID mismatch");
-    ribp_read(`RIBP_PSRAM_CHIP_MODE, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_CHIP_MODE, 1'b0, reg_data);
     if (reg_data[3:0] != 4'b1011) $fatal(1, "QPI mode mask mismatch");
 
     $display("PSRAM_TB_STAGE basic_axi");
@@ -407,28 +419,28 @@ module psram_tb;
     if (read_data != 32'hC001_CAFE) $fatal(1, "healthy chip after missing device failed");
 
     $display("PSRAM_TB_STAGE indirect");
-    ribp_write(`RIBP_PSRAM_INTR_STATE, 32'hF, 4'h1, 1'b0);
-    ribp_write(`RIBP_PSRAM_INDIRECT_CTRL, 32'h8000_0009, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_INTR_STATE, 32'hF, 4'h1, 1'b0);
+    apb4_write(`APB4_PSRAM_INDIRECT_CTRL, 32'h8000_0009, 4'hF, 1'b0);
     wait_for_indirect();
-    ribp_read(`RIBP_PSRAM_CHIP_MODE, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_CHIP_MODE, 1'b0, reg_data);
     if (!reg_data[4]) $fatal(1, "wrap32 mode did not update");
 
     $display("PSRAM_TB_STAGE timeout");
-    ribp_write(`RIBP_PSRAM_CS_MAX_LOW_CYCLES, 32'd20, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_CS_MAX_LOW_CYCLES, 32'd20, 4'hF, 1'b0);
     axi_read_single(PsramBase + 32'h0080_0800, `AXI4_BURST_SIZE_4BYTES, `AXI4_RESP_SLAVE_ERROR,
                     read_data);
-    ribp_read(`RIBP_PSRAM_CHIP_READY, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_CHIP_READY, 1'b0, reg_data);
     if (reg_data[3:0] != 4'b1001) $fatal(1, "timeout fault was not isolated");
-    ribp_write(`RIBP_PSRAM_CS_MAX_LOW_CYCLES, 32'd512, 4'hF, 1'b0);
+    apb4_write(`APB4_PSRAM_CS_MAX_LOW_CYCLES, 32'd512, 4'hF, 1'b0);
     axi_read_single(PsramBase + 32'h0180_0300, `AXI4_BURST_SIZE_4BYTES, `AXI4_RESP_OKAY, read_data);
     if (read_data != 32'hC001_CAFE) $fatal(1, "healthy chip failed after timeout");
 
     $display("PSRAM_TB_STAGE counters");
-    ribp_read(`RIBP_PSRAM_PERF_READ_BYTES, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_PERF_READ_BYTES, 1'b0, reg_data);
     if (reg_data == 32'd0) $fatal(1, "read performance counter did not advance");
-    ribp_read(`RIBP_PSRAM_PERF_WRITE_BYTES, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_PERF_WRITE_BYTES, 1'b0, reg_data);
     if (reg_data == 32'd0) $fatal(1, "write performance counter did not advance");
-    ribp_read(`RIBP_PSRAM_PERF_COMMANDS, 1'b0, reg_data);
+    apb4_read(`APB4_PSRAM_PERF_COMMANDS, 1'b0, reg_data);
     if (reg_data == 32'd0) $fatal(1, "command performance counter did not advance");
 
     $display("PSRAM controller integration test passed");

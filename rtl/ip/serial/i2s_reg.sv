@@ -14,7 +14,7 @@ module i2s_reg (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
-    ribp_if.slave       ribp,
+    apb4_if.slave       apb4,
     output logic        mode_o,
     output logic [ 1:0] format_o,
     output logic        recven_o,
@@ -33,11 +33,11 @@ module i2s_reg (
     // verilog_format: on
 );
 
-  // ribp
-  logic s_ribp_wr_hdshk, s_ribp_rd_hdshk;
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_rdata_en;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
+  // apb4
+  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
+  logic s_apb4_ready_d, s_apb4_ready_q;
+  logic s_apb4_rdata_en;
+  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
   // register
   logic s_i2s_mode_en;
   logic s_i2s_mode_d, s_i2s_mode_q;
@@ -57,12 +57,12 @@ module i2s_reg (
   logic s_rx_fifo_stall_d, s_rx_fifo_stall_q;
 
 
-  // ribp
-  assign s_ribp_wr_hdshk    = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
-  assign s_ribp_rd_hdshk    = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
-  assign ribp.ready         = s_ribp_ready_q;
-  assign ribp.resp_err      = 1'b0;
-  assign ribp.rdata         = s_ribp_rdata_q;
+  // apb4
+  assign s_apb4_wr_hdshk    = apb4.psel && apb4.penable && (~s_apb4_ready_q) && apb4.pwrite;
+  assign s_apb4_rd_hdshk    = apb4.psel && apb4.penable && (~s_apb4_ready_q) && (~apb4.pwrite);
+  assign apb4.pready        = s_apb4_ready_q;
+  assign apb4.pslverr       = 1'b0;
+  assign apb4.prdata        = s_apb4_rdata_q;
   // reg
   assign mode_o             = s_i2s_mode_q;
   assign format_o           = s_i2s_format_q;
@@ -74,8 +74,8 @@ module i2s_reg (
   assign dma_rx_stall_o     = s_rx_fifo_stall_q;
 
 
-  assign s_i2s_mode_en      = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_MODE;
-  assign s_i2s_mode_d       = ribp.wdata[0];
+  assign s_i2s_mode_en      = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_I2S_MODE;
+  assign s_i2s_mode_d       = apb4.pwdata[0];
   dffer #(
       .DATA_WIDTH(1)
   ) u_i2s_mode_dffer (
@@ -87,8 +87,8 @@ module i2s_reg (
   );
 
 
-  assign s_i2s_format_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_FORMAT;
-  assign s_i2s_format_d  = ribp.wdata[1:0];
+  assign s_i2s_format_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_I2S_FORMAT;
+  assign s_i2s_format_d  = apb4.pwdata[1:0];
   dffer #(
       .DATA_WIDTH(2)
   ) u_i2s_format_dffer (
@@ -100,8 +100,8 @@ module i2s_reg (
   );
 
 
-  assign s_i2s_upbound_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_UPBOUND;
-  assign s_i2s_upbound_d  = ribp.wdata[7:0];
+  assign s_i2s_upbound_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_I2S_UPBOUND;
+  assign s_i2s_upbound_d  = apb4.pwdata[7:0];
   dfferh #(
       .DATA_WIDTH(8)
   ) u_i2s_upbound_dfferh (
@@ -113,8 +113,8 @@ module i2s_reg (
   );
 
 
-  assign s_i2s_lowbound_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_LOWBOUND;
-  assign s_i2s_lowbound_d  = ribp.wdata[7:0];
+  assign s_i2s_lowbound_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_I2S_LOWBOUND;
+  assign s_i2s_lowbound_d  = apb4.pwdata[7:0];
   dffer #(
       .DATA_WIDTH(8)
   ) u_i2s_lowbound_dffer (
@@ -126,8 +126,8 @@ module i2s_reg (
   );
 
 
-  assign s_i2s_recven_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_RECVEN;
-  assign s_i2s_recven_d  = ribp.wdata[0];
+  assign s_i2s_recven_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_I2S_RECVEN;
+  assign s_i2s_recven_d  = apb4.pwdata[0];
   dffer #(
       .DATA_WIDTH(1)
   ) u_i2s_recven_dffer (
@@ -138,8 +138,8 @@ module i2s_reg (
       .dat_o  (s_i2s_recven_q)
   );
 
-  assign s_i2s_stream_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_STREAM_CTRL;
-  assign s_i2s_stream_d  = ribp.wdata[1:0];
+  assign s_i2s_stream_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_I2S_STREAM_CTRL;
+  assign s_i2s_stream_d  = apb4.pwdata[1:0];
   dffer #(
       .DATA_WIDTH(2)
   ) u_i2s_stream_dffer (
@@ -191,12 +191,12 @@ module i2s_reg (
   always_comb begin
     tx_push_valid_o = 1'b0;
     tx_push_data_o  = '0;
-    if (s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_I2S_TXDATA) begin
+    if (s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_I2S_TXDATA) begin
       tx_push_valid_o = 1'b1;
-      if (ribp.wstrb[0]) tx_push_data_o[7:0] = ribp.wdata[7:0];
-      if (ribp.wstrb[1]) tx_push_data_o[15:8] = ribp.wdata[15:8];
-      if (ribp.wstrb[2]) tx_push_data_o[23:16] = ribp.wdata[23:16];
-      if (ribp.wstrb[3]) tx_push_data_o[31:24] = ribp.wdata[31:24];
+      if (apb4.pstrb[0]) tx_push_data_o[7:0] = apb4.pwdata[7:0];
+      if (apb4.pstrb[1]) tx_push_data_o[15:8] = apb4.pwdata[15:8];
+      if (apb4.pstrb[2]) tx_push_data_o[23:16] = apb4.pwdata[23:16];
+      if (apb4.pstrb[3]) tx_push_data_o[31:24] = apb4.pwdata[31:24];
     end
   end
 
@@ -214,43 +214,43 @@ module i2s_reg (
       .dat_o  (s_i2s_stat_q)
   );
 
-  assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
+  assign s_apb4_ready_d = apb4.psel && apb4.penable && (~s_apb4_ready_q);
   dffr #(
       .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
+  ) u_apb4_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
+      .dat_i  (s_apb4_ready_d),
+      .dat_o  (s_apb4_ready_q)
   );
 
-  assign s_ribp_rdata_en = s_ribp_rd_hdshk;
+  assign s_apb4_rdata_en = s_apb4_rd_hdshk;
   always_comb begin
     rx_pop_valid_o = 1'b0;
-    s_ribp_rdata_d = s_ribp_rdata_q;
-    unique case (ribp.addr[7:0])
-      `RIBP_I2S_MODE:        s_ribp_rdata_d = {31'd0, s_i2s_mode_q};
-      `RIBP_I2S_FORMAT:      s_ribp_rdata_d = {30'd0, s_i2s_format_q};
-      `RIBP_I2S_RXDATA: begin
-        if (s_ribp_rd_hdshk) begin
+    s_apb4_rdata_d = s_apb4_rdata_q;
+    unique case (apb4.paddr[7:0])
+      `APB4_I2S_MODE:        s_apb4_rdata_d = {31'd0, s_i2s_mode_q};
+      `APB4_I2S_FORMAT:      s_apb4_rdata_d = {30'd0, s_i2s_format_q};
+      `APB4_I2S_RXDATA: begin
+        if (s_apb4_rd_hdshk) begin
           rx_pop_valid_o = 1'b1;
-          if (!rx_empty_i) s_ribp_rdata_d = rx_pop_data_i;
-          else s_ribp_rdata_d = '0;
+          if (!rx_empty_i) s_apb4_rdata_d = rx_pop_data_i;
+          else s_apb4_rdata_d = '0;
         end
       end
-      `RIBP_I2S_STATUS:      s_ribp_rdata_d = {30'd0, s_i2s_stat_q};
-      `RIBP_I2S_STREAM_CTRL: s_ribp_rdata_d = {30'd0, s_i2s_stream_q};
-      default:               s_ribp_rdata_d = s_ribp_rdata_q;
+      `APB4_I2S_STATUS:      s_apb4_rdata_d = {30'd0, s_i2s_stat_q};
+      `APB4_I2S_STREAM_CTRL: s_apb4_rdata_d = {30'd0, s_i2s_stream_q};
+      default:               s_apb4_rdata_d = s_apb4_rdata_q;
     endcase
   end
   dffer #(
       .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
+  ) u_apb4_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_ribp_rdata_en),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
+      .en_i   (s_apb4_rdata_en),
+      .dat_i  (s_apb4_rdata_d),
+      .dat_o  (s_apb4_rdata_q)
   );
 
 endmodule

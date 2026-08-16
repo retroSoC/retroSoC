@@ -1,9 +1,9 @@
 # AXI4-Stream Peripheral Data Paths
 
 The Mini SoC uses 32-bit AXI4-Stream links for high-rate peripheral data that
-does not need an address on every word. RIBP remains the register configuration
+does not need an address on every word. APB4 remains the register configuration
 plane. The active stream endpoints are DMA to I2S TX, I2S RX to DMA, and DVP RX
-to DMA. UART, I2C, and WS2812 retain their existing RIBP FIFO data registers.
+to DMA. UART, I2C, and WS2812 retain their existing APB4 FIFO data registers.
 
 ## Interface Contract
 

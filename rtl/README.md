@@ -30,10 +30,10 @@ RTL and local changes to existing RTL must preserve them:
 - Name a register write enable `s_<name>_en`. Do not add `_d` or `_q` to an
   ordinary combinational signal or to a parent-module connection simply
   because its source is registered inside a child module.
-- Use `s_req`, `s_write`, `s_req_accept`, and `s_access_error` for a RIBP slave
-  transaction. Name its registered response signals `s_ribp_ready_d/q`,
-  `s_ribp_rdata_d/q`, and `s_ribp_resp_err_d/q`.
-- Name register offsets `RIBP_<IP>_<REGISTER>` and field bit positions
+- Use `s_req`, `s_write`, `s_req_accept`, and `s_access_error` for an APB4 slave
+  transaction. Name its registered response signals `s_apb4_ready_d/q`,
+  `s_apb4_rdata_d/q`, and `s_apb4_resp_err_d/q`.
+- Name register offsets `APB4_<IP>_<REGISTER>` and field bit positions
   `<IP>_<REGISTER>_<FIELD>`. Do not add redundant `_OFFSET`, `_LSB`, `_MASK`,
   or `_VALUE` suffixes; keep implementation-only masks and constant values as
   typed `localparam` declarations in the owning module.
@@ -68,19 +68,19 @@ testbench retains that Micron timing model, so it is the reference for SDRAM
 command timing while Verilator provides fast functional coverage.
 
 The self-owned ESP-PSRAM64H controller exposes a 32-bit AXI4 data window and a
-separate RIBP management plane across four independently isolated 8 MiB chips.
+separate APB4 management plane across four independently isolated 8 MiB chips.
 Its frozen architecture, register ABI, timing limits, model, formal target, and
 verification evidence are documented in
 [ESP-PSRAM64H Controller](../docs/ip/psram.md).
 
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
-`sysctrl_core.sv` behind the stable `ribp_sysctrl` integration wrapper. Its
-generated register offsets, RIBP timing, control-plane behavior, and
+`sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
+generated register offsets, APB4 timing, control-plane behavior, and
 verification contract are documented in
-[RIBP System Control](../docs/ip/sysctrl.md).
+[APB4 System Control](../docs/ip/sysctrl.md).
 
 The Mini SoC APB4 platform block is `apb4_system` in `rtl/mini/top`. It owns
 archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, and the user-IP APB window.
-`ip_ribp_wrapper` remains the RIBP peripheral container. Topology generation
+`apb4_periph` remains the APB4 peripheral container. Topology generation
 and the `soc_apb4_system_fabric.svh` include are documented in
 [Mini SoC Topology](mini/integration/README.md).

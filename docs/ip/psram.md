@@ -1,7 +1,7 @@
 # ESP-PSRAM64H Controller
 
 The Mini SoC PSRAM controller provides a 32 MiB memory-mapped AXI4 window over
-four ESP-PSRAM64H devices and a separate RIBP management window. It is a
+four ESP-PSRAM64H devices and a separate APB4 management window. It is a
 device-specific 4-bit SDR controller, not a generic serial-memory controller.
 
 ## Scope and Integration
@@ -9,7 +9,7 @@ device-specific 4-bit SDR controller, not a generic serial-memory controller.
 | Property | Value |
 | --- | --- |
 | AXI4 data window | `0x40000000` - `0x41FFFFFF` |
-| RIBP management window | Generated `RS_SOC_RIBP_PSRAM_BASE` window |
+| APB4 management window | Generated `RS_SOC_APB4_PSRAM_BASE` window |
 | Capacity | 4 chips x 8 MiB = 32 MiB |
 | Chip selection | `chip = offset[24:23]` |
 | Device address | `local_addr = offset[22:0]` |
@@ -23,9 +23,9 @@ CPOL/CPHA selection, ECC, arbitrary software opcodes, and raw protocol-phase
 programming. The management port is for configuration, recovery, status, and
 restricted commands. Bulk data must use the AXI window.
 
-`ribp_psram` composes four blocks:
+`apb4_psram` composes four blocks:
 
-- `psram_reg`: RIBP register ABI, interrupts, and performance counters.
+- `psram_reg`: APB4 register ABI, interrupts, and performance counters.
 - `psram_axi4`: AXI protocol validation, error drain, byte strobes, and beat
   address generation.
 - `psram_core`: initialization, chip isolation, command arbitration, and the
@@ -119,7 +119,7 @@ retroSoC system sign-off.
 ## Register ABI
 
 Registers are 32-bit and naturally aligned. Unaligned, unmapped, directionally
-invalid, and forbidden busy-time accesses return RIBP `resp_err`. Configuration
+invalid, and forbidden busy-time accesses return APB4 `pslverr`. Configuration
 registers accept `wstrb` partial writes. Action and RW1C registers require the
 low byte strobe.
 
@@ -211,7 +211,7 @@ self-test. No dynamic memory or hosted-library dependency is introduced.
 | PSRAM-002 | Warm and cold initialization recover SPI/QPI state and validate ID. | Device model plus initialization and missing-chip scenarios in `psram_tb.sv`. |
 | PSRAM-003 | One failed chip is isolated without blocking healthy chips. | Chip 2 missing-fault test; ready/error masks and healthy-chip AXI accesses. |
 | PSRAM-004 | AXI legal bursts complete; illegal bursts terminate without deadlock. | Directed AXI/WSTRB/backpressure/error-drain tests and `formal-psram`. |
-| PSRAM-005 | RIBP rejects invalid ABI accesses and protects active timing. | Register error tests in `psram_tb.sv`. |
+| PSRAM-005 | APB4 rejects invalid ABI accesses and protects active timing. | Register error tests in `psram_tb.sv`. |
 | PSRAM-006 | All commands obey bounded CE#/SCLK and abort-safe behavior. | PHY assertions in `formal-psram`, model timing checks, access watchdog tests. |
 | PSRAM-007 | RTL and HAL register offsets remain synchronized. | `tests/test_psram.py` ABI comparison. |
 | PSRAM-008 | Timing math rounds conservatively and rejects invalid ranges. | Host cases in `tests/c/test_runtime.c`. |

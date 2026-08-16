@@ -71,7 +71,7 @@ historical baseline:
 | port | semantic name plus direction suffix | `addr_i`, `resp_err_o`, `data_io` |
 | low-active port | polarity before direction | `irq_n_o`; project reset spelling is `rst_n_i` |
 | local signal | `s_` plus semantic name | `s_cmd_valid`, `s_timeout_q` |
-| instance | `u_` plus role or function | `u_rx_fifo`, `u_cfg_ribp` |
+| instance | `u_` plus role or function | `u_rx_fifo`, `u_cfg_apb4` |
 | next/current state | `_d` / `_q` | `s_state_d`, `s_state_q` |
 | pipeline state | `_q2` / `_q3` | `s_addr_q2` |
 | enum typedef | lower snake case plus `_e` | `uart_state_e` |
@@ -80,7 +80,7 @@ historical baseline:
 | global macro | namespaced ALL_CAPS | `RETROSOC_UART__BAUD` |
 
 Protocol and technology names are stable interface vocabulary, not local
-abbreviations. Keep standard AXI/APB/RIBP fields such as `valid`, `ready`,
+abbreviations. Keep standard AXI/APB/RIB fields such as `valid`, `ready`, `psel`,
 `wdata`, `wstrb`, `rdata`, and `resp` unchanged. Do not mechanically rename
 software-visible register macros, PDK pins, generated bindings, or managed IP.
 A public rename requires a compatibility wrapper, a filelist update, and an
@@ -89,13 +89,13 @@ affected simulation/formal review.
 Use the approved local aliases in `rtl/rtl_style_manifest.json` only when they
 remain unambiguous (`cmd`, `req`, `resp`, `addr`, `cfg`, `stat`, `cnt`, and
 similar). New aliases require a manifest update and review. Instance names
-must identify their function rather than their order: use `cfg_ribp` or
-`u_sdram_data_ribp_if`, not `if0` or `bus1`.
+must identify their function rather than their order: use `cfg_apb4` or
+`u_sdram_data_apb4_if`, not `if0` or `bus1`.
 
 New FSMs use a typed enum with an `_e` type and descriptive values; opcode,
 response, register offset, and field constants remain ALL_CAPS because they
 are protocol or software-facing values. Existing `FSM_*`, `SOC_*`, `RIB_*`,
-and `RIBP_*` names are compatibility baseline and migrate only in isolated,
+and `APB4_*` names are compatibility baseline and migrate only in isolated,
 reviewed batches.
 
 ### 4.1 Identifier grammar and semantic order
@@ -143,12 +143,12 @@ The following rules are normative:
    or `_controller`, `_reg`, `_core`, `_if`, `_pkg`, `_formal`,
    `_formal_props`, and `_tb`.
 2. Name bus adapters with the repository's numeric `2` convention:
-   `rib2apb`, `rib2ram`, `ribp2axi4`, `axi42ribp`, and `axi42ram`. New code
+   `rib2apb`, `rib2ram`, `axi42apb`, `axi4_word_bridge`, and `axi42ram`. New code
    MUST NOT introduce another `_to_` spelling for the same conversion.
-3. Use function-qualified interface instances such as `cfg_ribp`,
-   `mem_ribp`, `dma_axi`, and `apb_periph`. Do not use `if0`, `bus0`,
+3. Use function-qualified interface instances such as `cfg_apb4`,
+   `mem_axi4`, `dma_axi`, and `apb_periph`. Do not use `if0`, `bus0`,
    `interface_a`, or names based only on declaration order.
-4. Keep standard protocol field names unchanged. AXI, APB, RIB, and RIBP
+4. Keep standard protocol field names unchanged. AXI, APB, and RIB
    fields such as `valid`, `ready`, `wdata`, `wstrb`, `rdata`, `resp`, and
    `resp_err` are interoperability vocabulary, not local style debt.
 5. Existing generic public modules such as `rcu` or `bus` are not renamed in
@@ -181,13 +181,13 @@ The following rules are normative:
    opcodes, response codes, register offsets, field positions, and other
    protocol/software-visible constants.
 4. Name global macros with a block namespace and a double underscore, such as
-   `RETROSOC_RIB__RESP_OK`, `RETROSOC_RIBP_UART__BAUD`, and
+   `RETROSOC_RIB__RESP_OK`, `RETROSOC_APB4_UART__BAUD`, and
    `RETROSOC_GPIO__PIN_COUNT`. Use include guards such as
    `RETROSOC_<FILE>_SVH`. Local macros use a single leading underscore and
    MUST be undefined after use.
 5. Do not use a macro for a value that can be expressed as a parameter,
    localparam, package constant, function, or enum. Existing `SOC_*`,
-   `RIB_*`, `RIBP_*`, and standard protocol macro names remain compatibility
+   `RIB_*`, `APB4_*`, and standard protocol macro names remain compatibility
    exceptions until their consumers are migrated.
 
 ### 4.4 Compatibility and migration boundaries
@@ -232,7 +232,7 @@ New abbreviations require review and an update to `rtl/rtl_style_manifest.json`.
 Use `_t` for typedefs, `_e` for enum types, `ALL_CAPS` for macros, and typed
 UpperCamelCase for new parameters. Global macros use the
 `RETROSOC_<BLOCK>__<NAME>` namespace; IP register macros use
-`RIBP_<IP>__<REGISTER>`. Prefer a package, enum, localparam, or parameter over
+`APB4_<IP>__<REGISTER>`. Prefer a package, enum, localparam, or parameter over
 a macro when the value does not cross a preprocessing boundary.
 
 Declare explicit widths and signedness for parameters, ports, constants, and
@@ -305,7 +305,7 @@ source domain, destination domain, reset assumptions, and the approved
 synchronizer, handshake, or asynchronous FIFO primitive.
 
 Each bus or streaming interface documents acceptance, backpressure, response
-error behavior, reset values, and outstanding-transaction limits. RIB/RIBP and
+error behavior, reset values, and outstanding-transaction limits. RIB/APB4 and
 AXI adapters MUST make burst boundaries, response timing, and access permissions
 explicit at the module boundary.
 

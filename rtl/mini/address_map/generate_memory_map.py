@@ -12,7 +12,7 @@ from typing import Any
 
 
 MAX_ADDRESS = 1 << 32
-VALID_ROUTES = {"ribp", "axi4", "apb", "ram", "reserved"}
+VALID_ROUTES = {"apb4", "axi4", "apb", "ram", "reserved"}
 VALID_KINDS = {"active", "reserved"}
 VALID_USER_ACCESS = {"none", "ro", "rw"}
 VALID_BURST = {"incr1", "incr4", "incr16"}
@@ -160,7 +160,7 @@ def render_rtl(
             f"{range_expression(symbol, region['base'], region['end'])}",
         ]
     lines.append("")
-    for route in ("ribp", "axi4", "apb", "ram", "reserved"):
+    for route in ("apb4", "axi4", "apb", "ram", "reserved"):
         selected = [
             f"`SOC_ADDR_IS_{region['symbol']}(addr)"
             for region in regions
@@ -170,7 +170,7 @@ def render_rtl(
     legacy_rib_targets = [
         f"`SOC_ADDR_IS_{region['symbol']}(addr)"
         for region in regions
-        if region["route"] in {"ribp", "axi4"}
+        if region["route"] in {"apb4", "axi4"}
     ]
     lines.append(
         f"`define SOC_ADDR_IS_RIB_LEGACY_TARGET(addr) ({join_or(legacy_rib_targets)})"

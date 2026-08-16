@@ -29,14 +29,15 @@ interface xpi_if ();
   );
 endinterface
 
-module ribp_xpi (
+module apb4_xpi (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic  clk_i,
     input  logic  rst_n_i,
     input  logic  dma_xfer_done_i,
     output logic  dma_tx_stall_o,
     output logic  dma_rx_stall_o,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
+    axi4_if.slave mem_axi4,
     xpi_if.dut    xpi
     // verilog_format: on
 );
@@ -104,38 +105,34 @@ module ribp_xpi (
   logic [6:0] s_rx_elem_num;
   // ctrl
   logic s_reg_xfer_start, s_xfer_done;
-  // interface
-  ribp_if u_reg_ribp_if ();
-  ribp_if u_mm_ribp_if ();
+  logic        s_mm_req_valid;
+  logic        s_mm_req_ready;
+  logic [31:0] s_mm_req_addr;
+  logic [31:0] s_mm_req_wdata;
+  logic [ 3:0] s_mm_req_wstrb;
+  logic [31:0] s_mm_req_rdata;
+  logic        s_mm_req_resp_err;
 
+  axi4_word_bridge u_mem_bridge (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .axi4          (mem_axi4),
+      .req_valid_o   (s_mm_req_valid),
+      .req_ready_i   (s_mm_req_ready),
+      .req_addr_o    (s_mm_req_addr),
+      .req_wdata_o   (s_mm_req_wdata),
+      .req_wstrb_o   (s_mm_req_wstrb),
+      .req_rdata_i   (s_mm_req_rdata),
+      .req_resp_err_i(s_mm_req_resp_err)
+  );
 
-  // ribp mux
-  assign s_xpi_mm_sel       = `SOC_ADDR_IS_FLASH(ribp.addr) || `SOC_ADDR_IS_XPI(ribp.addr);
-  assign u_reg_ribp_if.valid = ribp.valid && (~s_xpi_mm_sel);
-  assign u_reg_ribp_if.addr  = ribp.addr;
-  assign u_reg_ribp_if.wdata = ribp.wdata;
-  assign u_reg_ribp_if.wstrb = ribp.wstrb;
-
-  assign u_mm_ribp_if.valid  = ribp.valid && s_xpi_mm_sel;
-  assign u_mm_ribp_if.addr   = ribp.addr;
-  assign u_mm_ribp_if.wdata  = ribp.wdata;
-  assign u_mm_ribp_if.wstrb  = ribp.wstrb;
-
-  // verilog_format: off -- preserve reviewed column alignment
-  assign ribp.ready = (u_reg_ribp_if.valid & u_reg_ribp_if.ready) |
-                     (u_mm_ribp_if.valid  & u_mm_ribp_if.ready);
-  assign ribp.resp_err = (u_reg_ribp_if.valid & u_reg_ribp_if.ready & u_reg_ribp_if.resp_err) |
-                         (u_mm_ribp_if.valid  & u_mm_ribp_if.ready & u_mm_ribp_if.resp_err);
-
-  assign ribp.rdata = ({32{(u_reg_ribp_if.valid & u_reg_ribp_if.ready)}} & u_reg_ribp_if.rdata) |
-                     ({32{(u_mm_ribp_if.valid  & u_mm_ribp_if.ready)}}  & u_mm_ribp_if.rdata);
-  // verilog_format: on
-
-  // reg/mm mode nss
+  // Hold MM select for the entire memory request, matching the old RIBP
+  // valid window. A one-cycle rd/wr pulse would drop chip-select mid-transfer.
+  assign s_xpi_mm_sel    = s_mm_req_valid;
   assign s_xpi_nss       = s_xpi_mm_sel ? s_xpi_mm_nss : s_xpi_regnss;
   assign s_tx_push_valid = s_xpi_mm_sel ? s_mm_tx_push_valid : s_reg_tx_push_valid;
-  assign s_tx_push_data  = s_xpi_mm_sel ? s_mm_tx_push_data  : s_reg_tx_push_data;
-  assign s_rx_pop_valid  = s_xpi_mm_sel ? s_mm_rx_pop_valid  : s_reg_rx_pop_valid;
+  assign s_tx_push_data  = s_xpi_mm_sel ? s_mm_tx_push_data : s_reg_tx_push_data;
+  assign s_rx_pop_valid  = s_xpi_mm_sel ? s_mm_rx_pop_valid : s_reg_rx_pop_valid;
   assign s_xpi_mm_req    = s_xpi_mm_rd_st || s_xpi_mm_wr_st;
 
 
@@ -186,7 +183,7 @@ module ribp_xpi (
       // dma
       .dma_tx_stall_o(dma_tx_stall_o),
       .dma_rx_stall_o(dma_rx_stall_o),
-      .ribp(u_reg_ribp_if)
+      .apb4(apb4)
   );
 
 
@@ -211,7 +208,13 @@ module ribp_xpi (
       .rx_pop_ready_i (s_rx_pop_ready),
       // ctrl
       .xfer_done_i    (s_xfer_done),
-      .ribp           (u_mm_ribp_if)
+      .req_valid_i    (s_mm_req_valid),
+      .req_ready_o    (s_mm_req_ready),
+      .req_addr_i     (s_mm_req_addr),
+      .req_wdata_i    (s_mm_req_wdata),
+      .req_wstrb_i    (s_mm_req_wstrb),
+      .req_rdata_o    (s_mm_req_rdata),
+      .req_resp_err_o (s_mm_req_resp_err)
   );
 
 
@@ -260,7 +263,7 @@ module ribp_xpi (
       .nss_i(s_xpi_nss),
       .mode_i(s_xpi_mode[s_xpi_nss]),
       .clkdiv_i(s_xpi_clkdiv[s_xpi_nss]),
-      .rdwr_i(u_mm_ribp_if.valid ? s_xpi_mm_rdwr : s_xpi_rdwr[s_xpi_nss]),
+      .rdwr_i(s_xpi_mm_sel ? s_xpi_mm_rdwr : s_xpi_rdwr[s_xpi_nss]),
       .revdat_i(s_xpi_revdat[s_xpi_nss]),
       .cmdtyp_i(s_xpi_cmdtyp[s_xpi_nss]),
       .cmdlen_i(s_xpi_cmdlen[s_xpi_nss]),
@@ -268,12 +271,12 @@ module ribp_xpi (
       .adrtyp_i(s_xpi_adrtyp[s_xpi_nss]),
       .adrlen_i(s_xpi_adrlen[s_xpi_nss]),
       // HACK:
-      .adrdat_i(u_mm_ribp_if.valid ? {s_xpi_mm_addr[23:0], 8'hF0} : s_xpi_adrdat[s_xpi_nss]),
+      .adrdat_i(s_xpi_mm_sel ? {s_xpi_mm_addr[23:0], 8'hF0} : s_xpi_adrdat[s_xpi_nss]),
       .tdulen_i(s_xpi_tdulen[s_xpi_nss]),
       .rdulen_i(s_xpi_rdulen[s_xpi_nss]),
       .dattyp_i(s_xpi_dattyp[s_xpi_nss]),
       .datlen_i(s_xpi_datlen[s_xpi_nss]),  // NOTE:
-      .datbit_i(u_mm_ribp_if.valid ? s_xpi_mm_xfer_byte : s_xpi_datbit[s_xpi_nss]),
+      .datbit_i(s_xpi_mm_sel ? s_xpi_mm_xfer_byte : s_xpi_datbit[s_xpi_nss]),
       .hlvlen_i(s_xpi_hlvlen[s_xpi_nss]),
       .tx_data_req_o(s_tx_pop_valid),
       .tx_data_rdy_i(s_tx_pop_ready),
@@ -281,7 +284,7 @@ module ribp_xpi (
       .rx_data_req_o(s_rx_push_valid),
       .rx_data_rdy_i(s_rx_push_ready),
       .rx_data_o(s_rx_push_data),
-      .start_i(u_mm_ribp_if.valid ? s_xpi_mm_req : s_reg_xfer_start),
+      .start_i(s_xpi_mm_sel ? s_xpi_mm_req : s_reg_xfer_start),
       .done_o(s_xfer_done),
       .tx_elem_num_i(s_tx_elem_num[7:0]),
       .dma_xfer_done_i(dma_xfer_done_i),

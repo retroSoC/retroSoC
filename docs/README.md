@@ -44,7 +44,7 @@ the root README and subsystem guides.
   control, error, interrupt, DMA, HAL, and verification contracts.
 - [ip/i2c.md](ip/i2c.md) defines the dual I2C command, timing, error,
   recovery, DMA, HAL, and verification contracts.
-- [ip/psram.md](ip/psram.md) defines the four-chip ESP-PSRAM64H AXI/RIBP
+- [ip/psram.md](ip/psram.md) defines the four-chip ESP-PSRAM64H AXI/APB4
   controller, register ABI, timing, isolation, recovery, HAL, and verification
   contracts.
 - [ip/ps2.md](ip/ps2.md) defines the Mini SoC PS/2 APB, GPIO pad,

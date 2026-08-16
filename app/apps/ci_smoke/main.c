@@ -181,8 +181,8 @@ static bool rs_ci_smoke_uart_v3(void) {
     const uint8_t transmitted = UINT8_C(0xA5);
     rs_uart_rx_data_t received;
 
-    if ((RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0xF8)) != UINT32_C(0x00030000)) ||
-        (RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0xFC)) != UINT32_C(0x03FF4040)) ||
+    if ((RS_SOC_REG32(RS_SOC_APB4_UART0_BASE, UINT32_C(0xF8)) != UINT32_C(0x00030000)) ||
+        (RS_SOC_REG32(RS_SOC_APB4_UART0_BASE, UINT32_C(0xFC)) != UINT32_C(0x03FF4040)) ||
         (rs_uart_configure(&config, RS_TIMEOUT_DEFAULT) != RS_OK) ||
         (rs_uart_write(&transmitted, 1U, RS_TIMEOUT_DEFAULT) != RS_OK) ||
         (rs_uart_read(&received, 1U, RS_TIMEOUT_DEFAULT) != RS_OK) ||

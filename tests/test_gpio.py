@@ -27,7 +27,7 @@ def test_gpio_register_pad_interrupt_and_filter_contract(tmp_path: Path) -> None
                 "+define+SV_ASSRT_DISABLE",
                 f"+incdir+{peripheral}",
                 f"+incdir+{common}",
-                str(common / "interface/ribp_if.sv"),
+                str(common / "interface/apb4_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "clkrst/counter.sv"),
                 str(common / "cdc/cdc_sync.sv"),
@@ -36,7 +36,7 @@ def test_gpio_register_pad_interrupt_and_filter_contract(tmp_path: Path) -> None
                 str(peripheral / "user_gpio_if.sv"),
                 str(peripheral / "gpio_core.sv"),
                 str(peripheral / "gpio_reg.sv"),
-                str(peripheral / "ribp_gpio.sv"),
+                str(peripheral / "apb4_gpio.sv"),
                 str(ROOT / "tests/rtl/gpio_tb.sv"),
                 "",
             ]

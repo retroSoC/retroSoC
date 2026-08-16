@@ -32,7 +32,7 @@ static bool rs_timer_id_valid(rs_timer_id_t timer) {
 }
 
 static uintptr_t rs_timer_base(rs_timer_id_t timer) {
-    return timer == RS_TIMER_0 ? RS_SOC_RIBP_TIM0_BASE : RS_SOC_RIBP_TIM1_BASE;
+    return timer == RS_TIMER_0 ? RS_SOC_APB4_TIM0_BASE : RS_SOC_APB4_TIM1_BASE;
 }
 
 static volatile uint32_t *rs_timer_register(rs_timer_id_t timer, uint32_t offset) {
@@ -234,7 +234,7 @@ void rs_timer_shell_test(int argc, char **argv) {
 
     (void)argc;
     (void)argv;
-    printf("[RIBP IP] general timer test\n");
+    printf("[APB4 IP] general timer test\n");
     if ((rs_timer_configure(RS_TIMER_1, &config) != RS_OK) ||
         (rs_timer_start(RS_TIMER_1) != RS_OK)) {
         printf("timer configuration failed\n");

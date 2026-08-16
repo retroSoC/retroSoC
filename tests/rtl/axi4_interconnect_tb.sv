@@ -62,7 +62,7 @@ module axi4_interconnect_tb;
       .perf_mgmt_wait_o (),
       .perf_user_wait_o (),
       .perf_dma_wait_o  (),
-      .perf_ribp_wait_o (),
+      .perf_apb4_wait_o (),
       .perf_apb_wait_o  (),
       .perf_sdram_wait_o(),
       .perf_psram_wait_o(),

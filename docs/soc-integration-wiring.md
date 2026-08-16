@@ -72,19 +72,19 @@ programming, safety, and verification contract is in the managed
 
 ## WS2812 output
 
-The single-channel WS2812 transmitter occupies RIBP address `0x10008000` and
+The single-channel WS2812 transmitter occupies APB4 address `0x10008000` and
 drives GPIO2 alternate function 1. Software must configure GPIO2 for ALT1
-before starting a frame. The transmitter interrupt is RIBP group bit 10 and
+before starting a frame. The transmitter interrupt is APB4 group bit 10 and
 management-core interrupt 17. The data pin is forced low while idle, during
 reset/latch time, after abort, and after underflow.
 
-The RIBP TX FIFO is also a fixed-address target for the generic DMA engine.
-DMA is an AXI4 master and receives RIBP backpressure when the FIFO
+The APB4 TX FIFO is also a fixed-address target for the generic DMA engine.
+DMA is an AXI4 master and receives APB4/FIFO backpressure when the FIFO
 is full; the transmitter does not own a private DMA request channel. See
 [ws2812.md](ip/ws2812.md) for the register and transfer contract.
 
 I2S and DVP use dedicated 32-bit AXI4-Stream data links to DMA while retaining
-RIBP for configuration and PIO fallback. Their stream selection, backpressure,
+APB4 for configuration and PIO fallback. Their stream selection, backpressure,
 and transfer-boundary rules are defined in [axi4-stream.md](axi4-stream.md).
 
 ## Management JTAG

@@ -19,11 +19,11 @@ interface psram_if ();
   );
 endinterface
 
-module ribp_psram (
+module apb4_psram (
     // verilog_format: off -- preserve reviewed port alignment
     input logic    clk_i,
     input logic    rst_n_i,
-    ribp_if.slave  cfg_ribp,
+    apb4_if.slave  cfg_apb4,
     axi4_if.slave  mem_axi4,
     psram_if.dut   psram
     // verilog_format: on
@@ -115,7 +115,7 @@ module ribp_psram (
   psram_reg u_psram_reg (
       .clk_i                  (clk_i),
       .rst_n_i                (rst_n_i),
-      .ribp                   (cfg_ribp),
+      .apb4                   (cfg_apb4),
       .init_busy_i            (s_init_busy),
       .axi_busy_i             (s_axi_busy),
       .indirect_busy_i        (s_indirect_busy),

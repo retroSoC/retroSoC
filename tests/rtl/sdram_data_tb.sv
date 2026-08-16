@@ -14,7 +14,10 @@ module sdram_data_tb;
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
-  ribp_if cfg_ribp ();
+  apb4_if cfg_apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   sdram_if sdram ();
 
   always #5 clk_i = ~clk_i;
@@ -26,7 +29,7 @@ module sdram_data_tb;
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
       .axi4    (axi4),
-      .cfg_ribp(cfg_ribp),
+      .cfg_apb4(cfg_apb4),
       .sdram   (sdram)
   );
 
@@ -60,41 +63,41 @@ module sdram_data_tb;
 
   task automatic init_axi4;
     begin
-      axi4.awid      = '0;
-      axi4.awaddr    = '0;
-      axi4.awlen     = '0;
-      axi4.awsize    = `AXI4_BURST_SIZE_4BYTES;
-      axi4.awburst   = `AXI4_BURST_TYPE_INCR;
-      axi4.awlock    = `AXI4_LOCK_NORM;
-      axi4.awcache   = `AXI4_CACHE_NO_BUF;
-      axi4.awprot    = `AXI4_PROT_DATA;
-      axi4.awqos     = `AXI4_QOS_NORMAL;
-      axi4.awregion  = `AXI4_REGION_NORMAL;
-      axi4.awuser    = '0;
-      axi4.awvalid   = 1'b0;
-      axi4.wdata     = '0;
-      axi4.wstrb     = '0;
-      axi4.wlast     = 1'b0;
-      axi4.wuser     = '0;
-      axi4.wvalid    = 1'b0;
-      axi4.bready    = 1'b0;
-      axi4.arid      = '0;
-      axi4.araddr    = '0;
-      axi4.arlen     = '0;
-      axi4.arsize    = `AXI4_BURST_SIZE_4BYTES;
-      axi4.arburst   = `AXI4_BURST_TYPE_INCR;
-      axi4.arlock    = `AXI4_LOCK_NORM;
-      axi4.arcache   = `AXI4_CACHE_NO_BUF;
-      axi4.arprot    = `AXI4_PROT_DATA;
-      axi4.arqos     = `AXI4_QOS_NORMAL;
-      axi4.arregion  = `AXI4_REGION_NORMAL;
-      axi4.aruser    = '0;
-      axi4.arvalid   = 1'b0;
-      axi4.rready    = 1'b0;
-      cfg_ribp.valid = 1'b0;
-      cfg_ribp.addr  = '0;
-      cfg_ribp.wdata = '0;
-      cfg_ribp.wstrb = '0;
+      axi4.awid       = '0;
+      axi4.awaddr     = '0;
+      axi4.awlen      = '0;
+      axi4.awsize     = `AXI4_BURST_SIZE_4BYTES;
+      axi4.awburst    = `AXI4_BURST_TYPE_INCR;
+      axi4.awlock     = `AXI4_LOCK_NORM;
+      axi4.awcache    = `AXI4_CACHE_NO_BUF;
+      axi4.awprot     = `AXI4_PROT_DATA;
+      axi4.awqos      = `AXI4_QOS_NORMAL;
+      axi4.awregion   = `AXI4_REGION_NORMAL;
+      axi4.awuser     = '0;
+      axi4.awvalid    = 1'b0;
+      axi4.wdata      = '0;
+      axi4.wstrb      = '0;
+      axi4.wlast      = 1'b0;
+      axi4.wuser      = '0;
+      axi4.wvalid     = 1'b0;
+      axi4.bready     = 1'b0;
+      axi4.arid       = '0;
+      axi4.araddr     = '0;
+      axi4.arlen      = '0;
+      axi4.arsize     = `AXI4_BURST_SIZE_4BYTES;
+      axi4.arburst    = `AXI4_BURST_TYPE_INCR;
+      axi4.arlock     = `AXI4_LOCK_NORM;
+      axi4.arcache    = `AXI4_CACHE_NO_BUF;
+      axi4.arprot     = `AXI4_PROT_DATA;
+      axi4.arqos      = `AXI4_QOS_NORMAL;
+      axi4.arregion   = `AXI4_REGION_NORMAL;
+      axi4.aruser     = '0;
+      axi4.arvalid    = 1'b0;
+      axi4.rready     = 1'b0;
+      cfg_apb4.psel   = 1'b0;
+      cfg_apb4.paddr  = '0;
+      cfg_apb4.pwdata = '0;
+      cfg_apb4.pstrb  = '0;
     end
   endtask
 

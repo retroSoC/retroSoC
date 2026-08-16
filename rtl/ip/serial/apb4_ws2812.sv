@@ -8,13 +8,13 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module ribp_ws2812 #(
+module apb4_ws2812 #(
     parameter int TxFifoDepth = 16
 ) (
     // verilog_format: off -- preserve reviewed column alignment
     input logic   clk_i,
     input logic   rst_n_i,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
     ws2812_if.dut ws2812
     // verilog_format: on
 );
@@ -41,7 +41,7 @@ module ribp_ws2812 #(
   ) u_ws2812_reg (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),
-      .ribp                  (ribp),
+      .apb4                  (apb4),
       .bit_cycles_o          (s_bit_cycles),
       .t0h_cycles_o          (s_t0h_cycles),
       .t1h_cycles_o          (s_t1h_cycles),

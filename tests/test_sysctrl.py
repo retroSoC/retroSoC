@@ -55,7 +55,7 @@ def test_sysctrl_registers_lifecycle_faults_and_wake(tmp_path: Path) -> None:
                 f"+incdir+{common / 'utils'}",
                 f"+incdir+{common / 'cdc'}",
                 f"+incdir+{PERIPHERAL}",
-                str(common / "interface/ribp_if.sv"),
+                str(common / "interface/apb4_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "cdc/cdc_sync.sv"),
                 str(PERIPHERAL / "pll_ctrl_if.sv"),
@@ -63,7 +63,7 @@ def test_sysctrl_registers_lifecycle_faults_and_wake(tmp_path: Path) -> None:
                 str(PERIPHERAL / "sysctrl_define.svh"),
                 str(PERIPHERAL / "sysctrl_reg.sv"),
                 str(PERIPHERAL / "sysctrl_core.sv"),
-                str(PERIPHERAL / "ribp_sysctrl.sv"),
+                str(PERIPHERAL / "apb4_sysctrl.sv"),
                 str(ROOT / "tests/rtl/sysctrl_tb.sv"),
                 "",
             ]

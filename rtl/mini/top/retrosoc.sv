@@ -44,7 +44,7 @@ module retrosoc (
   // verilog_format: off -- preserve reviewed column alignment
   // Generated fabric links use the common 32-bit AXI4 contract.
   `include "soc_fabric_interfaces.svh"
-  ribp_if u_sdram_cfg_ribp_if ();
+  apb4_if u_sdram_cfg_if (.pclk(clk_i), .presetn(rst_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_sdram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
@@ -73,7 +73,7 @@ module retrosoc (
 
   logic                             s_mgmt_debug_halted;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
-  logic [  `SOC_IRQ_RIBP_WIDTH-1:0] s_ribp_irq;
+  logic [  `SOC_IRQ_APB4_WIDTH-1:0] s_apb4_irq;
   logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
   logic                             s_bus_fault_valid;
   logic [                     31:0] s_bus_fault_addr;
@@ -87,7 +87,7 @@ module retrosoc (
   logic [                     63:0] s_perf_mgmt_wait;
   logic [                     63:0] s_perf_user_wait;
   logic [                     63:0] s_perf_dma_wait;
-  logic [                     63:0] s_perf_ribp_wait;
+  logic [                     63:0] s_perf_apb4_wait;
   logic [                     63:0] s_perf_apb_wait;
   logic [                     63:0] s_perf_sdram_wait;
   logic [                     63:0] s_perf_psram_wait;
@@ -106,7 +106,7 @@ module retrosoc (
   assign u_sysctrl_if.perf_mgmt_wait_i  = s_perf_mgmt_wait;
   assign u_sysctrl_if.perf_user_wait_i  = s_perf_user_wait;
   assign u_sysctrl_if.perf_dma_wait_i   = s_perf_dma_wait;
-  assign u_sysctrl_if.perf_ribp_wait_i  = s_perf_ribp_wait;
+  assign u_sysctrl_if.perf_apb4_wait_i  = s_perf_apb4_wait;
   assign u_sysctrl_if.perf_apb_wait_i   = s_perf_apb_wait;
   assign u_sysctrl_if.perf_sdram_wait_i = s_perf_sdram_wait;
   assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
@@ -174,21 +174,21 @@ core_wrapper u_core_wrapper (
       .perf_mgmt_wait_o (s_perf_mgmt_wait),
       .perf_user_wait_o (s_perf_user_wait),
       .perf_dma_wait_o  (s_perf_dma_wait),
-      .perf_ribp_wait_o (s_perf_ribp_wait),
+      .perf_apb4_wait_o (s_perf_apb4_wait),
       .perf_apb_wait_o  (s_perf_apb_wait),
       .perf_sdram_wait_o(s_perf_sdram_wait),
       .perf_psram_wait_o(s_perf_psram_wait),
       .perf_flash_wait_o(s_perf_flash_wait)
   );
 
-  ip_ribp_wrapper u_ip_ribp_wrapper (
+  apb4_periph u_apb4_periph (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
       .debug_halted_i  (s_mgmt_debug_halted),
       .timebase_tick_i (timebase_tick_i),
-      `include "ip_ribp_wrapper_fabric.svh"
+      `include "apb4_periph_fabric.svh"
       .psram_axi4      (u_psram_axi4_if),
       .xpi_axi4        (u_xpi_axi4_if),
       .spisd_axi4      (u_spisd_axi4_if),
@@ -203,7 +203,7 @@ core_wrapper u_core_wrapper (
       .xpi             (xpi),
       .sysctrl         (u_sysctrl_if),
       .pll_ctrl        (pll_ctrl),
-      .sdram_cfg_ribp  (u_sdram_cfg_ribp_if),
+      .sdram_cfg       (u_sdram_cfg_if),
       .dvp             (u_dvp_if),
       .sdio            (u_sdio_if),
       .opipsram        (u_opipsram_if),
@@ -212,14 +212,14 @@ core_wrapper u_core_wrapper (
       .fault_addr_i    (s_bus_fault_addr),
       .fault_wstrb_i   (s_bus_fault_wstrb),
       .fault_reserved_i(s_bus_fault_reserved),
-      .irq_o           (s_ribp_irq)
+      .irq_o           (s_apb4_irq)
   );
 
   axi4_sdram u_axi4_sdram (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
       .axi4    (u_sdram_axi4_if),
-      .cfg_ribp(u_sdram_cfg_ribp_if),
+      .cfg_apb4(u_sdram_cfg_if),
       .sdram   (sdram)
   );
 

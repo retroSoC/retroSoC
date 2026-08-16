@@ -1,4 +1,4 @@
-# RIBP UART
+# APB4 UART
 
 UART0 is the Mini SoC management console and a general-purpose full-duplex
 serial port. The UART provides independent 64-byte transmit and receive FIFOs,
@@ -10,9 +10,9 @@ generic-DMA request pacing, and automatic active-low RTS/CTS flow control.
 
 | Property | Value |
 | --- | --- |
-| RIBP base address | `0x10001000` |
+| APB4 base address | `0x10001000` |
 | TX/RX FIFO depth | 64 entries each |
-| RIBP interrupt group bit | 2 |
+| APB4 interrupt group bit | 2 |
 | Management-core interrupt | 2 |
 | DMA modes | 5 UART TX, 6 UART RX |
 | Dedicated signals | `uart0_tx`, `uart0_rx` |
@@ -104,7 +104,7 @@ assert watermark, providing hysteresis. The output releases high immediately
 when automatic RTS or RX is disabled. FIFO push/pop changes affect the
 registered hysteresis state at the following SoC-clock boundary.
 
-A full `TXDATA` write applies RIBP backpressure while the enabled transmitter
+A full `TXDATA` write applies APB4 wait-states while the enabled transmitter
 can make progress. A full write while disabled is rejected, avoiding an
 unbounded bus wait. TX-done is raised when a transmitted character leaves both
 the serializer and FIFO empty. Watermark conditions reassert their interrupt

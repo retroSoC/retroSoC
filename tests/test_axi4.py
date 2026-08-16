@@ -12,12 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_axi42ribp_supports_bursts_backpressure_and_errors(tmp_path: Path) -> None:
+def test_axi4_word_bridge_supports_bursts_backpressure_and_errors(tmp_path: Path) -> None:
     verilator = shutil.which("verilator")
     if verilator is None:
         return
 
-    output = tmp_path / "axi42ribp_burst_tb"
+    output = tmp_path / "axi4_word_bridge_tb"
     ccache_tmp = tmp_path / "ccache"
     ccache_tmp.mkdir()
     subprocess.run(
@@ -27,15 +27,15 @@ def test_axi42ribp_supports_bursts_backpressure_and_errors(tmp_path: Path) -> No
             "--timing",
             "-Wno-fatal",
             "--top-module",
-            "axi42ribp_burst_tb",
+            "axi4_word_bridge_tb",
             "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),
             "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl/interface"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
-            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/ribp_if.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_addr_gen.sv"),
-            str(ROOT / "rtl/mini/top/axi42ribp_burst.sv"),
-            str(ROOT / "tests/rtl/axi42ribp_burst_tb.sv"),
+            str(ROOT / "rtl/mini/top/axi4_word_bridge.sv"),
+            str(ROOT / "tests/rtl/axi4_word_bridge_tb.sv"),
             "-Mdir",
             str(tmp_path / "obj"),
             "-o",
@@ -51,7 +51,7 @@ def test_axi42ribp_supports_bursts_backpressure_and_errors(tmp_path: Path) -> No
         },
     )
     result = subprocess.run([output], check=True, text=True, capture_output=True)
-    assert "AXI4 to RIBP burst bridge test passed" in result.stdout
+    assert "AXI4 word bridge test passed" in result.stdout
 
 
 def test_axi4_interconnect_classifies_decode_protocol_and_access_errors(

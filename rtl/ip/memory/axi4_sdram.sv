@@ -46,72 +46,44 @@ module axi4_sdram (
     input  logic  clk_i,
     input  logic  rst_n_i,
     axi4_if.slave axi4,
-    ribp_if.slave cfg_ribp,
+    apb4_if.slave cfg_apb4,
     sdram_if.dut  sdram
     // verilog_format: on
 );
 
-  // clk_i/rst_n_i drive all logic. Configuration and AXI traffic arbitrate onto
-  // one RIBP path; ready/resp_err return only from the selected target.
-  logic       s_sdram_reg_sel;
-  logic [1:0] s_sdram_clkdiv;
-  logic       s_sdram_clk;
-  logic       s_fir_edge;
-  logic       s_sec_edge;
+  // clk_i/rst_n_i drive all logic. Configuration is APB4; memory traffic stays
+  // on the AXI4 window and is serialized into one native word request.
+  logic [ 1:0] s_sdram_clkdiv;
+  logic        s_sdram_clk;
+  logic        s_fir_edge;
+  logic        s_sec_edge;
+  logic        s_req_valid;
+  logic        s_req_ready;
+  logic [31:0] s_req_addr;
+  logic [31:0] s_req_wdata;
+  logic [ 3:0] s_req_wstrb;
+  logic [31:0] s_req_rdata;
+  logic        s_req_resp_err;
 
-  // interface
-  ribp_if u_data_ribp_if ();
-  ribp_if u_merged_ribp_if ();
-  ribp_if u_reg_ribp_if ();
-  ribp_if u_mem_ribp_if ();
-
-  axi42ribp_burst u_axi42ribp_burst (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (axi4),
-      .ribp   (u_data_ribp_if)
+  axi4_word_bridge u_axi4_word_bridge (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .axi4          (axi4),
+      .req_valid_o   (s_req_valid),
+      .req_ready_i   (s_req_ready),
+      .req_addr_o    (s_req_addr),
+      .req_wdata_o   (s_req_wdata),
+      .req_wstrb_o   (s_req_wstrb),
+      .req_rdata_i   (s_req_rdata),
+      .req_resp_err_i(s_req_resp_err)
   );
-
-  ribp_arbiter2 u_ribp_arbiter (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .cfg    (cfg_ribp),
-      .data   (u_data_ribp_if),
-      .target (u_merged_ribp_if)
-  );
-
-  // ribp mux
-  assign s_sdram_reg_sel     = `SOC_ADDR_IS_RIBP_SDRAM(u_merged_ribp_if.addr);
-  assign u_reg_ribp_if.valid = u_merged_ribp_if.valid && s_sdram_reg_sel;
-  assign u_reg_ribp_if.addr  = u_merged_ribp_if.addr;
-  assign u_reg_ribp_if.wdata = u_merged_ribp_if.wdata;
-  assign u_reg_ribp_if.wstrb = u_merged_ribp_if.wstrb;
-
-  assign u_mem_ribp_if.valid = u_merged_ribp_if.valid && !s_sdram_reg_sel;
-  assign u_mem_ribp_if.addr  = u_merged_ribp_if.addr;
-  assign u_mem_ribp_if.wdata = u_merged_ribp_if.wdata;
-  assign u_mem_ribp_if.wstrb = u_merged_ribp_if.wstrb;
-
-  // verilog_format: off -- preserve reviewed column alignment
-  assign u_merged_ribp_if.ready = (u_reg_ribp_if.valid & u_reg_ribp_if.ready) |
-                                  (u_mem_ribp_if.valid & u_mem_ribp_if.ready);
-  assign u_merged_ribp_if.resp_err =
-      (u_reg_ribp_if.valid & u_reg_ribp_if.ready & u_reg_ribp_if.resp_err) |
-      (u_mem_ribp_if.valid & u_mem_ribp_if.ready & u_mem_ribp_if.resp_err);
-
-  assign u_merged_ribp_if.rdata =
-      ({32{(u_reg_ribp_if.valid & u_reg_ribp_if.ready)}} & u_reg_ribp_if.rdata) |
-      ({32{(u_mem_ribp_if.valid & u_mem_ribp_if.ready)}} & u_mem_ribp_if.rdata);
-  // verilog_format: on
-
 
   sdram_reg u_sdram_reg (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
-      .ribp    (u_reg_ribp_if),
+      .apb4    (cfg_apb4),
       .clkdiv_o(s_sdram_clkdiv)
   );
-
 
   sdram_clkgen u_sdram_clkgen (
       .clk_i     (clk_i),
@@ -122,16 +94,20 @@ module axi4_sdram (
       .sec_edge_o(s_sec_edge)
   );
 
-
   sdram_core u_sdram_core (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .fir_edge_i (s_fir_edge),
-      .sec_edge_i (s_sec_edge),
-      .sdram_clk_i(s_sdram_clk),
-      .ribp       (u_mem_ribp_if),
-      .sdram      (sdram)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .fir_edge_i    (s_fir_edge),
+      .sec_edge_i    (s_sec_edge),
+      .sdram_clk_i   (s_sdram_clk),
+      .req_valid_i   (s_req_valid),
+      .req_ready_o   (s_req_ready),
+      .req_addr_i    (s_req_addr),
+      .req_wdata_i   (s_req_wdata),
+      .req_wstrb_i   (s_req_wstrb),
+      .req_rdata_o   (s_req_rdata),
+      .req_resp_err_o(s_req_resp_err),
+      .sdram         (sdram)
   );
-
 
 endmodule

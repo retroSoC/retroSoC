@@ -9,12 +9,15 @@ each boundary.
 
 | Protocol | Interface | Purpose | Transfer shape |
 | --- | --- | --- | --- |
-| RIBP | Common `ribp_if` | Scalar core and peripheral compatibility | One scalar word request and response |
+| APB4 | Common `apb4_if` | Self-owned peripheral configuration plane | Setup/Access word transfer with wait-states |
+| RIBP | Common `ribp_if` | MPW user-core compatibility only | One scalar word request and response |
 | RIB | `rib_if` | Native retroSoC interconnect | Split command, write-data, and response channels |
 
-## RIBP
+## APB4 and RIBP
 
-RIBP is the scalar Common protocol used at every core and peripheral boundary.
+Self-owned configuration targets now sit on APB4. `apb4_periph` decodes the
+former `0x1000_0000` island through `axi42apb_periph`. RIBP remains only as the
+MPW user-core compatibility contract.
 A master presents
 `valid`, `addr`, `wdata`, and `wstrb`; a slave completes the request with
 `ready`, `rdata`, and `resp_err`. `wstrb == 0` denotes a read. There is no

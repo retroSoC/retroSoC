@@ -37,7 +37,7 @@
 #define RS_WS2812_IP_INFO_OFFSET         UINT32_C(0x3C)
 
 static volatile uint32_t *rs_ws2812_register(uint32_t offset) {
-    return (volatile uint32_t *)(uintptr_t)(RS_SOC_RIBP_WS2812_BASE + (uintptr_t)offset);
+    return (volatile uint32_t *)(uintptr_t)(RS_SOC_APB4_WS2812_BASE + (uintptr_t)offset);
 }
 
 static uint32_t rs_ws2812_read(uint32_t offset) {

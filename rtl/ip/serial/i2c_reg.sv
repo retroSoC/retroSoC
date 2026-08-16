@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-`include "ribp_i2c_define.svh"
+`include "apb4_i2c_define.svh"
 
 module i2c_reg #(
     parameter int CmdFifoDepth    = 16,
@@ -12,7 +12,7 @@ module i2c_reg #(
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
-    ribp_if.slave       ribp,
+    apb4_if.slave       apb4,
     output logic        enable_o,
     output logic [15:0] scl_low_cycles_o,
     output logic [15:0] scl_high_cycles_o,
@@ -71,9 +71,9 @@ module i2c_reg #(
   logic s_write;
   logic s_req_accept;
   logic s_access_err;
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_resp_err_d, s_ribp_resp_err_q;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
+  logic s_apb4_ready_d, s_apb4_ready_q;
+  logic s_apb4_resp_err_d, s_apb4_resp_err_q;
+  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
 
   logic s_en_en;
   logic s_en_d, s_en_q;
@@ -157,11 +157,11 @@ module i2c_reg #(
   end
 `endif
 
-  assign s_req = ribp.valid && !s_ribp_ready_q;
-  assign s_write = |ribp.wstrb;
-  assign ribp.ready = s_ribp_ready_q;
-  assign ribp.resp_err = s_ribp_resp_err_q;
-  assign ribp.rdata = s_ribp_rdata_q;
+  assign s_req = apb4.psel && apb4.penable && !s_apb4_ready_q;
+  assign s_write = apb4.pwrite;
+  assign apb4.pready = s_apb4_ready_q;
+  assign apb4.pslverr = s_apb4_resp_err_q;
+  assign apb4.prdata = s_apb4_rdata_q;
   assign enable_o = s_en_q;
   assign scl_low_cycles_o = s_scl_timing_q[15:0];
   assign scl_high_cycles_o = s_scl_timing_q[31:16];
@@ -264,16 +264,16 @@ module i2c_reg #(
     s_intr_test           = '0;
     s_config_err_event    = 1'b0;
     s_sw_cmd_err_event    = 1'b0;
-    s_ribp_rdata_d        = '0;
+    s_apb4_rdata_d        = '0;
     s_merge_value         = '0;
 
     if (s_req) begin
-      if ((ribp.addr[11:8] != 4'd0) || (ribp.addr[1:0] != 2'b00)) begin
+      if ((apb4.paddr[11:8] != 4'd0) || (apb4.paddr[1:0] != 2'b00)) begin
         s_access_err = 1'b1;
       end else if (s_write) begin
-        unique case (ribp.addr[7:0])
-          `RIBP_I2C_CTRL: begin
-            s_merge_value = merge_wstrb({31'd0, s_en_q}, ribp.wdata, ribp.wstrb);
+        unique case (apb4.paddr[7:0])
+          `APB4_I2C_CTRL: begin
+            s_merge_value = merge_wstrb({31'd0, s_en_q}, apb4.pwdata, apb4.pstrb);
             if ((s_merge_value[31:1] != 31'd0) ||
                 (s_merge_value[0] && !s_config_valid) ||
                 (!s_merge_value[0] && (busy_i || recovery_active_i))) begin
@@ -284,44 +284,44 @@ module i2c_reg #(
               s_en_d  = s_merge_value[0];
             end
           end
-          `RIBP_I2C_SCL_TIMING: begin
+          `APB4_I2C_SCL_TIMING: begin
             if (s_en_q || busy_i || recovery_active_i) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
             end else begin
               s_scl_timing_en = 1'b1;
-              s_scl_timing_d  = merge_wstrb(s_scl_timing_q, ribp.wdata, ribp.wstrb);
+              s_scl_timing_d  = merge_wstrb(s_scl_timing_q, apb4.pwdata, apb4.pstrb);
             end
           end
-          `RIBP_I2C_START_TIMING: begin
+          `APB4_I2C_START_TIMING: begin
             if (s_en_q || busy_i || recovery_active_i) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
             end else begin
               s_start_timing_en = 1'b1;
-              s_start_timing_d  = merge_wstrb(s_start_timing_q, ribp.wdata, ribp.wstrb);
+              s_start_timing_d  = merge_wstrb(s_start_timing_q, apb4.pwdata, apb4.pstrb);
             end
           end
-          `RIBP_I2C_DATA_TIMING: begin
+          `APB4_I2C_DATA_TIMING: begin
             if (s_en_q || busy_i || recovery_active_i) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
             end else begin
               s_data_timing_en = 1'b1;
-              s_data_timing_d  = merge_wstrb(s_data_timing_q, ribp.wdata, ribp.wstrb);
+              s_data_timing_d  = merge_wstrb(s_data_timing_q, apb4.pwdata, apb4.pstrb);
             end
           end
-          `RIBP_I2C_STOP_TIMING: begin
+          `APB4_I2C_STOP_TIMING: begin
             if (s_en_q || busy_i || recovery_active_i) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
             end else begin
               s_stop_timing_en = 1'b1;
-              s_stop_timing_d  = merge_wstrb(s_stop_timing_q, ribp.wdata, ribp.wstrb);
+              s_stop_timing_d  = merge_wstrb(s_stop_timing_q, apb4.pwdata, apb4.pstrb);
             end
           end
-          `RIBP_I2C_FILTER: begin
-            s_merge_value = merge_wstrb({20'd0, s_filter_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_FILTER: begin
+            s_merge_value = merge_wstrb({20'd0, s_filter_q}, apb4.pwdata, apb4.pstrb);
             if (s_en_q || busy_i || recovery_active_i ||
                 (s_merge_value[31:12] != 20'd0) || (s_merge_value[7:4] != 4'd0)) begin
               s_access_err       = 1'b1;
@@ -331,8 +331,8 @@ module i2c_reg #(
               s_filter_d  = s_merge_value[11:0];
             end
           end
-          `RIBP_I2C_STRETCH_TIMEOUT: begin
-            s_merge_value = merge_wstrb({8'd0, s_stretch_timeout_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_STRETCH_TIMEOUT: begin
+            s_merge_value = merge_wstrb({8'd0, s_stretch_timeout_q}, apb4.pwdata, apb4.pstrb);
             if (s_en_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
@@ -341,8 +341,8 @@ module i2c_reg #(
               s_stretch_timeout_d  = s_merge_value[23:0];
             end
           end
-          `RIBP_I2C_BUS_IDLE_TIMEOUT: begin
-            s_merge_value = merge_wstrb({8'd0, s_bus_idle_timeout_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_BUS_IDLE_TIMEOUT: begin
+            s_merge_value = merge_wstrb({8'd0, s_bus_idle_timeout_q}, apb4.pwdata, apb4.pstrb);
             if (s_en_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
@@ -351,8 +351,8 @@ module i2c_reg #(
               s_bus_idle_timeout_d  = s_merge_value[23:0];
             end
           end
-          `RIBP_I2C_COMMAND_TIMEOUT: begin
-            s_merge_value = merge_wstrb({8'd0, s_cmd_timeout_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_COMMAND_TIMEOUT: begin
+            s_merge_value = merge_wstrb({8'd0, s_cmd_timeout_q}, apb4.pwdata, apb4.pstrb);
             if (s_en_q || busy_i || recovery_active_i || (s_merge_value[31:24] != 8'd0)) begin
               s_access_err       = 1'b1;
               s_config_err_event = 1'b1;
@@ -361,8 +361,8 @@ module i2c_reg #(
               s_cmd_timeout_d  = s_merge_value[23:0];
             end
           end
-          `RIBP_I2C_TARGET_ADDR: begin
-            s_merge_value = merge_wstrb({21'd0, s_target_addr_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_TARGET_ADDR: begin
+            s_merge_value = merge_wstrb({21'd0, s_target_addr_q}, apb4.pwdata, apb4.pstrb);
             if (busy_i || recovery_active_i || !s_cmd_empty ||
                 (s_merge_value[31:11] != 21'd0) ||
                 (!s_merge_value[10] && (s_merge_value[9:7] != 3'd0))) begin
@@ -373,12 +373,12 @@ module i2c_reg #(
               s_target_addr_d  = s_merge_value[10:0];
             end
           end
-          `RIBP_I2C_DATA_CMD: begin
-            if ((ribp.wstrb != 4'hF) || (ribp.wdata[31:12] != 20'd0) ||
-                (!ribp.wdata[`I2C_DATA_CMD_READ] &&
-                 ribp.wdata[`I2C_DATA_CMD_NACK_LAST]) ||
-                (ribp.wdata[`I2C_DATA_CMD_READ] && ribp.wdata[`I2C_DATA_CMD_STOP] &&
-                 !ribp.wdata[`I2C_DATA_CMD_NACK_LAST])) begin
+          `APB4_I2C_DATA_CMD: begin
+            if ((apb4.pstrb != 4'hF) || (apb4.pwdata[31:12] != 20'd0) ||
+                (!apb4.pwdata[`I2C_DATA_CMD_READ] &&
+                 apb4.pwdata[`I2C_DATA_CMD_NACK_LAST]) ||
+                (apb4.pwdata[`I2C_DATA_CMD_READ] && apb4.pwdata[`I2C_DATA_CMD_STOP] &&
+                 !apb4.pwdata[`I2C_DATA_CMD_NACK_LAST])) begin
               s_access_err       = 1'b1;
               s_sw_cmd_err_event = 1'b1;
             end else if (s_cmd_full && s_en_q && s_config_valid) begin
@@ -390,35 +390,35 @@ module i2c_reg #(
               s_cmd_push = 1'b1;
             end
           end
-          `RIBP_I2C_COMMAND: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:4] != 28'd0) || (ribp.wdata[3:0] == 4'd0)) begin
+          `APB4_I2C_COMMAND: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:4] != 28'd0) || (apb4.pwdata[3:0] == 4'd0)) begin
               s_access_err       = 1'b1;
               s_sw_cmd_err_event = 1'b1;
-            end else if (ribp.wdata[`I2C_COMMAND_ABORT]) begin
-              if ((ribp.wdata[3:0] != 4'b0001) || (!busy_i && !recovery_active_i)) begin
+            end else if (apb4.pwdata[`I2C_COMMAND_ABORT]) begin
+              if ((apb4.pwdata[3:0] != 4'b0001) || (!busy_i && !recovery_active_i)) begin
                 s_access_err       = 1'b1;
                 s_sw_cmd_err_event = 1'b1;
               end else begin
                 abort_o = 1'b1;
               end
-            end else if (ribp.wdata[`I2C_COMMAND_RECOVER]) begin
-              if ((ribp.wdata[3:0] != 4'b0010) || !s_en_q || !s_config_valid ||
+            end else if (apb4.pwdata[`I2C_COMMAND_RECOVER]) begin
+              if ((apb4.pwdata[3:0] != 4'b0010) || !s_en_q || !s_config_valid ||
                   busy_i || recovery_active_i || !s_cmd_empty) begin
                 s_access_err       = 1'b1;
                 s_sw_cmd_err_event = 1'b1;
               end else begin
                 recover_o = 1'b1;
               end
-            end else if (busy_i || recovery_active_i || (ribp.wdata[1:0] != 2'd0)) begin
+            end else if (busy_i || recovery_active_i || (apb4.pwdata[1:0] != 2'd0)) begin
               s_access_err       = 1'b1;
               s_sw_cmd_err_event = 1'b1;
             end else begin
-              s_cmd_flush_cmd = ribp.wdata[`I2C_COMMAND_CMD_FLUSH];
-              s_rx_flush_cmd  = ribp.wdata[`I2C_COMMAND_RX_FLUSH];
+              s_cmd_flush_cmd = apb4.pwdata[`I2C_COMMAND_CMD_FLUSH];
+              s_rx_flush_cmd  = apb4.pwdata[`I2C_COMMAND_RX_FLUSH];
             end
           end
-          `RIBP_I2C_CMD_WATERMARK: begin
-            s_merge_value = merge_wstrb({24'd0, s_cmd_watermark_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_CMD_WATERMARK: begin
+            s_merge_value = merge_wstrb({24'd0, s_cmd_watermark_q}, apb4.pwdata, apb4.pstrb);
             if ((s_merge_value[31:8] != 24'd0) || (s_merge_value[7:0] >= CMD_DEPTH_INFO)) begin
               s_access_err       = 1'b1;
               s_sw_cmd_err_event = 1'b1;
@@ -427,8 +427,8 @@ module i2c_reg #(
               s_cmd_watermark_d  = s_merge_value[7:0];
             end
           end
-          `RIBP_I2C_RX_WATERMARK: begin
-            s_merge_value = merge_wstrb({24'd0, s_rx_watermark_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_RX_WATERMARK: begin
+            s_merge_value = merge_wstrb({24'd0, s_rx_watermark_q}, apb4.pwdata, apb4.pstrb);
             if ((s_merge_value[31:8] != 24'd0) || (s_merge_value[7:0] == 8'd0) ||
                 (s_merge_value[7:0] > RX_DEPTH_INFO)) begin
               s_access_err       = 1'b1;
@@ -438,22 +438,22 @@ module i2c_reg #(
               s_rx_watermark_d  = s_merge_value[7:0];
             end
           end
-          `RIBP_I2C_ERROR_STATUS: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:11] != 21'd0)) begin
+          `APB4_I2C_ERROR_STATUS: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:11] != 21'd0)) begin
               s_access_err = 1'b1;
             end else begin
-              s_err_clear = ribp.wdata[10:0];
+              s_err_clear = apb4.pwdata[10:0];
             end
           end
-          `RIBP_I2C_INTR_STATE: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:8] != 24'd0)) begin
+          `APB4_I2C_INTR_STATE: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:8] != 24'd0)) begin
               s_access_err = 1'b1;
             end else begin
-              s_intr_clear = ribp.wdata[7:0];
+              s_intr_clear = apb4.pwdata[7:0];
             end
           end
-          `RIBP_I2C_INTR_ENABLE: begin
-            s_merge_value = merge_wstrb({24'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb);
+          `APB4_I2C_INTR_ENABLE: begin
+            s_merge_value = merge_wstrb({24'd0, s_intr_en_q}, apb4.pwdata, apb4.pstrb);
             if (s_merge_value[31:8] != 24'd0) begin
               s_access_err = 1'b1;
             end else begin
@@ -461,84 +461,84 @@ module i2c_reg #(
               s_intr_en_d  = s_merge_value[7:0];
             end
           end
-          `RIBP_I2C_INTR_TEST: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:8] != 24'd0)) begin
+          `APB4_I2C_INTR_TEST: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:8] != 24'd0)) begin
               s_access_err = 1'b1;
             end else begin
-              s_intr_test = ribp.wdata[7:0];
+              s_intr_test = apb4.pwdata[7:0];
             end
           end
           default: s_access_err = 1'b1;
         endcase
       end else begin
-        unique case (ribp.addr[7:0])
-          `RIBP_I2C_CTRL:             s_ribp_rdata_d = {31'd0, s_en_q};
-          `RIBP_I2C_SCL_TIMING:       s_ribp_rdata_d = s_scl_timing_q;
-          `RIBP_I2C_START_TIMING:     s_ribp_rdata_d = s_start_timing_q;
-          `RIBP_I2C_DATA_TIMING:      s_ribp_rdata_d = s_data_timing_q;
-          `RIBP_I2C_STOP_TIMING:      s_ribp_rdata_d = s_stop_timing_q;
-          `RIBP_I2C_FILTER:           s_ribp_rdata_d = {20'd0, s_filter_q};
-          `RIBP_I2C_STRETCH_TIMEOUT:  s_ribp_rdata_d = {8'd0, s_stretch_timeout_q};
-          `RIBP_I2C_BUS_IDLE_TIMEOUT: s_ribp_rdata_d = {8'd0, s_bus_idle_timeout_q};
-          `RIBP_I2C_COMMAND_TIMEOUT:  s_ribp_rdata_d = {8'd0, s_cmd_timeout_q};
-          `RIBP_I2C_TARGET_ADDR:      s_ribp_rdata_d = {21'd0, s_target_addr_q};
-          `RIBP_I2C_RXDATA: begin
+        unique case (apb4.paddr[7:0])
+          `APB4_I2C_CTRL:             s_apb4_rdata_d = {31'd0, s_en_q};
+          `APB4_I2C_SCL_TIMING:       s_apb4_rdata_d = s_scl_timing_q;
+          `APB4_I2C_START_TIMING:     s_apb4_rdata_d = s_start_timing_q;
+          `APB4_I2C_DATA_TIMING:      s_apb4_rdata_d = s_data_timing_q;
+          `APB4_I2C_STOP_TIMING:      s_apb4_rdata_d = s_stop_timing_q;
+          `APB4_I2C_FILTER:           s_apb4_rdata_d = {20'd0, s_filter_q};
+          `APB4_I2C_STRETCH_TIMEOUT:  s_apb4_rdata_d = {8'd0, s_stretch_timeout_q};
+          `APB4_I2C_BUS_IDLE_TIMEOUT: s_apb4_rdata_d = {8'd0, s_bus_idle_timeout_q};
+          `APB4_I2C_COMMAND_TIMEOUT:  s_apb4_rdata_d = {8'd0, s_cmd_timeout_q};
+          `APB4_I2C_TARGET_ADDR:      s_apb4_rdata_d = {21'd0, s_target_addr_q};
+          `APB4_I2C_RXDATA: begin
             if (s_rx_empty) begin
               s_access_err       = 1'b1;
               s_sw_cmd_err_event = 1'b1;
             end else begin
-              s_ribp_rdata_d = {24'd0, s_rx_pop_data};
+              s_apb4_rdata_d = {24'd0, s_rx_pop_data};
               s_rx_pop       = 1'b1;
             end
           end
-          `RIBP_I2C_STATUS:           s_ribp_rdata_d = s_stat;
-          `RIBP_I2C_FIFO_LEVEL:       s_ribp_rdata_d = s_fifo_level;
-          `RIBP_I2C_CMD_WATERMARK:    s_ribp_rdata_d = {24'd0, s_cmd_watermark_q};
-          `RIBP_I2C_RX_WATERMARK:     s_ribp_rdata_d = {24'd0, s_rx_watermark_q};
-          `RIBP_I2C_ERROR_STATUS:     s_ribp_rdata_d = {21'd0, s_err_stat_q};
-          `RIBP_I2C_INTR_STATE:       s_ribp_rdata_d = {24'd0, s_intr_state_q};
-          `RIBP_I2C_INTR_ENABLE:      s_ribp_rdata_d = {24'd0, s_intr_en_q};
-          `RIBP_I2C_INTR_STATUS:      s_ribp_rdata_d = {24'd0, (s_intr_state_q & s_intr_en_q)};
-          `RIBP_I2C_LINE_STATE:       s_ribp_rdata_d = s_line_state;
-          `RIBP_I2C_IP_VERSION:       s_ribp_rdata_d = IP_VERSION;
-          `RIBP_I2C_CAPABILITY:       s_ribp_rdata_d = CAPABILITY;
+          `APB4_I2C_STATUS:           s_apb4_rdata_d = s_stat;
+          `APB4_I2C_FIFO_LEVEL:       s_apb4_rdata_d = s_fifo_level;
+          `APB4_I2C_CMD_WATERMARK:    s_apb4_rdata_d = {24'd0, s_cmd_watermark_q};
+          `APB4_I2C_RX_WATERMARK:     s_apb4_rdata_d = {24'd0, s_rx_watermark_q};
+          `APB4_I2C_ERROR_STATUS:     s_apb4_rdata_d = {21'd0, s_err_stat_q};
+          `APB4_I2C_INTR_STATE:       s_apb4_rdata_d = {24'd0, s_intr_state_q};
+          `APB4_I2C_INTR_ENABLE:      s_apb4_rdata_d = {24'd0, s_intr_en_q};
+          `APB4_I2C_INTR_STATUS:      s_apb4_rdata_d = {24'd0, (s_intr_state_q & s_intr_en_q)};
+          `APB4_I2C_LINE_STATE:       s_apb4_rdata_d = s_line_state;
+          `APB4_I2C_IP_VERSION:       s_apb4_rdata_d = IP_VERSION;
+          `APB4_I2C_CAPABILITY:       s_apb4_rdata_d = CAPABILITY;
           default: begin
             s_access_err   = 1'b1;
-            s_ribp_rdata_d = '0;
+            s_apb4_rdata_d = '0;
           end
         endcase
       end
     end
   end
 
-  assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_err;
+  assign s_apb4_ready_d    = s_req_accept;
+  assign s_apb4_resp_err_d = s_access_err;
 
   dffr #(
       .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
+  ) u_apb4_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
+      .dat_i  (s_apb4_ready_d),
+      .dat_o  (s_apb4_ready_q)
   );
   dffer #(
       .DATA_WIDTH(1)
-  ) u_ribp_resp_err_dffer (
+  ) u_apb4_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_resp_err_d),
-      .dat_o  (s_ribp_resp_err_q)
+      .dat_i  (s_apb4_resp_err_d),
+      .dat_o  (s_apb4_resp_err_q)
   );
   dffer #(
       .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
+  ) u_apb4_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
+      .dat_i  (s_apb4_rdata_d),
+      .dat_o  (s_apb4_rdata_q)
   );
 
   dffer #(
@@ -672,7 +672,7 @@ module i2c_reg #(
       .flush_i(s_cmd_flush_cmd || core_cmd_flush_i),
       .push_i (s_cmd_push),
       .full_o (s_cmd_full),
-      .dat_i  (ribp.wdata[11:0]),
+      .dat_i  (apb4.pwdata[11:0]),
       .pop_i  (cmd_pop_i),
       .empty_o(s_cmd_empty),
       .dat_o  (s_cmd_pop_data),

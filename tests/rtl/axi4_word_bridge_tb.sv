@@ -2,7 +2,7 @@
 
 `include "axi4_define.svh"
 
-module axi42ribp_burst_tb;
+module axi4_word_bridge_tb;
   logic          clk_i = 1'b0;
   logic          rst_n_i = 1'b0;
   logic   [31:0] memory              [0:63];
@@ -22,39 +22,51 @@ module axi42ribp_burst_tb;
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
-  ribp_if ribp ();
+  logic        req_valid;
+  logic        req_ready;
+  logic [31:0] req_addr;
+  logic [31:0] req_wdata;
+  logic [ 3:0] req_wstrb;
+  logic [31:0] req_rdata;
+  logic        req_resp_err;
 
   always #5 clk_i = ~clk_i;
 
   always @(posedge clk_i) cycle_count <= cycle_count + 1;
 
-  axi42ribp_burst u_dut (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (axi4),
-      .ribp   (ribp)
+  axi4_word_bridge u_dut (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .axi4          (axi4),
+      .req_valid_o   (req_valid),
+      .req_ready_i   (req_ready),
+      .req_addr_o    (req_addr),
+      .req_wdata_o   (req_wdata),
+      .req_wstrb_o   (req_wstrb),
+      .req_rdata_i   (req_rdata),
+      .req_resp_err_i(req_resp_err)
   );
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      ribp.ready      <= 1'b0;
-      ribp.rdata      <= '0;
+      req_ready       <= 1'b0;
+      req_rdata       <= '0;
       target_accesses <= 0;
     end else begin
-      ribp.ready <= ribp.valid && !ribp.ready;
-      if (ribp.valid && !ribp.ready) begin
+      req_ready <= req_valid && !req_ready;
+      if (req_valid && !req_ready) begin
         target_accesses <= target_accesses + 1;
-        ribp.rdata      <= memory[ribp.addr[7:2]];
+        req_rdata       <= memory[req_addr[7:2]];
         for (int lane = 0; lane < 4; lane++) begin
-          if (ribp.wstrb[lane]) begin
-            memory[ribp.addr[7:2]][lane*8+:8] <= ribp.wdata[lane*8+:8];
+          if (req_wstrb[lane]) begin
+            memory[req_addr[7:2]][lane*8+:8] <= req_wdata[lane*8+:8];
           end
         end
       end
     end
   end
 
-  assign ribp.resp_err = 1'b0;
+  assign req_resp_err = 1'b0;
 
   task automatic init_axi4;
     begin
@@ -172,7 +184,7 @@ module axi42ribp_burst_tb;
       @(negedge clk_i);
       axi4.rready = 1'b0;
       if (target_accesses != accesses_before) begin
-        $fatal(1, "illegal burst reached the RIBP target");
+        $fatal(1, "illegal burst reached the word target");
       end
     end
   endtask
@@ -204,7 +216,7 @@ module axi42ribp_burst_tb;
       axi4.bready = 1'b0;
       axi4.wlast  = 1'b0;
       if (target_accesses != accesses_before + 1) begin
-        $fatal(1, "early WLAST must commit exactly one RIBP beat");
+        $fatal(1, "early WLAST must commit exactly one word beat");
       end
     end
   endtask
@@ -299,8 +311,8 @@ module axi42ribp_burst_tb;
       $fatal(1, "16-beat burst improvement is below 20%%: burst=%0d single=%0d", burst_cycles,
              single_cycles);
     end
-    if (target_accesses != 49) $fatal(1, "unexpected RIBP access count");
-    $display("AXI4 to RIBP burst bridge test passed");
+    if (target_accesses != 49) $fatal(1, "unexpected word access count");
+    $display("AXI4 word bridge test passed");
     $finish;
   end
 endmodule

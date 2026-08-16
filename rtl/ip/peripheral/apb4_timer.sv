@@ -1,12 +1,12 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-module ribp_timer (
+module apb4_timer (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic  clk_i,
     input  logic  rst_n_i,
     input  logic  debug_halted_i,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
     output logic  irq_o
     // verilog_format: on
 );
@@ -34,7 +34,7 @@ module ribp_timer (
   timer_reg u_timer_reg (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
-      .ribp                 (ribp),
+      .apb4                 (apb4),
       .value_i              (s_value),
       .debug_frozen_i       (s_debug_frozen),
       .timeout_event_i      (s_timeout_event),

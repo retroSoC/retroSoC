@@ -29,13 +29,14 @@ can use the wider contract.
 
 ## Targets and Access Control
 
-The fixed targets are the RIBP configuration plane, APB, SRAM, SDRAM, PSRAM,
-XPI/Flash, SPI-SD, `DECERR`, and `SLVERR`. RIBP and APB accept only single-beat
-transactions. SRAM uses a direct AXI4 target with pipelined synchronous reads
-and response buffering. External-memory data windows accept up to sixteen
-beats; their current compatibility bridges serialize each beat into the
-existing controller data engine while preserving FIXED/INCR/WRAP beat
-addresses. Register configuration remains on RIBP.
+The fixed targets are the APB4 configuration plane (`apb4_periph`), APB
+(`apb4_system`), SRAM, SDRAM, PSRAM, XPI/Flash, SPI-SD, `DECERR`, and
+`SLVERR`. APB4 and APB accept only single-beat transactions. SRAM uses a
+direct AXI4 target with pipelined synchronous reads and response buffering.
+External-memory data windows accept up to sixteen beats; their current
+compatibility bridges serialize each beat into the existing controller data
+engine while preserving FIXED/INCR/WRAP beat addresses. Register
+configuration remains on APB4.
 
 The user-core firewall validates both the first and last byte before target
 arbitration. User access to SYSCTRL, CLINT, DMA configuration, and other
@@ -51,7 +52,7 @@ access-control rejection to `PROTERR`.
   `ID_WIDTH=1`, and `USER_WIDTH=1`; do not rely on Common defaults.
 - Hold address/control and response payload stable while `VALID` is asserted
   without `READY`. Write data must assert `WLAST` on the declared final beat.
-- Keep RIBP configuration and AXI4 data apertures separate in the canonical
+- Keep APB4 configuration and AXI4 data apertures separate in the canonical
   address map. An IP may arbitrate the two internally, but a data address must
   not be routed through the global configuration decoder.
 - Add controller-native command/data queues before claiming physical burst
@@ -61,7 +62,7 @@ access-control rejection to `PROTERR`.
 ## Verification and Performance Gates
 
 `tests/test_axi4.py` covers a four-beat write/read, response backpressure, and
-rejection of a seventeen-beat request without touching the RIBP target. The
+rejection of a seventeen-beat request without touching the APB4 target. The
 bridge unit test also covers Common address generation for FIXED and WRAP
 sequencing. The IHP130 `ci_smoke` regression is the end-to-end boot and
 configuration check.

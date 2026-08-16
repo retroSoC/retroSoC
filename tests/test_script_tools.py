@@ -260,7 +260,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/ip/peripheral/sysctrl_define.svh" in sysctrl.files
     assert ROOT / "rtl/ip/peripheral/sysctrl_reg.sv" in sysctrl.files
     assert ROOT / "rtl/ip/peripheral/sysctrl_core.sv" in sysctrl.files
-    assert ROOT / "rtl/ip/peripheral/ribp_sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/apb4_sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
@@ -269,17 +269,17 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
     assert ROOT / "rtl/ip/peripheral/gpio_core.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/gpio_reg.sv" in gpio.files
-    assert ROOT / "rtl/ip/peripheral/ribp_gpio.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/apb4_gpio.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/user_gpio_if.sv" in gpio.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio.files
     assert ROOT / "rtl/mini/formal/gpio_formal.sv" in gpio.files
-    assert ROOT / "rtl/ip/serial/ribp_ws2812.sv" in ws2812.files
+    assert ROOT / "rtl/ip/serial/apb4_ws2812.sv" in ws2812.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
     assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
-    assert ROOT / "rtl/ip/serial/ribp_i2c.sv" in i2c.files
+    assert ROOT / "rtl/ip/serial/apb4_i2c.sv" in i2c.files
     assert ROOT / "rtl/ip/serial/i2c_filter.sv" in i2c.files
     assert ROOT / "rtl/mini/formal/i2c_formal.sv" in i2c.files
-    assert ROOT / "rtl/ip/peripheral/ribp_clint.sv" in clint.files
+    assert ROOT / "rtl/ip/peripheral/apb4_clint.sv" in clint.files
     assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
 
 
@@ -591,7 +591,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/peripheral/ribp_sysctrl.sv"),
+        Path("rtl/ip/peripheral/apb4_sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -606,7 +606,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/peripheral/ribp_sysctrl.sv"),
+        Path("rtl/ip/peripheral/apb4_sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("tests/rtl/bus_fault_tb.sv"),

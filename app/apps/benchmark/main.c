@@ -115,7 +115,7 @@ static void rs_benchmark_report(const char *region, const char *operation, uint3
     rs_benchmark_put_hex(checksum);
     rs_benchmark_put_counter(" cycles=", cycles);
     rs_benchmark_put_counter(" mgmt_wait=", snapshot->mgmt_wait);
-    rs_benchmark_put_counter(" ribp_wait=", snapshot->ribp_wait);
+    rs_benchmark_put_counter(" apb4_wait=", snapshot->apb4_wait);
     rs_benchmark_put_counter(" sdram_wait=", snapshot->sdram_wait);
     rs_benchmark_put_counter(" psram_wait=", snapshot->psram_wait);
     rs_benchmark_put_counter(" flash_wait=", snapshot->flash_wait);

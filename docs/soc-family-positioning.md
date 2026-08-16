@@ -190,7 +190,7 @@ implemented or cross-PDK guarantee:
 
 Meeting these targets requires enlarging the current 32 MiB SDRAM address
 window and replacing the scalar external-memory bottleneck. A dedicated memory
-fabric may evolve independently while RIBP and APB remain the stable peripheral
+fabric may evolve independently while APB4 and APB remain the stable peripheral
 register interfaces. Frequency claims must be qualified separately for each
 PDK and physical implementation.
 
@@ -259,7 +259,7 @@ a lifecycle transition, but cannot override management-core access controls.
 ### AXI4 and Memory Contract
 
 Std uses a 64-bit AXI4 memory fabric for CPUs, the memory controller, GPU, NPU,
-display, audio, and high-bandwidth DMA. RIBP or APB remains suitable behind
+display, audio, and high-bandwidth DMA. APB4 or APB remains suitable behind
 bridges for low-bandwidth register peripherals.
 
 The AXI4 implementation target includes:

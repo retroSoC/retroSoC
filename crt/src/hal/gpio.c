@@ -38,7 +38,7 @@
 #define RS_GPIO_IP_VERSION_OFFSET       UINT32_C(0x0F8)
 #define RS_GPIO_CAPABILITY_OFFSET       UINT32_C(0x0FC)
 
-#define RS_GPIO_REG(offset)             RS_SOC_REG32(RS_SOC_RIBP_GPIO_ADMIN_BASE, (offset))
+#define RS_GPIO_REG(offset)             RS_SOC_REG32(RS_SOC_APB4_GPIO_ADMIN_BASE, (offset))
 
 static void rs_gpio_update_bits(uint32_t offset, uint32_t mask, bool set) {
     uint32_t value = RS_GPIO_REG(offset);

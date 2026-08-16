@@ -154,17 +154,17 @@ module dvp_core (
       if (cfg_valid_i && !s_frm_active_q) begin
         if ((s_frm_width == 0) || (s_frm_height == 0) || (s_format > 2'd1) ||
             (s_crop_en && ((s_crop_width == 0) || (s_crop_height == 0)))) begin
-          s_err_flags_q[`RIBP_DVP__ERROR_CONFIG] <= 1'b1;
+          s_err_flags_q[`APB4_DVP__ERROR_CONFIG] <= 1'b1;
           error_toggle_o                         <= ~error_toggle_o;
         end
         if (!s_en) s_frm_active_q <= 1'b0;
       end
-      if (cmd_i[`RIBP_DVP__COMMAND_ABORT]) begin
+      if (cmd_i[`APB4_DVP__COMMAND_ABORT]) begin
         s_frm_active_q                        <= 1'b0;
-        s_err_flags_q[`RIBP_DVP__ERROR_ABORT] <= 1'b1;
+        s_err_flags_q[`APB4_DVP__ERROR_ABORT] <= 1'b1;
         error_toggle_o                        <= ~error_toggle_o;
       end
-      if (cmd_i[`RIBP_DVP__COMMAND_FLUSH]) begin
+      if (cmd_i[`APB4_DVP__COMMAND_FLUSH]) begin
         s_out_valid_q  <= 1'b0;
         s_byte_phase_q <= 1'b0;
         s_word_phase_q <= 1'b0;
@@ -215,7 +215,7 @@ module dvp_core (
               s_word_phase_q <= 1'b0;
               s_word_total_q <= s_word_total_q + 1'b1;
             end else begin
-              s_err_flags_q[`RIBP_DVP__ERROR_OVERFLOW] <= 1'b1;
+              s_err_flags_q[`APB4_DVP__ERROR_OVERFLOW] <= 1'b1;
               s_drop_count_q                           <= s_drop_count_q + 1'b1;
               error_toggle_o                           <= ~error_toggle_o;
               s_frm_active_q                           <= 1'b0;
@@ -239,7 +239,7 @@ module dvp_core (
           s_word_phase_q <= 1'b0;
           s_word_total_q <= s_word_total_q + 1'b1;
         end else if (s_word_phase_q) begin
-          s_err_flags_q[`RIBP_DVP__ERROR_OVERFLOW] <= 1'b1;
+          s_err_flags_q[`APB4_DVP__ERROR_OVERFLOW] <= 1'b1;
           error_toggle_o                           <= ~error_toggle_o;
           s_frm_active_q                           <= 1'b0;
         end

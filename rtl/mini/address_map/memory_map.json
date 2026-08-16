@@ -2,74 +2,465 @@
   "schema_version": 2,
   "cpu_reset": "0x00000000",
   "sysctrl_registers": [
-    {"symbol": "CORESEL", "offset": "0x00"},
-    {"symbol": "IPSEL", "offset": "0x04"},
-    {"symbol": "PLL_CFG", "offset": "0x08"},
-    {"symbol": "PLL_CMD", "offset": "0x0C"},
-    {"symbol": "FAULT_STATUS", "offset": "0x10"},
-    {"symbol": "FAULT_ADDR", "offset": "0x14"},
-    {"symbol": "FAULT_COUNT", "offset": "0x18"},
-    {"symbol": "PLL_STATUS", "offset": "0x1C"},
-    {"symbol": "USER_CORE_RESET", "offset": "0x20"},
-    {"symbol": "USER_CORE_STATUS", "offset": "0x24"},
-    {"symbol": "FAULT_MASTER", "offset": "0x28"},
-    {"symbol": "FAULT_DETAIL", "offset": "0x2C"},
-    {"symbol": "PERF_CTRL", "offset": "0x40"},
-    {"symbol": "PERF_MGMT_WAIT_LO", "offset": "0x44"},
-    {"symbol": "PERF_MGMT_WAIT_HI", "offset": "0x48"},
-    {"symbol": "PERF_USER_WAIT_LO", "offset": "0x4C"},
-    {"symbol": "PERF_USER_WAIT_HI", "offset": "0x50"},
-    {"symbol": "PERF_DMA_WAIT_LO", "offset": "0x54"},
-    {"symbol": "PERF_DMA_WAIT_HI", "offset": "0x58"},
-    {"symbol": "PERF_RIBP_WAIT_LO", "offset": "0x5C"},
-    {"symbol": "PERF_RIBP_WAIT_HI", "offset": "0x60"},
-    {"symbol": "PERF_APB_WAIT_LO", "offset": "0x64"},
-    {"symbol": "PERF_APB_WAIT_HI", "offset": "0x68"},
-    {"symbol": "PERF_SDRAM_WAIT_LO", "offset": "0x6C"},
-    {"symbol": "PERF_SDRAM_WAIT_HI", "offset": "0x70"},
-    {"symbol": "PERF_PSRAM_WAIT_LO", "offset": "0x74"},
-    {"symbol": "PERF_PSRAM_WAIT_HI", "offset": "0x78"},
-    {"symbol": "PERF_FLASH_WAIT_LO", "offset": "0x7C"},
-    {"symbol": "PERF_FLASH_WAIT_HI", "offset": "0x80"},
-    {"symbol": "TEST_STATUS", "offset": "0x84"},
-    {"symbol": "RTC_WAKE_STATUS", "offset": "0x88"}
+    {
+      "symbol": "CORESEL",
+      "offset": "0x00"
+    },
+    {
+      "symbol": "IPSEL",
+      "offset": "0x04"
+    },
+    {
+      "symbol": "PLL_CFG",
+      "offset": "0x08"
+    },
+    {
+      "symbol": "PLL_CMD",
+      "offset": "0x0C"
+    },
+    {
+      "symbol": "FAULT_STATUS",
+      "offset": "0x10"
+    },
+    {
+      "symbol": "FAULT_ADDR",
+      "offset": "0x14"
+    },
+    {
+      "symbol": "FAULT_COUNT",
+      "offset": "0x18"
+    },
+    {
+      "symbol": "PLL_STATUS",
+      "offset": "0x1C"
+    },
+    {
+      "symbol": "USER_CORE_RESET",
+      "offset": "0x20"
+    },
+    {
+      "symbol": "USER_CORE_STATUS",
+      "offset": "0x24"
+    },
+    {
+      "symbol": "FAULT_MASTER",
+      "offset": "0x28"
+    },
+    {
+      "symbol": "FAULT_DETAIL",
+      "offset": "0x2C"
+    },
+    {
+      "symbol": "PERF_CTRL",
+      "offset": "0x40"
+    },
+    {
+      "symbol": "PERF_MGMT_WAIT_LO",
+      "offset": "0x44"
+    },
+    {
+      "symbol": "PERF_MGMT_WAIT_HI",
+      "offset": "0x48"
+    },
+    {
+      "symbol": "PERF_USER_WAIT_LO",
+      "offset": "0x4C"
+    },
+    {
+      "symbol": "PERF_USER_WAIT_HI",
+      "offset": "0x50"
+    },
+    {
+      "symbol": "PERF_DMA_WAIT_LO",
+      "offset": "0x54"
+    },
+    {
+      "symbol": "PERF_DMA_WAIT_HI",
+      "offset": "0x58"
+    },
+    {
+      "symbol": "PERF_APB4_WAIT_LO",
+      "offset": "0x5C"
+    },
+    {
+      "symbol": "PERF_APB4_WAIT_HI",
+      "offset": "0x60"
+    },
+    {
+      "symbol": "PERF_APB_WAIT_LO",
+      "offset": "0x64"
+    },
+    {
+      "symbol": "PERF_APB_WAIT_HI",
+      "offset": "0x68"
+    },
+    {
+      "symbol": "PERF_SDRAM_WAIT_LO",
+      "offset": "0x6C"
+    },
+    {
+      "symbol": "PERF_SDRAM_WAIT_HI",
+      "offset": "0x70"
+    },
+    {
+      "symbol": "PERF_PSRAM_WAIT_LO",
+      "offset": "0x74"
+    },
+    {
+      "symbol": "PERF_PSRAM_WAIT_HI",
+      "offset": "0x78"
+    },
+    {
+      "symbol": "PERF_FLASH_WAIT_LO",
+      "offset": "0x7C"
+    },
+    {
+      "symbol": "PERF_FLASH_WAIT_HI",
+      "offset": "0x80"
+    },
+    {
+      "symbol": "TEST_STATUS",
+      "offset": "0x84"
+    },
+    {
+      "symbol": "RTC_WAKE_STATUS",
+      "offset": "0x88"
+    }
   ],
   "regions": [
-    {"symbol": "FLASH", "base": "0x00000000", "size": "0x01000000", "route": "axi4", "kind": "active", "public": true, "linker": "FLASH", "user_access": "ro", "burst": "incr16"},
-    {"symbol": "RIBP_GPIO", "base": "0x10000000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_UART0", "base": "0x10001000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_TIM0", "base": "0x10002000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_TIM1", "base": "0x10003000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_PSRAM", "base": "0x10004000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "RIBP_SPISD", "base": "0x10005000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_I2C0", "base": "0x10006000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_I2S", "base": "0x10007000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_WS2812", "base": "0x10008000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_XPI", "base": "0x10009000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "RIBP_DMA", "base": "0x1000A000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "RIBP_SYSCTRL", "base": "0x1000B000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "RIBP_CLINT", "base": "0x10020000", "size": "0x00010000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "RIBP_SDRAM", "base": "0x1000D000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "RIBP_DVP", "base": "0x1000E000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_SDIO", "base": "0x1000F000", "size": "0x00001000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
-    {"symbol": "RIBP_OPIPSRAM", "base": "0x10010000", "size": "0x00001000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
-    {"symbol": "RIBP_I2C1", "base": "0x10011000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "RIBP_GA", "base": "0x10012000", "size": "0x00001000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
-    {"symbol": "RIBP_APU", "base": "0x10013000", "size": "0x00001000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
-    {"symbol": "RIBP_GPIO_ADMIN", "base": "0x10014000", "size": "0x00001000", "route": "ribp", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "APB_ARCHINFO", "base": "0x20000000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "ro"},
-    {"symbol": "APB_RNG", "base": "0x20001000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "APB_PWM", "base": "0x20002000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "APB_PS2", "base": "0x20003000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "APB_RTC", "base": "0x20004000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "APB_WDG", "base": "0x20005000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "none"},
-    {"symbol": "APB_CRC", "base": "0x20006000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "APB_USER_IP", "base": "0x20007000", "size": "0x00001000", "route": "apb", "kind": "active", "public": true, "user_access": "rw"},
-    {"symbol": "SRAM", "base": "0x30000000", "size": "0x00020000", "route": "ram", "kind": "active", "public": true, "linker": "SRAM", "user_access": "rw", "burst": "incr16"},
-    {"symbol": "SDRAM", "base": "0x38000000", "size": "0x04000000", "route": "axi4", "kind": "active", "public": true, "linker": "SDRAM", "user_access": "rw", "burst": "incr16"},
-    {"symbol": "PSRAM", "base": "0x40000000", "size": "0x02000000", "route": "axi4", "kind": "active", "public": true, "linker": "PSRAM", "user_access": "rw", "burst": "incr16"},
-    {"symbol": "OPIPSRAM", "base": "0x48000000", "size": "0x08000000", "route": "reserved", "kind": "reserved", "public": false, "user_access": "none"},
-    {"symbol": "XPI", "base": "0x50000000", "size": "0x10000000", "route": "axi4", "kind": "active", "public": true, "user_access": "rw", "burst": "incr16"},
-    {"symbol": "SPISD", "base": "0x60000000", "size": "0x40000000", "route": "axi4", "kind": "active", "public": true, "user_access": "rw", "burst": "incr16"}
+    {
+      "symbol": "FLASH",
+      "base": "0x00000000",
+      "size": "0x01000000",
+      "route": "axi4",
+      "kind": "active",
+      "public": true,
+      "linker": "FLASH",
+      "user_access": "ro",
+      "burst": "incr16"
+    },
+    {
+      "symbol": "APB4_GPIO",
+      "base": "0x10000000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_UART0",
+      "base": "0x10001000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_TIM0",
+      "base": "0x10002000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_TIM1",
+      "base": "0x10003000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_PSRAM",
+      "base": "0x10004000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_SPISD",
+      "base": "0x10005000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_I2C0",
+      "base": "0x10006000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_I2S",
+      "base": "0x10007000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_WS2812",
+      "base": "0x10008000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_XPI",
+      "base": "0x10009000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_DMA",
+      "base": "0x1000A000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_SYSCTRL",
+      "base": "0x1000B000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_CLINT",
+      "base": "0x10020000",
+      "size": "0x00010000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_SDRAM",
+      "base": "0x1000D000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_DVP",
+      "base": "0x1000E000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_SDIO",
+      "base": "0x1000F000",
+      "size": "0x00001000",
+      "route": "reserved",
+      "kind": "reserved",
+      "public": false,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_OPIPSRAM",
+      "base": "0x10010000",
+      "size": "0x00001000",
+      "route": "reserved",
+      "kind": "reserved",
+      "public": false,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_I2C1",
+      "base": "0x10011000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_GA",
+      "base": "0x10012000",
+      "size": "0x00001000",
+      "route": "reserved",
+      "kind": "reserved",
+      "public": false,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_APU",
+      "base": "0x10013000",
+      "size": "0x00001000",
+      "route": "reserved",
+      "kind": "reserved",
+      "public": false,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_GPIO_ADMIN",
+      "base": "0x10014000",
+      "size": "0x00001000",
+      "route": "apb4",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB_ARCHINFO",
+      "base": "0x20000000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "ro"
+    },
+    {
+      "symbol": "APB_RNG",
+      "base": "0x20001000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB_PWM",
+      "base": "0x20002000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB_PS2",
+      "base": "0x20003000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB_RTC",
+      "base": "0x20004000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB_WDG",
+      "base": "0x20005000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB_CRC",
+      "base": "0x20006000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB_USER_IP",
+      "base": "0x20007000",
+      "size": "0x00001000",
+      "route": "apb",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "SRAM",
+      "base": "0x30000000",
+      "size": "0x00020000",
+      "route": "ram",
+      "kind": "active",
+      "public": true,
+      "linker": "SRAM",
+      "user_access": "rw",
+      "burst": "incr16"
+    },
+    {
+      "symbol": "SDRAM",
+      "base": "0x38000000",
+      "size": "0x04000000",
+      "route": "axi4",
+      "kind": "active",
+      "public": true,
+      "linker": "SDRAM",
+      "user_access": "rw",
+      "burst": "incr16"
+    },
+    {
+      "symbol": "PSRAM",
+      "base": "0x40000000",
+      "size": "0x02000000",
+      "route": "axi4",
+      "kind": "active",
+      "public": true,
+      "linker": "PSRAM",
+      "user_access": "rw",
+      "burst": "incr16"
+    },
+    {
+      "symbol": "OPIPSRAM",
+      "base": "0x48000000",
+      "size": "0x08000000",
+      "route": "reserved",
+      "kind": "reserved",
+      "public": false,
+      "user_access": "none"
+    },
+    {
+      "symbol": "XPI",
+      "base": "0x50000000",
+      "size": "0x10000000",
+      "route": "axi4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw",
+      "burst": "incr16"
+    },
+    {
+      "symbol": "SPISD",
+      "base": "0x60000000",
+      "size": "0x40000000",
+      "route": "axi4",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw",
+      "burst": "incr16"
+    }
   ]
 }

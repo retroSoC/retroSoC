@@ -20,13 +20,13 @@ REQUIRED_FIELDS = {
     "checksum",
     "cycles",
     "mgmt_wait",
-    "ribp_wait",
+    "apb4_wait",
     "sdram_wait",
     "psram_wait",
     "flash_wait",
     "dma_wait",
 }
-TOKEN = re.compile(r"([a-z_]+)=([^\s]+)")
+TOKEN = re.compile(r"([a-z0-9_]+)=([^\s]+)")
 
 
 def parse_number(value: str) -> int:

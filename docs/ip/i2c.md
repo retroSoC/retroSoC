@@ -1,4 +1,4 @@
-# RIBP I2C
+# APB4 I2C
 
 The Mini SoC provides two independent controller-mode I2C instances. The I2C
 implements 7-bit and 10-bit addressing, queued write and read commands,
@@ -16,10 +16,10 @@ follow common commercial controller practice without copying another IP ABI.
 
 | Property | I2C0 | I2C1 |
 | --- | --- | --- |
-| RIBP base address | `0x10006000` | `0x10011000` |
+| APB4 base address | `0x10006000` | `0x10011000` |
 | Command / RX FIFO depth | 16 / 16 | 16 / 16 |
 | GPIO alternate function | GPIO7/8 ALT0 | GPIO3/4 ALT1 |
-| RIBP interrupt group bit | 7 | 12 |
+| APB4 interrupt group bit | 7 | 12 |
 | Management-core interrupt | 7 | 19 |
 | DMA TX/RX modes | 7 / 8 | 9 / 10 |
 
@@ -31,9 +31,9 @@ I2C configuration.
 
 ## Architecture
 
-`ribp_i2c` composes four implementation blocks:
+`apb4_i2c` composes four implementation blocks:
 
-- `i2c_reg` owns the RIBP ABI, command and receive FIFOs, sticky error and
+- `i2c_reg` owns the APB4 ABI, command and receive FIFOs, sticky error and
   interrupt state, capability discovery, and DMA pacing.
 - `i2c_filter` synchronizes SCL and SDA with the Common `cdc_sync` component
   and changes each filtered value only after its programmed stability period.
@@ -146,7 +146,7 @@ The self-checking RTL test covers ABI discovery and access errors, 7-bit write,
 7-bit combined write/repeated-START read, 10-bit read, clock stretching, address NACK,
 arbitration loss, and nine-clock recovery. The SBY target proves FIFO bounds,
 IRQ composition, valid command consumption, idle open-drain release, and
-recovery/busy consistency; 80-cycle covers reach RIBP errors, TX and RX data
+recovery/busy consistency; 80-cycle covers reach APB4 errors, TX and RX data
 paths, DMA pacing, activity, recovery, interrupt, and error state. Deep cover
 results retain a compact Yosys witness instead of automatically expanding a
 hundreds-of-MiB VCD. Host C tests cover exact timing conversion and invalid

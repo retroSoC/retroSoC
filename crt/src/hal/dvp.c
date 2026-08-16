@@ -37,7 +37,7 @@
 #define RS_DVP_STATUS_ERROR_MASK   UINT32_C(0x00000040)
 
 static volatile uint32_t *rs_dvp_register(uint32_t offset) {
-    return (volatile uint32_t *)(RS_SOC_RIBP_DVP_BASE + (uintptr_t)offset);
+    return (volatile uint32_t *)(RS_SOC_APB4_DVP_BASE + (uintptr_t)offset);
 }
 
 static bool rs_dvp_config_valid(const rs_dvp_config_t *config) {
@@ -152,7 +152,7 @@ rs_status_t rs_dvp_capture_dma(uintptr_t destination, uint32_t word_capacity,
     rs_dvp_status_t status;
     if ((destination == 0U) || (word_capacity == 0U))
         return RS_EINVAL;
-    if ((rs_dma_config(RS_DMA_MODE_DVP_RX, RS_SOC_RIBP_DVP_BASE, 0U, destination, 1U,
+    if ((rs_dma_config(RS_DMA_MODE_DVP_RX, RS_SOC_APB4_DVP_BASE, 0U, destination, 1U,
                        word_capacity) != RS_OK) ||
         (rs_dma_start() != RS_OK) || (rs_dvp_start() != RS_OK)) {
         return RS_EIO;

@@ -1,9 +1,9 @@
-# RIBP System Control
+# APB4 System Control
 
 SystemCtrl is the Mini SoC control-plane peripheral at
 `0x1000B000`. It owns user-core/IP selection, the PLL request protocol,
 bus-fault retention, performance-counter snapshots, RTC wake observation, and
-the terminal simulation result. The integration wrapper is `ribp_sysctrl`;
+the terminal simulation result. The integration wrapper is `apb4_sysctrl`;
 the implementation is separated into `sysctrl_reg`, `sysctrl_core`, and
 `sysctrl_if`.
 
@@ -22,14 +22,15 @@ PLL response is accepted, and always asserts `rsp_ready_o`. See
 [PLL Clock Control](../pll-clock-control.md) for the required software
 quiesce sequence.
 
-## RIBP contract
+## APB4 contract
 
-SystemCtrl accepts a RIBP request when `valid` is high and its registered
-`ready` is low. It responds in the following cycle, holds `resp_err` low as
-in the established ABI, and captures read data on accepted reads. Reads of an
-unmapped register retain the previously captured read value. Writes use the
-existing byte strobe qualification for each field; software must use full-word
-writes for `TEST_STATUS`.
+SystemCtrl accepts an APB4 access in the ACCESS phase when `psel` and
+`penable` are high and the registered `pready` is still low. It completes in
+the following cycle, holds `pslverr` low as in the established ABI, and
+captures read data on accepted reads. Reads of an unmapped register retain the
+previously captured read value. Writes use the existing byte strobe
+qualification for each field; software must use full-word writes for
+`TEST_STATUS`.
 
 The offset map remains generated from
 `rtl/mini/address_map/memory_map.json`. RTL aliases are in
@@ -53,7 +54,7 @@ offset macros.
 | `0x028` | `FAULT_MASTER` | RO | First fault master. |
 | `0x02C` | `FAULT_DETAIL` | RO | First raw RIB response code. |
 | `0x040` | `PERF_CTRL` | RW | Bit 0 enable, bit 1 clear pulse, bit 2 snapshot pulse. |
-| `0x044`-`0x080` | `PERF_*_WAIT_{LO,HI}` | RO | Snapshot of management, user, DMA, RIBP, APB, SDRAM, PSRAM, and flash wait counters. |
+| `0x044`-`0x080` | `PERF_*_WAIT_{LO,HI}` | RO | Snapshot of management, user, DMA, APB4, APB, SDRAM, PSRAM, and flash wait counters. |
 | `0x084` | `TEST_STATUS` | RW-once/RO | Full-word write with bit 31 set records sticky done, bit 0 pass, and bits `[15:8]` result code. |
 | `0x088` | `RTC_WAKE_STATUS` | RW1C/RO | Bit 0 synchronized live wake; bit 1 sticky wake, cleared by writing one to bit 1. |
 
@@ -78,7 +79,7 @@ sticky terminal result through `rs_sysctrl_write_test_status()`.
 
 ## Verification
 
-`tests/test_sysctrl.py` and `tests/rtl/sysctrl_tb.sv` check RIBP response
+`tests/test_sysctrl.py` and `tests/rtl/sysctrl_tb.sv` check APB4 response
 retention, reset values, user-core lifecycle errors, first-fault retention and
 W1C behavior, performance snapshots, sticky terminal status, and RTC wake
 live/sticky behavior. `sysctrl_formal` proves the user-core, PLL, fault, and

@@ -3,102 +3,903 @@
   "gpio_pins": 32,
   "irq_vector_width": 32,
   "irq_groups": [
-    {"name": "ribp", "width": 14, "top_signal": "s_ribp_irq"},
-    {"name": "apb", "width": 5, "top_signal": "s_apb_irq"}
+    {
+      "name": "apb4",
+      "width": 14,
+      "top_signal": "s_apb4_irq"
+    },
+    {
+      "name": "apb",
+      "width": 5,
+      "top_signal": "s_apb_irq"
+    }
   ],
   "interrupts": [
-    {"name": "clint_software", "description": "CLINT machine software interrupt", "group": "ribp", "group_bit": 0, "core_bit": 0, "signal": "u_clint_if.software_irq_o[0]", "user_visible": false},
-    {"name": "clint_timer", "description": "CLINT machine timer interrupt", "group": "ribp", "group_bit": 1, "core_bit": 1, "signal": "u_clint_if.timer_irq_o[0]", "user_visible": false},
-    {"name": "uart0", "description": "RIBP UART0 interrupt", "group": "ribp", "group_bit": 2, "core_bit": 2, "signal": "uart.irq_o"},
-    {"name": "timer0", "description": "RIBP timer0 interrupt", "group": "ribp", "group_bit": 3, "core_bit": 3, "signal": "s_tim0_irq"},
-    {"name": "timer1", "description": "RIBP timer1 interrupt", "group": "ribp", "group_bit": 4, "core_bit": 4, "signal": "s_tim1_irq"},
-    {"name": "psram", "description": "PSRAM controller interrupt", "group": "ribp", "group_bit": 5, "core_bit": 5, "signal": "psram.irq_o"},
-    {"name": "spisd", "description": "SPI SD controller interrupt", "group": "ribp", "group_bit": 6, "core_bit": 6, "signal": "spisd.irq_o"},
-    {"name": "i2c0", "description": "RIBP I2C0 interrupt", "group": "ribp", "group_bit": 7, "core_bit": 7, "signal": "i2c0.irq_o"},
-    {"name": "i2s", "description": "RIBP I2S interrupt", "group": "ribp", "group_bit": 8, "core_bit": 8, "signal": "i2s.irq_o"},
-    {"name": "xpi", "description": "XPI controller interrupt", "group": "ribp", "group_bit": 9, "core_bit": 9, "signal": "xpi.irq_o"},
-    {"name": "pwm", "description": "APB PWM interrupt", "group": "apb", "group_bit": 0, "core_bit": 11, "signal": "pwm.irq_o"},
-    {"name": "ps2", "description": "APB PS2 interrupt", "group": "apb", "group_bit": 1, "core_bit": 12, "signal": "ps2.irq_o"},
-    {"name": "rtc", "description": "APB RTC interrupt", "group": "apb", "group_bit": 2, "core_bit": 13, "signal": "u_rtc_if.irq_o"},
-    {"name": "watchdog_early_warning", "description": "APB watchdog early-warning interrupt", "group": "apb", "group_bit": 3, "core_bit": 14, "signal": "u_wdg_if.irq_o"},
-    {"name": "rng", "description": "APB RNG data/error interrupt", "group": "apb", "group_bit": 4, "core_bit": 16, "signal": "s_rng_irq", "user_visible": false},
-    {"name": "ws2812", "description": "WS2812 transmitter interrupt", "group": "ribp", "group_bit": 10, "core_bit": 17, "signal": "ws2812.irq_o"},
-    {"name": "gpio", "description": "RIBP GPIO combined interrupt", "group": "ribp", "group_bit": 11, "core_bit": 18, "signal": "gpio.irq_o"},
-    {"name": "i2c1", "description": "RIBP I2C1 interrupt", "group": "ribp", "group_bit": 12, "core_bit": 19, "signal": "i2c1.irq_o"},
-    {"name": "dvp", "description": "RIBP DVP capture interrupt", "group": "ribp", "group_bit": 13, "core_bit": 15, "signal": "s_dvp_irq"}
+    {
+      "name": "clint_software",
+      "description": "CLINT machine software interrupt",
+      "group": "apb4",
+      "group_bit": 0,
+      "core_bit": 0,
+      "signal": "u_clint_if.software_irq_o[0]",
+      "user_visible": false
+    },
+    {
+      "name": "clint_timer",
+      "description": "CLINT machine timer interrupt",
+      "group": "apb4",
+      "group_bit": 1,
+      "core_bit": 1,
+      "signal": "u_clint_if.timer_irq_o[0]",
+      "user_visible": false
+    },
+    {
+      "name": "uart0",
+      "description": "APB4 UART0 interrupt",
+      "group": "apb4",
+      "group_bit": 2,
+      "core_bit": 2,
+      "signal": "uart.irq_o"
+    },
+    {
+      "name": "timer0",
+      "description": "APB4 timer0 interrupt",
+      "group": "apb4",
+      "group_bit": 3,
+      "core_bit": 3,
+      "signal": "s_tim0_irq"
+    },
+    {
+      "name": "timer1",
+      "description": "APB4 timer1 interrupt",
+      "group": "apb4",
+      "group_bit": 4,
+      "core_bit": 4,
+      "signal": "s_tim1_irq"
+    },
+    {
+      "name": "psram",
+      "description": "PSRAM controller interrupt",
+      "group": "apb4",
+      "group_bit": 5,
+      "core_bit": 5,
+      "signal": "psram.irq_o"
+    },
+    {
+      "name": "spisd",
+      "description": "SPI SD controller interrupt",
+      "group": "apb4",
+      "group_bit": 6,
+      "core_bit": 6,
+      "signal": "spisd.irq_o"
+    },
+    {
+      "name": "i2c0",
+      "description": "APB4 I2C0 interrupt",
+      "group": "apb4",
+      "group_bit": 7,
+      "core_bit": 7,
+      "signal": "i2c0.irq_o"
+    },
+    {
+      "name": "i2s",
+      "description": "APB4 I2S interrupt",
+      "group": "apb4",
+      "group_bit": 8,
+      "core_bit": 8,
+      "signal": "i2s.irq_o"
+    },
+    {
+      "name": "xpi",
+      "description": "XPI controller interrupt",
+      "group": "apb4",
+      "group_bit": 9,
+      "core_bit": 9,
+      "signal": "xpi.irq_o"
+    },
+    {
+      "name": "pwm",
+      "description": "APB PWM interrupt",
+      "group": "apb",
+      "group_bit": 0,
+      "core_bit": 11,
+      "signal": "pwm.irq_o"
+    },
+    {
+      "name": "ps2",
+      "description": "APB PS2 interrupt",
+      "group": "apb",
+      "group_bit": 1,
+      "core_bit": 12,
+      "signal": "ps2.irq_o"
+    },
+    {
+      "name": "rtc",
+      "description": "APB RTC interrupt",
+      "group": "apb",
+      "group_bit": 2,
+      "core_bit": 13,
+      "signal": "u_rtc_if.irq_o"
+    },
+    {
+      "name": "watchdog_early_warning",
+      "description": "APB watchdog early-warning interrupt",
+      "group": "apb",
+      "group_bit": 3,
+      "core_bit": 14,
+      "signal": "u_wdg_if.irq_o"
+    },
+    {
+      "name": "rng",
+      "description": "APB RNG data/error interrupt",
+      "group": "apb",
+      "group_bit": 4,
+      "core_bit": 16,
+      "signal": "s_rng_irq",
+      "user_visible": false
+    },
+    {
+      "name": "ws2812",
+      "description": "WS2812 transmitter interrupt",
+      "group": "apb4",
+      "group_bit": 10,
+      "core_bit": 17,
+      "signal": "ws2812.irq_o"
+    },
+    {
+      "name": "gpio",
+      "description": "APB4 GPIO combined interrupt",
+      "group": "apb4",
+      "group_bit": 11,
+      "core_bit": 18,
+      "signal": "gpio.irq_o"
+    },
+    {
+      "name": "i2c1",
+      "description": "APB4 I2C1 interrupt",
+      "group": "apb4",
+      "group_bit": 12,
+      "core_bit": 19,
+      "signal": "i2c1.irq_o"
+    },
+    {
+      "name": "dvp",
+      "description": "APB4 DVP capture interrupt",
+      "group": "apb4",
+      "group_bit": 13,
+      "core_bit": 15,
+      "signal": "s_dvp_irq"
+    }
   ],
   "wake_sources": [
-    {"name": "rtc", "signal": "u_rtc_if.wake_o", "observer": "sysctrl.rtc_wake_i", "retained": false}
-  ],
-  "ribp_targets": [
-    {"slot": 0, "name": "uart0", "interface": "u_uart_ribp_if", "regions": ["RIBP_UART0"]},
-    {"slot": 1, "name": "gpio", "interface": "u_gpio_ribp_if", "regions": ["RIBP_GPIO", "RIBP_GPIO_ADMIN"]},
-    {"slot": 2, "name": "tim0", "interface": "u_tim0_ribp_if", "regions": ["RIBP_TIM0"]},
-    {"slot": 3, "name": "tim1", "interface": "u_tim1_ribp_if", "regions": ["RIBP_TIM1"]},
-    {"slot": 4, "name": "psram", "interface": "u_psram_ribp_if", "regions": ["RIBP_PSRAM"]},
-    {"slot": 5, "name": "spisd", "interface": "u_spisd_ribp_if", "regions": ["RIBP_SPISD"]},
-    {"slot": 6, "name": "i2c0", "interface": "u_i2c0_ribp_if", "regions": ["RIBP_I2C0"]},
-    {"slot": 7, "name": "i2s", "interface": "u_i2s_ribp_if", "regions": ["RIBP_I2S"]},
-    {"slot": 8, "name": "ws2812", "interface": "u_ws2812_ribp_if", "regions": ["RIBP_WS2812"]},
-    {"slot": 9, "name": "xpi", "interface": "u_xpi_ribp_if", "regions": ["RIBP_XPI"]},
-    {"slot": 10, "name": "dma", "interface": "u_dma_ribp_if", "regions": ["RIBP_DMA"]},
-    {"slot": 11, "name": "sysctrl", "interface": "u_sysctrl_ribp_if", "regions": ["RIBP_SYSCTRL"]},
-    {"slot": 12, "name": "clint", "interface": "u_clint_ribp_if", "regions": ["RIBP_CLINT"]},
-    {"slot": 13, "name": "sdram", "interface": "sdram_cfg_ribp", "regions": ["RIBP_SDRAM"], "external": true},
-    {"slot": 14, "name": "dvp", "interface": "u_dvp_ribp_if", "regions": ["RIBP_DVP"]},
-    {"slot": 15, "name": "sdio", "interface": "u_sdio_ribp_if", "disabled": true},
-    {"slot": 16, "name": "opipsram", "interface": "u_opipsram_ribp_if", "disabled": true},
-    {"slot": 17, "name": "i2c1", "interface": "u_i2c1_ribp_if", "regions": ["RIBP_I2C1"]}
+    {
+      "name": "rtc",
+      "signal": "u_rtc_if.wake_o",
+      "observer": "sysctrl.rtc_wake_i",
+      "retained": false
+    }
   ],
   "fabric_links": [
-    {"name": "mgmt", "interface": "u_mgmt_axi4_if", "protocol": "axi4"},
-    {"name": "user", "interface": "u_user_axi4_if", "protocol": "axi4"},
-    {"name": "dma", "interface": "u_dma_axi4_if", "protocol": "axi4"},
-    {"name": "cfg", "interface": "u_cfg_axi4_if", "protocol": "axi4"},
-    {"name": "apb", "interface": "u_apb_axi4_if", "protocol": "axi4"}
+    {
+      "name": "mgmt",
+      "interface": "u_mgmt_axi4_if",
+      "protocol": "axi4"
+    },
+    {
+      "name": "user",
+      "interface": "u_user_axi4_if",
+      "protocol": "axi4"
+    },
+    {
+      "name": "dma",
+      "interface": "u_dma_axi4_if",
+      "protocol": "axi4"
+    },
+    {
+      "name": "cfg",
+      "interface": "u_cfg_axi4_if",
+      "protocol": "axi4"
+    },
+    {
+      "name": "apb",
+      "interface": "u_apb_axi4_if",
+      "protocol": "axi4"
+    }
   ],
   "apb_targets": [
-    {"slot": 0, "name": "archinfo", "timed_interface": "u_archinfo_apb_if", "pure_interface": "u_archinfo_apb_pure_if", "region": "APB_ARCHINFO"},
-    {"slot": 1, "name": "rng", "timed_interface": "u_rng_apb_if", "pure_interface": "u_rng_apb_pure_if", "region": "APB_RNG"},
-    {"slot": 2, "name": "pwm", "timed_interface": "u_pwm_apb_if", "pure_interface": "u_pwm_apb_pure_if", "region": "APB_PWM"},
-    {"slot": 3, "name": "ps2", "timed_interface": "u_ps2_apb_if", "pure_interface": "u_ps2_apb_pure_if", "region": "APB_PS2"},
-    {"slot": 4, "name": "rtc", "timed_interface": "u_rtc_apb_if", "pure_interface": "u_rtc_apb_pure_if", "region": "APB_RTC"},
-    {"slot": 5, "name": "wdg", "timed_interface": "u_wdg_apb_if", "pure_interface": "u_wdg_apb_pure_if", "region": "APB_WDG"},
-    {"slot": 6, "name": "crc", "timed_interface": "u_crc_apb_if", "pure_interface": "u_crc_apb_pure_if", "region": "APB_CRC"},
-    {"slot": 7, "name": "user_ip", "timed_interface": "u_user_ip_apb_if", "pure_interface": "u_user_ip_apb_pure_if", "region": "APB_USER_IP"}
+    {
+      "slot": 0,
+      "name": "archinfo",
+      "timed_interface": "u_archinfo_apb_if",
+      "pure_interface": "u_archinfo_apb_pure_if",
+      "region": "APB_ARCHINFO"
+    },
+    {
+      "slot": 1,
+      "name": "rng",
+      "timed_interface": "u_rng_apb_if",
+      "pure_interface": "u_rng_apb_pure_if",
+      "region": "APB_RNG"
+    },
+    {
+      "slot": 2,
+      "name": "pwm",
+      "timed_interface": "u_pwm_apb_if",
+      "pure_interface": "u_pwm_apb_pure_if",
+      "region": "APB_PWM"
+    },
+    {
+      "slot": 3,
+      "name": "ps2",
+      "timed_interface": "u_ps2_apb_if",
+      "pure_interface": "u_ps2_apb_pure_if",
+      "region": "APB_PS2"
+    },
+    {
+      "slot": 4,
+      "name": "rtc",
+      "timed_interface": "u_rtc_apb_if",
+      "pure_interface": "u_rtc_apb_pure_if",
+      "region": "APB_RTC"
+    },
+    {
+      "slot": 5,
+      "name": "wdg",
+      "timed_interface": "u_wdg_apb_if",
+      "pure_interface": "u_wdg_apb_pure_if",
+      "region": "APB_WDG"
+    },
+    {
+      "slot": 6,
+      "name": "crc",
+      "timed_interface": "u_crc_apb_if",
+      "pure_interface": "u_crc_apb_pure_if",
+      "region": "APB_CRC"
+    },
+    {
+      "slot": 7,
+      "name": "user_ip",
+      "timed_interface": "u_user_ip_apb_if",
+      "pure_interface": "u_user_ip_apb_pure_if",
+      "region": "APB_USER_IP"
+    }
   ],
   "gpio_alt_functions": [
-    {"pin": 0, "alt0": {"inputs": ["u_uart0_if.cts_n_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_ps2_if.ps2_clk_i"], "do": "u_ps2_if.ps2_clk_o", "oe": "u_ps2_if.ps2_clk_oe_o"}},
-    {"pin": 1, "alt0": {"inputs": [], "do": "u_uart0_if.rts_n_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_ps2_if.ps2_dat_i"], "do": "u_ps2_if.ps2_dat_o", "oe": "u_ps2_if.ps2_dat_oe_o"}},
-    {"pin": 2, "alt0": {"inputs": ["u_pwm_if.sync_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": [], "do": "u_ws2812_if.dat_o", "oe": "1'b1"}},
-    {"pin": 3, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[0]", "oe": "u_pwm_if.oe_o[0]"}, "alt1": {"inputs": ["u_i2c1_if.scl_i"], "do": "u_i2c1_if.scl_o", "oe": "u_i2c1_if.scl_oe_o"}},
-    {"pin": 4, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[1]", "oe": "u_pwm_if.oe_o[1]"}, "alt1": {"inputs": ["u_i2c1_if.sda_i"], "do": "u_i2c1_if.sda_o", "oe": "u_i2c1_if.sda_oe_o"}},
-    {"pin": 5, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[2]", "oe": "u_pwm_if.oe_o[2]"}, "alt1": {"inputs": [], "do": "clkdiv4_i", "oe": "1'b1"}},
-    {"pin": 6, "alt0": {"inputs": [], "do": "u_pwm_if.pwm_o[3]", "oe": "u_pwm_if.oe_o[3]"}, "alt1": {"inputs": [], "do": "u_spisd_if.sck_o", "oe": "1'b1"}},
-    {"pin": 7, "alt0": {"inputs": ["u_i2c0_if.scl_i"], "do": "u_i2c0_if.scl_o", "oe": "u_i2c0_if.scl_oe_o"}, "alt1": {"inputs": [], "do": "u_spisd_if.nss_o", "oe": "1'b1"}},
-    {"pin": 8, "alt0": {"inputs": ["u_i2c0_if.sda_i"], "do": "u_i2c0_if.sda_o", "oe": "u_i2c0_if.sda_oe_o"}, "alt1": {"inputs": [], "do": "u_spisd_if.mosi_o", "oe": "1'b1"}},
-    {"pin": 9, "alt0": {"inputs": ["u_pwm_if.fault_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_spisd_if.miso_i"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 10, "alt0": {"inputs": [], "do": "u_i2s_if.mclk_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.pclk_i"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 11, "alt0": {"inputs": [], "do": "u_i2s_if.sclk_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.href_i"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 12, "alt0": {"inputs": [], "do": "u_i2s_if.lrck_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.vsync_i"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 13, "alt0": {"inputs": [], "do": "u_i2s_if.dacdat_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.dat_i[0]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 14, "alt0": {"inputs": ["u_i2s_if.adcdat_i"], "do": "1'b0", "oe": "1'b0"}, "alt1": {"inputs": ["u_dvp_if.dat_i[1]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 15, "alt0": {"inputs": [], "do": "u_sdio_if.sck_o", "oe": "1'b1"}, "alt1": {"inputs": ["u_dvp_if.dat_i[2]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 16, "alt0": {"inputs": ["u_sdio_if.cmd_di_i"], "do": "u_sdio_if.cmd_do_o", "oe": "u_sdio_if.cmd_oe_o"}, "alt1": {"inputs": ["u_dvp_if.dat_i[3]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 17, "alt0": {"inputs": ["u_sdio_if.dat_di_i[0]"], "do": "u_sdio_if.dat_do_o[0]", "oe": "u_sdio_if.dat_oe_o[0]"}, "alt1": {"inputs": ["u_dvp_if.dat_i[4]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 18, "alt0": {"inputs": ["u_sdio_if.dat_di_i[1]"], "do": "u_sdio_if.dat_do_o[1]", "oe": "u_sdio_if.dat_oe_o[1]"}, "alt1": {"inputs": ["u_dvp_if.dat_i[5]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 19, "alt0": {"inputs": ["u_sdio_if.dat_di_i[2]"], "do": "u_sdio_if.dat_do_o[2]", "oe": "u_sdio_if.dat_oe_o[2]"}, "alt1": {"inputs": ["u_dvp_if.dat_i[6]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 20, "alt0": {"inputs": ["u_sdio_if.dat_di_i[3]"], "do": "u_sdio_if.dat_do_o[3]", "oe": "u_sdio_if.dat_oe_o[3]"}, "alt1": {"inputs": ["u_dvp_if.dat_i[7]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 21, "alt0": {"inputs": [], "do": "u_opipsram_if.sck_o", "oe": "1'b1"}, "alt1": {"inputs": [], "do": "u_psram_if.sck_o", "oe": "1'b1"}},
-    {"pin": 22, "alt0": {"inputs": [], "do": "u_opipsram_if.ce_o", "oe": "1'b1"}, "alt1": {"inputs": [], "do": "u_psram_if.nss_o[0]", "oe": "1'b1"}},
-    {"pin": 23, "alt0": {"inputs": ["u_opipsram_if.io_di_i[0]"], "do": "u_opipsram_if.io_do_o[0]", "oe": "u_opipsram_if.io_oe_o[0]"}, "alt1": {"inputs": ["u_psram_if.io_di_i[0]"], "do": "u_psram_if.io_do_o[0]", "oe": "u_psram_if.io_oe_o[0]"}},
-    {"pin": 24, "alt0": {"inputs": ["u_opipsram_if.io_di_i[1]"], "do": "u_opipsram_if.io_do_o[1]", "oe": "u_opipsram_if.io_oe_o[1]"}, "alt1": {"inputs": ["u_psram_if.io_di_i[1]"], "do": "u_psram_if.io_do_o[1]", "oe": "u_psram_if.io_oe_o[1]"}},
-    {"pin": 25, "alt0": {"inputs": ["u_opipsram_if.io_di_i[2]"], "do": "u_opipsram_if.io_do_o[2]", "oe": "u_opipsram_if.io_oe_o[2]"}, "alt1": {"inputs": ["u_psram_if.io_di_i[2]"], "do": "u_psram_if.io_do_o[2]", "oe": "u_psram_if.io_oe_o[2]"}},
-    {"pin": 26, "alt0": {"inputs": ["u_opipsram_if.io_di_i[3]"], "do": "u_opipsram_if.io_do_o[3]", "oe": "u_opipsram_if.io_oe_o[3]"}, "alt1": {"inputs": ["u_psram_if.io_di_i[3]"], "do": "u_psram_if.io_do_o[3]", "oe": "u_psram_if.io_oe_o[3]"}},
-    {"pin": 27, "alt0": {"inputs": ["u_opipsram_if.io_di_i[4]"], "do": "u_opipsram_if.io_do_o[4]", "oe": "u_opipsram_if.io_oe_o[4]"}, "alt1": {"inputs": [], "do": "u_psram_if.nss_o[1]", "oe": "1'b1"}},
-    {"pin": 28, "alt0": {"inputs": ["u_opipsram_if.io_di_i[5]"], "do": "u_opipsram_if.io_do_o[5]", "oe": "u_opipsram_if.io_oe_o[5]"}, "alt1": {"inputs": [], "do": "u_psram_if.nss_o[2]", "oe": "1'b1"}},
-    {"pin": 29, "alt0": {"inputs": ["u_opipsram_if.io_di_i[6]"], "do": "u_opipsram_if.io_do_o[6]", "oe": "u_opipsram_if.io_oe_o[6]"}, "alt1": {"inputs": [], "do": "u_psram_if.nss_o[3]", "oe": "1'b1"}},
-    {"pin": 30, "alt0": {"inputs": ["u_opipsram_if.io_di_i[7]"], "do": "u_opipsram_if.io_do_o[7]", "oe": "u_opipsram_if.io_oe_o[7]"}, "alt1": {"inputs": ["u_pwm_if.capture_i[0]"], "do": "1'b0", "oe": "1'b0"}},
-    {"pin": 31, "alt0": {"inputs": ["u_opipsram_if.dqs_di_i"], "do": "u_opipsram_if.dqs_do_o", "oe": "u_opipsram_if.dqs_oe_o"}, "alt1": {"inputs": ["u_pwm_if.capture_i[1]"], "do": "1'b0", "oe": "1'b0"}}
+    {
+      "pin": 0,
+      "alt0": {
+        "inputs": [
+          "u_uart0_if.cts_n_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [
+          "u_ps2_if.ps2_clk_i"
+        ],
+        "do": "u_ps2_if.ps2_clk_o",
+        "oe": "u_ps2_if.ps2_clk_oe_o"
+      }
+    },
+    {
+      "pin": 1,
+      "alt0": {
+        "inputs": [],
+        "do": "u_uart0_if.rts_n_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [
+          "u_ps2_if.ps2_dat_i"
+        ],
+        "do": "u_ps2_if.ps2_dat_o",
+        "oe": "u_ps2_if.ps2_dat_oe_o"
+      }
+    },
+    {
+      "pin": 2,
+      "alt0": {
+        "inputs": [
+          "u_pwm_if.sync_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_ws2812_if.dat_o",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 3,
+      "alt0": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[0]",
+        "oe": "u_pwm_if.oe_o[0]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_i2c1_if.scl_i"
+        ],
+        "do": "u_i2c1_if.scl_o",
+        "oe": "u_i2c1_if.scl_oe_o"
+      }
+    },
+    {
+      "pin": 4,
+      "alt0": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[1]",
+        "oe": "u_pwm_if.oe_o[1]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_i2c1_if.sda_i"
+        ],
+        "do": "u_i2c1_if.sda_o",
+        "oe": "u_i2c1_if.sda_oe_o"
+      }
+    },
+    {
+      "pin": 5,
+      "alt0": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[2]",
+        "oe": "u_pwm_if.oe_o[2]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "clkdiv4_i",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 6,
+      "alt0": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[3]",
+        "oe": "u_pwm_if.oe_o[3]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_spisd_if.sck_o",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 7,
+      "alt0": {
+        "inputs": [
+          "u_i2c0_if.scl_i"
+        ],
+        "do": "u_i2c0_if.scl_o",
+        "oe": "u_i2c0_if.scl_oe_o"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_spisd_if.nss_o",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 8,
+      "alt0": {
+        "inputs": [
+          "u_i2c0_if.sda_i"
+        ],
+        "do": "u_i2c0_if.sda_o",
+        "oe": "u_i2c0_if.sda_oe_o"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_spisd_if.mosi_o",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 9,
+      "alt0": {
+        "inputs": [
+          "u_pwm_if.fault_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [
+          "u_spisd_if.miso_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 10,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.mclk_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.pclk_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 11,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.sclk_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.href_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 12,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.lrck_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.vsync_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 13,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.dacdat_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[0]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 14,
+      "alt0": {
+        "inputs": [
+          "u_i2s_if.adcdat_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[1]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 15,
+      "alt0": {
+        "inputs": [],
+        "do": "u_sdio_if.sck_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[2]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 16,
+      "alt0": {
+        "inputs": [
+          "u_sdio_if.cmd_di_i"
+        ],
+        "do": "u_sdio_if.cmd_do_o",
+        "oe": "u_sdio_if.cmd_oe_o"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[3]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 17,
+      "alt0": {
+        "inputs": [
+          "u_sdio_if.dat_di_i[0]"
+        ],
+        "do": "u_sdio_if.dat_do_o[0]",
+        "oe": "u_sdio_if.dat_oe_o[0]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[4]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 18,
+      "alt0": {
+        "inputs": [
+          "u_sdio_if.dat_di_i[1]"
+        ],
+        "do": "u_sdio_if.dat_do_o[1]",
+        "oe": "u_sdio_if.dat_oe_o[1]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[5]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 19,
+      "alt0": {
+        "inputs": [
+          "u_sdio_if.dat_di_i[2]"
+        ],
+        "do": "u_sdio_if.dat_do_o[2]",
+        "oe": "u_sdio_if.dat_oe_o[2]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[6]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 20,
+      "alt0": {
+        "inputs": [
+          "u_sdio_if.dat_di_i[3]"
+        ],
+        "do": "u_sdio_if.dat_do_o[3]",
+        "oe": "u_sdio_if.dat_oe_o[3]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_dvp_if.dat_i[7]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 21,
+      "alt0": {
+        "inputs": [],
+        "do": "u_opipsram_if.sck_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_psram_if.sck_o",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 22,
+      "alt0": {
+        "inputs": [],
+        "do": "u_opipsram_if.ce_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_psram_if.nss_o[0]",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 23,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[0]"
+        ],
+        "do": "u_opipsram_if.io_do_o[0]",
+        "oe": "u_opipsram_if.io_oe_o[0]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_psram_if.io_di_i[0]"
+        ],
+        "do": "u_psram_if.io_do_o[0]",
+        "oe": "u_psram_if.io_oe_o[0]"
+      }
+    },
+    {
+      "pin": 24,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[1]"
+        ],
+        "do": "u_opipsram_if.io_do_o[1]",
+        "oe": "u_opipsram_if.io_oe_o[1]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_psram_if.io_di_i[1]"
+        ],
+        "do": "u_psram_if.io_do_o[1]",
+        "oe": "u_psram_if.io_oe_o[1]"
+      }
+    },
+    {
+      "pin": 25,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[2]"
+        ],
+        "do": "u_opipsram_if.io_do_o[2]",
+        "oe": "u_opipsram_if.io_oe_o[2]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_psram_if.io_di_i[2]"
+        ],
+        "do": "u_psram_if.io_do_o[2]",
+        "oe": "u_psram_if.io_oe_o[2]"
+      }
+    },
+    {
+      "pin": 26,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[3]"
+        ],
+        "do": "u_opipsram_if.io_do_o[3]",
+        "oe": "u_opipsram_if.io_oe_o[3]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_psram_if.io_di_i[3]"
+        ],
+        "do": "u_psram_if.io_do_o[3]",
+        "oe": "u_psram_if.io_oe_o[3]"
+      }
+    },
+    {
+      "pin": 27,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[4]"
+        ],
+        "do": "u_opipsram_if.io_do_o[4]",
+        "oe": "u_opipsram_if.io_oe_o[4]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_psram_if.nss_o[1]",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 28,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[5]"
+        ],
+        "do": "u_opipsram_if.io_do_o[5]",
+        "oe": "u_opipsram_if.io_oe_o[5]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_psram_if.nss_o[2]",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 29,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[6]"
+        ],
+        "do": "u_opipsram_if.io_do_o[6]",
+        "oe": "u_opipsram_if.io_oe_o[6]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_psram_if.nss_o[3]",
+        "oe": "1'b1"
+      }
+    },
+    {
+      "pin": 30,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.io_di_i[7]"
+        ],
+        "do": "u_opipsram_if.io_do_o[7]",
+        "oe": "u_opipsram_if.io_oe_o[7]"
+      },
+      "alt1": {
+        "inputs": [
+          "u_pwm_if.capture_i[0]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 31,
+      "alt0": {
+        "inputs": [
+          "u_opipsram_if.dqs_di_i"
+        ],
+        "do": "u_opipsram_if.dqs_do_o",
+        "oe": "u_opipsram_if.dqs_oe_o"
+      },
+      "alt1": {
+        "inputs": [
+          "u_pwm_if.capture_i[1]"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    }
+  ],
+  "apb4_targets": [
+    {
+      "slot": 0,
+      "name": "uart0",
+      "timed_interface": "u_uart_apb_if",
+      "pure_interface": "u_uart_apb_pure_if",
+      "region": "APB4_UART0"
+    },
+    {
+      "slot": 1,
+      "name": "gpio",
+      "timed_interface": "u_gpio_apb_if",
+      "pure_interface": "u_gpio_apb_pure_if",
+      "region": "APB4_GPIO",
+      "regions": [
+        "APB4_GPIO",
+        "APB4_GPIO_ADMIN"
+      ]
+    },
+    {
+      "slot": 2,
+      "name": "tim0",
+      "timed_interface": "u_tim0_apb_if",
+      "pure_interface": "u_tim0_apb_pure_if",
+      "region": "APB4_TIM0"
+    },
+    {
+      "slot": 3,
+      "name": "tim1",
+      "timed_interface": "u_tim1_apb_if",
+      "pure_interface": "u_tim1_apb_pure_if",
+      "region": "APB4_TIM1"
+    },
+    {
+      "slot": 4,
+      "name": "psram",
+      "timed_interface": "u_psram_apb_if",
+      "pure_interface": "u_psram_apb_pure_if",
+      "region": "APB4_PSRAM"
+    },
+    {
+      "slot": 5,
+      "name": "spisd",
+      "timed_interface": "u_spisd_apb_if",
+      "pure_interface": "u_spisd_apb_pure_if",
+      "region": "APB4_SPISD"
+    },
+    {
+      "slot": 6,
+      "name": "i2c0",
+      "timed_interface": "u_i2c0_apb_if",
+      "pure_interface": "u_i2c0_apb_pure_if",
+      "region": "APB4_I2C0"
+    },
+    {
+      "slot": 7,
+      "name": "i2s",
+      "timed_interface": "u_i2s_apb_if",
+      "pure_interface": "u_i2s_apb_pure_if",
+      "region": "APB4_I2S"
+    },
+    {
+      "slot": 8,
+      "name": "ws2812",
+      "timed_interface": "u_ws2812_apb_if",
+      "pure_interface": "u_ws2812_apb_pure_if",
+      "region": "APB4_WS2812"
+    },
+    {
+      "slot": 9,
+      "name": "xpi",
+      "timed_interface": "u_xpi_apb_if",
+      "pure_interface": "u_xpi_apb_pure_if",
+      "region": "APB4_XPI"
+    },
+    {
+      "slot": 10,
+      "name": "dma",
+      "timed_interface": "u_dma_apb_if",
+      "pure_interface": "u_dma_apb_pure_if",
+      "region": "APB4_DMA"
+    },
+    {
+      "slot": 11,
+      "name": "sysctrl",
+      "timed_interface": "u_sysctrl_apb_if",
+      "pure_interface": "u_sysctrl_apb_pure_if",
+      "region": "APB4_SYSCTRL"
+    },
+    {
+      "slot": 12,
+      "name": "clint",
+      "timed_interface": "u_clint_apb_if",
+      "pure_interface": "u_clint_apb_pure_if",
+      "region": "APB4_CLINT"
+    },
+    {
+      "slot": 13,
+      "name": "sdram",
+      "timed_interface": "sdram_cfg",
+      "pure_interface": "sdram_cfg_pure",
+      "region": "APB4_SDRAM",
+      "regions": [
+        "APB4_SDRAM"
+      ],
+      "external": true
+    },
+    {
+      "slot": 14,
+      "name": "dvp",
+      "timed_interface": "u_dvp_apb_if",
+      "pure_interface": "u_dvp_apb_pure_if",
+      "region": "APB4_DVP"
+    },
+    {
+      "slot": 15,
+      "name": "sdio",
+      "timed_interface": "u_sdio_apb_if",
+      "pure_interface": "u_sdio_apb_pure_if",
+      "disabled": true
+    },
+    {
+      "slot": 16,
+      "name": "opipsram",
+      "timed_interface": "u_opipsram_apb_if",
+      "pure_interface": "u_opipsram_apb_pure_if",
+      "disabled": true
+    },
+    {
+      "slot": 17,
+      "name": "i2c1",
+      "timed_interface": "u_i2c1_apb_if",
+      "pure_interface": "u_i2c1_apb_pure_if",
+      "region": "APB4_I2C1"
+    }
   ]
 }

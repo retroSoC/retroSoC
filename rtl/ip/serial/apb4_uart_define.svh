@@ -1,32 +1,32 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-`ifndef RIBP_UART_DEFINE_SVH
-`define RIBP_UART_DEFINE_SVH
+`ifndef APB4_UART_DEFINE_SVH
+`define APB4_UART_DEFINE_SVH
 
 // verilog_format: off -- preserve reviewed column alignment
-`define RIBP_UART_BAUD_INT          8'h00
-`define RIBP_UART_BAUD_FRAC         8'h04
-`define RIBP_UART_LINE_CTRL         8'h08
-`define RIBP_UART_CTRL              8'h0C
-`define RIBP_UART_TXDATA            8'h10
-`define RIBP_UART_RXDATA            8'h14
-`define RIBP_UART_STATUS            8'h18
-`define RIBP_UART_FIFO_LEVEL        8'h1C
-`define RIBP_UART_FIFO_CTRL         8'h20
-`define RIBP_UART_TX_WATERMARK      8'h24
-`define RIBP_UART_RX_WATERMARK      8'h28
-`define RIBP_UART_RX_TIMEOUT_BITS   8'h2C
-`define RIBP_UART_ERROR_STATUS      8'h30
-`define RIBP_UART_INTR_STATE        8'h34
-`define RIBP_UART_INTR_ENABLE       8'h38
-`define RIBP_UART_INTR_STATUS       8'h3C
-`define RIBP_UART_INTR_TEST         8'h40
-`define RIBP_UART_DMA_CTRL          8'h44
-`define RIBP_UART_FLOW_CTRL         8'h48
-`define RIBP_UART_RTS_WATERMARK     8'h4C
-`define RIBP_UART_IP_VERSION        8'hF8
-`define RIBP_UART_CAPABILITY        8'hFC
+`define APB4_UART_BAUD_INT          8'h00
+`define APB4_UART_BAUD_FRAC         8'h04
+`define APB4_UART_LINE_CTRL         8'h08
+`define APB4_UART_CTRL              8'h0C
+`define APB4_UART_TXDATA            8'h10
+`define APB4_UART_RXDATA            8'h14
+`define APB4_UART_STATUS            8'h18
+`define APB4_UART_FIFO_LEVEL        8'h1C
+`define APB4_UART_FIFO_CTRL         8'h20
+`define APB4_UART_TX_WATERMARK      8'h24
+`define APB4_UART_RX_WATERMARK      8'h28
+`define APB4_UART_RX_TIMEOUT_BITS   8'h2C
+`define APB4_UART_ERROR_STATUS      8'h30
+`define APB4_UART_INTR_STATE        8'h34
+`define APB4_UART_INTR_ENABLE       8'h38
+`define APB4_UART_INTR_STATUS       8'h3C
+`define APB4_UART_INTR_TEST         8'h40
+`define APB4_UART_DMA_CTRL          8'h44
+`define APB4_UART_FLOW_CTRL         8'h48
+`define APB4_UART_RTS_WATERMARK     8'h4C
+`define APB4_UART_IP_VERSION        8'hF8
+`define APB4_UART_CAPABILITY        8'hFC
 
 `define UART_LINE_DATA_BITS         0
 `define UART_LINE_STOP2             2

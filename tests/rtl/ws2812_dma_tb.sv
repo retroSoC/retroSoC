@@ -27,10 +27,12 @@ module ws2812_dma_tb;
   logic       [31:0] dma_error_addr;
   logic       [ 1:0] dma_fsm;
   logic              host_active = 1'b1;
-  logic              host_valid = 1'b0;
+  logic              host_psel = 1'b0;
+  logic              host_penable = 1'b0;
   logic       [31:0] host_addr = '0;
   logic       [31:0] host_wdata = '0;
   logic       [ 3:0] host_wstrb = '0;
+  logic              dma_penable = 1'b0;
   logic              dma_ws_valid;
   bus_state_t        bus_state_q = BUS_IDLE;
   logic       [31:0] bus_addr_q = '0;
@@ -44,7 +46,10 @@ module ws2812_dma_tb;
 
   dma_hw_trg_if hw_trg ();
   rib_if dma_rib ();
-  ribp_if ws_ribp ();
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   ws2812_if ws2812 ();
   axi4_stream_if i2s_tx_axis (
       .aclk   (clk_i),
@@ -66,13 +71,16 @@ module ws2812_dma_tb;
     $fatal(1, "WS2812 DMA integration test timeout");
   end
 
-  assign ws_ribp.valid      = host_active ? host_valid : dma_ws_valid;
-  assign ws_ribp.addr       = host_active ? host_addr : bus_addr_q;
-  assign ws_ribp.wdata      = host_active ? host_wdata : dma_rib.wdata;
-  assign ws_ribp.wstrb      = host_active ? host_wstrb : dma_rib.wstrb;
+  assign apb4.psel          = host_active ? host_psel : dma_ws_valid;
+  assign apb4.penable       = host_active ? host_penable : dma_penable;
+  assign apb4.pwrite        = 1'b1;
+  assign apb4.paddr         = host_active ? host_addr : bus_addr_q;
+  assign apb4.pwdata        = host_active ? host_wdata : dma_rib.wdata;
+  assign apb4.pstrb         = host_active ? host_wstrb : dma_rib.wstrb;
+  assign apb4.pprot         = '0;
 
   assign dma_rib.cmd_ready  = bus_state_q == BUS_IDLE;
-  assign dma_rib.w_ready    = (bus_state_q == BUS_WRITE_DATA) && ws_ribp.ready;
+  assign dma_rib.w_ready    = (bus_state_q == BUS_WRITE_DATA) && dma_penable && apb4.pready;
   assign dma_rib.rsp_valid  = (bus_state_q == BUS_READ_RESP) || (bus_state_q == BUS_WRITE_RESP);
   assign dma_rib.rdata      = pixels[bus_addr_q[4:2]];
   assign dma_rib.resp_err   = 1'b0;
@@ -97,6 +105,18 @@ module ws2812_dma_tb;
   assign dvp_rx_axis.tdest  = '0;
   assign dvp_rx_axis.tuser  = '0;
   assign dvp_rx_axis.tvalid = 1'b0;
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      dma_penable <= 1'b0;
+    end else if (!dma_ws_valid) begin
+      dma_penable <= 1'b0;
+    end else if (!dma_penable) begin
+      dma_penable <= 1'b1;
+    end else if (apb4.pready) begin
+      dma_penable <= 1'b0;
+    end
+  end
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -177,32 +197,29 @@ module ws2812_dma_tb;
       .dvp_rx_axis (dvp_rx_axis)
   );
 
-  ribp_ws2812 #(
+  apb4_ws2812 #(
       .TxFifoDepth(4)
   ) u_ws2812 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (ws_ribp),
+      .apb4   (apb4),
       .ws2812 (ws2812)
   );
 
   task automatic host_write(input logic [31:0] address, input logic [31:0] data);
     begin
       @(negedge clk_i);
-      host_addr  = address;
-      host_wdata = data;
-      host_wstrb = 4'hF;
-      host_valid = 1'b1;
-      while (!ws_ribp.ready) begin
-        @(posedge clk_i);
-        #1;
-      end
-      if (ws_ribp.resp_err) begin
-        $fatal(1, "host write %h failed", address);
-      end
+      host_addr    = address;
+      host_wdata   = data;
+      host_wstrb   = 4'hF;
+      host_psel    = 1'b1;
+      host_penable = 1'b0;
       @(negedge clk_i);
-      host_valid = 1'b0;
-      host_wstrb = '0;
+      host_penable = 1'b1;
+      while (!apb4.pready) @(negedge clk_i);
+      if (apb4.pslverr) $fatal(1, "WS2812 write %h unexpected error", address);
+      host_psel    = 1'b0;
+      host_penable = 1'b0;
     end
   endtask
 
@@ -258,15 +275,15 @@ module ws2812_dma_tb;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
-    host_write(`RIBP_WS2812_BIT_CYCLES, BIT_CYCLES);
-    host_write(`RIBP_WS2812_T0H_CYCLES, T0H_CYCLES);
-    host_write(`RIBP_WS2812_T1H_CYCLES, T1H_CYCLES);
-    host_write(`RIBP_WS2812_RESET_CYCLES, RESET_CYCLES);
-    host_write(`RIBP_WS2812_FIFO_WATERMARK, 3);
-    host_write(`RIBP_WS2812_INTR_ENABLE, 1);
-    host_write(`RIBP_WS2812_TXDATA, pixels[0]);
-    host_write(`RIBP_WS2812_FRAME_WORDS, 6);
-    host_write(`RIBP_WS2812_CTRL, 1);
+    host_write(`APB4_WS2812_BIT_CYCLES, BIT_CYCLES);
+    host_write(`APB4_WS2812_T0H_CYCLES, T0H_CYCLES);
+    host_write(`APB4_WS2812_T1H_CYCLES, T1H_CYCLES);
+    host_write(`APB4_WS2812_RESET_CYCLES, RESET_CYCLES);
+    host_write(`APB4_WS2812_FIFO_WATERMARK, 3);
+    host_write(`APB4_WS2812_INTR_ENABLE, 1);
+    host_write(`APB4_WS2812_TXDATA, pixels[0]);
+    host_write(`APB4_WS2812_FRAME_WORDS, 6);
+    host_write(`APB4_WS2812_CTRL, 1);
 
     host_active = 1'b0;
     @(negedge clk_i);

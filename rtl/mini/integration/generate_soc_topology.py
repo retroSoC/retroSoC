@@ -18,39 +18,29 @@ SV_REFERENCE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*
 SV_CONSTANT_RE = re.compile(r"(?:1'[bB][01]|'[01])$")
 FABRIC_LINK_NAMES = ("mgmt", "user", "dma", "cfg", "apb")
 FABRIC_PROTOCOLS = {name: "axi4" for name in FABRIC_LINK_NAMES}
-IRQ_GROUP_NAMES = ("ribp", "apb")
+IRQ_GROUP_NAMES = ("apb4", "apb")
 IRQ_VECTOR_WIDTH = 32
 COMPATIBILITY_IRQ_BINDINGS = (
-    ("clint_software", "ribp", 0, 0, "u_clint_if.software_irq_o[0]"),
-    ("clint_timer", "ribp", 1, 1, "u_clint_if.timer_irq_o[0]"),
-    ("uart0", "ribp", 2, 2, "uart.irq_o"),
-    ("timer0", "ribp", 3, 3, "s_tim0_irq"),
-    ("timer1", "ribp", 4, 4, "s_tim1_irq"),
-    ("psram", "ribp", 5, 5, "psram.irq_o"),
-    ("spisd", "ribp", 6, 6, "spisd.irq_o"),
-    ("i2c0", "ribp", 7, 7, "i2c0.irq_o"),
-    ("i2s", "ribp", 8, 8, "i2s.irq_o"),
-    ("xpi", "ribp", 9, 9, "xpi.irq_o"),
+    ("clint_software", "apb4", 0, 0, "u_clint_if.software_irq_o[0]"),
+    ("clint_timer", "apb4", 1, 1, "u_clint_if.timer_irq_o[0]"),
+    ("uart0", "apb4", 2, 2, "uart.irq_o"),
+    ("timer0", "apb4", 3, 3, "s_tim0_irq"),
+    ("timer1", "apb4", 4, 4, "s_tim1_irq"),
+    ("psram", "apb4", 5, 5, "psram.irq_o"),
+    ("spisd", "apb4", 6, 6, "spisd.irq_o"),
+    ("i2c0", "apb4", 7, 7, "i2c0.irq_o"),
+    ("i2s", "apb4", 8, 8, "i2s.irq_o"),
+    ("xpi", "apb4", 9, 9, "xpi.irq_o"),
     ("pwm", "apb", 0, 11, "pwm.irq_o"),
     ("ps2", "apb", 1, 12, "ps2.irq_o"),
     ("rtc", "apb", 2, 13, "u_rtc_if.irq_o"),
     ("watchdog_early_warning", "apb", 3, 14, "u_wdg_if.irq_o"),
     ("rng", "apb", 4, 16, "s_rng_irq"),
-    ("ws2812", "ribp", 10, 17, "ws2812.irq_o"),
-    ("gpio", "ribp", 11, 18, "gpio.irq_o"),
-    ("i2c1", "ribp", 12, 19, "i2c1.irq_o"),
-    ("dvp", "ribp", 13, 15, "s_dvp_irq"),
+    ("ws2812", "apb4", 10, 17, "ws2812.irq_o"),
+    ("gpio", "apb4", 11, 18, "gpio.irq_o"),
+    ("i2c1", "apb4", 12, 19, "i2c1.irq_o"),
+    ("dvp", "apb4", 13, 15, "s_dvp_irq"),
 )
-
-
-@dataclass(frozen=True)
-class RIBPTarget:
-    slot: int
-    name: str
-    interface: str
-    regions: tuple[str, ...]
-    disabled: bool
-    external: bool
 
 
 @dataclass(frozen=True)
@@ -59,7 +49,9 @@ class ApbTarget:
     name: str
     timed_interface: str
     pure_interface: str
-    region: str
+    regions: tuple[str, ...]
+    disabled: bool = False
+    external: bool = False
 
 
 @dataclass(frozen=True)
@@ -179,81 +171,95 @@ def parse_regions(value: Any, field: str) -> tuple[str, ...]:
     return regions
 
 
-def parse_ribp_targets(
+def parse_apb4_targets(
     value: Any, memory_regions: dict[str, dict[str, Any]]
-) -> list[RIBPTarget]:
+) -> list[ApbTarget]:
     if not isinstance(value, list) or not value:
-        raise ValueError("ribp_targets must be a non-empty list")
-    targets: list[RIBPTarget] = []
+        raise ValueError("apb4_targets must be a non-empty list")
+    targets: list[ApbTarget] = []
     claimed_regions: set[str] = set()
     names: set[str] = set()
-    interfaces: set[str] = set()
+    timed_interfaces: set[str] = set()
+    pure_interfaces: set[str] = set()
     slots: set[int] = set()
     for index, entry in enumerate(value):
-        target = require_object(entry, f"ribp_targets[{index}]")
+        target = require_object(entry, f"apb4_targets[{index}]")
         slot = target.get("slot")
         if not isinstance(slot, int) or slot < 0:
-            raise ValueError(f"ribp_targets[{index}].slot must be a non-negative integer")
-        name = require_identifier(target.get("name"), f"ribp_targets[{index}].name")
-        interface = require_identifier(
-            target.get("interface"), f"ribp_targets[{index}].interface"
+            raise ValueError(f"apb4_targets[{index}].slot must be a non-negative integer")
+        name = require_identifier(target.get("name"), f"apb4_targets[{index}].name")
+        timed_interface = require_identifier(
+            target.get("timed_interface"), f"apb4_targets[{index}].timed_interface"
+        )
+        pure_interface = require_identifier(
+            target.get("pure_interface"), f"apb4_targets[{index}].pure_interface"
         )
         disabled = target.get("disabled", False)
         if not isinstance(disabled, bool):
-            raise ValueError(f"ribp_targets[{index}].disabled must be boolean")
+            raise ValueError(f"apb4_targets[{index}].disabled must be boolean")
         if disabled:
-            if "regions" in target:
-                raise ValueError(f"ribp_targets[{index}] is disabled but declares regions")
+            if "regions" in target or "region" in target:
+                raise ValueError(f"apb4_targets[{index}] is disabled but declares regions")
             regions: tuple[str, ...] = ()
+        elif "regions" in target:
+            regions = parse_regions(target.get("regions"), f"apb4_targets[{index}].regions")
         else:
-            regions = parse_regions(target.get("regions"), f"ribp_targets[{index}].regions")
-            for region_name in regions:
-                region = memory_regions.get(region_name)
-                if region is None:
-                    raise ValueError(
-                        f"ribp_targets[{index}] references unknown region {region_name}"
-                    )
-                if region.get("route") != "ribp" or region.get("kind") != "active":
-                    raise ValueError(
-                        f"ribp_targets[{index}] region {region_name} is not an active RIBP region"
-                    )
-                if region_name in claimed_regions:
-                    raise ValueError(f"RIBP region {region_name} has multiple targets")
-                claimed_regions.add(region_name)
+            region_name = require_identifier(
+                target.get("region"), f"apb4_targets[{index}].region"
+            )
+            regions = (region_name,)
+        for region_name in regions:
+            region = memory_regions.get(region_name)
+            if region is None:
+                raise ValueError(
+                    f"apb4_targets[{index}] references unknown region {region_name}"
+                )
+            if region.get("route") != "apb4" or region.get("kind") != "active":
+                raise ValueError(
+                    f"apb4_targets[{index}] region {region_name} is not an active APB4 region"
+                )
+            if region_name in claimed_regions:
+                raise ValueError(f"APB4 region {region_name} has multiple targets")
+            claimed_regions.add(region_name)
         external = target.get("external", False)
         if not isinstance(external, bool):
-            raise ValueError(f"ribp_targets[{index}].external must be boolean")
+            raise ValueError(f"apb4_targets[{index}].external must be boolean")
         if external and disabled:
-            raise ValueError(f"ribp_targets[{index}] cannot be both external and disabled")
+            raise ValueError(f"apb4_targets[{index}] cannot be both external and disabled")
         if name in names:
-            raise ValueError(f"RIBP target name {name} is duplicated")
-        if interface in interfaces:
-            raise ValueError(f"RIBP target interface {interface} is duplicated")
+            raise ValueError(f"APB4 target name {name} is duplicated")
+        if timed_interface in timed_interfaces:
+            raise ValueError(f"APB4 timed interface {timed_interface} is duplicated")
+        if pure_interface in pure_interfaces:
+            raise ValueError(f"APB4 pure interface {pure_interface} is duplicated")
         if slot in slots:
-            raise ValueError(f"RIBP target slot {slot} is duplicated")
+            raise ValueError(f"APB4 target slot {slot} is duplicated")
         names.add(name)
-        interfaces.add(interface)
+        timed_interfaces.add(timed_interface)
+        pure_interfaces.add(pure_interface)
         slots.add(slot)
-        targets.append(RIBPTarget(slot, name, interface, regions, disabled, external))
+        targets.append(
+            ApbTarget(slot, name, timed_interface, pure_interface, regions, disabled, external)
+        )
 
     ordered = sorted(targets, key=lambda item: item.slot)
     if [target.slot for target in ordered] != list(range(len(ordered))):
-        raise ValueError("RIBP target slots must be contiguous from zero")
-    active_ribp_regions = {
+        raise ValueError("APB4 target slots must be contiguous from zero")
+    active_apb4_regions = {
         symbol
         for symbol, region in memory_regions.items()
-        if region.get("route") == "ribp" and region.get("kind") == "active"
+        if region.get("route") == "apb4" and region.get("kind") == "active"
     }
-    if claimed_regions != active_ribp_regions:
-        missing = sorted(active_ribp_regions - claimed_regions)
-        extra = sorted(claimed_regions - active_ribp_regions)
+    if claimed_regions != active_apb4_regions:
+        missing = sorted(active_apb4_regions - claimed_regions)
+        extra = sorted(claimed_regions - active_apb4_regions)
         details: list[str] = []
         if missing:
             details.append(f"missing {', '.join(missing)}")
         if extra:
             details.append(f"extra {', '.join(extra)}")
         raise ValueError(
-            f"RIBP target regions do not cover the memory map ({'; '.join(details)})"
+            f"APB4 target regions do not cover the memory map ({'; '.join(details)})"
         )
     return ordered
 
@@ -302,7 +308,9 @@ def parse_apb_targets(value: Any, memory_regions: dict[str, dict[str, Any]]) -> 
         pure_interfaces.add(pure_interface)
         regions.add(region_name)
         slots.add(slot)
-        targets.append(ApbTarget(slot, name, timed_interface, pure_interface, region_name))
+        targets.append(
+            ApbTarget(slot, name, timed_interface, pure_interface, (region_name,))
+        )
 
     ordered = sorted(targets, key=lambda item: item.slot)
     if [target.slot for target in ordered] != list(range(len(ordered))):
@@ -312,7 +320,7 @@ def parse_apb_targets(value: Any, memory_regions: dict[str, dict[str, Any]]) -> 
         for symbol, region in memory_regions.items()
         if region.get("route") == "apb" and region.get("kind") == "active"
     }
-    claimed_regions = {target.region for target in ordered}
+    claimed_regions = {region for target in ordered for region in target.regions}
     if claimed_regions != active_regions:
         missing = sorted(active_regions - claimed_regions)
         extra = sorted(claimed_regions - active_regions)
@@ -504,7 +512,7 @@ def validate_compatibility_irq_bindings(interrupts: list[Interrupt]) -> None:
 def read_topology(
     topology_path: Path, memory_map_path: Path
 ) -> tuple[
-    list[RIBPTarget],
+    list[ApbTarget],
     list[ApbTarget],
     list[FabricLink],
     list[GpioFunction],
@@ -526,7 +534,7 @@ def read_topology(
     interrupts = parse_interrupts(document.get("interrupts"), irq_groups, irq_vector_width)
     validate_compatibility_irq_bindings(interrupts)
     return (
-        parse_ribp_targets(document.get("ribp_targets"), memory_regions),
+        parse_apb4_targets(document.get("apb4_targets"), memory_regions),
         parse_apb_targets(document.get("apb_targets"), memory_regions),
         parse_fabric_links(document.get("fabric_links")),
         parse_gpio_functions(document.get("gpio_alt_functions"), gpio_pins),
@@ -536,97 +544,12 @@ def read_topology(
     )
 
 
-def render_ribp_interfaces(targets: list[RIBPTarget]) -> str:
-    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
-    lines.extend(
-        f"  ribp_if {target.interface} ();" for target in targets if not target.external
-    )
-    return "\n".join(lines) + "\n"
-
-
-def render_region_select(region: str, memory_region: dict[str, Any]) -> str:
-    base = int(require_string(memory_region.get("base"), f"memory map region {region}.base"), 0)
-    if base == 0:
-        return f"(ribp.addr <= `SOC_ADDR_{region}_END)"
-    return f"`SOC_ADDR_IS_{region}(ribp.addr)"
-
-
-def render_ribp_routes(
-    targets: list[RIBPTarget], memory_regions: dict[str, dict[str, Any]]
-) -> str:
-    count = len(targets)
-    lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
-    lines.extend(
-        [
-            f"  logic [{count - 1}:0] s_slv_sel_d, s_slv_sel_q;",
-            f"  logic [{count - 1}:0] s_slv_ready;",
-            f"  logic [{count - 1}:0] s_slv_resp_err;",
-            f"  logic [31:0] s_slv_rdata [0:{count - 1}];",
-            "",
-        ]
-    )
-    for target in targets:
-        if not target.disabled:
-            lines.append(f"  logic [{len(target.regions) - 1}:0] s_{target.name}_region_sel;")
-    lines.append("")
-    for target in targets:
-        if target.disabled:
-            lines.append(f"  assign {target.interface}.valid = 1'b0;")
-        else:
-            for index, region in enumerate(target.regions):
-                lines.append(
-                    f"  assign s_{target.name}_region_sel[{index}] = "
-                    f"{render_region_select(region, memory_regions[region])};"
-                )
-            lines.append(
-                f"  assign {target.interface}.valid = ribp.valid && (|s_{target.name}_region_sel);"
-            )
-        lines.extend(
-            [
-                f"  assign {target.interface}.addr = ribp.addr;",
-                f"  assign {target.interface}.wdata = ribp.wdata;",
-                f"  assign {target.interface}.wstrb = ribp.wstrb;",
-                f"  assign s_slv_sel_d[{target.slot}] = {target.interface}.valid;",
-                f"  assign s_slv_ready[{target.slot}] = {target.interface}.ready;",
-                f"  assign s_slv_resp_err[{target.slot}] = {target.interface}.resp_err;",
-                f"  assign s_slv_rdata[{target.slot}] = {target.interface}.rdata;",
-                "",
-            ]
-        )
-    lines.extend(
-        [
-            f"  dffr #({count}) u_slv_sel_dffr (",
-            "      clk_i,",
-            "      rst_n_i,",
-            "      s_slv_sel_d,",
-            "      s_slv_sel_q",
-            "  );",
-            "",
-            "  assign ribp.ready = |(s_slv_sel_q & s_slv_ready);",
-            "  assign ribp.resp_err = |(s_slv_sel_q & s_slv_ready & s_slv_resp_err);",
-            "",
-            "  always_comb begin",
-            "    ribp.rdata = '0;",
-            f"    for (int index = 0; index < {count}; index++) begin",
-            "      if (s_slv_sel_q[index]) begin",
-            "        ribp.rdata = ribp.rdata | s_slv_rdata[index];",
-            "      end",
-            "    end",
-            "  end",
-        ]
-    )
-    return "\n".join(lines) + "\n"
-
-
 def render_apb_interfaces(targets: list[ApbTarget]) -> str:
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
     for target in targets:
-        lines.extend(
-            [
-                f"  apb4_if {target.timed_interface} (clk_i, rst_n_i);",
-                f"  apb4_pure_if {target.pure_interface} ();",
-            ]
-        )
+        if not target.external:
+            lines.append(f"  apb4_if {target.timed_interface} (clk_i, rst_n_i);")
+        lines.append(f"  apb4_pure_if {target.pure_interface} ();")
     return "\n".join(lines) + "\n"
 
 
@@ -693,10 +616,16 @@ def render_apb_request_routes(targets: list[ApbTarget]) -> str:
 
 def render_apb_select_routes(targets: list[ApbTarget]) -> str:
     lines = ["// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit."]
-    lines.extend(
-        f"  assign s_psel_comb[{target.slot}] = `SOC_ADDR_IS_{target.region}(s_decode_addr);"
-        for target in targets
-    )
+    for target in targets:
+        if target.disabled:
+            lines.append(f"  assign s_psel_comb[{target.slot}] = 1'b0;")
+        else:
+            terms = [
+                f"`SOC_ADDR_IS_{region}(s_decode_addr)" for region in target.regions
+            ]
+            lines.append(
+                f"  assign s_psel_comb[{target.slot}] = {' || '.join(terms)};"
+            )
     return "\n".join(lines) + "\n"
 
 
@@ -906,10 +835,15 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
         irq_groups,
         interrupts,
     ) = read_topology(topology_path, memory_map_path)
-    memory_regions = read_memory_regions(memory_map_path)
     rtl_dir = output_dir / "rtl"
-    atomic_write(rtl_dir / "ribp_interfaces.svh", render_ribp_interfaces(targets))
-    atomic_write(rtl_dir / "ribp_routes.svh", render_ribp_routes(targets, memory_regions))
+    atomic_write(rtl_dir / "apb4_periph_interfaces.svh", render_apb_interfaces(targets))
+    atomic_write(rtl_dir / "apb4_periph_bridges.svh", render_apb_bridges(targets))
+    atomic_write(rtl_dir / "apb4_periph_ports.svh", render_apb_ports(targets))
+    atomic_write(rtl_dir / "apb4_periph_connections.svh", render_apb_connections(targets))
+    atomic_write(rtl_dir / "apb4_periph_declarations.svh", render_apb_declarations(targets))
+    atomic_write(rtl_dir / "apb4_periph_request_routes.svh", render_apb_request_routes(targets))
+    atomic_write(rtl_dir / "apb4_periph_select_routes.svh", render_apb_select_routes(targets))
+    atomic_write(rtl_dir / "apb4_periph_response_mux.svh", render_apb_response_mux(targets))
     atomic_write(rtl_dir / "soc_apb_interfaces.svh", render_apb_interfaces(apb_targets))
     atomic_write(rtl_dir / "soc_apb_bridges.svh", render_apb_bridges(apb_targets))
     atomic_write(rtl_dir / "soc_apb_ports.svh", render_apb_ports(apb_targets))
@@ -929,7 +863,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
     )
     atomic_write(rtl_dir / "soc_bus_fabric.svh", render_bus_fabric_connections(fabric_links))
     atomic_write(
-        rtl_dir / "ip_ribp_wrapper_fabric.svh",
+        rtl_dir / "apb4_periph_fabric.svh",
         render_fabric_connection(fabric_links, "cfg", "cfg_axi4")
         + render_fabric_connection(fabric_links, "dma", "dma_axi4"),
     )
@@ -943,9 +877,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
         render_irq_config(irq_vector_width, irq_groups, interrupts),
     )
     for group in irq_groups:
-        filename = f"{group.name}_irq_bindings.svh"
-        if group.name != "ribp":
-            filename = f"soc_{group.name}_irq_bindings.svh"
+        filename = f"soc_{group.name}_irq_bindings.svh"
         atomic_write(
             rtl_dir / filename,
             render_irq_group_bindings(group, interrupts),

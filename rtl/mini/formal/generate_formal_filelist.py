@@ -72,7 +72,7 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "sysctrl_define.svh",
             PERIPHERAL / "sysctrl_reg.sv",
             PERIPHERAL / "sysctrl_core.sv",
-            PERIPHERAL / "ribp_sysctrl.sv",
+            PERIPHERAL / "apb4_sysctrl.sv",
             SCRIPT_DIR / "sysctrl_formal.sv",
         ]
     if target == "pll_rcu":
@@ -101,7 +101,7 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "user_gpio_if.sv",
             PERIPHERAL / "gpio_core.sv",
             PERIPHERAL / "gpio_reg.sv",
-            PERIPHERAL / "ribp_gpio.sv",
+            PERIPHERAL / "apb4_gpio.sv",
             SCRIPT_DIR / "gpio_formal.sv",
         ]
     if target == "ws2812":
@@ -112,7 +112,7 @@ def source_files(target: str) -> list[Path]:
             SERIAL / "ws2812_if.sv",
             SERIAL / "ws2812_reg.sv",
             SERIAL / "ws2812_core.sv",
-            SERIAL / "ribp_ws2812.sv",
+            SERIAL / "apb4_ws2812.sv",
             SCRIPT_DIR / "ws2812_formal.sv",
         ]
     if target == "uart":
@@ -124,12 +124,12 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "utils/fifo.sv",
             SERIAL / "uart_if.sv",
             SERIAL / "uart_baudgen.sv",
-            SERIAL / "ribp_uart_tx.sv",
-            SERIAL / "ribp_uart_rx.sv",
+            SERIAL / "apb4_uart_tx.sv",
+            SERIAL / "apb4_uart_rx.sv",
             SERIAL / "uart_flow_ctrl.sv",
             SERIAL / "uart_core.sv",
             SERIAL / "uart_reg.sv",
-            SERIAL / "ribp_uart.sv",
+            SERIAL / "apb4_uart.sv",
             SCRIPT_DIR / "uart_formal.sv",
         ]
     if target == "i2c":
@@ -142,7 +142,7 @@ def source_files(target: str) -> list[Path]:
             SERIAL / "i2c_filter.sv",
             SERIAL / "i2c_core.sv",
             SERIAL / "i2c_reg.sv",
-            SERIAL / "ribp_i2c.sv",
+            SERIAL / "apb4_i2c.sv",
             SCRIPT_DIR / "i2c_formal.sv",
         ]
     if target == "timer":
@@ -152,7 +152,7 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "clkrst/counter.sv",
             PERIPHERAL / "timer_core.sv",
             PERIPHERAL / "timer_reg.sv",
-            PERIPHERAL / "ribp_timer.sv",
+            PERIPHERAL / "apb4_timer.sv",
             SCRIPT_DIR / "timer_formal.sv",
         ]
     if target == "clint":
@@ -163,7 +163,7 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "clint_if.sv",
             PERIPHERAL / "clint_reg.sv",
             PERIPHERAL / "clint_core.sv",
-            PERIPHERAL / "ribp_clint.sv",
+            PERIPHERAL / "apb4_clint.sv",
             SCRIPT_DIR / "clint_formal.sv",
         ]
     if target == "dvp":

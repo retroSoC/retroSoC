@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-`include "ribp_i2c_define.svh"
+`include "apb4_i2c_define.svh"
 
 module i2c_tb;
   logic clk_i = 1'b0;
@@ -11,7 +11,10 @@ module i2c_tb;
   logic slave_sda_low = 1'b0;
   logic scl_line;
   logic sda_line;
-  ribp_if ribp ();
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   i2c_if i2c ();
 
   always #5 clk_i = ~clk_i;
@@ -21,54 +24,57 @@ module i2c_tb;
   assign i2c.scl_i = scl_line;
   assign i2c.sda_i = sda_line;
 
-  ribp_i2c u_dut (
+  apb4_i2c u_dut (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .dma_tx_stall_o(dma_tx_stall),
       .dma_rx_stall_o(dma_rx_stall),
-      .ribp          (ribp),
+      .apb4          (apb4),
       .i2c           (i2c)
   );
 
-  task automatic ribp_write(input logic [31:0] address, input logic [31:0] data,
+  task automatic apb4_write(input logic [31:0] address, input logic [31:0] data,
                             input logic expected_error);
     begin
       @(negedge clk_i);
-      ribp.addr  = address;
-      ribp.wdata = data;
-      ribp.wstrb = 4'hF;
-      ribp.valid = 1'b1;
-      while (!ribp.ready) begin
-        @(posedge clk_i);
-        #1;
-      end
-      if (ribp.resp_err !== expected_error) begin
-        $fatal(1, "I2C write %h error=%b expected=%b", address, ribp.resp_err, expected_error);
-      end
+      apb4.paddr   = address;
+      apb4.pwdata  = data;
+      apb4.pstrb   = 4'hF;
+      apb4.pwrite  = 1'b1;
+      apb4.psel    = 1'b1;
+      apb4.penable = 1'b0;
       @(negedge clk_i);
-      ribp.valid = 1'b0;
-      ribp.wstrb = '0;
+      apb4.penable = 1'b1;
+      while (!apb4.pready) @(negedge clk_i);
+      if (apb4.pslverr !== expected_error) begin
+        $fatal(1, "write %h error=%b expected=%b", address, apb4.pslverr, expected_error);
+      end
+      apb4.psel    = 1'b0;
+      apb4.penable = 1'b0;
+      apb4.pwrite  = 1'b0;
+      apb4.pstrb   = '0;
     end
   endtask
 
-  task automatic ribp_read(input logic [31:0] address, input logic expected_error,
+  task automatic apb4_read(input logic [31:0] address, input logic expected_error,
                            output logic [31:0] data);
     begin
       @(negedge clk_i);
-      ribp.addr  = address;
-      ribp.wdata = '0;
-      ribp.wstrb = '0;
-      ribp.valid = 1'b1;
-      while (!ribp.ready) begin
-        @(posedge clk_i);
-        #1;
-      end
-      if (ribp.resp_err !== expected_error) begin
-        $fatal(1, "I2C read %h error=%b expected=%b", address, ribp.resp_err, expected_error);
-      end
-      data = ribp.rdata;
+      apb4.paddr   = address;
+      apb4.pwdata  = '0;
+      apb4.pstrb   = '0;
+      apb4.pwrite  = 1'b0;
+      apb4.psel    = 1'b1;
+      apb4.penable = 1'b0;
       @(negedge clk_i);
-      ribp.valid = 1'b0;
+      apb4.penable = 1'b1;
+      while (!apb4.pready) @(negedge clk_i);
+      if (apb4.pslverr !== expected_error) begin
+        $fatal(1, "read %h error=%b expected=%b", address, apb4.pslverr, expected_error);
+      end
+      data         = apb4.prdata;
+      apb4.psel    = 1'b0;
+      apb4.penable = 1'b0;
     end
   endtask
 
@@ -124,26 +130,26 @@ module i2c_tb;
     begin
       value = '0;
       for (attempts = 0; attempts < 4000; attempts = attempts + 1) begin
-        ribp_read(`RIBP_I2C_INTR_STATE, 1'b0, value);
+        apb4_read(`APB4_I2C_INTR_STATE, 1'b0, value);
         if (value[`I2C_INTR_DONE]) begin
           attempts = 4000;
         end
       end
       if (!value[`I2C_INTR_DONE]) begin
-        ribp_read(`RIBP_I2C_ERROR_STATUS, 1'b0, error_value);
-        ribp_read(`RIBP_I2C_STATUS, 1'b0, status_value);
+        apb4_read(`APB4_I2C_ERROR_STATUS, 1'b0, error_value);
+        apb4_read(`APB4_I2C_STATUS, 1'b0, status_value);
         $fatal(1, "I2C transaction did not complete: error=%h status=%h fsm=%0d", error_value,
                status_value, u_dut.u_i2c_core.s_fsm_q);
       end
-      ribp_write(`RIBP_I2C_INTR_STATE, 32'hFF, 1'b0);
+      apb4_write(`APB4_I2C_INTR_STATE, 32'hFF, 1'b0);
     end
   endtask
 
   task automatic clear_state;
     begin
-      ribp_write(`RIBP_I2C_ERROR_STATUS, 32'h7FF, 1'b0);
-      ribp_write(`RIBP_I2C_INTR_STATE, 32'hFF, 1'b0);
-      ribp_write(`RIBP_I2C_COMMAND, 32'hC, 1'b0);
+      apb4_write(`APB4_I2C_ERROR_STATUS, 32'h7FF, 1'b0);
+      apb4_write(`APB4_I2C_INTR_STATE, 32'hFF, 1'b0);
+      apb4_write(`APB4_I2C_COMMAND, 32'hC, 1'b0);
     end
   endtask
 
@@ -153,30 +159,33 @@ module i2c_tb;
     logic          nack;
     integer        pulse_count;
 
-    ribp.valid = 1'b0;
-    ribp.addr  = '0;
-    ribp.wdata = '0;
-    ribp.wstrb = '0;
+    apb4.psel    = 1'b0;
+    apb4.penable = 1'b0;
+    apb4.pwrite  = 1'b0;
+    apb4.paddr   = '0;
+    apb4.pwdata  = '0;
+    apb4.pstrb   = '0;
+    apb4.pprot   = '0;
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
     repeat (4) @(posedge clk_i);
 
-    ribp_read(`RIBP_I2C_IP_VERSION, 1'b0, value);
+    apb4_read(`APB4_I2C_IP_VERSION, 1'b0, value);
     if (value != 32'h0002_0000) $fatal(1, "I2C version mismatch");
-    ribp_read(`RIBP_I2C_CAPABILITY, 1'b0, value);
+    apb4_read(`APB4_I2C_CAPABILITY, 1'b0, value);
     if (value != 32'h007F_1010) $fatal(1, "I2C capability mismatch: %h", value);
-    ribp_read(32'h2, 1'b1, value);
+    apb4_read(32'h2, 1'b1, value);
 
-    ribp_write(`RIBP_I2C_SCL_TIMING, 32'h0008_0008, 1'b0);
-    ribp_write(`RIBP_I2C_START_TIMING, 32'h0002_0002, 1'b0);
-    ribp_write(`RIBP_I2C_DATA_TIMING, 32'h0001_0000, 1'b0);
-    ribp_write(`RIBP_I2C_STOP_TIMING, 32'h0002_0002, 1'b0);
-    ribp_write(`RIBP_I2C_FILTER, 0, 1'b0);
-    ribp_write(`RIBP_I2C_STRETCH_TIMEOUT, 200, 1'b0);
-    ribp_write(`RIBP_I2C_BUS_IDLE_TIMEOUT, 200, 1'b0);
-    ribp_write(`RIBP_I2C_COMMAND_TIMEOUT, 2000, 1'b0);
-    ribp_write(`RIBP_I2C_TARGET_ADDR, 7'h50, 1'b0);
-    ribp_write(`RIBP_I2C_CTRL, 1, 1'b0);
+    apb4_write(`APB4_I2C_SCL_TIMING, 32'h0008_0008, 1'b0);
+    apb4_write(`APB4_I2C_START_TIMING, 32'h0002_0002, 1'b0);
+    apb4_write(`APB4_I2C_DATA_TIMING, 32'h0001_0000, 1'b0);
+    apb4_write(`APB4_I2C_STOP_TIMING, 32'h0002_0002, 1'b0);
+    apb4_write(`APB4_I2C_FILTER, 0, 1'b0);
+    apb4_write(`APB4_I2C_STRETCH_TIMEOUT, 200, 1'b0);
+    apb4_write(`APB4_I2C_BUS_IDLE_TIMEOUT, 200, 1'b0);
+    apb4_write(`APB4_I2C_COMMAND_TIMEOUT, 2000, 1'b0);
+    apb4_write(`APB4_I2C_TARGET_ADDR, 7'h50, 1'b0);
+    apb4_write(`APB4_I2C_CTRL, 1, 1'b0);
 
     fork
       begin
@@ -187,13 +196,13 @@ module i2c_tb;
         if (byte_value != 8'hA5) $fatal(1, "write data mismatch: %h", byte_value);
       end
       begin
-        ribp_write(`RIBP_I2C_DATA_CMD, 32'h4A5, 1'b0);
+        apb4_write(`APB4_I2C_DATA_CMD, 32'h4A5, 1'b0);
         wait_done();
       end
     join
 
     clear_state();
-    ribp_write(`RIBP_I2C_TARGET_ADDR, 32'h0000_06AA, 1'b0);
+    apb4_write(`APB4_I2C_TARGET_ADDR, 32'h0000_06AA, 1'b0);
     fork
       begin
         wait_start();
@@ -208,15 +217,15 @@ module i2c_tb;
         if (!nack) $fatal(1, "final 10-bit read byte was not NACKed");
       end
       begin
-        ribp_write(`RIBP_I2C_DATA_CMD, 32'hD00, 1'b0);
+        apb4_write(`APB4_I2C_DATA_CMD, 32'hD00, 1'b0);
         wait_done();
-        ribp_read(`RIBP_I2C_RXDATA, 1'b0, value);
+        apb4_read(`APB4_I2C_RXDATA, 1'b0, value);
         if (value[7:0] != 8'hC3) $fatal(1, "10-bit read data mismatch: %h", value);
       end
     join
 
     clear_state();
-    ribp_write(`RIBP_I2C_TARGET_ADDR, 7'h50, 1'b0);
+    apb4_write(`APB4_I2C_TARGET_ADDR, 7'h50, 1'b0);
     fork
       begin
         wait_start();
@@ -231,10 +240,10 @@ module i2c_tb;
         if (!nack) $fatal(1, "final read byte was not NACKed");
       end
       begin
-        ribp_write(`RIBP_I2C_DATA_CMD, 32'h012, 1'b0);
-        ribp_write(`RIBP_I2C_DATA_CMD, 32'hF00, 1'b0);
+        apb4_write(`APB4_I2C_DATA_CMD, 32'h012, 1'b0);
+        apb4_write(`APB4_I2C_DATA_CMD, 32'hF00, 1'b0);
         wait_done();
-        ribp_read(`RIBP_I2C_RXDATA, 1'b0, value);
+        apb4_read(`APB4_I2C_RXDATA, 1'b0, value);
         if (value[7:0] != 8'h5A) $fatal(1, "read data mismatch: %h", value);
       end
     join
@@ -247,20 +256,20 @@ module i2c_tb;
         receive_byte(byte_value, 0);
       end
       begin
-        ribp_write(`RIBP_I2C_DATA_CMD, 32'h45C, 1'b0);
+        apb4_write(`APB4_I2C_DATA_CMD, 32'h45C, 1'b0);
         wait_done();
       end
     join
 
     clear_state();
-    ribp_write(`RIBP_I2C_TARGET_ADDR, 7'h51, 1'b0);
-    ribp_write(`RIBP_I2C_DATA_CMD, 32'h455, 1'b0);
+    apb4_write(`APB4_I2C_TARGET_ADDR, 7'h51, 1'b0);
+    apb4_write(`APB4_I2C_DATA_CMD, 32'h455, 1'b0);
     repeat (300) @(posedge clk_i);
-    ribp_read(`RIBP_I2C_ERROR_STATUS, 1'b0, value);
+    apb4_read(`APB4_I2C_ERROR_STATUS, 1'b0, value);
     if (!value[`I2C_ERROR_ADDR_NACK]) $fatal(1, "address NACK was not reported");
 
     clear_state();
-    ribp_write(`RIBP_I2C_TARGET_ADDR, 7'h7F, 1'b0);
+    apb4_write(`APB4_I2C_TARGET_ADDR, 7'h7F, 1'b0);
     fork
       begin
         wait_start();
@@ -271,11 +280,11 @@ module i2c_tb;
         slave_sda_low = 1'b0;
       end
       begin
-        ribp_write(`RIBP_I2C_DATA_CMD, 32'h400, 1'b0);
+        apb4_write(`APB4_I2C_DATA_CMD, 32'h400, 1'b0);
       end
     join
     repeat (20) @(posedge clk_i);
-    ribp_read(`RIBP_I2C_ERROR_STATUS, 1'b0, value);
+    apb4_read(`APB4_I2C_ERROR_STATUS, 1'b0, value);
     if (!value[`I2C_ERROR_ARB_LOST]) $fatal(1, "arbitration loss was not reported");
 
     clear_state();
@@ -290,11 +299,11 @@ module i2c_tb;
         slave_sda_low = 1'b0;
       end
       begin
-        ribp_write(`RIBP_I2C_COMMAND, 32'h2, 1'b0);
+        apb4_write(`APB4_I2C_COMMAND, 32'h2, 1'b0);
       end
     join
     repeat (80) @(posedge clk_i);
-    ribp_read(`RIBP_I2C_INTR_STATE, 1'b0, value);
+    apb4_read(`APB4_I2C_INTR_STATE, 1'b0, value);
     if (!value[`I2C_INTR_RECOVERY_DONE] || (pulse_count != 9)) begin
       $fatal(1, "bus recovery failed: intr=%h pulses=%0d", value, pulse_count);
     end

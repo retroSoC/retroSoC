@@ -4,7 +4,7 @@
 
 module soc_irq_topology_tb;
   logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
-  logic [  `SOC_IRQ_RIBP_WIDTH-1:0] s_ribp_irq;
+  logic [  `SOC_IRQ_APB4_WIDTH-1:0] s_apb4_irq;
   logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
 
   `include "soc_irq_wiring.svh"
@@ -19,20 +19,20 @@ module soc_irq_topology_tb;
   endtask
 
   initial begin
-    s_ribp_irq = '0;
+    s_apb4_irq = '0;
     s_apb_irq  = '0;
     expect_irq('0);
 
     for (int bit_index = 0; bit_index < 10; bit_index++) begin
-      s_ribp_irq            = '0;
-      s_ribp_irq[bit_index] = 1'b1;
+      s_apb4_irq            = '0;
+      s_apb4_irq[bit_index] = 1'b1;
       s_apb_irq             = '0;
       expect_irq(32'd1 << bit_index);
     end
 
-    for (int bit_index = 10; bit_index < `SOC_IRQ_RIBP_WIDTH; bit_index++) begin
-      s_ribp_irq            = '0;
-      s_ribp_irq[bit_index] = 1'b1;
+    for (int bit_index = 10; bit_index < `SOC_IRQ_APB4_WIDTH; bit_index++) begin
+      s_apb4_irq            = '0;
+      s_apb4_irq[bit_index] = 1'b1;
       case (bit_index)
         13:      expect_irq(32'd1 << 15);
         default: expect_irq(32'd1 << (bit_index + 7));
@@ -40,7 +40,7 @@ module soc_irq_topology_tb;
     end
 
     for (int bit_index = 0; bit_index < `SOC_IRQ_APB_WIDTH; bit_index++) begin
-      s_ribp_irq           = '0;
+      s_apb4_irq           = '0;
       s_apb_irq            = '0;
       s_apb_irq[bit_index] = 1'b1;
       case (bit_index)

@@ -28,7 +28,7 @@ module axi4_interconnect #(
     output logic          [63:0] perf_mgmt_wait_o,
     output logic          [63:0] perf_user_wait_o,
     output logic          [63:0] perf_dma_wait_o,
-    output logic          [63:0] perf_ribp_wait_o,
+    output logic          [63:0] perf_apb4_wait_o,
     output logic          [63:0] perf_apb_wait_o,
     output logic          [63:0] perf_sdram_wait_o,
     output logic          [63:0] perf_psram_wait_o,
@@ -152,7 +152,7 @@ module axi4_interconnect #(
     if (`SOC_ADDR_IS_SPISD(addr)) return TARGET_SPISD;
     if (`SOC_ADDR_IS_APB(addr)) return TARGET_APB;
     if (`SOC_ADDR_IS_RAM(addr)) return TARGET_RAM;
-    if (`SOC_ADDR_IS_RIBP(addr)) return TARGET_CFG;
+    if (`SOC_ADDR_IS_APB4(addr)) return TARGET_CFG;
     return TARGET_DECERR;
   endfunction
 
@@ -572,7 +572,7 @@ module axi4_interconnect #(
   assign perf_mgmt_wait_o  = s_perf_master_wait[0];
   assign perf_user_wait_o  = s_perf_master_wait[1];
   assign perf_dma_wait_o   = s_perf_master_wait[2];
-  assign perf_ribp_wait_o  = s_perf_target_wait[TARGET_CFG];
+  assign perf_apb4_wait_o  = s_perf_target_wait[TARGET_CFG];
   assign perf_apb_wait_o   = s_perf_target_wait[TARGET_APB];
   assign perf_sdram_wait_o = s_perf_target_wait[TARGET_SDRAM];
   assign perf_psram_wait_o = s_perf_target_wait[TARGET_PSRAM];

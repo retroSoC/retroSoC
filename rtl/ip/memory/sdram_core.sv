@@ -33,19 +33,25 @@
 
 module sdram_core (
     // verilog_format: off -- preserve reviewed column alignment
-    input logic   clk_i,
-    input logic   rst_n_i,
-    input logic   sdram_clk_i,
-    input logic   fir_edge_i,
-    input logic   sec_edge_i,
-    ribp_if.slave ribp,
-    sdram_if.dut  sdram
+    input logic         clk_i,
+    input logic         rst_n_i,
+    input logic         sdram_clk_i,
+    input logic         fir_edge_i,
+    input logic         sec_edge_i,
+    input  logic        req_valid_i,
+    output logic        req_ready_o,
+    input  logic [31:0] req_addr_i,
+    input  logic [31:0] req_wdata_i,
+    input  logic [ 3:0] req_wstrb_i,
+    output logic [31:0] req_rdata_o,
+    output logic        req_resp_err_o,
+    sdram_if.dut        sdram
     // verilog_format: on
 );
 
   // clk_i/rst_n_i control the scheduler; SDRAM commands advance only on the
-  // supplied phase edges. RIBP accepts one captured request and never reports
-  // resp_err; ready is asserted when that request's response is available.
+  // supplied phase edges. The request port accepts one captured request and
+  // never reports resp_err; ready is asserted when that response is available.
   localparam int signed ClkFreq = 32'sd36;
   localparam int signed TrpNs = 32'sd20;
   localparam int signed TrcNs = 32'sd66;
@@ -143,17 +149,17 @@ module sdram_core (
   logic [12:0] s_addr_d, s_addr_q;
   logic s_upd_ready_d, s_upd_ready_q;
   // Registered RIB inputs (captured at Idle-to-ACT)
-  logic [31:0] s_ribp_addr_d, s_ribp_addr_q;
+  logic [31:0] s_apb4_addr_d, s_apb4_addr_q;
   logic [25:0] s_mem_addr;
   logic [31:0] s_req_addr_rel;
-  logic [31:0] s_ribp_wdata_d, s_ribp_wdata_q;
-  logic [3:0] s_ribp_wstrb_d, s_ribp_wstrb_q;
+  logic [31:0] s_apb4_wdata_d, s_apb4_wdata_q;
+  logic [3:0] s_apb4_wstrb_d, s_apb4_wstrb_q;
 
 
-  // ribp
-  assign ribp.ready = s_ready_q;
-  assign ribp.resp_err = 1'b0;
-  assign ribp.rdata = s_rdata_q;
+  // apb4
+  assign req_ready_o = s_ready_q;
+  assign req_resp_err_o = 1'b0;
+  assign req_rdata_o = s_rdata_q;
   // sdram
   assign sdram.clk_o = sdram_clk_i;
   assign sdram.cke_o = s_cke_q;
@@ -163,8 +169,8 @@ module sdram_core (
   assign sdram.ba_o = s_ba_q;
   assign sdram.dq_o = s_dq_q;
   assign sdram.oe_o = s_oe_q;
-  assign s_mem_addr = s_ribp_addr_q - `SOC_ADDR_SDRAM_BASE;
-  assign s_req_addr_rel = ribp.addr - `SOC_ADDR_SDRAM_BASE;
+  assign s_mem_addr = s_apb4_addr_q - `SOC_ADDR_SDRAM_BASE;
+  assign s_req_addr_rel = req_addr_i - `SOC_ADDR_SDRAM_BASE;
 
 
 
@@ -183,9 +189,9 @@ module sdram_core (
     s_cke_d        = s_cke_q;
     s_addr_d       = s_addr_q;
     s_upd_ready_d  = s_upd_ready_q;
-    s_ribp_addr_d  = s_ribp_addr_q;
-    s_ribp_wdata_d = s_ribp_wdata_q;
-    s_ribp_wstrb_d = s_ribp_wstrb_q;
+    s_apb4_addr_d  = s_apb4_addr_q;
+    s_apb4_wdata_d = s_apb4_wdata_q;
+    s_apb4_wstrb_d = s_apb4_wstrb_q;
     case (s_state_q)
       Reset: begin
         s_cke_d       = 1'b0;
@@ -230,16 +236,16 @@ module sdram_core (
         s_oe_d    = 1'b0;
         s_dqm_d   = 2'b11;
         s_ready_d = 1'b0;
-        if (ribp.valid && !s_ready_q) begin
+        if (req_valid_i && !s_ready_q) begin
           // Capture RIB inputs into holding registers
-          s_ribp_addr_d  = ribp.addr;
-          s_ribp_wdata_d = ribp.wdata;
-          s_ribp_wstrb_d = ribp.wstrb;
+          s_apb4_addr_d  = req_addr_i;
+          s_apb4_wdata_d = req_wdata_i;
+          s_apb4_wstrb_d = req_wstrb_i;
           s_cmd_d        = CmdAct;
           s_ba_d         = s_req_addr_rel[25:24];
           s_addr_d       = s_req_addr_rel[23:11];
           s_state_d      = WaitState;
-          s_ret_state_d  = |ribp.wstrb ? ColWriteLow : ColRead;
+          s_ret_state_d  = |req_wstrb_i ? ColWriteLow : ColRead;
           s_wait_cnt_d   = 16'(Trcd);
           s_upd_ready_d  = 1'b1;
         end else begin
@@ -281,19 +287,19 @@ module sdram_core (
       end
       ColWriteLow: begin
         s_cmd_d   = CmdWrite;
-        s_dqm_d   = ~s_ribp_wstrb_q[1:0];
+        s_dqm_d   = ~s_apb4_wstrb_q[1:0];
         // autoprecharge and column (use registered addr)
         s_ba_d    = s_mem_addr[25:24];
         s_addr_d  = {3'b001, s_mem_addr[10:2], 1'b0};
-        s_dq_d    = s_ribp_wdata_q[15:0];
+        s_dq_d    = s_apb4_wdata_q[15:0];
         s_oe_d    = 1'b1;
         s_state_d = ColWriteHigh;
       end
       ColWriteHigh: begin
         s_cmd_d       = CmdNop;
-        s_dqm_d       = ~s_ribp_wstrb_q[3:2];
+        s_dqm_d       = ~s_apb4_wstrb_q[3:2];
         // autoprecharge and column (use registered wdata)
-        s_dq_d        = s_ribp_wdata_q[31:16];
+        s_dq_d        = s_apb4_wdata_q[31:16];
         s_oe_d        = 1'b1;
         s_state_d     = WaitState;
         s_ret_state_d = Idle;
@@ -345,9 +351,9 @@ module sdram_core (
       s_cke_q        <= '0;
       s_addr_q       <= '0;
       s_upd_ready_q  <= '0;
-      s_ribp_addr_q  <= '0;
-      s_ribp_wdata_q <= '0;
-      s_ribp_wstrb_q <= '0;
+      s_apb4_addr_q  <= '0;
+      s_apb4_wdata_q <= '0;
+      s_apb4_wstrb_q <= '0;
     end else begin
       s_ready_q <= s_ready_d;
       if (fir_edge_i) begin
@@ -366,9 +372,9 @@ module sdram_core (
         s_cke_q        <= s_cke_d;
         s_addr_q       <= s_addr_d;
         s_upd_ready_q  <= s_upd_ready_d;
-        s_ribp_addr_q  <= s_ribp_addr_d;
-        s_ribp_wdata_q <= s_ribp_wdata_d;
-        s_ribp_wstrb_q <= s_ribp_wstrb_d;
+        s_apb4_addr_q  <= s_apb4_addr_d;
+        s_apb4_wdata_q <= s_apb4_wdata_d;
+        s_apb4_wstrb_q <= s_apb4_wstrb_d;
       end
     end
   end

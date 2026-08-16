@@ -54,39 +54,39 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/user_gpio_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/gpio_core.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/gpio_reg.sv \
-                             $(ROOT_PATH)/rtl/ip/peripheral/ribp_gpio.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/apb4_gpio.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/pll_ctrl_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_define.svh \
                              $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_reg.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_core.sv \
-                             $(ROOT_PATH)/rtl/ip/peripheral/ribp_sysctrl.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/apb4_sysctrl.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_if.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_reg.sv \
                              $(ROOT_PATH)/rtl/ip/serial/ws2812_core.sv \
-                             $(ROOT_PATH)/rtl/ip/serial/ribp_ws2812.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/apb4_ws2812.sv \
                              $(ROOT_PATH)/rtl/ip/serial/uart_if.sv \
                              $(ROOT_PATH)/rtl/ip/serial/uart_baudgen.sv \
-                             $(ROOT_PATH)/rtl/ip/serial/ribp_uart_tx.sv \
-                             $(ROOT_PATH)/rtl/ip/serial/ribp_uart_rx.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/apb4_uart_tx.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/apb4_uart_rx.sv \
                              $(ROOT_PATH)/rtl/ip/serial/uart_flow_ctrl.sv \
                              $(ROOT_PATH)/rtl/ip/serial/uart_core.sv \
                              $(ROOT_PATH)/rtl/ip/serial/uart_reg.sv \
-                             $(ROOT_PATH)/rtl/ip/serial/ribp_uart.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/apb4_uart.sv \
                              $(ROOT_PATH)/rtl/ip/serial/i2c_filter.sv \
                              $(ROOT_PATH)/rtl/ip/serial/i2c_core.sv \
                              $(ROOT_PATH)/rtl/ip/serial/i2c_reg.sv \
-                             $(ROOT_PATH)/rtl/ip/serial/ribp_i2c.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/apb4_i2c.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/i2c/rtl/i2c_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_core.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_define.svh \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_reg.sv \
-                             $(ROOT_PATH)/rtl/ip/peripheral/ribp_timer.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/apb4_timer.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/clint_define.svh \
                              $(ROOT_PATH)/rtl/ip/peripheral/clint_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/clint_reg.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/clint_core.sv \
-                             $(ROOT_PATH)/rtl/ip/peripheral/ribp_clint.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/apb4_clint.sv \
                              $(ROOT_PATH)/rtl/ip/multimedia/dvp_define.svh \
                              $(ROOT_PATH)/rtl/ip/multimedia/dvp_core.sv \
                              $(ROOT_PATH)/rtl/ip/multimedia/dvp_reg.sv \

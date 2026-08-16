@@ -1,57 +1,57 @@
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-`ifndef RIBP_GPIO_DEFINE_SVH
-`define RIBP_GPIO_DEFINE_SVH
+`ifndef APB4_GPIO_DEFINE_SVH
+`define APB4_GPIO_DEFINE_SVH
 
 // verilog_format: off -- preserve reviewed column alignment
-`define RIBP_GPIO_NUM                         32
+`define APB4_GPIO_NUM                         32
 
-`define RIBP_GPIO_USER_DATA_IN                12'h000
-`define RIBP_GPIO_USER_DATA_OUT               12'h004
-`define RIBP_GPIO_USER_OUT_SET                12'h008
-`define RIBP_GPIO_USER_OUT_CLEAR              12'h00C
-`define RIBP_GPIO_USER_OUT_TOGGLE             12'h010
-`define RIBP_GPIO_USER_INTR_STATE             12'h014
-`define RIBP_GPIO_USER_INTR_STATUS            12'h018
-`define RIBP_GPIO_USER_INTR_ENABLE            12'h01C
-`define RIBP_GPIO_USER_INTR_ENABLE_SET        12'h020
-`define RIBP_GPIO_USER_INTR_ENABLE_CLEAR      12'h024
+`define APB4_GPIO_USER_DATA_IN                12'h000
+`define APB4_GPIO_USER_DATA_OUT               12'h004
+`define APB4_GPIO_USER_OUT_SET                12'h008
+`define APB4_GPIO_USER_OUT_CLEAR              12'h00C
+`define APB4_GPIO_USER_OUT_TOGGLE             12'h010
+`define APB4_GPIO_USER_INTR_STATE             12'h014
+`define APB4_GPIO_USER_INTR_STATUS            12'h018
+`define APB4_GPIO_USER_INTR_ENABLE            12'h01C
+`define APB4_GPIO_USER_INTR_ENABLE_SET        12'h020
+`define APB4_GPIO_USER_INTR_ENABLE_CLEAR      12'h024
 
-`define RIBP_GPIO_ADMIN_DATA_IN               12'h000
-`define RIBP_GPIO_ADMIN_DATA_OUT              12'h004
-`define RIBP_GPIO_ADMIN_OUT_SET               12'h008
-`define RIBP_GPIO_ADMIN_OUT_CLEAR             12'h00C
-`define RIBP_GPIO_ADMIN_OUT_TOGGLE            12'h010
-`define RIBP_GPIO_ADMIN_OUTPUT_ENABLE         12'h014
-`define RIBP_GPIO_ADMIN_OE_SET                12'h018
-`define RIBP_GPIO_ADMIN_OE_CLEAR              12'h01C
-`define RIBP_GPIO_ADMIN_OE_TOGGLE             12'h020
-`define RIBP_GPIO_ADMIN_OPEN_DRAIN            12'h024
-`define RIBP_GPIO_ADMIN_INPUT_CMOS            12'h028
-`define RIBP_GPIO_ADMIN_PULL_UP               12'h02C
-`define RIBP_GPIO_ADMIN_PULL_DOWN             12'h030
-`define RIBP_GPIO_ADMIN_ALT_ENABLE            12'h034
-`define RIBP_GPIO_ADMIN_ALT_SELECT            12'h038
-`define RIBP_GPIO_ADMIN_USER_SELECT           12'h03C
-`define RIBP_GPIO_ADMIN_USER_LOCK             12'h040
-`define RIBP_GPIO_ADMIN_USER_STATUS           12'h044
-`define RIBP_GPIO_ADMIN_USER_ACCESS_MASK      12'h048
-`define RIBP_GPIO_ADMIN_INTR_RISE_ENABLE      12'h04C
-`define RIBP_GPIO_ADMIN_INTR_FALL_ENABLE      12'h050
-`define RIBP_GPIO_ADMIN_INTR_HIGH_ENABLE      12'h054
-`define RIBP_GPIO_ADMIN_INTR_LOW_ENABLE       12'h058
-`define RIBP_GPIO_ADMIN_INTR_ENABLE           12'h05C
-`define RIBP_GPIO_ADMIN_INTR_STATE            12'h060
-`define RIBP_GPIO_ADMIN_INTR_STATUS           12'h064
-`define RIBP_GPIO_ADMIN_INTR_TEST             12'h068
-`define RIBP_GPIO_ADMIN_FILTER_ENABLE         12'h06C
-`define RIBP_GPIO_ADMIN_FILTER_DIV            12'h070
-`define RIBP_GPIO_ADMIN_FILTER_COUNT          12'h074
-`define RIBP_GPIO_ADMIN_CONFIG_LOCK           12'h078
-`define RIBP_GPIO_PAD_CAPABILITY              12'h0F4
-`define RIBP_GPIO_IP_VERSION                  12'h0F8
-`define RIBP_GPIO_CAPABILITY                  12'h0FC
+`define APB4_GPIO_ADMIN_DATA_IN               12'h000
+`define APB4_GPIO_ADMIN_DATA_OUT              12'h004
+`define APB4_GPIO_ADMIN_OUT_SET               12'h008
+`define APB4_GPIO_ADMIN_OUT_CLEAR             12'h00C
+`define APB4_GPIO_ADMIN_OUT_TOGGLE            12'h010
+`define APB4_GPIO_ADMIN_OUTPUT_ENABLE         12'h014
+`define APB4_GPIO_ADMIN_OE_SET                12'h018
+`define APB4_GPIO_ADMIN_OE_CLEAR              12'h01C
+`define APB4_GPIO_ADMIN_OE_TOGGLE             12'h020
+`define APB4_GPIO_ADMIN_OPEN_DRAIN            12'h024
+`define APB4_GPIO_ADMIN_INPUT_CMOS            12'h028
+`define APB4_GPIO_ADMIN_PULL_UP               12'h02C
+`define APB4_GPIO_ADMIN_PULL_DOWN             12'h030
+`define APB4_GPIO_ADMIN_ALT_ENABLE            12'h034
+`define APB4_GPIO_ADMIN_ALT_SELECT            12'h038
+`define APB4_GPIO_ADMIN_USER_SELECT           12'h03C
+`define APB4_GPIO_ADMIN_USER_LOCK             12'h040
+`define APB4_GPIO_ADMIN_USER_STATUS           12'h044
+`define APB4_GPIO_ADMIN_USER_ACCESS_MASK      12'h048
+`define APB4_GPIO_ADMIN_INTR_RISE_ENABLE      12'h04C
+`define APB4_GPIO_ADMIN_INTR_FALL_ENABLE      12'h050
+`define APB4_GPIO_ADMIN_INTR_HIGH_ENABLE      12'h054
+`define APB4_GPIO_ADMIN_INTR_LOW_ENABLE       12'h058
+`define APB4_GPIO_ADMIN_INTR_ENABLE           12'h05C
+`define APB4_GPIO_ADMIN_INTR_STATE            12'h060
+`define APB4_GPIO_ADMIN_INTR_STATUS           12'h064
+`define APB4_GPIO_ADMIN_INTR_TEST             12'h068
+`define APB4_GPIO_ADMIN_FILTER_ENABLE         12'h06C
+`define APB4_GPIO_ADMIN_FILTER_DIV            12'h070
+`define APB4_GPIO_ADMIN_FILTER_COUNT          12'h074
+`define APB4_GPIO_ADMIN_CONFIG_LOCK           12'h078
+`define APB4_GPIO_PAD_CAPABILITY              12'h0F4
+`define APB4_GPIO_IP_VERSION                  12'h0F8
+`define APB4_GPIO_CAPABILITY                  12'h0FC
 
 `define GPIO_PAD_CAP_INPUT_CMOS               0
 `define GPIO_PAD_CAP_PULL_UP                  1

@@ -21,7 +21,7 @@ module axi4s_dvp (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic          clk_i,
     input  logic          rst_n_i,
-    ribp_if.slave         ribp,
+    apb4_if.slave         apb4,
     axi4_stream_if.source rx_axis,
     dvp_if.dut            dvp,
     output logic          irq_o
@@ -85,8 +85,8 @@ module axi4s_dvp (
   // Commands are consumed in the pixel domain as soon as they cross the CDC.
   assign s_cmd_rdy_pclk = !s_fifo_src_clear_busy;
   assign s_pclk_falling = s_cfg_sys[106];
-  assign s_fifo_src_clear = s_cmd_pclk[`RIBP_DVP__COMMAND_FLUSH] ||
-                            s_cmd_pclk[`RIBP_DVP__COMMAND_ABORT];
+  assign s_fifo_src_clear = s_cmd_pclk[`APB4_DVP__COMMAND_FLUSH] ||
+                            s_cmd_pclk[`APB4_DVP__COMMAND_ABORT];
   assign s_fifo_dst_ready = !s_fifo_dst_clear_busy && (s_stream_en ? rx_axis.tready : s_rx_pop);
   assign s_fifo_rx_data = s_fifo_dst_data[31:0];
   assign s_fifo_empty_sys = !s_fifo_dst_valid;
@@ -117,7 +117,7 @@ module axi4s_dvp (
   dvp_reg u_dvp_reg (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
-      .ribp               (ribp),
+      .apb4               (apb4),
       .active_i           (s_active),
       .fifo_empty_i       (s_fifo_empty_sys),
       .fifo_full_i        (s_fifo_full_sys),

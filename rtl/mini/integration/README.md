@@ -3,19 +3,21 @@
 `soc_topology.json` is the source of truth for internal Mini SoC integration
 that is not part of the software address-map ABI or the package pad map.
 
-The topology generator validates RIBP configuration and APB target ownership against
+The topology generator validates APB4 and APB target ownership against
 `../address_map/memory_map.json` and emits generated SystemVerilog include
-files for `ip_ribp_wrapper.sv`, `apb4_system.sv`, `axi42apb.sv`, and
+files for `apb4_periph.sv`, `apb4_system.sv`, `axi42apb.sv`, and
 `retrosoc.sv`. The APB4 platform subsystem is `apb4_system`, instantiated as
 `u_apb4_system`; its AXI4 configuration port is wired by generated
-`soc_apb4_system_fabric.svh`. `ip_ribp_wrapper` remains the RIBP peripheral
+`soc_apb4_system_fabric.svh`. `apb4_periph` remains the APB4 peripheral
 container. Generated fabric links are explicit 32-bit AXI4 interfaces.
 Interface arrays are confined to the AXI4 bus implementation and flattened by
 the existing synthesis/export flow before FPGA or netlist simulation.
 
-The `ribp_targets` list uses stable response slots. Every active RIBP
-memory-map region must appear exactly once. Disabled targets keep their slot
-and interface declaration but cannot own an address region.
+The `apb4_targets` list uses stable response slots for the former RIBP island
+at `0x1000_0000`. Every active APB4 memory-map region must appear exactly
+once. Disabled targets keep their slot and interface declaration but cannot
+own an address region. This list stays separate from `apb_targets`, which
+owns the `0x2000_0000` `apb4_system` island.
 
 Each `gpio_alt_functions` entry defines both alternate modes for one GPIO pin.
 `inputs` are driven from the selected GPIO input, and `do` and `oe` define the
@@ -28,7 +30,7 @@ contiguous from zero. The user-IP target is part of the fixed platform
 integration and its presence is checked against the canonical memory map.
 
 `irq_vector_width`, `irq_groups`, and `interrupts` define the complete core
-interrupt topology. `rib` and `apb` group entries declare the wrapper output
+interrupt topology. `apb4` and `apb` group entries declare the wrapper output
 width and the associated `retrosoc.sv` signal. Every group bit must be present
 exactly once, each core-vector bit must have one source, and sources are limited
 to scalar signal references or one-bit constants. The generator emits the two

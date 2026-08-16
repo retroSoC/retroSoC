@@ -6,22 +6,22 @@
 `define WS2812_DEFINE_SVH
 
 // verilog_format: off -- preserve reviewed column alignment
-`define RIBP_WS2812_BIT_CYCLES       8'h00
-`define RIBP_WS2812_T0H_CYCLES       8'h04
-`define RIBP_WS2812_T1H_CYCLES       8'h08
-`define RIBP_WS2812_RESET_CYCLES     8'h0C
-`define RIBP_WS2812_TXDATA           8'h10
-`define RIBP_WS2812_CTRL             8'h14
-`define RIBP_WS2812_STATUS           8'h18
-`define RIBP_WS2812_FRAME_WORDS      8'h1C
-`define RIBP_WS2812_FIFO_LEVEL       8'h20
-`define RIBP_WS2812_FIFO_WATERMARK   8'h24
-`define RIBP_WS2812_REMAINING_WORDS  8'h28
-`define RIBP_WS2812_ERROR_STATUS     8'h2C
-`define RIBP_WS2812_INTR_STATE       8'h30
-`define RIBP_WS2812_INTR_ENABLE      8'h34
-`define RIBP_WS2812_INTR_TEST        8'h38
-`define RIBP_WS2812_IP_INFO          8'h3C
+`define APB4_WS2812_BIT_CYCLES       8'h00
+`define APB4_WS2812_T0H_CYCLES       8'h04
+`define APB4_WS2812_T1H_CYCLES       8'h08
+`define APB4_WS2812_RESET_CYCLES     8'h0C
+`define APB4_WS2812_TXDATA           8'h10
+`define APB4_WS2812_CTRL             8'h14
+`define APB4_WS2812_STATUS           8'h18
+`define APB4_WS2812_FRAME_WORDS      8'h1C
+`define APB4_WS2812_FIFO_LEVEL       8'h20
+`define APB4_WS2812_FIFO_WATERMARK   8'h24
+`define APB4_WS2812_REMAINING_WORDS  8'h28
+`define APB4_WS2812_ERROR_STATUS     8'h2C
+`define APB4_WS2812_INTR_STATE       8'h30
+`define APB4_WS2812_INTR_ENABLE      8'h34
+`define APB4_WS2812_INTR_TEST        8'h38
+`define APB4_WS2812_IP_INFO          8'h3C
 
 `define WS2812_CTRL_START            0
 `define WS2812_CTRL_ABORT            1

@@ -13,7 +13,7 @@
 #define RS_CLINT_SOFTWARE_IRQ_PENDING UINT32_C(1)
 
 static volatile uint32_t *rs_clint_register(uint32_t offset) {
-    return (volatile uint32_t *)(uintptr_t)(RS_SOC_RIBP_CLINT_BASE + offset);
+    return (volatile uint32_t *)(uintptr_t)(RS_SOC_APB4_CLINT_BASE + offset);
 }
 
 static bool rs_clint_hart_valid(uint32_t hart) {

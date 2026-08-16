@@ -9,7 +9,7 @@ module clint_reg #(
     // verilog_format: off -- preserve reviewed column alignment
     input  logic               clk_i,
     input  logic               rst_n_i,
-    ribp_if.slave              ribp,
+    apb4_if.slave              apb4,
     input  logic [63:0]        mtime_i,
     output logic               mtime_load_o,
     output logic [63:0]        mtime_load_value_o,
@@ -35,9 +35,9 @@ module clint_reg #(
   logic [11:0] s_msip_hart;
   logic [11:0] s_mtimecmp_hart;
 
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_resp_err_d, s_ribp_resp_err_q;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
+  logic s_apb4_ready_d, s_apb4_ready_q;
+  logic s_apb4_resp_err_d, s_apb4_resp_err_q;
+  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
 
   logic [HartNum-1:0] s_msip_en;
   logic [HartNum-1:0] s_msip_d, s_msip_q;
@@ -68,40 +68,40 @@ module clint_reg #(
   end
 `endif
 
-  assign s_req = ribp.valid && !s_ribp_ready_q;
-  assign s_write = |ribp.wstrb;
+  assign s_req = apb4.psel && apb4.penable && !s_apb4_ready_q;
+  assign s_write = apb4.pwrite;
   assign s_req_accept = s_req;
-  assign s_offset = ribp.addr[15:0];
-  assign s_aligned = ribp.addr[1:0] == 2'b00;
+  assign s_offset = apb4.paddr[15:0];
+  assign s_aligned = apb4.paddr[1:0] == 2'b00;
 
   assign s_msip_hart = s_offset[13:2];
   assign s_mtimecmp_hart = s_offset[14:3] - 12'h800;
-  assign s_msip_sel = (s_offset < `RIBP_CLINT_MTIMECMP) && (s_msip_hart < HART_COUNT);
-  assign s_mtimecmp_sel = (s_offset >= `RIBP_CLINT_MTIMECMP) &&
-                             (s_offset < `RIBP_CLINT_MTIME) &&
+  assign s_msip_sel = (s_offset < `APB4_CLINT_MTIMECMP) && (s_msip_hart < HART_COUNT);
+  assign s_mtimecmp_sel = (s_offset >= `APB4_CLINT_MTIMECMP) &&
+                             (s_offset < `APB4_CLINT_MTIME) &&
                              (s_mtimecmp_hart < HART_COUNT);
   assign s_mtimecmp_high = s_offset[2];
-  assign s_mtime_sel = (s_offset == `RIBP_CLINT_MTIME) || (s_offset == `RIBP_CLINT_MTIMEH);
-  assign s_mtime_high = s_offset == `RIBP_CLINT_MTIMEH;
+  assign s_mtime_sel = (s_offset == `APB4_CLINT_MTIME) || (s_offset == `APB4_CLINT_MTIMEH);
+  assign s_mtime_high = s_offset == `APB4_CLINT_MTIMEH;
 
-  assign ribp.ready = s_ribp_ready_q;
-  assign ribp.rdata = s_ribp_rdata_q;
-  assign ribp.resp_err = s_ribp_resp_err_q;
+  assign apb4.pready = s_apb4_ready_q;
+  assign apb4.prdata = s_apb4_rdata_q;
+  assign apb4.pslverr = s_apb4_resp_err_q;
 
   always_comb begin
     s_access_err   = !s_aligned || !(s_msip_sel || s_mtimecmp_sel || s_mtime_sel);
-    s_ribp_rdata_d = '0;
+    s_apb4_rdata_d = '0;
     if (s_aligned) begin
       if (s_msip_sel) begin
-        s_ribp_rdata_d = {31'd0, s_msip_q[s_msip_hart[HART_INDEX_WIDTH-1:0]]};
+        s_apb4_rdata_d = {31'd0, s_msip_q[s_msip_hart[HART_INDEX_WIDTH-1:0]]};
       end else if (s_mtimecmp_sel) begin
         if (s_mtimecmp_high) begin
-          s_ribp_rdata_d = s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][63:32];
+          s_apb4_rdata_d = s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][63:32];
         end else begin
-          s_ribp_rdata_d = s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][31:0];
+          s_apb4_rdata_d = s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][31:0];
         end
       end else if (s_mtime_sel) begin
-        s_ribp_rdata_d = s_mtime_high ? mtime_i[63:32] : mtime_i[31:0];
+        s_apb4_rdata_d = s_mtime_high ? mtime_i[63:32] : mtime_i[31:0];
       end
     end
   end
@@ -109,9 +109,9 @@ module clint_reg #(
   always_comb begin
     s_msip_en = '0;
     s_msip_d  = s_msip_q;
-    if (s_req_accept && s_write && !s_access_err && s_msip_sel && ribp.wstrb[0]) begin
+    if (s_req_accept && s_write && !s_access_err && s_msip_sel && apb4.pstrb[0]) begin
       s_msip_en[s_msip_hart[HART_INDEX_WIDTH-1:0]] = 1'b1;
-      s_msip_d[s_msip_hart[HART_INDEX_WIDTH-1:0]]  = ribp.wdata[0];
+      s_msip_d[s_msip_hart[HART_INDEX_WIDTH-1:0]]  = apb4.pwdata[0];
     end
   end
   for (genvar hart = 0; hart < HartNum; hart++) begin : gen_msip
@@ -135,10 +135,10 @@ module clint_reg #(
       s_mtimecmp_en[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]] = 1'b1;
       if (s_mtimecmp_high) begin
         s_mtimecmp_d[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][63:32] = merge_wstrb(
-            s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][63:32], ribp.wdata, ribp.wstrb);
+            s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][63:32], apb4.pwdata, apb4.pstrb);
       end else begin
         s_mtimecmp_d[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][31:0] = merge_wstrb(
-            s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][31:0], ribp.wdata, ribp.wstrb);
+            s_mtimecmp_q[s_mtimecmp_hart[HART_INDEX_WIDTH-1:0]][31:0], apb4.pwdata, apb4.pstrb);
       end
     end
   end
@@ -160,9 +160,9 @@ module clint_reg #(
     if (s_req_accept && s_write && !s_access_err && s_mtime_sel) begin
       mtime_load_o = 1'b1;
       if (s_mtime_high) begin
-        mtime_load_value_o[63:32] = merge_wstrb(mtime_i[63:32], ribp.wdata, ribp.wstrb);
+        mtime_load_value_o[63:32] = merge_wstrb(mtime_i[63:32], apb4.pwdata, apb4.pstrb);
       end else begin
-        mtime_load_value_o[31:0] = merge_wstrb(mtime_i[31:0], ribp.wdata, ribp.wstrb);
+        mtime_load_value_o[31:0] = merge_wstrb(mtime_i[31:0], apb4.pwdata, apb4.pstrb);
       end
     end
   end
@@ -170,34 +170,34 @@ module clint_reg #(
   assign msip_o            = s_msip_q;
   assign mtimecmp_o        = s_mtimecmp_q;
 
-  assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_err;
+  assign s_apb4_ready_d    = s_req_accept;
+  assign s_apb4_resp_err_d = s_access_err;
 
   dffr #(
       .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
+  ) u_apb4_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
+      .dat_i  (s_apb4_ready_d),
+      .dat_o  (s_apb4_ready_q)
   );
   dffer #(
       .DATA_WIDTH(1)
-  ) u_ribp_resp_err_dffer (
+  ) u_apb4_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_resp_err_d),
-      .dat_o  (s_ribp_resp_err_q)
+      .dat_i  (s_apb4_resp_err_d),
+      .dat_o  (s_apb4_resp_err_q)
   );
   dffer #(
       .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
+  ) u_apb4_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
+      .dat_i  (s_apb4_rdata_d),
+      .dat_o  (s_apb4_rdata_q)
   );
 
 endmodule

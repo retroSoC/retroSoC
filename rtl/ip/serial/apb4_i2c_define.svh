@@ -1,35 +1,35 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-`ifndef RETROSOC_RIBP_I2C_DEFINE_SVH
-`define RETROSOC_RIBP_I2C_DEFINE_SVH
+`ifndef RETROSOC_APB4_I2C_DEFINE_SVH
+`define RETROSOC_APB4_I2C_DEFINE_SVH
 
 // verilog_format: off -- preserve reviewed column alignment
-`define RIBP_I2C_CTRL                 8'h00
-`define RIBP_I2C_SCL_TIMING           8'h04
-`define RIBP_I2C_START_TIMING         8'h08
-`define RIBP_I2C_DATA_TIMING          8'h0C
-`define RIBP_I2C_STOP_TIMING          8'h10
-`define RIBP_I2C_FILTER               8'h14
-`define RIBP_I2C_STRETCH_TIMEOUT      8'h18
-`define RIBP_I2C_BUS_IDLE_TIMEOUT     8'h1C
-`define RIBP_I2C_COMMAND_TIMEOUT      8'h20
-`define RIBP_I2C_TARGET_ADDR          8'h24
-`define RIBP_I2C_DATA_CMD             8'h28
-`define RIBP_I2C_RXDATA               8'h2C
-`define RIBP_I2C_STATUS               8'h30
-`define RIBP_I2C_FIFO_LEVEL           8'h34
-`define RIBP_I2C_COMMAND              8'h38
-`define RIBP_I2C_CMD_WATERMARK        8'h3C
-`define RIBP_I2C_RX_WATERMARK         8'h40
-`define RIBP_I2C_ERROR_STATUS         8'h44
-`define RIBP_I2C_INTR_STATE           8'h48
-`define RIBP_I2C_INTR_ENABLE          8'h4C
-`define RIBP_I2C_INTR_STATUS          8'h50
-`define RIBP_I2C_INTR_TEST            8'h54
-`define RIBP_I2C_LINE_STATE           8'h58
-`define RIBP_I2C_IP_VERSION           8'hF8
-`define RIBP_I2C_CAPABILITY           8'hFC
+`define APB4_I2C_CTRL                 8'h00
+`define APB4_I2C_SCL_TIMING           8'h04
+`define APB4_I2C_START_TIMING         8'h08
+`define APB4_I2C_DATA_TIMING          8'h0C
+`define APB4_I2C_STOP_TIMING          8'h10
+`define APB4_I2C_FILTER               8'h14
+`define APB4_I2C_STRETCH_TIMEOUT      8'h18
+`define APB4_I2C_BUS_IDLE_TIMEOUT     8'h1C
+`define APB4_I2C_COMMAND_TIMEOUT      8'h20
+`define APB4_I2C_TARGET_ADDR          8'h24
+`define APB4_I2C_DATA_CMD             8'h28
+`define APB4_I2C_RXDATA               8'h2C
+`define APB4_I2C_STATUS               8'h30
+`define APB4_I2C_FIFO_LEVEL           8'h34
+`define APB4_I2C_COMMAND              8'h38
+`define APB4_I2C_CMD_WATERMARK        8'h3C
+`define APB4_I2C_RX_WATERMARK         8'h40
+`define APB4_I2C_ERROR_STATUS         8'h44
+`define APB4_I2C_INTR_STATE           8'h48
+`define APB4_I2C_INTR_ENABLE          8'h4C
+`define APB4_I2C_INTR_STATUS          8'h50
+`define APB4_I2C_INTR_TEST            8'h54
+`define APB4_I2C_LINE_STATE           8'h58
+`define APB4_I2C_IP_VERSION           8'hF8
+`define APB4_I2C_CAPABILITY           8'hFC
 
 `define I2C_CTRL_ENABLE               0
 

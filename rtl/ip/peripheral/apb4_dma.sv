@@ -8,23 +8,23 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef RIBP_DMA_DEF_SV
-`define RIBP_DMA_DEF_SV
+`ifndef APB4_DMA_DEF_SV
+`define APB4_DMA_DEF_SV
 
 // verilog_format: off -- preserve reviewed column alignment
-`define RIBP_DMA_MODE         8'h00
-`define RIBP_DMA_SRCADDR      8'h04
-`define RIBP_DMA_SRCINCR      8'h08
-`define RIBP_DMA_DSTADDR      8'h0C
-`define RIBP_DMA_DSTINCR      8'h10
-`define RIBP_DMA_XFERLEN      8'h14
-`define RIBP_DMA_START        8'h18
-`define RIBP_DMA_STOP         8'h1C
-`define RIBP_DMA_RESET        8'h20
-`define RIBP_DMA_STATUS       8'h24
-`define RIBP_DMA_FSM          8'h28
-`define RIBP_DMA_ERROR_STATUS 8'h2C
-`define RIBP_DMA_ERROR_ADDR   8'h30
+`define APB4_DMA_MODE         8'h00
+`define APB4_DMA_SRCADDR      8'h04
+`define APB4_DMA_SRCINCR      8'h08
+`define APB4_DMA_DSTADDR      8'h0C
+`define APB4_DMA_DSTINCR      8'h10
+`define APB4_DMA_XFERLEN      8'h14
+`define APB4_DMA_START        8'h18
+`define APB4_DMA_STOP         8'h1C
+`define APB4_DMA_RESET        8'h20
+`define APB4_DMA_STATUS       8'h24
+`define APB4_DMA_FSM          8'h28
+`define APB4_DMA_ERROR_STATUS 8'h2C
+`define APB4_DMA_ERROR_ADDR   8'h30
 // verilog_format: on
 
 interface dma_hw_trg_if ();
@@ -55,13 +55,13 @@ endinterface
 
 `endif
 
-module ribp_dma (
+module apb4_dma (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic          clk_i,
     input  logic          rst_n_i,
     output logic          dma_xfer_done_o,
     dma_hw_trg_if.dut     hw_trg,
-    ribp_if.slave         ribp,
+    apb4_if.slave         apb4,
     rib_if.master         rib,
     axi4_stream_if.source i2s_tx_axis,
     axi4_stream_if.sink   i2s_rx_axis,
@@ -69,10 +69,10 @@ module ribp_dma (
     // verilog_format: on
 );
 
-  logic s_ribp_wr_hdshk, s_ribp_rd_hdshk;
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_rdata_en;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
+  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
+  logic s_apb4_ready_d, s_apb4_ready_q;
+  logic s_apb4_rdata_en;
+  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
 
   logic s_dma_mode_en;
   logic [3:0] s_dma_mode_d, s_dma_mode_q;
@@ -98,17 +98,17 @@ module ribp_dma (
   logic [31:0] s_xfer_err_addr;
 
 
-  assign s_ribp_wr_hdshk = ribp.valid && (~s_ribp_ready_q) && (|ribp.wstrb);
-  assign s_ribp_rd_hdshk = ribp.valid && (~s_ribp_ready_q) && (~(|ribp.wstrb));
-  assign ribp.ready      = s_ribp_ready_q;
-  assign ribp.resp_err   = 1'b0;
-  assign ribp.rdata      = s_ribp_rdata_q;
+  assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && (~s_apb4_ready_q) && apb4.pwrite;
+  assign s_apb4_rd_hdshk = apb4.psel && apb4.penable && (~s_apb4_ready_q) && (~apb4.pwrite);
+  assign apb4.pready     = s_apb4_ready_q;
+  assign apb4.pslverr    = 1'b0;
+  assign apb4.prdata     = s_apb4_rdata_q;
 
   assign dma_xfer_done_o = s_dma_stat_q;
 
 
-  assign s_dma_mode_en   = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_MODE;
-  assign s_dma_mode_d    = ribp.wdata[3:0];
+  assign s_dma_mode_en   = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_MODE;
+  assign s_dma_mode_d    = apb4.pwdata[3:0];
   dffer #(
       .DATA_WIDTH(4)
   ) u_dma_mode_dffer (
@@ -120,13 +120,13 @@ module ribp_dma (
   );
 
 
-  assign s_dma_srcaddr_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_SRCADDR;
+  assign s_dma_srcaddr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_SRCADDR;
   always_comb begin
     s_dma_srcaddr_d = s_dma_srcaddr_q;
-    if (ribp.wstrb[0]) s_dma_srcaddr_d[7:0] = ribp.wdata[7:0];
-    if (ribp.wstrb[1]) s_dma_srcaddr_d[15:8] = ribp.wdata[15:8];
-    if (ribp.wstrb[2]) s_dma_srcaddr_d[23:16] = ribp.wdata[23:16];
-    if (ribp.wstrb[3]) s_dma_srcaddr_d[31:24] = ribp.wdata[31:24];
+    if (apb4.pstrb[0]) s_dma_srcaddr_d[7:0] = apb4.pwdata[7:0];
+    if (apb4.pstrb[1]) s_dma_srcaddr_d[15:8] = apb4.pwdata[15:8];
+    if (apb4.pstrb[2]) s_dma_srcaddr_d[23:16] = apb4.pwdata[23:16];
+    if (apb4.pstrb[3]) s_dma_srcaddr_d[31:24] = apb4.pwdata[31:24];
   end
   dffer #(
       .DATA_WIDTH(32)
@@ -139,8 +139,8 @@ module ribp_dma (
   );
 
 
-  assign s_dma_srcincr_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_SRCINCR;
-  assign s_dma_srcincr_d  = ribp.wdata[0];
+  assign s_dma_srcincr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_SRCINCR;
+  assign s_dma_srcincr_d  = apb4.pwdata[0];
   dffer #(
       .DATA_WIDTH(1)
   ) u_dma_srcincr_dffer (
@@ -152,13 +152,13 @@ module ribp_dma (
   );
 
 
-  assign s_dma_dstaddr_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_DSTADDR;
+  assign s_dma_dstaddr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_DSTADDR;
   always_comb begin
     s_dma_dstaddr_d = s_dma_dstaddr_q;
-    if (ribp.wstrb[0]) s_dma_dstaddr_d[7:0] = ribp.wdata[7:0];
-    if (ribp.wstrb[1]) s_dma_dstaddr_d[15:8] = ribp.wdata[15:8];
-    if (ribp.wstrb[2]) s_dma_dstaddr_d[23:16] = ribp.wdata[23:16];
-    if (ribp.wstrb[3]) s_dma_dstaddr_d[31:24] = ribp.wdata[31:24];
+    if (apb4.pstrb[0]) s_dma_dstaddr_d[7:0] = apb4.pwdata[7:0];
+    if (apb4.pstrb[1]) s_dma_dstaddr_d[15:8] = apb4.pwdata[15:8];
+    if (apb4.pstrb[2]) s_dma_dstaddr_d[23:16] = apb4.pwdata[23:16];
+    if (apb4.pstrb[3]) s_dma_dstaddr_d[31:24] = apb4.pwdata[31:24];
   end
   dffer #(
       .DATA_WIDTH(32)
@@ -170,8 +170,8 @@ module ribp_dma (
       .dat_o  (s_dma_dstaddr_q)
   );
 
-  assign s_dma_dstincr_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_DSTINCR;
-  assign s_dma_dstincr_d  = ribp.wdata[0];
+  assign s_dma_dstincr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_DSTINCR;
+  assign s_dma_dstincr_d  = apb4.pwdata[0];
   dffer #(
       .DATA_WIDTH(1)
   ) u_dma_dstincr_dffer (
@@ -182,13 +182,13 @@ module ribp_dma (
       .dat_o  (s_dma_dstincr_q)
   );
 
-  assign s_dma_xferlen_en = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_XFERLEN;
+  assign s_dma_xferlen_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_XFERLEN;
   always_comb begin
     s_dma_xferlen_d = s_dma_xferlen_q;
-    if (ribp.wstrb[0]) s_dma_xferlen_d[7:0] = ribp.wdata[7:0];
-    if (ribp.wstrb[1]) s_dma_xferlen_d[15:8] = ribp.wdata[15:8];
-    if (ribp.wstrb[2]) s_dma_xferlen_d[23:16] = ribp.wdata[23:16];
-    if (ribp.wstrb[3]) s_dma_xferlen_d[31:24] = ribp.wdata[31:24];
+    if (apb4.pstrb[0]) s_dma_xferlen_d[7:0] = apb4.pwdata[7:0];
+    if (apb4.pstrb[1]) s_dma_xferlen_d[15:8] = apb4.pwdata[15:8];
+    if (apb4.pstrb[2]) s_dma_xferlen_d[23:16] = apb4.pwdata[23:16];
+    if (apb4.pstrb[3]) s_dma_xferlen_d[31:24] = apb4.pwdata[31:24];
   end
   dffer #(
       .DATA_WIDTH(32)
@@ -201,14 +201,14 @@ module ribp_dma (
   );
 
 
-  assign s_xfer_start = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_START;
-  assign s_xfer_stop  = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_STOP;
-  assign s_xfer_reset = s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_RESET;
+  assign s_xfer_start = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_START;
+  assign s_xfer_stop  = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_STOP;
+  assign s_xfer_reset = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_RESET;
 
 
   always_comb begin
     s_dma_stat_d = s_dma_stat_q;
-    if (s_ribp_rd_hdshk && ribp.addr[7:0] == `RIBP_DMA_STATUS) begin
+    if (s_apb4_rd_hdshk && apb4.paddr[7:0] == `APB4_DMA_STATUS) begin
       s_dma_stat_d = '0;
     end else if (s_xfer_done) begin
       s_dma_stat_d = 1'b1;
@@ -225,8 +225,8 @@ module ribp_dma (
 
   always_comb begin
     s_dma_err_stat_d = s_dma_err_stat_q;
-    if (s_ribp_wr_hdshk && ribp.addr[7:0] == `RIBP_DMA_ERROR_STATUS && ribp.wstrb[0] &&
-        ribp.wdata[0]) begin
+    if (s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_ERROR_STATUS && apb4.pstrb[0] &&
+        apb4.pwdata[0]) begin
       s_dma_err_stat_d = 1'b0;
     end else if (s_xfer_err) begin
       s_dma_err_stat_d = 1'b1;
@@ -262,41 +262,41 @@ module ribp_dma (
   );
 
 
-  assign s_ribp_ready_d = ribp.valid && (~s_ribp_ready_q);
+  assign s_apb4_ready_d = apb4.psel && apb4.penable && (~s_apb4_ready_q);
   dffr #(
       .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
+  ) u_apb4_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
+      .dat_i  (s_apb4_ready_d),
+      .dat_o  (s_apb4_ready_q)
   );
 
-  assign s_ribp_rdata_en = s_ribp_rd_hdshk;
+  assign s_apb4_rdata_en = s_apb4_rd_hdshk;
   always_comb begin
-    s_ribp_rdata_d = s_ribp_rdata_q;
-    unique case (ribp.addr[7:0])
-      `RIBP_DMA_MODE:         s_ribp_rdata_d = {28'd0, s_dma_mode_q};
-      `RIBP_DMA_SRCADDR:      s_ribp_rdata_d = s_dma_srcaddr_q;
-      `RIBP_DMA_SRCINCR:      s_ribp_rdata_d = {31'd0, s_dma_srcincr_q};
-      `RIBP_DMA_DSTADDR:      s_ribp_rdata_d = s_dma_dstaddr_q;
-      `RIBP_DMA_DSTINCR:      s_ribp_rdata_d = {31'd0, s_dma_dstincr_q};
-      `RIBP_DMA_XFERLEN:      s_ribp_rdata_d = s_dma_xferlen_q;
-      `RIBP_DMA_STATUS:       s_ribp_rdata_d = {31'd0, s_dma_stat_q};
-      `RIBP_DMA_FSM:          s_ribp_rdata_d = {30'd0, s_xfer_fsm};
-      `RIBP_DMA_ERROR_STATUS: s_ribp_rdata_d = {28'd0, s_dma_err_code_q, s_dma_err_stat_q};
-      `RIBP_DMA_ERROR_ADDR:   s_ribp_rdata_d = s_dma_err_addr_q;
-      default:                s_ribp_rdata_d = s_ribp_rdata_q;
+    s_apb4_rdata_d = s_apb4_rdata_q;
+    unique case (apb4.paddr[7:0])
+      `APB4_DMA_MODE:         s_apb4_rdata_d = {28'd0, s_dma_mode_q};
+      `APB4_DMA_SRCADDR:      s_apb4_rdata_d = s_dma_srcaddr_q;
+      `APB4_DMA_SRCINCR:      s_apb4_rdata_d = {31'd0, s_dma_srcincr_q};
+      `APB4_DMA_DSTADDR:      s_apb4_rdata_d = s_dma_dstaddr_q;
+      `APB4_DMA_DSTINCR:      s_apb4_rdata_d = {31'd0, s_dma_dstincr_q};
+      `APB4_DMA_XFERLEN:      s_apb4_rdata_d = s_dma_xferlen_q;
+      `APB4_DMA_STATUS:       s_apb4_rdata_d = {31'd0, s_dma_stat_q};
+      `APB4_DMA_FSM:          s_apb4_rdata_d = {30'd0, s_xfer_fsm};
+      `APB4_DMA_ERROR_STATUS: s_apb4_rdata_d = {28'd0, s_dma_err_code_q, s_dma_err_stat_q};
+      `APB4_DMA_ERROR_ADDR:   s_apb4_rdata_d = s_dma_err_addr_q;
+      default:                s_apb4_rdata_d = s_apb4_rdata_q;
     endcase
   end
   dffer #(
       .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
+  ) u_apb4_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (s_ribp_rdata_en),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
+      .en_i   (s_apb4_rdata_en),
+      .dat_i  (s_apb4_rdata_d),
+      .dat_o  (s_apb4_rdata_q)
   );
 
 

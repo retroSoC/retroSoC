@@ -5,7 +5,7 @@
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/uart.h>
 
-#define RS_UART_REG(offset)          RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, (offset))
+#define RS_UART_REG(offset)          RS_SOC_REG32(RS_SOC_APB4_UART0_BASE, (offset))
 
 #define RS_UART_BAUD_INT             RS_UART_REG(UINT32_C(0x00))
 #define RS_UART_BAUD_FRAC            RS_UART_REG(UINT32_C(0x04))
@@ -292,7 +292,7 @@ rs_status_t rs_uart_write_dma(const uint32_t *words, size_t count, rs_timeout_t 
     }
     RS_UART_DMA_CTRL = RS_UART_DMA_TX_ENABLE;
     status = rs_dma_config(RS_DMA_MODE_UART_TX, (uintptr_t)words, 1U,
-                           RS_SOC_RIBP_UART0_BASE + UINT32_C(0x10), 0U, (uint32_t)count);
+                           RS_SOC_APB4_UART0_BASE + UINT32_C(0x10), 0U, (uint32_t)count);
     if (status == RS_OK) {
         status = rs_dma_start();
     }
@@ -310,7 +310,7 @@ rs_status_t rs_uart_read_dma(uint32_t *words, size_t count, rs_timeout_t timeout
         return RS_EINVAL;
     }
     RS_UART_DMA_CTRL = RS_UART_DMA_RX_ENABLE;
-    status = rs_dma_config(RS_DMA_MODE_UART_RX, RS_SOC_RIBP_UART0_BASE + UINT32_C(0x14), 0U,
+    status = rs_dma_config(RS_DMA_MODE_UART_RX, RS_SOC_APB4_UART0_BASE + UINT32_C(0x14), 0U,
                            (uintptr_t)words, 1U, (uint32_t)count);
     if (status == RS_OK) {
         status = rs_dma_start();

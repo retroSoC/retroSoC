@@ -55,7 +55,7 @@
 #define RS_PSRAM_INDIRECT_START_MASK          UINT32_C(0x80000000)
 
 static volatile uint32_t *rs_psram_register(uint32_t offset) {
-    return (volatile uint32_t *)(uintptr_t)(RS_SOC_RIBP_PSRAM_BASE + offset);
+    return (volatile uint32_t *)(uintptr_t)(RS_SOC_APB4_PSRAM_BASE + offset);
 }
 
 static bool rs_psram_chip_valid(uint8_t chip) {

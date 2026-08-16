@@ -49,8 +49,8 @@
 #define RS_I2C_TIMEOUT_MAX_CYCLES      UINT32_C(0xFFFFFF)
 
 static uintptr_t rs_i2c_base(rs_i2c_bus_t bus) {
-    return (bus == RS_I2C_BUS_0) ? (uintptr_t)RS_SOC_RIBP_I2C0_BASE
-                                 : (uintptr_t)RS_SOC_RIBP_I2C1_BASE;
+    return (bus == RS_I2C_BUS_0) ? (uintptr_t)RS_SOC_APB4_I2C0_BASE
+                                 : (uintptr_t)RS_SOC_APB4_I2C1_BASE;
 }
 
 static bool rs_i2c_bus_valid(rs_i2c_bus_t bus) {

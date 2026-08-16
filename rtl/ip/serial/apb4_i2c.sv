@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-module ribp_i2c #(
+module apb4_i2c #(
     parameter int CmdFifoDepth = 16,
     parameter int RxFifoDepth  = 16
 ) (
@@ -10,7 +10,7 @@ module ribp_i2c #(
     input  logic  rst_n_i,
     output logic  dma_tx_stall_o,
     output logic  dma_rx_stall_o,
-    ribp_if.slave ribp,
+    apb4_if.slave apb4,
     i2c_if.dut    i2c
     // verilog_format: on
 );
@@ -81,7 +81,7 @@ module ribp_i2c #(
   ) u_i2c_reg (
       .clk_i                  (clk_i),
       .rst_n_i                (rst_n_i),
-      .ribp                   (ribp),
+      .apb4                   (apb4),
       .enable_o               (s_en),
       .scl_low_cycles_o       (s_scl_low_cycles),
       .scl_high_cycles_o      (s_scl_high_cycles),

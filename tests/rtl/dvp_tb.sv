@@ -7,9 +7,12 @@ module dvp_tb;
   logic        href_i = 1'b0;
   logic        vsync_i = 1'b0;
   logic [ 7:0] dat_i = 8'd0;
-  logic [31:0] ribp_rdata;
+  logic [31:0] apb4_rdata;
   logic        irq_o;
-  ribp_if ribp ();
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   axi4_stream_if #(
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
@@ -32,7 +35,7 @@ module dvp_tb;
   axi4s_dvp u_dut (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (ribp),
+      .apb4   (apb4),
       .rx_axis(axis),
       .dvp    (dvp),
       .irq_o  (irq_o)
@@ -41,27 +44,37 @@ module dvp_tb;
   task automatic write(input logic [31:0] address, input logic [31:0] data);
     begin
       @(negedge clk_i);
-      ribp.valid = 1'b1;
-      ribp.addr  = address;
-      ribp.wdata = data;
-      ribp.wstrb = 4'hf;
-      do @(negedge clk_i); while (!ribp.ready);
-      if (ribp.resp_err) $fatal(1, "unexpected write error at %h", address);
-      ribp.valid = 1'b0;
-      ribp.wstrb = '0;
+      apb4.paddr   = address;
+      apb4.pwdata  = data;
+      apb4.pstrb   = 4'hF;
+      apb4.pwrite  = 1'b1;
+      apb4.psel    = 1'b1;
+      apb4.penable = 1'b0;
+      @(negedge clk_i);
+      apb4.penable = 1'b1;
+      while (!apb4.pready) @(negedge clk_i);
+      apb4.psel    = 1'b0;
+      apb4.penable = 1'b0;
+      apb4.pwrite  = 1'b0;
+      apb4.pstrb   = '0;
     end
   endtask
 
   task automatic read(input logic [31:0] address, output logic [31:0] data);
     begin
       @(negedge clk_i);
-      ribp.valid = 1'b1;
-      ribp.addr  = address;
-      ribp.wdata = '0;
-      ribp.wstrb = '0;
-      do @(negedge clk_i); while (!ribp.ready);
-      data       = ribp.rdata;
-      ribp.valid = 1'b0;
+      apb4.paddr   = address;
+      apb4.pwdata  = '0;
+      apb4.pstrb   = '0;
+      apb4.pwrite  = 1'b0;
+      apb4.psel    = 1'b1;
+      apb4.penable = 1'b0;
+      @(negedge clk_i);
+      apb4.penable = 1'b1;
+      while (!apb4.pready) @(negedge clk_i);
+      data         = apb4.prdata;
+      apb4.psel    = 1'b0;
+      apb4.penable = 1'b0;
     end
   endtask
 
@@ -106,16 +119,16 @@ module dvp_tb;
     end
   end
   initial begin
-    ribp.valid = 1'b0;
-    ribp.addr  = '0;
-    ribp.wdata = '0;
-    ribp.wstrb = '0;
+    apb4.psel   = 1'b0;
+    apb4.paddr  = '0;
+    apb4.pwdata = '0;
+    apb4.pstrb  = '0;
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
     read(32'h0000_00f8, value);
     if (value != 32'h0002_0000) $fatal(1, "bad DVP version %h", value);
     read(32'h0000_0100, value);
-    if (!ribp.resp_err) $fatal(1, "invalid DVP access was accepted");
+    if (!apb4.pslverr) $fatal(1, "invalid DVP access was accepted");
     write(32'h0000_0018, {16'd2, 16'd4});
     write(32'h0000_000c, 32'd1);
     write(32'h0000_0000, 32'd3);
@@ -127,8 +140,8 @@ module dvp_tb;
     check_frame(1, 3, 2);
     write(32'h0000_0048, 32'h0000_0004);
     read(32'h0000_003c, value);
-    if (ribp.resp_err) $fatal(1, "DVP interrupt read failed");
-    $display("RIBP DVP capture test passed");
+    if (apb4.pslverr) $fatal(1, "DVP interrupt read failed");
+    $display("APB4 DVP capture test passed");
     $finish;
   end
 endmodule

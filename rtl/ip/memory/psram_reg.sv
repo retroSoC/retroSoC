@@ -7,7 +7,7 @@ module psram_reg (
     // verilog_format: off -- preserve reviewed port alignment
     input  logic                     clk_i,
     input  logic                     rst_n_i,
-    ribp_if.slave                    ribp,
+    apb4_if.slave                    apb4,
     input  logic                     init_busy_i,
     input  logic                     axi_busy_i,
     input  logic                     indirect_busy_i,
@@ -147,113 +147,113 @@ module psram_reg (
     end
   endfunction
 
-  assign s_req = ribp.valid && !s_ready_q;
-  assign s_write = |ribp.wstrb;
-  assign s_offset = ribp.addr[11:0];
-  assign s_aligned = ribp.addr[1:0] == 2'b00;
+  assign s_req = apb4.psel && apb4.penable && !s_ready_q;
+  assign s_write = apb4.pwrite;
+  assign s_offset = apb4.paddr[11:0];
+  assign s_aligned = apb4.paddr[1:0] == 2'b00;
   assign s_busy = init_busy_i || axi_busy_i || indirect_busy_i || phy_busy_i;
   assign s_timing_valid = (s_clk_config_q[15:0] != 16'd0) &&
                           (s_cs_max_low_q != 32'd0) &&
                           (s_access_timeout_q != 32'd0);
 
-  assign s_ctrl_write_value = merge_wstrb(s_ctrl_q, ribp.wdata, ribp.wstrb) & CTRL_WRITABLE_MASK;
-  assign s_chip_en_write_value = 4'(merge_wstrb({28'd0, s_chip_en_q}, ribp.wdata, ribp.wstrb));
+  assign s_ctrl_write_value = merge_wstrb(s_ctrl_q, apb4.pwdata, apb4.pstrb) & CTRL_WRITABLE_MASK;
+  assign s_chip_en_write_value = 4'(merge_wstrb({28'd0, s_chip_en_q}, apb4.pwdata, apb4.pstrb));
   assign s_clk_write_value = merge_wstrb(
-      s_clk_config_q, ribp.wdata, ribp.wstrb
+      s_clk_config_q, apb4.pwdata, apb4.pstrb
   ) & CLK_WRITABLE_MASK;
-  assign s_cs_setup_write_value = 16'(merge_wstrb({16'd0, s_cs_setup_q}, ribp.wdata, ribp.wstrb));
-  assign s_cs_high_write_value = 16'(merge_wstrb({16'd0, s_cs_high_q}, ribp.wdata, ribp.wstrb));
-  assign s_cs_hold_write_value = 16'(merge_wstrb({16'd0, s_cs_hold_q}, ribp.wdata, ribp.wstrb));
+  assign s_cs_setup_write_value = 16'(merge_wstrb({16'd0, s_cs_setup_q}, apb4.pwdata, apb4.pstrb));
+  assign s_cs_high_write_value = 16'(merge_wstrb({16'd0, s_cs_high_q}, apb4.pwdata, apb4.pstrb));
+  assign s_cs_hold_write_value = 16'(merge_wstrb({16'd0, s_cs_hold_q}, apb4.pwdata, apb4.pstrb));
   assign s_indirect_write_value = merge_wstrb(
-      s_indirect_ctrl_q, ribp.wdata, ribp.wstrb
+      s_indirect_ctrl_q, apb4.pwdata, apb4.pstrb
   ) & INDIRECT_WRITABLE_MASK;
   assign s_indirect_addr_write_value = 23'(merge_wstrb(
-      {9'd0, s_indirect_addr_q}, ribp.wdata, ribp.wstrb
+      {9'd0, s_indirect_addr_q}, apb4.pwdata, apb4.pstrb
   ));
-  assign s_intr_en_write_value = 4'(merge_wstrb({28'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb));
+  assign s_intr_en_write_value = 4'(merge_wstrb({28'd0, s_intr_en_q}, apb4.pwdata, apb4.pstrb));
   assign s_perf_write_value = 2'(merge_wstrb(
-      {30'd0, s_perf_ctrl_q}, ribp.wdata, ribp.wstrb
+      {30'd0, s_perf_ctrl_q}, apb4.pwdata, apb4.pstrb
   ) & PERF_WRITABLE_MASK);
 
-  assign ribp.ready = s_ready_q;
-  assign ribp.resp_err = s_resp_err_q;
-  assign ribp.rdata = s_rdata_q;
+  assign apb4.pready = s_ready_q;
+  assign apb4.pslverr = s_resp_err_q;
+  assign apb4.prdata = s_rdata_q;
 
   always_comb begin
     s_access_err = !s_aligned;
     s_read_data  = '0;
     if (s_aligned) begin
       unique case (s_offset)
-        `RIBP_PSRAM_CTRL: begin
+        `APB4_PSRAM_CTRL: begin
           s_read_data  = s_ctrl_q;
           s_access_err = s_write && s_busy && (s_ctrl_write_value != s_ctrl_q);
         end
-        `RIBP_PSRAM_COMMAND: begin
-          s_access_err = !s_write || !ribp.wstrb[0] ||
-                           ((ribp.wdata[2:0] == 3'd0) ||
-                            (|(ribp.wdata[2:0] & (ribp.wdata[2:0] - 1'b1)))) ||
-                           (ribp.wdata[`PSRAM_COMMAND_RECOVER] &&
-                            !s_chip_en_q[ribp.wdata[9:8]]);
+        `APB4_PSRAM_COMMAND: begin
+          s_access_err = !s_write || !apb4.pstrb[0] ||
+                           ((apb4.pwdata[2:0] == 3'd0) ||
+                            (|(apb4.pwdata[2:0] & (apb4.pwdata[2:0] - 1'b1)))) ||
+                           (apb4.pwdata[`PSRAM_COMMAND_RECOVER] &&
+                            !s_chip_en_q[apb4.pwdata[9:8]]);
         end
-        `RIBP_PSRAM_STATUS: begin
+        `APB4_PSRAM_STATUS: begin
           s_read_data = {
             26'd0, global_ready_i, quiesced_i, phy_busy_i, indirect_busy_i, axi_busy_i, init_busy_i
           };
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP_ENABLE: begin
+        `APB4_PSRAM_CHIP_ENABLE: begin
           s_read_data  = {28'd0, s_chip_en_q};
           s_access_err = s_write && s_busy;
         end
-        `RIBP_PSRAM_CHIP_PRESENT: begin
+        `APB4_PSRAM_CHIP_PRESENT: begin
           s_read_data  = {28'd0, chip_present_i};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP_READY: begin
+        `APB4_PSRAM_CHIP_READY: begin
           s_read_data  = {28'd0, chip_ready_i};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP_MODE: begin
+        `APB4_PSRAM_CHIP_MODE: begin
           s_read_data  = {24'd0, chip_wrap32_i, chip_qpi_i};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP_ERROR:        s_read_data = {28'd0, chip_error_i};
-        `RIBP_PSRAM_CLK_CONFIG: begin
+        `APB4_PSRAM_CHIP_ERROR:        s_read_data = {28'd0, chip_error_i};
+        `APB4_PSRAM_CLK_CONFIG: begin
           s_read_data  = s_clk_config_q;
           s_access_err = s_write && s_busy;
           if (s_write && (s_clk_write_value[15:0] == 16'd0)) begin
             s_access_err = 1'b1;
           end
         end
-        `RIBP_PSRAM_POWERUP_CYCLES: begin
+        `APB4_PSRAM_POWERUP_CYCLES: begin
           s_read_data  = s_powerup_cycles_q;
           s_access_err = s_write && s_busy;
         end
-        `RIBP_PSRAM_CS_SETUP_CYCLES: begin
+        `APB4_PSRAM_CS_SETUP_CYCLES: begin
           s_read_data  = {16'd0, s_cs_setup_q};
           s_access_err = s_write && s_busy;
         end
-        `RIBP_PSRAM_CS_HIGH_CYCLES: begin
+        `APB4_PSRAM_CS_HIGH_CYCLES: begin
           s_read_data  = {16'd0, s_cs_high_q};
           s_access_err = s_write && s_busy;
         end
-        `RIBP_PSRAM_CS_HOLD_CYCLES: begin
+        `APB4_PSRAM_CS_HOLD_CYCLES: begin
           s_read_data  = {16'd0, s_cs_hold_q};
           s_access_err = s_write && s_busy;
         end
-        `RIBP_PSRAM_CS_MAX_LOW_CYCLES: begin
+        `APB4_PSRAM_CS_MAX_LOW_CYCLES: begin
           s_read_data  = s_cs_max_low_q;
-          s_access_err = s_write && (s_busy || (ribp.wdata == 32'd0));
+          s_access_err = s_write && (s_busy || (apb4.pwdata == 32'd0));
         end
-        `RIBP_PSRAM_ACCESS_TIMEOUT_CYCLES: begin
+        `APB4_PSRAM_ACCESS_TIMEOUT_CYCLES: begin
           s_read_data  = s_access_timeout_q;
-          s_access_err = s_write && (s_busy || (ribp.wdata == 32'd0));
+          s_access_err = s_write && (s_busy || (apb4.pwdata == 32'd0));
         end
-        `RIBP_PSRAM_TIMING_STATUS: begin
+        `APB4_PSRAM_TIMING_STATUS: begin
           s_read_data  = {14'd0, s_clk_config_q[16], s_timing_valid, s_clk_config_q[15:0]};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_INDIRECT_CTRL: begin
+        `APB4_PSRAM_INDIRECT_CTRL: begin
           s_read_data = s_indirect_ctrl_q & 32'h7FFF_FFFF;
           if (s_write && s_indirect_write_value[`PSRAM_INDIRECT_START]) begin
             s_access_err =
@@ -262,94 +262,94 @@ module psram_reg (
                 !s_chip_en_q[s_indirect_write_value[9:8]];
           end
         end
-        `RIBP_PSRAM_INDIRECT_ADDR:     s_read_data = {9'd0, s_indirect_addr_q};
-        `RIBP_PSRAM_INDIRECT_WDATA_LO: s_read_data = s_indirect_wdata_q[31:0];
-        `RIBP_PSRAM_INDIRECT_WDATA_HI: s_read_data = s_indirect_wdata_q[63:32];
-        `RIBP_PSRAM_INDIRECT_RDATA_LO: begin
+        `APB4_PSRAM_INDIRECT_ADDR:     s_read_data = {9'd0, s_indirect_addr_q};
+        `APB4_PSRAM_INDIRECT_WDATA_LO: s_read_data = s_indirect_wdata_q[31:0];
+        `APB4_PSRAM_INDIRECT_WDATA_HI: s_read_data = s_indirect_wdata_q[63:32];
+        `APB4_PSRAM_INDIRECT_RDATA_LO: begin
           s_read_data  = indirect_rdata_i[31:0];
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_INDIRECT_RDATA_HI: begin
+        `APB4_PSRAM_INDIRECT_RDATA_HI: begin
           s_read_data  = indirect_rdata_i[63:32];
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_LAST_ERROR: begin
+        `APB4_PSRAM_LAST_ERROR: begin
           s_read_data  = {24'd0, last_error_chip_i, 2'd0, last_error_i};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_LAST_ERROR_ADDR: begin
+        `APB4_PSRAM_LAST_ERROR_ADDR: begin
           s_read_data  = last_error_addr_i;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP0_ID_LO: begin
+        `APB4_PSRAM_CHIP0_ID_LO: begin
           s_read_data  = chip0_id_i[31:0];
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP0_ID_HI: begin
+        `APB4_PSRAM_CHIP0_ID_HI: begin
           s_read_data  = {16'd0, chip0_id_i[47:32]};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP1_ID_LO: begin
+        `APB4_PSRAM_CHIP1_ID_LO: begin
           s_read_data  = chip1_id_i[31:0];
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP1_ID_HI: begin
+        `APB4_PSRAM_CHIP1_ID_HI: begin
           s_read_data  = {16'd0, chip1_id_i[47:32]};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP2_ID_LO: begin
+        `APB4_PSRAM_CHIP2_ID_LO: begin
           s_read_data  = chip2_id_i[31:0];
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP2_ID_HI: begin
+        `APB4_PSRAM_CHIP2_ID_HI: begin
           s_read_data  = {16'd0, chip2_id_i[47:32]};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP3_ID_LO: begin
+        `APB4_PSRAM_CHIP3_ID_LO: begin
           s_read_data  = chip3_id_i[31:0];
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CHIP3_ID_HI: begin
+        `APB4_PSRAM_CHIP3_ID_HI: begin
           s_read_data  = {16'd0, chip3_id_i[47:32]};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_INTR_STATE:        s_read_data = {28'd0, s_intr_state_q};
-        `RIBP_PSRAM_INTR_ENABLE:       s_read_data = {28'd0, s_intr_en_q};
-        `RIBP_PSRAM_INTR_STATUS: begin
+        `APB4_PSRAM_INTR_STATE:        s_read_data = {28'd0, s_intr_state_q};
+        `APB4_PSRAM_INTR_ENABLE:       s_read_data = {28'd0, s_intr_en_q};
+        `APB4_PSRAM_INTR_STATUS: begin
           s_read_data  = {28'd0, s_intr_state_q & s_intr_en_q};
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_INTR_TEST:         s_access_err = !s_write || !ribp.wstrb[0];
-        `RIBP_PSRAM_PERF_CTRL:         s_read_data = {30'd0, s_perf_ctrl_q};
-        `RIBP_PSRAM_PERF_READ_BYTES: begin
+        `APB4_PSRAM_INTR_TEST:         s_access_err = !s_write || !apb4.pstrb[0];
+        `APB4_PSRAM_PERF_CTRL:         s_read_data = {30'd0, s_perf_ctrl_q};
+        `APB4_PSRAM_PERF_READ_BYTES: begin
           s_read_data  = s_perf_read_bytes_q;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_PERF_WRITE_BYTES: begin
+        `APB4_PSRAM_PERF_WRITE_BYTES: begin
           s_read_data  = s_perf_write_bytes_q;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_PERF_COMMANDS: begin
+        `APB4_PSRAM_PERF_COMMANDS: begin
           s_read_data  = s_perf_commands_q;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_PERF_SPLITS: begin
+        `APB4_PSRAM_PERF_SPLITS: begin
           s_read_data  = s_perf_splits_q;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_PERF_STALL_CYCLES: begin
+        `APB4_PSRAM_PERF_STALL_CYCLES: begin
           s_read_data  = s_perf_stall_cycles_q;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_PERF_ERROR_COUNT: begin
+        `APB4_PSRAM_PERF_ERROR_COUNT: begin
           s_read_data  = s_perf_err_count_q;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_IP_VERSION: begin
+        `APB4_PSRAM_IP_VERSION: begin
           s_read_data  = `PSRAM_IP_VERSION_VALUE;
           s_access_err = s_write;
         end
-        `RIBP_PSRAM_CAPABILITY: begin
+        `APB4_PSRAM_CAPABILITY: begin
           s_read_data  = `PSRAM_CAPABILITY_VALUE;
           s_access_err = s_write;
         end
@@ -362,12 +362,12 @@ module psram_reg (
     s_intr_clear = '0;
     s_intr_set   = {timeout_event_i, error_event_i, indirect_done_event_i, init_done_event_i};
     if (s_req && s_write && !s_access_err &&
-        (s_offset == `RIBP_PSRAM_INTR_STATE) && ribp.wstrb[0]) begin
-      s_intr_clear = ribp.wdata[3:0];
+        (s_offset == `APB4_PSRAM_INTR_STATE) && apb4.pstrb[0]) begin
+      s_intr_clear = apb4.pwdata[3:0];
     end
     if (s_req && s_write && !s_access_err &&
-        (s_offset == `RIBP_PSRAM_INTR_TEST) && ribp.wstrb[0]) begin
-      s_intr_set = s_intr_set | ribp.wdata[3:0];
+        (s_offset == `APB4_PSRAM_INTR_TEST) && apb4.pstrb[0]) begin
+      s_intr_set = s_intr_set | apb4.pwdata[3:0];
     end
     s_intr_next = (s_intr_state_q & ~s_intr_clear) | s_intr_set;
   end
@@ -419,40 +419,42 @@ module psram_reg (
 
       if (s_req && s_write && !s_access_err) begin
         unique case (s_offset)
-          `RIBP_PSRAM_CTRL: s_ctrl_q <= s_ctrl_write_value;
-          `RIBP_PSRAM_COMMAND: begin
-            init_start_o    <= ribp.wdata[`PSRAM_COMMAND_INIT];
-            recover_start_o <= ribp.wdata[`PSRAM_COMMAND_RECOVER];
-            abort_o         <= ribp.wdata[`PSRAM_COMMAND_ABORT];
-            recover_chip_o  <= ribp.wdata[9:8];
+          `APB4_PSRAM_CTRL: s_ctrl_q <= s_ctrl_write_value;
+          `APB4_PSRAM_COMMAND: begin
+            init_start_o    <= apb4.pwdata[`PSRAM_COMMAND_INIT];
+            recover_start_o <= apb4.pwdata[`PSRAM_COMMAND_RECOVER];
+            abort_o         <= apb4.pwdata[`PSRAM_COMMAND_ABORT];
+            recover_chip_o  <= apb4.pwdata[9:8];
           end
-          `RIBP_PSRAM_CHIP_ENABLE: s_chip_en_q <= s_chip_en_write_value;
-          `RIBP_PSRAM_CHIP_ERROR: begin
-            if (ribp.wstrb[0]) chip_error_clear_o <= ribp.wdata[3:0];
+          `APB4_PSRAM_CHIP_ENABLE: s_chip_en_q <= s_chip_en_write_value;
+          `APB4_PSRAM_CHIP_ERROR: begin
+            if (apb4.pstrb[0]) chip_error_clear_o <= apb4.pwdata[3:0];
           end
-          `RIBP_PSRAM_CLK_CONFIG: s_clk_config_q <= s_clk_write_value;
-          `RIBP_PSRAM_POWERUP_CYCLES:
-          s_powerup_cycles_q <= merge_wstrb(s_powerup_cycles_q, ribp.wdata, ribp.wstrb);
-          `RIBP_PSRAM_CS_SETUP_CYCLES: s_cs_setup_q <= s_cs_setup_write_value;
-          `RIBP_PSRAM_CS_HIGH_CYCLES: s_cs_high_q <= s_cs_high_write_value;
-          `RIBP_PSRAM_CS_HOLD_CYCLES: s_cs_hold_q <= s_cs_hold_write_value;
-          `RIBP_PSRAM_CS_MAX_LOW_CYCLES:
-          s_cs_max_low_q <= merge_wstrb(s_cs_max_low_q, ribp.wdata, ribp.wstrb);
-          `RIBP_PSRAM_ACCESS_TIMEOUT_CYCLES:
-          s_access_timeout_q <= merge_wstrb(s_access_timeout_q, ribp.wdata, ribp.wstrb);
-          `RIBP_PSRAM_INDIRECT_CTRL: begin
+          `APB4_PSRAM_CLK_CONFIG: s_clk_config_q <= s_clk_write_value;
+          `APB4_PSRAM_POWERUP_CYCLES:
+          s_powerup_cycles_q <= merge_wstrb(s_powerup_cycles_q, apb4.pwdata, apb4.pstrb);
+          `APB4_PSRAM_CS_SETUP_CYCLES: s_cs_setup_q <= s_cs_setup_write_value;
+          `APB4_PSRAM_CS_HIGH_CYCLES: s_cs_high_q <= s_cs_high_write_value;
+          `APB4_PSRAM_CS_HOLD_CYCLES: s_cs_hold_q <= s_cs_hold_write_value;
+          `APB4_PSRAM_CS_MAX_LOW_CYCLES:
+          s_cs_max_low_q <= merge_wstrb(s_cs_max_low_q, apb4.pwdata, apb4.pstrb);
+          `APB4_PSRAM_ACCESS_TIMEOUT_CYCLES:
+          s_access_timeout_q <= merge_wstrb(s_access_timeout_q, apb4.pwdata, apb4.pstrb);
+          `APB4_PSRAM_INDIRECT_CTRL: begin
             s_indirect_ctrl_q <= s_indirect_write_value & 32'h7FFF_FFFF;
             indirect_start_o  <= s_indirect_write_value[`PSRAM_INDIRECT_START];
           end
-          `RIBP_PSRAM_INDIRECT_ADDR: s_indirect_addr_q <= s_indirect_addr_write_value;
-          `RIBP_PSRAM_INDIRECT_WDATA_LO:
-          s_indirect_wdata_q[31:0] <= merge_wstrb(s_indirect_wdata_q[31:0], ribp.wdata, ribp.wstrb);
-          `RIBP_PSRAM_INDIRECT_WDATA_HI:
-          s_indirect_wdata_q[63:32] <= merge_wstrb(
-              s_indirect_wdata_q[63:32], ribp.wdata, ribp.wstrb
+          `APB4_PSRAM_INDIRECT_ADDR: s_indirect_addr_q <= s_indirect_addr_write_value;
+          `APB4_PSRAM_INDIRECT_WDATA_LO:
+          s_indirect_wdata_q[31:0] <= merge_wstrb(
+              s_indirect_wdata_q[31:0], apb4.pwdata, apb4.pstrb
           );
-          `RIBP_PSRAM_INTR_ENABLE: s_intr_en_q <= s_intr_en_write_value;
-          `RIBP_PSRAM_PERF_CTRL: s_perf_ctrl_q <= s_perf_write_value[1:0];
+          `APB4_PSRAM_INDIRECT_WDATA_HI:
+          s_indirect_wdata_q[63:32] <= merge_wstrb(
+              s_indirect_wdata_q[63:32], apb4.pwdata, apb4.pstrb
+          );
+          `APB4_PSRAM_INTR_ENABLE: s_intr_en_q <= s_intr_en_write_value;
+          `APB4_PSRAM_PERF_CTRL: s_perf_ctrl_q <= s_perf_write_value[1:0];
           default: begin
           end
         endcase
@@ -461,8 +463,8 @@ module psram_reg (
       s_intr_state_q <= s_intr_next;
 
       if (s_req && s_write && !s_access_err &&
-          (s_offset == `RIBP_PSRAM_PERF_CTRL) &&
-          ribp.wdata[`PSRAM_PERF_CLEAR]) begin
+          (s_offset == `APB4_PSRAM_PERF_CTRL) &&
+          apb4.pwdata[`PSRAM_PERF_CLEAR]) begin
         s_perf_read_bytes_q   <= '0;
         s_perf_write_bytes_q  <= '0;
         s_perf_commands_q     <= '0;

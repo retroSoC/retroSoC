@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-module ribp_gpio #(
+module apb4_gpio #(
     parameter int          PinNum        = 32,
     parameter logic [31:0] UserBaseAddr  = 32'h1000_0000,
     parameter logic [31:0] AdminBaseAddr = 32'h1001_4000,
@@ -12,7 +12,7 @@ module ribp_gpio #(
     // verilog_format: off -- preserve reviewed column alignment
     input  logic         clk_i,
     input  logic         rst_n_i,
-    ribp_if.slave        ribp,
+    apb4_if.slave        apb4,
     gpio_if.dut          gpio,
     user_gpio_if.padctrl user_gpio
     // verilog_format: on
@@ -49,7 +49,7 @@ module ribp_gpio #(
   ) u_gpio_reg (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
-      .ribp              (ribp),
+      .apb4              (apb4),
       .data_in_i         (s_data_in),
       .intr_event_i      (s_intr_event),
       .data_out_o        (s_data_out),

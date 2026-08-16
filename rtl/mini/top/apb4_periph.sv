@@ -12,7 +12,7 @@
 `include "soc_irq_config.svh"
 `include "rib_defs.svh"
 
-module ip_ribp_wrapper (
+module apb4_periph (
     // verilog_format: off -- preserve reviewed column alignment
     input logic                            clk_i,
     input logic                            rst_n_i,
@@ -36,7 +36,7 @@ module ip_ribp_wrapper (
     axi4_if.master                         dma_axi4,
     sysctrl_if.dut                         sysctrl,
     pll_ctrl_if.sysctrl                    pll_ctrl,
-    ribp_if.master                         sdram_cfg_ribp,
+    apb4_if.master                         sdram_cfg,
     dvp_if.dut                             dvp,
     sdio_if.dut                            sdio,
     opipsram_if.dut                        opipsram,
@@ -45,27 +45,42 @@ module ip_ribp_wrapper (
     input logic [31:0]                     fault_addr_i,
     input logic [3:0]                      fault_wstrb_i,
     input logic                            fault_reserved_i,
-    output logic [`SOC_IRQ_RIBP_WIDTH-1:0] irq_o
+    output logic [`SOC_IRQ_APB4_WIDTH-1:0] irq_o
     // verilog_format: on
 );
 
-  // verilog_format: off -- preserve reviewed column alignment
-  // Generated RIBP target declarations preserve scalar-interface compatibility.
-  `include "ribp_interfaces.svh"
+  // Generated timed and pure scalar APB interfaces preserve FPGA compatibility.
+  `include "apb4_periph_interfaces.svh"
+  `include "apb4_periph_bridges.svh"
 
-  ribp_if ribp ();
-  ribp_if u_xpi_data_ribp_if ();
-  ribp_if u_xpi_target_ribp_if ();
-  ribp_if u_spisd_data_ribp_if ();
-  ribp_if u_spisd_target_ribp_if ();
-  rib_if  u_dma_rib_if ();
-  axi4_stream_if #(.DATA_WIDTH(32), .ID_WIDTH(1), .DEST_WIDTH(1), .USER_WIDTH(1))
-      u_i2s_tx_axis_if (.aclk(clk_i), .aresetn(rst_n_i));
-  axi4_stream_if #(.DATA_WIDTH(32), .ID_WIDTH(1), .DEST_WIDTH(1), .USER_WIDTH(1))
-      u_i2s_rx_axis_if (.aclk(clk_i), .aresetn(rst_n_i));
-  axi4_stream_if #(.DATA_WIDTH(32), .ID_WIDTH(1), .DEST_WIDTH(1), .USER_WIDTH(1))
-      u_dvp_rx_axis_if (.aclk(clk_i), .aresetn(rst_n_i));
-  // verilog_format: on
+rib_if u_dma_rib_if ();
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_i2s_tx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_i2s_rx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_dvp_rx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   clint_if u_clint_if ();
   dma_hw_trg_if u_dma_hw_trg_if ();
@@ -97,41 +112,11 @@ module ip_ribp_wrapper (
   localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
 `endif
 
-  axi42ribp u_axi42ribp (
+  axi42apb_periph u_axi42apb_periph (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .axi4   (cfg_axi4),
-      .ribp   (ribp)
-  );
-
-  axi42ribp_burst u_xpi_axi42ribp (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (xpi_axi4),
-      .ribp   (u_xpi_data_ribp_if)
-  );
-
-  axi42ribp_burst u_spisd_axi42ribp (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (spisd_axi4),
-      .ribp   (u_spisd_data_ribp_if)
-  );
-
-  ribp_arbiter2 u_xpi_ribp_arbiter (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .cfg    (u_xpi_ribp_if),
-      .data   (u_xpi_data_ribp_if),
-      .target (u_xpi_target_ribp_if)
-  );
-
-  ribp_arbiter2 u_spisd_ribp_arbiter (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .cfg    (u_spisd_ribp_if),
-      .data   (u_spisd_data_ribp_if),
-      .target (u_spisd_target_ribp_if)
+      `include "apb4_periph_connections.svh"
   );
 
   rib2axi4 u_dma_rib2axi4 (
@@ -140,9 +125,6 @@ module ip_ribp_wrapper (
       .rib    (u_dma_rib_if),
       .axi4   (dma_axi4)
   );
-
-  // Generated target routing operates on the RIBP configuration boundary
-  // behind the AXI4 adapter. Register targets therefore remain INCR1-only.
 
   assign u_dma_hw_trg_if.i2s_tx_proc  = ~s_dma_i2s_tx_stall;
   assign u_dma_hw_trg_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
@@ -155,168 +137,166 @@ module ip_ribp_wrapper (
   assign u_dma_hw_trg_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
   assign u_dma_hw_trg_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
 
-  // Uses ClusterIP common ribp_if and register.sv dffr through generated bindings.
-  `include "ribp_routes.svh"
+  `include "soc_apb4_irq_bindings.svh"
 
   // verilog_format: off -- preserve reviewed column alignment
-  // Generated IRQ ownership and core-vector bit assignments are topology checked.
-  `include "ribp_irq_bindings.svh"
-
-  ribp_gpio #(
-      .UserBaseAddr (`SOC_ADDR_RIBP_GPIO_BASE),
-      .AdminBaseAddr(`SOC_ADDR_RIBP_GPIO_ADMIN_BASE),
+  apb4_gpio #(
+      .UserBaseAddr (`SOC_ADDR_APB4_GPIO_BASE),
+      .AdminBaseAddr(`SOC_ADDR_APB4_GPIO_ADMIN_BASE),
       .HasInputCmos (GPIO_HAS_INPUT_CMOS),
       .HasPullUp    (GPIO_HAS_PULL_UP),
       .HasPullDown  (GPIO_HAS_PULL_DOWN)
-  ) u_rib_gpio (
+  ) u_apb4_gpio (
       .clk_i     (clk_i),
       .rst_n_i   (rst_n_i),
-      .ribp      (u_gpio_ribp_if),
+      .apb4      (u_gpio_apb_if),
       .gpio      (gpio),
       .user_gpio (user_gpio)
   );
   // verilog_format: on
 
-  ribp_uart u_rib_uart (
+  apb4_uart u_apb4_uart (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .dma_tx_stall_o(s_dma_uart_tx_stall),
       .dma_rx_stall_o(s_dma_uart_rx_stall),
-      .ribp          (u_uart_ribp_if),
+      .apb4          (u_uart_apb_if),
       .uart          (uart)
   );
 
-  ribp_timer u_rib_timer0 (
+  apb4_timer u_apb4_timer0 (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .debug_halted_i(debug_halted_i),
-      .ribp          (u_tim0_ribp_if),
+      .apb4          (u_tim0_apb_if),
       .irq_o         (s_tim0_irq)
   );
 
-  ribp_timer u_rib_timer1 (
+  apb4_timer u_apb4_timer1 (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .debug_halted_i(debug_halted_i),
-      .ribp          (u_tim1_ribp_if),
+      .apb4          (u_tim1_apb_if),
       .irq_o         (s_tim1_irq)
   );
 
-  ribp_psram u_rib_psram (
+  apb4_psram u_apb4_psram (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
-      .cfg_ribp(u_psram_ribp_if),
+      .cfg_apb4(u_psram_apb_if),
       .mem_axi4(psram_axi4),
       .psram   (psram)
   );
 
-  ribp_spisd u_rib_spisd (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .ribp   (u_spisd_target_ribp_if),
-      .spi    (spisd)
+  apb4_spisd u_apb4_spisd (
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .apb4    (u_spisd_apb_if),
+      .mem_axi4(spisd_axi4),
+      .spi     (spisd)
   );
 
-  ribp_i2c u_rib_i2c0 (
+  apb4_i2c u_apb4_i2c0 (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .dma_tx_stall_o(s_dma_i2c0_tx_stall),
       .dma_rx_stall_o(s_dma_i2c0_rx_stall),
-      .ribp          (u_i2c0_ribp_if),
+      .apb4          (u_i2c0_apb_if),
       .i2c           (i2c0)
   );
 
-  ribp_i2s u_rib_i2s (
+  apb4_i2s u_apb4_i2s (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .clk_aud_i     (clk_aud_i),
       .rst_aud_n_i   (rst_aud_n_i),
       .dma_tx_stall_o(s_dma_i2s_tx_stall),
       .dma_rx_stall_o(s_dma_i2s_rx_stall),
-      .ribp          (u_i2s_ribp_if),
+      .apb4          (u_i2s_apb_if),
       .tx_axis       (u_i2s_tx_axis_if),
       .rx_axis       (u_i2s_rx_axis_if),
       .i2s           (i2s)
   );
 
-  ribp_ws2812 u_rib_ws2812 (
+  apb4_ws2812 u_apb4_ws2812 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_ws2812_ribp_if),
+      .apb4   (u_ws2812_apb_if),
       .ws2812 (ws2812)
   );
 
-  ribp_xpi u_rib_xpi (
+  apb4_xpi u_apb4_xpi (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .dma_xfer_done_i(s_dma_xfer_done),
       .dma_tx_stall_o (s_dma_xpi_tx_stall),
       .dma_rx_stall_o (s_dma_xpi_rx_stall),
-      .ribp           (u_xpi_target_ribp_if),
+      .apb4           (u_xpi_apb_if),
+      .mem_axi4       (xpi_axi4),
       .xpi            (xpi)
   );
 
-  ribp_dma u_rib_dma (
+  apb4_dma u_apb4_dma (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .dma_xfer_done_o(s_dma_xfer_done),
       .hw_trg         (u_dma_hw_trg_if),
-      .ribp           (u_dma_ribp_if),
+      .apb4           (u_dma_apb_if),
       .rib            (u_dma_rib_if),
       .i2s_tx_axis    (u_i2s_tx_axis_if),
       .i2s_rx_axis    (u_i2s_rx_axis_if),
       .dvp_rx_axis    (u_dvp_rx_axis_if)
   );
 
-  ribp_sysctrl u_rib_sysctrl (
+  apb4_sysctrl u_apb4_sysctrl (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .fault_valid_i   (fault_valid_i),
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .ribp            (u_sysctrl_ribp_if),
+      .apb4            (u_sysctrl_apb_if),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );
 
-  ribp_clint u_rib_clint (
+  apb4_clint u_apb4_clint (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .timebase_tick_i(timebase_tick_i),
-      .ribp           (u_clint_ribp_if),
+      .apb4           (u_clint_apb_if),
       .clint          (u_clint_if)
   );
 
   axi4s_dvp u_axi4_dvp (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_dvp_ribp_if),
+      .apb4   (u_dvp_apb_if),
       .rx_axis(u_dvp_rx_axis_if),
       .dvp    (dvp),
       .irq_o  (s_dvp_irq)
   );
 
-  ribp_sdio u_rib_sdio (
+  apb4_sdio u_apb4_sdio (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_sdio_ribp_if),
+      .apb4   (u_sdio_apb_if),
       .sdio   (sdio)
   );
 
-  ribp_opipsram u_rib_opipsram (
+  apb4_opipsram u_apb4_opipsram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .ribp   (u_opipsram_ribp_if),
+      .apb4   (u_opipsram_apb_if),
       .psram  (opipsram)
   );
 
-  ribp_i2c u_rib_i2c1 (
+  apb4_i2c u_apb4_i2c1 (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .dma_tx_stall_o(s_dma_i2c1_tx_stall),
       .dma_rx_stall_o(s_dma_i2c1_rx_stall),
-      .ribp          (u_i2c1_ribp_if),
+      .apb4          (u_i2c1_apb_if),
       .i2c           (i2c1)
   );
 

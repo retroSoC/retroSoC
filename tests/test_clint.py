@@ -29,7 +29,7 @@ def test_clint_standard_map_multi_hart_and_timebase(tmp_path: Path) -> None:
                 f"+incdir+{common / 'utils'}",
                 f"+incdir+{common / 'clkrst'}",
                 f"+incdir+{PERIPHERAL}",
-                str(common / "interface/ribp_if.sv"),
+                str(common / "interface/apb4_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "utils/edge_det.sv"),
                 str(common / "cdc/cdc_sync.sv"),
@@ -38,7 +38,7 @@ def test_clint_standard_map_multi_hart_and_timebase(tmp_path: Path) -> None:
                 str(PERIPHERAL / "clint_timebase.sv"),
                 str(PERIPHERAL / "clint_reg.sv"),
                 str(PERIPHERAL / "clint_core.sv"),
-                str(PERIPHERAL / "ribp_clint.sv"),
+                str(PERIPHERAL / "apb4_clint.sv"),
                 str(ROOT / "tests/rtl/clint_tb.sv"),
                 "",
             ]

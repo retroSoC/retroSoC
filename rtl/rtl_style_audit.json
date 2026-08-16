@@ -16,69 +16,89 @@
   "rules": [
     {
       "id": "RTL-FILE",
-      "sections": [2],
+      "sections": [
+        2
+      ],
       "result": "compliant",
       "evidence": "Primary-unit/file-name checks and canonical filelist review."
     },
     {
       "id": "RTL-SV",
-      "sections": [3],
+      "sections": [
+        3
+      ],
       "result": "compliant",
       "evidence": "Restricted-SystemVerilog static checks and Verible lint."
     },
     {
       "id": "RTL-NAME",
-      "sections": [4],
+      "sections": [
+        4
+      ],
       "result": "compliant",
       "evidence": "Full-profile naming enforcement and boundary review."
     },
     {
       "id": "RTL-STRUCT",
-      "sections": [5],
+      "sections": [
+        5
+      ],
       "result": "compliant",
       "evidence": "Named-connection, generate-label, one-primary-unit, and filelist checks."
     },
     {
       "id": "RTL-COMB",
-      "sections": [6],
+      "sections": [
+        6
+      ],
       "result": "reviewed",
       "evidence": "Combinational defaults and protocol-path source review."
     },
     {
       "id": "RTL-SEQ",
-      "sections": [6],
+      "sections": [
+        6
+      ],
       "result": "reviewed",
       "evidence": "Reset, enable, FSM, inferred-memory, and sequential-priority review."
     },
     {
       "id": "RTL-WIDTH",
-      "sections": [7],
+      "sections": [
+        7
+      ],
       "result": "reviewed",
       "evidence": "Verilator lint and width, signedness, and X/Z source review."
     },
     {
       "id": "RTL-CDC",
-      "sections": [8],
+      "sections": [
+        8
+      ],
       "result": "reviewed",
       "evidence": "Clock/reset-domain metadata, CDC primitive review, and targeted tests."
     },
     {
       "id": "RTL-VERIFY",
-      "sections": [9],
+      "sections": [
+        9
+      ],
       "result": "reviewed",
       "evidence": "Formal source-list checks, readiness checks, and directed simulations."
     },
     {
       "id": "RTL-FMT",
-      "sections": [10],
+      "sections": [
+        10
+      ],
       "result": "compliant",
       "evidence": "Verible format, ASCII, whitespace, line-length, and paired-directive checks."
     }
   ],
   "inventory": {
     "rtl/ip/experimental": [
+      "apb4_gpu.sv",
       "axi4f2ribp.sv",
-      "ribp_gpu.sv",
       "wb2ribp.sv"
     ],
     "rtl/ip/interconnect": [
@@ -87,6 +107,8 @@
       "ribp_regslice.sv"
     ],
     "rtl/ip/memory": [
+      "apb4_opipsram.sv",
+      "apb4_psram.sv",
       "axi4_sdram.sv",
       "psram_axi4.sv",
       "psram_core.sv",
@@ -94,8 +116,6 @@
       "psram_phy.sv",
       "psram_pkg.sv",
       "psram_reg.sv",
-      "ribp_opipsram.sv",
-      "ribp_psram.sv",
       "sdram_clkgen.sv",
       "sdram_core.sv",
       "sdram_reg.sv"
@@ -107,6 +127,11 @@
       "dvp_reg.sv"
     ],
     "rtl/ip/peripheral": [
+      "apb4_clint.sv",
+      "apb4_dma.sv",
+      "apb4_gpio.sv",
+      "apb4_sysctrl.sv",
+      "apb4_timer.sv",
       "clint_core.sv",
       "clint_define.svh",
       "clint_if.sv",
@@ -118,11 +143,6 @@
       "gpio_if.sv",
       "gpio_reg.sv",
       "pll_ctrl_if.sv",
-      "ribp_clint.sv",
-      "ribp_dma.sv",
-      "ribp_gpio.sv",
-      "ribp_sysctrl.sv",
-      "ribp_timer.sv",
       "sysctrl_core.sv",
       "sysctrl_define.svh",
       "sysctrl_if.sv",
@@ -133,6 +153,14 @@
       "user_gpio_if.sv"
     ],
     "rtl/ip/serial": [
+      "apb4_i2c.sv",
+      "apb4_i2c_define.svh",
+      "apb4_i2s.sv",
+      "apb4_uart.sv",
+      "apb4_uart_define.svh",
+      "apb4_uart_rx.sv",
+      "apb4_uart_tx.sv",
+      "apb4_ws2812.sv",
       "i2c_core.sv",
       "i2c_filter.sv",
       "i2c_reg.sv",
@@ -142,14 +170,6 @@
       "i2s_recv.sv",
       "i2s_reg.sv",
       "i2s_send.sv",
-      "ribp_i2c.sv",
-      "ribp_i2c_define.svh",
-      "ribp_i2s.sv",
-      "ribp_uart.sv",
-      "ribp_uart_define.svh",
-      "ribp_uart_rx.sv",
-      "ribp_uart_tx.sv",
-      "ribp_ws2812.sv",
       "uart_baudgen.sv",
       "uart_core.sv",
       "uart_flow_ctrl.sv",
@@ -161,9 +181,9 @@
       "ws2812_reg.sv"
     ],
     "rtl/ip/storage": [
-      "ribp_sdio.sv",
-      "ribp_spisd.sv",
-      "ribp_xpi.sv",
+      "apb4_sdio.sv",
+      "apb4_spisd.sv",
+      "apb4_xpi.sv",
       "spisd_cache.sv",
       "spisd_core.sv",
       "spisd_data.sv",
@@ -184,18 +204,20 @@
       "ahbl2axi4.sv",
       "ahbl2ribp.sv",
       "apb4_if_bridge.sv",
+      "apb4_periph.sv",
       "apb4_system.sv",
+      "axi42apb.sv",
+      "axi42apb_periph.sv",
+      "axi42ram.sv",
+      "axi42ribp.sv",
+      "axi42ribp_burst.sv",
       "axi4_bus.sv",
       "axi4_connector.sv",
       "axi4_error_slave.sv",
       "axi4_interconnect.sv",
-      "axi42apb.sv",
-      "axi42ram.sv",
-      "axi42ribp.sv",
-      "axi42ribp_burst.sv",
+      "axi4_word_bridge.sv",
       "core_wrapper.sv",
       "gpio_pad_bridge.sv",
-      "ip_ribp_wrapper.sv",
       "mgmt_core_wrapper.sv",
       "mgmt_debug_reset.sv",
       "mgmt_debug_wrapper.sv",
@@ -230,7 +252,7 @@
     {
       "paths": [
         "rtl/ip/experimental/axi4f2ribp.sv",
-        "rtl/ip/experimental/ribp_gpu.sv",
+        "rtl/ip/experimental/apb4_gpu.sv",
         "rtl/ip/experimental/wb2ribp.sv"
       ],
       "result": "inactive experimental source",
