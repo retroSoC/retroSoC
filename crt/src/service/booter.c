@@ -114,7 +114,8 @@ void rs_app_info(void) {
     printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
     printf("                       1 x I2C0          @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_I2C0_BASE);
-    printf("                       1 x I2S           @%p\n", (void *)&reg_i2s_mode);
+    printf("                       1 x I2S           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_I2S_BASE);
     printf("                       1 x WS2812        @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
     printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);

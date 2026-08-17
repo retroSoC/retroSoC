@@ -20,10 +20,11 @@ IDs, destinations, and user sidebands are currently zero.
 
 ## Configuration and PIO Fallback
 
-I2S register offset `0x20` is `STREAM_CTRL`: bit 0 selects AXI4-Stream as the
+I2S register offset `0x00C` is `STREAM_CTRL`: bit 0 selects AXI4-Stream as the
 TX FIFO producer and bit 1 selects AXI4-Stream as the RX FIFO consumer. A clear
 bit preserves the existing `TXDATA` or `RXDATA` PIO behavior. Software must not
-change a stream-select bit while that direction is active.
+change a stream-select bit while that direction is active. `TXDATA` is `0x01C`
+and `RXDATA` is `0x020`.
 
 DVP register offset `0x0C` is `STREAM_CTRL`: bit 0 selects AXI4-Stream as the
 RX FIFO consumer. When clear, reads of `RXDATA` retain the existing pop

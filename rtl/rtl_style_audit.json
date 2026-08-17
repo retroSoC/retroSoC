@@ -167,6 +167,7 @@
       "i2s_clkgen.sv",
       "i2s_core.sv",
       "i2s_define.svh",
+      "i2s_pkg.sv",
       "i2s_recv.sv",
       "i2s_reg.sv",
       "i2s_send.sv",

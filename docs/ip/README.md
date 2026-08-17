@@ -11,6 +11,7 @@ verification documentation for self-owned retroSoC peripheral IP.
 - [uart.md](uart.md) defines the APB4 UART controller.
 - [i2c.md](i2c.md) defines the dual APB4 I2C controllers.
 - [dvp.md](dvp.md) defines the APB4 DVP capture controller.
+- [i2s.md](i2s.md) defines the APB4 I2S master transceiver.
 - [sdram.md](sdram.md) defines the AXI4 SDRAM data controller and APB4 configuration window.
 
 The corresponding RTL and HAL implementations remain the executable sources

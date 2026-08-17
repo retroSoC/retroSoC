@@ -1,6 +1,6 @@
 APP_SRCS += $(ROOT_PATH)/app/apps/shell/main.c
 APP_SRCS += $(ROOT_PATH)/crt/src/service/shell.c
-APP_SRCS += $(ROOT_PATH)/crt/src/hal/i2s.c
+APP_SRCS += $(ROOT_PATH)/app/apps/shell/i2s_player.c
 APP_SRCS += $(ROOT_PATH)/app/board/src/at24cxx.c
 APP_SRCS += $(ROOT_PATH)/app/board/src/pcf8563b.c
 APP_SRCS += $(ROOT_PATH)/app/board/src/es8388.c

@@ -44,6 +44,8 @@ the root README and subsystem guides.
   control, error, interrupt, DMA, HAL, and verification contracts.
 - [ip/i2c.md](ip/i2c.md) defines the dual I2C command, timing, error,
   recovery, DMA, HAL, and verification contracts.
+- [ip/i2s.md](ip/i2s.md) defines the I2S master register ABI, phase-separated
+  PHY, AXI4-Stream packing, CDC, HAL, and verification contracts.
 - [ip/psram.md](ip/psram.md) defines the four-chip ESP-PSRAM64H AXI/APB4
   controller, register ABI, timing, isolation, recovery, HAL, and verification
   contracts.

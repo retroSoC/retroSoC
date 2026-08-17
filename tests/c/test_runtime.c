@@ -9,6 +9,7 @@
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
+#include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/psram.h>
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
@@ -197,6 +198,32 @@ static int test_timer_helpers(void) {
     return 0;
 }
 
+static int test_i2s_helpers(void) {
+    uint8_t sclk_div;
+    uint8_t lrck_div;
+    uint16_t first;
+    uint16_t second;
+
+    if (rs_i2s_pack_stereo16(0x1111U, 0x2222U) != UINT32_C(0x22221111))
+        return 1;
+    rs_i2s_unpack_stereo16(UINT32_C(0x22221111), &first, &second);
+    if ((first != 0x1111U) || (second != 0x2222U))
+        return 2;
+    if ((rs_i2s_div_from_hz(18432000U, 48000U, 16U, &sclk_div, &lrck_div) != RS_OK) ||
+        (sclk_div != 5U) || (lrck_div != 15U))
+        return 3;
+    if ((rs_i2s_div_from_hz(18432000U, 96000U, 24U, &sclk_div, &lrck_div) != RS_OK) ||
+        (sclk_div != 1U) || (lrck_div != 23U))
+        return 4;
+    if ((rs_i2s_rxdata_address() - rs_i2s_txdata_address()) != (uintptr_t)4U)
+        return 6;
+    if ((rs_i2s_div_from_hz(0U, 48000U, 16U, &sclk_div, &lrck_div) != RS_EINVAL) ||
+        (rs_i2s_div_from_hz(18432000U, 48000U, 20U, &sclk_div, &lrck_div) != RS_EINVAL) ||
+        (rs_i2s_div_from_hz(18432000U, 48000U, 16U, NULL, &lrck_div) != RS_EINVAL))
+        return 5;
+    return 0;
+}
+
 static int test_psram_helpers(void) {
     rs_psram_timing_t timing;
 
@@ -357,8 +384,8 @@ int main(void) {
     const int results[] = {
         test_string_helpers(), test_formatter(),     test_compiler_helpers(), test_wait_helper(),
         test_ws2812_helpers(), test_timer_helpers(), test_psram_helpers(),    test_uart_helpers(),
-        test_i2c_helpers(),    test_gpio_helpers(),  test_ps2_decoders(),     test_wav_parser(),
-        test_video_parser(),
+        test_i2s_helpers(),    test_i2c_helpers(),   test_gpio_helpers(),     test_ps2_decoders(),
+        test_wav_parser(),     test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

@@ -1,121 +1,193 @@
+#include <stddef.h>
+
 #include <retrosoc/core/soc.h>
-#include <retrosoc/lib/console.h>
-#include <retrosoc/lib/printf.h>
-#include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/i2s.h>
-#include <retrosoc/media/wav_audio.h>
-#include <retrosoc/board/es8388.h>
+#include <retrosoc/lib/printf.h>
 
-static const uint32_t audio_addr[] = {0x61004000U, 0x64737000U};
-static const uint32_t audio_len = 2U;
-static uint32_t audio_idx;
+#define RS_I2S_CTRL_OFFSET         UINT32_C(0x000)
+#define RS_I2S_COMMAND_OFFSET      UINT32_C(0x004)
+#define RS_I2S_STATUS_OFFSET       UINT32_C(0x008)
+#define RS_I2S_STREAM_CTRL_OFFSET  UINT32_C(0x00C)
+#define RS_I2S_FORMAT_OFFSET       UINT32_C(0x010)
+#define RS_I2S_CLK_DIV_OFFSET      UINT32_C(0x014)
+#define RS_I2S_FIFO_TH_OFFSET      UINT32_C(0x018)
+#define RS_I2S_INTR_STATE_OFFSET   UINT32_C(0x024)
+#define RS_I2S_INTR_ENABLE_OFFSET  UINT32_C(0x028)
+#define RS_I2S_INTR_STATUS_OFFSET  UINT32_C(0x02C)
+#define RS_I2S_INTR_TEST_OFFSET    UINT32_C(0x030)
+#define RS_I2S_VERSION_OFFSET      UINT32_C(0x0F8)
+#define RS_I2S_CAPABILITY_OFFSET   UINT32_C(0x0FC)
 
-static void i2s_init(uint32_t mode) {
-    reg_i2s_mode = (uint32_t)mode;
-    reg_i2s_stream_ctrl = (mode == 0U) ? 0U : 1U;
-    reg_i2s_upbound = (uint32_t)120;
-    // NOTE: larger than 'clk/clk_aud 'size of i2x tx fifo
-    reg_i2s_lowbound = (uint32_t)80;
+#define RS_I2S_CTRL_ENABLE_MASK    UINT32_C(0x00000001)
+#define RS_I2S_CTRL_TX_ENABLE_MASK UINT32_C(0x00000002)
+#define RS_I2S_CTRL_RX_ENABLE_MASK UINT32_C(0x00000004)
+#define RS_I2S_CTRL_LOOPBACK_MASK  UINT32_C(0x00000008)
+#define RS_I2S_CTRL_CLK_PROG_MASK  UINT32_C(0x00000010)
+#define RS_I2S_COMMAND_TX_FLUSH    UINT32_C(0x00000001)
+#define RS_I2S_COMMAND_RX_FLUSH    UINT32_C(0x00000002)
+#define RS_I2S_STATUS_LEVEL_MASK   UINT32_C(0x000000FF)
+
+static volatile uint32_t *rs_i2s_register(uint32_t offset) {
+    return (volatile uint32_t *)(RS_SOC_APB4_I2S_BASE + (uintptr_t)offset);
 }
 
-static void i2s_audio_load(void) {
-    rs_wav_info_t info;
-    const uint32_t start_address = audio_addr[audio_idx];
-    const uint32_t available_size =
-        (start_address >= TF_CARD_START) && (start_address < (TF_CARD_START + TF_CARD_OFFST))
-            ? TF_CARD_OFFST - (start_address - TF_CARD_START)
-            : 0U;
+static bool rs_i2s_config_valid(const rs_i2s_config_t *config) {
+    if ((config == NULL) || ((uint32_t)config->preset > (uint32_t)RS_I2S_PRESET_24B_96K))
+        return false;
+    if (config->lowbound > config->upbound)
+        return false;
+    return true;
+}
 
-    if ((available_size == 0U) ||
-        (rs_wav_parse_spisd(start_address, available_size, &info) != RS_OK) ||
-        ((info.data_size % sizeof(uint32_t)) != 0U) ||
-        (rs_dma_config(RS_DMA_MODE_I2S_TX, start_address + info.data_offset, 1U,
-                       (uintptr_t)&reg_i2s_txdata, 0U,
-                       info.data_size / sizeof(uint32_t)) != RS_OK)) {
-        printf("wav file parse/configuration error\n");
+rs_status_t rs_i2s_probe(uint32_t *version, uint32_t *capability) {
+    if ((version == NULL) || (capability == NULL))
+        return RS_EINVAL;
+    *version = *rs_i2s_register(RS_I2S_VERSION_OFFSET);
+    *capability = *rs_i2s_register(RS_I2S_CAPABILITY_OFFSET);
+    return (*version == UINT32_C(0x00010000)) ? RS_OK : RS_EIO;
+}
+
+rs_status_t rs_i2s_configure(const rs_i2s_config_t *config) {
+    uint32_t control;
+    uint32_t format;
+    uint32_t clock_div;
+
+    if (!rs_i2s_config_valid(config))
+        return RS_EINVAL;
+    (void)rs_i2s_disable();
+    format = (uint32_t)config->preset;
+    if (config->bitmode_24)
+        format |= UINT32_C(0x00000004);
+    clock_div = (uint32_t)config->sclk_div | ((uint32_t)config->lrck_div << 8) |
+                ((uint32_t)config->mclk_div << 16);
+    control = (config->loopback ? RS_I2S_CTRL_LOOPBACK_MASK : 0U) |
+              (config->clock_prog ? RS_I2S_CTRL_CLK_PROG_MASK : 0U);
+    *rs_i2s_register(RS_I2S_FORMAT_OFFSET) = format;
+    *rs_i2s_register(RS_I2S_CLK_DIV_OFFSET) = clock_div;
+    *rs_i2s_register(RS_I2S_FIFO_TH_OFFSET) =
+        (uint32_t)config->upbound | ((uint32_t)config->lowbound << 8);
+    *rs_i2s_register(RS_I2S_STREAM_CTRL_OFFSET) =
+        (config->stream_tx ? 1U : 0U) | (config->stream_rx ? 2U : 0U);
+    *rs_i2s_register(RS_I2S_INTR_STATE_OFFSET) = RS_I2S_INTERRUPT_ALL;
+    *rs_i2s_register(RS_I2S_CTRL_OFFSET) = control;
+    return RS_OK;
+}
+
+rs_status_t rs_i2s_enable(bool tx, bool rx) {
+    uint32_t control;
+
+    control = *rs_i2s_register(RS_I2S_CTRL_OFFSET);
+    control |= RS_I2S_CTRL_ENABLE_MASK;
+    if (tx)
+        control |= RS_I2S_CTRL_TX_ENABLE_MASK;
+    else
+        control &= ~RS_I2S_CTRL_TX_ENABLE_MASK;
+    if (rx)
+        control |= RS_I2S_CTRL_RX_ENABLE_MASK;
+    else
+        control &= ~RS_I2S_CTRL_RX_ENABLE_MASK;
+    *rs_i2s_register(RS_I2S_CTRL_OFFSET) = control;
+    return RS_OK;
+}
+
+rs_status_t rs_i2s_disable(void) {
+    *rs_i2s_register(RS_I2S_CTRL_OFFSET) &=
+        ~(RS_I2S_CTRL_ENABLE_MASK | RS_I2S_CTRL_TX_ENABLE_MASK | RS_I2S_CTRL_RX_ENABLE_MASK);
+    return RS_OK;
+}
+
+rs_status_t rs_i2s_flush(bool tx, bool rx, rs_timeout_t timeout) {
+    uint32_t command;
+    uint32_t status;
+    uint32_t busy_mask;
+
+    command = (tx ? RS_I2S_COMMAND_TX_FLUSH : 0U) | (rx ? RS_I2S_COMMAND_RX_FLUSH : 0U);
+    busy_mask = (tx ? RS_I2S_STATUS_TX_FLUSH_BUSY : 0U) | (rx ? RS_I2S_STATUS_RX_FLUSH_BUSY : 0U);
+    if (command == 0U)
+        return RS_EINVAL;
+    *rs_i2s_register(RS_I2S_COMMAND_OFFSET) = command;
+    while (timeout-- != 0U) {
+        status = *rs_i2s_register(RS_I2S_STATUS_OFFSET);
+        if ((status & busy_mask) == 0U)
+            return RS_OK;
     }
+    return RS_ETIMEOUT;
 }
 
-static void i2s_audio_panel(void) {
-    printf("============================================================\n");
-    printf("                    retroSoC Audio Player                  \n");
-    printf(" system:   help[h] exit[e] mode[m] next-audio[n]            \n");
-    printf("============================================================\n");
-    printf(" player: play[s] pause[t] reset[r] vol-up[u] vol-down[d]    \n");
-    printf("============================================================\n");
+rs_status_t rs_i2s_write(uint32_t word, rs_timeout_t timeout) {
+    uint32_t status;
+
+    while (timeout-- != 0U) {
+        status = *rs_i2s_register(RS_I2S_STATUS_OFFSET);
+        if ((status & RS_I2S_STATUS_TX_FULL) == 0U) {
+            *(volatile uint32_t *)rs_i2s_txdata_address() = word;
+            return RS_OK;
+        }
+    }
+    return RS_ETIMEOUT;
+}
+
+rs_status_t rs_i2s_read(uint32_t *word, rs_timeout_t timeout) {
+    uint32_t status;
+
+    if (word == NULL)
+        return RS_EINVAL;
+    while (timeout-- != 0U) {
+        status = *rs_i2s_register(RS_I2S_STATUS_OFFSET);
+        if ((status & RS_I2S_STATUS_RX_EMPTY) == 0U) {
+            *word = *(volatile uint32_t *)rs_i2s_rxdata_address();
+            return RS_OK;
+        }
+    }
+    return RS_ETIMEOUT;
+}
+
+rs_status_t rs_i2s_get_status(rs_i2s_status_t *status) {
+    if (status == NULL)
+        return RS_EINVAL;
+    status->status = *rs_i2s_register(RS_I2S_STATUS_OFFSET);
+    status->tx_level = (uint8_t)((status->status >> 8) & RS_I2S_STATUS_LEVEL_MASK);
+    status->rx_level = (uint8_t)((status->status >> 16) & RS_I2S_STATUS_LEVEL_MASK);
+    status->interrupt_state = *rs_i2s_register(RS_I2S_INTR_STATE_OFFSET);
+    status->enable = (status->status & RS_I2S_STATUS_ENABLE) != 0U;
+    status->tx_full = (status->status & RS_I2S_STATUS_TX_FULL) != 0U;
+    status->tx_empty = (status->status & RS_I2S_STATUS_TX_EMPTY) != 0U;
+    status->rx_full = (status->status & RS_I2S_STATUS_RX_FULL) != 0U;
+    status->rx_empty = (status->status & RS_I2S_STATUS_RX_EMPTY) != 0U;
+    return RS_OK;
+}
+
+rs_status_t rs_i2s_interrupt_enable(uint32_t mask) {
+    if ((mask & ~RS_I2S_INTERRUPT_ALL) != 0U)
+        return RS_EINVAL;
+    *rs_i2s_register(RS_I2S_INTR_ENABLE_OFFSET) = mask;
+    return RS_OK;
+}
+
+rs_status_t rs_i2s_interrupt_clear(uint32_t mask) {
+    if ((mask & ~RS_I2S_INTERRUPT_ALL) != 0U)
+        return RS_EINVAL;
+    *rs_i2s_register(RS_I2S_INTR_STATE_OFFSET) = mask;
+    return RS_OK;
+}
+
+rs_status_t rs_i2s_interrupt_test(uint32_t mask) {
+    if ((mask & ~RS_I2S_INTERRUPT_ALL) != 0U)
+        return RS_EINVAL;
+    *rs_i2s_register(RS_I2S_INTR_TEST_OFFSET) = mask;
+    return RS_OK;
 }
 
 void ip_i2s_test(int argc, char **argv) {
+    uint32_t version;
+    uint32_t capability;
+
     (void)argc;
     (void)argv;
-
-    char type_ch;
-    uint32_t mode = 0, pause = 0, xfering = 0;
-
-    es8388_init();
-    printf("[APB IP] i2s test\n");
-    // load first data
-    // i2s_audio_load();
-    i2s_audio_panel();
-    while (true) {
-        type_ch = getchar();
-
-        if (xfering) {
-            if (reg_dma_status == (uint32_t)1) {
-                printf("dma tx done\n");
-                xfering = (uint32_t)0;
-            }
-        }
-
-        if (type_ch == 'e' && !xfering)
-            break;
-        else if (type_ch == 'h' && !xfering)
-            i2s_audio_panel();
-        else if (type_ch == 'n' && !xfering) {
-            if (audio_idx == audio_len - 1)
-                audio_idx = 0;
-            else
-                ++audio_idx;
-
-            i2s_audio_load();
-        } else if (type_ch == 'm' && !xfering) {
-            if (mode) {
-                mode = (uint32_t)0;
-                printf("switch to loopback mode\n");
-            } else {
-                mode = (uint32_t)1;
-                printf("switch to fifo-xfer mode\n");
-            }
-            i2s_init(mode);
-        } else if (type_ch == 's' && !xfering) {
-            // force switching to fifo-xfer mode
-            i2s_init(1);
-            xfering = (uint32_t)1;
-            if (rs_dma_start() == RS_OK) {
-                printf("start xfer\n");
-            } else {
-                xfering = 0U;
-            }
-        } else if (type_ch == 't' && xfering) {
-            if (pause) {
-                pause = (uint32_t)0;
-                (void)rs_dma_stop();
-                i2s_init(1);
-                printf("resume audio play\n");
-            } else {
-                pause = (uint32_t)1;
-                i2s_init(0);
-                (void)rs_dma_stop();
-                printf("fsm: %d\n", reg_dma_fsm);
-                printf("pause audio play\n");
-            }
-        } else if (type_ch == 'r' && xfering) {
-            xfering = (uint32_t)0;
-            i2s_init(0);
-            (void)rs_dma_reset();
-            printf("reset audio play\n");
-        }
+    printf("i2s test\n");
+    if (rs_i2s_probe(&version, &capability) == RS_OK) {
+        printf("i2s v%lx capability %lx\n", (unsigned long)version, (unsigned long)capability);
+    } else {
+        printf("i2s probe failed\n");
     }
-
-    i2s_init(0);
 }

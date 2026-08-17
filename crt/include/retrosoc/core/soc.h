@@ -34,16 +34,6 @@
 #define reg_spisd_rxdata                RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x10))
 #define reg_spisd_status                RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x14))
 #define reg_spisd_sync                  RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x18))
-// i2s
-#define reg_i2s_mode                    RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x00))
-#define reg_i2s_format                  RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x04))
-#define reg_i2s_upbound                 RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x08))
-#define reg_i2s_lowbound                RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x0C))
-#define reg_i2s_recven                  RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x10))
-#define reg_i2s_txdata                  RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x14))
-#define reg_i2s_rxdata                  RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x18))
-#define reg_i2s_status                  RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x1C))
-#define reg_i2s_stream_ctrl             RS_SOC_REG32(RS_SOC_APB4_I2S_BASE, UINT32_C(0x20))
 // xpi
 #define reg_xpi_cfgidx                  RS_SOC_REG32(RS_SOC_APB4_XPI_BASE, UINT32_C(0x00))
 #define reg_xpi_accmd                   RS_SOC_REG32(RS_SOC_APB4_XPI_BASE, UINT32_C(0x04))

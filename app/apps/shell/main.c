@@ -65,7 +65,7 @@ int main(void) {
     (void)rs_shell_register("crc", "crc test", true, rs_crc_shell_test);
     (void)rs_shell_register("ps2", "ps2 test", false, rs_ps2_shell_test);
     (void)rs_shell_register("lcd", "lcd test", true, ip_lcd_test);
-    (void)rs_shell_register("i2s", "i2s test", false, ip_i2s_test);
+    (void)rs_shell_register("i2s", "i2s test", false, ip_i2s_player);
     (void)rs_shell_register("nor", "nor flash test", false, ip_norflash_test);
     (void)rs_shell_register("pcf", "pcf8563b test", true, pcf8563b_test);
 #ifdef CSR_ENABLE

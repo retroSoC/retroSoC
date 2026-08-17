@@ -18,6 +18,7 @@
 /ip/serial/i2c_core.sv
 /ip/serial/i2c_reg.sv
 /ip/serial/apb4_i2c.sv
+/ip/serial/i2s_pkg.sv
 /ip/serial/i2s_reg.sv
 /ip/serial/i2s_clkgen.sv
 /ip/serial/i2s_recv.sv

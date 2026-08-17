@@ -12,7 +12,7 @@ FORMAL_PSRAM_DEPTH        ?= 32
 FORMAL_TIMEOUT            ?= 60
 FORMAL_WS2812_TIMEOUT     ?= 120
 FORMAL_I2C_TIMEOUT        ?= 300
-FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp psram
+FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp i2s psram
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR   := $(RTL_PATH)/formal/formal_results.py
@@ -40,6 +40,8 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/clint_formal_props.sv \
                              $(RTL_PATH)/formal/dvp_formal.sv \
                              $(RTL_PATH)/formal/dvp_formal_props.sv \
+                             $(RTL_PATH)/formal/i2s_formal.sv \
+                             $(RTL_PATH)/formal/i2s_formal_props.sv \
                              $(RTL_PATH)/formal/psram_formal.sv \
                              $(RTL_PATH)/formal/psram_formal_props.sv \
                              $(RTL_PATH)/top/rib_bus.sv \
@@ -77,6 +79,9 @@ FORMAL_SOURCE_FILES       := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/serial/i2c_core.sv \
                              $(ROOT_PATH)/rtl/ip/serial/i2c_reg.sv \
                              $(ROOT_PATH)/rtl/ip/serial/apb4_i2c.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/i2s_define.svh \
+                             $(ROOT_PATH)/rtl/ip/serial/i2s_pkg.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/i2s_reg.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/i2c/rtl/i2c_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_core.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_define.svh \
@@ -202,6 +207,8 @@ formal-clint: $(FORMAL_DIR)/clint/.stamp | manifest
 
 formal-dvp: $(FORMAL_DIR)/dvp/.stamp | manifest
 
+formal-i2s: $(FORMAL_DIR)/i2s/.stamp | manifest
+
 formal-psram: $(FORMAL_DIR)/psram/.stamp | manifest
 
 formal-doctor:
@@ -210,4 +217,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-dvp formal-psram formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-dvp formal-i2s formal-psram formal-doctor formal-clean

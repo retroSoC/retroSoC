@@ -1,6 +1,7 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/dma.h>
+#include <retrosoc/hal/i2s.h>
 #include <retrosoc/lib/printf.h>
 
 rs_status_t rs_dma_config(uint32_t mode, uintptr_t source, uint32_t source_increment,
@@ -69,31 +70,43 @@ rs_status_t rs_dma_get_error(rs_dma_error_t *error) {
 }
 
 void ip_dma_test(void) {
-    printf("dma test\n");
-    reg_i2s_mode = 1U;
-    reg_i2s_upbound = 120U;
-    reg_i2s_lowbound = 32U;
-    reg_i2s_recven = 0U;
-    reg_i2s_stream_ctrl = 1U;
+    rs_i2s_config_t i2s_config = {
+        .loopback = false,
+        .stream_tx = true,
+        .stream_rx = false,
+        .clock_prog = false,
+        .preset = RS_I2S_PRESET_16B_48K,
+        .bitmode_24 = false,
+        .sclk_div = 0U,
+        .lrck_div = 0U,
+        .mclk_div = 0U,
+        .upbound = 120U,
+        .lowbound = 32U,
+    };
 
-    if ((rs_dma_config(RS_DMA_MODE_I2S_TX, 0x40000000U, 1U, (uintptr_t)&reg_i2s_txdata, 0U, 512U) !=
+    printf("dma test\n");
+    if ((rs_i2s_configure(&i2s_config) != RS_OK) || (rs_i2s_enable(true, false) != RS_OK)) {
+        printf("dma i2s configure failed\n");
+        return;
+    }
+
+    if ((rs_dma_config(RS_DMA_MODE_I2S_TX, 0x40000000U, 1U, rs_i2s_txdata_address(), 0U, 512U) !=
          RS_OK) ||
         (rs_dma_start() != RS_OK) || (rs_dma_wait(RS_TIMEOUT_DEFAULT) != RS_OK)) {
         printf("dma transmit failed\n");
         return;
     }
 
-    reg_i2s_recven = 1U;
-    reg_i2s_stream_ctrl = 2U;
-    if ((rs_dma_config(RS_DMA_MODE_I2S_RX, (uintptr_t)&reg_i2s_rxdata, 0U, 0x41000000U, 1U, 180U) !=
+    i2s_config.stream_tx = false;
+    i2s_config.stream_rx = true;
+    if ((rs_i2s_configure(&i2s_config) != RS_OK) || (rs_i2s_enable(false, true) != RS_OK) ||
+        (rs_dma_config(RS_DMA_MODE_I2S_RX, rs_i2s_rxdata_address(), 0U, 0x41000000U, 1U, 180U) !=
          RS_OK) ||
         (rs_dma_start() != RS_OK) || (rs_dma_wait(RS_TIMEOUT_DEFAULT) != RS_OK)) {
         printf("dma receive failed\n");
-        reg_i2s_recven = 0U;
-        reg_i2s_stream_ctrl = 0U;
+        (void)rs_i2s_disable();
         return;
     }
-    reg_i2s_recven = 0U;
-    reg_i2s_stream_ctrl = 0U;
+    (void)rs_i2s_disable();
     printf("dma test passed\n");
 }

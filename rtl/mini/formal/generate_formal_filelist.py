@@ -175,6 +175,15 @@ def source_files(target: str) -> list[Path]:
             ROOT / "rtl/ip/multimedia/dvp_reg.sv",
             SCRIPT_DIR / "dvp_formal.sv",
         ]
+    if target == "i2s":
+        return [
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            SERIAL / "i2s_define.svh",
+            SERIAL / "i2s_pkg.sv",
+            SERIAL / "i2s_reg.sv",
+            SCRIPT_DIR / "i2s_formal.sv",
+        ]
     if target == "psram":
         return [
             COMMON_RTL / "interface/axi4_if.sv",
@@ -231,6 +240,7 @@ def parse_args() -> argparse.Namespace:
             "timer",
             "clint",
             "dvp",
+            "i2s",
             "psram",
         ),
         required=True,
