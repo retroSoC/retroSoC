@@ -71,49 +71,49 @@ module retrosoc (
   ps2_if      u_ps2_if      ();
   // verilog_format: on
 
-  logic                             s_mgmt_debug_halted;
-  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
-  logic [  `SOC_IRQ_APB4_WIDTH-1:0] s_apb4_irq;
-  logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
-  logic                             s_bus_fault_valid;
-  logic [                     31:0] s_bus_fault_addr;
-  logic [                      3:0] s_bus_fault_wstrb;
-  logic                             s_bus_fault_reserved;
-  logic                             s_bus_fault_access;
-  logic [                      1:0] s_bus_fault_master;
-  logic [                      2:0] s_bus_fault_code;
-  logic                             s_perf_en;
-  logic                             s_perf_clear;
-  logic [                     63:0] s_perf_mgmt_wait;
-  logic [                     63:0] s_perf_user_wait;
-  logic [                     63:0] s_perf_dma_wait;
-  logic [                     63:0] s_perf_apb4_wait;
-  logic [                     63:0] s_perf_apb_wait;
-  logic [                     63:0] s_perf_sdram_wait;
-  logic [                     63:0] s_perf_psram_wait;
-  logic [                     63:0] s_perf_flash_wait;
-  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
-  logic                             s_rtc_wake;
+  logic                                  s_mgmt_debug_halted;
+  logic [     `SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
+  logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] s_apb4_periph_irq;
+  logic [`SOC_IRQ_APB4_SYSTEM_WIDTH-1:0] s_apb4_system_irq;
+  logic                                  s_bus_fault_valid;
+  logic [                          31:0] s_bus_fault_addr;
+  logic [                           3:0] s_bus_fault_wstrb;
+  logic                                  s_bus_fault_reserved;
+  logic                                  s_bus_fault_access;
+  logic [                           1:0] s_bus_fault_master;
+  logic [                           2:0] s_bus_fault_code;
+  logic                                  s_perf_en;
+  logic                                  s_perf_clear;
+  logic [                          63:0] s_perf_mgmt_wait;
+  logic [                          63:0] s_perf_user_wait;
+  logic [                          63:0] s_perf_dma_wait;
+  logic [                          63:0] s_perf_apb4_periph_wait;
+  logic [                          63:0] s_perf_apb4_system_wait;
+  logic [                          63:0] s_perf_sdram_wait;
+  logic [                          63:0] s_perf_psram_wait;
+  logic [                          63:0] s_perf_flash_wait;
+  logic [     `SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
+  logic                                  s_rtc_wake;
 
-  assign u_sysctrl_if.fault_access_i    = s_bus_fault_access;
-  assign u_sysctrl_if.fault_master_i    = s_bus_fault_master;
-  assign u_sysctrl_if.fault_code_i      = s_bus_fault_code;
-  assign s_perf_en                      = u_sysctrl_if.perf_enable_o;
-  assign s_perf_clear                   = u_sysctrl_if.perf_clear_o;
-  assign test_done_o                    = u_sysctrl_if.test_done_o;
-  assign test_pass_o                    = u_sysctrl_if.test_pass_o;
-  assign test_code_o                    = u_sysctrl_if.test_code_o;
-  assign u_sysctrl_if.perf_mgmt_wait_i  = s_perf_mgmt_wait;
-  assign u_sysctrl_if.perf_user_wait_i  = s_perf_user_wait;
-  assign u_sysctrl_if.perf_dma_wait_i   = s_perf_dma_wait;
-  assign u_sysctrl_if.perf_apb4_wait_i  = s_perf_apb4_wait;
-  assign u_sysctrl_if.perf_apb_wait_i   = s_perf_apb_wait;
-  assign u_sysctrl_if.perf_sdram_wait_i = s_perf_sdram_wait;
-  assign u_sysctrl_if.perf_psram_wait_i = s_perf_psram_wait;
-  assign u_sysctrl_if.perf_flash_wait_i = s_perf_flash_wait;
-  assign u_sysctrl_if.rtc_wake_i        = s_rtc_wake;
-  assign u_uart0_if.rx_i                = uart_rx_i;
-  assign uart_tx_o                      = u_uart0_if.tx_o;
+  assign u_sysctrl_if.fault_access_i          = s_bus_fault_access;
+  assign u_sysctrl_if.fault_master_i          = s_bus_fault_master;
+  assign u_sysctrl_if.fault_code_i            = s_bus_fault_code;
+  assign s_perf_en                            = u_sysctrl_if.perf_enable_o;
+  assign s_perf_clear                         = u_sysctrl_if.perf_clear_o;
+  assign test_done_o                          = u_sysctrl_if.test_done_o;
+  assign test_pass_o                          = u_sysctrl_if.test_pass_o;
+  assign test_code_o                          = u_sysctrl_if.test_code_o;
+  assign u_sysctrl_if.perf_mgmt_wait_i        = s_perf_mgmt_wait;
+  assign u_sysctrl_if.perf_user_wait_i        = s_perf_user_wait;
+  assign u_sysctrl_if.perf_dma_wait_i         = s_perf_dma_wait;
+  assign u_sysctrl_if.perf_apb4_periph_wait_i = s_perf_apb4_periph_wait;
+  assign u_sysctrl_if.perf_apb4_system_wait_i = s_perf_apb4_system_wait;
+  assign u_sysctrl_if.perf_sdram_wait_i       = s_perf_sdram_wait;
+  assign u_sysctrl_if.perf_psram_wait_i       = s_perf_psram_wait;
+  assign u_sysctrl_if.perf_flash_wait_i       = s_perf_flash_wait;
+  assign u_sysctrl_if.rtc_wake_i              = s_rtc_wake;
+  assign u_uart0_if.rx_i                      = uart_rx_i;
+  assign uart_tx_o                            = u_uart0_if.tx_o;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
@@ -150,35 +150,35 @@ core_wrapper u_core_wrapper (
   );
 
   axi4_bus u_bus (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
+      .clk_i                  (clk_i),
+      .rst_n_i                (rst_n_i),
 `ifdef HAVE_SRAM_IF
-      .ram              (ram),
+      .ram                    (ram),
 `endif
-      .user_bus_enable_i(u_sysctrl_if.user_bus_enable_o),
-      .user_bus_idle_o  (u_sysctrl_if.user_bus_idle_i),
+      .user_bus_enable_i      (u_sysctrl_if.user_bus_enable_o),
+      .user_bus_idle_o        (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
-      .sdram_axi4       (u_sdram_axi4_if),
-      .psram_axi4       (u_psram_axi4_if),
-      .xpi_axi4         (u_xpi_axi4_if),
-      .spisd_axi4       (u_spisd_axi4_if),
-      .perf_enable_i    (s_perf_en),
-      .perf_clear_i     (s_perf_clear),
-      .fault_valid_o    (s_bus_fault_valid),
-      .fault_addr_o     (s_bus_fault_addr),
-      .fault_wstrb_o    (s_bus_fault_wstrb),
-      .fault_reserved_o (s_bus_fault_reserved),
-      .fault_access_o   (s_bus_fault_access),
-      .fault_master_o   (s_bus_fault_master),
-      .fault_code_o     (s_bus_fault_code),
-      .perf_mgmt_wait_o (s_perf_mgmt_wait),
-      .perf_user_wait_o (s_perf_user_wait),
-      .perf_dma_wait_o  (s_perf_dma_wait),
-      .perf_apb4_wait_o (s_perf_apb4_wait),
-      .perf_apb_wait_o  (s_perf_apb_wait),
-      .perf_sdram_wait_o(s_perf_sdram_wait),
-      .perf_psram_wait_o(s_perf_psram_wait),
-      .perf_flash_wait_o(s_perf_flash_wait)
+      .sdram_axi4             (u_sdram_axi4_if),
+      .psram_axi4             (u_psram_axi4_if),
+      .xpi_axi4               (u_xpi_axi4_if),
+      .spisd_axi4             (u_spisd_axi4_if),
+      .perf_enable_i          (s_perf_en),
+      .perf_clear_i           (s_perf_clear),
+      .fault_valid_o          (s_bus_fault_valid),
+      .fault_addr_o           (s_bus_fault_addr),
+      .fault_wstrb_o          (s_bus_fault_wstrb),
+      .fault_reserved_o       (s_bus_fault_reserved),
+      .fault_access_o         (s_bus_fault_access),
+      .fault_master_o         (s_bus_fault_master),
+      .fault_code_o           (s_bus_fault_code),
+      .perf_mgmt_wait_o       (s_perf_mgmt_wait),
+      .perf_user_wait_o       (s_perf_user_wait),
+      .perf_dma_wait_o        (s_perf_dma_wait),
+      .perf_apb4_periph_wait_o(s_perf_apb4_periph_wait),
+      .perf_apb4_system_wait_o(s_perf_apb4_system_wait),
+      .perf_sdram_wait_o      (s_perf_sdram_wait),
+      .perf_psram_wait_o      (s_perf_psram_wait),
+      .perf_flash_wait_o      (s_perf_flash_wait)
   );
 
   apb4_periph u_apb4_periph (
@@ -212,7 +212,7 @@ core_wrapper u_core_wrapper (
       .fault_addr_i    (s_bus_fault_addr),
       .fault_wstrb_i   (s_bus_fault_wstrb),
       .fault_reserved_i(s_bus_fault_reserved),
-      .irq_o           (s_apb4_irq)
+      .irq_o           (s_apb4_periph_irq)
   );
 
   axi4_sdram u_axi4_sdram (
@@ -229,14 +229,14 @@ core_wrapper u_core_wrapper (
       .clk_aud_i      (clk_aud_i),
       .rst_aud_n_i    (rst_aud_n_i),
       .debug_halted_i (s_mgmt_debug_halted),
-      `include "soc_apb4_system_fabric.svh"
+      `include "apb4_system_fabric.svh"
       .pwm            (u_pwm_if),
       .ps2            (u_ps2_if),
       .ip_sel_i       (u_sysctrl_if.ip_sel_o),
       .user_gpio      (u_user_gpio_if),
       .rtc_wake_o     (s_rtc_wake),
       .wdg_reset_req_o(wdg_reset_req_o),
-      .irq_o          (s_apb_irq)
+      .irq_o          (s_apb4_system_irq)
   );
 
 endmodule

@@ -1,7 +1,7 @@
 # PS/2 SoC Integration
 
 The Mini SoC integrates the managed PS/2 host controller at
-`RS_SOC_APB_PS2_BASE`. The standalone IP owns the transport RTL, register ABI,
+`RS_SOC_APB4_PS2_BASE`. The standalone IP owns the transport RTL, register ABI,
 device model, freestanding controller/keyboard/mouse software, formal proof,
 and release documentation under `rtl/managed/clusterip/ps2`.
 

@@ -20,7 +20,7 @@ REQUIRED_FIELDS = {
     "checksum",
     "cycles",
     "mgmt_wait",
-    "apb4_wait",
+    "apb4_periph_wait",
     "sdram_wait",
     "psram_wait",
     "flash_wait",

@@ -27,7 +27,7 @@ static rs_status_t rs_archinfo_status(archinfo_status_t status) {
 }
 
 rs_status_t rs_archinfo_read(rs_archinfo_t *info) {
-    return rs_archinfo_status(archinfo_read((uintptr_t)RS_SOC_APB_ARCHINFO_BASE, info));
+    return rs_archinfo_status(archinfo_read((uintptr_t)RS_SOC_APB4_ARCHINFO_BASE, info));
 }
 
 rs_status_t rs_archinfo_validate_build(const rs_archinfo_t *info) {
@@ -44,7 +44,7 @@ rs_status_t rs_archinfo_validate_build(const rs_archinfo_t *info) {
 
 rs_status_t rs_archinfo_read_device_id(uint32_t device_id[4]) {
     return rs_archinfo_status(
-        archinfo_read_device_id((uintptr_t)RS_SOC_APB_ARCHINFO_BASE, device_id));
+        archinfo_read_device_id((uintptr_t)RS_SOC_APB4_ARCHINFO_BASE, device_id));
 }
 
 void ip_archinfo_test(int argc, char **argv) {

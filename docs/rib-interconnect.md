@@ -15,8 +15,10 @@ each boundary.
 
 ## APB4 and RIBP
 
-Self-owned configuration targets now sit on APB4. `apb4_periph` decodes the
-former `0x1000_0000` island through `axi42apb_periph`. RIBP remains only as the
+Self-owned configuration targets sit on the `apb4_periph` island at
+`0x1000_0000` and are decoded by `axi42apb4_periph`. Cluster and platform
+targets sit on the `apb4_system` island at `0x2000_0000` and are decoded by
+`axi42apb4_system`. Both islands use `apb4_if`. RIBP remains only as the
 MPW user-core compatibility contract.
 A master presents
 `valid`, `addr`, `wdata`, and `wstrb`; a slave completes the request with

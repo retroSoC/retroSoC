@@ -60,16 +60,16 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     interfaces = (tmp_path / "rtl/apb4_periph_interfaces.svh").read_text(encoding="utf-8")
     routes = (tmp_path / "rtl/apb4_periph_select_routes.svh").read_text(encoding="utf-8")
     gpio = (tmp_path / "rtl/soc_gpio_alt_bindings.svh").read_text(encoding="utf-8")
-    apb_interfaces = (tmp_path / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
-    apb_declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
-    apb_routes = (tmp_path / "rtl/soc_apb_request_routes.svh").read_text(encoding="utf-8")
-    apb_response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
+    apb_interfaces = (tmp_path / "rtl/apb4_system_interfaces.svh").read_text(encoding="utf-8")
+    apb_declarations = (tmp_path / "rtl/apb4_system_declarations.svh").read_text(encoding="utf-8")
+    apb_routes = (tmp_path / "rtl/apb4_system_request_routes.svh").read_text(encoding="utf-8")
+    apb_response = (tmp_path / "rtl/apb4_system_response_mux.svh").read_text(encoding="utf-8")
     fabric = (tmp_path / "rtl/soc_fabric_interfaces.svh").read_text(encoding="utf-8")
     bus_fabric = (tmp_path / "rtl/soc_bus_fabric.svh").read_text(encoding="utf-8")
-    apb_system_fabric = (tmp_path / "rtl/soc_apb4_system_fabric.svh").read_text(encoding="utf-8")
+    apb_system_fabric = (tmp_path / "rtl/apb4_system_fabric.svh").read_text(encoding="utf-8")
     irq_config = (tmp_path / "rtl/soc_irq_config.svh").read_text(encoding="utf-8")
-    rib_irq = (tmp_path / "rtl/soc_apb4_irq_bindings.svh").read_text(encoding="utf-8")
-    apb_irq = (tmp_path / "rtl/soc_apb_irq_bindings.svh").read_text(encoding="utf-8")
+    rib_irq = (tmp_path / "rtl/apb4_periph_irq_bindings.svh").read_text(encoding="utf-8")
+    apb_irq = (tmp_path / "rtl/apb4_system_irq_bindings.svh").read_text(encoding="utf-8")
     irq_wiring = (tmp_path / "rtl/soc_irq_wiring.svh").read_text(encoding="utf-8")
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
@@ -102,7 +102,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign u_gpio_if.alt1_do_i[22] = u_psram_if.nss_o[0];" in gpio
     assert "s_tmr_capch" not in gpio
     assert apb_interfaces.count("apb4_if u_") == 8
-    assert "apb4_pure_if u_archinfo_apb_pure_if ();" in apb_interfaces
+    assert "apb4_pure_if u_archinfo_apb4_pure_if ();" in apb_interfaces
     assert "assign user_ip.paddr = s_addr_q;" in apb_routes
     assert "({32{s_psel_q[7]}} & user_ip.prdata)" in apb_response
     assert "localparam int NSLV = 8;" in apb_declarations
@@ -111,12 +111,12 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".user_axi4(u_user_axi4_if)" in bus_fabric
     assert ".dma_axi4(u_dma_axi4_if)" in bus_fabric
     assert ".cfg_axi4(u_cfg_axi4_if)" in bus_fabric
-    assert ".apb_axi4(u_apb_axi4_if)" in bus_fabric
-    assert ".axi4(u_apb_axi4_if)" in apb_system_fabric
+    assert ".system_axi4(u_system_axi4_if)" in bus_fabric
+    assert ".axi4(u_system_axi4_if)" in apb_system_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_USER_IRQ_MASK 32'h000EFBFC" in irq_config
-    assert "`define SOC_IRQ_APB4_WIDTH 14" in irq_config
-    assert "`define SOC_IRQ_APB_WIDTH 5" in irq_config
+    assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 14" in irq_config
+    assert "`define SOC_IRQ_APB4_SYSTEM_WIDTH 5" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
     assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
@@ -125,10 +125,10 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign irq_o[0] = pwm.irq_o;" in apb_irq
     assert "assign irq_o[4] = s_rng_irq;" in apb_irq
     assert "s_irq[10]" not in irq_wiring
-    assert "s_irq[15] = s_apb4_irq[13];" in irq_wiring
-    assert "s_irq[16] = s_apb_irq[4];" in irq_wiring
+    assert "s_irq[15] = s_apb4_periph_irq[13];" in irq_wiring
+    assert "s_irq[16] = s_apb4_system_irq[4];" in irq_wiring
     assert "irq_i[10] == 1'b0" in irq_sva
-    assert "irq_i[15] == apb4_irq_i[13]" in irq_sva
+    assert "irq_i[15] == apb4_periph_irq_i[13]" in irq_sva
     assert "irq_i[31] == 1'b0" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert filelist.startswith("+incdir+")
@@ -148,40 +148,40 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         for interrupt in document["interrupts"]
     ]
     assert mappings == [
-        ("clint_software", "apb4", 0, 0, "u_clint_if.software_irq_o[0]"),
-        ("clint_timer", "apb4", 1, 1, "u_clint_if.timer_irq_o[0]"),
-        ("uart0", "apb4", 2, 2, "uart.irq_o"),
-        ("timer0", "apb4", 3, 3, "s_tim0_irq"),
-        ("timer1", "apb4", 4, 4, "s_tim1_irq"),
-        ("psram", "apb4", 5, 5, "psram.irq_o"),
-        ("spisd", "apb4", 6, 6, "spisd.irq_o"),
-        ("i2c0", "apb4", 7, 7, "i2c0.irq_o"),
-        ("i2s", "apb4", 8, 8, "i2s.irq_o"),
-        ("xpi", "apb4", 9, 9, "xpi.irq_o"),
-        ("pwm", "apb", 0, 11, "pwm.irq_o"),
-        ("ps2", "apb", 1, 12, "ps2.irq_o"),
-        ("rtc", "apb", 2, 13, "u_rtc_if.irq_o"),
-        ("watchdog_early_warning", "apb", 3, 14, "u_wdg_if.irq_o"),
-        ("rng", "apb", 4, 16, "s_rng_irq"),
-        ("ws2812", "apb4", 10, 17, "ws2812.irq_o"),
-        ("gpio", "apb4", 11, 18, "gpio.irq_o"),
-        ("i2c1", "apb4", 12, 19, "i2c1.irq_o"),
-        ("dvp", "apb4", 13, 15, "s_dvp_irq"),
+        ("clint_software", "apb4_periph", 0, 0, "u_clint_if.software_irq_o[0]"),
+        ("clint_timer", "apb4_periph", 1, 1, "u_clint_if.timer_irq_o[0]"),
+        ("uart0", "apb4_periph", 2, 2, "uart.irq_o"),
+        ("timer0", "apb4_periph", 3, 3, "s_tim0_irq"),
+        ("timer1", "apb4_periph", 4, 4, "s_tim1_irq"),
+        ("psram", "apb4_periph", 5, 5, "psram.irq_o"),
+        ("spisd", "apb4_periph", 6, 6, "spisd.irq_o"),
+        ("i2c0", "apb4_periph", 7, 7, "i2c0.irq_o"),
+        ("i2s", "apb4_periph", 8, 8, "i2s.irq_o"),
+        ("xpi", "apb4_periph", 9, 9, "xpi.irq_o"),
+        ("pwm", "apb4_system", 0, 11, "pwm.irq_o"),
+        ("ps2", "apb4_system", 1, 12, "ps2.irq_o"),
+        ("rtc", "apb4_system", 2, 13, "u_rtc_if.irq_o"),
+        ("watchdog_early_warning", "apb4_system", 3, 14, "u_wdg_if.irq_o"),
+        ("rng", "apb4_system", 4, 16, "s_rng_irq"),
+        ("ws2812", "apb4_periph", 10, 17, "ws2812.irq_o"),
+        ("gpio", "apb4_periph", 11, 18, "gpio.irq_o"),
+        ("i2c1", "apb4_periph", 12, 19, "i2c1.irq_o"),
+        ("dvp", "apb4_periph", 13, 15, "s_dvp_irq"),
     ]
 
 
 def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     generate(tmp_path)
 
-    interfaces = (tmp_path / "rtl/soc_apb_interfaces.svh").read_text(encoding="utf-8")
-    declarations = (tmp_path / "rtl/soc_apb_declarations.svh").read_text(encoding="utf-8")
-    response = (tmp_path / "rtl/soc_apb_response_mux.svh").read_text(encoding="utf-8")
+    interfaces = (tmp_path / "rtl/apb4_system_interfaces.svh").read_text(encoding="utf-8")
+    declarations = (tmp_path / "rtl/apb4_system_declarations.svh").read_text(encoding="utf-8")
+    response = (tmp_path / "rtl/apb4_system_response_mux.svh").read_text(encoding="utf-8")
     formal_design = (ROOT / "rtl/mini/formal/rib2apb_formal.sv").read_text(encoding="utf-8")
     formal_properties = (ROOT / "rtl/mini/formal/rib2apb_formal_props.sv").read_text(
         encoding="utf-8"
     )
 
-    assert "apb4_if u_user_ip_apb_if (clk_i, rst_n_i);" in interfaces
+    assert "apb4_if u_user_ip_apb4_if (clk_i, rst_n_i);" in interfaces
     assert "localparam int NSLV = 8;" in declarations
     assert "s_psel_q[7]" in response
     assert "apb4_pure_if user_ip ();" in formal_design
@@ -192,27 +192,27 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
 
 def test_topology_rejects_unknown_or_non_rib_regions(tmp_path: Path) -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb4_targets"][0]["regions"] = ["UNKNOWN"]
+    document["apb4_periph_targets"][0]["regions"] = ["UNKNOWN"]
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "unknown region" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb4_targets"][0]["regions"] = ["SRAM"]
+    document["apb4_periph_targets"][0]["regions"] = ["SRAM"]
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
-    assert "not an active APB4 region" in result.stderr
+    assert "not an active apb4_periph region" in result.stderr
 
 
 def test_topology_rejects_duplicate_region_and_disabled_owner(tmp_path: Path) -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb4_targets"][1]["regions"] = ["APB4_UART0"]
+    document["apb4_periph_targets"][1]["regions"] = ["APB4_UART0"]
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "multiple targets" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb4_targets"][15]["regions"] = ["APB4_SDIO"]
+    document["apb4_periph_targets"][15]["regions"] = ["APB4_SDIO"]
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "disabled but declares regions" in result.stderr
@@ -226,16 +226,16 @@ def test_topology_rejects_duplicate_region_and_disabled_owner(tmp_path: Path) ->
 
 def test_topology_rejects_invalid_apb_target_ownership(tmp_path: Path) -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb_targets"][0]["region"] = "SRAM"
+    document["apb4_system_targets"][0]["region"] = "SRAM"
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
-    assert "not an active APB region" in result.stderr
+    assert "not an active apb4_system region" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["apb_targets"][7]["slot"] = 0
+    document["apb4_system_targets"][7]["slot"] = 0
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
-    assert "APB target slot 0 is duplicated" in result.stderr
+    assert "apb4_system_targets target slot 0 is duplicated" in result.stderr
 
 
 def test_topology_rejects_invalid_gpio_coverage_and_expression(tmp_path: Path) -> None:
@@ -260,16 +260,16 @@ def test_topology_rejects_invalid_gpio_coverage_and_expression(tmp_path: Path) -
 
 def test_topology_rejects_invalid_irq_groups_and_bindings(tmp_path: Path) -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    document["irq_groups"][1]["name"] = "apb4"
+    document["irq_groups"][1]["name"] = "apb4_periph"
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
-    assert "interrupt group apb4 is duplicated" in result.stderr
+    assert "interrupt group apb4_periph is duplicated" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
     document["interrupts"][1]["group_bit"] = 0
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
-    assert "interrupt group apb4 bit 0 is duplicated" in result.stderr
+    assert "interrupt group apb4_periph bit 0 is duplicated" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
     document["interrupts"][1]["core_bit"] = 0
@@ -286,7 +286,7 @@ def test_topology_rejects_invalid_irq_groups_and_bindings(tmp_path: Path) -> Non
     document["interrupts"].pop(rng_index)
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
-    assert "interrupt group apb does not cover every group bit" in result.stderr
+    assert "interrupt group apb4_system does not cover every group bit" in result.stderr
 
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
     document["interrupts"][0]["signal"] = "left | right"

@@ -46,10 +46,14 @@ module sysctrl_core (
   localparam sysctrl_offset_t PerfUserWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_USER_WAIT_HI);
   localparam sysctrl_offset_t PerfDmaWaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_DMA_WAIT_LO);
   localparam sysctrl_offset_t PerfDmaWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_DMA_WAIT_HI);
-  localparam sysctrl_offset_t PerfApb4WaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_WAIT_LO);
-  localparam sysctrl_offset_t PerfApb4WaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_WAIT_HI);
-  localparam sysctrl_offset_t PerfApbWaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB_WAIT_LO);
-  localparam sysctrl_offset_t PerfApbWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB_WAIT_HI);
+  localparam sysctrl_offset_t PerfApb4PeriphWaitLo =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_PERIPH_WAIT_LO);
+  localparam sysctrl_offset_t PerfApb4PeriphWaitHi =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_PERIPH_WAIT_HI);
+  localparam sysctrl_offset_t PerfApb4SystemWaitLo =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_SYSTEM_WAIT_LO);
+  localparam sysctrl_offset_t PerfApb4SystemWaitHi =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_SYSTEM_WAIT_HI);
   localparam sysctrl_offset_t PerfSdramWaitLo =
       sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDRAM_WAIT_LO);
   localparam sysctrl_offset_t PerfSdramWaitHi =
@@ -91,8 +95,8 @@ module sysctrl_core (
   logic [63:0] s_perf_mgmt_wait_d, s_perf_mgmt_wait_q;
   logic [63:0] s_perf_user_wait_d, s_perf_user_wait_q;
   logic [63:0] s_perf_dma_wait_d, s_perf_dma_wait_q;
-  logic [63:0] s_perf_apb4_wait_d, s_perf_apb4_wait_q;
-  logic [63:0] s_perf_apb_wait_d, s_perf_apb_wait_q;
+  logic [63:0] s_perf_apb4_periph_wait_d, s_perf_apb4_periph_wait_q;
+  logic [63:0] s_perf_apb4_system_wait_d, s_perf_apb4_system_wait_q;
   logic [63:0] s_perf_sdram_wait_d, s_perf_sdram_wait_q;
   logic [63:0] s_perf_psram_wait_d, s_perf_psram_wait_q;
   logic [63:0] s_perf_flash_wait_d, s_perf_flash_wait_q;
@@ -290,27 +294,27 @@ module sysctrl_core (
   assign s_perf_clear    = s_perf_write_en && write_data_i[`APB4_SYSCTRL__PERF_CTRL_CLEAR];
   assign s_perf_snapshot = s_perf_write_en && write_data_i[`APB4_SYSCTRL__PERF_CTRL_SNAPSHOT];
   always_comb begin
-    s_perf_en_d         = s_perf_en_q;
-    s_perf_mgmt_wait_d  = s_perf_mgmt_wait_q;
-    s_perf_user_wait_d  = s_perf_user_wait_q;
-    s_perf_dma_wait_d   = s_perf_dma_wait_q;
-    s_perf_apb4_wait_d  = s_perf_apb4_wait_q;
-    s_perf_apb_wait_d   = s_perf_apb_wait_q;
-    s_perf_sdram_wait_d = s_perf_sdram_wait_q;
-    s_perf_psram_wait_d = s_perf_psram_wait_q;
-    s_perf_flash_wait_d = s_perf_flash_wait_q;
+    s_perf_en_d               = s_perf_en_q;
+    s_perf_mgmt_wait_d        = s_perf_mgmt_wait_q;
+    s_perf_user_wait_d        = s_perf_user_wait_q;
+    s_perf_dma_wait_d         = s_perf_dma_wait_q;
+    s_perf_apb4_periph_wait_d = s_perf_apb4_periph_wait_q;
+    s_perf_apb4_system_wait_d = s_perf_apb4_system_wait_q;
+    s_perf_sdram_wait_d       = s_perf_sdram_wait_q;
+    s_perf_psram_wait_d       = s_perf_psram_wait_q;
+    s_perf_flash_wait_d       = s_perf_flash_wait_q;
     if (s_perf_write_en) begin
       s_perf_en_d = write_data_i[`APB4_SYSCTRL__PERF_CTRL_ENABLE];
     end
     if (s_perf_snapshot) begin
-      s_perf_mgmt_wait_d  = sysctrl.perf_mgmt_wait_i;
-      s_perf_user_wait_d  = sysctrl.perf_user_wait_i;
-      s_perf_dma_wait_d   = sysctrl.perf_dma_wait_i;
-      s_perf_apb4_wait_d  = sysctrl.perf_apb4_wait_i;
-      s_perf_apb_wait_d   = sysctrl.perf_apb_wait_i;
-      s_perf_sdram_wait_d = sysctrl.perf_sdram_wait_i;
-      s_perf_psram_wait_d = sysctrl.perf_psram_wait_i;
-      s_perf_flash_wait_d = sysctrl.perf_flash_wait_i;
+      s_perf_mgmt_wait_d        = sysctrl.perf_mgmt_wait_i;
+      s_perf_user_wait_d        = sysctrl.perf_user_wait_i;
+      s_perf_dma_wait_d         = sysctrl.perf_dma_wait_i;
+      s_perf_apb4_periph_wait_d = sysctrl.perf_apb4_periph_wait_i;
+      s_perf_apb4_system_wait_d = sysctrl.perf_apb4_system_wait_i;
+      s_perf_sdram_wait_d       = sysctrl.perf_sdram_wait_i;
+      s_perf_psram_wait_d       = sysctrl.perf_psram_wait_i;
+      s_perf_flash_wait_d       = sysctrl.perf_flash_wait_i;
     end
   end
 
@@ -340,77 +344,77 @@ module sysctrl_core (
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      s_sysctrl_coresel_q  <= '0;
-      s_user_reset_q       <= '1;
-      s_user_running_q     <= 1'b0;
-      s_user_draining_q    <= 1'b0;
-      s_user_config_err_q  <= 1'b0;
-      s_sysctrl_ipsel_q    <= '0;
-      s_pll_cfg_q          <= '0;
-      s_pll_req_valid_q    <= 1'b0;
-      s_pll_busy_q         <= 1'b0;
-      s_pll_err_q          <= 1'b0;
-      s_pll_err_reason_q   <= '0;
-      s_pll_active_sel_q   <= '0;
-      s_pll_active_valid_q <= 1'b0;
-      s_pll_safe_clk_q     <= 1'b1;
-      s_pll_lock_q         <= 1'b0;
-      s_fault_pending_q    <= 1'b0;
-      s_fault_write_q      <= 1'b0;
-      s_fault_reason_q     <= '0;
-      s_fault_detail_q     <= '0;
-      s_fault_addr_q       <= '0;
-      s_fault_count_q      <= '0;
-      s_fault_master_q     <= '0;
-      s_perf_en_q          <= 1'b0;
-      s_perf_mgmt_wait_q   <= '0;
-      s_perf_user_wait_q   <= '0;
-      s_perf_dma_wait_q    <= '0;
-      s_perf_apb4_wait_q   <= '0;
-      s_perf_apb_wait_q    <= '0;
-      s_perf_sdram_wait_q  <= '0;
-      s_perf_psram_wait_q  <= '0;
-      s_perf_flash_wait_q  <= '0;
-      s_test_done_q        <= 1'b0;
-      s_test_pass_q        <= 1'b0;
-      s_test_code_q        <= '0;
-      s_rtc_wake_seen_q    <= 1'b0;
+      s_sysctrl_coresel_q       <= '0;
+      s_user_reset_q            <= '1;
+      s_user_running_q          <= 1'b0;
+      s_user_draining_q         <= 1'b0;
+      s_user_config_err_q       <= 1'b0;
+      s_sysctrl_ipsel_q         <= '0;
+      s_pll_cfg_q               <= '0;
+      s_pll_req_valid_q         <= 1'b0;
+      s_pll_busy_q              <= 1'b0;
+      s_pll_err_q               <= 1'b0;
+      s_pll_err_reason_q        <= '0;
+      s_pll_active_sel_q        <= '0;
+      s_pll_active_valid_q      <= 1'b0;
+      s_pll_safe_clk_q          <= 1'b1;
+      s_pll_lock_q              <= 1'b0;
+      s_fault_pending_q         <= 1'b0;
+      s_fault_write_q           <= 1'b0;
+      s_fault_reason_q          <= '0;
+      s_fault_detail_q          <= '0;
+      s_fault_addr_q            <= '0;
+      s_fault_count_q           <= '0;
+      s_fault_master_q          <= '0;
+      s_perf_en_q               <= 1'b0;
+      s_perf_mgmt_wait_q        <= '0;
+      s_perf_user_wait_q        <= '0;
+      s_perf_dma_wait_q         <= '0;
+      s_perf_apb4_periph_wait_q <= '0;
+      s_perf_apb4_system_wait_q <= '0;
+      s_perf_sdram_wait_q       <= '0;
+      s_perf_psram_wait_q       <= '0;
+      s_perf_flash_wait_q       <= '0;
+      s_test_done_q             <= 1'b0;
+      s_test_pass_q             <= 1'b0;
+      s_test_code_q             <= '0;
+      s_rtc_wake_seen_q         <= 1'b0;
     end else begin
-      s_sysctrl_coresel_q  <= s_sysctrl_coresel_d;
-      s_user_reset_q       <= s_user_reset_d;
-      s_user_running_q     <= s_user_running_d;
-      s_user_draining_q    <= s_user_draining_d;
-      s_user_config_err_q  <= s_user_config_err_d;
-      s_sysctrl_ipsel_q    <= s_sysctrl_ipsel_d;
-      s_pll_cfg_q          <= s_pll_cfg_d;
-      s_pll_req_valid_q    <= s_pll_req_valid_d;
-      s_pll_busy_q         <= s_pll_busy_d;
-      s_pll_err_q          <= s_pll_err_d;
-      s_pll_err_reason_q   <= s_pll_err_reason_d;
-      s_pll_active_sel_q   <= s_pll_active_sel_d;
-      s_pll_active_valid_q <= s_pll_active_valid_d;
-      s_pll_safe_clk_q     <= s_pll_safe_clk_d;
-      s_pll_lock_q         <= s_pll_lock_d;
-      s_fault_pending_q    <= s_fault_pending_d;
-      s_fault_write_q      <= s_fault_write_d;
-      s_fault_reason_q     <= s_fault_reason_d;
-      s_fault_detail_q     <= s_fault_detail_d;
-      s_fault_addr_q       <= s_fault_addr_d;
-      s_fault_count_q      <= s_fault_count_d;
-      s_fault_master_q     <= s_fault_master_d;
-      s_perf_en_q          <= s_perf_en_d;
-      s_perf_mgmt_wait_q   <= s_perf_mgmt_wait_d;
-      s_perf_user_wait_q   <= s_perf_user_wait_d;
-      s_perf_dma_wait_q    <= s_perf_dma_wait_d;
-      s_perf_apb4_wait_q   <= s_perf_apb4_wait_d;
-      s_perf_apb_wait_q    <= s_perf_apb_wait_d;
-      s_perf_sdram_wait_q  <= s_perf_sdram_wait_d;
-      s_perf_psram_wait_q  <= s_perf_psram_wait_d;
-      s_perf_flash_wait_q  <= s_perf_flash_wait_d;
-      s_test_done_q        <= s_test_done_d;
-      s_test_pass_q        <= s_test_pass_d;
-      s_test_code_q        <= s_test_code_d;
-      s_rtc_wake_seen_q    <= s_rtc_wake_seen_d;
+      s_sysctrl_coresel_q       <= s_sysctrl_coresel_d;
+      s_user_reset_q            <= s_user_reset_d;
+      s_user_running_q          <= s_user_running_d;
+      s_user_draining_q         <= s_user_draining_d;
+      s_user_config_err_q       <= s_user_config_err_d;
+      s_sysctrl_ipsel_q         <= s_sysctrl_ipsel_d;
+      s_pll_cfg_q               <= s_pll_cfg_d;
+      s_pll_req_valid_q         <= s_pll_req_valid_d;
+      s_pll_busy_q              <= s_pll_busy_d;
+      s_pll_err_q               <= s_pll_err_d;
+      s_pll_err_reason_q        <= s_pll_err_reason_d;
+      s_pll_active_sel_q        <= s_pll_active_sel_d;
+      s_pll_active_valid_q      <= s_pll_active_valid_d;
+      s_pll_safe_clk_q          <= s_pll_safe_clk_d;
+      s_pll_lock_q              <= s_pll_lock_d;
+      s_fault_pending_q         <= s_fault_pending_d;
+      s_fault_write_q           <= s_fault_write_d;
+      s_fault_reason_q          <= s_fault_reason_d;
+      s_fault_detail_q          <= s_fault_detail_d;
+      s_fault_addr_q            <= s_fault_addr_d;
+      s_fault_count_q           <= s_fault_count_d;
+      s_fault_master_q          <= s_fault_master_d;
+      s_perf_en_q               <= s_perf_en_d;
+      s_perf_mgmt_wait_q        <= s_perf_mgmt_wait_d;
+      s_perf_user_wait_q        <= s_perf_user_wait_d;
+      s_perf_dma_wait_q         <= s_perf_dma_wait_d;
+      s_perf_apb4_periph_wait_q <= s_perf_apb4_periph_wait_d;
+      s_perf_apb4_system_wait_q <= s_perf_apb4_system_wait_d;
+      s_perf_sdram_wait_q       <= s_perf_sdram_wait_d;
+      s_perf_psram_wait_q       <= s_perf_psram_wait_d;
+      s_perf_flash_wait_q       <= s_perf_flash_wait_d;
+      s_test_done_q             <= s_test_done_d;
+      s_test_pass_q             <= s_test_pass_d;
+      s_test_code_q             <= s_test_code_d;
+      s_rtc_wake_seen_q         <= s_rtc_wake_seen_d;
     end
   end
 
@@ -456,10 +460,10 @@ module sysctrl_core (
       PerfUserWaitHi: read_data_o = s_perf_user_wait_q[63:32];
       PerfDmaWaitLo: read_data_o = s_perf_dma_wait_q[31:0];
       PerfDmaWaitHi: read_data_o = s_perf_dma_wait_q[63:32];
-      PerfApb4WaitLo: read_data_o = s_perf_apb4_wait_q[31:0];
-      PerfApb4WaitHi: read_data_o = s_perf_apb4_wait_q[63:32];
-      PerfApbWaitLo: read_data_o = s_perf_apb_wait_q[31:0];
-      PerfApbWaitHi: read_data_o = s_perf_apb_wait_q[63:32];
+      PerfApb4PeriphWaitLo: read_data_o = s_perf_apb4_periph_wait_q[31:0];
+      PerfApb4PeriphWaitHi: read_data_o = s_perf_apb4_periph_wait_q[63:32];
+      PerfApb4SystemWaitLo: read_data_o = s_perf_apb4_system_wait_q[31:0];
+      PerfApb4SystemWaitHi: read_data_o = s_perf_apb4_system_wait_q[63:32];
       PerfSdramWaitLo: read_data_o = s_perf_sdram_wait_q[31:0];
       PerfSdramWaitHi: read_data_o = s_perf_sdram_wait_q[63:32];
       PerfPsramWaitLo: read_data_o = s_perf_psram_wait_q[31:0];

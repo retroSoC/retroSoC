@@ -79,19 +79,19 @@
       "offset": "0x58"
     },
     {
-      "symbol": "PERF_APB4_WAIT_LO",
+      "symbol": "PERF_APB4_PERIPH_WAIT_LO",
       "offset": "0x5C"
     },
     {
-      "symbol": "PERF_APB4_WAIT_HI",
+      "symbol": "PERF_APB4_PERIPH_WAIT_HI",
       "offset": "0x60"
     },
     {
-      "symbol": "PERF_APB_WAIT_LO",
+      "symbol": "PERF_APB4_SYSTEM_WAIT_LO",
       "offset": "0x64"
     },
     {
-      "symbol": "PERF_APB_WAIT_HI",
+      "symbol": "PERF_APB4_SYSTEM_WAIT_HI",
       "offset": "0x68"
     },
     {
@@ -143,7 +143,7 @@
       "symbol": "APB4_GPIO",
       "base": "0x10000000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -152,7 +152,7 @@
       "symbol": "APB4_UART0",
       "base": "0x10001000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -161,7 +161,7 @@
       "symbol": "APB4_TIM0",
       "base": "0x10002000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -170,7 +170,7 @@
       "symbol": "APB4_TIM1",
       "base": "0x10003000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -179,7 +179,7 @@
       "symbol": "APB4_PSRAM",
       "base": "0x10004000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
@@ -188,7 +188,7 @@
       "symbol": "APB4_SPISD",
       "base": "0x10005000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -197,7 +197,7 @@
       "symbol": "APB4_I2C0",
       "base": "0x10006000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -206,7 +206,7 @@
       "symbol": "APB4_I2S",
       "base": "0x10007000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -215,7 +215,7 @@
       "symbol": "APB4_WS2812",
       "base": "0x10008000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -224,7 +224,7 @@
       "symbol": "APB4_XPI",
       "base": "0x10009000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
@@ -233,7 +233,7 @@
       "symbol": "APB4_DMA",
       "base": "0x1000A000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
@@ -242,7 +242,7 @@
       "symbol": "APB4_SYSCTRL",
       "base": "0x1000B000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
@@ -251,7 +251,7 @@
       "symbol": "APB4_CLINT",
       "base": "0x10020000",
       "size": "0x00010000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
@@ -260,7 +260,7 @@
       "symbol": "APB4_SDRAM",
       "base": "0x1000D000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
@@ -269,7 +269,7 @@
       "symbol": "APB4_DVP",
       "base": "0x1000E000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -296,7 +296,7 @@
       "symbol": "APB4_I2C1",
       "base": "0x10011000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "rw"
@@ -323,79 +323,79 @@
       "symbol": "APB4_GPIO_ADMIN",
       "base": "0x10014000",
       "size": "0x00001000",
-      "route": "apb4",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
     },
     {
-      "symbol": "APB_ARCHINFO",
+      "symbol": "APB4_ARCHINFO",
       "base": "0x20000000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "ro"
     },
     {
-      "symbol": "APB_RNG",
+      "symbol": "APB4_RNG",
       "base": "0x20001000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "none"
     },
     {
-      "symbol": "APB_PWM",
+      "symbol": "APB4_PWM",
       "base": "0x20002000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "rw"
     },
     {
-      "symbol": "APB_PS2",
+      "symbol": "APB4_PS2",
       "base": "0x20003000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "rw"
     },
     {
-      "symbol": "APB_RTC",
+      "symbol": "APB4_RTC",
       "base": "0x20004000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "rw"
     },
     {
-      "symbol": "APB_WDG",
+      "symbol": "APB4_WDG",
       "base": "0x20005000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "none"
     },
     {
-      "symbol": "APB_CRC",
+      "symbol": "APB4_CRC",
       "base": "0x20006000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "rw"
     },
     {
-      "symbol": "APB_USER_IP",
+      "symbol": "APB4_USER_IP",
       "base": "0x20007000",
       "size": "0x00001000",
-      "route": "apb",
+      "route": "apb4_system",
       "kind": "active",
       "public": true,
       "user_access": "rw"

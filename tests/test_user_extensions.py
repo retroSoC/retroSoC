@@ -66,7 +66,7 @@ def test_extensions_generate_isolated_scalar_bindings(tmp_path: Path) -> None:
     assert ip.count("user_gpio_if #(`USER_GPIO_NUM)") == 2
     assert "gpio.do_o = '0;" in ip
     assert "8'd2: begin" in ip
-    assert "u_user_2_apb_if.psel = apb.psel;" in ip
+    assert "u_user_2_apb4_if.psel = apb.psel;" in ip
     assert filelist.startswith("+incdir+")
     assert "`define USER_CORE_COUNT 6" in config
 

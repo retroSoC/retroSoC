@@ -14,38 +14,38 @@
 
 module apb4_periph (
     // verilog_format: off -- preserve reviewed column alignment
-    input logic                            clk_i,
-    input logic                            rst_n_i,
-    input logic                            clk_aud_i,
-    input logic                            rst_aud_n_i,
-    input logic                            debug_halted_i,
-    input logic                            timebase_tick_i,
-    axi4_if.slave                          cfg_axi4,
-    axi4_if.slave                          psram_axi4,
-    axi4_if.slave                          xpi_axi4,
-    axi4_if.slave                          spisd_axi4,
-    gpio_if.dut                            gpio,
-    user_gpio_if.padctrl                   user_gpio,
-    uart_if.dut                            uart,
-    psram_if.dut                           psram,
-    spi_if.dut                             spisd,
-    i2c_if.dut                             i2c0,
-    i2s_if.dut                             i2s,
-    ws2812_if.dut                          ws2812,
-    xpi_if.dut                             xpi,
-    axi4_if.master                         dma_axi4,
-    sysctrl_if.dut                         sysctrl,
-    pll_ctrl_if.sysctrl                    pll_ctrl,
-    apb4_if.master                         sdram_cfg,
-    dvp_if.dut                             dvp,
-    sdio_if.dut                            sdio,
-    opipsram_if.dut                        opipsram,
-    i2c_if.dut                             i2c1,
-    input logic                            fault_valid_i,
-    input logic [31:0]                     fault_addr_i,
-    input logic [3:0]                      fault_wstrb_i,
-    input logic                            fault_reserved_i,
-    output logic [`SOC_IRQ_APB4_WIDTH-1:0] irq_o
+    input logic                                   clk_i,
+    input logic                                   rst_n_i,
+    input logic                                   clk_aud_i,
+    input logic                                   rst_aud_n_i,
+    input logic                                   debug_halted_i,
+    input logic                                   timebase_tick_i,
+    axi4_if.slave                                 cfg_axi4,
+    axi4_if.slave                                 psram_axi4,
+    axi4_if.slave                                 xpi_axi4,
+    axi4_if.slave                                 spisd_axi4,
+    gpio_if.dut                                   gpio,
+    user_gpio_if.padctrl                          user_gpio,
+    uart_if.dut                                   uart,
+    psram_if.dut                                  psram,
+    spi_if.dut                                    spisd,
+    i2c_if.dut                                    i2c0,
+    i2s_if.dut                                    i2s,
+    ws2812_if.dut                                 ws2812,
+    xpi_if.dut                                    xpi,
+    axi4_if.master                                dma_axi4,
+    sysctrl_if.dut                                sysctrl,
+    pll_ctrl_if.sysctrl                           pll_ctrl,
+    apb4_if.master                                sdram_cfg,
+    dvp_if.dut                                    dvp,
+    sdio_if.dut                                   sdio,
+    opipsram_if.dut                               opipsram,
+    i2c_if.dut                                    i2c1,
+    input logic                                   fault_valid_i,
+    input logic [31:0]                            fault_addr_i,
+    input logic [3:0]                             fault_wstrb_i,
+    input logic                                   fault_reserved_i,
+    output logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] irq_o
     // verilog_format: on
 );
 
@@ -112,7 +112,7 @@ rib_if u_dma_rib_if ();
   localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
 `endif
 
-  axi42apb_periph u_axi42apb_periph (
+  axi42apb4_periph u_axi42apb4_periph (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .axi4   (cfg_axi4),
@@ -137,7 +137,7 @@ rib_if u_dma_rib_if ();
   assign u_dma_hw_trg_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
   assign u_dma_hw_trg_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
 
-  `include "soc_apb4_irq_bindings.svh"
+  `include "apb4_periph_irq_bindings.svh"
 
   // verilog_format: off -- preserve reviewed column alignment
   apb4_gpio #(
@@ -149,7 +149,7 @@ rib_if u_dma_rib_if ();
   ) u_apb4_gpio (
       .clk_i     (clk_i),
       .rst_n_i   (rst_n_i),
-      .apb4      (u_gpio_apb_if),
+      .apb4      (u_gpio_apb4_if),
       .gpio      (gpio),
       .user_gpio (user_gpio)
   );
@@ -160,7 +160,7 @@ rib_if u_dma_rib_if ();
       .rst_n_i       (rst_n_i),
       .dma_tx_stall_o(s_dma_uart_tx_stall),
       .dma_rx_stall_o(s_dma_uart_rx_stall),
-      .apb4          (u_uart_apb_if),
+      .apb4          (u_uart_apb4_if),
       .uart          (uart)
   );
 
@@ -168,7 +168,7 @@ rib_if u_dma_rib_if ();
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .debug_halted_i(debug_halted_i),
-      .apb4          (u_tim0_apb_if),
+      .apb4          (u_tim0_apb4_if),
       .irq_o         (s_tim0_irq)
   );
 
@@ -176,14 +176,14 @@ rib_if u_dma_rib_if ();
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .debug_halted_i(debug_halted_i),
-      .apb4          (u_tim1_apb_if),
+      .apb4          (u_tim1_apb4_if),
       .irq_o         (s_tim1_irq)
   );
 
   apb4_psram u_apb4_psram (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
-      .cfg_apb4(u_psram_apb_if),
+      .cfg_apb4(u_psram_apb4_if),
       .mem_axi4(psram_axi4),
       .psram   (psram)
   );
@@ -191,7 +191,7 @@ rib_if u_dma_rib_if ();
   apb4_spisd u_apb4_spisd (
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
-      .apb4    (u_spisd_apb_if),
+      .apb4    (u_spisd_apb4_if),
       .mem_axi4(spisd_axi4),
       .spi     (spisd)
   );
@@ -201,7 +201,7 @@ rib_if u_dma_rib_if ();
       .rst_n_i       (rst_n_i),
       .dma_tx_stall_o(s_dma_i2c0_tx_stall),
       .dma_rx_stall_o(s_dma_i2c0_rx_stall),
-      .apb4          (u_i2c0_apb_if),
+      .apb4          (u_i2c0_apb4_if),
       .i2c           (i2c0)
   );
 
@@ -212,7 +212,7 @@ rib_if u_dma_rib_if ();
       .rst_aud_n_i   (rst_aud_n_i),
       .dma_tx_stall_o(s_dma_i2s_tx_stall),
       .dma_rx_stall_o(s_dma_i2s_rx_stall),
-      .apb4          (u_i2s_apb_if),
+      .apb4          (u_i2s_apb4_if),
       .tx_axis       (u_i2s_tx_axis_if),
       .rx_axis       (u_i2s_rx_axis_if),
       .i2s           (i2s)
@@ -221,7 +221,7 @@ rib_if u_dma_rib_if ();
   apb4_ws2812 u_apb4_ws2812 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .apb4   (u_ws2812_apb_if),
+      .apb4   (u_ws2812_apb4_if),
       .ws2812 (ws2812)
   );
 
@@ -231,7 +231,7 @@ rib_if u_dma_rib_if ();
       .dma_xfer_done_i(s_dma_xfer_done),
       .dma_tx_stall_o (s_dma_xpi_tx_stall),
       .dma_rx_stall_o (s_dma_xpi_rx_stall),
-      .apb4           (u_xpi_apb_if),
+      .apb4           (u_xpi_apb4_if),
       .mem_axi4       (xpi_axi4),
       .xpi            (xpi)
   );
@@ -241,7 +241,7 @@ rib_if u_dma_rib_if ();
       .rst_n_i        (rst_n_i),
       .dma_xfer_done_o(s_dma_xfer_done),
       .hw_trg         (u_dma_hw_trg_if),
-      .apb4           (u_dma_apb_if),
+      .apb4           (u_dma_apb4_if),
       .rib            (u_dma_rib_if),
       .i2s_tx_axis    (u_i2s_tx_axis_if),
       .i2s_rx_axis    (u_i2s_rx_axis_if),
@@ -255,7 +255,7 @@ rib_if u_dma_rib_if ();
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .apb4            (u_sysctrl_apb_if),
+      .apb4            (u_sysctrl_apb4_if),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );
@@ -264,14 +264,14 @@ rib_if u_dma_rib_if ();
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .timebase_tick_i(timebase_tick_i),
-      .apb4           (u_clint_apb_if),
+      .apb4           (u_clint_apb4_if),
       .clint          (u_clint_if)
   );
 
   axi4s_dvp u_axi4_dvp (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .apb4   (u_dvp_apb_if),
+      .apb4   (u_dvp_apb4_if),
       .rx_axis(u_dvp_rx_axis_if),
       .dvp    (dvp),
       .irq_o  (s_dvp_irq)
@@ -280,14 +280,14 @@ rib_if u_dma_rib_if ();
   apb4_sdio u_apb4_sdio (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .apb4   (u_sdio_apb_if),
+      .apb4   (u_sdio_apb4_if),
       .sdio   (sdio)
   );
 
   apb4_opipsram u_apb4_opipsram (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .apb4   (u_opipsram_apb_if),
+      .apb4   (u_opipsram_apb4_if),
       .psram  (opipsram)
   );
 
@@ -296,7 +296,7 @@ rib_if u_dma_rib_if ();
       .rst_n_i       (rst_n_i),
       .dma_tx_stall_o(s_dma_i2c1_tx_stall),
       .dma_rx_stall_o(s_dma_i2c1_rx_stall),
-      .apb4          (u_i2c1_apb_if),
+      .apb4          (u_i2c1_apb4_if),
       .i2c           (i2c1)
   );
 

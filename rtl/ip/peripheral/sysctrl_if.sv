@@ -16,8 +16,8 @@ interface sysctrl_if ();
   logic [                   63:0] perf_mgmt_wait_i;
   logic [                   63:0] perf_user_wait_i;
   logic [                   63:0] perf_dma_wait_i;
-  logic [                   63:0] perf_apb4_wait_i;
-  logic [                   63:0] perf_apb_wait_i;
+  logic [                   63:0] perf_apb4_periph_wait_i;
+  logic [                   63:0] perf_apb4_system_wait_i;
   logic [                   63:0] perf_sdram_wait_i;
   logic [                   63:0] perf_psram_wait_i;
   logic [                   63:0] perf_flash_wait_i;
@@ -35,8 +35,8 @@ interface sysctrl_if ();
       input perf_mgmt_wait_i,
       input perf_user_wait_i,
       input perf_dma_wait_i,
-      input perf_apb4_wait_i,
-      input perf_apb_wait_i,
+      input perf_apb4_periph_wait_i,
+      input perf_apb4_system_wait_i,
       input perf_sdram_wait_i,
       input perf_psram_wait_i,
       input perf_flash_wait_i,

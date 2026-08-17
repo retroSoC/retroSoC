@@ -9,7 +9,7 @@ from scripts.parse_performance_log import parse_log
 def test_parse_log_requires_terminal_marker_and_complete_samples() -> None:
     report = parse_log(
         "PERF region=sdram op=read words=1024 checksum=0x1234 cycles=123 mgmt_wait=10 "
-        "apb4_wait=9 sdram_wait=8 psram_wait=0 flash_wait=0 dma_wait=0\n"
+        "apb4_periph_wait=9 sdram_wait=8 psram_wait=0 flash_wait=0 dma_wait=0\n"
         "PERF_BENCHMARK_PASS\n"
     )
 
@@ -23,7 +23,7 @@ def test_parse_log_requires_terminal_marker_and_complete_samples() -> None:
             "dma_wait": 0,
             "flash_wait": 0,
             "mgmt_wait": 10,
-            "apb4_wait": 9,
+            "apb4_periph_wait": 9,
             "operation": "read",
             "psram_wait": 0,
             "region": "sdram",
@@ -35,7 +35,7 @@ def test_parse_log_requires_terminal_marker_and_complete_samples() -> None:
 
 def test_parse_log_rejects_missing_benchmark_marker() -> None:
     report = parse_log(
-        "PERF region=flash op=read words=1024 checksum=0 cycles=10 mgmt_wait=1 apb4_wait=1 "
+        "PERF region=flash op=read words=1024 checksum=0 cycles=10 mgmt_wait=1 apb4_periph_wait=1 "
         "sdram_wait=0 psram_wait=0 flash_wait=1 dma_wait=0\n"
     )
 
@@ -45,7 +45,7 @@ def test_parse_log_rejects_missing_benchmark_marker() -> None:
 def test_parse_log_rejects_report_with_performance_failure() -> None:
     report = parse_log(
         "PERF region=sdram op=read words=1024 checksum=0x1234 cycles=123 mgmt_wait=10 "
-        "apb4_wait=9 sdram_wait=8 psram_wait=0 flash_wait=0 dma_wait=0\n"
+        "apb4_periph_wait=9 sdram_wait=8 psram_wait=0 flash_wait=0 dma_wait=0\n"
         "PERF_FAIL region=sdram op=read reason=data expected=1234 actual=0\n"
         "PERF_BENCHMARK_PASS\n"
     )

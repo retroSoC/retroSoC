@@ -8,8 +8,8 @@
 /top/axi4_error_slave.sv
 /top/rib2axi4.sv
 /top/ahbl2axi4.sv
-/top/axi42apb.sv
-/top/axi42apb_periph.sv
+/top/axi42apb4_system.sv
+/top/axi42apb4_periph.sv
 /top/axi4_word_bridge.sv
 /top/axi42ram.sv
 /top/rib_error_slave.sv

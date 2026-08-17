@@ -16,7 +16,7 @@ module axi4_bus (
     axi4_if.slave       user_axi4,
     axi4_if.slave       dma_axi4,
     axi4_if.master      cfg_axi4,
-    axi4_if.master      apb_axi4,
+    axi4_if.master      system_axi4,
 `ifdef HAVE_SRAM_IF
     ram_if.master       ram,
 `endif
@@ -38,8 +38,8 @@ module axi4_bus (
     output logic [63:0] perf_mgmt_wait_o,
     output logic [63:0] perf_user_wait_o,
     output logic [63:0] perf_dma_wait_o,
-    output logic [63:0] perf_apb4_wait_o,
-    output logic [63:0] perf_apb_wait_o,
+    output logic [63:0] perf_apb4_periph_wait_o,
+    output logic [63:0] perf_apb4_system_wait_o,
     output logic [63:0] perf_sdram_wait_o,
     output logic [63:0] perf_psram_wait_o,
     output logic [63:0] perf_flash_wait_o
@@ -100,7 +100,7 @@ module axi4_bus (
 
   axi4_connector u_apb_connector (
       .source(u_target_axi4_if[1]),
-      .sink  (apb_axi4)
+      .sink  (system_axi4)
   );
 
   axi4_connector u_ram_connector (
@@ -132,29 +132,29 @@ module axi4_bus (
       .NumMasters(NumMasters),
       .NumTargets(NumTargets)
   ) u_axi4_interconnect (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .masters          (u_master_axi4_if),
-      .targets          (u_target_axi4_if),
-      .user_bus_enable_i(user_bus_enable_i),
-      .user_bus_idle_o  (user_bus_idle_o),
-      .perf_enable_i    (perf_enable_i),
-      .perf_clear_i     (perf_clear_i),
-      .fault_valid_o    (fault_valid_o),
-      .fault_addr_o     (fault_addr_o),
-      .fault_wstrb_o    (fault_wstrb_o),
-      .fault_reserved_o (fault_reserved_o),
-      .fault_access_o   (fault_access_o),
-      .fault_master_o   (fault_master_o),
-      .fault_code_o     (fault_code_o),
-      .perf_mgmt_wait_o (perf_mgmt_wait_o),
-      .perf_user_wait_o (perf_user_wait_o),
-      .perf_dma_wait_o  (perf_dma_wait_o),
-      .perf_apb4_wait_o (perf_apb4_wait_o),
-      .perf_apb_wait_o  (perf_apb_wait_o),
-      .perf_sdram_wait_o(perf_sdram_wait_o),
-      .perf_psram_wait_o(perf_psram_wait_o),
-      .perf_flash_wait_o(perf_flash_wait_o)
+      .clk_i                  (clk_i),
+      .rst_n_i                (rst_n_i),
+      .masters                (u_master_axi4_if),
+      .targets                (u_target_axi4_if),
+      .user_bus_enable_i      (user_bus_enable_i),
+      .user_bus_idle_o        (user_bus_idle_o),
+      .perf_enable_i          (perf_enable_i),
+      .perf_clear_i           (perf_clear_i),
+      .fault_valid_o          (fault_valid_o),
+      .fault_addr_o           (fault_addr_o),
+      .fault_wstrb_o          (fault_wstrb_o),
+      .fault_reserved_o       (fault_reserved_o),
+      .fault_access_o         (fault_access_o),
+      .fault_master_o         (fault_master_o),
+      .fault_code_o           (fault_code_o),
+      .perf_mgmt_wait_o       (perf_mgmt_wait_o),
+      .perf_user_wait_o       (perf_user_wait_o),
+      .perf_dma_wait_o        (perf_dma_wait_o),
+      .perf_apb4_periph_wait_o(perf_apb4_periph_wait_o),
+      .perf_apb4_system_wait_o(perf_apb4_system_wait_o),
+      .perf_sdram_wait_o      (perf_sdram_wait_o),
+      .perf_psram_wait_o      (perf_psram_wait_o),
+      .perf_flash_wait_o      (perf_flash_wait_o)
   );
 
 `ifdef HAVE_SRAM_IF

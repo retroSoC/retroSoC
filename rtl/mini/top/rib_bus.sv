@@ -37,8 +37,8 @@ module rib_bus (
     output logic [63:0] perf_mgmt_wait_o,
     output logic [63:0] perf_user_wait_o,
     output logic [63:0] perf_dma_wait_o,
-    output logic [63:0] perf_apb4_wait_o,
-    output logic [63:0] perf_apb_wait_o,
+    output logic [63:0] perf_apb4_periph_wait_o,
+    output logic [63:0] perf_apb4_system_wait_o,
     output logic [63:0] perf_sdram_wait_o,
     output logic [63:0] perf_psram_wait_o,
     output logic [63:0] perf_flash_wait_o
@@ -49,8 +49,8 @@ module rib_bus (
   localparam logic [1:0] MSTR_USER = 2'd1;
   localparam logic [1:0] MSTR_DMA = 2'd2;
 
-  localparam logic [1:0] TARGET_RIBP = 2'd0;
-  localparam logic [1:0] TARGET_APB = 2'd1;
+  localparam logic [1:0] TARGET_APB4_PERIPH = 2'd0;
+  localparam logic [1:0] TARGET_APB4_SYSTEM = 2'd1;
   localparam logic [1:0] TARGET_RAM = 2'd2;
   localparam logic [1:0] TARGET_FAULT = 2'd3;
 
@@ -65,7 +65,7 @@ module rib_bus (
   logic [1:0] s_target_d, s_target_q;
   logic s_user_req;
   logic s_terminal_rsp;
-  logic s_ribp_sel, s_apb_sel, s_ram_sel, s_fault_sel;
+  logic s_apb4_periph_sel, s_apb4_system_sel, s_ram_sel, s_fault_sel;
   logic s_access_denied, s_burst_legal, s_len_legal;
   logic        s_user_access_allowed;
   logic [31:0] s_last_addr;
@@ -82,8 +82,8 @@ module rib_bus (
   logic [63:0] s_perf_mgmt_wait_d, s_perf_mgmt_wait_q;
   logic [63:0] s_perf_user_wait_d, s_perf_user_wait_q;
   logic [63:0] s_perf_dma_wait_d, s_perf_dma_wait_q;
-  logic [63:0] s_perf_apb4_wait_d, s_perf_apb4_wait_q;
-  logic [63:0] s_perf_apb_wait_d, s_perf_apb_wait_q;
+  logic [63:0] s_perf_apb4_periph_wait_d, s_perf_apb4_periph_wait_q;
+  logic [63:0] s_perf_apb4_system_wait_d, s_perf_apb4_system_wait_q;
   logic [63:0] s_perf_sdram_wait_d, s_perf_sdram_wait_q;
   logic [63:0] s_perf_psram_wait_d, s_perf_psram_wait_q;
   logic [63:0] s_perf_flash_wait_d, s_perf_flash_wait_q;
@@ -322,11 +322,11 @@ module rib_bus (
   assign s_access_denied = (s_mstr_id_q == MSTR_USER) && ~s_user_access_allowed;
 
   // verilog_format: off -- preserve reviewed column alignment
-  assign s_ribp_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
+  assign s_apb4_periph_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
                      s_burst_legal && `SOC_ADDR_IS_RIB_LEGACY_TARGET(u_mstr_rib_if.cmd_addr);
-  assign s_apb_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
+  assign s_apb4_system_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
                      (u_mstr_rib_if.cmd_len == `RIB_LEN_INCR1) &&
-                     `SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr);
+                     `SOC_ADDR_IS_APB4_SYSTEM(u_mstr_rib_if.cmd_addr);
 `ifdef HAVE_SRAM_IF
   assign s_ram_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q && ~s_access_denied &&
                      s_burst_legal && `SOC_ADDR_IS_RAM(u_mstr_rib_if.cmd_addr);
@@ -334,7 +334,7 @@ module rib_bus (
   assign s_ram_sel = 1'b0;
 `endif
   assign s_fault_sel = u_mstr_rib_if.cmd_valid && ~s_cmd_accepted_q &&
-                       ~(s_ribp_sel || s_apb_sel || s_ram_sel);
+                       ~(s_apb4_periph_sel || s_apb4_system_sel || s_ram_sel);
   // verilog_format: on
 
   always_comb begin
@@ -345,10 +345,10 @@ module rib_bus (
       s_fault_code = `RIB_RESP_RESERVED;
       // verilog_format: off -- preserve reviewed column alignment
     end else if ((`SOC_ADDR_IS_RIB_LEGACY_TARGET(u_mstr_rib_if.cmd_addr) ||
-                  `SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr) ||
+                  `SOC_ADDR_IS_APB4_SYSTEM(u_mstr_rib_if.cmd_addr) ||
                   `SOC_ADDR_IS_RAM(u_mstr_rib_if.cmd_addr)) &&
                  (~s_burst_legal ||
-                  (`SOC_ADDR_IS_APB(u_mstr_rib_if.cmd_addr) &&
+                  (`SOC_ADDR_IS_APB4_SYSTEM(u_mstr_rib_if.cmd_addr) &&
                    (u_mstr_rib_if.cmd_len != `RIB_LEN_INCR1)))) begin
       // verilog_format: on
       s_fault_code = `RIB_RESP_BURSTERR;
@@ -356,11 +356,11 @@ module rib_bus (
   end
 
   // Command routing. Target selection is captured on command acceptance.
-  assign rib.cmd_valid            = s_ribp_sel;
+  assign rib.cmd_valid            = s_apb4_periph_sel;
   assign rib.cmd_addr             = u_mstr_rib_if.cmd_addr;
   assign rib.cmd_write            = u_mstr_rib_if.cmd_write;
   assign rib.cmd_len              = u_mstr_rib_if.cmd_len;
-  assign apb_rib.cmd_valid        = s_apb_sel;
+  assign apb_rib.cmd_valid        = s_apb4_system_sel;
   assign apb_rib.cmd_addr         = u_mstr_rib_if.cmd_addr;
   assign apb_rib.cmd_write        = u_mstr_rib_if.cmd_write;
   assign apb_rib.cmd_len          = u_mstr_rib_if.cmd_len;
@@ -375,9 +375,9 @@ module rib_bus (
 
   always_comb begin
     u_mstr_rib_if.cmd_ready = 1'b0;
-    if (s_ribp_sel) begin
+    if (s_apb4_periph_sel) begin
       u_mstr_rib_if.cmd_ready = rib.cmd_ready;
-    end else if (s_apb_sel) begin
+    end else if (s_apb4_system_sel) begin
       u_mstr_rib_if.cmd_ready = apb_rib.cmd_ready;
     end else if (s_ram_sel) begin
       u_mstr_rib_if.cmd_ready = u_ram_rib_if.cmd_ready;
@@ -389,10 +389,10 @@ module rib_bus (
   always_comb begin
     s_target_d = s_target_q;
     if (u_mstr_rib_if.cmd_valid && u_mstr_rib_if.cmd_ready) begin
-      if (s_ribp_sel) begin
-        s_target_d = TARGET_RIBP;
-      end else if (s_apb_sel) begin
-        s_target_d = TARGET_APB;
+      if (s_apb4_periph_sel) begin
+        s_target_d = TARGET_APB4_PERIPH;
+      end else if (s_apb4_system_sel) begin
+        s_target_d = TARGET_APB4_SYSTEM;
       end else if (s_ram_sel) begin
         s_target_d = TARGET_RAM;
       end else begin
@@ -410,21 +410,21 @@ module rib_bus (
   );
 
   // Write-data and response routing uses the captured target.
-  assign rib.w_valid = s_mstr_lock_q && s_cmd_accepted_q && (s_target_q == TARGET_RIBP) ?
+  assign rib.w_valid = s_mstr_lock_q && s_cmd_accepted_q && (s_target_q == TARGET_APB4_PERIPH) ?
                        u_mstr_rib_if.w_valid : 1'b0;
   assign rib.wdata = u_mstr_rib_if.wdata;
   assign rib.wstrb = u_mstr_rib_if.wstrb;
   assign rib.wlast = u_mstr_rib_if.wlast;
-  assign rib.rsp_ready = s_mstr_lock_q && s_cmd_accepted_q && (s_target_q == TARGET_RIBP) ?
+  assign rib.rsp_ready = s_mstr_lock_q && s_cmd_accepted_q && (s_target_q == TARGET_APB4_PERIPH) ?
                          u_mstr_rib_if.rsp_ready : 1'b0;
 
   assign apb_rib.w_valid = s_mstr_lock_q && s_cmd_accepted_q &&
-                            (s_target_q == TARGET_APB) ? u_mstr_rib_if.w_valid : 1'b0;
+                            (s_target_q == TARGET_APB4_SYSTEM) ? u_mstr_rib_if.w_valid : 1'b0;
   assign apb_rib.wdata = u_mstr_rib_if.wdata;
   assign apb_rib.wstrb = u_mstr_rib_if.wstrb;
   assign apb_rib.wlast = u_mstr_rib_if.wlast;
   assign apb_rib.rsp_ready = s_mstr_lock_q && s_cmd_accepted_q &&
-                              (s_target_q == TARGET_APB) ? u_mstr_rib_if.rsp_ready : 1'b0;
+                              (s_target_q == TARGET_APB4_SYSTEM) ? u_mstr_rib_if.rsp_ready : 1'b0;
 
   assign u_ram_rib_if.w_valid = s_mstr_lock_q && s_cmd_accepted_q &&
                                   (s_target_q == TARGET_RAM) ?
@@ -455,7 +455,7 @@ module rib_bus (
     u_mstr_rib_if.rsp_beat  = '0;
     u_mstr_rib_if.rsp_last  = 1'b0;
     unique case (s_target_q)
-      TARGET_RIBP: begin
+      TARGET_APB4_PERIPH: begin
         u_mstr_rib_if.w_ready   = s_cmd_accepted_q && rib.w_ready;
         u_mstr_rib_if.rsp_valid = s_cmd_accepted_q && rib.rsp_valid;
         u_mstr_rib_if.rdata     = rib.rdata;
@@ -464,7 +464,7 @@ module rib_bus (
         u_mstr_rib_if.rsp_beat  = rib.rsp_beat;
         u_mstr_rib_if.rsp_last  = rib.rsp_last;
       end
-      TARGET_APB: begin
+      TARGET_APB4_SYSTEM: begin
         u_mstr_rib_if.w_ready   = s_cmd_accepted_q && apb_rib.w_ready;
         u_mstr_rib_if.rsp_valid = s_cmd_accepted_q && apb_rib.rsp_valid;
         u_mstr_rib_if.rdata     = apb_rib.rdata;
@@ -566,31 +566,35 @@ module rib_bus (
                             ~u_mstr_rib_if.rsp_valid));
 
   always_comb begin
-    s_perf_mgmt_wait_d  = s_perf_mgmt_wait_q;
-    s_perf_user_wait_d  = s_perf_user_wait_q;
-    s_perf_dma_wait_d   = s_perf_dma_wait_q;
-    s_perf_apb4_wait_d  = s_perf_apb4_wait_q;
-    s_perf_apb_wait_d   = s_perf_apb_wait_q;
-    s_perf_sdram_wait_d = s_perf_sdram_wait_q;
-    s_perf_psram_wait_d = s_perf_psram_wait_q;
-    s_perf_flash_wait_d = s_perf_flash_wait_q;
+    s_perf_mgmt_wait_d        = s_perf_mgmt_wait_q;
+    s_perf_user_wait_d        = s_perf_user_wait_q;
+    s_perf_dma_wait_d         = s_perf_dma_wait_q;
+    s_perf_apb4_periph_wait_d = s_perf_apb4_periph_wait_q;
+    s_perf_apb4_system_wait_d = s_perf_apb4_system_wait_q;
+    s_perf_sdram_wait_d       = s_perf_sdram_wait_q;
+    s_perf_psram_wait_d       = s_perf_psram_wait_q;
+    s_perf_flash_wait_d       = s_perf_flash_wait_q;
     if (perf_clear_i) begin
-      s_perf_mgmt_wait_d  = '0;
-      s_perf_user_wait_d  = '0;
-      s_perf_dma_wait_d   = '0;
-      s_perf_apb4_wait_d  = '0;
-      s_perf_apb_wait_d   = '0;
-      s_perf_sdram_wait_d = '0;
-      s_perf_psram_wait_d = '0;
-      s_perf_flash_wait_d = '0;
+      s_perf_mgmt_wait_d        = '0;
+      s_perf_user_wait_d        = '0;
+      s_perf_dma_wait_d         = '0;
+      s_perf_apb4_periph_wait_d = '0;
+      s_perf_apb4_system_wait_d = '0;
+      s_perf_sdram_wait_d       = '0;
+      s_perf_psram_wait_d       = '0;
+      s_perf_flash_wait_d       = '0;
     end else if (perf_enable_i && s_xfer_stalled) begin
       unique case (s_mstr_id_q)
         MSTR_MGMT: s_perf_mgmt_wait_d = s_perf_mgmt_wait_q + 1'b1;
         MSTR_USER: s_perf_user_wait_d = s_perf_user_wait_q + 1'b1;
         default:   s_perf_dma_wait_d = s_perf_dma_wait_q + 1'b1;
       endcase
-      if (s_target_q == TARGET_RIBP) s_perf_apb4_wait_d = s_perf_apb4_wait_q + 1'b1;
-      if (s_target_q == TARGET_APB) s_perf_apb_wait_d = s_perf_apb_wait_q + 1'b1;
+      if (s_target_q == TARGET_APB4_PERIPH) begin
+        s_perf_apb4_periph_wait_d = s_perf_apb4_periph_wait_q + 1'b1;
+      end
+      if (s_target_q == TARGET_APB4_SYSTEM) begin
+        s_perf_apb4_system_wait_d = s_perf_apb4_system_wait_q + 1'b1;
+      end
       if (`SOC_ADDR_IS_SDRAM(s_xfer_addr_q)) begin
         s_perf_sdram_wait_d = s_perf_sdram_wait_q + 1'b1;
       end
@@ -629,19 +633,19 @@ module rib_bus (
   );
   dffr #(
       .DATA_WIDTH(64)
-  ) u_perf_apb4_wait_dffr (
+  ) u_perf_apb4_periph_wait_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_perf_apb4_wait_d),
-      .dat_o  (s_perf_apb4_wait_q)
+      .dat_i  (s_perf_apb4_periph_wait_d),
+      .dat_o  (s_perf_apb4_periph_wait_q)
   );
   dffr #(
       .DATA_WIDTH(64)
-  ) u_perf_apb_wait_dffr (
+  ) u_perf_apb4_system_wait_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_perf_apb_wait_d),
-      .dat_o  (s_perf_apb_wait_q)
+      .dat_i  (s_perf_apb4_system_wait_d),
+      .dat_o  (s_perf_apb4_system_wait_q)
   );
   dffr #(
       .DATA_WIDTH(64)
@@ -668,13 +672,13 @@ module rib_bus (
       .dat_o  (s_perf_flash_wait_q)
   );
 
-  assign perf_mgmt_wait_o  = s_perf_mgmt_wait_q;
-  assign perf_user_wait_o  = s_perf_user_wait_q;
-  assign perf_dma_wait_o   = s_perf_dma_wait_q;
-  assign perf_apb4_wait_o  = s_perf_apb4_wait_q;
-  assign perf_apb_wait_o   = s_perf_apb_wait_q;
-  assign perf_sdram_wait_o = s_perf_sdram_wait_q;
-  assign perf_psram_wait_o = s_perf_psram_wait_q;
-  assign perf_flash_wait_o = s_perf_flash_wait_q;
+  assign perf_mgmt_wait_o        = s_perf_mgmt_wait_q;
+  assign perf_user_wait_o        = s_perf_user_wait_q;
+  assign perf_dma_wait_o         = s_perf_dma_wait_q;
+  assign perf_apb4_periph_wait_o = s_perf_apb4_periph_wait_q;
+  assign perf_apb4_system_wait_o = s_perf_apb4_system_wait_q;
+  assign perf_sdram_wait_o       = s_perf_sdram_wait_q;
+  assign perf_psram_wait_o       = s_perf_psram_wait_q;
+  assign perf_flash_wait_o       = s_perf_flash_wait_q;
 
 endmodule

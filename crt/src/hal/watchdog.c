@@ -24,20 +24,20 @@ void ip_wdg_test(int argc, char **argv) {
     (void)argv;
 
     printf("[APB IP] wdg V2 test\n");
-    status = wdg_configure((uintptr_t)RS_SOC_APB_WDG_BASE, &config);
+    status = wdg_configure((uintptr_t)RS_SOC_APB4_WDG_BASE, &config);
     if (status != WDG_STATUS_OK) {
         printf("watchdog configure failed: %d\n", (int)status);
         return;
     }
-    status = wdg_interrupt_test((uintptr_t)RS_SOC_APB_WDG_BASE, WDG_INTR_WARNING_MASK);
+    status = wdg_interrupt_test((uintptr_t)RS_SOC_APB4_WDG_BASE, WDG_INTR_WARNING_MASK);
     if (status == WDG_STATUS_OK) {
-        status = wdg_snapshot((uintptr_t)RS_SOC_APB_WDG_BASE, &snapshot, RS_WDG_COMMAND_TIMEOUT);
+        status = wdg_snapshot((uintptr_t)RS_SOC_APB4_WDG_BASE, &snapshot, RS_WDG_COMMAND_TIMEOUT);
     }
     if ((status != WDG_STATUS_OK) || ((snapshot.interrupt_state & WDG_INTR_WARNING_MASK) == 0U)) {
         printf("watchdog interrupt self-test failed: %d\n", (int)status);
         return;
     }
-    status = wdg_interrupt_clear((uintptr_t)RS_SOC_APB_WDG_BASE, WDG_INTR_WARNING_MASK);
+    status = wdg_interrupt_clear((uintptr_t)RS_SOC_APB4_WDG_BASE, WDG_INTR_WARNING_MASK);
     if (status != WDG_STATUS_OK) {
         printf("watchdog interrupt clear failed: %d\n", (int)status);
         return;

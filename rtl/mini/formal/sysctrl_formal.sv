@@ -76,8 +76,8 @@ module sysctrl_formal_design (
   assign sysctrl.perf_mgmt_wait_i = '0;
   assign sysctrl.perf_user_wait_i = '0;
   assign sysctrl.perf_dma_wait_i = '0;
-  assign sysctrl.perf_apb4_wait_i = '0;
-  assign sysctrl.perf_apb_wait_i = '0;
+  assign sysctrl.perf_apb4_periph_wait_i = '0;
+  assign sysctrl.perf_apb4_system_wait_i = '0;
   assign sysctrl.perf_sdram_wait_i = '0;
   assign sysctrl.perf_psram_wait_i = '0;
   assign sysctrl.perf_flash_wait_i = '0;

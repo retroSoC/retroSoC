@@ -129,19 +129,19 @@ void rs_app_info(void) {
     printf("                       1 x I2C1          @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_I2C1_BASE);
     printf("                       1 x ARCHINFO      @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_ARCHINFO_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_ARCHINFO_BASE);
     printf("                       1 x RNG           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_RNG_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_RNG_BASE);
     printf("                       1 x PWM V2(4CH)   @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_PWM_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_PWM_BASE);
     printf("                       1 x PS2           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_PS2_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_PS2_BASE);
     printf("                       1 x RTC           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_RTC_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_RTC_BASE);
     printf("                       1 x WDG V2        @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_WDG_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_WDG_BASE);
     printf("                       1 x CRC           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_CRC_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_CRC_BASE);
     printf("                       1 x USER_IP(4KiB) @%p\n", (void *)&reg_user_ip_reg0);
     printf("\n");
     printf("#############################################################\n");

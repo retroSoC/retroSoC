@@ -16,7 +16,7 @@ module rib2apb (
     input  logic       clk_i,
     input  logic       rst_n_i,
     rib_if.slave       rib,
-`include "soc_apb_ports.svh"
+`include "apb4_system_ports.svh"
     // verilog_format: on
 );
 
@@ -42,7 +42,7 @@ module rib2apb (
   logic [RSP_WIDTH-1:0] s_rsp_input_data, s_rsp_output_data;
 
   // Registered slave-select one-hot and APB response mux.
-  `include "soc_apb_declarations.svh"
+  `include "apb4_system_declarations.svh"
 
   assign s_cmd_hdshk   = rib.cmd_valid && rib.cmd_ready;
   assign s_decode_addr = rib.cmd_addr;
@@ -54,9 +54,9 @@ module rib2apb (
   assign s_xfer_valid  = (s_fsm_q == FSM_SETP) || (s_fsm_q == FSM_ENAB);
 
   // Generated APB routing uses the latched RIB request and selected target.
-  `include "soc_apb_request_routes.svh"
-  `include "soc_apb_select_routes.svh"
-  `include "soc_apb_response_mux.svh"
+  `include "apb4_system_request_routes.svh"
+  `include "apb4_system_select_routes.svh"
+  `include "apb4_system_response_mux.svh"
 
   assign s_psel_valid = |s_psel_comb;
 

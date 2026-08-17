@@ -11,8 +11,8 @@
 <text text-anchor="middle" x="132" y="-948.08" font-family="Arial" font-size="18.00">retroSoC Mini SoC Architecture</text>
 <g id="clust1" class="cluster">
 <title>cluster_rtl_ownership</title>
-<path fill="transparent" stroke="#cbd5e1" stroke-dasharray="5,2" d="M3179,-832.48C3179,-832.48 3834,-832.48 3834,-832.48 3840,-832.48 3846,-838.48 3846,-844.48 3846,-844.48 3846,-918.48 3846,-918.48 3846,-924.48 3840,-930.48 3834,-930.48 3834,-930.48 3179,-930.48 3179,-930.48 3173,-930.48 3167,-924.48 3167,-918.48 3167,-918.48 3167,-844.48 3167,-844.48 3167,-838.48 3173,-832.48 3179,-832.48"/>
-<text text-anchor="middle" x="3256.5" y="-918.48" font-family="Arial" font-size="10.00" fill="#334155">RTL ownership and validation profiles</text>
+<path fill="transparent" stroke="#cbd5e1" stroke-dasharray="5,2" d="M3194,-832.48C3194,-832.48 3849,-832.48 3849,-832.48 3855,-832.48 3861,-838.48 3861,-844.48 3861,-844.48 3861,-918.48 3861,-918.48 3861,-924.48 3855,-930.48 3849,-930.48 3849,-930.48 3194,-930.48 3194,-930.48 3188,-930.48 3182,-924.48 3182,-918.48 3182,-918.48 3182,-844.48 3182,-844.48 3182,-838.48 3188,-832.48 3194,-832.48"/>
+<text text-anchor="middle" x="3271.5" y="-918.48" font-family="Arial" font-size="10.00" fill="#334155">RTL ownership and validation profiles</text>
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_asic</title>
@@ -57,66 +57,66 @@
 <!-- ext_jtag -->
 <g id="node3" class="node">
 <title>ext_jtag</title>
-<path fill="#f3f4f6" stroke="#4b5563" stroke-width="1.1" d="M2389.5,-880.48C2389.5,-880.48 2258.5,-880.48 2258.5,-880.48 2252.5,-880.48 2246.5,-874.48 2246.5,-868.48 2246.5,-868.48 2246.5,-856.48 2246.5,-856.48 2246.5,-850.48 2252.5,-844.48 2258.5,-844.48 2258.5,-844.48 2389.5,-844.48 2389.5,-844.48 2395.5,-844.48 2401.5,-850.48 2401.5,-856.48 2401.5,-856.48 2401.5,-868.48 2401.5,-868.48 2401.5,-874.48 2395.5,-880.48 2389.5,-880.48"/>
-<text text-anchor="middle" x="2324" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Management JTAG</text>
-<text text-anchor="middle" x="2324" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">TCK, TMS, TDI, TRST_n, TDO</text>
+<path fill="#f3f4f6" stroke="#4b5563" stroke-width="1.1" d="M2419.5,-880.48C2419.5,-880.48 2288.5,-880.48 2288.5,-880.48 2282.5,-880.48 2276.5,-874.48 2276.5,-868.48 2276.5,-868.48 2276.5,-856.48 2276.5,-856.48 2276.5,-850.48 2282.5,-844.48 2288.5,-844.48 2288.5,-844.48 2419.5,-844.48 2419.5,-844.48 2425.5,-844.48 2431.5,-850.48 2431.5,-856.48 2431.5,-856.48 2431.5,-868.48 2431.5,-868.48 2431.5,-874.48 2425.5,-880.48 2419.5,-880.48"/>
+<text text-anchor="middle" x="2354" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Management JTAG</text>
+<text text-anchor="middle" x="2354" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">TCK, TMS, TDI, TRST_n, TDO</text>
 </g>
 <!-- jtag_dtm -->
 <g id="node10" class="node">
 <title>jtag_dtm</title>
-<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M2399,-698.98C2399,-698.98 2249,-698.98 2249,-698.98 2243,-698.98 2237,-692.98 2237,-686.98 2237,-686.98 2237,-674.98 2237,-674.98 2237,-668.98 2243,-662.98 2249,-662.98 2249,-662.98 2399,-662.98 2399,-662.98 2405,-662.98 2411,-668.98 2411,-674.98 2411,-674.98 2411,-686.98 2411,-686.98 2411,-692.98 2405,-698.98 2399,-698.98"/>
-<text text-anchor="middle" x="2324" y="-683.98" font-family="Arial" font-size="10.00" fill="#111827">Hazard3 JTAG DTM</text>
-<text text-anchor="middle" x="2324" y="-672.98" font-family="Arial" font-size="10.00" fill="#111827">10 MHz asynchronous TCK domain</text>
+<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M2429,-698.98C2429,-698.98 2279,-698.98 2279,-698.98 2273,-698.98 2267,-692.98 2267,-686.98 2267,-686.98 2267,-674.98 2267,-674.98 2267,-668.98 2273,-662.98 2279,-662.98 2279,-662.98 2429,-662.98 2429,-662.98 2435,-662.98 2441,-668.98 2441,-674.98 2441,-674.98 2441,-686.98 2441,-686.98 2441,-692.98 2435,-698.98 2429,-698.98"/>
+<text text-anchor="middle" x="2354" y="-683.98" font-family="Arial" font-size="10.00" fill="#111827">Hazard3 JTAG DTM</text>
+<text text-anchor="middle" x="2354" y="-672.98" font-family="Arial" font-size="10.00" fill="#111827">10 MHz asynchronous TCK domain</text>
 </g>
 <!-- ext_jtag&#45;&gt;jtag_dtm -->
 <g id="edge2" class="edge">
 <title>ext_jtag&#45;&gt;jtag_dtm</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2324,-844.27C2324,-812.24 2324,-743.39 2324,-706.51"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2326.45,-706.14 2324,-699.14 2321.55,-706.14 2326.45,-706.14"/>
-<text text-anchor="middle" x="2344" y="-815.08" font-family="Arial" font-size="8.00" fill="#374151">JTAG pads</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2354,-844.27C2354,-812.24 2354,-743.39 2354,-706.51"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2356.45,-706.14 2354,-699.14 2351.55,-706.14 2356.45,-706.14"/>
+<text text-anchor="middle" x="2374" y="-815.08" font-family="Arial" font-size="8.00" fill="#374151">JTAG pads</text>
 </g>
 <!-- rtl_owned -->
 <g id="node4" class="node">
 <title>rtl_owned</title>
-<path fill="#dcecf8" stroke="#4b5563" stroke-width="1.1" d="M3822,-880.48C3822,-880.48 3710,-880.48 3710,-880.48 3704,-880.48 3698,-874.48 3698,-868.48 3698,-868.48 3698,-856.48 3698,-856.48 3698,-850.48 3704,-844.48 3710,-844.48 3710,-844.48 3822,-844.48 3822,-844.48 3828,-844.48 3834,-850.48 3834,-856.48 3834,-856.48 3834,-868.48 3834,-868.48 3834,-874.48 3828,-880.48 3822,-880.48"/>
-<text text-anchor="middle" x="3766" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Self&#45;owned RTL</text>
-<text text-anchor="middle" x="3766" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">Verible format + strict style</text>
+<path fill="#dcecf8" stroke="#4b5563" stroke-width="1.1" d="M3837,-880.48C3837,-880.48 3725,-880.48 3725,-880.48 3719,-880.48 3713,-874.48 3713,-868.48 3713,-868.48 3713,-856.48 3713,-856.48 3713,-850.48 3719,-844.48 3725,-844.48 3725,-844.48 3837,-844.48 3837,-844.48 3843,-844.48 3849,-850.48 3849,-856.48 3849,-856.48 3849,-868.48 3849,-868.48 3849,-874.48 3843,-880.48 3837,-880.48"/>
+<text text-anchor="middle" x="3781" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Self&#45;owned RTL</text>
+<text text-anchor="middle" x="3781" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">Verible format + strict style</text>
 </g>
 <!-- rtl_verif -->
 <g id="node5" class="node">
 <title>rtl_verif</title>
-<path fill="#fce7f3" stroke="#4b5563" stroke-width="1.1" d="M3658.5,-880.48C3658.5,-880.48 3571.5,-880.48 3571.5,-880.48 3565.5,-880.48 3559.5,-874.48 3559.5,-868.48 3559.5,-868.48 3559.5,-856.48 3559.5,-856.48 3559.5,-850.48 3565.5,-844.48 3571.5,-844.48 3571.5,-844.48 3658.5,-844.48 3658.5,-844.48 3664.5,-844.48 3670.5,-850.48 3670.5,-856.48 3670.5,-856.48 3670.5,-868.48 3670.5,-868.48 3670.5,-874.48 3664.5,-880.48 3658.5,-880.48"/>
-<text text-anchor="middle" x="3615" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Formal and DV RTL</text>
-<text text-anchor="middle" x="3615" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">verification lint profile</text>
+<path fill="#fce7f3" stroke="#4b5563" stroke-width="1.1" d="M3673.5,-880.48C3673.5,-880.48 3586.5,-880.48 3586.5,-880.48 3580.5,-880.48 3574.5,-874.48 3574.5,-868.48 3574.5,-868.48 3574.5,-856.48 3574.5,-856.48 3574.5,-850.48 3580.5,-844.48 3586.5,-844.48 3586.5,-844.48 3673.5,-844.48 3673.5,-844.48 3679.5,-844.48 3685.5,-850.48 3685.5,-856.48 3685.5,-856.48 3685.5,-868.48 3685.5,-868.48 3685.5,-874.48 3679.5,-880.48 3673.5,-880.48"/>
+<text text-anchor="middle" x="3630" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Formal and DV RTL</text>
+<text text-anchor="middle" x="3630" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">verification lint profile</text>
 </g>
 <!-- rtl_tech -->
 <g id="node6" class="node">
 <title>rtl_tech</title>
-<path fill="#fff3c9" stroke="#4b5563" stroke-width="1.1" d="M3520.5,-880.48C3520.5,-880.48 3393.5,-880.48 3393.5,-880.48 3387.5,-880.48 3381.5,-874.48 3381.5,-868.48 3381.5,-868.48 3381.5,-856.48 3381.5,-856.48 3381.5,-850.48 3387.5,-844.48 3393.5,-844.48 3393.5,-844.48 3520.5,-844.48 3520.5,-844.48 3526.5,-844.48 3532.5,-850.48 3532.5,-856.48 3532.5,-856.48 3532.5,-868.48 3532.5,-868.48 3532.5,-874.48 3526.5,-880.48 3520.5,-880.48"/>
-<text text-anchor="middle" x="3457" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">PDK and technology wrappers</text>
-<text text-anchor="middle" x="3457" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">compile/elaboration profile</text>
+<path fill="#fff3c9" stroke="#4b5563" stroke-width="1.1" d="M3535.5,-880.48C3535.5,-880.48 3408.5,-880.48 3408.5,-880.48 3402.5,-880.48 3396.5,-874.48 3396.5,-868.48 3396.5,-868.48 3396.5,-856.48 3396.5,-856.48 3396.5,-850.48 3402.5,-844.48 3408.5,-844.48 3408.5,-844.48 3535.5,-844.48 3535.5,-844.48 3541.5,-844.48 3547.5,-850.48 3547.5,-856.48 3547.5,-856.48 3547.5,-868.48 3547.5,-868.48 3547.5,-874.48 3541.5,-880.48 3535.5,-880.48"/>
+<text text-anchor="middle" x="3472" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">PDK and technology wrappers</text>
+<text text-anchor="middle" x="3472" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">compile/elaboration profile</text>
 </g>
 <!-- rtl_generated -->
 <g id="node7" class="node">
 <title>rtl_generated</title>
-<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M3342.5,-880.48C3342.5,-880.48 3191.5,-880.48 3191.5,-880.48 3185.5,-880.48 3179.5,-874.48 3179.5,-868.48 3179.5,-868.48 3179.5,-856.48 3179.5,-856.48 3179.5,-850.48 3185.5,-844.48 3191.5,-844.48 3191.5,-844.48 3342.5,-844.48 3342.5,-844.48 3348.5,-844.48 3354.5,-850.48 3354.5,-856.48 3354.5,-856.48 3354.5,-868.48 3354.5,-868.48 3354.5,-874.48 3348.5,-880.48 3342.5,-880.48"/>
-<text text-anchor="middle" x="3267" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Generated and managed RTL</text>
-<text text-anchor="middle" x="3267" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">locked source and regeneration flow</text>
+<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M3357.5,-880.48C3357.5,-880.48 3206.5,-880.48 3206.5,-880.48 3200.5,-880.48 3194.5,-874.48 3194.5,-868.48 3194.5,-868.48 3194.5,-856.48 3194.5,-856.48 3194.5,-850.48 3200.5,-844.48 3206.5,-844.48 3206.5,-844.48 3357.5,-844.48 3357.5,-844.48 3363.5,-844.48 3369.5,-850.48 3369.5,-856.48 3369.5,-856.48 3369.5,-868.48 3369.5,-868.48 3369.5,-874.48 3363.5,-880.48 3357.5,-880.48"/>
+<text text-anchor="middle" x="3282" y="-865.48" font-family="Arial" font-size="10.00" fill="#111827">Generated and managed RTL</text>
+<text text-anchor="middle" x="3282" y="-854.48" font-family="Arial" font-size="10.00" fill="#111827">locked source and regeneration flow</text>
 </g>
 <!-- fabric -->
 <g id="node15" class="node">
 <title>fabric</title>
-<path fill="#dcecf8" stroke="#4b5563" stroke-width="1.1" d="M2940.75,-470.69C2940.75,-470.69 2857.37,-499.78 2857.37,-499.78 2851.7,-501.75 2840.04,-503.73 2834.04,-503.73 2834.04,-503.73 2645.96,-503.73 2645.96,-503.73 2639.96,-503.73 2628.3,-501.75 2622.63,-499.78 2622.63,-499.78 2539.25,-470.69 2539.25,-470.69 2533.59,-468.72 2533.59,-464.77 2539.25,-462.79 2539.25,-462.79 2622.63,-433.71 2622.63,-433.71 2628.3,-431.73 2639.96,-429.76 2645.96,-429.76 2645.96,-429.76 2834.04,-429.76 2834.04,-429.76 2840.04,-429.76 2851.7,-431.73 2857.37,-433.71 2857.37,-433.71 2940.75,-462.79 2940.75,-462.79 2946.41,-464.77 2946.41,-468.72 2940.75,-470.69"/>
-<text text-anchor="middle" x="2740" y="-475.24" font-family="Arial" font-size="10.00" fill="#111827">AXI4 fabric</text>
-<text text-anchor="middle" x="2740" y="-464.24" font-family="Arial" font-size="10.00" fill="#111827">3 masters / 9 targets, per&#45;target round robin</text>
-<text text-anchor="middle" x="2740" y="-453.24" font-family="Arial" font-size="10.00" fill="#111827">FIXED/INCR/WRAP1&#45;16, access policy, fault reporting</text>
+<path fill="#dcecf8" stroke="#4b5563" stroke-width="1.1" d="M2970.75,-470.69C2970.75,-470.69 2887.37,-499.78 2887.37,-499.78 2881.7,-501.75 2870.04,-503.73 2864.04,-503.73 2864.04,-503.73 2675.96,-503.73 2675.96,-503.73 2669.96,-503.73 2658.3,-501.75 2652.63,-499.78 2652.63,-499.78 2569.25,-470.69 2569.25,-470.69 2563.59,-468.72 2563.59,-464.77 2569.25,-462.79 2569.25,-462.79 2652.63,-433.71 2652.63,-433.71 2658.3,-431.73 2669.96,-429.76 2675.96,-429.76 2675.96,-429.76 2864.04,-429.76 2864.04,-429.76 2870.04,-429.76 2881.7,-431.73 2887.37,-433.71 2887.37,-433.71 2970.75,-462.79 2970.75,-462.79 2976.41,-464.77 2976.41,-468.72 2970.75,-470.69"/>
+<text text-anchor="middle" x="2770" y="-475.24" font-family="Arial" font-size="10.00" fill="#111827">AXI4 fabric</text>
+<text text-anchor="middle" x="2770" y="-464.24" font-family="Arial" font-size="10.00" fill="#111827">3 masters / 9 targets, per&#45;target round robin</text>
+<text text-anchor="middle" x="2770" y="-453.24" font-family="Arial" font-size="10.00" fill="#111827">FIXED/INCR/WRAP1&#45;16, access policy, fault reporting</text>
 </g>
 <!-- rcu&#45;&gt;fabric -->
 <g id="edge3" class="edge">
 <title>rcu&#45;&gt;fabric</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M362.03,-560.47C368.2,-559.24 372,-558.48 372,-558.48 372,-558.48 1976.81,-496.99 2544.18,-475.25"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2544.31,-477.69 2551.21,-474.98 2544.13,-472.8 2544.31,-477.69"/>
-<text text-anchor="middle" x="1240" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">system clock / reset</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M362.03,-560.47C368.2,-559.24 372,-558.48 372,-558.48 372,-558.48 2001.46,-496.82 2573.98,-475.16"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2574.18,-477.6 2581.08,-474.89 2573.99,-472.71 2574.18,-477.6"/>
+<text text-anchor="middle" x="1251" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">system clock / reset</text>
 </g>
 <!-- clint -->
 <g id="node21" class="node">
@@ -166,53 +166,53 @@
 <!-- mgmt_core -->
 <g id="node9" class="node">
 <title>mgmt_core</title>
-<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M2984,-703.48C2984,-703.48 2830,-703.48 2830,-703.48 2824,-703.48 2818,-697.48 2818,-691.48 2818,-691.48 2818,-670.48 2818,-670.48 2818,-664.48 2824,-658.48 2830,-658.48 2830,-658.48 2984,-658.48 2984,-658.48 2990,-658.48 2996,-664.48 2996,-670.48 2996,-670.48 2996,-691.48 2996,-691.48 2996,-697.48 2990,-703.48 2984,-703.48"/>
-<text text-anchor="middle" x="2907" y="-689.48" font-family="Arial" font-size="10.00" fill="#111827">Management core</text>
-<text text-anchor="middle" x="2907" y="-678.48" font-family="Arial" font-size="10.00" fill="#111827">Fixed Hazard3, branch predictor</text>
-<text text-anchor="middle" x="2907" y="-667.48" font-family="Arial" font-size="10.00" fill="#111827">JTAG Debug Module always present</text>
+<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M3014,-703.48C3014,-703.48 2860,-703.48 2860,-703.48 2854,-703.48 2848,-697.48 2848,-691.48 2848,-691.48 2848,-670.48 2848,-670.48 2848,-664.48 2854,-658.48 2860,-658.48 2860,-658.48 3014,-658.48 3014,-658.48 3020,-658.48 3026,-664.48 3026,-670.48 3026,-670.48 3026,-691.48 3026,-691.48 3026,-697.48 3020,-703.48 3014,-703.48"/>
+<text text-anchor="middle" x="2937" y="-689.48" font-family="Arial" font-size="10.00" fill="#111827">Management core</text>
+<text text-anchor="middle" x="2937" y="-678.48" font-family="Arial" font-size="10.00" fill="#111827">Fixed Hazard3, branch predictor</text>
+<text text-anchor="middle" x="2937" y="-667.48" font-family="Arial" font-size="10.00" fill="#111827">JTAG Debug Module always present</text>
 </g>
 <!-- mgmt_adapter -->
 <g id="node12" class="node">
 <title>mgmt_adapter</title>
-<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M2945.5,-598.98C2945.5,-598.98 2868.5,-598.98 2868.5,-598.98 2862.5,-598.98 2856.5,-592.98 2856.5,-586.98 2856.5,-586.98 2856.5,-574.98 2856.5,-574.98 2856.5,-568.98 2862.5,-562.98 2868.5,-562.98 2868.5,-562.98 2945.5,-562.98 2945.5,-562.98 2951.5,-562.98 2957.5,-568.98 2957.5,-574.98 2957.5,-574.98 2957.5,-586.98 2957.5,-586.98 2957.5,-592.98 2951.5,-598.98 2945.5,-598.98"/>
-<text text-anchor="middle" x="2907" y="-583.98" font-family="Arial" font-size="10.00" fill="#111827">AHB&#45;Lite2AXI4</text>
-<text text-anchor="middle" x="2907" y="-572.98" font-family="Arial" font-size="10.00" fill="#111827">single&#45;beat adapter</text>
+<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M2975.5,-598.98C2975.5,-598.98 2898.5,-598.98 2898.5,-598.98 2892.5,-598.98 2886.5,-592.98 2886.5,-586.98 2886.5,-586.98 2886.5,-574.98 2886.5,-574.98 2886.5,-568.98 2892.5,-562.98 2898.5,-562.98 2898.5,-562.98 2975.5,-562.98 2975.5,-562.98 2981.5,-562.98 2987.5,-568.98 2987.5,-574.98 2987.5,-574.98 2987.5,-586.98 2987.5,-586.98 2987.5,-592.98 2981.5,-598.98 2975.5,-598.98"/>
+<text text-anchor="middle" x="2937" y="-583.98" font-family="Arial" font-size="10.00" fill="#111827">AHB&#45;Lite2AXI4</text>
+<text text-anchor="middle" x="2937" y="-572.98" font-family="Arial" font-size="10.00" fill="#111827">single&#45;beat adapter</text>
 </g>
 <!-- mgmt_core&#45;&gt;mgmt_adapter -->
 <g id="edge9" class="edge">
 <title>mgmt_core&#45;&gt;mgmt_adapter</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2907,-658.24C2907,-642.92 2907,-622.4 2907,-606.51"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2909.45,-606.12 2907,-599.12 2904.55,-606.12 2909.45,-606.12"/>
-<text text-anchor="middle" x="2923.5" y="-629.08" font-family="Arial" font-size="8.00" fill="#374151">AHB&#45;Lite</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2937,-658.24C2937,-642.92 2937,-622.4 2937,-606.51"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2939.45,-606.12 2937,-599.12 2934.55,-606.12 2939.45,-606.12"/>
+<text text-anchor="middle" x="2953.5" y="-629.08" font-family="Arial" font-size="8.00" fill="#374151">AHB&#45;Lite</text>
 </g>
 <!-- debug_module -->
 <g id="node11" class="node">
 <title>debug_module</title>
-<path fill="#fce7f3" stroke="#4b5563" stroke-width="1.1" d="M2660.5,-703.48C2660.5,-703.48 2539.5,-703.48 2539.5,-703.48 2533.5,-703.48 2527.5,-697.48 2527.5,-691.48 2527.5,-691.48 2527.5,-670.48 2527.5,-670.48 2527.5,-664.48 2533.5,-658.48 2539.5,-658.48 2539.5,-658.48 2660.5,-658.48 2660.5,-658.48 2666.5,-658.48 2672.5,-664.48 2672.5,-670.48 2672.5,-670.48 2672.5,-691.48 2672.5,-691.48 2672.5,-697.48 2666.5,-703.48 2660.5,-703.48"/>
-<text text-anchor="middle" x="2600" y="-689.48" font-family="Arial" font-size="10.00" fill="#111827">Hazard3 Debug Module</text>
-<text text-anchor="middle" x="2600" y="-678.48" font-family="Arial" font-size="10.00" fill="#111827">abstract commands, no SBA</text>
-<text text-anchor="middle" x="2600" y="-667.48" font-family="Arial" font-size="10.00" fill="#111827">management&#45;hart&#45;only reset</text>
+<path fill="#fce7f3" stroke="#4b5563" stroke-width="1.1" d="M2690.5,-703.48C2690.5,-703.48 2569.5,-703.48 2569.5,-703.48 2563.5,-703.48 2557.5,-697.48 2557.5,-691.48 2557.5,-691.48 2557.5,-670.48 2557.5,-670.48 2557.5,-664.48 2563.5,-658.48 2569.5,-658.48 2569.5,-658.48 2690.5,-658.48 2690.5,-658.48 2696.5,-658.48 2702.5,-664.48 2702.5,-670.48 2702.5,-670.48 2702.5,-691.48 2702.5,-691.48 2702.5,-697.48 2696.5,-703.48 2690.5,-703.48"/>
+<text text-anchor="middle" x="2630" y="-689.48" font-family="Arial" font-size="10.00" fill="#111827">Hazard3 Debug Module</text>
+<text text-anchor="middle" x="2630" y="-678.48" font-family="Arial" font-size="10.00" fill="#111827">abstract commands, no SBA</text>
+<text text-anchor="middle" x="2630" y="-667.48" font-family="Arial" font-size="10.00" fill="#111827">management&#45;hart&#45;only reset</text>
 </g>
 <!-- jtag_dtm&#45;&gt;debug_module -->
 <g id="edge4" class="edge">
 <title>jtag_dtm&#45;&gt;debug_module</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2411.33,-680.98C2446.12,-680.98 2485.91,-680.98 2519.95,-680.98"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2520.12,-683.43 2527.12,-680.98 2520.12,-678.53 2520.12,-683.43"/>
-<text text-anchor="middle" x="2469.25" y="-686.58" font-family="Arial" font-size="8.00" fill="#374151">DMI, asynchronous CDC</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2441.33,-680.98C2476.12,-680.98 2515.91,-680.98 2549.95,-680.98"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2550.12,-683.43 2557.12,-680.98 2550.12,-678.53 2550.12,-683.43"/>
+<text text-anchor="middle" x="2499.25" y="-686.58" font-family="Arial" font-size="8.00" fill="#374151">DMI, asynchronous CDC</text>
 </g>
 <!-- debug_module&#45;&gt;mgmt_core -->
 <g id="edge5" class="edge">
 <title>debug_module&#45;&gt;mgmt_core</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2672.75,-680.98C2713.99,-680.98 2766.09,-680.98 2810.69,-680.98"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2810.77,-683.43 2817.77,-680.98 2810.77,-678.53 2810.77,-683.43"/>
-<text text-anchor="middle" x="2745.25" y="-686.58" font-family="Arial" font-size="8.00" fill="#374151">halt, resume, abstract commands</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2702.75,-680.98C2743.99,-680.98 2796.09,-680.98 2840.69,-680.98"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2840.77,-683.43 2847.77,-680.98 2840.77,-678.53 2840.77,-683.43"/>
+<text text-anchor="middle" x="2775.25" y="-686.58" font-family="Arial" font-size="8.00" fill="#374151">halt, resume, abstract commands</text>
 </g>
 <!-- debug_module&#45;&gt;mgmt_adapter -->
 <g id="edge6" class="edge">
 <title>debug_module&#45;&gt;mgmt_adapter</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2668.34,-658.47C2740.21,-635.84 2843,-603.48 2843,-603.48 2843,-603.48 2845.48,-602.65 2849.46,-601.31"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2850.41,-603.58 2856.26,-599.03 2848.85,-598.94 2850.41,-603.58"/>
-<text text-anchor="middle" x="2802" y="-629.08" font-family="Arial" font-size="8.00" fill="#374151">reset after bridge idle</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2698.34,-658.47C2770.21,-635.84 2873,-603.48 2873,-603.48 2873,-603.48 2875.48,-602.65 2879.46,-601.31"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2880.41,-603.58 2886.26,-599.03 2878.85,-598.94 2880.41,-603.58"/>
+<text text-anchor="middle" x="2832" y="-629.08" font-family="Arial" font-size="8.00" fill="#374151">reset after bridge idle</text>
 </g>
 <!-- timers -->
 <g id="node28" class="node">
@@ -225,31 +225,31 @@
 <!-- debug_module&#45;&gt;timers -->
 <g id="edge7" class="edge">
 <title>debug_module&#45;&gt;timers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2527.3,-671.05C2479.22,-665.15 2425,-658.48 2425,-658.48 2425,-658.48 1328,-581.98 1328,-581.98 1328,-581.98 1328,-581.98 1328,-356 1328,-356 1323,-289 1323,-289 1323,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2557.3,-671.05C2509.22,-665.15 2455,-658.48 2455,-658.48 2455,-658.48 1325,-581.98 1325,-581.98 1325,-581.98 1325,-581.98 1325,-356 1325,-356 1320,-289 1320,-289 1320,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="974.69,-259.72 967.32,-260.54 973.59,-264.5 974.69,-259.72"/>
-<text text-anchor="middle" x="1339" y="-464.84" font-family="Arial" font-size="8.00" fill="#374151">halted</text>
+<text text-anchor="middle" x="1336" y="-464.84" font-family="Arial" font-size="8.00" fill="#374151">halted</text>
 </g>
 <!-- mgmt_adapter&#45;&gt;fabric -->
 <g id="edge10" class="edge">
 <title>mgmt_adapter&#45;&gt;fabric</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2881.64,-562.94C2859.83,-548.28 2827.52,-526.56 2799.26,-507.57"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2800.48,-505.44 2793.3,-503.57 2797.74,-509.5 2800.48,-505.44"/>
-<text text-anchor="middle" x="2847" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2911.64,-562.94C2889.83,-548.28 2857.52,-526.56 2829.26,-507.57"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2830.48,-505.44 2823.3,-503.57 2827.74,-509.5 2830.48,-505.44"/>
+<text text-anchor="middle" x="2877" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
 </g>
 <!-- user_core -->
 <g id="node13" class="node">
 <title>user_core</title>
-<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M2817,-603.48C2817,-603.48 2741,-603.48 2741,-603.48 2735,-603.48 2729,-597.48 2729,-591.48 2729,-591.48 2729,-570.48 2729,-570.48 2729,-564.48 2735,-558.48 2741,-558.48 2741,-558.48 2817,-558.48 2817,-558.48 2823,-558.48 2829,-564.48 2829,-570.48 2829,-570.48 2829,-591.48 2829,-591.48 2829,-597.48 2823,-603.48 2817,-603.48"/>
-<text text-anchor="middle" x="2779" y="-589.48" font-family="Arial" font-size="10.00" fill="#111827">Selected user core</text>
-<text text-anchor="middle" x="2779" y="-578.48" font-family="Arial" font-size="10.00" fill="#111827">C0&#45;C5, one active</text>
-<text text-anchor="middle" x="2779" y="-567.48" font-family="Arial" font-size="10.00" fill="#111827">PicoRV32 at C5</text>
+<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M2847,-603.48C2847,-603.48 2771,-603.48 2771,-603.48 2765,-603.48 2759,-597.48 2759,-591.48 2759,-591.48 2759,-570.48 2759,-570.48 2759,-564.48 2765,-558.48 2771,-558.48 2771,-558.48 2847,-558.48 2847,-558.48 2853,-558.48 2859,-564.48 2859,-570.48 2859,-570.48 2859,-591.48 2859,-591.48 2859,-597.48 2853,-603.48 2847,-603.48"/>
+<text text-anchor="middle" x="2809" y="-589.48" font-family="Arial" font-size="10.00" fill="#111827">Selected user core</text>
+<text text-anchor="middle" x="2809" y="-578.48" font-family="Arial" font-size="10.00" fill="#111827">C0&#45;C5, one active</text>
+<text text-anchor="middle" x="2809" y="-567.48" font-family="Arial" font-size="10.00" fill="#111827">PicoRV32 at C5</text>
 </g>
 <!-- user_core&#45;&gt;fabric -->
 <g id="edge11" class="edge">
 <title>user_core&#45;&gt;fabric</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2771.48,-558.34C2766.79,-544.85 2760.6,-527.03 2754.95,-510.75"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2757.17,-509.7 2752.56,-503.89 2752.54,-511.31 2757.17,-509.7"/>
-<text text-anchor="middle" x="2771" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2801.48,-558.34C2796.79,-544.85 2790.6,-527.03 2784.95,-510.75"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2787.17,-509.7 2782.56,-503.89 2782.54,-511.31 2787.17,-509.7"/>
+<text text-anchor="middle" x="2801" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
 </g>
 <!-- dma -->
 <g id="node14" class="node">
@@ -261,9 +261,9 @@
 <!-- dma&#45;&gt;fabric -->
 <g id="edge12" class="edge">
 <title>dma&#45;&gt;fabric</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1863.31,-569.93C2023.64,-551.24 2369.85,-510.88 2575.99,-486.86"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2576.29,-489.29 2582.96,-486.05 2575.72,-484.42 2576.29,-489.29"/>
-<text text-anchor="middle" x="2238" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1863.39,-570.22C2028.43,-551.56 2391.09,-510.57 2604.34,-486.47"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2604.87,-488.87 2611.55,-485.65 2604.32,-484 2604.87,-488.87"/>
+<text text-anchor="middle" x="2252" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
 </g>
 <!-- stream_io -->
 <g id="node24" class="node">
@@ -277,10 +277,10 @@
 <!-- dma&#45;&gt;stream_io -->
 <g id="edge13" class="edge">
 <title>dma&#45;&gt;stream_io</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1870.2,-575.24C2127.54,-562.16 2829,-526.48 2829,-526.48 2829,-526.48 3346,-503.48 3346,-503.48 3346,-503.48 4267,-266 4267,-266 4267,-266 4269.6,-265.28 4273.96,-264.06"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1869.96,-572.8 1863.09,-575.61 1870.21,-577.7 1869.96,-572.8"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1870.52,-575.36C2133.25,-562.37 2859,-526.48 2859,-526.48 2859,-526.48 3376,-503.48 3376,-503.48 3376,-503.48 4267,-266 4267,-266 4267,-266 4269.6,-265.28 4273.96,-264.06"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1870.13,-572.93 1863.26,-575.72 1870.37,-577.82 1870.13,-572.93"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="4274.81,-266.37 4280.9,-262.13 4273.5,-261.65 4274.81,-266.37"/>
-<text text-anchor="middle" x="3776.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4&#45;Stream</text>
+<text text-anchor="middle" x="3793.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4&#45;Stream</text>
 </g>
 <!-- uart0 -->
 <g id="node25" class="node">
@@ -308,9 +308,9 @@
 <!-- dma&#45;&gt;i2c_controllers -->
 <g id="edge47" class="edge">
 <title>dma&#45;&gt;i2c_controllers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1761.1,-562.65C1703.62,-500.01 1510,-289 1510,-289 1510,-289 1467.37,-275.68 1426.12,-262.79"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1426.66,-260.39 1419.25,-260.64 1425.2,-265.07 1426.66,-260.39"/>
-<text text-anchor="middle" x="1656" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">DATA_CMD / RXDATA</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1761.16,-562.65C1703.89,-500.01 1511,-289 1511,-289 1511,-289 1468.1,-275.68 1426.59,-262.79"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1427.09,-260.38 1419.68,-260.64 1425.64,-265.06 1427.09,-260.38"/>
+<text text-anchor="middle" x="1657" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">DATA_CMD / RXDATA</text>
 </g>
 <!-- ws2812 -->
 <g id="node29" class="node">
@@ -330,59 +330,59 @@
 <!-- fault -->
 <g id="node16" class="node">
 <title>fault</title>
-<path fill="#fce7f3" stroke="#4b5563" stroke-width="1.1" d="M3320.5,-484.74C3320.5,-484.74 3211.5,-484.74 3211.5,-484.74 3205.5,-484.74 3199.5,-478.74 3199.5,-472.74 3199.5,-472.74 3199.5,-460.74 3199.5,-460.74 3199.5,-454.74 3205.5,-448.74 3211.5,-448.74 3211.5,-448.74 3320.5,-448.74 3320.5,-448.74 3326.5,-448.74 3332.5,-454.74 3332.5,-460.74 3332.5,-460.74 3332.5,-472.74 3332.5,-472.74 3332.5,-478.74 3326.5,-484.74 3320.5,-484.74"/>
-<text text-anchor="middle" x="3266" y="-469.74" font-family="Arial" font-size="10.00" fill="#111827">Error slave</text>
-<text text-anchor="middle" x="3266" y="-458.74" font-family="Arial" font-size="10.00" fill="#111827">access and protocol faults</text>
+<path fill="#fce7f3" stroke="#4b5563" stroke-width="1.1" d="M3350.5,-484.74C3350.5,-484.74 3241.5,-484.74 3241.5,-484.74 3235.5,-484.74 3229.5,-478.74 3229.5,-472.74 3229.5,-472.74 3229.5,-460.74 3229.5,-460.74 3229.5,-454.74 3235.5,-448.74 3241.5,-448.74 3241.5,-448.74 3350.5,-448.74 3350.5,-448.74 3356.5,-448.74 3362.5,-454.74 3362.5,-460.74 3362.5,-460.74 3362.5,-472.74 3362.5,-472.74 3362.5,-478.74 3356.5,-484.74 3350.5,-484.74"/>
+<text text-anchor="middle" x="3296" y="-469.74" font-family="Arial" font-size="10.00" fill="#111827">Error slave</text>
+<text text-anchor="middle" x="3296" y="-458.74" font-family="Arial" font-size="10.00" fill="#111827">access and protocol faults</text>
 </g>
 <!-- fabric&#45;&gt;fault -->
 <g id="edge14" class="edge">
 <title>fabric&#45;&gt;fault</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2884.8,-494.31C2964.94,-509.57 3048.5,-525.48 3048.5,-525.48 3048.5,-525.48 3101.5,-525.48 3101.5,-525.48 3101.5,-525.48 3186,-503.48 3186,-503.48 3186,-503.48 3202.11,-496.08 3219.88,-487.93"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2884.89,-491.84 2877.56,-492.94 2883.98,-496.65 2884.89,-491.84"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3221.13,-490.05 3226.47,-484.9 3219.08,-485.59 3221.13,-490.05"/>
-<text text-anchor="middle" x="3075" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">invalid / denied</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2914.8,-494.31C2994.94,-509.57 3078.5,-525.48 3078.5,-525.48 3078.5,-525.48 3131.5,-525.48 3131.5,-525.48 3131.5,-525.48 3216,-503.48 3216,-503.48 3216,-503.48 3232.11,-496.08 3249.88,-487.93"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2914.89,-491.84 2907.56,-492.94 2913.98,-496.65 2914.89,-491.84"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3251.13,-490.05 3256.47,-484.9 3249.08,-485.59 3251.13,-490.05"/>
+<text text-anchor="middle" x="3105" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">invalid / denied</text>
 </g>
 <!-- sram -->
 <g id="node17" class="node">
 <title>sram</title>
-<path fill="#fff3c9" stroke="#4b5563" stroke-width="1.1" d="M3160.5,-484.74C3160.5,-484.74 3017.5,-484.74 3017.5,-484.74 3011.5,-484.74 3005.5,-478.74 3005.5,-472.74 3005.5,-472.74 3005.5,-460.74 3005.5,-460.74 3005.5,-454.74 3011.5,-448.74 3017.5,-448.74 3017.5,-448.74 3160.5,-448.74 3160.5,-448.74 3166.5,-448.74 3172.5,-454.74 3172.5,-460.74 3172.5,-460.74 3172.5,-472.74 3172.5,-472.74 3172.5,-478.74 3166.5,-484.74 3160.5,-484.74"/>
-<text text-anchor="middle" x="3089" y="-469.74" font-family="Arial" font-size="10.00" fill="#111827">On&#45;chip SRAM</text>
-<text text-anchor="middle" x="3089" y="-458.74" font-family="Arial" font-size="10.00" fill="#111827">optional pipelined AXI42RAM path</text>
+<path fill="#fff3c9" stroke="#4b5563" stroke-width="1.1" d="M3190.5,-484.74C3190.5,-484.74 3047.5,-484.74 3047.5,-484.74 3041.5,-484.74 3035.5,-478.74 3035.5,-472.74 3035.5,-472.74 3035.5,-460.74 3035.5,-460.74 3035.5,-454.74 3041.5,-448.74 3047.5,-448.74 3047.5,-448.74 3190.5,-448.74 3190.5,-448.74 3196.5,-448.74 3202.5,-454.74 3202.5,-460.74 3202.5,-460.74 3202.5,-472.74 3202.5,-472.74 3202.5,-478.74 3196.5,-484.74 3190.5,-484.74"/>
+<text text-anchor="middle" x="3119" y="-469.74" font-family="Arial" font-size="10.00" fill="#111827">On&#45;chip SRAM</text>
+<text text-anchor="middle" x="3119" y="-458.74" font-family="Arial" font-size="10.00" fill="#111827">optional pipelined AXI42RAM path</text>
 </g>
 <!-- fabric&#45;&gt;sram -->
 <g id="edge15" class="edge">
 <title>fabric&#45;&gt;sram</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2952.32,-466.74C2968.24,-466.74 2983.72,-466.74 2998.2,-466.74"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2998.22,-469.19 3005.22,-466.74 2998.22,-464.29 2998.22,-469.19"/>
-<text text-anchor="middle" x="2978.89" y="-472.34" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2982.32,-466.74C2998.24,-466.74 3013.72,-466.74 3028.2,-466.74"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3028.22,-469.19 3035.22,-466.74 3028.22,-464.29 3028.22,-469.19"/>
+<text text-anchor="middle" x="3008.89" y="-472.34" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
 </g>
-<!-- apb4_adapter -->
+<!-- apb4_periph -->
 <g id="node18" class="node">
-<title>apb4_adapter</title>
+<title>apb4_periph</title>
 <path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M1922.5,-375C1922.5,-375 1817.5,-375 1817.5,-375 1811.5,-375 1805.5,-369 1805.5,-363 1805.5,-363 1805.5,-351 1805.5,-351 1805.5,-345 1811.5,-339 1817.5,-339 1817.5,-339 1922.5,-339 1922.5,-339 1928.5,-339 1934.5,-345 1934.5,-351 1934.5,-351 1934.5,-363 1934.5,-363 1934.5,-369 1928.5,-375 1922.5,-375"/>
 <text text-anchor="middle" x="1870" y="-360" font-family="Arial" font-size="10.00" fill="#111827">AXI42APB</text>
 <text text-anchor="middle" x="1870" y="-349" font-family="Arial" font-size="10.00" fill="#111827">APB4 configuration plane</text>
 </g>
-<!-- fabric&#45;&gt;apb4_adapter -->
+<!-- fabric&#45;&gt;apb4_periph -->
 <g id="edge17" class="edge">
-<title>fabric&#45;&gt;apb4_adapter</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2585.46,-446.6C2395.67,-423.1 2081.71,-384.22 1941.49,-366.85"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1941.78,-364.42 1934.53,-365.99 1941.18,-369.28 1941.78,-364.42"/>
-<text text-anchor="middle" x="2272.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4 config</text>
+<title>fabric&#45;&gt;apb4_periph</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2614,-447.07C2417.16,-423.5 2086.85,-383.96 1941.89,-366.61"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1941.95,-364.15 1934.71,-365.75 1941.36,-369.01 1941.95,-364.15"/>
+<text text-anchor="middle" x="2286.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4 config</text>
 </g>
-<!-- apb_adapter -->
+<!-- apb4_system -->
 <g id="node19" class="node">
-<title>apb_adapter</title>
-<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M3118,-375C3118,-375 3048,-375 3048,-375 3042,-375 3036,-369 3036,-363 3036,-363 3036,-351 3036,-351 3036,-345 3042,-339 3048,-339 3048,-339 3118,-339 3118,-339 3124,-339 3130,-345 3130,-351 3130,-351 3130,-363 3130,-363 3130,-369 3124,-375 3118,-375"/>
-<text text-anchor="middle" x="3083" y="-360" font-family="Arial" font-size="10.00" fill="#111827">AXI42APB</text>
-<text text-anchor="middle" x="3083" y="-349" font-family="Arial" font-size="10.00" fill="#111827">direct APB bridge</text>
+<title>apb4_system</title>
+<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M3123,-375C3123,-375 3053,-375 3053,-375 3047,-375 3041,-369 3041,-363 3041,-363 3041,-351 3041,-351 3041,-345 3047,-339 3053,-339 3053,-339 3123,-339 3123,-339 3129,-339 3135,-345 3135,-351 3135,-351 3135,-363 3135,-363 3135,-369 3129,-375 3123,-375"/>
+<text text-anchor="middle" x="3088" y="-360" font-family="Arial" font-size="10.00" fill="#111827">AXI42APB</text>
+<text text-anchor="middle" x="3088" y="-349" font-family="Arial" font-size="10.00" fill="#111827">direct APB bridge</text>
 </g>
-<!-- fabric&#45;&gt;apb_adapter -->
+<!-- fabric&#45;&gt;apb4_system -->
 <g id="edge18" class="edge">
-<title>fabric&#45;&gt;apb_adapter</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2850.42,-431.06C2910.15,-412.3 2981.25,-389.96 3028.98,-374.97"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3029.9,-377.25 3035.85,-372.81 3028.43,-372.57 3029.9,-377.25"/>
-<text text-anchor="middle" x="2961" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
+<title>fabric&#45;&gt;apb4_system</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2875.89,-429.87C2928.88,-411.91 2990.77,-390.94 3033.97,-376.31"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3034.89,-378.58 3040.74,-374.01 3033.32,-373.94 3034.89,-378.58"/>
+<text text-anchor="middle" x="2975" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
 </g>
 <!-- memory_targets -->
 <g id="node23" class="node">
@@ -395,9 +395,9 @@
 <!-- fabric&#45;&gt;memory_targets -->
 <g id="edge16" class="edge">
 <title>fabric&#45;&gt;memory_targets</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2867.27,-437.16C2985.69,-410.56 3144,-375 3144,-375 3144,-375 3292,-316 3292,-316 3292,-316 3354,-289 3354,-289 3354,-289 4035,-266 4035,-266 4035,-266 4041.52,-264.48 4051.47,-262.17"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2894.1,-436.03C3004.63,-409.57 3149,-375 3149,-375 3149,-375 3322,-316 3322,-316 3322,-316 3384,-289 3384,-289 3384,-289 4035,-266 4035,-266 4035,-266 4041.52,-264.48 4051.47,-262.17"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="4052.21,-264.51 4058.47,-260.54 4051.1,-259.74 4052.21,-264.51"/>
-<text text-anchor="middle" x="3250" y="-355.1" font-family="Arial" font-size="8.00" fill="#374151">AXI4 data</text>
+<text text-anchor="middle" x="3270" y="-355.1" font-family="Arial" font-size="8.00" fill="#374151">AXI4 data</text>
 </g>
 <!-- sysctrl -->
 <g id="node20" class="node">
@@ -407,45 +407,45 @@
 <text text-anchor="middle" x="2273" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">PLL, user&#45;core select/reset/bus enable</text>
 <text text-anchor="middle" x="2273" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">fault and performance control</text>
 </g>
-<!-- apb4_adapter&#45;&gt;sysctrl -->
+<!-- apb4_periph&#45;&gt;sysctrl -->
 <g id="edge19" class="edge">
-<title>apb4_adapter&#45;&gt;sysctrl</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1922.09,-338.92C1955.25,-328.05 1992,-316 1992,-316 1992,-316 2074,-289 2074,-289 2074,-289 2166,-266 2166,-266 2166,-266 2171.79,-264.54 2180.67,-262.3"/>
+<title>apb4_periph&#45;&gt;sysctrl</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1922.09,-338.92C1955.25,-328.05 1992,-316 1992,-316 1992,-316 2070,-289 2070,-289 2070,-289 2166,-266 2166,-266 2166,-266 2171.79,-264.54 2180.67,-262.3"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2181.47,-264.62 2187.65,-260.54 2180.27,-259.87 2181.47,-264.62"/>
-<text text-anchor="middle" x="2084.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<text text-anchor="middle" x="2080.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb4_adapter&#45;&gt;clint -->
+<!-- apb4_periph&#45;&gt;clint -->
 <g id="edge20" class="edge">
-<title>apb4_adapter&#45;&gt;clint</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1805.28,-339.82C1803.2,-339.3 1802,-339 1802,-339 1802,-339 1434,-316 1434,-316 1434,-316 1332,-289 1332,-289 1332,-289 554,-266 554,-266 554,-266 549.74,-264.68 543.1,-262.62"/>
+<title>apb4_periph&#45;&gt;clint</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1805.28,-339.82C1803.2,-339.3 1802,-339 1802,-339 1802,-339 1430,-316 1430,-316 1430,-316 1329,-289 1329,-289 1329,-289 554,-266 554,-266 554,-266 549.74,-264.68 543.1,-262.62"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="543.81,-260.27 536.39,-260.54 542.35,-264.95 543.81,-260.27"/>
-<text text-anchor="middle" x="1444.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<text text-anchor="middle" x="1440.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb4_targets -->
+<!-- apb4_periph_targets -->
 <g id="node22" class="node">
-<title>apb4_targets</title>
+<title>apb4_periph_targets</title>
 <path fill="#f9e1e7" stroke="#4b5563" stroke-width="1.1" d="M2140.5,-260.5C2140.5,-260.5 1941.5,-260.5 1941.5,-260.5 1935.5,-260.5 1929.5,-254.5 1929.5,-248.5 1929.5,-248.5 1929.5,-227.5 1929.5,-227.5 1929.5,-221.5 1935.5,-215.5 1941.5,-215.5 1941.5,-215.5 2140.5,-215.5 2140.5,-215.5 2146.5,-215.5 2152.5,-221.5 2152.5,-227.5 2152.5,-227.5 2152.5,-248.5 2152.5,-248.5 2152.5,-254.5 2146.5,-260.5 2140.5,-260.5"/>
 <text text-anchor="middle" x="2041" y="-246.5" font-family="Arial" font-size="10.00" fill="#111827">APB4 configuration targets</text>
 <text text-anchor="middle" x="2041" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">XPI, SDRAM, PSRAM, SPI&#45;SD, DVP and I2S</text>
 <text text-anchor="middle" x="2041" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">SDRAM config is a dedicated top&#45;level port</text>
 </g>
-<!-- apb4_adapter&#45;&gt;apb4_targets -->
+<!-- apb4_periph&#45;&gt;apb4_periph_targets -->
 <g id="edge21" class="edge">
-<title>apb4_adapter&#45;&gt;apb4_targets</title>
+<title>apb4_periph&#45;&gt;apb4_periph_targets</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1894.86,-338.99C1923.38,-319.48 1970.43,-287.28 2003.43,-264.71"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2005.02,-266.59 2009.41,-260.61 2002.25,-262.54 2005.02,-266.59"/>
 <text text-anchor="middle" x="1975.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb4_adapter&#45;&gt;uart0 -->
+<!-- apb4_periph&#45;&gt;uart0 -->
 <g id="edge22" class="edge">
-<title>apb4_adapter&#45;&gt;uart0</title>
+<title>apb4_periph&#45;&gt;uart0</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1844,-338.92C1813.78,-319.07 1768,-289 1768,-289 1768,-289 1723.05,-275.62 1679.65,-262.71"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1680.12,-260.29 1672.71,-260.64 1678.72,-264.98 1680.12,-260.29"/>
 <text text-anchor="middle" x="1816.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb4_adapter&#45;&gt;i2c_controllers -->
+<!-- apb4_periph&#45;&gt;i2c_controllers -->
 <g id="edge23" class="edge">
-<title>apb4_adapter&#45;&gt;i2c_controllers</title>
+<title>apb4_periph&#45;&gt;i2c_controllers</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1814.92,-338.92C1779.86,-328.05 1741,-316 1741,-316 1741,-316 1692,-289 1692,-289 1692,-289 1469,-266 1469,-266 1469,-266 1462.18,-264.45 1451.81,-262.1"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1452.29,-259.7 1444.92,-260.54 1451.2,-264.47 1452.29,-259.7"/>
 <text text-anchor="middle" x="1751.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
@@ -458,41 +458,41 @@
 <text text-anchor="middle" x="2481" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">user + management APB4 windows</text>
 <text text-anchor="middle" x="2481" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">atomic I/O, filter, locks, IRQ18</text>
 </g>
-<!-- apb4_adapter&#45;&gt;gpio_controller -->
+<!-- apb4_periph&#45;&gt;gpio_controller -->
 <g id="edge24" class="edge">
-<title>apb4_adapter&#45;&gt;gpio_controller</title>
+<title>apb4_periph&#45;&gt;gpio_controller</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1934.55,-352.83C2127.08,-343.37 2684,-316 2684,-316 2684,-316 2684,-289 2684,-289 2684,-289 2628.59,-275.35 2575.67,-262.32"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2575.95,-259.86 2568.56,-260.57 2574.77,-264.62 2575.95,-259.86"/>
 <text text-anchor="middle" x="2704" y="-305.1" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 <text text-anchor="middle" x="2704" y="-296.1" font-family="Arial" font-size="8.00" fill="#374151">user/admin</text>
 </g>
-<!-- apb4_adapter&#45;&gt;timers -->
+<!-- apb4_periph&#45;&gt;timers -->
 <g id="edge25" class="edge">
-<title>apb4_adapter&#45;&gt;timers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1805.23,-346.37C1725.63,-334.53 1601,-316 1601,-316 1601,-316 1510,-289 1510,-289 1510,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
+<title>apb4_periph&#45;&gt;timers</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1805.23,-346.37C1725.63,-334.53 1601,-316 1601,-316 1601,-316 1511,-289 1511,-289 1511,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="974.69,-259.72 967.32,-260.54 973.59,-264.5 974.69,-259.72"/>
 <text text-anchor="middle" x="1611.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb4_adapter&#45;&gt;ws2812 -->
+<!-- apb4_periph&#45;&gt;ws2812 -->
 <g id="edge26" class="edge">
-<title>apb4_adapter&#45;&gt;ws2812</title>
+<title>apb4_periph&#45;&gt;ws2812</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1863.31,-338.99C1855.95,-320.26 1843.99,-289.86 1835.2,-267.48"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1837.42,-266.44 1832.58,-260.82 1832.86,-268.23 1837.42,-266.44"/>
 <text text-anchor="middle" x="1863.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb_targets -->
+<!-- apb4_system_targets -->
 <g id="node30" class="node">
-<title>apb_targets</title>
+<title>apb4_system_targets</title>
 <path fill="#e6f4ea" stroke="#4b5563" stroke-width="1.1" d="M3774,-256C3774,-256 3694,-256 3694,-256 3688,-256 3682,-250 3682,-244 3682,-244 3682,-232 3682,-232 3682,-226 3688,-220 3694,-220 3694,-220 3774,-220 3774,-220 3780,-220 3786,-226 3786,-232 3786,-232 3786,-244 3786,-244 3786,-250 3780,-256 3774,-256"/>
 <text text-anchor="middle" x="3734" y="-241" font-family="Arial" font-size="10.00" fill="#111827">APB target wrapper</text>
 <text text-anchor="middle" x="3734" y="-230" font-family="Arial" font-size="10.00" fill="#111827">User IP target</text>
 </g>
-<!-- apb_adapter&#45;&gt;apb_targets -->
+<!-- apb4_system&#45;&gt;apb4_system_targets -->
 <g id="edge34" class="edge">
-<title>apb_adapter&#45;&gt;apb_targets</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3130.27,-339.27C3161.23,-328.31 3196,-316 3196,-316 3196,-316 3226,-289 3226,-289 3226,-289 3669,-266 3669,-266 3669,-266 3676.36,-262.94 3686.12,-258.89"/>
+<title>apb4_system&#45;&gt;apb4_system_targets</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3135.3,-341.22C3171.76,-329.82 3216,-316 3216,-316 3216,-316 3246,-289 3246,-289 3246,-289 3669,-266 3669,-266 3669,-266 3676.36,-262.94 3686.12,-258.89"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3687.31,-261.05 3692.83,-256.1 3685.43,-256.52 3687.31,-261.05"/>
-<text text-anchor="middle" x="3234" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<text text-anchor="middle" x="3256.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- pwm -->
 <g id="node31" class="node">
@@ -502,19 +502,19 @@
 <text text-anchor="middle" x="3281" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">2 timers, 4 action channels, 2 operators</text>
 <text text-anchor="middle" x="3281" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">fades, dead time, carrier, fault and capture, IRQ11</text>
 </g>
-<!-- apb_adapter&#45;&gt;pwm -->
+<!-- apb4_system&#45;&gt;pwm -->
 <g id="edge33" class="edge">
-<title>apb_adapter&#45;&gt;pwm</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3095.1,-338.75C3109.03,-318.89 3130,-289 3130,-289 3130,-289 3170.07,-275.73 3208.92,-262.87"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3209.77,-265.17 3215.65,-260.64 3208.23,-260.51 3209.77,-265.17"/>
-<text text-anchor="middle" x="3138" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<title>apb4_system&#45;&gt;pwm</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3101.39,-338.75C3116.8,-318.89 3140,-289 3140,-289 3140,-289 3177.11,-275.84 3213.25,-263.03"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3214.2,-265.29 3219.98,-260.64 3212.56,-260.67 3214.2,-265.29"/>
+<text text-anchor="middle" x="3150.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb_adapter&#45;&gt;wdg -->
+<!-- apb4_system&#45;&gt;wdg -->
 <g id="edge31" class="edge">
-<title>apb_adapter&#45;&gt;wdg</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3035.7,-354.81C2771.27,-348.18 1488,-316 1488,-316 1488,-316 1457,-289 1457,-289 1457,-289 758,-266 758,-266 758,-266 752.59,-264.57 744.26,-262.36"/>
+<title>apb4_system&#45;&gt;wdg</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3040.86,-354.82C2775.92,-348.22 1484,-316 1484,-316 1484,-316 1453,-289 1453,-289 1453,-289 758,-266 758,-266 758,-266 752.59,-264.57 744.26,-262.36"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="744.75,-259.96 737.36,-260.54 743.5,-264.7 744.75,-259.96"/>
-<text text-anchor="middle" x="1496" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<text text-anchor="middle" x="1494.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- crc -->
 <g id="node33" class="node">
@@ -524,19 +524,19 @@
 <text text-anchor="middle" x="3917" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">programmable 7/8/16/32&#45;bit streaming CRC</text>
 <text text-anchor="middle" x="3917" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">byte, halfword and word APB feed</text>
 </g>
-<!-- apb_adapter&#45;&gt;crc -->
+<!-- apb4_system&#45;&gt;crc -->
 <g id="edge32" class="edge">
-<title>apb_adapter&#45;&gt;crc</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3130,-344.32C3177.52,-332.52 3244,-316 3244,-316 3244,-316 3274,-289 3274,-289 3274,-289 3800,-266 3800,-266 3800,-266 3806.58,-264.48 3816.62,-262.17"/>
+<title>apb4_system&#45;&gt;crc</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3135.08,-345.59C3188.71,-333.74 3269,-316 3269,-316 3269,-316 3299,-289 3299,-289 3299,-289 3800,-266 3800,-266 3800,-266 3806.58,-264.48 3816.62,-262.17"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3817.41,-264.5 3823.68,-260.54 3816.31,-259.72 3817.41,-264.5"/>
-<text text-anchor="middle" x="3282" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<text text-anchor="middle" x="3309.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
-<!-- apb_adapter&#45;&gt;rtc -->
+<!-- apb4_system&#45;&gt;rtc -->
 <g id="edge30" class="edge">
-<title>apb_adapter&#45;&gt;rtc</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3035.69,-354.02C2843.19,-345.95 2129,-316 2129,-316 2129,-316 2097,-289 2097,-289 2097,-289 1232,-266 1232,-266 1232,-266 1225.07,-264.45 1214.52,-262.1"/>
+<title>apb4_system&#45;&gt;rtc</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3040.85,-354.04C2847.31,-346.01 2124,-316 2124,-316 2124,-316 2093,-289 2093,-289 2093,-289 1232,-266 1232,-266 1232,-266 1225.07,-264.45 1214.52,-262.1"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1214.88,-259.67 1207.51,-260.54 1213.81,-264.45 1214.88,-259.67"/>
-<text text-anchor="middle" x="2137" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<text text-anchor="middle" x="2134.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- archinfo -->
 <g id="node35" class="node">
@@ -546,12 +546,12 @@
 <text text-anchor="middle" x="3541" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">read&#45;only build, topology and technology identity</text>
 <text text-anchor="middle" x="3541" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">lifecycle&#45;gated 128&#45;bit device ID</text>
 </g>
-<!-- apb_adapter&#45;&gt;archinfo -->
+<!-- apb4_system&#45;&gt;archinfo -->
 <g id="edge27" class="edge">
-<title>apb_adapter&#45;&gt;archinfo</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3110.94,-338.8C3128.56,-327.96 3148,-316 3148,-316 3148,-316 3178,-289 3178,-289 3178,-289 3414,-266 3414,-266 3414,-266 3421.42,-264.42 3432.66,-262.03"/>
+<title>apb4_system&#45;&gt;archinfo</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3120.24,-338.8C3140.57,-327.96 3163,-316 3163,-316 3163,-316 3193,-289 3193,-289 3193,-289 3414,-266 3414,-266 3414,-266 3421.42,-264.42 3432.66,-262.03"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3433.36,-264.39 3439.7,-260.54 3432.34,-259.6 3433.36,-264.39"/>
-<text text-anchor="middle" x="3186" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<text text-anchor="middle" x="3203.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- rng -->
 <g id="node36" class="node">
@@ -561,12 +561,12 @@
 <text text-anchor="middle" x="2762" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">8&#45;word FIFO, fail&#45;closed monitoring, IRQ16</text>
 <text text-anchor="middle" x="2762" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">management&#45;only, deterministic source unqualified</text>
 </g>
-<!-- apb_adapter&#45;&gt;rng -->
+<!-- apb4_system&#45;&gt;rng -->
 <g id="edge28" class="edge">
-<title>apb_adapter&#45;&gt;rng</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3062.66,-338.75C3039.25,-318.89 3004,-289 3004,-289 3004,-289 2936.86,-275.13 2873.31,-262"/>
+<title>apb4_system&#45;&gt;rng</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3065.65,-338.8C3051.55,-327.96 3036,-316 3036,-316 3036,-316 3004,-289 3004,-289 3004,-289 2936.86,-275.13 2873.31,-262"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2873.74,-259.58 2866.39,-260.57 2872.75,-264.38 2873.74,-259.58"/>
-<text text-anchor="middle" x="3042" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<text text-anchor="middle" x="3046.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- ps2 -->
 <g id="node37" class="node">
@@ -576,12 +576,12 @@
 <text text-anchor="middle" x="3045" y="-235.5" font-family="Arial" font-size="10.00" fill="#111827">bidirectional open&#45;drain transport</text>
 <text text-anchor="middle" x="3045" y="-224.5" font-family="Arial" font-size="10.00" fill="#111827">16&#45;byte RX/TX FIFOs, errors, IRQ12</text>
 </g>
-<!-- apb_adapter&#45;&gt;ps2 -->
+<!-- apb4_system&#45;&gt;ps2 -->
 <g id="edge29" class="edge">
-<title>apb_adapter&#45;&gt;ps2</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3077.47,-338.99C3071.39,-320.26 3061.52,-289.86 3054.25,-267.48"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3056.58,-266.72 3052.09,-260.82 3051.92,-268.23 3056.58,-266.72"/>
-<text text-anchor="middle" x="3077" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB</text>
+<title>apb4_system&#45;&gt;ps2</title>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3081.75,-338.99C3074.87,-320.26 3063.69,-289.86 3055.47,-267.48"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="3057.73,-266.54 3053.02,-260.82 3053.13,-268.23 3057.73,-266.54"/>
+<text text-anchor="middle" x="3082.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- irq -->
 <g id="node39" class="node">
@@ -597,23 +597,23 @@
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1476.84,-147.81 1483.68,-144.94 1476.54,-142.92 1476.84,-147.81"/>
 <text text-anchor="middle" x="968.5" y="-180.6" font-family="Arial" font-size="8.00" fill="#374151">machine IRQ0 / IRQ1</text>
 </g>
-<!-- apb4_targets&#45;&gt;memory_targets -->
+<!-- apb4_periph_targets&#45;&gt;memory_targets -->
 <g id="edge61" class="edge">
-<title>apb4_targets&#45;&gt;memory_targets</title>
+<title>apb4_periph_targets&#45;&gt;memory_targets</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2141.6,-260.53C2155.97,-263.75 2166,-266 2166,-266 2166,-266 2801.5,-297 2801.5,-297 2801.5,-297 2870.5,-297 2870.5,-297 2870.5,-297 4035,-266 4035,-266 4035,-266 4041.14,-264.52 4050.6,-262.23"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="4051.41,-264.56 4057.64,-260.53 4050.26,-259.8 4051.41,-264.56"/>
 <text text-anchor="middle" x="2836" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4 configuration</text>
 </g>
-<!-- apb4_targets&#45;&gt;stream_io -->
+<!-- apb4_periph_targets&#45;&gt;stream_io -->
 <g id="edge62" class="edge">
-<title>apb4_targets&#45;&gt;stream_io</title>
+<title>apb4_periph_targets&#45;&gt;stream_io</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2141.6,-260.53C2155.97,-263.75 2166,-266 2166,-266 2166,-266 2933.5,-297 2933.5,-297 2933.5,-297 3002.5,-297 3002.5,-297 3002.5,-297 4267,-266 4267,-266 4267,-266 4269.6,-265.25 4273.96,-263.99"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="4274.85,-266.28 4280.9,-261.99 4273.49,-261.58 4274.85,-266.28"/>
 <text text-anchor="middle" x="2968" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4 configuration</text>
 </g>
-<!-- apb4_targets&#45;&gt;gpio_controller -->
+<!-- apb4_periph_targets&#45;&gt;gpio_controller -->
 <g id="edge35" class="edge">
-<title>apb4_targets&#45;&gt;gpio_controller</title>
+<title>apb4_periph_targets&#45;&gt;gpio_controller</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2107.78,-260.64C2156.84,-277.28 2215,-297 2215,-297 2215,-297 2281,-297 2281,-297 2281,-297 2342.68,-278.8 2397.54,-262.62"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2398.51,-264.89 2404.53,-260.56 2397.13,-260.19 2398.51,-264.89"/>
 <text text-anchor="middle" x="2248" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">alternate functions</text>
@@ -715,9 +715,9 @@
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1646.13,-155.71 1638.74,-155.12 1644.15,-160.19 1646.13,-155.71"/>
 <text text-anchor="middle" x="1717" y="-180.6" font-family="Arial" font-size="8.00" fill="#374151">IRQ17</text>
 </g>
-<!-- apb_targets&#45;&gt;gpio_controller -->
+<!-- apb4_system_targets&#45;&gt;gpio_controller -->
 <g id="edge60" class="edge">
-<title>apb_targets&#45;&gt;gpio_controller</title>
+<title>apb4_system_targets&#45;&gt;gpio_controller</title>
 <path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3692.1,-256.05C3679.52,-261.47 3669,-266 3669,-266 3669,-266 2796,-297 2796,-297 2796,-297 2760,-297 2760,-297 2760,-297 2656.67,-275.15 2575.77,-258.04"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2575.87,-255.56 2568.51,-256.51 2574.85,-260.35 2575.87,-255.56"/>
 <text text-anchor="middle" x="2778" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">user_gpio</text>

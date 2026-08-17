@@ -32,35 +32,35 @@ static rs_status_t rs_rng_status(rng_status_t status) {
 }
 
 rs_status_t rs_rng_init(const rs_rng_config_t *config) {
-    return rs_rng_status(rng_init((uintptr_t)RS_SOC_APB_RNG_BASE, config));
+    return rs_rng_status(rng_init((uintptr_t)RS_SOC_APB4_RNG_BASE, config));
 }
 
 rs_status_t rs_rng_get_status(rs_rng_snapshot_t *snapshot) {
-    return rs_rng_status(rng_get_status((uintptr_t)RS_SOC_APB_RNG_BASE, snapshot));
+    return rs_rng_status(rng_get_status((uintptr_t)RS_SOC_APB4_RNG_BASE, snapshot));
 }
 
 rs_status_t rs_rng_read_entropy(uint32_t *word, rs_timeout_t timeout) {
-    return rs_rng_status(rng_read_entropy((uintptr_t)RS_SOC_APB_RNG_BASE, word, timeout));
+    return rs_rng_status(rng_read_entropy((uintptr_t)RS_SOC_APB4_RNG_BASE, word, timeout));
 }
 
 rs_status_t rs_rng_read_diagnostic(uint32_t *word, rs_timeout_t timeout) {
-    return rs_rng_status(rng_read_diagnostic((uintptr_t)RS_SOC_APB_RNG_BASE, word, timeout));
+    return rs_rng_status(rng_read_diagnostic((uintptr_t)RS_SOC_APB4_RNG_BASE, word, timeout));
 }
 
 rs_status_t rs_rng_recover(void) {
-    return rs_rng_status(rng_recover((uintptr_t)RS_SOC_APB_RNG_BASE));
+    return rs_rng_status(rng_recover((uintptr_t)RS_SOC_APB4_RNG_BASE));
 }
 
 rs_status_t rs_rng_interrupt_enable(uint32_t mask) {
-    return rs_rng_status(rng_interrupt_enable((uintptr_t)RS_SOC_APB_RNG_BASE, mask));
+    return rs_rng_status(rng_interrupt_enable((uintptr_t)RS_SOC_APB4_RNG_BASE, mask));
 }
 
 rs_status_t rs_rng_interrupt_clear(uint32_t mask) {
-    return rs_rng_status(rng_interrupt_clear((uintptr_t)RS_SOC_APB_RNG_BASE, mask));
+    return rs_rng_status(rng_interrupt_clear((uintptr_t)RS_SOC_APB4_RNG_BASE, mask));
 }
 
 rs_status_t rs_rng_interrupt_test(uint32_t mask) {
-    return rs_rng_status(rng_interrupt_test((uintptr_t)RS_SOC_APB_RNG_BASE, mask));
+    return rs_rng_status(rng_interrupt_test((uintptr_t)RS_SOC_APB4_RNG_BASE, mask));
 }
 
 void rs_rng_shell_test(int argc, char **argv) {

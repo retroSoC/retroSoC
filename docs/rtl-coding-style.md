@@ -143,10 +143,10 @@ The following rules are normative:
    or `_controller`, `_reg`, `_core`, `_if`, `_pkg`, `_formal`,
    `_formal_props`, and `_tb`.
 2. Name bus adapters with the repository's numeric `2` convention:
-   `rib2apb`, `rib2ram`, `axi42apb`, `axi4_word_bridge`, and `axi42ram`. New code
+   `rib2apb`, `rib2ram`, `axi42apb4_periph`, `axi42apb4_system`, `axi4_word_bridge`, and `axi42ram`. New code
    MUST NOT introduce another `_to_` spelling for the same conversion.
 3. Use function-qualified interface instances such as `cfg_apb4`,
-   `mem_axi4`, `dma_axi`, and `apb_periph`. Do not use `if0`, `bus0`,
+   `mem_axi4`, `dma_axi`, and `apb4_periph`. Do not use `if0`, `bus0`,
    `interface_a`, or names based only on declaration order.
 4. Keep standard protocol field names unchanged. AXI, APB, and RIB
    fields such as `valid`, `ready`, `wdata`, `wstrb`, `rdata`, `resp`, and

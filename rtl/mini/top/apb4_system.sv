@@ -17,19 +17,19 @@
 
 module apb4_system (
     // verilog_format: off -- preserve reviewed column alignment
-    input  logic                          clk_i,
-    input  logic                          rst_n_i,
-    input  logic                          clk_aud_i,
-    input  logic                          rst_aud_n_i,
-    input  logic                          debug_halted_i,
-    axi4_if.slave                         axi4,
-    pwm_if.dut                            pwm,
-    ps2_if.dut                            ps2,
-    input  logic [`USER_IPSEL_WIDTH-1:0]  ip_sel_i,
-    user_gpio_if.user_ip                  user_gpio,
-    output logic                          rtc_wake_o,
-    output logic                          wdg_reset_req_o,
-    output logic [`SOC_IRQ_APB_WIDTH-1:0] irq_o
+    input  logic                                  clk_i,
+    input  logic                                  rst_n_i,
+    input  logic                                  clk_aud_i,
+    input  logic                                  rst_aud_n_i,
+    input  logic                                  debug_halted_i,
+    axi4_if.slave                                 axi4,
+    pwm_if.dut                                    pwm,
+    ps2_if.dut                                    ps2,
+    input  logic [`USER_IPSEL_WIDTH-1:0]          ip_sel_i,
+    user_gpio_if.user_ip                          user_gpio,
+    output logic                                  rtc_wake_o,
+    output logic                                  wdg_reset_req_o,
+    output logic [`SOC_IRQ_APB4_SYSTEM_WIDTH-1:0] irq_o
     // verilog_format: on
 );
 
@@ -84,7 +84,7 @@ module apb4_system (
 `endif
 
   // Generated timed and pure scalar APB interfaces preserve FPGA compatibility.
-  `include "soc_apb_interfaces.svh"
+  `include "apb4_system_interfaces.svh"
 
   // Low-frequency peripherals retain their dedicated interfaces.
   rtc_if u_rtc_if (
@@ -96,7 +96,7 @@ module apb4_system (
       .wdg_rst_n_i   (rst_aud_n_i),
       .debug_halted_i(debug_halted_i)
   );
-  `include "soc_apb_bridges.svh"
+  `include "apb4_system_bridges.svh"
 
   // verilog_format: off -- preserve reviewed column alignment
   apb4_archinfo #(
@@ -114,7 +114,7 @@ module apb4_system (
       .device_id_i            (128'h0000_0000_0000_0000_0000_0000_0000_0000),
       .device_id_valid_i      (1'b0),
       .device_id_read_enable_i(1'b0),
-      .apb4                   (u_archinfo_apb_if)
+      .apb4                   (u_archinfo_apb4_if)
   );
   // verilog_format: on
 
@@ -139,14 +139,14 @@ module apb4_system (
       .entropy_qualified_i(s_rng_entropy_qualified),
       .entropy_fault_i    (s_rng_entropy_fault),
       .irq_o              (s_rng_irq),
-      .apb4               (u_rng_apb_if)
+      .apb4               (u_rng_apb4_if)
   );
 
   apb4_pwm #(
       .PCLK_HZ(`SOC_EXT_CLK_HZ)
   ) u_apb4_pwm (
       .debug_halted_i(debug_halted_i),
-      .apb4          (u_pwm_apb_if),
+      .apb4          (u_pwm_apb4_if),
       .pwm           (pwm)
   );
 
@@ -155,14 +155,14 @@ module apb4_system (
       .RX_FIFO_DEPTH(16),
       .TX_FIFO_DEPTH(16)
   ) u_apb4_ps2 (
-      .apb4(u_ps2_apb_if),
+      .apb4(u_ps2_apb4_if),
       .ps2 (ps2)
   );
 
   apb4_rtc #(
       .RTC_CLOCK_HZ(`SOC_AUD_CLK_HZ)
   ) u_apb4_rtc (
-      .apb4(u_rtc_apb_if),
+      .apb4(u_rtc_apb4_if),
       .rtc (u_rtc_if)
   );
 
@@ -172,22 +172,22 @@ module apb4_system (
       .WDG_CLOCK_HZ      (`SOC_AUD_CLK_HZ),
       .RESET_PULSE_CYCLES(8)
   ) u_apb4_wdg (
-      .apb4(u_wdg_apb_if),
+      .apb4(u_wdg_apb4_if),
       .wdg (u_wdg_if)
   );
 
   assign wdg_reset_req_o = u_wdg_if.reset_req_o;
 
-  apb4_crc u_apb4_crc (.apb4(u_crc_apb_if));
+  apb4_crc u_apb4_crc (.apb4(u_crc_apb4_if));
 
   // Generated IRQ ownership and core-vector bit assignments are topology checked.
-  `include "soc_apb_irq_bindings.svh"
+  `include "apb4_system_irq_bindings.svh"
 
-axi42apb u_axi42apb (
+axi42apb4_system u_axi42apb4_system (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .axi4   (axi4),
-      `include "soc_apb_connections.svh"
+      `include "apb4_system_connections.svh"
   );
 
   user_ip_wrapper u_user_ip_wrapper (
@@ -195,7 +195,7 @@ axi42apb u_axi42apb (
       .rst_n_i(rst_n_i),
       .sel_i  (ip_sel_i),
       .gpio   (user_gpio),
-      .apb    (u_user_ip_apb_if)
+      .apb    (u_user_ip_apb4_if)
   );
 
 endmodule

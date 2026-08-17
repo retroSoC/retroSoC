@@ -30,36 +30,37 @@ rs_status_t rs_crc_get_profile(rs_crc_profile_t profile, rs_crc_config_t *config
 }
 
 rs_status_t rs_crc_init(const rs_crc_config_t *config) {
-    return rs_crc_status(crc_init((uintptr_t)RS_SOC_APB_CRC_BASE, config));
+    return rs_crc_status(crc_init((uintptr_t)RS_SOC_APB4_CRC_BASE, config));
 }
 
 rs_status_t rs_crc_start(void) {
-    return rs_crc_status(crc_start((uintptr_t)RS_SOC_APB_CRC_BASE));
+    return rs_crc_status(crc_start((uintptr_t)RS_SOC_APB4_CRC_BASE));
 }
 
 rs_status_t rs_crc_update(const void *data, size_t length) {
-    return rs_crc_status(crc_update((uintptr_t)RS_SOC_APB_CRC_BASE, data, length));
+    return rs_crc_status(crc_update((uintptr_t)RS_SOC_APB4_CRC_BASE, data, length));
 }
 
 rs_status_t rs_crc_finish(uint32_t *result) {
-    return rs_crc_status(crc_finish((uintptr_t)RS_SOC_APB_CRC_BASE, result));
+    return rs_crc_status(crc_finish((uintptr_t)RS_SOC_APB4_CRC_BASE, result));
 }
 
 rs_status_t rs_crc_abort(void) {
-    return rs_crc_status(crc_abort((uintptr_t)RS_SOC_APB_CRC_BASE));
+    return rs_crc_status(crc_abort((uintptr_t)RS_SOC_APB4_CRC_BASE));
 }
 
 rs_status_t rs_crc_compute(const rs_crc_config_t *config, const void *data, size_t length,
                            uint32_t *result) {
-    return rs_crc_status(crc_compute((uintptr_t)RS_SOC_APB_CRC_BASE, config, data, length, result));
+    return rs_crc_status(
+        crc_compute((uintptr_t)RS_SOC_APB4_CRC_BASE, config, data, length, result));
 }
 
 rs_status_t rs_crc_get_status(rs_crc_snapshot_t *snapshot) {
-    return rs_crc_status(crc_get_status((uintptr_t)RS_SOC_APB_CRC_BASE, snapshot));
+    return rs_crc_status(crc_get_status((uintptr_t)RS_SOC_APB4_CRC_BASE, snapshot));
 }
 
 rs_status_t rs_crc_clear_errors(uint32_t mask) {
-    return rs_crc_status(crc_clear_errors((uintptr_t)RS_SOC_APB_CRC_BASE, mask));
+    return rs_crc_status(crc_clear_errors((uintptr_t)RS_SOC_APB4_CRC_BASE, mask));
 }
 
 void rs_crc_shell_test(int argc, char **argv) {

@@ -12,8 +12,8 @@ module axi4_interconnect #(
 ) (
     input  logic                 clk_i,
     input  logic                 rst_n_i,
-           axi4_if.slave         masters          [NumMasters],
-           axi4_if.master        targets          [NumTargets],
+           axi4_if.slave         masters                [NumMasters],
+           axi4_if.master        targets                [NumTargets],
     input  logic                 user_bus_enable_i,
     output logic                 user_bus_idle_o,
     input  logic                 perf_enable_i,
@@ -28,8 +28,8 @@ module axi4_interconnect #(
     output logic          [63:0] perf_mgmt_wait_o,
     output logic          [63:0] perf_user_wait_o,
     output logic          [63:0] perf_dma_wait_o,
-    output logic          [63:0] perf_apb4_wait_o,
-    output logic          [63:0] perf_apb_wait_o,
+    output logic          [63:0] perf_apb4_periph_wait_o,
+    output logic          [63:0] perf_apb4_system_wait_o,
     output logic          [63:0] perf_sdram_wait_o,
     output logic          [63:0] perf_psram_wait_o,
     output logic          [63:0] perf_flash_wait_o
@@ -38,7 +38,7 @@ module axi4_interconnect #(
   localparam int TARGET_WIDTH = $clog2(NumTargets);
 
   localparam logic [TARGET_WIDTH-1:0] TARGET_CFG = TARGET_WIDTH'(0);
-  localparam logic [TARGET_WIDTH-1:0] TARGET_APB = TARGET_WIDTH'(1);
+  localparam logic [TARGET_WIDTH-1:0] TARGET_APB4_SYSTEM = TARGET_WIDTH'(1);
   localparam logic [TARGET_WIDTH-1:0] TARGET_RAM = TARGET_WIDTH'(2);
   localparam logic [TARGET_WIDTH-1:0] TARGET_SDRAM = TARGET_WIDTH'(3);
   localparam logic [TARGET_WIDTH-1:0] TARGET_PSRAM = TARGET_WIDTH'(4);
@@ -150,9 +150,9 @@ module axi4_interconnect #(
     if (`SOC_ADDR_IS_PSRAM(addr)) return TARGET_PSRAM;
     if (`SOC_ADDR_IS_FLASH(addr) || `SOC_ADDR_IS_XPI(addr)) return TARGET_XPI;
     if (`SOC_ADDR_IS_SPISD(addr)) return TARGET_SPISD;
-    if (`SOC_ADDR_IS_APB(addr)) return TARGET_APB;
+    if (`SOC_ADDR_IS_APB4_SYSTEM(addr)) return TARGET_APB4_SYSTEM;
     if (`SOC_ADDR_IS_RAM(addr)) return TARGET_RAM;
-    if (`SOC_ADDR_IS_APB4(addr)) return TARGET_CFG;
+    if (`SOC_ADDR_IS_APB4_PERIPH(addr)) return TARGET_CFG;
     return TARGET_DECERR;
   endfunction
 
@@ -442,8 +442,8 @@ module axi4_interconnect #(
       ));
       s_capture_target[master] = decode_target(addr);
       if (!s_protocol_legal[master] ||
-          ((s_capture_target[master] == TARGET_CFG || s_capture_target[master] == TARGET_APB) &&
-           (len != 8'd0))) begin
+          ((s_capture_target[master] == TARGET_CFG ||
+            s_capture_target[master] == TARGET_APB4_SYSTEM) && (len != 8'd0))) begin
         s_capture_target[master] = TARGET_SLVERR;
       end else if (!s_access_allowed[master]) begin
         s_capture_target[master] = TARGET_SLVERR;
@@ -569,14 +569,14 @@ module axi4_interconnect #(
     end
   end
 
-  assign perf_mgmt_wait_o  = s_perf_master_wait[0];
-  assign perf_user_wait_o  = s_perf_master_wait[1];
-  assign perf_dma_wait_o   = s_perf_master_wait[2];
-  assign perf_apb4_wait_o  = s_perf_target_wait[TARGET_CFG];
-  assign perf_apb_wait_o   = s_perf_target_wait[TARGET_APB];
-  assign perf_sdram_wait_o = s_perf_target_wait[TARGET_SDRAM];
-  assign perf_psram_wait_o = s_perf_target_wait[TARGET_PSRAM];
-  assign perf_flash_wait_o = s_perf_target_wait[TARGET_XPI];
+  assign perf_mgmt_wait_o        = s_perf_master_wait[0];
+  assign perf_user_wait_o        = s_perf_master_wait[1];
+  assign perf_dma_wait_o         = s_perf_master_wait[2];
+  assign perf_apb4_periph_wait_o = s_perf_target_wait[TARGET_CFG];
+  assign perf_apb4_system_wait_o = s_perf_target_wait[TARGET_APB4_SYSTEM];
+  assign perf_sdram_wait_o       = s_perf_target_wait[TARGET_SDRAM];
+  assign perf_psram_wait_o       = s_perf_target_wait[TARGET_PSRAM];
+  assign perf_flash_wait_o       = s_perf_target_wait[TARGET_XPI];
 
 `ifndef SYNTHESIS
   initial begin

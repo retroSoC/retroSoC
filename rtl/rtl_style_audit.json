@@ -206,8 +206,8 @@
       "apb4_if_bridge.sv",
       "apb4_periph.sv",
       "apb4_system.sv",
-      "axi42apb.sv",
-      "axi42apb_periph.sv",
+      "axi42apb4_system.sv",
+      "axi42apb4_periph.sv",
       "axi42ram.sv",
       "axi42ribp.sv",
       "axi42ribp_burst.sv",
@@ -245,7 +245,9 @@
       "user_extensions.svh",
       "user_ip_design_template.sv",
       "user_ip_top.sv",
-      "user_ip_wrapper.sv"
+      "user_ip_wrapper.sv",
+      "axi42apb4.svh",
+      "axi42apb4_state.svh"
     ]
   },
   "reviewed_boundaries": [

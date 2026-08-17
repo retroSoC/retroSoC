@@ -3,9 +3,9 @@
 `include "soc_irq_config.svh"
 
 module soc_irq_topology_tb;
-  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
-  logic [  `SOC_IRQ_APB4_WIDTH-1:0] s_apb4_irq;
-  logic [   `SOC_IRQ_APB_WIDTH-1:0] s_apb_irq;
+  logic [     `SOC_IRQ_VECTOR_WIDTH-1:0] s_irq;
+  logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] s_apb4_periph_irq;
+  logic [`SOC_IRQ_APB4_SYSTEM_WIDTH-1:0] s_apb4_system_irq;
 
   `include "soc_irq_wiring.svh"
 
@@ -19,30 +19,30 @@ module soc_irq_topology_tb;
   endtask
 
   initial begin
-    s_apb4_irq = '0;
-    s_apb_irq  = '0;
+    s_apb4_periph_irq = '0;
+    s_apb4_system_irq = '0;
     expect_irq('0);
 
     for (int bit_index = 0; bit_index < 10; bit_index++) begin
-      s_apb4_irq            = '0;
-      s_apb4_irq[bit_index] = 1'b1;
-      s_apb_irq             = '0;
+      s_apb4_periph_irq            = '0;
+      s_apb4_periph_irq[bit_index] = 1'b1;
+      s_apb4_system_irq            = '0;
       expect_irq(32'd1 << bit_index);
     end
 
-    for (int bit_index = 10; bit_index < `SOC_IRQ_APB4_WIDTH; bit_index++) begin
-      s_apb4_irq            = '0;
-      s_apb4_irq[bit_index] = 1'b1;
+    for (int bit_index = 10; bit_index < `SOC_IRQ_APB4_PERIPH_WIDTH; bit_index++) begin
+      s_apb4_periph_irq            = '0;
+      s_apb4_periph_irq[bit_index] = 1'b1;
       case (bit_index)
         13:      expect_irq(32'd1 << 15);
         default: expect_irq(32'd1 << (bit_index + 7));
       endcase
     end
 
-    for (int bit_index = 0; bit_index < `SOC_IRQ_APB_WIDTH; bit_index++) begin
-      s_apb4_irq           = '0;
-      s_apb_irq            = '0;
-      s_apb_irq[bit_index] = 1'b1;
+    for (int bit_index = 0; bit_index < `SOC_IRQ_APB4_SYSTEM_WIDTH; bit_index++) begin
+      s_apb4_periph_irq            = '0;
+      s_apb4_system_irq            = '0;
+      s_apb4_system_irq[bit_index] = 1'b1;
       case (bit_index)
         0:       expect_irq(32'd1 << 11);
         1:       expect_irq(32'd1 << 12);
@@ -53,7 +53,7 @@ module soc_irq_topology_tb;
       endcase
     end
 
-    s_apb_irq = '0;
+    s_apb4_system_irq = '0;
     expect_irq('0);
     if (s_irq[10] !== 1'b0) begin
       $fatal(1, "removed core IRQ bit is not low: IRQ10=%b", s_irq[10]);

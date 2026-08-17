@@ -68,7 +68,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C" in rtl
     assert "SOC_SYSCTRL_TEST_STATUS_OFFSET  32'h00000084" in rtl
     assert "SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET 32'h00000088" in rtl
-    assert "SOC_ADDR_IS_APB4(addr)" in rtl
+    assert "SOC_ADDR_IS_APB4_PERIPH(addr)" in rtl
     assert "SOC_ADDR_IS_NMI" not in rtl
     user_policy = rtl.split("`define SOC_USER_ADDR_READABLE", 1)[1].split(
         "`define SOC_ADDR_INCR4_CAPABLE", 1
@@ -98,8 +98,8 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
         "USER_IP": "20007000",
     }
     for symbol, base in expected_apb_bases.items():
-        assert f"`define SOC_ADDR_APB_{symbol}_BASE 32'h{base}" in rtl
-        assert f"#define RS_SOC_APB_{symbol}_BASE UINT32_C(0x{base})" in header
+        assert f"`define SOC_ADDR_APB4_{symbol}_BASE 32'h{base}" in rtl
+        assert f"#define RS_SOC_APB4_{symbol}_BASE UINT32_C(0x{base})" in header
     assert "APB_UART1" not in rtl
     assert "APB_UART1" not in header
     assert "APB_TMR" not in rtl
