@@ -28,10 +28,11 @@ ifneq ($(origin HAVE_DEBUG),undefined)
 $(error HAVE_DEBUG has been removed; the Hazard3 Debug Module is always enabled)
 endif
 
-SOC   ?= MINI
-SIMU  ?= VCS
-SYNTH ?= NONE
-STA   ?= NONE
+SOC          ?= MINI
+SIMU         ?= VCS
+SYNTH        ?= NONE
+SYNTH_RECIPE ?= balanced
+STA          ?= NONE
 
 # HW
 PDK                      ?= IHP130
@@ -101,7 +102,11 @@ VARIANT_ROOT   := $(abspath $(BUILD_ROOT))/$(VARIANT_ID)
 SW_BUILD_DIR   := $(VARIANT_ROOT)/sw
 SIM_TOOL_NAME  := $(shell printf '%s' '$(SIMU)' | tr '[:upper:]' '[:lower:]')
 SIM_BUILD_ROOT := $(VARIANT_ROOT)/sim/$(SIM_TOOL_NAME)
+ifeq ($(SYNTH_RECIPE),balanced)
 SYN_BUILD_ROOT := $(VARIANT_ROOT)/syn/yosys
+else
+SYN_BUILD_ROOT := $(VARIANT_ROOT)/syn/yosys-$(SYNTH_RECIPE)
+endif
 STA_BUILD_ROOT := $(VARIANT_ROOT)/sta/opensta
 META_DIR       := $(VARIANT_ROOT)/meta
 ifeq ($(SYNTH),YOSYS)
@@ -113,6 +118,7 @@ endif
 VALID_SOC           := MINI
 VALID_SIMU          := VCS VERILATOR IVERILOG
 VALID_SYNTH         := NONE YOSYS
+VALID_SYNTH_RECIPE  := balanced area speed
 VALID_STA           := NONE OPENSTA
 VALID_PDK           := ICS55 IHP130 SKY130 GF180
 VALID_BOOL          := YES NO
@@ -128,6 +134,7 @@ endef
 $(call validate_value,SOC,$(VALID_SOC))
 $(call validate_value,SIMU,$(VALID_SIMU))
 $(call validate_value,SYNTH,$(VALID_SYNTH))
+$(call validate_value,SYNTH_RECIPE,$(VALID_SYNTH_RECIPE))
 $(call validate_value,STA,$(VALID_STA))
 $(call validate_value,PDK,$(VALID_PDK))
 $(call validate_value,HAVE_PLL,$(VALID_BOOL))
@@ -326,7 +333,8 @@ config:
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
 	  SOC '$(SOC)' MGMT_CORE 'HAZARD3' \
-	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' \
+	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' SYNTH_RECIPE '$(SYNTH_RECIPE)' \
+	  STA '$(STA)' FORMAL '$(FORMAL)' \
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
@@ -390,7 +398,8 @@ manifest:
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/manifest.py create --root $(ROOT_PATH) \
 	  --lock $(LOCK_FILE) --output $(META_DIR)/manifest.json --profile $(PROFILE_NAME) \
 	  $(foreach var,$(CONFIG_KEY_VARS),--config $(var)=$($(var))) \
-	  --config SIMU=$(SIMU) --config SYNTH=$(SYNTH) --config STA=$(STA)
+	  --config SIMU=$(SIMU) --config SYNTH=$(SYNTH) --config SYNTH_RECIPE=$(SYNTH_RECIPE) \
+	  --config STA=$(STA)
 
 check-warnings:
 	python3 $(ROOT_PATH)/scripts/analyze_warnings.py check --root $(ROOT_PATH) \

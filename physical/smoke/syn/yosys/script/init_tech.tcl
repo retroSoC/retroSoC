@@ -33,6 +33,8 @@ if {$pdk == "IHP130"} {
     # for hilomap
     set tech_cell_tiehi {sg13g2_tiehi L_HI}
     set tech_cell_tielo {sg13g2_tielo L_LO}
+    set abc_driver        sg13g2_buf_4
+    set abc_load          6.0
 } elseif {$pdk == "ICS55"} {
     set pdk_dir "$root_dir/physical/pdk/icsprout55-pdk"
     set pdk_cells_lib "$root_dir/.cache/retrosoc/pdk/ics55"
@@ -42,6 +44,8 @@ if {$pdk == "IHP130"} {
     # for hilomap
     set tech_cell_tiehi {TIEHIH7R Z}
     set tech_cell_tielo {TIELOH7R Z}
+    set abc_driver        BUFX4H7R
+    set abc_load          6.0
 } elseif {$pdk == "GF180"} {
     set pdk_cells_lib "$root_dir/.cache/retrosoc/pdk/gf180"
     set tech_cells [list "$pdk_cells_lib/gf180mcu_fd_sc_mcu7t5v0__tt_025C_5v00.lib"]
@@ -50,12 +54,16 @@ if {$pdk == "IHP130"} {
     # Keep constants as logic instead of mapping them to an uncharacterized cell.
     set tech_cell_tiehi {}
     set tech_cell_tielo {}
+    set abc_driver        gf180mcu_fd_sc_mcu7t5v0__buf_4
+    set abc_load          13.43
 } elseif {$pdk == "SKY130"} {
     set pdk_cells_lib "$root_dir/.cache/retrosoc/pdk/sky130"
     set tech_cells [list "$pdk_cells_lib/sky130_fd_sc_hd__tt_025C_1v80.lib"]
     set tech_macros [list]
     set tech_cell_tiehi {sky130_fd_sc_hd__conb_1 HI}
     set tech_cell_tielo {sky130_fd_sc_hd__conb_1 LO}
+    set abc_driver        sky130_fd_sc_hd__buf_1
+    set abc_load          5
 } else {
     error "unsupported PDK for Yosys: $pdk"
 }

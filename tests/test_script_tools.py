@@ -858,8 +858,58 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
         )
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
+        assert not any(
+            any(value.startswith("SYNTH_RECIPE=") for value in values) for values in command_values
+        )
         assert ("STA=OPENSTA", "sta") in command_values
         assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
+
+
+def test_nightly_regression_runs_optional_yosys_recipes() -> None:
+    commands, profiles = select_regression("nightly", "IHP130")
+
+    assert commands == NIGHTLY_COMMANDS
+    assert profiles == ("configs/ci/ihp130.mk",)
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH=YOSYS", "SYNTH_RECIPE=area", "synth"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH=YOSYS", "SYNTH_RECIPE=speed", "synth"),
+    ) in NIGHTLY_COMMANDS
+    assert not any(
+        any(value.startswith("SYNTH_RECIPE=") for value in values) for _, values in PR_COMMANDS
+    )
+
+    nightly = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "nightly",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in nightly.stdout
+
+    pr = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "pr",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth" in pr.stdout
+    assert "SYNTH_RECIPE=area" not in pr.stdout
+    assert "SYNTH_RECIPE=speed" not in pr.stdout
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

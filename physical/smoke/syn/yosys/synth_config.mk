@@ -5,9 +5,6 @@
 # Authors:
 # - Philippe Sauter <phsauter@iis.ee.ethz.ch>
 
-# target clock-period in pico-seconds
-export YOSYS_TARGET_PERIOD_PS := 10000
-
 # modules Yosys will treat as blackboxes
 export YOSYS_BLACKBOX_MODULES := "*tc_sram_blackbox*"
 

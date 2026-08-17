@@ -27,6 +27,14 @@ YOSYS_RPT   := $(YOSYS_BUILD)/rpt
 
 include $(YOSYS_DIR)/synth_config.mk
 
+ifeq ($(origin YOSYS_TARGET_PERIOD_PS),undefined)
+YOSYS_TARGET_PERIOD_PS := $(shell python3 $(ROOT_PATH)/scripts/yosys_period.py \
+	--domains $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json)
+ifeq ($(strip $(YOSYS_TARGET_PERIOD_PS)),)
+$(error Failed to derive YOSYS_TARGET_PERIOD_PS from the clock/reset inventory)
+endif
+endif
+
 TOP_DESIGN ?= retrosoc_asic
 RTL_NAME   ?= retrosoc_asic
 SV_FLIST   := $(GENERATED_FL_DIR)/yosys.fl
@@ -55,7 +63,8 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 	@mkdir -p $(YOSYS_RPT)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool yosys \
 		--log $(YOSYS_BUILD)/$(RTL_NAME).log --result $(YOSYS_BUILD)/result-synth.json \
-		--env PDK=$(PDK) --env SOC=$(SOC) \
+		--env PDK=$(PDK) --env SOC=$(SOC) --env SYNTH_RECIPE=$(SYNTH_RECIPE) \
+		--env YOSYS_TARGET_PERIOD_PS=$(YOSYS_TARGET_PERIOD_PS) \
 		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
 		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \

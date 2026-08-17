@@ -65,6 +65,8 @@ NIGHTLY_COMMANDS = (
         "configs/benchmark/ihp130-hazard3-coremark.mk",
         ("SIMU=VERILATOR", "HAVE_SVA=YES", "coremark-report"),
     ),
+    ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "SYNTH_RECIPE=area", "synth")),
+    ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "SYNTH_RECIPE=speed", "synth")),
 )
 PR_PROFILES = ("configs/ci/ihp130.mk",)
 SMOKE_PROFILES: tuple[str, ...] = ()

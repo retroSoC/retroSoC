@@ -121,11 +121,18 @@ build/<variant>/
   sim/<simulator>/
   formal/<proof>/
   syn/yosys/
+  syn/yosys-area/    (optional SYNTH_RECIPE=area)
+  syn/yosys-speed/   (optional SYNTH_RECIPE=speed)
   sta/opensta/
   meta/manifest.json
   meta/warnings.json
   meta/metrics.json
 ```
+
+The default Yosys recipe writes `syn/yosys/`. Optional `SYNTH_RECIPE=area` and
+`SYNTH_RECIPE=speed` jobs write sibling directories; STA, netlist simulation, warning analysis,
+and metrics read only `syn/yosys/`. `SYNTH_RECIPE` is a flow selector and does not change the
+configuration hash.
 
 Generated filelists and MPW output are flow-local. Make depfiles track expanded RTL sources and
 included headers. The shared MPW generator is protected by a file lock. Default tool parallelism is
