@@ -65,12 +65,12 @@ module i2s_reg (
   logic [3:0] s_intr_stat_d, s_intr_stat_q;
   logic [3:0] s_intr_en_d, s_intr_en_q;
   logic [1:0] s_cmd_d, s_cmd_q;
-  logic        s_ctrl_en;
-  logic        s_stream_en;
-  logic        s_format_en;
-  logic        s_clk_en;
-  logic        s_fifo_th_en;
-  logic        s_intr_en_en;
+  logic s_ctrl_en;
+  logic s_stream_en;
+  logic s_format_en;
+  logic s_clk_en;
+  logic s_fifo_th_en;
+  logic s_intr_en_en;
   logic s_tx_stall_d, s_tx_stall_q;
   logic s_rx_stall_d, s_rx_stall_q;
   logic [ 7:0] s_upbound;
@@ -228,13 +228,13 @@ module i2s_reg (
     s_intr_en_d  = apb4.pwdata[3:0];
     if (s_accept && s_write && !s_access_err) begin
       unique case (s_offset)
-        `APB4_I2S_CTRL: s_ctrl_en = 1'b1;
+        `APB4_I2S_CTRL:        s_ctrl_en = 1'b1;
         `APB4_I2S_STREAM_CTRL: s_stream_en = 1'b1;
-        `APB4_I2S_FORMAT: s_format_en = 1'b1;
-        `APB4_I2S_CLK_DIV: s_clk_en = 1'b1;
-        `APB4_I2S_FIFO_TH: s_fifo_th_en = 1'b1;
+        `APB4_I2S_FORMAT:      s_format_en = 1'b1;
+        `APB4_I2S_CLK_DIV:     s_clk_en = 1'b1;
+        `APB4_I2S_FIFO_TH:     s_fifo_th_en = 1'b1;
         `APB4_I2S_INTR_ENABLE: s_intr_en_en = 1'b1;
-        default: ;
+        default:               ;
       endcase
     end
   end

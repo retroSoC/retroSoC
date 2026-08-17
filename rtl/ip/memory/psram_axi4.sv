@@ -39,6 +39,7 @@ module psram_axi4 (
     AxiReadResponse  = 4'd8
   } psram_axi_state_e;
 
+  logic             [ 3:0] s_state_bits_q;
   psram_axi_state_e        s_state_q;
   logic             [31:0] s_addr_q;
   logic             [31:0] s_next_addr;
@@ -55,14 +56,32 @@ module psram_axi4 (
   logic             [ 2:0] s_byte_count_q;
   logic                    s_read_invalid_q;
 
-  logic             [32:0] s_write_last_addr;
-  logic             [32:0] s_read_last_addr;
-  logic                    s_legal_write;
-  logic                    s_legal_read;
-  logic             [ 3:0] s_write_lane_mask;
-  logic             [ 1:0] s_active_lane;
-  logic             [ 2:0] s_active_run_len;
-  logic             [ 3:0] s_active_run_mask;
+  assign s_state_q = psram_axi_state_e'(s_state_bits_q);
+
+  psram_axi_state_e        s_state_d;
+  logic             [31:0] s_addr_d;
+  logic             [ 7:0] s_len_d;
+  logic             [ 7:0] s_beat_d;
+  logic             [ 2:0] s_size_d;
+  logic             [ 1:0] s_burst_d;
+  logic                    s_id_d;
+  logic             [31:0] s_wdata_d;
+  logic             [ 3:0] s_wstrb_d;
+  logic                    s_wlast_d;
+  logic             [ 1:0] s_resp_d;
+  logic             [31:0] s_rdata_d;
+  logic             [ 2:0] s_byte_count_d;
+  logic                    s_read_invalid_d;
+  logic s_split_event_d, s_split_event_q;
+
+  logic [32:0] s_write_last_addr;
+  logic [32:0] s_read_last_addr;
+  logic        s_legal_write;
+  logic        s_legal_read;
+  logic [ 3:0] s_write_lane_mask;
+  logic [ 1:0] s_active_lane;
+  logic [ 2:0] s_active_run_len;
+  logic [ 3:0] s_active_run_mask;
 
   function automatic logic [32:0] burst_last_addr(input logic [31:0] addr, input logic [7:0] length,
                                                   input logic [2:0] size, input logic [1:0] burst);
@@ -200,165 +219,286 @@ module psram_axi4 (
   assign mem_req_wdata_o = s_wdata_q >> (s_active_lane * 8);
   assign mem_rsp_ready_o = (s_state_q == AxiWriteWait) || (s_state_q == AxiReadWait);
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i) begin
-      s_state_q        <= AxiIdle;
-      s_addr_q         <= '0;
-      s_len_q          <= '0;
-      s_beat_q         <= '0;
-      s_size_q         <= '0;
-      s_burst_q        <= '0;
-      s_id_q           <= '0;
-      s_wdata_q        <= '0;
-      s_wstrb_q        <= '0;
-      s_wlast_q        <= 1'b0;
-      s_resp_q         <= `AXI4_RESP_OKAY;
-      s_rdata_q        <= '0;
-      s_byte_count_q   <= '0;
-      s_read_invalid_q <= 1'b0;
-      split_event_o    <= 1'b0;
-    end else begin
-      split_event_o <= 1'b0;
-      unique case (s_state_q)
-        AxiIdle: begin
-          s_beat_q         <= '0;
-          s_resp_q         <= `AXI4_RESP_OKAY;
-          s_read_invalid_q <= 1'b0;
-          if (axi4.arvalid && axi4.arready) begin
-            s_addr_q       <= axi4.araddr;
-            s_len_q        <= axi4.arlen;
-            s_size_q       <= axi4.arsize;
-            s_burst_q      <= axi4.arburst;
-            s_id_q         <= axi4.arid;
-            s_rdata_q      <= '0;
-            s_byte_count_q <= 3'(3'd1 << axi4.arsize);
-            if (s_legal_read) begin
-              s_state_q <= AxiReadRequest;
-            end else begin
-              s_resp_q         <= `AXI4_RESP_SLAVE_ERROR;
-              s_read_invalid_q <= 1'b1;
-              s_state_q        <= AxiReadResponse;
-            end
-          end else if (axi4.awvalid && axi4.awready) begin
-            s_addr_q  <= axi4.awaddr;
-            s_len_q   <= axi4.awlen;
-            s_size_q  <= axi4.awsize;
-            s_burst_q <= axi4.awburst;
-            s_id_q    <= axi4.awid;
-            if (s_legal_write) begin
-              s_state_q <= AxiWriteData;
-            end else begin
-              s_resp_q  <= `AXI4_RESP_SLAVE_ERROR;
-              s_state_q <= AxiWriteDrain;
-            end
+  always_comb begin
+    s_state_d        = s_state_q;
+    s_addr_d         = s_addr_q;
+    s_len_d          = s_len_q;
+    s_beat_d         = s_beat_q;
+    s_size_d         = s_size_q;
+    s_burst_d        = s_burst_q;
+    s_id_d           = s_id_q;
+    s_wdata_d        = s_wdata_q;
+    s_wstrb_d        = s_wstrb_q;
+    s_wlast_d        = s_wlast_q;
+    s_resp_d         = s_resp_q;
+    s_rdata_d        = s_rdata_q;
+    s_byte_count_d   = s_byte_count_q;
+    s_read_invalid_d = s_read_invalid_q;
+    s_split_event_d  = 1'b0;
+    s_split_event_d  = 1'b0;
+    unique case (s_state_q)
+      AxiIdle: begin
+        s_beat_d         = '0;
+        s_resp_d         = `AXI4_RESP_OKAY;
+        s_read_invalid_d = 1'b0;
+        if (axi4.arvalid && axi4.arready) begin
+          s_addr_d       = axi4.araddr;
+          s_len_d        = axi4.arlen;
+          s_size_d       = axi4.arsize;
+          s_burst_d      = axi4.arburst;
+          s_id_d         = axi4.arid;
+          s_rdata_d      = '0;
+          s_byte_count_d = 3'(3'd1 << axi4.arsize);
+          if (s_legal_read) begin
+            s_state_d = AxiReadRequest;
+          end else begin
+            s_resp_d         = `AXI4_RESP_SLAVE_ERROR;
+            s_read_invalid_d = 1'b1;
+            s_state_d        = AxiReadResponse;
+          end
+        end else if (axi4.awvalid && axi4.awready) begin
+          s_addr_d  = axi4.awaddr;
+          s_len_d   = axi4.awlen;
+          s_size_d  = axi4.awsize;
+          s_burst_d = axi4.awburst;
+          s_id_d    = axi4.awid;
+          if (s_legal_write) begin
+            s_state_d = AxiWriteData;
+          end else begin
+            s_resp_d  = `AXI4_RESP_SLAVE_ERROR;
+            s_state_d = AxiWriteDrain;
           end
         end
+      end
 
-        AxiWriteData: begin
-          if (axi4.wvalid && axi4.wready) begin
-            s_wdata_q <= axi4.wdata;
-            s_wstrb_q <= axi4.wstrb;
-            s_wlast_q <= axi4.wlast;
-            if ((axi4.wlast != (s_beat_q == s_len_q)) || (|(axi4.wstrb & ~s_write_lane_mask))) begin
-              s_resp_q <= `AXI4_RESP_SLAVE_ERROR;
-              if (axi4.wlast) s_state_q <= AxiWriteResponse;
-              else s_state_q <= AxiWriteDrain;
-            end else if (axi4.wstrb == 4'd0) begin
-              if (s_beat_q == s_len_q) begin
-                s_state_q <= AxiWriteResponse;
-              end else begin
-                if ((s_addr_q[22:0] == 23'h0003FF) || (s_addr_q[22:0] == 23'h7FFFFF)) begin
-                  split_event_o <= 1'b1;
-                end
-                s_addr_q  <= s_next_addr;
-                s_beat_q  <= s_beat_q + 1'b1;
-                s_state_q <= AxiWriteData;
-              end
-            end else begin
-              s_state_q <= AxiWriteRequest;
-            end
-          end
-        end
-
-        AxiWriteRequest: begin
-          if (mem_req_valid_o && mem_req_ready_i) begin
-            s_wstrb_q <= s_wstrb_q & ~s_active_run_mask;
-            s_state_q <= AxiWriteWait;
-          end
-        end
-
-        AxiWriteWait: begin
-          if (mem_rsp_valid_i && mem_rsp_ready_o) begin
-            if (mem_rsp_error_i) begin
-              s_resp_q <= `AXI4_RESP_SLAVE_ERROR;
-              if (s_wlast_q) s_state_q <= AxiWriteResponse;
-              else s_state_q <= AxiWriteDrain;
-            end else if (s_wstrb_q != 4'd0) begin
-              s_state_q <= AxiWriteRequest;
-            end else if (s_beat_q == s_len_q) begin
-              s_state_q <= AxiWriteResponse;
-            end else begin
-              if ((s_addr_q[22:0] == 23'h0003FF) || (s_addr_q[22:0] == 23'h7FFFFF)) begin
-                split_event_o <= 1'b1;
-              end
-              s_addr_q  <= s_next_addr;
-              s_beat_q  <= s_beat_q + 1'b1;
-              s_state_q <= AxiWriteData;
-            end
-          end
-        end
-
-        AxiWriteDrain: begin
-          if (axi4.wvalid && axi4.wready && axi4.wlast) begin
-            s_state_q <= AxiWriteResponse;
-          end
-        end
-
-        AxiWriteResponse: begin
-          if (axi4.bvalid && axi4.bready) begin
-            s_state_q <= AxiIdle;
-          end
-        end
-
-        AxiReadRequest: begin
-          if (mem_req_valid_o && mem_req_ready_i) begin
-            s_state_q <= AxiReadWait;
-          end
-        end
-
-        AxiReadWait: begin
-          if (mem_rsp_valid_i && mem_rsp_ready_o) begin
-            if (mem_rsp_error_i) begin
-              s_resp_q  <= `AXI4_RESP_SLAVE_ERROR;
-              s_state_q <= AxiReadResponse;
-            end else begin
-              s_rdata_q <= mem_rsp_rdata_i << (s_addr_q[1:0] * 8);
-              s_state_q <= AxiReadResponse;
-            end
-          end
-        end
-
-        AxiReadResponse: begin
-          if (axi4.rvalid && axi4.rready) begin
+      AxiWriteData: begin
+        if (axi4.wvalid && axi4.wready) begin
+          s_wdata_d = axi4.wdata;
+          s_wstrb_d = axi4.wstrb;
+          s_wlast_d = axi4.wlast;
+          if ((axi4.wlast != (s_beat_q == s_len_q)) || (|(axi4.wstrb & ~s_write_lane_mask))) begin
+            s_resp_d = `AXI4_RESP_SLAVE_ERROR;
+            if (axi4.wlast) s_state_d = AxiWriteResponse;
+            else s_state_d = AxiWriteDrain;
+          end else if (axi4.wstrb == 4'd0) begin
             if (s_beat_q == s_len_q) begin
-              s_state_q <= AxiIdle;
+              s_state_d = AxiWriteResponse;
             end else begin
               if ((s_addr_q[22:0] == 23'h0003FF) || (s_addr_q[22:0] == 23'h7FFFFF)) begin
-                split_event_o <= 1'b1;
+                s_split_event_d = 1'b1;
               end
-              s_addr_q  <= s_next_addr;
-              s_beat_q  <= s_beat_q + 1'b1;
-              s_rdata_q <= '0;
-              s_resp_q  <= s_read_invalid_q ? `AXI4_RESP_SLAVE_ERROR : `AXI4_RESP_OKAY;
-              s_state_q <= s_read_invalid_q ? AxiReadResponse : AxiReadRequest;
+              s_addr_d  = s_next_addr;
+              s_beat_d  = s_beat_q + 1'b1;
+              s_state_d = AxiWriteData;
             end
+          end else begin
+            s_state_d = AxiWriteRequest;
           end
         end
+      end
 
-        default: s_state_q <= AxiIdle;
-      endcase
-    end
+      AxiWriteRequest: begin
+        if (mem_req_valid_o && mem_req_ready_i) begin
+          s_wstrb_d = s_wstrb_q & ~s_active_run_mask;
+          s_state_d = AxiWriteWait;
+        end
+      end
+
+      AxiWriteWait: begin
+        if (mem_rsp_valid_i && mem_rsp_ready_o) begin
+          if (mem_rsp_error_i) begin
+            s_resp_d = `AXI4_RESP_SLAVE_ERROR;
+            if (s_wlast_d) s_state_d = AxiWriteResponse;
+            else s_state_d = AxiWriteDrain;
+          end else if (s_wstrb_q != 4'd0) begin
+            s_state_d = AxiWriteRequest;
+          end else if (s_beat_q == s_len_q) begin
+            s_state_d = AxiWriteResponse;
+          end else begin
+            if ((s_addr_q[22:0] == 23'h0003FF) || (s_addr_q[22:0] == 23'h7FFFFF)) begin
+              s_split_event_d = 1'b1;
+            end
+            s_addr_d  = s_next_addr;
+            s_beat_d  = s_beat_q + 1'b1;
+            s_state_d = AxiWriteData;
+          end
+        end
+      end
+
+      AxiWriteDrain: begin
+        if (axi4.wvalid && axi4.wready && axi4.wlast) begin
+          s_state_d = AxiWriteResponse;
+        end
+      end
+
+      AxiWriteResponse: begin
+        if (axi4.bvalid && axi4.bready) begin
+          s_state_d = AxiIdle;
+        end
+      end
+
+      AxiReadRequest: begin
+        if (mem_req_valid_o && mem_req_ready_i) begin
+          s_state_d = AxiReadWait;
+        end
+      end
+
+      AxiReadWait: begin
+        if (mem_rsp_valid_i && mem_rsp_ready_o) begin
+          if (mem_rsp_error_i) begin
+            s_resp_d  = `AXI4_RESP_SLAVE_ERROR;
+            s_state_d = AxiReadResponse;
+          end else begin
+            s_rdata_d = mem_rsp_rdata_i << (s_addr_q[1:0] * 8);
+            s_state_d = AxiReadResponse;
+          end
+        end
+      end
+
+      AxiReadResponse: begin
+        if (axi4.rvalid && axi4.rready) begin
+          if (s_beat_q == s_len_q) begin
+            s_state_d = AxiIdle;
+          end else begin
+            if ((s_addr_q[22:0] == 23'h0003FF) || (s_addr_q[22:0] == 23'h7FFFFF)) begin
+              s_split_event_d = 1'b1;
+            end
+            s_addr_d  = s_next_addr;
+            s_beat_d  = s_beat_q + 1'b1;
+            s_rdata_d = '0;
+            s_resp_d  = s_read_invalid_q ? `AXI4_RESP_SLAVE_ERROR : `AXI4_RESP_OKAY;
+            s_state_d = s_read_invalid_q ? AxiReadResponse : AxiReadRequest;
+          end
+        end
+      end
+
+      default: s_state_d = AxiIdle;
+    endcase
   end
+  dffrc #(
+      .DATA_WIDTH($bits(psram_axi_state_e)),
+      .RESET_VAL (AxiIdle)
+  ) u_state_dffrc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_state_d),
+      .dat_o  (s_state_bits_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_addr_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_addr_d),
+      .dat_o  (s_addr_q)
+  );
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_len_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_len_d),
+      .dat_o  (s_len_q)
+  );
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_beat_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_beat_d),
+      .dat_o  (s_beat_q)
+  );
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_size_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_size_d),
+      .dat_o  (s_size_q)
+  );
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_burst_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_burst_d),
+      .dat_o  (s_burst_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_id_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_id_d),
+      .dat_o  (s_id_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_wdata_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_wdata_d),
+      .dat_o  (s_wdata_q)
+  );
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_wstrb_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_wstrb_d),
+      .dat_o  (s_wstrb_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_wlast_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_wlast_d),
+      .dat_o  (s_wlast_q)
+  );
+  dffrc #(
+      .DATA_WIDTH(2),
+      .RESET_VAL (`AXI4_RESP_OKAY)
+  ) u_resp_dffrc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_resp_d),
+      .dat_o  (s_resp_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_rdata_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_rdata_d),
+      .dat_o  (s_rdata_q)
+  );
+  dffr #(
+      .DATA_WIDTH(3)
+  ) u_byte_count_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_byte_count_d),
+      .dat_o  (s_byte_count_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_read_invalid_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_read_invalid_d),
+      .dat_o  (s_read_invalid_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_split_event_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_split_event_d),
+      .dat_o  (s_split_event_q)
+  );
+
+  assign split_event_o = s_split_event_q;
 
   axi4_addr_gen #(
       .ADDR_WIDTH(32)

@@ -79,30 +79,53 @@ module psram_reg (
   logic        s_access_err;
   logic [31:0] s_read_data;
   logic        s_ready_q;
-  logic        s_resp_err_q;
-  logic [31:0] s_rdata_q;
+  logic s_resp_err_d, s_resp_err_q;
+  logic [31:0] s_rdata_d, s_rdata_q;
 
-  logic [31:0] s_ctrl_q;
-  logic [ 3:0] s_chip_en_q;
-  logic [31:0] s_clk_config_q;
-  logic [31:0] s_powerup_cycles_q;
-  logic [15:0] s_cs_setup_q;
-  logic [15:0] s_cs_high_q;
-  logic [15:0] s_cs_hold_q;
-  logic [31:0] s_cs_max_low_q;
-  logic [31:0] s_access_timeout_q;
-  logic [31:0] s_indirect_ctrl_q;
-  logic [22:0] s_indirect_addr_q;
+  logic [31:0] s_ctrl_d, s_ctrl_q;
+  logic [3:0] s_chip_en_d, s_chip_en_q;
+  logic [31:0] s_clk_config_d, s_clk_config_q;
+  logic [31:0] s_powerup_cycles_d, s_powerup_cycles_q;
+  logic [15:0] s_cs_setup_d, s_cs_setup_q;
+  logic [15:0] s_cs_high_d, s_cs_high_q;
+  logic [15:0] s_cs_hold_d, s_cs_hold_q;
+  logic [31:0] s_cs_max_low_d, s_cs_max_low_q;
+  logic [31:0] s_access_timeout_d, s_access_timeout_q;
+  logic [31:0] s_indirect_ctrl_d, s_indirect_ctrl_q;
+  logic [22:0] s_indirect_addr_d, s_indirect_addr_q;
+  logic [31:0] s_indirect_wdata_lo_d, s_indirect_wdata_hi_d;
   logic [63:0] s_indirect_wdata_q;
   logic [ 3:0] s_intr_state_q;
-  logic [ 3:0] s_intr_en_q;
-  logic [ 1:0] s_perf_ctrl_q;
-  logic [31:0] s_perf_read_bytes_q;
-  logic [31:0] s_perf_write_bytes_q;
-  logic [31:0] s_perf_commands_q;
-  logic [31:0] s_perf_splits_q;
-  logic [31:0] s_perf_stall_cycles_q;
-  logic [31:0] s_perf_err_count_q;
+  logic [3:0] s_intr_en_d, s_intr_en_q;
+  logic [1:0] s_perf_ctrl_d, s_perf_ctrl_q;
+  logic [31:0] s_perf_read_bytes_d, s_perf_read_bytes_q;
+  logic [31:0] s_perf_write_bytes_d, s_perf_write_bytes_q;
+  logic [31:0] s_perf_commands_d, s_perf_commands_q;
+  logic [31:0] s_perf_splits_d, s_perf_splits_q;
+  logic [31:0] s_perf_stall_cycles_d, s_perf_stall_cycles_q;
+  logic [31:0] s_perf_err_count_d, s_perf_err_count_q;
+  logic s_ctrl_en;
+  logic s_chip_en_en;
+  logic s_clk_en;
+  logic s_powerup_en;
+  logic s_cs_setup_en;
+  logic s_cs_high_en;
+  logic s_cs_hold_en;
+  logic s_cs_max_low_en;
+  logic s_access_timeout_en;
+  logic s_indirect_ctrl_en;
+  logic s_indirect_addr_en;
+  logic s_indirect_wdata_lo_en;
+  logic s_indirect_wdata_hi_en;
+  logic s_intr_en_en;
+  logic s_perf_ctrl_en;
+  logic s_recover_chip_en;
+  logic s_init_start_d, s_init_start_q;
+  logic s_recover_start_d, s_recover_start_q;
+  logic [1:0] s_recover_chip_d, s_recover_chip_q;
+  logic s_abort_d, s_abort_q;
+  logic [3:0] s_chip_err_clear_d, s_chip_err_clear_q;
+  logic s_indirect_start_d, s_indirect_start_q;
   logic [ 3:0] s_intr_clear;
   logic [ 3:0] s_intr_set;
   logic [ 3:0] s_intr_next;
@@ -372,119 +395,389 @@ module psram_reg (
     s_intr_next = (s_intr_state_q & ~s_intr_clear) | s_intr_set;
   end
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i) begin
-      s_ready_q             <= 1'b0;
-      s_resp_err_q          <= 1'b0;
-      s_rdata_q             <= '0;
-      s_ctrl_q              <= 32'h0000_0003;
-      s_chip_en_q           <= 4'hF;
-      s_clk_config_q        <= 32'h0000_0001;
-      s_powerup_cycles_q    <= 32'd10_800;
-      s_cs_setup_q          <= 16'd1;
-      s_cs_high_q           <= 16'd4;
-      s_cs_hold_q           <= 16'd3;
-      s_cs_max_low_q        <= 32'd576;
-      s_access_timeout_q    <= 32'd100_000;
-      s_indirect_ctrl_q     <= 32'h0000_0000;
-      s_indirect_addr_q     <= '0;
-      s_indirect_wdata_q    <= '0;
-      s_intr_state_q        <= '0;
-      s_intr_en_q           <= '0;
-      s_perf_ctrl_q         <= '0;
-      s_perf_read_bytes_q   <= '0;
-      s_perf_write_bytes_q  <= '0;
-      s_perf_commands_q     <= '0;
-      s_perf_splits_q       <= '0;
-      s_perf_stall_cycles_q <= '0;
-      s_perf_err_count_q    <= '0;
-      init_start_o          <= 1'b0;
-      recover_start_o       <= 1'b0;
-      recover_chip_o        <= '0;
-      abort_o               <= 1'b0;
-      chip_error_clear_o    <= '0;
-      indirect_start_o      <= 1'b0;
-    end else begin
-      s_ready_q          <= s_req;
-      init_start_o       <= 1'b0;
-      recover_start_o    <= 1'b0;
-      abort_o            <= 1'b0;
-      chip_error_clear_o <= '0;
-      indirect_start_o   <= 1'b0;
-
-      if (s_req) begin
-        s_resp_err_q <= s_access_err;
-        s_rdata_q    <= s_read_data;
-      end
-
-      if (s_req && s_write && !s_access_err) begin
-        unique case (s_offset)
-          `APB4_PSRAM_CTRL: s_ctrl_q <= s_ctrl_write_value;
-          `APB4_PSRAM_COMMAND: begin
-            init_start_o    <= apb4.pwdata[`PSRAM_COMMAND_INIT];
-            recover_start_o <= apb4.pwdata[`PSRAM_COMMAND_RECOVER];
-            abort_o         <= apb4.pwdata[`PSRAM_COMMAND_ABORT];
-            recover_chip_o  <= apb4.pwdata[9:8];
-          end
-          `APB4_PSRAM_CHIP_ENABLE: s_chip_en_q <= s_chip_en_write_value;
-          `APB4_PSRAM_CHIP_ERROR: begin
-            if (apb4.pstrb[0]) chip_error_clear_o <= apb4.pwdata[3:0];
-          end
-          `APB4_PSRAM_CLK_CONFIG: s_clk_config_q <= s_clk_write_value;
-          `APB4_PSRAM_POWERUP_CYCLES:
-          s_powerup_cycles_q <= merge_wstrb(s_powerup_cycles_q, apb4.pwdata, apb4.pstrb);
-          `APB4_PSRAM_CS_SETUP_CYCLES: s_cs_setup_q <= s_cs_setup_write_value;
-          `APB4_PSRAM_CS_HIGH_CYCLES: s_cs_high_q <= s_cs_high_write_value;
-          `APB4_PSRAM_CS_HOLD_CYCLES: s_cs_hold_q <= s_cs_hold_write_value;
-          `APB4_PSRAM_CS_MAX_LOW_CYCLES:
-          s_cs_max_low_q <= merge_wstrb(s_cs_max_low_q, apb4.pwdata, apb4.pstrb);
-          `APB4_PSRAM_ACCESS_TIMEOUT_CYCLES:
-          s_access_timeout_q <= merge_wstrb(s_access_timeout_q, apb4.pwdata, apb4.pstrb);
-          `APB4_PSRAM_INDIRECT_CTRL: begin
-            s_indirect_ctrl_q <= s_indirect_write_value & 32'h7FFF_FFFF;
-            indirect_start_o  <= s_indirect_write_value[`PSRAM_INDIRECT_START];
-          end
-          `APB4_PSRAM_INDIRECT_ADDR: s_indirect_addr_q <= s_indirect_addr_write_value;
-          `APB4_PSRAM_INDIRECT_WDATA_LO:
-          s_indirect_wdata_q[31:0] <= merge_wstrb(
-              s_indirect_wdata_q[31:0], apb4.pwdata, apb4.pstrb
-          );
-          `APB4_PSRAM_INDIRECT_WDATA_HI:
-          s_indirect_wdata_q[63:32] <= merge_wstrb(
-              s_indirect_wdata_q[63:32], apb4.pwdata, apb4.pstrb
-          );
-          `APB4_PSRAM_INTR_ENABLE: s_intr_en_q <= s_intr_en_write_value;
-          `APB4_PSRAM_PERF_CTRL: s_perf_ctrl_q <= s_perf_write_value[1:0];
-          default: begin
-          end
-        endcase
-      end
-
-      s_intr_state_q <= s_intr_next;
-
-      if (s_req && s_write && !s_access_err &&
-          (s_offset == `APB4_PSRAM_PERF_CTRL) &&
-          apb4.pwdata[`PSRAM_PERF_CLEAR]) begin
-        s_perf_read_bytes_q   <= '0;
-        s_perf_write_bytes_q  <= '0;
-        s_perf_commands_q     <= '0;
-        s_perf_splits_q       <= '0;
-        s_perf_stall_cycles_q <= '0;
-        s_perf_err_count_q    <= '0;
-      end else if (s_perf_ctrl_q[`PSRAM_PERF_ENABLE] && !s_perf_ctrl_q[`PSRAM_PERF_FREEZE]) begin
-        if (|perf_read_byte_event_i)
-          s_perf_read_bytes_q <= saturating_add(s_perf_read_bytes_q, perf_read_byte_event_i);
-        if (|perf_write_byte_event_i)
-          s_perf_write_bytes_q <= saturating_add(s_perf_write_bytes_q, perf_write_byte_event_i);
-        if (perf_command_event_i) s_perf_commands_q <= saturating_increment(s_perf_commands_q);
-        if (perf_split_event_i) s_perf_splits_q <= saturating_increment(s_perf_splits_q);
-        if (perf_stall_event_i)
-          s_perf_stall_cycles_q <= saturating_increment(s_perf_stall_cycles_q);
-        if (perf_error_event_i) s_perf_err_count_q <= saturating_increment(s_perf_err_count_q);
-      end
+  always_comb begin
+    s_ctrl_en              = 1'b0;
+    s_chip_en_en           = 1'b0;
+    s_clk_en               = 1'b0;
+    s_powerup_en           = 1'b0;
+    s_cs_setup_en          = 1'b0;
+    s_cs_high_en           = 1'b0;
+    s_cs_hold_en           = 1'b0;
+    s_cs_max_low_en        = 1'b0;
+    s_access_timeout_en    = 1'b0;
+    s_indirect_ctrl_en     = 1'b0;
+    s_indirect_addr_en     = 1'b0;
+    s_indirect_wdata_lo_en = 1'b0;
+    s_indirect_wdata_hi_en = 1'b0;
+    s_intr_en_en           = 1'b0;
+    s_perf_ctrl_en         = 1'b0;
+    s_recover_chip_en      = 1'b0;
+    s_ctrl_d               = s_ctrl_write_value;
+    s_chip_en_d            = s_chip_en_write_value;
+    s_clk_config_d         = s_clk_write_value;
+    s_powerup_cycles_d     = merge_wstrb(s_powerup_cycles_q, apb4.pwdata, apb4.pstrb);
+    s_cs_setup_d           = s_cs_setup_write_value;
+    s_cs_high_d            = s_cs_high_write_value;
+    s_cs_hold_d            = s_cs_hold_write_value;
+    s_cs_max_low_d         = merge_wstrb(s_cs_max_low_q, apb4.pwdata, apb4.pstrb);
+    s_access_timeout_d     = merge_wstrb(s_access_timeout_q, apb4.pwdata, apb4.pstrb);
+    s_indirect_ctrl_d      = s_indirect_write_value & 32'h7FFF_FFFF;
+    s_indirect_addr_d      = s_indirect_addr_write_value;
+    s_indirect_wdata_lo_d  = merge_wstrb(s_indirect_wdata_q[31:0], apb4.pwdata, apb4.pstrb);
+    s_indirect_wdata_hi_d  = merge_wstrb(s_indirect_wdata_q[63:32], apb4.pwdata, apb4.pstrb);
+    s_intr_en_d            = s_intr_en_write_value;
+    s_perf_ctrl_d          = s_perf_write_value[1:0];
+    s_recover_chip_d       = apb4.pwdata[9:8];
+    s_init_start_d         = 1'b0;
+    s_recover_start_d      = 1'b0;
+    s_abort_d              = 1'b0;
+    s_chip_err_clear_d     = '0;
+    s_indirect_start_d     = 1'b0;
+    if (s_req && s_write && !s_access_err) begin
+      unique case (s_offset)
+        `APB4_PSRAM_CTRL:                  s_ctrl_en = 1'b1;
+        `APB4_PSRAM_COMMAND: begin
+          s_init_start_d    = apb4.pwdata[`PSRAM_COMMAND_INIT];
+          s_recover_start_d = apb4.pwdata[`PSRAM_COMMAND_RECOVER];
+          s_abort_d         = apb4.pwdata[`PSRAM_COMMAND_ABORT];
+          s_recover_chip_en = 1'b1;
+        end
+        `APB4_PSRAM_CHIP_ENABLE:           s_chip_en_en = 1'b1;
+        `APB4_PSRAM_CHIP_ERROR: begin
+          if (apb4.pstrb[0]) s_chip_err_clear_d = apb4.pwdata[3:0];
+        end
+        `APB4_PSRAM_CLK_CONFIG:            s_clk_en = 1'b1;
+        `APB4_PSRAM_POWERUP_CYCLES:        s_powerup_en = 1'b1;
+        `APB4_PSRAM_CS_SETUP_CYCLES:       s_cs_setup_en = 1'b1;
+        `APB4_PSRAM_CS_HIGH_CYCLES:        s_cs_high_en = 1'b1;
+        `APB4_PSRAM_CS_HOLD_CYCLES:        s_cs_hold_en = 1'b1;
+        `APB4_PSRAM_CS_MAX_LOW_CYCLES:     s_cs_max_low_en = 1'b1;
+        `APB4_PSRAM_ACCESS_TIMEOUT_CYCLES: s_access_timeout_en = 1'b1;
+        `APB4_PSRAM_INDIRECT_CTRL: begin
+          s_indirect_ctrl_en = 1'b1;
+          s_indirect_start_d = s_indirect_write_value[`PSRAM_INDIRECT_START];
+        end
+        `APB4_PSRAM_INDIRECT_ADDR:         s_indirect_addr_en = 1'b1;
+        `APB4_PSRAM_INDIRECT_WDATA_LO:     s_indirect_wdata_lo_en = 1'b1;
+        `APB4_PSRAM_INDIRECT_WDATA_HI:     s_indirect_wdata_hi_en = 1'b1;
+        `APB4_PSRAM_INTR_ENABLE:           s_intr_en_en = 1'b1;
+        `APB4_PSRAM_PERF_CTRL:             s_perf_ctrl_en = 1'b1;
+        default:                           ;
+      endcase
     end
   end
 
+  always_comb begin
+    s_perf_read_bytes_d   = s_perf_read_bytes_q;
+    s_perf_write_bytes_d  = s_perf_write_bytes_q;
+    s_perf_commands_d     = s_perf_commands_q;
+    s_perf_splits_d       = s_perf_splits_q;
+    s_perf_stall_cycles_d = s_perf_stall_cycles_q;
+    s_perf_err_count_d    = s_perf_err_count_q;
+    if (s_req && s_write && !s_access_err && (s_offset == `APB4_PSRAM_PERF_CTRL) &&
+        apb4.pwdata[`PSRAM_PERF_CLEAR]) begin
+      s_perf_read_bytes_d   = '0;
+      s_perf_write_bytes_d  = '0;
+      s_perf_commands_d     = '0;
+      s_perf_splits_d       = '0;
+      s_perf_stall_cycles_d = '0;
+      s_perf_err_count_d    = '0;
+    end else if (s_perf_ctrl_q[`PSRAM_PERF_ENABLE] && !s_perf_ctrl_q[`PSRAM_PERF_FREEZE]) begin
+      if (|perf_read_byte_event_i)
+        s_perf_read_bytes_d = saturating_add(s_perf_read_bytes_q, perf_read_byte_event_i);
+      if (|perf_write_byte_event_i)
+        s_perf_write_bytes_d = saturating_add(s_perf_write_bytes_q, perf_write_byte_event_i);
+      if (perf_command_event_i) s_perf_commands_d = saturating_increment(s_perf_commands_q);
+      if (perf_split_event_i) s_perf_splits_d = saturating_increment(s_perf_splits_q);
+      if (perf_stall_event_i) s_perf_stall_cycles_d = saturating_increment(s_perf_stall_cycles_q);
+      if (perf_error_event_i) s_perf_err_count_d = saturating_increment(s_perf_err_count_q);
+    end
+  end
+
+  assign s_resp_err_d = s_access_err;
+  assign s_rdata_d    = s_read_data;
+
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_ready_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_req),
+      .dat_o  (s_ready_q)
+  );
+  dffer #(
+      .DATA_WIDTH(1)
+  ) u_resp_err_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_req),
+      .dat_i  (s_resp_err_d),
+      .dat_o  (s_resp_err_q)
+  );
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_rdata_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_req),
+      .dat_i  (s_rdata_d),
+      .dat_o  (s_rdata_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(32),
+      .RESET_VAL (32'h0000_0003)
+  ) u_ctrl_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_ctrl_en),
+      .dat_i  (s_ctrl_d),
+      .dat_o  (s_ctrl_q)
+  );
+  dfferh #(
+      .DATA_WIDTH(4)
+  ) u_chip_en_dfferh (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_chip_en_en),
+      .dat_i  (s_chip_en_d),
+      .dat_o  (s_chip_en_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(32),
+      .RESET_VAL (32'h0000_0001)
+  ) u_clk_config_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_clk_en),
+      .dat_i  (s_clk_config_d),
+      .dat_o  (s_clk_config_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(32),
+      .RESET_VAL (32'd10800)
+  ) u_powerup_cycles_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_powerup_en),
+      .dat_i  (s_powerup_cycles_d),
+      .dat_o  (s_powerup_cycles_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(16),
+      .RESET_VAL (16'd1)
+  ) u_cs_setup_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_cs_setup_en),
+      .dat_i  (s_cs_setup_d),
+      .dat_o  (s_cs_setup_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(16),
+      .RESET_VAL (16'd4)
+  ) u_cs_high_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_cs_high_en),
+      .dat_i  (s_cs_high_d),
+      .dat_o  (s_cs_high_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(16),
+      .RESET_VAL (16'd3)
+  ) u_cs_hold_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_cs_hold_en),
+      .dat_i  (s_cs_hold_d),
+      .dat_o  (s_cs_hold_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(32),
+      .RESET_VAL (32'd576)
+  ) u_cs_max_low_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_cs_max_low_en),
+      .dat_i  (s_cs_max_low_d),
+      .dat_o  (s_cs_max_low_q)
+  );
+  dfferc #(
+      .DATA_WIDTH(32),
+      .RESET_VAL (32'd100000)
+  ) u_access_timeout_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_access_timeout_en),
+      .dat_i  (s_access_timeout_d),
+      .dat_o  (s_access_timeout_q)
+  );
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_indirect_ctrl_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_indirect_ctrl_en),
+      .dat_i  (s_indirect_ctrl_d),
+      .dat_o  (s_indirect_ctrl_q)
+  );
+  dffer #(
+      .DATA_WIDTH(23)
+  ) u_indirect_addr_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_indirect_addr_en),
+      .dat_i  (s_indirect_addr_d),
+      .dat_o  (s_indirect_addr_q)
+  );
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_indirect_wdata_lo_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_indirect_wdata_lo_en),
+      .dat_i  (s_indirect_wdata_lo_d),
+      .dat_o  (s_indirect_wdata_q[31:0])
+  );
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_indirect_wdata_hi_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_indirect_wdata_hi_en),
+      .dat_i  (s_indirect_wdata_hi_d),
+      .dat_o  (s_indirect_wdata_q[63:32])
+  );
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_intr_state_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_intr_next),
+      .dat_o  (s_intr_state_q)
+  );
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_intr_en_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_intr_en_en),
+      .dat_i  (s_intr_en_d),
+      .dat_o  (s_intr_en_q)
+  );
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_perf_ctrl_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_perf_ctrl_en),
+      .dat_i  (s_perf_ctrl_d),
+      .dat_o  (s_perf_ctrl_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_perf_read_bytes_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_read_bytes_d),
+      .dat_o  (s_perf_read_bytes_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_perf_write_bytes_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_write_bytes_d),
+      .dat_o  (s_perf_write_bytes_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_perf_commands_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_commands_d),
+      .dat_o  (s_perf_commands_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_perf_splits_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_splits_d),
+      .dat_o  (s_perf_splits_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_perf_stall_cycles_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_stall_cycles_d),
+      .dat_o  (s_perf_stall_cycles_q)
+  );
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_perf_err_count_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_perf_err_count_d),
+      .dat_o  (s_perf_err_count_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_init_start_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_init_start_d),
+      .dat_o  (s_init_start_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_recover_start_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_recover_start_d),
+      .dat_o  (s_recover_start_q)
+  );
+  dffer #(
+      .DATA_WIDTH(2)
+  ) u_recover_chip_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_recover_chip_en),
+      .dat_i  (s_recover_chip_d),
+      .dat_o  (s_recover_chip_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_abort_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_abort_d),
+      .dat_o  (s_abort_q)
+  );
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_chip_err_clear_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_chip_err_clear_d),
+      .dat_o  (s_chip_err_clear_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_indirect_start_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_indirect_start_d),
+      .dat_o  (s_indirect_start_q)
+  );
+
+  assign init_start_o            = s_init_start_q;
+  assign recover_start_o         = s_recover_start_q;
+  assign recover_chip_o          = s_recover_chip_q;
+  assign abort_o                 = s_abort_q;
+  assign chip_error_clear_o      = s_chip_err_clear_q;
+  assign indirect_start_o        = s_indirect_start_q;
   assign controller_enable_o     = s_ctrl_q[`PSRAM_CTRL_ENABLE];
   assign memory_enable_o         = s_ctrl_q[`PSRAM_CTRL_MEMORY_ENABLE];
   assign auto_init_o             = s_ctrl_q[`PSRAM_CTRL_AUTO_INIT];

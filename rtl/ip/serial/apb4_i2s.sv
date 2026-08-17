@@ -90,10 +90,10 @@ module apb4_i2s (
   logic [7:0] s_rx_pop_cnt_d, s_rx_pop_cnt_q;
   logic [7:0] s_tx_pop_cnt_aud_d, s_tx_pop_cnt_aud_q;
   logic [7:0] s_rx_push_cnt_aud_d, s_rx_push_cnt_aud_q;
-  logic [ 7:0] s_tx_pop_cnt_sys;
-  logic        s_tx_pop_cnt_sys_v;
-  logic [ 7:0] s_rx_push_cnt_sys;
-  logic        s_rx_push_cnt_sys_v;
+  logic [7:0] s_tx_pop_cnt_sys;
+  logic       s_tx_pop_cnt_sys_v;
+  logic [7:0] s_rx_push_cnt_sys;
+  logic       s_rx_push_cnt_sys_v;
   logic [7:0] s_tx_pop_cnt_sys_d, s_tx_pop_cnt_sys_q;
   logic [7:0] s_rx_push_cnt_sys_d, s_rx_push_cnt_sys_q;
   logic [ 7:0] s_tx_level;
