@@ -62,9 +62,15 @@ module i2s_reg (
   logic [31:0] s_format_d, s_format_q;
   logic [31:0] s_clk_d, s_clk_q;
   logic [31:0] s_fifo_th_d, s_fifo_th_q;
-  logic [3:0] s_intr_stat_q;
-  logic [3:0] s_intr_en_q;
-  logic [1:0] s_cmd_q;
+  logic [3:0] s_intr_stat_d, s_intr_stat_q;
+  logic [3:0] s_intr_en_d, s_intr_en_q;
+  logic [1:0] s_cmd_d, s_cmd_q;
+  logic        s_ctrl_en;
+  logic        s_stream_en;
+  logic        s_format_en;
+  logic        s_clk_en;
+  logic        s_fifo_th_en;
+  logic        s_intr_en_en;
   logic s_tx_stall_d, s_tx_stall_q;
   logic s_rx_stall_d, s_rx_stall_q;
   logic [ 7:0] s_upbound;
@@ -208,62 +214,77 @@ module i2s_reg (
   end
 
   always_comb begin
-    s_ctrl_d    = s_ctrl_q;
-    s_stream_d  = s_stream_q;
-    s_format_d  = s_format_q;
-    s_clk_d     = s_clk_q;
-    s_fifo_th_d = s_fifo_th_q;
+    s_ctrl_en    = 1'b0;
+    s_stream_en  = 1'b0;
+    s_format_en  = 1'b0;
+    s_clk_en     = 1'b0;
+    s_fifo_th_en = 1'b0;
+    s_intr_en_en = 1'b0;
+    s_ctrl_d     = s_ctrl_merged;
+    s_stream_d   = merge_wstrb(s_stream_q, apb4.pwdata, apb4.pstrb) & StreamMask;
+    s_format_d   = merge_wstrb(s_format_q, apb4.pwdata, apb4.pstrb) & FormatMask;
+    s_clk_d      = merge_wstrb(s_clk_q, apb4.pwdata, apb4.pstrb) & ClkDivMask;
+    s_fifo_th_d  = merge_wstrb(s_fifo_th_q, apb4.pwdata, apb4.pstrb) & FifoThMask;
+    s_intr_en_d  = apb4.pwdata[3:0];
     if (s_accept && s_write && !s_access_err) begin
       unique case (s_offset)
-        `APB4_I2S_CTRL: s_ctrl_d = s_ctrl_merged;
-        `APB4_I2S_STREAM_CTRL:
-        s_stream_d = merge_wstrb(s_stream_q, apb4.pwdata, apb4.pstrb) & StreamMask;
-        `APB4_I2S_FORMAT:
-        s_format_d = merge_wstrb(s_format_q, apb4.pwdata, apb4.pstrb) & FormatMask;
-        `APB4_I2S_CLK_DIV: s_clk_d = merge_wstrb(s_clk_q, apb4.pwdata, apb4.pstrb) & ClkDivMask;
-        `APB4_I2S_FIFO_TH:
-        s_fifo_th_d = merge_wstrb(s_fifo_th_q, apb4.pwdata, apb4.pstrb) & FifoThMask;
+        `APB4_I2S_CTRL: s_ctrl_en = 1'b1;
+        `APB4_I2S_STREAM_CTRL: s_stream_en = 1'b1;
+        `APB4_I2S_FORMAT: s_format_en = 1'b1;
+        `APB4_I2S_CLK_DIV: s_clk_en = 1'b1;
+        `APB4_I2S_FIFO_TH: s_fifo_th_en = 1'b1;
+        `APB4_I2S_INTR_ENABLE: s_intr_en_en = 1'b1;
         default: ;
       endcase
     end
   end
 
-  dffr #(
+  dffer #(
       .DATA_WIDTH(32)
-  ) u_ctrl_dffr (
+  ) u_ctrl_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
+      .en_i   (s_ctrl_en),
       .dat_i  (s_ctrl_d),
       .dat_o  (s_ctrl_q)
   );
-  dffr #(
+  dffer #(
       .DATA_WIDTH(32)
-  ) u_stream_dffr (
+  ) u_stream_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
+      .en_i   (s_stream_en),
       .dat_i  (s_stream_d),
       .dat_o  (s_stream_q)
   );
-  dffr #(
+  dffer #(
       .DATA_WIDTH(32)
-  ) u_format_dffr (
+  ) u_format_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
+      .en_i   (s_format_en),
       .dat_i  (s_format_d),
       .dat_o  (s_format_q)
   );
-  dffr #(
+  dffer #(
       .DATA_WIDTH(32)
-  ) u_clk_dffr (
+  ) u_clk_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
+      .en_i   (s_clk_en),
       .dat_i  (s_clk_d),
       .dat_o  (s_clk_q)
   );
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i) s_fifo_th_q <= FifoThReset;
-    else s_fifo_th_q <= s_fifo_th_d;
-  end
+  dfferc #(
+      .DATA_WIDTH(32),
+      .RESET_VAL (FifoThReset)
+  ) u_fifo_th_dfferc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_fifo_th_en),
+      .dat_i  (s_fifo_th_d),
+      .dat_o  (s_fifo_th_q)
+  );
 
   always_comb begin
     s_tx_stall_d = s_tx_stall_q;
@@ -292,31 +313,52 @@ module i2s_reg (
       .dat_o  (s_rx_stall_q)
   );
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i) begin
-      s_cmd_q       <= '0;
-      s_intr_stat_q <= '0;
-      s_intr_en_q   <= '0;
-    end else begin
-      if (cmd_valid_o && cmd_ready_i) s_cmd_q <= '0;
-      if (s_accept && s_write && !s_access_err && (s_offset == `APB4_I2S_COMMAND)) begin
-        s_cmd_q <= s_cmd_q | apb4.pwdata[1:0];
-      end
-      if (s_accept && s_write && !s_access_err && (s_offset == `APB4_I2S_INTR_STATE)) begin
-        s_intr_stat_q <= s_intr_stat_q & ~apb4.pwdata[3:0];
-      end
-      if (s_tx_low_evt) s_intr_stat_q[`APB4_I2S__INTR_TX_LOW] <= 1'b1;
-      if (s_rx_high_evt) s_intr_stat_q[`APB4_I2S__INTR_RX_HIGH] <= 1'b1;
-      if (tx_underrun_i) s_intr_stat_q[`APB4_I2S__INTR_TX_UNDERRUN] <= 1'b1;
-      if (rx_overrun_i) s_intr_stat_q[`APB4_I2S__INTR_RX_OVERRUN] <= 1'b1;
-      if (s_accept && s_write && !s_access_err && (s_offset == `APB4_I2S_INTR_ENABLE)) begin
-        s_intr_en_q <= apb4.pwdata[3:0];
-      end
-      if (s_accept && s_write && !s_access_err && (s_offset == `APB4_I2S_INTR_TEST)) begin
-        s_intr_stat_q <= s_intr_stat_q | apb4.pwdata[3:0];
-      end
+  always_comb begin
+    s_cmd_d = s_cmd_q;
+    if (cmd_valid_o && cmd_ready_i) s_cmd_d = '0;
+    if (s_accept && s_write && !s_access_err && (s_offset == `APB4_I2S_COMMAND)) begin
+      s_cmd_d = s_cmd_q | apb4.pwdata[1:0];
     end
   end
+  dffr #(
+      .DATA_WIDTH(2)
+  ) u_cmd_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cmd_d),
+      .dat_o  (s_cmd_q)
+  );
+
+  always_comb begin
+    s_intr_stat_d = s_intr_stat_q;
+    if (s_accept && s_write && !s_access_err && (s_offset == `APB4_I2S_INTR_STATE)) begin
+      s_intr_stat_d = s_intr_stat_q & ~apb4.pwdata[3:0];
+    end
+    if (s_tx_low_evt) s_intr_stat_d[`APB4_I2S__INTR_TX_LOW] = 1'b1;
+    if (s_rx_high_evt) s_intr_stat_d[`APB4_I2S__INTR_RX_HIGH] = 1'b1;
+    if (tx_underrun_i) s_intr_stat_d[`APB4_I2S__INTR_TX_UNDERRUN] = 1'b1;
+    if (rx_overrun_i) s_intr_stat_d[`APB4_I2S__INTR_RX_OVERRUN] = 1'b1;
+    if (s_accept && s_write && !s_access_err && (s_offset == `APB4_I2S_INTR_TEST)) begin
+      s_intr_stat_d = s_intr_stat_q | apb4.pwdata[3:0];
+    end
+  end
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_intr_stat_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_intr_stat_d),
+      .dat_o  (s_intr_stat_q)
+  );
+  dffer #(
+      .DATA_WIDTH(4)
+  ) u_intr_en_dffer (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .en_i   (s_intr_en_en),
+      .dat_i  (s_intr_en_d),
+      .dat_o  (s_intr_en_q)
+  );
 
   dffr #(
       .DATA_WIDTH(1)

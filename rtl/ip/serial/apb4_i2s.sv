@@ -94,8 +94,8 @@ module apb4_i2s (
   logic        s_tx_pop_cnt_sys_v;
   logic [ 7:0] s_rx_push_cnt_sys;
   logic        s_rx_push_cnt_sys_v;
-  logic [ 7:0] s_tx_pop_cnt_sys_q;
-  logic [ 7:0] s_rx_push_cnt_sys_q;
+  logic [7:0] s_tx_pop_cnt_sys_d, s_tx_pop_cnt_sys_q;
+  logic [7:0] s_rx_push_cnt_sys_d, s_rx_push_cnt_sys_q;
   logic [ 7:0] s_tx_level;
   logic [ 7:0] s_rx_level;
   logic        s_tx_push;
@@ -116,7 +116,7 @@ module apb4_i2s (
   logic s_rx_overrun_fe;
   logic s_tx_underrun_sys;
   logic s_rx_overrun_sys;
-  logic s_tx_flush_sent_q;
+  logic s_tx_flush_sent_d, s_tx_flush_sent_q;
 
   assign s_cmd_sys = {s_cmd_rx_flush, s_cmd_tx_flush};
   assign s_tx_src_clear = s_cmd_tx_flush && !s_tx_flush_sent_q && !s_tx_src_clear_busy;
@@ -192,10 +192,15 @@ module apb4_i2s (
       .dst_valid_o(s_cfg_aud_v),
       .dst_ready_i(1'b1)
   );
-  always_ff @(posedge clk_aud_i or negedge rst_aud_n_i) begin
-    if (!rst_aud_n_i) s_cfg_aud_q <= '0;
-    else if (s_cfg_aud_v) s_cfg_aud_q <= s_cfg_aud;
-  end
+  dffer #(
+      .DATA_WIDTH(32)
+  ) u_cfg_aud_dffer (
+      .clk_i  (clk_aud_i),
+      .rst_n_i(rst_aud_n_i),
+      .en_i   (s_cfg_aud_v),
+      .dat_i  (s_cfg_aud),
+      .dat_o  (s_cfg_aud_q)
+  );
 
   cdc_2phase #(
       .DATA_WIDTH(2)
@@ -356,23 +361,46 @@ module apb4_i2s (
   );
   /* verilator lint_on PINCONNECTEMPTY */
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i) s_tx_flush_sent_q <= 1'b0;
-    else if (!s_cmd_tx_flush) s_tx_flush_sent_q <= 1'b0;
-    else if (s_tx_src_clear) s_tx_flush_sent_q <= 1'b1;
+  always_comb begin
+    s_tx_flush_sent_d = s_tx_flush_sent_q;
+    if (!s_cmd_tx_flush) s_tx_flush_sent_d = 1'b0;
+    else if (s_tx_src_clear) s_tx_flush_sent_d = 1'b1;
   end
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_tx_flush_sent_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_tx_flush_sent_d),
+      .dat_o  (s_tx_flush_sent_q)
+  );
 
-  always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i) begin
-      s_tx_pop_cnt_sys_q  <= '0;
-      s_rx_push_cnt_sys_q <= '0;
-    end else begin
-      if (s_tx_flush_busy) s_tx_pop_cnt_sys_q <= '0;
-      else if (s_tx_pop_cnt_sys_v) s_tx_pop_cnt_sys_q <= s_tx_pop_cnt_sys;
-      if (s_rx_flush_busy) s_rx_push_cnt_sys_q <= '0;
-      else if (s_rx_push_cnt_sys_v) s_rx_push_cnt_sys_q <= s_rx_push_cnt_sys;
-    end
+  always_comb begin
+    s_tx_pop_cnt_sys_d = s_tx_pop_cnt_sys_q;
+    if (s_tx_flush_busy) s_tx_pop_cnt_sys_d = '0;
+    else if (s_tx_pop_cnt_sys_v) s_tx_pop_cnt_sys_d = s_tx_pop_cnt_sys;
   end
+  always_comb begin
+    s_rx_push_cnt_sys_d = s_rx_push_cnt_sys_q;
+    if (s_rx_flush_busy) s_rx_push_cnt_sys_d = '0;
+    else if (s_rx_push_cnt_sys_v) s_rx_push_cnt_sys_d = s_rx_push_cnt_sys;
+  end
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_tx_pop_cnt_sys_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_tx_pop_cnt_sys_d),
+      .dat_o  (s_tx_pop_cnt_sys_q)
+  );
+  dffr #(
+      .DATA_WIDTH(8)
+  ) u_rx_push_cnt_sys_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_rx_push_cnt_sys_d),
+      .dat_o  (s_rx_push_cnt_sys_q)
+  );
 
   assign s_tx_underrun_tgl_d = s_tx_underrun_aud ? ~s_tx_underrun_tgl_q : s_tx_underrun_tgl_q;
   assign s_rx_overrun_tgl_d  = s_rx_overrun_aud ? ~s_rx_overrun_tgl_q : s_rx_overrun_tgl_q;
