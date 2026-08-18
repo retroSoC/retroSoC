@@ -55,8 +55,10 @@
 /ip/peripheral/clint_reg.sv
 /ip/peripheral/clint_core.sv
 /ip/peripheral/apb4_clint.sv
+/ip/memory/sdram_pkg.sv
 /ip/memory/sdram_clkgen.sv
 /ip/memory/sdram_reg.sv
+/ip/memory/sdram_axi4.sv
 /ip/memory/sdram_core.sv
 /ip/memory/axi4_sdram.sv
 /ip/multimedia/dvp_define.svh

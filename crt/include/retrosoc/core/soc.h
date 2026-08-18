@@ -85,9 +85,6 @@
 #define RS_SOC_DMA_ERROR_PENDING        UINT32_C(0x00000001)
 #define RS_SOC_DMA_ERROR_RESPONSE_SHIFT 1U
 #define RS_SOC_DMA_ERROR_RESPONSE_MASK  UINT32_C(0x0000000E)
-// sdram
-#define reg_sdram_clkdiv                RS_SOC_REG32(RS_SOC_APB4_SDRAM_BASE, UINT32_C(0x00))
-#define reg_sdram_cfg                   RS_SOC_REG32(RS_SOC_APB4_SDRAM_BASE, UINT32_C(0x04))
 #define reg_user_ip_reg0                RS_SOC_REG32(RS_SOC_APB4_USER_IP_BASE, UINT32_C(0x00))
 #define reg_user_ip_reg1                RS_SOC_REG32(RS_SOC_APB4_USER_IP_BASE, UINT32_C(0x04))
 #define reg_user_ip_reg2                RS_SOC_REG32(RS_SOC_APB4_USER_IP_BASE, UINT32_C(0x08))

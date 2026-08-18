@@ -4,6 +4,7 @@
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
+#include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
 #include <retrosoc/lib/printf.h>
@@ -160,6 +161,64 @@ static bool rs_ci_smoke_gpio_v2(void) {
     return rs_gpio_write(31U, false) == RS_OK;
 }
 
+#define RS_CI_SMOKE_SDRAM_SPAN UINT32_C(16)
+
+static bool rs_ci_smoke_sdram_wait_ready(void) {
+    rs_sdram_status_t status;
+
+    for (rs_timeout_t timeout = RS_TIMEOUT_DEFAULT; timeout != 0U; --timeout) {
+        if (rs_sdram_get_status(&status) != RS_OK) {
+            return false;
+        }
+        if (status.error) {
+            return false;
+        }
+        if (status.ready && !status.init_busy) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool rs_ci_smoke_sdram_access(void) {
+    volatile uint8_t *const bytes = (volatile uint8_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    volatile uint16_t *const halfs = (volatile uint16_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    volatile uint32_t *const words = (volatile uint32_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    uint32_t index;
+
+    if (!rs_ci_smoke_sdram_wait_ready()) {
+        return false;
+    }
+
+    for (index = 0U; index < RS_CI_SMOKE_SDRAM_SPAN; ++index) {
+        bytes[index] = (uint8_t)(index + 1U);
+    }
+    for (index = 0U; index < RS_CI_SMOKE_SDRAM_SPAN; ++index) {
+        if (bytes[index] != (uint8_t)(index + 1U)) {
+            return false;
+        }
+    }
+
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 2U); ++index) {
+        halfs[index] = (uint16_t)(index + 1U);
+    }
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 2U); ++index) {
+        if (halfs[index] != (uint16_t)(index + 1U)) {
+            return false;
+        }
+    }
+
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 4U); ++index) {
+        words[index] = index + 1U;
+    }
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 4U); ++index) {
+        if (words[index] != (index + 1U)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool rs_ci_smoke_uart_v3(void) {
     const rs_uart_config_t config = {
         .source_clock_hz = CPU_FREQ * UINT32_C(1000000),
@@ -224,8 +283,13 @@ int main(void) {
     if (!rs_ci_smoke_gpio_v2()) {
         rs_test_finish(RS_TEST_FAILED, 5U);
     }
+    printf("ci_smoke: GPIO passed\n");
+    if (!rs_ci_smoke_sdram_access()) {
+        rs_test_finish(RS_TEST_FAILED, 9U);
+    }
+    printf("ci_smoke: SDRAM passed\n");
 
-    printf("ci_smoke: UART, archinfo, RNG, CLINT, timer, and GPIO tests passed\n");
+    printf("ci_smoke: UART, archinfo, RNG, CLINT, timer, GPIO, and SDRAM tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

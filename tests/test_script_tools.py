@@ -46,6 +46,7 @@ from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
     CI_SMOKE_APP_VALUE,
     NIGHTLY_COMMANDS,
+    NIGHTLY_EXTRA_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
     RTL_LINT_VALUES,
@@ -910,6 +911,62 @@ def test_nightly_regression_runs_optional_yosys_recipes() -> None:
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth" in pr.stdout
     assert "SYNTH_RECIPE=area" not in pr.stdout
     assert "SYNTH_RECIPE=speed" not in pr.stdout
+
+
+def test_nightly_extra_regression_skips_pr_netsim() -> None:
+    commands, profiles = select_regression("nightly-extra", "IHP130")
+
+    assert commands == NIGHTLY_EXTRA_COMMANDS
+    assert profiles == ("configs/ci/ihp130.mk",)
+    assert NIGHTLY_COMMANDS == (*PR_COMMANDS, *NIGHTLY_EXTRA_COMMANDS)
+    assert not any("netsim" in values for _, values in commands)
+
+    extra = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "nightly-extra",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in extra.stdout
+    assert "netsim" not in extra.stdout
+
+    invalid = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/regress.py"),
+            "--root",
+            str(ROOT),
+            "--suite",
+            "nightly-extra",
+            "--pdk",
+            "GF180",
+            "--dry-run",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert invalid.returncode != 0
+    assert "nightly-extra regression supports only --pdk IHP130" in invalid.stderr
+
+
+def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
+    nightly = (ROOT / ".github/workflows/nightly.yml").read_text()
+    quality = (ROOT / ".github/workflows/quality.yml").read_text()
+
+    assert "suite: pr" in nightly
+    assert "timeout_minutes: 360" in nightly
+    assert "suite: nightly-extra" in nightly
+    assert "timeout_minutes: 180" in nightly
+    assert "suite: nightly\n" not in nightly
+    assert "--suite nightly-extra --pdk IHP130 --dry-run" in quality
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

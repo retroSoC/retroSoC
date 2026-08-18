@@ -15,7 +15,8 @@
 
 Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. This application verifies UART output,
-archinfo APB readback, RNG integration, and test-status completion within the CI time budget;
+archinfo APB readback, RNG integration, SDRAM 8/16/32-bit mapped-window access,
+and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 
@@ -150,7 +151,8 @@ A simulation passes only when its command succeeds, the pass marker is present, 
 timeout marker is present. UART startup text is diagnostic only; it is not a verdict. The local
 `netsim-boot` shortcut remains explicitly scoped to stopping Icarus assembly netlist simulation at
 `Hello retroSoC!`; CI uses the terminal software status. Icarus regressions use the assembly self-test as
-`retrosoc_asm`, while the normal `retrosoc_fw` image remains available for firmware size tracking and
+`retrosoc_asm` and cover both the SDRAM and PSRAM mapped windows, while the
+normal `retrosoc_fw` image remains available for firmware size tracking and
 Verilator regressions.
 
 ## Formal Protocol Proofs
@@ -267,7 +269,7 @@ validation profiles and are not mechanically rewritten by the root formatter.
 Quality CI also runs `rtl-readiness-check-all` to validate the maturity record;
 regression continues to provide the behavioral, synthesis, netlist, timing,
 warning, and metric evidence referenced by that record.
-`nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
+`nightly.yml` repeats the fixed IHP130 architecture as two parallel jobs: the PR IHP130 matrix with a 360-minute budget, and the extra CoreMark plus Yosys area/speed recipes. The split keeps the multi-hour Icarus netlist run from cancelling the remaining nightly coverage at the previous 240-minute single-job limit. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 
 Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source

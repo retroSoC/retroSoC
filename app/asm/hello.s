@@ -43,6 +43,10 @@ CHECK:
 .equ PSRAM_COMMAND,   RS_SOC_APB4_PSRAM_BASE + 0x04
 .equ PSRAM_STATUS,    RS_SOC_APB4_PSRAM_BASE + 0x08
 .equ PSRAM_READY,     0x20
+.equ SDRAM_STATUS,    RS_SOC_APB4_SDRAM_BASE + 0x0C
+.equ SDRAM_READY,     0x08
+.equ SDRAM_ERROR,     0x10
+.equ MEM_TEST_SPAN,   0x10
 PINMUX_PSRAM:
     li t0, GPIO_ALT_ENABLE
     lw t1, 0(t0)
@@ -63,7 +67,23 @@ WAIT_PSRAM_READY:
     andi t1, t1, PSRAM_READY
     beqz t1, WAIT_PSRAM_READY
 
+WAIT_SDRAM_READY:
+    li t0, SDRAM_STATUS
+    lw t1, 0(t0)
+    andi t2, t1, SDRAM_ERROR
+    bnez t2, TEST_FAIL
+    andi t1, t1, SDRAM_READY
+    beqz t1, WAIT_SDRAM_READY
+
 LDSD_TEST:
+    li s1, RS_SOC_SDRAM_BASE
+    jal ra, WR_8B_TEST
+    jal ra, RD_8B_TEST
+    jal ra, WR_16B_TEST
+    jal ra, RD_16B_TEST
+    jal ra, WR_32B_TEST
+    jal ra, RD_32B_TEST
+    li s1, RS_SOC_PSRAM_BASE
     jal ra, WR_8B_TEST
     jal ra, RD_8B_TEST
     jal ra, WR_16B_TEST
@@ -73,8 +93,8 @@ LDSD_TEST:
     j TEST_SUCCESS
 
 WR_8B_TEST:
-    li t0, 0x40000000
-    li t1, 0x40000010
+    mv t0, s1
+    addi t1, s1, MEM_TEST_SPAN
     li t2, 1
 WR_8B_LOOP:
     sb t2, 0(t0)
@@ -84,8 +104,8 @@ WR_8B_LOOP:
     ret
 
 WR_16B_TEST:
-    li t0, 0x40000000
-    li t1, 0x40000010
+    mv t0, s1
+    addi t1, s1, MEM_TEST_SPAN
     li t2, 1
 WR_16B_LOOP:
     sh t2, 0(t0)
@@ -95,8 +115,8 @@ WR_16B_LOOP:
     ret
 
 WR_32B_TEST:
-    li t0, 0x40000000
-    li t1, 0x40000010
+    mv t0, s1
+    addi t1, s1, MEM_TEST_SPAN
     li t2, 1
 WR_32B_LOOP:
     sw t2, 0(t0)
@@ -105,10 +125,9 @@ WR_32B_LOOP:
     blt t0, t1, WR_32B_LOOP
     ret
 
-
 RD_8B_TEST:
-    li t0, 0x40000000
-    li t1, 0x40000010
+    mv t0, s1
+    addi t1, s1, MEM_TEST_SPAN
     li t2, 1
 RD_8B_LOOP:
     lb t3, 0(t0)
@@ -119,8 +138,8 @@ RD_8B_LOOP:
     ret
 
 RD_16B_TEST:
-    li t0, 0x40000000
-    li t1, 0x40000010
+    mv t0, s1
+    addi t1, s1, MEM_TEST_SPAN
     li t2, 1
 RD_16B_LOOP:
     lh t3, 0(t0)
@@ -131,8 +150,8 @@ RD_16B_LOOP:
     ret
 
 RD_32B_TEST:
-    li t0, 0x40000000
-    li t1, 0x40000010
+    mv t0, s1
+    addi t1, s1, MEM_TEST_SPAN
     li t2, 1
 RD_32B_LOOP:
     lw t3, 0(t0)

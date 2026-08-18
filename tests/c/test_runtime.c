@@ -11,6 +11,7 @@
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/psram.h>
+#include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
@@ -224,6 +225,25 @@ static int test_i2s_helpers(void) {
     return 0;
 }
 
+static int test_sdram_helpers(void) {
+    rs_sdram_timing_t timing;
+
+    if ((rs_sdram_timing_from_hz(72000000U, 0U, &timing) != RS_OK) || (timing.trp_cycles != 1U) ||
+        (timing.trcd_cycles != 1U) || (timing.tras_cycles != 2U) || (timing.trc_cycles != 3U) ||
+        (timing.twr_cycles != 1U) || (timing.trfc_cycles != 3U) || (timing.trrd_cycles != 2U) ||
+        (timing.twtr_cycles != 2U) || (timing.trtp_cycles != 1U) || (timing.tmrd_cycles != 2U) ||
+        (timing.txsr_cycles != 3U) || (timing.trefi_cycles != 281U) ||
+        (timing.powerup_cycles != 3600U) || (timing.actual_sdram_hz != 36000000U)) {
+        return 1;
+    }
+    if ((rs_sdram_timing_from_hz(0U, 0U, &timing) != RS_EINVAL) ||
+        (rs_sdram_timing_from_hz(72000000U, 4U, &timing) != RS_EINVAL) ||
+        (rs_sdram_timing_from_hz(72000000U, 0U, NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    return 0;
+}
+
 static int test_psram_helpers(void) {
     rs_psram_timing_t timing;
 
@@ -383,9 +403,9 @@ static int test_video_parser(void) {
 int main(void) {
     const int results[] = {
         test_string_helpers(), test_formatter(),     test_compiler_helpers(), test_wait_helper(),
-        test_ws2812_helpers(), test_timer_helpers(), test_psram_helpers(),    test_uart_helpers(),
-        test_i2s_helpers(),    test_i2c_helpers(),   test_gpio_helpers(),     test_ps2_decoders(),
-        test_wav_parser(),     test_video_parser(),
+        test_ws2812_helpers(), test_timer_helpers(), test_psram_helpers(),    test_sdram_helpers(),
+        test_uart_helpers(),   test_i2s_helpers(),   test_i2c_helpers(),      test_gpio_helpers(),
+        test_ps2_decoders(),   test_wav_parser(),    test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

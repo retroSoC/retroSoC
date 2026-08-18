@@ -13,10 +13,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  extended-open-source-flows:
+  ihp130-open-source-flows:
     uses: ./.github/workflows/_regression.yml
     with:
-      suite: nightly
+      suite: pr
       pdk: IHP130
       profile: configs/ci/ihp130.mk
       retention_days: 90
+      timeout_minutes: 360
+  extended-open-source-flows:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: nightly-extra
+      pdk: IHP130
+      profile: configs/ci/ihp130.mk
+      retention_days: 90
+      timeout_minutes: 180

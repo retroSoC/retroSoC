@@ -31,17 +31,19 @@ module sdram_verilator_model (
 );
 
   localparam int unsigned MEMORY_WORDS = 1 << 25;
+  localparam logic [3:0] CMD_MRS = 4'b0000;
   localparam logic [3:0] CMD_ACTIVE = 4'b0011;
   localparam logic [3:0] CMD_READ = 4'b0101;
   localparam logic [3:0] CMD_WRITE = 4'b0100;
 
-  logic [12:0] s_row_q           [             0:3];
-  logic [15:0] s_memory          [0:MEMORY_WORDS-1];
-  logic        s_write_pending_q;
+  logic [12:0] s_row_q          [             0:3];
+  logic [15:0] s_memory         [0:MEMORY_WORDS-1];
+  logic [ 3:0] s_burst_len_q;
+  logic [ 3:0] s_write_left_q;
   logic [24:0] s_write_addr_q;
+  logic [ 3:0] s_read_left_q;
   logic        s_read_pending_q;
   logic        s_read_drive_q;
-  logic        s_read_second_q;
   logic [24:0] s_read_addr_q;
   logic [15:0] s_read_data_q;
   logic [ 3:0] s_command;
@@ -50,13 +52,14 @@ module sdram_verilator_model (
   assign dq_io     = s_read_drive_q ? s_read_data_q : 'z;
 
   initial begin
-    s_write_pending_q = 1'b0;
-    s_read_pending_q  = 1'b0;
-    s_read_drive_q    = 1'b0;
-    s_read_second_q   = 1'b0;
-    s_write_addr_q    = '0;
-    s_read_addr_q     = '0;
-    s_read_data_q     = '0;
+    s_burst_len_q    = 4'd2;
+    s_write_left_q   = 4'd0;
+    s_read_left_q    = 4'd0;
+    s_read_pending_q = 1'b0;
+    s_read_drive_q   = 1'b0;
+    s_write_addr_q   = '0;
+    s_read_addr_q    = '0;
+    s_read_data_q    = '0;
     for (int unsigned bank = 0; bank < 4; ++bank) begin
       s_row_q[bank] = '0;
     end
@@ -65,6 +68,16 @@ module sdram_verilator_model (
   function automatic logic [24:0] sdram_address(input logic [1:0] bank, input logic [12:0] row,
                                                 input logic [9:0] column);
     sdram_address = {bank, row, column};
+  endfunction
+
+  function automatic logic [3:0] mrs_burst_length(input logic [2:0] encoded);
+    begin
+      unique case (encoded)
+        3'b011:  return 4'd8;
+        3'b010:  return 4'd4;
+        default: return 4'd2;
+      endcase
+    end
   endfunction
 
   task automatic write_beat(input logic [24:0] address);
@@ -77,36 +90,43 @@ module sdram_verilator_model (
   always_ff @(posedge clk_i) begin
     if (cke_i) begin
       if (s_read_drive_q) begin
-        if (!s_read_second_q) begin
-          s_read_data_q   <= s_memory[s_read_addr_q+1'b1];
-          s_read_second_q <= 1'b1;
+        if (s_read_left_q != 4'd0) begin
+          s_read_data_q <= s_memory[s_read_addr_q];
+          s_read_addr_q <= s_read_addr_q + 1'b1;
+          s_read_left_q <= s_read_left_q - 4'd1;
         end else begin
           s_read_drive_q <= 1'b0;
         end
       end else if (s_read_pending_q) begin
         s_read_data_q    <= s_memory[s_read_addr_q];
+        s_read_addr_q    <= s_read_addr_q + 1'b1;
+        s_read_left_q    <= s_read_left_q - 4'd1;
         s_read_pending_q <= 1'b0;
         s_read_drive_q   <= 1'b1;
-        s_read_second_q  <= 1'b0;
       end
 
-      if (s_write_pending_q) begin
+      if (s_write_left_q != 4'd0) begin
         write_beat(s_write_addr_q);
-        s_write_pending_q <= 1'b0;
+        s_write_addr_q <= s_write_addr_q + 1'b1;
+        s_write_left_q <= s_write_left_q - 4'd1;
       end
 
       unique case (s_command)
+        CMD_MRS: begin
+          s_burst_len_q <= mrs_burst_length(addr_i[2:0]);
+        end
         CMD_ACTIVE: begin
           s_row_q[ba_i] <= addr_i[12:0];
         end
         CMD_READ: begin
           s_read_addr_q    <= sdram_address(ba_i, s_row_q[ba_i], addr_i[9:0]);
+          s_read_left_q    <= s_burst_len_q;
           s_read_pending_q <= 1'b1;
         end
         CMD_WRITE: begin
           write_beat(sdram_address(ba_i, s_row_q[ba_i], addr_i[9:0]));
-          s_write_addr_q    <= sdram_address(ba_i, s_row_q[ba_i], addr_i[9:0]) + 1'b1;
-          s_write_pending_q <= 1'b1;
+          s_write_addr_q <= sdram_address(ba_i, s_row_q[ba_i], addr_i[9:0]) + 1'b1;
+          s_write_left_q <= s_burst_len_q - 4'd1;
         end
         default: begin
         end

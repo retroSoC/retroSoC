@@ -29,7 +29,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | --- | --- |
 | `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
 | `bringup` | Manual startup diagnostic that prints complete application and archinfo details. |
-| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2 ABI/build identity, RNG V2 integration, and test-status completion. |
+| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2 ABI/build identity, RNG V2 integration, SDRAM 8/16/32-bit mapped-window access, and test-status completion. |
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |

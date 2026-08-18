@@ -27,6 +27,13 @@ the `retrosoc` namespace, for example:
 #include <retrosoc/lib/printf.h>
 ```
 
+`<retrosoc/hal/sdram.h>` provides cycle-count timing calculation, configuration,
+initialization/reinitialization, precharge-all, refresh, status, interrupt
+helpers, and a bounded self-test for the 64 MiB AXI4 SDRAM controller. See the
+[controller contract](../docs/ip/sdram.md). Applications include this header
+rather than `soc.h` register macros. The booter only prints the SDRAM window;
+it does not force a software reinit.
+
 `<retrosoc/hal/psram.h>` provides timing calculation, configuration,
 initialization, per-chip recovery, status/ID, restricted indirect commands,
 interrupts, and bounded self-test for the four-chip ESP-PSRAM64H controller.

@@ -124,7 +124,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB4_SYSCTRL_BASE);
     printf("                       1 x CLINT         @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
-    printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);
+    printf("                       1 x SDRAM         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SDRAM_BASE);
     printf("                       1 x DVP           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_DVP_BASE);
     printf("                       1 x I2C1          @%p\n",
