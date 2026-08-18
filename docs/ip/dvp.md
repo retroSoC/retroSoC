@@ -18,7 +18,7 @@ capture, and rectangular cropping.
 | Input interface | 8-bit parallel data, PCLK, HREF, VSYNC |
 | AXI4-Stream data width | 32 bits |
 | AXI4-Stream frame markers | `TUSER[0]` SOF, `TLAST` EOL |
-| DMA mode | 11 DVP RX |
+| DMA request selector | `DVP_RX` on bulk DMA channel 3 |
 | ABI version | `0x00020000` |
 
 The pixel clock is buffered and can be inverted before the pixel-domain reset
@@ -107,17 +107,20 @@ metadata chaining are not part of the current ABI.
 
 ## DMA and Software Contract
 
-DMA mode 11 treats each AXI4-Stream word as one 32-bit memory write and uses
-the stream `TKEEP` value for the final partial word. Software should configure
-the frame and crop dimensions, clear stale error and interrupt state, program
-the DMA destination and capacity, enable stream output, and then start DVP
-capture. A frame that reports overflow, synchronization, partial, or abort
-errors must not be consumed by software.
+The DMA MVP treats each full AXI4-Stream word as one 32-bit memory write.
+It accepts only `TKEEP=4'hf`; an odd-pixel DVP line produces a partial final
+word and therefore requires PIO handling or a future narrow-transfer/DRE DMA
+extension. Software should configure the frame and crop dimensions, clear
+stale error and interrupt state, program the channel-3 `DVP_RX` destination
+and capacity, enable stream output, and then start DVP capture. A frame that
+reports overflow, synchronization, partial, DMA, or abort errors must not be
+consumed by software.
 
 The public HAL exposes structured configuration, bounded status polling,
 command and interrupt control, capability discovery, and a convenience API
 for one-frame DMA capture. Applications should use `rs_dvp_configure()`,
-`rs_dma_config()`, `rs_dvp_start()`, and `rs_dvp_capture_dma()` rather than
+`rs_dma_configure()`, `rs_dma_start()`, `rs_dvp_start()`, and
+`rs_dvp_capture_dma()` rather than
 accessing the registers directly.
 
 ## Verification and Current Scope

@@ -96,6 +96,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/i2s.c \
             $(ROOT_PATH)/crt/src/hal/ws2812_math.c \
             $(ROOT_PATH)/crt/src/hal/ws2812.c \
+            $(ROOT_PATH)/crt/src/hal/dma_math.c \
             $(ROOT_PATH)/crt/src/hal/dma.c \
             $(ROOT_PATH)/crt/src/hal/dvp.c \
             $(ROOT_PATH)/crt/src/hal/perf.c \

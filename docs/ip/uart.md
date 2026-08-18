@@ -14,7 +14,7 @@ generic-DMA request pacing, and automatic active-low RTS/CTS flow control.
 | TX/RX FIFO depth | 64 entries each |
 | APB4 interrupt group bit | 2 |
 | Management-core interrupt | 2 |
-| DMA modes | 5 UART TX, 6 UART RX |
+| DMA request selectors | `UART_TX`, `UART_RX` on DMA channel 0 |
 | Dedicated signals | `uart0_tx`, `uart0_rx` |
 | Flow-control signals | GPIO0 ALT0 `uart0_cts_n`, GPIO1 ALT0 `uart0_rts_n` |
 

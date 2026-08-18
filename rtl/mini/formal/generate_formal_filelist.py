@@ -193,6 +193,18 @@ def source_files(target: str) -> list[Path]:
             MEMORY / "psram_phy.sv",
             SCRIPT_DIR / "psram_formal.sv",
         ]
+    if target == "dma":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/axi4_stream_if.sv",
+            COMMON_RTL / "stream/round_robin_arbiter.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            PERIPHERAL / "dma_pkg.sv",
+            PERIPHERAL / "dma_req_if.sv",
+            PERIPHERAL / "dma_axi4_master.sv",
+            PERIPHERAL / "dma_core.sv",
+            SCRIPT_DIR / "dma_formal.sv",
+        ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
@@ -212,6 +224,7 @@ def generate(
             TOP,
             COMMON_RTL,
             COMMON_RTL / "interface",
+            COMMON_RTL / "stream",
             COMMON_RTL / "utils",
             INTERCONNECT,
             PERIPHERAL,
@@ -242,6 +255,7 @@ def parse_args() -> argparse.Namespace:
             "dvp",
             "i2s",
             "psram",
+            "dma",
         ),
         required=True,
     )

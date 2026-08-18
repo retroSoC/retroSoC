@@ -451,7 +451,10 @@ rs_status_t rs_i2c_write_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_ad
                              rs_timeout_t timeout) {
     rs_status_t status;
     size_t index;
-    const uint32_t mode = (bus == RS_I2C_BUS_0) ? RS_DMA_MODE_I2C0_TX : RS_DMA_MODE_I2C1_TX;
+    const uint32_t channel = (bus == RS_I2C_BUS_0) ? RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1;
+    const rs_dma_request_t request =
+        (bus == RS_I2C_BUS_0) ? RS_DMA_REQUEST_I2C0_TX : RS_DMA_REQUEST_I2C1_TX;
+    rs_dma_config_t dma_config;
 
     if (!rs_i2c_bus_valid(bus) || (data == NULL) || (workspace == NULL) || (length == 0U) ||
         (length > RS_I2C_DMA_MAX_BYTES)) {
@@ -465,13 +468,22 @@ rs_status_t rs_i2c_write_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_ad
         workspace->words[index] = (uint32_t)data[index];
     }
     workspace->words[length - 1U] |= RS_I2C_DATA_CMD_STOP;
-    status = rs_dma_config(mode, (uintptr_t)&workspace->words[0], 1U,
-                           rs_i2c_base(bus) + RS_I2C_DATA_CMD_OFFSET, 0U, (uint32_t)length);
+    dma_config.kind = RS_DMA_KIND_MM_TO_MM;
+    dma_config.request = request;
+    dma_config.source = (uintptr_t)&workspace->words[0];
+    dma_config.destination = rs_i2c_base(bus) + RS_I2C_DATA_CMD_OFFSET;
+    dma_config.byte_count = (uint32_t)(length * sizeof(workspace->words[0]));
+    dma_config.width = RS_DMA_WIDTH_32;
+    dma_config.source_increment = true;
+    dma_config.destination_increment = false;
+    dma_config.priority = 2U;
+    dma_config.burst_beats = 1U;
+    status = rs_dma_configure(channel, &dma_config);
     if (status == RS_OK) {
-        status = rs_dma_start();
+        status = rs_dma_start(channel);
     }
     if (status == RS_OK) {
-        status = rs_dma_wait(timeout);
+        status = rs_dma_wait(channel, timeout);
     }
     if (status == RS_OK) {
         status = rs_i2c_wait_done(bus, timeout);
@@ -484,7 +496,10 @@ rs_status_t rs_i2c_read_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_add
                             rs_timeout_t timeout) {
     rs_status_t status;
     size_t index;
-    const uint32_t mode = (bus == RS_I2C_BUS_0) ? RS_DMA_MODE_I2C0_RX : RS_DMA_MODE_I2C1_RX;
+    const uint32_t channel = (bus == RS_I2C_BUS_0) ? RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1;
+    const rs_dma_request_t request =
+        (bus == RS_I2C_BUS_0) ? RS_DMA_REQUEST_I2C0_RX : RS_DMA_REQUEST_I2C1_RX;
+    rs_dma_config_t dma_config;
 
     if (!rs_i2c_bus_valid(bus) || (data == NULL) || (workspace == NULL) || (length == 0U) ||
         (length > RS_I2C_DMA_MAX_BYTES)) {
@@ -494,8 +509,17 @@ rs_status_t rs_i2c_read_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_add
     if (status != RS_OK) {
         return status;
     }
-    status = rs_dma_config(mode, rs_i2c_base(bus) + RS_I2C_RXDATA_OFFSET, 0U,
-                           (uintptr_t)&workspace->words[0], 1U, (uint32_t)length);
+    dma_config.kind = RS_DMA_KIND_MM_TO_MM;
+    dma_config.request = request;
+    dma_config.source = rs_i2c_base(bus) + RS_I2C_RXDATA_OFFSET;
+    dma_config.destination = (uintptr_t)&workspace->words[0];
+    dma_config.byte_count = (uint32_t)(length * sizeof(workspace->words[0]));
+    dma_config.width = RS_DMA_WIDTH_32;
+    dma_config.source_increment = false;
+    dma_config.destination_increment = true;
+    dma_config.priority = 2U;
+    dma_config.burst_beats = 1U;
+    status = rs_dma_configure(channel, &dma_config);
     if (status != RS_OK) {
         return status;
     }
@@ -508,9 +532,9 @@ rs_status_t rs_i2c_read_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_add
         }
         RS_I2C_REG(bus, RS_I2C_DATA_CMD_OFFSET) = command;
     }
-    status = rs_dma_start();
+    status = rs_dma_start(channel);
     if (status == RS_OK) {
-        status = rs_dma_wait(timeout);
+        status = rs_dma_wait(channel, timeout);
     }
     if (status == RS_OK) {
         status = rs_i2c_wait_done(bus, timeout);

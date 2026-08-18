@@ -279,10 +279,11 @@ rs_status_t rs_uart_irq_test(uint32_t mask) {
 }
 
 rs_status_t rs_uart_write_dma(const uint32_t *words, size_t count, rs_timeout_t timeout) {
+    rs_dma_config_t config;
     size_t index;
     rs_status_t status;
 
-    if ((words == NULL) || (count == 0U) || (count > UINT32_MAX)) {
+    if ((words == NULL) || (count == 0U) || (count > (UINT32_MAX / sizeof(*words)))) {
         return RS_EINVAL;
     }
     for (index = 0U; index < count; index++) {
@@ -290,33 +291,52 @@ rs_status_t rs_uart_write_dma(const uint32_t *words, size_t count, rs_timeout_t 
             return RS_EINVAL;
         }
     }
+    config.kind = RS_DMA_KIND_MM_TO_MM;
+    config.request = RS_DMA_REQUEST_UART_TX;
+    config.source = (uintptr_t)words;
+    config.destination = RS_SOC_APB4_UART0_BASE + UINT32_C(0x10);
+    config.byte_count = (uint32_t)(count * sizeof(*words));
+    config.width = RS_DMA_WIDTH_32;
+    config.source_increment = true;
+    config.destination_increment = false;
+    config.priority = 2U;
+    config.burst_beats = 1U;
     RS_UART_DMA_CTRL = RS_UART_DMA_TX_ENABLE;
-    status = rs_dma_config(RS_DMA_MODE_UART_TX, (uintptr_t)words, 1U,
-                           RS_SOC_APB4_UART0_BASE + UINT32_C(0x10), 0U, (uint32_t)count);
+    status = rs_dma_configure(RS_DMA_CHANNEL_UART0, &config);
     if (status == RS_OK) {
-        status = rs_dma_start();
+        status = rs_dma_start(RS_DMA_CHANNEL_UART0);
     }
     if (status == RS_OK) {
-        status = rs_dma_wait(timeout);
+        status = rs_dma_wait(RS_DMA_CHANNEL_UART0, timeout);
     }
     RS_UART_DMA_CTRL = 0U;
     return status;
 }
 
 rs_status_t rs_uart_read_dma(uint32_t *words, size_t count, rs_timeout_t timeout) {
+    rs_dma_config_t config;
     rs_status_t status;
 
-    if ((words == NULL) || (count == 0U) || (count > UINT32_MAX)) {
+    if ((words == NULL) || (count == 0U) || (count > (UINT32_MAX / sizeof(*words)))) {
         return RS_EINVAL;
     }
+    config.kind = RS_DMA_KIND_MM_TO_MM;
+    config.request = RS_DMA_REQUEST_UART_RX;
+    config.source = RS_SOC_APB4_UART0_BASE + UINT32_C(0x14);
+    config.destination = (uintptr_t)words;
+    config.byte_count = (uint32_t)(count * sizeof(*words));
+    config.width = RS_DMA_WIDTH_32;
+    config.source_increment = false;
+    config.destination_increment = true;
+    config.priority = 2U;
+    config.burst_beats = 1U;
     RS_UART_DMA_CTRL = RS_UART_DMA_RX_ENABLE;
-    status = rs_dma_config(RS_DMA_MODE_UART_RX, RS_SOC_APB4_UART0_BASE + UINT32_C(0x14), 0U,
-                           (uintptr_t)words, 1U, (uint32_t)count);
+    status = rs_dma_configure(RS_DMA_CHANNEL_UART0, &config);
     if (status == RS_OK) {
-        status = rs_dma_start();
+        status = rs_dma_start(RS_DMA_CHANNEL_UART0);
     }
     if (status == RS_OK) {
-        status = rs_dma_wait(timeout);
+        status = rs_dma_wait(RS_DMA_CHANNEL_UART0, timeout);
     }
     RS_UART_DMA_CTRL = 0U;
     return status;

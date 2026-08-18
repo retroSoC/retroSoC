@@ -17,7 +17,7 @@ and MCLK dividers. Host and audio clocks are independent; configuration uses
 | Pads | `mclk_o`, `sclk_o`, `lrck_o`, `dacdat_o`, `adcdat_i` |
 | AXI4-Stream data width | 32 bits |
 | FIFO depth | 128 words |
-| DMA modes | 1 I2S TX, 2 I2S RX |
+| DMA request selectors | `I2S_TX`, `I2S_RX` on bulk DMA channel 3 |
 | ABI version | `0x00010000` |
 
 MCLK is a buffered copy of `clk_aud_i` when `CLK_DIV[23:16]` is zero. SCLK and
@@ -89,11 +89,12 @@ DMA asserts `TLAST` on the final programmed TX word.
 ## HAL Sequence
 
 Applications should use `rs_i2s_configure()`, `rs_i2s_enable()`, and either
-`rs_i2s_write()`/`rs_i2s_read()` or DMA stream modes. DMA software should
-program `rs_i2s_txdata_address()` / `rs_i2s_rxdata_address()` rather than
-`soc.h` register macros. Program format and dividers while the controller is
-disabled. `rs_i2s_div_from_hz()` derives legal toggle-divider values for an
-exact `clk_aud` and sample rate.
+`rs_i2s_write()`/`rs_i2s_read()` or a channel-3 DMA stream configuration.
+DMA stream configurations use `RS_DMA_KIND_MM_TO_STREAM` with `I2S_TX` or
+`RS_DMA_KIND_STREAM_TO_MM` with `I2S_RX`; the unused address is zero. Program
+format and dividers while the controller is disabled.
+`rs_i2s_div_from_hz()` derives legal toggle-divider values for an exact
+`clk_aud` and sample rate.
 
 ## Verification
 

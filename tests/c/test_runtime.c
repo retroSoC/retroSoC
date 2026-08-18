@@ -7,6 +7,7 @@
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
@@ -319,6 +320,7 @@ static int test_gpio_helpers(void) {
         (timing.divider != 143U) || (timing.stable_samples != 3U)) {
         return 1;
     }
+
     if ((rs_gpio_filter_timing_from_us(1U, 1U, 1U, &timing) != RS_OK) || (timing.divider != 0U)) {
         return 2;
     }
@@ -329,6 +331,46 @@ static int test_gpio_helpers(void) {
         (rs_gpio_filter_timing_from_us(72000000U, 1000U, 3U, &timing) != RS_EINVAL) ||
         (rs_gpio_filter_timing_from_us(72000000U, 2U, 3U, NULL) != RS_EINVAL)) {
         return 3;
+    }
+    return 0;
+}
+
+static int test_dma_config_validation(void) {
+    rs_dma_config_t config = {
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .request = RS_DMA_REQUEST_SOFTWARE,
+        .source = (uintptr_t)UINT32_C(0x40000000),
+        .destination = (uintptr_t)UINT32_C(0x41000000),
+        .byte_count = 64U,
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
+        .priority = 1U,
+        .burst_beats = RS_DMA_MAX_BURST_BEATS,
+    };
+
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_OK) {
+        return 1;
+    }
+    config.width = RS_DMA_WIDTH_16;
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
+        return 2;
+    }
+    config.width = RS_DMA_WIDTH_32;
+    config.byte_count = 6U;
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
+        return 3;
+    }
+    config.byte_count = 64U;
+    config.kind = RS_DMA_KIND_MM_TO_STREAM;
+    config.request = RS_DMA_REQUEST_I2S_TX;
+    config.destination = (uintptr_t)0U;
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_OK) {
+        return 4;
+    }
+    config.source_increment = false;
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
+        return 5;
     }
     return 0;
 }
@@ -402,10 +444,12 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(), test_formatter(),     test_compiler_helpers(), test_wait_helper(),
-        test_ws2812_helpers(), test_timer_helpers(), test_psram_helpers(),    test_sdram_helpers(),
-        test_uart_helpers(),   test_i2s_helpers(),   test_i2c_helpers(),      test_gpio_helpers(),
-        test_ps2_decoders(),   test_wav_parser(),    test_video_parser(),
+        test_string_helpers(),        test_formatter(),      test_compiler_helpers(),
+        test_wait_helper(),           test_ws2812_helpers(), test_timer_helpers(),
+        test_psram_helpers(),         test_sdram_helpers(),  test_uart_helpers(),
+        test_i2s_helpers(),           test_i2c_helpers(),    test_gpio_helpers(),
+        test_dma_config_validation(), test_ps2_decoders(),   test_wav_parser(),
+        test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

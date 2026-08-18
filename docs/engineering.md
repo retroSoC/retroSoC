@@ -160,11 +160,18 @@ Verilator regressions.
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
 targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`, `gpio`,
-`ws2812`, `uart`, `i2c`, `timer`, and `clint`; each uses the SBY `prove` task for bounded model
-checking and k-induction, plus a `cover` task. The default depth is 20;
+`ws2812`, `uart`, `i2c`, `timer`, `clint`, `dvp`, `i2s`, `psram`, and `dma`;
+each uses an SBY bounded proof task plus a `cover` task. The default depth is 20;
 `ws2812` uses depth 120 and a 120-second per-task limit to cover a complete
 serialized word and reset path. `i2c` uses depth 80 and a 300-second per-task
-limit to reach a complete receive path and export its witness. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
+limit to reach a complete receive path and export its witness. `dma` uses a
+depth-24 BMC task, depth-32 covers, and a 120-second per-task limit for the narrowest supported four-channel,
+32-bit/4-beat/4-word `dma_core` configuration. Its constrained native AXI4
+responder and AXI4-Stream environment prove source stability under
+backpressure, FIFO bounds, transaction-owner stability, abort draining,
+channel accounting and terminal isolation, and observable AXI burst rules;
+covers include a complete MM-to-MM burst, an I2S-stream abort, and an AXI read
+error. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
 state machine. `gpio` checks dual-window access isolation, fixed user-GPIO
 ownership, locks, handoff, open-drain safety, and mux behavior. `rib_adapter`

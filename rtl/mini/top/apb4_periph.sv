@@ -10,7 +10,6 @@
 
 `include "mmap_define.svh"
 `include "soc_irq_config.svh"
-`include "rib_defs.svh"
 
 module apb4_periph (
     // verilog_format: off -- preserve reviewed column alignment
@@ -53,8 +52,7 @@ module apb4_periph (
   `include "apb4_periph_interfaces.svh"
   `include "apb4_periph_bridges.svh"
 
-rib_if u_dma_rib_if ();
-  axi4_stream_if #(
+axi4_stream_if #(
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .DEST_WIDTH(1),
@@ -83,7 +81,7 @@ rib_if u_dma_rib_if ();
   );
 
   clint_if u_clint_if ();
-  dma_hw_trg_if u_dma_hw_trg_if ();
+  dma_req_if u_dma_req_if ();
 
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
@@ -91,6 +89,7 @@ rib_if u_dma_rib_if ();
   logic s_dma_i2c0_tx_stall, s_dma_i2c0_rx_stall;
   logic s_dma_i2c1_tx_stall, s_dma_i2c1_rx_stall;
   logic s_dma_xfer_done;
+  logic s_dma_irq;
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
 
@@ -119,23 +118,16 @@ rib_if u_dma_rib_if ();
       `include "apb4_periph_connections.svh"
   );
 
-  rib2axi4 u_dma_rib2axi4 (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .rib    (u_dma_rib_if),
-      .axi4   (dma_axi4)
-  );
-
-  assign u_dma_hw_trg_if.i2s_tx_proc  = ~s_dma_i2s_tx_stall;
-  assign u_dma_hw_trg_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
-  assign u_dma_hw_trg_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
-  assign u_dma_hw_trg_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
-  assign u_dma_hw_trg_if.uart_tx_proc = ~s_dma_uart_tx_stall;
-  assign u_dma_hw_trg_if.uart_rx_proc = ~s_dma_uart_rx_stall;
-  assign u_dma_hw_trg_if.i2c0_tx_proc = ~s_dma_i2c0_tx_stall;
-  assign u_dma_hw_trg_if.i2c0_rx_proc = ~s_dma_i2c0_rx_stall;
-  assign u_dma_hw_trg_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
-  assign u_dma_hw_trg_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
+  assign u_dma_req_if.i2s_tx_proc  = ~s_dma_i2s_tx_stall;
+  assign u_dma_req_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
+  assign u_dma_req_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
+  assign u_dma_req_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
+  assign u_dma_req_if.uart_tx_proc = ~s_dma_uart_tx_stall;
+  assign u_dma_req_if.uart_rx_proc = ~s_dma_uart_rx_stall;
+  assign u_dma_req_if.i2c0_tx_proc = ~s_dma_i2c0_tx_stall;
+  assign u_dma_req_if.i2c0_rx_proc = ~s_dma_i2c0_rx_stall;
+  assign u_dma_req_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
+  assign u_dma_req_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
 
   `include "apb4_periph_irq_bindings.svh"
 
@@ -240,9 +232,10 @@ rib_if u_dma_rib_if ();
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .dma_xfer_done_o(s_dma_xfer_done),
-      .hw_trg         (u_dma_hw_trg_if),
+      .irq_o          (s_dma_irq),
+      .hw_trg         (u_dma_req_if),
       .apb4           (u_dma_apb4_if),
-      .rib            (u_dma_rib_if),
+      .axi4           (dma_axi4),
       .i2s_tx_axis    (u_i2s_tx_axis_if),
       .i2s_rx_axis    (u_i2s_rx_axis_if),
       .dvp_rx_axis    (u_dvp_rx_axis_if)

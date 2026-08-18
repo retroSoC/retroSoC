@@ -51,7 +51,8 @@ I2C0 uses GPIO7 for SCL and GPIO8 for SDA on ALT0. I2C1 uses GPIO3 for SCL and
 GPIO4 for SDA on ALT1. Both controller outputs are constant zero; the GPIO
 alternate-function output enable pulls a line low and releases it for high.
 Board-level pull-ups are therefore required. I2C0 uses management-core IRQ7
-and generic-DMA modes 7/8; I2C1 uses IRQ19 and DMA modes 9/10. See
+and DMA request selectors `I2C0_TX`/`I2C0_RX` on channel 1; I2C1 uses IRQ19
+and `I2C1_TX`/`I2C1_RX` on channel 2. See
 [i2c.md](ip/i2c.md) for the register and transfer contract.
 
 ## PWM alternate functions
@@ -79,13 +80,17 @@ management-core interrupt 17. The data pin is forced low while idle, during
 reset/latch time, after abort, and after underflow.
 
 The APB4 TX FIFO is also a fixed-address target for the generic DMA engine.
-DMA is an AXI4 master and receives APB4/FIFO backpressure when the FIFO
-is full; the transmitter does not own a private DMA request channel. See
-[ws2812.md](ip/ws2812.md) for the register and transfer contract.
+DMA is a native AXI4 master and receives APB4/FIFO backpressure when the FIFO
+is full; it emits a one-beat `FIXED` transaction for this endpoint and the
+transmitter does not own a private DMA request channel. See
+[ws2812.md](ip/ws2812.md) and [DMA MVP](ip/dma.md) for the register and
+transfer contracts.
 
 I2S and DVP use dedicated 32-bit AXI4-Stream data links to DMA while retaining
-APB4 for configuration and PIO fallback. Their stream selection, backpressure,
-and transfer-boundary rules are defined in [axi4-stream.md](axi4-stream.md).
+APB4 for configuration and PIO fallback. DMA aggregate done/error/half events
+use APB4-peripheral group bit 14 and management-core IRQ20. Their stream
+selection, backpressure, and transfer-boundary rules are defined in
+[axi4-stream.md](axi4-stream.md).
 
 ## Management JTAG
 

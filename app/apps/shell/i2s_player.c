@@ -32,6 +32,7 @@ static rs_status_t i2s_init(bool loopback) {
 
 static void i2s_audio_load(void) {
     rs_wav_info_t info;
+    rs_dma_config_t dma_config;
     const uint32_t start_address = audio_addr[audio_idx];
     const uint32_t available_size =
         (start_address >= TF_CARD_START) && (start_address < (TF_CARD_START + TF_CARD_OFFST))
@@ -40,9 +41,21 @@ static void i2s_audio_load(void) {
 
     if ((available_size == 0U) ||
         (rs_wav_parse_spisd(start_address, available_size, &info) != RS_OK) ||
-        ((info.data_size % sizeof(uint32_t)) != 0U) ||
-        (rs_dma_config(RS_DMA_MODE_I2S_TX, start_address + info.data_offset, 1U,
-                       rs_i2s_txdata_address(), 0U, info.data_size / sizeof(uint32_t)) != RS_OK)) {
+        ((info.data_size % sizeof(uint32_t)) != 0U)) {
+        printf("wav file parse/configuration error\n");
+        return;
+    }
+    dma_config.kind = RS_DMA_KIND_MM_TO_STREAM;
+    dma_config.request = RS_DMA_REQUEST_I2S_TX;
+    dma_config.source = (uintptr_t)(start_address + info.data_offset);
+    dma_config.destination = (uintptr_t)0U;
+    dma_config.byte_count = info.data_size;
+    dma_config.width = RS_DMA_WIDTH_32;
+    dma_config.source_increment = true;
+    dma_config.destination_increment = false;
+    dma_config.priority = 2U;
+    dma_config.burst_beats = RS_DMA_MAX_BURST_BEATS;
+    if (rs_dma_configure(RS_DMA_CHANNEL_BULK, &dma_config) != RS_OK) {
         printf("wav file parse/configuration error\n");
     }
 }
@@ -59,6 +72,7 @@ static void i2s_audio_panel(void) {
 void ip_i2s_player(int argc, char **argv) {
     char type_ch;
     uint32_t mode = 0, pause = 0, xfering = 0;
+    rs_dma_status_t dma_status;
 
     (void)argc;
     (void)argv;
@@ -69,7 +83,7 @@ void ip_i2s_player(int argc, char **argv) {
         type_ch = getchar();
 
         if (xfering) {
-            if (reg_dma_status == (uint32_t)1) {
+            if ((rs_dma_get_status(RS_DMA_CHANNEL_BULK, &dma_status) == RS_OK) && dma_status.done) {
                 printf("dma tx done\n");
                 xfering = (uint32_t)0;
             }
@@ -97,7 +111,7 @@ void ip_i2s_player(int argc, char **argv) {
         } else if (type_ch == 's' && !xfering) {
             (void)i2s_init(false);
             xfering = 1U;
-            if (rs_dma_start() == RS_OK) {
+            if (rs_dma_start(RS_DMA_CHANNEL_BULK) == RS_OK) {
                 printf("start xfer\n");
             } else {
                 xfering = 0U;
@@ -105,20 +119,21 @@ void ip_i2s_player(int argc, char **argv) {
         } else if (type_ch == 't' && xfering) {
             if (pause != 0U) {
                 pause = 0U;
-                (void)rs_dma_stop();
+                (void)rs_dma_resume(RS_DMA_CHANNEL_BULK);
                 (void)i2s_init(false);
                 printf("resume audio play\n");
             } else {
                 pause = 1U;
                 (void)i2s_init(true);
-                (void)rs_dma_stop();
-                printf("fsm: %d\n", reg_dma_fsm);
+                (void)rs_dma_suspend(RS_DMA_CHANNEL_BULK);
                 printf("pause audio play\n");
             }
         } else if (type_ch == 'r' && xfering) {
             xfering = 0U;
             (void)i2s_init(true);
-            (void)rs_dma_reset();
+            if (rs_dma_abort_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) == RS_OK) {
+                (void)rs_dma_reset(RS_DMA_CHANNEL_BULK);
+            }
             printf("reset audio play\n");
         }
     }

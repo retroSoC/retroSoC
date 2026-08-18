@@ -254,9 +254,10 @@
 <!-- dma -->
 <g id="node14" class="node">
 <title>dma</title>
-<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M1851,-598.98C1851,-598.98 1703,-598.98 1703,-598.98 1697,-598.98 1691,-592.98 1691,-586.98 1691,-586.98 1691,-574.98 1691,-574.98 1691,-568.98 1697,-562.98 1703,-562.98 1703,-562.98 1851,-562.98 1851,-562.98 1857,-562.98 1863,-568.98 1863,-574.98 1863,-574.98 1863,-586.98 1863,-586.98 1863,-592.98 1857,-598.98 1851,-598.98"/>
-<text text-anchor="middle" x="1777" y="-583.98" font-family="Arial" font-size="10.00" fill="#111827">DMA</text>
-<text text-anchor="middle" x="1777" y="-572.98" font-family="Arial" font-size="10.00" fill="#111827">AXI4 burst master and APB4 target</text>
+<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M1851,-603.48C1851,-603.48 1703,-603.48 1703,-603.48 1697,-603.48 1691,-597.48 1691,-591.48 1691,-591.48 1691,-570.48 1691,-570.48 1691,-564.48 1697,-558.48 1703,-558.48 1703,-558.48 1851,-558.48 1851,-558.48 1857,-558.48 1863,-564.48 1863,-570.48 1863,-570.48 1863,-591.48 1863,-591.48 1863,-597.48 1857,-603.48 1851,-603.48"/>
+<text text-anchor="middle" x="1777" y="-589.48" font-family="Arial" font-size="10.00" fill="#111827">DMA</text>
+<text text-anchor="middle" x="1777" y="-578.48" font-family="Arial" font-size="10.00" fill="#111827">4&#45;channel native AXI4 burst master</text>
+<text text-anchor="middle" x="1777" y="-567.48" font-family="Arial" font-size="10.00" fill="#111827">APB4 target, AXI4&#45;Stream, IRQ20</text>
 </g>
 <!-- dma&#45;&gt;fabric -->
 <g id="edge12" class="edge">
@@ -293,7 +294,7 @@
 <!-- dma&#45;&gt;uart0 -->
 <g id="edge43" class="edge">
 <title>dma&#45;&gt;uart0</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1771.94,-562.65C1753.64,-500.01 1692,-289 1692,-289 1692,-289 1668.98,-276.49 1645.97,-263.98"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1770.61,-558.11C1750.84,-490.44 1692,-289 1692,-289 1692,-289 1668.98,-276.49 1645.97,-263.98"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1647.14,-261.83 1639.82,-260.64 1644.8,-266.14 1647.14,-261.83"/>
 <text text-anchor="middle" x="1746.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">TX/RX data</text>
 </g>
@@ -308,7 +309,7 @@
 <!-- dma&#45;&gt;i2c_controllers -->
 <g id="edge47" class="edge">
 <title>dma&#45;&gt;i2c_controllers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1761.16,-562.65C1703.89,-500.01 1511,-289 1511,-289 1511,-289 1468.1,-275.68 1426.59,-262.79"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1757.01,-558.11C1695.15,-490.44 1511,-289 1511,-289 1511,-289 1468.1,-275.68 1426.59,-262.79"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1427.09,-260.38 1419.68,-260.64 1425.64,-265.06 1427.09,-260.38"/>
 <text text-anchor="middle" x="1657" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">DATA_CMD / RXDATA</text>
 </g>
@@ -323,7 +324,7 @@
 <!-- dma&#45;&gt;ws2812 -->
 <g id="edge41" class="edge">
 <title>dma&#45;&gt;ws2812</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1777.3,-562.65C1778.37,-500.01 1782,-289 1782,-289 1782,-289 1791.31,-277.91 1801.17,-266.18"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1777.38,-558.11C1778.54,-490.44 1782,-289 1782,-289 1782,-289 1791.31,-277.91 1801.17,-266.18"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1803.07,-267.72 1805.7,-260.79 1799.32,-264.57 1803.07,-267.72"/>
 <text text-anchor="middle" x="1807.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">TXDATA writes</text>
 </g>

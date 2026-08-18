@@ -46,6 +46,11 @@ clock, user-core, performance, and test-service APIs use this HAL; direct
 `reg_sysctrl_*` register macros are not public SDK interfaces. See the
 [SystemCtrl contract](../docs/ip/sysctrl.md).
 
+`<retrosoc/hal/dma.h>` provides the channel-aware direct-mode DMA API. UART0,
+I2C0, I2C1, and bulk/media clients have deterministic channel assignments; see
+the [DMA MVP contract](../docs/ip/dma.md). The current SDK intentionally
+accepts only naturally aligned 32-bit DMA transfers.
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

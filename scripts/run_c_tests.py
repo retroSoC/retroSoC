@@ -28,6 +28,7 @@ TEST_SOURCES = (
     "crt/src/hal/psram_math.c",
     "crt/src/hal/sdram_math.c",
     "crt/src/hal/i2s_math.c",
+    "crt/src/hal/dma_math.c",
     "crt/src/hal/sysctrl.c",
     "rtl/managed/clusterip/ps2/sw/src/ps2.c",
     "rtl/managed/clusterip/ps2/sw/src/ps2_keyboard.c",

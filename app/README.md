@@ -83,6 +83,11 @@ Application-specific public headers belong below their own component include
 directory, such as `board/include/retrosoc/board/` or
 `media/include/retrosoc/media/`.
 
+DMA users must select an explicit SDK channel. UART0 owns channel 0, I2C0
+channel 1, I2C1 channel 2, and media/benchmark clients serialize on bulk
+channel 3. See [DMA MVP](../docs/ip/dma.md) before adding a concurrent DMA
+client.
+
 Self-owned application C/H code follows the project
 [MISRA C:2012 Amendment 2 policy](../docs/misra-c-2012.md). Managed upstream
 sources and exclusions listed in `quality/embedded_c_policy.json` are outside

@@ -67,9 +67,10 @@ ordered RIB responses. An asserted RIBP `resp_err` is mapped to native RIB
 ## Targets and Performance
 
 The active Mini SoC no longer selects RIB as a fabric link. Current user cores
-retain their RIBP ABI and use a RIBP-to-AXI4 adapter. DMA retains its proven RIB
-chunk engine behind a RIB-to-AXI4 adapter. The RIB modules, protocol tests, and
-formal targets remain available for independent reuse and maintenance.
+retain their RIBP ABI and use a RIBP-to-AXI4 adapter. DMA is not a RIB client:
+it connects directly to the shared AXI4 fabric. The RIB modules, protocol
+tests, and formal targets remain available for independent reuse and
+maintenance.
 
 `rib2ram` is the native RIB SRAM target. It pipelines synchronous reads
 and uses the Common two-entry spill register for response backpressure. The

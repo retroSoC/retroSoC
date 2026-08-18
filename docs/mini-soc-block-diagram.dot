@@ -123,7 +123,7 @@ digraph mini_soc_block_diagram {
       ];
       dma [
         fillcolor="#DDF2E3",
-        label="DMA\nAXI4 burst master and APB4 target"
+        label="DMA\n4-channel native AXI4 burst master\nAPB4 target, AXI4-Stream, IRQ20"
       ];
       fabric [
         fillcolor="#DCECF8",

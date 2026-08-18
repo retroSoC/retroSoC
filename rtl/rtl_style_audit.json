@@ -118,6 +118,9 @@
       "psram_reg.sv",
       "sdram_clkgen.sv",
       "sdram_core.sv",
+      "sdram_define.svh",
+      "sdram_pkg.sv",
+      "sdram_axi4.sv",
       "sdram_reg.sv"
     ],
     "rtl/ip/multimedia": [
@@ -137,7 +140,12 @@
       "clint_if.sv",
       "clint_reg.sv",
       "clint_timebase.sv",
+      "dma_axi4_master.sv",
       "dma_core.sv",
+      "dma_define.svh",
+      "dma_pkg.sv",
+      "dma_reg.sv",
+      "dma_req_if.sv",
       "gpio_core.sv",
       "gpio_define.svh",
       "gpio_if.sv",

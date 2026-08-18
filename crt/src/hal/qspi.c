@@ -186,9 +186,21 @@ void qspi0_rd(uint32_t cmdtyp, uint32_t cmdlen, uint32_t cmddat, uint32_t adrtyp
 }
 
 void qspi0_dma_xfer(uint32_t addr, uint32_t len) {
-    if ((addr == 0U) || (len == 0U)) {
+    rs_dma_config_t dma_config;
+
+    if ((addr == 0U) || (len == 0U) || (len > (UINT32_MAX / sizeof(uint32_t)))) {
         return;
     }
+    dma_config.kind = RS_DMA_KIND_MM_TO_MM;
+    dma_config.request = RS_DMA_REQUEST_QSPI_TX;
+    dma_config.source = (uintptr_t)addr;
+    dma_config.destination = (uintptr_t)&reg_xpi_txdata;
+    dma_config.byte_count = len * sizeof(uint32_t);
+    dma_config.width = RS_DMA_WIDTH_32;
+    dma_config.source_increment = true;
+    dma_config.destination_increment = false;
+    dma_config.priority = 2U;
+    dma_config.burst_beats = 1U;
     reg_xpi_flush = (uint32_t)1;
     reg_xpi_datlen = (uint32_t)32;
     reg_xpi_mode = (uint32_t)1;
@@ -199,9 +211,9 @@ void qspi0_dma_xfer(uint32_t addr, uint32_t len) {
     // for(int i = 0; i < 32; ++i) {
     //     printf("data[%d]: %x\n", i, ptr[i]);
     // }
-    if ((rs_dma_config(3U, addr, 1U, (uintptr_t)&reg_xpi_txdata, 0U, len) != RS_OK) ||
-        (rs_dma_start() != RS_OK) || !rs_qspi_wait(1U << 2U, 1U) ||
-        (rs_dma_wait(RS_TIMEOUT_DEFAULT) != RS_OK)) {
+    if ((rs_dma_configure(RS_DMA_CHANNEL_BULK, &dma_config) != RS_OK) ||
+        (rs_dma_start(RS_DMA_CHANNEL_BULK) != RS_OK) || !rs_qspi_wait(1U << 2U, 1U) ||
+        (rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) != RS_OK)) {
         reg_xpi_mode = 0U;
         reg_xpi_flush = 1U;
         reg_xpi_revdat = 0U;

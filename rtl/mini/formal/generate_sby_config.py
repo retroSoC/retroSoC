@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--properties", type=Path, required=True)
     parser.add_argument("--solver", required=True)
-    parser.add_argument("--mode", choices=("prove", "cover"), required=True)
+    parser.add_argument("--mode", choices=("prove", "bmc", "cover"), required=True)
     parser.add_argument("--depth", type=positive_int, required=True)
     parser.add_argument("--no-vcd", action="store_false", dest="vcd")
     parser.add_argument("--output", type=Path, required=True)

@@ -9,333 +9,1210 @@
 // See the Mulan PSL v2 for more details.
 
 `include "mmap_define.svh"
-`include "rib_defs.svh"
+`include "axi4_define.svh"
 
-module dma_core (
-    // verilog_format: off -- preserve reviewed column alignment
-    input  logic          clk_i,
-    input  logic          rst_n_i,
-    input  logic [3:0]    mode_i,
-    input  logic [31:0]   srcaddr_i,
-    input  logic          srcincr_i,
-    input  logic [31:0]   dstaddr_i,
-    input  logic          dstincr_i,
-    input  logic [31:0]   xferlen_i,
-    input  logic          start_i,
-    input  logic          stop_i,
-    input  logic          reset_i,
-    output logic          done_o,
-    output logic          error_o,
-    output logic [2:0]    error_code_o,
-    output logic [31:0]   error_addr_o,
-    output logic [1:0]    fsm_o,
-    dma_hw_trg_if.dut     hw_trg,
-    rib_if.master         rib,
-    axi4_stream_if.source i2s_tx_axis,
-    axi4_stream_if.sink   i2s_rx_axis,
-    axi4_stream_if.sink   dvp_rx_axis
+module dma_core #(
+    parameter int AddrWidth         = 32,
+    parameter int DataWidth         = 32,
+    parameter int NumChannels       = 4,
+    parameter int ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
+    parameter int MaxBurstBeats     = 16,
+    parameter int FifoDepth         = 16
+) (
+    // verilog_format: off -- channel vectors are kept aligned with the register-bank ABI.
+    input  logic                           clk_i,
+    input  logic                           rst_n_i,
+    input  logic                           global_reset_i,
+    input  logic                           global_error_clear_i,
+    input  logic [NumChannels*32-1:0]      ch_cfg_i,
+    input  logic [NumChannels*32-1:0]      src_addr_i,
+    input  logic [NumChannels*32-1:0]      dst_addr_i,
+    input  logic [NumChannels*32-1:0]      byte_count_i,
+    input  logic [NumChannels*32-1:0]      request_sel_i,
+    input  logic [NumChannels*32-1:0]      burst_cfg_i,
+    input  logic [NumChannels-1:0]         start_i,
+    input  logic [NumChannels-1:0]         suspend_i,
+    input  logic [NumChannels-1:0]         resume_i,
+    input  logic [NumChannels-1:0]         abort_i,
+    input  logic [NumChannels-1:0]         channel_reset_i,
+    input  logic [NumChannels*3-1:0]       event_clear_i,
+    output logic [NumChannels-1:0]         busy_o,
+    output logic [NumChannels-1:0]         suspended_o,
+    output logic [NumChannels-1:0]         done_o,
+    output logic [NumChannels-1:0]         aborted_o,
+    output logic [NumChannels-1:0]         error_o,
+    output logic [NumChannels-1:0]         stream_last_o,
+    output logic [NumChannels*3-1:0]       event_status_o,
+    output logic [NumChannels*32-1:0]      error_status_o,
+    output logic [NumChannels*32-1:0]      error_addr_o,
+    output logic [NumChannels*32-1:0]      current_src_o,
+    output logic [NumChannels*32-1:0]      current_dst_o,
+    output logic [NumChannels*32-1:0]      remaining_o,
+    output logic [NumChannels*32-1:0]      bytes_done_o,
+    output logic [NumChannels*32-1:0]      stall_cycles_lo_o,
+    output logic [NumChannels*32-1:0]      stall_cycles_hi_o,
+    output logic                           first_error_valid_o,
+    output logic [ChannelIndexWidth-1:0]   first_error_channel_o,
+    output logic [31:0]                    first_error_status_o,
+    output logic [31:0]                    first_error_addr_o,
+    output logic [15:0]                    request_status_o,
+    output logic                           xpi_xfer_done_o,
+    dma_req_if.dut                         req,
+    axi4_if.master                         axi4,
+    axi4_stream_if.source                  i2s_tx_axis,
+    axi4_stream_if.sink                    i2s_rx_axis,
+    axi4_stream_if.sink                    dvp_rx_axis
     // verilog_format: on
 );
+  import dma_pkg::*;
 
-  localparam logic [3:0] SFT_TRG = 4'd0;
-  localparam logic [3:0] HWT_I2S_TX_TRG = 4'd1;
-  localparam logic [3:0] HWT_I2S_RX_TRG = 4'd2;
-  localparam logic [3:0] HWT_QSPI_TX_TRG = 4'd3;
-  localparam logic [3:0] HWT_QSPI_RX_TRG = 4'd4;
-  localparam logic [3:0] HWT_UART_TX_TRG = 4'd5;
-  localparam logic [3:0] HWT_UART_RX_TRG = 4'd6;
-  localparam logic [3:0] HWT_I2C0_TX_TRG = 4'd7;
-  localparam logic [3:0] HWT_I2C0_RX_TRG = 4'd8;
-  localparam logic [3:0] HWT_I2C1_TX_TRG = 4'd9;
-  localparam logic [3:0] HWT_I2C1_RX_TRG = 4'd10;
-  localparam logic [3:0] HWT_DVP_RX_TRG = 4'd11;
+  localparam int FifoCountWidth = $clog2(FifoDepth) + 1;
+  localparam logic [31:0] WordBytes = 32'd4;
 
-  localparam logic [2:0] FSM_IDLE = 3'd0;
-  localparam logic [2:0] FSM_RD_CMD = 3'd1;
-  localparam logic [2:0] FSM_RD_RESP = 3'd2;
-  localparam logic [2:0] FSM_WR_CMD = 3'd3;
-  localparam logic [2:0] FSM_WR_DATA = 3'd4;
-  localparam logic [2:0] FSM_WR_RESP = 3'd5;
-  localparam logic [2:0] FSM_DONE = 3'd6;
+  logic [      NumChannels-1:0][               2:0] s_cfg_kind;
+  logic [      NumChannels-1:0][               1:0] s_cfg_width;
+  logic [      NumChannels-1:0]                     s_cfg_src_increment;
+  logic [      NumChannels-1:0]                     s_cfg_dst_increment;
+  logic [      NumChannels-1:0][               1:0] s_cfg_priority;
+  logic [      NumChannels-1:0][              31:0] s_cfg_src_addr;
+  logic [      NumChannels-1:0][              31:0] s_cfg_dst_addr;
+  logic [      NumChannels-1:0][              31:0] s_cfg_byte_count;
+  logic [      NumChannels-1:0][               3:0] s_cfg_request;
+  logic [      NumChannels-1:0][               4:0] s_cfg_burst;
 
-  logic [2:0] s_fsm_d, s_fsm_q;
-  logic [31:0] s_xfer_cnt_d, s_xfer_cnt_q;
-  logic [31:0] s_src_addr_d, s_src_addr_q;
-  logic [31:0] s_dst_addr_d, s_dst_addr_q;
-  logic [1:0] s_wr_beat_d, s_wr_beat_q;
-  logic s_ctrl_stop_d, s_ctrl_stop_q;
-  logic        s_use_burst;
-  logic [ 1:0] s_chunk_len;
-  logic [31:0] s_chunk_words;
-  logic [31:0] s_remaining_words;
-  logic        s_read_trigger;
-  logic        s_write_trigger;
-  logic s_cmd_hdshk, s_rsp_hdshk, s_w_hdshk;
-  logic s_fifo_flush, s_fifo_push, s_fifo_pop;
-  logic s_fifo_full, s_fifo_empty;
-  logic [ 2:0] s_fifo_count;
-  logic [35:0] s_fifo_rdata;
-  logic        s_rsp_err;
-  logic        s_i2s_tx_stream;
-  logic        s_i2s_rx_stream;
-  logic        s_dvp_rx_stream;
-  logic        s_stream_rx_hdshk;
-  logic        s_stream_tx_hdshk;
+  logic [      NumChannels-1:0]                     s_busy_q;
+  logic [      NumChannels-1:0]                     s_suspended_q;
+  logic [      NumChannels-1:0]                     s_done_q;
+  logic [      NumChannels-1:0]                     s_aborted_q;
+  logic [      NumChannels-1:0]                     s_err_q;
+  logic [      NumChannels-1:0]                     s_stream_last_q;
+  logic [      NumChannels-1:0]                     s_abort_q;
+  logic [      NumChannels-1:0]                     s_suspend_req_q;
+  logic [      NumChannels-1:0]                     s_stream_tx_stop_q;
+  logic [      NumChannels-1:0]                     s_half_seen_q;
+  logic [      NumChannels-1:0]                     s_evt_done_q;
+  logic [      NumChannels-1:0]                     s_evt_half_q;
+  logic [      NumChannels-1:0]                     s_evt_err_q;
+  logic [      NumChannels-1:0][               2:0] s_kind_q;
+  logic [      NumChannels-1:0][               3:0] s_req_q;
+  logic [      NumChannels-1:0][               1:0] s_priority_q;
+  logic [      NumChannels-1:0][               4:0] s_burst_q;
+  logic [      NumChannels-1:0]                     s_src_increment_q;
+  logic [      NumChannels-1:0]                     s_dst_increment_q;
+  logic [      NumChannels-1:0][              31:0] s_src_base_q;
+  logic [      NumChannels-1:0][              31:0] s_dst_base_q;
+  logic [      NumChannels-1:0][              31:0] s_len_q;
+  logic [      NumChannels-1:0][              31:0] s_read_issued_q;
+  logic [      NumChannels-1:0][              31:0] s_write_issued_q;
+  logic [      NumChannels-1:0][              31:0] s_stream_accepted_q;
+  logic [      NumChannels-1:0][              31:0] s_bytes_done_q;
+  logic [      NumChannels-1:0][              63:0] s_stall_cycles_q;
+  logic [      NumChannels-1:0][               3:0] s_err_code_q;
+  logic [      NumChannels-1:0][               1:0] s_err_resp_q;
+  logic [      NumChannels-1:0]                     s_err_read_q;
+  logic [      NumChannels-1:0][              31:0] s_err_addr_q;
 
-  assign s_remaining_words = xferlen_i - s_xfer_cnt_q;
-  // verilog_format: off -- preserve reviewed column alignment
-  assign s_use_burst =
-      (mode_i == SFT_TRG) && srcincr_i && dstincr_i &&
-      (s_remaining_words >= 32'd4) &&
-      (s_src_addr_q[3:0] == 4'b0000) && (s_dst_addr_q[3:0] == 4'b0000) &&
-      `SOC_ADDR_SUPPORTS_INCR4(s_src_addr_q) &&
-      `SOC_ADDR_SUPPORTS_INCR4(s_src_addr_q + 32'd12) &&
-      `SOC_ADDR_SUPPORTS_INCR4(s_dst_addr_q) &&
-      `SOC_ADDR_SUPPORTS_INCR4(s_dst_addr_q + 32'd12);
-  // verilog_format: on
-  assign s_chunk_len = s_use_burst ? `RIB_LEN_INCR4 : `RIB_LEN_INCR1;
-  assign s_chunk_words = s_use_burst ? 32'd4 : 32'd1;
-  assign s_i2s_tx_stream = mode_i == HWT_I2S_TX_TRG;
-  assign s_i2s_rx_stream = mode_i == HWT_I2S_RX_TRG;
-  assign s_dvp_rx_stream = mode_i == HWT_DVP_RX_TRG;
+  logic [      NumChannels-1:0]                     s_fifo_flush;
+  logic [      NumChannels-1:0]                     s_fifo_push;
+  logic [      NumChannels-1:0]                     s_fifo_pop;
+  logic [      NumChannels-1:0]                     s_fifo_full;
+  logic [      NumChannels-1:0]                     s_fifo_empty;
+  logic [      NumChannels-1:0][FifoCountWidth-1:0] s_fifo_count;
+  logic [      NumChannels-1:0][              31:0] s_fifo_wdata;
+  logic [      NumChannels-1:0][              31:0] s_fifo_rdata;
 
-  assign i2s_tx_axis.tdata = s_fifo_rdata[31:0];
-  assign i2s_tx_axis.tkeep = '1;
-  assign i2s_tx_axis.tstrb = '1;
-  assign i2s_tx_axis.tlast = (s_xfer_cnt_q + 1'b1) >= xferlen_i;
-  assign i2s_tx_axis.tid = '0;
-  assign i2s_tx_axis.tdest = '0;
-  assign i2s_tx_axis.tuser = '0;
-  assign i2s_tx_axis.tvalid = (s_fsm_q == FSM_WR_DATA) && s_i2s_tx_stream &&
-                              !s_fifo_empty;
-  assign i2s_rx_axis.tready = (s_fsm_q == FSM_RD_RESP) && s_i2s_rx_stream &&
-                              !s_fifo_full;
-  assign dvp_rx_axis.tready = (s_fsm_q == FSM_RD_RESP) && s_dvp_rx_stream &&
-                             !s_fifo_full;
-  assign s_stream_tx_hdshk = i2s_tx_axis.tvalid && i2s_tx_axis.tready;
-  assign s_stream_rx_hdshk = (i2s_rx_axis.tvalid && i2s_rx_axis.tready) ||
-                             (dvp_rx_axis.tvalid && dvp_rx_axis.tready);
+  logic [                 15:0]                     s_req_ready;
+  logic [      NumChannels-1:0]                     s_start_valid;
+  logic [      NumChannels-1:0][               3:0] s_start_err_code;
 
-  always_comb begin
-    s_read_trigger = 1'b1;
-    unique case (mode_i)
-      HWT_I2S_RX_TRG:  s_read_trigger = hw_trg.i2s_rx_proc;
-      HWT_QSPI_RX_TRG: s_read_trigger = hw_trg.qspi_rx_proc;
-      HWT_UART_RX_TRG: s_read_trigger = hw_trg.uart_rx_proc;
-      HWT_I2C0_RX_TRG: s_read_trigger = hw_trg.i2c0_rx_proc;
-      HWT_I2C1_RX_TRG: s_read_trigger = hw_trg.i2c1_rx_proc;
-      default:         s_read_trigger = 1'b1;
-    endcase
+  logic [      NumChannels-1:0]                     s_read_candidate;
+  logic [      NumChannels-1:0][               4:0] s_read_candidate_beats;
+  logic [      NumChannels-1:0]                     s_write_candidate;
+  logic [      NumChannels-1:0][               4:0] s_write_candidate_beats;
+  logic [      NumChannels-1:0]                     s_read_rr_request;
+  logic [      NumChannels-1:0]                     s_write_rr_request;
+  logic [      NumChannels-1:0]                     s_read_rr_grant;
+  logic [      NumChannels-1:0]                     s_write_rr_grant;
+  logic [ChannelIndexWidth-1:0]                     s_read_rr_selected;
+  logic [ChannelIndexWidth-1:0]                     s_write_rr_selected;
+  logic                                             s_read_rr_valid;
+  logic                                             s_write_rr_valid;
+  logic [                  1:0]                     s_read_highest_priority;
+  logic [                  1:0]                     s_write_highest_priority;
+
+  logic                                             s_axi_read_start_valid;
+  logic                                             s_axi_read_start_ready;
+  logic [                 31:0]                     s_axi_read_start_addr;
+  logic [                  4:0]                     s_axi_read_start_beats;
+  logic                                             s_axi_read_start_fixed;
+  logic                                             s_axi_read_busy;
+  logic                                             s_axi_read_beat_valid;
+  logic                                             s_axi_read_beat_ready;
+  logic [                 31:0]                     s_axi_read_data;
+  logic [                  1:0]                     s_axi_read_resp;
+  logic                                             s_axi_read_last;
+  logic                                             s_axi_read_expected_last;
+  logic                                             s_axi_read_id_error;
+  logic                                             s_axi_read_done;
+
+  logic                                             s_axi_write_start_valid;
+  logic                                             s_axi_write_start_ready;
+  logic [                 31:0]                     s_axi_write_start_addr;
+  logic [                  4:0]                     s_axi_write_start_beats;
+  logic                                             s_axi_write_start_fixed;
+  logic                                             s_axi_write_busy;
+  logic                                             s_axi_write_data_valid;
+  logic                                             s_axi_write_data_ready;
+  logic [                 31:0]                     s_axi_write_data;
+  logic [                  3:0]                     s_axi_write_strb;
+  logic                                             s_axi_write_done;
+  logic [                  1:0]                     s_axi_write_resp;
+  logic                                             s_axi_write_id_error;
+
+  logic                                             s_read_owner_valid_q;
+  logic [ChannelIndexWidth-1:0]                     s_read_owner_q;
+  logic [                  4:0]                     s_read_beats_q;
+  logic [                  4:0]                     s_read_seen_q;
+  logic                                             s_read_err_q;
+  logic                                             s_write_owner_valid_q;
+  logic [ChannelIndexWidth-1:0]                     s_write_owner_q;
+  logic [                 31:0]                     s_write_bytes_q;
+
+  logic                                             s_i2s_tx_channel_valid;
+  logic [ChannelIndexWidth-1:0]                     s_i2s_tx_channel;
+  logic                                             s_i2s_rx_channel_valid;
+  logic [ChannelIndexWidth-1:0]                     s_i2s_rx_channel;
+  logic                                             s_dvp_rx_channel_valid;
+  logic [ChannelIndexWidth-1:0]                     s_dvp_rx_channel;
+  logic                                             s_i2s_tx_fire;
+  logic                                             s_i2s_rx_fire;
+  logic                                             s_dvp_rx_fire;
+  logic                                             s_stream_rx_keep_err;
+  logic [ChannelIndexWidth-1:0]                     s_stream_rx_err_channel;
+  logic [      NumChannels-1:0]                     s_progress;
+  logic [      NumChannels-1:0]                     s_read_owns_channel;
+  logic [      NumChannels-1:0]                     s_write_owns_channel;
+  logic [      NumChannels-1:0]                     s_stream_tx_valid;
+
+  logic                                             s_first_err_valid_q;
+  logic [ChannelIndexWidth-1:0]                     s_first_err_channel_q;
+  logic [                 31:0]                     s_first_err_stat_q;
+  logic [                 31:0]                     s_first_err_addr_q;
+
+  function automatic logic is_apb_address(input logic [31:0] addr_i);
+    is_apb_address = `SOC_ADDR_IS_APB4_PERIPH(addr_i) || `SOC_ADDR_IS_APB4_SYSTEM(addr_i);
+  endfunction
+
+  function automatic int unsigned min_unsigned(input int unsigned left_i,
+                                               input int unsigned right_i);
+    min_unsigned = (left_i < right_i) ? left_i : right_i;
+  endfunction
+
+  function automatic logic [31:0] channel_error_status(
+      input logic [3:0] error_code_i, input logic [1:0] response_i, input logic error_read_i,
+      input logic stream_last_i);
+    channel_error_status = {23'd0, stream_last_i, 1'b0, error_read_i, response_i, error_code_i};
+  endfunction
+
+`ifndef SYNTHESIS
+  initial begin
+    if ((AddrWidth != 32) || (DataWidth != 32) || (NumChannels < 2) ||
+        (MaxBurstBeats < 1) || (MaxBurstBeats > 16) || (FifoDepth < MaxBurstBeats) ||
+        ((FifoDepth & (FifoDepth - 1)) != 0)) begin
+      $fatal(1, "dma_core: MVP requires 32-bit AXI4, 2+ channels, and a power-of-two FIFO");
+    end
+  end
+`endif
+
+  for (genvar channel = 0; channel < NumChannels; channel++) begin : gen_channel_fifo
+    fifo #(
+        .DATA_WIDTH  (32),
+        .BUFFER_DEPTH(FifoDepth)
+    ) u_data_fifo (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .flush_i(s_fifo_flush[channel]),
+        .push_i (s_fifo_push[channel]),
+        .full_o (s_fifo_full[channel]),
+        .dat_i  (s_fifo_wdata[channel]),
+        .pop_i  (s_fifo_pop[channel]),
+        .empty_o(s_fifo_empty[channel]),
+        .dat_o  (s_fifo_rdata[channel]),
+        .cnt_o  (s_fifo_count[channel])
+    );
   end
 
-  always_comb begin
-    s_write_trigger = 1'b1;
-    unique case (mode_i)
-      HWT_I2S_TX_TRG:  s_write_trigger = hw_trg.i2s_tx_proc;
-      HWT_QSPI_TX_TRG: s_write_trigger = hw_trg.qspi_tx_proc;
-      HWT_UART_TX_TRG: s_write_trigger = hw_trg.uart_tx_proc;
-      HWT_I2C0_TX_TRG: s_write_trigger = hw_trg.i2c0_tx_proc;
-      HWT_I2C1_TX_TRG: s_write_trigger = hw_trg.i2c1_tx_proc;
-      default:         s_write_trigger = 1'b1;
-    endcase
-  end
-
-  assign rib.cmd_valid = ~s_ctrl_stop_q &&
-                         (((s_fsm_q == FSM_RD_CMD) && s_read_trigger) ||
-                          ((s_fsm_q == FSM_WR_CMD) && s_write_trigger));
-  assign rib.cmd_addr = s_fsm_q == FSM_WR_CMD ? s_dst_addr_q : s_src_addr_q;
-  assign rib.cmd_write = s_fsm_q == FSM_WR_CMD;
-  assign rib.cmd_len = s_chunk_len;
-  assign rib.w_valid = (s_fsm_q == FSM_WR_DATA) && !s_i2s_tx_stream &&
-                       ~s_fifo_empty && (s_fifo_count != 3'd0);
-  assign rib.wdata = s_fifo_rdata[31:0];
-  assign rib.wstrb = s_dvp_rx_stream ? s_fifo_rdata[35:32] : '1;
-  assign rib.wlast = s_wr_beat_q == s_chunk_len;
-  assign rib.rsp_ready = (s_fsm_q == FSM_RD_RESP) && !(s_i2s_rx_stream || s_dvp_rx_stream) ?
-                         (~s_fifo_full && (s_fifo_count != 3'd4)) :
-                         (s_fsm_q == FSM_WR_RESP);
-
-  assign s_cmd_hdshk = rib.cmd_valid && rib.cmd_ready;
-  assign s_rsp_hdshk = rib.rsp_valid && rib.rsp_ready;
-  assign s_w_hdshk = rib.w_valid && rib.w_ready;
-  assign s_rsp_err = s_rsp_hdshk && rib.resp_err;
-
-  assign s_fifo_flush = reset_i || start_i || s_rsp_err;
-  assign s_fifo_push = (s_i2s_rx_stream || s_dvp_rx_stream) ? s_stream_rx_hdshk :
-                       ((s_fsm_q == FSM_RD_RESP) && s_rsp_hdshk && ~rib.resp_err);
-  assign s_fifo_pop = s_i2s_tx_stream ? s_stream_tx_hdshk : ((s_fsm_q == FSM_WR_DATA) && s_w_hdshk);
-
-  fifo #(
-      .DATA_WIDTH  (36),
-      .BUFFER_DEPTH(4)
-  ) u_data_fifo (
-      .clk_i(clk_i),
-      .rst_n_i(rst_n_i),
-      .flush_i(s_fifo_flush),
-      .push_i(s_fifo_push),
-      .full_o(s_fifo_full),
-      .dat_i(s_i2s_rx_stream ? {4'b1111, i2s_rx_axis.tdata} :
-             s_dvp_rx_stream ? {dvp_rx_axis.tkeep, dvp_rx_axis.tdata} :
-             {4'b1111, rib.rdata}),
-      .pop_i(s_fifo_pop),
-      .empty_o(s_fifo_empty),
-      .dat_o(s_fifo_rdata),
-      .cnt_o(s_fifo_count)
+  round_robin_arbiter #(
+      .CLIENTS(NumChannels)
+  ) u_read_round_robin_arbiter (
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
+      .advance_i (s_axi_read_start_valid && s_axi_read_start_ready),
+      .request_i (s_read_rr_request),
+      .grant_o   (s_read_rr_grant),
+      .selected_o(s_read_rr_selected),
+      .valid_o   (s_read_rr_valid)
   );
 
-  assign fsm_o = s_fsm_q == FSM_IDLE ? 2'd0 : s_fsm_q == FSM_DONE ? 2'd2 : 2'd1;
+  round_robin_arbiter #(
+      .CLIENTS(NumChannels)
+  ) u_write_round_robin_arbiter (
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
+      .advance_i (s_axi_write_start_valid && s_axi_write_start_ready),
+      .request_i (s_write_rr_request),
+      .grant_o   (s_write_rr_grant),
+      .selected_o(s_write_rr_selected),
+      .valid_o   (s_write_rr_valid)
+  );
+
+  dma_axi4_master #(
+      .AddrWidth    (AddrWidth),
+      .DataWidth    (DataWidth),
+      .MaxBurstBeats(MaxBurstBeats)
+  ) u_dma_axi4_master (
+      .clk_i               (clk_i),
+      .rst_n_i             (rst_n_i),
+      .read_start_valid_i  (s_axi_read_start_valid),
+      .read_start_ready_o  (s_axi_read_start_ready),
+      .read_addr_i         (s_axi_read_start_addr),
+      .read_beats_i        (s_axi_read_start_beats),
+      .read_fixed_i        (s_axi_read_start_fixed),
+      .read_busy_o         (s_axi_read_busy),
+      .read_beat_valid_o   (s_axi_read_beat_valid),
+      .read_beat_ready_i   (s_axi_read_beat_ready),
+      .read_data_o         (s_axi_read_data),
+      .read_resp_o         (s_axi_read_resp),
+      .read_last_o         (s_axi_read_last),
+      .read_expected_last_o(s_axi_read_expected_last),
+      .read_id_error_o     (s_axi_read_id_error),
+      .read_done_o         (s_axi_read_done),
+      .write_start_valid_i (s_axi_write_start_valid),
+      .write_start_ready_o (s_axi_write_start_ready),
+      .write_addr_i        (s_axi_write_start_addr),
+      .write_beats_i       (s_axi_write_start_beats),
+      .write_fixed_i       (s_axi_write_start_fixed),
+      .write_busy_o        (s_axi_write_busy),
+      .write_data_valid_i  (s_axi_write_data_valid),
+      .write_data_ready_o  (s_axi_write_data_ready),
+      .write_data_i        (s_axi_write_data),
+      .write_strb_i        (s_axi_write_strb),
+      .write_done_o        (s_axi_write_done),
+      .write_resp_o        (s_axi_write_resp),
+      .write_id_error_o    (s_axi_write_id_error),
+      .axi4                (axi4)
+  );
 
   always_comb begin
-    s_fsm_d      = s_fsm_q;
-    s_xfer_cnt_d = s_xfer_cnt_q;
-    s_src_addr_d = s_src_addr_q;
-    s_dst_addr_d = s_dst_addr_q;
-    s_wr_beat_d  = s_wr_beat_q;
-    done_o       = 1'b0;
-    error_o      = 1'b0;
-    error_code_o = `RIB_RESP_OK;
-    error_addr_o = s_src_addr_q;
+    s_req_ready                       = '0;
+    s_req_ready[DMA_REQUEST_SOFTWARE] = 1'b1;
+    s_req_ready[DMA_REQUEST_I2S_TX]   = req.i2s_tx_proc;
+    s_req_ready[DMA_REQUEST_I2S_RX]   = req.i2s_rx_proc;
+    s_req_ready[DMA_REQUEST_QSPI_TX]  = req.qspi_tx_proc;
+    s_req_ready[DMA_REQUEST_QSPI_RX]  = req.qspi_rx_proc;
+    s_req_ready[DMA_REQUEST_UART_TX]  = req.uart_tx_proc;
+    s_req_ready[DMA_REQUEST_UART_RX]  = req.uart_rx_proc;
+    s_req_ready[DMA_REQUEST_I2C0_TX]  = req.i2c0_tx_proc;
+    s_req_ready[DMA_REQUEST_I2C0_RX]  = req.i2c0_rx_proc;
+    s_req_ready[DMA_REQUEST_I2C1_TX]  = req.i2c1_tx_proc;
+    s_req_ready[DMA_REQUEST_I2C1_RX]  = req.i2c1_rx_proc;
+    s_req_ready[DMA_REQUEST_DVP_RX]   = 1'b1;
+  end
+  assign request_status_o = s_req_ready;
 
-    if (reset_i) begin
-      s_fsm_d      = FSM_IDLE;
-      s_xfer_cnt_d = '0;
-      s_wr_beat_d  = '0;
+  always_comb begin
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      s_cfg_kind[channel]          = ch_cfg_i[(channel*32)+:3];
+      s_cfg_width[channel]         = ch_cfg_i[(channel*32)+4+:2];
+      s_cfg_src_increment[channel] = ch_cfg_i[(channel*32)+6];
+      s_cfg_dst_increment[channel] = ch_cfg_i[(channel*32)+7];
+      s_cfg_priority[channel]      = ch_cfg_i[(channel*32)+8+:2];
+      s_cfg_src_addr[channel]      = src_addr_i[(channel*32)+:32];
+      s_cfg_dst_addr[channel]      = dst_addr_i[(channel*32)+:32];
+      s_cfg_byte_count[channel]    = byte_count_i[(channel*32)+:32];
+      s_cfg_request[channel]       = request_sel_i[(channel*32)+:4];
+      s_cfg_burst[channel]         = burst_cfg_i[(channel*32)+:5];
+    end
+  end
+
+  always_comb begin
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      logic endpoint_busy;
+
+      endpoint_busy = 1'b0;
+      for (int unsigned other = 0; other < NumChannels; other++) begin
+        if ((other != channel) && s_busy_q[other]) begin
+          if ((s_cfg_kind[channel] == DMA_KIND_MM_TO_STREAM) &&
+              (s_kind_q[other] == DMA_KIND_MM_TO_STREAM) &&
+              (s_req_q[other] == DMA_REQUEST_I2S_TX)) begin
+            endpoint_busy = 1'b1;
+          end
+          if ((s_cfg_kind[channel] == DMA_KIND_STREAM_TO_MM) &&
+              (s_kind_q[other] == DMA_KIND_STREAM_TO_MM) &&
+              (s_req_q[other] == s_cfg_request[channel])) begin
+            endpoint_busy = 1'b1;
+          end
+        end
+      end
+
+      s_start_valid[channel]    = 1'b1;
+      s_start_err_code[channel] = DMA_ERROR_CONFIG;
+      if ((s_cfg_width[channel] != DMA_WIDTH_32) || (s_cfg_byte_count[channel] == 32'd0) ||
+          (s_cfg_byte_count[channel][1:0] != 2'b00) ||
+          (s_cfg_burst[channel] == 5'd0) ||
+          (s_cfg_burst[channel] > 5'(MaxBurstBeats))) begin
+        s_start_valid[channel] = 1'b0;
+        s_start_err_code[channel] = (s_cfg_byte_count[channel][1:0] != 2'b00)
+                                          ? DMA_ERROR_ALIGNMENT
+                                          : DMA_ERROR_CONFIG;
+      end else begin
+        unique case (s_cfg_kind[channel])
+          DMA_KIND_MM_TO_MM: begin
+            if ((s_cfg_src_addr[channel] == 32'd0) || (s_cfg_dst_addr[channel] == 32'd0) ||
+                (s_cfg_src_addr[channel][1:0] != 2'b00) ||
+                (s_cfg_dst_addr[channel][1:0] != 2'b00) ||
+                (s_cfg_request[channel] == DMA_REQUEST_I2S_TX) ||
+                (s_cfg_request[channel] == DMA_REQUEST_I2S_RX) ||
+                (s_cfg_request[channel] == DMA_REQUEST_DVP_RX)) begin
+              s_start_valid[channel] = 1'b0;
+              s_start_err_code[channel] =
+                  ((s_cfg_src_addr[channel][1:0] != 2'b00) ||
+                   (s_cfg_dst_addr[channel][1:0] != 2'b00))
+                      ? DMA_ERROR_ALIGNMENT
+                      : DMA_ERROR_CONFIG;
+            end
+          end
+          DMA_KIND_MM_TO_STREAM: begin
+            if ((s_cfg_src_addr[channel] == 32'd0) ||
+                (s_cfg_src_addr[channel][1:0] != 2'b00) ||
+                !s_cfg_src_increment[channel] ||
+                (s_cfg_request[channel] != DMA_REQUEST_I2S_TX) || endpoint_busy) begin
+              s_start_valid[channel] = 1'b0;
+              s_start_err_code[channel] = (s_cfg_src_addr[channel][1:0] != 2'b00)
+                                                ? DMA_ERROR_ALIGNMENT
+                                                : DMA_ERROR_CONFIG;
+            end
+          end
+          DMA_KIND_STREAM_TO_MM: begin
+            if ((s_cfg_dst_addr[channel] == 32'd0) ||
+                (s_cfg_dst_addr[channel][1:0] != 2'b00) ||
+                !s_cfg_dst_increment[channel] ||
+                ((s_cfg_request[channel] != DMA_REQUEST_I2S_RX) &&
+                 (s_cfg_request[channel] != DMA_REQUEST_DVP_RX)) ||
+                endpoint_busy) begin
+              s_start_valid[channel] = 1'b0;
+              s_start_err_code[channel] = (s_cfg_dst_addr[channel][1:0] != 2'b00)
+                                                ? DMA_ERROR_ALIGNMENT
+                                                : DMA_ERROR_CONFIG;
+            end
+          end
+          default: begin
+            s_start_valid[channel]    = 1'b0;
+            s_start_err_code[channel] = DMA_ERROR_CONFIG;
+          end
+        endcase
+      end
+      if (s_start_valid[channel] && s_cfg_src_increment[channel] &&
+          (s_cfg_kind[channel] != DMA_KIND_STREAM_TO_MM)) begin
+        if (({1'b0, s_cfg_src_addr[channel]} + {1'b0, s_cfg_byte_count[channel]} - 33'd4) >
+            33'h0_FFFF_FFFF) begin
+          s_start_valid[channel]    = 1'b0;
+          s_start_err_code[channel] = DMA_ERROR_CONFIG;
+        end
+      end
+      if (s_start_valid[channel] && s_cfg_dst_increment[channel] &&
+          (s_cfg_kind[channel] != DMA_KIND_MM_TO_STREAM)) begin
+        if (({1'b0, s_cfg_dst_addr[channel]} + {1'b0, s_cfg_byte_count[channel]} - 33'd4) >
+            33'h0_FFFF_FFFF) begin
+          s_start_valid[channel]    = 1'b0;
+          s_start_err_code[channel] = DMA_ERROR_CONFIG;
+        end
+      end
+    end
+  end
+
+  always_comb begin
+    s_read_candidate        = '0;
+    s_read_candidate_beats  = '0;
+    s_read_highest_priority = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      int unsigned        remaining_beats;
+      int unsigned        available_beats;
+      int unsigned        page_beats;
+      int unsigned        candidate_beats;
+      logic               force_single;
+      logic        [11:0] current_page_offset;
+
+      remaining_beats = 0;
+      available_beats = 0;
+      page_beats = 1;
+      candidate_beats = 0;
+      force_single = 1'b1;
+      current_page_offset = s_src_base_q[channel][11:0] +
+                            (s_src_increment_q[channel] ? s_read_issued_q[channel][11:0]
+                                                         : 12'd0);
+      if (s_busy_q[channel] && !s_suspended_q[channel] && !s_abort_q[channel] &&
+          !s_err_q[channel] &&
+          ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) ||
+           (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM)) &&
+          (s_read_issued_q[channel] < s_len_q[channel]) && !s_fifo_full[channel]) begin
+        remaining_beats = (s_len_q[channel] - s_read_issued_q[channel]) >> 2;
+        available_beats = FifoDepth - {{(32 - FifoCountWidth) {1'b0}}, s_fifo_count[channel]};
+        page_beats = (32'd4096 - {19'd0, 1'b0, current_page_offset}) >> 2;
+        force_single = !s_src_increment_q[channel] ||
+                       ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) &&
+                        !s_dst_increment_q[channel]) ||
+                       is_apb_address(s_src_base_q[channel]) ||
+            ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) && is_apb_address(s_dst_base_q[channel]));
+        candidate_beats = min_unsigned(remaining_beats, {27'd0, s_burst_q[channel]});
+        candidate_beats = min_unsigned(candidate_beats, MaxBurstBeats);
+        candidate_beats = min_unsigned(candidate_beats, page_beats);
+        if (force_single) begin
+          candidate_beats = min_unsigned(candidate_beats, 1);
+        end
+        if (((s_kind_q[channel] != DMA_KIND_MM_TO_MM) || s_src_increment_q[channel] ||
+             s_req_ready[s_req_q[channel]]) &&
+            (candidate_beats != 0) && (available_beats >= candidate_beats)) begin
+          s_read_candidate[channel]       = 1'b1;
+          s_read_candidate_beats[channel] = 5'(candidate_beats);
+          if (s_priority_q[channel] > s_read_highest_priority) begin
+            s_read_highest_priority = s_priority_q[channel];
+          end
+        end
+      end
+    end
+    s_read_rr_request = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      if (s_read_candidate[channel] && (s_priority_q[channel] == s_read_highest_priority)) begin
+        s_read_rr_request[channel] = 1'b1;
+      end
+    end
+  end
+
+  always_comb begin
+    s_write_candidate        = '0;
+    s_write_candidate_beats  = '0;
+    s_write_highest_priority = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      int unsigned        remaining_beats;
+      int unsigned        buffered_beats;
+      int unsigned        page_beats;
+      int unsigned        candidate_beats;
+      logic               force_single;
+      logic               read_owns_channel;
+      logic        [11:0] current_page_offset;
+
+      remaining_beats = 0;
+      buffered_beats = 0;
+      page_beats = 1;
+      candidate_beats = 0;
+      force_single = 1'b1;
+      read_owns_channel = s_read_owner_valid_q && (s_read_owner_q == ChannelIndexWidth'(channel));
+      current_page_offset = s_dst_base_q[channel][11:0] +
+                            (s_dst_increment_q[channel] ? s_write_issued_q[channel][11:0]
+                                                         : 12'd0);
+      if (s_busy_q[channel] && !s_suspended_q[channel] && !s_abort_q[channel] &&
+          !s_err_q[channel] && !read_owns_channel &&
+          ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) ||
+           (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM)) &&
+          (s_write_issued_q[channel] < s_len_q[channel]) && !s_fifo_empty[channel]) begin
+        remaining_beats = (s_len_q[channel] - s_write_issued_q[channel]) >> 2;
+        buffered_beats = {{(32 - FifoCountWidth) {1'b0}}, s_fifo_count[channel]};
+        page_beats = (32'd4096 - {19'd0, 1'b0, current_page_offset}) >> 2;
+        force_single = !s_dst_increment_q[channel] ||
+                       ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) &&
+                        !s_src_increment_q[channel]) ||
+                       is_apb_address(s_dst_base_q[channel]) ||
+            ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) && is_apb_address(s_src_base_q[channel]));
+        candidate_beats = min_unsigned(remaining_beats, {27'd0, s_burst_q[channel]});
+        candidate_beats = min_unsigned(candidate_beats, MaxBurstBeats);
+        candidate_beats = min_unsigned(candidate_beats, page_beats);
+        if (force_single) begin
+          candidate_beats = min_unsigned(candidate_beats, 1);
+        end
+        if ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) &&
+            (s_read_issued_q[channel] < s_len_q[channel]) &&
+            (buffered_beats < candidate_beats)) begin
+          // A source-page tail can be smaller than the destination burst.
+          // Drain that complete read burst before reserving the next one.
+          candidate_beats = buffered_beats;
+        end
+        if (((s_kind_q[channel] != DMA_KIND_MM_TO_MM) || s_dst_increment_q[channel] ||
+             s_req_ready[s_req_q[channel]]) &&
+            (candidate_beats != 0) && (buffered_beats >= candidate_beats)) begin
+          s_write_candidate[channel]       = 1'b1;
+          s_write_candidate_beats[channel] = 5'(candidate_beats);
+          if (s_priority_q[channel] > s_write_highest_priority) begin
+            s_write_highest_priority = s_priority_q[channel];
+          end
+        end
+      end
+    end
+    s_write_rr_request = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      if (s_write_candidate[channel] && (s_priority_q[channel] == s_write_highest_priority)) begin
+        s_write_rr_request[channel] = 1'b1;
+      end
+    end
+  end
+
+  always_comb begin
+    s_axi_read_start_valid = s_read_rr_valid && (|s_read_rr_grant) && !s_axi_read_busy;
+    s_axi_read_start_addr  = '0;
+    s_axi_read_start_beats = 5'd1;
+    s_axi_read_start_fixed = 1'b0;
+    if (s_read_rr_valid) begin
+      s_axi_read_start_addr = s_src_base_q[s_read_rr_selected] +
+                              (s_src_increment_q[s_read_rr_selected]
+                                   ? s_read_issued_q[s_read_rr_selected]
+                                   : 32'd0);
+      s_axi_read_start_beats = s_read_candidate_beats[s_read_rr_selected];
+      s_axi_read_start_fixed = !s_src_increment_q[s_read_rr_selected];
+    end
+
+    s_axi_write_start_valid = s_write_rr_valid && (|s_write_rr_grant) && !s_axi_write_busy;
+    s_axi_write_start_addr  = '0;
+    s_axi_write_start_beats = 5'd1;
+    s_axi_write_start_fixed = 1'b0;
+    if (s_write_rr_valid) begin
+      s_axi_write_start_addr = s_dst_base_q[s_write_rr_selected] +
+                               (s_dst_increment_q[s_write_rr_selected]
+                                    ? s_write_issued_q[s_write_rr_selected]
+                                    : 32'd0);
+      s_axi_write_start_beats = s_write_candidate_beats[s_write_rr_selected];
+      s_axi_write_start_fixed = !s_dst_increment_q[s_write_rr_selected];
+    end
+  end
+
+  always_comb begin
+    s_i2s_tx_channel_valid = 1'b0;
+    s_i2s_tx_channel       = '0;
+    s_i2s_rx_channel_valid = 1'b0;
+    s_i2s_rx_channel       = '0;
+    s_dvp_rx_channel_valid = 1'b0;
+    s_dvp_rx_channel       = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
+          (s_req_q[channel] == DMA_REQUEST_I2S_TX)) begin
+        s_i2s_tx_channel_valid = 1'b1;
+        s_i2s_tx_channel       = ChannelIndexWidth'(channel);
+      end
+      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
+          (s_req_q[channel] == DMA_REQUEST_I2S_RX)) begin
+        s_i2s_rx_channel_valid = 1'b1;
+        s_i2s_rx_channel       = ChannelIndexWidth'(channel);
+      end
+      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
+          (s_req_q[channel] == DMA_REQUEST_DVP_RX)) begin
+        s_dvp_rx_channel_valid = 1'b1;
+        s_dvp_rx_channel       = ChannelIndexWidth'(channel);
+      end
+    end
+  end
+
+  always_comb begin
+    i2s_tx_axis.tdata  = '0;
+    i2s_tx_axis.tkeep  = 4'hF;
+    i2s_tx_axis.tstrb  = 4'hF;
+    i2s_tx_axis.tlast  = 1'b0;
+    i2s_tx_axis.tid    = '0;
+    i2s_tx_axis.tdest  = '0;
+    i2s_tx_axis.tuser  = '0;
+    i2s_tx_axis.tvalid = 1'b0;
+    if (s_i2s_tx_channel_valid && !s_suspended_q[s_i2s_tx_channel] &&
+        !s_stream_tx_stop_q[s_i2s_tx_channel] &&
+        !s_fifo_empty[s_i2s_tx_channel]) begin
+      i2s_tx_axis.tdata = s_fifo_rdata[s_i2s_tx_channel];
+      i2s_tx_axis.tlast = (s_bytes_done_q[s_i2s_tx_channel] + WordBytes) >=
+                           s_len_q[s_i2s_tx_channel];
+      i2s_tx_axis.tvalid = 1'b1;
+    end
+
+    i2s_rx_axis.tready = s_i2s_rx_channel_valid &&
+                         !s_suspended_q[s_i2s_rx_channel] &&
+                         !s_abort_q[s_i2s_rx_channel] &&
+                         !s_err_q[s_i2s_rx_channel] &&
+                         !s_fifo_full[s_i2s_rx_channel] &&
+                         (s_stream_accepted_q[s_i2s_rx_channel] <
+                          s_len_q[s_i2s_rx_channel]);
+    dvp_rx_axis.tready = s_dvp_rx_channel_valid &&
+                         !s_suspended_q[s_dvp_rx_channel] &&
+                         !s_abort_q[s_dvp_rx_channel] &&
+                         !s_err_q[s_dvp_rx_channel] &&
+                         !s_fifo_full[s_dvp_rx_channel] &&
+                         (s_stream_accepted_q[s_dvp_rx_channel] <
+                          s_len_q[s_dvp_rx_channel]);
+  end
+
+  assign s_i2s_tx_fire = i2s_tx_axis.tvalid && i2s_tx_axis.tready;
+  assign s_i2s_rx_fire = i2s_rx_axis.tvalid && i2s_rx_axis.tready;
+  assign s_dvp_rx_fire = dvp_rx_axis.tvalid && dvp_rx_axis.tready;
+  assign s_stream_rx_keep_err =
+      (s_i2s_rx_fire && (i2s_rx_axis.tkeep != 4'hF)) ||
+      (s_dvp_rx_fire && (dvp_rx_axis.tkeep != 4'hF));
+  assign s_stream_rx_err_channel = s_i2s_rx_fire ? s_i2s_rx_channel : s_dvp_rx_channel;
+  assign s_axi_read_beat_ready = 1'b1;
+  assign s_axi_write_data_valid = s_write_owner_valid_q && !s_fifo_empty[s_write_owner_q];
+  assign s_axi_write_data = s_write_owner_valid_q ? s_fifo_rdata[s_write_owner_q] : 32'd0;
+  assign s_axi_write_strb = 4'hF;
+
+  always_comb begin
+    s_fifo_flush = '0;
+    s_fifo_push  = '0;
+    s_fifo_pop   = '0;
+    s_fifo_wdata = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      if (global_reset_i || channel_reset_i[channel]) begin
+        s_fifo_flush[channel] = 1'b1;
+      end
+      if ((s_abort_q[channel] || s_err_q[channel]) &&
+          !s_read_owns_channel[channel] && !s_write_owns_channel[channel] &&
+          ((s_kind_q[channel] != DMA_KIND_MM_TO_STREAM) ||
+           s_stream_tx_stop_q[channel] || !s_stream_tx_valid[channel])) begin
+        s_fifo_flush[channel] = 1'b1;
+      end
+    end
+
+    if (s_axi_read_beat_valid && s_read_owner_valid_q &&
+        (s_read_seen_q < s_read_beats_q) && !s_read_err_q &&
+        !s_abort_q[s_read_owner_q] && (s_axi_read_resp == `AXI4_RESP_OKAY) &&
+        !s_axi_read_id_error &&
+        (s_axi_read_last == s_axi_read_expected_last)) begin
+      s_fifo_push[s_read_owner_q]  = 1'b1;
+      s_fifo_wdata[s_read_owner_q] = s_axi_read_data;
+    end
+    if (s_axi_read_done && s_read_owner_valid_q &&
+        (s_read_err_q || (s_axi_read_resp != `AXI4_RESP_OKAY) ||
+         s_axi_read_id_error || (s_axi_read_last != s_axi_read_expected_last) ||
+         s_abort_q[s_read_owner_q])) begin
+      if ((s_kind_q[s_read_owner_q] != DMA_KIND_MM_TO_STREAM) ||
+          s_stream_tx_stop_q[s_read_owner_q] ||
+          !s_stream_tx_valid[s_read_owner_q]) begin
+        if (!s_write_owns_channel[s_read_owner_q]) begin
+          s_fifo_flush[s_read_owner_q] = 1'b1;
+        end
+      end
+    end
+
+    if (s_i2s_rx_fire && !s_stream_rx_keep_err) begin
+      s_fifo_push[s_i2s_rx_channel]  = 1'b1;
+      s_fifo_wdata[s_i2s_rx_channel] = i2s_rx_axis.tdata;
+    end
+    if (s_dvp_rx_fire && !s_stream_rx_keep_err) begin
+      s_fifo_push[s_dvp_rx_channel]  = 1'b1;
+      s_fifo_wdata[s_dvp_rx_channel] = dvp_rx_axis.tdata;
+    end
+    if (s_axi_write_data_valid && s_axi_write_data_ready && s_write_owner_valid_q) begin
+      s_fifo_pop[s_write_owner_q] = 1'b1;
+    end
+    if (s_i2s_tx_fire && s_i2s_tx_channel_valid) begin
+      s_fifo_pop[s_i2s_tx_channel] = 1'b1;
+    end
+    if (s_axi_write_done && s_write_owner_valid_q &&
+        ((s_axi_write_resp != `AXI4_RESP_OKAY) || s_axi_write_id_error ||
+         s_abort_q[s_write_owner_q] || s_err_q[s_write_owner_q])) begin
+      s_fifo_flush[s_write_owner_q] = 1'b1;
+    end
+  end
+
+  always_comb begin
+    s_progress = '0;
+    if (s_axi_read_start_valid && s_axi_read_start_ready) begin
+      s_progress[s_read_rr_selected] = 1'b1;
+    end
+    if (s_axi_read_beat_valid && s_read_owner_valid_q) begin
+      s_progress[s_read_owner_q] = 1'b1;
+    end
+    if (s_axi_write_start_valid && s_axi_write_start_ready) begin
+      s_progress[s_write_rr_selected] = 1'b1;
+    end
+    if (s_axi_write_data_valid && s_axi_write_data_ready && s_write_owner_valid_q) begin
+      s_progress[s_write_owner_q] = 1'b1;
+    end
+    if (s_axi_write_done && s_write_owner_valid_q) begin
+      s_progress[s_write_owner_q] = 1'b1;
+    end
+    if (s_i2s_tx_fire && s_i2s_tx_channel_valid) begin
+      s_progress[s_i2s_tx_channel] = 1'b1;
+    end
+    if (s_i2s_rx_fire && s_i2s_rx_channel_valid) begin
+      s_progress[s_i2s_rx_channel] = 1'b1;
+    end
+    if (s_dvp_rx_fire && s_dvp_rx_channel_valid) begin
+      s_progress[s_dvp_rx_channel] = 1'b1;
+    end
+  end
+
+  always_comb begin
+    s_read_owns_channel  = '0;
+    s_write_owns_channel = '0;
+    s_stream_tx_valid    = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      s_read_owns_channel[channel] = s_read_owner_valid_q &&
+                                     (s_read_owner_q == ChannelIndexWidth'(channel));
+      s_write_owns_channel[channel] = s_write_owner_valid_q &&
+                                      (s_write_owner_q == ChannelIndexWidth'(channel));
+      s_stream_tx_valid[channel] = s_i2s_tx_channel_valid &&
+                                   (s_i2s_tx_channel == ChannelIndexWidth'(channel)) &&
+                                   i2s_tx_axis.tvalid;
+    end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      s_busy_q              <= '0;
+      s_suspended_q         <= '0;
+      s_done_q              <= '0;
+      s_aborted_q           <= '0;
+      s_err_q               <= '0;
+      s_stream_last_q       <= '0;
+      s_abort_q             <= '0;
+      s_suspend_req_q       <= '0;
+      s_stream_tx_stop_q    <= '0;
+      s_half_seen_q         <= '0;
+      s_evt_done_q          <= '0;
+      s_evt_half_q          <= '0;
+      s_evt_err_q           <= '0;
+      s_kind_q              <= '0;
+      s_req_q               <= '0;
+      s_priority_q          <= '0;
+      s_burst_q             <= '0;
+      s_src_increment_q     <= '0;
+      s_dst_increment_q     <= '0;
+      s_src_base_q          <= '0;
+      s_dst_base_q          <= '0;
+      s_len_q               <= '0;
+      s_read_issued_q       <= '0;
+      s_write_issued_q      <= '0;
+      s_stream_accepted_q   <= '0;
+      s_bytes_done_q        <= '0;
+      s_stall_cycles_q      <= '0;
+      s_err_code_q          <= '0;
+      s_err_resp_q          <= '0;
+      s_err_read_q          <= '0;
+      s_err_addr_q          <= '0;
+      s_read_owner_valid_q  <= 1'b0;
+      s_read_owner_q        <= '0;
+      s_read_beats_q        <= '0;
+      s_read_seen_q         <= '0;
+      s_read_err_q          <= 1'b0;
+      s_write_owner_valid_q <= 1'b0;
+      s_write_owner_q       <= '0;
+      s_write_bytes_q       <= '0;
+      s_first_err_valid_q   <= 1'b0;
+      s_first_err_channel_q <= '0;
+      s_first_err_stat_q    <= '0;
+      s_first_err_addr_q    <= '0;
+      xpi_xfer_done_o       <= 1'b0;
     end else begin
-      unique case (s_fsm_q)
-        FSM_IDLE: begin
-          if (start_i) begin
-            s_src_addr_d = srcaddr_i;
-            s_dst_addr_d = dstaddr_i;
-            s_xfer_cnt_d = '0;
-            s_wr_beat_d = '0;
-            s_fsm_d      = xferlen_i == 32'd0 ? FSM_DONE :
-                           (s_i2s_rx_stream || s_dvp_rx_stream) ? FSM_RD_RESP : FSM_RD_CMD;
-          end
+      xpi_xfer_done_o <= 1'b0;
+      if (global_reset_i) begin
+        s_busy_q              <= '0;
+        s_suspended_q         <= '0;
+        s_done_q              <= '0;
+        s_aborted_q           <= '0;
+        s_err_q               <= '0;
+        s_stream_last_q       <= '0;
+        s_abort_q             <= '0;
+        s_suspend_req_q       <= '0;
+        s_stream_tx_stop_q    <= '0;
+        s_half_seen_q         <= '0;
+        s_evt_done_q          <= '0;
+        s_evt_half_q          <= '0;
+        s_evt_err_q           <= '0;
+        s_read_issued_q       <= '0;
+        s_write_issued_q      <= '0;
+        s_stream_accepted_q   <= '0;
+        s_bytes_done_q        <= '0;
+        s_stall_cycles_q      <= '0;
+        s_err_code_q          <= '0;
+        s_err_resp_q          <= '0;
+        s_err_read_q          <= '0;
+        s_err_addr_q          <= '0;
+        s_read_owner_valid_q  <= 1'b0;
+        s_read_err_q          <= 1'b0;
+        s_write_owner_valid_q <= 1'b0;
+        s_first_err_valid_q   <= 1'b0;
+        s_first_err_channel_q <= '0;
+        s_first_err_stat_q    <= '0;
+        s_first_err_addr_q    <= '0;
+      end else begin
+        if (global_error_clear_i) begin
+          s_first_err_valid_q   <= 1'b0;
+          s_first_err_channel_q <= '0;
+          s_first_err_stat_q    <= '0;
+          s_first_err_addr_q    <= '0;
         end
-        FSM_RD_CMD: begin
-          if (s_cmd_hdshk) begin
-            s_fsm_d = FSM_RD_RESP;
+
+        for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+          if (event_clear_i[channel*3]) begin
+            s_evt_done_q[channel] <= 1'b0;
           end
-        end
-        FSM_RD_RESP: begin
-          if ((s_i2s_rx_stream || s_dvp_rx_stream) && s_stream_rx_hdshk) begin
-            s_wr_beat_d = '0;
-            s_fsm_d     = FSM_WR_CMD;
-          end else if (s_rsp_hdshk) begin
-            if (rib.resp_err) begin
-              s_fsm_d      = FSM_IDLE;
-              error_o      = 1'b1;
-              error_code_o = rib.resp_code;
-              error_addr_o = s_src_addr_q + {28'd0, rib.rsp_beat, 2'b00};
-            end else if (rib.rsp_last) begin
-              s_wr_beat_d = '0;
-              s_fsm_d     = s_i2s_tx_stream ? FSM_WR_DATA : FSM_WR_CMD;
-            end
+          if (event_clear_i[(channel*3)+1]) begin
+            s_evt_half_q[channel] <= 1'b0;
           end
-        end
-        FSM_WR_CMD: begin
-          if (s_cmd_hdshk) begin
-            s_fsm_d = FSM_WR_DATA;
+          if (event_clear_i[(channel*3)+2]) begin
+            s_evt_err_q[channel] <= 1'b0;
           end
-        end
-        FSM_WR_DATA: begin
-          if (s_i2s_tx_stream && s_stream_tx_hdshk) begin
-            s_xfer_cnt_d = s_xfer_cnt_q + 1'b1;
-            if (srcincr_i) s_src_addr_d = s_src_addr_q + 32'd4;
-            if ((s_xfer_cnt_q + 1'b1) >= xferlen_i) begin
-              s_fsm_d = FSM_DONE;
-            end else begin
-              s_fsm_d = FSM_RD_CMD;
-            end
-          end else if (s_w_hdshk) begin
-            if (rib.wlast) begin
-              s_fsm_d = FSM_WR_RESP;
-            end else begin
-              s_wr_beat_d = s_wr_beat_q + 1'b1;
-            end
-          end
-        end
-        FSM_WR_RESP: begin
-          if (s_rsp_hdshk) begin
-            if (rib.resp_err) begin
-              s_fsm_d      = FSM_IDLE;
-              error_o      = 1'b1;
-              error_code_o = rib.resp_code;
-              error_addr_o = s_dst_addr_q + {28'd0, rib.rsp_beat, 2'b00};
-            end else begin
-              s_xfer_cnt_d = s_xfer_cnt_q + s_chunk_words;
-              if (srcincr_i) s_src_addr_d = s_src_addr_q + (s_chunk_words << 2);
-              if (dstincr_i) s_dst_addr_d = s_dst_addr_q + (s_chunk_words << 2);
-              if ((s_xfer_cnt_q + s_chunk_words) >= xferlen_i) begin
-                s_fsm_d = FSM_DONE;
+          if (channel_reset_i[channel]) begin
+            s_busy_q[channel]            <= 1'b0;
+            s_suspended_q[channel]       <= 1'b0;
+            s_done_q[channel]            <= 1'b0;
+            s_aborted_q[channel]         <= 1'b0;
+            s_err_q[channel]             <= 1'b0;
+            s_stream_last_q[channel]     <= 1'b0;
+            s_abort_q[channel]           <= 1'b0;
+            s_suspend_req_q[channel]     <= 1'b0;
+            s_stream_tx_stop_q[channel]  <= 1'b0;
+            s_half_seen_q[channel]       <= 1'b0;
+            s_evt_done_q[channel]        <= 1'b0;
+            s_evt_half_q[channel]        <= 1'b0;
+            s_evt_err_q[channel]         <= 1'b0;
+            s_read_issued_q[channel]     <= '0;
+            s_write_issued_q[channel]    <= '0;
+            s_stream_accepted_q[channel] <= '0;
+            s_bytes_done_q[channel]      <= '0;
+            s_stall_cycles_q[channel]    <= '0;
+            s_err_code_q[channel]        <= DMA_ERROR_NONE;
+            s_err_resp_q[channel]        <= '0;
+            s_err_read_q[channel]        <= 1'b0;
+            s_err_addr_q[channel]        <= '0;
+          end else begin
+            if (start_i[channel] && !s_busy_q[channel]) begin
+              s_done_q[channel]            <= 1'b0;
+              s_aborted_q[channel]         <= 1'b0;
+              s_err_q[channel]             <= 1'b0;
+              s_stream_last_q[channel]     <= 1'b0;
+              s_abort_q[channel]           <= 1'b0;
+              s_suspend_req_q[channel]     <= 1'b0;
+              s_stream_tx_stop_q[channel]  <= 1'b0;
+              s_half_seen_q[channel]       <= 1'b0;
+              s_evt_done_q[channel]        <= 1'b0;
+              s_evt_half_q[channel]        <= 1'b0;
+              s_evt_err_q[channel]         <= 1'b0;
+              s_read_issued_q[channel]     <= '0;
+              s_write_issued_q[channel]    <= '0;
+              s_stream_accepted_q[channel] <= '0;
+              s_bytes_done_q[channel]      <= '0;
+              s_stall_cycles_q[channel]    <= '0;
+              s_err_resp_q[channel]        <= '0;
+              s_err_read_q[channel]        <= 1'b0;
+              if (s_start_valid[channel]) begin
+                s_busy_q[channel]          <= 1'b1;
+                s_kind_q[channel]          <= s_cfg_kind[channel];
+                s_req_q[channel]           <= s_cfg_request[channel];
+                s_priority_q[channel]      <= s_cfg_priority[channel];
+                s_burst_q[channel]         <= s_cfg_burst[channel];
+                s_src_increment_q[channel] <= s_cfg_src_increment[channel];
+                s_dst_increment_q[channel] <= s_cfg_dst_increment[channel];
+                s_src_base_q[channel]      <= s_cfg_src_addr[channel];
+                s_dst_base_q[channel]      <= s_cfg_dst_addr[channel];
+                s_len_q[channel]           <= s_cfg_byte_count[channel];
+                s_err_code_q[channel]      <= DMA_ERROR_NONE;
+                s_err_addr_q[channel]      <= '0;
               end else begin
-                s_fsm_d = (s_i2s_rx_stream || s_dvp_rx_stream) ? FSM_RD_RESP : FSM_RD_CMD;
+                s_busy_q[channel]     <= 1'b0;
+                s_err_q[channel]      <= 1'b1;
+                s_evt_err_q[channel]  <= 1'b1;
+                s_err_code_q[channel] <= s_start_err_code[channel];
+                s_err_addr_q[channel] <= s_cfg_src_addr[channel];
+                if (!s_first_err_valid_q) begin
+                  s_first_err_valid_q <= 1'b1;
+                  s_first_err_channel_q <= ChannelIndexWidth'(channel);
+                  s_first_err_stat_q <= channel_error_status(
+                      s_start_err_code[channel], 2'b00, 1'b0, 1'b0
+                  );
+                  s_first_err_addr_q <= s_cfg_src_addr[channel];
+                end
+              end
+            end
+            if (suspend_i[channel] && s_busy_q[channel] && !s_abort_q[channel]) begin
+              s_suspend_req_q[channel] <= 1'b1;
+            end
+            if (resume_i[channel] && s_busy_q[channel] && !s_abort_q[channel]) begin
+              s_suspended_q[channel]      <= 1'b0;
+              s_suspend_req_q[channel]    <= 1'b0;
+              s_stream_tx_stop_q[channel] <= 1'b0;
+            end
+            if (abort_i[channel] && s_busy_q[channel]) begin
+              s_abort_q[channel]       <= 1'b1;
+              s_suspended_q[channel]   <= 1'b0;
+              s_suspend_req_q[channel] <= 1'b0;
+              if ((s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
+                  (!s_stream_tx_valid[channel] ||
+                   ((s_i2s_tx_channel == ChannelIndexWidth'(channel)) &&
+                    s_i2s_tx_fire))) begin
+                s_stream_tx_stop_q[channel] <= 1'b1;
+              end
+            end
+            if (s_busy_q[channel] && !s_suspended_q[channel] && !s_progress[channel]) begin
+              s_stall_cycles_q[channel] <= s_stall_cycles_q[channel] + 1'b1;
+            end
+          end
+        end
+
+        if (s_axi_read_start_valid && s_axi_read_start_ready) begin
+          s_read_owner_valid_q <= 1'b1;
+          s_read_owner_q <= s_read_rr_selected;
+          s_read_beats_q <= s_read_candidate_beats[s_read_rr_selected];
+          s_read_seen_q <= '0;
+          s_read_err_q <= 1'b0;
+          s_read_issued_q[s_read_rr_selected] <=
+              s_read_issued_q[s_read_rr_selected] +
+              ({27'd0, s_read_candidate_beats[s_read_rr_selected]} << 2);
+        end
+
+        if (s_axi_read_beat_valid && s_read_owner_valid_q) begin
+          s_read_seen_q <= s_read_seen_q + 1'b1;
+          if ((s_axi_read_resp != `AXI4_RESP_OKAY) || s_axi_read_id_error ||
+              (s_axi_read_last != s_axi_read_expected_last)) begin
+            s_read_err_q <= 1'b1;
+            s_err_q[s_read_owner_q] <= 1'b1;
+            s_evt_err_q[s_read_owner_q] <= 1'b1;
+            s_err_code_q[s_read_owner_q] <=
+                ((s_axi_read_resp != `AXI4_RESP_OKAY) ? DMA_ERROR_AXI_READ
+                                                       : DMA_ERROR_AXI_PROTOCOL);
+            s_err_resp_q[s_read_owner_q] <= s_axi_read_resp;
+            s_err_read_q[s_read_owner_q] <= 1'b1;
+            s_err_addr_q[s_read_owner_q] <= s_src_base_q[s_read_owner_q] +
+                                              (s_src_increment_q[s_read_owner_q]
+                                                   ? ({27'd0, s_read_seen_q} << 2)
+                                                   : 32'd0);
+            if (!s_first_err_valid_q) begin
+              s_first_err_valid_q <= 1'b1;
+              s_first_err_channel_q <= s_read_owner_q;
+              s_first_err_stat_q <= channel_error_status(
+                  ((s_axi_read_resp != `AXI4_RESP_OKAY) ? DMA_ERROR_AXI_READ
+                                                         : DMA_ERROR_AXI_PROTOCOL),
+                  s_axi_read_resp,
+                  1'b1,
+                  1'b0
+              );
+              s_first_err_addr_q <= s_src_base_q[s_read_owner_q] +
+                                      (s_src_increment_q[s_read_owner_q]
+                                           ? ({27'd0, s_read_seen_q} << 2)
+                                           : 32'd0);
+            end
+          end
+        end
+
+        if (s_axi_read_done && s_read_owner_valid_q) begin
+          if (s_read_err_q || (s_axi_read_resp != `AXI4_RESP_OKAY) ||
+              s_axi_read_id_error || (s_axi_read_last != s_axi_read_expected_last)) begin
+            s_suspend_req_q[s_read_owner_q] <= 1'b0;
+            s_abort_q[s_read_owner_q]       <= 1'b0;
+            if ((s_kind_q[s_read_owner_q] == DMA_KIND_MM_TO_STREAM) &&
+                (!s_stream_tx_valid[s_read_owner_q] ||
+                 ((s_i2s_tx_channel == s_read_owner_q) && s_i2s_tx_fire))) begin
+              s_stream_tx_stop_q[s_read_owner_q] <= 1'b1;
+            end
+          end else if (s_abort_q[s_read_owner_q]) begin
+            s_suspend_req_q[s_read_owner_q] <= 1'b0;
+          end
+          s_read_owner_valid_q <= 1'b0;
+        end
+
+        if (s_axi_write_start_valid && s_axi_write_start_ready) begin
+          s_write_owner_valid_q <= 1'b1;
+          s_write_owner_q <= s_write_rr_selected;
+          s_write_bytes_q <= {27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2;
+          s_write_issued_q[s_write_rr_selected] <=
+              s_write_issued_q[s_write_rr_selected] +
+              ({27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2);
+        end
+
+        if (s_axi_write_done && s_write_owner_valid_q) begin
+          s_write_owner_valid_q <= 1'b0;
+          if ((s_axi_write_resp != `AXI4_RESP_OKAY) || s_axi_write_id_error) begin
+            s_err_q[s_write_owner_q] <= 1'b1;
+            s_evt_err_q[s_write_owner_q] <= 1'b1;
+            s_err_code_q[s_write_owner_q] <=
+                ((s_axi_write_resp != `AXI4_RESP_OKAY) ? DMA_ERROR_AXI_WRITE
+                                                        : DMA_ERROR_AXI_PROTOCOL);
+            s_err_resp_q[s_write_owner_q] <= s_axi_write_resp;
+            s_err_read_q[s_write_owner_q] <= 1'b0;
+            s_err_addr_q[s_write_owner_q] <= s_dst_base_q[s_write_owner_q] +
+                                               (s_dst_increment_q[s_write_owner_q]
+                                                    ? (s_write_issued_q[s_write_owner_q] -
+                                                       s_write_bytes_q)
+                                                    : 32'd0);
+            if (!s_first_err_valid_q) begin
+              s_first_err_valid_q <= 1'b1;
+              s_first_err_channel_q <= s_write_owner_q;
+              s_first_err_stat_q <= channel_error_status(
+                  ((s_axi_write_resp != `AXI4_RESP_OKAY) ? DMA_ERROR_AXI_WRITE
+                                                          : DMA_ERROR_AXI_PROTOCOL),
+                  s_axi_write_resp,
+                  1'b0,
+                  1'b0
+              );
+              s_first_err_addr_q <= s_dst_base_q[s_write_owner_q] +
+                                      (s_dst_increment_q[s_write_owner_q]
+                                           ? (s_write_issued_q[s_write_owner_q] -
+                                              s_write_bytes_q)
+                                           : 32'd0);
+            end
+          end else if (s_err_q[s_write_owner_q]) begin
+            s_suspend_req_q[s_write_owner_q] <= 1'b0;
+          end else if (s_abort_q[s_write_owner_q]) begin
+            s_suspend_req_q[s_write_owner_q] <= 1'b0;
+          end else begin
+            s_bytes_done_q[s_write_owner_q] <= s_bytes_done_q[s_write_owner_q] + s_write_bytes_q;
+            if (!s_half_seen_q[s_write_owner_q] &&
+                ((s_bytes_done_q[s_write_owner_q] + s_write_bytes_q) >=
+                 (s_len_q[s_write_owner_q] >> 1))) begin
+              s_half_seen_q[s_write_owner_q] <= 1'b1;
+              s_evt_half_q[s_write_owner_q]  <= 1'b1;
+            end
+            if ((s_bytes_done_q[s_write_owner_q] + s_write_bytes_q) >=
+                s_len_q[s_write_owner_q]) begin
+              s_busy_q[s_write_owner_q]     <= 1'b0;
+              s_done_q[s_write_owner_q]     <= 1'b1;
+              s_evt_done_q[s_write_owner_q] <= 1'b1;
+              if ((s_req_q[s_write_owner_q] == DMA_REQUEST_QSPI_TX) ||
+                  (s_req_q[s_write_owner_q] == DMA_REQUEST_QSPI_RX)) begin
+                xpi_xfer_done_o <= 1'b1;
               end
             end
           end
         end
-        FSM_DONE: begin
-          done_o  = 1'b1;
-          s_fsm_d = FSM_IDLE;
+
+        if (s_stream_rx_keep_err) begin
+          s_err_q[s_stream_rx_err_channel]      <= 1'b1;
+          s_evt_err_q[s_stream_rx_err_channel]  <= 1'b1;
+          s_err_code_q[s_stream_rx_err_channel] <= DMA_ERROR_STREAM;
+          s_err_resp_q[s_stream_rx_err_channel] <= '0;
+          s_err_read_q[s_stream_rx_err_channel] <= 1'b1;
+          s_err_addr_q[s_stream_rx_err_channel] <= s_dst_base_q[s_stream_rx_err_channel];
+          if (!s_first_err_valid_q) begin
+            s_first_err_valid_q   <= 1'b1;
+            s_first_err_channel_q <= s_stream_rx_err_channel;
+            s_first_err_stat_q    <= channel_error_status(DMA_ERROR_STREAM, 2'b00, 1'b1, 1'b0);
+            s_first_err_addr_q    <= s_dst_base_q[s_stream_rx_err_channel];
+          end
+        end else begin
+          if (s_i2s_rx_fire) begin
+            s_stream_accepted_q[s_i2s_rx_channel] <=
+                s_stream_accepted_q[s_i2s_rx_channel] + WordBytes;
+            if (i2s_rx_axis.tlast) begin
+              s_stream_last_q[s_i2s_rx_channel] <= 1'b1;
+            end
+          end
+          if (s_dvp_rx_fire) begin
+            s_stream_accepted_q[s_dvp_rx_channel] <=
+                s_stream_accepted_q[s_dvp_rx_channel] + WordBytes;
+            if (dvp_rx_axis.tlast) begin
+              s_stream_last_q[s_dvp_rx_channel] <= 1'b1;
+            end
+          end
         end
-        default: s_fsm_d = FSM_IDLE;
-      endcase
+
+        if (s_i2s_tx_fire && s_i2s_tx_channel_valid) begin
+          if (s_abort_q[s_i2s_tx_channel] || s_err_q[s_i2s_tx_channel] ||
+              s_suspend_req_q[s_i2s_tx_channel]) begin
+            s_stream_tx_stop_q[s_i2s_tx_channel] <= 1'b1;
+            if (s_suspend_req_q[s_i2s_tx_channel] && !s_abort_q[s_i2s_tx_channel] &&
+                !s_err_q[s_i2s_tx_channel]) begin
+              s_suspended_q[s_i2s_tx_channel]   <= 1'b1;
+              s_suspend_req_q[s_i2s_tx_channel] <= 1'b0;
+            end
+          end else begin
+            s_bytes_done_q[s_i2s_tx_channel] <= s_bytes_done_q[s_i2s_tx_channel] + WordBytes;
+            if (!s_half_seen_q[s_i2s_tx_channel] &&
+                ((s_bytes_done_q[s_i2s_tx_channel] + WordBytes) >=
+                 (s_len_q[s_i2s_tx_channel] >> 1))) begin
+              s_half_seen_q[s_i2s_tx_channel] <= 1'b1;
+              s_evt_half_q[s_i2s_tx_channel]  <= 1'b1;
+            end
+            if ((s_bytes_done_q[s_i2s_tx_channel] + WordBytes) >= s_len_q[s_i2s_tx_channel]) begin
+              s_busy_q[s_i2s_tx_channel]           <= 1'b0;
+              s_done_q[s_i2s_tx_channel]           <= 1'b1;
+              s_evt_done_q[s_i2s_tx_channel]       <= 1'b1;
+              s_stream_tx_stop_q[s_i2s_tx_channel] <= 1'b1;
+            end
+          end
+        end
+
+        for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+          if (s_busy_q[channel] && s_suspend_req_q[channel] && !s_abort_q[channel] &&
+              !s_read_owns_channel[channel] && !s_write_owns_channel[channel] &&
+              (!s_stream_tx_valid[channel] || s_stream_tx_stop_q[channel])) begin
+            s_suspended_q[channel]   <= 1'b1;
+            s_suspend_req_q[channel] <= 1'b0;
+            if (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) begin
+              s_stream_tx_stop_q[channel] <= 1'b1;
+            end
+          end
+          if (s_busy_q[channel] && s_abort_q[channel] && !s_read_owns_channel[channel] &&
+              !s_write_owns_channel[channel]) begin
+            if ((s_kind_q[channel] != DMA_KIND_MM_TO_STREAM) ||
+                s_stream_tx_stop_q[channel] || !s_stream_tx_valid[channel]) begin
+              s_busy_q[channel]           <= 1'b0;
+              s_aborted_q[channel]        <= 1'b1;
+              s_abort_q[channel]          <= 1'b0;
+              s_suspend_req_q[channel]    <= 1'b0;
+              s_stream_tx_stop_q[channel] <= 1'b1;
+              s_err_code_q[channel]       <= DMA_ERROR_ABORT;
+            end
+          end
+          if (s_busy_q[channel] && s_err_q[channel] && !s_read_owns_channel[channel] &&
+              !s_write_owns_channel[channel] &&
+              ((s_kind_q[channel] != DMA_KIND_MM_TO_STREAM) ||
+               s_stream_tx_stop_q[channel] || !s_stream_tx_valid[channel])) begin
+            s_busy_q[channel]           <= 1'b0;
+            s_abort_q[channel]          <= 1'b0;
+            s_suspend_req_q[channel]    <= 1'b0;
+            s_stream_tx_stop_q[channel] <= 1'b1;
+          end
+        end
+      end
     end
   end
 
-  dffr #(
-      .DATA_WIDTH(3)
-  ) u_fsm_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_fsm_d),
-      .dat_o  (s_fsm_q)
-  );
-  dffr #(
-      .DATA_WIDTH(32)
-  ) u_xfer_cnt_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_xfer_cnt_d),
-      .dat_o  (s_xfer_cnt_q)
-  );
-  dffr #(
-      .DATA_WIDTH(32)
-  ) u_src_addr_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_src_addr_d),
-      .dat_o  (s_src_addr_q)
-  );
-  dffr #(
-      .DATA_WIDTH(32)
-  ) u_dst_addr_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_dst_addr_d),
-      .dat_o  (s_dst_addr_q)
-  );
-  dffr #(
-      .DATA_WIDTH(2)
-  ) u_wr_beat_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_wr_beat_d),
-      .dat_o  (s_wr_beat_q)
-  );
-
   always_comb begin
-    s_ctrl_stop_d = s_ctrl_stop_q;
-    if (stop_i) s_ctrl_stop_d = ~s_ctrl_stop_q;
-    if (reset_i) s_ctrl_stop_d = 1'b0;
+    busy_o            = s_busy_q;
+    suspended_o       = s_suspended_q;
+    done_o            = s_done_q;
+    aborted_o         = s_aborted_q;
+    error_o           = s_err_q;
+    stream_last_o     = s_stream_last_q;
+    event_status_o    = '0;
+    error_status_o    = '0;
+    error_addr_o      = '0;
+    current_src_o     = '0;
+    current_dst_o     = '0;
+    remaining_o       = '0;
+    bytes_done_o      = '0;
+    stall_cycles_lo_o = '0;
+    stall_cycles_hi_o = '0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      event_status_o[(channel*3)+:3] = {
+        s_evt_err_q[channel], s_evt_half_q[channel], s_evt_done_q[channel]
+      };
+      error_status_o[(channel*32)+:32] = channel_error_status(
+        s_err_code_q[channel],
+        s_err_resp_q[channel],
+        s_err_read_q[channel],
+        s_stream_last_q[channel]
+      );
+      error_addr_o[(channel*32)+:32] = s_err_addr_q[channel];
+      current_src_o[(channel * 32) +: 32] = s_src_base_q[channel] +
+                                             (s_src_increment_q[channel]
+                                                  ? s_read_issued_q[channel]
+                                                  : 32'd0);
+      current_dst_o[(channel * 32) +: 32] = s_dst_base_q[channel] +
+                                             (s_dst_increment_q[channel]
+                                                  ? s_write_issued_q[channel]
+                                                  : 32'd0);
+      remaining_o[(channel*32)+:32] = s_len_q[channel] - s_bytes_done_q[channel];
+      bytes_done_o[(channel*32)+:32] = s_bytes_done_q[channel];
+      stall_cycles_lo_o[(channel*32)+:32] = s_stall_cycles_q[channel][31:0];
+      stall_cycles_hi_o[(channel*32)+:32] = s_stall_cycles_q[channel][63:32];
+    end
   end
-  dffr #(
-      .DATA_WIDTH(1)
-  ) u_ctrl_stop_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_ctrl_stop_d),
-      .dat_o  (s_ctrl_stop_q)
-  );
 
+  assign first_error_valid_o   = s_first_err_valid_q;
+  assign first_error_channel_o = s_first_err_channel_q;
+  assign first_error_status_o  = s_first_err_stat_q;
+  assign first_error_addr_o    = s_first_err_addr_q;
 endmodule

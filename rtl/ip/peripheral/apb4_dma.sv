@@ -5,323 +5,157 @@
 //             http://license.coscl.org.cn/MulanPSL2
 // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 // EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef APB4_DMA_DEF_SV
-`define APB4_DMA_DEF_SV
-
-// verilog_format: off -- preserve reviewed column alignment
-`define APB4_DMA_MODE         8'h00
-`define APB4_DMA_SRCADDR      8'h04
-`define APB4_DMA_SRCINCR      8'h08
-`define APB4_DMA_DSTADDR      8'h0C
-`define APB4_DMA_DSTINCR      8'h10
-`define APB4_DMA_XFERLEN      8'h14
-`define APB4_DMA_START        8'h18
-`define APB4_DMA_STOP         8'h1C
-`define APB4_DMA_RESET        8'h20
-`define APB4_DMA_STATUS       8'h24
-`define APB4_DMA_FSM          8'h28
-`define APB4_DMA_ERROR_STATUS 8'h2C
-`define APB4_DMA_ERROR_ADDR   8'h30
-// verilog_format: on
-
-interface dma_hw_trg_if ();
-  logic i2s_tx_proc;
-  logic i2s_rx_proc;
-  logic qspi_tx_proc;
-  logic qspi_rx_proc;
-  logic uart_tx_proc;
-  logic uart_rx_proc;
-  logic i2c0_tx_proc;
-  logic i2c0_rx_proc;
-  logic i2c1_tx_proc;
-  logic i2c1_rx_proc;
-
-  modport dut(
-      input i2s_tx_proc,
-      input i2s_rx_proc,
-      input qspi_tx_proc,
-      input qspi_rx_proc,
-      input uart_tx_proc,
-      input uart_rx_proc,
-      input i2c0_tx_proc,
-      input i2c0_rx_proc,
-      input i2c1_tx_proc,
-      input i2c1_rx_proc
-  );
-endinterface
-
-`endif
-
-module apb4_dma (
-    // verilog_format: off -- preserve reviewed column alignment
+module apb4_dma #(
+    parameter int AddrWidth     = 32,
+    parameter int DataWidth     = 32,
+    parameter int NumChannels   = 4,
+    parameter int MaxBurstBeats = 16,
+    parameter int FifoDepth     = 16
+) (
+    // verilog_format: off -- integration ports retain established peripheral endpoint names.
     input  logic          clk_i,
     input  logic          rst_n_i,
     output logic          dma_xfer_done_o,
-    dma_hw_trg_if.dut     hw_trg,
+    output logic          irq_o,
+    dma_req_if.dut        hw_trg,
     apb4_if.slave         apb4,
-    rib_if.master         rib,
+    axi4_if.master        axi4,
     axi4_stream_if.source i2s_tx_axis,
     axi4_stream_if.sink   i2s_rx_axis,
     axi4_stream_if.sink   dvp_rx_axis
     // verilog_format: on
 );
+  logic [     NumChannels*32-1:0] s_ch_cfg;
+  logic [     NumChannels*32-1:0] s_src_addr;
+  logic [     NumChannels*32-1:0] s_dst_addr;
+  logic [     NumChannels*32-1:0] s_byte_count;
+  logic [     NumChannels*32-1:0] s_req_sel;
+  logic [     NumChannels*32-1:0] s_burst_cfg;
+  logic [        NumChannels-1:0] s_start;
+  logic [        NumChannels-1:0] s_suspend;
+  logic [        NumChannels-1:0] s_resume;
+  logic [        NumChannels-1:0] s_abort;
+  logic [        NumChannels-1:0] s_channel_reset;
+  logic [      NumChannels*3-1:0] s_event_clear;
+  logic                           s_global_reset;
+  logic                           s_global_err_clear;
+  logic [        NumChannels-1:0] s_busy;
+  logic [        NumChannels-1:0] s_suspended;
+  logic [        NumChannels-1:0] s_done;
+  logic [        NumChannels-1:0] s_aborted;
+  logic [        NumChannels-1:0] s_error;
+  logic [        NumChannels-1:0] s_stream_last;
+  logic [      NumChannels*3-1:0] s_evt_stat;
+  logic [     NumChannels*32-1:0] s_err_stat;
+  logic [     NumChannels*32-1:0] s_err_addr;
+  logic [     NumChannels*32-1:0] s_current_src;
+  logic [     NumChannels*32-1:0] s_current_dst;
+  logic [     NumChannels*32-1:0] s_remaining;
+  logic [     NumChannels*32-1:0] s_bytes_done;
+  logic [     NumChannels*32-1:0] s_stall_cycles_lo;
+  logic [     NumChannels*32-1:0] s_stall_cycles_hi;
+  logic                           s_first_err_valid;
+  logic [$clog2(NumChannels)-1:0] s_first_err_channel;
+  logic [                   31:0] s_first_err_stat;
+  logic [                   31:0] s_first_err_addr;
+  logic [                   15:0] s_req_stat;
 
-  logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
-  logic s_apb4_ready_d, s_apb4_ready_q;
-  logic s_apb4_rdata_en;
-  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
-
-  logic s_dma_mode_en;
-  logic [3:0] s_dma_mode_d, s_dma_mode_q;
-  logic s_dma_srcaddr_en;
-  logic [31:0] s_dma_srcaddr_d, s_dma_srcaddr_q;
-  logic s_dma_srcincr_en;
-  logic s_dma_srcincr_d, s_dma_srcincr_q;
-  logic s_dma_dstaddr_en;
-  logic [31:0] s_dma_dstaddr_d, s_dma_dstaddr_q;
-  logic s_dma_dstincr_en;
-  logic s_dma_dstincr_d, s_dma_dstincr_q;
-  logic s_dma_xferlen_en;
-  logic [31:0] s_dma_xferlen_d, s_dma_xferlen_q;
-  logic s_dma_stat_d, s_dma_stat_q;
-  logic s_dma_err_stat_d, s_dma_err_stat_q;
-  logic [2:0] s_dma_err_code_d, s_dma_err_code_q;
-  logic [31:0] s_dma_err_addr_d, s_dma_err_addr_q;
-  // common
-  logic s_xfer_start, s_xfer_stop, s_xfer_reset, s_xfer_done;
-  logic [ 1:0] s_xfer_fsm;
-  logic        s_xfer_err;
-  logic [ 2:0] s_xfer_err_code;
-  logic [31:0] s_xfer_err_addr;
-
-
-  assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && (~s_apb4_ready_q) && apb4.pwrite;
-  assign s_apb4_rd_hdshk = apb4.psel && apb4.penable && (~s_apb4_ready_q) && (~apb4.pwrite);
-  assign apb4.pready     = s_apb4_ready_q;
-  assign apb4.pslverr    = 1'b0;
-  assign apb4.prdata     = s_apb4_rdata_q;
-
-  assign dma_xfer_done_o = s_dma_stat_q;
-
-
-  assign s_dma_mode_en   = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_MODE;
-  assign s_dma_mode_d    = apb4.pwdata[3:0];
-  dffer #(
-      .DATA_WIDTH(4)
-  ) u_dma_mode_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dma_mode_en),
-      .dat_i  (s_dma_mode_d),
-      .dat_o  (s_dma_mode_q)
+  dma_reg #(
+      .NumChannels  (NumChannels),
+      .DataWidth    (DataWidth),
+      .MaxBurstBeats(MaxBurstBeats)
+  ) u_dma_reg (
+      .clk_i                (clk_i),
+      .rst_n_i              (rst_n_i),
+      .apb4                 (apb4),
+      .ch_cfg_o             (s_ch_cfg),
+      .src_addr_o           (s_src_addr),
+      .dst_addr_o           (s_dst_addr),
+      .byte_count_o         (s_byte_count),
+      .request_sel_o        (s_req_sel),
+      .burst_cfg_o          (s_burst_cfg),
+      .start_o              (s_start),
+      .suspend_o            (s_suspend),
+      .resume_o             (s_resume),
+      .abort_o              (s_abort),
+      .channel_reset_o      (s_channel_reset),
+      .event_clear_o        (s_event_clear),
+      .global_reset_o       (s_global_reset),
+      .global_error_clear_o (s_global_err_clear),
+      .busy_i               (s_busy),
+      .suspended_i          (s_suspended),
+      .done_i               (s_done),
+      .aborted_i            (s_aborted),
+      .error_i              (s_error),
+      .stream_last_i        (s_stream_last),
+      .event_status_i       (s_evt_stat),
+      .error_status_i       (s_err_stat),
+      .error_addr_i         (s_err_addr),
+      .current_src_i        (s_current_src),
+      .current_dst_i        (s_current_dst),
+      .remaining_i          (s_remaining),
+      .bytes_done_i         (s_bytes_done),
+      .stall_cycles_lo_i    (s_stall_cycles_lo),
+      .stall_cycles_hi_i    (s_stall_cycles_hi),
+      .first_error_valid_i  (s_first_err_valid),
+      .first_error_channel_i(s_first_err_channel),
+      .first_error_status_i (s_first_err_stat[8:0]),
+      .first_error_addr_hi_i(s_first_err_addr[31:16]),
+      .request_status_i     (s_req_stat),
+      .irq_o                (irq_o)
   );
 
-
-  assign s_dma_srcaddr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_SRCADDR;
-  always_comb begin
-    s_dma_srcaddr_d = s_dma_srcaddr_q;
-    if (apb4.pstrb[0]) s_dma_srcaddr_d[7:0] = apb4.pwdata[7:0];
-    if (apb4.pstrb[1]) s_dma_srcaddr_d[15:8] = apb4.pwdata[15:8];
-    if (apb4.pstrb[2]) s_dma_srcaddr_d[23:16] = apb4.pwdata[23:16];
-    if (apb4.pstrb[3]) s_dma_srcaddr_d[31:24] = apb4.pwdata[31:24];
-  end
-  dffer #(
-      .DATA_WIDTH(32)
-  ) u_dma_srcaddr_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dma_srcaddr_en),
-      .dat_i  (s_dma_srcaddr_d),
-      .dat_o  (s_dma_srcaddr_q)
+  dma_core #(
+      .AddrWidth    (AddrWidth),
+      .DataWidth    (DataWidth),
+      .NumChannels  (NumChannels),
+      .MaxBurstBeats(MaxBurstBeats),
+      .FifoDepth    (FifoDepth)
+  ) u_dma_core (
+      .clk_i                (clk_i),
+      .rst_n_i              (rst_n_i),
+      .global_reset_i       (s_global_reset),
+      .global_error_clear_i (s_global_err_clear),
+      .ch_cfg_i             (s_ch_cfg),
+      .src_addr_i           (s_src_addr),
+      .dst_addr_i           (s_dst_addr),
+      .byte_count_i         (s_byte_count),
+      .request_sel_i        (s_req_sel),
+      .burst_cfg_i          (s_burst_cfg),
+      .start_i              (s_start),
+      .suspend_i            (s_suspend),
+      .resume_i             (s_resume),
+      .abort_i              (s_abort),
+      .channel_reset_i      (s_channel_reset),
+      .event_clear_i        (s_event_clear),
+      .busy_o               (s_busy),
+      .suspended_o          (s_suspended),
+      .done_o               (s_done),
+      .aborted_o            (s_aborted),
+      .error_o              (s_error),
+      .stream_last_o        (s_stream_last),
+      .event_status_o       (s_evt_stat),
+      .error_status_o       (s_err_stat),
+      .error_addr_o         (s_err_addr),
+      .current_src_o        (s_current_src),
+      .current_dst_o        (s_current_dst),
+      .remaining_o          (s_remaining),
+      .bytes_done_o         (s_bytes_done),
+      .stall_cycles_lo_o    (s_stall_cycles_lo),
+      .stall_cycles_hi_o    (s_stall_cycles_hi),
+      .first_error_valid_o  (s_first_err_valid),
+      .first_error_channel_o(s_first_err_channel),
+      .first_error_status_o (s_first_err_stat),
+      .first_error_addr_o   (s_first_err_addr),
+      .request_status_o     (s_req_stat),
+      .xpi_xfer_done_o      (dma_xfer_done_o),
+      .req                  (hw_trg),
+      .axi4                 (axi4),
+      .i2s_tx_axis          (i2s_tx_axis),
+      .i2s_rx_axis          (i2s_rx_axis),
+      .dvp_rx_axis          (dvp_rx_axis)
   );
-
-
-  assign s_dma_srcincr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_SRCINCR;
-  assign s_dma_srcincr_d  = apb4.pwdata[0];
-  dffer #(
-      .DATA_WIDTH(1)
-  ) u_dma_srcincr_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dma_srcincr_en),
-      .dat_i  (s_dma_srcincr_d),
-      .dat_o  (s_dma_srcincr_q)
-  );
-
-
-  assign s_dma_dstaddr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_DSTADDR;
-  always_comb begin
-    s_dma_dstaddr_d = s_dma_dstaddr_q;
-    if (apb4.pstrb[0]) s_dma_dstaddr_d[7:0] = apb4.pwdata[7:0];
-    if (apb4.pstrb[1]) s_dma_dstaddr_d[15:8] = apb4.pwdata[15:8];
-    if (apb4.pstrb[2]) s_dma_dstaddr_d[23:16] = apb4.pwdata[23:16];
-    if (apb4.pstrb[3]) s_dma_dstaddr_d[31:24] = apb4.pwdata[31:24];
-  end
-  dffer #(
-      .DATA_WIDTH(32)
-  ) u_dma_dstaddr_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dma_dstaddr_en),
-      .dat_i  (s_dma_dstaddr_d),
-      .dat_o  (s_dma_dstaddr_q)
-  );
-
-  assign s_dma_dstincr_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_DSTINCR;
-  assign s_dma_dstincr_d  = apb4.pwdata[0];
-  dffer #(
-      .DATA_WIDTH(1)
-  ) u_dma_dstincr_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dma_dstincr_en),
-      .dat_i  (s_dma_dstincr_d),
-      .dat_o  (s_dma_dstincr_q)
-  );
-
-  assign s_dma_xferlen_en = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_XFERLEN;
-  always_comb begin
-    s_dma_xferlen_d = s_dma_xferlen_q;
-    if (apb4.pstrb[0]) s_dma_xferlen_d[7:0] = apb4.pwdata[7:0];
-    if (apb4.pstrb[1]) s_dma_xferlen_d[15:8] = apb4.pwdata[15:8];
-    if (apb4.pstrb[2]) s_dma_xferlen_d[23:16] = apb4.pwdata[23:16];
-    if (apb4.pstrb[3]) s_dma_xferlen_d[31:24] = apb4.pwdata[31:24];
-  end
-  dffer #(
-      .DATA_WIDTH(32)
-  ) u_dma_xferlen_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_dma_xferlen_en),
-      .dat_i  (s_dma_xferlen_d),
-      .dat_o  (s_dma_xferlen_q)
-  );
-
-
-  assign s_xfer_start = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_START;
-  assign s_xfer_stop  = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_STOP;
-  assign s_xfer_reset = s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_RESET;
-
-
-  always_comb begin
-    s_dma_stat_d = s_dma_stat_q;
-    if (s_apb4_rd_hdshk && apb4.paddr[7:0] == `APB4_DMA_STATUS) begin
-      s_dma_stat_d = '0;
-    end else if (s_xfer_done) begin
-      s_dma_stat_d = 1'b1;
-    end
-  end
-  dffr #(
-      .DATA_WIDTH(1)
-  ) u_dma_status_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_dma_stat_d),
-      .dat_o  (s_dma_stat_q)
-  );
-
-  always_comb begin
-    s_dma_err_stat_d = s_dma_err_stat_q;
-    if (s_apb4_wr_hdshk && apb4.paddr[7:0] == `APB4_DMA_ERROR_STATUS && apb4.pstrb[0] &&
-        apb4.pwdata[0]) begin
-      s_dma_err_stat_d = 1'b0;
-    end else if (s_xfer_err) begin
-      s_dma_err_stat_d = 1'b1;
-    end
-  end
-  dffr #(
-      .DATA_WIDTH(1)
-  ) u_dma_error_status_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_dma_err_stat_d),
-      .dat_o  (s_dma_err_stat_q)
-  );
-  assign s_dma_err_code_d = s_xfer_err_code;
-  dffer #(
-      .DATA_WIDTH(3)
-  ) u_dma_error_code_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_xfer_err),
-      .dat_i  (s_dma_err_code_d),
-      .dat_o  (s_dma_err_code_q)
-  );
-  assign s_dma_err_addr_d = s_xfer_err_addr;
-  dffer #(
-      .DATA_WIDTH(32)
-  ) u_dma_error_addr_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_xfer_err),
-      .dat_i  (s_dma_err_addr_d),
-      .dat_o  (s_dma_err_addr_q)
-  );
-
-
-  assign s_apb4_ready_d = apb4.psel && apb4.penable && (~s_apb4_ready_q);
-  dffr #(
-      .DATA_WIDTH(1)
-  ) u_apb4_ready_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_apb4_ready_d),
-      .dat_o  (s_apb4_ready_q)
-  );
-
-  assign s_apb4_rdata_en = s_apb4_rd_hdshk;
-  always_comb begin
-    s_apb4_rdata_d = s_apb4_rdata_q;
-    unique case (apb4.paddr[7:0])
-      `APB4_DMA_MODE:         s_apb4_rdata_d = {28'd0, s_dma_mode_q};
-      `APB4_DMA_SRCADDR:      s_apb4_rdata_d = s_dma_srcaddr_q;
-      `APB4_DMA_SRCINCR:      s_apb4_rdata_d = {31'd0, s_dma_srcincr_q};
-      `APB4_DMA_DSTADDR:      s_apb4_rdata_d = s_dma_dstaddr_q;
-      `APB4_DMA_DSTINCR:      s_apb4_rdata_d = {31'd0, s_dma_dstincr_q};
-      `APB4_DMA_XFERLEN:      s_apb4_rdata_d = s_dma_xferlen_q;
-      `APB4_DMA_STATUS:       s_apb4_rdata_d = {31'd0, s_dma_stat_q};
-      `APB4_DMA_FSM:          s_apb4_rdata_d = {30'd0, s_xfer_fsm};
-      `APB4_DMA_ERROR_STATUS: s_apb4_rdata_d = {28'd0, s_dma_err_code_q, s_dma_err_stat_q};
-      `APB4_DMA_ERROR_ADDR:   s_apb4_rdata_d = s_dma_err_addr_q;
-      default:                s_apb4_rdata_d = s_apb4_rdata_q;
-    endcase
-  end
-  dffer #(
-      .DATA_WIDTH(32)
-  ) u_apb4_rdata_dffer (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .en_i   (s_apb4_rdata_en),
-      .dat_i  (s_apb4_rdata_d),
-      .dat_o  (s_apb4_rdata_q)
-  );
-
-
-  dma_core u_dma_core (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
-      .mode_i      (s_dma_mode_q),
-      .srcaddr_i   (s_dma_srcaddr_q),
-      .srcincr_i   (s_dma_srcincr_q),
-      .dstaddr_i   (s_dma_dstaddr_q),
-      .dstincr_i   (s_dma_dstincr_q),
-      .xferlen_i   (s_dma_xferlen_q),
-      .start_i     (s_xfer_start),
-      .stop_i      (s_xfer_stop),
-      .reset_i     (s_xfer_reset),
-      .done_o      (s_xfer_done),
-      .error_o     (s_xfer_err),
-      .error_code_o(s_xfer_err_code),
-      .error_addr_o(s_xfer_err_addr),
-      .fsm_o       (s_xfer_fsm),
-      .hw_trg      (hw_trg),
-      .rib         (rib),
-      .i2s_tx_axis (i2s_tx_axis),
-      .i2s_rx_axis (i2s_rx_axis),
-      .dvp_rx_axis (dvp_rx_axis)
-  );
-
 endmodule

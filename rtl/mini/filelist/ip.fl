@@ -42,6 +42,11 @@
 /ip/storage/xpi_clkgen.sv
 /ip/storage/xpi_core.sv
 /ip/storage/apb4_xpi.sv
+/ip/peripheral/dma_pkg.sv
+/ip/peripheral/dma_define.svh
+/ip/peripheral/dma_req_if.sv
+/ip/peripheral/dma_axi4_master.sv
+/ip/peripheral/dma_reg.sv
 /ip/peripheral/dma_core.sv
 /ip/peripheral/apb4_dma.sv
 /ip/peripheral/pll_ctrl_if.sv

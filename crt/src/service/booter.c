@@ -119,7 +119,8 @@ void rs_app_info(void) {
     printf("                       1 x WS2812        @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
     printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
-    printf("                       1 x DMA           @%p\n", (void *)&reg_dma_mode);
+    printf("                       1 x DMA(4CH)      @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_DMA_BASE);
     printf("                       1 x SYSCTRL       @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_SYSCTRL_BASE);
     printf("                       1 x CLINT         @%p\n",

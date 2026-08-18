@@ -92,15 +92,20 @@ def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> No
                 f"+incdir+{memory_map / 'rtl'}",
                 f"+incdir+{common}",
                 f"+incdir+{common / 'interface'}",
+                f"+incdir+{common / 'stream'}",
                 f"+incdir+{common / 'utils'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
+                f"+incdir+{ROOT / 'rtl/ip/peripheral'}",
                 f"+incdir+{serial}",
                 str(common / "interface/apb4_if.sv"),
+                str(common / "interface/axi4_if.sv"),
                 str(common / "interface/axi4_stream_if.sv"),
-                str(ROOT / "rtl/mini/top/rib_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "utils/fifo.sv"),
-                str(ROOT / "rtl/ip/peripheral/apb4_dma.sv"),
+                str(common / "stream/round_robin_arbiter.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_pkg.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_req_if.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_axi4_master.sv"),
                 str(ROOT / "rtl/ip/peripheral/dma_core.sv"),
                 str(serial / "ws2812_if.sv"),
                 str(serial / "ws2812_reg.sv"),
@@ -130,4 +135,4 @@ def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> No
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "WS2812 DMA backpressure integration test passed" in result.stdout
+    assert "WS2812 native AXI4 DMA backpressure integration test passed" in result.stdout

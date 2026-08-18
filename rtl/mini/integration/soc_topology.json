@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 14,
+      "width": 15,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -169,6 +169,15 @@
       "group_bit": 13,
       "core_bit": 15,
       "signal": "s_dvp_irq"
+    },
+    {
+      "name": "dma",
+      "description": "APB4 DMA aggregate completion and error interrupt",
+      "group": "apb4_periph",
+      "group_bit": 14,
+      "core_bit": 20,
+      "signal": "s_dma_irq",
+      "user_visible": false
     }
   ],
   "wake_sources": [

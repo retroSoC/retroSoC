@@ -35,6 +35,7 @@ module soc_irq_topology_tb;
       s_apb4_periph_irq[bit_index] = 1'b1;
       case (bit_index)
         13:      expect_irq(32'd1 << 15);
+        14:      expect_irq(32'd1 << 20);
         default: expect_irq(32'd1 << (bit_index + 7));
       endcase
     end
@@ -58,8 +59,8 @@ module soc_irq_topology_tb;
     if (s_irq[10] !== 1'b0) begin
       $fatal(1, "removed core IRQ bit is not low: IRQ10=%b", s_irq[10]);
     end
-    if (s_irq[31:18] !== '0) begin
-      $fatal(1, "unallocated core IRQ bits are not low: %h", s_irq[31:18]);
+    if ((s_irq[31:21] !== '0) || (s_irq[19:18] !== '0)) begin
+      $fatal(1, "unallocated core IRQ bits are not low: %h", s_irq);
     end
 
     $display("SoC topology IRQ routing test passed");

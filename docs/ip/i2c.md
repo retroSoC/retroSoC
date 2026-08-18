@@ -21,7 +21,7 @@ follow common commercial controller practice without copying another IP ABI.
 | GPIO alternate function | GPIO7/8 ALT0 | GPIO3/4 ALT1 |
 | APB4 interrupt group bit | 7 | 12 |
 | Management-core interrupt | 7 | 19 |
-| DMA TX/RX modes | 7 / 8 | 9 / 10 |
+| DMA TX/RX selectors | `I2C0_TX` / `I2C0_RX`, channel 1 | `I2C1_TX` / `I2C1_RX`, channel 2 |
 
 Both instances and the generic DMA run in the SoC clock domain. Each pad uses
 open-drain signaling: the controller output value is permanently zero and its
@@ -133,7 +133,8 @@ retired fixed-I2C0 compatibility API is not retained. All operations that can
 wait take a timeout and return `rs_status_t`.
 
 DMA moves one 32-bit word per command or received byte through the fixed
-`DATA_CMD` and `RXDATA` addresses. The initial DMA API deliberately limits a
+`DATA_CMD` and `RXDATA` addresses using one-beat AXI4 fixed-address accesses.
+The channel-aware DMA API deliberately limits a
 transfer to 16 bytes because one generic DMA channel cannot refill commands or
 drain RX concurrently beyond the hardware FIFO proof boundary. Longer and
 combined transfers use the bounded CPU streaming API. Removing this limit

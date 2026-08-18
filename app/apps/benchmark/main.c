@@ -177,6 +177,18 @@ static bool rs_benchmark_memory(const char *region, volatile uint32_t *memory, u
 
 static bool rs_benchmark_dma(volatile uint32_t *source, volatile uint32_t *destination,
                              uint32_t expected_checksum) {
+    const rs_dma_config_t dma_config = {
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .request = RS_DMA_REQUEST_SOFTWARE,
+        .source = (uintptr_t)source,
+        .destination = (uintptr_t)destination,
+        .byte_count = RS_BENCHMARK_WORDS * sizeof(uint32_t),
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
+        .priority = 1U,
+        .burst_beats = RS_DMA_MAX_BURST_BEATS,
+    };
     rs_dma_error_t error;
     rs_perf_snapshot_t snapshot;
     rs_status_t status;
@@ -184,21 +196,22 @@ static bool rs_benchmark_dma(volatile uint32_t *source, volatile uint32_t *desti
     uint64_t cycles;
     uint32_t checksum;
 
+    error.code = 0U;
     error.response_code = 0U;
     error.address = 0U;
+    error.read = false;
 
     (void)rs_perf_start();
     cycle_start = rs_benchmark_read_cycle_counter();
-    status =
-        rs_dma_config(0U, (uintptr_t)source, 1U, (uintptr_t)destination, 1U, RS_BENCHMARK_WORDS);
+    status = rs_dma_configure(RS_DMA_CHANNEL_BULK, &dma_config);
     if (status == RS_OK) {
-        status = rs_dma_start();
+        status = rs_dma_start(RS_DMA_CHANNEL_BULK);
     }
     if (status == RS_OK) {
-        status = rs_dma_wait(RS_TIMEOUT_DEFAULT);
+        status = rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT);
     }
     if (status != RS_OK) {
-        (void)rs_dma_get_error(&error);
+        (void)rs_dma_get_error(RS_DMA_CHANNEL_BULK, &error);
         rs_benchmark_puts("PERF_FAIL region=dma op=copy\n");
         return false;
     }
