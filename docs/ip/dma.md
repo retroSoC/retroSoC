@@ -110,6 +110,12 @@ transfers are one-beat `FIXED` transactions. AXI `SLVERR`, `DECERR`, bad ID,
 and malformed `RLAST` are recorded against the owning channel; the first
 global error remains sticky until W1C/reset.
 
+The OPI PSRAM window at `0x48000000-0x4fffffff` is an ordinary MM-to-MM source
+or destination. It does not consume a peripheral request selector and shares
+bulk channel 3 with the other memory and stream clients. A transfer outside
+the configured OPI device size terminates through the normal AXI error path;
+the DMA must not infer capacity from the larger SoC aperture.
+
 I2S TX consumes the MM-to-stream path and receives `TLAST` on the final
 32-bit word with `TKEEP/TSTRB=4'hf`. I2S RX and DVP RX use stream-to-MM;
 programmed byte count terminates the transfer and incoming `TLAST` is recorded

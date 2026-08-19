@@ -32,12 +32,12 @@ Fixed-address and APB4/MMIO endpoints are always single-beat. See the
 ## Targets and Access Control
 
 The fixed targets are the APB4 configuration plane (`apb4_periph`), APB
-(`apb4_system`), SRAM, SDRAM, PSRAM, XPI/Flash, SPI-SD, `DECERR`, and
-`SLVERR`. APB4 and APB accept only single-beat transactions. SRAM uses a
-direct AXI4 target with pipelined synchronous reads and response buffering.
-External-memory data windows accept up to sixteen beats; their current
-compatibility bridges serialize each beat into the existing controller data
-engine while preserving FIXED/INCR/WRAP beat addresses. Register
+(`apb4_system`), SRAM, SDRAM, 4-bit PSRAM, OPI PSRAM, XPI/Flash, SPI-SD,
+`DECERR`, and `SLVERR`. APB4 and APB accept only single-beat transactions.
+SRAM uses a direct AXI4 target with pipelined synchronous reads and response
+buffering. External-memory data windows accept up to sixteen beats; their
+controller front ends validate and serialize or coalesce the physical
+transactions while preserving the documented AXI response contract. Register
 configuration remains on APB4.
 
 The user-core firewall validates both the first and last byte before target

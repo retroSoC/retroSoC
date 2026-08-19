@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 15,
+      "width": 16,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -178,6 +178,14 @@
       "core_bit": 20,
       "signal": "s_dma_irq",
       "user_visible": false
+    },
+    {
+      "name": "opipsram",
+      "description": "OPI PSRAM controller interrupt",
+      "group": "apb4_periph",
+      "group_bit": 15,
+      "core_bit": 22,
+      "signal": "opipsram.irq_o"
     }
   ],
   "wake_sources": [
@@ -341,7 +349,7 @@
       "name": "opipsram",
       "timed_interface": "u_opipsram_apb4_if",
       "pure_interface": "u_opipsram_apb4_pure_if",
-      "disabled": true
+      "region": "APB4_OPIPSRAM"
     },
     {
       "slot": 17,
@@ -741,7 +749,7 @@
       "pin": 21,
       "alt0": {
         "inputs": [],
-        "do": "u_opipsram_if.sck_o",
+        "do": "u_opipsram_if.ck_o",
         "oe": "1'b1"
       },
       "alt1": {
@@ -754,7 +762,7 @@
       "pin": 22,
       "alt0": {
         "inputs": [],
-        "do": "u_opipsram_if.ce_o",
+        "do": "u_opipsram_if.cs_n_o",
         "oe": "1'b1"
       },
       "alt1": {
@@ -767,10 +775,10 @@
       "pin": 23,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[0]"
+          "u_opipsram_if.dq_i[0]"
         ],
-        "do": "u_opipsram_if.io_do_o[0]",
-        "oe": "u_opipsram_if.io_oe_o[0]"
+        "do": "u_opipsram_if.dq_o[0]",
+        "oe": "u_opipsram_if.dq_oe_o[0]"
       },
       "alt1": {
         "inputs": [
@@ -784,10 +792,10 @@
       "pin": 24,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[1]"
+          "u_opipsram_if.dq_i[1]"
         ],
-        "do": "u_opipsram_if.io_do_o[1]",
-        "oe": "u_opipsram_if.io_oe_o[1]"
+        "do": "u_opipsram_if.dq_o[1]",
+        "oe": "u_opipsram_if.dq_oe_o[1]"
       },
       "alt1": {
         "inputs": [
@@ -801,10 +809,10 @@
       "pin": 25,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[2]"
+          "u_opipsram_if.dq_i[2]"
         ],
-        "do": "u_opipsram_if.io_do_o[2]",
-        "oe": "u_opipsram_if.io_oe_o[2]"
+        "do": "u_opipsram_if.dq_o[2]",
+        "oe": "u_opipsram_if.dq_oe_o[2]"
       },
       "alt1": {
         "inputs": [
@@ -818,10 +826,10 @@
       "pin": 26,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[3]"
+          "u_opipsram_if.dq_i[3]"
         ],
-        "do": "u_opipsram_if.io_do_o[3]",
-        "oe": "u_opipsram_if.io_oe_o[3]"
+        "do": "u_opipsram_if.dq_o[3]",
+        "oe": "u_opipsram_if.dq_oe_o[3]"
       },
       "alt1": {
         "inputs": [
@@ -835,10 +843,10 @@
       "pin": 27,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[4]"
+          "u_opipsram_if.dq_i[4]"
         ],
-        "do": "u_opipsram_if.io_do_o[4]",
-        "oe": "u_opipsram_if.io_oe_o[4]"
+        "do": "u_opipsram_if.dq_o[4]",
+        "oe": "u_opipsram_if.dq_oe_o[4]"
       },
       "alt1": {
         "inputs": [],
@@ -850,10 +858,10 @@
       "pin": 28,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[5]"
+          "u_opipsram_if.dq_i[5]"
         ],
-        "do": "u_opipsram_if.io_do_o[5]",
-        "oe": "u_opipsram_if.io_oe_o[5]"
+        "do": "u_opipsram_if.dq_o[5]",
+        "oe": "u_opipsram_if.dq_oe_o[5]"
       },
       "alt1": {
         "inputs": [],
@@ -865,10 +873,10 @@
       "pin": 29,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[6]"
+          "u_opipsram_if.dq_i[6]"
         ],
-        "do": "u_opipsram_if.io_do_o[6]",
-        "oe": "u_opipsram_if.io_oe_o[6]"
+        "do": "u_opipsram_if.dq_o[6]",
+        "oe": "u_opipsram_if.dq_oe_o[6]"
       },
       "alt1": {
         "inputs": [],
@@ -880,10 +888,10 @@
       "pin": 30,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.io_di_i[7]"
+          "u_opipsram_if.dq_i[7]"
         ],
-        "do": "u_opipsram_if.io_do_o[7]",
-        "oe": "u_opipsram_if.io_oe_o[7]"
+        "do": "u_opipsram_if.dq_o[7]",
+        "oe": "u_opipsram_if.dq_oe_o[7]"
       },
       "alt1": {
         "inputs": [
@@ -897,10 +905,10 @@
       "pin": 31,
       "alt0": {
         "inputs": [
-          "u_opipsram_if.dqs_di_i"
+          "u_opipsram_if.rwds_i"
         ],
-        "do": "u_opipsram_if.dqs_do_o",
-        "oe": "u_opipsram_if.dqs_oe_o"
+        "do": "u_opipsram_if.rwds_o",
+        "oe": "u_opipsram_if.rwds_oe_o"
       },
       "alt1": {
         "inputs": [

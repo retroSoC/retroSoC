@@ -4,6 +4,15 @@
 /ip/memory/psram_axi4.sv
 /ip/memory/psram_reg.sv
 /ip/memory/apb4_psram.sv
+/ip/memory/opipsram_pkg.sv
+/ip/memory/opipsram_define.svh
+/ip/memory/opipsram_protocol.sv
+/ip/memory/opipsram_trx.sv
+/ip/memory/opipsram_axi4.sv
+/ip/memory/opipsram_core.sv
+/ip/memory/opipsram_phy.sv
+/ip/memory/opipsram_reg.sv
+/ip/memory/opipsram_if.sv
 /ip/memory/apb4_opipsram.sv
 /ip/storage/spisd_init.sv
 /ip/storage/spisd_read.sv

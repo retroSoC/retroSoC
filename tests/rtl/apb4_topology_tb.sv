@@ -38,9 +38,9 @@ module apb4_topology_tb;
     expect_select(`SOC_ADDR_APB4_PSRAM_BASE, 4);
     expect_select(`SOC_ADDR_APB4_XPI_BASE, 9);
     expect_select(`SOC_ADDR_APB4_SDRAM_BASE, 13);
+    expect_select(`SOC_ADDR_APB4_OPIPSRAM_BASE, 16);
     expect_select(`SOC_ADDR_APB4_I2C1_BASE, 17);
     expect_disabled(`SOC_ADDR_APB4_SDIO_BASE);
-    expect_disabled(`SOC_ADDR_APB4_OPIPSRAM_BASE);
     $display("SoC topology APB4 routing test passed");
     $finish;
   end

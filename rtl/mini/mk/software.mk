@@ -103,6 +103,8 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/lcd.c \
             $(ROOT_PATH)/crt/src/hal/psram_math.c \
             $(ROOT_PATH)/crt/src/hal/psram.c \
+            $(ROOT_PATH)/crt/src/hal/opipsram_math.c \
+            $(ROOT_PATH)/crt/src/hal/opipsram.c \
             $(ROOT_PATH)/crt/src/hal/sdram_math.c \
             $(ROOT_PATH)/crt/src/hal/sdram.c \
             $(ROOT_PATH)/crt/src/hal/spisd.c \

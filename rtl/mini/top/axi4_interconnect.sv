@@ -8,7 +8,7 @@
 
 module axi4_interconnect #(
     parameter int NumMasters = 3,
-    parameter int NumTargets = 9
+    parameter int NumTargets = 10
 ) (
     input  logic                 clk_i,
     input  logic                 rst_n_i,
@@ -32,7 +32,8 @@ module axi4_interconnect #(
     output logic          [63:0] perf_apb4_system_wait_o,
     output logic          [63:0] perf_sdram_wait_o,
     output logic          [63:0] perf_psram_wait_o,
-    output logic          [63:0] perf_flash_wait_o
+    output logic          [63:0] perf_flash_wait_o,
+    output logic          [63:0] perf_opipsram_wait_o
 );
   localparam int MASTER_WIDTH = $clog2(NumMasters);
   localparam int TARGET_WIDTH = $clog2(NumTargets);
@@ -46,6 +47,7 @@ module axi4_interconnect #(
   localparam logic [TARGET_WIDTH-1:0] TARGET_SPISD = TARGET_WIDTH'(6);
   localparam logic [TARGET_WIDTH-1:0] TARGET_DECERR = TARGET_WIDTH'(7);
   localparam logic [TARGET_WIDTH-1:0] TARGET_SLVERR = TARGET_WIDTH'(8);
+  localparam logic [TARGET_WIDTH-1:0] TARGET_OPIPSRAM = TARGET_WIDTH'(9);
 
   localparam logic [1:0] MASTER_IDLE = 2'd0;
   localparam logic [1:0] MASTER_PENDING = 2'd1;
@@ -148,6 +150,7 @@ module axi4_interconnect #(
   function automatic logic [TARGET_WIDTH-1:0] decode_target(input logic [31:0] addr);
     if (`SOC_ADDR_IS_SDRAM(addr)) return TARGET_SDRAM;
     if (`SOC_ADDR_IS_PSRAM(addr)) return TARGET_PSRAM;
+    if (`SOC_ADDR_IS_OPIPSRAM(addr)) return TARGET_OPIPSRAM;
     if (`SOC_ADDR_IS_FLASH(addr) || `SOC_ADDR_IS_XPI(addr)) return TARGET_XPI;
     if (`SOC_ADDR_IS_SPISD(addr)) return TARGET_SPISD;
     if (`SOC_ADDR_IS_APB4_SYSTEM(addr)) return TARGET_APB4_SYSTEM;
@@ -577,11 +580,16 @@ module axi4_interconnect #(
   assign perf_sdram_wait_o       = s_perf_target_wait[TARGET_SDRAM];
   assign perf_psram_wait_o       = s_perf_target_wait[TARGET_PSRAM];
   assign perf_flash_wait_o       = s_perf_target_wait[TARGET_XPI];
+  if (NumTargets > 9) begin : gen_opipsram_perf
+    assign perf_opipsram_wait_o = s_perf_target_wait[TARGET_OPIPSRAM];
+  end else begin : gen_no_opipsram_perf
+    assign perf_opipsram_wait_o = '0;
+  end
 
 `ifndef SYNTHESIS
   initial begin
-    if (NumMasters != 3 || NumTargets != 9) begin
-      $fatal(1, "axi4_interconnect: retroSoC topology requires three masters and nine targets");
+    if (NumMasters != 3 || ((NumTargets != 9) && (NumTargets != 10))) begin
+      $fatal(1, "axi4_interconnect: invalid topology dimensions");
     end
   end
 `endif

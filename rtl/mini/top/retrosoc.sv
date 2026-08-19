@@ -53,6 +53,8 @@ module retrosoc (
       u_xpi_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_spisd_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_opipsram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   user_gpio_if u_user_gpio_if ();
   // ip interface
   gpio_if     u_gpio_if     ();
@@ -92,6 +94,7 @@ module retrosoc (
   logic [                          63:0] s_perf_sdram_wait;
   logic [                          63:0] s_perf_psram_wait;
   logic [                          63:0] s_perf_flash_wait;
+  logic [                          63:0] s_perf_opipsram_wait;
   logic [     `SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
   logic                                  s_rtc_wake;
 
@@ -109,7 +112,8 @@ module retrosoc (
   assign u_sysctrl_if.perf_apb4_periph_wait_i = s_perf_apb4_periph_wait;
   assign u_sysctrl_if.perf_apb4_system_wait_i = s_perf_apb4_system_wait;
   assign u_sysctrl_if.perf_sdram_wait_i       = s_perf_sdram_wait;
-  assign u_sysctrl_if.perf_psram_wait_i       = s_perf_psram_wait;
+  // The SYSCTRL PSRAM statistic aggregates the legacy and OPI PSRAM windows.
+  assign u_sysctrl_if.perf_psram_wait_i       = s_perf_psram_wait + s_perf_opipsram_wait;
   assign u_sysctrl_if.perf_flash_wait_i       = s_perf_flash_wait;
   assign u_sysctrl_if.rtc_wake_i              = s_rtc_wake;
   assign u_uart0_if.rx_i                      = uart_rx_i;
@@ -162,6 +166,7 @@ core_wrapper u_core_wrapper (
       .psram_axi4             (u_psram_axi4_if),
       .xpi_axi4               (u_xpi_axi4_if),
       .spisd_axi4             (u_spisd_axi4_if),
+      .opipsram_axi4          (u_opipsram_axi4_if),
       .perf_enable_i          (s_perf_en),
       .perf_clear_i           (s_perf_clear),
       .fault_valid_o          (s_bus_fault_valid),
@@ -178,7 +183,8 @@ core_wrapper u_core_wrapper (
       .perf_apb4_system_wait_o(s_perf_apb4_system_wait),
       .perf_sdram_wait_o      (s_perf_sdram_wait),
       .perf_psram_wait_o      (s_perf_psram_wait),
-      .perf_flash_wait_o      (s_perf_flash_wait)
+      .perf_flash_wait_o      (s_perf_flash_wait),
+      .perf_opipsram_wait_o   (s_perf_opipsram_wait)
   );
 
   apb4_periph u_apb4_periph (
@@ -192,6 +198,7 @@ core_wrapper u_core_wrapper (
       .psram_axi4      (u_psram_axi4_if),
       .xpi_axi4        (u_xpi_axi4_if),
       .spisd_axi4      (u_spisd_axi4_if),
+      .opipsram_axi4   (u_opipsram_axi4_if),
       .gpio            (u_gpio_if),
       .user_gpio       (u_user_gpio_if),
       .uart            (u_uart0_if),

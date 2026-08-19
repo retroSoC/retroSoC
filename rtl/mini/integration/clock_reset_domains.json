@@ -223,5 +223,59 @@
       "path": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
       "instance": "u_reset_cause_sync"
     }
+  ],
+  "same_domain_contracts": [
+    {
+      "name": "opipsram_phy",
+      "source_domain": "system",
+      "destination_domain": "system",
+      "clock": "clk_phy_i",
+      "reset": "rst_phy_n_i",
+      "relationship": "same_physical_source_logical_cdc",
+      "cdc": "cdc_2phase",
+      "description": "Mini SoC v1 ties clk_phy_i to clk_i and rst_phy_n_i to rst_n_i physically, but the IP keeps distinct system and PHY transaction domains. Do not collapse the logical CDC contract when the qualified PHY clock is introduced."
+    },
+    {
+      "name": "opipsram_command_cdc",
+      "source_domain": "system",
+      "destination_domain": "system",
+      "logical_destination": "opipsram_phy",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/memory/apb4_opipsram.sv",
+      "instance": "u_command_cdc",
+      "relationship": "same_physical_source_logical_cdc"
+    },
+    {
+      "name": "opipsram_response_cdc",
+      "source_domain": "system",
+      "destination_domain": "system",
+      "logical_source": "opipsram_phy",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/memory/apb4_opipsram.sv",
+      "instance": "u_response_cdc",
+      "relationship": "same_physical_source_logical_cdc"
+    },
+    {
+      "name": "opipsram_abort_cdc",
+      "source_domain": "system",
+      "destination_domain": "system",
+      "logical_destination": "opipsram_phy",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/memory/apb4_opipsram.sv",
+      "instance": "u_abort_cdc",
+      "relationship": "same_physical_source_logical_cdc"
+    },
+    {
+      "name": "opipsram_rwds_capture_reset",
+      "source_domain": "system",
+      "destination_domain": "system",
+      "logical_source": "opipsram_phy",
+      "clock": "clk_phy_i",
+      "reset": "rst_phy_n_i",
+      "contract_type": "async_fifo_reset",
+      "implementation": "delayed_rwds_source_synchronous_capture",
+      "reset_behavior": "reset holds ck_o low, cs_n_o high, dq/rwds output enables low; future qualified PHY CDC must flush payload state before re-enable",
+      "relationship": "same_physical_source_logical_cdc"
+    }
   ]
 }

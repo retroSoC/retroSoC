@@ -213,6 +213,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812_filelist = tmp_path / "ws2812.fl"
     i2c_filelist = tmp_path / "i2c.fl"
     clint_filelist = tmp_path / "clint.fl"
+    opipsram_filelist = tmp_path / "opipsram.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -236,6 +237,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "clint", clint_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist(
+        "opipsram", opipsram_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -246,7 +250,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812 = parse_filelists([ws2812_filelist], require_files=False)
     i2c = parse_filelists([i2c_filelist], require_files=False)
     clint = parse_filelists([clint_filelist], require_files=False)
+    opipsram = parse_filelists([opipsram_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
+    assert "+define+PDK_BEHAV" in opipsram.defines
+    assert "+define+SV_ASSRT_DISABLE" not in opipsram.defines
     assert ROOT / "rtl/mini/top/rib_bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
     assert ROOT / "rtl/mini/top/ribp2rib.sv" in bus.files
@@ -284,6 +291,18 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/i2c_formal.sv" in i2c.files
     assert ROOT / "rtl/ip/peripheral/apb4_clint.sv" in clint.files
     assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
+    assert ROOT / "rtl/ip/memory/opipsram_axi4.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_core.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_reg.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_protocol.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_phy.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_trx.sv" in opipsram.files
+    assert ROOT / "rtl/ip/util/async_fifo.sv" in opipsram.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/gray2bin.sv" in opipsram.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/xchecker.sv" in opipsram.files
+    assert ROOT / "rtl/tech/tc_clk.sv" in opipsram.files
+    assert ROOT / "rtl/tech/tc_opipsram_delay.sv" in opipsram.files
+    assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:

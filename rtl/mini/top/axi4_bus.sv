@@ -24,6 +24,7 @@ module axi4_bus (
     axi4_if.master      psram_axi4,
     axi4_if.master      xpi_axi4,
     axi4_if.master      spisd_axi4,
+    axi4_if.master      opipsram_axi4,
     input  logic        user_bus_enable_i,
     output logic        user_bus_idle_o,
     input  logic        perf_enable_i,
@@ -42,11 +43,12 @@ module axi4_bus (
     output logic [63:0] perf_apb4_system_wait_o,
     output logic [63:0] perf_sdram_wait_o,
     output logic [63:0] perf_psram_wait_o,
-    output logic [63:0] perf_flash_wait_o
+    output logic [63:0] perf_flash_wait_o,
+    output logic [63:0] perf_opipsram_wait_o
     // verilog_format: on
 );
   localparam int NumMasters = 3;
-  localparam int NumTargets = 9;
+  localparam int NumTargets = 10;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -128,6 +130,11 @@ module axi4_bus (
       .sink  (spisd_axi4)
   );
 
+  axi4_connector u_opipsram_connector (
+      .source(u_target_axi4_if[9]),
+      .sink  (opipsram_axi4)
+  );
+
   axi4_interconnect #(
       .NumMasters(NumMasters),
       .NumTargets(NumTargets)
@@ -154,7 +161,8 @@ module axi4_bus (
       .perf_apb4_system_wait_o(perf_apb4_system_wait_o),
       .perf_sdram_wait_o      (perf_sdram_wait_o),
       .perf_psram_wait_o      (perf_psram_wait_o),
-      .perf_flash_wait_o      (perf_flash_wait_o)
+      .perf_flash_wait_o      (perf_flash_wait_o),
+      .perf_opipsram_wait_o   (perf_opipsram_wait_o)
   );
 
 `ifdef HAVE_SRAM_IF

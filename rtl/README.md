@@ -73,6 +73,12 @@ Its frozen architecture, register ABI, timing limits, model, formal target, and
 verification evidence are documented in
 [ESP-PSRAM64H Controller](../docs/ip/psram.md).
 
+The prototype octal PSRAM controller reserves a separate 128 MiB AXI4 window
+and supports boot-selected OPI/xSPI and single-clock HyperBus profiles through
+a shared Basilisk-style digital PHY. Its protocol, CDC, delay-cell,
+register-ABI, DMA, and signoff boundaries are documented in
+[OPI PSRAM and Single-Clock HyperBus Controller](../docs/ip/opipsram.md).
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and

@@ -23,6 +23,7 @@ module apb4_periph (
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
     axi4_if.slave                                 spisd_axi4,
+    axi4_if.slave                                 opipsram_axi4,
     gpio_if.dut                                   gpio,
     user_gpio_if.padctrl                          user_gpio,
     uart_if.dut                                   uart,
@@ -278,10 +279,13 @@ axi4_stream_if #(
   );
 
   apb4_opipsram u_apb4_opipsram (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .apb4   (u_opipsram_apb4_if),
-      .psram  (opipsram)
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .clk_phy_i  (clk_i),
+      .rst_phy_n_i(rst_n_i),
+      .cfg_apb4   (u_opipsram_apb4_if),
+      .mem_axi4   (opipsram_axi4),
+      .psram      (opipsram)
   );
 
   apb4_i2c u_apb4_i2c1 (

@@ -23,6 +23,8 @@
 #include <retrosoc/media/video_player.h>
 #include <retrosoc/media/wav_audio.h>
 
+#include "../../crt/src/hal/opipsram_math.c"
+
 #define TEST_STORAGE_ADDRESS ((uintptr_t)0x1000U)
 
 int __clzsi2(unsigned int value);
@@ -269,6 +271,194 @@ static int test_psram_helpers(void) {
     return 0;
 }
 
+static int test_opipsram_helpers(void) {
+    rs_opipsram_config_t config = {
+        .profile = RS_OPIPSRAM_PROFILE_OPI,
+        .device_size = UINT32_C(0x00800000),
+        .timing =
+            {
+                .divider = 1U,
+                .phy_ratio = 2U,
+                .source_clock_hz = 72000000U,
+                .requested_ck_hz = 36000000U,
+                .actual_phy_hz = 72000000U,
+                .actual_ck_hz = 36000000U,
+                .cs_setup_cycles = 1U,
+                .cs_hold_cycles = 2U,
+                .cs_high_cycles = 4U,
+                .powerup_cycles = 10800U,
+                .timeout_cycles = 720000U,
+            },
+        .opi =
+            {
+                .read_command = UINT16_C(0xEE11),
+                .write_command = UINT16_C(0x12ED),
+                .register_read_command = UINT16_C(0),
+                .register_write_command = UINT16_C(0),
+                .command_width = RS_OPIPSRAM_COMMAND_WIDTH_16,
+                .address_width = RS_OPIPSRAM_ADDRESS_WIDTH_32,
+                .dummy_cycles = 8U,
+                .latency_cycles = 6U,
+                .dqs_policy = RS_OPIPSRAM_DQS_READ_WRITE,
+                .burst_boundary = 32U,
+            },
+        .hyperbus =
+            {
+                .initial_latency = 6U,
+                .additional_latency = 2U,
+                .read_recovery_cycles = 4U,
+                .write_recovery_cycles = 4U,
+                .rwds_additional_latency = true,
+            },
+        .enable = true,
+        .memory_enable = true,
+        .auto_initialize = false,
+        .line_buffer = true,
+    };
+    rs_opipsram_timing_t timing;
+    rs_opipsram_training_window_t window;
+    rs_dma_config_t dma_config;
+    rs_opipsram_indirect_t indirect = {
+        .write = false,
+        .register_space = false,
+        .length = 8U,
+        .address = UINT32_C(0x007FFFF8),
+        .write_data = UINT64_C(0),
+    };
+
+    if ((RS_OPIPSRAM_CMD_WIDTH_SHIFT != UINT32_C(16)) ||
+        (RS_OPIPSRAM_CMD_WIDTH_MASK != UINT32_C(0x00010000)) ||
+        (RS_OPIPSRAM_OPI_TIMING_ADDR_BYTES_MASK != UINT32_C(0x00000003)) ||
+        (RS_OPIPSRAM_OPI_TIMING_DUMMY_SHIFT != UINT32_C(2)) ||
+        (RS_OPIPSRAM_OPI_TIMING_DUMMY_MASK != UINT32_C(0x000003FC)) ||
+        (RS_OPIPSRAM_OPI_TIMING_LATENCY_SHIFT != UINT32_C(10)) ||
+        (RS_OPIPSRAM_OPI_TIMING_LATENCY_MASK != UINT32_C(0x00007C00)) ||
+        (RS_OPIPSRAM_OPI_TIMING_DQS_READ != UINT32_C(0x00008000)) ||
+        (RS_OPIPSRAM_OPI_TIMING_DQS_WRITE != UINT32_C(0x00010000)) ||
+        (RS_OPIPSRAM_HYPER_TIMING_RWDS_LATENCY_ENABLE != UINT32_C(0x80000000)) ||
+        (RS_OPIPSRAM_CLK_PHY_RATIO_MASK != UINT32_C(0x00010000)) ||
+        (RS_OPIPSRAM_CLK_PHY_RATIO_2X != UINT32_C(0x00010000)) ||
+        (RS_OPIPSRAM_PROFILE_STATUS_LOCKED != UINT32_C(0x00000002)) ||
+        (RS_OPIPSRAM_PROFILE_STATUS_VALID != UINT32_C(0x00000004)) ||
+        (RS_OPIPSRAM_PROFILE_STATUS_ERROR_MASK != UINT32_C(0x00000008))) {
+        return 1;
+    }
+    if ((rs_opipsram_timing_from_hz(72000000U, 36000000U, &timing) != RS_OK) ||
+        (timing.divider != 1U) || (timing.phy_ratio != 2U) || (timing.actual_phy_hz != 72000000U) ||
+        (timing.actual_ck_hz != 36000000U) || (timing.powerup_cycles != 10800U)) {
+        return 2;
+    }
+    if ((rs_opipsram_timing_from_hz(144000000U, 72000000U, &timing) != RS_OK) ||
+        (timing.actual_ck_hz != 72000000U) ||
+        (rs_opipsram_timing_from_hz(200000000U, 100000000U, &timing) != RS_OK) ||
+        (timing.actual_ck_hz != 100000000U)) {
+        return 3;
+    }
+    if ((rs_opipsram_timing_from_hz(192000000U, 48000000U, &timing) != RS_OK) ||
+        (timing.divider != 2U) || (timing.actual_phy_hz != 96000000U) ||
+        (timing.actual_ck_hz != 48000000U) ||
+        (rs_opipsram_timing_from_hz(UINT32_MAX, 36000000U, &timing) != RS_EINVAL)) {
+        return 4;
+    }
+    if ((rs_opipsram_timing_from_hz(0U, 36000000U, &timing) != RS_EINVAL) ||
+        (rs_opipsram_timing_from_hz(72000000U, 0U, &timing) != RS_EINVAL) ||
+        (rs_opipsram_timing_from_hz(72000000U, 35999999U, &timing) != RS_EINVAL) ||
+        (rs_opipsram_timing_from_hz(72000000U, 100000001U, &timing) != RS_EINVAL) ||
+        (rs_opipsram_timing_from_hz(72000000U, 36000000U, NULL) != RS_EINVAL)) {
+        return 5;
+    }
+    if (rs_opipsram_config_validate(&config) != RS_OK) {
+        return 6;
+    }
+    config.device_size = UINT32_C(0x00600000);
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 7;
+    }
+    config.device_size = RS_OPIPSRAM_MAX_DEVICE_SIZE + UINT32_C(1);
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 8;
+    }
+    config.device_size = UINT32_C(0x00800000);
+    config.opi.address_width = (rs_opipsram_address_width_t)5U;
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 9;
+    }
+    config.opi.address_width = RS_OPIPSRAM_ADDRESS_WIDTH_32;
+    config.opi.dummy_cycles = RS_OPIPSRAM_MAX_DUMMY_CYCLES + UINT8_C(1);
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 10;
+    }
+    config.opi.dummy_cycles = 8U;
+    config.opi.latency_cycles = RS_OPIPSRAM_MAX_LATENCY_CYCLES + UINT8_C(1);
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 11;
+    }
+    config.opi.latency_cycles = 6U;
+    config.profile = RS_OPIPSRAM_PROFILE_HYPERBUS;
+    config.hyperbus.initial_latency = RS_OPIPSRAM_MAX_LATENCY_CYCLES + UINT8_C(1);
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 12;
+    }
+    config.hyperbus.initial_latency = 6U;
+    config.hyperbus.write_recovery_cycles = UINT8_C(128);
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 13;
+    }
+    config.hyperbus.write_recovery_cycles = 4U;
+    config.profile = RS_OPIPSRAM_PROFILE_OPI;
+    config.timing.timeout_cycles = config.timing.powerup_cycles;
+    if (rs_opipsram_config_validate(&config) != RS_EINVAL) {
+        return 14;
+    }
+    if ((rs_opipsram_training_window_from_mask(UINT32_C(0xC3), 8U, &window) != RS_OK) ||
+        !window.valid || !window.wrapped || (window.first != 6U) || (window.last != 1U) ||
+        (window.width != 4U) || (window.center != 0U)) {
+        return 15;
+    }
+    if ((rs_opipsram_training_window_from_mask(UINT32_C(0), 8U, &window) != RS_OK) ||
+        window.valid || (window.width != 0U)) {
+        return 16;
+    }
+    if ((rs_opipsram_training_window_from_mask(UINT32_C(0x0E), 8U, &window) != RS_OK) ||
+        !window.valid || window.wrapped || (window.first != 1U) || (window.last != 3U) ||
+        (window.width != 3U) || (window.center != 2U)) {
+        return 17;
+    }
+    if ((rs_opipsram_training_window_from_mask(UINT32_C(0x01), 0U, &window) != RS_EINVAL) ||
+        (rs_opipsram_training_window_from_mask(UINT32_C(0x01), 33U, &window) != RS_EINVAL)) {
+        return 18;
+    }
+    if ((rs_opipsram_dma_copy_validate(RS_DMA_CHANNEL_BULK, (uintptr_t)0x40001000U,
+                                       (uintptr_t)RS_SOC_OPIPSRAM_BASE, 64U, 1U, 8U,
+                                       &dma_config) != RS_OK) ||
+        (dma_config.kind != RS_DMA_KIND_MM_TO_MM) ||
+        (dma_config.request != RS_DMA_REQUEST_SOFTWARE)) {
+        return 19;
+    }
+    if (rs_opipsram_dma_copy_validate(RS_DMA_CHANNEL_BULK, (uintptr_t)0x40001002U,
+                                      (uintptr_t)RS_SOC_OPIPSRAM_BASE, 64U, 1U, 8U,
+                                      &dma_config) != RS_EINVAL) {
+        return 20;
+    }
+    if (rs_opipsram_indirect_validate(&indirect, UINT32_C(0x00800000)) != RS_OK) {
+        return 21;
+    }
+    indirect.address = UINT32_C(0x007FFFF9);
+    if (rs_opipsram_indirect_validate(&indirect, UINT32_C(0x00800000)) != RS_EINVAL) {
+        return 22;
+    }
+    indirect.register_space = true;
+    indirect.address = UINT32_MAX;
+    if (rs_opipsram_indirect_validate(&indirect, UINT32_C(0)) != RS_EINVAL) {
+        return 23;
+    }
+    indirect.address = UINT32_C(0x00FFFFFF);
+    if (rs_opipsram_indirect_validate(&indirect, UINT32_C(0)) != RS_OK) {
+        return 24;
+    }
+    return 0;
+}
+
 static int test_uart_helpers(void) {
     rs_uart_timing_t timing;
 
@@ -444,11 +634,14 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(),        test_formatter(),      test_compiler_helpers(),
-        test_wait_helper(),           test_ws2812_helpers(), test_timer_helpers(),
-        test_psram_helpers(),         test_sdram_helpers(),  test_uart_helpers(),
-        test_i2s_helpers(),           test_i2c_helpers(),    test_gpio_helpers(),
-        test_dma_config_validation(), test_ps2_decoders(),   test_wav_parser(),
+        test_string_helpers(),        test_formatter(),
+        test_compiler_helpers(),      test_wait_helper(),
+        test_ws2812_helpers(),        test_timer_helpers(),
+        test_psram_helpers(),         test_sdram_helpers(),
+        test_uart_helpers(),          test_i2s_helpers(),
+        test_i2c_helpers(),           test_gpio_helpers(),
+        test_dma_config_validation(), test_opipsram_helpers(),
+        test_ps2_decoders(),          test_wav_parser(),
         test_video_parser(),
     };
 

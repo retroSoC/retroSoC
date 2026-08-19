@@ -92,6 +92,24 @@ use APB4-peripheral group bit 14 and management-core IRQ20. Their stream
 selection, backpressure, and transfer-boundary rules are defined in
 [axi4-stream.md](axi4-stream.md).
 
+## OPI PSRAM alternate functions
+
+The octal PSRAM controller uses GPIO21-31 ALT0 for CK, CS#, DQ[7:0], and
+RWDS/DQS. Its APB4 management window is `0x10010000`; bulk traffic uses the
+separate AXI4 window at `0x48000000-0x4fffffff`. The controller interrupt is
+allocated by `soc_topology.json`. Central DMA reaches the same AXI4 window as
+an ordinary MM-to-MM source or destination; the controller has no private DMA
+request channel.
+
+The version 1 Mini integration connects the PHY clock to the 72 MHz system
+clock. The Basilisk-style divide-by-two PHY therefore emits a 36 MHz external
+clock until a qualified independent PHY clock is integrated. The pin group
+does not route CK# or a dedicated device reset. Software must select all
+eleven ALT0 functions before initialization, and a board must satisfy the
+selected device's reset and single-ended-clock requirements. See
+[opipsram.md](ip/opipsram.md) for the protocol, delay-cell, and signoff
+boundaries.
+
 ## Management JTAG
 
 The fixed Hazard3 management core always exposes five ASIC pads:
