@@ -26,14 +26,6 @@
 
 #define RS_SOC_REG32(base, offset) (*(volatile uint32_t *)(uintptr_t)((base) + (offset)))
 
-// spisd
-#define reg_spisd_mode             RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x00))
-#define reg_spisd_clkdiv           RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x04))
-#define reg_spisd_addr             RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x08))
-#define reg_spisd_txdata           RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x0C))
-#define reg_spisd_rxdata           RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x10))
-#define reg_spisd_status           RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x14))
-#define reg_spisd_sync             RS_SOC_REG32(RS_SOC_APB4_SPISD_BASE, UINT32_C(0x18))
 // xpi
 #define reg_xpi_cfgidx             RS_SOC_REG32(RS_SOC_APB4_XPI_BASE, UINT32_C(0x00))
 #define reg_xpi_accmd              RS_SOC_REG32(RS_SOC_APB4_XPI_BASE, UINT32_C(0x04))

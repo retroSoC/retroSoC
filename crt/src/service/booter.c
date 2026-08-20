@@ -99,8 +99,8 @@ void rs_app_info(void) {
            PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, PSRAM_MEM_OFFST / 1024 / 1024);
     printf("  XPI MMIO:            @[0x%08x-0x%08x] %3d MiB\n", XPI_MEM_START,
            XPI_MEM_START + XPI_MEM_OFFST - 1, XPI_MEM_OFFST / 1024 / 1024);
-    printf("  SPISD MMIO:          @[0x%08x-0x%08x] %3d GiB\n\n", TF_CARD_START,
-           TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
+    printf("  Reserved (old SPISD):@[0x%08x-0x%08x]\n\n", TF_CARD_START,
+           TF_CARD_START + TF_CARD_OFFST - 1);
 
     printf("Memory Map IO Device:\n");
     printf("                       1 x GPIO(32PIN)   @%p\n",
@@ -111,7 +111,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB4_TIM0_BASE, (void *)(uintptr_t)RS_SOC_APB4_TIM1_BASE);
     printf("                       1 x PSRAM         @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_PSRAM_BASE);
-    printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
+    printf("                       1 x SPISD         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SPISD_BASE);
     printf("                       1 x I2C0          @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_I2C0_BASE);
     printf("                       1 x I2S           @%p\n",

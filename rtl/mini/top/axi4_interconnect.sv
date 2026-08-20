@@ -7,7 +7,7 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect #(
-    parameter int NumMasters = 5,
+    parameter int NumMasters = 6,
     parameter int NumTargets = 10
 ) (
     input  logic                 clk_i,
@@ -46,7 +46,7 @@ module axi4_interconnect #(
   localparam logic [TARGET_WIDTH-1:0] TARGET_SDRAM = TARGET_WIDTH'(3);
   localparam logic [TARGET_WIDTH-1:0] TARGET_PSRAM = TARGET_WIDTH'(4);
   localparam logic [TARGET_WIDTH-1:0] TARGET_XPI = TARGET_WIDTH'(5);
-  localparam logic [TARGET_WIDTH-1:0] TARGET_SPISD = TARGET_WIDTH'(6);
+  localparam logic [TARGET_WIDTH-1:0] TARGET_RETIRED_SPISD = TARGET_WIDTH'(6);
   localparam logic [TARGET_WIDTH-1:0] TARGET_DECERR = TARGET_WIDTH'(7);
   localparam logic [TARGET_WIDTH-1:0] TARGET_SLVERR = TARGET_WIDTH'(8);
   localparam logic [TARGET_WIDTH-1:0] TARGET_OPIPSRAM = TARGET_WIDTH'(9);
@@ -154,7 +154,7 @@ module axi4_interconnect #(
     if (`SOC_ADDR_IS_PSRAM(addr)) return TARGET_PSRAM;
     if (`SOC_ADDR_IS_OPIPSRAM(addr)) return TARGET_OPIPSRAM;
     if (`SOC_ADDR_IS_FLASH(addr) || `SOC_ADDR_IS_XPI(addr)) return TARGET_XPI;
-    if (`SOC_ADDR_IS_SPISD(addr)) return TARGET_SPISD;
+    if (`SOC_ADDR_IS_SPISD(addr)) return TARGET_RETIRED_SPISD;
     if (`SOC_ADDR_IS_APB4_SYSTEM(addr)) return TARGET_APB4_SYSTEM;
     if (`SOC_ADDR_IS_RAM(addr)) return TARGET_RAM;
     if (`SOC_ADDR_IS_APB4_PERIPH(addr)) return TARGET_CFG;
@@ -265,6 +265,10 @@ module axi4_interconnect #(
         .selected_o(s_target_selected[target]),
         .valid_o   (s_target_grant_valid[target])
     );
+
+`ifdef HAVE_SVA
+    assert property (@(posedge clk_i) disable iff (!rst_n_i) $onehot0(s_target_grant[target]));
+`endif
   end
 
   always_comb begin
@@ -576,7 +580,8 @@ module axi4_interconnect #(
 
   assign perf_mgmt_wait_o        = s_perf_master_wait[0];
   assign perf_user_wait_o        = s_perf_master_wait[1];
-  assign perf_dma_wait_o         = s_perf_master_wait[2];
+  // SYSCTRL keeps one DMA aggregate counter for the general and SPI-SD engines.
+  assign perf_dma_wait_o         = s_perf_master_wait[2] + s_perf_master_wait[5];
   assign perf_sdio0_wait_o       = s_perf_master_wait[3];
   assign perf_sdio1_wait_o       = s_perf_master_wait[4];
   assign perf_apb4_periph_wait_o = s_perf_target_wait[TARGET_CFG];
@@ -592,7 +597,7 @@ module axi4_interconnect #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (NumMasters != 5 || ((NumTargets != 9) && (NumTargets != 10))) begin
+    if (NumMasters != 6 || ((NumTargets != 9) && (NumTargets != 10))) begin
       $fatal(1, "axi4_interconnect: invalid topology dimensions");
     end
   end

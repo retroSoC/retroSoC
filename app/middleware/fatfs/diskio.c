@@ -1,4 +1,4 @@
-/* FatFs block-device adapter for the retroSoC SPISD memory window. */
+/* FatFs block-device adapter for the retroSoC SPI-SD controller. */
 
 #include <stdbool.h>
 
@@ -25,6 +25,10 @@ DSTATUS disk_status(BYTE pdrv) {
 
 DSTATUS disk_initialize(BYTE pdrv) {
     if (pdrv != RS_FATFS_DRIVE_TF) {
+        return STA_NOINIT;
+    }
+    if (rs_spisd_initialize((uint32_t)CPU_FREQ * UINT32_C(1000000), RS_TIMEOUT_DEFAULT) != RS_OK) {
+        rs_fatfs_initialized = false;
         return STA_NOINIT;
     }
     rs_fatfs_initialized = true;
@@ -63,12 +67,18 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
         }
         *(WORD *)buff = RS_SPISD_SECTOR_SIZE;
         return RES_OK;
-    case GET_SECTOR_COUNT:
+    case GET_SECTOR_COUNT: {
+        rs_spisd_card_info_t info;
+
         if (buff == NULL) {
             return RES_PARERR;
         }
-        *(LBA_t *)buff = (LBA_t)(TF_CARD_OFFST / RS_SPISD_SECTOR_SIZE);
+        if (rs_spisd_card_info_get(&info) != RS_OK) {
+            return RES_NOTRDY;
+        }
+        *(LBA_t *)buff = (LBA_t)info.capacity_blocks;
         return RES_OK;
+    }
     case GET_BLOCK_SIZE:
         if (buff == NULL) {
             return RES_PARERR;

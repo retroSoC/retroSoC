@@ -22,7 +22,7 @@ module apb4_periph (
     axi4_if.slave                                 cfg_axi4,
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
-    axi4_if.slave                                 spisd_axi4,
+    axi4_if.master                                spisd_axi4,
     axi4_if.slave                                 opipsram_axi4,
     gpio_if.dut                                   gpio,
     user_gpio_if.padctrl                          user_gpio,
@@ -188,7 +188,7 @@ axi4_stream_if #(
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
       .apb4    (u_spisd_apb4_if),
-      .mem_axi4(spisd_axi4),
+      .dma_axi4(spisd_axi4),
       .spi     (spisd)
   );
 

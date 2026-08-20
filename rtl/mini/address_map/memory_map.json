@@ -207,7 +207,7 @@
       "route": "apb4_periph",
       "kind": "active",
       "public": true,
-      "user_access": "rw"
+      "user_access": "none"
     },
     {
       "symbol": "APB4_I2C0",
@@ -483,11 +483,11 @@
       "symbol": "SPISD",
       "base": "0x60000000",
       "size": "0x40000000",
-      "route": "axi4",
-      "kind": "active",
+      "route": "reserved",
+      "kind": "reserved",
       "public": true,
-      "user_access": "rw",
-      "burst": "incr16"
+      "user_access": "none",
+      "burst": "incr1"
     }
   ]
 }

@@ -63,6 +63,13 @@ bits `[7:0]`/strobe lane 0 is the first wire byte, and `DATA_START` is the
 coordinated DMA/card-data launch. The SDK does not provide hotplug,
 filesystem, combo-card, UHS, DDR, or 1.8 V support.
 
+`<retrosoc/hal/spisd.h>` provides the separate SPI-mode SD Memory host API.
+It supports bounded SDSC/SDHC enumeration, PIO and native-AXI SG-DMA sector
+transfers, interrupt/error handling, CSD geometry, and an explicit verified
+CMD6 high-speed switch. Its descriptor/buffer alignment and retired-aperture
+compatibility behavior are defined in the
+[SPI-SD controller contract](../docs/ip/spisd.md).
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

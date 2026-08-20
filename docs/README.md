@@ -57,6 +57,10 @@ the root README and subsystem guides.
 - [ip/sdio-verification.md](ip/sdio-verification.md) records the standalone
   SD/SDIO behavioral models, directed coverage, formal bound, and verification
   blockers.
+- [ip/spisd.md](ip/spisd.md) defines the SPI-mode SD host commercial survey,
+  APB/AXI architecture, register and descriptor ABI, HAL, and product boundary;
+  [ip/spisd-verification.md](ip/spisd-verification.md) records its evidence and
+  commercial delivery gaps.
 - [ip/ps2.md](ip/ps2.md) defines the Mini SoC PS/2 APB, GPIO pad,
   interrupt, SDK, and managed-IP integration contract.
 - The managed [RTC V2 datasheet](../rtl/managed/clusterip/rtc/doc/datasheet.md)

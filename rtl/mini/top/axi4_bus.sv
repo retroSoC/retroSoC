@@ -17,6 +17,7 @@ module axi4_bus (
     axi4_if.slave       dma_axi4,
     axi4_if.slave       sdio0_axi4,
     axi4_if.slave       sdio1_axi4,
+    axi4_if.slave       spisd_axi4,
     axi4_if.master      cfg_axi4,
     axi4_if.master      system_axi4,
 `ifdef HAVE_SRAM_IF
@@ -25,7 +26,6 @@ module axi4_bus (
     axi4_if.master      sdram_axi4,
     axi4_if.master      psram_axi4,
     axi4_if.master      xpi_axi4,
-    axi4_if.master      spisd_axi4,
     axi4_if.master      opipsram_axi4,
     input  logic        user_bus_enable_i,
     output logic        user_bus_idle_o,
@@ -51,7 +51,7 @@ module axi4_bus (
     output logic [63:0] perf_opipsram_wait_o
     // verilog_format: on
 );
-  localparam int NumMasters = 5;
+  localparam int NumMasters = 6;
   localparam int NumTargets = 10;
 
   axi4_if #(
@@ -109,6 +109,11 @@ module axi4_bus (
       .sink  (u_master_axi4_if[4])
   );
 
+  axi4_connector u_spisd_connector (
+      .source(spisd_axi4),
+      .sink  (u_master_axi4_if[5])
+  );
+
   axi4_connector u_cfg_connector (
       .source(u_target_axi4_if[0]),
       .sink  (cfg_axi4)
@@ -137,11 +142,6 @@ module axi4_bus (
   axi4_connector u_xpi_connector (
       .source(u_target_axi4_if[5]),
       .sink  (xpi_axi4)
-  );
-
-  axi4_connector u_spisd_connector (
-      .source(u_target_axi4_if[6]),
-      .sink  (spisd_axi4)
   );
 
   axi4_connector u_opipsram_connector (
@@ -204,6 +204,14 @@ module axi4_bus (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .axi4   (u_target_axi4_if[7])
+  );
+
+  axi4_error_slave #(
+      .Response(2'b11)
+  ) u_retired_spisd_error_slave (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .axi4   (u_target_axi4_if[6])
   );
 
   axi4_error_slave #(

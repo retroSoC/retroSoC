@@ -79,6 +79,11 @@ a shared Basilisk-style digital PHY. Its protocol, CDC, delay-cell,
 register-ABI, DMA, and signoff boundaries are documented in
 [OPI PSRAM and Single-Clock HyperBus Controller](../docs/ip/opipsram.md).
 
+The self-owned SPI-SD host is an APB4-managed, native 32-bit AXI4 SG-DMA
+master with a single-clock mode-0 SDR PHY. Its phase, protocol, register,
+descriptor, software, and verification boundaries are documented in
+[SPI-SD Host Controller](../docs/ip/spisd.md).
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and

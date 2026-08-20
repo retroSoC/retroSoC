@@ -1,359 +1,362 @@
+// Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// retroSoC is licensed under Mulan PSL v2.
+// See LICENSE for the complete license text.
 
-module spisd_card (
-    input  logic sck,
-    input  logic cs_n,
-    input  logic mosi,
-    output logic miso,
-    input  logic power_on
+`timescale 1ns / 1ps
+
+module spisd_card #(
+    parameter int unsigned StorageBlocks  = 4,
+    parameter int unsigned Acmd41Attempts = 2
+) (
+    // verilog_format: off -- preserve the reviewed SPI-model port alignment
+    input  logic  sck,
+    input  logic  cs_n,
+    input  logic  mosi,
+    output logic  miso,
+    input  logic  power_on
+    // verilog_format: on
 );
+  import spisd_pkg::*;
 
-  localparam BLOCK_SIZE = 512;
-  localparam CAPACITY_MB = 16;
-  localparam BLOCK_COUNT = CAPACITY_MB * 1024 * 1024 / BLOCK_SIZE;
+  localparam int unsigned BlockSize = 512;
+  localparam int unsigned TxDepth = BlockSize + 16;
 
-  typedef enum logic [3:0] {
-    STATE_IDLE,
-    STATE_READ_CMD,
-    STATE_PROCESS_CMD,
-    STATE_SEND_RESPONSE,
-    STATE_READ_DATA,
-    STATE_SEND_DATA
-  } state_t;
+  localparam logic [5:0] Cmd0 = 6'd0;
+  localparam logic [5:0] Cmd6 = 6'd6;
+  localparam logic [5:0] Cmd8 = 6'd8;
+  localparam logic [5:0] Cmd9 = 6'd9;
+  localparam logic [5:0] Cmd12 = 6'd12;
+  localparam logic [5:0] Cmd16 = 6'd16;
+  localparam logic [5:0] Cmd17 = 6'd17;
+  localparam logic [5:0] Cmd24 = 6'd24;
+  localparam logic [5:0] Cmd55 = 6'd55;
+  localparam logic [5:0] Cmd58 = 6'd58;
+  localparam logic [5:0] Acmd41 = 6'd41;
 
-  typedef enum logic [5:0] {
-    CMD0_GO_IDLE_STATE      = 6'h00,
-    CMD8_SEND_IF_COND       = 6'h08,
-    CMD9_SEND_CSD           = 6'h09,
-    CMD10_SEND_CID          = 6'h0A,
-    CMD12_STOP_TRANSMISSION = 6'h0C,
-    CMD16_SET_BLOCKLEN      = 6'h10,
-    CMD17_READ_SINGLE_BLOCK = 6'h11,
-    CMD24_WRITE_BLOCK       = 6'h18,
-    CMD55_APP_CMD           = 6'h37,
-    ACMD41_SD_SEND_OP_COND  = 6'h29
-  } command_t;
+  // These controls are intentionally visible to testbenches through hierarchy.
+  logic          force_command_timeout;
+  logic          force_data_crc_error;
+  logic          force_write_reject;
 
-  typedef struct packed {
-    logic [6:0] reserved;
-    logic       param_error;
-    logic       addr_error;
-    logic       erase_seq_error;
-    logic       com_crc_error;
-    logic       illegal_command;
-    logic       erase_reset;
-    logic       in_idle_state;
-  } r1_response_t;
+  logic          sck_q;
+  logic          power_on_q;
+  logic          initialized;
+  logic          app_command;
+  logic   [ 7:0] rx_shift;
+  logic   [ 2:0] rx_bit_count;
+  logic   [ 2:0] command_byte_count;
+  logic   [ 5:0] command_index;
+  logic   [31:0] command_argument;
+  logic   [ 7:0] tx_data               [                  0:TxDepth-1];
+  integer        tx_read_index;
+  integer        tx_write_index;
+  logic   [ 2:0] tx_bit_count;
+  logic   [ 7:0] storage               [0:(StorageBlocks*BlockSize)-1];
+  logic   [ 7:0] csd                   [                         0:15];
+  integer        acmd41_count;
+  logic   [ 2:0] write_state;
+  integer        write_byte_count;
+  integer        write_block;
+  logic   [15:0] write_crc;
+  logic   [ 7:0] write_crc_high;
 
-  // verilog_format: off
-  state_t current_state = STATE_IDLE;
-  state_t next_state;
-  logic [7:0] command_byte;
-  logic [5:0] command_index;
-  logic [31:0] command_argument;
-  logic [2:0] command_byte_counter = 0;
-  logic [7:0] data_token;
-  logic [31:0] block_address;
-  logic [8:0] data_byte_counter; 
-  logic [7:0] data_buffer[0:BLOCK_SIZE-1]; 
-  logic [7:0] csd_register[0:15]; 
-  logic [7:0] cid_register[0:15]; 
-  r1_response_t current_r1;
-  logic [7:0] spi_shift_out;
-  logic [7:0] spi_shift_in;
-  logic [2:0] bit_counter = 0;
-  logic ocr_high_capacity;
-  logic initialized = 0;  
-  // verilog_format: on
-
-  initial begin
-    current_state = STATE_IDLE;
-    current_r1 = {7'h0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1};
-
-    csd_register = '{
-        8'h40,
-        8'h0E,
-        8'h00,
-        8'h32,  // CSD
-        8'h5B,
-        8'h59,
-        8'h00,
-        8'h00,
-        8'h1F,
-        8'h7F,
-        8'h80,
-        8'h0A,
-        8'h40,
-        8'h00,
-        8'h00,
-        8'h00
-    };
-
-    cid_register = '{
-        8'h00,
-        8'h01,
-        8'h41,
-        8'h4D,  // MID/OID
-        8'h44,
-        8'h2D,
-        8'h53,
-        8'h44,  // PNM
-        8'h53,
-        8'h44,
-        8'h32,
-        8'h47,
-        8'h30,
-        8'h00,
-        8'h00,
-        8'h64  // PSV/PRV/SN
-    };
-
-    for (int i = 0; i < BLOCK_SIZE; i++) begin
-      data_buffer[i] = 8'h00;
+  task automatic queue_clear;
+    begin
+      tx_read_index  = 0;
+      tx_write_index = 0;
+      tx_bit_count   = 3'd0;
     end
+  endtask
 
-    // set block size is 512B
-    current_r1.in_idle_state = 1;
-  end
+  task automatic queue_byte(input logic [7:0] data);
+    begin
+      if (tx_write_index >= TxDepth) $fatal(1, "SPI-SD model transmit queue overflow");
+      tx_data[tx_write_index] = data;
+      tx_write_index          = tx_write_index + 1;
+    end
+  endtask
 
-  // reset
-  always @(posedge power_on) begin
-    current_r1.in_idle_state = 1;
-    initialized              = 0;
-  end
+  task automatic queue_r1(input logic [7:0] response);
+    begin
+      queue_clear();
+      queue_byte(8'hFF);
+      queue_byte(response);
+    end
+  endtask
 
-  always_ff @(negedge sck or posedge cs_n) begin
-    if (cs_n) begin
-      spi_shift_in <= 8'h00;
-      bit_counter  <= 0;
-    end else if (!cs_n) begin
-      spi_shift_in <= {spi_shift_in[6:0], mosi};
-      bit_counter  <= bit_counter + 1;
+  task automatic queue_data_block(input integer block_index, input integer byte_count,
+                                  input logic use_csd);
+    logic [15:0] crc;
+    logic [ 7:0] data;
+    begin
+      queue_clear();
+      queue_byte(8'hFF);
+      queue_byte(initialized ? 8'h00 : 8'h01);
+      queue_byte(8'hFF);
+      queue_byte(8'hFE);
+      crc = 16'd0;
+      for (int index = 0; index < byte_count; index++) begin
+        if (use_csd) data = csd[index];
+        else data = storage[(block_index*BlockSize)+index];
+        queue_byte(data);
+        crc = spisd_crc16_byte(crc, data);
+      end
+      if (force_data_crc_error) crc = crc ^ 16'h0001;
+      queue_byte(crc[15:8]);
+      queue_byte(crc[7:0]);
+    end
+  endtask
 
-      if (bit_counter == 7) begin
-        bit_counter <= 0;
-        case (current_state)
-          STATE_IDLE: begin
-            if (spi_shift_in[7:6] == 2'b01) begin
-              command_byte         <= spi_shift_in;
-              command_byte_counter <= 1;
-              next_state    = STATE_READ_CMD;
-              current_state = STATE_READ_CMD;
+  task automatic process_command(input logic [5:0] index, input logic [31:0] argument);
+    logic   [ 7:0] r1;
+    logic   [ 7:0] status_data;
+    logic   [15:0] data_crc;
+    integer        block_index;
+    logic          was_app_command;
+    begin
+      if (force_command_timeout) begin
+        queue_clear();
+      end else begin
+        r1              = initialized ? 8'h00 : 8'h01;
+        was_app_command = app_command;
+        app_command     = 1'b0;
+        unique case (index)
+          Cmd0: begin
+            initialized  = 1'b0;
+            app_command  = 1'b0;
+            acmd41_count = 0;
+            queue_r1(8'h01);
+          end
+          Cmd8: begin
+            queue_clear();
+            queue_byte(8'hFF);
+            queue_byte(r1);
+            queue_byte(8'h00);
+            queue_byte(8'h00);
+            queue_byte(8'h01);
+            queue_byte(argument[7:0]);
+          end
+          Cmd9: begin
+            queue_data_block(0, 16, 1'b1);
+          end
+          Cmd12: begin
+            queue_clear();
+            queue_byte(8'hFF);
+            queue_byte(r1);
+            queue_byte(8'h00);
+            queue_byte(8'h00);
+            queue_byte(8'hFF);
+          end
+          Cmd16: begin
+            queue_r1((argument == BlockSize) ? r1 : (r1 | 8'h40));
+          end
+          Cmd17: begin
+            block_index = initialized ? (argument % StorageBlocks) : 0;
+            if (initialized) queue_data_block(block_index, BlockSize, 1'b0);
+            else queue_r1(8'h05);
+          end
+          Cmd24: begin
+            if (initialized) begin
+              queue_r1(8'h00);
+              write_state      = 3'd1;
+              write_byte_count = 0;
+              write_block      = argument % StorageBlocks;
+              write_crc        = 16'd0;
+            end else begin
+              queue_r1(8'h05);
             end
           end
-
-          STATE_READ_CMD: begin
-            case (command_byte_counter)
-              1: command_argument[31:24] <= spi_shift_in;
-              2: command_argument[23:16] <= spi_shift_in;
-              3: command_argument[15:8] <= spi_shift_in;
-              4: command_argument[7:0] <= spi_shift_in;
-              5: begin  // CRC7+ stop bit
-                command_index <= command_byte[5:0];
-                current_state = STATE_PROCESS_CMD;
-              end
-            endcase
-            command_byte_counter <= command_byte_counter + 1;
+          Cmd55: begin
+            app_command = 1'b1;
+            queue_r1(r1);
           end
-
-          STATE_READ_DATA: begin
-            data_buffer[data_byte_counter] <= spi_shift_in;
-            data_byte_counter              <= data_byte_counter + 1;
-            if (data_byte_counter == (BLOCK_SIZE - 1)) begin
-              current_state = STATE_SEND_RESPONSE;
-              prepare_response(8'h05);
+          Acmd41: begin
+            if (was_app_command) begin
+              if (acmd41_count < Acmd41Attempts) acmd41_count = acmd41_count + 1;
+              if (acmd41_count >= Acmd41Attempts) initialized = 1'b1;
+              queue_r1(initialized ? 8'h00 : 8'h01);
+            end else begin
+              queue_r1(r1 | 8'h04);
             end
           end
+          Cmd58: begin
+            queue_clear();
+            queue_byte(8'hFF);
+            queue_byte(r1);
+            queue_byte(initialized ? 8'hC0 : 8'h40);
+            queue_byte(8'hFF);
+            queue_byte(8'h80);
+            queue_byte(8'h00);
+          end
+          Cmd6: begin
+            queue_clear();
+            queue_byte(8'hFF);
+            queue_byte(r1);
+            queue_byte(8'hFF);
+            queue_byte(8'hFE);
+            data_crc = 16'd0;
+            for (int byte_index = 0; byte_index < 64; byte_index++) begin
+              status_data = (byte_index == 16) ? 8'h01 : 8'h00;
+              queue_byte(status_data);
+              data_crc = spisd_crc16_byte(data_crc, status_data);
+            end
+            if (force_data_crc_error) data_crc = data_crc ^ 16'h0001;
+            queue_byte(data_crc[15:8]);
+            queue_byte(data_crc[7:0]);
+          end
+          default: queue_r1(r1 | 8'h04);
         endcase
       end
     end
-  end
+  endtask
 
-
-  always_ff @(posedge sck or posedge cs_n) begin
-    if (cs_n) begin
-      miso          <= 1'b1;
-      spi_shift_out <= 8'hFF;
-      current_state <= STATE_IDLE;
-    end else if (!cs_n) begin
-      if (current_state == STATE_SEND_RESPONSE || current_state == STATE_SEND_DATA) begin
-        miso          <= spi_shift_out[7];
-        spi_shift_out <= {spi_shift_out[6:0], 1'b1};
-        bit_counter   <= bit_counter + 1;
-      end else begin
-        // other state
-        miso <= 1'b1;
-      end
-
-      // state handle
-      case (current_state)
-        STATE_PROCESS_CMD: begin
-          process_command(command_index);
-        end
-
-        STATE_SEND_RESPONSE: begin
-          if (bit_counter == 7) begin
-            bit_counter <= 0;
-            if (data_token == 0) begin
-              // R1 resp xfer done
-              current_state = STATE_IDLE;
-            end else if (data_token == 8'hFE) begin
-              // send data
-              current_state = STATE_SEND_DATA;
-              spi_shift_out <= data_buffer[0];
-            end else if (data_token == 8'h05) begin
-              // send data done
-              current_state = STATE_IDLE;
-            end
+  task automatic process_write_byte(input logic [7:0] data);
+    begin
+      unique case (write_state)
+        3'd1: begin
+          if (data == 8'hFE) begin
+            write_state      = 3'd2;
+            write_byte_count = 0;
+            write_crc        = 16'd0;
           end
         end
-
-        STATE_SEND_DATA: begin
-          if (bit_counter == 7) begin
-            bit_counter       <= 0;
-            data_byte_counter <= data_byte_counter + 1;
-            if (data_byte_counter < (BLOCK_SIZE - 1)) begin
-              spi_shift_out <= data_buffer[data_byte_counter+1];
-            end else begin
-              // send fake CRC
-              spi_shift_out <= 8'hFF;  // CRC1
-              next_state = STATE_SEND_RESPONSE;
-              prepare_response(0);  // change to IDLE state
-            end
-          end
+        3'd2: begin
+          storage[(write_block*BlockSize)+write_byte_count] = data;
+          write_crc                                         = spisd_crc16_byte(write_crc, data);
+          if (write_byte_count == (BlockSize - 1)) write_state = 3'd3;
+          else write_byte_count = write_byte_count + 1;
         end
+        3'd3: begin
+          write_crc_high = data;
+          write_state    = 3'd4;
+        end
+        3'd4: begin
+          queue_clear();
+          if (force_write_reject || ({write_crc_high, data} != write_crc)) begin
+            queue_byte(8'h0B);
+          end else begin
+            queue_byte(8'h05);
+            queue_byte(8'h00);
+            queue_byte(8'h00);
+            queue_byte(8'hFF);
+          end
+          write_state = 3'd0;
+        end
+        default: write_state = 3'd0;
       endcase
     end
+  endtask
+
+  task automatic process_rx_byte(input logic [7:0] data);
+    begin
+      if ((write_state != 3'd0) && (tx_read_index >= tx_write_index)) begin
+        process_write_byte(data);
+      end else if (tx_read_index >= tx_write_index) begin
+        unique case (command_byte_count)
+          3'd0: begin
+            if (data[7:6] == 2'b01) begin
+              command_index      = data[5:0];
+              command_byte_count = 3'd1;
+            end
+          end
+          3'd1, 3'd2, 3'd3, 3'd4: begin
+            command_argument   = {command_argument[23:0], data};
+            command_byte_count = command_byte_count + 1'b1;
+          end
+          3'd5: begin
+            command_byte_count = 3'd0;
+            process_command(command_index, command_argument);
+          end
+          default: command_byte_count = 3'd0;
+        endcase
+      end
+    end
+  endtask
+
+  task automatic transaction_reset;
+    begin
+      miso               = 1'b1;
+      rx_shift           = 8'hFF;
+      rx_bit_count       = 3'd0;
+      command_byte_count = 3'd0;
+      command_argument   = 32'd0;
+      tx_read_index      = 0;
+      tx_write_index     = 0;
+      tx_bit_count       = 3'd0;
+      write_state        = 3'd0;
+      write_byte_count   = 0;
+      write_crc          = 16'd0;
+      write_crc_high     = 8'd0;
+    end
+  endtask
+
+  task automatic model_reset;
+    begin
+      initialized           = 1'b0;
+      app_command           = 1'b0;
+      acmd41_count          = 0;
+      force_command_timeout = 1'b0;
+      force_data_crc_error  = 1'b0;
+      force_write_reject    = 1'b0;
+      transaction_reset();
+    end
+  endtask
+
+  initial begin
+    sck_q      = 1'b0;
+    power_on_q = 1'b0;
+    csd[0]     = 8'h40;
+    csd[1]     = 8'h0E;
+    csd[2]     = 8'h00;
+    csd[3]     = 8'h32;
+    csd[4]     = 8'h5B;
+    csd[5]     = 8'h59;
+    csd[6]     = 8'h00;
+    csd[7]     = 8'h00;
+    csd[8]     = 8'h1F;
+    csd[9]     = 8'h7F;
+    csd[10]    = 8'h80;
+    csd[11]    = 8'h0A;
+    csd[12]    = 8'h40;
+    csd[13]    = 8'h00;
+    csd[14]    = 8'h00;
+    csd[15]    = 8'h00;
+    for (int index = 0; index < (StorageBlocks * BlockSize); index++) begin
+      storage[index] = index[7:0];
+    end
+    model_reset();
   end
 
-  task process_command;
-    input logic [5:0] cmd;
-
-    // default resp: no error
-    current_r1.com_crc_error   = 0;
-    current_r1.illegal_command = 0;
-    current_r1.addr_error      = 0;
-    current_r1.param_error     = 0;
-
-    case (cmd)
-      CMD0_GO_IDLE_STATE: begin
-        current_r1.in_idle_state = 1;
-        prepare_response(1);  // r1 resp
+  // A single event process avoids races between independent edge processes in
+  // this behavioral model. The card samples MOSI on rising edges and changes
+  // MISO only on falling edges, matching SPI mode 0.
+  always @(sck or cs_n or power_on) begin
+    if (power_on && !power_on_q) model_reset();
+    if (cs_n) begin
+      transaction_reset();
+    end else if (!sck_q && sck) begin
+      rx_shift = {rx_shift[6:0], mosi};
+      if (rx_bit_count == 3'd7) begin
+        process_rx_byte(rx_shift);
+        rx_bit_count = 3'd0;
+      end else begin
+        rx_bit_count = rx_bit_count + 1'b1;
       end
-
-      CMD8_SEND_IF_COND: begin
-        // SD2.0 init check
-        if (command_argument[11:8] == 4'b0001) begin  // 2.7-3.6V
-          // r7 resp(0x01 + params + CRC)
-          spi_shift_out <= {1'b0, current_r1};
-          // send complete resp
-          next_state = STATE_SEND_RESPONSE;
-        end
-      end
-
-      CMD9_SEND_CSD: begin
-        // send CSD register
-        for (int i = 0; i < BLOCK_SIZE; i++) begin
-          if (i < 16) data_buffer[i] = csd_register[i];
-          else data_buffer[i] = 8'h00;
-        end
-        prepare_response(1);
-        // enter data xfer state
-        block_address     = 'x;
-        data_byte_counter = 0;
-      end
-
-      CMD10_SEND_CID: begin
-        // xfer CID register
-        for (int i = 0; i < BLOCK_SIZE; i++) begin
-          if (i < 16) data_buffer[i] = cid_register[i];
-          else data_buffer[i] = 8'h00;
-        end
-        prepare_response(1);
-        // enter data xfer state
-        block_address     = 'x;
-        data_byte_counter = 0;
-      end
-
-      CMD16_SET_BLOCKLEN: begin
-        // set data block len
-        if (command_argument == BLOCK_SIZE) begin
-          prepare_response(1);
+    end else if (sck_q && !sck) begin
+      if (tx_read_index < tx_write_index) begin
+        miso = tx_data[tx_read_index][7-tx_bit_count];
+        if (tx_bit_count == 3'd7) begin
+          tx_bit_count  = 3'd0;
+          tx_read_index = tx_read_index + 1;
         end else begin
-          current_r1.param_error = 1;
-          prepare_response(1);
+          tx_bit_count = tx_bit_count + 1'b1;
         end
+      end else begin
+        miso = 1'b1;
       end
-
-      CMD17_READ_SINGLE_BLOCK: begin
-        if (command_argument < BLOCK_COUNT) begin
-          block_address = command_argument;
-          // get data from model or RAM
-          prepare_response(1);
-          data_byte_counter = 0;
-        end else begin
-          current_r1.addr_error = 1;
-          prepare_response(1);
-        end
-      end
-
-      CMD24_WRITE_BLOCK: begin
-        if (command_argument < BLOCK_COUNT) begin
-          block_address     = command_argument;
-          current_state     = STATE_READ_DATA;
-          data_byte_counter = 0;
-        end else begin
-          current_r1.addr_error = 1;
-          prepare_response(1);
-        end
-      end
-
-      CMD55_APP_CMD: begin
-        if (command_argument == 0) begin
-          prepare_response(1);
-        end
-      end
-
-      ACMD41_SD_SEND_OP_COND: begin
-        if (command_argument[30] == 1'b1) begin  // HCS
-          ocr_high_capacity        = 1;
-          current_r1.in_idle_state = 0;
-          initialized              = 1;
-        end
-        prepare_response(1);
-      end
-
-      default: begin
-        current_r1.illegal_command = 1;
-        prepare_response(1);
-      end
-    endcase
-  endtask
-
-  task prepare_response;
-    input logic [7:0] token;
-
-    data_token = token;
-
-    case (token)
-      1: begin  // R1-type
-        spi_shift_out <= {1'b0, current_r1};
-        current_state = STATE_SEND_RESPONSE;
-      end
-
-      8'hFE: begin  // data token
-        spi_shift_out <= 8'hFE;
-        current_state = STATE_SEND_RESPONSE;
-      end
-
-      8'h05: begin  // data resp
-        spi_shift_out <= 8'h05;
-        current_state = STATE_SEND_RESPONSE;
-      end
-
-      default: begin
-        current_state = STATE_IDLE;
-      end
-    endcase
-  endtask
+    end
+    sck_q      = sck;
+    power_on_q = power_on;
+  end
 
 endmodule

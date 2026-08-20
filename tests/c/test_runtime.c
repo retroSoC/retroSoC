@@ -579,6 +579,63 @@ static int test_sdio_helpers(void) {
     return 0;
 }
 
+static int test_spisd_helpers(void) {
+    rs_spisd_clock_t clock;
+    rs_spisd_card_info_t info = {0};
+    rs_spisd_descriptor_t descriptor;
+    uint8_t csd_v2[16] = {0};
+    uint8_t csd_v1[16] = {0};
+    uint32_t argument;
+
+    if ((rs_spisd_clock_calculate(72000000U, 400000U, &clock) != RS_OK) ||
+        (clock.half_period != 90U) || (clock.actual_hz != 400000U) ||
+        (rs_spisd_clock_calculate(72000000U, 36000000U, &clock) != RS_OK) ||
+        (clock.half_period != 1U) || (clock.actual_hz != 36000000U)) {
+        return 1;
+    }
+    if ((rs_spisd_clock_calculate(0U, 400000U, &clock) != RS_EINVAL) ||
+        (rs_spisd_clock_calculate(72000000U, 36000001U, &clock) != RS_EINVAL) ||
+        (rs_spisd_clock_calculate(72000000U, 400000U, NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    if ((rs_spisd_card_address(RS_SPISD_CARD_SDSC, 2U, &argument) != RS_OK) ||
+        (argument != 1024U) ||
+        (rs_spisd_card_address(RS_SPISD_CARD_SDHC, 2U, &argument) != RS_OK) || (argument != 2U) ||
+        (rs_spisd_card_address((rs_spisd_card_type_t)2U, 0U, &argument) != RS_EINVAL)) {
+        return 3;
+    }
+    csd_v2[0] = UINT8_C(0x40);
+    csd_v2[8] = UINT8_C(0x03);
+    csd_v2[9] = UINT8_C(0xFF);
+    if ((rs_spisd_parse_csd(csd_v2, &info) != RS_OK) || !info.high_capacity ||
+        (info.card_type != RS_SPISD_CARD_SDHC) || (info.capacity_blocks != UINT32_C(0x00100000))) {
+        return 4;
+    }
+    csd_v1[5] = UINT8_C(9);
+    csd_v1[7] = UINT8_C(0xFF);
+    csd_v1[8] = UINT8_C(0xC0);
+    csd_v1[9] = UINT8_C(0x03);
+    csd_v1[10] = UINT8_C(0x80);
+    if ((rs_spisd_parse_csd(csd_v1, &info) != RS_OK) || info.high_capacity ||
+        (info.card_type != RS_SPISD_CARD_SDSC) || (info.capacity_blocks != UINT32_C(0x00080000))) {
+        return 5;
+    }
+    if ((rs_spisd_descriptor_prepare(&descriptor, (uintptr_t)UINT32_C(0x40000000), 64U,
+                                     (uintptr_t)0U, true, true) != RS_OK) ||
+        (rs_spisd_descriptor_validate(&descriptor) != RS_OK) ||
+        (rs_spisd_descriptor_publish(&descriptor) != RS_OK) ||
+        ((descriptor.control_status & RS_SPISD_DESC_OWN) == 0U)) {
+        return 6;
+    }
+    if ((rs_spisd_descriptor_prepare(&descriptor, (uintptr_t)UINT32_C(0x40000002), 64U,
+                                     (uintptr_t)0U, true, false) != RS_EINVAL) ||
+        (rs_spisd_descriptor_prepare(&descriptor, (uintptr_t)UINT32_C(0x40000000), 64U,
+                                     (uintptr_t)UINT32_C(0x40000FF0), false, false) != RS_EINVAL)) {
+        return 7;
+    }
+    return 0;
+}
+
 static int test_gpio_helpers(void) {
     rs_gpio_filter_timing_t timing;
 
@@ -710,15 +767,13 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(),   test_formatter(),
-        test_compiler_helpers(), test_wait_helper(),
-        test_ws2812_helpers(),   test_timer_helpers(),
-        test_psram_helpers(),    test_sdram_helpers(),
-        test_uart_helpers(),     test_i2s_helpers(),
-        test_i2c_helpers(),      test_sdio_helpers(),
-        test_gpio_helpers(),     test_dma_config_validation(),
-        test_opipsram_helpers(), test_ps2_decoders(),
-        test_wav_parser(),       test_video_parser(),
+        test_string_helpers(),   test_formatter(),      test_compiler_helpers(),
+        test_wait_helper(),      test_ws2812_helpers(), test_timer_helpers(),
+        test_psram_helpers(),    test_sdram_helpers(),  test_uart_helpers(),
+        test_i2s_helpers(),      test_i2c_helpers(),    test_sdio_helpers(),
+        test_spisd_helpers(),    test_gpio_helpers(),   test_dma_config_validation(),
+        test_opipsram_helpers(), test_ps2_decoders(),   test_wav_parser(),
+        test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {
