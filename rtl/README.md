@@ -88,5 +88,6 @@ verification contract are documented in
 The Mini SoC APB4 platform block is `apb4_system` in `rtl/mini/top`. It owns
 archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, and the user-IP APB window.
 `apb4_periph` remains the APB4 peripheral container. Topology generation
-and the `soc_apb4_system_fabric.svh` include are documented in
+includes both management-only native SDIO hosts (`sdio0` on GPIO15..20 ALT0
+and `sdio1` on dedicated pads), and the `soc_apb4_system_fabric.svh` include is documented in
 [Mini SoC Topology](mini/integration/README.md).

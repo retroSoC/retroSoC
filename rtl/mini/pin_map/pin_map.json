@@ -56,6 +56,49 @@
       "interface": "u_gpio_if"
     },
     {
+      "kind": "peripheral_output",
+      "direction": "output",
+      "ports": [
+        {"name": "sdio1_clk_o_pad", "signal": "u_sdio1_if.sck_o"}
+      ]
+    },
+    {
+      "kind": "peripheral_bidir",
+      "direction": "inout",
+      "ports": [
+        {
+          "name": "sdio1_cmd_io_pad",
+          "input": "u_sdio1_if.cmd_di_i",
+          "output": "u_sdio1_if.cmd_do_o",
+          "output_enable": "u_sdio1_if.cmd_oe_o"
+        },
+        {
+          "name": "sdio1_dat0_io_pad",
+          "input": "u_sdio1_if.dat_di_i[0]",
+          "output": "u_sdio1_if.dat_do_o[0]",
+          "output_enable": "u_sdio1_if.dat_oe_o[0]"
+        },
+        {
+          "name": "sdio1_dat1_io_pad",
+          "input": "u_sdio1_if.dat_di_i[1]",
+          "output": "u_sdio1_if.dat_do_o[1]",
+          "output_enable": "u_sdio1_if.dat_oe_o[1]"
+        },
+        {
+          "name": "sdio1_dat2_io_pad",
+          "input": "u_sdio1_if.dat_di_i[2]",
+          "output": "u_sdio1_if.dat_do_o[2]",
+          "output_enable": "u_sdio1_if.dat_oe_o[2]"
+        },
+        {
+          "name": "sdio1_dat3_io_pad",
+          "input": "u_sdio1_if.dat_di_i[3]",
+          "output": "u_sdio1_if.dat_do_o[3]",
+          "output_enable": "u_sdio1_if.dat_oe_o[3]"
+        }
+      ]
+    },
+    {
       "kind": "tri_output",
       "direction": "output",
       "ports": [
@@ -169,6 +212,12 @@
         "gpio_25_io_pad": "psram_dat2_io",
         "gpio_26_io_pad": "psram_dat3_io",
         "gpio_30_io_pad": "gpio_io30",
+        "sdio1_clk_o_pad": null,
+        "sdio1_cmd_io_pad": null,
+        "sdio1_dat0_io_pad": null,
+        "sdio1_dat1_io_pad": null,
+        "sdio1_dat2_io_pad": null,
+        "sdio1_dat3_io_pad": null,
         "uart0_tx_o_pad": "uart0_tx_o",
         "uart0_rx_i_pad": "uart0_rx_i",
         "xpi_sck_o_pad": "xpi_sck_o",
@@ -236,6 +285,12 @@
         "gpio_27_io_pad": "s_psram_nss1",
         "gpio_28_io_pad": "s_psram_nss2",
         "gpio_29_io_pad": "s_psram_nss3",
+        "sdio1_clk_o_pad": "sdio1_clk_o",
+        "sdio1_cmd_io_pad": "sdio1_cmd_io",
+        "sdio1_dat0_io_pad": "sdio1_dat0_io",
+        "sdio1_dat1_io_pad": "sdio1_dat1_io",
+        "sdio1_dat2_io_pad": "sdio1_dat2_io",
+        "sdio1_dat3_io_pad": "sdio1_dat3_io",
         "xpi_sck_o_pad": "s_xpi_sck_o",
         "xpi_nss0_o_pad": "s_xpi_nss0_o",
         "xpi_dat0_io_pad": "s_xpi_dat0_io",
@@ -307,6 +362,12 @@
         "gpio_27_io_pad": "s_psram_nss1",
         "gpio_28_io_pad": "s_psram_nss2",
         "gpio_29_io_pad": "s_psram_nss3",
+        "sdio1_clk_o_pad": "s_sdio1_clk",
+        "sdio1_cmd_io_pad": "s_sdio1_cmd",
+        "sdio1_dat0_io_pad": "s_sdio1_dat[0]",
+        "sdio1_dat1_io_pad": "s_sdio1_dat[1]",
+        "sdio1_dat2_io_pad": "s_sdio1_dat[2]",
+        "sdio1_dat3_io_pad": "s_sdio1_dat[3]",
         "uart0_tx_o_pad": "s_uart0_tx",
         "uart0_rx_i_pad": "s_uart0_rx",
         "xpi_sck_o_pad": "s_xpi_sck_o",

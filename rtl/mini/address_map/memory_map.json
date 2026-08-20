@@ -125,6 +125,22 @@
     {
       "symbol": "RTC_WAKE_STATUS",
       "offset": "0x88"
+    },
+    {
+      "symbol": "PERF_SDIO0_WAIT_LO",
+      "offset": "0x8C"
+    },
+    {
+      "symbol": "PERF_SDIO0_WAIT_HI",
+      "offset": "0x90"
+    },
+    {
+      "symbol": "PERF_SDIO1_WAIT_LO",
+      "offset": "0x94"
+    },
+    {
+      "symbol": "PERF_SDIO1_WAIT_HI",
+      "offset": "0x98"
     }
   ],
   "regions": [
@@ -275,12 +291,12 @@
       "user_access": "rw"
     },
     {
-      "symbol": "APB4_SDIO",
+      "symbol": "APB4_SDIO0",
       "base": "0x1000F000",
       "size": "0x00001000",
-      "route": "reserved",
-      "kind": "reserved",
-      "public": false,
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
       "user_access": "none"
     },
     {
@@ -322,6 +338,15 @@
     {
       "symbol": "APB4_GPIO_ADMIN",
       "base": "0x10014000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_SDIO1",
+      "base": "0x10015000",
       "size": "0x00001000",
       "route": "apb4_periph",
       "kind": "active",

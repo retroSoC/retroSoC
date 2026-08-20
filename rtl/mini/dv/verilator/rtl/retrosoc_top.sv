@@ -30,7 +30,13 @@ module retrosoc_top (
     output wire       jtag_tdo_o,
     output wire       test_done_o,
     output wire       test_pass_o,
-    output wire [7:0] test_code_o
+    output wire [7:0] test_code_o,
+    output wire       sdio1_clk_o,
+    inout  wire       sdio1_cmd_io,
+    inout  wire       sdio1_dat0_io,
+    inout  wire       sdio1_dat1_io,
+    inout  wire       sdio1_dat2_io,
+    inout  wire       sdio1_dat3_io
 );
 
   wire        s_clk;

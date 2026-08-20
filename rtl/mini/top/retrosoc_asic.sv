@@ -50,6 +50,8 @@
 // GPIO29  OPI_PSRAM_IO6                BIDI    QSPI_PSRAM_NSS3         OUT
 // GPIO30  OPI_PSRAM_IO7                BIDI    PWM_CAPTURE0            IN
 // GPIO31  OPI_PSRAM_DQS                BIDI    PWM_CAPTURE1            IN
+//
+// Dedicated SDIO1 pads: SDIO1_CLK, SDIO1_CMD, SDIO1_DAT[3:0].
 
 module retrosoc_asic (
     `include "retrosoc_asic_ports.svh"
@@ -84,6 +86,7 @@ module retrosoc_asic (
   gpio_if u_gpio_if ();
   xpi_if u_xpi_if ();
   sdram_if u_sdram_if ();
+  sdio_if u_sdio1_if ();
   pll_ctrl_if u_pll_ctrl_if ();
 
   `include "retrosoc_asic_pad_bindings.svh"
@@ -130,6 +133,7 @@ rcu #(
       .uart_tx_o      (s_uart0_tx),
       .xpi            (u_xpi_if),
       .sdram          (u_sdram_if),
+      .sdio1          (u_sdio1_if),
       .jtag_tck_i     (s_jtag_tck),
       .jtag_tms_i     (s_jtag_tms),
       .jtag_tdi_i     (s_jtag_tdi),

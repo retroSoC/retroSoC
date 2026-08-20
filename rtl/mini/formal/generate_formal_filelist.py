@@ -21,6 +21,7 @@ INTERCONNECT = ROOT / "rtl/ip/interconnect"
 PERIPHERAL = ROOT / "rtl/ip/peripheral"
 SERIAL = ROOT / "rtl/ip/serial"
 MEMORY = ROOT / "rtl/ip/memory"
+STORAGE = ROOT / "rtl/ip/storage"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -227,6 +228,19 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "dma_core.sv",
             SCRIPT_DIR / "dma_formal.sv",
         ]
+    if target == "sdio":
+        return [
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "interface/axi4_if.sv",
+            PERIPHERAL / "dma_axi4_master.sv",
+            STORAGE / "sdio_pkg.sv",
+            STORAGE / "sdio_define.svh",
+            STORAGE / "sdio_clock.sv",
+            STORAGE / "sdio_dma_descriptor.sv",
+            STORAGE / "sdio_dma.sv",
+            STORAGE / "sdio_reg.sv",
+            SCRIPT_DIR / "sdio_formal.sv",
+        ]
     raise ValueError(f"unsupported formal target: {target}")
 
 
@@ -279,6 +293,7 @@ def parse_args() -> argparse.Namespace:
             "psram",
             "opipsram",
             "dma",
+            "sdio",
         ),
         required=True,
     )

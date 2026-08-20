@@ -154,7 +154,7 @@ module bus_fault_tb;
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 
-    expect_fault(32'h1000_F000, 4'hF, 1'b1, `RIB_RESP_RESERVED);
+    expect_fault(32'h1001_2000, 4'hF, 1'b1, `RIB_RESP_RESERVED);
     expect_fault(32'hA000_0000, 4'h0, 1'b0, `RIB_RESP_DECERR);
     expect_user_denied(32'h1000_B000, 4'hF);
     $display("bus fault responder test passed");

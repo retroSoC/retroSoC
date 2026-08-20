@@ -29,6 +29,7 @@ module retrosoc (
     output logic         uart_tx_o,
     xpi_if.dut           xpi,
     sdram_if.dut         sdram,
+    sdio_if.dut          sdio1,
     input  logic         jtag_tck_i,
     input  logic         jtag_tms_i,
     input  logic         jtag_tdi_i,
@@ -66,7 +67,7 @@ module retrosoc (
   ws2812_if   u_ws2812_if   ();
   sysctrl_if  u_sysctrl_if  ();
   dvp_if      u_dvp_if      ();
-  sdio_if     u_sdio_if     ();
+  sdio_if     u_sdio0_if    ();
   opipsram_if u_opipsram_if ();
   i2c_if      u_i2c1_if     ();
   pwm_if      u_pwm_if      ();
@@ -82,13 +83,15 @@ module retrosoc (
   logic [                           3:0] s_bus_fault_wstrb;
   logic                                  s_bus_fault_reserved;
   logic                                  s_bus_fault_access;
-  logic [                           1:0] s_bus_fault_master;
+  logic [                           2:0] s_bus_fault_master;
   logic [                           2:0] s_bus_fault_code;
   logic                                  s_perf_en;
   logic                                  s_perf_clear;
   logic [                          63:0] s_perf_mgmt_wait;
   logic [                          63:0] s_perf_user_wait;
   logic [                          63:0] s_perf_dma_wait;
+  logic [                          63:0] s_perf_sdio0_wait;
+  logic [                          63:0] s_perf_sdio1_wait;
   logic [                          63:0] s_perf_apb4_periph_wait;
   logic [                          63:0] s_perf_apb4_system_wait;
   logic [                          63:0] s_perf_sdram_wait;
@@ -109,6 +112,8 @@ module retrosoc (
   assign u_sysctrl_if.perf_mgmt_wait_i        = s_perf_mgmt_wait;
   assign u_sysctrl_if.perf_user_wait_i        = s_perf_user_wait;
   assign u_sysctrl_if.perf_dma_wait_i         = s_perf_dma_wait;
+  assign u_sysctrl_if.perf_sdio0_wait_i       = s_perf_sdio0_wait;
+  assign u_sysctrl_if.perf_sdio1_wait_i       = s_perf_sdio1_wait;
   assign u_sysctrl_if.perf_apb4_periph_wait_i = s_perf_apb4_periph_wait;
   assign u_sysctrl_if.perf_apb4_system_wait_i = s_perf_apb4_system_wait;
   assign u_sysctrl_if.perf_sdram_wait_i       = s_perf_sdram_wait;
@@ -179,6 +184,8 @@ core_wrapper u_core_wrapper (
       .perf_mgmt_wait_o       (s_perf_mgmt_wait),
       .perf_user_wait_o       (s_perf_user_wait),
       .perf_dma_wait_o        (s_perf_dma_wait),
+      .perf_sdio0_wait_o      (s_perf_sdio0_wait),
+      .perf_sdio1_wait_o      (s_perf_sdio1_wait),
       .perf_apb4_periph_wait_o(s_perf_apb4_periph_wait),
       .perf_apb4_system_wait_o(s_perf_apb4_system_wait),
       .perf_sdram_wait_o      (s_perf_sdram_wait),
@@ -212,7 +219,8 @@ core_wrapper u_core_wrapper (
       .pll_ctrl        (pll_ctrl),
       .sdram_cfg       (u_sdram_cfg_if),
       .dvp             (u_dvp_if),
-      .sdio            (u_sdio_if),
+      .sdio0           (u_sdio0_if),
+      .sdio1           (sdio1),
       .opipsram        (u_opipsram_if),
       .i2c1            (u_i2c1_if),
       .fault_valid_i   (s_bus_fault_valid),

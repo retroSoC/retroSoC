@@ -10,8 +10,8 @@
 /* verilator lint_off SYNCASYNCNET */
 
 module axi4_interconnect_sva #(
-    parameter int NumMasters   = 3,
-    parameter int NumTargets   = 9,
+    parameter int NumMasters   = 5,
+    parameter int NumTargets   = 10,
     parameter int MASTER_WIDTH = $clog2(NumMasters),
     parameter int TARGET_WIDTH = $clog2(NumTargets)
 ) (

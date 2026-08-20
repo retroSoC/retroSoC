@@ -63,6 +63,8 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "#ifdef __ASSEMBLER__" in header
     assert "#define UINT32_C(value) value" in header
     assert "RS_SOC_APB4_SDIO_BASE" not in header
+    assert "RS_SOC_APB4_SDIO0_BASE UINT32_C(0x1000F000)" in header
+    assert "RS_SOC_APB4_SDIO1_BASE UINT32_C(0x10015000)" in header
     assert "RS_SOC_NMI_" not in header
     assert "RS_SOC_OPIPSRAM_BASE UINT32_C(0x48000000)" in header
     assert "RS_SOC_HAS_SRAM 1U" in header
@@ -70,6 +72,10 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "SOC_SYSCTRL_PLL_STATUS_OFFSET   32'h0000001C" in rtl
     assert "SOC_SYSCTRL_TEST_STATUS_OFFSET  32'h00000084" in rtl
     assert "SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET 32'h00000088" in rtl
+    assert "SOC_SYSCTRL_PERF_SDIO0_WAIT_LO_OFFSET 32'h0000008C" in rtl
+    assert "SOC_SYSCTRL_PERF_SDIO0_WAIT_HI_OFFSET 32'h00000090" in rtl
+    assert "SOC_SYSCTRL_PERF_SDIO1_WAIT_LO_OFFSET 32'h00000094" in rtl
+    assert "SOC_SYSCTRL_PERF_SDIO1_WAIT_HI_OFFSET 32'h00000098" in rtl
     assert "SOC_ADDR_IS_APB4_PERIPH(addr)" in rtl
     assert "SOC_ADDR_IS_NMI" not in rtl
     user_policy = rtl.split("`define SOC_USER_ADDR_READABLE", 1)[1].split(
@@ -82,6 +88,10 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_SYSCTRL_PLL_STATUS_OFFSET UINT32_C(0x0000001C)" in header
     assert "RS_SOC_SYSCTRL_TEST_STATUS_OFFSET UINT32_C(0x00000084)" in header
     assert "RS_SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET UINT32_C(0x00000088)" in header
+    assert "RS_SOC_SYSCTRL_PERF_SDIO0_WAIT_LO_OFFSET UINT32_C(0x0000008C)" in header
+    assert "RS_SOC_SYSCTRL_PERF_SDIO0_WAIT_HI_OFFSET UINT32_C(0x00000090)" in header
+    assert "RS_SOC_SYSCTRL_PERF_SDIO1_WAIT_LO_OFFSET UINT32_C(0x00000094)" in header
+    assert "RS_SOC_SYSCTRL_PERF_SDIO1_WAIT_HI_OFFSET UINT32_C(0x00000098)" in header
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x02000000" in linker
     assert "OPIPSRAM (wxa!ri) : ORIGIN = 0x48000000, LENGTH = 0x08000000" in linker
 
@@ -112,6 +122,8 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
     assert "`define SOC_ADDR_APB4_OPIPSRAM_BASE 32'h10010000" in rtl
     assert "`define SOC_ADDR_IS_OPIPSRAM(addr)" in rtl
     assert "#define RS_SOC_APB4_OPIPSRAM_BASE UINT32_C(0x10010000)" in header
+    assert "`define SOC_ADDR_APB4_SDIO0_BASE 32'h1000F000" in rtl
+    assert "`define SOC_ADDR_APB4_SDIO1_BASE 32'h10015000" in rtl
 
 
 def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:

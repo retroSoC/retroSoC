@@ -9,13 +9,15 @@ interface sysctrl_if ();
   logic                           user_bus_enable_o;
   logic                           user_bus_idle_i;
   logic                           fault_access_i;
-  logic [                    1:0] fault_master_i;
+  logic [                    2:0] fault_master_i;
   logic [                    2:0] fault_code_i;
   logic                           perf_enable_o;
   logic                           perf_clear_o;
   logic [                   63:0] perf_mgmt_wait_i;
   logic [                   63:0] perf_user_wait_i;
   logic [                   63:0] perf_dma_wait_i;
+  logic [                   63:0] perf_sdio0_wait_i;
+  logic [                   63:0] perf_sdio1_wait_i;
   logic [                   63:0] perf_apb4_periph_wait_i;
   logic [                   63:0] perf_apb4_system_wait_i;
   logic [                   63:0] perf_sdram_wait_i;
@@ -35,6 +37,8 @@ interface sysctrl_if ();
       input perf_mgmt_wait_i,
       input perf_user_wait_i,
       input perf_dma_wait_i,
+      input perf_sdio0_wait_i,
+      input perf_sdio1_wait_i,
       input perf_apb4_periph_wait_i,
       input perf_apb4_system_wait_i,
       input perf_sdram_wait_i,

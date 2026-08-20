@@ -54,6 +54,9 @@ the root README and subsystem guides.
 - [ip/opipsram.md](ip/opipsram.md) defines the boot-selected OPI/xSPI and
   single-clock HyperBus profiles, shared digital PHY, delay-cell boundary,
   register ABI, central-DMA use, and commercial signoff limits.
+- [ip/sdio-verification.md](ip/sdio-verification.md) records the standalone
+  SD/SDIO behavioral models, directed coverage, formal bound, and verification
+  blockers.
 - [ip/ps2.md](ip/ps2.md) defines the Mini SoC PS/2 APB, GPIO pad,
   interrupt, SDK, and managed-IP integration contract.
 - The managed [RTC V2 datasheet](../rtl/managed/clusterip/rtc/doc/datasheet.md)

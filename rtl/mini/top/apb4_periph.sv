@@ -34,11 +34,14 @@ module apb4_periph (
     ws2812_if.dut                                 ws2812,
     xpi_if.dut                                    xpi,
     axi4_if.master                                dma_axi4,
+    axi4_if.master                                sdio0_axi4,
+    axi4_if.master                                sdio1_axi4,
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
     apb4_if.master                                sdram_cfg,
     dvp_if.dut                                    dvp,
-    sdio_if.dut                                   sdio,
+    sdio_if.dut                                   sdio0,
+    sdio_if.dut                                   sdio1,
     opipsram_if.dut                               opipsram,
     i2c_if.dut                                    i2c1,
     input logic                                   fault_valid_i,
@@ -271,11 +274,20 @@ axi4_stream_if #(
       .irq_o  (s_dvp_irq)
   );
 
-  apb4_sdio u_apb4_sdio (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .apb4   (u_sdio_apb4_if),
-      .sdio   (sdio)
+  apb4_sdio u_apb4_sdio0 (
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .apb4    (u_sdio0_apb4_if),
+      .dma_axi4(sdio0_axi4),
+      .sdio    (sdio0)
+  );
+
+  apb4_sdio u_apb4_sdio1 (
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .apb4    (u_sdio1_apb4_if),
+      .dma_axi4(sdio1_axi4),
+      .sdio    (sdio1)
   );
 
   apb4_opipsram u_apb4_opipsram (

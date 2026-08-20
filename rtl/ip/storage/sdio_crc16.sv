@@ -1,0 +1,21 @@
+// Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+// retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
+`timescale 1ns / 1ps
+
+module sdio_crc16 (
+    input  logic [15:0] crc_i,
+    input  logic [ 7:0] data_i,
+    output logic [15:0] crc_o
+);
+  always_comb begin
+    crc_o = sdio_pkg::sdio_crc16_byte(crc_i, data_i);
+  end
+endmodule

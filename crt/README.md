@@ -51,6 +51,18 @@ I2C0, I2C1, and bulk/media clients have deterministic channel assignments; see
 the [DMA MVP contract](../docs/ip/dma.md). The current SDK intentionally
 accepts only naturally aligned 32-bit DMA transfers.
 
+`<retrosoc/hal/sdio.h>` provides separate low-level native SD host,
+SD Memory v2, and SDIO function APIs for `sdio0` and `sdio1`. The controller
+scope is fixed-present 3.3 V SDR at 1/4-bit width; it does not claim SD
+Association compliance or a vendor Wi-Fi driver. The 72 MHz SoC profiles use
+the validated 24/36 MHz operating range, while a 50 MHz SD clock requires a
+separately validated `clk_i >= 100 MHz` environment. SG DMA descriptors and
+their buffers must be 16-byte/32-bit aligned as applicable; callers must use a
+bounce buffer for an unaligned head. PIO and DMA use little-endian byte lanes:
+bits `[7:0]`/strobe lane 0 is the first wire byte, and `DATA_START` is the
+coordinated DMA/card-data launch. The SDK does not provide hotplug,
+filesystem, combo-card, UHS, DDR, or 1.8 V support.
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

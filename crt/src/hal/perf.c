@@ -24,6 +24,10 @@ rs_status_t rs_perf_snapshot(rs_perf_snapshot_t *snapshot) {
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_MGMT_WAIT, &snapshot->mgmt_wait) != RS_OK) ||
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_USER_WAIT, &snapshot->user_wait) != RS_OK) ||
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_DMA_WAIT, &snapshot->dma_wait) != RS_OK) ||
+        (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_SDIO0_WAIT, &snapshot->sdio0_wait) !=
+         RS_OK) ||
+        (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_SDIO1_WAIT, &snapshot->sdio1_wait) !=
+         RS_OK) ||
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_APB4_PERIPH_WAIT,
                                       &snapshot->apb4_periph_wait) != RS_OK) ||
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_APB4_SYSTEM_WAIT,

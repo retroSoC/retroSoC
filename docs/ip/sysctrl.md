@@ -12,7 +12,8 @@ the implementation is separated into `sysctrl_reg`, `sysctrl_core`, and
 `sysctrl_if` is the SoC-facing contract. It drives the selected user core,
 per-core reset mask, user-bus enable, selected user IP, performance
 enable/clear, and sticky terminal test result. It receives user-bus idle,
-fault metadata, eight wait counters, and asynchronous RTC wake. `sysctrl_core`
+fault metadata, ten wait counters (including independent SDIO0 and SDIO1
+master wait counters), and asynchronous RTC wake. `sysctrl_core`
 synchronizes RTC wake with the Common `cdc_sync` primitive before storing its
 sticky state.
 
@@ -51,10 +52,12 @@ offset macros.
 | `0x01C` | `PLL_STATUS` | RO | Active profile, valid, busy, error/error reason, safe clock, lock, and capability. |
 | `0x020` | `USER_CORE_RESET` | RW | Per-user-core active-high reset mask. All ones stops the user bus; a one-hot deassertion starts the selected core. |
 | `0x024` | `USER_CORE_STATUS` | RW1C/RO | Selected core, user-bus enabled/idle/draining, and bit 11 configuration-error W1C. |
-| `0x028` | `FAULT_MASTER` | RO | First fault master. |
+| `0x028` | `FAULT_MASTER` | RO | First fault master, a three-bit AXI master ID (0..4). |
 | `0x02C` | `FAULT_DETAIL` | RO | First raw RIB response code. |
 | `0x040` | `PERF_CTRL` | RW | Bit 0 enable, bit 1 clear pulse, bit 2 snapshot pulse. |
-| `0x044`-`0x080` | `PERF_*_WAIT_{LO,HI}` | RO | Snapshot of management, user, DMA, APB4, APB, SDRAM, PSRAM, and flash wait counters. |
+| `0x044`-`0x098` | `PERF_*_WAIT_{LO,HI}` | RO | Snapshot of management, user, central DMA, SDIO0, SDIO1, APB4, SDRAM, PSRAM, and flash wait counters. |
+| `0x08C`/`0x090` | `PERF_SDIO0_WAIT_LO/HI` | RO | Independent SDIO0 AXI master wait snapshot. |
+| `0x094`/`0x098` | `PERF_SDIO1_WAIT_LO/HI` | RO | Independent SDIO1 AXI master wait snapshot. |
 | `0x084` | `TEST_STATUS` | RW-once/RO | Full-word write with bit 31 set records sticky done, bit 0 pass, and bits `[15:8]` result code. |
 | `0x088` | `RTC_WAKE_STATUS` | RW1C/RO | Bit 0 synchronized live wake; bit 1 sticky wake, cleared by writing one to bit 1. |
 

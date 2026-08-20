@@ -15,6 +15,8 @@ module axi4_bus (
     axi4_if.slave       mgmt_axi4,
     axi4_if.slave       user_axi4,
     axi4_if.slave       dma_axi4,
+    axi4_if.slave       sdio0_axi4,
+    axi4_if.slave       sdio1_axi4,
     axi4_if.master      cfg_axi4,
     axi4_if.master      system_axi4,
 `ifdef HAVE_SRAM_IF
@@ -34,11 +36,13 @@ module axi4_bus (
     output logic [3:0]  fault_wstrb_o,
     output logic        fault_reserved_o,
     output logic        fault_access_o,
-    output logic [1:0]  fault_master_o,
+    output logic [2:0]  fault_master_o,
     output logic [2:0]  fault_code_o,
     output logic [63:0] perf_mgmt_wait_o,
     output logic [63:0] perf_user_wait_o,
     output logic [63:0] perf_dma_wait_o,
+    output logic [63:0] perf_sdio0_wait_o,
+    output logic [63:0] perf_sdio1_wait_o,
     output logic [63:0] perf_apb4_periph_wait_o,
     output logic [63:0] perf_apb4_system_wait_o,
     output logic [63:0] perf_sdram_wait_o,
@@ -47,7 +51,7 @@ module axi4_bus (
     output logic [63:0] perf_opipsram_wait_o
     // verilog_format: on
 );
-  localparam int NumMasters = 3;
+  localparam int NumMasters = 5;
   localparam int NumTargets = 10;
 
   axi4_if #(
@@ -93,6 +97,16 @@ module axi4_bus (
   axi4_connector u_dma_connector (
       .source(dma_axi4),
       .sink  (u_master_axi4_if[2])
+  );
+
+  axi4_connector u_sdio0_connector (
+      .source(sdio0_axi4),
+      .sink  (u_master_axi4_if[3])
+  );
+
+  axi4_connector u_sdio1_connector (
+      .source(sdio1_axi4),
+      .sink  (u_master_axi4_if[4])
   );
 
   axi4_connector u_cfg_connector (
@@ -157,6 +171,8 @@ module axi4_bus (
       .perf_mgmt_wait_o       (perf_mgmt_wait_o),
       .perf_user_wait_o       (perf_user_wait_o),
       .perf_dma_wait_o        (perf_dma_wait_o),
+      .perf_sdio0_wait_o      (perf_sdio0_wait_o),
+      .perf_sdio1_wait_o      (perf_sdio1_wait_o),
       .perf_apb4_periph_wait_o(perf_apb4_periph_wait_o),
       .perf_apb4_system_wait_o(perf_apb4_system_wait_o),
       .perf_sdram_wait_o      (perf_sdram_wait_o),

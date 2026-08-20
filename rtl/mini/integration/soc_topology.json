@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 16,
+      "width": 18,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -98,6 +98,15 @@
       "signal": "xpi.irq_o"
     },
     {
+      "name": "sdio0",
+      "description": "SDIO0 host interrupt",
+      "group": "apb4_periph",
+      "group_bit": 16,
+      "core_bit": 10,
+      "signal": "sdio0.irq_o",
+      "user_visible": false
+    },
+    {
       "name": "pwm",
       "description": "APB4 PWM interrupt",
       "group": "apb4_system",
@@ -186,6 +195,15 @@
       "group_bit": 15,
       "core_bit": 22,
       "signal": "opipsram.irq_o"
+    },
+    {
+      "name": "sdio1",
+      "description": "SDIO1 host interrupt",
+      "group": "apb4_periph",
+      "group_bit": 17,
+      "core_bit": 21,
+      "signal": "sdio1.irq_o",
+      "user_visible": false
     }
   ],
   "wake_sources": [
@@ -210,6 +228,16 @@
     {
       "name": "dma",
       "interface": "u_dma_axi4_if",
+      "protocol": "axi4"
+    },
+    {
+      "name": "sdio0",
+      "interface": "u_sdio0_axi4_if",
+      "protocol": "axi4"
+    },
+    {
+      "name": "sdio1",
+      "interface": "u_sdio1_axi4_if",
       "protocol": "axi4"
     },
     {
@@ -339,10 +367,10 @@
     },
     {
       "slot": 15,
-      "name": "sdio",
-      "timed_interface": "u_sdio_apb4_if",
-      "pure_interface": "u_sdio_apb4_pure_if",
-      "disabled": true
+      "name": "sdio0",
+      "timed_interface": "u_sdio0_apb4_if",
+      "pure_interface": "u_sdio0_apb4_pure_if",
+      "region": "APB4_SDIO0"
     },
     {
       "slot": 16,
@@ -357,6 +385,13 @@
       "timed_interface": "u_i2c1_apb4_if",
       "pure_interface": "u_i2c1_apb4_pure_if",
       "region": "APB4_I2C1"
+    },
+    {
+      "slot": 18,
+      "name": "sdio1",
+      "timed_interface": "u_sdio1_apb4_if",
+      "pure_interface": "u_sdio1_apb4_pure_if",
+      "region": "APB4_SDIO1"
     }
   ],
   "apb4_system_targets": [
@@ -649,7 +684,7 @@
       "pin": 15,
       "alt0": {
         "inputs": [],
-        "do": "u_sdio_if.sck_o",
+        "do": "u_sdio0_if.sck_o",
         "oe": "1'b1"
       },
       "alt1": {
@@ -664,10 +699,10 @@
       "pin": 16,
       "alt0": {
         "inputs": [
-          "u_sdio_if.cmd_di_i"
+          "u_sdio0_if.cmd_di_i"
         ],
-        "do": "u_sdio_if.cmd_do_o",
-        "oe": "u_sdio_if.cmd_oe_o"
+        "do": "u_sdio0_if.cmd_do_o",
+        "oe": "u_sdio0_if.cmd_oe_o"
       },
       "alt1": {
         "inputs": [
@@ -681,10 +716,10 @@
       "pin": 17,
       "alt0": {
         "inputs": [
-          "u_sdio_if.dat_di_i[0]"
+          "u_sdio0_if.dat_di_i[0]"
         ],
-        "do": "u_sdio_if.dat_do_o[0]",
-        "oe": "u_sdio_if.dat_oe_o[0]"
+        "do": "u_sdio0_if.dat_do_o[0]",
+        "oe": "u_sdio0_if.dat_oe_o[0]"
       },
       "alt1": {
         "inputs": [
@@ -698,10 +733,10 @@
       "pin": 18,
       "alt0": {
         "inputs": [
-          "u_sdio_if.dat_di_i[1]"
+          "u_sdio0_if.dat_di_i[1]"
         ],
-        "do": "u_sdio_if.dat_do_o[1]",
-        "oe": "u_sdio_if.dat_oe_o[1]"
+        "do": "u_sdio0_if.dat_do_o[1]",
+        "oe": "u_sdio0_if.dat_oe_o[1]"
       },
       "alt1": {
         "inputs": [
@@ -715,10 +750,10 @@
       "pin": 19,
       "alt0": {
         "inputs": [
-          "u_sdio_if.dat_di_i[2]"
+          "u_sdio0_if.dat_di_i[2]"
         ],
-        "do": "u_sdio_if.dat_do_o[2]",
-        "oe": "u_sdio_if.dat_oe_o[2]"
+        "do": "u_sdio0_if.dat_do_o[2]",
+        "oe": "u_sdio0_if.dat_oe_o[2]"
       },
       "alt1": {
         "inputs": [
@@ -732,10 +767,10 @@
       "pin": 20,
       "alt0": {
         "inputs": [
-          "u_sdio_if.dat_di_i[3]"
+          "u_sdio0_if.dat_di_i[3]"
         ],
-        "do": "u_sdio_if.dat_do_o[3]",
-        "oe": "u_sdio_if.dat_oe_o[3]"
+        "do": "u_sdio0_if.dat_do_o[3]",
+        "oe": "u_sdio0_if.dat_oe_o[3]"
       },
       "alt1": {
         "inputs": [

@@ -88,6 +88,14 @@ channel 1, I2C1 channel 2, and media/benchmark clients serialize on bulk
 channel 3. See [DMA MVP](../docs/ip/dma.md) before adding a concurrent DMA
 client.
 
+The SD/SDIO HAL exposes `rs_sd_memory_*` for SD Memory v2 block devices and
+`rs_sdio_function_*` for SDIO functions; these APIs must not be conflated.
+Bring-up can run the controller ID/capability/IRQ self-test without a card.
+The delivered software is limited to fixed-present 3.3 V SDR, 1/4-bit
+operation, aligned SG DMA buffers, and the validated 72 MHz 24/36 MHz versus
+`>=100 MHz` 50 MHz clock boundary. It makes no filesystem, hotplug,
+compliance, or vendor Wi-Fi claim.
+
 Self-owned application C/H code follows the project
 [MISRA C:2012 Amendment 2 policy](../docs/misra-c-2012.md). Managed upstream
 sources and exclusions listed in `quality/embedded_c_policy.json` are outside

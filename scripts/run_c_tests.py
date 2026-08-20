@@ -27,6 +27,7 @@ TEST_SOURCES = (
     "crt/src/hal/timer_math.c",
     "crt/src/hal/psram_math.c",
     "crt/src/hal/sdram_math.c",
+    "crt/src/hal/sdio_math.c",
     "crt/src/hal/i2s_math.c",
     "crt/src/hal/dma_math.c",
     "crt/src/hal/sysctrl.c",

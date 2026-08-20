@@ -4,7 +4,7 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect_tb;
-  localparam int NumMasters = 3;
+  localparam int NumMasters = 5;
   localparam int NumTargets = 9;
 
   logic        clk_i = 1'b0;
@@ -14,7 +14,7 @@ module axi4_interconnect_tb;
   logic [ 3:0] fault_wstrb_o;
   logic        fault_reserved_o;
   logic        fault_access_o;
-  logic [ 1:0] fault_master_o;
+  logic [ 2:0] fault_master_o;
   logic [ 2:0] fault_code_o;
   logic        user_bus_idle_o;
 
@@ -62,11 +62,14 @@ module axi4_interconnect_tb;
       .perf_mgmt_wait_o       (),
       .perf_user_wait_o       (),
       .perf_dma_wait_o        (),
+      .perf_sdio0_wait_o      (),
+      .perf_sdio1_wait_o      (),
       .perf_apb4_periph_wait_o(),
       .perf_apb4_system_wait_o(),
       .perf_sdram_wait_o      (),
       .perf_psram_wait_o      (),
-      .perf_flash_wait_o      ()
+      .perf_flash_wait_o      (),
+      .perf_opipsram_wait_o   ()
   );
 
   for (genvar target = 0; target < NumTargets; target++) begin : GEN_TARGETS
@@ -136,7 +139,7 @@ module axi4_interconnect_tb;
           end
           if ((beat == int'(length)) &&
               (!fault_valid_o || (fault_addr_o != address) || fault_access_o ||
-               (fault_master_o != 2'd0) || (fault_code_o != fault_code))) begin
+               (fault_master_o != 3'd0) || (fault_code_o != fault_code))) begin
             $fatal(1, "management fault classification mismatch");
           end
           beat = beat + 1;
@@ -168,7 +171,7 @@ module axi4_interconnect_tb;
       #1;
       if ((masters[1].bresp != `AXI4_RESP_SLAVE_ERROR) || !fault_valid_o ||
           !fault_access_o || (fault_addr_o != address) || (fault_wstrb_o != 4'hF) ||
-          (fault_master_o != 2'd1) || (fault_code_o != `RIB_RESP_PROTERR)) begin
+          (fault_master_o != 3'd1) || (fault_code_o != `RIB_RESP_PROTERR)) begin
         $fatal(1, "user access fault classification mismatch");
       end
       @(negedge clk_i);
@@ -176,16 +179,95 @@ module axi4_interconnect_tb;
     end
   endtask
 
+  task automatic issue_contending_sdio_faults;
+    integer cycles;
+    begin
+      @(negedge clk_i);
+      masters[3].araddr  = 32'hA000_1000;
+      masters[3].arlen   = 8'd0;
+      masters[3].arvalid = 1'b1;
+      masters[4].araddr  = 32'hA000_2000;
+      masters[4].arlen   = 8'd0;
+      masters[4].arvalid = 1'b1;
+      do @(posedge clk_i); while (!(masters[3].arready && masters[4].arready));
+      @(negedge clk_i);
+      masters[3].arvalid = 1'b0;
+      masters[4].arvalid = 1'b0;
+      cycles             = 0;
+      while (!masters[3].rvalid && !masters[4].rvalid && cycles < 100) begin
+        @(negedge clk_i);
+        cycles = cycles + 1;
+      end
+      if (cycles >= 100) $fatal(1, "SDIO master contention did not produce a response");
+      if (masters[3].rvalid) begin
+        masters[3].rready = 1'b1;
+        #1;
+        if ((masters[3].rresp != `AXI4_RESP_DECODE_ERROR) || !fault_valid_o ||
+            (fault_master_o != 3'd3) || (fault_addr_o != 32'hA000_1000) ||
+            (fault_code_o != `RIB_RESP_DECERR)) begin
+          $fatal(1, "SDIO0 fault attribution mismatch");
+        end
+        @(posedge clk_i);
+        @(negedge clk_i);
+        masters[3].rready = 1'b0;
+      end else begin
+        masters[4].rready = 1'b1;
+        #1;
+        if ((masters[4].rresp != `AXI4_RESP_DECODE_ERROR) || !fault_valid_o ||
+            (fault_master_o != 3'd4) || (fault_addr_o != 32'hA000_2000) ||
+            (fault_code_o != `RIB_RESP_DECERR)) begin
+          $fatal(1, "SDIO1 fault attribution mismatch");
+        end
+        @(posedge clk_i);
+        @(negedge clk_i);
+        masters[4].rready = 1'b0;
+      end
+
+      cycles = 0;
+      while (!masters[3].rvalid && !masters[4].rvalid && cycles < 100) begin
+        @(negedge clk_i);
+        cycles = cycles + 1;
+      end
+      if (cycles >= 100) $fatal(1, "second SDIO master response was lost");
+      if (masters[3].rvalid) begin
+        masters[3].rready = 1'b1;
+        #1;
+        if ((masters[3].rresp != `AXI4_RESP_DECODE_ERROR) || !fault_valid_o ||
+            (fault_master_o != 3'd3) || (fault_addr_o != 32'hA000_1000) ||
+            (fault_code_o != `RIB_RESP_DECERR)) begin
+          $fatal(1, "second SDIO0 fault attribution mismatch");
+        end
+        @(posedge clk_i);
+        @(negedge clk_i);
+        masters[3].rready = 1'b0;
+      end else begin
+        masters[4].rready = 1'b1;
+        #1;
+        if ((masters[4].rresp != `AXI4_RESP_DECODE_ERROR) || !fault_valid_o ||
+            (fault_master_o != 3'd4) || (fault_addr_o != 32'hA000_2000) ||
+            (fault_code_o != `RIB_RESP_DECERR)) begin
+          $fatal(1, "second SDIO1 fault attribution mismatch");
+        end
+        @(posedge clk_i);
+        @(negedge clk_i);
+        masters[4].rready = 1'b0;
+      end
+    end
+  endtask
+
   initial begin
     `INIT_MASTER(0)
     `INIT_MASTER(1)
     `INIT_MASTER(2)
+    `INIT_MASTER(3)
+    `INIT_MASTER(4)
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
 
     issue_mgmt_error_read(32'hA000_0000, 8'd0, `AXI4_RESP_DECODE_ERROR, `RIB_RESP_DECERR);
     issue_mgmt_error_read(32'h3000_0000, 8'd16, `AXI4_RESP_SLAVE_ERROR, `RIB_RESP_BURSTERR);
     issue_denied_user_write(32'h1000_B000);
+    issue_contending_sdio_faults();
 
     $display("AXI4 interconnect fault classification test passed");
     $finish;

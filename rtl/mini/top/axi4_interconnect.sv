@@ -7,7 +7,7 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect #(
-    parameter int NumMasters = 3,
+    parameter int NumMasters = 5,
     parameter int NumTargets = 10
 ) (
     input  logic                 clk_i,
@@ -23,11 +23,13 @@ module axi4_interconnect #(
     output logic          [ 3:0] fault_wstrb_o,
     output logic                 fault_reserved_o,
     output logic                 fault_access_o,
-    output logic          [ 1:0] fault_master_o,
+    output logic          [ 2:0] fault_master_o,
     output logic          [ 2:0] fault_code_o,
     output logic          [63:0] perf_mgmt_wait_o,
     output logic          [63:0] perf_user_wait_o,
     output logic          [63:0] perf_dma_wait_o,
+    output logic          [63:0] perf_sdio0_wait_o,
+    output logic          [63:0] perf_sdio1_wait_o,
     output logic          [63:0] perf_apb4_periph_wait_o,
     output logic          [63:0] perf_apb4_system_wait_o,
     output logic          [63:0] perf_sdram_wait_o,
@@ -471,7 +473,7 @@ module axi4_interconnect #(
         fault_wstrb_o    = s_master_first_wstrb[master];
         fault_reserved_o = `SOC_ADDR_IS_RESERVED(s_master_addr[master]);
         fault_access_o   = s_master_access_err[master];
-        fault_master_o   = 2'(master);
+        fault_master_o   = 3'(master);
         fault_code_o     = s_master_fault_code[master];
       end
     end
@@ -575,6 +577,8 @@ module axi4_interconnect #(
   assign perf_mgmt_wait_o        = s_perf_master_wait[0];
   assign perf_user_wait_o        = s_perf_master_wait[1];
   assign perf_dma_wait_o         = s_perf_master_wait[2];
+  assign perf_sdio0_wait_o       = s_perf_master_wait[3];
+  assign perf_sdio1_wait_o       = s_perf_master_wait[4];
   assign perf_apb4_periph_wait_o = s_perf_target_wait[TARGET_CFG];
   assign perf_apb4_system_wait_o = s_perf_target_wait[TARGET_APB4_SYSTEM];
   assign perf_sdram_wait_o       = s_perf_target_wait[TARGET_SDRAM];
@@ -588,7 +592,7 @@ module axi4_interconnect #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (NumMasters != 3 || ((NumTargets != 9) && (NumTargets != 10))) begin
+    if (NumMasters != 5 || ((NumTargets != 9) && (NumTargets != 10))) begin
       $fatal(1, "axi4_interconnect: invalid topology dimensions");
     end
   end

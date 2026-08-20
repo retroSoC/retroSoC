@@ -22,7 +22,15 @@
 /ip/storage/spisd_core.sv
 /ip/storage/spisd_data.sv
 /ip/storage/apb4_spisd.sv
-/ip/storage/apb4_sdio.sv
+/ip/storage/sdio_if.sv
+/ip/storage/sdio_pkg.sv
+/ip/storage/sdio_define.svh
+/ip/storage/sdio_crc7.sv
+/ip/storage/sdio_crc16.sv
+/ip/storage/sdio_clock.sv
+/ip/storage/sdio_command.sv
+/ip/storage/sdio_data.sv
+/ip/storage/sdio_dma_descriptor.sv
 /ip/serial/i2c_filter.sv
 /ip/serial/i2c_core.sv
 /ip/serial/i2c_reg.sv
@@ -55,6 +63,10 @@
 /ip/peripheral/dma_define.svh
 /ip/peripheral/dma_req_if.sv
 /ip/peripheral/dma_axi4_master.sv
+/ip/storage/sdio_dma.sv
+/ip/storage/sdio_reg.sv
+/ip/storage/sdio_core.sv
+/ip/storage/apb4_sdio.sv
 /ip/peripheral/dma_reg.sv
 /ip/peripheral/dma_core.sv
 /ip/peripheral/apb4_dma.sv

@@ -46,6 +46,14 @@ module sysctrl_core (
   localparam sysctrl_offset_t PerfUserWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_USER_WAIT_HI);
   localparam sysctrl_offset_t PerfDmaWaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_DMA_WAIT_LO);
   localparam sysctrl_offset_t PerfDmaWaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_DMA_WAIT_HI);
+  localparam sysctrl_offset_t PerfSdio0WaitLo =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDIO0_WAIT_LO);
+  localparam sysctrl_offset_t PerfSdio0WaitHi =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDIO0_WAIT_HI);
+  localparam sysctrl_offset_t PerfSdio1WaitLo =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDIO1_WAIT_LO);
+  localparam sysctrl_offset_t PerfSdio1WaitHi =
+      sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDIO1_WAIT_HI);
   localparam sysctrl_offset_t PerfApb4PeriphWaitLo =
       sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_PERIPH_WAIT_LO);
   localparam sysctrl_offset_t PerfApb4PeriphWaitHi =
@@ -90,11 +98,13 @@ module sysctrl_core (
   logic [2:0] s_fault_detail_d, s_fault_detail_q;
   logic [31:0] s_fault_addr_d, s_fault_addr_q;
   logic [31:0] s_fault_count_d, s_fault_count_q;
-  logic [1:0] s_fault_master_d, s_fault_master_q;
+  logic [2:0] s_fault_master_d, s_fault_master_q;
   logic s_perf_en_d, s_perf_en_q;
   logic [63:0] s_perf_mgmt_wait_d, s_perf_mgmt_wait_q;
   logic [63:0] s_perf_user_wait_d, s_perf_user_wait_q;
   logic [63:0] s_perf_dma_wait_d, s_perf_dma_wait_q;
+  logic [63:0] s_perf_sdio0_wait_d, s_perf_sdio0_wait_q;
+  logic [63:0] s_perf_sdio1_wait_d, s_perf_sdio1_wait_q;
   logic [63:0] s_perf_apb4_periph_wait_d, s_perf_apb4_periph_wait_q;
   logic [63:0] s_perf_apb4_system_wait_d, s_perf_apb4_system_wait_q;
   logic [63:0] s_perf_sdram_wait_d, s_perf_sdram_wait_q;
@@ -298,6 +308,8 @@ module sysctrl_core (
     s_perf_mgmt_wait_d        = s_perf_mgmt_wait_q;
     s_perf_user_wait_d        = s_perf_user_wait_q;
     s_perf_dma_wait_d         = s_perf_dma_wait_q;
+    s_perf_sdio0_wait_d       = s_perf_sdio0_wait_q;
+    s_perf_sdio1_wait_d       = s_perf_sdio1_wait_q;
     s_perf_apb4_periph_wait_d = s_perf_apb4_periph_wait_q;
     s_perf_apb4_system_wait_d = s_perf_apb4_system_wait_q;
     s_perf_sdram_wait_d       = s_perf_sdram_wait_q;
@@ -310,6 +322,8 @@ module sysctrl_core (
       s_perf_mgmt_wait_d        = sysctrl.perf_mgmt_wait_i;
       s_perf_user_wait_d        = sysctrl.perf_user_wait_i;
       s_perf_dma_wait_d         = sysctrl.perf_dma_wait_i;
+      s_perf_sdio0_wait_d       = sysctrl.perf_sdio0_wait_i;
+      s_perf_sdio1_wait_d       = sysctrl.perf_sdio1_wait_i;
       s_perf_apb4_periph_wait_d = sysctrl.perf_apb4_periph_wait_i;
       s_perf_apb4_system_wait_d = sysctrl.perf_apb4_system_wait_i;
       s_perf_sdram_wait_d       = sysctrl.perf_sdram_wait_i;
@@ -370,6 +384,8 @@ module sysctrl_core (
       s_perf_mgmt_wait_q        <= '0;
       s_perf_user_wait_q        <= '0;
       s_perf_dma_wait_q         <= '0;
+      s_perf_sdio0_wait_q       <= '0;
+      s_perf_sdio1_wait_q       <= '0;
       s_perf_apb4_periph_wait_q <= '0;
       s_perf_apb4_system_wait_q <= '0;
       s_perf_sdram_wait_q       <= '0;
@@ -406,6 +422,8 @@ module sysctrl_core (
       s_perf_mgmt_wait_q        <= s_perf_mgmt_wait_d;
       s_perf_user_wait_q        <= s_perf_user_wait_d;
       s_perf_dma_wait_q         <= s_perf_dma_wait_d;
+      s_perf_sdio0_wait_q       <= s_perf_sdio0_wait_d;
+      s_perf_sdio1_wait_q       <= s_perf_sdio1_wait_d;
       s_perf_apb4_periph_wait_q <= s_perf_apb4_periph_wait_d;
       s_perf_apb4_system_wait_q <= s_perf_apb4_system_wait_d;
       s_perf_sdram_wait_q       <= s_perf_sdram_wait_d;
@@ -451,7 +469,7 @@ module sysctrl_core (
         {(8 - `USER_CORESEL_WIDTH) {1'b0}},
         s_sysctrl_coresel_q
       };
-      FaultMaster: read_data_o = {30'd0, s_fault_master_q};
+      FaultMaster: read_data_o = {29'd0, s_fault_master_q};
       FaultDetail: read_data_o = {29'd0, s_fault_detail_q};
       PerfCtrl: read_data_o = {31'd0, s_perf_en_q};
       PerfMgmtWaitLo: read_data_o = s_perf_mgmt_wait_q[31:0];
@@ -460,6 +478,10 @@ module sysctrl_core (
       PerfUserWaitHi: read_data_o = s_perf_user_wait_q[63:32];
       PerfDmaWaitLo: read_data_o = s_perf_dma_wait_q[31:0];
       PerfDmaWaitHi: read_data_o = s_perf_dma_wait_q[63:32];
+      PerfSdio0WaitLo: read_data_o = s_perf_sdio0_wait_q[31:0];
+      PerfSdio0WaitHi: read_data_o = s_perf_sdio0_wait_q[63:32];
+      PerfSdio1WaitLo: read_data_o = s_perf_sdio1_wait_q[31:0];
+      PerfSdio1WaitHi: read_data_o = s_perf_sdio1_wait_q[63:32];
       PerfApb4PeriphWaitLo: read_data_o = s_perf_apb4_periph_wait_q[31:0];
       PerfApb4PeriphWaitHi: read_data_o = s_perf_apb4_periph_wait_q[63:32];
       PerfApb4SystemWaitLo: read_data_o = s_perf_apb4_system_wait_q[31:0];

@@ -16,7 +16,7 @@ from typing import Any
 SV_IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 SV_REFERENCE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[0-9]+\])?$")
 SV_CONSTANT_RE = re.compile(r"(?:1'[bB][01]|'[01])$")
-FABRIC_LINK_NAMES = ("mgmt", "user", "dma", "cfg", "system")
+FABRIC_LINK_NAMES = ("mgmt", "user", "dma", "sdio0", "sdio1", "cfg", "system")
 FABRIC_PROTOCOLS = {name: "axi4" for name in FABRIC_LINK_NAMES}
 IRQ_GROUP_NAMES = ("apb4_periph", "apb4_system")
 IRQ_VECTOR_WIDTH = 32
@@ -633,6 +633,8 @@ def render_bus_fabric_connections(links: list[FabricLink]) -> str:
         "mgmt": "mgmt_axi4",
         "user": "user_axi4",
         "dma": "dma_axi4",
+        "sdio0": "sdio0_axi4",
+        "sdio1": "sdio1_axi4",
         "cfg": "cfg_axi4",
         "system": "system_axi4",
     }
@@ -807,7 +809,9 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
     atomic_write(
         rtl_dir / "apb4_periph_fabric.svh",
         render_fabric_connection(fabric_links, "cfg", "cfg_axi4")
-        + render_fabric_connection(fabric_links, "dma", "dma_axi4"),
+        + render_fabric_connection(fabric_links, "dma", "dma_axi4")
+        + render_fabric_connection(fabric_links, "sdio0", "sdio0_axi4")
+        + render_fabric_connection(fabric_links, "sdio1", "sdio1_axi4"),
     )
     atomic_write(
         rtl_dir / "apb4_system_fabric.svh",

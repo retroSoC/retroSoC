@@ -13,6 +13,7 @@
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/psram.h>
 #include <retrosoc/hal/sdram.h>
+#include <retrosoc/hal/sdio.h>
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
@@ -503,6 +504,81 @@ static int test_i2c_helpers(void) {
     return 0;
 }
 
+static int test_sdio_helpers(void) {
+    rs_sdio_clock_t clock;
+    rs_sdio_response_t csd = {{0U, 0U, 0U, 0U, 0U}};
+    rs_sdio_cmd52_t cmd52 = {
+        .function = 2U,
+        .address = UINT32_C(0x123),
+        .write = true,
+        .raw = false,
+        .data = UINT8_C(0xA5),
+    };
+    rs_sdio_cmd53_t cmd53 = {
+        .function = 1U,
+        .address = UINT32_C(0x100),
+        .count = UINT16_C(512),
+        .write = true,
+        .block_mode = true,
+        .fixed_address = false,
+    };
+    rs_sdio_descriptor_t descriptor;
+    rs_sd_memory_info_t info = {0};
+    uint32_t value;
+
+    if ((rs_sdio_clock_calculate(72000000U, 400000U, &clock) != RS_OK) ||
+        (clock.half_period != 90U) || (clock.actual_hz != 400000U) ||
+        (rs_sdio_clock_calculate(100000000U, 50000000U, &clock) != RS_OK) ||
+        (clock.half_period != 1U) || (clock.actual_hz != 50000000U)) {
+        return 1;
+    }
+    if ((rs_sdio_clock_calculate(0U, 400000U, &clock) != RS_EINVAL) ||
+        (rs_sdio_clock_calculate(72000000U, 0U, &clock) != RS_EINVAL) ||
+        (rs_sdio_clock_calculate(72000000U, 40000001U, &clock) != RS_EINVAL) ||
+        (rs_sdio_clock_calculate(72000000U, 400000U, NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    if ((rs_sd_memory_address(RS_SD_MEMORY_SDSC, 2U, &value) != RS_OK) || (value != 1024U) ||
+        (rs_sd_memory_address(RS_SD_MEMORY_SDHC, 2U, &value) != RS_OK) || (value != 2U) ||
+        (rs_sdio_cmd52_argument(&cmd52, &value) != RS_OK) || (value != UINT32_C(0xA00246A5)) ||
+        (rs_sdio_cmd53_argument(&cmd53, &value) != RS_OK) || (value != UINT32_C(0x9C020000))) {
+        return 3;
+    }
+    if ((rs_sdio_validate_dma_buffer((const void *)(uintptr_t)UINT32_C(0x40000000), 4U) != RS_OK) ||
+        (rs_sdio_validate_dma_buffer((const void *)(uintptr_t)UINT32_C(0x40000002), 4U) !=
+         RS_EINVAL) ||
+        (rs_sdio_descriptor_prepare(&descriptor, (uintptr_t)UINT32_C(0x40000000), 64U,
+                                    (uintptr_t)0U, true, true) != RS_OK) ||
+        (rs_sdio_descriptor_validate(&descriptor) != RS_OK) ||
+        (rs_sdio_descriptor_publish(&descriptor) != RS_OK) ||
+        ((descriptor.control_status & (UINT32_C(1) << RS_SDIO_DESC_OWN_BIT)) == 0U)) {
+        return 4;
+    }
+    if (rs_sdio_descriptor_prepare(&descriptor, (uintptr_t)UINT32_C(0x40000000), 64U,
+                                   (uintptr_t)UINT32_C(0x40000FF0), false, false) != RS_EINVAL) {
+        return 5;
+    }
+    descriptor.buffer_addr = UINT32_C(0x40000000);
+    descriptor.byte_count = 64U;
+    descriptor.next_addr = UINT32_C(0x40000FF0);
+    descriptor.control_status = UINT32_C(0x00000003);
+    if (rs_sdio_descriptor_validate(&descriptor) != RS_EINVAL) {
+        return 6;
+    }
+    for (uint32_t bit = 48U; bit <= 69U; bit++) {
+        if (((UINT32_C(0x3FF) >> (bit - 48U)) & 1U) != 0U) {
+            csd.words[bit / 32U] |= UINT32_C(1) << (bit % 32U);
+        }
+    }
+    csd.words[3] |= UINT32_C(1) << (126U - 96U);
+    if ((rs_sd_memory_parse_csd(&csd, &info) != RS_OK) || (info.card_type != RS_SD_MEMORY_SDHC) ||
+        (info.capacity_blocks != UINT32_C(0x100000)) ||
+        (info.block_length != RS_SD_MEMORY_BLOCK_SIZE)) {
+        return 5;
+    }
+    return 0;
+}
+
 static int test_gpio_helpers(void) {
     rs_gpio_filter_timing_t timing;
 
@@ -634,15 +710,15 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(),        test_formatter(),
-        test_compiler_helpers(),      test_wait_helper(),
-        test_ws2812_helpers(),        test_timer_helpers(),
-        test_psram_helpers(),         test_sdram_helpers(),
-        test_uart_helpers(),          test_i2s_helpers(),
-        test_i2c_helpers(),           test_gpio_helpers(),
-        test_dma_config_validation(), test_opipsram_helpers(),
-        test_ps2_decoders(),          test_wav_parser(),
-        test_video_parser(),
+        test_string_helpers(),   test_formatter(),
+        test_compiler_helpers(), test_wait_helper(),
+        test_ws2812_helpers(),   test_timer_helpers(),
+        test_psram_helpers(),    test_sdram_helpers(),
+        test_uart_helpers(),     test_i2s_helpers(),
+        test_i2c_helpers(),      test_sdio_helpers(),
+        test_gpio_helpers(),     test_dma_config_validation(),
+        test_opipsram_helpers(), test_ps2_decoders(),
+        test_wav_parser(),       test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {
