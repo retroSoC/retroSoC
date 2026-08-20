@@ -1,11 +1,11 @@
 
 OPENSTA            ?= sta
 OPENSTA_THREADS    ?= $(JOBS)
-OPENSTA_NETLIST    ?= $(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v
+OPENSTA_NETLIST    ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 OPENSTA_REPORT     ?= $(STA_BUILD_ROOT)/retrosoc_sta.log
 OPENSTA_LOG        ?= $(STA_BUILD_ROOT)/opensta.log
 OPENSTA_METRICS    ?= $(STA_BUILD_ROOT)/timing_metrics.rpt
-OPENSTA_CONFIG     ?= $(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.config
+OPENSTA_CONFIG     ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.config
 OPENSTA_SDC        ?= $(STA_BUILD_ROOT)/retrosoc_core.sdc
 OPENSTA_SDC_GEN    := $(ROOT_PATH)/physical/smoke/sta/opensta/generate_sdc.py
 OPENSTA_DOMAIN_MAP := $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json

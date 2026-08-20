@@ -896,7 +896,23 @@ def test_nightly_regression_runs_optional_yosys_recipes() -> None:
     ) in NIGHTLY_COMMANDS
     assert (
         "configs/ci/ihp130.mk",
+        ("STA=OPENSTA", "SYNTH_RECIPE=area", "sta"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH_RECIPE=area", "metrics"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
         ("SYNTH=YOSYS", "SYNTH_RECIPE=speed", "synth"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("STA=OPENSTA", "SYNTH_RECIPE=speed", "sta"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH_RECIPE=speed", "metrics"),
     ) in NIGHTLY_COMMANDS
     assert not any(
         any(value.startswith("SYNTH_RECIPE=") for value in values) for _, values in PR_COMMANDS
@@ -914,7 +930,11 @@ def test_nightly_regression_runs_optional_yosys_recipes() -> None:
         "--dry-run",
     )
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in nightly.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=speed sta" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=speed metrics" in nightly.stdout
 
     pr = run(
         sys.executable,
@@ -953,7 +973,11 @@ def test_nightly_extra_regression_skips_pr_netsim() -> None:
     )
     assert "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=speed sta" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=speed metrics" in extra.stdout
     assert "netsim" not in extra.stdout
 
     invalid = subprocess.run(
@@ -1522,7 +1546,7 @@ def test_metrics_collection_and_observe_policy(tmp_path: Path) -> None:
     )
     data = json.loads(metrics.read_text(encoding="utf-8"))
     assert data["firmware"]["firmware.bin"]["bytes"] == 4
-    assert data["synthesis"] == {"top_area": 124.0, "top_cells": 43}
+    assert data["synthesis"] == {"recipe": "balanced", "top_area": 124.0, "top_cells": 43}
     assert data["timing"]["wns_min"] == -1.0
 
     policy = tmp_path / "policy.json"
@@ -1536,6 +1560,38 @@ def test_metrics_collection_and_observe_policy(tmp_path: Path) -> None:
         "--policy",
         str(policy),
     )
+
+
+def test_metrics_collection_selects_recipe_roots(tmp_path: Path) -> None:
+    variant = tmp_path / "variant"
+    synth_root = variant / "syn/yosys-area"
+    sta_root = variant / "sta/opensta-area"
+    (synth_root / "rpt").mkdir(parents=True)
+    sta_root.mkdir(parents=True)
+    (synth_root / "rpt/retrosoc_asic_area.json").write_text(
+        json.dumps({"design": {"area": 88.0, "num_cells": 19}}), encoding="utf-8"
+    )
+    (sta_root / "timing_metrics.rpt").write_text("wns_max=-0.25\n", encoding="utf-8")
+    metrics = tmp_path / "metrics-area.json"
+    run(
+        sys.executable,
+        str(ROOT / "scripts/metrics.py"),
+        "collect",
+        "--variant-root",
+        str(variant),
+        "--synth-root",
+        str(synth_root),
+        "--sta-root",
+        str(sta_root),
+        "--recipe",
+        "area",
+        "--output",
+        str(metrics),
+    )
+    data = json.loads(metrics.read_text(encoding="utf-8"))
+    assert data["schema_version"] == 2
+    assert data["synthesis"] == {"recipe": "area", "top_area": 88.0, "top_cells": 19}
+    assert data["timing"]["wns_max"] == -0.25
 
 
 def test_safe_extract_rejects_parent_traversal(tmp_path: Path) -> None:

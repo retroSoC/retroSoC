@@ -121,19 +121,42 @@ build/<variant>/
   sw/
   sim/<simulator>/
   formal/<proof>/
-  syn/yosys/
-  syn/yosys-area/    (optional SYNTH_RECIPE=area)
-  syn/yosys-speed/   (optional SYNTH_RECIPE=speed)
-  sta/opensta/
+  syn/yosys/         (balanced)
+  syn/yosys-area/    (SYNTH_RECIPE=area)
+  syn/yosys-speed/   (SYNTH_RECIPE=speed)
+  sta/opensta/       (balanced)
+  sta/opensta-area/  (SYNTH_RECIPE=area)
+  sta/opensta-speed/ (SYNTH_RECIPE=speed)
   meta/manifest.json
   meta/warnings.json
-  meta/metrics.json
+  meta/metrics.json          (balanced)
+  meta/metrics-area.json     (SYNTH_RECIPE=area)
+  meta/metrics-speed.json    (SYNTH_RECIPE=speed)
 ```
 
-The default Yosys recipe writes `syn/yosys/`. Optional `SYNTH_RECIPE=area` and
-`SYNTH_RECIPE=speed` jobs write sibling directories; STA, netlist simulation, warning analysis,
-and metrics read only `syn/yosys/`. `SYNTH_RECIPE` is a flow selector and does not change the
-configuration hash.
+`SYNTH_RECIPE` is a flow selector and does not change the configuration hash.
+The selected recipe determines the synthesis netlist consumed by OpenSTA and
+netlist simulation, and determines which metrics file is written. `balanced`
+is the default PR flow. Nightly IHP130 runs `area` and `speed` through synth,
+STA, and metrics; their netlist simulation remains an explicit, on-demand
+validation because of its runtime.
+
+Use the same commit, PDK, `BUILD_TIMESTAMP`, and `YOSYS_TARGET_PERIOD_PS` for
+all recipes in a QoR comparison:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=balanced synth
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth
+make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area STA=OPENSTA sta
+make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics
+```
+
+Recipe optimization is evaluated using top area, cell count, WNS/TNS, flow
+duration, warning signatures, and netlist simulation verdict together. The
+`area` recipe is area-first and the `speed` recipe is timing-first; a single
+improved metric is not sufficient to replace `balanced`. Metrics policy remains
+in `observe` mode while recipe baselines are collected and reviewed.
 
 Generated filelists and MPW output are flow-local. Make depfiles track expanded RTL sources and
 included headers. The shared MPW generator is protected by a file lock. Default tool parallelism is

@@ -10,7 +10,7 @@ VCS_FLOW_PYTHON := $(strip $(VCS_RUNNER) $(PYTHON))
 COMP_LOG        := -l compile.log
 SIM_LOG         := -l sim.log
 # netlist file path
-NETLIST_PATH := -v $(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v
+NETLIST_PATH := -v $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 POST_PATH    := -v $(ROOT_PATH)/physical/sdf/retrosoc_asic.v
 SDF_PATH     := "$(ROOT_PATH)/physical/sdf/retrosoc_asic_CTS_MIN.sdf.gz"
 # testbench filelist
@@ -48,7 +48,7 @@ SIM_OPTS    := +vcs+loopreport+1000 -suppress=ASLR_DETECTED_INFO \
                +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
 VCS_BEHV_DIR     := $(SIM_BUILD_ROOT)/behv
-VCS_NETL_DIR     := $(SIM_BUILD_ROOT)/netl
+VCS_NETL_DIR     := $(NETLIST_SIM_ROOT)
 VCS_POST_DIR     := $(SIM_BUILD_ROOT)/post
 VCS_BEHV_SIMV    := $(VCS_BEHV_DIR)/simv
 VCS_NETL_SIMV    := $(VCS_NETL_DIR)/simv
@@ -69,7 +69,7 @@ $(VCS_NETL_SIMV): DIR   := $(VCS_NETL_DIR)
 $(VCS_NETL_SIMV): FLIST := $(NETLIST_PATH) $(NET_FLIST) $(TB_FLIST)
 $(VCS_NETL_SIMV): OPTS  := $(TIME_OPTION)
 $(VCS_NETL_SIMV): DEPFILE := $(VCS_NETL_DEPFILE)
-$(VCS_NETL_SIMV): DEPS_ARGS := $(NET_FLIST) -f $(GENERATED_FL_DIR)/tb.fl --extra $(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v
+$(VCS_NETL_SIMV): DEPS_ARGS := $(NET_FLIST) -f $(GENERATED_FL_DIR)/tb.fl --extra $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 
 $(VCS_POST_SIMV): DIR   := $(VCS_POST_DIR)
 $(VCS_POST_SIMV): FLIST := $(POST_PATH) $(NET_FLIST) $(TB_FLIST)
@@ -82,7 +82,7 @@ netsim:   DIR   := $(VCS_NETL_DIR)
 postsim:  DIR   := $(VCS_POST_DIR)
 
 wave:     DIR   := $(SIM_BUILD_ROOT)/behv
-netwave:  DIR   := $(SIM_BUILD_ROOT)/netl
+netwave:  DIR   := $(NETLIST_SIM_ROOT)
 postwave: DIR   := $(SIM_BUILD_ROOT)/post
 
 comp: $(VCS_BEHV_SIMV)
@@ -101,7 +101,7 @@ $(VCS_BEHV_SIMV) $(VCS_NETL_SIMV) $(VCS_POST_SIMV): $(MPW_VARIANT_STAMP) $(FILEL
 		$(SIM_TOOL) $(COMMON_OPTS) $(OPTS) $(FLIST) -top $(RTL_TOP) $(COMP_LOG)
 	$(FLOW_PYTHON) $(RTL_PATH)/script/filelist_deps.py $(DEPS_ARGS) --target $@ --output $(DEPFILE)
 
-$(VCS_NETL_SIMV): $(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v
+$(VCS_NETL_SIMV): $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 $(VCS_POST_SIMV): $(ROOT_PATH)/physical/sdf/retrosoc_asic.v $(ROOT_PATH)/physical/sdf/retrosoc_asic_CTS_MIN.sdf.gz
 
 sim netsim postsim:

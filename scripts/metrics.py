@@ -22,19 +22,21 @@ HIERARCHY_RE = re.compile(r"^\s*(\d+)\s+[0-9.eE+-]+\s+retrosoc_asic\s*$", re.MUL
 
 def collect(args: argparse.Namespace) -> int:
     root = args.variant_root.resolve()
+    synth_root = (args.synth_root or root / "syn/yosys").resolve()
+    sta_root = (args.sta_root or root / "sta/opensta").resolve()
     metrics: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "policy": "observe",
         "firmware": {},
-        "synthesis": {},
+        "synthesis": {"recipe": args.recipe},
         "timing": {},
         "flows": {},
     }
     for binary in sorted((root / "sw").glob("*.bin")):
         metrics["firmware"][binary.name] = {"bytes": binary.stat().st_size}
 
-    area_json = root / "syn/yosys/rpt/retrosoc_asic_area.json"
-    area_report = root / "syn/yosys/rpt/retrosoc_asic_area.rpt"
+    area_json = synth_root / "rpt/retrosoc_asic_area.json"
+    area_report = synth_root / "rpt/retrosoc_asic_area.rpt"
     if area_json.is_file():
         design = json.loads(area_json.read_text(encoding="utf-8"))["design"]
         metrics["synthesis"]["top_area"] = float(design["area"])
@@ -48,7 +50,7 @@ def collect(args: argparse.Namespace) -> int:
         if hierarchy:
             metrics["synthesis"]["top_cells"] = int(hierarchy[-1])
 
-    timing_report = root / "sta/opensta/timing_metrics.rpt"
+    timing_report = sta_root / "timing_metrics.rpt"
     if timing_report.is_file():
         labels = ("wns_min", "wns_max", "tns_min", "tns_max")
         timing_text = timing_report.read_text(encoding="utf-8", errors="replace")
@@ -73,6 +75,19 @@ def collect(args: argparse.Namespace) -> int:
             "status": data.get("status"),
             "duration_seconds": data.get("duration_seconds"),
         }
+    for label, result in (
+        ("synthesis", synth_root / "result-synth.json"),
+        ("sta", sta_root / "result-sta.json"),
+    ):
+        if result.is_file():
+            try:
+                data = json.loads(result.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            metrics["flows"][label] = {
+                "status": data.get("status"),
+                "duration_seconds": data.get("duration_seconds"),
+            }
     atomic_write(args.output, json.dumps(metrics, indent=2, sort_keys=True) + "\n")
     print(f"metrics: {args.output.resolve()}")
     return 0
@@ -130,6 +145,9 @@ def parse_args() -> argparse.Namespace:
     subparsers = parser.add_subparsers(dest="command", required=True)
     collect_parser = subparsers.add_parser("collect")
     collect_parser.add_argument("--variant-root", type=Path, required=True)
+    collect_parser.add_argument("--synth-root", type=Path)
+    collect_parser.add_argument("--sta-root", type=Path)
+    collect_parser.add_argument("--recipe", choices=("balanced", "area", "speed"), default="balanced")
     collect_parser.add_argument("--output", type=Path, required=True)
     baseline_parser = subparsers.add_parser("baseline")
     baseline_parser.add_argument("--input", type=Path, action="append", required=True)

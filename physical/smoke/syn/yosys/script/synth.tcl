@@ -28,16 +28,6 @@ source $script_dir/init_tech.tcl
 yosys read_slang --top $top_design -F $sv_flist \
         --keep-hierarchy --allow-use-before-declare --ignore-initial --ignore-timing
 
-# # blackbox requested modules
-# if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {
-#     foreach sel $::env(YOSYS_BLACKBOX_MODULES) {
-#         puts "Blackboxing the module ${sel}"
-#         yosys select -list {*}$sel
-# 	    yosys blackbox {*}$sel
-#         yosys setattr -set keep_hierarchy 1 {*}$sel
-#     }
-# }
-
 # # preserve hierarchy of selected modules/instances
 if { [info exists ::env(YOSYS_KEEP_HIER_INST)] } {
     foreach sel $::env(YOSYS_KEEP_HIER_INST) {
@@ -116,7 +106,6 @@ yosys select -write ${report_dir}/${proj_name}_registers.rpt t:*DFF*
 yosys clean -purge
 
 # print paths to important instances
-yosys select -write ${report_dir}/${proj_name}_registers.rpt t:*DFF*
 set report [open ${report_dir}/${proj_name}_instances.rpt "w"]
 close $report
 if { [info exists ::env(YOSYS_REPORT_INSTS)] } {

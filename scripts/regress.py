@@ -65,7 +65,11 @@ NIGHTLY_EXTRA_COMMANDS = (
         ("SIMU=VERILATOR", "HAVE_SVA=YES", "coremark-report"),
     ),
     ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "SYNTH_RECIPE=area", "synth")),
+    ("configs/ci/ihp130.mk", ("STA=OPENSTA", "SYNTH_RECIPE=area", "sta")),
+    ("configs/ci/ihp130.mk", ("SYNTH_RECIPE=area", "metrics")),
     ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "SYNTH_RECIPE=speed", "synth")),
+    ("configs/ci/ihp130.mk", ("STA=OPENSTA", "SYNTH_RECIPE=speed", "sta")),
+    ("configs/ci/ihp130.mk", ("SYNTH_RECIPE=speed", "metrics")),
 )
 NIGHTLY_COMMANDS = (
     *PR_COMMANDS,

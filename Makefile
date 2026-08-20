@@ -102,13 +102,18 @@ VARIANT_ROOT   := $(abspath $(BUILD_ROOT))/$(VARIANT_ID)
 SW_BUILD_DIR   := $(VARIANT_ROOT)/sw
 SIM_TOOL_NAME  := $(shell printf '%s' '$(SIMU)' | tr '[:upper:]' '[:lower:]')
 SIM_BUILD_ROOT := $(VARIANT_ROOT)/sim/$(SIM_TOOL_NAME)
-ifeq ($(SYNTH_RECIPE),balanced)
-SYN_BUILD_ROOT := $(VARIANT_ROOT)/syn/yosys
-else
-SYN_BUILD_ROOT := $(VARIANT_ROOT)/syn/yosys-$(SYNTH_RECIPE)
-endif
-STA_BUILD_ROOT := $(VARIANT_ROOT)/sta/opensta
 META_DIR       := $(VARIANT_ROOT)/meta
+ifeq ($(SYNTH_RECIPE),balanced)
+SYN_BUILD_ROOT   := $(VARIANT_ROOT)/syn/yosys
+STA_BUILD_ROOT   := $(VARIANT_ROOT)/sta/opensta
+NETLIST_SIM_ROOT := $(SIM_BUILD_ROOT)/netl
+METRICS_OUTPUT   := $(META_DIR)/metrics.json
+else
+SYN_BUILD_ROOT   := $(VARIANT_ROOT)/syn/yosys-$(SYNTH_RECIPE)
+STA_BUILD_ROOT   := $(VARIANT_ROOT)/sta/opensta-$(SYNTH_RECIPE)
+NETLIST_SIM_ROOT := $(SIM_BUILD_ROOT)/netl-$(SYNTH_RECIPE)
+METRICS_OUTPUT   := $(META_DIR)/metrics-$(SYNTH_RECIPE).json
+endif
 ifeq ($(SYNTH),YOSYS)
 FLOW_FILELIST_DIR := $(SYN_BUILD_ROOT)/filelists
 else
@@ -407,10 +412,11 @@ check-warnings:
 
 metrics:
 	python3 $(ROOT_PATH)/scripts/metrics.py collect --variant-root $(VARIANT_ROOT) \
-	  --output $(META_DIR)/metrics.json
+	  --synth-root $(SYN_BUILD_ROOT) --sta-root $(STA_BUILD_ROOT) \
+	  --recipe $(SYNTH_RECIPE) --output $(METRICS_OUTPUT)
 
 check-metrics: metrics
-	python3 $(ROOT_PATH)/scripts/metrics.py check --metrics $(META_DIR)/metrics.json \
+	python3 $(ROOT_PATH)/scripts/metrics.py check --metrics $(METRICS_OUTPUT) \
 	  --policy $(ROOT_PATH)/quality/metrics/policy.json \
 	  --baseline $(ROOT_PATH)/quality/metrics/baseline.json
 

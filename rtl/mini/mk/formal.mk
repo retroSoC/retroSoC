@@ -21,6 +21,7 @@ FORMAL_I2C_TIMEOUT        ?= 300
 FORMAL_OPIPSRAM_TIMEOUT   ?= 300
 FORMAL_DMA_TIMEOUT        ?= 120
 FORMAL_SDIO_TIMEOUT       ?= 120
+FORMAL_COMPACT_COVER_TARGETS := i2c opipsram
 FORMAL_TARGETS            := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp i2s psram opipsram dma sdio
 FORMAL_FILELIST_GENERATOR := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR      := $(RTL_PATH)/formal/generate_sby_config.py
@@ -186,7 +187,7 @@ $(FORMAL_DIR)/%/cover.sby: $(FORMAL_DIR)/%/design.v $(RTL_PATH)/formal/%_formal_
 	python3 $(FORMAL_SBY_GENERATOR) --top $*_formal --input $< \
 		--properties $(RTL_PATH)/formal/$*_formal_props.sv --solver $(FORMAL_SOLVER) \
 		--mode cover --depth $(if $(filter dma,$*),$(FORMAL_DMA_COVER_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_COVER_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH)))))))) \
-		$(if $(filter i2c,$*),--no-vcd) --output $@
+		$(if $(filter $(FORMAL_COMPACT_COVER_TARGETS),$*),--no-vcd) --output $@
 	@if [ "$*" = opipsram ]; then sed -i '/^async2sync/i clk2fflogic' $@; fi
 
 $(FORMAL_DIR)/opipsram/bmc.sby: $(FORMAL_DIR)/opipsram/design.v \

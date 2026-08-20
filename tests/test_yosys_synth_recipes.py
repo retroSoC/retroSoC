@@ -48,6 +48,9 @@ def test_yosys_recipe_scripts_and_public_slot_are_stable() -> None:
     assert "SYNTH_RECIPE ?= balanced" in makefile
     assert "VALID_SYNTH_RECIPE  := balanced area speed" in makefile
     assert "syn/yosys-$(SYNTH_RECIPE)" in makefile
+    assert "sta/opensta-$(SYNTH_RECIPE)" in makefile
+    assert "netl-$(SYNTH_RECIPE)" in makefile
+    assert "metrics-$(SYNTH_RECIPE).json" in makefile
     assert "CONFIG_KEY_VARS" in makefile
     assert "SYNTH_RECIPE" not in makefile.split("CONFIG_KEY_VARS", 1)[1].split("VARIANT_ID", 1)[0]
     assert "--env SYNTH_RECIPE=$(SYNTH_RECIPE)" in yosys_mk
@@ -55,11 +58,12 @@ def test_yosys_recipe_scripts_and_public_slot_are_stable() -> None:
     assert "abc_${synth_recipe}.script" in synth_tcl
     assert "yosys abc {*}$tech_cells_args -D $period_ps -script $abc_script -constr $abc_constr" in synth_tcl
     assert "S110" not in synth_tcl
-    assert "$(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v" in opensta
-    assert "$(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v" in iverilog
-    assert "$(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v" in vcs
-    assert "SYN_BUILD_ROOT" not in opensta
-    assert "SYN_BUILD_ROOT" not in iverilog.split("NETLIST_PATH", 1)[1][:200]
+    assert "$(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v" in opensta
+    assert "$(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v" in iverilog
+    assert "$(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v" in vcs
+    assert "$(NETLIST_SIM_ROOT)" in iverilog
+    assert "$(NETLIST_SIM_ROOT)" in vcs
+    assert "$(VARIANT_ROOT)/syn/yosys/out/retrosoc_asic_yosys.v" not in vcs
     assert (YOSYS_SCRIPTS / "abc_balanced.script").read_text(encoding="utf-8").count("&nf {D}") == 1
     assert "&nf {D}" not in (YOSYS_SCRIPTS / "abc_area.script").read_text(encoding="utf-8")
     assert (YOSYS_SCRIPTS / "abc_speed.script").read_text(encoding="utf-8").count("&nf {D}") == 6

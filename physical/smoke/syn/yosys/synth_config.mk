@@ -5,9 +5,6 @@
 # Authors:
 # - Philippe Sauter <phsauter@iis.ee.ethz.ch>
 
-# modules Yosys will treat as blackboxes
-export YOSYS_BLACKBOX_MODULES := "*tc_sram_blackbox*"
-
 # flatten hierarchy (except for below selections)
 export YOSYS_FLATTEN_HIER := 1
 
