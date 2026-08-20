@@ -210,11 +210,11 @@ are maintained in the Common repository.
 wall-clock limit. Use `make CONFIG=<profile> formal-doctor` before a local
 proof to verify that the required tools are available.
 
-The I2C cover task stores the compact Yosys witness, constraints, and Verilog
-testbench but disables direct VCD output. Expanding the 70-cycle receive cover
-to VCD produces hundreds of MiB and can exceed the task limit on networked
-filesystems; the witness remains available for an explicit trace conversion
-when waveform inspection is required.
+The I2C and DMA cover tasks store the compact Yosys witness, constraints, and
+Verilog testbench but disable direct VCD output. Expanding the longer I2C
+receive or DMA burst covers to VCD produces large artifacts and can exceed the
+task limit on networked filesystems; the witness remains available for an
+explicit trace conversion when waveform inspection is required.
 
 The locked Bitwuzla 0.9.1 CLI uses `--lang smt2`, while the selected Yosys
 version invokes legacy Bitwuzla options. `scripts/bitwuzla_smt2.py` is the
