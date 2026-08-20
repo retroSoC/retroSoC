@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 18,
+      "width": 19,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -204,6 +204,15 @@
       "core_bit": 21,
       "signal": "sdio1.irq_o",
       "user_visible": false
+    },
+    {
+      "name": "crypto",
+      "description": "APB4 AES, SHA-2, and RSA accelerator interrupt",
+      "group": "apb4_periph",
+      "group_bit": 18,
+      "core_bit": 23,
+      "signal": "s_crypto_irq",
+      "user_visible": false
     }
   ],
   "wake_sources": [
@@ -392,6 +401,13 @@
       "timed_interface": "u_sdio1_apb4_if",
       "pure_interface": "u_sdio1_apb4_pure_if",
       "region": "APB4_SDIO1"
+    },
+    {
+      "slot": 19,
+      "name": "crypto",
+      "timed_interface": "u_crypto_apb4_if",
+      "pure_interface": "u_crypto_apb4_pure_if",
+      "region": "APB4_CRYPTO"
     }
   ],
   "apb4_system_targets": [

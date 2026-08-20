@@ -19,6 +19,8 @@ interface dma_req_if ();
   logic i2c0_rx_proc;
   logic i2c1_tx_proc;
   logic i2c1_rx_proc;
+  logic crypto_in_proc;
+  logic crypto_out_proc;
 
   modport dut(
       input i2s_tx_proc,
@@ -30,6 +32,8 @@ interface dma_req_if ();
       input i2c0_tx_proc,
       input i2c0_rx_proc,
       input i2c1_tx_proc,
-      input i2c1_rx_proc
+      input i2c1_rx_proc,
+      input crypto_in_proc,
+      input crypto_out_proc
   );
 endinterface

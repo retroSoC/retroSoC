@@ -40,8 +40,8 @@ module dma_error_tb;
   logic   [NumChannels*32-1:0] stall_cycles_hi_o;
   logic                        first_error_valid_o;
   logic   [               1:0] first_error_channel_o;
-  logic   [              31:0] first_error_status_o;
-  logic   [              31:0] first_error_addr_o;
+  logic   [               8:0] first_error_status_o;
+  logic   [              15:0] first_error_addr_hi_o;
   logic   [              15:0] request_status_o;
   logic                        xpi_xfer_done_o;
   logic                        error_mode = 1'b0;
@@ -91,6 +91,14 @@ module dma_error_tb;
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
+  axi4_stream_if crypto_in_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if crypto_out_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   always #5 clk_i = ~clk_i;
 
@@ -131,6 +139,15 @@ module dma_error_tb;
   assign dvp_rx_axis.tdest = '0;
   assign dvp_rx_axis.tuser = '0;
   assign dvp_rx_axis.tvalid = 1'b0;
+  assign crypto_in_axis.tready = 1'b0;
+  assign crypto_out_axis.tdata = '0;
+  assign crypto_out_axis.tkeep = '0;
+  assign crypto_out_axis.tstrb = '0;
+  assign crypto_out_axis.tlast = 1'b0;
+  assign crypto_out_axis.tid = '0;
+  assign crypto_out_axis.tdest = '0;
+  assign crypto_out_axis.tuser = '0;
+  assign crypto_out_axis.tvalid = 1'b0;
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -255,14 +272,16 @@ module dma_error_tb;
       .first_error_valid_o  (first_error_valid_o),
       .first_error_channel_o(first_error_channel_o),
       .first_error_status_o (first_error_status_o),
-      .first_error_addr_o   (first_error_addr_o),
+      .first_error_addr_hi_o(first_error_addr_hi_o),
       .request_status_o     (request_status_o),
       .xpi_xfer_done_o      (xpi_xfer_done_o),
       .req                  (req),
       .axi4                 (axi4),
       .i2s_tx_axis          (i2s_tx_axis),
       .i2s_rx_axis          (i2s_rx_axis),
-      .dvp_rx_axis          (dvp_rx_axis)
+      .dvp_rx_axis          (dvp_rx_axis),
+      .crypto_in_axis       (crypto_in_axis),
+      .crypto_out_axis      (crypto_out_axis)
   );
 
   task automatic configure_channel(input integer channel, input logic [2:0] kind,
@@ -327,16 +346,18 @@ module dma_error_tb;
     logic   [31:0] stalled_stream_data;
     logic          stalled_stream_last;
 
-    req.i2s_tx_proc  = 1'b1;
-    req.i2s_rx_proc  = 1'b1;
-    req.qspi_tx_proc = 1'b1;
-    req.qspi_rx_proc = 1'b1;
-    req.uart_tx_proc = 1'b1;
-    req.uart_rx_proc = 1'b1;
-    req.i2c0_tx_proc = 1'b1;
-    req.i2c0_rx_proc = 1'b1;
-    req.i2c1_tx_proc = 1'b1;
-    req.i2c1_rx_proc = 1'b1;
+    req.i2s_tx_proc     = 1'b1;
+    req.i2s_rx_proc     = 1'b1;
+    req.qspi_tx_proc    = 1'b1;
+    req.qspi_rx_proc    = 1'b1;
+    req.uart_tx_proc    = 1'b1;
+    req.uart_rx_proc    = 1'b1;
+    req.i2c0_tx_proc    = 1'b1;
+    req.i2c0_rx_proc    = 1'b1;
+    req.i2c1_tx_proc    = 1'b1;
+    req.i2c1_rx_proc    = 1'b1;
+    req.crypto_in_proc  = 1'b1;
+    req.crypto_out_proc = 1'b1;
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
 

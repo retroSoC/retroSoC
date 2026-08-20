@@ -21,4 +21,5 @@
 +incdir+/ip/serial
 +incdir+/ip/multimedia
 +incdir+/ip/peripheral
++incdir+/ip/security
 +incdir+/third_party/model/sdram/

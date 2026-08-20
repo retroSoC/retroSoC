@@ -1,6 +1,7 @@
 #include <retrosoc/core/archinfo.h>
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
+#include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
@@ -288,8 +289,12 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 9U);
     }
     printf("ci_smoke: SDRAM passed\n");
+    if (rs_crypto_selftest(RS_TIMEOUT_DEFAULT) != RS_OK) {
+        rs_test_finish(RS_TEST_FAILED, 10U);
+    }
+    printf("ci_smoke: crypto passed\n");
 
-    printf("ci_smoke: UART, archinfo, RNG, CLINT, timer, GPIO, and SDRAM tests passed\n");
+    printf("ci_smoke: all peripheral tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

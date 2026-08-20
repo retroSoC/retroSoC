@@ -30,8 +30,11 @@ the root README and subsystem guides.
   roadmap that stays inside the phase-separated 16-bit / 64 MiB contract.
 - [axi4-stream.md](axi4-stream.md) defines the DMA, I2S, and DVP AXI4-Stream
   data paths, PIO fallback, register controls, and backpressure contract.
-- [ip/dma.md](ip/dma.md) defines the native-AXI4 four-channel DMA direct-mode
+- [ip/dma.md](ip/dma.md) defines the native-AXI4 six-channel Mini DMA direct-mode
   register ABI, SDK API, scheduling, error, IRQ, and stream contracts.
+- [ip/crypto.md](ip/crypto.md) records the commercial AES/SHA/RSA survey and
+  defines the Mini SoC crypto architecture, APB/DMA ABI, security boundary,
+  HAL, verification evidence, and commercialization roadmap.
 - [ip/ws2812.md](ip/ws2812.md) defines the WS2812 transmitter register ABI,
   timing, FIFO, interrupt, DMA, and integration contracts.
 - [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,

@@ -264,6 +264,15 @@
       "user_access": "none"
     },
     {
+      "symbol": "APB4_CRYPTO",
+      "base": "0x1000C000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
       "symbol": "APB4_CLINT",
       "base": "0x10020000",
       "size": "0x00010000",

@@ -23,8 +23,8 @@ Common round-robin arbiter and retain ownership through `B` or `RLAST`.
 
 The three masters are the Hazard3 management core, the selected user core, and
 DMA. Hazard3 AHB-Lite and the current user-core RIBP ABI issue single-beat AXI4
-transactions through adapters. DMA is a native AXI4 master: its direct-mode
-four-channel engine uses fixed ID zero, independently schedules one read and
+transactions through adapters. DMA is a native AXI4 master: its production
+six-channel engine uses fixed ID zero, independently schedules one read and
 one write transaction, and issues aligned `INCR` bursts up to sixteen beats.
 Fixed-address and APB4/MMIO endpoints are always single-beat. See the
 [DMA MVP](ip/dma.md) for its ownership, abort, and FIFO-credit contract.

@@ -28,8 +28,8 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | Profile | Description |
 | --- | --- |
 | `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
-| `bringup` | Manual startup diagnostic that prints complete application and archinfo details. |
-| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2 ABI/build identity, RNG V2 integration, SDRAM 8/16/32-bit mapped-window access, and test-status completion. |
+| `bringup` | Manual startup diagnostic with architecture details and crypto AES/SHA known-answer self-test. |
+| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2, RNG, crypto AES/SHA, SDRAM mapped access, and test-status completion. |
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
@@ -88,9 +88,9 @@ directory, such as `board/include/retrosoc/board/` or
 `media/include/retrosoc/media/`.
 
 DMA users must select an explicit SDK channel. UART0 owns channel 0, I2C0
-channel 1, I2C1 channel 2, and media/benchmark clients serialize on bulk
-channel 3. See [DMA MVP](../docs/ip/dma.md) before adding a concurrent DMA
-client.
+channel 1, I2C1 channel 2, media/benchmark clients serialize on bulk channel
+3, and crypto reserves channels 4/5. See [DMA MVP](../docs/ip/dma.md) before
+adding a concurrent DMA client.
 
 The SD/SDIO HAL exposes `rs_sd_memory_*` for SD Memory v2 block devices and
 `rs_sdio_function_*` for SDIO functions; these APIs must not be conflated.

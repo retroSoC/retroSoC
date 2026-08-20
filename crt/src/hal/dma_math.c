@@ -24,10 +24,12 @@ static bool rs_dma_request_valid(const rs_dma_config_t *config) {
                ((config->request >= RS_DMA_REQUEST_XPI_TX) &&
                 (config->request <= RS_DMA_REQUEST_I2C1_RX));
     case RS_DMA_KIND_MM_TO_STREAM:
-        return config->request == RS_DMA_REQUEST_I2S_TX;
+        return (config->request == RS_DMA_REQUEST_I2S_TX) ||
+               (config->request == RS_DMA_REQUEST_CRYPTO_IN);
     case RS_DMA_KIND_STREAM_TO_MM:
         return (config->request == RS_DMA_REQUEST_I2S_RX) ||
-               (config->request == RS_DMA_REQUEST_DVP_RX);
+               (config->request == RS_DMA_REQUEST_DVP_RX) ||
+               (config->request == RS_DMA_REQUEST_CRYPTO_OUT);
     default:
         return false;
     }

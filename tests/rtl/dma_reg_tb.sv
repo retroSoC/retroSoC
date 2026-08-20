@@ -31,39 +31,56 @@ module dma_reg_tb;
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
+  axi4_stream_if crypto_in_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if crypto_out_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   always #5 clk_i = ~clk_i;
 
-  assign axi4.arready       = !read_active_q;
-  assign axi4.rid           = '0;
-  assign axi4.rdata         = 32'hC0DE_0001;
-  assign axi4.rresp         = `AXI4_RESP_OKAY;
-  assign axi4.rlast         = 1'b1;
-  assign axi4.ruser         = '0;
-  assign axi4.rvalid        = read_active_q;
-  assign axi4.awready       = !write_active_q && !write_response_q;
-  assign axi4.wready        = write_active_q;
-  assign axi4.bid           = '0;
-  assign axi4.bresp         = `AXI4_RESP_OKAY;
-  assign axi4.buser         = '0;
-  assign axi4.bvalid        = write_response_q && allow_write_response;
-  assign i2s_tx_axis.tready = 1'b0;
-  assign i2s_rx_axis.tdata  = '0;
-  assign i2s_rx_axis.tkeep  = '0;
-  assign i2s_rx_axis.tstrb  = '0;
-  assign i2s_rx_axis.tlast  = 1'b0;
-  assign i2s_rx_axis.tid    = '0;
-  assign i2s_rx_axis.tdest  = '0;
-  assign i2s_rx_axis.tuser  = '0;
-  assign i2s_rx_axis.tvalid = 1'b0;
-  assign dvp_rx_axis.tdata  = '0;
-  assign dvp_rx_axis.tkeep  = '0;
-  assign dvp_rx_axis.tstrb  = '0;
-  assign dvp_rx_axis.tlast  = 1'b0;
-  assign dvp_rx_axis.tid    = '0;
-  assign dvp_rx_axis.tdest  = '0;
-  assign dvp_rx_axis.tuser  = '0;
-  assign dvp_rx_axis.tvalid = 1'b0;
+  assign axi4.arready           = !read_active_q;
+  assign axi4.rid               = '0;
+  assign axi4.rdata             = 32'hC0DE_0001;
+  assign axi4.rresp             = `AXI4_RESP_OKAY;
+  assign axi4.rlast             = 1'b1;
+  assign axi4.ruser             = '0;
+  assign axi4.rvalid            = read_active_q;
+  assign axi4.awready           = !write_active_q && !write_response_q;
+  assign axi4.wready            = write_active_q;
+  assign axi4.bid               = '0;
+  assign axi4.bresp             = `AXI4_RESP_OKAY;
+  assign axi4.buser             = '0;
+  assign axi4.bvalid            = write_response_q && allow_write_response;
+  assign i2s_tx_axis.tready     = 1'b0;
+  assign i2s_rx_axis.tdata      = '0;
+  assign i2s_rx_axis.tkeep      = '0;
+  assign i2s_rx_axis.tstrb      = '0;
+  assign i2s_rx_axis.tlast      = 1'b0;
+  assign i2s_rx_axis.tid        = '0;
+  assign i2s_rx_axis.tdest      = '0;
+  assign i2s_rx_axis.tuser      = '0;
+  assign i2s_rx_axis.tvalid     = 1'b0;
+  assign dvp_rx_axis.tdata      = '0;
+  assign dvp_rx_axis.tkeep      = '0;
+  assign dvp_rx_axis.tstrb      = '0;
+  assign dvp_rx_axis.tlast      = 1'b0;
+  assign dvp_rx_axis.tid        = '0;
+  assign dvp_rx_axis.tdest      = '0;
+  assign dvp_rx_axis.tuser      = '0;
+  assign dvp_rx_axis.tvalid     = 1'b0;
+  assign crypto_in_axis.tready  = 1'b0;
+  assign crypto_out_axis.tdata  = '0;
+  assign crypto_out_axis.tkeep  = '0;
+  assign crypto_out_axis.tstrb  = '0;
+  assign crypto_out_axis.tlast  = 1'b0;
+  assign crypto_out_axis.tid    = '0;
+  assign crypto_out_axis.tdest  = '0;
+  assign crypto_out_axis.tuser  = '0;
+  assign crypto_out_axis.tvalid = 1'b0;
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -109,7 +126,9 @@ module dma_reg_tb;
       .axi4           (axi4),
       .i2s_tx_axis    (i2s_tx_axis),
       .i2s_rx_axis    (i2s_rx_axis),
-      .dvp_rx_axis    (dvp_rx_axis)
+      .dvp_rx_axis    (dvp_rx_axis),
+      .crypto_in_axis (crypto_in_axis),
+      .crypto_out_axis(crypto_out_axis)
   );
 
   task automatic apb_write(input logic [31:0] address, input logic [31:0] data,
@@ -161,23 +180,25 @@ module dma_reg_tb;
   initial begin
     logic [31:0] value;
 
-    apb4.paddr       = '0;
-    apb4.pprot       = '0;
-    apb4.psel        = 1'b0;
-    apb4.penable     = 1'b0;
-    apb4.pwrite      = 1'b0;
-    apb4.pwdata      = '0;
-    apb4.pstrb       = '0;
-    req.i2s_tx_proc  = 1'b1;
-    req.i2s_rx_proc  = 1'b1;
-    req.qspi_tx_proc = 1'b1;
-    req.qspi_rx_proc = 1'b1;
-    req.uart_tx_proc = 1'b1;
-    req.uart_rx_proc = 1'b1;
-    req.i2c0_tx_proc = 1'b1;
-    req.i2c0_rx_proc = 1'b1;
-    req.i2c1_tx_proc = 1'b1;
-    req.i2c1_rx_proc = 1'b1;
+    apb4.paddr          = '0;
+    apb4.pprot          = '0;
+    apb4.psel           = 1'b0;
+    apb4.penable        = 1'b0;
+    apb4.pwrite         = 1'b0;
+    apb4.pwdata         = '0;
+    apb4.pstrb          = '0;
+    req.i2s_tx_proc     = 1'b1;
+    req.i2s_rx_proc     = 1'b1;
+    req.qspi_tx_proc    = 1'b1;
+    req.qspi_rx_proc    = 1'b1;
+    req.uart_tx_proc    = 1'b1;
+    req.uart_rx_proc    = 1'b1;
+    req.i2c0_tx_proc    = 1'b1;
+    req.i2c0_rx_proc    = 1'b1;
+    req.i2c1_tx_proc    = 1'b1;
+    req.i2c1_rx_proc    = 1'b1;
+    req.crypto_in_proc  = 1'b1;
+    req.crypto_out_proc = 1'b1;
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
 

@@ -27,6 +27,8 @@ package dma_pkg;
   localparam logic [3:0] DMA_REQUEST_I2C1_TX = 4'd9;
   localparam logic [3:0] DMA_REQUEST_I2C1_RX = 4'd10;
   localparam logic [3:0] DMA_REQUEST_DVP_RX = 4'd11;
+  localparam logic [3:0] DMA_REQUEST_CRYPTO_IN = 4'd12;
+  localparam logic [3:0] DMA_REQUEST_CRYPTO_OUT = 4'd13;
 
   localparam logic [3:0] DMA_ERROR_NONE = 4'd0;
   localparam logic [3:0] DMA_ERROR_CONFIG = 4'd1;

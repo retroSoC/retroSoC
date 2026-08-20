@@ -71,7 +71,7 @@
 #define RS_DMA_ERROR_READ             UINT32_C(0x00000040)
 #define RS_DMA_ERROR_STREAM_LAST      UINT32_C(0x00000100)
 
-#define RS_DMA_CHANNEL_COUNT          4U
+#define RS_DMA_CHANNEL_COUNT          6U
 #define RS_DMA_MAX_BURST_BEATS        16U
 #define RS_DMA_DATA_WIDTH_BITS        32U
 

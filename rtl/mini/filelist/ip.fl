@@ -66,6 +66,15 @@
 /ip/peripheral/dma_define.svh
 /ip/peripheral/dma_req_if.sv
 /ip/peripheral/dma_axi4_master.sv
+/ip/security/crypto_pkg.sv
+/ip/security/crypto_define.svh
+/ip/security/crypto_aes_core.sv
+/ip/security/crypto_aes_engine.sv
+/ip/security/crypto_sha2_core.sv
+/ip/security/crypto_sha2_engine.sv
+/ip/security/crypto_montgomery.sv
+/ip/security/crypto_rsa_core.sv
+/ip/security/apb4_crypto.sv
 /ip/storage/sdio_dma.sv
 /ip/storage/sdio_reg.sv
 /ip/storage/sdio_core.sv

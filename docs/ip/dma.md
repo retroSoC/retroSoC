@@ -1,25 +1,26 @@
 # DMA MVP
 
-The Mini SoC DMA is a four-channel, direct-register transfer engine. It is an
+The Mini SoC DMA is a parameterized direct-register transfer engine. It is an
 APB4 configuration target at `RS_SOC_APB4_DMA_BASE`, a native 32-bit AXI4
 master, and an aggregate management-core interrupt source on IRQ20. DMA does
 not use RIB or a RIB-to-AXI4 adapter.
 
 ## Scope and limits
 
-- Four independent channel contexts share one AXI4 master (`ID=0`).
+- Six independent channel contexts share one AXI4 master (`ID=0`) in the
+  production Mini integration; the reusable module default remains four.
 - The current Mini integration supports 32-bit transfers only. `8`- and
   `16`-bit width encodings deliberately fail validation; software must not
   claim narrow-transfer support.
-- Direct-register mode supports MM-to-MM, memory/fixed-MMIO, MM-to-I2S
-  AXI4-Stream, and I2S/DVP AXI4-Stream-to-MM transfers.
+- Direct-register mode supports MM-to-MM, memory/fixed-MMIO, MM-to-I2S/crypto
+  AXI4-Stream, and I2S/DVP/crypto AXI4-Stream-to-MM transfers.
 - Scatter-gather, cyclic descriptors, 2D stride, width conversion, unaligned
   data realignment, cache coherency, multiple IDs, and asynchronous stream
   clocks are not implemented.
 
 The core parameters are `AddrWidth`, `DataWidth`, `NumChannels`,
 `MaxBurstBeats`, and `FifoDepth`. The production Mini instance is 32-bit,
-four channels, sixteen beats, and sixteen words of buffering. The direct
+six channels, sixteen beats, and sixteen words of buffering. The direct
 engine rejects an unsupported data width at elaboration rather than implying
 that the 64/128-bit roadmap is verified.
 
@@ -34,8 +35,11 @@ share a context:
 | 1 | I2C0 TX/RX |
 | 2 | I2C1 TX/RX |
 | 3 | Bulk client: I2S player/self-test, DVP capture, WS2812, XPI/QSPI, and benchmark |
+| 4 | Crypto input: memory-to-AES/SHA stream |
+| 5 | Crypto output: AES stream-to-memory |
 
-Bulk clients must serialize use of channel 3. Applications configure the
+Bulk clients must serialize use of channel 3. Crypto reserves channels 4 and
+5 so a full-duplex AES transfer does not contend for the bulk context. Applications configure the
 channel explicitly through `rs_dma_configure()`; there is no hidden global DMA
 context.
 
@@ -116,11 +120,12 @@ bulk channel 3 with the other memory and stream clients. A transfer outside
 the configured OPI device size terminates through the normal AXI error path;
 the DMA must not infer capacity from the larger SoC aperture.
 
-I2S TX consumes the MM-to-stream path and receives `TLAST` on the final
+I2S TX and crypto input consume the MM-to-stream path and receive `TLAST` on the final
 32-bit word with `TKEEP/TSTRB=4'hf`. I2S RX and DVP RX use stream-to-MM;
 programmed byte count terminates the transfer and incoming `TLAST` is recorded
 as diagnostic status only. AXI4-Stream backpressure preserves all source
-payload sidebands.
+payload sidebands. Crypto output is also stream-to-MM and requires the AES
+engine's final `TLAST`; crypto request selectors are 12 and 13.
 
 ## Suspend, abort, and completion
 
@@ -142,7 +147,8 @@ splits, 16-beat bursts, backpressure, stream transfer, and response error
 isolation. `tests/rtl/dma_reg_tb.sv` covers APB4 decode, busy configuration
 protection, W1C events, and aggregate IRQ behavior.
 `tests/rtl/ws2812_dma_tb.sv` verifies fixed MMIO writes and FIFO backpressure
-through native AXI4. The MVP remains single-clock inside DMA;
+through native AXI4. `tests/rtl/dma_crypto_tb.sv` verifies both crypto stream
+endpoints, backpressure, data preservation, and final `TLAST`. The MVP remains single-clock inside DMA;
 I2S/DVP CDC responsibility stays with their controllers. Physical memory
 burst coalescing, cache maintenance, board throughput, and 64/128-bit paths
 require separate evidence.

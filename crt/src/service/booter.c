@@ -121,10 +121,12 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
     printf("                       1 x XPI V2        @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_XPI_BASE);
-    printf("                       1 x DMA(4CH)      @%p\n",
+    printf("                       1 x DMA(6CH)      @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_DMA_BASE);
     printf("                       1 x SYSCTRL       @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_SYSCTRL_BASE);
+    printf("                       1 x CRYPTO        @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_CRYPTO_BASE);
     printf("                       1 x CLINT         @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
     printf("                       1 x SDRAM         @%p\n",

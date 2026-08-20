@@ -22,7 +22,8 @@ must appear exactly once. Disabled targets keep their slot and interface
 declaration but cannot own an address region. This list stays separate from
 `apb4_system_targets`, which owns the `0x2000_0000` `apb4_system` island.
 Slot 15 is the active SDIO0 management window; SDIO1 is appended at slot 18
-so the existing slots 0..17 remain stable.
+and the management-only crypto controller at slot 19, so the existing slots
+0..17 remain stable.
 
 Each `gpio_alt_functions` entry defines both alternate modes for one GPIO pin.
 `inputs` are driven from the selected GPIO input, and `do` and `oe` define the
@@ -43,8 +44,9 @@ to scalar signal references or one-bit constants. The generator emits the two
 wrapper bindings, the core-vector wiring, and simulation-only assertions.
 Existing allocated core IRQ bits retain their compatibility mapping; additions
 must use currently unallocated bits and preserve the existing entries. SDIO0
-and SDIO1 use APB4 group bits 16 and 17 and core bits 10 and 21, and remain
-management-only in the generated user IRQ mask. Removing a source leaves its
+and SDIO1 use APB4 group bits 16 and 17 and core bits 10 and 21. Crypto uses
+APB4 group bit 18 and core bit 23. All three remain management-only in the
+generated user IRQ mask. Removing a source leaves its
 core IRQ bit unallocated and driven low. Firmware does not
 expose a generic external interrupt API until the SoC includes a claim/complete
 interrupt controller.

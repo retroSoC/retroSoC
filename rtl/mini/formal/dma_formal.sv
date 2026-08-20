@@ -197,6 +197,24 @@ module dma_formal_design (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) crypto_in_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) crypto_out_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   always_comb begin
     s_ch_cfg_i              = '0;
@@ -287,6 +305,8 @@ module dma_formal_design (
   assign req.i2c0_rx_proc = 1'b1;
   assign req.i2c1_tx_proc = 1'b1;
   assign req.i2c1_rx_proc = 1'b1;
+  assign req.crypto_in_proc = 1'b1;
+  assign req.crypto_out_proc = 1'b1;
 
   assign axi4.arready = !s_read_active_q && (!axi4.arvalid || s_read_stalled_once_q);
   assign axi4.rid = 1'b0;
@@ -324,6 +344,15 @@ module dma_formal_design (
   assign dvp_rx_axis.tdest = 1'b0;
   assign dvp_rx_axis.tuser = 1'b0;
   assign dvp_rx_axis.tvalid = 1'b0;
+  assign crypto_in_axis.tready = 1'b0;
+  assign crypto_out_axis.tdata = 32'd0;
+  assign crypto_out_axis.tkeep = 4'hF;
+  assign crypto_out_axis.tstrb = 4'hF;
+  assign crypto_out_axis.tlast = 1'b0;
+  assign crypto_out_axis.tid = 1'b0;
+  assign crypto_out_axis.tdest = 1'b0;
+  assign crypto_out_axis.tuser = 1'b0;
+  assign crypto_out_axis.tvalid = 1'b0;
 
   dma_core #(
       .AddrWidth    (32),
@@ -366,14 +395,16 @@ module dma_formal_design (
       .first_error_valid_o  (),
       .first_error_channel_o(),
       .first_error_status_o (),
-      .first_error_addr_o   (),
+      .first_error_addr_hi_o(),
       .request_status_o     (),
       .xpi_xfer_done_o      (),
       .req                  (req),
       .axi4                 (axi4),
       .i2s_tx_axis          (i2s_tx_axis),
       .i2s_rx_axis          (i2s_rx_axis),
-      .dvp_rx_axis          (dvp_rx_axis)
+      .dvp_rx_axis          (dvp_rx_axis),
+      .crypto_in_axis       (crypto_in_axis),
+      .crypto_out_axis      (crypto_out_axis)
   );
 
   assign busy                = s_busy;

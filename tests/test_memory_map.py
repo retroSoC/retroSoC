@@ -124,6 +124,8 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
     assert "#define RS_SOC_APB4_OPIPSRAM_BASE UINT32_C(0x10010000)" in header
     assert "`define SOC_ADDR_APB4_SDIO0_BASE 32'h1000F000" in rtl
     assert "`define SOC_ADDR_APB4_SDIO1_BASE 32'h10015000" in rtl
+    assert "`define SOC_ADDR_APB4_CRYPTO_BASE 32'h1000C000" in rtl
+    assert "#define RS_SOC_APB4_CRYPTO_BASE UINT32_C(0x1000C000)" in header
 
 
 def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:

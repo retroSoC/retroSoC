@@ -25,7 +25,9 @@ module apb4_dma #(
     axi4_if.master        axi4,
     axi4_stream_if.source i2s_tx_axis,
     axi4_stream_if.sink   i2s_rx_axis,
-    axi4_stream_if.sink   dvp_rx_axis
+    axi4_stream_if.sink   dvp_rx_axis,
+    axi4_stream_if.source crypto_in_axis,
+    axi4_stream_if.sink   crypto_out_axis
     // verilog_format: on
 );
   logic [     NumChannels*32-1:0] s_ch_cfg;
@@ -59,8 +61,8 @@ module apb4_dma #(
   logic [     NumChannels*32-1:0] s_stall_cycles_hi;
   logic                           s_first_err_valid;
   logic [$clog2(NumChannels)-1:0] s_first_err_channel;
-  logic [                   31:0] s_first_err_stat;
-  logic [                   31:0] s_first_err_addr;
+  logic [                    8:0] s_first_err_stat;
+  logic [                   15:0] s_first_err_addr_hi;
   logic [                   15:0] s_req_stat;
 
   dma_reg #(
@@ -102,8 +104,8 @@ module apb4_dma #(
       .stall_cycles_hi_i    (s_stall_cycles_hi),
       .first_error_valid_i  (s_first_err_valid),
       .first_error_channel_i(s_first_err_channel),
-      .first_error_status_i (s_first_err_stat[8:0]),
-      .first_error_addr_hi_i(s_first_err_addr[31:16]),
+      .first_error_status_i (s_first_err_stat),
+      .first_error_addr_hi_i(s_first_err_addr_hi),
       .request_status_i     (s_req_stat),
       .irq_o                (irq_o)
   );
@@ -149,13 +151,15 @@ module apb4_dma #(
       .first_error_valid_o  (s_first_err_valid),
       .first_error_channel_o(s_first_err_channel),
       .first_error_status_o (s_first_err_stat),
-      .first_error_addr_o   (s_first_err_addr),
+      .first_error_addr_hi_o(s_first_err_addr_hi),
       .request_status_o     (s_req_stat),
       .xpi_xfer_done_o      (dma_xfer_done_o),
       .req                  (hw_trg),
       .axi4                 (axi4),
       .i2s_tx_axis          (i2s_tx_axis),
       .i2s_rx_axis          (i2s_rx_axis),
-      .dvp_rx_axis          (dvp_rx_axis)
+      .dvp_rx_axis          (dvp_rx_axis),
+      .crypto_in_axis       (crypto_in_axis),
+      .crypto_out_axis      (crypto_out_axis)
   );
 endmodule

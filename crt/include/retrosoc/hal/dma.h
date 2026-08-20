@@ -39,6 +39,8 @@ typedef enum {
     RS_DMA_REQUEST_I2C1_TX = 9,
     RS_DMA_REQUEST_I2C1_RX = 10,
     RS_DMA_REQUEST_DVP_RX = 11,
+    RS_DMA_REQUEST_CRYPTO_IN = 12,
+    RS_DMA_REQUEST_CRYPTO_OUT = 13,
 } rs_dma_request_t;
 
 typedef enum {
@@ -46,6 +48,8 @@ typedef enum {
     RS_DMA_CHANNEL_I2C0 = 1,
     RS_DMA_CHANNEL_I2C1 = 2,
     RS_DMA_CHANNEL_BULK = 3,
+    RS_DMA_CHANNEL_CRYPTO_IN = 4,
+    RS_DMA_CHANNEL_CRYPTO_OUT = 5,
 } rs_dma_channel_t;
 
 typedef struct {

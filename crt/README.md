@@ -51,6 +51,13 @@ I2C0, I2C1, and bulk/media clients have deterministic channel assignments; see
 the [DMA MVP contract](../docs/ip/dma.md). The current SDK intentionally
 accepts only naturally aligned 32-bit DMA transfers.
 
+`<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
+RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.
+AES DMA reserves channels 4/5; private RSA input is write-only at the APB
+boundary and assumes public exponent 65537 for result verification. See the
+[crypto controller contract](../docs/ip/crypto.md) before handling production
+keys or composing an RFC 8017 scheme.
+
 `<retrosoc/hal/sdio.h>` provides separate low-level native SD host,
 SD Memory v2, and SDIO function APIs for `sdio0` and `sdio1`. The controller
 scope is fixed-present 3.3 V SDR at 1/4-bit width; it does not claim SD

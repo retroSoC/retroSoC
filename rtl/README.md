@@ -91,6 +91,12 @@ automatic status polling, interrupts, and an SDR single-clock PHY. Its frozen
 ABI and commercial delivery boundary are documented in
 [XPI V2 Controller](../docs/ip/xpi.md).
 
+The self-owned crypto controller provides management-only APB4 control,
+central-DMA streams, AES-128/192/256 ECB/CBC/CTR, SHA-224/256, and raw
+RSA-2048 Montgomery exponentiation. Its register ABI, key/zeroize boundary,
+commercial survey, and verification roadmap are documented in
+[AES/SHA-2/RSA Crypto Controller](../docs/ip/crypto.md).
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and

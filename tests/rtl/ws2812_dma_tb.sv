@@ -72,6 +72,14 @@ module ws2812_dma_tb;
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
+  axi4_stream_if crypto_in_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if crypto_out_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   always #5 clk_i = ~clk_i;
 
@@ -119,6 +127,15 @@ module ws2812_dma_tb;
   assign dvp_rx_axis.tdest = '0;
   assign dvp_rx_axis.tuser = '0;
   assign dvp_rx_axis.tvalid = 1'b0;
+  assign crypto_in_axis.tready = 1'b0;
+  assign crypto_out_axis.tdata = '0;
+  assign crypto_out_axis.tkeep = '0;
+  assign crypto_out_axis.tstrb = '0;
+  assign crypto_out_axis.tlast = 1'b0;
+  assign crypto_out_axis.tid = '0;
+  assign crypto_out_axis.tdest = '0;
+  assign crypto_out_axis.tuser = '0;
+  assign crypto_out_axis.tvalid = 1'b0;
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
@@ -216,14 +233,16 @@ module ws2812_dma_tb;
       .first_error_valid_o  (),
       .first_error_channel_o(),
       .first_error_status_o (),
-      .first_error_addr_o   (),
+      .first_error_addr_hi_o(),
       .request_status_o     (),
       .xpi_xfer_done_o      (),
       .req                  (req),
       .axi4                 (axi4),
       .i2s_tx_axis          (i2s_tx_axis),
       .i2s_rx_axis          (i2s_rx_axis),
-      .dvp_rx_axis          (dvp_rx_axis)
+      .dvp_rx_axis          (dvp_rx_axis),
+      .crypto_in_axis       (crypto_in_axis),
+      .crypto_out_axis      (crypto_out_axis)
   );
 
   assign dma_done  = dma_done_vector[0];
@@ -290,22 +309,24 @@ module ws2812_dma_tb;
   end
 
   initial begin
-    pixels[0]        = 24'h800001;
-    pixels[1]        = 24'h010203;
-    pixels[2]        = 24'hA5A5A5;
-    pixels[3]        = 24'h5A5A5A;
-    pixels[4]        = 24'hFFFFFF;
-    pixels[5]        = 24'h000000;
-    req.i2s_tx_proc  = 1'b1;
-    req.i2s_rx_proc  = 1'b1;
-    req.qspi_tx_proc = 1'b1;
-    req.qspi_rx_proc = 1'b1;
-    req.uart_tx_proc = 1'b1;
-    req.uart_rx_proc = 1'b1;
-    req.i2c0_tx_proc = 1'b1;
-    req.i2c0_rx_proc = 1'b1;
-    req.i2c1_tx_proc = 1'b1;
-    req.i2c1_rx_proc = 1'b1;
+    pixels[0]           = 24'h800001;
+    pixels[1]           = 24'h010203;
+    pixels[2]           = 24'hA5A5A5;
+    pixels[3]           = 24'h5A5A5A;
+    pixels[4]           = 24'hFFFFFF;
+    pixels[5]           = 24'h000000;
+    req.i2s_tx_proc     = 1'b1;
+    req.i2s_rx_proc     = 1'b1;
+    req.qspi_tx_proc    = 1'b1;
+    req.qspi_rx_proc    = 1'b1;
+    req.uart_tx_proc    = 1'b1;
+    req.uart_rx_proc    = 1'b1;
+    req.i2c0_tx_proc    = 1'b1;
+    req.i2c0_rx_proc    = 1'b1;
+    req.i2c1_tx_proc    = 1'b1;
+    req.i2c1_rx_proc    = 1'b1;
+    req.crypto_in_proc  = 1'b1;
+    req.crypto_out_proc = 1'b1;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;

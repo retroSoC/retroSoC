@@ -83,6 +83,24 @@ axi4_stream_if #(
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_crypto_in_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_crypto_out_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   clint_if u_clint_if ();
   dma_req_if u_dma_req_if ();
@@ -94,6 +112,9 @@ axi4_stream_if #(
   logic s_dma_i2c1_tx_stall, s_dma_i2c1_rx_stall;
   logic s_dma_xfer_done;
   logic s_dma_irq;
+  logic s_dma_crypto_in_proc;
+  logic s_dma_crypto_out_proc;
+  logic s_crypto_irq;
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
   logic s_xpi_irq;
@@ -123,16 +144,18 @@ axi4_stream_if #(
       `include "apb4_periph_connections.svh"
   );
 
-  assign u_dma_req_if.i2s_tx_proc  = ~s_dma_i2s_tx_stall;
-  assign u_dma_req_if.i2s_rx_proc  = ~s_dma_i2s_rx_stall;
-  assign u_dma_req_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
-  assign u_dma_req_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
-  assign u_dma_req_if.uart_tx_proc = ~s_dma_uart_tx_stall;
-  assign u_dma_req_if.uart_rx_proc = ~s_dma_uart_rx_stall;
-  assign u_dma_req_if.i2c0_tx_proc = ~s_dma_i2c0_tx_stall;
-  assign u_dma_req_if.i2c0_rx_proc = ~s_dma_i2c0_rx_stall;
-  assign u_dma_req_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
-  assign u_dma_req_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
+  assign u_dma_req_if.i2s_tx_proc     = ~s_dma_i2s_tx_stall;
+  assign u_dma_req_if.i2s_rx_proc     = ~s_dma_i2s_rx_stall;
+  assign u_dma_req_if.qspi_tx_proc    = ~s_dma_xpi_tx_stall;
+  assign u_dma_req_if.qspi_rx_proc    = ~s_dma_xpi_rx_stall;
+  assign u_dma_req_if.uart_tx_proc    = ~s_dma_uart_tx_stall;
+  assign u_dma_req_if.uart_rx_proc    = ~s_dma_uart_rx_stall;
+  assign u_dma_req_if.i2c0_tx_proc    = ~s_dma_i2c0_tx_stall;
+  assign u_dma_req_if.i2c0_rx_proc    = ~s_dma_i2c0_rx_stall;
+  assign u_dma_req_if.i2c1_tx_proc    = ~s_dma_i2c1_tx_stall;
+  assign u_dma_req_if.i2c1_rx_proc    = ~s_dma_i2c1_rx_stall;
+  assign u_dma_req_if.crypto_in_proc  = s_dma_crypto_in_proc;
+  assign u_dma_req_if.crypto_out_proc = s_dma_crypto_out_proc;
 
   `include "apb4_periph_irq_bindings.svh"
 
@@ -234,7 +257,9 @@ axi4_stream_if #(
       .xpi            (xpi)
   );
 
-  apb4_dma u_apb4_dma (
+  apb4_dma #(
+      .NumChannels(6)
+  ) u_apb4_dma (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .dma_xfer_done_o(s_dma_xfer_done),
@@ -244,7 +269,20 @@ axi4_stream_if #(
       .axi4           (dma_axi4),
       .i2s_tx_axis    (u_i2s_tx_axis_if),
       .i2s_rx_axis    (u_i2s_rx_axis_if),
-      .dvp_rx_axis    (u_dvp_rx_axis_if)
+      .dvp_rx_axis    (u_dvp_rx_axis_if),
+      .crypto_in_axis (u_crypto_in_axis_if),
+      .crypto_out_axis(u_crypto_out_axis_if)
+  );
+
+  apb4_crypto u_apb4_crypto (
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .dma_input_proc_o (s_dma_crypto_in_proc),
+      .dma_output_proc_o(s_dma_crypto_out_proc),
+      .irq_o            (s_crypto_irq),
+      .apb4             (u_crypto_apb4_if),
+      .crypto_in_axis   (u_crypto_in_axis_if),
+      .crypto_out_axis  (u_crypto_out_axis_if)
   );
 
   apb4_sysctrl u_apb4_sysctrl (

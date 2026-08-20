@@ -9,7 +9,7 @@
   ],
   "reviewed_boundary_record": {
     "owner": "retroSoC RTL maintainers",
-    "related_commit": "7a7c0b2973d3bbe92bb3c2bbb9808edc5181b641",
+    "related_commit": "7df897b03820ab4f9b48472eef4308698c9a7df4",
     "expiry": "Expires before a behavior-changing or sequential-equivalence-verified refactor of an affected module.",
     "removal_plan": "Use an isolated change with named validation evidence; do not treat this audit record as a warning baseline or a blanket waiver."
   },
@@ -197,6 +197,17 @@
       "ws2812_define.svh",
       "ws2812_if.sv",
       "ws2812_reg.sv"
+    ],
+    "rtl/ip/security": [
+      "apb4_crypto.sv",
+      "crypto_aes_core.sv",
+      "crypto_aes_engine.sv",
+      "crypto_define.svh",
+      "crypto_montgomery.sv",
+      "crypto_pkg.sv",
+      "crypto_rsa_core.sv",
+      "crypto_sha2_core.sv",
+      "crypto_sha2_engine.sv"
     ],
     "rtl/ip/storage": [
       "apb4_sdio.sv",
