@@ -179,6 +179,36 @@ module axi4_interconnect_tb;
     end
   endtask
 
+  task automatic issue_management_with_idle_sdio;
+    integer cycles;
+    begin
+      @(negedge clk_i);
+      masters[0].araddr  = 32'h0000_0000;
+      masters[0].arlen   = 8'd0;
+      masters[0].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[0].arready);
+      @(negedge clk_i);
+      masters[0].arvalid = 1'b0;
+      masters[0].rready  = 1'b1;
+      cycles             = 0;
+      while (!masters[0].rvalid && cycles < 100) begin
+        if (masters[3].arvalid || masters[3].awvalid || masters[3].wvalid ||
+            masters[4].arvalid || masters[4].awvalid || masters[4].wvalid) begin
+          $fatal(1, "inactive SDIO master drove a request during management boot traffic");
+        end
+        @(negedge clk_i);
+        cycles = cycles + 1;
+      end
+      if (cycles >= 100) $fatal(1, "idle SDIO masters blocked management boot traffic");
+      if (masters[0].rresp != `AXI4_RESP_OKAY) begin
+        $fatal(1, "management boot traffic received an unexpected response");
+      end
+      @(posedge clk_i);
+      @(negedge clk_i);
+      masters[0].rready = 1'b0;
+    end
+  endtask
+
   task automatic issue_contending_sdio_faults;
     integer cycles;
     begin
@@ -264,6 +294,7 @@ module axi4_interconnect_tb;
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
 
+    issue_management_with_idle_sdio();
     issue_mgmt_error_read(32'hA000_0000, 8'd0, `AXI4_RESP_DECODE_ERROR, `RIB_RESP_DECERR);
     issue_mgmt_error_read(32'h3000_0000, 8'd16, `AXI4_RESP_SLAVE_ERROR, `RIB_RESP_BURSTERR);
     issue_denied_user_write(32'h1000_B000);

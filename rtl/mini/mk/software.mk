@@ -7,8 +7,8 @@ OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
 GCC_FLAGS     := -std=gnu11 -Wall -Wextra \
-             -Wl,-Bstatic,-T,$(LINK_TYPE).lds,--strip-debug -O3 \
-             -ffreestanding -nostdlib
+             -Wl,-Bstatic,-T,$(LINK_TYPE).lds,--strip-debug,--gc-sections -O3 \
+             -ffreestanding -nostdlib -ffunction-sections -fdata-sections
 SW_WARN_FLAGS := -Wformat=2 -Wshadow -Wstrict-prototypes -Wmissing-prototypes \
                  -Wcast-align -Werror=implicit-function-declaration \
                  -Werror=return-type -Werror=incompatible-pointer-types \

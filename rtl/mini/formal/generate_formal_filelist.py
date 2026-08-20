@@ -191,6 +191,7 @@ def source_files(target: str) -> list[Path]:
         return [
             COMMON_RTL / "interface/axi4_if.sv",
             COMMON_RTL / "interface/axi4_addr_gen.sv",
+            COMMON_RTL / "utils/register.sv",
             MEMORY / "psram_pkg.sv",
             MEMORY / "psram_axi4.sv",
             MEMORY / "psram_phy.sv",
