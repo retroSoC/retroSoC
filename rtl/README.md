@@ -84,6 +84,13 @@ master with a single-clock mode-0 SDR PHY. Its phase, protocol, register,
 descriptor, software, and verification boundaries are documented in
 [SPI-SD Host Controller](../docs/ip/spisd.md).
 
+The self-owned XPI V2 controller exposes four 64 MiB native-AXI4 windows and
+an APB4 management plane. It provides a 16-by-8 command LUT, reset-time NSS0
+quad-I/O NOR boot, mapped serial RAM access, indirect PIO/central-DMA commands,
+automatic status polling, interrupts, and an SDR single-clock PHY. Its frozen
+ABI and commercial delivery boundary are documented in
+[XPI V2 Controller](../docs/ip/xpi.md).
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and

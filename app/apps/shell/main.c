@@ -11,7 +11,7 @@
 #include <retrosoc/hal/ws2812.h>
 #include <retrosoc/hal/ps2.h>
 #include <retrosoc/hal/pwm.h>
-#include <retrosoc/hal/qspi.h>
+#include <retrosoc/hal/xpi.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/timer.h>
@@ -35,7 +35,9 @@ int main(void) {
     if (rs_i2c_init(RS_I2C_BUS_0, CPU_FREQ * UINT32_C(1000000), UINT32_C(400000)) != RS_OK) {
         return 1;
     }
-    qspi_dev_init();
+    if (rs_xpi_peripheral_initialize(RS_TIMEOUT_DEFAULT) != RS_OK) {
+        return 1;
+    }
     lcd_init();
 
     // lv_init();

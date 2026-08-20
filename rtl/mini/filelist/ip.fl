@@ -54,8 +54,11 @@
 /ip/serial/uart_core.sv
 /ip/serial/uart_reg.sv
 /ip/serial/apb4_uart.sv
+/ip/storage/xpi_pkg.sv
+/ip/storage/xpi_if.sv
 /ip/storage/xpi_reg.sv
 /ip/storage/xpi_mm.sv
+/ip/storage/xpi_indirect.sv
 /ip/storage/xpi_clkgen.sv
 /ip/storage/xpi_core.sv
 /ip/storage/apb4_xpi.sv

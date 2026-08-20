@@ -30,7 +30,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("spisd", "apb4_periph", 6, 6, "spisd.irq_o"),
     ("i2c0", "apb4_periph", 7, 7, "i2c0.irq_o"),
     ("i2s", "apb4_periph", 8, 8, "i2s.irq_o"),
-    ("xpi", "apb4_periph", 9, 9, "xpi.irq_o"),
+    ("xpi", "apb4_periph", 9, 9, "s_xpi_irq"),
     ("pwm", "apb4_system", 0, 11, "pwm.irq_o"),
     ("ps2", "apb4_system", 1, 12, "ps2.irq_o"),
     ("rtc", "apb4_system", 2, 13, "u_rtc_if.irq_o"),

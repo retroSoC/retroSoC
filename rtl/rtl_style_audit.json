@@ -224,7 +224,10 @@
       "xpi_clkgen.sv",
       "xpi_core.sv",
       "xpi_define.svh",
+      "xpi_if.sv",
+      "xpi_indirect.sv",
       "xpi_mm.sv",
+      "xpi_pkg.sv",
       "xpi_reg.sv"
     ],
     "rtl/ip/util": [

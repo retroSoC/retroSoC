@@ -128,8 +128,8 @@ VALID_STA           := NONE OPENSTA
 VALID_PDK           := ICS55 IHP130 SKY130 GF180
 VALID_BOOL          := YES NO
 VALID_ISA           := RV32E RV32I RV32IM
-VALID_APP           := benchmark bringup ci_smoke coremark debug shell
-VALID_LINK_TYPE     := xip ld2_all_sram ld2_sram ld2_psram ld2_sdram
+VALID_APP           := benchmark bringup ci_smoke coremark debug shell xpi_flash_loader
+VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
 VALID_COREMARK_MODE := quick standard
 
 define validate_value

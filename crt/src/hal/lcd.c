@@ -3,7 +3,7 @@
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/gpio.h>
-#include <retrosoc/hal/qspi.h>
+#include <retrosoc/hal/xpi.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/dma.h>
 // #include "image.h"
@@ -56,22 +56,45 @@ static bool rs_lcd_region_valid(uint16_t x_start, uint16_t y_start, uint16_t x_e
 
 static void lcd_wr_dc_cmd(uint8_t cmd) {
     (void)rs_gpio_port_clear(UINT32_C(1) << 2U);
-    qspi0_wr_dat8(cmd);
+    (void)rs_xpi_peripheral_write(&cmd, sizeof(cmd), RS_TIMEOUT_DEFAULT);
 }
 
 static void lcd_wr_dc_data8(uint8_t dat) {
     (void)rs_gpio_port_set(UINT32_C(1) << 2U);
-    qspi0_wr_dat8(dat);
+    (void)rs_xpi_peripheral_write(&dat, sizeof(dat), RS_TIMEOUT_DEFAULT);
 }
 
 static void lcd_wr_dc_data16(uint16_t dat) {
+    const uint8_t wire_data[] = {(uint8_t)(dat >> UINT16_C(8)), (uint8_t)dat};
+
     (void)rs_gpio_port_set(UINT32_C(1) << 2U);
-    qspi0_wr_dat16(dat);
+    (void)rs_xpi_peripheral_write(wire_data, sizeof(wire_data), RS_TIMEOUT_DEFAULT);
 }
 
 static void lcd_wr_data32(uint32_t *dat, uint32_t len) {
+    uint8_t wire_data[128];
+    uint32_t offset = UINT32_C(0);
+
+    if ((dat == NULL) && (len != UINT32_C(0))) {
+        return;
+    }
     (void)rs_gpio_port_set(UINT32_C(1) << 2U);
-    qspi0_wr_data32(dat, len);
+    while (offset < len) {
+        const uint32_t remaining = len - offset;
+        const uint32_t chunk = (remaining > UINT32_C(32)) ? UINT32_C(32) : remaining;
+        uint32_t word_index;
+
+        for (word_index = UINT32_C(0); word_index < chunk; word_index++) {
+            const uint32_t value = dat[offset + word_index];
+            wire_data[(word_index * UINT32_C(4))] = (uint8_t)(value >> UINT32_C(24));
+            wire_data[(word_index * UINT32_C(4)) + UINT32_C(1)] = (uint8_t)(value >> UINT32_C(16));
+            wire_data[(word_index * UINT32_C(4)) + UINT32_C(2)] = (uint8_t)(value >> UINT32_C(8));
+            wire_data[(word_index * UINT32_C(4)) + UINT32_C(3)] = (uint8_t)value;
+        }
+        (void)rs_xpi_peripheral_write(wire_data, (size_t)chunk * sizeof(uint32_t),
+                                      RS_TIMEOUT_DEFAULT);
+        offset += chunk;
+    }
 }
 
 void lcd_init(void) {
@@ -227,12 +250,6 @@ void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, 
 
     uint32_t total_pixels = (uint32_t)(xend - xsta) * (uint32_t)(yend - ysta);
 
-#ifdef USE_QSPI0_DMA
-    (void)rs_gpio_port_set(UINT32_C(1) << 2U);
-    uintptr_t addr = (uintptr_t)data;
-    // printf("addr: %x\n\n", addr);
-    qspi0_dma_xfer(addr, total_pixels / 2U); // every xfer contains two RGB565 pixels
-#else
     uint32_t i;
     uint32_t j;
     for (i = 0U, j = 0U; (i + 64U) < total_pixels; i += 64U, j += 32U) {
@@ -241,7 +258,6 @@ void lcd_fill_image(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, 
 
     if (i < total_pixels)
         lcd_wr_data32(data + j, (total_pixels - i) / 2U);
-#endif
 }
 
 void lcd_fill_video(uint16_t xsta, uint16_t ysta, uint16_t xend, uint16_t yend, uint32_t *data) {
@@ -336,10 +352,6 @@ void ip_lcd_test(int argc, char **argv) {
         pref_cnt += 3;
     }
     lcd_frame(0, pref_cnt);
-
-#ifdef USE_QSPI0_DMA
-    printf("enable dma\n");
-#endif
 
     // pref_cnt = 0;
     // lcd_frame(1, pref_cnt);

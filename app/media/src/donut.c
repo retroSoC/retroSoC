@@ -27,7 +27,6 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/lib/string.h>
 #include <retrosoc/lib/printf.h>
-#include <retrosoc/hal/qspi.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/media/donut.h>
 

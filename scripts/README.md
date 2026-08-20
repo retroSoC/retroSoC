@@ -32,6 +32,11 @@ RISC-V GDB, then records their logs and a structured result. Invoke it through
 [`../docs/hazard3-debug.md`](../docs/hazard3-debug.md) for its scope and
 limitations.
 
+`program_xpi_flash.py` drives the SRAM-resident XPI loader through an existing
+OpenOCD GDB endpoint. It validates and splits a BIN at 4 KiB sector boundaries,
+generates a reviewable GDB script, and performs erase/program only when
+`--execute` is explicit. See [`../docs/ip/xpi.md`](../docs/ip/xpi.md).
+
 `check_rtl_style.py` applies the ownership-aware RTL style rules from
 [`../rtl/rtl_style_manifest.json`](../rtl/rtl_style_manifest.json). The CI
 target checks changed self-owned RTL for positional module connections, legacy

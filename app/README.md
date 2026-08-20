@@ -33,6 +33,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
+| `xpi_flash_loader` | SRAM-resident, GDB-called service image for sector-preserving JTAG programming of the qualified NSS0 NOR. |
 
 The application manifest is loaded from `app/apps/<name>/app.mk`. It appends
 `APP_SRCS` and, when necessary, `APP_INC_DIRS` to the SDK sources selected by
@@ -58,6 +59,9 @@ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark
 
 # Hazard3 remote-bitbang, OpenOCD, and GDB acceptance flow
 make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim
+
+# Build the SRAM-resident XPI NOR loader used by the host JTAG tool
+make CONFIG=configs/ci/ihp130-xpi-flash-loader.mk firmware
 ```
 
 For a firmware-only build, omit `SIMU=VERILATOR sim`.

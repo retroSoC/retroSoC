@@ -13,6 +13,7 @@ verification documentation for self-owned retroSoC peripheral IP.
 - [dvp.md](dvp.md) defines the APB4 DVP capture controller.
 - [i2s.md](i2s.md) defines the APB4 I2S master transceiver.
 - [sdram.md](sdram.md) defines the AXI4 SDRAM data controller and APB4 configuration window.
+- [xpi.md](xpi.md) defines the native-AXI4/APB4 XPI V2 controller, commercial reference survey, LUT and PHY contracts, HAL, JTAG NOR programming, and delivery boundary.
 
 The corresponding RTL and HAL implementations remain the executable sources
 of truth. Update the affected document whenever an IP interface or register ABI

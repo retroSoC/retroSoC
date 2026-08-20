@@ -87,7 +87,7 @@ void rs_app_info(void) {
     printf("  FREQ:                %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Address Range:\n");
-    printf("  QSPI Flash:          @[0x%08x-0x%08x] %3d MiB\n", SPFS_MEM_START,
+    printf("  XPI NOR:             @[0x%08x-0x%08x] %3d MiB\n", SPFS_MEM_START,
            SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
 #if RS_SOC_HAS_SRAM
     printf("  On-chip RAM:         @[0x%08x-0x%08x] %3d KiB\n", SRAM_MEM_START,
@@ -119,7 +119,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB4_I2S_BASE);
     printf("                       1 x WS2812        @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
-    printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
+    printf("                       1 x XPI V2        @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_XPI_BASE);
     printf("                       1 x DMA(4CH)      @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_DMA_BASE);
     printf("                       1 x SYSCTRL       @%p\n",

@@ -96,6 +96,7 @@ axi4_stream_if #(
   logic s_dma_irq;
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
+  logic s_xpi_irq;
 
 `ifdef PDK_GF180
   localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
@@ -227,6 +228,7 @@ axi4_stream_if #(
       .dma_xfer_done_i(s_dma_xfer_done),
       .dma_tx_stall_o (s_dma_xpi_tx_stall),
       .dma_rx_stall_o (s_dma_xpi_rx_stall),
+      .irq_o          (s_xpi_irq),
       .apb4           (u_xpi_apb4_if),
       .mem_axi4       (xpi_axi4),
       .xpi            (xpi)

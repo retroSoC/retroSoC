@@ -95,7 +95,7 @@
       "group": "apb4_periph",
       "group_bit": 9,
       "core_bit": 9,
-      "signal": "xpi.irq_o"
+      "signal": "s_xpi_irq"
     },
     {
       "name": "sdio0",

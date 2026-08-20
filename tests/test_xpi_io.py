@@ -1,4 +1,4 @@
-"""RTL regression for XPI output-enable isolation during input phases."""
+"""RTL regression for the XPI v2 LUT engine and phase-isolated pads."""
 
 from __future__ import annotations
 
@@ -17,33 +17,16 @@ def test_xpi_releases_data_pads_while_receiving(tmp_path: Path) -> None:
     if iverilog is None or vvp is None:
         return
 
-    generated = tmp_path / "generated"
-    subprocess.run(
-        [
-            sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
-            "--map",
-            str(ROOT / "rtl/mini/address_map/memory_map.json"),
-            "--output-dir",
-            str(generated),
-        ],
-        check=True,
-    )
     source_list = tmp_path / "xpi_io.fl"
     source_list.write_text(
         "\n".join(
             [
                 "+define+SV_ASSRT_DISABLE",
-                f"+incdir+{generated / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/ip/storage'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
-                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/interface'}",
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
-                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_addr_gen.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
-                str(ROOT / "rtl/mini/top/axi4_word_bridge.sv"),
-                str(ROOT / "rtl/ip/storage/apb4_xpi.sv"),
+                str(ROOT / "rtl/ip/storage/xpi_pkg.sv"),
+                str(ROOT / "rtl/ip/storage/xpi_if.sv"),
                 str(ROOT / "rtl/ip/storage/xpi_clkgen.sv"),
                 str(ROOT / "rtl/ip/storage/xpi_core.sv"),
                 str(ROOT / "tests/rtl/xpi_io_tb.sv"),
@@ -79,4 +62,4 @@ def test_xpi_releases_data_pads_while_receiving(tmp_path: Path) -> None:
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
 
-    assert "XPI pad drive isolation test passed" in result.stdout
+    assert "XPI v2 LUT and pad isolation test passed" in result.stdout

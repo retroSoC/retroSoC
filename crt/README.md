@@ -70,6 +70,13 @@ CMD6 high-speed switch. Its descriptor/buffer alignment and retired-aperture
 compatibility behavior are defined in the
 [SPI-SD controller contract](../docs/ip/spisd.md).
 
+`<retrosoc/hal/xpi.h>` and `<retrosoc/hal/xpi_regs.h>` provide the typed XPI V2
+HAL and its manually maintained register ABI. The API covers four mapped
+slots, LUT programming, PIO and central-DMA indirect transfers, hardware
+polling, interrupts, errors, performance counters, and configuration locks.
+Reset-time NSS0 boot behavior and JTAG NOR programming are defined in the
+[XPI V2 controller contract](../docs/ip/xpi.md).
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

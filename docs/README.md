@@ -54,6 +54,9 @@ the root README and subsystem guides.
 - [ip/opipsram.md](ip/opipsram.md) defines the boot-selected OPI/xSPI and
   single-clock HyperBus profiles, shared digital PHY, delay-cell boundary,
   register ABI, central-DMA use, and commercial signoff limits.
+- [ip/xpi.md](ip/xpi.md) defines the four-slot SDR XPI V2 controller,
+  native-AXI4 mapped windows, APB4/LUT ABI, indirect/DMA/polling modes, JTAG
+  NOR loader, commercial survey, and verification boundary.
 - [ip/sdio-verification.md](ip/sdio-verification.md) records the standalone
   SD/SDIO behavioral models, directed coverage, formal bound, and verification
   blockers.
