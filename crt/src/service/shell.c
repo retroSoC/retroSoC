@@ -5,14 +5,14 @@
 #include <retrosoc/lib/string.h>
 #include <retrosoc/service/shell.h>
 #include <retrosoc/hal/lcd.h>
-#include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/timer.h>
+#include <retrosoc/hal/user_ip.h>
 #include <ff.h>
 #include <retrosoc/media/video_player.h>
+#include <retrosoc/network/user_ip_demo.h>
 #include <core_portme.h>
 // #include <lvgl.h>
 // #include <lv_port_disp.h>
-#include <userip.h>
 
 static char sh_argv_buf[RS_SHELL_MAX_ARGC][RS_SHELL_MAX_COMMAND_LENGTH + 1U];
 static char *sh_argv[RS_SHELL_MAX_ARGC + 1U];
@@ -686,6 +686,7 @@ static void rs_shell_app_coremark_cmd(int argc, char **argv) {
 
 static void rs_shell_app_userip_cmd(int argc, char **argv) {
     uint8_t current_user_id;
+    rs_status_t status;
 
     if (argc != 1 && argc != 2) {
         printf("[userip] cmd param error\n");
@@ -693,28 +694,26 @@ static void rs_shell_app_userip_cmd(int argc, char **argv) {
     }
 
     if (argc == 1) {
-        if (rs_sysctrl_get_ip_select(&current_user_id) != RS_OK) {
+        if (rs_user_ip_get_selected(&current_user_id) != RS_OK) {
             printf("user ip selection read failed\n");
             return;
         }
         printf("current user ip id: %03d\n", current_user_id);
-        userip_main(0, NULL);
     } else if (argc == 2) {
         int32_t user_id;
 
-        if ((rs_strtoi32(argv[1], &user_id) == RS_OK) && (user_id >= 0) && (user_id <= 255)) {
-            printf("switch to user ip id to [%03d...]\n", user_id);
-            if (rs_sysctrl_set_ip_select((uint8_t)user_id) != RS_OK) {
-                printf("user ip selection write failed\n");
-                return;
-            }
-            userip_main((int)user_id, NULL); // HACK:
-        } else {
-            printf("error use id: %d\n", user_id);
+        if ((rs_strtoi32(argv[1], &user_id) != RS_OK) || (user_id < 0) || (user_id > UINT8_MAX)) {
+            printf("invalid user ip id: %s\n", argv[1]);
             return;
         }
+        current_user_id = (uint8_t)user_id;
+        printf("switch to user ip id [%03d]\n", user_id);
     }
-    // userip: list all info/current id
+
+    status = rs_user_ip_demo_run(current_user_id);
+    if (status != RS_OK) {
+        printf("user ip %u test failed: %d\n", (uint32_t)current_user_id, status);
+    }
 }
 
 void rs_shell_launch(void) {

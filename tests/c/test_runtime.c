@@ -17,6 +17,7 @@
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
+#include <retrosoc/hal/user_ip.h>
 #include <retrosoc/hal/ws2812.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/lib/stdlib.h>
@@ -698,6 +699,26 @@ static int test_dma_config_validation(void) {
     return 0;
 }
 
+static int test_user_ip_validation(void) {
+    uint32_t value;
+
+    if ((rs_user_ip_get_selected(NULL) != RS_EINVAL) ||
+        (rs_user_ip_select(UINT8_MAX) != RS_EINVAL) ||
+        (rs_user_ip_probe(UINT8_MAX, &value) != RS_EINVAL) ||
+        (rs_user_ip_probe(0U, NULL) != RS_EINVAL)) {
+        return 1;
+    }
+    if ((rs_user_ip_read(0U, NULL) != RS_EINVAL) || (rs_user_ip_read(1U, &value) != RS_EINVAL) ||
+        (rs_user_ip_read(UINT32_C(0x1000), &value) != RS_EINVAL)) {
+        return 2;
+    }
+    if ((rs_user_ip_write(2U, 0U) != RS_EINVAL) ||
+        (rs_user_ip_write(UINT32_C(0x1000), 0U) != RS_EINVAL)) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_ps2_decoders(void) {
     ps2_keyboard_decoder_t keyboard;
     ps2_mouse_decoder_t mouse;
@@ -767,13 +788,13 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(),   test_formatter(),      test_compiler_helpers(),
-        test_wait_helper(),      test_ws2812_helpers(), test_timer_helpers(),
-        test_psram_helpers(),    test_sdram_helpers(),  test_uart_helpers(),
-        test_i2s_helpers(),      test_i2c_helpers(),    test_sdio_helpers(),
-        test_spisd_helpers(),    test_gpio_helpers(),   test_dma_config_validation(),
-        test_opipsram_helpers(), test_ps2_decoders(),   test_wav_parser(),
-        test_video_parser(),
+        test_string_helpers(),   test_formatter(),          test_compiler_helpers(),
+        test_wait_helper(),      test_ws2812_helpers(),     test_timer_helpers(),
+        test_psram_helpers(),    test_sdram_helpers(),      test_uart_helpers(),
+        test_i2s_helpers(),      test_i2c_helpers(),        test_sdio_helpers(),
+        test_spisd_helpers(),    test_gpio_helpers(),       test_dma_config_validation(),
+        test_opipsram_helpers(), test_user_ip_validation(), test_ps2_decoders(),
+        test_wav_parser(),       test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

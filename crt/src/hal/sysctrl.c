@@ -147,6 +147,9 @@ rs_status_t rs_sysctrl_get_ip_select(uint8_t *ip_id) {
 }
 
 rs_status_t rs_sysctrl_set_ip_select(uint8_t ip_id) {
+    if ((uint32_t)ip_id > RS_SOC_USER_IP_COUNT) {
+        return RS_EINVAL;
+    }
     *rs_sysctrl_register(RS_SYSCTRL_IPSEL_OFFSET) = (uint32_t)ip_id;
     return RS_OK;
 }

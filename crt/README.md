@@ -46,6 +46,12 @@ clock, user-core, performance, and test-service APIs use this HAL; direct
 `reg_sysctrl_*` register macros are not public SDK interfaces. See the
 [SystemCtrl contract](../docs/ip/sysctrl.md).
 
+`<retrosoc/hal/user_ip.h>` owns selection, identification, and validated
+32-bit access to the fixed 4 KiB user-IP window. The generic HAL does not
+assign semantics to extension-specific registers; each integrated user IP
+keeps its register ABI and driver in its owning application component. See the
+[User IP software contract](../docs/ip/user-ip.md).
+
 `<retrosoc/hal/dma.h>` provides the channel-aware direct-mode DMA API. UART0,
 I2C0, I2C1, and bulk/media clients have deterministic channel assignments; see
 the [DMA MVP contract](../docs/ip/dma.md). The current SDK intentionally

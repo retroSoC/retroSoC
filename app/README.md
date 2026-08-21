@@ -87,6 +87,12 @@ Application-specific public headers belong below their own component include
 directory, such as `board/include/retrosoc/board/` or
 `media/include/retrosoc/media/`.
 
+The shell's user-IP integration follows the same boundary under
+`network/userip`: its public demo entry point is namespaced below
+`include/retrosoc/network/`, while the slot 1 timer and slot 2 GPIO register
+tables remain private to the component. Generic slot selection and checked
+APB-window access come from `<retrosoc/hal/user_ip.h>`.
+
 DMA users must select an explicit SDK channel. UART0 owns channel 0, I2C0
 channel 1, I2C1 channel 2, media/benchmark clients serialize on bulk channel
 3, and crypto reserves channels 4/5. See [DMA MVP](../docs/ip/dma.md) before

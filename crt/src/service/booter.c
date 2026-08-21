@@ -149,7 +149,8 @@ void rs_app_info(void) {
            (void *)(uintptr_t)RS_SOC_APB4_WDG_BASE);
     printf("                       1 x CRC           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_CRC_BASE);
-    printf("                       1 x USER_IP(4KiB) @%p\n", (void *)&reg_user_ip_reg0);
+    printf("                       1 x USER_IP(4KiB) @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_USER_IP_BASE);
     printf("\n");
     printf("#############################################################\n");
     printf("#############################################################\n");

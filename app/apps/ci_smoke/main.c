@@ -1,3 +1,4 @@
+#include <archinfo_regs.h>
 #include <retrosoc/core/archinfo.h>
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
@@ -8,6 +9,7 @@
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
+#include <retrosoc/hal/user_ip.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/service/test.h>
 
@@ -17,6 +19,27 @@ static bool rs_ci_smoke_archinfo_v2(void) {
 
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
+}
+
+static bool rs_ci_smoke_user_ip(void) {
+    rs_status_t status;
+    uint32_t identifier = 0U;
+
+    status = rs_user_ip_probe(0U, &identifier);
+    if ((status != RS_OK) || (identifier != ARCHINFO_COMPONENT_ID_VALUE)) {
+        printf("ci_smoke: user IP 0 status %d identifier 0x%08x\n", (int)status,
+               (unsigned int)identifier);
+        return false;
+    }
+    for (uint32_t ip_id = 1U; ip_id <= RS_SOC_USER_IP_COUNT; ++ip_id) {
+        status = rs_user_ip_probe((uint8_t)ip_id, &identifier);
+        if ((status != RS_OK) || (identifier != ip_id)) {
+            printf("ci_smoke: user IP %u status %d identifier 0x%08x\n", (unsigned int)ip_id,
+                   (int)status, (unsigned int)identifier);
+            return false;
+        }
+    }
+    return rs_user_ip_select(0U) == RS_OK;
 }
 
 static bool rs_ci_smoke_rng_v2(void) {
@@ -265,6 +288,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_user_ip()) {
+        rs_test_finish(RS_TEST_FAILED, 11U);
+    }
+    printf("ci_smoke: user IP passed\n");
     if (!rs_ci_smoke_rng_v2()) {
         rs_test_finish(RS_TEST_FAILED, 8U);
     }

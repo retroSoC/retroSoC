@@ -1,10 +1,12 @@
 # IP Documentation
 
 This directory owns architecture, register ABI, software contract, and
-verification documentation for self-owned retroSoC peripheral IP.
+verification documentation for self-owned retroSoC peripheral IP and platform
+extension interfaces.
 
 - [timer.md](timer.md) defines the dual APB4 general timer.
 - [sysctrl.md](sysctrl.md) defines the APB4 SystemCtrl register ABI, control-plane contracts, HAL, and verification.
+- [user-ip.md](user-ip.md) defines the selectable user-IP window and software ownership boundary.
 - [ws2812.md](ws2812.md) defines the WS2812 transmitter.
 - [clint.md](clint.md) defines the management-hart software and timer interrupt block.
 - [gpio.md](gpio.md) defines the dual-window GPIO controller.
