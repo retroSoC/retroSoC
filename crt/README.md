@@ -76,6 +76,15 @@ bits `[7:0]`/strobe lane 0 is the first wire byte, and `DATA_START` is the
 coordinated DMA/card-data launch. The SDK does not provide hotplug,
 filesystem, combo-card, UHS, DDR, or 1.8 V support.
 
+`<retrosoc/hal/usb2.h>` provides the ULPI USB 2.0 controller primitives for
+role configuration, eight bidirectional device endpoints, sixteen host
+channels, interrupts, USB3320 register viewport access, and 32-byte AXI4
+scatter-gather descriptors. The register ABI is mirrored by hand in
+`<retrosoc/hal/usb2_regs.h>` and checked against RTL without a register
+generator. This layer is a DCD/HCD foundation; enumeration, class, hub, cache
+maintenance, and USB-IF compliance remain integration responsibilities. See
+the [USB2 controller contract](../docs/ip/usb2.md).
+
 `<retrosoc/hal/spisd.h>` provides the separate SPI-mode SD Memory host API.
 It supports bounded SDSC/SDHC enumeration, PIO and native-AXI SG-DMA sector
 transfers, interrupt/error handling, CSD geometry, and an explicit verified

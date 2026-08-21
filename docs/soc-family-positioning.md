@@ -120,6 +120,12 @@ Mini is not intended to compete with general-purpose Linux application
 processors that require RV64, cache-coherent multiprocessing, or
 high-bandwidth DDR interfaces.
 
+An optional NPU derivative may be explored separately as Mini-AI without
+changing the base Mini requirements. The commercial survey, memory-system
+constraints, and initial accelerator direction are recorded in
+[Mini NPU Commercial Reference Survey](ip/mini-npu.md). No NPU is implemented by
+the current Mini profiles.
+
 ### Current Mini Baseline
 
 The current executable RTL and generated integration inputs define these

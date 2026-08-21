@@ -17,6 +17,7 @@ module apb4_periph (
     input logic                                   rst_n_i,
     input logic                                   clk_aud_i,
     input logic                                   rst_aud_n_i,
+    input logic                                   clk_ulpi_i,
     input logic                                   debug_halted_i,
     input logic                                   timebase_tick_i,
     axi4_if.slave                                 cfg_axi4,
@@ -36,12 +37,14 @@ module apb4_periph (
     axi4_if.master                                dma_axi4,
     axi4_if.master                                sdio0_axi4,
     axi4_if.master                                sdio1_axi4,
+    axi4_if.master                                usb2_axi4,
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
     apb4_if.master                                sdram_cfg,
     dvp_if.dut                                    dvp,
     sdio_if.dut                                   sdio0,
     sdio_if.dut                                   sdio1,
+    usb2_ulpi_if.dut                              usb2,
     opipsram_if.dut                               opipsram,
     i2c_if.dut                                    i2c1,
     input logic                                   fault_valid_i,
@@ -115,6 +118,7 @@ axi4_stream_if #(
   logic s_dma_crypto_in_proc;
   logic s_dma_crypto_out_proc;
   logic s_crypto_irq;
+  logic s_usb2_irq;
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
   logic s_xpi_irq;
@@ -328,6 +332,16 @@ axi4_stream_if #(
       .apb4    (u_sdio1_apb4_if),
       .dma_axi4(sdio1_axi4),
       .sdio    (sdio1)
+  );
+
+  apb4_usb2 u_apb4_usb2 (
+      .clk_i     (clk_i),
+      .rst_n_i   (rst_n_i),
+      .clk_ulpi_i(clk_ulpi_i),
+      .apb4      (u_usb2_apb4_if),
+      .dma_axi4  (usb2_axi4),
+      .irq_o     (s_usb2_irq),
+      .ulpi      (usb2)
   );
 
   apb4_opipsram u_apb4_opipsram (

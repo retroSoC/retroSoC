@@ -9,6 +9,7 @@
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
+#include <retrosoc/hal/usb2.h>
 #include <retrosoc/hal/user_ip.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/service/test.h>
@@ -320,6 +321,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 10U);
     }
     printf("ci_smoke: crypto passed\n");
+    if (rs_usb2_controller_selftest() != RS_OK) {
+        rs_test_finish(RS_TEST_FAILED, 12U);
+    }
+    printf("ci_smoke: USB2 passed\n");
 
     printf("ci_smoke: all peripheral tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);

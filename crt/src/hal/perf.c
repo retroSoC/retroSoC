@@ -28,6 +28,7 @@ rs_status_t rs_perf_snapshot(rs_perf_snapshot_t *snapshot) {
          RS_OK) ||
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_SDIO1_WAIT, &snapshot->sdio1_wait) !=
          RS_OK) ||
+        (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_USB2_WAIT, &snapshot->usb2_wait) != RS_OK) ||
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_APB4_PERIPH_WAIT,
                                       &snapshot->apb4_periph_wait) != RS_OK) ||
         (rs_sysctrl_read_perf_counter(RS_SYSCTRL_PERF_APB4_SYSTEM_WAIT,

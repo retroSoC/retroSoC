@@ -3,7 +3,7 @@
 This directory owns project RTL IP.
 
 Self-owned IP is grouped by function: interconnect, util, memory, storage,
-serial, multimedia, and peripheral. The Mini SoC selects active sources
+serial, USB, multimedia, and peripheral. The Mini SoC selects active sources
 explicitly in rtl/mini/filelist/ip.fl, whose source order is part of
 the build contract.
 

@@ -18,6 +18,7 @@ interface sysctrl_if ();
   logic [                   63:0] perf_dma_wait_i;
   logic [                   63:0] perf_sdio0_wait_i;
   logic [                   63:0] perf_sdio1_wait_i;
+  logic [                   63:0] perf_usb2_wait_i;
   logic [                   63:0] perf_apb4_periph_wait_i;
   logic [                   63:0] perf_apb4_system_wait_i;
   logic [                   63:0] perf_sdram_wait_i;
@@ -39,6 +40,7 @@ interface sysctrl_if ();
       input perf_dma_wait_i,
       input perf_sdio0_wait_i,
       input perf_sdio1_wait_i,
+      input perf_usb2_wait_i,
       input perf_apb4_periph_wait_i,
       input perf_apb4_system_wait_i,
       input perf_sdram_wait_i,

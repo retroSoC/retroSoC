@@ -110,6 +110,8 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/sdram.c \
             $(ROOT_PATH)/crt/src/hal/sdio_math.c \
             $(ROOT_PATH)/crt/src/hal/sdio.c \
+            $(ROOT_PATH)/crt/src/hal/usb2_math.c \
+            $(ROOT_PATH)/crt/src/hal/usb2.c \
             $(ROOT_PATH)/crt/src/hal/spisd_math.c \
             $(ROOT_PATH)/crt/src/hal/spisd.c \
             $(ROOT_PATH)/crt/src/hal/xpi.c \

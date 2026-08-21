@@ -71,17 +71,27 @@ module retrosoc_top (
   wire        s_jtag_tdi;
   wire        s_jtag_trst_n;
   wire        s_jtag_tdo;
+  wire        s_usb2_ulpi_clk;
+  tri0        s_usb2_ulpi_dir;
+  tri0        s_usb2_ulpi_nxt;
+  // This wrapper intentionally has no external ULPI PHY model.
+  // verilator lint_off UNUSEDSIGNAL
+  tri0 [ 7:0] s_usb2_ulpi_data;
+  wire        s_usb2_ulpi_stp;
+  wire        s_usb2_ulpi_reset_n;
+  // verilator lint_on UNUSEDSIGNAL
 
-  assign s_clk         = ext_clk_i;
-  assign s_rst_n       = rst_n_i;
-  assign s_jtag_tck    = jtag_tck_i;
-  assign s_jtag_tms    = jtag_tms_i;
-  assign s_jtag_tdi    = jtag_tdi_i;
-  assign s_jtag_trst_n = jtag_trst_n_i;
-  assign jtag_tdo_o    = s_jtag_tdo;
-  assign test_done_o   = u_retrosoc_asic.s_test_done;
-  assign test_pass_o   = u_retrosoc_asic.s_test_pass;
-  assign test_code_o   = u_retrosoc_asic.s_test_code;
+  assign s_clk           = ext_clk_i;
+  assign s_rst_n         = rst_n_i;
+  assign s_jtag_tck      = jtag_tck_i;
+  assign s_jtag_tms      = jtag_tms_i;
+  assign s_jtag_tdi      = jtag_tdi_i;
+  assign s_jtag_trst_n   = jtag_trst_n_i;
+  assign jtag_tdo_o      = s_jtag_tdo;
+  assign test_done_o     = u_retrosoc_asic.s_test_done;
+  assign test_pass_o     = u_retrosoc_asic.s_test_pass;
+  assign test_code_o     = u_retrosoc_asic.s_test_code;
+  assign s_usb2_ulpi_clk = s_clk;
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_verilator_bindings.svh"
   );

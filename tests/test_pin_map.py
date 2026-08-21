@@ -57,6 +57,10 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert "output sdio1_clk_o_pad," in ports
     assert "inout sdio1_cmd_io_pad," in ports
     assert "inout sdio1_dat3_io_pad," in ports
+    assert "inout usb2_ulpi_clk_i_pad," in ports
+    assert "inout usb2_ulpi_data7_io_pad," in ports
+    assert "output usb2_ulpi_stp_o_pad," in ports
+    assert "output usb2_ulpi_reset_n_o_pad," in ports
     assert "HAVE_DEBUG" not in ports
     assert "HAVE_DEBUG" not in pads
     assert "u_gpio_31_io_pad" in pads
@@ -67,6 +71,13 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert ".c2p(u_sdio1_if.cmd_do_o)" in pads
     assert ".c2p_en(u_sdio1_if.cmd_oe_o)" in pads
     assert ".p2c(u_sdio1_if.cmd_di_i)" in pads
+    assert "tc_io_tri_pad u_usb2_ulpi_clk_i_pad" in pads
+    assert ".p2c(s_usb2_ulpi_clk)" in pads
+    assert "u_usb2_ulpi_data7_io_pad" in pads
+    assert ".c2p(u_usb2_ulpi_if.data_do_o[7])" in pads
+    assert ".c2p_en(u_usb2_ulpi_if.data_oe_o)" in pads
+    assert ".p2c(u_usb2_ulpi_if.data_di_i[7])" in pads
+    assert "tc_io_out_pad u_usb2_ulpi_stp_o_pad" in pads
     assert ".gpio_30_io_pad(gpio_io30)" in fpga
     assert ".gpio_15_io_pad()" in fpga
     assert ".gpio_24_io_pad(s_psram_dat1)" in testbench
@@ -78,11 +89,17 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert ".sdio1_clk_o_pad(sdio1_clk_o)" in verilator
     assert ".sdio1_cmd_io_pad(sdio1_cmd_io)" in verilator
     assert ".sdio1_dat3_io_pad(sdio1_dat3_io)" in verilator
+    assert ".usb2_ulpi_clk_i_pad(s_usb2_ulpi_clk)" in verilator
+    assert ".usb2_ulpi_data7_io_pad(s_usb2_ulpi_data[7])" in verilator
     assert ".sdio1_clk_o_pad(s_sdio1_clk)" in testbench
     assert ".sdio1_cmd_io_pad(s_sdio1_cmd)" in testbench
     assert ".sdio1_dat0_io_pad(s_sdio1_dat[0])" in testbench
+    assert ".usb2_ulpi_clk_i_pad(s_usb2_ulpi_clk)" in testbench
+    assert ".usb2_ulpi_data0_io_pad(s_usb2_ulpi_data[0])" in testbench
     assert ".sdio1_clk_o_pad()" in fpga
     assert ".sdio1_cmd_io_pad()" in fpga
+    assert ".usb2_ulpi_clk_i_pad(s_usb2_ulpi_clk)" in fpga
+    assert ".usb2_ulpi_data0_io_pad(s_usb2_ulpi_data[0])" in fpga
     assert ".jtag_tck_i_pad(s_jtag_tck)" in testbench
     assert "user_gpio_" not in ports
     assert "user_gpio_" not in pads

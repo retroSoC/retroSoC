@@ -141,6 +141,14 @@
     {
       "symbol": "PERF_SDIO1_WAIT_HI",
       "offset": "0x98"
+    },
+    {
+      "symbol": "PERF_USB2_WAIT_LO",
+      "offset": "0x9C"
+    },
+    {
+      "symbol": "PERF_USB2_WAIT_HI",
+      "offset": "0xA0"
     }
   ],
   "regions": [
@@ -356,6 +364,15 @@
     {
       "symbol": "APB4_SDIO1",
       "base": "0x10015000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_USB2",
+      "base": "0x10016000",
       "size": "0x00001000",
       "route": "apb4_periph",
       "kind": "active",

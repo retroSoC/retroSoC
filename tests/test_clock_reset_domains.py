@@ -39,6 +39,7 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
         "audio",
         "jtag",
         "dvp",
+        "usb2_ulpi",
     }
     assert {
         (crossing["name"], crossing["source"], crossing["destination"])
@@ -51,6 +52,32 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
         crossing for crossing in document["crossings"] if crossing["name"] == "clint_timebase"
     )
     assert clint["primitive"] == "edge_det"
+    assert {
+        "usb2_work",
+        "usb2_result",
+        "usb2_setup",
+        "usb2_fill_command",
+        "usb2_drain_command",
+        "usb2_buffer_event",
+        "usb2_view_request",
+        "usb2_view_response",
+        "usb2_fill_stream",
+        "usb2_drain_stream",
+        "usb2_role",
+        "usb2_role_reset",
+        "usb2_phy_reset",
+        "usb2_high_speed",
+        "usb2_enable",
+        "usb2_device_addr",
+        "usb2_endpoint_config",
+        "usb2_timeout",
+        "usb2_phy_status",
+        "usb2_transaction_busy",
+        "usb2_frame",
+        "usb2_ecc_counts",
+        "usb2_retry_event",
+        "usb2_protocol_event",
+    } <= {crossing["name"] for crossing in document["crossings"]}
     assert {
         "rtc_command",
         "rtc_response",

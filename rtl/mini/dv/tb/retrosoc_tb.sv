@@ -61,6 +61,12 @@ module retrosoc_tb;
   wire        s_sdio1_clk;
   tri1        s_sdio1_cmd;
   tri1 [ 3:0] s_sdio1_dat;
+  wire        s_usb2_ulpi_clk;
+  tri0        s_usb2_ulpi_dir;
+  tri0        s_usb2_ulpi_nxt;
+  tri0 [ 7:0] s_usb2_ulpi_data;
+  wire        s_usb2_ulpi_stp;
+  wire        s_usb2_ulpi_reset_n;
   wire        s_sdram_clk;
   wire        s_sdram_cke;
   wire        s_sdram_cs_n;
@@ -83,13 +89,14 @@ module retrosoc_tb;
   always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
 
   // connect inout pad
-  assign s_ext_clk     = r_ext_clk;
-  assign s_aud_clk     = r_aud_clk;
-  assign s_rst_n       = r_rst_n;
-  assign s_jtag_tck    = 1'b0;
-  assign s_jtag_tms    = 1'b0;
-  assign s_jtag_tdi    = 1'b0;
-  assign s_jtag_trst_n = 1'b0;
+  assign s_ext_clk       = r_ext_clk;
+  assign s_aud_clk       = r_aud_clk;
+  assign s_rst_n         = r_rst_n;
+  assign s_jtag_tck      = 1'b0;
+  assign s_jtag_tms      = 1'b0;
+  assign s_jtag_tdi      = 1'b0;
+  assign s_jtag_trst_n   = 1'b0;
+  assign s_usb2_ulpi_clk = s_ext_clk;
 
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_tb_bindings.svh"

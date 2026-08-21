@@ -54,6 +54,8 @@ module sysctrl_core (
       sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDIO1_WAIT_LO);
   localparam sysctrl_offset_t PerfSdio1WaitHi =
       sysctrl_offset_t'(`APB4_SYSCTRL__PERF_SDIO1_WAIT_HI);
+  localparam sysctrl_offset_t PerfUsb2WaitLo = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_USB2_WAIT_LO);
+  localparam sysctrl_offset_t PerfUsb2WaitHi = sysctrl_offset_t'(`APB4_SYSCTRL__PERF_USB2_WAIT_HI);
   localparam sysctrl_offset_t PerfApb4PeriphWaitLo =
       sysctrl_offset_t'(`APB4_SYSCTRL__PERF_APB4_PERIPH_WAIT_LO);
   localparam sysctrl_offset_t PerfApb4PeriphWaitHi =
@@ -105,6 +107,7 @@ module sysctrl_core (
   logic [63:0] s_perf_dma_wait_d, s_perf_dma_wait_q;
   logic [63:0] s_perf_sdio0_wait_d, s_perf_sdio0_wait_q;
   logic [63:0] s_perf_sdio1_wait_d, s_perf_sdio1_wait_q;
+  logic [63:0] s_perf_usb2_wait_d, s_perf_usb2_wait_q;
   logic [63:0] s_perf_apb4_periph_wait_d, s_perf_apb4_periph_wait_q;
   logic [63:0] s_perf_apb4_system_wait_d, s_perf_apb4_system_wait_q;
   logic [63:0] s_perf_sdram_wait_d, s_perf_sdram_wait_q;
@@ -310,6 +313,7 @@ module sysctrl_core (
     s_perf_dma_wait_d         = s_perf_dma_wait_q;
     s_perf_sdio0_wait_d       = s_perf_sdio0_wait_q;
     s_perf_sdio1_wait_d       = s_perf_sdio1_wait_q;
+    s_perf_usb2_wait_d        = s_perf_usb2_wait_q;
     s_perf_apb4_periph_wait_d = s_perf_apb4_periph_wait_q;
     s_perf_apb4_system_wait_d = s_perf_apb4_system_wait_q;
     s_perf_sdram_wait_d       = s_perf_sdram_wait_q;
@@ -324,6 +328,7 @@ module sysctrl_core (
       s_perf_dma_wait_d         = sysctrl.perf_dma_wait_i;
       s_perf_sdio0_wait_d       = sysctrl.perf_sdio0_wait_i;
       s_perf_sdio1_wait_d       = sysctrl.perf_sdio1_wait_i;
+      s_perf_usb2_wait_d        = sysctrl.perf_usb2_wait_i;
       s_perf_apb4_periph_wait_d = sysctrl.perf_apb4_periph_wait_i;
       s_perf_apb4_system_wait_d = sysctrl.perf_apb4_system_wait_i;
       s_perf_sdram_wait_d       = sysctrl.perf_sdram_wait_i;
@@ -386,6 +391,7 @@ module sysctrl_core (
       s_perf_dma_wait_q         <= '0;
       s_perf_sdio0_wait_q       <= '0;
       s_perf_sdio1_wait_q       <= '0;
+      s_perf_usb2_wait_q        <= '0;
       s_perf_apb4_periph_wait_q <= '0;
       s_perf_apb4_system_wait_q <= '0;
       s_perf_sdram_wait_q       <= '0;
@@ -424,6 +430,7 @@ module sysctrl_core (
       s_perf_dma_wait_q         <= s_perf_dma_wait_d;
       s_perf_sdio0_wait_q       <= s_perf_sdio0_wait_d;
       s_perf_sdio1_wait_q       <= s_perf_sdio1_wait_d;
+      s_perf_usb2_wait_q        <= s_perf_usb2_wait_d;
       s_perf_apb4_periph_wait_q <= s_perf_apb4_periph_wait_d;
       s_perf_apb4_system_wait_q <= s_perf_apb4_system_wait_d;
       s_perf_sdram_wait_q       <= s_perf_sdram_wait_d;
@@ -482,6 +489,8 @@ module sysctrl_core (
       PerfSdio0WaitHi: read_data_o = s_perf_sdio0_wait_q[63:32];
       PerfSdio1WaitLo: read_data_o = s_perf_sdio1_wait_q[31:0];
       PerfSdio1WaitHi: read_data_o = s_perf_sdio1_wait_q[63:32];
+      PerfUsb2WaitLo: read_data_o = s_perf_usb2_wait_q[31:0];
+      PerfUsb2WaitHi: read_data_o = s_perf_usb2_wait_q[63:32];
       PerfApb4PeriphWaitLo: read_data_o = s_perf_apb4_periph_wait_q[31:0];
       PerfApb4PeriphWaitHi: read_data_o = s_perf_apb4_periph_wait_q[63:32];
       PerfApb4SystemWaitLo: read_data_o = s_perf_apb4_system_wait_q[31:0];

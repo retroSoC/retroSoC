@@ -17,6 +17,7 @@
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
+#include <retrosoc/hal/usb2.h>
 #include <retrosoc/hal/user_ip.h>
 #include <retrosoc/hal/ws2812.h>
 #include <retrosoc/lib/printf.h>
@@ -580,6 +581,36 @@ static int test_sdio_helpers(void) {
     return 0;
 }
 
+static int test_usb2_helpers(void) {
+    _Alignas(32) rs_usb2_descriptor_t descriptors[2];
+
+    if ((rs_usb2_validate_dma_buffer((const void *)(uintptr_t)UINT32_C(0x40000000), 4U) != RS_OK) ||
+        (rs_usb2_validate_dma_buffer((const void *)(uintptr_t)UINT32_C(0x40000002), 4U) !=
+         RS_EINVAL) ||
+        (rs_usb2_descriptor_prepare(&descriptors[0], (uintptr_t)UINT32_C(0x40000000), 64U,
+                                    (uintptr_t)UINT32_C(0x40000020), false, false, true, false,
+                                    UINT32_C(0x1234)) != RS_OK) ||
+        (rs_usb2_descriptor_prepare(&descriptors[1], (uintptr_t)UINT32_C(0x40000100), 64U,
+                                    (uintptr_t)0U, true, true, false, false,
+                                    UINT32_C(0x1235)) != RS_OK) ||
+        (rs_usb2_descriptor_chain_validate(descriptors, 2U, 128U) != RS_OK) ||
+        (rs_usb2_descriptor_publish_chain(descriptors, 2U) != RS_OK) ||
+        ((descriptors[0].control & RS_USB2_DESC_OWN) == 0U) ||
+        ((descriptors[1].control & RS_USB2_DESC_OWN) == 0U)) {
+        return 1;
+    }
+    if ((rs_usb2_descriptor_prepare(&descriptors[0], (uintptr_t)UINT32_C(0xFFFFFFFC), 8U,
+                                    (uintptr_t)0U, true, false, false, false, 0U) != RS_EINVAL) ||
+        (rs_usb2_descriptor_prepare(&descriptors[0], (uintptr_t)UINT32_C(0x40000000), 64U,
+                                    (uintptr_t)UINT32_C(0x40000FE4), false, false, false, false,
+                                    0U) != RS_EINVAL) ||
+        (rs_usb2_descriptor_prepare(NULL, (uintptr_t)UINT32_C(0x40000000), 64U, (uintptr_t)0U, true,
+                                    false, false, false, 0U) != RS_EINVAL)) {
+        return 2;
+    }
+    return 0;
+}
+
 static int test_spisd_helpers(void) {
     rs_spisd_clock_t clock;
     rs_spisd_card_info_t info = {0};
@@ -788,13 +819,13 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(),   test_formatter(),          test_compiler_helpers(),
-        test_wait_helper(),      test_ws2812_helpers(),     test_timer_helpers(),
-        test_psram_helpers(),    test_sdram_helpers(),      test_uart_helpers(),
-        test_i2s_helpers(),      test_i2c_helpers(),        test_sdio_helpers(),
-        test_spisd_helpers(),    test_gpio_helpers(),       test_dma_config_validation(),
-        test_opipsram_helpers(), test_user_ip_validation(), test_ps2_decoders(),
-        test_wav_parser(),       test_video_parser(),
+        test_string_helpers(),        test_formatter(),        test_compiler_helpers(),
+        test_wait_helper(),           test_ws2812_helpers(),   test_timer_helpers(),
+        test_psram_helpers(),         test_sdram_helpers(),    test_uart_helpers(),
+        test_i2s_helpers(),           test_i2c_helpers(),      test_sdio_helpers(),
+        test_usb2_helpers(),          test_spisd_helpers(),    test_gpio_helpers(),
+        test_dma_config_validation(), test_opipsram_helpers(), test_user_ip_validation(),
+        test_ps2_decoders(),          test_wav_parser(),       test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

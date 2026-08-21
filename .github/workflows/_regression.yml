@@ -23,7 +23,7 @@ on:
       timeout_minutes:
         description: Maximum job duration
         required: false
-        default: 240
+        default: 360
         type: number
       toolset:
         description: Space-separated locked tools required by this suite

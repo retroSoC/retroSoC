@@ -18,6 +18,7 @@ module retrosoc (
     input  logic        rst_n_i,
     input  logic        clk_aud_i,
     input  logic        rst_aud_n_i,
+    input  logic        clk_ulpi_i,
     input  logic        clkdiv4_i,
     input  logic        timebase_tick_i,
     pll_ctrl_if.sysctrl pll_ctrl,
@@ -30,6 +31,7 @@ module retrosoc (
     xpi_if.dut           xpi,
     sdram_if.dut         sdram,
     sdio_if.dut          sdio1,
+    usb2_ulpi_if.dut     usb2,
     input  logic         jtag_tck_i,
     input  logic         jtag_tms_i,
     input  logic         jtag_tdi_i,
@@ -92,6 +94,7 @@ module retrosoc (
   logic [                          63:0] s_perf_dma_wait;
   logic [                          63:0] s_perf_sdio0_wait;
   logic [                          63:0] s_perf_sdio1_wait;
+  logic [                          63:0] s_perf_usb2_wait;
   logic [                          63:0] s_perf_apb4_periph_wait;
   logic [                          63:0] s_perf_apb4_system_wait;
   logic [                          63:0] s_perf_sdram_wait;
@@ -114,6 +117,7 @@ module retrosoc (
   assign u_sysctrl_if.perf_dma_wait_i         = s_perf_dma_wait;
   assign u_sysctrl_if.perf_sdio0_wait_i       = s_perf_sdio0_wait;
   assign u_sysctrl_if.perf_sdio1_wait_i       = s_perf_sdio1_wait;
+  assign u_sysctrl_if.perf_usb2_wait_i        = s_perf_usb2_wait;
   assign u_sysctrl_if.perf_apb4_periph_wait_i = s_perf_apb4_periph_wait;
   assign u_sysctrl_if.perf_apb4_system_wait_i = s_perf_apb4_system_wait;
   assign u_sysctrl_if.perf_sdram_wait_i       = s_perf_sdram_wait;
@@ -186,6 +190,7 @@ core_wrapper u_core_wrapper (
       .perf_dma_wait_o        (s_perf_dma_wait),
       .perf_sdio0_wait_o      (s_perf_sdio0_wait),
       .perf_sdio1_wait_o      (s_perf_sdio1_wait),
+      .perf_usb2_wait_o       (s_perf_usb2_wait),
       .perf_apb4_periph_wait_o(s_perf_apb4_periph_wait),
       .perf_apb4_system_wait_o(s_perf_apb4_system_wait),
       .perf_sdram_wait_o      (s_perf_sdram_wait),
@@ -199,6 +204,7 @@ core_wrapper u_core_wrapper (
       .rst_n_i         (rst_n_i),
       .clk_aud_i       (clk_aud_i),
       .rst_aud_n_i     (rst_aud_n_i),
+      .clk_ulpi_i      (clk_ulpi_i),
       .debug_halted_i  (s_mgmt_debug_halted),
       .timebase_tick_i (timebase_tick_i),
       `include "apb4_periph_fabric.svh"
@@ -221,6 +227,7 @@ core_wrapper u_core_wrapper (
       .dvp             (u_dvp_if),
       .sdio0           (u_sdio0_if),
       .sdio1           (sdio1),
+      .usb2            (usb2),
       .opipsram        (u_opipsram_if),
       .i2c1            (u_i2c1_if),
       .fault_valid_i   (s_bus_fault_valid),

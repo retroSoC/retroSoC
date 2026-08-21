@@ -86,6 +86,7 @@ module sysctrl_tb;
     sysctrl.perf_dma_wait_i         = 64'd13;
     sysctrl.perf_sdio0_wait_i       = 64'd131;
     sysctrl.perf_sdio1_wait_i       = 64'd141;
+    sysctrl.perf_usb2_wait_i        = 64'd151;
     sysctrl.perf_apb4_periph_wait_i = 64'd14;
     sysctrl.perf_apb4_system_wait_i = 64'd15;
     sysctrl.perf_sdram_wait_i       = 64'd16;
@@ -150,6 +151,8 @@ module sysctrl_tb;
     if (read_data !== 32'd131) $fatal(1, "SDIO0 performance snapshot was not recorded");
     read_register(32'h1000_B094, read_data);
     if (read_data !== 32'd141) $fatal(1, "SDIO1 performance snapshot was not recorded");
+    read_register(32'h1000_B09C, read_data);
+    if (read_data !== 32'd151) $fatal(1, "USB2 performance snapshot was not recorded");
 
     read_register(32'h1000_B020, read_data);
     if (read_data !== 32'h0000_003F) $fatal(1, "user cores were not held in reset");
