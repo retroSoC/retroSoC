@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import re
 import subprocess
 import sys
 import tarfile
@@ -16,6 +17,8 @@ DOMAINS = ROOT / "rtl/mini/integration/clock_reset_domains.json"
 PIN_MAP = ROOT / "rtl/mini/pin_map/pin_map.json"
 GENERATOR = ROOT / "physical/smoke/sta/opensta/generate_sdc.py"
 OPENSTA_MAKEFILE = ROOT / "physical/smoke/sta/opensta/opensta.mk"
+RCU = ROOT / "rtl/mini/top/rcu.sv"
+RETROSOC_ASIC = ROOT / "rtl/mini/top/retrosoc_asic.sv"
 GF180_GENERATOR = ROOT / "physical/pdk/generate_gf180_liberty.py"
 ICS55_PREPARER = ROOT / "physical/pdk/prepare_ics55_liberty.py"
 ICS55_SIM_MODEL_PREPARER = ROOT / "physical/pdk/prepare_ics55_sim_model.py"
@@ -57,6 +60,17 @@ def test_core_sdc_covers_current_clock_domains(tmp_path: Path) -> None:
     assert "set_clock_transition 0.1 [get_clocks {clk_dvp}]" in sdc
     assert "set_input_transition" not in sdc
     assert "set_false_path -from $reset_ext_rst_n_i_pad" in sdc
+
+
+def test_audio_sdc_root_drives_the_functional_audio_domain() -> None:
+    rcu = RCU.read_text(encoding="utf-8")
+    asic = RETROSOC_ASIC.read_text(encoding="utf-8")
+
+    assert re.search(r"\boutput\s+logic\s+aud_clk_o\b", rcu) is not None
+    assert re.search(r"\bassign\s+aud_clk_o\s*=\s*s_aud_clk_buf\s*;", rcu) is not None
+    assert re.search(r"\.aud_clk_o\s*\(s_aud_clk_buf\)", asic) is not None
+    assert re.search(r"\.clk_aud_i\s*\(s_aud_clk_buf\)", asic) is not None
+    assert re.search(r"\.clk_aud_i\s*\(s_aud_clk\)", asic) is None
 
 
 def test_opensta_invocation_exits_after_a_tcl_error() -> None:

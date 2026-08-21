@@ -22,6 +22,7 @@ module rcu #(
            pll_ctrl_if.rcu pll_ctrl,
     output logic           sys_clk_o,
     output logic           sys_rst_n_o,
+    output logic           aud_clk_o,
     output logic           aud_rst_n_o,
     output logic           sys_clkdiv4_o,
     output logic           timebase_tick_o
@@ -190,6 +191,7 @@ module rcu #(
   );
 
   assign sys_rst_n_o          = s_sys_rst_n_sync;
+  assign aud_clk_o            = s_aud_clk_buf;
   assign aud_rst_n_o          = s_aud_rst_n_sync;
   assign sys_clkdiv4_o        = s_sys_clkdiv4_q;
   assign s_sys_reset_source_n = ext_rst_n_i && !wdg_reset_req_i;

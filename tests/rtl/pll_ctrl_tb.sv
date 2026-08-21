@@ -12,6 +12,7 @@ module pll_ctrl_tb;
   logic        fault_reserved_i = 1'b0;
   logic        sys_clk_o;
   logic        sys_rst_n_o;
+  logic        aud_clk_o;
   logic        aud_rst_n_o;
   logic        sys_clkdiv4_o;
   apb4_if apb4 (
@@ -39,6 +40,7 @@ module pll_ctrl_tb;
       .pll_ctrl       (pll_ctrl),
       .sys_clk_o      (sys_clk_o),
       .sys_rst_n_o    (sys_rst_n_o),
+      .aud_clk_o      (aud_clk_o),
       .aud_rst_n_o    (aud_rst_n_o),
       .sys_clkdiv4_o  (sys_clkdiv4_o),
       .timebase_tick_o()
@@ -128,6 +130,18 @@ module pll_ctrl_tb;
     sysctrl.rtc_wake_i      = 1'b0;
     #100;
     rst_n_i = 1'b1;
+    repeat (2) begin
+      @(posedge aud_clk_i);
+      #1;
+      if (aud_clk_o !== 1'b1) begin
+        $fatal(1, "buffered audio clock did not follow a rising edge");
+      end
+      @(negedge aud_clk_i);
+      #1;
+      if (aud_clk_o !== 1'b0) begin
+        $fatal(1, "buffered audio clock did not follow a falling edge");
+      end
+    end
     wait (aud_rst_n_o);
     repeat (12) @(posedge sys_clk_o);
 
