@@ -1,38 +1,37 @@
 #include <stddef.h>
 
 #include <retrosoc/core/soc.h>
+#include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/user_core.h>
-
-#define RS_USER_CORE_STATUS_SEL_MASK     UINT32_C(0x0000001F)
-#define RS_USER_CORE_STATUS_BUS_ENABLED  UINT32_C(0x00000100)
-#define RS_USER_CORE_STATUS_BUS_IDLE     UINT32_C(0x00000200)
-#define RS_USER_CORE_STATUS_DRAINING     UINT32_C(0x00000400)
-#define RS_USER_CORE_STATUS_CONFIG_ERROR UINT32_C(0x00000800)
 
 static uint32_t rs_user_core_reset_mask_all(void) {
     return UINT32_MAX >> (UINT32_C(32) - RS_SOC_USER_CORE_COUNT);
 }
 
 rs_status_t rs_user_core_get_status(rs_user_core_status_t *status) {
-    uint32_t value;
+    rs_sysctrl_user_core_status_t sysctrl_status;
 
     if (status == NULL) {
         return RS_EINVAL;
     }
-    value = reg_sysctrl_user_core_status;
-    status->reset_mask = reg_sysctrl_user_core_reset;
-    status->selected_core = (uint8_t)(value & RS_USER_CORE_STATUS_SEL_MASK);
-    status->bus_enabled = (value & RS_USER_CORE_STATUS_BUS_ENABLED) != UINT32_C(0);
-    status->bus_idle = (value & RS_USER_CORE_STATUS_BUS_IDLE) != UINT32_C(0);
-    status->draining = (value & RS_USER_CORE_STATUS_DRAINING) != UINT32_C(0);
-    status->config_error = (value & RS_USER_CORE_STATUS_CONFIG_ERROR) != UINT32_C(0);
+    if (rs_sysctrl_get_user_core_status(&sysctrl_status) != RS_OK) {
+        return RS_EIO;
+    }
+    status->reset_mask = sysctrl_status.reset_mask;
+    status->selected_core = sysctrl_status.selected_core;
+    status->bus_enabled = sysctrl_status.bus_enabled;
+    status->bus_idle = sysctrl_status.bus_idle;
+    status->draining = sysctrl_status.draining;
+    status->config_error = sysctrl_status.config_error;
     return RS_OK;
 }
 
 rs_status_t rs_user_core_stop(rs_timeout_t timeout) {
     rs_user_core_status_t status;
 
-    reg_sysctrl_user_core_reset = rs_user_core_reset_mask_all();
+    if (rs_sysctrl_set_user_core_reset(rs_user_core_reset_mask_all()) != RS_OK) {
+        return RS_EIO;
+    }
     while (timeout-- != 0U) {
         if (rs_user_core_get_status(&status) != RS_OK) {
             return RS_EIO;
@@ -59,8 +58,10 @@ rs_status_t rs_user_core_start(uint8_t core_id, rs_timeout_t timeout) {
     if (result != RS_OK) {
         return result;
     }
-    reg_sysctrl_user_core_status = RS_USER_CORE_STATUS_CONFIG_ERROR;
-    reg_sysctrl_coresel = (uint32_t)core_id;
+    if ((rs_sysctrl_clear_user_core_config_error() != RS_OK) ||
+        (rs_sysctrl_set_core_select(core_id) != RS_OK)) {
+        return RS_EIO;
+    }
     if (rs_user_core_get_status(&status) != RS_OK) {
         return RS_EIO;
     }
@@ -68,7 +69,9 @@ rs_status_t rs_user_core_start(uint8_t core_id, rs_timeout_t timeout) {
         return RS_EIO;
     }
     reset_mask = rs_user_core_reset_mask_all() & ~(UINT32_C(1) << core_id);
-    reg_sysctrl_user_core_reset = reset_mask;
+    if (rs_sysctrl_set_user_core_reset(reset_mask) != RS_OK) {
+        return RS_EIO;
+    }
     while (timeout-- != 0U) {
         if (rs_user_core_get_status(&status) != RS_OK) {
             return RS_EIO;

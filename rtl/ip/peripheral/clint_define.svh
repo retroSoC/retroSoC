@@ -4,11 +4,11 @@
 `ifndef CLINT_DEFINE_SVH
 `define CLINT_DEFINE_SVH
 
-// verilog_format: off
-`define RIBP_CLINT_MSIP             16'h0000
-`define RIBP_CLINT_MTIMECMP         16'h4000
-`define RIBP_CLINT_MTIME            16'hBFF8
-`define RIBP_CLINT_MTIMEH           16'hBFFC
+// verilog_format: off -- preserve reviewed column alignment
+`define APB4_CLINT_MSIP             16'h0000
+`define APB4_CLINT_MTIMECMP         16'h4000
+`define APB4_CLINT_MTIME            16'hBFF8
+`define APB4_CLINT_MTIMEH           16'hBFFC
 
 `define CLINT_MSIP_STRIDE           16'h0004
 `define CLINT_MTIMECMP_STRIDE       16'h0008

@@ -4,9 +4,9 @@
 module gpio_core #(
     parameter int PinNum = 32
 ) (
-    // verilog_format: off
-    input  logic               clk_i,
-    input  logic               rst_n_i,
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic              clk_i,
+    input  logic              rst_n_i,
     input  logic [PinNum-1:0] data_out_i,
     input  logic [PinNum-1:0] output_enable_i,
     input  logic [PinNum-1:0] open_drain_i,
@@ -18,17 +18,17 @@ module gpio_core #(
     input  logic [PinNum-1:0] user_select_i,
     input  logic [PinNum-1:0] user_handoff_i,
     input  logic [PinNum-1:0] filter_enable_i,
-    input  logic [15:0]        filter_div_i,
-    input  logic [3:0]         filter_count_i,
+    input  logic [15:0]       filter_div_i,
+    input  logic [3:0]        filter_count_i,
     input  logic [PinNum-1:0] intr_rise_enable_i,
     input  logic [PinNum-1:0] intr_fall_enable_i,
     input  logic [PinNum-1:0] intr_high_enable_i,
     input  logic [PinNum-1:0] intr_low_enable_i,
-    input  logic               irq_i,
+    input  logic              irq_i,
     output logic [PinNum-1:0] data_in_o,
     output logic [PinNum-1:0] intr_event_o,
-    gpio_if.dut                gpio,
-    user_gpio_if.padctrl       user_gpio
+    gpio_if.dut               gpio,
+    user_gpio_if.padctrl      user_gpio
     // verilog_format: on
 );
 
@@ -44,11 +44,13 @@ module gpio_core #(
   logic [PinNum-1:0] s_native_data, s_native_oe;
   logic [PinNum-1:0] s_selected_data, s_selected_oe;
 
+`ifndef SYNTHESIS
   initial begin
     if ((PinNum < 1) || (PinNum > 32)) begin
       $fatal(1, "gpio_core: PinNum must be between 1 and 32");
     end
   end
+`endif
 
   cdc_sync #(
       .STAGE     (2),

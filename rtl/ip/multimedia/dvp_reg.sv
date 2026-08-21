@@ -4,10 +4,10 @@
 `include "dvp_define.svh"
 
 module dvp_reg (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic         clk_i,
     input  logic         rst_n_i,
-    ribp_if.slave        ribp,
+    apb4_if.slave        apb4,
     input  logic         active_i,
     input  logic         fifo_empty_i,
     input  logic         fifo_full_i,
@@ -75,15 +75,15 @@ module dvp_reg (
     end
   endfunction
 
-  assign s_req           = ribp.valid && !s_ready_q;
-  assign s_write         = |ribp.wstrb;
+  assign s_req           = apb4.psel && apb4.penable && !s_ready_q;
+  assign s_write         = |apb4.pstrb;
   assign s_accept        = s_req;
-  assign s_offset        = ribp.addr[11:0];
-  assign s_aligned       = ribp.addr[1:0] == 2'b00;
-  assign ribp.ready      = s_ready_q;
-  assign ribp.rdata      = s_rdata_q;
-  assign ribp.resp_err   = s_resp_err_q;
-  assign stream_enable_o = s_stream_q[`RIBP_DVP__STREAM_ENABLE];
+  assign s_offset        = apb4.paddr[11:0];
+  assign s_aligned       = apb4.paddr[1:0] == 2'b00;
+  assign apb4.pready     = s_ready_q;
+  assign apb4.prdata     = s_rdata_q;
+  assign apb4.pslverr    = s_resp_err_q;
+  assign stream_enable_o = s_stream_q[`APB4_DVP__STREAM_ENABLE];
   always_comb begin
     cfg_o          = '0;
     cfg_o[15:0]    = s_frame_size_q[15:0];
@@ -92,15 +92,15 @@ module dvp_reg (
     cfg_o[63:48]   = s_crop_start_q[31:16];
     cfg_o[79:64]   = s_crop_size_q[15:0];
     cfg_o[95:80]   = s_crop_size_q[31:16];
-    cfg_o[96]      = s_ctrl_q[`RIBP_DVP__CTRL_ENABLE];
-    cfg_o[97]      = s_ctrl_q[`RIBP_DVP__CTRL_SNAPSHOT];
-    cfg_o[98]      = s_ctrl_q[`RIBP_DVP__CTRL_CROP_ENABLE];
-    cfg_o[99]      = s_stream_q[`RIBP_DVP__STREAM_ENABLE];
+    cfg_o[96]      = s_ctrl_q[`APB4_DVP__CTRL_ENABLE];
+    cfg_o[97]      = s_ctrl_q[`APB4_DVP__CTRL_SNAPSHOT];
+    cfg_o[98]      = s_ctrl_q[`APB4_DVP__CTRL_CROP_ENABLE];
+    cfg_o[99]      = s_stream_q[`APB4_DVP__STREAM_ENABLE];
     cfg_o[103:100] = s_format_q[3:0];
     cfg_o[106:104] = s_sync_q[2:0];
   end
   assign cfg_valid_o = s_cfg_seq_q != s_cfg_sent_q;
-  assign rx_pop_o    = s_accept && !s_write && !stream_enable_o && (s_offset == `RIBP_DVP_RXDATA);
+  assign rx_pop_o    = s_accept && !s_write && !stream_enable_o && (s_offset == `APB4_DVP_RXDATA);
   assign irq_o       = |(s_intr_stat_q & s_intr_en_q);
 
   always_comb begin
@@ -108,51 +108,51 @@ module dvp_reg (
     s_rdata_d    = 32'd0;
     if (s_aligned) begin
       unique case (s_offset)
-        `RIBP_DVP_CTRL: s_rdata_d = s_ctrl_q;
-        `RIBP_DVP_RXDATA: s_rdata_d = rx_data_i;
-        `RIBP_DVP_STATUS:
+        `APB4_DVP_CTRL: s_rdata_d = s_ctrl_q;
+        `APB4_DVP_RXDATA: s_rdata_d = rx_data_i;
+        `APB4_DVP_STATUS:
         s_rdata_d = {
           26'd0, s_err_q != 0, stream_enable_o, !fifo_full_i, fifo_empty_i, active_i, s_ctrl_q[0]
         };
-        `RIBP_DVP_STREAM_CTRL: s_rdata_d = s_stream_q;
-        `RIBP_DVP_FORMAT: s_rdata_d = s_format_q;
-        `RIBP_DVP_SYNC_CFG: s_rdata_d = s_sync_q;
-        `RIBP_DVP_FRAME_SIZE: s_rdata_d = s_frame_size_q;
-        `RIBP_DVP_CROP_START: s_rdata_d = s_crop_start_q;
-        `RIBP_DVP_CROP_SIZE: s_rdata_d = s_crop_size_q;
-        `RIBP_DVP_FRAME_COUNT: s_rdata_d = s_frm_cnt_q;
-        `RIBP_DVP_LINE_COUNT: s_rdata_d = s_line_cnt_q;
-        `RIBP_DVP_PIXEL_COUNT: s_rdata_d = s_pixel_cnt_q;
-        `RIBP_DVP_WORD_COUNT: s_rdata_d = s_word_cnt_q;
-        `RIBP_DVP_DROP_COUNT: s_rdata_d = s_drop_cnt_q;
-        `RIBP_DVP_ERROR_STATUS: s_rdata_d = {26'd0, s_err_q};
-        `RIBP_DVP_INTR_STATE: s_rdata_d = {25'd0, s_intr_stat_q};
-        `RIBP_DVP_INTR_ENABLE: s_rdata_d = {25'd0, s_intr_en_q};
-        `RIBP_DVP_INTR_STATUS: s_rdata_d = {25'd0, s_intr_stat_q & s_intr_en_q};
-        `RIBP_DVP_INTR_TEST: s_access_err = !s_write;
-        `RIBP_DVP_IP_VERSION: s_rdata_d = IpVersion;
-        `RIBP_DVP_CAPABILITY: s_rdata_d = Capability;
-        `RIBP_DVP_COMMAND: s_access_err = !s_write;
+        `APB4_DVP_STREAM_CTRL: s_rdata_d = s_stream_q;
+        `APB4_DVP_FORMAT: s_rdata_d = s_format_q;
+        `APB4_DVP_SYNC_CFG: s_rdata_d = s_sync_q;
+        `APB4_DVP_FRAME_SIZE: s_rdata_d = s_frame_size_q;
+        `APB4_DVP_CROP_START: s_rdata_d = s_crop_start_q;
+        `APB4_DVP_CROP_SIZE: s_rdata_d = s_crop_size_q;
+        `APB4_DVP_FRAME_COUNT: s_rdata_d = s_frm_cnt_q;
+        `APB4_DVP_LINE_COUNT: s_rdata_d = s_line_cnt_q;
+        `APB4_DVP_PIXEL_COUNT: s_rdata_d = s_pixel_cnt_q;
+        `APB4_DVP_WORD_COUNT: s_rdata_d = s_word_cnt_q;
+        `APB4_DVP_DROP_COUNT: s_rdata_d = s_drop_cnt_q;
+        `APB4_DVP_ERROR_STATUS: s_rdata_d = {26'd0, s_err_q};
+        `APB4_DVP_INTR_STATE: s_rdata_d = {25'd0, s_intr_stat_q};
+        `APB4_DVP_INTR_ENABLE: s_rdata_d = {25'd0, s_intr_en_q};
+        `APB4_DVP_INTR_STATUS: s_rdata_d = {25'd0, s_intr_stat_q & s_intr_en_q};
+        `APB4_DVP_INTR_TEST: s_access_err = !s_write;
+        `APB4_DVP_IP_VERSION: s_rdata_d = IpVersion;
+        `APB4_DVP_CAPABILITY: s_rdata_d = Capability;
+        `APB4_DVP_COMMAND: s_access_err = !s_write;
         default: s_access_err = 1'b1;
       endcase
     end
     if (s_accept && s_write && active_i &&
-        ((s_offset == `RIBP_DVP_CTRL) || (s_offset == `RIBP_DVP_STREAM_CTRL) ||
-         (s_offset == `RIBP_DVP_FORMAT) || (s_offset == `RIBP_DVP_SYNC_CFG) ||
-         (s_offset == `RIBP_DVP_FRAME_SIZE) || (s_offset == `RIBP_DVP_CROP_START) ||
-         (s_offset == `RIBP_DVP_CROP_SIZE))) begin
+        ((s_offset == `APB4_DVP_CTRL) || (s_offset == `APB4_DVP_STREAM_CTRL) ||
+         (s_offset == `APB4_DVP_FORMAT) || (s_offset == `APB4_DVP_SYNC_CFG) ||
+         (s_offset == `APB4_DVP_FRAME_SIZE) || (s_offset == `APB4_DVP_CROP_START) ||
+         (s_offset == `APB4_DVP_CROP_SIZE))) begin
       s_access_err = 1'b1;
     end
-    if (s_accept && s_write && (s_offset == `RIBP_DVP_FRAME_SIZE) &&
-        ((ribp.wdata[15:0] == 0) || (ribp.wdata[31:16] == 0))) begin
+    if (s_accept && s_write && (s_offset == `APB4_DVP_FRAME_SIZE) &&
+        ((apb4.pwdata[15:0] == 0) || (apb4.pwdata[31:16] == 0))) begin
       s_access_err = 1'b1;
     end
     s_resp_err_d = s_accept && s_access_err;
   end
 
   assign cmd_valid_o = |s_cmd_q;
-  assign cmd_abort_o = s_cmd_q[`RIBP_DVP__COMMAND_ABORT];
-  assign cmd_flush_o = s_cmd_q[`RIBP_DVP__COMMAND_FLUSH];
+  assign cmd_abort_o = s_cmd_q[`APB4_DVP__COMMAND_ABORT];
+  assign cmd_flush_o = s_cmd_q[`APB4_DVP__COMMAND_FLUSH];
 
   always_comb begin
     s_ctrl_d       = s_ctrl_q;
@@ -165,32 +165,32 @@ module dvp_reg (
     s_cfg_seq_d    = s_cfg_seq_q;
     if (s_accept && s_write && !s_access_err) begin
       unique case (s_offset)
-        `RIBP_DVP_CTRL: begin
-          s_ctrl_d    = merge_wstrb(s_ctrl_q, ribp.wdata, ribp.wstrb) & CtrlMask;
+        `APB4_DVP_CTRL: begin
+          s_ctrl_d    = merge_wstrb(s_ctrl_q, apb4.pwdata, apb4.pstrb) & CtrlMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
-        `RIBP_DVP_STREAM_CTRL: begin
-          s_stream_d  = merge_wstrb(s_stream_q, ribp.wdata, ribp.wstrb) & StreamMask;
+        `APB4_DVP_STREAM_CTRL: begin
+          s_stream_d  = merge_wstrb(s_stream_q, apb4.pwdata, apb4.pstrb) & StreamMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
-        `RIBP_DVP_FORMAT: begin
-          s_format_d  = merge_wstrb(s_format_q, ribp.wdata, ribp.wstrb) & FormatMask;
+        `APB4_DVP_FORMAT: begin
+          s_format_d  = merge_wstrb(s_format_q, apb4.pwdata, apb4.pstrb) & FormatMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
-        `RIBP_DVP_SYNC_CFG: begin
-          s_sync_d    = merge_wstrb(s_sync_q, ribp.wdata, ribp.wstrb) & SyncMask;
+        `APB4_DVP_SYNC_CFG: begin
+          s_sync_d    = merge_wstrb(s_sync_q, apb4.pwdata, apb4.pstrb) & SyncMask;
           s_cfg_seq_d = s_cfg_seq_q + 1'b1;
         end
-        `RIBP_DVP_FRAME_SIZE: begin
-          s_frame_size_d = merge_wstrb(s_frame_size_q, ribp.wdata, ribp.wstrb);
+        `APB4_DVP_FRAME_SIZE: begin
+          s_frame_size_d = merge_wstrb(s_frame_size_q, apb4.pwdata, apb4.pstrb);
           s_cfg_seq_d    = s_cfg_seq_q + 1'b1;
         end
-        `RIBP_DVP_CROP_START: begin
-          s_crop_start_d = merge_wstrb(s_crop_start_q, ribp.wdata, ribp.wstrb);
+        `APB4_DVP_CROP_START: begin
+          s_crop_start_d = merge_wstrb(s_crop_start_q, apb4.pwdata, apb4.pstrb);
           s_cfg_seq_d    = s_cfg_seq_q + 1'b1;
         end
-        `RIBP_DVP_CROP_SIZE: begin
-          s_crop_size_d = merge_wstrb(s_crop_size_q, ribp.wdata, ribp.wstrb);
+        `APB4_DVP_CROP_SIZE: begin
+          s_crop_size_d = merge_wstrb(s_crop_size_q, apb4.pwdata, apb4.pstrb);
           s_cfg_seq_d   = s_cfg_seq_q + 1'b1;
         end
         default: begin
@@ -279,23 +279,23 @@ module dvp_reg (
     end else begin
       if (cfg_valid_o && cfg_ready_i) s_cfg_sent_q <= s_cfg_seq_q;
       if (cmd_valid_o && cmd_ready_i) s_cmd_q <= '0;
-      if (s_accept && s_write && !s_access_err && (s_offset == `RIBP_DVP_COMMAND)) begin
-        s_cmd_q <= s_cmd_q | ribp.wdata[1:0];
+      if (s_accept && s_write && !s_access_err && (s_offset == `APB4_DVP_COMMAND)) begin
+        s_cmd_q <= s_cmd_q | apb4.pwdata[1:0];
       end
       s_err_q <= (s_err_q | error_flags_i) &
-                 ~((s_accept && s_write && (s_offset == `RIBP_DVP_ERROR_STATUS))
-                       ? ribp.wdata[5:0]
+                 ~((s_accept && s_write && (s_offset == `APB4_DVP_ERROR_STATUS))
+                       ? apb4.pwdata[5:0]
                        : 6'd0);
-      if (frame_start_i) s_intr_stat_q[`RIBP_DVP__INTR_FRAME_START] <= 1'b1;
-      if (line_done_i) s_intr_stat_q[`RIBP_DVP__INTR_LINE_DONE] <= 1'b1;
-      if (frame_done_i) s_intr_stat_q[`RIBP_DVP__INTR_FRAME_DONE] <= 1'b1;
-      if (error_event_i) s_intr_stat_q[`RIBP_DVP__INTR_OVERFLOW] <= 1'b1;
-      if (s_accept && s_write && (s_offset == `RIBP_DVP_INTR_STATE))
-        s_intr_stat_q <= s_intr_stat_q & ~ribp.wdata[6:0];
-      if (s_accept && s_write && (s_offset == `RIBP_DVP_INTR_ENABLE))
-        s_intr_en_q <= ribp.wdata[6:0];
-      if (s_accept && s_write && (s_offset == `RIBP_DVP_INTR_TEST))
-        s_intr_stat_q <= s_intr_stat_q | ribp.wdata[6:0];
+      if (frame_start_i) s_intr_stat_q[`APB4_DVP__INTR_FRAME_START] <= 1'b1;
+      if (line_done_i) s_intr_stat_q[`APB4_DVP__INTR_LINE_DONE] <= 1'b1;
+      if (frame_done_i) s_intr_stat_q[`APB4_DVP__INTR_FRAME_DONE] <= 1'b1;
+      if (error_event_i) s_intr_stat_q[`APB4_DVP__INTR_OVERFLOW] <= 1'b1;
+      if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_STATE))
+        s_intr_stat_q <= s_intr_stat_q & ~apb4.pwdata[6:0];
+      if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_ENABLE))
+        s_intr_en_q <= apb4.pwdata[6:0];
+      if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_TEST))
+        s_intr_stat_q <= s_intr_stat_q | apb4.pwdata[6:0];
       if (frame_stats_valid_i) begin
         s_frm_cnt_q   <= frame_stats_i[31:0];
         s_line_cnt_q  <= {16'd0, frame_stats_i[47:32]};
@@ -311,7 +311,7 @@ module dvp_reg (
   ) u_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (ribp.valid && !s_ready_q),
+      .dat_i  (apb4.psel && apb4.penable && !s_ready_q),
       .dat_o  (s_ready_q)
   );
   dffer #(

@@ -10,13 +10,17 @@ module pll_ctrl_tb;
   logic [31:0] fault_addr_i = '0;
   logic [ 3:0] fault_wstrb_i = '0;
   logic        fault_reserved_i = 1'b0;
-  ribp_if rib ();
-  sysctrl_if sysctrl ();
-  pll_ctrl_if pll_ctrl ();
   logic        sys_clk_o;
   logic        sys_rst_n_o;
+  logic        aud_clk_o;
   logic        aud_rst_n_o;
   logic        sys_clkdiv4_o;
+  apb4_if apb4 (
+      .pclk   (sys_clk_o),
+      .presetn(sys_rst_n_o)
+  );
+  sysctrl_if sysctrl ();
+  pll_ctrl_if pll_ctrl ();
   logic [31:0] read_data;
   time         edge_start;
   time         edge_end;
@@ -36,19 +40,20 @@ module pll_ctrl_tb;
       .pll_ctrl       (pll_ctrl),
       .sys_clk_o      (sys_clk_o),
       .sys_rst_n_o    (sys_rst_n_o),
+      .aud_clk_o      (aud_clk_o),
       .aud_rst_n_o    (aud_rst_n_o),
       .sys_clkdiv4_o  (sys_clkdiv4_o),
       .timebase_tick_o()
   );
 
-  ribp_sysctrl u_sysctrl (
+  apb4_sysctrl u_sysctrl (
       .clk_i           (sys_clk_o),
       .rst_n_i         (sys_rst_n_o),
       .fault_valid_i   (fault_valid_i),
       .fault_addr_i    (fault_addr_i),
       .fault_wstrb_i   (fault_wstrb_i),
       .fault_reserved_i(fault_reserved_i),
-      .ribp            (rib),
+      .apb4            (apb4),
       .sysctrl         (sysctrl),
       .pll_ctrl        (pll_ctrl)
   );
@@ -56,29 +61,43 @@ module pll_ctrl_tb;
   task automatic read_register(input logic [31:0] address, output logic [31:0] data);
     begin
       @(negedge sys_clk_o);
-      rib.addr  = address;
-      rib.wdata = '0;
-      rib.wstrb = '0;
-      rib.valid = 1'b1;
-      while (!rib.ready) @(posedge sys_clk_o);
-      data = rib.rdata;
+      apb4.paddr   = address;
+      apb4.pwdata  = '0;
+      apb4.pstrb   = '0;
+      apb4.pwrite  = 1'b0;
+      apb4.psel    = 1'b1;
+      apb4.penable = 1'b0;
       @(negedge sys_clk_o);
-      rib.valid = 1'b0;
-      while (rib.ready) @(posedge sys_clk_o);
+      apb4.penable = 1'b1;
+      while (!apb4.pready) @(negedge sys_clk_o);
+      if (apb4.pslverr !== 1'b0) begin
+        $fatal(1, "read %h error=%b expected=%b", address, apb4.pslverr, 1'b0);
+      end
+      data         = apb4.prdata;
+      apb4.psel    = 1'b0;
+      apb4.penable = 1'b0;
     end
   endtask
 
   task automatic write_register(input logic [31:0] address, input logic [31:0] data);
     begin
       @(negedge sys_clk_o);
-      rib.addr  = address;
-      rib.wdata = data;
-      rib.wstrb = 4'hF;
-      rib.valid = 1'b1;
-      while (!rib.ready) @(posedge sys_clk_o);
+      apb4.paddr   = address;
+      apb4.pwdata  = data;
+      apb4.pstrb   = 4'hF;
+      apb4.pwrite  = 1'b1;
+      apb4.psel    = 1'b1;
+      apb4.penable = 1'b0;
       @(negedge sys_clk_o);
-      rib.valid = 1'b0;
-      while (rib.ready) @(posedge sys_clk_o);
+      apb4.penable = 1'b1;
+      while (!apb4.pready) @(negedge sys_clk_o);
+      if (apb4.pslverr !== 1'b0) begin
+        $fatal(1, "write %h error=%b expected=%b", address, apb4.pslverr, 1'b0);
+      end
+      apb4.psel    = 1'b0;
+      apb4.penable = 1'b0;
+      apb4.pwrite  = 1'b0;
+      apb4.pstrb   = '0;
     end
   endtask
 
@@ -101,16 +120,28 @@ module pll_ctrl_tb;
   endtask
 
   initial begin
-    rib.valid               = 1'b0;
-    rib.addr                = '0;
-    rib.wdata               = '0;
-    rib.wstrb               = '0;
+    apb4.psel               = 1'b0;
+    apb4.paddr              = '0;
+    apb4.pwdata             = '0;
+    apb4.pstrb              = '0;
     sysctrl.user_bus_idle_i = 1'b1;
     sysctrl.fault_access_i  = 1'b0;
     sysctrl.fault_master_i  = '0;
     sysctrl.rtc_wake_i      = 1'b0;
     #100;
     rst_n_i = 1'b1;
+    repeat (2) begin
+      @(posedge aud_clk_i);
+      #1;
+      if (aud_clk_o !== 1'b1) begin
+        $fatal(1, "buffered audio clock did not follow a rising edge");
+      end
+      @(negedge aud_clk_i);
+      #1;
+      if (aud_clk_o !== 1'b0) begin
+        $fatal(1, "buffered audio clock did not follow a falling edge");
+      end
+    end
     wait (aud_rst_n_o);
     repeat (12) @(posedge sys_clk_o);
 

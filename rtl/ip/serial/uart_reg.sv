@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
 
-`include "ribp_uart_define.svh"
+`include "apb4_uart_define.svh"
 
 module uart_reg #(
     parameter int TxFifoDepth    = 64,
@@ -9,10 +9,10 @@ module uart_reg #(
     parameter int TxFifoLogDepth = $clog2(TxFifoDepth),
     parameter int RxFifoLogDepth = $clog2(RxFifoDepth)
 ) (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
-    ribp_if.slave       ribp,
+    apb4_if.slave       apb4,
     output logic [23:0] baud_int_o,
     output logic [ 7:0] baud_frac_o,
     output logic [ 1:0] data_bits_o,
@@ -59,9 +59,9 @@ module uart_reg #(
   logic s_write;
   logic s_req_accept;
   logic s_access_err;
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_resp_err_d, s_ribp_resp_err_q;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
+  logic s_apb4_ready_d, s_apb4_ready_q;
+  logic s_apb4_resp_err_d, s_apb4_resp_err_q;
+  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
 
   logic s_baud_int_en;
   logic [23:0] s_baud_int_d, s_baud_int_q;
@@ -137,17 +137,19 @@ module uart_reg #(
     end
   endfunction
 
+`ifndef SYNTHESIS
   initial begin
     if ((TxFifoDepth != 64) || (RxFifoDepth != 64)) begin
       $fatal(1, "uart_reg: 64-entry FIFOs are required");
     end
   end
+`endif
 
-  assign s_req = ribp.valid && !s_ribp_ready_q;
-  assign s_write = |ribp.wstrb;
-  assign ribp.ready = s_ribp_ready_q;
-  assign ribp.resp_err = s_ribp_resp_err_q;
-  assign ribp.rdata = s_ribp_rdata_q;
+  assign s_req = apb4.psel && apb4.penable && !s_apb4_ready_q;
+  assign s_write = apb4.pwrite;
+  assign apb4.pready = s_apb4_ready_q;
+  assign apb4.pslverr = s_apb4_resp_err_q;
+  assign apb4.prdata = s_apb4_rdata_q;
 
   assign baud_int_o = s_baud_int_q;
   assign baud_frac_o = s_baud_frac_q;
@@ -233,16 +235,16 @@ module uart_reg #(
     s_intr_test            = '0;
     s_config_err_event     = 1'b0;
     s_cmd_err_event        = 1'b0;
-    s_ribp_rdata_d         = '0;
+    s_apb4_rdata_d         = '0;
     s_merge_value          = '0;
 
     if (s_req) begin
-      if ((ribp.addr[11:8] != 4'd0) || (ribp.addr[1:0] != 2'b00)) begin
+      if ((apb4.paddr[11:8] != 4'd0) || (apb4.paddr[1:0] != 2'b00)) begin
         s_access_err = 1'b1;
       end else if (s_write) begin
-        unique case (ribp.addr[7:0])
-          `RIBP_UART_BAUD_INT: begin
-            s_merge_value = merge_wstrb({8'd0, s_baud_int_q}, ribp.wdata, ribp.wstrb);
+        unique case (apb4.paddr[7:0])
+          `APB4_UART_BAUD_INT: begin
+            s_merge_value = merge_wstrb({8'd0, s_baud_int_q}, apb4.pwdata, apb4.pstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:24] != 8'd0) || (s_merge_value[23:0] < 24'd16)) begin
               s_access_err       = 1'b1;
@@ -252,8 +254,8 @@ module uart_reg #(
               s_baud_int_d  = s_merge_value[23:0];
             end
           end
-          `RIBP_UART_BAUD_FRAC: begin
-            s_merge_value = merge_wstrb({24'd0, s_baud_frac_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_BAUD_FRAC: begin
+            s_merge_value = merge_wstrb({24'd0, s_baud_frac_q}, apb4.pwdata, apb4.pstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:8] != 24'd0)) begin
               s_access_err       = 1'b1;
@@ -263,8 +265,8 @@ module uart_reg #(
               s_baud_frac_d  = s_merge_value[7:0];
             end
           end
-          `RIBP_UART_LINE_CTRL: begin
-            s_merge_value = merge_wstrb({27'd0, s_line_ctrl_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_LINE_CTRL: begin
+            s_merge_value = merge_wstrb({27'd0, s_line_ctrl_q}, apb4.pwdata, apb4.pstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:5] != 27'd0) || (s_merge_value[4:3] == 2'd3)) begin
               s_access_err       = 1'b1;
@@ -274,8 +276,8 @@ module uart_reg #(
               s_line_ctrl_d  = s_merge_value[4:0];
             end
           end
-          `RIBP_UART_CTRL: begin
-            s_merge_value = merge_wstrb({28'd0, s_ctrl_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_CTRL: begin
+            s_merge_value = merge_wstrb({28'd0, s_ctrl_q}, apb4.pwdata, apb4.pstrb);
             if ((s_merge_value[31:4] != 28'd0) ||
                 ((s_merge_value[1:0] != 2'd0) && !s_config_valid) ||
                 (s_merge_value[`UART_CTRL_TX_BREAK] && tx_busy_i) ||
@@ -288,10 +290,10 @@ module uart_reg #(
               s_ctrl_d  = s_merge_value[3:0];
             end
           end
-          `RIBP_UART_TXDATA: begin
-            if (!ribp.wstrb[0] ||
-                (|(ribp.wdata[31:8] & {{8{ribp.wstrb[3]}}, {8{ribp.wstrb[2]}},
-                                        {8{ribp.wstrb[1]}}}))) begin
+          `APB4_UART_TXDATA: begin
+            if (!apb4.pstrb[0] ||
+                (|(apb4.pwdata[31:8] & {{8{apb4.pstrb[3]}}, {8{apb4.pstrb[2]}},
+                                        {8{apb4.pstrb[1]}}}))) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else if (s_tx_full && tx_enable_o && s_config_valid) begin
@@ -303,20 +305,20 @@ module uart_reg #(
               s_tx_push = 1'b1;
             end
           end
-          `RIBP_UART_FIFO_CTRL: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:2] != 30'd0) ||
-                (ribp.wdata[1:0] == 2'd0) ||
-                (ribp.wdata[`UART_FIFO_CTRL_TX_FLUSH] && (tx_enable_o || tx_busy_i)) ||
-                (ribp.wdata[`UART_FIFO_CTRL_RX_FLUSH] && (rx_enable_o || rx_active_i))) begin
+          `APB4_UART_FIFO_CTRL: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:2] != 30'd0) ||
+                (apb4.pwdata[1:0] == 2'd0) ||
+                (apb4.pwdata[`UART_FIFO_CTRL_TX_FLUSH] && (tx_enable_o || tx_busy_i)) ||
+                (apb4.pwdata[`UART_FIFO_CTRL_RX_FLUSH] && (rx_enable_o || rx_active_i))) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else begin
-              s_tx_flush = ribp.wdata[`UART_FIFO_CTRL_TX_FLUSH];
-              s_rx_flush = ribp.wdata[`UART_FIFO_CTRL_RX_FLUSH];
+              s_tx_flush = apb4.pwdata[`UART_FIFO_CTRL_TX_FLUSH];
+              s_rx_flush = apb4.pwdata[`UART_FIFO_CTRL_RX_FLUSH];
             end
           end
-          `RIBP_UART_TX_WATERMARK: begin
-            s_merge_value = merge_wstrb({25'd0, s_tx_watermark_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_TX_WATERMARK: begin
+            s_merge_value = merge_wstrb({25'd0, s_tx_watermark_q}, apb4.pwdata, apb4.pstrb);
             if ((s_merge_value[31:7] != 25'd0) || (s_merge_value[6:0] >= 7'(TxFifoDepth))) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
@@ -325,8 +327,8 @@ module uart_reg #(
               s_tx_watermark_d  = s_merge_value[6:0];
             end
           end
-          `RIBP_UART_RX_WATERMARK: begin
-            s_merge_value = merge_wstrb({25'd0, s_rx_watermark_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_RX_WATERMARK: begin
+            s_merge_value = merge_wstrb({25'd0, s_rx_watermark_q}, apb4.pwdata, apb4.pstrb);
             if ((s_merge_value[31:7] != 25'd0) || (s_merge_value[6:0] == 7'd0) ||
                 (s_merge_value[6:0] > 7'(RxFifoDepth))) begin
               s_access_err    = 1'b1;
@@ -336,8 +338,8 @@ module uart_reg #(
               s_rx_watermark_d  = s_merge_value[6:0];
             end
           end
-          `RIBP_UART_RX_TIMEOUT_BITS: begin
-            s_merge_value = merge_wstrb({16'd0, s_rx_timeout_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_RX_TIMEOUT_BITS: begin
+            s_merge_value = merge_wstrb({16'd0, s_rx_timeout_q}, apb4.pwdata, apb4.pstrb);
             if (s_merge_value[31:16] != 16'd0) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
@@ -346,22 +348,22 @@ module uart_reg #(
               s_rx_timeout_d  = s_merge_value[15:0];
             end
           end
-          `RIBP_UART_ERROR_STATUS: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
+          `APB4_UART_ERROR_STATUS: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:7] != 25'd0)) begin
               s_access_err = 1'b1;
             end else begin
-              s_err_clear = ribp.wdata[6:0];
+              s_err_clear = apb4.pwdata[6:0];
             end
           end
-          `RIBP_UART_INTR_STATE: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
+          `APB4_UART_INTR_STATE: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:7] != 25'd0)) begin
               s_access_err = 1'b1;
             end else begin
-              s_intr_clear = ribp.wdata[6:0];
+              s_intr_clear = apb4.pwdata[6:0];
             end
           end
-          `RIBP_UART_INTR_ENABLE: begin
-            s_merge_value = merge_wstrb({25'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_INTR_ENABLE: begin
+            s_merge_value = merge_wstrb({25'd0, s_intr_en_q}, apb4.pwdata, apb4.pstrb);
             if (s_merge_value[31:7] != 25'd0) begin
               s_access_err = 1'b1;
             end else begin
@@ -369,15 +371,15 @@ module uart_reg #(
               s_intr_en_d  = s_merge_value[6:0];
             end
           end
-          `RIBP_UART_INTR_TEST: begin
-            if (!ribp.wstrb[0] || (ribp.wdata[31:7] != 25'd0)) begin
+          `APB4_UART_INTR_TEST: begin
+            if (!apb4.pstrb[0] || (apb4.pwdata[31:7] != 25'd0)) begin
               s_access_err = 1'b1;
             end else begin
-              s_intr_test = ribp.wdata[6:0];
+              s_intr_test = apb4.pwdata[6:0];
             end
           end
-          `RIBP_UART_DMA_CTRL: begin
-            s_merge_value = merge_wstrb({30'd0, s_dma_ctrl_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_DMA_CTRL: begin
+            s_merge_value = merge_wstrb({30'd0, s_dma_ctrl_q}, apb4.pwdata, apb4.pstrb);
             if (s_merge_value[31:2] != 30'd0) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
@@ -386,8 +388,8 @@ module uart_reg #(
               s_dma_ctrl_d  = s_merge_value[1:0];
             end
           end
-          `RIBP_UART_FLOW_CTRL: begin
-            s_merge_value = merge_wstrb({30'd0, s_flow_ctrl_q}, ribp.wdata, ribp.wstrb);
+          `APB4_UART_FLOW_CTRL: begin
+            s_merge_value = merge_wstrb({30'd0, s_flow_ctrl_q}, apb4.pwdata, apb4.pstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:2] != 30'd0)) begin
               s_access_err       = 1'b1;
@@ -397,9 +399,9 @@ module uart_reg #(
               s_flow_ctrl_d  = s_merge_value[1:0];
             end
           end
-          `RIBP_UART_RTS_WATERMARK: begin
+          `APB4_UART_RTS_WATERMARK: begin
             s_merge_value = merge_wstrb({9'd0, s_rts_deassert_level_q, 9'd0, s_rts_assert_level_q},
-                                        ribp.wdata, ribp.wstrb);
+                                        apb4.pwdata, apb4.pstrb);
             if (tx_enable_o || rx_enable_o || tx_busy_i || rx_active_i ||
                 (s_merge_value[31:23] != 9'd0) || (s_merge_value[15:7] != 9'd0) ||
                 (s_merge_value[22:16] > 7'(RxFifoDepth)) ||
@@ -415,75 +417,75 @@ module uart_reg #(
           default: s_access_err = 1'b1;
         endcase
       end else begin
-        unique case (ribp.addr[7:0])
-          `RIBP_UART_BAUD_INT: s_ribp_rdata_d = {8'd0, s_baud_int_q};
-          `RIBP_UART_BAUD_FRAC: s_ribp_rdata_d = {24'd0, s_baud_frac_q};
-          `RIBP_UART_LINE_CTRL: s_ribp_rdata_d = {27'd0, s_line_ctrl_q};
-          `RIBP_UART_CTRL: s_ribp_rdata_d = {28'd0, s_ctrl_q};
-          `RIBP_UART_RXDATA: begin
+        unique case (apb4.paddr[7:0])
+          `APB4_UART_BAUD_INT: s_apb4_rdata_d = {8'd0, s_baud_int_q};
+          `APB4_UART_BAUD_FRAC: s_apb4_rdata_d = {24'd0, s_baud_frac_q};
+          `APB4_UART_LINE_CTRL: s_apb4_rdata_d = {27'd0, s_line_ctrl_q};
+          `APB4_UART_CTRL: s_apb4_rdata_d = {28'd0, s_ctrl_q};
+          `APB4_UART_RXDATA: begin
             if (s_rx_empty) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else begin
-              s_ribp_rdata_d = {20'd0, s_rx_pop_data};
+              s_apb4_rdata_d = {20'd0, s_rx_pop_data};
               s_rx_pop       = 1'b1;
             end
           end
-          `RIBP_UART_STATUS: s_ribp_rdata_d = s_stat;
-          `RIBP_UART_FIFO_LEVEL: s_ribp_rdata_d = s_fifo_level;
-          `RIBP_UART_TX_WATERMARK: s_ribp_rdata_d = {25'd0, s_tx_watermark_q};
-          `RIBP_UART_RX_WATERMARK: s_ribp_rdata_d = {25'd0, s_rx_watermark_q};
-          `RIBP_UART_RX_TIMEOUT_BITS: s_ribp_rdata_d = {16'd0, s_rx_timeout_q};
-          `RIBP_UART_ERROR_STATUS: s_ribp_rdata_d = {25'd0, s_err_stat_q};
-          `RIBP_UART_INTR_STATE: s_ribp_rdata_d = {25'd0, s_intr_state_q};
-          `RIBP_UART_INTR_ENABLE: s_ribp_rdata_d = {25'd0, s_intr_en_q};
-          `RIBP_UART_INTR_STATUS: s_ribp_rdata_d = {25'd0, (s_intr_state_q & s_intr_en_q)};
-          `RIBP_UART_DMA_CTRL: s_ribp_rdata_d = {30'd0, s_dma_ctrl_q};
-          `RIBP_UART_FLOW_CTRL: s_ribp_rdata_d = {30'd0, s_flow_ctrl_q};
-          `RIBP_UART_RTS_WATERMARK:
-          s_ribp_rdata_d = {9'd0, s_rts_deassert_level_q, 9'd0, s_rts_assert_level_q};
-          `RIBP_UART_IP_VERSION: s_ribp_rdata_d = IP_VERSION;
-          `RIBP_UART_CAPABILITY: s_ribp_rdata_d = CAPABILITY;
+          `APB4_UART_STATUS: s_apb4_rdata_d = s_stat;
+          `APB4_UART_FIFO_LEVEL: s_apb4_rdata_d = s_fifo_level;
+          `APB4_UART_TX_WATERMARK: s_apb4_rdata_d = {25'd0, s_tx_watermark_q};
+          `APB4_UART_RX_WATERMARK: s_apb4_rdata_d = {25'd0, s_rx_watermark_q};
+          `APB4_UART_RX_TIMEOUT_BITS: s_apb4_rdata_d = {16'd0, s_rx_timeout_q};
+          `APB4_UART_ERROR_STATUS: s_apb4_rdata_d = {25'd0, s_err_stat_q};
+          `APB4_UART_INTR_STATE: s_apb4_rdata_d = {25'd0, s_intr_state_q};
+          `APB4_UART_INTR_ENABLE: s_apb4_rdata_d = {25'd0, s_intr_en_q};
+          `APB4_UART_INTR_STATUS: s_apb4_rdata_d = {25'd0, (s_intr_state_q & s_intr_en_q)};
+          `APB4_UART_DMA_CTRL: s_apb4_rdata_d = {30'd0, s_dma_ctrl_q};
+          `APB4_UART_FLOW_CTRL: s_apb4_rdata_d = {30'd0, s_flow_ctrl_q};
+          `APB4_UART_RTS_WATERMARK:
+          s_apb4_rdata_d = {9'd0, s_rts_deassert_level_q, 9'd0, s_rts_assert_level_q};
+          `APB4_UART_IP_VERSION: s_apb4_rdata_d = IP_VERSION;
+          `APB4_UART_CAPABILITY: s_apb4_rdata_d = CAPABILITY;
           default: begin
             s_access_err   = 1'b1;
-            s_ribp_rdata_d = '0;
+            s_apb4_rdata_d = '0;
           end
         endcase
       end
     end
   end
 
-  assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_err;
+  assign s_apb4_ready_d    = s_req_accept;
+  assign s_apb4_resp_err_d = s_access_err;
   assign s_rx_push         = rx_data_valid_i && !s_rx_full;
   assign s_overrun_event   = rx_data_valid_i && s_rx_full;
   assign s_rx_err_event    = s_rx_push && (|rx_data_i[11:8]);
 
   dffr #(
       .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
+  ) u_apb4_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
+      .dat_i  (s_apb4_ready_d),
+      .dat_o  (s_apb4_ready_q)
   );
   dffer #(
       .DATA_WIDTH(1)
-  ) u_ribp_resp_err_dffer (
+  ) u_apb4_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_resp_err_d),
-      .dat_o  (s_ribp_resp_err_q)
+      .dat_i  (s_apb4_resp_err_d),
+      .dat_o  (s_apb4_resp_err_q)
   );
   dffer #(
       .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
+  ) u_apb4_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
+      .dat_i  (s_apb4_rdata_d),
+      .dat_o  (s_apb4_rdata_q)
   );
 
   dffer #(
@@ -611,7 +613,7 @@ module uart_reg #(
       .flush_i(s_tx_flush),
       .push_i (s_tx_push),
       .full_o (s_tx_full),
-      .dat_i  (ribp.wdata[7:0]),
+      .dat_i  (apb4.pwdata[7:0]),
       .pop_i  (tx_data_pop_i),
       .empty_o(s_tx_empty),
       .dat_o  (s_tx_pop_data),
@@ -700,7 +702,7 @@ module uart_reg #(
 `ifdef SIMU_VERILATOR
   always_ff @(posedge clk_i) begin
     if (s_tx_push && !loopback_o) begin
-      $write("%c", ribp.wdata[7:0]);
+      $write("%c", apb4.pwdata[7:0]);
     end
   end
 `endif

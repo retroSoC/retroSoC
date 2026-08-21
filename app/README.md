@@ -28,11 +28,12 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | Profile | Description |
 | --- | --- |
 | `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
-| `bringup` | Manual startup diagnostic that prints complete application and archinfo details. |
-| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2 ABI/build identity, RNG V2 integration, and test-status completion. |
+| `bringup` | Manual startup diagnostic with architecture details and crypto AES/SHA known-answer self-test. |
+| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2, RNG, crypto AES/SHA, SDRAM mapped access, and test-status completion. |
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
+| `xpi_flash_loader` | SRAM-resident, GDB-called service image for sector-preserving JTAG programming of the qualified NSS0 NOR. |
 
 The application manifest is loaded from `app/apps/<name>/app.mk`. It appends
 `APP_SRCS` and, when necessary, `APP_INC_DIRS` to the SDK sources selected by
@@ -58,6 +59,9 @@ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark
 
 # Hazard3 remote-bitbang, OpenOCD, and GDB acceptance flow
 make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim
+
+# Build the SRAM-resident XPI NOR loader used by the host JTAG tool
+make CONFIG=configs/ci/ihp130-xpi-flash-loader.mk firmware
 ```
 
 For a firmware-only build, omit `SIMU=VERILATOR sim`.
@@ -82,6 +86,25 @@ Applications should consume public SDK headers through `<retrosoc/...>`.
 Application-specific public headers belong below their own component include
 directory, such as `board/include/retrosoc/board/` or
 `media/include/retrosoc/media/`.
+
+The shell's user-IP integration follows the same boundary under
+`network/userip`: its public demo entry point is namespaced below
+`include/retrosoc/network/`, while the slot 1 timer and slot 2 GPIO register
+tables remain private to the component. Generic slot selection and checked
+APB-window access come from `<retrosoc/hal/user_ip.h>`.
+
+DMA users must select an explicit SDK channel. UART0 owns channel 0, I2C0
+channel 1, I2C1 channel 2, media/benchmark clients serialize on bulk channel
+3, and crypto reserves channels 4/5. See [DMA MVP](../docs/ip/dma.md) before
+adding a concurrent DMA client.
+
+The SD/SDIO HAL exposes `rs_sd_memory_*` for SD Memory v2 block devices and
+`rs_sdio_function_*` for SDIO functions; these APIs must not be conflated.
+Bring-up can run the controller ID/capability/IRQ self-test without a card.
+The delivered software is limited to fixed-present 3.3 V SDR, 1/4-bit
+operation, aligned SG DMA buffers, and the validated 72 MHz 24/36 MHz versus
+`>=100 MHz` 50 MHz clock boundary. It makes no filesystem, hotplug,
+compliance, or vendor Wi-Fi claim.
 
 Self-owned application C/H code follows the project
 [MISRA C:2012 Amendment 2 policy](../docs/misra-c-2012.md). Managed upstream

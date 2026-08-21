@@ -11,10 +11,10 @@ register generator is intentionally not used in this version.
 
 | Property | Value |
 | --- | --- |
-| User-core RIBP window | `0x10000000`, user access `rw` |
-| Management RIBP window | `0x10014000`, user access `none` |
+| User-core APB4 window | `0x10000000`, user access `rw` |
+| Management APB4 window | `0x10014000`, user access `none` |
 | Pins | 32 |
-| RIBP interrupt group | Bit 11 |
+| APB4 interrupt group | Bit 11 |
 | Core interrupt | 18 |
 | Input synchronizer | Two stages in the SoC clock domain |
 | ABI version | `0x00020000` |
@@ -145,7 +145,7 @@ returns `RS_ENOTSUP` before requesting unsupported electrical features.
 The self-checking RTL test covers reset values, access errors, atomic output
 and OE, user-window masking, guarded user-IP handoff, open drain, pull
 conflicts, edge interrupt state, W1C, interrupt test, trigger conflicts,
-filtering, and configuration lock. The SBY target checks RIBP request
+filtering, and configuration lock. The SBY target checks APB4 request
 stability, lock monotonicity, user-window isolation, handoff high impedance,
 and open-drain safety, with covers for ownership, error, and interrupt paths.
 Host C tests cover filter timing limits, and `ci_smoke` checks capability

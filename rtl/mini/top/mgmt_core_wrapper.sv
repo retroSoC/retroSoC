@@ -11,7 +11,7 @@
 `include "mmap_define.svh"
 
 module mgmt_core_wrapper (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [31:0] irq_i,
@@ -51,7 +51,7 @@ module mgmt_core_wrapper (
   logic [31:0] s_dbg_sbus_rdata;
 
   assign debug_halted_o = s_dbg_halted;
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   ahbl_if u_ahbl_if (
       .hclk(clk_i),
       .hresetn(s_core_rst_n)

@@ -50,12 +50,15 @@
 // GPIO29  OPI_PSRAM_IO6                BIDI    QSPI_PSRAM_NSS3         OUT
 // GPIO30  OPI_PSRAM_IO7                BIDI    PWM_CAPTURE0            IN
 // GPIO31  OPI_PSRAM_DQS                BIDI    PWM_CAPTURE1            IN
+//
+// Dedicated SDIO1 pads: SDIO1_CLK, SDIO1_CMD, SDIO1_DAT[3:0].
 
 module retrosoc_asic (
     `include "retrosoc_asic_ports.svh"
 );
   logic s_ext_clk;
   logic s_aud_clk;
+  logic s_aud_clk_buf;
   logic s_sys_clkdiv4;
   logic s_timebase_tick;
 `ifdef HAVE_PLL
@@ -84,6 +87,7 @@ module retrosoc_asic (
   gpio_if u_gpio_if ();
   xpi_if u_xpi_if ();
   sdram_if u_sdram_if ();
+  sdio_if u_sdio1_if ();
   pll_ctrl_if u_pll_ctrl_if ();
 
   `include "retrosoc_asic_pad_bindings.svh"
@@ -102,6 +106,7 @@ rcu #(
       .pll_ctrl       (u_pll_ctrl_if),
       .sys_clk_o      (s_sys_clk),
       .sys_rst_n_o    (s_sys_rst_n),
+      .aud_clk_o      (s_aud_clk_buf),
       .aud_rst_n_o    (s_aud_rst_n),
       .sys_clkdiv4_o  (s_sys_clkdiv4),
       .timebase_tick_o(s_timebase_tick)
@@ -117,7 +122,7 @@ rcu #(
   retrosoc u_retrosoc (
       .clk_i          (s_sys_clk),
       .rst_n_i        (s_sys_rst_n),
-      .clk_aud_i      (s_aud_clk),
+      .clk_aud_i      (s_aud_clk_buf),
       .rst_aud_n_i    (s_aud_rst_n),
       .clkdiv4_i      (s_sys_clkdiv4),
       .timebase_tick_i(s_timebase_tick),
@@ -130,6 +135,7 @@ rcu #(
       .uart_tx_o      (s_uart0_tx),
       .xpi            (u_xpi_if),
       .sdram          (u_sdram_if),
+      .sdio1          (u_sdio1_if),
       .jtag_tck_i     (s_jtag_tck),
       .jtag_tms_i     (s_jtag_tms),
       .jtag_tdi_i     (s_jtag_tdi),

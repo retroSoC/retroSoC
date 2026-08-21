@@ -11,7 +11,7 @@ module bus_fault_tb;
   logic [ 1:0] fault_master_o;
   logic [ 2:0] fault_code_o;
   logic        user_bus_idle_o;
-  ribp_if mgmt_ribp ();
+  rib_if mgmt_rib ();
   rib_if user_rib ();
   rib_if dma_rib ();
   rib_if rib ();
@@ -39,7 +39,7 @@ module bus_fault_tb;
   rib_bus u_bus (
       .clk_i            (clk_i),
       .rst_n_i          (rst_n_i),
-      .mgmt_ribp        (mgmt_ribp),
+      .mgmt_rib         (mgmt_rib),
       .user_rib         (user_rib),
       .dma_rib          (dma_rib),
       .user_bus_enable_i(1'b1),
@@ -61,22 +61,32 @@ module bus_fault_tb;
                               input logic reserved, input logic [2:0] expected_code);
     begin
       @(negedge clk_i);
-      mgmt_ribp.addr  = address;
-      mgmt_ribp.wdata = 32'hA5A5_5A5A;
-      mgmt_ribp.wstrb = write_strobes;
-      mgmt_ribp.valid = 1'b1;
+      mgmt_rib.cmd_addr  = address;
+      mgmt_rib.cmd_write = |write_strobes;
+      mgmt_rib.cmd_len   = `RIB_LEN_INCR1;
+      mgmt_rib.cmd_valid = 1'b1;
+      while (!mgmt_rib.cmd_ready) @(posedge clk_i);
+      @(negedge clk_i);
+      mgmt_rib.cmd_valid = 1'b0;
+      if (|write_strobes) begin
+        mgmt_rib.wdata   = 32'hA5A5_5A5A;
+        mgmt_rib.wstrb   = write_strobes;
+        mgmt_rib.wlast   = 1'b1;
+        mgmt_rib.w_valid = 1'b1;
+        while (!mgmt_rib.w_ready) @(posedge clk_i);
+        @(negedge clk_i);
+        mgmt_rib.w_valid = 1'b0;
+      end
       while (!fault_valid_o) @(posedge clk_i);
       if (fault_addr_o !== address || fault_wstrb_o !== write_strobes ||
           fault_reserved_o !== reserved || fault_access_o || fault_code_o !== expected_code ||
           rib.cmd_valid || apb_rib.cmd_valid) begin
         $fatal(1, "unexpected fault response for address %h", address);
       end
-      while (!mgmt_ribp.ready) @(posedge clk_i);
-      if (mgmt_ribp.rdata !== 32'd0 || !mgmt_ribp.resp_err) begin
+      while (!mgmt_rib.rsp_valid) @(posedge clk_i);
+      if (mgmt_rib.rdata !== 32'd0 || !mgmt_rib.resp_err) begin
         $fatal(1, "fault response data must be zero");
       end
-      @(negedge clk_i);
-      mgmt_ribp.valid = 1'b0;
       while (fault_valid_o) @(posedge clk_i);
     end
   endtask
@@ -113,10 +123,15 @@ module bus_fault_tb;
   endtask
 
   initial begin
-    mgmt_ribp.valid    = 1'b0;
-    mgmt_ribp.addr     = '0;
-    mgmt_ribp.wdata    = '0;
-    mgmt_ribp.wstrb    = '0;
+    mgmt_rib.cmd_valid = 1'b0;
+    mgmt_rib.cmd_addr  = '0;
+    mgmt_rib.cmd_write = 1'b0;
+    mgmt_rib.cmd_len   = `RIB_LEN_INCR1;
+    mgmt_rib.w_valid   = 1'b0;
+    mgmt_rib.wdata     = '0;
+    mgmt_rib.wstrb     = '0;
+    mgmt_rib.wlast     = 1'b0;
+    mgmt_rib.rsp_ready = 1'b1;
     user_rib.cmd_valid = 1'b0;
     user_rib.cmd_addr  = '0;
     user_rib.cmd_write = 1'b0;
@@ -139,7 +154,7 @@ module bus_fault_tb;
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 
-    expect_fault(32'h1000_F000, 4'hF, 1'b1, `RIB_RESP_RESERVED);
+    expect_fault(32'h1001_2000, 4'hF, 1'b1, `RIB_RESP_RESERVED);
     expect_fault(32'hA000_0000, 4'h0, 1'b0, `RIB_RESP_DECERR);
     expect_user_denied(32'h1000_B000, 4'hF);
     $display("bus fault responder test passed");

@@ -4,7 +4,7 @@
 `include "gpio_define.svh"
 
 interface gpio_if #(
-    parameter int DataWidth = `RIBP_GPIO_NUM
+    parameter int DataWidth = `APB4_GPIO_NUM
 ) ();
   logic [DataWidth-1:0] oe_o;
   logic [DataWidth-1:0] cs_o;

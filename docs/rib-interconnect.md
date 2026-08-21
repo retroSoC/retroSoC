@@ -9,12 +9,17 @@ each boundary.
 
 | Protocol | Interface | Purpose | Transfer shape |
 | --- | --- | --- | --- |
-| RIBP | Common `ribp_if` | Scalar core and peripheral compatibility | One scalar word request and response |
+| APB4 | Common `apb4_if` | Self-owned peripheral configuration plane | Setup/Access word transfer with wait-states |
+| RIBP | Common `ribp_if` | MPW user-core compatibility only | One scalar word request and response |
 | RIB | `rib_if` | Native retroSoC interconnect | Split command, write-data, and response channels |
 
-## RIBP
+## APB4 and RIBP
 
-RIBP is the scalar Common protocol used at every core and peripheral boundary.
+Self-owned configuration targets sit on the `apb4_periph` island at
+`0x1000_0000` and are decoded by `axi42apb4_periph`. Cluster and platform
+targets sit on the `apb4_system` island at `0x2000_0000` and are decoded by
+`axi42apb4_system`. Both islands use `apb4_if`. RIBP remains only as the
+MPW user-core compatibility contract.
 A master presents
 `valid`, `addr`, `wdata`, and `wstrb`; a slave completes the request with
 `ready`, `rdata`, and `resp_err`. `wstrb == 0` denotes a read. There is no
@@ -62,9 +67,10 @@ ordered RIB responses. An asserted RIBP `resp_err` is mapped to native RIB
 ## Targets and Performance
 
 The active Mini SoC no longer selects RIB as a fabric link. Current user cores
-retain their RIBP ABI and use a RIBP-to-AXI4 adapter. DMA retains its proven RIB
-chunk engine behind a RIB-to-AXI4 adapter. The RIB modules, protocol tests, and
-formal targets remain available for independent reuse and maintenance.
+retain their RIBP ABI and use a RIBP-to-AXI4 adapter. DMA is not a RIB client:
+it connects directly to the shared AXI4 fabric. The RIB modules, protocol
+tests, and formal targets remain available for independent reuse and
+maintenance.
 
 `rib2ram` is the native RIB SRAM target. It pipelines synchronous reads
 and uses the Common two-entry spill register for response backpressure. The

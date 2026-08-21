@@ -1,11 +1,15 @@
+#include <archinfo_regs.h>
 #include <retrosoc/core/archinfo.h>
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
+#include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
+#include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
+#include <retrosoc/hal/user_ip.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/service/test.h>
 
@@ -15,6 +19,27 @@ static bool rs_ci_smoke_archinfo_v2(void) {
 
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
+}
+
+static bool rs_ci_smoke_user_ip(void) {
+    rs_status_t status;
+    uint32_t identifier = 0U;
+
+    status = rs_user_ip_probe(0U, &identifier);
+    if ((status != RS_OK) || (identifier != ARCHINFO_COMPONENT_ID_VALUE)) {
+        printf("ci_smoke: user IP 0 status %d identifier 0x%08x\n", (int)status,
+               (unsigned int)identifier);
+        return false;
+    }
+    for (uint32_t ip_id = 1U; ip_id <= RS_SOC_USER_IP_COUNT; ++ip_id) {
+        status = rs_user_ip_probe((uint8_t)ip_id, &identifier);
+        if ((status != RS_OK) || (identifier != ip_id)) {
+            printf("ci_smoke: user IP %u status %d identifier 0x%08x\n", (unsigned int)ip_id,
+                   (int)status, (unsigned int)identifier);
+            return false;
+        }
+    }
+    return rs_user_ip_select(0U) == RS_OK;
 }
 
 static bool rs_ci_smoke_rng_v2(void) {
@@ -160,6 +185,64 @@ static bool rs_ci_smoke_gpio_v2(void) {
     return rs_gpio_write(31U, false) == RS_OK;
 }
 
+#define RS_CI_SMOKE_SDRAM_SPAN UINT32_C(16)
+
+static bool rs_ci_smoke_sdram_wait_ready(void) {
+    rs_sdram_status_t status;
+
+    for (rs_timeout_t timeout = RS_TIMEOUT_DEFAULT; timeout != 0U; --timeout) {
+        if (rs_sdram_get_status(&status) != RS_OK) {
+            return false;
+        }
+        if (status.error) {
+            return false;
+        }
+        if (status.ready && !status.init_busy) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool rs_ci_smoke_sdram_access(void) {
+    volatile uint8_t *const bytes = (volatile uint8_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    volatile uint16_t *const halfs = (volatile uint16_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    volatile uint32_t *const words = (volatile uint32_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    uint32_t index;
+
+    if (!rs_ci_smoke_sdram_wait_ready()) {
+        return false;
+    }
+
+    for (index = 0U; index < RS_CI_SMOKE_SDRAM_SPAN; ++index) {
+        bytes[index] = (uint8_t)(index + 1U);
+    }
+    for (index = 0U; index < RS_CI_SMOKE_SDRAM_SPAN; ++index) {
+        if (bytes[index] != (uint8_t)(index + 1U)) {
+            return false;
+        }
+    }
+
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 2U); ++index) {
+        halfs[index] = (uint16_t)(index + 1U);
+    }
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 2U); ++index) {
+        if (halfs[index] != (uint16_t)(index + 1U)) {
+            return false;
+        }
+    }
+
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 4U); ++index) {
+        words[index] = index + 1U;
+    }
+    for (index = 0U; index < (RS_CI_SMOKE_SDRAM_SPAN / 4U); ++index) {
+        if (words[index] != (index + 1U)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool rs_ci_smoke_uart_v3(void) {
     const rs_uart_config_t config = {
         .source_clock_hz = CPU_FREQ * UINT32_C(1000000),
@@ -181,8 +264,8 @@ static bool rs_ci_smoke_uart_v3(void) {
     const uint8_t transmitted = UINT8_C(0xA5);
     rs_uart_rx_data_t received;
 
-    if ((RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0xF8)) != UINT32_C(0x00030000)) ||
-        (RS_SOC_REG32(RS_SOC_RIBP_UART0_BASE, UINT32_C(0xFC)) != UINT32_C(0x03FF4040)) ||
+    if ((RS_SOC_REG32(RS_SOC_APB4_UART0_BASE, UINT32_C(0xF8)) != UINT32_C(0x00030000)) ||
+        (RS_SOC_REG32(RS_SOC_APB4_UART0_BASE, UINT32_C(0xFC)) != UINT32_C(0x03FF4040)) ||
         (rs_uart_configure(&config, RS_TIMEOUT_DEFAULT) != RS_OK) ||
         (rs_uart_write(&transmitted, 1U, RS_TIMEOUT_DEFAULT) != RS_OK) ||
         (rs_uart_read(&received, 1U, RS_TIMEOUT_DEFAULT) != RS_OK) ||
@@ -205,6 +288,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_user_ip()) {
+        rs_test_finish(RS_TEST_FAILED, 11U);
+    }
+    printf("ci_smoke: user IP passed\n");
     if (!rs_ci_smoke_rng_v2()) {
         rs_test_finish(RS_TEST_FAILED, 8U);
     }
@@ -224,8 +311,17 @@ int main(void) {
     if (!rs_ci_smoke_gpio_v2()) {
         rs_test_finish(RS_TEST_FAILED, 5U);
     }
+    printf("ci_smoke: GPIO passed\n");
+    if (!rs_ci_smoke_sdram_access()) {
+        rs_test_finish(RS_TEST_FAILED, 9U);
+    }
+    printf("ci_smoke: SDRAM passed\n");
+    if (rs_crypto_selftest(RS_TIMEOUT_DEFAULT) != RS_OK) {
+        rs_test_finish(RS_TEST_FAILED, 10U);
+    }
+    printf("ci_smoke: crypto passed\n");
 
-    printf("ci_smoke: UART, archinfo, RNG, CLINT, timer, and GPIO tests passed\n");
+    printf("ci_smoke: all peripheral tests passed\n");
     rs_test_finish(RS_TEST_PASSED, 0U);
     return 0;
 }

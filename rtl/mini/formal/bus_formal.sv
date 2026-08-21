@@ -31,6 +31,7 @@ module bus_formal_design (
 );
 
   ribp_if mgmt_ribp ();
+  rib_if mgmt_rib ();
   rib_if user_rib ();
   rib_if dma_rib ();
   rib_if rib ();
@@ -188,33 +189,40 @@ module bus_formal_design (
   assign rib_cmd_len    = rib.cmd_len;
   assign apb_valid      = apb_rib.cmd_valid;
 
+  ribp2rib u_mgmt_ribp2rib (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .ribp   (mgmt_ribp),
+      .rib    (mgmt_rib)
+  );
+
   rib_bus u_dut (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .mgmt_ribp        (mgmt_ribp),
-      .user_rib         (user_rib),
-      .dma_rib          (dma_rib),
-      .user_bus_enable_i(1'b1),
-      .user_bus_idle_o  (user_idle),
-      .rib              (rib),
-      .apb_rib          (apb_rib),
-      .perf_enable_i    (1'b0),
-      .perf_clear_i     (1'b0),
-      .fault_valid_o    (fault_valid),
-      .fault_addr_o     (fault_addr),
-      .fault_wstrb_o    (fault_wstrb),
-      .fault_reserved_o (fault_reserved),
-      .fault_access_o   (fault_access),
-      .fault_master_o   (fault_master),
-      .fault_code_o     (fault_code),
-      .perf_mgmt_wait_o (),
-      .perf_user_wait_o (),
-      .perf_dma_wait_o  (),
-      .perf_ribp_wait_o (),
-      .perf_apb_wait_o  (),
-      .perf_sdram_wait_o(),
-      .perf_psram_wait_o(),
-      .perf_flash_wait_o()
+      .clk_i                  (clk_i),
+      .rst_n_i                (rst_n_i),
+      .mgmt_rib               (mgmt_rib),
+      .user_rib               (user_rib),
+      .dma_rib                (dma_rib),
+      .user_bus_enable_i      (1'b1),
+      .user_bus_idle_o        (user_idle),
+      .rib                    (rib),
+      .apb_rib                (apb_rib),
+      .perf_enable_i          (1'b0),
+      .perf_clear_i           (1'b0),
+      .fault_valid_o          (fault_valid),
+      .fault_addr_o           (fault_addr),
+      .fault_wstrb_o          (fault_wstrb),
+      .fault_reserved_o       (fault_reserved),
+      .fault_access_o         (fault_access),
+      .fault_master_o         (fault_master),
+      .fault_code_o           (fault_code),
+      .perf_mgmt_wait_o       (),
+      .perf_user_wait_o       (),
+      .perf_dma_wait_o        (),
+      .perf_apb4_periph_wait_o(),
+      .perf_apb4_system_wait_o(),
+      .perf_sdram_wait_o      (),
+      .perf_psram_wait_o      (),
+      .perf_flash_wait_o      ()
   );
 
   assign arb_locked   = u_dut.s_mstr_lock_q;

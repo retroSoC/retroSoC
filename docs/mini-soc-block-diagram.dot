@@ -123,7 +123,7 @@ digraph mini_soc_block_diagram {
       ];
       dma [
         fillcolor="#DDF2E3",
-        label="DMA\nAXI4 burst master and RIBP target"
+        label="DMA\n4-channel native AXI4 burst master\nAPB4 target, AXI4-Stream, IRQ20"
       ];
       fabric [
         fillcolor="#DCECF8",
@@ -138,11 +138,11 @@ digraph mini_soc_block_diagram {
         fillcolor="#FFF3C9",
         label="On-chip SRAM\noptional pipelined AXI42RAM path"
       ];
-      ribp_adapter [
+      apb4_periph [
         fillcolor="#E5E7EB",
-        label="AXI42RIBP\nconfiguration plane"
+        label="AXI42APB\nAPB4 configuration plane"
       ];
-      apb_adapter [
+      apb4_system [
         fillcolor="#E5E7EB",
         label="AXI42APB\ndirect APB bridge"
       ];
@@ -154,9 +154,9 @@ digraph mini_soc_block_diagram {
         fillcolor="#F9E1E7",
         label="CLINT\nstandard 64 KiB register map\nmtime, mtimecmp and MSIP"
       ];
-      ribp_targets [
+      apb4_periph_targets [
         fillcolor="#F9E1E7",
-        label="RIBP configuration targets\nXPI, SDRAM, PSRAM, SPI-SD, DVP and I2S\nSDRAM config is a dedicated top-level port"
+        label="APB4 configuration targets\nXPI, SDRAM, PSRAM, SPI-SD, DVP and I2S\nSDRAM config is a dedicated top-level port"
       ];
       memory_targets [
         fillcolor="#FFF3C9",
@@ -164,7 +164,7 @@ digraph mini_soc_block_diagram {
       ];
       stream_io [
         fillcolor="#FFF3C9",
-        label="AXI4-Stream data endpoints\nI2S TX/RX and DVP RX\nSOF/EOL/TKEEP framing\nDVP RIBP cfg + CDC pixel input"
+        label="AXI4-Stream data endpoints\nI2S TX/RX and DVP RX\nSOF/EOL/TKEEP framing\nDVP APB4 cfg + CDC pixel input"
       ];
       uart0 [
         fillcolor="#F9E1E7",
@@ -176,7 +176,7 @@ digraph mini_soc_block_diagram {
       ];
       gpio_controller [
         fillcolor="#F9E1E7",
-        label="GPIO\nuser + management RIBP windows\natomic I/O, filter, locks, IRQ18"
+        label="GPIO\nuser + management APB4 windows\natomic I/O, filter, locks, IRQ18"
       ];
       timers [
         fillcolor="#F9E1E7",
@@ -186,7 +186,7 @@ digraph mini_soc_block_diagram {
         fillcolor="#F9E1E7",
         label="WS2812 TX\n24-bit MSB-first serializer\n16-word FIFO, IRQ17, DMA-fed"
       ];
-      apb_targets [
+      apb4_system_targets [
         fillcolor="#E6F4EA",
         label="APB target wrapper\nUser IP target"
       ];
@@ -224,7 +224,7 @@ digraph mini_soc_block_diagram {
       ];
       irq [
         fillcolor="#FCE7F3",
-        label="Interrupt aggregation\nRIBP and APB target IRQs to management core"
+        label="Interrupt aggregation\nAPB4 and APB target IRQs to management core"
       ];
     }
   }
@@ -232,8 +232,8 @@ digraph mini_soc_block_diagram {
   { rank=same; jtag_dtm; debug_module; mgmt_core; }
   { rank=same; user_core; dma; }
   { rank=same; fault; fabric; sram; }
-  { rank=same; ribp_adapter; apb_adapter; }
-  { rank=same; sysctrl; clint; ribp_targets; memory_targets; stream_io; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb_targets; }
+  { rank=same; apb4_periph; apb4_system; }
+  { rank=same; sysctrl; clint; apb4_periph_targets; memory_targets; stream_io; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb4_system_targets; }
   { rank=same; gpio_bridge; irq; }
 
   ext_clock -> rcu [label="clock / reset"];
@@ -248,33 +248,33 @@ digraph mini_soc_block_diagram {
 
   mgmt_core -> mgmt_adapter [label="AHB-Lite"];
   mgmt_adapter -> fabric [label="AXI4"];
-  user_core -> fabric [label="RIBP2AXI4"];
+  user_core -> fabric [label="AXI4"];
   dma -> fabric [label="AXI4"];
   dma -> stream_io [dir=both, label="AXI4-Stream"];
 
   fabric -> fault [label="invalid / denied", dir=both];
   fabric -> sram [label="AXI4"];
   fabric -> memory_targets [label="AXI4 data"];
-  fabric -> ribp_adapter [label="AXI4 config"];
-  fabric -> apb_adapter [label="AXI4"];
-  ribp_adapter -> sysctrl [label="RIBP"];
-  ribp_adapter -> clint [label="RIBP"];
-  ribp_adapter -> ribp_targets [label="RIBP"];
-  ribp_adapter -> uart0 [label="RIBP"];
-  ribp_adapter -> i2c_controllers [label="RIBP"];
-  ribp_adapter -> gpio_controller [label="RIBP\nuser/admin"];
-  ribp_adapter -> timers [label="RIBP"];
-  ribp_adapter -> ws2812 [label="RIBP"];
-  apb_adapter -> archinfo [label="APB"];
-  apb_adapter -> rng [label="APB"];
-  apb_adapter -> ps2 [label="APB"];
-  apb_adapter -> rtc [label="APB"];
-  apb_adapter -> wdg [label="APB"];
-  apb_adapter -> crc [label="APB"];
-  apb_adapter -> pwm [label="APB"];
-  apb_adapter -> apb_targets [label="APB"];
+  fabric -> apb4_periph [label="AXI4 config"];
+  fabric -> apb4_system [label="AXI4"];
+  apb4_periph -> sysctrl [label="APB4"];
+  apb4_periph -> clint [label="APB4"];
+  apb4_periph -> apb4_periph_targets [label="APB4"];
+  apb4_periph -> uart0 [label="APB4"];
+  apb4_periph -> i2c_controllers [label="APB4"];
+  apb4_periph -> gpio_controller [label="APB4\nuser/admin"];
+  apb4_periph -> timers [label="APB4"];
+  apb4_periph -> ws2812 [label="APB4"];
+  apb4_system -> archinfo [label="APB4"];
+  apb4_system -> rng [label="APB4"];
+  apb4_system -> ps2 [label="APB4"];
+  apb4_system -> rtc [label="APB4"];
+  apb4_system -> wdg [label="APB4"];
+  apb4_system -> crc [label="APB4"];
+  apb4_system -> pwm [label="APB4"];
+  apb4_system -> apb4_system_targets [label="APB4"];
 
-  ribp_targets -> gpio_controller [label="alternate functions"];
+  apb4_periph_targets -> gpio_controller [label="alternate functions"];
   gpio_controller -> gpio_bridge [label="pad control"];
   gpio_controller -> irq [label="IRQ18"];
   timers -> irq [label="IRQ3 / IRQ4"];
@@ -299,9 +299,9 @@ digraph mini_soc_block_diagram {
   rcu -> wdg [label="independent 18.432 MHz clock", style=dashed];
   wdg -> irq [label="early warning IRQ14"];
   wdg -> rcu [label="system reset request", color="#B91C1C", penwidth=2];
-  apb_targets -> gpio_controller [label="user_gpio"];
-  ribp_targets -> memory_targets [label="RIBP configuration", style=dashed];
-  ribp_targets -> stream_io [label="RIBP configuration", style=dashed];
+  apb4_system_targets -> gpio_controller [label="user_gpio"];
+  apb4_periph_targets -> memory_targets [label="APB4 configuration", style=dashed];
+  apb4_periph_targets -> stream_io [label="APB4 configuration", style=dashed];
   memory_targets -> ext_io [dir=both, label="device interfaces"];
   stream_io -> ext_io [dir=both, label="I2S / DVP signals"];
   uart0 -> ext_io [dir=both, label="UART pads"];

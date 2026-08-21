@@ -1,10 +1,14 @@
 `timescale 1ns / 1ps
 
+`include "axi4_define.svh"
+`include "sdram_define.svh"
+
 module sdram_data_tb;
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
   wire  [15:0] s_dq;
   logic [31:0] s_read_data;
+  logic [31:0] s_apb_data;
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
@@ -14,7 +18,10 @@ module sdram_data_tb;
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
-  ribp_if cfg_ribp ();
+  apb4_if cfg_apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   sdram_if sdram ();
 
   always #5 clk_i = ~clk_i;
@@ -26,7 +33,7 @@ module sdram_data_tb;
       .clk_i   (clk_i),
       .rst_n_i (rst_n_i),
       .axi4    (axi4),
-      .cfg_ribp(cfg_ribp),
+      .cfg_apb4(cfg_apb4),
       .sdram   (sdram)
   );
 
@@ -60,41 +67,88 @@ module sdram_data_tb;
 
   task automatic init_axi4;
     begin
-      axi4.awid      = '0;
-      axi4.awaddr    = '0;
-      axi4.awlen     = '0;
-      axi4.awsize    = `AXI4_BURST_SIZE_4BYTES;
-      axi4.awburst   = `AXI4_BURST_TYPE_INCR;
-      axi4.awlock    = `AXI4_LOCK_NORM;
-      axi4.awcache   = `AXI4_CACHE_NO_BUF;
-      axi4.awprot    = `AXI4_PROT_DATA;
-      axi4.awqos     = `AXI4_QOS_NORMAL;
-      axi4.awregion  = `AXI4_REGION_NORMAL;
-      axi4.awuser    = '0;
-      axi4.awvalid   = 1'b0;
-      axi4.wdata     = '0;
-      axi4.wstrb     = '0;
-      axi4.wlast     = 1'b0;
-      axi4.wuser     = '0;
-      axi4.wvalid    = 1'b0;
-      axi4.bready    = 1'b0;
-      axi4.arid      = '0;
-      axi4.araddr    = '0;
-      axi4.arlen     = '0;
-      axi4.arsize    = `AXI4_BURST_SIZE_4BYTES;
-      axi4.arburst   = `AXI4_BURST_TYPE_INCR;
-      axi4.arlock    = `AXI4_LOCK_NORM;
-      axi4.arcache   = `AXI4_CACHE_NO_BUF;
-      axi4.arprot    = `AXI4_PROT_DATA;
-      axi4.arqos     = `AXI4_QOS_NORMAL;
-      axi4.arregion  = `AXI4_REGION_NORMAL;
-      axi4.aruser    = '0;
-      axi4.arvalid   = 1'b0;
-      axi4.rready    = 1'b0;
-      cfg_ribp.valid = 1'b0;
-      cfg_ribp.addr  = '0;
-      cfg_ribp.wdata = '0;
-      cfg_ribp.wstrb = '0;
+      axi4.awid        = '0;
+      axi4.awaddr      = '0;
+      axi4.awlen       = '0;
+      axi4.awsize      = `AXI4_BURST_SIZE_4BYTES;
+      axi4.awburst     = `AXI4_BURST_TYPE_INCR;
+      axi4.awlock      = `AXI4_LOCK_NORM;
+      axi4.awcache     = `AXI4_CACHE_NO_BUF;
+      axi4.awprot      = `AXI4_PROT_DATA;
+      axi4.awqos       = `AXI4_QOS_NORMAL;
+      axi4.awregion    = `AXI4_REGION_NORMAL;
+      axi4.awuser      = '0;
+      axi4.awvalid     = 1'b0;
+      axi4.wdata       = '0;
+      axi4.wstrb       = '0;
+      axi4.wlast       = 1'b0;
+      axi4.wuser       = '0;
+      axi4.wvalid      = 1'b0;
+      axi4.bready      = 1'b0;
+      axi4.arid        = '0;
+      axi4.araddr      = '0;
+      axi4.arlen       = '0;
+      axi4.arsize      = `AXI4_BURST_SIZE_4BYTES;
+      axi4.arburst     = `AXI4_BURST_TYPE_INCR;
+      axi4.arlock      = `AXI4_LOCK_NORM;
+      axi4.arcache     = `AXI4_CACHE_NO_BUF;
+      axi4.arprot      = `AXI4_PROT_DATA;
+      axi4.arqos       = `AXI4_QOS_NORMAL;
+      axi4.arregion    = `AXI4_REGION_NORMAL;
+      axi4.aruser      = '0;
+      axi4.arvalid     = 1'b0;
+      axi4.rready      = 1'b0;
+      cfg_apb4.psel    = 1'b0;
+      cfg_apb4.penable = 1'b0;
+      cfg_apb4.pwrite  = 1'b0;
+      cfg_apb4.paddr   = '0;
+      cfg_apb4.pwdata  = '0;
+      cfg_apb4.pstrb   = '0;
+    end
+  endtask
+
+  task automatic apb_write(input logic [11:0] offset, input logic [31:0] data);
+    begin
+      @(negedge clk_i);
+      cfg_apb4.psel    = 1'b1;
+      cfg_apb4.penable = 1'b0;
+      cfg_apb4.pwrite  = 1'b1;
+      cfg_apb4.paddr   = {20'd0, offset};
+      cfg_apb4.pwdata  = data;
+      cfg_apb4.pstrb   = 4'hF;
+      @(posedge clk_i);
+      @(negedge clk_i);
+      cfg_apb4.penable = 1'b1;
+      do @(posedge clk_i); while (!cfg_apb4.pready);
+      if (cfg_apb4.pslverr) begin
+        $fatal(1, "APB write SLVERR at %03x", offset);
+      end
+      @(negedge clk_i);
+      cfg_apb4.psel    = 1'b0;
+      cfg_apb4.penable = 1'b0;
+      cfg_apb4.pwrite  = 1'b0;
+    end
+  endtask
+
+  task automatic apb_read(input logic [11:0] offset);
+    begin
+      @(negedge clk_i);
+      cfg_apb4.psel    = 1'b1;
+      cfg_apb4.penable = 1'b0;
+      cfg_apb4.pwrite  = 1'b0;
+      cfg_apb4.paddr   = {20'd0, offset};
+      cfg_apb4.pstrb   = 4'h0;
+      @(posedge clk_i);
+      @(negedge clk_i);
+      cfg_apb4.penable = 1'b1;
+      do @(posedge clk_i); while (!cfg_apb4.pready);
+      if (cfg_apb4.pslverr) begin
+        $fatal(1, "APB read SLVERR at %03x", offset);
+      end
+      s_apb_data = cfg_apb4.prdata;
+      @(negedge clk_i);
+      cfg_apb4.psel    = 1'b0;
+      cfg_apb4.penable = 1'b0;
     end
   endtask
 
@@ -104,6 +158,8 @@ module sdram_data_tb;
       @(negedge clk_i);
       axi4.awaddr  = address;
       axi4.awlen   = 8'd0;
+      axi4.awburst = `AXI4_BURST_TYPE_INCR;
+      axi4.awlock  = `AXI4_LOCK_NORM;
       axi4.awvalid = 1'b1;
       do @(posedge clk_i); while (!axi4.awready);
       @(negedge clk_i);
@@ -131,6 +187,8 @@ module sdram_data_tb;
       @(negedge clk_i);
       axi4.araddr  = address;
       axi4.arlen   = 8'd0;
+      axi4.arburst = `AXI4_BURST_TYPE_INCR;
+      axi4.arlock  = `AXI4_LOCK_NORM;
       axi4.arvalid = 1'b1;
       do @(posedge clk_i); while (!axi4.arready);
       @(negedge clk_i);
@@ -146,13 +204,100 @@ module sdram_data_tb;
     end
   endtask
 
+  task automatic write_incr(input logic [31:0] address, input logic [7:0] length);
+    integer beat;
+    begin
+      @(negedge clk_i);
+      axi4.awaddr  = address;
+      axi4.awlen   = length;
+      axi4.awburst = `AXI4_BURST_TYPE_INCR;
+      axi4.awvalid = 1'b1;
+      do @(posedge clk_i); while (!axi4.awready);
+      @(negedge clk_i);
+      axi4.awvalid = 1'b0;
+      for (beat = 0; beat <= length; beat++) begin
+        axi4.wdata  = 32'h1000_0000 + address + (beat * 4);
+        axi4.wstrb  = 4'hF;
+        axi4.wlast  = (beat == length);
+        axi4.wvalid = 1'b1;
+        do @(posedge clk_i); while (!axi4.wready);
+        @(negedge clk_i);
+      end
+      axi4.wvalid = 1'b0;
+      axi4.wlast  = 1'b0;
+      axi4.bready = 1'b1;
+      do @(posedge clk_i); while (!axi4.bvalid);
+      if (axi4.bresp != `AXI4_RESP_OKAY) begin
+        $fatal(1, "AXI4 SDRAM INCR write failed at %08x", address);
+      end
+      @(negedge clk_i);
+      axi4.bready = 1'b0;
+    end
+  endtask
+
+  task automatic read_incr(input logic [31:0] address, input logic [7:0] length);
+    integer beat;
+    begin
+      @(negedge clk_i);
+      axi4.araddr  = address;
+      axi4.arlen   = length;
+      axi4.arburst = `AXI4_BURST_TYPE_INCR;
+      axi4.arvalid = 1'b1;
+      do @(posedge clk_i); while (!axi4.arready);
+      @(negedge clk_i);
+      axi4.arvalid = 1'b0;
+      axi4.rready  = 1'b1;
+      for (beat = 0; beat <= length; beat++) begin
+        do @(posedge clk_i); while (!axi4.rvalid);
+        if (axi4.rdata !== (32'h1000_0000 + address + (beat * 4))) begin
+          $fatal(1, "INCR read mismatch beat %0d got %08x", beat, axi4.rdata);
+        end
+        if (axi4.rresp != `AXI4_RESP_OKAY) begin
+          $fatal(1, "INCR read SLVERR beat %0d", beat);
+        end
+        if (axi4.rlast !== (beat == length)) begin
+          $fatal(1, "INCR RLAST mismatch beat %0d", beat);
+        end
+        @(negedge clk_i);
+      end
+      axi4.rready = 1'b0;
+    end
+  endtask
+
+  initial begin
+    #2_000_000;
+    $fatal(1, "simulation timeout");
+  end
+
   initial begin
     init_axi4();
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
+    $display("TB reset released");
 
-    // The controller waits 100 us after reset before accepting a request.
+    write_word(`SOC_ADDR_SDRAM_BASE + 32'h40, 32'h1357_9BDF, 4'b1111);
+    read_word(`SOC_ADDR_SDRAM_BASE + 32'h40);
+    if (s_read_data !== 32'h1357_9BDF) begin
+      $fatal(1, "post-reset stalled SDRAM readback was %08x", s_read_data);
+    end
+
+    // Auto-init is already complete if the post-reset access returned OKAY.
     repeat (8000) @(posedge clk_i);
+    $display("TB init wait done");
+
+    apb_read(`APB4_SDRAM__STATUS);
+    $display("TB STATUS=%08x", s_apb_data);
+    if (!s_apb_data[`APB4_SDRAM__STATUS_READY]) begin
+      $fatal(1, "SDRAM STATUS.READY was not set after auto-init");
+    end
+    apb_read(`APB4_SDRAM__IP_VERSION);
+    if (s_apb_data !== `APB4_SDRAM__IP_VERSION_VALUE) begin
+      $fatal(1, "SDRAM IP_VERSION mismatch %08x", s_apb_data);
+    end
+    apb_read(`APB4_SDRAM__CAPABILITY);
+    if (s_apb_data !== `APB4_SDRAM__CAPABILITY_VALUE) begin
+      $fatal(1, "SDRAM CAPABILITY mismatch %08x", s_apb_data);
+    end
 
     write_word(`SOC_ADDR_SDRAM_BASE, 32'h1234_5678, 4'b1111);
     read_word(`SOC_ADDR_SDRAM_BASE);
@@ -171,6 +316,54 @@ module sdram_data_tb;
     if (s_read_data !== 32'hCAFE_BABE) begin
       $fatal(1, "high-address SDRAM readback was %08x", s_read_data);
     end
+
+    write_incr(`SOC_ADDR_SDRAM_BASE + 32'h100, 8'd3);
+    read_incr(`SOC_ADDR_SDRAM_BASE + 32'h100, 8'd3);
+    write_incr(`SOC_ADDR_SDRAM_BASE + 32'h200, 8'd7);
+    read_incr(`SOC_ADDR_SDRAM_BASE + 32'h200, 8'd7);
+    write_incr(`SOC_ADDR_SDRAM_BASE + 32'h300, 8'd15);
+    read_incr(`SOC_ADDR_SDRAM_BASE + 32'h300, 8'd15);
+
+    @(negedge clk_i);
+    axi4.araddr  = `SOC_ADDR_SDRAM_BASE;
+    axi4.arlen   = 8'd0;
+    axi4.arlock  = 1'b1;
+    axi4.arvalid = 1'b1;
+    do @(posedge clk_i); while (!axi4.arready);
+    @(negedge clk_i);
+    axi4.arvalid = 1'b0;
+    axi4.arlock  = `AXI4_LOCK_NORM;
+    axi4.rready  = 1'b1;
+    do @(posedge clk_i); while (!axi4.rvalid);
+    if (axi4.rresp != `AXI4_RESP_SLAVE_ERROR) begin
+      $fatal(1, "exclusive read did not return SLVERR");
+    end
+    @(negedge clk_i);
+    axi4.rready = 1'b0;
+
+    apb_write(`APB4_SDRAM__COMMAND, 32'h1 << `APB4_SDRAM__COMMAND_PRECHARGE_ALL);
+    read_word(`SOC_ADDR_SDRAM_BASE);
+    if (s_read_data !== 32'hA5A5_5678) begin
+      $fatal(1, "post-precharge SDRAM readback was %08x", s_read_data);
+    end
+
+    apb_write(`APB4_SDRAM__CTRL, 32'h1 << `APB4_SDRAM__CTRL_ENABLE);
+    @(negedge clk_i);
+    axi4.araddr  = `SOC_ADDR_SDRAM_BASE;
+    axi4.arlen   = 8'd0;
+    axi4.arburst = `AXI4_BURST_TYPE_INCR;
+    axi4.arlock  = `AXI4_LOCK_NORM;
+    axi4.arvalid = 1'b1;
+    do @(posedge clk_i); while (!axi4.arready);
+    @(negedge clk_i);
+    axi4.arvalid = 1'b0;
+    axi4.rready  = 1'b1;
+    do @(posedge clk_i); while (!axi4.rvalid);
+    if (axi4.rresp != `AXI4_RESP_SLAVE_ERROR) begin
+      $fatal(1, "disabled-window read did not return SLVERR");
+    end
+    @(negedge clk_i);
+    axi4.rready = 1'b0;
 
     $display("sdram data integrity test passed");
     $finish;

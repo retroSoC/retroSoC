@@ -15,30 +15,36 @@ module dvp_formal_design (
     output logic [ 6:0] intr_enable,
     output logic        irq
 );
-  ribp_if rib ();
-  (* anyseq *) logic f_rib_valid;
-  (* anyseq *) logic [31:0] f_rib_addr, f_rib_wdata;
-  (* anyseq *) logic [3:0] f_rib_wstrb;
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
+  (* anyseq *) logic f_apb_sel;
+  (* anyseq *) logic [31:0] f_apb_addr, f_apb_wdata;
+  (* anyseq *) logic [3:0] f_apb_pstrb;
   (* anyseq *) logic f_active, f_fifo_empty, f_fifo_full;
   (* anyseq *)logic [  5:0] f_error_flags;
   (* anyseq *)logic [127:0] f_frame_stats;
   (* anyseq *)logic         f_frame_stats_valid;
-  assign rib.valid    = f_rib_valid;
-  assign rib.addr     = f_rib_addr;
-  assign rib.wdata    = f_rib_wdata;
-  assign rib.wstrb    = f_rib_wstrb;
-  assign rib_valid    = rib.valid;
-  assign rib_addr     = rib.addr;
-  assign rib_wdata    = rib.wdata;
-  assign rib_wstrb    = rib.wstrb;
-  assign rib_ready    = rib.ready;
-  assign rib_resp_err = rib.resp_err;
+  assign apb4.psel    = f_apb_sel;
+  assign apb4.penable = f_apb_sel;
+  assign apb4.pwrite  = |f_apb_pstrb;
+  assign apb4.paddr   = f_apb_addr;
+  assign apb4.pwdata  = f_apb_wdata;
+  assign apb4.pstrb   = f_apb_pstrb;
+  assign apb4.pprot   = 3'b000;
+  assign rib_valid    = apb4.psel;
+  assign rib_addr     = apb4.paddr;
+  assign rib_wdata    = apb4.pwdata;
+  assign rib_wstrb    = apb4.pstrb;
+  assign rib_ready    = apb4.pready;
+  assign rib_resp_err = apb4.pslverr;
   assign intr_state   = u_dut.s_intr_stat_q;
   assign intr_enable  = u_dut.s_intr_en_q;
   dvp_reg u_dut (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
-      .ribp               (rib),
+      .apb4               (apb4),
       .active_i           (f_active),
       .fifo_empty_i       (f_fifo_empty),
       .fifo_full_i        (f_fifo_full),

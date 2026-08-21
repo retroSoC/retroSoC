@@ -21,31 +21,12 @@
 set script_dir [file dirname [info script]]
 source $script_dir/common.tcl
 
-# constraints file
-set abc_constr $script_dir/abc.constr
-
-# ABC script without DFF optimizations
-set abc_combinational_script $script_dir/abc-opt.script
-
-# process abc file (written to WORK directory)
-set abc_comb_script   [processAbcScript $abc_combinational_script]
-
 # read liberty files and prepare some variables
 source $script_dir/init_tech.tcl
 
 # # read design
 yosys read_slang --top $top_design -F $sv_flist \
         --keep-hierarchy --allow-use-before-declare --ignore-initial --ignore-timing
-
-# # blackbox requested modules
-# if { [info exists ::env(YOSYS_BLACKBOX_MODULES)] } {
-#     foreach sel $::env(YOSYS_BLACKBOX_MODULES) {
-#         puts "Blackboxing the module ${sel}"
-#         yosys select -list {*}$sel
-# 	    yosys blackbox {*}$sel
-#         yosys setattr -set keep_hierarchy 1 {*}$sel
-#     }
-# }
 
 # # preserve hierarchy of selected modules/instances
 if { [info exists ::env(YOSYS_KEEP_HIER_INST)] } {
@@ -125,7 +106,6 @@ yosys select -write ${report_dir}/${proj_name}_registers.rpt t:*DFF*
 yosys clean -purge
 
 # print paths to important instances
-yosys select -write ${report_dir}/${proj_name}_registers.rpt t:*DFF*
 set report [open ${report_dir}/${proj_name}_instances.rpt "w"]
 close $report
 if { [info exists ::env(YOSYS_REPORT_INSTS)] } {
@@ -141,15 +121,21 @@ yosys tee -q -o "${report_dir}/${proj_name}_pre_tech.json" stat -json -tech cmos
 # -----------------------------------------------------------------------------
 # mapping to technology
 
-puts "Using combinational-only abc optimizations"
-if {$pdk == "S110"} {
-yosys dfflibmap {*}$dff_cells_dont_use_args {*}$tech_cells_args
-# yosys abc {*}$tech_cells_args -D $period_ps -script $abc_comb_script -constr $abc_constr -showtmp
-yosys abc {*}$comb_cells_dont_use_args {*}$tech_cells_args
-} else {
-    yosys dfflibmap {*}$tech_cells_args
-    yosys abc {*}$tech_cells_args
+set abc_script_src $script_dir/abc_${synth_recipe}.script
+if {![file exists $abc_script_src]} {
+    error "unsupported SYNTH_RECIPE: $synth_recipe"
 }
+set abc_script [processAbcScript $abc_script_src]
+
+set abc_constr $work_dir/abc.constr
+set constr_file [open $abc_constr w]
+puts $constr_file "set_driving_cell $abc_driver"
+puts $constr_file "set_load $abc_load"
+close $constr_file
+
+puts "Using SYNTH_RECIPE=$synth_recipe ABC script $abc_script_src (period_ps=$period_ps)"
+yosys dfflibmap {*}$tech_cells_args
+yosys abc {*}$tech_cells_args -D $period_ps -script $abc_script -constr $abc_constr
 
 
 yosys clean -purge
@@ -182,5 +168,7 @@ set config_file [open $config_tmp "w"]
 puts $config_file "PDK=$pdk"
 puts $config_file "SOC=$soc"
 puts $config_file "TOP_DESIGN=$top_design"
+puts $config_file "SYNTH_RECIPE=$synth_recipe"
+puts $config_file "PERIOD_PS=$period_ps"
 close $config_file
 file rename -force $config_tmp $config

@@ -27,6 +27,69 @@ the `retrosoc` namespace, for example:
 #include <retrosoc/lib/printf.h>
 ```
 
+`<retrosoc/hal/sdram.h>` provides cycle-count timing calculation, configuration,
+initialization/reinitialization, precharge-all, refresh, status, interrupt
+helpers, and a bounded self-test for the 64 MiB AXI4 SDRAM controller. See the
+[controller contract](../docs/ip/sdram.md). Applications include this header
+rather than `soc.h` register macros. The booter only prints the SDRAM window;
+it does not force a software reinit.
+
+`<retrosoc/hal/psram.h>` provides timing calculation, configuration,
+initialization, per-chip recovery, status/ID, restricted indirect commands,
+interrupts, and bounded self-test for the four-chip ESP-PSRAM64H controller.
+See the [controller contract](../docs/ip/psram.md) before using its destructive
+self-test or changing the memory timing.
+
+`<retrosoc/hal/sysctrl.h>` owns typed access to SystemCtrl user-core/IP,
+PLL, fault, performance, RTC-wake, and terminal-test functions. Existing
+clock, user-core, performance, and test-service APIs use this HAL; direct
+`reg_sysctrl_*` register macros are not public SDK interfaces. See the
+[SystemCtrl contract](../docs/ip/sysctrl.md).
+
+`<retrosoc/hal/user_ip.h>` owns selection, identification, and validated
+32-bit access to the fixed 4 KiB user-IP window. The generic HAL does not
+assign semantics to extension-specific registers; each integrated user IP
+keeps its register ABI and driver in its owning application component. See the
+[User IP software contract](../docs/ip/user-ip.md).
+
+`<retrosoc/hal/dma.h>` provides the channel-aware direct-mode DMA API. UART0,
+I2C0, I2C1, and bulk/media clients have deterministic channel assignments; see
+the [DMA MVP contract](../docs/ip/dma.md). The current SDK intentionally
+accepts only naturally aligned 32-bit DMA transfers.
+
+`<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
+RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.
+AES DMA reserves channels 4/5; private RSA input is write-only at the APB
+boundary and assumes public exponent 65537 for result verification. See the
+[crypto controller contract](../docs/ip/crypto.md) before handling production
+keys or composing an RFC 8017 scheme.
+
+`<retrosoc/hal/sdio.h>` provides separate low-level native SD host,
+SD Memory v2, and SDIO function APIs for `sdio0` and `sdio1`. The controller
+scope is fixed-present 3.3 V SDR at 1/4-bit width; it does not claim SD
+Association compliance or a vendor Wi-Fi driver. The 72 MHz SoC profiles use
+the validated 24/36 MHz operating range, while a 50 MHz SD clock requires a
+separately validated `clk_i >= 100 MHz` environment. SG DMA descriptors and
+their buffers must be 16-byte/32-bit aligned as applicable; callers must use a
+bounce buffer for an unaligned head. PIO and DMA use little-endian byte lanes:
+bits `[7:0]`/strobe lane 0 is the first wire byte, and `DATA_START` is the
+coordinated DMA/card-data launch. The SDK does not provide hotplug,
+filesystem, combo-card, UHS, DDR, or 1.8 V support.
+
+`<retrosoc/hal/spisd.h>` provides the separate SPI-mode SD Memory host API.
+It supports bounded SDSC/SDHC enumeration, PIO and native-AXI SG-DMA sector
+transfers, interrupt/error handling, CSD geometry, and an explicit verified
+CMD6 high-speed switch. Its descriptor/buffer alignment and retired-aperture
+compatibility behavior are defined in the
+[SPI-SD controller contract](../docs/ip/spisd.md).
+
+`<retrosoc/hal/xpi.h>` and `<retrosoc/hal/xpi_regs.h>` provide the typed XPI V2
+HAL and its manually maintained register ABI. The API covers four mapped
+slots, LUT programming, PIO and central-DMA indirect transfers, hardware
+polling, interrupts, errors, performance counters, and configuration locks.
+Reset-time NSS0 boot behavior and JTAG NOR programming are defined in the
+[XPI V2 controller contract](../docs/ip/xpi.md).
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

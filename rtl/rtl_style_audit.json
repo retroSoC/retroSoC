@@ -1,0 +1,356 @@
+{
+  "schema_version": 1,
+  "policy": "docs/rtl-coding-style.md",
+  "profile": "owned",
+  "review_methods": [
+    "automated static checks",
+    "tool-assisted source review",
+    "targeted simulation and formal source-list review"
+  ],
+  "reviewed_boundary_record": {
+    "owner": "retroSoC RTL maintainers",
+    "related_commit": "7df897b03820ab4f9b48472eef4308698c9a7df4",
+    "expiry": "Expires before a behavior-changing or sequential-equivalence-verified refactor of an affected module.",
+    "removal_plan": "Use an isolated change with named validation evidence; do not treat this audit record as a warning baseline or a blanket waiver."
+  },
+  "rules": [
+    {
+      "id": "RTL-FILE",
+      "sections": [
+        2
+      ],
+      "result": "compliant",
+      "evidence": "Primary-unit/file-name checks and canonical filelist review."
+    },
+    {
+      "id": "RTL-SV",
+      "sections": [
+        3
+      ],
+      "result": "compliant",
+      "evidence": "Restricted-SystemVerilog static checks and Verible lint."
+    },
+    {
+      "id": "RTL-NAME",
+      "sections": [
+        4
+      ],
+      "result": "compliant",
+      "evidence": "Full-profile naming enforcement and boundary review."
+    },
+    {
+      "id": "RTL-STRUCT",
+      "sections": [
+        5
+      ],
+      "result": "compliant",
+      "evidence": "Named-connection, generate-label, one-primary-unit, and filelist checks."
+    },
+    {
+      "id": "RTL-COMB",
+      "sections": [
+        6
+      ],
+      "result": "reviewed",
+      "evidence": "Combinational defaults and protocol-path source review."
+    },
+    {
+      "id": "RTL-SEQ",
+      "sections": [
+        6
+      ],
+      "result": "reviewed",
+      "evidence": "Reset, enable, FSM, inferred-memory, and sequential-priority review."
+    },
+    {
+      "id": "RTL-WIDTH",
+      "sections": [
+        7
+      ],
+      "result": "reviewed",
+      "evidence": "Verilator lint and width, signedness, and X/Z source review."
+    },
+    {
+      "id": "RTL-CDC",
+      "sections": [
+        8
+      ],
+      "result": "reviewed",
+      "evidence": "Clock/reset-domain metadata, CDC primitive review, and targeted tests."
+    },
+    {
+      "id": "RTL-VERIFY",
+      "sections": [
+        9
+      ],
+      "result": "reviewed",
+      "evidence": "Formal source-list checks, readiness checks, and directed simulations."
+    },
+    {
+      "id": "RTL-FMT",
+      "sections": [
+        10
+      ],
+      "result": "compliant",
+      "evidence": "Verible format, ASCII, whitespace, line-length, and paired-directive checks."
+    }
+  ],
+  "inventory": {
+    "rtl/ip/experimental": [
+      "apb4_gpu.sv",
+      "axi4f2ribp.sv",
+      "wb2ribp.sv"
+    ],
+    "rtl/ip/interconnect": [
+      "axi4l2ribp.sv",
+      "ribp2ribp.sv",
+      "ribp_regslice.sv"
+    ],
+    "rtl/ip/memory": [
+      "apb4_opipsram.sv",
+      "apb4_psram.sv",
+      "axi4_sdram.sv",
+      "opipsram_axi4.sv",
+      "opipsram_core.sv",
+      "opipsram_define.svh",
+      "opipsram_if.sv",
+      "opipsram_phy.sv",
+      "opipsram_pkg.sv",
+      "opipsram_protocol.sv",
+      "opipsram_reg.sv",
+      "opipsram_trx.sv",
+      "psram_axi4.sv",
+      "psram_core.sv",
+      "psram_define.svh",
+      "psram_phy.sv",
+      "psram_pkg.sv",
+      "psram_reg.sv",
+      "sdram_clkgen.sv",
+      "sdram_core.sv",
+      "sdram_define.svh",
+      "sdram_pkg.sv",
+      "sdram_axi4.sv",
+      "sdram_reg.sv"
+    ],
+    "rtl/ip/multimedia": [
+      "axi4s_dvp.sv",
+      "dvp_core.sv",
+      "dvp_define.svh",
+      "dvp_reg.sv"
+    ],
+    "rtl/ip/peripheral": [
+      "apb4_clint.sv",
+      "apb4_dma.sv",
+      "apb4_gpio.sv",
+      "apb4_sysctrl.sv",
+      "apb4_timer.sv",
+      "clint_core.sv",
+      "clint_define.svh",
+      "clint_if.sv",
+      "clint_reg.sv",
+      "clint_timebase.sv",
+      "dma_axi4_master.sv",
+      "dma_core.sv",
+      "dma_define.svh",
+      "dma_pkg.sv",
+      "dma_reg.sv",
+      "dma_req_if.sv",
+      "gpio_core.sv",
+      "gpio_define.svh",
+      "gpio_if.sv",
+      "gpio_reg.sv",
+      "pll_ctrl_if.sv",
+      "sysctrl_core.sv",
+      "sysctrl_define.svh",
+      "sysctrl_if.sv",
+      "sysctrl_reg.sv",
+      "timer_core.sv",
+      "timer_define.svh",
+      "timer_reg.sv",
+      "user_gpio_if.sv"
+    ],
+    "rtl/ip/serial": [
+      "apb4_i2c.sv",
+      "apb4_i2c_define.svh",
+      "apb4_i2s.sv",
+      "apb4_uart.sv",
+      "apb4_uart_define.svh",
+      "apb4_uart_rx.sv",
+      "apb4_uart_tx.sv",
+      "apb4_ws2812.sv",
+      "i2c_core.sv",
+      "i2c_filter.sv",
+      "i2c_reg.sv",
+      "i2s_clkgen.sv",
+      "i2s_core.sv",
+      "i2s_define.svh",
+      "i2s_pkg.sv",
+      "i2s_recv.sv",
+      "i2s_reg.sv",
+      "i2s_send.sv",
+      "uart_baudgen.sv",
+      "uart_core.sv",
+      "uart_flow_ctrl.sv",
+      "uart_if.sv",
+      "uart_reg.sv",
+      "ws2812_core.sv",
+      "ws2812_define.svh",
+      "ws2812_if.sv",
+      "ws2812_reg.sv"
+    ],
+    "rtl/ip/security": [
+      "apb4_crypto.sv",
+      "crypto_aes_core.sv",
+      "crypto_aes_engine.sv",
+      "crypto_define.svh",
+      "crypto_montgomery.sv",
+      "crypto_pkg.sv",
+      "crypto_rsa_core.sv",
+      "crypto_sha2_core.sv",
+      "crypto_sha2_engine.sv"
+    ],
+    "rtl/ip/storage": [
+      "apb4_sdio.sv",
+      "apb4_spisd.sv",
+      "apb4_xpi.sv",
+      "sdio_clock.sv",
+      "sdio_command.sv",
+      "sdio_core.sv",
+      "sdio_crc16.sv",
+      "sdio_crc7.sv",
+      "sdio_data.sv",
+      "sdio_define.svh",
+      "sdio_dma.sv",
+      "sdio_dma_descriptor.sv",
+      "sdio_if.sv",
+      "sdio_pkg.sv",
+      "sdio_reg.sv",
+      "spisd_clock.sv",
+      "spisd_command.sv",
+      "spisd_core.sv",
+      "spisd_data.sv",
+      "spisd_define.svh",
+      "spisd_pkg.sv",
+      "spisd_reg.sv",
+      "xpi_clkgen.sv",
+      "xpi_core.sv",
+      "xpi_define.svh",
+      "xpi_if.sv",
+      "xpi_indirect.sv",
+      "xpi_mm.sv",
+      "xpi_pkg.sv",
+      "xpi_reg.sv"
+    ],
+    "rtl/ip/util": [
+      "async_fifo.sv"
+    ],
+    "rtl/mini/top": [
+      "ahbl2axi4.sv",
+      "ahbl2ribp.sv",
+      "apb4_if_bridge.sv",
+      "apb4_periph.sv",
+      "apb4_system.sv",
+      "axi42apb4_system.sv",
+      "axi42apb4_periph.sv",
+      "axi42ram.sv",
+      "axi42ribp.sv",
+      "axi42ribp_burst.sv",
+      "axi4_bus.sv",
+      "axi4_connector.sv",
+      "axi4_error_slave.sv",
+      "axi4_interconnect.sv",
+      "axi4_word_bridge.sv",
+      "core_wrapper.sv",
+      "gpio_pad_bridge.sv",
+      "mgmt_core_wrapper.sv",
+      "mgmt_debug_reset.sv",
+      "mgmt_debug_wrapper.sv",
+      "onchip_ram.sv",
+      "pll_rcu_controller.sv",
+      "rcu.sv",
+      "retrosoc.sv",
+      "retrosoc_asic.sv",
+      "rib2apb.sv",
+      "rib2axi4.sv",
+      "rib2ram.sv",
+      "rib2ribp.sv",
+      "rib_bus.sv",
+      "rib_defs.svh",
+      "rib_error_slave.sv",
+      "rib_if.sv",
+      "ribp2axi4.sv",
+      "ribp2rib.sv",
+      "ribp_arbiter2.sv",
+      "soc_clock_config.svh",
+      "soc_common_cdc.sv",
+      "soc_common_fifo.sv",
+      "user_core_design.sv",
+      "user_core_top.sv",
+      "user_extensions.svh",
+      "user_ip_design_template.sv",
+      "user_ip_top.sv",
+      "user_ip_wrapper.sv",
+      "axi42apb4.svh",
+      "axi42apb4_state.svh"
+    ]
+  },
+  "reviewed_boundaries": [
+    {
+      "paths": [
+        "rtl/ip/experimental/axi4f2ribp.sv",
+        "rtl/ip/experimental/apb4_gpu.sv",
+        "rtl/ip/experimental/wb2ribp.sv"
+      ],
+      "result": "inactive experimental source",
+      "rationale": "The modules remain primary-unit-aligned but are not active filelist inputs. Incomplete protocol behavior was not changed by style work."
+    },
+    {
+      "paths": [
+        "rtl/ip/memory/psram_core.sv",
+        "rtl/ip/memory/sdram_core.sv",
+        "rtl/ip/multimedia/dvp_core.sv",
+        "rtl/ip/multimedia/dvp_reg.sv",
+        "rtl/ip/storage/xpi_mm.sv"
+      ],
+      "result": "raw sequential storage retained",
+      "rationale": "Reset and update priorities, SPI/SDRAM timing, or inferred-memory behavior are cycle-sensitive. Replacing these processes with Common register primitives requires a separate sequential-equivalence proof and affected protocol simulation."
+    },
+    {
+      "paths": [
+        "rtl/ip/util/async_fifo.sv"
+      ],
+      "result": "retained implementation",
+      "rationale": "Dual-clock storage, Gray-pointer synchronization, and inferred-memory behavior cannot be replaced by single-clock Common registers without equivalence evidence."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/axi4_interconnect.sv"
+      ],
+      "result": "retained implementation",
+      "rationale": "Priority-sensitive master, target, and performance state arrays remain unchanged pending separate sequential-equivalence proof."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/onchip_ram.sv"
+      ],
+      "result": "technology boundary retained",
+      "rationale": "PDK SRAM cell and pin names remain compatible with the technology library."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/soc_common_cdc.sv",
+        "rtl/mini/top/soc_common_fifo.sv"
+      ],
+      "result": "managed compatibility wrapper retained",
+      "rationale": "The narrow self-owned wrappers preserve required Verilator filename behavior while including managed Common source."
+    },
+    {
+      "paths": [
+        "rtl/mini/top/user_core_design.sv",
+        "rtl/mini/top/user_ip_design_template.sv"
+      ],
+      "result": "external template compatibility retained",
+      "rationale": "Template interfaces remain stable for externally distributed user designs."
+    }
+  ]
+}

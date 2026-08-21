@@ -28,37 +28,38 @@ static rs_status_t rs_rtc_status(rtc_status_t status) {
 }
 
 rs_status_t rs_rtc_probe(void) {
-    return rs_rtc_status(rtc_probe((uintptr_t)RS_SOC_APB_RTC_BASE));
+    return rs_rtc_status(rtc_probe((uintptr_t)RS_SOC_APB4_RTC_BASE));
 }
 
 rs_status_t rs_rtc_configure(const rs_rtc_config_t *config, rs_timeout_t timeout) {
-    return rs_rtc_status(rtc_configure((uintptr_t)RS_SOC_APB_RTC_BASE, config, timeout));
+    return rs_rtc_status(rtc_configure((uintptr_t)RS_SOC_APB4_RTC_BASE, config, timeout));
 }
 
 rs_status_t rs_rtc_set_time(const rs_rtc_time_t *time, rs_timeout_t timeout) {
-    return rs_rtc_status(rtc_set_time((uintptr_t)RS_SOC_APB_RTC_BASE, time, timeout));
+    return rs_rtc_status(rtc_set_time((uintptr_t)RS_SOC_APB4_RTC_BASE, time, timeout));
 }
 
 rs_status_t rs_rtc_get_time(rs_rtc_time_t *time, rs_timeout_t timeout) {
-    return rs_rtc_status(rtc_get_time((uintptr_t)RS_SOC_APB_RTC_BASE, time, timeout));
+    return rs_rtc_status(rtc_get_time((uintptr_t)RS_SOC_APB4_RTC_BASE, time, timeout));
 }
 
 rs_status_t rs_rtc_configure_alarm(uint32_t channel, const rs_rtc_alarm_t *alarm,
                                    rs_timeout_t timeout) {
     return rs_rtc_status(
-        rtc_configure_alarm((uintptr_t)RS_SOC_APB_RTC_BASE, channel, alarm, timeout));
+        rtc_configure_alarm((uintptr_t)RS_SOC_APB4_RTC_BASE, channel, alarm, timeout));
 }
 
 rs_status_t rs_rtc_configure_periodic(const rs_rtc_periodic_t *periodic, rs_timeout_t timeout) {
-    return rs_rtc_status(rtc_configure_periodic((uintptr_t)RS_SOC_APB_RTC_BASE, periodic, timeout));
+    return rs_rtc_status(
+        rtc_configure_periodic((uintptr_t)RS_SOC_APB4_RTC_BASE, periodic, timeout));
 }
 
 uint32_t rs_rtc_get_events(void) {
-    return rtc_get_events((uintptr_t)RS_SOC_APB_RTC_BASE);
+    return rtc_get_events((uintptr_t)RS_SOC_APB4_RTC_BASE);
 }
 
 rs_status_t rs_rtc_clear_events(uint32_t mask, rs_timeout_t timeout) {
-    return rs_rtc_status(rtc_clear_events((uintptr_t)RS_SOC_APB_RTC_BASE, mask, timeout));
+    return rs_rtc_status(rtc_clear_events((uintptr_t)RS_SOC_APB4_RTC_BASE, mask, timeout));
 }
 
 void rs_rtc_shell_test(int argc, char **argv) {

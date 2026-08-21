@@ -29,6 +29,8 @@ module ribp2ribp (
     input  logic        slvr_ready_i
 );
 
+  // Requests and responses cross independently through depth-16 asynchronous
+  // FIFOs; each side observes only its local clock/reset domain.
   logic s_mstr_valid_re;
   logic s_req_empty;
   logic s_req_empty_d, s_req_empty_q;

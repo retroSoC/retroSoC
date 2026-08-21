@@ -10,7 +10,7 @@
 
 // 32x4KB=128KB
 module onchip_ram (
-    // verilog_format: off
+    // verilog_format: off -- preserve aligned port declarations
     input logic  clk_i,
     ram_if.slave ram
     // verilog_format: on
@@ -19,39 +19,39 @@ module onchip_ram (
   logic        s_cs   [31:0];
   logic [31:0] s_rdata[0:31];
 
-  // verilog_format: off
-  assign s_cs[0]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[1]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[2]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[3]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
-  assign s_cs[4]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[5]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[6]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[7]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
-  assign s_cs[8]  = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[9]  = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[10] = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[11] = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
-  assign s_cs[12] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[13] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[14] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[15] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
-  assign s_cs[16] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[17] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[18] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[19] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
-  assign s_cs[20] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[21] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[22] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[23] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
-  assign s_cs[24] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[25] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[26] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[27] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
-  assign s_cs[28] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] && ~ram.addr[10];
-  assign s_cs[29] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] & ~ram.addr[11] &&  ram.addr[10];
-  assign s_cs[30] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &  ram.addr[11] && ~ram.addr[10];
-  assign s_cs[31] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &  ram.addr[11] &&  ram.addr[10];
+  // verilog_format: off -- preserve aligned bank decode
+  assign s_cs[0]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[1]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[2]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[3]  = ~ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
+  assign s_cs[4]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[5]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[6]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[7]  = ~ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
+  assign s_cs[8]  = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[9]  = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[10] = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[11] = ~ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
+  assign s_cs[12] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[13] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[14] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[15] = ~ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
+  assign s_cs[16] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[17] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[18] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[19] =  ram.addr[14] && ~ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
+  assign s_cs[20] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[21] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[22] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[23] =  ram.addr[14] && ~ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
+  assign s_cs[24] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[25] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[26] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[27] =  ram.addr[14] &&  ram.addr[13] && ~ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
+  assign s_cs[28] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] && ~ram.addr[10];
+  assign s_cs[29] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] && ~ram.addr[11] &&  ram.addr[10];
+  assign s_cs[30] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] && ~ram.addr[10];
+  assign s_cs[31] =  ram.addr[14] &&  ram.addr[13] &&  ram.addr[12] &&  ram.addr[11] &&  ram.addr[10];
 
   assign ram.rdata = s_rdata[ram.addr[14:10]];
   // verilog_format: on

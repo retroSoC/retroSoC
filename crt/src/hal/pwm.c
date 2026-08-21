@@ -34,107 +34,107 @@ static rs_status_t rs_pwm_status(pwm_status_t status) {
 }
 
 rs_status_t rs_pwm_probe(void) {
-    return rs_pwm_status(pwm_probe((uintptr_t)RS_SOC_APB_PWM_BASE));
+    return rs_pwm_status(pwm_probe((uintptr_t)RS_SOC_APB4_PWM_BASE));
 }
 
 rs_status_t rs_pwm_timer_configure(uint8_t timer, const rs_pwm_timer_config_t *config) {
-    return rs_pwm_status(pwm_timer_configure((uintptr_t)RS_SOC_APB_PWM_BASE, timer, config));
+    return rs_pwm_status(pwm_timer_configure((uintptr_t)RS_SOC_APB4_PWM_BASE, timer, config));
 }
 
 rs_status_t rs_pwm_channel_configure(uint8_t channel, const rs_pwm_channel_config_t *config) {
-    return rs_pwm_status(pwm_channel_configure((uintptr_t)RS_SOC_APB_PWM_BASE, channel, config));
+    return rs_pwm_status(pwm_channel_configure((uintptr_t)RS_SOC_APB4_PWM_BASE, channel, config));
 }
 
 rs_status_t rs_pwm_operator_configure(uint8_t operator_id, const rs_pwm_operator_config_t *config) {
     return rs_pwm_status(
-        pwm_operator_configure((uintptr_t)RS_SOC_APB_PWM_BASE, operator_id, config));
+        pwm_operator_configure((uintptr_t)RS_SOC_APB4_PWM_BASE, operator_id, config));
 }
 
 rs_status_t rs_pwm_fault_configure(const rs_pwm_fault_config_t *config) {
-    return rs_pwm_status(pwm_fault_configure((uintptr_t)RS_SOC_APB_PWM_BASE, config));
+    return rs_pwm_status(pwm_fault_configure((uintptr_t)RS_SOC_APB4_PWM_BASE, config));
 }
 
 rs_status_t rs_pwm_capture_configure(const rs_pwm_capture_config_t *config) {
-    return rs_pwm_status(pwm_capture_configure((uintptr_t)RS_SOC_APB_PWM_BASE, config));
+    return rs_pwm_status(pwm_capture_configure((uintptr_t)RS_SOC_APB4_PWM_BASE, config));
 }
 
 rs_status_t rs_pwm_enable(bool debug_freeze) {
-    return rs_pwm_status(pwm_enable((uintptr_t)RS_SOC_APB_PWM_BASE, debug_freeze));
+    return rs_pwm_status(pwm_enable((uintptr_t)RS_SOC_APB4_PWM_BASE, debug_freeze));
 }
 
 rs_status_t rs_pwm_disable(void) {
-    return rs_pwm_status(pwm_disable((uintptr_t)RS_SOC_APB_PWM_BASE));
+    return rs_pwm_status(pwm_disable((uintptr_t)RS_SOC_APB4_PWM_BASE));
 }
 
 rs_status_t rs_pwm_apply_update(rs_timeout_t timeout) {
-    return rs_pwm_status(pwm_apply_update((uintptr_t)RS_SOC_APB_PWM_BASE, timeout));
+    return rs_pwm_status(pwm_apply_update((uintptr_t)RS_SOC_APB4_PWM_BASE, timeout));
 }
 
 rs_status_t rs_pwm_software_sync(void) {
-    return rs_pwm_status(pwm_software_sync((uintptr_t)RS_SOC_APB_PWM_BASE));
+    return rs_pwm_status(pwm_software_sync((uintptr_t)RS_SOC_APB4_PWM_BASE));
 }
 
 rs_status_t rs_pwm_set_duty(uint8_t channel, uint32_t duty, rs_timeout_t timeout) {
-    return rs_pwm_status(pwm_set_duty((uintptr_t)RS_SOC_APB_PWM_BASE, channel, duty, timeout));
+    return rs_pwm_status(pwm_set_duty((uintptr_t)RS_SOC_APB4_PWM_BASE, channel, duty, timeout));
 }
 
 rs_status_t rs_pwm_fade_configure(uint8_t channel, const rs_pwm_fade_segment_t *segment) {
-    return rs_pwm_status(pwm_fade_configure((uintptr_t)RS_SOC_APB_PWM_BASE, channel, segment));
+    return rs_pwm_status(pwm_fade_configure((uintptr_t)RS_SOC_APB4_PWM_BASE, channel, segment));
 }
 
 rs_status_t rs_pwm_fade_start(uint8_t channel) {
-    return rs_pwm_status(pwm_fade_start((uintptr_t)RS_SOC_APB_PWM_BASE, channel));
+    return rs_pwm_status(pwm_fade_start((uintptr_t)RS_SOC_APB4_PWM_BASE, channel));
 }
 
 rs_status_t rs_pwm_fade_pause(uint8_t channel) {
-    return rs_pwm_status(pwm_fade_pause((uintptr_t)RS_SOC_APB_PWM_BASE, channel));
+    return rs_pwm_status(pwm_fade_pause((uintptr_t)RS_SOC_APB4_PWM_BASE, channel));
 }
 
 rs_status_t rs_pwm_fade_resume(uint8_t channel) {
-    return rs_pwm_status(pwm_fade_resume((uintptr_t)RS_SOC_APB_PWM_BASE, channel));
+    return rs_pwm_status(pwm_fade_resume((uintptr_t)RS_SOC_APB4_PWM_BASE, channel));
 }
 
 rs_status_t rs_pwm_fade_stop(uint8_t channel) {
-    return rs_pwm_status(pwm_fade_stop((uintptr_t)RS_SOC_APB_PWM_BASE, channel));
+    return rs_pwm_status(pwm_fade_stop((uintptr_t)RS_SOC_APB4_PWM_BASE, channel));
 }
 
 rs_status_t rs_pwm_gamma_program(uint8_t channel, const rs_pwm_fade_segment_t *segments,
                                  uint8_t count) {
     return rs_pwm_status(
-        pwm_gamma_program((uintptr_t)RS_SOC_APB_PWM_BASE, channel, segments, count));
+        pwm_gamma_program((uintptr_t)RS_SOC_APB4_PWM_BASE, channel, segments, count));
 }
 
 rs_status_t rs_pwm_gamma_start(uint8_t channel, uint8_t count) {
-    return rs_pwm_status(pwm_gamma_start((uintptr_t)RS_SOC_APB_PWM_BASE, channel, count));
+    return rs_pwm_status(pwm_gamma_start((uintptr_t)RS_SOC_APB4_PWM_BASE, channel, count));
 }
 
 rs_status_t rs_pwm_fault_clear(void) {
-    return rs_pwm_status(pwm_fault_clear((uintptr_t)RS_SOC_APB_PWM_BASE));
+    return rs_pwm_status(pwm_fault_clear((uintptr_t)RS_SOC_APB4_PWM_BASE));
 }
 
 rs_status_t rs_pwm_fault_test(void) {
-    return rs_pwm_status(pwm_fault_test((uintptr_t)RS_SOC_APB_PWM_BASE));
+    return rs_pwm_status(pwm_fault_test((uintptr_t)RS_SOC_APB4_PWM_BASE));
 }
 
 rs_status_t rs_pwm_capture_read(uint8_t channel, uint32_t *timestamp, rs_timeout_t timeout) {
     return rs_pwm_status(
-        pwm_capture_read((uintptr_t)RS_SOC_APB_PWM_BASE, channel, timestamp, timeout));
+        pwm_capture_read((uintptr_t)RS_SOC_APB4_PWM_BASE, channel, timestamp, timeout));
 }
 
 rs_status_t rs_pwm_interrupt_enable(uint32_t mask) {
-    return rs_pwm_status(pwm_interrupt_enable((uintptr_t)RS_SOC_APB_PWM_BASE, mask));
+    return rs_pwm_status(pwm_interrupt_enable((uintptr_t)RS_SOC_APB4_PWM_BASE, mask));
 }
 
 rs_status_t rs_pwm_interrupt_clear(uint32_t mask) {
-    return rs_pwm_status(pwm_interrupt_clear((uintptr_t)RS_SOC_APB_PWM_BASE, mask));
+    return rs_pwm_status(pwm_interrupt_clear((uintptr_t)RS_SOC_APB4_PWM_BASE, mask));
 }
 
 rs_status_t rs_pwm_interrupt_test(uint32_t mask) {
-    return rs_pwm_status(pwm_interrupt_test((uintptr_t)RS_SOC_APB_PWM_BASE, mask));
+    return rs_pwm_status(pwm_interrupt_test((uintptr_t)RS_SOC_APB4_PWM_BASE, mask));
 }
 
 rs_status_t rs_pwm_get_status(rs_pwm_snapshot_t *snapshot) {
-    return rs_pwm_status(pwm_get_status((uintptr_t)RS_SOC_APB_PWM_BASE, snapshot));
+    return rs_pwm_status(pwm_get_status((uintptr_t)RS_SOC_APB4_PWM_BASE, snapshot));
 }
 
 void rs_pwm_shell_test(int argc, char **argv) {

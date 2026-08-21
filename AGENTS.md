@@ -22,6 +22,10 @@ truth wins.
   `quality/metrics/policy.json` define the active quality policy.
 - [rtl/README.md](rtl/README.md) defines the self-owned SystemVerilog naming,
   register-state, macro, and formatting conventions.
+- [docs/rtl-coding-style.md](docs/rtl-coding-style.md) is the normative
+  self-owned RTL policy; [docs/rtl-coding-style-compliance.md](docs/rtl-coding-style-compliance.md)
+  defines the required audit, equivalence-preserving migration, and validation
+  process.
 
 Do not guess a profile, tool version, dependency revision, or generated-file
 location. Inspect the corresponding source of truth first.

@@ -3,14 +3,14 @@
 The Mini SoC CLINT provides machine software and machine timer interrupts for
 the management hart. Its register layout follows the conventional SiFive
 CLINT and RISC-V ACLINT-compatible offsets, while its bus-facing logic uses the
-retroSoC RIBP target protocol.
+retroSoC APB4 target protocol.
 
 ## Integration
 
 | Property | Value |
 | --- | --- |
-| RIBP base address | `0x10020000` |
-| RIBP aperture | 64 KiB |
+| APB4 base address | `0x10020000` |
+| APB4 aperture | 64 KiB |
 | Implemented Mini SoC harts | 1 management hart |
 | RTL hart parameter range | 1 through 4095 |
 | Timebase frequency | 1 MHz |
@@ -27,7 +27,7 @@ meaning of an `mtime` tick. `EXT_CLK_HZ` must be an integer multiple of
 
 ## Register ABI
 
-All implemented registers are 32-bit aligned RIBP accesses. Unmapped,
+All implemented registers are 32-bit aligned APB4 accesses. Unmapped,
 unimplemented-hart, and unaligned accesses complete with `resp_err` and read as
 zero. Partial writes use byte strobes. The Mini SoC implements hart 0; the RTL
 array dimensions and address decoder are parameterized for additional harts.
@@ -63,7 +63,7 @@ only update `mtimecmp`.
 The self-checking RTL test instantiates two harts and covers reset values,
 standard offsets, independent software interrupts, timer comparison, `mtime`
 writes, byte strobes, invalid accesses, and synchronized reference-clock
-ticks. The SBY target proves bounded RIBP response, `mtime` load/tick/hold
+ticks. The SBY target proves bounded APB4 response, `mtime` load/tick/hold
 priority, registered timer interrupt behavior, and reaches software interrupt,
 timer interrupt, write-time, and error paths. The `ci_smoke` firmware checks
 the standard map through the public HAL before completing the normal SoC boot

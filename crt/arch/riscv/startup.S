@@ -69,10 +69,13 @@ wait_psram_reset:
 # test: using psram before loading
 
 # Define the addresses
-.equ GPIO_ALT_ENABLE, RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x34
-.equ GPIO_ALT_SELECT, RS_SOC_RIBP_GPIO_ADMIN_BASE + 0x38
+.equ GPIO_ALT_ENABLE, RS_SOC_APB4_GPIO_ADMIN_BASE + 0x34
+.equ GPIO_ALT_SELECT, RS_SOC_APB4_GPIO_ADMIN_BASE + 0x38
 .equ BIT_MASK,        0x3FE00000  # Bits 21 to 29 set to 1
-.equ PSRAM_INIT,      RS_SOC_RIBP_PSRAM_BASE + 0x08
+.equ PSRAM_COMMAND,   RS_SOC_APB4_PSRAM_BASE + 0x04
+.equ PSRAM_STATUS,    RS_SOC_APB4_PSRAM_BASE + 0x08
+.equ PSRAM_INIT,      0x01
+.equ PSRAM_READY,     0x20
 
 PINMUX_PSRAM:
     li t0, GPIO_ALT_ENABLE
@@ -85,9 +88,15 @@ PINMUX_PSRAM:
     or t1, t1, t2
     sw t1, 0(t0)
 PSRAM_INIT_TRG:
-    li t0, PSRAM_INIT
-    li t1, 1
+    li t0, PSRAM_COMMAND
+    li t1, PSRAM_INIT
     sw t1, 0(t0)
+
+PSRAM_READY_WAIT:
+    li t0, PSRAM_STATUS
+    lw t1, 0(t0)
+    andi t1, t1, PSRAM_READY
+    beqz t1, PSRAM_READY_WAIT
 
 app_loader_start:
     la       a0, _ram_lma

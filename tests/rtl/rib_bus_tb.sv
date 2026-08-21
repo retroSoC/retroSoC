@@ -16,7 +16,7 @@ module rib_bus_tb;
   logic         fault_valid_o;
   logic   [2:0] fault_code_o;
   logic         user_bus_idle_o;
-  ribp_if mgmt_ribp ();
+  rib_if mgmt_rib ();
   rib_if user_rib ();
   rib_if dma_rib ();
   rib_if rib ();
@@ -67,32 +67,32 @@ module rib_bus_tb;
   assign apb_rib.rsp_last  = 1'b1;
 
   rib_bus u_bus (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .mgmt_ribp        (mgmt_ribp),
-      .user_rib         (user_rib),
-      .dma_rib          (dma_rib),
-      .user_bus_enable_i(1'b1),
-      .user_bus_idle_o  (user_bus_idle_o),
-      .rib              (rib),
-      .apb_rib          (apb_rib),
-      .perf_enable_i    (1'b0),
-      .perf_clear_i     (1'b0),
-      .fault_valid_o    (fault_valid_o),
-      .fault_addr_o     (),
-      .fault_wstrb_o    (),
-      .fault_reserved_o (),
-      .fault_access_o   (),
-      .fault_master_o   (),
-      .fault_code_o     (fault_code_o),
-      .perf_mgmt_wait_o (),
-      .perf_user_wait_o (),
-      .perf_dma_wait_o  (),
-      .perf_ribp_wait_o (),
-      .perf_apb_wait_o  (),
-      .perf_sdram_wait_o(),
-      .perf_psram_wait_o(),
-      .perf_flash_wait_o()
+      .clk_i                  (clk_i),
+      .rst_n_i                (rst_n_i),
+      .mgmt_rib               (mgmt_rib),
+      .user_rib               (user_rib),
+      .dma_rib                (dma_rib),
+      .user_bus_enable_i      (1'b1),
+      .user_bus_idle_o        (user_bus_idle_o),
+      .rib                    (rib),
+      .apb_rib                (apb_rib),
+      .perf_enable_i          (1'b0),
+      .perf_clear_i           (1'b0),
+      .fault_valid_o          (fault_valid_o),
+      .fault_addr_o           (),
+      .fault_wstrb_o          (),
+      .fault_reserved_o       (),
+      .fault_access_o         (),
+      .fault_master_o         (),
+      .fault_code_o           (fault_code_o),
+      .perf_mgmt_wait_o       (),
+      .perf_user_wait_o       (),
+      .perf_dma_wait_o        (),
+      .perf_apb4_periph_wait_o(),
+      .perf_apb4_system_wait_o(),
+      .perf_sdram_wait_o      (),
+      .perf_psram_wait_o      (),
+      .perf_flash_wait_o      ()
   );
 
   task automatic issue_read(input logic [31:0] address, input logic [1:0] length,
@@ -135,10 +135,15 @@ module rib_bus_tb;
   endtask
 
   initial begin
-    mgmt_ribp.valid    = 1'b0;
-    mgmt_ribp.addr     = '0;
-    mgmt_ribp.wdata    = '0;
-    mgmt_ribp.wstrb    = '0;
+    mgmt_rib.cmd_valid = 1'b0;
+    mgmt_rib.cmd_addr  = '0;
+    mgmt_rib.cmd_write = 1'b0;
+    mgmt_rib.cmd_len   = `RIB_LEN_INCR1;
+    mgmt_rib.w_valid   = 1'b0;
+    mgmt_rib.wdata     = '0;
+    mgmt_rib.wstrb     = '0;
+    mgmt_rib.wlast     = 1'b0;
+    mgmt_rib.rsp_ready = 1'b1;
     user_rib.cmd_valid = 1'b0;
     user_rib.cmd_addr  = '0;
     user_rib.cmd_write = 1'b0;

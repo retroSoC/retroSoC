@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 module axi4l2ribp (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        aclk_i,
     input  logic        aresetn_i,
     input  logic [31:0] awaddr_i,
@@ -29,23 +29,28 @@ module axi4l2ribp (
     output logic [ 1:0] rresp_o,
     output logic        rvalid_o,
     input  logic        rready_i,
-    ribp_if.master       ribp
+    ribp_if.master      ribp
     // verilog_format: on
 );
 
-  localparam [1:0] RD_IDLE = 2'd0;
-  localparam [1:0] RD_DATA = 2'd1;
-  localparam [1:0] RD_WAIT = 2'd2;
+  // AXI-Lite requests are accepted only in each channel's idle state; one read
+  // and one write may be outstanding. RIBP errors map to SLVERR responses.
+  typedef enum logic [1:0] {
+    RdIdle = 2'd0,
+    RdData = 2'd1,
+    RdWait = 2'd2
+  } rd_state_e;
+  typedef enum logic [1:0] {
+    WrIdle = 2'd0,
+    WrData = 2'd1,
+    WrWait = 2'd2,
+    WrResp = 2'd3
+  } wr_state_e;
+  localparam logic [1:0] AxiRespOkay = 2'b00;
+  localparam logic [1:0] AxiRespSlvErr = 2'b10;
 
-  localparam [1:0] WR_IDLE = 2'd0;
-  localparam [1:0] WR_DATA = 2'd1;
-  localparam [1:0] WR_WAIT = 2'd2;
-  localparam [1:0] WR_RESP = 2'd3;
-  localparam [1:0] AXI_RESP_OKAY = 2'b00;
-  localparam [1:0] AXI_RESP_SLVERR = 2'b10;
-
-  logic [1:0] s_rd_fsm_d, s_rd_fsm_q;
-  logic [1:0] s_wr_fsm_d, s_wr_fsm_q;
+  rd_state_e s_rd_fsm_d, s_rd_fsm_q;
+  wr_state_e s_wr_fsm_d, s_wr_fsm_q;
 
   logic [31:0] s_addr_d, s_addr_q;
   logic [31:0] s_rdata_d, s_rdata_q;
@@ -58,16 +63,16 @@ module axi4l2ribp (
   always_comb begin
     s_rd_fsm_d = s_rd_fsm_q;
     case (s_rd_fsm_q)
-      RD_IDLE: begin
-        if (arvalid_i) s_rd_fsm_d = RD_DATA;
+      RdIdle: begin
+        if (arvalid_i) s_rd_fsm_d = RdData;
       end
-      RD_DATA: begin
-        if (ribp.ready) s_rd_fsm_d = RD_WAIT;
+      RdData: begin
+        if (ribp.ready) s_rd_fsm_d = RdWait;
       end
-      RD_WAIT: begin
-        if (rready_i) s_rd_fsm_d = RD_IDLE;
+      RdWait: begin
+        if (rready_i) s_rd_fsm_d = RdIdle;
       end
-      default: s_rd_fsm_d = RD_IDLE;
+      default: s_rd_fsm_d = RdIdle;
     endcase
   end
   dffr #(
@@ -82,19 +87,19 @@ module axi4l2ribp (
   always_comb begin
     s_wr_fsm_d = s_wr_fsm_q;
     case (s_wr_fsm_q)
-      WR_IDLE: begin
-        if (awvalid_i) s_wr_fsm_d = WR_DATA;
+      WrIdle: begin
+        if (awvalid_i) s_wr_fsm_d = WrData;
       end
-      WR_DATA: begin
-        if (wvalid_i) s_wr_fsm_d = WR_WAIT;
+      WrData: begin
+        if (wvalid_i) s_wr_fsm_d = WrWait;
       end
-      WR_WAIT: begin
-        if (ribp.ready) s_wr_fsm_d = WR_RESP;
+      WrWait: begin
+        if (ribp.ready) s_wr_fsm_d = WrResp;
       end
-      WR_RESP: begin
-        if (bready_i) s_wr_fsm_d = WR_IDLE;
+      WrResp: begin
+        if (bready_i) s_wr_fsm_d = WrIdle;
       end
-      default: s_wr_fsm_d = WR_IDLE;
+      default: s_wr_fsm_d = WrIdle;
     endcase
   end
   dffr #(
@@ -108,10 +113,10 @@ module axi4l2ribp (
 
   always_comb begin
     ribp.addr = s_addr_q;
-    if (s_rd_fsm_q == RD_IDLE && arvalid_i) begin
+    if (s_rd_fsm_q == RdIdle && arvalid_i) begin
       ribp.addr = araddr_i;
       s_addr_d  = araddr_i;
-    end else if (s_wr_fsm_q == WR_IDLE && awvalid_i) begin
+    end else if (s_wr_fsm_q == WrIdle && awvalid_i) begin
       ribp.addr = awaddr_i;
       s_addr_d  = awaddr_i;
     end
@@ -121,7 +126,7 @@ module axi4l2ribp (
   ) u_addr_dffer (
       .clk_i  (aclk_i),
       .rst_n_i(aresetn_i),
-      .en_i   ((s_rd_fsm_q == RD_IDLE && arvalid_i) || (s_wr_fsm_q == WR_IDLE && awvalid_i)),
+      .en_i   ((s_rd_fsm_q == RdIdle && arvalid_i) || (s_wr_fsm_q == WrIdle && awvalid_i)),
       .dat_i  (s_addr_d),
       .dat_o  (s_addr_q)
   );
@@ -132,18 +137,18 @@ module axi4l2ribp (
   ) u_rdata_dffer (
       .clk_i  (aclk_i),
       .rst_n_i(aresetn_i),
-      .en_i   (s_rd_fsm_q == RD_DATA && ribp.ready),
+      .en_i   (s_rd_fsm_q == RdData && ribp.ready),
       .dat_i  (s_rdata_d),
       .dat_o  (s_rdata_q)
   );
 
-  assign s_rresp_d = ribp.resp_err ? AXI_RESP_SLVERR : AXI_RESP_OKAY;
+  assign s_rresp_d = ribp.resp_err ? AxiRespSlvErr : AxiRespOkay;
   dffer #(
       .DATA_WIDTH(2)
   ) u_rresp_dffer (
       .clk_i  (aclk_i),
       .rst_n_i(aresetn_i),
-      .en_i   (s_rd_fsm_q == RD_DATA && ribp.ready),
+      .en_i   (s_rd_fsm_q == RdData && ribp.ready),
       .dat_i  (s_rresp_d),
       .dat_o  (s_rresp_q)
   );
@@ -154,7 +159,7 @@ module axi4l2ribp (
   ) u_wdata_dffer (
       .clk_i  (aclk_i),
       .rst_n_i(aresetn_i),
-      .en_i   (s_wr_fsm_q == WR_DATA && wvalid_i),
+      .en_i   (s_wr_fsm_q == WrData && wvalid_i),
       .dat_i  (s_wdata_d),
       .dat_o  (s_wdata_q)
   );
@@ -165,36 +170,36 @@ module axi4l2ribp (
   ) u_wstrb_dffer (
       .clk_i  (aclk_i),
       .rst_n_i(aresetn_i),
-      .en_i   (s_wr_fsm_q == WR_DATA && wvalid_i),
+      .en_i   (s_wr_fsm_q == WrData && wvalid_i),
       .dat_i  (s_wstrb_d),
       .dat_o  (s_wstrb_q)
   );
 
-  assign s_bresp_d = ribp.resp_err ? AXI_RESP_SLVERR : AXI_RESP_OKAY;
+  assign s_bresp_d = ribp.resp_err ? AxiRespSlvErr : AxiRespOkay;
   dffer #(
       .DATA_WIDTH(2)
   ) u_bresp_dffer (
       .clk_i  (aclk_i),
       .rst_n_i(aresetn_i),
-      .en_i   (s_wr_fsm_q == WR_WAIT && ribp.ready),
+      .en_i   (s_wr_fsm_q == WrWait && ribp.ready),
       .dat_i  (s_bresp_d),
       .dat_o  (s_bresp_q)
   );
 
   // axil
-  assign arready_o  = s_rd_fsm_q == RD_IDLE && arvalid_i;
-  assign rvalid_o   = s_rd_fsm_q == RD_WAIT;
+  assign arready_o  = s_rd_fsm_q == RdIdle && arvalid_i;
+  assign rvalid_o   = s_rd_fsm_q == RdWait;
   assign rresp_o    = s_rresp_q;
   assign rdata_o    = s_rdata_q;
 
-  assign awready_o  = s_wr_fsm_q == WR_IDLE && awvalid_i;
-  assign wready_o   = s_wr_fsm_q == WR_DATA && wvalid_i;
-  assign bvalid_o   = s_wr_fsm_q == WR_RESP;
+  assign awready_o  = s_wr_fsm_q == WrIdle && awvalid_i;
+  assign wready_o   = s_wr_fsm_q == WrData && wvalid_i;
+  assign bvalid_o   = s_wr_fsm_q == WrResp;
   assign bresp_o    = s_bresp_q;
 
-  assign s_rd_req   = (s_rd_fsm_q == RD_DATA || s_rd_fsm_q == RD_WAIT);
-  assign s_wr_req   = s_wr_fsm_q == WR_WAIT;
+  assign s_rd_req   = (s_rd_fsm_q == RdData || s_rd_fsm_q == RdWait);
+  assign s_wr_req   = s_wr_fsm_q == WrWait;
   assign ribp.valid = s_rd_req || s_wr_req;
   assign ribp.wdata = s_wdata_q;
-  assign ribp.wstrb = (s_wr_fsm_q == WR_WAIT) ? s_wstrb_q : '0;
+  assign ribp.wstrb = (s_wr_fsm_q == WrWait) ? s_wstrb_q : '0;
 endmodule

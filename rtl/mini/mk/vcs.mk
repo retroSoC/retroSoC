@@ -48,7 +48,7 @@ SIM_OPTS    := +vcs+loopreport+1000 -suppress=ASLR_DETECTED_INFO \
                +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
 VCS_BEHV_DIR     := $(SIM_BUILD_ROOT)/behv
-VCS_NETL_DIR     := $(SIM_BUILD_ROOT)/netl
+VCS_NETL_DIR     := $(NETLIST_SIM_ROOT)
 VCS_POST_DIR     := $(SIM_BUILD_ROOT)/post
 VCS_BEHV_SIMV    := $(VCS_BEHV_DIR)/simv
 VCS_NETL_SIMV    := $(VCS_NETL_DIR)/simv
@@ -82,7 +82,7 @@ netsim:   DIR   := $(VCS_NETL_DIR)
 postsim:  DIR   := $(VCS_POST_DIR)
 
 wave:     DIR   := $(SIM_BUILD_ROOT)/behv
-netwave:  DIR   := $(SIM_BUILD_ROOT)/netl
+netwave:  DIR   := $(NETLIST_SIM_ROOT)
 postwave: DIR   := $(SIM_BUILD_ROOT)/post
 
 comp: $(VCS_BEHV_SIMV)

@@ -30,7 +30,7 @@ def test_i2c_controller_and_recovery_contract(tmp_path: Path) -> None:
                 f"+incdir+{common / 'utils'}",
                 f"+incdir+{common / 'cdc'}",
                 f"+incdir+{serial}",
-                str(common / "interface/ribp_if.sv"),
+                str(common / "interface/apb4_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "utils/fifo.sv"),
                 str(common / "cdc/cdc_sync.sv"),
@@ -38,7 +38,7 @@ def test_i2c_controller_and_recovery_contract(tmp_path: Path) -> None:
                 str(serial / "i2c_filter.sv"),
                 str(serial / "i2c_core.sv"),
                 str(serial / "i2c_reg.sv"),
-                str(serial / "ribp_i2c.sv"),
+                str(serial / "apb4_i2c.sv"),
                 str(ROOT / "tests/rtl/i2c_tb.sv"),
                 "",
             ]

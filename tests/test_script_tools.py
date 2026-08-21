@@ -46,6 +46,7 @@ from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
     CI_SMOKE_APP_VALUE,
     NIGHTLY_COMMANDS,
+    NIGHTLY_EXTRA_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
     RTL_LINT_VALUES,
@@ -212,6 +213,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812_filelist = tmp_path / "ws2812.fl"
     i2c_filelist = tmp_path / "i2c.fl"
     clint_filelist = tmp_path / "clint.fl"
+    opipsram_filelist = tmp_path / "opipsram.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -235,6 +237,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "clint", clint_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist(
+        "opipsram", opipsram_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -245,8 +250,11 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812 = parse_filelists([ws2812_filelist], require_files=False)
     i2c = parse_filelists([i2c_filelist], require_files=False)
     clint = parse_filelists([clint_filelist], require_files=False)
+    opipsram = parse_filelists([opipsram_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
-    assert ROOT / "rtl/mini/top/bus.sv" in bus.files
+    assert "+define+PDK_BEHAV" in opipsram.defines
+    assert "+define+SV_ASSRT_DISABLE" not in opipsram.defines
+    assert ROOT / "rtl/mini/top/rib_bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
     assert ROOT / "rtl/mini/top/ribp2rib.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_error_slave.sv" in bus.files
@@ -256,26 +264,45 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/top/rib2apb.sv" in rib2apb.files
     assert ROOT / "rtl/mini/formal/rib2apb_formal.sv" in rib2apb.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv" in rib2apb.files
-    assert ROOT / "rtl/ip/peripheral/sysctrl.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_if.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_define.svh" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_reg.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/sysctrl_core.sv" in sysctrl.files
+    assert ROOT / "rtl/ip/peripheral/apb4_sysctrl.sv" in sysctrl.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in sysctrl.files
     assert ROOT / "rtl/mini/formal/sysctrl_formal.sv" in sysctrl.files
     assert ROOT / "rtl/mini/top/rcu.sv" in pll_rcu.files
+    assert ROOT / "rtl/mini/top/pll_rcu_controller.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv" in pll_rcu.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv" in pll_rcu.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/gpio_core.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/gpio_reg.sv" in gpio.files
-    assert ROOT / "rtl/ip/peripheral/ribp_gpio.sv" in gpio.files
+    assert ROOT / "rtl/ip/peripheral/apb4_gpio.sv" in gpio.files
     assert ROOT / "rtl/ip/peripheral/user_gpio_if.sv" in gpio.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv" in gpio.files
     assert ROOT / "rtl/mini/formal/gpio_formal.sv" in gpio.files
-    assert ROOT / "rtl/ip/serial/ribp_ws2812.sv" in ws2812.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv" in ws2812.files
+    assert ROOT / "rtl/ip/serial/apb4_ws2812.sv" in ws2812.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in ws2812.files
     assert ROOT / "rtl/mini/formal/ws2812_formal.sv" in ws2812.files
-    assert ROOT / "rtl/ip/serial/ribp_i2c.sv" in i2c.files
+    assert ROOT / "rtl/ip/serial/apb4_i2c.sv" in i2c.files
     assert ROOT / "rtl/ip/serial/i2c_filter.sv" in i2c.files
     assert ROOT / "rtl/mini/formal/i2c_formal.sv" in i2c.files
-    assert ROOT / "rtl/ip/peripheral/ribp_clint.sv" in clint.files
+    assert ROOT / "rtl/ip/peripheral/apb4_clint.sv" in clint.files
     assert ROOT / "rtl/mini/formal/clint_formal.sv" in clint.files
+    assert ROOT / "rtl/ip/memory/opipsram_axi4.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_core.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_reg.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_protocol.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_phy.sv" in opipsram.files
+    assert ROOT / "rtl/ip/memory/opipsram_trx.sv" in opipsram.files
+    assert ROOT / "rtl/ip/util/async_fifo.sv" in opipsram.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/gray2bin.sv" in opipsram.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/xchecker.sv" in opipsram.files
+    assert ROOT / "rtl/tech/tc_clk.sv" in opipsram.files
+    assert ROOT / "rtl/tech/tc_opipsram_delay.sv" in opipsram.files
+    assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
@@ -586,7 +613,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
         Path("Makefile"),
         Path("configs/ci/example.mk"),
         Path("rtl/mini/top/retrosoc.sv"),
-        Path("rtl/ip/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/apb4_sysctrl.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("rtl/demo/reference.v"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -601,7 +628,7 @@ def test_format_file_scope_is_tracked_and_self_owned() -> None:
     ]
     assert format_files(paths, "rtl") == [
         Path("rtl/demo/reference.v"),
-        Path("rtl/ip/peripheral/sysctrl.sv"),
+        Path("rtl/ip/peripheral/apb4_sysctrl.sv"),
         Path("rtl/mini/top/retrosoc.sv"),
         Path("rtl/tech/tc_clk.sv"),
         Path("tests/rtl/bus_fault_tb.sv"),
@@ -851,8 +878,138 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
         )
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
+        assert not any(
+            any(value.startswith("SYNTH_RECIPE=") for value in values) for values in command_values
+        )
         assert ("STA=OPENSTA", "sta") in command_values
         assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
+
+
+def test_nightly_regression_runs_optional_yosys_recipes() -> None:
+    commands, profiles = select_regression("nightly", "IHP130")
+
+    assert commands == NIGHTLY_COMMANDS
+    assert profiles == ("configs/ci/ihp130.mk",)
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH=YOSYS", "SYNTH_RECIPE=area", "synth"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("STA=OPENSTA", "SYNTH_RECIPE=area", "sta"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH_RECIPE=area", "metrics"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH=YOSYS", "SYNTH_RECIPE=speed", "synth"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("STA=OPENSTA", "SYNTH_RECIPE=speed", "sta"),
+    ) in NIGHTLY_COMMANDS
+    assert (
+        "configs/ci/ihp130.mk",
+        ("SYNTH_RECIPE=speed", "metrics"),
+    ) in NIGHTLY_COMMANDS
+    assert not any(
+        any(value.startswith("SYNTH_RECIPE=") for value in values) for _, values in PR_COMMANDS
+    )
+
+    nightly = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "nightly",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=speed sta" in nightly.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=speed metrics" in nightly.stdout
+
+    pr = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "pr",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth" in pr.stdout
+    assert "SYNTH_RECIPE=area" not in pr.stdout
+    assert "SYNTH_RECIPE=speed" not in pr.stdout
+
+
+def test_nightly_extra_regression_skips_pr_netsim() -> None:
+    commands, profiles = select_regression("nightly-extra", "IHP130")
+
+    assert commands == NIGHTLY_EXTRA_COMMANDS
+    assert profiles == ("configs/ci/ihp130.mk",)
+    assert NIGHTLY_COMMANDS == (*PR_COMMANDS, *NIGHTLY_EXTRA_COMMANDS)
+    assert not any("netsim" in values for _, values in commands)
+
+    extra = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "nightly-extra",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=speed sta" in extra.stdout
+    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=speed metrics" in extra.stdout
+    assert "netsim" not in extra.stdout
+
+    invalid = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/regress.py"),
+            "--root",
+            str(ROOT),
+            "--suite",
+            "nightly-extra",
+            "--pdk",
+            "GF180",
+            "--dry-run",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert invalid.returncode != 0
+    assert "nightly-extra regression supports only --pdk IHP130" in invalid.stderr
+
+
+def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
+    nightly = (ROOT / ".github/workflows/nightly.yml").read_text()
+    quality = (ROOT / ".github/workflows/quality.yml").read_text()
+
+    assert "suite: pr" in nightly
+    assert "timeout_minutes: 360" in nightly
+    assert "suite: nightly-extra" in nightly
+    assert "timeout_minutes: 180" in nightly
+    assert "suite: nightly\n" not in nightly
+    assert "--suite nightly-extra --pdk IHP130 --dry-run" in quality
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(
@@ -1389,7 +1546,7 @@ def test_metrics_collection_and_observe_policy(tmp_path: Path) -> None:
     )
     data = json.loads(metrics.read_text(encoding="utf-8"))
     assert data["firmware"]["firmware.bin"]["bytes"] == 4
-    assert data["synthesis"] == {"top_area": 124.0, "top_cells": 43}
+    assert data["synthesis"] == {"recipe": "balanced", "top_area": 124.0, "top_cells": 43}
     assert data["timing"]["wns_min"] == -1.0
 
     policy = tmp_path / "policy.json"
@@ -1403,6 +1560,38 @@ def test_metrics_collection_and_observe_policy(tmp_path: Path) -> None:
         "--policy",
         str(policy),
     )
+
+
+def test_metrics_collection_selects_recipe_roots(tmp_path: Path) -> None:
+    variant = tmp_path / "variant"
+    synth_root = variant / "syn/yosys-area"
+    sta_root = variant / "sta/opensta-area"
+    (synth_root / "rpt").mkdir(parents=True)
+    sta_root.mkdir(parents=True)
+    (synth_root / "rpt/retrosoc_asic_area.json").write_text(
+        json.dumps({"design": {"area": 88.0, "num_cells": 19}}), encoding="utf-8"
+    )
+    (sta_root / "timing_metrics.rpt").write_text("wns_max=-0.25\n", encoding="utf-8")
+    metrics = tmp_path / "metrics-area.json"
+    run(
+        sys.executable,
+        str(ROOT / "scripts/metrics.py"),
+        "collect",
+        "--variant-root",
+        str(variant),
+        "--synth-root",
+        str(synth_root),
+        "--sta-root",
+        str(sta_root),
+        "--recipe",
+        "area",
+        "--output",
+        str(metrics),
+    )
+    data = json.loads(metrics.read_text(encoding="utf-8"))
+    assert data["schema_version"] == 2
+    assert data["synthesis"] == {"recipe": "area", "top_area": 88.0, "top_cells": 19}
+    assert data["timing"]["wns_max"] == -0.25
 
 
 def test_safe_extract_rejects_parent_traversal(tmp_path: Path) -> None:

@@ -23,19 +23,22 @@ Common round-robin arbiter and retain ownership through `B` or `RLAST`.
 
 The three masters are the Hazard3 management core, the selected user core, and
 DMA. Hazard3 AHB-Lite and the current user-core RIBP ABI issue single-beat AXI4
-transactions through adapters. DMA converts its existing four-word chunks to
-AXI4 `INCR4`, so non-burst masters remain compatible while burst-capable masters
-can use the wider contract.
+transactions through adapters. DMA is a native AXI4 master: its production
+six-channel engine uses fixed ID zero, independently schedules one read and
+one write transaction, and issues aligned `INCR` bursts up to sixteen beats.
+Fixed-address and APB4/MMIO endpoints are always single-beat. See the
+[DMA MVP](ip/dma.md) for its ownership, abort, and FIFO-credit contract.
 
 ## Targets and Access Control
 
-The fixed targets are the RIBP configuration plane, APB, SRAM, SDRAM, PSRAM,
-XPI/Flash, SPI-SD, `DECERR`, and `SLVERR`. RIBP and APB accept only single-beat
-transactions. SRAM uses a direct AXI4 target with pipelined synchronous reads
-and response buffering. External-memory data windows accept up to sixteen
-beats; their current compatibility bridges serialize each beat into the
-existing controller data engine while preserving FIXED/INCR/WRAP beat
-addresses. Register configuration remains on RIBP.
+The fixed targets are the APB4 configuration plane (`apb4_periph`), APB
+(`apb4_system`), SRAM, SDRAM, 4-bit PSRAM, OPI PSRAM, XPI/Flash, SPI-SD,
+`DECERR`, and `SLVERR`. APB4 and APB accept only single-beat transactions.
+SRAM uses a direct AXI4 target with pipelined synchronous reads and response
+buffering. External-memory data windows accept up to sixteen beats; their
+controller front ends validate and serialize or coalesce the physical
+transactions while preserving the documented AXI response contract. Register
+configuration remains on APB4.
 
 The user-core firewall validates both the first and last byte before target
 arbitration. User access to SYSCTRL, CLINT, DMA configuration, and other
@@ -51,7 +54,7 @@ access-control rejection to `PROTERR`.
   `ID_WIDTH=1`, and `USER_WIDTH=1`; do not rely on Common defaults.
 - Hold address/control and response payload stable while `VALID` is asserted
   without `READY`. Write data must assert `WLAST` on the declared final beat.
-- Keep RIBP configuration and AXI4 data apertures separate in the canonical
+- Keep APB4 configuration and AXI4 data apertures separate in the canonical
   address map. An IP may arbitrate the two internally, but a data address must
   not be routed through the global configuration decoder.
 - Add controller-native command/data queues before claiming physical burst
@@ -61,7 +64,7 @@ access-control rejection to `PROTERR`.
 ## Verification and Performance Gates
 
 `tests/test_axi4.py` covers a four-beat write/read, response backpressure, and
-rejection of a seventeen-beat request without touching the RIBP target. The
+rejection of a seventeen-beat request without touching the APB4 target. The
 bridge unit test also covers Common address generation for FIXED and WRAP
 sequencing. The IHP130 `ci_smoke` regression is the end-to-end boot and
 configuration check.

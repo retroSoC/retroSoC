@@ -4,6 +4,7 @@
 #include <retrosoc/lib/printf.h>
 #include <socver.h>
 #include <retrosoc/hal/psram.h>
+#include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/lib/console.h>
 #include <retrosoc/lib/string.h>
@@ -12,6 +13,13 @@
 #include <user_design_info.h>
 
 void rs_app_info(void) {
+    uint8_t selected_core;
+    uint8_t selected_ip;
+
+    selected_core = 0U;
+    selected_ip = 0U;
+    (void)rs_sysctrl_get_core_select(&selected_core);
+    (void)rs_sysctrl_get_ip_select(&selected_ip);
     printf("#############################################################\n");
     printf("#############################################################\n");
     printf("compile date: %s %s\n", __DATE__, __TIME__);
@@ -52,7 +60,7 @@ void rs_app_info(void) {
     uint32_t core_size = sizeof(user_core_info) / sizeof(user_core_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
     for (uint32_t i = 0; i < core_size; ++i) {
-        if (reg_sysctrl_coresel == i)
+        if (selected_core == i)
             printf("=>");
         else
             printf("  ");
@@ -64,7 +72,7 @@ void rs_app_info(void) {
     uint32_t ip_size = sizeof(user_ip_info) / sizeof(user_ip_info[0]);
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
     for (uint32_t i = 0; i < ip_size; ++i) {
-        if (reg_sysctrl_ipsel == i)
+        if (selected_ip == i)
             printf("=>");
         else
             printf("  ");
@@ -79,7 +87,7 @@ void rs_app_info(void) {
     printf("  FREQ:                %dMHz\n\n", CPU_FREQ);
 
     printf("Inst/Memory Address Range:\n");
-    printf("  QSPI Flash:          @[0x%08x-0x%08x] %3d MiB\n", SPFS_MEM_START,
+    printf("  XPI NOR:             @[0x%08x-0x%08x] %3d MiB\n", SPFS_MEM_START,
            SPFS_MEM_START + SPFS_MEM_OFFST - 1, SPFS_MEM_OFFST / 1024 / 1024);
 #if RS_SOC_HAS_SRAM
     printf("  On-chip RAM:         @[0x%08x-0x%08x] %3d KiB\n", SRAM_MEM_START,
@@ -91,48 +99,58 @@ void rs_app_info(void) {
            PSRAM_MEM_START + PSRAM_MEM_OFFST - 1, PSRAM_MEM_OFFST / 1024 / 1024);
     printf("  XPI MMIO:            @[0x%08x-0x%08x] %3d MiB\n", XPI_MEM_START,
            XPI_MEM_START + XPI_MEM_OFFST - 1, XPI_MEM_OFFST / 1024 / 1024);
-    printf("  SPISD MMIO:          @[0x%08x-0x%08x] %3d GiB\n\n", TF_CARD_START,
-           TF_CARD_START + TF_CARD_OFFST - 1, TF_CARD_OFFST / 1024 / 1024 / 1024);
+    printf("  Reserved (old SPISD):@[0x%08x-0x%08x]\n\n", TF_CARD_START,
+           TF_CARD_START + TF_CARD_OFFST - 1);
 
     printf("Memory Map IO Device:\n");
     printf("                       1 x GPIO(32PIN)   @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_GPIO_ADMIN_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_GPIO_ADMIN_BASE);
     printf("                       1 x UART0         @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_UART0_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_UART0_BASE);
     printf("                       2 x TIMER(0,1)    @%p,%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_TIM0_BASE, (void *)(uintptr_t)RS_SOC_RIBP_TIM1_BASE);
-    printf("                       1 x PSRAM         @%p\n", (void *)&reg_psram_wait);
-    printf("                       1 x SPISD         @%p\n", (void *)&reg_spisd_mode);
+           (void *)(uintptr_t)RS_SOC_APB4_TIM0_BASE, (void *)(uintptr_t)RS_SOC_APB4_TIM1_BASE);
+    printf("                       1 x PSRAM         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_PSRAM_BASE);
+    printf("                       1 x SPISD         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SPISD_BASE);
     printf("                       1 x I2C0          @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_I2C0_BASE);
-    printf("                       1 x I2S           @%p\n", (void *)&reg_i2s_mode);
+           (void *)(uintptr_t)RS_SOC_APB4_I2C0_BASE);
+    printf("                       1 x I2S           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_I2S_BASE);
     printf("                       1 x WS2812        @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_WS2812_BASE);
-    printf("                       1 x XPI           @%p\n", (void *)&reg_xpi_cfgidx);
-    printf("                       1 x DMA           @%p\n", (void *)&reg_dma_mode);
-    printf("                       1 x SYSCTRL       @%p\n", (void *)&reg_sysctrl_coresel);
+           (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
+    printf("                       1 x XPI V2        @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_XPI_BASE);
+    printf("                       1 x DMA(6CH)      @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_DMA_BASE);
+    printf("                       1 x SYSCTRL       @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SYSCTRL_BASE);
+    printf("                       1 x CRYPTO        @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_CRYPTO_BASE);
     printf("                       1 x CLINT         @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_CLINT_BASE);
-    printf("                       1 x SDRAM         @%p\n", (void *)&reg_sdram_clkdiv);
+           (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
+    printf("                       1 x SDRAM         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SDRAM_BASE);
     printf("                       1 x DVP           @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_DVP_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_DVP_BASE);
     printf("                       1 x I2C1          @%p\n",
-           (void *)(uintptr_t)RS_SOC_RIBP_I2C1_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_I2C1_BASE);
     printf("                       1 x ARCHINFO      @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_ARCHINFO_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_ARCHINFO_BASE);
     printf("                       1 x RNG           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_RNG_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_RNG_BASE);
     printf("                       1 x PWM V2(4CH)   @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_PWM_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_PWM_BASE);
     printf("                       1 x PS2           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_PS2_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_PS2_BASE);
     printf("                       1 x RTC           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_RTC_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_RTC_BASE);
     printf("                       1 x WDG V2        @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_WDG_BASE);
+           (void *)(uintptr_t)RS_SOC_APB4_WDG_BASE);
     printf("                       1 x CRC           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB_CRC_BASE);
-    printf("                       1 x USER_IP(4KiB) @%p\n", (void *)&reg_user_ip_reg0);
+           (void *)(uintptr_t)RS_SOC_APB4_CRC_BASE);
+    printf("                       1 x USER_IP(4KiB) @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_USER_IP_BASE);
     printf("\n");
     printf("#############################################################\n");
     printf("#############################################################\n");

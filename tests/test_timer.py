@@ -1,4 +1,4 @@
-"""RIBP Timer RTL regression tests."""
+"""APB4 Timer RTL regression tests."""
 
 from __future__ import annotations
 
@@ -27,12 +27,12 @@ def test_timer_modes_interrupts_and_errors(tmp_path: Path) -> None:
                 f"+incdir+{common / 'utils'}",
                 f"+incdir+{common / 'clkrst'}",
                 f"+incdir+{PERIPHERAL}",
-                str(common / "interface/ribp_if.sv"),
+                str(common / "interface/apb4_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "clkrst/counter.sv"),
                 str(PERIPHERAL / "timer_core.sv"),
                 str(PERIPHERAL / "timer_reg.sv"),
-                str(PERIPHERAL / "ribp_timer.sv"),
+                str(PERIPHERAL / "apb4_timer.sv"),
                 str(ROOT / "tests/rtl/timer_tb.sv"),
                 "",
             ]
@@ -57,4 +57,4 @@ def test_timer_modes_interrupts_and_errors(tmp_path: Path) -> None:
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "RIBP Timer register, mode, interrupt, and error test passed" in result.stdout
+    assert "APB4 Timer register, mode, interrupt, and error test passed" in result.stdout

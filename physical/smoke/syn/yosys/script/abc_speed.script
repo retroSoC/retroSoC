@@ -1,0 +1,55 @@
+# Copyright (c) 2022 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+#
+# -- Adaptable modifications are redistributed under compatible License --
+#
+# Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+# retroSoC is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#             http://license.coscl.org.cn/MulanPSL2
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+
+# Speed ABC recipe adapted from OpenROAD-flow-scripts flow/scripts/abc_speed.script.
+# Source: The-OpenROAD-Project/OpenROAD-flow-scripts, BSD-3-Clause.
+# Every &nf mapping step receives the shared {D} period constraint.
+
+&get -n
+&st
+&dch
+&nf {D}
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf {D}
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf {D}
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf {D}
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf {D}
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf {D}
+&put
+buffer -c
+topo
+stime -c
+upsize -c
+dnsize -c

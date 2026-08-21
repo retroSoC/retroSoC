@@ -9,7 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 module ws2812_core (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [15:0] bit_cycles_i,

@@ -11,7 +11,7 @@
 `include "user_extensions.svh"
 
 module user_core_top (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic                           clk_i,
     input  logic                           rst_n_i,
     input  logic [                   31:0] irq_i,
@@ -26,7 +26,7 @@ module user_core_top (
   // Generated bindings preserve scalar user-core interfaces and isolation.
   `include "user_core_bindings.svh"
 
-  // verilog_format: off
+  // verilog_format: off -- preserve reviewed column alignment
   rib2axi4 u_rib2axi4 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

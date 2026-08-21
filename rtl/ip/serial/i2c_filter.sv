@@ -2,7 +2,7 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module i2c_filter (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic       clk_i,
     input  logic       rst_n_i,
     input  logic [3:0] scl_filter_cycles_i,

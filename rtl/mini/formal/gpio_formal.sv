@@ -30,14 +30,17 @@ module gpio_formal_design (
     // verilog_format: on
 );
 
-  ribp_if ribp ();
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
   gpio_if #(4) gpio ();
   user_gpio_if #(4) user_gpio ();
 
-  (* anyseq *)logic        f_ribp_valid;
-  (* anyseq *)logic [31:0] f_ribp_addr;
-  (* anyseq *)logic [31:0] f_ribp_wdata;
-  (* anyseq *)logic [ 3:0] f_ribp_wstrb;
+  (* anyseq *)logic        f_apb_sel;
+  (* anyseq *)logic [31:0] f_apb_addr;
+  (* anyseq *)logic [31:0] f_apb_wdata;
+  (* anyseq *)logic [ 3:0] f_apb_pstrb;
   (* anyseq *)logic [ 3:0] f_gpio_di;
   (* anyseq *)logic [ 3:0] f_alt0_do;
   (* anyseq *)logic [ 3:0] f_alt0_oe;
@@ -46,10 +49,13 @@ module gpio_formal_design (
   (* anyseq *)logic [ 3:0] f_user_do;
   (* anyseq *)logic [ 3:0] f_user_oe;
 
-  assign ribp.valid     = f_ribp_valid;
-  assign ribp.addr      = f_ribp_addr;
-  assign ribp.wdata     = f_ribp_wdata;
-  assign ribp.wstrb     = f_ribp_wstrb;
+  assign apb4.psel      = f_apb_sel;
+  assign apb4.penable   = f_apb_sel;
+  assign apb4.pwrite    = |f_apb_pstrb;
+  assign apb4.paddr     = f_apb_addr;
+  assign apb4.pwdata    = f_apb_wdata;
+  assign apb4.pstrb     = f_apb_pstrb;
+  assign apb4.pprot     = 3'b000;
   assign gpio.di_i      = f_gpio_di;
   assign gpio.alt0_do_i = f_alt0_do;
   assign gpio.alt0_oe_i = f_alt0_oe;
@@ -58,12 +64,12 @@ module gpio_formal_design (
   assign user_gpio.do_o = f_user_do;
   assign user_gpio.oe_o = f_user_oe;
 
-  assign ribp_valid     = ribp.valid;
-  assign ribp_ready     = ribp.ready;
-  assign ribp_resp_err  = ribp.resp_err;
-  assign ribp_addr      = ribp.addr;
-  assign ribp_wdata     = ribp.wdata;
-  assign ribp_wstrb     = ribp.wstrb;
+  assign ribp_valid     = apb4.psel;
+  assign ribp_ready     = apb4.pready;
+  assign ribp_resp_err  = apb4.pslverr;
+  assign ribp_addr      = apb4.paddr;
+  assign ribp_wdata     = apb4.pwdata;
+  assign ribp_wstrb     = apb4.pstrb;
   assign gpio_oe        = gpio.oe_o;
   assign gpio_do        = gpio.do_o;
   assign user_oe        = user_gpio.oe_o;
@@ -80,7 +86,7 @@ module gpio_formal_design (
   assign intr_state     = u_dut.u_gpio_reg.s_intr_state_q;
   assign irq            = gpio.irq_o;
 
-  ribp_gpio #(
+  apb4_gpio #(
       .PinNum       (4),
       .UserBaseAddr (32'h1000_0000),
       .AdminBaseAddr(32'h1001_4000),
@@ -90,7 +96,7 @@ module gpio_formal_design (
   ) u_dut (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
-      .ribp     (ribp),
+      .apb4     (apb4),
       .gpio     (gpio),
       .user_gpio(user_gpio)
   );

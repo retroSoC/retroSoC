@@ -16,6 +16,8 @@ from typing import Any
 VALID_FEATURES = {"HAVE_PLL"}
 VALID_KINDS = {
     "full",
+    "peripheral_output",
+    "peripheral_bidir",
     "schmitt_input",
     "sdram_dq",
     "tri_input",
@@ -36,6 +38,9 @@ class Pad:
     kind: str
     index: int | None
     signal: str | None
+    input_signal: str | None
+    output_signal: str | None
+    output_enable_signal: str | None
     interface: str | None
     peer: str | None
     bind: bool
@@ -93,12 +98,20 @@ def parse_pad(entry: dict[str, Any], defaults: dict[str, Any], index: int | None
         raise ValueError(f"{name}.kind is not supported")
     feature = parse_feature(data.get("feature"), f"{name}.feature")
     signal = format_template(data.get("signal"), index, f"{name}.signal")
+    input_signal = format_template(data.get("input"), index, f"{name}.input")
+    output_signal = format_template(data.get("output"), index, f"{name}.output")
+    output_enable_signal = format_template(
+        data.get("output_enable"), index, f"{name}.output_enable"
+    )
     interface = format_template(data.get("interface"), index, f"{name}.interface")
     peer = format_template(data.get("peer"), index, f"{name}.peer")
     bind = data.get("bind", True)
     if not isinstance(bind, bool):
         raise ValueError(f"{name}.bind must be boolean")
-    if kind in {"tri_input", "schmitt_input", "tri_output"} and signal is None:
+    if (
+        kind in {"tri_input", "schmitt_input", "tri_output", "peripheral_output"}
+        and signal is None
+    ):
         raise ValueError(f"{name}.signal is required for {kind}")
     if kind == "full" and (interface is None or index is None):
         raise ValueError(f"{name} requires an interface and index")
@@ -106,7 +119,24 @@ def parse_pad(entry: dict[str, Any], defaults: dict[str, Any], index: int | None
         raise ValueError(f"{name} requires an index")
     if kind == "xtal" and bind and (signal is None or peer is None):
         raise ValueError(f"{name} requires signal and peer")
-    return Pad(name, direction, feature, kind, index, signal, interface, peer, bind)
+    if kind == "peripheral_bidir" and (
+        input_signal is None or output_signal is None or output_enable_signal is None
+    ):
+        raise ValueError(f"{name} requires input, output, and output_enable")
+    return Pad(
+        name,
+        direction,
+        feature,
+        kind,
+        index,
+        signal,
+        input_signal,
+        output_signal,
+        output_enable_signal,
+        interface,
+        peer,
+        bind,
+    )
 
 
 def expand_group(group: Any, index: int) -> list[Pad]:
@@ -214,6 +244,13 @@ def render_pad_instance(pad: Pad) -> str | None:
         return (
             f"  tc_io_tri_pad {instance} (.pad({pad.name}), .c2p({pad.signal}), .c2p_en(1'b1), "
             ".p2c());"
+        )
+    if pad.kind == "peripheral_output":
+        return f"  tc_io_out_pad {instance} (.pad({pad.name}), .c2p({pad.signal}));"
+    if pad.kind == "peripheral_bidir":
+        return (
+            f"  tc_io_tri_pad {instance} (.pad({pad.name}), .c2p({pad.output_signal}), "
+            f".c2p_en({pad.output_enable_signal}), .p2c({pad.input_signal}));"
         )
     if pad.kind == "full":
         return (

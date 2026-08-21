@@ -1,4 +1,4 @@
-"""RIBP DVP register, CDC, framing, and packing regression."""
+"""APB4 DVP register, CDC, framing, and packing regression."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def test_dvp_capture_framing(tmp_path: Path) -> None:
         "+incdir+" + str(common / "cdc"),
         "+incdir+" + str(common / "clkrst"),
         "+incdir+" + str(ip),
-        str(common / "interface/ribp_if.sv"),
+        str(common / "interface/apb4_if.sv"),
         str(common / "interface/axi4_stream_if.sv"),
         str(common / "utils/register.sv"),
         str(common / "utils/xchecker.sv"),
@@ -47,7 +47,7 @@ def test_dvp_capture_framing(tmp_path: Path) -> None:
         str(ROOT / "rtl/tech/tc_clk.sv"),
         str(ip / "dvp_core.sv"),
         str(ip / "dvp_reg.sv"),
-        str(ip / "dvp.sv"),
+        str(ip / "axi4s_dvp.sv"),
         str(ROOT / "tests/rtl/dvp_tb.sv"),
     ]
     source_list = tmp_path / "dvp.fl"
@@ -60,4 +60,4 @@ def test_dvp_capture_framing(tmp_path: Path) -> None:
     simulation = tmp_path / "dvp_tb"
     subprocess.run([iverilog, "-g2012", "-s", "dvp_tb", "-o", str(simulation), str(converted)], check=True)
     result = subprocess.run([vvp, str(simulation)], check=True, capture_output=True, text=True)
-    assert "RIBP DVP capture test passed" in result.stdout
+    assert "APB4 DVP capture test passed" in result.stdout

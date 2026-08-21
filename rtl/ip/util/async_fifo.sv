@@ -25,86 +25,91 @@ module async_fifo #(
     output logic [ DepthPower:0] elem_num_o
 );
 
-  localparam int FIFO_DEPTH = 2 ** DepthPower;
-  localparam int PTR_WIDTH = DepthPower + 1;  // extra bit for empty/full check
+  localparam int signed FifoDepth = 2 ** DepthPower;
+  localparam int signed PtrWidth = DepthPower + 1;  // extra bit for empty/full check
 
-  logic [DataWidth-1:0] r_mem[0:FIFO_DEPTH-1];
-  logic [PTR_WIDTH-1:0] r_wr_ptr_bin, r_rd_ptr_bin;
-  logic [PTR_WIDTH-1:0] r_wr_ptr_gray, r_rd_ptr_gray;
-  logic [PTR_WIDTH-1:0] r_wr_ptr_gray_sync[0:1];
-  logic [PTR_WIDTH-1:0] r_rd_ptr_gray_sync[0:1];
-  logic [PTR_WIDTH-1:0] s_rd_ptr_bin_sync;
+  logic [DataWidth-1:0] s_mem[0:FifoDepth-1];
+  logic [PtrWidth-1:0] s_wr_ptr_bin, s_rd_ptr_bin;
+  logic [PtrWidth-1:0] s_wr_ptr_gray, s_rd_ptr_gray;
+  logic [PtrWidth-1:0] s_wr_ptr_gray_sync[0:1];
+  logic [PtrWidth-1:0] s_rd_ptr_gray_sync[0:1];
+  logic [PtrWidth-1:0] s_rd_ptr_bin_sync;
 
-  // wr logic
+  // CDC storage: write-domain data is retained for the independent read domain.
+  // Resets are independently asserted in their respective domains; Gray pointers
+  // cross through two-flop synchronizers and the extra bounded index bit detects
+  // empty/full. These always_ff blocks preserve inferred dual-clock RAM, pointer,
+  // and synchronizer semantics and cannot be replaced by single-clock Common DFFs.
+  // Write-domain memory process.
   always_ff @(posedge wr_clk_i) begin
     if (wr_en_i && !wr_full_o) begin
-      r_mem[r_wr_ptr_bin[DepthPower-1:0]] <= wr_data_i;
+      s_mem[s_wr_ptr_bin[DepthPower-1:0]] <= wr_data_i;
     end
   end
   always_ff @(posedge wr_clk_i or negedge wr_rst_n_i) begin
     if (!wr_rst_n_i) begin
-      r_wr_ptr_bin  <= '0;
-      r_wr_ptr_gray <= '0;
+      s_wr_ptr_bin  <= '0;
+      s_wr_ptr_gray <= '0;
     end else if (wr_en_i && !wr_full_o) begin
-      r_wr_ptr_bin  <= r_wr_ptr_bin + 1'b1;
-      r_wr_ptr_gray <= bin2gray(r_wr_ptr_bin + 1'b1);
+      s_wr_ptr_bin  <= s_wr_ptr_bin + 1'b1;
+      s_wr_ptr_gray <= bin2gray(s_wr_ptr_bin + 1'b1);
     end
   end
 
-  // rd logic
+  // Read-domain memory and pointer processes.
   always_ff @(posedge rd_clk_i or negedge rd_rst_n_i) begin
     if (!rd_rst_n_i) begin
       rd_data_o <= '0;
     end else if (rd_en_i && !rd_empty_o) begin
-      rd_data_o <= r_mem[r_rd_ptr_bin[DepthPower-1:0]];
+      rd_data_o <= s_mem[s_rd_ptr_bin[DepthPower-1:0]];
     end
   end
   always_ff @(posedge rd_clk_i or negedge rd_rst_n_i) begin
     if (!rd_rst_n_i) begin
-      r_rd_ptr_bin  <= '0;
-      r_rd_ptr_gray <= '0;
+      s_rd_ptr_bin  <= '0;
+      s_rd_ptr_gray <= '0;
     end else if (rd_en_i && !rd_empty_o) begin
-      r_rd_ptr_bin  <= r_rd_ptr_bin + 1'b1;
-      r_rd_ptr_gray <= bin2gray(r_rd_ptr_bin + 1'b1);
+      s_rd_ptr_bin  <= s_rd_ptr_bin + 1'b1;
+      s_rd_ptr_gray <= bin2gray(s_rd_ptr_bin + 1'b1);
     end
   end
 
 
   always_ff @(posedge rd_clk_i or negedge rd_rst_n_i) begin
     if (!rd_rst_n_i) begin
-      r_wr_ptr_gray_sync[0] <= '0;
-      r_wr_ptr_gray_sync[1] <= '0;
+      s_wr_ptr_gray_sync[0] <= '0;
+      s_wr_ptr_gray_sync[1] <= '0;
     end else begin
-      r_wr_ptr_gray_sync[0] <= r_wr_ptr_gray;
-      r_wr_ptr_gray_sync[1] <= r_wr_ptr_gray_sync[0];
+      s_wr_ptr_gray_sync[0] <= s_wr_ptr_gray;
+      s_wr_ptr_gray_sync[1] <= s_wr_ptr_gray_sync[0];
     end
   end
 
   always_ff @(posedge wr_clk_i or negedge wr_rst_n_i) begin
     if (!wr_rst_n_i) begin
-      r_rd_ptr_gray_sync[0] <= '0;
-      r_rd_ptr_gray_sync[1] <= '0;
+      s_rd_ptr_gray_sync[0] <= '0;
+      s_rd_ptr_gray_sync[1] <= '0;
     end else begin
-      r_rd_ptr_gray_sync[0] <= r_rd_ptr_gray;
-      r_rd_ptr_gray_sync[1] <= r_rd_ptr_gray_sync[0];
+      s_rd_ptr_gray_sync[0] <= s_rd_ptr_gray;
+      s_rd_ptr_gray_sync[1] <= s_rd_ptr_gray_sync[0];
     end
   end
 
-  assign wr_full_o = r_wr_ptr_gray == {~r_rd_ptr_gray_sync[1][PTR_WIDTH-1:PTR_WIDTH-2],
-                                        r_rd_ptr_gray_sync[1][PTR_WIDTH-3:0]};
+  assign wr_full_o = s_wr_ptr_gray == {~s_rd_ptr_gray_sync[1][PtrWidth-1:PtrWidth-2],
+                                        s_rd_ptr_gray_sync[1][PtrWidth-3:0]};
 
-  assign rd_empty_o = r_rd_ptr_gray == r_wr_ptr_gray_sync[1];
+  assign rd_empty_o = s_rd_ptr_gray == s_wr_ptr_gray_sync[1];
 
-  assign elem_num_o = r_wr_ptr_bin - s_rd_ptr_bin_sync;
+  assign elem_num_o = s_wr_ptr_bin - s_rd_ptr_bin_sync;
 
-  function automatic logic [PTR_WIDTH-1:0] bin2gray(input logic [PTR_WIDTH-1:0] bin);
+  function automatic logic [PtrWidth-1:0] bin2gray(input logic [PtrWidth-1:0] bin);
     return (bin >> 1) ^ bin;
   endfunction
 
   gray2bin #(
-      .DATA_WIDTH(PTR_WIDTH)
+      .DATA_WIDTH(PtrWidth)
   ) u_gray2bin (
-      .gray_i(r_rd_ptr_gray_sync[1]),
+      .gray_i(s_rd_ptr_gray_sync[1]),
       .bin_o (s_rd_ptr_bin_sync)
   );
 

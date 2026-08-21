@@ -18,7 +18,6 @@
 #define RS_WS2812_IP_FIFO_DEPTH_SHIFT    16U
 #define RS_WS2812_IP_FIFO_DEPTH_MASK     UINT32_C(0xFF)
 #define RS_WS2812_PIXEL_MASK             UINT32_C(0x00FFFFFF)
-#define RS_WS2812_DMA_SOFTWARE_MODE      UINT32_C(0)
 
 #define RS_WS2812_BIT_CYCLES_OFFSET      UINT32_C(0x00)
 #define RS_WS2812_T0H_CYCLES_OFFSET      UINT32_C(0x04)
@@ -37,7 +36,7 @@
 #define RS_WS2812_IP_INFO_OFFSET         UINT32_C(0x3C)
 
 static volatile uint32_t *rs_ws2812_register(uint32_t offset) {
-    return (volatile uint32_t *)(uintptr_t)(RS_SOC_RIBP_WS2812_BASE + (uintptr_t)offset);
+    return (volatile uint32_t *)(uintptr_t)(RS_SOC_APB4_WS2812_BASE + (uintptr_t)offset);
 }
 
 static uint32_t rs_ws2812_read(uint32_t offset) {
@@ -249,6 +248,7 @@ rs_status_t rs_ws2812_write_dma(const uint32_t *pixels, size_t pixel_count, rs_t
     size_t preloaded;
     size_t dma_words;
     rs_status_t status;
+    rs_dma_config_t dma_config;
 
     status = rs_ws2812_prepare(pixels, pixel_count, &preloaded);
     if (status != RS_OK) {
@@ -256,9 +256,20 @@ rs_status_t rs_ws2812_write_dma(const uint32_t *pixels, size_t pixel_count, rs_t
     }
     dma_words = pixel_count - preloaded;
     if (dma_words != 0U) {
-        status = rs_dma_config(RS_WS2812_DMA_SOFTWARE_MODE, (uintptr_t)&pixels[preloaded], 1U,
-                               (uintptr_t)rs_ws2812_register(RS_WS2812_TXDATA_OFFSET), 0U,
-                               (uint32_t)dma_words);
+        if (dma_words > (UINT32_MAX / sizeof(*pixels))) {
+            return RS_EINVAL;
+        }
+        dma_config.kind = RS_DMA_KIND_MM_TO_MM;
+        dma_config.request = RS_DMA_REQUEST_SOFTWARE;
+        dma_config.source = (uintptr_t)&pixels[preloaded];
+        dma_config.destination = (uintptr_t)rs_ws2812_register(RS_WS2812_TXDATA_OFFSET);
+        dma_config.byte_count = (uint32_t)(dma_words * sizeof(*pixels));
+        dma_config.width = RS_DMA_WIDTH_32;
+        dma_config.source_increment = true;
+        dma_config.destination_increment = false;
+        dma_config.priority = 1U;
+        dma_config.burst_beats = 1U;
+        status = rs_dma_configure(RS_DMA_CHANNEL_BULK, &dma_config);
         if (status != RS_OK) {
             return status;
         }
@@ -268,9 +279,9 @@ rs_status_t rs_ws2812_write_dma(const uint32_t *pixels, size_t pixel_count, rs_t
         return status;
     }
     if (dma_words != 0U) {
-        status = rs_dma_start();
+        status = rs_dma_start(RS_DMA_CHANNEL_BULK);
         if (status == RS_OK) {
-            status = rs_dma_wait(timeout);
+            status = rs_dma_wait(RS_DMA_CHANNEL_BULK, timeout);
         }
         if (status != RS_OK) {
             (void)rs_ws2812_abort(timeout);

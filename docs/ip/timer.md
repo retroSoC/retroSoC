@@ -1,4 +1,4 @@
-# RIBP General Timer
+# APB4 General Timer
 
 The Mini SoC contains two identical 32-bit general-purpose timers. Each timer
 has a 16-bit prescaler, free-running, periodic, and one-shot modes, selectable
@@ -9,8 +9,8 @@ while the management Hazard3 core is halted by its Debug Module.
 
 | Property | Timer 0 | Timer 1 |
 | --- | --- | --- |
-| RIBP base address | `0x10002000` | `0x10003000` |
-| RIBP interrupt group bit | 3 | 4 |
+| APB4 base address | `0x10002000` | `0x10003000` |
+| APB4 interrupt group bit | 3 | 4 |
 | Management-core interrupt | 3 | 4 |
 | Counter width | 32 bits | 32 bits |
 | Prescaler width | 16 bits | 16 bits |
@@ -84,7 +84,7 @@ conversion uses the active clock reported by SYSCTRL and selects the smallest
 
 The self-checking RTL test covers both count directions, all operating modes,
 prescaling, background reload, both compare channels, debug freeze/resume,
-sticky interrupt clear/test behavior, byte strobes, and RIBP access errors.
+sticky interrupt clear/test behavior, byte strobes, and APB4 access errors.
 The SBY target proves response, hold, one-shot stop, sticky-event, and interrupt
 invariants and covers normal and error paths. Host C tests cover period
 conversion boundaries, and the `ci_smoke` firmware exercises both timer

@@ -37,7 +37,7 @@
 #define RS_DVP_STATUS_ERROR_MASK   UINT32_C(0x00000040)
 
 static volatile uint32_t *rs_dvp_register(uint32_t offset) {
-    return (volatile uint32_t *)(RS_SOC_RIBP_DVP_BASE + (uintptr_t)offset);
+    return (volatile uint32_t *)(RS_SOC_APB4_DVP_BASE + (uintptr_t)offset);
 }
 
 static bool rs_dvp_config_valid(const rs_dvp_config_t *config) {
@@ -147,26 +147,65 @@ rs_status_t rs_dvp_interrupt_test(uint32_t mask) {
     return RS_OK;
 }
 
+static rs_status_t rs_dvp_dma_cleanup(void) {
+    const rs_status_t status = rs_dma_abort_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT);
+
+    if (status != RS_OK) {
+        return status;
+    }
+    return rs_dma_reset(RS_DMA_CHANNEL_BULK);
+}
+
 rs_status_t rs_dvp_capture_dma(uintptr_t destination, uint32_t word_capacity,
                                rs_timeout_t timeout) {
+    rs_dma_config_t dma_config;
     rs_dvp_status_t status;
-    if ((destination == 0U) || (word_capacity == 0U))
+    rs_status_t result;
+    if ((destination == 0U) || (word_capacity == 0U) ||
+        (word_capacity > (UINT32_MAX / sizeof(uint32_t))))
         return RS_EINVAL;
-    if ((rs_dma_config(RS_DMA_MODE_DVP_RX, RS_SOC_RIBP_DVP_BASE, 0U, destination, 1U,
-                       word_capacity) != RS_OK) ||
-        (rs_dma_start() != RS_OK) || (rs_dvp_start() != RS_OK)) {
+    dma_config.kind = RS_DMA_KIND_STREAM_TO_MM;
+    dma_config.request = RS_DMA_REQUEST_DVP_RX;
+    dma_config.source = (uintptr_t)0U;
+    dma_config.destination = destination;
+    dma_config.byte_count = word_capacity * sizeof(uint32_t);
+    dma_config.width = RS_DMA_WIDTH_32;
+    dma_config.source_increment = false;
+    dma_config.destination_increment = true;
+    dma_config.priority = 3U;
+    dma_config.burst_beats = RS_DMA_MAX_BURST_BEATS;
+    result = rs_dma_configure(RS_DMA_CHANNEL_BULK, &dma_config);
+    if (result == RS_OK) {
+        result = rs_dma_start(RS_DMA_CHANNEL_BULK);
+    }
+    if (result == RS_OK) {
+        result = rs_dvp_start();
+    }
+    if (result != RS_OK) {
+        if ((RS_DMA_CH_REG(RS_DMA_CHANNEL_BULK, RS_DMA_CH_REG_STATUS) & RS_DMA_STATUS_BUSY) != 0U) {
+            (void)rs_dvp_dma_cleanup();
+        }
         return RS_EIO;
     }
     while (timeout-- != 0U) {
-        if (rs_dvp_get_status(&status) != RS_OK)
+        if (rs_dvp_get_status(&status) != RS_OK) {
+            (void)rs_dvp_abort();
+            (void)rs_dvp_dma_cleanup();
             return RS_EIO;
+        }
         if ((status.error_status != 0U) ||
             ((status.interrupt_state & RS_DVP_INTERRUPT_FRAME_DONE) != 0U)) {
             (void)rs_dvp_abort();
-            return (status.error_status == 0U) && (rs_dma_wait(timeout) == RS_OK) ? RS_OK : RS_EIO;
+            if ((status.error_status == 0U) &&
+                (rs_dma_wait(RS_DMA_CHANNEL_BULK, timeout) == RS_OK)) {
+                return RS_OK;
+            }
+            (void)rs_dvp_dma_cleanup();
+            return RS_EIO;
         }
     }
     (void)rs_dvp_abort();
+    (void)rs_dvp_dma_cleanup();
     return RS_ETIMEOUT;
 }
 

@@ -7,8 +7,8 @@ OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
 GCC_FLAGS     := -std=gnu11 -Wall -Wextra \
-             -Wl,-Bstatic,-T,$(LINK_TYPE).lds,--strip-debug -O3 \
-             -ffreestanding -nostdlib
+             -Wl,-Bstatic,-T,$(LINK_TYPE).lds,--strip-debug,--gc-sections -O3 \
+             -ffreestanding -nostdlib -ffunction-sections -fdata-sections
 SW_WARN_FLAGS := -Wformat=2 -Wshadow -Wstrict-prototypes -Wmissing-prototypes \
                  -Wcast-align -Werror=implicit-function-declaration \
                  -Werror=return-type -Werror=incompatible-pointer-types \
@@ -77,6 +77,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/service/test.c \
             $(ROOT_PATH)/crt/src/hal/clint.c \
             $(ROOT_PATH)/crt/src/hal/clock.c \
+            $(ROOT_PATH)/crt/src/hal/sysctrl.c \
             $(ROOT_PATH)/crt/src/hal/uart_math.c \
             $(ROOT_PATH)/crt/src/hal/uart.c \
             $(ROOT_PATH)/crt/src/hal/gpio_math.c \
@@ -91,15 +92,28 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/ps2.c \
             $(ROOT_PATH)/crt/src/hal/i2c_math.c \
             $(ROOT_PATH)/crt/src/hal/i2c.c \
+            $(ROOT_PATH)/crt/src/hal/i2s_math.c \
+            $(ROOT_PATH)/crt/src/hal/i2s.c \
             $(ROOT_PATH)/crt/src/hal/ws2812_math.c \
             $(ROOT_PATH)/crt/src/hal/ws2812.c \
+            $(ROOT_PATH)/crt/src/hal/dma_math.c \
             $(ROOT_PATH)/crt/src/hal/dma.c \
+            $(ROOT_PATH)/crt/src/hal/crypto.c \
             $(ROOT_PATH)/crt/src/hal/dvp.c \
             $(ROOT_PATH)/crt/src/hal/perf.c \
             $(ROOT_PATH)/crt/src/hal/lcd.c \
+            $(ROOT_PATH)/crt/src/hal/psram_math.c \
             $(ROOT_PATH)/crt/src/hal/psram.c \
+            $(ROOT_PATH)/crt/src/hal/opipsram_math.c \
+            $(ROOT_PATH)/crt/src/hal/opipsram.c \
+            $(ROOT_PATH)/crt/src/hal/sdram_math.c \
+            $(ROOT_PATH)/crt/src/hal/sdram.c \
+            $(ROOT_PATH)/crt/src/hal/sdio_math.c \
+            $(ROOT_PATH)/crt/src/hal/sdio.c \
+            $(ROOT_PATH)/crt/src/hal/spisd_math.c \
             $(ROOT_PATH)/crt/src/hal/spisd.c \
-            $(ROOT_PATH)/crt/src/hal/qspi.c \
+            $(ROOT_PATH)/crt/src/hal/xpi.c \
+            $(ROOT_PATH)/crt/src/hal/user_ip.c \
             $(ROOT_PATH)/crt/src/hal/user_core.c
 
 ifeq ($(HAVE_CSR),YES)

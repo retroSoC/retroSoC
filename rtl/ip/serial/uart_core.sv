@@ -2,7 +2,7 @@
 // retroSoC is licensed under Mulan PSL v2.
 
 module uart_core (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
     input  logic [23:0] baud_int_i,
@@ -46,7 +46,7 @@ module uart_core (
       .bit_tick_o   (bit_tick_o)
   );
 
-  ribp_uart_tx u_ribp_uart_tx (
+  apb4_uart_tx u_apb4_uart_tx (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .sample_tick_i  (s_sample_tick),
@@ -64,7 +64,7 @@ module uart_core (
       .tx_o           (s_tx)
   );
 
-  ribp_uart_rx u_ribp_uart_rx (
+  apb4_uart_rx u_apb4_uart_rx (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
       .sample_tick_i(s_sample_tick),

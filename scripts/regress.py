@@ -59,12 +59,21 @@ SMOKE_COMMANDS = (
         ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm"),
     ),
 )
-NIGHTLY_COMMANDS = (
-    *PR_COMMANDS,
+NIGHTLY_EXTRA_COMMANDS = (
     (
         "configs/benchmark/ihp130-hazard3-coremark.mk",
         ("SIMU=VERILATOR", "HAVE_SVA=YES", "coremark-report"),
     ),
+    ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "SYNTH_RECIPE=area", "synth")),
+    ("configs/ci/ihp130.mk", ("STA=OPENSTA", "SYNTH_RECIPE=area", "sta")),
+    ("configs/ci/ihp130.mk", ("SYNTH_RECIPE=area", "metrics")),
+    ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "SYNTH_RECIPE=speed", "synth")),
+    ("configs/ci/ihp130.mk", ("STA=OPENSTA", "SYNTH_RECIPE=speed", "sta")),
+    ("configs/ci/ihp130.mk", ("SYNTH_RECIPE=speed", "metrics")),
+)
+NIGHTLY_COMMANDS = (
+    *PR_COMMANDS,
+    *NIGHTLY_EXTRA_COMMANDS,
 )
 PR_PROFILES = ("configs/ci/ihp130.mk",)
 SMOKE_PROFILES: tuple[str, ...] = ()
@@ -108,6 +117,10 @@ def select_regression(
         if pdk is not None and pdk != "IHP130":
             raise ValueError("smoke regression supports only --pdk IHP130")
         return SMOKE_COMMANDS, SMOKE_PROFILES
+    if suite == "nightly-extra":
+        if pdk is not None and pdk != "IHP130":
+            raise ValueError("nightly-extra regression supports only --pdk IHP130")
+        return NIGHTLY_EXTRA_COMMANDS, NIGHTLY_PROFILES
     if pdk:
         if suite == "nightly":
             if pdk != "IHP130":
@@ -190,7 +203,7 @@ def run_observation(command: list[str], root: Path, environment: dict[str, str])
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a supported retroSoC regression suite")
     parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--suite", choices=("smoke", "pr", "nightly"), required=True)
+    parser.add_argument("--suite", choices=("smoke", "pr", "nightly", "nightly-extra"), required=True)
     parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PDK matrix")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(

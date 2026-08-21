@@ -9,17 +9,17 @@
 // See the Mulan PSL v2 for more details.
 
 module core_wrapper (
-    // verilog_format: off
-    input  logic          clk_i,
-    input  logic          rst_n_i,
-    input  logic [31:0]   irq_i,
-    input  logic          jtag_tck_i,
-    input  logic          jtag_tms_i,
-    input  logic          jtag_tdi_i,
-    input  logic          jtag_trst_n_i,
-    output logic          jtag_tdo_o,
-    output logic          debug_halted_o,
-    axi4_if.master        axi4
+    // verilog_format: off -- preserve reviewed column alignment
+    input  logic        clk_i,
+    input  logic        rst_n_i,
+    input  logic [31:0] irq_i,
+    input  logic        jtag_tck_i,
+    input  logic        jtag_tms_i,
+    input  logic        jtag_tdi_i,
+    input  logic        jtag_trst_n_i,
+    output logic        jtag_tdo_o,
+    output logic        debug_halted_o,
+    axi4_if.master      axi4
     // verilog_format: on
 );
 

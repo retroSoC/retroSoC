@@ -269,7 +269,7 @@ def render_ip_bindings(extensions: ExtensionMap) -> str:
         lines.extend(
             [
                 f"  user_gpio_if #(`USER_GPIO_NUM) u_user_{target.slot}_gpio_if ();",
-                f"  apb4_if u_user_{target.slot}_apb_if (clk_i, rst_n_i);",
+                f"  apb4_if u_user_{target.slot}_apb4_if (clk_i, rst_n_i);",
             ]
         )
     lines.extend(
@@ -285,7 +285,7 @@ def render_ip_bindings(extensions: ExtensionMap) -> str:
     )
     for target in extensions.ip_targets:
         lines.extend(
-            f"    u_user_{target.slot}_apb_if.{signal} = '0;" for signal in APB_REQUEST_SIGNALS
+            f"    u_user_{target.slot}_apb4_if.{signal} = '0;" for signal in APB_REQUEST_SIGNALS
         )
     lines.append("    unique case (sel_i)")
     for target in extensions.ip_targets:
@@ -294,13 +294,13 @@ def render_ip_bindings(extensions: ExtensionMap) -> str:
                 f"      {extensions.ip_selector_width}'d{target.slot}: begin",
                 f"        gpio.do_o = u_user_{target.slot}_gpio_if.do_o;",
                 f"        gpio.oe_o = u_user_{target.slot}_gpio_if.oe_o;",
-                f"        apb.pready = u_user_{target.slot}_apb_if.pready;",
-                f"        apb.prdata = u_user_{target.slot}_apb_if.prdata;",
-                f"        apb.pslverr = u_user_{target.slot}_apb_if.pslverr;",
+                f"        apb.pready = u_user_{target.slot}_apb4_if.pready;",
+                f"        apb.prdata = u_user_{target.slot}_apb4_if.prdata;",
+                f"        apb.pslverr = u_user_{target.slot}_apb4_if.pslverr;",
             ]
         )
         lines.extend(
-            f"        u_user_{target.slot}_apb_if.{signal} = apb.{signal};"
+            f"        u_user_{target.slot}_apb4_if.{signal} = apb.{signal};"
             for signal in APB_REQUEST_SIGNALS
         )
         lines.append("      end")
@@ -315,7 +315,7 @@ def render_ip_bindings(extensions: ExtensionMap) -> str:
                 "      .clk_i  (clk_i),",
                 "      .rst_n_i(rst_n_i),",
                 f"      .gpio   (u_user_{target.slot}_gpio_if),",
-                f"      .apb    (u_user_{target.slot}_apb_if)",
+                f"      .apb    (u_user_{target.slot}_apb4_if)",
                 "  );",
                 "",
             ]

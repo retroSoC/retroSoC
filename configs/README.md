@@ -12,6 +12,8 @@ profiles. The `ihp130-hazard3-coremark.mk` profile is the automated SRAM
 CoreMark quick measurement; its `-standard` counterpart is reserved for a
 10-second hardware run. The nightly workflow reuses the IHP130 CI profile and
 runs the quick CoreMark profile.
+`ci/ihp130-xpi-flash-loader.mk` builds the SRAM-only XPI NOR service image used
+by GDB/OpenOCD; it is a programming utility, not a normal boot application.
 Start builds from a committed profile rather than setting an unreviewed mix of
 variables on the command line.
 

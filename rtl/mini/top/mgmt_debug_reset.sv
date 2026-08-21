@@ -10,7 +10,7 @@
 
 // Converts Debug Module reset requests into a management-hart-only reset.
 // The request is retained until the AHB-Lite bridge has completed its current
-// RIBP transfer, so a debugger cannot discard an accepted management access.
+// AXI4 transfer, so a debugger cannot discard an accepted management access.
 module mgmt_debug_reset (
     input  logic clk_i,
     input  logic rst_n_i,

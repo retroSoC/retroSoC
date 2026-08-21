@@ -5,12 +5,6 @@
 # Authors:
 # - Philippe Sauter <phsauter@iis.ee.ethz.ch>
 
-# target clock-period in pico-seconds
-export YOSYS_TARGET_PERIOD_PS := 10000
-
-# modules Yosys will treat as blackboxes
-export YOSYS_BLACKBOX_MODULES := "*tc_sram_blackbox*"
-
 # flatten hierarchy (except for below selections)
 export YOSYS_FLATTEN_HIER := 1
 
@@ -22,7 +16,7 @@ export YOSYS_KEEP_HIER_INST :=  "t:tc_clk*$$*" \
 								"t:core_*$$*" \
 								"t:bus*$$*" \
 								"t:ip_rib_wrapper*$$*" \
-								"t:ip_apb_wrapper*$$*" \
+								"t:apb4_system*$$*" \
 								"t:apb_spi_master*$$*" \
 								"t:spi_flash*$$*" \
 								"t:mem2apb*$$*" \

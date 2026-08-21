@@ -14,10 +14,10 @@ module ws2812_reg #(
     parameter int TxFifoDepth    = 16,
     parameter int TxFifoLogDepth = $clog2(TxFifoDepth)
 ) (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
-    ribp_if.slave       ribp,
+    apb4_if.slave       apb4,
     output logic [15:0] bit_cycles_o,
     output logic [15:0] t0h_cycles_o,
     output logic [15:0] t1h_cycles_o,
@@ -47,9 +47,9 @@ module ws2812_reg #(
   logic s_write;
   logic s_req_accept;
   logic s_access_err;
-  logic s_ribp_ready_d, s_ribp_ready_q;
-  logic s_ribp_resp_err_d, s_ribp_resp_err_q;
-  logic [31:0] s_ribp_rdata_d, s_ribp_rdata_q;
+  logic s_apb4_ready_d, s_apb4_ready_q;
+  logic s_apb4_resp_err_d, s_apb4_resp_err_q;
+  logic [31:0] s_apb4_rdata_d, s_apb4_rdata_q;
 
   logic s_bit_cycles_en;
   logic [15:0] s_bit_cycles_d, s_bit_cycles_q;
@@ -102,11 +102,11 @@ module ws2812_reg #(
     end
   endfunction
 
-  assign s_req = ribp.valid && !s_ribp_ready_q;
-  assign s_write = |ribp.wstrb;
-  assign ribp.ready = s_ribp_ready_q;
-  assign ribp.resp_err = s_ribp_resp_err_q;
-  assign ribp.rdata = s_ribp_rdata_q;
+  assign s_req = apb4.psel && apb4.penable && !s_apb4_ready_q;
+  assign s_write = apb4.pwrite;
+  assign apb4.pready = s_apb4_ready_q;
+  assign apb4.pslverr = s_apb4_resp_err_q;
+  assign apb4.prdata = s_apb4_rdata_q;
   assign bit_cycles_o = s_bit_cycles_q;
   assign t0h_cycles_o = s_t0h_cycles_q;
   assign t1h_cycles_o = s_t1h_cycles_q;
@@ -116,7 +116,7 @@ module ws2812_reg #(
   assign data_o = s_tx_pop_data;
   assign irq_o = |(s_intr_state_q & s_intr_en_q);
   assign s_fifo_level = {{(31 - TxFifoLogDepth) {1'b0}}, s_tx_count};
-  assign s_watermark_write_value = merge_wstrb(s_fifo_watermark_q, ribp.wdata, ribp.wstrb);
+  assign s_watermark_write_value = merge_wstrb(s_fifo_watermark_q, apb4.pwdata, apb4.pstrb);
   assign s_config_valid            = (s_bit_cycles_q != 16'd0) &&
                                      (s_t0h_cycles_q != 16'd0) &&
                                      (s_t1h_cycles_q != 16'd0) &&
@@ -154,7 +154,7 @@ module ws2812_reg #(
     s_intr_en_d         = s_intr_en_q;
     s_fifo_flush_cmd    = 1'b0;
     s_tx_push           = 1'b0;
-    s_tx_push_data      = ribp.wdata[23:0];
+    s_tx_push_data      = apb4.pwdata[23:0];
     start_o             = 1'b0;
     abort_o             = 1'b0;
     s_err_clear         = '0;
@@ -162,31 +162,31 @@ module ws2812_reg #(
     s_intr_test         = '0;
     s_config_err_event  = 1'b0;
     s_cmd_err_event     = 1'b0;
-    s_ribp_rdata_d      = '0;
+    s_apb4_rdata_d      = '0;
 
     if (s_req) begin
-      if ((ribp.addr[11:8] != 4'd0) || (ribp.addr[1:0] != 2'b00)) begin
+      if ((apb4.paddr[11:8] != 4'd0) || (apb4.paddr[1:0] != 2'b00)) begin
         s_access_err = 1'b1;
       end else if (s_write) begin
-        unique case (ribp.addr[7:0])
-          `RIBP_WS2812_BIT_CYCLES: begin
+        unique case (apb4.paddr[7:0])
+          `APB4_WS2812_BIT_CYCLES: begin
             s_bit_cycles_en = 1'b1;
-            s_bit_cycles_d  = 16'(merge_wstrb({16'd0, s_bit_cycles_q}, ribp.wdata, ribp.wstrb));
+            s_bit_cycles_d  = 16'(merge_wstrb({16'd0, s_bit_cycles_q}, apb4.pwdata, apb4.pstrb));
           end
-          `RIBP_WS2812_T0H_CYCLES: begin
+          `APB4_WS2812_T0H_CYCLES: begin
             s_t0h_cycles_en = 1'b1;
-            s_t0h_cycles_d  = 16'(merge_wstrb({16'd0, s_t0h_cycles_q}, ribp.wdata, ribp.wstrb));
+            s_t0h_cycles_d  = 16'(merge_wstrb({16'd0, s_t0h_cycles_q}, apb4.pwdata, apb4.pstrb));
           end
-          `RIBP_WS2812_T1H_CYCLES: begin
+          `APB4_WS2812_T1H_CYCLES: begin
             s_t1h_cycles_en = 1'b1;
-            s_t1h_cycles_d  = 16'(merge_wstrb({16'd0, s_t1h_cycles_q}, ribp.wdata, ribp.wstrb));
+            s_t1h_cycles_d  = 16'(merge_wstrb({16'd0, s_t1h_cycles_q}, apb4.pwdata, apb4.pstrb));
           end
-          `RIBP_WS2812_RESET_CYCLES: begin
+          `APB4_WS2812_RESET_CYCLES: begin
             s_reset_cycles_en = 1'b1;
-            s_reset_cycles_d  = merge_wstrb(s_reset_cycles_q, ribp.wdata, ribp.wstrb);
+            s_reset_cycles_d  = merge_wstrb(s_reset_cycles_q, apb4.pwdata, apb4.pstrb);
           end
-          `RIBP_WS2812_TXDATA: begin
-            if (ribp.wstrb != 4'hF || (core_busy_i && (s_load_remaining_q == 32'd0))) begin
+          `APB4_WS2812_TXDATA: begin
+            if (apb4.pstrb != 4'hF || (core_busy_i && (s_load_remaining_q == 32'd0))) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else if (s_tx_full && core_busy_i) begin
@@ -198,12 +198,12 @@ module ws2812_reg #(
               s_tx_push = 1'b1;
             end
           end
-          `RIBP_WS2812_CTRL: begin
-            if (!ribp.wstrb[0]) begin
+          `APB4_WS2812_CTRL: begin
+            if (!apb4.pstrb[0]) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
             end else begin
-              unique case (ribp.wdata[2:0])
+              unique case (apb4.pwdata[2:0])
                 3'b001: begin
                   if (core_busy_i || (s_frame_words_q == 32'd0) || s_tx_empty ||
                       (s_fifo_level > s_frame_words_q)) begin
@@ -239,11 +239,11 @@ module ws2812_reg #(
               endcase
             end
           end
-          `RIBP_WS2812_FRAME_WORDS: begin
+          `APB4_WS2812_FRAME_WORDS: begin
             s_frame_words_en = 1'b1;
-            s_frame_words_d  = merge_wstrb(s_frame_words_q, ribp.wdata, ribp.wstrb);
+            s_frame_words_d  = merge_wstrb(s_frame_words_q, apb4.pwdata, apb4.pstrb);
           end
-          `RIBP_WS2812_FIFO_WATERMARK: begin
+          `APB4_WS2812_FIFO_WATERMARK: begin
             if (s_watermark_write_value >= TxFifoDepth) begin
               s_access_err    = 1'b1;
               s_cmd_err_event = 1'b1;
@@ -252,50 +252,50 @@ module ws2812_reg #(
               s_fifo_watermark_d  = s_watermark_write_value;
             end
           end
-          `RIBP_WS2812_ERROR_STATUS: begin
-            if (!ribp.wstrb[0]) begin
+          `APB4_WS2812_ERROR_STATUS: begin
+            if (!apb4.pstrb[0]) begin
               s_access_err = 1'b1;
             end else begin
-              s_err_clear = ribp.wdata[2:0];
+              s_err_clear = apb4.pwdata[2:0];
             end
           end
-          `RIBP_WS2812_INTR_STATE: begin
-            if (!ribp.wstrb[0]) begin
+          `APB4_WS2812_INTR_STATE: begin
+            if (!apb4.pstrb[0]) begin
               s_access_err = 1'b1;
             end else begin
-              s_intr_clear = ribp.wdata[3:0];
+              s_intr_clear = apb4.pwdata[3:0];
             end
           end
-          `RIBP_WS2812_INTR_ENABLE: begin
+          `APB4_WS2812_INTR_ENABLE: begin
             s_intr_en_en = 1'b1;
-            s_intr_en_d  = 4'(merge_wstrb({28'd0, s_intr_en_q}, ribp.wdata, ribp.wstrb));
+            s_intr_en_d  = 4'(merge_wstrb({28'd0, s_intr_en_q}, apb4.pwdata, apb4.pstrb));
           end
-          `RIBP_WS2812_INTR_TEST: begin
-            if (!ribp.wstrb[0]) begin
+          `APB4_WS2812_INTR_TEST: begin
+            if (!apb4.pstrb[0]) begin
               s_access_err = 1'b1;
             end else begin
-              s_intr_test = ribp.wdata[3:0];
+              s_intr_test = apb4.pwdata[3:0];
             end
           end
           default: s_access_err = 1'b1;
         endcase
       end else begin
-        unique case (ribp.addr[7:0])
-          `RIBP_WS2812_BIT_CYCLES:      s_ribp_rdata_d = {16'd0, s_bit_cycles_q};
-          `RIBP_WS2812_T0H_CYCLES:      s_ribp_rdata_d = {16'd0, s_t0h_cycles_q};
-          `RIBP_WS2812_T1H_CYCLES:      s_ribp_rdata_d = {16'd0, s_t1h_cycles_q};
-          `RIBP_WS2812_RESET_CYCLES:    s_ribp_rdata_d = s_reset_cycles_q;
-          `RIBP_WS2812_STATUS:          s_ribp_rdata_d = s_stat;
-          `RIBP_WS2812_FRAME_WORDS:     s_ribp_rdata_d = s_frame_words_q;
-          `RIBP_WS2812_FIFO_LEVEL:      s_ribp_rdata_d = s_fifo_level;
-          `RIBP_WS2812_FIFO_WATERMARK:  s_ribp_rdata_d = s_fifo_watermark_q;
-          `RIBP_WS2812_REMAINING_WORDS: s_ribp_rdata_d = core_remaining_words_i;
-          `RIBP_WS2812_ERROR_STATUS:    s_ribp_rdata_d = {29'd0, s_err_stat_q};
-          `RIBP_WS2812_INTR_STATE:      s_ribp_rdata_d = {28'd0, s_intr_state_q};
-          `RIBP_WS2812_INTR_ENABLE:     s_ribp_rdata_d = {28'd0, s_intr_en_q};
-          `RIBP_WS2812_IP_INFO:         s_ribp_rdata_d = IP_INFO;
+        unique case (apb4.paddr[7:0])
+          `APB4_WS2812_BIT_CYCLES:      s_apb4_rdata_d = {16'd0, s_bit_cycles_q};
+          `APB4_WS2812_T0H_CYCLES:      s_apb4_rdata_d = {16'd0, s_t0h_cycles_q};
+          `APB4_WS2812_T1H_CYCLES:      s_apb4_rdata_d = {16'd0, s_t1h_cycles_q};
+          `APB4_WS2812_RESET_CYCLES:    s_apb4_rdata_d = s_reset_cycles_q;
+          `APB4_WS2812_STATUS:          s_apb4_rdata_d = s_stat;
+          `APB4_WS2812_FRAME_WORDS:     s_apb4_rdata_d = s_frame_words_q;
+          `APB4_WS2812_FIFO_LEVEL:      s_apb4_rdata_d = s_fifo_level;
+          `APB4_WS2812_FIFO_WATERMARK:  s_apb4_rdata_d = s_fifo_watermark_q;
+          `APB4_WS2812_REMAINING_WORDS: s_apb4_rdata_d = core_remaining_words_i;
+          `APB4_WS2812_ERROR_STATUS:    s_apb4_rdata_d = {29'd0, s_err_stat_q};
+          `APB4_WS2812_INTR_STATE:      s_apb4_rdata_d = {28'd0, s_intr_state_q};
+          `APB4_WS2812_INTR_ENABLE:     s_apb4_rdata_d = {28'd0, s_intr_en_q};
+          `APB4_WS2812_IP_INFO:         s_apb4_rdata_d = IP_INFO;
           default: begin
-            s_ribp_rdata_d = '0;
+            s_apb4_rdata_d = '0;
             s_access_err   = 1'b1;
           end
         endcase
@@ -303,34 +303,34 @@ module ws2812_reg #(
     end
   end
 
-  assign s_ribp_ready_d    = s_req_accept;
-  assign s_ribp_resp_err_d = s_access_err;
+  assign s_apb4_ready_d    = s_req_accept;
+  assign s_apb4_resp_err_d = s_access_err;
 
   dffr #(
       .DATA_WIDTH(1)
-  ) u_ribp_ready_dffr (
+  ) u_apb4_ready_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_ribp_ready_d),
-      .dat_o  (s_ribp_ready_q)
+      .dat_i  (s_apb4_ready_d),
+      .dat_o  (s_apb4_ready_q)
   );
   dffer #(
       .DATA_WIDTH(1)
-  ) u_ribp_resp_err_dffer (
+  ) u_apb4_resp_err_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_resp_err_d),
-      .dat_o  (s_ribp_resp_err_q)
+      .dat_i  (s_apb4_resp_err_d),
+      .dat_o  (s_apb4_resp_err_q)
   );
   dffer #(
       .DATA_WIDTH(32)
-  ) u_ribp_rdata_dffer (
+  ) u_apb4_rdata_dffer (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .en_i   (s_req_accept),
-      .dat_i  (s_ribp_rdata_d),
-      .dat_o  (s_ribp_rdata_q)
+      .dat_i  (s_apb4_rdata_d),
+      .dat_o  (s_apb4_rdata_q)
   );
 
   dffer #(

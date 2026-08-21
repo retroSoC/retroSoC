@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/check_rtl_style.py"
+AUDIT = ROOT / "rtl/rtl_style_audit.json"
 
 
 def run_style(
@@ -119,7 +120,7 @@ def test_owned_style_accepts_project_naming_contract(tmp_path: Path) -> None:
     result = run_style(
         tmp_path,
         "`define RETROSOC_TEST__VALUE 1\n"
-        "module test_module(\n"
+        "module test(\n"
         "  input logic clk_i,\n"
         "  output logic data_o\n"
         ");\n"
@@ -135,7 +136,7 @@ def test_owned_style_accepts_project_naming_contract(tmp_path: Path) -> None:
 def test_owned_style_allows_protocol_localparams(tmp_path: Path) -> None:
     result = run_style(
         tmp_path,
-        "module test_module #(parameter int DataWidth = 32) ("
+        "module test #(parameter int DataWidth = 32) ("
         "input logic clk_i, output logic data_o);\n"
         "  localparam logic [1:0] FSM_IDLE = 2'd0;\n"
         "  localparam logic [1:0] FSM_RESP = 2'd1;\n"
@@ -151,7 +152,7 @@ def test_owned_style_allows_interface_members_and_include_guards(tmp_path: Path)
         tmp_path,
         "`ifndef GPIO_DEFINE_SVH\n"
         "`define GPIO_DEFINE_SVH\n"
-        "interface test_if ();\n"
+        "interface test ();\n"
         "  logic cmd_valid;\n"
         "  modport dut(input cmd_valid);\n"
         "endinterface\n"
@@ -159,3 +160,119 @@ def test_owned_style_allows_interface_members_and_include_guards(tmp_path: Path)
         enforce_naming=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_owned_style_rejects_mismatched_primary_design_unit(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module wrong_name(input logic clk_i, output logic data_o);\n"
+        "  assign data_o = clk_i;\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 1
+    assert "RTL-FILE-002" in result.stderr
+
+
+def test_owned_style_rejects_synthesizable_initial_block(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test(input logic clk_i, output logic data_o);\n"
+        "  initial begin\n"
+        "    data_o = clk_i;\n"
+        "  end\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 1
+    assert "RTL-SV-007" in result.stderr
+
+
+def test_owned_style_allows_verification_only_initial_block(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test(input logic clk_i, output logic data_o);\n"
+        "  assign data_o = clk_i;\n"
+        "`ifndef SYNTHESIS\n"
+        "  initial begin\n"
+        "    if (clk_i) $error(\"unexpected clock\");\n"
+        "  end\n"
+        "`endif\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_owned_style_rejects_unpaired_format_directive(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test(input logic clk_i, output logic data_o);\n"
+        "  // verilog_format: on\n"
+        "  assign data_o = clk_i;\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 1
+    assert "RTL-FMT-005" in result.stderr
+
+
+def test_owned_style_requires_formatter_exception_rationale(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test(input logic clk_i, output logic data_o);\n"
+        "  // verilog_format: off\n"
+        "  assign data_o = clk_i;\n"
+        "  // verilog_format: on\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 1
+    assert "RTL-FMT-007" in result.stderr
+
+
+def test_owned_style_requires_automatic_typed_functions(tmp_path: Path) -> None:
+    result = run_style(
+        tmp_path,
+        "module test(input logic clk_i, output logic data_o);\n"
+        "  function logic invert(input logic value_i);\n"
+        "    return !value_i;\n"
+        "  endfunction\n"
+        "  assign data_o = invert(clk_i);\n"
+        "endmodule\n",
+    )
+    assert result.returncode == 1
+    assert "RTL-SV-008" in result.stderr
+
+
+def test_owned_style_audit_matches_current_inventory() -> None:
+    audit = json.loads(AUDIT.read_text(encoding="utf-8"))
+    assert audit["schema_version"] == 1
+    assert audit["policy"] == "docs/rtl-coding-style.md"
+    assert audit["profile"] == "owned"
+    assert {
+        "owner",
+        "related_commit",
+        "expiry",
+        "removal_plan",
+    }.issubset(audit["reviewed_boundary_record"])
+
+    audited_paths = {
+        str(Path(directory) / name)
+        for directory, names in audit["inventory"].items()
+        for name in names
+    }
+    actual_paths = {
+        str(path.relative_to(ROOT))
+        for root in (ROOT / "rtl/ip", ROOT / "rtl/mini/top")
+        for path in root.rglob("*")
+        if path.is_file() and path.suffix in {".sv", ".svh"}
+    }
+    assert audited_paths == actual_paths
+    assert {
+        "RTL-FILE",
+        "RTL-SV",
+        "RTL-NAME",
+        "RTL-STRUCT",
+        "RTL-COMB",
+        "RTL-SEQ",
+        "RTL-WIDTH",
+        "RTL-CDC",
+        "RTL-VERIFY",
+        "RTL-FMT",
+    }.issubset({rule["id"] for rule in audit["rules"]})

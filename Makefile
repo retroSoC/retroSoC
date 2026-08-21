@@ -28,10 +28,11 @@ ifneq ($(origin HAVE_DEBUG),undefined)
 $(error HAVE_DEBUG has been removed; the Hazard3 Debug Module is always enabled)
 endif
 
-SOC   ?= MINI
-SIMU  ?= VCS
-SYNTH ?= NONE
-STA   ?= NONE
+SOC          ?= MINI
+SIMU         ?= VCS
+SYNTH        ?= NONE
+SYNTH_RECIPE ?= balanced
+STA          ?= NONE
 
 # HW
 PDK                      ?= IHP130
@@ -101,9 +102,18 @@ VARIANT_ROOT   := $(abspath $(BUILD_ROOT))/$(VARIANT_ID)
 SW_BUILD_DIR   := $(VARIANT_ROOT)/sw
 SIM_TOOL_NAME  := $(shell printf '%s' '$(SIMU)' | tr '[:upper:]' '[:lower:]')
 SIM_BUILD_ROOT := $(VARIANT_ROOT)/sim/$(SIM_TOOL_NAME)
-SYN_BUILD_ROOT := $(VARIANT_ROOT)/syn/yosys
-STA_BUILD_ROOT := $(VARIANT_ROOT)/sta/opensta
 META_DIR       := $(VARIANT_ROOT)/meta
+ifeq ($(SYNTH_RECIPE),balanced)
+SYN_BUILD_ROOT   := $(VARIANT_ROOT)/syn/yosys
+STA_BUILD_ROOT   := $(VARIANT_ROOT)/sta/opensta
+NETLIST_SIM_ROOT := $(SIM_BUILD_ROOT)/netl
+METRICS_OUTPUT   := $(META_DIR)/metrics.json
+else
+SYN_BUILD_ROOT   := $(VARIANT_ROOT)/syn/yosys-$(SYNTH_RECIPE)
+STA_BUILD_ROOT   := $(VARIANT_ROOT)/sta/opensta-$(SYNTH_RECIPE)
+NETLIST_SIM_ROOT := $(SIM_BUILD_ROOT)/netl-$(SYNTH_RECIPE)
+METRICS_OUTPUT   := $(META_DIR)/metrics-$(SYNTH_RECIPE).json
+endif
 ifeq ($(SYNTH),YOSYS)
 FLOW_FILELIST_DIR := $(SYN_BUILD_ROOT)/filelists
 else
@@ -113,12 +123,13 @@ endif
 VALID_SOC           := MINI
 VALID_SIMU          := VCS VERILATOR IVERILOG
 VALID_SYNTH         := NONE YOSYS
+VALID_SYNTH_RECIPE  := balanced area speed
 VALID_STA           := NONE OPENSTA
 VALID_PDK           := ICS55 IHP130 SKY130 GF180
 VALID_BOOL          := YES NO
 VALID_ISA           := RV32E RV32I RV32IM
-VALID_APP           := benchmark bringup ci_smoke coremark debug shell
-VALID_LINK_TYPE     := xip ld2_all_sram ld2_sram ld2_psram ld2_sdram
+VALID_APP           := benchmark bringup ci_smoke coremark debug shell xpi_flash_loader
+VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
 VALID_COREMARK_MODE := quick standard
 
 define validate_value
@@ -128,6 +139,7 @@ endef
 $(call validate_value,SOC,$(VALID_SOC))
 $(call validate_value,SIMU,$(VALID_SIMU))
 $(call validate_value,SYNTH,$(VALID_SYNTH))
+$(call validate_value,SYNTH_RECIPE,$(VALID_SYNTH_RECIPE))
 $(call validate_value,STA,$(VALID_STA))
 $(call validate_value,PDK,$(VALID_PDK))
 $(call validate_value,HAVE_PLL,$(VALID_BOOL))
@@ -262,7 +274,7 @@ endif
 	benchmark-report coremark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-clean formal-doctor \
+	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-opipsram formal-dma formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all
 .NOTPARALLEL: setup
 
@@ -291,7 +303,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  '  formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp run peripheral proofs' \
+	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-opipsram | formal-dma | formal-sdio run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -326,7 +338,8 @@ config:
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
 	  SOC '$(SOC)' MGMT_CORE 'HAZARD3' \
-	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' STA '$(STA)' FORMAL '$(FORMAL)' \
+	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' SYNTH_RECIPE '$(SYNTH_RECIPE)' \
+	  STA '$(STA)' FORMAL '$(FORMAL)' \
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
@@ -390,7 +403,8 @@ manifest:
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/manifest.py create --root $(ROOT_PATH) \
 	  --lock $(LOCK_FILE) --output $(META_DIR)/manifest.json --profile $(PROFILE_NAME) \
 	  $(foreach var,$(CONFIG_KEY_VARS),--config $(var)=$($(var))) \
-	  --config SIMU=$(SIMU) --config SYNTH=$(SYNTH) --config STA=$(STA)
+	  --config SIMU=$(SIMU) --config SYNTH=$(SYNTH) --config SYNTH_RECIPE=$(SYNTH_RECIPE) \
+	  --config STA=$(STA)
 
 check-warnings:
 	python3 $(ROOT_PATH)/scripts/analyze_warnings.py check --root $(ROOT_PATH) \
@@ -398,10 +412,11 @@ check-warnings:
 
 metrics:
 	python3 $(ROOT_PATH)/scripts/metrics.py collect --variant-root $(VARIANT_ROOT) \
-	  --output $(META_DIR)/metrics.json
+	  --synth-root $(SYN_BUILD_ROOT) --sta-root $(STA_BUILD_ROOT) \
+	  --recipe $(SYNTH_RECIPE) --output $(METRICS_OUTPUT)
 
 check-metrics: metrics
-	python3 $(ROOT_PATH)/scripts/metrics.py check --metrics $(META_DIR)/metrics.json \
+	python3 $(ROOT_PATH)/scripts/metrics.py check --metrics $(METRICS_OUTPUT) \
 	  --policy $(ROOT_PATH)/quality/metrics/policy.json \
 	  --baseline $(ROOT_PATH)/quality/metrics/baseline.json
 
@@ -445,7 +460,8 @@ rtl-style-check:
 
 rtl-style-check-all:
 	python3 $(ROOT_PATH)/scripts/check_rtl_style.py --root $(ROOT_PATH) \
-	  --profile owned --verible-verilog-lint $(VERIBLE_LINT)
+	  --profile owned --enforce-naming --audit $(ROOT_PATH)/rtl/rtl_style_audit.json \
+	  --verible-verilog-lint $(VERIBLE_LINT)
 
 rtl-readiness-check:
 	python3 $(ROOT_PATH)/scripts/check_rtl_readiness.py --root $(ROOT_PATH)

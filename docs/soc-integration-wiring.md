@@ -24,8 +24,10 @@ unsupported features, and unapproved connection syntax.
 
 SoC wrappers use the existing clusterIP interfaces for protocol boundaries,
 except for the self-owned UART0 `uart_if` under `rtl/ip/serial`.
-`apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and `gpio_pad_bridge`
-only exposes the pad-side subset of `gpio_if`; neither module contains state.
+`apb4_system` is the APB4 platform subsystem (`u_apb4_system`); it is not a
+protocol bridge. `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and
+`gpio_pad_bridge` only exposes the pad-side subset of `gpio_if`; neither
+adapter contains state.
 
 ## UART flow-control alternate functions
 
@@ -49,7 +51,8 @@ I2C0 uses GPIO7 for SCL and GPIO8 for SDA on ALT0. I2C1 uses GPIO3 for SCL and
 GPIO4 for SDA on ALT1. Both controller outputs are constant zero; the GPIO
 alternate-function output enable pulls a line low and releases it for high.
 Board-level pull-ups are therefore required. I2C0 uses management-core IRQ7
-and generic-DMA modes 7/8; I2C1 uses IRQ19 and DMA modes 9/10. See
+and DMA request selectors `I2C0_TX`/`I2C0_RX` on channel 1; I2C1 uses IRQ19
+and `I2C1_TX`/`I2C1_RX` on channel 2. See
 [i2c.md](ip/i2c.md) for the register and transfer contract.
 
 ## PWM alternate functions
@@ -70,20 +73,42 @@ programming, safety, and verification contract is in the managed
 
 ## WS2812 output
 
-The single-channel WS2812 transmitter occupies RIBP address `0x10008000` and
+The single-channel WS2812 transmitter occupies APB4 address `0x10008000` and
 drives GPIO2 alternate function 1. Software must configure GPIO2 for ALT1
-before starting a frame. The transmitter interrupt is RIBP group bit 10 and
+before starting a frame. The transmitter interrupt is APB4 group bit 10 and
 management-core interrupt 17. The data pin is forced low while idle, during
 reset/latch time, after abort, and after underflow.
 
-The RIBP TX FIFO is also a fixed-address target for the generic DMA engine.
-DMA is an AXI4 master and receives RIBP backpressure when the FIFO
-is full; the transmitter does not own a private DMA request channel. See
-[ws2812.md](ip/ws2812.md) for the register and transfer contract.
+The APB4 TX FIFO is also a fixed-address target for the generic DMA engine.
+DMA is a native AXI4 master and receives APB4/FIFO backpressure when the FIFO
+is full; it emits a one-beat `FIXED` transaction for this endpoint and the
+transmitter does not own a private DMA request channel. See
+[ws2812.md](ip/ws2812.md) and [DMA MVP](ip/dma.md) for the register and
+transfer contracts.
 
 I2S and DVP use dedicated 32-bit AXI4-Stream data links to DMA while retaining
-RIBP for configuration and PIO fallback. Their stream selection, backpressure,
-and transfer-boundary rules are defined in [axi4-stream.md](axi4-stream.md).
+APB4 for configuration and PIO fallback. DMA aggregate done/error/half events
+use APB4-peripheral group bit 14 and management-core IRQ20. Their stream
+selection, backpressure, and transfer-boundary rules are defined in
+[axi4-stream.md](axi4-stream.md).
+
+## OPI PSRAM alternate functions
+
+The octal PSRAM controller uses GPIO21-31 ALT0 for CK, CS#, DQ[7:0], and
+RWDS/DQS. Its APB4 management window is `0x10010000`; bulk traffic uses the
+separate AXI4 window at `0x48000000-0x4fffffff`. The controller interrupt is
+allocated by `soc_topology.json`. Central DMA reaches the same AXI4 window as
+an ordinary MM-to-MM source or destination; the controller has no private DMA
+request channel.
+
+The version 1 Mini integration connects the PHY clock to the 72 MHz system
+clock. The Basilisk-style divide-by-two PHY therefore emits a 36 MHz external
+clock until a qualified independent PHY clock is integrated. The pin group
+does not route CK# or a dedicated device reset. Software must select all
+eleven ALT0 functions before initialization, and a board must satisfy the
+selected device's reset and single-ended-clock requirements. See
+[opipsram.md](ip/opipsram.md) for the protocol, delay-cell, and signoff
+boundaries.
 
 ## Management JTAG
 

@@ -15,7 +15,8 @@
 
 Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. This application verifies UART output,
-archinfo APB readback, RNG integration, and test-status completion within the CI time budget;
+archinfo APB readback, RNG integration, SDRAM 8/16/32-bit mapped-window access,
+and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 
@@ -120,12 +121,42 @@ build/<variant>/
   sw/
   sim/<simulator>/
   formal/<proof>/
-  syn/yosys/
-  sta/opensta/
+  syn/yosys/         (balanced)
+  syn/yosys-area/    (SYNTH_RECIPE=area)
+  syn/yosys-speed/   (SYNTH_RECIPE=speed)
+  sta/opensta/       (balanced)
+  sta/opensta-area/  (SYNTH_RECIPE=area)
+  sta/opensta-speed/ (SYNTH_RECIPE=speed)
   meta/manifest.json
   meta/warnings.json
-  meta/metrics.json
+  meta/metrics.json          (balanced)
+  meta/metrics-area.json     (SYNTH_RECIPE=area)
+  meta/metrics-speed.json    (SYNTH_RECIPE=speed)
 ```
+
+`SYNTH_RECIPE` is a flow selector and does not change the configuration hash.
+The selected recipe determines the synthesis netlist consumed by OpenSTA and
+netlist simulation, and determines which metrics file is written. `balanced`
+is the default PR flow. Nightly IHP130 runs `area` and `speed` through synth,
+STA, and metrics; their netlist simulation remains an explicit, on-demand
+validation because of its runtime.
+
+Use the same commit, PDK, `BUILD_TIMESTAMP`, and `YOSYS_TARGET_PERIOD_PS` for
+all recipes in a QoR comparison:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=balanced synth
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth
+make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area STA=OPENSTA sta
+make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics
+```
+
+Recipe optimization is evaluated using top area, cell count, WNS/TNS, flow
+duration, warning signatures, and netlist simulation verdict together. The
+`area` recipe is area-first and the `speed` recipe is timing-first; a single
+improved metric is not sufficient to replace `balanced`. Metrics policy remains
+in `observe` mode while recipe baselines are collected and reviewed.
 
 Generated filelists and MPW output are flow-local. Make depfiles track expanded RTL sources and
 included headers. The shared MPW generator is protected by a file lock. Default tool parallelism is
@@ -143,7 +174,8 @@ A simulation passes only when its command succeeds, the pass marker is present, 
 timeout marker is present. UART startup text is diagnostic only; it is not a verdict. The local
 `netsim-boot` shortcut remains explicitly scoped to stopping Icarus assembly netlist simulation at
 `Hello retroSoC!`; CI uses the terminal software status. Icarus regressions use the assembly self-test as
-`retrosoc_asm`, while the normal `retrosoc_fw` image remains available for firmware size tracking and
+`retrosoc_asm` and cover both the SDRAM and PSRAM mapped windows, while the
+normal `retrosoc_fw` image remains available for firmware size tracking and
 Verilator regressions.
 
 ## Formal Protocol Proofs
@@ -151,16 +183,23 @@ Verilator regressions.
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
 targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`, `gpio`,
-`ws2812`, `uart`, `i2c`, `timer`, and `clint`; each uses the SBY `prove` task for bounded model
-checking and k-induction, plus a `cover` task. The default depth is 20;
+`ws2812`, `uart`, `i2c`, `timer`, `clint`, `dvp`, `i2s`, `psram`, and `dma`;
+each uses an SBY bounded proof task plus a `cover` task. The default depth is 20;
 `ws2812` uses depth 120 and a 120-second per-task limit to cover a complete
 serialized word and reset path. `i2c` uses depth 80 and a 300-second per-task
-limit to reach a complete receive path and export its witness. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
+limit to reach a complete receive path and export its witness. `dma` uses a
+depth-24 BMC task, depth-32 covers, and a 120-second per-task limit for the narrowest supported four-channel,
+32-bit/4-beat/4-word `dma_core` configuration. Its constrained native AXI4
+responder and AXI4-Stream environment prove source stability under
+backpressure, FIFO bounds, transaction-owner stability, abort draining,
+channel accounting and terminal isolation, and observable AXI burst rules;
+covers include a complete MM-to-MM burst, an I2S-stream abort, and an AXI read
+error. `sysctrl` checks register side effects, sticky terminal-test status, PLL request
 handling, and fault reporting. `pll_rcu` checks the clock-switch controller
 state machine. `gpio` checks dual-window access isolation, fixed user-GPIO
 ownership, locks, handoff, open-drain safety, and mux behavior. `rib_adapter`
 checks both single-word compatibility adapters
-under backpressure. `ws2812` checks RIBP response stability, FIFO bounds,
+under backpressure. `ws2812` checks APB4 response stability, FIFO bounds,
 waveform idle safety, sticky error and interrupt propagation, abort, and
 underflow preconditions. `uart` checks FIFO bounds, interrupt composition,
 DMA gating, and idle/break line safety. `i2c` checks FIFO bounds, interrupt
@@ -171,11 +210,11 @@ are maintained in the Common repository.
 wall-clock limit. Use `make CONFIG=<profile> formal-doctor` before a local
 proof to verify that the required tools are available.
 
-The I2C cover task stores the compact Yosys witness, constraints, and Verilog
-testbench but disables direct VCD output. Expanding the 70-cycle receive cover
-to VCD produces hundreds of MiB and can exceed the task limit on networked
-filesystems; the witness remains available for an explicit trace conversion
-when waveform inspection is required.
+The I2C and DMA cover tasks store the compact Yosys witness, constraints, and
+Verilog testbench but disable direct VCD output. Expanding the longer I2C
+receive or DMA burst covers to VCD produces large artifacts and can exceed the
+task limit on networked filesystems; the witness remains available for an
+explicit trace conversion when waveform inspection is required.
 
 The locked Bitwuzla 0.9.1 CLI uses `--lang smt2`, while the selected Yosys
 version invokes legacy Bitwuzla options. `scripts/bitwuzla_smt2.py` is the
@@ -260,7 +299,7 @@ validation profiles and are not mechanically rewritten by the root formatter.
 Quality CI also runs `rtl-readiness-check-all` to validate the maturity record;
 regression continues to provide the behavioral, synthesis, netlist, timing,
 warning, and metric evidence referenced by that record.
-`nightly.yml` repeats the fixed IHP130 architecture. Source dependencies, locked tool archives, and Verilator `ccache` use
+`nightly.yml` repeats the fixed IHP130 architecture as two parallel jobs: the PR IHP130 matrix with a 360-minute budget, and the extra CoreMark plus Yosys area/speed recipes. The split keeps the multi-hour Icarus netlist run from cancelling the remaining nightly coverage at the previous 240-minute single-job limit. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 
 Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source

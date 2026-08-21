@@ -20,16 +20,21 @@ COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
 INTERCONNECT = ROOT / "rtl/ip/interconnect"
 PERIPHERAL = ROOT / "rtl/ip/peripheral"
 SERIAL = ROOT / "rtl/ip/serial"
+MEMORY = ROOT / "rtl/ip/memory"
+STORAGE = ROOT / "rtl/ip/storage"
 TOP = ROOT / "rtl/mini/top"
 
 
 def target_defines(target: str) -> list[str]:
+    if target == "opipsram":
+        return ["+define+PDK_BEHAV"]
     return ["+define+SV_ASSRT_DISABLE"]
 
 
 def source_files(target: str) -> list[Path]:
     common = [
         COMMON_RTL / "interface/axi4_if.sv",
+        COMMON_RTL / "interface/apb4_if.sv",
         COMMON_RTL / "interface/ribp_if.sv",
         COMMON_RTL / "interface/ram_if.sv",
         COMMON_RTL / "utils/register.sv",
@@ -43,7 +48,7 @@ def source_files(target: str) -> list[Path]:
             TOP / "rib2ribp.sv",
             TOP / "rib_error_slave.sv",
             TOP / "rib2ram.sv",
-            TOP / "bus.sv",
+            TOP / "rib_bus.sv",
             SCRIPT_DIR / "bus_formal.sv",
         ]
     if target == "rib_adapter":
@@ -67,7 +72,11 @@ def source_files(target: str) -> list[Path]:
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
-            PERIPHERAL / "sysctrl.sv",
+            PERIPHERAL / "sysctrl_if.sv",
+            PERIPHERAL / "sysctrl_define.svh",
+            PERIPHERAL / "sysctrl_reg.sv",
+            PERIPHERAL / "sysctrl_core.sv",
+            PERIPHERAL / "apb4_sysctrl.sv",
             SCRIPT_DIR / "sysctrl_formal.sv",
         ]
     if target == "pll_rcu":
@@ -82,6 +91,7 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "pll_ctrl_if.sv",
             PERIPHERAL / "clint_timebase.sv",
             TOP / "rcu.sv",
+            TOP / "pll_rcu_controller.sv",
             SCRIPT_DIR / "pll_rcu_formal.sv",
         ]
     if target == "gpio":
@@ -95,40 +105,40 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "user_gpio_if.sv",
             PERIPHERAL / "gpio_core.sv",
             PERIPHERAL / "gpio_reg.sv",
-            PERIPHERAL / "ribp_gpio.sv",
+            PERIPHERAL / "apb4_gpio.sv",
             SCRIPT_DIR / "gpio_formal.sv",
         ]
     if target == "ws2812":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/fifo.sv",
             SERIAL / "ws2812_if.sv",
             SERIAL / "ws2812_reg.sv",
             SERIAL / "ws2812_core.sv",
-            SERIAL / "ribp_ws2812.sv",
+            SERIAL / "apb4_ws2812.sv",
             SCRIPT_DIR / "ws2812_formal.sv",
         ]
     if target == "uart":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "cdc/cdc_sync.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/edge_det.sv",
             COMMON_RTL / "utils/fifo.sv",
             SERIAL / "uart_if.sv",
             SERIAL / "uart_baudgen.sv",
-            SERIAL / "ribp_uart_tx.sv",
-            SERIAL / "ribp_uart_rx.sv",
+            SERIAL / "apb4_uart_tx.sv",
+            SERIAL / "apb4_uart_rx.sv",
             SERIAL / "uart_flow_ctrl.sv",
             SERIAL / "uart_core.sv",
             SERIAL / "uart_reg.sv",
-            SERIAL / "ribp_uart.sv",
+            SERIAL / "apb4_uart.sv",
             SCRIPT_DIR / "uart_formal.sv",
         ]
     if target == "i2c":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/fifo.sv",
             COMMON_RTL / "cdc/cdc_sync.sv",
@@ -136,36 +146,101 @@ def source_files(target: str) -> list[Path]:
             SERIAL / "i2c_filter.sv",
             SERIAL / "i2c_core.sv",
             SERIAL / "i2c_reg.sv",
-            SERIAL / "ribp_i2c.sv",
+            SERIAL / "apb4_i2c.sv",
             SCRIPT_DIR / "i2c_formal.sv",
         ]
     if target == "timer":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "clkrst/counter.sv",
             PERIPHERAL / "timer_core.sv",
             PERIPHERAL / "timer_reg.sv",
-            PERIPHERAL / "ribp_timer.sv",
+            PERIPHERAL / "apb4_timer.sv",
             SCRIPT_DIR / "timer_formal.sv",
         ]
     if target == "clint":
         return [
-            COMMON_RTL / "interface/ribp_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "clkrst/counter.sv",
             PERIPHERAL / "clint_if.sv",
             PERIPHERAL / "clint_reg.sv",
             PERIPHERAL / "clint_core.sv",
-            PERIPHERAL / "ribp_clint.sv",
+            PERIPHERAL / "apb4_clint.sv",
             SCRIPT_DIR / "clint_formal.sv",
         ]
     if target == "dvp":
         return [
-            COMMON_RTL / "interface/ribp_if.sv", COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "utils/register.sv",
             ROOT / "rtl/ip/multimedia/dvp_define.svh",
             ROOT / "rtl/ip/multimedia/dvp_reg.sv",
             SCRIPT_DIR / "dvp_formal.sv",
+        ]
+    if target == "i2s":
+        return [
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            SERIAL / "i2s_define.svh",
+            SERIAL / "i2s_pkg.sv",
+            SERIAL / "i2s_reg.sv",
+            SCRIPT_DIR / "i2s_formal.sv",
+        ]
+    if target == "psram":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/axi4_addr_gen.sv",
+            COMMON_RTL / "utils/register.sv",
+            MEMORY / "psram_pkg.sv",
+            MEMORY / "psram_axi4.sv",
+            MEMORY / "psram_phy.sv",
+            SCRIPT_DIR / "psram_formal.sv",
+        ]
+    if target == "opipsram":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/xchecker.sv",
+            COMMON_RTL / "utils/gray2bin.sv",
+            ROOT / "rtl/ip/util/async_fifo.sv",
+            ROOT / "rtl/tech/tc_clk.sv",
+            ROOT / "rtl/tech/tc_opipsram_delay.sv",
+            MEMORY / "opipsram_define.svh",
+            MEMORY / "opipsram_pkg.sv",
+            MEMORY / "opipsram_protocol.sv",
+            MEMORY / "opipsram_trx.sv",
+            MEMORY / "opipsram_axi4.sv",
+            MEMORY / "opipsram_core.sv",
+            MEMORY / "opipsram_phy.sv",
+            MEMORY / "opipsram_reg.sv",
+            SCRIPT_DIR / "opipsram_formal.sv",
+        ]
+    if target == "dma":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/axi4_stream_if.sv",
+            COMMON_RTL / "stream/round_robin_arbiter.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            PERIPHERAL / "dma_pkg.sv",
+            PERIPHERAL / "dma_req_if.sv",
+            PERIPHERAL / "dma_axi4_master.sv",
+            PERIPHERAL / "dma_core.sv",
+            SCRIPT_DIR / "dma_formal.sv",
+        ]
+    if target == "sdio":
+        return [
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "interface/axi4_if.sv",
+            PERIPHERAL / "dma_axi4_master.sv",
+            STORAGE / "sdio_pkg.sv",
+            STORAGE / "sdio_define.svh",
+            STORAGE / "sdio_clock.sv",
+            STORAGE / "sdio_dma_descriptor.sv",
+            STORAGE / "sdio_dma.sv",
+            STORAGE / "sdio_reg.sv",
+            SCRIPT_DIR / "sdio_formal.sv",
         ]
     raise ValueError(f"unsupported formal target: {target}")
 
@@ -186,10 +261,12 @@ def generate(
             TOP,
             COMMON_RTL,
             COMMON_RTL / "interface",
+            COMMON_RTL / "stream",
             COMMON_RTL / "utils",
             INTERCONNECT,
             PERIPHERAL,
             SERIAL,
+            MEMORY,
         ],
         files=source_files(target),
     ).deduplicate()
@@ -213,6 +290,11 @@ def parse_args() -> argparse.Namespace:
             "timer",
             "clint",
             "dvp",
+            "i2s",
+            "psram",
+            "opipsram",
+            "dma",
+            "sdio",
         ),
         required=True,
     )

@@ -1,16 +1,16 @@
 # PS/2 SoC Integration
 
 The Mini SoC integrates the managed PS/2 host controller at
-`RS_SOC_APB_PS2_BASE`. The standalone IP owns the transport RTL, register ABI,
+`RS_SOC_APB4_PS2_BASE`. The standalone IP owns the transport RTL, register ABI,
 device model, freestanding controller/keyboard/mouse software, formal proof,
 and release documentation under `rtl/managed/clusterip/ps2`.
 
 ## SoC Binding
 
 The controller is APB target slot 4 and reports its combined level interrupt at
-management interrupt vector 12. The APB wrapper uses the configured external
-clock frequency for reset timing defaults and instantiates 16-entry RX and TX
-FIFOs.
+management interrupt vector 12. `apb4_system` instantiates the managed PS/2
+host with the configured external clock frequency for reset timing defaults
+and 16-entry RX and TX FIFOs.
 
 GPIO0 and GPIO1 ALT1 select PS/2 clock and data respectively. Each ALT1 path
 binds all three signals as one function: resolved pad input, constant-zero pad

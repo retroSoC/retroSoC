@@ -6,7 +6,7 @@ module clint_timebase #(
     parameter int TimebaseHz = 1_000_000,
     parameter int CdcStage   = 2
 ) (
-    // verilog_format: off
+    // verilog_format: off -- preserve reviewed column alignment
     input  logic ref_clk_i,
     input  logic ref_rst_n_i,
     input  logic sys_clk_i,
@@ -24,12 +24,14 @@ module clint_timebase #(
   logic s_tick_toggle_sync;
   logic s_tick_re, s_tick_fe;
 
+`ifndef SYNTHESIS
   initial begin
     if ((RefClkHz <= 0) || (TimebaseHz <= 0) || (RefClkHz < TimebaseHz) ||
         ((RefClkHz % TimebaseHz) != 0)) begin
       $fatal(1, "clint_timebase: RefClkHz must be a positive multiple of TimebaseHz");
     end
   end
+`endif
 
   assign s_div_terminal = s_div_count == DIV_WIDTH'(DIVISOR - 1);
 
