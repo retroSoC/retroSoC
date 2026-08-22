@@ -13,11 +13,6 @@ entry point. It installs only the checksum-verified open-source tool bundles and
 hash-pinned Python dependencies; project-local PDK and source setup remains under
 the existing Make targets.
 
-The optional `XEZIM` and `CVC` simulator backends are intentionally not part of
-that locked installer. `scripts/doctor.py` checks them when `SIMU=XEZIM` or
-`SIMU=CVC` is selected and resolves the executable from the corresponding
-`XEZIM` or `CVC` environment variable.
-
 `publish_fatfs_artifact.sh` is the manual release helper for the lock-pinned
 FatFs R0.16 archive. It verifies the archive, GitHub authentication, release
 absence, and the published asset checksum before reporting the checksum-pinned

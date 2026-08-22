@@ -176,10 +176,6 @@ else ifeq ($(SIMU), VERILATOR)
     include $(RTL_PATH)/mk/verilator.mk
 else ifeq ($(SIMU), IVERILOG)
     include $(RTL_PATH)/mk/iverilog.mk
-else ifeq ($(SIMU), XEZIM)
-    include $(RTL_PATH)/mk/xezim.mk
-else ifeq ($(SIMU), CVC)
-    include $(RTL_PATH)/mk/cvc.mk
 endif
 
 .PHONY: gen_mpw_code generate_filelist memory-map check-memory-map pin-map check-pin-map \

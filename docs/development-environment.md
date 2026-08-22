@@ -17,11 +17,6 @@ specific to a checkout and continue to be installed by make setup or
 make setup-regression. The latter prepares the four pull-request PDK profiles
 in a fixed order.
 
-The optional Xezim and CVC simulation backends are also outside the locked
-environment. They must be installed separately and selected through explicit
-`XEZIM` and `CVC` executable paths. They are local compatibility tools, not
-reproducible CI inputs.
-
 ## Shared Bootstrap
 
 scripts/development_environment.py is the only tool installer for the three

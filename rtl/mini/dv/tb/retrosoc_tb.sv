@@ -16,11 +16,7 @@ module retrosoc_tb;
   localparam real XTAL_CPU_FREQ = 24.0;
   localparam real EXT_CPU_FREQ = 72.0;
   localparam real AUD_CPU_FREQ = 18.432;
-`ifdef SIMU_CVC
-  localparam integer ResetHoldTime = 170744;
-`else
   localparam time ResetHoldTime = 170744ns;
-`endif
 
   integer sim_runtime;
 
@@ -153,10 +149,8 @@ module retrosoc_tb;
   );
 
 
-`ifndef SIMU_CVC
   pullup u_i2c0_scl_pullup (s_i2c0_scl_io);
   pullup u_i2c0_sda_pullup (s_i2c0_sda_io);
-`endif
   AT24C04 u_AT24C04_0 (
       .WP (1'b0),
       .SCL(s_i2c0_scl_io),
@@ -182,9 +176,7 @@ module retrosoc_tb;
   );
 
 
-`ifndef SIMU_CVC
   pullup u_psram_nss0_pullup (s_psram_nss0);
-`endif
   ESP_PSRAM64H #(0) u_ESP_PSRAM64H_0 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss0),
@@ -192,27 +184,21 @@ module retrosoc_tb;
   );
 
 
-`ifndef SIMU_CVC
   pullup u_psram_nss1_pullup (s_psram_nss1);
-`endif
   ESP_PSRAM64H #(1) u_ESP_PSRAM64H_1 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss1),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
-`ifndef SIMU_CVC
   pullup u_psram_nss2_pullup (s_psram_nss2);
-`endif
   ESP_PSRAM64H #(2) u_ESP_PSRAM64H_2 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss2),
       .sio ({s_psram_dat3, s_psram_dat2, s_psram_dat1, s_psram_dat0})
   );
 
-`ifndef SIMU_CVC
   pullup u_psram_nss3_pullup (s_psram_nss3);
-`endif
   ESP_PSRAM64H #(3) u_ESP_PSRAM64H_3 (
       .sclk(s_psram_sck),
       .csn (s_psram_nss3),

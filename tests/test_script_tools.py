@@ -667,14 +667,15 @@ def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> N
     )
     assert build_state() == before
 
-    invalid = subprocess.run(
-        ["make", "SIMU=UNKNOWN", "help"],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-    )
-    assert invalid.returncode != 0
-    assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
+    for simulator in ("UNKNOWN", "XEZIM", "CVC"):
+        invalid = subprocess.run(
+            ["make", f"SIMU={simulator}", "help"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        assert invalid.returncode != 0
+        assert f"Invalid SIMU='{simulator}'" in invalid.stderr
 
     removed_core = subprocess.run(
         ["make", "CORE=alternate", "config"],
