@@ -142,7 +142,7 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/fifo.sv",
             COMMON_RTL / "cdc/cdc_sync.sv",
-            ROOT / "rtl/managed/clusterip/i2c/rtl/i2c_if.sv",
+            SERIAL / "i2c_if.sv",
             SERIAL / "i2c_filter.sv",
             SERIAL / "i2c_core.sv",
             SERIAL / "i2c_reg.sv",

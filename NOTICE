@@ -8,5 +8,8 @@ The following third-party projects or authors are referenced in the RTL source h
 - Ravenna / PicoRV32 in ASIC: notices are preserved in rtl/ip/peripheral/gpio.sv, rtl/ip/peripheral/timer.sv, and rtl/ip/serial/uart.sv.
 - Hirosh Dabui: the original copyright notice is preserved in rtl/ip/memory/sdram_core.sv.
 - EmbedFire: attribution is preserved in the SPI SD card related files under rtl/ip/storage/.
+- Device simulation models: the models under rtl/model/ preserve their upstream
+  notices, including the Winbond Electronics Corporation notice in the
+  W25Q128JVxIM model.
 
 These notices are included solely to preserve attribution for the retained third-party source material. They do not alter the licensing terms of the retroSoC repository itself, which is distributed under the Mulan PSL v2 license.

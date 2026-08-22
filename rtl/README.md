@@ -5,8 +5,9 @@ peripheral and technology wrappers, filelists, testbench support, and the Mini
 SoC build entry points.
 
 `mini/` is the active SoC integration flow. `managed/` contains locked or
-vendored integration inputs, while `ip/` contains self-owned IP and
-experiments. `filelist/` selects PDK-specific RTL sources; `tech/` contains
+vendored integration inputs, `ip/` contains self-owned IP and experiments, and
+`model/` contains committed device simulation models with preserved upstream
+notices. `filelist/` selects PDK-specific RTL sources; `tech/` contains
 technology wrappers. Respect managed upstream boundaries and use setup helpers
 rather than editing generated MPW output.
 

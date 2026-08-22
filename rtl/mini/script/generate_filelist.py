@@ -26,6 +26,7 @@ PATH_PREFIXES = {
     "hazard3": RTL_DIR / "managed" / "hazard3" / "hdl",
     "mpw": RTL_DIR / "managed" / "mpw",
     "tb": MINI_DIR / "dv" / "tb",
+    "device_model": RTL_DIR / "model",
     "model": MINI_DIR / "dv" / "model",
     "sva": MINI_DIR / "dv" / "sva",
     "top": MINI_DIR / "top",

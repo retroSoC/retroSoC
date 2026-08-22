@@ -22,8 +22,6 @@
 /clusterip/ps2/rtl/ps2_reg.sv
 /clusterip/ps2/rtl/ps2_if.sv
 /clusterip/ps2/rtl/apb4_ps2.sv
-/clusterip/i2c/rtl/i2c_if.sv
-/clusterip/spi/rtl/spi_if.sv
 /clusterip/rtc/rtl/rtc_pkg.sv
 /clusterip/rtc/rtl/rtc_if.sv
 /clusterip/rtc/rtl/rtc_tickgen.sv

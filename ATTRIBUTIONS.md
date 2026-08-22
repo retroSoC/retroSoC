@@ -38,6 +38,15 @@ Several SPI SD card related RTL files retain the original attribution to EmbedFi
 
 These headers state that the original code was published on GitHub by EmbedFire, but that the original license was not specified in the retained header.
 
-## 5. Notes on redistribution
+## 5. Device simulation models
+
+The simulation-only models under `rtl/model/` retain their upstream notices
+and source formatting. The AT24 model is imported from the retroSoC I2C
+repository, the microphone model from the retroSoC I2S repository, and the
+W25Q128JVxIM model from the retroSoC SPI repository. The Winbond model retains
+its original Winbond Electronics Corporation copyright and "All Rights
+Reserved" notice; its inclusion does not relicense it under Mulan PSL v2.
+
+## 6. Notes on redistribution
 
 The preserved third-party notices are included to maintain attribution for code that was adapted or reused in this repository. They do not replace the repository's main license declaration. The retroSoC project itself is distributed under the Mulan PSL v2 license.

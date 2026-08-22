@@ -19,7 +19,6 @@ def test_i2c_controller_and_recovery_contract(tmp_path: Path) -> None:
 
     common = ROOT / "rtl/managed/clusterip/common/rtl"
     serial = ROOT / "rtl/ip/serial"
-    cluster_i2c = ROOT / "rtl/managed/clusterip/i2c/rtl"
     source_list = tmp_path / "i2c.fl"
     source_list.write_text(
         "\n".join(
@@ -34,7 +33,7 @@ def test_i2c_controller_and_recovery_contract(tmp_path: Path) -> None:
                 str(common / "utils/register.sv"),
                 str(common / "utils/fifo.sv"),
                 str(common / "cdc/cdc_sync.sv"),
-                str(cluster_i2c / "i2c_if.sv"),
+                str(serial / "i2c_if.sv"),
                 str(serial / "i2c_filter.sv"),
                 str(serial / "i2c_core.sv"),
                 str(serial / "i2c_reg.sv"),

@@ -65,17 +65,12 @@ jobs:
             physical/pdk/icsprout55-pdk
             physical/pdk/skywater-pdk
             rtl/managed/clusterip/archinfo
-            rtl/managed/clusterip/clint
             rtl/managed/clusterip/common
             rtl/managed/clusterip/crc
-            rtl/managed/clusterip/i2c
-            rtl/managed/clusterip/i2s
-            rtl/managed/clusterip/plic
             rtl/managed/clusterip/ps2
             rtl/managed/clusterip/pwm
             rtl/managed/clusterip/rng
             rtl/managed/clusterip/rtc
-            rtl/managed/clusterip/spi
             rtl/managed/clusterip/wdg
             rtl/managed/third_party
             rtl/managed/mpw
