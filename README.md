@@ -41,8 +41,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
   `coremark`, `debug`, and `shell` applications.
-- Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
-  Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
+- Open-source behavioral simulation with Icarus Verilog and Verilator, optional RTL
+  behavior simulation with Xezim, synthesis with Yosys, netlist simulation with
+  Icarus Verilog or optional CVC, and timing analysis with OpenSTA.
 - Read-only ARCHINFO ABI discovery for build/configuration provenance, SoC
   topology, technology capabilities, and lifecycle-gated device identity.
 - Checksum-verified dependency and toolchain locks, structured flow results, warning
@@ -169,6 +170,29 @@ make CONFIG=configs/ci/ihp130.mk firmware
 make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim
 ```
 
+Xezim and CVC are optional local backends. They are not included in the locked
+development environment or the default CI matrix. Set their executable paths
+explicitly before use:
+
+```sh
+export XEZIM=/path/to/xezim
+export CVC=/path/to/cvc64
+export BUILD_TIMESTAMP=2026-08-22-00-00
+make CONFIG=configs/ci/ihp130.mk SIMU=XEZIM BUILD_TIMESTAMP="$BUILD_TIMESTAMP" firmware sim
+make CONFIG=configs/ci/ihp130.mk BUILD_TIMESTAMP="$BUILD_TIMESTAMP" firmware
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS BUILD_TIMESTAMP="$BUILD_TIMESTAMP" synth
+make CONFIG=configs/ci/ihp130.mk SIMU=CVC SYNTH=YOSYS BUILD_TIMESTAMP="$BUILD_TIMESTAMP" netsim
+```
+
+Xezim is limited to RTL behavior simulation in this integration. CVC is
+limited to synthesized, zero-delay netlist simulation; neither backend is a
+replacement for the supported Verilator/Icarus/VCS baseline or for OpenSTA
+timing analysis. The optional behavior flows use compact external-memory
+models and the IHP130 `PDK_BEHAV` path; they are intended for protocol and
+bring-up checks, not PDK-model or signoff coverage. Keep the same
+`BUILD_TIMESTAMP` when sharing generated artifacts between synthesis and
+netlist simulation commands.
+
 Select the interactive shell application without editing source files:
 
 ```sh
@@ -207,10 +231,12 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
 | --- | --- |
 | Icarus behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG sim` |
 | Verilator behavioral simulation | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR sim` |
+| Xezim RTL behavioral simulation (optional) | `make CONFIG=configs/ci/ihp130.mk SIMU=XEZIM sim` |
 | Hazard3 JTAG debug acceptance | `make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim` |
 | Assembly self-test with Icarus | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG RTL_SIM_TIMEOUT=5200000 sim-asm` |
 | Yosys synthesis | `make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth` |
 | Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG netsim` |
+| CVC netlist simulation after synthesis (optional) | `make CONFIG=configs/ci/ihp130.mk SIMU=CVC SYNTH=YOSYS netsim` |
 | OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta` |
 | Strict Verilator RTL lint | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
 | Hazard3 CoreMark quick report | `make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report` |

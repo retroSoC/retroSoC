@@ -77,7 +77,7 @@ def tokenize_filelist(path: Path) -> list[str]:
         path.read_text(encoding="utf-8").splitlines(), start=1
     ):
         stripped = raw_line.strip()
-        if not stripped or stripped.startswith("//"):
+        if not stripped or stripped.startswith("//") or stripped.startswith("#"):
             continue
         try:
             lexer = shlex.shlex(raw_line, posix=True)

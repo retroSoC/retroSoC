@@ -52,6 +52,24 @@ VCS flows remain cluster-only because public runners do not have the licensed
 simulator. ICS55 uses the same variant layout, manifests, result JSON, warning
 scanner, and cleanup rules as the other open-source CI PDKs.
 
+## Optional Simulation Backends
+
+The default simulator and regression matrix remain unchanged. `SIMU=XEZIM`
+adds an optional RTL behavior flow, while `SIMU=CVC` adds an optional
+post-synthesis, zero-delay netlist flow. Both backends reuse the generated
+profile filelists, firmware preparation, `scripts/run_flow.py`, structured
+result JSON, and `check_simulation.py` terminal marker checks.
+
+These tools are not installed by `scripts/development_environment.py` and are
+not entries in `dependencies/dependencies.lock.json`. Supply local executable
+paths with the `XEZIM` and `CVC` environment variables. Xezim does not provide
+the integrated netlist or SDF flow, and CVC does not provide the integrated
+post-layout SDF flow. Neither result replaces the Verilator/Icarus/VCS baseline
+or OpenSTA timing analysis. The IHP130 Xezim and CVC testbenches substitute
+small functional models for the large vendor flash, PSRAM, SDRAM, camera, and
+EEPROM models so that the optional tools can parse and elaborate the design;
+the supported baseline remains the authority for full external-model coverage.
+
 ## Reproducible Inputs
 
 `dependencies/dependencies.lock.json` is the source of truth for external Git repositories, downloaded

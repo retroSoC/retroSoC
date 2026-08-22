@@ -159,6 +159,11 @@ warning checks, and metric collection.
   newline or when simulation ends. Treat `sim.log` and `result-sim*.json` as
   the verdict; delayed terminal UART display is a known operational condition,
   not evidence that the simulation has failed.
+- `SIMU=XEZIM` is an optional IHP130 RTL-behavior flow and `SIMU=CVC` is an
+  optional synthesized, zero-delay netlist flow. They reuse generated
+  filelists and result checks but are outside the locked CI matrix. Both use
+  compact functional external-memory models; do not treat their results as a
+  replacement for the supported Verilator/Icarus/VCS or OpenSTA coverage.
 
 ## Before Hand-off
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -35,13 +36,17 @@ def version(executable: str) -> str | None:
     path = shutil.which(executable)
     if path is None:
         return None
+    name = Path(executable).name
     options = {
         "iverilog": "-V",
         "vvp": "-V",
         "sta": "-version",
+        "xezim": "-V",
+        "cvc": "-h",
+        "cvc64": "-h",
     }
     result = subprocess.run(
-        [executable, options.get(executable, "--version")],
+        [executable, options.get(name, "--version")],
         text=True,
         capture_output=True,
         check=False,
@@ -61,6 +66,10 @@ def main() -> int:
         tools.extend(("verilator", "c++"))
     elif args.simu == "VCS":
         tools.extend(("bsub", "vcs"))
+    elif args.simu == "XEZIM":
+        tools.append(os.environ.get("XEZIM", "xezim"))
+    elif args.simu == "CVC":
+        tools.append(os.environ.get("CVC", "cvc"))
     if args.synth == "YOSYS":
         tools.append("yosys")
     if args.sta == "OPENSTA":
