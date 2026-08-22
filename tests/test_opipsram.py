@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -46,6 +47,13 @@ def test_opipsram_protocol_model_compiles_and_runs() -> None:
     work = ROOT / ".cache" / "test-opipsram"
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True, exist_ok=True)
+    ccache_dir = work / "ccache"
+    ccache_tmp = work / "ccache-tmp"
+    ccache_dir.mkdir()
+    ccache_tmp.mkdir()
+    environment = os.environ.copy()
+    environment["CCACHE_DIR"] = str(ccache_dir)
+    environment["CCACHE_TEMPDIR"] = str(ccache_tmp)
     output = work / "opipsram_tb"
     sources = [
         ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
@@ -93,7 +101,9 @@ def test_opipsram_protocol_model_compiles_and_runs() -> None:
         str(output),
     ]
     try:
-        compile_result = subprocess.run(command, check=False, text=True, capture_output=True)
+        compile_result = subprocess.run(
+            command, check=False, text=True, capture_output=True, env=environment
+        )
         if compile_result.returncode != 0:
             pytest.fail(
                 "production OPI PSRAM RTL does not compile with the locked model list:\n"

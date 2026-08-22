@@ -13,8 +13,8 @@ a second SoC bus master. Debugger memory operations execute through the halted
 hart and remain subject to the AXI4 interconnect access policy. User cores,
 peripherals, clocks, and pad control stay outside the debug-reset scope.
 
-PicoRV32 is available as software-selected user core C5 through mini-ver-mpw;
-it is not a management-core option and has no management Debug Module.
+The C0-C3 user cores are software-selected through mini-ver-mpw. They are not
+management-core options and do not have a management Debug Module.
 
 ## Reset And Clocking
 

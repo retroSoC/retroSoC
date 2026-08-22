@@ -133,7 +133,7 @@ capabilities:
 
 - A fixed Hazard3 management core owns system control and has a permanent JTAG
   Debug Module.
-- The C0-C5 extension fabric permits one selected user core to run at a time.
+- The C0-C3 extension fabric permits one selected user core to run at a time.
 - SYSCTRL controls user-core selection, reset, interrupt admission, and bus
   admission. A stop request blocks new user transactions, drains an accepted
   transaction, and then asserts reset.

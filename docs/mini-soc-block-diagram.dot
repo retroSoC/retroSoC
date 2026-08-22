@@ -119,7 +119,7 @@ digraph mini_soc_block_diagram {
       ];
       user_core [
         fillcolor="#DDF2E3",
-        label="Selected user core\nC0-C5, one active\nPicoRV32 at C5"
+        label="Selected user core\nC0-C3, one active\nKianV / SERV / FemtoRV32 / DarkRISCV"
       ];
       dma [
         fillcolor="#DDF2E3",

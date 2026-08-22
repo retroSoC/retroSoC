@@ -38,7 +38,7 @@ from scripts.development_environment import (  # noqa: E402
     render_activation,
     stamp_data,
 )
-from scripts.generate_mpw import validate_extension_bindings  # noqa: E402
+from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.package import make_sbom  # noqa: E402
 from scripts import regress  # noqa: E402
@@ -395,7 +395,69 @@ def test_mpw_generator_uses_only_the_native_v2_contract() -> None:
 
     assert "migrate_user_" not in source
     assert "prepare_legacy_mpw_workspace" not in source
-    assert '"-m",\n        "mpwgen"' in source
+    assert '"mpwgen"' in source
+    assert '"generate"' in source
+
+
+def test_mpw_active_manifest_uses_self_owned_design_selection(tmp_path: Path) -> None:
+    manifest = tmp_path / "mpw.toml"
+    manifest.write_text(
+        """schema_version = 2
+[generator]
+api_version = "retrosoc-mpw-v2"
+[[design]]
+kind = "core"
+id = "slow_core"
+slot = 0
+enabled = false
+source_dir = "core/slow"
+top = "user_core_design"
+filelist = "usercore.fl"
+reset = "sync"
+name = "Slow"
+isa = "rv32i"
+maintainer = "owner"
+repo = "https://example.com/slow"
+[[design]]
+kind = "core"
+id = "selected_core"
+slot = 5
+source_dir = "core/selected"
+top = "user_core_design"
+filelist = "usercore.fl"
+reset = "async"
+name = "Selected"
+isa = "rv32i"
+maintainer = "owner"
+repo = "https://example.com/selected"
+""",
+        encoding="utf-8",
+    )
+    extensions = tmp_path / "user_extensions.json"
+    extensions.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "core_targets": [
+                    {
+                        "slot": 0,
+                        "design_id": "selected_core",
+                        "module": "mpw_c0",
+                        "reset": "async",
+                    }
+                ],
+                "ip_targets": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    active = render_active_manifest(manifest, extensions)
+
+    assert 'id = "selected_core"' in active
+    assert 'id = "slow_core"' not in active
+    assert "slot = 0" in active
+    assert "enabled" not in active
 
 
 def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None:
@@ -403,10 +465,15 @@ def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None
     extensions_path.parent.mkdir(parents=True)
     extensions = {
         "core_targets": [
-            {"slot": 0, "module": "mpw_core_zero", "reset": "sync"},
+            {
+                "slot": 0,
+                "design_id": "core_zero",
+                "module": "mpw_core_zero",
+                "reset": "sync",
+            },
         ],
         "ip_targets": [
-            {"slot": 1, "module": "mpw_ip_one"},
+            {"slot": 1, "design_id": "ip_one", "module": "mpw_ip_one"},
         ],
     }
     extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
@@ -414,8 +481,14 @@ def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None
     output.mkdir()
     manifest = {
         "designs": [
-            {"kind": "core", "slot": 0, "top": "mpw_core_zero", "reset": "sync"},
-            {"kind": "ip", "slot": 1, "top": "mpw_ip_one"},
+            {
+                "kind": "core",
+                "id": "core_zero",
+                "slot": 0,
+                "top": "mpw_core_zero",
+                "reset": "sync",
+            },
+            {"kind": "ip", "id": "ip_one", "slot": 1, "top": "mpw_ip_one"},
         ]
     }
     (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")

@@ -19,8 +19,8 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 ## Highlights
 
 - A fixed Hazard3 management core with a permanent JTAG Debug Module, plus
-  software-selected user-core and user-IP extension slots, including PicoRV32
-  at user-core slot C5.
+  software-selected user-core and user-IP extension slots. The active user
+  cores are KianV RV32I, SERV, FemtoRV32, and DarkRISCV at slots C0-C3.
 - A documented [Tiny/Mini/Std/Pro product direction](docs/soc-family-positioning.md)
   anchored by Mini and a trusted Hazard3 management model. The higher Linux,
   graphics, AI, and RV64 configurations are roadmap targets, not supported
@@ -67,8 +67,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 The committed profiles are the supported starting points. They select an ISA,
 PDK, application, linker layout, and optional features as one reproducible
 configuration. The management core is fixed to Hazard3. The user-extension
-fabric exposes stable C0-C5 user-core slots and software selects one active
-user core.
+fabric exposes C0-C3 user-core slots and software selects one active user core.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |

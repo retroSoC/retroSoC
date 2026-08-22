@@ -52,10 +52,11 @@ core IRQ bit unallocated and driven low. Firmware does not
 expose a generic external interrupt API until the SoC includes a claim/complete
 interrupt controller.
 
-`user_extensions.json` defines the SoC-level user-core and user-IP slots.
-The locked mini-ver-mpw `mpw.toml` remains the source of truth for enabled
-design IDs, module names, slots, and reset type. `scripts/generate_mpw.py`
-verifies that both descriptions agree before RTL generation.
+`user_extensions.json` defines the active SoC-level user-core and user-IP
+design IDs, slots, module names, and reset types. The locked mini-ver-mpw
+`mpw.toml` remains the source of truth for available design metadata and source
+locations. `scripts/generate_mpw.py` selects and renumbers the configured
+designs, then verifies the generated manifest before RTL generation.
 `generate_user_extensions.py` then creates isolated default routing and one
 explicit instance per selected slot for `user_core_top.sv` and `user_ip_top.sv`.
 User cores keep `ribp_if.master ribp` at the extension ABI and are converted to

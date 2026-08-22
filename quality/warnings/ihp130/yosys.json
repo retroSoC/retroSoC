@@ -11,7 +11,7 @@
       "signature": "56c5f69398be8d7b"
     },
     {
-      "count": 10,
+      "count": 13,
       "example": "warning:The network is combinational (run \"fraig\" or \"fraig_sweep\").",
       "signature": "62cc5ee554312205"
     },

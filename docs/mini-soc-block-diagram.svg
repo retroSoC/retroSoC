@@ -225,9 +225,9 @@
 <!-- debug_module&#45;&gt;timers -->
 <g id="edge7" class="edge">
 <title>debug_module&#45;&gt;timers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2557.3,-671.05C2509.22,-665.15 2455,-658.48 2455,-658.48 2455,-658.48 1325,-581.98 1325,-581.98 1325,-581.98 1325,-581.98 1325,-356 1325,-356 1320,-289 1320,-289 1320,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M2557.3,-671.05C2509.22,-665.15 2455,-658.48 2455,-658.48 2455,-658.48 1389,-581.98 1389,-581.98 1389,-581.98 1389,-581.98 1389,-356 1389,-356 1384,-289 1384,-289 1384,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="974.69,-259.72 967.32,-260.54 973.59,-264.5 974.69,-259.72"/>
-<text text-anchor="middle" x="1336" y="-464.84" font-family="Arial" font-size="8.00" fill="#374151">halted</text>
+<text text-anchor="middle" x="1400" y="-464.84" font-family="Arial" font-size="8.00" fill="#374151">halted</text>
 </g>
 <!-- mgmt_adapter&#45;&gt;fabric -->
 <g id="edge10" class="edge">
@@ -239,32 +239,32 @@
 <!-- user_core -->
 <g id="node13" class="node">
 <title>user_core</title>
-<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M2847,-603.48C2847,-603.48 2771,-603.48 2771,-603.48 2765,-603.48 2759,-597.48 2759,-591.48 2759,-591.48 2759,-570.48 2759,-570.48 2759,-564.48 2765,-558.48 2771,-558.48 2771,-558.48 2847,-558.48 2847,-558.48 2853,-558.48 2859,-564.48 2859,-570.48 2859,-570.48 2859,-591.48 2859,-591.48 2859,-597.48 2853,-603.48 2847,-603.48"/>
-<text text-anchor="middle" x="2809" y="-589.48" font-family="Arial" font-size="10.00" fill="#111827">Selected user core</text>
-<text text-anchor="middle" x="2809" y="-578.48" font-family="Arial" font-size="10.00" fill="#111827">C0&#45;C5, one active</text>
-<text text-anchor="middle" x="2809" y="-567.48" font-family="Arial" font-size="10.00" fill="#111827">PicoRV32 at C5</text>
+<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M2847.5,-603.48C2847.5,-603.48 2668.5,-603.48 2668.5,-603.48 2662.5,-603.48 2656.5,-597.48 2656.5,-591.48 2656.5,-591.48 2656.5,-570.48 2656.5,-570.48 2656.5,-564.48 2662.5,-558.48 2668.5,-558.48 2668.5,-558.48 2847.5,-558.48 2847.5,-558.48 2853.5,-558.48 2859.5,-564.48 2859.5,-570.48 2859.5,-570.48 2859.5,-591.48 2859.5,-591.48 2859.5,-597.48 2853.5,-603.48 2847.5,-603.48"/>
+<text text-anchor="middle" x="2758" y="-589.48" font-family="Arial" font-size="10.00" fill="#111827">Selected user core</text>
+<text text-anchor="middle" x="2758" y="-578.48" font-family="Arial" font-size="10.00" fill="#111827">C0&#45;C3, one active</text>
+<text text-anchor="middle" x="2758" y="-567.48" font-family="Arial" font-size="10.00" fill="#111827">KianV / SERV / FemtoRV32 / DarkRISCV</text>
 </g>
 <!-- user_core&#45;&gt;fabric -->
 <g id="edge11" class="edge">
 <title>user_core&#45;&gt;fabric</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2801.48,-558.34C2796.79,-544.85 2790.6,-527.03 2784.95,-510.75"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2787.17,-509.7 2782.56,-503.89 2782.54,-511.31 2787.17,-509.7"/>
-<text text-anchor="middle" x="2801" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2760.31,-558.34C2761.74,-544.97 2763.63,-527.34 2765.35,-511.19"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2767.83,-511.11 2766.14,-503.89 2762.95,-510.59 2767.83,-511.11"/>
+<text text-anchor="middle" x="2772" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
 </g>
 <!-- dma -->
 <g id="node14" class="node">
 <title>dma</title>
-<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M1851,-603.48C1851,-603.48 1703,-603.48 1703,-603.48 1697,-603.48 1691,-597.48 1691,-591.48 1691,-591.48 1691,-570.48 1691,-570.48 1691,-564.48 1697,-558.48 1703,-558.48 1703,-558.48 1851,-558.48 1851,-558.48 1857,-558.48 1863,-564.48 1863,-570.48 1863,-570.48 1863,-591.48 1863,-591.48 1863,-597.48 1857,-603.48 1851,-603.48"/>
-<text text-anchor="middle" x="1777" y="-589.48" font-family="Arial" font-size="10.00" fill="#111827">DMA</text>
-<text text-anchor="middle" x="1777" y="-578.48" font-family="Arial" font-size="10.00" fill="#111827">4&#45;channel native AXI4 burst master</text>
-<text text-anchor="middle" x="1777" y="-567.48" font-family="Arial" font-size="10.00" fill="#111827">APB4 target, AXI4&#45;Stream, IRQ20</text>
+<path fill="#ddf2e3" stroke="#4b5563" stroke-width="1.1" d="M1898,-603.48C1898,-603.48 1750,-603.48 1750,-603.48 1744,-603.48 1738,-597.48 1738,-591.48 1738,-591.48 1738,-570.48 1738,-570.48 1738,-564.48 1744,-558.48 1750,-558.48 1750,-558.48 1898,-558.48 1898,-558.48 1904,-558.48 1910,-564.48 1910,-570.48 1910,-570.48 1910,-591.48 1910,-591.48 1910,-597.48 1904,-603.48 1898,-603.48"/>
+<text text-anchor="middle" x="1824" y="-589.48" font-family="Arial" font-size="10.00" fill="#111827">DMA</text>
+<text text-anchor="middle" x="1824" y="-578.48" font-family="Arial" font-size="10.00" fill="#111827">4&#45;channel native AXI4 burst master</text>
+<text text-anchor="middle" x="1824" y="-567.48" font-family="Arial" font-size="10.00" fill="#111827">APB4 target, AXI4&#45;Stream, IRQ20</text>
 </g>
 <!-- dma&#45;&gt;fabric -->
 <g id="edge12" class="edge">
 <title>dma&#45;&gt;fabric</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1863.39,-570.22C2028.43,-551.56 2391.09,-510.57 2604.34,-486.47"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2604.87,-488.87 2611.55,-485.65 2604.32,-484 2604.87,-488.87"/>
-<text text-anchor="middle" x="2252" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1910.04,-569.78C2067.47,-551.1 2404.28,-511.14 2606.51,-487.14"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2606.99,-489.55 2613.65,-486.29 2606.41,-484.69 2606.99,-489.55"/>
+<text text-anchor="middle" x="2277" y="-529.08" font-family="Arial" font-size="8.00" fill="#374151">AXI4</text>
 </g>
 <!-- stream_io -->
 <g id="node24" class="node">
@@ -278,8 +278,8 @@
 <!-- dma&#45;&gt;stream_io -->
 <g id="edge13" class="edge">
 <title>dma&#45;&gt;stream_io</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1870.52,-575.36C2133.25,-562.37 2859,-526.48 2859,-526.48 2859,-526.48 3376,-503.48 3376,-503.48 3376,-503.48 4267,-266 4267,-266 4267,-266 4269.6,-265.28 4273.96,-264.06"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1870.13,-572.93 1863.26,-575.72 1870.37,-577.82 1870.13,-572.93"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1917.05,-575.17C2171.32,-562.03 2859,-526.48 2859,-526.48 2859,-526.48 3376,-503.48 3376,-503.48 3376,-503.48 4267,-266 4267,-266 4267,-266 4269.6,-265.28 4273.96,-264.06"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1916.88,-572.73 1910.02,-575.54 1917.14,-577.62 1916.88,-572.73"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="4274.81,-266.37 4280.9,-262.13 4273.5,-261.65 4274.81,-266.37"/>
 <text text-anchor="middle" x="3793.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4&#45;Stream</text>
 </g>
@@ -294,9 +294,9 @@
 <!-- dma&#45;&gt;uart0 -->
 <g id="edge43" class="edge">
 <title>dma&#45;&gt;uart0</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1770.61,-558.11C1750.84,-490.44 1692,-289 1692,-289 1692,-289 1668.98,-276.49 1645.97,-263.98"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1647.14,-261.83 1639.82,-260.64 1644.8,-266.14 1647.14,-261.83"/>
-<text text-anchor="middle" x="1746.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">TX/RX data</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1813.2,-558.38C1781.67,-495.33 1692,-316 1692,-316 1692,-316 1682,-289 1682,-289 1682,-289 1661.97,-276.79 1641.72,-264.44"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1642.98,-262.34 1635.73,-260.79 1640.43,-266.52 1642.98,-262.34"/>
+<text text-anchor="middle" x="1758.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">TX/RX data</text>
 </g>
 <!-- i2c_controllers -->
 <g id="node26" class="node">
@@ -309,9 +309,9 @@
 <!-- dma&#45;&gt;i2c_controllers -->
 <g id="edge47" class="edge">
 <title>dma&#45;&gt;i2c_controllers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1757.01,-558.11C1695.15,-490.44 1511,-289 1511,-289 1511,-289 1468.1,-275.68 1426.59,-262.79"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1427.09,-260.38 1419.68,-260.64 1425.64,-265.06 1427.09,-260.38"/>
-<text text-anchor="middle" x="1657" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">DATA_CMD / RXDATA</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1801.29,-558.27C1777.64,-535.65 1744,-503.48 1744,-503.48 1744,-503.48 1646,-407 1646,-407 1646,-407 1555,-316 1555,-316 1555,-316 1534,-289 1534,-289 1534,-289 1484.19,-275.46 1436.4,-262.48"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1436.77,-260.04 1429.37,-260.57 1435.48,-264.77 1436.77,-260.04"/>
+<text text-anchor="middle" x="1687" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">DATA_CMD / RXDATA</text>
 </g>
 <!-- ws2812 -->
 <g id="node29" class="node">
@@ -324,9 +324,9 @@
 <!-- dma&#45;&gt;ws2812 -->
 <g id="edge41" class="edge">
 <title>dma&#45;&gt;ws2812</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1777.38,-558.11C1778.54,-490.44 1782,-289 1782,-289 1782,-289 1791.31,-277.91 1801.17,-266.18"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1803.07,-267.72 1805.7,-260.79 1799.32,-264.57 1803.07,-267.72"/>
-<text text-anchor="middle" x="1807.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">TXDATA writes</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1824,-558.4C1824,-499.33 1824,-335.03 1824,-268.02"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1826.45,-267.71 1824,-260.71 1821.55,-267.71 1826.45,-267.71"/>
+<text text-anchor="middle" x="1851.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">TXDATA writes</text>
 </g>
 <!-- fault -->
 <g id="node16" class="node">
@@ -360,16 +360,16 @@
 <!-- apb4_periph -->
 <g id="node18" class="node">
 <title>apb4_periph</title>
-<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M1922.5,-375C1922.5,-375 1817.5,-375 1817.5,-375 1811.5,-375 1805.5,-369 1805.5,-363 1805.5,-363 1805.5,-351 1805.5,-351 1805.5,-345 1811.5,-339 1817.5,-339 1817.5,-339 1922.5,-339 1922.5,-339 1928.5,-339 1934.5,-345 1934.5,-351 1934.5,-351 1934.5,-363 1934.5,-363 1934.5,-369 1928.5,-375 1922.5,-375"/>
-<text text-anchor="middle" x="1870" y="-360" font-family="Arial" font-size="10.00" fill="#111827">AXI42APB</text>
-<text text-anchor="middle" x="1870" y="-349" font-family="Arial" font-size="10.00" fill="#111827">APB4 configuration plane</text>
+<path fill="#e5e7eb" stroke="#4b5563" stroke-width="1.1" d="M1969.5,-375C1969.5,-375 1864.5,-375 1864.5,-375 1858.5,-375 1852.5,-369 1852.5,-363 1852.5,-363 1852.5,-351 1852.5,-351 1852.5,-345 1858.5,-339 1864.5,-339 1864.5,-339 1969.5,-339 1969.5,-339 1975.5,-339 1981.5,-345 1981.5,-351 1981.5,-351 1981.5,-363 1981.5,-363 1981.5,-369 1975.5,-375 1969.5,-375"/>
+<text text-anchor="middle" x="1917" y="-360" font-family="Arial" font-size="10.00" fill="#111827">AXI42APB</text>
+<text text-anchor="middle" x="1917" y="-349" font-family="Arial" font-size="10.00" fill="#111827">APB4 configuration plane</text>
 </g>
 <!-- fabric&#45;&gt;apb4_periph -->
 <g id="edge17" class="edge">
 <title>fabric&#45;&gt;apb4_periph</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2614,-447.07C2417.16,-423.5 2086.85,-383.96 1941.89,-366.61"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1941.95,-364.15 1934.71,-365.75 1941.36,-369.01 1941.95,-364.15"/>
-<text text-anchor="middle" x="2286.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4 config</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M2616.02,-446.29C2430.51,-422.86 2126.63,-384.48 1988.89,-367.08"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1988.91,-364.61 1981.66,-366.17 1988.29,-369.47 1988.91,-364.61"/>
+<text text-anchor="middle" x="2312.5" y="-400.6" font-family="Arial" font-size="8.00" fill="#374151">AXI4 config</text>
 </g>
 <!-- apb4_system -->
 <g id="node19" class="node">
@@ -411,16 +411,16 @@
 <!-- apb4_periph&#45;&gt;sysctrl -->
 <g id="edge19" class="edge">
 <title>apb4_periph&#45;&gt;sysctrl</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1922.09,-338.92C1955.25,-328.05 1992,-316 1992,-316 1992,-316 2070,-289 2070,-289 2070,-289 2166,-266 2166,-266 2166,-266 2171.79,-264.54 2180.67,-262.3"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1957.99,-338.92C1984.08,-328.05 2013,-316 2013,-316 2013,-316 2070,-289 2070,-289 2070,-289 2166,-266 2166,-266 2166,-266 2171.79,-264.54 2180.67,-262.3"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2181.47,-264.62 2187.65,-260.54 2180.27,-259.87 2181.47,-264.62"/>
 <text text-anchor="middle" x="2080.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- apb4_periph&#45;&gt;clint -->
 <g id="edge20" class="edge">
 <title>apb4_periph&#45;&gt;clint</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1805.28,-339.82C1803.2,-339.3 1802,-339 1802,-339 1802,-339 1430,-316 1430,-316 1430,-316 1329,-289 1329,-289 1329,-289 554,-266 554,-266 554,-266 549.74,-264.68 543.1,-262.62"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1852.28,-339.82C1850.2,-339.3 1849,-339 1849,-339 1849,-339 1453,-316 1453,-316 1453,-316 1392,-289 1392,-289 1392,-289 554,-266 554,-266 554,-266 549.74,-264.68 543.1,-262.62"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="543.81,-260.27 536.39,-260.54 542.35,-264.95 543.81,-260.27"/>
-<text text-anchor="middle" x="1440.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<text text-anchor="middle" x="1463.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- apb4_periph_targets -->
 <g id="node22" class="node">
@@ -433,23 +433,23 @@
 <!-- apb4_periph&#45;&gt;apb4_periph_targets -->
 <g id="edge21" class="edge">
 <title>apb4_periph&#45;&gt;apb4_periph_targets</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1894.86,-338.99C1923.38,-319.48 1970.43,-287.28 2003.43,-264.71"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2005.02,-266.59 2009.41,-260.61 2002.25,-262.54 2005.02,-266.59"/>
-<text text-anchor="middle" x="1975.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1935.03,-338.99C1955.39,-319.78 1988.78,-288.28 2012.64,-265.76"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2014.47,-267.41 2017.88,-260.82 2011.1,-263.84 2014.47,-267.41"/>
+<text text-anchor="middle" x="1996.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- apb4_periph&#45;&gt;uart0 -->
 <g id="edge22" class="edge">
 <title>apb4_periph&#45;&gt;uart0</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1844,-338.92C1813.78,-319.07 1768,-289 1768,-289 1768,-289 1723.05,-275.62 1679.65,-262.71"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1680.12,-260.29 1672.71,-260.64 1678.72,-264.98 1680.12,-260.29"/>
-<text text-anchor="middle" x="1816.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1883.35,-338.92C1844.24,-319.07 1785,-289 1785,-289 1785,-289 1734.71,-275.41 1686.57,-262.4"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1687.2,-260.03 1679.8,-260.57 1685.92,-264.76 1687.2,-260.03"/>
+<text text-anchor="middle" x="1845.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- apb4_periph&#45;&gt;i2c_controllers -->
 <g id="edge23" class="edge">
 <title>apb4_periph&#45;&gt;i2c_controllers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1814.92,-338.92C1779.86,-328.05 1741,-316 1741,-316 1741,-316 1692,-289 1692,-289 1692,-289 1469,-266 1469,-266 1469,-266 1462.18,-264.45 1451.81,-262.1"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1852.33,-339.73C1808.31,-328.66 1758,-316 1758,-316 1758,-316 1683,-289 1683,-289 1683,-289 1469,-266 1469,-266 1469,-266 1462.18,-264.45 1451.81,-262.1"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1452.29,-259.7 1444.92,-260.54 1451.2,-264.47 1452.29,-259.7"/>
-<text text-anchor="middle" x="1751.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<text text-anchor="middle" x="1768.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- gpio_controller -->
 <g id="node27" class="node">
@@ -462,7 +462,7 @@
 <!-- apb4_periph&#45;&gt;gpio_controller -->
 <g id="edge24" class="edge">
 <title>apb4_periph&#45;&gt;gpio_controller</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1934.55,-352.83C2127.08,-343.37 2684,-316 2684,-316 2684,-316 2684,-289 2684,-289 2684,-289 2628.59,-275.35 2575.67,-262.32"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1981.73,-352.62C2166.65,-342.98 2684,-316 2684,-316 2684,-316 2684,-289 2684,-289 2684,-289 2628.59,-275.35 2575.67,-262.32"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2575.95,-259.86 2568.56,-260.57 2574.77,-264.62 2575.95,-259.86"/>
 <text text-anchor="middle" x="2704" y="-305.1" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 <text text-anchor="middle" x="2704" y="-296.1" font-family="Arial" font-size="8.00" fill="#374151">user/admin</text>
@@ -470,16 +470,16 @@
 <!-- apb4_periph&#45;&gt;timers -->
 <g id="edge25" class="edge">
 <title>apb4_periph&#45;&gt;timers</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1805.23,-346.37C1725.63,-334.53 1601,-316 1601,-316 1601,-316 1511,-289 1511,-289 1511,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1852.4,-348.05C1757.62,-336.38 1592,-316 1592,-316 1592,-316 1534,-289 1534,-289 1534,-289 991,-266 991,-266 991,-266 984.42,-264.48 974.38,-262.17"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="974.69,-259.72 967.32,-260.54 973.59,-264.5 974.69,-259.72"/>
-<text text-anchor="middle" x="1611.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<text text-anchor="middle" x="1602.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- apb4_periph&#45;&gt;ws2812 -->
 <g id="edge26" class="edge">
 <title>apb4_periph&#45;&gt;ws2812</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1863.31,-338.99C1855.95,-320.26 1843.99,-289.86 1835.2,-267.48"/>
-<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1837.42,-266.44 1832.58,-260.82 1832.86,-268.23 1837.42,-266.44"/>
-<text text-anchor="middle" x="1863.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M1908.5,-338.75C1898.72,-318.89 1884,-289 1884,-289 1884,-289 1870.21,-277.51 1855.86,-265.55"/>
+<polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="1857.09,-263.38 1850.14,-260.79 1853.95,-267.15 1857.09,-263.38"/>
+<text text-anchor="middle" x="1906.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- apb4_system_targets -->
 <g id="node30" class="node">
@@ -513,9 +513,9 @@
 <!-- apb4_system&#45;&gt;wdg -->
 <g id="edge31" class="edge">
 <title>apb4_system&#45;&gt;wdg</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3040.86,-354.82C2775.92,-348.22 1484,-316 1484,-316 1484,-316 1453,-289 1453,-289 1453,-289 758,-266 758,-266 758,-266 752.59,-264.57 744.26,-262.36"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" d="M3040.68,-354.8C2777.62,-348.15 1507,-316 1507,-316 1507,-316 1476,-289 1476,-289 1476,-289 758,-266 758,-266 758,-266 752.59,-264.57 744.26,-262.36"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="744.75,-259.96 737.36,-260.54 743.5,-264.7 744.75,-259.96"/>
-<text text-anchor="middle" x="1494.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
+<text text-anchor="middle" x="1517.5" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">APB4</text>
 </g>
 <!-- crc -->
 <g id="node33" class="node">
@@ -757,9 +757,9 @@
 <!-- rtc&#45;&gt;sysctrl -->
 <g id="edge56" class="edge">
 <title>rtc&#45;&gt;sysctrl</title>
-<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1208.38,-260.53C1222.3,-263.75 1232,-266 1232,-266 1232,-266 1628,-297 1628,-297 1628,-297 1686,-297 1686,-297 1686,-297 2166,-266 2166,-266 2166,-266 2171.45,-264.57 2179.89,-262.37"/>
+<path fill="none" stroke="#4b5563" stroke-width="1.2" stroke-dasharray="5,2" d="M1208.38,-260.53C1222.3,-263.75 1232,-266 1232,-266 1232,-266 1619,-297 1619,-297 1619,-297 1677,-297 1677,-297 1677,-297 2166,-266 2166,-266 2166,-266 2171.45,-264.57 2179.89,-262.37"/>
 <polygon fill="#4b5563" stroke="#4b5563" stroke-width="1.2" points="2180.73,-264.68 2186.88,-260.53 2179.49,-259.94 2180.73,-264.68"/>
-<text text-anchor="middle" x="1657" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">wake live / sticky</text>
+<text text-anchor="middle" x="1648" y="-300.6" font-family="Arial" font-size="8.00" fill="#374151">wake live / sticky</text>
 </g>
 <!-- rtc&#45;&gt;irq -->
 <g id="edge55" class="edge">

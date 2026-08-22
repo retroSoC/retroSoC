@@ -53,7 +53,7 @@ $(MPW_STAMP):
 	@mkdir -p $(@D)
 	@touch $@
 
-$(MPW_VARIANT_STAMP): $(MPW_STAMP) $(ROOT_PATH)/scripts/generate_mpw.py
+$(MPW_VARIANT_STAMP): $(MPW_STAMP) $(USER_EXTENSIONS_SOURCE) $(ROOT_PATH)/scripts/generate_mpw.py
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/generate_mpw.py --root $(ROOT_PATH) \
 		--output $(MPW_OUTPUT_DIR) \
 		--lock-file $(CACHE_ROOT)/locks/mpw.lock
