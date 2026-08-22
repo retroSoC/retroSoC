@@ -92,10 +92,10 @@ module apb4_system (
       .rtc_rst_n_i(rst_aud_n_i)
   );
   wdg_if u_wdg_if (
-      .wdg_clk_i     (clk_aud_i),
-      .wdg_rst_n_i   (rst_aud_n_i),
-      .debug_halted_i(debug_halted_i)
+      .wdg_clk_i  (clk_aud_i),
+      .wdg_rst_n_i(rst_aud_n_i)
   );
+  assign u_wdg_if.debug_halted_i = debug_halted_i;
   `include "apb4_system_bridges.svh"
 
   // verilog_format: off -- preserve reviewed column alignment

@@ -41,6 +41,7 @@ from scripts.development_environment import (  # noqa: E402
 from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.package import make_sbom  # noqa: E402
+from scripts.prepare_mpw import patch_serv  # noqa: E402
 from scripts import regress  # noqa: E402
 from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
@@ -397,6 +398,34 @@ def test_mpw_generator_uses_only_the_native_v2_contract() -> None:
     assert "prepare_legacy_mpw_workspace" not in source
     assert '"mpwgen"' in source
     assert '"generate"' in source
+
+
+def test_serv_setup_patch_is_idempotent(tmp_path: Path) -> None:
+    state = tmp_path / "serv_state.v"
+    state.write_text(
+        "module serv_state;\n"
+        "   wire misalign_trap_sync;\n"
+        "   assign use_trap = !trap_pending;\n"
+        "   wire trap_pending = WITH_CSR & trap_condition;\n"
+        "endmodule\n",
+        encoding="utf-8",
+    )
+
+    patch_serv(tmp_path)
+    first = state.read_text(encoding="utf-8")
+    patch_serv(tmp_path)
+
+    assert state.read_text(encoding="utf-8") == first
+    assert first.index("wire trap_pending;") < first.index("!trap_pending")
+    assert "assign trap_pending = WITH_CSR & trap_condition;" in first
+
+
+def test_serv_setup_patch_rejects_unknown_source(tmp_path: Path) -> None:
+    state = tmp_path / "serv_state.v"
+    state.write_text("module serv_state; endmodule\n", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="patch markers missing"):
+        patch_serv(tmp_path)
 
 
 def test_mpw_active_manifest_uses_self_owned_design_selection(tmp_path: Path) -> None:
@@ -828,6 +857,18 @@ def test_verilator_has_no_external_core_selection() -> None:
     assert "core-sel" not in command_line
     assert "core_sel_i" not in wrapper
     assert "core_sel_i" not in testbench
+
+
+def test_systemverilog_testbench_starts_in_reset_with_known_clocks() -> None:
+    testbench = (ROOT / "rtl/mini/dv/tb/retrosoc_tb.sv").read_text(encoding="utf-8")
+
+    assert "localparam time ResetHoldTime = 170744ns;" in testbench
+    for clock in ("r_ext_clk", "r_aud_clk", "r_xtal_clk"):
+        assert f"{clock} = 1'b0;" in testbench
+        assert f"{clock} = ~{clock};" in testbench
+    assert testbench.index("r_rst_n = 1'b0;") < testbench.index("#ResetHoldTime;")
+    assert testbench.index("#ResetHoldTime;") < testbench.index("r_rst_n = 1'b1;")
+    assert "#43;" not in testbench
 
 
 def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
