@@ -1,6 +1,9 @@
 `timescale 1ns / 1ps
 
 module sdio_register_tb;
+  localparam logic [31:0] Sdio0Base = 32'h1000_F000;
+  localparam logic [31:0] Sdio1Base = 32'h1001_5000;
+
   logic                              clk_i = 1'b0;
   logic                              rst_n_i = 1'b0;
   logic                              busy_i = 1'b0;
@@ -288,6 +291,25 @@ module sdio_register_tb;
     if ((value != 32'h5566_7788) || (pio_consume_count != 2)) begin
       $fatal(1, "consecutive PIO read contract failed: %h count=%0d", value, pio_consume_count);
     end
+
+    apb_read(Sdio0Base + `APB4_SDIO__IP_ID, value);
+    if (value != 32'h5344_494F) $fatal(1, "SDIO0 base IP ID mismatch");
+    apb_write(Sdio0Base + `APB4_SDIO__IRQ_ENABLE, 32'h0000_0001, 4'h1, 1'b0);
+    apb_write(Sdio0Base + `APB4_SDIO__IRQ_TEST, 32'h0000_0001, 4'h1, 1'b0);
+    apb_read(Sdio0Base + `APB4_SDIO__IRQ_STATUS, value);
+    if ((value & 32'h1) == 0 || !irq_o) $fatal(1, "SDIO0 base IRQ test failed");
+    apb_write(Sdio0Base + `APB4_SDIO__IRQ_STATUS, 32'h0000_0001, 4'h1, 1'b0);
+    if (irq_o) $fatal(1, "SDIO0 base IRQ W1C failed");
+
+    apb_read(Sdio1Base + `APB4_SDIO__IP_VERSION, value);
+    if (value != 32'h0001_0000) $fatal(1, "SDIO1 base version mismatch");
+    apb_write(Sdio1Base + `APB4_SDIO__IRQ_ENABLE, 32'h0000_0002, 4'h1, 1'b0);
+    apb_write(Sdio1Base + `APB4_SDIO__IRQ_TEST, 32'h0000_0002, 4'h1, 1'b0);
+    apb_read(Sdio1Base + `APB4_SDIO__IRQ_STATUS, value);
+    if ((value & 32'h2) == 0 || !irq_o) $fatal(1, "SDIO1 base IRQ test failed");
+    apb_write(Sdio1Base + `APB4_SDIO__IRQ_STATUS, 32'h0000_0002, 4'h1, 1'b0);
+    if (irq_o) $fatal(1, "SDIO1 base IRQ W1C failed");
+
     $display("SDIO APB register test passed");
     $finish;
   end

@@ -194,9 +194,6 @@ module sdio_reg (
       `APB4_SDIO__DEBUG:           s_read_data = {30'd0, pio_ready_i, pio_valid_i};
       default:                     s_read_error = 1'b1;
     endcase
-    if (apb4.paddr[31:12] != 20'd0) begin
-      s_read_error = 1'b1;
-    end
   end
 
   always_comb begin
@@ -243,9 +240,6 @@ module sdio_reg (
         s_write_error = 1'b1;
       end
     endcase
-    if (apb4.paddr[31:12] != 20'd0) begin
-      s_write_error = 1'b1;
-    end
   end
 
   always_comb begin
