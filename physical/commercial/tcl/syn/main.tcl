@@ -66,12 +66,12 @@ proc run_synthesis {} {
     flow::apply_constraints
     redirect [file join $report_dir check_design.pre.rpt] { check_design }
     redirect [file join $report_dir check_timing.pre.rpt] {
-        check_timing -verbose
+        check_timing
     }
     if {![check_design]} {
         flow::fail "pre-compile Design Compiler check_design failed"
     }
-    if {![check_timing -include {no_clock unconstrained_endpoints}]} {
+    if {![check_timing -include {unconstrained_endpoints}]} {
         flow::fail "pre-compile timing constraints are incomplete"
     }
     set_fix_multiple_port_nets -all -buffer_constants
@@ -89,7 +89,7 @@ proc run_synthesis {} {
         check_design -summary
     }
     redirect [file join $report_dir check_timing.rpt] {
-        check_timing -verbose
+        check_timing
     }
     redirect [file join $report_dir timing.setup.rpt] {
         report_timing -delay_type max -max_paths 1000 -input_pins -nets
@@ -119,7 +119,7 @@ proc run_synthesis {} {
     if {![check_design]} {
         flow::fail "Design Compiler check_design failed"
     }
-    if {![check_timing -include {no_clock unconstrained_endpoints}]} {
+    if {![check_timing -include {unconstrained_endpoints}]} {
         flow::fail "Design Compiler timing constraints are incomplete"
     }
     if {[flow::report_has_failure [file join $report_dir check_design.rpt] \

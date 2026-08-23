@@ -287,6 +287,16 @@ def test_dc_analyze_receives_one_source_list_argument() -> None:
     assert "concat $analyze_command [dict get $rtl sources]" not in synthesis
 
 
+def test_dc_check_timing_uses_supported_options() -> None:
+    synthesis = (FLOW / "tcl/syn/main.tcl").read_text(encoding="utf-8")
+    assert synthesis.count("check_timing\n") == 2
+    assert "check_timing -verbose" not in synthesis
+    assert synthesis.count(
+        "check_timing -include {unconstrained_endpoints}"
+    ) == 2
+    assert "no_clock" not in synthesis
+
+
 def test_commercial_timing_contract_covers_canonical_domains(tmp_path: Path) -> None:
     output = tmp_path / "commercial_timing_contract.tcl"
     subprocess.run(
