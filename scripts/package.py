@@ -116,6 +116,16 @@ def main() -> int:
             str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "core/core.fl"),
             "--dynamic-ip-filelist",
             str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "ip/ip.fl"),
+            "--memory-map-filelist",
+            str(args.variant_root / "generated/memory_map/memory_map.fl"),
+            "--soc-topology-filelist",
+            str(args.variant_root / "generated/soc_topology/soc_topology.fl"),
+            "--user-extensions-filelist",
+            str(args.variant_root / "generated/user_extensions/user_extensions.fl"),
+            "--pin-map-filelist",
+            str(args.variant_root / "generated/pin_map/pin_map.fl"),
+            "--archinfo-incdir",
+            str(args.variant_root / "generated/archinfo"),
         ]
         for key, flag in (
             ("HAVE_PLL", "--have-pll"),
@@ -128,7 +138,6 @@ def main() -> int:
         subprocess.run(command, cwd=root, check=True)
         command[2] = "tar"
         subprocess.run(command, cwd=root, check=True)
-        shutil.rmtree(staging / "rtl")
         shutil.copy2(args.lock, staging / "dependencies.lock.json")
         shutil.copy2(manifest_path, staging / "manifest.json")
         (staging / "sbom.cdx.json").write_text(

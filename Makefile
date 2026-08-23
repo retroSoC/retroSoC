@@ -268,7 +268,7 @@ ifeq ($(STA), OPENSTA)
 endif
 
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
-	clean-all purge-cache manifest check-warnings metrics check-metrics package \
+	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
 	benchmark-report coremark-report \
@@ -327,6 +327,7 @@ help:
 	  '  regress-smoke              run the IHP130 fast regression suite' \
 	  '  regress-pr | regress-nightly run supported full regression suites' \
 	  '  package                    create checksummed source deliverables' \
+	  '  commercial-package         create the RTL package consumed in the EDA zone' \
 	  '  clean | clean-all          clean current flow or all build output' \
 	  '  purge-cache                remove dependency and compiler caches' \
 	  '' \
@@ -477,6 +478,14 @@ sw-host-test:
 package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
 	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
 	  --variant-root $(VARIANT_ROOT) --output-dir $(ROOT_PATH)/dist/$(VARIANT_ID)
+
+commercial-package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
+	@test '$(PDK)' = ICS55
+	@test '$(HAVE_PLL)' = YES
+	@test '$(HAVE_SRAM_IF)' = YES
+	@test '$(HAVE_SRAM_MACRO)' = YES
+	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
+	  --variant-root $(VARIANT_ROOT) --output-dir $(VARIANT_ROOT)/commercial/input
 
 regress-smoke:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130

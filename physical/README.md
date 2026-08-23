@@ -1,11 +1,15 @@
 # Physical Design
 
 This directory owns physical-design integration, managed technology inputs,
-and smoke implementation-flow sources.
+smoke implementation-flow sources, and the self-developed commercial-flow
+drivers.
 
 - `pdk/` contains the locked PDK setup helpers and managed PDK checkouts.
 - `smoke/syn/` contains Yosys synthesis and source-export integration.
 - `smoke/sta/` contains OpenSTA constraints and timing integration.
+- `commercial/` contains licensed-tool orchestration and flow logic. PDKs,
+  foundry decks, commercial libraries, site configuration, and results remain
+  outside Git.
 - `sdf/`, when supplied by an implementation flow, contains post-layout
   netlist and SDF collateral consumed by post-layout simulation.
 

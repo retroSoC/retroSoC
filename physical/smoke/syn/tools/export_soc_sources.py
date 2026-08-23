@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import io
 import re
-import shutil
 import sys
 import tarfile
 import tempfile
@@ -53,15 +53,27 @@ def configured_filelist(
     *,
     require_files: bool = True,
 ) -> FileList:
-    names = [
-        "def.fl",
-        "sys_def.fl",
-        "commonip.fl",
-        "inc.fl",
-        "clusterip.fl",
-        "ip.fl",
-        "tech.fl",
-    ]
+    names: list[str | Path] = []
+    for name in (
+        "memory_map_filelist",
+        "soc_topology_filelist",
+        "user_extensions_filelist",
+    ):
+        path = getattr(args, name, None)
+        if path is not None:
+            names.append(path)
+    names.extend(
+        [
+            "def.fl",
+            "sys_def.fl",
+            "commonip.fl",
+            "inc.fl",
+        ]
+    )
+    pin_map = getattr(args, "pin_map_filelist", None)
+    if pin_map is not None:
+        names.append(pin_map)
+    names.extend(["clusterip.fl", "ip.fl", "tech.fl"])
     names.append("core_hazard3.fl")
     dynamic_core = args.dynamic_core_filelist
     if not dynamic_core.is_file():
@@ -71,10 +83,19 @@ def configured_filelist(
     if not dynamic_ip.is_file():
         raise FileNotFoundError(f"user IP filelist is not generated: {dynamic_ip}")
     names.append(str(dynamic_ip))
-    names.append(str(user_extensions_dir / "user_extensions.fl"))
+    if getattr(args, "user_extensions_filelist", None) is None:
+        names.append(str(user_extensions_dir / "user_extensions.fl"))
     names.append("top.fl")
     paths = [Path(name) if Path(name).is_absolute() else generated_dir / name for name in names]
-    return parse_filelists(paths, require_files=require_files)
+    filelist = parse_filelists(paths, require_files=require_files)
+    archinfo_incdir = getattr(args, "archinfo_incdir", None)
+    if archinfo_incdir is not None:
+        archinfo_incdir = archinfo_incdir.resolve()
+        if require_files and not archinfo_incdir.is_dir():
+            raise FileNotFoundError(f"archinfo include directory not found: {archinfo_incdir}")
+        filelist.incdirs.append(archinfo_incdir)
+        filelist.deduplicate()
+    return filelist
 
 
 def resolve_include(name: str, incdirs: list[Path], current_file: Path) -> Path | None:
@@ -160,25 +181,25 @@ def bundle_relative(path: Path) -> Path:
 
 
 def write_tar(filelist: FileList, export_dir: Path, soc: str) -> Path:
-    bundle = export_dir / "rtl"
-    if bundle.exists():
-        shutil.rmtree(bundle)
-    bundle.mkdir(parents=True)
-
+    export_dir.mkdir(parents=True, exist_ok=True)
     sources = [*filelist.library_files, *filelist.files]
+    bundled_files: dict[Path, Path] = {}
     for source in [*sources, *collect_includes(sources, filelist.incdirs)]:
-        destination = bundle / bundle_relative(source)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
+        bundled_files[bundle_relative(source)] = source.resolve()
 
     manifest = [*filelist.defines]
     manifest.extend(f"+incdir+{bundle_relative(path)}" for path in filelist.incdirs)
     manifest.extend(str(bundle_relative(path)) for path in sources)
-    atomic_write(bundle / "filelist.fl", "\n".join(manifest) + "\n")
+    manifest_data = ("\n".join(manifest) + "\n").encode()
 
     tar_path = export_dir / f"retrosoc_{soc.lower()}_sources.tar.gz"
     with tarfile.open(tar_path, "w:gz") as archive:
-        archive.add(bundle, arcname="rtl")
+        for relative, source in sorted(bundled_files.items()):
+            archive.add(source, arcname=str(Path("rtl") / relative), recursive=False)
+        filelist_info = tarfile.TarInfo("rtl/filelist.fl")
+        filelist_info.size = len(manifest_data)
+        filelist_info.mode = 0o644
+        archive.addfile(filelist_info, io.BytesIO(manifest_data))
     return tar_path
 
 
@@ -203,6 +224,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         required=True,
     )
+    parser.add_argument("--memory-map-filelist", type=Path)
+    parser.add_argument("--soc-topology-filelist", type=Path)
+    parser.add_argument("--user-extensions-filelist", type=Path)
+    parser.add_argument("--pin-map-filelist", type=Path)
+    parser.add_argument("--archinfo-incdir", type=Path)
     parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "export")
     return parser.parse_args()
 
@@ -217,9 +243,11 @@ def main() -> int:
         generated_dir = Path(temporary)
         user_extensions_dir = generated_dir / "user_extensions"
         generate_all(generated_dir, build_defines(args))
-        generate_user_extensions(
-            REPO_ROOT / "rtl/mini/integration/user_extensions.json", user_extensions_dir
-        )
+        if args.user_extensions_filelist is None:
+            generate_user_extensions(
+                REPO_ROOT / "rtl/mini/integration/user_extensions.json",
+                user_extensions_dir,
+            )
         filelist = configured_filelist(args, generated_dir, user_extensions_dir)
         if args.mode == "sv":
             output = export_dir / "retrosoc_asic_sources.sv"

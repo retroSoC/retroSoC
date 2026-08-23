@@ -195,6 +195,64 @@ def test_package_forwards_manifest_jtag_idcode() -> None:
     assert '"--jtag-idcode"' in package_source
     assert 'config.get("JTAG_IDCODE", "DEADBEEF")' in package_source
     assert '"--core"' not in package_source
+    for option in (
+        "--memory-map-filelist",
+        "--soc-topology-filelist",
+        "--user-extensions-filelist",
+        "--pin-map-filelist",
+        "--archinfo-incdir",
+    ):
+        assert f'"{option}"' in package_source
+
+
+def test_source_export_writes_tar_without_staging_rtl_tree(tmp_path: Path) -> None:
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_tar_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    source = ROOT / "rtl/mini/top/retrosoc_asic.sv"
+    filelist = parse_filelists([], require_files=False)
+    filelist.files.append(source)
+    archive = source_export.write_tar(filelist, tmp_path, "MINI")
+
+    assert not (tmp_path / "rtl").exists()
+    with tarfile.open(archive) as bundle:
+        names = bundle.getnames()
+        assert "rtl/mini/top/retrosoc_asic.sv" in names
+        assert bundle.extractfile("rtl/filelist.fl").read().decode() == (
+            "mini/top/retrosoc_asic.sv\n"
+        )
+
+
+def test_source_export_bundles_generated_include(tmp_path: Path) -> None:
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_include_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    include_dir = tmp_path / "generated/archinfo"
+    include_dir.mkdir(parents=True)
+    header = include_dir / "archinfo_integration_metadata.svh"
+    header.write_text("`define ARCHINFO_TEST 1\n", encoding="utf-8")
+    source = tmp_path / "design.sv"
+    source.write_text(
+        '`include "archinfo_integration_metadata.svh"\nmodule design; endmodule\n',
+        encoding="utf-8",
+    )
+    filelist = parse_filelists([], require_files=False)
+    filelist.incdirs.append(include_dir)
+    filelist.files.append(source)
+
+    archive = source_export.write_tar(filelist, tmp_path / "output", "MINI")
+
+    with tarfile.open(archive) as bundle:
+        names = bundle.getnames()
+        assert f"rtl/{source_export.bundle_relative(header)}" in names
+        filelist_text = bundle.extractfile("rtl/filelist.fl").read().decode()
+        assert f"+incdir+{source_export.bundle_relative(include_dir)}" in filelist_text
 
 
 def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> None:
