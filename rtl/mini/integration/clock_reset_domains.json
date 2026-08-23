@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "reset_ports": ["ext_rst_n_i_pad"],
+  "reset_ports": ["ext_rst_n_i_pad", "jtag_trst_n_i_pad"],
   "domains": [
     {
       "name": "external",

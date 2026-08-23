@@ -21,6 +21,7 @@ proc count_violations {path} {
 }
 
 proc run_sta {} {
+    flow::require_qualified_synthesis
     set top [flow::env TOP]
     set tag [string tolower [flow::env STA_TAG]]
     set scenario [flow::env STA_SCENARIO]
@@ -35,6 +36,7 @@ proc run_sta {} {
     set output_dir [file join $base output]
     set work_dir [file join $base work]
     flow::load_pt_scenario $tag $scenario
+    flow::require_commercial_clock_inventory
 
     update_timing -full
     if {![check_timing -include {no_clock unconstrained_endpoints}]} {
@@ -68,6 +70,14 @@ proc run_sta {} {
     }
     redirect [file join $report_dir ${scenario}.clocks.rpt] {
         report_clock_timing -type summary
+    }
+    redirect [file join $report_dir ${scenario}.exceptions.rpt] {
+        report_exceptions -nosplit
+    }
+    redirect [file join $report_dir ${scenario}.libraries.rpt] {
+        foreach_in_collection library [get_libs *] {
+            puts [get_object_name $library]
+        }
     }
     set drv_count [count_violations $constraint_report]
     flow::write_text [file join $output_dir ${scenario}.summary.tsv] \

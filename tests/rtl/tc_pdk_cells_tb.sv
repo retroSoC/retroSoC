@@ -1,6 +1,13 @@
 `timescale 1ns / 1ps
 
 module tc_pdk_cells_tb;
+`ifdef USE_POWER_PINS
+  wire iovdd = 1'b1;
+  wire iovss = 1'b0;
+  wire vdd = 1'b1;
+  wire vss = 1'b0;
+`endif
+
   logic in_drive;
   logic in_drive_en;
   tri   in_pad;
@@ -112,16 +119,34 @@ module tc_pdk_cells_tb;
   assign full_pad    = full_drive_en ? full_drive : 1'bz;
 
   tc_io_in_pad u_tc_io_in_pad (
-      .pad(in_pad),
-      .p2c(in_p2c)
+`ifdef USE_POWER_PINS
+      .iovdd(iovdd),
+      .iovss(iovss),
+      .vdd  (vdd),
+      .vss  (vss),
+`endif
+      .pad  (in_pad),
+      .p2c  (in_p2c)
   );
 
   tc_io_out_pad u_tc_io_out_pad (
-      .pad(out_pad),
-      .c2p(out_c2p)
+`ifdef USE_POWER_PINS
+      .iovdd(iovdd),
+      .iovss(iovss),
+      .vdd  (vdd),
+      .vss  (vss),
+`endif
+      .pad  (out_pad),
+      .c2p  (out_c2p)
   );
 
   tc_io_tri_pad u_tc_io_tri_pad (
+`ifdef USE_POWER_PINS
+      .iovdd (iovdd),
+      .iovss (iovss),
+      .vdd   (vdd),
+      .vss   (vss),
+`endif
       .pad   (tri_pad),
       .c2p   (tri_c2p),
       .c2p_en(tri_c2p_en),
@@ -129,6 +154,12 @@ module tc_pdk_cells_tb;
   );
 
   tc_io_tri_schmitt_pad u_tc_io_tri_schmitt_pad (
+`ifdef USE_POWER_PINS
+      .iovdd (iovdd),
+      .iovss (iovss),
+      .vdd   (vdd),
+      .vss   (vss),
+`endif
       .pad   (schmitt_pad),
       .c2p   (schmitt_c2p),
       .c2p_en(schmitt_c2p_en),
@@ -136,6 +167,12 @@ module tc_pdk_cells_tb;
   );
 
   tc_io_tri_full_pad u_tc_io_tri_full_pad (
+`ifdef USE_POWER_PINS
+      .iovdd (iovdd),
+      .iovss (iovss),
+      .vdd   (vdd),
+      .vss   (vss),
+`endif
       .pad   (full_pad),
       .c2p   (full_c2p),
       .c2p_en(full_c2p_en),

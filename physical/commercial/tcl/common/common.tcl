@@ -180,6 +180,14 @@ proc flow::all_library_files {} {
     return [lsort -unique $result]
 }
 
+proc flow::synthesis_library_files {} {
+    return [flow::library_files TYP]
+}
+
+proc flow::synthesis_target_files {} {
+    return [flow::env_list SYN_STD_DB_TYP]
+}
+
 proc flow::timing_files {pvt} {
     set result {}
     foreach prefix {STD_LIB IO_LIB SRAM_LIB} {
@@ -200,6 +208,49 @@ proc flow::all_lefs {} {
 proc flow::report_has_failure {path patterns} {
     if {![file isfile $path]} {
         flow::fail "required report was not written: $path"
+    }
+
+    proc flow::count_report_matches {path pattern} {
+        if {![file isfile $path]} {
+            flow::fail "required report was not written: $path"
+        }
+        set handle [open $path r]
+        set text [read $handle]
+        close $handle
+        return [regexp -all -nocase -- $pattern $text]
+    }
+
+    proc flow::require_qualified_synthesis {} {
+        variable run_root
+        set summary [file join $run_root syn output synthesis.summary.tsv]
+        if {![file isfile $summary]} {
+            flow::fail "qualified synthesis summary is missing: $summary"
+        }
+        array set values {}
+        set handle [open $summary r]
+        while {[gets $handle line] >= 0} {
+            if {[regexp {^([^\t]+)\t([^\t]+)$} $line unused name value]} {
+                set values($name) $value
+            }
+        }
+
+        proc flow::require_commercial_clock_inventory {} {
+            set expected {
+                clk_external clk_audio clk_jtag clk_dvp clk_usb2_ulpi
+                clk_xtal clk_pll clk_system_ext clk_system_pll
+            }
+            foreach name $expected {
+                if {[sizeof_collection [get_clocks -quiet $name]] != 1} {
+                    flow::fail "commercial clock is missing or ambiguous: $name"
+                }
+            }
+        }
+        close $handle
+        foreach name {flow_pass constraints_complete io_qualified} {
+            if {![info exists values($name)] || $values($name) ne "yes"} {
+                flow::fail "synthesis is not qualified for implementation: $name"
+            }
+        }
     }
     set handle [open $path r]
     set text [read $handle]

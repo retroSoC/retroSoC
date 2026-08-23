@@ -48,6 +48,10 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     testbench = (tmp_path / "rtl/retrosoc_asic_tb_bindings.svh").read_text(encoding="utf-8")
     verilator = (tmp_path / "rtl/retrosoc_asic_verilator_bindings.svh").read_text(encoding="utf-8")
 
+    assert "inout wire IOVDD," in ports
+    assert "inout wire IOVSS," in ports
+    assert "inout wire VDD," in ports
+    assert "inout wire VSS," in ports
     assert "inout extclk_i_pad," in ports
     assert "input xi_i_pad," in ports
     assert "inout sdram_dq15_io_pad" in ports
@@ -71,8 +75,13 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert ".c2p(u_sdio1_if.cmd_do_o)" in pads
     assert ".c2p_en(u_sdio1_if.cmd_oe_o)" in pads
     assert ".p2c(u_sdio1_if.cmd_di_i)" in pads
-    assert "tc_io_tri_pad u_usb2_ulpi_clk_i_pad" in pads
+    assert "tc_io_in_pad u_usb2_ulpi_clk_i_pad" in pads
     assert ".p2c(s_usb2_ulpi_clk)" in pads
+    assert "`define RETROSOC_PAD_POWER_CONNECTIONS" in pads
+    assert "for (genvar i = 0; i < 24; i++) begin : vdd_pads" in pads
+    assert "for (genvar i = 0; i < 24; i++) begin : vss_pads" in pads
+    assert "for (genvar i = 0; i < 16; i++) begin : iovdd_pads" in pads
+    assert "for (genvar i = 0; i < 16; i++) begin : iovss_pads" in pads
     assert "u_usb2_ulpi_data7_io_pad" in pads
     assert ".c2p(u_usb2_ulpi_if.data_do_o[7])" in pads
     assert ".c2p_en(u_usb2_ulpi_if.data_oe_o)" in pads

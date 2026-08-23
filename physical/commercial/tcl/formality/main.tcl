@@ -35,7 +35,7 @@ proc run_formality {} {
     set base [flow::stage_dirs formality $lower_mode]
     set report_dir [file join $base reports]
     set output_dir [file join $base output]
-    set libraries [flow::all_library_files]
+    set libraries [flow::synthesis_library_files]
 
     set rtl_filelist [file join $run_root input rtl filelist.fl]
     set rtl [flow::read_filelist $rtl_filelist]

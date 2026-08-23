@@ -7,6 +7,7 @@ drivers.
 - `pdk/` contains the locked PDK setup helpers and managed PDK checkouts.
 - `smoke/syn/` contains Yosys synthesis and source-export integration.
 - `smoke/sta/` contains OpenSTA constraints and timing integration.
+- `librelane/` contains the single-level open-source IHP130 full-chip pad-ring flow.
 - `commercial/` contains licensed-tool orchestration and flow logic. PDKs,
   foundry decks, commercial libraries, site configuration, and results remain
   outside Git.

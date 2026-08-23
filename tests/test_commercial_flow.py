@@ -13,6 +13,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -286,11 +287,151 @@ def test_dc_analyze_receives_one_source_list_argument() -> None:
     assert "concat $analyze_command [dict get $rtl sources]" not in synthesis
 
 
+def test_commercial_timing_contract_covers_canonical_domains(tmp_path: Path) -> None:
+    output = tmp_path / "commercial_timing_contract.tcl"
+    subprocess.run(
+        [
+            sys.executable,
+            str(FLOW / "scripts/generate_timing_contract.py"),
+            "--domains",
+            str(ROOT / "rtl/mini/integration/clock_reset_domains.json"),
+            "--pin-map",
+            str(ROOT / "rtl/mini/pin_map/pin_map.json"),
+            "--output",
+            str(output),
+        ],
+        check=True,
+    )
+    script = (
+        "namespace eval flow {}\n"
+        f"source {{{output}}}\n"
+        "puts [join [lsort [dict keys $flow::canonical_clock_domains]] ,]\n"
+        "puts [join $flow::canonical_reset_ports ,]\n"
+    )
+    result = subprocess.run(
+        ["tclsh"],
+        input=script,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert result.stdout.splitlines() == [
+        "audio,dvp,external,jtag,system,usb2_ulpi",
+        "ext_rst_n_i_pad,jtag_trst_n_i_pad",
+    ]
+    assert "u_retrosoc/u_apb4_periph/u_axi4_dvp" in output.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_commercial_constraints_do_not_apply_global_io_delays() -> None:
+    constraints = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (FLOW / "tcl/common").glob("*constraints.tcl")
+    )
+    assert "set_input_delay" in constraints
+    assert "set_output_delay" in constraints
+    assert "set_input_delay" + " -clock clk_external" not in constraints
+    assert "set_output_delay" + " -clock clk_external" not in constraints
+    assert "set_input_delay" + " -clock $clock" in constraints
+    assert "set_output_delay" + " -clock $clock" in constraints
+
+
+def test_dc_uses_typ_link_set_and_svt_lvt_target_subset() -> None:
+    synthesis = (FLOW / "tcl/syn/main.tcl").read_text(encoding="utf-8")
+    common = (FLOW / "tcl/common/common.tcl").read_text(encoding="utf-8")
+    example = (FLOW / "config/ics55.example.mk").read_text(encoding="utf-8")
+    assert "flow::synthesis_library_files" in synthesis
+    assert "flow::all_library_files" not in synthesis
+    assert "return [flow::library_files TYP]" in common
+    assert "SYN_STD_DB_TYP" in example
+    assert "H7CR (SVT) and H7CL (LVT)" in example
+
+
+def test_synthesis_summary_separates_flow_and_qor_status() -> None:
+    reporting = (FLOW / "tcl/syn/reporting.tcl").read_text(encoding="utf-8")
+    for metric in (
+        "flow_pass",
+        "constraints_complete",
+        "io_qualified",
+        "timing_met",
+        "drv_met",
+    ):
+        assert f'"{metric}\\t' in reporting
+    assert "lvt_area_percent" not in reporting
+    assert "[string tolower $group]_area_percent" in reporting
+
+
+def test_doctor_normalizes_h7c_nldm_liberty_names() -> None:
+    doctor = load_script("doctor")
+    db = "/local/ics55_LLSC_H7CR_typ_tt_1p2_25.db"
+    lib = "/local/ics55_LLSC_H7CR_typ_tt_1p2_25_nldm.lib"
+    assert doctor.normalized_library_stem(db) == doctor.normalized_library_stem(lib)
+    assert doctor.h7c_variants([db, lib]) == {"H7CR"}
+
+
+def test_internal_qor_doctor_does_not_require_backend_collateral(
+    tmp_path: Path,
+) -> None:
+    def touch(name: str) -> str:
+        path = tmp_path / name
+        path.write_bytes(b"view")
+        return str(path)
+
+    h7ch = touch("ics55_LLSC_H7CH_typ_tt_1p2_25.db")
+    h7cl = touch("ics55_LLSC_H7CL_typ_tt_1p2_25.db")
+    h7cr = touch("ics55_LLSC_H7CR_typ_tt_1p2_25.db")
+    archive = touch("rtl.tar.gz")
+    environment = {
+        "PATH": os.environ["PATH"],
+        "TOP": "retrosoc_asic",
+        "TECHNOLOGY": "ICS55",
+        "RTL_ARCHIVE": archive,
+        "LSF_MODE": "batch",
+        "LSF_SYN_ARGS": "-q synth",
+        "LSF_FM_ARGS": "-q formal",
+        "SYN_DONT_USE": "none",
+        "SYN_OPERATING_CONDITION_LIBRARY": (
+            "ics55_LLSC_H7CR_typ_tt_1p2_25"
+        ),
+        "SYN_OPERATING_CONDITION": "typical",
+        "STD_DB_TYP": f"{h7ch} {h7cl} {h7cr}",
+        "SYN_STD_DB_TYP": f"{h7cl} {h7cr}",
+        "IO_DB_TYP": touch("io_typ.db"),
+        "SRAM_DB_TYP": touch("sram_typ.db"),
+        "PLL_DB": touch("pll_typ.db"),
+        "ICS55_PLL_SUPPORTED_SEL": "0",
+        "ICS55_PLL_N": "2",
+        "ICS55_PLL_OD": "2",
+        "IO_TIMING_QUALIFIED": "NO",
+    }
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(FLOW / "scripts/doctor.py"),
+            "--dev",
+            "--allow-internal-qor",
+            "--output",
+            str(tmp_path / "doctor.json"),
+        ],
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_ics55_pll_wrapper(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        pytest.skip("iverilog and vvp are not installed")
+
     output = tmp_path / "tc_pll"
     subprocess.run(
         [
-            "iverilog",
+            iverilog,
             "-g2012",
             "-DPDK_ICS55",
             "-DHAVE_PLL",
@@ -305,7 +446,7 @@ def test_ics55_pll_wrapper(tmp_path: Path) -> None:
         cwd=ROOT,
     )
     result = subprocess.run(
-        ["vvp", str(output)],
+        [vvp, str(output)],
         text=True,
         capture_output=True,
         check=True,

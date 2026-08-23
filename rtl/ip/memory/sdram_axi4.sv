@@ -400,6 +400,10 @@ module sdram_axi4 (
     s_rd_err_code_d  = SdramErrNone;
     s_rd_err_addr_d  = s_err_addr_q;
     next_rd_addr     = s_rd_addr_q;
+    rd_frag          = '0;
+    rd_legal         = 1'b0;
+    rd_window        = 1'b0;
+    rd_last          = '0;
 
     unique case (s_rd_state_q)
       RdIdle: begin
@@ -513,6 +517,10 @@ module sdram_axi4 (
     s_wr_err_event_d = 1'b0;
     s_wr_err_code_d  = SdramErrNone;
     s_wr_err_addr_d  = s_err_addr_q;
+    wr_frag          = '0;
+    wr_legal         = 1'b0;
+    wr_window        = 1'b0;
+    wr_last          = '0;
 
     unique case (s_wr_state_q)
       WrIdle: begin

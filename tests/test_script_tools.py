@@ -184,6 +184,9 @@ def test_source_export_uses_the_fixed_hazard3_management_core(tmp_path: Path) ->
     )
 
     assert "+define+SOC_JTAG_IDCODE=-559038737" in filelist.defines
+    assert "+define+SOC_EXT_CLK_HZ=72000000" in filelist.defines
+    assert "+define+SOC_AUD_CLK_HZ=18432000" in filelist.defines
+    assert "+define+SOC_CLINT_TIMEBASE_HZ=1000000" in filelist.defines
     assert not any(item.startswith("+define+CORE_") for item in filelist.defines)
     assert "+define+HAVE_DEBUG" not in filelist.defines
     assert any(path.name == "hazard3_cpu_1port.v" for path in filelist.files)
@@ -196,13 +199,19 @@ def test_package_forwards_manifest_jtag_idcode() -> None:
     assert 'config.get("JTAG_IDCODE", "DEADBEEF")' in package_source
     assert '"--core"' not in package_source
     for option in (
+        "--ext-clk-hz",
+        "--aud-clk-hz",
+        "--clint-timebase-hz",
         "--memory-map-filelist",
         "--soc-topology-filelist",
         "--user-extensions-filelist",
         "--pin-map-filelist",
         "--archinfo-incdir",
+        "--metadata-file",
     ):
         assert f'"{option}"' in package_source
+    assert "generate_timing_contract.py" in package_source
+    assert "commercial_timing_contract.tcl" in package_source
 
 
 def test_source_export_writes_tar_without_staging_rtl_tree(tmp_path: Path) -> None:
@@ -215,7 +224,14 @@ def test_source_export_writes_tar_without_staging_rtl_tree(tmp_path: Path) -> No
     source = ROOT / "rtl/mini/top/retrosoc_asic.sv"
     filelist = parse_filelists([], require_files=False)
     filelist.files.append(source)
-    archive = source_export.write_tar(filelist, tmp_path, "MINI")
+    contract = tmp_path / "commercial_timing_contract.tcl"
+    contract.write_text("set flow::contract 1\n", encoding="utf-8")
+    archive = source_export.write_tar(
+        filelist,
+        tmp_path,
+        "MINI",
+        {Path("contracts/commercial_timing_contract.tcl"): contract},
+    )
 
     assert not (tmp_path / "rtl").exists()
     with tarfile.open(archive) as bundle:
@@ -223,6 +239,10 @@ def test_source_export_writes_tar_without_staging_rtl_tree(tmp_path: Path) -> No
         assert "rtl/mini/top/retrosoc_asic.sv" in names
         assert bundle.extractfile("rtl/filelist.fl").read().decode() == (
             "mini/top/retrosoc_asic.sv\n"
+        )
+        assert "rtl/contracts/commercial_timing_contract.tcl" in names
+        assert "contracts/commercial_timing_contract.tcl" not in (
+            bundle.extractfile("rtl/filelist.fl").read().decode()
         )
 
 

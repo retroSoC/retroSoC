@@ -26,6 +26,12 @@ at TT and slow corners. Derived Liberty files are stored below
 the locked HD library submodule; the remaining upstream libraries are outside
 the SoC integration boundary.
 
+The IHP130 dependency is also the technology source for the single-level
+`physical/librelane/` full-chip flow. The locked checkout includes the upstream
+`libs.tech/librelane` standard-cell, pad, extraction, DRC, LVS, filler, bondpad,
+and seal-ring configuration; LibreLane consumes it directly in manual-PDK mode.
+The other three open PDKs do not yet have project-owned LibreLane adapters.
+
 All four PDK profiles run slow-corner OpenSTA core timing in CI. The analysis
 uses the PDK standard-cell Liberty plus the linked IO-cell model required to
 read the synthesized top-level wrapper. It excludes board, pad-ring,

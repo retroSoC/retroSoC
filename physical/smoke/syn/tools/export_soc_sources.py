@@ -30,6 +30,9 @@ def build_defines(args: argparse.Namespace) -> list[str]:
         f"+define+PDK_{args.pdk}",
         f"+define+SIMU_{args.simu}",
         "+define+SYNTHESIS",
+        f"+define+SOC_EXT_CLK_HZ={getattr(args, 'ext_clk_hz', 72_000_000)}",
+        f"+define+SOC_AUD_CLK_HZ={getattr(args, 'aud_clk_hz', 18_432_000)}",
+        f"+define+SOC_CLINT_TIMEBASE_HZ={getattr(args, 'clint_timebase_hz', 1_000_000)}",
     ]
     if args.have_pll:
         defines.append("+define+HAVE_PLL")
@@ -180,7 +183,12 @@ def bundle_relative(path: Path) -> Path:
     return Path("repo") / relative
 
 
-def write_tar(filelist: FileList, export_dir: Path, soc: str) -> Path:
+def write_tar(
+    filelist: FileList,
+    export_dir: Path,
+    soc: str,
+    metadata_files: dict[Path, Path] | None = None,
+) -> Path:
     export_dir.mkdir(parents=True, exist_ok=True)
     sources = [*filelist.library_files, *filelist.files]
     bundled_files: dict[Path, Path] = {}
@@ -196,11 +204,37 @@ def write_tar(filelist: FileList, export_dir: Path, soc: str) -> Path:
     with tarfile.open(tar_path, "w:gz") as archive:
         for relative, source in sorted(bundled_files.items()):
             archive.add(source, arcname=str(Path("rtl") / relative), recursive=False)
+        for relative, source in sorted((metadata_files or {}).items()):
+            archive.add(source, arcname=str(Path("rtl") / relative), recursive=False)
         filelist_info = tarfile.TarInfo("rtl/filelist.fl")
         filelist_info.size = len(manifest_data)
         filelist_info.mode = 0o644
         archive.addfile(filelist_info, io.BytesIO(manifest_data))
     return tar_path
+
+
+def positive_integer(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be positive")
+    return parsed
+
+
+def metadata_file(value: str) -> tuple[Path, Path]:
+    destination, separator, source_text = value.partition("=")
+    relative = Path(destination)
+    source = Path(source_text)
+    if (
+        not separator
+        or not destination
+        or relative.is_absolute()
+        or ".." in relative.parts
+        or not source.is_file()
+    ):
+        raise argparse.ArgumentTypeError(
+            "metadata must use a safe DESTINATION=SOURCE_FILE mapping"
+        )
+    return relative, source.resolve()
 
 
 def parse_args() -> argparse.Namespace:
@@ -214,6 +248,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--have-sram-macro", action="store_true")
     parser.add_argument("--have-sva", action="store_true")
     parser.add_argument("--jtag-idcode", default="DEADBEEF")
+    parser.add_argument("--ext-clk-hz", type=positive_integer, default=72_000_000)
+    parser.add_argument("--aud-clk-hz", type=positive_integer, default=18_432_000)
+    parser.add_argument("--clint-timebase-hz", type=positive_integer, default=1_000_000)
     parser.add_argument(
         "--dynamic-core-filelist",
         type=Path,
@@ -229,6 +266,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--user-extensions-filelist", type=Path)
     parser.add_argument("--pin-map-filelist", type=Path)
     parser.add_argument("--archinfo-incdir", type=Path)
+    parser.add_argument("--metadata-file", type=metadata_file, action="append", default=[])
     parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "export")
     return parser.parse_args()
 
@@ -253,7 +291,7 @@ def main() -> int:
             output = export_dir / "retrosoc_asic_sources.sv"
             write_single_sv(filelist, output)
         else:
-            output = write_tar(filelist, export_dir, args.soc)
+            output = write_tar(filelist, export_dir, args.soc, dict(args.metadata_file))
     print(f"generated: {output}")
     return 0
 

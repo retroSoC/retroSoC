@@ -100,6 +100,24 @@ def main() -> int:
     ) as temp:
         staging = Path(temp) / "package"
         staging.mkdir()
+        timing_contract = Path(temp) / "commercial_timing_contract.tcl"
+        subprocess.run(
+            [
+                "python3",
+                str(
+                    root
+                    / "physical/commercial/scripts/generate_timing_contract.py"
+                ),
+                "--domains",
+                str(root / "rtl/mini/integration/clock_reset_domains.json"),
+                "--pin-map",
+                str(root / "rtl/mini/pin_map/pin_map.json"),
+                "--output",
+                str(timing_contract),
+            ],
+            cwd=root,
+            check=True,
+        )
         command = [
             "python3",
             str(root / "physical/smoke/syn/tools/export_soc_sources.py"),
@@ -112,6 +130,12 @@ def main() -> int:
             config["SIMU"],
             "--jtag-idcode",
             config.get("JTAG_IDCODE", "DEADBEEF"),
+            "--ext-clk-hz",
+            str(config.get("EXT_CLK_HZ", 72_000_000)),
+            "--aud-clk-hz",
+            str(config.get("AUD_CLK_HZ", 18_432_000)),
+            "--clint-timebase-hz",
+            str(config.get("CLINT_TIMEBASE_HZ", 1_000_000)),
             "--dynamic-core-filelist",
             str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "core/core.fl"),
             "--dynamic-ip-filelist",
@@ -126,6 +150,8 @@ def main() -> int:
             str(args.variant_root / "generated/pin_map/pin_map.fl"),
             "--archinfo-incdir",
             str(args.variant_root / "generated/archinfo"),
+            "--metadata-file",
+            "contracts/commercial_timing_contract.tcl={0}".format(timing_contract),
         ]
         for key, flag in (
             ("HAVE_PLL", "--have-pll"),

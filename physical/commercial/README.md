@@ -19,13 +19,26 @@ through a site-mounted shared filesystem, but have different responsibilities:
 
 2. In the EDA zone, create the ignored local configuration from
    `config/ics55.example.mk`, point `RTL_ARCHIVE` at the generated
-   `retrosoc_mini_sources.tar.gz`, and run:
+   `retrosoc_mini_sources.tar.gz`, and choose one of two entry points.
+   For synthesis with internal timing only:
 
    ```sh
    make -C physical/commercial \
-     LOCAL_CONFIG=local/ics55-production.mk doctor
+     LOCAL_CONFIG=local/ics55-production.mk doctor-syn
    make -C physical/commercial \
-     LOCAL_CONFIG=local/ics55-production.mk signoff
+     LOCAL_CONFIG=local/ics55-production.mk RUN_ID=<run-id> syn
+   make -C physical/commercial \
+     LOCAL_CONFIG=local/ics55-production.mk RUN_ID=<run-id> fm-rtl2syn
+   ```
+
+   For production implementation, first populate every interface timing
+   budget, set `IO_TIMING_QUALIFIED=YES`, and run:
+
+   ```sh
+   make -C physical/commercial \
+     LOCAL_CONFIG=local/ics55-production.mk RUN_ID=<run-id> doctor
+   make -C physical/commercial \
+     LOCAL_CONFIG=local/ics55-production.mk RUN_ID=<run-id> signoff
    ```
 
 Commercial tools are never executed directly by this Makefile. Every tool
@@ -49,6 +62,8 @@ site-specific values, including:
 - Liberty/DB, LEF, GDS, CDL, and RC technology files;
 - stream maps and Calibre DRC, antenna, and LVS decks;
 - PDK cell lists, routing layers, sites, and power nets.
+- reviewed min/max board and external-device I/O timing budgets;
+- an audited ICS55 pad-mode timing hook when bidirectional arcs require it.
 
 Do not add absolute PDK/library paths to tracked Make, Tcl, Python, shell, or
 documentation files. Run `python3 scripts/audit_boundary.py --root ../..`
@@ -98,7 +113,33 @@ The default policy is blocking:
 - Calibre DRC and antenna counts must be zero and LVS must be clean.
 
 The production `doctor` requires every violation threshold to remain zero.
-The flow has no local switch that converts a required check into success.
+It also requires qualified JTAG, DVP, ULPI, SDRAM, SDIO, XPI, and asynchronous
+I/O budgets and an audited local hook that selects GPIO10-20 DVP input mode
+and cuts invalid bidirectional-pad feedback arcs. `doctor-syn` is the only
+relaxed entry point: Design Compiler then false-paths all top-level I/O and
+reports internal sequential QoR. Its summary carries `io_qualified=no`, and
+Innovus and PrimeTime reject it.
+
+The canonical six-domain clock inventory is generated from
+`rtl/mini/integration/clock_reset_domains.json` into the commercial RTL
+package. Commercial constraints add the crystal and PLL overlays and model
+the system clock mux as physically exclusive external-source and PLL-source
+generated clocks. The asynchronous relationships cover system, audio,
+crystal, JTAG, DVP, and ULPI domains.
+
+The standard-cell family is LLSC H7C across DB, Liberty, LEF, GDS, and CDL.
+Design Compiler links one TYP set and targets only H7CR (SVT) plus H7CL
+(LVT); H7CH remains available to physical implementation but is not a
+synthesis target. No LVT percentage cap is implied. The synthesis result
+records actual HVT/LVT/SVT counts, areas, and percentages in:
+
+```text
+syn/output/synthesis.summary.tsv
+syn/output/synthesis.path_groups.tsv
+```
+
+Detailed clock, exception, setup/hold, QoR, design-rule, library-binding, and
+reference reports are written below `syn/reports/`.
 
 ## Legacy-flow audit
 

@@ -175,6 +175,7 @@ proc write_data_out {run_root top stage output_dir report_dir} {
 }
 
 proc run_apr {} {
+    flow::require_qualified_synthesis
     set top [flow::env TOP]
     set run_root [flow::env RUN_ROOT]
     set stage [string tolower [flow::env APR_STAGE]]
@@ -203,6 +204,7 @@ proc run_apr {} {
     } else {
         restore_previous $run_root $top $stage
     }
+    flow::require_commercial_clock_inventory
 
     switch -- $stage {
         initialize {

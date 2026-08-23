@@ -33,7 +33,7 @@
     },
     "pdk_ihp130": {
       "url": "https://github.com/IHP-GmbH/IHP-Open-PDK.git",
-      "revision": "68eebafcd9b2f5e92c69d37a8d3d90eb266550f5",
+      "revision": "970a7688e7dcce2a6172797df9ef47bde2f60f9f",
       "destination": "physical/pdk/IHP-Open-PDK",
       "recursive": true,
       "license": "Apache-2.0"

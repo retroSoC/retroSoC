@@ -267,6 +267,8 @@ ifeq ($(STA), OPENSTA)
     include physical/smoke/sta/opensta/opensta.mk
 endif
 
+include physical/librelane/Makefile
+
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
@@ -288,6 +290,11 @@ help:
 	  '  netcomp | netsim           synthesized-netlist simulation' \
 	  '  postcomp | postsim         post-layout simulation' \
 	  '  synth | sta                synthesis and timing analysis' \
+	  '  librelane-doctor           validate the IHP130 LibreLane Chip flow' \
+	  '  librelane-chip             run the single-level IHP130 pad-ring flow' \
+	  '  librelane-openroad         open the current Chip run in OpenROAD' \
+	  '  librelane-klayout          open the current Chip run in KLayout' \
+	  '  librelane-package          package full-chip views and evidence' \
 	  '  setup                      install pinned external dependencies' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  doctor                     check tools, paths, and selected configuration' \
@@ -307,7 +314,7 @@ help:
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
-	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
+	  '  tech-cell-test             test open-PDK technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \

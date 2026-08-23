@@ -22,6 +22,7 @@ TOP         ?= retrosoc_asic
 TECHNOLOGY  ?= ICS55
 FLOW_PYTHON ?= python
 TCLSH       ?= tclsh
+DOCTOR_ARGS ?=
 RUN_ID      ?= current
 BUILD_ROOT  ?= $(ROOT_PATH)/build
 RUN_ROOT    ?= $(abspath $(BUILD_ROOT))/commercial/ics55/$(RUN_ID)
@@ -62,7 +63,7 @@ endef
 # Export the ignored local configuration and the derived run locations to LSF.
 export
 
-.PHONY: help check-config doctor boundary-check input syn fm-rtl2syn \
+.PHONY: help check-config doctor doctor-syn boundary-check input syn fm-rtl2syn \
 	apr-initialize apr-floorplan apr-preplace apr-place apr-cts apr-route \
 	fm-syn2pr extract sta eco apr-eco reextract resta pv-merge pv-drc \
 	pv-antenna pv-lvs signoff clean-stage list-stages
@@ -71,6 +72,7 @@ help:
 	@printf '%s\n' \
 	  'retroSoC ICS55 commercial flow:' \
 	  '  doctor          validate EDA tools, local collateral, and RTL input' \
+	  '  doctor-syn      allow missing board I/O budgets for internal DC QoR' \
 	  '  input           safely stage the development-zone RTL archive' \
 	  '  syn             run Design Compiler synthesis' \
 	  '  fm-rtl2syn      prove RTL-to-synthesis equivalence' \
@@ -103,7 +105,13 @@ check-config:
 
 doctor: check-config
 	@mkdir -p $(META_DIR)
-	$(FLOW_PYTHON) $(FLOW_ROOT)/scripts/doctor.py --output $(META_DIR)/doctor.json
+	$(FLOW_PYTHON) $(FLOW_ROOT)/scripts/doctor.py $(DOCTOR_ARGS) \
+	  --output $(META_DIR)/doctor.json
+
+doctor-syn: check-config
+	@mkdir -p $(META_DIR)
+	$(FLOW_PYTHON) $(FLOW_ROOT)/scripts/doctor.py \
+	  $(DOCTOR_ARGS) --allow-internal-qor --output $(META_DIR)/doctor-syn.json
 
 boundary-check:
 	python3 $(FLOW_ROOT)/scripts/audit_boundary.py --root $(ROOT_PATH)
@@ -127,6 +135,8 @@ $(SYN_STAMP): $(INPUT_STAMP)
 	  --stamp $@ \
 	  --expect $(RUN_ROOT)/syn/output/$(TOP).syn.v \
 	  --expect $(RUN_ROOT)/syn/output/$(TOP).ddc \
+	  --expect $(RUN_ROOT)/syn/output/synthesis.summary.tsv \
+	  --expect $(RUN_ROOT)/syn/output/synthesis.path_groups.tsv \
 	  --expect $(RUN_ROOT)/syn/output/verdict.pass -- \
 	  $(call submit-job,LSF_SYN_ARGS,$(RUN_ROOT)/syn/log/tool.log) \
 	  $(DC_SHELL) -64 -f $(FLOW_ROOT)/tcl/syn/main.tcl
@@ -384,7 +394,8 @@ $(PV_LVS_STAMP): $(PV_ANT_STAMP)
 
 pv-lvs: $(PV_LVS_STAMP)
 
-signoff: $(PV_LVS_STAMP)
+signoff: doctor
+	$(MAKE) pv-lvs LOCAL_CONFIG=$(LOCAL_CONFIG) RUN_ID=$(RUN_ID)
 	@printf 'commercial signoff passed: %s\n' '$(RUN_ROOT)'
 
 clean-stage:

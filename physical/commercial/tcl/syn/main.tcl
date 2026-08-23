@@ -11,6 +11,7 @@
 set flow_root [file normalize [file join [file dirname [info script]] ../..]]
 source [file join $flow_root tcl common common.tcl]
 source [file join $flow_root tcl common constraints.tcl]
+source [file join $flow_root tcl syn reporting.tcl]
 
 proc run_synthesis {} {
     set top [flow::env TOP]
@@ -21,8 +22,8 @@ proc run_synthesis {} {
     set output_dir [file join $run_root syn output]
     set filelist [file join $run_root input rtl filelist.fl]
     set rtl [flow::read_filelist $filelist]
-    set libraries [flow::all_library_files]
-    set target_library [flow::env_list STD_DB_TYP]
+    set libraries [flow::synthesis_library_files]
+    set target_library [flow::synthesis_target_files]
 
     set search_path [list . [file join $run_root input rtl]]
     set search_path [concat $search_path [dict get $rtl incdirs]]
@@ -53,6 +54,7 @@ proc run_synthesis {} {
     if {![link]} {
         flow::fail "link failed for $top"
     }
+    flow::configure_synthesis_libraries
     uniquify
     foreach pattern [flow::env SYN_DONT_USE] {
         set cells [get_lib_cells -quiet */$pattern]
@@ -62,6 +64,16 @@ proc run_synthesis {} {
     }
 
     flow::apply_constraints
+    redirect [file join $report_dir check_design.pre.rpt] { check_design }
+    redirect [file join $report_dir check_timing.pre.rpt] {
+        check_timing -verbose
+    }
+    if {![check_design]} {
+        flow::fail "pre-compile Design Compiler check_design failed"
+    }
+    if {![check_timing -include {no_clock unconstrained_endpoints}]} {
+        flow::fail "pre-compile timing constraints are incomplete"
+    }
     set_fix_multiple_port_nets -all -buffer_constants
     set_boundary_optimization [current_design] true
 
@@ -72,21 +84,43 @@ proc run_synthesis {} {
     set_svf -off
 
     change_names -rules verilog -hierarchy
-    redirect [file join $report_dir check_design.rpt] { check_design -summary }
-    redirect [file join $report_dir timing.rpt] {
+    redirect [file join $report_dir check_design.rpt] { check_design }
+    redirect [file join $report_dir check_design.summary.rpt] {
+        check_design -summary
+    }
+    redirect [file join $report_dir check_timing.rpt] {
+        check_timing -verbose
+    }
+    redirect [file join $report_dir timing.setup.rpt] {
         report_timing -delay_type max -max_paths 1000 -input_pins -nets
     }
+    redirect [file join $report_dir timing.hold.rpt] {
+        report_timing -delay_type min -max_paths 1000 -input_pins -nets
+    }
+    redirect [file join $report_dir qor.rpt] { report_qor }
     redirect [file join $report_dir area.rpt] { report_area -hierarchy }
     redirect [file join $report_dir power.rpt] { report_power -hierarchy }
-    redirect [file join $report_dir constraints.rpt] {
-        report_constraint -all_violators -max_delay -min_delay \
-            -max_transition -max_fanout -max_capacitance
+    set drv_report [file join $report_dir design_rules.rpt]
+    redirect $drv_report {
+        report_constraint -all_violators -max_transition -max_fanout \
+            -max_capacitance
+    }
+    redirect [file join $report_dir timing_constraints.rpt] {
+        report_constraint -all_violators -max_delay -min_delay
     }
     redirect [file join $report_dir clocks.rpt] { report_clock -skew -attributes }
+    redirect [file join $report_dir clock_gating.rpt] {
+        report_clock_gating -nosplit -verbose
+    }
+    redirect [file join $report_dir exceptions.rpt] { report_exceptions -nosplit }
+    redirect [file join $report_dir library_binding.rpt] { report_design -library }
     redirect [file join $report_dir references.rpt] { report_reference -hierarchy }
 
     if {![check_design]} {
         flow::fail "Design Compiler check_design failed"
+    }
+    if {![check_timing -include {no_clock unconstrained_endpoints}]} {
+        flow::fail "Design Compiler timing constraints are incomplete"
     }
     if {[flow::report_has_failure [file join $report_dir check_design.rpt] \
             {{unresolved reference} {link failed} {Error:}}]} {
@@ -98,6 +132,11 @@ proc run_synthesis {} {
     write_sdc -nosplit [file join $output_dir ${top}.syn.sdc]
     write_sdf -version 3.0 -context verilog \
         [file join $output_dir ${top}.syn.sdf]
+    set drv_count [flow::count_report_matches $drv_report {\mVIOLATED\M}]
+    flow::write_path_group_summary \
+        [file join $output_dir synthesis.path_groups.tsv]
+    flow::write_synthesis_summary \
+        [file join $output_dir synthesis.summary.tsv] $drv_count
     flow::write_pass [file join $output_dir verdict.pass]
 }
 
