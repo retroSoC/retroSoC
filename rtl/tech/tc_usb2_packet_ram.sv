@@ -75,6 +75,48 @@ module tc_usb2_packet_ram (
   );
 
   assign data_o = {s_data_ecc, s_data_high, s_data_low};
+`elsif PDK_ICS55
+`ifdef HAVE_SRAM_MACRO
+  logic [31:0] s_data_read;
+  logic [31:0] s_ecc_read;
+
+  SRAM_4096X32_M8_BW u_data (
+      .A   (addr_i),
+      .D   (data_i[31:0]),
+      .CEB (~cs_i),
+      .CLK (clk_i),
+      .GWEB(~write_i),
+      .WEB (32'd0),
+      .MARE(1'b0),
+      .MAR (4'd0),
+      .Q   (s_data_read)
+  );
+
+  SRAM_4096X32_M8_BW u_ecc (
+      .A   (addr_i),
+      .D   ({24'd0, data_i[39:32]}),
+      .CEB (~cs_i),
+      .CLK (clk_i),
+      .GWEB(~write_i),
+      .WEB ({24'hFF_FFFF, 8'h00}),
+      .MARE(1'b0),
+      .MAR (4'd0),
+      .Q   (s_ecc_read)
+  );
+
+  assign data_o = {s_ecc_read[7:0], s_data_read};
+`else
+  logic [39:0] s_memory[0:4095];
+  always_ff @(posedge clk_i) begin
+    if (cs_i) begin
+      if (write_i) begin
+        s_memory[addr_i] <= data_i;
+      end else begin
+        data_o <= s_memory[addr_i];
+      end
+    end
+  end
+`endif
 `else
   logic [39:0] s_memory[0:4095];
   always_ff @(posedge clk_i) begin

@@ -31,7 +31,13 @@ def test_usb2_packet_store_registers_ecc_read_data() -> None:
     assert "assign tx_data_o            = s_read_word_q" in source
 
 
-def _run_iverilog(name: str, top: str, sources: list[str], marker: str) -> None:
+def _run_iverilog(
+    name: str,
+    top: str,
+    sources: list[str],
+    marker: str,
+    defines: list[str] | None = None,
+) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
     if iverilog is None or vvp is None:
@@ -42,6 +48,7 @@ def _run_iverilog(name: str, top: str, sources: list[str], marker: str) -> None:
         "\n".join(
             [
                 "+define+SV_ASSRT_DISABLE",
+                *(f"+define+{define}" for define in (defines or [])),
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/interface'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/utils'}",
@@ -63,6 +70,7 @@ def _run_iverilog(name: str, top: str, sources: list[str], marker: str) -> None:
             iverilog,
             "-g2012",
             "-DSV_ASSRT_DISABLE",
+            *(f"-D{define}" for define in (defines or [])),
             "-s",
             top,
             "-o",
@@ -111,6 +119,23 @@ def test_usb2_packet_ram_ecc() -> None:
             "tests/rtl/usb2_packet_ram_tb.sv",
         ],
         "USB2 packet RAM ECC test passed",
+    )
+
+
+def test_usb2_packet_ram_ecc_with_ics55_macros() -> None:
+    _run_iverilog(
+        "packet-ram-ics55",
+        "usb2_packet_ram_tb",
+        [
+            "rtl/managed/clusterip/common/rtl/utils/register.sv",
+            "rtl/managed/clusterip/common/rtl/base/ecc_secded.sv",
+            "tests/rtl/ics55_sram_4096x32_stub.sv",
+            "rtl/tech/tc_usb2_packet_ram.sv",
+            "rtl/ip/usb/usb2_packet_ram.sv",
+            "tests/rtl/usb2_packet_ram_tb.sv",
+        ],
+        "USB2 packet RAM ECC test passed",
+        ["PDK_ICS55", "HAVE_SRAM_MACRO"],
     )
 
 
