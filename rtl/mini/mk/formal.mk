@@ -98,7 +98,7 @@ FORMAL_SOURCE_FILES          := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/serial/i2s_define.svh \
                              $(ROOT_PATH)/rtl/ip/serial/i2s_pkg.sv \
                              $(ROOT_PATH)/rtl/ip/serial/i2s_reg.sv \
-                             $(ROOT_PATH)/rtl/managed/clusterip/i2c/rtl/i2c_if.sv \
+                             $(ROOT_PATH)/rtl/ip/serial/i2c_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_core.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_define.svh \
                              $(ROOT_PATH)/rtl/ip/peripheral/timer_reg.sv \

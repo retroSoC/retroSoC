@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -20,6 +21,34 @@ HAL_REGS = ROOT / "crt/include/retrosoc/hal/opipsram_regs.h"
 HAL_SOURCE = ROOT / "crt/src/hal/opipsram.c"
 OPIPSRAM_MODEL = ROOT / "rtl/mini/dv/model/opipsram_model.sv"
 OPIPSRAM_TB = ROOT / "tests/rtl/opipsram_tb.sv"
+PULP_HYPERBUS_COMMIT = "80de8df600edc5d7956a94c9d42f911d6e61efd7"
+PULP_SHL_LICENSE = ROOT / "licenses/PULP_Platform-SHL-0.51"
+PULP_PHY_SOURCES = {
+    ROOT / "rtl/ip/memory/opipsram_phy.sv": (
+        "src/hyperbus_phy.sv",
+        (
+            "Armin Berger <bergerar@ethz.ch>",
+            "Stephan Keck <kecks@ethz.ch>",
+            "Thomas Benz <tbenz@iis.ee.ethz.ch>",
+            "Paul Scheffler <paulsc@iis.ee.ethz.ch>",
+        ),
+    ),
+    ROOT / "rtl/ip/memory/opipsram_trx.sv": (
+        "src/hyperbus_trx.sv",
+        (
+            "Paul Scheffler <paulsc@iis.ee.ethz.ch>",
+            "Armin Berger <bergerar@ethz.ch>",
+            "Stephan Keck <kecks@ethz.ch>",
+        ),
+    ),
+    ROOT / "rtl/tech/tc_opipsram_delay.sv": (
+        "src/hyperbus_delay.sv",
+        (
+            "Thomas Benz <paulsc@iis.ee.ethz.ch>",
+            "Paul Scheffler <paulsc@iis.ee.ethz.ch>",
+        ),
+    ),
+}
 
 
 def _values(path: Path, pattern: str) -> dict[str, int]:
@@ -38,6 +67,29 @@ def _values(path: Path, pattern: str) -> dict[str, int]:
     return values
 
 
+def test_opipsram_phy_preserves_pulp_hyperbus_attribution() -> None:
+    assert PULP_SHL_LICENSE.is_file()
+    license_text = PULP_SHL_LICENSE.read_text(encoding="utf-8")
+    assert "SOLDERPAD HARDWARE LICENSE version 0.51" in license_text
+
+    for path, (source, authors) in PULP_PHY_SOURCES.items():
+        text = path.read_text(encoding="utf-8")
+        assert text.startswith("// Copyright 2023 ETH Zurich and University of Bologna.\n")
+        assert "// Solderpad Hardware License, Version 0.51, see LICENSE for details.\n" in text
+        assert "// SPDX-License-Identifier: SHL-0.51\n" in text
+        assert f"PULP Platform HyperBus v0.0.4 ({source})" in text
+        assert PULP_HYPERBUS_COMMIT in text
+        assert "Modified by retroSoC" in text
+        assert "retroSoC is licensed under Mulan PSL v2." in text
+        for author in authors:
+            assert f"// {author}\n" in text
+
+    for path in (ROOT / "docs/ip/opipsram.md", ROOT / "ATTRIBUTIONS.md", ROOT / "NOTICE"):
+        text = path.read_text(encoding="utf-8")
+        assert PULP_HYPERBUS_COMMIT in text
+        assert "SHL-0.51" in text
+
+
 def test_opipsram_protocol_model_compiles_and_runs() -> None:
     verilator = shutil.which("verilator")
     if verilator is None:
@@ -46,6 +98,13 @@ def test_opipsram_protocol_model_compiles_and_runs() -> None:
     work = ROOT / ".cache" / "test-opipsram"
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True, exist_ok=True)
+    ccache_dir = work / "ccache"
+    ccache_tmp = work / "ccache-tmp"
+    ccache_dir.mkdir()
+    ccache_tmp.mkdir()
+    environment = os.environ.copy()
+    environment["CCACHE_DIR"] = str(ccache_dir)
+    environment["CCACHE_TEMPDIR"] = str(ccache_tmp)
     output = work / "opipsram_tb"
     sources = [
         ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
@@ -93,7 +152,9 @@ def test_opipsram_protocol_model_compiles_and_runs() -> None:
         str(output),
     ]
     try:
-        compile_result = subprocess.run(command, check=False, text=True, capture_output=True)
+        compile_result = subprocess.run(
+            command, check=False, text=True, capture_output=True, env=environment
+        )
         if compile_result.returncode != 0:
             pytest.fail(
                 "production OPI PSRAM RTL does not compile with the locked model list:\n"

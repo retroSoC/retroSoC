@@ -38,9 +38,10 @@ from scripts.development_environment import (  # noqa: E402
     render_activation,
     stamp_data,
 )
-from scripts.generate_mpw import validate_extension_bindings  # noqa: E402
+from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.package import make_sbom  # noqa: E402
+from scripts.prepare_mpw import patch_serv  # noqa: E402
 from scripts import regress  # noqa: E402
 from scripts import run_flow  # noqa: E402
 from scripts.regress import (  # noqa: E402
@@ -183,9 +184,36 @@ def test_source_export_uses_the_fixed_hazard3_management_core(tmp_path: Path) ->
     )
 
     assert "+define+SOC_JTAG_IDCODE=-559038737" in filelist.defines
+    assert "+define+SOC_EXT_CLK_HZ=72000000" in filelist.defines
+    assert "+define+SOC_AUD_CLK_HZ=18432000" in filelist.defines
+    assert "+define+SOC_CLINT_TIMEBASE_HZ=1000000" in filelist.defines
     assert not any(item.startswith("+define+CORE_") for item in filelist.defines)
     assert "+define+HAVE_DEBUG" not in filelist.defines
     assert any(path.name == "hazard3_cpu_1port.v" for path in filelist.files)
+
+
+def test_librelane_source_export_inlines_hazard3_update_helper() -> None:
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_librelane_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    source = """function [XLEN-1:0] update_nonconst;
+    input [XLEN-1:0] prev;
+    input [XLEN-1:0] nonconst;
+begin
+    update_nonconst = (wdata_update & nonconst) | (prev & ~nonconst);
+end
+endfunction
+mtvec_reg <= update_nonconst(mtvec_reg, MTVEC_WMASK);
+mie <= update_nonconst(mie, MIE_WMASK);
+"""
+    sanitized = source_export.sanitize_librelane_source(source)
+
+    assert "update_nonconst" not in sanitized
+    assert "mtvec_reg <= ((wdata_update & MTVEC_WMASK) | (mtvec_reg & ~MTVEC_WMASK));" in sanitized
+    assert "mie <= ((wdata_update & MIE_WMASK) | (mie & ~MIE_WMASK));" in sanitized
 
 
 def test_package_forwards_manifest_jtag_idcode() -> None:
@@ -194,6 +222,81 @@ def test_package_forwards_manifest_jtag_idcode() -> None:
     assert '"--jtag-idcode"' in package_source
     assert 'config.get("JTAG_IDCODE", "DEADBEEF")' in package_source
     assert '"--core"' not in package_source
+    for option in (
+        "--ext-clk-hz",
+        "--aud-clk-hz",
+        "--clint-timebase-hz",
+        "--memory-map-filelist",
+        "--soc-topology-filelist",
+        "--user-extensions-filelist",
+        "--pin-map-filelist",
+        "--archinfo-incdir",
+        "--metadata-file",
+    ):
+        assert f'"{option}"' in package_source
+    assert "generate_timing_contract.py" in package_source
+    assert "commercial_timing_contract.tcl" in package_source
+
+
+def test_source_export_writes_tar_without_staging_rtl_tree(tmp_path: Path) -> None:
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_tar_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    source = ROOT / "rtl/mini/top/retrosoc_asic.sv"
+    filelist = parse_filelists([], require_files=False)
+    filelist.files.append(source)
+    contract = tmp_path / "commercial_timing_contract.tcl"
+    contract.write_text("set flow::contract 1\n", encoding="utf-8")
+    archive = source_export.write_tar(
+        filelist,
+        tmp_path,
+        "MINI",
+        {Path("contracts/commercial_timing_contract.tcl"): contract},
+    )
+
+    assert not (tmp_path / "rtl").exists()
+    with tarfile.open(archive) as bundle:
+        names = bundle.getnames()
+        assert "rtl/mini/top/retrosoc_asic.sv" in names
+        assert bundle.extractfile("rtl/filelist.fl").read().decode() == (
+            "mini/top/retrosoc_asic.sv\n"
+        )
+        assert "rtl/contracts/commercial_timing_contract.tcl" in names
+        assert "contracts/commercial_timing_contract.tcl" not in (
+            bundle.extractfile("rtl/filelist.fl").read().decode()
+        )
+
+
+def test_source_export_bundles_generated_include(tmp_path: Path) -> None:
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_include_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    include_dir = tmp_path / "generated/archinfo"
+    include_dir.mkdir(parents=True)
+    header = include_dir / "archinfo_integration_metadata.svh"
+    header.write_text("`define ARCHINFO_TEST 1\n", encoding="utf-8")
+    source = tmp_path / "design.sv"
+    source.write_text(
+        '`include "archinfo_integration_metadata.svh"\nmodule design; endmodule\n',
+        encoding="utf-8",
+    )
+    filelist = parse_filelists([], require_files=False)
+    filelist.incdirs.append(include_dir)
+    filelist.files.append(source)
+
+    archive = source_export.write_tar(filelist, tmp_path / "output", "MINI")
+
+    with tarfile.open(archive) as bundle:
+        names = bundle.getnames()
+        assert f"rtl/{source_export.bundle_relative(header)}" in names
+        filelist_text = bundle.extractfile("rtl/filelist.fl").read().decode()
+        assert f"+incdir+{source_export.bundle_relative(include_dir)}" in filelist_text
 
 
 def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> None:
@@ -227,16 +330,12 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "pll_rcu", pll_rcu_filelist, memory_map, topology, user_extensions
     )
-    assert generate_formal_filelist(
-        "gpio", gpio_filelist, memory_map, topology, user_extensions
-    )
+    assert generate_formal_filelist("gpio", gpio_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "ws2812", ws2812_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist("i2c", i2c_filelist, memory_map, topology, user_extensions)
-    assert generate_formal_filelist(
-        "clint", clint_filelist, memory_map, topology, user_extensions
-    )
+    assert generate_formal_filelist("clint", clint_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
@@ -395,7 +494,97 @@ def test_mpw_generator_uses_only_the_native_v2_contract() -> None:
 
     assert "migrate_user_" not in source
     assert "prepare_legacy_mpw_workspace" not in source
-    assert '"-m",\n        "mpwgen"' in source
+    assert '"mpwgen"' in source
+    assert '"generate"' in source
+
+
+def test_serv_setup_patch_is_idempotent(tmp_path: Path) -> None:
+    state = tmp_path / "serv_state.v"
+    state.write_text(
+        "module serv_state;\n"
+        "   wire misalign_trap_sync;\n"
+        "   assign use_trap = !trap_pending;\n"
+        "   wire trap_pending = WITH_CSR & trap_condition;\n"
+        "endmodule\n",
+        encoding="utf-8",
+    )
+
+    patch_serv(tmp_path)
+    first = state.read_text(encoding="utf-8")
+    patch_serv(tmp_path)
+
+    assert state.read_text(encoding="utf-8") == first
+    assert first.index("wire trap_pending;") < first.index("!trap_pending")
+    assert "assign trap_pending = WITH_CSR & trap_condition;" in first
+
+
+def test_serv_setup_patch_rejects_unknown_source(tmp_path: Path) -> None:
+    state = tmp_path / "serv_state.v"
+    state.write_text("module serv_state; endmodule\n", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="patch markers missing"):
+        patch_serv(tmp_path)
+
+
+def test_mpw_active_manifest_uses_self_owned_design_selection(tmp_path: Path) -> None:
+    manifest = tmp_path / "mpw.toml"
+    manifest.write_text(
+        """schema_version = 2
+[generator]
+api_version = "retrosoc-mpw-v2"
+[[design]]
+kind = "core"
+id = "slow_core"
+slot = 0
+enabled = false
+source_dir = "core/slow"
+top = "user_core_design"
+filelist = "usercore.fl"
+reset = "sync"
+name = "Slow"
+isa = "rv32i"
+maintainer = "owner"
+repo = "https://example.com/slow"
+[[design]]
+kind = "core"
+id = "selected_core"
+slot = 5
+source_dir = "core/selected"
+top = "user_core_design"
+filelist = "usercore.fl"
+reset = "async"
+name = "Selected"
+isa = "rv32i"
+maintainer = "owner"
+repo = "https://example.com/selected"
+""",
+        encoding="utf-8",
+    )
+    extensions = tmp_path / "user_extensions.json"
+    extensions.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "core_targets": [
+                    {
+                        "slot": 0,
+                        "design_id": "selected_core",
+                        "module": "mpw_c0",
+                        "reset": "async",
+                    }
+                ],
+                "ip_targets": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    active = render_active_manifest(manifest, extensions)
+
+    assert 'id = "selected_core"' in active
+    assert 'id = "slow_core"' not in active
+    assert "slot = 0" in active
+    assert "enabled" not in active
 
 
 def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None:
@@ -403,10 +592,15 @@ def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None
     extensions_path.parent.mkdir(parents=True)
     extensions = {
         "core_targets": [
-            {"slot": 0, "module": "mpw_core_zero", "reset": "sync"},
+            {
+                "slot": 0,
+                "design_id": "core_zero",
+                "module": "mpw_core_zero",
+                "reset": "sync",
+            },
         ],
         "ip_targets": [
-            {"slot": 1, "module": "mpw_ip_one"},
+            {"slot": 1, "design_id": "ip_one", "module": "mpw_ip_one"},
         ],
     }
     extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
@@ -414,8 +608,14 @@ def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None
     output.mkdir()
     manifest = {
         "designs": [
-            {"kind": "core", "slot": 0, "top": "mpw_core_zero", "reset": "sync"},
-            {"kind": "ip", "slot": 1, "top": "mpw_ip_one"},
+            {
+                "kind": "core",
+                "id": "core_zero",
+                "slot": 0,
+                "top": "mpw_core_zero",
+                "reset": "sync",
+            },
+            {"kind": "ip", "id": "ip_one", "slot": 1, "top": "mpw_ip_one"},
         ]
     }
     (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -565,14 +765,15 @@ def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> N
     )
     assert build_state() == before
 
-    invalid = subprocess.run(
-        ["make", "SIMU=UNKNOWN", "help"],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-    )
-    assert invalid.returncode != 0
-    assert "Invalid SIMU='UNKNOWN'" in invalid.stderr
+    for simulator in ("UNKNOWN", "XEZIM", "CVC"):
+        invalid = subprocess.run(
+            ["make", f"SIMU={simulator}", "help"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        assert invalid.returncode != 0
+        assert f"Invalid SIMU='{simulator}'" in invalid.stderr
 
     removed_core = subprocess.run(
         ["make", "CORE=alternate", "config"],
@@ -757,6 +958,18 @@ def test_verilator_has_no_external_core_selection() -> None:
     assert "core_sel_i" not in testbench
 
 
+def test_systemverilog_testbench_starts_in_reset_with_known_clocks() -> None:
+    testbench = (ROOT / "rtl/mini/dv/tb/retrosoc_tb.sv").read_text(encoding="utf-8")
+
+    assert "localparam time ResetHoldTime = 170744ns;" in testbench
+    for clock in ("r_ext_clk", "r_aud_clk", "r_xtal_clk"):
+        assert f"{clock} = 1'b0;" in testbench
+        assert f"{clock} = ~{clock};" in testbench
+    assert testbench.index("r_rst_n = 1'b0;") < testbench.index("#ResetHoldTime;")
+    assert testbench.index("#ResetHoldTime;") < testbench.index("r_rst_n = 1'b1;")
+    assert "#43;" not in testbench
+
+
 def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
     wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
@@ -841,9 +1054,7 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert (
-        "+ make CONFIG=configs/ci/ihp130.mk APP=ci_smoke firmware" in dry_run.stdout
-    )
+    assert "+ make CONFIG=configs/ci/ihp130.mk APP=ci_smoke firmware" in dry_run.stdout
     assert "netsim" not in dry_run.stdout
 
     invalid = subprocess.run(
@@ -865,9 +1076,9 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     assert "smoke regression supports only --pdk IHP130" in invalid.stderr
 
 
-def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
+def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
     assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
-    for profile in PDK_PR_PROFILES.values():
+    for pdk, profile in PDK_PR_PROFILES.items():
         commands = pdk_pr_commands(profile)
         command_values = [values for _, values in commands]
         assert command_values[0] == RTL_LINT_VALUES
@@ -882,7 +1093,14 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
             any(value.startswith("SYNTH_RECIPE=") for value in values) for values in command_values
         )
         assert ("STA=OPENSTA", "sta") in command_values
-        assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
+        netlist_targets = {
+            value
+            for values in command_values
+            for value in values
+            if value in {"netsim", "netsim-boot"}
+        }
+        expected_target = "netsim-boot" if pdk in {"GF180", "ICS55"} else "netsim"
+        assert netlist_targets == {expected_target}
 
 
 def test_nightly_regression_runs_optional_yosys_recipes() -> None:
@@ -929,10 +1147,14 @@ def test_nightly_regression_runs_optional_yosys_recipes() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in nightly.stdout
+    assert (
+        "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in nightly.stdout
+    )
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in nightly.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in nightly.stdout
-    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in nightly.stdout
+    assert (
+        "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in nightly.stdout
+    )
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=speed sta" in nightly.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=speed metrics" in nightly.stdout
 
@@ -971,7 +1193,10 @@ def test_nightly_extra_regression_skips_pr_netsim() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report" in extra.stdout
+    assert (
+        "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report"
+        in extra.stdout
+    )
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in extra.stdout

@@ -67,6 +67,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     fabric = (tmp_path / "rtl/soc_fabric_interfaces.svh").read_text(encoding="utf-8")
     bus_fabric = (tmp_path / "rtl/soc_bus_fabric.svh").read_text(encoding="utf-8")
     apb_system_fabric = (tmp_path / "rtl/apb4_system_fabric.svh").read_text(encoding="utf-8")
+    apb_periph_fabric = (tmp_path / "rtl/apb4_periph_fabric.svh").read_text(encoding="utf-8")
     irq_config = (tmp_path / "rtl/soc_irq_config.svh").read_text(encoding="utf-8")
     rib_irq = (tmp_path / "rtl/apb4_periph_irq_bindings.svh").read_text(encoding="utf-8")
     apb_irq = (tmp_path / "rtl/apb4_system_irq_bindings.svh").read_text(encoding="utf-8")
@@ -74,7 +75,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
-    assert interfaces.count("apb4_if u_") == 19
+    assert interfaces.count("apb4_if u_") == 20
     assert "nmi_if" not in interfaces
     assert "soc_nmi" not in interfaces
     assert "assign s_psel_comb[17] = `SOC_ADDR_IS_APB4_I2C1(s_decode_addr);" in routes
@@ -84,6 +85,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign s_psel_comb[16] = `SOC_ADDR_IS_APB4_OPIPSRAM(s_decode_addr);" in routes
     assert "assign s_psel_comb[18] = `SOC_ADDR_IS_APB4_SDIO1(s_decode_addr);" in routes
     assert "assign s_psel_comb[19] = `SOC_ADDR_IS_APB4_CRYPTO(s_decode_addr);" in routes
+    assert "assign s_psel_comb[20] = `SOC_ADDR_IS_APB4_USB2(s_decode_addr);" in routes
     assert gpio.count("// GPIO") == 64
     assert "u_uart1_if" not in gpio
     assert "assign u_uart0_if.cts_n_i = u_gpio_if.di_i[0];" in gpio
@@ -117,18 +119,20 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign user_ip.paddr = s_addr_q;" in apb_routes
     assert "({32{s_psel_q[7]}} & user_ip.prdata)" in apb_response
     assert "localparam int NSLV = 8;" in apb_declarations
-    assert fabric.count("axi4_if #(") == 7
+    assert fabric.count("axi4_if #(") == 8
     assert ".mgmt_axi4(u_mgmt_axi4_if)" in bus_fabric
     assert ".user_axi4(u_user_axi4_if)" in bus_fabric
     assert ".dma_axi4(u_dma_axi4_if)" in bus_fabric
     assert ".sdio0_axi4(u_sdio0_axi4_if)" in bus_fabric
     assert ".sdio1_axi4(u_sdio1_axi4_if)" in bus_fabric
+    assert ".usb2_axi4(u_usb2_axi4_if)" in bus_fabric
     assert ".cfg_axi4(u_cfg_axi4_if)" in bus_fabric
     assert ".system_axi4(u_system_axi4_if)" in bus_fabric
     assert ".axi4(u_system_axi4_if)" in apb_system_fabric
+    assert ".usb2_axi4(u_usb2_axi4_if)" in apb_periph_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_USER_IRQ_MASK 32'h004EFBFC" in irq_config
-    assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 19" in irq_config
+    assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 20" in irq_config
     assert "`define SOC_IRQ_APB4_SYSTEM_WIDTH 5" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
@@ -140,6 +144,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign irq_o[16] = sdio0.irq_o;" in rib_irq
     assert "assign irq_o[17] = sdio1.irq_o;" in rib_irq
     assert "assign irq_o[18] = s_crypto_irq;" in rib_irq
+    assert "assign irq_o[19] = s_usb2_irq;" in rib_irq
     assert "assign irq_o[0] = pwm.irq_o;" in apb_irq
     assert "assign irq_o[4] = s_rng_irq;" in apb_irq
     assert "s_irq[10] = s_apb4_periph_irq[16];" in irq_wiring
@@ -149,12 +154,14 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "s_irq[22] = s_apb4_periph_irq[15];" in irq_wiring
     assert "s_irq[21] = s_apb4_periph_irq[17];" in irq_wiring
     assert "s_irq[23] = s_apb4_periph_irq[18];" in irq_wiring
+    assert "s_irq[24] = s_apb4_periph_irq[19];" in irq_wiring
     assert "irq_i[10] == apb4_periph_irq_i[16]" in irq_sva
     assert "irq_i[15] == apb4_periph_irq_i[13]" in irq_sva
     assert "irq_i[20] == apb4_periph_irq_i[14]" in irq_sva
     assert "irq_i[22] == apb4_periph_irq_i[15]" in irq_sva
     assert "irq_i[21] == apb4_periph_irq_i[17]" in irq_sva
     assert "irq_i[23] == apb4_periph_irq_i[18]" in irq_sva
+    assert "irq_i[24] == apb4_periph_irq_i[19]" in irq_sva
     assert "irq_i[31] == 1'b0" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert filelist.startswith("+incdir+")
@@ -198,6 +205,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("opipsram", "apb4_periph", 15, 22, "opipsram.irq_o"),
         ("sdio1", "apb4_periph", 17, 21, "sdio1.irq_o"),
         ("crypto", "apb4_periph", 18, 23, "s_crypto_irq"),
+        ("usb2", "apb4_periph", 19, 24, "s_usb2_irq"),
     ]
 
 

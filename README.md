@@ -19,8 +19,8 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 ## Highlights
 
 - A fixed Hazard3 management core with a permanent JTAG Debug Module, plus
-  software-selected user-core and user-IP extension slots, including PicoRV32
-  at user-core slot C5.
+  software-selected user-core and user-IP extension slots. The active user
+  cores are KianV RV32I, SERV, FemtoRV32, and DarkRISCV at slots C0-C3.
 - A documented [Tiny/Mini/Std/Pro product direction](docs/soc-family-positioning.md)
   anchored by Mini and a trusted Hazard3 management model. The higher Linux,
   graphics, AI, and RV64 configurations are roadmap targets, not supported
@@ -41,8 +41,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,
   `coremark`, `debug`, and `shell` applications.
-- Open-source behavioral simulation with Icarus Verilog and Verilator, synthesis with
-  Yosys, netlist simulation with Icarus Verilog, and timing analysis with OpenSTA.
+- Open-source behavioral simulation with Icarus Verilog and Verilator,
+  synthesis with Yosys, netlist simulation with Icarus Verilog, and timing
+  analysis with OpenSTA.
 - Read-only ARCHINFO ABI discovery for build/configuration provenance, SoC
   topology, technology capabilities, and lifecycle-gated device identity.
 - Checksum-verified dependency and toolchain locks, structured flow results, warning
@@ -67,8 +68,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 The committed profiles are the supported starting points. They select an ISA,
 PDK, application, linker layout, and optional features as one reproducible
 configuration. The management core is fixed to Hazard3. The user-extension
-fabric exposes stable C0-C5 user-core slots and software selects one active
-user core.
+fabric exposes C0-C3 user-core slots and software selects one active user core.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |

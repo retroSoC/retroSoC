@@ -1,5 +1,12 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
 
 `include "dvp_define.svh"
 
@@ -247,5 +254,6 @@ module dvp_core (
     end
   end
 
-  assign error_flags_o = s_err_flags_q;
+  // SYNC, SIZE and PARTIAL are reserved until their capture paths are implemented.
+  assign error_flags_o = {s_err_flags_q[5:4], 3'b000, s_err_flags_q[0]};
 endmodule

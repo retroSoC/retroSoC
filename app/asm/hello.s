@@ -23,7 +23,7 @@ HELLO_LOOP:
 
 APP_INIT:
     li t1, 1
-    li t2, 6
+    li t2, 1
 APP_LOOP:
     la s0, msg_luck
     li a0, 67

@@ -1,5 +1,12 @@
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
 
 `include "user_extensions.svh"
 
@@ -18,6 +25,7 @@ interface sysctrl_if ();
   logic [                   63:0] perf_dma_wait_i;
   logic [                   63:0] perf_sdio0_wait_i;
   logic [                   63:0] perf_sdio1_wait_i;
+  logic [                   63:0] perf_usb2_wait_i;
   logic [                   63:0] perf_apb4_periph_wait_i;
   logic [                   63:0] perf_apb4_system_wait_i;
   logic [                   63:0] perf_sdram_wait_i;
@@ -39,6 +47,7 @@ interface sysctrl_if ();
       input perf_dma_wait_i,
       input perf_sdio0_wait_i,
       input perf_sdio1_wait_i,
+      input perf_usb2_wait_i,
       input perf_apb4_periph_wait_i,
       input perf_apb4_system_wait_i,
       input perf_sdram_wait_i,

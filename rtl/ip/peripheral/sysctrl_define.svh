@@ -1,5 +1,12 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
 
 `ifndef RETROSOC_SYSCTRL_DEFINE_SVH
 `define RETROSOC_SYSCTRL_DEFINE_SVH
@@ -42,6 +49,8 @@
 `define APB4_SYSCTRL__PERF_FLASH_WAIT_HI       `SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET
 `define APB4_SYSCTRL__TEST_STATUS              `SOC_SYSCTRL_TEST_STATUS_OFFSET
 `define APB4_SYSCTRL__RTC_WAKE_STATUS          `SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET
+`define APB4_SYSCTRL__PERF_USB2_WAIT_LO        `SOC_SYSCTRL_PERF_USB2_WAIT_LO_OFFSET
+`define APB4_SYSCTRL__PERF_USB2_WAIT_HI        `SOC_SYSCTRL_PERF_USB2_WAIT_HI_OFFSET
 
 `define APB4_SYSCTRL__PLL_CMD_APPLY         0
 `define APB4_SYSCTRL__PLL_CMD_CLEAR_ERROR   1

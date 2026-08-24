@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "reset_ports": ["ext_rst_n_i_pad"],
+  "reset_ports": ["ext_rst_n_i_pad", "jtag_trst_n_i_pad"],
   "domains": [
     {
       "name": "external",
@@ -75,6 +75,21 @@
         "pin": "u_retrosoc.u_apb4_periph.u_axi4_dvp.u_dvp_pclk_clk_buf/clk_o",
         "period_ns": 41.666666667,
         "async_group": "dvp"
+      }
+    },
+    {
+      "name": "usb2_ulpi",
+      "clock": "clk_ulpi_i",
+      "reset": "s_ulpi_rst_n",
+      "reset_source": "rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_ulpi_rst_sync",
+      "sta": {
+        "source_port": "usb2_ulpi_clk_i_pad",
+        "object_type": "port",
+        "period_ns": 16.666666667,
+        "async_group": "usb2_ulpi"
       }
     }
   ],
@@ -222,6 +237,198 @@
       "primitive": "cdc_sync",
       "path": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
       "instance": "u_reset_cause_sync"
+    },
+    {
+      "name": "usb2_work",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_work_cdc"
+    },
+    {
+      "name": "usb2_result",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_result_cdc"
+    },
+    {
+      "name": "usb2_setup",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_setup_cdc"
+    },
+    {
+      "name": "usb2_fill_command",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_fill_command_cdc"
+    },
+    {
+      "name": "usb2_drain_command",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_drain_command_cdc"
+    },
+    {
+      "name": "usb2_buffer_event",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_buffer_event_cdc"
+    },
+    {
+      "name": "usb2_view_request",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_view_request_cdc"
+    },
+    {
+      "name": "usb2_view_response",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_view_response_cdc"
+    },
+    {
+      "name": "usb2_fill_stream",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_fifo",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_fill_stream_cdc"
+    },
+    {
+      "name": "usb2_drain_stream",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "cdc_fifo",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_drain_stream_cdc"
+    },
+    {
+      "name": "usb2_role",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_role_sync"
+    },
+    {
+      "name": "usb2_role_reset",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_role_reset_sync"
+    },
+    {
+      "name": "usb2_phy_reset",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_phy_reset_sync"
+    },
+    {
+      "name": "usb2_high_speed",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_high_speed_sync"
+    },
+    {
+      "name": "usb2_enable",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_enable_sync"
+    },
+    {
+      "name": "usb2_device_addr",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_device_addr_sync"
+    },
+    {
+      "name": "usb2_endpoint_config",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_endpoint_cfg_sync"
+    },
+    {
+      "name": "usb2_timeout",
+      "source": "system",
+      "destination": "usb2_ulpi",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_timeout_sync"
+    },
+    {
+      "name": "usb2_phy_status",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_phy_status_sync"
+    },
+    {
+      "name": "usb2_transaction_busy",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_transaction_busy_sync"
+    },
+    {
+      "name": "usb2_frame",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_frame_sync"
+    },
+    {
+      "name": "usb2_ecc_counts",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_ecc_counts_sync"
+    },
+    {
+      "name": "usb2_retry_event",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "edge_det",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_retry_event_sync"
+    },
+    {
+      "name": "usb2_protocol_event",
+      "source": "usb2_ulpi",
+      "destination": "system",
+      "primitive": "edge_det",
+      "path": "rtl/ip/usb/apb4_usb2.sv",
+      "instance": "u_protocol_event_sync"
     }
   ],
   "same_domain_contracts": [

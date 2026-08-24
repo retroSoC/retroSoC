@@ -1,5 +1,12 @@
 // Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
 
 `include "axi4_define.svh"
 `include "mmap_define.svh"
@@ -400,6 +407,10 @@ module sdram_axi4 (
     s_rd_err_code_d  = SdramErrNone;
     s_rd_err_addr_d  = s_err_addr_q;
     next_rd_addr     = s_rd_addr_q;
+    rd_frag          = '0;
+    rd_legal         = 1'b0;
+    rd_window        = 1'b0;
+    rd_last          = '0;
 
     unique case (s_rd_state_q)
       RdIdle: begin
@@ -513,6 +524,10 @@ module sdram_axi4 (
     s_wr_err_event_d = 1'b0;
     s_wr_err_code_d  = SdramErrNone;
     s_wr_err_addr_d  = s_err_addr_q;
+    wr_frag          = '0;
+    wr_legal         = 1'b0;
+    wr_window        = 1'b0;
+    wr_last          = '0;
 
     unique case (s_wr_state_q)
       WrIdle: begin

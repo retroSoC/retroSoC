@@ -52,6 +52,7 @@
 // GPIO31  OPI_PSRAM_DQS                BIDI    PWM_CAPTURE1            IN
 //
 // Dedicated SDIO1 pads: SDIO1_CLK, SDIO1_CMD, SDIO1_DAT[3:0].
+// Dedicated 3.3 V ULPI pads: CLK, DATA[7:0], DIR, NXT, STP, RESET_N.
 
 module retrosoc_asic (
     `include "retrosoc_asic_ports.svh"
@@ -76,6 +77,7 @@ module retrosoc_asic (
   logic       s_jtag_tdo;
   logic       s_uart0_rx;
   logic       s_uart0_tx;
+  logic       s_usb2_ulpi_clk;
   (* keep = "true" *)logic       s_test_done;
   (* keep = "true" *)logic       s_test_pass;
   (* keep = "true" *)logic [7:0] s_test_code;
@@ -88,6 +90,7 @@ module retrosoc_asic (
   xpi_if u_xpi_if ();
   sdram_if u_sdram_if ();
   sdio_if u_sdio1_if ();
+  usb2_ulpi_if u_usb2_ulpi_if ();
   pll_ctrl_if u_pll_ctrl_if ();
 
   `include "retrosoc_asic_pad_bindings.svh"
@@ -124,6 +127,7 @@ rcu #(
       .rst_n_i        (s_sys_rst_n),
       .clk_aud_i      (s_aud_clk_buf),
       .rst_aud_n_i    (s_aud_rst_n),
+      .clk_ulpi_i     (s_usb2_ulpi_clk),
       .clkdiv4_i      (s_sys_clkdiv4),
       .timebase_tick_i(s_timebase_tick),
       .pll_ctrl       (u_pll_ctrl_if),
@@ -136,6 +140,7 @@ rcu #(
       .xpi            (u_xpi_if),
       .sdram          (u_sdram_if),
       .sdio1          (u_sdio1_if),
+      .usb2           (u_usb2_ulpi_if),
       .jtag_tck_i     (s_jtag_tck),
       .jtag_tms_i     (s_jtag_tms),
       .jtag_tdi_i     (s_jtag_tdi),

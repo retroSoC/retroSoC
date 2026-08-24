@@ -1,5 +1,12 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
 // See LICENSE for the complete license text.
 
 `include "axi4_define.svh"
@@ -7,7 +14,7 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect #(
-    parameter int NumMasters = 6,
+    parameter int NumMasters = 7,
     parameter int NumTargets = 10
 ) (
     input  logic                 clk_i,
@@ -30,6 +37,7 @@ module axi4_interconnect #(
     output logic          [63:0] perf_dma_wait_o,
     output logic          [63:0] perf_sdio0_wait_o,
     output logic          [63:0] perf_sdio1_wait_o,
+    output logic          [63:0] perf_usb2_wait_o,
     output logic          [63:0] perf_apb4_periph_wait_o,
     output logic          [63:0] perf_apb4_system_wait_o,
     output logic          [63:0] perf_sdram_wait_o,
@@ -584,6 +592,7 @@ module axi4_interconnect #(
   assign perf_dma_wait_o         = s_perf_master_wait[2] + s_perf_master_wait[5];
   assign perf_sdio0_wait_o       = s_perf_master_wait[3];
   assign perf_sdio1_wait_o       = s_perf_master_wait[4];
+  assign perf_usb2_wait_o        = s_perf_master_wait[6];
   assign perf_apb4_periph_wait_o = s_perf_target_wait[TARGET_CFG];
   assign perf_apb4_system_wait_o = s_perf_target_wait[TARGET_APB4_SYSTEM];
   assign perf_sdram_wait_o       = s_perf_target_wait[TARGET_SDRAM];
@@ -597,7 +606,7 @@ module axi4_interconnect #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (NumMasters != 6 || ((NumTargets != 9) && (NumTargets != 10))) begin
+    if (NumMasters != 7 || ((NumTargets != 9) && (NumTargets != 10))) begin
       $fatal(1, "axi4_interconnect: invalid topology dimensions");
     end
   end

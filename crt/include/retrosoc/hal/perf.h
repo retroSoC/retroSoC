@@ -11,6 +11,7 @@ typedef struct {
     uint64_t dma_wait;
     uint64_t sdio0_wait;
     uint64_t sdio1_wait;
+    uint64_t usb2_wait;
     uint64_t apb4_periph_wait;
     uint64_t apb4_system_wait;
     uint64_t sdram_wait;

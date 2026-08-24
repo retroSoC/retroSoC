@@ -267,8 +267,10 @@ ifeq ($(STA), OPENSTA)
     include physical/smoke/sta/opensta/opensta.mk
 endif
 
+include physical/librelane/Makefile
+
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
-	clean-all purge-cache manifest check-warnings metrics check-metrics package \
+	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
 	benchmark-report coremark-report \
@@ -288,6 +290,11 @@ help:
 	  '  netcomp | netsim           synthesized-netlist simulation' \
 	  '  postcomp | postsim         post-layout simulation' \
 	  '  synth | sta                synthesis and timing analysis' \
+	  '  librelane-doctor           validate the IHP130 LibreLane Chip flow' \
+	  '  librelane-chip             run the single-level IHP130 pad-ring flow' \
+	  '  librelane-openroad         open the current Chip run in OpenROAD' \
+	  '  librelane-klayout          open the current Chip run in KLayout' \
+	  '  librelane-package          package full-chip views and evidence' \
 	  '  setup                      install pinned external dependencies' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  doctor                     check tools, paths, and selected configuration' \
@@ -307,7 +314,7 @@ help:
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
-	  '  tech-cell-test             test GF180/SKY130 technology IO and clock wrappers' \
+	  '  tech-cell-test             test open-PDK technology IO and clock wrappers' \
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
@@ -327,6 +334,7 @@ help:
 	  '  regress-smoke              run the IHP130 fast regression suite' \
 	  '  regress-pr | regress-nightly run supported full regression suites' \
 	  '  package                    create checksummed source deliverables' \
+	  '  commercial-package         create the RTL package consumed in the EDA zone' \
 	  '  clean | clean-all          clean current flow or all build output' \
 	  '  purge-cache                remove dependency and compiler caches' \
 	  '' \
@@ -477,6 +485,14 @@ sw-host-test:
 package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
 	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
 	  --variant-root $(VARIANT_ROOT) --output-dir $(ROOT_PATH)/dist/$(VARIANT_ID)
+
+commercial-package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
+	@test '$(PDK)' = ICS55
+	@test '$(HAVE_PLL)' = YES
+	@test '$(HAVE_SRAM_IF)' = YES
+	@test '$(HAVE_SRAM_MACRO)' = YES
+	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
+	  --variant-root $(VARIANT_ROOT) --output-dir $(VARIANT_ROOT)/commercial/input
 
 regress-smoke:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130

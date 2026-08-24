@@ -11,7 +11,7 @@ decoder template. `apb4_system` is instantiated as `u_apb4_system`; its AXI4
 configuration port is wired by generated `apb4_system_fabric.svh`.
 `apb4_periph` remains the self-owned APB4 peripheral container. Generated
 fabric links are explicit 32-bit AXI4 interfaces; `mgmt`, `user`, `dma`,
-`sdio0`, and `sdio1` are the five native AXI4 masters, while `cfg` and
+`sdio0`, `sdio1`, and `usb2` are generated native AXI4 links, while `cfg` and
 `system` are target-side links.
 Interface arrays are confined to the AXI4 bus implementation and flattened by
 the existing synthesis/export flow before FPGA or netlist simulation.
@@ -21,9 +21,9 @@ RIBP island at `0x1000_0000`. Every active `apb4_periph` memory-map region
 must appear exactly once. Disabled targets keep their slot and interface
 declaration but cannot own an address region. This list stays separate from
 `apb4_system_targets`, which owns the `0x2000_0000` `apb4_system` island.
-Slot 15 is the active SDIO0 management window; SDIO1 is appended at slot 18
-and the management-only crypto controller at slot 19, so the existing slots
-0..17 remain stable.
+Slot 15 is the active SDIO0 management window; SDIO1 is appended at slot 18,
+the management-only crypto controller at slot 19, and USB2 at slot 20, so the
+existing slots 0..17 remain stable.
 
 Each `gpio_alt_functions` entry defines both alternate modes for one GPIO pin.
 `inputs` are driven from the selected GPIO input, and `do` and `oe` define the
@@ -45,16 +45,18 @@ wrapper bindings, the core-vector wiring, and simulation-only assertions.
 Existing allocated core IRQ bits retain their compatibility mapping; additions
 must use currently unallocated bits and preserve the existing entries. SDIO0
 and SDIO1 use APB4 group bits 16 and 17 and core bits 10 and 21. Crypto uses
-APB4 group bit 18 and core bit 23. All three remain management-only in the
+APB4 group bit 18 and core bit 23. USB2 uses APB4 group bit 19 and core bit 24.
+All four remain management-only in the
 generated user IRQ mask. Removing a source leaves its
 core IRQ bit unallocated and driven low. Firmware does not
 expose a generic external interrupt API until the SoC includes a claim/complete
 interrupt controller.
 
-`user_extensions.json` defines the SoC-level user-core and user-IP slots.
-The locked mini-ver-mpw `mpw.toml` remains the source of truth for enabled
-design IDs, module names, slots, and reset type. `scripts/generate_mpw.py`
-verifies that both descriptions agree before RTL generation.
+`user_extensions.json` defines the active SoC-level user-core and user-IP
+design IDs, slots, module names, and reset types. The locked mini-ver-mpw
+`mpw.toml` remains the source of truth for available design metadata and source
+locations. `scripts/generate_mpw.py` selects and renumbers the configured
+designs, then verifies the generated manifest before RTL generation.
 `generate_user_extensions.py` then creates isolated default routing and one
 explicit instance per selected slot for `user_core_top.sv` and `user_ip_top.sv`.
 User cores keep `ribp_if.master ribp` at the extension ABI and are converted to

@@ -8,7 +8,10 @@ edit generated files.
 The map intentionally does not contain FPGA package locations. Board-level
 locations remain owned by the FPGA constraint file. Dedicated SDIO1 pads are
 therefore emitted but intentionally unbound in the FPGA profile until a
-package pin and 3.3 V I/O-bank contract exists. The generic
+package pin and 3.3 V I/O-bank contract exists. The 13 USB2 ULPI clock,
+DATA[7:0], DIR, NXT, STP, and PHY-reset pads are also dedicated, never enter
+the GPIO mux, and remain unbound until a USB3320-capable 3.3 V board and timing
+contract are approved. The generic
 `peripheral_bidir` kind requires explicit input, output, and output-enable
 signals and is reusable for any peripheral, not just SDIO. Validate changes
 with `make check-pin-map` and the pin-map tests before running a regression.

@@ -35,6 +35,11 @@ the root README and subsystem guides.
 - [ip/crypto.md](ip/crypto.md) records the commercial AES/SHA/RSA survey and
   defines the Mini SoC crypto architecture, APB/DMA ABI, security boundary,
   HAL, verification evidence, and commercialization roadmap.
+- [ip/usb2.md](ip/usb2.md) defines the ULPI USB 2.0 dual-role architecture,
+  AXI4 descriptor DMA, APB4 ABI, dedicated pads, HAL, and release gates.
+- [ip/mini-npu.md](ip/mini-npu.md) evaluates commercial edge-AI SoCs and records the
+  optional Mini-AI NPU architecture direction, memory constraints, software
+  boundary, and integration prerequisites; it is not an implemented profile.
 - [ip/ws2812.md](ip/ws2812.md) defines the WS2812 transmitter register ABI,
   timing, FIFO, interrupt, DMA, and integration contracts.
 - [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,

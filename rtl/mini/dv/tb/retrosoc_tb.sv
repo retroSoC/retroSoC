@@ -16,6 +16,7 @@ module retrosoc_tb;
   localparam real XTAL_CPU_FREQ = 24.0;
   localparam real EXT_CPU_FREQ = 72.0;
   localparam real AUD_CPU_FREQ = 18.432;
+  localparam time ResetHoldTime = 170744ns;
 
   integer sim_runtime;
 
@@ -61,6 +62,12 @@ module retrosoc_tb;
   wire        s_sdio1_clk;
   tri1        s_sdio1_cmd;
   tri1 [ 3:0] s_sdio1_dat;
+  wire        s_usb2_ulpi_clk;
+  tri0        s_usb2_ulpi_dir;
+  tri0        s_usb2_ulpi_nxt;
+  tri0 [ 7:0] s_usb2_ulpi_data;
+  wire        s_usb2_ulpi_stp;
+  wire        s_usb2_ulpi_reset_n;
   wire        s_sdram_clk;
   wire        s_sdram_cke;
   wire        s_sdram_cs_n;
@@ -77,19 +84,31 @@ module retrosoc_tb;
   wire [ 7:0] s_dvp_data;
 
 `ifdef HAVE_PLL
-  always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = (r_xtal_clk === 1'b0);
+  always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = ~r_xtal_clk;
 `endif
-  always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = (r_ext_clk === 1'b0);
-  always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = (r_aud_clk === 1'b0);
+  always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = ~r_ext_clk;
+  always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = ~r_aud_clk;
+
+  initial begin
+    r_ext_clk = 1'b0;
+    r_aud_clk = 1'b0;
+`ifdef HAVE_PLL
+    r_xtal_clk = 1'b0;
+`endif
+    r_rst_n = 1'b0;
+    #ResetHoldTime;
+    r_rst_n = 1'b1;
+  end
 
   // connect inout pad
-  assign s_ext_clk     = r_ext_clk;
-  assign s_aud_clk     = r_aud_clk;
-  assign s_rst_n       = r_rst_n;
-  assign s_jtag_tck    = 1'b0;
-  assign s_jtag_tms    = 1'b0;
-  assign s_jtag_tdi    = 1'b0;
-  assign s_jtag_trst_n = 1'b0;
+  assign s_ext_clk       = r_ext_clk;
+  assign s_aud_clk       = r_aud_clk;
+  assign s_rst_n         = r_rst_n;
+  assign s_jtag_tck      = 1'b0;
+  assign s_jtag_tms      = 1'b0;
+  assign s_jtag_tdi      = 1'b0;
+  assign s_jtag_trst_n   = 1'b0;
+  assign s_usb2_ulpi_clk = s_ext_clk;
 
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_tb_bindings.svh"
@@ -200,15 +219,6 @@ module retrosoc_tb;
       .vsync_o(s_dvp_vsync),
       .dat_o  (s_dvp_data)
   );
-
-
-  initial begin
-    r_rst_n = 1;
-    #43;
-    r_rst_n = 0;
-    #170701;
-    r_rst_n = 1;
-  end
 
   initial begin : PS2_DEVICE_MODEL_BLOCK
     integer i;

@@ -9,8 +9,6 @@
 +incdir+/clusterip/rng/rtl
 +incdir+/clusterip/pwm/rtl
 +incdir+/clusterip/ps2/rtl
-+incdir+/clusterip/i2c/rtl
-+incdir+/clusterip/spi/rtl
 +incdir+/clusterip/rtc/rtl
 +incdir+/clusterip/wdg/rtl
 +incdir+/clusterip/crc/rtl
@@ -22,4 +20,5 @@
 +incdir+/ip/multimedia
 +incdir+/ip/peripheral
 +incdir+/ip/security
++incdir+/ip/usb
 +incdir+/third_party/model/sdram/

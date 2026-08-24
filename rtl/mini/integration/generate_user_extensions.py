@@ -20,6 +20,7 @@ APB_REQUEST_SIGNALS = ("paddr", "pprot", "psel", "penable", "pwrite", "pwdata", 
 @dataclass(frozen=True)
 class ExtensionTarget:
     slot: int
+    design_id: str
     module: str
     instance: str
     bus: str
@@ -74,12 +75,14 @@ def parse_targets(
         raise ValueError(f"{field} must be a non-empty list")
     targets: list[ExtensionTarget] = []
     slots: set[int] = set()
+    design_ids: set[str] = set()
     instances: set[str] = set()
     for index, entry in enumerate(value):
         target = require_object(entry, f"{field}[{index}]")
         slot = target.get("slot")
         if not isinstance(slot, int) or not first_slot <= slot < (1 << selector_width):
             raise ValueError(f"{field}[{index}].slot must be within the selector range")
+        design_id = require_identifier(target.get("design_id"), f"{field}[{index}].design_id")
         module = require_identifier(target.get("module"), f"{field}[{index}].module")
         instance = require_identifier(target.get("instance"), f"{field}[{index}].instance")
         if field == "core_targets":
@@ -94,11 +97,14 @@ def parse_targets(
             reset = "async"
         if slot in slots:
             raise ValueError(f"{field} slot {slot} is duplicated")
+        if design_id in design_ids:
+            raise ValueError(f"{field} design_id {design_id} is duplicated")
         if instance in instances:
             raise ValueError(f"{field} instance {instance} is duplicated")
         slots.add(slot)
+        design_ids.add(design_id)
         instances.add(instance)
-        targets.append(ExtensionTarget(slot, module, instance, bus, reset))
+        targets.append(ExtensionTarget(slot, design_id, module, instance, bus, reset))
     ordered = tuple(sorted(targets, key=lambda item: item.slot))
     if [target.slot for target in ordered] != list(range(first_slot, first_slot + len(ordered))):
         raise ValueError(f"{field} slots must be contiguous from {first_slot}")
@@ -107,8 +113,8 @@ def parse_targets(
 
 def read_extensions(path: Path) -> ExtensionMap:
     document = require_object(json.loads(path.read_text(encoding="utf-8")), "user extensions")
-    if document.get("schema_version") != 1:
-        raise ValueError("schema_version must be 1")
+    if document.get("schema_version") != 2:
+        raise ValueError("schema_version must be 2")
     core_selector_width = require_positive_integer(
         document.get("core_selector_width"), "core_selector_width"
     )

@@ -86,6 +86,7 @@ module sysctrl_tb;
     sysctrl.perf_dma_wait_i         = 64'd13;
     sysctrl.perf_sdio0_wait_i       = 64'd131;
     sysctrl.perf_sdio1_wait_i       = 64'd141;
+    sysctrl.perf_usb2_wait_i        = 64'd151;
     sysctrl.perf_apb4_periph_wait_i = 64'd14;
     sysctrl.perf_apb4_system_wait_i = 64'd15;
     sysctrl.perf_sdram_wait_i       = 64'd16;
@@ -150,22 +151,24 @@ module sysctrl_tb;
     if (read_data !== 32'd131) $fatal(1, "SDIO0 performance snapshot was not recorded");
     read_register(32'h1000_B094, read_data);
     if (read_data !== 32'd141) $fatal(1, "SDIO1 performance snapshot was not recorded");
+    read_register(32'h1000_B09C, read_data);
+    if (read_data !== 32'd151) $fatal(1, "USB2 performance snapshot was not recorded");
 
     read_register(32'h1000_B020, read_data);
-    if (read_data !== 32'h0000_003F) $fatal(1, "user cores were not held in reset");
-    write_register(32'h1000_B000, 32'h0000_0006);
+    if (read_data !== 32'h0000_000F) $fatal(1, "user cores were not held in reset");
+    write_register(32'h1000_B000, 32'h0000_0004);
     read_register(32'h1000_B024, read_data);
     if ((read_data & 32'h0000_083F) !== 32'h0000_0800) begin
       $fatal(1, "out-of-range user core selection was accepted");
     end
     write_register(32'h1000_B024, 32'h0000_0800);
     write_register(32'h1000_B000, 32'h0000_0001);
-    write_register(32'h1000_B020, 32'h0000_003D);
+    write_register(32'h1000_B020, 32'h0000_000D);
     read_register(32'h1000_B024, read_data);
     if ((read_data & 32'h0000_0300) !== 32'h0000_0300 || (read_data & 32'h1F) != 1) begin
       $fatal(1, "user core start state was not recorded");
     end
-    write_register(32'h1000_B020, 32'h0000_003F);
+    write_register(32'h1000_B020, 32'h0000_000F);
     read_register(32'h1000_B024, read_data);
     if ((read_data & 32'h0000_0300) !== 32'h0000_0200) begin
       $fatal(1, "user core stop state was not recorded");

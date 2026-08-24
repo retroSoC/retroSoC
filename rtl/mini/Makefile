@@ -53,7 +53,7 @@ $(MPW_STAMP):
 	@mkdir -p $(@D)
 	@touch $@
 
-$(MPW_VARIANT_STAMP): $(MPW_STAMP) $(ROOT_PATH)/scripts/generate_mpw.py
+$(MPW_VARIANT_STAMP): $(MPW_STAMP) $(USER_EXTENSIONS_SOURCE) $(ROOT_PATH)/scripts/generate_mpw.py
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/generate_mpw.py --root $(ROOT_PATH) \
 		--output $(MPW_OUTPUT_DIR) \
 		--lock-file $(CACHE_ROOT)/locks/mpw.lock
@@ -150,24 +150,24 @@ else ifeq ($(PDK), GF180)
     PDK_FILELIST := $(GENERATED_FL_DIR)/pdk_gf180.fl
 endif
 
-NET_FLIST := -f $(PDK_FILELIST)
-NET_FLIST += -f $(GENERATED_FL_DIR)/def.fl
-NET_FLIST += -f $(GENERATED_FL_DIR)/sys_def.fl
-NET_FLIST += -f $(GENERATED_FL_DIR)/commonip.fl
-NET_FLIST += -f $(GENERATED_FL_DIR)/inc.fl
-NET_FLIST += -f $(PIN_MAP_FILELIST)
+NET_FILELISTS := $(PDK_FILELIST) \
+	$(GENERATED_FL_DIR)/def.fl \
+	$(GENERATED_FL_DIR)/sys_def.fl \
+	$(GENERATED_FL_DIR)/commonip.fl \
+	$(GENERATED_FL_DIR)/inc.fl \
+	$(PIN_MAP_FILELIST)
+NET_FLIST     := $(foreach filelist,$(NET_FILELISTS),-f $(filelist))
 
-RTL_FLIST := -f $(MEMORY_MAP_FILELIST) -f $(SOC_TOPOLOGY_FILELIST) -f $(USER_EXTENSIONS_FILELIST) \
-	$(NET_FLIST)
-RTL_FLIST += -f $(GENERATED_FL_DIR)/clusterip.fl
-RTL_FLIST += -f $(GENERATED_FL_DIR)/ip.fl
-RTL_FLIST += -f $(GENERATED_FL_DIR)/tech.fl
-RTL_FLIST += -f $(GENERATED_FL_DIR)/core_hazard3.fl
-
-RTL_FLIST += -f $(MPW_OUTPUT_DIR)/core/core.fl
-RTL_FLIST += -f $(MPW_OUTPUT_DIR)/ip/ip.fl
-
-RTL_FLIST += -f $(GENERATED_FL_DIR)/top.fl
+RTL_FILELISTS := $(MEMORY_MAP_FILELIST) $(SOC_TOPOLOGY_FILELIST) $(USER_EXTENSIONS_FILELIST) \
+	$(NET_FILELISTS) \
+	$(GENERATED_FL_DIR)/clusterip.fl \
+	$(GENERATED_FL_DIR)/ip.fl \
+	$(GENERATED_FL_DIR)/tech.fl \
+	$(GENERATED_FL_DIR)/core_hazard3.fl \
+	$(MPW_OUTPUT_DIR)/core/core.fl \
+	$(MPW_OUTPUT_DIR)/ip/ip.fl \
+	$(GENERATED_FL_DIR)/top.fl
+RTL_FLIST     := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))
 #====================== end ======================
 
 ifeq ($(SIMU), VCS)

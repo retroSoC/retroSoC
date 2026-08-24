@@ -17,6 +17,7 @@ module axi4_bus (
     axi4_if.slave       dma_axi4,
     axi4_if.slave       sdio0_axi4,
     axi4_if.slave       sdio1_axi4,
+    axi4_if.slave       usb2_axi4,
     axi4_if.slave       spisd_axi4,
     axi4_if.master      cfg_axi4,
     axi4_if.master      system_axi4,
@@ -43,6 +44,7 @@ module axi4_bus (
     output logic [63:0] perf_dma_wait_o,
     output logic [63:0] perf_sdio0_wait_o,
     output logic [63:0] perf_sdio1_wait_o,
+    output logic [63:0] perf_usb2_wait_o,
     output logic [63:0] perf_apb4_periph_wait_o,
     output logic [63:0] perf_apb4_system_wait_o,
     output logic [63:0] perf_sdram_wait_o,
@@ -51,7 +53,7 @@ module axi4_bus (
     output logic [63:0] perf_opipsram_wait_o
     // verilog_format: on
 );
-  localparam int NumMasters = 6;
+  localparam int NumMasters = 7;
   localparam int NumTargets = 10;
 
   axi4_if #(
@@ -114,6 +116,11 @@ module axi4_bus (
       .sink  (u_master_axi4_if[5])
   );
 
+  axi4_connector u_usb2_connector (
+      .source(usb2_axi4),
+      .sink  (u_master_axi4_if[6])
+  );
+
   axi4_connector u_cfg_connector (
       .source(u_target_axi4_if[0]),
       .sink  (cfg_axi4)
@@ -173,6 +180,7 @@ module axi4_bus (
       .perf_dma_wait_o        (perf_dma_wait_o),
       .perf_sdio0_wait_o      (perf_sdio0_wait_o),
       .perf_sdio1_wait_o      (perf_sdio1_wait_o),
+      .perf_usb2_wait_o       (perf_usb2_wait_o),
       .perf_apb4_periph_wait_o(perf_apb4_periph_wait_o),
       .perf_apb4_system_wait_o(perf_apb4_system_wait_o),
       .perf_sdram_wait_o      (perf_sdram_wait_o),

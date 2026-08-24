@@ -65,13 +65,14 @@ gen_iverilog_filelist: $(IVERILOG_BEHV_FLIST)
 tech-cell-test: $(FILELIST_STAMP) $(TECH_CELL_TEST) $(ROOT_PATH)/rtl/tech/tc_io.sv \
 	$(ROOT_PATH)/rtl/tech/tc_clk.sv
 	@case "$(PDK)" in \
-		GF180|SKY130|ICS55) ;; \
-		*) echo "tech-cell-test supports PDK=GF180, SKY130, or ICS55" >&2; exit 2 ;; \
+		GF180|SKY130|ICS55|IHP130) ;; \
+		*) echo "tech-cell-test supports PDK=GF180, SKY130, ICS55, or IHP130" >&2; exit 2 ;; \
 	esac
 	@mkdir -p $(TECH_CELL_TEST_DIR)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-tech-cells \
 		--log $(TECH_CELL_TEST_DIR)/compile.log --result $(TECH_CELL_TEST_DIR)/result-compile.json \
 		--cwd $(TECH_CELL_TEST_DIR) -- $(IVERILOG) $(IVERILOG_COMMON_OPTS) $(IVERILOG_TIME_OPTS) \
+		$(if $(filter IHP130,$(PDK)),-DUSE_POWER_PINS) \
 		-f $(GENERATED_FL_DIR)/def.fl -f $(PDK_FILELIST) $(ROOT_PATH)/rtl/tech/tc_io.sv \
 		$(ROOT_PATH)/rtl/tech/tc_clk.sv $(TECH_CELL_TEST) -o simv -s tc_pdk_cells_tb
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-tech-cells-sim \

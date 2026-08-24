@@ -96,6 +96,14 @@ endmodule
 
 
 module tc_io_xtl_pad (
+`ifdef PDK_IHP130
+`ifdef USE_POWER_PINS
+    inout  wire  iovdd,
+    inout  wire  iovss,
+    inout  wire  vdd,
+    inout  wire  vss,
+`endif
+`endif
     input  logic xi_pad,
     output logic xo_pad,
     input  logic en,
@@ -120,8 +128,15 @@ module tc_io_xtl_pad (
   assign s_xi_pad = xi_pad;
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadIn u_sg13g2_IOPadIn (
-      .pad(s_xi_pad),
-      .p2c(clk)
+`ifdef USE_POWER_PINS
+
+      .iovdd(iovdd),
+      .iovss(iovss),
+      .vdd  (vdd),
+      .vss  (vss),
+`endif
+      .pad  (s_xi_pad),
+      .p2c  (clk)
   );
   assign xo_pad = xi_pad;
 
@@ -148,6 +163,14 @@ module tc_io_xtl_pad (
 endmodule
 
 module tc_io_in_pad (
+`ifdef PDK_IHP130
+`ifdef USE_POWER_PINS
+    inout  wire  iovdd,
+    inout  wire  iovss,
+    inout  wire  vdd,
+    inout  wire  vss,
+`endif
+`endif
     inout  logic pad,
     output logic p2c
 );
@@ -184,8 +207,15 @@ module tc_io_in_pad (
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadIn u_sg13g2_IOPadIn (
-      .pad(pad),
-      .p2c(p2c)
+`ifdef USE_POWER_PINS
+
+      .iovdd(iovdd),
+      .iovss(iovss),
+      .vdd  (vdd),
+      .vss  (vss),
+`endif
+      .pad  (pad),
+      .p2c  (p2c)
   );
 
 `elsif PDK_ICS55
@@ -210,6 +240,14 @@ module tc_io_in_pad (
 endmodule
 
 module tc_io_out_pad (
+`ifdef PDK_IHP130
+`ifdef USE_POWER_PINS
+    inout wire  iovdd,
+    inout wire  iovss,
+    inout wire  vdd,
+    inout wire  vss,
+`endif
+`endif
     inout wire  pad,
     input logic c2p
 );
@@ -242,8 +280,15 @@ module tc_io_out_pad (
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadOut4mA u_sg13g2_IOPadOut4mA (
-      .pad(pad),
-      .c2p(c2p)
+`ifdef USE_POWER_PINS
+
+      .iovdd(iovdd),
+      .iovss(iovss),
+      .vdd  (vdd),
+      .vss  (vss),
+`endif
+      .pad  (pad),
+      .c2p  (c2p)
   );
 
 `elsif PDK_ICS55
@@ -268,6 +313,14 @@ module tc_io_out_pad (
 endmodule
 
 module tc_io_tri_pad (
+`ifdef PDK_IHP130
+`ifdef USE_POWER_PINS
+    inout  wire  iovdd,
+    inout  wire  iovss,
+    inout  wire  vdd,
+    inout  wire  vss,
+`endif
+`endif
     inout  wire  pad,
     input  logic c2p,
     input  logic c2p_en,
@@ -301,6 +354,13 @@ module tc_io_tri_pad (
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
+`ifdef USE_POWER_PINS
+
+      .iovdd (iovdd),
+      .iovss (iovss),
+      .vdd   (vdd),
+      .vss   (vss),
+`endif
       .pad   (pad),
       .c2p   (c2p),
       .c2p_en(c2p_en),
@@ -339,6 +399,14 @@ endmodule
 
 
 module tc_io_tri_schmitt_pad (
+`ifdef PDK_IHP130
+`ifdef USE_POWER_PINS
+    inout  wire  iovdd,
+    inout  wire  iovss,
+    inout  wire  vdd,
+    inout  wire  vss,
+`endif
+`endif
     inout  wire  pad,
     input  logic c2p,
     input  logic c2p_en,
@@ -372,6 +440,13 @@ module tc_io_tri_schmitt_pad (
 `elsif PDK_IHP130
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
+`ifdef USE_POWER_PINS
+
+      .iovdd (iovdd),
+      .iovss (iovss),
+      .vdd   (vdd),
+      .vss   (vss),
+`endif
       .pad   (pad),
       .c2p   (c2p),
       .c2p_en(c2p_en),
@@ -409,7 +484,51 @@ module tc_io_tri_schmitt_pad (
 endmodule
 
 
+
+module tc_io_schmitt_in_pad (
+`ifdef PDK_IHP130
+`ifdef USE_POWER_PINS
+    inout  wire  iovdd,
+    inout  wire  iovss,
+    inout  wire  vdd,
+    inout  wire  vss,
+`endif
+`endif
+    inout  wire  pad,
+    output logic p2c
+);
+`ifdef PDK_IHP130
+  (* keep *) (* dont_touch = "true" *)
+  sg13g2_IOPadIn u_sg13g2_IOPadIn (
+`ifdef USE_POWER_PINS
+
+      .iovdd(iovdd),
+      .iovss(iovss),
+      .vdd  (vdd),
+      .vss  (vss),
+`endif
+      .pad  (pad),
+      .p2c  (p2c)
+  );
+`else
+  tc_io_tri_schmitt_pad u_tc_io_tri_schmitt_pad (
+      .pad   (pad),
+      .c2p   (1'b0),
+      .c2p_en(1'b0),
+      .p2c   (p2c)
+  );
+`endif
+endmodule
+
 module tc_io_tri_full_pad (
+`ifdef PDK_IHP130
+`ifdef USE_POWER_PINS
+    inout  wire  iovdd,
+    inout  wire  iovss,
+    inout  wire  vdd,
+    inout  wire  vss,
+`endif
+`endif
     inout  wire  pad,
     input  logic c2p,
     input  logic c2p_en,
@@ -452,6 +571,13 @@ module tc_io_tri_full_pad (
   assign dum[2] = pd;
   (* keep *) (* dont_touch = "true" *)
   sg13g2_IOPadInOut4mA u_sg13g2_IOPadInOut4mA (
+`ifdef USE_POWER_PINS
+
+      .iovdd (iovdd),
+      .iovss (iovss),
+      .vdd   (vdd),
+      .vss   (vss),
+`endif
       .pad   (pad),
       .c2p   (c2p),
       .c2p_en(c2p_en),

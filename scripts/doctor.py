@@ -35,13 +35,14 @@ def version(executable: str) -> str | None:
     path = shutil.which(executable)
     if path is None:
         return None
+    name = Path(executable).name
     options = {
         "iverilog": "-V",
         "vvp": "-V",
         "sta": "-version",
     }
     result = subprocess.run(
-        [executable, options.get(executable, "--version")],
+        [executable, options.get(name, "--version")],
         text=True,
         capture_output=True,
         check=False,

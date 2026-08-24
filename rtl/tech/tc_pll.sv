@@ -115,6 +115,74 @@ module tc_pll (
       s_lock_d,
       s_lock_q
   );
+`elsif PDK_ICS55
+`ifdef HAVE_PLL
+  localparam logic [2:0] ICS55_SUPPORTED_SEL = 3'd0;
+  localparam logic [7:0] ICS55_N = 8'd2;
+  localparam logic [1:0] ICS55_OD = 2'd2;
+  localparam logic [2:0] ICS55_LOCK_CYCLES = 3'd4;
+
+  logic [2:0] s_cfg_sel_d, s_cfg_sel_q;
+  logic [2:0] s_lock_count_d, s_lock_count_q;
+  logic s_lock_d, s_lock_q;
+  logic s_mode_supported;
+
+  assign s_cfg_sel_d = cfg_sel_i;
+  dffer #(3) u_cfg_sel_dffer (
+      fref_i,
+      rst_n_i,
+      cfg_apply_i,
+      s_cfg_sel_d,
+      s_cfg_sel_q
+  );
+
+  assign s_mode_supported = s_cfg_sel_q == ICS55_SUPPORTED_SEL;
+  always_comb begin
+    s_lock_count_d = s_lock_count_q;
+    s_lock_d       = s_lock_q;
+    if (cfg_apply_i || !s_mode_supported) begin
+      s_lock_count_d = '0;
+      s_lock_d       = 1'b0;
+    end else if (!s_lock_q) begin
+      if (s_lock_count_q == ICS55_LOCK_CYCLES - 1'b1) begin
+        s_lock_d = 1'b1;
+      end else begin
+        s_lock_count_d = s_lock_count_q + 1'b1;
+      end
+    end
+  end
+  dffr #(3) u_lock_count_dffr (
+      fref_i,
+      rst_n_i,
+      s_lock_count_d,
+      s_lock_count_q
+  );
+  dffr #(1) u_lock_dffr (
+      fref_i,
+      rst_n_i,
+      s_lock_d,
+      s_lock_q
+  );
+
+  assign pll_capable_o = 1'b1;
+  assign pll_lock_o    = s_lock_q;
+  (* keep *) (* dont_touch = "true" *)
+  PLL_TOP u_PLL_TOP (
+      .CKOUT1(pll_clk_o),
+      .CKOUT2(),
+      .CKTST (),
+      .EN    (rst_n_i && s_mode_supported),
+      .REFCLK(fref_i),
+      .BP    (1'b0),
+      .SELECT(1'b0),
+      .OD    (ICS55_OD),
+      .N     (ICS55_N)
+  );
+`else
+  assign pll_capable_o = 1'b0;
+  assign pll_lock_o    = 1'b0;
+  assign pll_clk_o     = fref_i;
+`endif
 `else
   assign pll_capable_o = 1'b0;
   assign pll_lock_o    = 1'b0;

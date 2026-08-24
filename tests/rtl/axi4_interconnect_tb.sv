@@ -4,7 +4,7 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect_tb;
-  localparam int NumMasters = 6;
+  localparam int NumMasters = 7;
   localparam int NumTargets = 9;
 
   logic        clk_i = 1'b0;
@@ -64,6 +64,7 @@ module axi4_interconnect_tb;
       .perf_dma_wait_o        (),
       .perf_sdio0_wait_o      (),
       .perf_sdio1_wait_o      (),
+      .perf_usb2_wait_o       (),
       .perf_apb4_periph_wait_o(),
       .perf_apb4_system_wait_o(),
       .perf_sdram_wait_o      (),
@@ -194,7 +195,8 @@ module axi4_interconnect_tb;
       while (!masters[0].rvalid && cycles < 100) begin
         if (masters[3].arvalid || masters[3].awvalid || masters[3].wvalid ||
             masters[4].arvalid || masters[4].awvalid || masters[4].wvalid ||
-            masters[5].arvalid || masters[5].awvalid || masters[5].wvalid) begin
+            masters[5].arvalid || masters[5].awvalid || masters[5].wvalid ||
+            masters[6].arvalid || masters[6].awvalid || masters[6].wvalid) begin
           $fatal(1, "inactive storage master drove a request during management boot traffic");
         end
         @(negedge clk_i);

@@ -14,6 +14,10 @@ extension interfaces.
 - [i2c.md](i2c.md) defines the dual APB4 I2C controllers.
 - [dvp.md](dvp.md) defines the APB4 DVP capture controller.
 - [i2s.md](i2s.md) defines the APB4 I2S master transceiver.
+- [usb2.md](usb2.md) defines the dual-role ULPI USB 2.0 controller, AXI4
+  descriptor DMA, dedicated-pad integration, HAL, and commercial release gates.
+- [mini-npu.md](mini-npu.md) records the commercial NPU reference survey and optional
+  Mini-AI architecture direction; it does not define implemented RTL or ABI.
 - [sdram.md](sdram.md) defines the AXI4 SDRAM data controller and APB4 configuration window.
 - [xpi.md](xpi.md) defines the native-AXI4/APB4 XPI V2 controller, commercial reference survey, LUT and PHY contracts, HAL, JTAG NOR programming, and delivery boundary.
 

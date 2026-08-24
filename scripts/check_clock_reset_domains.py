@@ -15,6 +15,7 @@ CDC_PRIMITIVES = {
     "async_fifo",
     "async_reqack",
     "cdc_2phase",
+    "cdc_fifo",
     "cdc_sync",
     "cdc_fifo_warm_flush",
     "edge_det",

@@ -180,6 +180,7 @@
       "apb4_ws2812.sv",
       "i2c_core.sv",
       "i2c_filter.sv",
+      "i2c_if.sv",
       "i2c_reg.sv",
       "i2s_clkgen.sv",
       "i2s_core.sv",
@@ -225,6 +226,7 @@
       "sdio_if.sv",
       "sdio_pkg.sv",
       "sdio_reg.sv",
+      "spi_if.sv",
       "spisd_clock.sv",
       "spisd_command.sv",
       "spisd_core.sv",
@@ -243,6 +245,24 @@
     ],
     "rtl/ip/util": [
       "async_fifo.sv"
+    ],
+    "rtl/ip/usb": [
+      "apb4_usb2.sv",
+      "usb2_define.svh",
+      "usb2_dma.sv",
+      "usb2_dma_descriptor.sv",
+      "usb2_link_domain.sv",
+      "usb2_packet_ram.sv",
+      "usb2_packet_store.sv",
+      "usb2_pkg.sv",
+      "usb2_reg.sv",
+      "usb2_role_controller.sv",
+      "usb2_scheduler.sv",
+      "usb2_sie_rx.sv",
+      "usb2_sie_tx.sv",
+      "usb2_transaction_engine.sv",
+      "usb2_ulpi_if.sv",
+      "usb2_ulpi_link.sv"
     ],
     "rtl/mini/top": [
       "ahbl2axi4.sv",
@@ -321,6 +341,15 @@
       ],
       "result": "retained implementation",
       "rationale": "Dual-clock storage, Gray-pointer synchronization, and inferred-memory behavior cannot be replaced by single-clock Common registers without equivalence evidence."
+    },
+    {
+      "paths": [
+        "rtl/ip/usb/apb4_usb2.sv",
+        "rtl/ip/usb/usb2_link_domain.sv",
+        "rtl/ip/usb/usb2_packet_ram.sv"
+      ],
+      "result": "reviewed CDC and technology-memory boundary",
+      "rationale": "The system/ULPI boundary uses managed request-acknowledge synchronizers, asynchronous FIFOs, level synchronizers, and event toggles. Packet RAM retains a single-port technology wrapper with SECDED encoding; replacement requires CDC and memory-equivalence evidence."
     },
     {
       "paths": [

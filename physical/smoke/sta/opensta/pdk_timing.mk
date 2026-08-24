@@ -1,10 +1,15 @@
 # PDK-specific Liberty inputs for the reproducible core-STA baseline.
 
 ifeq ($(PDK),IHP130)
-OPENSTA_LIBERTY   := $(ROOT_PATH)/physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_slow_1p08V_125C.lib
-OPENSTA_LINK_LIBS := $(ROOT_PATH)/physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/lib/sg13g2_io_slow_1p08V_3p0V_125C.lib
+OPENSTA_LIBERTY       := $(ROOT_PATH)/physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_slow_1p08V_125C.lib
+OPENSTA_LINK_LIBS     := $(ROOT_PATH)/physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/lib/sg13g2_io_slow_1p08V_3p0V_125C.lib
+IHP130_USB2_SRAM_LIBS := \
+    $(ROOT_PATH)/physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/lib/RM_IHPSG13_1P_4096x16_c3_bm_bist_slow_1p08V_125C.lib \
+    $(ROOT_PATH)/physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/lib/RM_IHPSG13_1P_4096x8_c3_bm_bist_slow_1p08V_125C.lib
 ifeq ($(HAVE_SRAM_MACRO),YES)
 OPENSTA_SRAM_LIBS := $(wildcard $(ROOT_PATH)/physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/lib/*_slow_1p08V_125C.lib)
+else
+OPENSTA_SRAM_LIBS := $(IHP130_USB2_SRAM_LIBS)
 endif
 else ifeq ($(PDK),GF180)
 OPENSTA_LIBERTY   := $(ROOT_PATH)/.cache/retrosoc/pdk/gf180/gf180mcu_fd_sc_mcu7t5v0__ss_125C_4v50.lib

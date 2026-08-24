@@ -120,6 +120,12 @@ Mini is not intended to compete with general-purpose Linux application
 processors that require RV64, cache-coherent multiprocessing, or
 high-bandwidth DDR interfaces.
 
+An optional NPU derivative may be explored separately as Mini-AI without
+changing the base Mini requirements. The commercial survey, memory-system
+constraints, and initial accelerator direction are recorded in
+[Mini NPU Commercial Reference Survey](ip/mini-npu.md). No NPU is implemented by
+the current Mini profiles.
+
 ### Current Mini Baseline
 
 The current executable RTL and generated integration inputs define these
@@ -127,7 +133,7 @@ capabilities:
 
 - A fixed Hazard3 management core owns system control and has a permanent JTAG
   Debug Module.
-- The C0-C5 extension fabric permits one selected user core to run at a time.
+- The C0-C3 extension fabric permits one selected user core to run at a time.
 - SYSCTRL controls user-core selection, reset, interrupt admission, and bus
   admission. A stop request blocks new user transactions, drains an accepted
   transaction, and then asserts reset.

@@ -159,7 +159,6 @@ warning checks, and metric collection.
   newline or when simulation ends. Treat `sim.log` and `result-sim*.json` as
   the verdict; delayed terminal UART display is a known operational condition,
   not evidence that the simulation has failed.
-
 ## Before Hand-off
 
 1. State the selected profile and commands run.

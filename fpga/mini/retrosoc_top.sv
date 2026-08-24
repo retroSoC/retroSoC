@@ -80,6 +80,12 @@ module retrosoc_top (
   wire s_jtag_tms;
   wire s_jtag_tdi;
   wire s_jtag_trst_n;
+  wire s_usb2_ulpi_clk;
+  tri0 s_usb2_ulpi_dir;
+  tri0 s_usb2_ulpi_nxt;
+  tri0 [7:0] s_usb2_ulpi_data;
+  wire s_usb2_ulpi_stp;
+  wire s_usb2_ulpi_reset_n;
   clk_wiz_0 u_clk_wiz_0 (
       .clk_in1 (clk_i),
       .clk_out1(s_sys_clk),
@@ -90,6 +96,7 @@ module retrosoc_top (
   assign s_jtag_tms    = 1'b0;
   assign s_jtag_tdi    = 1'b0;
   assign s_jtag_trst_n = 1'b0;
+  assign s_usb2_ulpi_clk = s_sys_clk;
 
   retrosoc_asic u_retrosoc (
       `include "retrosoc_asic_fpga_mini_bindings.svh"

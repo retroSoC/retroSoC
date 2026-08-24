@@ -14,7 +14,6 @@ COMMON_REGISTER = "rtl/managed/clusterip/common/rtl/utils/register.sv"
 INCDIRS = [
     "rtl/managed/clusterip/common/rtl",
     "rtl/managed/clusterip/common/rtl/interface",
-    "rtl/managed/clusterip/spi/rtl",
     "rtl/ip/peripheral",
     "rtl/ip/storage",
 ]
@@ -108,7 +107,7 @@ def test_spisd_wrapper_apb_and_training() -> None:
         [
             "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
             "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
-            "rtl/managed/clusterip/spi/rtl/spi_if.sv",
+            "rtl/ip/storage/spi_if.sv",
             "rtl/ip/storage/spisd_pkg.sv",
             "rtl/ip/storage/spisd_define.svh",
             COMMON_REGISTER,

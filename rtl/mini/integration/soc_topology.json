@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 19,
+      "width": 20,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -213,6 +213,15 @@
       "core_bit": 23,
       "signal": "s_crypto_irq",
       "user_visible": false
+    },
+    {
+      "name": "usb2",
+      "description": "ULPI USB 2.0 dual-role controller interrupt",
+      "group": "apb4_periph",
+      "group_bit": 19,
+      "core_bit": 24,
+      "signal": "s_usb2_irq",
+      "user_visible": false
     }
   ],
   "wake_sources": [
@@ -247,6 +256,11 @@
     {
       "name": "sdio1",
       "interface": "u_sdio1_axi4_if",
+      "protocol": "axi4"
+    },
+    {
+      "name": "usb2",
+      "interface": "u_usb2_axi4_if",
       "protocol": "axi4"
     },
     {
@@ -408,6 +422,13 @@
       "timed_interface": "u_crypto_apb4_if",
       "pure_interface": "u_crypto_apb4_pure_if",
       "region": "APB4_CRYPTO"
+    },
+    {
+      "slot": 20,
+      "name": "usb2",
+      "timed_interface": "u_usb2_apb4_if",
+      "pure_interface": "u_usb2_apb4_pure_if",
+      "region": "APB4_USB2"
     }
   ],
   "apb4_system_targets": [

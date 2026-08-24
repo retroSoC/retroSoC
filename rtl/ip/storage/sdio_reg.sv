@@ -148,7 +148,7 @@ module sdio_reg (
       `APB4_SDIO__IP_ID:           s_read_data = 32'h5344_494F;
       `APB4_SDIO__IP_VERSION:      s_read_data = 32'h0001_0000;
       `APB4_SDIO__CAPABILITY:      s_read_data = 32'h0000_01FF;
-      `APB4_SDIO__HOST_CTRL:       s_read_data = {29'd0, s_host_ctrl_q};
+      `APB4_SDIO__HOST_CTRL:       s_read_data = {29'd0, s_host_ctrl_q[2], 1'b0, s_host_ctrl_q[0]};
       `APB4_SDIO__CLOCK_CTRL:      s_read_data = {8'd0, s_half_period_q, 7'd0, s_clock_en_q};
       `APB4_SDIO__CLOCK_ACTUAL:    s_read_data = clock_actual_i;
       `APB4_SDIO__BUS_CTRL:        s_read_data = {30'd0, s_bus_width_q};
@@ -194,9 +194,6 @@ module sdio_reg (
       `APB4_SDIO__DEBUG:           s_read_data = {30'd0, pio_ready_i, pio_valid_i};
       default:                     s_read_error = 1'b1;
     endcase
-    if (apb4.paddr[31:12] != 20'd0) begin
-      s_read_error = 1'b1;
-    end
   end
 
   always_comb begin
@@ -243,9 +240,6 @@ module sdio_reg (
         s_write_error = 1'b1;
       end
     endcase
-    if (apb4.paddr[31:12] != 20'd0) begin
-      s_write_error = 1'b1;
-    end
   end
 
   always_comb begin

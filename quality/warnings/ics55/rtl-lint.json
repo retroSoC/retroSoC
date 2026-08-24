@@ -2,16 +2,6 @@
   "entries": [
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_exception'",
-      "signature": "000fb8dd01a5428a"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/memory/opipsram.sv:<line>: Signal is not used: 'dummy1'",
-      "signature": "008d95747db7d189"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'U_MODE'",
       "signature": "00c52f1f83c2580c"
     },
@@ -42,23 +32,18 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/memory/opipsram.sv:<line>: Signal is not used: 'dummy0'",
-      "signature": "04bac65dbc35e317"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT24'",
       "signature": "0575591db42a0fbd"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER21'",
-      "signature": "05b67f901c971eb6"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIPRA'",
+      "signature": "05b320a7991ae73c"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/ps2/rtl/apb4_ps2.sv:<line>: Instance pin connected by name with empty reference: 'cnt_o'",
-      "signature": "06196c17d5f6490d"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER21'",
+      "signature": "05b67f901c971eb6"
     },
     {
       "count": 1,
@@ -87,18 +72,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'trigger_break_any'",
-      "signature": "0904528f6a17265d"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_addr'",
       "signature": "0905fde6635da519"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/crc/rtl/apb4_crc.sv:<line>: Signal is not driven, nor used: 's_crc_stat_en'",
-      "signature": "092fb17faa08b69c"
     },
     {
       "count": 1,
@@ -142,33 +117,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/crc/rtl/apb4_crc.sv:<line>: Signal is not used: 's_bit_done'",
-      "signature": "0b902e996255b2e6"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'W_ADDR'",
       "signature": "0bdf9e1cb55e00af"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'x_trig_m_en'",
-      "signature": "0c4a1987e01af028"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/femtorv32/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c3'",
-      "signature": "0c690b06f95f782f"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'ovf_o'",
-      "signature": "0cd6ad0666cb4214"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
-      "signature": "0d06be595a08493b"
     },
     {
       "count": 1,
@@ -182,18 +132,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/peripheral/clint.sv:<line>: Filename 'clint' does not match IFACE name: 'simp_clint_if'",
-      "signature": "0d58f8e3a70c0796"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_width_const.vh:<line>: Parameter is not used: 'W_REGADDR'",
       "signature": "0e22c168d3675281"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/kianv_harris_mc_edition.v:<line>: Filename 'kianv_harris_mc_edition' does not match MODULE name: 'mpw_core_kianv_rv32ima_kianv_harris_mc_edition'",
-      "signature": "0e5137058a4659f0"
     },
     {
       "count": 1,
@@ -222,6 +162,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIPA'",
+      "signature": "12bdd500c7a3121d"
+    },
+    {
+      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/serv/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'o_ext_rs2'",
       "signature": "12e1c9d3c592f1e6"
     },
@@ -237,8 +182,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg_pkg.sv:<line>: Parameter is not used: 'ARCHINFO_IDH_ADDR'",
-      "signature": "1510a46d72b53794"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Bits of function variable are not used: 'relative'[25:11]",
+      "signature": "15357b2357c7b4df"
     },
     {
       "count": 1,
@@ -277,23 +222,18 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv:<line>: Signal is not used: 'tid'",
+      "signature": "17869ed3816eaa41"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER23H'",
       "signature": "17cdabd58cde47df"
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/uart/rtl/apb4_uart.sv:<line>: Signal is not used: 's_tx_push_ready'",
-      "signature": "180e0d114ef963d3"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_CLMUL'",
       "signature": "1841f569b8cc3a63"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Bits of signal are not used: 's_xpi_mm_addr'[31:24]",
-      "signature": "18aed22c95543f04"
     },
     {
       "count": 1,
@@ -307,18 +247,8 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
-      "signature": "18dc57d578bf4b27"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'xpi_nss3_o_pad'",
       "signature": "1906e34634cd1781"
-    },
-    {
-      "count": 3,
-      "example": "BLKSEQ:$ROOT/rtl/mini/dv/model/ESP_PSRAM64H.sv:<line>: Blocking assignment '=' in sequential logic process",
-      "signature": "193913def90badff"
     },
     {
       "count": 1,
@@ -337,16 +267,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/peripheral/gpio.sv:<line>: Filename 'gpio' does not match IFACE name: 'gpio_if'",
-      "signature": "1a9428981de81b81"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_28_io_pad'",
-      "signature": "1a98ef9f57ed19a3"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Bits of signal are not used: 'jump_target'[0]",
       "signature": "1b804ee58bc71e61"
     },
@@ -359,11 +279,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER17'",
       "signature": "1c0396a2a77b894f"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/i2c/rtl/i2c_if.sv:<line>: Signal is not used: 'scl_i'",
-      "signature": "1c34583186130058"
     },
     {
       "count": 1,
@@ -392,11 +307,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
-      "signature": "1e835069bdd38609"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZILSD'",
       "signature": "1ebe452d9a83ff1e"
     },
@@ -422,28 +332,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxlowb'",
-      "signature": "208d42d47a5e277e"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wen'",
-      "signature": "21c010a36c0ecebd"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_27_io_pad'",
-      "signature": "22904cb738c777b2"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBC'",
       "signature": "23236599e40a834a"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi_reg.sv:<line>: Signal is not driven, nor used: 's_xpi_status_en'",
-      "signature": "233d164f9debed2f"
     },
     {
       "count": 1,
@@ -477,18 +367,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_tx_pop_ready'",
-      "signature": "26abec594813c294"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG2'",
       "signature": "270714b35fca9eb1"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/multimedia/dvp.sv:<line>: Filename 'dvp' does not match IFACE name: 'dvp_if'",
-      "signature": "27c5f9b9abea31f5"
     },
     {
       "count": 1,
@@ -517,8 +397,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/load_decoder.v:<line>: Filename 'load_decoder' does not match MODULE name: 'mpw_core_kianv_rv32ima_load_decoder'",
-      "signature": "29cab1ed4499d0fb"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/top/axi4_interconnect.sv:<line>: Signal is not used: 's_target_grant'",
+      "signature": "29cd24d635039555"
     },
     {
       "count": 1,
@@ -537,18 +417,13 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/store_decoder.v:<line>: Filename 'store_decoder' does not match MODULE name: 'mpw_core_kianv_rv32ima_store_decoder'",
-      "signature": "2a907a508f858479"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/rv_opcodes.vh:<line>: Parameter is not used: 'RV_RS2_BITS'",
       "signature": "2ba7afcc1b2d4504"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/multiplier_extension_decoder.v:<line>: Filename 'multiplier_extension_decoder' does not match MODULE name: 'mpw_core_kianv_rv32ima_multiplier_extension_decoder'",
-      "signature": "2d39ab19546997ea"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/debug/dm/hazard3_dm.v:<line>: Parameter is not used: 'SBERROR_OK'",
+      "signature": "2ce0fd1da9cc19ce"
     },
     {
       "count": 1,
@@ -559,11 +434,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'SLEEP'",
       "signature": "2e8ad717e150a3a3"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
-      "signature": "2e995f85d4f98f79"
     },
     {
       "count": 1,
@@ -597,23 +467,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_trap_cause'",
-      "signature": "3181b9bed50e0b99"
-    },
-    {
-      "count": 2,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/ribp/interconnect/ribp2ribp.sv:<line>: Instance pin connected by name with empty reference: 'wr_full_o'",
-      "signature": "318efa86c71de71f"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg_pkg.sv:<line>: Parameter is not used: 'ARCHINFO_IDL_ADDR'",
-      "signature": "322396a00ca3c09c"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_running'",
-      "signature": "325f409692811d44"
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk2.wr_frag' (not all control paths of combinational always assign a value)",
+      "signature": "323ff436024777f0"
     },
     {
       "count": 1,
@@ -627,11 +482,6 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi_core.sv:<line>: Signal is not driven, nor used: 's_dma_xfer_start'",
-      "signature": "32c054fef632543e"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_REFETCH'",
       "signature": "32cb9f5d916d8bf7"
     },
@@ -642,11 +492,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/peripheral/dma.sv:<line>: Filename 'dma' does not match IFACE name: 'dma_hw_trg_if'",
-      "signature": "33e39d0d0a1dff75"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'BREAKPOINT_TRIGGERS'",
       "signature": "348a60446f3a10ba"
     },
@@ -654,11 +499,6 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv:<line>: Filename 'cdc_2phase' does not match MODULE name: 'cdc_2phase_src'",
       "signature": "34ac155b3b3991a1"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/csr_exception_handler.v:<line>: Filename 'csr_exception_handler' does not match MODULE name: 'mpw_core_kianv_rv32ima_csr_exception_handler'",
-      "signature": "34d7bee7743b694e"
     },
     {
       "count": 1,
@@ -687,13 +527,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'H3MISA'",
-      "signature": "36d239ac9763c9ff"
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk1.rd_last' (not all control paths of combinational always assign a value)",
+      "signature": "36b0e0e13aa17c74"
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
-      "signature": "371c638e15ec836e"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'H3MISA'",
+      "signature": "36d239ac9763c9ff"
     },
     {
       "count": 1,
@@ -702,18 +542,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c1'",
-      "signature": "3742d7fb67059f9b"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'FAST_BRANCHCMP'",
       "signature": "3755f80888534459"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/user_core_design.sv:<line>: Bits of signal are not used: 'irq_i'[31:2]",
-      "signature": "3756f1e06e788f59"
     },
     {
       "count": 1,
@@ -727,8 +557,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altdat'",
-      "signature": "382777b4699511c0"
+      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/common/rtl/base/ecc_secded.sv:<line>: Filename 'ecc_secded' does not match PACKAGE name: 'secded_layout_pkg'",
+      "signature": "37d30349cb202ff8"
     },
     {
       "count": 1,
@@ -752,8 +582,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/darkriscv/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c4'",
-      "signature": "3a0b2a04b848f745"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Bits of function variable are not used: 'last_addr'[11:0]",
+      "signature": "3baa9bf591c869f4"
     },
     {
       "count": 1,
@@ -807,33 +637,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_halted'",
-      "signature": "3efc841792f6c49a"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_30_io_pad'",
       "signature": "3f1d0963252c64c8"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/crc/rtl/crc8_model.sv:<line>: Filename 'crc8_model' does not match MODULE name: 'crc8_07'",
-      "signature": "3f29990b3c40eff6"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZCLSD'",
       "signature": "402ae240d37858c6"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/fifo.v:<line>: Filename 'fifo' does not match MODULE name: 'mpw_core_kianv_rv32ima_fifo'",
-      "signature": "40593d426a14f2c9"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_target_addr'",
-      "signature": "41ca3e122d867001"
     },
     {
       "count": 1,
@@ -872,11 +682,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/extend.v:<line>: Filename 'extend' does not match MODULE name: 'mpw_core_kianv_rv32ima_extend'",
-      "signature": "43e85ab96360da59"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHARTID'",
       "signature": "455c87de9a6187f4"
     },
@@ -907,11 +712,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Filename 'xpi' does not match IFACE name: 'xpi_if'",
-      "signature": "46cf25197f1a6ee0"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_ADD'",
       "signature": "46e820bfd66f24b3"
     },
@@ -919,11 +719,6 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/serv/serv/serv_rf_ram_if.v:<line>: Filename 'serv_rf_ram_if' does not match MODULE name: 'mpw_core_serv_serv_rf_ram_if'",
       "signature": "46ea1f9d6bc05519"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/multiplier.v:<line>: Filename 'multiplier' does not match MODULE name: 'mpw_core_kianv_rv32ima_multiplier'",
-      "signature": "4728d19ada9b6c6b"
     },
     {
       "count": 1,
@@ -939,26 +734,6 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32i/kianV/control_unit.v:<line>: Filename 'control_unit' does not match MODULE name: 'mpw_core_kianv_rv32i_control_unit'",
       "signature": "47ccc730f259e974"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Signal is not used: 's_xpi_alttyp'",
-      "signature": "480e9c277321b847"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg_pkg.sv:<line>: Parameter is not used: 'ARCHINFO_SYS_ADDR'",
-      "signature": "4817fb88856e974b"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_29_io_pad'",
-      "signature": "48c03f194a9399da"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/ribp/memory/sdram_core.sv:<line>: Parameter is not used: 'CMD_BST'",
-      "signature": "48f36633918e6491"
     },
     {
       "count": 1,
@@ -987,11 +762,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
-      "signature": "4a4ff64dc2adf3cc"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUSRCA_PC'",
       "signature": "4a5301b26725055d"
     },
@@ -1012,16 +782,6 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/ribp/memory/sdram_core.sv:<line>: Parameter is not used: 'AUTO_REFRESH'",
-      "signature": "4be9214ddeeaaae1"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/load_alignment.v:<line>: Filename 'load_alignment' does not match MODULE name: 'mpw_core_kianv_rv32ima_load_alignment'",
-      "signature": "4bfc0ee3be29b7ca"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_MRET'",
       "signature": "4c2a4a8300420a20"
     },
@@ -1029,11 +789,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'MULH_FAST'",
       "signature": "4c4bc2856cc6f774"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'f_trigger_m_mode'",
-      "signature": "4c5d18bdecb9382f"
     },
     {
       "count": 1,
@@ -1047,33 +802,13 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/multiplier_decoder.v:<line>: Filename 'multiplier_decoder' does not match MODULE name: 'mpw_core_kianv_rv32ima_multiplier_decoder'",
-      "signature": "4d6ba9328c1d4ccf"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Signal is not used: 's_bit_rsynf'",
-      "signature": "4d70669b8a494847"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT30'",
       "signature": "4de9df4639f15bf4"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/store_alignment.v:<line>: Filename 'store_alignment' does not match MODULE name: 'mpw_core_kianv_rv32ima_store_alignment'",
-      "signature": "4ead96748d84155c"
-    },
-    {
-      "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/tech/tc_clk.sv:<line>: Filename 'tc_clk' does not match MODULE name: 'tc_clk_inv'",
       "signature": "4ec048718bb177a1"
-    },
-    {
-      "count": 1,
-      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/rng/rtl/rng_define.svh:<line>: Missing newline at end of file (POSIX 3.206).",
-      "signature": "4eca5822dac20719"
     },
     {
       "count": 1,
@@ -1087,11 +822,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'dst_data_o'",
-      "signature": "4fbad4a28d5694d0"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'PMP_HARDWIRED_ADDR'",
       "signature": "4fc61bc5875a37c0"
     },
@@ -1099,16 +829,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEDELEG'",
       "signature": "4fcb995a51d1180a"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/serial/i2s.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
-      "signature": "501fb1ec09712dd9"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/sdio.sv:<line>: Signal is not used: 'dummy1'",
-      "signature": "505d36ef15386786"
     },
     {
       "count": 1,
@@ -1122,13 +842,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'src_ready_o'",
-      "signature": "509303f3fb8f202d"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_if.sv:<line>: Signal is not used: 'aclk'",
+      "signature": "50ffea6ec9f3319c"
     },
     {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/sdio.sv:<line>: Signal is not used: 'irq_o'",
-      "signature": "511ddb07a652ec8b"
+      "count": 2,
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/memory/sdram_core.sv:<line>: Operator ADD expects 3 bits on the LHS, but LHS's SEL generates 1 bits.",
+      "signature": "516ba44ddfe59750"
     },
     {
       "count": 1,
@@ -1139,11 +859,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_C'",
       "signature": "51fb79f7714621a3"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
-      "signature": "5205bf154806930b"
     },
     {
       "count": 1,
@@ -1159,11 +874,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_SB'",
       "signature": "5298c4e58dca3b51"
-    },
-    {
-      "count": 3,
-      "example": "WIDTHTRUNC:$ROOT/rtl/ip/ribp/storage/spisd_write.sv:<line>: Bit extraction of var[7:0] requires 3 bit index, not 4 bits.",
-      "signature": "52a801eec8db2eda"
     },
     {
       "count": 1,
@@ -1196,11 +906,6 @@
       "signature": "550e02682aa2da16"
     },
     {
-      "count": 2,
-      "example": "CMPCONST:$ROOT/rtl/ip/ribp/storage/spisd_write.sv:<line>: Comparison is constant due to limited range",
-      "signature": "5656f3e197d9119c"
-    },
-    {
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER10H'",
       "signature": "56c043c62cbcab00"
@@ -1212,11 +917,6 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/memory/opipsram.sv:<line>: Signal is not used: 'irq_o'",
-      "signature": "57218855d88e0355"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCAUSE'",
       "signature": "5735f905ace73e02"
     },
@@ -1224,16 +924,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'MEMOP_AMO'",
       "signature": "5746a6ef992cd0f3"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/alu.v:<line>: Bits of signal are not used: 'sra_srai_rslt'[63:32]",
-      "signature": "57fe2ba51c012db9"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_data_rdy'",
-      "signature": "5817d543a504142c"
     },
     {
       "count": 1,
@@ -1257,23 +947,18 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/memory/psram_core.sv:<line>: Filename 'psram_core' does not match MODULE name: 'load_new_byte'",
-      "signature": "5b488e71ed72e215"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/darkriscv/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'DEBUG'",
       "signature": "5b5b61b7f9634714"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MINSTRETH'",
-      "signature": "5d19ef0c8ba1c56f"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Bits of function variable are not used: 'relative'[25:24,10:0]",
+      "signature": "5c8fdb8346ebf887"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/ribp/memory/sdram_core.sv:<line>: Parameter is not used: 'PRE_CHARGE_ALL'",
-      "signature": "5d3a48d50d593bc5"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MINSTRETH'",
+      "signature": "5d19ef0c8ba1c56f"
     },
     {
       "count": 1,
@@ -1307,18 +992,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/peripheral/pll_ctrl_if.sv:<line>: Signal is not used: 'req_sel_o'",
-      "signature": "5fb57637c4ad423d"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'RESET_REGFILE'",
       "signature": "60076cfad9a08606"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/user_core_design.sv:<line>: Parameter is not used: 'ID'",
-      "signature": "6014cd8bb32150f6"
     },
     {
       "count": 1,
@@ -1337,28 +1012,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'trigger_break_d_mode'",
-      "signature": "622747e89fd53878"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFGM0'",
       "signature": "623bf821e2a9c639"
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_rxupb'",
-      "signature": "62d067d16e9e1df1"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT28'",
       "signature": "632c1e9f825211bc"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdy'",
-      "signature": "63c469702eb1c598"
     },
     {
       "count": 1,
@@ -1382,6 +1042,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/tc_opipsram_delay.sv:<line>: Bits of signal are not driven, nor used: 's_coarse_mux'[7]",
+      "signature": "66af103ce7137ce0"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'MUL_FASTER'",
       "signature": "66bea68133be6a24"
     },
@@ -1392,18 +1057,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/serial/i2s.sv:<line>: Filename 'i2s' does not match IFACE name: 'i2s_if'",
-      "signature": "6719cee607366904"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT21'",
       "signature": "67e8e8f7c1532aac"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txupb'",
-      "signature": "685951089304c347"
     },
     {
       "count": 1,
@@ -1432,16 +1087,6 @@
     },
     {
       "count": 1,
-      "example": "SYNCASYNCNET:$ROOT/rtl/managed/clusterip/common/rtl/utils/register.sv:<line>: Signal flopped as both synchronous and async: 'retrosoc_top.u_retrosoc_asic.u_rcu.u_sys_rst_sync.__Vcellout__RST_SYNC_BLOCK[4].RST_SYNC_N0_BLOCK.u_sync_dffr____pinNumber4'",
-      "signature": "69ad9c2d06349b9b"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Signal is not driven, nor used: 's_xpi_txlowb'",
-      "signature": "6a7a79f1a4a4e2e2"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TDATA1'",
       "signature": "6aaf1feedaa4d405"
     },
@@ -1467,28 +1112,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_data0_wdata'",
-      "signature": "6def5419f7bda56c"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/ribp/storage/spisd_init.sv:<line>: Parameter is not used: 'DIV_FREQ'",
-      "signature": "6e3568070195ade2"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_err'",
-      "signature": "6ee45b6539994edb"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_UNZIP'",
       "signature": "6f439f5e9a4d68c8"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/mini/top/rcu.sv:<line>: Filename 'rcu' does not match MODULE name: 'pll_rcu_controller'",
-      "signature": "6f97fc8d1bb13758"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/debug/dm/hazard3_dm.v:<line>: Bits of signal are not used: 'dmi_paddr'[1:0]",
+      "signature": "6fa77ea010fc54b8"
     },
     {
       "count": 1,
@@ -1512,8 +1142,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_elem_num'",
-      "signature": "7267112d7087ea51"
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk1.rd_frag' (not all control paths of combinational always assign a value)",
+      "signature": "727e3bf5db241f8b"
     },
     {
       "count": 1,
@@ -1567,23 +1197,8 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_exception'",
-      "signature": "7aa1422f28590293"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/multimedia/dvp.sv:<line>: Signal is not used: 's_rx_full'",
-      "signature": "7ad3156be256bac0"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_0_io_pad'",
       "signature": "7b105b7a92957ce9"
-    },
-    {
-      "count": 1,
-      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/wdg/rtl/wdg_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
-      "signature": "7b606887e11f2fa9"
     },
     {
       "count": 1,
@@ -1606,14 +1221,19 @@
       "signature": "7c2c3cb746584653"
     },
     {
-      "count": 2,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/ribp/interconnect/ribp2ribp.sv:<line>: Instance pin connected by name with empty reference: 'elem_num_o'",
-      "signature": "7d5aa06fd6dc15b1"
-    },
-    {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/femtorv32/user_core_design.sv:<line>: Bits of signal are not used: 's_mem_addr'[1:0]",
       "signature": "7d77240b3d7ea34d"
+    },
+    {
+      "count": 1,
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk2.wr_legal' (not all control paths of combinational always assign a value)",
+      "signature": "7dccafa79aaf23d1"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv:<line>: Signal is not used: 'aresetn'",
+      "signature": "7e24f33fb923deb5"
     },
     {
       "count": 1,
@@ -1629,6 +1249,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER27'",
       "signature": "7f30d21586d6102f"
+    },
+    {
+      "count": 1,
+      "example": "UNOPTFLAT:$ROOT/rtl/ip/memory/axi4_sdram.sv:<line>: Signal unoptimizable: Circular combinational logic: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.s_wr_cmd_ready'",
+      "signature": "7fb5bf9e2485a568"
     },
     {
       "count": 1,
@@ -1697,18 +1322,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/serial/uart.sv:<line>: Filename 'uart' does not match MODULE name: 'ribp_uart'",
-      "signature": "855b022f0926bca0"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_AND'",
       "signature": "85a05bc1126c9c77"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/datapath_unit.v:<line>: Filename 'datapath_unit' does not match MODULE name: 'mpw_core_kianv_rv32ima_datapath_unit'",
-      "signature": "85fef7285a8bc6b7"
     },
     {
       "count": 1,
@@ -1719,6 +1334,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER29H'",
       "signature": "860ed6ab6f7358e7"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/ribp_if.sv:<line>: Signal is not used: 'resp_err'",
+      "signature": "863536f8ba40d4d4"
     },
     {
       "count": 1,
@@ -1734,11 +1354,6 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/ahbl_if.sv:<line>: Signal is not used: 'hburst'",
       "signature": "86dee9662e8be179"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/datapath_unit.v:<line>: Parameter is not used: 'STACKADDR'",
-      "signature": "87347e6152d5f9d0"
     },
     {
       "count": 1,
@@ -1767,16 +1382,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/register_file.v:<line>: Filename 'register_file' does not match MODULE name: 'mpw_core_kianv_rv32ima_register_file'",
-      "signature": "8aa42083214ecd37"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/sdio.sv:<line>: Signal is not used: 'dummy0'",
-      "signature": "8ae4fbcbd523adbb"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/serv/serv/serv_top.v:<line>: Signal is not used: 'i_ext_rd'",
       "signature": "8b07c3661061041d"
     },
@@ -1797,13 +1402,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/user_core_design.sv:<line>: Bits of signal are not used: 's_rib_addr'[1:0]",
-      "signature": "8c2662842c101372"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT13'",
+      "signature": "8cbe5790e81f5b64"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT13'",
-      "signature": "8cbe5790e81f5b64"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/debug/cdc/hazard3_apb_async_bridge.v:<line>: Signal is not used: 'src_penable'",
+      "signature": "8cbe8e35b42cd8b2"
     },
     {
       "count": 1,
@@ -1822,28 +1427,23 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_instr_caught_ebreak'",
-      "signature": "8f145c7b719e7fc2"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/memory/opipsram.sv:<line>: Signal is not used: 'io_di_i'",
-      "signature": "8f5ee23c310fcf71"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'x_pmp_cfg_wdata'",
       "signature": "8f5f2bf62f5107ac"
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/darkriscv/darkriscv/darkriscv.v:<line>: Parameter is not used: 'CPTR'",
-      "signature": "90b5295c79348584"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/tech/tc_opipsram_delay.sv:<line>: Bits of signal are not driven, nor used: 's_fine_mux'[31:30]",
+      "signature": "8f83a8ddaceeab9d"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/memory/psram.sv:<line>: Filename 'psram' does not match IFACE name: 'psram_if'",
-      "signature": "90f952693335f81a"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEINEXT'",
+      "signature": "90a76897a1e4367a"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/darkriscv/darkriscv/darkriscv.v:<line>: Parameter is not used: 'CPTR'",
+      "signature": "90b5295c79348584"
     },
     {
       "count": 1,
@@ -1892,18 +1492,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/crc/rtl/crc32_model.sv:<line>: Filename 'crc32_model' does not match MODULE name: 'crc32_04c11db7'",
-      "signature": "92b6ff76224f2d3e"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/arith/hazard3_alu.v:<line>: Bits of signal are not used: 'funct7_32b'[6:4,0]",
       "signature": "9471030a38d2c86d"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/divider_decoder.v:<line>: Filename 'divider_decoder' does not match MODULE name: 'mpw_core_kianv_rv32ima_divider_decoder'",
-      "signature": "947a0a54ebc498e3"
     },
     {
       "count": 1,
@@ -1927,6 +1517,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv:<line>: Signal is not used: 'tdest'",
+      "signature": "94ce4081818687e6"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XOR'",
       "signature": "9502b7b09131a66e"
     },
@@ -1944,11 +1539,6 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'xpi_nss2_o_pad'",
       "signature": "95f6e45df454ca6c"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/design_elements.v:<line>: Filename 'design_elements' does not match MODULE name: 'mpw_core_kianv_rv32ima_mux2'",
-      "signature": "961e7cd1e963a482"
     },
     {
       "count": 1,
@@ -1977,11 +1567,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/alu.v:<line>: Filename 'alu' does not match MODULE name: 'mpw_core_kianv_rv32ima_alu'",
-      "signature": "97aae7e6357061d0"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/serv/serv/serv_synth_wrapper.v:<line>: Instance pin connected by name with empty reference: 'o_ext_rs2'",
       "signature": "97c4c18434036ee7"
     },
@@ -1989,11 +1574,6 @@
       "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_3_io_pad'",
       "signature": "9893b007f511a231"
-    },
-    {
-      "count": 1,
-      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/pwm/rtl/pwm_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
-      "signature": "98ba924f79eb6e14"
     },
     {
       "count": 1,
@@ -2042,16 +1622,6 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'pmp_trigger_check_dph_m_mode'",
-      "signature": "9c371918925abc2d"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/peripheral/sysctrl.sv:<line>: Filename 'sysctrl' does not match IFACE name: 'sysctrl_if'",
-      "signature": "9cfd8d907569961e"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'MTVEC_INIT'",
       "signature": "9cfefd00bcf6c29d"
     },
@@ -2092,11 +1662,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/main_fsm.v:<line>: Filename 'main_fsm' does not match MODULE name: 'mpw_core_kianv_rv32ima_main_fsm'",
-      "signature": "a0323cc1f3dbbca9"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr.v:<line>: Parameter is not used: 'EXTENSION_ZBKC'",
       "signature": "a06afce3497e5f9b"
     },
@@ -2107,28 +1672,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_wen'",
-      "signature": "a14fd17658d94c32"
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk2.wr_window' (not all control paths of combinational always assign a value)",
+      "signature": "a0a13d42578ce432"
     },
     {
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSCRATCH'",
       "signature": "a1da501e9a774202"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/divider.v:<line>: Filename 'divider' does not match MODULE name: 'mpw_core_kianv_rv32ima_divider'",
-      "signature": "a2037979e39c4dcb"
-    },
-    {
-      "count": 1,
-      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/timer/rtl/tmr_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
-      "signature": "a279807dd0b5fc33"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'btb_clear'",
-      "signature": "a364eb2716792fd4"
     },
     {
       "count": 1,
@@ -2187,16 +1737,6 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/sdio.sv:<line>: Signal is not used: 'cmd_di_i'",
-      "signature": "a71198dc158d0f05"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/storage/xpi_mm.sv:<line>: Filename 'xpi_mm' does not match MODULE name: 'xfer_dispatcher'",
-      "signature": "a76bc229e3b89fcb"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER21H'",
       "signature": "a76ee7e5b7a83137"
     },
@@ -2207,13 +1747,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/memory/psram_core.sv:<line>: Bits of signal are not used: 'wr_data_i'[7:0]",
-      "signature": "a8845119c49a953a"
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32i/kianV/datapath_unit.v:<line>: Filename 'datapath_unit' does not match MODULE name: 'mpw_core_kianv_rv32i_datapath_unit'",
+      "signature": "a8b290ac02eeb458"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32i/kianV/datapath_unit.v:<line>: Filename 'datapath_unit' does not match MODULE name: 'mpw_core_kianv_rv32i_datapath_unit'",
-      "signature": "a8b290ac02eeb458"
+      "example": "DECLFILENAME:$ROOT/rtl/ip/memory/axi4_sdram.sv:<line>: Filename 'axi4_sdram' does not match IFACE name: 'sdram_if'",
+      "signature": "a90916740809d34f"
     },
     {
       "count": 1,
@@ -2222,18 +1762,13 @@
     },
     {
       "count": 1,
-      "example": "WIDTHTRUNC:$ROOT/rtl/ip/ribp/storage/spisd_read.sv:<line>: Operator ASSIGNDLY expects 8 bits on the Assign RHS, but Assign RHS's REPLICATE generates 9 bits.",
-      "signature": "aa37292a001a430c"
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/darkriscv/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c3'",
+      "signature": "a9bdcbc773cd52d9"
     },
     {
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/mpw/core/serv/user_core_design.sv:<line>: Parameter is not used: 'ID'",
       "signature": "aac36aa7f03bedcc"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'f_trigger_addr'",
-      "signature": "ab24c1149bdbbb6d"
     },
     {
       "count": 1,
@@ -2252,13 +1787,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/hazard3/hdl/hazard3_cpu_2port.v:<line>: Instance pin connected by name with empty reference: 'bus_aph_panic_i'",
-      "signature": "ac01cb1c5156a90f"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Bits of function variable are not used: 'rem_bytes'[1:0]",
+      "signature": "abcf2df31283e92a"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/storage/spisd.sv:<line>: Filename 'spisd' does not match MODULE name: 'ribp_spisd'",
-      "signature": "ac8b69917114a248"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/hazard3/hdl/hazard3_cpu_2port.v:<line>: Instance pin connected by name with empty reference: 'bus_aph_panic_i'",
+      "signature": "ac01cb1c5156a90f"
     },
     {
       "count": 1,
@@ -2302,18 +1837,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Signal is not used: 's_xpi_altlen'",
-      "signature": "affc23b5e22a53c2"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/memory/axi4_sdram.sv:<line>: Instance pin connected by name with empty reference: 'burst_type_o'",
+      "signature": "af71878bf2aa8bee"
     },
     {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/serv/serv/serv_bufreg.v:<line>: Signal is not used: 'i_cnt_done'",
       "signature": "b091d4717edc7d92"
-    },
-    {
-      "count": 1,
-      "example": "IMPORTSTAR:$ROOT/rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv:<line>: 'import::*' in $unit scope may pollute global namespace",
-      "signature": "b13fd37a1362d500"
     },
     {
       "count": 1,
@@ -2324,6 +1854,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSTATUS'",
       "signature": "b2505fca5f4d7124"
+    },
+    {
+      "count": 5,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Instance pin connected by name with empty reference: 'cnt_o'",
+      "signature": "b2c208417d5eeeaf"
     },
     {
       "count": 1,
@@ -2337,8 +1872,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/clusterip/crc/rtl/crc16_model.sv:<line>: Filename 'crc16_model' does not match MODULE name: 'crc16_1021'",
-      "signature": "b47f45226a43e65c"
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/serv/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c1'",
+      "signature": "b338d7c52717ef30"
     },
     {
       "count": 1,
@@ -2347,18 +1882,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/control_unit.v:<line>: Filename 'control_unit' does not match MODULE name: 'mpw_core_kianv_rv32ima_control_unit'",
-      "signature": "b50150d35466ce40"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/ps2/rtl/apb4_ps2.sv:<line>: Instance pin connected by name with empty reference: 'full_o'",
-      "signature": "b5e3e9fef2e40ff1"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/ip/ribp/memory/sdram_core.sv:<line>: Parameter is not used: 'LAST_STATE'",
-      "signature": "b720e859b3d96689"
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk1.rd_window' (not all control paths of combinational always assign a value)",
+      "signature": "b4c791ac1b3ded32"
     },
     {
       "count": 1,
@@ -2402,23 +1927,8 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/ribp/serial/onewire.sv:<line>: Instance pin connected by name with empty reference: 'cnt_o'",
-      "signature": "b912a08a58a3d7fe"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/darkriscv/darkriscv/darkriscv.v:<line>: Signal is not used: 'DAER'",
       "signature": "b99832da36ca9be2"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/memory/opipsram.sv:<line>: Filename 'opipsram' does not match IFACE name: 'opipsram_if'",
-      "signature": "b9eb41b5b6eb5ccc"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/storage/sdio.sv:<line>: Filename 'sdio' does not match IFACE name: 'sdio_if'",
-      "signature": "bb2fd6dc28d116b0"
     },
     {
       "count": 1,
@@ -2434,11 +1944,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER10'",
       "signature": "bc5974b822f99576"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/cells.v:<line>: Filename 'cells' does not match MODULE name: 'mpw_core_kianv_rv32ima_buffer_cell'",
-      "signature": "bc9ea524810f90d7"
     },
     {
       "count": 1,
@@ -2462,6 +1967,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIFA'",
+      "signature": "bdd4bafae73b3f5e"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPADDR4'",
       "signature": "bddba4e17f7ed760"
     },
@@ -2474,11 +1984,6 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32i/kianV/design_elements.v:<line>: Filename 'design_elements' does not match MODULE name: 'mpw_core_kianv_rv32i_mux2'",
       "signature": "be2743ec0029efad"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/multimedia/dvp.sv:<line>: Signal is not driven, nor used: 's_rx_pop_ready'",
-      "signature": "be2c06de368977ce"
     },
     {
       "count": 1,
@@ -2497,38 +2002,18 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_fir_trg_o'",
-      "signature": "bfd3207837c35f83"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_src_size'",
-      "signature": "c0681281899ff1f2"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/csr_decoder.v:<line>: Filename 'csr_decoder' does not match MODULE name: 'mpw_core_kianv_rv32ima_csr_decoder'",
-      "signature": "c0bc4768910e733a"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SHXADD'",
       "signature": "c18ba22b0ecb8975"
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'btb_set_src_addr'",
-      "signature": "c1ed209e86e1ead7"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/store_decoder.v:<line>: Bits of signal are not used: 'funct3'[2]",
-      "signature": "c283790bc7ac6134"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MINSTRET'",
       "signature": "c368010fa9b24394"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Bits of function variable are not used: 'relative'[23:0]",
+      "signature": "c38337519880cc10"
     },
     {
       "count": 1,
@@ -2577,6 +2062,11 @@
     },
     {
       "count": 1,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Operator ASSIGN expects 8 bits on the Assign RHS, but Assign RHS's SEL generates 10 bits.",
+      "signature": "c93753fedff8a853"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_EBREAK'",
       "signature": "c9d4c18e3dd4f03c"
     },
@@ -2584,11 +2074,6 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/darkriscv/darkriscv/darkbridge.v:<line>: Signal is not used: 'IHLT'",
       "signature": "ca81f9845d564cad"
-    },
-    {
-      "count": 2,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/uart/rtl/apb4_uart.sv:<line>: Instance pin connected by name with empty reference: 'busy_o'",
-      "signature": "ca99a5392993487e"
     },
     {
       "count": 1,
@@ -2607,23 +2092,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/storage/sdio.sv:<line>: Signal is not used: 'dat_di_i'",
-      "signature": "cb8001b4af1077a9"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'dat_o'",
-      "signature": "cbc24339ec49c826"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Signal is not used: 's_cap_in'",
-      "signature": "cc39d539774eec98"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER18'",
       "signature": "cc4447ed80bca4af"
+    },
+    {
+      "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/femtorv32/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c2'",
+      "signature": "cc6f6a46c3f5f750"
     },
     {
       "count": 1,
@@ -2647,13 +2122,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/serial/i2c.sv:<line>: Filename 'i2c' does not match MODULE name: 'ribp_i2c'",
-      "signature": "ce0fe3787cfc243e"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/mini/top/user_core_design_template.sv:<line>: Filename 'user_core_design_template' does not match MODULE name: 'user_core_design'",
-      "signature": "d00b4d58006976c6"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/peripheral/pll_ctrl_if.sv:<line>: Signal is not used: 'req_sel_o'",
+      "signature": "cd98cd5f8ba452a7"
     },
     {
       "count": 1,
@@ -2672,8 +2142,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_addr'",
-      "signature": "d0a38cc720ac8ab8"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv:<line>: Signal is not used: 'tstrb'",
+      "signature": "d107b15c3ab26a79"
     },
     {
       "count": 1,
@@ -2692,16 +2162,6 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/serv/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c2'",
-      "signature": "d3db0914089b3aca"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/memory/opipsram.sv:<line>: Signal is not used: 'dqs_di_i'",
-      "signature": "d454eb037ab7517a"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT29'",
       "signature": "d48c931d9922cdb6"
     },
@@ -2712,18 +2172,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/timer/rtl/apb4_tmr.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
-      "signature": "d530c365aa32fb3d"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_if.sv:<line>: Signal is not used: 'aresetn'",
+      "signature": "d4f29a2333f1740c"
     },
     {
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'pmp_i_kill'",
       "signature": "d53357cefd665164"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'x_trig_cfg_wdata'",
-      "signature": "d5668f0299879d4d"
     },
     {
       "count": 1,
@@ -2747,13 +2202,8 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/ribp/peripheral/gpio.sv:<line>: Signal is not used: 'irq_o'",
-      "signature": "d8674d3f3a79d5d0"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/memory/sdram.sv:<line>: Filename 'sdram' does not match IFACE name: 'sdram_if'",
-      "signature": "d8996d75a35d3386"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/debug/dm/hazard3_dm.v:<line>: Parameter is not used: 'PROGBUF_SIZE'",
+      "signature": "d806c7ef63c8398e"
     },
     {
       "count": 1,
@@ -2767,13 +2217,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/serv/serv/serv_bufreg.v:<line>: Signal is not used: 'i_right_shift_op'",
-      "signature": "da5c9ee48fb062c2"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEICONTEXT'",
+      "signature": "da4e1c0063ee0d37"
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/peripheral/timer.sv:<line>: Filename 'timer' does not match MODULE name: 'ribp_timer'",
-      "signature": "ddca3d25d44af331"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/serv/serv/serv_bufreg.v:<line>: Signal is not used: 'i_right_shift_op'",
+      "signature": "da5c9ee48fb062c2"
     },
     {
       "count": 1,
@@ -2784,11 +2234,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'BCOND_ALWAYS'",
       "signature": "de4efd472df5ce6e"
-    },
-    {
-      "count": 1,
-      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/ps2/rtl/ps2_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
-      "signature": "dede41f7cadcb4e8"
     },
     {
       "count": 1,
@@ -2824,11 +2269,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MCYCLEH'",
       "signature": "e1142fcbcdebe68e"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
-      "signature": "e12f263c34f144e9"
     },
     {
       "count": 1,
@@ -2902,8 +2342,13 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/ribp/storage/xpi.sv:<line>: Instance pin connected by name with empty reference: 'xpi_accmd_o'",
-      "signature": "e787228a473eb0bb"
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/memory/axi4_sdram.sv:<line>: Instance pin connected by name with empty reference: 'stall_event_o'",
+      "signature": "e70628e53a3e89ff"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEIEA'",
+      "signature": "e76bc25ed2f5fd1d"
     },
     {
       "count": 1,
@@ -2937,13 +2382,18 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv:<line>: Signal is not used: 'tuser'",
+      "signature": "e95d96d8ad151b2c"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MISA'",
       "signature": "e98223c9514b66f3"
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'btb_set'",
-      "signature": "e9c8969b9acc562b"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv:<line>: Signal is not used: 'aclk'",
+      "signature": "ea1bfdc6665f301a"
     },
     {
       "count": 1,
@@ -2977,13 +2427,13 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_width_const.vh:<line>: Parameter is not used: 'W_MEMOP'",
-      "signature": "ebefcbb26f1f9236"
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Bits of function variable are not used: 'relative'[25:11,1:0]",
+      "signature": "ebb10a629d037132"
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_core.v:<line>: Signal is not used: 'm_trig_event_interrupt'",
-      "signature": "eca794f0ed109cfb"
+      "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_width_const.vh:<line>: Parameter is not used: 'W_MEMOP'",
+      "signature": "ebefcbb26f1f9236"
     },
     {
       "count": 1,
@@ -3007,11 +2457,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/user_core_design.sv:<line>: Instance pin connected by name with empty reference: 'PC'",
-      "signature": "eda82af30d9c77be"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'M_OP_MULHU'",
       "signature": "ede3244c1286a834"
     },
@@ -3019,11 +2464,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TCONTROL'",
       "signature": "eee1f40880b0c327"
-    },
-    {
-      "count": 1,
-      "example": "SYNCASYNCNET:$ROOT/rtl/managed/mpw/core/femtorv32/user_core_design.sv:<line>: Signal flopped as both synchronous and async: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_user_core_top.__Vcellinp__u_mpw_core_femtorv32__rst_n_i'",
-      "signature": "ef7bcb09123f998f"
     },
     {
       "count": 1,
@@ -3046,7 +2486,7 @@
       "signature": "f1f0ace29e0a56d0"
     },
     {
-      "count": 29,
+      "count": 30,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_pad_bindings.svh:<line>: Instance pin connected by name with empty reference: 'p2c'",
       "signature": "f2548a0d3b636cfb"
     },
@@ -3072,11 +2512,6 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/hazard3/hdl/hazard3_frontend.v:<line>: Signal is not used: 'pmp_trigger_check_dph_addr'",
-      "signature": "f453db0239cd62ee"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'clk_en'",
       "signature": "f47d3d0e2ee1e85b"
     },
@@ -3094,11 +2529,6 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/serv/serv/serv_bufreg2.v:<line>: Filename 'serv_bufreg2' does not match MODULE name: 'mpw_core_serv_serv_bufreg2'",
       "signature": "f54afe8681d27688"
-    },
-    {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv:<line>: Instance pin connected by name with empty reference: 'clk_o'",
-      "signature": "f5c86d2641312606"
     },
     {
       "count": 1,
@@ -3122,8 +2552,8 @@
     },
     {
       "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/ip/ribp/serial/onewire.sv:<line>: Filename 'onewire' does not match IFACE name: 'onewire_if'",
-      "signature": "f7f7426e19a5dd7e"
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk1.rd_legal' (not all control paths of combinational always assign a value)",
+      "signature": "f88aacfc3533fc19"
     },
     {
       "count": 1,
@@ -3152,18 +2582,13 @@
     },
     {
       "count": 1,
-      "example": "EOFNEWLINE:$ROOT/rtl/managed/clusterip/uart/rtl/uart_if.sv:<line>: Missing newline at end of file (POSIX 3.206).",
-      "signature": "fad478d50a43d7ce"
-    },
-    {
-      "count": 1,
-      "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32ima/kianV/alu_decoder.v:<line>: Filename 'alu_decoder' does not match MODULE name: 'mpw_core_kianv_rv32ima_alu_decoder'",
-      "signature": "faf7c0228ad8dbcf"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER26H'",
       "signature": "fb8dd2e470f5c46d"
+    },
+    {
+      "count": 1,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Operator ASSIGN expects 26 bits on the Assign RHS, but Assign RHS's SUB generates 32 bits.",
+      "signature": "fbecd76d01d6d8e8"
     },
     {
       "count": 1,
@@ -3176,9 +2601,9 @@
       "signature": "fc6f395584c3a436"
     },
     {
-      "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv:<line>: Instance pin connected by name with empty reference: 'clk_cnt_o'",
-      "signature": "fd5e8e149f4a4f56"
+      "count": 4,
+      "example": "WIDTHEXPAND:$ROOT/rtl/ip/memory/sdram_core.sv:<line>: Operator ADD expects 3 bits on the RHS, but RHS's SEL generates 1 bits.",
+      "signature": "fdae401986aaa825"
     },
     {
       "count": 1,
@@ -3197,11 +2622,6 @@
     },
     {
       "count": 1,
-      "example": "PINCONNECTEMPTY:$ROOT/rtl/mini/top/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'dbg_sbus_rdata'",
-      "signature": "fe5a379927d7a450"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT26'",
       "signature": "febfea7999fe3850"
     },
@@ -3212,6 +2632,11 @@
     },
     {
       "count": 1,
+      "example": "DECLFILENAME:$ROOT/rtl/ip/memory/apb4_psram.sv:<line>: Filename 'apb4_psram' does not match IFACE name: 'psram_if'",
+      "signature": "ff4abd0f3eebcb86"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/mpw/core/darkriscv/darkriscv/darkbridge.v:<line>: Signal is not used: 'DRW'",
       "signature": "ff50b50e66d518a8"
     },
@@ -3219,6 +2644,11 @@
       "count": 1,
       "example": "DECLFILENAME:$ROOT/rtl/managed/mpw/core/kianv_rv32i/user_core_design.sv:<line>: Filename 'user_core_design' does not match MODULE name: 'mpw_c0'",
       "signature": "ffc1cca248daf538"
+    },
+    {
+      "count": 1,
+      "example": "LATCH:$ROOT/rtl/ip/memory/sdram_axi4.sv:<line>: Latch inferred for signal 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_axi4_sdram.u_sdram_axi4.unnamedblk2.wr_last' (not all control paths of combinational always assign a value)",
+      "signature": "ffcdc1d42d579e2c"
     }
   ],
   "profile": "ics55",

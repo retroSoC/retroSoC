@@ -49,7 +49,7 @@ module tc_sram_1024x32 (
       .A_REN      (~wren_i),
       .A_DIN      ({32'h0, data_i[31:0]}),
       .A_DOUT     (s_rd_data_mem),
-      .A_DLY      ('0),
+      .A_DLY      (1'b1),
       .A_BIST_CLK ('0),
       .A_BIST_EN  ('0),
       .A_BIST_MEN ('0),

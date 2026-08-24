@@ -17,6 +17,7 @@ typedef enum {
     RS_SYSCTRL_PERF_FLASH_WAIT = 7,
     RS_SYSCTRL_PERF_SDIO0_WAIT = 8,
     RS_SYSCTRL_PERF_SDIO1_WAIT = 9,
+    RS_SYSCTRL_PERF_USB2_WAIT = 10,
 } rs_sysctrl_perf_counter_t;
 
 typedef struct {
