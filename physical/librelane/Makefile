@@ -63,6 +63,7 @@ $(LIBRELANE_RTL): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) $(LIBRELANE_TRACKED_RTL
 		--user-extensions-filelist $(USER_EXTENSIONS_FILELIST) \
 		--pin-map-filelist $(PIN_MAP_FILELIST) \
 		--archinfo-incdir $(ARCHINFO_METADATA_DIR) \
+		--librelane-safe \
 		$(LIBRELANE_FEATURE_ARGS)
 
 $(LIBRELANE_SDC): $(LIBRELANE_FLOW_ROOT)/scripts/generate_sdc.py \

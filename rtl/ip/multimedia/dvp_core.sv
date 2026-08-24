@@ -247,5 +247,6 @@ module dvp_core (
     end
   end
 
-  assign error_flags_o = s_err_flags_q;
+  // SYNC, SIZE and PARTIAL are reserved until their capture paths are implemented.
+  assign error_flags_o = {s_err_flags_q[5:4], 3'b000, s_err_flags_q[0]};
 endmodule

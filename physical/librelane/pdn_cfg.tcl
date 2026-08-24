@@ -10,17 +10,30 @@ set secondary_supplies []
 foreach vdd $::env(VDD_NETS) gnd $::env(GND_NETS) {
     if {$vdd != $::env(VDD_NET)} {
         lappend secondary_supplies $vdd
-        set net [odb::dbNet_create [ord::get_db_block] $vdd]
-        $net setSpecial
-        $net setSigType POWER
+        set db_net [[ord::get_db_block] findNet $vdd]
+        if {$db_net == "NULL"} {
+            set net [odb::dbNet_create [ord::get_db_block] $vdd]
+            $net setSpecial
+            $net setSigType "POWER"
+        }
     }
     if {$gnd != $::env(GND_NET)} {
         lappend secondary_supplies $gnd
-        set net [odb::dbNet_create [ord::get_db_block] $gnd]
-        $net setSpecial
-        $net setSigType GROUND
+        set db_net [[ord::get_db_block] findNet $gnd]
+        if {$db_net == "NULL"} {
+            set net [odb::dbNet_create [ord::get_db_block] $gnd]
+            $net setSpecial
+            $net setSigType "GROUND"
+        }
     }
 }
+
+# IHP IO cells carry both core and external-IO power rails on lower-case pins.
+add_global_connection -net $::env(VDD_NET) -inst_pattern .* -pin_pattern vdd -power
+add_global_connection -net $::env(GND_NET) -inst_pattern .* -pin_pattern vss -ground
+add_global_connection -net IOVDD -inst_pattern .* -pin_pattern iovdd -power
+add_global_connection -net IOVSS -inst_pattern .* -pin_pattern iovss -ground
+global_connect -verbose
 
 set_voltage_domain -name CORE -power $::env(VDD_NET) -ground $::env(GND_NET) \
     -secondary_power $secondary_supplies

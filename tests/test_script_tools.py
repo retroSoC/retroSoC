@@ -192,6 +192,30 @@ def test_source_export_uses_the_fixed_hazard3_management_core(tmp_path: Path) ->
     assert any(path.name == "hazard3_cpu_1port.v" for path in filelist.files)
 
 
+def test_librelane_source_export_inlines_hazard3_update_helper() -> None:
+    module_path = ROOT / "physical/smoke/syn/tools/export_soc_sources.py"
+    spec = importlib.util.spec_from_file_location("retrosoc_librelane_export", module_path)
+    assert spec is not None and spec.loader is not None
+    source_export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source_export)
+
+    source = """function [XLEN-1:0] update_nonconst;
+    input [XLEN-1:0] prev;
+    input [XLEN-1:0] nonconst;
+begin
+    update_nonconst = (wdata_update & nonconst) | (prev & ~nonconst);
+end
+endfunction
+mtvec_reg <= update_nonconst(mtvec_reg, MTVEC_WMASK);
+mie <= update_nonconst(mie, MIE_WMASK);
+"""
+    sanitized = source_export.sanitize_librelane_source(source)
+
+    assert "update_nonconst" not in sanitized
+    assert "mtvec_reg <= ((wdata_update & MTVEC_WMASK) | (mtvec_reg & ~MTVEC_WMASK));" in sanitized
+    assert "mie <= ((wdata_update & MIE_WMASK) | (mie & ~MIE_WMASK));" in sanitized
+
+
 def test_package_forwards_manifest_jtag_idcode() -> None:
     package_source = (ROOT / "scripts/package.py").read_text(encoding="utf-8")
 
@@ -306,16 +330,12 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "pll_rcu", pll_rcu_filelist, memory_map, topology, user_extensions
     )
-    assert generate_formal_filelist(
-        "gpio", gpio_filelist, memory_map, topology, user_extensions
-    )
+    assert generate_formal_filelist("gpio", gpio_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "ws2812", ws2812_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist("i2c", i2c_filelist, memory_map, topology, user_extensions)
-    assert generate_formal_filelist(
-        "clint", clint_filelist, memory_map, topology, user_extensions
-    )
+    assert generate_formal_filelist("clint", clint_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
@@ -1034,9 +1054,7 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert (
-        "+ make CONFIG=configs/ci/ihp130.mk APP=ci_smoke firmware" in dry_run.stdout
-    )
+    assert "+ make CONFIG=configs/ci/ihp130.mk APP=ci_smoke firmware" in dry_run.stdout
     assert "netsim" not in dry_run.stdout
 
     invalid = subprocess.run(
@@ -1122,10 +1140,14 @@ def test_nightly_regression_runs_optional_yosys_recipes() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in nightly.stdout
+    assert (
+        "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in nightly.stdout
+    )
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in nightly.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in nightly.stdout
-    assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in nightly.stdout
+    assert (
+        "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=speed synth" in nightly.stdout
+    )
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=speed sta" in nightly.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=speed metrics" in nightly.stdout
 
@@ -1164,7 +1186,10 @@ def test_nightly_extra_regression_skips_pr_netsim() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report" in extra.stdout
+    assert (
+        "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report"
+        in extra.stdout
+    )
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in extra.stdout

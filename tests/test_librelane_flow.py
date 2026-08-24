@@ -61,6 +61,11 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     assert "u_sdram_dq15_io_pad.u_sg13g2_IOPadInOut4mA" in sides["west"]
     assert config["DIE_AREA"] == [0, 0, 8000, 8000]
     assert config["CORE_AREA"] == [365, 365, 7635, 7635]
+    assert config["USE_SLANG"] is True
+    assert config["SLANG_ARGUMENTS"] == ["--keep-hierarchy"]
+    assert config["SYNTH_SHARE_RESOURCES"] is False
+    assert config["SYNTH_HIERARCHY_MODE"] == "deferred_flatten"
+    assert config["YOSYS_LOG_LEVEL"] == "WARNING"
     assert config["VDD_NETS"] == ["VDD", "IOVDD"]
     assert config["GND_NETS"] == ["VSS", "IOVSS"]
     assert set(config["MACROS"]) == {
@@ -98,6 +103,7 @@ def test_librelane_flow_is_single_level_chip_only() -> None:
     lock = json.loads((ROOT / "dependencies/dependencies.lock.json").read_text())
 
     assert "librelane-chip:" in makefile
+    assert "--librelane-safe" in makefile
     assert "librelane-core" not in makefile
     assert "librelane-all" not in makefile
     assert "include physical/librelane/Makefile" in top_makefile
@@ -113,3 +119,14 @@ def test_bondpad_lef_matches_the_generated_master_contract() -> None:
     assert "CLASS COVER" in lef
     assert "SIZE 70.0 BY 70.0" in lef
     assert "SITE sg13g2_ioSite" in lef
+
+
+def test_pdn_connects_all_ihp_pad_power_rails() -> None:
+    pdn = (FLOW_ROOT / "pdn_cfg.tcl").read_text(encoding="utf-8")
+
+    assert "findNet $vdd" in pdn
+    assert "findNet $gnd" in pdn
+    assert "-net $::env(VDD_NET) -inst_pattern .* -pin_pattern vdd -power" in pdn
+    assert "-net $::env(GND_NET) -inst_pattern .* -pin_pattern vss -ground" in pdn
+    assert "-net IOVDD -inst_pattern .* -pin_pattern iovdd -power" in pdn
+    assert "-net IOVSS -inst_pattern .* -pin_pattern iovss -ground" in pdn
