@@ -85,9 +85,13 @@ PDK_PR_PROFILES = {
     "ICS55": "configs/ci/ics55.mk",
     "SKY130": "configs/ci/sky130.mk",
 }
+NETSIM_BOOT_PROFILES = frozenset(
+    ("configs/ci/gf180.mk", "configs/ci/ics55.mk")
+)
 
 
 def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    netsim_target = "netsim-boot" if profile in NETSIM_BOOT_PROFILES else "netsim"
     return (
         (profile, RTL_LINT_VALUES),
         (profile, (CI_SMOKE_APP_VALUE, "firmware")),
@@ -104,7 +108,7 @@ def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
                 "SIMU=IVERILOG",
                 "SIM_FIRMWARE_NAME=retrosoc_asm",
                 "RTL_SIM_TIMEOUT=5200000",
-                "netsim",
+                netsim_target,
             ),
         ),
     )

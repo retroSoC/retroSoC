@@ -1076,9 +1076,9 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     assert "smoke regression supports only --pdk IHP130" in invalid.stderr
 
 
-def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
+def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
     assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
-    for profile in PDK_PR_PROFILES.values():
+    for pdk, profile in PDK_PR_PROFILES.items():
         commands = pdk_pr_commands(profile)
         command_values = [values for _, values in commands]
         assert command_values[0] == RTL_LINT_VALUES
@@ -1093,7 +1093,14 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_netlist() -> None:
             any(value.startswith("SYNTH_RECIPE=") for value in values) for values in command_values
         )
         assert ("STA=OPENSTA", "sta") in command_values
-        assert any("SIMU=IVERILOG" in values and "netsim" in values for values in command_values)
+        netlist_targets = {
+            value
+            for values in command_values
+            for value in values
+            if value in {"netsim", "netsim-boot"}
+        }
+        expected_target = "netsim-boot" if pdk in {"GF180", "ICS55"} else "netsim"
+        assert netlist_targets == {expected_target}
 
 
 def test_nightly_regression_runs_optional_yosys_recipes() -> None:
