@@ -69,6 +69,8 @@ The committed profiles are the supported starting points. They select an ISA,
 PDK, application, linker layout, and optional features as one reproducible
 configuration. The management core is fixed to Hazard3. The user-extension
 fabric exposes C0-C3 user-core slots and software selects one active user core.
+`SRAM_SIZE_KIB` selects a generated 4/16/32/64/128 KiB native-AXI4 on-chip
+SRAM window; committed profiles explicitly retain the 128 KiB default.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |

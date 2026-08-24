@@ -17,6 +17,11 @@ by GDB/OpenOCD; it is a programming utility, not a normal boot application.
 Start builds from a committed profile rather than setting an unreviewed mix of
 variables on the command line.
 
+`SRAM_SIZE_KIB` selects 4, 16, 32, 64, or 128 KiB of on-chip SRAM and is part
+of the build variant key. Every committed profile sets 128 explicitly;
+profiles with `HAVE_SRAM_IF=NO` keep a reproducible capacity selection while
+the hardware capability reports the memory absent.
+
 `PDK_BEHAV=YES` selects technology-wrapper functional models for behavioral
 simulation. It is a simulation-only setting, participates in the build variant
 key, and is invalid with Yosys synthesis. Profiles that execute from an SRAM

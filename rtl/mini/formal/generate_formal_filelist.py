@@ -26,7 +26,7 @@ TOP = ROOT / "rtl/mini/top"
 
 
 def target_defines(target: str) -> list[str]:
-    if target == "opipsram":
+    if target in {"onchip_ram", "opipsram"}:
         return ["+define+PDK_BEHAV"]
     return ["+define+SV_ASSRT_DISABLE"]
 
@@ -197,6 +197,18 @@ def source_files(target: str) -> list[Path]:
             MEMORY / "psram_phy.sv",
             SCRIPT_DIR / "psram_formal.sv",
         ]
+    if target == "onchip_ram":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "interface/axi4_addr_gen.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/xchecker.sv",
+            ROOT / "rtl/tech/tc_sram.sv",
+            TOP / "onchip_ram_reg.sv",
+            TOP / "onchip_ram.sv",
+            SCRIPT_DIR / "onchip_ram_formal.sv",
+        ]
     if target == "opipsram":
         return [
             COMMON_RTL / "interface/axi4_if.sv",
@@ -292,6 +304,7 @@ def parse_args() -> argparse.Namespace:
             "dvp",
             "i2s",
             "psram",
+            "onchip_ram",
             "opipsram",
             "dma",
             "sdio",

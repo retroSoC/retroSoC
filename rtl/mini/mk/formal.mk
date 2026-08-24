@@ -22,7 +22,7 @@ FORMAL_OPIPSRAM_TIMEOUT      ?= 300
 FORMAL_DMA_TIMEOUT           ?= 120
 FORMAL_SDIO_TIMEOUT          ?= 120
 FORMAL_COMPACT_COVER_TARGETS := i2c opipsram dma
-FORMAL_TARGETS               := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp i2s psram opipsram dma sdio
+FORMAL_TARGETS               := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp i2s psram onchip_ram opipsram dma sdio
 FORMAL_FILELIST_GENERATOR    := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR         := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR      := $(RTL_PATH)/formal/formal_results.py
@@ -54,6 +54,8 @@ FORMAL_SOURCE_FILES          := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/i2s_formal_props.sv \
                              $(RTL_PATH)/formal/psram_formal.sv \
                              $(RTL_PATH)/formal/psram_formal_props.sv \
+                             $(RTL_PATH)/formal/onchip_ram_formal.sv \
+                             $(RTL_PATH)/formal/onchip_ram_formal_props.sv \
                              $(RTL_PATH)/formal/opipsram_formal.sv \
                              $(RTL_PATH)/formal/opipsram_formal_props.sv \
                              $(RTL_PATH)/formal/dma_formal.sv \
@@ -115,6 +117,9 @@ FORMAL_SOURCE_FILES          := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/memory/psram_pkg.sv \
                              $(ROOT_PATH)/rtl/ip/memory/psram_axi4.sv \
                              $(ROOT_PATH)/rtl/ip/memory/psram_phy.sv \
+                             $(RTL_PATH)/top/onchip_ram_reg.sv \
+                             $(RTL_PATH)/top/onchip_ram.sv \
+                             $(ROOT_PATH)/rtl/tech/tc_sram.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/register.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/xchecker.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/gray2bin.sv \
@@ -179,7 +184,7 @@ $(FORMAL_DIR)/%/prove.sby: $(FORMAL_DIR)/%/design.v $(RTL_PATH)/formal/%_formal_
 	$(FORMAL_SBY_GENERATOR)
 	python3 $(FORMAL_SBY_GENERATOR) --top $*_formal --input $< \
 		--properties $(RTL_PATH)/formal/$*_formal_props.sv --solver $(FORMAL_SOLVER) \
-		--mode $(if $(filter dma sdio,$*),bmc,prove) --depth $(if $(filter dma,$*),$(FORMAL_DMA_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH)))))))) --output $@
+		--mode $(if $(filter dma sdio onchip_ram,$*),bmc,prove) --depth $(if $(filter dma,$*),$(FORMAL_DMA_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH)))))))) --output $@
 	@if [ "$*" = opipsram ]; then sed -i '/^async2sync/i clk2fflogic' $@; fi
 
 $(FORMAL_DIR)/%/cover.sby: $(FORMAL_DIR)/%/design.v $(RTL_PATH)/formal/%_formal_props.sv \
@@ -277,6 +282,8 @@ formal-i2s: $(FORMAL_DIR)/i2s/.stamp | manifest
 
 formal-psram: $(FORMAL_DIR)/psram/.stamp | manifest
 
+formal-onchip-ram: $(FORMAL_DIR)/onchip_ram/.stamp | manifest
+
 formal-opipsram: $(FORMAL_DIR)/opipsram/.stamp | manifest
 
 formal-dma: $(FORMAL_DIR)/dma/.stamp | manifest
@@ -289,4 +296,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-dvp formal-i2s formal-psram formal-opipsram formal-dma formal-sdio formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-dvp formal-i2s formal-psram formal-onchip-ram formal-opipsram formal-dma formal-sdio formal-doctor formal-clean

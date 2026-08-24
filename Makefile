@@ -39,6 +39,7 @@ PDK                      ?= IHP130
 HAVE_PLL                 ?= NO
 HAVE_SRAM_IF             ?= NO
 HAVE_SRAM_MACRO          ?= NO
+SRAM_SIZE_KIB            ?= 128
 PDK_BEHAV                ?= NO
 HAVE_SVA                 ?= NO
 BUILD_RELEASE            ?= NO
@@ -85,7 +86,7 @@ VCS_SHELL_PYTHON   := $(if $(filter VCS,$(SIMU)),$(if $(filter $(VCS_SHELL_GOALS
 JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
-CONFIG_KEY_VARS    := SOC PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO PDK_BEHAV HAVE_SVA \
+CONFIG_KEY_VARS    := SOC PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA \
                    BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ ISA HAVE_CSR APP LINK_TYPE \
                    COREMARK_MODE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
@@ -131,6 +132,7 @@ VALID_ISA           := RV32E RV32I RV32IM
 VALID_APP           := benchmark bringup ci_smoke coremark debug shell xpi_flash_loader
 VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
 VALID_COREMARK_MODE := quick standard
+VALID_SRAM_SIZE_KIB := 4 16 32 64 128
 
 define validate_value
 $(if $(filter $($(1)),$(2)),,$(error Invalid $(1)='$($(1))'; expected one of: $(2)))
@@ -145,6 +147,7 @@ $(call validate_value,PDK,$(VALID_PDK))
 $(call validate_value,HAVE_PLL,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_IF,$(VALID_BOOL))
 $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
+$(call validate_value,SRAM_SIZE_KIB,$(VALID_SRAM_SIZE_KIB))
 $(call validate_value,PDK_BEHAV,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,BUILD_RELEASE,$(VALID_BOOL))
@@ -276,7 +279,7 @@ include physical/librelane/Makefile
 	benchmark-report coremark-report \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-opipsram formal-dma formal-sdio formal-clean formal-doctor \
+	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all
 .NOTPARALLEL: setup
 
@@ -310,7 +313,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-opipsram | formal-dma | formal-sdio run peripheral proofs' \
+	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-sdio run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -350,7 +353,8 @@ config:
 	  STA '$(STA)' FORMAL '$(FORMAL)' \
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
-	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
+	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' SRAM_SIZE_KIB '$(SRAM_SIZE_KIB)' \
+	  PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
 	  BUILD_RELEASE '$(BUILD_RELEASE)' \
 	  JTAG_IDCODE '$(JTAG_IDCODE)' EXT_CLK_HZ '$(EXT_CLK_HZ)' AUD_CLK_HZ '$(AUD_CLK_HZ)' \
 	  CLINT_TIMEBASE_HZ '$(CLINT_TIMEBASE_HZ)' \

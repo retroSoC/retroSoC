@@ -41,6 +41,7 @@ module apb4_periph (
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
     apb4_if.master                                sdram_cfg,
+    apb4_if.master                                sram_cfg,
     dvp_if.dut                                    dvp,
     sdio_if.dut                                   sdio0,
     sdio_if.dut                                   sdio1,

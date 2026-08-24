@@ -380,6 +380,15 @@
       "user_access": "none"
     },
     {
+      "symbol": "APB4_SRAM",
+      "base": "0x10017000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
       "symbol": "APB4_ARCHINFO",
       "base": "0x20000000",
       "size": "0x00001000",
@@ -455,6 +464,13 @@
       "symbol": "SRAM",
       "base": "0x30000000",
       "size": "0x00020000",
+      "size_options": [
+        "0x00001000",
+        "0x00004000",
+        "0x00008000",
+        "0x00010000",
+        "0x00020000"
+      ],
       "route": "ram",
       "kind": "active",
       "public": true,

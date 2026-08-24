@@ -17,6 +17,8 @@
 /top/core_wrapper.sv
 /top/retrosoc.sv
 /top/retrosoc_asic.sv
+/top/retrosoc_core.sv
+/top/onchip_ram_reg.sv
 /top/onchip_ram.sv
 /top/apb4_periph.sv
 /top/apb4_system.sv

@@ -28,12 +28,16 @@ def test_booter_prints_the_fixed_hazard3_specification() -> None:
     assert "Other: Zifencei_Zilsd_Xh3BextM_Xh3IRQ" in booter
     assert "Not present: U-mode PMP Zcb_Zclsd_Zcmp_Xh3PMPM_Xh3Power" in booter
     assert "IRQ: 30 external + software + timer; Xh3IRQ, 4 priority levels" in booter
-    assert "one shared instruction/data AHB5 manager port" in booter
-    assert "single-beat AXI4 normal access" in booter
-    assert "no burst, lock, or global-exclusive forwarding; no system A atomics" in booter
+    assert "AHB5 manager -> AHB-Lite/AXI4 fabric" in booter
+    assert "Single-beat access; no burst or exclusive transactions" in booter
     assert "RS_SOC_MGMT_JTAG_IDCODE" in booter
-    assert "halted-hart memory commands; system bus access disabled" in booter
-    assert "2 exact execute-address hardware breakpoints; no watchpoints" in booter
+    assert "RISC-V JTAG DTM/DM, IDCODE 0x%08x" in booter
+    assert "One hart: halt/resume, 2 breakpoints; no system-bus access" in booter
+    assert "AHB-Lite NSEQ subset" not in booter
+    assert "external cache/coherency handshake" not in booter
+    assert "TCK/TMS/TDI/TRST_n/TDO" not in booter
+    assert "instruction injection" not in booter
+    assert "exact execute-address hardware breakpoints" not in booter
 
     for parameter in (
         ".EXTENSION_A        (1)",

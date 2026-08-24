@@ -285,11 +285,14 @@
       "mgmt_core_wrapper.sv",
       "mgmt_debug_reset.sv",
       "mgmt_debug_wrapper.sv",
+      "onchip_ram_define.svh",
+      "onchip_ram_reg.sv",
       "onchip_ram.sv",
       "pll_rcu_controller.sv",
       "rcu.sv",
       "retrosoc.sv",
       "retrosoc_asic.sv",
+      "retrosoc_core.sv",
       "rib2apb.sv",
       "rib2axi4.sv",
       "rib2ram.sv",
@@ -360,10 +363,11 @@
     },
     {
       "paths": [
-        "rtl/mini/top/onchip_ram.sv"
+        "rtl/mini/top/onchip_ram.sv",
+        "rtl/mini/top/onchip_ram_reg.sv"
       ],
-      "result": "technology boundary retained",
-      "rationale": "PDK SRAM cell and pin names remain compatible with the technology library."
+      "result": "reviewed AXI and technology-memory boundary",
+      "rationale": "AXI and APB state uses Common registers; the synchronous bank array retains the stable technology wrapper and PDK SRAM pin boundary."
     },
     {
       "paths": [

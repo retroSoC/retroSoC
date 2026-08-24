@@ -82,10 +82,6 @@ module retrosoc_asic (
   (* keep = "true" *)logic       s_test_pass;
   (* keep = "true" *)logic [7:0] s_test_code;
 
-`ifdef HAVE_SRAM_IF
-  ram_if u_ram_if ();
-`endif
-
   gpio_if u_gpio_if ();
   xpi_if u_xpi_if ();
   sdram_if u_sdram_if ();
@@ -115,13 +111,6 @@ rcu #(
       .timebase_tick_o(s_timebase_tick)
   );
 
-`ifdef HAVE_SRAM_IF
-  onchip_ram u_onchip_ram (
-      .clk_i(s_sys_clk),
-      .ram  (u_ram_if)
-  );
-`endif
-
   retrosoc u_retrosoc (
       .clk_i          (s_sys_clk),
       .rst_n_i        (s_sys_rst_n),
@@ -131,9 +120,6 @@ rcu #(
       .clkdiv4_i      (s_sys_clkdiv4),
       .timebase_tick_i(s_timebase_tick),
       .pll_ctrl       (u_pll_ctrl_if),
-`ifdef HAVE_SRAM_IF
-      .ram            (u_ram_if),
-`endif
       .gpio           (u_gpio_if),
       .uart_rx_i      (s_uart0_rx),
       .uart_tx_o      (s_uart0_tx),

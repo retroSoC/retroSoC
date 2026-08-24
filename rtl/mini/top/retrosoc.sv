@@ -22,9 +22,6 @@ module retrosoc (
     input  logic        clkdiv4_i,
     input  logic        timebase_tick_i,
     pll_ctrl_if.sysctrl pll_ctrl,
-`ifdef HAVE_SRAM_IF
-    ram_if.master        ram,
-`endif
     gpio_if.soc_pad      gpio,
     input  logic         uart_rx_i,
     output logic         uart_tx_o,
@@ -48,6 +45,9 @@ module retrosoc (
   // Generated fabric links use the common 32-bit AXI4 contract.
   `include "soc_fabric_interfaces.svh"
   apb4_if u_sdram_cfg_if (.pclk(clk_i), .presetn(rst_n_i));
+  apb4_if u_sram_cfg_if (.pclk(clk_i), .presetn(rst_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_sram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_sdram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
@@ -103,6 +103,12 @@ module retrosoc (
   logic [                          63:0] s_perf_opipsram_wait;
   logic [     `SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
   logic                                  s_rtc_wake;
+
+`ifdef HAVE_SRAM_IF
+  localparam bit SramPresent = 1'b1;
+`else
+  localparam bit SramPresent = 1'b0;
+`endif
 
   assign u_sysctrl_if.fault_access_i          = s_bus_fault_access;
   assign u_sysctrl_if.fault_master_i          = s_bus_fault_master;
@@ -162,12 +168,22 @@ core_wrapper u_core_wrapper (
       .core_reset_i(u_sysctrl_if.core_reset_o)
   );
 
+  onchip_ram #(
+      .Present    (SramPresent),
+      .CapacityKiB(`SOC_ADDR_SRAM_SIZE >> 10)
+  ) u_onchip_ram (
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
+      .perf_enable_i(s_perf_en),
+      .perf_clear_i (s_perf_clear),
+      .mem_axi4     (u_sram_axi4_if),
+      .cfg_apb4     (u_sram_cfg_if)
+  );
+
   axi4_bus u_bus (
       .clk_i                  (clk_i),
       .rst_n_i                (rst_n_i),
-`ifdef HAVE_SRAM_IF
-      .ram                    (ram),
-`endif
+      .sram_axi4              (u_sram_axi4_if),
       .user_bus_enable_i      (u_sysctrl_if.user_bus_enable_o),
       .user_bus_idle_o        (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
@@ -224,6 +240,7 @@ core_wrapper u_core_wrapper (
       .sysctrl         (u_sysctrl_if),
       .pll_ctrl        (pll_ctrl),
       .sdram_cfg       (u_sdram_cfg_if),
+      .sram_cfg        (u_sram_cfg_if),
       .dvp             (u_dvp_if),
       .sdio0           (u_sdio0_if),
       .sdio1           (sdio1),

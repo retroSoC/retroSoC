@@ -34,8 +34,11 @@ Fixed-address and APB4/MMIO endpoints are always single-beat. See the
 The fixed targets are the APB4 configuration plane (`apb4_periph`), APB
 (`apb4_system`), SRAM, SDRAM, 4-bit PSRAM, OPI PSRAM, XPI/Flash, SPI-SD,
 `DECERR`, and `SLVERR`. APB4 and APB accept only single-beat transactions.
-SRAM uses a direct AXI4 target with pipelined synchronous reads and response
-buffering. External-memory data windows accept up to sixteen beats; their
+SRAM uses a direct AXI4 target with pipelined synchronous reads, a one-cycle
+first response, backpressure, and one beat per cycle sustained bursts. Its
+effective window is generated from `SRAM_SIZE_KIB`; see the
+[on-chip SRAM contract](ip/onchip-sram.md). External-memory data windows accept
+up to sixteen beats; their
 controller front ends validate and serialize or coalesce the physical
 transactions while preserving the documented AXI response contract. Register
 configuration remains on APB4.
@@ -63,12 +66,16 @@ access-control rejection to `PROTERR`.
 
 ## Verification and Performance Gates
 
-`tests/test_axi4.py` covers a four-beat write/read, response backpressure, and
-rejection of a seventeen-beat request without touching the APB4 target. The
-bridge unit test also covers Common address generation for FIXED and WRAP
-sequencing. The IHP130 `ci_smoke` regression is the end-to-end boot and
-configuration check.
-CoreMark uses SRAM and must not regress more than five percent from the recorded
-7,620,324-cycle baseline. A controller may be promoted to a native burst target
-only after aligned sixteen-word tests show at least twenty percent improvement
-and cover partial writes, backpressure, device timing, and error termination.
+`tests/test_axi4.py` covers fabric classification. `tests/test_onchip_ram.py`
+covers all five capacities, sixteen-beat reads/writes, response backpressure,
+partial writes, technology mapping, and error termination. The bridge unit
+test also covers Common address generation for FIXED and WRAP sequencing. The
+IHP130 `ci_smoke` regression is the end-to-end boot and configuration check.
+CoreMark uses SRAM and must not regress more than five percent from the native
+4,662,868-cycle baseline; the retired compatibility path required 7,620,324
+cycles. A native SRAM target must return an aligned sixteen-word burst in
+sixteen response cycles, report first-response and total latency against the
+compatibility bridge, and cover partial writes, backpressure, device timing,
+and error termination. The measured compatibility bridge needs 18 response
+cycles; the native target removes both overhead cycles and reaches the 32-bit
+AXI payload limit.

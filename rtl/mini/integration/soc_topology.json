@@ -429,6 +429,14 @@
       "timed_interface": "u_usb2_apb4_if",
       "pure_interface": "u_usb2_apb4_pure_if",
       "region": "APB4_USB2"
+    },
+    {
+      "slot": 21,
+      "name": "sram",
+      "timed_interface": "sram_cfg",
+      "pure_interface": "sram_cfg_pure",
+      "region": "APB4_SRAM",
+      "external": true
     }
   ],
   "apb4_system_targets": [

@@ -16,6 +16,7 @@ VALID_ROUTES = {"apb4_periph", "apb4_system", "axi4", "ram", "reserved"}
 VALID_KINDS = {"active", "reserved"}
 VALID_USER_ACCESS = {"none", "ro", "rw"}
 VALID_BURST = {"incr1", "incr4", "incr16"}
+VALID_SRAM_SIZE_KIB = (4, 16, 32, 64, 128)
 
 
 def parse_integer(value: Any, field: str) -> int:
@@ -29,7 +30,11 @@ def parse_integer(value: Any, field: str) -> int:
     raise ValueError(f"{field} must be an integer")
 
 
-def read_map(path: Path) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
+def read_map(
+    path: Path, sram_size_kib: int = 128
+) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
+    if sram_size_kib not in VALID_SRAM_SIZE_KIB:
+        raise ValueError(f"sram_size_kib must be one of {VALID_SRAM_SIZE_KIB}")
     with path.open(encoding="utf-8") as source:
         document = json.load(source)
     if document.get("schema_version") != 2:
@@ -89,6 +94,17 @@ def read_map(path: Path) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]
             raise ValueError(f"regions[{index}] reserved regions cannot support bursts")
         base = parse_integer(region.get("base"), f"regions[{index}].base")
         size = parse_integer(region.get("size"), f"regions[{index}].size")
+        if symbol == "SRAM":
+            size_options = region.get("size_options")
+            if not isinstance(size_options, list):
+                raise ValueError(f"regions[{index}].size_options must be a list")
+            parsed_options = tuple(
+                parse_integer(value, f"regions[{index}].size_options") for value in size_options
+            )
+            expected_options = tuple(value * 1024 for value in VALID_SRAM_SIZE_KIB)
+            if parsed_options != expected_options:
+                raise ValueError(f"regions[{index}].size_options must be {expected_options}")
+            size = sram_size_kib * 1024
         if base < 0 or size <= 0 or base + size > MAX_ADDRESS:
             raise ValueError(f"regions[{index}] exceeds the 32-bit address space")
         if base % 4 != 0 or size % 4 != 0:
@@ -155,6 +171,7 @@ def render_rtl(
         symbol = region["symbol"]
         lines += [
             f"`define SOC_ADDR_{symbol}_BASE {hex32(region['base'])}",
+            f"`define SOC_ADDR_{symbol}_SIZE {hex32(region['size'])}",
             f"`define SOC_ADDR_{symbol}_END  {hex32(region['end'])}",
             f"`define SOC_ADDR_IS_{symbol}(addr) "
             f"{range_expression(symbol, region['base'], region['end'])}",
@@ -172,9 +189,7 @@ def render_rtl(
         for region in regions
         if region["route"] in {"apb4_periph", "axi4"}
     ]
-    lines.append(
-        f"`define SOC_ADDR_IS_RIB_LEGACY_TARGET(addr) ({join_or(legacy_rib_targets)})"
-    )
+    lines.append(f"`define SOC_ADDR_IS_RIB_LEGACY_TARGET(addr) ({join_or(legacy_rib_targets)})")
     user_readable = [
         f"`SOC_ADDR_IS_{region['symbol']}(addr)"
         for region in regions
@@ -282,8 +297,8 @@ def atomic_write(path: Path, content: str) -> None:
         raise
 
 
-def generate(map_path: Path, output_dir: Path, have_sram_if: str) -> None:
-    cpu_reset, regions, sysctrl_registers = read_map(map_path)
+def generate(map_path: Path, output_dir: Path, have_sram_if: str, sram_size_kib: int) -> None:
+    cpu_reset, regions, sysctrl_registers = read_map(map_path, sram_size_kib)
     atomic_write(
         output_dir / "rtl" / "mmap_define.svh",
         render_rtl(cpu_reset, regions, sysctrl_registers),
@@ -301,15 +316,21 @@ def main() -> int:
     parser.add_argument("--map", required=True, type=Path)
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--have-sram-if", choices=("YES", "NO"), default="NO")
+    parser.add_argument("--sram-size-kib", type=int, choices=VALID_SRAM_SIZE_KIB, default=128)
     parser.add_argument("--check", action="store_true", help="validate only; write nothing")
     arguments = parser.parse_args()
     try:
         if arguments.check:
-            read_map(arguments.map)
+            read_map(arguments.map, arguments.sram_size_kib)
         else:
             if arguments.output_dir is None:
                 parser.error("--output-dir is required unless --check is used")
-            generate(arguments.map, arguments.output_dir, arguments.have_sram_if)
+            generate(
+                arguments.map,
+                arguments.output_dir,
+                arguments.have_sram_if,
+                arguments.sram_size_kib,
+            )
     except (OSError, ValueError, json.JSONDecodeError) as error:
         parser.error(str(error))
     return 0

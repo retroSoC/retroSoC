@@ -16,7 +16,7 @@ USER_EXTENSIONS = ROOT / "rtl/mini/integration/user_extensions.json"
 USER_GENERATOR = ROOT / "rtl/mini/integration/generate_user_extensions.py"
 
 
-def generate(output_dir: Path, *, sram: str = "NO") -> None:
+def generate(output_dir: Path, *, sram: str = "NO", sram_size_kib: int = 128) -> None:
     subprocess.run(
         [
             sys.executable,
@@ -27,6 +27,8 @@ def generate(output_dir: Path, *, sram: str = "NO") -> None:
             str(output_dir),
             "--have-sram-if",
             sram,
+            "--sram-size-kib",
+            str(sram_size_kib),
         ],
         check=True,
     )
@@ -66,6 +68,7 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_APB4_SDIO0_BASE UINT32_C(0x1000F000)" in header
     assert "RS_SOC_APB4_SDIO1_BASE UINT32_C(0x10015000)" in header
     assert "RS_SOC_APB4_USB2_BASE UINT32_C(0x10016000)" in header
+    assert "RS_SOC_APB4_SRAM_BASE UINT32_C(0x10017000)" in header
     assert "RS_SOC_NMI_" not in header
     assert "RS_SOC_OPIPSRAM_BASE UINT32_C(0x48000000)" in header
     assert "RS_SOC_HAS_SRAM 1U" in header
@@ -99,6 +102,22 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_SYSCTRL_PERF_USB2_WAIT_HI_OFFSET UINT32_C(0x000000A0)" in header
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x02000000" in linker
     assert "OPIPSRAM (wxa!ri) : ORIGIN = 0x48000000, LENGTH = 0x08000000" in linker
+
+
+def test_sram_capacity_selects_one_consistent_hardware_software_window(tmp_path: Path) -> None:
+    for size_kib in (4, 16, 32, 64, 128):
+        output = tmp_path / str(size_kib)
+        generate(output, sram="YES", sram_size_kib=size_kib)
+        size = size_kib * 1024
+        end = 0x30000000 + size - 1
+        rtl = (output / "rtl/mmap_define.svh").read_text(encoding="utf-8")
+        header = (output / "include/retrosoc/generated/memory_map.h").read_text(encoding="utf-8")
+        linker = (output / "linker/memory_regions.ld").read_text(encoding="utf-8")
+
+        assert f"`define SOC_ADDR_SRAM_SIZE 32'h{size:08X}" in rtl
+        assert f"`define SOC_ADDR_SRAM_END  32'h{end:08X}" in rtl
+        assert f"#define RS_SOC_SRAM_SIZE UINT32_C(0x{size:08X})" in header
+        assert f"SRAM (wxa!ri) : ORIGIN = 0x30000000, LENGTH = 0x{size:08X}" in linker
 
 
 def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> None:

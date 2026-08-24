@@ -4,6 +4,7 @@
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/onchip_sram.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/sdram.h>
@@ -20,6 +21,22 @@ static bool rs_ci_smoke_archinfo_v2(void) {
 
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
+}
+
+static bool rs_ci_smoke_onchip_sram(void) {
+    rs_onchip_sram_info_t info;
+    rs_onchip_sram_perf_t performance;
+
+    if ((rs_onchip_sram_probe(&info) != RS_OK) ||
+        (rs_onchip_sram_read_performance(&performance) != RS_OK) ||
+        (info.present != (RS_SOC_HAS_SRAM != 0U))) {
+        return false;
+    }
+    if (info.present) {
+        return (info.memory_bytes == RS_SOC_SRAM_SIZE) &&
+               (info.bank_count == (RS_SOC_SRAM_SIZE / RS_ONCHIP_SRAM_BANK_BYTES_VALUE));
+    }
+    return (info.memory_bytes == 0U) && (info.bank_count == 0U);
 }
 
 static bool rs_ci_smoke_user_ip(void) {
@@ -289,6 +306,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_onchip_sram()) {
+        rs_test_finish(RS_TEST_FAILED, 12U);
+    }
+    printf("ci_smoke: on-chip SRAM passed\n");
     if (!rs_ci_smoke_user_ip()) {
         rs_test_finish(RS_TEST_FAILED, 11U);
     }

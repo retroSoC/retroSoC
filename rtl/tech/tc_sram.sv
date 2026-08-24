@@ -38,17 +38,15 @@ module tc_sram_1024x32 (
   end
 `elsif PDK_IHP130
 `ifdef HAVE_SRAM_MACRO
-  logic [63:0] s_rd_data_mem;
-  assign data_o = s_rd_data_mem[31:0];
-  RM_IHPSG13_1P_1024x64_c2_bm_bist u_mem (
+  RM_IHPSG13_1P_1024x32_c2_bm_bist u_mem (
       .A_CLK      (clk_i),
       .A_ADDR     (addr_i),
-      .A_BM       ({32'h0, {8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
+      .A_BM       ({{8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
       .A_MEN      (cs_i),
       .A_WEN      (wren_i),
       .A_REN      (~wren_i),
-      .A_DIN      ({32'h0, data_i[31:0]}),
-      .A_DOUT     (s_rd_data_mem),
+      .A_DIN      (data_i),
+      .A_DOUT     (data_o),
       .A_DLY      (1'b1),
       .A_BIST_CLK ('0),
       .A_BIST_EN  ('0),

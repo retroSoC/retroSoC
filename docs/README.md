@@ -46,6 +46,9 @@ the root README and subsystem guides.
   counting modes, interrupt, debug-freeze, HAL, and verification contracts.
 - [ip/sysctrl.md](ip/sysctrl.md) defines the SystemCtrl register ABI, user-core
   lifecycle, PLL/fault/performance/RTC/test contracts, HAL, and verification.
+- [ip/onchip-sram.md](ip/onchip-sram.md) defines the configurable native-AXI4
+  SRAM architecture, APB capability ABI, technology mapping, verification, and
+  reliability roadmap.
 - [ip/user-ip.md](ip/user-ip.md) defines the selectable 4 KiB user-IP window,
   generic HAL, extension-owned register ABI, and verification contract.
 - [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed

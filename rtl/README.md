@@ -68,6 +68,12 @@ does not elaborate the tri-state delays in the Micron model. The Icarus
 testbench retains that Micron timing model, so it is the reference for SDRAM
 command timing while Verilator provides fast functional coverage.
 
+The Mini SoC on-chip SRAM is a synthesis-time selectable 4/16/32/64/128 KiB
+native 32-bit AXI4 target built from fixed 4 KiB technology banks. Its read-only
+APB capability/performance ABI, technology mapping, verification evidence, and
+ECC/MBIST roadmap are documented in
+[Configurable Native-AXI4 On-chip SRAM](../docs/ip/onchip-sram.md).
+
 The self-owned ESP-PSRAM64H controller exposes a 32-bit AXI4 data window and a
 separate APB4 management plane across four independently isolated 8 MiB chips.
 Its frozen architecture, register ABI, timing limits, model, formal target, and

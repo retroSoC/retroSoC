@@ -64,7 +64,8 @@ gen_mpw_code: $(MPW_VARIANT_STAMP)
 
 $(MEMORY_MAP_STAMP): $(MEMORY_MAP_SOURCE) $(MEMORY_MAP_SCRIPT)
 	$(FLOW_PYTHON) $(MEMORY_MAP_SCRIPT) --map $(MEMORY_MAP_SOURCE) \
-		--output-dir $(MEMORY_MAP_DIR) --have-sram-if $(HAVE_SRAM_IF)
+		--output-dir $(MEMORY_MAP_DIR) --have-sram-if $(HAVE_SRAM_IF) \
+		--sram-size-kib $(SRAM_SIZE_KIB)
 	@touch $@
 
 memory-map: $(MEMORY_MAP_STAMP)
