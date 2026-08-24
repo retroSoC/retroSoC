@@ -9,8 +9,16 @@ Several RTL files retain the original copyright notice from ETH Zurich and Unive
 - rtl/managed/clusterip/**
 - rtl/managed/mpw/core/username7/ibex/**
 - rtl/tech/tc_clk.sv
+- rtl/ip/memory/opipsram_phy.sv
+- rtl/ip/memory/opipsram_trx.sv
+- rtl/tech/tc_opipsram_delay.sv
 
-The header in rtl/tech/tc_clk.sv also states the Solderpad Hardware License, Version 0.51.
+The `tc_clk.sv` header and the adapted OPI PSRAM PHY files state the
+Solderpad Hardware License, Version 0.51 (`SHL-0.51`). The OPI PSRAM PHY
+files are adapted from PULP Platform HyperBus v0.0.4 at commit
+`80de8df600edc5d7956a94c9d42f911d6e61efd7`; each preserves the source-file
+authors and records retroSoC's modifications. The exact license text is in
+[`licenses/PULP_Platform-SHL-0.51`](licenses/PULP_Platform-SHL-0.51).
 
 ## 2. Ravenna / PicoRV32 in ASIC
 

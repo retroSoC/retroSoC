@@ -31,11 +31,22 @@ returns `SLVERR` and never wraps to device address zero.
 
 ## Evidence and Compatibility Boundary
 
-The digital PHY architecture is based on the module boundaries used by PULP
-HyperBus v0.0.4 at commit
+The digital PHY is adapted from PULP Platform HyperBus v0.0.4 at commit
 `80de8df600edc5d7956a94c9d42f911d6e61efd7`, as locked by the Basilisk
-integration. The retroSoC implementation is self-owned and adapted to the
-project's Common primitives, interfaces, reset spelling, and coding style.
+integration. The following files retain their corresponding upstream Solderpad
+Hardware License 0.51 (`SHL-0.51`) copyright and author notices:
+
+| retroSoC file | PULP HyperBus source |
+| --- | --- |
+| `rtl/ip/memory/opipsram_phy.sv` | `src/hyperbus_phy.sv` |
+| `rtl/ip/memory/opipsram_trx.sv` | `src/hyperbus_trx.sv` |
+| `rtl/tech/tc_opipsram_delay.sv` | `src/hyperbus_delay.sv` |
+
+retroSoC modifications adapt the PHY to OPI/xSPI, one routed clock for the
+HyperBus profile, the project's Common primitives and interfaces, reset
+conventions, and technology-specific delay mapping. The upstream `SHL-0.51`
+text is preserved in [`../../licenses/PULP_Platform-SHL-0.51`](../../licenses/PULP_Platform-SHL-0.51);
+the retroSoC modifications retain their Mulan PSL v2 declaration in each file.
 
 The following upstream concepts are reused:
 
@@ -59,9 +70,11 @@ Upstream references:
 - <https://github.com/pulp-platform/cheshire-ihp130-o/blob/560f00f1c14a7f2f22861df6bb4816eacf7f2e7e/Bender.lock#L99-L117>
 - <https://github.com/pulp-platform/hyperbus/blob/80de8df600edc5d7956a94c9d42f911d6e61efd7/src/hyperbus_trx.sv#L62-L240>
 
-No upstream RTL or restricted vendor model is included as a dependency.
-Copying upstream implementation text in a future change requires a separate
-license and NOTICE review.
+The PULP sources are provenance references, not a build-time checkout or a
+restricted vendor-model dependency. The retained source notices and the
+repository NOTICE cover the adapted PHY files; unrelated controller, protocol,
+register, interface, HAL, model, and SoC integration code remains retroSoC
+owned.
 
 ## Commercial Reference Selection
 

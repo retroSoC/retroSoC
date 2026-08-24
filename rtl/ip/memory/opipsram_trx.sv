@@ -1,5 +1,27 @@
+// Copyright 2023 ETH Zurich and University of Bologna.
+// Solderpad Hardware License, Version 0.51, see LICENSE for details.
+// SPDX-License-Identifier: SHL-0.51
+//
+// Paul Scheffler <paulsc@iis.ee.ethz.ch>
+// Armin Berger <bergerar@ethz.ch>
+// Stephan Keck <kecks@ethz.ch>
+//
+// Adapted from PULP Platform HyperBus v0.0.4 (src/hyperbus_trx.sv) at commit
+// 80de8df600edc5d7956a94c9d42f911d6e61efd7.
+// Modified by retroSoC for OPI/xSPI, single-clock HyperBus, project-local
+// interfaces and primitives, reset conventions, and technology mapping.
+//
+// -- Adaptable modifications are redistributed under compatible License --
+//
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // retroSoC is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
 
 module opipsram_trx (
     // verilog_format: off -- preserve reviewed port alignment
