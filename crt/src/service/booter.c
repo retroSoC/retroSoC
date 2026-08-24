@@ -12,6 +12,28 @@
 #include <retrosoc/service/booter.h>
 #include <user_design_info.h>
 
+static void rs_print_hazard3_spec(void) {
+    printf("\nManagement-Core Specification:\n");
+    printf("  Identity\n");
+    printf("    Core: Hazard3(single hart), 3-stage pipeline\n");
+    printf("    Role: trusted management, boot, lifecycle control\n");
+    printf("    Source: https://github.com/Wren6991/Hazard3\n");
+    printf("  Hardware ISA\n");
+    printf("    Base: RV32IMAC_Zicsr\n");
+    printf("    Bit manipulation: Zba_Zbb_Zbc_Zbkb_Zbkx_Zbs\n");
+    printf("    Other: Zifencei_Zilsd_Xh3BextM_Xh3IRQ\n");
+    printf("    Not present: U-mode PMP Zcb_Zclsd_Zcmp_Xh3PMPM_Xh3Power\n");
+    printf("  Privilege and interrupts\n");
+    printf("    Mode: M-mode only; mandatory, trap, and counter CSRs enabled\n");
+    printf("    IRQ: 30 external + software + timer; Xh3IRQ, 4 priority levels\n");
+    printf("  Memory bus\n");
+    printf("    AHB5 manager -> AHB-Lite/AXI4 fabric\n");
+    printf("    Single-beat access; no burst or exclusive transactions\n");
+    printf("  Debug\n");
+    printf("    RISC-V JTAG DTM/DM, IDCODE 0x%08x\n", RS_SOC_MGMT_JTAG_IDCODE);
+    printf("    One hart: halt/resume, 2 breakpoints; no system-bus access\n");
+}
+
 void rs_app_info(void) {
     uint8_t selected_core;
     uint8_t selected_ip;
@@ -78,10 +100,7 @@ void rs_app_info(void) {
     printf("  | SRAM / Ext |    | Peripherals|    | User IP    |\n");
     printf("  +------------+    +------------+    +------------+\n");
 
-    printf("\nManagement Processor:\n");
-    printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
-    printf("=>[0]: %-15s %-12s %-12s %s\n", "Hazard3", "rv32imac", "Wren6991",
-           "https://github.com/Wren6991/Hazard3");
+    rs_print_hazard3_spec();
 
     printf("\nUser Processors:\n");
     uint32_t core_size = sizeof(user_core_info) / sizeof(user_core_info[0]);
