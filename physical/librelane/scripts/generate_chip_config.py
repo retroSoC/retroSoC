@@ -64,11 +64,11 @@ def power_instances(side_index: int) -> list[str]:
     for local_index in range(6):
         for kind in ("vdd", "vss"):
             index = (side_index * 6) + local_index
-            result.append(f"{kind}_pads\\[{index}\\].{kind}_pad")
+            result.append(f"{kind}_pads[{index}].{kind}_pad")
         if local_index < 4:
             for kind in ("iovdd", "iovss"):
                 index = (side_index * 4) + local_index
-                result.append(f"{kind}_pads\\[{index}\\].{kind}_pad")
+                result.append(f"{kind}_pads[{index}].{kind}_pad")
     return result
 
 
@@ -106,6 +106,9 @@ def macro_config(
 
 
 def build_config(args: argparse.Namespace) -> dict[str, object]:
+    target = getattr(args, "target", "chip")
+    if target not in {"chip", "core"}:
+        raise ValueError("target must be chip or core")
     pads, _ = read_map(args.pin_map)
     active_pads = [pad for pad in pads if pad.feature is None or args.have_pll]
     signal_instances: dict[str, list[str]] = {side: [] for side in SIDE_ORDER}
@@ -152,44 +155,31 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
                 ]
             )
 
-    return {
-        "meta": {"version": 3, "flow": "Chip"},
-        "DESIGN_NAME": "retrosoc_asic",
+    common = {
         "VERILOG_FILES": [config_path(args.rtl, config_dir)],
         "USE_SLANG": True,
         "SLANG_ARGUMENTS": ["--keep-hierarchy"],
+        "VERILOG_POWER_DEFINE": None,
         "SYNTH_SHARE_RESOURCES": False,
         "SYNTH_HIERARCHY_MODE": "deferred_flatten",
         "YOSYS_LOG_LEVEL": "WARNING",
+        "SYNTH_STRATEGY": "AREA 3",
         "PRIMARY_GDSII_STREAMOUT_TOOL": "klayout",
-        "PAD_SOUTH": pad_sides["SOUTH"],
-        "PAD_EAST": pad_sides["EAST"],
-        "PAD_NORTH": pad_sides["NORTH"],
-        "PAD_WEST": pad_sides["WEST"],
         "PNR_SDC_FILE": config_path(args.sdc, config_dir),
         "SIGNOFF_SDC_FILE": config_path(args.sdc, config_dir),
         "FALLBACK_SDC": config_path(args.sdc, config_dir),
         "CLOCK_PORT": list(CLOCK_PORTS),
         "CLOCK_PERIOD": 1_000_000_000 / args.ext_clk_hz,
-        "VDD_NETS": ["VDD", "IOVDD"],
-        "GND_NETS": ["VSS", "IOVSS"],
+        "VDD_NETS": ["VDD"],
+        "GND_NETS": ["VSS"],
         "FP_SIZING": "absolute",
-        "DIE_AREA": [0, 0, 8000, 8000],
-        "CORE_AREA": [365, 365, 7635, 7635],
-        "PL_TARGET_DENSITY_PCT": 30,
         "PDN_CORE_RING": True,
         "PDN_CORE_RING_VWIDTH": 15,
         "PDN_CORE_RING_HWIDTH": 15,
         "PDN_CORE_RING_VSPACING": 5,
         "PDN_CORE_RING_HSPACING": 5,
-        "PDN_CORE_RING_CONNECT_TO_PADS": True,
-        "PDN_ENABLE_PINS": False,
+        "PDN_ENABLE_PINS": True,
         "PDN_CFG": config_path(args.pdn, config_dir),
-        "PAD_BONDPAD_NAME": "bondpad_70x70",
-        "EXTRA_GDS": [config_path(args.bondpad_gds, config_dir)],
-        "EXTRA_LEFS": [config_path(args.bondpad_lef, config_dir)],
-        "IGNORE_DISCONNECTED_MODULES": ["bondpad_70x70"],
-        "MAGIC_EXT_UNIQUE": "notopports",
         "MACROS": macros,
         "PDN_MACRO_CONNECTIONS": macro_hooks,
         "MAGIC_GDS_FLATGLOB": [
@@ -200,6 +190,41 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
             "RSC_*",
             "*_CELL_SUB",
         ],
+    }
+    if target == "core":
+        return {
+            "meta": {"version": 3, "flow": "Classic"},
+            "DESIGN_NAME": "retrosoc_core",
+            "DIE_AREA": [0, 0, 6000, 6000],
+            "CORE_AREA": [120, 120, 5880, 5880],
+            "PL_TARGET_DENSITY_PCT": 45,
+            "PDN_CORE_RING_CONNECT_TO_PADS": False,
+            **common,
+        }
+    return {
+        "meta": {"version": 3, "flow": "Chip"},
+        "DESIGN_NAME": "retrosoc_asic",
+        "SYNTH_KEEP_HIERARCHY_MODULES": [
+            "sg13g2_IOPadVdd",
+            "sg13g2_IOPadVss",
+            "sg13g2_IOPadIOVdd",
+            "sg13g2_IOPadIOVss",
+        ],
+        "PAD_SOUTH": pad_sides["SOUTH"],
+        "PAD_EAST": pad_sides["EAST"],
+        "PAD_NORTH": pad_sides["NORTH"],
+        "PAD_WEST": pad_sides["WEST"],
+        "DIE_AREA": [0, 0, 8000, 8000],
+        "CORE_AREA": [365, 365, 7635, 7635],
+        "PL_TARGET_DENSITY_PCT": 30,
+        "PDN_CORE_RING_CONNECT_TO_PADS": True,
+        "PAD_CFG": config_path(ROOT / "physical/librelane/pad_cfg.tcl", config_dir),
+        "PAD_BONDPAD_NAME": "bondpad_70x70",
+        "EXTRA_GDS": [config_path(args.bondpad_gds, config_dir)],
+        "EXTRA_LEFS": [config_path(args.bondpad_lef, config_dir)],
+        "IGNORE_DISCONNECTED_MODULES": ["bondpad_70x70"],
+        "MAGIC_EXT_UNIQUE": "notopports",
+        **common,
     }
 
 
@@ -222,6 +247,7 @@ def main() -> int:
     parser.add_argument("--ext-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--aud-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--have-pll", action="store_true")
+    parser.add_argument("--target", choices=("chip", "core"), default="chip")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:

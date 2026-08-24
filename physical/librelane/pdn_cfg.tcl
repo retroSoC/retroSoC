@@ -28,6 +28,16 @@ foreach vdd $::env(VDD_NETS) gnd $::env(GND_NETS) {
     }
 }
 
+# I/O rails are pad-ring internal and are absent from the synthesized top-level.
+foreach {net signal_type} {IOVDD POWER IOVSS GROUND} {
+    set db_net [[ord::get_db_block] findNet $net]
+    if {$db_net == "NULL"} {
+        set db_net [odb::dbNet_create [ord::get_db_block] $net]
+        $db_net setSpecial
+        $db_net setSigType $signal_type
+    }
+}
+
 # IHP IO cells carry both core and external-IO power rails on lower-case pins.
 add_global_connection -net $::env(VDD_NET) -inst_pattern .* -pin_pattern vdd -power
 add_global_connection -net $::env(GND_NET) -inst_pattern .* -pin_pattern vss -ground
@@ -35,13 +45,47 @@ add_global_connection -net IOVDD -inst_pattern .* -pin_pattern iovdd -power
 add_global_connection -net IOVSS -inst_pattern .* -pin_pattern iovss -ground
 global_connect -verbose
 
+# connect_by_abutment assigns IHP pad rails to corner-local *_RING nets. Rebind
+# those physical pad and filler pins so the PDN knows they are VDD/VSS terminals.
+proc reconnect_ihp_padring_rails {block} {
+    foreach {net_name pin_name} {
+        VDD vdd
+        VSS vss
+        IOVDD iovdd
+        IOVSS iovss
+    } {
+        set net [$block findNet $net_name]
+        foreach inst [$block getInsts] {
+            set master_name [[$inst getMaster] getName]
+            if {![string match "sg13g2_IOPad*" $master_name] &&
+                ![string match "sg13g2_Filler*" $master_name] &&
+                ![string match "sg13g2_Corner*" $master_name]} {
+                continue
+            }
+            foreach iterm [$inst getITerms] {
+                if {[[$iterm getMTerm] getName] != $pin_name} {
+                    continue
+                }
+                odb::dbITerm_disconnect $iterm
+                odb::dbITerm_connect $iterm $net
+            }
+        }
+    }
+}
+reconnect_ihp_padring_rails [ord::get_db_block]
+
 set_voltage_domain -name CORE -power $::env(VDD_NET) -ground $::env(GND_NET) \
     -secondary_power $secondary_supplies
 
+set stdcell_grid_args [list]
+if {$::env(PDN_ENABLE_PINS) == 1} {
+    lappend stdcell_grid_args -pins "$::env(PDN_VERTICAL_LAYER) $::env(PDN_HORIZONTAL_LAYER)"
+}
 define_pdn_grid \
     -name stdcell_grid \
     -starts_with POWER \
-    -voltage_domain CORE
+    -voltage_domain CORE \
+    {*}$stdcell_grid_args
 
 add_pdn_stripe \
     -grid stdcell_grid \

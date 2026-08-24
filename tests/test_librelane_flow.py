@@ -1,4 +1,4 @@
-"""Tests for the single-level IHP130 LibreLane pad-ring flow."""
+"""Tests for IHP130 LibreLane core and pad-ring flows."""
 
 from __future__ import annotations
 
@@ -52,10 +52,10 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
         "north": 48,
         "west": 59,
     }
-    assert sum(item.startswith("vdd_pads\\[") for item in placed) == 24
-    assert sum(item.startswith("vss_pads\\[") for item in placed) == 24
-    assert sum(item.startswith("iovdd_pads\\[") for item in placed) == 16
-    assert sum(item.startswith("iovss_pads\\[") for item in placed) == 16
+    assert sum(item.startswith("vdd_pads[") for item in placed) == 24
+    assert sum(item.startswith("vss_pads[") for item in placed) == 24
+    assert sum(item.startswith("iovdd_pads[") for item in placed) == 16
+    assert sum(item.startswith("iovss_pads[") for item in placed) == 16
     assert "u_extclk_i_pad.u_sg13g2_IOPadIn" in sides["south"]
     assert "u_gpio_31_io_pad.u_sg13g2_IOPadInOut4mA" in sides["east"]
     assert "u_sdram_dq15_io_pad.u_sg13g2_IOPadInOut4mA" in sides["west"]
@@ -63,16 +63,48 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     assert config["CORE_AREA"] == [365, 365, 7635, 7635]
     assert config["USE_SLANG"] is True
     assert config["SLANG_ARGUMENTS"] == ["--keep-hierarchy"]
+    assert config["VERILOG_POWER_DEFINE"] is None
     assert config["SYNTH_SHARE_RESOURCES"] is False
     assert config["SYNTH_HIERARCHY_MODE"] == "deferred_flatten"
+    assert config["SYNTH_KEEP_HIERARCHY_MODULES"] == [
+        "sg13g2_IOPadVdd",
+        "sg13g2_IOPadVss",
+        "sg13g2_IOPadIOVdd",
+        "sg13g2_IOPadIOVss",
+    ]
     assert config["YOSYS_LOG_LEVEL"] == "WARNING"
-    assert config["VDD_NETS"] == ["VDD", "IOVDD"]
-    assert config["GND_NETS"] == ["VSS", "IOVSS"]
+    assert config["SYNTH_STRATEGY"] == "AREA 3"
+    assert config["VDD_NETS"] == ["VDD"]
+    assert config["GND_NETS"] == ["VSS"]
+    assert config["PAD_CFG"].endswith("physical/librelane/pad_cfg.tcl")
+    assert config["PDN_ENABLE_PINS"] is True
     assert set(config["MACROS"]) == {
         "RM_IHPSG13_1P_4096x16_c3_bm_bist",
         "RM_IHPSG13_1P_4096x8_c3_bm_bist",
     }
     assert len(config["PDN_MACRO_CONNECTIONS"]) == 6
+
+
+def test_core_config_uses_a_padless_classic_flow(tmp_path: Path) -> None:
+    module = load_module(
+        "retrosoc_librelane_core_config", FLOW_ROOT / "scripts/generate_chip_config.py"
+    )
+    arguments = chip_arguments(tmp_path)
+    arguments.target = "core"
+    config = module.build_config(arguments)
+
+    assert config["meta"] == {"version": 3, "flow": "Classic"}
+    assert config["DESIGN_NAME"] == "retrosoc_core"
+    assert config["DIE_AREA"] == [0, 0, 6000, 6000]
+    assert config["CORE_AREA"] == [120, 120, 5880, 5880]
+    assert config["PDN_CORE_RING_CONNECT_TO_PADS"] is False
+    assert "PAD_CFG" not in config
+    assert not any(key.startswith("PAD_") for key in config)
+    assert "PAD_BONDPAD_NAME" not in config
+    assert set(config["MACROS"]) == {
+        "RM_IHPSG13_1P_4096x16_c3_bm_bist",
+        "RM_IHPSG13_1P_4096x8_c3_bm_bist",
+    }
 
 
 def test_chip_sdc_is_pad_aware_and_does_not_false_path_all_io(tmp_path: Path) -> None:
@@ -88,6 +120,7 @@ def test_chip_sdc_is_pad_aware_and_does_not_false_path_all_io(tmp_path: Path) ->
 
     assert "u_extclk_i_pad.u_sg13g2_IOPadIn/p2c" in sdc
     assert "u_usb2_ulpi_clk_i_pad.u_sg13g2_IOPadIn/p2c" in sdc
+    assert "u_rcu.u_sys_clk_buf.u_sg13g2_buf_1/X" in sdc
     assert "create_generated_clock -name clk_system" in sdc
     assert "set_clock_groups -name retrosoc_async -asynchronous" in sdc
     assert "set_input_delay -max" in sdc
@@ -97,14 +130,35 @@ def test_chip_sdc_is_pad_aware_and_does_not_false_path_all_io(tmp_path: Path) ->
     assert "set_false_path -to [all_outputs]" not in sdc
 
 
-def test_librelane_flow_is_single_level_chip_only() -> None:
+def test_core_sdc_constrains_logical_top_ports(tmp_path: Path) -> None:
+    module = load_module("retrosoc_librelane_core_sdc", FLOW_ROOT / "scripts/generate_sdc.py")
+    arguments = SimpleNamespace(
+        domains=DOMAINS,
+        pin_map=PIN_MAP,
+        ext_clk_hz=72_000_000,
+        aud_clk_hz=18_432_000,
+        have_pll=False,
+        target="core",
+    )
+    sdc = module.render(arguments)
+
+    assert 'require_ports "clock external" {extclk_i_pad}' in sdc
+    assert 'require_ports "clock usb2_ulpi" {usb2_ulpi_clk_i_pad}' in sdc
+    assert "u_extclk_i_pad.u_sg13g2_IOPadIn/p2c" not in sdc
+    assert "u_rcu.u_sys_clk_buf.u_sg13g2_buf_1/X" in sdc
+
+
+def test_librelane_flow_exposes_core_and_chip_targets() -> None:
     makefile = (FLOW_ROOT / "Makefile").read_text(encoding="utf-8")
     top_makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     lock = json.loads((ROOT / "dependencies/dependencies.lock.json").read_text())
 
     assert "librelane-chip:" in makefile
+    assert "librelane-core:" in makefile
+    assert "librelane-core-package:" in makefile
+    assert "LIBRELANE_TARGET         ?= chip" in makefile
+    assert "--skip OpenROAD.STAMidPNR" in makefile
     assert "--librelane-safe" in makefile
-    assert "librelane-core" not in makefile
     assert "librelane-all" not in makefile
     assert "include physical/librelane/Makefile" in top_makefile
     ihp_filelist = (ROOT / "rtl/filelist/pdk_ihp130.fl").read_text(encoding="utf-8")
@@ -126,6 +180,13 @@ def test_pdn_connects_all_ihp_pad_power_rails() -> None:
 
     assert "findNet $vdd" in pdn
     assert "findNet $gnd" in pdn
+    assert "foreach {net signal_type} {IOVDD POWER IOVSS GROUND}" in pdn
+    pad_cfg = (FLOW_ROOT / "pad_cfg.tcl").read_text(encoding="utf-8")
+    assert "make_instance $instance_name $master" in pad_cfg
+    assert "proc reconnect_ihp_padring_rails" in pdn
+    assert "odb::dbITerm_connect $iterm $net" in pdn
+    assert "set stdcell_grid_args [list]" in pdn
+    assert '-pins "$::env(PDN_VERTICAL_LAYER) $::env(PDN_HORIZONTAL_LAYER)"' in pdn
     assert "-net $::env(VDD_NET) -inst_pattern .* -pin_pattern vdd -power" in pdn
     assert "-net $::env(GND_NET) -inst_pattern .* -pin_pattern vss -ground" in pdn
     assert "-net IOVDD -inst_pattern .* -pin_pattern iovdd -power" in pdn

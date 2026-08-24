@@ -77,3 +77,4 @@ socver.*
 !/rtl/managed/clusterip/setup.py
 /rtl/managed/mpw/
 /rtl/managed/third_party/
+*result.json

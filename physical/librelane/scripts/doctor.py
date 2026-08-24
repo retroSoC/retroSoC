@@ -73,9 +73,23 @@ def main() -> int:
         if not path.is_file():
             errors.append(f"required LibreLane/IHP file is missing: {path}")
 
+    config: dict[str, object] = {}
+    flow_name = ""
+    if args.config.is_file():
+        try:
+            config = json.loads(args.config.read_text(encoding="utf-8"))
+            meta = config.get("meta", {})
+            if not isinstance(meta, dict) or not isinstance(meta.get("flow"), str):
+                raise ValueError("config meta.flow must name a LibreLane flow")
+            flow_name = meta["flow"]
+        except (OSError, ValueError, json.JSONDecodeError) as error:
+            errors.append(f"failed to read LibreLane configuration: {error}")
+
     if args.config.is_file() and not errors:
         try:
-            flow_class = Flow.factory.get("Chip")
+            flow_class = Flow.factory.get(flow_name)
+            if flow_class is None:
+                raise ValueError(f"unknown LibreLane flow: {flow_name}")
             flow = flow_class(
                 str(args.config.resolve()),
                 pdk="ihp-sg13g2",
@@ -84,26 +98,29 @@ def main() -> int:
                 pad="sg13g2_io",
                 design_dir=str(args.config.resolve().parent),
             )
+            details["flow"] = flow_name
             details["config_design"] = flow.config["DESIGN_NAME"]
             details["drc_runset"] = str(flow.config["KLAYOUT_DRC_RUNSET"])
             details["lvs_setup"] = str(flow.config["NETGEN_SETUP"])
             details["pad_spice"] = [str(path) for path in flow.config["PAD_SPICE_MODELS"]]
         except Exception as error:  # LibreLane reports structured configuration exceptions.
-            errors.append(f"LibreLane Chip configuration failed to load: {error}")
+            errors.append(f"LibreLane {flow_name or 'unknown'} configuration failed to load: {error}")
 
-    if args.config.is_file():
-        config = json.loads(args.config.read_text(encoding="utf-8"))
+    if config:
         placed = [
             item
             for side in ("PAD_SOUTH", "PAD_EAST", "PAD_NORTH", "PAD_WEST")
             for item in config.get(side, [])
         ]
-        expected = EXPECTED_SIGNAL_PADS + sum(IHP130_POWER_PAD_COUNTS.values())
         details["placed_pad_count"] = len(placed)
-        if len(placed) != expected or len(placed) != len(set(placed)):
-            errors.append(
-                f"expected {expected} unique placed signal/power PADs, found {len(placed)}"
-            )
+        if flow_name == "Chip":
+            expected = EXPECTED_SIGNAL_PADS + sum(IHP130_POWER_PAD_COUNTS.values())
+            if len(placed) != expected or len(placed) != len(set(placed)):
+                errors.append(
+                    f"expected {expected} unique placed signal/power PADs, found {len(placed)}"
+                )
+        elif flow_name == "Classic" and placed:
+            errors.append("core hardening configuration must not define pad-ring placement")
 
     result = {
         "schema_version": 1,
