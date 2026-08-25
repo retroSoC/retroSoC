@@ -277,6 +277,7 @@ ifeq ($(STA), OPENSTA)
 endif
 
 include physical/librelane/Makefile
+include physical/ecc/Makefile
 
 .PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
@@ -304,6 +305,10 @@ help:
 	  '  librelane-openroad         open the current Chip run in OpenROAD' \
 	  '  librelane-klayout          open the current Chip run in KLayout' \
 	  '  librelane-package          package full-chip views and evidence' \
+	  '  ecc-setup                   install the pinned ECC CLI and ICS55 inputs' \
+	  '  ecc-doctor                  validate the padless ICS55 ECC hardening flow' \
+	  '  ecc-core                    run the padless ICS55 ECC hardening flow' \
+	  '  ecc-package                 package ECC core views and evidence' \
 	  '  setup                      install pinned external dependencies' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  doctor                     check tools, paths, and selected configuration' \

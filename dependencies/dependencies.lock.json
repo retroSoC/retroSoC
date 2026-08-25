@@ -70,6 +70,12 @@
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
   },
   "archives": {
+    "ecc_cli_linux_x86_64": {
+      "url": "https://github.com/openecos-projects/ecc/releases/download/v0.1.0-alpha.10/ecc-cli-linux-x86_64.tar.gz",
+      "sha256": "fc3daaca24dddb04ba3490329042f52da05190da03c3831042293dd0cbffdca6",
+      "destination": ".cache/retrosoc/downloads/ecc/ecc-cli-linux-x86_64-v0.1.0-alpha.10.tar.gz",
+      "license": "Apache-2.0"
+    },
     "fatfs": {
       "url": "https://github.com/retroSoC/artifact/releases/download/fatfs-r0.16/fatfs-r0.16.zip",
       "sha256": "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e",
