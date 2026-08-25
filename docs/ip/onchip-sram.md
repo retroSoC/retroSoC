@@ -37,10 +37,10 @@ cost-effective in the current one-owner-per-target fabric.
 ## Configuration and address contract
 
 `SRAM_SIZE_KIB` is part of the reproducible configuration digest and accepts
-only `4`, `16`, `32`, `64`, or `128`. Every committed profile sets `128`
-explicitly to preserve the prior address map. The address-map generator uses
-the selected value for RTL decode macros, SDK base/size/end constants, and the
-linker `LENGTH(SRAM)`.
+only `4`, `16`, `32`, `64`, or `128`. IHP130, GF180, and SKY130 CI profiles
+select `32`; ICS55 keeps the SRAM absent. IHP130 benchmark/CoreMark profiles
+retain `128`. The address-map generator uses the selected value for RTL decode
+macros, SDK base/size/end constants, and the linker `LENGTH(SRAM)`.
 
 `HAVE_SRAM_IF=YES` marks the memory present and elaborates the bank array. When
 it is `NO`, the AXI target returns `DECERR`; the APB window remains readable
@@ -111,10 +111,18 @@ the register parity test prevents drift without adding a generator.
 ## Technology mapping
 
 `tc_sram_1024x32` is the stable technology boundary. Behavioral simulation
-uses an inferred 1024-by-32 array. IHP130 maps to
-`RM_IHPSG13_1P_1024x32_c2_bm_bist`; the former 1024-by-64 mapping and discarded
-upper half are removed. ICS55 continues to map to its 1024-by-32 wrapper. Bank
-count, rather than technology depth or width, implements every product size.
+uses the Common byte-mask RAM model. IHP130 maps to
+`RM_IHPSG13_1P_1024x32_c2_bm_bist`. GF180 composes four byte lanes across two
+`gf180mcu_fd_ip_sram__sram512x8m8wm1` depth halves and registers the address
+high bit for synchronous read selection. SKY130 maps to the OpenRAM-generated
+`sky130_sram_4kbyte_1rw_32x1024_8`. Its Liberty-compatible logical boundary
+exports 32 data bits and hides OpenRAM's required physical spare column; a
+future physical adapter must tie the spare enable and spare input low. The
+required spare row expands the macro address port to 11 bits, so the wrapper
+ties its high bit low and exposes exactly logical addresses 0 through 1023.
+ICS55 retains its existing mapping but its supported profiles keep the macro
+disabled. Bank count, rather than technology depth or width, implements every
+product size.
 
 The wrapper preserves byte masks and one-cycle synchronous reads. PDK timing,
 LEF/GDS placement, power hookup, BIST pins, and foundry signoff remain
@@ -125,7 +133,10 @@ physical-flow responsibilities.
 `tests/test_onchip_ram.py` elaborates all five capacities and covers bank
 boundaries, first/last words, byte/half/word masks, `FIXED`, `INCR`, `WRAP`,
 16-beat continuous traffic, backpressure, AR/AW priority, absent-memory and
-malformed accesses, counters, and IHP130/ICS55 x32 wrapper polarity and masks.
+malformed accesses, counters, all four PDK wrapper polarities and masks, and
+the GF180 511/512 depth boundary. The setup tests independently validate the
+SKY130 artifact manifest and generated-file hashes. Full Verilator regression
+firmware exercises the first and last locations through the SoC interconnect.
 
 `make CONFIG=configs/ci/ihp130.mk formal-onchip-ram` runs a 20-cycle bounded
 proof and cover set for AXI stability, channel exclusion, response bounds,

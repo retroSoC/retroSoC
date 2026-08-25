@@ -64,6 +64,7 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool yosys \
 		--log $(YOSYS_BUILD)/$(RTL_NAME).log --result $(YOSYS_BUILD)/result-synth.json \
 		--env PDK=$(PDK) --env SOC=$(SOC) --env SYNTH_RECIPE=$(SYNTH_RECIPE) \
+		--env HAVE_SRAM_MACRO=$(HAVE_SRAM_MACRO) --env SRAM_SIZE_KIB=$(SRAM_SIZE_KIB) \
 		--env YOSYS_TARGET_PERIOD_PS=$(YOSYS_TARGET_PERIOD_PS) \
 		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \

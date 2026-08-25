@@ -12,5 +12,8 @@ The following third-party projects or authors are referenced in the RTL source h
 - Device simulation models: the models under rtl/model/ preserve their upstream
   notices, including the Winbond Electronics Corporation notice in the
   W25Q128JVxIM model.
+- SKY130 OpenRAM SRAM artifact: generated using OpenRAM under BSD-3-Clause and
+  the SkyWater SRAM build-space under Apache-2.0. Both license texts and the
+  exact source revisions are retained in the downloaded artifact manifest.
 
 These notices are included solely to preserve attribution for the retained third-party source material. They do not alter the licensing terms of the retroSoC repository itself, which is distributed under the Mulan PSL v2 license.

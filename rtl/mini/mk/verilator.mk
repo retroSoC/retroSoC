@@ -111,7 +111,8 @@ sim: comp
 debug-sim: comp firmware
 	@test "$(SIMU)" = VERILATOR || { echo "debug-sim requires SIMU=VERILATOR" >&2; exit 2; }
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/doctor.py --root $(ROOT_PATH) --simu $(SIMU) \
-		--synth $(SYNTH) --sta $(STA) --pdk $(PDK) --formal $(FORMAL) \
+		--synth $(SYNTH) --sta $(STA) --pdk $(PDK) --have-sram-macro $(HAVE_SRAM_MACRO) \
+		--formal $(FORMAL) \
 		--require-debug-tools --lock $(LOCK_FILE)
 	python3 $(DEBUG_SIM_SESSION) \
 		--emulator $(VERILATOR_EMU) \

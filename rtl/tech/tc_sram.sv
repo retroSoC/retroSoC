@@ -9,6 +9,7 @@
 // See the Mulan PSL v2 for more details.
 
 module tc_sram_1024x32 (
+    // verilog_format: off -- preserve the technology memory interface columns
     input  logic        clk_i,
     input  logic        cs_i,
     input  logic [ 9:0] addr_i,
@@ -16,23 +17,24 @@ module tc_sram_1024x32 (
     input  logic [ 3:0] mask_i,
     input  logic        wren_i,
     output logic [31:0] data_o
+    // verilog_format: on
 );
 
 `ifdef PDK_BEHAV
-  logic [31:0] r_data;
-  logic [31:0] mem    [0:1023];
+  logic [31:0] s_data_q;
+  logic [31:0] s_storage_q[0:1023];
 
-  assign data_o = r_data;
+  assign data_o = s_data_q;
   always_ff @(posedge clk_i) begin
     if (cs_i) begin
       if (!wren_i) begin
-        r_data <= mem[addr_i];
+        s_data_q <= s_storage_q[addr_i];
       end else begin
-        if (mask_i[0]) mem[addr_i][7:0] <= data_i[7:0];
-        if (mask_i[1]) mem[addr_i][15:8] <= data_i[15:8];
-        if (mask_i[2]) mem[addr_i][23:16] <= data_i[23:16];
-        if (mask_i[3]) mem[addr_i][31:24] <= data_i[31:24];
-        r_data <= 32'bx;
+        if (mask_i[0]) s_storage_q[addr_i][7:0] <= data_i[7:0];
+        if (mask_i[1]) s_storage_q[addr_i][15:8] <= data_i[15:8];
+        if (mask_i[2]) s_storage_q[addr_i][23:16] <= data_i[23:16];
+        if (mask_i[3]) s_storage_q[addr_i][31:24] <= data_i[31:24];
+        s_data_q <= 32'bx;
       end
     end
   end
@@ -48,14 +50,81 @@ module tc_sram_1024x32 (
       .A_DIN      (data_i),
       .A_DOUT     (data_o),
       .A_DLY      (1'b1),
-      .A_BIST_CLK ('0),
-      .A_BIST_EN  ('0),
-      .A_BIST_MEN ('0),
-      .A_BIST_WEN ('0),
-      .A_BIST_REN ('0),
-      .A_BIST_ADDR('0),
-      .A_BIST_DIN ('0),
-      .A_BIST_BM  ('0)
+      .A_BIST_CLK (1'b0),
+      .A_BIST_EN  (1'b0),
+      .A_BIST_MEN (1'b0),
+      .A_BIST_WEN (1'b0),
+      .A_BIST_REN (1'b0),
+      .A_BIST_ADDR(10'b0),
+      .A_BIST_DIN (32'b0),
+      .A_BIST_BM  (32'b0)
+  );
+`endif
+`elsif PDK_GF180
+`ifdef HAVE_SRAM_MACRO
+  logic                 s_read_depth_q;
+  logic [1:0][3:0][7:0] s_macro_data_o;
+`ifndef SYNTHESIS
+  wire s_vdd = 1'b1;
+  wire s_vss = 1'b0;
+`endif
+
+  dffl #(
+      .DATA_WIDTH(1)
+  ) u_read_depth_dffl (
+      .clk_i(clk_i),
+      .en_i (cs_i && !wren_i),
+      .dat_i(addr_i[9]),
+      .dat_o(s_read_depth_q)
+  );
+
+  for (genvar depth = 0; depth < 2; depth++) begin : gen_depth
+    for (genvar byte_index = 0; byte_index < 4; byte_index++) begin : gen_byte
+      // verilog_format: off -- preserve conditional PDK power-pin connections
+      gf180mcu_fd_ip_sram__sram512x8m8wm1 u_sram (
+          .CLK (clk_i),
+          .CEN (~(cs_i && (addr_i[9] == 1'(depth)))),
+          .GWEN(~wren_i),
+          .WEN (~{8{mask_i[byte_index]}}),
+          .A   (addr_i[8:0]),
+          .D   (data_i[byte_index*8+:8]),
+`ifndef SYNTHESIS
+          .Q   (s_macro_data_o[depth][byte_index]),
+          .VDD (s_vdd),
+          .VSS (s_vss)
+`else
+          .Q   (s_macro_data_o[depth][byte_index])
+`endif
+      );
+      // verilog_format: on
+    end
+  end
+
+  assign data_o = {
+    s_macro_data_o[s_read_depth_q][3],
+    s_macro_data_o[s_read_depth_q][2],
+    s_macro_data_o[s_read_depth_q][1],
+    s_macro_data_o[s_read_depth_q][0]
+  };
+`endif
+`elsif PDK_SKY130
+`ifdef HAVE_SRAM_MACRO
+`ifdef USE_POWER_PINS
+  wire s_vccd1 = 1'b1;
+  wire s_vssd1 = 1'b0;
+`endif
+  sky130_sram_4kbyte_1rw_32x1024_8 u_sram (
+`ifdef USE_POWER_PINS
+      .vccd1 (s_vccd1),
+      .vssd1 (s_vssd1),
+`endif
+      .clk0  (clk_i),
+      .csb0  (~cs_i),
+      .web0  (~wren_i),
+      .wmask0(mask_i),
+      .addr0 ({1'b0, addr_i}),
+      .din0  (data_i),
+      .dout0 (data_o)
   );
 `endif
 `elsif PDK_S110

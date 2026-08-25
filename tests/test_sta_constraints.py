@@ -93,6 +93,16 @@ def test_ihp130_core_sta_loads_usb2_packet_ram_liberties() -> None:
     assert "OPENSTA_SRAM_LIBS := $(IHP130_USB2_SRAM_LIBS)" in makefile
 
 
+def test_open_pdk_core_sta_uses_matching_sram_corners() -> None:
+    makefile = PDK_TIMING_MAKEFILE.read_text(encoding="utf-8")
+    opensta = OPENSTA_MAKEFILE.read_text(encoding="utf-8")
+
+    assert "gf180mcu_fd_ip_sram__sram512x8m8wm1__ss_125C_4v50.lib" in makefile
+    assert "sky130_sram_4kbyte_1rw_32x1024_8_SS_1p4V_100C.lib" in makefile
+    assert "HAVE_SRAM_MACRO=$(HAVE_SRAM_MACRO)" in opensta
+    assert "SRAM_SIZE_KIB=$(SRAM_SIZE_KIB)" in opensta
+
+
 def test_core_sdc_rejects_pads_missing_from_the_pin_map(tmp_path: Path) -> None:
     document = json.loads(DOMAINS.read_text(encoding="utf-8"))
     document["domains"][3]["sta"]["source_port"] = "missing_pad"

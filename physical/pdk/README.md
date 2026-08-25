@@ -21,10 +21,13 @@ self-feedback models without modifying the vendor checkout. GF180 assembles its
 locked `gf180mcu_fd_sc_mcu7t5v0` Liberty fragments and the two SoC-used IO
 cells (`in_c` and `bi_t`) at both its TT and core-STA slow corners. SKY130
 generates its `sky130_fd_sc_hd` Liberty model from locked upstream JSON files
-at TT and slow corners. Derived Liberty files are stored below
+at TT and slow corners. It also downloads the checksum-locked OpenRAM
+`sky130_sram_4kbyte_1rw_32x1024_8` artifact and validates its source manifest,
+logical geometry, generated-file hashes, TT 1.8 V/25 C Liberty, and SS
+1.4 V/100 C Liberty. Derived and generated views are stored below
 `.cache/retrosoc/pdk/` and are not committed. SKY130 setup initializes only
-the locked HD library submodule; the remaining upstream libraries are outside
-the SoC integration boundary.
+the locked HD library submodule; OpenRAM's build-space and Ciel inputs are
+recorded in the macro artifact rather than added to the SoC PDK checkout.
 
 The IHP130 dependency is also the technology source for the independent
 `physical/librelane/` core-hardening and full-chip pad-ring flows. The locked
@@ -58,3 +61,18 @@ unsupported switch primitives and drive strengths. Synthesis still preserves
 the original PDK cell instances. GF180 netlist simulation also substitutes
 pin-compatible sequential-cell models because the upstream functional models
 propagate an unconnected synthesized notifier as an unknown value.
+
+GF180 implements each logical `1024 x 32` SRAM bank with eight public
+`512 x 8` macros: four byte lanes across two address-depth halves. SKY130 uses
+one OpenRAM logical `1024 x 32` macro per bank. The Liberty-compatible wrapper
+hides its required physical spare column, and its spare row remains outside the
+logical address space. A future physical adapter must tie the spare enable and
+spare input low. The wrapper also fixes the generated 11-bit address port's
+high bit low to expose words 0 through 1023. Fast logical models are used for
+RTL and functional netlist simulation, while Yosys and OpenSTA consume the
+real macro Liberty views.
+
+The SKY130 artifact uses analytical characterization and does not gate release
+on OpenRAM DRC/LVS. Its LEF/GDS/SPICE files are development collateral, not
+foundry-qualified or production-signoff evidence. GF180/SKY130 still lack
+project-owned full-chip placement, extraction, DRC, and LVS adapters.

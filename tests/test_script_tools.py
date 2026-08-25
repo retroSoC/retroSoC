@@ -1025,8 +1025,25 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert "PDK_BEHAV HAVE_SVA" in makefile
     assert "PDK_BEHAV=YES is for functional simulation" in makefile
     assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
+    assert re.search(r"^SRAM_SIZE_KIB\s*:= 128$", profile, re.MULTILINE)
     assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
     assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
+
+
+def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> None:
+    for pdk in ("ihp130", "gf180", "sky130"):
+        profile = (ROOT / f"configs/ci/{pdk}.mk").read_text(encoding="utf-8")
+        assert re.search(r"^HAVE_SRAM_IF\s*:= YES$", profile, re.MULTILINE)
+        assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
+        assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
+
+    ics55 = (ROOT / "configs/ci/ics55.mk").read_text(encoding="utf-8")
+    assert re.search(r"^HAVE_SRAM_IF\s*:= NO$", ics55, re.MULTILINE)
+    assert re.search(r"^HAVE_SRAM_MACRO\s*:= NO$", ics55, re.MULTILINE)
+
+    for name in ("ihp130-hazard3", "ihp130-hazard3-coremark"):
+        benchmark = (ROOT / f"configs/benchmark/{name}.mk").read_text(encoding="utf-8")
+        assert re.search(r"^SRAM_SIZE_KIB\s*:= 128$", benchmark, re.MULTILINE)
 
 
 def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:

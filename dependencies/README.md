@@ -14,3 +14,9 @@ python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 
 Then run the affected setup, doctor, test, and regression flow described in
 [Engineering Workflow](../docs/engineering.md).
+
+The locked SKY130 OpenRAM SRAM archive is generated and published by the
+`retroSoC/artifact` workflow. `physical/pdk/setup.py` verifies its SHA-256,
+manifest, geometry, source revisions, generated-file hashes, and TT/SS views
+before materializing it below `.cache/retrosoc/pdk/sky130/openram/`. Generated
+Verilog, Liberty, LEF, GDS, and SPICE views are never committed here.

@@ -39,6 +39,33 @@ static bool rs_ci_smoke_onchip_sram(void) {
     return (info.memory_bytes == 0U) && (info.bank_count == 0U);
 }
 
+static bool rs_ci_smoke_onchip_sram_access(void) {
+#if RS_SOC_HAS_SRAM
+    volatile uint8_t *const bytes = (volatile uint8_t *)(uintptr_t)RS_SOC_SRAM_BASE;
+    volatile uint16_t *const halfs = (volatile uint16_t *)(uintptr_t)RS_SOC_SRAM_BASE;
+    volatile uint32_t *const words = (volatile uint32_t *)(uintptr_t)RS_SOC_SRAM_BASE;
+    volatile uint32_t *const last =
+        (volatile uint32_t *)(uintptr_t)(RS_SOC_SRAM_BASE + RS_SOC_SRAM_SIZE - 4U);
+
+    words[0] = UINT32_C(0x11223344);
+    if (words[0] != UINT32_C(0x11223344)) {
+        return false;
+    }
+    bytes[1] = UINT8_C(0xA5);
+    if (words[0] != UINT32_C(0x1122A544)) {
+        return false;
+    }
+    halfs[1] = UINT16_C(0xBEEF);
+    if (words[0] != UINT32_C(0xBEEFA544)) {
+        return false;
+    }
+    *last = UINT32_C(0xCAFEF00D);
+    return *last == UINT32_C(0xCAFEF00D);
+#else
+    return true;
+#endif
+}
+
 static bool rs_ci_smoke_user_ip(void) {
     rs_status_t status;
     uint32_t identifier = 0U;
@@ -306,7 +333,7 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
-    if (!rs_ci_smoke_onchip_sram()) {
+    if (!rs_ci_smoke_onchip_sram() || !rs_ci_smoke_onchip_sram_access()) {
         rs_test_finish(RS_TEST_FAILED, 12U);
     }
     printf("ci_smoke: on-chip SRAM passed\n");

@@ -170,5 +170,7 @@ puts $config_file "SOC=$soc"
 puts $config_file "TOP_DESIGN=$top_design"
 puts $config_file "SYNTH_RECIPE=$synth_recipe"
 puts $config_file "PERIOD_PS=$period_ps"
+puts $config_file "HAVE_SRAM_MACRO=$::env(HAVE_SRAM_MACRO)"
+puts $config_file "SRAM_SIZE_KIB=$::env(SRAM_SIZE_KIB)"
 close $config_file
 file rename -force $config_tmp $config

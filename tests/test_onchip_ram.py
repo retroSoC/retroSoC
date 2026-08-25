@@ -61,6 +61,7 @@ def test_onchip_ram_axi4_capacity_protocol_and_performance(
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_addr_gen.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/tech/ram.sv"),
             str(ROOT / "rtl/tech/tc_sram.sv"),
             str(ROOT / "rtl/mini/top/onchip_ram_reg.sv"),
             str(ROOT / "rtl/mini/top/onchip_ram.sv"),
@@ -122,6 +123,7 @@ def test_absent_onchip_ram_reports_capability_and_decode_errors(tmp_path: Path) 
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_addr_gen.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/tech/ram.sv"),
             str(ROOT / "rtl/tech/tc_sram.sv"),
             str(ROOT / "rtl/mini/top/onchip_ram_reg.sv"),
             str(ROOT / "rtl/mini/top/onchip_ram.sv"),
@@ -235,6 +237,58 @@ def test_ics55_wrapper_preserves_active_low_controls_and_byte_masks(tmp_path: Pa
     assert "1024x32 SRAM wrapper test passed" in result.stdout
 
 
+@pytest.mark.parametrize(
+    ("pdk", "model"),
+    (
+        ("GF180", "gf180_sram_sim_cells.sv"),
+        ("SKY130", "sky130_sram_sim_cells.sv"),
+    ),
+)
+def test_open_pdk_sram_wrappers_preserve_depth_and_byte_masks(
+    tmp_path: Path, pdk: str, model: str
+) -> None:
+    verilator = shutil.which("verilator")
+    if verilator is None:
+        return
+
+    output = tmp_path / f"tc_sram_{pdk.lower()}"
+    ccache_tmp = tmp_path / f"ccache-{pdk.lower()}"
+    ccache_tmp.mkdir()
+    subprocess.run(
+        [
+            verilator,
+            "--binary",
+            "--timing",
+            "-Wno-fatal",
+            "--top-module",
+            "tc_sram_1024x32_tb",
+            f"+define+PDK_{pdk}",
+            "+define+HAVE_SRAM_MACRO",
+            "+define+SV_ASSRT_DISABLE",
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/tech/ram.sv"),
+            str(ROOT / "rtl/tech" / model),
+            str(ROOT / "rtl/tech/tc_sram.sv"),
+            str(ROOT / "tests/rtl/tc_sram_1024x32_tb.sv"),
+            "-Mdir",
+            str(tmp_path / f"obj-{pdk.lower()}"),
+            "-o",
+            str(output),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+        env={
+            **os.environ,
+            "CCACHE_DIR": str(ccache_tmp),
+            "CCACHE_TEMPDIR": str(ccache_tmp),
+        },
+    )
+    result = subprocess.run([output], check=True, text=True, capture_output=True)
+    assert "1024x32 SRAM wrapper test passed" in result.stdout
+
+
 def test_native_axi4_burst_reaches_peak_and_removes_bridge_overhead(tmp_path: Path) -> None:
     verilator = shutil.which("verilator")
     if verilator is None:
@@ -280,6 +334,7 @@ def test_native_axi4_burst_reaches_peak_and_removes_bridge_overhead(tmp_path: Pa
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/xchecker.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/tech/ram.sv"),
             str(ROOT / "rtl/tech/tc_sram.sv"),
             str(ROOT / "rtl/mini/top/axi42ram.sv"),
             str(ROOT / "rtl/mini/top/onchip_ram_reg.sv"),

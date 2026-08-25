@@ -70,21 +70,24 @@ PDK, application, linker layout, and optional features as one reproducible
 configuration. The management core is fixed to Hazard3. The user-extension
 fabric exposes C0-C3 user-core slots and software selects one active user core.
 `SRAM_SIZE_KIB` selects a generated 4/16/32/64/128 KiB native-AXI4 on-chip
-SRAM window; committed profiles explicitly retain the 128 KiB default.
+SRAM window. The IHP130, GF180, and SKY130 CI profiles enable a 32 KiB macro-backed
+window; ICS55 keeps it absent. IHP130 benchmark/CoreMark profiles retain 128 KiB
+because their fixed data placement and SRAM-resident image require the larger capacity.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |
-| [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
-| [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
+| [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Pull-request open-source regression with a 32 KiB IHP SRAM: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
+| [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist, and OpenSTA coverage with a 32 KiB SRAM assembled from GF180 macros. |
 | [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist simulation, and OpenSTA core timing coverage. |
-| [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
+| [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist, and OpenSTA coverage with a 32 KiB OpenRAM SRAM. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
 | [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | RV32IM | `coremark` | Fixed four-iteration SRAM CoreMark quick measurement, recorded by nightly IHP130 regression. |
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
-application, which checks UART, archinfo APB readback, RNG fail-closed behavior, and test-status
+application, which checks UART, archinfo APB readback, macro-backed on-chip SRAM,
+RNG fail-closed behavior, and test-status
 completion without the verbose startup report. ARCHINFO checks include its
 ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,

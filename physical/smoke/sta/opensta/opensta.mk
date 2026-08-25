@@ -26,6 +26,14 @@ sta: $(OPENSTA_SDC) | manifest
 		echo "OpenSTA netlist configuration does not match PDK=$(PDK); rerun synthesis" >&2; \
 		exit 1; \
 		}
+	@grep -qx 'HAVE_SRAM_MACRO=$(HAVE_SRAM_MACRO)' $(OPENSTA_CONFIG) || { \
+		echo "OpenSTA netlist SRAM macro configuration mismatch; rerun synthesis" >&2; \
+		exit 1; \
+		}
+	@grep -qx 'SRAM_SIZE_KIB=$(SRAM_SIZE_KIB)' $(OPENSTA_CONFIG) || { \
+		echo "OpenSTA netlist SRAM capacity mismatch; rerun synthesis" >&2; \
+		exit 1; \
+		}
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool opensta --log $(OPENSTA_LOG) \
 		--result $(STA_BUILD_ROOT)/result-sta.json \
 		--env OPENSTA_NETLIST=$(OPENSTA_NETLIST) --env OPENSTA_LIBERTY=$(OPENSTA_LIBERTY) \

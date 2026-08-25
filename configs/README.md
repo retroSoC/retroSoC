@@ -18,9 +18,15 @@ Start builds from a committed profile rather than setting an unreviewed mix of
 variables on the command line.
 
 `SRAM_SIZE_KIB` selects 4, 16, 32, 64, or 128 KiB of on-chip SRAM and is part
-of the build variant key. Every committed profile sets 128 explicitly;
-profiles with `HAVE_SRAM_IF=NO` keep a reproducible capacity selection while
-the hardware capability reports the memory absent.
+of the build variant key. IHP130, GF180, and SKY130 CI profiles select eight
+4 KiB banks for 32 KiB total and enable both the interface and technology
+macro. ICS55 profiles keep the memory absent. IHP130 benchmark and CoreMark
+profiles explicitly retain 128 KiB for their fixed workload placement and
+SRAM-resident image.
+
+`HAVE_SRAM_MACRO=YES` requires `HAVE_SRAM_IF=YES`. The generic manual defaults
+enable 32 KiB for IHP130, GF180, and SKY130 and keep ICS55 disabled; committed
+profiles remain the supported reproducible entry points.
 
 `PDK_BEHAV=YES` selects technology-wrapper functional models for behavioral
 simulation. It is a simulation-only setting, participates in the build variant

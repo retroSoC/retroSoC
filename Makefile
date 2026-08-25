@@ -37,9 +37,9 @@ STA          ?= NONE
 # HW
 PDK                      ?= IHP130
 HAVE_PLL                 ?= NO
-HAVE_SRAM_IF             ?= NO
-HAVE_SRAM_MACRO          ?= NO
-SRAM_SIZE_KIB            ?= 128
+HAVE_SRAM_IF             ?= $(if $(filter ICS55,$(PDK)),NO,YES)
+HAVE_SRAM_MACRO          ?= $(if $(filter ICS55,$(PDK)),NO,YES)
+SRAM_SIZE_KIB            ?= $(if $(filter ICS55,$(PDK)),128,32)
 PDK_BEHAV                ?= NO
 HAVE_SVA                 ?= NO
 BUILD_RELEASE            ?= NO
@@ -160,6 +160,12 @@ $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
+
+ifeq ($(HAVE_SRAM_MACRO),YES)
+ifneq ($(HAVE_SRAM_IF),YES)
+$(error HAVE_SRAM_MACRO=YES requires HAVE_SRAM_IF=YES)
+endif
+endif
 
 JTAG_IDCODE_VALID := $(shell printf '%s' '$(JTAG_IDCODE)' | grep -E '^[[:xdigit:]]{8}$$')
 ifneq ($(JTAG_IDCODE_VALID),$(JTAG_IDCODE))
@@ -364,7 +370,8 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --formal $(FORMAL) --lock $(LOCK_FILE)
+	  --pdk $(PDK) --have-sram-macro $(HAVE_SRAM_MACRO) \
+	  --formal $(FORMAL) --lock $(LOCK_FILE)
 
 benchmark-report: firmware
 

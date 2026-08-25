@@ -82,6 +82,12 @@
       "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_LLSC_H7CR_liberty.tar.bz2",
       "license": "Apache-2.0"
     },
+    "sky130_openram_sram_4kbyte_1rw_32x1024_8": {
+      "url": "https://github.com/retroSoC/artifact/releases/download/openram-sky130_sram_4kbyte_1rw_32x1024_8-b2b069ce119d-24dfd2f0371c/sky130_sram_4kbyte_1rw_32x1024_8-openram-b2b069ce119d.tar.gz",
+      "sha256": "75d987556561c7f3e9bc29e59b854849c2938c509c1b2e37906eb2af6aae211e",
+      "destination": ".cache/retrosoc/downloads/pdk/sky130/sky130_sram_4kbyte_1rw_32x1024_8-openram-b2b069ce119d.tar.gz",
+      "license": "LicenseRef-OpenRAM-SKY130-Mixed"
+    },
     "serv": {
       "url": "https://github.com/olofk/serv/archive/refs/tags/1.4.0.tar.gz",
       "sha256": "f81c37b9f9d548c658e23bb7eb90fbed8b54e2e9e51fa42b8cd2f34cecc472ab",
