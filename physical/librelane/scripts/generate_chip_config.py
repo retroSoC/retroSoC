@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -42,6 +43,19 @@ SRAM_INSTANCES = {
         "u_packet_ram.u_packet_ram.u_ecc": ([1500, 500], "N"),
     },
 }
+
+
+def onchip_sram_instances(capacity_kib: int) -> dict[str, tuple[list[int], str]]:
+    if capacity_kib <= 0 or capacity_kib % 4 != 0:
+        raise ValueError("SRAM_SIZE_KIB must be a positive multiple of 4")
+    count = capacity_kib // 4
+    return {
+        f"u_retrosoc.u_onchip_ram.gen_memory.gen_bank[{index}].u_ram.u_mem": (
+            [2000 + (index % 4) * 500, 500 + (index // 4) * 750],
+            "N",
+        )
+        for index in range(count)
+    }
 
 
 def config_path(path: Path, base: Path) -> str:
@@ -141,17 +155,34 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
 
     config_dir = args.output.resolve().parent
     sram_header = config_path(args.sram_vh, config_dir)
+    active_sram_instances = dict(SRAM_INSTANCES)
+    if getattr(args, "have_sram_macro", False):
+        active_sram_instances["RM_IHPSG13_1P_1024x32_c2_bm_bist"] = onchip_sram_instances(
+            getattr(args, "sram_size_kib", 32)
+        )
     macros = {
         master: macro_config(master, instances, sram_header)
-        for master, instances in SRAM_INSTANCES.items()
+        for master, instances in active_sram_instances.items()
     }
     macro_hooks: list[str] = []
-    for instances in SRAM_INSTANCES.values():
+    for instances in active_sram_instances.values():
         for instance in instances:
+            bracket_start = instance.find("[")
+            if bracket_start >= 0:
+                bracket_end = instance.index("]", bracket_start)
+                instance_pattern = (
+                    re.escape(instance[:bracket_start])
+                    + ".*"
+                    + instance[bracket_start + 1 : bracket_end]
+                    + ".*"
+                    + re.escape(instance[bracket_end + 1 :])
+                )
+            else:
+                instance_pattern = re.escape(instance)
             macro_hooks.extend(
                 [
-                    f"{instance} VDD VSS VDDARRAY! VSS!",
-                    f"{instance} VDD VSS VDD! VSS!",
+                    f"{instance_pattern} VDD VSS VDDARRAY! VSS!",
+                    f"{instance_pattern} VDD VSS VDD! VSS!",
                 ]
             )
 
@@ -164,10 +195,17 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
         "SYNTH_HIERARCHY_MODE": "deferred_flatten",
         "YOSYS_LOG_LEVEL": "WARNING",
         "SYNTH_STRATEGY": "AREA 3",
+        "RUN_POST_GPL_DESIGN_REPAIR": False,
+        "RUN_CTS": False,
+        "RUN_POST_CTS_RESIZER_TIMING": False,
+        "EXTRA_EXCLUDED_CELLS": ["sg13g2_IOPad*"],
         "PRIMARY_GDSII_STREAMOUT_TOOL": "klayout",
         "PNR_SDC_FILE": config_path(args.sdc, config_dir),
         "SIGNOFF_SDC_FILE": config_path(args.sdc, config_dir),
         "FALLBACK_SDC": config_path(args.sdc, config_dir),
+        "STA_EXTRA_CORNER_TCL_FILE": config_path(
+            ROOT / "physical/librelane/sta_report_limit.tcl", config_dir
+        ),
         "CLOCK_PORT": list(CLOCK_PORTS),
         "CLOCK_PERIOD": 1_000_000_000 / args.ext_clk_hz,
         "VDD_NETS": ["VDD"],
@@ -179,6 +217,7 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
         "PDN_CORE_RING_VSPACING": 5,
         "PDN_CORE_RING_HSPACING": 5,
         "PDN_ENABLE_PINS": True,
+        "ERROR_ON_PDN_VIOLATIONS": True,
         "PDN_CFG": config_path(args.pdn, config_dir),
         "MACROS": macros,
         "PDN_MACRO_CONNECTIONS": macro_hooks,
@@ -216,7 +255,7 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
         "PAD_WEST": pad_sides["WEST"],
         "DIE_AREA": [0, 0, 8000, 8000],
         "CORE_AREA": [365, 365, 7635, 7635],
-        "PL_TARGET_DENSITY_PCT": 30,
+        "PL_TARGET_DENSITY_PCT": 45,
         "PDN_CORE_RING_CONNECT_TO_PADS": True,
         "PAD_CFG": config_path(ROOT / "physical/librelane/pad_cfg.tcl", config_dir),
         "PAD_BONDPAD_NAME": "bondpad_70x70",
@@ -247,6 +286,8 @@ def main() -> int:
     parser.add_argument("--ext-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--aud-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--have-pll", action="store_true")
+    parser.add_argument("--have-sram-macro", action="store_true")
+    parser.add_argument("--sram-size-kib", type=positive_integer, default=32)
     parser.add_argument("--target", choices=("chip", "core"), default="chip")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

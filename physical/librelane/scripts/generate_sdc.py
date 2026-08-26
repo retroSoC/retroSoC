@@ -138,7 +138,6 @@ def render(args: argparse.Namespace) -> str:
             "set_clock_uncertainty -setup 0.2 $all_retrosoc_clocks",
             "set_clock_uncertainty -hold 0.1 $all_retrosoc_clocks",
             "set_clock_transition 0.1 $all_retrosoc_clocks",
-            "set_propagated_clock $all_retrosoc_clocks",
             "set_timing_derate -early 0.95",
             "set_timing_derate -late 1.05",
             "set_max_fanout 10 [current_design]",

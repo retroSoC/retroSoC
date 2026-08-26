@@ -61,6 +61,7 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     assert "u_sdram_dq15_io_pad.u_sg13g2_IOPadInOut4mA" in sides["west"]
     assert config["DIE_AREA"] == [0, 0, 8000, 8000]
     assert config["CORE_AREA"] == [365, 365, 7635, 7635]
+    assert config["PL_TARGET_DENSITY_PCT"] == 45
     assert config["USE_SLANG"] is True
     assert config["SLANG_ARGUMENTS"] == ["--keep-hierarchy"]
     assert config["VERILOG_POWER_DEFINE"] is None
@@ -74,10 +75,18 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     ]
     assert config["YOSYS_LOG_LEVEL"] == "WARNING"
     assert config["SYNTH_STRATEGY"] == "AREA 3"
+    assert config["RUN_POST_GPL_DESIGN_REPAIR"] is False
+    assert config["RUN_CTS"] is False
+    assert config["RUN_POST_CTS_RESIZER_TIMING"] is False
+    assert config["EXTRA_EXCLUDED_CELLS"] == ["sg13g2_IOPad*"]
     assert config["VDD_NETS"] == ["VDD"]
     assert config["GND_NETS"] == ["VSS"]
     assert config["PAD_CFG"].endswith("physical/librelane/pad_cfg.tcl")
     assert config["PDN_ENABLE_PINS"] is True
+    assert config["ERROR_ON_PDN_VIOLATIONS"] is True
+    assert config["STA_EXTRA_CORNER_TCL_FILE"].endswith(
+        "physical/librelane/sta_report_limit.tcl"
+    )
     assert set(config["MACROS"]) == {
         "RM_IHPSG13_1P_4096x16_c3_bm_bist",
         "RM_IHPSG13_1P_4096x8_c3_bm_bist",
@@ -107,6 +116,27 @@ def test_core_config_uses_a_padless_classic_flow(tmp_path: Path) -> None:
     }
 
 
+def test_chip_config_includes_configured_onchip_sram_banks(tmp_path: Path) -> None:
+    module = load_module(
+        "retrosoc_librelane_sram_config", FLOW_ROOT / "scripts/generate_chip_config.py"
+    )
+    arguments = chip_arguments(tmp_path)
+    arguments.have_sram_macro = True
+    arguments.sram_size_kib = 32
+    config = module.build_config(arguments)
+
+    macro = config["MACROS"]["RM_IHPSG13_1P_1024x32_c2_bm_bist"]
+    assert len(macro["instances"]) == 8
+    assert "u_retrosoc.u_onchip_ram.gen_memory.gen_bank[0].u_ram.u_mem" in macro["instances"]
+    assert "u_retrosoc.u_onchip_ram.gen_memory.gen_bank[7].u_ram.u_mem" in macro["instances"]
+    assert any(
+        "gen_bank.*0.*\\.u_ram" in connection
+        for connection in config["PDN_MACRO_CONNECTIONS"]
+    )
+    blackboxes = (FLOW_ROOT / "sram_blackboxes.vh").read_text(encoding="utf-8")
+    assert "module RM_IHPSG13_1P_1024x32_c2_bm_bist" in blackboxes
+
+
 def test_chip_sdc_is_pad_aware_and_does_not_false_path_all_io(tmp_path: Path) -> None:
     module = load_module("retrosoc_librelane_sdc", FLOW_ROOT / "scripts/generate_sdc.py")
     arguments = SimpleNamespace(
@@ -123,6 +153,7 @@ def test_chip_sdc_is_pad_aware_and_does_not_false_path_all_io(tmp_path: Path) ->
     assert "u_rcu.u_sys_clk_buf.u_sg13g2_buf_1/X" in sdc
     assert "create_generated_clock -name clk_system" in sdc
     assert "set_clock_groups -name retrosoc_async -asynchronous" in sdc
+    assert "set_propagated_clock" not in sdc
     assert "set_input_delay -max" in sdc
     assert "set_output_delay -max" in sdc
     assert "set_false_path -from $reset_ext_rst_n_i_pad" in sdc
@@ -157,6 +188,7 @@ def test_librelane_flow_exposes_core_and_chip_targets() -> None:
     assert "librelane-core:" in makefile
     assert "librelane-core-package:" in makefile
     assert "LIBRELANE_TARGET         ?= chip" in makefile
+    assert "LIBRELANE_COMMAND       := $(LIBRELANE_PYTHON) -m librelane" in makefile
     assert "--skip OpenROAD.STAMidPNR" in makefile
     assert "--librelane-safe" in makefile
     assert "librelane-all" not in makefile
@@ -164,6 +196,8 @@ def test_librelane_flow_exposes_core_and_chip_targets() -> None:
     ihp_filelist = (ROOT / "rtl/filelist/pdk_ihp130.fl").read_text(encoding="utf-8")
     assert ihp_filelist.index("sg13g2_udp.v") < ihp_filelist.index("sg13g2_stdcell.v")
     assert lock["sources"]["pdk_ihp130"]["revision"] == ("970a7688e7dcce2a6172797df9ef47bde2f60f9f")
+    doctor = (FLOW_ROOT / "scripts/doctor.py").read_text(encoding="utf-8")
+    assert 'EXPECTED_OPENSTA_VERSION = "3.0.0"' in doctor
 
 
 def test_bondpad_lef_matches_the_generated_master_contract() -> None:
@@ -173,6 +207,20 @@ def test_bondpad_lef_matches_the_generated_master_contract() -> None:
     assert "CLASS COVER" in lef
     assert "SIZE 70.0 BY 70.0" in lef
     assert "SITE sg13g2_ioSite" in lef
+
+
+def test_sta_report_wrapper_caps_only_expanded_path_enumeration() -> None:
+    wrapper = (FLOW_ROOT / "sta_report_limit.tcl").read_text(encoding="utf-8")
+    assert "set ::retrosoc_sta_group_path_count 10" in wrapper
+    assert "OpenSTA executable" in wrapper
+    assert "rename report_checks ::retrosoc_report_checks" in wrapper
+    assert "lsearch -exact $args -group_path_count" in wrapper
+    assert "lappend args -group_path_count" in wrapper
+    assert "rename report_check_types ::retrosoc_report_check_types" in wrapper
+    assert "lsearch -exact $args -violators" in wrapper
+    assert "rename report_parasitic_annotation" in wrapper
+    assert "lsearch -exact $args -report_unannotated" in wrapper
+    assert "::retrosoc_report_checks" in wrapper
 
 
 def test_pdn_connects_all_ihp_pad_power_rails() -> None:
@@ -187,6 +235,13 @@ def test_pdn_connects_all_ihp_pad_power_rails() -> None:
     assert "odb::dbITerm_connect $iterm $net" in pdn
     assert "set stdcell_grid_args [list]" in pdn
     assert '-pins "$::env(PDN_VERTICAL_LAYER) $::env(PDN_HORIZONTAL_LAYER)"' in pdn
+    assert "odb::dbTechLayer_setDirection" not in pdn
+    assert "Metal4 HORIZONTAL" not in pdn
+    assert '-layers "Metal2 Metal3"' in pdn
+    assert "-extend_to_core_ring" in pdn
+    assert "-connect_to_pad_layers TopMetal2" in pdn
+    assert '-layers "Metal3 Metal4"' in pdn
+    assert "-layer Metal4" in pdn
     assert "-net $::env(VDD_NET) -inst_pattern .* -pin_pattern vdd -power" in pdn
     assert "-net $::env(GND_NET) -inst_pattern .* -pin_pattern vss -ground" in pdn
     assert "-net IOVDD -inst_pattern .* -pin_pattern iovdd -power" in pdn

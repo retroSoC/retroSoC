@@ -22,6 +22,7 @@ LIBRELANE_KLAYOUT_PATH   := $(LIBRELANE_PDK_ROOT)/$(LIBRELANE_PDK)/libs.tech/kla
 LIBRELANE_BONDPAD_SCRIPT := $(LIBRELANE_PDK_ROOT)/$(LIBRELANE_PDK)/libs.tech/klayout/tech/scripts/bondpad.py
 LIBRELANE_PDN            := $(LIBRELANE_FLOW_ROOT)/pdn_cfg.tcl
 LIBRELANE_SRAM_VH        := $(LIBRELANE_FLOW_ROOT)/sram_blackboxes.vh
+LIBRELANE_STA_REPORT_LIMIT := $(LIBRELANE_FLOW_ROOT)/sta_report_limit.tcl
 LIBRELANE_CLOCK_DOMAINS  := $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json
 LIBRELANE_PIN_MAP        := $(ROOT_PATH)/rtl/mini/pin_map/pin_map.json
 LIBRELANE_TRACKED_RTL    := $(shell git -C $(ROOT_PATH) ls-files \
@@ -29,6 +30,7 @@ LIBRELANE_TRACKED_RTL    := $(shell git -C $(ROOT_PATH) ls-files \
 
 LIBRELANE_SOURCE_PYTHON ?= /usr/bin/python3
 LIBRELANE_PYTHON        ?= python3
+LIBRELANE_COMMAND       := $(LIBRELANE_PYTHON) -m librelane
 # LibreLane 3.0.5 writes 1000 expanded paths per group at every mid-PnR STA.
 # Final multi-corner RCX STA remains mandatory; skip only the redundant reports.
 LIBRELANE_MID_PNR_SKIP ?= --skip OpenROAD.STAMidPNR
@@ -51,6 +53,7 @@ LIBRELANE_FEATURE_ARGS := \
 
 LIBRELANE_CONFIG_DEPS := $(LIBRELANE_RTL) $(LIBRELANE_SDC) \
 	$(LIBRELANE_PDN) $(LIBRELANE_SRAM_VH) \
+	$(LIBRELANE_STA_REPORT_LIMIT) \
 	$(LIBRELANE_FLOW_ROOT)/scripts/generate_chip_config.py
 ifeq ($(LIBRELANE_TARGET),chip)
 LIBRELANE_CONFIG_DEPS += $(LIBRELANE_BONDPAD_GDS) $(LIBRELANE_BONDPAD_LEF)
@@ -106,8 +109,10 @@ $(LIBRELANE_CONFIG): $(LIBRELANE_CONFIG_DEPS)
 		--pdn $(LIBRELANE_PDN) --bondpad-gds $(LIBRELANE_BONDPAD_GDS) \
 		--bondpad-lef $(LIBRELANE_BONDPAD_LEF) --sram-vh $(LIBRELANE_SRAM_VH) \
 		--ext-clk-hz $(EXT_CLK_HZ) --aud-clk-hz $(AUD_CLK_HZ) \
-		$(if $(filter YES,$(HAVE_PLL)),--have-pll) --target $(LIBRELANE_TARGET) \
-		--output $@
+		--sram-size-kib $(SRAM_SIZE_KIB) \
+		$(if $(filter YES,$(HAVE_PLL)),--have-pll) \
+		$(if $(filter YES,$(HAVE_SRAM_MACRO)),--have-sram-macro) \
+		--target $(LIBRELANE_TARGET) --output $@
 
 librelane-input: $(LIBRELANE_CONFIG)
 
@@ -123,7 +128,7 @@ librelane-doctor: $(LIBRELANE_DOCTOR_RESULT)
 librelane-run: librelane-doctor manifest
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool librelane \
 		--log $(LIBRELANE_LOG) --result $(LIBRELANE_RESULT) --cwd $(LIBRELANE_RUN_ROOT) -- \
-		librelane $(LIBRELANE_CONFIG) --manual-pdk --pdk $(LIBRELANE_PDK) \
+		$(LIBRELANE_COMMAND) $(LIBRELANE_CONFIG) --manual-pdk --pdk $(LIBRELANE_PDK) \
 		--pdk-root $(LIBRELANE_PDK_ROOT) --scl $(LIBRELANE_SCL) --pad $(LIBRELANE_PAD) \
 		--run-tag $(LIBRELANE_RUN_TAG) --overwrite --jobs $(JOBS) $(LIBRELANE_MID_PNR_SKIP) \
 		--condensed --hide-progress-bar --save-views-to $(LIBRELANE_FINAL_DIR)
@@ -137,13 +142,13 @@ librelane-core:
 	+$(MAKE) LIBRELANE_TARGET=core librelane-run
 
 librelane-openroad: librelane-doctor
-	cd $(LIBRELANE_RUN_ROOT) && librelane $(LIBRELANE_CONFIG) --manual-pdk \
+	cd $(LIBRELANE_RUN_ROOT) && $(LIBRELANE_COMMAND) $(LIBRELANE_CONFIG) --manual-pdk \
 		--pdk $(LIBRELANE_PDK) --pdk-root $(LIBRELANE_PDK_ROOT) \
 		--scl $(LIBRELANE_SCL) --pad $(LIBRELANE_PAD) \
 		--run-tag $(LIBRELANE_RUN_TAG) --last-run --flow OpenInOpenROAD
 
 librelane-klayout: librelane-doctor
-	cd $(LIBRELANE_RUN_ROOT) && librelane $(LIBRELANE_CONFIG) --manual-pdk \
+	cd $(LIBRELANE_RUN_ROOT) && $(LIBRELANE_COMMAND) $(LIBRELANE_CONFIG) --manual-pdk \
 		--pdk $(LIBRELANE_PDK) --pdk-root $(LIBRELANE_PDK_ROOT) \
 		--scl $(LIBRELANE_SCL) --pad $(LIBRELANE_PAD) \
 		--run-tag $(LIBRELANE_RUN_TAG) --last-run --flow OpenInKLayout
