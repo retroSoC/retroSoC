@@ -71,6 +71,8 @@ module retrosoc_top (
   wire        s_jtag_tdi;
   wire        s_jtag_trst_n;
   wire        s_jtag_tdo;
+  wire        s_uart1_tx;
+  tri1        s_uart1_rx;
   wire        s_usb2_ulpi_clk;
   tri0        s_usb2_ulpi_dir;
   tri0        s_usb2_ulpi_nxt;

@@ -77,6 +77,8 @@ module retrosoc_asic (
   logic       s_jtag_tdo;
   logic       s_uart0_rx;
   logic       s_uart0_tx;
+  logic       s_uart1_rx;
+  logic       s_uart1_tx;
   logic       s_usb2_ulpi_clk;
   (* keep = "true" *)logic       s_test_done;
   (* keep = "true" *)logic       s_test_pass;
@@ -123,6 +125,8 @@ rcu #(
       .gpio           (u_gpio_if),
       .uart_rx_i      (s_uart0_rx),
       .uart_tx_o      (s_uart0_tx),
+      .uart1_rx_i     (s_uart1_rx),
+      .uart1_tx_o     (s_uart1_tx),
       .xpi            (u_xpi_if),
       .sdram          (u_sdram_if),
       .sdio1          (u_sdio1_if),

@@ -16,6 +16,10 @@ tooling.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.
+- `test_hp_boot_bundle.py` checks the HP flash ABI, CRCs, payload placement,
+  and handwritten mailbox RTL/C offset parity. `test_hp_platform.py`,
+  `test_hp_mailbox.py`, `test_plic.py`, and the AXI tests cover the remaining
+  HP integration contracts.
 
 Add a host C test when changing deterministic runtime or media logic; add a
 Python test when changing scripts or build policy. Run:

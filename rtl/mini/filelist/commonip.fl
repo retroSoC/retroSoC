@@ -3,6 +3,7 @@
 /clusterip/common/rtl/interface/ahbl_if.sv
 /clusterip/common/rtl/interface/axi4_if.sv
 /clusterip/common/rtl/interface/axi4_addr_gen.sv
+/clusterip/common/rtl/bus/axi4_regslice.sv
 /clusterip/common/rtl/interface/axi4_stream_if.sv
 /clusterip/common/rtl/interface/ribp_if.sv
 /clusterip/common/rtl/interface/ram_if.sv

@@ -50,6 +50,12 @@ typedef struct {
     bool capable;
 } rs_sysctrl_pll_status_t;
 
+typedef struct {
+    bool present;
+    bool released;
+    bool reset_asserted;
+} rs_sysctrl_hp_status_t;
+
 rs_status_t rs_sysctrl_get_core_select(uint8_t *core_id);
 rs_status_t rs_sysctrl_set_core_select(uint8_t core_id);
 rs_status_t rs_sysctrl_get_ip_select(uint8_t *ip_id);
@@ -70,5 +76,8 @@ void rs_sysctrl_write_test_status(bool pass, uint8_t code);
 rs_status_t rs_sysctrl_get_test_status(bool *done, bool *pass, uint8_t *code);
 rs_status_t rs_sysctrl_get_rtc_wake_status(bool *live, bool *seen);
 rs_status_t rs_sysctrl_clear_rtc_wake(void);
+rs_status_t rs_sysctrl_set_hp_release(bool release);
+rs_status_t rs_sysctrl_get_hp_status(rs_sysctrl_hp_status_t *status);
+rs_status_t rs_sysctrl_select_hp_debug(bool select_hp);
 
 #endif

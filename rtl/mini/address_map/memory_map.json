@@ -149,6 +149,18 @@
     {
       "symbol": "PERF_USB2_WAIT_HI",
       "offset": "0xA0"
+    },
+    {
+      "symbol": "HP_CTRL",
+      "offset": "0xA4"
+    },
+    {
+      "symbol": "HP_STATUS",
+      "offset": "0xA8"
+    },
+    {
+      "symbol": "DEBUG_SELECT",
+      "offset": "0xAC"
     }
   ],
   "regions": [
@@ -162,6 +174,24 @@
       "linker": "FLASH",
       "user_access": "ro",
       "burst": "incr16"
+    },
+    {
+      "symbol": "HP_ACLINT",
+      "base": "0x02000000",
+      "size": "0x00010000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "HP_PLIC",
+      "base": "0x0C000000",
+      "size": "0x04000000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
     },
     {
       "symbol": "APB4_GPIO",
@@ -387,6 +417,24 @@
       "kind": "active",
       "public": true,
       "user_access": "none"
+    },
+    {
+      "symbol": "APB4_UART1",
+      "base": "0x10018000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_HP_MAILBOX",
+      "base": "0x10019000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
     },
     {
       "symbol": "APB4_ARCHINFO",

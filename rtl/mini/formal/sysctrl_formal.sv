@@ -42,7 +42,9 @@ module sysctrl_formal_design (
     output logic [31:0] fault_count,
     output logic        test_done,
     output logic        test_pass,
-    output logic [ 7:0] test_code
+    output logic [ 7:0] test_code,
+    output logic        hp_release,
+    output logic        debug_hp_select
 );
 
   apb4_if apb4 (
@@ -85,12 +87,14 @@ module sysctrl_formal_design (
   assign sysctrl.perf_dma_wait_i = '0;
   assign sysctrl.perf_sdio0_wait_i = '0;
   assign sysctrl.perf_sdio1_wait_i = '0;
+  assign sysctrl.perf_usb2_wait_i = '0;
   assign sysctrl.perf_apb4_periph_wait_i = '0;
   assign sysctrl.perf_apb4_system_wait_i = '0;
   assign sysctrl.perf_sdram_wait_i = '0;
   assign sysctrl.perf_psram_wait_i = '0;
   assign sysctrl.perf_flash_wait_i = '0;
   assign sysctrl.rtc_wake_i = 1'b0;
+  assign sysctrl.hp_present_i = 1'b1;
   assign pll_ctrl.req_ready_i = f_pll_req_ready;
   assign pll_ctrl.rsp_active_sel_i = f_pll_active_sel;
   assign pll_ctrl.rsp_active_valid_i = f_pll_active_valid;
@@ -131,6 +135,8 @@ module sysctrl_formal_design (
   assign test_done = sysctrl.test_done_o;
   assign test_pass = sysctrl.test_pass_o;
   assign test_code = sysctrl.test_code_o;
+  assign hp_release = sysctrl.hp_release_o;
+  assign debug_hp_select = sysctrl.debug_hp_select_o;
 
   apb4_sysctrl u_dut (
       .clk_i           (clk_i),

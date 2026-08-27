@@ -13,6 +13,31 @@
       "destination": "rtl/managed/hazard3",
       "license": "NOASSERTION"
     },
+    "vexiiriscv": {
+      "url": "https://github.com/SpinalHDL/VexiiRiscv.git",
+      "revision": "ef7da4134ff11ec6a681d0632123b232b853b046",
+      "destination": ".cache/retrosoc/sources/vexiiriscv",
+      "recursive": true,
+      "license": "MIT"
+    },
+    "opensbi_hp": {
+      "url": "https://github.com/riscv-software-src/opensbi.git",
+      "revision": "cbf9f6734dd85a982c63e3cb5db7ffe09da839ca",
+      "destination": ".cache/retrosoc/sources/opensbi-hp",
+      "license": "BSD-2-Clause"
+    },
+    "linux_hp": {
+      "url": "https://github.com/gregkh/linux.git",
+      "revision": "14c37ff05f22da2fa7076d10f6a07c7ede330c83",
+      "destination": ".cache/retrosoc/sources/linux-hp",
+      "license": "GPL-2.0-only"
+    },
+    "buildroot_hp": {
+      "url": "https://gitlab.com/buildroot.org/buildroot.git",
+      "revision": "cb857ba4c87a93e5265a9e4a3f32071abf39e14a",
+      "destination": ".cache/retrosoc/sources/buildroot-hp",
+      "license": "GPL-2.0-or-later"
+    },
     "ibex": {
       "url": "https://github.com/lowRISC/ibex.git",
       "revision": "0c233f54361d769f370889223acc456f2ac19d46",
@@ -61,7 +86,7 @@
       "license": "Apache-2.0"
     },
     "cluster_archinfo": {"url": "https://github.com/retroSoC/archinfo.git", "revision": "78505969a0afdbc887cdd9b36eda228b4afb616e", "destination": "rtl/managed/clusterip/archinfo", "license": "MulanPSL-2.0"},
-    "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "5604bd5899bcc3a937cef55db4bac3b5102e562c", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
+    "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "964a54d70cb78e394ba9a25c05f2aa2b02941fb7", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
     "cluster_crc": {"url": "https://github.com/retroSoC/crc.git", "revision": "8c1a5664c4d23d005c1afad432372a13ca967cc8", "destination": "rtl/managed/clusterip/crc", "license": "MulanPSL-2.0"},
     "cluster_ps2": {"url": "https://github.com/retroSoC/ps2.git", "revision": "2097a0d41b07573ff0453d65ba9a1670b3df7b9c", "destination": "rtl/managed/clusterip/ps2", "license": "MulanPSL-2.0"},
     "cluster_pwm": {"url": "https://github.com/retroSoC/pwm.git", "revision": "79ae32f725e848a1e7f6134847b3fb032ed64006", "destination": "rtl/managed/clusterip/pwm", "license": "MulanPSL-2.0"},

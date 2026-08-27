@@ -20,3 +20,9 @@ The locked SKY130 OpenRAM SRAM archive is generated and published by the
 manifest, geometry, source revisions, generated-file hashes, and TT/SS views
 before materializing it below `.cache/retrosoc/pdk/sky130/openram/`. Generated
 Verilog, Liberty, LEF, GDS, and SPICE views are never committed here.
+
+The HP profile additionally locks VexiiRiscv, OpenSBI, Linux stable, and
+Buildroot source revisions. `make setup-hp-linux` installs the software sources
+below `.cache/retrosoc/sources/`; VexiiRiscv may be supplied through
+`VEXIIRISCV_ROOT`, but its revision is still checked before generated RTL is
+accepted. No generated CPU RTL or Linux build output belongs in Git.

@@ -199,6 +199,14 @@
       "instance": "inst_hazard3_apb_async_bridge"
     },
     {
+      "name": "hp_debug_select",
+      "source": "system",
+      "destination": "jtag",
+      "primitive": "cdc_sync",
+      "path": "rtl/mini/top/retrosoc.sv",
+      "instance": "u_debug_select_sync"
+    },
+    {
       "name": "wdg_command",
       "source": "system",
       "destination": "audio",

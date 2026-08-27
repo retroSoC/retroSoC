@@ -35,6 +35,8 @@ module retrosoc_tb;
   wire        s_jtag_trst_n;
   wire        s_uart0_tx;
   wire        s_uart0_rx;
+  wire        s_uart1_tx;
+  tri1        s_uart1_rx;
   tri1        s_gpio_0_io;
   tri1        s_gpio_1_io;
   wire        s_psram_sck;

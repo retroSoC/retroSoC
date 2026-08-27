@@ -606,7 +606,7 @@ module axi4_interconnect #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (NumMasters != 7 || ((NumTargets != 9) && (NumTargets != 10))) begin
+    if (((NumMasters != 7) && (NumMasters != 8)) || ((NumTargets != 9) && (NumTargets != 10))) begin
       $fatal(1, "axi4_interconnect: invalid topology dimensions");
     end
   end

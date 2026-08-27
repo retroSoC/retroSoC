@@ -85,6 +85,9 @@ module sysctrl_core (
       sysctrl_offset_t'(`APB4_SYSCTRL__PERF_FLASH_WAIT_HI);
   localparam sysctrl_offset_t TestStatus = sysctrl_offset_t'(`APB4_SYSCTRL__TEST_STATUS);
   localparam sysctrl_offset_t RtcWakeStatus = sysctrl_offset_t'(`APB4_SYSCTRL__RTC_WAKE_STATUS);
+  localparam sysctrl_offset_t HpCtrl = sysctrl_offset_t'(`APB4_SYSCTRL__HP_CTRL);
+  localparam sysctrl_offset_t HpStatus = sysctrl_offset_t'(`APB4_SYSCTRL__HP_STATUS);
+  localparam sysctrl_offset_t DebugSelect = sysctrl_offset_t'(`APB4_SYSCTRL__DEBUG_SELECT);
 
   logic [`USER_CORESEL_WIDTH-1:0] s_sysctrl_coresel_d, s_sysctrl_coresel_q;
   logic [`USER_CORE_COUNT-1:0] s_user_reset_d, s_user_reset_q;
@@ -124,6 +127,8 @@ module sysctrl_core (
   logic s_test_pass_d, s_test_pass_q;
   logic [7:0] s_test_code_d, s_test_code_q;
   logic s_rtc_wake_seen_d, s_rtc_wake_seen_q;
+  logic s_hp_release_d, s_hp_release_q;
+  logic s_debug_hp_sel_d, s_debug_hp_sel_q;
   logic        s_rtc_wake_sync;
   logic        s_core_sel_write_valid;
   logic        s_core_sel_write_en;
@@ -154,6 +159,8 @@ module sysctrl_core (
   assign sysctrl.test_done_o       = s_test_done_q;
   assign sysctrl.test_pass_o       = s_test_pass_q;
   assign sysctrl.test_code_o       = s_test_code_q;
+  assign sysctrl.hp_release_o      = s_hp_release_q;
+  assign sysctrl.debug_hp_select_o = s_debug_hp_sel_q;
   assign pll_ctrl.req_sel_o        = s_pll_cfg_q;
   assign pll_ctrl.req_valid_o      = s_pll_req_valid_q;
   assign pll_ctrl.rsp_ready_o      = 1'b1;
@@ -220,6 +227,35 @@ module sysctrl_core (
       s_user_draining_d = 1'b0;
     end
   end
+
+  always_comb begin
+    s_hp_release_d   = s_hp_release_q;
+    s_debug_hp_sel_d = s_debug_hp_sel_q;
+    if (write_valid_i && (write_offset_i == HpCtrl) && write_strobe_i[0]) begin
+      s_hp_release_d = write_data_i[`APB4_SYSCTRL__HP_CTRL_RELEASE] && sysctrl.hp_present_i;
+    end
+    if (write_valid_i && (write_offset_i == DebugSelect) && write_strobe_i[0] &&
+        !s_hp_release_q) begin
+      s_debug_hp_sel_d = write_data_i[`APB4_SYSCTRL__DEBUG_SELECT_HP] && sysctrl.hp_present_i;
+    end
+  end
+
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_hp_release_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_hp_release_d),
+      .dat_o  (s_hp_release_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_debug_hp_select_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_debug_hp_sel_d),
+      .dat_o  (s_debug_hp_sel_q)
+  );
 
   assign s_pll_cfg_write_en = write_valid_i && (write_offset_i == PllCfg) && write_strobe_i[0];
   assign s_pll_apply = write_valid_i && (write_offset_i == PllCmd) && write_strobe_i[0] &&
@@ -510,6 +546,12 @@ module sysctrl_core (
       PerfFlashWaitHi: read_data_o = s_perf_flash_wait_q[63:32];
       TestStatus: read_data_o = {s_test_done_q, 15'd0, s_test_code_q, 7'd0, s_test_pass_q};
       RtcWakeStatus: read_data_o = {30'd0, s_rtc_wake_seen_q, s_rtc_wake_sync};
+      HpCtrl: read_data_o = {31'd0, s_hp_release_q};
+      HpStatus:
+      read_data_o = {
+        29'd0, sysctrl.hp_present_i && !s_hp_release_q, s_hp_release_q, sysctrl.hp_present_i
+      };
+      DebugSelect: read_data_o = {31'd0, s_debug_hp_sel_q};
       default: begin
         read_data_valid_o = 1'b0;
       end

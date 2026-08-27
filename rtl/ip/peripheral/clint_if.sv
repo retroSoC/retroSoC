@@ -13,6 +13,7 @@ interface clint_if #(
 ) ();
   logic [HartNum-1:0] timer_irq_o;
   logic [HartNum-1:0] software_irq_o;
+  logic [       63:0] mtime_o;
 
-  modport dut(output timer_irq_o, output software_irq_o);
+  modport dut(output timer_irq_o, output software_irq_o, output mtime_o);
 endinterface

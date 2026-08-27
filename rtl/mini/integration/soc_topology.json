@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 20,
+      "width": 22,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -222,6 +222,24 @@
       "core_bit": 24,
       "signal": "s_usb2_irq",
       "user_visible": false
+    },
+    {
+      "name": "hp_mailbox_lp",
+      "description": "HP-to-LP mailbox doorbell",
+      "group": "apb4_periph",
+      "group_bit": 20,
+      "core_bit": 25,
+      "signal": "s_mailbox_lp_irq",
+      "user_visible": false
+    },
+    {
+      "name": "uart1",
+      "description": "HP Linux UART interrupt",
+      "group": "apb4_periph",
+      "group_bit": 21,
+      "core_bit": 26,
+      "signal": "uart1.irq_o",
+      "user_visible": false
     }
   ],
   "wake_sources": [
@@ -437,6 +455,34 @@
       "pure_interface": "sram_cfg_pure",
       "region": "APB4_SRAM",
       "external": true
+    },
+    {
+      "slot": 22,
+      "name": "uart1",
+      "timed_interface": "u_uart1_apb4_if",
+      "pure_interface": "u_uart1_apb4_pure_if",
+      "region": "APB4_UART1"
+    },
+    {
+      "slot": 23,
+      "name": "hp_mailbox",
+      "timed_interface": "u_hp_mailbox_apb4_if",
+      "pure_interface": "u_hp_mailbox_apb4_pure_if",
+      "region": "APB4_HP_MAILBOX"
+    },
+    {
+      "slot": 24,
+      "name": "hp_aclint",
+      "timed_interface": "u_hp_aclint_apb4_if",
+      "pure_interface": "u_hp_aclint_apb4_pure_if",
+      "region": "HP_ACLINT"
+    },
+    {
+      "slot": 25,
+      "name": "hp_plic",
+      "timed_interface": "u_hp_plic_apb4_if",
+      "pure_interface": "u_hp_plic_apb4_pure_if",
+      "region": "HP_PLIC"
     }
   ],
   "apb4_system_targets": [

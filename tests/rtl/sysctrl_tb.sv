@@ -93,6 +93,7 @@ module sysctrl_tb;
     sysctrl.perf_psram_wait_i       = 64'd17;
     sysctrl.perf_flash_wait_i       = 64'd18;
     sysctrl.rtc_wake_i              = 1'b0;
+    sysctrl.hp_present_i            = 1'b0;
     pll_ctrl.req_ready_i            = 1'b1;
     pll_ctrl.rsp_active_sel_i       = '0;
     pll_ctrl.rsp_active_valid_i     = 1'b0;
@@ -216,7 +217,33 @@ module sysctrl_tb;
       $fatal(1, "RTC wake sticky status W1C failed");
     end
 
-    $display("SystemCtrl register, lifecycle, fault, performance, and RTC wake test passed");
+    read_register(32'h1000_B0A8, read_data);
+    if (read_data !== 32'h0000_0000) $fatal(1, "absent HP status was not zero");
+    write_register(32'h1000_B0A4, 32'h0000_0001);
+    write_register(32'h1000_B0AC, 32'h0000_0001);
+    if (sysctrl.hp_release_o || sysctrl.debug_hp_select_o) begin
+      $fatal(1, "absent HP accepted lifecycle control");
+    end
+
+    sysctrl.hp_present_i = 1'b1;
+    read_register(32'h1000_B0A8, read_data);
+    if (read_data !== 32'h0000_0005) $fatal(1, "present HP reset status mismatch");
+    write_register(32'h1000_B0AC, 32'h0000_0001);
+    if (!sysctrl.debug_hp_select_o) $fatal(1, "HP debug selection was not accepted in reset");
+    write_register(32'h1000_B0A4, 32'h0000_0001);
+    read_register(32'h1000_B0A8, read_data);
+    if ((read_data !== 32'h0000_0003) || !sysctrl.hp_release_o) begin
+      $fatal(1, "HP release status mismatch");
+    end
+    write_register(32'h1000_B0AC, 32'h0000_0000);
+    if (!sysctrl.debug_hp_select_o) $fatal(1, "running HP allowed JTAG selection change");
+    write_register(32'h1000_B0A4, 32'h0000_0000);
+    write_register(32'h1000_B0AC, 32'h0000_0000);
+    if (sysctrl.hp_release_o || sysctrl.debug_hp_select_o) begin
+      $fatal(1, "HP reset/debug return did not complete");
+    end
+
+    $display("SystemCtrl register, lifecycle, fault, performance, RTC wake, and HP test passed");
     $finish;
   end
 endmodule

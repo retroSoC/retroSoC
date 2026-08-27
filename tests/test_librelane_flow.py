@@ -44,10 +44,10 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     sides = {name: config[f"PAD_{name.upper()}"] for name in module.SIDE_ORDER}
     placed = [instance for side in module.SIDE_ORDER for instance in sides[side]]
 
-    assert len(placed) == 189
+    assert len(placed) == 191
     assert len(placed) == len(set(placed))
     assert {side: len(instances) for side, instances in sides.items()} == {
-        "south": 30,
+        "south": 32,
         "east": 52,
         "north": 48,
         "west": 59,

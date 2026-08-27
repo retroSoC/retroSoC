@@ -30,7 +30,7 @@ make CONFIG=configs/ci/ihp130.mk librelane-core-package
 make CONFIG=configs/ci/ihp130.mk librelane-package
 ```
 
-The chip target places all 109 signal pads, 80 core/IO power and ground pads,
+The chip target places all 111 signal pads, 80 core/IO power and ground pads,
 four corners, I/O fillers, and 70 um bondpads. It is a bare-die plan, not a
 QFN/BGA package definition. The SDC constrains the external clock at 72 MHz;
 mid-PnR timing report passes are skipped because LibreLane 3.0.5 emits 1000

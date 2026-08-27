@@ -23,7 +23,7 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
 SIDE_ORDER = ("south", "east", "north", "west")
-EXPECTED_SIGNAL_PADS = 109
+EXPECTED_SIGNAL_PADS = 111
 CLOCK_PORTS = (
     "extclk_i_pad",
     "audclk_i_pad",

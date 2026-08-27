@@ -4,7 +4,7 @@
 `include "rib_defs.svh"
 
 module axi4_interconnect_tb;
-  localparam int NumMasters = 7;
+  localparam int NumMasters = 8;
   localparam int NumTargets = 9;
 
   logic        clk_i = 1'b0;
@@ -288,6 +288,50 @@ module axi4_interconnect_tb;
     end
   endtask
 
+  task automatic issue_hp_accesses;
+    integer beat;
+    begin
+      @(negedge clk_i);
+      masters[7].araddr  = 32'h3800_0000;
+      masters[7].arlen   = 8'd15;
+      masters[7].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[7].arready);
+      @(negedge clk_i);
+      masters[7].arvalid = 1'b0;
+      masters[7].rready  = 1'b1;
+      beat               = 0;
+      while (beat < 16) begin
+        @(negedge clk_i);
+        if (masters[7].rvalid) begin
+          if ((masters[7].rresp != `AXI4_RESP_OKAY) ||
+              (masters[7].rlast != (beat == 15)) || fault_valid_o) begin
+            $fatal(1, "HP SDRAM burst was rejected or misclassified");
+          end
+          beat = beat + 1;
+        end
+      end
+      @(negedge clk_i);
+      masters[7].rready  = 1'b0;
+      masters[7].araddr  = 32'hA000_7000;
+      masters[7].arlen   = 8'd0;
+      masters[7].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[7].arready);
+      @(negedge clk_i);
+      masters[7].arvalid = 1'b0;
+      masters[7].rready  = 1'b1;
+      while (!masters[7].rvalid) @(negedge clk_i);
+      #1;
+      if ((masters[7].rresp != `AXI4_RESP_DECODE_ERROR) || !fault_valid_o ||
+          (fault_master_o != 3'd7) || (fault_addr_o != 32'hA000_7000) ||
+          (fault_code_o != `RIB_RESP_DECERR)) begin
+        $fatal(1, "HP decode fault attribution mismatch");
+      end
+      @(posedge clk_i);
+      @(negedge clk_i);
+      masters[7].rready = 1'b0;
+    end
+  endtask
+
   initial begin
     `INIT_MASTER(0)
     `INIT_MASTER(1)
@@ -295,6 +339,8 @@ module axi4_interconnect_tb;
     `INIT_MASTER(3)
     `INIT_MASTER(4)
     `INIT_MASTER(5)
+    `INIT_MASTER(6)
+    `INIT_MASTER(7)
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
 
@@ -303,6 +349,7 @@ module axi4_interconnect_tb;
     issue_mgmt_error_read(32'h3000_0000, 8'd16, `AXI4_RESP_SLAVE_ERROR, `RIB_RESP_BURSTERR);
     issue_denied_user_write(32'h1000_B000);
     issue_contending_sdio_faults();
+    issue_hp_accesses();
 
     $display("AXI4 interconnect fault classification test passed");
     $finish;

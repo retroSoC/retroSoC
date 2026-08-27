@@ -88,6 +88,6 @@ def test_sysctrl_registers_lifecycle_faults_and_wake(tmp_path: Path) -> None:
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "SystemCtrl register, lifecycle, fault, performance, and RTC wake test passed" in (
+    assert "SystemCtrl register, lifecycle, fault, performance, RTC wake, and HP test passed" in (
         result.stdout
     )

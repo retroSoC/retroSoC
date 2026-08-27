@@ -12,6 +12,11 @@ profiles. The `ihp130-hazard3-coremark.mk` profile is the automated SRAM
 CoreMark quick measurement; its `-standard` counterpart is reserved for a
 10-second hardware run. The nightly workflow reuses the IHP130 CI profile and
 runs the quick CoreMark profile.
+`ci/ihp130-hp.mk` is the experimental asymmetric Linux profile. It fixes both
+LP and HP at 72 MHz, runs `hp_boot` entirely from 32 KiB on-chip SRAM, and
+generates VexiiRiscv RTL only below the selected build variant. It is not part
+of the supported PR matrix until Linux boot, HP performance, synthesis, and
+timing evidence are qualified.
 `ci/ihp130-xpi-flash-loader.mk` builds the SRAM-only XPI NOR service image used
 by GDB/OpenOCD; it is a programming utility, not a normal boot application.
 Start builds from a committed profile rather than setting an unreviewed mix of

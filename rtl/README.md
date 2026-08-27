@@ -11,6 +11,12 @@ notices. `filelist/` selects PDK-specific RTL sources; `tech/` contains
 technology wrappers. Respect managed upstream boundaries and use setup helpers
 rather than editing generated MPW output.
 
+The optional IHP130 LP/HP profile integrates VexiiRiscv through self-owned
+wrappers, a 64-to-32 compatibility plane, HP ACLINT/PLIC, mailbox, UART1, and
+SYSCTRL lifecycle signals. The generated CPU Verilog lives only below
+`build/<variant>/generated/vexiiriscv/` and is an external lint boundary. See
+[LP/HP Architecture](../docs/lp-hp-architecture.md).
+
 RTL changes require an affected firmware build and simulation. Use
 `make regress-pr` or `make regress-nightly` for supported regression coverage;
 see [Engineering Workflow](../docs/engineering.md) for results and artifacts.

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
+from scripts.check_lp_hp_performance import compare as compare_lp_hp
 from scripts.parse_coremark_log import parse_log as parse_coremark_log
 from scripts.parse_performance_log import parse_log
 
@@ -91,3 +94,21 @@ def test_parse_coremark_rejects_failure_or_non_sram_result() -> None:
         assert "SRAM" in str(error)
     else:
         raise AssertionError("non-SRAM CoreMark result was accepted")
+
+
+def test_lp_hp_coremark_ratio_gate() -> None:
+    lp = parse_coremark_log(
+        "COREMARK_RESULT mode=quick qualified=0 memory=sram iterations=4 cycles=2000 "
+        "cpu_hz=72000000\nCOREMARK_PASS\n"
+    )
+    hp = parse_coremark_log(
+        "COREMARK_RESULT mode=quick qualified=0 memory=sram iterations=12 cycles=2000 "
+        "cpu_hz=72000000\nCOREMARK_PASS\n"
+    )
+    report = compare_lp_hp(lp, hp, Decimal("2.5"))
+    assert report["status"] == "passed"
+    assert report["measured_ratio"] == "3.000"
+
+    hp["results"][0]["coremark_per_mhz"] = "4000.000"
+    report = compare_lp_hp(lp, hp, Decimal("2.5"))
+    assert report["status"] == "failed"

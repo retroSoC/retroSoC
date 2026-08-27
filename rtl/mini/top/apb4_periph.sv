@@ -28,6 +28,7 @@ module apb4_periph (
     gpio_if.dut                                   gpio,
     user_gpio_if.padctrl                          user_gpio,
     uart_if.dut                                   uart,
+    uart_if.dut                                   uart1,
     psram_if.dut                                  psram,
     spi_if.dut                                    spisd,
     i2c_if.dut                                    i2c0,
@@ -52,6 +53,11 @@ module apb4_periph (
     input logic [31:0]                            fault_addr_i,
     input logic [3:0]                             fault_wstrb_i,
     input logic                                   fault_reserved_i,
+    output logic [63:0]                           hp_time_o,
+    output logic                                  hp_timer_irq_o,
+    output logic                                  hp_software_irq_o,
+    output logic                                  hp_machine_external_irq_o,
+    output logic                                  hp_supervisor_external_irq_o,
     output logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -107,6 +113,7 @@ axi4_stream_if #(
   );
 
   clint_if u_clint_if ();
+  clint_if #(.HartNum(2)) u_hp_clint_if ();
   dma_req_if u_dma_req_if ();
 
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
@@ -123,6 +130,9 @@ axi4_stream_if #(
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
   logic s_xpi_irq;
+  logic s_mailbox_lp_irq, s_mailbox_hp_irq;
+  logic [31:0] s_hp_plic_source;
+  logic [ 1:0] s_hp_plic_context_irq;
 
 `ifdef PDK_GF180
   localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
@@ -161,6 +171,17 @@ axi4_stream_if #(
   assign u_dma_req_if.i2c1_rx_proc    = ~s_dma_i2c1_rx_stall;
   assign u_dma_req_if.crypto_in_proc  = s_dma_crypto_in_proc;
   assign u_dma_req_if.crypto_out_proc = s_dma_crypto_out_proc;
+  assign hp_time_o                    = u_hp_clint_if.mtime_o;
+  assign hp_timer_irq_o               = u_hp_clint_if.timer_irq_o[1];
+  assign hp_software_irq_o            = u_hp_clint_if.software_irq_o[1];
+  assign hp_machine_external_irq_o    = s_hp_plic_context_irq[0];
+  assign hp_supervisor_external_irq_o = s_hp_plic_context_irq[1];
+
+  always_comb begin
+    s_hp_plic_source    = '0;
+    s_hp_plic_source[1] = uart1.irq_o;
+    s_hp_plic_source[2] = s_mailbox_hp_irq;
+  end
 
   `include "apb4_periph_irq_bindings.svh"
 
@@ -187,6 +208,42 @@ axi4_stream_if #(
       .dma_rx_stall_o(s_dma_uart_rx_stall),
       .apb4          (u_uart_apb4_if),
       .uart          (uart)
+  );
+
+  // UART1 is dedicated to HP Linux and intentionally has no central-DMA route in the MVP.
+  apb4_uart u_apb4_uart1 (
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .dma_tx_stall_o(),
+      .dma_rx_stall_o(),
+      .apb4          (u_uart1_apb4_if),
+      .uart          (uart1)
+  );
+
+  apb4_hp_mailbox u_apb4_hp_mailbox (
+      .clk_i   (clk_i),
+      .rst_n_i (rst_n_i),
+      .apb4    (u_hp_mailbox_apb4_if),
+      .lp_irq_o(s_mailbox_lp_irq),
+      .hp_irq_o(s_mailbox_hp_irq)
+  );
+
+  apb4_clint #(
+      .HartNum(2)
+  ) u_apb4_hp_aclint (
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .timebase_tick_i(timebase_tick_i),
+      .apb4           (u_hp_aclint_apb4_if),
+      .clint          (u_hp_clint_if)
+  );
+
+  apb4_plic u_apb4_hp_plic (
+      .clk_i        (clk_i),
+      .rst_n_i      (rst_n_i),
+      .source_i     (s_hp_plic_source),
+      .apb4         (u_hp_plic_apb4_if),
+      .context_irq_o(s_hp_plic_context_irq)
   );
 
   apb4_timer u_apb4_timer0 (

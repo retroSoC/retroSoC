@@ -122,7 +122,7 @@ check-clock-reset-domains:
 
 $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py \
 	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) \
-	$(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP)
+	$(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_STAMP))
 	$(FLOW_PYTHON) $(RTL_PATH)/script/generate_filelist.py \
 		--output-dir $(GENERATED_FL_DIR) \
 		--incdir $(ARCHINFO_METADATA_DIR) \
@@ -167,6 +167,7 @@ RTL_FILELISTS := $(MEMORY_MAP_FILELIST) $(SOC_TOPOLOGY_FILELIST) $(USER_EXTENSIO
 	$(GENERATED_FL_DIR)/core_hazard3.fl \
 	$(MPW_OUTPUT_DIR)/core/core.fl \
 	$(MPW_OUTPUT_DIR)/ip/ip.fl \
+	$(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_DIR)/vexiiriscv.fl) \
 	$(GENERATED_FL_DIR)/top.fl
 RTL_FLIST     := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))
 #====================== end ======================

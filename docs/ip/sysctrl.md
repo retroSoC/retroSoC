@@ -3,7 +3,8 @@
 SystemCtrl is the Mini SoC control-plane peripheral at
 `0x1000B000`. It owns user-core/IP selection, the PLL request protocol,
 bus-fault retention, performance-counter snapshots, RTC wake observation, and
-the terminal simulation result. The integration wrapper is `apb4_sysctrl`;
+the terminal simulation result. In the HP profile it also owns HP reset release
+and shared-JTAG selection. The integration wrapper is `apb4_sysctrl`;
 the implementation is separated into `sysctrl_reg`, `sysctrl_core`, and
 `sysctrl_if`.
 
@@ -52,7 +53,7 @@ offset macros.
 | `0x01C` | `PLL_STATUS` | RO | Active profile, valid, busy, error/error reason, safe clock, lock, and capability. |
 | `0x020` | `USER_CORE_RESET` | RW | Per-user-core active-high reset mask. All ones stops the user bus; a one-hot deassertion starts the selected core. |
 | `0x024` | `USER_CORE_STATUS` | RW1C/RO | Selected core, user-bus enabled/idle/draining, and bit 11 configuration-error W1C. |
-| `0x028` | `FAULT_MASTER` | RO | First fault master, a three-bit AXI master ID (0..4). |
+| `0x028` | `FAULT_MASTER` | RO | First fault master, a three-bit AXI master ID (0..7); HP is 7. |
 | `0x02C` | `FAULT_DETAIL` | RO | First raw RIB response code. |
 | `0x040` | `PERF_CTRL` | RW | Bit 0 enable, bit 1 clear pulse, bit 2 snapshot pulse. |
 | `0x044`-`0x098` | `PERF_*_WAIT_{LO,HI}` | RO | Snapshot of management, user, central DMA, SDIO0, SDIO1, APB4, SDRAM, PSRAM, and flash wait counters. |
@@ -60,6 +61,9 @@ offset macros.
 | `0x094`/`0x098` | `PERF_SDIO1_WAIT_LO/HI` | RO | Independent SDIO1 AXI master wait snapshot. |
 | `0x084` | `TEST_STATUS` | RW-once/RO | Full-word write with bit 31 set records sticky done, bit 0 pass, and bits `[15:8]` result code. |
 | `0x088` | `RTC_WAKE_STATUS` | RW1C/RO | Bit 0 synchronized live wake; bit 1 sticky wake, cleared by writing one to bit 1. |
+| `0x0A4` | `HP_CTRL` | RW | Bit 0 releases HP reset when the HP profile is present. Reset value 0. |
+| `0x0A8` | `HP_STATUS` | RO | Bits 0/1/2 report present, released, and reset asserted. |
+| `0x0AC` | `DEBUG_SELECT` | RW | Bit 0 selects HP on shared JTAG only while HP remains in reset. Reset value 0 selects LP. |
 
 The first fault remains visible until software clears pending; later faults
 increase only the saturating count. A hardware fault in the clear cycle

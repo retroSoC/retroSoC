@@ -27,6 +27,8 @@ module retrosoc_top (
     inout  gpio_io30,
     output uart0_tx_o,
     inout  uart0_rx_i,
+    output uart1_tx_o,
+    inout  uart1_rx_i,
     output xpi_sck_o,
     output xpi_nss0_o,
     inout  xpi_dat0_io,

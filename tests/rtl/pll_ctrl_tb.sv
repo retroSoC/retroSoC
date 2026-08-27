@@ -120,14 +120,27 @@ module pll_ctrl_tb;
   endtask
 
   initial begin
-    apb4.psel               = 1'b0;
-    apb4.paddr              = '0;
-    apb4.pwdata             = '0;
-    apb4.pstrb              = '0;
-    sysctrl.user_bus_idle_i = 1'b1;
-    sysctrl.fault_access_i  = 1'b0;
-    sysctrl.fault_master_i  = '0;
-    sysctrl.rtc_wake_i      = 1'b0;
+    apb4.psel                       = 1'b0;
+    apb4.paddr                      = '0;
+    apb4.pwdata                     = '0;
+    apb4.pstrb                      = '0;
+    sysctrl.user_bus_idle_i         = 1'b1;
+    sysctrl.fault_access_i          = 1'b0;
+    sysctrl.fault_master_i          = '0;
+    sysctrl.fault_code_i            = '0;
+    sysctrl.perf_mgmt_wait_i        = '0;
+    sysctrl.perf_user_wait_i        = '0;
+    sysctrl.perf_dma_wait_i         = '0;
+    sysctrl.perf_sdio0_wait_i       = '0;
+    sysctrl.perf_sdio1_wait_i       = '0;
+    sysctrl.perf_usb2_wait_i        = '0;
+    sysctrl.perf_apb4_periph_wait_i = '0;
+    sysctrl.perf_apb4_system_wait_i = '0;
+    sysctrl.perf_sdram_wait_i       = '0;
+    sysctrl.perf_psram_wait_i       = '0;
+    sysctrl.perf_flash_wait_i       = '0;
+    sysctrl.rtc_wake_i              = 1'b0;
+    sysctrl.hp_present_i            = 1'b0;
     #100;
     rst_n_i = 1'b1;
     repeat (2) begin

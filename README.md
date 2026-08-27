@@ -21,6 +21,11 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 - A fixed Hazard3 management core with a permanent JTAG Debug Module, plus
   software-selected user-core and user-IP extension slots. The active user
   cores are KianV RV32I, SERV, FemtoRV32, and DarkRISCV at slots C0-C3.
+- An experimental IHP130 [LP/HP profile](docs/lp-hp-architecture.md) that keeps
+  Hazard3 as LP and adds a generated dual-issue RV32IMAFDC VexiiRiscv HP core,
+  HP CLINT/PLIC, UART1, mailbox, locked OpenSBI/Linux/Buildroot inputs, and a
+  CRC-checked direct-Linux boot bundle. Linux boot and performance evidence are
+  release gates, not yet baseline CI claims.
 - A documented [Tiny/Mini/Std/Pro product direction](docs/soc-family-positioning.md)
   anchored by Mini and a trusted Hazard3 management model. The higher Linux,
   graphics, AI, and RV64 configurations are roadmap targets, not supported
@@ -82,6 +87,7 @@ because their fixed data placement and SRAM-resident image require the larger ca
 | [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist, and OpenSTA coverage with a 32 KiB OpenRAM SRAM. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
+| [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV32IMAFDC | `hp_boot` | Experimental fixed-72-MHz LP/HP integration, generated VexiiRiscv RTL, Linux image/bundle flow, and HP RTL validation. |
 | [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | RV32IM | `coremark` | Fixed four-iteration SRAM CoreMark quick measurement, recorded by nightly IHP130 regression. |
 | [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
 
@@ -220,6 +226,8 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
 | OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta` |
 | Strict Verilator RTL lint | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
 | Hazard3 CoreMark quick report | `make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report` |
+| Generate the untracked HP core RTL | `make CONFIG=configs/ci/ihp130-hp.mk vexii-generate` |
+| Build and package the HP Linux flash image | `make setup-hp-linux && make CONFIG=configs/ci/ihp130-hp.mk hp-bundle` |
 | IHP130 fast smoke suite | `make regress-smoke` |
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |

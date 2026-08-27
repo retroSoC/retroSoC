@@ -21,13 +21,20 @@ Read and write ordering is therefore program order at each master. Different
 masters may use different targets concurrently; requests to one target use a
 Common round-robin arbiter and retain ownership through `B` or `RLAST`.
 
-The three masters are the Hazard3 management core, the selected user core, and
-DMA. Hazard3 AHB-Lite and the current user-core RIBP ABI issue single-beat AXI4
-transactions through adapters. DMA is a native AXI4 master: its production
+The integrated fabric has eight master slots: Hazard3 management (0), selected
+user core (1), central DMA (2), SDIO0 (3), SDIO1 (4), the retained SPI-SD slot
+(5), USB2 (6), and optional HP (7). Hazard3 AHB-Lite and the current user-core
+RIBP ABI issue single-beat AXI4 transactions through adapters. DMA is a native AXI4 master: its production
 six-channel engine uses fixed ID zero, independently schedules one read and
 one write transaction, and issues aligned `INCR` bursts up to sixteen beats.
 Fixed-address and APB4/MMIO endpoints are always single-beat. See the
 [DMA MVP](ip/dma.md) for its ownership, abort, and FIFO-credit contract.
+
+HP presents separate 64-bit instruction-cache, data-cache, and uncached-MMIO
+ports. Self-owned downsizers and a transaction mux serialize them onto master
+7. A maximum eight-beat 64-bit transfer becomes the fabric maximum sixteen
+32-bit beats. This is a compatibility plane without coherency; see the
+[LP/HP contract](lp-hp-architecture.md).
 
 ## Targets and Access Control
 
@@ -66,7 +73,9 @@ access-control rejection to `PROTERR`.
 
 ## Verification and Performance Gates
 
-`tests/test_axi4.py` covers fabric classification. `tests/test_onchip_ram.py`
+`tests/test_axi4.py` covers fabric classification, HP master 7 attribution,
+64-to-32 burst/lane conversion, response identity, and backpressure.
+`tests/test_onchip_ram.py`
 covers all five capacities, sixteen-beat reads/writes, response backpressure,
 partial writes, technology mapping, and error termination. The bridge unit
 test also covers Common address generation for FIXED and WRAP sequencing. The

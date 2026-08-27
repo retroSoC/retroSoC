@@ -75,7 +75,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
-    assert interfaces.count("apb4_if u_") == 20
+    assert interfaces.count("apb4_if u_") == 24
     assert "nmi_if" not in interfaces
     assert "soc_nmi" not in interfaces
     assert "assign s_psel_comb[17] = `SOC_ADDR_IS_APB4_I2C1(s_decode_addr);" in routes
@@ -86,6 +86,10 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign s_psel_comb[18] = `SOC_ADDR_IS_APB4_SDIO1(s_decode_addr);" in routes
     assert "assign s_psel_comb[19] = `SOC_ADDR_IS_APB4_CRYPTO(s_decode_addr);" in routes
     assert "assign s_psel_comb[20] = `SOC_ADDR_IS_APB4_USB2(s_decode_addr);" in routes
+    assert "assign s_psel_comb[22] = `SOC_ADDR_IS_APB4_UART1(s_decode_addr);" in routes
+    assert "assign s_psel_comb[23] = `SOC_ADDR_IS_APB4_HP_MAILBOX(s_decode_addr);" in routes
+    assert "assign s_psel_comb[24] = `SOC_ADDR_IS_HP_ACLINT(s_decode_addr);" in routes
+    assert "assign s_psel_comb[25] = `SOC_ADDR_IS_HP_PLIC(s_decode_addr);" in routes
     assert gpio.count("// GPIO") == 64
     assert "u_uart1_if" not in gpio
     assert "assign u_uart0_if.cts_n_i = u_gpio_if.di_i[0];" in gpio
@@ -132,7 +136,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".usb2_axi4(u_usb2_axi4_if)" in apb_periph_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_USER_IRQ_MASK 32'h004EFBFC" in irq_config
-    assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 20" in irq_config
+    assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 22" in irq_config
     assert "`define SOC_IRQ_APB4_SYSTEM_WIDTH 5" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
@@ -206,6 +210,8 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("sdio1", "apb4_periph", 17, 21, "sdio1.irq_o"),
         ("crypto", "apb4_periph", 18, 23, "s_crypto_irq"),
         ("usb2", "apb4_periph", 19, 24, "s_usb2_irq"),
+        ("hp_mailbox_lp", "apb4_periph", 20, 25, "s_mailbox_lp_irq"),
+        ("uart1", "apb4_periph", 21, 26, "uart1.irq_o"),
     ]
 
 

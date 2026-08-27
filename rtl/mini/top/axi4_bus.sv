@@ -19,6 +19,7 @@ module axi4_bus (
     axi4_if.slave       sdio1_axi4,
     axi4_if.slave       usb2_axi4,
     axi4_if.slave       spisd_axi4,
+    axi4_if.slave       hp_axi4,
     axi4_if.master      cfg_axi4,
     axi4_if.master      system_axi4,
     axi4_if.master      sram_axi4,
@@ -51,7 +52,7 @@ module axi4_bus (
     output logic [63:0] perf_opipsram_wait_o
     // verilog_format: on
 );
-  localparam int NumMasters = 7;
+  localparam int NumMasters = 8;
   localparam int NumTargets = 10;
 
   axi4_if #(
@@ -107,6 +108,11 @@ module axi4_bus (
   axi4_connector u_usb2_connector (
       .source(usb2_axi4),
       .sink  (u_master_axi4_if[6])
+  );
+
+  axi4_connector u_hp_connector (
+      .source(hp_axi4),
+      .sink  (u_master_axi4_if[7])
   );
 
   axi4_connector u_cfg_connector (

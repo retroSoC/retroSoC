@@ -1,0 +1,83 @@
+/dts-v1/;
+
+/ {
+	compatible = "retrosoc,mini-hp";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		bootargs = "console=hvc0 earlycon=sbi rdinit=/sbin/init";
+		linux,initrd-start = <0x39000000>;
+		/* build_hp_linux.py replaces this with the actual rootfs end. */
+		linux,initrd-end = <0x39000000>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <1000000>;
+
+		cpu@1 {
+			compatible = "spinal,vexiiriscv", "riscv";
+			device_type = "cpu";
+			reg = <1>;
+			clock-frequency = <72000000>;
+			mmu-type = "riscv,sv32";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei";
+
+			hp_cpu_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+	};
+
+	memory@38000000 {
+		device_type = "memory";
+		reg = <0x38000000 0x04000000>;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		hp_aclint: timer@2000000 {
+			compatible = "sifive,clint0";
+			reg = <0x02000000 0x00010000>;
+			interrupts-extended = <&hp_cpu_intc 3>, <&hp_cpu_intc 7>;
+		};
+
+		hp_plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0x0c000000 0x04000000>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+			riscv,ndev = <31>;
+			interrupts-extended = <&hp_cpu_intc 11>, <&hp_cpu_intc 9>;
+		};
+
+		uart1: serial@10018000 {
+			compatible = "retrosoc,uart-v3";
+			reg = <0x10018000 0x1000>;
+			interrupt-parent = <&hp_plic>;
+			interrupts = <1>;
+			clock-frequency = <72000000>;
+			status = "okay";
+		};
+
+		hp_mailbox: mailbox@10019000 {
+			compatible = "retrosoc,hp-mailbox-v1";
+			reg = <0x10019000 0x1000>;
+			interrupt-parent = <&hp_plic>;
+			interrupts = <2>;
+			#mbox-cells = <1>;
+		};
+	};
+};

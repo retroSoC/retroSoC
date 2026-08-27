@@ -20,7 +20,7 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 
 EXPECTED_LIBRELANE_VERSION = "LibreLane v3.0.5"
 EXPECTED_OPENSTA_VERSION = "3.0.0"
-EXPECTED_SIGNAL_PADS = 109
+EXPECTED_SIGNAL_PADS = 111
 
 
 def command_output(command: list[str]) -> str:

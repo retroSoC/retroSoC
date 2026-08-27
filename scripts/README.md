@@ -25,6 +25,15 @@ SRAM CoreMark quick report into `meta/coremark.json`; it requires one valid
 `COREMARK_RESULT` record and `COREMARK_PASS`. Both reports complement, rather
 than replace, the common `SIM_TEST_PASS` simulation verdict.
 
+`generate_vexiiriscv.py` verifies the locked VexiiRiscv revision and generates
+the fixed HP core below `build/`; generated RTL is never tracked.
+`setup_hp_linux.py` installs the locked OpenSBI, Linux, and Buildroot revisions
+and can resume a checkout left without `HEAD` by an interrupted fetch.
+`build_hp_linux.py` builds the RV32 `ilp32d` image set with the repo-owned
+external OpenSBI platform. `package_hp_boot.py` creates the v1 LP/HP flash
+bundle and its SHA-256/CRC manifest. `check_lp_hp_performance.py` applies the
+measured 2.5x CoreMark/MHz gate.
+
 `run_debug_session.py` is the local Hazard3 debug acceptance driver. It starts
 the Verilator remote-bitbang endpoint, the lock-pinned OpenOCD binary, and
 RISC-V GDB, then records their logs and a structured result. Invoke it through

@@ -111,6 +111,9 @@
 /ip/peripheral/clint_reg.sv
 /ip/peripheral/clint_core.sv
 /ip/peripheral/apb4_clint.sv
+/ip/peripheral/hp_mailbox_define.svh
+/ip/peripheral/apb4_hp_mailbox.sv
+/ip/peripheral/apb4_plic.sv
 /ip/memory/sdram_pkg.sv
 /ip/memory/sdram_clkgen.sv
 /ip/memory/sdram_reg.sv

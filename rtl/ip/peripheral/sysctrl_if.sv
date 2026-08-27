@@ -36,6 +36,9 @@ interface sysctrl_if ();
   logic                           test_pass_o;
   logic [                    7:0] test_code_o;
   logic [  `USER_IPSEL_WIDTH-1:0] ip_sel_o;
+  logic                           hp_present_i;
+  logic                           hp_release_o;
+  logic                           debug_hp_select_o;
 
   modport dut(
       input user_bus_idle_i,
@@ -54,6 +57,7 @@ interface sysctrl_if ();
       input perf_psram_wait_i,
       input perf_flash_wait_i,
       input rtc_wake_i,
+      input hp_present_i,
       output core_sel_o,
       output core_reset_o,
       output user_bus_enable_o,
@@ -62,6 +66,8 @@ interface sysctrl_if ();
       output perf_clear_o,
       output test_done_o,
       output test_pass_o,
-      output test_code_o
+      output test_code_o,
+      output hp_release_o,
+      output debug_hp_select_o
   );
 endinterface

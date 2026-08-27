@@ -11,6 +11,8 @@
 /top/axi42apb4_system.sv
 /top/axi42apb4_periph.sv
 /top/axi4_word_bridge.sv
+/top/axi4_downsizer_64to32.sv
+/top/hp_axi4_mux3.sv
 /top/axi42ram.sv
 /top/rib_error_slave.sv
 /top/rib2ram.sv
@@ -29,6 +31,8 @@
 /top/mgmt_debug_reset.sv
 /top/mgmt_debug_wrapper.sv
 /top/mgmt_core_wrapper.sv
+/top/hp_core_wrapper.sv
+/top/hp_subsystem.sv
 /top/user_core_design.sv
 /top/user_core_top.sv
 /top/user_ip_design_template.sv

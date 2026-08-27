@@ -25,6 +25,8 @@ module retrosoc (
     gpio_if.soc_pad      gpio,
     input  logic         uart_rx_i,
     output logic         uart_tx_o,
+    input  logic         uart1_rx_i,
+    output logic         uart1_tx_o,
     xpi_if.dut           xpi,
     sdram_if.dut         sdram,
     sdio_if.dut          sdio1,
@@ -58,10 +60,13 @@ module retrosoc (
       u_spisd_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_opipsram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_hp_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
   user_gpio_if u_user_gpio_if ();
   // ip interface
   gpio_if     u_gpio_if     ();
   uart_if     u_uart0_if    ();
+  uart_if     u_uart1_if    ();
   psram_if    u_psram_if    ();
   spi_if      u_spisd_if    ();
   i2c_if      u_i2c0_if     ();
@@ -103,6 +108,15 @@ module retrosoc (
   logic [                          63:0] s_perf_opipsram_wait;
   logic [     `SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
   logic                                  s_rtc_wake;
+  logic                                  s_hp_jtag_tdo;
+  logic                                  s_hp_debug_reset_req;
+  logic                                  s_lp_jtag_tdo;
+  logic                                  s_debug_hp_sel_jtag;
+  logic [                          63:0] s_hp_time;
+  logic                                  s_hp_timer_irq;
+  logic                                  s_hp_software_irq;
+  logic                                  s_hp_machine_external_irq;
+  logic                                  s_hp_supervisor_external_irq;
 
 `ifdef HAVE_SRAM_IF
   localparam bit SramPresent = 1'b1;
@@ -131,8 +145,15 @@ module retrosoc (
   assign u_sysctrl_if.perf_psram_wait_i       = s_perf_psram_wait + s_perf_opipsram_wait;
   assign u_sysctrl_if.perf_flash_wait_i       = s_perf_flash_wait;
   assign u_sysctrl_if.rtc_wake_i              = s_rtc_wake;
-  assign u_uart0_if.rx_i                      = uart_rx_i;
-  assign uart_tx_o                            = u_uart0_if.tx_o;
+`ifdef HAVE_HP
+  assign u_sysctrl_if.hp_present_i = 1'b1;
+`else
+  assign u_sysctrl_if.hp_present_i = 1'b0;
+`endif
+  assign u_uart0_if.rx_i = uart_rx_i;
+  assign uart_tx_o       = u_uart0_if.tx_o;
+  assign u_uart1_if.rx_i = uart1_rx_i;
+  assign uart1_tx_o      = u_uart1_if.tx_o;
 
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
@@ -151,12 +172,24 @@ core_wrapper u_core_wrapper (
       `include "soc_mgmt_core_wrapper_fabric.svh"
       .irq_i         (s_irq),
       .jtag_tck_i    (jtag_tck_i),
-      .jtag_tms_i    (jtag_tms_i),
-      .jtag_tdi_i    (jtag_tdi_i),
+      .jtag_tms_i    (s_debug_hp_sel_jtag ? 1'b1 : jtag_tms_i),
+      .jtag_tdi_i    (s_debug_hp_sel_jtag ? 1'b0 : jtag_tdi_i),
       .jtag_trst_n_i (jtag_trst_n_i),
-      .jtag_tdo_o    (jtag_tdo_o),
+      .jtag_tdo_o    (s_lp_jtag_tdo),
       .debug_halted_o(s_mgmt_debug_halted)
   );
+
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_debug_select_sync (
+      .clk_i  (jtag_tck_i),
+      .rst_n_i(jtag_trst_n_i),
+      .dat_i  (u_sysctrl_if.debug_hp_select_o),
+      .dat_o  (s_debug_hp_sel_jtag)
+  );
+
+  assign jtag_tdo_o = s_debug_hp_sel_jtag ? s_hp_jtag_tdo : s_lp_jtag_tdo;
 
   assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq & `SOC_USER_IRQ_MASK) : '0;
   user_core_top u_user_core_top (
@@ -167,6 +200,60 @@ core_wrapper u_core_wrapper (
       `include "soc_user_core_fabric.svh"
       .core_reset_i(u_sysctrl_if.core_reset_o)
   );
+
+`ifdef HAVE_HP
+  hp_subsystem u_hp_subsystem (
+      .clk_i                    (clk_i),
+      .rst_n_i                  (rst_n_i),
+      .core_reset_i             (!u_sysctrl_if.hp_release_o || s_hp_debug_reset_req),
+      .time_i                   (s_hp_time),
+      .timer_irq_i              (s_hp_timer_irq),
+      .software_irq_i           (s_hp_software_irq),
+      .machine_external_irq_i   (s_hp_machine_external_irq),
+      .supervisor_external_irq_i(s_hp_supervisor_external_irq),
+      .jtag_tck_i               (jtag_tck_i),
+      .jtag_tms_i               (s_debug_hp_sel_jtag ? jtag_tms_i : 1'b1),
+      .jtag_tdi_i               (s_debug_hp_sel_jtag ? jtag_tdi_i : 1'b0),
+      .jtag_trst_n_i            (jtag_trst_n_i),
+      .jtag_tdo_o               (s_hp_jtag_tdo),
+      .debug_reset_req_o        (s_hp_debug_reset_req),
+      .axi4                     (u_hp_axi4_if)
+  );
+`else
+  assign u_hp_axi4_if.awid     = '0;
+  assign u_hp_axi4_if.awaddr   = '0;
+  assign u_hp_axi4_if.awlen    = '0;
+  assign u_hp_axi4_if.awsize   = '0;
+  assign u_hp_axi4_if.awburst  = '0;
+  assign u_hp_axi4_if.awlock   = '0;
+  assign u_hp_axi4_if.awcache  = '0;
+  assign u_hp_axi4_if.awprot   = '0;
+  assign u_hp_axi4_if.awqos    = '0;
+  assign u_hp_axi4_if.awregion = '0;
+  assign u_hp_axi4_if.awuser   = '0;
+  assign u_hp_axi4_if.awvalid  = 1'b0;
+  assign u_hp_axi4_if.wdata    = '0;
+  assign u_hp_axi4_if.wstrb    = '0;
+  assign u_hp_axi4_if.wlast    = 1'b0;
+  assign u_hp_axi4_if.wuser    = '0;
+  assign u_hp_axi4_if.wvalid   = 1'b0;
+  assign u_hp_axi4_if.bready   = 1'b1;
+  assign u_hp_axi4_if.arid     = '0;
+  assign u_hp_axi4_if.araddr   = '0;
+  assign u_hp_axi4_if.arlen    = '0;
+  assign u_hp_axi4_if.arsize   = '0;
+  assign u_hp_axi4_if.arburst  = '0;
+  assign u_hp_axi4_if.arlock   = '0;
+  assign u_hp_axi4_if.arcache  = '0;
+  assign u_hp_axi4_if.arprot   = '0;
+  assign u_hp_axi4_if.arqos    = '0;
+  assign u_hp_axi4_if.arregion = '0;
+  assign u_hp_axi4_if.aruser   = '0;
+  assign u_hp_axi4_if.arvalid  = 1'b0;
+  assign u_hp_axi4_if.rready   = 1'b1;
+  assign s_hp_jtag_tdo         = 1'b0;
+  assign s_hp_debug_reset_req  = 1'b0;
+`endif
 
   onchip_ram #(
       .Present    (SramPresent),
@@ -187,6 +274,7 @@ core_wrapper u_core_wrapper (
       .user_bus_enable_i      (u_sysctrl_if.user_bus_enable_o),
       .user_bus_idle_o        (u_sysctrl_if.user_bus_idle_i),
       `include "soc_bus_fabric.svh"
+      .hp_axi4                (u_hp_axi4_if),
       .sdram_axi4             (u_sdram_axi4_if),
       .psram_axi4             (u_psram_axi4_if),
       .xpi_axi4               (u_xpi_axi4_if),
@@ -216,42 +304,48 @@ core_wrapper u_core_wrapper (
   );
 
   apb4_periph u_apb4_periph (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .clk_aud_i       (clk_aud_i),
-      .rst_aud_n_i     (rst_aud_n_i),
-      .clk_ulpi_i      (clk_ulpi_i),
-      .debug_halted_i  (s_mgmt_debug_halted),
-      .timebase_tick_i (timebase_tick_i),
+      .clk_i                       (clk_i),
+      .rst_n_i                     (rst_n_i),
+      .clk_aud_i                   (clk_aud_i),
+      .rst_aud_n_i                 (rst_aud_n_i),
+      .clk_ulpi_i                  (clk_ulpi_i),
+      .debug_halted_i              (s_mgmt_debug_halted),
+      .timebase_tick_i             (timebase_tick_i),
       `include "apb4_periph_fabric.svh"
-      .psram_axi4      (u_psram_axi4_if),
-      .xpi_axi4        (u_xpi_axi4_if),
-      .spisd_axi4      (u_spisd_axi4_if),
-      .opipsram_axi4   (u_opipsram_axi4_if),
-      .gpio            (u_gpio_if),
-      .user_gpio       (u_user_gpio_if),
-      .uart            (u_uart0_if),
-      .psram           (u_psram_if),
-      .spisd           (u_spisd_if),
-      .i2c0            (u_i2c0_if),
-      .i2s             (u_i2s_if),
-      .ws2812          (u_ws2812_if),
-      .xpi             (xpi),
-      .sysctrl         (u_sysctrl_if),
-      .pll_ctrl        (pll_ctrl),
-      .sdram_cfg       (u_sdram_cfg_if),
-      .sram_cfg        (u_sram_cfg_if),
-      .dvp             (u_dvp_if),
-      .sdio0           (u_sdio0_if),
-      .sdio1           (sdio1),
-      .usb2            (usb2),
-      .opipsram        (u_opipsram_if),
-      .i2c1            (u_i2c1_if),
-      .fault_valid_i   (s_bus_fault_valid),
-      .fault_addr_i    (s_bus_fault_addr),
-      .fault_wstrb_i   (s_bus_fault_wstrb),
-      .fault_reserved_i(s_bus_fault_reserved),
-      .irq_o           (s_apb4_periph_irq)
+      .psram_axi4                  (u_psram_axi4_if),
+      .xpi_axi4                    (u_xpi_axi4_if),
+      .spisd_axi4                  (u_spisd_axi4_if),
+      .opipsram_axi4               (u_opipsram_axi4_if),
+      .gpio                        (u_gpio_if),
+      .user_gpio                   (u_user_gpio_if),
+      .uart                        (u_uart0_if),
+      .uart1                       (u_uart1_if),
+      .psram                       (u_psram_if),
+      .spisd                       (u_spisd_if),
+      .i2c0                        (u_i2c0_if),
+      .i2s                         (u_i2s_if),
+      .ws2812                      (u_ws2812_if),
+      .xpi                         (xpi),
+      .sysctrl                     (u_sysctrl_if),
+      .pll_ctrl                    (pll_ctrl),
+      .sdram_cfg                   (u_sdram_cfg_if),
+      .sram_cfg                    (u_sram_cfg_if),
+      .dvp                         (u_dvp_if),
+      .sdio0                       (u_sdio0_if),
+      .sdio1                       (sdio1),
+      .usb2                        (usb2),
+      .opipsram                    (u_opipsram_if),
+      .i2c1                        (u_i2c1_if),
+      .fault_valid_i               (s_bus_fault_valid),
+      .fault_addr_i                (s_bus_fault_addr),
+      .fault_wstrb_i               (s_bus_fault_wstrb),
+      .fault_reserved_i            (s_bus_fault_reserved),
+      .hp_time_o                   (s_hp_time),
+      .hp_timer_irq_o              (s_hp_timer_irq),
+      .hp_software_irq_o           (s_hp_software_irq),
+      .hp_machine_external_irq_o   (s_hp_machine_external_irq),
+      .hp_supervisor_external_irq_o(s_hp_supervisor_external_irq),
+      .irq_o                       (s_apb4_periph_irq)
   );
 
   axi4_sdram u_axi4_sdram (

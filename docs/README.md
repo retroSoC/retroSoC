@@ -16,6 +16,9 @@ the root README and subsystem guides.
   register protocol and software quiesce contract.
 - [hazard3-debug.md](hazard3-debug.md) defines the management Hazard3 JTAG
   Debug Module integration, reset boundary, and Verilator/OpenOCD/GDB flow.
+- [lp-hp-architecture.md](lp-hp-architecture.md) defines the implemented
+  Hazard3 LP/VexiiRiscv HP topology, Linux boot ABI, MVP evidence, and
+  commercial-alignment roadmap.
 - [coremark.md](coremark.md) defines the SRAM-resident Hazard3 CoreMark quick
   measurement, optional standard hardware run, and structured result format.
 - [soc-family-positioning.md](soc-family-positioning.md) defines the planned
@@ -46,6 +49,8 @@ the root README and subsystem guides.
   counting modes, interrupt, debug-freeze, HAL, and verification contracts.
 - [ip/sysctrl.md](ip/sysctrl.md) defines the SystemCtrl register ABI, user-core
   lifecycle, PLL/fault/performance/RTC/test contracts, HAL, and verification.
+- [ip/hp-platform.md](ip/hp-platform.md) defines the experimental HP PLIC and
+  LP/HP mailbox register, interrupt, software, and verification contracts.
 - [ip/onchip-sram.md](ip/onchip-sram.md) defines the configurable native-AXI4
   SRAM architecture, APB capability ABI, technology mapping, verification, and
   reliability roadmap.
