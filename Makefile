@@ -122,6 +122,7 @@ HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
 HP_BOOT_BUNDLE_BIN      := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).bin
 HP_BOOT_BUNDLE_HEX      := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).hex
 HP_BOOT_BUNDLE_MANIFEST := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).json
+HP_LINUX_SIM_TIME       ?= 7200
 HP_SMOKE_BUILD_DIR      := $(VARIANT_ROOT)/hp-smoke
 HP_SMOKE_STAMP          := $(HP_SMOKE_BUILD_DIR)/images/.stamp
 HP_SMOKE_BUNDLE_NAME    ?= retrosoc_hp_smoke
@@ -313,7 +314,7 @@ endif
 include physical/librelane/Makefile
 include physical/ecc/Makefile
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app setup-hp-linux hp-linux hp-bundle hp-smoke-bundle hp-smoke-sim \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
@@ -349,6 +350,7 @@ help:
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
 	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
 	  '  hp-bundle                  package LP firmware and HP Linux images for flash' \
+	  '  hp-linux-sim               run the fast-flash HP Linux userspace acceptance test' \
 	  '  hp-smoke-sim               run LP release, HP MMIO, and mailbox RTL smoke test' \
 	  '  doctor                     check tools, paths, and selected configuration' \
 	  '  config | manifest          print/write the effective configuration' \
@@ -497,6 +499,18 @@ $(HP_BOOT_BUNDLE_HEX): $(HP_BOOT_BUNDLE_BIN)
 	$(OBJC) -I binary -O verilog $< $@
 
 hp-bundle: $(HP_BOOT_BUNDLE_BIN) $(HP_BOOT_BUNDLE_HEX)
+
+hp-linux-sim: hp-bundle comp
+	@test '$(SIMU)' = VERILATOR
+	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_BOOT_BUNDLE_NAME) \
+		SOC_SIM_TIME=$(HP_LINUX_SIM_TIME) VERILATOR_SIM_ARGS=--fast-flash sim
+	python3 $(ROOT_PATH)/scripts/check_simulation.py \
+		--log $(SIM_BUILD_ROOT)/sim.log \
+		--result $(SIM_BUILD_ROOT)/result-hp-linux-sim-check.json \
+		--require 'VERILATOR_FAST_FLASH=enabled' \
+		--require 'retroSoC HP Linux ready' \
+		--require 'HP_LINUX_READY' \
+		--require 'SIM_TEST_PASS code=0'
 
 $(HP_SMOKE_STAMP): $(ROOT_PATH)/scripts/build_hp_smoke.py \
 	$(ROOT_PATH)/app/ports/linux/smoke/start.S \

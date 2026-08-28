@@ -45,6 +45,26 @@ def test_makefile_uses_path_resolved_sbt() -> None:
     assert "/nfs/home/miaoyuchi/sbt/bin/sbt" not in makefile
 
 
+def test_hp_linux_simulation_uses_explicit_fast_flash_acceptance() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    verilator_makefile = (ROOT / "rtl/mini/mk/verilator.mk").read_text(encoding="utf-8")
+    emulator = (ROOT / "rtl/mini/dv/verilator/csrc/main.cpp").read_text(encoding="utf-8")
+
+    assert "HP_LINUX_SIM_TIME       ?= 7200" in makefile
+    assert "hp-linux-sim: hp-bundle comp" in makefile
+    assert "VERILATOR_SIM_ARGS=--fast-flash sim" in makefile
+    for marker in (
+        "VERILATOR_FAST_FLASH=enabled",
+        "retroSoC HP Linux ready",
+        "HP_LINUX_READY",
+        "SIM_TEST_PASS code=0",
+    ):
+        assert f"--require '{marker}'" in makefile
+    assert "VERILATOR_SIM_ARGS      ?=" in verilator_makefile
+    assert "$(VERILATOR_SIM_ARGS) -t $(SOC_SIM_TIME)" in verilator_makefile
+    assert '("fast-flash"' in emulator
+
+
 def test_hp_address_and_sysctrl_contract() -> None:
     document = json.loads(
         (ROOT / "rtl/mini/address_map/memory_map.json").read_text(encoding="utf-8")

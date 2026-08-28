@@ -10,6 +10,12 @@
 
 `include "xpi_define.svh"
 
+`ifdef SIMU_VERILATOR
+`define APB4_XPI_CORE_MODULE xpi_core_verilator
+`else
+`define APB4_XPI_CORE_MODULE xpi_core
+`endif
+
 module apb4_xpi (
     // verilog_format: off -- preserve reviewed port alignment
     input  logic  clk_i,
@@ -426,7 +432,7 @@ module apb4_xpi (
       .perf_command_event_o   (s_indirect_perf_cmd)
   );
 
-  xpi_core u_xpi_core (
+  `APB4_XPI_CORE_MODULE u_xpi_core (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .start_i         (s_core_start),
@@ -550,3 +556,5 @@ module apb4_xpi (
   assign s_unused_mm_perf_split = s_mm_perf_split;
 
 endmodule
+
+`undef APB4_XPI_CORE_MODULE

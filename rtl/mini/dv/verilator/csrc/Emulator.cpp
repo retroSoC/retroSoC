@@ -23,6 +23,7 @@ void env_init() {
 }
 
 extern "C" void flash_init(const char *img);
+extern "C" void flash_set_fast_mode(bool enable);
 
 Emulator::Emulator(cxxopts::ParseResult &res) {
     args.dumpWave = res["dump-wave"].as<bool>();
@@ -36,6 +37,7 @@ Emulator::Emulator(cxxopts::ParseResult &res) {
         args.simTime = tmp;
 
     args.jtagPort = res["jtag-port"].as<unsigned long>();
+    args.fastFlash = res["fast-flash"].as<bool>();
 
     args.image = res["image"].as<std::string>();
 
@@ -48,6 +50,8 @@ Emulator::Emulator(cxxopts::ParseResult &res) {
 
     std::cout << rang::fg::green << "Initializing flash with " << args.image << " ..."
               << rang::fg::reset << std::endl;
+    flash_set_fast_mode(args.fastFlash);
+    std::cout << "VERILATOR_FAST_FLASH=" << (args.fastFlash ? "enabled" : "disabled") << std::endl;
     flash_init(args.image.c_str());
 
     dutPtr = new Vretrosoc_top;

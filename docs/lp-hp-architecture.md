@@ -148,8 +148,20 @@ deterministic terminal verdict.
 make setup-hp-linux
 make CONFIG=configs/ci/ihp130-hp.mk hp-linux
 make CONFIG=configs/ci/ihp130-hp.mk hp-bundle
-make CONFIG=configs/ci/ihp130-hp.mk SIMU=VERILATOR comp sim
+make CONFIG=configs/ci/ihp130-hp.mk SIMU=VERILATOR hp-linux-sim
 ```
+
+`hp-linux-sim` enables the Verilator-only slot-0 read backend and applies a
+7200-second wall-time limit. It reads the same flash image through DPI but
+retains the LP firmware, TCD, DMA, AXI, XPI memory-map checks, CRC, SDRAM, HP
+release, OpenSBI, Linux, and final Buildroot init script. The target requires
+the userspace message, the mailbox acknowledgement, and `SIM_TEST_PASS code=0`;
+completing only the image copy is not a pass. `HP_BOOT_RELEASED` remains a
+diagnostic but is not a machine marker because LP and HP UART characters may
+interleave after release. The generic `sim` target and `hp-smoke-sim` continue
+to use the pin-level QSPI model. The fast backend accepts only the reset slot-0
+`0xEB` read sequence and reports an XPI sequence error for other slots, writes,
+or LUT programs.
 
 The setup flow locks VexiiRiscv, OpenSBI, Linux, and Buildroot by full Git
 revision. Interrupted HP source fetches are repaired in place on retry.

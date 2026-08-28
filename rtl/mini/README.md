@@ -17,3 +17,11 @@ This directory is the active Mini SoC integration boundary.
 
 Generated filelists, address-map products, and MPW output belong in the
 configured build variant, not under this directory.
+
+Verilator normally retains the pin-level QSPI flash model. The explicit
+`--fast-flash` emulator option replaces only the reset slot-0 `0xEB` read PHY
+with a byte-wide DPI backend; unsupported slots, writes, or LUTs fail rather
+than silently falling back. `hp-linux-sim` uses this mode so TCD, DMA, AXI,
+XPI memory-map, CRC, SDRAM, HP release, and Linux userspace remain in the
+acceptance path without spending hours shifting the boot payload over QSPI.
+`hp-smoke-sim` remains the pin-level protocol reference.

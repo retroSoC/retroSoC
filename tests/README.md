@@ -20,7 +20,9 @@ tooling.
 - `test_hp_boot_bundle.py` checks the HP flash ABI, CRCs, payload placement,
   and handwritten mailbox RTL/C offset parity. `test_hp_platform.py`,
   `test_hp_mailbox.py`, `test_plic.py`, and the AXI tests cover the remaining
-  HP integration contracts.
+  HP integration contracts. `test_xpi_fast_flash.py` covers the explicitly
+  selected Verilator slot-0 read accelerator, including backpressure and
+  negative completion paths.
 
 Add a host C test when changing deterministic runtime or media logic; add a
 Python test when changing scripts or build policy. Run:

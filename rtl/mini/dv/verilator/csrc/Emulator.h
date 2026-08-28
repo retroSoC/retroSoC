@@ -33,6 +33,7 @@ class Emulator {
     Vretrosoc_top *dutPtr = nullptr;
     struct Args {
         bool dumpWave = false;
+        bool fastFlash = false;
         unsigned long dumpBegin = 0UL;
         unsigned long dumpEnd = -1UL;
         unsigned long simTime = -1UL;
