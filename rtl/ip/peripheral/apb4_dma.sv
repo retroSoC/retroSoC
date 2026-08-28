@@ -36,6 +36,9 @@ module apb4_dma #(
   logic [     NumChannels*32-1:0] s_byte_count;
   logic [     NumChannels*32-1:0] s_req_sel;
   logic [     NumChannels*32-1:0] s_burst_cfg;
+  logic [     NumChannels*32-1:0] s_tcd_head;
+  logic [     NumChannels*32-1:0] s_tcd_count;
+  logic [     NumChannels*32-1:0] s_crc_expected;
   logic [        NumChannels-1:0] s_start;
   logic [        NumChannels-1:0] s_suspend;
   logic [        NumChannels-1:0] s_resume;
@@ -59,6 +62,7 @@ module apb4_dma #(
   logic [     NumChannels*32-1:0] s_bytes_done;
   logic [     NumChannels*32-1:0] s_stall_cycles_lo;
   logic [     NumChannels*32-1:0] s_stall_cycles_hi;
+  logic [     NumChannels*32-1:0] s_crc_result;
   logic                           s_first_err_valid;
   logic [$clog2(NumChannels)-1:0] s_first_err_channel;
   logic [                    8:0] s_first_err_stat;
@@ -79,6 +83,9 @@ module apb4_dma #(
       .byte_count_o         (s_byte_count),
       .request_sel_o        (s_req_sel),
       .burst_cfg_o          (s_burst_cfg),
+      .tcd_head_o           (s_tcd_head),
+      .tcd_count_o          (s_tcd_count),
+      .crc_expected_o       (s_crc_expected),
       .start_o              (s_start),
       .suspend_o            (s_suspend),
       .resume_o             (s_resume),
@@ -102,6 +109,7 @@ module apb4_dma #(
       .bytes_done_i         (s_bytes_done),
       .stall_cycles_lo_i    (s_stall_cycles_lo),
       .stall_cycles_hi_i    (s_stall_cycles_hi),
+      .crc_result_i         (s_crc_result),
       .first_error_valid_i  (s_first_err_valid),
       .first_error_channel_i(s_first_err_channel),
       .first_error_status_i (s_first_err_stat),
@@ -127,6 +135,9 @@ module apb4_dma #(
       .byte_count_i         (s_byte_count),
       .request_sel_i        (s_req_sel),
       .burst_cfg_i          (s_burst_cfg),
+      .tcd_head_i           (s_tcd_head),
+      .tcd_count_i          (s_tcd_count),
+      .crc_expected_i       (s_crc_expected),
       .start_i              (s_start),
       .suspend_i            (s_suspend),
       .resume_i             (s_resume),
@@ -148,6 +159,7 @@ module apb4_dma #(
       .bytes_done_o         (s_bytes_done),
       .stall_cycles_lo_o    (s_stall_cycles_lo),
       .stall_cycles_hi_o    (s_stall_cycles_hi),
+      .crc_result_o         (s_crc_result),
       .first_error_valid_o  (s_first_err_valid),
       .first_error_channel_o(s_first_err_channel),
       .first_error_status_o (s_first_err_stat),

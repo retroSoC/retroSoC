@@ -8,6 +8,7 @@ module dma_error_tb;
   localparam logic [31:0] ErrorSource = 32'hDEAD_0000;
   localparam logic [31:0] StreamSource = 32'h4000_3000;
   localparam logic [31:0] StreamDestination = 32'h4000_4000;
+  localparam logic [31:0] TcdBase = 32'h4000_8000;
 
   logic                        clk_i = 1'b0;
   logic                        rst_n_i = 1'b0;
@@ -17,6 +18,9 @@ module dma_error_tb;
   logic   [NumChannels*32-1:0] byte_count_i = '0;
   logic   [NumChannels*32-1:0] request_sel_i = '0;
   logic   [NumChannels*32-1:0] burst_cfg_i = '0;
+  logic   [NumChannels*32-1:0] tcd_head_i = '0;
+  logic   [NumChannels*32-1:0] tcd_count_i = '0;
+  logic   [NumChannels*32-1:0] crc_expected_i = '0;
   logic   [   NumChannels-1:0] start_i = '0;
   logic   [   NumChannels-1:0] suspend_i = '0;
   logic   [   NumChannels-1:0] resume_i = '0;
@@ -38,6 +42,7 @@ module dma_error_tb;
   logic   [NumChannels*32-1:0] bytes_done_o;
   logic   [NumChannels*32-1:0] stall_cycles_lo_o;
   logic   [NumChannels*32-1:0] stall_cycles_hi_o;
+  logic   [NumChannels*32-1:0] crc_result_o;
   logic                        first_error_valid_o;
   logic   [               1:0] first_error_channel_o;
   logic   [               8:0] first_error_status_o;
@@ -65,6 +70,7 @@ module dma_error_tb;
   integer                      stream_rx_count = 0;
   logic   [              31:0] written_addr                     [0:127];
   logic   [              31:0] written_data                     [0:127];
+  logic   [               3:0] written_strb                     [0:127];
   logic   [              31:0] stream_tx_data                   [  0:7];
   logic                        stream_tx_last                   [  0:7];
   logic                        rx_driver_valid_q = 1'b0;
@@ -73,6 +79,7 @@ module dma_error_tb;
   logic                        rx_driver_last_q = 1'b0;
   logic                        stream_tx_ready_enable = 1'b1;
   logic                        write_accept_enable = 1'b1;
+  logic   [              31:0] tcd_mem                          [ 0:15];
 
   dma_req_if req ();
   axi4_if axi4 (
@@ -103,7 +110,11 @@ module dma_error_tb;
   always #5 clk_i = ~clk_i;
 
   function automatic logic [31:0] model_read_data(input logic [31:0] address);
-    model_read_data = 32'hA500_0000 + ((address - SourceBase) >> 2);
+    if ((address >= TcdBase) && (address < (TcdBase + 32'd64))) begin
+      model_read_data = tcd_mem[(address-TcdBase)>>2];
+    end else begin
+      model_read_data = 32'hA500_0000 + ((address - SourceBase) >> 2);
+    end
   endfunction
 
   assign axi4.arready = !read_active_q && cycle_q[0];
@@ -198,6 +209,7 @@ module dma_error_tb;
       if (axi4.wvalid && axi4.wready) begin
         written_addr[write_count] <= write_addr_q + (write_index_q << 2);
         written_data[write_count] <= axi4.wdata;
+        written_strb[write_count] <= axi4.wstrb;
         write_count               <= write_count + 1;
         if (axi4.wlast) begin
           if ((write_index_q + 1'b1) != write_beats_q) begin
@@ -243,6 +255,9 @@ module dma_error_tb;
       .global_reset_i       (1'b0),
       .global_error_clear_i (1'b0),
       .ch_cfg_i             (ch_cfg_i),
+      .tcd_head_i           (tcd_head_i),
+      .tcd_count_i          (tcd_count_i),
+      .crc_expected_i       (crc_expected_i),
       .src_addr_i           (src_addr_i),
       .dst_addr_i           (dst_addr_i),
       .byte_count_i         (byte_count_i),
@@ -269,6 +284,7 @@ module dma_error_tb;
       .bytes_done_o         (bytes_done_o),
       .stall_cycles_lo_o    (stall_cycles_lo_o),
       .stall_cycles_hi_o    (stall_cycles_hi_o),
+      .crc_result_o         (crc_result_o),
       .first_error_valid_o  (first_error_valid_o),
       .first_error_channel_o(first_error_channel_o),
       .first_error_status_o (first_error_status_o),
@@ -380,12 +396,61 @@ module dma_error_tb;
       end
     end
 
-    error_mode = 1'b1;
+    for (integer index = 0; index < 16; index++) begin
+      tcd_mem[index] = 32'd0;
+    end
+    tcd_mem[1]         = CopySource + 32'h200;
+    tcd_mem[2]         = CopyDestination + 32'h200;
+    tcd_mem[3]         = 32'd8;
+    tcd_mem[7]         = 32'h0101_0007;
+    tcd_head_i[0+:32]  = TcdBase;
+    tcd_count_i[0+:32] = 32'd1;
+    write_before       = write_count;
+    start_channel(0);
+    wait_terminal(0);
+    tcd_head_i[0+:32]  = 32'd0;
+    tcd_count_i[0+:32] = 32'd0;
+    if (error_o[0] || (write_count != (write_before + 2)) ||
+        (written_data[write_before] != model_read_data(
+            CopySource + 32'h200
+        )) || (written_data[write_before+1] != model_read_data(
+            CopySource + 32'h204
+        ))) begin
+      $fatal(1, "DMA TCD fetch transfer failed count=%0d", write_count);
+    end
+
+    configure_channel(0, 3'd0, 4'd0, CopySource, 1'b1, CopyDestination + 32'h100, 1'b1, 32'd6, 2'd1,
+                      5'd16);
+    write_before = write_count;
+    start_channel(0);
+    wait_terminal(0);
+    if (error_o[0] || (write_count != (write_before + 2)) ||
+        (written_strb[write_before] != 4'hF) ||
+        (written_strb[write_before + 1] != 4'h3) || (bytes_done_o[0 +: 32] != 32'd6)) begin
+      $fatal(1, "DMA tail-byte transfer failed count=%0d done=%0d strb=%h/%h", write_count,
+             bytes_done_o[0+:32], written_strb[write_before], written_strb[write_before+1]);
+    end
+
+    configure_channel(0, 3'd0, 4'd0, CopySource, 1'b1, CopyDestination + 32'h300, 1'b1, 32'd8, 2'd1,
+                      5'd16);
+    ch_cfg_i[10]          = 1'b1;
+    ch_cfg_i[11]          = 1'b1;
+    crc_expected_i[0+:32] = 32'h943F_F353;
+    start_channel(0);
+    wait_terminal(0);
+    if (error_o[0] || (crc_result_o[0+:32] != 32'h943F_F353)) begin
+      $fatal(1, "DMA CRC check failed result=%h", crc_result_o[0+:32]);
+    end
+    ch_cfg_i[10]          = 1'b0;
+    ch_cfg_i[11]          = 1'b0;
+    crc_expected_i[0+:32] = 32'd0;
+
+    error_mode            = 1'b1;
     configure_channel(1, 3'd0, 4'd0, ErrorSource, 1'b1, 32'h4000_5000, 1'b1, 32'd4, 2'd3, 5'd1);
     start_channel(1);
     wait_terminal(1);
     if (!error_o[1] || !first_error_valid_o || (first_error_channel_o != 2'd1) ||
-        (write_count != 20)) begin
+        (write_count != 26)) begin
       $fatal(1, "DMA read error was not isolated to its channel");
     end
     error_mode = 1'b0;
@@ -409,7 +474,7 @@ module dma_error_tb;
     drive_rx_beat(32'h5100_0001, 4'hF, 1'b1);
     wait_terminal(3);
     if (error_o[3] || (stream_rx_count != 2) || !stream_last_o[3] ||
-        (written_data[20] != 32'h5100_0000) || (written_data[21] != 32'h5100_0001)) begin
+        (written_data[26] != 32'h5100_0000) || (written_data[27] != 32'h5100_0001)) begin
       $fatal(1, "DMA AXI4-Stream RX did not write the programmed byte count");
     end
 

@@ -1,0 +1,3 @@
+# Testbench/model dependencies that are not part of the synthesized netlist.
+/clusterip/common/rtl/utils/register.sv
+/clusterip/common/rtl/clkrst/rst_sync.sv

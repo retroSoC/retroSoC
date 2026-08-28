@@ -52,10 +52,11 @@ assign semantics to extension-specific registers; each integrated user IP
 keeps its register ABI and driver in its owning application component. See the
 [User IP software contract](../docs/ip/user-ip.md).
 
-`<retrosoc/hal/dma.h>` provides the channel-aware direct-mode DMA API. UART0,
-I2C0, I2C1, and bulk/media clients have deterministic channel assignments; see
-the [DMA MVP contract](../docs/ip/dma.md). The current SDK intentionally
-accepts only naturally aligned 32-bit DMA transfers.
+`<retrosoc/hal/dma.h>` provides the channel-aware direct and linked-list DMA
+API. UART0, I2C0, I2C1, bulk/media clients, and the HP boot loader have
+deterministic channel assignments; see the [DMA V2 contract](../docs/ip/dma.md).
+The SDK accepts aligned 32-bit transfers, partial final beats for MM-to-MM,
+and 64-byte aligned TCD chains.
 
 `<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
 RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.

@@ -366,13 +366,17 @@ module dma_formal_design (
       .DataWidth    (32),
       .NumChannels  (NumChannels),
       .MaxBurstBeats(4),
-      .FifoDepth    (FifoDepth)
+      .FifoDepth    (FifoDepth),
+      .EnableCrc    (1'b0)
   ) u_dut (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
       .global_reset_i       (1'b0),
       .global_error_clear_i (1'b0),
       .ch_cfg_i             (s_ch_cfg_i),
+      .tcd_head_i           ('0),
+      .tcd_count_i          ('0),
+      .crc_expected_i       ('0),
       .src_addr_i           (s_src_addr_i),
       .dst_addr_i           (s_dst_addr_i),
       .byte_count_i         (s_byte_count_i),
@@ -399,6 +403,7 @@ module dma_formal_design (
       .bytes_done_o         (s_bytes_done),
       .stall_cycles_lo_o    (),
       .stall_cycles_hi_o    (),
+      .crc_result_o         (),
       .first_error_valid_o  (),
       .first_error_channel_o(),
       .first_error_status_o (),

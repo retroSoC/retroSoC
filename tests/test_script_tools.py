@@ -137,6 +137,15 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
     }.issubset({path.name for path in generated})
 
 
+def test_netlist_support_filelist_is_an_explicit_testbench_allowlist(tmp_path: Path) -> None:
+    generate_all(tmp_path, ["+define+PDK_IHP130"])
+
+    support = parse_filelists([tmp_path / "netlist_support.fl"])
+    source_names = {path.name for path in support.files}
+
+    assert source_names == {"register.sv", "rst_sync.sv"}
+
+
 def test_filelist_round_trips_verilog_define_values(tmp_path: Path) -> None:
     generate_all(tmp_path, ["+define+SOC_JTAG_IDCODE=32'hDEADBEEF"])
 

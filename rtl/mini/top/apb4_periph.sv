@@ -320,7 +320,8 @@ axi4_stream_if #(
   );
 
   apb4_dma #(
-      .NumChannels(6)
+      .NumChannels(8),
+      .FifoDepth  (32)
   ) u_apb4_dma (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),

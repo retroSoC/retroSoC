@@ -691,6 +691,7 @@ static int test_gpio_helpers(void) {
 }
 
 static int test_dma_config_validation(void) {
+    static rs_dma_tcd_t tcd __attribute__((aligned(64)));
     rs_dma_config_t config = {
         .kind = RS_DMA_KIND_MM_TO_MM,
         .request = RS_DMA_REQUEST_SOFTWARE,
@@ -713,7 +714,7 @@ static int test_dma_config_validation(void) {
     }
     config.width = RS_DMA_WIDTH_32;
     config.byte_count = 6U;
-    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_OK) {
         return 3;
     }
     config.byte_count = 64U;
@@ -723,9 +724,35 @@ static int test_dma_config_validation(void) {
     if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_OK) {
         return 4;
     }
+    config.byte_count = 6U;
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
+        return 6;
+    }
     config.source_increment = false;
     if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
         return 5;
+    }
+    tcd.next_ptr = 0U;
+    tcd.source = UINT32_C(0x40000000);
+    tcd.destination = UINT32_C(0x41000000);
+    tcd.byte_count = 6U;
+    tcd.source_stride = 0;
+    tcd.destination_stride = 0;
+    tcd.y_count = 1U;
+    tcd.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                  ((uint32_t)RS_DMA_KIND_MM_TO_MM << RS_DMA_TCD_KIND_SHIFT) |
+                  ((uint32_t)RS_DMA_REQUEST_SOFTWARE << RS_DMA_TCD_REQUEST_SHIFT) |
+                  (UINT32_C(1) << RS_DMA_TCD_PRIORITY_SHIFT) |
+                  (UINT32_C(16) << RS_DMA_TCD_BURST_SHIFT);
+    if (rs_dma_tcd_validate(RS_DMA_CHANNEL_BULK, &tcd) != RS_OK) {
+        return 7;
+    }
+    tcd.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
+                  ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
+                  ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT) |
+                  (UINT32_C(1) << RS_DMA_TCD_PRIORITY_SHIFT);
+    if (rs_dma_tcd_validate(RS_DMA_CHANNEL_BULK, &tcd) != RS_EINVAL) {
+        return 8;
     }
     return 0;
 }

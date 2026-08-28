@@ -117,8 +117,7 @@ def main() -> int:
     if args.mode == "behv":
         base.files.append(_require(args.converted, "converted behavioral RTL"))
     else:
-        common = parse_filelists([generated_dir / "commonip.fl"])
-        base.extend(common)
+        base.extend(parse_filelists([generated_dir / "netlist_support.fl"]))
         base.files.append(_require(args.netlist, f"{args.mode} netlist"))
 
     if args.mode == "post":

@@ -4,6 +4,7 @@
 
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/hp_mailbox.h>
+#include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/uart.h>
@@ -16,6 +17,9 @@
 #define RS_HP_BOOT_READY_EVENT           UINT32_C(1)
 #define RS_HP_BOOT_READY_ARG             UINT32_C(0x4C4E5801)
 #define RS_HP_BOOT_READBACK_STRIDE_BYTES UINT32_C(1024)
+#define RS_HP_BOOT_DMA_TIMEOUT           (RS_TIMEOUT_DEFAULT * UINT32_C(64))
+
+static rs_dma_tcd_t s_hp_boot_tcd __attribute__((aligned(64)));
 
 _Static_assert(sizeof(rs_hp_boot_header_t) == RS_HP_BOOT_HEADER_SIZE,
                "HP boot bundle header ABI mismatch");
@@ -141,6 +145,38 @@ static bool rs_hp_boot_copy_entry(const rs_hp_boot_entry_t *entry) {
     return (~crc) == entry->crc32;
 }
 
+static bool rs_hp_boot_dma_copy_entry(const rs_hp_boot_entry_t *entry) {
+    rs_status_t status;
+
+    s_hp_boot_tcd.next_ptr = UINT32_C(0);
+    s_hp_boot_tcd.source = RS_SOC_FLASH_BASE + entry->flash_offset;
+    s_hp_boot_tcd.destination = entry->load_address;
+    s_hp_boot_tcd.byte_count = entry->size;
+    s_hp_boot_tcd.source_stride = 0;
+    s_hp_boot_tcd.destination_stride = 0;
+    s_hp_boot_tcd.y_count = UINT16_C(1);
+    s_hp_boot_tcd.reserved = UINT16_C(0);
+    s_hp_boot_tcd.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                            RS_DMA_TCD_CRC_ENABLE | RS_DMA_TCD_CRC_FINAL |
+                            (UINT32_C(3) << RS_DMA_TCD_PRIORITY_SHIFT) |
+                            (UINT32_C(16) << RS_DMA_TCD_BURST_SHIFT);
+    s_hp_boot_tcd.control |= ((uint32_t)RS_DMA_KIND_MM_TO_MM << RS_DMA_TCD_KIND_SHIFT) |
+                             ((uint32_t)RS_DMA_REQUEST_SOFTWARE << RS_DMA_TCD_REQUEST_SHIFT);
+    s_hp_boot_tcd.crc_expected = entry->crc32;
+    s_hp_boot_tcd.crc_seed = UINT32_C(0xFFFFFFFF);
+    s_hp_boot_tcd.crc_result = UINT32_C(0);
+    s_hp_boot_tcd.status = UINT32_C(0);
+    s_hp_boot_tcd.bytes_done = UINT32_C(0);
+    s_hp_boot_tcd.error_status = UINT32_C(0);
+    s_hp_boot_tcd.reserved_tail = UINT32_C(0);
+    s_hp_boot_tcd.reserved_tail2 = UINT32_C(0);
+    __asm__ volatile("fence rw, rw" ::: "memory");
+    status = rs_dma_submit_tcd(RS_DMA_CHANNEL_HP, &s_hp_boot_tcd, RS_HP_BOOT_DMA_TIMEOUT);
+    __asm__ volatile("fence rw, rw" ::: "memory");
+    return (status == RS_OK) && (s_hp_boot_tcd.bytes_done == entry->size) &&
+           (s_hp_boot_tcd.crc_result == entry->crc32);
+}
+
 static bool rs_hp_boot_wait_sdram(void) {
     rs_sdram_status_t status;
 
@@ -184,7 +220,8 @@ int main(void) {
     for (uint32_t index = 0U; index < RS_HP_BOOT_BUNDLE_ENTRY_COUNT; ++index) {
         printf("HP_BOOT_LOAD:%u:%u\n", (unsigned int)header.entries[index].type,
                (unsigned int)header.entries[index].size);
-        if (!rs_hp_boot_copy_entry(&header.entries[index])) {
+        if (!rs_hp_boot_dma_copy_entry(&header.entries[index]) &&
+            !rs_hp_boot_copy_entry(&header.entries[index])) {
             rs_hp_boot_fail((uint8_t)(UINT8_C(5) + (uint8_t)index));
         }
     }

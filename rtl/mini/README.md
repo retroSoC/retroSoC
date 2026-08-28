@@ -6,7 +6,10 @@ This directory is the active Mini SoC integration boundary.
 - core contains self-owned Mini core wrappers.
 - dv contains behavioural testbench, device models, and Verilator harness
   sources.
-- filelist contains canonical ordered .fl templates.
+- filelist contains canonical ordered .fl templates. `commonip.fl` is the full
+  behavioral/synthesis Common source set; `netlist_support.fl` is the explicit
+  allowlist of testbench dependencies not already present in a synthesized
+  netlist.
 - mk contains simulator and software make fragments.
 - script contains filelist, address-map, conversion, and setup helpers.
 - top contains SoC integration RTL, including `apb4_system` for the APB4

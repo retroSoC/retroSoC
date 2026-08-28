@@ -26,6 +26,9 @@ module dma_reg #(
     output logic [NumChannels*32-1:0]      byte_count_o,
     output logic [NumChannels*32-1:0]      request_sel_o,
     output logic [NumChannels*32-1:0]      burst_cfg_o,
+    output logic [NumChannels*32-1:0]      tcd_head_o,
+    output logic [NumChannels*32-1:0]      tcd_count_o,
+    output logic [NumChannels*32-1:0]      crc_expected_o,
     output logic [NumChannels-1:0]         start_o,
     output logic [NumChannels-1:0]         suspend_o,
     output logic [NumChannels-1:0]         resume_o,
@@ -49,6 +52,7 @@ module dma_reg #(
     input  logic [NumChannels*32-1:0]      bytes_done_i,
     input  logic [NumChannels*32-1:0]      stall_cycles_lo_i,
     input  logic [NumChannels*32-1:0]      stall_cycles_hi_i,
+    input  logic [NumChannels*32-1:0]      crc_result_i,
     input  logic                           first_error_valid_i,
     input  logic [ChannelIndexWidth-1:0]   first_error_channel_i,
     input  logic [8:0]                     first_error_status_i,
@@ -58,7 +62,7 @@ module dma_reg #(
     // verilog_format: on
 );
   localparam logic [31:0] IpId = 32'h444D_4134;
-  localparam logic [31:0] IpVersion = 32'h0001_0000;
+  localparam logic [31:0] IpVersion = 32'h0002_0000;
   localparam logic [31:0] ChannelBase = {20'd0, `APB4_DMA__CH_BASE};
   localparam logic [31:0] ChannelStride = {20'd0, `APB4_DMA__CH_STRIDE};
 
@@ -68,6 +72,9 @@ module dma_reg #(
   logic [   NumChannels*32-1:0] s_byte_count_q;
   logic [   NumChannels*32-1:0] s_req_sel_q;
   logic [   NumChannels*32-1:0] s_burst_cfg_q;
+  logic [   NumChannels*32-1:0] s_tcd_head_q;
+  logic [   NumChannels*32-1:0] s_tcd_count_q;
+  logic [   NumChannels*32-1:0] s_crc_expected_q;
   logic [   NumChannels*32-1:0] s_evt_en_q;
   logic [      NumChannels-1:0] s_irq_en_q;
   logic [      NumChannels-1:0] s_irq_test_q;
@@ -138,13 +145,17 @@ module dma_reg #(
                                (s_channel_offset == `APB4_DMA__CH_REMAINING) ||
                                (s_channel_offset == `APB4_DMA__CH_BYTES_DONE) ||
                                (s_channel_offset == `APB4_DMA__CH_STALL_CYCLES_LO) ||
-                               (s_channel_offset == `APB4_DMA__CH_STALL_CYCLES_HI);
+                               (s_channel_offset == `APB4_DMA__CH_STALL_CYCLES_HI) ||
+                               (s_channel_offset == `APB4_DMA__CH_CRC_RESULT);
   assign s_channel_config_write = (s_channel_offset == `APB4_DMA__CH_CFG) ||
                                   (s_channel_offset == `APB4_DMA__CH_SRC_ADDR) ||
                                   (s_channel_offset == `APB4_DMA__CH_DST_ADDR) ||
                                   (s_channel_offset == `APB4_DMA__CH_BYTE_COUNT) ||
                                   (s_channel_offset == `APB4_DMA__CH_REQUEST_SEL) ||
-                                  (s_channel_offset == `APB4_DMA__CH_BURST_CFG);
+                                  (s_channel_offset == `APB4_DMA__CH_BURST_CFG) ||
+                                  (s_channel_offset == `APB4_DMA__CH_TCD_HEAD) ||
+                                  (s_channel_offset == `APB4_DMA__CH_TCD_COUNT) ||
+                                  (s_channel_offset == `APB4_DMA__CH_CRC_EXPECTED);
   assign s_low_byte_only_write =
       s_write &&
       (((s_offset == `APB4_DMA__GLOBAL_CTRL) ||
@@ -176,6 +187,9 @@ module dma_reg #(
           (s_channel_offset != `APB4_DMA__CH_BYTE_COUNT) &&
           (s_channel_offset != `APB4_DMA__CH_REQUEST_SEL) &&
           (s_channel_offset != `APB4_DMA__CH_BURST_CFG) &&
+          (s_channel_offset != `APB4_DMA__CH_TCD_HEAD) &&
+          (s_channel_offset != `APB4_DMA__CH_TCD_COUNT) &&
+          (s_channel_offset != `APB4_DMA__CH_CRC_EXPECTED) &&
           (s_channel_offset != `APB4_DMA__CH_EVENT_ENABLE) &&
           (s_channel_offset != `APB4_DMA__CH_EVENT_STATUS)))) begin
       s_access_err = 1'b1;
@@ -237,25 +251,31 @@ module dma_reg #(
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      s_ch_cfg_q     <= '0;
-      s_src_addr_q   <= '0;
-      s_dst_addr_q   <= '0;
-      s_byte_count_q <= '0;
-      s_req_sel_q    <= '0;
-      s_burst_cfg_q  <= '0;
-      s_evt_en_q     <= '0;
-      s_irq_en_q     <= '0;
-      s_irq_test_q   <= '0;
+      s_ch_cfg_q       <= '0;
+      s_src_addr_q     <= '0;
+      s_dst_addr_q     <= '0;
+      s_byte_count_q   <= '0;
+      s_req_sel_q      <= '0;
+      s_burst_cfg_q    <= '0;
+      s_tcd_head_q     <= '0;
+      s_tcd_count_q    <= '0;
+      s_crc_expected_q <= '0;
+      s_evt_en_q       <= '0;
+      s_irq_en_q       <= '0;
+      s_irq_test_q     <= '0;
     end else if (global_reset_o) begin
-      s_ch_cfg_q     <= '0;
-      s_src_addr_q   <= '0;
-      s_dst_addr_q   <= '0;
-      s_byte_count_q <= '0;
-      s_req_sel_q    <= '0;
-      s_burst_cfg_q  <= '0;
-      s_evt_en_q     <= '0;
-      s_irq_en_q     <= '0;
-      s_irq_test_q   <= '0;
+      s_ch_cfg_q       <= '0;
+      s_src_addr_q     <= '0;
+      s_dst_addr_q     <= '0;
+      s_byte_count_q   <= '0;
+      s_req_sel_q      <= '0;
+      s_burst_cfg_q    <= '0;
+      s_tcd_head_q     <= '0;
+      s_tcd_count_q    <= '0;
+      s_crc_expected_q <= '0;
+      s_evt_en_q       <= '0;
+      s_irq_en_q       <= '0;
+      s_irq_test_q     <= '0;
     end else if (s_write && !s_access_err) begin
       if (s_offset == `APB4_DMA__IRQ_ENABLE) begin
         s_irq_en_q <= s_irq_en_write;
@@ -292,6 +312,18 @@ module dma_reg #(
             s_burst_cfg_q[(s_channel_index*32)+:32] <=
                 merge_bytes(s_burst_cfg_q[(s_channel_index*32)+:32], apb4.pwdata, apb4.pstrb);
           end
+          `APB4_DMA__CH_TCD_HEAD: begin
+            s_tcd_head_q[(s_channel_index*32)+:32] <=
+                merge_bytes(s_tcd_head_q[(s_channel_index*32)+:32], apb4.pwdata, apb4.pstrb);
+          end
+          `APB4_DMA__CH_TCD_COUNT: begin
+            s_tcd_count_q[(s_channel_index*32)+:32] <=
+                merge_bytes(s_tcd_count_q[(s_channel_index*32)+:32], apb4.pwdata, apb4.pstrb);
+          end
+          `APB4_DMA__CH_CRC_EXPECTED: begin
+            s_crc_expected_q[(s_channel_index*32)+:32] <=
+                merge_bytes(s_crc_expected_q[(s_channel_index*32)+:32], apb4.pwdata, apb4.pstrb);
+          end
           `APB4_DMA__CH_EVENT_ENABLE: begin
             s_evt_en_q[(s_channel_index*32)+:32] <=
                 merge_bytes(s_evt_en_q[(s_channel_index*32)+:32], apb4.pwdata, apb4.pstrb);
@@ -318,7 +350,7 @@ module dma_reg #(
       `APB4_DMA__IP_ID: s_read_data = IpId;
       `APB4_DMA__IP_VERSION: s_read_data = IpVersion;
       `APB4_DMA__CAPABILITY:
-      s_read_data = {1'b0, 3'd3, 4'(MaxBurstBeats), 8'(DataWidth), 8'(NumChannels), 8'd0};
+      s_read_data = {1'b0, 3'd3, 4'(MaxBurstBeats), 8'(DataWidth), 8'(NumChannels), 7'd0, 1'b1};
       `APB4_DMA__GLOBAL_CTRL: s_read_data = 32'd0;
       `APB4_DMA__GLOBAL_STATUS: s_read_data = {31'd0, |busy_i};
       `APB4_DMA__IRQ_STATE: s_read_data = {{(32 - NumChannels) {1'b0}}, s_irq_state};
@@ -365,6 +397,10 @@ module dma_reg #(
             s_read_data = stall_cycles_lo_i[(s_channel_index*32)+:32];
             `APB4_DMA__CH_STALL_CYCLES_HI:
             s_read_data = stall_cycles_hi_i[(s_channel_index*32)+:32];
+            `APB4_DMA__CH_TCD_HEAD: s_read_data = s_tcd_head_q[(s_channel_index*32)+:32];
+            `APB4_DMA__CH_TCD_COUNT: s_read_data = s_tcd_count_q[(s_channel_index*32)+:32];
+            `APB4_DMA__CH_CRC_EXPECTED: s_read_data = s_crc_expected_q[(s_channel_index*32)+:32];
+            `APB4_DMA__CH_CRC_RESULT: s_read_data = crc_result_i[(s_channel_index*32)+:32];
             default: s_read_data = 32'd0;
           endcase
         end
@@ -372,10 +408,13 @@ module dma_reg #(
     endcase
   end
 
-  assign ch_cfg_o      = s_ch_cfg_q;
-  assign src_addr_o    = s_src_addr_q;
-  assign dst_addr_o    = s_dst_addr_q;
-  assign byte_count_o  = s_byte_count_q;
-  assign request_sel_o = s_req_sel_q;
-  assign burst_cfg_o   = s_burst_cfg_q;
+  assign ch_cfg_o       = s_ch_cfg_q;
+  assign src_addr_o     = s_src_addr_q;
+  assign dst_addr_o     = s_dst_addr_q;
+  assign byte_count_o   = s_byte_count_q;
+  assign request_sel_o  = s_req_sel_q;
+  assign burst_cfg_o    = s_burst_cfg_q;
+  assign tcd_head_o     = s_tcd_head_q;
+  assign tcd_count_o    = s_tcd_count_q;
+  assign crc_expected_o = s_crc_expected_q;
 endmodule

@@ -206,6 +206,25 @@ module dma_reg_tb;
     if (value != 32'h444D_4134) begin
       $fatal(1, "DMA IP identification mismatch");
     end
+    apb_read(32'h004, value);
+    if (value != 32'h0002_0000) begin
+      $fatal(1, "DMA V2 version mismatch: %h", value);
+    end
+    apb_read(32'h008, value);
+    if ((value[0] != 1'b1) || (value[15:8] != 8'd4)) begin
+      $fatal(1, "DMA capability descriptor/channel mismatch: %h", value);
+    end
+    apb_write(32'h2C8, 32'h4000_8000, 4'hF, 1'b0);
+    apb_write(32'h2CC, 32'h0000_0001, 4'hF, 1'b0);
+    apb_write(32'h2D0, 32'h1234_5678, 4'hF, 1'b0);
+    apb_read(32'h2C8, value);
+    if (value != 32'h4000_8000) begin
+      $fatal(1, "DMA TCD head register mismatch: %h", value);
+    end
+    apb_read(32'h2D0, value);
+    if (value != 32'h1234_5678) begin
+      $fatal(1, "DMA CRC expected register mismatch: %h", value);
+    end
     apb_write(32'h02c, 32'h1, 4'hF, 1'b1);
     apb_write(32'h104, 32'h0000_0160, 4'h1, 1'b0);
     apb_write(32'h108, 32'h4000_0000, 4'hF, 1'b0);

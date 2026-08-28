@@ -21,7 +21,7 @@ ECC_H7CR_LIBERTY  := $(CACHE_ROOT)/pdk/ics55/ics55_h7cr_ss.lib
 ECC_CLOCK_DOMAINS := $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json
 ECC_PIN_MAP       := $(ROOT_PATH)/rtl/mini/pin_map/pin_map.json
 ECC_SOURCE_PYTHON ?= /usr/bin/python3
-ECC_ENV            := XDG_CACHE_HOME=$(CACHE_ROOT)/fontconfig
+ECC_ENV           := XDG_CACHE_HOME=$(CACHE_ROOT)/fontconfig
 ECC_TRACKED_RTL   := $(shell git -C $(ROOT_PATH) ls-files \
 	'rtl/**/*.sv' 'rtl/**/*.svh' 'rtl/**/*.v' 'rtl/**/*.vh')
 

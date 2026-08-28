@@ -43,6 +43,10 @@
 `define APB4_DMA__CH_BYTES_DONE         7'h3C
 `define APB4_DMA__CH_STALL_CYCLES_LO    7'h40
 `define APB4_DMA__CH_STALL_CYCLES_HI    7'h44
+`define APB4_DMA__CH_TCD_HEAD           7'h48
+`define APB4_DMA__CH_TCD_COUNT          7'h4C
+`define APB4_DMA__CH_CRC_EXPECTED       7'h50
+`define APB4_DMA__CH_CRC_RESULT         7'h54
 
 `define APB4_DMA__GLOBAL_CTRL_RESET     0
 `define APB4_DMA__CH_CTRL_START         0
@@ -56,6 +60,8 @@
 `define APB4_DMA__CH_CFG_SRC_INCREMENT  6
 `define APB4_DMA__CH_CFG_DST_INCREMENT  7
 `define APB4_DMA__CH_CFG_PRIORITY_LSB   8
+`define APB4_DMA__CH_CFG_CRC_ENABLE     10
+`define APB4_DMA__CH_CFG_CRC_FINAL      11
 
 `define APB4_DMA__EVENT_DONE             0
 `define APB4_DMA__EVENT_HALF             1

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -187,7 +188,7 @@ def test_librelane_flow_exposes_core_and_chip_targets() -> None:
     assert "librelane-chip:" in makefile
     assert "librelane-core:" in makefile
     assert "librelane-core-package:" in makefile
-    assert "LIBRELANE_TARGET         ?= chip" in makefile
+    assert re.search(r"^LIBRELANE_TARGET\s+\?=\s+chip$", makefile, flags=re.MULTILINE)
     assert "LIBRELANE_COMMAND       := $(LIBRELANE_PYTHON) -m librelane" in makefile
     assert "--skip OpenROAD.STAMidPNR" in makefile
     assert "--librelane-safe" in makefile

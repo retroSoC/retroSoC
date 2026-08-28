@@ -70,6 +70,7 @@ def generate_all(
             "core_hazard3.fl",
             "inc.fl",
             "ip.fl",
+            "netlist_support.fl",
             "sys_def.fl",
             "tb.fl",
             "tech.fl",

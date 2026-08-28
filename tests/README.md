@@ -12,7 +12,8 @@ tooling.
   rules for new owned RTL.
 - `test_crypto.py` runs directed AES, SHA-2, RSA/Montgomery, streaming, and
   APB4 simulations; `test_crypto_register_parity.py` checks the handwritten
-  RTL/C register ABI and `test_dma.py` covers the crypto DMA endpoints.
+  RTL/C register ABI and `test_dma.py` covers DMA bursts, TCD fetch, CRC,
+  tail-byte writes, and crypto endpoints.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.

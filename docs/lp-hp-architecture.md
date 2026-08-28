@@ -67,7 +67,8 @@ Linux must not map device registers as cacheable.
 | --- | --- | --- |
 | HP ACLINT | `0x02000000` | hart 1 machine software/timer interrupts, 1 MHz timebase |
 | HP PLIC | `0x0C000000` | 31 usable sources and M/S contexts |
-| UART1 | `0x10018000` | dedicated HP/SBI console pads; no DMA in MVP |
+| UART1 | `0x10018000` | dedicated HP/SBI console pads; DMA request remains available |
+| DMA | `0x1000A000` | LP-managed TCD/data movement; channel 6 reserved for HP boot |
 | HP mailbox | `0x10019000` | command/event, argument, sequence, and dual doorbells |
 | SDRAM | `0x38000000`-`0x3BFFFFFF` | shared 64 MiB Linux main memory |
 
@@ -124,7 +125,11 @@ fixed destinations, sizes, alignment, and every payload CRC. It copies with
 32-bit writes and full readback for control payloads; large payloads use full
 flash CRC validation without destination rereads. It issues a memory fence
 before releasing HP.
-CRC detects accidental corruption; it is not authentication.
+CRC detects accidental corruption; it is not authentication. DMA V2 channel 6
+loads each entry with a 64-byte TCD and hardware CRC32. If DMA validation or
+transfer fails, LP falls back to the existing CPU copy path before releasing
+HP. Descriptor and payload memory are explicitly non-coherent; LP publishes
+them with `fence rw,rw` and HP starts only after ownership transfer.
 
 OpenSBI is built from an external repo-owned platform directory without
 patching its locked source. The platform maps OpenSBI hart index 0 to hardware
