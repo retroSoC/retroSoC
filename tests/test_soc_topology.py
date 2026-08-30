@@ -118,11 +118,12 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign u_opipsram_if.rwds_i = u_gpio_if.di_i[31];" in gpio
     assert "assign u_gpio_if.alt0_do_i[31] = u_opipsram_if.rwds_o;" in gpio
     assert "s_tmr_capch" not in gpio
-    assert apb_interfaces.count("apb4_if u_") == 10
+    assert apb_interfaces.count("apb4_if u_") == 11
     assert "apb4_pure_if u_archinfo_apb4_pure_if ();" in apb_interfaces
+    assert "apb4_if u_resource_ctrl_apb4_if (clk_i, rst_n_i);" in apb_interfaces
     assert "assign user_ip.paddr = s_addr_q;" in apb_routes
     assert "({32{s_psel_q[7]}} & user_ip.prdata)" in apb_response
-    assert "localparam int NSLV = 10;" in apb_declarations
+    assert "localparam int NSLV = 11;" in apb_declarations
     assert fabric.count("axi4_if #(") == 8
     assert ".mgmt_axi4(u_mgmt_axi4_if)" in bus_fabric
     assert ".user_axi4(u_user_axi4_if)" in bus_fabric
@@ -137,22 +138,23 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
     assert "`define SOC_USER_IRQ_MASK 32'h004EFBFC" in irq_config
     assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 22" in irq_config
-    assert "`define SOC_IRQ_APB4_SYSTEM_WIDTH 7" in irq_config
+    assert "`define SOC_IRQ_APB4_SYSTEM_WIDTH 8" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
     assert "assign irq_o[11] = gpio.irq_o;" in rib_irq
     assert "assign irq_o[12] = i2c1.irq_o;" in rib_irq
     assert "assign irq_o[13] = s_dvp_irq;" in rib_irq
-    assert "assign irq_o[14] = s_dma_irq;" in rib_irq
+    assert "assign irq_o[14] = resource_irq_lp_i[0];" in rib_irq
     assert "assign irq_o[15] = opipsram.irq_o;" in rib_irq
-    assert "assign irq_o[16] = sdio0.irq_o;" in rib_irq
-    assert "assign irq_o[17] = sdio1.irq_o;" in rib_irq
+    assert "assign irq_o[16] = resource_irq_lp_i[2];" in rib_irq
+    assert "assign irq_o[17] = resource_irq_lp_i[3];" in rib_irq
     assert "assign irq_o[18] = s_crypto_irq;" in rib_irq
-    assert "assign irq_o[19] = s_usb2_irq;" in rib_irq
+    assert "assign irq_o[19] = resource_irq_lp_i[1];" in rib_irq
     assert "assign irq_o[0] = pwm.irq_o;" in apb_irq
     assert "assign irq_o[4] = s_rng_irq;" in apb_irq
     assert "assign irq_o[5] = s_ext_l_irq;" in apb_irq
     assert "assign irq_o[6] = s_ext_h_irq;" in apb_irq
+    assert "assign irq_o[7] = s_resource_fault_irq;" in apb_irq
     assert "s_irq[10] = s_apb4_periph_irq[16];" in irq_wiring
     assert "s_irq[15] = s_apb4_periph_irq[13];" in irq_wiring
     assert "s_irq[16] = s_apb4_system_irq[4];" in irq_wiring
@@ -163,6 +165,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "s_irq[24] = s_apb4_periph_irq[19];" in irq_wiring
     assert "s_irq[27] = s_apb4_system_irq[5];" in irq_wiring
     assert "s_irq[28] = s_apb4_system_irq[6];" in irq_wiring
+    assert "s_irq[29] = s_apb4_system_irq[7];" in irq_wiring
     assert "irq_i[10] == apb4_periph_irq_i[16]" in irq_sva
     assert "irq_i[15] == apb4_periph_irq_i[13]" in irq_sva
     assert "irq_i[20] == apb4_periph_irq_i[14]" in irq_sva
@@ -172,6 +175,8 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "irq_i[24] == apb4_periph_irq_i[19]" in irq_sva
     assert "irq_i[31] == 1'b0" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
+    assert ".clk_i(clk_lp_i)" in irq_sva
+    assert ".rst_n_i(rst_lp_n_i)" in irq_sva
     assert filelist.startswith("+incdir+")
 
 
@@ -195,11 +200,11 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("timer0", "apb4_periph", 3, 3, "s_tim0_irq"),
         ("timer1", "apb4_periph", 4, 4, "s_tim1_irq"),
         ("psram", "apb4_periph", 5, 5, "psram.irq_o"),
-        ("spisd", "apb4_periph", 6, 6, "spisd.irq_o"),
+        ("spisd", "apb4_periph", 6, 6, "resource_irq_lp_i[4]"),
         ("i2c0", "apb4_periph", 7, 7, "i2c0.irq_o"),
         ("i2s", "apb4_periph", 8, 8, "i2s.irq_o"),
         ("xpi", "apb4_periph", 9, 9, "s_xpi_irq"),
-        ("sdio0", "apb4_periph", 16, 10, "sdio0.irq_o"),
+        ("sdio0", "apb4_periph", 16, 10, "resource_irq_lp_i[2]"),
         ("pwm", "apb4_system", 0, 11, "pwm.irq_o"),
         ("ps2", "apb4_system", 1, 12, "ps2.irq_o"),
         ("rtc", "apb4_system", 2, 13, "u_rtc_if.irq_o"),
@@ -209,15 +214,16 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("gpio", "apb4_periph", 11, 18, "gpio.irq_o"),
         ("i2c1", "apb4_periph", 12, 19, "i2c1.irq_o"),
         ("dvp", "apb4_periph", 13, 15, "s_dvp_irq"),
-        ("dma", "apb4_periph", 14, 20, "s_dma_irq"),
+        ("dma", "apb4_periph", 14, 20, "resource_irq_lp_i[0]"),
         ("opipsram", "apb4_periph", 15, 22, "opipsram.irq_o"),
-        ("sdio1", "apb4_periph", 17, 21, "sdio1.irq_o"),
+        ("sdio1", "apb4_periph", 17, 21, "resource_irq_lp_i[3]"),
         ("crypto", "apb4_periph", 18, 23, "s_crypto_irq"),
-        ("usb2", "apb4_periph", 19, 24, "s_usb2_irq"),
+        ("usb2", "apb4_periph", 19, 24, "resource_irq_lp_i[1]"),
         ("hp_mailbox_lp", "apb4_periph", 20, 25, "s_mailbox_lp_irq"),
         ("uart1", "apb4_periph", 21, 26, "uart1.irq_o"),
         ("extension_l", "apb4_system", 5, 27, "s_ext_l_irq"),
         ("extension_h", "apb4_system", 6, 28, "s_ext_h_irq"),
+        ("resource_fault", "apb4_system", 7, 29, "s_resource_fault_irq"),
     ]
 
 
@@ -233,7 +239,7 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     )
 
     assert "apb4_if u_user_ip_apb4_if (clk_i, rst_n_i);" in interfaces
-    assert "localparam int NSLV = 10;" in declarations
+    assert "localparam int NSLV = 11;" in declarations
     assert "s_psel_q[7]" in response
     assert "apb4_pure_if user_ip ();" in formal_design
     assert ".user_ip (user_ip)" in formal_design

@@ -24,8 +24,9 @@
 			clock-frequency = <72000000>;
 			mmu-type = "riscv,sv32";
 			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
-					       "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicbom",
+					       "zicsr", "zifencei";
+			riscv,cbom-block-size = <64>;
 
 			hp_cpu_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";

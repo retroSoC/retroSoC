@@ -16,12 +16,14 @@
 Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. The IHP130 PR simulation also uses the
 32 KiB `ld2_all_sram` layout, the explicit Verilator `--fast-flash` backend,
-and a 360-second wall-clock budget. The full serial XPI path remains covered
-by the Icarus assembly self-test and directed XPI model tests; the accelerated
-run is the broad software-visible integration test. This application verifies UART output,
+and a 360-second wall-clock budget. GF180, ICS55, and SKY130 use the common
+`ld2_sdram` execution layout, the same fast-flash backend, and a 600-second
+budget so the broad smoke does not execute from the serial PSRAM model. The
+full serial XPI and PSRAM path remains covered by the Icarus assembly self-test
+and directed memory-model tests. This application verifies UART output,
 archinfo APB readback, on-chip SRAM first/last-word and 8/16/32-bit access,
-RNG integration, SDRAM 8/16/32-bit mapped-window access,
-and test-status completion within the CI time budget;
+RNG integration, SDRAM 8/16/32-bit access in a reserved tail scratch area, and
+test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 

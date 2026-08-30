@@ -23,6 +23,8 @@ module apb4_periph (
     input logic                                   debug_halted_i,
     input logic                                   timebase_tick_i,
     input logic                                   ext_h_hp_irq_i,
+    input logic [4:0]                             resource_irq_lp_i,
+    input logic [4:0]                             resource_irq_hp_i,
     axi4_if.slave                                 cfg_axi4,
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
@@ -62,6 +64,7 @@ module apb4_periph (
     output logic                                  hp_software_irq_o,
     output logic                                  hp_machine_external_irq_o,
     output logic                                  hp_supervisor_external_irq_o,
+    output logic [4:0]                            resource_irq_raw_o,
     output logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -184,23 +187,24 @@ axi4_stream_if #(
       `include "apb4_periph_connections.svh"
   );
 
-  assign u_dma_req_if.i2s_tx_proc     = ~s_dma_i2s_tx_stall;
-  assign u_dma_req_if.i2s_rx_proc     = ~s_dma_i2s_rx_stall;
-  assign u_dma_req_if.qspi_tx_proc    = ~s_dma_xpi_tx_stall;
-  assign u_dma_req_if.qspi_rx_proc    = ~s_dma_xpi_rx_stall;
-  assign u_dma_req_if.uart_tx_proc    = ~s_dma_uart_tx_stall;
-  assign u_dma_req_if.uart_rx_proc    = ~s_dma_uart_rx_stall;
-  assign u_dma_req_if.i2c0_tx_proc    = ~s_dma_i2c0_tx_stall;
-  assign u_dma_req_if.i2c0_rx_proc    = ~s_dma_i2c0_rx_stall;
-  assign u_dma_req_if.i2c1_tx_proc    = ~s_dma_i2c1_tx_stall;
-  assign u_dma_req_if.i2c1_rx_proc    = ~s_dma_i2c1_rx_stall;
-  assign u_dma_req_if.crypto_in_proc  = s_dma_crypto_in_proc;
+  assign u_dma_req_if.i2s_tx_proc = ~s_dma_i2s_tx_stall;
+  assign u_dma_req_if.i2s_rx_proc = ~s_dma_i2s_rx_stall;
+  assign u_dma_req_if.qspi_tx_proc = ~s_dma_xpi_tx_stall;
+  assign u_dma_req_if.qspi_rx_proc = ~s_dma_xpi_rx_stall;
+  assign u_dma_req_if.uart_tx_proc = ~s_dma_uart_tx_stall;
+  assign u_dma_req_if.uart_rx_proc = ~s_dma_uart_rx_stall;
+  assign u_dma_req_if.i2c0_tx_proc = ~s_dma_i2c0_tx_stall;
+  assign u_dma_req_if.i2c0_rx_proc = ~s_dma_i2c0_rx_stall;
+  assign u_dma_req_if.i2c1_tx_proc = ~s_dma_i2c1_tx_stall;
+  assign u_dma_req_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
+  assign u_dma_req_if.crypto_in_proc = s_dma_crypto_in_proc;
   assign u_dma_req_if.crypto_out_proc = s_dma_crypto_out_proc;
-  assign hp_time_o                    = u_hp_clint_if.mtime_o;
-  assign hp_timer_irq_o               = u_hp_clint_if.timer_irq_o[1];
-  assign hp_software_irq_o            = u_hp_clint_if.software_irq_o[1];
-  assign hp_machine_external_irq_o    = s_hp_plic_context_irq[0];
+  assign hp_time_o = u_hp_clint_if.mtime_o;
+  assign hp_timer_irq_o = u_hp_clint_if.timer_irq_o[1];
+  assign hp_software_irq_o = u_hp_clint_if.software_irq_o[1];
+  assign hp_machine_external_irq_o = s_hp_plic_context_irq[0];
   assign hp_supervisor_external_irq_o = s_hp_plic_context_irq[1];
+  assign resource_irq_raw_o = {spisd.irq_o, sdio1.irq_o, sdio0.irq_o, s_usb2_irq, s_dma_irq};
 
   apb4_async_bridge u_psram_cfg_mem_cdc (
       .src_clk_i  (clk_i),
@@ -274,6 +278,11 @@ axi4_stream_if #(
     s_hp_plic_source[1] = uart1.irq_o;
     s_hp_plic_source[2] = s_mailbox_hp_irq;
     s_hp_plic_source[3] = ext_h_hp_irq_i;
+    s_hp_plic_source[4] = resource_irq_hp_i[0];
+    s_hp_plic_source[5] = resource_irq_hp_i[1];
+    s_hp_plic_source[6] = resource_irq_hp_i[2];
+    s_hp_plic_source[7] = resource_irq_hp_i[3];
+    s_hp_plic_source[8] = resource_irq_hp_i[4];
   end
 
   `include "apb4_periph_irq_bindings.svh"

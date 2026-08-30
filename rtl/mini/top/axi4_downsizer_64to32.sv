@@ -9,6 +9,7 @@ module axi4_downsizer_64to32 #(
 ) (
     input logic          clk_i,
     input logic          rst_n_i,
+    input logic          clear_i,
           axi4_if.slave  wide,
           axi4_if.master narrow
 );
@@ -19,6 +20,8 @@ module axi4_downsizer_64to32 #(
 
   channel_state_e s_read_state_d, s_read_state_q;
   channel_state_e s_write_state_d, s_write_state_q;
+  logic s_read_state_bits_q;
+  logic s_write_state_bits_q;
   logic [WideIdWidth-1:0] s_read_id_d, s_read_id_q;
   logic [WideIdWidth-1:0] s_write_id_d, s_write_id_q;
   logic [2:0] s_read_size_d, s_read_size_q;
@@ -46,6 +49,8 @@ module axi4_downsizer_64to32 #(
   logic [8:0] s_read_beats;
   logic [8:0] s_write_beats;
 
+  assign s_read_state_q = channel_state_e'(s_read_state_bits_q);
+  assign s_write_state_q = channel_state_e'(s_write_state_bits_q);
   assign s_read_beats = {1'b0, wide.arlen} + 9'd1;
   assign s_write_beats = {1'b0, wide.awlen} + 9'd1;
 
@@ -114,6 +119,12 @@ module axi4_downsizer_64to32 #(
     if (s_wide_read_accept) begin
       s_read_addr_d = s_read_next_addr;
       if (narrow.rlast) s_read_state_d = Idle;
+    end
+
+    if (clear_i) begin
+      s_read_state_d = Idle;
+      s_read_upper_d = 1'b0;
+      s_read_resp_d  = `AXI4_RESP_OKAY;
     end
   end
 
@@ -188,6 +199,13 @@ module axi4_downsizer_64to32 #(
       s_b_pending_d   = 1'b0;
       s_write_state_d = Idle;
     end
+
+    if (clear_i) begin
+      s_write_state_d = Idle;
+      s_write_upper_d = 1'b0;
+      s_b_pending_d   = 1'b0;
+      s_b_resp_d      = `AXI4_RESP_OKAY;
+    end
   end
 
   axi4_addr_gen #(
@@ -215,7 +233,7 @@ module axi4_downsizer_64to32 #(
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_read_state_d),
-      .dat_o  (s_read_state_q)
+      .dat_o  (s_read_state_bits_q)
   );
 
   dffr #(
@@ -224,7 +242,7 @@ module axi4_downsizer_64to32 #(
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_write_state_d),
-      .dat_o  (s_write_state_q)
+      .dat_o  (s_write_state_bits_q)
   );
 
   dffr #(

@@ -14,6 +14,7 @@
 /top/axi4_id_prefix.sv
 /top/axi4_interconnect.sv
 /top/axi4_data_crossbar.sv
+/top/axi4_target_guard.sv
 /top/soc_data_plane.sv
 /top/axi4_error_slave.sv
 /top/rib2axi4.sv
@@ -32,6 +33,7 @@
 /top/retrosoc_core.sv
 /top/onchip_ram_reg.sv
 /top/onchip_ram.sv
+/top/resource_controller.sv
 /top/apb4_periph.sv
 /top/apb4_system.sv
 /top/rib_bus.sv

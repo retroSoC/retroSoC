@@ -20,7 +20,7 @@ def test_hp_profile_and_locked_generator_contract() -> None:
 
     profile = (ROOT / "configs/ci/ihp130-hp.mk").read_text(encoding="utf-8")
     assert "HAVE_HP" in profile and "YES" in profile
-    assert "rv32imafdc_max" in profile
+    assert "rv32imafdc_zicbom_max" in profile
     assert "APP" in profile and "hp_boot" in profile
     assert "LINK_TYPE" in profile and "ld2_all_sram" in profile
 
@@ -28,7 +28,7 @@ def test_hp_profile_and_locked_generator_contract() -> None:
         encoding="utf-8"
     )
     for requirement in (
-        'param.addISA("m", "a", "f", "d", "c", "s", "u", "zicntr", "zihpm")',
+        'param.addISA("m", "a", "f", "d", "c", "s", "u", "zicbom", "zicntr", "zihpm")',
         "param.decoders = 2",
         "param.lanes = 2",
         "param.fetchL1Ways = 4",
@@ -74,6 +74,7 @@ def test_hp_address_and_sysctrl_contract() -> None:
     assert regions["HP_PLIC"]["base"] == "0x0C000000"
     assert regions["APB4_UART1"]["base"] == "0x10018000"
     assert regions["APB4_HP_MAILBOX"]["base"] == "0x10019000"
+    assert regions["APB4_RESOURCE_CTRL"]["base"] == "0x2000A000"
 
     registers = {register["symbol"]: register["offset"] for register in document["sysctrl_registers"]}
     assert registers["HP_CTRL"] == "0xA4"
@@ -151,3 +152,6 @@ def test_hp_linux_device_tree_compiles_and_can_patch_initrd_end(tmp_path: Path) 
     ).strip()
     assert initrd_end == "39123456"
     assert hart_id == "1"
+    dts = (ROOT / "app/ports/linux/linux/retrosoc_hp.dts").read_text(encoding="utf-8")
+    assert '"zicbom"' in dts
+    assert "riscv,cbom-block-size = <64>;" in dts

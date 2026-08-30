@@ -14,6 +14,7 @@
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/psram.h>
+#include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/sdio.h>
 #include <retrosoc/hal/spisd.h>
@@ -846,6 +847,22 @@ static int test_extension_validation(void) {
     return 0;
 }
 
+static int test_resource_validation(void) {
+    rs_resource_status_t status;
+
+    if ((rs_resource_get_status((rs_resource_t)RS_RESOURCE_COUNT, &status) != RS_EINVAL) ||
+        (rs_resource_get_status(RS_RESOURCE_DMA, NULL) != RS_EINVAL) ||
+        (rs_resource_set_owner((rs_resource_t)RS_RESOURCE_COUNT, RS_RESOURCE_OWNER_LP, false) !=
+         RS_EINVAL) ||
+        (rs_resource_set_owner(RS_RESOURCE_DMA, (rs_resource_owner_t)2, false) != RS_EINVAL) ||
+        (rs_resource_set_lifecycle((rs_resource_t)RS_RESOURCE_COUNT, false, false) != RS_EINVAL) ||
+        (rs_resource_clear_fault((rs_resource_t)RS_RESOURCE_COUNT) != RS_EINVAL) ||
+        (rs_resource_get_cache_status(NULL) != RS_EINVAL)) {
+        return 1;
+    }
+    return 0;
+}
+
 static int test_ps2_decoders(void) {
     ps2_keyboard_decoder_t keyboard;
     ps2_mouse_decoder_t mouse;
@@ -935,6 +952,7 @@ int main(void) {
         test_opipsram_helpers(),
         test_user_ip_validation(),
         test_extension_validation(),
+        test_resource_validation(),
         test_ps2_decoders(),
         test_wav_parser(),
         test_video_parser(),

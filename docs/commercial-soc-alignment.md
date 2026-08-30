@@ -30,10 +30,18 @@ gateway, and EXT-H use a 64-bit memory plane. APB remains a separate control
 plane. Every data-plane initiator has a fixed identity, an outstanding-credit
 limit, a QoS class, an access policy, and fault attribution.
 
-The first delivery contract is target-aware rather than uniform: high
-bandwidth initiators can issue up to four reads and two writes, while serial
-memory targets advertise lower credits. Stable target-specific functional
-clocks keep SDRAM refresh and serial-memory timing independent of HP DFS.
+The independent Resource Controller applies the RT1180/TRDC-style resource
+domain idea without claiming a security lifecycle: six fixed resources have
+idle-gated owner changes, sticky owner lock, fault attribution, and mutually
+exclusive LP/HP IRQ delivery. The AON shutdown sequence uses a 64-byte Zicbom
+cache-maintenance request/ACK before blocking HP traffic. This is explicit
+software-managed coherency, not a coherent interconnect.
+
+The first delivery contract is target-aware rather than uniform: SRAM/SDRAM
+admit four reads and two writes, while serial memory targets advertise lower
+credits. A queued target guard bounds stalls and fail-closes after accepted
+timeouts. Stable target-specific functional clocks keep SDRAM refresh and
+serial-memory timing independent of HP DFS.
 
 No release may describe the implementation as timing closed, CDC signed off,
 silicon qualified, functionally safe, or cache coherent until the separate

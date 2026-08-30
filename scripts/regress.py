@@ -16,15 +16,24 @@ from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
 CI_SMOKE_APP_VALUE = "APP=ci_smoke"
-CI_SMOKE_SIM_VALUES = (
-    CI_SMOKE_APP_VALUE,
-    "LINK_TYPE=ld2_all_sram",
+CI_SMOKE_VERILATOR_VALUES = (
     "VERILATOR_SIM_ARGS=--fast-flash",
-    "SOC_SIM_TIME=360",
     "SIMU=VERILATOR",
     "HAVE_SVA=YES",
     "firmware",
     "sim",
+)
+CI_SMOKE_SIM_VALUES = (
+    CI_SMOKE_APP_VALUE,
+    "LINK_TYPE=ld2_all_sram",
+    "SOC_SIM_TIME=360",
+    *CI_SMOKE_VERILATOR_VALUES,
+)
+CI_SMOKE_SDRAM_SIM_VALUES = (
+    CI_SMOKE_APP_VALUE,
+    "LINK_TYPE=ld2_sdram",
+    "SOC_SIM_TIME=600",
+    *CI_SMOKE_VERILATOR_VALUES,
 )
 RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint")
 RTL_LINT_OBSERVATION_VALUES = (
@@ -106,7 +115,7 @@ def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
     verilator_values = (
         CI_SMOKE_SIM_VALUES
         if profile == "configs/ci/ihp130.mk"
-        else (CI_SMOKE_APP_VALUE, "SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim")
+        else CI_SMOKE_SDRAM_SIM_VALUES
     )
     return (
         (profile, RTL_LINT_VALUES),

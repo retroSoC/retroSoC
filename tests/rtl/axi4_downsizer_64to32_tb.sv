@@ -30,6 +30,7 @@ module axi4_downsizer_64to32_tb;
   axi4_downsizer_64to32 u_dut (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
+      .clear_i(1'b0),
       .wide   (wide),
       .narrow (narrow)
   );

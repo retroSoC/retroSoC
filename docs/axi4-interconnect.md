@@ -40,15 +40,16 @@ IDs. It has eight masters:
 | 7 | EXT-H | PCLK-to-HP AXI64 CDC |
 
 Each source receives a fixed three-bit master prefix. The crossbar maintains
-independent read and write owners for each target, enabling read/write overlap
-and cross-target concurrency. Different IDs from HP/DMA/EXT-H may be active on
-different targets up to the master credit. The same ID is blocked until
-completion, and each target remains single-outstanding per direction.
+independent read and write arbitration for each target, enabling read/write
+overlap and cross-target concurrency. Different IDs from HP/DMA/EXT-H may be
+active on the same or different targets up to master and target credits. The
+same source ID is blocked until completion. SRAM/SDRAM target credits are four
+reads and two writes; serial and error targets use one read and one write.
 
 | Target | Current backend |
 | --- | --- |
-| on-chip SRAM | AXI64-to-32, HP-to-LP CDC, native AXI32 SRAM |
-| SDRAM | AXI64-to-32, HP-to-LP CDC, AXI32 controller |
+| on-chip SRAM | native AXI64/ID6 striped technology macros in HP |
+| SDRAM | HP-to-memory AXI64 CDC, local 64-to-32 SDRAM adaptation |
 | QPI PSRAM | AXI64-to-32, CDC, selected QPI frontend |
 | OPI/HyperBus | AXI64-to-32, CDC, selected OPI frontend |
 | XPI/flash | AXI64-to-32, CDC, XPI frontend |
@@ -68,15 +69,15 @@ fail-closed according to the synchronized AON pad mode.
 - `apb4_async_bridge` converts one APB request into a request/response CDC
   transaction and guarantees a finite APB completion when the destination runs.
 
-Normal HP shutdown blocks new addresses, drains accepted traffic, and performs
-a coordinated warm flush. Forced timeout records a lifecycle fault. Synthetic
-completion for every accepted transaction behind a permanently stopped target
-is not yet claimed.
+Normal HP shutdown requests software cache maintenance, blocks new addresses,
+drains accepted traffic, and performs a coordinated warm flush. Target guards
+provide bounded synthetic `SLVERR` completion and fail-closed isolation for a
+stopped target.
 
 ## Verification boundary
 
 `tests/test_axi4.py` retains LP fabric, downsizer, burst, response, and
 backpressure coverage. Full-product Verilator/Icarus simulation exercises LP
 boot, HP elaboration, the memory gateways, and product APB paths. The current
-implementation does not claim same-target multi-outstanding reordering, cache
-coherency, formal crossbar proof, CDC signoff, or physical bandwidth closure.
+implementation does not claim cache coherency, full AXI formal proof, CDC
+signoff, or physical bandwidth closure.

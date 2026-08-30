@@ -61,8 +61,8 @@ module retrosoc (
   // verilog_format: off -- preserve reviewed column alignment
   // Generated fabric links use the common 32-bit AXI4 contract.
   `include "soc_fabric_interfaces.svh"
-  apb4_if u_sdram_cfg_if (.pclk(clk_lp_i), .presetn(rst_lp_n_i));
-  apb4_if u_sram_cfg_if (.pclk(clk_lp_i), .presetn(rst_lp_n_i));
+  apb4_if u_sdram_cfg_if (.pclk(clk_mem_i), .presetn(rst_mem_n_i));
+  apb4_if u_sram_cfg_if (.pclk(clk_hp_i), .presetn(rst_hp_n_i));
   apb4_if u_sdram_cfg_pclk_if (.pclk(clk_pclk_i), .presetn(rst_pclk_n_i));
   apb4_if u_sram_cfg_pclk_if (.pclk(clk_pclk_i), .presetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
@@ -101,10 +101,14 @@ module retrosoc (
       u_hp_mmio_gated_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_hp_mmio_lp_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(6), .USER_WIDTH(1))
+      u_data_sram_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_data_sram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+      u_retired_data_sram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_data_sdram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+      u_data_sdram_axi4_if (.aclk(clk_mem_i), .aresetn(rst_mem_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_retired_data_sdram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_data_qpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
@@ -202,6 +206,10 @@ module retrosoc (
   logic             s_hp_lifecycle_release_hp;
   logic             s_hp_lifecycle_block;
   logic             s_hp_lifecycle_flush;
+  logic             s_hp_cache_req_aon;
+  logic             s_hp_cache_req_pclk;
+  logic             s_hp_cache_clean_pclk;
+  logic             s_hp_cache_clean_aon;
   logic             s_hp_lifecycle_draining;
   logic             s_hp_lifecycle_fault;
   logic             s_hp_block_combined;
@@ -215,6 +223,16 @@ module retrosoc (
   logic [31:0]      s_ext_h_timeout;
   logic             s_ext_h_irq_raw;
   logic [ 1:0]      s_ext_h_owner;
+  logic [ 5:0][1:0] s_resource_owner;
+  logic [ 5:0]      s_resource_quiesce;
+  logic [ 5:0]      s_resource_reset;
+  logic [ 5:0]      s_resource_idle_hp;
+  logic [ 5:0]      s_resource_idle_pclk;
+  logic [ 5:0]      s_resource_block_ack_hp;
+  logic [ 5:0]      s_resource_block_ack_pclk;
+  logic [ 4:0]      s_resource_irq_raw;
+  logic [ 4:0]      s_resource_irq_lp;
+  logic [ 4:0]      s_resource_irq_hp;
   logic [31:0]      s_fault_addr_mux;
   logic [ 3:0]      s_fault_wstrb_mux;
   logic             s_fault_reserved_mux;
@@ -400,6 +418,7 @@ core_wrapper u_core_wrapper (
   axi4_downsizer_64to32 u_hp_mmio_downsizer (
       .clk_i  (clk_hp_i),
       .rst_n_i(rst_hp_n_i),
+      .clear_i(1'b0),
       .wide   (u_hp_mmio_wide_axi4_if),
       .narrow (u_hp_mmio_hp_axi4_if)
   );
@@ -443,17 +462,37 @@ core_wrapper u_core_wrapper (
       .dat_o({s_hp_release_req_aon, s_hp_debug_reset_req_aon, s_hp_idle_aon, s_hp_flush_busy_aon})
   );
   hp_lifecycle_controller u_hp_lifecycle_controller (
-      .clk_i         (clk_aon_i),
-      .rst_n_i       (rst_aon_n_i),
-      .release_req_i (s_hp_release_req_aon && !s_hp_debug_reset_req_aon),
-      .hp_idle_i     (s_hp_idle_aon),
-      .flush_busy_i  (s_hp_flush_busy_aon),
-      .timeout_i     (16'd1024),
-      .hp_release_o  (s_hp_lifecycle_release_aon),
-      .block_new_o   (s_hp_lifecycle_block),
-      .flush_o       (s_hp_lifecycle_flush),
-      .draining_o    (s_hp_lifecycle_draining),
-      .forced_fault_o(s_hp_lifecycle_fault)
+      .clk_i          (clk_aon_i),
+      .rst_n_i        (rst_aon_n_i),
+      .release_req_i  (s_hp_release_req_aon && !s_hp_debug_reset_req_aon),
+      .hp_idle_i      (s_hp_idle_aon),
+      .flush_busy_i   (s_hp_flush_busy_aon),
+      .cache_clean_i  (s_hp_cache_clean_aon),
+      .timeout_i      (16'd1024),
+      .hp_release_o   (s_hp_lifecycle_release_aon),
+      .block_new_o    (s_hp_lifecycle_block),
+      .flush_o        (s_hp_lifecycle_flush),
+      .cache_request_o(s_hp_cache_req_aon),
+      .draining_o     (s_hp_lifecycle_draining),
+      .forced_fault_o (s_hp_lifecycle_fault)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_hp_cache_req_sync (
+      .clk_i  (clk_pclk_i),
+      .rst_n_i(rst_pclk_n_i),
+      .dat_i  (s_hp_cache_req_aon),
+      .dat_o  (s_hp_cache_req_pclk)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_hp_cache_clean_sync (
+      .clk_i  (clk_aon_i),
+      .rst_n_i(rst_aon_n_i),
+      .dat_i  (s_hp_cache_clean_pclk),
+      .dat_o  (s_hp_cache_clean_aon)
   );
   cdc_sync #(
       .STAGE     (2),
@@ -485,49 +524,75 @@ core_wrapper u_core_wrapper (
   );
 
   soc_data_plane u_data_plane (
-      .clk_lp_i           (clk_lp_i),
-      .rst_lp_n_i         (rst_lp_n_i),
-      .clk_io_i           (clk_pclk_i),
-      .rst_io_n_i         (rst_pclk_n_i),
-      .clk_hp_i           (clk_hp_i),
-      .rst_hp_n_i         (rst_hp_n_i),
-      .block_new_i        (s_hp_block_combined),
-      .recovery_i         (s_hp_lifecycle_block),
-      .flush_i            (s_hp_lifecycle_flush),
-      .mem_pad_mode_i     (s_mem_pad_mode_lp),
-      .ext_h_block_i      (s_ext_h_block),
-      .ext_h_read_base_i  (s_ext_h_read_base),
-      .ext_h_read_limit_i (s_ext_h_read_limit),
-      .ext_h_write_base_i (s_ext_h_write_base),
-      .ext_h_write_limit_i(s_ext_h_write_limit),
-      .hp_icache_axi4     (u_hp_icache_axi4_if),
-      .hp_dcache_axi4     (u_hp_dcache_axi4_if),
-      .dma_axi4           (u_dma_axi4_if),
-      .sdio0_axi4         (u_sdio0_axi4_if),
-      .sdio1_axi4         (u_sdio1_axi4_if),
-      .spisd_axi4         (u_spisd_axi4_if),
-      .usb2_axi4          (u_usb2_axi4_if),
-      .lp_data_axi4       (u_mgmt_data_axi4_if),
-      .ext_h_axi4         (u_ext_h_wide_axi4_if),
-      .sram_gateway_axi4  (u_data_sram_axi4_if),
-      .sdram_gateway_axi4 (u_data_sdram_axi4_if),
-      .qpi_gateway_axi4   (u_data_qpi_axi4_if),
-      .opi_gateway_axi4   (u_data_opi_axi4_if),
-      .xpi_gateway_axi4   (u_data_xpi_axi4_if),
-      .idle_o             (s_data_plane_idle),
-      .flush_busy_o       (s_data_plane_flush_busy),
-      .ext_h_idle_o       (s_ext_h_data_idle),
-      .outstanding_read_o (s_data_plane_outstanding_read),
-      .outstanding_write_o(s_data_plane_outstanding_write),
-      .fault_valid_o      (s_data_plane_fault_valid),
-      .fault_master_o     (s_data_plane_fault_master),
-      .fault_target_o     (s_data_plane_fault_target),
-      .fault_addr_o       (s_data_plane_fault_addr),
-      .fault_write_o      (s_data_plane_fault_write),
-      .fault_reason_o     (s_data_plane_fault_reason)
+      .clk_lp_i            (clk_lp_i),
+      .rst_lp_n_i          (rst_lp_n_i),
+      .clk_io_i            (clk_pclk_i),
+      .rst_io_n_i          (rst_pclk_n_i),
+      .clk_hp_i            (clk_hp_i),
+      .rst_hp_n_i          (rst_hp_n_i),
+      .clk_mem_i           (clk_mem_i),
+      .rst_mem_n_i         (rst_mem_n_i),
+      .block_new_i         (s_hp_block_combined),
+      .recovery_i          (s_hp_lifecycle_block),
+      .flush_i             (s_hp_lifecycle_flush),
+      .resource_block_i    (s_resource_quiesce | s_resource_reset),
+      .mem_pad_mode_i      (s_mem_pad_mode_lp),
+      .ext_h_block_i       (s_ext_h_block),
+      .ext_h_read_base_i   (s_ext_h_read_base),
+      .ext_h_read_limit_i  (s_ext_h_read_limit),
+      .ext_h_write_base_i  (s_ext_h_write_base),
+      .ext_h_write_limit_i (s_ext_h_write_limit),
+      .hp_icache_axi4      (u_hp_icache_axi4_if),
+      .hp_dcache_axi4      (u_hp_dcache_axi4_if),
+      .dma_axi4            (u_dma_axi4_if),
+      .sdio0_axi4          (u_sdio0_axi4_if),
+      .sdio1_axi4          (u_sdio1_axi4_if),
+      .spisd_axi4          (u_spisd_axi4_if),
+      .usb2_axi4           (u_usb2_axi4_if),
+      .lp_data_axi4        (u_mgmt_data_axi4_if),
+      .ext_h_axi4          (u_ext_h_wide_axi4_if),
+      .sram_gateway_axi4   (u_data_sram_axi4_if),
+      .sdram_gateway_axi4  (u_data_sdram_axi4_if),
+      .qpi_gateway_axi4    (u_data_qpi_axi4_if),
+      .opi_gateway_axi4    (u_data_opi_axi4_if),
+      .xpi_gateway_axi4    (u_data_xpi_axi4_if),
+      .idle_o              (s_data_plane_idle),
+      .flush_busy_o        (s_data_plane_flush_busy),
+      .ext_h_idle_o        (s_ext_h_data_idle),
+      .resource_idle_o     (s_resource_idle_hp),
+      .resource_block_ack_o(s_resource_block_ack_hp),
+      .outstanding_read_o  (s_data_plane_outstanding_read),
+      .outstanding_write_o (s_data_plane_outstanding_write),
+      .fault_valid_o       (s_data_plane_fault_valid),
+      .fault_master_o      (s_data_plane_fault_master),
+      .fault_target_o      (s_data_plane_fault_target),
+      .fault_addr_o        (s_data_plane_fault_addr),
+      .fault_write_o       (s_data_plane_fault_write),
+      .fault_reason_o      (s_data_plane_fault_reason)
+  );
+
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(6)
+  ) u_resource_idle_sync (
+      .clk_i  (clk_pclk_i),
+      .rst_n_i(rst_pclk_n_i),
+      .dat_i  (s_resource_idle_hp),
+      .dat_o  (s_resource_idle_pclk)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(6)
+  ) u_resource_block_ack_sync (
+      .clk_i  (clk_pclk_i),
+      .rst_n_i(rst_pclk_n_i),
+      .dat_i  (s_resource_block_ack_hp),
+      .dat_o  (s_resource_block_ack_pclk)
   );
 
   axi4_master_idle u_idle_master (.axi4(u_idle_axi4_if));
+  axi4_master_idle u_retired_sram_master (.axi4(u_retired_data_sram_axi4_if));
+  axi4_master_idle u_retired_sdram_master (.axi4(u_retired_data_sdram_axi4_if));
 
   axi4_async_bridge #(
       .DataWidth(32),
@@ -602,16 +667,16 @@ core_wrapper u_core_wrapper (
   apb4_async_bridge u_sdram_cfg_cdc (
       .src_clk_i  (clk_pclk_i),
       .src_rst_n_i(rst_pclk_n_i),
-      .dst_clk_i  (clk_lp_i),
-      .dst_rst_n_i(rst_lp_n_i),
+      .dst_clk_i  (clk_mem_i),
+      .dst_rst_n_i(rst_mem_n_i),
       .src_apb4   (u_sdram_cfg_pclk_if),
       .dst_apb4   (u_sdram_cfg_if)
   );
   apb4_async_bridge u_sram_cfg_cdc (
       .src_clk_i  (clk_pclk_i),
       .src_rst_n_i(rst_pclk_n_i),
-      .dst_clk_i  (clk_lp_i),
-      .dst_rst_n_i(rst_lp_n_i),
+      .dst_clk_i  (clk_hp_i),
+      .dst_rst_n_i(rst_hp_n_i),
       .src_apb4   (u_sram_cfg_pclk_if),
       .dst_apb4   (u_sram_cfg_if)
   );
@@ -646,22 +711,35 @@ core_wrapper u_core_wrapper (
 
   onchip_ram #(
       .Present    (SramPresent),
-      .CapacityKiB(`SOC_ADDR_SRAM_SIZE >> 10)
+      .CapacityKiB(`SOC_ADDR_SRAM_SIZE >> 10),
+      .DataWidth  (64),
+      .IdWidth    (6)
   ) u_onchip_ram (
-      .clk_i        (clk_lp_i),
-      .rst_n_i      (rst_lp_n_i),
+      .clk_i        (clk_hp_i),
+      .rst_n_i      (rst_hp_n_i),
       .perf_enable_i(s_perf_en),
       .perf_clear_i (s_perf_clear),
-      .mem_axi4     (u_sram_axi4_if),
+      .mem_axi4     (u_data_sram_axi4_if),
       .cfg_apb4     (u_sram_cfg_if)
+  );
+
+  axi4_error_slave u_retired_sram_target (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .axi4   (u_sram_axi4_if)
+  );
+  axi4_error_slave u_retired_sdram_target (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .axi4   (u_sdram_axi4_if)
   );
 
   axi4_bus u_bus (
       .clk_i                  (clk_lp_i),
       .rst_n_i                (rst_lp_n_i),
       .mgmt_axi4              (u_mgmt_control_axi4_if),
-      .user_axi4              (u_data_sram_axi4_if),
-      .dma_axi4               (u_data_sdram_axi4_if),
+      .user_axi4              (u_retired_data_sram_axi4_if),
+      .dma_axi4               (u_retired_data_sdram_axi4_if),
       .sdio0_axi4             (u_data_qpi_axi4_if),
       .sdio1_axi4             (u_data_xpi_axi4_if),
       .usb2_axi4              (u_hp_mmio_lp_axi4_if),
@@ -711,6 +789,8 @@ core_wrapper u_core_wrapper (
       .debug_halted_i              (s_mgmt_debug_halted),
       .timebase_tick_i             (timebase_tick_i),
       .ext_h_hp_irq_i              ((s_ext_h_owner == 2'd1) ? s_ext_h_irq_raw : 1'b0),
+      .resource_irq_lp_i           (s_resource_irq_lp),
+      .resource_irq_hp_i           (s_resource_irq_hp),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
       .dma_axi4                    (u_dma_axi4_if),
       .sdio0_axi4                  (u_sdio0_axi4_if),
@@ -750,44 +830,55 @@ core_wrapper u_core_wrapper (
       .hp_software_irq_o           (s_hp_software_irq),
       .hp_machine_external_irq_o   (s_hp_machine_external_irq),
       .hp_supervisor_external_irq_o(s_hp_supervisor_external_irq),
+      .resource_irq_raw_o          (s_resource_irq_raw),
       .irq_o                       (s_apb4_periph_irq)
   );
 
   axi4_sdram u_axi4_sdram (
-      .clk_i   (clk_lp_i),
-      .rst_n_i (rst_lp_n_i),
-      .axi4    (u_sdram_axi4_if),
+      .clk_i   (clk_mem_i),
+      .rst_n_i (rst_mem_n_i),
+      .axi4    (u_data_sdram_axi4_if),
       .cfg_apb4(u_sdram_cfg_if),
       .sdram   (sdram)
   );
 
   apb4_system u_apb4_system (
-      .clk_i              (clk_pclk_i),
-      .rst_n_i            (rst_pclk_n_i),
-      .clk_aud_i          (clk_aud_i),
-      .rst_aud_n_i        (rst_aud_n_i),
-      .debug_halted_i     (s_mgmt_debug_halted),
-      .ext_h_data_idle_i  (s_ext_h_data_idle),
-      .ext_h_axi4         (u_ext_h_wide_axi4_if),
-      .axi4               (u_system_pclk_axi4_if),
-      .pwm                (u_pwm_if),
-      .ps2                (u_ps2_if),
-      .ip_sel_i           (u_sysctrl_if.ip_sel_o),
-      .user_gpio          (u_user_gpio_if),
-      .rtc_wake_o         (s_rtc_wake),
-      .wdg_reset_req_o    (wdg_reset_req_o),
-      .ext_h_block_o      (s_ext_h_block),
-      .ext_h_read_base_o  (s_ext_h_read_base),
-      .ext_h_read_limit_o (s_ext_h_read_limit),
-      .ext_h_write_base_o (s_ext_h_write_base),
+      .clk_i(clk_pclk_i),
+      .rst_n_i(rst_pclk_n_i),
+      .clk_aud_i(clk_aud_i),
+      .rst_aud_n_i(rst_aud_n_i),
+      .debug_halted_i(s_mgmt_debug_halted),
+      .ext_h_data_idle_i(s_ext_h_data_idle),
+      .resource_idle_i({s_ext_h_data_idle && s_resource_idle_pclk[5], s_resource_idle_pclk[4:0]}),
+      .resource_block_ack_i(s_resource_block_ack_pclk),
+      .resource_irq_i(s_resource_irq_raw),
+      .cache_request_i(s_hp_cache_req_pclk),
+      .ext_h_axi4(u_ext_h_wide_axi4_if),
+      .axi4(u_system_pclk_axi4_if),
+      .pwm(u_pwm_if),
+      .ps2(u_ps2_if),
+      .ip_sel_i(u_sysctrl_if.ip_sel_o),
+      .user_gpio(u_user_gpio_if),
+      .rtc_wake_o(s_rtc_wake),
+      .wdg_reset_req_o(wdg_reset_req_o),
+      .ext_h_block_o(s_ext_h_block),
+      .ext_h_read_base_o(s_ext_h_read_base),
+      .ext_h_read_limit_o(s_ext_h_read_limit),
+      .ext_h_write_base_o(s_ext_h_write_base),
       .ext_h_write_limit_o(s_ext_h_write_limit),
-      .ext_h_timeout_o    (s_ext_h_timeout),
-      .ext_h_irq_raw_o    (s_ext_h_irq_raw),
-      .ext_h_owner_o      (s_ext_h_owner),
-      .irq_o              (s_apb4_system_irq)
+      .ext_h_timeout_o(s_ext_h_timeout),
+      .ext_h_irq_raw_o(s_ext_h_irq_raw),
+      .ext_h_owner_o(s_ext_h_owner),
+      .cache_clean_o(s_hp_cache_clean_pclk),
+      .resource_owner_o(s_resource_owner),
+      .resource_quiesce_o(s_resource_quiesce),
+      .resource_reset_o(s_resource_reset),
+      .resource_irq_lp_o(s_resource_irq_lp),
+      .resource_irq_hp_o(s_resource_irq_hp),
+      .irq_o(s_apb4_system_irq)
   );
 
-  logic [31:0] s_unused_domain_inputs;
+  logic [34:0] s_unused_domain_inputs;
   assign s_unused_domain_inputs = {
     clk_pclk_i,
     rst_pclk_n_i,
@@ -801,6 +892,9 @@ core_wrapper u_core_wrapper (
     s_mgmt_router_idle,
     s_hp_lifecycle_draining,
     s_hp_lifecycle_fault,
+    ^s_resource_owner,
+    ^s_resource_quiesce,
+    ^s_resource_reset,
     ^unused_cdc_clear_busy,
     ^unused_cdc_epoch,
     ^s_ext_h_timeout

@@ -262,9 +262,10 @@ static bool rs_ci_smoke_sdram_wait_ready(void) {
 }
 
 static bool rs_ci_smoke_sdram_access(void) {
-    volatile uint8_t *const bytes = (volatile uint8_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
-    volatile uint16_t *const halfs = (volatile uint16_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
-    volatile uint32_t *const words = (volatile uint32_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    const uintptr_t scratch = (uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_SPAN + UINT32_C(1));
+    volatile uint8_t *const bytes = (volatile uint8_t *)scratch;
+    volatile uint16_t *const halfs = (volatile uint16_t *)scratch;
+    volatile uint32_t *const words = (volatile uint32_t *)scratch;
     uint32_t index;
 
     if (!rs_ci_smoke_sdram_wait_ready()) {

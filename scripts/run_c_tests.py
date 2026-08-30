@@ -34,6 +34,7 @@ TEST_SOURCES = (
     "crt/src/hal/dma_math.c",
     "crt/src/hal/sysctrl.c",
     "crt/src/hal/clock.c",
+    "crt/src/hal/resource.c",
     "crt/src/hal/extension.c",
     "crt/src/hal/user_ip.c",
     "rtl/managed/clusterip/ps2/sw/src/ps2.c",

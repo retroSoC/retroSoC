@@ -38,9 +38,11 @@ supports a byte-masked final beat and reports AXI response errors and
 no-progress timeouts. Programmed ranges are enforced by the data-plane M7
 firewall; M6 and control-plane addresses remain denied in hardware.
 
-OWNER also controls interrupt routing. LP ownership delivers the slot event on
-LP IRQ 28; HP ownership delivers it on HP PLIC source 3. The two routes are
-mutually exclusive. Quiesce or reset blocks new EXT-H AXI addresses and STATUS
+For EXT-H, the central Resource Controller owner is the interrupt-routing
+authority. LP ownership delivers the slot event on LP IRQ 28; HP ownership
+delivers it on HP PLIC source 3, never both. The local `OWNER` register remains
+an ABI-compatible mirror, and `rs_extension_set_owner()` updates both through
+the Resource HAL. Quiesce or reset blocks new EXT-H AXI addresses and STATUS
 does not report idle until the DMA and address gate have drained.
 
 `<retrosoc/hal/extension.h>` provides discovery, status, ownership, lifecycle,

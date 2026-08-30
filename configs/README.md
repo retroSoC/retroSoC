@@ -14,7 +14,7 @@ CoreMark quick measurement; its `-standard` counterpart is reserved for a
 runs the quick CoreMark profile.
 `ci/ihp130-hp.mk` is the asymmetric Linux application profile. It starts HP
 from the external 72 MHz safe clock and LP from REF24, runs `hp_boot` entirely
-from 32 KiB on-chip SRAM, and
+from 32 KiB on-chip SRAM, enables VexiiRiscv `Zicbom` with 64-byte blocks, and
 generates VexiiRiscv RTL only below the selected build variant. It is not part
 of the supported PR matrix until Linux boot, HP performance, synthesis, and
 timing evidence are qualified.

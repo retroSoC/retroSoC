@@ -271,6 +271,7 @@ def test_axi4_data_crossbar_supports_cross_target_outstanding_and_acl(tmp_path: 
             str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv"),
             str(ROOT / "rtl/mini/top/axi4_data_crossbar.sv"),
             str(ROOT / "tests/rtl/axi4_data_crossbar_tb.sv"),
             "-Mdir",
@@ -289,3 +290,43 @@ def test_axi4_data_crossbar_supports_cross_target_outstanding_and_acl(tmp_path: 
     )
     result = subprocess.run([output], check=True, text=True, capture_output=True)
     assert "AXI4 data crossbar concurrency and ACL test passed" in result.stdout
+
+
+def test_axi4_target_guard_terminates_and_isolates_timeouts(tmp_path: Path) -> None:
+    verilator = shutil.which("verilator")
+    if verilator is None:
+        return
+
+    output = tmp_path / "axi4_target_guard_tb"
+    ccache_tmp = tmp_path / "ccache"
+    ccache_tmp.mkdir()
+    subprocess.run(
+        [
+            verilator,
+            "--binary",
+            "--timing",
+            "-Wno-fatal",
+            "--top-module",
+            "axi4_target_guard_tb",
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl/interface"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv"),
+            str(ROOT / "rtl/mini/top/axi4_target_guard.sv"),
+            str(ROOT / "tests/rtl/axi4_target_guard_tb.sv"),
+            "-Mdir",
+            str(tmp_path / "obj"),
+            "-o",
+            str(output),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+        env={
+            **os.environ,
+            "CCACHE_DIR": str(ccache_tmp),
+            "CCACHE_TEMPDIR": str(ccache_tmp),
+        },
+    )
+    result = subprocess.run([output], check=True, text=True, capture_output=True)
+    assert "AXI4 target guard timeout and isolation test passed" in result.stdout

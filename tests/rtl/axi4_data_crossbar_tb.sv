@@ -7,6 +7,8 @@ module axi4_data_crossbar_tb;
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
   logic        idle_o;
+  logic [ 7:0] master_block_i = '0;
+  logic [ 7:0] master_idle_o;
   logic [ 7:0] outstanding_read_o;
   logic [ 7:0] outstanding_write_o;
   logic        fault_valid_o;
@@ -46,6 +48,7 @@ module axi4_data_crossbar_tb;
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
       .block_new_i        (1'b0),
+      .master_block_i     (master_block_i),
       .recovery_i         (1'b0),
       .mem_pad_mode_i     (2'd1),
       .ext_h_read_base_i  (32'h3000_0000),
@@ -55,6 +58,7 @@ module axi4_data_crossbar_tb;
       .masters            (masters),
       .targets            (targets),
       .idle_o             (idle_o),
+      .master_idle_o      (master_idle_o),
       .outstanding_read_o (outstanding_read_o),
       .outstanding_write_o(outstanding_write_o),
       .fault_valid_o      (fault_valid_o),
@@ -172,6 +176,18 @@ module axi4_data_crossbar_tb;
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
 
+    @(negedge clk_i);
+    master_block_i[1]  = 1'b1;
+    masters[1].arid    = 6'b001_111;
+    masters[1].araddr  = 32'h3000_0000;
+    masters[1].arvalid = 1'b1;
+    #1;
+    if (masters[1].arready || master_idle_o[1]) begin
+      $fatal(1, "blocked master was accepted or reported idle with VALID held");
+    end
+    masters[1].arvalid = 1'b0;
+    master_block_i[1]  = 1'b0;
+
     issue_master1_read(6'b001_000, 32'h3000_0000);
     issue_master1_read(6'b001_001, 32'h3800_0000);
     if (outstanding_read_o != 8'd2 || idle_o) begin
@@ -199,6 +215,35 @@ module axi4_data_crossbar_tb;
     @(negedge clk_i);
     if (!idle_o || (outstanding_read_o != 8'd0)) begin
       $fatal(1, "read completion did not drain the crossbar");
+    end
+
+    issue_master1_read(6'b001_010, 32'h3000_0040);
+    issue_master1_read(6'b001_011, 32'h3000_0080);
+    if (outstanding_read_o != 8'd2) begin
+      $fatal(1, "same-target reads were not tracked concurrently");
+    end
+    fork
+      return_target0_read(6'b001_011, 64'h3333_3333_3333_3333);
+      begin
+        wait (masters[1].rvalid);
+        if ((masters[1].rid != 6'b001_011) || (masters[1].rdata != 64'h3333_3333_3333_3333)) begin
+          $fatal(1, "same-target out-of-order response was misrouted");
+        end
+      end
+    join
+    @(posedge clk_i);
+    fork
+      return_target0_read(6'b001_010, 64'h4444_4444_4444_4444);
+      begin
+        wait (masters[1].rvalid);
+        if ((masters[1].rid != 6'b001_010) || (masters[1].rdata != 64'h4444_4444_4444_4444)) begin
+          $fatal(1, "same-target older response was misrouted");
+        end
+      end
+    join
+    @(negedge clk_i);
+    if (!idle_o || (outstanding_read_o != 8'd0)) begin
+      $fatal(1, "same-target reads did not drain the crossbar");
     end
 
     @(negedge clk_i);

@@ -463,6 +463,8 @@ module axi4_interconnect #(
       `SOC_ADDR_IS_APB4_EXT_L(addr)
       && !
       `SOC_ADDR_IS_APB4_EXT_H(addr)
+      && !
+      `SOC_ADDR_IS_APB4_RESOURCE_CTRL(addr)
       );
 `else
       s_access_allowed[master] = (master != 1) || ((read_req &&

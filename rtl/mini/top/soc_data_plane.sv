@@ -9,9 +9,12 @@ module soc_data_plane (
     input  logic       rst_io_n_i,
     input  logic       clk_hp_i,
     input  logic       rst_hp_n_i,
+    input  logic       clk_mem_i,
+    input  logic       rst_mem_n_i,
     input  logic       block_new_i,
     input  logic       recovery_i,
     input  logic       flush_i,
+    input  logic [5:0] resource_block_i,
     input  logic [1:0] mem_pad_mode_i,
     input  logic       ext_h_block_i,
     input  logic [31:0] ext_h_read_base_i,
@@ -35,6 +38,8 @@ module soc_data_plane (
     output logic       idle_o,
     output logic       flush_busy_o,
     output logic       ext_h_idle_o,
+    output logic [5:0] resource_idle_o,
+    output logic [5:0] resource_block_ack_o,
     output logic [7:0] outstanding_read_o,
     output logic [7:0] outstanding_write_o,
     output logic       fault_valid_o,
@@ -47,18 +52,37 @@ module soc_data_plane (
 );
   localparam int unsigned NumIoMasters = 3;
   localparam int unsigned NumMemoryTargets = 5;
+  localparam logic [3:0] FaultTimeout = 4'd5;
 
-  logic                             s_block_new_hp;
-  logic [                 1:0]      s_mem_pad_mode_hp;
-  logic [    NumIoMasters-1:0]      s_io_clear_busy;
-  logic [NumMemoryTargets-1:0]      s_target_clear_busy;
-  logic                             s_lp_clear_busy;
-  logic                             s_ext_clear_busy;
-  logic [    NumIoMasters-1:0][7:0] unused_io_epoch;
-  logic [NumMemoryTargets-1:0][7:0] unused_target_epoch;
-  logic [                 7:0]      unused_lp_epoch;
-  logic [                 7:0]      unused_ext_epoch;
-  logic [                 2:0]      s_unused_epoch;
+  logic                              s_block_new_hp;
+  logic [                 1:0]       s_mem_pad_mode_hp;
+  logic [    NumIoMasters-1:0]       s_io_clear_busy;
+  logic [NumMemoryTargets-1:0]       s_target_clear_busy;
+  logic [NumMemoryTargets-1:0]       s_guard_clear_busy;
+  logic [NumMemoryTargets-1:0]       s_guard_abort;
+  logic [NumMemoryTargets-1:0]       s_guard_abort_done;
+  logic [NumMemoryTargets-1:0]       s_guard_abort_seen_q;
+  logic [NumMemoryTargets-1:0]       s_guard_timeout_valid;
+  logic [NumMemoryTargets-1:0]       s_guard_timeout_write;
+  logic [NumMemoryTargets-1:0][ 5:0] s_guard_timeout_id;
+  logic [NumMemoryTargets-1:0][31:0] s_guard_timeout_addr;
+  logic                              s_sdram_abort_mem;
+  logic                              s_crossbar_fault_valid;
+  logic [                 2:0]       s_crossbar_fault_master;
+  logic [                 2:0]       s_crossbar_fault_target;
+  logic [                31:0]       s_crossbar_fault_addr;
+  logic                              s_crossbar_fault_write;
+  logic [                 3:0]       s_crossbar_fault_reason;
+  logic                              s_lp_clear_busy;
+  logic                              s_ext_clear_busy;
+  logic [    NumIoMasters-1:0][ 7:0] unused_io_epoch;
+  logic [NumMemoryTargets-1:0][ 7:0] unused_target_epoch;
+  logic [                 7:0]       unused_lp_epoch;
+  logic [                 7:0]       unused_ext_epoch;
+  logic [                 2:0]       s_unused_epoch;
+  logic [                 5:0]       s_resource_block_hp;
+  logic [                 7:0]       s_master_idle;
+  logic [                 7:0]       s_master_block;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -74,9 +98,27 @@ module soc_data_plane (
       .DATA_WIDTH(64),
       .ID_WIDTH  (6),
       .USER_WIDTH(1)
-  ) u_target_axi4[6] (
+  ) u_crossbar_target_axi4[6] (
       .aclk   (clk_hp_i),
       .aresetn(rst_hp_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (6),
+      .USER_WIDTH(1)
+  ) u_target_axi4[NumMemoryTargets] (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (6),
+      .USER_WIDTH(1)
+  ) u_sdram_mem_axi4 (
+      .aclk   (clk_mem_i),
+      .aresetn(rst_mem_n_i)
   );
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -196,6 +238,33 @@ module soc_data_plane (
       .dat_i  (mem_pad_mode_i),
       .dat_o  (s_mem_pad_mode_hp)
   );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(6)
+  ) u_resource_block_sync (
+      .clk_i  (clk_hp_i),
+      .rst_n_i(rst_hp_n_i),
+      .dat_i  (resource_block_i),
+      .dat_o  (s_resource_block_hp)
+  );
+
+  assign s_master_block = {
+    s_resource_block_hp[5],
+    2'b00,
+    s_resource_block_hp[4] || s_resource_block_hp[3],
+    s_resource_block_hp[2] || s_resource_block_hp[1],
+    s_resource_block_hp[0],
+    2'b00
+  };
+  assign resource_idle_o = {
+    s_master_idle[7],
+    s_master_idle[4],
+    s_master_idle[4],
+    s_master_idle[3],
+    s_master_idle[3],
+    s_master_idle[2]
+  };
+  assign resource_block_ack_o = s_resource_block_hp;
 
   axi4_id_prefix #(
       .MasterIndex(3'd0)
@@ -327,6 +396,7 @@ module soc_data_plane (
       .clk_i              (clk_hp_i),
       .rst_n_i            (rst_hp_n_i),
       .block_new_i        (s_block_new_hp),
+      .master_block_i     (s_master_block),
       .recovery_i         (recovery_i),
       .mem_pad_mode_i     (s_mem_pad_mode_hp),
       .ext_h_read_base_i  (ext_h_read_base_i),
@@ -334,41 +404,106 @@ module soc_data_plane (
       .ext_h_write_base_i (ext_h_write_base_i),
       .ext_h_write_limit_i(ext_h_write_limit_i),
       .masters            (u_master_axi4),
-      .targets            (u_target_axi4),
+      .targets            (u_crossbar_target_axi4),
       .idle_o             (idle_o),
+      .master_idle_o      (s_master_idle),
       .outstanding_read_o (outstanding_read_o),
       .outstanding_write_o(outstanding_write_o),
-      .fault_valid_o      (fault_valid_o),
-      .fault_master_o     (fault_master_o),
-      .fault_target_o     (fault_target_o),
-      .fault_addr_o       (fault_addr_o),
-      .fault_write_o      (fault_write_o),
-      .fault_reason_o     (fault_reason_o)
+      .fault_valid_o      (s_crossbar_fault_valid),
+      .fault_master_o     (s_crossbar_fault_master),
+      .fault_target_o     (s_crossbar_fault_target),
+      .fault_addr_o       (s_crossbar_fault_addr),
+      .fault_write_o      (s_crossbar_fault_write),
+      .fault_reason_o     (s_crossbar_fault_reason)
   );
 
   for (genvar target = 0; target < NumMemoryTargets; target++) begin : gen_memory_target
-    axi4_downsizer_64to32 #(
-        .WideIdWidth(6)
-    ) u_target_downsizer (
-        .clk_i  (clk_hp_i),
-        .rst_n_i(rst_hp_n_i),
-        .wide   (u_target_axi4[target]),
-        .narrow (u_target_hp_axi4[target])
+    localparam logic [31:0] TargetTimeout = (target == 0) ? 32'd256 :
+        (target == 1) ? 32'd8192 : 32'd65535;
+
+    axi4_target_guard #(
+        .ReadDepth (target < 2 ? 4 : 2),
+        .WriteDepth(2)
+    ) u_target_guard (
+        .clk_i          (clk_hp_i),
+        .rst_n_i        (rst_hp_n_i),
+        .clear_i        (flush_i),
+        .timeout_i      (TargetTimeout),
+        .clear_busy_o   (s_guard_clear_busy[target]),
+        .abort_o        (s_guard_abort[target]),
+        .abort_done_i   (s_guard_abort_done[target]),
+        .timeout_valid_o(s_guard_timeout_valid[target]),
+        .timeout_write_o(s_guard_timeout_write[target]),
+        .timeout_id_o   (s_guard_timeout_id[target]),
+        .timeout_addr_o (s_guard_timeout_addr[target]),
+        .source         (u_crossbar_target_axi4[target]),
+        .sink           (u_target_axi4[target])
     );
-    axi4_async_bridge #(
-        .DataWidth(32),
-        .IdWidth  (1)
-    ) u_target_cdc (
-        .src_clk_i   (clk_hp_i),
-        .src_rst_n_i (rst_hp_n_i),
-        .dst_clk_i   (clk_lp_i),
-        .dst_rst_n_i (rst_lp_n_i),
-        .clear_i     (flush_i),
-        .clear_busy_o(s_target_clear_busy[target]),
-        .epoch_o     (unused_target_epoch[target]),
-        .src_axi4    (u_target_hp_axi4[target]),
-        .dst_axi4    (u_gateway_lp_axi4[target])
-    );
+    if (target == 0) begin : gen_native_sram
+      axi4_connector u_sram_gateway_connector (
+          .source(u_target_axi4[target]),
+          .sink  (sram_gateway_axi4)
+      );
+      assign s_target_clear_busy[target] = 1'b0;
+      assign unused_target_epoch[target] = 8'd0;
+    end else if (target == 1) begin : gen_native_sdram
+      axi4_async_bridge #(
+          .DataWidth(64),
+          .IdWidth  (6)
+      ) u_target_cdc (
+          .src_clk_i   (clk_hp_i),
+          .src_rst_n_i (rst_hp_n_i),
+          .dst_clk_i   (clk_mem_i),
+          .dst_rst_n_i (rst_mem_n_i),
+          .clear_i     (flush_i || s_guard_abort[target]),
+          .clear_busy_o(s_target_clear_busy[target]),
+          .epoch_o     (unused_target_epoch[target]),
+          .src_axi4    (u_target_axi4[target]),
+          .dst_axi4    (u_sdram_mem_axi4)
+      );
+      cdc_sync #(
+          .STAGE     (2),
+          .DATA_WIDTH(1)
+      ) u_abort_sync (
+          .clk_i  (clk_mem_i),
+          .rst_n_i(rst_mem_n_i),
+          .dat_i  (s_guard_abort[target]),
+          .dat_o  (s_sdram_abort_mem)
+      );
+      axi4_downsizer_64to32 #(
+          .WideIdWidth(6)
+      ) u_target_downsizer (
+          .clk_i  (clk_mem_i),
+          .rst_n_i(rst_mem_n_i),
+          .clear_i(s_sdram_abort_mem),
+          .wide   (u_sdram_mem_axi4),
+          .narrow (sdram_gateway_axi4)
+      );
+    end else begin : gen_legacy_memory
+      axi4_downsizer_64to32 #(
+          .WideIdWidth(6)
+      ) u_target_downsizer (
+          .clk_i  (clk_hp_i),
+          .rst_n_i(rst_hp_n_i),
+          .clear_i(s_guard_abort[target]),
+          .wide   (u_target_axi4[target]),
+          .narrow (u_target_hp_axi4[target])
+      );
+      axi4_async_bridge #(
+          .DataWidth(32),
+          .IdWidth  (1)
+      ) u_target_cdc (
+          .src_clk_i   (clk_hp_i),
+          .src_rst_n_i (rst_hp_n_i),
+          .dst_clk_i   (clk_lp_i),
+          .dst_rst_n_i (rst_lp_n_i),
+          .clear_i     (flush_i || s_guard_abort[target]),
+          .clear_busy_o(s_target_clear_busy[target]),
+          .epoch_o     (unused_target_epoch[target]),
+          .src_axi4    (u_target_hp_axi4[target]),
+          .dst_axi4    (u_gateway_lp_axi4[target])
+      );
+    end
   end
 
   axi4_error_slave #(
@@ -377,23 +512,52 @@ module soc_data_plane (
   ) u_data_error_slave (
       .clk_i  (clk_hp_i),
       .rst_n_i(rst_hp_n_i),
-      .axi4   (u_target_axi4[5])
+      .axi4   (u_crossbar_target_axi4[5])
   );
 
+  for (genvar target = 0; target < NumMemoryTargets; target++) begin : gen_abort_handshake
+    assign s_guard_abort_done[target] = (target == 0) ? s_guard_abort[target] :
+        s_guard_abort[target] && s_guard_abort_seen_q[target] &&
+        !s_target_clear_busy[target];
+
+    always_ff @(posedge clk_hp_i or negedge rst_hp_n_i) begin
+      if (!rst_hp_n_i) begin
+        s_guard_abort_seen_q[target] <= 1'b0;
+      end else if (!s_guard_abort[target]) begin
+        s_guard_abort_seen_q[target] <= 1'b0;
+      end else if (s_target_clear_busy[target]) begin
+        s_guard_abort_seen_q[target] <= 1'b1;
+      end
+    end
+  end
+
+  always_comb begin
+    fault_valid_o  = s_crossbar_fault_valid;
+    fault_master_o = s_crossbar_fault_master;
+    fault_target_o = s_crossbar_fault_target;
+    fault_addr_o   = s_crossbar_fault_addr;
+    fault_write_o  = s_crossbar_fault_write;
+    fault_reason_o = s_crossbar_fault_reason;
+    if (!s_crossbar_fault_valid) begin
+      for (int target = NumMemoryTargets - 1; target >= 0; target--) begin
+        if (s_guard_timeout_valid[target]) begin
+          fault_valid_o  = 1'b1;
+          fault_master_o = s_guard_timeout_id[target][5:3];
+          fault_target_o = 3'(target);
+          fault_addr_o   = s_guard_timeout_addr[target];
+          fault_write_o  = s_guard_timeout_write[target];
+          fault_reason_o = FaultTimeout;
+        end
+      end
+    end
+  end
+
   assign flush_busy_o = (|s_io_clear_busy) || (|s_target_clear_busy) ||
-                        s_lp_clear_busy || s_ext_clear_busy;
+                        (|s_guard_clear_busy) || s_lp_clear_busy || s_ext_clear_busy;
   assign s_unused_epoch = {
     ^unused_io_epoch, ^unused_target_epoch, ^{unused_lp_epoch, unused_ext_epoch}
   };
 
-  axi4_connector u_sram_gateway_connector (
-      .source(u_gateway_lp_axi4[0]),
-      .sink  (sram_gateway_axi4)
-  );
-  axi4_connector u_sdram_gateway_connector (
-      .source(u_gateway_lp_axi4[1]),
-      .sink  (sdram_gateway_axi4)
-  );
   axi4_connector u_qpi_gateway_connector (
       .source(u_gateway_lp_axi4[2]),
       .sink  (qpi_gateway_axi4)

@@ -10,7 +10,7 @@
     },
     {
       "name": "apb4_system",
-      "width": 7,
+      "width": 8,
       "top_signal": "s_apb4_system_irq"
     }
   ],
@@ -71,7 +71,7 @@
       "group": "apb4_periph",
       "group_bit": 6,
       "core_bit": 6,
-      "signal": "spisd.irq_o"
+      "signal": "resource_irq_lp_i[4]"
     },
     {
       "name": "i2c0",
@@ -103,7 +103,7 @@
       "group": "apb4_periph",
       "group_bit": 16,
       "core_bit": 10,
-      "signal": "sdio0.irq_o",
+      "signal": "resource_irq_lp_i[2]",
       "user_visible": false
     },
     {
@@ -185,7 +185,7 @@
       "group": "apb4_periph",
       "group_bit": 14,
       "core_bit": 20,
-      "signal": "s_dma_irq",
+      "signal": "resource_irq_lp_i[0]",
       "user_visible": false
     },
     {
@@ -202,7 +202,7 @@
       "group": "apb4_periph",
       "group_bit": 17,
       "core_bit": 21,
-      "signal": "sdio1.irq_o",
+      "signal": "resource_irq_lp_i[3]",
       "user_visible": false
     },
     {
@@ -220,7 +220,7 @@
       "group": "apb4_periph",
       "group_bit": 19,
       "core_bit": 24,
-      "signal": "s_usb2_irq",
+      "signal": "resource_irq_lp_i[1]",
       "user_visible": false
     },
     {
@@ -257,6 +257,15 @@
       "group_bit": 6,
       "core_bit": 28,
       "signal": "s_ext_h_irq",
+      "user_visible": false
+    },
+    {
+      "name": "resource_fault",
+      "description": "Resource ownership and handoff fault interrupt",
+      "group": "apb4_system",
+      "group_bit": 7,
+      "core_bit": 29,
+      "signal": "s_resource_fault_irq",
       "user_visible": false
     }
   ],
@@ -581,6 +590,13 @@
       "timed_interface": "u_ext_h_apb4_if",
       "pure_interface": "u_ext_h_apb4_pure_if",
       "region": "APB4_EXT_H"
+    },
+    {
+      "slot": 10,
+      "name": "resource_ctrl",
+      "timed_interface": "u_resource_ctrl_apb4_if",
+      "pure_interface": "u_resource_ctrl_apb4_pure_if",
+      "region": "APB4_RESOURCE_CTRL"
     }
   ],
   "gpio_alt_functions": [

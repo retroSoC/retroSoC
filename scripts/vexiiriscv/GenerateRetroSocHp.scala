@@ -20,7 +20,7 @@ object GenerateRetroSocHp extends App {
   param.physicalWidth = 32
   param.resetVector = 0x38000000L
   param.asidWidth = 9
-  param.addISA("m", "a", "f", "d", "c", "s", "u", "zicntr", "zihpm")
+  param.addISA("m", "a", "f", "d", "c", "s", "u", "zicbom", "zicntr", "zihpm")
   param.fixIsaParams()
 
   param.decoders = 2

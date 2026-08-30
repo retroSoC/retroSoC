@@ -8,7 +8,7 @@ Every committed `MINI_MODE=PRODUCT` profile instantiates two fixed harts:
 | --- | --- | --- |
 | Core | Hazard3 | generated VexiiRiscv |
 | Hart ID | 0 | 1 |
-| ISA | profile RV32I/RV32IM | RV32IMAFDC, S/U mode, Sv32 |
+| ISA | profile RV32I/RV32IM | RV32IMAFDC + Zicbom, S/U mode, Sv32 |
 | Reset clock | REF24 at 24 MHz | external 72 MHz safe clock |
 | Role | boot, control, diagnostics, recovery | high-throughput application/Linux |
 | JTAG | reset owner | selectable while HP is held in reset |
@@ -73,12 +73,11 @@ same memory admission, inactive-pad, ACL, and fault path as HP and DMA.
 ## Native AXI64 data plane
 
 `soc_data_plane` contains an 8-master, 6-target AXI64 crossbar. Read and write
-ownership are independent, so one target may read and write concurrently and
-different targets progress concurrently. Different source IDs from a
-high-bandwidth master may be active against different targets. The same source
-ID is blocked until completion, and each target currently remains
-single-outstanding per direction. Global IDs contain a fixed master prefix
-plus the source ID.
+channels progress independently, and different source IDs may be active against
+the same or different targets. The same source ID is blocked until completion.
+SRAM and SDRAM accept four reads and two writes; serial memories and the error
+target accept one per direction. Responses route by the global-ID master prefix,
+and a Common FIFO preserves write-data order where AXI4 W has no ID.
 
 | Master | Entry path |
 | --- | --- |
@@ -91,11 +90,18 @@ plus the source ID.
 | EXT-H | PCLK-to-HP AXI64 async bridge, ID prefix 7 |
 
 Targets are SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, XPI/flash, and a
-finite-latency error slave. Current 32-bit memory frontends use AXI64-to-32
-downsizers. QPI, OPI, and XPI controllers run from the stable 36 MHz memory
-root; their APB windows use PCLK-to-memory proxies. SRAM and SDRAM still use
-LP-domain frontends and remain explicit native-64-bit follow-up work. Inactive
-QPI/OPI windows route to `SLVERR`.
+finite-latency error slave. SRAM is a native AXI64, six-bit-ID target in HP and
+stripes each beat across two existing 32-bit technology macros. SDRAM crosses
+HP to the stable memory domain as AXI64 and is downsized only beside the current
+32-bit SDRAM frontend. QPI, OPI, and XPI retain transitional 32-bit LP staging
+before their stable memory-domain engines. Inactive QPI/OPI windows return
+`SLVERR`.
+
+Every memory target has a queued guard. SRAM/SDRAM queue depth matches their
+credits. Target stalls are bounded by target-specific timeouts; a pre-accept
+stall receives synthetic `SLVERR`, while an accepted timeout flushes the CDC
+boundary, completes the original burst with `SLVERR`, and permanently isolates
+that target until hard reset so a late response cannot contaminate new traffic.
 
 All async AXI channels use Common coordinated warm-flush FIFOs and expose a
 source-domain epoch. HP shutdown holds a flush request until every bridge sees
@@ -131,6 +137,12 @@ EXT-H DMA performs aligned 64-bit memory copies with a partial final strobe.
 Its IRQ is delivered to LP IRQ 28 or HP PLIC source 3 according to owner,
 never both. Software discovers it through `<retrosoc/hal/extension.h>`.
 
+The Resource Controller at `0x2000_A000` is the central owner and IRQ authority
+for DMA, USB2, SDIO0/1, SPI-SD, and EXT-H. Handoff requires idle, owner lock is
+sticky, and rejected handoffs raise LP IRQ 29. It also carries the AON cache
+request/clean acknowledgement used before HP drain. See
+[`ip/resource-controller.md`](ip/resource-controller.md).
+
 The old `APB4_USER_IP` window is a read-only compatibility/capability window.
 Product writes to `CORESEL`, `IPSEL`, `USER_CORE_RESET`, or
 `USER_CORE_STATUS` return APB `PSLVERR`; legacy HAL mutators return
@@ -149,8 +161,10 @@ so absolute commercial paths are never tracked.
 
 Behavioral RTL, firmware, directed data-plane/lifecycle/clock tests, manifest
 parity, and quality checks are the evidence for this implementation. HP stop
-implements drain, coordinated flush, actual-release status, and bounded forced
-reset, but a forced reset cannot preserve dirty cache data. It must not be
+implements a pre-drain cache request/ACK window, drain, coordinated flush,
+actual-release status, and bounded forced reset. Vexii implements 64-byte
+`Zicbom`; software still owns shared-range selection, and a forced reset cannot
+preserve dirty cache data when the ACK times out. It must not be
 called cache coherent, power isolated, timing closed, CDC/RDC signed off, or
 silicon-qualified. Synthesis, netlist simulation, STA, MMMC, clock-tree, DFT,
 and analogue PLL qualification are separate gates.

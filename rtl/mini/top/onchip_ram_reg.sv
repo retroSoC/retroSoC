@@ -12,7 +12,8 @@
 
 module onchip_ram_reg #(
     parameter bit          Present     = 1'b1,
-    parameter int unsigned CapacityKiB = 128
+    parameter int unsigned CapacityKiB = 128,
+    parameter int unsigned DataBytes   = 4
 ) (
     // verilog_format: off -- preserve the register input grouping
     input  logic        clk_i,
@@ -31,7 +32,7 @@ module onchip_ram_reg #(
   localparam int unsigned BankBytes = 4096;
   localparam int unsigned BankCount = CapacityKiB / 4;
   localparam logic [31:0] Capability =
-      32'(4 << `APB4_ONCHIP_RAM__CAP_DATA_BYTES_LSB) |
+      32'(DataBytes << `APB4_ONCHIP_RAM__CAP_DATA_BYTES_LSB) |
       32'(16 << `APB4_ONCHIP_RAM__CAP_MAX_BEATS_LSB) |
       32'h0000_007E | 32'(Present);
 

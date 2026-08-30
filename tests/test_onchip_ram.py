@@ -84,6 +84,75 @@ def test_onchip_ram_axi4_capacity_protocol_and_performance(
     assert f"on-chip SRAM AXI4 test passed capacity_kib={capacity_kib}" in result.stdout
 
 
+@pytest.mark.parametrize("capacity_kib", (4, 32))
+def test_onchip_ram_native_axi64_width_ids_and_lanes(
+    tmp_path: Path, capacity_kib: int
+) -> None:
+    verilator = shutil.which("verilator")
+    if verilator is None:
+        return
+
+    generated = tmp_path / "memory_map"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            "--map",
+            str(ROOT / "rtl/mini/address_map/memory_map.json"),
+            "--output-dir",
+            str(generated),
+            "--have-sram-if",
+            "YES",
+            "--sram-size-kib",
+            str(capacity_kib),
+        ],
+        check=True,
+    )
+    output = tmp_path / f"onchip_ram64_{capacity_kib}"
+    ccache_tmp = tmp_path / "ccache64"
+    ccache_tmp.mkdir()
+    subprocess.run(
+        [
+            verilator,
+            "--binary",
+            "--timing",
+            "-Wno-fatal",
+            "--top-module",
+            "onchip_ram64_tb",
+            f"-GCapacityKiB={capacity_kib}",
+            "+define+PDK_BEHAV",
+            "+define+SV_ASSRT_DISABLE",
+            "-I" + str(generated / "rtl"),
+            "-I" + str(ROOT / "rtl/mini/top"),
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl/interface"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_addr_gen.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/tech/ram.sv"),
+            str(ROOT / "rtl/tech/tc_sram.sv"),
+            str(ROOT / "rtl/mini/top/onchip_ram_reg.sv"),
+            str(ROOT / "rtl/mini/top/onchip_ram.sv"),
+            str(ROOT / "tests/rtl/onchip_ram64_tb.sv"),
+            "-Mdir",
+            str(tmp_path / "obj64"),
+            "-o",
+            str(output),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+        env={
+            **os.environ,
+            "CCACHE_DIR": str(ccache_tmp),
+            "CCACHE_TEMPDIR": str(ccache_tmp),
+        },
+    )
+    result = subprocess.run([output], check=True, text=True, capture_output=True)
+    assert "native AXI64 on-chip SRAM test passed" in result.stdout
+
+
 def test_absent_onchip_ram_reports_capability_and_decode_errors(tmp_path: Path) -> None:
     verilator = shutil.which("verilator")
     if verilator is None:

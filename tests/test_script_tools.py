@@ -1162,8 +1162,9 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> 
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
             assert "SOC_SIM_TIME=360" in verilator_values
         else:
-            assert "LINK_TYPE=ld2_all_sram" not in verilator_values
-            assert "VERILATOR_SIM_ARGS=--fast-flash" not in verilator_values
+            assert "LINK_TYPE=ld2_sdram" in verilator_values
+            assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
+            assert "SOC_SIM_TIME=600" in verilator_values
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert not any(

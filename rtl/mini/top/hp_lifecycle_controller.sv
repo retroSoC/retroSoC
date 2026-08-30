@@ -8,10 +8,12 @@ module hp_lifecycle_controller (
     input  logic        release_req_i,
     input  logic        hp_idle_i,
     input  logic        flush_busy_i,
+    input  logic        cache_clean_i,
     input  logic [15:0] timeout_i,
     output logic        hp_release_o,
     output logic        block_new_o,
     output logic        flush_o,
+    output logic        cache_request_o,
     output logic        draining_o,
     output logic        forced_fault_o
     // verilog_format: on
@@ -19,6 +21,7 @@ module hp_lifecycle_controller (
   typedef enum logic [2:0] {
     Held,
     Running,
+    CacheRequest,
     Quiesce,
     FlushRequest,
     FlushWait
@@ -36,8 +39,9 @@ module hp_lifecycle_controller (
   assign hp_release_o = s_hp_release_q;
   assign block_new_o = s_block_new_q;
   assign flush_o = s_flush_q;
-  assign draining_o = (s_state_q == Quiesce) || (s_state_q == FlushRequest) ||
-                      (s_state_q == FlushWait);
+  assign cache_request_o = s_state_q == CacheRequest;
+  assign draining_o = (s_state_q == CacheRequest) || (s_state_q == Quiesce) ||
+                      (s_state_q == FlushRequest) || (s_state_q == FlushWait);
   assign forced_fault_o = s_forced_fault_q;
 
   always_comb begin
@@ -65,8 +69,24 @@ module hp_lifecycle_controller (
         s_flush_d       = 1'b0;
         s_timeout_cnt_d = '0;
         if (!release_req_i) begin
-          s_block_new_d = 1'b1;
-          s_state_d     = Quiesce;
+          s_state_d = CacheRequest;
+        end
+      end
+      CacheRequest: begin
+        s_hp_release_d = 1'b1;
+        s_block_new_d  = 1'b0;
+        s_flush_d      = 1'b0;
+        if (cache_clean_i) begin
+          s_block_new_d   = 1'b1;
+          s_timeout_cnt_d = '0;
+          s_state_d       = Quiesce;
+        end else if (s_timeout_cnt_q == s_timeout_limit - 1'b1) begin
+          s_forced_fault_d = 1'b1;
+          s_block_new_d    = 1'b1;
+          s_timeout_cnt_d  = '0;
+          s_state_d        = Quiesce;
+        end else begin
+          s_timeout_cnt_d = s_timeout_cnt_q + 1'b1;
         end
       end
       Quiesce: begin

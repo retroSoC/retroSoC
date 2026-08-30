@@ -31,7 +31,7 @@ rs_status_t rs_onchip_sram_probe(rs_onchip_sram_info_t *info) {
     info->present = (capability & RS_ONCHIP_SRAM_CAP_PRESENT) != 0U;
 
     if ((bank_bytes != RS_ONCHIP_SRAM_BANK_BYTES_VALUE) || (info->max_burst_beats != 16U) ||
-        (info->data_bytes != 4U) ||
+        ((info->data_bytes != 4U) && (info->data_bytes != 8U)) ||
         ((capability & (RS_ONCHIP_SRAM_CAP_NATIVE_AXI4 | RS_ONCHIP_SRAM_CAP_BYTE_WRITE |
                         RS_ONCHIP_SRAM_CAP_FIXED | RS_ONCHIP_SRAM_CAP_INCR |
                         RS_ONCHIP_SRAM_CAP_WRAP | RS_ONCHIP_SRAM_CAP_PERFORMANCE)) !=

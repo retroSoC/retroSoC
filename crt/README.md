@@ -52,6 +52,10 @@ MPW compatibility API; selector mutators return `RS_ENOTSUP` in product builds.
 See the [extension contract](../docs/ip/extensions.md) and
 [legacy user-IP contract](../docs/ip/user-ip.md).
 
+`<retrosoc/hal/resource.h>` owns the central DMA, USB2, SDIO0/1, SPI-SD, and
+EXT-H owner/lock, lifecycle-request, fault, and HP cache-maintenance handshake.
+See the [Resource Controller contract](../docs/ip/resource-controller.md).
+
 `<retrosoc/hal/memory.h>` provides the uniform Mini memory inventory for
 SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, and XPI. It reports the fixed
 window, device/initialization/ready/active state, shared-pad mode, DMA and

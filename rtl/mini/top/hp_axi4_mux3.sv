@@ -16,12 +16,15 @@ module hp_axi4_mux3 (
   } state_e;
 
   state_e s_state_d, s_state_q;
+  logic s_state_bits_q;
   logic [1:0] s_owner_d, s_owner_q;
   logic s_write_d, s_write_q;
   logic [1:0] s_selected;
   logic       s_selected_write;
   logic       s_addr_accept;
   logic       s_terminal;
+
+  assign s_state_q = state_e'(s_state_bits_q);
 
   always_comb begin
     s_selected       = 2'd0;
@@ -177,7 +180,7 @@ module hp_axi4_mux3 (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_state_d),
-      .dat_o  (s_state_q)
+      .dat_o  (s_state_bits_q)
   );
   dffr #(
       .DATA_WIDTH(2)

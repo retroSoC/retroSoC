@@ -2,9 +2,12 @@
 
 ## Scope and maturity
 
-The Mini SoC on-chip SRAM is a synthesis-time configurable, 32-bit native-AXI4
-target backed by fixed `1024 x 32` single-port technology wrappers. Supported
-capacities are 4, 16, 32, 64, and 128 KiB. The data aperture starts at
+The Mini SoC on-chip SRAM is a synthesis-time configurable AXI4 target backed
+by fixed 32-bit single-port technology wrappers. The reusable module keeps a
+32-bit/ID1 compatibility mode; the Mini product instantiates native
+64-bit/ID6 and stripes each beat over two wrappers. Supported capacities are
+4, 16, 32, 64, and 128 KiB in compatibility mode; the product selects 32 KiB.
+The data aperture starts at
 `0x3000_0000`; its generated end address and linker length match the selected
 physical capacity. A management-only APB4 window at `0x1001_7000` reports the
 configuration and saturating performance counters.
@@ -29,10 +32,10 @@ dependencies and do not transfer a vendor's qualification to retroSoC.
 | [CAST SRAM-CTRL and ECC-SRAM](https://www.cast-inc.com/peripherals/memory-controllers/sram-ctrl) | Commercial IP emphasizes native AXI/AHB/APB, byte accesses, low latency, lint/scan readiness, SECDED, testbenches, scripts, and integration documentation. | The products remain offered. Use the features and deliverables as an IP-readiness checklist, not as evidence for this implementation. |
 | [Synopsys STAR Memory System](https://www.synopsys.com/articles/embedded-memory-test.html) | Hierarchical test, diagnosis, redundancy repair, tester patterns, and physical failed-bit mapping address manufacturing yield and field diagnosis. | The product family remains published. Keep DFT/repair as a physical-delivery phase instead of embedding an unqualified March engine in the AXI datapath. |
 
-The selected architecture is static capacity configuration plus a native AXI
-datapath. Dynamic bank reassignment, caches, multiple outstanding IDs, and
-multi-master bank scheduling require changes above this target and are not
-cost-effective in the current one-owner-per-target fabric.
+The selected architecture is static capacity configuration plus a native AXI64
+datapath. The data crossbar queues up to four SRAM reads and two writes while
+this SRAM engine completes one transaction at a time; IDs are preserved to the
+terminal response.
 
 ## Configuration and address contract
 
@@ -56,19 +59,20 @@ with `PRESENT=0`, zero memory bytes, and zero banks.
 
 ## AXI4 datapath
 
-The target uses the project-wide 32-bit address/data and 1-bit ID/USER
-geometry. It accepts one active read or write transaction, gives AR priority
-when AR and AW are simultaneously valid, and preserves the ID to the terminal
-response.
+The product target uses 32-bit addresses, 64-bit data, six-bit ID, and one-bit
+USER. It accepts one active read or write transaction, gives AR priority when
+AR and AW are simultaneously valid, and preserves the ID to the terminal
+response. The compatibility parameterization retains 32-bit data and one-bit
+ID for standalone/formal reuse.
 
-Supported requests are naturally aligned 1-, 2-, or 4-byte transfers using
+Supported product requests are naturally aligned 1-, 2-, 4-, or 8-byte transfers using
 `FIXED`, `INCR`, or legal 2/4/8/16-beat `WRAP` bursts. Bursts are limited to 16
 beats and one 4 KiB page. Because a bank is exactly one 4 KiB page, a legal
-transaction selects one bank for its lifetime.
+transaction selects one striped bank pair for its lifetime.
 
 The macro is issued directly on AR acceptance. The first response is available
 one cycle later. With `RREADY` asserted, following beats issue on preceding
-response cycles, giving one word per cycle without bubbles. Backpressure stops
+response cycles, giving one 64-bit beat per cycle without bubbles. Backpressure stops
 new reads and holds data, ID, response, and `RLAST` stable.
 
 After AW acceptance the target consumes one W beat per cycle. Strobes outside
@@ -110,7 +114,8 @@ the register parity test prevents drift without adding a generator.
 
 ## Technology mapping
 
-`tc_sram_1024x32` is the stable technology boundary. Behavioral simulation
+`tc_sram_1024x32` and `tc_sram_4096x32` remain the stable technology
+boundaries. Behavioral simulation
 uses the Common byte-mask RAM model. IHP130 maps to
 `RM_IHPSG13_1P_1024x32_c2_bm_bist`. GF180 composes four byte lanes across two
 `gf180mcu_fd_ip_sram__sram512x8m8wm1` depth halves and registers the address
@@ -120,9 +125,9 @@ exports 32 data bits and hides OpenRAM's required physical spare column; a
 future physical adapter must tie the spare enable and spare input low. The
 required spare row expands the macro address port to 11 bits, so the wrapper
 ties its high bit low and exposes exactly logical addresses 0 through 1023.
-ICS55 retains its existing mapping but its supported profiles keep the macro
-disabled. Bank count, rather than technology depth or width, implements every
-product size.
+ICS55 pairs two 4096x32 macros for the 32 KiB AXI64 product target, but its
+committed profiles keep the macro disabled. Bank count, rather than technology
+depth or width, implements every product size.
 
 The wrapper preserves byte masks and one-cycle synchronous reads. PDK timing,
 LEF/GDS placement, power hookup, BIST pins, and foundry signoff remain
@@ -130,13 +135,15 @@ physical-flow responsibilities.
 
 ## Verification and performance evidence
 
-`tests/test_onchip_ram.py` elaborates all five capacities and covers bank
+`tests/test_onchip_ram.py` elaborates all five 32-bit compatibility capacities and covers bank
 boundaries, first/last words, byte/half/word masks, `FIXED`, `INCR`, `WRAP`,
 16-beat continuous traffic, backpressure, AR/AW priority, absent-memory and
 malformed accesses, counters, all four PDK wrapper polarities and masks, and
 the GF180 511/512 depth boundary. The setup tests independently validate the
 SKY130 artifact manifest and generated-file hashes. Full Verilator regression
 firmware exercises the first and last locations through the SoC interconnect.
+The native AXI64 test additionally covers six-bit IDs, continuous 64-bit bursts,
+and upper/lower 32-bit byte strobes.
 
 `make CONFIG=configs/ci/ihp130.mk formal-onchip-ram` runs a 20-cycle bounded
 proof and cover set for AXI stability, channel exclusion, response bounds,

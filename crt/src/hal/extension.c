@@ -3,6 +3,7 @@
 
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/extension.h>
+#include <retrosoc/hal/resource.h>
 
 #define RS_EXTENSION_IDENTIFICATION_OFFSET  UINT32_C(0x000)
 #define RS_EXTENSION_VERSION_OFFSET         UINT32_C(0x004)
@@ -110,6 +111,7 @@ rs_status_t rs_extension_get_status(rs_extension_slot_t slot, rs_extension_statu
 rs_status_t rs_extension_set_owner(rs_extension_slot_t slot, rs_extension_owner_t owner,
                                    bool lock) {
     uint32_t value;
+    rs_status_t status;
 
     if ((owner != RS_EXTENSION_OWNER_LP) && (owner != RS_EXTENSION_OWNER_HP)) {
         return RS_EINVAL;
@@ -118,12 +120,19 @@ rs_status_t rs_extension_set_owner(rs_extension_slot_t slot, rs_extension_owner_
     if (lock) {
         value |= RS_EXTENSION_OWNER_LOCK;
     }
+    if (slot == RS_EXTENSION_SLOT_H) {
+        status = rs_resource_set_owner(RS_RESOURCE_EXT_H, (rs_resource_owner_t)owner, lock);
+        if (status != RS_OK) {
+            return status;
+        }
+    }
     return rs_extension_write(slot, RS_EXTENSION_OWNER_OFFSET, value);
 }
 
 rs_status_t rs_extension_set_lifecycle(rs_extension_slot_t slot, bool quiesce, bool reset,
                                        bool clear_fault) {
     uint32_t command = 0U;
+    rs_status_t status;
 
     if (quiesce) {
         command |= RS_EXTENSION_COMMAND_QUIESCE;
@@ -133,6 +142,15 @@ rs_status_t rs_extension_set_lifecycle(rs_extension_slot_t slot, bool quiesce, b
     }
     if (clear_fault) {
         command |= RS_EXTENSION_COMMAND_CLEAR_FAULT;
+    }
+    if (slot == RS_EXTENSION_SLOT_H) {
+        status = rs_resource_set_lifecycle(RS_RESOURCE_EXT_H, quiesce, reset);
+        if (status != RS_OK) {
+            return status;
+        }
+        if (clear_fault && (rs_resource_clear_fault(RS_RESOURCE_EXT_H) != RS_OK)) {
+            return RS_EIO;
+        }
     }
     return rs_extension_write(slot, RS_EXTENSION_COMMAND_OFFSET, command);
 }

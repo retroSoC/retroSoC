@@ -129,8 +129,14 @@ def test_chip_config_includes_configured_onchip_sram_banks(tmp_path: Path) -> No
 
     macro = config["MACROS"]["RM_IHPSG13_1P_1024x32_c2_bm_bist"]
     assert len(macro["instances"]) == 8
-    assert "u_retrosoc.u_onchip_ram.gen_memory.gen_bank[0].u_ram.u_mem" in macro["instances"]
-    assert "u_retrosoc.u_onchip_ram.gen_memory.gen_bank[7].u_ram.u_mem" in macro["instances"]
+    assert (
+        "u_retrosoc.u_onchip_ram.gen_memory64.gen_bank[0].u_ram_lo.u_mem"
+        in macro["instances"]
+    )
+    assert (
+        "u_retrosoc.u_onchip_ram.gen_memory64.gen_bank[3].u_ram_hi.u_mem"
+        in macro["instances"]
+    )
     assert any(
         "gen_bank.*0.*\\.u_ram" in connection
         for connection in config["PDN_MACRO_CONNECTIONS"]

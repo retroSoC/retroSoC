@@ -13,7 +13,9 @@
 
 module onchip_ram #(
     parameter bit          Present     = 1'b1,
-    parameter int unsigned CapacityKiB = 128
+    parameter int unsigned CapacityKiB = 128,
+    parameter int unsigned DataWidth   = 32,
+    parameter int unsigned IdWidth     = 1
 ) (
     // verilog_format: off -- preserve the AXI, APB, and performance grouping
     input logic          clk_i,
@@ -31,8 +33,10 @@ module onchip_ram #(
   localparam int unsigned TechnologyBankKiB = 4;
   localparam int unsigned TechnologyAddrWidth = 10;
 `endif
-  localparam int unsigned NumBanks = CapacityKiB / TechnologyBankKiB;
+  localparam int unsigned NumBanks = (CapacityKiB + TechnologyBankKiB - 1) / TechnologyBankKiB;
   localparam int unsigned BankIndexWidth = (NumBanks > 1) ? $clog2(NumBanks) : 1;
+  localparam int unsigned DataBytes = DataWidth / 8;
+  localparam int unsigned BeatSize = $clog2(DataBytes);
   localparam logic [31:0] MemoryEnd = `SOC_ADDR_SRAM_BASE + 32'(CapacityKiB * 1024) - 1'b1;
 
   typedef enum logic [2:0] {
@@ -47,7 +51,7 @@ module onchip_ram #(
   state_e       s_state_d;
   state_e       s_state_q;
   logic   [2:0] s_state_bits_q;
-  logic s_id_d, s_id_q;
+  logic [IdWidth-1:0] s_id_d, s_id_q;
   logic [7:0] s_len_d, s_len_q;
   logic [7:0] s_beat_d, s_beat_q;
   logic [2:0] s_size_d, s_size_q;
@@ -69,38 +73,38 @@ module onchip_ram #(
   logic [31:0] s_perf_stall_cycles_d, s_perf_stall_cycles_q;
   logic [31:0] s_perf_err_resps_d, s_perf_err_resps_q;
 
-  logic [32:0] s_ar_last_addr;
-  logic [32:0] s_aw_last_addr;
-  logic [31:0] s_ar_next_addr;
-  logic [31:0] s_read_next_addr;
-  logic [31:0] s_write_next_addr;
-  logic        s_ar_protocol_legal;
-  logic        s_aw_protocol_legal;
-  logic        s_ar_bounds_legal;
-  logic        s_aw_bounds_legal;
-  logic [ 1:0] s_ar_response;
-  logic [ 1:0] s_aw_response;
-  logic        s_ar_accept;
-  logic        s_aw_accept;
-  logic        s_w_accept;
-  logic        s_read_accept;
-  logic        s_b_accept;
-  logic        s_read_issue;
-  logic        s_read_can_issue;
-  logic        s_expected_wlast;
-  logic [ 3:0] s_write_lane_mask;
-  logic        s_write_strobe_legal;
-  logic        s_write_beat_legal;
-  logic        s_write_terminal;
-  logic        s_err_resp_event;
-  logic        s_stall_event;
+  logic [         32:0] s_ar_last_addr;
+  logic [         32:0] s_aw_last_addr;
+  logic [         31:0] s_ar_next_addr;
+  logic [         31:0] s_read_next_addr;
+  logic [         31:0] s_write_next_addr;
+  logic                 s_ar_protocol_legal;
+  logic                 s_aw_protocol_legal;
+  logic                 s_ar_bounds_legal;
+  logic                 s_aw_bounds_legal;
+  logic [          1:0] s_ar_response;
+  logic [          1:0] s_aw_response;
+  logic                 s_ar_accept;
+  logic                 s_aw_accept;
+  logic                 s_w_accept;
+  logic                 s_read_accept;
+  logic                 s_b_accept;
+  logic                 s_read_issue;
+  logic                 s_read_can_issue;
+  logic                 s_expected_wlast;
+  logic [DataBytes-1:0] s_write_lane_mask;
+  logic                 s_write_strobe_legal;
+  logic                 s_write_beat_legal;
+  logic                 s_write_terminal;
+  logic                 s_err_resp_event;
+  logic                 s_stall_event;
 
-  logic        s_mem_read;
-  logic        s_mem_write;
-  logic [14:0] s_mem_word_addr;
-  logic [31:0] s_mem_wdata;
-  logic [ 3:0] s_mem_wstrb;
-  logic [31:0] s_mem_rdata;
+  logic                 s_mem_read;
+  logic                 s_mem_write;
+  logic [         14:0] s_mem_word_addr;
+  logic [DataWidth-1:0] s_mem_wdata;
+  logic [DataBytes-1:0] s_mem_wstrb;
+  logic [DataWidth-1:0] s_mem_rdata;
 
   function automatic logic wrap_length_legal(input logic [7:0] length_i);
     return (length_i == 8'd1) || (length_i == 8'd3) || (length_i == 8'd7) || (length_i == 8'd15);
@@ -124,13 +128,14 @@ module onchip_ram #(
     end
   endfunction
 
-  function automatic logic [3:0] transfer_lane_mask(input logic [2:0] size_i,
-                                                    input logic [1:0] address_i);
-    unique case (size_i)
-      3'd0:    return 4'b0001 << address_i;
-      3'd1:    return 4'b0011 << address_i;
-      default: return 4'b1111;
-    endcase
+  function automatic logic [DataBytes-1:0] transfer_lane_mask(input logic [2:0] size_i,
+                                                              input logic [2:0] address_i);
+    logic [DataBytes-1:0] base_mask;
+    begin
+      base_mask = (size_i >= 3'(BeatSize)) ?
+          {DataBytes{1'b1}} : {DataBytes{1'b1}} >> (DataBytes - (1 << size_i));
+      return base_mask << (address_i & 3'(DataBytes - 1));
+    end
   endfunction
 
   function automatic logic [31:0] saturating_increment(input logic [31:0] value_i);
@@ -151,7 +156,7 @@ module onchip_ram #(
        (mem_axi4.arburst == `AXI4_BURST_TYPE_INCR) ||
        ((mem_axi4.arburst == `AXI4_BURST_TYPE_WRAP) && wrap_length_legal(
       mem_axi4.arlen
-  ))) && !mem_axi4.arlock && (mem_axi4.arsize <= `AXI4_BURST_SIZE_4BYTES) &&
+  ))) && !mem_axi4.arlock && (mem_axi4.arsize <= 3'(BeatSize)) &&
       ((mem_axi4.araddr & ((32'd1 << mem_axi4.arsize) - 1'b1)) == 32'd0) && !s_ar_last_addr[32] &&
       (mem_axi4.araddr[31:12] == s_ar_last_addr[31:12]);
   assign s_aw_protocol_legal =
@@ -160,7 +165,7 @@ module onchip_ram #(
        (mem_axi4.awburst == `AXI4_BURST_TYPE_INCR) ||
        ((mem_axi4.awburst == `AXI4_BURST_TYPE_WRAP) && wrap_length_legal(
       mem_axi4.awlen
-  ))) && !mem_axi4.awlock && (mem_axi4.awsize <= `AXI4_BURST_SIZE_4BYTES) &&
+  ))) && !mem_axi4.awlock && (mem_axi4.awsize <= 3'(BeatSize)) &&
       ((mem_axi4.awaddr & ((32'd1 << mem_axi4.awsize) - 1'b1)) == 32'd0) && !s_aw_last_addr[32] &&
       (mem_axi4.awaddr[31:12] == s_aw_last_addr[31:12]);
   assign s_ar_bounds_legal = Present && (mem_axi4.araddr >= `SOC_ADDR_SRAM_BASE) &&
@@ -176,7 +181,7 @@ module onchip_ram #(
   assign mem_axi4.awready = (s_state_q == Idle) && !mem_axi4.arvalid;
   assign mem_axi4.wready = (s_state_q == WriteData) || (s_state_q == WriteDrain);
   assign mem_axi4.rid = s_id_q;
-  assign mem_axi4.rdata = (s_read_rsp_q == `AXI4_RESP_OKAY) ? s_mem_rdata : 32'd0;
+  assign mem_axi4.rdata = (s_read_rsp_q == `AXI4_RESP_OKAY) ? s_mem_rdata : '0;
   assign mem_axi4.rresp = s_read_rsp_q;
   assign mem_axi4.rlast = s_read_rsp_last_q;
   assign mem_axi4.ruser = '0;
@@ -194,8 +199,8 @@ module onchip_ram #(
   assign s_read_can_issue = !s_read_pending_q || mem_axi4.rready;
   assign s_read_issue = (s_state_q == ReadData) && s_read_issue_valid_q && s_read_can_issue;
   assign s_expected_wlast = s_beat_q == s_len_q;
-  assign s_write_lane_mask = transfer_lane_mask(s_size_q, s_addr_q[1:0]);
-  assign s_write_strobe_legal = (mem_axi4.wstrb & ~s_write_lane_mask) == 4'd0;
+  assign s_write_lane_mask = transfer_lane_mask(s_size_q, s_addr_q[2:0]);
+  assign s_write_strobe_legal = (mem_axi4.wstrb & ~s_write_lane_mask) == '0;
   assign s_write_beat_legal = s_write_strobe_legal && (mem_axi4.wlast == s_expected_wlast);
   assign s_write_terminal = s_expected_wlast || mem_axi4.wlast;
 
@@ -203,10 +208,11 @@ module onchip_ram #(
   assign s_mem_write = (s_state_q == WriteData) && s_w_accept && s_write_beat_legal &&
                        (|mem_axi4.wstrb);
   assign s_mem_word_addr =
-      (s_ar_accept && (s_ar_response == `AXI4_RESP_OKAY)) ? mem_axi4.araddr[16:2] :
-      s_read_issue ? s_read_issue_addr_q[16:2] : s_addr_q[16:2];
+      (s_ar_accept && (s_ar_response == `AXI4_RESP_OKAY)) ?
+      15'(mem_axi4.araddr >> BeatSize) :
+      s_read_issue ? 15'(s_read_issue_addr_q >> BeatSize) : 15'(s_addr_q >> BeatSize);
   assign s_mem_wdata = mem_axi4.wdata;
-  assign s_mem_wstrb = s_mem_write ? mem_axi4.wstrb : 4'd0;
+  assign s_mem_wstrb = s_mem_write ? mem_axi4.wstrb : '0;
 
   assign s_err_resp_event =
       (s_b_accept && (mem_axi4.bresp != `AXI4_RESP_OKAY)) ||
@@ -367,7 +373,7 @@ module onchip_ram #(
     end
   end
 
-  if (Present) begin : gen_memory
+  if (Present && (DataWidth == 32)) begin : gen_memory
     logic [      NumBanks-1:0] s_bank_cs;
     logic [              31:0] s_bank_rdata  [NumBanks];
     logic [BankIndexWidth-1:0] s_read_bank_q;
@@ -413,14 +419,83 @@ module onchip_ram #(
 `ifdef HAVE_SVA
     assert property (@(posedge clk_i) disable iff (!rst_n_i) $onehot0(s_bank_cs));
 `endif
+  end else if (Present) begin : gen_memory64
+    localparam int unsigned NumBankPairs = (NumBanks + 1) / 2;
+    localparam int unsigned PairIndexWidth = (NumBankPairs > 1) ? $clog2(NumBankPairs) : 1;
+
+    logic [  NumBankPairs-1:0] s_bank_cs;
+    logic [              31:0] s_bank_lo_rdata[NumBankPairs];
+    logic [              31:0] s_bank_hi_rdata[NumBankPairs];
+    logic [PairIndexWidth-1:0] s_read_bank_q;
+
+    for (genvar bank = 0; bank < NumBankPairs; bank++) begin : gen_bank
+      assign s_bank_cs[bank] = (s_mem_read || s_mem_write) &&
+          (s_mem_word_addr[14:TechnologyAddrWidth] == (15 - TechnologyAddrWidth)'(bank));
+`ifdef PDK_ICS55
+      tc_sram_4096x32 u_ram_lo (
+          .clk_i (clk_i),
+          .cs_i  (s_bank_cs[bank]),
+          .addr_i(s_mem_word_addr[11:0]),
+          .data_i(s_mem_wdata[31:0]),
+          .mask_i(s_mem_wstrb[3:0]),
+          .wren_i(s_mem_write),
+          .data_o(s_bank_lo_rdata[bank])
+      );
+      tc_sram_4096x32 u_ram_hi (
+          .clk_i (clk_i),
+          .cs_i  (s_bank_cs[bank]),
+          .addr_i(s_mem_word_addr[11:0]),
+          .data_i(s_mem_wdata[63:32]),
+          .mask_i(s_mem_wstrb[7:4]),
+          .wren_i(s_mem_write),
+          .data_o(s_bank_hi_rdata[bank])
+      );
+`else
+      tc_sram_1024x32 u_ram_lo (
+          .clk_i (clk_i),
+          .cs_i  (s_bank_cs[bank]),
+          .addr_i(s_mem_word_addr[9:0]),
+          .data_i(s_mem_wdata[31:0]),
+          .mask_i(s_mem_wstrb[3:0]),
+          .wren_i(s_mem_write),
+          .data_o(s_bank_lo_rdata[bank])
+      );
+      tc_sram_1024x32 u_ram_hi (
+          .clk_i (clk_i),
+          .cs_i  (s_bank_cs[bank]),
+          .addr_i(s_mem_word_addr[9:0]),
+          .data_i(s_mem_wdata[63:32]),
+          .mask_i(s_mem_wstrb[7:4]),
+          .wren_i(s_mem_write),
+          .data_o(s_bank_hi_rdata[bank])
+      );
+`endif
+    end
+
+    dffer #(
+        .DATA_WIDTH(PairIndexWidth)
+    ) u_read_bank_dffer (
+        .clk_i  (clk_i),
+        .rst_n_i(rst_n_i),
+        .en_i   (s_mem_read),
+        .dat_i  (s_mem_word_addr[PairIndexWidth+TechnologyAddrWidth-1:TechnologyAddrWidth]),
+        .dat_o  (s_read_bank_q)
+    );
+
+    assign s_mem_rdata = {s_bank_hi_rdata[s_read_bank_q], s_bank_lo_rdata[s_read_bank_q]};
+
+`ifdef HAVE_SVA
+    assert property (@(posedge clk_i) disable iff (!rst_n_i) $onehot0(s_bank_cs));
+`endif
   end else begin : gen_no_memory
-    assign s_mem_rdata = {32{1'b0 & ^{s_mem_read, s_mem_write, s_mem_word_addr,
-                                      s_mem_wdata, s_mem_wstrb}}};
+    assign s_mem_rdata = {DataWidth{1'b0 & ^{s_mem_read, s_mem_write, s_mem_word_addr,
+                                             s_mem_wdata, s_mem_wstrb}}};
   end
 
   onchip_ram_reg #(
       .Present    (Present),
-      .CapacityKiB(CapacityKiB)
+      .CapacityKiB(CapacityKiB),
+      .DataBytes  (DataBytes)
   ) u_reg (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),
@@ -442,7 +517,7 @@ module onchip_ram #(
       .dat_o  (s_state_bits_q)
   );
   dffr #(
-      .DATA_WIDTH(1)
+      .DATA_WIDTH(IdWidth)
   ) u_id_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -619,9 +694,11 @@ module onchip_ram #(
 
 `ifndef SYNTHESIS
   initial begin
-    if ((CapacityKiB != 4) && (CapacityKiB != 16) && (CapacityKiB != 32) &&
-        (CapacityKiB != 64) && (CapacityKiB != 128)) begin
-      $fatal(1, "onchip_ram: CapacityKiB must be 4, 16, 32, 64, or 128");
+    if (((DataWidth != 32) && (DataWidth != 64)) || (IdWidth < 1) ||
+        ((DataWidth % 8) != 0) ||
+        ((CapacityKiB != 4) && (CapacityKiB != 16) && (CapacityKiB != 32) &&
+         (CapacityKiB != 64) && (CapacityKiB != 128))) begin
+      $fatal(1, "onchip_ram: invalid width, ID, or capacity geometry");
     end
   end
 `endif

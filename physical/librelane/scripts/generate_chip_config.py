@@ -49,9 +49,10 @@ SRAM_INSTANCES = {
 def onchip_sram_instances(capacity_kib: int) -> dict[str, tuple[list[int], str]]:
     if capacity_kib <= 0 or capacity_kib % 4 != 0:
         raise ValueError("SRAM_SIZE_KIB must be a positive multiple of 4")
-    count = capacity_kib // 4
+    count = 2 * ((capacity_kib + 7) // 8)
     return {
-        f"u_retrosoc.u_onchip_ram.gen_memory.gen_bank[{index}].u_ram.u_mem": (
+        "u_retrosoc.u_onchip_ram.gen_memory64."
+        f"gen_bank[{index // 2}].u_ram_{'lo' if index % 2 == 0 else 'hi'}.u_mem": (
             [2000 + (index % 4) * 500, 500 + (index // 4) * 750],
             "N",
         )

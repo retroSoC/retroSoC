@@ -108,11 +108,18 @@
     {"name": "qpi_target", "source": "lp", "destination": "pclk", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_psram_target_cdc"},
     {"name": "xpi_target", "source": "lp", "destination": "pclk", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_xpi_target_cdc"},
     {"name": "opi_target", "source": "lp", "destination": "pclk", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_opi_target_cdc"},
-    {"name": "sdram_config", "source": "pclk", "destination": "lp", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_sdram_cfg_cdc"},
-    {"name": "sram_config", "source": "pclk", "destination": "lp", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_sram_cfg_cdc"},
+    {"name": "sdram_config", "source": "pclk", "destination": "memory", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_sdram_cfg_cdc"},
+    {"name": "sram_config", "source": "pclk", "destination": "hp", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_sram_cfg_cdc"},
     {"name": "io_dma_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_io_cdc"},
     {"name": "extension_h_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ext_h_cdc"},
-    {"name": "memory_data", "source": "hp", "destination": "lp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},
+    {"name": "sdram_data", "source": "hp", "destination": "memory", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},
+    {"name": "serial_memory_data", "source": "hp", "destination": "lp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},
+    {"name": "sdram_abort", "source": "hp", "destination": "memory", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_abort_sync"},
+    {"name": "hp_cache_request", "source": "aon", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_hp_cache_req_sync"},
+    {"name": "hp_cache_clean", "source": "pclk", "destination": "aon", "primitive": "cdc_sync", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_hp_cache_clean_sync"},
+    {"name": "resource_block", "source": "pclk", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_resource_block_sync"},
+    {"name": "resource_idle", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_resource_idle_sync"},
+    {"name": "resource_block_ack", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_resource_block_ack_sync"},
     {"name": "memory_pad_mode_hp", "source": "aon", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_mem_pad_mode_sync"},
     {"name": "memory_pad_mode_lp", "source": "aon", "destination": "lp", "primitive": "cdc_sync", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_mem_pad_mode_sync"},
     {"name": "dvp_enable", "source": "pclk", "destination": "dvp", "primitive": "cdc_2phase", "path": "rtl/ip/multimedia/axi4s_dvp.sv", "instance": "u_dvp_config_cdc"},
@@ -159,7 +166,7 @@
   "same_domain_contracts": [
     {
       "name": "lp_pclk_generated_clock",
-      "source_domain": "lp",
+      "source_domain": "hp",
       "destination_domain": "pclk",
       "clock": "clk_pclk_i",
       "reset": "rst_pclk_n_i",
@@ -173,7 +180,7 @@
       "clock": "clk_mem_i",
       "reset": "rst_mem_n_i",
       "relationship": "declared_transition_boundary",
-      "description": "The stable 36 MHz memory root is exported; controller engine migration remains explicit in RTL and documentation."
+      "description": "SDRAM AXI64 commands cross from HP into the stable 36 MHz memory domain; refresh and protocol timing do not follow HP DFS."
     }
   ]
 }

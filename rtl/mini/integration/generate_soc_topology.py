@@ -27,7 +27,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("timer0", "apb4_periph", 3, 3, "s_tim0_irq"),
     ("timer1", "apb4_periph", 4, 4, "s_tim1_irq"),
     ("psram", "apb4_periph", 5, 5, "psram.irq_o"),
-    ("spisd", "apb4_periph", 6, 6, "spisd.irq_o"),
+    ("spisd", "apb4_periph", 6, 6, "resource_irq_lp_i[4]"),
     ("i2c0", "apb4_periph", 7, 7, "i2c0.irq_o"),
     ("i2s", "apb4_periph", 8, 8, "i2s.irq_o"),
     ("xpi", "apb4_periph", 9, 9, "s_xpi_irq"),
@@ -36,6 +36,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("rtc", "apb4_system", 2, 13, "u_rtc_if.irq_o"),
     ("watchdog_early_warning", "apb4_system", 3, 14, "u_wdg_if.irq_o"),
     ("rng", "apb4_system", 4, 16, "s_rng_irq"),
+    ("resource_fault", "apb4_system", 7, 29, "s_resource_fault_irq"),
     ("ws2812", "apb4_periph", 10, 17, "ws2812.irq_o"),
     ("gpio", "apb4_periph", 11, 18, "gpio.irq_o"),
     ("i2c1", "apb4_periph", 12, 19, "i2c1.irq_o"),
@@ -767,8 +768,8 @@ def render_irq_sva(vector_width: int, groups: list[IrqGroup], interrupts: list[I
     )
     lines.extend(
         [
-            "    .clk_i(clk_i),",
-            "    .rst_n_i(rst_n_i),",
+            "    .clk_i(clk_lp_i),",
+            "    .rst_n_i(rst_lp_n_i),",
             "    .irq_i(s_irq),",
         ]
     )

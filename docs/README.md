@@ -61,6 +61,8 @@ the root README and subsystem guides.
   behavior of the legacy 4 KiB user-IP window.
 - [ip/extensions.md](ip/extensions.md) defines product EXT-L/EXT-H fixed
   windows, lifecycle, capability, ACL, fault, and HAL contracts.
+- [ip/resource-controller.md](ip/resource-controller.md) defines centralized
+  DMA/I/O/EXT-H ownership, IRQ routing, cache handoff, and fault contracts.
 - [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed
   timebase, RV32 access rules, interrupt behavior, and verification contract.
 - [ip/gpio.md](ip/gpio.md) defines the GPIO dual-window ABI, pad ownership,

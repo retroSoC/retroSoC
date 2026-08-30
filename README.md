@@ -91,8 +91,8 @@ used with commercial 32 KiB SRAM and PLL simulation models.
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
 | [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV32IMAFDC | `hp_boot` | Linux image/bundle flow and HP RTL validation on the fixed product topology. |
-| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | LP RV32IM / HP RV32IMAFDC | `coremark` | Fixed four-iteration LP SRAM CoreMark measurement with the product HP core present. |
-| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | LP RV32IM / HP RV32IMAFDC | `bringup` | Site profile with PLL/SRAM intentionally disabled for regression compatibility. |
+| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | LP RV32IM / HP RV32IMAFDC+Zicbom | `coremark` | Fixed four-iteration LP SRAM CoreMark measurement with the product HP core present. |
+| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | LP RV32IM / HP RV32IMAFDC+Zicbom | `bringup` | Site profile with PLL/SRAM intentionally disabled for regression compatibility. |
 | [`configs/cluster/mini-mpw.mk`](configs/cluster/mini-mpw.mk) | RV32IM | `bringup` | Legacy MPW C0-C3/user-IP selection profile; not part of the Mini product ABI. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
