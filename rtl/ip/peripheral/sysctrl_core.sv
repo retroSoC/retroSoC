@@ -683,7 +683,13 @@ module sysctrl_core (
       HpCtrl: read_data_o = {31'd0, s_hp_release_q};
       HpStatus:
       read_data_o = {
-        29'd0, sysctrl.hp_present_i && !s_hp_release_q, s_hp_release_q, sysctrl.hp_present_i
+        26'd0,
+        sysctrl.hp_actual_released_i,
+        sysctrl.hp_forced_fault_i,
+        sysctrl.hp_draining_i,
+        sysctrl.hp_present_i && !s_hp_release_q,
+        s_hp_release_q,
+        sysctrl.hp_present_i
       };
       DebugSelect: read_data_o = {31'd0, s_debug_hp_sel_q};
       ClockHpReq: read_data_o = {29'd0, s_pll_cfg_q};

@@ -81,3 +81,5 @@ socver.*
 /rtl/managed/mpw/
 /rtl/managed/third_party/
 *result.json
+*.pdf
+/publications/datasheets/assets/

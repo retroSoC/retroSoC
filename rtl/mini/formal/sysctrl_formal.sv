@@ -53,6 +53,7 @@ module sysctrl_formal_design (
   );
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
+  clock_ctrl_if clock_ctrl ();
 
   (* anyseq *)logic        f_apb_sel;
   (* anyseq *)logic [31:0] f_apb_addr;
@@ -70,6 +71,12 @@ module sysctrl_formal_design (
   (* anyseq *)logic [31:0] f_fault_addr;
   (* anyseq *)logic [ 3:0] f_fault_wstrb;
   (* anyseq *)logic        f_fault_reserved;
+  (* anyseq *)logic        f_clock_req_ready;
+  (* anyseq *)logic        f_clock_rsp_valid;
+  (* anyseq *)logic [31:0] f_clock_rsp_data;
+  (* anyseq *)logic [31:0] f_clock_current;
+  (* anyseq *)logic [31:0] f_clock_fault;
+  (* anyseq *)logic [31:0] f_clock_memory;
 
   assign apb4.psel = f_apb_sel;
   assign apb4.penable = f_apb_sel;
@@ -95,6 +102,9 @@ module sysctrl_formal_design (
   assign sysctrl.perf_flash_wait_i = '0;
   assign sysctrl.rtc_wake_i = 1'b0;
   assign sysctrl.hp_present_i = 1'b1;
+  assign sysctrl.hp_actual_released_i = 1'b0;
+  assign sysctrl.hp_draining_i = 1'b0;
+  assign sysctrl.hp_forced_fault_i = 1'b0;
   assign pll_ctrl.req_ready_i = f_pll_req_ready;
   assign pll_ctrl.rsp_active_sel_i = f_pll_active_sel;
   assign pll_ctrl.rsp_active_valid_i = f_pll_active_valid;
@@ -103,6 +113,12 @@ module sysctrl_formal_design (
   assign pll_ctrl.rsp_error_i = f_pll_rsp_error;
   assign pll_ctrl.rsp_valid_i = f_pll_rsp_valid;
   assign pll_ctrl.capable_i = f_pll_capable;
+  assign clock_ctrl.req_ready_i = f_clock_req_ready;
+  assign clock_ctrl.rsp_valid_i = f_clock_rsp_valid;
+  assign clock_ctrl.rsp_data_i = f_clock_rsp_data;
+  assign clock_ctrl.current_i = f_clock_current;
+  assign clock_ctrl.fault_i = f_clock_fault;
+  assign clock_ctrl.memory_i = f_clock_memory;
 
   assign rib_valid = apb4.psel;
   assign rib_addr = apb4.paddr;
@@ -111,8 +127,12 @@ module sysctrl_formal_design (
   assign rib_ready = apb4.pready;
   assign ip_sel = sysctrl.ip_sel_o;
   assign core_sel = u_dut.u_sysctrl_core.s_sysctrl_coresel_q;
-  assign user_reset = {{(32 - `USER_CORE_COUNT) {1'b0}}, u_dut.u_sysctrl_core.s_user_reset_q};
-  assign user_reset_mask = {{(32 - `USER_CORE_COUNT) {1'b0}}, {`USER_CORE_COUNT{1'b1}}};
+  assign user_reset = {
+    {(32 - `USER_CORE_STORAGE_COUNT) {1'b0}}, u_dut.u_sysctrl_core.s_user_reset_q
+  };
+  assign user_reset_mask = {
+    {(32 - `USER_CORE_STORAGE_COUNT) {1'b0}}, {`USER_CORE_STORAGE_COUNT{1'b1}}
+  };
   assign user_core_count = `USER_CORE_COUNT;
   assign user_bus_enable = u_dut.u_sysctrl_core.s_user_running_q;
   assign user_config_error = u_dut.u_sysctrl_core.s_user_config_err_q;
@@ -147,7 +167,8 @@ module sysctrl_formal_design (
       .fault_reserved_i(f_fault_reserved),
       .apb4            (apb4),
       .sysctrl         (sysctrl),
-      .pll_ctrl        (pll_ctrl)
+      .pll_ctrl        (pll_ctrl),
+      .clock_ctrl      (clock_ctrl)
   );
 
   initial begin

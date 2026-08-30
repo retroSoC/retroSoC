@@ -72,6 +72,9 @@
 #define RS_SYSCTRL_HP_PRESENT                      UINT32_C(0x00000001)
 #define RS_SYSCTRL_HP_RELEASED                     UINT32_C(0x00000002)
 #define RS_SYSCTRL_HP_RESET_ASSERTED               UINT32_C(0x00000004)
+#define RS_SYSCTRL_HP_DRAINING                     UINT32_C(0x00000008)
+#define RS_SYSCTRL_HP_FORCED_FAULT                 UINT32_C(0x00000010)
+#define RS_SYSCTRL_HP_ACTUAL_RELEASED              UINT32_C(0x00000020)
 
 static volatile uint32_t *rs_sysctrl_register(uint32_t offset) {
     return (volatile uint32_t *)(RS_SOC_APB4_SYSCTRL_BASE + (uintptr_t)offset);
@@ -301,6 +304,9 @@ rs_status_t rs_sysctrl_get_hp_status(rs_sysctrl_hp_status_t *status) {
     status->present = (value & RS_SYSCTRL_HP_PRESENT) != 0U;
     status->released = (value & RS_SYSCTRL_HP_RELEASED) != 0U;
     status->reset_asserted = (value & RS_SYSCTRL_HP_RESET_ASSERTED) != 0U;
+    status->draining = (value & RS_SYSCTRL_HP_DRAINING) != 0U;
+    status->forced_fault = (value & RS_SYSCTRL_HP_FORCED_FAULT) != 0U;
+    status->actual_released = (value & RS_SYSCTRL_HP_ACTUAL_RELEASED) != 0U;
     return RS_OK;
 }
 

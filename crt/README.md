@@ -52,6 +52,13 @@ MPW compatibility API; selector mutators return `RS_ENOTSUP` in product builds.
 See the [extension contract](../docs/ip/extensions.md) and
 [legacy user-IP contract](../docs/ip/user-ip.md).
 
+`<retrosoc/hal/memory.h>` provides the uniform Mini memory inventory for
+SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, and XPI. It reports the fixed
+window, device/initialization/ready/active state, shared-pad mode, DMA and
+cache visibility, and the controller fault summary by composing the existing
+per-controller HALs. It does not merge heterogeneous memories into one
+allocator or provide hardware cache coherency.
+
 `<retrosoc/hal/dma.h>` provides the channel-aware direct and linked-list DMA
 API. UART0, I2C0, I2C1, bulk/media clients, and the HP boot loader have
 deterministic channel assignments; see the [DMA V2 contract](../docs/ip/dma.md).

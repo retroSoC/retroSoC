@@ -95,24 +95,25 @@ bind rib2apb rib2apb_sva #(
 module soc_pll_rcu_sva (
     input logic       clk_i,
     input logic       rst_n_i,
-    input logic [2:0] state_i,
+    input logic [3:0] state_i,
     input logic       pll_capable_i,
     input logic       pll_apply_i,
     input logic       select_ext_clk_i
 );
 
-  localparam logic [2:0] PLL_SAFE = 3'd1;
-  localparam logic [2:0] PLL_APPLY = 3'd2;
-  localparam logic [2:0] PLL_WAIT_LOCK = 3'd3;
-  localparam logic [2:0] PLL_RESPOND = 3'd5;
+  localparam logic [3:0] PLL_VALIDATE = 4'd1;
+  localparam logic [3:0] PLL_APPLY = 4'd4;
+  localparam logic [3:0] PLL_WAIT_LOCK_LOW = 4'd5;
+  localparam logic [3:0] PLL_QUALIFY_LOCK = 4'd6;
+  localparam logic [3:0] PLL_FAIL_SAFE = 4'd10;
 
   // The output remains on the external clock until the PLL switch stage completes.
   assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      state_i == PLL_SAFE |-> select_ext_clk_i);
+      ((state_i == PLL_APPLY) || (state_i == PLL_WAIT_LOCK_LOW) ||
+       (state_i == PLL_QUALIFY_LOCK)) |-> select_ext_clk_i);
+  assert property (@(posedge clk_i) disable iff (!rst_n_i) pll_apply_i |-> state_i == PLL_APPLY);
   assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      pll_apply_i |-> state_i inside {PLL_APPLY, PLL_WAIT_LOCK});
-  assert property (@(posedge clk_i) disable iff (!rst_n_i)
-      state_i == PLL_SAFE && !pll_capable_i |=> state_i == PLL_RESPOND);
+      state_i == PLL_VALIDATE && !pll_capable_i |=> state_i == PLL_FAIL_SAFE);
 
 endmodule
 
@@ -122,7 +123,7 @@ bind pll_rcu_controller soc_pll_rcu_sva u_soc_pll_rcu_sva (
     .state_i         (s_state_q),
     .pll_capable_i   (pll_capable_i),
     .pll_apply_i     (pll_apply_o),
-    .select_ext_clk_i(select_ext_clk_o)
+    .select_ext_clk_i(sel_ext_clk_o)
 );
 
 module soc_gpio_user_handoff_sva #(

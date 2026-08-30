@@ -28,6 +28,8 @@ TOP = ROOT / "rtl/mini/top"
 def target_defines(target: str) -> list[str]:
     if target in {"onchip_ram", "opipsram"}:
         return ["+define+PDK_BEHAV"]
+    if target == "sysctrl":
+        return ["+define+SV_ASSRT_DISABLE", "+define+MINI_PRODUCT"]
     return ["+define+SV_ASSRT_DISABLE"]
 
 
@@ -72,6 +74,7 @@ def source_files(target: str) -> list[Path]:
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "clock_ctrl_if.sv",
             PERIPHERAL / "sysctrl_if.sv",
             PERIPHERAL / "sysctrl_define.svh",
             PERIPHERAL / "sysctrl_reg.sv",
@@ -89,6 +92,7 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "clkrst/counter.sv",
             COMMON_RTL / "utils/edge_det.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "clock_ctrl_if.sv",
             PERIPHERAL / "clint_timebase.sv",
             TOP / "rcu.sv",
             TOP / "pll_rcu_controller.sv",

@@ -836,6 +836,13 @@ static int test_extension_validation(void) {
     if (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &invalid_acl) != RS_EINVAL) {
         return 5;
     }
+    if ((rs_extension_dma_start((uintptr_t)UINT32_C(0x30000001), (uintptr_t)UINT32_C(0x30000008),
+                                UINT32_C(8)) != RS_EINVAL) ||
+        (rs_extension_dma_start((uintptr_t)UINT32_C(0x30000000), (uintptr_t)UINT32_C(0x30000008),
+                                0U) != RS_EINVAL) ||
+        (rs_extension_dma_get_status(NULL) != RS_EINVAL)) {
+        return 6;
+    }
     return 0;
 }
 

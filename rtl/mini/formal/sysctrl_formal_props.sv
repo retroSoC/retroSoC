@@ -107,6 +107,11 @@ module sysctrl_formal;
     end
 
     if (rst_n_i && f_past_valid) begin
+      if (user_core_count == 0) begin
+        assert (user_reset == user_reset_mask);
+        assert (!user_bus_enable);
+        assert (ip_sel == 0);
+      end
       if ($past(
               rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
                 rib_addr[7:0] == 8'h00 && rib_wdata[4:0] < user_core_count &&
@@ -123,6 +128,7 @@ module sysctrl_formal;
       end
       if ($past(
               rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                user_core_count != 0 &&
                 rib_addr[7:0] == SYSCTRL_USER_CORE_RESET_OFFSET &&
                 (rib_wdata & user_reset_mask) == user_reset_mask
           )) begin
@@ -130,7 +136,7 @@ module sysctrl_formal;
         assert (!user_bus_enable);
       end
       if ($past(
-              rst_n_i && rib_valid && !rib_ready && |rib_wstrb &&
+              rst_n_i && user_core_count != 0 && rib_valid && !rib_ready && |rib_wstrb &&
                 rib_addr[7:0] == SYSCTRL_IPSEL_OFFSET
           )) begin
         assert (ip_sel == $past(rib_wdata[7:0]));

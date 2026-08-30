@@ -21,7 +21,8 @@ Applications use `rs_clock_set_frequency()` and `rs_clock_get_status()` from
 
 1. Run the transition routine from SRAM, disable interrupts, and quiesce DMA,
    serial transfers, and other frequency-sensitive transactions.
-2. Call `rs_clock_set_frequency()` and wait with a bounded timeout.
+2. Call `rs_clock_set_frequency()` and wait with a bounded timeout. The
+   programmed `CLK_TIMEOUT` is also the AON quiesce and PLL-lock budget.
 3. On success, reprogram UART, SPI, I2C, timer, and other divider-dependent
    peripherals for the new frequency before restoring normal operation.
 4. `RS_ENOTSUP` means the current PDK has no integrated dynamic PLL or
@@ -32,3 +33,9 @@ Applications use `rs_clock_set_frequency()` and `rs_clock_get_status()` from
 must integrate a characterized PLL macro, lock timing, and glitch-free clock
 switch before setting capability to 1. The ICS55 hard wrapper advertises only
 the qualified selector-0 configuration; requests for other selectors fail safe.
+
+AON Gray-counter monitors track EXT72, HP root, PCLK, and the stable memory
+root without sampling their pulses directly at 24 MHz. A stopped clock sets a
+sticky clock fault. `CLK_GATE[0]` drives the HP-core leaf ICG; the AXI64 fabric
+and memory root remain active for management recovery and DMA. Technology
+timing, scan force-on, and analogue PLL qualification remain physical gates.

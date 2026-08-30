@@ -459,6 +459,10 @@ module axi4_interconnect #(
       `SOC_ADDR_IS_APB4_WDG(addr)
       && !
       `SOC_ADDR_IS_APB4_GPIO_ADMIN(addr)
+      && !
+      `SOC_ADDR_IS_APB4_EXT_L(addr)
+      && !
+      `SOC_ADDR_IS_APB4_EXT_H(addr)
       );
 `else
       s_access_allowed[master] = (master != 1) || ((read_req &&

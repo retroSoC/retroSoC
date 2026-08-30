@@ -7,6 +7,7 @@
 /top/rib2apb.sv
 /top/axi4_connector.sv
 /top/axi4_master_idle.sv
+/top/axi4_mgmt_router.sv
 /top/axi4_async_bridge.sv
 /top/axi4_address_gate.sv
 /top/axi4_upsizer_32to64.sv
@@ -38,8 +39,11 @@
 /top/rcu.sv
 /top/pll_rcu_controller.sv
 /top/clock_config_controller.sv
+/top/clock_frequency_monitor.sv
+/top/soc_clock_gate.sv
 /top/soc_clock_reset_subsystem.sv
 /top/mgmt_debug_reset.sv
+/top/hp_lifecycle_controller.sv
 /top/mgmt_debug_wrapper.sv
 /top/mgmt_core_wrapper.sv
 /top/hp_core_wrapper.sv
@@ -50,6 +54,7 @@
 /top/user_ip_top.sv
 /top/user_ip_wrapper.sv
 /top/extension_slot.sv
+/top/extension_dma_master.sv
 /top/extension_compat.sv
 /top/extension_subsystem.sv
 /sva/rib_protocol_sva.sv

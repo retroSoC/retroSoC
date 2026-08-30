@@ -50,6 +50,7 @@ from scripts.regress import (  # noqa: E402
     NIGHTLY_EXTRA_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
+    RTL_COMMANDS,
     RTL_LINT_VALUES,
     SMOKE_COMMANDS,
     pdk_pr_commands,
@@ -955,7 +956,13 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
     regression_commands = (*SMOKE_COMMANDS, *PR_COMMANDS, *NIGHTLY_COMMANDS)
     for _, values in regression_commands:
         if "SIMU=VERILATOR" in values:
-            assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
+            simulation_timeout = [value for value in values if value.startswith("SOC_SIM_TIME=")]
+            if "APP=ci_smoke" in values and "sim" in values:
+                assert simulation_timeout == ["SOC_SIM_TIME=360"]
+                assert "LINK_TYPE=ld2_all_sram" in values
+                assert "VERILATOR_SIM_ARGS=--fast-flash" in values
+            else:
+                assert not simulation_timeout
             if "debug-sim" not in values:
                 assert "HAVE_SVA=YES" in values
 
@@ -1107,6 +1114,37 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     assert "smoke regression supports only --pdk IHP130" in invalid.stderr
 
 
+def test_rtl_regression_excludes_synthesis_and_timing() -> None:
+    commands, profiles = select_regression("rtl", "IHP130")
+
+    assert commands == RTL_COMMANDS
+    assert profiles == ("configs/ci/ihp130.mk",)
+    values = [value for _, command_values in commands for value in command_values]
+    assert "sim" in values
+    assert "sim-asm" in values
+    assert "debug-sim" in values
+    assert "synth" not in values
+    assert "netsim" not in values
+    assert "sta" not in values
+
+    dry_run = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "rtl",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "SIMU=VERILATOR" in dry_run.stdout
+    assert "SIMU=IVERILOG" in dry_run.stdout
+    assert "synth" not in dry_run.stdout
+    assert "netsim" not in dry_run.stdout
+    assert "STA=OPENSTA" not in dry_run.stdout
+
+
 def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
     assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
     for pdk, profile in PDK_PR_PROFILES.items():
@@ -1118,6 +1156,14 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> 
             CI_SMOKE_APP_VALUE in values and "SIMU=VERILATOR" in values and "firmware" in values
             for values in command_values
         )
+        verilator_values = next(values for values in command_values if "sim" in values)
+        if pdk == "IHP130":
+            assert "LINK_TYPE=ld2_all_sram" in verilator_values
+            assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
+            assert "SOC_SIM_TIME=360" in verilator_values
+        else:
+            assert "LINK_TYPE=ld2_all_sram" not in verilator_values
+            assert "VERILATOR_SIM_ARGS=--fast-flash" not in verilator_values
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert not any(

@@ -14,7 +14,11 @@
 | Cluster | `configs/cluster/ics55.mk` | compatibility profile for site-specific ICS55 runs |
 
 Regression Verilator firmware simulations override the profiles' manual
-`bringup` default with `APP=ci_smoke`. This application verifies UART output,
+`bringup` default with `APP=ci_smoke`. The IHP130 PR simulation also uses the
+32 KiB `ld2_all_sram` layout, the explicit Verilator `--fast-flash` backend,
+and a 360-second wall-clock budget. The full serial XPI path remains covered
+by the Icarus assembly self-test and directed XPI model tests; the accelerated
+run is the broad software-visible integration test. This application verifies UART output,
 archinfo APB readback, on-chip SRAM first/last-word and 8/16/32-bit access,
 RNG integration, SDRAM 8/16/32-bit mapped-window access,
 and test-status completion within the CI time budget;

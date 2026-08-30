@@ -105,6 +105,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/perf.c \
             $(ROOT_PATH)/crt/src/hal/lcd.c \
             $(ROOT_PATH)/crt/src/hal/onchip_sram.c \
+            $(ROOT_PATH)/crt/src/hal/memory.c \
             $(ROOT_PATH)/crt/src/hal/psram_math.c \
             $(ROOT_PATH)/crt/src/hal/psram.c \
             $(ROOT_PATH)/crt/src/hal/opipsram_math.c \

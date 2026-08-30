@@ -54,6 +54,9 @@ typedef struct {
     bool present;
     bool released;
     bool reset_asserted;
+    bool draining;
+    bool forced_fault;
+    bool actual_released;
 } rs_sysctrl_hp_status_t;
 
 rs_status_t rs_sysctrl_get_core_select(uint8_t *core_id);

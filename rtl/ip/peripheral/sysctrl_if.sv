@@ -37,6 +37,9 @@ interface sysctrl_if ();
   logic [                         7:0] test_code_o;
   logic [       `USER_IPSEL_WIDTH-1:0] ip_sel_o;
   logic                                hp_present_i;
+  logic                                hp_actual_released_i;
+  logic                                hp_draining_i;
+  logic                                hp_forced_fault_i;
   logic                                hp_release_o;
   logic                                debug_hp_select_o;
 
@@ -58,6 +61,9 @@ interface sysctrl_if ();
       input perf_flash_wait_i,
       input rtc_wake_i,
       input hp_present_i,
+      input hp_actual_released_i,
+      input hp_draining_i,
+      input hp_forced_fault_i,
       output core_sel_o,
       output core_reset_o,
       output user_bus_enable_o,

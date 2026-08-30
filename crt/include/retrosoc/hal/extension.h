@@ -46,6 +46,12 @@ typedef struct {
     uint32_t timeout_cycles;
 } rs_extension_acl_t;
 
+typedef struct {
+    bool busy;
+    bool done;
+    bool fault;
+} rs_extension_dma_status_t;
+
 rs_status_t rs_extension_probe(rs_extension_slot_t slot, rs_extension_capabilities_t *capabilities);
 rs_status_t rs_extension_get_status(rs_extension_slot_t slot, rs_extension_status_t *status);
 rs_status_t rs_extension_set_owner(rs_extension_slot_t slot, rs_extension_owner_t owner, bool lock);
@@ -54,5 +60,8 @@ rs_status_t rs_extension_set_lifecycle(rs_extension_slot_t slot, bool quiesce, b
 rs_status_t rs_extension_configure_acl(rs_extension_slot_t slot,
                                        const rs_extension_acl_t *configuration);
 rs_status_t rs_extension_read(rs_extension_slot_t slot, uint32_t offset, uint32_t *value);
+rs_status_t rs_extension_dma_start(uintptr_t source, uintptr_t destination, uint32_t byte_count);
+rs_status_t rs_extension_dma_abort(void);
+rs_status_t rs_extension_dma_get_status(rs_extension_dma_status_t *status);
 
 #endif

@@ -4,23 +4,33 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/extension.h>
 
-#define RS_EXTENSION_IDENTIFICATION_OFFSET UINT32_C(0x000)
-#define RS_EXTENSION_VERSION_OFFSET        UINT32_C(0x004)
-#define RS_EXTENSION_CAPABILITY_OFFSET     UINT32_C(0x008)
-#define RS_EXTENSION_OWNER_OFFSET          UINT32_C(0x00C)
-#define RS_EXTENSION_COMMAND_OFFSET        UINT32_C(0x010)
-#define RS_EXTENSION_STATUS_OFFSET         UINT32_C(0x014)
-#define RS_EXTENSION_READ_BASE_OFFSET      UINT32_C(0x018)
-#define RS_EXTENSION_READ_LIMIT_OFFSET     UINT32_C(0x01C)
-#define RS_EXTENSION_WRITE_BASE_OFFSET     UINT32_C(0x020)
-#define RS_EXTENSION_WRITE_LIMIT_OFFSET    UINT32_C(0x024)
-#define RS_EXTENSION_TIMEOUT_OFFSET        UINT32_C(0x028)
+#define RS_EXTENSION_IDENTIFICATION_OFFSET  UINT32_C(0x000)
+#define RS_EXTENSION_VERSION_OFFSET         UINT32_C(0x004)
+#define RS_EXTENSION_CAPABILITY_OFFSET      UINT32_C(0x008)
+#define RS_EXTENSION_OWNER_OFFSET           UINT32_C(0x00C)
+#define RS_EXTENSION_COMMAND_OFFSET         UINT32_C(0x010)
+#define RS_EXTENSION_STATUS_OFFSET          UINT32_C(0x014)
+#define RS_EXTENSION_READ_BASE_OFFSET       UINT32_C(0x018)
+#define RS_EXTENSION_READ_LIMIT_OFFSET      UINT32_C(0x01C)
+#define RS_EXTENSION_WRITE_BASE_OFFSET      UINT32_C(0x020)
+#define RS_EXTENSION_WRITE_LIMIT_OFFSET     UINT32_C(0x024)
+#define RS_EXTENSION_TIMEOUT_OFFSET         UINT32_C(0x028)
+#define RS_EXTENSION_DMA_SOURCE_OFFSET      UINT32_C(0x100)
+#define RS_EXTENSION_DMA_DESTINATION_OFFSET UINT32_C(0x104)
+#define RS_EXTENSION_DMA_LENGTH_OFFSET      UINT32_C(0x108)
+#define RS_EXTENSION_DMA_COMMAND_OFFSET     UINT32_C(0x10C)
+#define RS_EXTENSION_DMA_STATUS_OFFSET      UINT32_C(0x110)
 
-#define RS_EXTENSION_REGISTER_SIZE         UINT32_C(4)
-#define RS_EXTENSION_OWNER_LOCK            UINT32_C(0x00000100)
-#define RS_EXTENSION_COMMAND_QUIESCE       UINT32_C(0x00000001)
-#define RS_EXTENSION_COMMAND_RESET         UINT32_C(0x00000002)
-#define RS_EXTENSION_COMMAND_CLEAR_FAULT   UINT32_C(0x00000004)
+#define RS_EXTENSION_REGISTER_SIZE          UINT32_C(4)
+#define RS_EXTENSION_OWNER_LOCK             UINT32_C(0x00000100)
+#define RS_EXTENSION_COMMAND_QUIESCE        UINT32_C(0x00000001)
+#define RS_EXTENSION_COMMAND_RESET          UINT32_C(0x00000002)
+#define RS_EXTENSION_COMMAND_CLEAR_FAULT    UINT32_C(0x00000004)
+#define RS_EXTENSION_DMA_START              UINT32_C(0x00000001)
+#define RS_EXTENSION_DMA_ABORT              UINT32_C(0x00000002)
+#define RS_EXTENSION_DMA_STATUS_BUSY        UINT32_C(0x00000001)
+#define RS_EXTENSION_DMA_STATUS_DONE        UINT32_C(0x00000002)
+#define RS_EXTENSION_DMA_STATUS_FAULT       UINT32_C(0x00000004)
 
 static bool rs_extension_slot_valid(rs_extension_slot_t slot) {
     return (slot == RS_EXTENSION_SLOT_L) || (slot == RS_EXTENSION_SLOT_H);
@@ -150,5 +160,44 @@ rs_status_t rs_extension_configure_acl(rs_extension_slot_t slot,
          RS_OK)) {
         return RS_EINVAL;
     }
+    return RS_OK;
+}
+
+rs_status_t rs_extension_dma_start(uintptr_t source, uintptr_t destination, uint32_t byte_count) {
+    if (((source | destination) & (uintptr_t)UINT32_C(0x7)) != (uintptr_t)0U ||
+        (byte_count == 0U) || (source > (uintptr_t)UINT32_MAX) ||
+        (destination > (uintptr_t)UINT32_MAX)) {
+        return RS_EINVAL;
+    }
+    if ((rs_extension_write(RS_EXTENSION_SLOT_H, RS_EXTENSION_DMA_SOURCE_OFFSET,
+                            (uint32_t)source) != RS_OK) ||
+        (rs_extension_write(RS_EXTENSION_SLOT_H, RS_EXTENSION_DMA_DESTINATION_OFFSET,
+                            (uint32_t)destination) != RS_OK) ||
+        (rs_extension_write(RS_EXTENSION_SLOT_H, RS_EXTENSION_DMA_LENGTH_OFFSET, byte_count) !=
+         RS_OK) ||
+        (rs_extension_write(RS_EXTENSION_SLOT_H, RS_EXTENSION_DMA_COMMAND_OFFSET,
+                            RS_EXTENSION_DMA_START) != RS_OK)) {
+        return RS_EIO;
+    }
+    return RS_OK;
+}
+
+rs_status_t rs_extension_dma_abort(void) {
+    return rs_extension_write(RS_EXTENSION_SLOT_H, RS_EXTENSION_DMA_COMMAND_OFFSET,
+                              RS_EXTENSION_DMA_ABORT);
+}
+
+rs_status_t rs_extension_dma_get_status(rs_extension_dma_status_t *status) {
+    uint32_t value;
+
+    if (status == NULL) {
+        return RS_EINVAL;
+    }
+    if (rs_extension_read(RS_EXTENSION_SLOT_H, RS_EXTENSION_DMA_STATUS_OFFSET, &value) != RS_OK) {
+        return RS_EIO;
+    }
+    status->busy = (value & RS_EXTENSION_DMA_STATUS_BUSY) != 0U;
+    status->done = (value & RS_EXTENSION_DMA_STATUS_DONE) != 0U;
+    status->fault = (value & RS_EXTENSION_DMA_STATUS_FAULT) != 0U;
     return RS_OK;
 }

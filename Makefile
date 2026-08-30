@@ -337,7 +337,7 @@ include physical/ecc/Makefile
 
 .PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
-	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
+	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
 	benchmark-report coremark-report \
 	hp-performance-check \
@@ -670,6 +670,9 @@ commercial-package: $(MPW_VARIANT_DEP) $(FILELIST_STAMP) manifest
 
 regress-smoke:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130
+
+regress-rtl:
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk IHP130
 
 regress-pr:
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)

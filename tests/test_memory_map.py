@@ -265,6 +265,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                     str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/counter.sv"),
                     str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/clk_int_div.sv"),
                     str(ROOT / "rtl/managed/clusterip/common/rtl/clock/safe_clock_mux.sv"),
+                    str(ROOT / "rtl/mini/top/soc_clock_gate.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/edge_det.sv"),
                     str(ROOT / "rtl/ip/peripheral/pll_ctrl_if.sv"),
                     str(ROOT / "rtl/ip/peripheral/clock_ctrl_if.sv"),
@@ -279,6 +280,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
                     str(ROOT / "rtl/mini/top/rcu.sv"),
                     str(ROOT / "rtl/mini/top/pll_rcu_controller.sv"),
                     str(ROOT / "rtl/mini/top/clock_config_controller.sv"),
+                    str(ROOT / "rtl/mini/top/clock_frequency_monitor.sv"),
                     str(ROOT / "rtl/mini/top/soc_clock_reset_subsystem.sv"),
                 str(ROOT / "tests/rtl/pll_ctrl_tb.sv"),
                 "",
@@ -360,3 +362,55 @@ def test_sysctrl_does_not_expose_unused_i2c_or_qspi_select_registers() -> None:
     ):
         assert symbol not in rtl
     assert "reg_sysctrl_" not in header
+
+
+def test_hp_lifecycle_controller_drains_and_forces_bounded_reset(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        return
+
+    simulation = tmp_path / "hp_lifecycle_controller_tb"
+    subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-s",
+            "hp_lifecycle_controller_tb",
+            "-o",
+            str(simulation),
+            str(ROOT / "rtl/mini/top/hp_lifecycle_controller.sv"),
+            str(ROOT / "tests/rtl/hp_lifecycle_controller_tb.sv"),
+        ],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
+    assert "HP lifecycle drain, flush, and forced reset test passed" in result.stdout
+
+
+def test_clock_frequency_monitor_detects_stop_and_restart(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        return
+
+    simulation = tmp_path / "clock_frequency_monitor_tb"
+    subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-s",
+            "clock_frequency_monitor_tb",
+            "-I",
+            str(ROOT / "rtl/managed/clusterip/common/rtl"),
+            "-o",
+            str(simulation),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
+            str(ROOT / "rtl/mini/top/clock_frequency_monitor.sv"),
+            str(ROOT / "tests/rtl/clock_frequency_monitor_tb.sv"),
+        ],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
+    assert "Clock frequency activity and sticky fault test passed" in result.stdout

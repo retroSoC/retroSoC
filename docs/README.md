@@ -18,6 +18,10 @@ the root README and subsystem guides.
   Debug Module integration, reset boundary, and Verilator/OpenOCD/GDB flow.
 - [lp-hp-architecture.md](lp-hp-architecture.md) defines the current Mini
   product AON/LP/HP/PCLK, AXI64 data-plane, memory-pad, and extension contract.
+- [commercial-soc-alignment.md](commercial-soc-alignment.md) records the
+  selected commercial architecture patterns and their reuse boundaries.
+- [mini-high-performance-traceability.md](mini-high-performance-traceability.md)
+  maps Mini architecture requirements to implementation and evidence status.
 - [coremark.md](coremark.md) defines the SRAM-resident Hazard3 CoreMark quick
   measurement, optional standard hardware run, and structured result format.
 - [soc-family-positioning.md](soc-family-positioning.md) defines the planned

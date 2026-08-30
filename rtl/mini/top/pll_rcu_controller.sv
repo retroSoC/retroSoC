@@ -15,6 +15,7 @@ module pll_rcu_controller #(
     input  logic                 pll_capable_i,
     input  logic                 hp_idle_i,
     input  logic                 pclk_idle_i,
+    input  logic          [15:0] timeout_i,
     input  logic                 force_safe_i,
     input  logic                 clear_fault_i,
     output logic           [2:0] pll_sel_o,
@@ -79,6 +80,7 @@ module pll_rcu_controller #(
   logic          s_fault_sticky_q;
   logic          s_rsp_valid_d;
   logic          s_rsp_valid_q;
+  logic   [15:0] s_timeout_limit;
 
   assign s_state_q = state_e'(s_state_bits_q);
 
@@ -127,6 +129,7 @@ module pll_rcu_controller #(
   assign hp_block_o = s_hp_block_q;
   assign lp_force_ref_o = s_lp_force_ref_q;
   assign pll_fault_o = s_fault_sticky_q;
+  assign s_timeout_limit = (timeout_i < 16'd2) ? 16'd2 : timeout_i;
 
   always_comb begin
     s_state_d         = s_state_q;
@@ -182,7 +185,7 @@ module pll_rcu_controller #(
         if (hp_idle_i && pclk_idle_i) begin
           s_timeout_cnt_d = '0;
           s_state_d       = ParkLp;
-        end else if (s_timeout_cnt_q == 16'(QuiesceTimeout - 1)) begin
+        end else if (s_timeout_cnt_q == s_timeout_limit - 1'b1) begin
           s_err_d          = 2'd2;
           s_fault_sticky_d = 1'b1;
           s_state_d        = FailSafe;
@@ -208,7 +211,7 @@ module pll_rcu_controller #(
         if (!pll_lock_i) begin
           s_timeout_cnt_d = '0;
           s_state_d       = QualifyLock;
-        end else if (s_timeout_cnt_q == 16'(LockTimeout - 1)) begin
+        end else if (s_timeout_cnt_q == s_timeout_limit - 1'b1) begin
           s_err_d          = 2'd2;
           s_fault_sticky_d = 1'b1;
           s_state_d        = FailSafe;
@@ -227,7 +230,7 @@ module pll_rcu_controller #(
         end else begin
           s_lock_qual_cnt_d = s_lock_qual_cnt_q + 1'b1;
         end
-        if (s_timeout_cnt_q == 16'(LockTimeout - 1)) begin
+        if (s_timeout_cnt_q == s_timeout_limit - 1'b1) begin
           s_err_d          = 2'd2;
           s_fault_sticky_d = 1'b1;
           s_state_d        = FailSafe;

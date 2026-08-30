@@ -20,6 +20,7 @@ module soc_clock_reset_subsystem #(
     output logic           lp_clk_o,
     output logic           lp_rst_n_o,
     output logic           hp_clk_o,
+    output logic           hp_core_clk_o,
     output logic           hp_rst_n_o,
     output logic           pclk_o,
     output logic           pclk_rst_n_o,
@@ -50,6 +51,7 @@ module soc_clock_reset_subsystem #(
   logic        s_pll_force_lp_ref;
   logic        s_lp_force_ref;
   logic        s_hp_root_clk;
+  logic        s_hp_core_clk;
   logic        s_hp_div2_clk;
   logic        s_hp_div4_clk;
   logic        s_lp_perf_div2_or_more_clk;
@@ -79,6 +81,10 @@ module soc_clock_reset_subsystem #(
   logic        s_pclk_second_trigger;
   logic        s_hp_idle_aon;
   logic        s_pclk_idle_aon;
+  logic        s_pll_fault;
+  logic [ 3:0] s_clock_alive;
+  logic [ 3:0] s_clock_fault;
+  logic [63:0] s_clock_edge_delta;
 
   tc_clk_buf u_ref24_clk_buf (
       .clk_i(ref24_clk_i),
@@ -147,6 +153,13 @@ module soc_clock_reset_subsystem #(
       .rst_n_i (s_aon_rst_n),
       .select_i(s_sel_ext_clk),
       .clk_o   (s_hp_root_clk)
+  );
+
+  soc_clock_gate u_hp_core_clock_gate (
+      .clk_i    (s_hp_root_clk),
+      .en_i     (!s_gate_mask[0]),
+      .test_en_i(1'b0),
+      .clk_o    (s_hp_core_clk)
   );
 
   clk_int_even_div_static #(
@@ -266,6 +279,47 @@ module soc_clock_reset_subsystem #(
       .clk_o  (s_lp_clk_div4)
   );
 
+  clock_frequency_monitor u_ext72_monitor (
+      .ref_clk_i        (s_ref24_clk_buf),
+      .ref_rst_n_i      (s_aon_rst_n),
+      .monitored_clk_i  (s_ext72_clk_buf),
+      .monitored_rst_n_i(s_aon_rst_n),
+      .clear_fault_i    (s_clear_fault),
+      .alive_o          (s_clock_alive[0]),
+      .fault_o          (s_clock_fault[0]),
+      .edge_delta_o     (s_clock_edge_delta[15:0])
+  );
+  clock_frequency_monitor u_hp_monitor (
+      .ref_clk_i        (s_ref24_clk_buf),
+      .ref_rst_n_i      (s_aon_rst_n),
+      .monitored_clk_i  (s_hp_root_clk),
+      .monitored_rst_n_i(s_aon_rst_n),
+      .clear_fault_i    (s_clear_fault),
+      .alive_o          (s_clock_alive[1]),
+      .fault_o          (s_clock_fault[1]),
+      .edge_delta_o     (s_clock_edge_delta[31:16])
+  );
+  clock_frequency_monitor u_pclk_monitor (
+      .ref_clk_i        (s_ref24_clk_buf),
+      .ref_rst_n_i      (s_aon_rst_n),
+      .monitored_clk_i  (s_pclk),
+      .monitored_rst_n_i(s_aon_rst_n),
+      .clear_fault_i    (s_clear_fault),
+      .alive_o          (s_clock_alive[2]),
+      .fault_o          (s_clock_fault[2]),
+      .edge_delta_o     (s_clock_edge_delta[47:32])
+  );
+  clock_frequency_monitor u_memory_monitor (
+      .ref_clk_i        (s_ref24_clk_buf),
+      .ref_rst_n_i      (s_aon_rst_n),
+      .monitored_clk_i  (s_mem_clk_div2),
+      .monitored_rst_n_i(s_aon_rst_n),
+      .clear_fault_i    (s_clear_fault),
+      .alive_o          (s_clock_alive[3]),
+      .fault_o          (s_clock_fault[3]),
+      .edge_delta_o     (s_clock_edge_delta[63:48])
+  );
+
   pll_rcu_controller u_pll_rcu_controller (
       .sys_clk_i     (s_pclk),
       .sys_rst_n_i   (pclk_rst_n_o),
@@ -275,6 +329,7 @@ module soc_clock_reset_subsystem #(
       .pll_capable_i (s_pll_capable),
       .hp_idle_i     (s_hp_idle_aon),
       .pclk_idle_i   (s_pclk_idle_aon),
+      .timeout_i     (s_timeout),
       .force_safe_i  (s_force_safe),
       .clear_fault_i (s_clear_fault),
       .pll_sel_o     (s_pll_sel),
@@ -282,7 +337,7 @@ module soc_clock_reset_subsystem #(
       .sel_ext_clk_o (s_sel_ext_clk),
       .hp_block_o    (hp_block_o),
       .lp_force_ref_o(s_pll_force_lp_ref),
-      .pll_fault_o   (pll_fault_o),
+      .pll_fault_o   (s_pll_fault),
       .pll_ctrl      (pll_ctrl)
   );
 
@@ -293,7 +348,7 @@ module soc_clock_reset_subsystem #(
       .aon_rst_n_i   (s_aon_rst_n),
       .hp_pstate_i   (s_pll_sel),
       .hp_pll_sel_i  (!s_sel_ext_clk),
-      .pll_fault_i   (pll_fault_o),
+      .pll_fault_i   (s_pll_fault || (|s_clock_fault)),
       .pclk_idle_i   (s_pclk_idle_aon),
       .clock_ctrl    (clock_ctrl),
       .lp_mode_o     (s_lp_mode),
@@ -357,23 +412,25 @@ module soc_clock_reset_subsystem #(
       .tick_o     (timebase_tick_o)
   );
 
-  assign aon_clk_o    = s_ref24_clk_buf;
-  assign aon_rst_n_o  = s_aon_rst_n;
-  assign lp_clk_o     = s_lp_root_clk;
-  assign hp_clk_o     = s_hp_root_clk;
-  assign pclk_o       = s_pclk;
-  assign mem_clk_o    = s_mem_clk_div2;
-  assign aud_clk_o    = s_aud_clk_buf;
-  assign lp_clkdiv4_o = s_lp_clk_div4;
+  assign aon_clk_o     = s_ref24_clk_buf;
+  assign aon_rst_n_o   = s_aon_rst_n;
+  assign lp_clk_o      = s_lp_root_clk;
+  assign hp_clk_o      = s_hp_root_clk;
+  assign hp_core_clk_o = s_hp_core_clk;
+  assign pclk_o        = s_pclk;
+  assign mem_clk_o     = s_mem_clk_div2;
+  assign aud_clk_o     = s_aud_clk_buf;
+  assign lp_clkdiv4_o  = s_lp_clk_div4;
+  assign pll_fault_o   = s_pll_fault || (|s_clock_fault);
 
-  logic [31:0] s_unused_clock_config;
+  logic [16:0] s_unused_clock_config;
   assign s_unused_clock_config = {
     2'd0,
     s_gate_mask,
-    s_timeout,
     s_pclk_count,
     ^{s_pclk_div_done, s_pclk_first_trigger, s_pclk_second_trigger, s_pclk_cfg_src_ready,
-      s_pll_apply}
+      s_pll_apply},
+    ^{s_clock_alive, s_clock_edge_delta}
   };
 
 `ifndef SYNTHESIS

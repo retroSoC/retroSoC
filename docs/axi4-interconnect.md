@@ -33,16 +33,17 @@ IDs. It has eight masters:
 | 0 | Vexii I-cache | native AXI64, source ID preserved |
 | 1 | Vexii D-cache | native AXI64, source ID preserved |
 | 2 | central DMA | PCLK-to-HP CDC, AXI32-to-64 |
-| 3 | SDIO0 | PCLK-to-HP CDC, AXI32-to-64 |
-| 4 | SDIO1 | PCLK-to-HP CDC, AXI32-to-64 |
-| 5 | SPI-SD | PCLK-to-HP CDC, AXI32-to-64 |
-| 6 | USB2 | PCLK-to-HP CDC, AXI32-to-64 |
+| 3 | I/O gateway A | USB2 and SDIO0, PCLK-to-HP CDC, AXI32-to-64 |
+| 4 | I/O gateway B | SDIO1 and SPI-SD, PCLK-to-HP CDC, AXI32-to-64 |
+| 5 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC, AXI32-to-64 |
+| 6 | reserved | permanently idle and denied |
 | 7 | EXT-H | PCLK-to-HP AXI64 CDC |
 
 Each source receives a fixed three-bit master prefix. The crossbar maintains
 independent read and write owners for each target, enabling read/write overlap
-and cross-target concurrency. It accepts one outstanding transaction in each
-direction per master; it does not reorder responses within a source.
+and cross-target concurrency. Different IDs from HP/DMA/EXT-H may be active on
+different targets up to the master credit. The same ID is blocked until
+completion, and each target remains single-outstanding per direction.
 
 | Target | Current backend |
 | --- | --- |
@@ -63,18 +64,19 @@ fail-closed according to the synchronized AON pad mode.
 - `axi4_downsizer_64to32` splits 64-bit beats for current memory frontends and
   recombines read responses.
 - `axi4_async_bridge` carries AW, W, B, AR, and R through independent Common
-  `cdc_fifo` channels with a two-sided reset barrier.
+  coordinated warm-flush FIFOs and reports clear-busy and epoch state.
 - `apb4_async_bridge` converts one APB request into a request/response CDC
   transaction and guarantees a finite APB completion when the destination runs.
 
-Async bridges flush protocol state when either side resets. Clock-stop timeout
-and full hot-reset recovery are not yet claimed; callers must quiesce before
-reset or DFS.
+Normal HP shutdown blocks new addresses, drains accepted traffic, and performs
+a coordinated warm flush. Forced timeout records a lifecycle fault. Synthetic
+completion for every accepted transaction behind a permanently stopped target
+is not yet claimed.
 
 ## Verification boundary
 
 `tests/test_axi4.py` retains LP fabric, downsizer, burst, response, and
 backpressure coverage. Full-product Verilator/Icarus simulation exercises LP
 boot, HP elaboration, the memory gateways, and product APB paths. The current
-implementation does not claim multi-outstanding reordering, cache coherency,
-formal crossbar proof, CDC signoff, or physical bandwidth closure.
+implementation does not claim same-target multi-outstanding reordering, cache
+coherency, formal crossbar proof, CDC signoff, or physical bandwidth closure.

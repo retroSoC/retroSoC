@@ -13,6 +13,9 @@ module axi4_async_bridge #(
     input  logic       src_rst_n_i,
     input  logic       dst_clk_i,
     input  logic       dst_rst_n_i,
+    input  logic       clear_i,
+    output logic       clear_busy_o,
+    output logic [7:0] epoch_o,
     axi4_if.slave      src_axi4,
     axi4_if.master     dst_axi4
     // verilog_format: on
@@ -34,6 +37,40 @@ module axi4_async_bridge #(
   logic [ArWidth-1:0] s_ar_dst_data;
   logic [ RWidth-1:0] s_r_dst_data;
   logic [ RWidth-1:0] s_r_src_data;
+  logic               s_clear_src;
+  logic               s_clear_dst;
+  logic               s_clear_q;
+  logic               s_clear_dst_q;
+  logic               s_clear_src_pulse;
+  logic               s_clear_dst_pulse;
+  logic [7:0] s_epoch_d, s_epoch_q;
+  logic s_aw_src_clear_busy, s_aw_dst_clear_busy;
+  logic s_w_src_clear_busy, s_w_dst_clear_busy;
+  logic s_b_src_clear_busy, s_b_dst_clear_busy;
+  logic s_ar_src_clear_busy, s_ar_dst_clear_busy;
+  logic s_r_src_clear_busy, s_r_dst_clear_busy;
+
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_clear_src_sync (
+      .clk_i  (src_clk_i),
+      .rst_n_i(src_rst_n_i),
+      .dat_i  (clear_i),
+      .dat_o  (s_clear_src)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_clear_sync (
+      .clk_i  (dst_clk_i),
+      .rst_n_i(dst_rst_n_i),
+      .dat_i  (clear_i),
+      .dat_o  (s_clear_dst)
+  );
+
+  assign s_clear_src_pulse = s_clear_src && !s_clear_q;
+  assign s_clear_dst_pulse = s_clear_dst && !s_clear_dst_q;
 
   assign s_aw_src_data = {
     src_axi4.awid,
@@ -62,58 +99,67 @@ module axi4_async_bridge #(
     dst_axi4.awuser
   } = s_aw_dst_data;
 
-  cdc_fifo #(
+  cdc_fifo_warm_flush #(
       .DATA_WIDTH  (AwWidth),
       .BUFFER_DEPTH(FifoDepth)
   ) u_aw_fifo (
-      .src_clk_i  (src_clk_i),
-      .src_rst_n_i(src_rst_n_i),
-      .src_data_i (s_aw_src_data),
-      .src_valid_i(src_axi4.awvalid),
-      .src_ready_o(src_axi4.awready),
-      .dst_clk_i  (dst_clk_i),
-      .dst_rst_n_i(dst_rst_n_i),
-      .dst_data_o (s_aw_dst_data),
-      .dst_valid_o(dst_axi4.awvalid),
-      .dst_ready_i(dst_axi4.awready)
+      .src_clk_i       (src_clk_i),
+      .src_rst_n_i     (src_rst_n_i),
+      .src_clear_i     (s_clear_src_pulse),
+      .src_clear_busy_o(s_aw_src_clear_busy),
+      .src_data_i      (s_aw_src_data),
+      .src_valid_i     (src_axi4.awvalid),
+      .src_ready_o     (src_axi4.awready),
+      .dst_clk_i       (dst_clk_i),
+      .dst_rst_n_i     (dst_rst_n_i),
+      .dst_clear_busy_o(s_aw_dst_clear_busy),
+      .dst_data_o      (s_aw_dst_data),
+      .dst_valid_o     (dst_axi4.awvalid),
+      .dst_ready_i     (dst_axi4.awready)
   );
 
   assign s_w_src_data = {src_axi4.wdata, src_axi4.wstrb, src_axi4.wlast, src_axi4.wuser};
   assign {dst_axi4.wdata, dst_axi4.wstrb, dst_axi4.wlast, dst_axi4.wuser} = s_w_dst_data;
 
-  cdc_fifo #(
+  cdc_fifo_warm_flush #(
       .DATA_WIDTH  (WWidth),
       .BUFFER_DEPTH(FifoDepth)
   ) u_w_fifo (
-      .src_clk_i  (src_clk_i),
-      .src_rst_n_i(src_rst_n_i),
-      .src_data_i (s_w_src_data),
-      .src_valid_i(src_axi4.wvalid),
-      .src_ready_o(src_axi4.wready),
-      .dst_clk_i  (dst_clk_i),
-      .dst_rst_n_i(dst_rst_n_i),
-      .dst_data_o (s_w_dst_data),
-      .dst_valid_o(dst_axi4.wvalid),
-      .dst_ready_i(dst_axi4.wready)
+      .src_clk_i       (src_clk_i),
+      .src_rst_n_i     (src_rst_n_i),
+      .src_clear_i     (s_clear_src_pulse),
+      .src_clear_busy_o(s_w_src_clear_busy),
+      .src_data_i      (s_w_src_data),
+      .src_valid_i     (src_axi4.wvalid),
+      .src_ready_o     (src_axi4.wready),
+      .dst_clk_i       (dst_clk_i),
+      .dst_rst_n_i     (dst_rst_n_i),
+      .dst_clear_busy_o(s_w_dst_clear_busy),
+      .dst_data_o      (s_w_dst_data),
+      .dst_valid_o     (dst_axi4.wvalid),
+      .dst_ready_i     (dst_axi4.wready)
   );
 
   assign s_b_dst_data = {dst_axi4.bid, dst_axi4.bresp, dst_axi4.buser};
   assign {src_axi4.bid, src_axi4.bresp, src_axi4.buser} = s_b_src_data;
 
-  cdc_fifo #(
+  cdc_fifo_warm_flush #(
       .DATA_WIDTH  (BWidth),
       .BUFFER_DEPTH(FifoDepth)
   ) u_b_fifo (
-      .src_clk_i  (dst_clk_i),
-      .src_rst_n_i(dst_rst_n_i),
-      .src_data_i (s_b_dst_data),
-      .src_valid_i(dst_axi4.bvalid),
-      .src_ready_o(dst_axi4.bready),
-      .dst_clk_i  (src_clk_i),
-      .dst_rst_n_i(src_rst_n_i),
-      .dst_data_o (s_b_src_data),
-      .dst_valid_o(src_axi4.bvalid),
-      .dst_ready_i(src_axi4.bready)
+      .src_clk_i       (dst_clk_i),
+      .src_rst_n_i     (dst_rst_n_i),
+      .src_clear_i     (s_clear_dst_pulse),
+      .src_clear_busy_o(s_b_dst_clear_busy),
+      .src_data_i      (s_b_dst_data),
+      .src_valid_i     (dst_axi4.bvalid),
+      .src_ready_o     (dst_axi4.bready),
+      .dst_clk_i       (src_clk_i),
+      .dst_rst_n_i     (src_rst_n_i),
+      .dst_clear_busy_o(s_b_src_clear_busy),
+      .dst_data_o      (s_b_src_data),
+      .dst_valid_o     (src_axi4.bvalid),
+      .dst_ready_i     (src_axi4.bready)
   );
 
   assign s_ar_src_data = {
@@ -143,20 +189,23 @@ module axi4_async_bridge #(
     dst_axi4.aruser
   } = s_ar_dst_data;
 
-  cdc_fifo #(
+  cdc_fifo_warm_flush #(
       .DATA_WIDTH  (ArWidth),
       .BUFFER_DEPTH(FifoDepth)
   ) u_ar_fifo (
-      .src_clk_i  (src_clk_i),
-      .src_rst_n_i(src_rst_n_i),
-      .src_data_i (s_ar_src_data),
-      .src_valid_i(src_axi4.arvalid),
-      .src_ready_o(src_axi4.arready),
-      .dst_clk_i  (dst_clk_i),
-      .dst_rst_n_i(dst_rst_n_i),
-      .dst_data_o (s_ar_dst_data),
-      .dst_valid_o(dst_axi4.arvalid),
-      .dst_ready_i(dst_axi4.arready)
+      .src_clk_i       (src_clk_i),
+      .src_rst_n_i     (src_rst_n_i),
+      .src_clear_i     (s_clear_src_pulse),
+      .src_clear_busy_o(s_ar_src_clear_busy),
+      .src_data_i      (s_ar_src_data),
+      .src_valid_i     (src_axi4.arvalid),
+      .src_ready_o     (src_axi4.arready),
+      .dst_clk_i       (dst_clk_i),
+      .dst_rst_n_i     (dst_rst_n_i),
+      .dst_clear_busy_o(s_ar_dst_clear_busy),
+      .dst_data_o      (s_ar_dst_data),
+      .dst_valid_o     (dst_axi4.arvalid),
+      .dst_ready_i     (dst_axi4.arready)
   );
 
   assign s_r_dst_data = {
@@ -165,21 +214,50 @@ module axi4_async_bridge #(
   assign {src_axi4.rid, src_axi4.rdata, src_axi4.rresp, src_axi4.rlast,
           src_axi4.ruser} = s_r_src_data;
 
-  cdc_fifo #(
+  cdc_fifo_warm_flush #(
       .DATA_WIDTH  (RWidth),
       .BUFFER_DEPTH(FifoDepth)
   ) u_r_fifo (
-      .src_clk_i  (dst_clk_i),
-      .src_rst_n_i(dst_rst_n_i),
-      .src_data_i (s_r_dst_data),
-      .src_valid_i(dst_axi4.rvalid),
-      .src_ready_o(dst_axi4.rready),
-      .dst_clk_i  (src_clk_i),
-      .dst_rst_n_i(src_rst_n_i),
-      .dst_data_o (s_r_src_data),
-      .dst_valid_o(src_axi4.rvalid),
-      .dst_ready_i(src_axi4.rready)
+      .src_clk_i       (dst_clk_i),
+      .src_rst_n_i     (dst_rst_n_i),
+      .src_clear_i     (s_clear_dst_pulse),
+      .src_clear_busy_o(s_r_dst_clear_busy),
+      .src_data_i      (s_r_dst_data),
+      .src_valid_i     (dst_axi4.rvalid),
+      .src_ready_o     (dst_axi4.rready),
+      .dst_clk_i       (src_clk_i),
+      .dst_rst_n_i     (src_rst_n_i),
+      .dst_clear_busy_o(s_r_src_clear_busy),
+      .dst_data_o      (s_r_src_data),
+      .dst_valid_o     (src_axi4.rvalid),
+      .dst_ready_i     (src_axi4.rready)
   );
+
+  assign clear_busy_o = s_aw_src_clear_busy || s_aw_dst_clear_busy ||
+                        s_w_src_clear_busy || s_w_dst_clear_busy ||
+                        s_b_src_clear_busy || s_b_dst_clear_busy ||
+                        s_ar_src_clear_busy || s_ar_dst_clear_busy ||
+                        s_r_src_clear_busy || s_r_dst_clear_busy;
+  assign s_epoch_d = (s_clear_src_pulse && !clear_busy_o) ? s_epoch_q + 1'b1 : s_epoch_q;
+  assign epoch_o = s_epoch_q;
+
+  always_ff @(posedge src_clk_i or negedge src_rst_n_i) begin
+    if (!src_rst_n_i) begin
+      s_clear_q <= 1'b0;
+      s_epoch_q <= '0;
+    end else begin
+      s_clear_q <= s_clear_src;
+      s_epoch_q <= s_epoch_d;
+    end
+  end
+
+  always_ff @(posedge dst_clk_i or negedge dst_rst_n_i) begin
+    if (!dst_rst_n_i) begin
+      s_clear_dst_q <= 1'b0;
+    end else begin
+      s_clear_dst_q <= s_clear_dst;
+    end
+  end
 
 `ifndef SYNTHESIS
   initial begin

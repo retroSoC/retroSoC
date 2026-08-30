@@ -67,6 +67,7 @@ module retrosoc_asic (
   logic       s_aon_rst_n;
   logic       s_sys_clk;
   logic       s_hp_clk;
+  logic       s_hp_core_clk;
   logic       s_hp_rst_n;
   logic       s_pclk;
   logic       s_pclk_rst_n;
@@ -124,6 +125,7 @@ rcu #(
       .sys_clk_o      (s_sys_clk),
       .sys_rst_n_o    (s_sys_rst_n),
       .hp_clk_o       (s_hp_clk),
+      .hp_core_clk_o  (s_hp_core_clk),
       .hp_rst_n_o     (s_hp_rst_n),
       .pclk_o         (s_pclk),
       .pclk_rst_n_o   (s_pclk_rst_n),
@@ -140,9 +142,12 @@ rcu #(
   );
 
   retrosoc u_retrosoc (
+      .clk_aon_i      (s_aon_clk),
+      .rst_aon_n_i    (s_aon_rst_n),
       .clk_lp_i       (s_sys_clk),
       .rst_lp_n_i     (s_sys_rst_n),
       .clk_hp_i       (s_hp_clk),
+      .clk_hp_core_i  (s_hp_core_clk),
       .rst_hp_n_i     (s_hp_rst_n),
       .clk_pclk_i     (s_pclk),
       .rst_pclk_n_i   (s_pclk_rst_n),

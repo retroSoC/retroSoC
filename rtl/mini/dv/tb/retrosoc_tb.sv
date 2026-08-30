@@ -250,6 +250,19 @@ module retrosoc_tb;
     if ($value$plusargs("sim_timeout=%d", sim_runtime) && sim_runtime > 0) begin
       $display("Simulation timeout set to: %0dns", sim_runtime);
       #sim_runtime;
+      $display("CLOCK_RESET_DIAG aon=%0b lp=%0b hp=%0b pclk=%0b mem=%0b",
+               u_retrosoc_asic.s_aon_rst_n, u_retrosoc_asic.s_sys_rst_n, u_retrosoc_asic.s_hp_rst_n,
+               u_retrosoc_asic.s_pclk_rst_n, u_retrosoc_asic.s_mem_rst_n);
+      $display("DATA_PLANE_DIAG rcu_block=%0b lifecycle_block=%0b flush=%0b busy=%0b idle=%0b",
+               u_retrosoc_asic.s_hp_block, u_retrosoc_asic.u_retrosoc.s_hp_lifecycle_block,
+               u_retrosoc_asic.u_retrosoc.s_hp_lifecycle_flush,
+               u_retrosoc_asic.u_retrosoc.s_data_plane_flush_busy,
+               u_retrosoc_asic.u_retrosoc.s_data_plane_idle);
+      $display("LP_GATEWAY_DIAG src_arvalid=%0b src_arready=%0b dst_arvalid=%0b dst_arready=%0b",
+               u_retrosoc_asic.u_retrosoc.u_mgmt_data_axi4_if.arvalid,
+               u_retrosoc_asic.u_retrosoc.u_mgmt_data_axi4_if.arready,
+               u_retrosoc_asic.u_retrosoc.u_data_plane.u_lp_data_hp_axi4.arvalid,
+               u_retrosoc_asic.u_retrosoc.u_data_plane.u_lp_data_hp_axi4.arready);
       $fatal(1, "SIM_TEST_TIMEOUT");
     end
     $display("Simulation timeout disabled; waiting for terminal software status");

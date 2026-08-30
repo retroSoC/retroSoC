@@ -22,6 +22,7 @@ module apb4_system (
     input  logic                                  clk_aud_i,
     input  logic                                  rst_aud_n_i,
     input  logic                                  debug_halted_i,
+    input  logic                                  ext_h_data_idle_i,
     axi4_if.slave                                 axi4,
     axi4_if.master                                ext_h_axi4,
     pwm_if.dut                                    pwm,
@@ -30,6 +31,14 @@ module apb4_system (
     user_gpio_if.user_ip                          user_gpio,
     output logic                                  rtc_wake_o,
     output logic                                  wdg_reset_req_o,
+    output logic                                  ext_h_block_o,
+    output logic [31:0]                           ext_h_read_base_o,
+    output logic [31:0]                           ext_h_read_limit_o,
+    output logic [31:0]                           ext_h_write_base_o,
+    output logic [31:0]                           ext_h_write_limit_o,
+    output logic [31:0]                           ext_h_timeout_o,
+    output logic                                  ext_h_irq_raw_o,
+    output logic [1:0]                            ext_h_owner_o,
     output logic [`SOC_IRQ_APB4_SYSTEM_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -75,9 +84,15 @@ module apb4_system (
   logic        s_rng_irq;
   logic        s_ext_l_irq;
   logic        s_ext_h_irq;
+  logic        s_ext_h_irq_raw;
+  logic [ 1:0] s_ext_h_owner;
 `ifdef MINI_PRODUCT
   logic s_unused_product_input;
 `endif
+
+  assign s_ext_h_irq     = (s_ext_h_owner == 2'd0) ? s_ext_h_irq_raw : 1'b0;
+  assign ext_h_irq_raw_o = s_ext_h_irq_raw;
+  assign ext_h_owner_o   = s_ext_h_owner;
 
 `ifdef PDK_IHP130
   localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0201_0082;
@@ -219,13 +234,21 @@ axi42apb4_system u_axi42apb4_system (
 `endif
 
   extension_subsystem u_extension_subsystem (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .ext_l_apb4 (u_ext_l_apb4_if),
-      .ext_h_apb4 (u_ext_h_apb4_if),
-      .ext_h_axi4 (ext_h_axi4),
-      .ext_l_irq_o(s_ext_l_irq),
-      .ext_h_irq_o(s_ext_h_irq)
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .ext_h_data_idle_i  (ext_h_data_idle_i),
+      .ext_l_apb4         (u_ext_l_apb4_if),
+      .ext_h_apb4         (u_ext_h_apb4_if),
+      .ext_h_axi4         (ext_h_axi4),
+      .ext_l_irq_o        (s_ext_l_irq),
+      .ext_h_irq_o        (s_ext_h_irq_raw),
+      .ext_h_block_o      (ext_h_block_o),
+      .ext_h_owner_o      (s_ext_h_owner),
+      .ext_h_read_base_o  (ext_h_read_base_o),
+      .ext_h_read_limit_o (ext_h_read_limit_o),
+      .ext_h_write_base_o (ext_h_write_base_o),
+      .ext_h_write_limit_o(ext_h_write_limit_o),
+      .ext_h_timeout_o    (ext_h_timeout_o)
   );
 
 endmodule

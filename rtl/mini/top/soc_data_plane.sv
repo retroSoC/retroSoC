@@ -10,7 +10,14 @@ module soc_data_plane (
     input  logic       clk_hp_i,
     input  logic       rst_hp_n_i,
     input  logic       block_new_i,
+    input  logic       recovery_i,
+    input  logic       flush_i,
     input  logic [1:0] mem_pad_mode_i,
+    input  logic       ext_h_block_i,
+    input  logic [31:0] ext_h_read_base_i,
+    input  logic [31:0] ext_h_read_limit_i,
+    input  logic [31:0] ext_h_write_base_i,
+    input  logic [31:0] ext_h_write_limit_i,
     axi4_if.slave      hp_icache_axi4,
     axi4_if.slave      hp_dcache_axi4,
     axi4_if.slave      dma_axi4,
@@ -18,20 +25,40 @@ module soc_data_plane (
     axi4_if.slave      sdio1_axi4,
     axi4_if.slave      spisd_axi4,
     axi4_if.slave      usb2_axi4,
+    axi4_if.slave      lp_data_axi4,
     axi4_if.slave      ext_h_axi4,
     axi4_if.master     sram_gateway_axi4,
     axi4_if.master     sdram_gateway_axi4,
     axi4_if.master     qpi_gateway_axi4,
     axi4_if.master     opi_gateway_axi4,
     axi4_if.master     xpi_gateway_axi4,
-    output logic       idle_o
+    output logic       idle_o,
+    output logic       flush_busy_o,
+    output logic       ext_h_idle_o,
+    output logic [7:0] outstanding_read_o,
+    output logic [7:0] outstanding_write_o,
+    output logic       fault_valid_o,
+    output logic [2:0] fault_master_o,
+    output logic [2:0] fault_target_o,
+    output logic [31:0] fault_addr_o,
+    output logic       fault_write_o,
+    output logic [3:0] fault_reason_o
     // verilog_format: on
 );
-  localparam int unsigned NumIoMasters = 5;
+  localparam int unsigned NumIoMasters = 3;
   localparam int unsigned NumMemoryTargets = 5;
 
-  logic       s_block_new_hp;
-  logic [1:0] s_mem_pad_mode_hp;
+  logic                             s_block_new_hp;
+  logic [                 1:0]      s_mem_pad_mode_hp;
+  logic [    NumIoMasters-1:0]      s_io_clear_busy;
+  logic [NumMemoryTargets-1:0]      s_target_clear_busy;
+  logic                             s_lp_clear_busy;
+  logic                             s_ext_clear_busy;
+  logic [    NumIoMasters-1:0][7:0] unused_io_epoch;
+  logic [NumMemoryTargets-1:0][7:0] unused_target_epoch;
+  logic [                 7:0]      unused_lp_epoch;
+  logic [                 7:0]      unused_ext_epoch;
+  logic [                 2:0]      s_unused_epoch;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -89,12 +116,39 @@ module soc_data_plane (
   );
   axi4_if #(
       .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_io_idle_axi4[2] (
+      .aclk   (clk_io_i),
+      .aresetn(rst_io_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_lp_data_hp_axi4 (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
       .DATA_WIDTH(64),
       .ID_WIDTH  (3),
       .USER_WIDTH(1)
   ) u_ext_h_hp_axi4 (
       .aclk   (clk_hp_i),
       .aresetn(rst_hp_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (3),
+      .USER_WIDTH(1)
+  ) u_ext_h_gated_axi4 (
+      .aclk   (clk_io_i),
+      .aresetn(rst_io_n_i)
   );
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -168,34 +222,39 @@ module soc_data_plane (
       .source(dma_axi4),
       .sink  (u_io_lp_axi4[0])
   );
-  axi4_connector u_sdio0_source_connector (
-      .source(sdio0_axi4),
-      .sink  (u_io_lp_axi4[1])
+  hp_axi4_mux3 u_io_gateway_a (
+      .clk_i  (clk_io_i),
+      .rst_n_i(rst_io_n_i),
+      .icache (u_io_idle_axi4[0]),
+      .dcache (sdio0_axi4),
+      .mmio   (usb2_axi4),
+      .axi4   (u_io_lp_axi4[1])
   );
-  axi4_connector u_sdio1_source_connector (
-      .source(sdio1_axi4),
-      .sink  (u_io_lp_axi4[2])
+  hp_axi4_mux3 u_io_gateway_b (
+      .clk_i  (clk_io_i),
+      .rst_n_i(rst_io_n_i),
+      .icache (u_io_idle_axi4[1]),
+      .dcache (spisd_axi4),
+      .mmio   (sdio1_axi4),
+      .axi4   (u_io_lp_axi4[2])
   );
-  axi4_connector u_spisd_source_connector (
-      .source(spisd_axi4),
-      .sink  (u_io_lp_axi4[3])
-  );
-  axi4_connector u_usb2_source_connector (
-      .source(usb2_axi4),
-      .sink  (u_io_lp_axi4[4])
-  );
+  axi4_master_idle u_io_gateway_a_idle (.axi4(u_io_idle_axi4[0]));
+  axi4_master_idle u_io_gateway_b_idle (.axi4(u_io_idle_axi4[1]));
 
   for (genvar master = 0; master < NumIoMasters; master++) begin : gen_io_master
     axi4_async_bridge #(
         .DataWidth(32),
         .IdWidth  (1)
     ) u_io_cdc (
-        .src_clk_i  (clk_io_i),
-        .src_rst_n_i(rst_io_n_i),
-        .dst_clk_i  (clk_hp_i),
-        .dst_rst_n_i(rst_hp_n_i),
-        .src_axi4   (u_io_lp_axi4[master]),
-        .dst_axi4   (u_io_hp_axi4[master])
+        .src_clk_i   (clk_io_i),
+        .src_rst_n_i (rst_io_n_i),
+        .dst_clk_i   (clk_hp_i),
+        .dst_rst_n_i (rst_hp_n_i),
+        .clear_i     (flush_i),
+        .clear_busy_o(s_io_clear_busy[master]),
+        .epoch_o     (unused_io_epoch[master]),
+        .src_axi4    (u_io_lp_axi4[master]),
+        .dst_axi4    (u_io_hp_axi4[master])
     );
     axi4_upsizer_32to64 #(
         .MasterIndex(3'(master + 2))
@@ -208,15 +267,50 @@ module soc_data_plane (
   end
 
   axi4_async_bridge #(
+      .DataWidth(32),
+      .IdWidth  (1)
+  ) u_lp_data_cdc (
+      .src_clk_i   (clk_lp_i),
+      .src_rst_n_i (rst_lp_n_i),
+      .dst_clk_i   (clk_hp_i),
+      .dst_rst_n_i (rst_hp_n_i),
+      .clear_i     (flush_i),
+      .clear_busy_o(s_lp_clear_busy),
+      .epoch_o     (unused_lp_epoch),
+      .src_axi4    (lp_data_axi4),
+      .dst_axi4    (u_lp_data_hp_axi4)
+  );
+  axi4_upsizer_32to64 #(
+      .MasterIndex(3'd5)
+  ) u_lp_data_upsizer (
+      .clk_i  (clk_hp_i),
+      .rst_n_i(rst_hp_n_i),
+      .narrow (u_lp_data_hp_axi4),
+      .wide   (u_master_axi4[5])
+  );
+  axi4_master_idle u_reserved_master_idle (.axi4(u_master_axi4[6]));
+
+  axi4_async_bridge #(
       .DataWidth(64),
       .IdWidth  (3)
   ) u_ext_h_cdc (
-      .src_clk_i  (clk_io_i),
-      .src_rst_n_i(rst_io_n_i),
-      .dst_clk_i  (clk_hp_i),
-      .dst_rst_n_i(rst_hp_n_i),
-      .src_axi4   (ext_h_axi4),
-      .dst_axi4   (u_ext_h_hp_axi4)
+      .src_clk_i   (clk_io_i),
+      .src_rst_n_i (rst_io_n_i),
+      .dst_clk_i   (clk_hp_i),
+      .dst_rst_n_i (rst_hp_n_i),
+      .clear_i     (flush_i),
+      .clear_busy_o(s_ext_clear_busy),
+      .epoch_o     (unused_ext_epoch),
+      .src_axi4    (u_ext_h_gated_axi4),
+      .dst_axi4    (u_ext_h_hp_axi4)
+  );
+  axi4_address_gate u_ext_h_address_gate (
+      .clk_i      (clk_io_i),
+      .rst_n_i    (rst_io_n_i),
+      .block_new_i(ext_h_block_i),
+      .source     (ext_h_axi4),
+      .sink       (u_ext_h_gated_axi4),
+      .idle_o     (ext_h_idle_o)
   );
   axi4_id_prefix #(
       .MasterIndex(3'd7)
@@ -230,13 +324,26 @@ module soc_data_plane (
   );
 
   axi4_data_crossbar u_data_crossbar (
-      .clk_i         (clk_hp_i),
-      .rst_n_i       (rst_hp_n_i),
-      .block_new_i   (s_block_new_hp),
-      .mem_pad_mode_i(s_mem_pad_mode_hp),
-      .masters       (u_master_axi4),
-      .targets       (u_target_axi4),
-      .idle_o        (idle_o)
+      .clk_i              (clk_hp_i),
+      .rst_n_i            (rst_hp_n_i),
+      .block_new_i        (s_block_new_hp),
+      .recovery_i         (recovery_i),
+      .mem_pad_mode_i     (s_mem_pad_mode_hp),
+      .ext_h_read_base_i  (ext_h_read_base_i),
+      .ext_h_read_limit_i (ext_h_read_limit_i),
+      .ext_h_write_base_i (ext_h_write_base_i),
+      .ext_h_write_limit_i(ext_h_write_limit_i),
+      .masters            (u_master_axi4),
+      .targets            (u_target_axi4),
+      .idle_o             (idle_o),
+      .outstanding_read_o (outstanding_read_o),
+      .outstanding_write_o(outstanding_write_o),
+      .fault_valid_o      (fault_valid_o),
+      .fault_master_o     (fault_master_o),
+      .fault_target_o     (fault_target_o),
+      .fault_addr_o       (fault_addr_o),
+      .fault_write_o      (fault_write_o),
+      .fault_reason_o     (fault_reason_o)
   );
 
   for (genvar target = 0; target < NumMemoryTargets; target++) begin : gen_memory_target
@@ -252,12 +359,15 @@ module soc_data_plane (
         .DataWidth(32),
         .IdWidth  (1)
     ) u_target_cdc (
-        .src_clk_i  (clk_hp_i),
-        .src_rst_n_i(rst_hp_n_i),
-        .dst_clk_i  (clk_lp_i),
-        .dst_rst_n_i(rst_lp_n_i),
-        .src_axi4   (u_target_hp_axi4[target]),
-        .dst_axi4   (u_gateway_lp_axi4[target])
+        .src_clk_i   (clk_hp_i),
+        .src_rst_n_i (rst_hp_n_i),
+        .dst_clk_i   (clk_lp_i),
+        .dst_rst_n_i (rst_lp_n_i),
+        .clear_i     (flush_i),
+        .clear_busy_o(s_target_clear_busy[target]),
+        .epoch_o     (unused_target_epoch[target]),
+        .src_axi4    (u_target_hp_axi4[target]),
+        .dst_axi4    (u_gateway_lp_axi4[target])
     );
   end
 
@@ -269,6 +379,12 @@ module soc_data_plane (
       .rst_n_i(rst_hp_n_i),
       .axi4   (u_target_axi4[5])
   );
+
+  assign flush_busy_o = (|s_io_clear_busy) || (|s_target_clear_busy) ||
+                        s_lp_clear_busy || s_ext_clear_busy;
+  assign s_unused_epoch = {
+    ^unused_io_epoch, ^unused_target_epoch, ^{unused_lp_epoch, unused_ext_epoch}
+  };
 
   axi4_connector u_sram_gateway_connector (
       .source(u_gateway_lp_axi4[0]),

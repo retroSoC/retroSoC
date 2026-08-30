@@ -99,12 +99,18 @@ CI Verilator firmware simulations explicitly select the `ci_smoke`
 application, which checks UART, archinfo APB readback, macro-backed on-chip SRAM,
 RNG fail-closed behavior, and test-status
 completion without the verbose startup report. ARCHINFO checks include its
-ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
+ABI and the build/configuration identifiers generated for that variant. The
+IHP130 PR run links this image into the 32 KiB SRAM, explicitly enables the
+fast-flash backend, and allows 360 seconds; Icarus keeps the real serial XPI
+boot-model check. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,
 use:
 
 ```sh
 make CONFIG=configs/ci/ihp130.mk APP=bringup SIMU=VERILATOR SOC_SIM_TIME=300 firmware sim
+
+# Firmware, RTL lint, debug, and behavioral simulation without synthesis/STA
+make regress-rtl
 ```
 
 ## Prerequisites
@@ -198,8 +204,10 @@ variant identifier; `make help` lists all available targets. Netlist simulation 
 analysis consume the Yosys netlist, so run the synthesis command first. The CI-proven netlist
 regression uses the assembly self-test image:
 
-Verilator simulations run for 180 seconds by default. Set `SOC_SIM_TIME` explicitly only when
-an exploratory local run needs a different limit.
+Verilator simulations run for 180 seconds by default. The IHP130 `ci_smoke`
+regression explicitly uses 360 seconds because its LP memory accesses traverse
+the asynchronous data gateway. Set `SOC_SIM_TIME` explicitly only when an
+exploratory local run needs a different limit.
 
 VCS flow commands use `bsub -Is` by default: this includes parse-time Python helpers used to
 calculate the variant and dependency-lock digest, generated-flow Python helpers, VCS, `simv`, and

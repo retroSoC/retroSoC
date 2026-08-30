@@ -85,7 +85,7 @@ module retrosoc_top (
   wire        s_jtag_trst_n;
   wire        s_jtag_tdo;
   wire        s_uart1_tx;
-  tri1        s_uart1_rx;
+  wire        s_uart1_rx;
   wire        s_usb2_ulpi_clk;
   tri0        s_usb2_ulpi_dir;
   tri0        s_usb2_ulpi_nxt;
@@ -103,6 +103,7 @@ module retrosoc_top (
   assign s_jtag_tms          = jtag_tms_i;
   assign s_jtag_tdi          = jtag_tdi_i;
   assign s_jtag_trst_n       = jtag_trst_n_i;
+  assign s_uart1_rx          = s_uart1_tx;
   assign jtag_tdo_o          = s_jtag_tdo;
   assign test_done_o         = u_retrosoc_asic.s_test_done;
   assign test_pass_o         = u_retrosoc_asic.s_test_pass;

@@ -10,12 +10,13 @@
 
 module pll_rcu_formal;
 
-  localparam [2:0] PLL_IDLE = 3'd0;
-  localparam [2:0] PLL_SAFE = 3'd1;
-  localparam [2:0] PLL_APPLY = 3'd2;
-  localparam [2:0] PLL_WAIT_LOCK = 3'd3;
-  localparam [2:0] PLL_SWITCH = 3'd4;
-  localparam [2:0] PLL_RESPOND = 3'd5;
+  localparam [3:0] PLL_APPLY = 4'd4;
+  localparam [3:0] PLL_WAIT_LOCK_LOW = 4'd5;
+  localparam [3:0] PLL_QUALIFY_LOCK = 4'd6;
+  localparam [3:0] PLL_SWITCH = 4'd7;
+  localparam [3:0] PLL_RESTORE_LP = 4'd8;
+  localparam [3:0] PLL_RESPOND = 4'd9;
+  localparam [3:0] PLL_FAIL_SAFE = 4'd10;
 
   (* anyseq *) (* gclk *)reg        clk_i;
   wire       rst_n_i;
@@ -27,13 +28,12 @@ module pll_rcu_formal;
   wire       rsp_ready;
   wire       pll_lock;
   wire       pll_capable;
-  wire [2:0] state;
+  wire [3:0] state;
   wire       pll_apply;
   wire       select_ext_clk;
   wire       active_valid;
   wire       safe_clk;
   wire       active_lock;
-  wire       lock_seen_low;
   wire [1:0] error;
 
   pll_rcu_formal_design u_design (
@@ -53,7 +53,6 @@ module pll_rcu_formal;
       .active_valid  (active_valid),
       .safe_clk      (safe_clk),
       .active_lock   (active_lock),
-      .lock_seen_low (lock_seen_low),
       .error         (error)
   );
 
@@ -64,25 +63,30 @@ module pll_rcu_formal;
     end
 
     if (rst_n_i) begin
-      assert(!(state == PLL_SAFE || state == PLL_APPLY || state == PLL_WAIT_LOCK) ||
-             select_ext_clk);
-      assert (!pll_apply || state != PLL_IDLE && state != PLL_SAFE);
-      if (f_past_valid && $past(state == PLL_SAFE && !pll_capable)) begin
-        assert (state == PLL_RESPOND);
-        assert (safe_clk);
-        assert (!active_valid);
-        assert (error == 2'd1);
-      end
-      if (f_past_valid && $past(state == PLL_WAIT_LOCK && pll_lock && lock_seen_low)) begin
-        assert (state == PLL_SWITCH);
+      assert (!(state == PLL_APPLY || state == PLL_WAIT_LOCK_LOW ||
+                state == PLL_QUALIFY_LOCK) || (select_ext_clk && safe_clk));
+      assert (!(state == PLL_APPLY || state == PLL_WAIT_LOCK_LOW ||
+                state == PLL_QUALIFY_LOCK) ||
+              (error == 2'd0 && !active_valid && !active_lock));
+      assert (!pll_apply || state == PLL_WAIT_LOCK_LOW);
+      if (state == PLL_SWITCH) begin
         assert (active_valid);
-        assert (!safe_clk);
+        assert (select_ext_clk);
+        assert (safe_clk);
         assert (active_lock);
         assert (error == 2'd0);
       end
       if (f_past_valid && $past(state == PLL_SWITCH)) begin
-        assert (state == PLL_RESPOND);
+        assert (state == PLL_RESTORE_LP);
         assert (!select_ext_clk);
+        assert (!safe_clk);
+      end
+      if (f_past_valid && $past(state == PLL_FAIL_SAFE)) begin
+        assert (state == PLL_RESPOND);
+        assert (select_ext_clk);
+        assert (safe_clk);
+        assert (!active_valid);
+        assert (!active_lock);
       end
       cover (state == PLL_SWITCH && active_valid && active_lock);
       cover (state == PLL_RESPOND && error == 2'd1);

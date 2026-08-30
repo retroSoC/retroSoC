@@ -18,8 +18,11 @@ module apb4_periph (
     input logic                                   clk_aud_i,
     input logic                                   rst_aud_n_i,
     input logic                                   clk_ulpi_i,
+    input logic                                   clk_mem_i,
+    input logic                                   rst_mem_n_i,
     input logic                                   debug_halted_i,
     input logic                                   timebase_tick_i,
+    input logic                                   ext_h_hp_irq_i,
     axi4_if.slave                                 cfg_axi4,
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
@@ -116,6 +119,20 @@ axi4_stream_if #(
   clint_if u_clint_if ();
   clint_if #(.HartNum(2)) u_hp_clint_if ();
   dma_req_if u_dma_req_if ();
+  apb4_if u_psram_mem_apb4_if (
+      .pclk   (clk_mem_i),
+      .presetn(rst_mem_n_i)
+  );
+  apb4_if u_xpi_mem_apb4_if (
+      .pclk   (clk_mem_i),
+      .presetn(rst_mem_n_i)
+  );
+  apb4_if u_opipsram_mem_apb4_if (
+      .pclk   (clk_mem_i),
+      .presetn(rst_mem_n_i)
+  );
+  psram_if u_psram_mem_if ();
+  opipsram_if u_opipsram_mem_if ();
 
   logic s_dma_i2s_tx_stall, s_dma_i2s_rx_stall;
   logic s_dma_xpi_tx_stall, s_dma_xpi_rx_stall;
@@ -131,9 +148,16 @@ axi4_stream_if #(
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
   logic s_xpi_irq;
+  logic s_xpi_irq_mem;
+  logic s_psram_irq_mem;
+  logic s_opipsram_irq_mem;
+  logic s_dma_xfer_done_mem;
+  logic s_dma_xpi_tx_stall_mem;
+  logic s_dma_xpi_rx_stall_mem;
   logic s_mailbox_lp_irq, s_mailbox_hp_irq;
   logic [31:0] s_hp_plic_source;
   logic [ 1:0] s_hp_plic_context_irq;
+  logic [ 3:0] s_unused_optional_status;
 
 `ifdef PDK_GF180
   localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
@@ -178,10 +202,78 @@ axi4_stream_if #(
   assign hp_machine_external_irq_o    = s_hp_plic_context_irq[0];
   assign hp_supervisor_external_irq_o = s_hp_plic_context_irq[1];
 
+  apb4_async_bridge u_psram_cfg_mem_cdc (
+      .src_clk_i  (clk_i),
+      .src_rst_n_i(rst_n_i),
+      .dst_clk_i  (clk_mem_i),
+      .dst_rst_n_i(rst_mem_n_i),
+      .src_apb4   (u_psram_apb4_if),
+      .dst_apb4   (u_psram_mem_apb4_if)
+  );
+  apb4_async_bridge u_xpi_cfg_mem_cdc (
+      .src_clk_i  (clk_i),
+      .src_rst_n_i(rst_n_i),
+      .dst_clk_i  (clk_mem_i),
+      .dst_rst_n_i(rst_mem_n_i),
+      .src_apb4   (u_xpi_apb4_if),
+      .dst_apb4   (u_xpi_mem_apb4_if)
+  );
+  apb4_async_bridge u_opipsram_cfg_mem_cdc (
+      .src_clk_i  (clk_i),
+      .src_rst_n_i(rst_n_i),
+      .dst_clk_i  (clk_mem_i),
+      .dst_rst_n_i(rst_mem_n_i),
+      .src_apb4   (u_opipsram_apb4_if),
+      .dst_apb4   (u_opipsram_mem_apb4_if)
+  );
+
+  cdc_event_bridge u_xpi_dma_done_cdc (
+      .src_clk_i     (clk_i),
+      .src_rst_n_i   (rst_n_i),
+      .event_i       (s_dma_xfer_done),
+      .source_ready_o(s_unused_optional_status[0]),
+      .source_busy_o (s_unused_optional_status[1]),
+      .dst_clk_i     (clk_mem_i),
+      .dst_rst_n_i   (rst_mem_n_i),
+      .event_o       (s_dma_xfer_done_mem)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(5)
+  ) u_memory_status_sync (
+      .clk_i(clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i({
+        s_xpi_irq_mem,
+        s_psram_irq_mem,
+        s_opipsram_irq_mem,
+        s_dma_xpi_tx_stall_mem,
+        s_dma_xpi_rx_stall_mem
+      }),
+      .dat_o({s_xpi_irq, psram.irq_o, opipsram.irq_o, s_dma_xpi_tx_stall, s_dma_xpi_rx_stall})
+  );
+
+  assign psram.sck_o              = u_psram_mem_if.sck_o;
+  assign psram.nss_o              = u_psram_mem_if.nss_o;
+  assign psram.io_oe_o            = u_psram_mem_if.io_oe_o;
+  assign psram.io_do_o            = u_psram_mem_if.io_do_o;
+  assign u_psram_mem_if.io_di_i   = psram.io_di_i;
+  assign s_psram_irq_mem          = u_psram_mem_if.irq_o;
+  assign opipsram.ck_o            = u_opipsram_mem_if.ck_o;
+  assign opipsram.cs_n_o          = u_opipsram_mem_if.cs_n_o;
+  assign opipsram.dq_oe_o         = u_opipsram_mem_if.dq_oe_o;
+  assign opipsram.dq_o            = u_opipsram_mem_if.dq_o;
+  assign opipsram.rwds_oe_o       = u_opipsram_mem_if.rwds_oe_o;
+  assign opipsram.rwds_o          = u_opipsram_mem_if.rwds_o;
+  assign u_opipsram_mem_if.dq_i   = opipsram.dq_i;
+  assign u_opipsram_mem_if.rwds_i = opipsram.rwds_i;
+  assign s_opipsram_irq_mem       = u_opipsram_mem_if.irq_o;
+
   always_comb begin
     s_hp_plic_source    = '0;
     s_hp_plic_source[1] = uart1.irq_o;
     s_hp_plic_source[2] = s_mailbox_hp_irq;
+    s_hp_plic_source[3] = ext_h_hp_irq_i;
   end
 
   `include "apb4_periph_irq_bindings.svh"
@@ -215,8 +307,8 @@ axi4_stream_if #(
   apb4_uart u_apb4_uart1 (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
-      .dma_tx_stall_o(),
-      .dma_rx_stall_o(),
+      .dma_tx_stall_o(s_unused_optional_status[2]),
+      .dma_rx_stall_o(s_unused_optional_status[3]),
       .apb4          (u_uart1_apb4_if),
       .uart          (uart1)
   );
@@ -264,11 +356,11 @@ axi4_stream_if #(
   );
 
   apb4_psram u_apb4_psram (
-      .clk_i   (clk_i),
-      .rst_n_i (rst_n_i),
-      .cfg_apb4(u_psram_apb4_if),
+      .clk_i   (clk_mem_i),
+      .rst_n_i (rst_mem_n_i),
+      .cfg_apb4(u_psram_mem_apb4_if),
       .mem_axi4(psram_axi4),
-      .psram   (psram)
+      .psram   (u_psram_mem_if)
   );
 
   apb4_spisd u_apb4_spisd (
@@ -309,13 +401,13 @@ axi4_stream_if #(
   );
 
   apb4_xpi u_apb4_xpi (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .dma_xfer_done_i(s_dma_xfer_done),
-      .dma_tx_stall_o (s_dma_xpi_tx_stall),
-      .dma_rx_stall_o (s_dma_xpi_rx_stall),
-      .irq_o          (s_xpi_irq),
-      .apb4           (u_xpi_apb4_if),
+      .clk_i          (clk_mem_i),
+      .rst_n_i        (rst_mem_n_i),
+      .dma_xfer_done_i(s_dma_xfer_done_mem),
+      .dma_tx_stall_o (s_dma_xpi_tx_stall_mem),
+      .dma_rx_stall_o (s_dma_xpi_rx_stall_mem),
+      .irq_o          (s_xpi_irq_mem),
+      .apb4           (u_xpi_mem_apb4_if),
       .mem_axi4       (xpi_axi4),
       .xpi            (xpi)
   );
@@ -406,13 +498,13 @@ axi4_stream_if #(
   );
 
   apb4_opipsram u_apb4_opipsram (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .clk_phy_i  (clk_i),
-      .rst_phy_n_i(rst_n_i),
-      .cfg_apb4   (u_opipsram_apb4_if),
+      .clk_i      (clk_mem_i),
+      .rst_n_i    (rst_mem_n_i),
+      .clk_phy_i  (clk_mem_i),
+      .rst_phy_n_i(rst_mem_n_i),
+      .cfg_apb4   (u_opipsram_mem_apb4_if),
       .mem_axi4   (opipsram_axi4),
-      .psram      (opipsram)
+      .psram      (u_opipsram_mem_if)
   );
 
   apb4_i2c u_apb4_i2c1 (

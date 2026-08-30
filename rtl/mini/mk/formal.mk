@@ -5,6 +5,7 @@ FORMAL_SOLVER                := bitwuzla
 FORMAL_SOLVER_DIR            := $(FORMAL_DIR)/bin
 FORMAL_SOLVER_WRAPPER        := $(FORMAL_SOLVER_DIR)/bitwuzla
 FORMAL_DEPTH                 ?= 20
+FORMAL_PLL_RCU_DEPTH         ?= 32
 FORMAL_WS2812_DEPTH          ?= 120
 FORMAL_I2C_DEPTH             ?= 80
 FORMAL_CLINT_DEPTH           ?= 32
@@ -76,6 +77,7 @@ FORMAL_SOURCE_FILES          := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/gpio_reg.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/apb4_gpio.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/pll_ctrl_if.sv \
+                             $(ROOT_PATH)/rtl/ip/peripheral/clock_ctrl_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_if.sv \
                              $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_define.svh \
                              $(ROOT_PATH)/rtl/ip/peripheral/sysctrl_reg.sv \
@@ -175,7 +177,7 @@ $(FORMAL_DIR)/%/formal.fl: $(FORMAL_FILELIST_GENERATOR) $(FORMAL_SOURCE_FILES) \
 		--user-extensions-dir $(USER_EXTENSIONS_DIR)
 
 $(FORMAL_DIR)/%/design.v: $(FORMAL_DIR)/%/formal.fl $(RTL_PATH)/script/convt_sv2v.py \
-	$(RTL_PATH)/script/filelist.py
+	$(RTL_PATH)/script/filelist.py $(FORMAL_SOURCE_FILES)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool formal-sv2v \
 		--log $(@D)/sv2v.log --result $(@D)/result-sv2v.json \
 		-- python3 $(RTL_PATH)/script/convt_sv2v.py -f $< --output $@
@@ -184,14 +186,14 @@ $(FORMAL_DIR)/%/prove.sby: $(FORMAL_DIR)/%/design.v $(RTL_PATH)/formal/%_formal_
 	$(FORMAL_SBY_GENERATOR)
 	python3 $(FORMAL_SBY_GENERATOR) --top $*_formal --input $< \
 		--properties $(RTL_PATH)/formal/$*_formal_props.sv --solver $(FORMAL_SOLVER) \
-		--mode $(if $(filter dma sdio onchip_ram,$*),bmc,prove) --depth $(if $(filter dma,$*),$(FORMAL_DMA_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH)))))))) --output $@
+		--mode $(if $(filter dma sdio onchip_ram,$*),bmc,prove) --depth $(if $(filter pll_rcu,$*),$(FORMAL_PLL_RCU_DEPTH),$(if $(filter dma,$*),$(FORMAL_DMA_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH))))))))) --output $@
 	@if [ "$*" = opipsram ]; then sed -i '/^async2sync/i clk2fflogic' $@; fi
 
 $(FORMAL_DIR)/%/cover.sby: $(FORMAL_DIR)/%/design.v $(RTL_PATH)/formal/%_formal_props.sv \
 	$(FORMAL_SBY_GENERATOR)
 	python3 $(FORMAL_SBY_GENERATOR) --top $*_formal --input $< \
 		--properties $(RTL_PATH)/formal/$*_formal_props.sv --solver $(FORMAL_SOLVER) \
-		--mode cover --depth $(if $(filter dma,$*),$(FORMAL_DMA_COVER_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_COVER_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH)))))))) \
+		--mode cover --depth $(if $(filter pll_rcu,$*),$(FORMAL_PLL_RCU_DEPTH),$(if $(filter dma,$*),$(FORMAL_DMA_COVER_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_COVER_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH))))))))) \
 		$(if $(filter $(FORMAL_COMPACT_COVER_TARGETS),$*),--no-vcd) --output $@
 	@if [ "$*" = opipsram ]; then sed -i '/^async2sync/i clk2fflogic' $@; fi
 

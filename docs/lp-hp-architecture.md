@@ -66,37 +66,40 @@ HP uncached MMIO is downsized to AXI32 and crosses HP to LP through
 watchdog, and GPIO administration windows with `SLVERR`; Hazard3 retains full
 management access.
 
-The LP control fabric remains the compatibility path for Hazard3 boot and
-external-memory accesses. HP, DMA, and accelerator payload traffic uses the
-native data plane described below. Moving the remaining controller protocol
-engines from LP/PCLK to the exported memory root is an explicit follow-up; the
-present RTL does not claim that migration or its physical CDC signoff.
+`axi4_mgmt_router` keeps APB/control addresses on this path and routes every
+memory window through an LP-to-HP data gateway. Hazard3 therefore shares the
+same memory admission, inactive-pad, ACL, and fault path as HP and DMA.
 
 ## Native AXI64 data plane
 
 `soc_data_plane` contains an 8-master, 6-target AXI64 crossbar. Read and write
 ownership are independent, so one target may read and write concurrently and
-different targets progress concurrently. Each direction permits one active
-transaction per master and per target; global IDs contain a fixed master
-prefix plus the source ID.
+different targets progress concurrently. Different source IDs from a
+high-bandwidth master may be active against different targets. The same source
+ID is blocked until completion, and each target currently remains
+single-outstanding per direction. Global IDs contain a fixed master prefix
+plus the source ID.
 
 | Master | Entry path |
 | --- | --- |
 | HP I-cache | native AXI64, ID prefix 0 |
 | HP D-cache | native AXI64, ID prefix 1 |
 | central DMA | PCLK-to-HP async bridge, AXI32-to-64 upsizer |
-| SDIO0 / SDIO1 | PCLK-to-HP async bridge, upsizer |
-| SPI-SD / USB2 | PCLK-to-HP async bridge, upsizer |
+| I/O gateway A | USB2 and SDIO0, then PCLK-to-HP CDC and upsizer |
+| I/O gateway B | SDIO1 and SPI-SD, then PCLK-to-HP CDC and upsizer |
+| LP data gateway | Hazard3 memory traffic, LP-to-HP CDC and upsizer |
 | EXT-H | PCLK-to-HP AXI64 async bridge, ID prefix 7 |
 
 Targets are SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, XPI/flash, and a
 finite-latency error slave. Current 32-bit memory frontends use AXI64-to-32
-downsizers followed by HP-to-LP async bridges. Inactive QPI/OPI windows route
-to `SLVERR`. HP I-cache, D-cache, and MMIO no longer share the retired
-`hp_axi4_mux3` path.
+downsizers. QPI, OPI, and XPI controllers run from the stable 36 MHz memory
+root; their APB windows use PCLK-to-memory proxies. SRAM and SDRAM still use
+LP-domain frontends and remain explicit native-64-bit follow-up work. Inactive
+QPI/OPI windows route to `SLVERR`.
 
-All async AXI channels use Common `cdc_fifo` storage and a reset barrier. A
-single-ended reset aborts the link epoch rather than returning a stale response.
+All async AXI channels use Common coordinated warm-flush FIFOs and expose a
+source-domain epoch. HP shutdown holds a flush request until every bridge sees
+it, then waits for bridge recovery before resetting the core.
 
 ## Memory and shared pads
 
@@ -123,9 +126,10 @@ Product Mini has fixed control windows:
 
 Each slot exposes identification, version, capability, owner/lock, lifecycle,
 status, timeout, first fault, fault address, and request count. EXT-H adds read
-and write ACL ranges. The current reference slot is idle and issues no data
-traffic; its interface and isolation contract are live. Software discovers it
-through `<retrosoc/hal/extension.h>`.
+and write ACL ranges that are enforced at data-plane admission. The reference
+EXT-H DMA performs aligned 64-bit memory copies with a partial final strobe.
+Its IRQ is delivered to LP IRQ 28 or HP PLIC source 3 according to owner,
+never both. Software discovers it through `<retrosoc/hal/extension.h>`.
 
 The old `APB4_USER_IP` window is a read-only compatibility/capability window.
 Product writes to `CORESEL`, `IPSEL`, `USER_CORE_RESET`, or
@@ -143,8 +147,10 @@ so absolute commercial paths are never tracked.
 
 ## Evidence boundary
 
-Behavioral RTL, firmware, directed PLL/SYSCTRL tests, manifest parity, and
-quality checks are the evidence for this implementation. It must not be called
-cache coherent, power isolated, hot-reset safe, timing closed, CDC/RDC signed
-off, or silicon-qualified. Synthesis, netlist simulation, STA, MMMC, clock-tree,
-DFT, and analogue PLL qualification are separate gates.
+Behavioral RTL, firmware, directed data-plane/lifecycle/clock tests, manifest
+parity, and quality checks are the evidence for this implementation. HP stop
+implements drain, coordinated flush, actual-release status, and bounded forced
+reset, but a forced reset cannot preserve dirty cache data. It must not be
+called cache coherent, power isolated, timing closed, CDC/RDC signed off, or
+silicon-qualified. Synthesis, netlist simulation, STA, MMMC, clock-tree, DFT,
+and analogue PLL qualification are separate gates.

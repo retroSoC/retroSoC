@@ -65,7 +65,7 @@ offset macros.
 | `0x084` | `TEST_STATUS` | RW-once/RO | Full-word write with bit 31 set records sticky done, bit 0 pass, and bits `[15:8]` result code. |
 | `0x088` | `RTC_WAKE_STATUS` | RW1C/RO | Bit 0 synchronized live wake; bit 1 sticky wake, cleared by writing one to bit 1. |
 | `0x0A4` | `HP_CTRL` | RW | Bit 0 releases HP reset when the HP profile is present. Reset value 0. |
-| `0x0A8` | `HP_STATUS` | RO | Bits 0/1/2 report present, released, and reset asserted. |
+| `0x0A8` | `HP_STATUS` | RO | Bits 0/1/2 preserve present and requested release/reset; bits 3/4/5 report draining, forced fault, and actual release. |
 | `0x0AC` | `DEBUG_SELECT` | RW | Bit 0 selects HP on shared JTAG only while HP remains in reset. Reset value 0 selects LP. |
 | `0x0B0` | `CLK_HP_REQ` | RW/WO command | HP P-state; bits 31/30 apply PLL/force safe. |
 | `0x0B4` | `CLK_HP_CURRENT` | RO | Current HP source/P-state and LP/PCLK/gate configuration. |

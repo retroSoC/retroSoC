@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -142,3 +144,43 @@ def test_extensions_reject_duplicate_regions_and_irqs(tmp_path: Path) -> None:
     result = validate(write_invalid_extensions(tmp_path, document))
     assert result.returncode != 0
     assert "overlapping or out-of-range IRQs" in result.stderr
+
+
+def test_extension_dma_executes_copy_tail_and_timeout(tmp_path: Path) -> None:
+    verilator = shutil.which("verilator")
+    if verilator is None:
+        return
+
+    output = tmp_path / "extension_dma_master_tb"
+    ccache_tmp = tmp_path / "ccache"
+    ccache_tmp.mkdir()
+    subprocess.run(
+        [
+            verilator,
+            "--binary",
+            "--timing",
+            "-Wno-fatal",
+            "--top-module",
+            "extension_dma_master_tb",
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl/interface"),
+            "-I" + str(ROOT / "rtl/mini/top"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
+            str(ROOT / "rtl/mini/top/extension_dma_master.sv"),
+            str(ROOT / "tests/rtl/extension_dma_master_tb.sv"),
+            "-Mdir",
+            str(tmp_path / "obj"),
+            "-o",
+            str(output),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+        env={
+            **os.environ,
+            "CCACHE_DIR": str(ccache_tmp),
+            "CCACHE_TEMPDIR": str(ccache_tmp),
+        },
+    )
+    result = subprocess.run([output], check=True, text=True, capture_output=True)
+    assert "Extension DMA copy, tail strobe, and timeout test passed" in result.stdout

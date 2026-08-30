@@ -25,12 +25,23 @@ generating register definitions.
 | `0x02C` | `FAULT` | RO | sticky fault state |
 | `0x030` | `FAULT_ADDRESS` | RO | first rejected control address |
 | `0x034` | `REQUEST_COUNT` | RO | saturating accepted APB request count |
+| `0x100` | `DMA_SOURCE` | EXT-H RW | aligned memory-copy source |
+| `0x104` | `DMA_DESTINATION` | EXT-H RW | aligned memory-copy destination |
+| `0x108` | `DMA_LENGTH` | EXT-H RW | nonzero byte count |
+| `0x10C` | `DMA_COMMAND` | EXT-H WO | start or abort |
+| `0x110` | `DMA_STATUS` | EXT-H RO | busy, done pulse, and fault |
 
 EXT-L rejects ACL and timeout writes. Invalid or read-only writes complete with
 APB `PSLVERR`, set the slot fault, and record the first offending address.
-The reference EXT-H master is idle; connecting a real accelerator must retain
-the control-plane deny policy and implement the programmed ranges before it can
-issue payload traffic.
+The reference EXT-H master performs sequential 64-bit memory copies. It
+supports a byte-masked final beat and reports AXI response errors and
+no-progress timeouts. Programmed ranges are enforced by the data-plane M7
+firewall; M6 and control-plane addresses remain denied in hardware.
+
+OWNER also controls interrupt routing. LP ownership delivers the slot event on
+LP IRQ 28; HP ownership delivers it on HP PLIC source 3. The two routes are
+mutually exclusive. Quiesce or reset blocks new EXT-H AXI addresses and STATUS
+does not report idle until the DMA and address gate have drained.
 
 `<retrosoc/hal/extension.h>` provides discovery, status, ownership, lifecycle,
 and EXT-H ACL operations. Register constants remain independently handwritten
