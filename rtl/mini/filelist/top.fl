@@ -1,10 +1,19 @@
 /top/apb4_if_bridge.sv
+/top/apb4_async_bridge.sv
 /top/gpio_pad_bridge.sv
+/top/memory_pad_mux.sv
 /top/ribp2rib.sv
 /top/rib2ribp.sv
 /top/rib2apb.sv
 /top/axi4_connector.sv
+/top/axi4_master_idle.sv
+/top/axi4_async_bridge.sv
+/top/axi4_address_gate.sv
+/top/axi4_upsizer_32to64.sv
+/top/axi4_id_prefix.sv
 /top/axi4_interconnect.sv
+/top/axi4_data_crossbar.sv
+/top/soc_data_plane.sv
 /top/axi4_error_slave.sv
 /top/rib2axi4.sv
 /top/ahbl2axi4.sv
@@ -28,6 +37,8 @@
 /top/axi4_bus.sv
 /top/rcu.sv
 /top/pll_rcu_controller.sv
+/top/clock_config_controller.sv
+/top/soc_clock_reset_subsystem.sv
 /top/mgmt_debug_reset.sv
 /top/mgmt_debug_wrapper.sv
 /top/mgmt_core_wrapper.sv
@@ -38,5 +49,8 @@
 /top/user_ip_design_template.sv
 /top/user_ip_top.sv
 /top/user_ip_wrapper.sv
+/top/extension_slot.sv
+/top/extension_compat.sv
+/top/extension_subsystem.sv
 /sva/rib_protocol_sva.sv
 /sva/axi4_interconnect_sva.sv

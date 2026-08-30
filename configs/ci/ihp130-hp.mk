@@ -1,4 +1,5 @@
 SOC                := MINI
+MINI_MODE          := PRODUCT
 PDK                := IHP130
 HAVE_PLL           := NO
 HAVE_HP            := YES

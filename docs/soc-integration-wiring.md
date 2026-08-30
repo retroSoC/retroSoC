@@ -29,6 +29,15 @@ protocol bridge. `apb4_if_bridge` only adapts `apb4_pure_if` to `apb4_if`, and
 `gpio_pad_bridge` only exposes the pad-side subset of `gpio_if`; neither
 adapter contains state.
 
+## Root clock pads
+
+`extclk_i_pad` is the 72 MHz HP safe/bypass source. `ref24clk_i_pad` is the
+independent, always-present 24 MHz AON and PLL-reference input. It replaces the
+conditional `XI/XO` pad pair. `audclk_i_pad` remains the independent audio
+functional clock. Simulation wrappers drive REF24 separately; the current FPGA
+wrapper aliases it to the board system clock and therefore does not validate
+the independent-clock physical contract.
+
 ## UART flow-control alternate functions
 
 UART0 keeps dedicated RX and TX package pads. Optional active-low hardware flow
@@ -101,9 +110,13 @@ allocated by `soc_topology.json`. Central DMA reaches the same AXI4 window as
 an ordinary MM-to-MM source or destination; the controller has no private DMA
 request channel.
 
-The version 1 Mini integration connects the PHY clock to the 72 MHz system
-clock. The Basilisk-style divide-by-two PHY therefore emits a 36 MHz external
-clock until a qualified independent PHY clock is integrated. The pin group
+Product integration instantiates QPI and OPI controllers together and places
+`memory_pad_mux` between both PHY interfaces and GPIO21-31. AON reset selects
+QPI; `MEM_PAD_CTRL` can select and lock the boot-time mode. The inactive side
+holds clock/chip-select/output-enable safe and its AXI aperture returns
+`SLVERR`. The exported stable memory root is 36 MHz, while completing the
+controller-engine migration to that root remains a documented implementation
+boundary. The pin group
 does not route CK# or a dedicated device reset. Software must select all
 eleven ALT0 functions before initialization, and a board must satisfy the
 selected device's reset and single-ended-clock requirements. See
@@ -123,9 +136,10 @@ system clock domain through Hazard3's APB async bridge. FPGA and RTL-testbench
 profiles tie the JTAG inputs inactive. The Verilator wrapper exposes
 them to the local remote-bitbang server used by the debug acceptance flow.
 
-## User IP GPIO ownership
+## MPW user-IP GPIO ownership
 
-The fixed user-IP integration does not add dedicated user GPIO pads. A user IP
+This section applies to `MINI_MODE=MPW`. Product EXT-L/EXT-H slots do not add
+dedicated user GPIO pads in the current manifest. An MPW user IP
 can instead drive any of the 32 rib GPIO pads through `user_gpio_if`. Software
 selects an owner per pin with `USER_SELECT` at management-window offset
 `0x03C`; clear selects the existing software/alternate GPIO path and set

@@ -28,7 +28,9 @@ class Emulator {
     int runSim();
 
   private:
+    void advanceClocks();
     unsigned long long cycle = 0;
+    unsigned int ref24Divider = 0U;
     chrono::system_clock::time_point startTime;
     Vretrosoc_top *dutPtr = nullptr;
     struct Args {

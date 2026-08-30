@@ -23,6 +23,7 @@ module apb4_system (
     input  logic                                  rst_aud_n_i,
     input  logic                                  debug_halted_i,
     axi4_if.slave                                 axi4,
+    axi4_if.master                                ext_h_axi4,
     pwm_if.dut                                    pwm,
     ps2_if.dut                                    ps2,
     input  logic [`USER_IPSEL_WIDTH-1:0]          ip_sel_i,
@@ -35,6 +36,7 @@ module apb4_system (
 
   localparam logic [7:0] ARCHINFO_MGMT_HART_COUNT = 8'd1;
   localparam logic [7:0] ARCHINFO_USER_CORE_COUNT = `USER_CORE_COUNT;
+  localparam logic [7:0] ARCHINFO_EXTENSION_COUNT = `RETROSOC_EXTENSION__COUNT;
   localparam logic [7:0] ARCHINFO_GPIO_COUNT = 8'd32;
   localparam logic [7:0] ARCHINFO_IRQ_COUNT = `SOC_IRQ_VECTOR_WIDTH;
   localparam logic [31:0] ARCHINFO_TOPOLOGY = {
@@ -48,7 +50,7 @@ module apb4_system (
 `endif
 `ifdef HAVE_SRAM_IF
   localparam logic ARCHINFO_HAVE_SRAM_IF = 1'b1;
-  localparam logic [31:0] ARCHINFO_SRAM_BYTES = 32'd131_072;
+  localparam logic [31:0] ARCHINFO_SRAM_BYTES = `SOC_ADDR_SRAM_SIZE;
 `else
   localparam logic ARCHINFO_HAVE_SRAM_IF = 1'b0;
   localparam logic [31:0] ARCHINFO_SRAM_BYTES = 32'd0;
@@ -60,7 +62,8 @@ module apb4_system (
 `endif
 
   localparam logic [31:0] ARCHINFO_FEATURES0 =
-      32'h0000_FFF8 | {31'd0, ARCHINFO_HAVE_PLL} |
+      32'h0000_FFF8 | ({24'd0, ARCHINFO_EXTENSION_COUNT} << 16) |
+      {31'd0, ARCHINFO_HAVE_PLL} |
       ({31'd0, ARCHINFO_HAVE_SRAM_IF} << 1) | ({31'd0, ARCHINFO_HAVE_SRAM_MACRO} << 2);
 
   logic        s_rng_entropy_en;
@@ -70,6 +73,11 @@ module apb4_system (
   logic        s_rng_entropy_qualified;
   logic        s_rng_entropy_fault;
   logic        s_rng_irq;
+  logic        s_ext_l_irq;
+  logic        s_ext_h_irq;
+`ifdef MINI_PRODUCT
+  logic s_unused_product_input;
+`endif
 
 `ifdef PDK_IHP130
   localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0201_0082;
@@ -190,12 +198,34 @@ axi42apb4_system u_axi42apb4_system (
       `include "apb4_system_connections.svh"
   );
 
+`ifdef MINI_PRODUCT
+  assign user_gpio.do_o         = '0;
+  assign user_gpio.oe_o         = '0;
+  assign s_unused_product_input = ^{ip_sel_i, user_gpio.di_i};
+
+  extension_compat u_extension_compat (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .apb4   (u_user_ip_apb4_if)
+  );
+`else
   user_ip_wrapper u_user_ip_wrapper (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .sel_i  (ip_sel_i),
       .gpio   (user_gpio),
       .apb    (u_user_ip_apb4_if)
+  );
+`endif
+
+  extension_subsystem u_extension_subsystem (
+      .clk_i      (clk_i),
+      .rst_n_i    (rst_n_i),
+      .ext_l_apb4 (u_ext_l_apb4_if),
+      .ext_h_apb4 (u_ext_h_apb4_if),
+      .ext_h_axi4 (ext_h_axi4),
+      .ext_l_irq_o(s_ext_l_irq),
+      .ext_h_irq_o(s_ext_h_irq)
   );
 
 endmodule

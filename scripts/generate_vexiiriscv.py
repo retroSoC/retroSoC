@@ -59,16 +59,23 @@ def generate(args: argparse.Namespace) -> None:
     output.mkdir(parents=True, exist_ok=True)
     command = [
         str(args.sbt),
+        "--batch",
         f'set Compile / unmanagedSourceDirectories += file("{scala_dir}")',
         f"runMain {GENERATOR_CLASS} {output}",
     ]
     environment = os.environ.copy()
-    java_home = environment.get("HOME")
-    if java_home:
-        inherited = environment.get("JAVA_TOOL_OPTIONS", "").strip()
-        environment["JAVA_TOOL_OPTIONS"] = (
-            f"{inherited} -Duser.home={java_home}".strip()
-        )
+    sbt_cache = root / ".cache/retrosoc/sbt"
+    sbt_cache.mkdir(parents=True, exist_ok=True)
+    inherited = environment.get("JAVA_TOOL_OPTIONS", "").strip()
+    java_options = (
+        f"-Duser.home={sbt_cache} "
+        f"-Dsbt.global.base={sbt_cache / 'global'} "
+        f"-Dsbt.boot.directory={sbt_cache / 'boot'} "
+        f"-Dsbt.ivy.home={sbt_cache / 'ivy'}"
+        " -Dsbt.server.autostart=false"
+    )
+    environment["JAVA_TOOL_OPTIONS"] = f"{inherited} {java_options}".strip()
+    environment["COURSIER_CACHE"] = str(sbt_cache / "coursier")
     subprocess.run(command, cwd=source, check=True, env=environment)
 
     generated = output / "vexii_riscv_hp_generated.v"

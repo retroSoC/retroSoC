@@ -5,6 +5,7 @@
       "kind": "tri_input",
       "direction": "inout",
       "ports": [
+        {"name": "ref24clk_i_pad", "signal": "s_ref24_clk"},
         {"name": "extclk_i_pad", "signal": "s_ext_clk"},
         {"name": "audclk_i_pad", "signal": "s_aud_clk"}
       ]
@@ -14,14 +15,6 @@
       "direction": "inout",
       "ports": [
         {"name": "ext_rst_n_i_pad", "signal": "s_ext_rst_n"}
-      ]
-    },
-    {
-      "kind": "xtal",
-      "feature": "HAVE_PLL",
-      "ports": [
-        {"name": "xi_i_pad", "direction": "input", "signal": "s_xtal_io", "peer": "xo_o_pad"},
-        {"name": "xo_o_pad", "direction": "output", "bind": false}
       ]
     },
     {
@@ -222,10 +215,10 @@
   "profiles": {
     "fpga_mini": {
       "bindings": {
+        "ref24clk_i_pad": "s_ref24_clk",
         "extclk_i_pad": "s_sys_clk",
         "audclk_i_pad": "s_aud_clk",
         "ext_rst_n_i_pad": "rst_n_i",
-        "xi_i_pad": "s_sys_clk",
         "jtag_tck_i_pad": "s_jtag_tck",
         "jtag_tms_i_pad": "s_jtag_tms",
         "jtag_tdi_i_pad": "s_jtag_tdi",
@@ -325,6 +318,7 @@
     },
     "verilator": {
       "bindings": {
+        "ref24clk_i_pad": "s_ref24_clk",
         "extclk_i_pad": "s_clk",
         "ext_rst_n_i_pad": "s_rst_n",
         "jtag_tck_i_pad": "s_jtag_tck",
@@ -411,10 +405,10 @@
     },
     "tb": {
       "bindings": {
+        "ref24clk_i_pad": "s_ref24_clk",
         "extclk_i_pad": "s_ext_clk",
         "audclk_i_pad": "s_aud_clk",
         "ext_rst_n_i_pad": "s_rst_n",
-        "xi_i_pad": "r_xtal_clk",
         "jtag_tck_i_pad": "s_jtag_tck",
         "jtag_tms_i_pad": "s_jtag_tms",
         "jtag_tdi_i_pad": "s_jtag_tdi",

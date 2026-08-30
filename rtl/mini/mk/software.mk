@@ -118,6 +118,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/spisd_math.c \
             $(ROOT_PATH)/crt/src/hal/spisd.c \
             $(ROOT_PATH)/crt/src/hal/xpi.c \
+            $(ROOT_PATH)/crt/src/hal/extension.c \
             $(ROOT_PATH)/crt/src/hal/user_ip.c \
             $(ROOT_PATH)/crt/src/hal/user_core.c
 
@@ -195,7 +196,7 @@ FORCE_VERSION:
 
 upd_ver_info: $(VERSION_HEADER)
 
-asm: $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP)
+asm: $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP)
 	@mkdir -p $(SW_BUILD_DIR)/asm
 	$(MAKE) -C $(ROOT_PATH)/app/asm OUT_DIR=$(SW_BUILD_DIR)/asm \
 		GENERATED_INCLUDE=$(MEMORY_MAP_C_DIR)
@@ -203,7 +204,7 @@ asm: $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
-$(FIRMWARE_ELF): $(MPW_VARIANT_STAMP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+$(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mini/mk/software.mk
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)

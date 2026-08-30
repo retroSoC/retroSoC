@@ -13,6 +13,7 @@ module sysctrl_tb;
   );
   sysctrl_if sysctrl ();
   pll_ctrl_if pll_ctrl ();
+  clock_ctrl_if clock_ctrl ();
 
   always #5 clk_i = ~clk_i;
 
@@ -25,7 +26,8 @@ module sysctrl_tb;
       .fault_reserved_i(fault_reserved_i),
       .apb4            (apb4),
       .sysctrl         (sysctrl),
-      .pll_ctrl        (pll_ctrl)
+      .pll_ctrl        (pll_ctrl),
+      .clock_ctrl      (clock_ctrl)
   );
 
   task automatic read_register(input logic [31:0] address, output logic [31:0] data);
@@ -46,6 +48,28 @@ module sysctrl_tb;
       data         = apb4.prdata;
       apb4.psel    = 1'b0;
       apb4.penable = 1'b0;
+    end
+  endtask
+
+  task automatic write_register_error(input logic [31:0] address, input logic [31:0] data);
+    begin
+      @(negedge clk_i);
+      apb4.paddr   = address;
+      apb4.pwdata  = data;
+      apb4.pstrb   = 4'hF;
+      apb4.pwrite  = 1'b1;
+      apb4.psel    = 1'b1;
+      apb4.penable = 1'b0;
+      @(negedge clk_i);
+      apb4.penable = 1'b1;
+      while (!apb4.pready) @(negedge clk_i);
+      if (apb4.pslverr !== 1'b1) begin
+        $fatal(1, "write %h error=%b expected=%b", address, apb4.pslverr, 1'b1);
+      end
+      apb4.psel    = 1'b0;
+      apb4.penable = 1'b0;
+      apb4.pwrite  = 1'b0;
+      apb4.pstrb   = '0;
     end
   endtask
 
@@ -102,6 +126,12 @@ module sysctrl_tb;
     pll_ctrl.rsp_error_i            = '0;
     pll_ctrl.rsp_valid_i            = 1'b0;
     pll_ctrl.capable_i              = 1'b0;
+    clock_ctrl.req_ready_i          = 1'b1;
+    clock_ctrl.rsp_data_i           = '0;
+    clock_ctrl.rsp_valid_i          = 1'b0;
+    clock_ctrl.current_i            = '0;
+    clock_ctrl.fault_i              = '0;
+    clock_ctrl.memory_i             = 32'h0000_0005;
     repeat (2) @(posedge clk_i);
     rst_n_i = 1'b1;
 
@@ -156,24 +186,15 @@ module sysctrl_tb;
     if (read_data !== 32'd151) $fatal(1, "USB2 performance snapshot was not recorded");
 
     read_register(32'h1000_B020, read_data);
-    if (read_data !== 32'h0000_000F) $fatal(1, "user cores were not held in reset");
-    write_register(32'h1000_B000, 32'h0000_0004);
+    if (read_data !== 32'hFFFF_FFFF) $fatal(1, "retired user cores were not held in reset");
     read_register(32'h1000_B024, read_data);
-    if ((read_data & 32'h0000_083F) !== 32'h0000_0800) begin
-      $fatal(1, "out-of-range user core selection was accepted");
-    end
-    write_register(32'h1000_B024, 32'h0000_0800);
-    write_register(32'h1000_B000, 32'h0000_0001);
-    write_register(32'h1000_B020, 32'h0000_000D);
+    if (read_data !== 32'h0000_0200) $fatal(1, "retired user-core status was not idle");
+    write_register_error(32'h1000_B000, 32'h0000_0001);
+    write_register_error(32'h1000_B004, 32'h0000_0001);
+    write_register_error(32'h1000_B020, 32'hFFFF_FFFE);
+    write_register_error(32'h1000_B024, 32'h0000_0800);
     read_register(32'h1000_B024, read_data);
-    if ((read_data & 32'h0000_0300) !== 32'h0000_0300 || (read_data & 32'h1F) != 1) begin
-      $fatal(1, "user core start state was not recorded");
-    end
-    write_register(32'h1000_B020, 32'h0000_000F);
-    read_register(32'h1000_B024, read_data);
-    if ((read_data & 32'h0000_0300) !== 32'h0000_0200) begin
-      $fatal(1, "user core stop state was not recorded");
-    end
+    if (read_data !== 32'h0000_0A00) $fatal(1, "retired user-core write fault was not sticky");
 
     read_register(32'h1000_B084, read_data);
     if (read_data !== 32'h0000_0000) begin

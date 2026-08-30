@@ -45,8 +45,9 @@ def test_sysctrl_registers_lifecycle_faults_and_wake(tmp_path: Path) -> None:
     source_list = tmp_path / "sysctrl.fl"
     source_list.write_text(
         "\n".join(
-            [
-                "+define+SV_ASSRT_DISABLE",
+                [
+                    "+define+SV_ASSRT_DISABLE",
+                    "+define+MINI_PRODUCT",
                 f"+incdir+{generated / 'rtl'}",
                 f"+incdir+{generated / 'user_extensions' / 'rtl'}",
                 f"+incdir+{ROOT / 'rtl/mini/top'}",
@@ -58,7 +59,8 @@ def test_sysctrl_registers_lifecycle_faults_and_wake(tmp_path: Path) -> None:
                 str(common / "interface/apb4_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "cdc/cdc_sync.sv"),
-                str(PERIPHERAL / "pll_ctrl_if.sv"),
+                    str(PERIPHERAL / "pll_ctrl_if.sv"),
+                    str(PERIPHERAL / "clock_ctrl_if.sv"),
                 str(PERIPHERAL / "sysctrl_if.sv"),
                 str(PERIPHERAL / "sysctrl_define.svh"),
                 str(PERIPHERAL / "sysctrl_reg.sv"),

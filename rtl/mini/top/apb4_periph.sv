@@ -41,6 +41,7 @@ module apb4_periph (
     axi4_if.master                                usb2_axi4,
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
+    clock_ctrl_if.sysctrl                         clock_ctrl,
     apb4_if.master                                sdram_cfg,
     apb4_if.master                                sram_cfg,
     dvp_if.dut                                    dvp,
@@ -357,7 +358,8 @@ axi4_stream_if #(
       .fault_reserved_i(fault_reserved_i),
       .apb4            (u_sysctrl_apb4_if),
       .sysctrl         (sysctrl),
-      .pll_ctrl        (pll_ctrl)
+      .pll_ctrl        (pll_ctrl),
+      .clock_ctrl      (clock_ctrl)
   );
 
   apb4_clint u_apb4_clint (

@@ -16,9 +16,8 @@ the root README and subsystem guides.
   register protocol and software quiesce contract.
 - [hazard3-debug.md](hazard3-debug.md) defines the management Hazard3 JTAG
   Debug Module integration, reset boundary, and Verilator/OpenOCD/GDB flow.
-- [lp-hp-architecture.md](lp-hp-architecture.md) defines the implemented
-  Hazard3 LP/VexiiRiscv HP topology, Linux boot ABI, MVP evidence, and
-  commercial-alignment roadmap.
+- [lp-hp-architecture.md](lp-hp-architecture.md) defines the current Mini
+  product AON/LP/HP/PCLK, AXI64 data-plane, memory-pad, and extension contract.
 - [coremark.md](coremark.md) defines the SRAM-resident Hazard3 CoreMark quick
   measurement, optional standard hardware run, and structured result format.
 - [soc-family-positioning.md](soc-family-positioning.md) defines the planned
@@ -47,15 +46,17 @@ the root README and subsystem guides.
   timing, FIFO, interrupt, DMA, and integration contracts.
 - [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,
   counting modes, interrupt, debug-freeze, HAL, and verification contracts.
-- [ip/sysctrl.md](ip/sysctrl.md) defines the SystemCtrl register ABI, user-core
-  lifecycle, PLL/fault/performance/RTC/test contracts, HAL, and verification.
+- [ip/sysctrl.md](ip/sysctrl.md) defines the SystemCtrl compatibility,
+  clock/pad/fault/performance/RTC/test contracts, HAL, and verification.
 - [ip/hp-platform.md](ip/hp-platform.md) defines the experimental HP PLIC and
   LP/HP mailbox register, interrupt, software, and verification contracts.
 - [ip/onchip-sram.md](ip/onchip-sram.md) defines the configurable native-AXI4
   SRAM architecture, APB capability ABI, technology mapping, verification, and
   reliability roadmap.
-- [ip/user-ip.md](ip/user-ip.md) defines the selectable 4 KiB user-IP window,
-  generic HAL, extension-owned register ABI, and verification contract.
+- [ip/user-ip.md](ip/user-ip.md) defines the MPW and product-compatibility
+  behavior of the legacy 4 KiB user-IP window.
+- [ip/extensions.md](ip/extensions.md) defines product EXT-L/EXT-H fixed
+  windows, lifecycle, capability, ACL, fault, and HAL contracts.
 - [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed
   timebase, RV32 access rules, interrupt behavior, and verification contract.
 - [ip/gpio.md](ip/gpio.md) defines the GPIO dual-window ABI, pad ownership,

@@ -45,10 +45,10 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     sides = {name: config[f"PAD_{name.upper()}"] for name in module.SIDE_ORDER}
     placed = [instance for side in module.SIDE_ORDER for instance in sides[side]]
 
-    assert len(placed) == 191
+    assert len(placed) == 192
     assert len(placed) == len(set(placed))
     assert {side: len(instances) for side, instances in sides.items()} == {
-        "south": 32,
+        "south": 33,
         "east": 52,
         "north": 48,
         "west": 59,
@@ -58,6 +58,7 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     assert sum(item.startswith("iovdd_pads[") for item in placed) == 16
     assert sum(item.startswith("iovss_pads[") for item in placed) == 16
     assert "u_extclk_i_pad.u_sg13g2_IOPadIn" in sides["south"]
+    assert "u_ref24clk_i_pad.u_sg13g2_IOPadIn" in sides["south"]
     assert "u_gpio_31_io_pad.u_sg13g2_IOPadInOut4mA" in sides["east"]
     assert "u_sdram_dq15_io_pad.u_sg13g2_IOPadInOut4mA" in sides["west"]
     assert config["DIE_AREA"] == [0, 0, 8000, 8000]

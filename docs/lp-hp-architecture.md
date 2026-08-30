@@ -1,216 +1,150 @@
-# LP/HP Architecture and Delivery Contract
+# Mini Product LP/HP Architecture
 
-## Status
+## Product contract
 
-The committed `configs/ci/ihp130-hp.mk` profile is the executable MVP for the
-retroSoC asymmetric LP/HP architecture. Hazard3 is the low-performance control
-core (LP, hart 0) and a generated RV32 VexiiRiscv instance is the
-high-performance Linux core (HP, hart 1). Both run from the fixed 72 MHz system
-clock in this profile.
+Every committed `MINI_MODE=PRODUCT` profile instantiates two fixed harts:
 
-The profile proves integration, build, and lint readiness. A repeatable Linux
-boot, the 2.5x performance gate, physical timing closure, and hardware
-qualification remain release gates until their evidence is recorded. This MVP
-must not be described as cache coherent, hot-reset safe, secure boot capable,
-or power isolated.
-
-The commercial reference analysis and product positioning are in
-[SoC Family Product Positioning](soc-family-positioning.md). The implementation
-reuses the most relevant patterns from heterogeneous Linux/MCU devices:
-
-- an always-available management core owns application-core release;
-- Linux receives standard CLINT/PLIC privilege interrupts and a dedicated
-  console;
-- a mailbox is the versioned cross-core control path;
-- boot artifacts and generated CPU RTL have locked, reviewable provenance;
-- performance claims are machine checked from measurements, not inferred from
-  CPU configuration.
-
-The MVP deliberately avoids presenting the HP core as an ordinary C0-C3 user
-core. Those legacy slots remain available and software selected. HP has a
-fixed hart ID, reset vector, bus master, interrupt topology, and Linux ABI.
-
-## Compute and Memory Topology
-
-| Property | LP | HP |
+| Property | LP management | HP application |
 | --- | --- | --- |
 | Core | Hazard3 | generated VexiiRiscv |
 | Hart ID | 0 | 1 |
-| ISA | RV32IM plus existing CSR/debug profile | RV32IMAFDC, S/U mode, Sv32 |
-| Clock | 72 MHz | 72 MHz |
-| Primary role | boot, lifecycle, diagnostics, recovery | OpenSBI and Linux |
-| Reset | root reset controller | SYSCTRL release plus HP debug reset request |
-| JTAG | shared pads, reset default owner | selectable only while HP is held reset |
-| Main-memory view | 32-bit AXI4 | three AXI64 planes converted to one 32-bit AXI4 master |
+| ISA | profile RV32I/RV32IM | RV32IMAFDC, S/U mode, Sv32 |
+| Reset clock | REF24 at 24 MHz | external 72 MHz safe clock |
+| Role | boot, control, diagnostics, recovery | high-throughput application/Linux |
+| JTAG | reset owner | selectable while HP is held in reset |
 
-HP instruction-cache, data-cache, and uncached MMIO ports each pass through a
-64-to-32 adapter. The adapters preserve IDs and responses, split or combine
-64-bit beats, honor backpressure, and track lanes across AXI burst types. The
-transaction mux prioritizes uncached MMIO, then data cache, then instruction
-cache and permits one transaction at a time. A Common `axi4_regslice` separates
-the HP compatibility plane from the legacy system fabric.
+The product generator reports `USER_CORE_COUNT=0`, `USER_IP_COUNT=0`, and
+`EXTENSION_COUNT=2`. The former C0-C3 cores and selectable user-IP designs are
+available only through `configs/cluster/mini-mpw.mk`; they are not part of the
+product address, interrupt, or lifecycle ABI.
 
-The current system interconnect accepts up to sixteen 32-bit beats. Therefore
-an HP 64-bit burst is limited to eight source beats. The generated 16 KiB,
-four-way instruction and data caches use eight-beat refill/writeback geometry.
-This is a compatibility architecture for the current 64 MiB SDRAM, not the
-native 64-bit memory plane required for a later performance product.
+There is no hardware cache coherency. Firmware and operating systems must use
+explicit ownership, fences, and cache maintenance for shared buffers.
 
-There is no hardware cache coherency between LP, HP, DMA, or user cores. LP
-loads HP memory before releasing HP, when HP caches are cold. Any later shared
-buffer protocol must define ownership transfer and explicit cache maintenance.
-Linux must not map device registers as cacheable.
+## Clock and reset domains
 
-## Platform ABI
+`soc_clock_reset_subsystem` is the product clock/reset implementation behind
+the compatibility `rcu` wrapper.
 
-| Block | Address | Purpose |
+| Domain | Root | Implemented policy |
 | --- | --- | --- |
-| HP ACLINT | `0x02000000` | hart 1 machine software/timer interrupts, 1 MHz timebase |
-| HP PLIC | `0x0C000000` | 31 usable sources and M/S contexts |
-| UART1 | `0x10018000` | dedicated HP/SBI console pads; DMA request remains available |
-| DMA | `0x1000A000` | LP-managed TCD/data movement; channel 6 reserved for HP boot |
-| HP mailbox | `0x10019000` | command/event, argument, sequence, and dual doorbells |
-| SDRAM | `0x38000000`-`0x3BFFFFFF` | shared 64 MiB Linux main memory |
+| AON | dedicated REF24 input | fixed 24 MHz; PLL/clock/pad control and 1 MHz tick |
+| LP | REF24 or divided HP | reset default REF24; AUTO/MANUAL division never exceeds 72 MHz |
+| HP | EXT72 or PLL | reset default EXT72; generic model supports 72-240 MHz in 24 MHz steps |
+| PCLK | LP generated clock | `/1`, `/2`, `/4`, `/8`, `/16`; APB register banks |
+| memory | EXT72 `/2` | stable 36 MHz root exported for protocol-engine migration |
+| audio | dedicated input | independent audio/RTC/watchdog engine clock |
+| DVP, ULPI, JTAG | external functional clocks | dedicated CDC and reset contracts |
 
-PLIC source 1 is UART1 and source 2 is the HP mailbox. The LP interrupt map
-retains existing assignments and adds mailbox IRQ 25 and UART1 IRQ 26. The
-PLIC implements the priority, enable, pending, threshold, claim, and complete
-registers needed by the Linux SiFive PLIC driver; it is not an AIA, MSI, or
-virtualization interrupt controller.
+Root selection uses Common `safe_clock_mux`; integer division uses Common clock
+dividers. The PCLK divider is reset from AON so generated-clock startup cannot
+depend on its own downstream reset. `clock_reset_domains.json` records reset
+synchronizers and the approved CDC primitives.
 
-SYSCTRL adds `HP_CTRL` at `0xA4`, `HP_STATUS` at `0xA8`, and `DEBUG_SELECT` at
-`0xAC`. Reset defaults keep HP asserted and JTAG connected to LP. Selecting HP
-debug while HP is running is rejected by hardware. The MVP release bit does
-not drain transactions before reasserting reset, so software must not use it
-as a safe hot-reset interface.
+`pll_rcu_controller` runs from AON and implements validate, quiesce, LP park,
+EXT72 safe selection, PLL apply, lock-low observation, lock qualification,
+PLL selection, LP restore, response, and fail-safe states. It blocks new HP
+traffic while switching and falls back to EXT72 on timeout or runtime lock
+loss. Fault state is sticky until explicitly cleared.
 
-The mailbox RTL and `<retrosoc/hal/hp_mailbox.h>` are handwritten definitions.
-`tests/test_hp_boot_bundle.py` checks their register offsets against each other.
-Sequence zero means no message. Writers publish code and argument before the
-nonzero sequence and doorbell; readers use the sequence as the validity token.
+The generic functional PLL maps selectors 0-7 to 72, 96, 120, 144, 168, 192,
+216, and 240 MHz from REF24. The ICS55 hard-macro wrapper accepts selector 0
+only; other selectors fail safe. This is a digital integration contract, not
+PLL jitter, PVT, or clock-tree signoff.
 
-## Generated Core Contract
+## Control plane
 
-`make CONFIG=configs/ci/ihp130-hp.mk vexii-generate` runs the locked Scala
-configuration in `scripts/vexiiriscv/GenerateRetroSocHp.scala`. It verifies the
-source revision from `dependencies/dependencies.lock.json` and writes RTL,
-filelist, source status, and SHA-256 provenance below the selected
-`build/<variant>/generated/vexiiriscv/` directory. Generated VexiiRiscv RTL is
-never Git tracked.
+Hazard3 keeps a direct 32-bit control path:
 
-The fixed configuration enables dual issue, late ALU, full bypassing, branch
-prediction, PMP, performance counters, debug triggers, RV32IMAFDC, Sv32, and
-separate 16 KiB instruction/data caches. Changing any of these is a new
-`HP_CONFIG` and requires a separate profile, software ABI review, synthesis,
-timing, and benchmark evidence.
-
-## Boot Flow
-
-The `hp_boot` LP application is linked wholly into the 32 KiB on-chip SRAM so
-loading OpenSBI at the SDRAM base cannot overwrite running management code.
-The `hp-bundle` target combines LP firmware and the four HP artifacts in the
-16 MiB boot flash:
-
-| Artifact | Load address | Maximum |
-| --- | --- | --- |
-| OpenSBI `fw_jump.bin` | `0x38000000` | 512 KiB |
-| `retrosoc_hp.dtb` | `0x38080000` | 64 KiB |
-| Linux `Image` | `0x38400000` | 12 MiB |
-| `rootfs.cpio.gz` | `0x39000000` | 8 MiB |
-
-The bundle starts at flash offset `0x00100000`. Its 128-byte v1 header contains
-four whitelisted entries with type, flash offset, load address, byte count,
-CRC32, and required flags. LP validates the header, flash and SDRAM bounds,
-fixed destinations, sizes, alignment, and every payload CRC. It copies with
-32-bit writes and full readback for control payloads; large payloads use full
-flash CRC validation without destination rereads. It issues a memory fence
-before releasing HP.
-CRC detects accidental corruption; it is not authentication. DMA V2 channel 6
-loads each entry with a 64-byte TCD and hardware CRC32. If DMA validation or
-transfer fails, LP falls back to the existing CPU copy path before releasing
-HP. Descriptor and payload memory are explicitly non-coherent; LP publishes
-them with `fence rw,rw` and HP starts only after ownership transfer.
-
-OpenSBI is built from an external repo-owned platform directory without
-patching its locked source. The platform maps OpenSBI hart index 0 to hardware
-hart ID 1, registers the HP ACLINT, and provides the SBI debug console through
-UART1. OpenSBI starts at `0x38000000` and directly enters Linux at
-`0x38400000`, passing the DTB at `0x38080000`; U-Boot is not part of the MVP.
-
-Buildroot creates the RV32 glibc toolchain and a small initramfs. Linux starts
-from `tinyconfig` and merges `app/ports/linux/linux/retrosoc_hp.config` so the
-Image stays within the fixed flash budget. Its final init script prints
-`retroSoC HP Linux ready` and posts mailbox event 1 with argument `0x4C4E5801`.
-LP then writes the normal sticky `TEST_STATUS` pass result, giving simulation a
-deterministic terminal verdict.
-
-```sh
-make setup-hp-linux
-make CONFIG=configs/ci/ihp130-hp.mk hp-linux
-make CONFIG=configs/ci/ihp130-hp.mk hp-bundle
-make CONFIG=configs/ci/ihp130-hp.mk SIMU=VERILATOR hp-linux-sim
+```text
+Hazard3 -> AHB-Lite adapter -> LP AXI32 control fabric
+        -> LP/PCLK bridge -> APB4 peripheral and system register banks
 ```
 
-`hp-linux-sim` enables the Verilator-only slot-0 read backend and applies a
-7200-second wall-time limit. It reads the same flash image through DPI but
-retains the LP firmware, TCD, DMA, AXI, XPI memory-map checks, CRC, SDRAM, HP
-release, OpenSBI, Linux, and final Buildroot init script. The target requires
-the userspace message, the mailbox acknowledgement, and `SIM_TEST_PASS code=0`;
-completing only the image copy is not a pass. `HP_BOOT_RELEASED` remains a
-diagnostic but is not a machine marker because LP and HP UART characters may
-interleave after release. The generic `sim` target and `hp-smoke-sim` continue
-to use the pin-level QSPI model. The fast backend accepts only the reset slot-0
-`0xEB` read sequence and reports an XPI sequence error for other slots, writes,
-or LUT programs.
+HP uncached MMIO is downsized to AXI32 and crosses HP to LP through
+`axi4_async_bridge`. Product access control rejects HP writes to root SYSCTRL,
+watchdog, and GPIO administration windows with `SLVERR`; Hazard3 retains full
+management access.
 
-The setup flow locks VexiiRiscv, OpenSBI, Linux, and Buildroot by full Git
-revision. Interrupted HP source fetches are repaired in place on retry.
+The LP control fabric remains the compatibility path for Hazard3 boot and
+external-memory accesses. HP, DMA, and accelerator payload traffic uses the
+native data plane described below. Moving the remaining controller protocol
+engines from LP/PCLK to the exported memory root is an explicit follow-up; the
+present RTL does not claim that migration or its physical CDC signoff.
 
-## Performance and Verification
+## Native AXI64 data plane
 
-LP and HP claims use the same 72 MHz frequency and CoreMark mode. After both
-machine-readable reports exist, enforce the selected requirement with:
+`soc_data_plane` contains an 8-master, 6-target AXI64 crossbar. Read and write
+ownership are independent, so one target may read and write concurrently and
+different targets progress concurrently. Each direction permits one active
+transaction per master and per target; global IDs contain a fixed master
+prefix plus the source ID.
 
-```sh
-make hp-performance-check \
-  LP_COREMARK_REPORT=<lp-coremark.json> \
-  HP_COREMARK_REPORT=<hp-coremark.json>
-```
+| Master | Entry path |
+| --- | --- |
+| HP I-cache | native AXI64, ID prefix 0 |
+| HP D-cache | native AXI64, ID prefix 1 |
+| central DMA | PCLK-to-HP async bridge, AXI32-to-64 upsizer |
+| SDIO0 / SDIO1 | PCLK-to-HP async bridge, upsizer |
+| SPI-SD / USB2 | PCLK-to-HP async bridge, upsizer |
+| EXT-H | PCLK-to-HP AXI64 async bridge, ID prefix 7 |
 
-The gate writes `meta/lp-hp-performance.json` and requires HP CoreMark/MHz to
-be at least 2.5 times LP. An HP report must come from executed Linux, RTL
-simulation, FPGA, or silicon with its provenance retained. A predicted score
-is not acceptable evidence.
+Targets are SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, XPI/flash, and a
+finite-latency error slave. Current 32-bit memory frontends use AXI64-to-32
+downsizers followed by HP-to-LP async bridges. Inactive QPI/OPI windows route
+to `SLVERR`. HP I-cache, D-cache, and MMIO no longer share the retired
+`hp_axi4_mux3` path.
 
-Current directed verification covers the AXI downsizer, 8-master interconnect,
-mailbox, PLIC, topology generation, pad ring, generated-source boundary,
-bundle CRC/layout, HAL/RTL offset parity, HP firmware build, RTL style, and
-full-design Verilator lint. Release qualification additionally requires a
-successful Linux boot log, both CoreMark reports, IHP130 synthesis/STA, and the
-normal PR regression.
+All async AXI channels use Common `cdc_fifo` storage and a reset barrier. A
+single-ended reset aborts the link epoch rather than returning a stale response.
 
-## Commercial Alignment Roadmap
+## Memory and shared pads
 
-The next phases are ordered by risk and dependency:
+Product profiles instantiate on-chip SRAM, SDRAM, QPI, OPI/HyperBus, and XPI
+integration paths. The on-chip SRAM product size is 32 KiB. ICS55 uses two
+16 KiB `SRAM_4096X32_M8_BW` macros; committed ICS55 regression profiles keep
+the SRAM interface/macro disabled until commercial models are supplied locally.
 
-1. Complete repeatable Linux boot and native UART/mailbox kernel drivers;
-   retain boot-time and error-injection evidence.
-2. Replace the serialized compatibility plane with a native burst-capable
-   memory path, add HP QoS/wait counters, and close the 2.5x performance gate.
-3. Add lifecycle handshakes that block new HP requests, drain accepted traffic,
-   request Linux shutdown, apply cache maintenance, and only then reset.
-4. Add clock gating, power isolation/retention controls, CDC/RDC signoff, and
-   measured state-transition latency and energy.
-5. Add immutable boot ROM, signature verification, rollback protection, OTP
-   key/lifecycle state, debug authentication/disable, firewall regions, and a
-   documented threat model. CRC32 is then retained only for transport errors.
-6. Add RAS evidence: ECC/parity coverage, watchdog escalation, bus timeout,
-   machine-check logging, fault injection, and recovery/reset campaigns.
-7. Add production DFT, MBIST, trace, PMU event definitions, coverage closure,
-   software update/recovery, long-duration stress, and PVT/package signoff.
+QPI and OPI share GPIO21-31 through `memory_pad_mux`. AON retains
+`MEM_PAD_MODE` and its lock across LP/HP changes. Reset selects QPI to preserve
+the established boot flow. The inactive controller receives safe input values,
+its clock/chip-select/output-enable path is inactive, and mapped data access
+returns `SLVERR`. The first product implementation permits boot-time selection
+only, not a live protocol switch.
 
-Avoid claiming a commercial big.LITTLE-style coherent cluster: this design is
-asymmetric multiprocessing with independent software roles. Also avoid direct
-LP reset of a running HP, shared cacheable buffers without an ownership
-protocol, Linux control over root lifecycle registers, and per-PDK frequency
-claims derived only from RTL simulation.
+## Extensions
+
+Product Mini has fixed control windows:
+
+| Slot | Window | IRQ | Data path |
+| --- | --- | --- | --- |
+| EXT-L 0 | `0x20008000-0x20008FFF` | LP IRQ 27 | APB4 only |
+| EXT-H 1 | `0x20009000-0x20009FFF` | LP IRQ 28 | APB4 plus AXI64 master/stream capability |
+
+Each slot exposes identification, version, capability, owner/lock, lifecycle,
+status, timeout, first fault, fault address, and request count. EXT-H adds read
+and write ACL ranges. The current reference slot is idle and issues no data
+traffic; its interface and isolation contract are live. Software discovers it
+through `<retrosoc/hal/extension.h>`.
+
+The old `APB4_USER_IP` window is a read-only compatibility/capability window.
+Product writes to `CORESEL`, `IPSEL`, `USER_CORE_RESET`, or
+`USER_CORE_STATUS` return APB `PSLVERR`; legacy HAL mutators return
+`RS_ENOTSUP`.
+
+## Configuration and local ICS55 models
+
+Committed `configs/ci/ics55.mk` and `configs/cluster/ics55.mk` deliberately set
+both PLL and SRAM to `NO`. `configs/local/ics55.example.mk` documents an
+ignored local profile with PLL, SRAM interface, SRAM macro, and 32 KiB enabled.
+`LOCAL_RTL_FILES` injects commercial SRAM and PLL simulation models into only
+that generated variant filelist. `configs/local/*.mk` and `*.sv` are ignored,
+so absolute commercial paths are never tracked.
+
+## Evidence boundary
+
+Behavioral RTL, firmware, directed PLL/SYSCTRL tests, manifest parity, and
+quality checks are the evidence for this implementation. It must not be called
+cache coherent, power isolated, hot-reset safe, timing closed, CDC/RDC signed
+off, or silicon-qualified. Synthesis, netlist simulation, STA, MMMC, clock-tree,
+DFT, and analogue PLL qualification are separate gates.

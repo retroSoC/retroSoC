@@ -17,7 +17,9 @@ SOC_TOPOLOGY_SCRIPT        := $(RTL_PATH)/integration/generate_soc_topology.py
 SOC_TOPOLOGY_DIR           := $(VARIANT_ROOT)/generated/soc_topology
 SOC_TOPOLOGY_STAMP         := $(SOC_TOPOLOGY_DIR)/.stamp
 SOC_TOPOLOGY_FILELIST      := $(SOC_TOPOLOGY_DIR)/soc_topology.fl
-USER_EXTENSIONS_SOURCE     := $(RTL_PATH)/integration/user_extensions.json
+PRODUCT_EXTENSIONS_SOURCE  := $(RTL_PATH)/integration/user_extensions.json
+LEGACY_EXTENSIONS_SOURCE   := $(RTL_PATH)/integration/user_extensions_legacy.json
+USER_EXTENSIONS_SOURCE     := $(if $(filter MPW,$(MINI_MODE)),$(LEGACY_EXTENSIONS_SOURCE),$(PRODUCT_EXTENSIONS_SOURCE))
 USER_EXTENSIONS_SCRIPT     := $(RTL_PATH)/integration/generate_user_extensions.py
 USER_EXTENSIONS_DIR        := $(VARIANT_ROOT)/generated/user_extensions
 USER_EXTENSIONS_STAMP      := $(USER_EXTENSIONS_DIR)/.stamp
@@ -33,7 +35,9 @@ CLOCK_RESET_DOMAINS_SCRIPT := $(ROOT_PATH)/scripts/check_clock_reset_domains.py
 MPW_STAMP                  := $(CACHE_ROOT)/stamps/mpw-$(LOCK_DIGEST).prepared
 MPW_OUTPUT_DIR             := $(VARIANT_ROOT)/generated/mpw/$(SIM_TOOL_NAME)
 MPW_VARIANT_STAMP          := $(MPW_OUTPUT_DIR)/.stamp
+MPW_VARIANT_DEP            := $(if $(filter MPW,$(MINI_MODE)),$(MPW_VARIANT_STAMP))
 FILELIST_STAMP             := $(GENERATED_FL_DIR)/.stamp
+PDK_LOCAL_FILELIST         := $(GENERATED_FL_DIR)/pdk_local.fl
 FILELIST_TEMPLATES         := $(sort $(wildcard $(ROOT_PATH)/rtl/filelist/pdk_*.fl) \
                       $(wildcard $(RTL_PATH)/filelist/*.fl) $(RTL_PATH)/lint.msg)
 
@@ -53,9 +57,10 @@ $(MPW_STAMP):
 	@mkdir -p $(@D)
 	@touch $@
 
-$(MPW_VARIANT_STAMP): $(MPW_STAMP) $(USER_EXTENSIONS_SOURCE) $(ROOT_PATH)/scripts/generate_mpw.py
+$(MPW_VARIANT_STAMP): $(MPW_STAMP) $(LEGACY_EXTENSIONS_SOURCE) $(ROOT_PATH)/scripts/generate_mpw.py
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/generate_mpw.py --root $(ROOT_PATH) \
 		--output $(MPW_OUTPUT_DIR) \
+		--extensions $(LEGACY_EXTENSIONS_SOURCE) \
 		--lock-file $(CACHE_ROOT)/locks/mpw.lock
 	@mkdir -p $(@D)
 	@touch $@
@@ -120,12 +125,15 @@ archinfo-metadata: $(ARCHINFO_METADATA_STAMP)
 check-clock-reset-domains:
 	$(FLOW_PYTHON) $(CLOCK_RESET_DOMAINS_SCRIPT) --map $(CLOCK_RESET_DOMAINS_SOURCE) --root $(ROOT_PATH)
 
-$(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py \
+$(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py $(LOCAL_RTL_FILES) \
 	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) \
-	$(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_STAMP))
+	$(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) \
+	$(if $(filter MPW,$(MINI_MODE)),$(MPW_VARIANT_STAMP)) \
+	$(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_STAMP))
 	$(FLOW_PYTHON) $(RTL_PATH)/script/generate_filelist.py \
 		--output-dir $(GENERATED_FL_DIR) \
 		--incdir $(ARCHINFO_METADATA_DIR) \
+		$(foreach source,$(LOCAL_RTL_FILES),--local-rtl-file $(source)) \
 		$(foreach define,$(DEF_LIST),--define $(define))
 	@touch $@
 
@@ -152,6 +160,7 @@ else ifeq ($(PDK), GF180)
 endif
 
 NET_FILELISTS := $(PDK_FILELIST) \
+	$(PDK_LOCAL_FILELIST) \
 	$(GENERATED_FL_DIR)/def.fl \
 	$(GENERATED_FL_DIR)/sys_def.fl \
 	$(GENERATED_FL_DIR)/commonip.fl \
@@ -165,8 +174,8 @@ RTL_FILELISTS := $(MEMORY_MAP_FILELIST) $(SOC_TOPOLOGY_FILELIST) $(USER_EXTENSIO
 	$(GENERATED_FL_DIR)/ip.fl \
 	$(GENERATED_FL_DIR)/tech.fl \
 	$(GENERATED_FL_DIR)/core_hazard3.fl \
-	$(MPW_OUTPUT_DIR)/core/core.fl \
-	$(MPW_OUTPUT_DIR)/ip/ip.fl \
+	$(if $(filter MPW,$(MINI_MODE)),$(MPW_OUTPUT_DIR)/core/core.fl,$(USER_EXTENSIONS_DIR)/legacy_core.fl) \
+	$(if $(filter MPW,$(MINI_MODE)),$(MPW_OUTPUT_DIR)/ip/ip.fl,$(USER_EXTENSIONS_DIR)/legacy_ip.fl) \
 	$(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_DIR)/vexiiriscv.fl) \
 	$(GENERATED_FL_DIR)/top.fl
 RTL_FLIST     := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))

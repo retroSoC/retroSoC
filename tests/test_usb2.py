@@ -129,8 +129,9 @@ def test_usb2_packet_ram_ecc_with_ics55_macros() -> None:
         [
             "rtl/managed/clusterip/common/rtl/utils/register.sv",
             "rtl/managed/clusterip/common/rtl/base/ecc_secded.sv",
-            "tests/rtl/ics55_sram_4096x32_stub.sv",
-            "rtl/tech/tc_usb2_packet_ram.sv",
+                "tests/rtl/ics55_sram_4096x32_stub.sv",
+                "rtl/tech/tc_sram.sv",
+                "rtl/tech/tc_usb2_packet_ram.sv",
             "rtl/ip/usb/usb2_packet_ram.sv",
             "tests/rtl/usb2_packet_ram_tb.sv",
         ],

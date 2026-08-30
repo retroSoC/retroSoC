@@ -143,11 +143,16 @@ rs_status_t rs_sysctrl_get_core_select(uint8_t *core_id) {
 }
 
 rs_status_t rs_sysctrl_set_core_select(uint8_t core_id) {
+#if !RS_SOC_HAS_USER_CORES
+    (void)core_id;
+    return RS_ENOTSUP;
+#else
     if ((uint32_t)core_id >= RS_SOC_USER_CORE_COUNT) {
         return RS_EINVAL;
     }
     *rs_sysctrl_register(RS_SYSCTRL_CORESEL_OFFSET) = (uint32_t)core_id;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_get_ip_select(uint8_t *ip_id) {
@@ -159,11 +164,16 @@ rs_status_t rs_sysctrl_get_ip_select(uint8_t *ip_id) {
 }
 
 rs_status_t rs_sysctrl_set_ip_select(uint8_t ip_id) {
+#if !RS_SOC_HAS_USER_IP_MUX
+    (void)ip_id;
+    return RS_ENOTSUP;
+#else
     if ((uint32_t)ip_id > RS_SOC_USER_IP_COUNT) {
         return RS_EINVAL;
     }
     *rs_sysctrl_register(RS_SYSCTRL_IPSEL_OFFSET) = (uint32_t)ip_id;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_get_user_core_status(rs_sysctrl_user_core_status_t *status) {
@@ -183,13 +193,22 @@ rs_status_t rs_sysctrl_get_user_core_status(rs_sysctrl_user_core_status_t *statu
 }
 
 rs_status_t rs_sysctrl_set_user_core_reset(uint32_t reset_mask) {
+#if !RS_SOC_HAS_USER_CORES
+    (void)reset_mask;
+    return RS_ENOTSUP;
+#else
     *rs_sysctrl_register(RS_SYSCTRL_USER_CORE_RESET_OFFSET) = reset_mask;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_clear_user_core_config_error(void) {
+#if !RS_SOC_HAS_USER_CORES
+    return RS_ENOTSUP;
+#else
     *rs_sysctrl_register(RS_SYSCTRL_USER_CORE_STATUS_OFFSET) = RS_SYSCTRL_USER_CORE_CONFIG_ERROR;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_get_pll_config(uint8_t *selection) {

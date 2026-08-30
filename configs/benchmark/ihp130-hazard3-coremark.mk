@@ -1,9 +1,12 @@
 SOC               := MINI
+MINI_MODE         := PRODUCT
 PDK               := IHP130
 HAVE_PLL          := NO
 HAVE_SRAM_IF      := YES
 HAVE_SRAM_MACRO   := YES
-SRAM_SIZE_KIB     := 128
+SRAM_SIZE_KIB     := 32
+HAVE_HP           := YES
+HP_CONFIG         := rv32imafdc_max
 PDK_BEHAV         := YES
 HAVE_SVA          := NO
 EXT_CLK_HZ        := 72000000

@@ -14,14 +14,24 @@
 
 module retrosoc (
     // verilog_format: off -- preserve reviewed column alignment
-    input  logic        clk_i,
-    input  logic        rst_n_i,
+    input  logic        clk_lp_i,
+    input  logic        rst_lp_n_i,
+    input  logic        clk_hp_i,
+    input  logic        rst_hp_n_i,
+    input  logic        clk_pclk_i,
+    input  logic        rst_pclk_n_i,
+    input  logic        clk_mem_i,
+    input  logic        rst_mem_n_i,
+    input  logic [1:0]  mem_pad_mode_i,
+    input  logic        mem_pad_lock_i,
+    input  logic        hp_block_i,
     input  logic        clk_aud_i,
     input  logic        rst_aud_n_i,
     input  logic        clk_ulpi_i,
     input  logic        clkdiv4_i,
     input  logic        timebase_tick_i,
     pll_ctrl_if.sysctrl pll_ctrl,
+    clock_ctrl_if.sysctrl clock_ctrl,
     gpio_if.soc_pad      gpio,
     input  logic         uart_rx_i,
     output logic         uart_tx_o,
@@ -39,35 +49,74 @@ module retrosoc (
     output logic         wdg_reset_req_o,
     output logic         test_done_o,
     output logic         test_pass_o,
-    output logic [7:0]   test_code_o
+    output logic [7:0]   test_code_o,
+    output logic         hp_idle_o,
+    output logic         pclk_idle_o
     // verilog_format: on
 );
 
   // verilog_format: off -- preserve reviewed column alignment
   // Generated fabric links use the common 32-bit AXI4 contract.
   `include "soc_fabric_interfaces.svh"
-  apb4_if u_sdram_cfg_if (.pclk(clk_i), .presetn(rst_n_i));
-  apb4_if u_sram_cfg_if (.pclk(clk_i), .presetn(rst_n_i));
+  apb4_if u_sdram_cfg_if (.pclk(clk_lp_i), .presetn(rst_lp_n_i));
+  apb4_if u_sram_cfg_if (.pclk(clk_lp_i), .presetn(rst_lp_n_i));
+  apb4_if u_sdram_cfg_pclk_if (.pclk(clk_pclk_i), .presetn(rst_pclk_n_i));
+  apb4_if u_sram_cfg_pclk_if (.pclk(clk_pclk_i), .presetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_sram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+      u_cfg_pclk_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_sdram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+      u_system_pclk_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_psram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+      u_sram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_xpi_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+      u_sdram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_spisd_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+      u_psram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_opipsram_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+      u_xpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_hp_axi4_if (.aclk(clk_i), .aresetn(rst_n_i));
+      u_spisd_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_opipsram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_psram_pclk_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_xpi_pclk_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_opipsram_pclk_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_ext_h_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_hp_icache_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_hp_dcache_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_hp_mmio_wide_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_hp_mmio_hp_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_hp_mmio_gated_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_hp_mmio_lp_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_data_sram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_data_sdram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_data_qpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_data_opi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_data_xpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_idle_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   user_gpio_if u_user_gpio_if ();
   // ip interface
   gpio_if     u_gpio_if     ();
   uart_if     u_uart0_if    ();
   uart_if     u_uart1_if    ();
   psram_if    u_psram_if    ();
+  psram_if    u_psram_raw_if ();
   spi_if      u_spisd_if    ();
   i2c_if      u_i2c0_if     ();
   i2s_if      u_i2s_if      ();
@@ -76,6 +125,7 @@ module retrosoc (
   dvp_if      u_dvp_if      ();
   sdio_if     u_sdio0_if    ();
   opipsram_if u_opipsram_if ();
+  opipsram_if u_opipsram_raw_if ();
   i2c_if      u_i2c1_if     ();
   pwm_if      u_pwm_if      ();
   ps2_if      u_ps2_if      ();
@@ -106,17 +156,27 @@ module retrosoc (
   logic [                          63:0] s_perf_psram_wait;
   logic [                          63:0] s_perf_flash_wait;
   logic [                          63:0] s_perf_opipsram_wait;
-  logic [     `SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
-  logic                                  s_rtc_wake;
-  logic                                  s_hp_jtag_tdo;
-  logic                                  s_hp_debug_reset_req;
-  logic                                  s_lp_jtag_tdo;
-  logic                                  s_debug_hp_sel_jtag;
-  logic [                          63:0] s_hp_time;
-  logic                                  s_hp_timer_irq;
-  logic                                  s_hp_software_irq;
-  logic                                  s_hp_machine_external_irq;
-  logic                                  s_hp_supervisor_external_irq;
+`ifndef MINI_PRODUCT
+  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
+`else
+  logic s_unused_product_legacy;
+`endif
+  logic        s_rtc_wake;
+  logic        s_hp_jtag_tdo;
+  logic        s_hp_debug_reset_req;
+  logic        s_lp_jtag_tdo;
+  logic        s_debug_hp_sel_jtag;
+  logic [63:0] s_hp_time;
+  logic        s_hp_timer_irq;
+  logic        s_hp_software_irq;
+  logic        s_hp_machine_external_irq;
+  logic        s_hp_supervisor_external_irq;
+  logic        s_data_plane_idle;
+  logic        s_hp_mmio_idle;
+  logic [ 3:0] s_pclk_pending_d;
+  logic [ 3:0] s_pclk_pending_q;
+  logic [ 1:0] s_mem_pad_mode_lp;
+  logic        s_mem_pad_lock_lp;
 
 `ifdef HAVE_SRAM_IF
   localparam bit SramPresent = 1'b1;
@@ -155,6 +215,33 @@ module retrosoc (
   assign u_uart1_if.rx_i = uart1_rx_i;
   assign uart1_tx_o      = u_uart1_if.tx_o;
 
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(2)
+  ) u_mem_pad_mode_sync (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .dat_i  (mem_pad_mode_i),
+      .dat_o  (s_mem_pad_mode_lp)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_mem_pad_lock_sync (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .dat_i  (mem_pad_lock_i),
+      .dat_o  (s_mem_pad_lock_lp)
+  );
+
+  memory_pad_mux u_memory_pad_mux (
+      .mode_i        (s_mem_pad_mode_lp),
+      .controller_qpi(u_psram_raw_if),
+      .pads_qpi      (u_psram_if),
+      .controller_opi(u_opipsram_raw_if),
+      .pads_opi      (u_opipsram_if)
+  );
+
   gpio_pad_bridge u_gpio_pad_bridge (
       .inner(u_gpio_if),
       .outer(gpio)
@@ -167,8 +254,8 @@ module retrosoc (
   `include "soc_gpio_alt_bindings.svh"
 
 core_wrapper u_core_wrapper (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
+      .clk_i         (clk_lp_i),
+      .rst_n_i       (rst_lp_n_i),
       `include "soc_mgmt_core_wrapper_fabric.svh"
       .irq_i         (s_irq),
       .jtag_tck_i    (jtag_tck_i),
@@ -191,20 +278,48 @@ core_wrapper u_core_wrapper (
 
   assign jtag_tdo_o = s_debug_hp_sel_jtag ? s_hp_jtag_tdo : s_lp_jtag_tdo;
 
+`ifdef MINI_PRODUCT
+  assign s_unused_product_legacy = ^{
+    u_sysctrl_if.core_sel_o, u_sysctrl_if.core_reset_o, u_sysctrl_if.user_bus_enable_o
+  };
+
+  axi4_master_idle u_retired_user_master (.axi4(u_user_axi4_if));
+  axi4_error_slave u_retired_user_slave (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .axi4   (u_user_axi4_if)
+  );
+`else
   assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq & `SOC_USER_IRQ_MASK) : '0;
+
   user_core_top u_user_core_top (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
+      .clk_i       (clk_lp_i),
+      .rst_n_i     (rst_lp_n_i),
       .irq_i       (s_user_irq),
       .sel_i       (u_sysctrl_if.core_sel_o),
       `include "soc_user_core_fabric.svh"
       .core_reset_i(u_sysctrl_if.core_reset_o)
   );
 
+  assign u_ext_h_wide_axi4_if.awready = 1'b0;
+  assign u_ext_h_wide_axi4_if.wready  = 1'b0;
+  assign u_ext_h_wide_axi4_if.bid     = '0;
+  assign u_ext_h_wide_axi4_if.bresp   = '0;
+  assign u_ext_h_wide_axi4_if.buser   = '0;
+  assign u_ext_h_wide_axi4_if.bvalid  = 1'b0;
+  assign u_ext_h_wide_axi4_if.arready = 1'b0;
+  assign u_ext_h_wide_axi4_if.rid     = '0;
+  assign u_ext_h_wide_axi4_if.rdata   = '0;
+  assign u_ext_h_wide_axi4_if.rresp   = '0;
+  assign u_ext_h_wide_axi4_if.rlast   = 1'b0;
+  assign u_ext_h_wide_axi4_if.ruser   = '0;
+  assign u_ext_h_wide_axi4_if.rvalid  = 1'b0;
+`endif
+
 `ifdef HAVE_HP
   hp_subsystem u_hp_subsystem (
-      .clk_i                    (clk_i),
-      .rst_n_i                  (rst_n_i),
+      .clk_i                    (clk_hp_i),
+      .rst_n_i                  (rst_hp_n_i),
       .core_reset_i             (!u_sysctrl_if.hp_release_o || s_hp_debug_reset_req),
       .time_i                   (s_hp_time),
       .timer_irq_i              (s_hp_timer_irq),
@@ -217,50 +332,179 @@ core_wrapper u_core_wrapper (
       .jtag_trst_n_i            (jtag_trst_n_i),
       .jtag_tdo_o               (s_hp_jtag_tdo),
       .debug_reset_req_o        (s_hp_debug_reset_req),
-      .axi4                     (u_hp_axi4_if)
+      .icache_axi4              (u_hp_icache_axi4_if),
+      .dcache_axi4              (u_hp_dcache_axi4_if),
+      .mmio_axi4                (u_hp_mmio_wide_axi4_if)
   );
 `else
-  assign u_hp_axi4_if.awid     = '0;
-  assign u_hp_axi4_if.awaddr   = '0;
-  assign u_hp_axi4_if.awlen    = '0;
-  assign u_hp_axi4_if.awsize   = '0;
-  assign u_hp_axi4_if.awburst  = '0;
-  assign u_hp_axi4_if.awlock   = '0;
-  assign u_hp_axi4_if.awcache  = '0;
-  assign u_hp_axi4_if.awprot   = '0;
-  assign u_hp_axi4_if.awqos    = '0;
-  assign u_hp_axi4_if.awregion = '0;
-  assign u_hp_axi4_if.awuser   = '0;
-  assign u_hp_axi4_if.awvalid  = 1'b0;
-  assign u_hp_axi4_if.wdata    = '0;
-  assign u_hp_axi4_if.wstrb    = '0;
-  assign u_hp_axi4_if.wlast    = 1'b0;
-  assign u_hp_axi4_if.wuser    = '0;
-  assign u_hp_axi4_if.wvalid   = 1'b0;
-  assign u_hp_axi4_if.bready   = 1'b1;
-  assign u_hp_axi4_if.arid     = '0;
-  assign u_hp_axi4_if.araddr   = '0;
-  assign u_hp_axi4_if.arlen    = '0;
-  assign u_hp_axi4_if.arsize   = '0;
-  assign u_hp_axi4_if.arburst  = '0;
-  assign u_hp_axi4_if.arlock   = '0;
-  assign u_hp_axi4_if.arcache  = '0;
-  assign u_hp_axi4_if.arprot   = '0;
-  assign u_hp_axi4_if.arqos    = '0;
-  assign u_hp_axi4_if.arregion = '0;
-  assign u_hp_axi4_if.aruser   = '0;
-  assign u_hp_axi4_if.arvalid  = 1'b0;
-  assign u_hp_axi4_if.rready   = 1'b1;
-  assign s_hp_jtag_tdo         = 1'b0;
-  assign s_hp_debug_reset_req  = 1'b0;
+  axi4_master_idle u_hp_icache_idle (.axi4(u_hp_icache_axi4_if));
+  axi4_master_idle u_hp_dcache_idle (.axi4(u_hp_dcache_axi4_if));
+  axi4_master_idle u_hp_mmio_idle (.axi4(u_hp_mmio_wide_axi4_if));
+  assign s_hp_jtag_tdo        = 1'b0;
+  assign s_hp_debug_reset_req = 1'b0;
 `endif
+
+  axi4_downsizer_64to32 u_hp_mmio_downsizer (
+      .clk_i  (clk_hp_i),
+      .rst_n_i(rst_hp_n_i),
+      .wide   (u_hp_mmio_wide_axi4_if),
+      .narrow (u_hp_mmio_hp_axi4_if)
+  );
+
+  axi4_async_bridge #(
+      .DataWidth(32),
+      .IdWidth  (1)
+  ) u_hp_mmio_cdc (
+      .src_clk_i  (clk_hp_i),
+      .src_rst_n_i(rst_hp_n_i),
+      .dst_clk_i  (clk_lp_i),
+      .dst_rst_n_i(rst_lp_n_i),
+      .src_axi4   (u_hp_mmio_gated_axi4_if),
+      .dst_axi4   (u_hp_mmio_lp_axi4_if)
+  );
+
+  axi4_address_gate u_hp_mmio_gate (
+      .clk_i      (clk_hp_i),
+      .rst_n_i    (rst_hp_n_i),
+      .block_new_i(hp_block_i),
+      .source     (u_hp_mmio_hp_axi4_if),
+      .sink       (u_hp_mmio_gated_axi4_if),
+      .idle_o     (s_hp_mmio_idle)
+  );
+
+  soc_data_plane u_data_plane (
+      .clk_lp_i          (clk_lp_i),
+      .rst_lp_n_i        (rst_lp_n_i),
+      .clk_io_i          (clk_pclk_i),
+      .rst_io_n_i        (rst_pclk_n_i),
+      .clk_hp_i          (clk_hp_i),
+      .rst_hp_n_i        (rst_hp_n_i),
+      .block_new_i       (hp_block_i),
+      .mem_pad_mode_i    (s_mem_pad_mode_lp),
+      .hp_icache_axi4    (u_hp_icache_axi4_if),
+      .hp_dcache_axi4    (u_hp_dcache_axi4_if),
+      .dma_axi4          (u_dma_axi4_if),
+      .sdio0_axi4        (u_sdio0_axi4_if),
+      .sdio1_axi4        (u_sdio1_axi4_if),
+      .spisd_axi4        (u_spisd_axi4_if),
+      .usb2_axi4         (u_usb2_axi4_if),
+      .ext_h_axi4        (u_ext_h_wide_axi4_if),
+      .sram_gateway_axi4 (u_data_sram_axi4_if),
+      .sdram_gateway_axi4(u_data_sdram_axi4_if),
+      .qpi_gateway_axi4  (u_data_qpi_axi4_if),
+      .opi_gateway_axi4  (u_data_opi_axi4_if),
+      .xpi_gateway_axi4  (u_data_xpi_axi4_if),
+      .idle_o            (s_data_plane_idle)
+  );
+
+  axi4_master_idle u_idle_master (.axi4(u_idle_axi4_if));
+
+  axi4_async_bridge #(
+      .DataWidth(32),
+      .IdWidth  (1)
+  ) u_cfg_pclk_cdc (
+      .src_clk_i  (clk_lp_i),
+      .src_rst_n_i(rst_lp_n_i),
+      .dst_clk_i  (clk_pclk_i),
+      .dst_rst_n_i(rst_pclk_n_i),
+      .src_axi4   (u_cfg_axi4_if),
+      .dst_axi4   (u_cfg_pclk_axi4_if)
+  );
+  axi4_async_bridge #(
+      .DataWidth(32),
+      .IdWidth  (1)
+  ) u_system_pclk_cdc (
+      .src_clk_i  (clk_lp_i),
+      .src_rst_n_i(rst_lp_n_i),
+      .dst_clk_i  (clk_pclk_i),
+      .dst_rst_n_i(rst_pclk_n_i),
+      .src_axi4   (u_system_axi4_if),
+      .dst_axi4   (u_system_pclk_axi4_if)
+  );
+  axi4_async_bridge #(
+      .DataWidth(32),
+      .IdWidth  (1)
+  ) u_psram_target_cdc (
+      .src_clk_i  (clk_lp_i),
+      .src_rst_n_i(rst_lp_n_i),
+      .dst_clk_i  (clk_pclk_i),
+      .dst_rst_n_i(rst_pclk_n_i),
+      .src_axi4   (u_psram_axi4_if),
+      .dst_axi4   (u_psram_pclk_axi4_if)
+  );
+  axi4_async_bridge #(
+      .DataWidth(32),
+      .IdWidth  (1)
+  ) u_xpi_target_cdc (
+      .src_clk_i  (clk_lp_i),
+      .src_rst_n_i(rst_lp_n_i),
+      .dst_clk_i  (clk_pclk_i),
+      .dst_rst_n_i(rst_pclk_n_i),
+      .src_axi4   (u_xpi_axi4_if),
+      .dst_axi4   (u_xpi_pclk_axi4_if)
+  );
+  axi4_async_bridge #(
+      .DataWidth(32),
+      .IdWidth  (1)
+  ) u_opi_target_cdc (
+      .src_clk_i  (clk_lp_i),
+      .src_rst_n_i(rst_lp_n_i),
+      .dst_clk_i  (clk_pclk_i),
+      .dst_rst_n_i(rst_pclk_n_i),
+      .src_axi4   (u_opipsram_axi4_if),
+      .dst_axi4   (u_opipsram_pclk_axi4_if)
+  );
+  apb4_async_bridge u_sdram_cfg_cdc (
+      .src_clk_i  (clk_pclk_i),
+      .src_rst_n_i(rst_pclk_n_i),
+      .dst_clk_i  (clk_lp_i),
+      .dst_rst_n_i(rst_lp_n_i),
+      .src_apb4   (u_sdram_cfg_pclk_if),
+      .dst_apb4   (u_sdram_cfg_if)
+  );
+  apb4_async_bridge u_sram_cfg_cdc (
+      .src_clk_i  (clk_pclk_i),
+      .src_rst_n_i(rst_pclk_n_i),
+      .dst_clk_i  (clk_lp_i),
+      .dst_rst_n_i(rst_lp_n_i),
+      .src_apb4   (u_sram_cfg_pclk_if),
+      .dst_apb4   (u_sram_cfg_if)
+  );
+
+  always_comb begin
+    s_pclk_pending_d = s_pclk_pending_q;
+    if (u_cfg_axi4_if.bvalid && u_cfg_axi4_if.bready) s_pclk_pending_d[0] = 1'b0;
+    if (u_cfg_axi4_if.awvalid && u_cfg_axi4_if.awready) s_pclk_pending_d[0] = 1'b1;
+    if (u_cfg_axi4_if.rvalid && u_cfg_axi4_if.rready && u_cfg_axi4_if.rlast)
+      s_pclk_pending_d[1] = 1'b0;
+    if (u_cfg_axi4_if.arvalid && u_cfg_axi4_if.arready) s_pclk_pending_d[1] = 1'b1;
+    if (u_system_axi4_if.bvalid && u_system_axi4_if.bready) s_pclk_pending_d[2] = 1'b0;
+    if (u_system_axi4_if.awvalid && u_system_axi4_if.awready) s_pclk_pending_d[2] = 1'b1;
+    if (u_system_axi4_if.rvalid && u_system_axi4_if.rready && u_system_axi4_if.rlast)
+      s_pclk_pending_d[3] = 1'b0;
+    if (u_system_axi4_if.arvalid && u_system_axi4_if.arready) s_pclk_pending_d[3] = 1'b1;
+  end
+
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_pclk_pending_dffr (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .dat_i  (s_pclk_pending_d),
+      .dat_o  (s_pclk_pending_q)
+  );
+
+  assign hp_idle_o = s_data_plane_idle && s_hp_mmio_idle;
+  assign pclk_idle_o = !(|s_pclk_pending_q) && !u_cfg_axi4_if.awvalid &&
+                       !u_cfg_axi4_if.arvalid && !u_system_axi4_if.awvalid &&
+                       !u_system_axi4_if.arvalid;
 
   onchip_ram #(
       .Present    (SramPresent),
       .CapacityKiB(`SOC_ADDR_SRAM_SIZE >> 10)
   ) u_onchip_ram (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
+      .clk_i        (clk_lp_i),
+      .rst_n_i      (rst_lp_n_i),
       .perf_enable_i(s_perf_en),
       .perf_clear_i (s_perf_clear),
       .mem_axi4     (u_sram_axi4_if),
@@ -268,17 +512,25 @@ core_wrapper u_core_wrapper (
   );
 
   axi4_bus u_bus (
-      .clk_i                  (clk_i),
-      .rst_n_i                (rst_n_i),
+      .clk_i                  (clk_lp_i),
+      .rst_n_i                (rst_lp_n_i),
+      .mgmt_axi4              (u_mgmt_axi4_if),
+      .user_axi4              (u_data_sram_axi4_if),
+      .dma_axi4               (u_data_sdram_axi4_if),
+      .sdio0_axi4             (u_data_qpi_axi4_if),
+      .sdio1_axi4             (u_data_xpi_axi4_if),
+      .usb2_axi4              (u_hp_mmio_lp_axi4_if),
+      .spisd_axi4             (u_data_opi_axi4_if),
+      .hp_axi4                (u_idle_axi4_if),
+      .cfg_axi4               (u_cfg_axi4_if),
+      .system_axi4            (u_system_axi4_if),
       .sram_axi4              (u_sram_axi4_if),
-      .user_bus_enable_i      (u_sysctrl_if.user_bus_enable_o),
+      .user_bus_enable_i      (1'b1),
       .user_bus_idle_o        (u_sysctrl_if.user_bus_idle_i),
-      `include "soc_bus_fabric.svh"
-      .hp_axi4                (u_hp_axi4_if),
+      .mem_pad_mode_i         (s_mem_pad_mode_lp),
       .sdram_axi4             (u_sdram_axi4_if),
       .psram_axi4             (u_psram_axi4_if),
       .xpi_axi4               (u_xpi_axi4_if),
-      .spisd_axi4             (u_spisd_axi4_if),
       .opipsram_axi4          (u_opipsram_axi4_if),
       .perf_enable_i          (s_perf_en),
       .perf_clear_i           (s_perf_clear),
@@ -304,23 +556,27 @@ core_wrapper u_core_wrapper (
   );
 
   apb4_periph u_apb4_periph (
-      .clk_i                       (clk_i),
-      .rst_n_i                     (rst_n_i),
+      .clk_i                       (clk_pclk_i),
+      .rst_n_i                     (rst_pclk_n_i),
       .clk_aud_i                   (clk_aud_i),
       .rst_aud_n_i                 (rst_aud_n_i),
       .clk_ulpi_i                  (clk_ulpi_i),
       .debug_halted_i              (s_mgmt_debug_halted),
       .timebase_tick_i             (timebase_tick_i),
-      `include "apb4_periph_fabric.svh"
-      .psram_axi4                  (u_psram_axi4_if),
-      .xpi_axi4                    (u_xpi_axi4_if),
+      .cfg_axi4                    (u_cfg_pclk_axi4_if),
+      .dma_axi4                    (u_dma_axi4_if),
+      .sdio0_axi4                  (u_sdio0_axi4_if),
+      .sdio1_axi4                  (u_sdio1_axi4_if),
+      .usb2_axi4                   (u_usb2_axi4_if),
+      .psram_axi4                  (u_psram_pclk_axi4_if),
+      .xpi_axi4                    (u_xpi_pclk_axi4_if),
       .spisd_axi4                  (u_spisd_axi4_if),
-      .opipsram_axi4               (u_opipsram_axi4_if),
+      .opipsram_axi4               (u_opipsram_pclk_axi4_if),
       .gpio                        (u_gpio_if),
       .user_gpio                   (u_user_gpio_if),
       .uart                        (u_uart0_if),
       .uart1                       (u_uart1_if),
-      .psram                       (u_psram_if),
+      .psram                       (u_psram_raw_if),
       .spisd                       (u_spisd_if),
       .i2c0                        (u_i2c0_if),
       .i2s                         (u_i2s_if),
@@ -328,13 +584,14 @@ core_wrapper u_core_wrapper (
       .xpi                         (xpi),
       .sysctrl                     (u_sysctrl_if),
       .pll_ctrl                    (pll_ctrl),
-      .sdram_cfg                   (u_sdram_cfg_if),
-      .sram_cfg                    (u_sram_cfg_if),
+      .clock_ctrl                  (clock_ctrl),
+      .sdram_cfg                   (u_sdram_cfg_pclk_if),
+      .sram_cfg                    (u_sram_cfg_pclk_if),
       .dvp                         (u_dvp_if),
       .sdio0                       (u_sdio0_if),
       .sdio1                       (sdio1),
       .usb2                        (usb2),
-      .opipsram                    (u_opipsram_if),
+      .opipsram                    (u_opipsram_raw_if),
       .i2c1                        (u_i2c1_if),
       .fault_valid_i               (s_bus_fault_valid),
       .fault_addr_i                (s_bus_fault_addr),
@@ -349,20 +606,21 @@ core_wrapper u_core_wrapper (
   );
 
   axi4_sdram u_axi4_sdram (
-      .clk_i   (clk_i),
-      .rst_n_i (rst_n_i),
+      .clk_i   (clk_lp_i),
+      .rst_n_i (rst_lp_n_i),
       .axi4    (u_sdram_axi4_if),
       .cfg_apb4(u_sdram_cfg_if),
       .sdram   (sdram)
   );
 
   apb4_system u_apb4_system (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
+      .clk_i          (clk_pclk_i),
+      .rst_n_i        (rst_pclk_n_i),
       .clk_aud_i      (clk_aud_i),
       .rst_aud_n_i    (rst_aud_n_i),
       .debug_halted_i (s_mgmt_debug_halted),
-      `include "apb4_system_fabric.svh"
+      .ext_h_axi4     (u_ext_h_wide_axi4_if),
+      .axi4           (u_system_pclk_axi4_if),
       .pwm            (u_pwm_if),
       .ps2            (u_ps2_if),
       .ip_sel_i       (u_sysctrl_if.ip_sel_o),
@@ -371,5 +629,10 @@ core_wrapper u_core_wrapper (
       .wdg_reset_req_o(wdg_reset_req_o),
       .irq_o          (s_apb4_system_irq)
   );
+
+  logic [3:0] s_unused_domain_inputs;
+  assign s_unused_domain_inputs = {
+    clk_pclk_i, rst_pclk_n_i, clk_mem_i, rst_mem_n_i ^ s_mem_pad_lock_lp
+  };
 
 endmodule

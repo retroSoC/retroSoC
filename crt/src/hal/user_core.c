@@ -4,9 +4,11 @@
 #include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/user_core.h>
 
+#if RS_SOC_HAS_USER_CORES
 static uint32_t rs_user_core_reset_mask_all(void) {
     return UINT32_MAX >> (UINT32_C(32) - RS_SOC_USER_CORE_COUNT);
 }
+#endif
 
 rs_status_t rs_user_core_get_status(rs_user_core_status_t *status) {
     rs_sysctrl_user_core_status_t sysctrl_status;
@@ -27,6 +29,10 @@ rs_status_t rs_user_core_get_status(rs_user_core_status_t *status) {
 }
 
 rs_status_t rs_user_core_stop(rs_timeout_t timeout) {
+#if !RS_SOC_HAS_USER_CORES
+    (void)timeout;
+    return RS_ENOTSUP;
+#else
     rs_user_core_status_t status;
 
     if (rs_sysctrl_set_user_core_reset(rs_user_core_reset_mask_all()) != RS_OK) {
@@ -44,9 +50,15 @@ rs_status_t rs_user_core_stop(rs_timeout_t timeout) {
         }
     }
     return RS_ETIMEOUT;
+#endif
 }
 
 rs_status_t rs_user_core_start(uint8_t core_id, rs_timeout_t timeout) {
+#if !RS_SOC_HAS_USER_CORES
+    (void)core_id;
+    (void)timeout;
+    return RS_ENOTSUP;
+#else
     rs_user_core_status_t status;
     rs_status_t result;
     uint32_t reset_mask;
@@ -84,11 +96,18 @@ rs_status_t rs_user_core_start(uint8_t core_id, rs_timeout_t timeout) {
         }
     }
     return RS_ETIMEOUT;
+#endif
 }
 
 rs_status_t rs_user_core_reset(uint8_t core_id, rs_timeout_t timeout) {
+#if !RS_SOC_HAS_USER_CORES
+    (void)core_id;
+    (void)timeout;
+    return RS_ENOTSUP;
+#else
     if ((uint32_t)core_id >= RS_SOC_USER_CORE_COUNT) {
         return RS_EINVAL;
     }
     return rs_user_core_stop(timeout);
+#endif
 }

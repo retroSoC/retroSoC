@@ -56,7 +56,10 @@ def expand_lint_config(content: str) -> str:
 
 
 def generate_all(
-    output_dir: Path, defines: list[str], incdirs: list[Path] | None = None
+    output_dir: Path,
+    defines: list[str],
+    incdirs: list[Path] | None = None,
+    local_rtl_files: list[Path] | None = None,
 ) -> list[Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     generated: list[Path] = []
@@ -99,6 +102,16 @@ def generate_all(
     include_tokens = [f"+incdir+{path.resolve()}" for path in (incdirs or [])]
     atomic_write(def_file, " ".join([*include_tokens, *defines]) + "\n")
     generated.append(def_file)
+
+    local_filelist = output_dir / "pdk_local.fl"
+    local_sources = [path.resolve() for path in (local_rtl_files or [])]
+    missing = [path for path in local_sources if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            "local RTL source(s) not found: " + ", ".join(str(path) for path in missing)
+        )
+    atomic_write(local_filelist, "".join(f"{path}\n" for path in local_sources))
+    generated.append(local_filelist)
     return generated
 
 
@@ -111,6 +124,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--incdir", action="append", default=[], type=Path, help="generated include directory"
     )
+    parser.add_argument(
+        "--local-rtl-file",
+        action="append",
+        default=[],
+        type=Path,
+        help="local untracked PDK simulation model",
+    )
     return parser.parse_args()
 
 
@@ -119,7 +139,9 @@ def main() -> int:
     invalid = [item for item in args.define if not item.startswith("+define+")]
     if invalid:
         raise SystemExit(f"invalid define token(s): {' '.join(invalid)}")
-    generated = generate_all(args.output_dir.resolve(), args.define, args.incdir)
+    generated = generate_all(
+        args.output_dir.resolve(), args.define, args.incdir, args.local_rtl_file
+    )
     print(f"generated {len(generated)} files in {args.output_dir.resolve()}")
     return 0
 

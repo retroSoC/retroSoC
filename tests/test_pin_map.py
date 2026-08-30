@@ -57,10 +57,12 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert "inout wire VDD," not in core_ports
     assert "inout extclk_i_pad," in core_ports
     assert "assign s_ext_clk = extclk_i_pad;" in core_bindings
+    assert "inout ref24clk_i_pad," in core_ports
+    assert "assign s_ref24_clk = ref24clk_i_pad;" in core_bindings
     assert "assign gpio_0_io_pad = u_gpio_if.oe_o[0] ? u_gpio_if.do_o[0] : 1'bz;" in core_bindings
     assert "assign u_sdram_if.dq_i[15] = sdram_dq15_io_pad;" in core_bindings
     assert "inout extclk_i_pad," in ports
-    assert "input xi_i_pad," in ports
+    assert "inout ref24clk_i_pad," in ports
     assert "inout sdram_dq15_io_pad" in ports
     assert "inout jtag_tck_i_pad" in ports
     assert "inout jtag_trst_n_i_pad" in ports
@@ -75,6 +77,7 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert "HAVE_DEBUG" not in ports
     assert "HAVE_DEBUG" not in pads
     assert "u_gpio_31_io_pad" in pads
+    assert "tc_io_in_pad u_ref24clk_i_pad" in pads
     assert "u_sdram_dq15_io_pad" in pads
     assert "u_sdio1_clk_o_pad" in pads
     assert "tc_io_out_pad u_sdio1_clk_o_pad" in pads
@@ -100,6 +103,7 @@ def test_pin_map_generates_asic_and_platform_bindings(tmp_path: Path) -> None:
     assert ".gpio_24_io_pad(s_psram_dat1)" in testbench
     assert testbench.count(".gpio_24_io_pad(") == 1
     assert ".sdram_clk_o_pad(s_sdram_clk)" in verilator
+    assert ".ref24clk_i_pad(s_ref24_clk)" in verilator
     assert ".sdram_dq15_io_pad(s_sdram_dq[15])" in verilator
     assert ".jtag_tck_i_pad(s_jtag_tck)" in verilator
     assert ".jtag_tdo_o_pad(s_jtag_tdo)" in verilator
@@ -161,7 +165,15 @@ def test_pin_map_rejects_unknown_profile_pad(tmp_path: Path) -> None:
 
 def test_pin_map_requires_explicit_bidirectional_peripheral_signals(tmp_path: Path) -> None:
     document = json.loads(PIN_MAP.read_text(encoding="utf-8"))
-    document["pads"][8]["ports"][0].pop("output_enable")
+    bidirectional_pad = next(
+        pad
+        for pad in document["pads"]
+        if any("output_enable" in port for port in pad.get("ports", []))
+    )
+    bidirectional_port = next(
+        port for port in bidirectional_pad["ports"] if "output_enable" in port
+    )
+    bidirectional_port.pop("output_enable")
     invalid_map = tmp_path / "missing-bidir-signal.json"
     invalid_map.write_text(json.dumps(document), encoding="utf-8")
 

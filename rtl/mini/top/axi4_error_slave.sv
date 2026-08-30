@@ -12,7 +12,8 @@
 `include "axi4_define.svh"
 
 module axi4_error_slave #(
-    parameter logic [1:0] Response = `AXI4_RESP_DECODE_ERROR
+    parameter logic        [1:0] Response = `AXI4_RESP_DECODE_ERROR,
+    parameter int unsigned       IdWidth  = 1
 ) (
     input logic         clk_i,
     input logic         rst_n_i,
@@ -24,7 +25,7 @@ module axi4_error_slave #(
   localparam logic [1:0] FSM_READ_RESP = 2'd3;
 
   logic [1:0] s_fsm_d, s_fsm_q;
-  logic s_id_d, s_id_q;
+  logic [IdWidth-1:0] s_id_d, s_id_q;
   logic [7:0] s_len_d, s_len_q;
   logic [7:0] s_beat_d, s_beat_q;
 
@@ -94,7 +95,7 @@ module axi4_error_slave #(
       .dat_o  (s_fsm_q)
   );
   dffr #(
-      .DATA_WIDTH(1)
+      .DATA_WIDTH(IdWidth)
   ) u_id_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

@@ -87,28 +87,24 @@ module tc_usb2_packet_ram (
   logic [31:0] s_data_read;
   logic [31:0] s_ecc_read;
 
-  SRAM_4096X32_M8_BW u_data (
-      .A   (addr_i),
-      .D   (data_i[31:0]),
-      .CEB (~cs_i),
-      .CLK (clk_i),
-      .GWEB(~write_i),
-      .WEB (32'd0),
-      .MARE(1'b0),
-      .MAR (4'd0),
-      .Q   (s_data_read)
+  tc_sram_4096x32 u_data (
+      .clk_i (clk_i),
+      .cs_i  (cs_i),
+      .addr_i(addr_i),
+      .data_i(data_i[31:0]),
+      .mask_i(4'hF),
+      .wren_i(write_i),
+      .data_o(s_data_read)
   );
 
-  SRAM_4096X32_M8_BW u_ecc (
-      .A   (addr_i),
-      .D   ({24'd0, data_i[39:32]}),
-      .CEB (~cs_i),
-      .CLK (clk_i),
-      .GWEB(~write_i),
-      .WEB ({24'hFF_FFFF, 8'h00}),
-      .MARE(1'b0),
-      .MAR (4'd0),
-      .Q   (s_ecc_read)
+  tc_sram_4096x32 u_ecc (
+      .clk_i (clk_i),
+      .cs_i  (cs_i),
+      .addr_i(addr_i),
+      .data_i({24'd0, data_i[39:32]}),
+      .mask_i(4'b0001),
+      .wren_i(write_i),
+      .data_o(s_ecc_read)
   );
 
   assign data_o = {s_ecc_read[7:0], s_data_read};

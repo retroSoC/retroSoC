@@ -24,7 +24,14 @@ module onchip_ram #(
     apb4_if.slave        cfg_apb4
     // verilog_format: on
 );
-  localparam int unsigned NumBanks = CapacityKiB / 4;
+`ifdef PDK_ICS55
+  localparam int unsigned TechnologyBankKiB = 16;
+  localparam int unsigned TechnologyAddrWidth = 12;
+`else
+  localparam int unsigned TechnologyBankKiB = 4;
+  localparam int unsigned TechnologyAddrWidth = 10;
+`endif
+  localparam int unsigned NumBanks = CapacityKiB / TechnologyBankKiB;
   localparam int unsigned BankIndexWidth = (NumBanks > 1) ? $clog2(NumBanks) : 1;
   localparam logic [31:0] MemoryEnd = `SOC_ADDR_SRAM_BASE + 32'(CapacityKiB * 1024) - 1'b1;
 
@@ -366,7 +373,19 @@ module onchip_ram #(
     logic [BankIndexWidth-1:0] s_read_bank_q;
 
     for (genvar bank = 0; bank < NumBanks; bank++) begin : gen_bank
-      assign s_bank_cs[bank] = (s_mem_read || s_mem_write) && (s_mem_word_addr[14:10] == 5'(bank));
+      assign s_bank_cs[bank] = (s_mem_read || s_mem_write) &&
+          (s_mem_word_addr[14:TechnologyAddrWidth] == (15 - TechnologyAddrWidth)'(bank));
+`ifdef PDK_ICS55
+      tc_sram_4096x32 u_ram (
+          .clk_i (clk_i),
+          .cs_i  (s_bank_cs[bank]),
+          .addr_i(s_mem_word_addr[11:0]),
+          .data_i(s_mem_wdata),
+          .mask_i(s_mem_wstrb),
+          .wren_i(s_mem_write),
+          .data_o(s_bank_rdata[bank])
+      );
+`else
       tc_sram_1024x32 u_ram (
           .clk_i (clk_i),
           .cs_i  (s_bank_cs[bank]),
@@ -376,6 +395,7 @@ module onchip_ram #(
           .wren_i(s_mem_write),
           .data_o(s_bank_rdata[bank])
       );
+`endif
     end
 
     dffer #(
@@ -384,7 +404,7 @@ module onchip_ram #(
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),
         .en_i   (s_mem_read),
-        .dat_i  (s_mem_word_addr[BankIndexWidth+9:10]),
+        .dat_i  (s_mem_word_addr[BankIndexWidth+TechnologyAddrWidth-1:TechnologyAddrWidth]),
         .dat_o  (s_read_bank_q)
     );
 

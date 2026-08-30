@@ -103,7 +103,7 @@ void rs_app_info(void) {
     rs_print_hazard3_spec();
 
     printf("\nUser Processors:\n");
-    uint32_t core_size = sizeof(user_core_info) / sizeof(user_core_info[0]);
+    uint32_t core_size = RS_SOC_USER_CORE_COUNT;
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
     for (uint32_t i = 0; i < core_size; ++i) {
         if (selected_core == i)
@@ -115,7 +115,7 @@ void rs_app_info(void) {
     }
 
     printf("\nUser IPs:\n");
-    uint32_t ip_size = sizeof(user_ip_info) / sizeof(user_ip_info[0]);
+    uint32_t ip_size = RS_SOC_USER_IP_COUNT;
     printf("       %-15s %-12s %-12s %s\n", "[name]", "[isa]", "[maintainer]", "[repo]");
     for (uint32_t i = 0; i < ip_size; ++i) {
         if (selected_ip == i)

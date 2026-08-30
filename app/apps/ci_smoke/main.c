@@ -3,6 +3,7 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
+#include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/onchip_sram.h>
 #include <retrosoc/hal/rng.h>
@@ -66,25 +67,36 @@ static bool rs_ci_smoke_onchip_sram_access(void) {
 #endif
 }
 
-static bool rs_ci_smoke_user_ip(void) {
-    rs_status_t status;
-    uint32_t identifier = 0U;
+static bool rs_ci_smoke_extensions(void) {
+    const rs_extension_acl_t acl = {
+        .read_base = RS_SOC_SDRAM_BASE,
+        .read_limit = RS_SOC_SDRAM_END,
+        .write_base = RS_SOC_SDRAM_BASE,
+        .write_limit = RS_SOC_SDRAM_END,
+        .timeout_cycles = UINT32_C(1024),
+    };
+    rs_extension_capabilities_t ext_l;
+    rs_extension_capabilities_t ext_h;
+    rs_extension_status_t status;
 
-    status = rs_user_ip_probe(0U, &identifier);
-    if ((status != RS_OK) || (identifier != ARCHINFO_COMPONENT_ID_VALUE)) {
-        printf("ci_smoke: user IP 0 status %d identifier 0x%08x\n", (int)status,
-               (unsigned int)identifier);
+    if ((RS_SOC_USER_CORE_COUNT != 0U) || (RS_SOC_USER_IP_COUNT != 0U) ||
+        (RS_SOC_EXTENSION_COUNT != 2U) || (rs_user_ip_select(0U) != RS_ENOTSUP) ||
+        (rs_extension_probe(RS_EXTENSION_SLOT_L, &ext_l) != RS_OK) ||
+        (rs_extension_probe(RS_EXTENSION_SLOT_H, &ext_h) != RS_OK) ||
+        (ext_l.identification != RS_EXTENSION_IDENTIFICATION_EXT_L) || ext_l.data_master ||
+        ext_l.stream || (ext_l.interrupt_count != 1U) ||
+        (ext_h.identification != RS_EXTENSION_IDENTIFICATION_EXT_H) || !ext_h.data_master ||
+        !ext_h.stream || (ext_h.interrupt_count != 1U) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_L, &acl) != RS_ENOTSUP) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &acl) != RS_OK) ||
+        (rs_extension_set_lifecycle(RS_EXTENSION_SLOT_H, true, true, false) != RS_OK) ||
+        (rs_extension_get_status(RS_EXTENSION_SLOT_H, &status) != RS_OK) || !status.present ||
+        !status.idle || !status.quiesced || !status.in_reset || status.fault ||
+        (rs_extension_set_lifecycle(RS_EXTENSION_SLOT_H, false, false, false) != RS_OK)) {
         return false;
     }
-    for (uint32_t ip_id = 1U; ip_id <= RS_SOC_USER_IP_COUNT; ++ip_id) {
-        status = rs_user_ip_probe((uint8_t)ip_id, &identifier);
-        if ((status != RS_OK) || (identifier != ip_id)) {
-            printf("ci_smoke: user IP %u status %d identifier 0x%08x\n", (unsigned int)ip_id,
-                   (int)status, (unsigned int)identifier);
-            return false;
-        }
-    }
-    return rs_user_ip_select(0U) == RS_OK;
+    return rs_extension_get_status(RS_EXTENSION_SLOT_H, &status) == RS_OK && status.present &&
+           status.idle && !status.quiesced && !status.in_reset && !status.fault;
 }
 
 static bool rs_ci_smoke_rng_v2(void) {
@@ -337,10 +349,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 12U);
     }
     printf("ci_smoke: on-chip SRAM passed\n");
-    if (!rs_ci_smoke_user_ip()) {
+    if (!rs_ci_smoke_extensions()) {
         rs_test_finish(RS_TEST_FAILED, 11U);
     }
-    printf("ci_smoke: user IP passed\n");
+    printf("ci_smoke: extensions passed\n");
     if (!rs_ci_smoke_rng_v2()) {
         rs_test_finish(RS_TEST_FAILED, 8U);
     }

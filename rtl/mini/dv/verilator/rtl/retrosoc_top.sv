@@ -21,25 +21,38 @@
 `timescale 1 ns / 1 ps
 
 module retrosoc_top (
-    input  wire       ext_clk_i,
-    input  wire       rst_n_i,
-    input  wire       jtag_tck_i,
-    input  wire       jtag_tms_i,
-    input  wire       jtag_tdi_i,
-    input  wire       jtag_trst_n_i,
-    output wire       jtag_tdo_o,
-    output wire       test_done_o,
-    output wire       test_pass_o,
-    output wire [7:0] test_code_o,
-    output wire       sdio1_clk_o,
-    inout  wire       sdio1_cmd_io,
-    inout  wire       sdio1_dat0_io,
-    inout  wire       sdio1_dat1_io,
-    inout  wire       sdio1_dat2_io,
-    inout  wire       sdio1_dat3_io
+    input  wire        ext_clk_i,
+    input  wire        ref24_clk_i,
+    input  wire        rst_n_i,
+    input  wire        jtag_tck_i,
+    input  wire        jtag_tms_i,
+    input  wire        jtag_tdi_i,
+    input  wire        jtag_trst_n_i,
+    output wire        jtag_tdo_o,
+    output wire        test_done_o,
+    output wire        test_pass_o,
+    output wire [ 7:0] test_code_o,
+    output wire        diag_aon_rst_n_o,
+    output wire        diag_lp_rst_n_o,
+    output wire        diag_pclk_rst_n_o,
+    output wire        diag_hp_rst_n_o,
+    output wire [31:0] diag_mgmt_araddr_o,
+    output wire        diag_mgmt_arvalid_o,
+    output wire        diag_mgmt_arready_o,
+    output wire        diag_xpi_arvalid_o,
+    output wire        diag_xpi_arready_o,
+    output wire        diag_xpi_rvalid_o,
+    output wire        diag_xpi_rready_o,
+    output wire        sdio1_clk_o,
+    inout  wire        sdio1_cmd_io,
+    inout  wire        sdio1_dat0_io,
+    inout  wire        sdio1_dat1_io,
+    inout  wire        sdio1_dat2_io,
+    inout  wire        sdio1_dat3_io
 );
 
   wire        s_clk;
+  wire        s_ref24_clk;
   wire        s_rst_n;
   wire        s_psram_sck;
   wire        s_psram_nss0;
@@ -83,17 +96,29 @@ module retrosoc_top (
   wire        s_usb2_ulpi_reset_n;
   // verilator lint_on UNUSEDSIGNAL
 
-  assign s_clk           = ext_clk_i;
-  assign s_rst_n         = rst_n_i;
-  assign s_jtag_tck      = jtag_tck_i;
-  assign s_jtag_tms      = jtag_tms_i;
-  assign s_jtag_tdi      = jtag_tdi_i;
-  assign s_jtag_trst_n   = jtag_trst_n_i;
-  assign jtag_tdo_o      = s_jtag_tdo;
-  assign test_done_o     = u_retrosoc_asic.s_test_done;
-  assign test_pass_o     = u_retrosoc_asic.s_test_pass;
-  assign test_code_o     = u_retrosoc_asic.s_test_code;
-  assign s_usb2_ulpi_clk = s_clk;
+  assign s_clk               = ext_clk_i;
+  assign s_ref24_clk         = ref24_clk_i;
+  assign s_rst_n             = rst_n_i;
+  assign s_jtag_tck          = jtag_tck_i;
+  assign s_jtag_tms          = jtag_tms_i;
+  assign s_jtag_tdi          = jtag_tdi_i;
+  assign s_jtag_trst_n       = jtag_trst_n_i;
+  assign jtag_tdo_o          = s_jtag_tdo;
+  assign test_done_o         = u_retrosoc_asic.s_test_done;
+  assign test_pass_o         = u_retrosoc_asic.s_test_pass;
+  assign test_code_o         = u_retrosoc_asic.s_test_code;
+  assign diag_aon_rst_n_o    = u_retrosoc_asic.s_aon_rst_n;
+  assign diag_lp_rst_n_o     = u_retrosoc_asic.s_sys_rst_n;
+  assign diag_pclk_rst_n_o   = u_retrosoc_asic.s_pclk_rst_n;
+  assign diag_hp_rst_n_o     = u_retrosoc_asic.s_hp_rst_n;
+  assign diag_mgmt_araddr_o  = u_retrosoc_asic.u_retrosoc.u_mgmt_axi4_if.araddr;
+  assign diag_mgmt_arvalid_o = u_retrosoc_asic.u_retrosoc.u_mgmt_axi4_if.arvalid;
+  assign diag_mgmt_arready_o = u_retrosoc_asic.u_retrosoc.u_mgmt_axi4_if.arready;
+  assign diag_xpi_arvalid_o  = u_retrosoc_asic.u_retrosoc.u_xpi_axi4_if.arvalid;
+  assign diag_xpi_arready_o  = u_retrosoc_asic.u_retrosoc.u_xpi_axi4_if.arready;
+  assign diag_xpi_rvalid_o   = u_retrosoc_asic.u_retrosoc.u_xpi_axi4_if.rvalid;
+  assign diag_xpi_rready_o   = u_retrosoc_asic.u_retrosoc.u_xpi_axi4_if.rready;
+  assign s_usb2_ulpi_clk     = s_clk;
   retrosoc_asic u_retrosoc_asic (
       `include "retrosoc_asic_verilator_bindings.svh"
   );

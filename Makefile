@@ -29,6 +29,7 @@ $(error HAVE_DEBUG has been removed; the Hazard3 Debug Module is always enabled)
 endif
 
 SOC          ?= MINI
+MINI_MODE    ?= PRODUCT
 SIMU         ?= VCS
 SYNTH        ?= NONE
 SYNTH_RECIPE ?= balanced
@@ -42,7 +43,7 @@ HAVE_SRAM_MACRO          ?= $(if $(filter ICS55,$(PDK)),NO,YES)
 SRAM_SIZE_KIB            ?= $(if $(filter ICS55,$(PDK)),128,32)
 PDK_BEHAV                ?= NO
 HAVE_SVA                 ?= NO
-HAVE_HP                  ?= NO
+HAVE_HP                  ?= YES
 HP_CONFIG                ?= rv32imafdc_max
 BUILD_RELEASE            ?= NO
 JTAG_IDCODE              ?= DEADBEEF
@@ -75,7 +76,7 @@ HP_COREMARK_REPORT ?=
 
 BUILD_ROOT         ?= $(ROOT_PATH)/build
 CACHE_ROOT         ?= $(ROOT_PATH)/.cache/retrosoc
-VEXIIRISCV_ROOT    ?= $(abspath $(ROOT_PATH)/../VexiiRiscv)
+VEXIIRISCV_ROOT    ?= $(ROOT_PATH)/.cache/retrosoc/sources/vexiiriscv
 SBT                ?= sbt
 BUILD_TIMESTAMP    ?= $(shell date '+%Y-%m-%d-%H-%M')
 BUILD_TIMESTAMP    := $(BUILD_TIMESTAMP)
@@ -94,7 +95,8 @@ VCS_SHELL_PYTHON   := $(if $(filter VCS,$(SIMU)),$(if $(filter $(VCS_SHELL_GOALS
 JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
-CONFIG_KEY_VARS    := SOC PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA \
+LOCAL_RTL_FILES    ?=
+CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA \
                    HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ ISA HAVE_CSR APP LINK_TYPE \
                    COREMARK_MODE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
@@ -150,6 +152,7 @@ FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
 endif
 
 VALID_SOC           := MINI
+VALID_MINI_MODE     := PRODUCT MPW
 VALID_SIMU          := VCS VERILATOR IVERILOG
 VALID_SYNTH         := NONE YOSYS
 VALID_SYNTH_RECIPE  := balanced area speed
@@ -168,6 +171,7 @@ $(if $(filter $($(1)),$(2)),,$(error Invalid $(1)='$($(1))'; expected one of: $(
 endef
 
 $(call validate_value,SOC,$(VALID_SOC))
+$(call validate_value,MINI_MODE,$(VALID_MINI_MODE))
 $(call validate_value,SIMU,$(VALID_SIMU))
 $(call validate_value,SYNTH,$(VALID_SYNTH))
 $(call validate_value,SYNTH_RECIPE,$(VALID_SYNTH_RECIPE))
@@ -191,6 +195,17 @@ $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
+
+ifeq ($(MINI_MODE),PRODUCT)
+ifneq ($(HAVE_HP),YES)
+$(error MINI_MODE=PRODUCT requires HAVE_HP=YES)
+endif
+endif
+
+MISSING_LOCAL_RTL_FILES := $(filter-out $(wildcard $(LOCAL_RTL_FILES)),$(LOCAL_RTL_FILES))
+ifneq ($(strip $(MISSING_LOCAL_RTL_FILES)),)
+$(error LOCAL_RTL_FILES contains missing source(s): $(MISSING_LOCAL_RTL_FILES))
+endif
 
 ifeq ($(HAVE_SRAM_MACRO),YES)
 ifneq ($(HAVE_SRAM_IF),YES)
@@ -290,6 +305,12 @@ ifeq ($(HAVE_HP), YES)
     DEF_LIST += +define+HAVE_HP
 endif
 
+ifeq ($(MINI_MODE), PRODUCT)
+    DEF_LIST += +define+MINI_PRODUCT
+else
+    DEF_LIST += +define+MINI_MPW
+endif
+
 ifeq ($(SYNTH), YOSYS)
     DEF_LIST += +define+SYNTHESIS
 endif
@@ -314,7 +335,7 @@ endif
 include physical/librelane/Makefile
 include physical/ecc/Makefile
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-clusterip setup-ip setup-pdk setup-app setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
@@ -402,7 +423,7 @@ config:
 	  ROOT_PATH '$(ROOT_PATH)' CONFIG '$(or $(CONFIG_PATH),<defaults>)' \
 	  BUILD_TIMESTAMP '$(BUILD_TIMESTAMP)' VARIANT_ID '$(VARIANT_ID)' VARIANT_ROOT '$(VARIANT_ROOT)' \
 	  JOBS '$(JOBS)' \
-	  SOC '$(SOC)' MGMT_CORE 'HAZARD3' \
+	  SOC '$(SOC)' MINI_MODE '$(MINI_MODE)' MGMT_CORE 'HAZARD3' \
 	  SIMU '$(SIMU)' SYNTH '$(SYNTH)' SYNTH_RECIPE '$(SYNTH_RECIPE)' \
 	  STA '$(STA)' FORMAL '$(FORMAL)' \
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
@@ -440,7 +461,7 @@ hp-performance-check:
 		--lp $(LP_COREMARK_REPORT) --hp $(HP_COREMARK_REPORT) \
 		--minimum-ratio $(HP_PERF_MIN_RATIO) --output $(META_DIR)/lp-hp-performance.json
 
-setup: setup-mpw setup-clusterip setup-ip setup-pdk setup-app
+setup: setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app
 
 setup-regression:
 	$(MAKE) CONFIG=configs/ci/ihp130.mk setup
@@ -454,6 +475,9 @@ setup-mpw:
 	  --lock-file $(CACHE_ROOT)/locks/mpw-prepare.lock
 	@mkdir -p $(dir $(MPW_STAMP))
 	@touch $(MPW_STAMP)
+
+setup-vexiiriscv:
+	python3 $(ROOT_PATH)/scripts/setup_vexiiriscv.py
 
 setup-clusterip:
 	python3 $(ROOT_PATH)/rtl/managed/clusterip/setup.py
@@ -632,11 +656,11 @@ sw-policy-check:
 sw-host-test:
 	python3 $(ROOT_PATH)/scripts/run_c_tests.py --root $(ROOT_PATH) --cc $(HOST_CC)
 
-package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
+package: $(MPW_VARIANT_DEP) $(FILELIST_STAMP) manifest
 	python3 $(ROOT_PATH)/scripts/package.py --root $(ROOT_PATH) --lock $(LOCK_FILE) \
 	  --variant-root $(VARIANT_ROOT) --output-dir $(ROOT_PATH)/dist/$(VARIANT_ID)
 
-commercial-package: $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) manifest
+commercial-package: $(MPW_VARIANT_DEP) $(FILELIST_STAMP) manifest
 	@test '$(PDK)' = ICS55
 	@test '$(HAVE_PLL)' = YES
 	@test '$(HAVE_SRAM_IF)' = YES

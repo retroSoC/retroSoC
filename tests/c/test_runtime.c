@@ -7,6 +7,8 @@
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/clock.h>
+#include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
@@ -148,6 +150,22 @@ static int test_wait_helper(void) {
         rs_wait_not_value(&value, 0U, 1U) != RS_OK ||
         rs_wait_not_value(&value, 0x30U, 1U) != RS_ETIMEOUT) {
         return 1;
+    }
+    return 0;
+}
+
+static int test_clock_frequency_contract(void) {
+    uint32_t frequency_hz;
+
+    if ((rs_clock_frequency_hz(RS_CLOCK_FREQ_72MHZ, &frequency_hz) != RS_OK) ||
+        (frequency_hz != UINT32_C(72000000)) ||
+        (rs_clock_frequency_hz(RS_CLOCK_FREQ_240MHZ, &frequency_hz) != RS_OK) ||
+        (frequency_hz != UINT32_C(240000000))) {
+        return 1;
+    }
+    if ((rs_clock_frequency_hz((rs_clock_frequency_t)8, &frequency_hz) != RS_EINVAL) ||
+        (rs_clock_frequency_hz(RS_CLOCK_FREQ_72MHZ, NULL) != RS_EINVAL)) {
+        return 2;
     }
     return 0;
 }
@@ -761,8 +779,8 @@ static int test_user_ip_validation(void) {
     uint32_t value;
 
     if ((rs_user_ip_get_selected(NULL) != RS_EINVAL) ||
-        (rs_user_ip_select(UINT8_MAX) != RS_EINVAL) ||
-        (rs_user_ip_probe(UINT8_MAX, &value) != RS_EINVAL) ||
+        (rs_user_ip_select(UINT8_MAX) != RS_ENOTSUP) ||
+        (rs_user_ip_probe(UINT8_MAX, &value) != RS_ENOTSUP) ||
         (rs_user_ip_probe(0U, NULL) != RS_EINVAL)) {
         return 1;
     }
@@ -773,6 +791,50 @@ static int test_user_ip_validation(void) {
     if ((rs_user_ip_write(2U, 0U) != RS_EINVAL) ||
         (rs_user_ip_write(UINT32_C(0x1000), 0U) != RS_EINVAL)) {
         return 3;
+    }
+    return 0;
+}
+
+static int test_extension_validation(void) {
+    const rs_extension_acl_t valid_acl = {
+        .read_base = UINT32_C(0x38000000),
+        .read_limit = UINT32_C(0x38000FFF),
+        .write_base = UINT32_C(0x38000000),
+        .write_limit = UINT32_C(0x38000FFF),
+        .timeout_cycles = UINT32_C(64),
+    };
+    rs_extension_acl_t invalid_acl = valid_acl;
+    rs_extension_capabilities_t capabilities;
+    rs_extension_status_t status;
+    uint32_t value;
+
+    if ((rs_extension_probe((rs_extension_slot_t)2, &capabilities) != RS_EINVAL) ||
+        (rs_extension_probe(RS_EXTENSION_SLOT_L, NULL) != RS_EINVAL) ||
+        (rs_extension_get_status((rs_extension_slot_t)2, &status) != RS_EINVAL) ||
+        (rs_extension_get_status(RS_EXTENSION_SLOT_H, NULL) != RS_EINVAL)) {
+        return 1;
+    }
+    if ((rs_extension_read((rs_extension_slot_t)2, 0U, &value) != RS_EINVAL) ||
+        (rs_extension_read(RS_EXTENSION_SLOT_L, 1U, &value) != RS_EINVAL) ||
+        (rs_extension_read(RS_EXTENSION_SLOT_L, UINT32_C(0x1000), &value) != RS_EINVAL) ||
+        (rs_extension_read(RS_EXTENSION_SLOT_L, 0U, NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    if ((rs_extension_set_owner(RS_EXTENSION_SLOT_L, (rs_extension_owner_t)2, false) !=
+         RS_EINVAL) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_L, &valid_acl) != RS_ENOTSUP) ||
+        (rs_extension_configure_acl((rs_extension_slot_t)2, &valid_acl) != RS_EINVAL) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, NULL) != RS_EINVAL)) {
+        return 3;
+    }
+    invalid_acl.read_limit = invalid_acl.read_base - UINT32_C(1);
+    if (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &invalid_acl) != RS_EINVAL) {
+        return 4;
+    }
+    invalid_acl = valid_acl;
+    invalid_acl.timeout_cycles = 0U;
+    if (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &invalid_acl) != RS_EINVAL) {
+        return 5;
     }
     return 0;
 }
@@ -846,13 +908,29 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(),        test_formatter(),        test_compiler_helpers(),
-        test_wait_helper(),           test_ws2812_helpers(),   test_timer_helpers(),
-        test_psram_helpers(),         test_sdram_helpers(),    test_uart_helpers(),
-        test_i2s_helpers(),           test_i2c_helpers(),      test_sdio_helpers(),
-        test_usb2_helpers(),          test_spisd_helpers(),    test_gpio_helpers(),
-        test_dma_config_validation(), test_opipsram_helpers(), test_user_ip_validation(),
-        test_ps2_decoders(),          test_wav_parser(),       test_video_parser(),
+        test_string_helpers(),
+        test_formatter(),
+        test_compiler_helpers(),
+        test_wait_helper(),
+        test_clock_frequency_contract(),
+        test_ws2812_helpers(),
+        test_timer_helpers(),
+        test_psram_helpers(),
+        test_sdram_helpers(),
+        test_uart_helpers(),
+        test_i2s_helpers(),
+        test_i2c_helpers(),
+        test_sdio_helpers(),
+        test_usb2_helpers(),
+        test_spisd_helpers(),
+        test_gpio_helpers(),
+        test_dma_config_validation(),
+        test_opipsram_helpers(),
+        test_user_ip_validation(),
+        test_extension_validation(),
+        test_ps2_decoders(),
+        test_wav_parser(),
+        test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

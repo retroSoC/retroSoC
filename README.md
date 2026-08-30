@@ -18,11 +18,12 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 ## Highlights
 
-- A fixed Hazard3 management core with a permanent JTAG Debug Module, plus
-  software-selected user-core and user-IP extension slots. The active user
-  cores are KianV RV32I, SERV, FemtoRV32, and DarkRISCV at slots C0-C3.
-- An experimental IHP130 [LP/HP profile](docs/lp-hp-architecture.md) that keeps
-  Hazard3 as LP and adds a generated dual-issue RV32IMAFDC VexiiRiscv HP core,
+- A fixed asymmetric dual-core Mini product: Hazard3 is the LP management hart
+  and generated dual-issue RV32IMAFDC VexiiRiscv is the HP application hart.
+  The C0-C3 selectable cores remain only in the explicit Mini MPW profile.
+- A product [LP/HP architecture](docs/lp-hp-architecture.md) with independent
+  AON, LP, HP, PCLK, memory, audio, pixel, JTAG, and ULPI clock/reset contracts,
+  a native AXI64 HP data plane, fixed EXT-L/EXT-H slots,
   HP CLINT/PLIC, UART1, mailbox, locked OpenSBI/Linux/Buildroot inputs, and a
   CRC-checked direct-Linux boot bundle. Linux boot and performance evidence are
   release gates, not yet baseline CI claims.
@@ -72,12 +73,14 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 The committed profiles are the supported starting points. They select an ISA,
 PDK, application, linker layout, and optional features as one reproducible
-configuration. The management core is fixed to Hazard3. The user-extension
-fabric exposes C0-C3 user-core slots and software selects one active user core.
+configuration. Product profiles set `MINI_MODE=PRODUCT`, fix both CPU harts,
+and report zero selectable user cores. `configs/cluster/mini-mpw.mk` is the
+separate `MINI_MODE=MPW` compatibility profile for C0-C3.
 `SRAM_SIZE_KIB` selects a generated 4/16/32/64/128 KiB native-AXI4 on-chip
 SRAM window. The IHP130, GF180, and SKY130 CI profiles enable a 32 KiB macro-backed
-window; ICS55 keeps it absent. IHP130 benchmark/CoreMark profiles retain 128 KiB
-because their fixed data placement and SRAM-resident image require the larger capacity.
+window; committed ICS55 regression profiles deliberately keep SRAM and PLL
+disabled. `configs/local/ics55.example.mk` documents the ignored local profile
+used with commercial 32 KiB SRAM and PLL simulation models.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |
@@ -87,9 +90,10 @@ because their fixed data placement and SRAM-resident image require the larger ca
 | [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist, and OpenSTA coverage with a 32 KiB OpenRAM SRAM. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
-| [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV32IMAFDC | `hp_boot` | Experimental fixed-72-MHz LP/HP integration, generated VexiiRiscv RTL, Linux image/bundle flow, and HP RTL validation. |
-| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | RV32IM | `coremark` | Fixed four-iteration SRAM CoreMark quick measurement, recorded by nightly IHP130 regression. |
-| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
+| [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV32IMAFDC | `hp_boot` | Linux image/bundle flow and HP RTL validation on the fixed product topology. |
+| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | LP RV32IM / HP RV32IMAFDC | `coremark` | Fixed four-iteration LP SRAM CoreMark measurement with the product HP core present. |
+| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | LP RV32IM / HP RV32IMAFDC | `bringup` | Site profile with PLL/SRAM intentionally disabled for regression compatibility. |
+| [`configs/cluster/mini-mpw.mk`](configs/cluster/mini-mpw.mk) | RV32IM | `bringup` | Legacy MPW C0-C3/user-IP selection profile; not part of the Mini product ABI. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
 application, which checks UART, archinfo APB readback, macro-backed on-chip SRAM,

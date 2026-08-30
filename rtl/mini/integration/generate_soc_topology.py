@@ -59,6 +59,7 @@ class FabricLink:
     name: str
     interface: str
     protocol: str
+    domain: str
 
 
 @dataclass(frozen=True)
@@ -279,6 +280,7 @@ def parse_fabric_links(value: Any) -> list[FabricLink]:
         name = require_identifier(link.get("name"), f"fabric_links[{index}].name")
         interface = require_identifier(link.get("interface"), f"fabric_links[{index}].interface")
         protocol = require_string(link.get("protocol"), f"fabric_links[{index}].protocol")
+        domain = require_string(link.get("domain"), f"fabric_links[{index}].domain")
         if name not in FABRIC_LINK_NAMES:
             raise ValueError(f"fabric_links[{index}].name is not a supported SoC fabric role")
         if name in names:
@@ -289,9 +291,11 @@ def parse_fabric_links(value: Any) -> list[FabricLink]:
             raise ValueError(
                 f"fabric_links[{index}].protocol must be {FABRIC_PROTOCOLS[name]} for {name}"
             )
+        if domain not in {"lp", "pclk"}:
+            raise ValueError(f"fabric_links[{index}].domain must be lp or pclk")
         names.add(name)
         interfaces.add(interface)
-        links.append(FabricLink(name, interface, protocol))
+        links.append(FabricLink(name, interface, protocol, domain))
     if names != set(FABRIC_LINK_NAMES):
         missing = ", ".join(sorted(set(FABRIC_LINK_NAMES) - names))
         raise ValueError(f"fabric_links does not cover required roles: {missing}")
@@ -599,6 +603,8 @@ def render_fabric_interfaces(links: list[FabricLink]) -> str:
     }
     for link in links:
         if link.protocol == "axi4":
+            clock = "clk_lp_i" if link.domain == "lp" else "clk_pclk_i"
+            reset = "rst_lp_n_i" if link.domain == "lp" else "rst_pclk_n_i"
             lines.extend(
                 [
                     "  axi4_if #(",
@@ -607,8 +613,8 @@ def render_fabric_interfaces(links: list[FabricLink]) -> str:
                     "      .ID_WIDTH  (1),",
                     "      .USER_WIDTH(1)",
                     f"  ) {link.interface} (",
-                    "      .aclk   (clk_i),",
-                    "      .aresetn(rst_n_i)",
+                    f"      .aclk   ({clock}),",
+                    f"      .aresetn({reset})",
                     "  );",
                 ]
             )

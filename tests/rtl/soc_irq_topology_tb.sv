@@ -56,6 +56,8 @@ module soc_irq_topology_tb;
         2:       expect_irq(32'd1 << 13);
         3:       expect_irq(32'd1 << 14);
         4:       expect_irq(32'd1 << 16);
+        5:       expect_irq(32'd1 << 27);
+        6:       expect_irq(32'd1 << 28);
         default: $fatal(1, "unexpected APB IRQ bit %0d", bit_index);
       endcase
     end
@@ -66,7 +68,7 @@ module soc_irq_topology_tb;
       $fatal(1, "SDIO core IRQ bits are not low when sources are low: IRQ10=%b IRQ21=%b",
              s_irq[10], s_irq[21]);
     end
-    if ((s_irq[31:27] !== '0) || (s_irq[19:18] !== '0)) begin
+    if ((s_irq[31:29] !== '0) || (s_irq[19:18] !== '0)) begin
       $fatal(1, "unallocated core IRQ bits are not low: %h", s_irq);
     end
 

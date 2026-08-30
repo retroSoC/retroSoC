@@ -98,10 +98,9 @@ feature reference when Wi-Fi is included.
 
 ### Status and Position
 
-retroSoC Mini is an open-source RISC-V microcontroller-class SoC with a fixed
-Hazard3 management core and one software-selected user core. The experimental
-`configs/ci/ihp130-hp.mk` profile now adds a separate 32-bit VexiiRiscv Linux
-core without consuming the C0-C3 slots. RTL integration, a direct-Linux image
+retroSoC Mini is an open-source asymmetric RISC-V SoC with a fixed Hazard3 LP
+management core and a fixed 32-bit VexiiRiscv HP application core. C0-C3 are
+available only in the separate MPW compatibility profile. RTL integration, a direct-Linux image
 flow, and LP boot firmware are implemented; repeatable Linux boot,
 performance, synthesis, timing, and hardware evidence are still qualification
 gates rather than supported product claims.
@@ -135,16 +134,16 @@ capabilities:
 
 - A fixed Hazard3 management core owns system control and has a permanent JTAG
   Debug Module.
-- The C0-C3 extension fabric permits one selected user core to run at a time.
-- SYSCTRL controls user-core selection, reset, interrupt admission, and bus
-  admission. A stop request blocks new user transactions, drains an accepted
-  transaction, and then asserts reset.
+- Product SYSCTRL reports zero selectable user cores and retains the old
+  offsets as fail-safe compatibility registers. The MPW profile retains C0-C3.
+- Fixed EXT-L and EXT-H slots provide capability, ownership, lifecycle, IRQ,
+  ACL, timeout, and fault boundaries without a runtime selector.
 - The canonical address map exposes configurable on-chip SRAM, a 64 MiB SDRAM
   window, and an 8 MiB PSRAM window. Address-window capacity does not guarantee
   that every implementation includes the corresponding physical memory.
-- AXI4 is the active 32-bit interconnect. It supports linear one- through
-  sixteen-beat transfers, one transaction per master, and concurrent accesses
-  to different targets.
+- AXI4 uses a 32-bit LP control plane and an 8x6 native AXI64 HP data plane.
+  Vexii I/D ports remain independent; DMA and I/O masters cross into HP and
+  current memory frontends are reached through 64-to-32 target adapters.
 - Current external-memory targets serialize accepted AXI4 bursts into ordered
   scalar engine accesses. They do not yet combine a burst into a native SDRAM,
   PSRAM, flash, or SPI-SD physical transaction.

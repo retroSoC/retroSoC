@@ -155,3 +155,67 @@ module tc_sram_1024x32 (
 `endif
 `endif
 endmodule
+
+module tc_sram_4096x32 (
+    // verilog_format: off -- preserve the technology memory interface columns
+    input  logic        clk_i,
+    input  logic        cs_i,
+    input  logic [11:0] addr_i,
+    input  logic [31:0] data_i,
+    input  logic [ 3:0] mask_i,
+    input  logic        wren_i,
+    output logic [31:0] data_o
+    // verilog_format: on
+);
+`ifdef PDK_BEHAV
+  logic [31:0] s_data_q;
+  logic [31:0] s_storage_q[0:4095];
+
+  assign data_o = s_data_q;
+  always_ff @(posedge clk_i) begin
+    if (cs_i) begin
+      if (wren_i) begin
+        if (mask_i[0]) s_storage_q[addr_i][7:0] <= data_i[7:0];
+        if (mask_i[1]) s_storage_q[addr_i][15:8] <= data_i[15:8];
+        if (mask_i[2]) s_storage_q[addr_i][23:16] <= data_i[23:16];
+        if (mask_i[3]) s_storage_q[addr_i][31:24] <= data_i[31:24];
+      end else begin
+        s_data_q <= s_storage_q[addr_i];
+      end
+    end
+  end
+`elsif PDK_ICS55
+`ifdef HAVE_SRAM_MACRO
+  SRAM_4096X32_M8_BW u_sram (
+      .A   (addr_i),
+      .D   (data_i),
+      .CEB (~cs_i),
+      .CLK (clk_i),
+      .GWEB(~wren_i),
+      .WEB (~{{8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
+      .MARE(1'b0),
+      .MAR (4'd0),
+      .Q   (data_o)
+  );
+`else
+  assign data_o = '0;
+`endif
+`else
+  logic [31:0] s_data_q;
+  logic [31:0] s_storage_q[0:4095];
+
+  assign data_o = s_data_q;
+  always_ff @(posedge clk_i) begin
+    if (cs_i) begin
+      if (wren_i) begin
+        if (mask_i[0]) s_storage_q[addr_i][7:0] <= data_i[7:0];
+        if (mask_i[1]) s_storage_q[addr_i][15:8] <= data_i[15:8];
+        if (mask_i[2]) s_storage_q[addr_i][23:16] <= data_i[23:16];
+        if (mask_i[3]) s_storage_q[addr_i][31:24] <= data_i[31:24];
+      end else begin
+        s_data_q <= s_storage_q[addr_i];
+      end
+    end
+  end
+`endif
+endmodule

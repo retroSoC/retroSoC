@@ -75,7 +75,9 @@ testbench retains that Micron timing model, so it is the reference for SDRAM
 command timing while Verilator provides fast functional coverage.
 
 The Mini SoC on-chip SRAM is a synthesis-time selectable 4/16/32/64/128 KiB
-native 32-bit AXI4 target built from fixed 4 KiB technology banks. Its read-only
+native 32-bit AXI4 target. Product profiles select 32 KiB; ICS55 assembles it
+from two 16 KiB `SRAM_4096X32_M8_BW` macros while other mappings retain their
+technology-bank geometry. Its read-only
 APB capability/performance ABI, technology mapping, verification evidence, and
 ECC/MBIST roadmap are documented in
 [Configurable Native-AXI4 On-chip SRAM](../docs/ip/onchip-sram.md).
@@ -117,7 +119,8 @@ verification contract are documented in
 [APB4 System Control](../docs/ip/sysctrl.md).
 
 The Mini SoC APB4 platform block is `apb4_system` in `rtl/mini/top`. It owns
-archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, and the user-IP APB window.
+archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, the read-only legacy user-IP
+compatibility window, and fixed EXT-L/EXT-H control windows in product mode.
 `apb4_periph` remains the APB4 peripheral container. Topology generation
 includes both management-only native SDIO hosts (`sdio0` on GPIO15..20 ALT0
 and `sdio1` on dedicated pads), and the `soc_apb4_system_fabric.svh` include is documented in

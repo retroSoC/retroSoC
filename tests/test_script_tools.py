@@ -629,12 +629,12 @@ def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None
     }
     (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
-    validate_extension_bindings(tmp_path, output)
+    validate_extension_bindings(extensions_path, output)
 
     extensions["core_targets"][0]["module"] = "wrong_core"
     extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
     with pytest.raises(ValueError, match="does not match"):
-        validate_extension_bindings(tmp_path, output)
+        validate_extension_bindings(extensions_path, output)
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
@@ -745,21 +745,23 @@ def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Pa
 
 
 def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> None:
+    build_root = tmp_path / "build"
+
     def build_state() -> dict[str, tuple[int, int]]:
-        build = ROOT / "build"
-        if not build.exists():
+        if not build_root.exists():
             return {}
         return {
-            str(path.relative_to(build)): (path.stat().st_size, path.stat().st_mtime_ns)
-            for path in build.rglob("*")
+            str(path.relative_to(build_root)): (path.stat().st_size, path.stat().st_mtime_ns)
+            for path in build_root.rglob("*")
             if path.is_file()
         }
 
     before = build_state()
-    run("make", "-n", "help")
+    run("make", "-n", f"BUILD_ROOT={build_root}", "help")
     run(
         "make",
         "-n",
+        f"BUILD_ROOT={build_root}",
         f"ARCHINFO_METADATA_SCRIPT={tmp_path / 'missing-generate-metadata.py'}",
         "SIMU=IVERILOG",
         "comp",
@@ -767,6 +769,7 @@ def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> N
     run(
         "make",
         "-n",
+        f"BUILD_ROOT={build_root}",
         "CONFIG=configs/ci/ihp130.mk",
         "SIMU=IVERILOG",
         "RTL_SIM_TIMEOUT=5200000",
@@ -971,10 +974,12 @@ def test_systemverilog_testbench_starts_in_reset_with_known_clocks() -> None:
     testbench = (ROOT / "rtl/mini/dv/tb/retrosoc_tb.sv").read_text(encoding="utf-8")
 
     assert "localparam time ResetHoldTime = 170744ns;" in testbench
-    for clock in ("r_ext_clk", "r_aud_clk", "r_xtal_clk"):
-        assert f"{clock} = 1'b0;" in testbench
+    for clock in ("r_ext_clk", "r_aud_clk", "r_ref24_clk"):
+        assert re.search(rf"\b{clock}\s*=\s*1'b0;", testbench) is not None
         assert f"{clock} = ~{clock};" in testbench
-    assert testbench.index("r_rst_n = 1'b0;") < testbench.index("#ResetHoldTime;")
+    reset_init = re.search(r"\br_rst_n\s*=\s*1'b0;", testbench)
+    assert reset_init is not None
+    assert reset_init.start() < testbench.index("#ResetHoldTime;")
     assert testbench.index("#ResetHoldTime;") < testbench.index("r_rst_n = 1'b1;")
     assert "#43;" not in testbench
 
@@ -1034,7 +1039,7 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert "PDK_BEHAV HAVE_SVA" in makefile
     assert "PDK_BEHAV=YES is for functional simulation" in makefile
     assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
-    assert re.search(r"^SRAM_SIZE_KIB\s*:= 128$", profile, re.MULTILINE)
+    assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
     assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
     assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
 
@@ -1052,7 +1057,7 @@ def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> N
 
     for name in ("ihp130-hazard3", "ihp130-hazard3-coremark"):
         benchmark = (ROOT / f"configs/benchmark/{name}.mk").read_text(encoding="utf-8")
-        assert re.search(r"^SRAM_SIZE_KIB\s*:= 128$", benchmark, re.MULTILINE)
+        assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", benchmark, re.MULTILINE)
 
 
 def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:

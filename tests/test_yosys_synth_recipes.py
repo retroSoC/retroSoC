@@ -23,12 +23,12 @@ def run_period(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_yosys_period_rounds_external_sta_period() -> None:
-    assert period_ps({"domains": [{"name": "external", "sta": {"period_ns": 13.888888889}}]}) == 13889
+def test_yosys_period_rounds_hp_sta_period() -> None:
+    assert period_ps({"domains": [{"name": "hp", "sta": {"period_ns": 4.166666667}}]}) == 4167
 
     result = run_period("--domains", str(DOMAINS))
     assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "13889"
+    assert result.stdout.strip() == "4167"
 
 
 def test_yosys_period_rejects_unknown_domain() -> None:

@@ -161,6 +161,50 @@
     {
       "symbol": "DEBUG_SELECT",
       "offset": "0xAC"
+    },
+    {
+      "symbol": "CLK_HP_REQ",
+      "offset": "0xB0"
+    },
+    {
+      "symbol": "CLK_HP_CURRENT",
+      "offset": "0xB4"
+    },
+    {
+      "symbol": "CLK_LP_CFG",
+      "offset": "0xB8"
+    },
+    {
+      "symbol": "CLK_PCLK_CFG",
+      "offset": "0xBC"
+    },
+    {
+      "symbol": "CLK_STATUS",
+      "offset": "0xC0"
+    },
+    {
+      "symbol": "CLK_FAULT",
+      "offset": "0xC4"
+    },
+    {
+      "symbol": "CLK_TIMEOUT",
+      "offset": "0xC8"
+    },
+    {
+      "symbol": "CLK_GATE",
+      "offset": "0xCC"
+    },
+    {
+      "symbol": "MEM_PAD_CTRL",
+      "offset": "0xD0"
+    },
+    {
+      "symbol": "MEM_PAD_STATUS",
+      "offset": "0xD4"
+    },
+    {
+      "symbol": "MEM_PAD_FAULT",
+      "offset": "0xD8"
     }
   ],
   "regions": [
@@ -507,6 +551,24 @@
       "kind": "active",
       "public": true,
       "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_EXT_L",
+      "base": "0x20008000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_EXT_H",
+      "base": "0x20009000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
     },
     {
       "symbol": "SRAM",

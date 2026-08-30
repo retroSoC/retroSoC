@@ -18,6 +18,8 @@ module rib2apb_tb;
   apb4_pure_if wdg ();
   apb4_pure_if crc ();
   apb4_pure_if user_ip ();
+  apb4_pure_if ext_l ();
+  apb4_pure_if ext_h ();
 
   always #5 clk_i = ~clk_i;
 
@@ -45,6 +47,12 @@ module rib2apb_tb;
   assign user_ip.pready   = 1'b0;
   assign user_ip.prdata   = '0;
   assign user_ip.pslverr  = 1'b0;
+  assign ext_l.pready     = 1'b0;
+  assign ext_l.prdata     = '0;
+  assign ext_l.pslverr    = 1'b0;
+  assign ext_h.pready     = 1'b0;
+  assign ext_h.prdata     = '0;
+  assign ext_h.pslverr    = 1'b0;
 
   rib2apb u_rib2apb (
       .clk_i   (clk_i),
@@ -57,7 +65,9 @@ module rib2apb_tb;
       .rtc     (rtc),
       .wdg     (wdg),
       .crc     (crc),
-      .user_ip (user_ip)
+      .user_ip (user_ip),
+      .ext_l   (ext_l),
+      .ext_h   (ext_h)
   );
 
   task automatic send_command(input logic [31:0] address, input logic write,

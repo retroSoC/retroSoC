@@ -45,6 +45,9 @@ audio_file.h
 /build/
 /.cache/
 /dist/
+/configs/local/*.mk
+/configs/local/*.sv
+!/configs/local/*.example.mk
 .vscode
 retrosoc_sections.lds
 retrosoc_syn*

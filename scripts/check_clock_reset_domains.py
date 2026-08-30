@@ -12,8 +12,10 @@ from typing import Any
 
 RESET_PRIMITIVES = {"rst_sync"}
 CDC_PRIMITIVES = {
+    "apb4_async_bridge",
     "async_fifo",
     "async_reqack",
+    "axi4_async_bridge",
     "cdc_2phase",
     "cdc_fifo",
     "cdc_sync",

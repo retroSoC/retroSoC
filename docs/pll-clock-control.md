@@ -10,7 +10,7 @@ configuration leaves the system on the safe clock.
 
 | Offset | Name | Access | Description |
 | --- | --- | --- | --- |
-| `0x08` | `PLL_CFG` | RW | `FREQ_SEL[2:0]`: 24, 48, 72, 96, 120, 144, 168, or 192 MHz. |
+| `0x08` | `PLL_CFG` | RW | `HP_PSTATE[2:0]`: 72, 96, 120, 144, 168, 192, 216, or 240 MHz. |
 | `0x0c` | `PLL_CMD` | WO | bit 0 is `APPLY`; bit 1 is `CLEAR_ERROR`. |
 | `0x1c` | `PLL_STATUS` | RO | Active profile, validity, busy state, error and cause, safe-clock source, lock state, and capability. |
 
@@ -28,7 +28,7 @@ Applications use `rs_clock_set_frequency()` and `rs_clock_get_status()` from
    glitch-free clock-switch backend. The system remains on the external safe
    clock.
 
-`PDK_BEHAV` provides a dynamic-frequency and lock behavior model. A real PDK
+`PDK_BEHAV` provides all eight dynamic frequencies and lock behavior. A real PDK
 must integrate a characterized PLL macro, lock timing, and glitch-free clock
-switch before setting capability to 1. The current IHP130 and ICS55 backends
-do not advertise this capability.
+switch before setting capability to 1. The ICS55 hard wrapper advertises only
+the qualified selector-0 configuration; requests for other selectors fail safe.

@@ -101,6 +101,26 @@ def main() -> int:
         staging = Path(temp) / "package"
         staging.mkdir()
         timing_contract = Path(temp) / "commercial_timing_contract.tcl"
+        if config.get("MINI_MODE", "PRODUCT") == "MPW":
+            dynamic_core_filelist = (
+                args.variant_root
+                / "generated/mpw"
+                / config["SIMU"].lower()
+                / "core/core.fl"
+            )
+            dynamic_ip_filelist = (
+                args.variant_root
+                / "generated/mpw"
+                / config["SIMU"].lower()
+                / "ip/ip.fl"
+            )
+        else:
+            dynamic_core_filelist = (
+                args.variant_root / "generated/user_extensions/legacy_core.fl"
+            )
+            dynamic_ip_filelist = (
+                args.variant_root / "generated/user_extensions/legacy_ip.fl"
+            )
         subprocess.run(
             [
                 "python3",
@@ -137,9 +157,9 @@ def main() -> int:
             "--clint-timebase-hz",
             str(config.get("CLINT_TIMEBASE_HZ", 1_000_000)),
             "--dynamic-core-filelist",
-            str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "core/core.fl"),
+            str(dynamic_core_filelist),
             "--dynamic-ip-filelist",
-            str(args.variant_root / "generated/mpw" / config["SIMU"].lower() / "ip/ip.fl"),
+            str(dynamic_ip_filelist),
             "--memory-map-filelist",
             str(args.variant_root / "generated/memory_map/memory_map.fl"),
             "--soc-topology-filelist",

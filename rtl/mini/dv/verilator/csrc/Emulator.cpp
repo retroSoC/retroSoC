@@ -96,11 +96,22 @@ void Emulator::wave() {
     }
 }
 
+void Emulator::advanceClocks() {
+    dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+    ++ref24Divider;
+    if (ref24Divider == 3U) {
+        dutPtr->ref24_clk_i = !dutPtr->ref24_clk_i;
+        ref24Divider = 0U;
+    }
+}
+
 void Emulator::reset() {
     std::cout << rang::fg::yellow << "Initializing and resetting DUT ..." << rang::fg::reset
               << std::endl;
     dutPtr->rst_n_i = 1;
     dutPtr->ext_clk_i = 0;
+    dutPtr->ref24_clk_i = 0;
+    ref24Divider = 0U;
     dutPtr->jtag_tck_i = 0;
     dutPtr->jtag_tms_i = 0;
     dutPtr->jtag_tdi_i = 0;
@@ -110,7 +121,7 @@ void Emulator::reset() {
     // static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
 
     for (int i = 0; i < 10; i++) {
-        dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+        advanceClocks();
         dutPtr->eval();
         // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " <<
         // static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
@@ -118,7 +129,7 @@ void Emulator::reset() {
 
     dutPtr->rst_n_i = 0;
     for (int i = 0; i < 10; i++) {
-        dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+        advanceClocks();
         dutPtr->eval();
         // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " <<
         // static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
@@ -127,7 +138,7 @@ void Emulator::reset() {
     dutPtr->rst_n_i = 1;
     dutPtr->jtag_trst_n_i = 1;
     for (int i = 0; i < 5; i++) {
-        dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+        advanceClocks();
         dutPtr->eval();
         // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " <<
         // static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
@@ -138,7 +149,7 @@ void Emulator::reset() {
 }
 
 void Emulator::step() {
-    dutPtr->ext_clk_i = !dutPtr->ext_clk_i;
+    advanceClocks();
     dutPtr->eval();
     // std::cout << "rst_n_i: " << static_cast<unsigned>(dutPtr->rst_n_i) << " ext_clk_i: " <<
     // static_cast<unsigned>(dutPtr->ext_clk_i) << std::endl;
@@ -185,6 +196,19 @@ int Emulator::runSim() {
     }
     if (getArriveTime()) {
         std::cerr << "SIM_TEST_TIMEOUT" << std::endl;
+        std::cerr << "CLOCK_RESET_DIAG aon=" << static_cast<unsigned>(dutPtr->diag_aon_rst_n_o)
+                  << " lp=" << static_cast<unsigned>(dutPtr->diag_lp_rst_n_o)
+                  << " pclk=" << static_cast<unsigned>(dutPtr->diag_pclk_rst_n_o)
+                  << " hp=" << static_cast<unsigned>(dutPtr->diag_hp_rst_n_o) << std::endl;
+        std::cerr << "MGMT_READ_DIAG addr=0x" << std::hex
+                  << static_cast<unsigned>(dutPtr->diag_mgmt_araddr_o) << std::dec
+                  << " valid=" << static_cast<unsigned>(dutPtr->diag_mgmt_arvalid_o)
+                  << " ready=" << static_cast<unsigned>(dutPtr->diag_mgmt_arready_o) << std::endl;
+        std::cerr << "XPI_READ_DIAG arvalid="
+                  << static_cast<unsigned>(dutPtr->diag_xpi_arvalid_o)
+                  << " arready=" << static_cast<unsigned>(dutPtr->diag_xpi_arready_o)
+                  << " rvalid=" << static_cast<unsigned>(dutPtr->diag_xpi_rvalid_o)
+                  << " rready=" << static_cast<unsigned>(dutPtr->diag_xpi_rready_o) << std::endl;
     }
     dutPtr->final();
     return 0;

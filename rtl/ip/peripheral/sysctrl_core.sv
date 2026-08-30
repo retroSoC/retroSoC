@@ -27,6 +27,8 @@ module sysctrl_core (
     input  logic         fault_reserved_i,
     sysctrl_if.dut       sysctrl,
     pll_ctrl_if.sysctrl  pll_ctrl,
+    clock_ctrl_if.sysctrl clock_ctrl,
+    output logic         write_error_o,
     output logic         read_data_valid_o,
     output logic [31:0]  read_data_o
     // verilog_format: on
@@ -88,9 +90,21 @@ module sysctrl_core (
   localparam sysctrl_offset_t HpCtrl = sysctrl_offset_t'(`APB4_SYSCTRL__HP_CTRL);
   localparam sysctrl_offset_t HpStatus = sysctrl_offset_t'(`APB4_SYSCTRL__HP_STATUS);
   localparam sysctrl_offset_t DebugSelect = sysctrl_offset_t'(`APB4_SYSCTRL__DEBUG_SELECT);
+  localparam sysctrl_offset_t ClockHpReq = sysctrl_offset_t'(`SOC_SYSCTRL_CLK_HP_REQ_OFFSET);
+  localparam sysctrl_offset_t ClockHpCurrent =
+      sysctrl_offset_t'(`SOC_SYSCTRL_CLK_HP_CURRENT_OFFSET);
+  localparam sysctrl_offset_t ClockLpCfg = sysctrl_offset_t'(`SOC_SYSCTRL_CLK_LP_CFG_OFFSET);
+  localparam sysctrl_offset_t ClockPclkCfg = sysctrl_offset_t'(`SOC_SYSCTRL_CLK_PCLK_CFG_OFFSET);
+  localparam sysctrl_offset_t ClockStatus = sysctrl_offset_t'(`SOC_SYSCTRL_CLK_STATUS_OFFSET);
+  localparam sysctrl_offset_t ClockFault = sysctrl_offset_t'(`SOC_SYSCTRL_CLK_FAULT_OFFSET);
+  localparam sysctrl_offset_t ClockTimeout = sysctrl_offset_t'(`SOC_SYSCTRL_CLK_TIMEOUT_OFFSET);
+  localparam sysctrl_offset_t ClockGate = sysctrl_offset_t'(`SOC_SYSCTRL_CLK_GATE_OFFSET);
+  localparam sysctrl_offset_t MemPadCtrl = sysctrl_offset_t'(`SOC_SYSCTRL_MEM_PAD_CTRL_OFFSET);
+  localparam sysctrl_offset_t MemPadStatus = sysctrl_offset_t'(`SOC_SYSCTRL_MEM_PAD_STATUS_OFFSET);
+  localparam sysctrl_offset_t MemPadFault = sysctrl_offset_t'(`SOC_SYSCTRL_MEM_PAD_FAULT_OFFSET);
 
   logic [`USER_CORESEL_WIDTH-1:0] s_sysctrl_coresel_d, s_sysctrl_coresel_q;
-  logic [`USER_CORE_COUNT-1:0] s_user_reset_d, s_user_reset_q;
+  logic [`USER_CORE_STORAGE_COUNT-1:0] s_user_reset_d, s_user_reset_q;
   logic s_user_running_d, s_user_running_q;
   logic s_user_draining_d, s_user_draining_q;
   logic s_user_config_err_d, s_user_config_err_q;
@@ -129,6 +143,16 @@ module sysctrl_core (
   logic s_rtc_wake_seen_d, s_rtc_wake_seen_q;
   logic s_hp_release_d, s_hp_release_q;
   logic s_debug_hp_sel_d, s_debug_hp_sel_q;
+  logic [31:0] s_clock_req_data_d;
+  logic [31:0] s_clock_req_data_q;
+  logic        s_clock_req_valid_d;
+  logic        s_clock_req_valid_q;
+  logic        s_clock_busy_d;
+  logic        s_clock_busy_q;
+  logic        s_clock_err_d;
+  logic        s_clock_err_q;
+  logic [15:0] s_clock_timeout_d;
+  logic [15:0] s_clock_timeout_q;
   logic        s_rtc_wake_sync;
   logic        s_core_sel_write_valid;
   logic        s_core_sel_write_en;
@@ -146,6 +170,12 @@ module sysctrl_core (
   logic        s_test_stat_write;
   logic        s_rtc_wake_clear;
   logic [14:0] unused_write_data;
+  logic        s_clock_cmd_write;
+  logic        s_clock_cmd_accept;
+  logic        s_clock_write_reject;
+`ifdef MINI_PRODUCT
+  logic s_unused_product_legacy;
+`endif
 
   // TEST_STATUS[30:16] and the same bits on every other register are reserved.
   assign unused_write_data         = write_data_i[30:16];
@@ -164,6 +194,9 @@ module sysctrl_core (
   assign pll_ctrl.req_sel_o        = s_pll_cfg_q;
   assign pll_ctrl.req_valid_o      = s_pll_req_valid_q;
   assign pll_ctrl.rsp_ready_o      = 1'b1;
+  assign clock_ctrl.req_data_o     = s_clock_req_data_q;
+  assign clock_ctrl.req_valid_o    = s_clock_req_valid_q;
+  assign clock_ctrl.rsp_ready_o    = 1'b1;
 
   cdc_sync #(
       .STAGE     (2),
@@ -175,16 +208,48 @@ module sysctrl_core (
       .dat_o  (s_rtc_wake_sync)
   );
 
+`ifdef MINI_PRODUCT
+  assign s_unused_product_legacy = ^{
+    s_core_sel_write_valid,
+    s_core_sel_write_en,
+    s_user_reset_write_en,
+    s_user_reset_write_legal,
+    s_user_config_err_clear,
+    s_user_draining_q,
+    sysctrl.user_bus_idle_i,
+    clock_ctrl.rsp_data_i[31:4]
+  };
+
+  assign s_core_sel_write_valid = 1'b0;
+  assign s_core_sel_write_en = 1'b0;
+  assign s_user_reset_write_en = 1'b0;
+  assign s_user_reset_write_legal = 1'b0;
+  assign s_user_config_err_clear = 1'b0;
+
+  always_comb begin
+    s_sysctrl_coresel_d = '0;
+    s_user_reset_d      = '1;
+    s_user_running_d    = 1'b0;
+    s_user_draining_d   = 1'b0;
+    s_user_config_err_d = s_user_config_err_q;
+    if (write_valid_i && ((write_offset_i == CoreSel) ||
+                          (write_offset_i == IpSel) ||
+                          (write_offset_i == UserCoreReset) ||
+                          (write_offset_i == UserCoreStatus))) begin
+      s_user_config_err_d = 1'b1;
+    end
+  end
+`else
   assign s_core_sel_write_valid = write_data_i[`USER_CORESEL_WIDTH-1:0] < `USER_CORE_COUNT;
   assign s_core_sel_write_en = write_valid_i && (write_offset_i == CoreSel) &&
                                write_strobe_i[0] && s_core_sel_write_valid &&
                                (&s_user_reset_q) && sysctrl.user_bus_idle_i && !s_user_running_q;
   assign s_user_reset_write_en = write_valid_i && (write_offset_i == UserCoreReset) &&
                                  write_strobe_i[0];
-  assign s_user_reset_write_legal = (&write_data_i[`USER_CORE_COUNT-1:0]) ||
+  assign s_user_reset_write_legal = (&write_data_i[`USER_CORE_STORAGE_COUNT-1:0]) ||
       ((s_sysctrl_coresel_q < `USER_CORE_COUNT) &&
-       ((~write_data_i[`USER_CORE_COUNT-1:0]) ==
-        ({{(`USER_CORE_COUNT - 1){1'b0}}, 1'b1} << s_sysctrl_coresel_q)));
+       ((~write_data_i[`USER_CORE_STORAGE_COUNT-1:0]) ==
+        ({{(`USER_CORE_STORAGE_COUNT - 1){1'b0}}, 1'b1} << s_sysctrl_coresel_q)));
   assign s_user_config_err_clear = write_valid_i && (write_offset_i == UserCoreStatus) &&
                                    write_strobe_i[1] && write_data_i[11];
 
@@ -206,16 +271,16 @@ module sysctrl_core (
     if (s_user_reset_write_en) begin
       if (!s_user_reset_write_legal) begin
         s_user_config_err_d = 1'b1;
-      end else if (&write_data_i[`USER_CORE_COUNT-1:0]) begin
+      end else if (&write_data_i[`USER_CORE_STORAGE_COUNT-1:0]) begin
         s_user_running_d = 1'b0;
         if (sysctrl.user_bus_idle_i) begin
-          s_user_reset_d    = write_data_i[`USER_CORE_COUNT-1:0];
+          s_user_reset_d    = write_data_i[`USER_CORE_STORAGE_COUNT-1:0];
           s_user_draining_d = 1'b0;
         end else begin
           s_user_draining_d = 1'b1;
         end
       end else if (sysctrl.user_bus_idle_i && (&s_user_reset_q) && !s_user_running_q) begin
-        s_user_reset_d    = write_data_i[`USER_CORE_COUNT-1:0];
+        s_user_reset_d    = write_data_i[`USER_CORE_STORAGE_COUNT-1:0];
         s_user_running_d  = 1'b1;
         s_user_draining_d = 1'b0;
       end else begin
@@ -227,6 +292,7 @@ module sysctrl_core (
       s_user_draining_d = 1'b0;
     end
   end
+`endif
 
   always_comb begin
     s_hp_release_d   = s_hp_release_q;
@@ -257,15 +323,21 @@ module sysctrl_core (
       .dat_o  (s_debug_hp_sel_q)
   );
 
-  assign s_pll_cfg_write_en = write_valid_i && (write_offset_i == PllCfg) && write_strobe_i[0];
-  assign s_pll_apply = write_valid_i && (write_offset_i == PllCmd) && write_strobe_i[0] &&
-                       write_data_i[`APB4_SYSCTRL__PLL_CMD_APPLY];
+  assign s_pll_cfg_write_en = write_valid_i && write_strobe_i[0] &&
+      ((write_offset_i == PllCfg) || (write_offset_i == ClockHpReq));
+  assign s_pll_apply = write_valid_i && write_strobe_i[0] &&
+      (((write_offset_i == PllCmd) && write_data_i[`APB4_SYSCTRL__PLL_CMD_APPLY]) ||
+       ((write_offset_i == ClockHpReq) && write_data_i[31]));
   assign s_pll_clear_err = write_valid_i && (write_offset_i == PllCmd) && write_strobe_i[0] &&
                            write_data_i[`APB4_SYSCTRL__PLL_CMD_CLEAR_ERROR];
   assign s_pll_rsp_accept = pll_ctrl.rsp_valid_i;
 
   always_comb begin
-    s_sysctrl_ipsel_d    = s_sysctrl_ipsel_q;
+`ifdef MINI_PRODUCT
+    s_sysctrl_ipsel_d = '0;
+`else
+    s_sysctrl_ipsel_d = s_sysctrl_ipsel_q;
+`endif
     s_pll_cfg_d          = s_pll_cfg_q;
     s_pll_req_valid_d    = s_pll_req_valid_q;
     s_pll_busy_d         = s_pll_busy_q;
@@ -275,9 +347,11 @@ module sysctrl_core (
     s_pll_active_valid_d = s_pll_active_valid_q;
     s_pll_safe_clk_d     = s_pll_safe_clk_q;
     s_pll_lock_d         = s_pll_lock_q;
+`ifndef MINI_PRODUCT
     if (write_valid_i && (write_offset_i == IpSel)) begin
       s_sysctrl_ipsel_d = write_data_i[`USER_IPSEL_WIDTH-1:0];
     end
+`endif
     if (s_pll_cfg_write_en) begin
       s_pll_cfg_d = write_data_i[2:0];
     end
@@ -308,6 +382,57 @@ module sysctrl_core (
       s_pll_err_reason_d = pll_ctrl.rsp_error_i;
     end
   end
+
+  assign s_clock_cmd_write = write_valid_i &&
+      ((write_offset_i == ClockLpCfg) || (write_offset_i == ClockPclkCfg) ||
+       (write_offset_i == ClockGate) || (write_offset_i == ClockTimeout) ||
+       (write_offset_i == MemPadCtrl) ||
+       ((write_offset_i == ClockHpReq) && write_data_i[30]) ||
+       ((write_offset_i == ClockFault) && write_data_i[0]) ||
+       ((write_offset_i == MemPadFault) && write_data_i[0]));
+  assign s_clock_cmd_accept = s_clock_cmd_write && !s_clock_busy_q && !s_clock_req_valid_q;
+  assign s_clock_write_reject = s_clock_cmd_write && !s_clock_cmd_accept;
+
+  always_comb begin
+    s_clock_req_data_d  = s_clock_req_data_q;
+    s_clock_req_valid_d = s_clock_req_valid_q;
+    s_clock_busy_d      = s_clock_busy_q;
+    s_clock_err_d       = s_clock_err_q;
+    s_clock_timeout_d   = s_clock_timeout_q;
+    if (s_clock_req_valid_q && clock_ctrl.req_ready_i) begin
+      s_clock_req_valid_d = 1'b0;
+    end
+    if (clock_ctrl.rsp_valid_i) begin
+      s_clock_busy_d = 1'b0;
+      s_clock_err_d  = clock_ctrl.rsp_data_i[3:0] != 4'd0;
+    end
+    if (s_clock_cmd_accept) begin
+      s_clock_req_valid_d = 1'b1;
+      s_clock_busy_d      = 1'b1;
+      s_clock_err_d       = 1'b0;
+      unique case (write_offset_i)
+        ClockLpCfg:   s_clock_req_data_d = {4'd1, 24'd0, write_data_i[3:0]};
+        ClockPclkCfg: s_clock_req_data_d = {4'd2, 25'd0, write_data_i[2:0]};
+        ClockGate:    s_clock_req_data_d = {4'd4, 20'd0, write_data_i[7:0]};
+        ClockTimeout: begin
+          s_clock_req_data_d = {4'd6, 12'd0, write_data_i[15:0]};
+          s_clock_timeout_d  = write_data_i[15:0];
+        end
+        ClockFault:   s_clock_req_data_d = {4'd5, 27'd0, write_data_i[0]};
+        MemPadCtrl:   s_clock_req_data_d = {4'd7, 19'd0, write_data_i[8], 6'd0, write_data_i[1:0]};
+        MemPadFault:  s_clock_req_data_d = {4'd8, 27'd0, write_data_i[0]};
+        default:      s_clock_req_data_d = {4'd3, 27'd0, write_data_i[30]};
+      endcase
+    end
+  end
+
+`ifdef MINI_PRODUCT
+  assign write_error_o = s_clock_write_reject || (write_valid_i &&
+      ((write_offset_i == CoreSel) || (write_offset_i == IpSel) ||
+       (write_offset_i == UserCoreReset) || (write_offset_i == UserCoreStatus)));
+`else
+  assign write_error_o = s_clock_write_reject;
+`endif
 
   assign s_fault_stat_clear = write_valid_i && (write_offset_i == FaultStatus) &&
                               write_strobe_i[0] &&
@@ -490,8 +615,8 @@ module sysctrl_core (
     read_data_valid_o = 1'b1;
     read_data_o       = '0;
     unique case (read_offset_i)
-      CoreSel: read_data_o = {{(32 - `USER_CORESEL_WIDTH) {1'b0}}, s_sysctrl_coresel_q};
-      IpSel: read_data_o = {{(32 - `USER_IPSEL_WIDTH) {1'b0}}, s_sysctrl_ipsel_q};
+      CoreSel: read_data_o = '0;
+      IpSel: read_data_o = '0;
       PllCfg: read_data_o = {29'd0, s_pll_cfg_q};
       FaultStatus: read_data_o = {27'd0, s_fault_reason_q, s_fault_write_q, s_fault_pending_q};
       FaultAddr: read_data_o = s_fault_addr_q;
@@ -508,8 +633,16 @@ module sysctrl_core (
         s_pll_active_valid_q,
         s_pll_active_sel_q
       };
-      UserCoreReset: read_data_o = {{(32 - `USER_CORE_COUNT) {1'b0}}, s_user_reset_q};
+      UserCoreReset:
+`ifdef MINI_PRODUCT
+      read_data_o = 32'hFFFF_FFFF;
+`else
+      read_data_o = {{(32 - `USER_CORE_STORAGE_COUNT) {1'b0}}, s_user_reset_q};
+`endif
       UserCoreStatus:
+`ifdef MINI_PRODUCT
+      read_data_o = {20'd0, s_user_config_err_q, 1'b0, 1'b1, 1'b0, 8'd0};
+`else
       read_data_o = {
         20'd0,
         s_user_config_err_q,
@@ -519,6 +652,7 @@ module sysctrl_core (
         {(8 - `USER_CORESEL_WIDTH) {1'b0}},
         s_sysctrl_coresel_q
       };
+`endif
       FaultMaster: read_data_o = {29'd0, s_fault_master_q};
       FaultDetail: read_data_o = {29'd0, s_fault_detail_q};
       PerfCtrl: read_data_o = {31'd0, s_perf_en_q};
@@ -552,10 +686,66 @@ module sysctrl_core (
         29'd0, sysctrl.hp_present_i && !s_hp_release_q, s_hp_release_q, sysctrl.hp_present_i
       };
       DebugSelect: read_data_o = {31'd0, s_debug_hp_sel_q};
+      ClockHpReq: read_data_o = {29'd0, s_pll_cfg_q};
+      ClockHpCurrent: read_data_o = clock_ctrl.current_i;
+      ClockLpCfg: read_data_o = {28'd0, clock_ctrl.current_i[7:4]};
+      ClockPclkCfg: read_data_o = {29'd0, clock_ctrl.current_i[10:8]};
+      ClockStatus:
+      read_data_o = {
+        28'd0, s_clock_err_q, s_clock_busy_q, clock_ctrl.fault_i[1], clock_ctrl.fault_i[0]
+      };
+      ClockFault: read_data_o = clock_ctrl.fault_i;
+      ClockTimeout: read_data_o = {16'd0, s_clock_timeout_q};
+      ClockGate: read_data_o = {24'd0, clock_ctrl.current_i[18:11]};
+      MemPadCtrl: read_data_o = {23'd0, clock_ctrl.memory_i[2], 6'd0, clock_ctrl.memory_i[1:0]};
+      MemPadStatus: read_data_o = clock_ctrl.memory_i;
+      MemPadFault: read_data_o = {31'd0, clock_ctrl.memory_i[4]};
       default: begin
         read_data_valid_o = 1'b0;
       end
     endcase
   end
+
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_clock_req_data_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_clock_req_data_d),
+      .dat_o  (s_clock_req_data_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_clock_req_valid_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_clock_req_valid_d),
+      .dat_o  (s_clock_req_valid_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_clock_busy_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_clock_busy_d),
+      .dat_o  (s_clock_busy_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_clock_err_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_clock_err_d),
+      .dat_o  (s_clock_err_q)
+  );
+  dffrc #(
+      .DATA_WIDTH(16),
+      .RESET_VAL (16'd1024)
+  ) u_clock_timeout_dffrc (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_clock_timeout_d),
+      .dat_o  (s_clock_timeout_q)
+  );
 
 endmodule

@@ -68,7 +68,7 @@ export CCACHE_DIR = $(CACHE_ROOT)/ccache/verilator
 export CCACHE_TEMPDIR = $(CACHE_ROOT)/ccache/verilator/tmp
 endif
 
-$(VERILATOR_STAMP): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
+$(VERILATOR_STAMP): $(MPW_VARIANT_DEP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(CCACHE_TEMPDIR)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator \
@@ -85,7 +85,7 @@ $(VERILATOR_EMU): $(VERILATOR_STAMP)
 		-- make -j$(VERILATOR_JOBS) VM_PARALLEL_BUILDS=1 OPT_FAST=-O3 -C $(SOC_COMPILE_HOME) \
 		-f V$(SOC_VSRC_TOP).mk
 
-$(RTL_LINT_STAMP): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
+$(RTL_LINT_STAMP): $(MPW_VARIANT_DEP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
 	@mkdir -p $(RTL_LINT_DIR)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool rtl-lint \
 		--log $(RTL_LINT_DIR)/lint.log --result $(RTL_LINT_DIR)/result-rtl-lint.json \

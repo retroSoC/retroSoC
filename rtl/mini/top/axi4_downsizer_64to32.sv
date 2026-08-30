@@ -4,7 +4,9 @@
 `include "axi4_define.svh"
 
 // Converts one outstanding 64-bit AXI4 transaction into a 32-bit transaction.
-module axi4_downsizer_64to32 (
+module axi4_downsizer_64to32 #(
+    parameter int unsigned WideIdWidth = 3
+) (
     input logic          clk_i,
     input logic          rst_n_i,
           axi4_if.slave  wide,
@@ -17,8 +19,8 @@ module axi4_downsizer_64to32 (
 
   channel_state_e s_read_state_d, s_read_state_q;
   channel_state_e s_write_state_d, s_write_state_q;
-  logic [2:0] s_read_id_d, s_read_id_q;
-  logic [2:0] s_write_id_d, s_write_id_q;
+  logic [WideIdWidth-1:0] s_read_id_d, s_read_id_q;
+  logic [WideIdWidth-1:0] s_write_id_d, s_write_id_q;
   logic [2:0] s_read_size_d, s_read_size_q;
   logic [2:0] s_write_size_d, s_write_size_q;
   logic [7:0] s_read_len_d, s_read_len_q;
@@ -226,7 +228,7 @@ module axi4_downsizer_64to32 (
   );
 
   dffr #(
-      .DATA_WIDTH(3)
+      .DATA_WIDTH(WideIdWidth)
   ) u_read_id_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -234,7 +236,7 @@ module axi4_downsizer_64to32 (
       .dat_o  (s_read_id_q)
   );
   dffr #(
-      .DATA_WIDTH(3)
+      .DATA_WIDTH(WideIdWidth)
   ) u_write_id_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
