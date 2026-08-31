@@ -101,6 +101,20 @@ use APB4-peripheral group bit 14 and management-core IRQ20. Their stream
 selection, backpressure, and transfer-boundary rules are defined in
 [axi4-stream.md](axi4-stream.md).
 
+## JPEG codec integration
+
+The Baseline JPEG codec occupies APB4 slot 26 at `0x1001a000`. It owns a
+private 64-bit AXI4 master rather than consuming central-DMA channels. The
+master is index 6 in the generated data-plane policy and crosses from PCLK to
+the HP fabric through `u_jpeg_cdc`; its buffers must be non-cacheable/shared or
+covered by the Resource Controller cache-maintenance handoff.
+
+JPEG is resource index 6. Its LP interrupt is APB4-peripheral group bit 22 and
+management-core IRQ30; HP ownership routes the raw source to PLIC source 9.
+Quiesce blocks new direct/ring jobs, resource reset aborts the codec, and idle
+is acknowledged only after both AXI channels drain. The APB4/raster/ring ABI
+and performance boundary are defined in [jpeg.md](ip/jpeg.md).
+
 ## OPI PSRAM alternate functions
 
 The octal PSRAM controller uses GPIO21-31 ALT0 for CK, CS#, DQ[7:0], and

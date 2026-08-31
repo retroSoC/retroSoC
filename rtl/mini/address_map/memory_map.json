@@ -499,6 +499,15 @@
       "user_access": "none"
     },
     {
+      "symbol": "APB4_JPEG",
+      "base": "0x1001A000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
       "symbol": "APB4_PWM",
       "base": "0x20002000",
       "size": "0x00001000",

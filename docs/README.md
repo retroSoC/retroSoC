@@ -43,6 +43,9 @@ the root README and subsystem guides.
   HAL, verification evidence, and commercialization roadmap.
 - [ip/usb2.md](ip/usb2.md) defines the ULPI USB 2.0 dual-role architecture,
   AXI4 descriptor DMA, APB4 ABI, dedicated pads, HAL, and release gates.
+- [ip/jpeg.md](ip/jpeg.md) records the commercial JPEG IP/SoC survey and
+  defines the Mini Baseline JPEG codec, private AXI4 DMA, APB4/ring ABI, HAL,
+  verification boundary, and measured 1080p60 optimization plan.
 - [ip/mini-npu.md](ip/mini-npu.md) evaluates commercial edge-AI SoCs and records the
   optional Mini-AI NPU architecture direction, memory constraints, software
   boundary, and integration prerequisites; it is not an implemented profile.

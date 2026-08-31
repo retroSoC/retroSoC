@@ -52,8 +52,9 @@ MPW compatibility API; selector mutators return `RS_ENOTSUP` in product builds.
 See the [extension contract](../docs/ip/extensions.md) and
 [legacy user-IP contract](../docs/ip/user-ip.md).
 
-`<retrosoc/hal/resource.h>` owns the central DMA, USB2, SDIO0/1, SPI-SD, and
-EXT-H owner/lock, lifecycle-request, fault, and HP cache-maintenance handshake.
+`<retrosoc/hal/resource.h>` owns the central DMA, USB2, SDIO0/1, SPI-SD,
+EXT-H, and JPEG owner/lock, lifecycle-request, fault, and HP cache-maintenance
+handshake.
 See the [Resource Controller contract](../docs/ip/resource-controller.md).
 
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
@@ -80,6 +81,12 @@ AES DMA reserves channels 4/5; private RSA input is write-only at the APB
 boundary and assumes public exponent 65537 for result verification. See the
 [crypto controller contract](../docs/ip/crypto.md) before handling production
 keys or composing an RFC 8017 scheme.
+
+`<retrosoc/hal/jpeg.h>` provides validated direct jobs, bounded waits/abort,
+status and IRQ access, encoder table portal operations, and 128-byte SG-ring
+descriptors for the private-AXI Baseline JPEG codec. Metadata fields are
+reserved and rejected in V1. See the [JPEG codec contract](../docs/ip/jpeg.md)
+for the raster, cache, descriptor, and performance requirements.
 
 `<retrosoc/hal/sdio.h>` provides separate low-level native SD host,
 SD Memory v2, and SDIO function APIs for `sdio0` and `sdio1`. The controller

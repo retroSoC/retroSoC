@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 22,
+      "width": 23,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -260,6 +260,15 @@
       "user_visible": false
     },
     {
+      "name": "jpeg",
+      "description": "APB4 JPEG codec completion and error interrupt",
+      "group": "apb4_periph",
+      "group_bit": 22,
+      "core_bit": 30,
+      "signal": "resource_irq_lp_i[5]",
+      "user_visible": false
+    },
+    {
       "name": "resource_fault",
       "description": "Resource ownership and handoff fault interrupt",
       "group": "apb4_system",
@@ -378,9 +387,9 @@
     },
     {
       "index": 6,
-      "name": "reserved",
-      "read_targets": [],
-      "write_targets": [],
+      "name": "jpeg",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
       "allow_instruction": false,
       "require_noncacheable": true
     },
@@ -584,6 +593,13 @@
       "timed_interface": "u_hp_plic_apb4_if",
       "pure_interface": "u_hp_plic_apb4_pure_if",
       "region": "HP_PLIC"
+    },
+    {
+      "slot": 26,
+      "name": "jpeg",
+      "timed_interface": "u_jpeg_apb4_if",
+      "pure_interface": "u_jpeg_apb4_pure_if",
+      "region": "APB4_JPEG"
     }
   ],
   "apb4_system_targets": [

@@ -109,6 +109,7 @@
     {"name": "sram_config", "source": "pclk", "destination": "hp", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_sram_cfg_cdc"},
     {"name": "fabric_monitor", "source": "pclk", "destination": "hp", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_fabric_monitor_cdc"},
     {"name": "io_dma_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_io_cdc"},
+    {"name": "jpeg_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_jpeg_cdc"},
     {"name": "extension_h_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ext_h_cdc"},
     {"name": "sdram_data", "source": "hp", "destination": "memory", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},
     {"name": "serial_memory_data", "source": "hp", "destination": "memory", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},

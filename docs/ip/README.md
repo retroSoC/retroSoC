@@ -19,6 +19,9 @@ extension interfaces.
 - [i2s.md](i2s.md) defines the APB4 I2S master transceiver.
 - [usb2.md](usb2.md) defines the dual-role ULPI USB 2.0 controller, AXI4
   descriptor DMA, dedicated-pad integration, HAL, and commercial release gates.
+- [jpeg.md](jpeg.md) defines the Baseline JPEG encoder/decoder, commercial
+  reference survey, APB4/AXI4 DMA and SG-ring ABI, HAL, verification evidence,
+  measured performance baseline, and 1080p60 optimization gates.
 - [mini-npu.md](mini-npu.md) records the commercial NPU reference survey and optional
   Mini-AI architecture direction; it does not define implemented RTL or ABI.
 - [sdram.md](sdram.md) defines the AXI4 SDRAM data controller and APB4 configuration window.

@@ -23,8 +23,10 @@ module apb4_periph (
     input logic                                   debug_halted_i,
     input logic                                   timebase_tick_i,
     input logic                                   ext_h_hp_irq_i,
-    input logic [4:0]                             resource_irq_lp_i,
-    input logic [4:0]                             resource_irq_hp_i,
+    input logic [5:0]                             resource_irq_lp_i,
+    input logic [5:0]                             resource_irq_hp_i,
+    input logic                                   jpeg_quiesce_i,
+    input logic                                   jpeg_reset_i,
     axi4_if.slave                                 cfg_axi4,
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
@@ -44,6 +46,7 @@ module apb4_periph (
     axi4_if.master                                sdio0_axi4,
     axi4_if.master                                sdio1_axi4,
     axi4_if.master                                usb2_axi4,
+    axi4_if.master                                jpeg_axi4,
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
     clock_ctrl_if.sysctrl                         clock_ctrl,
@@ -64,7 +67,8 @@ module apb4_periph (
     output logic                                  hp_software_irq_o,
     output logic                                  hp_machine_external_irq_o,
     output logic                                  hp_supervisor_external_irq_o,
-    output logic [4:0]                            resource_irq_raw_o,
+    output logic                                  jpeg_idle_o,
+    output logic [5:0]                            resource_irq_raw_o,
     output logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -147,6 +151,7 @@ axi4_stream_if #(
   logic s_dma_crypto_in_proc;
   logic s_dma_crypto_out_proc;
   logic s_crypto_irq;
+  logic s_jpeg_irq_raw;
   logic s_usb2_irq;
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
@@ -204,7 +209,9 @@ axi4_stream_if #(
   assign hp_software_irq_o = u_hp_clint_if.software_irq_o[1];
   assign hp_machine_external_irq_o = s_hp_plic_context_irq[0];
   assign hp_supervisor_external_irq_o = s_hp_plic_context_irq[1];
-  assign resource_irq_raw_o = {spisd.irq_o, sdio1.irq_o, sdio0.irq_o, s_usb2_irq, s_dma_irq};
+  assign resource_irq_raw_o = {
+    s_jpeg_irq_raw, spisd.irq_o, sdio1.irq_o, sdio0.irq_o, s_usb2_irq, s_dma_irq
+  };
 
   apb4_async_bridge u_psram_cfg_mem_cdc (
       .src_clk_i  (clk_i),
@@ -283,6 +290,7 @@ axi4_stream_if #(
     s_hp_plic_source[6] = resource_irq_hp_i[2];
     s_hp_plic_source[7] = resource_irq_hp_i[3];
     s_hp_plic_source[8] = resource_irq_hp_i[4];
+    s_hp_plic_source[9] = resource_irq_hp_i[5];
   end
 
   `include "apb4_periph_irq_bindings.svh"
@@ -448,6 +456,17 @@ axi4_stream_if #(
       .apb4             (u_crypto_apb4_if),
       .crypto_in_axis   (u_crypto_in_axis_if),
       .crypto_out_axis  (u_crypto_out_axis_if)
+  );
+
+  apb4_jpeg u_apb4_jpeg (
+      .clk_i           (clk_i),
+      .rst_n_i         (rst_n_i),
+      .quiesce_i       (jpeg_quiesce_i),
+      .resource_reset_i(jpeg_reset_i),
+      .apb4            (u_jpeg_apb4_if),
+      .axi4            (jpeg_axi4),
+      .idle_o          (jpeg_idle_o),
+      .irq_o           (s_jpeg_irq_raw)
   );
 
   apb4_sysctrl u_apb4_sysctrl (

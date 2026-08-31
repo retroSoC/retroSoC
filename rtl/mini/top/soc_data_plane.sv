@@ -16,7 +16,7 @@ module soc_data_plane (
     input  logic       block_new_i,
     input  logic       recovery_i,
     input  logic       flush_i,
-    input  logic [5:0] resource_block_i,
+    input  logic [6:0] resource_block_i,
     input  logic [1:0] mem_pad_mode_i,
     input  logic       ext_h_block_i,
     input  logic [31:0] ext_h_read_base_i,
@@ -30,6 +30,7 @@ module soc_data_plane (
     axi4_if.slave      sdio1_axi4,
     axi4_if.slave      spisd_axi4,
     axi4_if.slave      usb2_axi4,
+    axi4_if.slave      jpeg_axi4,
     axi4_if.slave      lp_data_axi4,
     axi4_if.slave      ext_h_axi4,
     axi4_if.master     sram_gateway_axi4,
@@ -41,8 +42,8 @@ module soc_data_plane (
     output logic       idle_o,
     output logic       flush_busy_o,
     output logic       ext_h_idle_o,
-    output logic [5:0] resource_idle_o,
-    output logic [5:0] resource_block_ack_o,
+    output logic [6:0] resource_idle_o,
+    output logic [6:0] resource_block_ack_o,
     output logic [7:0] outstanding_read_o,
     output logic [7:0] outstanding_write_o,
     output logic       fault_valid_o,
@@ -78,12 +79,14 @@ module soc_data_plane (
   logic [                 3:0]       s_crossbar_fault_reason;
   logic                              s_lp_clear_busy;
   logic                              s_ext_clear_busy;
+  logic                              s_jpeg_clear_busy;
   logic [    NumIoMasters-1:0][ 7:0] unused_io_epoch;
   logic [NumMemoryTargets-1:0][ 7:0] unused_target_epoch;
   logic [                 7:0]       unused_lp_epoch;
   logic [                 7:0]       unused_ext_epoch;
+  logic [                 7:0]       unused_jpeg_epoch;
   logic [                 2:0]       s_unused_epoch;
-  logic [                 5:0]       s_resource_block_hp;
+  logic [                 6:0]       s_resource_block_hp;
   logic [                 7:0]       s_master_idle;
   logic [                 7:0]       s_master_block;
   logic [                 7:0]       s_monitor_master_read_accept;
@@ -230,6 +233,24 @@ module soc_data_plane (
       .aclk   (clk_hp_i),
       .aresetn(rst_hp_n_i)
   );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (3),
+      .USER_WIDTH(1)
+  ) u_jpeg_hp_axi4 (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (6),
+      .USER_WIDTH(1)
+  ) u_jpeg_prefixed_axi4 (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
   cdc_sync #(
       .STAGE     (2),
       .DATA_WIDTH(2)
@@ -241,7 +262,7 @@ module soc_data_plane (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(6)
+      .DATA_WIDTH(7)
   ) u_resource_block_sync (
       .clk_i  (clk_hp_i),
       .rst_n_i(rst_hp_n_i),
@@ -251,13 +272,15 @@ module soc_data_plane (
 
   assign s_master_block = {
     s_resource_block_hp[5],
-    2'b00,
+    s_resource_block_hp[6],
+    1'b0,
     s_resource_block_hp[4] || s_resource_block_hp[3],
     s_resource_block_hp[2] || s_resource_block_hp[1],
     s_resource_block_hp[0],
     2'b00
   };
   assign resource_idle_o = {
+    s_master_idle[6],
     s_master_idle[7],
     s_master_idle[4],
     s_master_idle[4],
@@ -358,7 +381,30 @@ module soc_data_plane (
       .narrow (u_lp_data_hp_axi4),
       .wide   (u_master_axi4[5])
   );
-  axi4_master_idle u_reserved_master_idle (.axi4(u_master_axi4[6]));
+  axi4_async_bridge #(
+      .DataWidth(64),
+      .IdWidth  (3)
+  ) u_jpeg_cdc (
+      .src_clk_i   (clk_io_i),
+      .src_rst_n_i (rst_io_n_i),
+      .dst_clk_i   (clk_hp_i),
+      .dst_rst_n_i (rst_hp_n_i),
+      .clear_i     (flush_i),
+      .clear_busy_o(s_jpeg_clear_busy),
+      .epoch_o     (unused_jpeg_epoch),
+      .src_axi4    (jpeg_axi4),
+      .dst_axi4    (u_jpeg_hp_axi4)
+  );
+  axi4_id_prefix #(
+      .MasterIndex(3'd6)
+  ) u_jpeg_prefix (
+      .source(u_jpeg_hp_axi4),
+      .sink  (u_jpeg_prefixed_axi4)
+  );
+  axi4_connector u_jpeg_connector (
+      .source(u_jpeg_prefixed_axi4),
+      .sink  (u_master_axi4[6])
+  );
 
   axi4_async_bridge #(
       .DataWidth(64),
@@ -590,9 +636,12 @@ module soc_data_plane (
   end
 
   assign flush_busy_o = (|s_io_clear_busy) || (|s_target_clear_busy) ||
-                        (|s_guard_clear_busy) || s_lp_clear_busy || s_ext_clear_busy;
+                        (|s_guard_clear_busy) || s_lp_clear_busy || s_ext_clear_busy ||
+                        s_jpeg_clear_busy;
   assign s_unused_epoch = {
-    ^unused_io_epoch, ^unused_target_epoch, ^{unused_lp_epoch, unused_ext_epoch}
+    ^unused_io_epoch,
+    ^unused_target_epoch,
+    ^{unused_lp_epoch, unused_ext_epoch, unused_jpeg_epoch}
   };
 
   axi4_connector u_qpi_gateway_connector (

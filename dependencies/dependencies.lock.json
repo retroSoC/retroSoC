@@ -95,6 +95,12 @@
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
   },
   "archives": {
+    "libjpeg_turbo": {
+      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
+      "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
+      "destination": ".cache/retrosoc/downloads/libjpeg-turbo/libjpeg-turbo-3.2.0.tar.gz",
+      "license": "BSD-3-Clause AND IJG"
+    },
     "ecc_cli_linux_x86_64": {
       "url": "https://github.com/openecos-projects/ecc/releases/download/v0.1.0-alpha.10/ecc-cli-linux-x86_64.tar.gz",
       "sha256": "fc3daaca24dddb04ba3490329042f52da05190da03c3831042293dd0cbffdca6",

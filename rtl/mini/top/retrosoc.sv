@@ -86,6 +86,8 @@ module retrosoc (
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_ext_h_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_jpeg_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_hp_icache_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_hp_dcache_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
@@ -230,16 +232,18 @@ module retrosoc (
   logic [31:0]      s_ext_h_timeout;
   logic             s_ext_h_irq_raw;
   logic [ 1:0]      s_ext_h_owner;
-  logic [ 5:0][1:0] s_resource_owner;
-  logic [ 5:0]      s_resource_quiesce;
-  logic [ 5:0]      s_resource_reset;
-  logic [ 5:0]      s_resource_idle_hp;
-  logic [ 5:0]      s_resource_idle_pclk;
-  logic [ 5:0]      s_resource_block_ack_hp;
-  logic [ 5:0]      s_resource_block_ack_pclk;
-  logic [ 4:0]      s_resource_irq_raw;
-  logic [ 4:0]      s_resource_irq_lp;
-  logic [ 4:0]      s_resource_irq_hp;
+  logic [ 6:0][1:0] s_resource_owner;
+  logic [ 6:0]      s_resource_quiesce;
+  logic [ 6:0]      s_resource_reset;
+  logic [ 6:0]      s_resource_idle_hp;
+  logic [ 6:0]      s_resource_idle_pclk;
+  logic [ 6:0]      s_resource_block_ack_hp;
+  logic [ 6:0]      s_resource_block_ack_pclk;
+  logic [ 5:0]      s_resource_irq_raw;
+  logic [ 5:0]      s_resource_irq_lp;
+  logic [ 5:0]      s_resource_irq_hp;
+  logic             s_jpeg_idle;
+  logic [ 6:0]      s_resource_idle_combined;
   logic [31:0]      s_fault_addr_mux;
   logic [ 3:0]      s_fault_wstrb_mux;
   logic             s_fault_reserved_mux;
@@ -565,6 +569,7 @@ core_wrapper u_core_wrapper (
       .sdio1_axi4          (u_sdio1_axi4_if),
       .spisd_axi4          (u_spisd_axi4_if),
       .usb2_axi4           (u_usb2_axi4_if),
+      .jpeg_axi4           (u_jpeg_wide_axi4_if),
       .lp_data_axi4        (u_mgmt_data_axi4_if),
       .ext_h_axi4          (u_ext_h_wide_axi4_if),
       .sram_gateway_axi4   (u_data_sram_axi4_if),
@@ -590,7 +595,7 @@ core_wrapper u_core_wrapper (
 
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(6)
+      .DATA_WIDTH(7)
   ) u_resource_idle_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -599,7 +604,7 @@ core_wrapper u_core_wrapper (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(6)
+      .DATA_WIDTH(7)
   ) u_resource_block_ack_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -792,11 +797,14 @@ core_wrapper u_core_wrapper (
       .ext_h_hp_irq_i              ((s_ext_h_owner == 2'd1) ? s_ext_h_irq_raw : 1'b0),
       .resource_irq_lp_i           (s_resource_irq_lp),
       .resource_irq_hp_i           (s_resource_irq_hp),
+      .jpeg_quiesce_i              (s_resource_quiesce[6]),
+      .jpeg_reset_i                (s_resource_reset[6]),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
       .dma_axi4                    (u_dma_axi4_if),
       .sdio0_axi4                  (u_sdio0_axi4_if),
       .sdio1_axi4                  (u_sdio1_axi4_if),
       .usb2_axi4                   (u_usb2_axi4_if),
+      .jpeg_axi4                   (u_jpeg_wide_axi4_if),
       .psram_axi4                  (u_data_qpi_axi4_if),
       .xpi_axi4                    (u_data_xpi_axi4_if),
       .spisd_axi4                  (u_spisd_axi4_if),
@@ -832,6 +840,7 @@ core_wrapper u_core_wrapper (
       .hp_machine_external_irq_o   (s_hp_machine_external_irq),
       .hp_supervisor_external_irq_o(s_hp_supervisor_external_irq),
       .resource_irq_raw_o          (s_resource_irq_raw),
+      .jpeg_idle_o                 (s_jpeg_idle),
       .irq_o                       (s_apb4_periph_irq)
   );
 
@@ -850,7 +859,7 @@ core_wrapper u_core_wrapper (
       .rst_aud_n_i(rst_aud_n_i),
       .debug_halted_i(s_mgmt_debug_halted),
       .ext_h_data_idle_i(s_ext_h_data_idle),
-      .resource_idle_i({s_ext_h_data_idle && s_resource_idle_pclk[5], s_resource_idle_pclk[4:0]}),
+      .resource_idle_i(s_resource_idle_combined),
       .resource_block_ack_i(s_resource_block_ack_pclk),
       .resource_irq_i(s_resource_irq_raw),
       .cache_request_i(s_hp_cache_req_pclk),
@@ -879,6 +888,12 @@ core_wrapper u_core_wrapper (
       .resource_irq_hp_o(s_resource_irq_hp),
       .irq_o(s_apb4_system_irq)
   );
+
+  assign s_resource_idle_combined = {
+    s_jpeg_idle && s_resource_idle_pclk[6],
+    s_ext_h_data_idle && s_resource_idle_pclk[5],
+    s_resource_idle_pclk[4:0]
+  };
 
   logic [35:0] s_unused_domain_inputs;
   assign s_unused_domain_inputs = {

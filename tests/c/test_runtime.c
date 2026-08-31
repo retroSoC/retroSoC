@@ -13,6 +13,7 @@
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
+#include <retrosoc/hal/jpeg.h>
 #include <retrosoc/hal/psram.h>
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
@@ -863,6 +864,68 @@ static int test_resource_validation(void) {
     return 0;
 }
 
+static int test_jpeg_validation(void) {
+    static _Alignas(RS_JPEG_DESCRIPTOR_ALIGNMENT) rs_jpeg_descriptor_t ring[2];
+    rs_jpeg_descriptor_t descriptor;
+    rs_jpeg_job_t job = {
+        .mode = RS_JPEG_MODE_ENCODE,
+        .input_format = RS_JPEG_FORMAT_RGB565,
+        .output_format = RS_JPEG_FORMAT_RGB565,
+        .sampling = RS_JPEG_SAMPLING_420,
+        .width = 1920U,
+        .height = 1080U,
+        .quality = 75U,
+        .table_context = 0U,
+        .restart_interval = 64U,
+        .bitstream = (uintptr_t)UINT32_C(0x38000000),
+        .bitstream_size = UINT32_C(0x00100000),
+        .planes = {(uintptr_t)UINT32_C(0x38100000), (uintptr_t)0U, (uintptr_t)0U},
+        .strides = {3840U, 0U, 0U},
+        .metadata = (uintptr_t)0U,
+        .metadata_length = 0U,
+        .auto_header = true,
+        .strict = true,
+    };
+
+    if ((rs_jpeg_job_validate(&job) != RS_OK) ||
+        (rs_jpeg_descriptor_build(&descriptor, &job, UINT64_C(0x123456789ABCDEF0), true) !=
+         RS_OK) ||
+        (descriptor.image_size != UINT32_C(0x04380780)) ||
+        (descriptor.cookie_lo != UINT32_C(0x9ABCDEF0)) ||
+        (descriptor.cookie_hi != UINT32_C(0x12345678)) ||
+        ((descriptor.control &
+          (RS_JPEG_DESCRIPTOR_OWN | RS_JPEG_DESCRIPTOR_IOC | RS_JPEG_DESCRIPTOR_ENCODE)) !=
+         (RS_JPEG_DESCRIPTOR_OWN | RS_JPEG_DESCRIPTOR_IOC | RS_JPEG_DESCRIPTOR_ENCODE))) {
+        return 1;
+    }
+    if ((rs_jpeg_ring_validate(ring, 2U) != RS_OK) ||
+        (rs_jpeg_ring_validate(ring, 3U) != RS_EINVAL) ||
+        (rs_jpeg_ring_validate(NULL, 2U) != RS_EINVAL)) {
+        return 2;
+    }
+    job.quality = 0U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 3;
+    }
+    job.quality = 75U;
+    job.strides[0] = 3839U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 4;
+    }
+    job.strides[0] = 3840U;
+    job.bitstream += 1U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 5;
+    }
+    job.bitstream -= 1U;
+    job.metadata = (uintptr_t)UINT32_C(0x38200000);
+    job.metadata_length = 8U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 6;
+    }
+    return 0;
+}
+
 static int test_ps2_decoders(void) {
     ps2_keyboard_decoder_t keyboard;
     ps2_mouse_decoder_t mouse;
@@ -953,6 +1016,7 @@ int main(void) {
         test_user_ip_validation(),
         test_extension_validation(),
         test_resource_validation(),
+        test_jpeg_validation(),
         test_ps2_decoders(),
         test_wav_parser(),
         test_video_parser(),

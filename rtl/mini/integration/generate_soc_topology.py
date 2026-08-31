@@ -27,7 +27,7 @@ DATA_MASTER_NAMES = (
     "io_gateway_a",
     "io_gateway_b",
     "lp_gateway",
-    "reserved",
+    "jpeg",
     "ext_h",
 )
 DATA_TARGET_NAMES = ("sram", "sdram", "qpi", "opi", "xpi")

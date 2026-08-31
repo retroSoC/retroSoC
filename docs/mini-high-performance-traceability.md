@@ -22,7 +22,8 @@
 | HP normal and forced hot reset | AON lifecycle controller and Resource Controller | cache request/ACK, drain, timeout, flush, and recovery tests | implemented digitally: Zicbom and bounded ACK window exist; range policy and Linux service remain software work |
 | Clock monitor and programmable timeout | AON clock/reset subsystem | 8x8 DFS and clock-loss tests | implemented |
 | Operational EXT-H ACL, timeout, and data path | Extension subsystem | transfer, denial, hang, and quiesce tests | implemented |
-| Ownership-aware IRQ handoff | Resource Controller and HP PLIC | idle handoff, owner lock, LP/HP exclusion, and fault tests | implemented for DMA, USB2, SDIO0/1, SPI-SD, and EXT-H; downstream per-engine reset ACK remains pending |
+| Ownership-aware IRQ handoff | Resource Controller and HP PLIC | idle handoff, owner lock, LP/HP exclusion, and fault tests | implemented for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, and JPEG; downstream per-engine reset ACK remains pending |
+| JPEG 1080p60 at 72 MHz | JPEG codec and private AXI4 DMA | complete 1080p encode/decode cycles, randomized AXI stalls, synthesis/STA/power | partial: functional direct/ring codec and cycle benchmark exist; current encode core projects to about 24 fps, and the required multi-lane pipeline remains planned |
 | Bounded target timeout and isolation | Target guards | pre-/post-accept timeout, burst completion, and late-response isolation | implemented: synthetic SLVERR and fail-closed isolation; physical fault injection pending |
 | Root-visible fabric observability | Fabric Monitor | counters, snapshot, high-water, promotion, timeout, isolation, flush, sticky fault, and RTL/C parity tests | implemented; histogram/interrupt/trace streaming and silicon correlation remain pending |
 | QPI/OPI pad exclusion and inactive-window error | Memory pad manager | simulation and formal mutual-exclusion proof | implemented |

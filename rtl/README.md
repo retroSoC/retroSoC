@@ -112,6 +112,13 @@ RSA-2048 Montgomery exponentiation. Its register ABI, key/zeroize boundary,
 commercial survey, and verification roadmap are documented in
 [AES/SHA-2/RSA Crypto Controller](../docs/ip/crypto.md).
 
+The self-owned JPEG controller provides 8-bit Baseline Sequential encode and
+decode, five raster formats, a 64-bit AXI4 2D DMA, direct and 128-byte SG-ring
+jobs, four encoder table contexts, interrupts, and LP/HP transferable resource
+ownership. Its implemented limits, handwritten ABI, measured performance, and
+commercial release gates are documented in
+[Baseline JPEG Codec](../docs/ip/jpeg.md).
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and

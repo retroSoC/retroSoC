@@ -26,3 +26,8 @@ Buildroot source revisions. `make setup-hp-linux` installs the software sources
 below `.cache/retrosoc/sources/`; VexiiRiscv may be supplied through
 `VEXIIRISCV_ROOT`, but its revision is still checked before generated RTL is
 accepted. No generated CPU RTL or Linux build output belongs in Git.
+
+The libjpeg-turbo source archive is a host-verification input for the JPEG
+accelerator. It supplies an implementation-independent interoperability oracle;
+it is not linked into firmware or synthesized RTL. The repository-owned fixed
+point model remains the bit-accurate source of expected RTL results.
