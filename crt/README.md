@@ -56,6 +56,11 @@ See the [extension contract](../docs/ip/extensions.md) and
 EXT-H owner/lock, lifecycle-request, fault, and HP cache-maintenance handshake.
 See the [Resource Controller contract](../docs/ip/resource-controller.md).
 
+`<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
+master/target counters, stable snapshots, warm-flush counts, target isolation,
+and the sticky first-fault record. See the
+[Fabric Monitor contract](../docs/ip/fabric-monitor.md).
+
 `<retrosoc/hal/memory.h>` provides the uniform Mini memory inventory for
 SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, and XPI. It reports the fixed
 window, device/initialization/ready/active state, shared-pad mode, DMA and

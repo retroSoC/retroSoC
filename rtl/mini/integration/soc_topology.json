@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "gpio_pins": 32,
   "irq_vector_width": 32,
   "irq_groups": [
@@ -327,6 +327,72 @@
       "domain": "lp"
     }
   ],
+  "data_master_policies": [
+    {
+      "index": 0,
+      "name": "hp_icache",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": [],
+      "allow_instruction": true,
+      "require_noncacheable": false
+    },
+    {
+      "index": 1,
+      "name": "hp_dcache",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": false
+    },
+    {
+      "index": 2,
+      "name": "dma",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    },
+    {
+      "index": 3,
+      "name": "io_gateway_a",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    },
+    {
+      "index": 4,
+      "name": "io_gateway_b",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    },
+    {
+      "index": 5,
+      "name": "lp_gateway",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    },
+    {
+      "index": 6,
+      "name": "reserved",
+      "read_targets": [],
+      "write_targets": [],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    },
+    {
+      "index": 7,
+      "name": "ext_h",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    }
+  ],
   "apb4_periph_targets": [
     {
       "slot": 0,
@@ -597,6 +663,14 @@
       "timed_interface": "u_resource_ctrl_apb4_if",
       "pure_interface": "u_resource_ctrl_apb4_pure_if",
       "region": "APB4_RESOURCE_CTRL"
+    },
+    {
+      "slot": 11,
+      "name": "fabric_monitor",
+      "timed_interface": "fabric_monitor",
+      "pure_interface": "fabric_monitor_pure",
+      "region": "APB4_FABRIC_MONITOR",
+      "external": true
     }
   ],
   "gpio_alt_functions": [

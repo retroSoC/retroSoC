@@ -301,6 +301,7 @@
       "extension_dma_master.sv",
       "extension_slot.sv",
       "extension_subsystem.sv",
+      "fabric_monitor.sv",
       "gpio_pad_bridge.sv",
       "hp_axi4_mux3.sv",
       "hp_core_wrapper.sv",

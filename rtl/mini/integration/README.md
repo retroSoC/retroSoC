@@ -34,7 +34,15 @@ The `apb4_system_targets` list defines the stable APB4 response slot,
 timed/pure APB4 interface names, and corresponding active `apb4_system`
 address-map region. Slots are contiguous from zero. The user-IP target is
 part of the fixed platform integration and its presence is checked against
-the canonical memory map.
+the canonical memory map. Slot 10 is the Resource Controller; slot 11 is the
+external HP-domain Fabric Monitor reached through its explicit PCLK-to-HP APB
+bridge.
+
+`data_master_policies` defines all eight native data-plane master identities,
+read/write target sets, instruction permission, and non-cacheable attribute
+requirements. The generator rejects missing, reordered, or unknown entries
+and emits packed `soc_data_policy.svh` constants consumed by the crossbar.
+This keeps access policy reviewable without generating register definitions.
 
 `irq_vector_width`, `irq_groups`, and `interrupts` define the complete core
 interrupt topology. `apb4_periph` and `apb4_system` group entries declare the
@@ -63,6 +71,11 @@ User cores keep `ribp_if.master ribp` at the extension ABI and are converted to
 AXI4 after selection; user IPs use `user_gpio_if.user_ip gpio` and APB4. This
 prevents system-fabric and electrical pad-control contracts from entering the
 extension muxes.
+
+Product extension entries also declare `data_master`, `stream`, and
+`local_sram` independently. Capability registers are driven from those exact
+values. The current EXT-H has a data master but no stream or local SRAM; EXT-L
+has none of the three.
 
 `clock_reset_domains.json` is the checked inventory of root clock domains,
 reset synchronizers, and RCU PLL control crossings. It records the primitive,

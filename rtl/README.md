@@ -121,6 +121,10 @@ verification contract are documented in
 The Mini SoC APB4 platform block is `apb4_system` in `rtl/mini/top`. It owns
 archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, the read-only legacy user-IP
 compatibility window, and fixed EXT-L/EXT-H control windows in product mode.
+The root-only Fabric Monitor is a separate HP-domain APB target reached through
+the generated `apb4_system` route and a PCLK-to-HP async bridge; its counter
+and sticky-fault ABI is documented in
+[Mini Data-Plane Fabric Monitor](../docs/ip/fabric-monitor.md).
 `apb4_periph` remains the APB4 peripheral container. Topology generation
 includes both management-only native SDIO hosts (`sdio0` on GPIO15..20 ALT0
 and `sdio1` on dedicated pads), and the `soc_apb4_system_fabric.svh` include is documented in

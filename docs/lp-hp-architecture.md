@@ -91,11 +91,11 @@ and a Common FIFO preserves write-data order where AXI4 W has no ID.
 
 Targets are SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, XPI/flash, and a
 finite-latency error slave. SRAM is a native AXI64, six-bit-ID target in HP and
-stripes each beat across two existing 32-bit technology macros. SDRAM crosses
-HP to the stable memory domain as AXI64 and is downsized only beside the current
-32-bit SDRAM frontend. QPI, OPI, and XPI retain transitional 32-bit LP staging
-before their stable memory-domain engines. Inactive QPI/OPI windows return
-`SLVERR`.
+stripes each beat across two existing 32-bit technology macros. SDRAM, QPI,
+OPI, and XPI cross directly from HP to the stable memory domain as AXI64 and
+are downsized only beside their current 32-bit controller frontends. Serial
+payload therefore does not consume LP fabric bandwidth. Inactive QPI/OPI
+windows return `SLVERR`.
 
 Every memory target has a queued guard. SRAM/SDRAM queue depth matches their
 credits. Target stalls are bounded by target-specific timeouts; a pre-accept
@@ -128,7 +128,7 @@ Product Mini has fixed control windows:
 | Slot | Window | IRQ | Data path |
 | --- | --- | --- | --- |
 | EXT-L 0 | `0x20008000-0x20008FFF` | LP IRQ 27 | APB4 only |
-| EXT-H 1 | `0x20009000-0x20009FFF` | LP IRQ 28 | APB4 plus AXI64 master/stream capability |
+| EXT-H 1 | `0x20009000-0x20009FFF` | LP IRQ 28 | APB4 plus AXI64 data master |
 
 Each slot exposes identification, version, capability, owner/lock, lifecycle,
 status, timeout, first fault, fault address, and request count. EXT-H adds read
@@ -142,6 +142,12 @@ for DMA, USB2, SDIO0/1, SPI-SD, and EXT-H. Handoff requires idle, owner lock is
 sticky, and rejected handoffs raise LP IRQ 29. It also carries the AON cache
 request/clean acknowledgement used before HP drain. See
 [`ip/resource-controller.md`](ip/resource-controller.md).
+
+The root-only Fabric Monitor at `0x2000_B000` records per-master and
+per-target traffic, wait, promotion, credit high-water, timeout, isolation,
+flush, and sticky first-fault information. Its APB path crosses PCLK to HP so
+the counters observe the native fabric directly. See
+[`ip/fabric-monitor.md`](ip/fabric-monitor.md).
 
 The old `APB4_USER_IP` window is a read-only compatibility/capability window.
 Product writes to `CORESEL`, `IPSEL`, `USER_CORE_RESET`, or

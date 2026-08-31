@@ -29,6 +29,7 @@ module apb4_system (
     input  logic                                  cache_request_i,
     axi4_if.slave                                 axi4,
     axi4_if.master                                ext_h_axi4,
+    apb4_if.master                                fabric_monitor,
     pwm_if.dut                                    pwm,
     ps2_if.dut                                    ps2,
     input  logic [`USER_IPSEL_WIDTH-1:0]          ip_sel_i,

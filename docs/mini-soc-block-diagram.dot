@@ -1,29 +1,28 @@
-// Mini SoC architecture overview.
+// Mini PRODUCT architecture overview.
 // Render with: dot -Tsvg docs/mini-soc-block-diagram.dot -o docs/mini-soc-block-diagram.svg
-// Sources of truth: rtl/mini/top/{retrosoc_asic,retrosoc,bus}.sv and
-// rtl/mini/integration/{soc_topology,user_extensions,clock_reset_domains}.json.
+// Sources of truth: rtl/mini/top and rtl/mini/integration/*.json.
 digraph mini_soc_block_diagram {
   graph [
     bgcolor="transparent",
     compound=true,
     fontname="Arial",
     fontsize=18,
-    label="retroSoC Mini SoC Architecture",
+    label="retroSoC Mini Product Architecture",
     labelloc="t",
     labeljust="l",
-    newrank=true,
-    nodesep=0.38,
-    rankdir=TB,
-    ranksep=0.62,
+    nodesep=0.42,
+    rankdir=LR,
+    ranksep=0.72,
     splines=polyline
   ];
 
   node [
     color="#4B5563",
+    fillcolor="#F8FAFC",
     fontcolor="#111827",
     fontname="Arial",
     fontsize=10,
-    margin="0.12,0.08",
+    margin="0.14,0.10",
     penwidth=1.1,
     shape=box,
     style="rounded,filled"
@@ -37,273 +36,143 @@ digraph mini_soc_block_diagram {
     penwidth=1.2
   ];
 
-  ext_clock [
+  clocks [
     fillcolor="#F3F4F6",
-    label="External clocks and reset\next_clk, aud_clk, reset"
+    label="Clock and reset inputs\nREF24, EXT72, audio\nDVP, ULPI, JTAG"
   ];
-  ext_io [
+  pads [
     fillcolor="#F3F4F6",
-    label="External I/O and memory\nGPIO, UART0, PS/2, XPI Flash, SDRAM, PSRAM\nSD card, I2C, I2S, DVP, WS2812 and PWM"
-  ];
-  ext_jtag [
-    fillcolor="#F3F4F6",
-    label="Management JTAG\nTCK, TMS, TDI, TRST_n, TDO"
+    label="Pads and devices\nSDRAM, QPI/OPI shared pads, XPI\nUSB2, SDIO, SPI-SD, GPIO/peripherals"
   ];
 
-  subgraph cluster_rtl_ownership {
-    color="#CBD5E1";
-    fontcolor="#334155";
+  subgraph cluster_aon {
+    color="#7C3AED";
     fontname="Arial";
-    fontsize=10;
-    label="RTL ownership and validation profiles";
-    margin=12;
-    rank=sink;
-    style="rounded,dashed";
-
-    rtl_owned [
-      fillcolor="#DCECF8",
-      label="Self-owned RTL\nVerible format + strict style"
-    ];
-    rtl_verif [
-      fillcolor="#FCE7F3",
-      label="Formal and DV RTL\nverification lint profile"
-    ];
-    rtl_tech [
-      fillcolor="#FFF3C9",
-      label="PDK and technology wrappers\ncompile/elaboration profile"
-    ];
-    rtl_generated [
-      fillcolor="#E5E7EB",
-      label="Generated and managed RTL\nlocked source and regeneration flow"
-    ];
-  }
-
-  subgraph cluster_asic {
-    color="#111827";
-    fontcolor="#111827";
-    fontname="Arial";
-    fontsize=14;
-    label="retrosoc_asic";
-    margin=18;
+    label="AON @ REF24";
     style="rounded";
 
-    rcu [
+    aon [
       fillcolor="#EDE9FE",
-      label="RCU\nclock buffering and reset synchronization\nPLL CDC and fixed 1 MHz timebase"
+      label="Clock/reset subsystem\nPLL supervisor and clock monitor\nHP lifecycle, pad mode, retained faults"
     ];
-
-    subgraph cluster_soc {
-      color="#94A3B8";
-      fontcolor="#334155";
-      fontname="Arial";
-      fontsize=12;
-      label="retrosoc";
-      margin=16;
-      style="rounded,dashed";
-
-      mgmt_core [
-        fillcolor="#DDF2E3",
-        label="Management core\nFixed Hazard3, branch predictor\nJTAG Debug Module always present"
-      ];
-      jtag_dtm [
-        fillcolor="#E5E7EB",
-        label="Hazard3 JTAG DTM\n10 MHz asynchronous TCK domain"
-      ];
-      debug_module [
-        fillcolor="#FCE7F3",
-        label="Hazard3 Debug Module\nabstract commands, no SBA\nmanagement-hart-only reset"
-      ];
-      mgmt_adapter [
-        fillcolor="#E5E7EB",
-        label="AHB-Lite2AXI4\nsingle-beat adapter"
-      ];
-      user_core [
-        fillcolor="#DDF2E3",
-        label="Selected user core\nC0-C3, one active\nKianV / SERV / FemtoRV32 / DarkRISCV"
-      ];
-      dma [
-        fillcolor="#DDF2E3",
-        label="DMA\n4-channel native AXI4 burst master\nAPB4 target, AXI4-Stream, IRQ20"
-      ];
-      fabric [
-        fillcolor="#DCECF8",
-        label="AXI4 fabric\n3 masters / 9 targets, per-target round robin\nFIXED/INCR/WRAP1-16, access policy, fault reporting",
-        shape=hexagon
-      ];
-      fault [
-        fillcolor="#FCE7F3",
-        label="Error slave\naccess and protocol faults"
-      ];
-      sram [
-        fillcolor="#FFF3C9",
-        label="On-chip SRAM\noptional pipelined AXI42RAM path"
-      ];
-      apb4_periph [
-        fillcolor="#E5E7EB",
-        label="AXI42APB\nAPB4 configuration plane"
-      ];
-      apb4_system [
-        fillcolor="#E5E7EB",
-        label="AXI42APB\ndirect APB bridge"
-      ];
-      sysctrl [
-        fillcolor="#F9E1E7",
-        label="SYSCTRL\nPLL, user-core select/reset/bus enable\nfault and performance control"
-      ];
-      clint [
-        fillcolor="#F9E1E7",
-        label="CLINT\nstandard 64 KiB register map\nmtime, mtimecmp and MSIP"
-      ];
-      apb4_periph_targets [
-        fillcolor="#F9E1E7",
-        label="APB4 configuration targets\nXPI, SDRAM, PSRAM, SPI-SD, DVP and I2S\nSDRAM config is a dedicated top-level port"
-      ];
-      memory_targets [
-        fillcolor="#FFF3C9",
-        label="AXI4 data targets\nXPI/Flash, SDRAM, PSRAM and SPI-SD\nFIXED/INCR/WRAP compatibility engines"
-      ];
-      stream_io [
-        fillcolor="#FFF3C9",
-        label="AXI4-Stream data endpoints\nI2S TX/RX and DVP RX\nSOF/EOL/TKEEP framing\nDVP APB4 cfg + CDC pixel input"
-      ];
-      uart0 [
-        fillcolor="#F9E1E7",
-        label="UART0\n64-byte TX/RX FIFOs, fractional baud\nauto RTS/CTS, framing/errors, IRQ2, DMA-paced"
-      ];
-      i2c_controllers [
-        fillcolor="#F9E1E7",
-        label="I2C0 / I2C1\n16-entry command/RX FIFOs, Sm/Fm/Fm+\n7/10-bit, IRQ7/19, DMA-paced"
-      ];
-      gpio_controller [
-        fillcolor="#F9E1E7",
-        label="GPIO\nuser + management APB4 windows\natomic I/O, filter, locks, IRQ18"
-      ];
-      timers [
-        fillcolor="#F9E1E7",
-        label="General timers 0/1\n32-bit counter, 16-bit prescaler\nperiodic / one-shot, compare, debug freeze"
-      ];
-      ws2812 [
-        fillcolor="#F9E1E7",
-        label="WS2812 TX\n24-bit MSB-first serializer\n16-word FIFO, IRQ17, DMA-fed"
-      ];
-      apb4_system_targets [
-        fillcolor="#E6F4EA",
-        label="APB target wrapper\nUser IP target"
-      ];
-      pwm [
-        fillcolor="#E6F4EA",
-        label="PWM\n2 timers, 4 action channels, 2 operators\nfades, dead time, carrier, fault and capture, IRQ11"
-      ];
-      wdg [
-        fillcolor="#FDE68A",
-        label="WDG\nindependent-clock window watchdog\nearly IRQ14, retained cause/count"
-      ];
-      crc [
-        fillcolor="#E6F4EA",
-        label="CRC\nprogrammable 7/8/16/32-bit streaming CRC\nbyte, halfword and word APB feed"
-      ];
-      rtc [
-        fillcolor="#E6F4EA",
-        label="RTC\n64-bit Epoch + 1/256-second time\ndual alarm, periodic wake, calibration, IRQ13"
-      ];
-      archinfo [
-        fillcolor="#E6F4EA",
-        label="ARCHINFO\nread-only build, topology and technology identity\nlifecycle-gated 128-bit device ID"
-      ];
-      rng [
-        fillcolor="#E6F4EA",
-        label="RNG entropy controller\n8-word FIFO, fail-closed monitoring, IRQ16\nmanagement-only, deterministic source unqualified"
-      ];
-      ps2 [
-        fillcolor="#E6F4EA",
-        label="PS/2 host\nbidirectional open-drain transport\n16-byte RX/TX FIFOs, errors, IRQ12"
-      ];
-      gpio_bridge [
-        fillcolor="#E5E7EB",
-        label="GPIO pad bridge\nPDK capability-adapted controls"
-      ];
-      irq [
-        fillcolor="#FCE7F3",
-        label="Interrupt aggregation\nAPB4 and APB target IRQs to management core"
-      ];
-    }
   }
 
-  { rank=same; jtag_dtm; debug_module; mgmt_core; }
-  { rank=same; user_core; dma; }
-  { rank=same; fault; fabric; sram; }
-  { rank=same; apb4_periph; apb4_system; }
-  { rank=same; sysctrl; clint; apb4_periph_targets; memory_targets; stream_io; uart0; i2c_controllers; gpio_controller; timers; ws2812; archinfo; rng; ps2; rtc; wdg; crc; pwm; apb4_system_targets; }
-  { rank=same; gpio_bridge; irq; }
+  subgraph cluster_lp {
+    color="#15803D";
+    fontname="Arial";
+    label="LP control domain";
+    style="rounded";
 
-  ext_clock -> rcu [label="clock / reset"];
-  ext_jtag -> jtag_dtm [label="JTAG pads"];
-  rcu -> fabric [label="system clock / reset", style=dashed];
+    hazard3 [
+      fillcolor="#DCFCE7",
+      label="Hazard3 management hart 0\nAHB-Lite + JTAG Debug Module"
+    ];
+    lp_fabric [
+      fillcolor="#DBEAFE",
+      label="32-bit LP control fabric\nroot access policy and fault routing",
+      shape=hexagon
+    ];
+    lp_gateway [
+      fillcolor="#E0F2FE",
+      label="LP -> HP data gateway\nAXI32 -> 64 + async bridge\nbackground / recovery QoS"
+    ];
+    hp_mmio [
+      fillcolor="#E0F2FE",
+      label="HP -> LP MMIO bridge\nAXI64 -> 32 + async bridge"
+    ];
+  }
 
-  jtag_dtm -> debug_module [label="DMI, asynchronous CDC"];
-  debug_module -> mgmt_core [label="halt, resume, abstract commands"];
-  debug_module -> mgmt_adapter [label="reset after bridge idle", style=dashed];
-  debug_module -> timers [label="halted", style=dashed];
-  rcu -> clint [label="1 MHz tick", style=dashed];
+  subgraph cluster_pclk {
+    color="#A16207";
+    fontname="Arial";
+    label="PCLK register domain";
+    style="rounded";
 
-  mgmt_core -> mgmt_adapter [label="AHB-Lite"];
-  mgmt_adapter -> fabric [label="AXI4"];
-  user_core -> fabric [label="AXI4"];
-  dma -> fabric [label="AXI4"];
-  dma -> stream_io [dir=both, label="AXI4-Stream"];
+    apb [
+      fillcolor="#FEF3C7",
+      label="APB4 system + peripheral islands\nSYSCTRL, Resource Controller\nEXT-L/EXT-H, memory/peripheral control"
+    ];
+    io_gateway [
+      fillcolor="#FEF3C7",
+      label="DMA and I/O sub-fabrics\ncentral DMA, USB2, SDIO0/1, SPI-SD\nAXI32 -> 64 + async bridges"
+    ];
+  }
 
-  fabric -> fault [label="invalid / denied", dir=both];
-  fabric -> sram [label="AXI4"];
-  fabric -> memory_targets [label="AXI4 data"];
-  fabric -> apb4_periph [label="AXI4 config"];
-  fabric -> apb4_system [label="AXI4"];
-  apb4_periph -> sysctrl [label="APB4"];
-  apb4_periph -> clint [label="APB4"];
-  apb4_periph -> apb4_periph_targets [label="APB4"];
-  apb4_periph -> uart0 [label="APB4"];
-  apb4_periph -> i2c_controllers [label="APB4"];
-  apb4_periph -> gpio_controller [label="APB4\nuser/admin"];
-  apb4_periph -> timers [label="APB4"];
-  apb4_periph -> ws2812 [label="APB4"];
-  apb4_system -> archinfo [label="APB4"];
-  apb4_system -> rng [label="APB4"];
-  apb4_system -> ps2 [label="APB4"];
-  apb4_system -> rtc [label="APB4"];
-  apb4_system -> wdg [label="APB4"];
-  apb4_system -> crc [label="APB4"];
-  apb4_system -> pwm [label="APB4"];
-  apb4_system -> apb4_system_targets [label="APB4"];
+  subgraph cluster_hp {
+    color="#1D4ED8";
+    fontname="Arial";
+    label="HP data domain @ EXT72 / PLL";
+    style="rounded";
 
-  apb4_periph_targets -> gpio_controller [label="alternate functions"];
-  gpio_controller -> gpio_bridge [label="pad control"];
-  gpio_controller -> irq [label="IRQ18"];
-  timers -> irq [label="IRQ3 / IRQ4"];
-  clint -> irq [label="machine IRQ0 / IRQ1"];
-  ws2812 -> gpio_bridge [label="GPIO2 ALT1"];
-  dma -> ws2812 [label="TXDATA writes", style=dashed];
-  ws2812 -> irq [label="IRQ17"];
-  dma -> uart0 [label="TX/RX data", style=dashed];
-  uart0 -> gpio_controller [dir=both, label="GPIO0/1 ALT0\nCTS_n / RTS_n"];
-  uart0 -> irq [label="IRQ2"];
-  i2c_controllers -> gpio_controller [label="GPIO3/4 ALT1\nGPIO7/8 ALT0"];
-  dma -> i2c_controllers [label="DATA_CMD / RXDATA", style=dashed];
-  i2c_controllers -> irq [label="IRQ7 / IRQ19"];
-  rng -> irq [label="IRQ16"];
-  ps2 -> gpio_controller [label="GPIO0/1 ALT1\nopen drain"];
-  ps2 -> irq [label="IRQ12"];
-  pwm -> gpio_controller [dir=both, label="GPIO3-6 output\nGPIO2 sync, GPIO9 fault\nGPIO30/31 capture"];
-  pwm -> irq [label="IRQ11"];
-  rcu -> rtc [label="18.432 MHz audio clock", style=dashed];
-  rtc -> irq [label="IRQ13"];
-  rtc -> sysctrl [label="wake live / sticky", style=dashed];
-  rcu -> wdg [label="independent 18.432 MHz clock", style=dashed];
-  wdg -> irq [label="early warning IRQ14"];
-  wdg -> rcu [label="system reset request", color="#B91C1C", penwidth=2];
-  apb4_system_targets -> gpio_controller [label="user_gpio"];
-  apb4_periph_targets -> memory_targets [label="APB4 configuration", style=dashed];
-  apb4_periph_targets -> stream_io [label="APB4 configuration", style=dashed];
-  memory_targets -> ext_io [dir=both, label="device interfaces"];
-  stream_io -> ext_io [dir=both, label="I2S / DVP signals"];
-  uart0 -> ext_io [dir=both, label="UART pads"];
-  gpio_bridge -> ext_io [dir=both, label="pad control"];
+    vexii [
+      fillcolor="#DBEAFE",
+      label="VexiiRiscv hart 1\nindependent native AXI64 I-cache / D-cache"
+    ];
+    ext_h [
+      fillcolor="#DBEAFE",
+      label="EXT-H\nAXI64 data master\nfixed range ACL"
+    ];
+    data_plane [
+      fillcolor="#BFDBFE",
+      label="Native AXI64 Data Plane\n8 masters x 6 targets, global ID6\ntarget credits, QoS aging, generated ACL",
+      shape=hexagon
+    ];
+    guards [
+      fillcolor="#FCE7F3",
+      label="Queued target guards\nbounded SLVERR, timeout and isolation"
+    ];
+    sram [
+      fillcolor="#FDE68A",
+      label="32 KiB on-chip SRAM\nnative AXI64 / ID6"
+    ];
+    monitor [
+      fillcolor="#FCE7F3",
+      label="Fabric Monitor @ 0x2000_B000\nsnapshot counters, wait/high-water\ntimeout/isolation, sticky first fault"
+    ];
+  }
+
+  subgraph cluster_memory {
+    color="#B45309";
+    fontname="Arial";
+    label="Stable memory domain";
+    style="rounded";
+
+    memory_cdc [
+      fillcolor="#FFEDD5",
+      label="Four direct HP -> memory AXI64 bridges\nlocal AXI64 -> 32 adaptation"
+    ];
+    memory [
+      fillcolor="#FED7AA",
+      label="Fixed-present frontends\nSDRAM | QPI | OPI/HyperBus | XPI\nQPI/OPI boot-selected, inactive SLVERR"
+    ];
+  }
+
+  clocks -> aon [label="REF24 / EXT72"];
+  aon -> hazard3 [label="LP clock/reset"];
+  aon -> apb [label="PCLK/reset"];
+  aon -> data_plane [label="HP clock/reset\nblock, drain, flush", style=dashed];
+  aon -> memory [label="stable memory clock/reset", style=dashed];
+
+  hazard3 -> lp_fabric [label="AHB -> AXI32"];
+  lp_fabric -> apb [label="LP -> PCLK APB"];
+  lp_fabric -> lp_gateway [label="memory windows"];
+  hp_mmio -> lp_fabric [label="uncached MMIO"];
+
+  vexii -> data_plane [label="I$ / D$ AXI64"];
+  vexii -> hp_mmio [label="MMIO"];
+  io_gateway -> data_plane [label="M2-M4"];
+  lp_gateway -> data_plane [label="M5"];
+  ext_h -> data_plane [label="M7"];
+  apb -> ext_h [label="control / ownership", style=dashed];
+
+  data_plane -> guards [label="five memory targets"];
+  guards -> sram [label="native AXI64"];
+  guards -> memory_cdc [label="SDRAM/QPI/OPI/XPI AXI64"];
+  memory_cdc -> memory [label="AXI32 frontends"];
+  data_plane -> monitor [label="events / fault"];
+  apb -> monitor [label="PCLK -> HP APB"];
+
+  apb -> pads [label="control and peripheral I/O", dir=both];
+  io_gateway -> pads [label="payload", dir=both];
+  memory -> pads [label="memory protocols", dir=both];
 }

@@ -22,8 +22,9 @@ budget so the broad smoke does not execute from the serial PSRAM model. The
 full serial XPI and PSRAM path remains covered by the Icarus assembly self-test
 and directed memory-model tests. This application verifies UART output,
 archinfo APB readback, on-chip SRAM first/last-word and 8/16/32-bit access,
-RNG integration, SDRAM 8/16/32-bit access in a reserved tail scratch area, and
-test-status completion within the CI time budget;
+Fabric Monitor collection through the PCLK-to-HP APB path, truthful extension
+capabilities, RNG integration, SDRAM 8/16/32-bit access in a reserved tail
+scratch area, and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
 

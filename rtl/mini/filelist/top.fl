@@ -15,6 +15,7 @@
 /top/axi4_interconnect.sv
 /top/axi4_data_crossbar.sv
 /top/axi4_target_guard.sv
+/top/fabric_monitor.sv
 /top/soc_data_plane.sv
 /top/axi4_error_slave.sv
 /top/rib2axi4.sv

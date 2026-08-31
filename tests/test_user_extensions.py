@@ -65,6 +65,11 @@ def test_product_extensions_generate_fixed_slot_contract(tmp_path: Path) -> None
     assert "`define RETROSOC_EXTENSION__EXT_H_COUNT 1" in config
     assert "RETROSOC_EXTENSION__SLOT0_KIND_EXT_H" in product
     assert "RETROSOC_EXTENSION__SLOT1_KIND_EXT_H" in product
+    assert "RETROSOC_EXTENSION__SLOT1_DATA_MASTER" in product
+    assert "RETROSOC_EXTENSION__SLOT1_STREAM" in product
+    assert "RETROSOC_EXTENSION__SLOT1_LOCAL_SRAM" in product
+    assert "RETROSOC_EXTENSION__SLOT1_STREAM                 0" in product
+    assert "RETROSOC_EXTENSION__SLOT1_LOCAL_SRAM             0" in product
     assert "RS_SOC_USER_CORE_COUNT UINT32_C(0)" in c_config
     assert "RS_SOC_EXTENSION_COUNT UINT32_C(2)" in c_config
     assert filelist.startswith("+incdir+")
@@ -127,7 +132,7 @@ def test_extensions_reject_invalid_kind_and_ext_l_data_path(tmp_path: Path) -> N
     document["extensions"][0]["data_master"] = True
     result = validate(write_invalid_extensions(tmp_path, document))
     assert result.returncode != 0
-    assert "EXT-L cannot expose a data master or stream" in result.stderr
+    assert "EXT-L cannot expose a data master, stream, or local SRAM" in result.stderr
 
 
 def test_extensions_reject_duplicate_regions_and_irqs(tmp_path: Path) -> None:

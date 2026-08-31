@@ -1,6 +1,10 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // SPDX-License-Identifier: MulanPSL-2.0
 
+`ifdef MINI_PRODUCT
+`include "product_extensions_config.svh"
+`endif
+
 module extension_subsystem (
     // verilog_format: off -- preserve the slot control/data contract columns
     input  logic          clk_i,
@@ -48,9 +52,12 @@ module extension_subsystem (
   logic [31:0] unused_ext_l_dma_len;
 
   extension_slot #(
-      .SlotId  (0),
-      .KindExtH(1'b0),
-      .IrqCount(1)
+      .SlotId       (0),
+      .KindExtH     (1'b0),
+      .HasDataMaster(1'b0),
+      .HasStream    (1'b0),
+      .HasLocalSram (1'b0),
+      .IrqCount     (1)
   ) u_ext_l_slot (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
@@ -78,9 +85,18 @@ module extension_subsystem (
   );
 
   extension_slot #(
-      .SlotId  (1),
-      .KindExtH(1'b1),
-      .IrqCount(1)
+      .SlotId       (1),
+      .KindExtH     (1'b1),
+`ifdef MINI_PRODUCT
+      .HasDataMaster(`RETROSOC_EXTENSION__SLOT1_DATA_MASTER),
+      .HasStream    (`RETROSOC_EXTENSION__SLOT1_STREAM),
+      .HasLocalSram (`RETROSOC_EXTENSION__SLOT1_LOCAL_SRAM),
+`else
+      .HasDataMaster(1'b1),
+      .HasStream    (1'b0),
+      .HasLocalSram (1'b0),
+`endif
+      .IrqCount     (1)
   ) u_ext_h_slot (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),

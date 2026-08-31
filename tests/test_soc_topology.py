@@ -62,6 +62,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     gpio = (tmp_path / "rtl/soc_gpio_alt_bindings.svh").read_text(encoding="utf-8")
     apb_interfaces = (tmp_path / "rtl/apb4_system_interfaces.svh").read_text(encoding="utf-8")
     apb_declarations = (tmp_path / "rtl/apb4_system_declarations.svh").read_text(encoding="utf-8")
+    apb_connections = (tmp_path / "rtl/apb4_system_connections.svh").read_text(encoding="utf-8")
     apb_routes = (tmp_path / "rtl/apb4_system_request_routes.svh").read_text(encoding="utf-8")
     apb_response = (tmp_path / "rtl/apb4_system_response_mux.svh").read_text(encoding="utf-8")
     fabric = (tmp_path / "rtl/soc_fabric_interfaces.svh").read_text(encoding="utf-8")
@@ -73,6 +74,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     apb_irq = (tmp_path / "rtl/apb4_system_irq_bindings.svh").read_text(encoding="utf-8")
     irq_wiring = (tmp_path / "rtl/soc_irq_wiring.svh").read_text(encoding="utf-8")
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
+    data_policy = (tmp_path / "rtl/soc_data_policy.svh").read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
     assert interfaces.count("apb4_if u_") == 24
@@ -123,7 +125,8 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "apb4_if u_resource_ctrl_apb4_if (clk_i, rst_n_i);" in apb_interfaces
     assert "assign user_ip.paddr = s_addr_q;" in apb_routes
     assert "({32{s_psel_q[7]}} & user_ip.prdata)" in apb_response
-    assert "localparam int NSLV = 11;" in apb_declarations
+    assert "localparam int NSLV = 12;" in apb_declarations
+    assert ".fabric_monitor(fabric_monitor_pure)" in apb_connections
     assert fabric.count("axi4_if #(") == 8
     assert ".mgmt_axi4(u_mgmt_axi4_if)" in bus_fabric
     assert ".user_axi4(u_user_axi4_if)" in bus_fabric
@@ -177,6 +180,10 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert ".clk_i(clk_lp_i)" in irq_sva
     assert ".rst_n_i(rst_lp_n_i)" in irq_sva
+    assert "SOC_DATA_POLICY_READ_TARGET_MASK" in data_policy
+    assert "SOC_DATA_POLICY_WRITE_TARGET_MASK" in data_policy
+    assert "SOC_DATA_POLICY_ALLOW_INSTRUCTION" in data_policy
+    assert "SOC_DATA_POLICY_REQUIRE_NONCACHEABLE" in data_policy
     assert filelist.startswith("+incdir+")
 
 
@@ -239,14 +246,29 @@ def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
     )
 
     assert "apb4_if u_user_ip_apb4_if (clk_i, rst_n_i);" in interfaces
-    assert "localparam int NSLV = 11;" in declarations
+    assert "localparam int NSLV = 12;" in declarations
     assert "s_psel_q[7]" in response
     assert "apb4_pure_if user_ip ();" in formal_design
-    assert ".user_ip (user_ip)" in formal_design
+    assert ".user_ip       (user_ip)" in formal_design
     assert "apb4_pure_if ext_l ();" in formal_design
     assert "apb4_pure_if ext_h ();" in formal_design
-    assert "logic [ 9:0] psel_comb" in formal_design
-    assert "wire [ 9:0] psel_comb" in formal_properties
+    assert "apb4_pure_if resource_ctrl ();" in formal_design
+    assert "apb4_pure_if fabric_monitor ();" in formal_design
+    assert "logic [11:0] psel_comb" in formal_design
+    assert "wire [11:0] psel_comb" in formal_properties
+
+
+def test_memory_pad_mux_uses_directional_interface_modports() -> None:
+    mux = (ROOT / "rtl/mini/top/memory_pad_mux.sv").read_text(encoding="utf-8")
+    qpi = (ROOT / "rtl/ip/memory/apb4_psram.sv").read_text(encoding="utf-8")
+    opi = (ROOT / "rtl/ip/memory/opipsram_if.sv").read_text(encoding="utf-8")
+
+    assert "psram_if.pad            controller_qpi" in mux
+    assert "psram_if.dut            pads_qpi" in mux
+    assert "opipsram_if.pad         controller_opi" in mux
+    assert "opipsram_if.dut         pads_opi" in mux
+    assert "modport pad(" in qpi
+    assert "modport pad(" in opi
 
 
 def test_topology_rejects_unknown_or_non_rib_regions(tmp_path: Path) -> None:

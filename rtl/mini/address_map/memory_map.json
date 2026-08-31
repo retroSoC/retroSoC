@@ -580,6 +580,15 @@
       "user_access": "none"
     },
     {
+      "symbol": "APB4_FABRIC_MONITOR",
+      "base": "0x2000B000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
       "symbol": "SRAM",
       "base": "0x30000000",
       "size": "0x00020000",

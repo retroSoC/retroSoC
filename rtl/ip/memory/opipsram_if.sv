@@ -30,4 +30,16 @@ interface opipsram_if ();
       output rwds_o,
       output irq_o
   );
+
+  modport pad(
+      input ck_o,
+      input cs_n_o,
+      input dq_oe_o,
+      output dq_i,
+      input dq_o,
+      input rwds_oe_o,
+      output rwds_i,
+      input rwds_o,
+      input irq_o
+  );
 endinterface

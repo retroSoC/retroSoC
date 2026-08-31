@@ -24,6 +24,8 @@ interface psram_if ();
       output io_do_o,
       output irq_o
   );
+
+  modport pad(input sck_o, input nss_o, input io_oe_o, output io_di_i, input io_do_o, input irq_o);
 endinterface
 
 module apb4_psram (

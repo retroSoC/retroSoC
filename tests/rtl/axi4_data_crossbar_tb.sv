@@ -17,6 +17,8 @@ module axi4_data_crossbar_tb;
   logic [31:0] fault_addr_o;
   logic        fault_write_o;
   logic [ 3:0] fault_reason_o;
+  logic        recovery_i = 1'b0;
+  logic [ 7:0] monitor_master_promotion_o;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -44,29 +46,36 @@ module axi4_data_crossbar_tb;
     $fatal(1, "AXI4 data crossbar test timed out");
   end
 
-  axi4_data_crossbar u_dut (
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .block_new_i        (1'b0),
-      .master_block_i     (master_block_i),
-      .recovery_i         (1'b0),
-      .mem_pad_mode_i     (2'd1),
-      .ext_h_read_base_i  (32'h3000_0000),
-      .ext_h_read_limit_i (32'h4FFF_FFFF),
-      .ext_h_write_base_i (32'h3000_0000),
-      .ext_h_write_limit_i(32'h4FFF_FFFF),
-      .masters            (masters),
-      .targets            (targets),
-      .idle_o             (idle_o),
-      .master_idle_o      (master_idle_o),
-      .outstanding_read_o (outstanding_read_o),
-      .outstanding_write_o(outstanding_write_o),
-      .fault_valid_o      (fault_valid_o),
-      .fault_master_o     (fault_master_o),
-      .fault_target_o     (fault_target_o),
-      .fault_addr_o       (fault_addr_o),
-      .fault_write_o      (fault_write_o),
-      .fault_reason_o     (fault_reason_o)
+  axi4_data_crossbar #(
+      .StarvationCycles   (4),
+      .ReadTargetMask     (40'b1111100000111111111111111111111111111111),
+      .WriteTargetMask    (40'b0111100000011110111101111011110111100000),
+      .AllowInstruction   (8'b00000001),
+      .RequireNoncacheable(8'b11111100)
+  ) u_dut (
+      .clk_i                     (clk_i),
+      .rst_n_i                   (rst_n_i),
+      .block_new_i               (1'b0),
+      .master_block_i            (master_block_i),
+      .recovery_i                (recovery_i),
+      .mem_pad_mode_i            (2'd1),
+      .ext_h_read_base_i         (32'h3000_0000),
+      .ext_h_read_limit_i        (32'h4FFF_FFFF),
+      .ext_h_write_base_i        (32'h3000_0000),
+      .ext_h_write_limit_i       (32'h4FFF_FFFF),
+      .masters                   (masters),
+      .targets                   (targets),
+      .idle_o                    (idle_o),
+      .master_idle_o             (master_idle_o),
+      .outstanding_read_o        (outstanding_read_o),
+      .outstanding_write_o       (outstanding_write_o),
+      .fault_valid_o             (fault_valid_o),
+      .fault_master_o            (fault_master_o),
+      .fault_target_o            (fault_target_o),
+      .fault_addr_o              (fault_addr_o),
+      .fault_write_o             (fault_write_o),
+      .fault_reason_o            (fault_reason_o),
+      .monitor_master_promotion_o(monitor_master_promotion_o)
   );
 
   task automatic issue_master1_read(input logic [5:0] id, input logic [31:0] addr);
@@ -106,6 +115,19 @@ module axi4_data_crossbar_tb;
       do @(posedge clk_i); while (!targets[1].rready);
       @(negedge clk_i);
       targets[1].rvalid = 1'b0;
+    end
+  endtask
+
+  task automatic return_target5_read(input logic [5:0] id);
+    begin
+      @(negedge clk_i);
+      targets[5].rid    = id;
+      targets[5].rresp  = 2'b10;
+      targets[5].rlast  = 1'b1;
+      targets[5].rvalid = 1'b1;
+      do @(posedge clk_i); while (!targets[5].rready);
+      @(negedge clk_i);
+      targets[5].rvalid = 1'b0;
     end
   endtask
 
@@ -266,7 +288,123 @@ module axi4_data_crossbar_tb;
     @(negedge clk_i);
     targets[5].rvalid = 1'b0;
 
-    $display("AXI4 data crossbar concurrency and ACL test passed");
+    @(negedge clk_i);
+    masters[2].arid    = 6'b010_001;
+    masters[2].araddr  = 32'h3000_0000;
+    masters[2].arcache = 4'b0011;
+    masters[2].arvalid = 1'b1;
+    do @(posedge clk_i); while (!masters[2].arready);
+    #1;
+    if (!fault_valid_o || (fault_master_o != 3'd2) || (fault_reason_o != 4'd3)) begin
+      $fatal(1, "cache-attribute ACL fault attribution mismatch");
+    end
+    @(negedge clk_i);
+    masters[2].arvalid = 1'b0;
+    masters[2].arcache = 4'd0;
+    return_target5_read(6'b010_001);
+
+    @(negedge clk_i);
+    masters[1].arid    = 6'b001_100;
+    masters[1].araddr  = 32'h3000_0000;
+    masters[1].arprot  = 3'b100;
+    masters[1].arvalid = 1'b1;
+    do @(posedge clk_i); while (!masters[1].arready);
+    #1;
+    if (!fault_valid_o || (fault_master_o != 3'd1) || (fault_reason_o != 4'd3)) begin
+      $fatal(1, "instruction ACL fault attribution mismatch");
+    end
+    @(negedge clk_i);
+    masters[1].arvalid = 1'b0;
+    masters[1].arprot  = 3'd0;
+    return_target5_read(6'b001_100);
+
+    @(negedge clk_i);
+    masters[1].awid    = 6'b001_101;
+    masters[1].awaddr  = 32'h5000_0000;
+    masters[1].awvalid = 1'b1;
+    do @(posedge clk_i); while (!masters[1].awready);
+    #1;
+    if (!fault_valid_o || (fault_master_o != 3'd1) || (fault_reason_o != 4'd3) ||
+        !fault_write_o) begin
+      $fatal(1, "write-target ACL fault attribution mismatch");
+    end
+    @(negedge clk_i);
+    masters[1].awvalid = 1'b0;
+    masters[1].wdata   = 64'hA5A5_5A5A_1122_3344;
+    masters[1].wstrb   = 8'hFF;
+    masters[1].wvalid  = 1'b1;
+    do @(posedge clk_i); while (!masters[1].wready);
+    @(negedge clk_i);
+    masters[1].wvalid = 1'b0;
+    targets[5].bid    = 6'b001_101;
+    targets[5].bresp  = 2'b10;
+    targets[5].bvalid = 1'b1;
+    do @(posedge clk_i); while (!targets[5].bready);
+    @(negedge clk_i);
+    targets[5].bvalid = 1'b0;
+
+    target0_recovery_priority : begin
+      @(negedge clk_i);
+      recovery_i         = 1'b1;
+      targets[0].arready = 1'b0;
+      masters[0].arid    = 6'b000_100;
+      masters[0].araddr  = 32'h3000_0100;
+      masters[0].arvalid = 1'b1;
+      masters[5].arid    = 6'b101_000;
+      masters[5].araddr  = 32'h3000_0180;
+      masters[5].arvalid = 1'b1;
+      #1;
+      if (!targets[0].arvalid || (targets[0].arid != 6'b101_000)) begin
+        $fatal(1, "recovery master did not receive emergency priority");
+      end
+      targets[0].arready = 1'b1;
+      do @(posedge clk_i); while (!masters[5].arready);
+      @(negedge clk_i);
+      masters[5].arvalid = 1'b0;
+      do @(posedge clk_i); while (!masters[0].arready);
+      @(negedge clk_i);
+      masters[0].arvalid = 1'b0;
+      recovery_i         = 1'b0;
+      return_target0_read(6'b101_000, 64'h5555_5555_5555_5555);
+      return_target0_read(6'b000_100, 64'h0000_0000_0000_0100);
+    end
+
+    target0_starvation_bound : begin
+      @(negedge clk_i);
+      targets[0].arready = 1'b0;
+      masters[5].arid    = 6'b101_001;
+      masters[5].araddr  = 32'h3000_0200;
+      masters[5].arvalid = 1'b1;
+      repeat (4) @(posedge clk_i);
+      @(negedge clk_i);
+      masters[0].arid    = 6'b000_101;
+      masters[0].araddr  = 32'h3000_0280;
+      masters[0].arvalid = 1'b1;
+      #1;
+      if (!targets[0].arvalid || (targets[0].arid != 6'b101_001)) begin
+        $fatal(1, "aged LP request did not override a newer latency request");
+      end
+      targets[0].arready = 1'b1;
+      #1;
+      if (!monitor_master_promotion_o[5]) begin
+        $fatal(1, "aged LP service was not reported as a promotion");
+      end
+      do @(posedge clk_i); while (!masters[5].arready);
+      @(negedge clk_i);
+      masters[5].arvalid = 1'b0;
+      do @(posedge clk_i); while (!masters[0].arready);
+      @(negedge clk_i);
+      masters[0].arvalid = 1'b0;
+      return_target0_read(6'b101_001, 64'h5555_5555_0000_0200);
+      return_target0_read(6'b000_101, 64'h0000_0000_0000_0280);
+    end
+
+    @(negedge clk_i);
+    if (!idle_o || (outstanding_read_o != 8'd0) || (outstanding_write_o != 8'd0)) begin
+      $fatal(1, "ACL and QoS transactions did not drain the crossbar");
+    end
+
+    $display("AXI4 data crossbar concurrency, ACL, and QoS test passed");
     $finish;
   end
 

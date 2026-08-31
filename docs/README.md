@@ -63,6 +63,8 @@ the root README and subsystem guides.
   windows, lifecycle, capability, ACL, fault, and HAL contracts.
 - [ip/resource-controller.md](ip/resource-controller.md) defines centralized
   DMA/I/O/EXT-H ownership, IRQ routing, cache handoff, and fault contracts.
+- [ip/fabric-monitor.md](ip/fabric-monitor.md) defines native AXI64 master and
+  target counters, sticky fault retention, snapshots, and the HAL contract.
 - [ip/clint.md](ip/clint.md) defines the standard CLINT register map, fixed
   timebase, RV32 access rules, interrupt behavior, and verification contract.
 - [ip/gpio.md](ip/gpio.md) defines the GPIO dual-window ABI, pad ownership,

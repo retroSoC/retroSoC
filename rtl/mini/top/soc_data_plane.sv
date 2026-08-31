@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // SPDX-License-Identifier: MulanPSL-2.0
 
+`include "soc_data_policy.svh"
+
 module soc_data_plane (
     // verilog_format: off -- preserve the LP/HP and memory-target boundary columns
     input  logic       clk_lp_i,
@@ -35,6 +37,7 @@ module soc_data_plane (
     axi4_if.master     qpi_gateway_axi4,
     axi4_if.master     opi_gateway_axi4,
     axi4_if.master     xpi_gateway_axi4,
+    apb4_if.slave      fabric_monitor_apb4,
     output logic       idle_o,
     output logic       flush_busy_o,
     output logic       ext_h_idle_o,
@@ -54,7 +57,6 @@ module soc_data_plane (
   localparam int unsigned NumMemoryTargets = 5;
   localparam logic [3:0] FaultTimeout = 4'd5;
 
-  logic                              s_block_new_hp;
   logic [                 1:0]       s_mem_pad_mode_hp;
   logic [    NumIoMasters-1:0]       s_io_clear_busy;
   logic [NumMemoryTargets-1:0]       s_target_clear_busy;
@@ -63,10 +65,11 @@ module soc_data_plane (
   logic [NumMemoryTargets-1:0]       s_guard_abort_done;
   logic [NumMemoryTargets-1:0]       s_guard_abort_seen_q;
   logic [NumMemoryTargets-1:0]       s_guard_timeout_valid;
+  logic [NumMemoryTargets-1:0]       s_guard_isolated;
   logic [NumMemoryTargets-1:0]       s_guard_timeout_write;
   logic [NumMemoryTargets-1:0][ 5:0] s_guard_timeout_id;
   logic [NumMemoryTargets-1:0][31:0] s_guard_timeout_addr;
-  logic                              s_sdram_abort_mem;
+  logic [NumMemoryTargets-1:0]       s_target_abort_mem;
   logic                              s_crossbar_fault_valid;
   logic [                 2:0]       s_crossbar_fault_master;
   logic [                 2:0]       s_crossbar_fault_target;
@@ -83,6 +86,23 @@ module soc_data_plane (
   logic [                 5:0]       s_resource_block_hp;
   logic [                 7:0]       s_master_idle;
   logic [                 7:0]       s_master_block;
+  logic [                 7:0]       s_monitor_master_read_accept;
+  logic [                 7:0]       s_monitor_master_write_accept;
+  logic [                 7:0]       s_monitor_master_read_beat;
+  logic [                 7:0]       s_monitor_master_write_beat;
+  logic [                 7:0]       s_monitor_master_wait;
+  logic [                 7:0]       s_monitor_master_promotion;
+  logic [                 7:0][ 2:0] s_monitor_master_read_outstanding;
+  logic [                 7:0][ 2:0] s_monitor_master_write_outstanding;
+  logic [                 5:0]       s_monitor_target_read_accept;
+  logic [                 5:0]       s_monitor_target_write_accept;
+  logic [                 5:0]       s_monitor_target_read_beat;
+  logic [                 5:0]       s_monitor_target_write_beat;
+  logic [                 5:0]       s_monitor_target_wait;
+  logic [                 5:0][ 2:0] s_monitor_target_read_outstanding;
+  logic [                 5:0][ 2:0] s_monitor_target_write_outstanding;
+  logic [                 5:0]       s_monitor_target_timeout;
+  logic [                 5:0]       s_monitor_target_isolated;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -116,7 +136,16 @@ module soc_data_plane (
       .DATA_WIDTH(64),
       .ID_WIDTH  (6),
       .USER_WIDTH(1)
-  ) u_sdram_mem_axi4 (
+  ) u_target_mem_axi4[NumMemoryTargets-1] (
+      .aclk   (clk_mem_i),
+      .aresetn(rst_mem_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_target_mem_narrow_axi4[NumMemoryTargets-1] (
       .aclk   (clk_mem_i),
       .aresetn(rst_mem_n_i)
   );
@@ -200,34 +229,6 @@ module soc_data_plane (
   ) u_ext_h_prefixed_axi4 (
       .aclk   (clk_hp_i),
       .aresetn(rst_hp_n_i)
-  );
-  axi4_if #(
-      .ADDR_WIDTH(32),
-      .DATA_WIDTH(32),
-      .ID_WIDTH  (1),
-      .USER_WIDTH(1)
-  ) u_target_hp_axi4[NumMemoryTargets] (
-      .aclk   (clk_hp_i),
-      .aresetn(rst_hp_n_i)
-  );
-  axi4_if #(
-      .ADDR_WIDTH(32),
-      .DATA_WIDTH(32),
-      .ID_WIDTH  (1),
-      .USER_WIDTH(1)
-  ) u_gateway_lp_axi4[NumMemoryTargets] (
-      .aclk   (clk_lp_i),
-      .aresetn(rst_lp_n_i)
-  );
-
-  cdc_sync #(
-      .STAGE     (2),
-      .DATA_WIDTH(1)
-  ) u_block_new_sync (
-      .clk_i  (clk_hp_i),
-      .rst_n_i(rst_hp_n_i),
-      .dat_i  (block_new_i),
-      .dat_o  (s_block_new_hp)
   );
   cdc_sync #(
       .STAGE     (2),
@@ -392,29 +393,49 @@ module soc_data_plane (
       .sink  (u_master_axi4[7])
   );
 
-  axi4_data_crossbar u_data_crossbar (
-      .clk_i              (clk_hp_i),
-      .rst_n_i            (rst_hp_n_i),
-      .block_new_i        (s_block_new_hp),
-      .master_block_i     (s_master_block),
-      .recovery_i         (recovery_i),
-      .mem_pad_mode_i     (s_mem_pad_mode_hp),
-      .ext_h_read_base_i  (ext_h_read_base_i),
-      .ext_h_read_limit_i (ext_h_read_limit_i),
-      .ext_h_write_base_i (ext_h_write_base_i),
-      .ext_h_write_limit_i(ext_h_write_limit_i),
-      .masters            (u_master_axi4),
-      .targets            (u_crossbar_target_axi4),
-      .idle_o             (idle_o),
-      .master_idle_o      (s_master_idle),
-      .outstanding_read_o (outstanding_read_o),
-      .outstanding_write_o(outstanding_write_o),
-      .fault_valid_o      (s_crossbar_fault_valid),
-      .fault_master_o     (s_crossbar_fault_master),
-      .fault_target_o     (s_crossbar_fault_target),
-      .fault_addr_o       (s_crossbar_fault_addr),
-      .fault_write_o      (s_crossbar_fault_write),
-      .fault_reason_o     (s_crossbar_fault_reason)
+  axi4_data_crossbar #(
+      .ReadTargetMask     (`SOC_DATA_POLICY_READ_TARGET_MASK),
+      .WriteTargetMask    (`SOC_DATA_POLICY_WRITE_TARGET_MASK),
+      .AllowInstruction   (`SOC_DATA_POLICY_ALLOW_INSTRUCTION),
+      .RequireNoncacheable(`SOC_DATA_POLICY_REQUIRE_NONCACHEABLE)
+  ) u_data_crossbar (
+      .clk_i                             (clk_hp_i),
+      .rst_n_i                           (rst_hp_n_i),
+      .block_new_i                       (block_new_i),
+      .master_block_i                    (s_master_block),
+      .recovery_i                        (recovery_i),
+      .mem_pad_mode_i                    (s_mem_pad_mode_hp),
+      .ext_h_read_base_i                 (ext_h_read_base_i),
+      .ext_h_read_limit_i                (ext_h_read_limit_i),
+      .ext_h_write_base_i                (ext_h_write_base_i),
+      .ext_h_write_limit_i               (ext_h_write_limit_i),
+      .masters                           (u_master_axi4),
+      .targets                           (u_crossbar_target_axi4),
+      .idle_o                            (idle_o),
+      .master_idle_o                     (s_master_idle),
+      .outstanding_read_o                (outstanding_read_o),
+      .outstanding_write_o               (outstanding_write_o),
+      .fault_valid_o                     (s_crossbar_fault_valid),
+      .fault_master_o                    (s_crossbar_fault_master),
+      .fault_target_o                    (s_crossbar_fault_target),
+      .fault_addr_o                      (s_crossbar_fault_addr),
+      .fault_write_o                     (s_crossbar_fault_write),
+      .fault_reason_o                    (s_crossbar_fault_reason),
+      .monitor_master_read_accept_o      (s_monitor_master_read_accept),
+      .monitor_master_write_accept_o     (s_monitor_master_write_accept),
+      .monitor_master_read_beat_o        (s_monitor_master_read_beat),
+      .monitor_master_write_beat_o       (s_monitor_master_write_beat),
+      .monitor_master_wait_o             (s_monitor_master_wait),
+      .monitor_master_promotion_o        (s_monitor_master_promotion),
+      .monitor_master_read_outstanding_o (s_monitor_master_read_outstanding),
+      .monitor_master_write_outstanding_o(s_monitor_master_write_outstanding),
+      .monitor_target_read_accept_o      (s_monitor_target_read_accept),
+      .monitor_target_write_accept_o     (s_monitor_target_write_accept),
+      .monitor_target_read_beat_o        (s_monitor_target_read_beat),
+      .monitor_target_write_beat_o       (s_monitor_target_write_beat),
+      .monitor_target_wait_o             (s_monitor_target_wait),
+      .monitor_target_read_outstanding_o (s_monitor_target_read_outstanding),
+      .monitor_target_write_outstanding_o(s_monitor_target_write_outstanding)
   );
 
   for (genvar target = 0; target < NumMemoryTargets; target++) begin : gen_memory_target
@@ -433,6 +454,7 @@ module soc_data_plane (
         .abort_o        (s_guard_abort[target]),
         .abort_done_i   (s_guard_abort_done[target]),
         .timeout_valid_o(s_guard_timeout_valid[target]),
+        .isolated_o     (s_guard_isolated[target]),
         .timeout_write_o(s_guard_timeout_write[target]),
         .timeout_id_o   (s_guard_timeout_id[target]),
         .timeout_addr_o (s_guard_timeout_addr[target]),
@@ -446,7 +468,7 @@ module soc_data_plane (
       );
       assign s_target_clear_busy[target] = 1'b0;
       assign unused_target_epoch[target] = 8'd0;
-    end else if (target == 1) begin : gen_native_sdram
+    end else begin : gen_stable_memory
       axi4_async_bridge #(
           .DataWidth(64),
           .IdWidth  (6)
@@ -459,7 +481,7 @@ module soc_data_plane (
           .clear_busy_o(s_target_clear_busy[target]),
           .epoch_o     (unused_target_epoch[target]),
           .src_axi4    (u_target_axi4[target]),
-          .dst_axi4    (u_sdram_mem_axi4)
+          .dst_axi4    (u_target_mem_axi4[target-1])
       );
       cdc_sync #(
           .STAGE     (2),
@@ -468,43 +490,20 @@ module soc_data_plane (
           .clk_i  (clk_mem_i),
           .rst_n_i(rst_mem_n_i),
           .dat_i  (s_guard_abort[target]),
-          .dat_o  (s_sdram_abort_mem)
+          .dat_o  (s_target_abort_mem[target])
       );
       axi4_downsizer_64to32 #(
           .WideIdWidth(6)
       ) u_target_downsizer (
           .clk_i  (clk_mem_i),
           .rst_n_i(rst_mem_n_i),
-          .clear_i(s_sdram_abort_mem),
-          .wide   (u_sdram_mem_axi4),
-          .narrow (sdram_gateway_axi4)
-      );
-    end else begin : gen_legacy_memory
-      axi4_downsizer_64to32 #(
-          .WideIdWidth(6)
-      ) u_target_downsizer (
-          .clk_i  (clk_hp_i),
-          .rst_n_i(rst_hp_n_i),
-          .clear_i(s_guard_abort[target]),
-          .wide   (u_target_axi4[target]),
-          .narrow (u_target_hp_axi4[target])
-      );
-      axi4_async_bridge #(
-          .DataWidth(32),
-          .IdWidth  (1)
-      ) u_target_cdc (
-          .src_clk_i   (clk_hp_i),
-          .src_rst_n_i (rst_hp_n_i),
-          .dst_clk_i   (clk_lp_i),
-          .dst_rst_n_i (rst_lp_n_i),
-          .clear_i     (flush_i || s_guard_abort[target]),
-          .clear_busy_o(s_target_clear_busy[target]),
-          .epoch_o     (unused_target_epoch[target]),
-          .src_axi4    (u_target_hp_axi4[target]),
-          .dst_axi4    (u_gateway_lp_axi4[target])
+          .clear_i(s_target_abort_mem[target]),
+          .wide   (u_target_mem_axi4[target-1]),
+          .narrow (u_target_mem_narrow_axi4[target-1])
       );
     end
   end
+  assign s_target_abort_mem[0] = 1'b0;
 
   axi4_error_slave #(
       .Response(2'b11),
@@ -513,6 +512,44 @@ module soc_data_plane (
       .clk_i  (clk_hp_i),
       .rst_n_i(rst_hp_n_i),
       .axi4   (u_crossbar_target_axi4[5])
+  );
+
+  assign s_monitor_target_timeout  = {1'b0, s_guard_timeout_valid};
+  assign s_monitor_target_isolated = {1'b0, s_guard_isolated};
+
+  fabric_monitor u_fabric_monitor (
+      .clk_i                     (clk_hp_i),
+      .rst_n_i                   (rst_hp_n_i),
+      .idle_i                    (idle_o),
+      .recovery_i                (recovery_i),
+      .flush_busy_i              (flush_busy_o),
+      .flush_i                   (flush_i),
+      .outstanding_read_i        (outstanding_read_o),
+      .outstanding_write_i       (outstanding_write_o),
+      .fault_valid_i             (fault_valid_o),
+      .fault_master_i            (fault_master_o),
+      .fault_target_i            (fault_target_o),
+      .fault_addr_i              (fault_addr_o),
+      .fault_write_i             (fault_write_o),
+      .fault_reason_i            (fault_reason_o),
+      .master_read_accept_i      (s_monitor_master_read_accept),
+      .master_write_accept_i     (s_monitor_master_write_accept),
+      .master_read_beat_i        (s_monitor_master_read_beat),
+      .master_write_beat_i       (s_monitor_master_write_beat),
+      .master_wait_i             (s_monitor_master_wait),
+      .master_promotion_i        (s_monitor_master_promotion),
+      .master_read_outstanding_i (s_monitor_master_read_outstanding),
+      .master_write_outstanding_i(s_monitor_master_write_outstanding),
+      .target_read_accept_i      (s_monitor_target_read_accept),
+      .target_write_accept_i     (s_monitor_target_write_accept),
+      .target_read_beat_i        (s_monitor_target_read_beat),
+      .target_write_beat_i       (s_monitor_target_write_beat),
+      .target_wait_i             (s_monitor_target_wait),
+      .target_timeout_i          (s_monitor_target_timeout),
+      .target_isolated_i         (s_monitor_target_isolated),
+      .target_read_outstanding_i (s_monitor_target_read_outstanding),
+      .target_write_outstanding_i(s_monitor_target_write_outstanding),
+      .apb4                      (fabric_monitor_apb4)
   );
 
   for (genvar target = 0; target < NumMemoryTargets; target++) begin : gen_abort_handshake
@@ -559,15 +596,19 @@ module soc_data_plane (
   };
 
   axi4_connector u_qpi_gateway_connector (
-      .source(u_gateway_lp_axi4[2]),
+      .source(u_target_mem_narrow_axi4[1]),
       .sink  (qpi_gateway_axi4)
   );
   axi4_connector u_opi_gateway_connector (
-      .source(u_gateway_lp_axi4[3]),
+      .source(u_target_mem_narrow_axi4[2]),
       .sink  (opi_gateway_axi4)
   );
   axi4_connector u_xpi_gateway_connector (
-      .source(u_gateway_lp_axi4[4]),
+      .source(u_target_mem_narrow_axi4[3]),
       .sink  (xpi_gateway_axi4)
+  );
+  axi4_connector u_sdram_gateway_connector (
+      .source(u_target_mem_narrow_axi4[0]),
+      .sink  (sdram_gateway_axi4)
   );
 endmodule

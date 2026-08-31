@@ -20,6 +20,17 @@ FABRIC_LINK_NAMES = ("mgmt", "user", "dma", "sdio0", "sdio1", "usb2", "cfg", "sy
 FABRIC_PROTOCOLS = {name: "axi4" for name in FABRIC_LINK_NAMES}
 IRQ_GROUP_NAMES = ("apb4_periph", "apb4_system")
 IRQ_VECTOR_WIDTH = 32
+DATA_MASTER_NAMES = (
+    "hp_icache",
+    "hp_dcache",
+    "dma",
+    "io_gateway_a",
+    "io_gateway_b",
+    "lp_gateway",
+    "reserved",
+    "ext_h",
+)
+DATA_TARGET_NAMES = ("sram", "sdram", "qpi", "opi", "xpi")
 COMPATIBILITY_IRQ_BINDINGS = (
     ("clint_software", "apb4_periph", 0, 0, "u_clint_if.software_irq_o[0]"),
     ("clint_timer", "apb4_periph", 1, 1, "u_clint_if.timer_irq_o[0]"),
@@ -61,6 +72,16 @@ class FabricLink:
     interface: str
     protocol: str
     domain: str
+
+
+@dataclass(frozen=True)
+class DataMasterPolicy:
+    index: int
+    name: str
+    read_targets: tuple[str, ...]
+    write_targets: tuple[str, ...]
+    allow_instruction: bool
+    require_noncacheable: bool
 
 
 @dataclass(frozen=True)
@@ -303,6 +324,54 @@ def parse_fabric_links(value: Any) -> list[FabricLink]:
     return sorted(links, key=lambda item: FABRIC_LINK_NAMES.index(item.name))
 
 
+def parse_data_master_policies(value: Any) -> list[DataMasterPolicy]:
+    if not isinstance(value, list) or len(value) != len(DATA_MASTER_NAMES):
+        raise ValueError("data_master_policies must define all eight data masters")
+    policies: list[DataMasterPolicy] = []
+    for position, entry in enumerate(value):
+        policy = require_object(entry, f"data_master_policies[{position}]")
+        index = policy.get("index")
+        name = require_identifier(policy.get("name"), f"data_master_policies[{position}].name")
+        if index != position or name != DATA_MASTER_NAMES[position]:
+            raise ValueError(
+                f"data_master_policies[{position}] must define index {position} "
+                f"and name {DATA_MASTER_NAMES[position]}"
+            )
+        target_lists: list[tuple[str, ...]] = []
+        for access in ("read_targets", "write_targets"):
+            targets = policy.get(access)
+            if not isinstance(targets, list):
+                raise ValueError(f"data_master_policies[{position}].{access} must be a list")
+            parsed_targets = tuple(
+                require_identifier(target, f"data_master_policies[{position}].{access}")
+                for target in targets
+            )
+            if len(parsed_targets) != len(set(parsed_targets)) or any(
+                target not in DATA_TARGET_NAMES for target in parsed_targets
+            ):
+                raise ValueError(
+                    f"data_master_policies[{position}].{access} contains duplicate or unknown targets"
+                )
+            target_lists.append(parsed_targets)
+        allow_instruction = policy.get("allow_instruction")
+        require_noncacheable = policy.get("require_noncacheable")
+        if not isinstance(allow_instruction, bool) or not isinstance(require_noncacheable, bool):
+            raise ValueError(
+                f"data_master_policies[{position}] attributes must be boolean"
+            )
+        policies.append(
+            DataMasterPolicy(
+                index,
+                name,
+                target_lists[0],
+                target_lists[1],
+                allow_instruction,
+                require_noncacheable,
+            )
+        )
+    return policies
+
+
 def parse_gpio_mode(value: Any, field: str) -> GpioMode:
     mode = require_object(value, field)
     inputs_value = mode.get("inputs")
@@ -459,10 +528,11 @@ def read_topology(
     int,
     list[IrqGroup],
     list[Interrupt],
+    list[DataMasterPolicy],
 ]:
     document = require_object(json.loads(topology_path.read_text(encoding="utf-8")), "topology")
-    if document.get("schema_version") != 1:
-        raise ValueError("schema_version must be 1")
+    if document.get("schema_version") != 2:
+        raise ValueError("schema_version must be 2")
     gpio_pins = document.get("gpio_pins")
     if not isinstance(gpio_pins, int) or gpio_pins <= 0:
         raise ValueError("gpio_pins must be a positive integer")
@@ -491,6 +561,36 @@ def read_topology(
         irq_vector_width,
         irq_groups,
         interrupts,
+        parse_data_master_policies(document.get("data_master_policies")),
+    )
+
+
+def render_data_policy(policies: list[DataMasterPolicy]) -> str:
+    def packed_target_mask(access: str) -> str:
+        bits = "".join(
+            "".join(
+                "1" if target in getattr(policy, access) else "0"
+                for target in reversed(DATA_TARGET_NAMES)
+            )
+            for policy in reversed(policies)
+        )
+        return f"40'b{bits}"
+
+    instruction_bits = "".join(
+        "1" if policy.allow_instruction else "0" for policy in reversed(policies)
+    )
+    noncacheable_bits = "".join(
+        "1" if policy.require_noncacheable else "0" for policy in reversed(policies)
+    )
+    return "\n".join(
+        [
+            "// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit.",
+            f"`define {'SOC_DATA_POLICY_READ_TARGET_MASK':<44} {packed_target_mask('read_targets')}",
+            f"`define {'SOC_DATA_POLICY_WRITE_TARGET_MASK':<44} {packed_target_mask('write_targets')}",
+            f"`define {'SOC_DATA_POLICY_ALLOW_INSTRUCTION':<44} 8'b{instruction_bits}",
+            f"`define {'SOC_DATA_POLICY_REQUIRE_NONCACHEABLE':<44} 8'b{noncacheable_bits}",
+            "",
+        ]
     )
 
 
@@ -789,6 +889,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
         irq_vector_width,
         irq_groups,
         interrupts,
+        data_master_policies,
     ) = read_topology(topology_path, memory_map_path)
     rtl_dir = output_dir / "rtl"
 
@@ -845,6 +946,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
         rtl_dir / "soc_irq_sva.svh",
         render_irq_sva(irq_vector_width, irq_groups, interrupts),
     )
+    atomic_write(rtl_dir / "soc_data_policy.svh", render_data_policy(data_master_policies))
     atomic_write(output_dir / "soc_topology.fl", f"+incdir+{rtl_dir}\n")
 
 

@@ -4,9 +4,13 @@
 `include "mmap_define.svh"
 
 module axi4_data_crossbar #(
-    parameter int unsigned NumMasters       = 8,
-    parameter int unsigned NumTargets       = 6,
-    parameter int unsigned StarvationCycles = 256
+    parameter int unsigned                                  NumMasters          = 8,
+    parameter int unsigned                                  NumTargets          = 6,
+    parameter int unsigned                                  StarvationCycles    = 256,
+    parameter logic        [NumMasters-1:0][NumTargets-2:0] ReadTargetMask      = '1,
+    parameter logic        [NumMasters-1:0][NumTargets-2:0] WriteTargetMask     = '1,
+    parameter logic        [NumMasters-1:0]                 AllowInstruction    = '1,
+    parameter logic        [NumMasters-1:0]                 RequireNoncacheable = '0
 ) (
     // verilog_format: off -- preserve the data-plane contract columns
     input  logic                clk_i,
@@ -30,7 +34,22 @@ module axi4_data_crossbar #(
     output logic          [2:0] fault_target_o,
     output logic         [31:0] fault_addr_o,
     output logic                fault_write_o,
-    output logic          [3:0] fault_reason_o
+    output logic          [3:0] fault_reason_o,
+    output logic [NumMasters-1:0] monitor_master_read_accept_o,
+    output logic [NumMasters-1:0] monitor_master_write_accept_o,
+    output logic [NumMasters-1:0] monitor_master_read_beat_o,
+    output logic [NumMasters-1:0] monitor_master_write_beat_o,
+    output logic [NumMasters-1:0] monitor_master_wait_o,
+    output logic [NumMasters-1:0] monitor_master_promotion_o,
+    output logic [NumMasters-1:0][2:0] monitor_master_read_outstanding_o,
+    output logic [NumMasters-1:0][2:0] monitor_master_write_outstanding_o,
+    output logic [NumTargets-1:0] monitor_target_read_accept_o,
+    output logic [NumTargets-1:0] monitor_target_write_accept_o,
+    output logic [NumTargets-1:0] monitor_target_read_beat_o,
+    output logic [NumTargets-1:0] monitor_target_write_beat_o,
+    output logic [NumTargets-1:0] monitor_target_wait_o,
+    output logic [NumTargets-1:0][2:0] monitor_target_read_outstanding_o,
+    output logic [NumTargets-1:0][2:0] monitor_target_write_outstanding_o
     // verilog_format: on
 );
   localparam int unsigned MasterWidth = $clog2(NumMasters);
@@ -181,8 +200,8 @@ module axi4_data_crossbar #(
   logic [NumMasters-1:0][            2:0] s_write_accept_id;
   logic [NumMasters-1:0][            2:0] s_read_complete_id;
   logic [NumMasters-1:0][            2:0] s_write_complete_id;
-  logic [NumTargets-1:0][            3:0] s_read_max_priority;
-  logic [NumTargets-1:0][            3:0] s_write_max_priority;
+  logic [NumTargets-1:0][            4:0] s_read_max_priority;
+  logic [NumTargets-1:0][            4:0] s_write_max_priority;
   logic                                   s_fault_valid_d;
   logic [           2:0]                  s_fault_master_d;
   logic [           2:0]                  s_fault_target_d;
@@ -223,11 +242,15 @@ module axi4_data_crossbar #(
   endfunction
 
   function automatic logic access_allowed(
-      input int unsigned master, input logic [31:0] addr, input logic write_access,
+      input int unsigned master, input logic [TargetWidth-1:0] target, input logic [31:0] addr,
+      input logic write_access, input logic [2:0] prot, input logic [3:0] cache,
       input logic [31:0] ext_read_base, input logic [31:0] ext_read_limit,
       input logic [31:0] ext_write_base, input logic [31:0] ext_write_limit);
-    if (master == 6) return 1'b0;
-    if ((master == 0) && write_access) return 1'b0;
+    if (target == TargetError) return 1'b1;
+    if (write_access && !WriteTargetMask[master][target]) return 1'b0;
+    if (!write_access && !ReadTargetMask[master][target]) return 1'b0;
+    if (prot[2] && !AllowInstruction[master]) return 1'b0;
+    if (RequireNoncacheable[master] && (cache != 4'd0)) return 1'b0;
     if ((master == 7) && write_access && ((addr < ext_write_base) || (addr > ext_write_limit)))
       return 1'b0;
     if ((master == 7) && !write_access && ((addr < ext_read_base) || (addr > ext_read_limit)))
@@ -279,7 +302,7 @@ module axi4_data_crossbar #(
     return CountWidth'(1);
   endfunction
 
-  function automatic logic [3:0] master_priority(input int unsigned master,
+  function automatic logic [4:0] master_priority(input int unsigned master,
                                                  input logic [3:0] request_qos, input logic aged,
                                                  input logic recovery);
     logic [3:0] base_priority;
@@ -290,8 +313,9 @@ module axi4_data_crossbar #(
       5:       base_priority = recovery ? 4'd15 : 4'd2;
       default: base_priority = 4'd0;
     endcase
-    if (aged) return 4'd15;
-    return (request_qos > base_priority) ? request_qos : base_priority;
+    if (recovery && (master == 5)) return 5'd31;
+    if (aged) return 5'd16;
+    return {1'b0, (request_qos > base_priority) ? request_qos : base_priority};
   endfunction
 
   for (genvar master = 0; master < NumMasters; master++) begin : gen_master_ports
@@ -468,10 +492,13 @@ module axi4_data_crossbar #(
       s_write_decoded_target[master] = decode_target(m_aw[master].addr, mem_pad_mode_i);
       s_read_fault_reason[master]    = decode_fault_reason(m_ar[master].addr, mem_pad_mode_i);
       s_write_fault_reason[master]   = decode_fault_reason(m_aw[master].addr, mem_pad_mode_i);
-      if (!access_allowed(
+      if ((s_read_fault_reason[master] == 4'd0) && !access_allowed(
               master,
+              s_read_decoded_target[master],
               m_ar[master].addr,
               1'b0,
+              m_ar[master].prot,
+              m_ar[master].cache,
               ext_h_read_base_i,
               ext_h_read_limit_i,
               ext_h_write_base_i,
@@ -487,10 +514,13 @@ module axi4_data_crossbar #(
           )) begin
         s_read_fault_reason[master] = FaultProtocol;
       end
-      if (!access_allowed(
+      if ((s_write_fault_reason[master] == 4'd0) && !access_allowed(
               master,
+              s_write_decoded_target[master],
               m_aw[master].addr,
               1'b1,
+              m_aw[master].prot,
+              m_aw[master].cache,
               ext_h_read_base_i,
               ext_h_read_limit_i,
               ext_h_write_base_i,
@@ -822,6 +852,35 @@ module axi4_data_crossbar #(
     assign master_idle_o[master] = (s_master_read_count_q[master] == '0) &&
         (s_master_write_count_q[master] == '0) && (s_route_count_q[master] == '0) &&
         !m_arvalid[master] && !m_awvalid[master] && !m_wvalid[master];
+    assign monitor_master_read_accept_o[master] = s_read_accept[master];
+    assign monitor_master_write_accept_o[master] = s_write_accept[master];
+    assign monitor_master_read_beat_o[master] = m_rvalid[master] && m_rready[master];
+    assign monitor_master_write_beat_o[master] = m_wvalid[master] && m_wready[master];
+    assign monitor_master_wait_o[master] =
+        (m_arvalid[master] && !m_arready[master]) ||
+        (m_awvalid[master] && !m_awready[master]) ||
+        (m_wvalid[master] && !m_wready[master]);
+    assign monitor_master_promotion_o[master] =
+        (s_read_accept[master] &&
+         (s_read_age_q[s_read_accept_target[master]][master] == AgeWidth'(StarvationCycles))) ||
+        (s_write_accept[master] &&
+         (s_write_age_q[s_write_accept_target[master]][master] == AgeWidth'(StarvationCycles)));
+    assign monitor_master_read_outstanding_o[master] = s_master_read_count_q[master];
+    assign monitor_master_write_outstanding_o[master] = s_master_write_count_q[master];
+  end
+  for (genvar target = 0; target < NumTargets; target++) begin : gen_target_monitor
+    assign monitor_target_read_accept_o[target] = s_read_capture[target];
+    assign monitor_target_write_accept_o[target] = s_write_capture[target];
+    assign monitor_target_read_beat_o[target] = t_rvalid[target] && t_rready[target];
+    assign monitor_target_write_beat_o[target] = t_wvalid[target] && t_wready[target];
+    assign monitor_target_wait_o[target] =
+        (t_arvalid[target] && !t_arready[target]) ||
+        (t_awvalid[target] && !t_awready[target]) ||
+        (t_wvalid[target] && !t_wready[target]) ||
+        (t_rvalid[target] && !t_rready[target]) ||
+        (t_bvalid[target] && !t_bready[target]);
+    assign monitor_target_read_outstanding_o[target] = s_target_read_count_q[target];
+    assign monitor_target_write_outstanding_o[target] = s_target_write_count_q[target];
   end
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin

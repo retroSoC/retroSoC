@@ -65,6 +65,8 @@ module retrosoc (
   apb4_if u_sram_cfg_if (.pclk(clk_hp_i), .presetn(rst_hp_n_i));
   apb4_if u_sdram_cfg_pclk_if (.pclk(clk_pclk_i), .presetn(rst_pclk_n_i));
   apb4_if u_sram_cfg_pclk_if (.pclk(clk_pclk_i), .presetn(rst_pclk_n_i));
+  apb4_if u_fabric_monitor_pclk_if (.pclk(clk_pclk_i), .presetn(rst_pclk_n_i));
+  apb4_if u_fabric_monitor_hp_if (.pclk(clk_hp_i), .presetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_cfg_pclk_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
@@ -81,12 +83,6 @@ module retrosoc (
       u_spisd_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_opipsram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
-  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_psram_pclk_axi4_if (.aclk(clk_mem_i), .aresetn(rst_mem_n_i));
-  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_xpi_pclk_axi4_if (.aclk(clk_mem_i), .aresetn(rst_mem_n_i));
-  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_opipsram_pclk_axi4_if (.aclk(clk_mem_i), .aresetn(rst_mem_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_ext_h_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
@@ -110,11 +106,17 @@ module retrosoc (
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_retired_data_sdram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_data_qpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+      u_data_qpi_axi4_if (.aclk(clk_mem_i), .aresetn(rst_mem_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_data_opi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+      u_data_opi_axi4_if (.aclk(clk_mem_i), .aresetn(rst_mem_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
-      u_data_xpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+      u_data_xpi_axi4_if (.aclk(clk_mem_i), .aresetn(rst_mem_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_retired_data_qpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_retired_data_opi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_retired_data_xpi_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_idle_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
@@ -213,6 +215,11 @@ module retrosoc (
   logic             s_hp_lifecycle_draining;
   logic             s_hp_lifecycle_fault;
   logic             s_hp_block_combined;
+  logic             s_hp_block_hp;
+  logic             s_hp_recovery_hp;
+  logic             s_hp_flush_hp;
+  logic             s_hp_mmio_clear_busy;
+  logic [ 7:0]      s_hp_mmio_epoch;
   logic [ 2:0]      s_hp_lifecycle_stat_pclk;
   logic             s_ext_h_data_idle;
   logic             s_ext_h_block;
@@ -236,8 +243,8 @@ module retrosoc (
   logic [31:0]      s_fault_addr_mux;
   logic [ 3:0]      s_fault_wstrb_mux;
   logic             s_fault_reserved_mux;
-  logic [ 5:0]      unused_cdc_clear_busy;
-  logic [ 5:0][7:0] unused_cdc_epoch;
+  logic [ 2:0]      unused_cdc_clear_busy;
+  logic [ 2:0][7:0] unused_cdc_epoch;
 
 `ifdef HAVE_SRAM_IF
   localparam bit SramPresent = 1'b1;
@@ -418,7 +425,7 @@ core_wrapper u_core_wrapper (
   axi4_downsizer_64to32 u_hp_mmio_downsizer (
       .clk_i  (clk_hp_i),
       .rst_n_i(rst_hp_n_i),
-      .clear_i(1'b0),
+      .clear_i(s_hp_flush_hp),
       .wide   (u_hp_mmio_wide_axi4_if),
       .narrow (u_hp_mmio_hp_axi4_if)
   );
@@ -431,9 +438,9 @@ core_wrapper u_core_wrapper (
       .src_rst_n_i (rst_hp_n_i),
       .dst_clk_i   (clk_lp_i),
       .dst_rst_n_i (rst_lp_n_i),
-      .clear_i     (1'b0),
-      .clear_busy_o(unused_cdc_clear_busy[0]),
-      .epoch_o     (unused_cdc_epoch[0]),
+      .clear_i     (s_hp_flush_hp),
+      .clear_busy_o(s_hp_mmio_clear_busy),
+      .epoch_o     (s_hp_mmio_epoch),
       .src_axi4    (u_hp_mmio_gated_axi4_if),
       .dst_axi4    (u_hp_mmio_lp_axi4_if)
   );
@@ -441,7 +448,7 @@ core_wrapper u_core_wrapper (
   axi4_address_gate u_hp_mmio_gate (
       .clk_i      (clk_hp_i),
       .rst_n_i    (rst_hp_n_i),
-      .block_new_i(s_hp_block_combined),
+      .block_new_i(s_hp_block_hp),
       .source     (u_hp_mmio_hp_axi4_if),
       .sink       (u_hp_mmio_gated_axi4_if),
       .idle_o     (s_hp_mmio_idle)
@@ -457,7 +464,7 @@ core_wrapper u_core_wrapper (
         u_sysctrl_if.hp_release_o,
         s_hp_debug_reset_req,
         s_data_plane_idle && s_hp_mmio_idle,
-        s_data_plane_flush_busy
+        s_data_plane_flush_busy || s_hp_mmio_clear_busy
       }),
       .dat_o({s_hp_release_req_aon, s_hp_debug_reset_req_aon, s_hp_idle_aon, s_hp_flush_busy_aon})
   );
@@ -507,6 +514,15 @@ core_wrapper u_core_wrapper (
   cdc_sync #(
       .STAGE     (2),
       .DATA_WIDTH(3)
+  ) u_hp_lifecycle_control_sync (
+      .clk_i  (clk_hp_i),
+      .rst_n_i(rst_hp_n_i),
+      .dat_i  ({s_hp_block_combined, s_hp_lifecycle_block, s_hp_lifecycle_flush}),
+      .dat_o  ({s_hp_block_hp, s_hp_recovery_hp, s_hp_flush_hp})
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(3)
   ) u_hp_lifecycle_status_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -532,9 +548,9 @@ core_wrapper u_core_wrapper (
       .rst_hp_n_i          (rst_hp_n_i),
       .clk_mem_i           (clk_mem_i),
       .rst_mem_n_i         (rst_mem_n_i),
-      .block_new_i         (s_hp_block_combined),
-      .recovery_i          (s_hp_lifecycle_block),
-      .flush_i             (s_hp_lifecycle_flush),
+      .block_new_i         (s_hp_block_hp),
+      .recovery_i          (s_hp_recovery_hp),
+      .flush_i             (s_hp_flush_hp),
       .resource_block_i    (s_resource_quiesce | s_resource_reset),
       .mem_pad_mode_i      (s_mem_pad_mode_lp),
       .ext_h_block_i       (s_ext_h_block),
@@ -556,6 +572,7 @@ core_wrapper u_core_wrapper (
       .qpi_gateway_axi4    (u_data_qpi_axi4_if),
       .opi_gateway_axi4    (u_data_opi_axi4_if),
       .xpi_gateway_axi4    (u_data_xpi_axi4_if),
+      .fabric_monitor_apb4 (u_fabric_monitor_hp_if),
       .idle_o              (s_data_plane_idle),
       .flush_busy_o        (s_data_plane_flush_busy),
       .ext_h_idle_o        (s_ext_h_data_idle),
@@ -593,6 +610,9 @@ core_wrapper u_core_wrapper (
   axi4_master_idle u_idle_master (.axi4(u_idle_axi4_if));
   axi4_master_idle u_retired_sram_master (.axi4(u_retired_data_sram_axi4_if));
   axi4_master_idle u_retired_sdram_master (.axi4(u_retired_data_sdram_axi4_if));
+  axi4_master_idle u_retired_qpi_master (.axi4(u_retired_data_qpi_axi4_if));
+  axi4_master_idle u_retired_opi_master (.axi4(u_retired_data_opi_axi4_if));
+  axi4_master_idle u_retired_xpi_master (.axi4(u_retired_data_xpi_axi4_if));
 
   axi4_async_bridge #(
       .DataWidth(32),
@@ -622,48 +642,6 @@ core_wrapper u_core_wrapper (
       .src_axi4    (u_system_axi4_if),
       .dst_axi4    (u_system_pclk_axi4_if)
   );
-  axi4_async_bridge #(
-      .DataWidth(32),
-      .IdWidth  (1)
-  ) u_psram_target_cdc (
-      .src_clk_i   (clk_lp_i),
-      .src_rst_n_i (rst_lp_n_i),
-      .dst_clk_i   (clk_mem_i),
-      .dst_rst_n_i (rst_mem_n_i),
-      .clear_i     (1'b0),
-      .clear_busy_o(unused_cdc_clear_busy[3]),
-      .epoch_o     (unused_cdc_epoch[3]),
-      .src_axi4    (u_psram_axi4_if),
-      .dst_axi4    (u_psram_pclk_axi4_if)
-  );
-  axi4_async_bridge #(
-      .DataWidth(32),
-      .IdWidth  (1)
-  ) u_xpi_target_cdc (
-      .src_clk_i   (clk_lp_i),
-      .src_rst_n_i (rst_lp_n_i),
-      .dst_clk_i   (clk_mem_i),
-      .dst_rst_n_i (rst_mem_n_i),
-      .clear_i     (1'b0),
-      .clear_busy_o(unused_cdc_clear_busy[4]),
-      .epoch_o     (unused_cdc_epoch[4]),
-      .src_axi4    (u_xpi_axi4_if),
-      .dst_axi4    (u_xpi_pclk_axi4_if)
-  );
-  axi4_async_bridge #(
-      .DataWidth(32),
-      .IdWidth  (1)
-  ) u_opi_target_cdc (
-      .src_clk_i   (clk_lp_i),
-      .src_rst_n_i (rst_lp_n_i),
-      .dst_clk_i   (clk_mem_i),
-      .dst_rst_n_i (rst_mem_n_i),
-      .clear_i     (1'b0),
-      .clear_busy_o(unused_cdc_clear_busy[5]),
-      .epoch_o     (unused_cdc_epoch[5]),
-      .src_axi4    (u_opipsram_axi4_if),
-      .dst_axi4    (u_opipsram_pclk_axi4_if)
-  );
   apb4_async_bridge u_sdram_cfg_cdc (
       .src_clk_i  (clk_pclk_i),
       .src_rst_n_i(rst_pclk_n_i),
@@ -679,6 +657,14 @@ core_wrapper u_core_wrapper (
       .dst_rst_n_i(rst_hp_n_i),
       .src_apb4   (u_sram_cfg_pclk_if),
       .dst_apb4   (u_sram_cfg_if)
+  );
+  apb4_async_bridge u_fabric_monitor_cdc (
+      .src_clk_i  (clk_pclk_i),
+      .src_rst_n_i(rst_pclk_n_i),
+      .dst_clk_i  (clk_hp_i),
+      .dst_rst_n_i(rst_hp_n_i),
+      .src_apb4   (u_fabric_monitor_pclk_if),
+      .dst_apb4   (u_fabric_monitor_hp_if)
   );
 
   always_comb begin
@@ -733,6 +719,21 @@ core_wrapper u_core_wrapper (
       .rst_n_i(rst_lp_n_i),
       .axi4   (u_sdram_axi4_if)
   );
+  axi4_error_slave u_retired_qpi_target (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .axi4   (u_psram_axi4_if)
+  );
+  axi4_error_slave u_retired_xpi_target (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .axi4   (u_xpi_axi4_if)
+  );
+  axi4_error_slave u_retired_opi_target (
+      .clk_i  (clk_lp_i),
+      .rst_n_i(rst_lp_n_i),
+      .axi4   (u_opipsram_axi4_if)
+  );
 
   axi4_bus u_bus (
       .clk_i                  (clk_lp_i),
@@ -740,10 +741,10 @@ core_wrapper u_core_wrapper (
       .mgmt_axi4              (u_mgmt_control_axi4_if),
       .user_axi4              (u_retired_data_sram_axi4_if),
       .dma_axi4               (u_retired_data_sdram_axi4_if),
-      .sdio0_axi4             (u_data_qpi_axi4_if),
-      .sdio1_axi4             (u_data_xpi_axi4_if),
+      .sdio0_axi4             (u_retired_data_qpi_axi4_if),
+      .sdio1_axi4             (u_retired_data_xpi_axi4_if),
       .usb2_axi4              (u_hp_mmio_lp_axi4_if),
-      .spisd_axi4             (u_data_opi_axi4_if),
+      .spisd_axi4             (u_retired_data_opi_axi4_if),
       .hp_axi4                (u_idle_axi4_if),
       .cfg_axi4               (u_cfg_axi4_if),
       .system_axi4            (u_system_axi4_if),
@@ -796,10 +797,10 @@ core_wrapper u_core_wrapper (
       .sdio0_axi4                  (u_sdio0_axi4_if),
       .sdio1_axi4                  (u_sdio1_axi4_if),
       .usb2_axi4                   (u_usb2_axi4_if),
-      .psram_axi4                  (u_psram_pclk_axi4_if),
-      .xpi_axi4                    (u_xpi_pclk_axi4_if),
+      .psram_axi4                  (u_data_qpi_axi4_if),
+      .xpi_axi4                    (u_data_xpi_axi4_if),
       .spisd_axi4                  (u_spisd_axi4_if),
-      .opipsram_axi4               (u_opipsram_pclk_axi4_if),
+      .opipsram_axi4               (u_data_opi_axi4_if),
       .gpio                        (u_gpio_if),
       .user_gpio                   (u_user_gpio_if),
       .uart                        (u_uart0_if),
@@ -854,6 +855,7 @@ core_wrapper u_core_wrapper (
       .resource_irq_i(s_resource_irq_raw),
       .cache_request_i(s_hp_cache_req_pclk),
       .ext_h_axi4(u_ext_h_wide_axi4_if),
+      .fabric_monitor(u_fabric_monitor_pclk_if),
       .axi4(u_system_pclk_axi4_if),
       .pwm(u_pwm_if),
       .ps2(u_ps2_if),
@@ -878,7 +880,7 @@ core_wrapper u_core_wrapper (
       .irq_o(s_apb4_system_irq)
   );
 
-  logic [34:0] s_unused_domain_inputs;
+  logic [35:0] s_unused_domain_inputs;
   assign s_unused_domain_inputs = {
     clk_pclk_i,
     rst_pclk_n_i,
@@ -897,6 +899,7 @@ core_wrapper u_core_wrapper (
     ^s_resource_reset,
     ^unused_cdc_clear_busy,
     ^unused_cdc_epoch,
+    ^{s_hp_mmio_epoch, s_hp_mmio_clear_busy},
     ^s_ext_h_timeout
   };
 

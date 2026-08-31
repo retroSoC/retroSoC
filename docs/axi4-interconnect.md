@@ -55,6 +55,29 @@ reads and two writes; serial and error targets use one read and one write.
 | XPI/flash | AXI64-to-32, CDC, XPI frontend |
 | error | finite-latency `SLVERR` responder |
 
+Admission policy is generated from `soc_topology.json`, not duplicated in
+the integration RTL:
+
+| Master | Read targets | Write targets | Instruction | Attribute rule |
+| --- | --- | --- | --- | --- |
+| HP I-cache | all five memories | none | allowed | cache attributes preserved |
+| HP D-cache | all five memories | SRAM, SDRAM, QPI, OPI | denied | cache attributes preserved |
+| DMA, I/O A/B, LP gateway | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required |
+| reserved | none | none | denied | fail-closed |
+| EXT-H | all five memories within slot ACL | SRAM, SDRAM, QPI, OPI within slot ACL | denied | `AxCACHE=0` required |
+
+XPI is read-only on the data plane. A denied target, instruction access,
+cache attribute, or EXT-H range is routed to the finite-latency error target
+and records the immutable master identity and original decoded target.
+
+Per-target arbitration first selects the highest effective five-bit priority
+and then uses the Common round-robin arbiter among equal requesters. Normal
+classes are HP I/D 12, I/O gateways 10, DMA/EXT-H 8, and LP gateway 2, with
+incoming AXI QoS able to raise a normal request up to 15. A continuously
+eligible request is promoted to 16 after 256 cycles. During recovery, the LP
+gateway is promoted to 31. Target backpressure is outside the service bound;
+once a target accepts addresses, aged requesters rotate without starvation.
+
 `block_new_i` prevents new address acceptance during HP clock changes. Existing
 owners retain their response route until terminal completion. QPI/OPI decode is
 fail-closed according to the synchronized AON pad mode.
@@ -74,10 +97,22 @@ drains accepted traffic, and performs a coordinated warm flush. Target guards
 provide bounded synthetic `SLVERR` completion and fail-closed isolation for a
 stopped target.
 
+SDRAM, QPI, OPI, and XPI each cross directly from HP to the stable memory
+domain as AXI64, then use a local 64-to-32 adapter beside the current
+controller. Serial payload no longer stages through the LP fabric. Lifecycle
+flush covers the HP MMIO bridge and every HP-to-memory bridge before reset.
+
+The root-only Fabric Monitor at `0x2000_B000` observes accepted addresses,
+beats, wait cycles, high-water marks, aging promotions, target timeouts,
+isolation, warm flushes, and sticky first-fault attribution. Counter banks use
+explicit snapshots; see [its register contract](ip/fabric-monitor.md).
+
 ## Verification boundary
 
-`tests/test_axi4.py` retains LP fabric, downsizer, burst, response, and
-backpressure coverage. Full-product Verilator/Icarus simulation exercises LP
-boot, HP elaboration, the memory gateways, and product APB paths. The current
-implementation does not claim cache coherency, full AXI formal proof, CDC
-signoff, or physical bandwidth closure.
+`tests/test_axi4.py` retains LP fabric, downsizer, burst, response,
+backpressure, multi-ID, ACL attribute/target/execute denial, emergency
+priority, and aging-promotion coverage. `tests/test_fabric_monitor.py` covers
+the monitor ABI and counters. Full-product Verilator/Icarus simulation
+exercises LP boot, HP elaboration, direct HP-to-memory gateways, and product
+APB paths. The current implementation does not claim cache coherency, a full
+AXI liveness proof, CDC signoff, or physical bandwidth closure.

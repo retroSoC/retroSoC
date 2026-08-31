@@ -4,6 +4,9 @@
 module extension_slot #(
     parameter int unsigned SlotId             = 0,
     parameter bit          KindExtH           = 1'b0,
+    parameter bit          HasDataMaster      = KindExtH,
+    parameter bit          HasStream          = 1'b0,
+    parameter bit          HasLocalSram       = 1'b0,
     parameter int unsigned IrqCount           = 1,
     parameter int unsigned ResetTimeoutCycles = 1024
 ) (
@@ -55,7 +58,7 @@ module extension_slot #(
 
   localparam logic [31:0] Identifier = KindExtH ? 32'h4558_5448 : 32'h4558_544C;
   localparam logic [31:0] Capabilities = {
-    16'd0, 8'(IrqCount), 4'd0, KindExtH, KindExtH, KindExtH, 1'b1
+    16'd0, 8'(IrqCount), 4'd0, HasLocalSram, HasStream, HasDataMaster, 1'b1
   };
 
   logic        s_apb4_ready_d;
@@ -412,7 +415,7 @@ module extension_slot #(
 
 `ifndef SYNTHESIS
   initial begin
-    if ((IrqCount < 1) || (IrqCount > 4) || (SlotId > 255)) begin
+    if ((IrqCount < 1) || (IrqCount > 4) || (SlotId > 255) || (KindExtH != HasDataMaster)) begin
       $fatal(1, "extension_slot: invalid slot or IRQ count");
     end
   end

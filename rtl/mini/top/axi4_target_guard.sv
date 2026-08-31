@@ -20,6 +20,7 @@ module axi4_target_guard #(
     output logic                 abort_o,
     input  logic                 abort_done_i,
     output logic                 timeout_valid_o,
+    output logic                 isolated_o,
     output logic                 timeout_write_o,
     output logic [IdWidth-1:0]   timeout_id_o,
     output logic [AddrWidth-1:0] timeout_addr_o,
@@ -427,6 +428,7 @@ module axi4_target_guard #(
   assign abort_o = (s_read_state_q == ReadAbort) || (s_write_state_q == WriteAbort);
   assign clear_busy_o = clear_i || abort_o;
   assign timeout_valid_o = s_timeout_read || s_timeout_write;
+  assign isolated_o = s_isolated_q;
   assign timeout_write_o = s_timeout_write;
   assign timeout_id_o = s_timeout_write ?
                         ((s_write_state_q == WriteSend) ? s_aw_id : s_write_id_q) :

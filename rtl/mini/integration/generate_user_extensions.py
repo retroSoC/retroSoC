@@ -45,6 +45,7 @@ class ProductExtension:
     irq_count: int
     data_master: bool
     stream: bool
+    local_sram: bool
 
 
 @dataclass(frozen=True)
@@ -158,10 +159,13 @@ def parse_product_extensions(value: Any) -> tuple[ProductExtension, ...]:
         )
         data_master = extension.get("data_master")
         stream = extension.get("stream")
-        if not isinstance(data_master, bool) or not isinstance(stream, bool):
-            raise ValueError(f"extensions[{index}] data_master and stream must be boolean")
-        if kind == "ext_l" and (data_master or stream):
-            raise ValueError("EXT-L cannot expose a data master or stream")
+        local_sram = extension.get("local_sram")
+        if not all(isinstance(value, bool) for value in (data_master, stream, local_sram)):
+            raise ValueError(
+                f"extensions[{index}] data_master, stream, and local_sram must be boolean"
+            )
+        if kind == "ext_l" and (data_master or stream or local_sram):
+            raise ValueError("EXT-L cannot expose a data master, stream, or local SRAM")
         if slot in slots or control_region in regions:
             raise ValueError(f"extensions[{index}] duplicates a slot or control region")
         allocated_irqs = set(range(irq_base, irq_base + irq_count))
@@ -172,7 +176,7 @@ def parse_product_extensions(value: Any) -> tuple[ProductExtension, ...]:
         irq_bits.update(allocated_irqs)
         extensions.append(
             ProductExtension(
-                slot, kind, control_region, irq_base, irq_count, data_master, stream
+                slot, kind, control_region, irq_base, irq_count, data_master, stream, local_sram
             )
         )
     ordered = tuple(sorted(extensions, key=lambda item: item.slot))
@@ -383,6 +387,7 @@ def render_product_config(product: ProductExtensionMap) -> str:
                 f"`define {prefix + '_IRQ_COUNT':<48} {extension.irq_count}",
                 f"`define {prefix + '_DATA_MASTER':<48} {int(extension.data_master)}",
                 f"`define {prefix + '_STREAM':<48} {int(extension.stream)}",
+                f"`define {prefix + '_LOCAL_SRAM':<48} {int(extension.local_sram)}",
             ]
         )
     lines.extend(["", "`endif", ""])

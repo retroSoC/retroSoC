@@ -8,7 +8,7 @@ generating register definitions.
 | Slot | Kind | Base | ID | IRQ | Capability |
 | ---: | --- | --- | --- | ---: | --- |
 | 0 | EXT-L | `0x20008000` | `0x4558544C` (`EXTL`) | 27 | APB4, one IRQ |
-| 1 | EXT-H | `0x20009000` | `0x45585448` (`EXTH`) | 28 | APB4, AXI64 master, stream, one IRQ |
+| 1 | EXT-H | `0x20009000` | `0x45585448` (`EXTH`) | 28 | APB4, AXI64 master, one IRQ |
 
 ## Register ABI
 
@@ -53,3 +53,7 @@ The legacy `APB4_USER_IP` window remains read-only in product mode and reports
 the product extension capability. Its selector APIs return `RS_ENOTSUP`.
 Legacy selectable designs and their private register ABIs remain in the MPW
 manifest and profile.
+
+Product capability bits are truthful: neither slot advertises a local SRAM or
+AXI4-Stream endpoint, and EXT-L does not advertise a data master. These are
+reserved extension ABI directions, not implemented product interfaces.

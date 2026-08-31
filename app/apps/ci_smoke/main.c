@@ -4,6 +4,7 @@
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/extension.h>
+#include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/onchip_sram.h>
 #include <retrosoc/hal/rng.h>
@@ -67,6 +68,33 @@ static bool rs_ci_smoke_onchip_sram_access(void) {
 #endif
 }
 
+static bool rs_ci_smoke_fabric_monitor_start(void) {
+    return (rs_fabric_monitor_clear() == RS_OK) &&
+           (rs_fabric_monitor_configure(true, false) == RS_OK);
+}
+
+static bool rs_ci_smoke_fabric_monitor_check(void) {
+    rs_fabric_monitor_status_t status;
+    rs_fabric_master_stats_t master;
+    rs_fabric_target_stats_t target;
+    rs_fabric_fault_t fault;
+    uint32_t flush_count;
+
+    if ((rs_fabric_monitor_snapshot() != RS_OK) ||
+        (rs_fabric_monitor_get_status(&status) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_LP, &master) != RS_OK) ||
+        (rs_fabric_monitor_read_target(RS_FABRIC_TARGET_SRAM, &target) != RS_OK) ||
+        (rs_fabric_monitor_read_fault(&fault) != RS_OK) ||
+        (rs_fabric_monitor_get_flush_count(&flush_count) != RS_OK)) {
+        return false;
+    }
+    return !status.recovery && !status.flush_busy && !fault.valid && (flush_count == 0U) &&
+           (master.read_requests != 0U) && (master.write_requests != 0U) &&
+           (master.read_beats != 0U) && (master.write_beats != 0U) &&
+           (target.read_requests != 0U) && (target.write_requests != 0U) &&
+           (target.read_beats != 0U) && (target.write_beats != 0U);
+}
+
 static bool rs_ci_smoke_extensions(void) {
     const rs_extension_acl_t acl = {
         .read_base = RS_SOC_SDRAM_BASE,
@@ -84,9 +112,9 @@ static bool rs_ci_smoke_extensions(void) {
         (rs_extension_probe(RS_EXTENSION_SLOT_L, &ext_l) != RS_OK) ||
         (rs_extension_probe(RS_EXTENSION_SLOT_H, &ext_h) != RS_OK) ||
         (ext_l.identification != RS_EXTENSION_IDENTIFICATION_EXT_L) || ext_l.data_master ||
-        ext_l.stream || (ext_l.interrupt_count != 1U) ||
+        ext_l.stream || ext_l.local_sram || (ext_l.interrupt_count != 1U) ||
         (ext_h.identification != RS_EXTENSION_IDENTIFICATION_EXT_H) || !ext_h.data_master ||
-        !ext_h.stream || (ext_h.interrupt_count != 1U) ||
+        ext_h.stream || ext_h.local_sram || (ext_h.interrupt_count != 1U) ||
         (rs_extension_configure_acl(RS_EXTENSION_SLOT_L, &acl) != RS_ENOTSUP) ||
         (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &acl) != RS_OK) ||
         (rs_extension_set_lifecycle(RS_EXTENSION_SLOT_H, true, true, false) != RS_OK) ||
@@ -346,10 +374,17 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_fabric_monitor_start()) {
+        rs_test_finish(RS_TEST_FAILED, 13U);
+    }
     if (!rs_ci_smoke_onchip_sram() || !rs_ci_smoke_onchip_sram_access()) {
         rs_test_finish(RS_TEST_FAILED, 12U);
     }
     printf("ci_smoke: on-chip SRAM passed\n");
+    if (!rs_ci_smoke_fabric_monitor_check()) {
+        rs_test_finish(RS_TEST_FAILED, 13U);
+    }
+    printf("ci_smoke: fabric monitor passed\n");
     if (!rs_ci_smoke_extensions()) {
         rs_test_finish(RS_TEST_FAILED, 11U);
     }

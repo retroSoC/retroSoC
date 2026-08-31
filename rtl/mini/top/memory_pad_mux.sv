@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module memory_pad_mux (
-    input logic       [1:0] mode_i,
-          psram_if          controller_qpi,
-          psram_if          pads_qpi,
-          opipsram_if       controller_opi,
-          opipsram_if       pads_opi
+    // verilog_format: off -- preserve the shared-pad contract columns
+    input logic             [1:0] mode_i,
+          psram_if.pad            controller_qpi,
+          psram_if.dut            pads_qpi,
+          opipsram_if.pad         controller_opi,
+          opipsram_if.dut         pads_opi
+    // verilog_format: on
 );
   localparam logic [1:0] ModeQpi = 2'd1;
   localparam logic [1:0] ModeOpi = 2'd2;

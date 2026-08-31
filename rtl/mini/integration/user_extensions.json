@@ -10,7 +10,8 @@
       "irq_base": 27,
       "irq_count": 1,
       "data_master": false,
-      "stream": false
+      "stream": false,
+      "local_sram": false
     },
     {
       "slot": 1,
@@ -19,7 +20,8 @@
       "irq_base": 28,
       "irq_count": 1,
       "data_master": true,
-      "stream": true
+      "stream": false,
+      "local_sram": false
     }
   ]
 }

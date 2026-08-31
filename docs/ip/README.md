@@ -7,6 +7,8 @@ extension interfaces.
 - [timer.md](timer.md) defines the dual APB4 general timer.
 - [sysctrl.md](sysctrl.md) defines the APB4 SystemCtrl register ABI, control-plane contracts, HAL, and verification.
 - [resource-controller.md](resource-controller.md) defines root-managed resource ownership, IRQ routing, and cache-maintenance handoff.
+- [fabric-monitor.md](fabric-monitor.md) defines data-plane counters, sticky
+  fault retention, snapshot semantics, and the public HAL.
 - [user-ip.md](user-ip.md) defines the selectable user-IP window and software ownership boundary.
 - [ws2812.md](ws2812.md) defines the WS2812 transmitter.
 - [clint.md](clint.md) defines the management-hart software and timer interrupt block.

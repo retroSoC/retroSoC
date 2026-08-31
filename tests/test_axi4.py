@@ -289,7 +289,7 @@ def test_axi4_data_crossbar_supports_cross_target_outstanding_and_acl(tmp_path: 
         },
     )
     result = subprocess.run([output], check=True, text=True, capture_output=True)
-    assert "AXI4 data crossbar concurrency and ACL test passed" in result.stdout
+    assert "AXI4 data crossbar concurrency, ACL, and QoS test passed" in result.stdout
 
 
 def test_axi4_target_guard_terminates_and_isolates_timeouts(tmp_path: Path) -> None:
