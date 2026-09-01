@@ -327,6 +327,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812_filelist = tmp_path / "ws2812.fl"
     i2c_filelist = tmp_path / "i2c.fl"
     clint_filelist = tmp_path / "clint.fl"
+    onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
@@ -348,6 +349,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist("i2c", i2c_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist("clint", clint_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
+        "onchip_ram", onchip_ram_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
 
@@ -360,9 +364,13 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812 = parse_filelists([ws2812_filelist], require_files=False)
     i2c = parse_filelists([i2c_filelist], require_files=False)
     clint = parse_filelists([clint_filelist], require_files=False)
+    onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
+    assert "+define+PDK_BEHAV" in onchip_ram.defines
+    assert "+define+SYNTHESIS" in onchip_ram.defines
     assert "+define+PDK_BEHAV" in opipsram.defines
+    assert "+define+SYNTHESIS" not in opipsram.defines
     assert "+define+SV_ASSRT_DISABLE" not in opipsram.defines
     assert ROOT / "rtl/mini/top/rib_bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files

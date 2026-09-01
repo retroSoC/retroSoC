@@ -26,7 +26,9 @@ TOP = ROOT / "rtl/mini/top"
 
 
 def target_defines(target: str) -> list[str]:
-    if target in {"onchip_ram", "opipsram"}:
+    if target == "onchip_ram":
+        return ["+define+PDK_BEHAV", "+define+SYNTHESIS"]
+    if target == "opipsram":
         return ["+define+PDK_BEHAV"]
     if target == "sysctrl":
         return ["+define+SV_ASSRT_DISABLE", "+define+MINI_PRODUCT"]
