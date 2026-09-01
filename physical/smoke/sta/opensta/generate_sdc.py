@@ -70,6 +70,18 @@ def render(domains: list[dict[str, Any]], reset_ports: list[str]) -> str:
         "  return $objects",
         "}",
         "",
+        "proc require_net_driver_pin {label name} {",
+        "  set net [get_nets -quiet $name]",
+        "  if {$net eq \"\"} {",
+        "    error \"required SDC net is missing: $label ($name)\"",
+        "  }",
+        "  set drivers [get_pins -quiet -filter \"direction == output\" -of_objects $net]",
+        "  if {[llength $drivers] != 1} {",
+        "    error \"required SDC net must have one output driver: $label ($name)\"",
+        "  }",
+        "  return $drivers",
+        "}",
+        "",
         "proc require_ports {label name} {",
         "  set objects [get_ports -quiet $name]",
         "  if {$objects eq \"\"} {",
@@ -89,6 +101,12 @@ def render(domains: list[dict[str, Any]], reset_ports: list[str]) -> str:
             object_name = sta["source_port"]
             lines.append(
                 f"set {pin_variable} [require_ports \"clock {name}\" {{{object_name}}}]"
+            )
+        elif object_type == "net_driver":
+            pin_variable = f"clk_{name}_pin"
+            lines.append(
+                f"set {pin_variable} [require_net_driver_pin \"clock {name}\" "
+                f"{{{sta['net']}}}]"
             )
         else:
             pin_variable = f"clk_{name}_pin"

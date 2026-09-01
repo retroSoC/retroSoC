@@ -9,8 +9,10 @@ module jpeg_mcu_builder_tb;
   logic         block_last;
   logic         done;
   logic         error_flag;
+  logic [511:0] expected_block;
   int           input_beats;
   int           output_blocks;
+  int           timeout_cycles;
 
   axi4_stream_if #(
       .DATA_WIDTH(64)
@@ -20,6 +22,16 @@ module jpeg_mcu_builder_tb;
   );
 
   always #5 clk = ~clk;
+
+  always_comb begin
+    expected_block = {64{8'd128}};
+    if (output_blocks < 4) begin
+      for (int sample = 0; sample < 64; sample ++) begin
+        expected_block[sample*8+:8] = 8'((((output_blocks >> 1) * 8 + (sample >> 3)) * 16) +
+                                                ((output_blocks & 1) * 8) + (sample & 7));
+      end
+    end
+  end
 
   jpeg_mcu_builder u_dut (
       .clk_i         (clk),
@@ -44,8 +56,8 @@ module jpeg_mcu_builder_tb;
       input_beats <= input_beats + 1;
     end
     if (rst_n && block_valid) begin
-      if (block_data != {64{8'd128}} || (block_last != (output_blocks == 5))) begin
-        $fatal(1, "generated block mismatch at %0d", output_blocks);
+      if (block_data !== expected_block || (block_last != (output_blocks == 5))) begin
+        $fatal(1, "generated block mismatch at %0d: %h", output_blocks, block_data);
       end
       output_blocks <= output_blocks + 1;
     end
@@ -53,7 +65,7 @@ module jpeg_mcu_builder_tb;
 
   initial begin
     start             = 1'b0;
-    pixel_axis.tdata  = {8{8'd128}};
+    pixel_axis.tdata  = '0;
     pixel_axis.tkeep  = 8'hff;
     pixel_axis.tstrb  = 8'hff;
     pixel_axis.tlast  = 1'b0;
@@ -70,13 +82,27 @@ module jpeg_mcu_builder_tb;
     @(negedge clk);
     start             = 1'b0;
     pixel_axis.tvalid = 1'b1;
+    for (int lane = 0; lane < 8; lane++) begin
+      pixel_axis.tdata[lane*8+:8] = 8'(lane / 3);
+    end
     while (input_beats < 96) begin
       @(negedge clk);
       pixel_axis.tlast = input_beats == 95;
+      for (int lane = 0; lane < 8; lane++) begin
+        pixel_axis.tdata[lane*8+:8] = 8'(((input_beats * 8) + lane) / 3);
+      end
     end
     pixel_axis.tvalid = 1'b0;
     pixel_axis.tlast  = 1'b0;
-    while (!done) @(negedge clk);
+    timeout_cycles    = 2000;
+    while (!done && (timeout_cycles > 0)) begin
+      @(negedge clk);
+      timeout_cycles--;
+    end
+    if (timeout_cycles == 0) begin
+      $fatal(1, "MCU builder timeout: state=%0d block=%0d sample=%0d", u_dut.s_state_q,
+             u_dut.s_block_cnt_q, u_dut.s_sample_cnt_q);
+    end
     if (error_flag || output_blocks != 6) begin
       $fatal(1, "MCU builder completion mismatch: err=%0d blocks=%0d", error_flag, output_blocks);
     end

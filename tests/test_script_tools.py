@@ -53,6 +53,7 @@ from scripts.regress import (  # noqa: E402
     RTL_COMMANDS,
     RTL_LINT_VALUES,
     SMOKE_COMMANDS,
+    behavioral_only,
     pdk_pr_commands,
     regression_environment,
     select_regression,
@@ -1145,6 +1146,45 @@ def test_rtl_regression_excludes_synthesis_and_timing() -> None:
     assert "STA=OPENSTA" not in dry_run.stdout
 
 
+def test_behavioral_only_excludes_synthesis_and_netlist_consumers() -> None:
+    commands = behavioral_only(PR_COMMANDS)
+    values = [value for _, command_values in commands for value in command_values]
+
+    assert commands == RTL_COMMANDS
+    assert "synth" not in values
+    assert "sta" not in values
+    assert "netsim" not in values
+
+    dry_run = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "pr",
+        "--pdk",
+        "GF180",
+        "--behavioral-only",
+        "--dry-run",
+    )
+    assert "SIMU=VERILATOR" in dry_run.stdout
+    assert "SIMU=IVERILOG" in dry_run.stdout
+    assert "SYNTH=YOSYS" not in dry_run.stdout
+    assert "STA=OPENSTA" not in dry_run.stdout
+    assert "netsim" not in dry_run.stdout
+
+    nightly_extra = behavioral_only(NIGHTLY_EXTRA_COMMANDS)
+    assert nightly_extra == NIGHTLY_EXTRA_COMMANDS[:1]
+
+
+def test_hosted_regression_keeps_tools_but_skips_synthesis_execution() -> None:
+    workflow = (ROOT / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
+
+    assert "default: verilator sv2v iverilog yosys opensta openocd riscv_gnu" in workflow
+    assert "SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor" in workflow
+    assert "--behavioral-only" in workflow
+
+
 def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
     assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
     for pdk, profile in PDK_PR_PROFILES.items():
@@ -1312,7 +1352,9 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     assert "suite: nightly-extra" in nightly
     assert "timeout_minutes: 180" in nightly
     assert "suite: nightly\n" not in nightly
-    assert "--suite nightly-extra --pdk IHP130 --dry-run" in quality
+    assert (
+        "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
+    )
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

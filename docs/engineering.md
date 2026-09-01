@@ -5,12 +5,12 @@
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
 | Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
-| Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
+| Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/ihp130-debug.mk` | Verilator remote-bitbang JTAG DTM, Debug Module, OpenOCD, and GDB acceptance |
-| Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/ics55.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus, Yosys, netlist Icarus, OpenSTA |
-| Nightly | `configs/ci/ihp130.mk` | repeated full IHP130 regression |
+| Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
+| Pull request | `configs/ci/ics55.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
+| Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
+| Nightly | `configs/ci/ihp130.mk` | repeated behavioral IHP130 regression and CoreMark |
 | Cluster | `configs/cluster/ics55.mk` | compatibility profile for site-specific ICS55 runs |
 
 Regression Verilator firmware simulations override the profiles' manual
@@ -47,7 +47,8 @@ with `RS_ENOTSUP`; only the diagnostic API returns words. Production use
 requires replacing that source with a PDK-qualified entropy macro and
 completing the source-specific characterization and NIST SP 800-90B evidence.
 
-OpenSTA runs a reproducible core-STA baseline for every CI PDK: IHP130 uses
+The local full flow defines a reproducible OpenSTA core baseline for every CI
+PDK profile: IHP130 uses
 `slow_1p08V_125C`, GF180 uses `ss_125C_4v50`, ICS55 uses the H7CR
 `ss_1p08_125C` view, and SKY130 uses `ss_100C_1v40`. Enabled SRAM macros use
 matching slow-corner Liberty views; the SKY130 SRAM view is analytically
@@ -147,9 +148,10 @@ build/<variant>/
 `SYNTH_RECIPE` is a flow selector and does not change the configuration hash.
 The selected recipe determines the synthesis netlist consumed by OpenSTA and
 netlist simulation, and determines which metrics file is written. `balanced`
-is the default PR flow. Nightly IHP130 runs `area` and `speed` through synth,
-STA, and metrics; their netlist simulation remains an explicit, on-demand
-validation because of its runtime.
+is the default full-flow recipe. The nightly IHP130 command set also defines
+`area` and `speed` synth, STA, and metrics stages; hosted CI currently filters
+them through `--behavioral-only`, while local execution remains available.
+Netlist simulation is an explicit, on-demand validation because of its runtime.
 
 Use the same commit, PDK, `BUILD_TIMESTAMP`, and `YOSYS_TARGET_PERIOD_PS` for
 all recipes in a QoR comparison:
@@ -299,17 +301,23 @@ changes after freeze must retain the baseline revision and equivalence evidence.
 
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
 Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
-the four full PDK regression workflows remain required PR coverage and do not repeat the format checks.
+the four PDK regression workflows remain required PR coverage and do not repeat the format checks.
 
 Self-owned RTL also passes `rtl-style-check`, which applies the ownership-aware
 rules in `rtl/rtl_style_manifest.json`. New positional module connections,
 legacy `always @` blocks, and unjustified explicit nets are rejected in changed
 self-owned RTL. Formal/DV, PDK, generated, and managed RTL use separate
 validation profiles and are not mechanically rewritten by the root formatter.
-Quality CI also runs `rtl-readiness-check-all` to validate the maturity record;
-regression continues to provide the behavioral, synthesis, netlist, timing,
-warning, and metric evidence referenced by that record.
-`nightly.yml` repeats the fixed IHP130 architecture as two parallel jobs: the PR IHP130 matrix with a 360-minute budget, and the extra CoreMark plus Yosys area/speed recipes. The split keeps the multi-hour Icarus netlist run from cancelling the remaining nightly coverage at the previous 240-minute single-job limit. Source dependencies, locked tool archives, and Verilator `ccache` use
+Quality CI also runs `rtl-readiness-check-all` to validate the maturity record.
+GitHub-hosted regression currently passes `--behavioral-only`, so it provides
+behavioral and warning evidence but skips SoC Yosys synthesis, netlist
+simulation, OpenSTA, and synthesis-recipe metrics. The locked tools are still
+installed and checked. This temporary policy avoids the unresolved JPEG
+synthesis-memory peak. Local full regressions retain those stages and remain the
+source of synthesis and timing evidence until hosted coverage is restored.
+`nightly.yml` repeats the fixed IHP130 architecture as two parallel behavioral
+jobs: the PR IHP130 matrix and the extra CoreMark coverage. Source dependencies,
+locked tool archives, and Verilator `ccache` use
 separate cache keys.
 
 Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source

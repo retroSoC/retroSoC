@@ -3,8 +3,9 @@
 // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND.
 
 module jpeg_block_decoder #(
-    parameter int unsigned ElementWidth = 24,
-    parameter int unsigned WindowWidth  = 32
+    parameter int unsigned ElementWidth              = 24,
+    parameter int unsigned WindowWidth               = 32,
+    parameter bit          ExternalCoefficientEngine = 1'b0
 ) (
     // verilog_format: off -- preserve command, table, bit-window, and block columns
     input  logic                                  clk_i,
@@ -19,6 +20,14 @@ module jpeg_block_decoder #(
     input  logic [256*5-1:0]                      ac_length_i,
     input  logic [WindowWidth-1:0]                bit_window_i,
     input  logic [$clog2(WindowWidth+1)-1:0]      bit_count_i,
+    output logic                                  coefficient_start_o,
+    output logic [64*ElementWidth-1:0]            coefficient_block_o,
+    input  logic                                  coefficient_start_ready_i,
+    input  logic [64*ElementWidth-1:0]            coefficient_result_i,
+    input  logic                                  coefficient_result_valid_i,
+    output logic                                  coefficient_result_ready_o,
+    input  logic                                  coefficient_table_err_i,
+    input  logic                                  coefficient_overflow_i,
     output logic [$clog2(WindowWidth+1)-1:0]      bit_consume_o,
     output logic                                  bit_consume_valid_o,
     output logic                                  start_ready_o,
@@ -78,18 +87,23 @@ module jpeg_block_decoder #(
     end
   endfunction
 
-  assign s_state_q         = state_e'(s_state_bits_q);
-  assign start_ready_o     = s_state_q == Idle;
-  assign block_o           = s_block_q;
-  assign dc_o              = s_dc_q;
-  assign result_valid_o    = s_state_q == Result;
-  assign error_o           = s_err_q;
-  assign s_entropy_start   = (s_state_q == Idle) && start_i;
-  assign s_entropy_ready   = s_state_q == Entropy;
-  assign s_quant_start     = (s_state_q == Entropy) && s_entropy_valid;
-  assign s_quant_ready     = s_state_q == Dequantize;
+  assign s_state_q = state_e'(s_state_bits_q);
+  assign start_ready_o = s_state_q == Idle;
+  assign block_o = s_block_q;
+  assign dc_o = s_dc_q;
+  assign result_valid_o = s_state_q == Result;
+  assign error_o = s_err_q;
+  assign s_entropy_start = (s_state_q == Idle) && start_i;
+  assign s_entropy_ready = (s_state_q == Entropy) &&
+                           (!ExternalCoefficientEngine || coefficient_start_ready_i);
+  assign s_quant_start = (s_state_q == Entropy) && s_entropy_valid;
+  assign s_quant_ready = s_state_q == Dequantize;
   assign s_transform_start = (s_state_q == Dequantize) && s_quant_valid;
   assign s_transform_ready = s_state_q == Transform;
+  assign coefficient_start_o = ExternalCoefficientEngine && (s_state_q == Entropy) &&
+                               s_entropy_valid;
+  assign coefficient_block_o = s_entropy_block;
+  assign coefficient_result_ready_o = ExternalCoefficientEngine && (s_state_q == Transform);
 
   always_comb begin
     for (int unsigned index = 0; index < 64; index++) begin
@@ -111,10 +125,10 @@ module jpeg_block_decoder #(
         end
       end
       Entropy: begin
-        if (s_entropy_valid) begin
+        if (s_entropy_valid && (!ExternalCoefficientEngine || coefficient_start_ready_i)) begin
           s_dc_d = s_entropy_dc;
           s_err_d |= s_entropy_err;
-          s_state_d = Dequantize;
+          s_state_d = ExternalCoefficientEngine ? Transform : Dequantize;
         end
       end
       Dequantize: begin
@@ -126,6 +140,9 @@ module jpeg_block_decoder #(
       Transform: begin
         if (s_transform_valid) begin
           s_block_d = s_clamped_block;
+          if (ExternalCoefficientEngine) begin
+            s_err_d |= coefficient_table_err_i || coefficient_overflow_i;
+          end
           s_state_d = Result;
         end
       end
@@ -162,37 +179,46 @@ module jpeg_block_decoder #(
       .error_o            (s_entropy_err)
   );
 
-  jpeg_quantizer #(
-      .ElementWidth(ElementWidth)
-  ) u_dequantizer (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .start_i       (s_quant_start),
-      .dequantize_i  (1'b1),
-      .block_i       (s_entropy_block),
-      .quant_i       (quant_i),
-      .reciprocal_i  (reciprocal_i),
-      .start_ready_o (),
-      .block_o       (s_quant_block),
-      .result_valid_o(s_quant_valid),
-      .result_ready_i(s_quant_ready),
-      .table_err_o   (s_quant_err),
-      .overflow_o    (s_quant_overflow)
-  );
+  if (ExternalCoefficientEngine) begin : gen_external_coefficient_engine
+    assign s_quant_block     = '0;
+    assign s_quant_valid     = 1'b0;
+    assign s_quant_err       = 1'b0;
+    assign s_quant_overflow  = 1'b0;
+    assign s_transform_block = coefficient_result_i;
+    assign s_transform_valid = coefficient_result_valid_i;
+  end else begin : gen_internal_coefficient_engine
+    jpeg_quantizer #(
+        .ElementWidth(ElementWidth)
+    ) u_dequantizer (
+        .clk_i         (clk_i),
+        .rst_n_i       (rst_n_i),
+        .start_i       (s_quant_start),
+        .dequantize_i  (1'b1),
+        .block_i       (s_entropy_block),
+        .quant_i       (quant_i),
+        .reciprocal_i  (reciprocal_i),
+        .start_ready_o (),
+        .block_o       (s_quant_block),
+        .result_valid_o(s_quant_valid),
+        .result_ready_i(s_quant_ready),
+        .table_err_o   (s_quant_err),
+        .overflow_o    (s_quant_overflow)
+    );
 
-  jpeg_transform #(
-      .ElementWidth(ElementWidth)
-  ) u_inverse_transform (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .start_i       (s_transform_start),
-      .inverse_i     (1'b1),
-      .block_i       (s_quant_block),
-      .start_ready_o (),
-      .block_o       (s_transform_block),
-      .result_valid_o(s_transform_valid),
-      .result_ready_i(s_transform_ready)
-  );
+    jpeg_transform #(
+        .ElementWidth(ElementWidth)
+    ) u_inverse_transform (
+        .clk_i         (clk_i),
+        .rst_n_i       (rst_n_i),
+        .start_i       (s_transform_start),
+        .inverse_i     (1'b1),
+        .block_i       (s_quant_block),
+        .start_ready_o (),
+        .block_o       (s_transform_block),
+        .result_valid_o(s_transform_valid),
+        .result_ready_i(s_transform_ready)
+    );
+  end
 
   dffr #(
       .DATA_WIDTH(3)

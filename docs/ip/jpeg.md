@@ -92,6 +92,23 @@ master before idle is reported.
 | Tables | Four encoder contexts in six 1024 x 32 technology SRAMs. Decoder tables come from the input JPEG. Portal writes auto-increment and commit atomically marks a context valid. | Software must load expanded canonical Huffman tables. `TABLE_DEFAULT` is reserved and marks the context erroneous; quality is realized by the loaded quant tables. |
 | Faults | APB alignment/access errors, validation errors, first AXI fault address/response, malformed JPEG codes, abort, resource reset, sticky W1C IRQ and first-error state. | Error recovery is job/ring level; no ECC/MBIST on table storage and no duplicated safety controller. |
 
+The encode MCU builder captures at most 768 raster bytes in three 256-byte
+banks. On IHP130, three replicas of those banks use nine
+`RM_IHPSG13_2P_64x32_c2` macros and provide six synchronous 32-bit read ports;
+other targets use the portable `tc_sram_64x32_2p` model. One fetch cycle
+precedes each 64-sample block. Replication is limited to the read-only
+generation phase, while both write ports broadcast each accepted 64-bit input
+beat to every replica. This replaces the former 6,144-bit multi-read inferred
+memory without changing the raster or block interface.
+
+Encode and decode share one exact 8x8 transform plus four-lane quant/dequant
+engine because the top-level scheduler makes the two directions mutually
+exclusive. Table caches stream entries into common `dffl` entry banks instead
+of retaining another full copy. The decoder checks 16 Huffman symbols per
+cycle and advances through at most 16 groups for an AC symbol; this preserves
+the expanded table ABI and exact decode result while bounding comparator area
+and synthesis effort.
+
 The locked libjpeg-turbo 3.2.0 archive is a host-verification input, not linked
 into freestanding firmware. `tests/jpeg_reference.py` is the deterministic BAM
 used for byte-exact RTL vectors; libjpeg-turbo/Pillow interoperability provides
@@ -174,28 +191,67 @@ clock. This is 124.416 Mpixel/s and 186.624 M color samples/s, so a sustained
 implementation needs at least 1.728 pixels/cycle or 2.592 color samples/cycle,
 before blanking and memory stalls.
 
-The current functional pipeline does not meet that target. The deterministic
-Icarus benchmark measured 979 busy cycles for one 16 x 16 4:2:0 MCU and 1347
-for two, or about 368 steady-state cycles/MCU. Excluding DMA stalls, that
-projects to about 3.00 million cycles for 1080p, approximately 24 fps at
-72 MHz. This is an optimization baseline, not a 1080p60 claim.
+The current functional pipeline does not meet that target. With SRAM-backed
+MCU storage, the deterministic Icarus benchmark measures 1157 busy cycles for
+one 16 x 16 4:2:0 MCU and 1703 for two, or 546 steady-state cycles/MCU.
+Excluding DMA stalls, that projects to about 4.46 million cycles for 1080p,
+approximately 16.1 fps at 72 MHz. The test now gates the steady-state delta at
+no more than 550 cycles. This is an optimization baseline, not a 1080p60
+claim.
+
+The pre-macro standalone builder check used 172,593 mapped cells. The previous
+whole-design run exceeded 500 GiB while techmapping the combinational MCU
+builder and had to be terminated. The IHP130 macro mapping removes that
+asynchronous multi-read memory from generic logic. Behavioral and real
+`FUNCTIONAL` macro tests cover independent dual-port reads, paired writes, and
+the bank geometry.
+
+The full IHP130 `balanced` smoke synthesis then completed in 23,603.72 seconds.
+Yosys reported a 31,476.61 MiB peak, 3,780,306 cells, and 69,900,602.54 um2
+including technology SRAM and I/O macros. The builder accounts for 212,500
+generic mapped cells, including 6,144 DFFE and 159,641 mux cells. This confirms
+that the former memory explosion is removed, while also quantifying why the
+multi-read-port scratchpad must be replaced before a commercial PPA claim.
+
+OpenSTA completed the slow-corner core smoke analysis, but timing does not
+close: max WNS/TNS are -4262.54 ns/-611269376.00 ns and min WNS/TNS are
+-0.48 ns/-55.37 ns. The worst max paths are high-fanout PCLK reset and recovery
+paths, not a JPEG throughput path. One generic clock-gate latch remains a
+black box because the Yosys flow does not map `$_DLATCH_N_` to the IHP130 latch
+or integrated clock-gate cell. These are explicit reset-tree, clock-gating, and
+physical-buffering gaps; a successful OpenSTA process exit is not timing
+signoff.
+
+The measured local generic-cell reductions before the final full-chip rerun
+are: table cache 91,157 to 5,087 cells per instance; entropy decoder 89,080 to
+22,719; transform 308,389 to 233,313; four-lane quantizer 130,094 to 106,420;
+and entropy encoder 43,875 to 40,517. One shared coefficient engine replaces
+the former encode and decode transform/quant pairs. These local numbers use
+the same coarse-plus-techmap recipe and exclude SRAM macro area.
+
+An IHP130-macro-aware `apb4_jpeg` diagnostic synthesis completed in 1,582.78
+seconds with an 11.55 GiB peak and 684,337 generic cells, including eight
+`1024x32` table macros and nine `64x32` dual-port MCU macros. This is below the
+0.7-million-cell JPEG target. It is a block-level measurement, not a substitute
+for the final full-SoC mapped area, STA, or post-layout macro utilization.
 
 The commercial-performance revision is ordered as follows:
 
-1. Add two ping-pong MCU raster buffers so DMA captures MCU N+1 while N is
-   transformed. Coalesce compressed output into 16-beat writes instead of one
-   AXI transaction per output beat.
-2. Split transform, quantize, and entropy into independently backpressured
+1. Convert at least two input pixels per cycle into banked Y/Cb/Cr storage,
+   accumulating 4:2:2 or 4:2:0 chroma while pixels arrive. Give each processing
+   lane a fixed bank instead of recreating a multi-read-port raster buffer.
+2. Add two ping-pong MCU buffers so DMA captures MCU N+1 while N is transformed.
+   Coalesce compressed output into 16-beat writes instead of one AXI transaction
+   per output beat.
+3. Split transform, quantize, and entropy into independently backpressured
    block stages. Bank block storage and carry component/DC metadata beside the
    data so at least one block enters every eight cycles.
-3. Use four transform lanes and two entropy lanes for the 4:2:0 profile. Compute
+4. Use four transform lanes and two entropy lanes for the 4:2:0 profile. Compute
    quantized DC values before entropy issue so luma predictor dependencies do
    not serialize DCT/quant work. Preserve token order through per-block FIFOs.
-4. Convert RGB/YUYV/NV12 with at least two pixels/cycle and bank the raster
-   buffer to supply four color samples/cycle. Register multiplier outputs and
-   fanout-heavy table selects before physical synthesis.
-5. Mirror the pipeline on decode: speculative Huffman lookahead, four
-   coefficients/cycle inverse RLE, overlapped dequant/IDCT, and ping-pong
+5. Register multiplier outputs and fanout-heavy table selects before physical
+   synthesis. Mirror the pipeline on decode with speculative Huffman lookahead,
+   four coefficients/cycle inverse RLE, overlapped dequant/IDCT, and ping-pong
    reconstruction. Invalid codes still retire in order and fail closed.
 6. Gate the claim with a 1080p frame simulation using randomized AXI
    backpressure, `CYCLES <= 1,200,000` at zero memory stall, sustained SDRAM

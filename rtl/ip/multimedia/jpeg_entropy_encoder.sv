@@ -42,10 +42,8 @@ module jpeg_entropy_encoder #(
   logic        [                     3:0] s_group_q;
   logic        [                     3:0] s_run_d;
   logic        [                     3:0] s_run_q;
-  logic        [     64*ElementWidth-1:0] s_block_d;
-  logic        [     64*ElementWidth-1:0] s_block_q;
-  logic signed [        ElementWidth-1:0] s_previous_dc_d;
-  logic signed [        ElementWidth-1:0] s_previous_dc_q;
+  logic        [                     5:0] s_last_nonzero_d;
+  logic        [                     5:0] s_last_nonzero_q;
   logic signed [        ElementWidth-1:0] s_dc_d;
   logic signed [        ElementWidth-1:0] s_dc_q;
   logic                                   s_err_d;
@@ -155,19 +153,16 @@ module jpeg_entropy_encoder #(
     end
   endfunction
 
-  function automatic logic has_nonzero_after(input logic [64*ElementWidth-1:0] block_i,
-                                             input logic [5:0] scan_index_i);
-    logic s_found;
+  function automatic logic [5:0] last_nonzero_index(input logic [64*ElementWidth-1:0] block_i);
+    logic [5:0] s_last;
     begin
-      s_found = 1'b0;
+      s_last = 6'd0;
       for (int unsigned index = 1; index < 64; index++) begin
-        if ((index > scan_index_i) && ($signed(
-                block_i[zigzag_index(6'(index))*ElementWidth+:ElementWidth]
-            ) != 0)) begin
-          s_found = 1'b1;
+        if ($signed(block_i[zigzag_index(6'(index))*ElementWidth+:ElementWidth]) != 0) begin
+          s_last = 6'(index);
         end
       end
-      return s_found;
+      return s_last;
     end
   endfunction
 
@@ -178,9 +173,9 @@ module jpeg_entropy_encoder #(
     logic [TokenWidth-1:0] s_amplitude;
     logic [TokenWidth-1:0] s_mask;
     begin
-      s_code = TokenWidth'(code_i);
+      s_code      = TokenWidth'(code_i);
       s_amplitude = TokenWidth'(amplitude_i);
-      s_mask = (TokenWidth'(1) << category_i) - 1'b1;
+      s_mask      = (TokenWidth'(1) << category_i) - 1'b1;
       return (s_code << category_i) | (s_amplitude & s_mask);
     end
   endfunction
@@ -196,8 +191,7 @@ module jpeg_entropy_encoder #(
     s_state_d          = s_state_q;
     s_group_d          = s_group_q;
     s_run_d            = s_run_q;
-    s_block_d          = s_block_q;
-    s_previous_dc_d    = s_previous_dc_q;
+    s_last_nonzero_d   = s_last_nonzero_q;
     s_dc_d             = s_dc_q;
     s_err_d            = s_err_q;
     token_bits_o       = '0;
@@ -218,15 +212,14 @@ module jpeg_entropy_encoder #(
         s_group_d = 4'd0;
         s_run_d   = 4'd0;
         if (start_i) begin
-          s_block_d       = block_i;
-          s_previous_dc_d = previous_dc_i;
-          s_dc_d          = block_i[0+:ElementWidth];
-          s_err_d         = 1'b0;
-          s_state_d       = Dc;
+          s_dc_d           = block_i[0+:ElementWidth];
+          s_last_nonzero_d = last_nonzero_index(block_i);
+          s_err_d          = 1'b0;
+          s_state_d        = Dc;
         end
       end
       Dc: begin
-        s_coefficient_work = s_dc_q - s_previous_dc_q;
+        s_coefficient_work = s_dc_q - previous_dc_i;
         s_category_work    = value_category(s_coefficient_work);
         if (s_category_work > 5'd11) begin
           s_err_d = 1'b1;
@@ -251,11 +244,10 @@ module jpeg_entropy_encoder #(
         for (int unsigned lane = 0; lane < 4; lane++) begin
           if (((s_group_q * 4) + lane + 1) < 64) begin
             s_coefficient_work =
-                s_block_q[zigzag_index(6'((s_group_q*4)+lane+1))*ElementWidth+:ElementWidth];
+                block_i[zigzag_index(6'((s_group_q*4)+lane+1))*ElementWidth+:ElementWidth];
             if (s_coefficient_work == 0) begin
-              if ((s_run_work == 4'd15) && has_nonzero_after(
-                      s_block_q, 6'((s_group_q * 4) + lane + 1)
-                  )) begin
+              if ((s_run_work == 4'd15) &&
+                  (6'((s_group_q * 4) + lane + 1) < s_last_nonzero_q)) begin
                 s_code_work     = ac_code_i[8'hf0*16+:16];
                 s_code_len_work = ac_length_i[8'hf0*5+:5];
                 if (s_emit_count < EmitCountWidth'(TokenSlots)) begin
@@ -353,20 +345,12 @@ module jpeg_entropy_encoder #(
       .dat_o  (s_run_q)
   );
   dffr #(
-      .DATA_WIDTH(64 * ElementWidth)
-  ) u_block_dffr (
+      .DATA_WIDTH(6)
+  ) u_last_nonzero_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_block_d),
-      .dat_o  (s_block_q)
-  );
-  dffr #(
-      .DATA_WIDTH(ElementWidth)
-  ) u_previous_dc_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_previous_dc_d),
-      .dat_o  (s_previous_dc_q)
+      .dat_i  (s_last_nonzero_d),
+      .dat_o  (s_last_nonzero_q)
   );
   dffr #(
       .DATA_WIDTH(ElementWidth)
@@ -387,6 +371,19 @@ module jpeg_entropy_encoder #(
   initial begin
     if (TokenSlots < 4 || TokenWidth < 27 || ElementWidth < 16) begin
       $fatal(1, "jpeg_entropy_encoder: invalid token or coefficient width");
+    end
+  end
+`endif
+
+`ifndef SV_ASSRT_DISABLE
+  always_ff @(posedge clk_i) begin
+    if (rst_n_i && (s_state_q != Idle)) begin
+      assert ($stable(block_i));
+      assert ($stable(previous_dc_i));
+      assert ($stable(dc_code_i));
+      assert ($stable(dc_length_i));
+      assert ($stable(ac_code_i));
+      assert ($stable(ac_length_i));
     end
   end
 `endif

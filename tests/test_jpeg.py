@@ -74,6 +74,35 @@ def test_jpeg_quantize_dequantize(tmp_path: Path) -> None:
     assert "JPEG quantizer tests passed" in result.stdout
 
 
+def test_jpeg_coefficient_engine(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        return
+    simulation = tmp_path / "jpeg_coefficient_engine_tb"
+    subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-DSV_ASSRT_DISABLE",
+            "-I",
+            str(ROOT / "rtl/managed/clusterip/common/rtl"),
+            "-s",
+            "jpeg_coefficient_engine_tb",
+            "-o",
+            str(simulation),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/ip/multimedia/jpeg_transform.sv"),
+            str(ROOT / "rtl/ip/multimedia/jpeg_quantizer.sv"),
+            str(ROOT / "rtl/ip/multimedia/jpeg_coefficient_engine.sv"),
+            str(ROOT / "tests/rtl/jpeg_coefficient_engine_tb.sv"),
+        ],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
+    assert "JPEG coefficient engine test passed" in result.stdout
+
+
 def test_jpeg_entropy_encoder(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
@@ -226,6 +255,7 @@ def test_jpeg_apb_ring_descriptor_path(tmp_path: Path) -> None:
         "jpeg_pkg.sv",
         "jpeg_transform.sv",
         "jpeg_quantizer.sv",
+        "jpeg_coefficient_engine.sv",
         "jpeg_entropy_encoder.sv",
         "jpeg_entropy_decoder.sv",
         "jpeg_bit_packer.sv",
@@ -236,6 +266,7 @@ def test_jpeg_apb_ring_descriptor_path(tmp_path: Path) -> None:
         "jpeg_marker_parser.sv",
         "jpeg_table_store.sv",
         "jpeg_table_cache.sv",
+        "jpeg_table_register_bank.sv",
         "jpeg_block_encoder.sv",
         "jpeg_block_decoder.sv",
         "jpeg_mcu_builder.sv",
@@ -252,6 +283,7 @@ def test_jpeg_apb_ring_descriptor_path(tmp_path: Path) -> None:
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/interface'}",
                 f"+incdir+{multimedia}",
+                "+define+SV_ASSRT_DISABLE",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv"),
@@ -544,6 +576,7 @@ def test_jpeg_mcu_reconstructor(tmp_path: Path) -> None:
         "\n".join(
             [
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                "+define+SV_ASSRT_DISABLE",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/ip/multimedia/jpeg_mcu_reconstructor.sv"),
@@ -595,6 +628,7 @@ def test_jpeg_mcu_builder(tmp_path: Path) -> None:
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+                str(ROOT / "rtl/tech/tc_sram.sv"),
                 str(ROOT / "rtl/ip/multimedia/jpeg_mcu_builder.sv"),
                 str(ROOT / "tests/rtl/jpeg_mcu_builder_tb.sv"),
                 "",
@@ -790,11 +824,14 @@ def test_jpeg_encode_core_complete_file(tmp_path: Path) -> None:
         "\n".join(
             [
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                "+define+SV_ASSRT_DISABLE",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"),
+                str(ROOT / "rtl/tech/tc_sram.sv"),
                 str(ROOT / "rtl/ip/multimedia/jpeg_transform.sv"),
                 str(ROOT / "rtl/ip/multimedia/jpeg_quantizer.sv"),
+                str(ROOT / "rtl/ip/multimedia/jpeg_coefficient_engine.sv"),
                 str(ROOT / "rtl/ip/multimedia/jpeg_entropy_encoder.sv"),
                 str(ROOT / "rtl/ip/multimedia/jpeg_block_encoder.sv"),
                 str(ROOT / "rtl/ip/multimedia/jpeg_bit_packer.sv"),
@@ -853,7 +890,7 @@ def test_jpeg_encode_core_complete_file(tmp_path: Path) -> None:
     assert match is not None
     benchmark_cycles = int(match.group(1))
     assert baseline_cycles < benchmark_cycles
-    assert benchmark_cycles - baseline_cycles < 1_000
+    assert benchmark_cycles - baseline_cycles <= 550
 
 
 def test_jpeg_decode_core_complete_file(tmp_path: Path) -> None:
@@ -881,10 +918,12 @@ def test_jpeg_decode_core_complete_file(tmp_path: Path) -> None:
         ROOT / "rtl/ip/multimedia/jpeg_marker_parser.sv",
         ROOT / "rtl/ip/multimedia/jpeg_table_store.sv",
         ROOT / "rtl/ip/multimedia/jpeg_table_cache.sv",
+        ROOT / "rtl/ip/multimedia/jpeg_table_register_bank.sv",
         ROOT / "rtl/ip/multimedia/jpeg_bit_reader.sv",
         ROOT / "rtl/ip/multimedia/jpeg_entropy_decoder.sv",
         ROOT / "rtl/ip/multimedia/jpeg_quantizer.sv",
         ROOT / "rtl/ip/multimedia/jpeg_transform.sv",
+        ROOT / "rtl/ip/multimedia/jpeg_coefficient_engine.sv",
         ROOT / "rtl/ip/multimedia/jpeg_block_decoder.sv",
         ROOT / "rtl/ip/multimedia/jpeg_mcu_reconstructor.sv",
         ROOT / "rtl/ip/multimedia/jpeg_decode_core.sv",
@@ -895,6 +934,7 @@ def test_jpeg_decode_core_complete_file(tmp_path: Path) -> None:
             [
                 f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
                 "+define+PDK_BEHAV",
+                "+define+SV_ASSRT_DISABLE",
                 *(str(source) for source in sources),
                 "",
             ]

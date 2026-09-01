@@ -41,7 +41,6 @@ module jpeg_mcu_reconstructor (
   logic   [ 4:0]        s_height_q;
   logic   [ 2:0]        s_block_cnt_d;
   logic   [ 2:0]        s_block_cnt_q;
-  logic   [ 5:0][511:0] s_blocks_d;
   logic   [ 5:0][511:0] s_blocks_q;
   logic   [ 4:0]        s_x_d;
   logic   [ 4:0]        s_x_q;
@@ -67,6 +66,7 @@ module jpeg_mcu_reconstructor (
   logic                 s_second_valid;
   logic                 s_pixel_accept;
   logic   [ 4:0]        s_x_next;
+  logic   [ 5:0]        s_block_write_en;
 
   function automatic logic [7:0] block_sample(input logic [511:0] block_i, input logic [2:0] x_i,
                                               input logic [2:0] y_i);
@@ -94,8 +94,7 @@ module jpeg_mcu_reconstructor (
       s_cb    = $signed({1'b0, cb_i}) - 10'sd128;
       s_cr    = $signed({1'b0, cr_i}) - 10'sd128;
       s_red   = $signed(18'({1'b0, y_i})) + ((18'sd359 * s_cr + 18'sd128) >>> 8);
-      s_green = $signed(18'({1'b0, y_i})) -
-                ((18'sd88 * s_cb + 18'sd183 * s_cr + 18'sd128) >>> 8);
+      s_green = $signed(18'({1'b0, y_i})) - ((18'sd88 * s_cb + 18'sd183 * s_cr + 18'sd128) >>> 8);
       s_blue  = $signed(18'({1'b0, y_i})) + ((18'sd454 * s_cb + 18'sd128) >>> 8);
       return {clamp_color(s_red), clamp_color(s_green), clamp_color(s_blue)};
     end
@@ -160,16 +159,30 @@ module jpeg_mcu_reconstructor (
 
   assign {s_red0, s_green0, s_blue0} = ycbcr_to_rgb(s_y0, s_cb0, s_cr0);
   assign {s_red1, s_green1, s_blue1} = ycbcr_to_rgb(s_y1, s_cb1, s_cr1);
-  assign s_rgb565_0                  = {s_red0[7:3], s_green0[7:2], s_blue0[7:3]};
-  assign s_rgb565_1                  = {s_red1[7:3], s_green1[7:2], s_blue1[7:3]};
-  assign s_x_next                    = s_x_q + 1'b1;
-  assign s_second_valid              = (s_x_q + 1'b1) < s_width_q;
-  assign s_pixel_accept              = pixel_axis.tvalid && pixel_axis.tready;
-  assign s_state_q                   = state_e'(s_state_bits_q);
-  assign start_ready_o               = s_state_q == Idle;
-  assign block_ready_o               = s_state_q == Load;
-  assign done_o                      = s_state_q == Done;
-  assign error_o                     = s_err_q;
+  assign s_rgb565_0 = {s_red0[7:3], s_green0[7:2], s_blue0[7:3]};
+  assign s_rgb565_1 = {s_red1[7:3], s_green1[7:2], s_blue1[7:3]};
+  assign s_x_next = s_x_q + 1'b1;
+  assign s_second_valid = (s_x_q + 1'b1) < s_width_q;
+  assign s_pixel_accept = pixel_axis.tvalid && pixel_axis.tready;
+  assign s_state_q = state_e'(s_state_bits_q);
+  assign start_ready_o = s_state_q == Idle;
+  assign block_ready_o = s_state_q == Load;
+  assign done_o = s_state_q == Done;
+  assign error_o = s_err_q;
+  assign s_block_write_en = ((s_state_q == Load) && block_valid_i) ?
+      (6'b000001 << s_block_cnt_q) : 6'b000000;
+
+  // Every required block is loaded before Pixels, so the block bank needs no reset.
+  for (genvar block_index = 0; block_index < 6; block_index++) begin : gen_block_register
+    dffl #(
+        .DATA_WIDTH(512)
+    ) u_block_dffl (
+        .clk_i(clk_i),
+        .en_i (s_block_write_en[block_index]),
+        .dat_i(block_i),
+        .dat_o(s_blocks_q[block_index])
+    );
+  end
 
   always_comb begin
     pixel_axis.tdata  = '0;
@@ -230,7 +243,6 @@ module jpeg_mcu_reconstructor (
     s_width_d     = s_width_q;
     s_height_d    = s_height_q;
     s_block_cnt_d = s_block_cnt_q;
-    s_blocks_d    = s_blocks_q;
     s_x_d         = s_x_q;
     s_y_d         = s_y_q;
     s_err_d       = s_err_q;
@@ -242,7 +254,6 @@ module jpeg_mcu_reconstructor (
           s_width_d = valid_width_i;
           s_height_d = valid_height_i;
           s_block_cnt_d = 3'd0;
-          s_blocks_d = '0;
           s_x_d = 5'd0;
           s_y_d = 5'd0;
           s_err_d = (format_i > 3'd4) || (valid_width_i == 5'd0) ||
@@ -253,7 +264,6 @@ module jpeg_mcu_reconstructor (
       end
       Load: begin
         if (block_valid_i) begin
-          s_blocks_d[s_block_cnt_q] = block_i;
           if (s_block_cnt_q + 1'b1 == s_expected_blocks) begin
             s_x_d     = 5'd0;
             s_y_d     = 5'd0;
@@ -346,14 +356,6 @@ module jpeg_mcu_reconstructor (
       .rst_n_i(rst_n_i),
       .dat_i  (s_block_cnt_d),
       .dat_o  (s_block_cnt_q)
-  );
-  dffr #(
-      .DATA_WIDTH(6 * 512)
-  ) u_blocks_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_blocks_d),
-      .dat_o  (s_blocks_q)
   );
   dffr #(
       .DATA_WIDTH(5)

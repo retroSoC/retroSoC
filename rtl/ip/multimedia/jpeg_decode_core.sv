@@ -2,12 +2,24 @@
 // retroSoC is licensed under Mulan PSL v2.
 // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND.
 
-module jpeg_decode_core (
+module jpeg_decode_core #(
+    parameter bit ExternalCoefficientEngine = 1'b0
+) (
     // verilog_format: off -- preserve command, JPEG input, pixel output, and result columns
     input  logic              clk_i,
     input  logic              rst_n_i,
     input  logic              start_i,
     input  logic [ 2:0]       output_format_i,
+    output logic              coefficient_start_o,
+    output logic [1535:0]     coefficient_block_o,
+    output logic [ 511:0]     coefficient_quant_o,
+    output logic [1599:0]     coefficient_reciprocal_o,
+    input  logic              coefficient_start_ready_i,
+    input  logic [1535:0]     coefficient_result_i,
+    input  logic              coefficient_result_valid_i,
+    output logic              coefficient_result_ready_o,
+    input  logic              coefficient_table_err_i,
+    input  logic              coefficient_overflow_i,
     axi4_stream_if.sink       bitstream_axis,
     axi4_stream_if.source     pixel_axis,
     output logic              start_ready_o,
@@ -101,38 +113,25 @@ module jpeg_decode_core (
   logic        [   1:0]       s_cache_quant_id;
   logic        [   1:0]       s_cache_dc_id;
   logic        [   1:0]       s_cache_ac_id;
-  logic        [ 511:0]       s_cache_quant;
-  logic        [1599:0]       s_cache_reciprocal;
-  logic        [ 191:0]       s_cache_dc_code;
-  logic        [  59:0]       s_cache_dc_len;
-  logic        [4095:0]       s_cache_ac_code;
-  logic        [1279:0]       s_cache_ac_len;
+  logic        [   3:0]       s_cache_entry_kind;
+  logic        [   7:0]       s_cache_entry_index;
+  logic        [  31:0]       s_cache_entry_data;
+  logic        [  24:0]       s_cache_entry_reciprocal;
+  logic                       s_cache_entry_valid;
   logic                       s_cache_valid;
   logic                       s_cache_ready;
   logic                       s_cache_err;
-  logic        [ 511:0]       s_luma_quant_d;
   logic        [ 511:0]       s_luma_quant_q;
-  logic        [1599:0]       s_luma_reciprocal_d;
   logic        [1599:0]       s_luma_reciprocal_q;
-  logic        [ 191:0]       s_luma_dc_code_d;
   logic        [ 191:0]       s_luma_dc_code_q;
-  logic        [  59:0]       s_luma_dc_len_d;
   logic        [  59:0]       s_luma_dc_len_q;
-  logic        [4095:0]       s_luma_ac_code_d;
   logic        [4095:0]       s_luma_ac_code_q;
-  logic        [1279:0]       s_luma_ac_len_d;
   logic        [1279:0]       s_luma_ac_len_q;
-  logic        [ 511:0]       s_chroma_quant_d;
   logic        [ 511:0]       s_chroma_quant_q;
-  logic        [1599:0]       s_chroma_reciprocal_d;
   logic        [1599:0]       s_chroma_reciprocal_q;
-  logic        [ 191:0]       s_chroma_dc_code_d;
   logic        [ 191:0]       s_chroma_dc_code_q;
-  logic        [  59:0]       s_chroma_dc_len_d;
   logic        [  59:0]       s_chroma_dc_len_q;
-  logic        [4095:0]       s_chroma_ac_code_d;
   logic        [4095:0]       s_chroma_ac_code_q;
-  logic        [1279:0]       s_chroma_ac_len_d;
   logic        [1279:0]       s_chroma_ac_len_q;
 
   logic        [  31:0]       s_bit_window;
@@ -220,6 +219,8 @@ module jpeg_decode_core (
   assign s_selected_quant = (s_block_component == 3'd0) ? s_luma_quant_q : s_chroma_quant_q;
   assign s_selected_reciprocal = (s_block_component == 3'd0) ?
                                      s_luma_reciprocal_q : s_chroma_reciprocal_q;
+  assign coefficient_quant_o = s_selected_quant;
+  assign coefficient_reciprocal_o = s_selected_reciprocal;
   assign s_selected_dc_code = (s_block_component == 3'd0) ? s_luma_dc_code_q : s_chroma_dc_code_q;
   assign s_selected_dc_len = (s_block_component == 3'd0) ? s_luma_dc_len_q : s_chroma_dc_len_q;
   assign s_selected_ac_code = (s_block_component == 3'd0) ? s_luma_ac_code_q : s_chroma_ac_code_q;
@@ -253,28 +254,16 @@ module jpeg_decode_core (
   assign s_block_ready = (s_state_q == BlockWait) && s_reconstructor_block_ready;
 
   always_comb begin
-    s_state_d             = s_state_q;
-    s_output_format_d     = s_output_format_q;
-    s_mcu_col_d           = s_mcu_col_q;
-    s_mcu_row_d           = s_mcu_row_q;
-    s_block_index_d       = s_block_index_q;
-    s_restart_cnt_d       = s_restart_cnt_q;
-    s_restart_index_d     = s_restart_index_q;
-    s_dc_predictor_d      = s_dc_predictor_q;
-    s_err_d               = s_err_q;
-    s_err_code_d          = s_err_code_q;
-    s_luma_quant_d        = s_luma_quant_q;
-    s_luma_reciprocal_d   = s_luma_reciprocal_q;
-    s_luma_dc_code_d      = s_luma_dc_code_q;
-    s_luma_dc_len_d       = s_luma_dc_len_q;
-    s_luma_ac_code_d      = s_luma_ac_code_q;
-    s_luma_ac_len_d       = s_luma_ac_len_q;
-    s_chroma_quant_d      = s_chroma_quant_q;
-    s_chroma_reciprocal_d = s_chroma_reciprocal_q;
-    s_chroma_dc_code_d    = s_chroma_dc_code_q;
-    s_chroma_dc_len_d     = s_chroma_dc_len_q;
-    s_chroma_ac_code_d    = s_chroma_ac_code_q;
-    s_chroma_ac_len_d     = s_chroma_ac_len_q;
+    s_state_d         = s_state_q;
+    s_output_format_d = s_output_format_q;
+    s_mcu_col_d       = s_mcu_col_q;
+    s_mcu_row_d       = s_mcu_row_q;
+    s_block_index_d   = s_block_index_q;
+    s_restart_cnt_d   = s_restart_cnt_q;
+    s_restart_index_d = s_restart_index_q;
+    s_dc_predictor_d  = s_dc_predictor_q;
+    s_err_d           = s_err_q;
+    s_err_code_d      = s_err_code_q;
     unique case (s_state_q)
       Idle: begin
         if (start_i) begin
@@ -313,12 +302,6 @@ module jpeg_decode_core (
       CacheLumaStart:   s_state_d = CacheLumaWait;
       CacheLumaWait: begin
         if (s_cache_valid) begin
-          s_luma_quant_d      = s_cache_quant;
-          s_luma_reciprocal_d = s_cache_reciprocal;
-          s_luma_dc_code_d    = s_cache_dc_code;
-          s_luma_dc_len_d     = s_cache_dc_len;
-          s_luma_ac_code_d    = s_cache_ac_code;
-          s_luma_ac_len_d     = s_cache_ac_len;
           if (s_cache_err) begin
             s_err_d      = 1'b1;
             s_err_code_d = 5'd3;
@@ -333,12 +316,6 @@ module jpeg_decode_core (
       CacheChromaStart: s_state_d = CacheChromaWait;
       CacheChromaWait: begin
         if (s_cache_valid) begin
-          s_chroma_quant_d      = s_cache_quant;
-          s_chroma_reciprocal_d = s_cache_reciprocal;
-          s_chroma_dc_code_d    = s_cache_dc_code;
-          s_chroma_dc_len_d     = s_cache_dc_len;
-          s_chroma_ac_code_d    = s_cache_ac_code;
-          s_chroma_ac_len_d     = s_cache_ac_len;
           if (s_cache_err) begin
             s_err_d      = 1'b1;
             s_err_code_d = 5'd3;
@@ -499,30 +476,60 @@ module jpeg_decode_core (
   );
 
   jpeg_table_cache u_table_cache (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .start_i         (s_cache_start),
-      .context_i       (2'd0),
-      .quant_id_i      (s_cache_quant_id),
-      .dc_id_i         (s_cache_dc_id),
-      .ac_id_i         (s_cache_ac_id),
-      .start_ready_o   (),
-      .lookup_o        (s_table_lookup),
-      .lookup_context_o(s_table_lookup_context),
-      .lookup_kind_o   (s_table_lookup_kind),
-      .lookup_index_o  (s_table_lookup_index),
-      .lookup_data_i   (s_table_lookup_data),
-      .lookup_valid_i  (s_table_lookup_valid),
-      .lookup_err_i    (s_table_lookup_err),
-      .quant_o         (s_cache_quant),
-      .reciprocal_o    (s_cache_reciprocal),
-      .dc_code_o       (s_cache_dc_code),
-      .dc_length_o     (s_cache_dc_len),
-      .ac_code_o       (s_cache_ac_code),
-      .ac_length_o     (s_cache_ac_len),
-      .result_valid_o  (s_cache_valid),
-      .result_ready_i  (s_cache_ready),
-      .error_o         (s_cache_err)
+      .clk_i             (clk_i),
+      .rst_n_i           (rst_n_i),
+      .start_i           (s_cache_start),
+      .context_i         (2'd0),
+      .quant_id_i        (s_cache_quant_id),
+      .dc_id_i           (s_cache_dc_id),
+      .ac_id_i           (s_cache_ac_id),
+      .start_ready_o     (),
+      .lookup_o          (s_table_lookup),
+      .lookup_context_o  (s_table_lookup_context),
+      .lookup_kind_o     (s_table_lookup_kind),
+      .lookup_index_o    (s_table_lookup_index),
+      .lookup_data_i     (s_table_lookup_data),
+      .lookup_valid_i    (s_table_lookup_valid),
+      .lookup_err_i      (s_table_lookup_err),
+      .entry_kind_o      (s_cache_entry_kind),
+      .entry_index_o     (s_cache_entry_index),
+      .entry_data_o      (s_cache_entry_data),
+      .entry_reciprocal_o(s_cache_entry_reciprocal),
+      .entry_valid_o     (s_cache_entry_valid),
+      .entry_ready_i     (1'b1),
+      .result_valid_o    (s_cache_valid),
+      .result_ready_i    (s_cache_ready),
+      .error_o           (s_cache_err)
+  );
+
+  jpeg_table_register_bank u_luma_table_register_bank (
+      .clk_i             (clk_i),
+      .write_i           (s_cache_entry_valid && (s_state_q == CacheLumaWait)),
+      .entry_kind_i      (s_cache_entry_kind),
+      .entry_index_i     (s_cache_entry_index),
+      .entry_data_i      (s_cache_entry_data),
+      .entry_reciprocal_i(s_cache_entry_reciprocal),
+      .quant_o           (s_luma_quant_q),
+      .reciprocal_o      (s_luma_reciprocal_q),
+      .dc_code_o         (s_luma_dc_code_q),
+      .dc_length_o       (s_luma_dc_len_q),
+      .ac_code_o         (s_luma_ac_code_q),
+      .ac_length_o       (s_luma_ac_len_q)
+  );
+
+  jpeg_table_register_bank u_chroma_table_register_bank (
+      .clk_i             (clk_i),
+      .write_i           (s_cache_entry_valid && (s_state_q == CacheChromaWait)),
+      .entry_kind_i      (s_cache_entry_kind),
+      .entry_index_i     (s_cache_entry_index),
+      .entry_data_i      (s_cache_entry_data),
+      .entry_reciprocal_i(s_cache_entry_reciprocal),
+      .quant_o           (s_chroma_quant_q),
+      .reciprocal_o      (s_chroma_reciprocal_q),
+      .dc_code_o         (s_chroma_dc_code_q),
+      .dc_length_o       (s_chroma_dc_len_q),
+      .ac_code_o         (s_chroma_ac_code_q),
+      .ac_length_o       (s_chroma_ac_len_q)
   );
 
   jpeg_bit_reader u_bit_reader (
@@ -543,27 +550,37 @@ module jpeg_decode_core (
       .error_o            (s_bit_err)
   );
 
-  jpeg_block_decoder u_block_decoder (
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .start_i            (s_block_start),
-      .previous_dc_i      (s_dc_predictor_q[s_block_component]),
-      .quant_i            (s_selected_quant),
-      .reciprocal_i       (s_selected_reciprocal),
-      .dc_code_i          (s_selected_dc_code),
-      .dc_length_i        (s_selected_dc_len),
-      .ac_code_i          (s_selected_ac_code),
-      .ac_length_i        (s_selected_ac_len),
-      .bit_window_i       (s_bit_window),
-      .bit_count_i        (s_bit_count),
-      .bit_consume_o      (s_bit_consume),
-      .bit_consume_valid_o(s_bit_consume_valid),
-      .start_ready_o      (),
-      .block_o            (s_decoded_block),
-      .dc_o               (s_decoded_dc),
-      .result_valid_o     (s_block_valid),
-      .result_ready_i     (s_block_ready),
-      .error_o            (s_block_err)
+  jpeg_block_decoder #(
+      .ExternalCoefficientEngine(ExternalCoefficientEngine)
+  ) u_block_decoder (
+      .clk_i                     (clk_i),
+      .rst_n_i                   (rst_n_i),
+      .start_i                   (s_block_start),
+      .previous_dc_i             (s_dc_predictor_q[s_block_component]),
+      .quant_i                   (s_selected_quant),
+      .reciprocal_i              (s_selected_reciprocal),
+      .dc_code_i                 (s_selected_dc_code),
+      .dc_length_i               (s_selected_dc_len),
+      .ac_code_i                 (s_selected_ac_code),
+      .ac_length_i               (s_selected_ac_len),
+      .bit_window_i              (s_bit_window),
+      .bit_count_i               (s_bit_count),
+      .coefficient_start_o       (coefficient_start_o),
+      .coefficient_block_o       (coefficient_block_o),
+      .coefficient_start_ready_i (coefficient_start_ready_i),
+      .coefficient_result_i      (coefficient_result_i),
+      .coefficient_result_valid_i(coefficient_result_valid_i),
+      .coefficient_result_ready_o(coefficient_result_ready_o),
+      .coefficient_table_err_i   (coefficient_table_err_i),
+      .coefficient_overflow_i    (coefficient_overflow_i),
+      .bit_consume_o             (s_bit_consume),
+      .bit_consume_valid_o       (s_bit_consume_valid),
+      .start_ready_o             (),
+      .block_o                   (s_decoded_block),
+      .dc_o                      (s_decoded_dc),
+      .result_valid_o            (s_block_valid),
+      .result_ready_i            (s_block_ready),
+      .error_o                   (s_block_err)
   );
 
   jpeg_mcu_reconstructor u_mcu_reconstructor (
@@ -660,101 +677,5 @@ module jpeg_decode_core (
       .rst_n_i(rst_n_i),
       .dat_i  (s_err_code_d),
       .dat_o  (s_err_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(512)
-  ) u_luma_quant_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_quant_d),
-      .dat_o  (s_luma_quant_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1600)
-  ) u_luma_reciprocal_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_reciprocal_d),
-      .dat_o  (s_luma_reciprocal_q)
-  );
-  dffr #(
-      .DATA_WIDTH(192)
-  ) u_luma_dc_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_dc_code_d),
-      .dat_o  (s_luma_dc_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(60)
-  ) u_luma_dc_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_dc_len_d),
-      .dat_o  (s_luma_dc_len_q)
-  );
-  dffr #(
-      .DATA_WIDTH(4096)
-  ) u_luma_ac_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_ac_code_d),
-      .dat_o  (s_luma_ac_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1280)
-  ) u_luma_ac_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_ac_len_d),
-      .dat_o  (s_luma_ac_len_q)
-  );
-  dffr #(
-      .DATA_WIDTH(512)
-  ) u_chroma_quant_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_quant_d),
-      .dat_o  (s_chroma_quant_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1600)
-  ) u_chroma_reciprocal_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_reciprocal_d),
-      .dat_o  (s_chroma_reciprocal_q)
-  );
-  dffr #(
-      .DATA_WIDTH(192)
-  ) u_chroma_dc_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_dc_code_d),
-      .dat_o  (s_chroma_dc_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(60)
-  ) u_chroma_dc_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_dc_len_d),
-      .dat_o  (s_chroma_dc_len_q)
-  );
-  dffr #(
-      .DATA_WIDTH(4096)
-  ) u_chroma_ac_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_ac_code_d),
-      .dat_o  (s_chroma_ac_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1280)
-  ) u_chroma_ac_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_ac_len_d),
-      .dat_o  (s_chroma_ac_len_q)
   );
 endmodule

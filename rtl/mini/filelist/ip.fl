@@ -128,6 +128,7 @@
 /ip/multimedia/jpeg_pkg.sv
 /ip/multimedia/jpeg_transform.sv
 /ip/multimedia/jpeg_quantizer.sv
+/ip/multimedia/jpeg_coefficient_engine.sv
 /ip/multimedia/jpeg_entropy_encoder.sv
 /ip/multimedia/jpeg_entropy_decoder.sv
 /ip/multimedia/jpeg_bit_packer.sv
@@ -138,6 +139,7 @@
 /ip/multimedia/jpeg_marker_parser.sv
 /ip/multimedia/jpeg_table_store.sv
 /ip/multimedia/jpeg_table_cache.sv
+/ip/multimedia/jpeg_table_register_bank.sv
 /ip/multimedia/jpeg_block_encoder.sv
 /ip/multimedia/jpeg_block_decoder.sv
 /ip/multimedia/jpeg_mcu_builder.sv

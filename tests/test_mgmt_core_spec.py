@@ -9,6 +9,7 @@ SOFTWARE_MAKE = ROOT / "rtl/mini/mk/software.mk"
 MGMT_CORE = ROOT / "rtl/mini/top/mgmt_core_wrapper.sv"
 MGMT_DEBUG = ROOT / "rtl/mini/top/mgmt_debug_wrapper.sv"
 AHBL_TO_AXI4 = ROOT / "rtl/mini/top/ahbl2axi4.sv"
+VEXII_CONFIG = ROOT / "scripts/vexiiriscv/GenerateRetroSocHp.scala"
 
 
 def test_booter_prints_the_fixed_hazard3_specification() -> None:
@@ -67,3 +68,38 @@ def test_booter_prints_the_fixed_hazard3_specification() -> None:
     assert "axi4.arlen    = 8'd0;" in ahbl_to_axi4
     assert "axi4.awlock   = `AXI4_LOCK_NORM;" in ahbl_to_axi4
     assert "axi4.arlock   = `AXI4_LOCK_NORM;" in ahbl_to_axi4
+
+
+def test_booter_prints_present_hp_core_specification() -> None:
+    booter = BOOTER.read_text(encoding="utf-8")
+    vexii_config = VEXII_CONFIG.read_text(encoding="utf-8")
+
+    for text in (
+        "High-Performance-Core Specification:",
+        "Core: VexiiRiscv(hart 1), dual-issue in-order",
+        "Base: RV32IMAFDC_Zicbom_Zicntr_Zihpm",
+        "Mode: M/S/U; Sv32 MMU, 9-bit ASID",
+        "Protection: 16 PMP regions, 4 KiB granularity",
+        "L1: separate 16 KiB, 4-way instruction and data caches",
+        "Maintenance: 64-byte Zicbom CBO; no hardware coherency",
+        "Bus: native AXI64 I/D + cacheless AXI32 MMIO",
+        "Embedded RISC-V JTAG, 4 triggers",
+    ):
+        assert text in booter
+
+    assert "rs_sysctrl_get_hp_status(&status)" in booter
+    assert "!status.present" in booter
+    for parameter in (
+        'param.addISA("m", "a", "f", "d", "c", "s", "u", "zicbom", "zicntr", "zihpm")',
+        "param.asidWidth = 9",
+        "param.decoders = 2",
+        "param.lanes = 2",
+        "param.fetchL1Sets = 64",
+        "param.fetchL1Ways = 4",
+        "param.lsuL1Sets = 64",
+        "param.lsuL1Ways = 4",
+        "param.pmpParam.pmpSize = 16",
+        "param.pmpParam.granularity = 4096",
+        "param.privParam.debugTriggers = 4",
+    ):
+        assert parameter in vexii_config

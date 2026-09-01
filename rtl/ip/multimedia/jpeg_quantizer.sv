@@ -5,7 +5,8 @@
 module jpeg_quantizer #(
     parameter int unsigned ElementWidth    = 24,
     parameter int unsigned ReciprocalWidth = 25,
-    parameter int unsigned ReciprocalShift = 24
+    parameter int unsigned ReciprocalShift = 24,
+    parameter int unsigned LaneCount       = 4
 ) (
     // verilog_format: off -- preserve the block and table interface columns
     input  logic                            clk_i,
@@ -29,25 +30,21 @@ module jpeg_quantizer #(
     Result
   } state_e;
 
-  state_e                          s_state_d;
-  state_e                          s_state_q;
-  logic   [                   1:0] s_state_bits_q;
-  logic   [                   2:0] s_group_d;
-  logic   [                   2:0] s_group_q;
-  logic                            s_dequantize_d;
-  logic                            s_dequantize_q;
-  logic   [   64*ElementWidth-1:0] s_input_d;
-  logic   [   64*ElementWidth-1:0] s_input_q;
-  logic   [              64*8-1:0] s_quant_d;
-  logic   [              64*8-1:0] s_quant_q;
-  logic   [64*ReciprocalWidth-1:0] s_reciprocal_d;
-  logic   [64*ReciprocalWidth-1:0] s_reciprocal_q;
-  logic   [   64*ElementWidth-1:0] s_result_d;
-  logic   [   64*ElementWidth-1:0] s_result_q;
-  logic                            s_table_err_d;
-  logic                            s_table_err_q;
-  logic                            s_overflow_d;
-  logic                            s_overflow_q;
+  state_e                       s_state_d;
+  state_e                       s_state_q;
+  logic   [                1:0] s_state_bits_q;
+  logic   [                5:0] s_index_d;
+  logic   [                5:0] s_index_q;
+  logic   [                5:0] s_process_index;
+  logic                         s_dequantize_d;
+  logic                         s_dequantize_q;
+  logic   [64*ElementWidth-1:0] s_result_q;
+  logic   [64*ElementWidth-1:0] s_result_write_data;
+  logic   [               63:0] s_result_write_en;
+  logic                         s_table_err_d;
+  logic                         s_table_err_q;
+  logic                         s_overflow_d;
+  logic                         s_overflow_q;
 
   function automatic logic signed [ElementWidth-1:0] quantize_value(
       input logic signed [ElementWidth-1:0] value_i, input logic [7:0] quant_i,
@@ -104,58 +101,33 @@ module jpeg_quantizer #(
   assign overflow_o     = s_overflow_q;
 
   always_comb begin
-    s_state_d      = s_state_q;
-    s_group_d      = s_group_q;
-    s_dequantize_d = s_dequantize_q;
-    s_input_d      = s_input_q;
-    s_quant_d      = s_quant_q;
-    s_reciprocal_d = s_reciprocal_q;
-    s_result_d     = s_result_q;
-    s_table_err_d  = s_table_err_q;
-    s_overflow_d   = s_overflow_q;
+    s_state_d           = s_state_q;
+    s_index_d           = s_index_q;
+    s_dequantize_d      = s_dequantize_q;
+    s_table_err_d       = s_table_err_q;
+    s_overflow_d        = s_overflow_q;
+    s_process_index     = s_index_q;
+    s_result_write_data = '0;
+    s_result_write_en   = '0;
 
     unique case (s_state_q)
       Idle: begin
-        s_group_d = 3'd0;
+        s_index_d = 6'd0;
         if (start_i) begin
-          s_dequantize_d = dequantize_i;
-          s_input_d      = block_i;
-          s_quant_d      = quant_i;
-          s_reciprocal_d = reciprocal_i;
-          s_result_d     = '0;
-          s_table_err_d  = 1'b0;
-          s_overflow_d   = 1'b0;
-          s_state_d      = Process;
+          s_index_d       = 6'(LaneCount);
+          s_process_index = 6'd0;
+          s_dequantize_d  = dequantize_i;
+          s_table_err_d   = 1'b0;
+          s_overflow_d    = 1'b0;
+          s_state_d       = Process;
         end
       end
       Process: begin
-        for (int unsigned lane = 0; lane < 8; lane++) begin
-          if (s_quant_q[((s_group_q*8)+lane)*8+:8] == 8'd0) begin
-            s_table_err_d = 1'b1;
-          end else if (s_dequantize_q) begin
-            s_result_d[((s_group_q*8)+lane)*ElementWidth+:ElementWidth] = dequantize_value(
-              s_input_q[((s_group_q*8)+lane)*ElementWidth+:ElementWidth],
-              s_quant_q[((s_group_q*8)+lane)*8+:8]
-            );
-            if (product_overflows(
-                    s_input_q[((s_group_q*8)+lane)*ElementWidth+:ElementWidth],
-                    s_quant_q[((s_group_q*8)+lane)*8+:8]
-                )) begin
-              s_overflow_d = 1'b1;
-            end
-          end else begin
-            s_result_d[((s_group_q*8)+lane)*ElementWidth+:ElementWidth] = quantize_value(
-              s_input_q[((s_group_q*8)+lane)*ElementWidth+:ElementWidth],
-              s_quant_q[((s_group_q*8)+lane)*8+:8],
-              s_reciprocal_q[((s_group_q*8)+lane)*ReciprocalWidth+:ReciprocalWidth]
-            );
-          end
-        end
-        if (s_group_q == 3'd7) begin
-          s_group_d = 3'd0;
+        if ((int'(s_index_q) + LaneCount) >= 64) begin
+          s_index_d = 6'd0;
           s_state_d = Result;
         end else begin
-          s_group_d = s_group_q + 1'b1;
+          s_index_d = s_index_q + 6'(LaneCount);
         end
       end
       Result: begin
@@ -167,6 +139,49 @@ module jpeg_quantizer #(
         s_state_d = Idle;
       end
     endcase
+
+    if ((s_state_q == Process) || ((s_state_q == Idle) && start_i)) begin
+      for (int unsigned lane = 0; lane < LaneCount; lane++) begin
+        if ((int'(s_process_index) + lane) < 64) begin
+          if (quant_i[(int'(s_process_index)+lane)*8+:8] == 8'd0) begin
+            s_table_err_d = 1'b1;
+          end else if ((s_state_q == Idle) ? dequantize_i : s_dequantize_q) begin
+            s_result_write_data[(int'(s_process_index)+lane)*ElementWidth+:ElementWidth] =
+                dequantize_value(
+              block_i[(int'(s_process_index)+lane)*ElementWidth+:ElementWidth],
+              quant_i[(int'(s_process_index)+lane)*8+:8]
+            );
+            s_result_write_en[int'(s_process_index)+lane] = 1'b1;
+            if (product_overflows(
+                    block_i[(int'(s_process_index)+lane)*ElementWidth+:ElementWidth],
+                    quant_i[(int'(s_process_index)+lane)*8+:8]
+                )) begin
+              s_overflow_d = 1'b1;
+            end
+          end else begin
+            s_result_write_data[(int'(s_process_index)+lane)*ElementWidth+:ElementWidth] =
+                quantize_value(
+              block_i[(int'(s_process_index)+lane)*ElementWidth+:ElementWidth],
+              quant_i[(int'(s_process_index)+lane)*8+:8],
+              reciprocal_i[(int'(s_process_index)+lane)*ReciprocalWidth+:ReciprocalWidth]
+            );
+            s_result_write_en[int'(s_process_index)+lane] = 1'b1;
+          end
+        end
+      end
+    end
+  end
+
+  // Every coefficient is overwritten before Result, so the output bank needs no reset.
+  for (genvar coefficient = 0; coefficient < 64; coefficient++) begin : gen_result_register
+    dffl #(
+        .DATA_WIDTH(ElementWidth)
+    ) u_result_dffl (
+        .clk_i(clk_i),
+        .en_i (s_result_write_en[coefficient]),
+        .dat_i(s_result_write_data[coefficient*ElementWidth+:ElementWidth]),
+        .dat_o(s_result_q[coefficient*ElementWidth+:ElementWidth])
+    );
   end
 
   dffr #(
@@ -178,50 +193,18 @@ module jpeg_quantizer #(
       .dat_o  (s_state_bits_q)
   );
   dffr #(
-      .DATA_WIDTH(3)
-  ) u_group_dffr (
+      .DATA_WIDTH(6)
+  ) u_index_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_group_d),
-      .dat_o  (s_group_q)
+      .dat_i  (s_index_d),
+      .dat_o  (s_index_q)
   );
   dffr u_dequantize_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .dat_i  (s_dequantize_d),
       .dat_o  (s_dequantize_q)
-  );
-  dffr #(
-      .DATA_WIDTH(64 * ElementWidth)
-  ) u_input_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_input_d),
-      .dat_o  (s_input_q)
-  );
-  dffr #(
-      .DATA_WIDTH(64 * 8)
-  ) u_quant_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_quant_d),
-      .dat_o  (s_quant_q)
-  );
-  dffr #(
-      .DATA_WIDTH(64 * ReciprocalWidth)
-  ) u_reciprocal_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_reciprocal_d),
-      .dat_o  (s_reciprocal_q)
-  );
-  dffr #(
-      .DATA_WIDTH(64 * ElementWidth)
-  ) u_result_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_result_d),
-      .dat_o  (s_result_q)
   );
   dffr u_table_err_dffr (
       .clk_i  (clk_i),
@@ -238,8 +221,19 @@ module jpeg_quantizer #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (ElementWidth < 16 || ReciprocalWidth <= ReciprocalShift) begin
+    if (ElementWidth < 16 || ReciprocalWidth <= ReciprocalShift || LaneCount < 1 ||
+        LaneCount > 8) begin
       $fatal(1, "jpeg_quantizer: invalid arithmetic widths");
+    end
+  end
+`endif
+
+`ifndef SV_ASSRT_DISABLE
+  always_ff @(posedge clk_i) begin
+    if (rst_n_i && (s_state_q != Idle)) begin
+      assert ($stable(block_i));
+      assert ($stable(quant_i));
+      assert ($stable(reciprocal_i));
     end
   end
 `endif

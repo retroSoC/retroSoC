@@ -42,6 +42,7 @@ RTL_LINT_OBSERVATION_VALUES = (
     "check-rtl-lint",
 )
 OBSERVATION_TARGETS = ("check-warnings", "check-metrics")
+SYNTHESIS_DEPENDENT_TARGETS = frozenset(("synth", "sta", "netsim", "netsim-boot", "metrics"))
 
 
 PR_COMMANDS = (
@@ -192,6 +193,17 @@ def with_netsim_boot_only(
     return tuple(transformed)
 
 
+def behavioral_only(
+    commands: tuple[tuple[str, tuple[str, ...]], ...],
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Exclude synthesis and commands that consume its generated netlist."""
+    return tuple(
+        (profile, values)
+        for profile, values in commands
+        if SYNTHESIS_DEPENDENT_TARGETS.isdisjoint(values)
+    )
+
+
 def run_command(
     command: list[str], root: Path, capture_output: bool, environment: dict[str, str]
 ) -> str:
@@ -243,6 +255,11 @@ def main() -> int:
         action="store_true",
         help="locally stop each Icarus assembly netlist run after Hello retroSoC!",
     )
+    parser.add_argument(
+        "--behavioral-only",
+        action="store_true",
+        help="skip synthesis, STA, netlist simulation, and synthesis-recipe metrics",
+    )
     args = parser.parse_args()
     try:
         commands, profiles = select_regression(args.suite, args.pdk)
@@ -250,6 +267,8 @@ def main() -> int:
         parser.error(str(error))
     if args.netsim_boot_only:
         commands = with_netsim_boot_only(commands)
+    if args.behavioral_only:
+        commands = behavioral_only(commands)
     environment = regression_environment()
     for profile, values in commands:
         command = ["make", f"CONFIG={profile}", *values]

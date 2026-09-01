@@ -1,23 +1,33 @@
 `timescale 1ns / 1ps
 
 module jpeg_decode_core_tb;
-  logic          clk = 1'b0;
-  logic          rst_n = 1'b0;
-  logic          start;
-  logic          busy;
-  logic          done;
-  logic   [15:0] width;
-  logic   [15:0] height;
-  logic   [ 1:0] sampling;
-  logic          error_flag;
-  logic   [ 4:0] error_code;
-  logic   [ 7:0] input_bytes   [0:2047];
-  logic   [ 7:0] expected_rgb  [0:4095];
-  integer        input_size;
-  integer        expected_size;
-  integer        output_index;
-  string         input_path;
-  string         expected_path;
+  logic            clk = 1'b0;
+  logic            rst_n = 1'b0;
+  logic            start;
+  logic            busy;
+  logic            done;
+  logic   [  15:0] width;
+  logic   [  15:0] height;
+  logic   [   1:0] sampling;
+  logic            error_flag;
+  logic   [   4:0] error_code;
+  logic            coefficient_start;
+  logic   [1535:0] coefficient_block;
+  logic   [ 511:0] coefficient_quant;
+  logic   [1599:0] coefficient_reciprocal;
+  logic            coefficient_start_ready;
+  logic   [1535:0] coefficient_result;
+  logic            coefficient_result_valid;
+  logic            coefficient_result_ready;
+  logic            coefficient_table_err;
+  logic            coefficient_overflow;
+  logic   [   7:0] input_bytes              [0:2047];
+  logic   [   7:0] expected_rgb             [0:4095];
+  integer          input_size;
+  integer          expected_size;
+  integer          output_index;
+  string           input_path;
+  string           expected_path;
 
   axi4_stream_if #(
       .DATA_WIDTH(64)
@@ -34,21 +44,49 @@ module jpeg_decode_core_tb;
 
   always #5 clk = ~clk;
 
-  jpeg_decode_core u_dut (
-      .clk_i          (clk),
-      .rst_n_i        (rst_n),
-      .start_i        (start),
-      .output_format_i(3'd2),
-      .bitstream_axis (bitstream_axis),
-      .pixel_axis     (pixel_axis),
-      .start_ready_o  (),
-      .busy_o         (busy),
-      .done_o         (done),
-      .width_o        (width),
-      .height_o       (height),
-      .sampling_o     (sampling),
-      .error_o        (error_flag),
-      .error_code_o   (error_code)
+  jpeg_coefficient_engine u_coefficient_engine (
+      .clk_i         (clk),
+      .rst_n_i       (rst_n),
+      .start_i       (coefficient_start),
+      .decode_i      (1'b1),
+      .block_i       (coefficient_block),
+      .quant_i       (coefficient_quant),
+      .reciprocal_i  (coefficient_reciprocal),
+      .start_ready_o (coefficient_start_ready),
+      .block_o       (coefficient_result),
+      .result_valid_o(coefficient_result_valid),
+      .result_ready_i(coefficient_result_ready),
+      .table_err_o   (coefficient_table_err),
+      .overflow_o    (coefficient_overflow)
+  );
+
+  jpeg_decode_core #(
+      .ExternalCoefficientEngine(1'b1)
+  ) u_dut (
+      .clk_i                     (clk),
+      .rst_n_i                   (rst_n),
+      .start_i                   (start),
+      .output_format_i           (3'd2),
+      .coefficient_start_o       (coefficient_start),
+      .coefficient_block_o       (coefficient_block),
+      .coefficient_quant_o       (coefficient_quant),
+      .coefficient_reciprocal_o  (coefficient_reciprocal),
+      .coefficient_start_ready_i (coefficient_start_ready),
+      .coefficient_result_i      (coefficient_result),
+      .coefficient_result_valid_i(coefficient_result_valid),
+      .coefficient_result_ready_o(coefficient_result_ready),
+      .coefficient_table_err_i   (coefficient_table_err),
+      .coefficient_overflow_i    (coefficient_overflow),
+      .bitstream_axis            (bitstream_axis),
+      .pixel_axis                (pixel_axis),
+      .start_ready_o             (),
+      .busy_o                    (busy),
+      .done_o                    (done),
+      .width_o                   (width),
+      .height_o                  (height),
+      .sampling_o                (sampling),
+      .error_o                   (error_flag),
+      .error_code_o              (error_code)
   );
 
   task automatic send_input_beat(input integer offset_i);
@@ -129,9 +167,10 @@ module jpeg_decode_core_tb;
     end
     if (error_flag || !done || width != 16'd16 || height != 16'd16 || sampling != 2'd3 ||
         output_index != expected_size) begin
-      $fatal(1,
-             "decode completion mismatch: done=%0d err=%0d code=%0d size=%0dx%0d sampling=%0d bytes=%0d expected=%0d",
-             done, error_flag, error_code, width, height, sampling, output_index, expected_size);
+      $fatal(
+          1,
+          "decode completion mismatch: done=%0d err=%0d code=%0d size=%0dx%0d sampling=%0d bytes=%0d expected=%0d",
+          done, error_flag, error_code, width, height, sampling, output_index, expected_size);
     end
     $display("JPEG decode core tests passed");
     $finish;

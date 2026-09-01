@@ -10,7 +10,7 @@
       "reset_primitive": "rst_sync",
       "path": "rtl/mini/top/soc_clock_reset_subsystem.sv",
       "instance": "u_aon_rst_sync",
-      "sta": {"source_port": "ref24clk_i_pad", "pin": "u_rcu.u_clock_reset_subsystem/u_ref24_clk_buf", "period_ns": 41.666666667, "async_group": "aon"}
+      "sta": {"source_port": "ref24clk_i_pad", "pin": "u_rcu.u_clock_reset_subsystem.u_ref24_clk_buf/clk_o", "period_ns": 41.666666667, "async_group": "aon"}
     },
     {
       "name": "lp",
@@ -20,7 +20,7 @@
       "reset_primitive": "rst_sync",
       "path": "rtl/mini/top/soc_clock_reset_subsystem.sv",
       "instance": "u_lp_rst_sync",
-      "sta": {"source_domain": "aon", "pin": "u_rcu.u_clock_reset_subsystem/u_lp_root_mux", "period_ns": 13.888888889, "async_group": "lp"}
+      "sta": {"source_domain": "aon", "object_type": "net_driver", "net": "s_sys_clk", "period_ns": 13.888888889, "async_group": "lp"}
     },
     {
       "name": "hp",
@@ -30,7 +30,7 @@
       "reset_primitive": "rst_sync",
       "path": "rtl/mini/top/soc_clock_reset_subsystem.sv",
       "instance": "u_hp_rst_sync",
-      "sta": {"source_port": "extclk_i_pad", "pin": "u_rcu.u_clock_reset_subsystem/u_hp_root_mux", "period_ns": 4.166666667, "async_group": "hp"}
+      "sta": {"source_port": "extclk_i_pad", "object_type": "net_driver", "net": "s_hp_clk", "period_ns": 4.166666667, "async_group": "hp"}
     },
     {
       "name": "pclk",
@@ -40,7 +40,7 @@
       "reset_primitive": "rst_sync",
       "path": "rtl/mini/top/soc_clock_reset_subsystem.sv",
       "instance": "u_pclk_rst_sync",
-      "sta": {"source_domain": "lp", "pin": "u_rcu.u_clock_reset_subsystem/u_pclk_divider", "period_ns": 20.833333333, "async_group": "lp"}
+      "sta": {"source_domain": "lp", "object_type": "net_driver", "net": "s_pclk", "period_ns": 20.833333333, "async_group": "lp"}
     },
     {
       "name": "memory",
@@ -50,7 +50,7 @@
       "reset_primitive": "rst_sync",
       "path": "rtl/mini/top/soc_clock_reset_subsystem.sv",
       "instance": "u_mem_rst_sync",
-      "sta": {"source_port": "extclk_i_pad", "pin": "u_rcu.u_clock_reset_subsystem/u_mem_clk_div2", "period_ns": 27.777777778, "async_group": "memory"}
+      "sta": {"source_port": "extclk_i_pad", "object_type": "net_driver", "net": "s_mem_clk", "period_ns": 27.777777778, "async_group": "memory"}
     },
     {
       "name": "audio",
@@ -60,7 +60,7 @@
       "reset_primitive": "rst_sync",
       "path": "rtl/mini/top/soc_clock_reset_subsystem.sv",
       "instance": "u_aud_rst_sync",
-      "sta": {"source_port": "audclk_i_pad", "pin": "u_rcu.u_clock_reset_subsystem/u_aud_clk_buf", "period_ns": 54.253472222, "async_group": "audio"}
+      "sta": {"source_port": "audclk_i_pad", "pin": "u_rcu.u_clock_reset_subsystem.u_aud_clk_buf/clk_o", "period_ns": 54.253472222, "async_group": "audio"}
     },
     {
       "name": "jtag",
@@ -80,7 +80,7 @@
       "reset_primitive": "rst_sync",
       "path": "rtl/ip/multimedia/axi4s_dvp.sv",
       "instance": "u_dvp_pclk_rst_sync",
-      "sta": {"source_port": "gpio_10_io_pad", "pin": "u_retrosoc.u_apb4_periph.u_axi4_dvp/u_dvp_pclk_clk_buf", "period_ns": 41.666666667, "async_group": "dvp"}
+      "sta": {"source_port": "gpio_10_io_pad", "pin": "u_retrosoc.u_apb4_periph.u_axi4_dvp.u_dvp_pclk_clk_buf/clk_o", "period_ns": 41.666666667, "async_group": "dvp"}
     },
     {
       "name": "usb2_ulpi",

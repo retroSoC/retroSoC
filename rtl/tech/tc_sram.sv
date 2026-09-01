@@ -156,6 +156,135 @@ module tc_sram_1024x32 (
 `endif
 endmodule
 
+module tc_sram_64x64 (
+    // verilog_format: off -- preserve the technology memory interface columns
+    input  logic        clk_i,
+    input  logic        cs_i,
+    input  logic [ 5:0] addr_i,
+    input  logic [63:0] data_i,
+    input  logic        wren_i,
+    output logic [63:0] data_o
+    // verilog_format: on
+);
+`ifdef PDK_IHP130
+`ifdef HAVE_SRAM_MACRO
+  `define _TC_SRAM_64X64_IHP_MACRO
+`endif
+`endif
+
+`ifdef _TC_SRAM_64X64_IHP_MACRO
+  RM_IHPSG13_1P_64x64_c2_bm_bist u_mem (
+      .A_CLK      (clk_i),
+      .A_ADDR     (addr_i),
+      .A_BM       (64'hffff_ffff_ffff_ffff),
+      .A_MEN      (cs_i),
+      .A_WEN      (wren_i),
+      .A_REN      (~wren_i),
+      .A_DIN      (data_i),
+      .A_DOUT     (data_o),
+      .A_DLY      (1'b1),
+      .A_BIST_CLK (1'b0),
+      .A_BIST_EN  (1'b0),
+      .A_BIST_MEN (1'b0),
+      .A_BIST_WEN (1'b0),
+      .A_BIST_REN (1'b0),
+      .A_BIST_ADDR(6'b0),
+      .A_BIST_DIN (64'b0),
+      .A_BIST_BM  (64'b0)
+  );
+`else
+  logic [63:0] s_storage[64];
+
+  always_ff @(posedge clk_i) begin
+    if (cs_i) begin
+      if (wren_i) begin
+        s_storage[addr_i] <= data_i;
+      end else begin
+        data_o <= s_storage[addr_i];
+      end
+    end
+  end
+`endif
+
+`ifdef _TC_SRAM_64X64_IHP_MACRO
+  `undef _TC_SRAM_64X64_IHP_MACRO
+`endif
+endmodule
+
+module tc_sram_64x32_2p (
+    // verilog_format: off -- preserve the dual-port technology memory columns
+    input  logic        clk_i,
+    input  logic        a_cs_i,
+    input  logic [ 5:0] a_addr_i,
+    input  logic [31:0] a_data_i,
+    input  logic        a_wren_i,
+    output logic [31:0] a_data_o,
+    input  logic        b_cs_i,
+    input  logic [ 5:0] b_addr_i,
+    input  logic [31:0] b_data_i,
+    input  logic        b_wren_i,
+    output logic [31:0] b_data_o
+    // verilog_format: on
+);
+`ifdef PDK_IHP130
+`ifdef HAVE_SRAM_MACRO
+  `define _TC_SRAM_64X32_2P_IHP_MACRO
+`endif
+`endif
+
+`ifdef _TC_SRAM_64X32_2P_IHP_MACRO
+  RM_IHPSG13_2P_64x32_c2 u_mem (
+      .A_CLK (clk_i),
+      .A_ADDR(a_addr_i),
+      .A_MEN (a_cs_i),
+      .A_WEN (a_wren_i),
+      .A_REN (~a_wren_i),
+      .A_DIN (a_data_i),
+      .A_DOUT(a_data_o),
+      .A_DLY (1'b1),
+      .B_CLK (clk_i),
+      .B_ADDR(b_addr_i),
+      .B_MEN (b_cs_i),
+      .B_WEN (b_wren_i),
+      .B_REN (~b_wren_i),
+      .B_DIN (b_data_i),
+      .B_DOUT(b_data_o),
+      .B_DLY (1'b1)
+  );
+`else
+  logic [31:0] s_storage[64];
+
+  always_ff @(posedge clk_i) begin
+    if (a_cs_i) begin
+      if (a_wren_i) begin
+        s_storage[a_addr_i] <= a_data_i;
+      end else begin
+        a_data_o <= s_storage[a_addr_i];
+      end
+    end
+    if (b_cs_i) begin
+      if (b_wren_i) begin
+        s_storage[b_addr_i] <= b_data_i;
+      end else begin
+        b_data_o <= s_storage[b_addr_i];
+      end
+    end
+  end
+`endif
+
+`ifndef SYNTHESIS
+  always_ff @(posedge clk_i) begin
+    if (a_cs_i && b_cs_i && (a_addr_i == b_addr_i) && (a_wren_i || b_wren_i)) begin
+      $fatal(1, "tc_sram_64x32_2p: conflicting access at address %0d", a_addr_i);
+    end
+  end
+`endif
+
+`ifdef _TC_SRAM_64X32_2P_IHP_MACRO
+  `undef _TC_SRAM_64X32_2P_IHP_MACRO
+`endif
+endmodule
+
 module tc_sram_4096x32 (
     // verilog_format: off -- preserve the technology memory interface columns
     input  logic        clk_i,

@@ -34,6 +34,127 @@ static void rs_print_hazard3_spec(void) {
     printf("    One hart: halt/resume, 2 breakpoints; no system-bus access\n");
 }
 
+static const char *rs_boolean_name(bool value) {
+    return value ? "yes" : "no";
+}
+
+static void rs_print_hp_core_spec(void) {
+    rs_sysctrl_hp_status_t status = {0};
+
+    if ((rs_sysctrl_get_hp_status(&status) != RS_OK) || !status.present) {
+        return;
+    }
+
+    printf("\nHigh-Performance-Core Specification:\n");
+    printf("  Identity\n");
+    printf("    Core: VexiiRiscv(hart 1), dual-issue in-order\n");
+    printf("    Role: high-throughput application and Linux\n");
+    printf("    Source: https://github.com/SpinalHDL/VexiiRiscv\n");
+    printf("  Hardware ISA and privilege\n");
+    printf("    Base: RV32IMAFDC_Zicbom_Zicntr_Zihpm\n");
+    printf("    Mode: M/S/U; Sv32 MMU, 9-bit ASID\n");
+    printf("    Protection: 16 PMP regions, 4 KiB granularity\n");
+    printf("    IRQ: machine software/timer/external + supervisor external\n");
+    printf("  Microarchitecture\n");
+    printf("    Execution: 2 decoders/lanes, late ALU, full bypassing\n");
+    printf("    Prediction: BTB + GShare + RAS\n");
+    printf("  Cache and memory\n");
+    printf("    L1: separate 16 KiB, 4-way instruction and data caches\n");
+    printf("    Maintenance: 64-byte Zicbom CBO; no hardware coherency\n");
+    printf("    Bus: native AXI64 I/D + cacheless AXI32 MMIO\n");
+    printf("  Debug\n");
+    printf("    Embedded RISC-V JTAG, 4 triggers\n");
+    printf("  Runtime\n");
+    printf("    Released: %s; actual: %s; reset asserted: %s\n", rs_boolean_name(status.released),
+           rs_boolean_name(status.actual_released), rs_boolean_name(status.reset_asserted));
+    printf("    Draining: %s; forced fault: %s\n", rs_boolean_name(status.draining),
+           rs_boolean_name(status.forced_fault));
+}
+
+static void rs_print_mmio_map(void) {
+    printf("Memory-Mapped I/O Devices:\n");
+    printf("                       1 x HP ACLINT      @%p\n",
+           (void *)(uintptr_t)RS_SOC_HP_ACLINT_BASE);
+    printf("                       1 x HP PLIC        @%p\n",
+           (void *)(uintptr_t)RS_SOC_HP_PLIC_BASE);
+    printf("                       1 x GPIO(32PIN)    @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_GPIO_BASE);
+    printf("                       1 x UART0          @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_UART0_BASE);
+    printf("                       1 x TIMER0         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_TIM0_BASE);
+    printf("                       1 x TIMER1         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_TIM1_BASE);
+    printf("                       1 x PSRAM CTRL     @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_PSRAM_BASE);
+    printf("                       1 x SPI-SD         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SPISD_BASE);
+    printf("                       1 x I2C0           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_I2C0_BASE);
+    printf("                       1 x I2S            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_I2S_BASE);
+    printf("                       1 x WS2812         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
+    printf("                       1 x XPI CTRL       @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_XPI_BASE);
+    printf("                       1 x DMA(8CH)       @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_DMA_BASE);
+    printf("                       1 x SYSCTRL        @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SYSCTRL_BASE);
+    printf("                       1 x CRYPTO         @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_CRYPTO_BASE);
+    printf("                       1 x SDRAM CTRL     @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SDRAM_BASE);
+    printf("                       1 x DVP            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_DVP_BASE);
+    printf("                       1 x SDIO0          @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SDIO0_BASE);
+    printf("                       1 x OPI/HB PSRAM   @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_OPIPSRAM_BASE);
+    printf("                       1 x I2C1           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_I2C1_BASE);
+    printf("                       1 x GPIO ADMIN     @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_GPIO_ADMIN_BASE);
+    printf("                       1 x SDIO1          @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SDIO1_BASE);
+    printf("                       1 x USB2           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_USB2_BASE);
+    printf("                       1 x SRAM CTRL      @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_SRAM_BASE);
+    printf("                       1 x UART1          @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_UART1_BASE);
+    printf("                       1 x HP MAILBOX     @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_HP_MAILBOX_BASE);
+    printf("                       1 x JPEG           @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_JPEG_BASE);
+    printf("                       1 x CLINT          @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
+    printf("                       1 x ARCHINFO       @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_ARCHINFO_BASE);
+    printf("                       1 x RNG            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_RNG_BASE);
+    printf("                       1 x PWM(4CH)       @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_PWM_BASE);
+    printf("                       1 x PS2            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_PS2_BASE);
+    printf("                       1 x RTC            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_RTC_BASE);
+    printf("                       1 x WDG            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_WDG_BASE);
+    printf("                       1 x CRC            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_CRC_BASE);
+    printf("                       1 x USER IP COMPAT @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_USER_IP_BASE);
+    printf("                       1 x EXT-L          @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_EXT_L_BASE);
+    printf("                       1 x EXT-H          @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_EXT_H_BASE);
+    printf("                       1 x RESOURCE CTRL  @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_RESOURCE_CTRL_BASE);
+    printf("                       1 x FABRIC MONITOR @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_FABRIC_MONITOR_BASE);
+}
+
 void rs_app_info(void) {
     uint8_t selected_core;
     uint8_t selected_ip;
@@ -101,6 +222,7 @@ void rs_app_info(void) {
     printf("  +------------+    +------------+    +------------+\n");
 
     rs_print_hazard3_spec();
+    rs_print_hp_core_spec();
 
     printf("\nUser Processors:\n");
     uint32_t core_size = RS_SOC_USER_CORE_COUNT;
@@ -148,65 +270,7 @@ void rs_app_info(void) {
     printf("  Reserved:            @[0x%08x-0xffffffff] %3u MiB\n\n", TF_CARD_START,
            (unsigned int)(((UINT32_MAX - TF_CARD_START) / UINT32_C(1048576)) + UINT32_C(1)));
 
-    printf("Memory Map IO Device:\n");
-    printf("                       1 x GPIO(32PIN)   @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_GPIO_BASE);
-    printf("                       1 x UART0         @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_UART0_BASE);
-    printf("                       2 x TIMER(0,1)    @%p,%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_TIM0_BASE, (void *)(uintptr_t)RS_SOC_APB4_TIM1_BASE);
-    printf("                       1 x PSRAM         @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_PSRAM_BASE);
-    printf("                       1 x SPISD         @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_SPISD_BASE);
-    printf("                       1 x I2C0          @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_I2C0_BASE);
-    printf("                       1 x I2S           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_I2S_BASE);
-    printf("                       1 x WS2812        @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_WS2812_BASE);
-    printf("                       1 x XPI           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_XPI_BASE);
-    printf("                       1 x DMA(6CH)      @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_DMA_BASE);
-    printf("                       1 x SYSCTRL       @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_SYSCTRL_BASE);
-    printf("                       1 x CRYPTO        @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_CRYPTO_BASE);
-    printf("                       1 x SDRAM         @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_SDRAM_BASE);
-    printf("                       1 x DVP           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_DVP_BASE);
-    printf("                       1 x SDIO0         @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_SDIO0_BASE);
-    printf("                       1 x OPIPSRAM      @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_OPIPSRAM_BASE);
-    printf("                       1 x I2C1          @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_I2C1_BASE);
-    printf("                       1 x GPIO ADMIN    @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_GPIO_ADMIN_BASE);
-    printf("                       1 x SDIO1         @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_SDIO1_BASE);
-    printf("                       1 x USB2          @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_USB2_BASE);
-    printf("                       1 x CLINT         @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
-    printf("                       1 x ARCHINFO      @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_ARCHINFO_BASE);
-    printf("                       1 x RNG           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_RNG_BASE);
-    printf("                       1 x PWM(4CH)      @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_PWM_BASE);
-    printf("                       1 x PS2           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_PS2_BASE);
-    printf("                       1 x RTC           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_RTC_BASE);
-    printf("                       1 x WDG           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_WDG_BASE);
-    printf("                       1 x CRC           @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_CRC_BASE);
-    printf("                       1 x USER_IP(4KiB) @%p\n",
-           (void *)(uintptr_t)RS_SOC_APB4_USER_IP_BASE);
+    rs_print_mmio_map();
     printf("\n");
     printf("#############################################################\n");
     printf("#############################################################\n");

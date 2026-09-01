@@ -32,75 +32,12 @@ module jpeg_transform #(
   logic   [                2:0] s_index_q;
   logic                         s_inverse_d;
   logic                         s_inverse_q;
-  logic   [64*ElementWidth-1:0] s_input_d;
-  logic   [64*ElementWidth-1:0] s_input_q;
+  logic   [64*ElementWidth-1:0] s_data_d;
+  logic   [64*ElementWidth-1:0] s_data_q;
   logic   [64*ElementWidth-1:0] s_temp_d;
   logic   [64*ElementWidth-1:0] s_temp_q;
-  logic   [64*ElementWidth-1:0] s_result_d;
-  logic   [64*ElementWidth-1:0] s_result_q;
   logic   [ 8*ElementWidth-1:0] s_vector;
-
-  function automatic logic signed [15:0] cosine_value(input logic [2:0] frequency_i,
-                                                      input logic [2:0] sample_i);
-    begin
-      unique case ({
-        frequency_i, sample_i
-      })
-        6'o00, 6'o01, 6'o02, 6'o03, 6'o04, 6'o05, 6'o06, 6'o07: cosine_value = 16'sd11585;
-        6'o10:                                                  cosine_value = 16'sd16069;
-        6'o11:                                                  cosine_value = 16'sd13623;
-        6'o12:                                                  cosine_value = 16'sd9102;
-        6'o13:                                                  cosine_value = 16'sd3196;
-        6'o14:                                                  cosine_value = -16'sd3196;
-        6'o15:                                                  cosine_value = -16'sd9102;
-        6'o16:                                                  cosine_value = -16'sd13623;
-        6'o17:                                                  cosine_value = -16'sd16069;
-        6'o20:                                                  cosine_value = 16'sd15137;
-        6'o21:                                                  cosine_value = 16'sd6270;
-        6'o22:                                                  cosine_value = -16'sd6270;
-        6'o23:                                                  cosine_value = -16'sd15137;
-        6'o24:                                                  cosine_value = -16'sd15137;
-        6'o25:                                                  cosine_value = -16'sd6270;
-        6'o26:                                                  cosine_value = 16'sd6270;
-        6'o27:                                                  cosine_value = 16'sd15137;
-        6'o30:                                                  cosine_value = 16'sd13623;
-        6'o31:                                                  cosine_value = -16'sd3196;
-        6'o32:                                                  cosine_value = -16'sd16069;
-        6'o33:                                                  cosine_value = -16'sd9102;
-        6'o34:                                                  cosine_value = 16'sd9102;
-        6'o35:                                                  cosine_value = 16'sd16069;
-        6'o36:                                                  cosine_value = 16'sd3196;
-        6'o37:                                                  cosine_value = -16'sd13623;
-        6'o40, 6'o43, 6'o44, 6'o47:                             cosine_value = 16'sd11585;
-        6'o41, 6'o42, 6'o45, 6'o46:                             cosine_value = -16'sd11585;
-        6'o50:                                                  cosine_value = 16'sd9102;
-        6'o51:                                                  cosine_value = -16'sd16069;
-        6'o52:                                                  cosine_value = 16'sd3196;
-        6'o53:                                                  cosine_value = 16'sd13623;
-        6'o54:                                                  cosine_value = -16'sd13623;
-        6'o55:                                                  cosine_value = -16'sd3196;
-        6'o56:                                                  cosine_value = 16'sd16069;
-        6'o57:                                                  cosine_value = -16'sd9102;
-        6'o60:                                                  cosine_value = 16'sd6270;
-        6'o61:                                                  cosine_value = -16'sd15137;
-        6'o62:                                                  cosine_value = 16'sd15137;
-        6'o63:                                                  cosine_value = -16'sd6270;
-        6'o64:                                                  cosine_value = -16'sd6270;
-        6'o65:                                                  cosine_value = 16'sd15137;
-        6'o66:                                                  cosine_value = -16'sd15137;
-        6'o67:                                                  cosine_value = 16'sd6270;
-        6'o70:                                                  cosine_value = 16'sd3196;
-        6'o71:                                                  cosine_value = -16'sd9102;
-        6'o72:                                                  cosine_value = 16'sd13623;
-        6'o73:                                                  cosine_value = -16'sd16069;
-        6'o74:                                                  cosine_value = 16'sd16069;
-        6'o75:                                                  cosine_value = -16'sd13623;
-        6'o76:                                                  cosine_value = 16'sd9102;
-        6'o77:                                                  cosine_value = -16'sd3196;
-        default:                                                cosine_value = 16'sd0;
-      endcase
-    end
-  endfunction
+  logic   [ 8*ElementWidth-1:0] s_transformed_vector;
 
   function automatic logic signed [ElementWidth-1:0] rounded_scale(
       input logic signed [47:0] value_i);
@@ -118,59 +55,105 @@ module jpeg_transform #(
     end
   endfunction
 
-  function automatic logic signed [ElementWidth-1:0] transform_1d(
-      input logic [8*ElementWidth-1:0] vector_i, input logic [2:0] output_i, input logic inverse_i);
-    logic signed [            47:0] s_accumulator;
-    logic signed [ElementWidth-1:0] s_sample;
-    logic signed [            15:0] s_cosine;
+  function automatic logic [8*ElementWidth-1:0] transform_vector(
+      input logic [8*ElementWidth-1:0] vector_i, input logic inverse_i);
+    logic signed [  ElementWidth-1:0] s_x      [0:7];
+    logic signed [    ElementWidth:0] s_pair   [0:3];
+    logic signed [              47:0] s_even   [0:3];
+    logic signed [              47:0] s_odd    [0:3];
+    logic signed [              47:0] s_value  [0:7];
+    logic        [8*ElementWidth-1:0] s_result;
     begin
-      s_accumulator = 48'sd0;
       for (int unsigned index = 0; index < 8; index++) begin
-        s_sample = vector_i[index*ElementWidth+:ElementWidth];
-        s_cosine = inverse_i ? cosine_value(3'(index), output_i) :
-            cosine_value(output_i, 3'(index));
-        s_accumulator += s_sample * s_cosine;
+        s_x[index]     = vector_i[index*ElementWidth+:ElementWidth];
+        s_value[index] = 48'sd0;
       end
-      return rounded_scale(s_accumulator);
+      if (inverse_i) begin
+        s_even[0] = (s_x[0] * 16'sd11585) + (s_x[2] * 16'sd15137) +
+                    (s_x[4] * 16'sd11585) + (s_x[6] * 16'sd6270);
+        s_even[1] = (s_x[0] * 16'sd11585) + (s_x[2] * 16'sd6270) -
+                    (s_x[4] * 16'sd11585) - (s_x[6] * 16'sd15137);
+        s_even[2] = (s_x[0] * 16'sd11585) - (s_x[2] * 16'sd6270) -
+                    (s_x[4] * 16'sd11585) + (s_x[6] * 16'sd15137);
+        s_even[3] = (s_x[0] * 16'sd11585) - (s_x[2] * 16'sd15137) +
+                    (s_x[4] * 16'sd11585) - (s_x[6] * 16'sd6270);
+        s_odd[0] = (s_x[1] * 16'sd16069) + (s_x[3] * 16'sd13623) +
+                   (s_x[5] * 16'sd9102) + (s_x[7] * 16'sd3196);
+        s_odd[1] = (s_x[1] * 16'sd13623) - (s_x[3] * 16'sd3196) -
+                   (s_x[5] * 16'sd16069) - (s_x[7] * 16'sd9102);
+        s_odd[2] = (s_x[1] * 16'sd9102) - (s_x[3] * 16'sd16069) +
+                   (s_x[5] * 16'sd3196) + (s_x[7] * 16'sd13623);
+        s_odd[3] = (s_x[1] * 16'sd3196) - (s_x[3] * 16'sd9102) +
+                   (s_x[5] * 16'sd13623) - (s_x[7] * 16'sd16069);
+        for (int unsigned index = 0; index < 4; index++) begin
+          s_value[index]   = s_even[index] + s_odd[index];
+          s_value[7-index] = s_even[index] - s_odd[index];
+        end
+      end else begin
+        for (int unsigned index = 0; index < 4; index++) begin
+          s_pair[index] = s_x[index] + s_x[7-index];
+        end
+        s_value[0] = (s_pair[0] + s_pair[1] + s_pair[2] + s_pair[3]) * 16'sd11585;
+        s_value[2] = ((s_pair[0] - s_pair[3]) * 16'sd15137) + ((s_pair[1] - s_pair[2]) * 16'sd6270);
+        s_value[4] = (s_pair[0] - s_pair[1] - s_pair[2] + s_pair[3]) * 16'sd11585;
+        s_value[6] = ((s_pair[0] - s_pair[3]) * 16'sd6270) - ((s_pair[1] - s_pair[2]) * 16'sd15137);
+        for (int unsigned index = 0; index < 4; index++) begin
+          s_pair[index] = s_x[index] - s_x[7-index];
+        end
+        s_value[1] = (s_pair[0] * 16'sd16069) + (s_pair[1] * 16'sd13623) +
+                     (s_pair[2] * 16'sd9102) + (s_pair[3] * 16'sd3196);
+        s_value[3] = (s_pair[0] * 16'sd13623) - (s_pair[1] * 16'sd3196) -
+                     (s_pair[2] * 16'sd16069) - (s_pair[3] * 16'sd9102);
+        s_value[5] = (s_pair[0] * 16'sd9102) - (s_pair[1] * 16'sd16069) +
+                     (s_pair[2] * 16'sd3196) + (s_pair[3] * 16'sd13623);
+        s_value[7] = (s_pair[0] * 16'sd3196) - (s_pair[1] * 16'sd9102) +
+                     (s_pair[2] * 16'sd13623) - (s_pair[3] * 16'sd16069);
+      end
+      s_result = '0;
+      for (int unsigned index = 0; index < 8; index++) begin
+        s_result[index*ElementWidth+:ElementWidth] = rounded_scale(s_value[index]);
+      end
+      return s_result;
     end
   endfunction
 
   assign s_state_q      = state_e'(s_state_bits_q);
   assign start_ready_o  = s_state_q == Idle;
-  assign block_o        = s_result_q;
+  assign block_o        = s_data_q;
   assign result_valid_o = s_state_q == Result;
 
   always_comb begin
-    s_state_d   = s_state_q;
-    s_index_d   = s_index_q;
-    s_inverse_d = s_inverse_q;
-    s_input_d   = s_input_q;
-    s_temp_d    = s_temp_q;
-    s_result_d  = s_result_q;
-    s_vector    = '0;
+    s_state_d            = s_state_q;
+    s_index_d            = s_index_q;
+    s_inverse_d          = s_inverse_q;
+    s_data_d             = s_data_q;
+    s_temp_d             = s_temp_q;
+    s_vector             = '0;
+    s_transformed_vector = transform_vector(s_vector, s_inverse_q);
 
     unique case (s_state_q)
       Idle: begin
         s_index_d = 3'd0;
         if (start_i) begin
-          s_input_d   = block_i;
+          s_data_d    = block_i;
           s_inverse_d = inverse_i;
           s_temp_d    = '0;
-          s_result_d  = '0;
           s_state_d   = FirstPass;
         end
       end
       FirstPass: begin
         for (int unsigned index = 0; index < 8; index++) begin
           s_vector[index*ElementWidth+:ElementWidth] =
-              s_input_q[((s_index_q*8)+index)*ElementWidth+:ElementWidth];
+              s_data_q[((s_index_q*8)+index)*ElementWidth+:ElementWidth];
         end
+        s_transformed_vector = transform_vector(s_vector, s_inverse_q);
         for (int unsigned output_index = 0; output_index < 8; output_index++) begin
           s_temp_d[((s_index_q*8)+output_index)*ElementWidth+:ElementWidth] =
-              transform_1d(s_vector, 3'(output_index), s_inverse_q);
+              s_transformed_vector[output_index*ElementWidth+:ElementWidth];
         end
         if (s_index_q == 3'd7) begin
           s_index_d = 3'd0;
+          s_data_d  = '0;
           s_state_d = SecondPass;
         end else begin
           s_index_d = s_index_q + 1'b1;
@@ -181,9 +164,10 @@ module jpeg_transform #(
           s_vector[index*ElementWidth+:ElementWidth] =
               s_temp_q[((index*8)+int'(s_index_q))*ElementWidth+:ElementWidth];
         end
+        s_transformed_vector = transform_vector(s_vector, s_inverse_q);
         for (int unsigned output_index = 0; output_index < 8; output_index++) begin
-          s_result_d[((output_index*8)+int'(s_index_q))*ElementWidth+:ElementWidth] =
-              transform_1d(s_vector, 3'(output_index), s_inverse_q);
+          s_data_d[((output_index*8)+int'(s_index_q))*ElementWidth+:ElementWidth] =
+              s_transformed_vector[output_index*ElementWidth+:ElementWidth];
         end
         if (s_index_q == 3'd7) begin
           s_index_d = 3'd0;
@@ -227,11 +211,11 @@ module jpeg_transform #(
   );
   dffr #(
       .DATA_WIDTH(64 * ElementWidth)
-  ) u_input_dffr (
+  ) u_data_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .dat_i  (s_input_d),
-      .dat_o  (s_input_q)
+      .dat_i  (s_data_d),
+      .dat_o  (s_data_q)
   );
   dffr #(
       .DATA_WIDTH(64 * ElementWidth)
@@ -241,15 +225,6 @@ module jpeg_transform #(
       .dat_i  (s_temp_d),
       .dat_o  (s_temp_q)
   );
-  dffr #(
-      .DATA_WIDTH(64 * ElementWidth)
-  ) u_result_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_result_d),
-      .dat_o  (s_result_q)
-  );
-
 `ifndef SV_ASSRT_DISABLE
   always_ff @(posedge clk_i) begin
     if (rst_n_i) begin

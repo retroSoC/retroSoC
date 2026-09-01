@@ -84,10 +84,10 @@ used with commercial 32 KiB SRAM and PLL simulation models.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |
-| [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Pull-request open-source regression with a 32 KiB IHP SRAM: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
-| [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist, and OpenSTA coverage with a 32 KiB SRAM assembled from GF180 macros. |
-| [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist simulation, and OpenSTA core timing coverage. |
-| [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist, and OpenSTA coverage with a 32 KiB OpenRAM SRAM. |
+| [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Firmware and behavioral regression with a 32 KiB IHP SRAM; local full-flow commands also support Yosys, netlist Icarus, and OpenSTA. |
+| [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Firmware and behavioral regression with a 32 KiB SRAM assembled from GF180 macros; local full-flow commands support synthesis and timing. |
+| [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Firmware and behavioral regression without a public SRAM macro; local full-flow commands support synthesis and core timing. |
+| [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Firmware and behavioral regression with a 32 KiB OpenRAM SRAM; local full-flow commands support synthesis and timing. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
 | [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV32IMAFDC | `hp_boot` | Linux image/bundle flow and HP RTL validation on the fixed product topology. |
@@ -253,6 +253,11 @@ before those flows and omits synthesis,
 timing, and netlist simulation for fast feedback. `make regress-pr` runs the
 supported IHP130, GF180, ICS55, and SKY130 PR matrices in sequence, including
 slow-corner OpenSTA core timing analysis for each PDK.
+
+GitHub-hosted regression workflows currently pass `--behavioral-only` to avoid
+the unresolved JPEG Yosys memory peak. They retain RTL lint, firmware, Verilator,
+and Icarus behavioral coverage; local `make regress-pr` remains the complete
+synthesis, netlist simulation, and OpenSTA flow.
 
 Build outputs are isolated below `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`. Each variant keeps its
 firmware, generated sources, simulator output, synthesis and timing reports, manifest, warning

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -14,6 +15,7 @@ GENERATOR = ROOT / "rtl/mini/address_map/generate_memory_map.py"
 MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
 USER_EXTENSIONS = ROOT / "rtl/mini/integration/user_extensions.json"
 USER_GENERATOR = ROOT / "rtl/mini/integration/generate_user_extensions.py"
+BOOTER = ROOT / "crt/src/service/booter.c"
 
 
 def generate(output_dir: Path, *, sram: str = "NO", sram_size_kib: int = 128) -> None:
@@ -102,6 +104,28 @@ def test_generated_artifacts_share_the_capacity_baseline(tmp_path: Path) -> None
     assert "RS_SOC_SYSCTRL_PERF_USB2_WAIT_HI_OFFSET UINT32_C(0x000000A0)" in header
     assert "PSRAM (wxa!ri) : ORIGIN = 0x40000000, LENGTH = 0x02000000" in linker
     assert "OPIPSRAM (wxa!ri) : ORIGIN = 0x48000000, LENGTH = 0x08000000" in linker
+
+
+def test_booter_prints_every_public_active_mmio_region() -> None:
+    document = json.loads(MEMORY_MAP.read_text(encoding="utf-8"))
+    expected = {
+        region["symbol"]
+        for region in document["regions"]
+        if region["kind"] == "active"
+        and region.get("public") is True
+        and region["route"] in {"apb4_periph", "apb4_system"}
+    }
+    booter = BOOTER.read_text(encoding="utf-8")
+    mmio_function = booter.split("static void rs_print_mmio_map(void) {", 1)[1].split(
+        "\n}", 1
+    )[0]
+    actual = set(re.findall(r"RS_SOC_([A-Z0-9_]+)_BASE", mmio_function))
+
+    assert actual == expected
+    assert "DMA(8CH)" in mmio_function
+    assert "DMA(6CH)" not in mmio_function
+    assert "RS_SOC_APB4_GA_BASE" not in mmio_function
+    assert "RS_SOC_APB4_APU_BASE" not in mmio_function
 
 
 def test_sram_capacity_selects_one_consistent_hardware_software_window(tmp_path: Path) -> None:

@@ -19,13 +19,23 @@ module jpeg_encode_core_tb;
   logic            busy;
   logic            done;
   logic            error_flag;
-  logic   [   7:0] expected             [0:2047];
-  logic   [   7:0] luma_quant_values    [  0:63];
-  logic   [   7:0] chroma_quant_values  [  0:63];
-  logic   [  31:0] luma_dc_entries      [  0:11];
-  logic   [  31:0] chroma_dc_entries    [  0:11];
-  logic   [  31:0] luma_ac_entries      [ 0:255];
-  logic   [  31:0] chroma_ac_entries    [ 0:255];
+  logic            coefficient_start;
+  logic   [1535:0] coefficient_block;
+  logic   [ 511:0] coefficient_quant;
+  logic   [1599:0] coefficient_reciprocal;
+  logic            coefficient_start_ready;
+  logic   [1535:0] coefficient_result;
+  logic            coefficient_result_valid;
+  logic            coefficient_result_ready;
+  logic            coefficient_table_err;
+  logic            coefficient_overflow;
+  logic   [   7:0] expected                 [0:2047];
+  logic   [   7:0] luma_quant_values        [  0:63];
+  logic   [   7:0] chroma_quant_values      [  0:63];
+  logic   [  31:0] luma_dc_entries          [  0:11];
+  logic   [  31:0] chroma_dc_entries        [  0:11];
+  logic   [  31:0] luma_ac_entries          [ 0:255];
+  logic   [  31:0] chroma_ac_entries        [ 0:255];
   integer          expected_size;
   integer          output_index;
   integer          input_beats;
@@ -57,36 +67,68 @@ module jpeg_encode_core_tb;
 
   always #5 clk = ~clk;
 
-  jpeg_encode_core u_dut (
-      .clk_i              (clk),
-      .rst_n_i            (rst_n),
-      .start_i            (start),
-      .width_i            (test_width[15:0]),
-      .height_i           (test_height[15:0]),
-      .sampling_i         (2'd3),
-      .input_format_i     (3'd2),
-      .restart_interval_i (16'd0),
-      .luma_quant_i       (luma_quant),
-      .luma_reciprocal_i  (luma_reciprocal),
-      .luma_dc_code_i     (luma_dc_code),
-      .luma_dc_length_i   (luma_dc_length),
-      .luma_ac_code_i     (luma_ac_code),
-      .luma_ac_length_i   (luma_ac_length),
-      .chroma_quant_i     (chroma_quant),
-      .chroma_reciprocal_i(chroma_reciprocal),
-      .chroma_dc_code_i   (chroma_dc_code),
-      .chroma_dc_length_i (chroma_dc_length),
-      .chroma_ac_code_i   (chroma_ac_code),
-      .chroma_ac_length_i (chroma_ac_length),
-      .pixel_axis         (pixel_axis),
-      .bitstream_axis     (bitstream_axis),
-      .start_ready_o      (),
-      .busy_o             (busy),
-      .done_o             (done),
-      .error_o            (error_flag)
+  jpeg_coefficient_engine u_coefficient_engine (
+      .clk_i         (clk),
+      .rst_n_i       (rst_n),
+      .start_i       (coefficient_start),
+      .decode_i      (1'b0),
+      .block_i       (coefficient_block),
+      .quant_i       (coefficient_quant),
+      .reciprocal_i  (coefficient_reciprocal),
+      .start_ready_o (coefficient_start_ready),
+      .block_o       (coefficient_result),
+      .result_valid_o(coefficient_result_valid),
+      .result_ready_i(coefficient_result_ready),
+      .table_err_o   (coefficient_table_err),
+      .overflow_o    (coefficient_overflow)
+  );
+
+  jpeg_encode_core #(
+      .ExternalCoefficientEngine(1'b1)
+  ) u_dut (
+      .clk_i                     (clk),
+      .rst_n_i                   (rst_n),
+      .start_i                   (start),
+      .width_i                   (test_width[15:0]),
+      .height_i                  (test_height[15:0]),
+      .sampling_i                (2'd3),
+      .input_format_i            (3'd2),
+      .restart_interval_i        (16'd0),
+      .luma_quant_i              (luma_quant),
+      .luma_reciprocal_i         (luma_reciprocal),
+      .luma_dc_code_i            (luma_dc_code),
+      .luma_dc_length_i          (luma_dc_length),
+      .luma_ac_code_i            (luma_ac_code),
+      .luma_ac_length_i          (luma_ac_length),
+      .chroma_quant_i            (chroma_quant),
+      .chroma_reciprocal_i       (chroma_reciprocal),
+      .chroma_dc_code_i          (chroma_dc_code),
+      .chroma_dc_length_i        (chroma_dc_length),
+      .chroma_ac_code_i          (chroma_ac_code),
+      .chroma_ac_length_i        (chroma_ac_length),
+      .coefficient_start_o       (coefficient_start),
+      .coefficient_block_o       (coefficient_block),
+      .coefficient_quant_o       (coefficient_quant),
+      .coefficient_reciprocal_o  (coefficient_reciprocal),
+      .coefficient_start_ready_i (coefficient_start_ready),
+      .coefficient_result_i      (coefficient_result),
+      .coefficient_result_valid_i(coefficient_result_valid),
+      .coefficient_result_ready_o(coefficient_result_ready),
+      .coefficient_table_err_i   (coefficient_table_err),
+      .coefficient_overflow_i    (coefficient_overflow),
+      .pixel_axis                (pixel_axis),
+      .bitstream_axis            (bitstream_axis),
+      .start_ready_o             (),
+      .busy_o                    (busy),
+      .done_o                    (done),
+      .error_o                   (error_flag)
   );
 
   always @(posedge clk) begin
+    if (rst_n && u_dut.s_builder_block_valid && (u_dut.s_builder_block !== {64{8'd128}})) begin
+      $fatal(1, "MCU builder output changed under block backpressure: block=%0d data=%h",
+             u_dut.u_mcu_builder.s_block_cnt_q, u_dut.s_builder_block);
+    end
     if (rst_n && busy) begin
       cycle_count <= cycle_count + 1;
     end
@@ -129,8 +171,8 @@ module jpeg_encode_core_tb;
         )) begin
       $fatal(1, "encode core test requires JPEG and table plusargs");
     end
-    test_width = 16;
-    test_height = 16;
+    test_width           = 16;
+    test_height          = 16;
     expected_input_beats = 96;
     void'($value$plusargs("test_width=%d", test_width));
     void'($value$plusargs("test_height=%d", test_height));
@@ -199,8 +241,8 @@ module jpeg_encode_core_tb;
       pixel_axis.tlast = input_beats + 1 == expected_input_beats;
     end
     pixel_axis.tvalid = 1'b0;
-    pixel_axis.tlast = 1'b0;
-    timeout_cycles = 3000;
+    pixel_axis.tlast  = 1'b0;
+    timeout_cycles    = 10000;
     while (!done && (timeout_cycles > 0)) begin
       @(negedge clk);
       timeout_cycles--;

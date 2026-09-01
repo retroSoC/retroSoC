@@ -104,38 +104,25 @@ module apb4_jpeg (
   logic   [  31:0] s_table_lookup_data;
   logic            s_table_lookup_valid;
   logic            s_table_lookup_err;
-  logic   [ 511:0] s_cache_quant;
-  logic   [1599:0] s_cache_reciprocal;
-  logic   [ 191:0] s_cache_dc_code;
-  logic   [  59:0] s_cache_dc_len;
-  logic   [4095:0] s_cache_ac_code;
-  logic   [1279:0] s_cache_ac_len;
+  logic   [   3:0] s_cache_entry_kind;
+  logic   [   7:0] s_cache_entry_index;
+  logic   [  31:0] s_cache_entry_data;
+  logic   [  24:0] s_cache_entry_reciprocal;
+  logic            s_cache_entry_valid;
   logic            s_cache_valid;
   logic            s_cache_ready;
   logic            s_cache_err;
-  logic   [ 511:0] s_luma_quant_d;
   logic   [ 511:0] s_luma_quant_q;
-  logic   [1599:0] s_luma_reciprocal_d;
   logic   [1599:0] s_luma_reciprocal_q;
-  logic   [ 191:0] s_luma_dc_code_d;
   logic   [ 191:0] s_luma_dc_code_q;
-  logic   [  59:0] s_luma_dc_len_d;
   logic   [  59:0] s_luma_dc_len_q;
-  logic   [4095:0] s_luma_ac_code_d;
   logic   [4095:0] s_luma_ac_code_q;
-  logic   [1279:0] s_luma_ac_len_d;
   logic   [1279:0] s_luma_ac_len_q;
-  logic   [ 511:0] s_chroma_quant_d;
   logic   [ 511:0] s_chroma_quant_q;
-  logic   [1599:0] s_chroma_reciprocal_d;
   logic   [1599:0] s_chroma_reciprocal_q;
-  logic   [ 191:0] s_chroma_dc_code_d;
   logic   [ 191:0] s_chroma_dc_code_q;
-  logic   [  59:0] s_chroma_dc_len_d;
   logic   [  59:0] s_chroma_dc_len_q;
-  logic   [4095:0] s_chroma_ac_code_d;
   logic   [4095:0] s_chroma_ac_code_q;
-  logic   [1279:0] s_chroma_ac_len_d;
   logic   [1279:0] s_chroma_ac_len_q;
 
   axi4_stream_if #(
@@ -210,6 +197,29 @@ module apb4_jpeg (
   logic [   1:0] s_decode_sampling;
   logic          s_decode_err;
   logic [   4:0] s_decode_err_code;
+  logic          s_encode_coefficient_start;
+  logic [1535:0] s_encode_coefficient_block;
+  logic [ 511:0] s_encode_coefficient_quant;
+  logic [1599:0] s_encode_coefficient_reciprocal;
+  logic          s_encode_coefficient_start_ready;
+  logic          s_encode_coefficient_result_ready;
+  logic          s_decode_coefficient_start;
+  logic [1535:0] s_decode_coefficient_block;
+  logic [ 511:0] s_decode_coefficient_quant;
+  logic [1599:0] s_decode_coefficient_reciprocal;
+  logic          s_decode_coefficient_start_ready;
+  logic          s_decode_coefficient_result_ready;
+  logic          s_coefficient_start;
+  logic          s_coefficient_decode;
+  logic [1535:0] s_coefficient_block;
+  logic [ 511:0] s_coefficient_quant;
+  logic [1599:0] s_coefficient_reciprocal;
+  logic          s_coefficient_start_ready;
+  logic [1535:0] s_coefficient_result;
+  logic          s_coefficient_result_valid;
+  logic          s_coefficient_result_ready;
+  logic          s_coefficient_table_err;
+  logic          s_coefficient_overflow;
 
   logic [  11:0] s_read_mcu_col_d;
   logic [  11:0] s_read_mcu_col_q;
@@ -609,18 +619,6 @@ module apb4_jpeg (
 
   always_comb begin
     s_state_d                   = s_state_q;
-    s_luma_quant_d              = s_luma_quant_q;
-    s_luma_reciprocal_d         = s_luma_reciprocal_q;
-    s_luma_dc_code_d            = s_luma_dc_code_q;
-    s_luma_dc_len_d             = s_luma_dc_len_q;
-    s_luma_ac_code_d            = s_luma_ac_code_q;
-    s_luma_ac_len_d             = s_luma_ac_len_q;
-    s_chroma_quant_d            = s_chroma_quant_q;
-    s_chroma_reciprocal_d       = s_chroma_reciprocal_q;
-    s_chroma_dc_code_d          = s_chroma_dc_code_q;
-    s_chroma_dc_len_d           = s_chroma_dc_len_q;
-    s_chroma_ac_code_d          = s_chroma_ac_code_q;
-    s_chroma_ac_len_d           = s_chroma_ac_len_q;
     s_read_mcu_col_d            = s_read_mcu_col_q;
     s_read_mcu_row_d            = s_read_mcu_row_q;
     s_read_uv_d                 = s_read_uv_q;
@@ -676,7 +674,7 @@ module apb4_jpeg (
     end
     if ((s_state_q == RingFetchRun) && u_dma_read_axis.tvalid && u_dma_read_axis.tready) begin
       s_descriptor_d[s_descriptor_beat_q*64+:64] = u_dma_read_axis.tdata;
-      s_descriptor_beat_d = s_descriptor_beat_q + 1'b1;
+      s_descriptor_beat_d                        = s_descriptor_beat_q + 1'b1;
     end
     if ((s_state_q == RingWriteRun) && u_dma_write_axis.tvalid && u_dma_write_axis.tready) begin
       s_descriptor_beat_d = s_descriptor_beat_q + 1'b1;
@@ -708,8 +706,8 @@ module apb4_jpeg (
             s_state_d = DecodeStart;
           end
         end else if (s_reg_ring_kick) begin
-          s_ring_stalled_d = 1'b0;
-          s_ring_err_d = 1'b0;
+          s_ring_stalled_d   = 1'b0;
+          s_ring_err_d       = 1'b0;
           s_ring_completed_d = 16'd0;
           if (!s_ring_config_valid || quiesce_i || resource_reset_i) begin
             s_err_event_d = 1'b1;
@@ -719,14 +717,14 @@ module apb4_jpeg (
           end else if (s_ring_head_q != s_ring_tail) begin
             s_descriptor_beat_d = 5'd0;
             s_ring_job_active_d = 1'b1;
-            s_state_d = RingFetchStart;
+            s_state_d           = RingFetchStart;
           end
         end
       end
       RingFetchStart: begin
         if (!s_dma_read_busy) begin
           s_descriptor_beat_d = 5'd0;
-          s_state_d = RingFetchRun;
+          s_state_d           = RingFetchRun;
         end
       end
       RingFetchRun: begin
@@ -748,22 +746,22 @@ module apb4_jpeg (
         s_read_pending_d            = 1'b0;
         s_surface_write_pending_d   = 1'b0;
         if (!s_descriptor_q[`APB4_JPEG__DESCRIPTOR_OWN]) begin
-          s_ring_stalled_d = 1'b1;
-          s_ring_event_d = 1'b1;
+          s_ring_stalled_d    = 1'b1;
+          s_ring_event_d      = 1'b1;
           s_ring_job_active_d = 1'b0;
-          s_state_d = Idle;
+          s_state_d           = Idle;
         end else if (!s_start_valid) begin
-          s_descriptor_d[`APB4_JPEG__DESCRIPTOR_OWN] = 1'b0;
-          s_descriptor_d[63:32] = 32'd0;
+          s_descriptor_d[`APB4_JPEG__DESCRIPTOR_OWN]            = 1'b0;
+          s_descriptor_d[63:32]                                 = 32'd0;
           s_descriptor_d[32+`APB4_JPEG__DESCRIPTOR_STATUS_DONE] = 1'b1;
-          s_descriptor_d[32+`APB4_JPEG__DESCRIPTOR_STATUS_ERR] = 1'b1;
-          s_descriptor_d[40+:5] = 5'd1;
-          s_err_event_d = 1'b1;
-          s_err_code_d = 5'd1;
-          s_err_stage_d = 4'd1;
-          s_ring_err_d = 1'b1;
-          s_descriptor_beat_d = 5'd0;
-          s_state_d = RingWriteStart;
+          s_descriptor_d[32+`APB4_JPEG__DESCRIPTOR_STATUS_ERR]  = 1'b1;
+          s_descriptor_d[40+:5]                                 = 5'd1;
+          s_err_event_d                                         = 1'b1;
+          s_err_code_d                                          = 5'd1;
+          s_err_stage_d                                         = 4'd1;
+          s_ring_err_d                                          = 1'b1;
+          s_descriptor_beat_d                                   = 5'd0;
+          s_state_d                                             = RingWriteStart;
         end else if (s_encode_mode) begin
           s_state_d = EncodeCacheLumaStart;
         end else begin
@@ -773,34 +771,22 @@ module apb4_jpeg (
       EncodeCacheLumaStart:   s_state_d = EncodeCacheLumaWait;
       EncodeCacheLumaWait: begin
         if (s_cache_valid) begin
-          s_luma_quant_d      = s_cache_quant;
-          s_luma_reciprocal_d = s_cache_reciprocal;
-          s_luma_dc_code_d    = s_cache_dc_code;
-          s_luma_dc_len_d     = s_cache_dc_len;
-          s_luma_ac_code_d    = s_cache_ac_code;
-          s_luma_ac_len_d     = s_cache_ac_len;
           if (s_cache_err) begin
             s_err_event_d = 1'b1;
             s_err_code_d  = 5'd3;
             s_err_stage_d = 4'd1;
             if (s_ring_job_active_q) begin
               s_descriptor_d[`APB4_JPEG__DESCRIPTOR_OWN] = 1'b0;
-              s_descriptor_d[63:32] = 32'd3;
-              s_descriptor_d[40+:5] = 5'd3;
-              s_descriptor_beat_d = 5'd0;
-              s_ring_err_d = 1'b1;
-              s_state_d = RingWriteStart;
+              s_descriptor_d[63:32]                      = 32'd3;
+              s_descriptor_d[40+:5]                      = 5'd3;
+              s_descriptor_beat_d                        = 5'd0;
+              s_ring_err_d                               = 1'b1;
+              s_state_d                                  = RingWriteStart;
             end else begin
               s_state_d = Idle;
             end
           end else if (s_job_sampling == 2'd0) begin
-            s_chroma_quant_d      = s_cache_quant;
-            s_chroma_reciprocal_d = s_cache_reciprocal;
-            s_chroma_dc_code_d    = s_cache_dc_code;
-            s_chroma_dc_len_d     = s_cache_dc_len;
-            s_chroma_ac_code_d    = s_cache_ac_code;
-            s_chroma_ac_len_d     = s_cache_ac_len;
-            s_state_d             = EncodeStart;
+            s_state_d = EncodeStart;
           end else begin
             s_state_d = EncodeCacheChromaStart;
           end
@@ -809,23 +795,17 @@ module apb4_jpeg (
       EncodeCacheChromaStart: s_state_d = EncodeCacheChromaWait;
       EncodeCacheChromaWait: begin
         if (s_cache_valid) begin
-          s_chroma_quant_d      = s_cache_quant;
-          s_chroma_reciprocal_d = s_cache_reciprocal;
-          s_chroma_dc_code_d    = s_cache_dc_code;
-          s_chroma_dc_len_d     = s_cache_dc_len;
-          s_chroma_ac_code_d    = s_cache_ac_code;
-          s_chroma_ac_len_d     = s_cache_ac_len;
           if (s_cache_err) begin
             s_err_event_d = 1'b1;
             s_err_code_d  = 5'd3;
             s_err_stage_d = 4'd1;
             if (s_ring_job_active_q) begin
               s_descriptor_d[`APB4_JPEG__DESCRIPTOR_OWN] = 1'b0;
-              s_descriptor_d[63:32] = 32'd3;
-              s_descriptor_d[40+:5] = 5'd3;
-              s_descriptor_beat_d = 5'd0;
-              s_ring_err_d = 1'b1;
-              s_state_d = RingWriteStart;
+              s_descriptor_d[63:32]                      = 32'd3;
+              s_descriptor_d[40+:5]                      = 5'd3;
+              s_descriptor_beat_d                        = 5'd0;
+              s_ring_err_d                               = 1'b1;
+              s_state_d                                  = RingWriteStart;
             end else begin
               s_state_d = Idle;
             end
@@ -966,7 +946,7 @@ module apb4_jpeg (
           s_abort_done_d = 1'b1;
           if (s_ring_job_active_q) begin
             s_descriptor_beat_d = 5'd0;
-            s_state_d = RingWriteStart;
+            s_state_d           = RingWriteStart;
           end else begin
             s_state_d = Idle;
           end
@@ -975,17 +955,17 @@ module apb4_jpeg (
       RingWriteStart: begin
         if (!s_dma_write_busy) begin
           s_descriptor_beat_d = 5'd0;
-          s_state_d = RingWriteRun;
+          s_state_d           = RingWriteRun;
         end
       end
       RingWriteRun: begin
         if (s_dma_write_done) begin
-          s_ring_head_d = s_ring_next_head;
+          s_ring_head_d      = s_ring_next_head;
           s_ring_completed_d = s_ring_completed_q + 1'b1;
           if (s_descriptor_q[`APB4_JPEG__DESCRIPTOR_IOC] ||
               (s_irq_coalesce[15:0] == 16'd0) ||
               (s_ring_completed_q + 1'b1 >= s_irq_coalesce[15:0])) begin
-            s_ring_event_d = 1'b1;
+            s_ring_event_d     = 1'b1;
             s_ring_completed_d = 16'd0;
           end
           s_ring_job_active_d = 1'b0;
@@ -994,7 +974,7 @@ module apb4_jpeg (
               !(s_ring_err_q && s_ring_control[`APB4_JPEG__RING_CONTROL_STOP_ERR])) begin
             s_ring_job_active_d = 1'b1;
             s_descriptor_beat_d = 5'd0;
-            s_state_d = RingFetchStart;
+            s_state_d           = RingFetchStart;
           end else begin
             s_state_d = Idle;
           end
@@ -1004,11 +984,11 @@ module apb4_jpeg (
     endcase
 
     if (s_reg_soft_reset && (s_state_q == Idle)) begin
-      s_ring_head_d = 32'd0;
+      s_ring_head_d       = 32'd0;
       s_ring_job_active_d = 1'b0;
-      s_ring_stalled_d = 1'b0;
-      s_ring_err_d = 1'b0;
-      s_ring_completed_d = 16'd0;
+      s_ring_stalled_d    = 1'b0;
+      s_ring_err_d        = 1'b0;
+      s_ring_completed_d  = 16'd0;
     end
 
     if ((s_reg_abort || resource_reset_i) && (s_state_q != Idle)) begin
@@ -1018,7 +998,7 @@ module apb4_jpeg (
            (s_state_q == EncodeStart) || (s_state_q == EncodeRun) ||
            (s_state_q == DecodeStart) || (s_state_q == DecodeRun))) begin
         s_descriptor_d[`APB4_JPEG__DESCRIPTOR_OWN] = 1'b0;
-        s_descriptor_d[63:32] = 32'd5;
+        s_descriptor_d[63:32]                      = 32'd5;
       end else begin
         s_ring_job_active_d = 1'b0;
       end
@@ -1033,8 +1013,8 @@ module apb4_jpeg (
       s_ring_err_d   = s_ring_job_active_q;
       if (s_ring_job_active_q && ((s_state_q == EncodeRun) || (s_state_q == DecodeRun))) begin
         s_descriptor_d[`APB4_JPEG__DESCRIPTOR_OWN] = 1'b0;
-        s_descriptor_d[63:32] = 32'd3;
-        s_descriptor_d[40+:5] = s_dma_err_read ? 5'd13 : 5'd14;
+        s_descriptor_d[63:32]                      = 32'd3;
+        s_descriptor_d[40+:5]                      = s_dma_err_read ? 5'd13 : 5'd14;
       end else begin
         s_ring_job_active_d = 1'b0;
       end
@@ -1046,9 +1026,9 @@ module apb4_jpeg (
       s_err_stage_d = 4'd7;
       if (s_ring_job_active_q) begin
         s_descriptor_d[`APB4_JPEG__DESCRIPTOR_OWN] = 1'b0;
-        s_descriptor_d[63:32] = 32'd3;
-        s_descriptor_d[40+:5] = s_encode_err ? 5'd18 : s_decode_err_code;
-        s_ring_err_d = 1'b1;
+        s_descriptor_d[63:32]                      = 32'd3;
+        s_descriptor_d[40+:5]                      = s_encode_err ? 5'd18 : s_decode_err_code;
+        s_ring_err_d                               = 1'b1;
       end
       s_state_d = AbortDrain;
     end
@@ -1147,30 +1127,60 @@ module apb4_jpeg (
   );
 
   jpeg_table_cache u_encode_table_cache (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .start_i         (s_cache_start),
-      .context_i       (s_job_config[9:8]),
-      .quant_id_i      (s_cache_quant_id),
-      .dc_id_i         (s_cache_dc_id),
-      .ac_id_i         (s_cache_ac_id),
-      .start_ready_o   (),
-      .lookup_o        (s_table_lookup),
-      .lookup_context_o(s_table_lookup_context),
-      .lookup_kind_o   (s_table_lookup_kind),
-      .lookup_index_o  (s_table_lookup_index),
-      .lookup_data_i   (s_table_lookup_data),
-      .lookup_valid_i  (s_table_lookup_valid),
-      .lookup_err_i    (s_table_lookup_err),
-      .quant_o         (s_cache_quant),
-      .reciprocal_o    (s_cache_reciprocal),
-      .dc_code_o       (s_cache_dc_code),
-      .dc_length_o     (s_cache_dc_len),
-      .ac_code_o       (s_cache_ac_code),
-      .ac_length_o     (s_cache_ac_len),
-      .result_valid_o  (s_cache_valid),
-      .result_ready_i  (s_cache_ready),
-      .error_o         (s_cache_err)
+      .clk_i             (clk_i),
+      .rst_n_i           (rst_n_i),
+      .start_i           (s_cache_start),
+      .context_i         (s_job_config[9:8]),
+      .quant_id_i        (s_cache_quant_id),
+      .dc_id_i           (s_cache_dc_id),
+      .ac_id_i           (s_cache_ac_id),
+      .start_ready_o     (),
+      .lookup_o          (s_table_lookup),
+      .lookup_context_o  (s_table_lookup_context),
+      .lookup_kind_o     (s_table_lookup_kind),
+      .lookup_index_o    (s_table_lookup_index),
+      .lookup_data_i     (s_table_lookup_data),
+      .lookup_valid_i    (s_table_lookup_valid),
+      .lookup_err_i      (s_table_lookup_err),
+      .entry_kind_o      (s_cache_entry_kind),
+      .entry_index_o     (s_cache_entry_index),
+      .entry_data_o      (s_cache_entry_data),
+      .entry_reciprocal_o(s_cache_entry_reciprocal),
+      .entry_valid_o     (s_cache_entry_valid),
+      .entry_ready_i     (1'b1),
+      .result_valid_o    (s_cache_valid),
+      .result_ready_i    (s_cache_ready),
+      .error_o           (s_cache_err)
+  );
+
+  jpeg_table_register_bank u_luma_table_register_bank (
+      .clk_i             (clk_i),
+      .write_i           (s_cache_entry_valid && (s_state_q == EncodeCacheLumaWait)),
+      .entry_kind_i      (s_cache_entry_kind),
+      .entry_index_i     (s_cache_entry_index),
+      .entry_data_i      (s_cache_entry_data),
+      .entry_reciprocal_i(s_cache_entry_reciprocal),
+      .quant_o           (s_luma_quant_q),
+      .reciprocal_o      (s_luma_reciprocal_q),
+      .dc_code_o         (s_luma_dc_code_q),
+      .dc_length_o       (s_luma_dc_len_q),
+      .ac_code_o         (s_luma_ac_code_q),
+      .ac_length_o       (s_luma_ac_len_q)
+  );
+
+  jpeg_table_register_bank u_chroma_table_register_bank (
+      .clk_i             (clk_i),
+      .write_i           (s_cache_entry_valid && (s_state_q == EncodeCacheChromaWait)),
+      .entry_kind_i      (s_cache_entry_kind),
+      .entry_index_i     (s_cache_entry_index),
+      .entry_data_i      (s_cache_entry_data),
+      .entry_reciprocal_i(s_cache_entry_reciprocal),
+      .quant_o           (s_chroma_quant_q),
+      .reciprocal_o      (s_chroma_reciprocal_q),
+      .dc_code_o         (s_chroma_dc_code_q),
+      .dc_length_o       (s_chroma_dc_len_q),
+      .ac_code_o         (s_chroma_ac_code_q),
+      .ac_length_o       (s_chroma_ac_len_q)
   );
 
   jpeg_dma u_dma (
@@ -1205,50 +1215,106 @@ module apb4_jpeg (
       .axi4              (axi4)
   );
 
-  jpeg_encode_core u_encode_core (
-      .clk_i              (clk_i),
-      .rst_n_i            (s_core_rst_n),
-      .start_i            (s_encode_start),
-      .width_i            (s_job_width),
-      .height_i           (s_job_height),
-      .sampling_i         (s_job_sampling),
-      .input_format_i     (s_job_input_format),
-      .restart_interval_i (s_restart_interval[15:0]),
-      .luma_quant_i       (s_luma_quant_q),
-      .luma_reciprocal_i  (s_luma_reciprocal_q),
-      .luma_dc_code_i     (s_luma_dc_code_q),
-      .luma_dc_length_i   (s_luma_dc_len_q),
-      .luma_ac_code_i     (s_luma_ac_code_q),
-      .luma_ac_length_i   (s_luma_ac_len_q),
-      .chroma_quant_i     (s_chroma_quant_q),
-      .chroma_reciprocal_i(s_chroma_reciprocal_q),
-      .chroma_dc_code_i   (s_chroma_dc_code_q),
-      .chroma_dc_length_i (s_chroma_dc_len_q),
-      .chroma_ac_code_i   (s_chroma_ac_code_q),
-      .chroma_ac_length_i (s_chroma_ac_len_q),
-      .pixel_axis         (u_encode_pixel_axis),
-      .bitstream_axis     (u_encode_bitstream_axis),
-      .start_ready_o      (),
-      .busy_o             (s_encode_busy),
-      .done_o             (s_encode_done),
-      .error_o            (s_encode_err)
+  assign s_coefficient_start = s_encode_coefficient_start || s_decode_coefficient_start;
+  assign s_coefficient_decode = s_decode_coefficient_start;
+  assign s_coefficient_block = s_decode_coefficient_start ?
+                                   s_decode_coefficient_block : s_encode_coefficient_block;
+  assign s_coefficient_quant = s_decode_coefficient_start ?
+                                   s_decode_coefficient_quant : s_encode_coefficient_quant;
+  assign s_coefficient_reciprocal = s_decode_coefficient_start ?
+                                        s_decode_coefficient_reciprocal :
+                                        s_encode_coefficient_reciprocal;
+  assign s_encode_coefficient_start_ready = s_coefficient_start_ready &&
+                                            !s_decode_coefficient_start;
+  assign s_decode_coefficient_start_ready = s_coefficient_start_ready;
+  assign s_coefficient_result_ready = (s_state_q == DecodeRun) ?
+                                          s_decode_coefficient_result_ready :
+                                          s_encode_coefficient_result_ready;
+
+  jpeg_coefficient_engine u_coefficient_engine (
+      .clk_i         (clk_i),
+      .rst_n_i       (s_core_rst_n),
+      .start_i       (s_coefficient_start),
+      .decode_i      (s_coefficient_decode),
+      .block_i       (s_coefficient_block),
+      .quant_i       (s_coefficient_quant),
+      .reciprocal_i  (s_coefficient_reciprocal),
+      .start_ready_o (s_coefficient_start_ready),
+      .block_o       (s_coefficient_result),
+      .result_valid_o(s_coefficient_result_valid),
+      .result_ready_i(s_coefficient_result_ready),
+      .table_err_o   (s_coefficient_table_err),
+      .overflow_o    (s_coefficient_overflow)
   );
 
-  jpeg_decode_core u_decode_core (
-      .clk_i          (clk_i),
-      .rst_n_i        (s_core_rst_n),
-      .start_i        (s_decode_start),
-      .output_format_i(s_job_output_format),
-      .bitstream_axis (u_decode_bitstream_axis),
-      .pixel_axis     (u_decode_pixel_axis),
-      .start_ready_o  (),
-      .busy_o         (s_decode_busy),
-      .done_o         (s_decode_done),
-      .width_o        (s_decode_width),
-      .height_o       (s_decode_height),
-      .sampling_o     (s_decode_sampling),
-      .error_o        (s_decode_err),
-      .error_code_o   (s_decode_err_code)
+  jpeg_encode_core #(
+      .ExternalCoefficientEngine(1'b1)
+  ) u_encode_core (
+      .clk_i                     (clk_i),
+      .rst_n_i                   (s_core_rst_n),
+      .start_i                   (s_encode_start),
+      .width_i                   (s_job_width),
+      .height_i                  (s_job_height),
+      .sampling_i                (s_job_sampling),
+      .input_format_i            (s_job_input_format),
+      .restart_interval_i        (s_restart_interval[15:0]),
+      .luma_quant_i              (s_luma_quant_q),
+      .luma_reciprocal_i         (s_luma_reciprocal_q),
+      .luma_dc_code_i            (s_luma_dc_code_q),
+      .luma_dc_length_i          (s_luma_dc_len_q),
+      .luma_ac_code_i            (s_luma_ac_code_q),
+      .luma_ac_length_i          (s_luma_ac_len_q),
+      .chroma_quant_i            (s_chroma_quant_q),
+      .chroma_reciprocal_i       (s_chroma_reciprocal_q),
+      .chroma_dc_code_i          (s_chroma_dc_code_q),
+      .chroma_dc_length_i        (s_chroma_dc_len_q),
+      .chroma_ac_code_i          (s_chroma_ac_code_q),
+      .chroma_ac_length_i        (s_chroma_ac_len_q),
+      .coefficient_start_o       (s_encode_coefficient_start),
+      .coefficient_block_o       (s_encode_coefficient_block),
+      .coefficient_quant_o       (s_encode_coefficient_quant),
+      .coefficient_reciprocal_o  (s_encode_coefficient_reciprocal),
+      .coefficient_start_ready_i (s_encode_coefficient_start_ready),
+      .coefficient_result_i      (s_coefficient_result),
+      .coefficient_result_valid_i(s_coefficient_result_valid && (s_state_q == EncodeRun)),
+      .coefficient_result_ready_o(s_encode_coefficient_result_ready),
+      .coefficient_table_err_i   (s_coefficient_table_err),
+      .coefficient_overflow_i    (s_coefficient_overflow),
+      .pixel_axis                (u_encode_pixel_axis),
+      .bitstream_axis            (u_encode_bitstream_axis),
+      .start_ready_o             (),
+      .busy_o                    (s_encode_busy),
+      .done_o                    (s_encode_done),
+      .error_o                   (s_encode_err)
+  );
+
+  jpeg_decode_core #(
+      .ExternalCoefficientEngine(1'b1)
+  ) u_decode_core (
+      .clk_i                     (clk_i),
+      .rst_n_i                   (s_core_rst_n),
+      .start_i                   (s_decode_start),
+      .output_format_i           (s_job_output_format),
+      .coefficient_start_o       (s_decode_coefficient_start),
+      .coefficient_block_o       (s_decode_coefficient_block),
+      .coefficient_quant_o       (s_decode_coefficient_quant),
+      .coefficient_reciprocal_o  (s_decode_coefficient_reciprocal),
+      .coefficient_start_ready_i (s_decode_coefficient_start_ready),
+      .coefficient_result_i      (s_coefficient_result),
+      .coefficient_result_valid_i(s_coefficient_result_valid && (s_state_q == DecodeRun)),
+      .coefficient_result_ready_o(s_decode_coefficient_result_ready),
+      .coefficient_table_err_i   (s_coefficient_table_err),
+      .coefficient_overflow_i    (s_coefficient_overflow),
+      .bitstream_axis            (u_decode_bitstream_axis),
+      .pixel_axis                (u_decode_pixel_axis),
+      .start_ready_o             (),
+      .busy_o                    (s_decode_busy),
+      .done_o                    (s_decode_done),
+      .width_o                   (s_decode_width),
+      .height_o                  (s_decode_height),
+      .sampling_o                (s_decode_sampling),
+      .error_o                   (s_decode_err),
+      .error_code_o              (s_decode_err_code)
   );
 
   dffr #(
@@ -1314,102 +1380,6 @@ module apb4_jpeg (
       .rst_n_i(rst_n_i),
       .dat_i  (s_ring_completed_d),
       .dat_o  (s_ring_completed_q)
-  );
-  dffr #(
-      .DATA_WIDTH(512)
-  ) u_luma_quant_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_quant_d),
-      .dat_o  (s_luma_quant_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1600)
-  ) u_luma_reciprocal_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_reciprocal_d),
-      .dat_o  (s_luma_reciprocal_q)
-  );
-  dffr #(
-      .DATA_WIDTH(192)
-  ) u_luma_dc_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_dc_code_d),
-      .dat_o  (s_luma_dc_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(60)
-  ) u_luma_dc_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_dc_len_d),
-      .dat_o  (s_luma_dc_len_q)
-  );
-  dffr #(
-      .DATA_WIDTH(4096)
-  ) u_luma_ac_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_ac_code_d),
-      .dat_o  (s_luma_ac_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1280)
-  ) u_luma_ac_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_luma_ac_len_d),
-      .dat_o  (s_luma_ac_len_q)
-  );
-  dffr #(
-      .DATA_WIDTH(512)
-  ) u_chroma_quant_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_quant_d),
-      .dat_o  (s_chroma_quant_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1600)
-  ) u_chroma_reciprocal_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_reciprocal_d),
-      .dat_o  (s_chroma_reciprocal_q)
-  );
-  dffr #(
-      .DATA_WIDTH(192)
-  ) u_chroma_dc_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_dc_code_d),
-      .dat_o  (s_chroma_dc_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(60)
-  ) u_chroma_dc_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_dc_len_d),
-      .dat_o  (s_chroma_dc_len_q)
-  );
-  dffr #(
-      .DATA_WIDTH(4096)
-  ) u_chroma_ac_code_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_ac_code_d),
-      .dat_o  (s_chroma_ac_code_q)
-  );
-  dffr #(
-      .DATA_WIDTH(1280)
-  ) u_chroma_ac_len_dffr (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .dat_i  (s_chroma_ac_len_d),
-      .dat_o  (s_chroma_ac_len_q)
   );
   dffr #(
       .DATA_WIDTH(12)

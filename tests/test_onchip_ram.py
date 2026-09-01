@@ -267,6 +267,64 @@ def test_ihp130_wrapper_uses_functional_1024x32_macro(tmp_path: Path) -> None:
     assert "RM_IHPSG13_1P_1024x64_c2_bm_bist" not in wrapper
 
 
+@pytest.mark.parametrize("macro", (False, True))
+def test_jpeg_workspace_sram_wrappers(tmp_path: Path, macro: bool) -> None:
+    verilator = shutil.which("verilator")
+    if verilator is None:
+        return
+
+    output = tmp_path / ("jpeg_workspace_macro" if macro else "jpeg_workspace_behavioral")
+    ccache_tmp = tmp_path / ("ccache-jpeg-macro" if macro else "ccache-jpeg-behavioral")
+    ccache_tmp.mkdir()
+    command = [
+        verilator,
+        "--binary",
+        "--timing",
+        "-Wno-fatal",
+        "--top-module",
+        "tc_sram_jpeg_workspace_tb",
+    ]
+    if macro:
+        sram_root = (
+            ROOT / "physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog"
+        )
+        command.extend(
+            [
+                "+define+PDK_IHP130",
+                "+define+HAVE_SRAM_MACRO",
+                "+define+FUNCTIONAL",
+                "+define+SYNTHESIS",
+                str(sram_root / "RM_IHPSG13_1P_core_behavioral_bm_bist.v"),
+                str(sram_root / "RM_IHPSG13_2P_core_behavioral_ideal.v"),
+                str(sram_root / "RM_IHPSG13_1P_64x64_c2_bm_bist.v"),
+                str(sram_root / "RM_IHPSG13_2P_64x32_c2.v"),
+            ]
+        )
+    command.extend(
+        [
+            str(ROOT / "rtl/tech/tc_sram.sv"),
+            str(ROOT / "tests/rtl/tc_sram_jpeg_workspace_tb.sv"),
+            "-Mdir",
+            str(tmp_path / ("obj-jpeg-macro" if macro else "obj-jpeg-behavioral")),
+            "-o",
+            str(output),
+        ]
+    )
+    subprocess.run(
+        command,
+        check=True,
+        text=True,
+        capture_output=True,
+        env={
+            **os.environ,
+            "CCACHE_DIR": str(ccache_tmp),
+            "CCACHE_TEMPDIR": str(ccache_tmp),
+        },
+    )
+    result = subprocess.run([output], check=True, text=True, capture_output=True)
+    assert "JPEG SRAM workspace wrapper test passed" in result.stdout
+
+
 def test_ics55_wrapper_preserves_active_low_controls_and_byte_masks(tmp_path: Path) -> None:
     verilator = shutil.which("verilator")
     if verilator is None:

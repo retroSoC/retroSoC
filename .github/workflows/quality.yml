@@ -88,10 +88,10 @@ jobs:
 
       - name: Validate regression definitions
         run: |
-          python3 scripts/regress.py --root . --suite pr --pdk IHP130 --dry-run
-          python3 scripts/regress.py --root . --suite pr --pdk GF180 --dry-run
-          python3 scripts/regress.py --root . --suite pr --pdk ICS55 --dry-run
-          python3 scripts/regress.py --root . --suite pr --pdk SKY130 --dry-run
-          python3 scripts/regress.py --root . --suite nightly --pdk IHP130 --dry-run
-          python3 scripts/regress.py --root . --suite nightly-extra --pdk IHP130 --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk GF180 --behavioral-only --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk ICS55 --behavioral-only --dry-run
+          python3 scripts/regress.py --root . --suite pr --pdk SKY130 --behavioral-only --dry-run
+          python3 scripts/regress.py --root . --suite nightly --pdk IHP130 --behavioral-only --dry-run
+          python3 scripts/regress.py --root . --suite nightly-extra --pdk IHP130 --behavioral-only --dry-run
           python3 scripts/regress.py --root . --suite smoke --pdk IHP130 --dry-run

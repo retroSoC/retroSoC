@@ -4,7 +4,8 @@
 
 module jpeg_entropy_decoder #(
     parameter int unsigned ElementWidth = 24,
-    parameter int unsigned WindowWidth  = 32
+    parameter int unsigned WindowWidth  = 32,
+    parameter int unsigned SearchLanes  = 16
 ) (
     // verilog_format: off -- preserve block, table, and bit-window interface columns
     input  logic                                  clk_i,
@@ -41,6 +42,8 @@ module jpeg_entropy_decoder #(
   logic        [                1:0] s_state_bits_q;
   logic        [                6:0] s_coeff_index_d;
   logic        [                6:0] s_coeff_index_q;
+  logic        [                7:0] s_search_base_d;
+  logic        [                7:0] s_search_base_q;
   logic        [64*ElementWidth-1:0] s_block_d;
   logic        [64*ElementWidth-1:0] s_block_q;
   logic signed [   ElementWidth-1:0] s_dc_d;
@@ -168,15 +171,17 @@ module jpeg_entropy_decoder #(
         end
       end
     end else if (s_state_q == Ac) begin
-      for (int unsigned symbol = 0; symbol < 256; symbol++) begin
-        if (!s_match && (ac_length_i[symbol*5+:5] != 5'd0) &&
-            (6'(ac_length_i[symbol*5+:5]) <= bit_count_i) &&
-            (ac_code_i[symbol*16+:16] ==
-             16'(bit_window_i >> (WindowWidth - int'(ac_length_i[symbol*5+:5]))))) begin
+      for (int unsigned lane = 0; lane < SearchLanes; lane++) begin
+        if (!s_match && ((int'(s_search_base_q) + lane) < 256) &&
+            (ac_length_i[(int'(s_search_base_q)+lane)*5+:5] != 5'd0) &&
+            (6'(ac_length_i[(int'(s_search_base_q)+lane)*5+:5]) <= bit_count_i) &&
+            (ac_code_i[(int'(s_search_base_q)+lane)*16+:16] ==
+             16'(bit_window_i >>
+                 (WindowWidth - int'(ac_length_i[(int'(s_search_base_q)+lane)*5+:5]))))) begin
           s_match    = 1'b1;
-          s_symbol   = 8'(symbol);
-          s_code_len = ac_length_i[symbol*5+:5];
-          s_code     = ac_code_i[symbol*16+:16];
+          s_symbol   = s_search_base_q + 8'(lane);
+          s_code_len = ac_length_i[(int'(s_search_base_q)+lane)*5+:5];
+          s_code     = ac_code_i[(int'(s_search_base_q)+lane)*16+:16];
         end
       end
     end
@@ -185,6 +190,7 @@ module jpeg_entropy_decoder #(
   always_comb begin
     s_state_d = s_state_q;
     s_coeff_index_d = s_coeff_index_q;
+    s_search_base_d = s_search_base_q;
     s_block_d = s_block_q;
     s_dc_d = s_dc_q;
     s_err_d = s_err_q;
@@ -203,6 +209,7 @@ module jpeg_entropy_decoder #(
       Idle: begin
         if (start_i) begin
           s_coeff_index_d = 7'd1;
+          s_search_base_d = 8'd0;
           s_block_d       = '0;
           s_dc_d          = previous_dc_i;
           s_err_d         = 1'b0;
@@ -215,6 +222,7 @@ module jpeg_entropy_decoder #(
           bit_consume_valid_o        = 1'b1;
           s_dc_d                     = s_dc_q + s_value;
           s_block_d[0+:ElementWidth] = s_dc_q + s_value;
+          s_search_base_d            = 8'd0;
           s_state_d                  = Ac;
         end else if (bit_count_i >= CountWidth'(16)) begin
           s_err_d   = 1'b1;
@@ -226,6 +234,7 @@ module jpeg_entropy_decoder #(
           if (s_symbol == 8'h00) begin
             bit_consume_o       = CountWidth'(s_code_len);
             bit_consume_valid_o = 1'b1;
+            s_search_base_d     = 8'd0;
             s_state_d           = Result;
           end else if (s_symbol == 8'hf0) begin
             bit_consume_o       = CountWidth'(s_code_len);
@@ -235,6 +244,7 @@ module jpeg_entropy_decoder #(
               s_state_d = Result;
             end else begin
               s_coeff_index_d = s_coeff_index_q + 7'd16;
+              s_search_base_d = 8'd0;
             end
           end else if ((s_value_len == 5'd0) || (s_value_len > 5'd10) ||
                        (s_next_index >= 7'd64)) begin
@@ -248,11 +258,19 @@ module jpeg_entropy_decoder #(
               s_state_d = Result;
             end else begin
               s_coeff_index_d = s_next_index + 1'b1;
+              s_search_base_d = 8'd0;
             end
           end
-        end else if (bit_count_i >= CountWidth'(16)) begin
-          s_err_d   = 1'b1;
-          s_state_d = Result;
+        end else if (!s_match) begin
+          if ((int'(s_search_base_q) + SearchLanes) >= 256) begin
+            s_search_base_d = 8'd0;
+            if (bit_count_i >= CountWidth'(16)) begin
+              s_err_d   = 1'b1;
+              s_state_d = Result;
+            end
+          end else begin
+            s_search_base_d = s_search_base_q + 8'(SearchLanes);
+          end
         end
       end
       Result: begin
@@ -281,6 +299,14 @@ module jpeg_entropy_decoder #(
       .dat_o  (s_coeff_index_q)
   );
   dffr #(
+      .DATA_WIDTH(8)
+  ) u_search_base_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_search_base_d),
+      .dat_o  (s_search_base_q)
+  );
+  dffr #(
       .DATA_WIDTH(64 * ElementWidth)
   ) u_block_dffr (
       .clk_i  (clk_i),
@@ -305,7 +331,8 @@ module jpeg_entropy_decoder #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (ElementWidth < 16 || WindowWidth < 27) begin
+    if ((ElementWidth < 16) || (WindowWidth < 27) || (SearchLanes < 1) ||
+        (SearchLanes > 256) || ((256 % SearchLanes) != 0)) begin
       $fatal(1, "jpeg_entropy_decoder: invalid coefficient or window width");
     end
   end

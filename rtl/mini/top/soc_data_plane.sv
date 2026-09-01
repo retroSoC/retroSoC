@@ -639,9 +639,7 @@ module soc_data_plane (
                         (|s_guard_clear_busy) || s_lp_clear_busy || s_ext_clear_busy ||
                         s_jpeg_clear_busy;
   assign s_unused_epoch = {
-    ^unused_io_epoch,
-    ^unused_target_epoch,
-    ^{unused_lp_epoch, unused_ext_epoch, unused_jpeg_epoch}
+    ^unused_io_epoch, ^unused_target_epoch, ^{unused_lp_epoch, unused_ext_epoch, unused_jpeg_epoch}
   };
 
   axi4_connector u_qpi_gateway_connector (

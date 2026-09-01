@@ -107,10 +107,12 @@ def validate(document_path: Path, root: Path) -> None:
         else:
             sta_sources[name] = require_identifier(source_domain, f"{field}.sta.source_domain")
         object_type = sta.get("object_type", "pin")
-        if object_type not in {"pin", "port"}:
-            raise ValueError(f"{field}.sta.object_type must be pin or port")
+        if object_type not in {"net_driver", "pin", "port"}:
+            raise ValueError(f"{field}.sta.object_type must be net_driver, pin, or port")
         if object_type == "pin":
             require_hierarchical_pin(sta.get("pin"), f"{field}.sta.pin")
+        elif object_type == "net_driver":
+            require_identifier(sta.get("net"), f"{field}.sta.net")
         elif source_port is None:
             raise ValueError(f"{field}.sta port object requires source_port")
         require_positive_number(sta.get("period_ns"), f"{field}.sta.period_ns")

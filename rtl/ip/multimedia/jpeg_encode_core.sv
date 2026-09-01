@@ -2,7 +2,9 @@
 // retroSoC is licensed under Mulan PSL v2.
 // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND.
 
-module jpeg_encode_core (
+module jpeg_encode_core #(
+    parameter bit ExternalCoefficientEngine = 1'b0
+) (
     // verilog_format: off -- preserve command, tables, pixel input, and JPEG output columns
     input  logic              clk_i,
     input  logic              rst_n_i,
@@ -24,6 +26,16 @@ module jpeg_encode_core (
     input  logic [ 59:0]      chroma_dc_length_i,
     input  logic [4095:0]     chroma_ac_code_i,
     input  logic [1279:0]     chroma_ac_length_i,
+    output logic              coefficient_start_o,
+    output logic [1535:0]     coefficient_block_o,
+    output logic [511:0]      coefficient_quant_o,
+    output logic [1599:0]     coefficient_reciprocal_o,
+    input  logic              coefficient_start_ready_i,
+    input  logic [1535:0]     coefficient_result_i,
+    input  logic              coefficient_result_valid_i,
+    output logic              coefficient_result_ready_o,
+    input  logic              coefficient_table_err_i,
+    input  logic              coefficient_overflow_i,
     axi4_stream_if.sink       pixel_axis,
     axi4_stream_if.source     bitstream_axis,
     output logic              start_ready_o,
@@ -177,6 +189,9 @@ module jpeg_encode_core (
       s_block_component = 3'd0;
     end
   end
+
+  assign coefficient_quant_o = s_selected_quant;
+  assign coefficient_reciprocal_o = s_selected_reciprocal;
 
   assign s_selected_quant = (s_block_component == 3'd0) ? luma_quant_i : chroma_quant_i;
   assign s_selected_reciprocal = (s_block_component == 3'd0) ?
@@ -391,29 +406,39 @@ module jpeg_encode_core (
       .error_o       (s_builder_err)
   );
 
-  jpeg_block_encoder u_block_encoder (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .start_i       (s_block_encoder_start),
-      .block_i       (s_builder_block),
-      .previous_dc_i (s_dc_predictor_q[s_block_component]),
-      .quant_i       (s_selected_quant),
-      .reciprocal_i  (s_selected_reciprocal),
-      .dc_code_i     (s_selected_dc_code),
-      .dc_length_i   (s_selected_dc_len),
-      .ac_code_i     (s_selected_ac_code),
-      .ac_length_i   (s_selected_ac_len),
-      .start_ready_o (),
-      .token_bits_o  (s_token_bits),
-      .token_length_o(s_token_len),
-      .token_count_o (s_token_cnt),
-      .token_valid_o (s_token_valid),
-      .token_last_o  (s_token_last),
-      .token_ready_i (s_token_ready),
-      .dc_o          (s_block_dc),
-      .result_valid_o(s_block_result_valid),
-      .result_ready_i(s_block_result_ready),
-      .error_o       (s_block_err)
+  jpeg_block_encoder #(
+      .ExternalCoefficientEngine(ExternalCoefficientEngine)
+  ) u_block_encoder (
+      .clk_i                     (clk_i),
+      .rst_n_i                   (rst_n_i),
+      .start_i                   (s_block_encoder_start),
+      .block_i                   (s_builder_block),
+      .previous_dc_i             (s_dc_predictor_q[s_block_component]),
+      .quant_i                   (s_selected_quant),
+      .reciprocal_i              (s_selected_reciprocal),
+      .dc_code_i                 (s_selected_dc_code),
+      .dc_length_i               (s_selected_dc_len),
+      .ac_code_i                 (s_selected_ac_code),
+      .ac_length_i               (s_selected_ac_len),
+      .coefficient_start_o       (coefficient_start_o),
+      .coefficient_block_o       (coefficient_block_o),
+      .coefficient_start_ready_i (coefficient_start_ready_i),
+      .coefficient_result_i      (coefficient_result_i),
+      .coefficient_result_valid_i(coefficient_result_valid_i),
+      .coefficient_result_ready_o(coefficient_result_ready_o),
+      .coefficient_table_err_i   (coefficient_table_err_i),
+      .coefficient_overflow_i    (coefficient_overflow_i),
+      .start_ready_o             (),
+      .token_bits_o              (s_token_bits),
+      .token_length_o            (s_token_len),
+      .token_count_o             (s_token_cnt),
+      .token_valid_o             (s_token_valid),
+      .token_last_o              (s_token_last),
+      .token_ready_i             (s_token_ready),
+      .dc_o                      (s_block_dc),
+      .result_valid_o            (s_block_result_valid),
+      .result_ready_i            (s_block_result_ready),
+      .error_o                   (s_block_err)
   );
 
   jpeg_bit_packer u_bit_packer (

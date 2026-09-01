@@ -60,7 +60,12 @@ def load_contract(domains_path: Path, pin_map_path: Path) -> tuple[list[dict[str
                 f"clock domain {domain['name']} references an unknown pad: {source_port}"
             )
         object_type = sta.get("object_type", "pin")
-        observation = source_port if object_type == "port" else sta["pin"].replace(".", "/")
+        if object_type == "port":
+            observation = source_port
+        elif object_type == "net_driver":
+            observation = sta["net"]
+        else:
+            observation = sta["pin"].replace(".", "/")
         parsed.append(
             {
                 "name": domain["name"],

@@ -146,13 +146,13 @@ module apb4_jpeg_ring_tb;
       memory[index] = 64'd0;
     end
     memory[32'h1000>>3] = 64'h0000000000000001;
-    apb4.paddr   = '0;
-    apb4.pprot   = '0;
-    apb4.psel    = 1'b0;
-    apb4.penable = 1'b0;
-    apb4.pwrite  = 1'b0;
-    apb4.pwdata  = '0;
-    apb4.pstrb   = '0;
+    apb4.paddr          = '0;
+    apb4.pprot          = '0;
+    apb4.psel           = 1'b0;
+    apb4.penable        = 1'b0;
+    apb4.pwrite         = 1'b0;
+    apb4.pwdata         = '0;
+    apb4.pstrb          = '0;
     repeat (3) @(posedge clk);
     rst_n = 1'b1;
 

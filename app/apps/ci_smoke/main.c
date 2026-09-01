@@ -74,6 +74,8 @@ static bool rs_ci_smoke_fabric_monitor_start(void) {
 }
 
 static bool rs_ci_smoke_fabric_monitor_check(void) {
+    const rs_fabric_target_t active_memory_target =
+        (RS_SOC_HAS_SRAM != 0U) ? RS_FABRIC_TARGET_SRAM : RS_FABRIC_TARGET_SDRAM;
     rs_fabric_monitor_status_t status;
     rs_fabric_master_stats_t master;
     rs_fabric_target_stats_t target;
@@ -83,7 +85,7 @@ static bool rs_ci_smoke_fabric_monitor_check(void) {
     if ((rs_fabric_monitor_snapshot() != RS_OK) ||
         (rs_fabric_monitor_get_status(&status) != RS_OK) ||
         (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_LP, &master) != RS_OK) ||
-        (rs_fabric_monitor_read_target(RS_FABRIC_TARGET_SRAM, &target) != RS_OK) ||
+        (rs_fabric_monitor_read_target(active_memory_target, &target) != RS_OK) ||
         (rs_fabric_monitor_read_fault(&fault) != RS_OK) ||
         (rs_fabric_monitor_get_flush_count(&flush_count) != RS_OK)) {
         return false;

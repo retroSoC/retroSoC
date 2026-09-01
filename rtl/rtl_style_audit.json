@@ -144,6 +144,7 @@
       "jpeg_block_encoder.sv",
       "jpeg_byte_joiner.sv",
       "jpeg_byte_unpacker.sv",
+      "jpeg_coefficient_engine.sv",
       "jpeg_decode_core.sv",
       "jpeg_define.svh",
       "jpeg_dma.sv",
@@ -158,6 +159,7 @@
       "jpeg_quantizer.sv",
       "jpeg_reg.sv",
       "jpeg_table_cache.sv",
+      "jpeg_table_register_bank.sv",
       "jpeg_table_store.sv",
       "jpeg_transform.sv"
     ],

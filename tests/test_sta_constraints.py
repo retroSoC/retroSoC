@@ -59,13 +59,26 @@ def test_core_sdc_covers_current_clock_domains(tmp_path: Path) -> None:
     assert "create_clock -name clk_dvp -period 41.666666667" in sdc
     assert "create_clock -name clk_usb2_ulpi -period 16.666666667" in sdc
     assert "get_pins -quiet" in sdc
+    assert "get_nets -quiet" in sdc
     assert "get_ports -quiet" in sdc
+    assert (
+        "set clk_lp_pin [require_net_driver_pin \"clock lp\" {s_sys_clk}]" in sdc
+    )
+    assert (
+        "set clk_hp_pin [require_net_driver_pin \"clock hp\" {s_hp_clk}]" in sdc
+    )
+    assert (
+        "set clk_pclk_pin [require_net_driver_pin \"clock pclk\" {s_pclk}]" in sdc
+    )
+    assert (
+        "set clk_memory_pin [require_net_driver_pin \"clock memory\" {s_mem_clk}]" in sdc
+    )
     assert "set clk_jtag_port [require_ports \"clock jtag\" {jtag_tck_i_pad}]" in sdc
     assert (
         "set clk_usb2_ulpi_port [require_ports \"clock usb2_ulpi\" "
         "{usb2_ulpi_clk_i_pad}]"
     ) in sdc
-    assert "u_retrosoc.u_apb4_periph.u_axi4_dvp/u_dvp_pclk_clk_buf" in sdc
+    assert "u_retrosoc.u_apb4_periph.u_axi4_dvp.u_dvp_pclk_clk_buf/clk_o" in sdc
     assert "-group [get_clocks {clk_lp clk_pclk}]" in sdc
     assert "set_clock_transition 0.1 [get_clocks {clk_dvp}]" in sdc
     assert "set_input_transition" not in sdc

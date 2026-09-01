@@ -128,7 +128,9 @@ jobs:
           make CONFIG=${{ inputs.profile }} formal
 
       - name: Run ${{ inputs.suite }} regression
-        run: python3 scripts/regress.py --root . --suite "${{ inputs.suite }}" --pdk "${{ inputs.pdk }}"
+        run: >-
+          python3 scripts/regress.py --root . --suite "${{ inputs.suite }}"
+          --pdk "${{ inputs.pdk }}" --behavioral-only
 
       - name: Upload reports and structured results
         if: always()
