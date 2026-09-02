@@ -248,6 +248,17 @@ DMA behavior:
 - abort blocks new addresses, drains accepted responses, then discards local
   in-flight codec data.
 
+The DMA no-progress timer runs only while an AXI request is presented or an
+accepted AXI read/write/descriptor transaction is outstanding. A handshake on
+`AW`, `W`, `B`, `AR`, or `R` is progress and reloads the full nonzero
+`DMA_TIMEOUT` value. Merely holding `VALID`, moving data between local FIFOs,
+or waiting on a codec/stream endpoint is not DMA progress. The first cycle with
+an unaccepted address/data `VALID` or an accepted transaction starts the epoch.
+Expiry blocks new AXI addresses, records error 17 against the owning direction
+and address, and drains any accepted transaction before terminal completion.
+The timer stops when no AXI request or response is pending and clears on abort,
+soft reset, resource reset, or hard reset.
+
 Gateway A has one fabric identity, so local first-error and per-client counters
 are required for attribution. Handoff conservatively waits for APU, USB2, and
 SDIO0 gateway traffic to become idle.
@@ -271,6 +282,36 @@ existing central-DMA route. APU mode selects APU-to-I2S TX and I2S RX-to-KWS,
 which may operate concurrently. Active-direction route changes are rejected.
 No external pad is added; I2S retains audio-clock-domain sampling and CDC.
 
+Phase 2 implements and verifies the production stream router and two 64-word
+Common FIFOs through a test-only wrapper, but it has no production APU PCM
+producer or KWS consumer. Consequently, in the SoC integration through Phase 2,
+`CAPABILITY0.STREAMS` remains zero and any `STREAM_ROUTE` direction value 1
+returns `PSLVERR`. Reset value 0 continues to select central DMA. The test-only
+wrapper is in the verification filelist only, drives the production FIFO/router
+interfaces directly, and creates no register, descriptor operation, capability,
+or synthesized diagnostic path. TX value 1 becomes legal only when the first
+codec stream producer is delivered; RX value 1 becomes legal only with KWS.
+
+A TX direction is active when its route is APU and at least one of the endpoint
+session-active input, a nonempty TX FIFO, or an asserted unaccepted output
+`TVALID` is true. An RX direction is active when its route is APU and at least
+one of the endpoint session-active input, a nonempty RX FIFO, or an accepted
+but unretired input beat is true. A `STREAM_ROUTE` write that changes one
+direction returns `PSLVERR` while that direction is active; changing only the
+inactive direction or rewriting the same value is legal. Phase-2 production
+endpoint session-active inputs are tied low.
+
+`STREAM_WATERMARK` programs an RX/input high watermark in bits `[7:0]` and a
+TX/output low watermark in bits `[15:8]`; `[31:16]` are reserved zero. Each
+value is 0 (disabled) or 1..64 words. The input event occurs on an occupancy
+crossing from below to greater-than-or-equal-to its threshold and rearms below
+the threshold. The output event occurs on a crossing from above to
+less-than-or-equal-to its threshold while TX is active and rearms above it.
+The events set sticky IRQ bits 6 and 7. Setting a threshold to zero disables
+future events and resets its crossing detector but does not clear an already
+sticky IRQ; software clears that through `IRQ_STATE`. Hardware set wins a
+same-cycle W1C.
+
 ## DMA and Interrupt Contract
 
 ### Direct and ring operation
@@ -284,6 +325,36 @@ and rings the doorbell. Hardware fetches only owned descriptors, writes all
 results, clears OWN, advances head, then raises completion. An unowned head
 stalls without consumption. An invalid owned entry completes with error and
 advances head; stop-on-error prevents the next fetch. IOC overrides coalescing.
+
+Phase 2 does not add a public diagnostic operation and does not make decode or
+KWS executable. Because every public operation depends on later phases,
+`START_DIRECT` and `RING_DOORBELL` continue to return `PSLVERR` until valid
+locked microcode and the selected format/KWS capability are both present.
+Phase-2 verification instead instantiates the production DMA and ring scheduler
+behind a verification-only backend. The backend drives the internal transport
+request/completion interface, exercises memory-to-memory direct transfers,
+fetches public 128-byte descriptors, supplies deterministic result writeback,
+and tests OWN-last, unowned stalls, invalid-owned completion, wrap, coalescing,
+abort, and every bus error. It is excluded from behavioral/synthesis product
+filelists and has no public opcode or runtime path. Thus successful P2
+direct/ring verification does not pull microcode, primitives, codecs, or KWS
+forward.
+
+For non-IOC completions, an internal pending-completion count increments after
+descriptor result writeback and OWN clear. A zero-to-one transition starts a
+coalescing timeout epoch loaded from `RING_COALESCE[31:16]`; the timer decrements
+once per PCLK cycle. A ring event is generated when the post-completion pending
+count reaches `RING_COALESCE[7:0]` or the timer expires with a nonzero count.
+Either event clears the pending count and stops the epoch. An IOC completion
+immediately generates one ring event covering the IOC descriptor and all prior
+pending completions, then clears the count/epoch regardless of the programmed
+threshold. IRQ W1C does not reset or rearm the count/timer. Ring disable,
+abort, soft/resource/hard reset, or stop-on-error terminal writeback clears the
+pending count and timer. Both coalescing fields remain nonzero as already
+required by the P1 ABI. If an error descriptor also has IOC, its terminal
+writeback first generates the IOC ring event covering pending completions, then
+stop-on-error halts and clears the coalescing state; the error IRQ is collected
+independently.
 
 ### Descriptor ABI
 
@@ -352,8 +423,8 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
 | `0x004` | `IP_VERSION` | RO | `0x00010000` | Public ABI V1.0. |
-| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. MVP has 0..8 set. |
-| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; MVP 16/112/2/96. |
+| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; MVP has 0..8 set. |
+| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; MVP is 16/112/2/96. |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
 | `0x018` | `IRQ_STATE` | RW1C | `0` | Sticky events. |
@@ -364,16 +435,17 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x02c` | `ERROR_DETAIL` | RO | `0` | First format/opcode/primitive/model diagnostic. |
 | `0x030` | `SEQUENCER_TIMEOUT` | RW idle | `0x0000ffff` | Nonzero maximum no-retirement cycles. |
 | `0x034` | `STREAM_ROUTE` | RW idle | `0` | TX `[1:0]`: DMA0/APU1; RX `[3:2]`: DMA0/APU1. |
-| `0x038` | `STREAM_STATUS` | RO | `0` | TX/RX activity, FIFO flags, xrun, and accepted-word low counts. |
+| `0x038` | `STREAM_STATUS` | RO | P1 `0`, P2+ `0x00000014` | Frozen live/sticky allocation below. |
 | `0x03c` | `OWNER_STATUS` | RO | `0` | Resource owner `[1:0]`, owner lock 8, quiesce 9, reset request 10. |
 | `0x040` | `READ_BASE` | RW idle/LP | `0xffffffff` | Inclusive local DMA read base. |
 | `0x044` | `READ_LIMIT` | RW idle/LP | `0` | Base greater than limit denies all. |
 | `0x048` | `WRITE_BASE` | RW idle/LP | `0xffffffff` | Inclusive local DMA write base. |
 | `0x04c` | `WRITE_LIMIT` | RW idle/LP | `0` | Inclusive write limit. |
 | `0x050` | `DMA_TIMEOUT` | RW idle | `0x0000ffff` | Nonzero no-progress timeout. |
-| `0x054` | `ABI_DIGEST` | RO | implementation | Digest over registers, descriptor, `APUMC`, `APUM`, opcode, format, IRQ, and error tables. |
+| `0x054` | `ABI_DIGEST` | RO | `0` until MVP | CRC32 digest over the complete frozen V1 tables; partial P1..P7 implementations report zero. |
 | `0x058` | `SEQUENCER_STATUS` | RO | `0` | PC `[10:0]`, class `[14:11]`, opcode `[18:15]`, wait 19, loop-active 20. |
 | `0x05c` | `SEQUENCER_RETIRED` | RO | `0` | Saturating instructions retired in current frame/block. |
+| `0x060` | `STREAM_WATERMARK` | RW idle | `0` | RX/input high `[7:0]`, TX/output low `[15:8]`, reserved `[31:16]=0`; zero disables, otherwise 1..64. Added in P2. |
 | `0x080` | `MC_IMAGE_ADDRESS` | RW idle/LP | `0` | 64-byte-aligned `APUMC` address. |
 | `0x084` | `MC_IMAGE_SIZE` | RW idle/LP | `0` | Exact nonzero bundle bytes. |
 | `0x088` | `MC_EXPECTED_CRC` | RW idle/LP | `0` | Expected payload CRC32, equal to header. |
@@ -392,7 +464,7 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x114` | `JOB_INPUT_CONFIG` | RW idle | `0` | Descriptor word6. |
 | `0x118` | `JOB_OUTPUT_CONFIG` | RW idle | `0` | Descriptor word7. |
 | `0x11c` | `JOB_FLAGS` | RW idle | `0` | Descriptor word8. |
-| `0x120` | `JOB_STATUS` | RO | `0` | Busy/done/error/aborted and result code. |
+| `0x120` | `JOB_STATUS` | RO | `0` | Frozen live/sticky allocation below. |
 | `0x124` | `JOB_INPUT_USED` | RO | `0` | Result input bytes. |
 | `0x128` | `JOB_OUTPUT_BYTES` | RO | `0` | Result output bytes. |
 | `0x12c` | `JOB_FRAMES` | RO | `0` | Result PCM frames. |
@@ -404,7 +476,7 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x188` | `RING_HEAD` | RO | `0` | Hardware index. |
 | `0x18c` | `RING_TAIL` | RW | `0` | Software index. |
 | `0x190` | `RING_CONTROL` | RW idle | `0` | Enable 0, stop-on-error 1. |
-| `0x194` | `RING_STATUS` | RO | `0` | Active, unowned stall, empty, error, wrap. |
+| `0x194` | `RING_STATUS` | RO | P1 `0`, P2+ `0x00000004` | Frozen live/sticky allocation below. |
 | `0x198` | `RING_COMPLETED` | RO | `0` | Saturating completion count. |
 | `0x19c` | `RING_COALESCE` | RW idle | `0x00010001` | Count `[7:0]`, nonzero timeout `[31:16]`. |
 | `0x1a0` | `RING_DOORBELL` | WO | `0` | Write one to rescan. |
@@ -427,15 +499,87 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x304` | `PERF_STATUS` | RO | `0` | Snapshot valid and overflow summary. |
 | `0x308..0x354` | `PERF_*` | RO snapshot | `0` | Ten 64-bit pairs: active cycles, input/output bytes, decoded frames, DMA read/write stalls, stream stalls, sequencer instructions, KWS cycles, and faults. |
 
+P2 freezes these status layouts. Reserved bits read zero and writes to every
+status register return `PSLVERR`.
+
+| `STREAM_STATUS` bits | Semantics |
+| ---: | --- |
+| 0 | `TX_ACTIVE`, live according to the active-direction definition in the stream contract. |
+| 1 | `RX_ACTIVE`, live according to the active-direction definition in the stream contract. |
+| 2 | `TX_FIFO_EMPTY`, live; reset one from P2 onward. |
+| 3 | `TX_FIFO_FULL`, live. |
+| 4 | `RX_FIFO_EMPTY`, live; reset one from P2 onward. |
+| 5 | `RX_FIFO_FULL`, live. |
+| 6 | `TX_UNDERRUN`, sticky until IRQ-state stream-xrun W1C or reset. |
+| 7 | `RX_OVERRUN`, sticky until IRQ-state stream-xrun W1C or reset. |
+| 15:8 | Saturating low-byte count of TX words accepted by I2S since counter clear/reset. |
+| 23:16 | Saturating low-byte count of RX words accepted from I2S since counter clear/reset. |
+| 31:24 | Reserved zero. |
+
+The two xrun bits clear together when software W1C-clears IRQ bit 9. A new xrun
+in that cycle wins and leaves the corresponding status/IRQ state set.
+
+| `JOB_STATUS` bits | Semantics |
+| ---: | --- |
+| 0 | `BUSY`, live while a direct or ring-owned job has not reached terminal writeback. |
+| 1 | `DONE`, sticky terminal success. |
+| 2 | `ERROR`, sticky terminal failure. |
+| 3 | `ABORTED`, sticky terminal abort. |
+| 4 | `DIRECT_ACTIVE`, live while the current job came from direct registers. |
+| 5 | `INPUT_PENDING`, live while input AXI/stream work is outstanding. |
+| 6 | `OUTPUT_PENDING`, live while output AXI/stream work is outstanding. |
+| 7 | `WRITEBACK_PENDING`, live while descriptor/direct results have not retired. |
+| 13:8 | Terminal six-bit error code. |
+| 17:14 | Terminal four-bit stage. |
+| 19:18 | Terminal AXI response. |
+| 31:20 | Reserved zero. |
+
+`DONE` denotes success and is mutually exclusive with `ERROR`. `ABORTED` may
+coexist with `ERROR` when drain encounters a higher-priority fault. Terminal
+sticky/result fields clear when a new valid internal/public job is accepted or
+on soft/resource/hard reset; they do not clear on status read.
+
+| `RING_STATUS` bits | Semantics |
+| ---: | --- |
+| 0 | `ACTIVE`, live after scheduler start until disabled, aborted, or stopped. |
+| 1 | `STALLED_UNOWNED`, live while head points to an unowned descriptor. |
+| 2 | `EMPTY`, live when head equals tail and no descriptor/writeback is pending; reset one from P2 onward. |
+| 3 | `ERROR`, sticky after a descriptor/ring error. |
+| 4 | `WRAPPED`, sticky after head wraps to zero. |
+| 5 | `COALESCE_PENDING`, live while pending-completion count is nonzero. |
+| 6 | `WRITEBACK_PENDING`, live while result/OWN-clear is outstanding. |
+| 7 | `STOPPED_ON_ERROR`, sticky when stop-on-error halts after terminal writeback. |
+| 15:8 | Live pending-completion count used by coalescing. |
+| 23:16 | Last descriptor index whose result writeback and OWN clear completed. |
+| 31:24 | Reserved zero. |
+
+Ring sticky fields, pending count, last index, and coalescing epoch clear on a
+legal ring-enable transition from zero to one or on soft/resource/hard reset.
+Status reads and IRQ W1C do not clear them.
+
+Capability bits describe implemented hardware, not whether a codec job is
+currently legal. P2 reports `CAPABILITY0=0x00000018` for private DMA and ring,
+while format, streams, KWS, sequencer, and resampler bits remain zero;
+`CAPABILITY1=0`. A caller must require both the requested format/KWS bit and the
+necessary engine/model state before submitting. The P2 stream router is not
+advertised because its production endpoints remain unavailable. `ABI_DIGEST`
+is zero for every partial Phase1..7 build and becomes the nonzero CRC32 over
+the complete canonical V1 register/field/descriptor/`APUMC`/`APUM`/opcode/
+format/IRQ/error tables only in the Phase8 supported MVP. A zero digest means
+prototype/incomplete ABI and is not a compatibility hash for a subset.
+
 Hardware set wins same-cycle W1C. Snapshot captures all 64-bit counters
 atomically; software reads low then high.
 
 `MICROCODE_LOAD` and `MODEL_LOAD` require LP owner, quiesced/idle state,
 valid ACLs, and a clear corresponding lock; KWS must also be disabled for model
 load. `START_DIRECT` requires valid locked microcode and a validated direct
-job. `RING_KICK` requires an enabled valid ring. `ABORT` requires active work.
-`SOFT_RESET` and `CLEAR_COUNTERS` require idle. Violations return `PSLVERR`
-without changing state.
+job whose requested format/KWS capability is set. `RING_KICK` requires an
+enabled valid ring plus valid locked microcode and a supported operation at
+head. `ABORT` requires active work. `SOFT_RESET` and `CLEAR_COUNTERS` require
+idle. Therefore P2 continues to reject start and doorbell while accepting and
+validating their configuration registers. Violations return `PSLVERR` without
+changing state.
 
 ### `APUMC` microcode bundle ABI
 
@@ -547,6 +691,11 @@ IDs, `APUMC`, `APUM`, ownership, and lock semantics cannot change within major
 version 1. Incompatible behavior requires a new major version and capability
 negotiation; software fails closed on unknown major versions.
 
+`STREAM_WATERMARK` at `0x060` is the sole P2 ABI append. P1 continues to return
+`PSLVERR` for that formerly reserved offset, while P2 implements it; no P1
+offset, accepted field, reset value, or reserved mask is repurposed. P2 updates
+the independently handwritten SVH/C tables and parity tests together.
+
 ## Clock, Reset, CDC/RDC, and Lifecycle
 
 APB4, DMA source, sequencer, local SRAM, fixed engines, KWS, and stream router
@@ -622,6 +771,24 @@ do not overwrite code, stage, address/PC, detail, AXI response, or descriptor
 index. A requested, successfully drained abort or quiesced resource reset sets
 terminal status/IRQ but not first error; code20/21 enters first error only when
 forced, timed out, or accepted work was lost.
+
+Simultaneous terminal conditions use this fixed first-error precedence:
+
+1. Hard/PCLK reset clears all status and records no retained error.
+2. Forced resource reset or lifecycle loss records code21.
+3. AXI write response/protocol failure records code16.
+4. AXI read response/protocol failure records code15.
+5. DMA no-progress timeout records code17.
+6. RX stream overrun records code19.
+7. TX stream underrun records code18.
+8. A forced abort records code20.
+
+A normal resource reset or successfully drained software abort is not an error.
+When several non-reset events coincide, every applicable sticky IRQ/status and
+counter is updated, but only the highest item above enters the immutable first
+error. An AXI fault observed while abort drains therefore outranks abort. RX
+overrun outranks TX underrun because it represents lost input. Hardware event
+capture outranks a same-cycle first-error or IRQ W1C.
 
 Format errors terminate the owning job. AXI protocol loss, sequencer trap,
 watchdog, impossible internal state, or repeated timeout quiesces the whole APU
@@ -726,8 +893,8 @@ does not become evidence of self-owned MISRA conformance.
 | Area | Required evidence |
 | --- | --- |
 | APB/register | Decode, waits, strobes, RO/WO, busy protection, W1C/set priority, reset, capability, and RTL/C parity. |
-| DMA/ring | Native AXI BFM and constrained-random direct/ring ownership, wrap, coalescing, 4 KiB split, tails, ACL overflow, faults, abort, timeout. |
-| Streams | Random backpressure, stable payload, route protection, S16/S24 packing, TLAST, xrun, concurrent TX decode/RX KWS. |
+| DMA/ring | Native AXI BFM plus the P2 verification-only backend cover internal direct/ring ownership, writeback, wrap, coalescing epochs/IOC, 4 KiB split, tails, ACL overflow, faults, abort, and timeout without a public diagnostic operation. |
+| Streams | P2 verification-only endpoints cover both production router/FIFO directions, random backpressure, watermark/xrun, active detection, and route protection; later phases add S16/S24/TLAST and concurrent codec/KWS product endpoints. |
 | Assembler/loader | Syntax and semantic rejection, deterministic binary, all control-flow/loop/stack/range checks, CRC, capability, atomic valid/lock, mutation/fuzz. |
 | Sequencer/formal | PC/control-store bounds, only bounded loop-back, counter decrement, call depth, watchdog, no system/APB access, descriptor-only DMA handles, legal traps. |
 | Primitives | Bitstream/CRC, every Huffman/Rice mode, arithmetic extremes, saturation, transform/LPC/resampler differential, latency bounds. |
@@ -820,12 +987,17 @@ ID: `APU-P2`.
 
 Scope: direct/ring DMA, descriptors, ACL, fair Gateway A arbitration,
 PCLK-to-HP integration, stream router/FIFOs, I2S directions, abort/drain, bus
-errors, and counters.
+errors, P2 status/watermark semantics, and counters.
 
 Dependencies: Phase1 and existing Common interfaces/FIFO/CDC/arbitration.
 
-Public changes: implements frozen DMA/ring/stream/ACL ABI and adds `apu_data`
-CDC inventory; no sequencer/codec functionality.
+Public changes: implements DMA/ring/ACL transport, the appended
+`STREAM_WATERMARK` register, frozen `STREAM_STATUS`/`JOB_STATUS`/
+`RING_STATUS` fields, `CAPABILITY0=0x00000018`, and the `apu_data` CDC
+inventory. `CAPABILITY1`, `ABI_DIGEST`, format/stream/KWS/sequencer/resampler
+capabilities, public start/doorbell, and public APU stream routes remain at the
+specified fail-closed P1 values. No sequencer, primitive, codec, KWS, public
+diagnostic operation, or synthesized diagnostic endpoint is added.
 
 Validation:
 
@@ -837,8 +1009,13 @@ make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR rtl-lint
 make CONFIG=configs/ci/ihp130.mk APP=ci_smoke SIMU=VERILATOR firmware sim
 ```
 
-Completion: direct/ring and both stream directions pass directed/random tests;
-every bus fault/abort is bounded; Gateway A fairness is demonstrated.
+Completion: the production DMA and ring scheduler pass direct/ring directed and
+random tests through the verification-only backend; the production router and
+both 64-word FIFO directions pass standalone backpressure/watermark/xrun tests;
+public start/doorbell and route value1 remain rejected; every bus fault,
+timeout, coalescing epoch, writeback, and abort path is bounded; status/IRQ/C
+parity passes; Gateway A fairness is demonstrated. No P3..P7 engine is required
+for P2 completion.
 
 ### Phase 3 - Microcode Assembler, Loader, and Sequencer
 
