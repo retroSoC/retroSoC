@@ -133,7 +133,10 @@
       "sdram_reg.sv"
     ],
     "rtl/ip/multimedia": [
+      "apb4_apu.sv",
       "apb4_jpeg.sv",
+      "apu_define.svh",
+      "apu_reg.sv",
       "axi4s_dvp.sv",
       "dvp_core.sv",
       "dvp_define.svh",

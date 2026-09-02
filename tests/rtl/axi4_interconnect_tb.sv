@@ -180,6 +180,41 @@ module axi4_interconnect_tb;
     end
   endtask
 
+  task automatic issue_hp_apu_write(input logic [31:0] address, input logic [1:0] expected_response,
+                                    input logic expected_access_fault);
+    begin
+      @(negedge clk_i);
+      masters[6].awaddr  = address;
+      masters[6].awlen   = 8'd0;
+      masters[6].awvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[6].awready);
+      @(negedge clk_i);
+      masters[6].awvalid = 1'b0;
+      masters[6].wdata   = 32'h1234_5678;
+      masters[6].wstrb   = 4'hf;
+      masters[6].wlast   = 1'b1;
+      masters[6].wvalid  = 1'b1;
+      do @(posedge clk_i); while (!masters[6].wready);
+      @(negedge clk_i);
+      masters[6].wvalid = 1'b0;
+      masters[6].bready = 1'b1;
+      while (!masters[6].bvalid) @(negedge clk_i);
+      #1;
+      if ((masters[6].bresp != expected_response) ||
+          (fault_valid_o != expected_access_fault) ||
+          (expected_access_fault &&
+           (!fault_access_o || (fault_addr_o != address) || (fault_master_o != 3'd6) ||
+            (fault_code_o != `RIB_RESP_PROTERR)))) begin
+        $fatal(
+            1,
+            "HP APU access policy mismatch at %h: resp=%0d fault=%0d access=%0d master=%0d code=%0d",
+            address, masters[6].bresp, fault_valid_o, fault_access_o, fault_master_o, fault_code_o);
+      end
+      @(negedge clk_i);
+      masters[6].bready = 1'b0;
+    end
+  endtask
+
   task automatic issue_management_with_idle_sdio;
     integer cycles;
     begin
@@ -347,7 +382,12 @@ module axi4_interconnect_tb;
     issue_management_with_idle_sdio();
     issue_mgmt_error_read(32'hA000_0000, 8'd0, `AXI4_RESP_DECODE_ERROR, `RIB_RESP_DECERR);
     issue_mgmt_error_read(32'h3000_0000, 8'd16, `AXI4_RESP_SLAVE_ERROR, `RIB_RESP_BURSTERR);
+`ifdef MINI_PRODUCT
+    issue_hp_apu_write(32'h1001_301C, `AXI4_RESP_OKAY, 1'b0);
+    issue_hp_apu_write(32'h1001_3040, `AXI4_RESP_SLAVE_ERROR, 1'b1);
+`else
     issue_denied_user_write(32'h1000_B000);
+`endif
     issue_contending_sdio_faults();
     issue_hp_accesses();
 

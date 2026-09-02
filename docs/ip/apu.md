@@ -26,10 +26,12 @@ The design was frozen on 2026-09-02 from these repository sources of truth:
   programmable-LUT, and lifecycle patterns; and
 - `dependencies/dependencies.lock.json` for managed inputs.
 
-This specification defines a target, not an implemented feature. The current
-executable address map keeps `APB4_APU` reserved and disabled. No claim is made
-that APU RTL, microcode, assembler, codec conformance, KWS model, Linux driver,
-timing closure, power closure, CDC/RDC signoff, or silicon qualification exists.
+APU-P1 implements the APB4 register shell, Resource Controller index 7,
+LP IRQ31/HP PLIC source10 ownership routing, and HAL discovery. The shell
+advertises zero datapath capabilities and rejects every deferred datapath
+command. No claim is made that APU DMA, streams, microcode, sequencer, codec
+engines, KWS, codec conformance, Linux driver, timing closure, power closure,
+CDC/RDC signoff, or silicon qualification exists.
 
 ## Commercial References
 

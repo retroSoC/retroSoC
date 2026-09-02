@@ -33,6 +33,7 @@ TEST_SOURCES = (
     "crt/src/hal/i2s_math.c",
     "crt/src/hal/dma_math.c",
     "crt/src/hal/jpeg_math.c",
+    "crt/src/hal/apu.c",
     "crt/src/hal/sysctrl.c",
     "crt/src/hal/clock.c",
     "crt/src/hal/resource.c",

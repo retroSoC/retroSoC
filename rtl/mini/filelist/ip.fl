@@ -125,6 +125,8 @@
 /ip/multimedia/dvp_core.sv
 /ip/multimedia/dvp_reg.sv
 /ip/multimedia/axi4s_dvp.sv
+/ip/multimedia/apu_reg.sv
+/ip/multimedia/apb4_apu.sv
 /ip/multimedia/jpeg_pkg.sv
 /ip/multimedia/jpeg_transform.sv
 /ip/multimedia/jpeg_quantizer.sv

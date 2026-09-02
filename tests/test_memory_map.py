@@ -125,7 +125,7 @@ def test_booter_prints_every_public_active_mmio_region() -> None:
     assert "DMA(8CH)" in mmio_function
     assert "DMA(6CH)" not in mmio_function
     assert "RS_SOC_APB4_GA_BASE" not in mmio_function
-    assert "RS_SOC_APB4_APU_BASE" not in mmio_function
+    assert "RS_SOC_APB4_APU_BASE" in mmio_function
 
 
 def test_sram_capacity_selects_one_consistent_hardware_software_window(tmp_path: Path) -> None:
@@ -173,9 +173,11 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
     assert "`define SOC_ADDR_APB4_SDIO0_BASE 32'h1000F000" in rtl
     assert "`define SOC_ADDR_APB4_SDIO1_BASE 32'h10015000" in rtl
     assert "`define SOC_ADDR_APB4_USB2_BASE 32'h10016000" in rtl
+    assert "`define SOC_ADDR_APB4_APU_BASE 32'h10013000" in rtl
     assert "`define SOC_ADDR_APB4_CRYPTO_BASE 32'h1000C000" in rtl
     assert "#define RS_SOC_APB4_CRYPTO_BASE UINT32_C(0x1000C000)" in header
     assert "#define RS_SOC_APB4_USB2_BASE UINT32_C(0x10016000)" in header
+    assert "#define RS_SOC_APB4_APU_BASE UINT32_C(0x10013000)" in header
 
 
 def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:

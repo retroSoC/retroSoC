@@ -48,6 +48,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("watchdog_early_warning", "apb4_system", 3, 14, "u_wdg_if.irq_o"),
     ("rng", "apb4_system", 4, 16, "s_rng_irq"),
     ("resource_fault", "apb4_system", 7, 29, "s_resource_fault_irq"),
+    ("apu", "apb4_periph", 23, 31, "resource_irq_lp_i[6]"),
     ("ws2812", "apb4_periph", 10, 17, "ws2812.irq_o"),
     ("gpio", "apb4_periph", 11, 18, "gpio.irq_o"),
     ("i2c1", "apb4_periph", 12, 19, "i2c1.irq_o"),

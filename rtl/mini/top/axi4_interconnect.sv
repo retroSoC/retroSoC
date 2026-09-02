@@ -433,6 +433,13 @@ module axi4_interconnect #(
       automatic logic [32:0] wrap_base = {1'b0, addr} & ~(burst_bytes - 1'b1);
       automatic
       logic
+      apu_lp_only =
+      `SOC_ADDR_IS_APB4_APU(addr)
+      && (((addr[11:0] >= 12'h040) && (addr[11:0] <= 12'h04c)) ||
+          ((addr[11:0] >= 12'h080) && (addr[11:0] <= 12'h088)) ||
+          ((addr[11:0] >= 12'h200) && (addr[11:0] <= 12'h208)));
+      automatic
+      logic
       burst_legal =
           (burst == `AXI4_BURST_TYPE_FIXED) ||
           (burst == `AXI4_BURST_TYPE_INCR) ||
@@ -465,7 +472,7 @@ module axi4_interconnect #(
       `SOC_ADDR_IS_APB4_EXT_H(addr)
       && !
       `SOC_ADDR_IS_APB4_RESOURCE_CTRL(addr)
-      );
+      && !apu_lp_only);
 `else
       s_access_allowed[master] = (master != 1) || ((read_req &&
       `SOC_USER_ADDR_READABLE(addr)

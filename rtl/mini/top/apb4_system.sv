@@ -23,9 +23,9 @@ module apb4_system (
     input  logic                                  rst_aud_n_i,
     input  logic                                  debug_halted_i,
     input  logic                                  ext_h_data_idle_i,
-    input  logic [6:0]                            resource_idle_i,
-    input  logic [6:0]                            resource_block_ack_i,
-    input  logic [5:0]                            resource_irq_i,
+    input  logic [7:0]                            resource_idle_i,
+    input  logic [7:0]                            resource_block_ack_i,
+    input  logic [6:0]                            resource_irq_i,
     input  logic                                  cache_request_i,
     axi4_if.slave                                 axi4,
     axi4_if.master                                ext_h_axi4,
@@ -45,11 +45,12 @@ module apb4_system (
     output logic                                  ext_h_irq_raw_o,
     output logic [1:0]                            ext_h_owner_o,
     output logic                                  cache_clean_o,
-    output logic [6:0][1:0]                       resource_owner_o,
-    output logic [6:0]                            resource_quiesce_o,
-    output logic [6:0]                            resource_reset_o,
-    output logic [5:0]                            resource_irq_lp_o,
-    output logic [5:0]                            resource_irq_hp_o,
+    output logic [7:0][1:0]                       resource_owner_o,
+    output logic [7:0]                            resource_owner_lock_o,
+    output logic [7:0]                            resource_quiesce_o,
+    output logic [7:0]                            resource_reset_o,
+    output logic [6:0]                            resource_irq_lp_o,
+    output logic [6:0]                            resource_irq_hp_o,
     output logic [`SOC_IRQ_APB4_SYSTEM_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -97,12 +98,13 @@ module apb4_system (
   logic             s_ext_h_irq;
   logic             s_ext_h_irq_raw;
   logic [ 1:0]      unused_ext_h_owner;
-  logic [ 6:0]      s_resource_irq;
-  logic [ 6:0]      s_resource_irq_lp;
-  logic [ 6:0]      s_resource_irq_hp;
-  logic [ 6:0][1:0] s_resource_owner;
-  logic [ 6:0]      s_resource_quiesce;
-  logic [ 6:0]      s_resource_reset;
+  logic [ 7:0]      s_resource_irq;
+  logic [ 7:0]      s_resource_irq_lp;
+  logic [ 7:0]      s_resource_irq_hp;
+  logic [ 7:0][1:0] s_resource_owner;
+  logic [ 7:0]      s_resource_owner_lock;
+  logic [ 7:0]      s_resource_quiesce;
+  logic [ 7:0]      s_resource_reset;
   logic             s_resource_fault_irq;
   logic             s_cache_clean;
   logic             s_unused_resource;
@@ -110,16 +112,17 @@ module apb4_system (
   logic s_unused_product_input;
 `endif
 
-  assign s_resource_irq     = {resource_irq_i[5], s_ext_h_irq_raw, resource_irq_i[4:0]};
-  assign s_ext_h_irq        = s_resource_irq_lp[5];
-  assign ext_h_irq_raw_o    = s_ext_h_irq_raw;
-  assign ext_h_owner_o      = s_resource_owner[5];
-  assign cache_clean_o      = s_cache_clean;
-  assign resource_owner_o   = s_resource_owner;
-  assign resource_quiesce_o = s_resource_quiesce;
-  assign resource_reset_o   = s_resource_reset;
-  assign resource_irq_lp_o  = {s_resource_irq_lp[6], s_resource_irq_lp[4:0]};
-  assign resource_irq_hp_o  = {s_resource_irq_hp[6], s_resource_irq_hp[4:0]};
+  assign s_resource_irq        = {resource_irq_i[6:5], s_ext_h_irq_raw, resource_irq_i[4:0]};
+  assign s_ext_h_irq           = s_resource_irq_lp[5];
+  assign ext_h_irq_raw_o       = s_ext_h_irq_raw;
+  assign ext_h_owner_o         = s_resource_owner[5];
+  assign cache_clean_o         = s_cache_clean;
+  assign resource_owner_o      = s_resource_owner;
+  assign resource_owner_lock_o = s_resource_owner_lock;
+  assign resource_quiesce_o    = s_resource_quiesce;
+  assign resource_reset_o      = s_resource_reset;
+  assign resource_irq_lp_o     = {s_resource_irq_lp[7:6], s_resource_irq_lp[4:0]};
+  assign resource_irq_hp_o     = {s_resource_irq_hp[7:6], s_resource_irq_hp[4:0]};
 
 `ifdef PDK_IHP130
   localparam logic [31:0] ARCHINFO_TECHNOLOGY = 32'h0201_0082;
@@ -231,7 +234,7 @@ module apb4_system (
   apb4_crc u_apb4_crc (.apb4(u_crc_apb4_if));
 
   resource_controller #(
-      .ResourceCount(7)
+      .ResourceCount(8)
   ) u_resource_controller (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
@@ -241,6 +244,7 @@ module apb4_system (
       .cache_request_i(cache_request_i),
       .cache_clean_o  (s_cache_clean),
       .owner_o        (s_resource_owner),
+      .owner_lock_o   (s_resource_owner_lock),
       .quiesce_o      (s_resource_quiesce),
       .reset_o        (s_resource_reset),
       .irq_lp_o       (s_resource_irq_lp),
@@ -297,6 +301,6 @@ axi42apb4_system u_axi42apb4_system (
       .ext_h_timeout_o    (ext_h_timeout_o)
   );
 
-  assign s_unused_resource = ^unused_ext_h_owner;
+  assign s_unused_resource = ^{unused_ext_h_owner, s_resource_irq_hp[5]};
 
 endmodule

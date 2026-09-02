@@ -6,6 +6,7 @@
 
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
+#include <retrosoc/hal/apu.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/clock.h>
 #include <retrosoc/hal/extension.h>
@@ -864,6 +865,10 @@ static int test_resource_validation(void) {
     return 0;
 }
 
+static int test_apu_validation(void) {
+    return (rs_apu_probe(NULL) == RS_EINVAL) ? 0 : 1;
+}
+
 static int test_jpeg_validation(void) {
     static _Alignas(RS_JPEG_DESCRIPTOR_ALIGNMENT) rs_jpeg_descriptor_t ring[2];
     rs_jpeg_descriptor_t descriptor;
@@ -1016,6 +1021,7 @@ int main(void) {
         test_user_ip_validation(),
         test_extension_validation(),
         test_resource_validation(),
+        test_apu_validation(),
         test_jpeg_validation(),
         test_ps2_decoders(),
         test_wav_parser(),

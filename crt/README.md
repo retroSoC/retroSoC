@@ -53,9 +53,14 @@ See the [extension contract](../docs/ip/extensions.md) and
 [legacy user-IP contract](../docs/ip/user-ip.md).
 
 `<retrosoc/hal/resource.h>` owns the central DMA, USB2, SDIO0/1, SPI-SD,
-EXT-H, and JPEG owner/lock, lifecycle-request, fault, and HP cache-maintenance
+EXT-H, JPEG, and APU owner/lock, lifecycle-request, fault, and HP cache-maintenance
 handshake.
 See the [Resource Controller contract](../docs/ip/resource-controller.md).
+
+`<retrosoc/hal/apu.h>` provides APU-P1 identity, ABI version, capability, and
+ABI-digest discovery. The current shell reports zero datapath capabilities;
+job, DMA, stream, microcode, codec, and KWS APIs remain unavailable until their
+frozen implementation phases.
 
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
 master/target counters, stable snapshots, warm-flush counts, target isolation,

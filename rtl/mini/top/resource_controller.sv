@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module resource_controller #(
-    parameter int unsigned ResourceCount = 6
+    parameter int unsigned ResourceCount = 8
 ) (
     // verilog_format: off -- preserve the resource ownership boundary columns
     input  logic                            clk_i,
@@ -13,6 +13,7 @@ module resource_controller #(
     input  logic                            cache_request_i,
     output logic                            cache_clean_o,
     output logic [ResourceCount-1:0][1:0]   owner_o,
+    output logic [ResourceCount-1:0]        owner_lock_o,
     output logic [ResourceCount-1:0]        quiesce_o,
     output logic [ResourceCount-1:0]        reset_o,
     output logic [ResourceCount-1:0]        irq_lp_o,
@@ -69,6 +70,7 @@ module resource_controller #(
   assign apb4.pslverr  = s_resp_err_q;
   assign apb4.prdata   = s_rdata_q;
   assign owner_o       = s_owner_q;
+  assign owner_lock_o  = s_owner_lock_q;
   assign quiesce_o     = s_quiesce_q;
   assign reset_o       = s_reset_q;
   assign cache_clean_o = s_cache_clean_q;

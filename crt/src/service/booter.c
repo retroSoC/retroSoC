@@ -127,6 +127,8 @@ static void rs_print_mmio_map(void) {
            (void *)(uintptr_t)RS_SOC_APB4_HP_MAILBOX_BASE);
     printf("                       1 x JPEG           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_JPEG_BASE);
+    printf("                       1 x APU            @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_APU_BASE);
     printf("                       1 x CLINT          @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
     printf("                       1 x ARCHINFO       @%p\n",

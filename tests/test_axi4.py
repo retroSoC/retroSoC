@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -173,8 +175,9 @@ def test_axi4_word_bridge_supports_bursts_backpressure_and_errors(tmp_path: Path
     assert "AXI4 word bridge test passed" in result.stdout
 
 
+@pytest.mark.parametrize("product_mode", [False, True])
 def test_axi4_interconnect_classifies_decode_protocol_and_access_errors(
-    tmp_path: Path,
+    tmp_path: Path, product_mode: bool
 ) -> None:
     verilator = shutil.which("verilator")
     if verilator is None:
@@ -205,6 +208,7 @@ def test_axi4_interconnect_classifies_decode_protocol_and_access_errors(
             "-Wno-fatal",
             "--top-module",
             "axi4_interconnect_tb",
+            *(["-DMINI_PRODUCT"] if product_mode else []),
             "-I" + str(memory_map / "rtl"),
             "-I" + str(ROOT / "rtl/mini/top"),
             "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),

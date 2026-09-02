@@ -1,6 +1,7 @@
 #include <archinfo_regs.h>
 #include <retrosoc/core/archinfo.h>
 #include <retrosoc/core/soc.h>
+#include <retrosoc/hal/apu.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/extension.h>
@@ -23,6 +24,14 @@ static bool rs_ci_smoke_archinfo_v2(void) {
 
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
+}
+
+static bool rs_ci_smoke_apu_p1(void) {
+    rs_apu_info_t info;
+
+    return (rs_apu_probe(&info) == RS_OK) && (info.capability0 == RS_APU_CAPABILITY0_IMPLEMENTED) &&
+           (info.capability1 == RS_APU_CAPABILITY1_IMPLEMENTED) &&
+           (info.abi_digest == RS_APU_DIGEST_IMPLEMENTED);
 }
 
 static bool rs_ci_smoke_onchip_sram(void) {
@@ -376,6 +385,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_apu_p1()) {
+        rs_test_finish(RS_TEST_FAILED, 14U);
+    }
+    printf("ci_smoke: APU-P1 discovery passed\n");
     if (!rs_ci_smoke_fabric_monitor_start()) {
         rs_test_finish(RS_TEST_FAILED, 13U);
     }

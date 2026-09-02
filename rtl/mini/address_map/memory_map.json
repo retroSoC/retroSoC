@@ -421,9 +421,9 @@
       "symbol": "APB4_APU",
       "base": "0x10013000",
       "size": "0x00001000",
-      "route": "reserved",
-      "kind": "reserved",
-      "public": false,
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
       "user_access": "none"
     },
     {

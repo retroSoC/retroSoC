@@ -3,9 +3,9 @@
 ## Scope
 
 The Resource Controller at `0x2000_A000` is the root-management ownership and
-interrupt-routing authority for central DMA, USB2, SDIO0, SDIO1, SPI-SD, and
-EXT-H. Hazard3 has read/write access; HP MMIO may inspect status but writes are
-rejected by the root-control firewall.
+interrupt-routing authority for central DMA, USB2, SDIO0, SDIO1, SPI-SD,
+EXT-H, JPEG, and APU. Hazard3 has read/write access; HP MMIO may inspect status
+but writes are rejected by the root-control firewall.
 It is handwritten RTL and has a matching handwritten
 `<retrosoc/hal/resource.h>` API; no register generator is used.
 
@@ -19,6 +19,8 @@ Resource indices are fixed:
 | 3 | SDIO1 | 7 |
 | 4 | SPI-SD | 8 |
 | 5 | EXT-H | 3 |
+| 6 | JPEG | 9 |
+| 7 | APU | 10 |
 
 Owner `0` routes the resource interrupt to the existing LP vector. Owner `1`
 removes it from LP and routes it to the listed HP PLIC source. Reset masks both
@@ -74,6 +76,7 @@ LP/HP IRQ routing are implemented and directed-tested. `CONTROL.QUIESCE`
 blocks the corresponding data-crossbar master and waits per-master outstanding
 zero; shared I/O gateways are conservatively blocked as a pair. `CONTROL.RESET`
 also blocks new data and masks IRQ but is not yet connected to every peripheral
-engine's internal reset state machine. It must not be
-described as independent peripheral power isolation or reset containment until
+engine's internal reset state machine. The APU-P1 shell is an exception: its
+index-7 quiesce acknowledgement and reset are connected locally in PCLK. It
+must not be described as independent peripheral power isolation or reset containment until
 those downstream acknowledgements and fault-injection tests exist.
