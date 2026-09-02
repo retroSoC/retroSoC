@@ -46,6 +46,9 @@ the root README and subsystem guides.
 - [ip/jpeg.md](ip/jpeg.md) records the commercial JPEG IP/SoC survey and
   defines the Mini Baseline JPEG codec, private AXI4 DMA, APB4/ring ABI, HAL,
   verification boundary, and measured 1080p60 optimization plan.
+- [ip/apu.md](ip/apu.md) defines the coreless Mini Audio Processing Unit,
+  including LP-loaded codec microcode, WAV/MP3/FLAC decode, private AXI4 DMA,
+  APB4/ring ABI, I2S streams, independent KWS, lifecycle, and evidence gates.
 - [ip/mini-npu.md](ip/mini-npu.md) evaluates commercial edge-AI SoCs and records the
   optional Mini-AI NPU architecture direction, memory constraints, software
   boundary, and integration prerequisites; it is not an implemented profile.

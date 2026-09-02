@@ -119,6 +119,14 @@ ownership. Its implemented limits, handwritten ABI, measured performance, and
 commercial release gates are documented in
 [Baseline JPEG Codec](../docs/ip/jpeg.md).
 
+The planned Mini Audio Processing Unit has a frozen coreless architecture at
+the reserved `APB4_APU` window. LP loads one bounded microcode bundle containing
+WAV, MP3, and FLAC entry points; a hardware sequencer drives fixed bitstream,
+entropy, transform, reconstruction, resampler, DMA, and I2S stream engines.
+Continuous KWS uses a separate fixed INT8 engine. The feature is not implemented
+or enabled by the current topology; its ABI, phases, verification, and evidence
+gates are defined in [Mini Audio Processing Unit](../docs/ip/apu.md).
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and
