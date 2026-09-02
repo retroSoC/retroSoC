@@ -3,6 +3,7 @@
 /clusterip/common/rtl/interface/ahbl_if.sv
 /clusterip/common/rtl/interface/axi4_if.sv
 /clusterip/common/rtl/interface/axi4_addr_gen.sv
+/clusterip/common/rtl/bus/axi4_regslice.sv
 /clusterip/common/rtl/interface/axi4_stream_if.sv
 /clusterip/common/rtl/interface/ribp_if.sv
 /clusterip/common/rtl/interface/ram_if.sv
@@ -21,5 +22,6 @@
 /clusterip/common/rtl/cdc/cdc_2phase.sv
 /top/soc_common_cdc.sv
 /clusterip/common/rtl/clkrst/clk_int_div.sv
+/clusterip/common/rtl/clock/safe_clock_mux.sv
 /clusterip/common/rtl/clkrst/rst_sync.sv
 /clusterip/common/rtl/clkrst/counter.sv

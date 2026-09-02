@@ -26,8 +26,12 @@ TOP = ROOT / "rtl/mini/top"
 
 
 def target_defines(target: str) -> list[str]:
+    if target == "onchip_ram":
+        return ["+define+PDK_BEHAV", "+define+SYNTHESIS"]
     if target == "opipsram":
         return ["+define+PDK_BEHAV"]
+    if target == "sysctrl":
+        return ["+define+SV_ASSRT_DISABLE", "+define+MINI_PRODUCT"]
     return ["+define+SV_ASSRT_DISABLE"]
 
 
@@ -72,6 +76,7 @@ def source_files(target: str) -> list[Path]:
             *common,
             COMMON_RTL / "cdc/cdc_sync.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "clock_ctrl_if.sv",
             PERIPHERAL / "sysctrl_if.sv",
             PERIPHERAL / "sysctrl_define.svh",
             PERIPHERAL / "sysctrl_reg.sv",
@@ -89,6 +94,7 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "clkrst/counter.sv",
             COMMON_RTL / "utils/edge_det.sv",
             PERIPHERAL / "pll_ctrl_if.sv",
+            PERIPHERAL / "clock_ctrl_if.sv",
             PERIPHERAL / "clint_timebase.sv",
             TOP / "rcu.sv",
             TOP / "pll_rcu_controller.sv",
@@ -197,6 +203,18 @@ def source_files(target: str) -> list[Path]:
             MEMORY / "psram_phy.sv",
             SCRIPT_DIR / "psram_formal.sv",
         ]
+    if target == "onchip_ram":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "interface/axi4_addr_gen.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/xchecker.sv",
+            ROOT / "rtl/tech/tc_sram.sv",
+            TOP / "onchip_ram_reg.sv",
+            TOP / "onchip_ram.sv",
+            SCRIPT_DIR / "onchip_ram_formal.sv",
+        ]
     if target == "opipsram":
         return [
             COMMON_RTL / "interface/axi4_if.sv",
@@ -292,6 +310,7 @@ def parse_args() -> argparse.Namespace:
             "dvp",
             "i2s",
             "psram",
+            "onchip_ram",
             "opipsram",
             "dma",
             "sdio",

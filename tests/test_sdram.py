@@ -170,5 +170,14 @@ def test_ci_software_covers_sdram_mapped_window() -> None:
 
     assert "rs_ci_smoke_sdram_access" in smoke
     assert "RS_SOC_SDRAM_BASE" in smoke
+    assert "RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_SPAN" in smoke
     assert "RS_SOC_SDRAM_BASE" in hello
     assert "WAIT_SDRAM_READY" in hello
+
+
+def test_ci_fabric_monitor_tracks_the_active_firmware_memory() -> None:
+    smoke = (ROOT / "app/apps/ci_smoke/main.c").read_text(encoding="utf-8")
+
+    assert "(RS_SOC_HAS_SRAM != 0U)" in smoke
+    assert "? RS_FABRIC_TARGET_SRAM : RS_FABRIC_TARGET_SDRAM" in smoke
+    assert "rs_fabric_monitor_read_target(active_memory_target, &target)" in smoke

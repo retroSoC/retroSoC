@@ -20,6 +20,17 @@ FABRIC_LINK_NAMES = ("mgmt", "user", "dma", "sdio0", "sdio1", "usb2", "cfg", "sy
 FABRIC_PROTOCOLS = {name: "axi4" for name in FABRIC_LINK_NAMES}
 IRQ_GROUP_NAMES = ("apb4_periph", "apb4_system")
 IRQ_VECTOR_WIDTH = 32
+DATA_MASTER_NAMES = (
+    "hp_icache",
+    "hp_dcache",
+    "dma",
+    "io_gateway_a",
+    "io_gateway_b",
+    "lp_gateway",
+    "jpeg",
+    "ext_h",
+)
+DATA_TARGET_NAMES = ("sram", "sdram", "qpi", "opi", "xpi")
 COMPATIBILITY_IRQ_BINDINGS = (
     ("clint_software", "apb4_periph", 0, 0, "u_clint_if.software_irq_o[0]"),
     ("clint_timer", "apb4_periph", 1, 1, "u_clint_if.timer_irq_o[0]"),
@@ -27,7 +38,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("timer0", "apb4_periph", 3, 3, "s_tim0_irq"),
     ("timer1", "apb4_periph", 4, 4, "s_tim1_irq"),
     ("psram", "apb4_periph", 5, 5, "psram.irq_o"),
-    ("spisd", "apb4_periph", 6, 6, "spisd.irq_o"),
+    ("spisd", "apb4_periph", 6, 6, "resource_irq_lp_i[4]"),
     ("i2c0", "apb4_periph", 7, 7, "i2c0.irq_o"),
     ("i2s", "apb4_periph", 8, 8, "i2s.irq_o"),
     ("xpi", "apb4_periph", 9, 9, "s_xpi_irq"),
@@ -36,6 +47,7 @@ COMPATIBILITY_IRQ_BINDINGS = (
     ("rtc", "apb4_system", 2, 13, "u_rtc_if.irq_o"),
     ("watchdog_early_warning", "apb4_system", 3, 14, "u_wdg_if.irq_o"),
     ("rng", "apb4_system", 4, 16, "s_rng_irq"),
+    ("resource_fault", "apb4_system", 7, 29, "s_resource_fault_irq"),
     ("ws2812", "apb4_periph", 10, 17, "ws2812.irq_o"),
     ("gpio", "apb4_periph", 11, 18, "gpio.irq_o"),
     ("i2c1", "apb4_periph", 12, 19, "i2c1.irq_o"),
@@ -59,6 +71,17 @@ class FabricLink:
     name: str
     interface: str
     protocol: str
+    domain: str
+
+
+@dataclass(frozen=True)
+class DataMasterPolicy:
+    index: int
+    name: str
+    read_targets: tuple[str, ...]
+    write_targets: tuple[str, ...]
+    allow_instruction: bool
+    require_noncacheable: bool
 
 
 @dataclass(frozen=True)
@@ -279,6 +302,7 @@ def parse_fabric_links(value: Any) -> list[FabricLink]:
         name = require_identifier(link.get("name"), f"fabric_links[{index}].name")
         interface = require_identifier(link.get("interface"), f"fabric_links[{index}].interface")
         protocol = require_string(link.get("protocol"), f"fabric_links[{index}].protocol")
+        domain = require_string(link.get("domain"), f"fabric_links[{index}].domain")
         if name not in FABRIC_LINK_NAMES:
             raise ValueError(f"fabric_links[{index}].name is not a supported SoC fabric role")
         if name in names:
@@ -289,13 +313,63 @@ def parse_fabric_links(value: Any) -> list[FabricLink]:
             raise ValueError(
                 f"fabric_links[{index}].protocol must be {FABRIC_PROTOCOLS[name]} for {name}"
             )
+        if domain not in {"lp", "pclk"}:
+            raise ValueError(f"fabric_links[{index}].domain must be lp or pclk")
         names.add(name)
         interfaces.add(interface)
-        links.append(FabricLink(name, interface, protocol))
+        links.append(FabricLink(name, interface, protocol, domain))
     if names != set(FABRIC_LINK_NAMES):
         missing = ", ".join(sorted(set(FABRIC_LINK_NAMES) - names))
         raise ValueError(f"fabric_links does not cover required roles: {missing}")
     return sorted(links, key=lambda item: FABRIC_LINK_NAMES.index(item.name))
+
+
+def parse_data_master_policies(value: Any) -> list[DataMasterPolicy]:
+    if not isinstance(value, list) or len(value) != len(DATA_MASTER_NAMES):
+        raise ValueError("data_master_policies must define all eight data masters")
+    policies: list[DataMasterPolicy] = []
+    for position, entry in enumerate(value):
+        policy = require_object(entry, f"data_master_policies[{position}]")
+        index = policy.get("index")
+        name = require_identifier(policy.get("name"), f"data_master_policies[{position}].name")
+        if index != position or name != DATA_MASTER_NAMES[position]:
+            raise ValueError(
+                f"data_master_policies[{position}] must define index {position} "
+                f"and name {DATA_MASTER_NAMES[position]}"
+            )
+        target_lists: list[tuple[str, ...]] = []
+        for access in ("read_targets", "write_targets"):
+            targets = policy.get(access)
+            if not isinstance(targets, list):
+                raise ValueError(f"data_master_policies[{position}].{access} must be a list")
+            parsed_targets = tuple(
+                require_identifier(target, f"data_master_policies[{position}].{access}")
+                for target in targets
+            )
+            if len(parsed_targets) != len(set(parsed_targets)) or any(
+                target not in DATA_TARGET_NAMES for target in parsed_targets
+            ):
+                raise ValueError(
+                    f"data_master_policies[{position}].{access} contains duplicate or unknown targets"
+                )
+            target_lists.append(parsed_targets)
+        allow_instruction = policy.get("allow_instruction")
+        require_noncacheable = policy.get("require_noncacheable")
+        if not isinstance(allow_instruction, bool) or not isinstance(require_noncacheable, bool):
+            raise ValueError(
+                f"data_master_policies[{position}] attributes must be boolean"
+            )
+        policies.append(
+            DataMasterPolicy(
+                index,
+                name,
+                target_lists[0],
+                target_lists[1],
+                allow_instruction,
+                require_noncacheable,
+            )
+        )
+    return policies
 
 
 def parse_gpio_mode(value: Any, field: str) -> GpioMode:
@@ -454,10 +528,11 @@ def read_topology(
     int,
     list[IrqGroup],
     list[Interrupt],
+    list[DataMasterPolicy],
 ]:
     document = require_object(json.loads(topology_path.read_text(encoding="utf-8")), "topology")
-    if document.get("schema_version") != 1:
-        raise ValueError("schema_version must be 1")
+    if document.get("schema_version") != 2:
+        raise ValueError("schema_version must be 2")
     gpio_pins = document.get("gpio_pins")
     if not isinstance(gpio_pins, int) or gpio_pins <= 0:
         raise ValueError("gpio_pins must be a positive integer")
@@ -486,6 +561,36 @@ def read_topology(
         irq_vector_width,
         irq_groups,
         interrupts,
+        parse_data_master_policies(document.get("data_master_policies")),
+    )
+
+
+def render_data_policy(policies: list[DataMasterPolicy]) -> str:
+    def packed_target_mask(access: str) -> str:
+        bits = "".join(
+            "".join(
+                "1" if target in getattr(policy, access) else "0"
+                for target in reversed(DATA_TARGET_NAMES)
+            )
+            for policy in reversed(policies)
+        )
+        return f"40'b{bits}"
+
+    instruction_bits = "".join(
+        "1" if policy.allow_instruction else "0" for policy in reversed(policies)
+    )
+    noncacheable_bits = "".join(
+        "1" if policy.require_noncacheable else "0" for policy in reversed(policies)
+    )
+    return "\n".join(
+        [
+            "// Generated by rtl/mini/integration/generate_soc_topology.py; do not edit.",
+            f"`define {'SOC_DATA_POLICY_READ_TARGET_MASK':<44} {packed_target_mask('read_targets')}",
+            f"`define {'SOC_DATA_POLICY_WRITE_TARGET_MASK':<44} {packed_target_mask('write_targets')}",
+            f"`define {'SOC_DATA_POLICY_ALLOW_INSTRUCTION':<44} 8'b{instruction_bits}",
+            f"`define {'SOC_DATA_POLICY_REQUIRE_NONCACHEABLE':<44} 8'b{noncacheable_bits}",
+            "",
+        ]
     )
 
 
@@ -599,6 +704,8 @@ def render_fabric_interfaces(links: list[FabricLink]) -> str:
     }
     for link in links:
         if link.protocol == "axi4":
+            clock = "clk_lp_i" if link.domain == "lp" else "clk_pclk_i"
+            reset = "rst_lp_n_i" if link.domain == "lp" else "rst_pclk_n_i"
             lines.extend(
                 [
                     "  axi4_if #(",
@@ -607,8 +714,8 @@ def render_fabric_interfaces(links: list[FabricLink]) -> str:
                     "      .ID_WIDTH  (1),",
                     "      .USER_WIDTH(1)",
                     f"  ) {link.interface} (",
-                    "      .aclk   (clk_i),",
-                    "      .aresetn(rst_n_i)",
+                    f"      .aclk   ({clock}),",
+                    f"      .aresetn({reset})",
                     "  );",
                 ]
             )
@@ -761,8 +868,8 @@ def render_irq_sva(vector_width: int, groups: list[IrqGroup], interrupts: list[I
     )
     lines.extend(
         [
-            "    .clk_i(clk_i),",
-            "    .rst_n_i(rst_n_i),",
+            "    .clk_i(clk_lp_i),",
+            "    .rst_n_i(rst_lp_n_i),",
             "    .irq_i(s_irq),",
         ]
     )
@@ -782,6 +889,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
         irq_vector_width,
         irq_groups,
         interrupts,
+        data_master_policies,
     ) = read_topology(topology_path, memory_map_path)
     rtl_dir = output_dir / "rtl"
 
@@ -838,6 +946,7 @@ def generate(topology_path: Path, memory_map_path: Path, output_dir: Path) -> No
         rtl_dir / "soc_irq_sva.svh",
         render_irq_sva(irq_vector_width, irq_groups, interrupts),
     )
+    atomic_write(rtl_dir / "soc_data_policy.svh", render_data_policy(data_master_policies))
     atomic_write(output_dir / "soc_topology.fl", f"+incdir+{rtl_dir}\n")
 
 

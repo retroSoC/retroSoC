@@ -6,6 +6,12 @@ fractional baud-rate generation, configurable framing, receive diagnostics,
 watermark and timeout interrupts, internal loopback, break generation,
 generic-DMA request pacing, and automatic active-low RTS/CTS flow control.
 
+The HP profile instantiates the same UART v3 register ABI as UART1 at
+`0x10018000`, with dedicated `uart1_tx`/`uart1_rx` pads and PLIC source 1.
+UART1 has no DMA or RTS/CTS connection in the MVP. The external OpenSBI platform
+uses UART1 as the SBI debug console, and Linux initially consumes it through
+`hvc0`; a native Linux UART driver is a later delivery item.
+
 ## Integration
 
 | Property | Value |

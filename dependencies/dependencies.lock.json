@@ -13,6 +13,31 @@
       "destination": "rtl/managed/hazard3",
       "license": "NOASSERTION"
     },
+    "vexiiriscv": {
+      "url": "https://github.com/SpinalHDL/VexiiRiscv.git",
+      "revision": "ef7da4134ff11ec6a681d0632123b232b853b046",
+      "destination": ".cache/retrosoc/sources/vexiiriscv",
+      "recursive": true,
+      "license": "MIT"
+    },
+    "opensbi_hp": {
+      "url": "https://github.com/riscv-software-src/opensbi.git",
+      "revision": "cbf9f6734dd85a982c63e3cb5db7ffe09da839ca",
+      "destination": ".cache/retrosoc/sources/opensbi-hp",
+      "license": "BSD-2-Clause"
+    },
+    "linux_hp": {
+      "url": "https://github.com/gregkh/linux.git",
+      "revision": "14c37ff05f22da2fa7076d10f6a07c7ede330c83",
+      "destination": ".cache/retrosoc/sources/linux-hp",
+      "license": "GPL-2.0-only"
+    },
+    "buildroot_hp": {
+      "url": "https://gitlab.com/buildroot.org/buildroot.git",
+      "revision": "cb857ba4c87a93e5265a9e4a3f32071abf39e14a",
+      "destination": ".cache/retrosoc/sources/buildroot-hp",
+      "license": "GPL-2.0-or-later"
+    },
     "ibex": {
       "url": "https://github.com/lowRISC/ibex.git",
       "revision": "0c233f54361d769f370889223acc456f2ac19d46",
@@ -61,7 +86,7 @@
       "license": "Apache-2.0"
     },
     "cluster_archinfo": {"url": "https://github.com/retroSoC/archinfo.git", "revision": "78505969a0afdbc887cdd9b36eda228b4afb616e", "destination": "rtl/managed/clusterip/archinfo", "license": "MulanPSL-2.0"},
-    "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "5604bd5899bcc3a937cef55db4bac3b5102e562c", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
+    "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "964a54d70cb78e394ba9a25c05f2aa2b02941fb7", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
     "cluster_crc": {"url": "https://github.com/retroSoC/crc.git", "revision": "8c1a5664c4d23d005c1afad432372a13ca967cc8", "destination": "rtl/managed/clusterip/crc", "license": "MulanPSL-2.0"},
     "cluster_ps2": {"url": "https://github.com/retroSoC/ps2.git", "revision": "2097a0d41b07573ff0453d65ba9a1670b3df7b9c", "destination": "rtl/managed/clusterip/ps2", "license": "MulanPSL-2.0"},
     "cluster_pwm": {"url": "https://github.com/retroSoC/pwm.git", "revision": "79ae32f725e848a1e7f6134847b3fb032ed64006", "destination": "rtl/managed/clusterip/pwm", "license": "MulanPSL-2.0"},
@@ -70,6 +95,18 @@
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
   },
   "archives": {
+    "libjpeg_turbo": {
+      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
+      "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
+      "destination": ".cache/retrosoc/downloads/libjpeg-turbo/libjpeg-turbo-3.2.0.tar.gz",
+      "license": "BSD-3-Clause AND IJG"
+    },
+    "ecc_cli_linux_x86_64": {
+      "url": "https://github.com/openecos-projects/ecc/releases/download/v0.1.0-alpha.10/ecc-cli-linux-x86_64.tar.gz",
+      "sha256": "fc3daaca24dddb04ba3490329042f52da05190da03c3831042293dd0cbffdca6",
+      "destination": ".cache/retrosoc/downloads/ecc/ecc-cli-linux-x86_64-v0.1.0-alpha.10.tar.gz",
+      "license": "Apache-2.0"
+    },
     "fatfs": {
       "url": "https://github.com/retroSoC/artifact/releases/download/fatfs-r0.16/fatfs-r0.16.zip",
       "sha256": "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e",
@@ -81,6 +118,12 @@
       "sha256": "faa3fc2f3ef8560c2d7cafc7800ecee39b69b8d177b14d098ed94062ba3f6e5c",
       "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_LLSC_H7CR_liberty.tar.bz2",
       "license": "Apache-2.0"
+    },
+    "sky130_openram_sram_4kbyte_1rw_32x1024_8": {
+      "url": "https://github.com/retroSoC/artifact/releases/download/openram-sky130_sram_4kbyte_1rw_32x1024_8-b2b069ce119d-24dfd2f0371c/sky130_sram_4kbyte_1rw_32x1024_8-openram-b2b069ce119d.tar.gz",
+      "sha256": "75d987556561c7f3e9bc29e59b854849c2938c509c1b2e37906eb2af6aae211e",
+      "destination": ".cache/retrosoc/downloads/pdk/sky130/sky130_sram_4kbyte_1rw_32x1024_8-openram-b2b069ce119d.tar.gz",
+      "license": "LicenseRef-OpenRAM-SKY130-Mixed"
     },
     "serv": {
       "url": "https://github.com/olofk/serv/archive/refs/tags/1.4.0.tar.gz",

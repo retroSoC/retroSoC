@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 C_DEFINE = ROOT / "app/network/userip/src/user_ip_regs.h"
-EXTENSIONS = ROOT / "rtl/mini/integration/user_extensions.json"
+EXTENSIONS = ROOT / "rtl/mini/integration/user_extensions_legacy.json"
 SOC_HEADER = ROOT / "crt/include/retrosoc/core/soc.h"
 RTL_DEFINES = {
     1: ROOT / "rtl/managed/mpw/ip/username1/user_ip_design.sv",

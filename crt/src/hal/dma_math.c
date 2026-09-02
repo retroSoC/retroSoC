@@ -13,7 +13,7 @@ static bool rs_dma_address_valid(uintptr_t address, uint32_t byte_count, bool in
     if (!increment) {
         return true;
     }
-    last_address = address + (uintptr_t)(byte_count - sizeof(uint32_t));
+    last_address = address + (uintptr_t)(byte_count - UINT32_C(1));
     return last_address >= address && last_address <= (uintptr_t)UINT32_MAX;
 }
 
@@ -38,9 +38,8 @@ static bool rs_dma_request_valid(const rs_dma_config_t *config) {
 rs_status_t rs_dma_config_validate(uint32_t channel, const rs_dma_config_t *config) {
     if ((channel >= RS_DMA_CHANNEL_COUNT) || (config == NULL) ||
         (config->width != RS_DMA_WIDTH_32) || (config->byte_count == 0U) ||
-        ((config->byte_count % sizeof(uint32_t)) != 0U) || (config->priority > 3U) ||
-        (config->burst_beats == 0U) || (config->burst_beats > RS_DMA_MAX_BURST_BEATS) ||
-        !rs_dma_request_valid(config)) {
+        (config->priority > 3U) || (config->burst_beats == 0U) ||
+        (config->burst_beats > RS_DMA_MAX_BURST_BEATS) || !rs_dma_request_valid(config)) {
         return RS_EINVAL;
     }
 
@@ -57,19 +56,73 @@ rs_status_t rs_dma_config_validate(uint32_t channel, const rs_dma_config_t *conf
         break;
     case RS_DMA_KIND_MM_TO_STREAM:
         if ((config->source == (uintptr_t)0U) || ((config->source % sizeof(uint32_t)) != 0U) ||
-            !config->source_increment ||
+            ((config->byte_count % sizeof(uint32_t)) != 0U) || !config->source_increment ||
             !rs_dma_address_valid(config->source, config->byte_count, true)) {
             return RS_EINVAL;
         }
         break;
     case RS_DMA_KIND_STREAM_TO_MM:
         if ((config->destination == (uintptr_t)0U) ||
-            ((config->destination % sizeof(uint32_t)) != 0U) || !config->destination_increment ||
+            ((config->destination % sizeof(uint32_t)) != 0U) ||
+            ((config->byte_count % sizeof(uint32_t)) != 0U) || !config->destination_increment ||
             !rs_dma_address_valid(config->destination, config->byte_count, true)) {
             return RS_EINVAL;
         }
         break;
     default:
+        return RS_EINVAL;
+    }
+    return RS_OK;
+}
+
+rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd) {
+    uint32_t kind;
+    uint32_t request;
+    uint32_t burst;
+
+    if ((channel >= RS_DMA_CHANNEL_COUNT) || (tcd == NULL) ||
+        (((uintptr_t)tcd & UINT32_C(0x3F)) != (uintptr_t)0U) ||
+        ((tcd->next_ptr != UINT32_C(0)) && ((tcd->next_ptr & UINT32_C(0x3F)) != UINT32_C(0))) ||
+        (tcd->byte_count == UINT32_C(0)) || (tcd->y_count > UINT16_C(1)) ||
+        (tcd->source_stride != 0) || (tcd->destination_stride != 0) ||
+        ((tcd->control & RS_DMA_TCD_VALID) == UINT32_C(0))) {
+        return RS_EINVAL;
+    }
+    kind = (tcd->control >> RS_DMA_TCD_KIND_SHIFT) & UINT32_C(0x7);
+    request = (tcd->control >> RS_DMA_TCD_REQUEST_SHIFT) & UINT32_C(0xF);
+    burst = (tcd->control >> RS_DMA_TCD_BURST_SHIFT) & UINT32_C(0x1F);
+    if ((kind > (uint32_t)RS_DMA_KIND_STREAM_TO_MM) ||
+        (request > (uint32_t)RS_DMA_REQUEST_CRYPTO_OUT) || (burst > RS_DMA_MAX_BURST_BEATS) ||
+        ((tcd->source & UINT32_C(0x3)) != UINT32_C(0)) ||
+        ((tcd->destination & UINT32_C(0x3)) != UINT32_C(0))) {
+        return RS_EINVAL;
+    }
+    if (((kind != (uint32_t)RS_DMA_KIND_STREAM_TO_MM) && (tcd->source == UINT32_C(0))) ||
+        ((kind != (uint32_t)RS_DMA_KIND_MM_TO_STREAM) && (tcd->destination == UINT32_C(0)))) {
+        return RS_EINVAL;
+    }
+    if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_MM) &&
+        !((request == (uint32_t)RS_DMA_REQUEST_SOFTWARE) ||
+          ((request >= (uint32_t)RS_DMA_REQUEST_XPI_TX) &&
+           (request <= (uint32_t)RS_DMA_REQUEST_I2C1_RX)))) {
+        return RS_EINVAL;
+    }
+    if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_STREAM) &&
+        (!((request == (uint32_t)RS_DMA_REQUEST_I2S_TX) ||
+           (request == (uint32_t)RS_DMA_REQUEST_CRYPTO_IN)) ||
+         ((tcd->control & RS_DMA_TCD_SRC_INC) == UINT32_C(0)))) {
+        return RS_EINVAL;
+    }
+    if ((kind == (uint32_t)RS_DMA_KIND_STREAM_TO_MM) &&
+        (!((request == (uint32_t)RS_DMA_REQUEST_I2S_RX) ||
+           (request == (uint32_t)RS_DMA_REQUEST_DVP_RX) ||
+           (request == (uint32_t)RS_DMA_REQUEST_CRYPTO_OUT)) ||
+         ((tcd->control & RS_DMA_TCD_DST_INC) == UINT32_C(0)))) {
+        return RS_EINVAL;
+    }
+    if (((kind == (uint32_t)RS_DMA_KIND_MM_TO_STREAM) ||
+         (kind == (uint32_t)RS_DMA_KIND_STREAM_TO_MM)) &&
+        ((tcd->byte_count & UINT32_C(0x3)) != UINT32_C(0))) {
         return RS_EINVAL;
     }
     return RS_OK;

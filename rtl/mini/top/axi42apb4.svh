@@ -32,6 +32,7 @@ always_comb begin
       s_resp_d = `AXI4_RESP_OKAY;
       if (axi4.arvalid && axi4.arready) begin
         s_addr_d  = axi4.araddr;
+        s_wstrb_d = '0;
         s_write_d = 1'b0;
         s_id_d    = axi4.arid;
         s_len_d   = axi4.arlen;

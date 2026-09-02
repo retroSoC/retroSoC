@@ -283,8 +283,8 @@ rs_status_t rs_opipsram_dma_copy_validate(uint32_t channel, uintptr_t source, ui
     bool source_in_aperture;
     bool destination_in_aperture;
 
-    if ((config == NULL) || (byte_count == 0U) || ((byte_count % sizeof(uint32_t)) != 0U) ||
-        ((source % sizeof(uint32_t)) != 0U) || ((destination % sizeof(uint32_t)) != 0U)) {
+    if ((config == NULL) || (byte_count == 0U) || ((source % sizeof(uint32_t)) != 0U) ||
+        ((destination % sizeof(uint32_t)) != 0U)) {
         return RS_EINVAL;
     }
     source_in_aperture = rs_opipsram_aperture_range_valid(source, byte_count);

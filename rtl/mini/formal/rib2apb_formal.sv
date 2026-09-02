@@ -44,8 +44,8 @@ module rib2apb_formal_design (
     output logic [ 1:0] rib_rsp_beat,
     output logic        rib_rsp_last,
     output logic        rib_rsp_ready,
-    output logic [ 7:0] psel_comb,
-    output logic [ 7:0] psel_q,
+    output logic [11:0] psel_comb,
+    output logic [11:0] psel_q,
     output logic        xfer_ready,
     output logic        xfer_error,
     output logic        rsp_input_valid,
@@ -63,6 +63,10 @@ module rib2apb_formal_design (
   apb4_pure_if wdg ();
   apb4_pure_if crc ();
   apb4_pure_if user_ip ();
+  apb4_pure_if ext_l ();
+  apb4_pure_if ext_h ();
+  apb4_pure_if resource_ctrl ();
+  apb4_pure_if fabric_monitor ();
 
   (* anyseq *)logic        f_rib_cmd_valid;
   (* anyseq *)logic [31:0] f_rib_cmd_addr;
@@ -110,19 +114,27 @@ module rib2apb_formal_design (
   formal_apb_slave u_wdg_slave (.apb(wdg));
   formal_apb_slave u_crc_slave (.apb(crc));
   formal_apb_slave u_user_ip_slave (.apb(user_ip));
+  formal_apb_slave u_ext_l_slave (.apb(ext_l));
+  formal_apb_slave u_ext_h_slave (.apb(ext_h));
+  formal_apb_slave u_resource_ctrl_slave (.apb(resource_ctrl));
+  formal_apb_slave u_fabric_monitor_slave (.apb(fabric_monitor));
 
   rib2apb u_dut (
-      .clk_i   (clk_i),
-      .rst_n_i (rst_n_i),
-      .rib     (rib),
-      .archinfo(archinfo),
-      .rng     (rng),
-      .pwm     (pwm),
-      .ps2     (ps2),
-      .rtc     (rtc),
-      .wdg     (wdg),
-      .crc     (crc),
-      .user_ip (user_ip)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .rib           (rib),
+      .archinfo      (archinfo),
+      .rng           (rng),
+      .pwm           (pwm),
+      .ps2           (ps2),
+      .rtc           (rtc),
+      .wdg           (wdg),
+      .crc           (crc),
+      .user_ip       (user_ip),
+      .ext_l         (ext_l),
+      .ext_h         (ext_h),
+      .resource_ctrl (resource_ctrl),
+      .fabric_monitor(fabric_monitor)
   );
 
   assign psel_comb       = u_dut.s_psel_comb;

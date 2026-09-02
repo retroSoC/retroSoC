@@ -8,7 +8,7 @@
 #define RS_CLOCK_ERROR_LOCK_TIMEOUT 2U
 
 static bool rs_clock_frequency_valid(rs_clock_frequency_t frequency) {
-    return (uint32_t)frequency <= (uint32_t)RS_CLOCK_FREQ_192MHZ;
+    return (uint32_t)frequency <= (uint32_t)RS_CLOCK_FREQ_240MHZ;
 }
 
 rs_status_t rs_clock_get_status(rs_clock_status_t *status) {
@@ -37,7 +37,7 @@ rs_status_t rs_clock_frequency_hz(rs_clock_frequency_t frequency, uint32_t *freq
     if (!rs_clock_frequency_valid(frequency) || (frequency_hz == NULL)) {
         return RS_EINVAL;
     }
-    *frequency_hz = ((uint32_t)frequency + 1U) * UINT32_C(24000000);
+    *frequency_hz = ((uint32_t)frequency + 3U) * UINT32_C(24000000);
     return RS_OK;
 }
 

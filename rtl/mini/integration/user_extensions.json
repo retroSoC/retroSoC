@@ -1,16 +1,27 @@
 {
-  "schema_version": 2,
-  "core_selector_width": 5,
-  "ip_selector_width": 8,
+  "schema_version": 3,
+  "mode": "product",
   "gpio_width": 32,
-  "core_targets": [
-    {"slot": 0, "design_id": "kianv_rv32i", "module": "mpw_c0", "instance": "u_mpw_core_kianv_rv32i", "bus": "ribp", "reset": "sync"},
-    {"slot": 1, "design_id": "serv", "module": "mpw_c1", "instance": "u_mpw_core_serv", "bus": "ribp", "reset": "async"},
-    {"slot": 2, "design_id": "femtorv32", "module": "mpw_c2", "instance": "u_mpw_core_femtorv32", "bus": "ribp", "reset": "async"},
-    {"slot": 3, "design_id": "darkriscv", "module": "mpw_c3", "instance": "u_mpw_core_darkriscv", "bus": "ribp", "reset": "async"}
-  ],
-  "ip_targets": [
-    {"slot": 1, "design_id": "tiny_timer", "module": "mpw_i1", "instance": "u_mpw_ip_tiny_timer"},
-    {"slot": 2, "design_id": "tiny_gpio", "module": "mpw_i2", "instance": "u_mpw_ip_tiny_gpio"}
+  "extensions": [
+    {
+      "slot": 0,
+      "kind": "ext_l",
+      "control_region": "APB4_EXT_L",
+      "irq_base": 27,
+      "irq_count": 1,
+      "data_master": false,
+      "stream": false,
+      "local_sram": false
+    },
+    {
+      "slot": 1,
+      "kind": "ext_h",
+      "control_region": "APB4_EXT_H",
+      "irq_base": 28,
+      "irq_count": 1,
+      "data_master": true,
+      "stream": false,
+      "local_sram": false
+    }
   ]
 }

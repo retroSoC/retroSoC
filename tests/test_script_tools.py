@@ -50,8 +50,10 @@ from scripts.regress import (  # noqa: E402
     NIGHTLY_EXTRA_COMMANDS,
     PDK_PR_PROFILES,
     PR_COMMANDS,
+    RTL_COMMANDS,
     RTL_LINT_VALUES,
     SMOKE_COMMANDS,
+    behavioral_only,
     pdk_pr_commands,
     regression_environment,
     select_regression,
@@ -135,6 +137,15 @@ def test_generate_all_is_stable_and_expands_paths(tmp_path: Path) -> None:
         "pdk_ihp130.fl",
         "pdk_sky130.fl",
     }.issubset({path.name for path in generated})
+
+
+def test_netlist_support_filelist_is_an_explicit_testbench_allowlist(tmp_path: Path) -> None:
+    generate_all(tmp_path, ["+define+PDK_IHP130"])
+
+    support = parse_filelists([tmp_path / "netlist_support.fl"])
+    source_names = {path.name for path in support.files}
+
+    assert source_names == {"register.sv", "rst_sync.sv"}
 
 
 def test_filelist_round_trips_verilog_define_values(tmp_path: Path) -> None:
@@ -316,6 +327,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812_filelist = tmp_path / "ws2812.fl"
     i2c_filelist = tmp_path / "i2c.fl"
     clint_filelist = tmp_path / "clint.fl"
+    onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
@@ -337,6 +349,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist("i2c", i2c_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist("clint", clint_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
+        "onchip_ram", onchip_ram_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
 
@@ -349,9 +364,13 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     ws2812 = parse_filelists([ws2812_filelist], require_files=False)
     i2c = parse_filelists([i2c_filelist], require_files=False)
     clint = parse_filelists([clint_filelist], require_files=False)
+    onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
+    assert "+define+PDK_BEHAV" in onchip_ram.defines
+    assert "+define+SYNTHESIS" in onchip_ram.defines
     assert "+define+PDK_BEHAV" in opipsram.defines
+    assert "+define+SYNTHESIS" not in opipsram.defines
     assert "+define+SV_ASSRT_DISABLE" not in opipsram.defines
     assert ROOT / "rtl/mini/top/rib_bus.sv" in bus.files
     assert ROOT / "rtl/mini/top/rib_if.sv" in bus.files
@@ -402,6 +421,16 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/tech/tc_clk.sv" in opipsram.files
     assert ROOT / "rtl/tech/tc_opipsram_delay.sv" in opipsram.files
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
+
+
+def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+
+    assert re.search(r"^FORMAL_OPIPSRAM_DEPTH\s+\?= 40$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_OPIPSRAM_BMC_DEPTH\s+\?= 40$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_OPIPSRAM_TIMEOUT\s+\?= 300$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_OPIPSRAM_BMC_TIMEOUT\s+\?= 600$", formal_makefile, re.MULTILINE)
+    assert "$(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY)" in formal_makefile
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
@@ -620,12 +649,12 @@ def test_mpw_extension_bindings_match_generated_manifest(tmp_path: Path) -> None
     }
     (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
-    validate_extension_bindings(tmp_path, output)
+    validate_extension_bindings(extensions_path, output)
 
     extensions["core_targets"][0]["module"] = "wrong_core"
     extensions_path.write_text(json.dumps(extensions), encoding="utf-8")
     with pytest.raises(ValueError, match="does not match"):
-        validate_extension_bindings(tmp_path, output)
+        validate_extension_bindings(extensions_path, output)
 
 
 def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
@@ -736,21 +765,23 @@ def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Pa
 
 
 def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> None:
+    build_root = tmp_path / "build"
+
     def build_state() -> dict[str, tuple[int, int]]:
-        build = ROOT / "build"
-        if not build.exists():
+        if not build_root.exists():
             return {}
         return {
-            str(path.relative_to(build)): (path.stat().st_size, path.stat().st_mtime_ns)
-            for path in build.rglob("*")
+            str(path.relative_to(build_root)): (path.stat().st_size, path.stat().st_mtime_ns)
+            for path in build_root.rglob("*")
             if path.is_file()
         }
 
     before = build_state()
-    run("make", "-n", "help")
+    run("make", "-n", f"BUILD_ROOT={build_root}", "help")
     run(
         "make",
         "-n",
+        f"BUILD_ROOT={build_root}",
         f"ARCHINFO_METADATA_SCRIPT={tmp_path / 'missing-generate-metadata.py'}",
         "SIMU=IVERILOG",
         "comp",
@@ -758,6 +789,7 @@ def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> N
     run(
         "make",
         "-n",
+        f"BUILD_ROOT={build_root}",
         "CONFIG=configs/ci/ihp130.mk",
         "SIMU=IVERILOG",
         "RTL_SIM_TIMEOUT=5200000",
@@ -943,7 +975,13 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
     regression_commands = (*SMOKE_COMMANDS, *PR_COMMANDS, *NIGHTLY_COMMANDS)
     for _, values in regression_commands:
         if "SIMU=VERILATOR" in values:
-            assert not any(value.startswith("SOC_SIM_TIME=") for value in values)
+            simulation_timeout = [value for value in values if value.startswith("SOC_SIM_TIME=")]
+            if "APP=ci_smoke" in values and "sim" in values:
+                assert simulation_timeout == ["SOC_SIM_TIME=360"]
+                assert "LINK_TYPE=ld2_all_sram" in values
+                assert "VERILATOR_SIM_ARGS=--fast-flash" in values
+            else:
+                assert not simulation_timeout
             if "debug-sim" not in values:
                 assert "HAVE_SVA=YES" in values
 
@@ -962,10 +1000,12 @@ def test_systemverilog_testbench_starts_in_reset_with_known_clocks() -> None:
     testbench = (ROOT / "rtl/mini/dv/tb/retrosoc_tb.sv").read_text(encoding="utf-8")
 
     assert "localparam time ResetHoldTime = 170744ns;" in testbench
-    for clock in ("r_ext_clk", "r_aud_clk", "r_xtal_clk"):
-        assert f"{clock} = 1'b0;" in testbench
+    for clock in ("r_ext_clk", "r_aud_clk", "r_ref24_clk"):
+        assert re.search(rf"\b{clock}\s*=\s*1'b0;", testbench) is not None
         assert f"{clock} = ~{clock};" in testbench
-    assert testbench.index("r_rst_n = 1'b0;") < testbench.index("#ResetHoldTime;")
+    reset_init = re.search(r"\br_rst_n\s*=\s*1'b0;", testbench)
+    assert reset_init is not None
+    assert reset_init.start() < testbench.index("#ResetHoldTime;")
     assert testbench.index("#ResetHoldTime;") < testbench.index("r_rst_n = 1'b1;")
     assert "#43;" not in testbench
 
@@ -1025,8 +1065,25 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert "PDK_BEHAV HAVE_SVA" in makefile
     assert "PDK_BEHAV=YES is for functional simulation" in makefile
     assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
+    assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
     assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
     assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
+
+
+def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> None:
+    for pdk in ("ihp130", "gf180", "sky130"):
+        profile = (ROOT / f"configs/ci/{pdk}.mk").read_text(encoding="utf-8")
+        assert re.search(r"^HAVE_SRAM_IF\s*:= YES$", profile, re.MULTILINE)
+        assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
+        assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
+
+    ics55 = (ROOT / "configs/ci/ics55.mk").read_text(encoding="utf-8")
+    assert re.search(r"^HAVE_SRAM_IF\s*:= NO$", ics55, re.MULTILINE)
+    assert re.search(r"^HAVE_SRAM_MACRO\s*:= NO$", ics55, re.MULTILINE)
+
+    for name in ("ihp130-hazard3", "ihp130-hazard3-coremark"):
+        benchmark = (ROOT / f"configs/benchmark/{name}.mk").read_text(encoding="utf-8")
+        assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", benchmark, re.MULTILINE)
 
 
 def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
@@ -1076,6 +1133,76 @@ def test_smoke_regression_uses_ihp130_behavioral_coverage_only() -> None:
     assert "smoke regression supports only --pdk IHP130" in invalid.stderr
 
 
+def test_rtl_regression_excludes_synthesis_and_timing() -> None:
+    commands, profiles = select_regression("rtl", "IHP130")
+
+    assert commands == RTL_COMMANDS
+    assert profiles == ("configs/ci/ihp130.mk",)
+    values = [value for _, command_values in commands for value in command_values]
+    assert "sim" in values
+    assert "sim-asm" in values
+    assert "debug-sim" in values
+    assert "synth" not in values
+    assert "netsim" not in values
+    assert "sta" not in values
+
+    dry_run = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "rtl",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "SIMU=VERILATOR" in dry_run.stdout
+    assert "SIMU=IVERILOG" in dry_run.stdout
+    assert "synth" not in dry_run.stdout
+    assert "netsim" not in dry_run.stdout
+    assert "STA=OPENSTA" not in dry_run.stdout
+
+
+def test_behavioral_only_excludes_synthesis_and_netlist_consumers() -> None:
+    commands = behavioral_only(PR_COMMANDS)
+    values = [value for _, command_values in commands for value in command_values]
+
+    assert commands == RTL_COMMANDS
+    assert "synth" not in values
+    assert "sta" not in values
+    assert "netsim" not in values
+
+    dry_run = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "pr",
+        "--pdk",
+        "GF180",
+        "--behavioral-only",
+        "--dry-run",
+    )
+    assert "SIMU=VERILATOR" in dry_run.stdout
+    assert "SIMU=IVERILOG" in dry_run.stdout
+    assert "SYNTH=YOSYS" not in dry_run.stdout
+    assert "STA=OPENSTA" not in dry_run.stdout
+    assert "netsim" not in dry_run.stdout
+
+    nightly_extra = behavioral_only(NIGHTLY_EXTRA_COMMANDS)
+    assert nightly_extra == NIGHTLY_EXTRA_COMMANDS[:1]
+
+
+def test_hosted_regression_keeps_tools_but_skips_synthesis_execution() -> None:
+    workflow = (ROOT / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
+
+    assert "default: verilator sv2v iverilog yosys opensta openocd riscv_gnu" in workflow
+    assert "SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor" in workflow
+    assert "--behavioral-only" in workflow
+
+
 def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
     assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
     for pdk, profile in PDK_PR_PROFILES.items():
@@ -1087,6 +1214,15 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> 
             CI_SMOKE_APP_VALUE in values and "SIMU=VERILATOR" in values and "firmware" in values
             for values in command_values
         )
+        verilator_values = next(values for values in command_values if "sim" in values)
+        if pdk == "IHP130":
+            assert "LINK_TYPE=ld2_all_sram" in verilator_values
+            assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
+            assert "SOC_SIM_TIME=360" in verilator_values
+        else:
+            assert "LINK_TYPE=ld2_sdram" in verilator_values
+            assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
+            assert "SOC_SIM_TIME=600" in verilator_values
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert not any(
@@ -1234,7 +1370,9 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     assert "suite: nightly-extra" in nightly
     assert "timeout_minutes: 180" in nightly
     assert "suite: nightly\n" not in nightly
-    assert "--suite nightly-extra --pdk IHP130 --dry-run" in quality
+    assert (
+        "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
+    )
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

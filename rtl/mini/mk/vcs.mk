@@ -94,7 +94,7 @@ postsim: $(VCS_POST_SIMV)
 
 comp netcomp postcomp sim netsim postsim: FLOW_PYTHON := $(VCS_FLOW_PYTHON)
 
-$(VCS_BEHV_SIMV) $(VCS_NETL_SIMV) $(VCS_POST_SIMV): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
+$(VCS_BEHV_SIMV) $(VCS_NETL_SIMV) $(VCS_POST_SIMV): $(MPW_VARIANT_DEP) $(FILELIST_STAMP)
 	@mkdir -p $(DIR)
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool vcs --log $(DIR)/driver-compile.log \
 		--result $(DIR)/result-compile.json --cwd $(DIR) -- \

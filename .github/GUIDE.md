@@ -7,8 +7,14 @@ workflows.
 `workflows/quality.yml` runs the fast quality gate. `workflows/regression-smoke.yml`,
 `workflows/regression-ihp130.yml`, `workflows/regression-gf180.yml`,
 `workflows/regression-ics55.yml`, `workflows/regression-sky130.yml`, and
-`workflows/nightly.yml` call the reusable regression workflow. Nightly splits the IHP130 PR matrix from the extra CoreMark and Yosys recipes. `workflows/release.yml` packages tagged releases. `actions/locked-tools/`
-installs the locked open-source tools used by CI.
+`workflows/nightly.yml` call the reusable regression workflow. The reusable
+workflow currently selects `--behavioral-only`: hosted CI skips SoC Yosys
+synthesis, OpenSTA, and netlist simulation while the JPEG synthesis-memory
+issue is being resolved.
+The locked synthesis and timing tools are still installed and checked; only the
+SoC synthesis and downstream execution stages are filtered. Local regression
+commands retain those stages. `workflows/release.yml` packages tagged releases.
+`actions/locked-tools/` installs the locked open-source tools used by CI.
 
 Keep Actions pinned by commit ID and use the dependency lock rather than adding
 ad-hoc downloads. Validate workflow changes with `yamllint .github .yamllint.yml`,

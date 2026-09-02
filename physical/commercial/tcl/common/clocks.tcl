@@ -27,12 +27,28 @@ proc flow::required_pins {label name} {
     return $objects
 }
 
+proc flow::required_net_driver_pin {label name} {
+    set nets [get_nets -quiet $name]
+    if {[sizeof_collection $nets] != 1} {
+        flow::fail "required $label net is missing or ambiguous: $name"
+    }
+    set drivers [filter_collection [get_pins -quiet -of_objects $nets] \
+        "direction == out"]
+    if {[sizeof_collection $drivers] != 1} {
+        flow::fail "required $label net must have one output driver: $name"
+    }
+    return $drivers
+}
+
 proc flow::domain_object {domain} {
     variable canonical_clock_domains
     set values [dict get $canonical_clock_domains $domain]
     set observation [dict get $values observation]
     if {[dict get $values object_type] eq "port"} {
         return [flow::required_ports "clock $domain" [list $observation]]
+    }
+    if {[dict get $values object_type] eq "net_driver"} {
+        return [flow::required_net_driver_pin "clock $domain" $observation]
     }
     return [flow::required_pins "clock $domain" $observation]
 }

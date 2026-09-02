@@ -19,17 +19,17 @@ module axi4_bus (
     axi4_if.slave       sdio1_axi4,
     axi4_if.slave       usb2_axi4,
     axi4_if.slave       spisd_axi4,
+    axi4_if.slave       hp_axi4,
     axi4_if.master      cfg_axi4,
     axi4_if.master      system_axi4,
-`ifdef HAVE_SRAM_IF
-    ram_if.master       ram,
-`endif
+    axi4_if.master      sram_axi4,
     axi4_if.master      sdram_axi4,
     axi4_if.master      psram_axi4,
     axi4_if.master      xpi_axi4,
     axi4_if.master      opipsram_axi4,
     input  logic        user_bus_enable_i,
     output logic        user_bus_idle_o,
+    input  logic [1:0]  mem_pad_mode_i,
     input  logic        perf_enable_i,
     input  logic        perf_clear_i,
     output logic        fault_valid_o,
@@ -53,7 +53,7 @@ module axi4_bus (
     output logic [63:0] perf_opipsram_wait_o
     // verilog_format: on
 );
-  localparam int NumMasters = 7;
+  localparam int NumMasters = 8;
   localparam int NumTargets = 10;
 
   axi4_if #(
@@ -72,16 +72,6 @@ module axi4_bus (
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
   ) u_target_axi4_if[NumTargets] (
-      .aclk   (clk_i),
-      .aresetn(rst_n_i)
-  );
-
-  axi4_if #(
-      .ADDR_WIDTH(32),
-      .DATA_WIDTH(32),
-      .ID_WIDTH  (1),
-      .USER_WIDTH(1)
-  ) u_ram_axi4_if (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -121,6 +111,11 @@ module axi4_bus (
       .sink  (u_master_axi4_if[6])
   );
 
+  axi4_connector u_hp_connector (
+      .source(hp_axi4),
+      .sink  (u_master_axi4_if[7])
+  );
+
   axi4_connector u_cfg_connector (
       .source(u_target_axi4_if[0]),
       .sink  (cfg_axi4)
@@ -133,7 +128,7 @@ module axi4_bus (
 
   axi4_connector u_ram_connector (
       .source(u_target_axi4_if[2]),
-      .sink  (u_ram_axi4_if)
+      .sink  (sram_axi4)
   );
 
   axi4_connector u_sdram_connector (
@@ -166,6 +161,7 @@ module axi4_bus (
       .targets                (u_target_axi4_if),
       .user_bus_enable_i      (user_bus_enable_i),
       .user_bus_idle_o        (user_bus_idle_o),
+      .mem_pad_mode_i         (mem_pad_mode_i),
       .perf_enable_i          (perf_enable_i),
       .perf_clear_i           (perf_clear_i),
       .fault_valid_o          (fault_valid_o),
@@ -188,23 +184,6 @@ module axi4_bus (
       .perf_flash_wait_o      (perf_flash_wait_o),
       .perf_opipsram_wait_o   (perf_opipsram_wait_o)
   );
-
-`ifdef HAVE_SRAM_IF
-  axi42ram u_axi42ram (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (u_ram_axi4_if),
-      .ram    (ram)
-  );
-`else
-  axi4_error_slave #(
-      .Response(2'b11)
-  ) u_ram_error_slave (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .axi4   (u_ram_axi4_if)
-  );
-`endif
 
   axi4_error_slave #(
       .Response(2'b11)

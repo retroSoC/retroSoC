@@ -34,8 +34,11 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
     document = json.loads(DOMAIN_MAP.read_text(encoding="utf-8"))
     assert document["schema_version"] == 2
     assert {domain["name"] for domain in document["domains"]} == {
-        "external",
-        "system",
+        "aon",
+        "lp",
+        "hp",
+        "pclk",
+        "memory",
         "audio",
         "jtag",
         "dvp",
@@ -45,8 +48,10 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
         (crossing["name"], crossing["source"], crossing["destination"])
         for crossing in document["crossings"]
     } >= {
-        ("clint_timebase", "external", "system"),
-        ("jtag_dmi", "jtag", "system"),
+        ("clint_timebase", "aon", "lp"),
+        ("jtag_dmi", "jtag", "lp"),
+        ("hp_mmio", "hp", "lp"),
+        ("io_dma_data", "pclk", "hp"),
     }
     clint = next(
         crossing for crossing in document["crossings"] if crossing["name"] == "clint_timebase"
@@ -111,3 +116,11 @@ def test_clock_reset_domain_inventory_rejects_unknown_domain_and_instance(tmp_pa
     result = check(write_invalid_map(tmp_path, document))
     assert result.returncode != 0
     assert "STA source references unknown domain" in result.stderr
+
+
+def test_clock_reset_domain_inventory_rejects_invalid_sta_net_driver(tmp_path: Path) -> None:
+    document = json.loads(DOMAIN_MAP.read_text(encoding="utf-8"))
+    document["domains"][1]["sta"]["net"] = "invalid.net"
+    result = check(write_invalid_map(tmp_path, document))
+    assert result.returncode != 0
+    assert "sta.net must be a SystemVerilog identifier" in result.stderr

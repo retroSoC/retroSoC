@@ -16,6 +16,25 @@ from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
 
 
 CI_SMOKE_APP_VALUE = "APP=ci_smoke"
+CI_SMOKE_VERILATOR_VALUES = (
+    "VERILATOR_SIM_ARGS=--fast-flash",
+    "SIMU=VERILATOR",
+    "HAVE_SVA=YES",
+    "firmware",
+    "sim",
+)
+CI_SMOKE_SIM_VALUES = (
+    CI_SMOKE_APP_VALUE,
+    "LINK_TYPE=ld2_all_sram",
+    "SOC_SIM_TIME=360",
+    *CI_SMOKE_VERILATOR_VALUES,
+)
+CI_SMOKE_SDRAM_SIM_VALUES = (
+    CI_SMOKE_APP_VALUE,
+    "LINK_TYPE=ld2_sdram",
+    "SOC_SIM_TIME=600",
+    *CI_SMOKE_VERILATOR_VALUES,
+)
 RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint")
 RTL_LINT_OBSERVATION_VALUES = (
     "SIMU=VERILATOR",
@@ -23,6 +42,7 @@ RTL_LINT_OBSERVATION_VALUES = (
     "check-rtl-lint",
 )
 OBSERVATION_TARGETS = ("check-warnings", "check-metrics")
+SYNTHESIS_DEPENDENT_TARGETS = frozenset(("synth", "sta", "netsim", "netsim-boot", "metrics"))
 
 
 PR_COMMANDS = (
@@ -31,7 +51,7 @@ PR_COMMANDS = (
     ("configs/ci/ihp130-shell.mk", ("firmware",)),
     (
         "configs/ci/ihp130.mk",
-        (CI_SMOKE_APP_VALUE, "SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
+        CI_SMOKE_SIM_VALUES,
     ),
     ("configs/ci/ihp130-debug.mk", ("SIMU=VERILATOR", "debug-sim")),
     ("configs/ci/ihp130.mk", ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
@@ -47,6 +67,7 @@ PR_COMMANDS = (
     ),
     ("configs/ci/ihp130.mk", ("STA=OPENSTA", "sta")),
 )
+RTL_COMMANDS = PR_COMMANDS[:6]
 SMOKE_COMMANDS = (
     ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
     ("configs/ci/ihp130.mk", (CI_SMOKE_APP_VALUE, "firmware")),
@@ -92,13 +113,15 @@ NETSIM_BOOT_PROFILES = frozenset(
 
 def pdk_pr_commands(profile: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
     netsim_target = "netsim-boot" if profile in NETSIM_BOOT_PROFILES else "netsim"
+    verilator_values = (
+        CI_SMOKE_SIM_VALUES
+        if profile == "configs/ci/ihp130.mk"
+        else CI_SMOKE_SDRAM_SIM_VALUES
+    )
     return (
         (profile, RTL_LINT_VALUES),
         (profile, (CI_SMOKE_APP_VALUE, "firmware")),
-        (
-            profile,
-            (CI_SMOKE_APP_VALUE, "SIMU=VERILATOR", "HAVE_SVA=YES", "firmware", "sim"),
-        ),
+        (profile, verilator_values),
         (profile, ("SIMU=IVERILOG", "RTL_SIM_TIMEOUT=5200000", "sim-asm")),
         (profile, ("SYNTH=YOSYS", "synth")),
         (profile, ("STA=OPENSTA", "sta")),
@@ -121,6 +144,10 @@ def select_regression(
         if pdk is not None and pdk != "IHP130":
             raise ValueError("smoke regression supports only --pdk IHP130")
         return SMOKE_COMMANDS, SMOKE_PROFILES
+    if suite == "rtl":
+        if pdk is not None and pdk != "IHP130":
+            raise ValueError("rtl regression supports only --pdk IHP130")
+        return RTL_COMMANDS, PR_PROFILES
     if suite == "nightly-extra":
         if pdk is not None and pdk != "IHP130":
             raise ValueError("nightly-extra regression supports only --pdk IHP130")
@@ -166,6 +193,17 @@ def with_netsim_boot_only(
     return tuple(transformed)
 
 
+def behavioral_only(
+    commands: tuple[tuple[str, tuple[str, ...]], ...],
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Exclude synthesis and commands that consume its generated netlist."""
+    return tuple(
+        (profile, values)
+        for profile, values in commands
+        if SYNTHESIS_DEPENDENT_TARGETS.isdisjoint(values)
+    )
+
+
 def run_command(
     command: list[str], root: Path, capture_output: bool, environment: dict[str, str]
 ) -> str:
@@ -207,13 +245,20 @@ def run_observation(command: list[str], root: Path, environment: dict[str, str])
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a supported retroSoC regression suite")
     parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--suite", choices=("smoke", "pr", "nightly", "nightly-extra"), required=True)
+    parser.add_argument(
+        "--suite", choices=("smoke", "rtl", "pr", "nightly", "nightly-extra"), required=True
+    )
     parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PDK matrix")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--netsim-boot-only",
         action="store_true",
         help="locally stop each Icarus assembly netlist run after Hello retroSoC!",
+    )
+    parser.add_argument(
+        "--behavioral-only",
+        action="store_true",
+        help="skip synthesis, STA, netlist simulation, and synthesis-recipe metrics",
     )
     args = parser.parse_args()
     try:
@@ -222,6 +267,8 @@ def main() -> int:
         parser.error(str(error))
     if args.netsim_boot_only:
         commands = with_netsim_boot_only(commands)
+    if args.behavioral_only:
+        commands = behavioral_only(commands)
     environment = regression_environment()
     for profile, values in commands:
         command = ["make", f"CONFIG={profile}", *values]

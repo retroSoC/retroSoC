@@ -13,7 +13,10 @@ SOC_COMPILE_HOME := $(BUILD_DIR)/emu_compile
 SOC_VXXFILES      := $(RTL_FLIST)
 SOC_VXXFILES      += $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv
+SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/flash_read_byte_binder.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv
+SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/xpi_fast_flash_model.sv
+SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/xpi_core_verilator.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/retrosoc_top.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/sdram_verilator_model.sv
 SOC_VSRC_INCLPATH += -I$(SOC_VSRC_HOME)
@@ -34,6 +37,7 @@ RTL_LINT_FLAGS += --assert --Wall --timescale "1ns/1ns" -Wno-fatal
 RTL_LINT_FLAGS += $(SOC_VSRC_INCLPATH) $(SOC_VXXFILES)
 
 SOC_SIM_TIME            ?= 180
+VERILATOR_SIM_ARGS      ?=
 OPENOCD                 ?= openocd
 RISCV_GDB               ?= riscv32-unknown-elf-gdb
 DEBUG_SIM_DIR           := $(SIM_BUILD_ROOT)/debug
@@ -46,7 +50,10 @@ RTL_LINT_STAMP          := $(RTL_LINT_DIR)/rtl-lint.stamp
 RTL_LINT_DEPFILE        := $(RTL_LINT_DIR)/rtl-lint.d
 VERILATOR_EXTRA_SOURCES := $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv \
                            $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv \
+                           $(RTL_PATH)/dv/verilator/rtl/flash_read_byte_binder.sv \
                            $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv \
+                           $(RTL_PATH)/dv/verilator/rtl/xpi_fast_flash_model.sv \
+                           $(RTL_PATH)/dv/verilator/rtl/xpi_core_verilator.sv \
                            $(RTL_PATH)/dv/verilator/rtl/retrosoc_top.sv \
                            $(RTL_PATH)/dv/verilator/rtl/sdram_verilator_model.sv \
                            $(SOC_CXXFILES) $(wildcard $(SOC_CSRC_HOME)/*.h) \
@@ -61,7 +68,7 @@ export CCACHE_DIR = $(CACHE_ROOT)/ccache/verilator
 export CCACHE_TEMPDIR = $(CACHE_ROOT)/ccache/verilator/tmp
 endif
 
-$(VERILATOR_STAMP): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
+$(VERILATOR_STAMP): $(MPW_VARIANT_DEP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(CCACHE_TEMPDIR)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator \
@@ -78,7 +85,7 @@ $(VERILATOR_EMU): $(VERILATOR_STAMP)
 		-- make -j$(VERILATOR_JOBS) VM_PARALLEL_BUILDS=1 OPT_FAST=-O3 -C $(SOC_COMPILE_HOME) \
 		-f V$(SOC_VSRC_TOP).mk
 
-$(RTL_LINT_STAMP): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
+$(RTL_LINT_STAMP): $(MPW_VARIANT_DEP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCES)
 	@mkdir -p $(RTL_LINT_DIR)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool rtl-lint \
 		--log $(RTL_LINT_DIR)/lint.log --result $(RTL_LINT_DIR)/result-rtl-lint.json \
@@ -104,14 +111,15 @@ sim: comp
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator-sim --stream-bytes \
 		--log $(BUILD_DIR)/sim.log --result $(BUILD_DIR)/result-sim.json \
 		--cwd $(BUILD_DIR) -- $(BUILD_DIR)/emu -i $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).bin \
-		-t $(SOC_SIM_TIME)
+		$(VERILATOR_SIM_ARGS) -t $(SOC_SIM_TIME)
 	python3 $(ROOT_PATH)/scripts/check_simulation.py --log $(BUILD_DIR)/sim.log \
 		--result $(BUILD_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
 debug-sim: comp firmware
 	@test "$(SIMU)" = VERILATOR || { echo "debug-sim requires SIMU=VERILATOR" >&2; exit 2; }
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/doctor.py --root $(ROOT_PATH) --simu $(SIMU) \
-		--synth $(SYNTH) --sta $(STA) --pdk $(PDK) --formal $(FORMAL) \
+		--synth $(SYNTH) --sta $(STA) --pdk $(PDK) --have-sram-macro $(HAVE_SRAM_MACRO) \
+		--formal $(FORMAL) \
 		--require-debug-tools --lock $(LOCK_FILE)
 	python3 $(DEBUG_SIM_SESSION) \
 		--emulator $(VERILATOR_EMU) \

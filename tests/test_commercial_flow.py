@@ -326,12 +326,14 @@ def test_commercial_timing_contract_covers_canonical_domains(tmp_path: Path) -> 
         check=True,
     )
     assert result.stdout.splitlines() == [
-        "audio,dvp,external,jtag,system,usb2_ulpi",
+        "aon,audio,dvp,hp,jtag,lp,memory,pclk,usb2_ulpi",
         "ext_rst_n_i_pad,jtag_trst_n_i_pad",
     ]
     assert "u_retrosoc/u_apb4_periph/u_axi4_dvp" in output.read_text(
         encoding="utf-8"
     )
+    assert "object_type {net_driver}" in output.read_text(encoding="utf-8")
+    assert "observation {s_sys_clk}" in output.read_text(encoding="utf-8")
 
 
 def test_commercial_constraints_do_not_apply_global_io_delays() -> None:

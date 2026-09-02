@@ -24,6 +24,7 @@ CLOCK_PADS = {
     "usb2_ulpi": "usb2_ulpi_clk_i_pad",
 }
 RESET_PADS = {"ext_rst_n_i_pad", "jtag_trst_n_i_pad"}
+IHP130_SYSTEM_CLOCK_PIN = "u_rcu.u_sys_clk_buf.u_sg13g2_buf_1/X"
 
 
 def positive_integer(value: str) -> int:
@@ -58,7 +59,9 @@ def logical_directions(pad: Pad) -> tuple[bool, bool]:
 
 def render(args: argparse.Namespace) -> str:
     validate(args.domains, ROOT)
-    document = json.loads(args.domains.read_text(encoding="utf-8"))
+    target = getattr(args, "target", "chip")
+    if target not in {"chip", "core"}:
+        raise ValueError("target must be chip or core")
     pads, _ = read_map(args.pin_map)
     active = [pad for pad in pads if pad.feature is None or args.have_pll]
     by_name = {pad.name: pad for pad in active}
@@ -106,19 +109,21 @@ def render(args: argparse.Namespace) -> str:
     ]
     clock_vars: dict[str, str] = {}
     for name, pad_name in CLOCK_PADS.items():
-        instance = ihp130_pad_instance(by_name[pad_name])
-        if instance is None:
-            raise ValueError(f"clock PAD has no IHP130 physical instance: {pad_name}")
         variable = f"clk_{name}_pin"
-        lines.append(f'set {variable} [require_pins "clock {name}" {{{instance}/p2c}}]')
+        if target == "chip":
+            instance = ihp130_pad_instance(by_name[pad_name])
+            if instance is None:
+                raise ValueError(f"clock PAD has no IHP130 physical instance: {pad_name}")
+            lines.append(f'set {variable} [require_pins "clock {name}" {{{instance}/p2c}}]')
+        else:
+            lines.append(f'set {variable} [require_ports "clock {name}" {{{pad_name}}}]')
         lines.append(f"create_clock -name clk_{name} -period {periods[name]:.12g} ${variable}")
         lines.append("")
         clock_vars[name] = variable
 
-    system_pin = document["domains"][1]["sta"]["pin"]
     lines.extend(
         [
-            f'set clk_system_pin [require_pins "clock system" {{{system_pin}}}]',
+            f'set clk_system_pin [require_pins "clock system" {{{IHP130_SYSTEM_CLOCK_PIN}}}]',
             "create_generated_clock -name clk_system -source $clk_external_pin "
             "-divide_by 1 $clk_system_pin",
             "",
@@ -133,7 +138,6 @@ def render(args: argparse.Namespace) -> str:
             "set_clock_uncertainty -setup 0.2 $all_retrosoc_clocks",
             "set_clock_uncertainty -hold 0.1 $all_retrosoc_clocks",
             "set_clock_transition 0.1 $all_retrosoc_clocks",
-            "set_propagated_clock $all_retrosoc_clocks",
             "set_timing_derate -early 0.95",
             "set_timing_derate -late 1.05",
             "set_max_fanout 10 [current_design]",
@@ -175,6 +179,7 @@ def main() -> int:
     parser.add_argument("--ext-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--aud-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--have-pll", action="store_true")
+    parser.add_argument("--target", choices=("chip", "core"), default="chip")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:

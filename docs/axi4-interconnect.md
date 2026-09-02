@@ -1,74 +1,118 @@
-# AXI4 Interconnect Contract
+# Mini AXI4 Interconnect Contract
 
-AXI4 is the active Mini SoC system interconnect. The Common `axi4_if`
-declaration, `memory_map.json`, and `axi4_interconnect.sv` are the executable
-sources of truth. RIB remains documented and verified as an independent legacy
-protocol; it is not an active Mini SoC fabric link.
+Mini uses two cooperating AXI fabrics. `axi4_interconnect` is the 32-bit LP
+control/compatibility plane; `axi4_data_crossbar` is the 64-bit HP payload
+plane. Common `axi4_if`, `memory_map.json`, and `soc_topology.json` are the
+executable protocol, address, and integration sources of truth.
 
-## Supported Subset
+## LP control plane
 
-The interconnect has 32-bit addresses and 32-bit data. It supports `INCR` and
-`FIXED` transfers with one through sixteen beats (`AxLEN` 0 through 15), and
-AXI-legal `WRAP` transfers with two, four, eight, or sixteen beats
-(`AxLEN` 1, 3, 7, or 15). All transfers require natural 1-, 2-, or 4-byte
-alignment and must remain inside one 4 KiB page and one decoded target.
-Locked, wider, misaligned, and cross-target transactions receive `SLVERR`.
-Unmapped addresses receive `DECERR`.
+The LP fabric has 32-bit address/data, one-bit ID/user fields, and eight master
+slots. Product wiring assigns management, five down-converted data gateways,
+HP MMIO, and an idle terminator. The former selected user-core slot name is
+retained only at the module compatibility boundary; product mode does not
+instantiate a user core.
 
-Each master may own at most one read or write transaction. IDs and user fields
-are one bit because no outstanding or out-of-order completion is supported.
-Read and write ordering is therefore program order at each master. Different
-masters may use different targets concurrently; requests to one target use a
-Common round-robin arbiter and retain ownership through `B` or `RLAST`.
+It supports aligned 1-, 2-, and 4-byte `FIXED`, `INCR`, and legal AXI `WRAP`
+transfers up to sixteen beats. One read or write transaction may be active per
+master. Requests to one target use Common round-robin arbitration and retain
+ownership through `B` or `RLAST`. Misaligned, unsupported, cross-page, and
+cross-target transactions return `SLVERR`; unmapped addresses return `DECERR`.
 
-The three masters are the Hazard3 management core, the selected user core, and
-DMA. Hazard3 AHB-Lite and the current user-core RIBP ABI issue single-beat AXI4
-transactions through adapters. DMA is a native AXI4 master: its production
-six-channel engine uses fixed ID zero, independently schedules one read and
-one write transaction, and issues aligned `INCR` bursts up to sixteen beats.
-Fixed-address and APB4/MMIO endpoints are always single-beat. See the
-[DMA MVP](ip/dma.md) for its ownership, abort, and FIFO-credit contract.
+Hazard3 accesses APB4 registers through LP-to-PCLK async-safe bridges. HP MMIO
+is downsized and crosses HP-to-LP. Product access policy prevents the HP MMIO
+master from writing SYSCTRL/RCU, watchdog, and GPIO administration windows.
 
-## Targets and Access Control
+## HP data plane
 
-The fixed targets are the APB4 configuration plane (`apb4_periph`), APB
-(`apb4_system`), SRAM, SDRAM, 4-bit PSRAM, OPI PSRAM, XPI/Flash, SPI-SD,
-`DECERR`, and `SLVERR`. APB4 and APB accept only single-beat transactions.
-SRAM uses a direct AXI4 target with pipelined synchronous reads and response
-buffering. External-memory data windows accept up to sixteen beats; their
-controller front ends validate and serialize or coalesce the physical
-transactions while preserving the documented AXI response contract. Register
-configuration remains on APB4.
+The native payload fabric is AXI64 with 32-bit addresses and six-bit global
+IDs. It has eight masters:
 
-The user-core firewall validates both the first and last byte before target
-arbitration. User access to SYSCTRL, CLINT, DMA configuration, and other
-management-only regions is rejected with `SLVERR`. SYSCTRL records the address,
-master, write strobes, reserved/access classification, and response code for a
-terminal error. The internal fault classification maps an unmapped address to
-`DECERR`, a malformed or unsupported burst to `BURSTERR`, and a firewall or
-access-control rejection to `PROTERR`.
+| Index | Master | Adaptation |
+| ---: | --- | --- |
+| 0 | Vexii I-cache | native AXI64, source ID preserved |
+| 1 | Vexii D-cache | native AXI64, source ID preserved |
+| 2 | central DMA | PCLK-to-HP CDC, AXI32-to-64 |
+| 3 | I/O gateway A | USB2 and SDIO0, PCLK-to-HP CDC, AXI32-to-64 |
+| 4 | I/O gateway B | SDIO1 and SPI-SD, PCLK-to-HP CDC, AXI32-to-64 |
+| 5 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC, AXI32-to-64 |
+| 6 | reserved | permanently idle and denied |
+| 7 | EXT-H | PCLK-to-HP AXI64 CDC |
 
-## Integration Rules
+Each source receives a fixed three-bit master prefix. The crossbar maintains
+independent read and write arbitration for each target, enabling read/write
+overlap and cross-target concurrency. Different IDs from HP/DMA/EXT-H may be
+active on the same or different targets up to master and target credits. The
+same source ID is blocked until completion. SRAM/SDRAM target credits are four
+reads and two writes; serial and error targets use one read and one write.
 
-- Instantiate every Mini SoC AXI4 link with `ADDR_WIDTH=32`, `DATA_WIDTH=32`,
-  `ID_WIDTH=1`, and `USER_WIDTH=1`; do not rely on Common defaults.
-- Hold address/control and response payload stable while `VALID` is asserted
-  without `READY`. Write data must assert `WLAST` on the declared final beat.
-- Keep APB4 configuration and AXI4 data apertures separate in the canonical
-  address map. An IP may arbitrate the two internally, but a data address must
-  not be routed through the global configuration decoder.
-- Add controller-native command/data queues before claiming physical burst
-  coalescing. The compatibility bridges establish protocol correctness, not
-  SDRAM row, serial chip-select, or media-sector amortization.
+| Target | Current backend |
+| --- | --- |
+| on-chip SRAM | native AXI64/ID6 striped technology macros in HP |
+| SDRAM | HP-to-memory AXI64 CDC, local 64-to-32 SDRAM adaptation |
+| QPI PSRAM | AXI64-to-32, CDC, selected QPI frontend |
+| OPI/HyperBus | AXI64-to-32, CDC, selected OPI frontend |
+| XPI/flash | AXI64-to-32, CDC, XPI frontend |
+| error | finite-latency `SLVERR` responder |
 
-## Verification and Performance Gates
+Admission policy is generated from `soc_topology.json`, not duplicated in
+the integration RTL:
 
-`tests/test_axi4.py` covers a four-beat write/read, response backpressure, and
-rejection of a seventeen-beat request without touching the APB4 target. The
-bridge unit test also covers Common address generation for FIXED and WRAP
-sequencing. The IHP130 `ci_smoke` regression is the end-to-end boot and
-configuration check.
-CoreMark uses SRAM and must not regress more than five percent from the recorded
-7,620,324-cycle baseline. A controller may be promoted to a native burst target
-only after aligned sixteen-word tests show at least twenty percent improvement
-and cover partial writes, backpressure, device timing, and error termination.
+| Master | Read targets | Write targets | Instruction | Attribute rule |
+| --- | --- | --- | --- | --- |
+| HP I-cache | all five memories | none | allowed | cache attributes preserved |
+| HP D-cache | all five memories | SRAM, SDRAM, QPI, OPI | denied | cache attributes preserved |
+| DMA, I/O A/B, LP gateway | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required |
+| reserved | none | none | denied | fail-closed |
+| EXT-H | all five memories within slot ACL | SRAM, SDRAM, QPI, OPI within slot ACL | denied | `AxCACHE=0` required |
+
+XPI is read-only on the data plane. A denied target, instruction access,
+cache attribute, or EXT-H range is routed to the finite-latency error target
+and records the immutable master identity and original decoded target.
+
+Per-target arbitration first selects the highest effective five-bit priority
+and then uses the Common round-robin arbiter among equal requesters. Normal
+classes are HP I/D 12, I/O gateways 10, DMA/EXT-H 8, and LP gateway 2, with
+incoming AXI QoS able to raise a normal request up to 15. A continuously
+eligible request is promoted to 16 after 256 cycles. During recovery, the LP
+gateway is promoted to 31. Target backpressure is outside the service bound;
+once a target accepts addresses, aged requesters rotate without starvation.
+
+`block_new_i` prevents new address acceptance during HP clock changes. Existing
+owners retain their response route until terminal completion. QPI/OPI decode is
+fail-closed according to the synchronized AON pad mode.
+
+## Width and CDC adapters
+
+- `axi4_upsizer_32to64` preserves byte lanes and adds the master ID prefix.
+- `axi4_downsizer_64to32` splits 64-bit beats for current memory frontends and
+  recombines read responses.
+- `axi4_async_bridge` carries AW, W, B, AR, and R through independent Common
+  coordinated warm-flush FIFOs and reports clear-busy and epoch state.
+- `apb4_async_bridge` converts one APB request into a request/response CDC
+  transaction and guarantees a finite APB completion when the destination runs.
+
+Normal HP shutdown requests software cache maintenance, blocks new addresses,
+drains accepted traffic, and performs a coordinated warm flush. Target guards
+provide bounded synthetic `SLVERR` completion and fail-closed isolation for a
+stopped target.
+
+SDRAM, QPI, OPI, and XPI each cross directly from HP to the stable memory
+domain as AXI64, then use a local 64-to-32 adapter beside the current
+controller. Serial payload no longer stages through the LP fabric. Lifecycle
+flush covers the HP MMIO bridge and every HP-to-memory bridge before reset.
+
+The root-only Fabric Monitor at `0x2000_B000` observes accepted addresses,
+beats, wait cycles, high-water marks, aging promotions, target timeouts,
+isolation, warm flushes, and sticky first-fault attribution. Counter banks use
+explicit snapshots; see [its register contract](ip/fabric-monitor.md).
+
+## Verification boundary
+
+`tests/test_axi4.py` retains LP fabric, downsizer, burst, response,
+backpressure, multi-ID, ACL attribute/target/execute denial, emergency
+priority, and aging-promotion coverage. `tests/test_fabric_monitor.py` covers
+the monitor ABI and counters. Full-product Verilator/Icarus simulation
+exercises LP boot, HP elaboration, direct HP-to-memory gateways, and product
+APB paths. The current implementation does not claim cache coherency, a full
+AXI liveness proof, CDC signoff, or physical bandwidth closure.

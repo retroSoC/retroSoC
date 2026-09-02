@@ -40,22 +40,40 @@ interrupts, and bounded self-test for the four-chip ESP-PSRAM64H controller.
 See the [controller contract](../docs/ip/psram.md) before using its destructive
 self-test or changing the memory timing.
 
-`<retrosoc/hal/sysctrl.h>` owns typed access to SystemCtrl user-core/IP,
-PLL, fault, performance, RTC-wake, and terminal-test functions. Existing
+`<retrosoc/hal/sysctrl.h>` owns typed access to SystemCtrl legacy compatibility,
+PLL/clock, memory-pad, fault, performance, RTC-wake, and terminal-test functions. Existing
 clock, user-core, performance, and test-service APIs use this HAL; direct
 `reg_sysctrl_*` register macros are not public SDK interfaces. See the
 [SystemCtrl contract](../docs/ip/sysctrl.md).
 
-`<retrosoc/hal/user_ip.h>` owns selection, identification, and validated
-32-bit access to the fixed 4 KiB user-IP window. The generic HAL does not
-assign semantics to extension-specific registers; each integrated user IP
-keeps its register ABI and driver in its owning application component. See the
-[User IP software contract](../docs/ip/user-ip.md).
+`<retrosoc/hal/extension.h>` owns product EXT-L/EXT-H discovery, lifecycle,
+ownership, status, and ACL operations. `<retrosoc/hal/user_ip.h>` remains the
+MPW compatibility API; selector mutators return `RS_ENOTSUP` in product builds.
+See the [extension contract](../docs/ip/extensions.md) and
+[legacy user-IP contract](../docs/ip/user-ip.md).
 
-`<retrosoc/hal/dma.h>` provides the channel-aware direct-mode DMA API. UART0,
-I2C0, I2C1, and bulk/media clients have deterministic channel assignments; see
-the [DMA MVP contract](../docs/ip/dma.md). The current SDK intentionally
-accepts only naturally aligned 32-bit DMA transfers.
+`<retrosoc/hal/resource.h>` owns the central DMA, USB2, SDIO0/1, SPI-SD,
+EXT-H, and JPEG owner/lock, lifecycle-request, fault, and HP cache-maintenance
+handshake.
+See the [Resource Controller contract](../docs/ip/resource-controller.md).
+
+`<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
+master/target counters, stable snapshots, warm-flush counts, target isolation,
+and the sticky first-fault record. See the
+[Fabric Monitor contract](../docs/ip/fabric-monitor.md).
+
+`<retrosoc/hal/memory.h>` provides the uniform Mini memory inventory for
+SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, and XPI. It reports the fixed
+window, device/initialization/ready/active state, shared-pad mode, DMA and
+cache visibility, and the controller fault summary by composing the existing
+per-controller HALs. It does not merge heterogeneous memories into one
+allocator or provide hardware cache coherency.
+
+`<retrosoc/hal/dma.h>` provides the channel-aware direct and linked-list DMA
+API. UART0, I2C0, I2C1, bulk/media clients, and the HP boot loader have
+deterministic channel assignments; see the [DMA V2 contract](../docs/ip/dma.md).
+The SDK accepts aligned 32-bit transfers, partial final beats for MM-to-MM,
+and 64-byte aligned TCD chains.
 
 `<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
 RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.
@@ -63,6 +81,12 @@ AES DMA reserves channels 4/5; private RSA input is write-only at the APB
 boundary and assumes public exponent 65537 for result verification. See the
 [crypto controller contract](../docs/ip/crypto.md) before handling production
 keys or composing an RFC 8017 scheme.
+
+`<retrosoc/hal/jpeg.h>` provides validated direct jobs, bounded waits/abort,
+status and IRQ access, encoder table portal operations, and 128-byte SG-ring
+descriptors for the private-AXI Baseline JPEG codec. Metadata fields are
+reserved and rejected in V1. See the [JPEG codec contract](../docs/ip/jpeg.md)
+for the raster, cache, descriptor, and performance requirements.
 
 `<retrosoc/hal/sdio.h>` provides separate low-level native SD host,
 SD Memory v2, and SDIO function APIs for `sdio0` and `sdio1`. The controller

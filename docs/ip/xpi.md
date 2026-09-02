@@ -284,6 +284,12 @@ contract. These shortcuts create device lock-in or stale executable data.
 | Full flash model | Icarus regression uses the Winbond model; the fast Verilator model covers reset `0xEB` reads only |
 | Implementation | IHP130 Yosys synthesis, Icarus netlist boot, OpenSTA, warning, and metric stages in `regress-pr-ihp130` |
 
+The fast Verilator model is opt-in through `--fast-flash`. It returns one byte
+per accepted core clock from the same DPI flash image while retaining the XPI
+memory-map front end. It rejects writes, nonzero slots, and modified LUTs with
+an XPI sequence error. Default Verilator and `hp-smoke-sim` runs retain the
+pin-level QSPI model; `hp-linux-sim` is the bounded userspace acceptance flow.
+
 Commercial-IP signoff is not claimed by these tests alone. Release candidates
 still need requirements traceability to every register field, APB/AXI protocol
 assertion coverage, constrained-random LUT/FIFO/error testing, functional and

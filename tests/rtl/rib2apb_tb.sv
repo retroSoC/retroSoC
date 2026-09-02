@@ -18,46 +18,66 @@ module rib2apb_tb;
   apb4_pure_if wdg ();
   apb4_pure_if crc ();
   apb4_pure_if user_ip ();
+  apb4_pure_if ext_l ();
+  apb4_pure_if ext_h ();
+  apb4_pure_if resource_ctrl ();
+  apb4_pure_if fabric_monitor ();
 
   always #5 clk_i = ~clk_i;
 
-  assign archinfo.pready  = 1'b0;
-  assign archinfo.prdata  = '0;
-  assign archinfo.pslverr = 1'b0;
-  assign rng.pready       = rng_ready;
-  assign rng.prdata       = rng_rdata;
-  assign rng.pslverr      = rng_slverr;
-  assign pwm.pready       = 1'b0;
-  assign pwm.prdata       = '0;
-  assign pwm.pslverr      = 1'b0;
-  assign ps2.pready       = 1'b0;
-  assign ps2.prdata       = '0;
-  assign ps2.pslverr      = 1'b0;
-  assign rtc.pready       = 1'b0;
-  assign rtc.prdata       = '0;
-  assign rtc.pslverr      = 1'b0;
-  assign wdg.pready       = 1'b0;
-  assign wdg.prdata       = '0;
-  assign wdg.pslverr      = 1'b0;
-  assign crc.pready       = 1'b0;
-  assign crc.prdata       = '0;
-  assign crc.pslverr      = 1'b0;
-  assign user_ip.pready   = 1'b0;
-  assign user_ip.prdata   = '0;
-  assign user_ip.pslverr  = 1'b0;
+  assign archinfo.pready        = 1'b0;
+  assign archinfo.prdata        = '0;
+  assign archinfo.pslverr       = 1'b0;
+  assign rng.pready             = rng_ready;
+  assign rng.prdata             = rng_rdata;
+  assign rng.pslverr            = rng_slverr;
+  assign pwm.pready             = 1'b0;
+  assign pwm.prdata             = '0;
+  assign pwm.pslverr            = 1'b0;
+  assign ps2.pready             = 1'b0;
+  assign ps2.prdata             = '0;
+  assign ps2.pslverr            = 1'b0;
+  assign rtc.pready             = 1'b0;
+  assign rtc.prdata             = '0;
+  assign rtc.pslverr            = 1'b0;
+  assign wdg.pready             = 1'b0;
+  assign wdg.prdata             = '0;
+  assign wdg.pslverr            = 1'b0;
+  assign crc.pready             = 1'b0;
+  assign crc.prdata             = '0;
+  assign crc.pslverr            = 1'b0;
+  assign user_ip.pready         = 1'b0;
+  assign user_ip.prdata         = '0;
+  assign user_ip.pslverr        = 1'b0;
+  assign ext_l.pready           = 1'b0;
+  assign ext_l.prdata           = '0;
+  assign ext_l.pslverr          = 1'b0;
+  assign ext_h.pready           = 1'b0;
+  assign ext_h.prdata           = '0;
+  assign ext_h.pslverr          = 1'b0;
+  assign resource_ctrl.pready   = 1'b0;
+  assign resource_ctrl.prdata   = '0;
+  assign resource_ctrl.pslverr  = 1'b0;
+  assign fabric_monitor.pready  = 1'b0;
+  assign fabric_monitor.prdata  = '0;
+  assign fabric_monitor.pslverr = 1'b0;
 
   rib2apb u_rib2apb (
-      .clk_i   (clk_i),
-      .rst_n_i (rst_n_i),
-      .rib     (rib),
-      .archinfo(archinfo),
-      .rng     (rng),
-      .pwm     (pwm),
-      .ps2     (ps2),
-      .rtc     (rtc),
-      .wdg     (wdg),
-      .crc     (crc),
-      .user_ip (user_ip)
+      .clk_i         (clk_i),
+      .rst_n_i       (rst_n_i),
+      .rib           (rib),
+      .archinfo      (archinfo),
+      .rng           (rng),
+      .pwm           (pwm),
+      .ps2           (ps2),
+      .rtc           (rtc),
+      .wdg           (wdg),
+      .crc           (crc),
+      .user_ip       (user_ip),
+      .ext_l         (ext_l),
+      .ext_h         (ext_h),
+      .resource_ctrl (resource_ctrl),
+      .fabric_monitor(fabric_monitor)
   );
 
   task automatic send_command(input logic [31:0] address, input logic write,

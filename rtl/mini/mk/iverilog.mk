@@ -34,7 +34,7 @@ IVERILOG_TIME_OPTS   := -gno-specify
 IVERILOG_POST_OPTS   := -gspecify -Tmin
 IVERILOG_SIM_OPTS    := +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
-$(CONVERTED_SOC): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
+$(CONVERTED_SOC): $(if $(filter MPW,$(MINI_MODE)),$(MPW_VARIANT_STAMP)) $(FILELIST_STAMP)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/convt_sv2v.py $(RTL_FLIST) --output $@
 	python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) --target $@ \
@@ -44,18 +44,21 @@ $(IVERILOG_BEHV_FLIST): $(FILELIST_STAMP) $(CONVERTED_SOC) $(IVERILOG_FILELIST_G
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode behv --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
+		--local-pdk-filelist $(PDK_LOCAL_FILELIST) \
 		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --converted $(CONVERTED_SOC)
 
 $(IVERILOG_NETL_FLIST): $(FILELIST_STAMP) $(NETLIST_PATH) $(IVERILOG_FILELIST_GEN) $(NETLIST_SIM_MODELS)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode netl --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
+		--local-pdk-filelist $(PDK_LOCAL_FILELIST) \
 		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --netlist $(NETLIST_PATH)
 
 $(IVERILOG_POST_FLIST): $(FILELIST_STAMP) $(POST_PATH) $(SDF_PATH) $(IVERILOG_FILELIST_GEN) $(NETLIST_SIM_MODELS)
 	@mkdir -p $(@D)
 	python3 $(RTL_PATH)/script/gen_iverilog_filelist.py \
 		--mode post --pdk $(PDK) --generated-dir $(GENERATED_FL_DIR) \
+		--local-pdk-filelist $(PDK_LOCAL_FILELIST) \
 		--pin-map-rtl-dir $(PIN_MAP_DIR)/rtl --output $@ --netlist $(POST_PATH) --sdf $(SDF_PATH) \
 		--sdf-scope $(SDF_SCOPE)
 

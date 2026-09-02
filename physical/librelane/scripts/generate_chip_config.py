@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -22,9 +23,10 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
 SIDE_ORDER = ("south", "east", "north", "west")
-EXPECTED_SIGNAL_PADS = 109
+EXPECTED_SIGNAL_PADS = 112
 CLOCK_PORTS = (
     "extclk_i_pad",
+    "ref24clk_i_pad",
     "audclk_i_pad",
     "jtag_tck_i_pad",
     "gpio_10_io_pad",
@@ -42,6 +44,20 @@ SRAM_INSTANCES = {
         "u_packet_ram.u_packet_ram.u_ecc": ([1500, 500], "N"),
     },
 }
+
+
+def onchip_sram_instances(capacity_kib: int) -> dict[str, tuple[list[int], str]]:
+    if capacity_kib <= 0 or capacity_kib % 4 != 0:
+        raise ValueError("SRAM_SIZE_KIB must be a positive multiple of 4")
+    count = 2 * ((capacity_kib + 7) // 8)
+    return {
+        "u_retrosoc.u_onchip_ram.gen_memory64."
+        f"gen_bank[{index // 2}].u_ram_{'lo' if index % 2 == 0 else 'hi'}.u_mem": (
+            [2000 + (index % 4) * 500, 500 + (index // 4) * 750],
+            "N",
+        )
+        for index in range(count)
+    }
 
 
 def config_path(path: Path, base: Path) -> str:
@@ -64,11 +80,11 @@ def power_instances(side_index: int) -> list[str]:
     for local_index in range(6):
         for kind in ("vdd", "vss"):
             index = (side_index * 6) + local_index
-            result.append(f"{kind}_pads\\[{index}\\].{kind}_pad")
+            result.append(f"{kind}_pads[{index}].{kind}_pad")
         if local_index < 4:
             for kind in ("iovdd", "iovss"):
                 index = (side_index * 4) + local_index
-                result.append(f"{kind}_pads\\[{index}\\].{kind}_pad")
+                result.append(f"{kind}_pads[{index}].{kind}_pad")
     return result
 
 
@@ -106,6 +122,9 @@ def macro_config(
 
 
 def build_config(args: argparse.Namespace) -> dict[str, object]:
+    target = getattr(args, "target", "chip")
+    if target not in {"chip", "core"}:
+        raise ValueError("target must be chip or core")
     pads, _ = read_map(args.pin_map)
     active_pads = [pad for pad in pads if pad.feature is None or args.have_pll]
     signal_instances: dict[str, list[str]] = {side: [] for side in SIDE_ORDER}
@@ -138,58 +157,70 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
 
     config_dir = args.output.resolve().parent
     sram_header = config_path(args.sram_vh, config_dir)
+    active_sram_instances = dict(SRAM_INSTANCES)
+    if getattr(args, "have_sram_macro", False):
+        active_sram_instances["RM_IHPSG13_1P_1024x32_c2_bm_bist"] = onchip_sram_instances(
+            getattr(args, "sram_size_kib", 32)
+        )
     macros = {
         master: macro_config(master, instances, sram_header)
-        for master, instances in SRAM_INSTANCES.items()
+        for master, instances in active_sram_instances.items()
     }
     macro_hooks: list[str] = []
-    for instances in SRAM_INSTANCES.values():
+    for instances in active_sram_instances.values():
         for instance in instances:
+            bracket_start = instance.find("[")
+            if bracket_start >= 0:
+                bracket_end = instance.index("]", bracket_start)
+                instance_pattern = (
+                    re.escape(instance[:bracket_start])
+                    + ".*"
+                    + instance[bracket_start + 1 : bracket_end]
+                    + ".*"
+                    + re.escape(instance[bracket_end + 1 :])
+                )
+            else:
+                instance_pattern = re.escape(instance)
             macro_hooks.extend(
                 [
-                    f"{instance} VDD VSS VDDARRAY! VSS!",
-                    f"{instance} VDD VSS VDD! VSS!",
+                    f"{instance_pattern} VDD VSS VDDARRAY! VSS!",
+                    f"{instance_pattern} VDD VSS VDD! VSS!",
                 ]
             )
 
-    return {
-        "meta": {"version": 3, "flow": "Chip"},
-        "DESIGN_NAME": "retrosoc_asic",
+    common = {
         "VERILOG_FILES": [config_path(args.rtl, config_dir)],
         "USE_SLANG": True,
         "SLANG_ARGUMENTS": ["--keep-hierarchy"],
+        "VERILOG_POWER_DEFINE": None,
         "SYNTH_SHARE_RESOURCES": False,
         "SYNTH_HIERARCHY_MODE": "deferred_flatten",
         "YOSYS_LOG_LEVEL": "WARNING",
+        "SYNTH_STRATEGY": "AREA 3",
+        "RUN_POST_GPL_DESIGN_REPAIR": False,
+        "RUN_CTS": False,
+        "RUN_POST_CTS_RESIZER_TIMING": False,
+        "EXTRA_EXCLUDED_CELLS": ["sg13g2_IOPad*"],
         "PRIMARY_GDSII_STREAMOUT_TOOL": "klayout",
-        "PAD_SOUTH": pad_sides["SOUTH"],
-        "PAD_EAST": pad_sides["EAST"],
-        "PAD_NORTH": pad_sides["NORTH"],
-        "PAD_WEST": pad_sides["WEST"],
         "PNR_SDC_FILE": config_path(args.sdc, config_dir),
         "SIGNOFF_SDC_FILE": config_path(args.sdc, config_dir),
         "FALLBACK_SDC": config_path(args.sdc, config_dir),
+        "STA_EXTRA_CORNER_TCL_FILE": config_path(
+            ROOT / "physical/librelane/sta_report_limit.tcl", config_dir
+        ),
         "CLOCK_PORT": list(CLOCK_PORTS),
         "CLOCK_PERIOD": 1_000_000_000 / args.ext_clk_hz,
-        "VDD_NETS": ["VDD", "IOVDD"],
-        "GND_NETS": ["VSS", "IOVSS"],
+        "VDD_NETS": ["VDD"],
+        "GND_NETS": ["VSS"],
         "FP_SIZING": "absolute",
-        "DIE_AREA": [0, 0, 8000, 8000],
-        "CORE_AREA": [365, 365, 7635, 7635],
-        "PL_TARGET_DENSITY_PCT": 30,
         "PDN_CORE_RING": True,
         "PDN_CORE_RING_VWIDTH": 15,
         "PDN_CORE_RING_HWIDTH": 15,
         "PDN_CORE_RING_VSPACING": 5,
         "PDN_CORE_RING_HSPACING": 5,
-        "PDN_CORE_RING_CONNECT_TO_PADS": True,
-        "PDN_ENABLE_PINS": False,
+        "PDN_ENABLE_PINS": True,
+        "ERROR_ON_PDN_VIOLATIONS": True,
         "PDN_CFG": config_path(args.pdn, config_dir),
-        "PAD_BONDPAD_NAME": "bondpad_70x70",
-        "EXTRA_GDS": [config_path(args.bondpad_gds, config_dir)],
-        "EXTRA_LEFS": [config_path(args.bondpad_lef, config_dir)],
-        "IGNORE_DISCONNECTED_MODULES": ["bondpad_70x70"],
-        "MAGIC_EXT_UNIQUE": "notopports",
         "MACROS": macros,
         "PDN_MACRO_CONNECTIONS": macro_hooks,
         "MAGIC_GDS_FLATGLOB": [
@@ -200,6 +231,41 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
             "RSC_*",
             "*_CELL_SUB",
         ],
+    }
+    if target == "core":
+        return {
+            "meta": {"version": 3, "flow": "Classic"},
+            "DESIGN_NAME": "retrosoc_core",
+            "DIE_AREA": [0, 0, 6000, 6000],
+            "CORE_AREA": [120, 120, 5880, 5880],
+            "PL_TARGET_DENSITY_PCT": 45,
+            "PDN_CORE_RING_CONNECT_TO_PADS": False,
+            **common,
+        }
+    return {
+        "meta": {"version": 3, "flow": "Chip"},
+        "DESIGN_NAME": "retrosoc_asic",
+        "SYNTH_KEEP_HIERARCHY_MODULES": [
+            "sg13g2_IOPadVdd",
+            "sg13g2_IOPadVss",
+            "sg13g2_IOPadIOVdd",
+            "sg13g2_IOPadIOVss",
+        ],
+        "PAD_SOUTH": pad_sides["SOUTH"],
+        "PAD_EAST": pad_sides["EAST"],
+        "PAD_NORTH": pad_sides["NORTH"],
+        "PAD_WEST": pad_sides["WEST"],
+        "DIE_AREA": [0, 0, 8000, 8000],
+        "CORE_AREA": [365, 365, 7635, 7635],
+        "PL_TARGET_DENSITY_PCT": 45,
+        "PDN_CORE_RING_CONNECT_TO_PADS": True,
+        "PAD_CFG": config_path(ROOT / "physical/librelane/pad_cfg.tcl", config_dir),
+        "PAD_BONDPAD_NAME": "bondpad_70x70",
+        "EXTRA_GDS": [config_path(args.bondpad_gds, config_dir)],
+        "EXTRA_LEFS": [config_path(args.bondpad_lef, config_dir)],
+        "IGNORE_DISCONNECTED_MODULES": ["bondpad_70x70"],
+        "MAGIC_EXT_UNIQUE": "notopports",
+        **common,
     }
 
 
@@ -222,6 +288,9 @@ def main() -> int:
     parser.add_argument("--ext-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--aud-clk-hz", type=positive_integer, required=True)
     parser.add_argument("--have-pll", action="store_true")
+    parser.add_argument("--have-sram-macro", action="store_true")
+    parser.add_argument("--sram-size-kib", type=positive_integer, default=32)
+    parser.add_argument("--target", choices=("chip", "core"), default="chip")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:

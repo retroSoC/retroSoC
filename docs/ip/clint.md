@@ -1,7 +1,9 @@
 # Core-Local Interruptor
 
-The Mini SoC CLINT provides machine software and machine timer interrupts for
-the management hart. Its register layout follows the conventional SiFive
+The baseline Mini SoC CLINT provides machine software and machine timer
+interrupts for the management hart. The HP profile adds an independent
+two-slot instance at `0x02000000` and connects slot 1 to HP hart 1. Its register
+layout follows the conventional SiFive
 CLINT and RISC-V ACLINT-compatible offsets, while its bus-facing logic uses the
 retroSoC APB4 target protocol.
 
@@ -17,6 +19,10 @@ retroSoC APB4 target protocol.
 | Management-core interrupts | software IRQ 0, timer IRQ 1 |
 | User-core access | denied by the AXI4 interconnect access policy |
 | User-core interrupt visibility | masked |
+
+The HP instance uses the same 1 MHz reference timebase. OpenSBI programs hart
+1 `MSIP` at `0x02000004`, `MTIMECMP` at `0x02004008`, and shared `MTIME` at
+`0x0200BFF8`. The baseline management CLINT remains at `0x10020000`.
 
 The timebase divider runs from the buffered external reference clock, not the
 PLL-selected system clock. A toggle crosses into the system domain through the

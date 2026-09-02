@@ -18,6 +18,7 @@ module sysctrl_reg (
     output logic [31:0] write_data_o,
     output logic [3:0]  write_strobe_o,
     output logic [7:0]  read_offset_o,
+    input  logic        write_error_i,
     input  logic        read_data_valid_i,
     input  logic [31:0] read_data_i
     // verilog_format: on
@@ -29,19 +30,22 @@ module sysctrl_reg (
   logic        s_apb4_ready_q;
   logic [31:0] s_apb4_rdata_d;
   logic [31:0] s_apb4_rdata_q;
+  logic        s_apb4_resp_err_d;
+  logic        s_apb4_resp_err_q;
 
-  assign s_req_accept   = apb4.psel && apb4.penable && !s_apb4_ready_q;
-  assign s_read_accept  = s_req_accept && !(|apb4.pstrb);
-  assign write_valid_o  = s_req_accept && (|apb4.pstrb);
-  assign write_offset_o = apb4.paddr[7:0];
-  assign write_data_o   = apb4.pwdata;
-  assign write_strobe_o = apb4.pstrb;
-  assign read_offset_o  = apb4.paddr[7:0];
-  assign apb4.pready    = s_apb4_ready_q;
-  assign apb4.pslverr   = 1'b0;
-  assign apb4.prdata    = s_apb4_rdata_q;
-  assign s_apb4_ready_d = s_req_accept;
-  assign s_apb4_rdata_d = read_data_valid_i ? read_data_i : s_apb4_rdata_q;
+  assign s_req_accept      = apb4.psel && apb4.penable && !s_apb4_ready_q;
+  assign s_read_accept     = s_req_accept && !(|apb4.pstrb);
+  assign write_valid_o     = s_req_accept && (|apb4.pstrb);
+  assign write_offset_o    = apb4.paddr[7:0];
+  assign write_data_o      = apb4.pwdata;
+  assign write_strobe_o    = apb4.pstrb;
+  assign read_offset_o     = apb4.paddr[7:0];
+  assign apb4.pready       = s_apb4_ready_q;
+  assign apb4.pslverr      = s_apb4_resp_err_q;
+  assign apb4.prdata       = s_apb4_rdata_q;
+  assign s_apb4_ready_d    = s_req_accept;
+  assign s_apb4_rdata_d    = read_data_valid_i ? read_data_i : s_apb4_rdata_q;
+  assign s_apb4_resp_err_d = s_req_accept && write_error_i;
 
   dffr #(
       .DATA_WIDTH(1)
@@ -60,6 +64,15 @@ module sysctrl_reg (
       .en_i   (s_read_accept),
       .dat_i  (s_apb4_rdata_d),
       .dat_o  (s_apb4_rdata_q)
+  );
+
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_apb4_resp_err_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_apb4_resp_err_d),
+      .dat_o  (s_apb4_resp_err_q)
   );
 
 endmodule

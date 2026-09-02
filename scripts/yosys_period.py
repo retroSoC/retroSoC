@@ -22,7 +22,7 @@ def require_string(value: Any, field: str) -> str:
     return value
 
 
-def period_ps(document: dict[str, Any], domain: str = "external") -> int:
+def period_ps(document: dict[str, Any], domain: str = "hp") -> int:
     require_string(domain, "domain")
     domains = document.get("domains")
     if not isinstance(domains, list) or not domains:
@@ -42,7 +42,7 @@ def period_ps(document: dict[str, Any], domain: str = "external") -> int:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--domains", type=Path, required=True)
-    parser.add_argument("--domain", default="external")
+    parser.add_argument("--domain", default="hp")
     return parser.parse_args(argv)
 
 

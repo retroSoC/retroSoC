@@ -5,6 +5,7 @@
       "kind": "tri_input",
       "direction": "inout",
       "ports": [
+        {"name": "ref24clk_i_pad", "signal": "s_ref24_clk"},
         {"name": "extclk_i_pad", "signal": "s_ext_clk"},
         {"name": "audclk_i_pad", "signal": "s_aud_clk"}
       ]
@@ -14,14 +15,6 @@
       "direction": "inout",
       "ports": [
         {"name": "ext_rst_n_i_pad", "signal": "s_ext_rst_n"}
-      ]
-    },
-    {
-      "kind": "xtal",
-      "feature": "HAVE_PLL",
-      "ports": [
-        {"name": "xi_i_pad", "direction": "input", "signal": "s_xtal_io", "peer": "xo_o_pad"},
-        {"name": "xo_o_pad", "direction": "output", "bind": false}
       ]
     },
     {
@@ -143,6 +136,20 @@
       "kind": "tri_output",
       "direction": "output",
       "ports": [
+        {"name": "uart1_tx_o_pad", "signal": "s_uart1_tx"}
+      ]
+    },
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {"name": "uart1_rx_i_pad", "signal": "s_uart1_rx"}
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
         {"name": "xpi_sck_o_pad", "signal": "u_xpi_if.sck_o"}
       ]
     },
@@ -208,10 +215,10 @@
   "profiles": {
     "fpga_mini": {
       "bindings": {
+        "ref24clk_i_pad": "s_ref24_clk",
         "extclk_i_pad": "s_sys_clk",
         "audclk_i_pad": "s_aud_clk",
         "ext_rst_n_i_pad": "rst_n_i",
-        "xi_i_pad": "s_sys_clk",
         "jtag_tck_i_pad": "s_jtag_tck",
         "jtag_tms_i_pad": "s_jtag_tms",
         "jtag_tdi_i_pad": "s_jtag_tdi",
@@ -260,6 +267,8 @@
         "usb2_ulpi_reset_n_o_pad": "s_usb2_ulpi_reset_n",
         "uart0_tx_o_pad": "uart0_tx_o",
         "uart0_rx_i_pad": "uart0_rx_i",
+        "uart1_tx_o_pad": "uart1_tx_o",
+        "uart1_rx_i_pad": "uart1_rx_i",
         "xpi_sck_o_pad": "xpi_sck_o",
         "xpi_nss0_o_pad": "xpi_nss0_o",
         "xpi_dat0_io_pad": "xpi_dat0_io",
@@ -309,6 +318,7 @@
     },
     "verilator": {
       "bindings": {
+        "ref24clk_i_pad": "s_ref24_clk",
         "extclk_i_pad": "s_clk",
         "ext_rst_n_i_pad": "s_rst_n",
         "jtag_tck_i_pad": "s_jtag_tck",
@@ -316,6 +326,8 @@
         "jtag_tdi_i_pad": "s_jtag_tdi",
         "jtag_trst_n_i_pad": "s_jtag_trst_n",
         "jtag_tdo_o_pad": "s_jtag_tdo",
+        "uart1_tx_o_pad": "s_uart1_tx",
+        "uart1_rx_i_pad": "s_uart1_rx",
         "gpio_21_io_pad": "s_psram_sck",
         "gpio_22_io_pad": "s_psram_nss0",
         "gpio_23_io_pad": "s_psram_dat0",
@@ -393,10 +405,10 @@
     },
     "tb": {
       "bindings": {
+        "ref24clk_i_pad": "s_ref24_clk",
         "extclk_i_pad": "s_ext_clk",
         "audclk_i_pad": "s_aud_clk",
         "ext_rst_n_i_pad": "s_rst_n",
-        "xi_i_pad": "r_xtal_clk",
         "jtag_tck_i_pad": "s_jtag_tck",
         "jtag_tms_i_pad": "s_jtag_tms",
         "jtag_tdi_i_pad": "s_jtag_tdi",
@@ -436,6 +448,8 @@
         "usb2_ulpi_reset_n_o_pad": "s_usb2_ulpi_reset_n",
         "uart0_tx_o_pad": "s_uart0_tx",
         "uart0_rx_i_pad": "s_uart0_rx",
+        "uart1_tx_o_pad": "s_uart1_tx",
+        "uart1_rx_i_pad": "s_uart1_rx",
         "xpi_sck_o_pad": "s_xpi_sck_o",
         "xpi_nss0_o_pad": "s_xpi_nss0_o",
         "xpi_nss1_o_pad": "s_xpi_nss1_o",

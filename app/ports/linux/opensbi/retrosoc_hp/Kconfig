@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-2-Clause
+
+config PLATFORM_RETROSOC_HP
+	bool
+	select IPI_MSWI
+	select TIMER_MTIMER
+	default y

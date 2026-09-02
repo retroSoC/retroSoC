@@ -11,6 +11,12 @@ notices. `filelist/` selects PDK-specific RTL sources; `tech/` contains
 technology wrappers. Respect managed upstream boundaries and use setup helpers
 rather than editing generated MPW output.
 
+The optional IHP130 LP/HP profile integrates VexiiRiscv through self-owned
+wrappers, a 64-to-32 compatibility plane, HP ACLINT/PLIC, mailbox, UART1, and
+SYSCTRL lifecycle signals. The generated CPU Verilog lives only below
+`build/<variant>/generated/vexiiriscv/` and is an external lint boundary. See
+[LP/HP Architecture](../docs/lp-hp-architecture.md).
+
 RTL changes require an affected firmware build and simulation. Use
 `make regress-pr` or `make regress-nightly` for supported regression coverage;
 see [Engineering Workflow](../docs/engineering.md) for results and artifacts.
@@ -68,6 +74,14 @@ does not elaborate the tri-state delays in the Micron model. The Icarus
 testbench retains that Micron timing model, so it is the reference for SDRAM
 command timing while Verilator provides fast functional coverage.
 
+The Mini SoC on-chip SRAM is a synthesis-time selectable 4/16/32/64/128 KiB
+native 32-bit AXI4 target. Product profiles select 32 KiB; ICS55 assembles it
+from two 16 KiB `SRAM_4096X32_M8_BW` macros while other mappings retain their
+technology-bank geometry. Its read-only
+APB capability/performance ABI, technology mapping, verification evidence, and
+ECC/MBIST roadmap are documented in
+[Configurable Native-AXI4 On-chip SRAM](../docs/ip/onchip-sram.md).
+
 The self-owned ESP-PSRAM64H controller exposes a 32-bit AXI4 data window and a
 separate APB4 management plane across four independently isolated 8 MiB chips.
 Its frozen architecture, register ABI, timing limits, model, formal target, and
@@ -98,6 +112,13 @@ RSA-2048 Montgomery exponentiation. Its register ABI, key/zeroize boundary,
 commercial survey, and verification roadmap are documented in
 [AES/SHA-2/RSA Crypto Controller](../docs/ip/crypto.md).
 
+The self-owned JPEG controller provides 8-bit Baseline Sequential encode and
+decode, five raster formats, a 64-bit AXI4 2D DMA, direct and 128-byte SG-ring
+jobs, four encoder table contexts, interrupts, and LP/HP transferable resource
+ownership. Its implemented limits, handwritten ABI, measured performance, and
+commercial release gates are documented in
+[Baseline JPEG Codec](../docs/ip/jpeg.md).
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and
@@ -105,7 +126,12 @@ verification contract are documented in
 [APB4 System Control](../docs/ip/sysctrl.md).
 
 The Mini SoC APB4 platform block is `apb4_system` in `rtl/mini/top`. It owns
-archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, and the user-IP APB window.
+archinfo, RTC, watchdog, PWM, PS/2, RNG, CRC, the read-only legacy user-IP
+compatibility window, and fixed EXT-L/EXT-H control windows in product mode.
+The root-only Fabric Monitor is a separate HP-domain APB target reached through
+the generated `apb4_system` route and a PCLK-to-HP async bridge; its counter
+and sticky-fault ABI is documented in
+[Mini Data-Plane Fabric Monitor](../docs/ip/fabric-monitor.md).
 `apb4_periph` remains the APB4 peripheral container. Topology generation
 includes both management-only native SDIO hosts (`sdio0` on GPIO15..20 ALT0
 and `sdio1` on dedicated pads), and the `soc_apb4_system_fabric.svh` include is documented in

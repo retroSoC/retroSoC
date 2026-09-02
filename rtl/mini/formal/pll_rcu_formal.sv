@@ -19,13 +19,12 @@ module pll_rcu_formal_design (
     output logic       rsp_ready,
     output logic       pll_lock,
     output logic       pll_capable,
-    output logic [2:0] state,
+    output logic [3:0] state,
     output logic       pll_apply,
     output logic       select_ext_clk,
     output logic       active_valid,
     output logic       safe_clk,
     output logic       active_lock,
-    output logic       lock_seen_low,
     output logic [1:0] error
 );
 
@@ -47,13 +46,10 @@ module pll_rcu_formal_design (
   assign rsp_ready            = pll_ctrl.rsp_ready_o;
   assign pll_lock             = f_pll_lock;
   assign pll_capable          = f_pll_capable;
-  assign state                = u_dut.s_state_q;
-  assign pll_apply            = u_dut.s_pll_apply_q;
-  assign select_ext_clk       = u_dut.s_sel_ext_clk_q;
+  assign state                = u_dut.s_state_bits_q;
   assign active_valid         = u_dut.s_active_valid_q;
   assign safe_clk             = u_dut.s_safe_clk_q;
   assign active_lock          = u_dut.s_lock_q;
-  assign lock_seen_low        = u_dut.s_lock_seen_low_q;
   assign error                = u_dut.s_err_q;
 
   // Both controller domains share the formal clock. This proves the control
@@ -61,16 +57,24 @@ module pll_rcu_formal_design (
   pll_rcu_controller #(
       .LockTimeout(4)
   ) u_dut (
-      .sys_clk_i       (clk_i),
-      .sys_rst_n_i     (rst_n_i),
-      .ext_clk_i       (clk_i),
-      .ext_rst_n_i     (rst_n_i),
-      .pll_lock_i      (f_pll_lock),
-      .pll_capable_i   (f_pll_capable),
-      .pll_sel_o       (),
-      .pll_apply_o     (),
-      .select_ext_clk_o(),
-      .pll_ctrl        (pll_ctrl)
+      .sys_clk_i     (clk_i),
+      .sys_rst_n_i   (rst_n_i),
+      .ext_clk_i     (clk_i),
+      .ext_rst_n_i   (rst_n_i),
+      .pll_lock_i    (f_pll_lock),
+      .pll_capable_i (f_pll_capable),
+      .hp_idle_i     (1'b1),
+      .pclk_idle_i   (1'b1),
+      .timeout_i     (16'd16),
+      .force_safe_i  (1'b0),
+      .clear_fault_i (1'b0),
+      .pll_sel_o     (),
+      .pll_apply_o   (pll_apply),
+      .sel_ext_clk_o (select_ext_clk),
+      .hp_block_o    (),
+      .lp_force_ref_o(),
+      .pll_fault_o   (),
+      .pll_ctrl      (pll_ctrl)
   );
 
   initial begin

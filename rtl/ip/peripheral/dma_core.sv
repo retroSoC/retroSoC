@@ -17,7 +17,8 @@ module dma_core #(
     parameter int NumChannels       = 4,
     parameter int ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
     parameter int MaxBurstBeats     = 16,
-    parameter int FifoDepth         = 16
+    parameter int FifoDepth         = 16,
+    parameter bit EnableCrc         = 1'b1
 ) (
     // verilog_format: off -- channel vectors are kept aligned with the register-bank ABI.
     input  logic                           clk_i,
@@ -30,6 +31,9 @@ module dma_core #(
     input  logic [NumChannels*32-1:0]      byte_count_i,
     input  logic [NumChannels*32-1:0]      request_sel_i,
     input  logic [NumChannels*32-1:0]      burst_cfg_i,
+    input  logic [NumChannels*32-1:0]      tcd_head_i,
+    input  logic [NumChannels*32-1:0]      tcd_count_i,
+    input  logic [NumChannels*32-1:0]      crc_expected_i,
     input  logic [NumChannels-1:0]         start_i,
     input  logic [NumChannels-1:0]         suspend_i,
     input  logic [NumChannels-1:0]         resume_i,
@@ -51,6 +55,7 @@ module dma_core #(
     output logic [NumChannels*32-1:0]      bytes_done_o,
     output logic [NumChannels*32-1:0]      stall_cycles_lo_o,
     output logic [NumChannels*32-1:0]      stall_cycles_hi_o,
+    output logic [NumChannels*32-1:0]      crc_result_o,
     output logic                           first_error_valid_o,
     output logic [ChannelIndexWidth-1:0]   first_error_channel_o,
     output logic [8:0]                     first_error_status_o,
@@ -81,6 +86,8 @@ module dma_core #(
   logic [      NumChannels-1:0][              31:0] s_cfg_byte_count;
   logic [      NumChannels-1:0][               3:0] s_cfg_request;
   logic [      NumChannels-1:0][               4:0] s_cfg_burst;
+  logic [      NumChannels-1:0]                     s_cfg_crc_enable;
+  logic [      NumChannels-1:0]                     s_cfg_crc_final;
 
   logic [      NumChannels-1:0]                     s_busy_q;
   logic [      NumChannels-1:0]                     s_suspended_q;
@@ -109,6 +116,29 @@ module dma_core #(
   logic [      NumChannels-1:0][              31:0] s_stream_accepted_q;
   logic [      NumChannels-1:0][              31:0] s_bytes_done_q;
   logic [      NumChannels-1:0][              63:0] s_stall_cycles_q;
+  logic [      NumChannels-1:0][              31:0] s_crc_q;
+  logic [      NumChannels-1:0][              31:0] s_crc_expected_q;
+  logic [      NumChannels-1:0]                     s_crc_en_q;
+  logic [      NumChannels-1:0]                     s_crc_fin_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_head_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_count_q;
+  logic [      NumChannels-1:0]                     s_tcd_mode_q;
+  logic [      NumChannels-1:0]                     s_tcd_loaded_q;
+  logic [      NumChannels-1:0]                     s_tcd_fetch_pending_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_ptr_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_next_ptr_q;
+  logic [      NumChannels-1:0][              15:0] s_tcd_words_left_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_word0_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_word1_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_word2_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_word3_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_word7_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_word8_q;
+  logic [      NumChannels-1:0][              31:0] s_tcd_word9_q;
+  logic                                             s_tcd_read_owner_valid_q;
+  logic [ChannelIndexWidth-1:0]                     s_tcd_read_owner_q;
+  logic [                  4:0]                     s_tcd_read_seen_q;
+  logic                                             s_tcd_parse_q;
   logic [      NumChannels-1:0][               3:0] s_err_code_q;
   logic [      NumChannels-1:0][               1:0] s_err_resp_q;
   logic [      NumChannels-1:0]                     s_err_read_q;
@@ -141,6 +171,8 @@ module dma_core #(
   logic                                             s_write_rr_valid;
   logic [                  1:0]                     s_read_highest_priority;
   logic [                  1:0]                     s_write_highest_priority;
+  logic [ChannelIndexWidth-1:0]                     s_tcd_fetch_selected;
+  logic                                             s_tcd_fetch_valid;
 
   logic                                             s_axi_read_start_valid;
   logic                                             s_axi_read_start_ready;
@@ -176,9 +208,11 @@ module dma_core #(
   logic [                  4:0]                     s_read_beats_q;
   logic [                  4:0]                     s_read_seen_q;
   logic                                             s_read_err_q;
+  logic [                 31:0]                     s_read_burst_bytes_q;
   logic                                             s_write_owner_valid_q;
   logic [ChannelIndexWidth-1:0]                     s_write_owner_q;
   logic [                 31:0]                     s_write_bytes_q;
+  logic [                  4:0]                     s_write_beat_q;
 
   logic                                             s_i2s_tx_channel_valid;
   logic [ChannelIndexWidth-1:0]                     s_i2s_tx_channel;
@@ -220,6 +254,32 @@ module dma_core #(
       input logic [3:0] error_code_i, input logic [1:0] response_i, input logic error_read_i,
       input logic stream_last_i);
     channel_error_status = {stream_last_i, 1'b0, error_read_i, response_i, error_code_i};
+  endfunction
+
+  function automatic logic [31:0] crc32_byte(input logic [31:0] crc_i, input logic [7:0] data_i);
+    logic [31:0] crc;
+    crc = crc_i ^ {24'd0, data_i};
+    for (int unsigned bit_index = 0; bit_index < 8; bit_index++) begin
+      crc = (crc[0]) ? ((crc >> 1) ^ 32'hEDB8_8320) : (crc >> 1);
+    end
+    crc32_byte = crc;
+  endfunction
+
+  function automatic logic [31:0] crc32_word(input logic [31:0] crc_i, input logic [31:0] data_i,
+                                             input logic [2:0] valid_bytes_i);
+    logic [31:0] crc;
+    crc = crc_i;
+    for (int unsigned byte_index = 0; byte_index < 4; byte_index++) begin
+      if (byte_index < valid_bytes_i) begin
+        crc = crc32_byte(crc, data_i[(byte_index*8)+:8]);
+      end
+    end
+    crc32_word = crc;
+  endfunction
+
+  function automatic logic tcd_active(input logic [31:0] head_i, input logic [31:0] count_i);
+    tcd_active = (^head_i !== 1'bx) && (^count_i !== 1'bx) &&
+                 (head_i != 32'd0) && (count_i != 32'd0);
   endfunction
 
 `ifndef SYNTHESIS
@@ -337,11 +397,28 @@ module dma_core #(
       s_cfg_src_increment[channel] = ch_cfg_i[(channel*32)+6];
       s_cfg_dst_increment[channel] = ch_cfg_i[(channel*32)+7];
       s_cfg_priority[channel]      = ch_cfg_i[(channel*32)+8+:2];
+      s_cfg_crc_enable[channel]    = EnableCrc && ch_cfg_i[(channel*32)+10];
+      s_cfg_crc_final[channel]     = EnableCrc && ch_cfg_i[(channel*32)+11];
       s_cfg_src_addr[channel]      = src_addr_i[(channel*32)+:32];
       s_cfg_dst_addr[channel]      = dst_addr_i[(channel*32)+:32];
       s_cfg_byte_count[channel]    = byte_count_i[(channel*32)+:32];
       s_cfg_request[channel]       = request_sel_i[(channel*32)+:4];
       s_cfg_burst[channel]         = burst_cfg_i[(channel*32)+:5];
+    end
+  end
+
+  always_comb begin
+    s_tcd_fetch_selected = '0;
+    s_tcd_fetch_valid    = 1'b0;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      if (s_tcd_fetch_pending_q[channel] && s_busy_q[channel] &&
+          !s_tcd_read_owner_valid_q && !s_axi_read_busy) begin
+        if (!s_tcd_fetch_valid || (s_priority_q[channel] >
+                                   s_priority_q[s_tcd_fetch_selected])) begin
+          s_tcd_fetch_selected = ChannelIndexWidth'(channel);
+          s_tcd_fetch_valid    = 1'b1;
+        end
+      end
     end
   end
 
@@ -370,13 +447,10 @@ module dma_core #(
       s_start_valid[channel]    = 1'b1;
       s_start_err_code[channel] = DMA_ERROR_CONFIG;
       if ((s_cfg_width[channel] != DMA_WIDTH_32) || (s_cfg_byte_count[channel] == 32'd0) ||
-          (s_cfg_byte_count[channel][1:0] != 2'b00) ||
           (s_cfg_burst[channel] == 5'd0) ||
           (s_cfg_burst[channel] > 5'(MaxBurstBeats))) begin
-        s_start_valid[channel] = 1'b0;
-        s_start_err_code[channel] = (s_cfg_byte_count[channel][1:0] != 2'b00)
-                                          ? DMA_ERROR_ALIGNMENT
-                                          : DMA_ERROR_CONFIG;
+        s_start_valid[channel]    = 1'b0;
+        s_start_err_code[channel] = DMA_ERROR_CONFIG;
       end else begin
         unique case (s_cfg_kind[channel])
           DMA_KIND_MM_TO_MM: begin
@@ -399,27 +473,33 @@ module dma_core #(
           DMA_KIND_MM_TO_STREAM: begin
             if ((s_cfg_src_addr[channel] == 32'd0) ||
                 (s_cfg_src_addr[channel][1:0] != 2'b00) ||
+                (s_cfg_byte_count[channel][1:0] != 2'b00) ||
                 !s_cfg_src_increment[channel] ||
                 ((s_cfg_request[channel] != DMA_REQUEST_I2S_TX) &&
                  (s_cfg_request[channel] != DMA_REQUEST_CRYPTO_IN)) || endpoint_busy) begin
               s_start_valid[channel] = 1'b0;
-              s_start_err_code[channel] = (s_cfg_src_addr[channel][1:0] != 2'b00)
-                                                ? DMA_ERROR_ALIGNMENT
-                                                : DMA_ERROR_CONFIG;
+              s_start_err_code[channel] =
+                  ((s_cfg_src_addr[channel][1:0] != 2'b00) ||
+                   (s_cfg_byte_count[channel][1:0] != 2'b00))
+                      ? DMA_ERROR_ALIGNMENT
+                      : DMA_ERROR_CONFIG;
             end
           end
           DMA_KIND_STREAM_TO_MM: begin
             if ((s_cfg_dst_addr[channel] == 32'd0) ||
                 (s_cfg_dst_addr[channel][1:0] != 2'b00) ||
+                (s_cfg_byte_count[channel][1:0] != 2'b00) ||
                 !s_cfg_dst_increment[channel] ||
                 ((s_cfg_request[channel] != DMA_REQUEST_I2S_RX) &&
                  (s_cfg_request[channel] != DMA_REQUEST_DVP_RX) &&
                  (s_cfg_request[channel] != DMA_REQUEST_CRYPTO_OUT)) ||
                 endpoint_busy) begin
               s_start_valid[channel] = 1'b0;
-              s_start_err_code[channel] = (s_cfg_dst_addr[channel][1:0] != 2'b00)
-                                                ? DMA_ERROR_ALIGNMENT
-                                                : DMA_ERROR_CONFIG;
+              s_start_err_code[channel] =
+                  ((s_cfg_dst_addr[channel][1:0] != 2'b00) ||
+                   (s_cfg_byte_count[channel][1:0] != 2'b00))
+                      ? DMA_ERROR_ALIGNMENT
+                      : DMA_ERROR_CONFIG;
             end
           end
           default: begin
@@ -427,6 +507,11 @@ module dma_core #(
             s_start_err_code[channel] = DMA_ERROR_CONFIG;
           end
         endcase
+      end
+      if (tcd_active(tcd_head_i[(channel*32)+:32], tcd_count_i[(channel*32)+:32])) begin
+        s_start_valid[channel] = ((tcd_head_i[(channel*32)+:32] & 32'h0000_003F) == 32'd0) &&
+                                 (tcd_count_i[(channel*32)+:32] <= 32'h0000_FFFF);
+        s_start_err_code[channel] = s_start_valid[channel] ? DMA_ERROR_NONE : DMA_ERROR_ALIGNMENT;
       end
       if (s_start_valid[channel] && s_cfg_src_increment[channel] &&
           (s_cfg_kind[channel] != DMA_KIND_STREAM_TO_MM)) begin
@@ -468,11 +553,11 @@ module dma_core #(
                             (s_src_increment_q[channel] ? s_read_issued_q[channel][11:0]
                                                          : 12'd0);
       if (s_busy_q[channel] && !s_suspended_q[channel] && !s_abort_q[channel] &&
-          !s_err_q[channel] &&
+          !s_err_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
           ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) ||
            (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM)) &&
           (s_read_issued_q[channel] < s_len_q[channel]) && !s_fifo_full[channel]) begin
-        remaining_beats = (s_len_q[channel] - s_read_issued_q[channel]) >> 2;
+        remaining_beats = (s_len_q[channel] - s_read_issued_q[channel] + 32'd3) >> 2;
         available_beats = FifoDepth - {{(32 - FifoCountWidth) {1'b0}}, s_fifo_count[channel]};
         page_beats = (32'd4096 - {19'd0, 1'b0, current_page_offset}) >> 2;
         force_single = !s_src_increment_q[channel] ||
@@ -528,11 +613,12 @@ module dma_core #(
                             (s_dst_increment_q[channel] ? s_write_issued_q[channel][11:0]
                                                          : 12'd0);
       if (s_busy_q[channel] && !s_suspended_q[channel] && !s_abort_q[channel] &&
-          !s_err_q[channel] && !read_owns_channel &&
+          !s_err_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          !read_owns_channel &&
           ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) ||
            (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM)) &&
           (s_write_issued_q[channel] < s_len_q[channel]) && !s_fifo_empty[channel]) begin
-        remaining_beats = (s_len_q[channel] - s_write_issued_q[channel]) >> 2;
+        remaining_beats = (s_len_q[channel] - s_write_issued_q[channel] + 32'd3) >> 2;
         buffered_beats = {{(32 - FifoCountWidth) {1'b0}}, s_fifo_count[channel]};
         page_beats = (32'd4096 - {19'd0, 1'b0, current_page_offset}) >> 2;
         force_single = !s_dst_increment_q[channel] ||
@@ -585,6 +671,12 @@ module dma_core #(
       s_axi_read_start_beats = s_read_candidate_beats[s_read_rr_selected];
       s_axi_read_start_fixed = !s_src_increment_q[s_read_rr_selected];
     end
+    if (s_tcd_fetch_valid) begin
+      s_axi_read_start_valid = !s_axi_read_busy;
+      s_axi_read_start_addr  = s_tcd_ptr_q[s_tcd_fetch_selected];
+      s_axi_read_start_beats = 5'd16;
+      s_axi_read_start_fixed = 1'b0;
+    end
 
     s_axi_write_start_valid = s_write_rr_valid && (|s_write_rr_grant) && !s_axi_write_busy;
     s_axi_write_start_addr  = '0;
@@ -612,27 +704,32 @@ module dma_core #(
     s_crypto_out_channel_valid = 1'b0;
     s_crypto_out_channel       = '0;
     for (int unsigned channel = 0; channel < NumChannels; channel++) begin
-      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
+      if (s_busy_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
           (s_req_q[channel] == DMA_REQUEST_I2S_TX)) begin
         s_i2s_tx_channel_valid = 1'b1;
         s_i2s_tx_channel       = ChannelIndexWidth'(channel);
       end
-      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
+      if (s_busy_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
           (s_req_q[channel] == DMA_REQUEST_I2S_RX)) begin
         s_i2s_rx_channel_valid = 1'b1;
         s_i2s_rx_channel       = ChannelIndexWidth'(channel);
       end
-      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
+      if (s_busy_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
           (s_req_q[channel] == DMA_REQUEST_DVP_RX)) begin
         s_dvp_rx_channel_valid = 1'b1;
         s_dvp_rx_channel       = ChannelIndexWidth'(channel);
       end
-      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
+      if (s_busy_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
           (s_req_q[channel] == DMA_REQUEST_CRYPTO_IN)) begin
         s_crypto_in_channel_valid = 1'b1;
         s_crypto_in_channel       = ChannelIndexWidth'(channel);
       end
-      if (s_busy_q[channel] && (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
+      if (s_busy_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
           (s_req_q[channel] == DMA_REQUEST_CRYPTO_OUT)) begin
         s_crypto_out_channel_valid = 1'b1;
         s_crypto_out_channel       = ChannelIndexWidth'(channel);
@@ -712,7 +809,22 @@ module dma_core #(
   assign s_axi_read_beat_ready = 1'b1;
   assign s_axi_write_data_valid = s_write_owner_valid_q && !s_fifo_empty[s_write_owner_q];
   assign s_axi_write_data = s_write_owner_valid_q ? s_fifo_rdata[s_write_owner_q] : 32'd0;
-  assign s_axi_write_strb = 4'hF;
+  always_comb begin
+    int unsigned valid_bytes;
+
+    valid_bytes = s_write_bytes_q - ({27'd0, s_write_beat_q} << 2);
+    if (valid_bytes >= 4) begin
+      s_axi_write_strb = 4'hF;
+    end else if (valid_bytes == 3) begin
+      s_axi_write_strb = 4'h7;
+    end else if (valid_bytes == 2) begin
+      s_axi_write_strb = 4'h3;
+    end else if (valid_bytes == 1) begin
+      s_axi_write_strb = 4'h1;
+    end else begin
+      s_axi_write_strb = 4'h0;
+    end
+  end
 
   always_comb begin
     s_fifo_flush = '0;
@@ -834,82 +946,118 @@ module dma_core #(
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      s_busy_q              <= '0;
-      s_suspended_q         <= '0;
-      s_done_q              <= '0;
-      s_aborted_q           <= '0;
-      s_err_q               <= '0;
-      s_stream_last_q       <= '0;
-      s_abort_q             <= '0;
-      s_suspend_req_q       <= '0;
-      s_stream_tx_stop_q    <= '0;
-      s_half_seen_q         <= '0;
-      s_evt_done_q          <= '0;
-      s_evt_half_q          <= '0;
-      s_evt_err_q           <= '0;
-      s_kind_q              <= '0;
-      s_req_q               <= '0;
-      s_priority_q          <= '0;
-      s_burst_q             <= '0;
-      s_src_increment_q     <= '0;
-      s_dst_increment_q     <= '0;
-      s_src_base_q          <= '0;
-      s_dst_base_q          <= '0;
-      s_len_q               <= '0;
-      s_read_issued_q       <= '0;
-      s_write_issued_q      <= '0;
-      s_stream_accepted_q   <= '0;
-      s_bytes_done_q        <= '0;
-      s_stall_cycles_q      <= '0;
-      s_err_code_q          <= '0;
-      s_err_resp_q          <= '0;
-      s_err_read_q          <= '0;
-      s_err_addr_q          <= '0;
-      s_read_owner_valid_q  <= 1'b0;
-      s_read_owner_q        <= '0;
-      s_read_beats_q        <= '0;
-      s_read_seen_q         <= '0;
-      s_read_err_q          <= 1'b0;
-      s_write_owner_valid_q <= 1'b0;
-      s_write_owner_q       <= '0;
-      s_write_bytes_q       <= '0;
-      s_first_err_valid_q   <= 1'b0;
-      s_first_err_channel_q <= '0;
-      s_first_err_stat_q    <= '0;
-      s_first_err_addr_hi_q <= '0;
-      xpi_xfer_done_o       <= 1'b0;
+      s_busy_q                 <= '0;
+      s_suspended_q            <= '0;
+      s_done_q                 <= '0;
+      s_aborted_q              <= '0;
+      s_err_q                  <= '0;
+      s_stream_last_q          <= '0;
+      s_abort_q                <= '0;
+      s_suspend_req_q          <= '0;
+      s_stream_tx_stop_q       <= '0;
+      s_half_seen_q            <= '0;
+      s_evt_done_q             <= '0;
+      s_evt_half_q             <= '0;
+      s_evt_err_q              <= '0;
+      s_kind_q                 <= '0;
+      s_req_q                  <= '0;
+      s_priority_q             <= '0;
+      s_burst_q                <= '0;
+      s_src_increment_q        <= '0;
+      s_dst_increment_q        <= '0;
+      s_src_base_q             <= '0;
+      s_dst_base_q             <= '0;
+      s_len_q                  <= '0;
+      s_read_issued_q          <= '0;
+      s_write_issued_q         <= '0;
+      s_stream_accepted_q      <= '0;
+      s_bytes_done_q           <= '0;
+      s_stall_cycles_q         <= '0;
+      s_err_code_q             <= '0;
+      s_err_resp_q             <= '0;
+      s_err_read_q             <= '0;
+      s_err_addr_q             <= '0;
+      s_crc_q                  <= '0;
+      s_crc_expected_q         <= '0;
+      s_crc_en_q               <= '0;
+      s_crc_fin_q              <= '0;
+      s_tcd_head_q             <= '0;
+      s_tcd_count_q            <= '0;
+      s_tcd_mode_q             <= '0;
+      s_tcd_loaded_q           <= '0;
+      s_tcd_fetch_pending_q    <= '0;
+      s_tcd_ptr_q              <= '0;
+      s_tcd_next_ptr_q         <= '0;
+      s_tcd_words_left_q       <= '0;
+      s_tcd_read_owner_valid_q <= 1'b0;
+      s_tcd_read_owner_q       <= '0;
+      s_tcd_read_seen_q        <= '0;
+      s_tcd_parse_q            <= 1'b0;
+      s_read_owner_valid_q     <= 1'b0;
+      s_read_owner_q           <= '0;
+      s_read_beats_q           <= '0;
+      s_read_seen_q            <= '0;
+      s_read_err_q             <= 1'b0;
+      s_read_burst_bytes_q     <= '0;
+      s_write_owner_valid_q    <= 1'b0;
+      s_write_owner_q          <= '0;
+      s_write_bytes_q          <= '0;
+      s_write_beat_q           <= '0;
+      s_first_err_valid_q      <= 1'b0;
+      s_first_err_channel_q    <= '0;
+      s_first_err_stat_q       <= '0;
+      s_first_err_addr_hi_q    <= '0;
+      xpi_xfer_done_o          <= 1'b0;
     end else begin
       xpi_xfer_done_o <= 1'b0;
       if (global_reset_i) begin
-        s_busy_q              <= '0;
-        s_suspended_q         <= '0;
-        s_done_q              <= '0;
-        s_aborted_q           <= '0;
-        s_err_q               <= '0;
-        s_stream_last_q       <= '0;
-        s_abort_q             <= '0;
-        s_suspend_req_q       <= '0;
-        s_stream_tx_stop_q    <= '0;
-        s_half_seen_q         <= '0;
-        s_evt_done_q          <= '0;
-        s_evt_half_q          <= '0;
-        s_evt_err_q           <= '0;
-        s_read_issued_q       <= '0;
-        s_write_issued_q      <= '0;
-        s_stream_accepted_q   <= '0;
-        s_bytes_done_q        <= '0;
-        s_stall_cycles_q      <= '0;
-        s_err_code_q          <= '0;
-        s_err_resp_q          <= '0;
-        s_err_read_q          <= '0;
-        s_err_addr_q          <= '0;
-        s_read_owner_valid_q  <= 1'b0;
-        s_read_err_q          <= 1'b0;
-        s_write_owner_valid_q <= 1'b0;
-        s_first_err_valid_q   <= 1'b0;
-        s_first_err_channel_q <= '0;
-        s_first_err_stat_q    <= '0;
-        s_first_err_addr_hi_q <= '0;
+        s_busy_q                 <= '0;
+        s_suspended_q            <= '0;
+        s_done_q                 <= '0;
+        s_aborted_q              <= '0;
+        s_err_q                  <= '0;
+        s_stream_last_q          <= '0;
+        s_abort_q                <= '0;
+        s_suspend_req_q          <= '0;
+        s_stream_tx_stop_q       <= '0;
+        s_half_seen_q            <= '0;
+        s_evt_done_q             <= '0;
+        s_evt_half_q             <= '0;
+        s_evt_err_q              <= '0;
+        s_read_issued_q          <= '0;
+        s_write_issued_q         <= '0;
+        s_stream_accepted_q      <= '0;
+        s_bytes_done_q           <= '0;
+        s_stall_cycles_q         <= '0;
+        s_err_code_q             <= '0;
+        s_err_resp_q             <= '0;
+        s_err_read_q             <= '0;
+        s_err_addr_q             <= '0;
+        s_crc_q                  <= '0;
+        s_crc_expected_q         <= '0;
+        s_crc_en_q               <= '0;
+        s_crc_fin_q              <= '0;
+        s_tcd_head_q             <= '0;
+        s_tcd_count_q            <= '0;
+        s_tcd_mode_q             <= '0;
+        s_tcd_loaded_q           <= '0;
+        s_tcd_fetch_pending_q    <= '0;
+        s_tcd_ptr_q              <= '0;
+        s_tcd_next_ptr_q         <= '0;
+        s_tcd_words_left_q       <= '0;
+        s_tcd_read_owner_valid_q <= 1'b0;
+        s_tcd_read_owner_q       <= '0;
+        s_tcd_read_seen_q        <= '0;
+        s_tcd_parse_q            <= 1'b0;
+        s_read_owner_valid_q     <= 1'b0;
+        s_read_err_q             <= 1'b0;
+        s_read_burst_bytes_q     <= '0;
+        s_write_owner_valid_q    <= 1'b0;
+        s_write_beat_q           <= '0;
+        s_first_err_valid_q      <= 1'b0;
+        s_first_err_channel_q    <= '0;
+        s_first_err_stat_q       <= '0;
+        s_first_err_addr_hi_q    <= '0;
       end else begin
         if (global_error_clear_i) begin
           s_first_err_valid_q   <= 1'b0;
@@ -929,28 +1077,45 @@ module dma_core #(
             s_evt_err_q[channel] <= 1'b0;
           end
           if (channel_reset_i[channel]) begin
-            s_busy_q[channel]            <= 1'b0;
-            s_suspended_q[channel]       <= 1'b0;
-            s_done_q[channel]            <= 1'b0;
-            s_aborted_q[channel]         <= 1'b0;
-            s_err_q[channel]             <= 1'b0;
-            s_stream_last_q[channel]     <= 1'b0;
-            s_abort_q[channel]           <= 1'b0;
-            s_suspend_req_q[channel]     <= 1'b0;
-            s_stream_tx_stop_q[channel]  <= 1'b0;
-            s_half_seen_q[channel]       <= 1'b0;
-            s_evt_done_q[channel]        <= 1'b0;
-            s_evt_half_q[channel]        <= 1'b0;
-            s_evt_err_q[channel]         <= 1'b0;
-            s_read_issued_q[channel]     <= '0;
-            s_write_issued_q[channel]    <= '0;
-            s_stream_accepted_q[channel] <= '0;
-            s_bytes_done_q[channel]      <= '0;
-            s_stall_cycles_q[channel]    <= '0;
-            s_err_code_q[channel]        <= DMA_ERROR_NONE;
-            s_err_resp_q[channel]        <= '0;
-            s_err_read_q[channel]        <= 1'b0;
-            s_err_addr_q[channel]        <= '0;
+            s_busy_q[channel]              <= 1'b0;
+            s_suspended_q[channel]         <= 1'b0;
+            s_done_q[channel]              <= 1'b0;
+            s_aborted_q[channel]           <= 1'b0;
+            s_err_q[channel]               <= 1'b0;
+            s_stream_last_q[channel]       <= 1'b0;
+            s_abort_q[channel]             <= 1'b0;
+            s_suspend_req_q[channel]       <= 1'b0;
+            s_stream_tx_stop_q[channel]    <= 1'b0;
+            s_half_seen_q[channel]         <= 1'b0;
+            s_evt_done_q[channel]          <= 1'b0;
+            s_evt_half_q[channel]          <= 1'b0;
+            s_evt_err_q[channel]           <= 1'b0;
+            s_read_issued_q[channel]       <= '0;
+            s_write_issued_q[channel]      <= '0;
+            s_stream_accepted_q[channel]   <= '0;
+            s_bytes_done_q[channel]        <= '0;
+            s_stall_cycles_q[channel]      <= '0;
+            s_err_code_q[channel]          <= DMA_ERROR_NONE;
+            s_err_resp_q[channel]          <= '0;
+            s_err_read_q[channel]          <= 1'b0;
+            s_err_addr_q[channel]          <= '0;
+            s_crc_q[channel]               <= '0;
+            s_crc_expected_q[channel]      <= '0;
+            s_crc_en_q[channel]            <= 1'b0;
+            s_crc_fin_q[channel]           <= 1'b0;
+            s_tcd_head_q[channel]          <= '0;
+            s_tcd_count_q[channel]         <= '0;
+            s_tcd_mode_q[channel]          <= 1'b0;
+            s_tcd_loaded_q[channel]        <= 1'b0;
+            s_tcd_fetch_pending_q[channel] <= 1'b0;
+            s_tcd_ptr_q[channel]           <= '0;
+            s_tcd_next_ptr_q[channel]      <= '0;
+            s_tcd_words_left_q[channel]    <= '0;
+            if (s_tcd_read_owner_valid_q &&
+                (s_tcd_read_owner_q == ChannelIndexWidth'(channel))) begin
+              s_tcd_read_owner_valid_q <= 1'b0;
+              s_tcd_parse_q            <= 1'b0;
+            end
           end else begin
             if (start_i[channel] && !s_busy_q[channel]) begin
               s_done_q[channel]            <= 1'b0;
@@ -972,18 +1137,35 @@ module dma_core #(
               s_err_resp_q[channel]        <= '0;
               s_err_read_q[channel]        <= 1'b0;
               if (s_start_valid[channel]) begin
-                s_busy_q[channel]          <= 1'b1;
-                s_kind_q[channel]          <= s_cfg_kind[channel];
-                s_req_q[channel]           <= s_cfg_request[channel];
-                s_priority_q[channel]      <= s_cfg_priority[channel];
-                s_burst_q[channel]         <= s_cfg_burst[channel];
+                s_busy_q[channel] <= 1'b1;
+                s_kind_q[channel] <= s_cfg_kind[channel];
+                s_req_q[channel] <= s_cfg_request[channel];
+                s_priority_q[channel] <= s_cfg_priority[channel];
+                s_burst_q[channel] <= s_cfg_burst[channel];
                 s_src_increment_q[channel] <= s_cfg_src_increment[channel];
                 s_dst_increment_q[channel] <= s_cfg_dst_increment[channel];
-                s_src_base_q[channel]      <= s_cfg_src_addr[channel];
-                s_dst_base_q[channel]      <= s_cfg_dst_addr[channel];
-                s_len_q[channel]           <= s_cfg_byte_count[channel];
-                s_err_code_q[channel]      <= DMA_ERROR_NONE;
-                s_err_addr_q[channel]      <= '0;
+                s_src_base_q[channel] <= s_cfg_src_addr[channel];
+                s_dst_base_q[channel] <= s_cfg_dst_addr[channel];
+                s_len_q[channel] <= s_cfg_byte_count[channel];
+                s_err_code_q[channel] <= DMA_ERROR_NONE;
+                s_err_addr_q[channel] <= '0;
+                s_crc_q[channel] <= 32'hFFFF_FFFF;
+                s_crc_expected_q[channel] <= crc_expected_i[(channel*32)+:32];
+                s_crc_en_q[channel] <= s_cfg_crc_enable[channel];
+                s_crc_fin_q[channel] <= s_cfg_crc_final[channel];
+                s_tcd_head_q[channel] <= tcd_head_i[(channel*32)+:32];
+                s_tcd_count_q[channel] <= tcd_count_i[(channel*32)+:32];
+                s_tcd_mode_q[channel] <= tcd_active(
+                    tcd_head_i[(channel*32)+:32], tcd_count_i[(channel*32)+:32]
+                );
+                s_tcd_loaded_q[channel] <= !tcd_active(
+                    tcd_head_i[(channel*32)+:32], tcd_count_i[(channel*32)+:32]
+                );
+                s_tcd_fetch_pending_q[channel] <= tcd_active(
+                    tcd_head_i[(channel*32)+:32], tcd_count_i[(channel*32)+:32]
+                );
+                s_tcd_ptr_q[channel] <= tcd_head_i[(channel*32)+:32];
+                s_tcd_words_left_q[channel] <= tcd_count_i[(channel*32)+:16];
               end else begin
                 s_busy_q[channel]     <= 1'b0;
                 s_err_q[channel]      <= 1'b1;
@@ -1028,18 +1210,126 @@ module dma_core #(
         end
 
         if (s_axi_read_start_valid && s_axi_read_start_ready) begin
-          s_read_owner_valid_q <= 1'b1;
-          s_read_owner_q <= s_read_rr_selected;
-          s_read_beats_q <= s_read_candidate_beats[s_read_rr_selected];
-          s_read_seen_q <= '0;
-          s_read_err_q <= 1'b0;
-          s_read_issued_q[s_read_rr_selected] <=
-              s_read_issued_q[s_read_rr_selected] +
-              ({27'd0, s_read_candidate_beats[s_read_rr_selected]} << 2);
+          if (s_tcd_fetch_valid) begin
+            s_tcd_read_owner_valid_q                    <= 1'b1;
+            s_tcd_read_owner_q                          <= s_tcd_fetch_selected;
+            s_tcd_read_seen_q                           <= '0;
+            s_tcd_fetch_pending_q[s_tcd_fetch_selected] <= 1'b0;
+          end else begin
+            s_read_owner_valid_q <= 1'b1;
+            s_read_owner_q <= s_read_rr_selected;
+            s_read_beats_q <= s_read_candidate_beats[s_read_rr_selected];
+            s_read_seen_q <= '0;
+            s_read_err_q <= 1'b0;
+            s_read_burst_bytes_q <=
+              (s_len_q[s_read_rr_selected] - s_read_issued_q[s_read_rr_selected] <
+               ({27'd0, s_read_candidate_beats[s_read_rr_selected]} << 2))
+                  ? (s_len_q[s_read_rr_selected] - s_read_issued_q[s_read_rr_selected])
+                  : ({27'd0, s_read_candidate_beats[s_read_rr_selected]} << 2);
+            s_read_issued_q[s_read_rr_selected] <=
+                s_read_issued_q[s_read_rr_selected] +
+                (((s_len_q[s_read_rr_selected] - s_read_issued_q[s_read_rr_selected]) <
+                  ({27'd0, s_read_candidate_beats[s_read_rr_selected]} << 2))
+                     ? (s_len_q[s_read_rr_selected] - s_read_issued_q[s_read_rr_selected])
+                     : ({27'd0, s_read_candidate_beats[s_read_rr_selected]} << 2));
+          end
+        end
+
+        if (s_axi_read_beat_valid && s_tcd_read_owner_valid_q) begin
+          unique case (s_tcd_read_seen_q[3:0])
+            4'd0: s_tcd_word0_q[s_tcd_read_owner_q] <= s_axi_read_data;
+            4'd1: s_tcd_word1_q[s_tcd_read_owner_q] <= s_axi_read_data;
+            4'd2: s_tcd_word2_q[s_tcd_read_owner_q] <= s_axi_read_data;
+            4'd3: s_tcd_word3_q[s_tcd_read_owner_q] <= s_axi_read_data;
+            4'd7: s_tcd_word7_q[s_tcd_read_owner_q] <= s_axi_read_data;
+            4'd8: s_tcd_word8_q[s_tcd_read_owner_q] <= s_axi_read_data;
+            4'd9: s_tcd_word9_q[s_tcd_read_owner_q] <= s_axi_read_data;
+            default: begin
+            end
+          endcase
+          if ((s_axi_read_resp != `AXI4_RESP_OKAY) || s_axi_read_id_error ||
+              (s_axi_read_last != s_axi_read_expected_last)) begin
+            s_err_q[s_tcd_read_owner_q] <= 1'b1;
+            s_evt_err_q[s_tcd_read_owner_q] <= 1'b1;
+            s_err_code_q[s_tcd_read_owner_q] <=
+                (s_axi_read_resp != `AXI4_RESP_OKAY) ? DMA_ERROR_AXI_READ : DMA_ERROR_AXI_PROTOCOL;
+            s_err_resp_q[s_tcd_read_owner_q] <= s_axi_read_resp;
+            s_err_read_q[s_tcd_read_owner_q] <= 1'b1;
+            s_err_addr_q[s_tcd_read_owner_q] <=
+                s_tcd_ptr_q[s_tcd_read_owner_q] + ({27'd0, s_tcd_read_seen_q} << 2);
+          end
+          s_tcd_read_seen_q <= s_tcd_read_seen_q + 1'b1;
+        end
+        if (s_axi_read_done && s_tcd_read_owner_valid_q) begin
+          s_tcd_read_owner_valid_q <= 1'b0;
+          s_tcd_parse_q            <= 1'b1;
+        end
+
+        if (s_tcd_parse_q) begin
+          s_tcd_parse_q <= 1'b0;
+          if (s_err_q[s_tcd_read_owner_q] ||
+              (s_tcd_word7_q[s_tcd_read_owner_q][0] == 1'b0) ||
+              (s_tcd_word3_q[s_tcd_read_owner_q] == 32'd0) ||
+              (s_tcd_word1_q[s_tcd_read_owner_q][1:0] != 2'b00) ||
+              (s_tcd_word2_q[s_tcd_read_owner_q][1:0] != 2'b00) ||
+              ((s_tcd_word0_q[s_tcd_read_owner_q] != 32'd0) &&
+               (s_tcd_word0_q[s_tcd_read_owner_q][5:0] != 6'd0)) ||
+              (s_tcd_word7_q[s_tcd_read_owner_q][10:8] > DMA_KIND_STREAM_TO_MM) ||
+              (s_tcd_word7_q[s_tcd_read_owner_q][15:12] > DMA_REQUEST_CRYPTO_OUT) ||
+              (((s_tcd_word7_q[s_tcd_read_owner_q][10:8] == DMA_KIND_MM_TO_STREAM) ||
+                (s_tcd_word7_q[s_tcd_read_owner_q][10:8] == DMA_KIND_STREAM_TO_MM)) &&
+               (s_tcd_word3_q[s_tcd_read_owner_q][1:0] != 2'b00)) ||
+              (s_tcd_word7_q[s_tcd_read_owner_q][24:20] > 5'd16)) begin
+            s_err_q[s_tcd_read_owner_q]        <= 1'b1;
+            s_evt_err_q[s_tcd_read_owner_q]    <= 1'b1;
+            s_err_code_q[s_tcd_read_owner_q]   <= DMA_ERROR_CONFIG;
+            s_tcd_loaded_q[s_tcd_read_owner_q] <= 1'b0;
+          end else begin
+            s_tcd_next_ptr_q[s_tcd_read_owner_q] <= s_tcd_word0_q[s_tcd_read_owner_q];
+            s_src_base_q[s_tcd_read_owner_q] <= s_tcd_word1_q[s_tcd_read_owner_q];
+            s_dst_base_q[s_tcd_read_owner_q] <= s_tcd_word2_q[s_tcd_read_owner_q];
+            s_len_q[s_tcd_read_owner_q] <= s_tcd_word3_q[s_tcd_read_owner_q];
+            s_kind_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][10:8];
+            s_req_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][15:12];
+            s_priority_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][17:16];
+            s_burst_q[s_tcd_read_owner_q]     <=
+                (s_tcd_word7_q[s_tcd_read_owner_q][24:20] == 5'd0)
+                    ? 5'd16
+                    : s_tcd_word7_q[s_tcd_read_owner_q][24:20];
+            s_src_increment_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][1];
+            s_dst_increment_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][2];
+            s_crc_en_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][3];
+            s_crc_fin_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][4];
+            s_crc_expected_q[s_tcd_read_owner_q] <= s_tcd_word8_q[s_tcd_read_owner_q];
+            s_crc_q[s_tcd_read_owner_q] <=
+                (s_tcd_word9_q[s_tcd_read_owner_q] == 32'd0)
+                    ? 32'hFFFF_FFFF
+                    : s_tcd_word9_q[s_tcd_read_owner_q];
+            s_stream_tx_stop_q[s_tcd_read_owner_q] <= 1'b0;
+            s_suspended_q[s_tcd_read_owner_q] <= 1'b0;
+            s_abort_q[s_tcd_read_owner_q] <= 1'b0;
+            s_done_q[s_tcd_read_owner_q] <= 1'b0;
+            s_read_issued_q[s_tcd_read_owner_q] <= '0;
+            s_write_issued_q[s_tcd_read_owner_q] <= '0;
+            s_stream_accepted_q[s_tcd_read_owner_q] <= '0;
+            s_bytes_done_q[s_tcd_read_owner_q] <= '0;
+            s_tcd_loaded_q[s_tcd_read_owner_q] <= 1'b1;
+          end
         end
 
         if (s_axi_read_beat_valid && s_read_owner_valid_q) begin
           s_read_seen_q <= s_read_seen_q + 1'b1;
+          if (s_crc_en_q[s_read_owner_q] &&
+              ((s_kind_q[s_read_owner_q] == DMA_KIND_MM_TO_MM) ||
+               (s_kind_q[s_read_owner_q] == DMA_KIND_MM_TO_STREAM))) begin
+            s_crc_q[s_read_owner_q] <= crc32_word(
+                s_crc_q[s_read_owner_q],
+                s_axi_read_data,
+                ((s_read_burst_bytes_q - ({27'd0, s_read_seen_q} << 2)) >= 32'd4)
+                    ? 3'd4
+                    : 3'(s_read_burst_bytes_q - ({27'd0, s_read_seen_q} << 2))
+            );
+          end
           if ((s_axi_read_resp != `AXI4_RESP_OKAY) || s_axi_read_id_error ||
               (s_axi_read_last != s_axi_read_expected_last)) begin
             s_read_err_q <= 1'b1;
@@ -1093,10 +1383,18 @@ module dma_core #(
         if (s_axi_write_start_valid && s_axi_write_start_ready) begin
           s_write_owner_valid_q <= 1'b1;
           s_write_owner_q <= s_write_rr_selected;
-          s_write_bytes_q <= {27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2;
+          s_write_bytes_q <=
+              (s_len_q[s_write_rr_selected] - s_write_issued_q[s_write_rr_selected] <
+               ({27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2))
+                  ? (s_len_q[s_write_rr_selected] - s_write_issued_q[s_write_rr_selected])
+                  : ({27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2);
+          s_write_beat_q <= '0;
           s_write_issued_q[s_write_rr_selected] <=
               s_write_issued_q[s_write_rr_selected] +
-              ({27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2);
+              (((s_len_q[s_write_rr_selected] - s_write_issued_q[s_write_rr_selected]) <
+                ({27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2))
+                   ? (s_len_q[s_write_rr_selected] - s_write_issued_q[s_write_rr_selected])
+                   : ({27'd0, s_write_candidate_beats[s_write_rr_selected]} << 2));
         end
 
         if (s_axi_write_done && s_write_owner_valid_q) begin
@@ -1136,24 +1434,50 @@ module dma_core #(
           end else if (s_abort_q[s_write_owner_q]) begin
             s_suspend_req_q[s_write_owner_q] <= 1'b0;
           end else begin
-            s_bytes_done_q[s_write_owner_q] <= s_bytes_done_q[s_write_owner_q] + s_write_bytes_q;
-            if (!s_half_seen_q[s_write_owner_q] &&
+            if (s_crc_en_q[s_write_owner_q] && s_crc_fin_q[s_write_owner_q] &&
+                ((s_bytes_done_q[s_write_owner_q] + s_write_bytes_q) >=
+                 s_len_q[s_write_owner_q]) &&
+                (~s_crc_q[s_write_owner_q] != s_crc_expected_q[s_write_owner_q])) begin
+              s_err_q[s_write_owner_q]      <= 1'b1;
+              s_evt_err_q[s_write_owner_q]  <= 1'b1;
+              s_err_code_q[s_write_owner_q] <= DMA_ERROR_CONFIG;
+              s_err_resp_q[s_write_owner_q] <= '0;
+              s_err_read_q[s_write_owner_q] <= 1'b0;
+              s_err_addr_q[s_write_owner_q] <= s_dst_base_q[s_write_owner_q];
+            end else begin
+              s_bytes_done_q[s_write_owner_q] <= s_bytes_done_q[s_write_owner_q] + s_write_bytes_q;
+              if (!s_half_seen_q[s_write_owner_q] &&
                 ((s_bytes_done_q[s_write_owner_q] + s_write_bytes_q) >=
                  (s_len_q[s_write_owner_q] >> 1))) begin
-              s_half_seen_q[s_write_owner_q] <= 1'b1;
-              s_evt_half_q[s_write_owner_q]  <= 1'b1;
-            end
-            if ((s_bytes_done_q[s_write_owner_q] + s_write_bytes_q) >=
-                s_len_q[s_write_owner_q]) begin
-              s_busy_q[s_write_owner_q]     <= 1'b0;
-              s_done_q[s_write_owner_q]     <= 1'b1;
-              s_evt_done_q[s_write_owner_q] <= 1'b1;
-              if ((s_req_q[s_write_owner_q] == DMA_REQUEST_QSPI_TX) ||
-                  (s_req_q[s_write_owner_q] == DMA_REQUEST_QSPI_RX)) begin
-                xpi_xfer_done_o <= 1'b1;
+                s_half_seen_q[s_write_owner_q] <= 1'b1;
+                s_evt_half_q[s_write_owner_q]  <= 1'b1;
+              end
+              if ((s_bytes_done_q[s_write_owner_q] + s_write_bytes_q) >=
+                  s_len_q[s_write_owner_q]) begin
+                if (s_tcd_mode_q[s_write_owner_q] &&
+                  (s_tcd_next_ptr_q[s_write_owner_q] != 32'd0) &&
+                  (s_tcd_words_left_q[s_write_owner_q] > 16'd1)) begin
+                  s_tcd_ptr_q[s_write_owner_q] <= s_tcd_next_ptr_q[s_write_owner_q];
+                  s_tcd_words_left_q[s_write_owner_q] <=
+                      s_tcd_words_left_q[s_write_owner_q] - 16'd1;
+                  s_tcd_fetch_pending_q[s_write_owner_q] <= 1'b1;
+                  s_tcd_loaded_q[s_write_owner_q] <= 1'b0;
+                end else begin
+                  s_busy_q[s_write_owner_q]     <= 1'b0;
+                  s_done_q[s_write_owner_q]     <= 1'b1;
+                  s_evt_done_q[s_write_owner_q] <= 1'b1;
+                  if ((s_req_q[s_write_owner_q] == DMA_REQUEST_QSPI_TX) ||
+                    (s_req_q[s_write_owner_q] == DMA_REQUEST_QSPI_RX)) begin
+                    xpi_xfer_done_o <= 1'b1;
+                  end
+                end
               end
             end
           end
+        end
+
+        if (s_axi_write_data_valid && s_axi_write_data_ready && s_write_owner_valid_q) begin
+          s_write_beat_q <= s_write_beat_q + 1'b1;
         end
 
         if (s_stream_rx_keep_err) begin
@@ -1211,10 +1535,21 @@ module dma_core #(
               s_evt_half_q[s_i2s_tx_channel]  <= 1'b1;
             end
             if ((s_bytes_done_q[s_i2s_tx_channel] + WordBytes) >= s_len_q[s_i2s_tx_channel]) begin
-              s_busy_q[s_i2s_tx_channel]           <= 1'b0;
-              s_done_q[s_i2s_tx_channel]           <= 1'b1;
-              s_evt_done_q[s_i2s_tx_channel]       <= 1'b1;
-              s_stream_tx_stop_q[s_i2s_tx_channel] <= 1'b1;
+              if (s_tcd_mode_q[s_i2s_tx_channel] &&
+                  (s_tcd_next_ptr_q[s_i2s_tx_channel] != 32'd0) &&
+                  (s_tcd_words_left_q[s_i2s_tx_channel] > 16'd1)) begin
+                s_tcd_ptr_q[s_i2s_tx_channel] <= s_tcd_next_ptr_q[s_i2s_tx_channel];
+                s_tcd_words_left_q[s_i2s_tx_channel]    <=
+                    s_tcd_words_left_q[s_i2s_tx_channel] - 16'd1;
+                s_tcd_fetch_pending_q[s_i2s_tx_channel] <= 1'b1;
+                s_tcd_loaded_q[s_i2s_tx_channel] <= 1'b0;
+                s_stream_tx_stop_q[s_i2s_tx_channel] <= 1'b1;
+              end else begin
+                s_busy_q[s_i2s_tx_channel]           <= 1'b0;
+                s_done_q[s_i2s_tx_channel]           <= 1'b1;
+                s_evt_done_q[s_i2s_tx_channel]       <= 1'b1;
+                s_stream_tx_stop_q[s_i2s_tx_channel] <= 1'b1;
+              end
             end
           end
         end
@@ -1238,10 +1573,21 @@ module dma_core #(
             end
             if ((s_bytes_done_q[s_crypto_in_channel] + WordBytes) >=
                 s_len_q[s_crypto_in_channel]) begin
-              s_busy_q[s_crypto_in_channel]           <= 1'b0;
-              s_done_q[s_crypto_in_channel]           <= 1'b1;
-              s_evt_done_q[s_crypto_in_channel]       <= 1'b1;
-              s_stream_tx_stop_q[s_crypto_in_channel] <= 1'b1;
+              if (s_tcd_mode_q[s_crypto_in_channel] &&
+                  (s_tcd_next_ptr_q[s_crypto_in_channel] != 32'd0) &&
+                  (s_tcd_words_left_q[s_crypto_in_channel] > 16'd1)) begin
+                s_tcd_ptr_q[s_crypto_in_channel] <= s_tcd_next_ptr_q[s_crypto_in_channel];
+                s_tcd_words_left_q[s_crypto_in_channel]    <=
+                    s_tcd_words_left_q[s_crypto_in_channel] - 16'd1;
+                s_tcd_fetch_pending_q[s_crypto_in_channel] <= 1'b1;
+                s_tcd_loaded_q[s_crypto_in_channel] <= 1'b0;
+                s_stream_tx_stop_q[s_crypto_in_channel] <= 1'b1;
+              end else begin
+                s_busy_q[s_crypto_in_channel]           <= 1'b0;
+                s_done_q[s_crypto_in_channel]           <= 1'b1;
+                s_evt_done_q[s_crypto_in_channel]       <= 1'b1;
+                s_stream_tx_stop_q[s_crypto_in_channel] <= 1'b1;
+              end
             end
           end
         end
@@ -1298,6 +1644,7 @@ module dma_core #(
     bytes_done_o      = '0;
     stall_cycles_lo_o = '0;
     stall_cycles_hi_o = '0;
+    crc_result_o      = '0;
     for (int unsigned channel = 0; channel < NumChannels; channel++) begin
       event_status_o[(channel*3)+:3] = {
         s_evt_err_q[channel], s_evt_half_q[channel], s_evt_done_q[channel]
@@ -1324,6 +1671,7 @@ module dma_core #(
       bytes_done_o[(channel*32)+:32] = s_bytes_done_q[channel];
       stall_cycles_lo_o[(channel*32)+:32] = s_stall_cycles_q[channel][31:0];
       stall_cycles_hi_o[(channel*32)+:32] = s_stall_cycles_q[channel][63:32];
+      crc_result_o[(channel*32)+:32] = ~s_crc_q[channel];
     end
   end
 

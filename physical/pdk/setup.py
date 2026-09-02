@@ -102,6 +102,28 @@ def main() -> int:
                 ),
                 check=True,
             )
+            sram = archive("sky130_openram_sram_4kbyte_1rw_32x1024_8")
+            sram_archive = ROOT / sram["destination"]
+            download_file(
+                sram["url"],
+                sram_archive,
+                sram["sha256"],
+                update=args.update,
+                timeout=120,
+            )
+            subprocess.run(
+                (
+                    sys.executable,
+                    str(PDK_DIR / "prepare_sky130_sram.py"),
+                    "--archive",
+                    str(sram_archive),
+                    "--output-dir",
+                    str(ROOT / ".cache/retrosoc/pdk/sky130/openram"),
+                    "--archive-sha256",
+                    sram["sha256"],
+                ),
+                check=True,
+            )
             subprocess.run(
                 (
                     sys.executable,

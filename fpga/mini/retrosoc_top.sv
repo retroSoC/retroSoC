@@ -27,6 +27,8 @@ module retrosoc_top (
     inout  gpio_io30,
     output uart0_tx_o,
     inout  uart0_rx_i,
+    output uart1_tx_o,
+    inout  uart1_rx_i,
     output xpi_sck_o,
     output xpi_nss0_o,
     inout  xpi_dat0_io,
@@ -75,6 +77,7 @@ module retrosoc_top (
 );
 
   wire s_sys_clk;
+  wire s_ref24_clk;
   wire s_aud_clk;
   wire s_jtag_tck;
   wire s_jtag_tms;
@@ -97,6 +100,7 @@ module retrosoc_top (
   assign s_jtag_tdi    = 1'b0;
   assign s_jtag_trst_n = 1'b0;
   assign s_usb2_ulpi_clk = s_sys_clk;
+  assign s_ref24_clk = s_sys_clk;
 
   retrosoc_asic u_retrosoc (
       `include "retrosoc_asic_fpga_mini_bindings.svh"

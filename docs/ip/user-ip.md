@@ -1,13 +1,18 @@
-# User IP Software Contract
+# Legacy User IP Software Contract
 
 ## Scope
 
-The Mini SoC exposes one 4 KiB APB4 user-IP window at
-`RS_SOC_APB4_USER_IP_BASE`. SystemCtrl selects which implementation responds to
-that window. Slot 0 is the fixed ARCHINFO demonstration target; generated user
-extensions occupy contiguous slots beginning at 1.
+Mini product mode exposes the historical 4 KiB `RS_SOC_APB4_USER_IP_BASE`
+window only as a read-only compatibility/capability target. `IPSEL` reads zero,
+selector writes return APB `PSLVERR`, and selector HAL operations return
+`RS_ENOTSUP`. Product software uses the fixed
+[EXT-L/EXT-H contract](extensions.md).
 
-The extension map in `rtl/mini/integration/user_extensions.json` is the source
+The `MINI_MODE=MPW` profile retains the original behavior: SystemCtrl selects
+one implementation, slot 0 is ARCHINFO, and generated user IPs occupy
+contiguous slots beginning at 1.
+
+The legacy map in `rtl/mini/integration/user_extensions_legacy.json` is the source
 of truth for implemented slots. Its generator emits `RS_SOC_USER_IP_COUNT`,
 which is also the highest valid slot because extension slots are required to
 be contiguous from 1.
@@ -56,5 +61,5 @@ unchanged.
 Host tests cover argument, alignment, range, and slot validation without
 performing MMIO. `tests/test_user_ip_register_parity.py` compares the private C
 register definitions with the integrated managed RTL and extension manifest.
-The `ci_smoke` firmware probes slot 0 and every generated extension slot in
-simulation, then restores slot 0.
+Product `ci_smoke` verifies that selector mutation is unsupported, then probes
+the fixed extension slots. MPW register parity remains a host test.

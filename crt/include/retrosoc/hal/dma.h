@@ -61,6 +61,9 @@ typedef struct {
     rs_dma_width_t width;
     bool source_increment;
     bool destination_increment;
+    bool crc_enable;
+    bool crc_final;
+    uint32_t crc_expected;
     uint8_t priority;
     uint8_t burst_beats;
 } rs_dma_config_t;
@@ -76,10 +79,49 @@ typedef struct {
     uint32_t bytes_done;
     uint32_t remaining;
     uint64_t stall_cycles;
+    uint32_t crc_result;
 } rs_dma_status_t;
+
+typedef struct {
+    uint32_t next_ptr;
+    uint32_t source;
+    uint32_t destination;
+    uint32_t byte_count;
+    int32_t source_stride;
+    int32_t destination_stride;
+    uint16_t y_count;
+    uint16_t reserved;
+    uint32_t control;
+    uint32_t crc_expected;
+    uint32_t crc_seed;
+    uint32_t crc_result;
+    uint32_t status;
+    uint32_t bytes_done;
+    uint32_t error_status;
+    uint32_t reserved_tail;
+    uint32_t reserved_tail2;
+} rs_dma_tcd_t;
+
+_Static_assert(sizeof(rs_dma_tcd_t) == 64U, "DMA TCD ABI must be 64 bytes");
+
+#define RS_DMA_TCD_VALID          UINT32_C(0x00000001)
+#define RS_DMA_TCD_SRC_INC        UINT32_C(0x00000002)
+#define RS_DMA_TCD_DST_INC        UINT32_C(0x00000004)
+#define RS_DMA_TCD_CRC_ENABLE     UINT32_C(0x00000008)
+#define RS_DMA_TCD_CRC_FINAL      UINT32_C(0x00000010)
+#define RS_DMA_TCD_INT_DONE       UINT32_C(0x00000020)
+#define RS_DMA_TCD_INT_ERROR      UINT32_C(0x00000040)
+#define RS_DMA_TCD_KIND_SHIFT     8U
+#define RS_DMA_TCD_REQUEST_SHIFT  12U
+#define RS_DMA_TCD_PRIORITY_SHIFT 16U
+#define RS_DMA_TCD_BURST_SHIFT    20U
 
 rs_status_t rs_dma_config_validate(uint32_t channel, const rs_dma_config_t *config);
 rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config);
+rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd);
+rs_status_t rs_dma_submit_tcd(uint32_t channel, rs_dma_tcd_t *tcd, rs_timeout_t timeout);
+rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint32_t max_tcds,
+                                    rs_timeout_t timeout);
 rs_status_t rs_dma_start(uint32_t channel);
 rs_status_t rs_dma_suspend(uint32_t channel);
 rs_status_t rs_dma_resume(uint32_t channel);

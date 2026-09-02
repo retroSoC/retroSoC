@@ -17,5 +17,6 @@
 `include "cdc_fifo.sv"
 `include "async_reqack.sv"
 `include "cdc_warm_flush.sv"
+`include "cdc_advanced.sv"
 /* verilator lint_on SYNCASYNCNET */
 /* verilator lint_on DECLFILENAME */

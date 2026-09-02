@@ -13,7 +13,7 @@ application policy separate from common runtime and HAL code.
 | `media/` | WAV, video, and visual-demo components with public media headers. |
 | `middleware/` | Application middleware configuration and integration, including FatFs. |
 | `network/` | Optional network or user-IP integration. |
-| `ports/` | Ports and configuration for external libraries, such as LVGL. |
+| `ports/` | Ports and configuration for external libraries, including LVGL and the HP Linux/OpenSBI platform. |
 | `benchmark/` | Project integration for benchmark workloads, including CoreMark. |
 | `asm/` | Standalone assembly firmware used by low-level simulation self-tests. |
 
@@ -32,6 +32,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2, RNG, crypto AES/SHA, SDRAM mapped access, and test-status completion. |
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
+| `hp_boot` | SRAM-resident LP loader that validates the HP Linux flash bundle, loads SDRAM, releases HP, and monitors the mailbox verdict. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 | `xpi_flash_loader` | SRAM-resident, GDB-called service image for sector-preserving JTAG programming of the qualified NSS0 NOR. |
 
@@ -59,6 +60,10 @@ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark
 
 # Hazard3 remote-bitbang, OpenOCD, and GDB acceptance flow
 make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim
+
+# Build the locked OpenSBI/Linux/initramfs set and LP/HP flash bundle
+make setup-hp-linux
+make CONFIG=configs/ci/ihp130-hp.mk hp-bundle
 
 # Build the SRAM-resident XPI NOR loader used by the host JTAG tool
 make CONFIG=configs/ci/ihp130-xpi-flash-loader.mk firmware

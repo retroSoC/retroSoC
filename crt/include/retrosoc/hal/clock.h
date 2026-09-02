@@ -7,14 +7,14 @@
 #include <retrosoc/core/status.h>
 
 typedef enum {
-    RS_CLOCK_FREQ_24MHZ = 0,
-    RS_CLOCK_FREQ_48MHZ = 1,
-    RS_CLOCK_FREQ_72MHZ = 2,
-    RS_CLOCK_FREQ_96MHZ = 3,
-    RS_CLOCK_FREQ_120MHZ = 4,
-    RS_CLOCK_FREQ_144MHZ = 5,
-    RS_CLOCK_FREQ_168MHZ = 6,
-    RS_CLOCK_FREQ_192MHZ = 7,
+    RS_CLOCK_FREQ_72MHZ = 0,
+    RS_CLOCK_FREQ_96MHZ = 1,
+    RS_CLOCK_FREQ_120MHZ = 2,
+    RS_CLOCK_FREQ_144MHZ = 3,
+    RS_CLOCK_FREQ_168MHZ = 4,
+    RS_CLOCK_FREQ_192MHZ = 5,
+    RS_CLOCK_FREQ_216MHZ = 6,
+    RS_CLOCK_FREQ_240MHZ = 7,
 } rs_clock_frequency_t;
 
 typedef struct {

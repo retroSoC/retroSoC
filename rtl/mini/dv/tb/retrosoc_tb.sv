@@ -18,90 +18,88 @@ module retrosoc_tb;
   localparam real AUD_CPU_FREQ = 18.432;
   localparam time ResetHoldTime = 170744ns;
 
-  integer sim_runtime;
+  integer        sim_runtime;
 
-  reg     r_ext_clk;
-  wire    s_ext_clk;
-  reg     r_aud_clk;
-  wire    s_aud_clk;
-  reg     r_rst_n;
-  wire    s_rst_n;
-`ifdef HAVE_PLL
-  reg r_xtal_clk;
-`endif
-  wire        s_jtag_tck;
-  wire        s_jtag_tms;
-  wire        s_jtag_tdi;
-  wire        s_jtag_trst_n;
-  wire        s_uart0_tx;
-  wire        s_uart0_rx;
-  tri1        s_gpio_0_io;
-  tri1        s_gpio_1_io;
-  wire        s_psram_sck;
-  wire        s_psram_nss0;
-  wire        s_psram_nss1;
-  wire        s_psram_nss2;
-  wire        s_psram_nss3;
-  tri1        s_psram_dat0;
-  tri1        s_psram_dat1;
-  tri1        s_psram_dat2;
-  tri1        s_psram_dat3;
-  wire        s_i2c0_sda_io;
-  wire        s_i2c0_scl_io;
-  wire        s_xpi_sck_o;
-  wire        s_xpi_nss0_o;
-  wire        s_xpi_nss1_o;
-  wire        s_xpi_nss2_o;
-  wire        s_xpi_dat0_io;
-  wire        s_xpi_dat1_io;
-  wire        s_xpi_dat2_io;
-  wire        s_xpi_dat3_io;
-  wire        s_i2s_sclk;
-  wire        s_i2s_lrck;
-  wire        s_i2s_adcdat;
-  wire        s_sdio1_clk;
-  tri1        s_sdio1_cmd;
-  tri1 [ 3:0] s_sdio1_dat;
-  wire        s_usb2_ulpi_clk;
-  tri0        s_usb2_ulpi_dir;
-  tri0        s_usb2_ulpi_nxt;
-  tri0 [ 7:0] s_usb2_ulpi_data;
-  wire        s_usb2_ulpi_stp;
-  wire        s_usb2_ulpi_reset_n;
-  wire        s_sdram_clk;
-  wire        s_sdram_cke;
-  wire        s_sdram_cs_n;
-  wire        s_sdram_ras_n;
-  wire        s_sdram_cas_n;
-  wire        s_sdram_we_n;
-  wire [ 1:0] s_sdram_ba;
-  wire [12:0] s_sdram_addr;
-  wire [ 1:0] s_sdram_dqm;
-  wire [15:0] s_sdram_dq;
-  wire        s_dvp_pclk;
-  wire        s_dvp_href;
-  wire        s_dvp_vsync;
-  wire [ 7:0] s_dvp_data;
+  reg            r_ext_clk;
+  wire           s_ext_clk;
+  reg            r_aud_clk;
+  wire           s_aud_clk;
+  reg            r_rst_n;
+  wire           s_rst_n;
+  reg            r_ref24_clk;
+  wire           s_ref24_clk;
+  wire           s_jtag_tck;
+  wire           s_jtag_tms;
+  wire           s_jtag_tdi;
+  wire           s_jtag_trst_n;
+  wire           s_uart0_tx;
+  wire           s_uart0_rx;
+  wire           s_uart1_tx;
+  tri1           s_uart1_rx;
+  tri1           s_gpio_0_io;
+  tri1           s_gpio_1_io;
+  wire           s_psram_sck;
+  wire           s_psram_nss0;
+  wire           s_psram_nss1;
+  wire           s_psram_nss2;
+  wire           s_psram_nss3;
+  tri1           s_psram_dat0;
+  tri1           s_psram_dat1;
+  tri1           s_psram_dat2;
+  tri1           s_psram_dat3;
+  wire           s_i2c0_sda_io;
+  wire           s_i2c0_scl_io;
+  wire           s_xpi_sck_o;
+  wire           s_xpi_nss0_o;
+  wire           s_xpi_nss1_o;
+  wire           s_xpi_nss2_o;
+  wire           s_xpi_dat0_io;
+  wire           s_xpi_dat1_io;
+  wire           s_xpi_dat2_io;
+  wire           s_xpi_dat3_io;
+  wire           s_i2s_sclk;
+  wire           s_i2s_lrck;
+  wire           s_i2s_adcdat;
+  wire           s_sdio1_clk;
+  tri1           s_sdio1_cmd;
+  tri1    [ 3:0] s_sdio1_dat;
+  wire           s_usb2_ulpi_clk;
+  tri0           s_usb2_ulpi_dir;
+  tri0           s_usb2_ulpi_nxt;
+  tri0    [ 7:0] s_usb2_ulpi_data;
+  wire           s_usb2_ulpi_stp;
+  wire           s_usb2_ulpi_reset_n;
+  wire           s_sdram_clk;
+  wire           s_sdram_cke;
+  wire           s_sdram_cs_n;
+  wire           s_sdram_ras_n;
+  wire           s_sdram_cas_n;
+  wire           s_sdram_we_n;
+  wire    [ 1:0] s_sdram_ba;
+  wire    [12:0] s_sdram_addr;
+  wire    [ 1:0] s_sdram_dqm;
+  wire    [15:0] s_sdram_dq;
+  wire           s_dvp_pclk;
+  wire           s_dvp_href;
+  wire           s_dvp_vsync;
+  wire    [ 7:0] s_dvp_data;
 
-`ifdef HAVE_PLL
-  always #(1000 / XTAL_CPU_FREQ / 2) r_xtal_clk = ~r_xtal_clk;
-`endif
+  always #(1000 / XTAL_CPU_FREQ / 2) r_ref24_clk = ~r_ref24_clk;
   always #(1000 / EXT_CPU_FREQ / 2) r_ext_clk = ~r_ext_clk;
   always #(1000 / AUD_CPU_FREQ / 2) r_aud_clk = ~r_aud_clk;
 
   initial begin
-    r_ext_clk = 1'b0;
-    r_aud_clk = 1'b0;
-`ifdef HAVE_PLL
-    r_xtal_clk = 1'b0;
-`endif
-    r_rst_n = 1'b0;
+    r_ext_clk   = 1'b0;
+    r_aud_clk   = 1'b0;
+    r_ref24_clk = 1'b0;
+    r_rst_n     = 1'b0;
     #ResetHoldTime;
     r_rst_n = 1'b1;
   end
 
   // connect inout pad
   assign s_ext_clk       = r_ext_clk;
+  assign s_ref24_clk     = r_ref24_clk;
   assign s_aud_clk       = r_aud_clk;
   assign s_rst_n         = r_rst_n;
   assign s_jtag_tck      = 1'b0;
@@ -252,6 +250,19 @@ module retrosoc_tb;
     if ($value$plusargs("sim_timeout=%d", sim_runtime) && sim_runtime > 0) begin
       $display("Simulation timeout set to: %0dns", sim_runtime);
       #sim_runtime;
+      $display("CLOCK_RESET_DIAG aon=%0b lp=%0b hp=%0b pclk=%0b mem=%0b",
+               u_retrosoc_asic.s_aon_rst_n, u_retrosoc_asic.s_sys_rst_n, u_retrosoc_asic.s_hp_rst_n,
+               u_retrosoc_asic.s_pclk_rst_n, u_retrosoc_asic.s_mem_rst_n);
+      $display("DATA_PLANE_DIAG rcu_block=%0b lifecycle_block=%0b flush=%0b busy=%0b idle=%0b",
+               u_retrosoc_asic.s_hp_block, u_retrosoc_asic.u_retrosoc.s_hp_lifecycle_block,
+               u_retrosoc_asic.u_retrosoc.s_hp_lifecycle_flush,
+               u_retrosoc_asic.u_retrosoc.s_data_plane_flush_busy,
+               u_retrosoc_asic.u_retrosoc.s_data_plane_idle);
+      $display("LP_GATEWAY_DIAG src_arvalid=%0b src_arready=%0b dst_arvalid=%0b dst_arready=%0b",
+               u_retrosoc_asic.u_retrosoc.u_mgmt_data_axi4_if.arvalid,
+               u_retrosoc_asic.u_retrosoc.u_mgmt_data_axi4_if.arready,
+               u_retrosoc_asic.u_retrosoc.u_data_plane.u_lp_data_hp_axi4.arvalid,
+               u_retrosoc_asic.u_retrosoc.u_data_plane.u_lp_data_hp_axi4.arready);
       $fatal(1, "SIM_TEST_TIMEOUT");
     end
     $display("Simulation timeout disabled; waiting for terminal software status");

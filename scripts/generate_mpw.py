@@ -100,10 +100,9 @@ def render_active_manifest(manifest_path: Path, extensions_path: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
-def generate(root: Path, output: Path) -> None:
+def generate(root: Path, output: Path, extensions: Path) -> None:
     managed_mpw = root / "rtl/managed/mpw"
     manifest = managed_mpw / "mpw.toml"
-    extensions = root / "rtl/mini/integration/user_extensions.json"
     if not manifest.is_file():
         raise FileNotFoundError(f"MPW v2 manifest is missing: {manifest}")
     descriptor, manifest_name = tempfile.mkstemp(
@@ -126,12 +125,11 @@ def generate(root: Path, output: Path) -> None:
         subprocess.run(command, cwd=managed_mpw, check=True)
     finally:
         active_manifest.unlink(missing_ok=True)
-    validate_extension_bindings(root, output)
+    validate_extension_bindings(extensions, output)
 
 
-def validate_extension_bindings(root: Path, output: Path) -> None:
+def validate_extension_bindings(extensions_path: Path, output: Path) -> None:
     """Require SoC slot bindings to match the generated MPW v2 manifest."""
-    extensions_path = root / "rtl/mini/integration/user_extensions.json"
     manifest_path = output / "manifest.json"
     extensions = json.loads(extensions_path.read_text(encoding="utf-8"))
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -178,12 +176,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--extensions", required=True, type=Path)
     parser.add_argument("--lock-file", required=True, type=Path)
     arguments = parser.parse_args()
     arguments.lock_file.parent.mkdir(parents=True, exist_ok=True)
     with arguments.lock_file.open("a+", encoding="utf-8") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        generate(arguments.root.resolve(), arguments.output.resolve())
+        generate(
+            arguments.root.resolve(),
+            arguments.output.resolve(),
+            arguments.extensions.resolve(),
+        )
     return 0
 
 

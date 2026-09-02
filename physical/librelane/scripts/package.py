@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a checksummed LibreLane full-chip delivery archive."""
+"""Create a checksummed LibreLane implementation delivery archive."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ def main() -> int:
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--variant-root", type=Path, required=True)
     parser.add_argument("--run-root", type=Path, required=True)
+    parser.add_argument("--target", choices=("chip", "core"), required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     root = args.root.resolve()
@@ -35,8 +36,8 @@ def main() -> int:
         run_root / "final",
         run_root / "runs/current",
         variant_root / "meta/manifest.json",
-        variant_root / "meta/librelane-doctor.json",
-        variant_root / "meta/librelane-chip.json",
+        variant_root / f"meta/librelane-{args.target}-doctor.json",
+        variant_root / f"meta/librelane-{args.target}.json",
         root / "dependencies/dependencies.lock.json",
     )
     missing = [str(path) for path in required if not path.exists()]
@@ -45,19 +46,19 @@ def main() -> int:
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="retrosoc-librelane-package-") as temporary:
-        staging = Path(temporary) / "retrosoc-ihp130-chip"
+        staging = Path(temporary) / f"retrosoc-ihp130-{args.target}"
         shutil.copytree(run_root / "final", staging / "final")
         shutil.copytree(run_root / "runs/current", staging / "evidence/run")
         shutil.copy2(run_root / "config.json", staging / "evidence/config.json")
         shutil.copy2(run_root / "result.json", staging / "evidence/result.json")
         shutil.copy2(variant_root / "meta/manifest.json", staging / "evidence/manifest.json")
         shutil.copy2(
-            variant_root / "meta/librelane-doctor.json",
+            variant_root / f"meta/librelane-{args.target}-doctor.json",
             staging / "evidence/librelane-doctor.json",
         )
         shutil.copy2(
-            variant_root / "meta/librelane-chip.json",
-            staging / "evidence/librelane-chip.json",
+            variant_root / f"meta/librelane-{args.target}.json",
+            staging / f"evidence/librelane-{args.target}.json",
         )
         shutil.copy2(
             root / "dependencies/dependencies.lock.json",

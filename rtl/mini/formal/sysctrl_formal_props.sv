@@ -16,6 +16,8 @@ module sysctrl_formal;
   localparam [7:0] SYSCTRL_FAULT_STATUS_OFFSET = 8'h10;
   localparam [7:0] SYSCTRL_USER_CORE_RESET_OFFSET = 8'h20;
   localparam [7:0] SYSCTRL_TEST_STATUS_OFFSET = 8'h84;
+  localparam [7:0] SYSCTRL_HP_CTRL_OFFSET = 8'hA4;
+  localparam [7:0] SYSCTRL_DEBUG_SELECT_OFFSET = 8'hAC;
 
   (* anyseq *) (* gclk *)reg         clk_i;
   wire        rst_n_i;
@@ -51,6 +53,8 @@ module sysctrl_formal;
   wire        test_done;
   wire        test_pass;
   wire [ 7:0] test_code;
+  wire        hp_release;
+  wire        debug_hp_select;
 
   sysctrl_formal_design u_design (
       .clk_i            (clk_i),
@@ -86,7 +90,9 @@ module sysctrl_formal;
       .fault_count      (fault_count),
       .test_done        (test_done),
       .test_pass        (test_pass),
-      .test_code        (test_code)
+      .test_code        (test_code),
+      .hp_release       (hp_release),
+      .debug_hp_select  (debug_hp_select)
   );
 
   always @(posedge clk_i) begin
@@ -101,6 +107,11 @@ module sysctrl_formal;
     end
 
     if (rst_n_i && f_past_valid) begin
+      if (user_core_count == 0) begin
+        assert (user_reset == user_reset_mask);
+        assert (!user_bus_enable);
+        assert (ip_sel == 0);
+      end
       if ($past(
               rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
                 rib_addr[7:0] == 8'h00 && rib_wdata[4:0] < user_core_count &&
@@ -117,6 +128,7 @@ module sysctrl_formal;
       end
       if ($past(
               rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                user_core_count != 0 &&
                 rib_addr[7:0] == SYSCTRL_USER_CORE_RESET_OFFSET &&
                 (rib_wdata & user_reset_mask) == user_reset_mask
           )) begin
@@ -124,7 +136,7 @@ module sysctrl_formal;
         assert (!user_bus_enable);
       end
       if ($past(
-              rst_n_i && rib_valid && !rib_ready && |rib_wstrb &&
+              rst_n_i && user_core_count != 0 && rib_valid && !rib_ready && |rib_wstrb &&
                 rib_addr[7:0] == SYSCTRL_IPSEL_OFFSET
           )) begin
         assert (ip_sel == $past(rib_wdata[7:0]));
@@ -187,12 +199,28 @@ module sysctrl_formal;
         assert (test_pass == $past(test_pass));
         assert (test_code == $past(test_code));
       end
+      if ($past(
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                rib_addr[7:0] == SYSCTRL_HP_CTRL_OFFSET
+          )) begin
+        assert (hp_release == $past(rib_wdata[0]));
+      end
+      if ($past(
+              rst_n_i && rib_valid && !rib_ready && rib_wstrb[0] &&
+                rib_addr[7:0] == SYSCTRL_DEBUG_SELECT_OFFSET && !hp_release
+          )) begin
+        assert (debug_hp_select == $past(rib_wdata[0]));
+      end
+      if ($past(rst_n_i && hp_release)) begin
+        assert (debug_hp_select == $past(debug_hp_select));
+      end
     end
 
     if (rst_n_i) begin
       cover (pll_busy && pll_req_valid);
       cover (pll_error && pll_error_reason == 2'd3);
       cover (fault_pending && fault_reason == 2'd2);
+      cover (hp_release);
     end
   end
 

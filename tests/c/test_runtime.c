@@ -7,11 +7,15 @@
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/clock.h>
+#include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
+#include <retrosoc/hal/jpeg.h>
 #include <retrosoc/hal/psram.h>
+#include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/sdio.h>
 #include <retrosoc/hal/spisd.h>
@@ -148,6 +152,22 @@ static int test_wait_helper(void) {
         rs_wait_not_value(&value, 0U, 1U) != RS_OK ||
         rs_wait_not_value(&value, 0x30U, 1U) != RS_ETIMEOUT) {
         return 1;
+    }
+    return 0;
+}
+
+static int test_clock_frequency_contract(void) {
+    uint32_t frequency_hz;
+
+    if ((rs_clock_frequency_hz(RS_CLOCK_FREQ_72MHZ, &frequency_hz) != RS_OK) ||
+        (frequency_hz != UINT32_C(72000000)) ||
+        (rs_clock_frequency_hz(RS_CLOCK_FREQ_240MHZ, &frequency_hz) != RS_OK) ||
+        (frequency_hz != UINT32_C(240000000))) {
+        return 1;
+    }
+    if ((rs_clock_frequency_hz((rs_clock_frequency_t)8, &frequency_hz) != RS_EINVAL) ||
+        (rs_clock_frequency_hz(RS_CLOCK_FREQ_72MHZ, NULL) != RS_EINVAL)) {
+        return 2;
     }
     return 0;
 }
@@ -691,6 +711,7 @@ static int test_gpio_helpers(void) {
 }
 
 static int test_dma_config_validation(void) {
+    static rs_dma_tcd_t tcd __attribute__((aligned(64)));
     rs_dma_config_t config = {
         .kind = RS_DMA_KIND_MM_TO_MM,
         .request = RS_DMA_REQUEST_SOFTWARE,
@@ -713,7 +734,7 @@ static int test_dma_config_validation(void) {
     }
     config.width = RS_DMA_WIDTH_32;
     config.byte_count = 6U;
-    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_OK) {
         return 3;
     }
     config.byte_count = 64U;
@@ -723,9 +744,35 @@ static int test_dma_config_validation(void) {
     if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_OK) {
         return 4;
     }
+    config.byte_count = 6U;
+    if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
+        return 6;
+    }
     config.source_increment = false;
     if (rs_dma_config_validate(RS_DMA_CHANNEL_BULK, &config) != RS_EINVAL) {
         return 5;
+    }
+    tcd.next_ptr = 0U;
+    tcd.source = UINT32_C(0x40000000);
+    tcd.destination = UINT32_C(0x41000000);
+    tcd.byte_count = 6U;
+    tcd.source_stride = 0;
+    tcd.destination_stride = 0;
+    tcd.y_count = 1U;
+    tcd.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                  ((uint32_t)RS_DMA_KIND_MM_TO_MM << RS_DMA_TCD_KIND_SHIFT) |
+                  ((uint32_t)RS_DMA_REQUEST_SOFTWARE << RS_DMA_TCD_REQUEST_SHIFT) |
+                  (UINT32_C(1) << RS_DMA_TCD_PRIORITY_SHIFT) |
+                  (UINT32_C(16) << RS_DMA_TCD_BURST_SHIFT);
+    if (rs_dma_tcd_validate(RS_DMA_CHANNEL_BULK, &tcd) != RS_OK) {
+        return 7;
+    }
+    tcd.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
+                  ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
+                  ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT) |
+                  (UINT32_C(1) << RS_DMA_TCD_PRIORITY_SHIFT);
+    if (rs_dma_tcd_validate(RS_DMA_CHANNEL_BULK, &tcd) != RS_EINVAL) {
+        return 8;
     }
     return 0;
 }
@@ -734,8 +781,8 @@ static int test_user_ip_validation(void) {
     uint32_t value;
 
     if ((rs_user_ip_get_selected(NULL) != RS_EINVAL) ||
-        (rs_user_ip_select(UINT8_MAX) != RS_EINVAL) ||
-        (rs_user_ip_probe(UINT8_MAX, &value) != RS_EINVAL) ||
+        (rs_user_ip_select(UINT8_MAX) != RS_ENOTSUP) ||
+        (rs_user_ip_probe(UINT8_MAX, &value) != RS_ENOTSUP) ||
         (rs_user_ip_probe(0U, NULL) != RS_EINVAL)) {
         return 1;
     }
@@ -746,6 +793,135 @@ static int test_user_ip_validation(void) {
     if ((rs_user_ip_write(2U, 0U) != RS_EINVAL) ||
         (rs_user_ip_write(UINT32_C(0x1000), 0U) != RS_EINVAL)) {
         return 3;
+    }
+    return 0;
+}
+
+static int test_extension_validation(void) {
+    const rs_extension_acl_t valid_acl = {
+        .read_base = UINT32_C(0x38000000),
+        .read_limit = UINT32_C(0x38000FFF),
+        .write_base = UINT32_C(0x38000000),
+        .write_limit = UINT32_C(0x38000FFF),
+        .timeout_cycles = UINT32_C(64),
+    };
+    rs_extension_acl_t invalid_acl = valid_acl;
+    rs_extension_capabilities_t capabilities;
+    rs_extension_status_t status;
+    uint32_t value;
+
+    if ((rs_extension_probe((rs_extension_slot_t)2, &capabilities) != RS_EINVAL) ||
+        (rs_extension_probe(RS_EXTENSION_SLOT_L, NULL) != RS_EINVAL) ||
+        (rs_extension_get_status((rs_extension_slot_t)2, &status) != RS_EINVAL) ||
+        (rs_extension_get_status(RS_EXTENSION_SLOT_H, NULL) != RS_EINVAL)) {
+        return 1;
+    }
+    if ((rs_extension_read((rs_extension_slot_t)2, 0U, &value) != RS_EINVAL) ||
+        (rs_extension_read(RS_EXTENSION_SLOT_L, 1U, &value) != RS_EINVAL) ||
+        (rs_extension_read(RS_EXTENSION_SLOT_L, UINT32_C(0x1000), &value) != RS_EINVAL) ||
+        (rs_extension_read(RS_EXTENSION_SLOT_L, 0U, NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    if ((rs_extension_set_owner(RS_EXTENSION_SLOT_L, (rs_extension_owner_t)2, false) !=
+         RS_EINVAL) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_L, &valid_acl) != RS_ENOTSUP) ||
+        (rs_extension_configure_acl((rs_extension_slot_t)2, &valid_acl) != RS_EINVAL) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, NULL) != RS_EINVAL)) {
+        return 3;
+    }
+    invalid_acl.read_limit = invalid_acl.read_base - UINT32_C(1);
+    if (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &invalid_acl) != RS_EINVAL) {
+        return 4;
+    }
+    invalid_acl = valid_acl;
+    invalid_acl.timeout_cycles = 0U;
+    if (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &invalid_acl) != RS_EINVAL) {
+        return 5;
+    }
+    if ((rs_extension_dma_start((uintptr_t)UINT32_C(0x30000001), (uintptr_t)UINT32_C(0x30000008),
+                                UINT32_C(8)) != RS_EINVAL) ||
+        (rs_extension_dma_start((uintptr_t)UINT32_C(0x30000000), (uintptr_t)UINT32_C(0x30000008),
+                                0U) != RS_EINVAL) ||
+        (rs_extension_dma_get_status(NULL) != RS_EINVAL)) {
+        return 6;
+    }
+    return 0;
+}
+
+static int test_resource_validation(void) {
+    rs_resource_status_t status;
+
+    if ((rs_resource_get_status((rs_resource_t)RS_RESOURCE_COUNT, &status) != RS_EINVAL) ||
+        (rs_resource_get_status(RS_RESOURCE_DMA, NULL) != RS_EINVAL) ||
+        (rs_resource_set_owner((rs_resource_t)RS_RESOURCE_COUNT, RS_RESOURCE_OWNER_LP, false) !=
+         RS_EINVAL) ||
+        (rs_resource_set_owner(RS_RESOURCE_DMA, (rs_resource_owner_t)2, false) != RS_EINVAL) ||
+        (rs_resource_set_lifecycle((rs_resource_t)RS_RESOURCE_COUNT, false, false) != RS_EINVAL) ||
+        (rs_resource_clear_fault((rs_resource_t)RS_RESOURCE_COUNT) != RS_EINVAL) ||
+        (rs_resource_get_cache_status(NULL) != RS_EINVAL)) {
+        return 1;
+    }
+    return 0;
+}
+
+static int test_jpeg_validation(void) {
+    static _Alignas(RS_JPEG_DESCRIPTOR_ALIGNMENT) rs_jpeg_descriptor_t ring[2];
+    rs_jpeg_descriptor_t descriptor;
+    rs_jpeg_job_t job = {
+        .mode = RS_JPEG_MODE_ENCODE,
+        .input_format = RS_JPEG_FORMAT_RGB565,
+        .output_format = RS_JPEG_FORMAT_RGB565,
+        .sampling = RS_JPEG_SAMPLING_420,
+        .width = 1920U,
+        .height = 1080U,
+        .quality = 75U,
+        .table_context = 0U,
+        .restart_interval = 64U,
+        .bitstream = (uintptr_t)UINT32_C(0x38000000),
+        .bitstream_size = UINT32_C(0x00100000),
+        .planes = {(uintptr_t)UINT32_C(0x38100000), (uintptr_t)0U, (uintptr_t)0U},
+        .strides = {3840U, 0U, 0U},
+        .metadata = (uintptr_t)0U,
+        .metadata_length = 0U,
+        .auto_header = true,
+        .strict = true,
+    };
+
+    if ((rs_jpeg_job_validate(&job) != RS_OK) ||
+        (rs_jpeg_descriptor_build(&descriptor, &job, UINT64_C(0x123456789ABCDEF0), true) !=
+         RS_OK) ||
+        (descriptor.image_size != UINT32_C(0x04380780)) ||
+        (descriptor.cookie_lo != UINT32_C(0x9ABCDEF0)) ||
+        (descriptor.cookie_hi != UINT32_C(0x12345678)) ||
+        ((descriptor.control &
+          (RS_JPEG_DESCRIPTOR_OWN | RS_JPEG_DESCRIPTOR_IOC | RS_JPEG_DESCRIPTOR_ENCODE)) !=
+         (RS_JPEG_DESCRIPTOR_OWN | RS_JPEG_DESCRIPTOR_IOC | RS_JPEG_DESCRIPTOR_ENCODE))) {
+        return 1;
+    }
+    if ((rs_jpeg_ring_validate(ring, 2U) != RS_OK) ||
+        (rs_jpeg_ring_validate(ring, 3U) != RS_EINVAL) ||
+        (rs_jpeg_ring_validate(NULL, 2U) != RS_EINVAL)) {
+        return 2;
+    }
+    job.quality = 0U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 3;
+    }
+    job.quality = 75U;
+    job.strides[0] = 3839U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 4;
+    }
+    job.strides[0] = 3840U;
+    job.bitstream += 1U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 5;
+    }
+    job.bitstream -= 1U;
+    job.metadata = (uintptr_t)UINT32_C(0x38200000);
+    job.metadata_length = 8U;
+    if (rs_jpeg_job_validate(&job) != RS_EINVAL) {
+        return 6;
     }
     return 0;
 }
@@ -819,13 +995,31 @@ static int test_video_parser(void) {
 
 int main(void) {
     const int results[] = {
-        test_string_helpers(),        test_formatter(),        test_compiler_helpers(),
-        test_wait_helper(),           test_ws2812_helpers(),   test_timer_helpers(),
-        test_psram_helpers(),         test_sdram_helpers(),    test_uart_helpers(),
-        test_i2s_helpers(),           test_i2c_helpers(),      test_sdio_helpers(),
-        test_usb2_helpers(),          test_spisd_helpers(),    test_gpio_helpers(),
-        test_dma_config_validation(), test_opipsram_helpers(), test_user_ip_validation(),
-        test_ps2_decoders(),          test_wav_parser(),       test_video_parser(),
+        test_string_helpers(),
+        test_formatter(),
+        test_compiler_helpers(),
+        test_wait_helper(),
+        test_clock_frequency_contract(),
+        test_ws2812_helpers(),
+        test_timer_helpers(),
+        test_psram_helpers(),
+        test_sdram_helpers(),
+        test_uart_helpers(),
+        test_i2s_helpers(),
+        test_i2c_helpers(),
+        test_sdio_helpers(),
+        test_usb2_helpers(),
+        test_spisd_helpers(),
+        test_gpio_helpers(),
+        test_dma_config_validation(),
+        test_opipsram_helpers(),
+        test_user_ip_validation(),
+        test_extension_validation(),
+        test_resource_validation(),
+        test_jpeg_validation(),
+        test_ps2_decoders(),
+        test_wav_parser(),
+        test_video_parser(),
     };
 
     for (size_t index = 0U; index < (sizeof(results) / sizeof(results[0])); ++index) {

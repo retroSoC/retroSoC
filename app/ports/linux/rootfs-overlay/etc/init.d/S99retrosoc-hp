@@ -1,0 +1,11 @@
+#!/bin/sh
+
+case "$1" in
+    start)
+        echo "retroSoC HP Linux ready"
+        devmem 0x10019020 32 0x00000001
+        devmem 0x10019024 32 0x4C4E5801
+        devmem 0x10019028 32 0x00000001
+        devmem 0x1001902C 32 0x00000001
+        ;;
+esac

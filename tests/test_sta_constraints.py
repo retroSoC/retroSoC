@@ -19,6 +19,7 @@ GENERATOR = ROOT / "physical/smoke/sta/opensta/generate_sdc.py"
 OPENSTA_MAKEFILE = ROOT / "physical/smoke/sta/opensta/opensta.mk"
 PDK_TIMING_MAKEFILE = ROOT / "physical/smoke/sta/opensta/pdk_timing.mk"
 RCU = ROOT / "rtl/mini/top/rcu.sv"
+CLOCK_SUBSYSTEM = ROOT / "rtl/mini/top/soc_clock_reset_subsystem.sv"
 RETROSOC_ASIC = ROOT / "rtl/mini/top/retrosoc_asic.sv"
 GF180_GENERATOR = ROOT / "physical/pdk/generate_gf180_liberty.py"
 ICS55_PREPARER = ROOT / "physical/pdk/prepare_ics55_liberty.py"
@@ -48,21 +49,37 @@ def test_core_sdc_covers_current_clock_domains(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     sdc = output.read_text(encoding="utf-8")
-    assert "create_clock -name clk_external -period 13.888888889" in sdc
-    assert "create_generated_clock -name clk_system" in sdc
+    assert "create_clock -name clk_aon -period 41.666666667" in sdc
+    assert "create_generated_clock -name clk_lp" in sdc
+    assert "create_clock -name clk_hp -period 4.166666667" in sdc
+    assert "create_generated_clock -name clk_pclk" in sdc
+    assert "create_clock -name clk_memory -period 27.777777778" in sdc
     assert "create_clock -name clk_audio -period 54.253472222" in sdc
     assert "create_clock -name clk_jtag -period 100" in sdc
     assert "create_clock -name clk_dvp -period 41.666666667" in sdc
     assert "create_clock -name clk_usb2_ulpi -period 16.666666667" in sdc
     assert "get_pins -quiet" in sdc
+    assert "get_nets -quiet" in sdc
     assert "get_ports -quiet" in sdc
+    assert (
+        "set clk_lp_pin [require_net_driver_pin \"clock lp\" {s_sys_clk}]" in sdc
+    )
+    assert (
+        "set clk_hp_pin [require_net_driver_pin \"clock hp\" {s_hp_clk}]" in sdc
+    )
+    assert (
+        "set clk_pclk_pin [require_net_driver_pin \"clock pclk\" {s_pclk}]" in sdc
+    )
+    assert (
+        "set clk_memory_pin [require_net_driver_pin \"clock memory\" {s_mem_clk}]" in sdc
+    )
     assert "set clk_jtag_port [require_ports \"clock jtag\" {jtag_tck_i_pad}]" in sdc
     assert (
         "set clk_usb2_ulpi_port [require_ports \"clock usb2_ulpi\" "
         "{usb2_ulpi_clk_i_pad}]"
     ) in sdc
     assert "u_retrosoc.u_apb4_periph.u_axi4_dvp.u_dvp_pclk_clk_buf/clk_o" in sdc
-    assert "-group [get_clocks {clk_external clk_system}]" in sdc
+    assert "-group [get_clocks {clk_lp clk_pclk}]" in sdc
     assert "set_clock_transition 0.1 [get_clocks {clk_dvp}]" in sdc
     assert "set_input_transition" not in sdc
     assert "set_false_path -from $reset_ext_rst_n_i_pad" in sdc
@@ -70,10 +87,11 @@ def test_core_sdc_covers_current_clock_domains(tmp_path: Path) -> None:
 
 def test_audio_sdc_root_drives_the_functional_audio_domain() -> None:
     rcu = RCU.read_text(encoding="utf-8")
+    subsystem = CLOCK_SUBSYSTEM.read_text(encoding="utf-8")
     asic = RETROSOC_ASIC.read_text(encoding="utf-8")
 
     assert re.search(r"\boutput\s+logic\s+aud_clk_o\b", rcu) is not None
-    assert re.search(r"\bassign\s+aud_clk_o\s*=\s*s_aud_clk_buf\s*;", rcu) is not None
+    assert re.search(r"\bassign\s+aud_clk_o\s*=\s*s_aud_clk_buf\s*;", subsystem) is not None
     assert re.search(r"\.aud_clk_o\s*\(s_aud_clk_buf\)", asic) is not None
     assert re.search(r"\.clk_aud_i\s*\(s_aud_clk_buf\)", asic) is not None
     assert re.search(r"\.clk_aud_i\s*\(s_aud_clk\)", asic) is None
@@ -93,9 +111,19 @@ def test_ihp130_core_sta_loads_usb2_packet_ram_liberties() -> None:
     assert "OPENSTA_SRAM_LIBS := $(IHP130_USB2_SRAM_LIBS)" in makefile
 
 
+def test_open_pdk_core_sta_uses_matching_sram_corners() -> None:
+    makefile = PDK_TIMING_MAKEFILE.read_text(encoding="utf-8")
+    opensta = OPENSTA_MAKEFILE.read_text(encoding="utf-8")
+
+    assert "gf180mcu_fd_ip_sram__sram512x8m8wm1__ss_125C_4v50.lib" in makefile
+    assert "sky130_sram_4kbyte_1rw_32x1024_8_SS_1p4V_100C.lib" in makefile
+    assert "HAVE_SRAM_MACRO=$(HAVE_SRAM_MACRO)" in opensta
+    assert "SRAM_SIZE_KIB=$(SRAM_SIZE_KIB)" in opensta
+
+
 def test_core_sdc_rejects_pads_missing_from_the_pin_map(tmp_path: Path) -> None:
     document = json.loads(DOMAINS.read_text(encoding="utf-8"))
-    document["domains"][3]["sta"]["source_port"] = "missing_pad"
+    document["domains"][0]["sta"]["source_port"] = "missing_pad"
     invalid = tmp_path / "clock_reset_domains.json"
     invalid.write_text(json.dumps(document), encoding="utf-8")
 

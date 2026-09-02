@@ -3,7 +3,10 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
+#include <retrosoc/hal/extension.h>
+#include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/onchip_sram.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/sdram.h>
@@ -22,25 +25,108 @@ static bool rs_ci_smoke_archinfo_v2(void) {
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
 }
 
-static bool rs_ci_smoke_user_ip(void) {
-    rs_status_t status;
-    uint32_t identifier = 0U;
+static bool rs_ci_smoke_onchip_sram(void) {
+    rs_onchip_sram_info_t info;
+    rs_onchip_sram_perf_t performance;
 
-    status = rs_user_ip_probe(0U, &identifier);
-    if ((status != RS_OK) || (identifier != ARCHINFO_COMPONENT_ID_VALUE)) {
-        printf("ci_smoke: user IP 0 status %d identifier 0x%08x\n", (int)status,
-               (unsigned int)identifier);
+    if ((rs_onchip_sram_probe(&info) != RS_OK) ||
+        (rs_onchip_sram_read_performance(&performance) != RS_OK) ||
+        (info.present != (RS_SOC_HAS_SRAM != 0U))) {
         return false;
     }
-    for (uint32_t ip_id = 1U; ip_id <= RS_SOC_USER_IP_COUNT; ++ip_id) {
-        status = rs_user_ip_probe((uint8_t)ip_id, &identifier);
-        if ((status != RS_OK) || (identifier != ip_id)) {
-            printf("ci_smoke: user IP %u status %d identifier 0x%08x\n", (unsigned int)ip_id,
-                   (int)status, (unsigned int)identifier);
-            return false;
-        }
+    if (info.present) {
+        return (info.memory_bytes == RS_SOC_SRAM_SIZE) &&
+               (info.bank_count == (RS_SOC_SRAM_SIZE / RS_ONCHIP_SRAM_BANK_BYTES_VALUE));
     }
-    return rs_user_ip_select(0U) == RS_OK;
+    return (info.memory_bytes == 0U) && (info.bank_count == 0U);
+}
+
+static bool rs_ci_smoke_onchip_sram_access(void) {
+#if RS_SOC_HAS_SRAM
+    volatile uint8_t *const bytes = (volatile uint8_t *)(uintptr_t)RS_SOC_SRAM_BASE;
+    volatile uint16_t *const halfs = (volatile uint16_t *)(uintptr_t)RS_SOC_SRAM_BASE;
+    volatile uint32_t *const words = (volatile uint32_t *)(uintptr_t)RS_SOC_SRAM_BASE;
+    volatile uint32_t *const last =
+        (volatile uint32_t *)(uintptr_t)(RS_SOC_SRAM_BASE + RS_SOC_SRAM_SIZE - 4U);
+
+    words[0] = UINT32_C(0x11223344);
+    if (words[0] != UINT32_C(0x11223344)) {
+        return false;
+    }
+    bytes[1] = UINT8_C(0xA5);
+    if (words[0] != UINT32_C(0x1122A544)) {
+        return false;
+    }
+    halfs[1] = UINT16_C(0xBEEF);
+    if (words[0] != UINT32_C(0xBEEFA544)) {
+        return false;
+    }
+    *last = UINT32_C(0xCAFEF00D);
+    return *last == UINT32_C(0xCAFEF00D);
+#else
+    return true;
+#endif
+}
+
+static bool rs_ci_smoke_fabric_monitor_start(void) {
+    return (rs_fabric_monitor_clear() == RS_OK) &&
+           (rs_fabric_monitor_configure(true, false) == RS_OK);
+}
+
+static bool rs_ci_smoke_fabric_monitor_check(void) {
+    const rs_fabric_target_t active_memory_target =
+        (RS_SOC_HAS_SRAM != 0U) ? RS_FABRIC_TARGET_SRAM : RS_FABRIC_TARGET_SDRAM;
+    rs_fabric_monitor_status_t status;
+    rs_fabric_master_stats_t master;
+    rs_fabric_target_stats_t target;
+    rs_fabric_fault_t fault;
+    uint32_t flush_count;
+
+    if ((rs_fabric_monitor_snapshot() != RS_OK) ||
+        (rs_fabric_monitor_get_status(&status) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_LP, &master) != RS_OK) ||
+        (rs_fabric_monitor_read_target(active_memory_target, &target) != RS_OK) ||
+        (rs_fabric_monitor_read_fault(&fault) != RS_OK) ||
+        (rs_fabric_monitor_get_flush_count(&flush_count) != RS_OK)) {
+        return false;
+    }
+    return !status.recovery && !status.flush_busy && !fault.valid && (flush_count == 0U) &&
+           (master.read_requests != 0U) && (master.write_requests != 0U) &&
+           (master.read_beats != 0U) && (master.write_beats != 0U) &&
+           (target.read_requests != 0U) && (target.write_requests != 0U) &&
+           (target.read_beats != 0U) && (target.write_beats != 0U);
+}
+
+static bool rs_ci_smoke_extensions(void) {
+    const rs_extension_acl_t acl = {
+        .read_base = RS_SOC_SDRAM_BASE,
+        .read_limit = RS_SOC_SDRAM_END,
+        .write_base = RS_SOC_SDRAM_BASE,
+        .write_limit = RS_SOC_SDRAM_END,
+        .timeout_cycles = UINT32_C(1024),
+    };
+    rs_extension_capabilities_t ext_l;
+    rs_extension_capabilities_t ext_h;
+    rs_extension_status_t status;
+
+    if ((RS_SOC_USER_CORE_COUNT != 0U) || (RS_SOC_USER_IP_COUNT != 0U) ||
+        (RS_SOC_EXTENSION_COUNT != 2U) || (rs_user_ip_select(0U) != RS_ENOTSUP) ||
+        (rs_extension_probe(RS_EXTENSION_SLOT_L, &ext_l) != RS_OK) ||
+        (rs_extension_probe(RS_EXTENSION_SLOT_H, &ext_h) != RS_OK) ||
+        (ext_l.identification != RS_EXTENSION_IDENTIFICATION_EXT_L) || ext_l.data_master ||
+        ext_l.stream || ext_l.local_sram || (ext_l.interrupt_count != 1U) ||
+        (ext_h.identification != RS_EXTENSION_IDENTIFICATION_EXT_H) || !ext_h.data_master ||
+        ext_h.stream || ext_h.local_sram || (ext_h.interrupt_count != 1U) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_L, &acl) != RS_ENOTSUP) ||
+        (rs_extension_configure_acl(RS_EXTENSION_SLOT_H, &acl) != RS_OK) ||
+        (rs_extension_set_lifecycle(RS_EXTENSION_SLOT_H, true, true, false) != RS_OK) ||
+        (rs_extension_get_status(RS_EXTENSION_SLOT_H, &status) != RS_OK) || !status.present ||
+        !status.idle || !status.quiesced || !status.in_reset || status.fault ||
+        (rs_extension_set_lifecycle(RS_EXTENSION_SLOT_H, false, false, false) != RS_OK)) {
+        return false;
+    }
+    return rs_extension_get_status(RS_EXTENSION_SLOT_H, &status) == RS_OK && status.present &&
+           status.idle && !status.quiesced && !status.in_reset && !status.fault;
 }
 
 static bool rs_ci_smoke_rng_v2(void) {
@@ -206,9 +292,10 @@ static bool rs_ci_smoke_sdram_wait_ready(void) {
 }
 
 static bool rs_ci_smoke_sdram_access(void) {
-    volatile uint8_t *const bytes = (volatile uint8_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
-    volatile uint16_t *const halfs = (volatile uint16_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
-    volatile uint32_t *const words = (volatile uint32_t *)(uintptr_t)RS_SOC_SDRAM_BASE;
+    const uintptr_t scratch = (uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_SPAN + UINT32_C(1));
+    volatile uint8_t *const bytes = (volatile uint8_t *)scratch;
+    volatile uint16_t *const halfs = (volatile uint16_t *)scratch;
+    volatile uint32_t *const words = (volatile uint32_t *)scratch;
     uint32_t index;
 
     if (!rs_ci_smoke_sdram_wait_ready()) {
@@ -289,10 +376,21 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
-    if (!rs_ci_smoke_user_ip()) {
+    if (!rs_ci_smoke_fabric_monitor_start()) {
+        rs_test_finish(RS_TEST_FAILED, 13U);
+    }
+    if (!rs_ci_smoke_onchip_sram() || !rs_ci_smoke_onchip_sram_access()) {
+        rs_test_finish(RS_TEST_FAILED, 12U);
+    }
+    printf("ci_smoke: on-chip SRAM passed\n");
+    if (!rs_ci_smoke_fabric_monitor_check()) {
+        rs_test_finish(RS_TEST_FAILED, 13U);
+    }
+    printf("ci_smoke: fabric monitor passed\n");
+    if (!rs_ci_smoke_extensions()) {
         rs_test_finish(RS_TEST_FAILED, 11U);
     }
-    printf("ci_smoke: user IP passed\n");
+    printf("ci_smoke: extensions passed\n");
     if (!rs_ci_smoke_rng_v2()) {
         rs_test_finish(RS_TEST_FAILED, 8U);
     }

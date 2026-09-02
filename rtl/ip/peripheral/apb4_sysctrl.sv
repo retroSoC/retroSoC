@@ -18,7 +18,8 @@ module apb4_sysctrl (
     input  logic         fault_reserved_i,
     apb4_if.slave        apb4,
     sysctrl_if.dut       sysctrl,
-    pll_ctrl_if.sysctrl  pll_ctrl
+    pll_ctrl_if.sysctrl  pll_ctrl,
+    clock_ctrl_if.sysctrl clock_ctrl
     // verilog_format: on
 );
 
@@ -29,6 +30,7 @@ module apb4_sysctrl (
   logic [ 7:0] s_read_offset;
   logic        s_read_data_valid;
   logic [31:0] s_read_data;
+  logic        s_write_error;
 
   sysctrl_reg u_sysctrl_reg (
       .clk_i            (clk_i),
@@ -39,6 +41,7 @@ module apb4_sysctrl (
       .write_data_o     (s_write_data),
       .write_strobe_o   (s_write_strobe),
       .read_offset_o    (s_read_offset),
+      .write_error_i    (s_write_error),
       .read_data_valid_i(s_read_data_valid),
       .read_data_i      (s_read_data)
   );
@@ -57,6 +60,8 @@ module apb4_sysctrl (
       .fault_reserved_i (fault_reserved_i),
       .sysctrl          (sysctrl),
       .pll_ctrl         (pll_ctrl),
+      .clock_ctrl       (clock_ctrl),
+      .write_error_o    (s_write_error),
       .read_data_valid_o(s_read_data_valid),
       .read_data_o      (s_read_data)
   );

@@ -18,9 +18,15 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 ## Highlights
 
-- A fixed Hazard3 management core with a permanent JTAG Debug Module, plus
-  software-selected user-core and user-IP extension slots. The active user
-  cores are KianV RV32I, SERV, FemtoRV32, and DarkRISCV at slots C0-C3.
+- A fixed asymmetric dual-core Mini product: Hazard3 is the LP management hart
+  and generated dual-issue RV32IMAFDC VexiiRiscv is the HP application hart.
+  The C0-C3 selectable cores remain only in the explicit Mini MPW profile.
+- A product [LP/HP architecture](docs/lp-hp-architecture.md) with independent
+  AON, LP, HP, PCLK, memory, audio, pixel, JTAG, and ULPI clock/reset contracts,
+  a native AXI64 HP data plane, fixed EXT-L/EXT-H slots,
+  HP CLINT/PLIC, UART1, mailbox, locked OpenSBI/Linux/Buildroot inputs, and a
+  CRC-checked direct-Linux boot bundle. Linux boot and performance evidence are
+  release gates, not yet baseline CI claims.
 - A documented [Tiny/Mini/Std/Pro product direction](docs/soc-family-positioning.md)
   anchored by Mini and a trusted Hazard3 management model. The higher Linux,
   graphics, AI, and RV64 configurations are roadmap targets, not supported
@@ -67,29 +73,44 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 The committed profiles are the supported starting points. They select an ISA,
 PDK, application, linker layout, and optional features as one reproducible
-configuration. The management core is fixed to Hazard3. The user-extension
-fabric exposes C0-C3 user-core slots and software selects one active user core.
+configuration. Product profiles set `MINI_MODE=PRODUCT`, fix both CPU harts,
+and report zero selectable user cores. `configs/cluster/mini-mpw.mk` is the
+separate `MINI_MODE=MPW` compatibility profile for C0-C3.
+`SRAM_SIZE_KIB` selects a generated 4/16/32/64/128 KiB native-AXI4 on-chip
+SRAM window. The IHP130, GF180, and SKY130 CI profiles enable a 32 KiB macro-backed
+window; committed ICS55 regression profiles deliberately keep SRAM and PLL
+disabled. `configs/local/ics55.example.mk` documents the ignored local profile
+used with commercial 32 KiB SRAM and PLL simulation models.
 
 | Profile | ISA | Application | Coverage |
 | --- | --- | --- | --- |
-| [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Pull-request open-source regression: firmware, Verilator, Icarus, Yosys, Icarus netlist simulation, and OpenSTA. |
-| [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
-| [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, Icarus netlist simulation, and OpenSTA core timing coverage. |
-| [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Pull-request firmware, RTL simulation, Yosys, and Icarus netlist coverage. |
+| [`configs/ci/ihp130.mk`](configs/ci/ihp130.mk) | RV32IM | `bringup` | Firmware and behavioral regression with a 32 KiB IHP SRAM; local full-flow commands also support Yosys, netlist Icarus, and OpenSTA. |
+| [`configs/ci/gf180.mk`](configs/ci/gf180.mk) | RV32IM | `bringup` | Firmware and behavioral regression with a 32 KiB SRAM assembled from GF180 macros; local full-flow commands support synthesis and timing. |
+| [`configs/ci/ics55.mk`](configs/ci/ics55.mk) | RV32IM | `bringup` | Firmware and behavioral regression without a public SRAM macro; local full-flow commands support synthesis and core timing. |
+| [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Firmware and behavioral regression with a 32 KiB OpenRAM SRAM; local full-flow commands support synthesis and timing. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
-| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | RV32IM | `coremark` | Fixed four-iteration SRAM CoreMark quick measurement, recorded by nightly IHP130 regression. |
-| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | RV32IM | `bringup` | Compatibility profile for site-specific ICS55 runs. |
+| [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV32IMAFDC | `hp_boot` | Linux image/bundle flow and HP RTL validation on the fixed product topology. |
+| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | LP RV32IM / HP RV32IMAFDC+Zicbom | `coremark` | Fixed four-iteration LP SRAM CoreMark measurement with the product HP core present. |
+| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | LP RV32IM / HP RV32IMAFDC+Zicbom | `bringup` | Site profile with PLL/SRAM intentionally disabled for regression compatibility. |
+| [`configs/cluster/mini-mpw.mk`](configs/cluster/mini-mpw.mk) | RV32IM | `bringup` | Legacy MPW C0-C3/user-IP selection profile; not part of the Mini product ABI. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
-application, which checks UART, archinfo APB readback, RNG fail-closed behavior, and test-status
+application, which checks UART, archinfo APB readback, macro-backed on-chip SRAM,
+RNG fail-closed behavior, and test-status
 completion without the verbose startup report. ARCHINFO checks include its
-ABI and the build/configuration identifiers generated for that variant. The profiles retain `bringup`
+ABI and the build/configuration identifiers generated for that variant. The
+IHP130 PR run links this image into the 32 KiB SRAM, explicitly enables the
+fast-flash backend, and allows 360 seconds; Icarus keeps the real serial XPI
+boot-model check. The profiles retain `bringup`
 as their default for manual diagnostics. To run the full report in Verilator,
 use:
 
 ```sh
 make CONFIG=configs/ci/ihp130.mk APP=bringup SIMU=VERILATOR SOC_SIM_TIME=300 firmware sim
+
+# Firmware, RTL lint, debug, and behavioral simulation without synthesis/STA
+make regress-rtl
 ```
 
 ## Prerequisites
@@ -183,8 +204,10 @@ variant identifier; `make help` lists all available targets. Netlist simulation 
 analysis consume the Yosys netlist, so run the synthesis command first. The CI-proven netlist
 regression uses the assembly self-test image:
 
-Verilator simulations run for 180 seconds by default. Set `SOC_SIM_TIME` explicitly only when
-an exploratory local run needs a different limit.
+Verilator simulations run for 180 seconds by default. The IHP130 `ci_smoke`
+regression explicitly uses 360 seconds because its LP memory accesses traverse
+the asynchronous data gateway. Set `SOC_SIM_TIME` explicitly only when an
+exploratory local run needs a different limit.
 
 VCS flow commands use `bsub -Is` by default: this includes parse-time Python helpers used to
 calculate the variant and dependency-lock digest, generated-flow Python helpers, VCS, `simv`, and
@@ -215,6 +238,8 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
 | OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta` |
 | Strict Verilator RTL lint | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
 | Hazard3 CoreMark quick report | `make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report` |
+| Generate the untracked HP core RTL | `make CONFIG=configs/ci/ihp130-hp.mk vexii-generate` |
+| Build and package the HP Linux flash image | `make setup-hp-linux && make CONFIG=configs/ci/ihp130-hp.mk hp-bundle` |
 | IHP130 fast smoke suite | `make regress-smoke` |
 | Pull-request regression suite | `make regress-pr` |
 | Nightly regression suite | `make regress-nightly` |
@@ -228,6 +253,11 @@ before those flows and omits synthesis,
 timing, and netlist simulation for fast feedback. `make regress-pr` runs the
 supported IHP130, GF180, ICS55, and SKY130 PR matrices in sequence, including
 slow-corner OpenSTA core timing analysis for each PDK.
+
+GitHub-hosted regression workflows currently pass `--behavioral-only` to avoid
+the unresolved JPEG Yosys memory peak. They retain RTL lint, firmware, Verilator,
+and Icarus behavioral coverage; local `make regress-pr` remains the complete
+synthesis, netlist simulation, and OpenSTA flow.
 
 Build outputs are isolated below `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`. Each variant keeps its
 firmware, generated sources, simulator output, synthesis and timing reports, manifest, warning

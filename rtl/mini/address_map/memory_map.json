@@ -149,6 +149,62 @@
     {
       "symbol": "PERF_USB2_WAIT_HI",
       "offset": "0xA0"
+    },
+    {
+      "symbol": "HP_CTRL",
+      "offset": "0xA4"
+    },
+    {
+      "symbol": "HP_STATUS",
+      "offset": "0xA8"
+    },
+    {
+      "symbol": "DEBUG_SELECT",
+      "offset": "0xAC"
+    },
+    {
+      "symbol": "CLK_HP_REQ",
+      "offset": "0xB0"
+    },
+    {
+      "symbol": "CLK_HP_CURRENT",
+      "offset": "0xB4"
+    },
+    {
+      "symbol": "CLK_LP_CFG",
+      "offset": "0xB8"
+    },
+    {
+      "symbol": "CLK_PCLK_CFG",
+      "offset": "0xBC"
+    },
+    {
+      "symbol": "CLK_STATUS",
+      "offset": "0xC0"
+    },
+    {
+      "symbol": "CLK_FAULT",
+      "offset": "0xC4"
+    },
+    {
+      "symbol": "CLK_TIMEOUT",
+      "offset": "0xC8"
+    },
+    {
+      "symbol": "CLK_GATE",
+      "offset": "0xCC"
+    },
+    {
+      "symbol": "MEM_PAD_CTRL",
+      "offset": "0xD0"
+    },
+    {
+      "symbol": "MEM_PAD_STATUS",
+      "offset": "0xD4"
+    },
+    {
+      "symbol": "MEM_PAD_FAULT",
+      "offset": "0xD8"
     }
   ],
   "regions": [
@@ -162,6 +218,24 @@
       "linker": "FLASH",
       "user_access": "ro",
       "burst": "incr16"
+    },
+    {
+      "symbol": "HP_ACLINT",
+      "base": "0x02000000",
+      "size": "0x00010000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "HP_PLIC",
+      "base": "0x0C000000",
+      "size": "0x04000000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
     },
     {
       "symbol": "APB4_GPIO",
@@ -380,6 +454,33 @@
       "user_access": "none"
     },
     {
+      "symbol": "APB4_SRAM",
+      "base": "0x10017000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_UART1",
+      "base": "0x10018000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
+      "symbol": "APB4_HP_MAILBOX",
+      "base": "0x10019000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "rw"
+    },
+    {
       "symbol": "APB4_ARCHINFO",
       "base": "0x20000000",
       "size": "0x00001000",
@@ -393,6 +494,15 @@
       "base": "0x20001000",
       "size": "0x00001000",
       "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_JPEG",
+      "base": "0x1001A000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
       "kind": "active",
       "public": true,
       "user_access": "none"
@@ -452,9 +562,52 @@
       "user_access": "rw"
     },
     {
+      "symbol": "APB4_EXT_L",
+      "base": "0x20008000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_EXT_H",
+      "base": "0x20009000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_RESOURCE_CTRL",
+      "base": "0x2000A000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_FABRIC_MONITOR",
+      "base": "0x2000B000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
       "symbol": "SRAM",
       "base": "0x30000000",
       "size": "0x00020000",
+      "size_options": [
+        "0x00001000",
+        "0x00004000",
+        "0x00008000",
+        "0x00010000",
+        "0x00020000"
+      ],
       "route": "ram",
       "kind": "active",
       "public": true,

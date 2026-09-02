@@ -11,31 +11,37 @@
 `include "user_extensions.svh"
 
 interface sysctrl_if ();
-  logic [`USER_CORESEL_WIDTH-1:0] core_sel_o;
-  logic [   `USER_CORE_COUNT-1:0] core_reset_o;
-  logic                           user_bus_enable_o;
-  logic                           user_bus_idle_i;
-  logic                           fault_access_i;
-  logic [                    2:0] fault_master_i;
-  logic [                    2:0] fault_code_i;
-  logic                           perf_enable_o;
-  logic                           perf_clear_o;
-  logic [                   63:0] perf_mgmt_wait_i;
-  logic [                   63:0] perf_user_wait_i;
-  logic [                   63:0] perf_dma_wait_i;
-  logic [                   63:0] perf_sdio0_wait_i;
-  logic [                   63:0] perf_sdio1_wait_i;
-  logic [                   63:0] perf_usb2_wait_i;
-  logic [                   63:0] perf_apb4_periph_wait_i;
-  logic [                   63:0] perf_apb4_system_wait_i;
-  logic [                   63:0] perf_sdram_wait_i;
-  logic [                   63:0] perf_psram_wait_i;
-  logic [                   63:0] perf_flash_wait_i;
-  logic                           rtc_wake_i;
-  logic                           test_done_o;
-  logic                           test_pass_o;
-  logic [                    7:0] test_code_o;
-  logic [  `USER_IPSEL_WIDTH-1:0] ip_sel_o;
+  logic [     `USER_CORESEL_WIDTH-1:0] core_sel_o;
+  logic [`USER_CORE_STORAGE_COUNT-1:0] core_reset_o;
+  logic                                user_bus_enable_o;
+  logic                                user_bus_idle_i;
+  logic                                fault_access_i;
+  logic [                         2:0] fault_master_i;
+  logic [                         2:0] fault_code_i;
+  logic                                perf_enable_o;
+  logic                                perf_clear_o;
+  logic [                        63:0] perf_mgmt_wait_i;
+  logic [                        63:0] perf_user_wait_i;
+  logic [                        63:0] perf_dma_wait_i;
+  logic [                        63:0] perf_sdio0_wait_i;
+  logic [                        63:0] perf_sdio1_wait_i;
+  logic [                        63:0] perf_usb2_wait_i;
+  logic [                        63:0] perf_apb4_periph_wait_i;
+  logic [                        63:0] perf_apb4_system_wait_i;
+  logic [                        63:0] perf_sdram_wait_i;
+  logic [                        63:0] perf_psram_wait_i;
+  logic [                        63:0] perf_flash_wait_i;
+  logic                                rtc_wake_i;
+  logic                                test_done_o;
+  logic                                test_pass_o;
+  logic [                         7:0] test_code_o;
+  logic [       `USER_IPSEL_WIDTH-1:0] ip_sel_o;
+  logic                                hp_present_i;
+  logic                                hp_actual_released_i;
+  logic                                hp_draining_i;
+  logic                                hp_forced_fault_i;
+  logic                                hp_release_o;
+  logic                                debug_hp_select_o;
 
   modport dut(
       input user_bus_idle_i,
@@ -54,6 +60,10 @@ interface sysctrl_if ();
       input perf_psram_wait_i,
       input perf_flash_wait_i,
       input rtc_wake_i,
+      input hp_present_i,
+      input hp_actual_released_i,
+      input hp_draining_i,
+      input hp_forced_fault_i,
       output core_sel_o,
       output core_reset_o,
       output user_bus_enable_o,
@@ -62,6 +72,8 @@ interface sysctrl_if ();
       output perf_clear_o,
       output test_done_o,
       output test_pass_o,
-      output test_code_o
+      output test_code_o,
+      output hp_release_o,
+      output debug_hp_select_o
   );
 endinterface

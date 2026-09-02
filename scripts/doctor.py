@@ -23,6 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--synth", required=True)
     parser.add_argument("--sta", required=True)
     parser.add_argument("--pdk", required=True)
+    parser.add_argument("--have-sram-macro", choices=("YES", "NO"), default="NO")
     parser.add_argument("--formal", choices=("YES", "NO"), default="NO")
     parser.add_argument("--require-debug-tools", action="store_true")
     parser.add_argument("--lock", type=Path, default=DEFAULT_LOCK)
@@ -81,6 +82,8 @@ def main() -> int:
     if args.pdk in pdk_names:
         source_names.append(pdk_names[args.pdk])
     paths = {name: root / lock["sources"][name]["destination"] for name in source_names}
+    if args.pdk == "SKY130" and args.have_sram_macro == "YES":
+        paths["sky130_openram_sram"] = root / ".cache/retrosoc/pdk/sky130/openram"
     tool_results = {
         tool: {"path": shutil.which(tool), "version": version(tool)}
         for tool in dict.fromkeys(tools)

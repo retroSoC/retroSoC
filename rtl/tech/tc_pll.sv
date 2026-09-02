@@ -32,14 +32,14 @@ module tc_pll (
 
   function automatic int pll_multiplier(input logic [2:0] cfg_sel);
     case (cfg_sel)
-      3'd0:    pll_multiplier = 1;
-      3'd1:    pll_multiplier = 2;
-      3'd2:    pll_multiplier = 3;
-      3'd3:    pll_multiplier = 4;
-      3'd4:    pll_multiplier = 5;
-      3'd5:    pll_multiplier = 6;
-      3'd6:    pll_multiplier = 7;
-      default: pll_multiplier = 8;
+      3'd0:    pll_multiplier = 3;
+      3'd1:    pll_multiplier = 4;
+      3'd2:    pll_multiplier = 5;
+      3'd3:    pll_multiplier = 6;
+      3'd4:    pll_multiplier = 7;
+      3'd5:    pll_multiplier = 8;
+      3'd6:    pll_multiplier = 9;
+      default: pll_multiplier = 10;
     endcase
   endfunction
 

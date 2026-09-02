@@ -55,5 +55,6 @@ module apb4_clint #(
 
   assign clint.software_irq_o = s_msip;
   assign clint.timer_irq_o    = s_timer_irq;
+  assign clint.mtime_o        = s_mtime;
 
 endmodule

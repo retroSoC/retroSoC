@@ -26,6 +26,12 @@ rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config) {
     if (config->destination_increment) {
         channel_config |= RS_DMA_CH_CFG_DST_INCREMENT;
     }
+    if (config->crc_enable) {
+        channel_config |= RS_DMA_CH_CFG_CRC_ENABLE;
+    }
+    if (config->crc_final) {
+        channel_config |= RS_DMA_CH_CFG_CRC_FINAL;
+    }
 
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CFG) = channel_config;
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_SRC_ADDR) = (uint32_t)config->source;
@@ -33,7 +39,82 @@ rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config) {
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_BYTE_COUNT) = config->byte_count;
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_REQUEST_SEL) = (uint32_t)config->request;
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_BURST_CFG) = (uint32_t)config->burst_beats;
+    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CRC_EXPECTED) = config->crc_expected;
     return RS_OK;
+}
+
+rs_status_t rs_dma_submit_tcd(uint32_t channel, rs_dma_tcd_t *tcd, rs_timeout_t timeout) {
+    return rs_dma_submit_tcd_chain(channel, tcd, UINT32_C(1), timeout);
+}
+
+rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint32_t max_tcds,
+                                    rs_timeout_t timeout) {
+    rs_dma_tcd_t *current;
+    uint32_t submitted;
+
+    if ((first == NULL) || (max_tcds == UINT32_C(0)) || (channel >= RS_DMA_CHANNEL_COUNT)) {
+        return RS_EINVAL;
+    }
+    current = first;
+    submitted = UINT32_C(0);
+    while ((current != NULL) && (submitted < max_tcds)) {
+        rs_dma_config_t config;
+        rs_dma_status_t status;
+        rs_status_t result;
+        uint32_t control;
+        uint32_t burst;
+
+        result = rs_dma_tcd_validate(channel, current);
+        if (result != RS_OK) {
+            return result;
+        }
+        control = current->control;
+        burst = (control >> RS_DMA_TCD_BURST_SHIFT) & UINT32_C(0x1F);
+        if (burst == UINT32_C(0)) {
+            burst = RS_DMA_MAX_BURST_BEATS;
+        }
+        config.kind = (rs_dma_transfer_kind_t)((control >> RS_DMA_TCD_KIND_SHIFT) & UINT32_C(0x7));
+        config.request = (rs_dma_request_t)((control >> RS_DMA_TCD_REQUEST_SHIFT) & UINT32_C(0xF));
+        config.source = (uintptr_t)current->source;
+        config.destination = (uintptr_t)current->destination;
+        config.byte_count = current->byte_count;
+        config.width = RS_DMA_WIDTH_32;
+        config.source_increment = (control & RS_DMA_TCD_SRC_INC) != UINT32_C(0);
+        config.destination_increment = (control & RS_DMA_TCD_DST_INC) != UINT32_C(0);
+        config.crc_enable = (control & RS_DMA_TCD_CRC_ENABLE) != UINT32_C(0);
+        config.crc_final = (control & RS_DMA_TCD_CRC_FINAL) != UINT32_C(0);
+        config.crc_expected = current->crc_expected;
+        config.priority = (uint8_t)((control >> RS_DMA_TCD_PRIORITY_SHIFT) & UINT32_C(0x3));
+        config.burst_beats = (uint8_t)burst;
+        result = rs_dma_configure(channel, &config);
+        if (result != RS_OK) {
+            return result;
+        }
+        RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_HEAD) = (uint32_t)(uintptr_t)current;
+        RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_COUNT) = UINT32_C(1);
+        __asm__ volatile("fence rw, rw" ::: "memory");
+        result = rs_dma_start(channel);
+        if (result != RS_OK) {
+            return result;
+        }
+        result = rs_dma_wait(channel, timeout);
+        if (result != RS_OK) {
+            (void)rs_dma_get_status(channel, &status);
+            current->status = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STATUS);
+            current->bytes_done = status.bytes_done;
+            current->crc_result = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CRC_RESULT);
+            current->error_status = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_ERROR_STATUS);
+            return result;
+        }
+        (void)rs_dma_get_status(channel, &status);
+        current->status = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STATUS);
+        current->bytes_done = status.bytes_done;
+        current->crc_result = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CRC_RESULT);
+        current->error_status = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_ERROR_STATUS);
+        current = (rs_dma_tcd_t *)(uintptr_t)current->next_ptr;
+        submitted++;
+    }
+    return (current == NULL) ? RS_OK : RS_EINVAL;
 }
 
 rs_status_t rs_dma_start(uint32_t channel) {
@@ -113,6 +194,7 @@ rs_status_t rs_dma_get_status(uint32_t channel, rs_dma_status_t *status) {
     status->stall_cycles =
         ((uint64_t)RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STALL_CYCLES_HI) << 32U) |
         RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STALL_CYCLES_LO);
+    status->crc_result = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CRC_RESULT);
     return RS_OK;
 }
 

@@ -57,4 +57,10 @@ Reserved" notice; its inclusion does not relicense it under Mulan PSL v2.
 
 ## 6. Notes on redistribution
 
+The optional checksum-locked SKY130 SRAM artifact is generated with OpenRAM at
+the revision recorded in its manifest. OpenRAM is distributed under the BSD
+3-Clause License; the SkyWater-provided SRAM build-space used by the generator
+is distributed under Apache License 2.0. The artifact retains both exact
+license texts and is materialized only below the ignored `.cache/` tree.
+
 The preserved third-party notices are included to maintain attribution for code that was adapted or reused in this repository. They do not replace the repository's main license declaration. The retroSoC project itself is distributed under the Mulan PSL v2 license.

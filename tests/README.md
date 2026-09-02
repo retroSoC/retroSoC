@@ -12,10 +12,17 @@ tooling.
   rules for new owned RTL.
 - `test_crypto.py` runs directed AES, SHA-2, RSA/Montgomery, streaming, and
   APB4 simulations; `test_crypto_register_parity.py` checks the handwritten
-  RTL/C register ABI and `test_dma.py` covers the crypto DMA endpoints.
+  RTL/C register ABI and `test_dma.py` covers DMA bursts, TCD fetch, CRC,
+  tail-byte writes, and crypto endpoints.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.
+- `test_hp_boot_bundle.py` checks the HP flash ABI, CRCs, payload placement,
+  and handwritten mailbox RTL/C offset parity. `test_hp_platform.py`,
+  `test_hp_mailbox.py`, `test_plic.py`, and the AXI tests cover the remaining
+  HP integration contracts. `test_xpi_fast_flash.py` covers the explicitly
+  selected Verilator slot-0 read accelerator, including backpressure and
+  negative completion paths.
 
 Add a host C test when changing deterministic runtime or media logic; add a
 Python test when changing scripts or build policy. Run:

@@ -2,6 +2,7 @@
 +incdir+/clusterip/common/rtl
 +incdir+/clusterip/common/rtl/cdc
 +incdir+/clusterip/common/rtl/clkrst
++incdir+/clusterip/common/rtl/clock
 +incdir+/clusterip/common/rtl/interface
 +incdir+/clusterip/common/rtl/tech
 +incdir+/clusterip/common/rtl/utils

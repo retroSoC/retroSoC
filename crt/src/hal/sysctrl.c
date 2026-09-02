@@ -40,6 +40,9 @@
 #define RS_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET       RS_SOC_SYSCTRL_PERF_FLASH_WAIT_HI_OFFSET
 #define RS_SYSCTRL_TEST_STATUS_OFFSET              RS_SOC_SYSCTRL_TEST_STATUS_OFFSET
 #define RS_SYSCTRL_RTC_WAKE_STATUS_OFFSET          RS_SOC_SYSCTRL_RTC_WAKE_STATUS_OFFSET
+#define RS_SYSCTRL_HP_CTRL_OFFSET                  RS_SOC_SYSCTRL_HP_CTRL_OFFSET
+#define RS_SYSCTRL_HP_STATUS_OFFSET                RS_SOC_SYSCTRL_HP_STATUS_OFFSET
+#define RS_SYSCTRL_DEBUG_SELECT_OFFSET             RS_SOC_SYSCTRL_DEBUG_SELECT_OFFSET
 
 #define RS_SYSCTRL_PLL_CMD_APPLY                   UINT32_C(0x00000001)
 #define RS_SYSCTRL_PLL_CMD_CLEAR_ERROR             UINT32_C(0x00000002)
@@ -66,6 +69,12 @@
 #define RS_SYSCTRL_PLL_CAPABLE                     UINT32_C(0x00000400)
 #define RS_SYSCTRL_RTC_WAKE_LIVE                   UINT32_C(0x00000001)
 #define RS_SYSCTRL_RTC_WAKE_SEEN                   UINT32_C(0x00000002)
+#define RS_SYSCTRL_HP_PRESENT                      UINT32_C(0x00000001)
+#define RS_SYSCTRL_HP_RELEASED                     UINT32_C(0x00000002)
+#define RS_SYSCTRL_HP_RESET_ASSERTED               UINT32_C(0x00000004)
+#define RS_SYSCTRL_HP_DRAINING                     UINT32_C(0x00000008)
+#define RS_SYSCTRL_HP_FORCED_FAULT                 UINT32_C(0x00000010)
+#define RS_SYSCTRL_HP_ACTUAL_RELEASED              UINT32_C(0x00000020)
 
 static volatile uint32_t *rs_sysctrl_register(uint32_t offset) {
     return (volatile uint32_t *)(RS_SOC_APB4_SYSCTRL_BASE + (uintptr_t)offset);
@@ -137,11 +146,16 @@ rs_status_t rs_sysctrl_get_core_select(uint8_t *core_id) {
 }
 
 rs_status_t rs_sysctrl_set_core_select(uint8_t core_id) {
+#if !RS_SOC_HAS_USER_CORES
+    (void)core_id;
+    return RS_ENOTSUP;
+#else
     if ((uint32_t)core_id >= RS_SOC_USER_CORE_COUNT) {
         return RS_EINVAL;
     }
     *rs_sysctrl_register(RS_SYSCTRL_CORESEL_OFFSET) = (uint32_t)core_id;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_get_ip_select(uint8_t *ip_id) {
@@ -153,11 +167,16 @@ rs_status_t rs_sysctrl_get_ip_select(uint8_t *ip_id) {
 }
 
 rs_status_t rs_sysctrl_set_ip_select(uint8_t ip_id) {
+#if !RS_SOC_HAS_USER_IP_MUX
+    (void)ip_id;
+    return RS_ENOTSUP;
+#else
     if ((uint32_t)ip_id > RS_SOC_USER_IP_COUNT) {
         return RS_EINVAL;
     }
     *rs_sysctrl_register(RS_SYSCTRL_IPSEL_OFFSET) = (uint32_t)ip_id;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_get_user_core_status(rs_sysctrl_user_core_status_t *status) {
@@ -177,13 +196,22 @@ rs_status_t rs_sysctrl_get_user_core_status(rs_sysctrl_user_core_status_t *statu
 }
 
 rs_status_t rs_sysctrl_set_user_core_reset(uint32_t reset_mask) {
+#if !RS_SOC_HAS_USER_CORES
+    (void)reset_mask;
+    return RS_ENOTSUP;
+#else
     *rs_sysctrl_register(RS_SYSCTRL_USER_CORE_RESET_OFFSET) = reset_mask;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_clear_user_core_config_error(void) {
+#if !RS_SOC_HAS_USER_CORES
+    return RS_ENOTSUP;
+#else
     *rs_sysctrl_register(RS_SYSCTRL_USER_CORE_STATUS_OFFSET) = RS_SYSCTRL_USER_CORE_CONFIG_ERROR;
     return RS_OK;
+#endif
 }
 
 rs_status_t rs_sysctrl_get_pll_config(uint8_t *selection) {
@@ -251,6 +279,50 @@ rs_status_t rs_sysctrl_get_fault_status(rs_sysctrl_fault_status_t *status) {
 rs_status_t rs_sysctrl_clear_fault(void) {
     *rs_sysctrl_register(RS_SYSCTRL_FAULT_STATUS_OFFSET) = RS_SYSCTRL_FAULT_PENDING;
     return RS_OK;
+}
+
+rs_status_t rs_sysctrl_set_hp_release(bool release) {
+    rs_sysctrl_hp_status_t status;
+
+    if ((rs_sysctrl_get_hp_status(&status) != RS_OK) || !status.present) {
+        return RS_ENOTSUP;
+    }
+    *rs_sysctrl_register(RS_SYSCTRL_HP_CTRL_OFFSET) = release ? UINT32_C(1) : UINT32_C(0);
+    if (rs_sysctrl_get_hp_status(&status) != RS_OK) {
+        return RS_EIO;
+    }
+    return (status.released == release) && (status.reset_asserted != release) ? RS_OK : RS_EIO;
+}
+
+rs_status_t rs_sysctrl_get_hp_status(rs_sysctrl_hp_status_t *status) {
+    uint32_t value;
+
+    if (status == NULL) {
+        return RS_EINVAL;
+    }
+    value = *rs_sysctrl_register(RS_SYSCTRL_HP_STATUS_OFFSET);
+    status->present = (value & RS_SYSCTRL_HP_PRESENT) != 0U;
+    status->released = (value & RS_SYSCTRL_HP_RELEASED) != 0U;
+    status->reset_asserted = (value & RS_SYSCTRL_HP_RESET_ASSERTED) != 0U;
+    status->draining = (value & RS_SYSCTRL_HP_DRAINING) != 0U;
+    status->forced_fault = (value & RS_SYSCTRL_HP_FORCED_FAULT) != 0U;
+    status->actual_released = (value & RS_SYSCTRL_HP_ACTUAL_RELEASED) != 0U;
+    return RS_OK;
+}
+
+rs_status_t rs_sysctrl_select_hp_debug(bool select_hp) {
+    rs_sysctrl_hp_status_t status;
+    uint32_t value;
+
+    if ((rs_sysctrl_get_hp_status(&status) != RS_OK) || !status.present) {
+        return RS_ENOTSUP;
+    }
+    if (status.released) {
+        return RS_EIO;
+    }
+    *rs_sysctrl_register(RS_SYSCTRL_DEBUG_SELECT_OFFSET) = select_hp ? UINT32_C(1) : UINT32_C(0);
+    value = *rs_sysctrl_register(RS_SYSCTRL_DEBUG_SELECT_OFFSET) & UINT32_C(1);
+    return (value == (select_hp ? UINT32_C(1) : UINT32_C(0))) ? RS_OK : RS_EIO;
 }
 
 rs_status_t rs_sysctrl_set_perf_control(bool enable, bool clear, bool snapshot) {

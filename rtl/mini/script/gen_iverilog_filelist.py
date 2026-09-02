@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pdk", required=True)
     parser.add_argument("--generated-dir", type=Path, default=DEFAULT_GENERATED_DIR)
     parser.add_argument("--pin-map-rtl-dir", type=Path, required=True)
+    parser.add_argument("--local-pdk-filelist", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--converted", type=Path)
     parser.add_argument("--netlist", type=Path)
@@ -117,8 +118,7 @@ def main() -> int:
     if args.mode == "behv":
         base.files.append(_require(args.converted, "converted behavioral RTL"))
     else:
-        common = parse_filelists([generated_dir / "commonip.fl"])
-        base.extend(common)
+        base.extend(parse_filelists([generated_dir / "netlist_support.fl"]))
         base.files.append(_require(args.netlist, f"{args.mode} netlist"))
 
     if args.mode == "post":
@@ -127,6 +127,8 @@ def main() -> int:
 
     pdk_filelist = generated_dir / f"pdk_{args.pdk.lower()}.fl"
     base.extend(parse_filelists([pdk_filelist]))
+    if args.local_pdk_filelist is not None:
+        base.extend(parse_filelists([args.local_pdk_filelist.resolve()]))
     if args.mode != "behv":
         base.files.append(ROOT_DIR / "rtl/tech/netlist_sim_cells.v")
         cell_models = _standard_cell_models(args.pdk, args.netlist)

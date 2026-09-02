@@ -23,6 +23,7 @@ module axi4_interconnect #(
            axi4_if.master        targets                [NumTargets],
     input  logic                 user_bus_enable_i,
     output logic                 user_bus_idle_o,
+    input  logic          [ 1:0] mem_pad_mode_i,
     input  logic                 perf_enable_i,
     input  logic                 perf_clear_i,
     output logic                 fault_valid_o,
@@ -157,10 +158,12 @@ module axi4_interconnect #(
   logic [          63:0]                   s_perf_master_wait[NumMasters];
   logic [          63:0]                   s_perf_target_wait[NumTargets];
 
-  function automatic logic [TARGET_WIDTH-1:0] decode_target(input logic [31:0] addr);
+  function automatic logic [TARGET_WIDTH-1:0] decode_target(input logic [31:0] addr,
+                                                            input logic [1:0] mem_pad_mode);
     if (`SOC_ADDR_IS_SDRAM(addr)) return TARGET_SDRAM;
-    if (`SOC_ADDR_IS_PSRAM(addr)) return TARGET_PSRAM;
-    if (`SOC_ADDR_IS_OPIPSRAM(addr)) return TARGET_OPIPSRAM;
+    if (`SOC_ADDR_IS_PSRAM(addr)) return (mem_pad_mode == 2'd1) ? TARGET_PSRAM : TARGET_SLVERR;
+    if (`SOC_ADDR_IS_OPIPSRAM(addr))
+      return (mem_pad_mode == 2'd2) ? TARGET_OPIPSRAM : TARGET_SLVERR;
     if (`SOC_ADDR_IS_FLASH(addr) || `SOC_ADDR_IS_XPI(addr)) return TARGET_XPI;
     if (`SOC_ADDR_IS_SPISD(addr)) return TARGET_RETIRED_SPISD;
     if (`SOC_ADDR_IS_APB4_SYSTEM(addr)) return TARGET_APB4_SYSTEM;
@@ -447,7 +450,23 @@ module axi4_interconnect #(
                                  ((addr & ((32'd1 << size) - 1'b1)) == '0) &&
                                  (s_last_addr[master][32] == 1'b0) &&
                                  (addr[31:12] == s_last_addr[master][31:12]) &&
-                                 (decode_target(addr) == decode_target(s_last_addr[master][31:0]));
+                                 (decode_target(addr, mem_pad_mode_i) ==
+          decode_target(s_last_addr[master][31:0], mem_pad_mode_i));
+`ifdef MINI_PRODUCT
+      s_access_allowed[master] = (master != 6) || read_req || (write_req && !
+      `SOC_ADDR_IS_APB4_SYSCTRL(addr)
+      && !
+      `SOC_ADDR_IS_APB4_WDG(addr)
+      && !
+      `SOC_ADDR_IS_APB4_GPIO_ADMIN(addr)
+      && !
+      `SOC_ADDR_IS_APB4_EXT_L(addr)
+      && !
+      `SOC_ADDR_IS_APB4_EXT_H(addr)
+      && !
+      `SOC_ADDR_IS_APB4_RESOURCE_CTRL(addr)
+      );
+`else
       s_access_allowed[master] = (master != 1) || ((read_req &&
       `SOC_USER_ADDR_READABLE(addr)
       &&
@@ -457,7 +476,8 @@ module axi4_interconnect #(
       &&
       `SOC_USER_ADDR_WRITABLE(s_last_addr[master][31:0])
       ));
-      s_capture_target[master] = decode_target(addr);
+`endif
+      s_capture_target[master] = decode_target(addr, mem_pad_mode_i);
       if (!s_protocol_legal[master] ||
           ((s_capture_target[master] == TARGET_CFG ||
             s_capture_target[master] == TARGET_APB4_SYSTEM) && (len != 8'd0))) begin
@@ -606,7 +626,7 @@ module axi4_interconnect #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (NumMasters != 7 || ((NumTargets != 9) && (NumTargets != 10))) begin
+    if (((NumMasters != 7) && (NumMasters != 8)) || ((NumTargets != 9) && (NumTargets != 10))) begin
       $fatal(1, "axi4_interconnect: invalid topology dimensions");
     end
   end
