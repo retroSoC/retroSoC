@@ -37,6 +37,7 @@ and validation boundary.
 
 | Directory | Guide | Role |
 | --- | --- | --- |
+| `.agents/` | [.agents/README.md](.agents/README.md) | Repository-scoped Work and Codex feature-development skills. |
 | `.github/` | [.github/GUIDE.md](.github/GUIDE.md) | CI, release automation, reusable actions, and ownership metadata. |
 | `app/` | [app/README.md](app/README.md) | Firmware applications and integrations. |
 | `dependencies/` | [dependencies/README.md](dependencies/README.md) | Locked external inputs and checksums. |

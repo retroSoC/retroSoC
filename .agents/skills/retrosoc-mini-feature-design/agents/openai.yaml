@@ -1,0 +1,10 @@
+interface:
+  display_name: "retroSoC Mini Feature Design"
+  short_description: "Research and freeze a Mini SoC/IP specification"
+  default_prompt: >-
+    Use @retrosoc-mini-feature-design. Stage: research. Feature slug:
+    audio-processing-unit. Research this feature for retroSoC Mini in Plan
+    mode. Do not modify files.
+
+policy:
+  allow_implicit_invocation: true

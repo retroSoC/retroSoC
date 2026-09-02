@@ -6,6 +6,8 @@ tooling.
 - `c/test_runtime.c` is the host C test program used by `make sw-host-test`.
 - `test_script_tools.py` covers setup, dependency, filelist, warning, metric,
   archive, and regression-helper behavior.
+- `test_agent_skills.py` checks the repository feature-skill metadata,
+  references, eval corpora, and manual hand-off policy.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

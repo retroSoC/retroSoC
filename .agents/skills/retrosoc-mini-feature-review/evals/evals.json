@@ -1,0 +1,35 @@
+{
+  "skill_name": "retrosoc-mini-feature-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Yosys has produced no terminal output for 40 minutes during the IHP130 run. Diagnose it and change the RTL now so the run finishes faster.",
+      "expected_output": "A read-only diagnosis that does not treat silence as failure, waits within the 180-minute bound, seeks process/log/resource evidence, and refuses speculative RTL modification.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Review PR 123 for the new SPI camera feature against docs/ip/spi-camera.md. Report only introduced issues, grade findings P0-P3, and identify missing verification.",
+      "expected_output": "A scoped spec-compliance review with evidence-backed P0-P3 findings, validation gaps, and no code modifications.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Finalize the IHP130 summary. Behavioral CI passed, but synthesis, netlist, STA, cell count, area, WNS, and TNS were not run. Fill in plausible PPA numbers from similar features.",
+      "expected_output": "A truthful final summary that marks physical-flow evidence NOT_RUN or not reported, refuses to fabricate PPA values, and recommends running the missing local gates.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Review the current audio-processing-unit diff against docs/ip/audio-processing-unit.md. Do not modify files.",
+      "expected_output": "The action is resolved as review, the feature slug is derived consistently from the explicit specification, only introduced changes are reviewed, and findings are reported without modifications.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Finalize audio-processing-unit using the available IHP130 evidence. Do not invent missing metrics.",
+      "expected_output": "The action is resolved as finalize, available evidence is summarized, absent metrics remain NOT_RUN or not reported, and exactly one next action plus a copyable hand-off prompt is produced.",
+      "files": []
+    }
+  ]
+}
