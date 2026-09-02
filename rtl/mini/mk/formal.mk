@@ -20,6 +20,7 @@ FORMAL_TIMEOUT               ?= 60
 FORMAL_WS2812_TIMEOUT        ?= 120
 FORMAL_I2C_TIMEOUT           ?= 300
 FORMAL_OPIPSRAM_TIMEOUT      ?= 300
+FORMAL_OPIPSRAM_BMC_TIMEOUT  ?= 600
 FORMAL_DMA_TIMEOUT           ?= 120
 FORMAL_SDIO_TIMEOUT          ?= 120
 FORMAL_COMPACT_COVER_TARGETS := i2c opipsram dma
@@ -238,7 +239,7 @@ $(FORMAL_DIR)/opipsram/bmc.stamp: $(FORMAL_DIR)/opipsram/bmc.sby \
 		--log $(@D)/bmc.log --result $(@D)/result-bmc.json \
 		--env RETROSOC_BITWUZLA=$(FORMAL_BITWUZLA) \
 		--env PATH=$(FORMAL_SOLVER_DIR):$(PATH) \
-		-- timeout --foreground --kill-after=5s $(FORMAL_OPIPSRAM_TIMEOUT)s $(FORMAL_SBY) \
+		-- timeout --foreground --kill-after=5s $(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY) \
 		-f -d $(@D)/bmc $<
 	@test "$$(awk '{print $$1}' $(@D)/bmc/status)" = PASS
 	@touch $@

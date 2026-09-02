@@ -195,11 +195,15 @@ Verilator regressions.
 `make CONFIG=configs/ci/ihp130.mk formal` proves selected
 protocol invariants with SymbiYosys, Yosys, `sv2v`, and Bitwuzla. The current
 targets are `bus`, `rib_adapter`, `rib2apb`, `sysctrl`, `pll_rcu`, `gpio`,
-`ws2812`, `uart`, `i2c`, `timer`, `clint`, `dvp`, `i2s`, `psram`, and `dma`;
+`ws2812`, `uart`, `i2c`, `timer`, `clint`, `dvp`, `i2s`, `psram`,
+`onchip_ram`, `opipsram`, `dma`, and `sdio`;
 each uses an SBY bounded proof task plus a `cover` task. The default depth is 20;
 `ws2812` uses depth 120 and a 120-second per-task limit to cover a complete
 serialized word and reset path. `i2c` uses depth 80 and a 300-second per-task
-limit to reach a complete receive path and export its witness. `dma` uses a
+limit to reach a complete receive path and export its witness. `opipsram` uses
+depth 40 for prove, cover, and BMC; prove and cover retain a 300-second limit,
+while BMC uses 600 seconds to preserve the full bound on variable-speed hosted
+runners. `dma` uses a
 depth-24 BMC task, depth-32 covers, and a 120-second per-task limit for the narrowest supported four-channel,
 32-bit/4-beat/4-word `dma_core` configuration. Its constrained native AXI4
 responder and AXI4-Stream environment prove source stability under

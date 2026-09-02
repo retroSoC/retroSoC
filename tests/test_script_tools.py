@@ -423,6 +423,16 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
 
 
+def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+
+    assert re.search(r"^FORMAL_OPIPSRAM_DEPTH\s+\?= 40$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_OPIPSRAM_BMC_DEPTH\s+\?= 40$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_OPIPSRAM_TIMEOUT\s+\?= 300$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_OPIPSRAM_BMC_TIMEOUT\s+\?= 600$", formal_makefile, re.MULTILINE)
+    assert "$(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY)" in formal_makefile
+
+
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
     design = (ROOT / "rtl/mini/formal/sysctrl_formal.sv").read_text(encoding="utf-8")
     properties = (ROOT / "rtl/mini/formal/sysctrl_formal_props.sv").read_text(encoding="utf-8")
