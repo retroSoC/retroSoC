@@ -4,7 +4,7 @@
 
 module apu_reg_tb;
   localparam logic [31:0] ApuBase = 32'h1001_3000;
-  localparam int unsigned RegisterCount = 95;
+  localparam int unsigned RegisterCount = 96;
   localparam logic [1:0] AccessRo = 2'd0;
   localparam logic [1:0] AccessWo = 2'd1;
   localparam logic [1:0] AccessRw = 2'd2;
@@ -23,24 +23,98 @@ module apu_reg_tb;
   logic        [31:0] s_reg_reset             [RegisterCount];
   logic               s_reg_full_strobe       [RegisterCount];
   int unsigned        s_reg_count;
+  string              s_phase;
 
   apb4_if apb4 (
       .pclk   (clk_i),
       .presetn(rst_n_i)
   );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) axi4 (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) dma_tx_axis (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) dma_rx_axis (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) i2s_tx_axis (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) i2s_rx_axis (
+      clk_i,
+      rst_n_i
+  );
+
+  assign axi4.awready       = 1'b0;
+  assign axi4.wready        = 1'b0;
+  assign axi4.bid           = '0;
+  assign axi4.bresp         = '0;
+  assign axi4.buser         = '0;
+  assign axi4.bvalid        = 1'b0;
+  assign axi4.arready       = 1'b0;
+  assign axi4.rid           = '0;
+  assign axi4.rdata         = '0;
+  assign axi4.rresp         = '0;
+  assign axi4.rlast         = 1'b0;
+  assign axi4.ruser         = '0;
+  assign axi4.rvalid        = 1'b0;
+  assign dma_tx_axis.tdata  = '0;
+  assign dma_tx_axis.tkeep  = '1;
+  assign dma_tx_axis.tstrb  = '1;
+  assign dma_tx_axis.tlast  = 1'b0;
+  assign dma_tx_axis.tid    = '0;
+  assign dma_tx_axis.tdest  = '0;
+  assign dma_tx_axis.tuser  = '0;
+  assign dma_tx_axis.tvalid = 1'b0;
+  assign dma_rx_axis.tready = 1'b1;
+  assign i2s_tx_axis.tready = 1'b1;
+  assign i2s_rx_axis.tdata  = '0;
+  assign i2s_rx_axis.tkeep  = '1;
+  assign i2s_rx_axis.tstrb  = '1;
+  assign i2s_rx_axis.tlast  = 1'b0;
+  assign i2s_rx_axis.tid    = '0;
+  assign i2s_rx_axis.tdest  = '0;
+  assign i2s_rx_axis.tuser  = '0;
+  assign i2s_rx_axis.tvalid = 1'b0;
 
   always #5 clk_i = ~clk_i;
 
   apb4_apu u_dut (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .owner_i         (owner_i),
-      .owner_lock_i    (owner_lock_i),
-      .quiesce_i       (quiesce_i),
-      .resource_reset_i(resource_reset_i),
-      .apb4            (apb4),
-      .idle_o          (idle_o),
-      .irq_o           (irq_o)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .owner_i          (owner_i),
+      .owner_lock_i     (owner_lock_i),
+      .quiesce_i        (quiesce_i),
+      .resource_reset_i (resource_reset_i),
+      .bridge_epoch_i   (8'd0),
+      .i2s_tx_underrun_i(1'b0),
+      .i2s_rx_overrun_i (1'b0),
+      .apb4             (apb4),
+      .axi4             (axi4),
+      .dma_tx_axis      (dma_tx_axis),
+      .dma_rx_axis      (dma_rx_axis),
+      .i2s_tx_axis      (i2s_tx_axis),
+      .i2s_rx_axis      (i2s_rx_axis),
+      .idle_o           (idle_o),
+      .irq_o            (irq_o)
   );
 
   function automatic logic [31:0] legal_write_value(input logic [11:0] offset_i);
@@ -50,6 +124,7 @@ module apu_reg_tb;
       `APB4_APU__ERROR_STATUS:           legal_write_value = 32'h0000_0001;
       `APB4_APU__SEQUENCER_TIMEOUT:      legal_write_value = 32'h1234_5678;
       `APB4_APU__STREAM_ROUTE:           legal_write_value = 32'd0;
+      `APB4_APU__STREAM_WATERMARK:       legal_write_value = 32'h0000_2020;
       `APB4_APU__READ_BASE:              legal_write_value = 32'h3000_0000;
       `APB4_APU__READ_LIMIT:             legal_write_value = 32'h3000_ffff;
       `APB4_APU__WRITE_BASE:             legal_write_value = 32'h3001_0000;
@@ -116,7 +191,7 @@ module apu_reg_tb;
       s_reg_count = 0;
       add_register(`APB4_APU__IP_ID, AccessRo, 32'h4150_5530, 1'b0);
       add_register(`APB4_APU__IP_VERSION, AccessRo, 32'h0001_0000, 1'b0);
-      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_0018, 1'b0);
       add_register(`APB4_APU__CAPABILITY1, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__COMMAND, AccessWo, 32'd0, 1'b1);
       add_register(`APB4_APU__STATUS, AccessRo, 32'h0000_0100, 1'b0);
@@ -128,7 +203,7 @@ module apu_reg_tb;
       add_register(`APB4_APU__ERROR_DETAIL, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__SEQUENCER_TIMEOUT, AccessRw, 32'h0000_ffff, 1'b0);
       add_register(`APB4_APU__STREAM_ROUTE, AccessRw, 32'd0, 1'b0);
-      add_register(`APB4_APU__STREAM_STATUS, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__STREAM_STATUS, AccessRo, 32'h0000_0014, 1'b0);
       add_register(`APB4_APU__OWNER_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__READ_BASE, AccessRw, 32'hffff_ffff, 1'b1);
       add_register(`APB4_APU__READ_LIMIT, AccessRw, 32'd0, 1'b1);
@@ -138,6 +213,7 @@ module apu_reg_tb;
       add_register(`APB4_APU__ABI_DIGEST, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__SEQUENCER_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__SEQUENCER_RETIRED, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__STREAM_WATERMARK, AccessRw, 32'd0, 1'b0);
       add_register(`APB4_APU__MC_IMAGE_ADDRESS, AccessRw, 32'd0, 1'b1);
       add_register(`APB4_APU__MC_IMAGE_SIZE, AccessRw, 32'd0, 1'b1);
       add_register(`APB4_APU__MC_EXPECTED_CRC, AccessRw, 32'd0, 1'b1);
@@ -168,7 +244,7 @@ module apu_reg_tb;
       add_register(`APB4_APU__RING_HEAD, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__RING_TAIL, AccessRw, 32'd0, 1'b1);
       add_register(`APB4_APU__RING_CONTROL, AccessRw, 32'd0, 1'b1);
-      add_register(`APB4_APU__RING_STATUS, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__RING_STATUS, AccessRo, 32'h0000_0004, 1'b0);
       add_register(`APB4_APU__RING_COMPLETED, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__RING_COALESCE, AccessRw, 32'h0001_0001, 1'b1);
       add_register(`APB4_APU__RING_DOORBELL, AccessWo, 32'd0, 1'b1);
@@ -269,7 +345,9 @@ module apu_reg_tb;
       if (s_wait_cycles != 1) begin
         $fatal(1, "APU write wait count mismatch at %h: %0d", offset_i, s_wait_cycles);
       end
-      if (apb4.pslverr != expected_err_i) $fatal(1, "APU write response mismatch at %h", offset_i);
+      if (apb4.pslverr != expected_err_i) begin
+        $fatal(1, "APU write response mismatch at %h in %s", offset_i, s_phase);
+      end
       s_response_err = apb4.pslverr;
       #2;
       if (!apb4.pready || (apb4.pslverr != s_response_err)) begin
@@ -307,7 +385,9 @@ module apu_reg_tb;
       if (s_wait_cycles != 1) begin
         $fatal(1, "APU read wait count mismatch at %h: %0d", offset_i, s_wait_cycles);
       end
-      if (apb4.pslverr != expected_err_i) $fatal(1, "APU read response mismatch at %h", offset_i);
+      if (apb4.pslverr != expected_err_i) begin
+        $fatal(1, "APU read response mismatch at %h during %s", offset_i, s_phase);
+      end
       s_response_data = apb4.prdata;
       s_response_err  = apb4.pslverr;
       #2;
@@ -383,10 +463,12 @@ module apu_reg_tb;
 
   initial begin
     initialize_register_table();
+    s_phase = "initial reset matrix";
     drive_apb_idle();
     hard_reset();
     if (!idle_o || irq_o) $fatal(1, "APU reset lifecycle outputs mismatch");
 
+    s_phase = "access matrix";
     for (int unsigned register_index = 0; register_index < RegisterCount; register_index++) begin
       hard_reset();
       if (s_reg_access[register_index] == AccessWo) begin
@@ -429,6 +511,7 @@ module apu_reg_tb;
       endcase
     end
 
+    s_phase = "valid byte strobes";
     hard_reset();
     apb_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'h0000_00aa, 4'h1, 1'b0);
     expect_read(`APB4_APU__SEQUENCER_TIMEOUT, 32'h0000_ffaa);
@@ -439,6 +522,7 @@ module apu_reg_tb;
     apb_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'hdd00_0000, 4'h8, 1'b0);
     expect_read(`APB4_APU__SEQUENCER_TIMEOUT, 32'hddcc_bbaa);
 
+    s_phase = "invalid full strobes";
     for (int unsigned register_index = 0; register_index < RegisterCount; register_index++) begin
       if (s_reg_full_strobe[register_index]) begin
         hard_reset();
@@ -452,9 +536,12 @@ module apu_reg_tb;
       end
     end
 
+    s_phase = "rejected values";
     check_rejected_write(`APB4_APU__COMMAND, 32'h0000_0080, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+    check_rejected_write(`APB4_APU__COMMAND, 32'h0000_0002, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     for (int bit_index = 0; bit_index < 6; bit_index++) begin
       if ((bit_index != `APB4_APU__COMMAND_SOFT_RESET) &&
+          (bit_index != `APB4_APU__COMMAND_ABORT) &&
           (bit_index != `APB4_APU__COMMAND_CLEAR_COUNTERS)) begin
         check_rejected_write(`APB4_APU__COMMAND, 32'd1 << bit_index,
                              `APB4_APU__ERROR_CODE_UNSUPPORTED);
@@ -469,6 +556,10 @@ module apu_reg_tb;
     check_rejected_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'd0, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__STREAM_ROUTE, 32'h0000_0001, `APB4_APU__ERROR_CODE_UNSUPPORTED);
     check_rejected_write(`APB4_APU__STREAM_ROUTE, 32'h0000_0004, `APB4_APU__ERROR_CODE_UNSUPPORTED);
+    check_rejected_write(`APB4_APU__STREAM_WATERMARK, 32'h0000_0041,
+                         `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+    check_rejected_write(`APB4_APU__STREAM_WATERMARK, 32'h0001_0000,
+                         `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__DMA_TIMEOUT, 32'd0, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__MC_IMAGE_ADDRESS, 32'h3002_0001,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
@@ -500,6 +591,7 @@ module apu_reg_tb;
     check_rejected_write(`APB4_APU__PERF_CONTROL, 32'h0000_0008,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
 
+    s_phase = "set over clear";
     hard_reset();
     apb_write(`APB4_APU__IRQ_TEST, 32'h0000_0001, 4'hf, 1'b0);
     force u_dut.u_apu_reg.s_irq_set = 11'h001;
@@ -509,27 +601,64 @@ module apu_reg_tb;
     apb_write(`APB4_APU__IRQ_STATE, 32'h0000_0001, 4'h1, 1'b0);
     expect_read(`APB4_APU__IRQ_STATE, 32'd0);
 
+    s_phase = "soft reset";
     hard_reset();
     program_rw_registers();
     apb_write(`APB4_APU__COMMAND, 32'h0000_0004, 4'hf, 1'b0);
     check_reset_state(1'b1);
 
+    s_phase = "resource reset";
     hard_reset();
     program_rw_registers();
+    force u_dut.s_dma_busy = 1'b1;
     @(negedge clk_i);
     resource_reset_i = 1'b1;
+    repeat (3) @(posedge clk_i);
+    if (u_dut.s_resource_reset_apply_q || (u_dut.u_apu_reg.s_timeout_q[0] != 32'h1234_5678)) begin
+      $fatal(1, "resource reset applied before transport drain");
+    end
+    force u_dut.s_dma_busy = 1'b0;
+    wait (u_dut.s_resource_reset_apply_q);
+    release u_dut.s_dma_busy;
     @(posedge clk_i);
     @(negedge clk_i);
     resource_reset_i = 1'b0;
     check_reset_state(1'b1);
+
+    s_phase = "performance enable";
+    hard_reset();
+    force u_dut.s_dma_busy = 1'b1;
+    repeat (5) @(posedge clk_i);
+    if (u_dut.s_active_cycles_q != 64'd0) begin
+      $fatal(1, "disabled performance counter advanced");
+    end
+    force u_dut.s_dma_busy = 1'b0;
+    release u_dut.s_dma_busy;
+    hard_reset();
+    apb_write(`APB4_APU__PERF_CONTROL, 32'h0000_0001, 4'hf, 1'b0);
+    force u_dut.s_dma_busy = 1'b1;
+    repeat (5) @(posedge clk_i);
+    if (u_dut.s_active_cycles_q == 64'd0) begin
+      $fatal(1, "enabled performance counter did not advance");
+    end
+    force u_dut.s_dma_busy = 1'b0;
+    release u_dut.s_dma_busy;
 
     hard_reset();
     owner_i      = 2'd1;
     owner_lock_i = 1'b1;
     quiesce_i    = 1'b1;
     expect_read(`APB4_APU__OWNER_STATUS, 32'h0000_0301);
-    apb_read(12'h060, s_value, 1'b1);
+    apb_read(12'h064, s_value, 1'b1);
     apb_read(12'h001, s_value, 1'b1);
+
+    s_phase = "command state predicates";
+    hard_reset();
+    force u_dut.u_apu_reg.core_busy_i = 1'b1;
+    force u_dut.u_apu_reg.core_idle_i = 1'b0;
+    apb_write(`APB4_APU__COMMAND, 32'h0000_0002, 4'hf, 1'b0);
+    apb_write(`APB4_APU__COMMAND, 32'h0000_0040, 4'hf, 1'b1);
+    expect_read(`APB4_APU__ERROR_STATUS, 32'd1 | (32'(`APB4_APU__ERROR_CODE_INVALID_CONFIG) << 1));
 
     $display("APU-P1 complete APB register matrix passed");
     $finish;
@@ -537,6 +666,6 @@ module apu_reg_tb;
 
   initial begin
     repeat (20000) @(posedge clk_i);
-    $fatal(1, "APU-P1 APB register matrix timed out");
+    $fatal(1, "APU-P1 APB register matrix timed out in %s", s_phase);
   end
 endmodule

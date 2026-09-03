@@ -135,8 +135,11 @@
     "rtl/ip/multimedia": [
       "apb4_apu.sv",
       "apb4_jpeg.sv",
+      "apu_dma.sv",
       "apu_define.svh",
+      "apu_ring_scheduler.sv",
       "apu_reg.sv",
+      "apu_stream_router.sv",
       "axi4s_dvp.sv",
       "dvp_core.sv",
       "dvp_define.svh",

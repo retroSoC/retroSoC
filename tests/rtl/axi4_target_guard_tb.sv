@@ -74,6 +74,28 @@ module axi4_target_guard_tb;
     end
   endtask
 
+  task automatic return_read_beat(input logic [5:0] id, input logic last,
+                                  input logic expected_last, input logic [1:0] expected_resp);
+    begin
+      @(negedge clk_i);
+      sink.rid    = id;
+      sink.rdata  = 64'h0123_4567_89ab_cdef;
+      sink.rresp  = 2'b00;
+      sink.rlast  = last;
+      sink.rvalid = 1'b1;
+      wait (source.rvalid);
+      #1;
+      if ((source.rid != id) || (source.rresp != expected_resp) ||
+          (source.rlast != expected_last)) begin
+        $fatal(1, "target guard read normalization mismatch");
+      end
+      do @(posedge clk_i); while (!sink.rready);
+      @(negedge clk_i);
+      sink.rvalid = 1'b0;
+      sink.rlast  = 1'b0;
+    end
+  endtask
+
   initial begin
     source.awid     = '0;
     source.awaddr   = '0;
@@ -123,6 +145,15 @@ module axi4_target_guard_tb;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
+
+    issue_read(6'h07, 8'd1, 32'h3800_0020);
+    do @(posedge clk_i); while (!sink.arvalid);
+    return_read_beat(6'h07, 1'b0, 1'b0, 2'b00);
+    return_read_beat(6'h07, 1'b0, 1'b1, 2'b10);
+
+    issue_read(6'h08, 8'd0, 32'h3800_0030);
+    do @(posedge clk_i); while (!sink.arvalid);
+    return_read_beat(6'h08, 1'b1, 1'b1, 2'b00);
 
     issue_read(6'h09, 8'd1, 32'h3800_0040);
     wait (timeout_valid_o);

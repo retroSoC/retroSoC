@@ -26,10 +26,11 @@ The design was frozen on 2026-09-02 from these repository sources of truth:
   programmable-LUT, and lifecycle patterns; and
 - `dependencies/dependencies.lock.json` for managed inputs.
 
-APU-P1 implements the APB4 register shell, Resource Controller index 7,
-LP IRQ31/HP PLIC source10 ownership routing, and HAL discovery. The shell
-advertises zero datapath capabilities and rejects every deferred datapath
-command. No claim is made that APU DMA, streams, microcode, sequencer, codec
+APU-P2 implements the private AXI4 DMA, descriptor ring scheduler, fair Gateway
+A arbitration, and the production audio stream router with two 64-word Common
+FIFOs. The shell reports only private-DMA and ring capabilities; public direct
+start, ring doorbell, and APU stream routes remain fail-closed until their
+later-phase engines exist. No claim is made that microcode, sequencer, codec
 engines, KWS, codec conformance, Linux driver, timing closure, power closure,
 CDC/RDC signoff, or silicon qualification exists.
 

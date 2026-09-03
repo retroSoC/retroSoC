@@ -45,6 +45,39 @@ module apu_irq_topology_tb;
       .pclk   (clk_i),
       .presetn(rst_n_i)
   );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_apu_axi4_if (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) u_dma_tx_axis (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) u_dma_rx_axis (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) u_i2s_tx_axis (
+      clk_i,
+      rst_n_i
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) u_i2s_rx_axis (
+      clk_i,
+      rst_n_i
+  );
 
   always #5 clk_i = ~clk_i;
 
@@ -62,15 +95,23 @@ module apu_irq_topology_tb;
   `include "soc_irq_wiring.svh"
 
 apb4_apu u_apu (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .owner_i         (s_resource_owner[7]),
-      .owner_lock_i    (s_resource_owner_lock[7]),
-      .quiesce_i       (s_resource_quiesce[7]),
-      .resource_reset_i(s_resource_reset[7]),
-      .apb4            (u_apu_apb4_if),
-      .idle_o          (s_apu_idle),
-      .irq_o           (s_apu_irq_raw)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .owner_i          (s_resource_owner[7]),
+      .owner_lock_i     (s_resource_owner_lock[7]),
+      .quiesce_i        (s_resource_quiesce[7]),
+      .resource_reset_i (s_resource_reset[7]),
+      .bridge_epoch_i   (8'd0),
+      .i2s_tx_underrun_i(1'b0),
+      .i2s_rx_overrun_i (1'b0),
+      .apb4             (u_apu_apb4_if),
+      .axi4             (u_apu_axi4_if),
+      .dma_tx_axis      (u_dma_tx_axis),
+      .dma_rx_axis      (u_dma_rx_axis),
+      .i2s_tx_axis      (u_i2s_tx_axis),
+      .i2s_rx_axis      (u_i2s_rx_axis),
+      .idle_o           (s_apu_idle),
+      .irq_o            (s_apu_irq_raw)
   );
 
   resource_controller #(
@@ -214,6 +255,37 @@ apb4_apu u_apu (
 
   initial begin
     drive_apb_idle();
+    u_apu_axi4_if.awready = 1'b0;
+    u_apu_axi4_if.wready  = 1'b0;
+    u_apu_axi4_if.bid     = '0;
+    u_apu_axi4_if.bresp   = '0;
+    u_apu_axi4_if.buser   = '0;
+    u_apu_axi4_if.bvalid  = 1'b0;
+    u_apu_axi4_if.arready = 1'b0;
+    u_apu_axi4_if.rid     = '0;
+    u_apu_axi4_if.rdata   = '0;
+    u_apu_axi4_if.rresp   = '0;
+    u_apu_axi4_if.rlast   = 1'b0;
+    u_apu_axi4_if.ruser   = '0;
+    u_apu_axi4_if.rvalid  = 1'b0;
+    u_dma_tx_axis.tdata   = '0;
+    u_dma_tx_axis.tkeep   = '1;
+    u_dma_tx_axis.tstrb   = '1;
+    u_dma_tx_axis.tlast   = 1'b0;
+    u_dma_tx_axis.tid     = '0;
+    u_dma_tx_axis.tdest   = '0;
+    u_dma_tx_axis.tuser   = '0;
+    u_dma_tx_axis.tvalid  = 1'b0;
+    u_dma_rx_axis.tready  = 1'b1;
+    u_i2s_tx_axis.tready  = 1'b1;
+    u_i2s_rx_axis.tdata   = '0;
+    u_i2s_rx_axis.tkeep   = '1;
+    u_i2s_rx_axis.tstrb   = '1;
+    u_i2s_rx_axis.tlast   = 1'b0;
+    u_i2s_rx_axis.tid     = '0;
+    u_i2s_rx_axis.tdest   = '0;
+    u_i2s_rx_axis.tuser   = '0;
+    u_i2s_rx_axis.tvalid  = 1'b0;
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
 

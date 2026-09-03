@@ -16,7 +16,7 @@ module soc_data_plane (
     input  logic       block_new_i,
     input  logic       recovery_i,
     input  logic       flush_i,
-    input  logic [6:0] resource_block_i,
+    input  logic [7:0] resource_block_i,
     input  logic [1:0] mem_pad_mode_i,
     input  logic       ext_h_block_i,
     input  logic [31:0] ext_h_read_base_i,
@@ -30,6 +30,7 @@ module soc_data_plane (
     axi4_if.slave      sdio1_axi4,
     axi4_if.slave      spisd_axi4,
     axi4_if.slave      usb2_axi4,
+    axi4_if.slave      apu_axi4,
     axi4_if.slave      jpeg_axi4,
     axi4_if.slave      lp_data_axi4,
     axi4_if.slave      ext_h_axi4,
@@ -42,8 +43,9 @@ module soc_data_plane (
     output logic       idle_o,
     output logic       flush_busy_o,
     output logic       ext_h_idle_o,
-    output logic [6:0] resource_idle_o,
-    output logic [6:0] resource_block_ack_o,
+    output logic [7:0] apu_bridge_epoch_o,
+    output logic [7:0] resource_idle_o,
+    output logic [7:0] resource_block_ack_o,
     output logic [7:0] outstanding_read_o,
     output logic [7:0] outstanding_write_o,
     output logic       fault_valid_o,
@@ -86,7 +88,7 @@ module soc_data_plane (
   logic [                 7:0]       unused_ext_epoch;
   logic [                 7:0]       unused_jpeg_epoch;
   logic [                 2:0]       s_unused_epoch;
-  logic [                 6:0]       s_resource_block_hp;
+  logic [                 7:0]       s_resource_block_hp;
   logic [                 7:0]       s_master_idle;
   logic [                 7:0]       s_master_block;
   logic [                 7:0]       s_monitor_master_read_accept;
@@ -193,7 +195,7 @@ module soc_data_plane (
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) u_io_idle_axi4[2] (
+  ) u_io_idle_axi4[1] (
       .aclk   (clk_io_i),
       .aresetn(rst_io_n_i)
   );
@@ -262,7 +264,7 @@ module soc_data_plane (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(7)
+      .DATA_WIDTH(8)
   ) u_resource_block_sync (
       .clk_i  (clk_hp_i),
       .rst_n_i(rst_hp_n_i),
@@ -275,11 +277,12 @@ module soc_data_plane (
     s_resource_block_hp[6],
     1'b0,
     s_resource_block_hp[4] || s_resource_block_hp[3],
-    s_resource_block_hp[2] || s_resource_block_hp[1],
+    s_resource_block_hp[7] || s_resource_block_hp[2] || s_resource_block_hp[1],
     s_resource_block_hp[0],
     2'b00
   };
   assign resource_idle_o = {
+    s_master_idle[3],
     s_master_idle[6],
     s_master_idle[7],
     s_master_idle[4],
@@ -315,10 +318,14 @@ module soc_data_plane (
       .source(dma_axi4),
       .sink  (u_io_lp_axi4[0])
   );
-  hp_axi4_mux3 u_io_gateway_a (
+  hp_axi4_mux3 #(
+      .RoundRobin       (1'b1),
+      .Client0EpochAware(1'b1)
+  ) u_io_gateway_a (
       .clk_i  (clk_io_i),
       .rst_n_i(rst_io_n_i),
-      .icache (u_io_idle_axi4[0]),
+      .epoch_i(unused_io_epoch[1]),
+      .icache (apu_axi4),
       .dcache (sdio0_axi4),
       .mmio   (usb2_axi4),
       .axi4   (u_io_lp_axi4[1])
@@ -326,13 +333,13 @@ module soc_data_plane (
   hp_axi4_mux3 u_io_gateway_b (
       .clk_i  (clk_io_i),
       .rst_n_i(rst_io_n_i),
-      .icache (u_io_idle_axi4[1]),
+      .epoch_i(unused_io_epoch[2]),
+      .icache (u_io_idle_axi4[0]),
       .dcache (spisd_axi4),
       .mmio   (sdio1_axi4),
       .axi4   (u_io_lp_axi4[2])
   );
-  axi4_master_idle u_io_gateway_a_idle (.axi4(u_io_idle_axi4[0]));
-  axi4_master_idle u_io_gateway_b_idle (.axi4(u_io_idle_axi4[1]));
+  axi4_master_idle u_io_gateway_b_idle (.axi4(u_io_idle_axi4[0]));
 
   for (genvar master = 0; master < NumIoMasters; master++) begin : gen_io_master
     axi4_async_bridge #(
@@ -638,6 +645,7 @@ module soc_data_plane (
   assign flush_busy_o = (|s_io_clear_busy) || (|s_target_clear_busy) ||
                         (|s_guard_clear_busy) || s_lp_clear_busy || s_ext_clear_busy ||
                         s_jpeg_clear_busy;
+  assign apu_bridge_epoch_o = unused_io_epoch[1];
   assign s_unused_epoch = {
     ^unused_io_epoch, ^unused_target_epoch, ^{unused_lp_epoch, unused_ext_epoch, unused_jpeg_epoch}
   };

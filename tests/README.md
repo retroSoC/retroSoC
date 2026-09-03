@@ -16,9 +16,10 @@ tooling.
   APB4 simulations; `test_crypto_register_parity.py` checks the handwritten
   RTL/C register ABI and `test_dma.py` covers DMA bursts, TCD fetch, CRC,
   tail-byte writes, and crypto endpoints.
-- `test_apu.py` checks the complete fail-closed APU-P1 APB4 register matrix and
-  integrated LP/HP IRQ ownership topology; `test_apu_register_parity.py` keeps
-  its handwritten RTL/C ABI and matrix coverage synchronized.
+- `test_apu.py` checks the fail-closed APU APB4/IRQ shell plus the P2 private
+  DMA, ring scheduler, stream router, Gateway A, and verification-only backend;
+  `test_apu_register_parity.py` keeps its handwritten RTL/C ABI and matrix
+  coverage synchronized.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.

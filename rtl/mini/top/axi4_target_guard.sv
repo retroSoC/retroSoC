@@ -106,6 +106,7 @@ module axi4_target_guard #(
   logic s_write_progress;
   logic s_read_timeout_enable;
   logic s_write_timeout_enable;
+  logic s_read_missing_last;
 
   assign s_ar_push_data = {
     source.arid,
@@ -212,11 +213,14 @@ module axi4_target_guard #(
                      (sink.arready || s_timeout_read || s_isolated_q)) ||
                     ((s_read_state_q == ReadIdle) && s_isolated_q && !s_ar_empty);
 
+  assign s_read_missing_last = (s_read_state_q == ReadForward) && sink.rvalid &&
+                               (s_read_remaining_q == 9'd1) && !sink.rlast;
   assign source.rid = (s_read_state_q == ReadSynthetic) ? s_read_id_q : sink.rid;
   assign source.rdata = (s_read_state_q == ReadSynthetic) ? '0 : sink.rdata;
-  assign source.rresp = (s_read_state_q == ReadSynthetic) ? `AXI4_RESP_SLAVE_ERROR : sink.rresp;
+  assign source.rresp = ((s_read_state_q == ReadSynthetic) || s_read_missing_last) ?
+                        `AXI4_RESP_SLAVE_ERROR : sink.rresp;
   assign source.rlast = (s_read_state_q == ReadSynthetic) ?
-                        (s_read_remaining_q == 9'd1) : sink.rlast;
+                        (s_read_remaining_q == 9'd1) : (sink.rlast || s_read_missing_last);
   assign source.ruser = (s_read_state_q == ReadSynthetic) ? '0 : sink.ruser;
   assign source.rvalid = (s_read_state_q == ReadSynthetic) ||
                          ((s_read_state_q == ReadForward) && sink.rvalid);

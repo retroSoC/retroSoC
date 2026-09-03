@@ -125,6 +125,9 @@
 /ip/multimedia/dvp_core.sv
 /ip/multimedia/dvp_reg.sv
 /ip/multimedia/axi4s_dvp.sv
+/ip/multimedia/apu_dma.sv
+/ip/multimedia/apu_ring_scheduler.sv
+/ip/multimedia/apu_stream_router.sv
 /ip/multimedia/apu_reg.sv
 /ip/multimedia/apb4_apu.sv
 /ip/multimedia/jpeg_pkg.sv

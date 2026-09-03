@@ -329,6 +329,8 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint_filelist = tmp_path / "clint.fl"
     onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
+    apu_filelist = tmp_path / "apu.fl"
+    gateway_a_filelist = tmp_path / "gateway_a.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -354,6 +356,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist("apu", apu_filelist, memory_map, topology, user_extensions)
+    assert generate_formal_filelist(
+        "gateway_a", gateway_a_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -366,6 +372,8 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint = parse_filelists([clint_filelist], require_files=False)
     onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
+    apu = parse_filelists([apu_filelist], require_files=False)
+    gateway_a = parse_filelists([gateway_a_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert "+define+PDK_BEHAV" in onchip_ram.defines
     assert "+define+SYNTHESIS" in onchip_ram.defines
@@ -421,6 +429,11 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/tech/tc_clk.sv" in opipsram.files
     assert ROOT / "rtl/tech/tc_opipsram_delay.sv" in opipsram.files
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
+    assert ROOT / "rtl/ip/multimedia/apu_dma.sv" in apu.files
+    assert ROOT / "rtl/mini/formal/apu_formal.sv" in apu.files
+    assert ROOT / "rtl/mini/top/hp_axi4_mux3.sv" in gateway_a.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv" in gateway_a.files
+    assert ROOT / "rtl/mini/formal/gateway_a_formal.sv" in gateway_a.files
 
 
 def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:

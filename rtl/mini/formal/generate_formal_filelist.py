@@ -22,6 +22,7 @@ PERIPHERAL = ROOT / "rtl/ip/peripheral"
 SERIAL = ROOT / "rtl/ip/serial"
 MEMORY = ROOT / "rtl/ip/memory"
 STORAGE = ROOT / "rtl/ip/storage"
+MULTIMEDIA = ROOT / "rtl/ip/multimedia"
 TOP = ROOT / "rtl/mini/top"
 
 
@@ -247,6 +248,23 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "dma_core.sv",
             SCRIPT_DIR / "dma_formal.sv",
         ]
+    if target == "apu":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/axi4_stream_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            PERIPHERAL / "dma_axi4_master.sv",
+            MULTIMEDIA / "apu_dma.sv",
+            SCRIPT_DIR / "apu_formal.sv",
+        ]
+    if target == "gateway_a":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "stream/round_robin_arbiter.sv",
+            TOP / "hp_axi4_mux3.sv",
+            SCRIPT_DIR / "gateway_a_formal.sv",
+        ]
     if target == "sdio":
         return [
             COMMON_RTL / "interface/apb4_if.sv",
@@ -285,6 +303,7 @@ def generate(
             PERIPHERAL,
             SERIAL,
             MEMORY,
+            MULTIMEDIA,
         ],
         files=source_files(target),
     ).deduplicate()
@@ -313,6 +332,8 @@ def parse_args() -> argparse.Namespace:
             "onchip_ram",
             "opipsram",
             "dma",
+            "apu",
+            "gateway_a",
             "sdio",
         ),
         required=True,

@@ -29,6 +29,7 @@ module apb4_periph (
     input logic                                   apu_owner_lock_i,
     input logic                                   apu_quiesce_i,
     input logic                                   apu_reset_i,
+    input logic [7:0]                             apu_bridge_epoch_i,
     input logic                                   jpeg_quiesce_i,
     input logic                                   jpeg_reset_i,
     axi4_if.slave                                 cfg_axi4,
@@ -50,6 +51,7 @@ module apb4_periph (
     axi4_if.master                                sdio0_axi4,
     axi4_if.master                                sdio1_axi4,
     axi4_if.master                                usb2_axi4,
+    axi4_if.master                                apu_axi4,
     axi4_if.master                                jpeg_axi4,
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
@@ -97,6 +99,24 @@ axi4_stream_if #(
       .DEST_WIDTH(1),
       .USER_WIDTH(1)
   ) u_i2s_rx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_dma_i2s_tx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_dma_i2s_rx_axis_if (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -157,6 +177,7 @@ axi4_stream_if #(
   logic s_dma_crypto_out_proc;
   logic s_crypto_irq;
   logic s_apu_irq_raw;
+  logic s_i2s_tx_underrun_evt, s_i2s_rx_overrun_evt;
   logic s_jpeg_irq_raw;
   logic s_usb2_irq;
   logic s_tim0_irq, s_tim1_irq;
@@ -405,16 +426,18 @@ axi4_stream_if #(
   );
 
   apb4_i2s u_apb4_i2s (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .clk_aud_i     (clk_aud_i),
-      .rst_aud_n_i   (rst_aud_n_i),
-      .dma_tx_stall_o(s_dma_i2s_tx_stall),
-      .dma_rx_stall_o(s_dma_i2s_rx_stall),
-      .apb4          (u_i2s_apb4_if),
-      .tx_axis       (u_i2s_tx_axis_if),
-      .rx_axis       (u_i2s_rx_axis_if),
-      .i2s           (i2s)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .clk_aud_i        (clk_aud_i),
+      .rst_aud_n_i      (rst_aud_n_i),
+      .dma_tx_stall_o   (s_dma_i2s_tx_stall),
+      .dma_rx_stall_o   (s_dma_i2s_rx_stall),
+      .tx_underrun_evt_o(s_i2s_tx_underrun_evt),
+      .rx_overrun_evt_o (s_i2s_rx_overrun_evt),
+      .apb4             (u_i2s_apb4_if),
+      .tx_axis          (u_i2s_tx_axis_if),
+      .rx_axis          (u_i2s_rx_axis_if),
+      .i2s              (i2s)
   );
 
   apb4_ws2812 u_apb4_ws2812 (
@@ -447,8 +470,8 @@ axi4_stream_if #(
       .hw_trg         (u_dma_req_if),
       .apb4           (u_dma_apb4_if),
       .axi4           (dma_axi4),
-      .i2s_tx_axis    (u_i2s_tx_axis_if),
-      .i2s_rx_axis    (u_i2s_rx_axis_if),
+      .i2s_tx_axis    (u_dma_i2s_tx_axis_if),
+      .i2s_rx_axis    (u_dma_i2s_rx_axis_if),
       .dvp_rx_axis    (u_dvp_rx_axis_if),
       .crypto_in_axis (u_crypto_in_axis_if),
       .crypto_out_axis(u_crypto_out_axis_if)
@@ -477,15 +500,23 @@ axi4_stream_if #(
   );
 
   apb4_apu u_apb4_apu (
-      .clk_i           (clk_i),
-      .rst_n_i         (rst_n_i),
-      .owner_i         (apu_owner_i),
-      .owner_lock_i    (apu_owner_lock_i),
-      .quiesce_i       (apu_quiesce_i),
-      .resource_reset_i(apu_reset_i),
-      .apb4            (u_apu_apb4_if),
-      .idle_o          (apu_idle_o),
-      .irq_o           (s_apu_irq_raw)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .owner_i          (apu_owner_i),
+      .owner_lock_i     (apu_owner_lock_i),
+      .quiesce_i        (apu_quiesce_i),
+      .resource_reset_i (apu_reset_i),
+      .bridge_epoch_i   (apu_bridge_epoch_i),
+      .i2s_tx_underrun_i(s_i2s_tx_underrun_evt),
+      .i2s_rx_overrun_i (s_i2s_rx_overrun_evt),
+      .apb4             (u_apu_apb4_if),
+      .axi4             (apu_axi4),
+      .dma_tx_axis      (u_dma_i2s_tx_axis_if),
+      .dma_rx_axis      (u_dma_i2s_rx_axis_if),
+      .i2s_tx_axis      (u_i2s_tx_axis_if),
+      .i2s_rx_axis      (u_i2s_rx_axis_if),
+      .idle_o           (apu_idle_o),
+      .irq_o            (s_apu_irq_raw)
   );
 
   apb4_sysctrl u_apb4_sysctrl (

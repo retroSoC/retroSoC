@@ -119,12 +119,13 @@ ownership. Its implemented limits, handwritten ABI, measured performance, and
 commercial release gates are documented in
 [Baseline JPEG Codec](../docs/ip/jpeg.md).
 
-The Mini Audio Processing Unit has a frozen coreless architecture. APU-P1
-implements its fail-closed APB4 shell at `APB4_APU`, Resource Controller index
-7, and exclusive LP IRQ31/HP PLIC source10 routing. The shell advertises no
-datapath capabilities: private DMA, streams, microcode, codec engines, and KWS
-remain deferred to their frozen phases. The complete ABI, phase order, and
-evidence gates are defined in [Mini Audio Processing Unit](../docs/ip/apu.md).
+The Mini Audio Processing Unit has a frozen coreless architecture. APU-P2 adds
+the private AXI4 DMA, descriptor scheduler, fair Gateway A arbitration, and
+production stream router/FIFOs to the fail-closed APB4 shell at `APB4_APU`.
+Resource Controller index 7 and exclusive LP IRQ31/HP PLIC source10 routing
+remain fixed. Public jobs and APU stream routes remain disabled until their
+later-phase engines exist. The complete ABI, phase order, and evidence gates
+are defined in [Mini Audio Processing Unit](../docs/ip/apu.md).
 
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its

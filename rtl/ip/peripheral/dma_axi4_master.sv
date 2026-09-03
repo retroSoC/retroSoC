@@ -18,6 +18,7 @@ module dma_axi4_master #(
     // verilog_format: off -- AXI command/data ports are aligned with their response groups.
     input  logic                 clk_i,
     input  logic                 rst_n_i,
+    input  logic                 clear_i,
     input  logic                 read_start_valid_i,
     output logic                 read_start_ready_o,
     input  logic [AddrWidth-1:0] read_addr_i,
@@ -141,6 +142,12 @@ module dma_axi4_master #(
       s_read_beats_q <= 5'd1;
       s_read_beat_q  <= '0;
       s_read_fixed_q <= 1'b0;
+    end else if (clear_i) begin
+      s_read_state_q <= ReadIdle;
+      s_read_addr_q  <= '0;
+      s_read_beats_q <= 5'd1;
+      s_read_beat_q  <= '0;
+      s_read_fixed_q <= 1'b0;
     end else begin
       unique case (s_read_state_q)
         ReadIdle: begin
@@ -173,6 +180,12 @@ module dma_axi4_master #(
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
+      s_write_state_q <= WriteIdle;
+      s_write_addr_q  <= '0;
+      s_write_beats_q <= 5'd1;
+      s_write_beat_q  <= '0;
+      s_write_fixed_q <= 1'b0;
+    end else if (clear_i) begin
       s_write_state_q <= WriteIdle;
       s_write_addr_q  <= '0;
       s_write_beats_q <= 5'd1;

@@ -87,6 +87,8 @@ module retrosoc (
       u_ext_h_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_jpeg_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_apu_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_hp_icache_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
@@ -191,6 +193,7 @@ module retrosoc (
   logic             s_mgmt_router_idle;
   logic [ 7:0]      s_data_plane_outstanding_read;
   logic [ 7:0]      s_data_plane_outstanding_write;
+  logic [ 7:0]      s_apu_bridge_epoch;
   logic             s_data_plane_fault_valid;
   logic [ 2:0]      s_data_plane_fault_master;
   logic [ 2:0]      s_data_plane_fault_target;
@@ -236,10 +239,10 @@ module retrosoc (
   logic [ 7:0]      s_resource_owner_lock;
   logic [ 7:0]      s_resource_quiesce;
   logic [ 7:0]      s_resource_reset;
-  logic [ 6:0]      s_resource_idle_hp;
-  logic [ 6:0]      s_resource_idle_pclk;
-  logic [ 6:0]      s_resource_block_ack_hp;
-  logic [ 6:0]      s_resource_block_ack_pclk;
+  logic [ 7:0]      s_resource_idle_hp;
+  logic [ 7:0]      s_resource_idle_pclk;
+  logic [ 7:0]      s_resource_block_ack_hp;
+  logic [ 7:0]      s_resource_block_ack_pclk;
   logic [ 6:0]      s_resource_irq_raw;
   logic [ 6:0]      s_resource_irq_lp;
   logic [ 6:0]      s_resource_irq_hp;
@@ -558,7 +561,7 @@ core_wrapper u_core_wrapper (
       .block_new_i         (s_hp_block_hp),
       .recovery_i          (s_hp_recovery_hp),
       .flush_i             (s_hp_flush_hp),
-      .resource_block_i    (s_resource_quiesce[6:0] | s_resource_reset[6:0]),
+      .resource_block_i    (s_resource_quiesce | s_resource_reset),
       .mem_pad_mode_i      (s_mem_pad_mode_lp),
       .ext_h_block_i       (s_ext_h_block),
       .ext_h_read_base_i   (s_ext_h_read_base),
@@ -572,6 +575,7 @@ core_wrapper u_core_wrapper (
       .sdio1_axi4          (u_sdio1_axi4_if),
       .spisd_axi4          (u_spisd_axi4_if),
       .usb2_axi4           (u_usb2_axi4_if),
+      .apu_axi4            (u_apu_axi4_if),
       .jpeg_axi4           (u_jpeg_wide_axi4_if),
       .lp_data_axi4        (u_mgmt_data_axi4_if),
       .ext_h_axi4          (u_ext_h_wide_axi4_if),
@@ -584,6 +588,7 @@ core_wrapper u_core_wrapper (
       .idle_o              (s_data_plane_idle),
       .flush_busy_o        (s_data_plane_flush_busy),
       .ext_h_idle_o        (s_ext_h_data_idle),
+      .apu_bridge_epoch_o  (s_apu_bridge_epoch),
       .resource_idle_o     (s_resource_idle_hp),
       .resource_block_ack_o(s_resource_block_ack_hp),
       .outstanding_read_o  (s_data_plane_outstanding_read),
@@ -598,7 +603,7 @@ core_wrapper u_core_wrapper (
 
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(7)
+      .DATA_WIDTH(8)
   ) u_resource_idle_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -607,7 +612,7 @@ core_wrapper u_core_wrapper (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(7)
+      .DATA_WIDTH(8)
   ) u_resource_block_ack_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -804,6 +809,7 @@ core_wrapper u_core_wrapper (
       .apu_owner_lock_i            (s_resource_owner_lock[7]),
       .apu_quiesce_i               (s_resource_quiesce[7]),
       .apu_reset_i                 (s_resource_reset[7]),
+      .apu_bridge_epoch_i          (s_apu_bridge_epoch),
       .jpeg_quiesce_i              (s_resource_quiesce[6]),
       .jpeg_reset_i                (s_resource_reset[6]),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
@@ -811,6 +817,7 @@ core_wrapper u_core_wrapper (
       .sdio0_axi4                  (u_sdio0_axi4_if),
       .sdio1_axi4                  (u_sdio1_axi4_if),
       .usb2_axi4                   (u_usb2_axi4_if),
+      .apu_axi4                    (u_apu_axi4_if),
       .jpeg_axi4                   (u_jpeg_wide_axi4_if),
       .psram_axi4                  (u_data_qpi_axi4_if),
       .xpi_axi4                    (u_data_xpi_axi4_if),
@@ -899,13 +906,13 @@ core_wrapper u_core_wrapper (
   );
 
   assign s_resource_idle_combined = {
-    s_apu_idle,
+    s_apu_idle && s_resource_idle_pclk[7],
     s_jpeg_idle && s_resource_idle_pclk[6],
     s_ext_h_data_idle && s_resource_idle_pclk[5],
     s_resource_idle_pclk[4:0]
   };
   assign s_resource_block_ack_combined = {
-    s_apu_idle && (s_resource_quiesce[7] || s_resource_reset[7]), s_resource_block_ack_pclk
+    s_apu_idle && s_resource_block_ack_pclk[7], s_resource_block_ack_pclk[6:0]
   };
 
   logic [36:0] s_unused_domain_inputs;

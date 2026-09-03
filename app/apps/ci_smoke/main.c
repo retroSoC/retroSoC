@@ -26,7 +26,7 @@ static bool rs_ci_smoke_archinfo_v2(void) {
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
 }
 
-static bool rs_ci_smoke_apu_p1(void) {
+static bool rs_ci_smoke_apu(void) {
     rs_apu_info_t info;
 
     return (rs_apu_probe(&info) == RS_OK) && (info.capability0 == RS_APU_CAPABILITY0_IMPLEMENTED) &&
@@ -385,10 +385,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
-    if (!rs_ci_smoke_apu_p1()) {
+    if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }
-    printf("ci_smoke: APU-P1 discovery passed\n");
+    printf("ci_smoke: APU-P2 discovery passed\n");
     if (!rs_ci_smoke_fabric_monitor_start()) {
         rs_test_finish(RS_TEST_FAILED, 13U);
     }

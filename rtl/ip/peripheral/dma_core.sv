@@ -341,6 +341,7 @@ module dma_core #(
   ) u_dma_axi4_master (
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),
+      .clear_i             (1'b0),
       .read_start_valid_i  (s_axi_read_start_valid),
       .read_start_ready_o  (s_axi_read_start_ready),
       .read_addr_i         (s_axi_read_start_addr),
