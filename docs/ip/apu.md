@@ -907,23 +907,67 @@ An asynchronous P2 transport error is sampled at the next retirement boundary,
 then fetch and new commands stop while accepted transfers drain. Trap reason
 allocations are 1 illegal encoding, 2 PC/program range, 3 call stack, 4 loop,
 5 local/table range, 6 unavailable/undeclared primitive, 7 no-retirement
-watchdog, 8 per-frame retirement budget, 9 engine/transport fault, and 10 explicit
-`TRAP`; 0 and 11..255 are reserved. A trap sets sticky
-`STATUS.SEQUENCER_TRAPPED` and IRQ bit 10. The status clears at the next
-accepted entry launch or soft/resource/hard reset; IRQ bit 10 clears only by
-its W1C or reset. Reasons 1..8 and 10 record immutable first error code 11 at
-the applicable stage. Reason 9 retains the original code 8, 15..19, or 22,
-stage, AXI response, address, and detail while additionally setting sequencer
-trap state.
-If another global terminal condition and a sequencer trap coincide, hard reset,
-forced resource reset, AXI write, AXI read, DMA timeout, RX overrun, and TX
-underrun retain their existing order above the trap; the trap outranks forced
-abort. Every applicable sticky event still sets. A trap leaves a previously
-loaded `MC_STATUS.VALID` and `MC_LOCK` set because the bundle itself remains
-loaded. For reasons 1..8, `ERROR_ADDRESS=PC<<3` and `ERROR_DETAIL` contains
-reason `[7:0]`, PC `[18:8]`, class `[22:19]`, opcode `[26:23]`, and `aux[4:0]`
-`[31:27]`. Explicit `TRAP` instead copies its 32-bit immediate to
-`ERROR_DETAIL`.
+watchdog, 8 per-frame retirement budget, 9 engine/transport fault, and 10
+explicit `TRAP`; 0 and 11..255 are reserved. A trap sets sticky
+`STATUS.SEQUENCER_TRAPPED` and IRQ bit 10. IRQ bit 10 clears only by its W1C or
+reset. A trap leaves a previously loaded `MC_STATUS.VALID` and `MC_LOCK` set
+because the bundle itself remains loaded.
+
+For the table below, `PC` is the trapping 11-bit control-store word index and
+`trap_detail(reason)` is reason `[7:0]`, PC `[18:8]`, class `[22:19]`, opcode
+`[26:23]`, and `aux[4:0]` `[31:27]`. Every primary non-AXI trap sets
+`ERROR_STATUS.VALID=1`, AXI response `0`, descriptor index `0`, and
+`ERROR_ADDRESS=zero_extend(PC)<<3`. APUMC entry indices are not job/ring
+descriptor indices and therefore never enter `ERROR_STATUS.DESCRIPTOR_INDEX`.
+
+| Trap reason | `ERROR_STATUS` code | Stage | AXI response | Descriptor index | `ERROR_ADDRESS` | `ERROR_DETAIL` |
+| ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 1 illegal encoding | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(1)` |
+| 2 PC/program range | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(2)` |
+| 3 call stack | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(3)` |
+| 4 loop | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(4)` |
+| 5 local/table range | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(5)` |
+| 6 unavailable/undeclared primitive | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(6)` |
+| 7 no-retirement watchdog | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(7)` |
+| 8 per-frame retirement budget | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(8)` |
+| 9 non-AXI engine semantic failure | 8 | 6 for reconstruction/transform; 7 for resampler/PCM | 0 | 0 | `PC<<3` | `trap_detail(9)` |
+| 9 non-AXI FIFO/local/arithmetic overflow | 22 | stage of the failing engine, 6 or 7 | 0 | 0 | `PC<<3` | `trap_detail(9)` |
+| 9 AXI/DMA/stream cause | unchanged causative code 15..19 | unchanged causative stage | unchanged causative value | unchanged causative value | unchanged causative address | unchanged causative detail |
+| 9 without a valid causative error | 11 | 11 | 0 | 0 | `PC<<3` | `trap_detail(9)` |
+| 10 explicit `TRAP` | 11 | 11 | 0 | 0 | `PC<<3` | the instruction's 32-bit immediate |
+
+Reason 9 is secondary when an AXI/DMA/stream first-error tuple has already
+been captured: it sets sequencer trap status and IRQ bit 10 but does not alter
+that tuple. A reason-9 assertion without a causative error is an internal
+sequencer trap and uses the fail-closed row above. If another global terminal
+condition and a sequencer trap coincide, hard reset, forced resource reset,
+AXI write, AXI read, DMA timeout, RX overrun, and TX underrun retain their
+existing order above the trap; the trap outranks forced abort. Every applicable
+sticky event still sets.
+
+`SEQUENCER_STATUS` bits `[31:21]` are reserved zero. While running, PC, class,
+opcode, wait, and loop-active are live for the current instruction. Wait is one
+for any current-instruction stall, including explicit wait, pending-GPR,
+kernel, DMA, FIFO, or backpressure stall. The terminal readback rules are:
+
+| Event | `SEQUENCER_STATUS` after the event | `SEQUENCER_RETIRED` after the event |
+| --- | --- | --- |
+| `END`, with either a zero or nonzero latched terminal result | Retains the terminal `END` PC/class/opcode and the wait/loop-active values sampled immediately before retirement. | Retains the saturating current-frame count including the retired `END`. |
+| Trap, including watchdog | Retains the trapping current-instruction PC/class/opcode and its wait/loop-active values when the trap was recognized. | Retains the count before the non-retired trapping instruction or stall. |
+| Accepted abort with an active sequencer | Further retirement stops; retains the current-instruction tuple sampled when abort was accepted through terminal abort completion. | Retains the count sampled when abort was accepted. |
+| Accepted abort without an active sequencer | Remains unchanged. | Remains unchanged. |
+| Soft reset | Clears to zero when the reset is applied. | Clears to zero. |
+| Normally drained or forced resource reset | Clears to zero when resource-reset state is applied after drain. | Clears to zero. |
+| Hard/PCLK reset | Clears immediately to reset value zero. | Clears immediately to reset value zero. |
+
+`END`, trap, and abort snapshots persist through status reads,
+`ERROR_STATUS`/IRQ W1C, `CLEAR_COUNTERS`, and microcode load. The next accepted
+entry launch clears `SEQUENCER_RETIRED` to zero and initializes
+`SEQUENCER_STATUS` to entry PC with class/opcode/wait/loop-active zero until the
+first instruction fetch updates it. `STATUS.SEQUENCER_TRAPPED` clears on that
+launch or on soft/resource/hard reset; `END` and abort do not set it. The P3
+verification-only launch follows the same rules and creates no public launch
+mechanism.
 
 #### P3 loader, status, and control store
 
@@ -959,12 +1003,38 @@ any nonzero P3 table field; capability is an unsupported primitive mask,
 class-2..6 instruction in P3, or header/entry mask mismatch; CRC is the final
 three-way CRC mismatch. A nonzero P3 scratch field is a range error.
 
+Every non-AXI loader validation failure sets `ERROR_STATUS.VALID=1`, stage 1,
+AXI response 0, descriptor index 0, and the code/address/detail tuple below,
+subject to the global immutable-first-error rule. Loader diagnostics use an
+absolute DMA source byte address, `MC_IMAGE_ADDRESS + bundle byte offset`.
+APUMC entry indices do not use the job/ring descriptor-index field.
+
+| Loader category | `MC_STATUS` bit | Error code | `ERROR_ADDRESS` | `ERROR_DETAIL` |
+| --- | ---: | ---: | --- | --- |
+| Header | 2 | 9 | Address of the first offending header word, or the aligned 32-bit word containing the first nonzero padding byte. | Observed little-endian 32-bit word at `ERROR_ADDRESS`. |
+| Range | 3 | 9 | Address of the first header/entry field participating in the failed range relation. | Observed little-endian 32-bit field value. |
+| Control flow | 4 | 9 | Address of the first offending 64-bit instruction: `MC_IMAGE_ADDRESS + instruction_offset + (PC<<3)`. | `trap_detail(1)` for encoding/predicate/reserved-operand failure, `trap_detail(2)` for target/fall-through/termination failure, `trap_detail(3)` for call/return proof failure, or `trap_detail(4)` for loop proof failure. |
+| Table | 5 | 9 | Address of the first nonzero P3 table field: header word 5, header word 6, then entry-descriptor word 7 in entry-index order. | Observed little-endian 32-bit field value. |
+| Capability | 7 | 10 | Address of header word 9, an entry word 6, or an instruction, whichever is the first offending item under the order below. | `header_mask XOR (entry0_mask OR entry1_mask OR entry2_mask)` for a mask mismatch; `observed_mask AND NOT implemented_mask` for an unsupported-mask failure; `trap_detail(6)` for a class-2..6 instruction rejected by P3. |
+| CRC | 6 | 10 | Address of header word 11, `MC_IMAGE_ADDRESS+0x2c`. | `MC_ACTUAL_CRC`. |
+
+For header, range, and table categories, “first” means lowest bundle byte
+offset. For a range relation with more than one participating field, the
+lowest-addressed participant owns the diagnostic. Control-flow instructions
+are checked by entry index 0, 1, 2 and then increasing PC; a proof failure
+without a unique instruction uses that entry's entry PC, and the lower entry
+index wins a tie. For capability checking, header-mask mismatch precedes
+unsupported header-mask bits; header word 9 then precedes entry word 6 in entry
+order, which precedes instructions in that same entry/PC order. These locator
+rules apply after the already frozen category precedence and do not change
+which `MC_STATUS` bit wins.
+
 Exactly one validation-error bit is set on failure using precedence header,
 range, control-flow, table, capability, then CRC. Header/range/control-flow/
-table failures record first error code 9; capability/CRC failures record code
-10. An AXI read/protocol failure records code 15 and sets no validation-error
-bit. All failure classes set sticky first-error IRQ bit 8 under the global
-first-error rules. `MC_ACTUAL_CRC` is zero on early-validation or AXI failure;
+table failures use code 9; capability/CRC failures use code 10. An AXI
+read/protocol failure records code 15 and sets no validation-error bit. All
+failure classes set sticky first-error IRQ bit 8 under the global first-error
+rules. `MC_ACTUAL_CRC` is zero on early-validation or AXI failure;
 header/range failures are early. For an admitted range-safe image, the loader
 continues through the complete payload before reporting control-flow, table,
 capability, or CRC failure, and `MC_ACTUAL_CRC` contains the computed value,
@@ -1113,7 +1183,7 @@ formal checks do not replace commercial CDC/RDC signoff.
 
 Stages are APB/config 0, loader 1, descriptor/ring 2, DMA read 3, bitstream 4,
 entropy 5, reconstruction/transform 6, resampler/PCM 7, DMA write/stream 8, KWS
-frontend 9, KWS inference 10, and lifecycle 11.
+frontend 9, KWS inference 10, and sequencer-control/lifecycle 11.
 
 First error is immutable until W1C/reset. Later faults increment counters but
 do not overwrite code, stage, address/PC, detail, AXI response, or descriptor
