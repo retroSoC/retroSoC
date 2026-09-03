@@ -424,8 +424,8 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
 | `0x004` | `IP_VERSION` | RO | `0x00010000` | Public ABI V1.0. |
-| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; MVP has 0..8 set. |
-| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; MVP is 16/112/2/96. |
+| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; MVP has 0..8 set. |
+| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; MVP is 16/112/2/96. |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
 | `0x018` | `IRQ_STATE` | RW1C | `0` | Sticky events. |
@@ -450,11 +450,11 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x080` | `MC_IMAGE_ADDRESS` | RW idle/LP | `0` | 64-byte-aligned `APUMC` address. |
 | `0x084` | `MC_IMAGE_SIZE` | RW idle/LP | `0` | Exact nonzero bundle bytes. |
 | `0x088` | `MC_EXPECTED_CRC` | RW idle/LP | `0` | Expected payload CRC32, equal to header. |
-| `0x08c` | `MC_STATUS` | RO | `0` | Busy, valid, header/range/control-flow/table/CRC/capability errors. |
-| `0x090` | `MC_ABI` | RO | `0` | Loaded microcode ISA ABI. |
+| `0x08c` | `MC_STATUS` | RO | `0` | Busy 0, valid 1, header error 2, range error 3, control-flow error 4, table error 5, CRC error 6, capability error 7; `[31:8]` reserved zero. |
+| `0x090` | `MC_ABI` | RO | `0` | Loaded combined major/minor microcode ABI; V1.0 is `0x00010000`. |
 | `0x094` | `MC_BUILD_ID_LO` | RO | `0` | Build ID low. |
 | `0x098` | `MC_BUILD_ID_HI` | RO | `0` | Build ID high. |
-| `0x09c` | `MC_LOCK` | RO | `0` | Set automatically after successful load; hard reset clears. |
+| `0x09c` | `MC_LOCK` | RO | `0` | Lock bit 0 sets automatically after successful load; `[31:1]` reserved zero; hard reset clears. |
 | `0x0a0` | `MC_ACTUAL_CRC` | RO | `0` | Observed microcode payload CRC32. |
 | `0x0a4` | `MC_LOAD_COUNT` | RO | `0` | Saturating successful-load count. |
 | `0x100` | `JOB_CONTROL` | RW idle | `0` | Descriptor word0 operation/format/output/downmix/resample without OWN/IOC. |
@@ -561,9 +561,13 @@ Status reads and IRQ W1C do not clear them.
 Capability bits describe implemented hardware, not whether a codec job is
 currently legal. P2 reports `CAPABILITY0=0x00000018` for private DMA and ring,
 while format, streams, KWS, sequencer, and resampler bits remain zero;
-`CAPABILITY1=0`. A caller must require both the requested format/KWS bit and the
-necessary engine/model state before submitting. The P2 stream router is not
-advertised because its production endpoints remain unavailable. `ABI_DIGEST`
+`CAPABILITY1=0`. P3 reports `CAPABILITY0=0x00000098` for private DMA, ring, and
+the sequencer, and `CAPABILITY1=0x00000010` for the 16 KiB control store. P3
+continues to report zero for every format, stream, KWS, resampler, data-SRAM,
+channel, and sample-rate field. A caller must require both the requested
+format/KWS bit and the necessary engine/model state before submitting. The P2
+stream router remains unadvertised through P3 because its production endpoints
+remain unavailable. `ABI_DIGEST`
 is zero for every partial Phase1..7 build and becomes the nonzero CRC32 over
 the complete canonical V1 register/field/descriptor/`APUMC`/`APUM`/opcode/
 format/IRQ/error tables only in the Phase8 supported MVP. A zero digest means
@@ -574,39 +578,106 @@ atomically; software reads low then high.
 
 `MICROCODE_LOAD` and `MODEL_LOAD` require LP owner, quiesced/idle state,
 valid ACLs, and a clear corresponding lock; KWS must also be disabled for model
-load. `START_DIRECT` requires valid locked microcode and a validated direct
-job whose requested format/KWS capability is set. `RING_KICK` requires an
-enabled valid ring plus valid locked microcode and a supported operation at
-head. `ABORT` requires active work. `SOFT_RESET` and `CLEAR_COUNTERS` require
-idle. Therefore P2 continues to reject start and doorbell while accepting and
-validating their configuration registers. Violations return `PSLVERR` without
+load. P3 makes `MICROCODE_LOAD` legal under those conditions, but does not make
+any decode or stream transport public; `MODEL_LOAD` remains rejected until its
+later phase. `START_DIRECT` requires valid locked
+microcode and a validated direct job whose requested format/KWS capability is
+set. `RING_KICK` requires an enabled valid ring plus valid locked microcode and
+a supported operation at head. `ABORT` requires active work. `SOFT_RESET` and
+`CLEAR_COUNTERS` require idle. Therefore P2 and P3 reject public start and
+doorbell, and reject `STREAM_ROUTE` value 1 in either direction, while accepting
+and validating their configuration registers. The P3 dummy-program sequencer
+launch path is verification-only and creates no public command, descriptor
+operation, route, capability, or ABI. Violations return `PSLVERR` without
 changing state.
 
 ### `APUMC` microcode bundle ABI
 
-The bundle starts with a 64-byte header:
+All multibyte bundle fields and instructions are little-endian. The bundle
+starts with this exact 64-byte header:
 
 | Word | Field |
 | ---: | --- |
 | 0 | magic `0x41504d43` (`APMC`) |
-| 1 | header version `[31:16]`, required microcode ISA ABI `[15:0]`; V1 is `0x00010000` |
+| 1 | combined APUMC/ISA ABI: major `[31:16]`, minor `[15:0]`; P3 accepts exactly V1.0, `0x00010000` |
 | 2 | total bundle bytes |
 | 3 | instruction count, 1..2048 |
 | 4 | 64-byte-aligned instruction offset |
-| 5 | table/constant offset |
-| 6 | table/constant bytes, limited by local table region |
-| 7 | entry-descriptor offset |
+| 5 | table-payload offset, 4-byte aligned |
+| 6 | table-payload bytes |
+| 7 | entry-descriptor offset, 32-byte aligned |
 | 8 | entry count; V1 requires exactly 3 |
-| 9 | required hardware capability mask |
+| 9 | required primitive mask, equal to the OR of all entry primitive masks |
 | 10 | maximum declared local scratch bytes |
 | 11 | CRC32/ISO-HDLC over all bytes after the header |
-| 12-13 | 64-bit build ID |
+| 12 | build ID bits `[31:0]` |
+| 13 | build ID bits `[63:32]` |
 | 14-15 | reserved zero |
 
-Three 32-byte entry descriptors follow. Each contains format ID, entry PC,
-program first/last PC, scratch base/size, maximum loop count, maximum retired
-instructions per frame/block, and required primitive mask. IDs 0/1/2 are
-WAV/MP3/FLAC and must each appear exactly once.
+The header total must equal `MC_IMAGE_SIZE` and be at least 160 bytes. The
+instruction byte count is exactly instruction count multiplied by eight. The
+header, descriptor array, instruction array, and table payload must lie wholly
+inside the total, must not overlap, and address arithmetic must not wrap. A
+zero-byte table payload is represented by word 6 equal to zero; word 5 remains
+range checked and aligned but is otherwise ignored. Bytes not occupied by one
+of those regions are padding and must be zero. `MC_EXPECTED_CRC`, header
+word 11, and the CRC32/ISO-HDLC calculated over bundle bytes 64 through the end
+in increasing byte-address order must all agree. CRC parameters are reflected
+polynomial `0xedb88320` (normal form `0x04c11db7`), initial value
+`0xffffffff`, and final XOR `0xffffffff`. Any other word-1 value, reserved bit,
+entry count, alignment, size, range, overlap, or CRC relation is invalid.
+
+The descriptor array contains these exact three 32-byte, eight-word entries:
+
+| Word | Bit allocation and units |
+| ---: | --- |
+| 0 | format ID `[3:0]`; entry PC `[14:4]`; `[31:15]` reserved zero |
+| 1 | program-first PC `[10:0]`; `[15:11]` reserved zero; program-last PC `[26:16]`; `[31:27]` reserved zero |
+| 2 | scratch base byte offset `[16:0]`; `[31:17]` reserved zero |
+| 3 | scratch size in bytes `[16:0]`; `[31:17]` reserved zero |
+| 4 | maximum loop count `[15:0]`; `[31:16]` reserved zero |
+| 5 | maximum retired instructions per frame/block `[23:0]`; `[31:24]` reserved zero |
+| 6 | required primitive mask `[31:0]` |
+| 7 | table-relative byte offset `[15:0]`; table bytes `[31:16]` |
+
+PC fields are 64-bit instruction indices, not byte addresses. Descriptor array
+indices 0, 1, and 2 have format IDs 0, 1, and 2 for WAV, MP3, and FLAC
+respectively. For each entry, first PC is less than or equal to entry PC, entry
+PC is less than or equal to last PC, and last PC is less than the header
+instruction count. Scratch base and size are four-byte aligned, do not wrap,
+and lie within the advertised local data SRAM. Maximum
+loop count is 1..65535 and maximum retired count is nonzero. Table offset and
+size are four-byte aligned and select a non-wrapping range inside the global
+table payload. Word 10 of the header equals the greatest scratch end declared
+by any entry.
+
+P3 has no local data SRAM or primitive engine. It therefore accepts only
+scratch base/size zero, table offset/size zero, header table bytes zero, and
+header/entry primitive masks zero. Its required three entries may contain only
+class-0 control and class-1 scalar instructions. A nonzero scratch/table field,
+primitive mask, or class-2 through class-6 instruction fails load validation;
+P3 never publishes table bytes. P4 adds the local table/SRAM and primitive
+capabilities needed to admit those already frozen encodings. This restriction
+does not pull a codec, table engine, or P4 storage into P3.
+
+Primitive mask bits are fixed as follows. Bits 21..31 are reserved zero. Every
+instruction's listed primitive must appear in its entry mask, every entry mask
+must be a subset of the implemented mask, and the header mask is exactly the
+OR of the three entry masks.
+
+| Bit | Primitive | Bit | Primitive |
+| ---: | --- | ---: | --- |
+| 0 | bitstream reservoir | 11 | fixed predictor |
+| 1 | CRC | 12 | LPC |
+| 2 | Huffman | 13 | channel decorrelate |
+| 3 | Rice | 14 | resampler |
+| 4 | local memory/table | 15 | PCM pack |
+| 5 | local FIFO | 16 | DMA input |
+| 6 | requantize | 17 | DMA output |
+| 7 | stereo processing | 18 | stream output |
+| 8 | IMDCT6 | 19 | frame commit/job result |
+| 9 | IMDCT18 | 20 | event |
+| 10 | DCT32/polyphase |  |  |
 
 Instructions are little-endian 64-bit words:
 
@@ -617,9 +688,40 @@ Instructions are little-endian 64-bit words:
 +---------+---------+---------+---------+---------+---------+----------+-----------+
 ```
 
-Registers and predicates outside their defined range are illegal. Predicates
-are always, zero, nonzero, less-than, greater/equal, bitstream-end, FIFO-ready,
-and kernel-done. Opcode classes are:
+The sequencer has 16 32-bit GPRs, three comparison flags (`EQ`, signed `LT`,
+and unsigned `LT`), four 11-bit return-stack entries, and four loop slots. All
+are cleared at entry launch and on soft, resource, or hard reset. Every GPR is
+writable. GPR writes become visible to the next retired instruction. `CMP` is
+the only instruction that changes comparison flags. Arithmetic `ADD` and `SUB`
+wrap modulo 2^32; only `SAT` saturates. Variable shifts use the low five bits
+of `src1`. Default next PC is current PC plus one.
+
+Predicate encodings are exact:
+
+| `pred` | Condition |
+| ---: | --- |
+| 0 | always |
+| 1 | comparison `EQ` |
+| 2 | not comparison `EQ` |
+| 3 | comparison signed `LT` |
+| 4 | not comparison signed `LT` |
+| 5 | comparison unsigned `LT` |
+| 6 | not comparison unsigned `LT` |
+| 7 | descriptor input exhausted and bit reservoir empty |
+| 8 | input FIFO nonempty |
+| 9 | output FIFO not full |
+| 10 | fixed-kernel completion latch set |
+| 11 | no transport outstanding and the last transport command succeeded |
+| 12-15 | invalid |
+
+A false predicate is a one-cycle semantic NOP: it retires, increments the
+per-frame retired count, and advances PC by one without other side effects.
+Encoding and operand legality are still checked by the loader regardless of
+the predicate. Unless an opcode says otherwise, reserved operand fields must
+be zero. Register fields required by an opcode are 0..15; an opcode that
+produces multiple registers states the tighter `dst` limit.
+
+Opcode classes are:
 
 | Class | Operations |
 | ---: | --- |
@@ -645,27 +747,273 @@ Within each class, V1 opcode numbers are fixed:
 | 6 | 0 INPUT_REFILL, 1 OUTPUT_COMMIT, 2 OUTPUT_STREAM, 3 DMA_WAIT, 4 FRAME_COMMIT, 5 JOB_RESULT, 6 EVENT |
 
 Unallocated opcodes in every valid class are illegal. Class-specific use of
-`dst`, `src0`, `src1`, `aux`, and `immediate` is defined by the assembler and
-reference-interpreter tables covered by `ABI_DIGEST`; a use not declared by
-those frozen V1 tables is rejected rather than ignored.
+`dst`, `src0`, `src1`, `aux`, and `immediate` is frozen below. A use not listed
+is rejected rather than ignored.
 
-Only the dedicated loop-back instruction may branch backward. Its counter is
-nonzero, bounded by the entry manifest and hardware limit 65535, and decrements
-on every taken branch. Conditional jumps/calls are forward only. Call depth is
-four. Every entry must reach `END` or `TRAP` under the static verifier; runtime
-instruction and no-retirement watchdogs provide a second bound.
+#### Control and scalar semantics
 
-Local accesses are restricted to the entry scratch/table ranges. DMA commands
-refer only to the active validated descriptor; microcode never supplies a raw
-system address. Unknown opcode, PC/table/local range failure, stack error,
-undeclared primitive, excessive loop, nonzero reserved field, or CRC mismatch
-keeps `MC_STATUS.VALID` clear.
+| Class.op | Operands and execution |
+| --- | --- |
+| `0.0 NOP` | `dst/src0/src1/aux/immediate=0`; no effect. |
+| `0.1 END` | all operand fields zero; when true, stalls until accepted kernel/transport/writeback work has drained, then terminates and commits the latched `JOB_RESULT`; code zero is success and a nonzero code is terminal error. If none was latched, the committed result is zero/success. A drained engine/transport fault traps instead. |
+| `0.2 TRAP` | `dst/src0/src1/aux=0`; when true, traps with `immediate` as `ERROR_DETAIL`. |
+| `0.3 JUMP_FWD` | only `immediate[10:0]` is used and is 1..2047; target is `PC+1+delta` and must be inside the entry program range. |
+| `0.4 CALL_FWD` | same target rule as `JUMP_FWD`; pushes `PC+1`, then branches; a fifth nested call traps. |
+| `0.5 RET` | all operands zero and predicate must be always; pops and branches; empty stack traps. |
+| `0.6 LOOP_SETUP` | predicate always; `aux[1:0]` selects an inactive loop slot, `aux[7:2]=0`, count is `R[src0][15:0]`, and other fields are zero. Count must be nonzero and no greater than the descriptor maximum; the slot records count and `PC+1` as its loop-start PC. |
+| `0.7 LOOP_BACK` | predicate always; `aux[1:0]` selects the active slot, `immediate[10:0]` is a nonzero backward distance, and other fields are zero. `PC+1-distance` must equal the slot's recorded loop-start. Count greater than one is decremented and branches there; count one clears the slot and falls through. Inactive slot, underflow, or target mismatch/range failure traps. |
+| `0.8 WAIT` | predicate always; `aux` source 0 DMA, 1 kernel, 2 input-FIFO ready, 3 output-FIFO ready, 4 TX-stream accepted/idle, or 5 ring writeback complete; all other operands zero. It stalls without retiring until true. Other sources are invalid. |
+| `1.0 MOV` | `R[dst]=R[src0]`; `src1/aux/immediate=0`. |
+| `1.1 MOVI` | `R[dst]=immediate`; `src0/src1/aux=0`. |
+| `1.2 ADD` | `R[dst]=R[src0]+R[src1]` modulo 2^32; `aux/immediate=0`. |
+| `1.3 SUB` | `R[dst]=R[src0]-R[src1]` modulo 2^32; `aux/immediate=0`. |
+| `1.4 AND` | `R[dst]=R[src0]&R[src1]`; `aux/immediate=0`. |
+| `1.5 OR` | `R[dst]=R[src0]|R[src1]`; `aux/immediate=0`. |
+| `1.6 XOR` | `R[dst]=R[src0]^R[src1]`; `aux/immediate=0`. |
+| `1.7 SHL` | `R[dst]=R[src0]<<R[src1][4:0]`; `aux/immediate=0`. |
+| `1.8 SHR` | logical right shift by `R[src1][4:0]`; `aux/immediate=0`. |
+| `1.9 SAR` | signed arithmetic right shift by `R[src1][4:0]`; `aux/immediate=0`. |
+| `1.10 CMP` | sets `EQ`, signed `LT`, and unsigned `LT` from `R[src0]` versus `R[src1]`; `dst/aux/immediate=0`. |
+| `1.11 MIN` | `aux[0]` selects unsigned 0 or signed 1 minimum of `R[src0]` and `R[src1]`; `aux[7:1]=0`, `immediate=0`. |
+| `1.12 MAX` | `aux[0]` selects unsigned 0 or signed 1 maximum; `aux[7:1]=0`, `immediate=0`. |
+| `1.13 SAT` | saturates `R[src0]` to a width selected by `aux[4:0]`: 0 means 32, or literal 8, 16, or 24; `aux[5]` selects unsigned 0 or signed 1, `aux[7:6]=0`, `src1/immediate=0`; result is zero- or sign-extended into `R[dst]`. |
+
+`WAIT` source 0 is true when no private AXI command/beat/response is pending and
+the last DMA command succeeded; a latched DMA error traps instead. Source 1 is
+true when the kernel completion latch is set, source 2 when the input FIFO is
+nonempty, source 3 when the output FIFO is not full, source 4 when no
+microcode-issued stream payload remains unaccepted, and source 5 when no ring
+writeback remains pending. Source 0 or 5 requires the relevant DMA primitive,
+source 1 requires the entry's kernel primitive, sources 2/3 require local FIFO,
+and source 4 requires stream output. P3 zero-mask dummy programs therefore
+cannot contain `WAIT`.
+
+#### Bitstream, entropy, and local-data semantics
+
+| Class.op | Operands and execution |
+| --- | --- |
+| `2.0 REFILL` | `immediate[5:0]` is 1..32 required valid bits; stalls until present or descriptor EOF and writes the valid-bit count to `R[dst]`; EOF itself does not trap. Other operands are zero. |
+| `2.1 PEEK` | width is `immediate[5:0]`, 1..32; writes the next bits to `R[dst]` without consuming. Insufficient bits at EOF trap as truncated stream. Other operands are zero. |
+| `2.2 GET` | same as `PEEK`, then consumes the bits. |
+| `2.3 SKIP` | width is `immediate[5:0]`, 1..32; consumes without a result; insufficient bits trap. Other operands are zero. |
+| `2.4 ALIGN` | all operands zero; consumes 0..7 bits to reach the next input byte. |
+| `2.5 FRAME_SYNC` | byte-aligned scan for a masked 8..16-bit value: pattern `R[src0][15:0]`, mask `R[src1][15:0]`, width `aux[4:0]`, maximum scan bytes `immediate[15:0]` 1..65535; `R[dst]` receives skipped bytes and the matching byte remains at the head. No match before limit/EOF traps. Upper aux/immediate bits are zero. |
+| `2.6 CRC8` | updates accumulator `R[src0][7:0]` with byte `R[src1][7:0]` using the MSB-first polynomial `0x07`, initial/final XOR zero, and writes the eight-bit result to `R[dst]`; no reservoir side effect; `aux/immediate=0`. |
+| `2.7 CRC16` | updates accumulator `R[src0][15:0]` with byte `R[src1][7:0]` using the MSB-first polynomial `0x8005`, initial/final XOR zero, and writes the 16-bit result to `R[dst]`; no reservoir side effect; `aux/immediate=0`. |
+| `3.0 HUFF_SYMBOL` | canonical table starts at entry-table byte offset `R[src0]`, contains `R[src1]` entries, and has maximum code length `aux[4:0]` 1..24; consumes a code and writes its 16-bit symbol to `R[dst]`; `immediate=0`. |
+| `3.1 HUFF_PAIR` | same lookup fields as `HUFF_SYMBOL`; decoded symbol nibbles are written to `R[dst]` and `R[dst+1]`, so `dst<=14`. |
+| `3.2 HUFF_QUAD` | same lookup fields; four decoded one-bit values are written to `R[dst..dst+3]`, so `dst<=12`. |
+| `3.3 UNARY` | `aux[0]` selects zeros-until-one 0 or ones-until-zero 1; `immediate[15:0]` is a nonzero maximum; consumes the terminator and writes the run length to `R[dst]`; source fields and upper bits are zero. |
+| `3.4 RICE4` | parameter `k=R[src0][3:0]`; for `k<15`, reads zero-run quotient `q`, its one terminator, and `k` remainder bits, then maps `u=(q<<k)|remainder` to signed `(u>>1) ^ -(u&1)` in `R[dst]`. For `k=15`, reads `R[src1][5:0]` bits (1..32) as a two's-complement residual. `aux/immediate=0`. |
+| `3.5 RICE5` | as `RICE4`, with `k=R[src0][4:0]`, escape value 31, and the same 1..32-bit raw width. |
+| `3.6 SIGN_RESTORE` | base magnitude is `R[src0]` and linbits count is `R[src1][4:0]`; nonzero magnitude consumes linbits to form `magnitude+extra`, then one sign bit and writes its positive value for sign 0 or two's-complement negative for sign 1 to `R[dst]`. Zero magnitude consumes neither and returns zero; `aux/immediate=0`. |
+| `4.0 LD32` | loads `R[dst]` from descriptor scratch base plus `R[src0]+sign_extend(immediate[15:0])`; `src1/aux` and upper immediate bits are zero. |
+| `4.1 ST32` | stores `R[src1]` to the same scratch address calculation; `dst/aux` and upper immediate bits are zero. |
+| `4.2 TABLE8` | loads and zero-extends table element at entry table base plus `R[src0]+R[src1]`; `aux/immediate=0`. |
+| `4.3 TABLE16` | as `TABLE8`, with index `R[src1]*2`; address must be two-byte aligned. |
+| `4.4 TABLE32` | as `TABLE8`, with index `R[src1]*4`; address must be four-byte aligned. |
+| `4.5 FIFO_POP` | `aux=0` selects the input-byte FIFO; stalls while empty, writes a little-endian 32-bit word to `R[dst]` and literal valid-byte count 1..4 `[2:0]` plus last flag bit 8 to `R[dst+1]`; `dst<=14`, sources/immediate zero, and all other sideband bits are zero. |
+| `4.6 FIFO_PUSH` | `aux=0` selects the PCM-output FIFO; stalls while full, pushes little-endian `R[src0]` with literal valid-byte count 1..4 `[2:0]` and last flag bit 8 from `R[src1]`; other sideband bits must be zero and trap before push otherwise; `dst/immediate=0`. |
+
+A `PEEK` or `GET` result is right-aligned in the destination; the earliest bit
+in the MSB-first reservoir becomes result bit `width-1`. CRC results and Huffman
+symbols are zero-extended to 32 bits. A canonical Huffman table entry is one 32-bit word with symbol `[15:0]`, code
+length `[20:16]` in 1..24, and `[31:21]` zero, in canonical-code order. All
+entries are ordered first by increasing length and then increasing canonical
+code; the first code of each length is derived by the canonical prefix rule.
+An invalid prefix or exhausted bounded table traps as entropy/decode failure.
+All reservoir reads use the codec-defined most-significant-bit-first order.
+Local loads/stores are little-endian, must be naturally aligned, stay within
+the active entry scratch range, and must not access the read-only table range.
+Table reads must stay
+inside the active entry table slice. Range checks include the complete access
+and trap before any partial side effect.
+
+#### Kernel and transport semantics
+
+Only one fixed-kernel request may be outstanding. For class 5, the values in
+`R[src0]`, `R[src1]`, and pre-issue `R[dst]` are input, coefficient/state, and
+output byte offsets relative to the descriptor scratch base. The low 16 bits
+of `immediate` are a nonzero element/block count and upper bits are zero. Issue
+stalls until accepted, retires on acceptance, clears the kernel-done latch, and
+completion sets that latch and replaces `R[dst]` with the produced element
+count. `dst` is pending between acceptance and completion; any instruction
+that would read or overwrite a pending GPR stalls. An unsuccessful kernel
+completion traps at the next retirement boundary with error code 8, or code 22
+for reported FIFO/local/arithmetic overflow. A dynamic range/alignment failure
+traps before issue.
+
+| Class.op | `aux` and operation |
+| --- | --- |
+| `5.0 REQUANT` | shift `[4:0]`, round-to-nearest bit 5, output width `[7:6]`: 0 S16, 1 S24, 2 S32, 3 invalid. |
+| `5.1 STEREO` | mode `[1:0]`: independent, left-side, side-right, or mid-side; `[7:2]=0`. |
+| `5.2 IMDCT6` | six-point transform blocks; `aux=0`. |
+| `5.3 IMDCT18` | eighteen-point transform blocks; `aux=0`. |
+| `5.4 DCT32_POLY` | 32-point/polyphase subband blocks; `aux=0`. |
+| `5.5 FIXED` | predictor order `aux[2:0]` 0..4; `[7:3]=0`. |
+| `5.6 LPC` | predictor order `aux[5:0]` 1..32; `[7:6]=0`. |
+| `5.7 DECORRELATE` | channel mode `[1:0]` as `STEREO`; `[7:2]=0`. |
+| `5.8 RESAMPLE` | coefficient profile `aux[3:0]` 0..15; `[7:4]=0`; count is input frames. |
+| `5.9 PCM_PACK` | format `[1:0]`: 0 S16_LE, 1 S24_32LE, 2..3 invalid; mono-duplicate bit 2; `[7:3]=0`. |
+
+The class-5 opcode requires its correspondingly named primitive bit, except
+`STEREO` requires bit 7 and `DECORRELATE` requires bit 13. Class-2 operations
+require bitstream bit 0, with CRC operations additionally requiring bit 1.
+Huffman operations require bits 0 and 2; unary/Rice/sign operations require
+bits 0 and 3. Local accesses require bit 4 and FIFO accesses require bit 5.
+
+| Class.op | Operands and execution |
+| --- | --- |
+| `6.0 INPUT_REFILL` | scratch-relative destination byte offset `R[src0]`, nonzero requested bytes `R[src1]`, returned transferred bytes `R[dst]`; `aux/immediate=0`; uses only the active descriptor input cursor and requires primitive bit 16. |
+| `6.1 OUTPUT_COMMIT` | scratch-relative source byte offset `R[src0]`, nonzero bytes `R[src1]`, returned committed bytes `R[dst]`; `aux/immediate=0`; uses only the active descriptor memory-output cursor and requires bit 17. |
+| `6.2 OUTPUT_STREAM` | same operands as `OUTPUT_COMMIT`, through the active TX stream, and requires bit 18. |
+| `6.3 DMA_WAIT` | all operands except `dst` zero; waits for transport quiescence, writes zero on success, and traps on the latched transport error. The entry must declare every DMA/stream primitive that may be outstanding. |
+| `6.4 FRAME_COMMIT` | saturating-adds input-used `R[src0]` and output-produced `R[src1]` to job counters, saturating-increments frame count, then resets the per-frame retired counter; `dst/aux/immediate=0`; requires bit 19. |
+| `6.5 JOB_RESULT` | latches terminal code `R[src0][5:0]`, detail `R[src1]`, and stage `aux[3:0]` without terminating; `R[src0][31:6]`, `dst`, `immediate`, and `aux[7:4]` must be zero, and codes 23..63 trap as an illegal runtime value; requires bit 19. |
+| `6.6 EVENT` | sets sticky IRQ state selected by nonzero `immediate[10:0]`; only bits 6 and 7 may be one; all register/aux fields and upper immediate bits are zero; requires bit 20. |
+
+Transport operations never accept a raw system address from microcode. They
+advance only the active validated descriptor cursor and inherit its ACL,
+4 KiB-boundary, burst, timeout, abort, and first-error rules. At most one
+microcode read command and one write/stream command may be outstanding. An
+input/output opcode stalls until its command is admitted, retires on admission,
+marks `dst` pending, and writes the completed byte count on successful
+completion. A read or overwrite of that pending GPR stalls. `DMA_WAIT` and
+`FRAME_COMMIT` stall until every applicable pending command has completed; a
+latched failure traps instead. All these stalls count toward the no-retirement
+watchdog.
+
+#### Control-flow, watchdog, and trap rules
+
+Only `LOOP_BACK` may branch backward. The loader proves all direct targets,
+fall-throughs, returns, and loop-back targets remain inside the entry's
+inclusive program range; call depth never exceeds four; each loop slot has one
+setup and one matching back edge; loop intervals are disjoint or properly
+nested rather than crossing; and every reachable path reaches `END` or `TRAP`.
+Runtime rechecks dynamic return, loop, local, table, and transport ranges before
+side effects.
+
+The no-retirement counter clears on entry launch and each retired instruction,
+increments once per running cycle with no retirement, and traps after exactly
+`SEQUENCER_TIMEOUT` consecutive such cycles. A legal timeout value is nonzero.
+The per-frame counter starts at zero and counts every retired instruction,
+including predicate-false instructions. If the next instruction would exceed
+the descriptor maximum, it traps before instruction side effects; `END` may be
+the last allowed retirement. `FRAME_COMMIT` resets the counter only after its
+counter/result update commits. Falling through program-last PC or control-store
+word 2047 traps.
+
+An asynchronous P2 transport error is sampled at the next retirement boundary,
+then fetch and new commands stop while accepted transfers drain. Trap reason
+allocations are 1 illegal encoding, 2 PC/program range, 3 call stack, 4 loop,
+5 local/table range, 6 unavailable/undeclared primitive, 7 no-retirement
+watchdog, 8 per-frame retirement budget, 9 engine/transport fault, and 10 explicit
+`TRAP`; 0 and 11..255 are reserved. A trap sets sticky
+`STATUS.SEQUENCER_TRAPPED` and IRQ bit 10. The status clears at the next
+accepted entry launch or soft/resource/hard reset; IRQ bit 10 clears only by
+its W1C or reset. Reasons 1..8 and 10 record immutable first error code 11 at
+the applicable stage. Reason 9 retains the original code 8, 15..19, or 22,
+stage, AXI response, address, and detail while additionally setting sequencer
+trap state.
+If another global terminal condition and a sequencer trap coincide, hard reset,
+forced resource reset, AXI write, AXI read, DMA timeout, RX overrun, and TX
+underrun retain their existing order above the trap; the trap outranks forced
+abort. Every applicable sticky event still sets. A trap leaves a previously
+loaded `MC_STATUS.VALID` and `MC_LOCK` set because the bundle itself remains
+loaded. For reasons 1..8, `ERROR_ADDRESS=PC<<3` and `ERROR_DETAIL` contains
+reason `[7:0]`, PC `[18:8]`, class `[22:19]`, opcode `[26:23]`, and `aux[4:0]`
+`[31:27]`. Explicit `TRAP` instead copies its 32-bit immediate to
+`ERROR_DETAIL`.
+
+#### P3 loader, status, and control store
+
+`MC_STATUS` reset is zero. `BUSY` bit 0 is live, `VALID` bit 1 is retained
+state, bits 2..7 are sticky terminal validation errors, and bits 8..31 are
+reserved zero. `STATUS.MICROCODE_VALID` is an exact mirror of
+`MC_STATUS.VALID`. A legal load start clears `VALID`, bits 2..7, `MC_ABI`,
+build ID, and `MC_ACTUAL_CRC`, then sets `BUSY`. A prior successful load has
+automatically set `MC_LOCK`, so the clear-lock admission rule prevents it from
+being overwritten. Busy, valid, and terminal-error states are mutually
+exclusive.
+
+The loader first validates header/ranges sufficiently to bound DMA, may then
+write the private control store while the sequencer is held idle and `VALID=0`,
+and publishes the new image atomically only after full validation and CRC.
+Success in one PCLK edge clears `BUSY`, sets `VALID` and `MC_LOCK`, writes
+`MC_ABI=0x00010000`, build ID and actual CRC, saturating-increments
+`MC_LOAD_COUNT`, and sets sticky IRQ bit 3. Load-done IRQ and count occur only
+on successful publication; the count saturates at `0xffffffff`. A failed
+attempt clears `BUSY`, keeps `VALID` and lock clear, does not increment the
+count, does not set IRQ bit 3, and makes any partially written store
+inaccessible; the next attempt overwrites it.
+
+Load admission also requires 64-byte-aligned `MC_IMAGE_ADDRESS`, nonzero
+`MC_IMAGE_SIZE`, and a non-wrapping complete source range inside the local read
+ACL. Admission failure returns `PSLVERR` without setting `BUSY` or changing
+loader state. Once admitted, validation-error categories are exact: header is
+bad magic/ABI/header reserved/total/entry count; range is offset, alignment,
+overlap, instruction-count, PC, scratch, or arithmetic range; control-flow is
+instruction encoding, predicate, operand-reserved, branch/call/loop, or
+termination proof; table is global/entry table layout or content, including
+any nonzero P3 table field; capability is an unsupported primitive mask,
+class-2..6 instruction in P3, or header/entry mask mismatch; CRC is the final
+three-way CRC mismatch. A nonzero P3 scratch field is a range error.
+
+Exactly one validation-error bit is set on failure using precedence header,
+range, control-flow, table, capability, then CRC. Header/range/control-flow/
+table failures record first error code 9; capability/CRC failures record code
+10. An AXI read/protocol failure records code 15 and sets no validation-error
+bit. All failure classes set sticky first-error IRQ bit 8 under the global
+first-error rules. `MC_ACTUAL_CRC` is zero on early-validation or AXI failure;
+header/range failures are early. For an admitted range-safe image, the loader
+continues through the complete payload before reporting control-flow, table,
+capability, or CRC failure, and `MC_ACTUAL_CRC` contains the computed value,
+including on CRC mismatch.
+A later legal load start clears the loader error bits. Clearing `ERROR_STATUS`
+or IRQ state does not clear `MC_STATUS`. Idle `CLEAR_COUNTERS` clears
+`MC_LOAD_COUNT` but not valid, lock, ABI/build/CRC, or loader errors. Hardware
+terminal updates win any same-cycle software clear elsewhere.
+
+Hard/PCLK reset has highest precedence and clears all loader state, valid,
+lock, ABI/build/CRC, and load count without an IRQ. Resource reset is next: if
+a load is active, it blocks new DMA, drains accepted traffic, cancels the load,
+clears all `MC_STATUS` bits plus lock/ABI/build/CRC, leaves the count unchanged,
+suppresses load-done IRQ, and records forced lifecycle error 21 because the
+accepted load was canceled. Idle-only soft reset cannot be accepted while
+loader `BUSY`. A software abort accepted during a load uses the existing P2
+block-new-and-drain behavior, then cancels publication, clears all `MC_STATUS`
+bits plus lock/ABI/build/CRC, leaves the count unchanged, suppresses IRQ bit 3,
+and sets abort-done IRQ bit 5. A successfully drained abort records no first
+error; a drain fault or timeout uses the existing global error and precedence
+rules. When no load is active, soft or normally drained resource reset clears
+loader error bits while preserving valid, lock, ABI/build/CRC, and load count.
+Terminal precedence is hard reset, resource reset, accepted abort, load
+failure, then load success.
+
+The control store is exactly 2048x64 (16 KiB), has synchronous one-PCLK-cycle
+sequencer fetches, no architecturally visible reset contents, and is readable
+only when valid. With `HAVE_SRAM_MACRO=YES`, it is implemented as four
+`tc_sram_1024x32` instances: two depth banks by low/high 32-bit halves; loader
+writes the halves and sequencer fetches the combined word, with mutually
+exclusive loader/fetch ownership. If a selected PDK advertises the macro but
+cannot elaborate that mapping, elaboration must fail.
+
+With `HAVE_SRAM_MACRO=NO`, including the supported ICS55 profile,
+`apu_control_store` selects a portable inferred synchronous
+`logic [63:0] mem [0:2047]` implementation with identical admission, latency,
+byte/word ordering, and loader/fetch exclusion. It must not instantiate an
+unconnected macro wrapper. This path is functional and synthesis-compatibility
+evidence only; it is not an SRAM-macro, PPA, or tapeout claim.
 
 `apu-mcasm` is the single assembler/verifier and produces the binary, symbols,
 control-flow/loop report, primitive manifest, deterministic trace input, and
-ABI digest. A separate Python interpreter executes the exact ISA for BAM and
-microcode/RTL differential tests. Neither tool accepts C, ELF, RV32, dynamic
-linking, or runtime code generation.
+canonical ABI-input manifest. A separate Python interpreter executes the exact
+enabled ISA for BAM and microcode/RTL differential tests. In P3 both tools
+execute class 0/1 and reject class 2..6 under the P3 target capabilities; later
+phases extend execution without changing these encodings. No partial tool-table
+fingerprint is exposed as the public `ABI_DIGEST`, which remains zero through
+P7. Neither tool accepts C, ELF, RV32, dynamic linking, or runtime code
+generation.
 
 ### `APUM` KWS model ABI
 
@@ -1023,13 +1371,21 @@ for P2 completion.
 ID: `APU-P3`.
 
 Scope: `apu-mcasm`, reference interpreter, ISA tables, `APUMC` loader,
-2048x64 control store, scalar/loop/call state, local-memory protection,
-watchdog/traps, loader lock, ABI parity, co-simulation, and formal.
+2048x64 control store, scalar/loop/call state, load-time local/table protection,
+watchdog/traps, loader lock/atomic publication, ABI parity, co-simulation, and
+formal. Class-2 through class-6 execution, codec tables, and data SRAM remain
+outside this phase.
 
-Dependencies: Phase2 and qualified 4 KiB SRAM abstraction.
+Dependencies: Phase2, the Common `tc_sram_1024x32` wrapper for macro profiles,
+and the frozen inferred-control-store fallback for `HAVE_SRAM_MACRO=NO`.
 
-Public changes: implements the frozen microcode loader/ISA/status ABI. It adds
-no processor, system hart, new clock domain, or arbitrary code execution.
+Public changes: implements the frozen microcode loader, class-0/class-1
+sequencer, `MC_STATUS`, `MC_ABI`, build/CRC/lock/count, IRQ bit 3, and exact
+P3 values `CAPABILITY0=0x00000098` and `CAPABILITY1=0x00000010`.
+`ABI_DIGEST` remains zero. Public direct/ring commands and APU stream routes
+remain fail-closed, and the verification-only dummy launch adds no public ABI.
+It adds no processor, system hart, new clock domain, or arbitrary code
+execution.
 
 Validation:
 
@@ -1037,13 +1393,23 @@ Validation:
 python3 -m pytest -q
 make CONFIG=configs/ci/ihp130.mk formal
 make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR rtl-lint
-make CONFIG=configs/ci/ihp130.mk APP=ci_smoke SIMU=VERILATOR firmware sim
+make CONFIG=configs/ci/ihp130.mk APP=ci_smoke LINK_TYPE=ld2_all_sram SOC_SIM_TIME=360 VERILATOR_SIM_ARGS=--fast-flash SIMU=VERILATOR HAVE_SVA=YES firmware sim
 make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/ics55.mk SYNTH=YOSYS synth
 ```
 
-Completion: valid microcode runs deterministic dummy programs; all malformed
-ISA/control-flow/range/CRC/capability/watchdog cases fail closed; control-store
-mapping and size are reviewed.
+The 360-second command with `--fast-flash` is the supported P3 SoC-level
+Verilator acceptance command; fast flash changes only boot/XPI timing and does
+not bypass APU logic. Directed loader/sequencer tests remain the functional
+evidence for the P3 paths.
+
+Completion: all three required zero-table/zero-primitive entries load
+atomically and deterministic class-0/class-1 dummy programs execute through
+the verification-only launch. Every malformed header/descriptor/ISA/control-
+flow/range/table/CRC/capability/watchdog case fails closed with the frozen
+status, IRQ, count, and reset result. Macro and inferred control-store mappings,
+including ICS55 elaboration/synthesis, are reviewed. No P4..P7 engine is
+required for P3 completion.
 
 ### Phase 4 - Shared Bitstream, Entropy, and DSP Primitive Engines
 
