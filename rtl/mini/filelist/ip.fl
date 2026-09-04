@@ -131,6 +131,14 @@
 /ip/multimedia/apu_stream_router.sv
 /ip/multimedia/apu_control_store.sv
 /ip/multimedia/apu_microcode_loader.sv
+/ip/multimedia/apu_local_sram.sv
+/ip/multimedia/apu_bitstream_engine.sv
+/ip/multimedia/apu_entropy_engine.sv
+/ip/multimedia/apu_reconstruction_engine.sv
+/ip/multimedia/apu_transform_engine.sv
+/ip/multimedia/apu_resampler.sv
+/ip/multimedia/apu_kernel_engine.sv
+/ip/multimedia/apu_primitive_dispatcher.sv
 /ip/multimedia/apu_codec_sequencer.sv
 /ip/multimedia/apu_reg.sv
 /ip/multimedia/apb4_apu.sv

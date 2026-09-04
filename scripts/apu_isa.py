@@ -17,6 +17,9 @@ APUMC_ENTRY_COUNT = 3
 APUMC_INSTRUCTION_OFFSET = 192
 APUMC_MAX_INSTRUCTIONS = 2048
 APUMC_P3_CAPABILITY_MASK = 0
+APUMC_P4_CAPABILITY_MASK = 0x0000FFFF
+APUMC_P4_TABLE_SCRATCH_BYTES = 0x6000
+APUMC_TARGETS = ("p3", "p4")
 
 
 class InstructionClass(IntEnum):
@@ -56,6 +59,50 @@ class ScalarOpcode(IntEnum):
     MIN = 11
     MAX = 12
     SAT = 13
+
+
+class BitstreamOpcode(IntEnum):
+    REFILL = 0
+    PEEK = 1
+    GET = 2
+    SKIP = 3
+    ALIGN = 4
+    FRAME_SYNC = 5
+    CRC8 = 6
+    CRC16 = 7
+
+
+class EntropyOpcode(IntEnum):
+    HUFF_SYMBOL = 0
+    HUFF_PAIR = 1
+    HUFF_QUAD = 2
+    UNARY = 3
+    RICE4 = 4
+    RICE5 = 5
+    SIGN_RESTORE = 6
+
+
+class LocalOpcode(IntEnum):
+    LD32 = 0
+    ST32 = 1
+    TABLE8 = 2
+    TABLE16 = 3
+    TABLE32 = 4
+    FIFO_POP = 5
+    FIFO_PUSH = 6
+
+
+class KernelOpcode(IntEnum):
+    REQUANT = 0
+    STEREO = 1
+    IMDCT6 = 2
+    IMDCT18 = 3
+    DCT32_POLY = 4
+    FIXED = 5
+    LPC = 6
+    DECORRELATE = 7
+    RESAMPLE = 8
+    PCM_PACK = 9
 
 
 PREDICATES = {
@@ -184,6 +231,9 @@ def abi_manifest() -> dict[str, object]:
             "table": 7,
         },
         "p3_implemented_primitive_mask": APUMC_P3_CAPABILITY_MASK,
+        "p4_implemented_primitive_mask": APUMC_P4_CAPABILITY_MASK,
+        "p4_local_data_bytes": 0x1C000,
+        "p4_local_table_scratch_bytes": APUMC_P4_TABLE_SCRATCH_BYTES,
     }
 
 
@@ -281,9 +331,36 @@ def _require_zero(instruction: Instruction, names: Iterable[str]) -> None:
             raise ValueError(f"{name} is reserved for this opcode")
 
 
-def validate_p3_instruction(instruction: Instruction) -> None:
-    """Validate one instruction against the P3 class-0/class-1 subset."""
+def _target_mask(target: str) -> int:
+    if target not in APUMC_TARGETS:
+        raise ValueError(f"unknown APU target {target}")
+    return APUMC_P3_CAPABILITY_MASK if target == "p3" else APUMC_P4_CAPABILITY_MASK
 
+
+def instruction_required_mask(instruction: Instruction) -> int:
+    instruction_class = instruction.instruction_class
+    opcode = instruction.opcode
+    if instruction_class == InstructionClass.CONTROL and opcode == ControlOpcode.WAIT:
+        if instruction.aux == 1:
+            return 0x0000FFC0
+        if instruction.aux in (2, 3):
+            return 1 << 5
+        return 0
+    if instruction_class == InstructionClass.BITSTREAM:
+        return (1 << 0) | ((1 << 1) if opcode in (6, 7) else 0)
+    if instruction_class == InstructionClass.ENTROPY:
+        return (1 << 0) | (1 << (2 if opcode <= 2 else 3))
+    if instruction_class == InstructionClass.LOCAL:
+        return 1 << (5 if opcode in (5, 6) else 4)
+    if instruction_class == InstructionClass.KERNEL:
+        return 1 << (opcode + 6)
+    return 0
+
+
+def validate_instruction(instruction: Instruction, target: str = "p3") -> None:
+    """Validate one frozen V1 instruction for the selected implementation target."""
+
+    target_mask = _target_mask(target)
     if instruction.predicate > 11:
         raise ValueError("predicate is reserved")
     if instruction.instruction_class == InstructionClass.CONTROL:
@@ -318,45 +395,136 @@ def validate_p3_instruction(instruction: Instruction) -> None:
             _require_zero(instruction, ("dst", "src0", "src1", "immediate"))
             if instruction.predicate != 0 or instruction.aux > 5:
                 raise ValueError("WAIT encoding is invalid")
-            raise ValueError("WAIT requires a primitive unavailable in P3")
+            if target == "p3" or instruction.aux not in (1, 2, 3):
+                raise ValueError(f"WAIT source is unavailable in {target.upper()}")
         return
 
-    if instruction.instruction_class != InstructionClass.SCALAR:
-        if instruction.instruction_class <= 6:
-            raise ValueError("instruction class is unavailable in P3")
+    if instruction.instruction_class == InstructionClass.SCALAR:
+        if instruction.opcode > ScalarOpcode.SAT:
+            raise ValueError("scalar opcode is unallocated")
+        opcode = ScalarOpcode(instruction.opcode)
+        if opcode == ScalarOpcode.MOV:
+            _require_zero(instruction, ("src1", "aux", "immediate"))
+        elif opcode == ScalarOpcode.MOVI:
+            _require_zero(instruction, ("src0", "src1", "aux"))
+        elif opcode in (
+            ScalarOpcode.ADD,
+            ScalarOpcode.SUB,
+            ScalarOpcode.AND,
+            ScalarOpcode.OR,
+            ScalarOpcode.XOR,
+            ScalarOpcode.SHL,
+            ScalarOpcode.SHR,
+            ScalarOpcode.SAR,
+        ):
+            _require_zero(instruction, ("aux", "immediate"))
+        elif opcode == ScalarOpcode.CMP:
+            _require_zero(instruction, ("dst", "aux", "immediate"))
+        elif opcode in (ScalarOpcode.MIN, ScalarOpcode.MAX):
+            _require_zero(instruction, ("immediate",))
+            if instruction.aux > 1:
+                raise ValueError("MIN/MAX aux must select unsigned or signed")
+        elif opcode == ScalarOpcode.SAT:
+            _require_zero(instruction, ("src1", "immediate"))
+            if instruction.aux & 0xC0 or (instruction.aux & 0x1F) not in (0, 8, 16, 24):
+                raise ValueError("SAT width/sign encoding is invalid")
+        return
+
+    if instruction.instruction_class > InstructionClass.TRANSPORT:
         raise ValueError("instruction class is invalid in V1")
-    if instruction.opcode > ScalarOpcode.SAT:
-        raise ValueError("scalar opcode is unallocated")
+    if target == "p3" or instruction.instruction_class == InstructionClass.TRANSPORT:
+        raise ValueError(f"instruction class is unavailable in {target.upper()}")
 
-    opcode = ScalarOpcode(instruction.opcode)
-    if opcode == ScalarOpcode.MOV:
-        _require_zero(instruction, ("src1", "aux", "immediate"))
-    elif opcode == ScalarOpcode.MOVI:
-        _require_zero(instruction, ("src0", "src1", "aux"))
-    elif opcode in (
-        ScalarOpcode.ADD,
-        ScalarOpcode.SUB,
-        ScalarOpcode.AND,
-        ScalarOpcode.OR,
-        ScalarOpcode.XOR,
-        ScalarOpcode.SHL,
-        ScalarOpcode.SHR,
-        ScalarOpcode.SAR,
-    ):
-        _require_zero(instruction, ("aux", "immediate"))
-    elif opcode == ScalarOpcode.CMP:
-        _require_zero(instruction, ("dst", "aux", "immediate"))
-    elif opcode in (ScalarOpcode.MIN, ScalarOpcode.MAX):
-        _require_zero(instruction, ("immediate",))
-        if instruction.aux > 1:
-            raise ValueError("MIN/MAX aux must select unsigned or signed")
-    elif opcode == ScalarOpcode.SAT:
-        _require_zero(instruction, ("src1", "immediate"))
-        if instruction.aux & 0xC0 or (instruction.aux & 0x1F) not in (0, 8, 16, 24):
-            raise ValueError("SAT width/sign encoding is invalid")
+    if instruction.instruction_class == InstructionClass.BITSTREAM:
+        if instruction.opcode > BitstreamOpcode.CRC16:
+            raise ValueError("bitstream opcode is unallocated")
+        opcode = BitstreamOpcode(instruction.opcode)
+        if opcode in (BitstreamOpcode.REFILL, BitstreamOpcode.PEEK, BitstreamOpcode.GET):
+            _require_zero(instruction, ("src0", "src1", "aux"))
+            if not 1 <= instruction.immediate <= 32:
+                raise ValueError("bit width must be 1..32")
+        elif opcode == BitstreamOpcode.SKIP:
+            _require_zero(instruction, ("dst", "src0", "src1", "aux"))
+            if not 1 <= instruction.immediate <= 32:
+                raise ValueError("bit width must be 1..32")
+        elif opcode == BitstreamOpcode.ALIGN:
+            _require_zero(instruction, ("dst", "src0", "src1", "aux", "immediate"))
+        elif opcode == BitstreamOpcode.FRAME_SYNC:
+            if not 8 <= instruction.aux <= 16 or not 1 <= instruction.immediate <= 0xFFFF:
+                raise ValueError("FRAME_SYNC width/limit is invalid")
+        else:
+            _require_zero(instruction, ("aux", "immediate"))
+    elif instruction.instruction_class == InstructionClass.ENTROPY:
+        if instruction.opcode > EntropyOpcode.SIGN_RESTORE:
+            raise ValueError("entropy opcode is unallocated")
+        opcode = EntropyOpcode(instruction.opcode)
+        if opcode <= EntropyOpcode.HUFF_QUAD:
+            if not 1 <= instruction.aux <= 24:
+                raise ValueError("Huffman maximum length must be 1..24")
+            if opcode == EntropyOpcode.HUFF_PAIR and instruction.dst > 14:
+                raise ValueError("HUFF_PAIR destination must be 0..14")
+            if opcode == EntropyOpcode.HUFF_QUAD and instruction.dst > 12:
+                raise ValueError("HUFF_QUAD destination must be 0..12")
+            _require_zero(instruction, ("immediate",))
+        elif opcode == EntropyOpcode.UNARY:
+            _require_zero(instruction, ("src0", "src1"))
+            if instruction.aux > 1 or not 1 <= instruction.immediate <= 0xFFFF:
+                raise ValueError("UNARY polarity/maximum is invalid")
+        else:
+            _require_zero(instruction, ("aux", "immediate"))
+    elif instruction.instruction_class == InstructionClass.LOCAL:
+        if instruction.opcode > LocalOpcode.FIFO_PUSH:
+            raise ValueError("local opcode is unallocated")
+        opcode = LocalOpcode(instruction.opcode)
+        if opcode == LocalOpcode.LD32:
+            _require_zero(instruction, ("src1", "aux"))
+            if instruction.immediate >> 16:
+                raise ValueError("LD32 immediate must fit 16 bits")
+        elif opcode == LocalOpcode.ST32:
+            _require_zero(instruction, ("dst", "aux"))
+            if instruction.immediate >> 16:
+                raise ValueError("ST32 immediate must fit 16 bits")
+        elif opcode in (LocalOpcode.TABLE8, LocalOpcode.TABLE16, LocalOpcode.TABLE32):
+            _require_zero(instruction, ("aux", "immediate"))
+        elif opcode == LocalOpcode.FIFO_POP:
+            _require_zero(instruction, ("src0", "src1", "aux", "immediate"))
+            if instruction.dst > 14:
+                raise ValueError("FIFO_POP destination must be 0..14")
+        else:
+            _require_zero(instruction, ("dst", "aux", "immediate"))
+    elif instruction.instruction_class == InstructionClass.KERNEL:
+        if instruction.opcode > KernelOpcode.PCM_PACK or not 1 <= instruction.immediate <= 0xFFFF:
+            raise ValueError("kernel opcode/count is invalid")
+        opcode = KernelOpcode(instruction.opcode)
+        if opcode == KernelOpcode.REQUANT and (instruction.aux >> 6) == 3:
+            raise ValueError("REQUANT output width is invalid")
+        if opcode in (KernelOpcode.STEREO, KernelOpcode.DECORRELATE) and instruction.aux >> 2:
+            raise ValueError("stereo mode is invalid")
+        if opcode in (KernelOpcode.IMDCT6, KernelOpcode.IMDCT18, KernelOpcode.DCT32_POLY) and instruction.aux:
+            raise ValueError("transform aux is reserved")
+        if opcode == KernelOpcode.FIXED and instruction.aux > 4:
+            raise ValueError("fixed predictor order is invalid")
+        if opcode == KernelOpcode.LPC and not 1 <= instruction.aux <= 32:
+            raise ValueError("LPC order is invalid")
+        if opcode == KernelOpcode.RESAMPLE and instruction.aux > 15:
+            raise ValueError("resampler profile is invalid")
+        if opcode == KernelOpcode.PCM_PACK and (instruction.aux >> 3 or (instruction.aux & 3) > 1):
+            raise ValueError("PCM pack format is invalid")
+
+    if instruction_required_mask(instruction) & ~target_mask:
+        raise ValueError(f"required primitive is unavailable in {target.upper()}")
 
 
-def validate_entry(entry: Entry, instruction_count: int) -> None:
+def validate_p3_instruction(instruction: Instruction) -> None:
+    validate_instruction(instruction, "p3")
+
+
+def validate_p4_instruction(instruction: Instruction) -> None:
+    validate_instruction(instruction, "p4")
+
+
+def validate_entry(entry: Entry, instruction_count: int, target: str = "p3",
+                   table_payload_bytes: int = 0) -> None:
     if entry.format_id not in range(APUMC_ENTRY_COUNT):
         raise ValueError("entry format must be 0, 1, or 2")
     if not (0 <= entry.first_pc <= entry.entry_pc <= entry.last_pc < instruction_count):
@@ -365,7 +533,7 @@ def validate_entry(entry: Entry, instruction_count: int) -> None:
         raise ValueError("maximum loop count must be 1..65535")
     if not 1 <= entry.max_retired <= 0xFFFFFF:
         raise ValueError("maximum retired count must be 1..16777215")
-    if any(
+    if target == "p3" and any(
         (
             entry.scratch_base,
             entry.scratch_bytes,
@@ -375,9 +543,25 @@ def validate_entry(entry: Entry, instruction_count: int) -> None:
         )
     ):
         raise ValueError("P3 entries cannot use scratch, table, or primitives")
+    if target == "p4":
+        if entry.primitive_mask & ~APUMC_P4_CAPABILITY_MASK:
+            raise ValueError("P4 entry requires an unavailable primitive")
+        if entry.scratch_base & 3 or entry.scratch_bytes & 3:
+            raise ValueError("scratch range must be four-byte aligned")
+        scratch_end = entry.scratch_base + entry.scratch_bytes
+        if scratch_end > APUMC_P4_TABLE_SCRATCH_BYTES:
+            raise ValueError("scratch range exceeds the P4 codec workspace")
+        if entry.scratch_bytes and entry.scratch_base < table_payload_bytes:
+            raise ValueError("scratch range overlaps the active table payload")
+        if entry.table_offset & 3 or entry.table_bytes & 3:
+            raise ValueError("entry table range must be four-byte aligned")
+        if entry.table_offset + entry.table_bytes > table_payload_bytes:
+            raise ValueError("entry table range exceeds the active table payload")
 
 
-def control_flow_report(instructions: list[Instruction], entry: Entry) -> dict[str, object]:
+def control_flow_report(
+    instructions: list[Instruction], entry: Entry, target: str = "p3"
+) -> dict[str, object]:
     """Prove bounded V1 control flow and return its deterministic report."""
 
     loop_pairs: dict[int, int] = {}
@@ -389,8 +573,8 @@ def control_flow_report(instructions: list[Instruction], entry: Entry) -> dict[s
             continue
         opcode = ControlOpcode(instruction.opcode)
         if opcode in (ControlOpcode.JUMP_FWD, ControlOpcode.CALL_FWD):
-            target = pc + 1 + instruction.immediate
-            if target > entry.last_pc:
+            branch_target = pc + 1 + instruction.immediate
+            if branch_target > entry.last_pc:
                 raise ValueError(f"entry {entry.format_id} branch at PC {pc} leaves its range")
         elif opcode == ControlOpcode.LOOP_SETUP:
             slot = instruction.aux & 3
@@ -445,16 +629,16 @@ def control_flow_report(instructions: list[Instruction], entry: Entry) -> dict[s
             if opcode in (ControlOpcode.END, ControlOpcode.TRAP):
                 terminals.add(pc)
             elif opcode == ControlOpcode.JUMP_FWD:
-                target = pc + 1 + instruction.immediate
-                successors.append((target, returns, loops))
-                edges.add((pc, target, "jump_true"))
+                branch_target = pc + 1 + instruction.immediate
+                successors.append((branch_target, returns, loops))
+                edges.add((pc, branch_target, "jump_true"))
             elif opcode == ControlOpcode.CALL_FWD:
                 if len(returns) == 4:
                     raise ValueError(f"entry {entry.format_id} can exceed four nested calls")
-                target = pc + 1 + instruction.immediate
-                successors.append((target, (*returns, pc + 1), loops))
+                branch_target = pc + 1 + instruction.immediate
+                successors.append((branch_target, (*returns, pc + 1), loops))
                 maximum_call_depth = max(maximum_call_depth, len(returns) + 1)
-                edges.add((pc, target, "call_true"))
+                edges.add((pc, branch_target, "call_true"))
             elif opcode == ControlOpcode.RET:
                 if not returns:
                     raise ValueError(f"entry {entry.format_id} can return with an empty stack")
@@ -481,8 +665,11 @@ def control_flow_report(instructions: list[Instruction], entry: Entry) -> dict[s
             elif opcode == ControlOpcode.NOP:
                 successors.append((pc + 1, returns, loops))
                 edges.add((pc, pc + 1, "fallthrough"))
+            elif opcode == ControlOpcode.WAIT and target == "p4":
+                successors.append((pc + 1, returns, loops))
+                edges.add((pc, pc + 1, "wait_ready"))
             else:
-                raise ValueError("WAIT requires a primitive unavailable in P3")
+                raise ValueError(f"WAIT requires a primitive unavailable in {target.upper()}")
         pending.extend(successors)
         if len(visited) > APUMC_MAX_INSTRUCTIONS * 64:
             raise ValueError(f"entry {entry.format_id} control-flow proof exceeded its bound")
@@ -510,32 +697,64 @@ def control_flow_report(instructions: list[Instruction], entry: Entry) -> dict[s
     }
 
 
-def validate_control_flow(instructions: list[Instruction], entry: Entry) -> None:
+def validate_control_flow(
+    instructions: list[Instruction], entry: Entry, target: str = "p3"
+) -> None:
     """Prove bounded V1 control flow for one entry descriptor."""
 
-    control_flow_report(instructions, entry)
+    control_flow_report(instructions, entry, target)
 
 
-def build_apumc(instructions: list[Instruction], entries: list[Entry], build_id: int = 0) -> bytes:
+def build_apumc(
+    instructions: list[Instruction],
+    entries: list[Entry],
+    build_id: int = 0,
+    *,
+    target: str = "p3",
+    table_payload: bytes = b"",
+) -> bytes:
+    target_mask = _target_mask(target)
     if not 1 <= len(instructions) <= APUMC_MAX_INSTRUCTIONS:
         raise ValueError("instruction count must be 1..2048")
+    if len(table_payload) & 3 or len(table_payload) > APUMC_P4_TABLE_SCRATCH_BYTES:
+        raise ValueError("table payload must be four-byte aligned and at most 24 KiB")
+    if target == "p3" and table_payload:
+        raise ValueError("P3 does not admit a table payload")
     if len(entries) != APUMC_ENTRY_COUNT:
         raise ValueError("APUMC V1 requires exactly three entries")
     for index, entry in enumerate(entries):
         if entry.format_id != index:
             raise ValueError("entry descriptor order must be WAV, MP3, FLAC")
-        validate_entry(entry, len(instructions))
+        validate_entry(entry, len(instructions), target, len(table_payload))
     for instruction in instructions:
-        validate_p3_instruction(instruction)
+        validate_instruction(instruction, target)
     for entry in entries:
-        validate_control_flow(instructions, entry)
+        validate_control_flow(instructions, entry, target)
+        for pc in range(entry.first_pc, entry.last_pc + 1):
+            required = instruction_required_mask(instructions[pc])
+            if instructions[pc].instruction_class == InstructionClass.CONTROL and required:
+                if instructions[pc].aux == 1:
+                    if not (entry.primitive_mask & required):
+                        raise ValueError("kernel WAIT requires a class-5 primitive")
+                elif required & ~entry.primitive_mask:
+                    raise ValueError("FIFO WAIT requires the local-FIFO primitive")
+            elif required & ~entry.primitive_mask:
+                raise ValueError(f"entry {entry.format_id} omits an instruction primitive")
 
     descriptor = b"".join(struct.pack("<8I", *entry.words()) for entry in entries)
     padding = bytes(APUMC_INSTRUCTION_OFFSET - APUMC_HEADER_BYTES - len(descriptor))
     encoded = b"".join(struct.pack("<Q", instruction.encode()) for instruction in instructions)
-    payload = descriptor + padding + encoded
+    table_offset = APUMC_INSTRUCTION_OFFSET + len(encoded) if table_payload else 0
+    payload = descriptor + padding + encoded + table_payload
     total_bytes = APUMC_HEADER_BYTES + len(payload)
     crc = crc32_iso_hdlc(payload)
+    required_mask = 0
+    scratch_end = 0
+    for entry in entries:
+        required_mask |= entry.primitive_mask
+        scratch_end = max(scratch_end, entry.scratch_base + entry.scratch_bytes)
+    if required_mask & ~target_mask:
+        raise ValueError(f"bundle requires a primitive unavailable in {target.upper()}")
     header = struct.pack(
         "<16I",
         APUMC_MAGIC,
@@ -543,12 +762,12 @@ def build_apumc(instructions: list[Instruction], entries: list[Entry], build_id:
         total_bytes,
         len(instructions),
         APUMC_INSTRUCTION_OFFSET,
-        0,
-        0,
+        table_offset,
+        len(table_payload),
         APUMC_HEADER_BYTES,
         APUMC_ENTRY_COUNT,
-        APUMC_P3_CAPABILITY_MASK,
-        0,
+        required_mask,
+        scratch_end,
         crc,
         build_id & 0xFFFFFFFF,
         (build_id >> 32) & 0xFFFFFFFF,
@@ -558,7 +777,10 @@ def build_apumc(instructions: list[Instruction], entries: list[Entry], build_id:
     return header + payload
 
 
-def parse_apumc(bundle: bytes) -> tuple[list[Instruction], list[Entry], tuple[int, ...]]:
+def parse_apumc(
+    bundle: bytes, target: str = "p3"
+) -> tuple[list[Instruction], list[Entry], tuple[int, ...]]:
+    target_mask = _target_mask(target)
     if len(bundle) < APUMC_HEADER_BYTES:
         raise ValueError("bundle is smaller than the APUMC header")
     header = struct.unpack_from("<16I", bundle)
@@ -582,7 +804,7 @@ def parse_apumc(bundle: bytes) -> tuple[list[Instruction], list[Entry], tuple[in
     entry_end = entry_offset + APUMC_ENTRY_COUNT * APUMC_ENTRY_BYTES
     if not 1 <= instruction_count <= APUMC_MAX_INSTRUCTIONS:
         raise ValueError("APUMC instruction count is invalid")
-    if (
+    common_range_error = (
         instruction_offset < APUMC_HEADER_BYTES
         or instruction_offset % 64 != 0
         or instruction_end > len(bundle)
@@ -591,28 +813,40 @@ def parse_apumc(bundle: bytes) -> tuple[list[Instruction], list[Entry], tuple[in
         or entry_end > len(bundle)
         or not (instruction_end <= entry_offset or entry_end <= instruction_offset)
         or table_offset % 4 != 0
-        or table_bytes != 0
-        or table_offset != 0
-        or header[9] != 0
-        or header[10] != 0
-    ):
+    )
+    table_end = table_offset + table_bytes
+    if common_range_error:
+        raise ValueError("APUMC range fields are invalid")
+    if target == "p3" and (table_bytes or table_offset or header[9] or header[10]):
         raise ValueError("APUMC range or P3 capability fields are invalid")
+    if target == "p4" and (
+        table_bytes > APUMC_P4_TABLE_SCRATCH_BYTES
+        or table_bytes & 3
+        or table_offset > len(bundle)
+        or (table_bytes and (table_offset < APUMC_HEADER_BYTES or table_end > len(bundle)))
+        or (table_bytes and not (
+            (table_end <= instruction_offset or table_offset >= instruction_end)
+            and (table_end <= entry_offset or table_offset >= entry_end)
+        ))
+        or header[9] & ~target_mask
+        or header[10] > APUMC_P4_TABLE_SCRATCH_BYTES
+    ):
+        raise ValueError("APUMC range or P4 capability fields are invalid")
     if crc32_iso_hdlc(bundle[APUMC_HEADER_BYTES:]) != header[11]:
         raise ValueError("APUMC CRC mismatch")
     entries = []
     for index in range(APUMC_ENTRY_COUNT):
         words = struct.unpack_from("<8I", bundle, entry_offset + index * APUMC_ENTRY_BYTES)
-        if (
+        reserved_error = (
             words[0] >> 15
             or (words[1] & 0xF800F800)
-            or words[2]
-            or words[3]
             or words[4] >> 16
             or words[5] >> 24
-            or words[6]
-            or words[7]
-        ):
-            raise ValueError(f"APUMC entry {index} has invalid reserved or P3 fields")
+            or words[2] >> 17
+            or words[3] >> 17
+        )
+        if reserved_error or (target == "p3" and any(words[item] for item in (2, 3, 6, 7))):
+            raise ValueError(f"APUMC entry {index} has invalid reserved or target fields")
         entries.append(
             Entry(
                 format_id=words[0] & 0xF,
@@ -638,14 +872,30 @@ def parse_apumc(bundle: bytes) -> tuple[list[Instruction], list[Entry], tuple[in
     occupied[instruction_offset:instruction_end] = bytes([1]) * (
         instruction_end - instruction_offset
     )
+    if table_bytes:
+        occupied[table_offset:table_end] = bytes([1]) * table_bytes
     if any(byte for index, byte in enumerate(bundle) if not occupied[index]):
         raise ValueError("APUMC padding must be zero")
     for index, entry in enumerate(entries):
         if entry.format_id != index:
             raise ValueError("entry descriptor order must be WAV, MP3, FLAC")
-        validate_entry(entry, instruction_count)
+        validate_entry(entry, instruction_count, target, table_bytes)
     for instruction in instructions:
-        validate_p3_instruction(instruction)
+        validate_instruction(instruction, target)
     for entry in entries:
-        validate_control_flow(instructions, entry)
+        validate_control_flow(instructions, entry, target)
+        for pc in range(entry.first_pc, entry.last_pc + 1):
+            required = instruction_required_mask(instructions[pc])
+            if instructions[pc].instruction_class == InstructionClass.CONTROL and required:
+                if instructions[pc].aux == 1:
+                    if not (entry.primitive_mask & required):
+                        raise ValueError("kernel WAIT requires a class-5 primitive")
+                elif required & ~entry.primitive_mask:
+                    raise ValueError("FIFO WAIT requires the local-FIFO primitive")
+            elif required & ~entry.primitive_mask:
+                raise ValueError(f"entry {entry.format_id} omits an instruction primitive")
+    if header[9] != (entries[0].primitive_mask | entries[1].primitive_mask | entries[2].primitive_mask):
+        raise ValueError("APUMC header primitive mask does not match entry masks")
+    if header[10] != max(entry.scratch_base + entry.scratch_bytes for entry in entries):
+        raise ValueError("APUMC scratch end does not match entry descriptors")
     return instructions, entries, header

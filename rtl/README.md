@@ -119,9 +119,10 @@ ownership. Its implemented limits, handwritten ABI, measured performance, and
 commercial release gates are documented in
 [Baseline JPEG Codec](../docs/ip/jpeg.md).
 
-The Mini Audio Processing Unit has a frozen coreless architecture. APU-P2 adds
-the private AXI4 DMA, descriptor scheduler, fair Gateway A arbitration, and
-production stream router/FIFOs to the fail-closed APB4 shell at `APB4_APU`.
+The Mini Audio Processing Unit has a frozen coreless architecture. APU-P4 adds
+the private AXI4 DMA and scheduler, microcode loader/sequencer, 112 KiB local
+store, primitive FIFOs, and class-2 through class-5 bitstream, entropy, local,
+and fixed-point DSP engines to the fail-closed APB4 shell at `APB4_APU`.
 Resource Controller index 7 and exclusive LP IRQ31/HP PLIC source10 routing
 remain fixed. Public jobs and APU stream routes remain disabled until their
 later-phase engines exist. The complete ABI, phase order, and evidence gates

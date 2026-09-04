@@ -330,6 +330,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
     apu_filelist = tmp_path / "apu.fl"
+    apu_primitives_filelist = tmp_path / "apu_primitives.fl"
     apu_loader_filelist = tmp_path / "apu_loader.fl"
     apu_sequencer_filelist = tmp_path / "apu_sequencer.fl"
     gateway_a_filelist = tmp_path / "gateway_a.fl"
@@ -360,6 +361,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     )
     assert generate_formal_filelist("apu", apu_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
+        "apu_primitives", apu_primitives_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
         "apu_loader", apu_loader_filelist, memory_map, topology, user_extensions
     )
     assert generate_formal_filelist(
@@ -381,6 +385,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
     apu = parse_filelists([apu_filelist], require_files=False)
+    apu_primitives = parse_filelists([apu_primitives_filelist], require_files=False)
     apu_loader = parse_filelists([apu_loader_filelist], require_files=False)
     apu_sequencer = parse_filelists([apu_sequencer_filelist], require_files=False)
     gateway_a = parse_filelists([gateway_a_filelist], require_files=False)
@@ -441,6 +446,22 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
     assert ROOT / "rtl/ip/multimedia/apu_dma.sv" in apu.files
     assert ROOT / "rtl/mini/formal/apu_formal.sv" in apu.files
+    assert ROOT / "rtl/ip/multimedia/apu_resampler.sv" in apu_primitives.files
+    assert ROOT / "rtl/ip/multimedia/apu_local_sram.sv" in apu_primitives.files
+    assert ROOT / "rtl/ip/multimedia/apu_kernel_engine.sv" in apu_primitives.files
+    assert ROOT / "rtl/ip/multimedia/apu_primitive_dispatcher.sv" in apu_primitives.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in apu_primitives.files
+    assert ROOT / "rtl/mini/formal/apu_primitives_formal.sv" in apu_primitives.files
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    for scenario in (
+        "apu_primitives_invalid_read",
+        "apu_primitives_local",
+        "apu_primitives_kernel",
+        "apu_primitives_input_fifo",
+        "apu_primitives_alignment",
+        "apu_primitives_output_fifo",
+    ):
+        assert scenario in formal_makefile
     assert ROOT / "rtl/ip/multimedia/apu_microcode_loader.sv" in apu_loader.files
     assert ROOT / "rtl/mini/formal/apu_loader_formal.sv" in apu_loader.files
     assert ROOT / "rtl/ip/multimedia/apu_codec_sequencer.sv" in apu_sequencer.files

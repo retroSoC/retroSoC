@@ -47,11 +47,15 @@ module apb4_apu (
   logic [2:0][10:0] s_mc_entry_pc, s_mc_entry_first, s_mc_entry_last;
   logic [2:0][15:0] s_mc_entry_max_loop;
   logic [2:0][23:0] s_mc_entry_max_retired;
+  logic [2:0][16:0] s_mc_entry_scratch_base, s_mc_entry_scratch_bytes;
+  logic [2:0][31:0] s_mc_entry_primitive_mask;
+  logic [2:0][15:0] s_mc_entry_table_offset, s_mc_entry_table_bytes;
+  logic [15:0] s_mc_table_bytes;
   logic s_store_active, s_store_read, s_store_write, s_store_valid;
   logic [10:0] s_store_addr;
   logic [63:0] s_store_write_data, s_store_read_data;
   logic s_seq_fetch, s_seq_fetch_valid, s_seq_trapped, s_seq_trap_event;
-  logic s_seq_abort_done, s_seq_fault_valid, s_seq_idle;
+  logic s_seq_abort_done, s_seq_fault_valid, s_seq_launch_epoch, s_seq_idle;
   logic [10:0] s_seq_fetch_addr;
   logic [63:0] s_seq_fetch_data, s_seq_perf_retired;
   logic [31:0] s_seq_status, s_seq_retired;
@@ -61,6 +65,35 @@ module apb4_apu (
   logic [ 1:0]       s_seq_fault_resp;
   logic [ 7:0]       s_seq_fault_index;
   logic [31:0] s_seq_fault_addr, s_seq_fault_detail;
+  logic s_primitive_req_valid, s_primitive_req_ready, s_primitive_result_valid;
+  logic [63:0] s_primitive_instruction;
+  logic [31:0] s_primitive_source0, s_primitive_source1, s_primitive_destination;
+  logic [3:0]       s_primitive_result_dst;
+  logic [3:0][31:0] s_primitive_result_data;
+  logic [2:0]       s_primitive_result_words;
+  logic s_primitive_result_kernel, s_primitive_err, s_primitive_kernel_done;
+  logic [5:0] s_primitive_err_code;
+  logic [3:0] s_primitive_err_stage;
+  logic [7:0] s_primitive_err_reason;
+  logic [16:0] s_active_scratch_base, s_active_scratch_bytes;
+  logic [31:0] s_active_primitive_mask;
+  logic [15:0] s_active_table_offset, s_active_table_bytes;
+  logic s_primitive_busy, s_primitive_input_exhausted;
+  logic s_primitive_input_ready, s_primitive_output_ready;
+  logic s_primitive_input_accept_unused, s_primitive_output_valid_unused;
+  logic [6:0] s_primitive_input_count_unused, s_primitive_output_count_unused;
+  logic        s_primitive_kernel_busy_unused;
+  logic [31:0] s_primitive_cycles_unused;
+  logic [40:0] s_primitive_output_data_unused;
+  logic s_local_loader_write, s_local_loader_ready;
+  logic [16:0] s_local_loader_addr;
+  logic [31:0] s_local_loader_data;
+  logic [ 3:0] s_local_loader_strb;
+  logic s_local_codec_req, s_local_codec_write, s_local_codec_ready;
+  logic [16:0] s_local_codec_addr;
+  logic [31:0] s_local_codec_write_data, s_local_codec_read_data;
+  logic [3:0] s_local_codec_strb;
+  logic s_local_codec_valid, s_local_codec_err;
   logic s_input_watermark_evt, s_output_watermark_evt, s_xrun_evt;
   logic s_ring_event, s_ring_err, s_abort_done;
   logic [ 5:0] s_ring_err_code;
@@ -164,7 +197,7 @@ module apb4_apu (
   assign s_tx_route_apu = s_stream_route[1:0] == 2'd1;
   assign s_rx_route_apu = s_stream_route[3:2] == 2'd1;
   assign s_transport_idle = s_scheduler_idle && !s_dma_busy && s_stream_idle && s_mc_idle &&
-      s_seq_idle;
+      s_seq_idle && !s_primitive_busy;
   assign idle_o = s_transport_idle;
   assign s_resource_reset_request = s_resource_reset_pending_q ||
       (resource_reset_i && !s_resource_reset_seen_q);
@@ -323,59 +356,71 @@ module apb4_apu (
       .axi4            (axi4)
   );
 
-  apu_microcode_loader u_microcode_loader (
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .start_i            (s_microcode_load),
-      .abort_i            (s_abort),
-      .resource_reset_i   (s_resource_reset_request),
-      .soft_reset_i       (s_soft_reset),
-      .counter_clear_i    (s_cnt_clear),
-      .image_addr_i       (s_mc_image_addr),
-      .image_size_i       (s_mc_image_size),
-      .expected_crc_i     (s_mc_expected_crc),
-      .dma_request_valid_o(s_mc_dma_req_valid),
-      .dma_request_ready_i(s_mc_dma_req_ready),
-      .dma_request_addr_o (s_mc_dma_req_addr),
-      .dma_request_bytes_o(s_mc_dma_req_bytes),
-      .dma_data_i         (u_dma_read_axis.tdata),
-      .dma_keep_i         (u_dma_read_axis.tkeep),
-      .dma_last_i         (u_dma_read_axis.tlast),
-      .dma_valid_i        (u_dma_read_axis.tvalid && !s_mc_idle),
-      .dma_ready_o        (s_mc_dma_ready),
-      .dma_done_i         (s_dma_done),
-      .dma_err_i          (s_dma_err),
-      .dma_err_code_i     (s_dma_err_code),
-      .dma_err_stage_i    (s_dma_err_stage),
-      .dma_err_resp_i     (s_dma_err_resp),
-      .dma_err_addr_i     (s_dma_err_addr),
-      .store_active_o     (s_store_active),
-      .store_read_o       (s_store_read),
-      .store_write_o      (s_store_write),
-      .store_addr_o       (s_store_addr),
-      .store_data_o       (s_store_write_data),
-      .store_data_i       (s_store_read_data),
-      .store_valid_i      (s_store_valid),
-      .stat_o             (s_mc_status),
-      .abi_o              (s_mc_abi),
-      .build_id_o         (s_mc_build_id),
-      .lock_o             (s_mc_lock),
-      .actual_crc_o       (s_mc_actual_crc),
-      .load_count_o       (s_mc_load_count),
-      .entry_pc_o         (s_mc_entry_pc),
-      .entry_first_o      (s_mc_entry_first),
-      .entry_last_o       (s_mc_entry_last),
-      .entry_max_loop_o   (s_mc_entry_max_loop),
-      .entry_max_retired_o(s_mc_entry_max_retired),
-      .load_done_o        (s_mc_load_done),
-      .abort_done_o       (s_mc_abort_done),
-      .fault_valid_o      (s_mc_fault_valid),
-      .fault_code_o       (s_mc_fault_code),
-      .fault_stage_o      (s_mc_fault_stage),
-      .fault_resp_o       (s_mc_fault_resp),
-      .fault_addr_o       (s_mc_fault_addr),
-      .fault_detail_o     (s_mc_fault_detail),
-      .idle_o             (s_mc_idle)
+  apu_microcode_loader #(
+      .EnableP4(1'b1)
+  ) u_microcode_loader (
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .start_i               (s_microcode_load),
+      .abort_i               (s_abort),
+      .resource_reset_i      (s_resource_reset_request),
+      .soft_reset_i          (s_soft_reset),
+      .counter_clear_i       (s_cnt_clear),
+      .image_addr_i          (s_mc_image_addr),
+      .image_size_i          (s_mc_image_size),
+      .expected_crc_i        (s_mc_expected_crc),
+      .dma_request_valid_o   (s_mc_dma_req_valid),
+      .dma_request_ready_i   (s_mc_dma_req_ready),
+      .dma_request_addr_o    (s_mc_dma_req_addr),
+      .dma_request_bytes_o   (s_mc_dma_req_bytes),
+      .dma_data_i            (u_dma_read_axis.tdata),
+      .dma_keep_i            (u_dma_read_axis.tkeep),
+      .dma_last_i            (u_dma_read_axis.tlast),
+      .dma_valid_i           (u_dma_read_axis.tvalid && !s_mc_idle),
+      .dma_ready_o           (s_mc_dma_ready),
+      .dma_done_i            (s_dma_done),
+      .dma_err_i             (s_dma_err),
+      .dma_err_code_i        (s_dma_err_code),
+      .dma_err_stage_i       (s_dma_err_stage),
+      .dma_err_resp_i        (s_dma_err_resp),
+      .dma_err_addr_i        (s_dma_err_addr),
+      .store_active_o        (s_store_active),
+      .store_read_o          (s_store_read),
+      .store_write_o         (s_store_write),
+      .store_addr_o          (s_store_addr),
+      .store_data_o          (s_store_write_data),
+      .store_data_i          (s_store_read_data),
+      .store_valid_i         (s_store_valid),
+      .local_write_o         (s_local_loader_write),
+      .local_addr_o          (s_local_loader_addr),
+      .local_data_o          (s_local_loader_data),
+      .local_strb_o          (s_local_loader_strb),
+      .table_bytes_o         (s_mc_table_bytes),
+      .stat_o                (s_mc_status),
+      .abi_o                 (s_mc_abi),
+      .build_id_o            (s_mc_build_id),
+      .lock_o                (s_mc_lock),
+      .actual_crc_o          (s_mc_actual_crc),
+      .load_count_o          (s_mc_load_count),
+      .entry_pc_o            (s_mc_entry_pc),
+      .entry_first_o         (s_mc_entry_first),
+      .entry_last_o          (s_mc_entry_last),
+      .entry_max_loop_o      (s_mc_entry_max_loop),
+      .entry_max_retired_o   (s_mc_entry_max_retired),
+      .entry_scratch_base_o  (s_mc_entry_scratch_base),
+      .entry_scratch_bytes_o (s_mc_entry_scratch_bytes),
+      .entry_primitive_mask_o(s_mc_entry_primitive_mask),
+      .entry_table_offset_o  (s_mc_entry_table_offset),
+      .entry_table_bytes_o   (s_mc_entry_table_bytes),
+      .load_done_o           (s_mc_load_done),
+      .abort_done_o          (s_mc_abort_done),
+      .fault_valid_o         (s_mc_fault_valid),
+      .fault_code_o          (s_mc_fault_code),
+      .fault_stage_o         (s_mc_fault_stage),
+      .fault_resp_o          (s_mc_fault_resp),
+      .fault_addr_o          (s_mc_fault_addr),
+      .fault_detail_o        (s_mc_fault_detail),
+      .idle_o                (s_mc_idle)
   );
 
   apu_control_store u_control_store (
@@ -395,54 +440,153 @@ module apb4_apu (
       .fetch_valid_o  (s_seq_fetch_valid)
   );
 
-  apu_codec_sequencer u_codec_sequencer (
-      .clk_i                   (clk_i),
-      .rst_n_i                 (rst_n_i),
-      .soft_reset_i            (s_soft_reset),
-      .resource_reset_i        (s_resource_reset_apply_q),
-      .counter_clear_i         (s_cnt_clear),
-      .abort_i                 (s_abort),
-      .launch_i                (1'b0),
-      .launch_entry_i          (2'd0),
-      .image_valid_i           (s_mc_status[`APB4_APU__MC_STATUS_VALID]),
-      .timeout_i               (s_sequencer_timeout),
-      .entry_pc_i              (s_mc_entry_pc),
-      .entry_first_i           (s_mc_entry_first),
-      .entry_last_i            (s_mc_entry_last),
-      .entry_max_loop_i        (s_mc_entry_max_loop),
-      .entry_max_retired_i     (s_mc_entry_max_retired),
-      .input_exhausted_i       (1'b1),
-      .input_ready_i           (1'b0),
-      .output_ready_i          (1'b1),
-      .kernel_done_i           (1'b0),
-      .transport_idle_success_i(!s_dma_busy && !s_dma_err),
-      .stall_i                 (1'b0),
-      .cause_valid_i           (1'b0),
-      .cause_code_i            (6'd0),
-      .cause_stage_i           (4'd0),
-      .cause_resp_i            (2'd0),
-      .cause_index_i           (8'd0),
-      .cause_addr_i            (32'd0),
-      .cause_detail_i          (32'd0),
-      .fetch_o                 (s_seq_fetch),
-      .fetch_addr_o            (s_seq_fetch_addr),
-      .fetch_data_i            (s_seq_fetch_data),
-      .fetch_valid_i           (s_seq_fetch_valid),
-      .stat_o                  (s_seq_status),
-      .retired_o               (s_seq_retired),
-      .gpr_o                   (s_seq_gpr),
-      .trapped_o               (s_seq_trapped),
-      .trap_event_o            (s_seq_trap_event),
-      .abort_done_o            (s_seq_abort_done),
-      .fault_valid_o           (s_seq_fault_valid),
-      .fault_code_o            (s_seq_fault_code),
-      .fault_stage_o           (s_seq_fault_stage),
-      .fault_resp_o            (s_seq_fault_resp),
-      .fault_index_o           (s_seq_fault_index),
-      .fault_addr_o            (s_seq_fault_addr),
-      .fault_detail_o          (s_seq_fault_detail),
-      .perf_retired_o          (s_seq_perf_retired),
-      .idle_o                  (s_seq_idle)
+  apu_local_sram u_local_sram (
+      .clk_i(clk_i),
+      .rst_n_i(rst_n_i),
+      .image_valid_i(s_mc_status[`APB4_APU__MC_STATUS_VALID]),
+      .table_bytes_i(s_mc_table_bytes),
+      .epoch_clear_i(s_seq_launch_epoch || s_soft_reset || s_resource_reset_apply_q || s_abort),
+      .loader_active_i(!s_mc_idle),
+      .loader_req_i(s_local_loader_write),
+      .loader_addr_i(s_local_loader_addr),
+      .loader_data_i(s_local_loader_data),
+      .loader_strb_i(s_local_loader_strb),
+      .loader_ready_o(s_local_loader_ready),
+      .codec_req_i(s_local_codec_req),
+      .codec_write_i(s_local_codec_write),
+      .codec_addr_i(s_local_codec_addr),
+      .codec_data_i(s_local_codec_write_data),
+      .codec_strb_i(s_local_codec_strb),
+      .codec_ready_o(s_local_codec_ready),
+      .codec_data_o(s_local_codec_read_data),
+      .codec_valid_o(s_local_codec_valid),
+      .codec_access_err_o(s_local_codec_err)
+  );
+
+  apu_primitive_dispatcher u_primitive_dispatcher (
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .flush_i          (s_seq_launch_epoch || s_soft_reset || s_resource_reset_apply_q || s_abort),
+      .req_valid_i      (s_primitive_req_valid),
+      .req_ready_o      (s_primitive_req_ready),
+      .instruction_i    (s_primitive_instruction),
+      .source0_i        (s_primitive_source0),
+      .source1_i        (s_primitive_source1),
+      .destination_i    (s_primitive_destination),
+      .scratch_base_i   (s_active_scratch_base),
+      .scratch_bytes_i  (s_active_scratch_bytes),
+      .table_offset_i   (s_active_table_offset),
+      .table_bytes_i    (s_active_table_bytes),
+      .result_valid_o   (s_primitive_result_valid),
+      .result_dst_o     (s_primitive_result_dst),
+      .result_data_o    (s_primitive_result_data),
+      .result_words_o   (s_primitive_result_words),
+      .result_kernel_o  (s_primitive_result_kernel),
+      .error_o          (s_primitive_err),
+      .error_code_o     (s_primitive_err_code),
+      .error_stage_o    (s_primitive_err_stage),
+      .error_reason_o   (s_primitive_err_reason),
+      .cycles_o         (s_primitive_cycles_unused),
+      .kernel_done_o    (s_primitive_kernel_done),
+      .busy_o           (s_primitive_busy),
+      .input_exhausted_o(s_primitive_input_exhausted),
+      .input_ready_o    (s_primitive_input_ready),
+      .output_ready_o   (s_primitive_output_ready),
+      .input_count_o    (s_primitive_input_count_unused),
+      .output_count_o   (s_primitive_output_count_unused),
+      .kernel_busy_o    (s_primitive_kernel_busy_unused),
+      .memory_req_o     (s_local_codec_req),
+      .memory_write_o   (s_local_codec_write),
+      .memory_addr_o    (s_local_codec_addr),
+      .memory_data_o    (s_local_codec_write_data),
+      .memory_strb_o    (s_local_codec_strb),
+      .memory_valid_i   (s_local_codec_valid),
+      .memory_data_i    (s_local_codec_read_data),
+      .memory_error_i   (s_local_codec_err),
+      .input_valid_i    (1'b0),
+      .input_data_i     (41'd0),
+      .input_accept_o   (s_primitive_input_accept_unused),
+      .output_valid_o   (s_primitive_output_valid_unused),
+      .output_data_o    (s_primitive_output_data_unused),
+      .output_accept_i  (1'b0)
+  );
+
+  apu_codec_sequencer #(
+      .EnableP4(1'b1)
+  ) u_codec_sequencer (
+      .clk_i                    (clk_i),
+      .rst_n_i                  (rst_n_i),
+      .soft_reset_i             (s_soft_reset),
+      .resource_reset_i         (s_resource_reset_apply_q),
+      .counter_clear_i          (s_cnt_clear),
+      .abort_i                  (s_abort),
+      .launch_i                 (1'b0),
+      .launch_entry_i           (2'd0),
+      .image_valid_i            (s_mc_status[`APB4_APU__MC_STATUS_VALID]),
+      .timeout_i                (s_sequencer_timeout),
+      .entry_pc_i               (s_mc_entry_pc),
+      .entry_first_i            (s_mc_entry_first),
+      .entry_last_i             (s_mc_entry_last),
+      .entry_max_loop_i         (s_mc_entry_max_loop),
+      .entry_max_retired_i      (s_mc_entry_max_retired),
+      .entry_scratch_base_i     (s_mc_entry_scratch_base),
+      .entry_scratch_bytes_i    (s_mc_entry_scratch_bytes),
+      .entry_primitive_mask_i   (s_mc_entry_primitive_mask),
+      .entry_table_offset_i     (s_mc_entry_table_offset),
+      .entry_table_bytes_i      (s_mc_entry_table_bytes),
+      .input_exhausted_i        (s_primitive_input_exhausted),
+      .input_ready_i            (s_primitive_input_ready),
+      .output_ready_i           (s_primitive_output_ready),
+      .kernel_done_i            (s_primitive_kernel_done),
+      .transport_idle_success_i (!s_dma_busy && !s_dma_err),
+      .stall_i                  (1'b0),
+      .cause_valid_i            (1'b0),
+      .cause_code_i             (6'd0),
+      .cause_stage_i            (4'd0),
+      .cause_resp_i             (2'd0),
+      .cause_index_i            (8'd0),
+      .cause_addr_i             (32'd0),
+      .cause_detail_i           (32'd0),
+      .primitive_req_valid_o    (s_primitive_req_valid),
+      .primitive_req_ready_i    (s_primitive_req_ready),
+      .primitive_instruction_o  (s_primitive_instruction),
+      .primitive_source0_o      (s_primitive_source0),
+      .primitive_source1_o      (s_primitive_source1),
+      .primitive_destination_o  (s_primitive_destination),
+      .primitive_result_valid_i (s_primitive_result_valid),
+      .primitive_result_dst_i   (s_primitive_result_dst),
+      .primitive_result_data_i  (s_primitive_result_data),
+      .primitive_result_words_i (s_primitive_result_words),
+      .primitive_result_kernel_i(s_primitive_result_kernel),
+      .primitive_error_i        (s_primitive_err),
+      .primitive_error_code_i   (s_primitive_err_code),
+      .primitive_error_stage_i  (s_primitive_err_stage),
+      .primitive_error_reason_i (s_primitive_err_reason),
+      .fetch_o                  (s_seq_fetch),
+      .fetch_addr_o             (s_seq_fetch_addr),
+      .fetch_data_i             (s_seq_fetch_data),
+      .fetch_valid_i            (s_seq_fetch_valid),
+      .stat_o                   (s_seq_status),
+      .retired_o                (s_seq_retired),
+      .gpr_o                    (s_seq_gpr),
+      .trapped_o                (s_seq_trapped),
+      .trap_event_o             (s_seq_trap_event),
+      .abort_done_o             (s_seq_abort_done),
+      .fault_valid_o            (s_seq_fault_valid),
+      .fault_code_o             (s_seq_fault_code),
+      .fault_stage_o            (s_seq_fault_stage),
+      .fault_resp_o             (s_seq_fault_resp),
+      .fault_index_o            (s_seq_fault_index),
+      .fault_addr_o             (s_seq_fault_addr),
+      .fault_detail_o           (s_seq_fault_detail),
+      .perf_retired_o           (s_seq_perf_retired),
+      .active_scratch_base_o    (s_active_scratch_base),
+      .active_scratch_bytes_o   (s_active_scratch_bytes),
+      .active_primitive_mask_o  (s_active_primitive_mask),
+      .active_table_offset_o    (s_active_table_offset),
+      .active_table_bytes_o     (s_active_table_bytes),
+      .launch_epoch_o           (s_seq_launch_epoch),
+      .idle_o                   (s_seq_idle)
   );
 
   apu_ring_scheduler u_ring_scheduler (
@@ -576,10 +720,14 @@ module apb4_apu (
     end
   end
 
-  logic s_unused_pending;
+  logic s_unused_pending, s_unused_p3, s_unused_p4;
   assign s_unused_pending = s_dma_input_pending ^ s_dma_output_pending ^ s_dma_aborted ^
       s_reg_idle_unused ^ s_backend_job_valid_unused ^ s_backend_resp_ready_unused ^
       ^s_backend_descriptor_unused ^ ^s_backend_index_unused ^ ^s_ring_coalesce[15:8];
-  logic s_unused_p3;
   assign s_unused_p3 = ^s_seq_gpr;
+  assign s_unused_p4 = ^s_active_primitive_mask ^ s_local_loader_ready ^ s_local_codec_ready ^
+      s_primitive_input_accept_unused ^ s_primitive_output_valid_unused ^
+      ^s_primitive_cycles_unused ^ ^s_primitive_output_data_unused ^
+      ^s_primitive_input_count_unused ^ ^s_primitive_output_count_unused ^
+      s_primitive_kernel_busy_unused;
 endmodule

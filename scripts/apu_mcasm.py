@@ -1,21 +1,28 @@
-"""Assemble and statically verify frozen APU-P3 microcode bundles."""
+"""Assemble and statically verify frozen APU-P3/P4 microcode bundles."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import re
+import struct
 from dataclasses import dataclass
 from pathlib import Path
 
 from apu_isa import (
     CONTROL_OPCODES,
+    DEFERRED_OPCODES,
     PREDICATES,
     SCALAR_OPCODES,
+    APUMC_TARGETS,
+    BitstreamOpcode,
     ControlOpcode,
+    EntropyOpcode,
     Entry,
     Instruction,
     InstructionClass,
+    KernelOpcode,
+    LocalOpcode,
     ScalarOpcode,
     abi_manifest,
     build_apumc,
@@ -31,6 +38,8 @@ class Assembly:
     instructions: list[Instruction]
     entries: list[Entry]
     build_id: int
+    target: str
+    table_payload: bytes
 
 
 def _number(token: str) -> int:
@@ -91,10 +100,100 @@ def _encode_instruction(tokens: list[str], pc: int, labels: dict[str, int]) -> I
             values["aux"] = _number(args[0])
         return Instruction(InstructionClass.CONTROL, opcode, **values)
 
-    if mnemonic not in SCALAR_OPCODES:
+    if mnemonic in SCALAR_OPCODES:
+        opcode = ScalarOpcode(SCALAR_OPCODES[mnemonic])
+        values = {"predicate": predicate}
+    elif mnemonic in DEFERRED_OPCODES["bitstream"]:
+        opcode = BitstreamOpcode(DEFERRED_OPCODES["bitstream"].index(mnemonic))
+        values = {"predicate": predicate}
+        if opcode in (BitstreamOpcode.REFILL, BitstreamOpcode.PEEK, BitstreamOpcode.GET):
+            if len(args) != 2:
+                raise ValueError(f"{mnemonic} takes a destination and bit width")
+            values.update(dst=_register(args[0]), immediate=_number(args[1]))
+        elif opcode == BitstreamOpcode.SKIP:
+            if len(args) != 1:
+                raise ValueError("skip takes one bit width")
+            values["immediate"] = _number(args[0])
+        elif opcode == BitstreamOpcode.ALIGN:
+            if args:
+                raise ValueError("align takes no operands")
+        elif opcode == BitstreamOpcode.FRAME_SYNC:
+            if len(args) != 5:
+                raise ValueError("frame_sync takes dst, pattern, mask, width, and limit")
+            values.update(
+                dst=_register(args[0]),
+                src0=_register(args[1]),
+                src1=_register(args[2]),
+                aux=_number(args[3]),
+                immediate=_number(args[4]),
+            )
+        else:
+            if len(args) != 3:
+                raise ValueError(f"{mnemonic} takes dst, accumulator, and byte registers")
+            values.update(dst=_register(args[0]), src0=_register(args[1]), src1=_register(args[2]))
+        return Instruction(InstructionClass.BITSTREAM, opcode, **values)
+    elif mnemonic in DEFERRED_OPCODES["entropy"]:
+        opcode = EntropyOpcode(DEFERRED_OPCODES["entropy"].index(mnemonic))
+        values = {"predicate": predicate}
+        if opcode <= EntropyOpcode.HUFF_QUAD:
+            if len(args) != 4:
+                raise ValueError(f"{mnemonic} takes dst, table, entries, and maximum length")
+            values.update(
+                dst=_register(args[0]),
+                src0=_register(args[1]),
+                src1=_register(args[2]),
+                aux=_number(args[3]),
+            )
+        elif opcode == EntropyOpcode.UNARY:
+            if len(args) != 3:
+                raise ValueError("unary takes dst, polarity, and maximum run")
+            values.update(dst=_register(args[0]), aux=_number(args[1]), immediate=_number(args[2]))
+        else:
+            if len(args) != 3:
+                raise ValueError(f"{mnemonic} takes three registers")
+            values.update(dst=_register(args[0]), src0=_register(args[1]), src1=_register(args[2]))
+        return Instruction(InstructionClass.ENTROPY, opcode, **values)
+    elif mnemonic in DEFERRED_OPCODES["local"]:
+        opcode = LocalOpcode(DEFERRED_OPCODES["local"].index(mnemonic))
+        values = {"predicate": predicate}
+        if opcode == LocalOpcode.LD32:
+            if len(args) != 3:
+                raise ValueError("ld32 takes destination, address register, and offset")
+            values.update(dst=_register(args[0]), src0=_register(args[1]), immediate=_number(args[2]) & 0xFFFF)
+        elif opcode == LocalOpcode.ST32:
+            if len(args) != 3:
+                raise ValueError("st32 takes address, value, and offset")
+            values.update(src0=_register(args[0]), src1=_register(args[1]), immediate=_number(args[2]) & 0xFFFF)
+        elif opcode in (LocalOpcode.TABLE8, LocalOpcode.TABLE16, LocalOpcode.TABLE32):
+            if len(args) != 3:
+                raise ValueError(f"{mnemonic} takes destination, base, and index registers")
+            values.update(dst=_register(args[0]), src0=_register(args[1]), src1=_register(args[2]))
+        elif opcode == LocalOpcode.FIFO_POP:
+            if len(args) != 1:
+                raise ValueError("fifo_pop takes one destination")
+            values["dst"] = _register(args[0])
+        else:
+            if len(args) != 2:
+                raise ValueError("fifo_push takes data and metadata registers")
+            values.update(src0=_register(args[0]), src1=_register(args[1]))
+        return Instruction(InstructionClass.LOCAL, opcode, **values)
+    elif mnemonic in DEFERRED_OPCODES["kernel"]:
+        opcode = KernelOpcode(DEFERRED_OPCODES["kernel"].index(mnemonic))
+        if len(args) != 5:
+            raise ValueError(f"{mnemonic} takes output, input, parameter, aux, and count")
+        return Instruction(
+            InstructionClass.KERNEL,
+            opcode,
+            predicate=predicate,
+            dst=_register(args[0]),
+            src0=_register(args[1]),
+            src1=_register(args[2]),
+            aux=_number(args[3]),
+            immediate=_number(args[4]),
+        )
+    else:
         raise ValueError(f"unknown mnemonic {mnemonic}")
-    opcode = ScalarOpcode(SCALAR_OPCODES[mnemonic])
-    values = {"predicate": predicate}
+
     if opcode == ScalarOpcode.MOV:
         if len(args) != 2:
             raise ValueError("mov takes two registers")
@@ -127,7 +226,9 @@ def _encode_instruction(tokens: list[str], pc: int, labels: dict[str, int]) -> I
     return Instruction(InstructionClass.SCALAR, opcode, **values)
 
 
-def assemble(source: str) -> Assembly:
+def assemble(source: str, target: str = "p3") -> Assembly:
+    if target not in APUMC_TARGETS:
+        raise ValueError(f"unknown APU target {target}")
     lines = []
     labels: dict[str, int] = {}
     directives: list[list[str]] = []
@@ -149,11 +250,14 @@ def assemble(source: str) -> Assembly:
 
     build_id = 0
     entry_directives = []
+    table_words: list[int] = []
     for directive in directives:
         if directive[0] == ".build_id" and len(directive) == 2:
             build_id = _number(directive[1])
-        elif directive[0] == ".entry" and len(directive) == 7:
+        elif directive[0] == ".entry" and len(directive) in (7, 12):
             entry_directives.append(directive[1:])
+        elif directive[0] == ".table32" and len(directive) > 1:
+            table_words.extend(_number(value) & 0xFFFFFFFF for value in directive[1:])
         else:
             raise ValueError(f"invalid assembler directive {' '.join(directive)}")
     if len(entry_directives) != 3:
@@ -169,21 +273,26 @@ def assemble(source: str) -> Assembly:
     entries = []
     for values in entry_directives:
         try:
-            entries.append(
-                Entry(
-                    format_id=_number(values[0]),
-                    entry_pc=labels[values[1]],
-                    first_pc=labels[values[2]],
-                    last_pc=labels[values[3]],
-                    max_loop_count=_number(values[4]),
-                    max_retired=_number(values[5]),
-                )
-            )
+            optional = [0, 0, 0, 0, 0] if len(values) == 6 else [_number(item) for item in values[6:]]
+            entries.append(Entry(
+                format_id=_number(values[0]),
+                entry_pc=labels[values[1]],
+                first_pc=labels[values[2]],
+                last_pc=labels[values[3]],
+                max_loop_count=_number(values[4]),
+                max_retired=_number(values[5]),
+                scratch_base=optional[0],
+                scratch_bytes=optional[1],
+                primitive_mask=optional[2],
+                table_offset=optional[3],
+                table_bytes=optional[4],
+            ))
         except KeyError as error:
             raise ValueError(f"unknown entry label {error.args[0]}") from error
     entries.sort(key=lambda entry: entry.format_id)
-    bundle = build_apumc(instructions, entries, build_id)
-    return Assembly(bundle, dict(sorted(labels.items())), instructions, entries, build_id)
+    table_payload = b"".join(struct.pack("<I", word) for word in table_words)
+    bundle = build_apumc(instructions, entries, build_id, target=target, table_payload=table_payload)
+    return Assembly(bundle, dict(sorted(labels.items())), instructions, entries, build_id, target, table_payload)
 
 
 def _artifact_data(assembly: Assembly) -> dict[str, object]:
@@ -199,6 +308,7 @@ def _artifact_data(assembly: Assembly) -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
+    parser.add_argument("--target", choices=APUMC_TARGETS, default="p3")
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("--symbols", type=Path)
     parser.add_argument("--cfg-report", type=Path)
@@ -206,7 +316,7 @@ def main() -> int:
     parser.add_argument("--trace-input", type=Path)
     parser.add_argument("--abi-input-manifest", type=Path)
     args = parser.parse_args()
-    assembly = assemble(args.source.read_text(encoding="utf-8"))
+    assembly = assemble(args.source.read_text(encoding="utf-8"), args.target)
     args.output.write_bytes(assembly.bundle)
     artifacts = {
         args.symbols: assembly.symbols,
@@ -214,12 +324,16 @@ def main() -> int:
             **_artifact_data(assembly),
             "entries": [entry.__dict__ for entry in assembly.entries],
             "control_flow": [
-                control_flow_report(assembly.instructions, entry) for entry in assembly.entries
+                control_flow_report(assembly.instructions, entry, assembly.target)
+                for entry in assembly.entries
             ],
         },
         args.primitive_manifest: {
-            "implemented_mask": 0,
-            "required_mask": 0,
+            "target": assembly.target,
+            "implemented_mask": 0 if assembly.target == "p3" else 0x0000FFFF,
+            "required_mask": __import__("functools").reduce(
+                int.__or__, (entry.primitive_mask for entry in assembly.entries), 0
+            ),
             "entry_masks": [entry.primitive_mask for entry in assembly.entries],
         },
         args.trace_input: {

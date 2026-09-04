@@ -1,4 +1,4 @@
-"""Keep the handwritten APU RTL and SDK register ABI synchronized through P3."""
+"""Keep the handwritten APU RTL, SDK, and P4 ISA definitions synchronized."""
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ def test_apu_register_matrix_covers_each_offset_once() -> None:
     assert set(covered) == set(expected)
 
 
-def test_apu_p3_tool_isa_matches_handwritten_rtl_and_c() -> None:
+def test_apu_p4_tool_isa_matches_handwritten_rtl_and_c() -> None:
     rtl = _rtl_values()
     manifest = abi_manifest()
     exact = {
@@ -82,6 +82,10 @@ def test_apu_p3_tool_isa_matches_handwritten_rtl_and_c() -> None:
         "APUMC_ENTRY_BYTES": manifest["apumc"]["entry_bytes"],
         "APUMC_ENTRY_COUNT": manifest["apumc"]["entry_count"],
         "APUMC_MAX_INSTRUCTIONS": manifest["apumc"]["max_instructions"],
+        "APUMC_P3_PRIMITIVE_MASK": manifest["p3_implemented_primitive_mask"],
+        "APUMC_P4_PRIMITIVE_MASK": manifest["p4_implemented_primitive_mask"],
+        "LOCAL_DATA_BYTES": manifest["p4_local_data_bytes"],
+        "LOCAL_TABLE_SCRATCH_BYTES": manifest["p4_local_table_scratch_bytes"],
     }
     for name, value in manifest["classes"].items():
         exact[f"MC_CLASS_{name.upper()}"] = value

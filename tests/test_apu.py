@@ -51,6 +51,14 @@ def test_apu_p1_apb_register_shell(tmp_path: Path) -> None:
                 str(multimedia / "apu_stream_router.sv"),
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
+                str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_bitstream_engine.sv"),
+                str(multimedia / "apu_entropy_engine.sv"),
+                str(multimedia / "apu_reconstruction_engine.sv"),
+                str(multimedia / "apu_transform_engine.sv"),
+                str(multimedia / "apu_resampler.sv"),
+                str(multimedia / "apu_kernel_engine.sv"),
+                str(multimedia / "apu_primitive_dispatcher.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
                 str(multimedia / "apu_reg.sv"),
                 str(multimedia / "apb4_apu.sv"),
@@ -128,6 +136,14 @@ def test_apu_p1_integrated_irq_ownership_topology(tmp_path: Path) -> None:
                 str(multimedia / "apu_stream_router.sv"),
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
+                str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_bitstream_engine.sv"),
+                str(multimedia / "apu_entropy_engine.sv"),
+                str(multimedia / "apu_reconstruction_engine.sv"),
+                str(multimedia / "apu_transform_engine.sv"),
+                str(multimedia / "apu_resampler.sv"),
+                str(multimedia / "apu_kernel_engine.sv"),
+                str(multimedia / "apu_primitive_dispatcher.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
                 str(multimedia / "apu_reg.sv"),
                 str(multimedia / "apb4_apu.sv"),
@@ -415,12 +431,12 @@ last:
     source_list = tmp_path / "apu_p3_microcode.fl"
     source_list.write_text(
         "\n".join(
-                [
-                    "+define+SV_ASSRT_DISABLE",
-                    f"+incdir+{multimedia}",
-                    f"+incdir+{common}",
-                    str(ROOT / "rtl/tech/tc_sram.sv"),
-                    str(multimedia / "apu_microcode_pkg.sv"),
+            [
+                "+define+SV_ASSRT_DISABLE",
+                f"+incdir+{multimedia}",
+                f"+incdir+{common}",
+                str(ROOT / "rtl/tech/tc_sram.sv"),
+                str(multimedia / "apu_microcode_pkg.sv"),
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
@@ -532,6 +548,14 @@ done:
                 str(multimedia / "apu_stream_router.sv"),
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
+                str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_bitstream_engine.sv"),
+                str(multimedia / "apu_entropy_engine.sv"),
+                str(multimedia / "apu_reconstruction_engine.sv"),
+                str(multimedia / "apu_transform_engine.sv"),
+                str(multimedia / "apu_resampler.sv"),
+                str(multimedia / "apu_kernel_engine.sv"),
+                str(multimedia / "apu_primitive_dispatcher.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
                 str(multimedia / "apu_reg.sv"),
                 str(multimedia / "apb4_apu.sv"),
@@ -575,7 +599,7 @@ done:
     assert "APU-P3 APB, DMA, loader integration passed" in result.stdout
 
 
-def test_apu_p3_product_scope_remains_coreless_and_fail_closed() -> None:
+def test_apu_p4_product_scope_remains_coreless_and_fail_closed() -> None:
     top = (ROOT / "rtl/ip/multimedia/apb4_apu.sv").read_text(encoding="utf-8")
     register_block = (ROOT / "rtl/ip/multimedia/apu_reg.sv").read_text(encoding="utf-8")
     product_filelist = (ROOT / "rtl/mini/filelist/ip.fl").read_text(encoding="utf-8")
@@ -585,11 +609,23 @@ def test_apu_p3_product_scope_remains_coreless_and_fail_closed() -> None:
     assert "32'h0000_0029" in register_block
     assert "s_merged_write != 32'd0" in register_block
     assert "apu_interpreter" not in product_filelist
+    assert "apu_primitives.py" not in product_filelist
+    assert "apu_p4_primitives_tb" not in product_filelist
+    assert "apu_p4_loader_tb" not in product_filelist
+    assert "apu_p4_sequencer_tb" not in product_filelist
     assert "apu_p3_microcode_tb" not in product_filelist
     assert "VerificationCrcBypass" not in product_filelist
     assert ".VerificationCrcBypass" not in top
     assert "VerificationControlFlowBypass" not in product_filelist
     assert ".VerificationControlFlowBypass" not in top
+    for production_module in (
+        "apu_local_sram.sv",
+        "apu_bitstream_engine.sv",
+        "apu_entropy_engine.sv",
+        "apu_kernel_engine.sv",
+        "apu_primitive_dispatcher.sv",
+    ):
+        assert production_module in product_filelist
     for forbidden in ("hazard3", "vexiiriscv", "rv32", "dsp_core"):
         assert forbidden not in top.lower()
 

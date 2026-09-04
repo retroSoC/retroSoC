@@ -33,6 +33,15 @@ APU_LOADER_SCENARIOS = {
     "apu_loader_abort": 5,
     "apu_loader_resource_reset": 6,
 }
+APU_PRIMITIVE_SCENARIOS = {
+    "apu_primitives_invalid_read": 0,
+    "apu_primitives_local": 1,
+    "apu_primitives_kernel": 2,
+    "apu_primitives_input_fifo": 3,
+    "apu_primitives_alignment": 4,
+    "apu_primitives_output_fifo": 5,
+    "apu_primitives_local_overflow": 6,
+}
 
 
 def target_defines(target: str) -> list[str]:
@@ -44,6 +53,11 @@ def target_defines(target: str) -> list[str]:
             "+define+SV_ASSRT_DISABLE",
             "+define+SYNTHESIS",
             f"+define+APU_LOADER_FORMAL_SCENARIO={scenario}",
+        ]
+    if target in APU_PRIMITIVE_SCENARIOS:
+        return [
+            "+define+SV_ASSRT_DISABLE",
+            f"+define+APU_PRIMITIVES_FORMAL_SCENARIO={APU_PRIMITIVE_SCENARIOS[target]}",
         ]
     if target == "opipsram":
         return ["+define+PDK_BEHAV"]
@@ -273,6 +287,20 @@ def source_files(target: str) -> list[Path]:
             MULTIMEDIA / "apu_dma.sv",
             SCRIPT_DIR / "apu_formal.sv",
         ]
+    if target == "apu_primitives" or target in APU_PRIMITIVE_SCENARIOS:
+        return [
+            COMMON_RTL / "utils/fifo.sv",
+            MULTIMEDIA / "apu_microcode_pkg.sv",
+            MULTIMEDIA / "apu_local_sram.sv",
+            MULTIMEDIA / "apu_bitstream_engine.sv",
+            MULTIMEDIA / "apu_entropy_engine.sv",
+            MULTIMEDIA / "apu_reconstruction_engine.sv",
+            MULTIMEDIA / "apu_transform_engine.sv",
+            MULTIMEDIA / "apu_resampler.sv",
+            MULTIMEDIA / "apu_kernel_engine.sv",
+            MULTIMEDIA / "apu_primitive_dispatcher.sv",
+            SCRIPT_DIR / "apu_primitives_formal.sv",
+        ]
     if target == "apu_loader" or target in APU_LOADER_SCENARIOS:
         return [
             ROOT / "rtl/tech/tc_sram.sv",
@@ -362,6 +390,8 @@ def parse_args() -> argparse.Namespace:
             "opipsram",
             "dma",
             "apu",
+            "apu_primitives",
+            *APU_PRIMITIVE_SCENARIOS,
             *APU_LOADER_SCENARIOS,
             "apu_sequencer",
             "gateway_a",

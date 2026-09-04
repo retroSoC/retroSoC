@@ -80,8 +80,8 @@ module apu_reg (
 );
   localparam logic [31:0] IpId = 32'h4150_5530;
   localparam logic [31:0] IpVersion = 32'h0001_0000;
-  localparam logic [31:0] Capability0 = 32'h0000_0098;
-  localparam logic [31:0] Capability1 = 32'h0000_0010;
+  localparam logic [31:0] Capability0 = 32'h0000_0198;
+  localparam logic [31:0] Capability1 = 32'h0182_7010;
   localparam logic [31:0] AbiDigest = 32'd0;
   localparam logic [10:0] IrqMask = 11'h7ff;
   localparam logic [31:0] TimeoutReset = 32'h0000_ffff;

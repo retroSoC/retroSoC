@@ -4,7 +4,8 @@
 `include "apu_define.svh"
 
 module apu_microcode_loader #(
-    parameter int unsigned PathStackDepth = 2048
+    parameter int unsigned PathStackDepth = 2048,
+    parameter bit          EnableP4       = 1'b0
 ) (
     // verilog_format: off -- preserve command, DMA, store, and result columns
     input  logic                  clk_i,
@@ -39,6 +40,11 @@ module apu_microcode_loader #(
     output logic [63:0]           store_data_o,
     input  logic [63:0]           store_data_i,
     input  logic                  store_valid_i,
+    output logic                  local_write_o,
+    output logic [16:0]           local_addr_o,
+    output logic [31:0]           local_data_o,
+    output logic [3:0]            local_strb_o,
+    output logic [15:0]           table_bytes_o,
     output logic [7:0]            stat_o,
     output logic [31:0]           abi_o,
     output logic [63:0]           build_id_o,
@@ -50,6 +56,11 @@ module apu_microcode_loader #(
     output logic [2:0][10:0]      entry_last_o,
     output logic [2:0][15:0]      entry_max_loop_o,
     output logic [2:0][23:0]      entry_max_retired_o,
+    output logic [2:0][16:0]      entry_scratch_base_o,
+    output logic [2:0][16:0]      entry_scratch_bytes_o,
+    output logic [2:0][31:0]      entry_primitive_mask_o,
+    output logic [2:0][15:0]      entry_table_offset_o,
+    output logic [2:0][15:0]      entry_table_bytes_o,
     output logic                  load_done_o,
     output logic                  abort_done_o,
     output logic                  fault_valid_o,
@@ -63,7 +74,7 @@ module apu_microcode_loader #(
 );
   import apu_microcode_pkg::*;
 
-  localparam logic [11:0] PathStackLimit = PathStackDepth;
+  localparam logic [11:0] PathStackLimit = 12'(PathStackDepth);
 
   typedef enum logic [4:0] {
     Idle,
@@ -115,7 +126,7 @@ module apu_microcode_loader #(
   logic s_path_stack_cs, s_path_stack_write, s_path_stack_push;
   logic [10:0] s_path_stack_addr;
   logic [63:0] s_path_stack_write_data, s_path_stack_read_data;
-  logic s_path_stop_valid_q;
+  logic        s_path_stop_valid_q;
   logic [10:0] s_path_stop_pc_q;
   logic s_scan_control_err_q, s_scan_capability_err_q;
   logic [31:0] s_scan_control_addr_q, s_scan_control_detail_q;
@@ -123,6 +134,7 @@ module apu_microcode_loader #(
   logic s_cancel_resource_q, s_cancel_abort_q;
 
   logic s_header_err, s_header_range_err, s_range_err, s_table_err, s_capability_err;
+  logic s_table_header_err;
   logic [31:0] s_header_addr, s_header_detail;
   logic [31:0] s_header_range_addr, s_header_range_detail;
   logic [31:0] s_range_addr, s_range_detail;
@@ -136,7 +148,7 @@ module apu_microcode_loader #(
   logic [ 4:0] s_entry_word_relative;
   logic [63:0] s_scan_instruction;
   logic [3:0] s_scan_class, s_scan_opcode, s_scan_predicate;
-  logic [ 1:0] s_scan_aux;
+  logic [ 7:0] s_scan_aux;
   logic [10:0] s_scan_immediate;
   logic        s_scan_last;
   logic s_scan_instruction_err, s_scan_target_err, s_scan_call_err, s_scan_loop_err;
@@ -172,6 +184,12 @@ module apu_microcode_loader #(
   }) ?
       s_scan_pc_q : s_instruction_word_relative[11:1];
   assign store_data_o = {dma_data_i, s_instruction_low_q};
+  assign local_write_o = EnableP4 && (s_state_q == PayloadReceive) && s_data_accept &&
+      s_data_in_table;
+  assign local_addr_o = 17'(s_byte_offset_q - s_header_q[5]);
+  assign local_data_o = dma_data_i;
+  assign local_strb_o = dma_keep_i;
+  assign table_bytes_o = s_header_q[6][15:0];
   assign idle_o = s_state_q == Idle;
   assign stat_o = {
     s_err_bits_q[5],
@@ -190,11 +208,16 @@ module apu_microcode_loader #(
   assign load_count_o = s_load_count_q;
 
   for (genvar entry = 0; entry < 3; entry++) begin : gen_entry_outputs
-    assign entry_pc_o[entry]          = s_entry_word_q[entry*8][14:4];
-    assign entry_first_o[entry]       = s_entry_word_q[(entry*8)+1][10:0];
-    assign entry_last_o[entry]        = s_entry_word_q[(entry*8)+1][26:16];
-    assign entry_max_loop_o[entry]    = s_entry_word_q[(entry*8)+4][15:0];
-    assign entry_max_retired_o[entry] = s_entry_word_q[(entry*8)+5][23:0];
+    assign entry_pc_o[entry]             = s_entry_word_q[entry*8][14:4];
+    assign entry_first_o[entry]          = s_entry_word_q[(entry*8)+1][10:0];
+    assign entry_last_o[entry]           = s_entry_word_q[(entry*8)+1][26:16];
+    assign entry_max_loop_o[entry]       = s_entry_word_q[(entry*8)+4][15:0];
+    assign entry_max_retired_o[entry]    = s_entry_word_q[(entry*8)+5][23:0];
+    assign entry_scratch_base_o[entry]   = s_entry_word_q[(entry*8)+2][16:0];
+    assign entry_scratch_bytes_o[entry]  = s_entry_word_q[(entry*8)+3][16:0];
+    assign entry_primitive_mask_o[entry] = s_entry_word_q[(entry*8)+6];
+    assign entry_table_offset_o[entry]   = s_entry_word_q[(entry*8)+7][15:0];
+    assign entry_table_bytes_o[entry]    = s_entry_word_q[(entry*8)+7][31:16];
   end
 
   assign s_instruction_end = {1'b0, s_header_q[4]} + ({1'b0, s_header_q[3]} << 3);
@@ -284,7 +307,8 @@ module apu_microcode_loader #(
       s_header_range_err    = 1'b1;
       s_header_range_addr   = s_source_addr_q + 32'd20;
       s_header_range_detail = s_header_q[5];
-    end else if (s_header_q[10] != 32'd0) begin
+    end else if ((!EnableP4 && (s_header_q[10] != 32'd0)) ||
+                 (EnableP4 && (s_header_q[10] > 32'h0000_6000))) begin
       s_header_range_err    = 1'b1;
       s_header_range_addr   = s_source_addr_q + 32'd40;
       s_header_range_detail = s_header_q[10];
@@ -292,10 +316,15 @@ module apu_microcode_loader #(
   end
 
   always_comb begin
-    s_range_err    = s_header_range_err;
-    s_range_addr   = s_header_range_addr;
-    s_range_detail = s_header_range_detail;
+    logic [31:0] s_scratch_end;
+    logic [31:0] s_max_scratch_end;
+    s_range_err       = s_header_range_err;
+    s_range_addr      = s_header_range_addr;
+    s_range_detail    = s_header_range_detail;
+    s_max_scratch_end = 32'd0;
     for (int unsigned entry = 0; entry < 3; entry++) begin
+      s_scratch_end = s_entry_word_q[(entry*8)+2] + s_entry_word_q[(entry*8)+3];
+      if (s_scratch_end > s_max_scratch_end) s_max_scratch_end = s_scratch_end;
       if (!s_range_err && ((s_entry_word_q[entry*8][31:15] != 17'd0) ||
                            (s_entry_word_q[entry*8][3:0] != 4'(entry)))) begin
         s_range_err    = 1'b1;
@@ -312,11 +341,19 @@ module apu_microcode_loader #(
         s_range_err    = 1'b1;
         s_range_addr   = s_source_addr_q + s_header_q[7] + 32'(entry * 32) + 32'd4;
         s_range_detail = s_entry_word_q[(entry*8)+1];
-      end else if (!s_range_err && (s_entry_word_q[(entry*8)+2] != 32'd0)) begin
+      end else if (!s_range_err &&
+                   ((!EnableP4 && (s_entry_word_q[(entry*8)+2] != 32'd0)) ||
+                    (EnableP4 && ((s_entry_word_q[(entry*8)+2][31:17] != 15'd0) ||
+                                  (s_entry_word_q[(entry*8)+2][1:0] != 2'd0) ||
+                                  (s_entry_word_q[(entry*8)+3][31:17] != 15'd0) ||
+                                  (s_entry_word_q[(entry*8)+3][1:0] != 2'd0) ||
+                                  (s_scratch_end > 32'h0000_6000) ||
+                                  ((s_entry_word_q[(entry*8)+3] != 32'd0) &&
+                                   (s_entry_word_q[(entry*8)+2] < s_header_q[6])))))) begin
         s_range_err    = 1'b1;
         s_range_addr   = s_source_addr_q + s_header_q[7] + 32'(entry * 32) + 32'd8;
         s_range_detail = s_entry_word_q[(entry*8)+2];
-      end else if (!s_range_err && (s_entry_word_q[(entry*8)+3] != 32'd0)) begin
+      end else if (!s_range_err && !EnableP4 && (s_entry_word_q[(entry*8)+3] != 32'd0)) begin
         s_range_err    = 1'b1;
         s_range_addr   = s_source_addr_q + s_header_q[7] + 32'(entry * 32) + 32'd12;
         s_range_detail = s_entry_word_q[(entry*8)+3];
@@ -334,21 +371,35 @@ module apu_microcode_loader #(
         s_range_detail = s_entry_word_q[(entry*8)+5];
       end
     end
+    if (!s_range_err && EnableP4 && (s_header_q[10] != s_max_scratch_end)) begin
+      s_range_err    = 1'b1;
+      s_range_addr   = s_source_addr_q + 32'd40;
+      s_range_detail = s_header_q[10];
+    end
   end
 
   always_comb begin
-    s_table_err    = 1'b0;
-    s_table_addr   = s_source_addr_q + 32'd20;
+    logic [16:0] s_entry_table_end;
+    s_table_err = 1'b0;
+    s_table_addr = s_source_addr_q + 32'd20;
     s_table_detail = s_header_q[5];
-    if (s_header_q[5] != 32'd0) begin
+    s_table_header_err = EnableP4 &&
+        ((s_header_q[6] > 32'h0000_6000) || (s_header_q[6][1:0] != 2'd0));
+    if (!EnableP4 && (s_header_q[5] != 32'd0)) begin
       s_table_err = 1'b1;
-    end else if (s_header_q[6] != 32'd0) begin
+    end else if (!EnableP4 && (s_header_q[6] != 32'd0)) begin
       s_table_err    = 1'b1;
       s_table_addr   = s_source_addr_q + 32'd24;
       s_table_detail = s_header_q[6];
     end else begin
       for (int unsigned entry = 0; entry < 3; entry++) begin
-        if (!s_table_err && (s_entry_word_q[(entry*8)+7] != 32'd0)) begin
+        s_entry_table_end = {1'b0, s_entry_word_q[(entry*8)+7][15:0]} +
+            {1'b0, s_entry_word_q[(entry*8)+7][31:16]};
+        if (!s_table_err &&
+            ((!EnableP4 && (s_entry_word_q[(entry*8)+7] != 32'd0)) ||
+             (EnableP4 && ((s_entry_word_q[(entry*8)+7][1:0] != 2'd0) ||
+                           (s_entry_word_q[(entry*8)+7][17:16] != 2'd0) ||
+                           (s_entry_table_end > {1'b0, s_header_q[6][15:0]}))))) begin
           s_table_err    = 1'b1;
           s_table_addr   = s_source_addr_q + s_header_q[7] + 32'(entry * 32) + 32'd28;
           s_table_detail = s_entry_word_q[(entry*8)+7];
@@ -365,12 +416,17 @@ module apu_microcode_loader #(
     s_capability_detail = s_header_q[9] ^ s_entry_mask;
     if (s_header_q[9] != s_entry_mask) begin
       s_capability_err = 1'b1;
-    end else if (s_header_q[9] != 32'd0) begin
+    end else if ((!EnableP4 && (s_header_q[9] != 32'd0)) ||
+                 (EnableP4 &&
+                  ((s_header_q[9] & ~`APB4_APU__APUMC_P4_PRIMITIVE_MASK) != 32'd0))) begin
       s_capability_err    = 1'b1;
       s_capability_detail = s_header_q[9];
     end else begin
       for (int unsigned entry = 0; entry < 3; entry++) begin
-        if (!s_capability_err && (s_entry_word_q[(entry*8)+6] != 32'd0)) begin
+        if (!s_capability_err &&
+            ((!EnableP4 && (s_entry_word_q[(entry*8)+6] != 32'd0)) ||
+             (EnableP4 && ((s_entry_word_q[(entry*8)+6] &
+                            ~`APB4_APU__APUMC_P4_PRIMITIVE_MASK) != 32'd0)))) begin
           s_capability_err    = 1'b1;
           s_capability_addr   = s_source_addr_q + s_header_q[7] + 32'(entry * 32) + 32'd24;
           s_capability_detail = s_entry_word_q[(entry*8)+6];
@@ -383,7 +439,7 @@ module apu_microcode_loader #(
   assign s_scan_class = s_scan_instruction[63:60];
   assign s_scan_opcode = s_scan_instruction[59:56];
   assign s_scan_predicate = s_scan_instruction[55:52];
-  assign s_scan_aux = s_scan_instruction[33:32];
+  assign s_scan_aux = s_scan_instruction[39:32];
   assign s_scan_immediate = s_scan_instruction[10:0];
   assign s_scan_last = s_scan_pc_q == entry_last_o[s_scan_entry_q];
   assign s_scan_target = {1'b0, s_scan_pc_q} + 1'b1 + {1'b0, s_scan_immediate};
@@ -391,7 +447,7 @@ module apu_microcode_loader #(
       (s_scan_predicate != 4'd0) && (s_scan_class == 4'd0) &&
       (s_scan_opcode inside {4'd3, 4'd4}) && (s_path_stack_count_q < PathStackLimit);
   assign s_path_stack_cs = s_path_stack_push ||
-      ((s_state_q == PathPop) && (s_path_stack_count_q != 7'd0));
+      ((s_state_q == PathPop) && (s_path_stack_count_q != 12'd0));
   assign s_path_stack_write = s_path_stack_push;
   assign s_path_stack_addr = s_path_stack_push ?
       s_path_stack_count_q[10:0] : s_path_stack_count_q[10:0] - 1'b1;
@@ -452,7 +508,7 @@ module apu_microcode_loader #(
     end
   end
 `else
-  logic [63:0] s_path_stack_mem [0:PathStackDepth-1];
+  logic [63:0] s_path_stack_mem         [0:PathStackDepth-1];
   logic [63:0] s_path_stack_read_data_q;
 
   assign s_path_stack_read_data = s_path_stack_read_data_q;
@@ -495,12 +551,23 @@ module apu_microcode_loader #(
        ((s_loop_active_q & ~(4'b0001 << s_scan_aux[1:0])) != 4'd0) :
        ((s_loop_active_q != 4'd0) ||
         ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd6))));
-  assign s_scan_capability_instruction = ((s_scan_class >= 4'd2) && (s_scan_class <= 4'd6)) ||
-      ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8));
+  assign s_scan_capability_instruction = EnableP4 ?
+      ((s_scan_class == 4'd6) ||
+       ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) &&
+        !(s_scan_aux inside {8'd1, 8'd2, 8'd3})) ||
+       (!((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) &&
+          (s_scan_aux == 8'd1)) &&
+        ((instruction_primitive_mask(
+      s_scan_instruction
+  ) & ~entry_primitive_mask_o[s_scan_entry_q]) != 32'd0)) ||
+      (((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) && (s_scan_aux == 8'd1)) &&
+       ((entry_primitive_mask_o[s_scan_entry_q] & 32'h0000_ffc0) == 32'd0))) :
+      (((s_scan_class >= 4'd2) && (s_scan_class <= 4'd6)) ||
+       ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8)));
 
   always_comb begin
     s_path_fallthrough = s_scan_predicate != 4'd0;
-    if (s_scan_class == 4'd1) begin
+    if ((s_scan_class >= 4'd1) && (s_scan_class <= (EnableP4 ? 4'd5 : 4'd1))) begin
       s_path_fallthrough = 1'b1;
     end else if ((s_scan_class == 4'd0) && (s_scan_opcode inside {4'd0, 4'd6, 4'd7})) begin
       s_path_fallthrough = 1'b1;
@@ -727,6 +794,14 @@ module apu_microcode_loader #(
               fault_stage_o   <= `APB4_APU__ERROR_STAGE_LOADER;
               fault_addr_o    <= s_header_range_addr;
               fault_detail_o  <= s_header_range_detail;
+            end else if (s_table_header_err) begin
+              s_state_q       <= Idle;
+              s_err_bits_q[3] <= 1'b1;
+              fault_valid_o   <= 1'b1;
+              fault_code_o    <= `APB4_APU__ERROR_CODE_MICROCODE;
+              fault_stage_o   <= `APB4_APU__ERROR_STAGE_LOADER;
+              fault_addr_o    <= s_source_addr_q + 32'd24;
+              fault_detail_o  <= s_header_q[6];
             end else begin
               s_transfer_err_q <= 1'b0;
               s_byte_offset_q  <= s_header_q[7];
@@ -789,6 +864,14 @@ module apu_microcode_loader #(
               fault_stage_o   <= `APB4_APU__ERROR_STAGE_LOADER;
               fault_addr_o    <= s_range_addr;
               fault_detail_o  <= s_range_detail;
+            end else if (EnableP4 && s_table_err) begin
+              s_state_q       <= Idle;
+              s_err_bits_q[3] <= 1'b1;
+              fault_valid_o   <= 1'b1;
+              fault_code_o    <= `APB4_APU__ERROR_CODE_MICROCODE;
+              fault_stage_o   <= `APB4_APU__ERROR_STAGE_LOADER;
+              fault_addr_o    <= s_table_addr;
+              fault_detail_o  <= s_table_detail;
             end else begin
               s_byte_offset_q  <= 32'd64;
               s_crc_q          <= 32'hffff_ffff;
@@ -865,7 +948,7 @@ module apu_microcode_loader #(
               fault_addr_o    <= s_range_addr;
               fault_detail_o  <= s_range_detail;
             end else begin
-              s_actual_crc_q <= ~s_crc_q;
+              s_actual_crc_q         <= ~s_crc_q;
               s_scan_entry_q         <= 2'd0;
               s_scan_pc_q            <= entry_first_o[0];
               s_call_depth_q         <= 3'd0;
@@ -894,15 +977,15 @@ module apu_microcode_loader #(
                   s_scan_pc_q,
                   s_scan_instruction
               );
-              s_scan_pc_q          <= entry_pc_o[s_scan_entry_q];
-              s_call_depth_q       <= 3'd0;
-              s_return_pc_q        <= '0;
-              s_loop_active_q      <= 4'd0;
-              s_loop_start_q       <= '0;
+              s_scan_pc_q <= entry_pc_o[s_scan_entry_q];
+              s_call_depth_q <= 3'd0;
+              s_return_pc_q <= '0;
+              s_loop_active_q <= 4'd0;
+              s_loop_start_q <= '0;
               s_path_stack_count_q <= '0;
-              s_path_stop_valid_q  <= 1'b1;
-              s_path_stop_pc_q     <= s_scan_pc_q;
-              s_state_q            <= PathRequest;
+              s_path_stop_valid_q <= 1'b1;
+              s_path_stop_pc_q <= s_scan_pc_q;
+              s_state_q <= PathRequest;
             end else begin
               if (!s_scan_capability_err_q && s_scan_capability_instruction &&
                   instruction_encoding_valid(
@@ -1000,7 +1083,7 @@ module apu_microcode_loader #(
             end
           end
           PathPop: begin
-            if (s_path_stack_count_q != 7'd0) begin
+            if (s_path_stack_count_q != 12'd0) begin
               s_path_stack_count_q <= s_path_stack_count_q - 1'b1;
               s_state_q            <= PathPopLoad;
             end else if (s_scan_control_err_q || (s_scan_entry_q == 2'd2)) begin

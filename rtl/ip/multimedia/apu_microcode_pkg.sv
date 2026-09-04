@@ -10,7 +10,52 @@ package apu_microcode_pkg;
     logic [10:0] last_pc;
     logic [15:0] max_loop_count;
     logic [23:0] max_retired;
+    logic [16:0] scratch_base;
+    logic [16:0] scratch_bytes;
+    logic [31:0] primitive_mask;
+    logic [15:0] table_offset;
+    logic [15:0] table_bytes;
   } apu_mc_entry_t;
+
+  function automatic logic [31:0] instruction_primitive_mask(input logic [63:0] instruction_i);
+    logic [3:0] s_class;
+    logic [3:0] s_opcode;
+    logic [7:0] s_aux;
+    logic       s_unused;
+    begin
+      s_class                    = instruction_i[63:60];
+      s_opcode                   = instruction_i[59:56];
+      s_aux                      = instruction_i[39:32];
+      s_unused                   = ^{instruction_i[55:40], instruction_i[31:0]};
+      instruction_primitive_mask = 32'd0;
+      unique case (s_class)
+        `APB4_APU__MC_CLASS_CONTROL: begin
+          if (s_opcode == `APB4_APU__MC_CONTROL_WAIT) begin
+            if (s_aux == `APB4_APU__MC_WAIT_KERNEL) instruction_primitive_mask = 32'h0000_ffc0;
+            else if (s_aux inside {`APB4_APU__MC_WAIT_INPUT_FIFO, `APB4_APU__MC_WAIT_OUTPUT_FIFO})
+              instruction_primitive_mask = 32'd1 << `APB4_APU__MC_PRIMITIVE_LOCAL_FIFO;
+          end
+        end
+        `APB4_APU__MC_CLASS_BITSTREAM: begin
+          instruction_primitive_mask = 32'd1 << `APB4_APU__MC_PRIMITIVE_BITSTREAM;
+          if (s_opcode inside {`APB4_APU__MC_BITSTREAM_CRC8, `APB4_APU__MC_BITSTREAM_CRC16})
+            instruction_primitive_mask |= 32'd1 << `APB4_APU__MC_PRIMITIVE_CRC;
+        end
+        `APB4_APU__MC_CLASS_ENTROPY:
+        instruction_primitive_mask = (32'd1 << `APB4_APU__MC_PRIMITIVE_BITSTREAM) |
+            (32'd1 << ((s_opcode <= `APB4_APU__MC_ENTROPY_HUFF_QUAD) ?
+                       `APB4_APU__MC_PRIMITIVE_HUFFMAN : `APB4_APU__MC_PRIMITIVE_RICE));
+        `APB4_APU__MC_CLASS_LOCAL:
+        instruction_primitive_mask = 32'd1 <<
+            ((s_opcode inside {`APB4_APU__MC_LOCAL_FIFO_POP, `APB4_APU__MC_LOCAL_FIFO_PUSH}) ?
+             `APB4_APU__MC_PRIMITIVE_LOCAL_FIFO : `APB4_APU__MC_PRIMITIVE_LOCAL_MEMORY);
+        `APB4_APU__MC_CLASS_KERNEL:
+        instruction_primitive_mask = 32'd1 << (s_opcode + `APB4_APU__MC_PRIMITIVE_REQUANTIZE);
+        default: instruction_primitive_mask = 32'd0;
+      endcase
+      return instruction_primitive_mask | {32{s_unused && 1'b0}};
+    end
+  endfunction
 
   function automatic logic [31:0] crc32_word(input logic [31:0] crc_i, input logic [31:0] data_i,
                                              input logic [3:0] keep_i);

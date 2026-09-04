@@ -221,6 +221,7 @@ module apu_p3_microcode_tb;
       .fault_addr_o            (seq_fault_addr),
       .fault_detail_o          (seq_fault_detail),
       .perf_retired_o          (seq_perf_retired),
+      .launch_epoch_o          (),
       .idle_o                  (seq_idle)
   );
 

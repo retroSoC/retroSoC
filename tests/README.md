@@ -19,7 +19,10 @@ tooling.
 - `test_apu.py` checks the fail-closed APU APB4/IRQ shell plus the P2 private
   DMA, ring scheduler, stream router, Gateway A, and verification-only backend;
   `test_apu_register_parity.py` keeps its handwritten RTL/C ABI and matrix
-  coverage synchronized.
+  coverage synchronized. `test_apu_primitives.py` compares the P4 assembler,
+  BAM, loader, sequencer, local SRAM, FIFOs, and production primitive engines
+  with Icarus and Verilator while keeping its injectors out of product
+  filelists.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.
