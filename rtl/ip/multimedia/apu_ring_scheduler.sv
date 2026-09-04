@@ -278,7 +278,36 @@ module apu_ring_scheduler (
   end
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i || soft_reset_i) begin
+    if (!rst_n_i) begin
+      s_state_q          <= Idle;
+      s_word_index_q     <= 6'd0;
+      s_head_q           <= 8'd0;
+      s_completed_q      <= 32'd0;
+      s_active_q         <= 1'b0;
+      s_ring_err_q       <= 1'b0;
+      s_wrapped_q        <= 1'b0;
+      s_stopped_q        <= 1'b0;
+      s_pending_q        <= 8'd0;
+      s_coalesce_timer_q <= 16'd0;
+      s_last_index_q     <= 8'd0;
+      s_job_busy_q       <= 1'b0;
+      s_job_done_q       <= 1'b0;
+      s_job_err_q        <= 1'b0;
+      s_job_aborted_q    <= 1'b0;
+      s_job_code_q       <= 6'd0;
+      s_job_stage_q      <= 4'd0;
+      s_job_resp_q       <= 2'd0;
+      s_ring_event_q     <= 1'b0;
+      s_err_event_q      <= 1'b0;
+      s_abort_done_q     <= 1'b0;
+      s_err_code_q       <= 6'd0;
+      s_err_stage_q      <= 4'd0;
+      s_err_resp_q       <= 2'd0;
+      s_err_index_q      <= 8'd0;
+      s_err_addr_q       <= 32'd0;
+      s_abort_pending_q  <= 1'b0;
+      s_ring_en_q        <= 1'b0;
+    end else if (soft_reset_i) begin
       s_state_q          <= Idle;
       s_word_index_q     <= 6'd0;
       s_head_q           <= 8'd0;

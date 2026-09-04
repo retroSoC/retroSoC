@@ -165,7 +165,14 @@ module apu_stream_router #(
   );
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i || flush_i) begin
+    if (!rst_n_i) begin
+      s_tx_low_armed_q  <= 1'b0;
+      s_rx_high_armed_q <= 1'b1;
+      s_tx_underrun_q   <= 1'b0;
+      s_rx_overrun_q    <= 1'b0;
+      s_tx_words_q      <= 8'd0;
+      s_rx_words_q      <= 8'd0;
+    end else if (flush_i) begin
       s_tx_low_armed_q  <= 1'b0;
       s_rx_high_armed_q <= 1'b1;
       s_tx_underrun_q   <= 1'b0;

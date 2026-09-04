@@ -1,12 +1,18 @@
-"""Keep the handwritten APU-P1 RTL and SDK register ABI synchronized."""
+"""Keep the handwritten APU RTL and SDK register ABI synchronized through P3."""
 
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from apu_isa import abi_manifest  # noqa: E402
+
+
 RTL_DEFINE = ROOT / "rtl/ip/multimedia/apu_define.svh"
 C_HEADER = ROOT / "crt/include/retrosoc/hal/apu_regs.h"
 REGISTER_TESTBENCH = ROOT / "tests/rtl/apu_reg_tb.sv"
@@ -64,3 +70,65 @@ def test_apu_register_matrix_covers_each_offset_once() -> None:
 
     assert len(covered) == len(set(covered))
     assert set(covered) == set(expected)
+
+
+def test_apu_p3_tool_isa_matches_handwritten_rtl_and_c() -> None:
+    rtl = _rtl_values()
+    manifest = abi_manifest()
+    exact = {
+        "APUMC_MAGIC": manifest["apumc"]["magic"],
+        "APUMC_ABI": manifest["apumc"]["abi"],
+        "APUMC_HEADER_BYTES": manifest["apumc"]["header_bytes"],
+        "APUMC_ENTRY_BYTES": manifest["apumc"]["entry_bytes"],
+        "APUMC_ENTRY_COUNT": manifest["apumc"]["entry_count"],
+        "APUMC_MAX_INSTRUCTIONS": manifest["apumc"]["max_instructions"],
+    }
+    for name, value in manifest["classes"].items():
+        exact[f"MC_CLASS_{name.upper()}"] = value
+    for name, value in manifest["control_opcodes"].items():
+        exact[f"MC_CONTROL_{name.upper()}"] = value
+    for name, value in manifest["scalar_opcodes"].items():
+        exact[f"MC_SCALAR_{name.upper()}"] = value
+    for class_name, opcodes in manifest["deferred_opcodes"].items():
+        for name, value in opcodes.items():
+            exact[f"MC_{class_name.upper()}_{name.upper()}"] = value
+    predicate_names = {
+        "always": "ALWAYS",
+        "eq": "EQ",
+        "ne": "NE",
+        "slt": "SIGNED_LT",
+        "sge": "SIGNED_GE",
+        "ult": "UNSIGNED_LT",
+        "uge": "UNSIGNED_GE",
+        "input_exhausted": "INPUT_EXHAUSTED",
+        "input_ready": "INPUT_READY",
+        "output_ready": "OUTPUT_READY",
+        "kernel_done": "KERNEL_DONE",
+        "transport_done": "TRANSPORT_DONE",
+    }
+    for name, value in manifest["predicates"].items():
+        exact[f"MC_PRED_{predicate_names[name]}"] = value
+    for name, value in manifest["wait_sources"].items():
+        exact[f"MC_WAIT_{name.upper()}"] = value
+    for name, value in manifest["primitives"].items():
+        exact[f"MC_PRIMITIVE_{name.upper()}"] = value
+    for name, value in manifest["instruction_fields"].items():
+        exact[f"MC_INSTRUCTION_{name.upper()}"] = value
+    for name, value in manifest["entry_words"].items():
+        exact[f"APUMC_ENTRY_{name.upper()}"] = value
+    trap_names = {
+        "illegal": "ILLEGAL",
+        "pc_range": "PC_RANGE",
+        "call_stack": "CALL_STACK",
+        "loop": "LOOP",
+        "local_range": "LOCAL_RANGE",
+        "unavailable": "UNAVAILABLE",
+        "watchdog": "WATCHDOG",
+        "retired_budget": "RETIRED_BUDGET",
+        "engine": "ENGINE",
+        "explicit": "EXPLICIT",
+    }
+    for name, value in manifest["trap_reasons"].items():
+        if name != "reserved":
+            exact[f"MC_TRAP_{trap_names[name]}"] = value
+    assert {name: rtl[name] for name in exact} == exact

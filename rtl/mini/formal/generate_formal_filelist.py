@@ -24,11 +24,27 @@ MEMORY = ROOT / "rtl/ip/memory"
 STORAGE = ROOT / "rtl/ip/storage"
 MULTIMEDIA = ROOT / "rtl/ip/multimedia"
 TOP = ROOT / "rtl/mini/top"
+APU_LOADER_SCENARIOS = {
+    "apu_loader_success": 0,
+    "apu_loader_header_range": 1,
+    "apu_loader_descriptor_range": 2,
+    "apu_loader_crc": 3,
+    "apu_loader_control_flow": 4,
+    "apu_loader_abort": 5,
+    "apu_loader_resource_reset": 6,
+}
 
 
 def target_defines(target: str) -> list[str]:
     if target == "onchip_ram":
         return ["+define+PDK_BEHAV", "+define+SYNTHESIS"]
+    if target == "apu_loader" or target in APU_LOADER_SCENARIOS:
+        scenario = APU_LOADER_SCENARIOS.get(target, 0)
+        return [
+            "+define+SV_ASSRT_DISABLE",
+            "+define+SYNTHESIS",
+            f"+define+APU_LOADER_FORMAL_SCENARIO={scenario}",
+        ]
     if target == "opipsram":
         return ["+define+PDK_BEHAV"]
     if target == "sysctrl":
@@ -257,6 +273,19 @@ def source_files(target: str) -> list[Path]:
             MULTIMEDIA / "apu_dma.sv",
             SCRIPT_DIR / "apu_formal.sv",
         ]
+    if target == "apu_loader" or target in APU_LOADER_SCENARIOS:
+        return [
+            ROOT / "rtl/tech/tc_sram.sv",
+            MULTIMEDIA / "apu_microcode_pkg.sv",
+            MULTIMEDIA / "apu_microcode_loader.sv",
+            SCRIPT_DIR / "apu_loader_formal.sv",
+        ]
+    if target == "apu_sequencer":
+        return [
+            MULTIMEDIA / "apu_microcode_pkg.sv",
+            MULTIMEDIA / "apu_codec_sequencer.sv",
+            SCRIPT_DIR / "apu_sequencer_formal.sv",
+        ]
     if target == "gateway_a":
         return [
             COMMON_RTL / "interface/axi4_if.sv",
@@ -333,6 +362,8 @@ def parse_args() -> argparse.Namespace:
             "opipsram",
             "dma",
             "apu",
+            *APU_LOADER_SCENARIOS,
+            "apu_sequencer",
             "gateway_a",
             "sdio",
         ),

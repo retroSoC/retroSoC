@@ -24,16 +24,43 @@ module apb4_apu (
     output logic                   irq_o
     // verilog_format: on
 );
-  logic s_soft_reset, s_abort, s_cnt_clear, s_xrun_clear, s_perf_enable;
+  logic s_soft_reset, s_abort, s_microcode_load, s_cnt_clear, s_xrun_clear, s_perf_enable;
   logic [ 3:0] s_stream_route;
   logic [15:0] s_stream_watermark;
   logic [31:0] s_read_base, s_read_limit, s_write_base, s_write_limit;
   logic [31:0] s_dma_timeout, s_ring_base, s_ring_coalesce;
+  logic [31:0] s_sequencer_timeout, s_mc_image_addr, s_mc_image_size, s_mc_expected_crc;
   logic [8:0] s_ring_size;
   logic [7:0] s_ring_tail, s_ring_head;
   logic [1:0] s_ring_control;
   logic [31:0] s_stream_stat, s_job_stat, s_ring_stat, s_ring_completed;
   logic [10:0] s_irq_set;
+  logic [ 7:0] s_mc_status;
+  logic [31:0] s_mc_abi, s_mc_actual_crc, s_mc_load_count;
+  logic [63:0] s_mc_build_id;
+  logic s_mc_lock, s_mc_load_done, s_mc_abort_done, s_mc_idle;
+  logic       s_mc_fault_valid;
+  logic [5:0] s_mc_fault_code;
+  logic [3:0] s_mc_fault_stage;
+  logic [1:0] s_mc_fault_resp;
+  logic [31:0] s_mc_fault_addr, s_mc_fault_detail;
+  logic [2:0][10:0] s_mc_entry_pc, s_mc_entry_first, s_mc_entry_last;
+  logic [2:0][15:0] s_mc_entry_max_loop;
+  logic [2:0][23:0] s_mc_entry_max_retired;
+  logic s_store_active, s_store_read, s_store_write, s_store_valid;
+  logic [10:0] s_store_addr;
+  logic [63:0] s_store_write_data, s_store_read_data;
+  logic s_seq_fetch, s_seq_fetch_valid, s_seq_trapped, s_seq_trap_event;
+  logic s_seq_abort_done, s_seq_fault_valid, s_seq_idle;
+  logic [10:0] s_seq_fetch_addr;
+  logic [63:0] s_seq_fetch_data, s_seq_perf_retired;
+  logic [31:0] s_seq_status, s_seq_retired;
+  logic [15:0][31:0] s_seq_gpr;
+  logic [ 5:0]       s_seq_fault_code;
+  logic [ 3:0]       s_seq_fault_stage;
+  logic [ 1:0]       s_seq_fault_resp;
+  logic [ 7:0]       s_seq_fault_index;
+  logic [31:0] s_seq_fault_addr, s_seq_fault_detail;
   logic s_input_watermark_evt, s_output_watermark_evt, s_xrun_evt;
   logic s_ring_event, s_ring_err, s_abort_done;
   logic [ 5:0] s_ring_err_code;
@@ -46,9 +73,13 @@ module apb4_apu (
   logic [ 3:0] s_fault_stage;
   logic [ 1:0] s_fault_resp;
   logic [ 7:0] s_fault_index;
-  logic [31:0] s_fault_addr;
+  logic [31:0] s_fault_addr, s_fault_detail;
   logic s_dma_req_valid, s_dma_req_ready, s_dma_req_write;
   logic [31:0] s_dma_req_addr, s_dma_req_bytes;
+  logic s_ring_dma_req_valid, s_ring_dma_req_ready, s_ring_dma_req_write;
+  logic [31:0] s_ring_dma_req_addr, s_ring_dma_req_bytes;
+  logic s_mc_dma_req_valid, s_mc_dma_req_ready, s_mc_dma_ready;
+  logic [31:0] s_mc_dma_req_addr, s_mc_dma_req_bytes;
   logic s_dma_busy, s_dma_done, s_dma_err, s_dma_aborted, s_dma_aborting;
   logic        s_dma_abort;
   logic [ 5:0] s_dma_err_code;
@@ -82,6 +113,12 @@ module apb4_apu (
   );
   axi4_stream_if #(
       .DATA_WIDTH(32)
+  ) u_scheduler_read_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
   ) u_apu_tx_axis (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
@@ -102,20 +139,32 @@ module apb4_apu (
   assign u_apu_tx_axis.tuser = '0;
   assign u_apu_tx_axis.tvalid = 1'b0;
   assign u_apu_rx_axis.tready = 1'b0;
+  assign u_scheduler_read_axis.tdata = u_dma_read_axis.tdata;
+  assign u_scheduler_read_axis.tkeep = u_dma_read_axis.tkeep;
+  assign u_scheduler_read_axis.tstrb = u_dma_read_axis.tstrb;
+  assign u_scheduler_read_axis.tlast = u_dma_read_axis.tlast;
+  assign u_scheduler_read_axis.tid = u_dma_read_axis.tid;
+  assign u_scheduler_read_axis.tdest = u_dma_read_axis.tdest;
+  assign u_scheduler_read_axis.tuser = u_dma_read_axis.tuser;
+  assign u_scheduler_read_axis.tvalid = u_dma_read_axis.tvalid && s_mc_idle;
+  assign u_dma_read_axis.tready = s_mc_idle ? u_scheduler_read_axis.tready : s_mc_dma_ready;
   assign s_irq_set = {
-    1'b0,
+    s_seq_trap_event,
     s_xrun_evt,
     s_fault_valid,
     s_output_watermark_evt,
     s_input_watermark_evt,
-    s_abort_done,
-    3'b000,
+    s_abort_done || s_mc_abort_done || s_seq_abort_done,
+    1'b0,
+    s_mc_load_done,
+    1'b0,
     s_ring_event,
     1'b0
   };
   assign s_tx_route_apu = s_stream_route[1:0] == 2'd1;
   assign s_rx_route_apu = s_stream_route[3:2] == 2'd1;
-  assign s_transport_idle = s_scheduler_idle && !s_dma_busy && s_stream_idle;
+  assign s_transport_idle = s_scheduler_idle && !s_dma_busy && s_stream_idle && s_mc_idle &&
+      s_seq_idle;
   assign idle_o = s_transport_idle;
   assign s_resource_reset_request = s_resource_reset_pending_q ||
       (resource_reset_i && !s_resource_reset_seen_q);
@@ -124,22 +173,35 @@ module apb4_apu (
   assign s_dma_admission_block = (quiesce_i || s_resource_reset_request) &&
       !s_job_stat[`APB4_APU__JOB_STATUS_BUSY] &&
       !s_ring_stat[`APB4_APU__RING_STATUS_WRITEBACK_PENDING];
+  assign s_dma_req_valid = s_mc_idle ? s_ring_dma_req_valid :
+      (s_mc_dma_req_valid && !s_resource_reset_request);
+  assign s_dma_req_write = s_mc_idle && s_ring_dma_req_write;
+  assign s_dma_req_addr = s_mc_idle ? s_ring_dma_req_addr : s_mc_dma_req_addr;
+  assign s_dma_req_bytes = s_mc_idle ? s_ring_dma_req_bytes : s_mc_dma_req_bytes;
+  assign s_ring_dma_req_ready = s_mc_idle && s_dma_req_ready;
+  assign s_mc_dma_req_ready = !s_mc_idle && s_dma_req_ready && !s_resource_reset_request;
 
   always_comb begin
-    s_fault_valid = s_ring_err;
-    s_fault_code  = s_ring_err_code;
-    s_fault_stage = s_ring_err_stage;
-    s_fault_resp  = s_ring_err_resp;
-    s_fault_index = s_ring_err_index;
-    s_fault_addr  = s_ring_err_addr;
-    if (!s_ring_err && s_rx_route_apu && i2s_rx_overrun_i) begin
+    s_fault_valid = s_ring_err || s_mc_fault_valid || s_seq_fault_valid;
+    s_fault_code  = s_ring_err ? s_ring_err_code :
+                    (s_mc_fault_valid ? s_mc_fault_code : s_seq_fault_code);
+    s_fault_stage = s_ring_err ? s_ring_err_stage :
+                     (s_mc_fault_valid ? s_mc_fault_stage : s_seq_fault_stage);
+    s_fault_resp  = s_ring_err ? s_ring_err_resp :
+                    (s_mc_fault_valid ? s_mc_fault_resp : s_seq_fault_resp);
+    s_fault_index = s_ring_err ? s_ring_err_index : (s_mc_fault_valid ? 8'd0 : s_seq_fault_index);
+    s_fault_addr  = s_ring_err ? s_ring_err_addr :
+                    (s_mc_fault_valid ? s_mc_fault_addr : s_seq_fault_addr);
+    s_fault_detail = s_mc_fault_valid ? s_mc_fault_detail :
+        (s_seq_fault_valid ? s_seq_fault_detail : 32'd0);
+    if (!s_fault_valid && s_rx_route_apu && i2s_rx_overrun_i) begin
       s_fault_valid = 1'b1;
       s_fault_code  = `APB4_APU__ERROR_CODE_STREAM_OVERRUN;
       s_fault_stage = `APB4_APU__ERROR_STAGE_KWS_FRONTEND;
       s_fault_resp  = 2'd0;
       s_fault_index = 8'd0;
       s_fault_addr  = 32'd0;
-    end else if (!s_ring_err && s_tx_route_apu && i2s_tx_underrun_i) begin
+    end else if (!s_fault_valid && s_tx_route_apu && i2s_tx_underrun_i) begin
       s_fault_valid = 1'b1;
       s_fault_code  = `APB4_APU__ERROR_CODE_STREAM_UNDERRUN;
       s_fault_stage = `APB4_APU__ERROR_STAGE_DMA_WRITE;
@@ -171,6 +233,15 @@ module apb4_apu (
       .ring_status_i          (s_ring_stat),
       .ring_head_i            (s_ring_head),
       .ring_completed_i       (s_ring_completed),
+      .mc_status_i            (s_mc_status),
+      .mc_abi_i               (s_mc_abi),
+      .mc_build_id_i          (s_mc_build_id),
+      .mc_lock_i              (s_mc_lock),
+      .mc_actual_crc_i        (s_mc_actual_crc),
+      .mc_load_count_i        (s_mc_load_count),
+      .sequencer_status_i     (s_seq_status),
+      .sequencer_retired_i    (s_seq_retired),
+      .sequencer_trapped_i    (s_seq_trapped),
       .irq_set_i              (s_irq_set),
       .fault_valid_i          (s_fault_valid),
       .fault_code_i           (s_fault_code),
@@ -178,17 +249,19 @@ module apb4_apu (
       .fault_resp_i           (s_fault_resp),
       .fault_index_i          (s_fault_index),
       .fault_addr_i           (s_fault_addr),
-      .fault_detail_i         (32'd0),
+      .fault_detail_i         (s_fault_detail),
       .perf_active_cycles_i   (s_active_cycles_q),
       .perf_input_bytes_i     (s_dma_read_bytes),
       .perf_output_bytes_i    (s_dma_write_bytes),
       .perf_dma_read_stalls_i (s_dma_read_stalls),
       .perf_dma_write_stalls_i(s_dma_write_stalls),
       .perf_stream_stalls_i   (s_stream_stalls_q),
+      .perf_sequencer_instr_i (s_seq_perf_retired),
       .perf_faults_i          (s_faults_q),
       .apb4                   (apb4),
       .soft_reset_o           (s_soft_reset),
       .abort_o                (s_abort),
+      .microcode_load_o       (s_microcode_load),
       .counter_clear_o        (s_cnt_clear),
       .perf_enable_o          (s_perf_enable),
       .xrun_clear_o           (s_xrun_clear),
@@ -199,6 +272,10 @@ module apb4_apu (
       .write_base_o           (s_write_base),
       .write_limit_o          (s_write_limit),
       .dma_timeout_o          (s_dma_timeout),
+      .sequencer_timeout_o    (s_sequencer_timeout),
+      .mc_image_addr_o        (s_mc_image_addr),
+      .mc_image_size_o        (s_mc_image_size),
+      .mc_expected_crc_o      (s_mc_expected_crc),
       .ring_base_o            (s_ring_base),
       .ring_size_o            (s_ring_size),
       .ring_tail_o            (s_ring_tail),
@@ -212,7 +289,7 @@ module apb4_apu (
       .clk_i           (clk_i),
       .rst_n_i         (rst_n_i),
       .abort_i         (s_dma_abort),
-      .quiesce_i       (s_dma_admission_block),
+      .quiesce_i       (s_dma_admission_block && s_mc_idle),
       .bridge_epoch_i  (bridge_epoch_i),
       .perf_enable_i   (s_perf_enable),
       .counter_clear_i (s_cnt_clear),
@@ -246,6 +323,128 @@ module apb4_apu (
       .axi4            (axi4)
   );
 
+  apu_microcode_loader u_microcode_loader (
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .start_i            (s_microcode_load),
+      .abort_i            (s_abort),
+      .resource_reset_i   (s_resource_reset_request),
+      .soft_reset_i       (s_soft_reset),
+      .counter_clear_i    (s_cnt_clear),
+      .image_addr_i       (s_mc_image_addr),
+      .image_size_i       (s_mc_image_size),
+      .expected_crc_i     (s_mc_expected_crc),
+      .dma_request_valid_o(s_mc_dma_req_valid),
+      .dma_request_ready_i(s_mc_dma_req_ready),
+      .dma_request_addr_o (s_mc_dma_req_addr),
+      .dma_request_bytes_o(s_mc_dma_req_bytes),
+      .dma_data_i         (u_dma_read_axis.tdata),
+      .dma_keep_i         (u_dma_read_axis.tkeep),
+      .dma_last_i         (u_dma_read_axis.tlast),
+      .dma_valid_i        (u_dma_read_axis.tvalid && !s_mc_idle),
+      .dma_ready_o        (s_mc_dma_ready),
+      .dma_done_i         (s_dma_done),
+      .dma_err_i          (s_dma_err),
+      .dma_err_code_i     (s_dma_err_code),
+      .dma_err_stage_i    (s_dma_err_stage),
+      .dma_err_resp_i     (s_dma_err_resp),
+      .dma_err_addr_i     (s_dma_err_addr),
+      .store_active_o     (s_store_active),
+      .store_read_o       (s_store_read),
+      .store_write_o      (s_store_write),
+      .store_addr_o       (s_store_addr),
+      .store_data_o       (s_store_write_data),
+      .store_data_i       (s_store_read_data),
+      .store_valid_i      (s_store_valid),
+      .stat_o             (s_mc_status),
+      .abi_o              (s_mc_abi),
+      .build_id_o         (s_mc_build_id),
+      .lock_o             (s_mc_lock),
+      .actual_crc_o       (s_mc_actual_crc),
+      .load_count_o       (s_mc_load_count),
+      .entry_pc_o         (s_mc_entry_pc),
+      .entry_first_o      (s_mc_entry_first),
+      .entry_last_o       (s_mc_entry_last),
+      .entry_max_loop_o   (s_mc_entry_max_loop),
+      .entry_max_retired_o(s_mc_entry_max_retired),
+      .load_done_o        (s_mc_load_done),
+      .abort_done_o       (s_mc_abort_done),
+      .fault_valid_o      (s_mc_fault_valid),
+      .fault_code_o       (s_mc_fault_code),
+      .fault_stage_o      (s_mc_fault_stage),
+      .fault_resp_o       (s_mc_fault_resp),
+      .fault_addr_o       (s_mc_fault_addr),
+      .fault_detail_o     (s_mc_fault_detail),
+      .idle_o             (s_mc_idle)
+  );
+
+  apu_control_store u_control_store (
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .loader_active_i(s_store_active),
+      .loader_read_i  (s_store_read),
+      .loader_write_i (s_store_write),
+      .loader_addr_i  (s_store_addr),
+      .loader_data_i  (s_store_write_data),
+      .loader_data_o  (s_store_read_data),
+      .loader_valid_o (s_store_valid),
+      .image_valid_i  (s_mc_status[`APB4_APU__MC_STATUS_VALID]),
+      .fetch_i        (s_seq_fetch),
+      .fetch_addr_i   (s_seq_fetch_addr),
+      .fetch_data_o   (s_seq_fetch_data),
+      .fetch_valid_o  (s_seq_fetch_valid)
+  );
+
+  apu_codec_sequencer u_codec_sequencer (
+      .clk_i                   (clk_i),
+      .rst_n_i                 (rst_n_i),
+      .soft_reset_i            (s_soft_reset),
+      .resource_reset_i        (s_resource_reset_apply_q),
+      .counter_clear_i         (s_cnt_clear),
+      .abort_i                 (s_abort),
+      .launch_i                (1'b0),
+      .launch_entry_i          (2'd0),
+      .image_valid_i           (s_mc_status[`APB4_APU__MC_STATUS_VALID]),
+      .timeout_i               (s_sequencer_timeout),
+      .entry_pc_i              (s_mc_entry_pc),
+      .entry_first_i           (s_mc_entry_first),
+      .entry_last_i            (s_mc_entry_last),
+      .entry_max_loop_i        (s_mc_entry_max_loop),
+      .entry_max_retired_i     (s_mc_entry_max_retired),
+      .input_exhausted_i       (1'b1),
+      .input_ready_i           (1'b0),
+      .output_ready_i          (1'b1),
+      .kernel_done_i           (1'b0),
+      .transport_idle_success_i(!s_dma_busy && !s_dma_err),
+      .stall_i                 (1'b0),
+      .cause_valid_i           (1'b0),
+      .cause_code_i            (6'd0),
+      .cause_stage_i           (4'd0),
+      .cause_resp_i            (2'd0),
+      .cause_index_i           (8'd0),
+      .cause_addr_i            (32'd0),
+      .cause_detail_i          (32'd0),
+      .fetch_o                 (s_seq_fetch),
+      .fetch_addr_o            (s_seq_fetch_addr),
+      .fetch_data_i            (s_seq_fetch_data),
+      .fetch_valid_i           (s_seq_fetch_valid),
+      .stat_o                  (s_seq_status),
+      .retired_o               (s_seq_retired),
+      .gpr_o                   (s_seq_gpr),
+      .trapped_o               (s_seq_trapped),
+      .trap_event_o            (s_seq_trap_event),
+      .abort_done_o            (s_seq_abort_done),
+      .fault_valid_o           (s_seq_fault_valid),
+      .fault_code_o            (s_seq_fault_code),
+      .fault_stage_o           (s_seq_fault_stage),
+      .fault_resp_o            (s_seq_fault_resp),
+      .fault_index_o           (s_seq_fault_index),
+      .fault_addr_o            (s_seq_fault_addr),
+      .fault_detail_o          (s_seq_fault_detail),
+      .perf_retired_o          (s_seq_perf_retired),
+      .idle_o                  (s_seq_idle)
+  );
+
   apu_ring_scheduler u_ring_scheduler (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),
@@ -261,12 +460,12 @@ module apb4_apu (
       .stop_on_error_i       (s_ring_control[1]),
       .coalesce_count_i      (s_ring_coalesce[7:0]),
       .coalesce_timeout_i    (s_ring_coalesce[31:16]),
-      .dma_request_valid_o   (s_dma_req_valid),
-      .dma_request_ready_i   (s_dma_req_ready),
-      .dma_request_write_o   (s_dma_req_write),
-      .dma_request_addr_o    (s_dma_req_addr),
-      .dma_request_bytes_o   (s_dma_req_bytes),
-      .dma_read_axis         (u_dma_read_axis),
+      .dma_request_valid_o   (s_ring_dma_req_valid),
+      .dma_request_ready_i   (s_ring_dma_req_ready),
+      .dma_request_write_o   (s_ring_dma_req_write),
+      .dma_request_addr_o    (s_ring_dma_req_addr),
+      .dma_request_bytes_o   (s_ring_dma_req_bytes),
+      .dma_read_axis         (u_scheduler_read_axis),
       .dma_write_axis        (u_dma_write_axis),
       .dma_done_i            (s_dma_done),
       .dma_error_i           (s_dma_err),
@@ -355,7 +554,11 @@ module apb4_apu (
   end
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i || s_soft_reset || s_resource_reset_apply_q || s_cnt_clear) begin
+    if (!rst_n_i) begin
+      s_active_cycles_q <= 64'd0;
+      s_stream_stalls_q <= 64'd0;
+      s_faults_q        <= 64'd0;
+    end else if (s_soft_reset || s_resource_reset_apply_q || s_cnt_clear) begin
       s_active_cycles_q <= 64'd0;
       s_stream_stalls_q <= 64'd0;
       s_faults_q        <= 64'd0;
@@ -377,4 +580,6 @@ module apb4_apu (
   assign s_unused_pending = s_dma_input_pending ^ s_dma_output_pending ^ s_dma_aborted ^
       s_reg_idle_unused ^ s_backend_job_valid_unused ^ s_backend_resp_ready_unused ^
       ^s_backend_descriptor_unused ^ ^s_backend_index_unused ^ ^s_ring_coalesce[15:8];
+  logic s_unused_p3;
+  assign s_unused_p3 = ^s_seq_gpr;
 endmodule

@@ -191,8 +191,8 @@ module apu_reg_tb;
       s_reg_count = 0;
       add_register(`APB4_APU__IP_ID, AccessRo, 32'h4150_5530, 1'b0);
       add_register(`APB4_APU__IP_VERSION, AccessRo, 32'h0001_0000, 1'b0);
-      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_0018, 1'b0);
-      add_register(`APB4_APU__CAPABILITY1, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_0098, 1'b0);
+      add_register(`APB4_APU__CAPABILITY1, AccessRo, 32'h0000_0010, 1'b0);
       add_register(`APB4_APU__COMMAND, AccessWo, 32'd0, 1'b1);
       add_register(`APB4_APU__STATUS, AccessRo, 32'h0000_0100, 1'b0);
       add_register(`APB4_APU__IRQ_STATE, AccessRw, 32'd0, 1'b0);
@@ -461,6 +461,21 @@ module apu_reg_tb;
     end
   endtask
 
+  task automatic seed_performance_state;
+    begin
+      hard_reset();
+      apb_write(`APB4_APU__PERF_CONTROL, 32'h0000_0001, 4'hf, 1'b0);
+      force u_dut.s_dma_busy = 1'b1;
+      repeat (3) @(posedge clk_i);
+      release u_dut.s_dma_busy;
+      apb_write(`APB4_APU__PERF_CONTROL, 32'h0000_0005, 4'hf, 1'b0);
+      if ((u_dut.s_active_cycles_q == 64'd0) ||
+          (u_dut.u_apu_reg.s_perf_snapshot_q[0] == 64'd0)) begin
+        $fatal(1, "performance reset-timing state was not seeded");
+      end
+    end
+  endtask
+
   initial begin
     initialize_register_table();
     s_phase = "initial reset matrix";
@@ -542,11 +557,13 @@ module apu_reg_tb;
     for (int bit_index = 0; bit_index < 6; bit_index++) begin
       if ((bit_index != `APB4_APU__COMMAND_SOFT_RESET) &&
           (bit_index != `APB4_APU__COMMAND_ABORT) &&
+          (bit_index != `APB4_APU__COMMAND_MICROCODE_LOAD) &&
           (bit_index != `APB4_APU__COMMAND_CLEAR_COUNTERS)) begin
         check_rejected_write(`APB4_APU__COMMAND, 32'd1 << bit_index,
                              `APB4_APU__ERROR_CODE_UNSUPPORTED);
       end
     end
+    check_rejected_write(`APB4_APU__COMMAND, 32'h0000_0010, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__IRQ_STATE, 32'h0000_0800, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__IRQ_ENABLE, 32'h0000_0800,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
@@ -624,6 +641,60 @@ module apu_reg_tb;
     @(negedge clk_i);
     resource_reset_i = 1'b0;
     check_reset_state(1'b1);
+
+    s_phase = "reset timing";
+    seed_performance_state();
+    @(negedge clk_i);
+    force u_dut.u_apu_reg.s_soft_reset = 1'b1;
+    #1;
+    if ((u_dut.s_active_cycles_q == 64'd0) || (u_dut.u_apu_reg.s_perf_snapshot_q[0] == 64'd0)) begin
+      $fatal(1, "soft reset acted asynchronously");
+    end
+    @(posedge clk_i);
+    #1;
+    if ((u_dut.s_active_cycles_q != 64'd0) || (u_dut.u_apu_reg.s_perf_snapshot_q != '0)) begin
+      $fatal(1, "soft reset did not clear performance state on PCLK");
+    end
+    release u_dut.u_apu_reg.s_soft_reset;
+
+    seed_performance_state();
+    @(negedge clk_i);
+    force u_dut.s_resource_reset_apply_q = 1'b1;
+    #1;
+    if ((u_dut.s_active_cycles_q == 64'd0) || (u_dut.u_apu_reg.s_perf_snapshot_q[0] == 64'd0)) begin
+      $fatal(1, "resource reset apply acted asynchronously");
+    end
+    @(posedge clk_i);
+    #1;
+    if ((u_dut.s_active_cycles_q != 64'd0) || (u_dut.u_apu_reg.s_perf_snapshot_q != '0)) begin
+      $fatal(1, "resource reset apply did not clear performance state on PCLK");
+    end
+    release u_dut.s_resource_reset_apply_q;
+
+    seed_performance_state();
+    @(negedge clk_i);
+    force u_dut.u_apu_reg.s_cnt_clear = 1'b1;
+    #1;
+    if ((u_dut.s_active_cycles_q == 64'd0) || (u_dut.u_apu_reg.s_perf_snapshot_q[0] == 64'd0)) begin
+      $fatal(1, "counter clear acted asynchronously");
+    end
+    @(posedge clk_i);
+    #1;
+    if ((u_dut.s_active_cycles_q != 64'd0) || (u_dut.u_apu_reg.s_perf_snapshot_q != '0)) begin
+      $fatal(1, "counter clear did not clear performance state on PCLK");
+    end
+    release u_dut.u_apu_reg.s_cnt_clear;
+
+    seed_performance_state();
+    @(negedge clk_i);
+    rst_n_i = 1'b0;
+    #1;
+    if ((u_dut.s_active_cycles_q != 64'd0) || (u_dut.u_apu_reg.s_perf_snapshot_q != '0)) begin
+      $fatal(1, "hard reset did not clear performance state asynchronously");
+    end
+    repeat (2) @(posedge clk_i);
+    @(negedge clk_i);
+    rst_n_i = 1'b1;
 
     s_phase = "performance enable";
     hard_reset();

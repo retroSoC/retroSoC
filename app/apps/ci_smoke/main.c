@@ -388,7 +388,7 @@ int main(void) {
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }
-    printf("ci_smoke: APU-P2 discovery passed\n");
+    printf("ci_smoke: APU-P3 discovery passed\n");
     if (!rs_ci_smoke_fabric_monitor_start()) {
         rs_test_finish(RS_TEST_FAILED, 13U);
     }

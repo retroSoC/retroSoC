@@ -352,6 +352,52 @@ module apu_ring_scheduler_tb;
     if (ring_status_o != 32'h0000_0004 || job_status_o != 32'd0) begin
       $fatal(1, "ring/job reset status mismatch");
     end
+
+    s_phase          = "reset timing";
+    ring_tail_i      = 8'd1;
+    ring_enable_i    = 1'b1;
+    hold_dma_request = 1'b1;
+    pulse_start();
+    @(posedge clk_i);
+    #1;
+    if (!dma_request_valid_o || idle_o) $fatal(1, "ring reset-timing state was not seeded");
+    @(negedge clk_i);
+    soft_reset_i = 1'b1;
+    ring_tail_i  = 8'd0;
+    #1;
+    if (!dma_request_valid_o || idle_o) $fatal(1, "ring soft reset acted asynchronously");
+    @(posedge clk_i);
+    #1;
+    if (!idle_o || (ring_status_o != 32'h0000_0004) || (job_status_o != 32'd0)) begin
+      $fatal(1, "ring soft reset did not apply on PCLK");
+    end
+    @(negedge clk_i);
+    soft_reset_i     = 1'b0;
+    ring_enable_i    = 1'b0;
+    hold_dma_request = 1'b0;
+    repeat (2) @(posedge clk_i);
+
+    ring_tail_i      = 8'd1;
+    ring_enable_i    = 1'b1;
+    hold_dma_request = 1'b1;
+    pulse_start();
+    @(posedge clk_i);
+    #1;
+    if (!dma_request_valid_o || idle_o) $fatal(1, "ring hard-reset state was not seeded");
+    @(negedge clk_i);
+    rst_n_i     = 1'b0;
+    ring_tail_i = 8'd0;
+    #1;
+    if (!idle_o || (ring_status_o != 32'h0000_0004) || (job_status_o != 32'd0)) begin
+      $fatal(1, "ring hard reset did not apply asynchronously");
+    end
+    repeat (2) @(posedge clk_i);
+    @(negedge clk_i);
+    rst_n_i          = 1'b1;
+    ring_enable_i    = 1'b0;
+    hold_dma_request = 1'b0;
+    repeat (2) @(posedge clk_i);
+
     ring_size_i = 9'd256;
     force u_dut.s_head_q = 8'd254;
     #1;

@@ -26,6 +26,15 @@ module apu_reg (
     input  logic [31:0] ring_status_i,
     input  logic [7:0]  ring_head_i,
     input  logic [31:0] ring_completed_i,
+    input  logic [7:0]  mc_status_i,
+    input  logic [31:0] mc_abi_i,
+    input  logic [63:0] mc_build_id_i,
+    input  logic        mc_lock_i,
+    input  logic [31:0] mc_actual_crc_i,
+    input  logic [31:0] mc_load_count_i,
+    input  logic [31:0] sequencer_status_i,
+    input  logic [31:0] sequencer_retired_i,
+    input  logic        sequencer_trapped_i,
     input  logic [10:0] irq_set_i,
     input  logic        fault_valid_i,
     input  logic [5:0]  fault_code_i,
@@ -40,10 +49,12 @@ module apu_reg (
     input  logic [63:0] perf_dma_read_stalls_i,
     input  logic [63:0] perf_dma_write_stalls_i,
     input  logic [63:0] perf_stream_stalls_i,
+    input  logic [63:0] perf_sequencer_instr_i,
     input  logic [63:0] perf_faults_i,
     apb4_if.slave       apb4,
     output logic        soft_reset_o,
     output logic        abort_o,
+    output logic        microcode_load_o,
     output logic        counter_clear_o,
     output logic        perf_enable_o,
     output logic        xrun_clear_o,
@@ -54,6 +65,10 @@ module apu_reg (
     output logic [31:0] write_base_o,
     output logic [31:0] write_limit_o,
     output logic [31:0] dma_timeout_o,
+    output logic [31:0] sequencer_timeout_o,
+    output logic [31:0] mc_image_addr_o,
+    output logic [31:0] mc_image_size_o,
+    output logic [31:0] mc_expected_crc_o,
     output logic [31:0] ring_base_o,
     output logic [8:0]  ring_size_o,
     output logic [7:0]  ring_tail_o,
@@ -65,8 +80,8 @@ module apu_reg (
 );
   localparam logic [31:0] IpId = 32'h4150_5530;
   localparam logic [31:0] IpVersion = 32'h0001_0000;
-  localparam logic [31:0] Capability0 = 32'h0000_0018;
-  localparam logic [31:0] Capability1 = 32'd0;
+  localparam logic [31:0] Capability0 = 32'h0000_0098;
+  localparam logic [31:0] Capability1 = 32'h0000_0010;
   localparam logic [31:0] AbiDigest = 32'd0;
   localparam logic [10:0] IrqMask = 11'h7ff;
   localparam logic [31:0] TimeoutReset = 32'h0000_ffff;
@@ -89,6 +104,7 @@ module apu_reg (
   logic [31:0] s_read_data;
   logic        s_soft_reset;
   logic        s_abort;
+  logic        s_microcode_load;
   logic        s_cnt_clear;
   logic [10:0] s_irq_clear;
   logic [10:0] s_irq_set;
@@ -109,9 +125,10 @@ module apu_reg (
   logic [15:0] s_stream_watermark_d, s_stream_watermark_q;
   logic s_perf_en_d, s_perf_en_q;
   logic s_perf_snapshot_valid_d, s_perf_snapshot_valid_q;
-  logic [9:0][63:0] s_perf_snapshot_q;
-  logic             s_err_clear;
-  logic             s_unused_snapshot;
+  logic [ 9:0][63:0] s_perf_snapshot_q;
+  logic              s_err_clear;
+  logic              s_unused_snapshot;
+  logic [32:0]       s_mc_image_end;
 
   function automatic logic [31:0] apply_wstrb(
       input logic [31:0] previous_i, input logic [31:0] value_i, input logic [3:0] strobe_i);
@@ -144,6 +161,7 @@ module apu_reg (
   assign irq_o = (s_irq_state_q & s_irq_en_q) != 11'd0;
   assign soft_reset_o = s_soft_reset;
   assign abort_o = s_abort;
+  assign microcode_load_o = s_microcode_load;
   assign counter_clear_o = s_cnt_clear;
   assign perf_enable_o = s_perf_en_q;
   assign xrun_clear_o = s_irq_clear[`APB4_APU__IRQ_STREAM_XRUN];
@@ -154,6 +172,10 @@ module apu_reg (
   assign write_base_o = s_acl_q[2];
   assign write_limit_o = s_acl_q[3];
   assign dma_timeout_o = s_timeout_q[1];
+  assign sequencer_timeout_o = s_timeout_q[0];
+  assign mc_image_addr_o = s_mc_cfg_q[0];
+  assign mc_image_size_o = s_mc_cfg_q[1];
+  assign mc_expected_crc_o = s_mc_cfg_q[2];
   assign ring_base_o = s_ring_cfg_q[0];
   assign ring_size_o = s_ring_cfg_q[1][8:0];
   assign ring_tail_o = s_ring_cfg_q[2][7:0];
@@ -162,6 +184,7 @@ module apu_reg (
   assign s_err_clear     = s_write && !s_write_err &&
       (s_offset == `APB4_APU__ERROR_STATUS) && s_strobed_write[0];
   assign s_unused_snapshot = ^s_perf_snapshot_q[3] ^ ^s_perf_snapshot_q[7] ^ ^s_perf_snapshot_q[8];
+  assign s_mc_image_end = {1'b0, s_mc_cfg_q[0]} + {1'b0, s_mc_cfg_q[1]} - 1'b1;
 
   always_comb begin
     s_read_data = 32'd0;
@@ -175,14 +198,15 @@ module apu_reg (
         `APB4_APU__STATUS:
         s_read_data = {
           22'd0,
-          1'b0,
+          sequencer_trapped_i,
           !core_busy_i,
           core_aborting_i,
           quiesce_i,
           2'd0,
           ring_status_i[`APB4_APU__RING_STATUS_ACTIVE],
           core_busy_i,
-          2'd0
+          1'b0,
+          mc_status_i[`APB4_APU__MC_STATUS_VALID]
         };
         `APB4_APU__IRQ_STATE: s_read_data = {21'd0, s_irq_state_q};
         `APB4_APU__IRQ_ENABLE: s_read_data = {21'd0, s_irq_en_q};
@@ -200,10 +224,15 @@ module apu_reg (
         `APB4_APU__WRITE_LIMIT: s_read_data = s_acl_q[3];
         `APB4_APU__DMA_TIMEOUT: s_read_data = s_timeout_q[1];
         `APB4_APU__ABI_DIGEST: s_read_data = AbiDigest;
-        `APB4_APU__SEQUENCER_STATUS, `APB4_APU__SEQUENCER_RETIRED,
-        `APB4_APU__MC_STATUS, `APB4_APU__MC_ABI, `APB4_APU__MC_BUILD_ID_LO,
-        `APB4_APU__MC_BUILD_ID_HI, `APB4_APU__MC_LOCK, `APB4_APU__MC_ACTUAL_CRC,
-        `APB4_APU__MC_LOAD_COUNT,
+        `APB4_APU__SEQUENCER_STATUS: s_read_data = sequencer_status_i;
+        `APB4_APU__SEQUENCER_RETIRED: s_read_data = sequencer_retired_i;
+        `APB4_APU__MC_STATUS: s_read_data = {24'd0, mc_status_i};
+        `APB4_APU__MC_ABI: s_read_data = mc_abi_i;
+        `APB4_APU__MC_BUILD_ID_LO: s_read_data = mc_build_id_i[31:0];
+        `APB4_APU__MC_BUILD_ID_HI: s_read_data = mc_build_id_i[63:32];
+        `APB4_APU__MC_LOCK: s_read_data = {31'd0, mc_lock_i};
+        `APB4_APU__MC_ACTUAL_CRC: s_read_data = mc_actual_crc_i;
+        `APB4_APU__MC_LOAD_COUNT: s_read_data = mc_load_count_i;
         `APB4_APU__KWS_STATUS, `APB4_APU__KWS_RESULT, `APB4_APU__KWS_TIMESTAMP_LO,
         `APB4_APU__KWS_TIMESTAMP_HI, `APB4_APU__KWS_FRAME_COUNT,
         `APB4_APU__KWS_INFERENCE_COUNT, `APB4_APU__KWS_HIT_COUNT,
@@ -257,9 +286,9 @@ module apu_reg (
         `APB4_APU__PERF_DMA_WRITE_STALLS_HI: s_read_data = s_perf_snapshot_q[5][63:32];
         `APB4_APU__PERF_STREAM_STALLS_LO: s_read_data = s_perf_snapshot_q[6][31:0];
         `APB4_APU__PERF_STREAM_STALLS_HI: s_read_data = s_perf_snapshot_q[6][63:32];
-        `APB4_APU__PERF_SEQUENCER_INSTR_LO, `APB4_APU__PERF_SEQUENCER_INSTR_HI,
-        `APB4_APU__PERF_KWS_CYCLES_LO, `APB4_APU__PERF_KWS_CYCLES_HI:
-        s_read_data = 32'd0;
+        `APB4_APU__PERF_SEQUENCER_INSTR_LO: s_read_data = s_perf_snapshot_q[7][31:0];
+        `APB4_APU__PERF_SEQUENCER_INSTR_HI: s_read_data = s_perf_snapshot_q[7][63:32];
+        `APB4_APU__PERF_KWS_CYCLES_LO, `APB4_APU__PERF_KWS_CYCLES_HI: s_read_data = 32'd0;
         `APB4_APU__PERF_FAULTS_LO: s_read_data = s_perf_snapshot_q[9][31:0];
         `APB4_APU__PERF_FAULTS_HI: s_read_data = s_perf_snapshot_q[9][63:32];
         `APB4_APU__COMMAND, `APB4_APU__IRQ_TEST, `APB4_APU__RING_DOORBELL: begin
@@ -281,10 +310,15 @@ module apu_reg (
     if (!s_write_err) begin
       unique case (s_offset)
         `APB4_APU__COMMAND: begin
-          s_write_unsupported = (apb4.pwdata & 32'h0000_0039) != 32'd0;
+          s_write_unsupported = (apb4.pwdata & 32'h0000_0029) != 32'd0;
           s_write_err = (apb4.pstrb != 4'hf) ||
                         ((apb4.pwdata & 32'hffff_ff80) != 32'd0) ||
                         (apb4.pwdata[`APB4_APU__COMMAND_ABORT] && !core_busy_i) ||
+                        (apb4.pwdata[`APB4_APU__COMMAND_MICROCODE_LOAD] &&
+                         (!core_idle_i || !quiesce_i || (owner_i != 2'd0) || mc_lock_i ||
+                          (s_mc_cfg_q[0][5:0] != 6'd0) || (s_mc_cfg_q[1] == 32'd0) ||
+                          s_mc_image_end[32] || (s_mc_cfg_q[0] < s_acl_q[0]) ||
+                          (s_mc_image_end[31:0] > s_acl_q[1]))) ||
                         ((apb4.pwdata[`APB4_APU__COMMAND_SOFT_RESET] ||
                           apb4.pwdata[`APB4_APU__COMMAND_CLEAR_COUNTERS]) && !core_idle_i) ||
                         s_write_unsupported;
@@ -429,6 +463,7 @@ module apu_reg (
     s_perf_snapshot_valid_d = s_perf_snapshot_valid_q;
     s_soft_reset            = 1'b0;
     s_abort                 = 1'b0;
+    s_microcode_load        = 1'b0;
     s_cnt_clear             = 1'b0;
     s_irq_clear             = 11'd0;
     s_irq_set               = irq_set_i;
@@ -436,9 +471,10 @@ module apu_reg (
     if (s_write && !s_write_err) begin
       unique case (s_offset)
         `APB4_APU__COMMAND: begin
-          s_abort      = apb4.pwdata[`APB4_APU__COMMAND_ABORT];
-          s_soft_reset = apb4.pwdata[`APB4_APU__COMMAND_SOFT_RESET];
-          s_cnt_clear  = apb4.pwdata[`APB4_APU__COMMAND_CLEAR_COUNTERS];
+          s_abort          = apb4.pwdata[`APB4_APU__COMMAND_ABORT];
+          s_soft_reset     = apb4.pwdata[`APB4_APU__COMMAND_SOFT_RESET];
+          s_cnt_clear      = apb4.pwdata[`APB4_APU__COMMAND_CLEAR_COUNTERS];
+          s_microcode_load = apb4.pwdata[`APB4_APU__COMMAND_MICROCODE_LOAD];
         end
         `APB4_APU__IRQ_STATE:              s_irq_clear = s_strobed_write[10:0];
         `APB4_APU__IRQ_ENABLE:             s_irq_en_d = s_merged_write[10:0];
@@ -535,6 +571,22 @@ module apu_reg (
       s_stream_watermark_d    = 16'd0;
       s_perf_en_d             = 1'b0;
       s_perf_snapshot_valid_d = 1'b0;
+      if (resource_reset_apply_i && s_err_stat_q[`APB4_APU__ERROR_VALID] &&
+          (s_err_stat_q[6:1] == `APB4_APU__ERROR_CODE_RESOURCE_RESET)) begin
+        s_err_stat_d                              = s_err_stat_q;
+        s_err_addr_d                              = s_err_addr_q;
+        s_err_detail_d                            = s_err_detail_q;
+        s_irq_state_d[`APB4_APU__IRQ_FIRST_ERROR] = 1'b1;
+      end else if (resource_reset_apply_i && fault_valid_i &&
+                   (fault_code_i == `APB4_APU__ERROR_CODE_RESOURCE_RESET)) begin
+        s_err_stat_d = 32'd1 | (32'(fault_code_i) << `APB4_APU__ERROR_CODE) |
+            (32'(fault_stage_i) << `APB4_APU__ERROR_STAGE) |
+            (32'(fault_resp_i) << `APB4_APU__ERROR_AXI_RESPONSE) |
+            (32'(fault_index_i) << `APB4_APU__ERROR_DESCRIPTOR_INDEX);
+        s_err_addr_d = fault_addr_i;
+        s_err_detail_d = fault_detail_i;
+        s_irq_state_d[`APB4_APU__IRQ_FIRST_ERROR] = 1'b1;
+      end
     end
   end
 
@@ -697,7 +749,9 @@ module apu_reg (
   );
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
-    if (!rst_n_i || s_soft_reset || resource_reset_apply_i || s_cnt_clear) begin
+    if (!rst_n_i) begin
+      s_perf_snapshot_q <= '0;
+    end else if (s_soft_reset || resource_reset_apply_i || s_cnt_clear) begin
       s_perf_snapshot_q <= '0;
     end else if (s_write && !s_write_err && (s_offset == `APB4_APU__PERF_CONTROL) &&
                  s_merged_write[`APB4_APU__PERF_CONTROL_SNAPSHOT]) begin
@@ -708,7 +762,7 @@ module apu_reg (
       s_perf_snapshot_q[4] <= perf_dma_read_stalls_i;
       s_perf_snapshot_q[5] <= perf_dma_write_stalls_i;
       s_perf_snapshot_q[6] <= perf_stream_stalls_i;
-      s_perf_snapshot_q[7] <= 64'd0;
+      s_perf_snapshot_q[7] <= perf_sequencer_instr_i;
       s_perf_snapshot_q[8] <= 64'd0;
       s_perf_snapshot_q[9] <= perf_faults_i;
     end

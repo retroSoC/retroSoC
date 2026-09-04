@@ -135,8 +135,12 @@
     "rtl/ip/multimedia": [
       "apb4_apu.sv",
       "apb4_jpeg.sv",
+      "apu_codec_sequencer.sv",
+      "apu_control_store.sv",
       "apu_dma.sv",
       "apu_define.svh",
+      "apu_microcode_loader.sv",
+      "apu_microcode_pkg.sv",
       "apu_ring_scheduler.sv",
       "apu_reg.sv",
       "apu_stream_router.sv",

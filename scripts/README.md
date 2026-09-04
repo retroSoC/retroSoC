@@ -4,6 +4,11 @@ This directory contains the Python implementation of setup, dependency locking,
 build manifests, flow execution, simulation checks, regression orchestration,
 quality checks, metrics, packaging, and cleanup.
 
+`apu_mcasm.py`, `apu_isa.py`, and `apu_interpreter.py` are the frozen APU
+microcode V1 assembler/ABI model and P3 reference interpreter. They accept only
+the APU instruction language and deliberately have no C, ELF, RV32, dynamic
+linking, or runtime code-generation path.
+
 Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.

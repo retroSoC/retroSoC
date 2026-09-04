@@ -330,6 +330,8 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
     apu_filelist = tmp_path / "apu.fl"
+    apu_loader_filelist = tmp_path / "apu_loader.fl"
+    apu_sequencer_filelist = tmp_path / "apu_sequencer.fl"
     gateway_a_filelist = tmp_path / "gateway_a.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
@@ -358,6 +360,12 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     )
     assert generate_formal_filelist("apu", apu_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
+        "apu_loader", apu_loader_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "apu_sequencer", apu_sequencer_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
         "gateway_a", gateway_a_filelist, memory_map, topology, user_extensions
     )
 
@@ -373,6 +381,8 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
     apu = parse_filelists([apu_filelist], require_files=False)
+    apu_loader = parse_filelists([apu_loader_filelist], require_files=False)
+    apu_sequencer = parse_filelists([apu_sequencer_filelist], require_files=False)
     gateway_a = parse_filelists([gateway_a_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert "+define+PDK_BEHAV" in onchip_ram.defines
@@ -431,6 +441,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
     assert ROOT / "rtl/ip/multimedia/apu_dma.sv" in apu.files
     assert ROOT / "rtl/mini/formal/apu_formal.sv" in apu.files
+    assert ROOT / "rtl/ip/multimedia/apu_microcode_loader.sv" in apu_loader.files
+    assert ROOT / "rtl/mini/formal/apu_loader_formal.sv" in apu_loader.files
+    assert ROOT / "rtl/ip/multimedia/apu_codec_sequencer.sv" in apu_sequencer.files
+    assert ROOT / "rtl/mini/formal/apu_sequencer_formal.sv" in apu_sequencer.files
     assert ROOT / "rtl/mini/top/hp_axi4_mux3.sv" in gateway_a.files
     assert ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv" in gateway_a.files
     assert ROOT / "rtl/mini/formal/gateway_a_formal.sv" in gateway_a.files
@@ -467,6 +481,9 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     compact_cover_config = render_sby_config(
         "i2c_formal", design, properties, "bitwuzla", "cover", 80, vcd=False
     )
+    skipped_cover_config = render_sby_config(
+        "apu_loader_formal", design, properties, "bitwuzla", "cover", 64, skip=60
+    )
 
     assert "mode prove" in prove_config
     assert "mode cover" in cover_config
@@ -476,6 +493,7 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     assert f"properties.v {properties.resolve()}" in prove_config
     assert "vcd off" not in cover_config
     assert "vcd off" in compact_cover_config
+    assert "skip 60" in skipped_cover_config
 
 
 def test_bitwuzla_wrapper_translates_yosys_legacy_arguments() -> None:

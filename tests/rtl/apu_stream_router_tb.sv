@@ -195,6 +195,40 @@ module apu_stream_router_tb;
     #1;
     if ((status_o != 32'h0000_0014) || !idle_o) $fatal(1, "stream reset status mismatch");
 
+    tx_route_apu_i = 1'b1;
+    tx_underrun_i  = 1'b1;
+    @(posedge clk_i);
+    @(negedge clk_i);
+    tx_underrun_i = 1'b0;
+    #1;
+    if (!status_o[6]) $fatal(1, "stream reset-timing state was not seeded");
+    flush_i = 1'b1;
+    #1;
+    if (!status_o[6]) $fatal(1, "stream flush acted asynchronously");
+    @(posedge clk_i);
+    #1;
+    if (status_o[6]) $fatal(1, "stream flush did not apply on PCLK");
+    @(negedge clk_i);
+    flush_i       = 1'b0;
+
+    tx_underrun_i = 1'b1;
+    @(posedge clk_i);
+    @(negedge clk_i);
+    tx_underrun_i = 1'b0;
+    #1;
+    if (!status_o[6]) $fatal(1, "stream hard-reset state was not seeded");
+    rst_n_i = 1'b0;
+    #1;
+    if (status_o != 32'h0000_0014) begin
+      $fatal(1, "stream hard reset did not apply asynchronously");
+    end
+    repeat (2) @(posedge clk_i);
+    @(negedge clk_i);
+    rst_n_i        = 1'b1;
+    tx_route_apu_i = 1'b0;
+    rx_route_apu_i = 1'b0;
+    repeat (2) @(posedge clk_i);
+
     dma_tx_axis.tvalid = 1'b1;
     #1;
     if (!i2s_tx_axis.tvalid || (i2s_tx_axis.tdata != 32'h1122_3344) || !dma_tx_axis.tready)
