@@ -424,8 +424,8 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
 | `0x004` | `IP_VERSION` | RO | `0x00010000` | Public ABI V1.0. |
-| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; MVP has 0..8 set. |
-| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; MVP is 16/112/2/96. |
+| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; MVP has 0..8 set. |
+| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4 is `0x01827010`; MVP is 16/112/2/96. |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
 | `0x018` | `IRQ_STATE` | RW1C | `0` | Sticky events. |
@@ -564,9 +564,14 @@ while format, streams, KWS, sequencer, and resampler bits remain zero;
 `CAPABILITY1=0`. P3 reports `CAPABILITY0=0x00000098` for private DMA, ring, and
 the sequencer, and `CAPABILITY1=0x00000010` for the 16 KiB control store. P3
 continues to report zero for every format, stream, KWS, resampler, data-SRAM,
-channel, and sample-rate field. A caller must require both the requested
+channel, and sample-rate field. P4 reports `CAPABILITY0=0x00000198` for private
+DMA, ring, sequencer, and the implemented resampler primitive, and
+`CAPABILITY1=0x01827010` for 16 KiB control store, 112 KiB local data SRAM,
+two-channel primitive capacity, and 96 kHz maximum source-rate capacity. P4
+format bits 0..2, streams bit 5, and KWS bit 6 remain zero because no public
+codec or stream session exists. A caller must require both the requested
 format/KWS bit and the necessary engine/model state before submitting. The P2
-stream router remains unadvertised through P3 because its production endpoints
+stream router remains unadvertised through P4 because its production endpoints
 remain unavailable. `ABI_DIGEST`
 is zero for every partial Phase1..7 build and becomes the nonzero CRC32 over
 the complete canonical V1 register/field/descriptor/`APUMC`/`APUM`/opcode/
@@ -1085,6 +1090,236 @@ fingerprint is exposed as the public `ABI_DIGEST`, which remains zero through
 P7. Neither tool accepts C, ELF, RV32, dynamic linking, or runtime code
 generation.
 
+#### P4 primitive and local-SRAM profile
+
+P4 implements primitive-mask bits 0..15, so its implemented primitive mask is
+exactly `0x0000ffff`. It admits classes 0..5 and rejects class 6 and classes
+7..15 at load time. Within class 0, `WAIT` sources 1 (kernel), 2 (input FIFO),
+and 3 (output FIFO) are admitted; sources 0, 4, and 5 remain unavailable.
+Primitive bits 16..20, every class-6 transport opcode, and public
+transport-driven entry launch remain deferred. Each entry mask may be any
+subset of `0x0000ffff`, but every admitted instruction must have all of its
+required bits in that entry mask and the header mask remains the exact OR of
+the three entry masks.
+
+The assembler, parser, reference interpreter, RTL package, and handwritten C
+mirror expose a separate P4 target with this mask and class admission. The P3
+target remains mask zero/class 0..1 and is not widened retroactively. P4 adds
+no opcode, predicate, primitive-bit number, descriptor field, or APUMC header
+field.
+
+P4 reports `CAPABILITY0=0x00000198` and `CAPABILITY1=0x01827010` as defined in
+the register table. Format bits, streams, and KWS stay zero; `ABI_DIGEST` stays
+zero. Consequently `START_DIRECT`, `RING_DOORBELL`, and `STREAM_ROUTE` value 1
+remain fail-closed. P4 exercises primitive programs only through the
+verification-only launch and data-injection path, which adds no public command,
+operation, address, interrupt, or route.
+
+The P4 112 KiB local-data address space is byte addressed and fixed:
+
+| Local byte range | Size | P4 ownership and access |
+| --- | ---: | --- |
+| `0x00000..0x05fff` | 24 KiB | Active-bundle table followed by per-entry codec scratch. |
+| `0x06000..0x07fff` | 8 KiB | Input staging, internal and verification-only until class 6 is enabled. |
+| `0x08000..0x09fff` | 8 KiB | Output staging, internal and verification-only until class 6 is enabled. |
+| `0x0a000..0x19fff` | 64 KiB | Reserved for P7 KWS; inaccessible in P4. |
+| `0x1a000..0x1bfff` | 8 KiB | Primitive scoreboard, FIFO metadata, and bounded internal result state; not microcode addressable. |
+
+Let `T` be header word 6, the table-payload byte count. P4 requires
+`0<=T<=0x6000` and four-byte alignment, and copies
+`bundle[header_word5+i]` exactly to local byte address `i` for `0<=i<T`.
+Entry table slices may overlap because they are read-only, but each must be
+wholly inside `[0,T)`. Each nonempty entry
+scratch range must be wholly inside `[T,0x6000)`, must not wrap, and must not
+overlap its table slice; scratch ranges belonging to different entries may
+overlap because only one codec entry can execute. Header word 10 remains the
+greatest declared scratch end and must be at most `0x6000`. A zero-table,
+zero-scratch P3-compatible bundle remains legal in P4.
+
+For P4 load diagnostics, `T` or entry-table-slice failure sets
+`MC_STATUS.TABLE_ERROR`, code 9/stage 1, and locates header word 6 or the first
+failing entry word 7. Scratch/base/end/header-word-10 failure sets
+`MC_STATUS.RANGE_ERROR`, code 9/stage 1, and locates the first participating
+field. A mask bit above 15, class-6 instruction, or unavailable `WAIT` source
+sets `MC_STATUS.CAPABILITY_ERROR`, code 10/stage 1, using the already frozen
+mask/instruction locator and detail. Classes 7..15 remain illegal V1 encodings
+and use `MC_STATUS.CONTROL_FLOW_ERROR`. All are non-AXI loader tuples with
+response/index zero and retain the existing category precedence.
+
+The loader owns the local-data port while loading and writes only `[0,T)`.
+Control-store words and table bytes are a single publication unit: both remain
+inaccessible while `MC_STATUS.VALID=0`, and the existing successful-load edge
+publishes both before setting lock/IRQ/count. Header, descriptor, instruction,
+table, or CRC failure; load abort; hard reset; or forced resource reset during
+load leaves both unpublished. Physical SRAM contents need not be cleared.
+After successful publication, the table is read-only and survives sequencer
+trap, job abort, soft reset, and normally drained resource reset exactly with
+the locked control store. Only hard reset invalidates that retained bundle.
+
+Scratch, staging, FIFO, and internal-result contents have no architectural
+reset value. Each accepted entry launch starts a new mutable-data epoch: its
+scratch range, both staging ranges, both primitive FIFOs, and internal result
+state are logically invalid until written in that epoch. A read of an invalid
+word traps with reason 5 before data is consumed; a successful `ST32`, injector
+write, or kernel write marks only the written SRAM words valid, while FIFO
+push marks only its new entry valid. Abort and soft, resource, or hard reset
+invalidate all mutable epochs and flush both FIFOs. This may use validity
+metadata rather than physically clearing SRAM, but stale
+bits must never affect a result or become externally visible. The P4
+verification-only injector may initialize scratch/FIFO data and validity for a
+test launch; it is excluded from product filelists and public ABI.
+
+`apu_local_sram` presents one active codec-side 32-bit, byte-write-enabled port
+with a one-PCLK-cycle synchronous read. With `HAVE_SRAM_MACRO=YES`, local
+address bits select 28 existing `tc_sram_1024x32` instances: banks 0..9 are
+codec table/scratch/staging, banks 10..25 are the disabled P4 KWS partition,
+and banks 26..27 are internal common/result state. With
+`HAVE_SRAM_MACRO=NO`, it selects an inferred synchronous
+`logic [31:0] mem [0:28671]` implementation with identical ordering, latency,
+and byte masks; it must not instantiate an unavailable macro wrapper. Loader
+access is exclusive. Outside loading, the one outstanding fixed kernel owns
+the SRAM port until completion; otherwise class-4 sequencer access owns it.
+This makes arbitration bounded and prevents a scalar/local instruction from
+perturbing an accepted kernel's latency. The inferred path is compatibility
+evidence, not SRAM-macro, PPA, or tapeout evidence. P7 may enable a separate
+KWS client on banks 10..25 without sharing codec banks or changing this P4
+address/latency contract; common-bank contention remains governed by its later
+phase.
+
+P4 implements two 64-entry, 41-bit primitive FIFOs using the existing Common
+`stream_fifo`: payload is data `[31:0]`, valid-byte count `[34:32]`, reserved
+`[39:35]=0`, and last `[40]`. They implement class-4 `FIFO_POP/PUSH` and remain
+separate from the already frozen P2 stream-router FIFOs. They run in PCLK, add
+no CDC/RDC boundary, and have only the verification producer/consumer in P4;
+class 6 later connects production transport.
+
+##### P4 bit-accurate numerical contract
+
+Scratch samples are little-endian signed two's-complement 32-bit integers.
+Fractional coefficients are signed Q2.30 words. A signed multiply produces the
+exact 64-bit product; a dot product accumulates in signed 72 bits. Exceeding
+the signed 72-bit range traps as code 22 before the affected output is made
+valid. `RNE(x,s)` divides signed integer `x` by `2^s` and rounds the magnitude
+to nearest with an exact half going to an even quotient, then restores the
+sign; `RNE(x,0)=x`. An unrounded right shift is a two's-complement arithmetic
+shift, rounding toward negative infinity. `SATb(x)` clamps to
+`[-2^(b-1),2^(b-1)-1]`. All formulas below use these operations and contain no
+floating-point or implementation-dependent intermediate.
+
+`R[src1]` points to an opcode-specific parameter block in entry scratch. A
+32-bit reference word in such a block uses bit 31 as table select: zero means
+scratch-relative byte offset `[16:0]` with `[30:17]=0`, and one means
+entry-table-relative byte offset `[15:0]` with `[30:16]=0`. References are
+four-byte aligned, the complete referenced range is checked before issue, and
+table-selected ranges are read-only. State and history references must select
+scratch; input/output array references must also select scratch. Coefficient
+and scale references may select table or scratch. Coefficients are therefore
+explicit operands rather than hidden RTL constants. Static coefficient banks
+originate in CRC-covered APUMC data; dynamic scales or predictors may be
+written to scratch by microcode. Hardware, assembler, interpreter, and BAM
+consume identical words. Codec-specific static values are selected with the
+P5/P6 bundles without changing the P4 arithmetic contract.
+
+For the class-5 table, `N=immediate[15:0]`, `P` is the transform or predictor
+order defined by the opcode, and the pre-issue value of `R[dst]` is the
+scratch-relative output base:
+
+| Opcode | Parameter block and exact output |
+| --- | --- |
+| `REQUANT` | Word 0 references `N` Q2.30 scales. For element `i`, `product=input[i]*scale[i]`; aux bit 5 selects `RNE(product,30+shift)` or arithmetic shift by `30+shift`, where shift is aux `[4:0]`. Apply `SAT16`, `SAT24`, or `SAT32` from aux `[7:6]`, sign-extend to 32 bits, and write `N` outputs. |
+| `STEREO` | Word 0 references the second `N`-sample input. Inputs are planar `A` and `B`; output is planar left then right. Modes produce `(A,B)`, `(A,A-B)`, `(A+B,B)`, or `mid=(A*2)+(B&1); ((mid+B)>>1,(mid-B)>>1)` for independent, left-side, side-right, or mid-side. Signed 64-bit intermediates are clamped with `SAT32`; result count is `2N`. |
+| `IMDCT6` / `IMDCT18` | Word 0 references a row-major Q2.30 matrix `C[2P][P]`, with `P=6` or 18. For every block and `0<=n<2P`, output `SAT32(RNE(sum(k=0..P-1,input[k]*C[n][k]),30))`. There is no hidden scale; results contain `12N` or `36N` samples. |
+| `DCT32_POLY` | Words 0/1 reference Q2.30 `C[32][32]` and `W[16][32]`; word 2 references signed-32 `history[16][32]`; word 3 holds phase `[3:0]` and has other bits zero. Compute `v[n]=SAT32(RNE(sum(k=0..31,input[k]*C[n][k]),30))`, replace `history[phase][n]`, then output `SAT32(RNE(sum(m=0..15,history[(phase-m)&15][j]*W[m][j]),30))` for `j=0..31`; advance phase modulo 16 and write it back to word 3 per block. Result count is `32N`. |
+| `FIXED` | Word 0 references a newest-first signed-32 history with `P=aux[2:0]` in 0..4. Predictor is 0, `s1`, `2s1-s2`, `3s1-3s2+s3`, or `4s1-6s2+4s3-s4`. Add each signed-32 residual, require the exact signed-64 result to fit signed 32 bits, write it, and update history. Result count is `N`. |
+| `LPC` | Word 0 references `P=aux[5:0]` signed-32 coefficients, word 1 references newest-first signed-32 history, and word 2 is a sign-extended predictor shift in -31..31. Accumulate `sum(j=0..P-1,coeff[j]*history[j])` in signed 72 bits; arithmetic-shift right for nonnegative shift or exact-shift left for negative shift, add the residual, require signed-32 range, write, and update history. Result count is `N`. |
+| `DECORRELATE` | Word 0 references the second planar input and uses the four `STEREO` equations, but any result outside signed 32 bits traps rather than saturates. Result count is `2N`. |
+| `RESAMPLE` | Words 0/1/2 reference the full-band, two-thirds-band, and half-band coefficient banks; each bank is Q2.30 `H[32][16]`. Mutable words 3/4 hold 64-bit `next_output_num`, words 5/6 hold 64-bit `input_base_index`, and word 7 is channel count 1 or 2. The exact rational/phase/filter rules below produce interleaved signed-32 frames and update both 64-bit state values. Result count is produced frames. |
+| `PCM_PACK` | Word 0 is signed Q2.30 gain and word 1 is input channels 1 or 2; `N` counts input frames. For each input sample use `RNE(sample*gain,30)`, then `SAT16` or `SAT24`. S16_LE emits two little-endian bytes; S24_32LE emits the sign-extended 24-bit result in a four-byte little-endian word. Mono-duplicate is legal only for one input channel and emits two equal channels. Result count is emitted bytes. |
+
+The 16 `RESAMPLE` profile ratios are output/input in lowest terms:
+
+| Profile | Ratio `L/M` | Coefficient bank | Profile | Ratio `L/M` | Coefficient bank |
+| ---: | ---: | --- | ---: | ---: | --- |
+| 0 | `1/1` exact bypass | none | 8 | `6/1` | full-band |
+| 1 | `1/2` | half-band | 9 | `8/1` | full-band |
+| 2 | `80/147` | half-band | 10 | `12/1` | full-band |
+| 3 | `160/147` | full-band | 11 | `320/147` | full-band |
+| 4 | `3/2` | full-band | 12 | `640/147` | full-band |
+| 5 | `2/1` | full-band | 13 | `1280/147` | full-band |
+| 6 | `3/1` | full-band | 14 | `2/3` | two-thirds-band |
+| 7 | `4/1` | full-band | 15 | `4/3` | full-band |
+
+Profile 0 copies exactly `N` interleaved frames, adds `N` to both
+`next_output_num` and `input_base_index`, and reports `N` frames. For profiles
+1..15, source frame indices are absolute. At invocation, `R[src0]` addresses
+frame `input_base_index` and its buffer must also contain seven valid history
+frames before it and nine valid look-ahead frames after the `N` frames. While
+`floor(next_output_num/L)<input_base_index+N`, let
+`i=floor(next_output_num/L)` and remainder `r=next_output_num mod L`. Phase is
+the nearest-even integer to `32*r/L`; phase 32 is represented as phase 0 with
+`i` incremented. For every channel, output
+`SAT32(RNE(sum(t=0..15,sample[i+t-7]*H[phase][t]),30))`, then add `M` to
+`next_output_num`. After the invocation add `N` to `input_base_index`.
+Both state values start at zero; the first seven history frames and final nine
+look-ahead frames are explicit valid zeros supplied by microcode. A profile
+cannot change within a job; a new job reinitializes both state values. The three
+coefficient banks are APUMC data and have no hidden normalization or scale;
+the P5/P6 approved bundles provide their codec-quality values while P4 BAM
+compares the exact supplied Q2.30 words.
+
+##### P4 latency and fault bounds
+
+Latency is counted in PCLK cycles from accepted execute/issue through retire or
+kernel-done, inclusive. The bounds assume required local words are valid and a
+required FIFO word/space is present. Time waiting for external FIFO data or
+space is instead covered by `SEQUENCER_TIMEOUT`. `B` is scanned bytes, `E` is
+Huffman entries (1..4096), `q` is a Rice quotient limited to 65535, `k` is the
+Rice parameter/raw width, `maximum_run` is the `UNARY` immediate, `S` is
+emitted PCM samples, and `O`/`C` are resampler output frames/channels.
+
+An entropy request with `E` outside 1..4096, a unary run beyond its declared
+maximum, or a Rice quotient above 65535 traps as invalid entropy before a
+result is written. EOF before the required entropy bits is a truncated-stream
+fault rather than a latency-bound exception.
+
+| Primitive/opcode | Maximum PCLK cycles |
+| --- | ---: |
+| `REFILL` | 3 |
+| `PEEK`, `GET`, `SKIP`, `ALIGN`, `CRC8`, `CRC16` | 1 |
+| `FRAME_SYNC` | `2+2B` |
+| `HUFF_SYMBOL`, `HUFF_PAIR`, `HUFF_QUAD` | `2+24+E` |
+| `UNARY` | `2+maximum_run` |
+| `RICE4`, `RICE5` | `4+q+k`; escape path `4+raw_width` |
+| `SIGN_RESTORE` | `3+linbits` |
+| `LD32`, `TABLE8`, `TABLE16`, `TABLE32` | 2 |
+| `ST32`, ready `FIFO_POP`, ready `FIFO_PUSH` | 1 |
+| `REQUANT` | `8+4N` |
+| `STEREO`, `DECORRELATE` | `8+4N` |
+| `IMDCT6` | `8+94N` |
+| `IMDCT18` | `8+706N` |
+| `DCT32_POLY` | `8+2304N` |
+| `FIXED` | `8+(P+4)N` |
+| `LPC` | `8+(2P+5)N` |
+| `RESAMPLE` profile 0 | `8+2NC` |
+| `RESAMPLE` profiles 1..15 | `8+2NC+36OC` |
+| `PCM_PACK` | `8+5S` |
+
+`N`, output size, every referenced array, and each latency expression must fit
+32-bit unsigned arithmetic and the active scratch range before issue. A bound
+violation traps before a write. A conforming implementation may complete
+earlier but never later under the stated ready-data conditions. The interpreter
+and RTL expose identical completion cycles in the P4 latency corpus.
+
+P4 extends reason-9 causative errors without changing P3 behavior: frame-sync
+failure captures code 4/stage 4; required-bit exhaustion captures code 5 with
+stage 4 for class 2 or stage 5 for class 3; and invalid Huffman/unary/Rice
+content or a frozen entropy bound violation captures code 7/stage 5. These
+non-AXI tuples use response/index zero, `ERROR_ADDRESS=PC<<3`, and
+`ERROR_DETAIL=trap_detail(9)` before setting the existing secondary reason-9
+trap. CRC opcodes only calculate values; codec checksum policy remains in the
+codec phases. Local range/validity faults use reason 5. Class-5 semantic and
+overflow faults retain the already frozen code 8 or 22 and stage 6/7 mapping.
+
 ### `APUM` KWS model ABI
 
 The 64-byte model header contains magic `APUM`, header/model ABI, total bytes,
@@ -1487,26 +1722,38 @@ ID: `APU-P4`.
 
 Scope: reservoir, CRC, Huffman/Rice, scalar reconstruction, transform,
 resampler/PCM packer, 112 KiB local SRAM arbitration, primitive scoreboard,
-latency counters, extreme arithmetic tests, and formal bounds.
+latency counters, extreme arithmetic tests, and formal bounds. The implemented
+primitive mask is `0x0000ffff`; class 6 and primitive bits 16..20 remain
+outside this phase.
 
-Dependencies: Phase3.
+Dependencies: Phase3, Common `tc_sram_1024x32`, and Common `stream_fifo`.
 
-Public changes: implements existing capability bits and primitive manifest;
-no new public register, opcode class, or format ID may be added.
+Public changes: reports exact P4 values `CAPABILITY0=0x00000198` and
+`CAPABILITY1=0x01827010`, admits the frozen class-2..5 ISA and APUMC table/
+scratch fields, and retains `ABI_DIGEST=0`. Format, stream, and KWS capabilities
+remain zero, while primitive channel/rate discovery becomes 2/96 kHz; public
+direct/ring/stream behavior stays fail-closed. No new public register, opcode
+class, format ID, IRQ, resource, address, clock/reset boundary, or CDC/RDC entry
+is added.
 
 Validation:
 
 ```sh
 python3 -m pytest -q
-make CONFIG=configs/ci/ihp130.mk formal
-make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR rtl-lint
-make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
+make CONFIG=configs/ci/ihp130.mk formal-apu
+make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES rtl-lint
 ```
 
+`tests/test_apu_primitives.py` is a required P4 deliverable and runs the same
+golden corpus through the Python BAM/interpreter plus focused Icarus and
+Verilator primitive testbenches. `formal-apu` must include the P4 dispatcher,
+local-range/validity, single-kernel, and latency-counter properties.
+
 Completion: every primitive matches BAM over directed/random/extreme inputs,
-meets latency bounds, reports faults, and closes the 48 MHz block target or
-records a blocking failure.
+meets the frozen ready-data latency bound, reports the frozen fault tuple,
+proves local/table/FIFO bounds, and preserves all fail-closed public paths.
+Yosys synthesis, OpenSTA, netlist simulation, macro PPA, and 48 MHz closure are
+explicitly deferred to Phase8 and are not P4 completion gates.
 
 ### Phase 5 - WAV and FLAC Microprograms
 
