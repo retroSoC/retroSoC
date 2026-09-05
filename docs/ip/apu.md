@@ -424,8 +424,8 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
 | `0x004` | `IP_VERSION` | RO | `0x00010000` | Public ABI V1.0. |
-| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; MVP has 0..8 set. |
-| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4 is `0x01827010`; MVP is 16/112/2/96. |
+| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; P5 is `0x000001bd`; MVP has 0..8 set. |
+| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4/P5 are `0x01827010`; MVP is 16/112/2/96. |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
 | `0x018` | `IRQ_STATE` | RW1C | `0` | Sticky events. |
@@ -1320,6 +1320,373 @@ trap. CRC opcodes only calculate values; codec checksum policy remains in the
 codec phases. Local range/validity faults use reason 5. Class-5 semantic and
 overflow faults retain the already frozen code 8 or 22 and stage 6/7 mapping.
 
+#### P5 public codec and transport profile
+
+This section freezes P5 against the reviewed P4 interfaces present at
+`57ffd03216502804f1108041184fdd6e6a328217`. It specifies the production
+controller that replaces the tied-off job, FIFO, and TX-session connections;
+it does not declare that controller already implemented.
+
+| P5 discovery/admission | Exact value or rule |
+| --- | --- |
+| `CAPABILITY0` | `0x000001bd`: WAV 0, FLAC 2, DMA 3, ring 4, TX streams 5, sequencer 7, resampler 8. MP3 1 and KWS 6 remain zero. |
+| `CAPABILITY1` | `0x01827010`: 16 KiB control, 112 KiB data, two channels, 96 kHz maximum source rate. |
+| Implemented primitive mask | `0x001fffff`, bits 0..20; reserved bits 21..31 remain zero. |
+| ISA target | Add `p5` to the assembler/parser/interpreter and hardware capability validation. Classes 0..6 and all six existing `WAIT` sources are admitted subject to entry masks. Existing `p3` and `p4` targets retain their masks and behavior. |
+| Public job | Operation 0 with format 0 WAV or 2 FLAC; one active job, direct or ring. MP3, KWS operation 1, and model load remain unavailable. |
+| Stream route | TX 0/1 legal; RX only 0 legal. Bit 5 means at least one implemented stream direction, not permission for RX/KWS. RX 1 and reserved direction values return `PSLVERR`. |
+| ABI identity | Existing offsets, descriptor size, instruction encoding, `MC_ABI=0x00010000`, and topology stay fixed. `ABI_DIGEST=0` through P7. |
+
+Direct acceptance snapshots all job fields, requires owner/unblocked/idle,
+locked valid microcode, a supported format, valid ranges and output geometry,
+and no enabled active ring. Rejected direct starts cause no payload DMA and
+leave result state unchanged. Ring doorbell requires an enabled valid ring,
+owner/unblocked state, locked microcode, and no direct job; it does not inspect
+the head format during the APB transfer. Each invalid owned descriptor,
+including MP3/KWS, completes with the existing P2 error/writeback/OWN-clear
+sequence. Thus an unsupported ring head cannot prevent its own rejection
+writeback. Direct and ring configuration words retain their existing layouts.
+Buffers and the complete 128-byte descriptor must fit the relevant ACL;
+input/output and descriptor/result memory may not overlap. Shared storage must
+remain immutable/non-cacheable or explicitly cache-maintained while owned.
+
+##### Production entry context and class-6 movement
+
+GPRs still start at zero. Before the first instruction, after the P4 mutable
+epoch clear, the controller writes the following 64-byte context into the
+last 64 bytes of the active entry's scratch range. This is a microprogram ABI
+inside existing scratch, not a new APB register window. The P5 WAV/FLAC bundle
+reserves it; kernels and transport data buffers may not overlap it. `LD32` and
+`ST32` use the existing scratch-relative addressing to access it.
+
+| Word | Value/owner |
+| ---: | --- |
+| 0..3 | Controller writes descriptor `CONTROL` without OWN/IOC, `INPUT_CONFIG`, `OUTPUT_CONFIG`, and `JOB_FLAGS`; microcode reads only. |
+| 4 | Microcode's cumulative parsed input bytes, initially zero; monotonically increasing and at most `INPUT_LENGTH`. |
+| 5 | Microcode's diagnostic byte offset from input start, initially zero; may equal `INPUT_LENGTH` for EOF. |
+| 6 | Microcode's detected `SOURCE_INFO` in the existing result layout, initially zero; written after header validation and constant thereafter. |
+| 7 | Microcode final-output marker, bit 0 only; initially zero. It marks the next output command as the final one and is consumed/cleared when that command is accepted. |
+| 8 | Controller writes `INPUT_LENGTH`; microcode reads only. |
+| 9 | Controller writes `OUTPUT_CAPACITY`; microcode reads only. |
+| 10 | Controller writes current private-DMA input cursor after each refill completion; microcode reads only. |
+| 11 | Controller writes completed transport output bytes after each output completion; microcode reads only. |
+| 12..15 | Reserved zero. |
+
+The controller owns transport cursors and checks context bounds when consumed.
+APUMC loader validation retains all P4 table/scratch range rules. Job dispatch
+additionally requires a WAV/FLAC entry with at least 64 scratch bytes; a
+generic primitive-only bundle may still load but cannot run a public codec
+job without this space. Only released, verified P5 microprograms define codec
+semantics; load CRC/lock is not authentication of an arbitrary program.
+
+`INPUT_REFILL` has exactly one source: the active descriptor input cursor. Its
+requested count is a multiple of four in 4..256, and its scratch destination
+is four-byte aligned and has space for the request. Actual bytes are
+`min(request, INPUT_LENGTH-cursor)`. The controller buffers an entire request
+in the P4 input staging region at `0x06000` before publishing it; on success
+it copies the actual bytes to scratch, zeroes unused lanes of the final local
+word, and queues the same bytes in the primitive input FIFO. Completion and
+cursor increment occur once both copies have been accepted. Source bytes are
+not reread or decoded by LP/HP. Zero actual bytes completes with zero without
+issuing AXI; it sets the EOF state and emits no zero-byte FIFO item.
+
+Refill admission reserves enough free FIFO entries for the entire actual
+request, as well as the read-command slot, and waits for an active fixed
+kernel to complete before claiming SRAM. A reservation need not wait for the
+reservoir to empty. The primitive FIFO's `last` is set only on the item ending
+the descriptor input, not on each 256-byte refill. Valid-byte counts remain
+literal 1..4 and byte order is increasing address. `FIFO_POP` and bitstream
+refill consume one shared FIFO; the microprogram must not use `FIFO_POP`
+while the bitstream reservoir holds unconsumed bits. Scratch copies are for
+CRC/header inspection and do not implicitly consume the reservoir.
+The parser tracks available bits and schedules explicit refills before an
+operation would exhaust queued input. Long unary/Rice tokens spanning refill
+boundaries are decoded with bounded bit-read/refill microcode loops; issuing
+an entropy primitive that stalls waiting for its own not-yet-issued refill
+is forbidden in the released bundle. This needs no autonomous host refill.
+
+`OUTPUT_COMMIT` and `OUTPUT_STREAM` both take authoritative bytes from the
+specified scratch range; their byte count is 1..256 and a multiple of a
+complete destination PCM sample frame. The scratch base is four-byte aligned.
+They first copy those bytes into output staging at `0x08000`, then enqueue
+them into the primitive output FIFO, then drain that FIFO to private AXI DMA
+or to the P2 TX router respectively. Output-command admission requires this
+FIFO empty. `FIFO_PUSH` remains executable for primitive programs, but an
+output command with older manually pushed entries is a reason-5 contract
+fault; it may not discard or substitute those entries. During transport's
+FIFO ownership, manual pushes stall. SRAM and FIFO payloads are not two
+alternative public output modes.
+
+Only one read and one output command may be pending. Local SRAM ownership is
+loader exclusive, then an already accepted fixed kernel, then a transport
+copy, then a class-4 request; newly eligible kernel/transport/local requests
+use round robin and cannot preempt an accepted operation. Each transport copy
+is at most 64 words. Transport waits outside a running kernel do not change
+P4's accepted-kernel latency guarantee. The DMA owner remains held until done
+through the P2 channel/response drain, including ring fetch and writeback.
+
+Output-memory cursor advances only by bytes from bursts with successful B
+responses. `OUTPUT_COMMIT` returns its requested count only after all B
+responses succeed. `OUTPUT_STREAM` returns only after the last word of that
+command crosses the router-to-I2S handshake, not merely the primitive FIFO
+or router enqueue. Source/context data cannot be modified while its command
+is pending; unrelated mutable words may still be used. Existing GPR-pending,
+`DMA_WAIT`, and `WAIT` semantics apply.
+`WAIT 4` includes the router FIFO and unaccepted TX word; `WAIT 5` observes
+ring result/OWN writeback. It is initially true before a writeback begins and
+is not a prerequisite for the running entry's own future writeback.
+
+The final-output context marker asserts `TLAST` only on the final I2S word of
+the marked command. Memory output consumes the marker without an external
+`TLAST`. A marked command forbids later output commands in that job. Empty
+audio emits no word or `TLAST`. A nonempty successful stream job must have
+exactly one final marker. The microprogram checks EOF/container end using
+look-ahead before releasing the final PCM frame. There is no fabricated
+`TLAST` on a previously accepted word when a job aborts or fails.
+
+`FRAME_COMMIT` retires once per destination PCM sample frame, never once per
+compressed FLAC frame or DMA command. Its source0/source1 values add logical
+input-used/output-produced deltas and it increments the existing frame counter
+by one. Source1 equals destination bytes per frame, including mono-to-stereo
+duplication for I2S; input deltas may be zero during upsampling. Hardware
+also tracks physical successful bytes independently, so commits cannot exceed
+transported bytes. On normal `END`, logical output bytes/frames must equal
+physical bytes/complete PCM frames; mismatch is a contract failure. Parsed
+input context word 4 supplies final input-used, including header/trailing
+chunks not associated with the last PCM frame, and must not be less than the
+committed input-used. `FRAME_COMMIT` continues to reset the per-frame retired
+watchdog budget. `EVENT` retains IRQ bits 6/7 semantics; it does not replace
+the router's watermark detectors.
+
+On failure or abort, results report parsed input context word 4, the physical
+successful output prefix, and complete PCM frames in that prefix. A burst
+with failing B is excluded from that prefix even though some destination
+bytes may physically have changed. No rollback of AXI or accepted audio is
+promised. Successful DMA byte counters count each wire transfer once;
+sequencer commits and local staging copies do not double-count them. Loader
+and ring traffic retain their existing counter attribution. `JOB_CYCLES`
+saturates from job acceptance through terminal drain/result construction;
+ring finish timestamp precedes OWN clear, as in the P2 scheduler.
+
+Abort/resource block-new stops instruction retirement and new transfers.
+An output command is not issued to AXI until its complete payload is in
+staging; its accepted W/B work drains even if mutable epochs are invalidated.
+A presented unaccepted stream word remains stable and drains, as do already
+queued router words. Unpresented staging/primitive-FIFO data may be discarded
+after the command's outstanding obligations are tracked. Resource reset is
+applied only after drain; hard/PCLK reset retains the P2 warm-flush rules.
+If the sink/fabric never responds, idle/abort-done must not falsely assert.
+AXI response/protocol and DMA-timeout precedence remains unchanged. New
+codec errors enter below the existing AXI/DMA/xrun causes, below a sequencer
+trap, and above forced abort on the same cycle; otherwise the first captured
+error remains immutable. Empty/full primitive FIFOs alone are backpressure,
+not audio xrun. The P2 router's real I2S xrun events retain codes 18/19.
+On successful END, any prefetched-but-unparsed input tail is discarded after
+all read responses drain; it is not counted as parsed input and cannot carry
+into the next entry epoch. This includes relaxed trailing bytes.
+
+##### P5 WAV and native-FLAC file profiles
+
+Files are finite, contiguous DMA inputs of at most `0x7fffffff` bytes. These
+limits are the P5 acceptance subset; a valid file outside them is unsupported,
+not malformed. WAV syntax uses the Microsoft
+[RIFF rules](https://learn.microsoft.com/en-us/windows/win32/xaudio2/resource-interchange-file-format--riff-)
+and [PCM/extensible format definitions](https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible).
+Native FLAC syntax is [RFC 9639](https://datatracker.ietf.org/doc/html/rfc9639);
+the bounded profile and error policy below override any freedom it gives a
+decoder. LP/HP neither parse these files for the APU nor provide decoded PCM.
+
+| WAV property | P5 rule |
+| --- | --- |
+| Container | Exactly little-endian `RIFF`, 32-bit size, `WAVE`; no RF64, RIFX, WAVE64, compressed WAVE, or leading tags. Compute `riff_end=8+size` with checked wide arithmetic. It must be at least 12 and not exceed input length. |
+| Required chunks | Exactly one `fmt ` before exactly one `data`. Chunk headers are eight bytes; every chunk payload and its odd-size pad must fit `riff_end`. `data` before `fmt `, duplicate required chunks, overlapping/wrapped sizes, or a partial final chunk header fail. |
+| PCM `fmt ` | Tag 1; length 16, or length 18 with `cbSize=0`. Channels 1/2, integer rate 8000..96000 Hz, bits 8/16/24/32. `blockAlign=channels*(bits/8)` and `avgBytesPerSec=rate*blockAlign` must match exactly. |
+| Extensible `fmt ` | Tag `0xfffe`; length 40, `cbSize=22`, PCM subtype GUID `00000001-0000-0010-8000-00aa00389b71`. Valid bits must equal container bits, both from 8/16/24/32. Mono channel mask is 0 or `0x4`; stereo is 0 or `0x3`. Float subtype, other masks, and padded-valid-bit variants are unsupported. |
+| Unknown chunks | Skip bounded payloads by consuming input; do not interpret `LIST`, `JUNK`, `fact`, `bext`, or embedded metadata. At most 1024 chunks and 1 MiB total skipped payload plus padding, including chunks after `data`. |
+| Alignment/padding | Odd chunk lengths have exactly one pad byte; strict mode requires zero, relaxed mode accepts any value. Missing required pad is truncated input. `data` size must be a multiple of blockAlign, including a valid zero-length data chunk. |
+| End | Parse remaining chunks through `riff_end`. Strict requires `riff_end==INPUT_LENGTH`; relaxed ignores bytes beyond riff_end and sets warning bit 1. `RESULT_INPUT_USED=riff_end` on success. |
+| Sample representation | Eight-bit samples are unsigned with bias 128; 16/24/32-bit samples are signed little-endian two's complement. No host conversion or dither. |
+
+| Native FLAC property | P5 rule |
+| --- | --- |
+| Signature/metadata | `fLaC` at byte zero; first metadata block is exactly one 34-byte STREAMINFO. At most 128 metadata blocks and 1 MiB total metadata payload. A terminating last-metadata flag is mandatory. Types 1..6 are bounded opaque skips; reserved types 7..126 are unsupported; type 127 and duplicate STREAMINFO are malformed. |
+| Geometry | 1/2 channels, 16/24 bits/sample, rate 8000..96000 Hz. Nonzero total-samples is a required exact end count; zero means unknown until EOF. Nonzero min/max frame-byte hints must be ordered; STREAMINFO min/max block sizes must be legal and contain each nonfinal frame's block size. |
+| Workspace bound | Maximum coded block is 4096 samples for mono or 2048 for stereo. Maximum encoded frame is 65536 bytes. A larger advertised maximum or frame/block is unsupported before PCM from that frame is released. This explicitly excludes common 4096-sample stereo files in P5; broader block support needs a later memory/streaming design. |
+| Frame header | Accept fixed- and variable-blocking strategies, all RFC block-size codes 1..15 and sample-rate codes 0..14 when the decoded values fit the profile. Code 0 block size, code 15 sample rate, reserved bits/bit-depth codes, and invalid UTF-8-style frame/sample numbers fail. A file keeps one blocking strategy. Numbers start at zero and advance contiguously; final short blocks, including 1..15 samples, are allowed. |
+| Property changes | Rate, bit depth, and channel count must match STREAMINFO and stay constant. Channel assignment may vary per frame among independent/left-side/side-right/mid-side; mono uses independent only. All expected nonzero `INPUT_CONFIG` fields must match the detected source. |
+| Subframes | Constant, verbatim, fixed order 0..4, LPC order 1..32; predictor order is no larger than block size. LPC coefficient precision 1..15 and signed shift -16..15 are accepted. Restore predictor warmups and residuals exactly; side subframes use the required extra bit. |
+| Wasted bits | Accept any legal wasted-bit count leaving at least one coded bit. Restore wasted bits before stereo decorrelation and check the final nominal sample range. Invalid counts or reconstruction overflow fail. |
+| Residuals | Rice and Rice2 with legal partition order 0..15, block divisibility, first-partition warmup subtraction, and exact sample count. Honor P4's quotient limit 65535; a legal larger quotient is unsupported. Escape raw width 0 represents an all-zero residual partition and is synthesized by microcode without issuing the P4 raw-width primitive; raw widths 1..31 use sign extension. |
+| Integrity | Mandatory header CRC8 and frame CRC16, initialized zero with the existing P4 polynomials, in both strict modes. All subframe-to-footer pad bits must be zero. Decode and validate the full frame before releasing any of its PCM. No resynchronization, concealment, or checksum bypass. |
+| MD5 | STREAMINFO MD5 is retained as metadata but not computed by P5. Zero and nonzero MD5 fields are accepted; success always sets warning bit 0, MD5 unchecked. Strict does not turn on an absent MD5 engine. External reference tests may verify MD5; APU success does not assert whole-file MD5 verification. |
+| End/truncation | With a known sample count, stop at exactly that count; a final frame may not exceed it. Strict rejects trailing bytes; relaxed ignores trailing bytes and sets warning bit 1. With unknown count, only exact EOF after a valid frame is success; incomplete next headers/frames fail in either mode. Empty streams are accepted only at the metadata end with total-samples zero. |
+
+The P5 released bundle uses at most 6144 table bytes and reserves at least
+18432 scratch bytes for each supported entry, wholly within the existing
+`0x00000..0x05fff` workspace. Up to 16384 scratch bytes hold one full decoded
+FLAC frame; at least 2048 remain for input copies, predictor state, parameter
+blocks, resampling tiles, CRC and job context. Process resampling in tiles of
+at most eight source frames so expansion up to 12:1 fits that remainder.
+Predictor reconstruction uses at most 64 residual samples per kernel request,
+preserving history across requests. Required P5 bundles bound each kernel's
+ready-data latency below the existing default `SEQUENCER_TIMEOUT=0xffff` and
+prove their maximum retired count between commits (including metadata skip)
+fits the entry's 24-bit budget. No artificial FRAME_COMMIT may be used to
+reset a watchdog before producing an output PCM frame.
+This is a release-bundle packing requirement, not a reduction of P4 loader
+capacity. The staging regions and P7 KWS reservation retain their P4 addresses.
+WAV processes at most 256 source PCM frames per validation block, using a
+smaller tile when needed. A terminal container/metadata error can occur after
+earlier valid audio has already been emitted; its prefix is retained.
+For resampling across FLAC frames, retain only the bounded history and pending
+end tile while decoding the next full frame into the main planar buffer; do
+not allocate a second full-frame buffer or read unverified next-frame samples.
+On a next-frame CRC error, pending unissued output may be discarded. Accumulate
+small packed tiles until an output command can carry 256 bytes, except at
+final output or remaining capacity, so I2S startup prefill can complete without
+waiting on a shorter nonfinal command's sink handshake.
+
+##### P5 PCM, rate, and completion policy
+
+For source precision `b`, normalize signed source integer `s` to signed Q1.31
+with the exact integer `s*2^(32-b)` (WAV unsigned eight-bit first subtracts
+128). Stereo-to-mono is `RNE(left+right,1)` using a signed 33-bit sum in that
+domain, followed by signed-32 saturation. Bit 10 in CONTROL authorizes this
+reduction; it is illegal when not doing stereo-to-mono. Mono-to-stereo is exact
+duplication and does not use bit 10. Output channel zero means derive from
+source for memory, and two for I2S. Memory permits 1/2 output channels; I2S
+requires two physical slots. To request downmixed audio on I2S, select one
+logical output channel with bit 10, then duplicate it into the two slots.
+
+CONTROL bit 11 zero requires output rate zero (derive) or exactly source
+rate. With bit 11 one, rate must explicitly be 48000 or 96000 Hz and the
+reduced output/source ratio must match a P4 profile, including profile 0 for
+equal rates. Other ratios are unsupported; no nearest-rate choice is made.
+Memory pass-through accepts every source rate in the file profile; I2S output
+must resolve to 48 or 96 kHz. Its width/rate are configured through the existing
+I2S HAL before submission. The APU does not write I2S registers; the driver
+requires matching I2S format and stream-TX configuration and an idle central
+DMA TX path before enabling APU TX route.
+
+The shipped P5 resampler tables are three fixed 32-phase/16-tap Q2.30 banks.
+Their values are uniquely defined by the following offline formula, not by
+host floating-point defaults. For cutoff `c=1,2/3,1/2`, phase `p=0..31`, and
+tap `t=0..15`, let `x=t-7-p/32`, `sinc(z)=sin(pi*z)/(pi*z)` with sinc(0)=1,
+`w(t)=(1-cos(2*pi*(t+1/2)/16))/2`, and `a(t)=c*sinc(c*x)*w(t)`.
+Round `2^30*a(t)/sum(a)` to nearest-even to obtain each coefficient; add the
+integer residual `2^30-sum(coefficients)` to tap 7. Coefficient generation
+must resolve rounding using increased precision/interval bounds, emit all
+1536 little-endian signed words, and compare independently generated words
+before shipping. The binary is covered by the APUMC CRC/build manifest. P4
+arithmetic, profile mapping, phase rounding, history/look-ahead, and saturation
+are unchanged. Identity bypass is exact; nonidentity conversion is not a
+lossless-output claim.
+
+After downmix/resampling, convert Q1.31 to signed output precision by
+arithmetic right shift 16 for S16 or 8 for S24, then saturation. There is no
+dither or implicit gain. Before using `PCM_PACK`, microcode has already made
+that shift and sets packer gain to `0x40000000`. Thus native 16/24-bit FLAC
+pass-through at matching precision/rate/channels is bit-exact, and changing
+precision has a deterministic amplitude-preserving result. Stereo S16 uses
+one full 32-bit I2S word per frame; stereo S24 uses two sign-extended words.
+`TKEEP=TSTRB=0xf`; all other I2S sidebands are zero except final `TLAST`.
+
+Output capacity is enforced before issuing each command, with checked
+`cursor+bytes` arithmetic; only whole destination PCM frames may be issued.
+Memory output requires nonzero capacity and four-byte-aligned address. Stream
+output uses address/capacity zero. In either mode total output bytes must fit
+32 bits; detect a prospective overflow as code 22/stage 8 before issue rather
+than allowing a cursor to wrap.
+If the entire next command cannot fit, issue no byte from it and terminate
+with code 8/capacity detail. The released microprogram must shorten a tile to
+the remaining whole-frame capacity first, then report exhaustion if more
+audio remains. A known too-small capacity need not prevent earlier valid
+frames from being returned. Input format errors never publish a partly
+decoded or CRC-unverified FLAC frame; transport faults may leave partial
+output from an already verified frame. Success is distinct from partial
+prefix plus terminal error.
+
+Memory success waits for every output B response. Stream success waits for
+the final router-to-I2S handshake and an empty APU TX router, not for the last
+sample to leave the DAC pin. The stream session remains active until that
+drain, so route changes still use the P2 active-direction rule. Software that
+needs audible completion must separately drain I2S before disabling it.
+Empty jobs need no final beat. IRQ, ring coalescing/IOC, result writeback and
+OWN-last release follow P2; direct completion uses IRQ bit 0, ring uses bit 1.
+`JOB_FLAGS[0]` affects only the explicitly stated padding/trailing-byte checks;
+it never disables bounds, codec CRC, overflow, or output-capacity checks.
+
+##### P5 format diagnostics and unsupported MP3 entry
+
+Codec `RESULT_DETAIL`, `JOB_DETAIL`, and codec `ERROR_DETAIL` use format ID
+`[31:24]`, warnings `[23:16]`, and reason `[15:0]`. Warnings are bit 0 MD5
+unchecked (FLAC only), bit 1 relaxed trailing bytes ignored, bit 2 relaxed
+nonzero WAV pad accepted; bits 3..7 are zero. Warnings describe checks actually
+skipped, including on a later failure. All unspecified reason values are
+reserved. On success reason/code are zero. On a codec error the tuple has
+VALID=1, AXI response=0, direct descriptor index=0 or the owning ring index,
+and `ERROR_ADDRESS=INPUT_ADDRESS+context_word5`, with checked arithmetic.
+The location is the first byte of the failing field/chunk/frame, or exactly
+one-past-input for truncation. W1C, existing first-error preservation and P3
+loader/trap tuples remain unchanged.
+
+| Reason | Meaning | Code / stage |
+| ---: | --- | --- |
+| `0x0001` | Unsupported operation/format | 3 / 2 |
+| `0x0002` | Unsupported rate/channels/precision or expected-input mismatch | 3 / 4 |
+| `0x0003` | Unsupported valid encoding/container/metadata type | 3 / 4 |
+| `0x0004` | File/chunk/metadata/block/frame/Rice quotient profile limit | 3 / 4 (container/block) or 5 (Rice) |
+| `0x0010` | Bad file signature | 4 / 4 |
+| `0x0011` | RIFF size/wrap or malformed container extent | 4 / 4 |
+| `0x0012` | Missing/duplicate/misordered required chunk | 4 / 4 |
+| `0x0013` | Chunk data length not frame-aligned or invalid chunk extent | 4 / 4 |
+| `0x0014` | Invalid PCM format fields/alignment/byte rate | 4 / 4 |
+| `0x0015` | Invalid STREAMINFO | 4 / 4 |
+| `0x0016` | Invalid FLAC metadata structure | 4 / 4 |
+| `0x0017` | Invalid/reserved frame header | 4 / 4 |
+| `0x0018` | Midstream geometry/blocking-strategy change | 4 / 4 |
+| `0x0019` | Forbidden nonzero pad bits/strict pad byte | 4 / 4 |
+| `0x001a` | Invalid/noncontiguous frame or sample number | 4 / 4 |
+| `0x001b` | Strict trailing bytes | 4 / 4 |
+| `0x0020` | Required bytes/bits missing | 5 / 4 for class 2/parser; 5 / 5 for entropy |
+| `0x0030`, `0x0031` | Header CRC8, frame CRC16 mismatch | 6 / 4 |
+| `0x0032` | Nonzero STREAMINFO total differs at complete-frame EOF or is exceeded | 4 / 4 |
+| `0x0040` | Malformed entropy/partition encoding | 7 / 5 |
+| `0x0041` | Invalid wasted-bit count | 7 / 5 |
+| `0x0042` | Invalid Rice escape/partition sample count | 7 / 5 |
+| `0x0043` | Reconstruction or restored sample out of range | 22 / 6 |
+| `0x0050` | Unsupported output rate/channel/flag combination | 3 / 0 |
+| `0x0051` | Destination capacity exhausted | 8 / 8 |
+| `0x0052` | Invalid context/cursor/commit/final-marker contract | 11 / 11; uses existing sequencer reason-9 trap detail, not codec detail |
+
+Structural APB rejections still return `PSLVERR` without inventing a new
+codec result. For unsupported ring descriptors, reason 1 uses descriptor
+CONTROL address rather than an input-file address. Transport/primitive/trap
+errors keep their existing P2/P3/P4 tuple (including PC addresses), and the
+job result copies that detail. The format table applies to microcode parser
+`JOB_RESULT` failures, not a reinterpretation of those lower-level failures.
+For output capacity reason `0x0051`, use `OUTPUT_ADDRESS+output_cursor` for
+memory (response zero, stage 8, owning job index). A total-byte overflow on
+stream uses address zero and code 22/stage 8 with `trap_detail(9)`; on memory
+it uses the checked next destination address, saturating at `0xffffffff` if
+that address itself overflows. Invalid context reason `0x0052` uses the
+existing reason-9 fallback code 11/stage 11/index zero/PC address.
+When multiple parser checks at the same position fail, structural extent and
+reserved-bit errors precede unsupported-profile checks, then CRC checks;
+the first check in field order otherwise wins.
+
+The released P5 APUMC still contains exactly three entries. Instruction word
+0 is always `0x0200000001000001` (unconditional class-0 TRAP, detail
+`0x01000001`). The MP3 entry at descriptor index 1 has the exact eight words
+`[0x00000001, 0, 0, 0, 1, 1, 0, 0]`: entry/first/last PC zero, zero scratch,
+table and primitive mask, maximum loop/retired one. A verification-only
+launch of it produces code 11/stage 11/response 0/index 0/address 0/detail
+`0x01000001`, retired zero. Public MP3 requests are rejected with unsupported
+format before reaching that trap. WAV and FLAC entries start after PC 0;
+their masks contain the primitives they declare and may share read-only
+tables and scratch as already allowed. The header mask is the OR of entries,
+not forcibly `0x001fffff`; the implemented mask advertises hardware capacity.
+
 ### `APUM` KWS model ABI
 
 The 64-byte model header contains magic `APUM`, header/model ABI, total bytes,
@@ -1349,6 +1716,143 @@ negotiation; software fails closed on unknown major versions.
 `PSLVERR` for that formerly reserved offset, while P2 implements it; no P1
 offset, accepted field, reset value, or reserved mask is repurposed. P2 updates
 the independently handwritten SVH/C tables and parity tests together.
+
+### P5 HAL contract
+
+The following declarations are the required P5 additions to
+`<retrosoc/hal/apu.h>`, implemented in `crt/src/hal/apu.c` with deterministic
+packing/validation tests. They describe software interfaces to implement in
+P5; this freeze does not add code. Existing `rs_apu_probe`, `rs_apu_info_t`,
+`rs_apu_descriptor_t`, and every 128-byte descriptor member offset are retained.
+Enums use the already frozen integer encodings. These host-side structures
+are not DMA wire formats; only `rs_apu_descriptor_t` is the shared layout.
+
+```c
+typedef enum { RS_APU_WAV = 0, RS_APU_MP3 = 1, RS_APU_FLAC = 2 } rs_apu_format_t;
+typedef enum { RS_APU_MEMORY = 0, RS_APU_I2S = 1 } rs_apu_output_t;
+typedef enum { RS_APU_S16 = 0, RS_APU_S24_32 = 1 } rs_apu_pcm_t;
+
+typedef struct {
+    rs_apu_format_t format;
+    rs_apu_output_t output;
+    rs_apu_pcm_t pcm;
+    uint32_t input_address, input_bytes;
+    uint32_t output_address, output_capacity;
+    uint32_t expected_rate, expected_channels, expected_bits;
+    uint32_t output_rate, output_channels;
+    uint32_t downmix, resample, strict; /* each exactly zero or one */
+    uint32_t cookie[2];
+} rs_apu_job_t;
+
+typedef struct { uint32_t address, bytes, expected_crc; } rs_apu_image_t;
+typedef struct { uint32_t status, address, detail; } rs_apu_error_t;
+typedef struct {
+    uint32_t status; /* descriptor RESULT_STATUS encoding, including direct */
+    uint32_t input_used, output_bytes, frames, source_info, cycles, detail;
+    uint32_t cookie[2], start_timestamp[2], finish_timestamp[2];
+    uint32_t microcode_build_id;
+    rs_apu_error_t first_error;
+} rs_apu_result_t;
+
+typedef struct {
+    rs_apu_descriptor_t *descriptors; /* aligned CPU mapping, caller-owned */
+    uint32_t dma_address, entries, tail;
+} rs_apu_ring_t;
+
+rs_status_t rs_apu_set_acl(uint32_t read_base, uint32_t read_limit,
+                           uint32_t write_base, uint32_t write_limit);
+rs_status_t rs_apu_microcode_load(const rs_apu_image_t *image, rs_timeout_t timeout);
+rs_status_t rs_apu_validate_job(const rs_apu_job_t *job);
+rs_status_t rs_apu_submit_direct(const rs_apu_job_t *job);
+rs_status_t rs_apu_wait_direct(rs_apu_result_t *result, rs_timeout_t timeout);
+rs_status_t rs_apu_decode(const rs_apu_job_t *job, rs_apu_result_t *result,
+                          rs_timeout_t timeout);
+rs_status_t rs_apu_ring_configure(rs_apu_ring_t *ring, uint32_t stop_on_error,
+                                 uint32_t coalesce_count, uint32_t coalesce_timeout);
+rs_status_t rs_apu_ring_submit(rs_apu_ring_t *ring, const rs_apu_job_t *job,
+                              uint32_t ioc, uint32_t *slot);
+rs_status_t rs_apu_ring_result(const rs_apu_ring_t *ring, uint32_t slot,
+                              rs_apu_result_t *result, rs_timeout_t timeout);
+rs_status_t rs_apu_ring_disable(rs_timeout_t timeout);
+rs_status_t rs_apu_stream_route(uint32_t tx_route, uint32_t rx_route);
+rs_status_t rs_apu_abort(rs_timeout_t timeout);
+rs_status_t rs_apu_soft_reset(void);
+rs_status_t rs_apu_error_read(rs_apu_error_t *error);
+rs_status_t rs_apu_error_clear(void);
+rs_status_t rs_apu_irq_read(uint32_t *state);
+rs_status_t rs_apu_irq_enable(uint32_t mask);
+rs_status_t rs_apu_irq_ack(uint32_t mask);
+```
+
+All pointers are mandatory; addresses are 32-bit DMA addresses, never silently
+truncated CPU pointers. Validation rejects unknown enums, nonboolean flags,
+reserved fields, misalignment, overflow, overlap, unsupported capabilities,
+and invalid capacity/route combinations before any job-register mutation.
+Header-dependent checks are performed by APU microcode after submission, not
+by reading the file on LP/HP. Direct submission packs the same descriptor
+words into `JOB_*`, fences, and issues START once; it is asynchronous.
+`rs_apu_decode` is exactly submit-direct followed by wait-direct. Direct
+results normalize `JOB_STATUS` into descriptor-result bit positions; direct
+cookie is the saved submitted cookie, and direct start/finish timestamps are
+zero because no corresponding APB registers exist. The direct build ID is
+read from the locked MC build ID. `first_error` is a raw snapshot of the global
+first-error tuple and may belong to an earlier fault; per-job status/detail
+are authoritative for the returned job. No API implicitly clears first error.
+
+`rs_timeout_t` uses the existing unsigned poll-budget convention here: timeout
+`n` permits at most `max(1,n)` status observations; zero is a nonblocking
+single observation, not infinite. `RS_TIMEOUT_DEFAULT` is the existing SDK
+default. A poll has no assumed wall-clock duration. Exhaustion returns
+`RS_ETIMEOUT`, leaves the output result structure untouched, and does not
+abort, reset, release buffers, or retry a command. An admitted operation can
+still be active; buffers remain owned until a later successful terminal wait
+or drained abort. A successful poll populates the complete result even when
+its terminal status maps to a nonzero `rs_status_t`.
+
+Return mapping: `RS_EINVAL` for invalid arguments, range/packing violations,
+or illegal idle/owner conditions; `RS_ENOTSUP` for a clear required capability
+or error code 3; `RS_ENOSPC` for full software ring or reason `0x0051` capacity
+exhaustion; `RS_ETIMEOUT` for poll exhaustion; `RS_EFORMAT` for codec codes
+4..7; `RS_EIO` for hardware DMA, trap, overflow, abort, or other terminal
+failures. Successful operation is `RS_OK`. Busy is not encoded as success;
+terminal DMA timeout is `RS_EIO` with hardware code 17, distinct from a HAL
+poll budget expiring while hardware is still running.
+
+The caller owns resource acquisition/quiesce, I2S setup, cache maintenance,
+and serialization between LP/HP/interrupt contexts. APU HAL calls never
+transfer resource ownership, decode on the host, allocate memory, or load a
+replacement image automatically. ACL programming and microcode load are
+LP-only and quiesced/idle; a locked image returns `RS_EINVAL` without trying
+to unlock it. Load waits for busy to clear, then checks MC valid/lock/CRC and
+returns the frozen loader result. Timeout does not cancel the load.
+
+Ring configure requires idle with ring disabled, 2..256 power-of-two entries,
+128-byte-aligned CPU/DMA bases, a non-cacheable descriptor mapping, boolean
+stop-on-error, count 1..255, and timeout 1..65535. It programs
+base/size/coalescing, tail zero, then enables;
+software must have cleared every OWN bit before configuring. At most
+`entries-1` slots are queued to disambiguate head==tail. Submit fills a free
+slot, zeros result/reserved/KWS words, preserves the requested cookie, writes
+OWN last, fences, advances tail, and rings the doorbell. The P5 ring helper
+requires non-cacheable descriptor storage so no cache-maintenance callback is
+needed between its payload stores and OWN publication. Payload-buffer cache
+clean/invalidate remains the caller's responsibility before submit and after
+completion; manual cached-descriptor operation still follows the existing P2
+CBO contract. Submit does not wait. Result polling observes OWN clear with
+an acquire fence and then copies the immutable descriptor
+result. A slot with OWN clear and no terminal result is not a completed job
+and returns `RS_EINVAL`; callers must collect a slot before resubmitting it.
+Result polling never recycles or advances a producer slot. Ring disable uses abort
+when active, waits for idle, then clears enable. Abort on an idle APU is a HAL
+no-op returning OK; otherwise it issues ABORT once and waits for idle/abort
+completion. Soft reset requires idle and preserves the locked bundle.
+
+`rs_apu_stream_route` changes the requested directions only after checking
+their active state and P5 directional capabilities; it preserves the P2
+same-value write rule. IRQ enable replaces the enable mask, IRQ ack W1C-clears
+only requested implemented bits, and reads never clear. Invalid mask bits are
+`RS_EINVAL`. Error clear writes only ERROR_STATUS valid/W1C and cannot clear a
+same-cycle hardware fault. None of these calls changes existing IRQ routing.
 
 ## Clock, Reset, CDC/RDC, and Lifecycle
 
@@ -1541,6 +2045,76 @@ power, coherency, or security require a new approved phase/spec revision.
 All new external corpora or reference packages require exact revisions or
 archive checksums in the dependency lock. Managed source retains notices and
 does not become evidence of self-owned MISRA conformance.
+
+### P5 locked reference inputs and qualification
+
+The following pins were read from upstream and both archive SHA-256 values
+were computed from the complete fixed-revision archive bytes on 2026-09-05.
+They are authoritative P5 setup inputs, not floating branch/tag selections.
+This documentation freeze does not modify the executable dependency lock.
+Adding the exact entries and setup/test integration below is the first P5
+implementation step; missing installed inputs are setup work, not an open
+architecture choice. No direct download is added to CI or firmware flows.
+
+| Lock key / use | Upstream and full revision | Destination | License handling |
+| --- | --- | --- | --- |
+| `sources.apu_libflac` / host-only reference | `https://github.com/xiph/flac.git`, release 1.5.0 commit `1507800de4b70e21be71f38caa0d9079d0bc6e45` | `.cache/retrosoc/sources/apu-libflac` | Lock license `NOASSERTION` for the mixed source tree; libFLAC/libFLAC++ are BSD-3-Clause (`COPYING.Xiph`), CLI code is GPL-2.0-or-later. Retain COPYING.Xiph, COPYING.GPL, COPYING.LGPL, COPYING.FDL and per-file notices. |
+| `sources.apu_flac_corpus` / host-only corpus | `https://github.com/ietf-wg-cellar/flac-test-files.git`, commit `aa7b0c6cf32994c106ae517a08134c28a96ff5b2` | `.cache/retrosoc/sources/apu-flac-corpus` | `CC0-1.0`; retain LICENSE.txt and root/per-group README.txt attribution. |
+
+| Archive lock key | URL | SHA-256 | Download destination |
+| --- | --- | --- | --- |
+| `archives.apu_libflac` | `https://codeload.github.com/xiph/flac/tar.gz/1507800de4b70e21be71f38caa0d9079d0bc6e45` | `d80ef5facdb21972efe91774da03d6b9abf216aa17093d740fcc411cd8afbb41` | `.cache/retrosoc/downloads/apu/libflac-1507800de4b70e21be71f38caa0d9079d0bc6e45.tar.gz` |
+| `archives.apu_flac_corpus` | `https://codeload.github.com/ietf-wg-cellar/flac-test-files/tar.gz/aa7b0c6cf32994c106ae517a08134c28a96ff5b2` | `36de2310155b4084011fbd56f24603dfef91a26c5433e3f92bd21995b45089c3` | `.cache/retrosoc/downloads/apu/flac-corpus-aa7b0c6cf32994c106ae517a08134c28a96ff5b2.tar.gz` |
+
+Archive license fields match the corresponding source entries. Git checkout
+and verified archive extraction are two encodings of the same pinned source;
+setup selects one explicitly and must not silently fall back to a newer
+revision after a checksum failure. Build the host reference with Ogg disabled,
+and keep its binaries/build products in the variant build tree. No libFLAC,
+GPL CLI, or corpus code is linked into `crt/`, LP/HP firmware, RTL, or shipped
+APUMC; comparison is through host test processes. If reference tools are
+redistributed, retain their applicable source/license obligations. `NOASSERTION`
+is not a relicensing or compliance claim. P5's self-owned HAL and microassembly
+are independent artifacts; any copied upstream material needs explicit notice
+review before inclusion.
+
+P5 delivers deterministic WAV/FLAC microassembly, the three-entry APUMC bundle,
+1536-word resampler coefficient file, symbols, instruction/control-store and
+scratch high-water reports, and a per-file corpus manifest. The manifest records
+each pinned corpus relative path and SHA-256, its expected supported/rejected/
+malformed result, profile reason, PCM geometry, and reference-output hash.
+Every official corpus file is classified, including files above P5 block limits;
+unsupported files must be tested for clean rejection, not silently omitted.
+Generated valid/malformed vectors supplement the official corpus for every
+WAV chunk boundary, FLAC escape width zero, wasted-bit count, predictor order,
+CRC fault, strict/relaxed case, and 2048/4096 block boundary. Host libFLAC
+supplies PCM truth; the independent integer post-processing model supplies
+downmix/resample/packing truth. CRC-only success with MD5 unchecked must be
+visible in expected results.
+The host harness obtains PCM even for an MD5-only mismatch and records that
+reference integrity failure separately; it must not mislabel the P5 documented
+MD5-unchecked acceptance as a PCM decoding mismatch.
+
+Directed tests must exercise production direct and ring submission, invalid
+owned MP3/KWS entries, class-6 cursor/FIFO backpressure, all three required
+bundle entries, every format error tuple, exact output capacity and one-frame
+short capacity, I2S final TLAST/drain, abort/reset during every transport stage,
+and cross-format ring sequences. Differential Icarus and Verilator runs use
+the same fixtures and result scoreboard; no verification injector may appear
+in product behavioral or synthesis filelists. Formal covers exclusive DMA/SRAM
+ownership, range checks, stable stream payload under stalls, accepted-transfer
+drain, OWN-clear ordering, and no public MP3/KWS/RX execution. P3/P4 target and
+observability regressions remain required.
+
+At 48 MHz PCLK, a ready memory target must sustain the P5 supported WAV/FLAC
+rates and 44.1-to-48 kHz conversion in cycle-counted simulation. The I2S test
+starts consumption after a 64-word APU prefill (or the whole output for a
+shorter job), then supplies ready memory without injected stalls; between
+first and last samples it must record zero xrun. Separate random-stall tests
+verify bounded error/drain rather than claim uninterrupted playback under
+unbounded stalls. Measured maximum tolerable AXI stalls, source properties,
+instruction budget, and occupancy must accompany results. Static timing,
+area, power, netlist, and physical 48 MHz closure remain Phase8 evidence.
 
 ### Required evidence matrix
 
@@ -1761,11 +2335,19 @@ ID: `APU-P5`.
 
 Scope: WAV/FLAC microassembly, tables, metadata/frame parsing, PCM conversion,
 Rice/fixed/LPC/decorrelation, resampling, memory/I2S output, interpreter/RTL
-differential, conformance corpus, and HAL decode.
+differential, conformance corpus, and the frozen P5 HAL. Includes production
+class-6 transport, controller entry context, direct/ring backend connection,
+TX stream routing, and exact codec/result policies in the P5 sections above.
 
-Dependencies: Phase4 and locked RFC/libFLAC/test inputs.
+Dependencies: reviewed Phase4 and the exact RFC/libFLAC/corpus inputs above.
+Implement their dependency-lock/setup entries before reference tests. No host
+decoder enters the product path.
 
-Public changes: enables format IDs0 and2 only; no ABI layout change.
+Public changes: `CAPABILITY0=0x000001bd`, `CAPABILITY1=0x01827010`, implemented
+primitive mask `0x001fffff`, classes 0..6, format IDs 0/2, TX route 1, and the
+documented HAL. MP3/KWS/RX route 1 remain unavailable and `ABI_DIGEST=0`.
+No existing APB offset, descriptor layout, P1..P4 target behavior, Resource7,
+APB group23, IRQ31/PLIC10, Gateway A identity, or clock/CDC allocation changes.
 
 Validation:
 
@@ -1774,11 +2356,23 @@ python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 make sw-format-check sw-policy-check sw-host-test
 python3 -m pytest -q
 make CONFIG=configs/ci/ihp130.mk firmware
-make CONFIG=configs/ci/ihp130.mk APP=ci_smoke SIMU=VERILATOR firmware sim
+make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES rtl-lint
+make CONFIG=configs/ci/ihp130.mk formal-apu formal-apu-loader formal-apu-sequencer
+make CONFIG=configs/ci/ihp130.mk APP=ci_smoke LINK_TYPE=ld2_all_sram SOC_SIM_TIME=360 VERILATOR_SIM_ARGS=--fast-flash SIMU=VERILATOR HAVE_SVA=YES firmware sim
 ```
 
-Completion: supported WAV/FLAC matrices and malformed corpora pass; FLAC is
-bit-exact; 44.1-to-48 and 24-bit/96 kHz playback meet xrun/counter gates.
+`tests/test_apu_codecs.py` and `tests/test_apu_codec_transport.py` are P5
+deliverables included by the full Pytest command; missing required EDA/reference
+tools are reported as unrun, never counted as passing skipped tests. The
+ci_smoke command proves SoC integration and does not replace the directed
+codec corpus or long-playback evidence.
+
+Completion: the exact supported/rejected matrices, malformed corpus, published
+error/count rules, HAL host tests, and production direct/ring/TX paths pass.
+Matching-precision/rate/channel FLAC is bit-exact; 44.1-to-48 and 24-bit/96 kHz
+playback meet the cycle-counted xrun gate. Larger FLAC blocks, whole-file MD5,
+unlisted conversion ratios, MP3 and KWS are outside P5. Synthesis/STA/netlist/
+PPA remain deferred to Phase8; functional cycle evidence is not timing signoff.
 
 ### Phase 6 - MP3 Layer III Microprogram and Real-Time Closure
 
