@@ -50,22 +50,22 @@ module apu_loader_formal_design (
     begin
       s_word = 32'd0;
       unique case (word_i)
-        8'd0:                                            s_word = 32'h4150_4d43;
-        8'd1:                                            s_word = 32'h0001_0000;
-        8'd2:                                            s_word = 32'h0000_00c8;
-        8'd3:                                            s_word = 32'h0000_0001;
-        8'd4:                                            s_word = 32'h0000_00c0;
-        8'd7:                                            s_word = 32'h0000_0040;
-        8'd8:                                            s_word = 32'h0000_0003;
-        8'd5:                                            s_word = (f_scenario == 3'd1) ? 32'd204 : 32'd0;
-        8'd11:                                           s_word = (f_scenario == 3'd3) ? 32'h62e4_edd0 : 32'h62e4_edd1;
-        8'd12:                                           s_word = 32'h5566_7788;
-        8'd13:                                           s_word = 32'h1122_3344;
-        8'd20, 8'd24, 8'd28, 8'd29, 8'd36, 8'd37:        s_word = 32'h0000_0001;
-        8'd21:                                           s_word = (f_scenario == 3'd2) ? 32'd0 : 32'h0000_0001;
-        8'd32:                                           s_word = 32'h0000_0002;
-        8'd49:                                           s_word = (f_scenario == 3'd4) ? 32'h0500_0000 : 32'h0100_0000;
-        default:                                         s_word = 32'd0;
+        8'd0: s_word = 32'h4150_4d43;
+        8'd1: s_word = 32'h0001_0000;
+        8'd2: s_word = 32'h0000_00c8;
+        8'd3: s_word = 32'h0000_0001;
+        8'd4: s_word = 32'h0000_00c0;
+        8'd7: s_word = 32'h0000_0040;
+        8'd8: s_word = 32'h0000_0003;
+        8'd5: s_word = (f_scenario == 3'd1) ? 32'd204 : 32'd0;
+        8'd11: s_word = (f_scenario == 3'd3) ? 32'h62e4_edd0 : 32'h62e4_edd1;
+        8'd12: s_word = 32'h5566_7788;
+        8'd13: s_word = 32'h1122_3344;
+        8'd20, 8'd24, 8'd28, 8'd29, 8'd36, 8'd37: s_word = 32'h0000_0001;
+        8'd21: s_word = (f_scenario == 3'd2) ? 32'd0 : 32'h0000_0001;
+        8'd32: s_word = 32'h0000_0002;
+        8'd49: s_word = (f_scenario == 3'd4) ? 32'h0500_0000 : 32'h0100_0000;
+        default: s_word = 32'd0;
       endcase
       return s_word;
     end

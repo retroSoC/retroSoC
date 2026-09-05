@@ -25,9 +25,11 @@ module apu_dma_tb;
   logic [ 1:0] error_resp_o;
   logic [31:0] error_addr_o;
   logic [63:0] read_bytes_o, write_bytes_o;
-  logic [31:0] memory     [0:32767];
-  logic [31:0] buffer     [   0:31];
-  logic [ 3:0] buffer_keep[   0:31];
+  logic        write_burst_done_o;
+  logic [31:0] write_burst_bytes_o;
+  logic [31:0] memory              [0:32767];
+  logic [31:0] buffer              [   0:31];
+  logic [ 3:0] buffer_keep         [   0:31];
   logic read_active, write_active, write_source_active;
   logic [31:0] read_base, write_base;
   logic [7:0] read_len, write_len, read_index, write_index, source_index;
@@ -43,6 +45,8 @@ module apu_dma_tb;
   logic       allow_write_response = 1'b1;
   logic [7:0] source_last_index = 8'd0;
   int unsigned read_bursts, write_bursts;
+  int unsigned write_burst_completions;
+  logic [63:0] successful_write_burst_bytes;
   string s_phase;
 
   axi4_if #(
@@ -127,6 +131,8 @@ module apu_dma_tb;
       .output_pending_o(),
       .read_bytes_o,
       .write_bytes_o,
+      .write_burst_done_o,
+      .write_burst_bytes_o,
       .read_stalls_o   (),
       .write_stalls_o  (),
       .axi4
@@ -150,14 +156,16 @@ module apu_dma_tb;
 
   always @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      read_active  <= 1'b0;
-      write_active <= 1'b0;
-      bvalid       <= 1'b0;
-      read_index   <= 8'd0;
-      write_index  <= 8'd0;
-      source_index <= 8'd0;
-      read_bursts  <= 0;
-      write_bursts <= 0;
+      read_active                  <= 1'b0;
+      write_active                 <= 1'b0;
+      bvalid                       <= 1'b0;
+      read_index                   <= 8'd0;
+      write_index                  <= 8'd0;
+      source_index                 <= 8'd0;
+      read_bursts                  <= 0;
+      write_bursts                 <= 0;
+      write_burst_completions      <= 0;
+      successful_write_burst_bytes <= 64'd0;
     end else begin
       if (axi4.arvalid && axi4.arready) begin
         read_active <= 1'b1;
@@ -180,6 +188,10 @@ module apu_dma_tb;
         write_len    <= axi4.awlen;
         write_index  <= 8'd0;
         write_bursts <= write_bursts + 1;
+      end
+      if (write_burst_done_o) begin
+        write_burst_completions <= write_burst_completions + 1;
+        successful_write_burst_bytes <= successful_write_burst_bytes + write_burst_bytes_o;
       end
       if (axi4.wvalid && axi4.wready) begin
         for (int byte_index = 0; byte_index < 4; byte_index++) begin
@@ -221,8 +233,10 @@ module apu_dma_tb;
     write_source_active = 1'b1;
     issue_request(1'b1, 32'h0000_2000, 32'd67);
     while (!done_o) @(posedge clk_i);
+    @(negedge clk_i);
     write_source_active = 1'b0;
-    if (error_o || (write_bytes_o != 64'd67) || (write_bursts < 2)) begin
+    if (error_o || (write_bytes_o != 64'd67) || (write_bursts < 2) ||
+        (write_burst_completions != 2) || (successful_write_burst_bytes != 64'd67)) begin
       $fatal(1, "APU DMA write/split failed");
     end
     for (int index = 0; index < 16; index++) begin

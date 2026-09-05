@@ -119,13 +119,14 @@ ownership. Its implemented limits, handwritten ABI, measured performance, and
 commercial release gates are documented in
 [Baseline JPEG Codec](../docs/ip/jpeg.md).
 
-The Mini Audio Processing Unit has a frozen coreless architecture. APU-P4 adds
+The Mini Audio Processing Unit has a frozen coreless architecture. APU-P5 adds
 the private AXI4 DMA and scheduler, microcode loader/sequencer, 112 KiB local
 store, primitive FIFOs, and class-2 through class-5 bitstream, entropy, local,
-and fixed-point DSP engines to the fail-closed APB4 shell at `APB4_APU`.
+and fixed-point DSP engines plus production WAV/FLAC microprogram transport to
+the APB4 shell at `APB4_APU`.
 Resource Controller index 7 and exclusive LP IRQ31/HP PLIC source10 routing
-remain fixed. Public jobs and APU stream routes remain disabled until their
-later-phase engines exist. The complete ABI, phase order, and evidence gates
+remain fixed. Direct/ring WAV/FLAC jobs and the TX stream route are available;
+MP3, KWS, and the RX route remain disabled. The complete ABI, phase order, and evidence gates
 are defined in [Mini Audio Processing Unit](../docs/ip/apu.md).
 
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and

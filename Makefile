@@ -118,6 +118,10 @@ HP_GENERATED_DIR        := $(VARIANT_ROOT)/generated/vexiiriscv
 HP_GENERATED_RTL        := $(HP_GENERATED_DIR)/vexii_riscv_hp_generated.v
 HP_GENERATED_MANIFEST   := $(HP_GENERATED_DIR)/manifest.json
 HP_GENERATED_STAMP      := $(HP_GENERATED_DIR)/.stamp
+APU_P5_DIR              := $(VARIANT_ROOT)/apu/p5
+APU_P5_BUNDLE           := $(APU_P5_DIR)/apu-p5.apumc
+APU_P5_REFERENCE_DIR    := $(VARIANT_ROOT)/apu/reference
+APU_P5_CORPUS_MANIFEST  := $(APU_P5_DIR)/corpus-manifest.json
 HP_LINUX_BUILD_DIR      := $(VARIANT_ROOT)/hp-linux
 HP_LINUX_STAMP          := $(HP_LINUX_BUILD_DIR)/images/.stamp
 HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
@@ -335,7 +339,7 @@ endif
 include physical/librelane/Makefile
 include physical/ecc/Makefile
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference apu-p5-bundle apu-p5-corpus setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
@@ -367,6 +371,9 @@ help:
 	  '  ecc-core                    run the padless ICS55 ECC hardening flow' \
 	  '  ecc-package                 package ECC core views and evidence' \
 	  '  setup                      install pinned external dependencies' \
+	  '  setup-apu-reference        install pinned host-only APU FLAC references' \
+	  '  apu-p5-bundle              build the deterministic WAV/FLAC APUMC bundle' \
+	  '  apu-p5-corpus              qualify the pinned FLAC corpus with libFLAC' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
 	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
@@ -490,6 +497,22 @@ setup-pdk:
 
 setup-app:
 	python3 $(ROOT_PATH)/app/setup.py
+
+setup-apu-reference:
+	python3 $(ROOT_PATH)/scripts/setup_apu_reference.py --build-dir $(APU_P5_REFERENCE_DIR)
+
+$(APU_P5_BUNDLE): $(ROOT_PATH)/scripts/build_apu_p5_bundle.py \
+	$(ROOT_PATH)/scripts/apu_p5_coefficients.py $(ROOT_PATH)/scripts/apu_mcasm.py \
+	$(ROOT_PATH)/scripts/apu_isa.py $(ROOT_PATH)/rtl/ip/multimedia/apu_p5_codecs.apus
+	python3 $(ROOT_PATH)/scripts/build_apu_p5_bundle.py --output-dir $(APU_P5_DIR)
+
+apu-p5-bundle: $(APU_P5_BUNDLE)
+
+apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
+	python3 $(ROOT_PATH)/scripts/qualify_apu_p5_corpus.py \
+		--flac $(APU_P5_REFERENCE_DIR)/src/flac/flac \
+		--corpus $(ROOT_PATH)/.cache/retrosoc/sources/apu-flac-corpus \
+		--output $(APU_P5_CORPUS_MANIFEST)
 
 setup-hp-linux:
 	python3 $(ROOT_PATH)/scripts/setup_hp_linux.py

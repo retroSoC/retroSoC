@@ -48,6 +48,7 @@ module apu_ring_scheduler (
     input  logic [31:0]            backend_source_info_i,
     input  logic [31:0]            backend_cycles_i,
     input  logic [31:0]            backend_detail_i,
+    input  logic [31:0]            backend_build_id_i,
     output logic [31:0]            job_status_o,
     output logic [31:0]            ring_status_o,
     output logic [7:0]             ring_head_o,
@@ -570,6 +571,7 @@ module apu_ring_scheduler (
             s_descriptor_q[15] <= backend_detail_i;
             s_descriptor_q[20] <= s_timestamp_q[31:0];
             s_descriptor_q[21] <= s_timestamp_q[63:32];
+            s_descriptor_q[23] <= backend_build_id_i;
             s_word_index_q <= 6'd1;
             s_state_q <= ResultWriteRequest;
           end else if (abort_i) begin

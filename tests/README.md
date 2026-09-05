@@ -23,6 +23,11 @@ tooling.
   BAM, loader, sequencer, local SRAM, FIFOs, and production primitive engines
   with Icarus and Verilator while keeping its injectors out of product
   filelists.
+- `test_apu_codecs.py` and `test_apu_codec_transport.py` check the P5 target,
+  deterministic coefficient/APUMC artifacts, integer WAV/FLAC and PCM models,
+  direct/ring product paths, and identical Icarus/Verilator execution of the
+  production class-6 transport. The explicit `apu-p5-corpus` target qualifies
+  every pinned official FLAC file against locked libFLAC.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.

@@ -4,7 +4,8 @@
 `include "apu_define.svh"
 
 module apu_codec_sequencer #(
-    parameter bit EnableP4 = 1'b0
+    parameter bit EnableP4 = 1'b0,
+    parameter bit EnableP5 = 1'b0
 ) (
     // verilog_format: off -- preserve launch, predicate, store, and result columns
     input  logic                  clk_i,
@@ -32,6 +33,9 @@ module apu_codec_sequencer #(
     input  logic                  output_ready_i,
     input  logic                  kernel_done_i,
     input  logic                  transport_idle_success_i,
+    input  logic                  dma_idle_success_i,
+    input  logic                  tx_idle_i,
+    input  logic                  ring_writeback_idle_i,
     input  logic                  stall_i,
     input  logic                  cause_valid_i,
     input  logic [5:0]            cause_code_i,
@@ -55,6 +59,17 @@ module apu_codec_sequencer #(
     input  logic [ 5:0]           primitive_error_code_i,
     input  logic [ 3:0]           primitive_error_stage_i,
     input  logic [ 7:0]           primitive_error_reason_i,
+    output logic                  transport_req_valid_o,
+    input  logic                  transport_req_ready_i,
+    output logic [ 3:0]           transport_opcode_o,
+    output logic [ 3:0]           transport_dst_o,
+    output logic [ 3:0]           transport_aux_o,
+    output logic [ 1:0]           transport_event_o,
+    output logic [31:0]           transport_source0_o,
+    output logic [31:0]           transport_source1_o,
+    input  logic                  transport_result_valid_i,
+    input  logic [ 3:0]           transport_result_dst_i,
+    input  logic [31:0]           transport_result_data_i,
     output logic                  fetch_o,
     output logic [10:0]           fetch_addr_o,
     input  logic [63:0]           fetch_data_i,
@@ -64,6 +79,7 @@ module apu_codec_sequencer #(
     output logic [15:0][31:0]     gpr_o,
     output logic                  trapped_o,
     output logic                  trap_event_o,
+    output logic                  end_event_o,
     output logic                  abort_done_o,
     output logic                  fault_valid_o,
     output logic [5:0]            fault_code_o,
@@ -89,7 +105,8 @@ module apu_codec_sequencer #(
     FetchRequest,
     FetchWait,
     Execute,
-    PrimitiveWait
+    PrimitiveWait,
+    TransportWait
   } sequencer_state_e;
 
   sequencer_state_e              s_state_q;
@@ -109,14 +126,16 @@ module apu_codec_sequencer #(
   logic [31:0] s_primitive_mask_q;
   logic [15:0] s_table_offset_q, s_table_bytes_q;
   logic s_kernel_pending_q, s_kernel_done_q;
-  logic [ 3:0] s_kernel_dst_q;
-  logic        s_kernel_err_q;
-  logic [ 5:0] s_kernel_err_code_q;
-  logic [ 3:0] s_kernel_err_stage_q;
-  logic [ 7:0] s_kernel_err_reason_q;
-  logic [31:0] s_stat_q;
-  logic        s_trapped_q;
-  logic [63:0] s_perf_retired_q;
+  logic [ 3:0]      s_kernel_dst_q;
+  logic             s_kernel_err_q;
+  logic [ 5:0]      s_kernel_err_code_q;
+  logic [ 3:0]      s_kernel_err_stage_q;
+  logic [ 7:0]      s_kernel_err_reason_q;
+  logic [ 1:0]      s_transport_pending_q;
+  logic [ 1:0][3:0] s_transport_dst_q;
+  logic [31:0]      s_stat_q;
+  logic             s_trapped_q;
+  logic [63:0]      s_perf_retired_q;
 
   logic [3:0] s_class, s_opcode, s_predicate, s_dst, s_src0, s_src1;
   logic [7:0] s_aux;
@@ -128,7 +147,34 @@ module apu_codec_sequencer #(
   logic [ 7:0] s_trap_reason;
   logic [31:0] s_trap_detail;
   logic s_pending_dependency, s_wait_stall, s_primitive_stall, s_execute_stall;
-  logic s_primitive_class;
+  logic s_primitive_class, s_transport_class, s_transport_async;
+
+`ifndef SYNTHESIS
+  initial begin
+    if (EnableP5 && !EnableP4) $fatal(1, "apu_codec_sequencer: P5 requires the P4 profile");
+  end
+`endif
+
+  function automatic logic uses_register(input logic [3:0] register_i);
+    uses_register = 1'b0;
+    unique case (s_class)
+      `APB4_APU__MC_CLASS_CONTROL:
+      uses_register = (s_opcode == `APB4_APU__MC_CONTROL_LOOP_SETUP) && (s_src0 == register_i);
+      `APB4_APU__MC_CLASS_SCALAR: begin
+        unique case (s_opcode)
+          `APB4_APU__MC_SCALAR_MOV: uses_register = (s_src0 == register_i) || (s_dst == register_i);
+          `APB4_APU__MC_SCALAR_MOVI: uses_register = s_dst == register_i;
+          `APB4_APU__MC_SCALAR_CMP:
+          uses_register = (s_src0 == register_i) || (s_src1 == register_i);
+          `APB4_APU__MC_SCALAR_SAT: uses_register = (s_src0 == register_i) || (s_dst == register_i);
+          default:
+          uses_register = (s_src0 == register_i) || (s_src1 == register_i) || (s_dst == register_i);
+        endcase
+      end
+      default:
+      uses_register = (s_src0 == register_i) || (s_src1 == register_i) || (s_dst == register_i);
+    endcase
+  endfunction
 
   assign s_class = s_instruction_q[63:60];
   assign s_opcode = s_instruction_q[59:56];
@@ -162,8 +208,20 @@ module apu_codec_sequencer #(
   assign primitive_source1_o = s_source1;
   assign primitive_destination_o = s_gpr_q[s_dst];
   assign s_primitive_class = EnableP4 && (s_class >= 4'd2) && (s_class <= 4'd5);
+  assign s_transport_class = EnableP5 && (s_class == `APB4_APU__MC_CLASS_TRANSPORT);
+  assign s_transport_async = s_transport_class &&
+      (s_opcode <= `APB4_APU__MC_TRANSPORT_OUTPUT_STREAM);
   assign primitive_req_valid_o = (s_state_q == Execute) && s_predicate_true &&
       s_primitive_class && !s_pending_dependency && !s_kernel_pending_q;
+  assign transport_req_valid_o = (s_state_q == Execute) && s_predicate_true &&
+      s_transport_class && !s_pending_dependency &&
+      (!s_transport_async || !s_transport_pending_q[(s_opcode == 4'd0) ? 0 : 1]);
+  assign transport_opcode_o = s_opcode;
+  assign transport_dst_o = s_dst;
+  assign transport_aux_o = s_aux[3:0];
+  assign transport_event_o = s_immediate[7:6];
+  assign transport_source0_o = s_source0;
+  assign transport_source1_o = s_source1;
 
   always_comb begin
     unique case (s_predicate)
@@ -184,61 +242,26 @@ module apu_codec_sequencer #(
   end
 
   always_comb begin
-    s_pending_dependency = 1'b0;
-    if (s_kernel_pending_q && s_predicate_true) begin
-      unique case (s_class)
-        `APB4_APU__MC_CLASS_CONTROL: begin
-          s_pending_dependency = (s_opcode == `APB4_APU__MC_CONTROL_LOOP_SETUP) &&
-              (s_src0 == s_kernel_dst_q);
-        end
-        `APB4_APU__MC_CLASS_SCALAR: begin
-          unique case (s_opcode)
-            `APB4_APU__MC_SCALAR_MOV:
-            s_pending_dependency = (s_src0 == s_kernel_dst_q) || (s_dst == s_kernel_dst_q);
-            `APB4_APU__MC_SCALAR_MOVI: s_pending_dependency = s_dst == s_kernel_dst_q;
-            `APB4_APU__MC_SCALAR_CMP:
-            s_pending_dependency = (s_src0 == s_kernel_dst_q) || (s_src1 == s_kernel_dst_q);
-            `APB4_APU__MC_SCALAR_SAT:
-            s_pending_dependency = (s_src0 == s_kernel_dst_q) || (s_dst == s_kernel_dst_q);
-            default:
-            s_pending_dependency = (s_src0 == s_kernel_dst_q) ||
-                (s_src1 == s_kernel_dst_q) || (s_dst == s_kernel_dst_q);
-          endcase
-        end
-        `APB4_APU__MC_CLASS_BITSTREAM: begin
-          s_pending_dependency = (s_dst == s_kernel_dst_q) ||
-              ((s_opcode >= `APB4_APU__MC_BITSTREAM_FRAME_SYNC) &&
-               ((s_src0 == s_kernel_dst_q) || (s_src1 == s_kernel_dst_q)));
-        end
-        `APB4_APU__MC_CLASS_ENTROPY, `APB4_APU__MC_CLASS_LOCAL: begin
-          s_pending_dependency = (s_src0 == s_kernel_dst_q) ||
-              (s_src1 == s_kernel_dst_q) || (s_dst == s_kernel_dst_q) ||
-              ((s_class == `APB4_APU__MC_CLASS_ENTROPY) &&
-               (s_opcode inside {`APB4_APU__MC_ENTROPY_HUFF_PAIR,
-                                  `APB4_APU__MC_ENTROPY_HUFF_QUAD}) &&
-               ((s_dst + 1'b1) == s_kernel_dst_q)) ||
-              ((s_class == `APB4_APU__MC_CLASS_ENTROPY) &&
-               (s_opcode == `APB4_APU__MC_ENTROPY_HUFF_QUAD) &&
-               (((s_dst + 4'd2) == s_kernel_dst_q) ||
-                ((s_dst + 4'd3) == s_kernel_dst_q))) ||
-              ((s_class == `APB4_APU__MC_CLASS_LOCAL) &&
-               (s_opcode == `APB4_APU__MC_LOCAL_FIFO_POP) &&
-               ((s_dst + 1'b1) == s_kernel_dst_q));
-        end
-        `APB4_APU__MC_CLASS_KERNEL: s_pending_dependency = 1'b1;
-        default:                    s_pending_dependency = 1'b0;
-      endcase
-    end
+    s_pending_dependency = s_predicate_true &&
+        ((s_kernel_pending_q && uses_register(s_kernel_dst_q)) ||
+         (s_transport_pending_q[0] && uses_register(s_transport_dst_q[0])) ||
+         (s_transport_pending_q[1] && uses_register(s_transport_dst_q[1])));
     s_wait_stall = EnableP4 && s_predicate_true &&
         (s_class == `APB4_APU__MC_CLASS_CONTROL) &&
         (s_opcode == `APB4_APU__MC_CONTROL_WAIT) &&
-        (((s_aux == `APB4_APU__MC_WAIT_KERNEL) && !s_kernel_done_q) ||
+        (((s_aux == `APB4_APU__MC_WAIT_DMA) && EnableP5 && !dma_idle_success_i) ||
+         ((s_aux == `APB4_APU__MC_WAIT_KERNEL) && !s_kernel_done_q) ||
          ((s_aux == `APB4_APU__MC_WAIT_INPUT_FIFO) && !input_ready_i) ||
-         ((s_aux == `APB4_APU__MC_WAIT_OUTPUT_FIFO) && !output_ready_i));
+         ((s_aux == `APB4_APU__MC_WAIT_OUTPUT_FIFO) && !output_ready_i) ||
+         ((s_aux == `APB4_APU__MC_WAIT_TX_STREAM) && EnableP5 && !tx_idle_i) ||
+         ((s_aux == `APB4_APU__MC_WAIT_RING_WRITEBACK) && EnableP5 &&
+          !ring_writeback_idle_i));
     s_primitive_stall = s_primitive_class &&
         (s_kernel_pending_q || s_pending_dependency || !primitive_req_ready_i);
     s_execute_stall = stall_i || s_wait_stall || s_primitive_stall ||
-        (s_kernel_pending_q && s_predicate_true &&
+        (s_transport_class && !s_pending_dependency && !transport_req_ready_i) ||
+        ((s_kernel_pending_q || |s_transport_pending_q || !transport_idle_success_i) &&
+         s_predicate_true &&
          (s_class == `APB4_APU__MC_CLASS_CONTROL) &&
          (s_opcode == `APB4_APU__MC_CONTROL_END));
   end
@@ -255,7 +278,7 @@ module apu_codec_sequencer #(
       s_trap_reason = 8'd1;
     end else if ((!EnableP4 && ((s_class >= 4'd2) ||
                                ((s_class == 4'd0) && (s_opcode == 4'd8)))) ||
-                 (EnableP4 && ((s_class == 4'd6) ||
+                 (EnableP4 && !EnableP5 && ((s_class == 4'd6) ||
                                ((s_class == 4'd0) && (s_opcode == 4'd8) &&
                                 !(s_aux inside {8'd1, 8'd2, 8'd3}))))) begin
       s_trap_now    = 1'b1;
@@ -407,10 +430,13 @@ module apu_codec_sequencer #(
       s_kernel_err_code_q   <= 6'd0;
       s_kernel_err_stage_q  <= 4'd0;
       s_kernel_err_reason_q <= 8'd0;
+      s_transport_pending_q <= 2'd0;
+      s_transport_dst_q     <= '0;
       s_stat_q              <= 32'd0;
       s_trapped_q           <= 1'b0;
       s_perf_retired_q      <= 64'd0;
       trap_event_o          <= 1'b0;
+      end_event_o           <= 1'b0;
       abort_done_o          <= 1'b0;
       fault_valid_o         <= 1'b0;
       fault_code_o          <= 6'd0;
@@ -421,6 +447,7 @@ module apu_codec_sequencer #(
       fault_detail_o        <= 32'd0;
     end else begin
       trap_event_o  <= 1'b0;
+      end_event_o   <= 1'b0;
       abort_done_o  <= 1'b0;
       fault_valid_o <= 1'b0;
       if (primitive_result_valid_i && primitive_result_kernel_i) begin
@@ -437,52 +464,63 @@ module apu_codec_sequencer #(
       end else if (kernel_done_i) begin
         s_kernel_done_q <= 1'b1;
       end
+      if (transport_result_valid_i && (s_state_q != TransportWait)) begin
+        s_gpr_q[transport_result_dst_i] <= transport_result_data_i;
+        if (s_transport_pending_q[0] && (transport_result_dst_i == s_transport_dst_q[0])) begin
+          s_transport_pending_q[0] <= 1'b0;
+        end else if (s_transport_pending_q[1] &&
+                     (transport_result_dst_i == s_transport_dst_q[1])) begin
+          s_transport_pending_q[1] <= 1'b0;
+        end
+      end
       if (counter_clear_i) s_perf_retired_q <= 64'd0;
       if (soft_reset_i || resource_reset_i) begin
-        s_state_q          <= Idle;
-        s_gpr_q            <= '0;
-        s_eq_q             <= 1'b0;
-        s_signed_lt_q      <= 1'b0;
-        s_unsigned_lt_q    <= 1'b0;
-        s_return_depth_q   <= 3'd0;
-        s_loop_active_q    <= 4'd0;
-        s_pc_q             <= 11'd0;
-        s_frame_retired_q  <= 24'd0;
-        s_watchdog_q       <= 32'd0;
-        s_stat_q           <= 32'd0;
-        s_trapped_q        <= 1'b0;
-        s_perf_retired_q   <= 64'd0;
-        s_kernel_pending_q <= 1'b0;
-        s_kernel_done_q    <= 1'b0;
-        s_kernel_err_q     <= 1'b0;
+        s_state_q             <= Idle;
+        s_gpr_q               <= '0;
+        s_eq_q                <= 1'b0;
+        s_signed_lt_q         <= 1'b0;
+        s_unsigned_lt_q       <= 1'b0;
+        s_return_depth_q      <= 3'd0;
+        s_loop_active_q       <= 4'd0;
+        s_pc_q                <= 11'd0;
+        s_frame_retired_q     <= 24'd0;
+        s_watchdog_q          <= 32'd0;
+        s_stat_q              <= 32'd0;
+        s_trapped_q           <= 1'b0;
+        s_perf_retired_q      <= 64'd0;
+        s_kernel_pending_q    <= 1'b0;
+        s_kernel_done_q       <= 1'b0;
+        s_kernel_err_q        <= 1'b0;
+        s_transport_pending_q <= 2'd0;
       end else begin
         unique case (s_state_q)
           Idle: begin
             if (launch_i && image_valid_i && (launch_entry_i < 2'd3)) begin
-              s_state_q          <= FetchRequest;
-              s_gpr_q            <= '0;
-              s_eq_q             <= 1'b0;
-              s_signed_lt_q      <= 1'b0;
-              s_unsigned_lt_q    <= 1'b0;
-              s_return_depth_q   <= 3'd0;
-              s_loop_active_q    <= 4'd0;
-              s_pc_q             <= entry_pc_i[launch_entry_i];
-              s_first_pc_q       <= entry_first_i[launch_entry_i];
-              s_last_pc_q        <= entry_last_i[launch_entry_i];
-              s_max_loop_q       <= entry_max_loop_i[launch_entry_i];
-              s_max_retired_q    <= entry_max_retired_i[launch_entry_i];
-              s_scratch_base_q   <= entry_scratch_base_i[launch_entry_i];
-              s_scratch_bytes_q  <= entry_scratch_bytes_i[launch_entry_i];
-              s_primitive_mask_q <= entry_primitive_mask_i[launch_entry_i];
-              s_table_offset_q   <= entry_table_offset_i[launch_entry_i];
-              s_table_bytes_q    <= entry_table_bytes_i[launch_entry_i];
-              s_frame_retired_q  <= 24'd0;
-              s_watchdog_q       <= 32'd0;
-              s_stat_q           <= {21'd0, entry_pc_i[launch_entry_i]};
-              s_trapped_q        <= 1'b0;
-              s_kernel_pending_q <= 1'b0;
-              s_kernel_done_q    <= 1'b0;
-              s_kernel_err_q     <= 1'b0;
+              s_state_q             <= FetchRequest;
+              s_gpr_q               <= '0;
+              s_eq_q                <= 1'b0;
+              s_signed_lt_q         <= 1'b0;
+              s_unsigned_lt_q       <= 1'b0;
+              s_return_depth_q      <= 3'd0;
+              s_loop_active_q       <= 4'd0;
+              s_pc_q                <= entry_pc_i[launch_entry_i];
+              s_first_pc_q          <= entry_first_i[launch_entry_i];
+              s_last_pc_q           <= entry_last_i[launch_entry_i];
+              s_max_loop_q          <= entry_max_loop_i[launch_entry_i];
+              s_max_retired_q       <= entry_max_retired_i[launch_entry_i];
+              s_scratch_base_q      <= entry_scratch_base_i[launch_entry_i];
+              s_scratch_bytes_q     <= entry_scratch_bytes_i[launch_entry_i];
+              s_primitive_mask_q    <= entry_primitive_mask_i[launch_entry_i];
+              s_table_offset_q      <= entry_table_offset_i[launch_entry_i];
+              s_table_bytes_q       <= entry_table_bytes_i[launch_entry_i];
+              s_frame_retired_q     <= 24'd0;
+              s_watchdog_q          <= 32'd0;
+              s_stat_q              <= {21'd0, entry_pc_i[launch_entry_i]};
+              s_trapped_q           <= 1'b0;
+              s_kernel_pending_q    <= 1'b0;
+              s_kernel_done_q       <= 1'b0;
+              s_kernel_err_q        <= 1'b0;
+              s_transport_pending_q <= 2'd0;
             end
           end
           FetchRequest: begin
@@ -576,7 +614,7 @@ module apu_codec_sequencer #(
               `RETROSOC_APU__SET_TRAP(trap_detail(8'd1, s_pc_q, s_instruction_q));
             end else if ((!EnableP4 && ((s_class >= 4'd2) ||
                                        ((s_class == 4'd0) && (s_opcode == 4'd8)))) ||
-                         (EnableP4 && ((s_class == 4'd6) ||
+                         (EnableP4 && !EnableP5 && ((s_class == 4'd6) ||
                                       ((s_class == 4'd0) && (s_opcode == 4'd8) &&
                                        !(s_aux inside {8'd1, 8'd2, 8'd3}))))) begin
               `RETROSOC_APU__SET_TRAP(trap_detail(8'd6, s_pc_q, s_instruction_q));
@@ -615,7 +653,10 @@ module apu_codec_sequencer #(
                       s_state_q <= FetchRequest;
                     end
                   end
-                  4'd1: s_state_q <= Idle;
+                  4'd1: begin
+                    s_state_q   <= Idle;
+                    end_event_o <= 1'b1;
+                  end
                   4'd2: begin
                     `RETROSOC_APU__SET_TRAP(s_immediate);
                     s_frame_retired_q <= s_frame_retired_q;
@@ -715,6 +756,24 @@ module apu_codec_sequencer #(
                   s_pc_q    <= s_pc_q + 1'b1;
                   s_state_q <= FetchRequest;
                 end
+              end else if (s_transport_class) begin
+                if (s_transport_async) begin
+                  s_transport_pending_q[(s_opcode==4'd0)?0 : 1] <= 1'b1;
+                  s_transport_dst_q[(s_opcode==4'd0)?0 : 1]     <= s_dst;
+                  if ((s_pc_q == s_last_pc_q) || (s_pc_q == 11'd2047)) begin
+                    `RETROSOC_APU__SET_TRAP(trap_detail(8'd2, s_pc_q, s_instruction_q));
+                    s_frame_retired_q                             <= s_frame_retired_q;
+                    s_perf_retired_q                              <= s_perf_retired_q;
+                    s_transport_pending_q[(s_opcode==4'd0)?0 : 1] <= 1'b0;
+                  end else begin
+                    s_pc_q    <= s_pc_q + 1'b1;
+                    s_state_q <= FetchRequest;
+                  end
+                end else begin
+                  s_watchdog_q <= s_watchdog_q + 1'b1;
+                  s_stat_q[19] <= 1'b1;
+                  s_state_q    <= TransportWait;
+                end
               end else begin
                 unique case (s_opcode)
                   4'd0: s_gpr_q[s_dst] <= s_source0;
@@ -801,6 +860,39 @@ module apu_codec_sequencer #(
               s_kernel_done_q    <= 1'b0;
               s_kernel_err_q     <= 1'b0;
               abort_done_o       <= 1'b1;
+            end else if (s_watchdog_q + 1'b1 >= timeout_i) begin
+              `RETROSOC_APU__SET_TRAP(trap_detail(8'd7, s_pc_q, s_instruction_q));
+            end else begin
+              s_watchdog_q <= s_watchdog_q + 1'b1;
+            end
+          end
+          TransportWait: begin
+            s_stat_q[19] <= 1'b1;
+            if (transport_result_valid_i) begin
+              s_gpr_q[transport_result_dst_i] <= transport_result_data_i;
+              s_watchdog_q                    <= 32'd0;
+              s_stat_q[19]                    <= 1'b0;
+              if ((s_class == `APB4_APU__MC_CLASS_TRANSPORT) &&
+                  (s_opcode == `APB4_APU__MC_TRANSPORT_FRAME_COMMIT)) begin
+                s_frame_retired_q <= 24'd0;
+              end else begin
+                s_frame_retired_q <= s_frame_retired_q + 1'b1;
+              end
+              if (!counter_clear_i && !(&s_perf_retired_q)) begin
+                s_perf_retired_q <= s_perf_retired_q + 1'b1;
+              end
+              if ((s_pc_q == s_last_pc_q) || (s_pc_q == 11'd2047)) begin
+                `RETROSOC_APU__SET_TRAP(trap_detail(8'd2, s_pc_q, s_instruction_q));
+                s_frame_retired_q <= s_frame_retired_q;
+                s_perf_retired_q  <= s_perf_retired_q;
+              end else begin
+                s_pc_q    <= s_pc_q + 1'b1;
+                s_state_q <= FetchRequest;
+              end
+            end else if (abort_i) begin
+              s_state_q             <= Idle;
+              s_transport_pending_q <= 2'd0;
+              abort_done_o          <= 1'b1;
             end else if (s_watchdog_q + 1'b1 >= timeout_i) begin
               `RETROSOC_APU__SET_TRAP(trap_detail(8'd7, s_pc_q, s_instruction_q));
             end else begin

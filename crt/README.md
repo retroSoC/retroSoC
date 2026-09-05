@@ -57,10 +57,11 @@ EXT-H, JPEG, and APU owner/lock, lifecycle-request, fault, and HP cache-maintena
 handshake.
 See the [Resource Controller contract](../docs/ip/resource-controller.md).
 
-`<retrosoc/hal/apu.h>` provides APU-P1 identity, ABI version, capability, and
-ABI-digest discovery. The current shell reports zero datapath capabilities;
-job, DMA, stream, microcode, codec, and KWS APIs remain unavailable until their
-frozen implementation phases.
+`<retrosoc/hal/apu.h>` provides APU discovery, ACL and microcode loading,
+validated direct/ring WAV and FLAC jobs, TX stream routing, bounded waits,
+abort/reset, interrupt, and first-error access. The P5 surface remains coreless;
+MP3, KWS, model loading, and the APU RX route stay unavailable until their
+frozen later phases.
 
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
 master/target counters, stable snapshots, warm-flush counts, target isolation,

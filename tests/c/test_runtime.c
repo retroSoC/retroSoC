@@ -43,6 +43,9 @@ unsigned long long __umoddi3(unsigned long long dividend, unsigned long long div
 
 static uint8_t storage[32];
 static uint32_t image_call_count;
+volatile uint32_t rs_apu_test_mmio[1024];
+
+#define APU_TEST_REG(offset) rs_apu_test_mmio[(offset) / 4U]
 
 void putch(char ch) {
     (void)ch;
@@ -866,7 +869,188 @@ static int test_resource_validation(void) {
 }
 
 static int test_apu_validation(void) {
-    return (rs_apu_probe(NULL) == RS_EINVAL) ? 0 : 1;
+    rs_apu_job_t job = {
+        .format = RS_APU_WAV,
+        .output = RS_APU_MEMORY,
+        .pcm = RS_APU_S16,
+        .input_address = UINT32_C(0x38000000),
+        .input_bytes = UINT32_C(0x1000),
+        .output_address = UINT32_C(0x38002000),
+        .output_capacity = UINT32_C(0x2000),
+        .expected_rate = UINT32_C(48000),
+        .expected_channels = 2U,
+        .expected_bits = 16U,
+        .output_rate = UINT32_C(48000),
+        .output_channels = 2U,
+        .downmix = 0U,
+        .resample = 0U,
+        .strict = 1U,
+        .cookie = {UINT32_C(0x11223344), UINT32_C(0x55667788)},
+    };
+
+    if ((rs_apu_probe(NULL) != RS_EINVAL) || (rs_apu_validate_job(NULL) != RS_EINVAL) ||
+        (rs_apu_validate_job(&job) != RS_OK)) {
+        return 1;
+    }
+    job.format = RS_APU_MP3;
+    if (rs_apu_validate_job(&job) != RS_ENOTSUP) {
+        return 2;
+    }
+    job.format = RS_APU_FLAC;
+    job.output_address = job.input_address;
+    if (rs_apu_validate_job(&job) != RS_EINVAL) {
+        return 3;
+    }
+    job.output = RS_APU_I2S;
+    job.output_address = 0U;
+    job.output_capacity = 0U;
+    job.output_rate = UINT32_C(44100);
+    if (rs_apu_validate_job(&job) != RS_ENOTSUP) {
+        return 4;
+    }
+    job.output = (rs_apu_output_t)-1;
+    if (rs_apu_validate_job(&job) != RS_EINVAL) {
+        return 5;
+    }
+    job.output = RS_APU_MEMORY;
+    job.output_address = UINT32_C(0x38002000);
+    job.output_capacity = UINT32_C(0x2000);
+    job.output_rate = UINT32_C(48000);
+    job.expected_bits = 8U;
+    if (rs_apu_validate_job(&job) != RS_ENOTSUP) {
+        return 6;
+    }
+    job.expected_bits = 16U;
+    job.expected_channels = 0U;
+    job.output_channels = 1U;
+    job.downmix = 1U;
+    if (rs_apu_validate_job(&job) != RS_OK) {
+        return 7;
+    }
+    return 0;
+}
+
+static void test_apu_mmio_reset(void) {
+    for (size_t index = 0U; index < (sizeof(rs_apu_test_mmio) / sizeof(rs_apu_test_mmio[0]));
+         ++index) {
+        rs_apu_test_mmio[index] = 0U;
+    }
+    APU_TEST_REG(RS_APU_ABI_CAPABILITY0) = RS_APU_CAPABILITY0_IMPLEMENTED;
+    APU_TEST_REG(RS_APU_ABI_STATUS) = UINT32_C(1) << RS_APU_ABI_STATUS_IDLE;
+    APU_TEST_REG(RS_APU_ABI_MC_STATUS) = UINT32_C(1) << RS_APU_ABI_MC_STATUS_VALID;
+    APU_TEST_REG(RS_APU_ABI_MC_LOCK) = UINT32_C(1) << RS_APU_ABI_MC_LOCK_LOCKED;
+    APU_TEST_REG(RS_APU_ABI_READ_BASE) = UINT32_C(0x10000000);
+    APU_TEST_REG(RS_APU_ABI_READ_LIMIT) = UINT32_C(0x100FFFFF);
+    APU_TEST_REG(RS_APU_ABI_WRITE_BASE) = UINT32_C(0x10000000);
+    APU_TEST_REG(RS_APU_ABI_WRITE_LIMIT) = UINT32_C(0x100FFFFF);
+}
+
+static int test_apu_hal_contract(void) {
+    static _Alignas(RS_APU_ABI_DESCRIPTOR_BYTES) rs_apu_descriptor_t descriptors[4];
+    rs_apu_job_t job = {
+        .format = RS_APU_WAV,
+        .output = RS_APU_MEMORY,
+        .pcm = RS_APU_S16,
+        .input_address = UINT32_C(0x10001000),
+        .input_bytes = UINT32_C(0x100),
+        .output_address = UINT32_C(0x10002000),
+        .output_capacity = UINT32_C(0x400),
+        .expected_rate = UINT32_C(48000),
+        .expected_channels = 2U,
+        .expected_bits = 16U,
+        .output_rate = UINT32_C(48000),
+        .output_channels = 2U,
+        .strict = 1U,
+    };
+    const rs_apu_image_t image = {
+        .address = UINT32_C(0x10000000),
+        .bytes = UINT32_C(0x1000),
+        .expected_crc = UINT32_C(0x12345678),
+    };
+    rs_apu_ring_t ring = {
+        .descriptors = descriptors,
+        .dma_address = UINT32_C(0x10004000),
+        .entries = 4U,
+        .tail = 0U,
+    };
+    rs_apu_result_t result;
+    uint32_t slot;
+
+    test_apu_mmio_reset();
+    APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_QUIESCE;
+    APU_TEST_REG(RS_APU_ABI_MC_IMAGE_ADDRESS) = UINT32_C(0xA5A5A5A5);
+    if ((rs_apu_microcode_load(&image, 0U) != RS_EINVAL) ||
+        (APU_TEST_REG(RS_APU_ABI_MC_IMAGE_ADDRESS) != UINT32_C(0xA5A5A5A5))) {
+        return 1;
+    }
+    if (rs_apu_set_acl(UINT32_C(0x10000000), UINT32_C(0x100FFFFF), UINT32_C(0x10000000),
+                       UINT32_C(0x100FFFFF)) != RS_OK) {
+        return 2;
+    }
+
+    APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = 0U;
+    if (rs_apu_submit_direct(&job) != RS_OK ||
+        APU_TEST_REG(RS_APU_ABI_JOB_INPUT_ADDRESS) != job.input_address ||
+        APU_TEST_REG(RS_APU_ABI_COMMAND) != (UINT32_C(1) << RS_APU_ABI_COMMAND_START_DIRECT)) {
+        return 3;
+    }
+    APU_TEST_REG(RS_APU_ABI_RING_CONTROL) = 1U;
+    APU_TEST_REG(RS_APU_ABI_JOB_INPUT_ADDRESS) = UINT32_C(0xA5A5A5A5);
+    if ((rs_apu_submit_direct(&job) != RS_EINVAL) ||
+        (APU_TEST_REG(RS_APU_ABI_JOB_INPUT_ADDRESS) != UINT32_C(0xA5A5A5A5))) {
+        return 4;
+    }
+
+    (void)memset(descriptors, 0, sizeof(descriptors));
+    APU_TEST_REG(RS_APU_ABI_RING_CONTROL) = 0U;
+    if (rs_apu_ring_configure(&ring, 0U, 1U, 1U) != RS_OK) {
+        return 5;
+    }
+    if ((rs_apu_ring_submit(&ring, &job, 1U, &slot) != RS_OK) || (slot != 0U) ||
+        ((descriptors[0].control & (UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_CONTROL_OWN)) == 0U)) {
+        return 6;
+    }
+    descriptors[0].control &= ~(UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_CONTROL_OWN);
+    descriptors[0].result_status = UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_STATUS_DONE;
+    if (rs_apu_ring_result(&ring, 0U, &result, 0U) != RS_OK) {
+        return 7;
+    }
+
+    APU_TEST_REG(RS_APU_ABI_RING_HEAD) = 1U;
+    if ((rs_apu_ring_submit(&ring, &job, 0U, &slot) != RS_OK) || (slot != 1U)) {
+        return 8;
+    }
+    descriptors[1].control &= ~(UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_CONTROL_OWN);
+    descriptors[1].result_status = UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_STATUS_DONE;
+    APU_TEST_REG(RS_APU_ABI_RING_HEAD) = 2U;
+    if ((rs_apu_ring_submit(&ring, &job, 0U, &slot) != RS_OK) || (slot != 2U)) {
+        return 9;
+    }
+    descriptors[2].control &= ~(UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_CONTROL_OWN);
+    descriptors[2].result_status = UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_STATUS_DONE;
+    if (rs_apu_ring_result(&ring, 2U, &result, 0U) != RS_OK) {
+        return 10;
+    }
+    APU_TEST_REG(RS_APU_ABI_RING_HEAD) = 3U;
+    if ((rs_apu_ring_submit(&ring, &job, 0U, &slot) != RS_OK) || (slot != 3U)) {
+        return 11;
+    }
+    descriptors[3].control &= ~(UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_CONTROL_OWN);
+    descriptors[3].result_status = UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_STATUS_DONE;
+    if (rs_apu_ring_result(&ring, 3U, &result, 0U) != RS_OK) {
+        return 12;
+    }
+    APU_TEST_REG(RS_APU_ABI_RING_HEAD) = 0U;
+    if ((rs_apu_ring_submit(&ring, &job, 0U, &slot) != RS_OK) || (slot != 0U)) {
+        return 13;
+    }
+    descriptors[0].control &= ~(UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_CONTROL_OWN);
+    descriptors[0].result_status = UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_STATUS_DONE;
+    APU_TEST_REG(RS_APU_ABI_RING_HEAD) = 1U;
+    if (rs_apu_ring_submit(&ring, &job, 0U, &slot) != RS_ENOSPC) {
+        return 14;
+    }
+    return 0;
 }
 
 static int test_jpeg_validation(void) {
@@ -1022,6 +1206,7 @@ int main(void) {
         test_extension_validation(),
         test_resource_validation(),
         test_apu_validation(),
+        test_apu_hal_contract(),
         test_jpeg_validation(),
         test_ps2_decoders(),
         test_wav_parser(),

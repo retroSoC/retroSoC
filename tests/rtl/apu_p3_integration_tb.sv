@@ -219,7 +219,7 @@ module apu_p3_integration_tb;
     apb_read(`APB4_APU__IRQ_STATE, s_value);
     if (!s_value[`APB4_APU__IRQ_MICROCODE_LOAD_DONE]) $fatal(1, "APU-P3 load IRQ missing");
     apb_write(`APB4_APU__COMMAND, 32'h0000_0010, 1'b1);
-    apb_write(`APB4_APU__STREAM_ROUTE, 32'd1, 1'b1);
+    apb_write(`APB4_APU__STREAM_ROUTE, 32'd1, 1'b0);
 
     $display("APU-P3 APB, DMA, loader integration passed");
     $finish;

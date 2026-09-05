@@ -34,6 +34,10 @@ package apu_microcode_pkg;
             if (s_aux == `APB4_APU__MC_WAIT_KERNEL) instruction_primitive_mask = 32'h0000_ffc0;
             else if (s_aux inside {`APB4_APU__MC_WAIT_INPUT_FIFO, `APB4_APU__MC_WAIT_OUTPUT_FIFO})
               instruction_primitive_mask = 32'd1 << `APB4_APU__MC_PRIMITIVE_LOCAL_FIFO;
+            else if (s_aux == `APB4_APU__MC_WAIT_TX_STREAM)
+              instruction_primitive_mask = 32'd1 << `APB4_APU__MC_PRIMITIVE_STREAM_OUTPUT;
+            else if (s_aux == `APB4_APU__MC_WAIT_RING_WRITEBACK)
+              instruction_primitive_mask = 32'd1 << `APB4_APU__MC_PRIMITIVE_DMA_OUTPUT;
           end
         end
         `APB4_APU__MC_CLASS_BITSTREAM: begin
@@ -51,6 +55,15 @@ package apu_microcode_pkg;
              `APB4_APU__MC_PRIMITIVE_LOCAL_FIFO : `APB4_APU__MC_PRIMITIVE_LOCAL_MEMORY);
         `APB4_APU__MC_CLASS_KERNEL:
         instruction_primitive_mask = 32'd1 << (s_opcode + `APB4_APU__MC_PRIMITIVE_REQUANTIZE);
+        `APB4_APU__MC_CLASS_TRANSPORT: begin
+          if (s_opcode <= `APB4_APU__MC_TRANSPORT_OUTPUT_STREAM)
+            instruction_primitive_mask = 32'd1 << (s_opcode + `APB4_APU__MC_PRIMITIVE_DMA_INPUT);
+          else if (s_opcode inside {`APB4_APU__MC_TRANSPORT_FRAME_COMMIT,
+                                    `APB4_APU__MC_TRANSPORT_JOB_RESULT})
+            instruction_primitive_mask = 32'd1 << `APB4_APU__MC_PRIMITIVE_FRAME_COMMIT;
+          else if (s_opcode == `APB4_APU__MC_TRANSPORT_EVENT)
+            instruction_primitive_mask = 32'd1 << `APB4_APU__MC_PRIMITIVE_EVENT;
+        end
         default: instruction_primitive_mask = 32'd0;
       endcase
       return instruction_primitive_mask | {32{s_unused && 1'b0}};

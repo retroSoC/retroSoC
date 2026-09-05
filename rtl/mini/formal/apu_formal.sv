@@ -154,6 +154,8 @@ module apu_formal_design (
       .output_pending_o(),
       .read_bytes_o(s_read_bytes),
       .write_bytes_o(s_write_bytes),
+      .write_burst_done_o(),
+      .write_burst_bytes_o(),
       .read_stalls_o(),
       .write_stalls_o(),
       .axi4

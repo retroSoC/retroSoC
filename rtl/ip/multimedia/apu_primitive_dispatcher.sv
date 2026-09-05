@@ -49,7 +49,11 @@ module apu_primitive_dispatcher (
     output logic                  input_accept_o,
     output logic                  output_valid_o,
     output logic [40:0]           output_data_o,
-    input  logic                  output_accept_i
+    input  logic                  output_accept_i,
+    input  logic                  transport_output_valid_i,
+    input  logic [40:0]           transport_output_data_i,
+    output logic                  transport_output_accept_o,
+    input  logic                  transport_output_owned_i
     // verilog_format: on
 );
   typedef enum logic [3:0] {
@@ -142,7 +146,8 @@ module apu_primitive_dispatcher (
         ((s_class inside {`APB4_APU__MC_CLASS_BITSTREAM, `APB4_APU__MC_CLASS_ENTROPY}) ||
          ((s_class == `APB4_APU__MC_CLASS_LOCAL) &&
         (((s_opcode == `APB4_APU__MC_LOCAL_FIFO_POP) && !s_input_empty) ||
-         ((s_opcode == `APB4_APU__MC_LOCAL_FIFO_PUSH) && !s_output_full) ||
+         ((s_opcode == `APB4_APU__MC_LOCAL_FIFO_PUSH) && !s_output_full &&
+          !transport_output_owned_i) ||
           (s_opcode < `APB4_APU__MC_LOCAL_FIFO_POP))))));
   assign busy_o = (s_state_q != Idle) || s_kernel_busy;
   assign kernel_done_o = result_valid_o && result_kernel_o && !error_o;
@@ -160,10 +165,13 @@ module apu_primitive_dispatcher (
        (s_opcode == `APB4_APU__MC_LOCAL_FIFO_POP));
   assign s_fifo_metadata_ok = ((source1_i & ~32'h0000_0107) == 32'd0) &&
       (source1_i[2:0] != 3'd0) && (source1_i[2:0] <= 3'd4);
-  assign s_output_fifo_push = req_valid_i && req_ready_o && s_fifo_metadata_ok &&
-      (s_class == `APB4_APU__MC_CLASS_LOCAL) &&
-      (s_opcode == `APB4_APU__MC_LOCAL_FIFO_PUSH);
-  assign s_output_fifo_write_data = {source1_i[8], 5'd0, source1_i[2:0], source0_i};
+  assign transport_output_accept_o = transport_output_valid_i && !s_output_full;
+  assign s_output_fifo_push = transport_output_accept_o ||
+      (req_valid_i && req_ready_o && s_fifo_metadata_ok && !transport_output_owned_i &&
+       (s_class == `APB4_APU__MC_CLASS_LOCAL) &&
+       (s_opcode == `APB4_APU__MC_LOCAL_FIFO_PUSH));
+  assign s_output_fifo_write_data = transport_output_valid_i ? transport_output_data_i :
+      {source1_i[8], 5'd0, source1_i[2:0], source0_i};
   assign output_valid_o = !s_output_empty;
   assign output_data_o = s_output_fifo_data;
   assign s_output_fifo_pop = output_accept_i && output_valid_o;
@@ -437,18 +445,18 @@ module apu_primitive_dispatcher (
       unique case (s_state_q)
         Idle: begin
           if (req_valid_i && req_ready_o && (s_class != `APB4_APU__MC_CLASS_KERNEL)) begin
-            s_instruction_q <= instruction_i;
-            s_source0_q <= source0_i;
-            s_source1_q <= source1_i;
-            s_scratch_base_q <= scratch_base_i;
-            s_scratch_bytes_q <= scratch_bytes_i;
-            s_table_offset_q <= table_offset_i;
-            s_table_bytes_q <= table_bytes_i;
-            s_cycles_q <= 32'd1;
+            s_instruction_q         <= instruction_i;
+            s_source0_q             <= source0_i;
+            s_source1_q             <= source1_i;
+            s_scratch_base_q        <= scratch_base_i;
+            s_scratch_bytes_q       <= scratch_bytes_i;
+            s_table_offset_q        <= table_offset_i;
+            s_table_bytes_q         <= table_bytes_i;
+            s_cycles_q              <= 32'd1;
             s_local_addr_overflow_q <= s_local_addr_full[34:17] != 18'd0;
-            result_dst_o <= instruction_i[51:48];
-            result_data_o <= '0;
-            result_words_o <= 3'd0;
+            result_dst_o            <= instruction_i[51:48];
+            result_data_o           <= '0;
+            result_words_o          <= 3'd0;
             if (s_class == `APB4_APU__MC_CLASS_BITSTREAM) begin
               if (s_opcode == `APB4_APU__MC_BITSTREAM_FRAME_SYNC) begin
                 s_frame_skipped_q <= 16'd0;

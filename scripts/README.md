@@ -5,10 +5,17 @@ build manifests, flow execution, simulation checks, regression orchestration,
 quality checks, metrics, packaging, and cleanup.
 
 `apu_mcasm.py`, `apu_isa.py`, `apu_interpreter.py`, and `apu_primitives.py` are
-the frozen APU microcode V1 assembler/ABI model, P3/P4 target interpreters, and
+the frozen APU microcode V1 assembler/ABI model, P3/P4/P5 target interpreters, and
 bit-accurate P4 primitive model. They accept only the APU instruction language
 and deliberately have no C, ELF, RV32, dynamic linking, or runtime
 code-generation path.
+
+`setup_apu_reference.py` installs the checksum-pinned libFLAC and official
+FLAC corpus as host-only P5 verification inputs and builds libFLAC with Ogg
+disabled below the selected build variant. These inputs never enter firmware,
+RTL, or shipped APU microcode.
+`qualify_apu_p5_corpus.py` enumerates that exact corpus, records source and
+decoded-PCM hashes, and classifies each file against the frozen P5 profile.
 
 Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download

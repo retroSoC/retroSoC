@@ -140,6 +140,8 @@
 /ip/multimedia/apu_kernel_engine.sv
 /ip/multimedia/apu_primitive_dispatcher.sv
 /ip/multimedia/apu_codec_sequencer.sv
+/ip/multimedia/apu_codec_transport.sv
+/ip/multimedia/apu_codec_controller.sv
 /ip/multimedia/apu_reg.sv
 /ip/multimedia/apb4_apu.sv
 /ip/multimedia/jpeg_pkg.sv

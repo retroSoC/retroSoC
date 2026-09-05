@@ -24,6 +24,7 @@ from apu_isa import (
     KernelOpcode,
     LocalOpcode,
     ScalarOpcode,
+    TransportOpcode,
     abi_manifest,
     build_apumc,
     control_flow_report,
@@ -191,6 +192,34 @@ def _encode_instruction(tokens: list[str], pc: int, labels: dict[str, int]) -> I
             aux=_number(args[3]),
             immediate=_number(args[4]),
         )
+    elif mnemonic in DEFERRED_OPCODES["transport"]:
+        opcode = TransportOpcode(DEFERRED_OPCODES["transport"].index(mnemonic))
+        values = {"predicate": predicate}
+        if opcode in (
+            TransportOpcode.INPUT_REFILL,
+            TransportOpcode.OUTPUT_COMMIT,
+            TransportOpcode.OUTPUT_STREAM,
+        ):
+            if len(args) != 3:
+                raise ValueError(f"{mnemonic} takes destination, address, and count registers")
+            values.update(dst=_register(args[0]), src0=_register(args[1]), src1=_register(args[2]))
+        elif opcode == TransportOpcode.DMA_WAIT:
+            if len(args) != 1:
+                raise ValueError("dma_wait takes one destination register")
+            values["dst"] = _register(args[0])
+        elif opcode == TransportOpcode.FRAME_COMMIT:
+            if len(args) != 2:
+                raise ValueError("frame_commit takes input and output count registers")
+            values.update(src0=_register(args[0]), src1=_register(args[1]))
+        elif opcode == TransportOpcode.JOB_RESULT:
+            if len(args) != 3:
+                raise ValueError("job_result takes code, detail, and stage")
+            values.update(src0=_register(args[0]), src1=_register(args[1]), aux=_number(args[2]))
+        else:
+            if len(args) != 1:
+                raise ValueError("event takes one IRQ mask")
+            values["immediate"] = _number(args[0])
+        return Instruction(InstructionClass.TRANSPORT, opcode, **values)
     else:
         raise ValueError(f"unknown mnemonic {mnemonic}")
 
@@ -226,7 +255,7 @@ def _encode_instruction(tokens: list[str], pc: int, labels: dict[str, int]) -> I
     return Instruction(InstructionClass.SCALAR, opcode, **values)
 
 
-def assemble(source: str, target: str = "p3") -> Assembly:
+def assemble(source: str, target: str = "p3", table_payload_input: bytes | None = None) -> Assembly:
     if target not in APUMC_TARGETS:
         raise ValueError(f"unknown APU target {target}")
     lines = []
@@ -290,7 +319,13 @@ def assemble(source: str, target: str = "p3") -> Assembly:
         except KeyError as error:
             raise ValueError(f"unknown entry label {error.args[0]}") from error
     entries.sort(key=lambda entry: entry.format_id)
-    table_payload = b"".join(struct.pack("<I", word) for word in table_words)
+    if table_payload_input is not None and table_words:
+        raise ValueError("external table payload cannot be combined with .table32")
+    table_payload = (
+        table_payload_input
+        if table_payload_input is not None
+        else b"".join(struct.pack("<I", word) for word in table_words)
+    )
     bundle = build_apumc(instructions, entries, build_id, target=target, table_payload=table_payload)
     return Assembly(bundle, dict(sorted(labels.items())), instructions, entries, build_id, target, table_payload)
 
@@ -315,8 +350,10 @@ def main() -> int:
     parser.add_argument("--primitive-manifest", type=Path)
     parser.add_argument("--trace-input", type=Path)
     parser.add_argument("--abi-input-manifest", type=Path)
+    parser.add_argument("--table-binary", type=Path)
     args = parser.parse_args()
-    assembly = assemble(args.source.read_text(encoding="utf-8"), args.target)
+    table_payload = args.table_binary.read_bytes() if args.table_binary is not None else None
+    assembly = assemble(args.source.read_text(encoding="utf-8"), args.target, table_payload)
     args.output.write_bytes(assembly.bundle)
     artifacts = {
         args.symbols: assembly.symbols,

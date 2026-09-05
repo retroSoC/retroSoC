@@ -18,8 +18,9 @@ APUMC_INSTRUCTION_OFFSET = 192
 APUMC_MAX_INSTRUCTIONS = 2048
 APUMC_P3_CAPABILITY_MASK = 0
 APUMC_P4_CAPABILITY_MASK = 0x0000FFFF
+APUMC_P5_CAPABILITY_MASK = 0x001FFFFF
 APUMC_P4_TABLE_SCRATCH_BYTES = 0x6000
-APUMC_TARGETS = ("p3", "p4")
+APUMC_TARGETS = ("p3", "p4", "p5")
 
 
 class InstructionClass(IntEnum):
@@ -103,6 +104,16 @@ class KernelOpcode(IntEnum):
     DECORRELATE = 7
     RESAMPLE = 8
     PCM_PACK = 9
+
+
+class TransportOpcode(IntEnum):
+    INPUT_REFILL = 0
+    OUTPUT_COMMIT = 1
+    OUTPUT_STREAM = 2
+    DMA_WAIT = 3
+    FRAME_COMMIT = 4
+    JOB_RESULT = 5
+    EVENT = 6
 
 
 PREDICATES = {
@@ -232,6 +243,7 @@ def abi_manifest() -> dict[str, object]:
         },
         "p3_implemented_primitive_mask": APUMC_P3_CAPABILITY_MASK,
         "p4_implemented_primitive_mask": APUMC_P4_CAPABILITY_MASK,
+        "p5_implemented_primitive_mask": APUMC_P5_CAPABILITY_MASK,
         "p4_local_data_bytes": 0x1C000,
         "p4_local_table_scratch_bytes": APUMC_P4_TABLE_SCRATCH_BYTES,
     }
@@ -334,7 +346,11 @@ def _require_zero(instruction: Instruction, names: Iterable[str]) -> None:
 def _target_mask(target: str) -> int:
     if target not in APUMC_TARGETS:
         raise ValueError(f"unknown APU target {target}")
-    return APUMC_P3_CAPABILITY_MASK if target == "p3" else APUMC_P4_CAPABILITY_MASK
+    return {
+        "p3": APUMC_P3_CAPABILITY_MASK,
+        "p4": APUMC_P4_CAPABILITY_MASK,
+        "p5": APUMC_P5_CAPABILITY_MASK,
+    }[target]
 
 
 def instruction_required_mask(instruction: Instruction) -> int:
@@ -345,6 +361,10 @@ def instruction_required_mask(instruction: Instruction) -> int:
             return 0x0000FFC0
         if instruction.aux in (2, 3):
             return 1 << 5
+        if instruction.aux == 4:
+            return 1 << 18
+        if instruction.aux == 5:
+            return 1 << 17
         return 0
     if instruction_class == InstructionClass.BITSTREAM:
         return (1 << 0) | ((1 << 1) if opcode in (6, 7) else 0)
@@ -354,6 +374,13 @@ def instruction_required_mask(instruction: Instruction) -> int:
         return 1 << (5 if opcode in (5, 6) else 4)
     if instruction_class == InstructionClass.KERNEL:
         return 1 << (opcode + 6)
+    if instruction_class == InstructionClass.TRANSPORT:
+        if opcode <= TransportOpcode.OUTPUT_STREAM:
+            return 1 << (opcode + 16)
+        if opcode in (TransportOpcode.FRAME_COMMIT, TransportOpcode.JOB_RESULT):
+            return 1 << 19
+        if opcode == TransportOpcode.EVENT:
+            return 1 << 20
     return 0
 
 
@@ -395,7 +422,7 @@ def validate_instruction(instruction: Instruction, target: str = "p3") -> None:
             _require_zero(instruction, ("dst", "src0", "src1", "immediate"))
             if instruction.predicate != 0 or instruction.aux > 5:
                 raise ValueError("WAIT encoding is invalid")
-            if target == "p3" or instruction.aux not in (1, 2, 3):
+            if target == "p3" or (target == "p4" and instruction.aux not in (1, 2, 3)):
                 raise ValueError(f"WAIT source is unavailable in {target.upper()}")
         return
 
@@ -432,7 +459,9 @@ def validate_instruction(instruction: Instruction, target: str = "p3") -> None:
 
     if instruction.instruction_class > InstructionClass.TRANSPORT:
         raise ValueError("instruction class is invalid in V1")
-    if target == "p3" or instruction.instruction_class == InstructionClass.TRANSPORT:
+    if target == "p3" or (
+        target == "p4" and instruction.instruction_class == InstructionClass.TRANSPORT
+    ):
         raise ValueError(f"instruction class is unavailable in {target.upper()}")
 
     if instruction.instruction_class == InstructionClass.BITSTREAM:
@@ -510,6 +539,30 @@ def validate_instruction(instruction: Instruction, target: str = "p3") -> None:
             raise ValueError("resampler profile is invalid")
         if opcode == KernelOpcode.PCM_PACK and (instruction.aux >> 3 or (instruction.aux & 3) > 1):
             raise ValueError("PCM pack format is invalid")
+    elif instruction.instruction_class == InstructionClass.TRANSPORT:
+        if instruction.opcode > TransportOpcode.EVENT:
+            raise ValueError("transport opcode is unallocated")
+        opcode = TransportOpcode(instruction.opcode)
+        if opcode in (
+            TransportOpcode.INPUT_REFILL,
+            TransportOpcode.OUTPUT_COMMIT,
+            TransportOpcode.OUTPUT_STREAM,
+        ):
+            _require_zero(instruction, ("aux", "immediate"))
+        elif opcode == TransportOpcode.DMA_WAIT:
+            _require_zero(instruction, ("src0", "src1", "aux", "immediate"))
+        elif opcode == TransportOpcode.FRAME_COMMIT:
+            _require_zero(instruction, ("dst", "aux", "immediate"))
+        elif opcode == TransportOpcode.JOB_RESULT:
+            _require_zero(instruction, ("dst", "immediate"))
+            if instruction.aux >> 4:
+                raise ValueError("JOB_RESULT stage is invalid")
+        else:
+            _require_zero(instruction, ("dst", "src0", "src1", "aux"))
+            if instruction.immediate >> 11 or not instruction.immediate & 0x0C0:
+                raise ValueError("EVENT mask is invalid")
+            if instruction.immediate & ~0x0C0:
+                raise ValueError("EVENT mask contains unavailable IRQ bits")
 
     if instruction_required_mask(instruction) & ~target_mask:
         raise ValueError(f"required primitive is unavailable in {target.upper()}")
@@ -521,6 +574,10 @@ def validate_p3_instruction(instruction: Instruction) -> None:
 
 def validate_p4_instruction(instruction: Instruction) -> None:
     validate_instruction(instruction, "p4")
+
+
+def validate_p5_instruction(instruction: Instruction) -> None:
+    validate_instruction(instruction, "p5")
 
 
 def validate_entry(entry: Entry, instruction_count: int, target: str = "p3",
@@ -543,14 +600,14 @@ def validate_entry(entry: Entry, instruction_count: int, target: str = "p3",
         )
     ):
         raise ValueError("P3 entries cannot use scratch, table, or primitives")
-    if target == "p4":
-        if entry.primitive_mask & ~APUMC_P4_CAPABILITY_MASK:
-            raise ValueError("P4 entry requires an unavailable primitive")
+    if target in ("p4", "p5"):
+        if entry.primitive_mask & ~_target_mask(target):
+            raise ValueError(f"{target.upper()} entry requires an unavailable primitive")
         if entry.scratch_base & 3 or entry.scratch_bytes & 3:
             raise ValueError("scratch range must be four-byte aligned")
         scratch_end = entry.scratch_base + entry.scratch_bytes
         if scratch_end > APUMC_P4_TABLE_SCRATCH_BYTES:
-            raise ValueError("scratch range exceeds the P4 codec workspace")
+            raise ValueError("scratch range exceeds the codec workspace")
         if entry.scratch_bytes and entry.scratch_base < table_payload_bytes:
             raise ValueError("scratch range overlaps the active table payload")
         if entry.table_offset & 3 or entry.table_bytes & 3:
@@ -665,7 +722,7 @@ def control_flow_report(
             elif opcode == ControlOpcode.NOP:
                 successors.append((pc + 1, returns, loops))
                 edges.add((pc, pc + 1, "fallthrough"))
-            elif opcode == ControlOpcode.WAIT and target == "p4":
+            elif opcode == ControlOpcode.WAIT and target in ("p4", "p5"):
                 successors.append((pc + 1, returns, loops))
                 edges.add((pc, pc + 1, "wait_ready"))
             else:
@@ -819,7 +876,7 @@ def parse_apumc(
         raise ValueError("APUMC range fields are invalid")
     if target == "p3" and (table_bytes or table_offset or header[9] or header[10]):
         raise ValueError("APUMC range or P3 capability fields are invalid")
-    if target == "p4" and (
+    if target in ("p4", "p5") and (
         table_bytes > APUMC_P4_TABLE_SCRATCH_BYTES
         or table_bytes & 3
         or table_offset > len(bundle)
@@ -831,7 +888,7 @@ def parse_apumc(
         or header[9] & ~target_mask
         or header[10] > APUMC_P4_TABLE_SCRATCH_BYTES
     ):
-        raise ValueError("APUMC range or P4 capability fields are invalid")
+        raise ValueError(f"APUMC range or {target.upper()} capability fields are invalid")
     if crc32_iso_hdlc(bundle[APUMC_HEADER_BYTES:]) != header[11]:
         raise ValueError("APUMC CRC mismatch")
     entries = []
@@ -892,6 +949,19 @@ def parse_apumc(
                         raise ValueError("kernel WAIT requires a class-5 primitive")
                 elif required & ~entry.primitive_mask:
                     raise ValueError("FIFO WAIT requires the local-FIFO primitive")
+            elif (
+                instructions[pc].instruction_class == InstructionClass.CONTROL
+                and instructions[pc].opcode == ControlOpcode.WAIT
+                and instructions[pc].aux == 0
+                and not entry.primitive_mask & 0x00070000
+            ):
+                raise ValueError("DMA WAIT requires a transport primitive")
+            elif (
+                instructions[pc].instruction_class == InstructionClass.TRANSPORT
+                and instructions[pc].opcode == TransportOpcode.DMA_WAIT
+                and not entry.primitive_mask & 0x00070000
+            ):
+                raise ValueError("DMA_WAIT requires a transport primitive")
             elif required & ~entry.primitive_mask:
                 raise ValueError(f"entry {entry.format_id} omits an instruction primitive")
     if header[9] != (entries[0].primitive_mask | entries[1].primitive_mask | entries[2].primitive_mask):

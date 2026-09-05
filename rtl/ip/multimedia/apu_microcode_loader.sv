@@ -5,7 +5,8 @@
 
 module apu_microcode_loader #(
     parameter int unsigned PathStackDepth = 2048,
-    parameter bit          EnableP4       = 1'b0
+    parameter bit          EnableP4       = 1'b0,
+    parameter bit          EnableP5       = 1'b0
 ) (
     // verilog_format: off -- preserve command, DMA, store, and result columns
     input  logic                  clk_i,
@@ -75,6 +76,12 @@ module apu_microcode_loader #(
   import apu_microcode_pkg::*;
 
   localparam logic [11:0] PathStackLimit = 12'(PathStackDepth);
+
+`ifndef SYNTHESIS
+  initial begin
+    if (EnableP5 && !EnableP4) $fatal(1, "apu_microcode_loader: P5 requires the P4 profile");
+  end
+`endif
 
   typedef enum logic [4:0] {
     Idle,
@@ -417,16 +424,20 @@ module apu_microcode_loader #(
     if (s_header_q[9] != s_entry_mask) begin
       s_capability_err = 1'b1;
     end else if ((!EnableP4 && (s_header_q[9] != 32'd0)) ||
-                 (EnableP4 &&
-                  ((s_header_q[9] & ~`APB4_APU__APUMC_P4_PRIMITIVE_MASK) != 32'd0))) begin
+                 (EnableP4 && !EnableP5 &&
+                  ((s_header_q[9] & ~`APB4_APU__APUMC_P4_PRIMITIVE_MASK) != 32'd0)) ||
+                 (EnableP5 &&
+                  ((s_header_q[9] & ~`APB4_APU__APUMC_P5_PRIMITIVE_MASK) != 32'd0))) begin
       s_capability_err    = 1'b1;
       s_capability_detail = s_header_q[9];
     end else begin
       for (int unsigned entry = 0; entry < 3; entry++) begin
         if (!s_capability_err &&
             ((!EnableP4 && (s_entry_word_q[(entry*8)+6] != 32'd0)) ||
-             (EnableP4 && ((s_entry_word_q[(entry*8)+6] &
-                            ~`APB4_APU__APUMC_P4_PRIMITIVE_MASK) != 32'd0)))) begin
+             (EnableP4 && !EnableP5 && ((s_entry_word_q[(entry*8)+6] &
+                                         ~`APB4_APU__APUMC_P4_PRIMITIVE_MASK) != 32'd0)) ||
+             (EnableP5 && ((s_entry_word_q[(entry*8)+6] &
+                            ~`APB4_APU__APUMC_P5_PRIMITIVE_MASK) != 32'd0)))) begin
           s_capability_err    = 1'b1;
           s_capability_addr   = s_source_addr_q + s_header_q[7] + 32'(entry * 32) + 32'd24;
           s_capability_detail = s_entry_word_q[(entry*8)+6];
@@ -551,23 +562,42 @@ module apu_microcode_loader #(
        ((s_loop_active_q & ~(4'b0001 << s_scan_aux[1:0])) != 4'd0) :
        ((s_loop_active_q != 4'd0) ||
         ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd6))));
-  assign s_scan_capability_instruction = EnableP4 ?
-      ((s_scan_class == 4'd6) ||
-       ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) &&
-        !(s_scan_aux inside {8'd1, 8'd2, 8'd3})) ||
-       (!((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) &&
-          (s_scan_aux == 8'd1)) &&
-        ((instruction_primitive_mask(
-      s_scan_instruction
-  ) & ~entry_primitive_mask_o[s_scan_entry_q]) != 32'd0)) ||
-      (((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) && (s_scan_aux == 8'd1)) &&
-       ((entry_primitive_mask_o[s_scan_entry_q] & 32'h0000_ffc0) == 32'd0))) :
-      (((s_scan_class >= 4'd2) && (s_scan_class <= 4'd6)) ||
-       ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8)));
+  // verilog_format: off -- preserve the P3/P4/P5 capability decision tree
+  always_comb begin
+    s_scan_capability_instruction = 1'b0;
+    if (!EnableP4) begin
+      s_scan_capability_instruction = ((s_scan_class >= 4'd2) && (s_scan_class <= 4'd6)) ||
+          ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8));
+    end else if (!EnableP5) begin
+      s_scan_capability_instruction = (s_scan_class == 4'd6) ||
+          ((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) &&
+           !(s_scan_aux inside {8'd1, 8'd2, 8'd3})) ||
+          (!((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) &&
+             (s_scan_aux == 8'd1)) &&
+           ((instruction_primitive_mask(s_scan_instruction) &
+             ~entry_primitive_mask_o[s_scan_entry_q]) != 32'd0)) ||
+          (((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) && (s_scan_aux == 8'd1)) &&
+           ((entry_primitive_mask_o[s_scan_entry_q] & 32'h0000_ffc0) == 32'd0));
+    end else begin
+      s_scan_capability_instruction =
+          (!((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) &&
+             (s_scan_aux inside {8'd0, 8'd1})) &&
+           !((s_scan_class == 4'd6) && (s_scan_opcode == 4'd3)) &&
+           ((instruction_primitive_mask(s_scan_instruction) &
+             ~entry_primitive_mask_o[s_scan_entry_q]) != 32'd0)) ||
+          (((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) && (s_scan_aux == 8'd1)) &&
+           ((entry_primitive_mask_o[s_scan_entry_q] & 32'h0000_ffc0) == 32'd0)) ||
+          ((((s_scan_class == 4'd0) && (s_scan_opcode == 4'd8) && (s_scan_aux == 8'd0)) ||
+            ((s_scan_class == 4'd6) && (s_scan_opcode == 4'd3))) &&
+           ((entry_primitive_mask_o[s_scan_entry_q] & 32'h0007_0000) == 32'd0));
+    end
+  end
+  // verilog_format: on
 
   always_comb begin
     s_path_fallthrough = s_scan_predicate != 4'd0;
-    if ((s_scan_class >= 4'd1) && (s_scan_class <= (EnableP4 ? 4'd5 : 4'd1))) begin
+    if ((s_scan_class >= 4'd1) &&
+        (s_scan_class <= (EnableP5 ? 4'd6 : (EnableP4 ? 4'd5 : 4'd1)))) begin
       s_path_fallthrough = 1'b1;
     end else if ((s_scan_class == 4'd0) && (s_scan_opcode inside {4'd0, 4'd6, 4'd7})) begin
       s_path_fallthrough = 1'b1;

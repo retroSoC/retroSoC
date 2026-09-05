@@ -60,6 +60,8 @@ def test_apu_p1_apb_register_shell(tmp_path: Path) -> None:
                 str(multimedia / "apu_kernel_engine.sv"),
                 str(multimedia / "apu_primitive_dispatcher.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
+                str(multimedia / "apu_codec_transport.sv"),
+                str(multimedia / "apu_codec_controller.sv"),
                 str(multimedia / "apu_reg.sv"),
                 str(multimedia / "apb4_apu.sv"),
                 str(ROOT / "tests/rtl/apu_reg_tb.sv"),
@@ -145,6 +147,8 @@ def test_apu_p1_integrated_irq_ownership_topology(tmp_path: Path) -> None:
                 str(multimedia / "apu_kernel_engine.sv"),
                 str(multimedia / "apu_primitive_dispatcher.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
+                str(multimedia / "apu_codec_transport.sv"),
+                str(multimedia / "apu_codec_controller.sv"),
                 str(multimedia / "apu_reg.sv"),
                 str(multimedia / "apb4_apu.sv"),
                 str(ROOT / "rtl/mini/top/resource_controller.sv"),
@@ -557,6 +561,8 @@ done:
                 str(multimedia / "apu_kernel_engine.sv"),
                 str(multimedia / "apu_primitive_dispatcher.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
+                str(multimedia / "apu_codec_transport.sv"),
+                str(multimedia / "apu_codec_controller.sv"),
                 str(multimedia / "apu_reg.sv"),
                 str(multimedia / "apb4_apu.sv"),
                 str(ROOT / "tests/rtl/apu_p3_integration_tb.sv"),
@@ -599,15 +605,15 @@ done:
     assert "APU-P3 APB, DMA, loader integration passed" in result.stdout
 
 
-def test_apu_p4_product_scope_remains_coreless_and_fail_closed() -> None:
+def test_apu_p5_product_scope_remains_coreless_and_later_features_fail_closed() -> None:
     top = (ROOT / "rtl/ip/multimedia/apb4_apu.sv").read_text(encoding="utf-8")
     register_block = (ROOT / "rtl/ip/multimedia/apu_reg.sv").read_text(encoding="utf-8")
     product_filelist = (ROOT / "rtl/mini/filelist/ip.fl").read_text(encoding="utf-8")
     normalized_top = " ".join(top.split())
-    assert ".launch_i (1'b0)" in normalized_top
-    assert ".start_i (1'b0)" in normalized_top
-    assert "32'h0000_0029" in register_block
-    assert "s_merged_write != 32'd0" in register_block
+    assert ".launch_i(s_codec_seq_launch)" in normalized_top
+    assert ".start_i (s_ring_kick)" in normalized_top
+    assert "COMMAND_MODEL_LOAD" in register_block
+    assert "s_merged_write[3:2] != 2'd0" in register_block
     assert "apu_interpreter" not in product_filelist
     assert "apu_primitives.py" not in product_filelist
     assert "apu_p4_primitives_tb" not in product_filelist
@@ -624,6 +630,8 @@ def test_apu_p4_product_scope_remains_coreless_and_fail_closed() -> None:
         "apu_entropy_engine.sv",
         "apu_kernel_engine.sv",
         "apu_primitive_dispatcher.sv",
+        "apu_codec_transport.sv",
+        "apu_codec_controller.sv",
     ):
         assert production_module in product_filelist
     for forbidden in ("hazard3", "vexiiriscv", "rv32", "dsp_core"):

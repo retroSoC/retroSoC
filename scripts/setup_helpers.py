@@ -93,6 +93,7 @@ def download_file(
     update: bool = False,
     retries: int = 3,
     timeout: int = 30,
+    resume: bool = False,
 ) -> None:
     destination = destination.resolve()
     if destination.is_file():
@@ -107,22 +108,31 @@ def download_file(
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     last_error: Exception | None = None
+    partial = destination.with_name(f".{destination.name}.partial") if resume else None
     for attempt in range(1, retries + 1):
-        fd, temporary_name = tempfile.mkstemp(
-            prefix=f".{destination.name}.", dir=destination.parent
-        )
-        os.close(fd)
-        temporary = Path(temporary_name)
-        try:
-            request = urllib.request.Request(
-                url, headers={"User-Agent": "retroSoC-setup/1"}
+        if partial is None:
+            fd, temporary_name = tempfile.mkstemp(
+                prefix=f".{destination.name}.", dir=destination.parent
             )
+            os.close(fd)
+            temporary = Path(temporary_name)
+        else:
+            temporary = partial
+        try:
+            received = temporary.stat().st_size if temporary.is_file() else 0
+            headers = {"User-Agent": "retroSoC-setup/1"}
+            if received:
+                headers["Range"] = f"bytes={received}-"
+            request = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(request, timeout=timeout) as response:
-                with temporary.open("wb") as output:
+                append = received != 0 and response.status == 206
+                with temporary.open("ab" if append else "wb") as output:
                     while chunk := response.read(1024 * 1024):
                         output.write(chunk)
             actual = sha256(temporary)
             if actual != expected_sha256:
+                if resume:
+                    temporary.unlink(missing_ok=True)
                 raise RuntimeError(
                     f"checksum mismatch for {url}: {actual}, expected {expected_sha256}"
                 )
@@ -131,7 +141,8 @@ def download_file(
             return
         except Exception as error:
             last_error = error
-            temporary.unlink(missing_ok=True)
+            if not resume:
+                temporary.unlink(missing_ok=True)
             if attempt < retries:
                 time.sleep(attempt)
     raise RuntimeError(f"failed to download {url}: {last_error}")

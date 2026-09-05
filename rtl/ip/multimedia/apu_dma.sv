@@ -38,6 +38,8 @@ module apu_dma (
     output logic                 output_pending_o,
     output logic [63:0]          read_bytes_o,
     output logic [63:0]          write_bytes_o,
+    output logic                 write_burst_done_o,
+    output logic [31:0]          write_burst_bytes_o,
     output logic [63:0]          read_stalls_o,
     output logic [63:0]          write_stalls_o,
     axi4_if.master               axi4
@@ -67,10 +69,14 @@ module apu_dma (
   logic          s_done_q;
   logic   [63:0] s_read_bytes_q;
   logic   [63:0] s_write_bytes_q;
+  logic          s_write_burst_done_q;
+  logic   [31:0] s_write_burst_bytes_q;
+  logic   [31:0] s_active_write_burst_bytes_q;
   logic   [63:0] s_read_stalls_q;
   logic   [63:0] s_write_stalls_q;
   logic   [ 4:0] s_sel_beats;
   logic   [31:0] s_beat_bytes;
+  logic   [31:0] s_selected_burst_bytes;
   logic   [ 3:0] s_expected_keep;
   logic          s_read_start_ready;
   logic          s_read_busy;
@@ -136,6 +142,8 @@ module apu_dma (
 
   assign s_sel_beats = choose_burst(s_addr_q[11:0], s_remaining_q);
   assign s_beat_bytes = (s_remaining_q < 32'd4) ? s_remaining_q : 32'd4;
+  assign s_selected_burst_bytes = (s_remaining_q < ({27'd0, s_sel_beats} << 2)) ?
+      s_remaining_q : ({27'd0, s_sel_beats} << 2);
   assign s_expected_keep = byte_mask(s_beat_bytes);
   assign s_req_last = {1'b0, request_addr_i} + {1'b0, request_bytes_i} - 1'b1;
   assign s_req_range_valid = (request_bytes_i != 32'd0) && !s_req_last[32] &&
@@ -159,6 +167,8 @@ module apu_dma (
                             (s_state_q == WriteResponse);
   assign read_bytes_o = s_read_bytes_q;
   assign write_bytes_o = s_write_bytes_q;
+  assign write_burst_done_o = s_write_burst_done_q;
+  assign write_burst_bytes_o = s_write_burst_bytes_q;
   assign read_stalls_o = s_read_stalls_q;
   assign write_stalls_o = s_write_stalls_q;
 
@@ -232,27 +242,31 @@ module apu_dma (
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      s_state_q        <= Idle;
-      s_addr_q         <= 32'd0;
-      s_remaining_q    <= 32'd0;
-      s_burst_beats_q  <= 5'd0;
-      s_timeout_q      <= 32'd0;
-      s_drain_q        <= 1'b0;
-      s_err_q          <= 1'b0;
-      s_aborted_q      <= 1'b0;
-      s_err_code_q     <= 6'd0;
-      s_err_stage_q    <= 4'd0;
-      s_err_resp_q     <= 2'd0;
-      s_err_addr_q     <= 32'd0;
-      s_done_q         <= 1'b0;
-      s_read_bytes_q   <= 64'd0;
-      s_write_bytes_q  <= 64'd0;
-      s_read_stalls_q  <= 64'd0;
-      s_write_stalls_q <= 64'd0;
-      s_bridge_epoch_q <= 8'd0;
+      s_state_q                    <= Idle;
+      s_addr_q                     <= 32'd0;
+      s_remaining_q                <= 32'd0;
+      s_burst_beats_q              <= 5'd0;
+      s_timeout_q                  <= 32'd0;
+      s_drain_q                    <= 1'b0;
+      s_err_q                      <= 1'b0;
+      s_aborted_q                  <= 1'b0;
+      s_err_code_q                 <= 6'd0;
+      s_err_stage_q                <= 4'd0;
+      s_err_resp_q                 <= 2'd0;
+      s_err_addr_q                 <= 32'd0;
+      s_done_q                     <= 1'b0;
+      s_read_bytes_q               <= 64'd0;
+      s_write_bytes_q              <= 64'd0;
+      s_write_burst_done_q         <= 1'b0;
+      s_write_burst_bytes_q        <= 32'd0;
+      s_active_write_burst_bytes_q <= 32'd0;
+      s_read_stalls_q              <= 64'd0;
+      s_write_stalls_q             <= 64'd0;
+      s_bridge_epoch_q             <= 8'd0;
     end else begin
-      s_done_q         <= 1'b0;
-      s_bridge_epoch_q <= bridge_epoch_i;
+      s_done_q             <= 1'b0;
+      s_write_burst_done_q <= 1'b0;
+      s_bridge_epoch_q     <= bridge_epoch_i;
       if (counter_clear_i) begin
         s_read_bytes_q   <= 64'd0;
         s_write_bytes_q  <= 64'd0;
@@ -358,8 +372,9 @@ module apu_dma (
               s_drain_q   <= 1'b0;
               s_timeout_q <= 32'd0;
             end else if (s_write_start_ready && !abort_i && !s_timeout_expire) begin
-              s_burst_beats_q <= s_sel_beats;
-              s_state_q       <= WriteData;
+              s_burst_beats_q              <= s_sel_beats;
+              s_active_write_burst_bytes_q <= s_selected_burst_bytes;
+              s_state_q                    <= WriteData;
             end
           end
           WriteData: begin
@@ -388,6 +403,9 @@ module apu_dma (
                 s_err_stage_q <= 4'd8;
                 s_err_resp_q  <= s_write_resp;
                 s_err_addr_q  <= s_addr_q;
+              end else if (!s_drain_q) begin
+                s_write_burst_done_q  <= 1'b1;
+                s_write_burst_bytes_q <= s_active_write_burst_bytes_q;
               end
               if (s_drain_q || s_write_fault || (s_remaining_q == 32'd0)) begin
                 s_state_q   <= Idle;

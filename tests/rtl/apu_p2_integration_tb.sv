@@ -385,38 +385,40 @@ module apu_p2_integration_tb;
   apu_dma u_dma (
       .clk_i,
       .rst_n_i,
-      .abort_i         (effective_abort && !ring_status[`APB4_APU__RING_STATUS_WRITEBACK_PENDING]),
-      .quiesce_i       (dma_admission_block),
+      .abort_i(effective_abort && !ring_status[`APB4_APU__RING_STATUS_WRITEBACK_PENDING]),
+      .quiesce_i(dma_admission_block),
       .bridge_epoch_i,
-      .perf_enable_i   (1'b1),
-      .counter_clear_i (1'b0),
-      .request_valid_i (dma_request_valid),
-      .request_ready_o (dma_request_ready),
-      .request_write_i (dma_request_write),
-      .request_addr_i  (dma_request_addr),
-      .request_bytes_i (dma_request_bytes),
-      .read_base_i     (RingBase),
-      .read_limit_i    (32'h0000_2fff),
-      .write_base_i    (RingBase),
-      .write_limit_i   (32'h0000_2fff),
-      .timeout_i       (32'd24),
-      .read_axis       (dma_read_axis),
-      .write_axis      (dma_write_axis),
-      .busy_o          (dma_busy),
-      .done_o          (dma_done),
-      .error_o         (dma_error),
-      .aborted_o       (dma_aborted),
-      .aborting_o      (dma_aborting),
-      .error_code_o    (dma_error_code),
-      .error_stage_o   (dma_error_stage),
-      .error_resp_o    (dma_error_resp),
-      .error_addr_o    (dma_error_addr),
-      .input_pending_o (),
+      .perf_enable_i(1'b1),
+      .counter_clear_i(1'b0),
+      .request_valid_i(dma_request_valid),
+      .request_ready_o(dma_request_ready),
+      .request_write_i(dma_request_write),
+      .request_addr_i(dma_request_addr),
+      .request_bytes_i(dma_request_bytes),
+      .read_base_i(RingBase),
+      .read_limit_i(32'h0000_2fff),
+      .write_base_i(RingBase),
+      .write_limit_i(32'h0000_2fff),
+      .timeout_i(32'd24),
+      .read_axis(dma_read_axis),
+      .write_axis(dma_write_axis),
+      .busy_o(dma_busy),
+      .done_o(dma_done),
+      .error_o(dma_error),
+      .aborted_o(dma_aborted),
+      .aborting_o(dma_aborting),
+      .error_code_o(dma_error_code),
+      .error_stage_o(dma_error_stage),
+      .error_resp_o(dma_error_resp),
+      .error_addr_o(dma_error_addr),
+      .input_pending_o(),
       .output_pending_o(),
-      .read_bytes_o    (),
-      .write_bytes_o   (),
-      .read_stalls_o   (),
-      .write_stalls_o  (),
+      .read_bytes_o(),
+      .write_bytes_o(),
+      .write_burst_done_o(),
+      .write_burst_bytes_o(),
+      .read_stalls_o(),
+      .write_stalls_o(),
       .axi4
   );
 
@@ -464,6 +466,7 @@ module apu_p2_integration_tb;
       .backend_source_info_i (backend_source_info),
       .backend_cycles_i      (backend_cycles),
       .backend_detail_i      (backend_detail),
+      .backend_build_id_i    (32'd0),
       .job_status_o          (job_status),
       .ring_status_o         (ring_status),
       .ring_head_o           (ring_head),
@@ -667,15 +670,15 @@ module apu_p2_integration_tb;
                                          input logic [3:0] state_i);
     int unsigned timeout;
     begin
-      ring_enable_i       = 1'b0;
-      quiesce_i           = 1'b0;
-      resource_reset_i    = 1'b0;
-      hold_addresses_i    = 1'b0;
-      hold_read_data_i    = 1'b0;
-      hold_write_data_i   = 1'b0;
+      ring_enable_i         = 1'b0;
+      quiesce_i             = 1'b0;
+      resource_reset_i      = 1'b0;
+      hold_addresses_i      = 1'b0;
+      hold_read_data_i      = 1'b0;
+      hold_write_data_i     = 1'b0;
       hold_write_response_i = 1'b0;
-      hold_backend_i      = 1'b0;
-      suppress_read_last_i = 1'b0;
+      hold_backend_i        = 1'b0;
+      suppress_read_last_i  = 1'b0;
       hard_reset();
       clear_memory();
       make_descriptor(0);
@@ -713,10 +716,9 @@ module apu_p2_integration_tb;
         wait_idle();
       end
 
-      if (memory[0][31] || (memory[1] == 32'd0) || !result_retired_q ||
-          !owner_write_seen_q) begin
-        $fatal(1, "lifecycle drain lost ordered descriptor writeback state %0d reset=%0d",
-               state_i, resource_reset_case_i);
+      if (memory[0][31] || (memory[1] == 32'd0) || !result_retired_q || !owner_write_seen_q) begin
+        $fatal(1, "lifecycle drain lost ordered descriptor writeback state %0d reset=%0d", state_i,
+               resource_reset_case_i);
       end
       if (!resource_reset_case_i) begin
         @(negedge clk_i);

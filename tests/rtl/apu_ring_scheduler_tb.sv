@@ -131,6 +131,7 @@ module apu_ring_scheduler_tb;
       .backend_source_info_i (backend_source_info),
       .backend_cycles_i      (backend_cycles),
       .backend_detail_i      (backend_detail),
+      .backend_build_id_i    (32'd0),
       .job_status_o,
       .ring_status_o,
       .ring_head_o,

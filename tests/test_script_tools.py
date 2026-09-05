@@ -467,7 +467,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/ip/multimedia/apu_codec_sequencer.sv" in apu_sequencer.files
     assert ROOT / "rtl/mini/formal/apu_sequencer_formal.sv" in apu_sequencer.files
     assert ROOT / "rtl/mini/top/hp_axi4_mux3.sv" in gateway_a.files
-    assert ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv" in gateway_a.files
+    assert (
+        ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv" in gateway_a.files
+    )
     assert ROOT / "rtl/mini/formal/gateway_a_formal.sv" in gateway_a.files
 
 
@@ -776,6 +778,13 @@ def test_dependency_helpers_are_idempotent(tmp_path: Path) -> None:
     first_mtime = downloaded.stat().st_mtime_ns
     download_file(payload.as_uri(), downloaded, digest)
     assert downloaded.stat().st_mtime_ns == first_mtime
+
+    resumed = tmp_path / "resumed.bin"
+    partial = tmp_path / ".resumed.bin.partial"
+    partial.write_bytes(b"partial")
+    download_file(payload.as_uri(), resumed, digest, resume=True)
+    assert resumed.read_bytes() == b"verified"
+    assert not partial.exists()
 
 
 def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Path) -> None:
@@ -1422,9 +1431,7 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     assert "suite: nightly-extra" in nightly
     assert "timeout_minutes: 180" in nightly
     assert "suite: nightly\n" not in nightly
-    assert (
-        "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
-    )
+    assert "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

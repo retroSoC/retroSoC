@@ -84,6 +84,7 @@ def test_apu_p4_tool_isa_matches_handwritten_rtl_and_c() -> None:
         "APUMC_MAX_INSTRUCTIONS": manifest["apumc"]["max_instructions"],
         "APUMC_P3_PRIMITIVE_MASK": manifest["p3_implemented_primitive_mask"],
         "APUMC_P4_PRIMITIVE_MASK": manifest["p4_implemented_primitive_mask"],
+        "APUMC_P5_PRIMITIVE_MASK": manifest["p5_implemented_primitive_mask"],
         "LOCAL_DATA_BYTES": manifest["p4_local_data_bytes"],
         "LOCAL_TABLE_SCRATCH_BYTES": manifest["p4_local_table_scratch_bytes"],
     }

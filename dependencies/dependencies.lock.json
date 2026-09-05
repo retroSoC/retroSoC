@@ -50,6 +50,18 @@
       "destination": "app/coremark/coremark-main",
       "license": "Apache-2.0"
     },
+    "apu_libflac": {
+      "url": "https://github.com/xiph/flac.git",
+      "revision": "1507800de4b70e21be71f38caa0d9079d0bc6e45",
+      "destination": ".cache/retrosoc/sources/apu-libflac",
+      "license": "NOASSERTION"
+    },
+    "apu_flac_corpus": {
+      "url": "https://github.com/ietf-wg-cellar/flac-test-files.git",
+      "revision": "aa7b0c6cf32994c106ae517a08134c28a96ff5b2",
+      "destination": ".cache/retrosoc/sources/apu-flac-corpus",
+      "license": "CC0-1.0"
+    },
     "third_party_ip": {
       "url": "https://github.com/retroSoC/3rd-party.git",
       "revision": "d991ec9f7bf696e7e5d840758487068b11bd4121",
@@ -95,6 +107,18 @@
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
   },
   "archives": {
+    "apu_libflac": {
+      "url": "https://codeload.github.com/xiph/flac/tar.gz/1507800de4b70e21be71f38caa0d9079d0bc6e45",
+      "sha256": "d80ef5facdb21972efe91774da03d6b9abf216aa17093d740fcc411cd8afbb41",
+      "destination": ".cache/retrosoc/downloads/apu/libflac-1507800de4b70e21be71f38caa0d9079d0bc6e45.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "apu_flac_corpus": {
+      "url": "https://codeload.github.com/ietf-wg-cellar/flac-test-files/tar.gz/aa7b0c6cf32994c106ae517a08134c28a96ff5b2",
+      "sha256": "36de2310155b4084011fbd56f24603dfef91a26c5433e3f92bd21995b45089c3",
+      "destination": ".cache/retrosoc/downloads/apu/flac-corpus-aa7b0c6cf32994c106ae517a08134c28a96ff5b2.tar.gz",
+      "license": "CC0-1.0"
+    },
     "libjpeg_turbo": {
       "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
       "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",

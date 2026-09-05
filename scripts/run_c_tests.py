@@ -94,6 +94,7 @@ def main() -> int:
             "-Wextra",
             "-Werror",
             "-fno-builtin",
+            "-DRS_APU_TEST_MMIO",
             "-I",
             str(memory_map_root / "include"),
             "-I",

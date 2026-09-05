@@ -31,3 +31,9 @@ The libjpeg-turbo source archive is a host-verification input for the JPEG
 accelerator. It supplies an implementation-independent interoperability oracle;
 it is not linked into firmware or synthesized RTL. The repository-owned fixed
 point model remains the bit-accurate source of expected RTL results.
+
+The pinned libFLAC source and official FLAC test corpus are host-only APU-P5
+verification inputs. Install them with `make setup-apu-reference`; neither is
+linked into firmware, RTL, or the shipped APUMC bundle. Run
+`make CONFIG=configs/ci/ihp130.mk apu-p5-corpus` to produce the checksum-pinned
+per-file profile and independent PCM manifest.
