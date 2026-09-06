@@ -47,7 +47,7 @@
   *Media and data processing*
   - Stereo I2S master and parallel DVP capture.
   - Baseline JPEG encoder/decoder with private DMA.
-  - Coreless APU integration: partial implementation; codec jobs remain disabled.
+  - Coreless APU with WAV/FLAC job infrastructure; production qualification remains incomplete.
   - AES, SHA-2, raw RSA and CRC engines.
   - RNG controller; current entropy source is unqualified.
 
@@ -68,7 +68,7 @@ and fault recovery. VexiiRiscv supplies the application-side compute and Linux i
 The design is intended for embedded control, basic human-machine interfaces, retro multimedia
 experimentation, education and ASIC prototyping.
 
-#figure(product-diagram(), caption:[Mini PRODUCT functional block diagram. External memories and the ULPI PHY are off-chip components.])<product-diagram>
+#figure(product-diagram(), caption:[Integrated Mini PRODUCT IP inventory, organized by function.])<product-diagram>
 
 #ds-table("profile", [Document reference configuration],
   ([Property], [Reference]),
@@ -82,11 +82,3 @@ experimentation, education and ASIC prototyping.
     ([MPW compatibility], code(doc.mpw_profile)),
   ), widths:(0.8fr,1.9fr),
 )
-Clock values above describe the selected digital configuration, not characterized maximum
-frequencies. Larger memory-map apertures describe addressability and do not imply fitted devices.
-
-== Reading this datasheet
-The architecture and peripheral sections describe PRODUCT mode unless explicitly marked MPW.
-Address, LP IRQ, pad and access-matrix tables are generated from the same reviewed inputs used
-by the SoC integration. Per-IP references point to detailed contracts or executable sources at
-the recorded commit. Features marked *partial*, *prototype* or *TBD* are not qualified product claims.

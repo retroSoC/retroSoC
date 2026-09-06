@@ -18,25 +18,23 @@
 }
 
 #let product-diagram() = cetz.canvas({
-  box(0, 6.5, 5, 1.45, [*LP management* \ Hazard3 · hart 0 \ Boot, ownership, recovery], fill: pale-gold)
-  box(6, 6.5, 5, 1.45, [*HP application* \ VexiiRiscv · hart 1 \ RV32IMAFDC + Zicbom], fill: pale-gold)
-  box(12, 6.5, 5, 1.45, [*Lifecycle & debug* \ JTAG · clock/reset \ Resource ownership])
-  box(0, 4.6, 5, 1.0, [*AXI32 control plane* \ APB4 register access])
-  box(6, 4.6, 11, 1.0, [*Native AXI64 data plane* \ Eight masters · five memory targets], fill: pale-gold)
-  wire(((2.5,6.5),(2.5,5.6)))
-  wire(((8.5,6.5),(8.5,5.6)))
-  wire(((14.5,6.5),(14.5,5.6)), dashed: true)
-  wire(((5,5.1),(6,5.1)))
-  box(0, 2.1, 5, 1.6, [*APB4 peripherals* \ GPIO · UART · I2C · timers \ I2S · DVP · USB2 · storage])
-  box(6, 2.1, 5, 1.6, [*Memory* \ SRAM · SDRAM \ QPI PSRAM · OPI · XPI])
-  box(12, 2.1, 5, 1.6, [*Data initiators* \ DMA · SDIO · USB2 \ JPEG · APU (partial) · EXT-H])
-  wire(((2.5,4.6),(2.5,3.7)))
-  wire(((8.5,4.6),(8.5,3.7)))
-  wire(((14.5,3.7),(14.5,4.6)))
-  box(0, 0, 8, 1.2, [*Root platform* \ SYSCTRL/RCU · CLINT · ARCHINFO \ CRC · RNG · Resource Controller · Fabric Monitor])
-  box(9, 0, 8, 1.2, [*Product extension boundary* \ EXT-L: APB4 + IRQ \ EXT-H: APB4 + IRQ + AXI64])
-  wire(((2.5,2.1),(2.5,1.2)))
-  wire(((14.5,2.1),(14.5,1.2)))
+  import cetz.draw: rect, content
+  let top = 0
+  for row in range(3) {
+    let groups = data.overview_groups.slice(row * 3, row * 3 + 3)
+    let height = calc.max(..groups.map(g => calc.ceil(g.items.len() / 2) * 1.0 + 0.95))
+    for (column, group) in groups.enumerate() {
+      let x = column * 5.7
+      rect((x, top - height), (x + 5.35, top), stroke:0.6pt+gold, fill:white, radius:0.08)
+      content((x + 2.675, top - 0.4), text(9.5pt, weight:"semibold", group.title))
+      for (n, item) in group.items.enumerate() {
+        let bx = x + 0.15 + calc.rem(n,2) * 2.575
+        let by = top - 1.7 - calc.floor(n/2) * 1.0
+        box(bx,by,2.475,0.9,item,fill:gray)
+      }
+    }
+    top -= height + 0.3
+  }
 })
 
 #let fabric-diagram() = cetz.canvas({

@@ -1,0 +1,1734 @@
+{
+  "apb4": {
+    "source": {
+      "signal": [
+        {
+          "name": "PCLK",
+          "wave": "p......."
+        },
+        {
+          "name": "PSEL",
+          "wave": "01...0.."
+        },
+        {
+          "name": "PENABLE",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "PREADY",
+          "wave": "0...10.."
+        },
+        {
+          "name": "PWRITE",
+          "wave": "1......."
+        },
+        {
+          "name": "ADDR / DATA",
+          "wave": "x=...x..",
+          "data": [
+            "valid"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "APB example with wait states. The request and write data remain stable until PSEL, PENABLE and PREADY are high together. Cycle counts illustrate this transaction only."
+  },
+  "axi4": {
+    "source": {
+      "signal": [
+        {
+          "name": "ACLK",
+          "wave": "p......."
+        },
+        {
+          "name": "ARVALID",
+          "wave": "01.0...."
+        },
+        {
+          "name": "ARREADY",
+          "wave": "0.10...."
+        },
+        {
+          "name": "RVALID",
+          "wave": "0...1..0"
+        },
+        {
+          "name": "RREADY",
+          "wave": "0....1.."
+        },
+        {
+          "name": "RLAST",
+          "wave": "0.....10"
+        },
+        {
+          "name": "RDATA",
+          "wave": "x...=.=x",
+          "data": [
+            "D0",
+            "D1"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Read-address and response channels are independent. A stalled valid response retains data and response attributes. D0 transfers before the final D1 beat."
+  },
+  "axis": {
+    "source": {
+      "signal": [
+        {
+          "name": "ACLK",
+          "wave": "p......."
+        },
+        {
+          "name": "TVALID",
+          "wave": "01.....0"
+        },
+        {
+          "name": "TREADY",
+          "wave": "01.0.1.."
+        },
+        {
+          "name": "TDATA",
+          "wave": "x===..=x",
+          "data": [
+            "D0",
+            "D1",
+            "D2",
+            "D3"
+          ]
+        },
+        {
+          "name": "TLAST",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Rising-edge transfers occur only while TVALID and TREADY are both high. D2 is held through two cycles of backpressure. D3 carries TLAST and is the final transfer; TVALID then deasserts."
+  },
+  "uart": {
+    "source": {
+      "signal": [
+        {
+          "name": "bit slot",
+          "wave": "===========",
+          "data": [
+            "idle",
+            "start",
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "stop"
+          ]
+        },
+        {
+          "name": "TX (0xA5)",
+          "wave": "101010.101."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "8N1 example, LSB first. Each slot is one programmed bit period; payload 0xA5 is followed by a high stop bit. The receiver uses its oversampling clock internally."
+  },
+  "i2c": {
+    "source": {
+      "signal": [
+        {
+          "name": "phase",
+          "wave": "x=.=.=.=.=x",
+          "data": [
+            "START",
+            "address",
+            "ACK",
+            "data",
+            "STOP"
+          ]
+        },
+        {
+          "name": "SCL",
+          "wave": "1.0p.p.p.01"
+        },
+        {
+          "name": "SDA",
+          "wave": "10.=.0.=.01",
+          "data": [
+            "A+W",
+            "byte"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Byte phases are compressed. START/STOP change SDA while SCL is high; payload is stable at the SCL sampling edge. The receiver drives ACK low in the ninth bit period. Stretching extends a low SCL phase."
+  },
+  "i2s": {
+    "source": {
+      "signal": [
+        {
+          "name": "BCLK",
+          "wave": "p...|...p..."
+        },
+        {
+          "name": "LRCK",
+          "wave": "0...|1......"
+        },
+        {
+          "name": "serial data",
+          "wave": "x=..|.=....x",
+          "data": [
+            "left",
+            "right"
+          ]
+        },
+        {
+          "name": "word valid",
+          "wave": "0..1|0....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "I2S stereo timing is schematic. A channel's MSB follows the LRCK transition by one bit-clock period. Slot length and MCLK/BCLK dividers are programmable."
+  },
+  "ws2812": {
+    "source": {
+      "signal": [
+        {
+          "name": "engine clock",
+          "wave": "p......."
+        },
+        {
+          "name": "zero symbol",
+          "wave": "01.0...."
+        },
+        {
+          "name": "one symbol",
+          "wave": "01....0."
+        },
+        {
+          "name": "symbol slot",
+          "wave": "=.......",
+          "data": [
+            "BIT_CYCLES"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Relative digital pulse example: T0H < T1H < BIT_CYCLES. This drawing compares two possible symbols, rather than two simultaneous outputs. Program real LED timing from the board clock; hold low for RESET_CYCLES after the frame."
+  },
+  "ps2": {
+    "source": {
+      "signal": [
+        {
+          "name": "phase",
+          "wave": "x=.=..=.=x",
+          "data": [
+            "inhibit",
+            "start",
+            "D0-D7",
+            "P/S"
+          ]
+        },
+        {
+          "name": "clock",
+          "wave": "10.n..n.1."
+        },
+        {
+          "name": "data",
+          "wave": "1.0=..=1..",
+          "data": [
+            "data",
+            "P"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Compressed device-to-host frame. Falling clock edges sample start=0, D0 through D7, parity P, and stop S=1. A host inhibit holds the open-drain clock low. Stuck-clock or incomplete frames are bounded by FRAME_TIMEOUT; firmware can issue ABORT or SOFT_RESET before retrying."
+  },
+  "xpi": {
+    "source": {
+      "signal": [
+        {
+          "name": "CS_n",
+          "wave": "10.......1"
+        },
+        {
+          "name": "SCK",
+          "wave": "0p..|..p.0"
+        },
+        {
+          "name": "phase",
+          "wave": "x=..|=.=.x",
+          "data": [
+            "CMD/ADDR",
+            "TA",
+            "data"
+          ]
+        },
+        {
+          "name": "IO",
+          "wave": "z=..|z.=.z",
+          "data": [
+            "out",
+            "in"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Read-transaction phase sketch; command/address bit counts and dummy cycles are compressed. Output changes and input samples use the controller's specified clock phases. Chip select and turnaround rules depend on the programmed operation. TA denotes the turnaround interval."
+  },
+  "psram": {
+    "source": {
+      "signal": [
+        {
+          "name": "CS_n",
+          "wave": "10.......1"
+        },
+        {
+          "name": "SCK",
+          "wave": "0p..|..p.0"
+        },
+        {
+          "name": "phase",
+          "wave": "x=..|=.=.x",
+          "data": [
+            "CMD/ADDR",
+            "TA",
+            "data"
+          ]
+        },
+        {
+          "name": "IO",
+          "wave": "z=..|z.=.z",
+          "data": [
+            "out",
+            "in"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Read-transaction phase sketch; command/address bit counts and dummy cycles are compressed. Output changes and input samples use the controller's specified clock phases. Chip select and turnaround rules depend on the programmed operation. TA denotes the turnaround interval."
+  },
+  "spisd": {
+    "source": {
+      "signal": [
+        {
+          "name": "CS_n",
+          "wave": "10.......1"
+        },
+        {
+          "name": "SCK",
+          "wave": "0p..|..p.0"
+        },
+        {
+          "name": "phase",
+          "wave": "x=..|=.=.x",
+          "data": [
+            "CMD/ADDR",
+            "TA",
+            "data"
+          ]
+        },
+        {
+          "name": "IO",
+          "wave": "z=..|z.=.z",
+          "data": [
+            "out",
+            "in"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Read-transaction phase sketch; command/address bit counts and dummy cycles are compressed. Output changes and input samples use the controller's specified clock phases. Chip select and turnaround rules depend on the programmed operation. TA denotes the turnaround interval."
+  },
+  "opipsram": {
+    "source": {
+      "signal": [
+        {
+          "name": "CS_n",
+          "wave": "10.......1"
+        },
+        {
+          "name": "CK",
+          "wave": "0p..|..p.0"
+        },
+        {
+          "name": "phase",
+          "wave": "x=..|=.=.x",
+          "data": [
+            "CMD/ADDR",
+            "latency",
+            "DDR data"
+          ]
+        },
+        {
+          "name": "DQ",
+          "wave": "z=..|z.=.z",
+          "data": [
+            "out",
+            "in"
+          ]
+        },
+        {
+          "name": "RWDS",
+          "wave": "z...|=.=.z",
+          "data": [
+            "latency",
+            "strobe"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Octal/HyperBus-style read phases are compressed. Both CK edges carry data in the selected DDR profile. RWDS meaning and latency follow that profile; this is not an electrical timing guarantee."
+  },
+  "sdio": {
+    "source": {
+      "signal": [
+        {
+          "name": "SDCLK",
+          "wave": "p...|....p"
+        },
+        {
+          "name": "CMD",
+          "wave": "1=..|=...1",
+          "data": [
+            "command",
+            "response"
+          ]
+        },
+        {
+          "name": "DAT[3:0]",
+          "wave": "z...|=..=z",
+          "data": [
+            "payload",
+            "CRC/end"
+          ]
+        },
+        {
+          "name": "DMA request",
+          "wave": "0...|1...0"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Native SD command and data phases are compressed. Data width is selected as one or four SDR lanes. Each active data lane has its own CRC16; card response, busy and timeout behavior are handled separately."
+  },
+  "sdram": {
+    "source": {
+      "signal": [
+        {
+          "name": "SDCLK",
+          "wave": "p......."
+        },
+        {
+          "name": "command",
+          "wave": "========",
+          "data": [
+            "ACT",
+            "NOP",
+            "READ",
+            "NOP",
+            "NOP",
+            "NOP",
+            "NOP",
+            "NOP"
+          ]
+        },
+        {
+          "name": "row / column",
+          "wave": "==xxxxxx",
+          "data": [
+            "row",
+            "column"
+          ]
+        },
+        {
+          "name": "DQ",
+          "wave": "z....==z",
+          "data": [
+            "D0",
+            "D1"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Illustrative ACTIVATE-to-READ sequence with compressed command spacing. Actual tRCD, CAS latency, burst and refresh timings are programmed in SDRAM-clock cycles and must match the fitted part."
+  },
+  "usb2": {
+    "source": {
+      "signal": [
+        {
+          "name": "ULPI_CLK",
+          "wave": "p........."
+        },
+        {
+          "name": "DIR",
+          "wave": "0.1....0.."
+        },
+        {
+          "name": "NXT",
+          "wave": "0...1.0..."
+        },
+        {
+          "name": "DATA",
+          "wave": "x..==.=x..",
+          "data": [
+            "CMD",
+            "byte",
+            "CMD"
+          ]
+        },
+        {
+          "name": "STP",
+          "wave": "0........."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Illustrative receive sequence, sampled on ULPI_CLK rising edges. A DIR transition has a turnaround interval with no accepted byte. With DIR high, NXT=0 identifies RxCmd and NXT=1 qualifies RX data. STP remains low in this receive example; cycle counts are illustrative."
+  },
+  "gpio": {
+    "source": {
+      "signal": [
+        {
+          "name": "event slot",
+          "wave": "p......."
+        },
+        {
+          "name": "old owner OE",
+          "wave": "1..0...."
+        },
+        {
+          "name": "owner request",
+          "wave": "0.1....."
+        },
+        {
+          "name": "guard active",
+          "wave": "0..10..."
+        },
+        {
+          "name": "new owner OE",
+          "wave": "0...1..."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Ownership handoff forces output enable low for the guard interval before the new owner may drive. The example shows ordering, not pad propagation delay."
+  },
+  "timer": {
+    "source": {
+      "signal": [
+        {
+          "name": "timer tick",
+          "wave": "p......."
+        },
+        {
+          "name": "counter",
+          "wave": "========",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0",
+            "1",
+            "2",
+            "3"
+          ]
+        },
+        {
+          "name": "compare event",
+          "wave": "0..10..1"
+        },
+        {
+          "name": "IRQ state",
+          "wave": "0..1...."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Example periodic count with a compare event. The event becomes sticky until cleared; prescaling, direction, reload and one-shot behavior alter the count sequence."
+  },
+  "rtc": {
+    "source": {
+      "signal": [
+        {
+          "name": "APB command",
+          "wave": "0.10...."
+        },
+        {
+          "name": "command busy",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "RTC response",
+          "wave": "0...10.."
+        },
+        {
+          "name": "snapshot valid",
+          "wave": "0....1.."
+        },
+        {
+          "name": "APB read",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "An asynchronous command remains busy until the RTC-domain response returns. Read the committed snapshot only after completion; use a timeout if the RTC source clock stops."
+  },
+  "wdg": {
+    "source": {
+      "signal": [
+        {
+          "name": "count phase",
+          "wave": "x=.=.=.=x",
+          "data": [
+            "closed",
+            "open",
+            "service",
+            "reload"
+          ]
+        },
+        {
+          "name": "window open",
+          "wave": "0..1..0.."
+        },
+        {
+          "name": "valid service",
+          "wave": "0....10.."
+        },
+        {
+          "name": "early warning",
+          "wave": "0........"
+        },
+        {
+          "name": "reset request",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Normal windowed servicing example. Service outside the accepted window, a malformed key sequence or timeout requests reset. No relationship to wall-clock time is implied by the event slots."
+  },
+  "dma": {
+    "source": {
+      "signal": [
+        {
+          "name": "descriptor ready",
+          "wave": "01......"
+        },
+        {
+          "name": "START",
+          "wave": "0.10...."
+        },
+        {
+          "name": "busy",
+          "wave": "0.1...0."
+        },
+        {
+          "name": "AXI/stream work",
+          "wave": "x..=..x.",
+          "data": [
+            "payload"
+          ]
+        },
+        {
+          "name": "completion IRQ",
+          "wave": "0.....1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Programming/descriptor publication precedes START. Completion follows the terminal accepted transfer and any required descriptor writeback. Target stalls can lengthen the active interval."
+  },
+  "crc": {
+    "source": {
+      "signal": [
+        {
+          "name": "START",
+          "wave": "010....."
+        },
+        {
+          "name": "DATA accepted",
+          "wave": "0.1110.."
+        },
+        {
+          "name": "FINISH",
+          "wave": "0....10."
+        },
+        {
+          "name": "RESULT_VALID",
+          "wave": "0.....1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "START loads the configured initial state. Accepted data bytes update the running CRC; FINISH latches RESULT. APB byte strobes select the bytes and ordering."
+  },
+  "rng": {
+    "source": {
+      "signal": [
+        {
+          "name": "controller enable",
+          "wave": "01......"
+        },
+        {
+          "name": "source qualified",
+          "wave": "0......."
+        },
+        {
+          "name": "entropy request",
+          "wave": "0..10..."
+        },
+        {
+          "name": "usable entropy",
+          "wave": "0......."
+        },
+        {
+          "name": "result",
+          "wave": "x...=...",
+          "data": [
+            "unqualified"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Current Mini integration keeps source qualification low. Diagnostic input cannot be advertised or returned as qualified production entropy; retain fail-closed error handling."
+  },
+  "clint": {
+    "source": {
+      "signal": [
+        {
+          "name": "mtime",
+          "wave": "======",
+          "data": [
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "name": "mtimecmp",
+          "wave": "=...=.",
+          "data": [
+            "4",
+            "9"
+          ]
+        },
+        {
+          "name": "timer IRQ",
+          "wave": "0.1.0."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Timer IRQ is asserted when mtime reaches the enabled comparator value. Move the comparator ahead to clear it. RV32 software uses safe high/low update and snapshot sequences."
+  },
+  "aclint": {
+    "source": {
+      "signal": [
+        {
+          "name": "mtime",
+          "wave": "======",
+          "data": [
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "name": "mtimecmp",
+          "wave": "=...=.",
+          "data": [
+            "4",
+            "9"
+          ]
+        },
+        {
+          "name": "timer IRQ",
+          "wave": "0.1.0."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Timer IRQ is asserted when mtime reaches the enabled comparator value. Move the comparator ahead to clear it. RV32 software uses safe high/low update and snapshot sequences."
+  },
+  "plic": {
+    "source": {
+      "signal": [
+        {
+          "name": "source IRQ",
+          "wave": "01......"
+        },
+        {
+          "name": "pending",
+          "wave": "01.0..1."
+        },
+        {
+          "name": "claim read",
+          "wave": "0.10...."
+        },
+        {
+          "name": "complete write",
+          "wave": "0....10."
+        },
+        {
+          "name": "context IRQ",
+          "wave": "01.0..1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Claim selects an enabled source above threshold and marks it claimed. Completion releases it; a still-asserted level source can become pending again."
+  },
+  "mailbox": {
+    "source": {
+      "signal": [
+        {
+          "name": "payload writes",
+          "wave": "01.0...."
+        },
+        {
+          "name": "memory fence",
+          "wave": "0..10..."
+        },
+        {
+          "name": "doorbell",
+          "wave": "0...10.."
+        },
+        {
+          "name": "peer IRQ",
+          "wave": "0....1.."
+        },
+        {
+          "name": "peer acknowledge",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Publish payload fields and execute the required fence before ringing the doorbell. The receiver consumes a coherent message and acknowledges its interrupt state."
+  },
+  "resource": {
+    "source": {
+      "signal": [
+        {
+          "name": "quiesce request",
+          "wave": "01......"
+        },
+        {
+          "name": "resource busy",
+          "wave": "1..0...."
+        },
+        {
+          "name": "idle / drain ack",
+          "wave": "0..1...."
+        },
+        {
+          "name": "cache handoff",
+          "wave": "0...10.."
+        },
+        {
+          "name": "owner",
+          "wave": "=....=..",
+          "data": [
+            "LP",
+            "HP"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Owner changes occur only after the required quiesce, drain and cache-maintenance handoff. Ownership does not create cache coherency or bypass address permissions."
+  },
+  "monitor": {
+    "source": {
+      "signal": [
+        {
+          "name": "live events",
+          "wave": "011.110."
+        },
+        {
+          "name": "SNAPSHOT",
+          "wave": "0...10.."
+        },
+        {
+          "name": "snapshot valid",
+          "wave": "0....1.."
+        },
+        {
+          "name": "counter reads",
+          "wave": "0.....11"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Read counters from the explicit snapshot bank after snapshot completion. Live counters can continue changing while the captured bank stays stable."
+  },
+  "sysctrl": {
+    "source": {
+      "signal": [
+        {
+          "name": "clock request",
+          "wave": "010....."
+        },
+        {
+          "name": "block new traffic",
+          "wave": "01....0."
+        },
+        {
+          "name": "drain complete",
+          "wave": "0.1....."
+        },
+        {
+          "name": "safe source",
+          "wave": "0..1...."
+        },
+        {
+          "name": "PLL qualified",
+          "wave": "0....1.."
+        },
+        {
+          "name": "response",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Clock-transition phase sketch. New work is blocked before switching; timeout or lock failure returns to the safe source. Phase durations are not fixed by this drawing."
+  },
+  "sram": {
+    "source": {
+      "signal": [
+        {
+          "name": "ACLK",
+          "wave": "p......."
+        },
+        {
+          "name": "AR handshake",
+          "wave": "010....."
+        },
+        {
+          "name": "RVALID",
+          "wave": "0..1..0."
+        },
+        {
+          "name": "RREADY",
+          "wave": "0...1..."
+        },
+        {
+          "name": "RDATA",
+          "wave": "x..=.=x.",
+          "data": [
+            "D0",
+            "D1"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "AXI SRAM response ordering is shown schematically. Read data is held through backpressure; arbitration and bank conflicts can change latency."
+  },
+  "jpeg": {
+    "source": {
+      "signal": [
+        {
+          "name": "configuration",
+          "wave": "x=..x...",
+          "data": [
+            "job / operands"
+          ]
+        },
+        {
+          "name": "START",
+          "wave": "0..10..."
+        },
+        {
+          "name": "engine busy",
+          "wave": "0..1..0."
+        },
+        {
+          "name": "payload work",
+          "wave": "x...=.x.",
+          "data": [
+            "work"
+          ]
+        },
+        {
+          "name": "result valid",
+          "wave": "0.....1."
+        },
+        {
+          "name": "IRQ",
+          "wave": "0.....1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Job lifecycle ordering only. Submit valid buffers/operands after ownership and cache handoff. Completion follows actual engine and transport work; errors are reported through the status/IRQ contract."
+  },
+  "apu": {
+    "source": {
+      "signal": [
+        {
+          "name": "configuration",
+          "wave": "x=..x...",
+          "data": [
+            "job / operands"
+          ]
+        },
+        {
+          "name": "START",
+          "wave": "0..10..."
+        },
+        {
+          "name": "engine busy",
+          "wave": "0..1..0."
+        },
+        {
+          "name": "payload work",
+          "wave": "x...=.x.",
+          "data": [
+            "work"
+          ]
+        },
+        {
+          "name": "result valid",
+          "wave": "0.....1."
+        },
+        {
+          "name": "IRQ",
+          "wave": "0.....1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Job lifecycle ordering only. Submit valid buffers/operands after ownership and cache handoff. Completion follows actual engine and transport work; errors are reported through the status/IRQ contract."
+  },
+  "crypto": {
+    "source": {
+      "signal": [
+        {
+          "name": "configuration",
+          "wave": "x=..x...",
+          "data": [
+            "job / operands"
+          ]
+        },
+        {
+          "name": "START",
+          "wave": "0..10..."
+        },
+        {
+          "name": "engine busy",
+          "wave": "0..1..0."
+        },
+        {
+          "name": "payload work",
+          "wave": "x...=.x.",
+          "data": [
+            "work"
+          ]
+        },
+        {
+          "name": "result valid",
+          "wave": "0.....1."
+        },
+        {
+          "name": "IRQ",
+          "wave": "0.....1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Job lifecycle ordering only. Submit valid buffers/operands after ownership and cache handoff. Completion follows actual engine and transport work; errors are reported through the status/IRQ contract."
+  },
+  "dvp": {
+    "source": {
+      "signal": [
+        {
+          "name": "pixel clock",
+          "wave": "p...|..."
+        },
+        {
+          "name": "VSYNC (active)",
+          "wave": "010.|..."
+        },
+        {
+          "name": "HREF",
+          "wave": "0.1.|.0."
+        },
+        {
+          "name": "pixel data",
+          "wave": "x.=.|.xx",
+          "data": [
+            "line pixels"
+          ]
+        },
+        {
+          "name": "stream TLAST",
+          "wave": "0...|10."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Frame/line sketch with compressed pixels. Configured polarity and sample edge determine VSYNC/HREF interpretation. Packed stream words carry SOF/EOL sidebands; overflow is an explicit error."
+  },
+  "archinfo": {
+    "source": {
+      "signal": [
+        {
+          "name": "PCLK",
+          "wave": "p....."
+        },
+        {
+          "name": "APB read",
+          "wave": "010..."
+        },
+        {
+          "name": "address",
+          "wave": "x=x...",
+          "data": [
+            "ID / capability"
+          ]
+        },
+        {
+          "name": "PREADY",
+          "wave": "0.10.."
+        },
+        {
+          "name": "read result",
+          "wave": "x.=x..",
+          "data": [
+            "immutable value"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Read-only discovery transaction. Writes, unaligned or unmapped offsets and denied device-ID reads return the documented APB error; build-dependent values come from integration parameters."
+  },
+  "extensions": {
+    "source": {
+      "signal": [
+        {
+          "name": "quiesce",
+          "wave": "01......"
+        },
+        {
+          "name": "accepted work",
+          "wave": "1..0...."
+        },
+        {
+          "name": "idle",
+          "wave": "0..1...."
+        },
+        {
+          "name": "reset request",
+          "wave": "0...10.."
+        },
+        {
+          "name": "ready",
+          "wave": "0....1.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Extension lifecycle ordering. EXT-H additionally checks its data-master address limits and timeout; EXT-L has no data master."
+  },
+  "mpw-timer": {
+    "source": {
+      "signal": [
+        {
+          "name": "user clock",
+          "wave": "p......."
+        },
+        {
+          "name": "COUNT",
+          "wave": "========",
+          "data": [
+            "N-1",
+            "N",
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ]
+        },
+        {
+          "name": "user GPIO",
+          "wave": "0.1....."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Example: DIV=0, COUNT preloaded to N-1, with N=0xFFFF. COUNT advances each user clock; terminal N clears to zero and toggles the replicated output on the next clock. For other DIV values, ordinary increments are separated by DIV+1 clocks; terminal clearing remains unconditional."
+  },
+  "mpw-gpio": {
+    "source": {
+      "signal": [
+        {
+          "name": "APB write",
+          "wave": "010.10.."
+        },
+        {
+          "name": "DATA_OUT",
+          "wave": "x=......",
+          "data": [
+            "data"
+          ]
+        },
+        {
+          "name": "OUTPUT_ENABLE",
+          "wave": "0....1.."
+        },
+        {
+          "name": "pad drive",
+          "wave": "z....=..",
+          "data": [
+            "data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Program output data before enabling the intended pads. User-IP selection and SoC GPIO ownership must already permit this design to drive."
+  },
+  "pwm": {
+    "source": {
+      "signal": [
+        {
+          "name": "timer tick",
+          "wave": "p......."
+        },
+        {
+          "name": "counter",
+          "wave": "========",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0",
+            "1",
+            "2",
+            "3"
+          ]
+        },
+        {
+          "name": "PWM output",
+          "wave": "1.0.1.0."
+        },
+        {
+          "name": "shadow update",
+          "wave": "0.10...."
+        },
+        {
+          "name": "active update",
+          "wave": "0...10.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Illustrative edge-aligned PWM. A configured update boundary transfers shadow values to active state; duty, phase, action, dead-time and fault policy determine the real output waveform."
+  },
+  "uart-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "RX phase",
+          "wave": "x=..=.=x",
+          "data": [
+            "payload",
+            "stop",
+            "idle"
+          ]
+        },
+        {
+          "name": "RX",
+          "wave": "x...0.1."
+        },
+        {
+          "name": "frame error",
+          "wave": "0....1.."
+        },
+        {
+          "name": "RX FIFO push",
+          "wave": "0....10."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Malformed receive frame: the stop sample is low. The received character carries its framing-error metadata into RXDATA; software inspects and clears the sticky error source. Time is compressed to frame phases, not oversampling clocks."
+  },
+  "i2c-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "controller SCL",
+          "wave": "0101...."
+        },
+        {
+          "name": "target holds low",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "observed SCL",
+          "wave": "010..1.."
+        },
+        {
+          "name": "stretch timeout",
+          "wave": "0...10.."
+        },
+        {
+          "name": "ABORT / recover",
+          "wave": "0....10."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "The resolved open-drain SCL remains low while the target stretches it. This example exceeds the programmed timeout; software aborts and uses bounded bus recovery. Slots show ordering only, not a fixed maximum stretch duration."
+  },
+  "ws2812-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "FIFO has data",
+          "wave": "1.0....."
+        },
+        {
+          "name": "serial word",
+          "wave": "x=..x...",
+          "data": [
+            "last word"
+          ]
+        },
+        {
+          "name": "underflow",
+          "wave": "0...1..."
+        },
+        {
+          "name": "output",
+          "wave": "x...0..."
+        },
+        {
+          "name": "reset-low hold",
+          "wave": "0...1..."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "If the next word is unavailable during an active frame, the transmitter records underflow and enforces reset-low timing. Firmware must clear/recover and resend the frame. RESET_CYCLES defines the programmed low interval."
+  },
+  "ps2-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "clock progresses",
+          "wave": "1.0....."
+        },
+        {
+          "name": "frame active",
+          "wave": "01...0.."
+        },
+        {
+          "name": "FRAME_TIMEOUT",
+          "wave": "0....10."
+        },
+        {
+          "name": "ABORT / reset",
+          "wave": "0.....10"
+        },
+        {
+          "name": "lines released",
+          "wave": "1.0...1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "A stalled partial frame reaches the programmed timeout. ABORT or SOFT_RESET returns the host to a released open-drain state. No physical timeout duration is implied by these schematic slots."
+  },
+  "i2s-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "word boundary",
+          "wave": "p......."
+        },
+        {
+          "name": "TX FIFO valid",
+          "wave": "1.0...1."
+        },
+        {
+          "name": "TX sample",
+          "wave": "==0...==",
+          "data": [
+            "L",
+            "R",
+            "L",
+            "R"
+          ]
+        },
+        {
+          "name": "underrun state",
+          "wave": "0.1....."
+        },
+        {
+          "name": "W1C / refill",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "An empty TX FIFO at a required word boundary substitutes zero and records underrun. Clear the event only after restoring the producer; an active underrun may reassert. Slots are audio words, not BCLK cycles."
+  },
+  "dvp-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "pixel arrivals",
+          "wave": "p......."
+        },
+        {
+          "name": "FIFO has space",
+          "wave": "1.0...1."
+        },
+        {
+          "name": "frame dropped",
+          "wave": "0..1...."
+        },
+        {
+          "name": "overflow IRQ",
+          "wave": "0..1...."
+        },
+        {
+          "name": "next frame",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "The external camera cannot be backpressured. FIFO exhaustion marks the active frame as dropped; software discards partial DMA data and recovers at a frame boundary. Pixel and frame intervals are compressed."
+  },
+  "xpi-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "transaction active",
+          "wave": "01....0."
+        },
+        {
+          "name": "RX FIFO full",
+          "wave": "0..1.0.."
+        },
+        {
+          "name": "serial progress",
+          "wave": "p..0.p.."
+        },
+        {
+          "name": "consumer drains",
+          "wave": "0....10."
+        },
+        {
+          "name": "completion",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Schematic FIFO backpressure: the sequencer can pause serial work while RX storage is full and resume when drained. The configured timeout bounds missing progress; serial edge details depend on the selected LUT instruction."
+  },
+  "spisd-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "write data",
+          "wave": "x=..x...",
+          "data": [
+            "block"
+          ]
+        },
+        {
+          "name": "MISO busy",
+          "wave": "1...0.1."
+        },
+        {
+          "name": "busy wait",
+          "wave": "0...1.0."
+        },
+        {
+          "name": "completed",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "After the write response token, a card may hold MISO low while programming. Completion waits for busy release; TIMEOUT_BUSY bounds the wait. These are transaction phases, not measured card timing."
+  },
+  "sdio-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "response/data",
+          "wave": "x=..x...",
+          "data": [
+            "transfer"
+          ]
+        },
+        {
+          "name": "DAT0",
+          "wave": "1...0.1."
+        },
+        {
+          "name": "busy wait",
+          "wave": "0...1.0."
+        },
+        {
+          "name": "completed",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "For R1b and write-data completion, DAT0 low extends the busy phase. A configured data/busy timeout terminates a non-progressing transfer and reports an error. Card timing remains device-specific."
+  },
+  "sdram-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "SDCLK",
+          "wave": "p......."
+        },
+        {
+          "name": "command",
+          "wave": "==...=..",
+          "data": [
+            "REF",
+            "NOP",
+            "ACT"
+          ]
+        },
+        {
+          "name": "new request",
+          "wave": "01......"
+        },
+        {
+          "name": "refresh wait",
+          "wave": "01...0.."
+        },
+        {
+          "name": "request accepted",
+          "wave": "0....10."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "A due refresh delays new bank commands until the programmed tRFC interval has elapsed. NOP slots are symbolic; real cycle counts come from the selected SDRAM timing configuration."
+  },
+  "usb2-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "ULPI_CLK",
+          "wave": "p......."
+        },
+        {
+          "name": "DIR",
+          "wave": "0......."
+        },
+        {
+          "name": "NXT",
+          "wave": "0.10.1.."
+        },
+        {
+          "name": "DATA",
+          "wave": "x=.=..=x",
+          "data": [
+            "TXCMD",
+            "D0",
+            "D1"
+          ]
+        },
+        {
+          "name": "STP",
+          "wave": "0......1"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Transmit-side wait example. While the PHY holds NXT low, the link retains the current DATA byte. The final accepted byte precedes STP. DIR takeover is handled separately by the link FSM; these slots do not specify electrical timing."
+  }
+}

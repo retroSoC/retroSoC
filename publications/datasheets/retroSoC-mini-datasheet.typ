@@ -2,6 +2,7 @@
 #show: template
 #include "sections/overview.typ"
 #pagebreak()
+#include "sections/reading.typ"
 #{
   set text(size: 9.5pt)
   set par(leading: 0.4em, spacing: 0.4em)

@@ -7,14 +7,15 @@
 #let mono = "FiraCode Nerd Font"
 #let data = json(sys.inputs.at("data"))
 #let doc = data.document
-#let code(value) = text(font: mono, size: 9pt, value)
-#let source(path, title: "Interface and implementation reference") = {
+#let code(value) = text(font: mono, size: 9pt, value.replace("_", "_\u{200b}").replace(".", ".\u{200b}"))
+#let source(path, title: "Interface and implementation reference", line:none) = {
   let managed = data.managed_sources.find(s=>path.starts-with(s.destination + "/"))
   let url = if managed == none {
     "https://github.com/retroSoC/retroSoC/blob/" + doc.source_revision + "/" + path
   } else {
     managed.url.trim(".git", at:end) + "/blob/" + managed.revision + "/" + path.slice(managed.destination.len()+1)
   }
+  if line!=none { url += "#L"+str(line) }
   link(url, text(size: 9pt, fill: muted, title))
 }
 #let note(body, title: "Integration note") = block(
@@ -90,9 +91,16 @@
   set page(paper: "a4", margin: (x: 19mm, top: 21mm, bottom: 20mm),
     header: context {
       let hs = query(heading.where(level: 1)).filter(h => h.location().page() <= here().page())
+      let starts=query(metadata).filter(m=>type(m.value)==dictionary and m.value.at("kind",default:"")=="ip-start" and m.value.page<=here().page())
+      let active=none
+      if starts.len()>0 {
+        let latest=starts.last().value
+        let ends=query(metadata).filter(m=>type(m.value)==dictionary and m.value.at("kind",default:"")=="ip-end" and m.value.id==latest.id)
+        if ends.len()>0 and here().page()<=ends.first().value.page { active=upper(latest.id) }
+      }
       set text(size: 9pt, fill: muted)
       grid(columns: (1fr, 1fr), [retroSoC Mini], align(right)[
-        #if hs.len() > 0 { hs.last().body } else { [Product datasheet] }
+        #if active!=none { active } else if hs.len() > 0 { hs.last().body } else { [Product datasheet] }
       ])
       v(4pt)
       line(length: 100%, stroke: 0.6pt + gold)

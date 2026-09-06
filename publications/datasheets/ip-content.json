@@ -1,0 +1,2199 @@
+{
+  "xpi": {
+    "title": "XPI Universal Controller",
+    "blocks": [
+      "Register bank",
+      "AXI read frontend",
+      "Slot/LUT store",
+      "Transaction engine",
+      "TX/RX FIFOs",
+      "SDR serial PHY"
+    ],
+    "function_sections": [
+      "Selected Architecture",
+      "Reset and Boot Contract",
+      "Memory Map and AXI4 Contract",
+      "LUT and PHY Contract",
+      "Indirect, DMA, Polling, and Interrupts"
+    ],
+    "software_sections": [
+      "HAL and JTAG Flash Programming"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/xpi.c",
+    "api": [
+      {
+        "name": "rs_xpi_probe",
+        "signature": "rs_status_t rs_xpi_probe(void);"
+      },
+      {
+        "name": "rs_xpi_enable",
+        "signature": "rs_status_t rs_xpi_enable(bool enable, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_xpi_slot_configure",
+        "signature": "rs_status_t rs_xpi_slot_configure(uint8_t slot, const rs_xpi_slot_config_t *config, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_xpi_lut_write",
+        "signature": "rs_status_t rs_xpi_lut_write(uint8_t sequence, const uint16_t *instructions, size_t instruction_count, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_xpi_transfer",
+        "signature": "rs_status_t rs_xpi_transfer(const rs_xpi_transfer_t *transfer, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_xpi_transfer_dma",
+        "signature": "rs_status_t rs_xpi_transfer_dma(const rs_xpi_transfer_t *transfer, rs_xpi_dma_direction_t direction, uint32_t channel, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_xpi_poll",
+        "signature": "rs_status_t rs_xpi_poll(const rs_xpi_poll_config_t *config, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_xpi_abort",
+        "signature": "rs_status_t rs_xpi_abort(rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/xpi.h",
+    "flow": [
+      "AXI read / APB FIFO",
+      "LUT sequencer + PHY",
+      "SCK / CS / DQ"
+    ]
+  },
+  "spisd": {
+    "title": "SPI SD Card Controller",
+    "blocks": [
+      "APB control",
+      "Command engine",
+      "PIO/FIFO path",
+      "Descriptor walker",
+      "AXI DMA master",
+      "SPI/CRC PHY"
+    ],
+    "function_sections": [
+      "Architecture",
+      "Clock and phase contract",
+      "Protocol behavior",
+      "Scatter-gather DMA ABI"
+    ],
+    "software_sections": [
+      "SDK and filesystem contract"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/spisd.c",
+    "api": [
+      {
+        "name": "rs_spisd_probe",
+        "signature": "rs_status_t rs_spisd_probe(uint32_t *ip_id, uint32_t *version, uint32_t *capability);"
+      },
+      {
+        "name": "rs_spisd_clock_calculate",
+        "signature": "rs_status_t rs_spisd_clock_calculate(uint32_t source_clock_hz, uint32_t target_clock_hz, rs_spisd_clock_t *clock);"
+      },
+      {
+        "name": "rs_spisd_card_address",
+        "signature": "rs_status_t rs_spisd_card_address(rs_spisd_card_type_t card_type, uint32_t sector, uint32_t *argument);"
+      },
+      {
+        "name": "rs_spisd_parse_csd",
+        "signature": "rs_status_t rs_spisd_parse_csd(const uint8_t *csd, rs_spisd_card_info_t *info);"
+      },
+      {
+        "name": "rs_spisd_descriptor_prepare",
+        "signature": "rs_status_t rs_spisd_descriptor_prepare(rs_spisd_descriptor_t *descriptor, uintptr_t buffer, size_t byte_count, uintptr_t next, bool end, bool irq);"
+      },
+      {
+        "name": "rs_spisd_descriptor_validate",
+        "signature": "rs_status_t rs_spisd_descriptor_validate(const rs_spisd_descriptor_t *descriptor);"
+      },
+      {
+        "name": "rs_spisd_descriptor_publish",
+        "signature": "rs_status_t rs_spisd_descriptor_publish(rs_spisd_descriptor_t *descriptor);"
+      },
+      {
+        "name": "rs_spisd_clock_set",
+        "signature": "rs_status_t rs_spisd_clock_set(uint32_t source_clock_hz, uint32_t target_clock_hz, uint32_t *actual_clock_hz);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/spisd.h",
+    "flow": [
+      "APB FIFO / local DMA",
+      "SPI-SD command/data",
+      "SCK / CS / MOSI / MISO"
+    ]
+  },
+  "sdio": {
+    "title": "SD/SDIO Host Controller",
+    "blocks": [
+      "APB control",
+      "Command/response",
+      "Data/CRC lanes",
+      "Descriptor DMA",
+      "AXI master",
+      "SD bus PHY"
+    ],
+    "function_sections": [
+      "Supported behavior",
+      "Clock and I/O boundary",
+      "Descriptor ABI"
+    ],
+    "software_sections": [
+      "Software sequencing and integration contract"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/sdio.c",
+    "api": [
+      {
+        "name": "rs_sdio_clock_calculate",
+        "signature": "rs_status_t rs_sdio_clock_calculate(uint32_t source_clock_hz, uint32_t target_clock_hz, rs_sdio_clock_t *clock);"
+      },
+      {
+        "name": "rs_sdio_response_field",
+        "signature": "rs_status_t rs_sdio_response_field(const rs_sdio_response_t *response, uint32_t high_bit, uint32_t low_bit, uint32_t *value);"
+      },
+      {
+        "name": "rs_sd_memory_address",
+        "signature": "rs_status_t rs_sd_memory_address(rs_sd_memory_card_type_t card_type, uint32_t block, uint32_t *argument);"
+      },
+      {
+        "name": "rs_sd_memory_parse_csd",
+        "signature": "rs_status_t rs_sd_memory_parse_csd(const rs_sdio_response_t *response, rs_sd_memory_info_t *info);"
+      },
+      {
+        "name": "rs_sdio_cmd52_argument",
+        "signature": "rs_status_t rs_sdio_cmd52_argument(const rs_sdio_cmd52_t *command, uint32_t *argument);"
+      },
+      {
+        "name": "rs_sdio_cmd53_argument",
+        "signature": "rs_status_t rs_sdio_cmd53_argument(const rs_sdio_cmd53_t *command, uint32_t *argument);"
+      },
+      {
+        "name": "rs_sdio_validate_dma_buffer",
+        "signature": "rs_status_t rs_sdio_validate_dma_buffer(const void *buffer, size_t byte_count);"
+      },
+      {
+        "name": "rs_sdio_descriptor_prepare",
+        "signature": "rs_status_t rs_sdio_descriptor_prepare(rs_sdio_descriptor_t *descriptor, uintptr_t buffer, size_t byte_count, uintptr_t next, bool end, bool irq);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/sdio.h",
+    "flow": [
+      "APB FIFO / local DMA",
+      "SD command/data engine",
+      "CLK / CMD / DAT[3:0]"
+    ]
+  },
+  "sram": {
+    "title": "On-Chip SRAM",
+    "blocks": [
+      "AXI64 frontend",
+      "Read/write queues",
+      "Bank decoder",
+      "Technology SRAMs",
+      "Byte-write control",
+      "APB counters"
+    ],
+    "function_sections": [
+      "Configuration and address contract",
+      "AXI4 datapath",
+      "Technology mapping"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/sram.c",
+    "api": [
+      {
+        "name": "rs_onchip_sram_probe",
+        "signature": "rs_status_t rs_onchip_sram_probe(rs_onchip_sram_info_t *info);"
+      },
+      {
+        "name": "rs_onchip_sram_read_performance",
+        "signature": "rs_status_t rs_onchip_sram_read_performance(rs_onchip_sram_perf_t *performance);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/onchip_sram.h",
+    "flow": [
+      "AXI read/write",
+      "Banked SRAM",
+      "AXI data / response"
+    ]
+  },
+  "psram": {
+    "title": "QPI PSRAM Controller",
+    "blocks": [
+      "APB management",
+      "AXI frontend",
+      "Chip select mapper",
+      "Initialization FSM",
+      "Transaction engine",
+      "4-bit SDR PHY"
+    ],
+    "function_sections": [
+      "AXI4 Contract",
+      "Initialization and Recovery",
+      "Timing Programming"
+    ],
+    "software_sections": [
+      "HAL Sequence"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/psram.c",
+    "api": [
+      {
+        "name": "rs_psram_timing_from_hz",
+        "signature": "rs_status_t rs_psram_timing_from_hz(uint32_t source_clock_hz, uint32_t sclk_hz, rs_psram_timing_t *timing);"
+      },
+      {
+        "name": "rs_psram_configure",
+        "signature": "rs_status_t rs_psram_configure(const rs_psram_config_t *config);"
+      },
+      {
+        "name": "rs_psram_initialize",
+        "signature": "rs_status_t rs_psram_initialize(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_psram_recover",
+        "signature": "rs_status_t rs_psram_recover(uint8_t chip, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_psram_abort",
+        "signature": "rs_status_t rs_psram_abort(void);"
+      },
+      {
+        "name": "rs_psram_get_status",
+        "signature": "rs_status_t rs_psram_get_status(rs_psram_status_t *status);"
+      },
+      {
+        "name": "rs_psram_read_id",
+        "signature": "rs_status_t rs_psram_read_id(uint8_t chip, uint64_t *identifier);"
+      },
+      {
+        "name": "rs_psram_indirect",
+        "signature": "rs_status_t rs_psram_indirect(const rs_psram_indirect_t *command, uint64_t *read_data, rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/psram.h",
+    "flow": [
+      "AXI read/write",
+      "Command + QPI PHY",
+      "SCK / CS / DQ[3:0]"
+    ]
+  },
+  "opipsram": {
+    "title": "OPI PSRAM Controller",
+    "blocks": [
+      "APB control",
+      "AXI frontend",
+      "Protocol selection",
+      "Command scheduler",
+      "Read/write FIFOs",
+      "DDR/RWDS PHY"
+    ],
+    "function_sections": [
+      "Status and Scope",
+      "Clock, Reset, and CDC Contract",
+      "AXI4 Contract",
+      "Protocol Profiles",
+      "Digital PHY and Technology Delay"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/opipsram.c",
+    "api": [
+      {
+        "name": "rs_opipsram_timing_from_hz",
+        "signature": "rs_status_t rs_opipsram_timing_from_hz(uint32_t source_clock_hz, uint32_t ck_hz, rs_opipsram_timing_t *timing);"
+      },
+      {
+        "name": "rs_opipsram_timing_validate",
+        "signature": "rs_status_t rs_opipsram_timing_validate(const rs_opipsram_timing_t *timing);"
+      },
+      {
+        "name": "rs_opipsram_config_validate",
+        "signature": "rs_status_t rs_opipsram_config_validate(const rs_opipsram_config_t *config);"
+      },
+      {
+        "name": "rs_opipsram_indirect_validate",
+        "signature": "rs_status_t rs_opipsram_indirect_validate(const rs_opipsram_indirect_t *command, uint32_t device_size);"
+      },
+      {
+        "name": "rs_opipsram_configure",
+        "signature": "rs_status_t rs_opipsram_configure(const rs_opipsram_config_t *config);"
+      },
+      {
+        "name": "rs_opipsram_initialize",
+        "signature": "rs_status_t rs_opipsram_initialize(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_opipsram_abort",
+        "signature": "rs_status_t rs_opipsram_abort(void);"
+      },
+      {
+        "name": "rs_opipsram_soft_reset",
+        "signature": "rs_status_t rs_opipsram_soft_reset(rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/opipsram.h",
+    "flow": [
+      "AXI read/write",
+      "Profile sequencer + PHY",
+      "CK / CS / DQ / RWDS"
+    ]
+  },
+  "sdram": {
+    "title": "SDRAM Controller",
+    "blocks": [
+      "APB configuration",
+      "AXI frontend",
+      "Bank/row tracking",
+      "Refresh scheduler",
+      "Burst data path",
+      "SDRAM x16 PHY"
+    ],
+    "function_sections": [
+      "AXI4 Contract",
+      "Timing and Initialization"
+    ],
+    "software_sections": [
+      "HAL Sequence"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/sdram.c",
+    "api": [
+      {
+        "name": "rs_sdram_timing_from_hz",
+        "signature": "rs_status_t rs_sdram_timing_from_hz(uint32_t source_clock_hz, uint8_t clkdiv, rs_sdram_timing_t *timing);"
+      },
+      {
+        "name": "rs_sdram_configure",
+        "signature": "rs_status_t rs_sdram_configure(const rs_sdram_config_t *config);"
+      },
+      {
+        "name": "rs_sdram_initialize",
+        "signature": "rs_status_t rs_sdram_initialize(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_sdram_reinitialize",
+        "signature": "rs_status_t rs_sdram_reinitialize(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_sdram_precharge_all",
+        "signature": "rs_status_t rs_sdram_precharge_all(void);"
+      },
+      {
+        "name": "rs_sdram_refresh",
+        "signature": "rs_status_t rs_sdram_refresh(void);"
+      },
+      {
+        "name": "rs_sdram_get_status",
+        "signature": "rs_status_t rs_sdram_get_status(rs_sdram_status_t *status);"
+      },
+      {
+        "name": "rs_sdram_interrupt_enable",
+        "signature": "rs_status_t rs_sdram_interrupt_enable(uint32_t mask);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/sdram.h",
+    "flow": [
+      "AXI read/write",
+      "Burst and bank engine",
+      "SDRAM command / DQ"
+    ]
+  },
+  "gpio": {
+    "title": "GPIO Controller",
+    "blocks": [
+      "User APB window",
+      "Admin APB window",
+      "Input sync/filter",
+      "Event detector",
+      "Ownership/ALT mux",
+      "Pad output control"
+    ],
+    "function_sections": [
+      "Pin and interrupt behavior",
+      "Pad capabilities"
+    ],
+    "software_sections": [
+      "Software and verification"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/gpio.c",
+    "api": [
+      {
+        "name": "rs_gpio_filter_timing_from_us",
+        "signature": "rs_status_t rs_gpio_filter_timing_from_us(uint32_t source_clock_hz, uint32_t sample_period_us, uint8_t stable_samples, rs_gpio_filter_timing_t *timing);"
+      },
+      {
+        "name": "rs_gpio_get_capabilities",
+        "signature": "rs_status_t rs_gpio_get_capabilities(rs_gpio_capabilities_t *capabilities);"
+      },
+      {
+        "name": "rs_gpio_configure",
+        "signature": "rs_status_t rs_gpio_configure(uint32_t pin, const rs_gpio_config_t *config);"
+      },
+      {
+        "name": "rs_gpio_read",
+        "signature": "rs_status_t rs_gpio_read(uint32_t pin, bool *high);"
+      },
+      {
+        "name": "rs_gpio_write",
+        "signature": "rs_status_t rs_gpio_write(uint32_t pin, bool high);"
+      },
+      {
+        "name": "rs_gpio_toggle",
+        "signature": "rs_status_t rs_gpio_toggle(uint32_t pin);"
+      },
+      {
+        "name": "rs_gpio_port_read",
+        "signature": "rs_status_t rs_gpio_port_read(uint32_t *value);"
+      },
+      {
+        "name": "rs_gpio_port_set",
+        "signature": "rs_status_t rs_gpio_port_set(uint32_t mask);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/gpio.h",
+    "flow": [
+      "Pad input",
+      "Filter + event detection",
+      "DATA_IN / interrupt"
+    ]
+  },
+  "dma": {
+    "title": "DMA Controller",
+    "blocks": [
+      "APB channel state",
+      "TCD fetch engine",
+      "Channel arbiter",
+      "Read/write buffers",
+      "AXI master",
+      "Stream endpoints"
+    ],
+    "function_sections": [
+      "Scope and limits",
+      "Channel ownership",
+      "AXI4 and stream behavior",
+      "Suspend, abort, and completion",
+      "TCD and coherency contract"
+    ],
+    "software_sections": [
+      "Programming model"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/dma.c",
+    "api": [
+      {
+        "name": "rs_dma_config_validate",
+        "signature": "rs_status_t rs_dma_config_validate(uint32_t channel, const rs_dma_config_t *config);"
+      },
+      {
+        "name": "rs_dma_configure",
+        "signature": "rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config);"
+      },
+      {
+        "name": "rs_dma_tcd_validate",
+        "signature": "rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd);"
+      },
+      {
+        "name": "rs_dma_submit_tcd",
+        "signature": "rs_status_t rs_dma_submit_tcd(uint32_t channel, rs_dma_tcd_t *tcd, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_dma_submit_tcd_chain",
+        "signature": "rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint32_t max_tcds, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_dma_start",
+        "signature": "rs_status_t rs_dma_start(uint32_t channel);"
+      },
+      {
+        "name": "rs_dma_suspend",
+        "signature": "rs_status_t rs_dma_suspend(uint32_t channel);"
+      },
+      {
+        "name": "rs_dma_resume",
+        "signature": "rs_status_t rs_dma_resume(uint32_t channel);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/dma.h",
+    "flow": [
+      "Memory / stream source",
+      "Channel buffers",
+      "Memory / stream target"
+    ]
+  },
+  "timer": {
+    "title": "General-Purpose Timers",
+    "blocks": [
+      "APB registers",
+      "16-bit prescaler",
+      "32-bit counter",
+      "Reload/mode logic",
+      "Two comparators",
+      "Event/IRQ logic"
+    ],
+    "function_sections": [
+      "Counting Semantics"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/timer.c",
+    "api": [
+      {
+        "name": "rs_timer_period_from_ms",
+        "signature": "rs_status_t rs_timer_period_from_ms(uint32_t source_clock_hz, uint32_t milliseconds, rs_timer_period_t *period);"
+      },
+      {
+        "name": "rs_timer_configure",
+        "signature": "rs_status_t rs_timer_configure(rs_timer_id_t timer, const rs_timer_config_t *config);"
+      },
+      {
+        "name": "rs_timer_start",
+        "signature": "rs_status_t rs_timer_start(rs_timer_id_t timer);"
+      },
+      {
+        "name": "rs_timer_stop",
+        "signature": "rs_status_t rs_timer_stop(rs_timer_id_t timer);"
+      },
+      {
+        "name": "rs_timer_set_load",
+        "signature": "rs_status_t rs_timer_set_load(rs_timer_id_t timer, uint32_t load);"
+      },
+      {
+        "name": "rs_timer_set_background_load",
+        "signature": "rs_status_t rs_timer_set_background_load(rs_timer_id_t timer, uint32_t load);"
+      },
+      {
+        "name": "rs_timer_set_compare",
+        "signature": "rs_status_t rs_timer_set_compare(rs_timer_id_t timer, uint32_t channel, uint32_t compare);"
+      },
+      {
+        "name": "rs_timer_get_value",
+        "signature": "rs_status_t rs_timer_get_value(rs_timer_id_t timer, uint32_t *value);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/timer.h",
+    "flow": [
+      "Clock + prescaler",
+      "Counter + comparators",
+      "Events / IRQ"
+    ]
+  },
+  "rtc": {
+    "title": "Real-Time Clock",
+    "blocks": [
+      "APB staging",
+      "Command CDC",
+      "Clock tick/calibration",
+      "64-bit time counter",
+      "Alarms/periodic timer",
+      "Event/IRQ/wake"
+    ],
+    "function_sections": [
+      "Purpose",
+      "Features",
+      "Command Model"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/rtc.c",
+    "api": [
+      {
+        "name": "rs_rtc_probe",
+        "signature": "rs_status_t rs_rtc_probe(void);"
+      },
+      {
+        "name": "rs_rtc_configure",
+        "signature": "rs_status_t rs_rtc_configure(const rs_rtc_config_t *config, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_rtc_set_time",
+        "signature": "rs_status_t rs_rtc_set_time(const rs_rtc_time_t *time, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_rtc_get_time",
+        "signature": "rs_status_t rs_rtc_get_time(rs_rtc_time_t *time, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_rtc_configure_alarm",
+        "signature": "rs_status_t rs_rtc_configure_alarm(uint32_t channel, const rs_rtc_alarm_t *alarm, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_rtc_configure_periodic",
+        "signature": "rs_status_t rs_rtc_configure_periodic(const rs_rtc_periodic_t *periodic, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_rtc_get_events",
+        "signature": "uint32_t rs_rtc_get_events(void);"
+      },
+      {
+        "name": "rs_rtc_clear_events",
+        "signature": "rs_status_t rs_rtc_clear_events(uint32_t mask, rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/rtc.h",
+    "flow": [
+      "Independent clock",
+      "Timebase + alarms",
+      "Snapshot / wake / IRQ"
+    ]
+  },
+  "wdg": {
+    "title": "Watchdog",
+    "blocks": [
+      "APB configuration",
+      "Service sequencer",
+      "Command CDC",
+      "Prescaler/counter",
+      "Window/timeout logic",
+      "IRQ/reset request"
+    ],
+    "function_sections": [
+      "Architecture",
+      "Counter Model",
+      "Programming Rules",
+      "Reset Cause and Retention",
+      "Debug Policy"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Configure prescale, reload, window and warning policy while inactive; lock only after validation.",
+      "Start once, then use the required two-key service inside the allowed window with bounded completion checks.",
+      "An APB reset does not stop the independent core. Inspect the retained cause after recovery."
+    ],
+    "flow": [
+      "Service key writes",
+      "Window + timeout counter",
+      "Early warning / reset"
+    ]
+  },
+  "pwm": {
+    "title": "PWM Controller",
+    "blocks": [
+      "APB/shadow registers",
+      "Two timers",
+      "Four channels",
+      "Fade/gamma engines",
+      "Operators/dead time",
+      "Capture/fault logic"
+    ],
+    "function_sections": [
+      "Scope and Interfaces",
+      "Timer Blocks",
+      "Channel Blocks",
+      "Operator Blocks",
+      "Capture Registers"
+    ],
+    "software_sections": [
+      "Programming Sequence"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/pwm.c",
+    "api": [
+      {
+        "name": "rs_pwm_probe",
+        "signature": "rs_status_t rs_pwm_probe(void);"
+      },
+      {
+        "name": "rs_pwm_timer_configure",
+        "signature": "rs_status_t rs_pwm_timer_configure(uint8_t timer, const rs_pwm_timer_config_t *config);"
+      },
+      {
+        "name": "rs_pwm_channel_configure",
+        "signature": "rs_status_t rs_pwm_channel_configure(uint8_t channel, const rs_pwm_channel_config_t *config);"
+      },
+      {
+        "name": "rs_pwm_operator_configure",
+        "signature": "rs_status_t rs_pwm_operator_configure(uint8_t operator_id, const rs_pwm_operator_config_t *config);"
+      },
+      {
+        "name": "rs_pwm_fault_configure",
+        "signature": "rs_status_t rs_pwm_fault_configure(const rs_pwm_fault_config_t *config);"
+      },
+      {
+        "name": "rs_pwm_capture_configure",
+        "signature": "rs_status_t rs_pwm_capture_configure(const rs_pwm_capture_config_t *config);"
+      },
+      {
+        "name": "rs_pwm_enable",
+        "signature": "rs_status_t rs_pwm_enable(bool debug_freeze);"
+      },
+      {
+        "name": "rs_pwm_disable",
+        "signature": "rs_status_t rs_pwm_disable(void);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/pwm.h",
+    "flow": [
+      "Timer events",
+      "Channel / dead-time logic",
+      "PWM pad outputs"
+    ]
+  },
+  "uart": {
+    "title": "UART",
+    "blocks": [
+      "APB/baud control",
+      "64-byte TX FIFO",
+      "TX serializer",
+      "RX sampler",
+      "64-byte RX FIFO",
+      "Flow/DMA/IRQ"
+    ],
+    "function_sections": [
+      "Timing and transfer behavior"
+    ],
+    "software_sections": [
+      "DMA and software contract"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/uart.c",
+    "api": [
+      {
+        "name": "rs_uart_timing_calculate",
+        "signature": "rs_status_t rs_uart_timing_calculate(uint32_t source_clock_hz, uint32_t baud_rate, rs_uart_timing_t *timing);"
+      },
+      {
+        "name": "rs_uart_init",
+        "signature": "rs_status_t rs_uart_init(uint32_t source_clock_hz, uint32_t baud_rate);"
+      },
+      {
+        "name": "rs_uart_configure",
+        "signature": "rs_status_t rs_uart_configure(const rs_uart_config_t *config, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_uart_write",
+        "signature": "rs_status_t rs_uart_write(const uint8_t *data, size_t length, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_uart_read",
+        "signature": "rs_status_t rs_uart_read(rs_uart_rx_data_t *data, size_t length, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_uart_flush",
+        "signature": "rs_status_t rs_uart_flush(bool flush_tx, bool flush_rx, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_uart_get_status",
+        "signature": "rs_status_t rs_uart_get_status(rs_uart_status_t *status);"
+      },
+      {
+        "name": "rs_uart_irq_enable",
+        "signature": "rs_status_t rs_uart_irq_enable(uint32_t mask);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/uart.h",
+    "flow": [
+      "APB / stream TX",
+      "FIFO + serializer",
+      "TX pad"
+    ]
+  },
+  "i2c": {
+    "title": "I2C Controllers",
+    "blocks": [
+      "APB configuration",
+      "Command FIFO",
+      "Controller FSM",
+      "SCL timing/filter",
+      "SDA arbitration",
+      "RX FIFO/DMA/IRQ"
+    ],
+    "function_sections": [
+      "Architecture",
+      "Protocol and failure behavior"
+    ],
+    "software_sections": [
+      "Timing, DMA, and software"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/i2c.c",
+    "api": [
+      {
+        "name": "rs_i2c_timing_calculate",
+        "signature": "rs_status_t rs_i2c_timing_calculate(uint32_t source_clock_hz, uint32_t bus_hz, rs_i2c_timing_t *timing);"
+      },
+      {
+        "name": "rs_i2c_configure",
+        "signature": "rs_status_t rs_i2c_configure(rs_i2c_bus_t bus, const rs_i2c_config_t *config, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_i2c_init",
+        "signature": "rs_status_t rs_i2c_init(rs_i2c_bus_t bus, uint32_t source_clock_hz, uint32_t bus_hz);"
+      },
+      {
+        "name": "rs_i2c_transfer",
+        "signature": "rs_status_t rs_i2c_transfer(rs_i2c_bus_t bus, const rs_i2c_transfer_t *transfer, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_i2c_register_write",
+        "signature": "rs_status_t rs_i2c_register_write(rs_i2c_bus_t bus, const rs_i2c_register_access_t *access, const uint8_t *data, size_t length, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_i2c_register_read",
+        "signature": "rs_status_t rs_i2c_register_read(rs_i2c_bus_t bus, const rs_i2c_register_access_t *access, uint8_t *data, size_t length, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_i2c_abort",
+        "signature": "rs_status_t rs_i2c_abort(rs_i2c_bus_t bus, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_i2c_recover",
+        "signature": "rs_status_t rs_i2c_recover(rs_i2c_bus_t bus, rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/i2c.h",
+    "flow": [
+      "Command FIFO",
+      "Controller + arbitration",
+      "SCL / SDA"
+    ]
+  },
+  "ws2812": {
+    "title": "WS2812 Transmitter",
+    "blocks": [
+      "APB timing registers",
+      "16-word GRB FIFO",
+      "Frame scheduler",
+      "24-bit shifter",
+      "Pulse/reset generator",
+      "Events/DMA pacing"
+    ],
+    "function_sections": [
+      "Timing contract"
+    ],
+    "software_sections": [
+      "Transfer sequence"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/ws2812.c",
+    "api": [
+      {
+        "name": "rs_ws2812_pack_grb",
+        "signature": "uint32_t rs_ws2812_pack_grb(uint8_t red, uint8_t green, uint8_t blue);"
+      },
+      {
+        "name": "rs_ws2812_timing_from_ns",
+        "signature": "rs_status_t rs_ws2812_timing_from_ns(const rs_ws2812_config_t *config, rs_ws2812_timing_t *timing);"
+      },
+      {
+        "name": "rs_ws2812_init",
+        "signature": "rs_status_t rs_ws2812_init(const rs_ws2812_config_t *config);"
+      },
+      {
+        "name": "rs_ws2812_get_status",
+        "signature": "rs_status_t rs_ws2812_get_status(rs_ws2812_status_t *status);"
+      },
+      {
+        "name": "rs_ws2812_push",
+        "signature": "rs_status_t rs_ws2812_push(uint32_t pixel, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ws2812_start",
+        "signature": "rs_status_t rs_ws2812_start(uint32_t pixel_count);"
+      },
+      {
+        "name": "rs_ws2812_wait",
+        "signature": "rs_status_t rs_ws2812_wait(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ws2812_abort",
+        "signature": "rs_status_t rs_ws2812_abort(rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/ws2812.h",
+    "flow": [
+      "APB / stream words",
+      "GRB shifter + timing",
+      "GPIO21 output"
+    ]
+  },
+  "ps2": {
+    "title": "PS/2 Host",
+    "blocks": [
+      "APB configuration",
+      "TX/RX FIFOs",
+      "Input filters",
+      "Frame RX/TX",
+      "Host inhibit",
+      "Open-drain/IRQ"
+    ],
+    "function_sections": [
+      "Interfaces",
+      "Configuration",
+      "Frame Behavior"
+    ],
+    "software_sections": [
+      "Software Model"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/ps2.c",
+    "api": [
+      {
+        "name": "rs_ps2_configure",
+        "signature": "rs_status_t rs_ps2_configure(const rs_ps2_config_t *config, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ps2_init",
+        "signature": "rs_status_t rs_ps2_init(uint32_t source_clock_hz);"
+      },
+      {
+        "name": "rs_ps2_write",
+        "signature": "rs_status_t rs_ps2_write(const uint8_t *data, size_t length, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ps2_read",
+        "signature": "rs_status_t rs_ps2_read(rs_ps2_rx_byte_t *data, size_t length, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ps2_command",
+        "signature": "rs_status_t rs_ps2_command(uint8_t command, const uint8_t *parameters, size_t parameter_count, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ps2_identify",
+        "signature": "rs_status_t rs_ps2_identify(rs_ps2_device_info_t *info, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ps2_flush",
+        "signature": "rs_status_t rs_ps2_flush(bool flush_rx, bool flush_tx);"
+      },
+      {
+        "name": "rs_ps2_abort",
+        "signature": "rs_status_t rs_ps2_abort(void);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/ps2.h",
+    "flow": [
+      "PS/2 clock and data",
+      "Frame checker + RX FIFO",
+      "APB RXDATA / IRQ"
+    ]
+  },
+  "usb2": {
+    "title": "USB 2.0 Controller",
+    "blocks": [
+      "APB role/control",
+      "Endpoint/channel state",
+      "Descriptor DMA",
+      "Packet RAM",
+      "Host/device engines",
+      "ULPI interface"
+    ],
+    "function_sections": [
+      "Delivered scope and maturity",
+      "Architecture",
+      "AXI4 and performance contract",
+      "DMA descriptor ABI",
+      "ASIC and board boundary"
+    ],
+    "software_sections": [
+      "Software sequence"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/usb2.c",
+    "api": [
+      {
+        "name": "rs_usb2_validate_dma_buffer",
+        "signature": "rs_status_t rs_usb2_validate_dma_buffer(const void *buffer, size_t byte_count);"
+      },
+      {
+        "name": "rs_usb2_descriptor_prepare",
+        "signature": "rs_status_t rs_usb2_descriptor_prepare(rs_usb2_descriptor_t *descriptor, uintptr_t buffer, size_t byte_count, uintptr_t next, bool end, bool irq, bool short_ok, bool zero_packet, uint32_t frame);"
+      },
+      {
+        "name": "rs_usb2_descriptor_validate",
+        "signature": "rs_status_t rs_usb2_descriptor_validate(const rs_usb2_descriptor_t *descriptor);"
+      },
+      {
+        "name": "rs_usb2_descriptor_chain_validate",
+        "signature": "rs_status_t rs_usb2_descriptor_chain_validate(const rs_usb2_descriptor_t *descriptors, uint16_t count, uint32_t total_bytes);"
+      },
+      {
+        "name": "rs_usb2_descriptor_publish",
+        "signature": "rs_status_t rs_usb2_descriptor_publish(rs_usb2_descriptor_t *descriptor);"
+      },
+      {
+        "name": "rs_usb2_descriptor_publish_chain",
+        "signature": "rs_status_t rs_usb2_descriptor_publish_chain(rs_usb2_descriptor_t *descriptors, uint16_t count);"
+      },
+      {
+        "name": "rs_usb2_probe",
+        "signature": "rs_status_t rs_usb2_probe(uint32_t *ip_id, uint32_t *version, uint32_t *capability0, uint32_t *capability1);"
+      },
+      {
+        "name": "rs_usb2_reset",
+        "signature": "rs_status_t rs_usb2_reset(rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/usb2.h",
+    "flow": [
+      "Descriptors / memory",
+      "DMA + packet RAM",
+      "ULPI transaction link"
+    ]
+  },
+  "archinfo": {
+    "title": "Architecture Information",
+    "blocks": [
+      "APB read decoder",
+      "Build/config identity",
+      "Topology/capabilities",
+      "Device ID gate"
+    ],
+    "function_sections": [
+      "Purpose",
+      "Interface"
+    ],
+    "software_sections": [
+      "Software Rules"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Read a snapshot through core/archinfo.h and validate build identity before using configuration-dependent drivers.",
+      "Use discovered memory/topology/technology capabilities.",
+      "Read device identity only when its lifecycle gate permits it; the current top-level wiring does not provision a valid unique device ID."
+    ],
+    "example_file": "publications/examples/archinfo.c",
+    "api": [
+      {
+        "name": "rs_archinfo_read",
+        "signature": "rs_status_t rs_archinfo_read(rs_archinfo_t *info);"
+      },
+      {
+        "name": "rs_archinfo_validate_build",
+        "signature": "rs_status_t rs_archinfo_validate_build(const rs_archinfo_t *info);"
+      }
+    ],
+    "flow": [
+      "Configuration / identity",
+      "Read-only decoder",
+      "APB read response"
+    ]
+  },
+  "sysctrl": {
+    "title": "System Controller",
+    "blocks": [
+      "APB frontend",
+      "Root configuration",
+      "Fault capture",
+      "Clock/HP control",
+      "Performance snapshots",
+      "Test/wake status"
+    ],
+    "function_sections": [
+      "Integration",
+      "APB4 contract"
+    ],
+    "software_sections": [
+      "SDK contract"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/sysctrl.c",
+    "api": [
+      {
+        "name": "rs_sysctrl_get_core_select",
+        "signature": "rs_status_t rs_sysctrl_get_core_select(uint8_t *core_id);"
+      },
+      {
+        "name": "rs_sysctrl_set_core_select",
+        "signature": "rs_status_t rs_sysctrl_set_core_select(uint8_t core_id);"
+      },
+      {
+        "name": "rs_sysctrl_get_ip_select",
+        "signature": "rs_status_t rs_sysctrl_get_ip_select(uint8_t *ip_id);"
+      },
+      {
+        "name": "rs_sysctrl_set_ip_select",
+        "signature": "rs_status_t rs_sysctrl_set_ip_select(uint8_t ip_id);"
+      },
+      {
+        "name": "rs_sysctrl_get_user_core_status",
+        "signature": "rs_status_t rs_sysctrl_get_user_core_status(rs_sysctrl_user_core_status_t *status);"
+      },
+      {
+        "name": "rs_sysctrl_set_user_core_reset",
+        "signature": "rs_status_t rs_sysctrl_set_user_core_reset(uint32_t reset_mask);"
+      },
+      {
+        "name": "rs_sysctrl_clear_user_core_config_error",
+        "signature": "rs_status_t rs_sysctrl_clear_user_core_config_error(void);"
+      },
+      {
+        "name": "rs_sysctrl_get_pll_config",
+        "signature": "rs_status_t rs_sysctrl_get_pll_config(uint8_t *selection);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/sysctrl.h",
+    "flow": [
+      "Fault / clock requests",
+      "Root control + capture",
+      "Status / clock handoff"
+    ]
+  },
+  "clint": {
+    "title": "Management CLINT",
+    "blocks": [
+      "APB decoder",
+      "Software IRQ bits",
+      "64-bit timer",
+      "Compare registers",
+      "Hart interrupt outputs"
+    ],
+    "function_sections": [
+      "Integration",
+      "Register ABI"
+    ],
+    "software_sections": [
+      "RV32 Software Contract"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/clint.c",
+    "api": [
+      {
+        "name": "rs_clint_get_time",
+        "signature": "rs_status_t rs_clint_get_time(uint64_t *time);"
+      },
+      {
+        "name": "rs_clint_set_time",
+        "signature": "rs_status_t rs_clint_set_time(uint64_t time);"
+      },
+      {
+        "name": "rs_clint_get_compare",
+        "signature": "rs_status_t rs_clint_get_compare(uint32_t hart, uint64_t *compare);"
+      },
+      {
+        "name": "rs_clint_set_compare",
+        "signature": "rs_status_t rs_clint_set_compare(uint32_t hart, uint64_t compare);"
+      },
+      {
+        "name": "rs_clint_get_software_interrupt",
+        "signature": "rs_status_t rs_clint_get_software_interrupt(uint32_t hart, bool *pending);"
+      },
+      {
+        "name": "rs_clint_set_software_interrupt",
+        "signature": "rs_status_t rs_clint_set_software_interrupt(uint32_t hart, bool pending);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/clint.h",
+    "flow": [
+      "Reference ticks / MSIP",
+      "Time compare / pending",
+      "LP MTIP / MSIP"
+    ]
+  },
+  "aclint": {
+    "title": "HP ACLINT",
+    "blocks": [
+      "APB decoder",
+      "Two hart slots",
+      "64-bit timer",
+      "Compare registers",
+      "Hart 1 IRQ outputs"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "notes": [
+      "The HP ACLINT is mapped at 0x02000000. The shared implementation provides two addressable hart slots, and hart slot 1 drives the HP software and timer interrupt inputs. MSIP1 is at offset 0x0004, MTIMECMP1 at 0x4008/0x400C, and the common MTIME at 0xBFF8/0xBFFC. This is separate from the management CLINT at 0x02010000.",
+      "Each 64-bit timer value is accessed as two 32-bit words. Use the retry and safe compare-update sequences below. The HP boot configuration uses a 1 MHz reference timebase; changing a CPU PLL setting does not redefine this reference."
+    ],
+    "software_steps": [
+      "HP consumes hart slot 1 of the two-slot window. Do not use a management-CLINT base-address helper.",
+      "Read high/low/high and retry if the high words differ when a coherent RV32 time value is required.",
+      "Update compare using the safe high/low sequence. OpenSBI may provide this service for HP software."
+    ],
+    "flow": [
+      "Reference ticks / MSIP",
+      "Hart 1 compare / pending",
+      "HP MTIP / MSIP"
+    ]
+  },
+  "plic": {
+    "title": "HP PLIC",
+    "blocks": [
+      "APB decoder",
+      "Source priorities",
+      "Pending/claimed bits",
+      "Context enables",
+      "Priority arbitration",
+      "Claim/complete"
+    ],
+    "function_sections": [
+      "PLIC"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Program source priority, the machine/supervisor context enable and threshold.",
+      "Read CLAIM_COMPLETE once per claim. Zero means no eligible source; a nonzero ID claims that source.",
+      "Service the device cause, then write the claimed ID to the same context to complete it. A still-active level can pend again."
+    ],
+    "flow": [
+      "External IRQ levels",
+      "Priority + claim state",
+      "HP MEIP / SEIP"
+    ]
+  },
+  "mailbox": {
+    "title": "LP/HP Mailbox",
+    "blocks": [
+      "APB bank access",
+      "LP payload bank",
+      "HP payload bank",
+      "Doorbells",
+      "Interrupt state"
+    ],
+    "function_sections": [
+      "Mailbox"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/mailbox.c",
+    "api": [
+      {
+        "name": "rs_hp_mailbox_probe",
+        "signature": "rs_status_t rs_hp_mailbox_probe(void);"
+      },
+      {
+        "name": "rs_hp_mailbox_send_to_hp",
+        "signature": "rs_status_t rs_hp_mailbox_send_to_hp(const rs_hp_mailbox_message_t *message);"
+      },
+      {
+        "name": "rs_hp_mailbox_receive_from_hp",
+        "signature": "rs_status_t rs_hp_mailbox_receive_from_hp(rs_hp_mailbox_message_t *message);"
+      },
+      {
+        "name": "rs_hp_mailbox_enable_lp_interrupt",
+        "signature": "rs_status_t rs_hp_mailbox_enable_lp_interrupt(bool enable);"
+      },
+      {
+        "name": "rs_hp_mailbox_lp_interrupt_pending",
+        "signature": "rs_status_t rs_hp_mailbox_lp_interrupt_pending(bool *pending);"
+      },
+      {
+        "name": "rs_hp_mailbox_clear_lp_interrupt",
+        "signature": "rs_status_t rs_hp_mailbox_clear_lp_interrupt(void);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/hp_mailbox.h",
+    "flow": [
+      "Sender payload + fence",
+      "Doorbell + pending bit",
+      "Receiver interrupt"
+    ]
+  },
+  "resource": {
+    "title": "Resource Controller",
+    "blocks": [
+      "Root APB access",
+      "Owner/lock state",
+      "Quiesce/reset logic",
+      "Idle handshake",
+      "IRQ router",
+      "Cache handoff"
+    ],
+    "function_sections": [
+      "Scope",
+      "Cache Maintenance"
+    ],
+    "software_sections": [
+      "Delivery Boundary"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/resource.c",
+    "api": [
+      {
+        "name": "rs_resource_get_status",
+        "signature": "rs_status_t rs_resource_get_status(rs_resource_t resource, rs_resource_status_t *status);"
+      },
+      {
+        "name": "rs_resource_set_owner",
+        "signature": "rs_status_t rs_resource_set_owner(rs_resource_t resource, rs_resource_owner_t owner, bool lock);"
+      },
+      {
+        "name": "rs_resource_set_lifecycle",
+        "signature": "rs_status_t rs_resource_set_lifecycle(rs_resource_t resource, bool quiesce, bool reset);"
+      },
+      {
+        "name": "rs_resource_clear_fault",
+        "signature": "rs_status_t rs_resource_clear_fault(rs_resource_t resource);"
+      },
+      {
+        "name": "rs_resource_get_cache_status",
+        "signature": "rs_status_t rs_resource_get_cache_status(rs_resource_cache_status_t *status);"
+      },
+      {
+        "name": "rs_resource_acknowledge_cache_clean",
+        "signature": "rs_status_t rs_resource_acknowledge_cache_clean(void);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/resource.h",
+    "flow": [
+      "LP ownership request",
+      "Quiesce + idle handshake",
+      "Owner / IRQ route"
+    ]
+  },
+  "monitor": {
+    "title": "Fabric Monitor",
+    "blocks": [
+      "APB/CDC access",
+      "Master event taps",
+      "Target event taps",
+      "Saturating counters",
+      "Snapshot banks",
+      "First-fault capture"
+    ],
+    "function_sections": [
+      "Scope",
+      "Master Counter Banks",
+      "Target Counter Banks"
+    ],
+    "software_sections": [
+      "Software and Verification"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/monitor.c",
+    "api": [
+      {
+        "name": "rs_fabric_monitor_configure",
+        "signature": "rs_status_t rs_fabric_monitor_configure(bool enable, bool freeze);"
+      },
+      {
+        "name": "rs_fabric_monitor_clear",
+        "signature": "rs_status_t rs_fabric_monitor_clear(void);"
+      },
+      {
+        "name": "rs_fabric_monitor_snapshot",
+        "signature": "rs_status_t rs_fabric_monitor_snapshot(void);"
+      },
+      {
+        "name": "rs_fabric_monitor_get_status",
+        "signature": "rs_status_t rs_fabric_monitor_get_status(rs_fabric_monitor_status_t *status);"
+      },
+      {
+        "name": "rs_fabric_monitor_get_flush_count",
+        "signature": "rs_status_t rs_fabric_monitor_get_flush_count(uint32_t *count);"
+      },
+      {
+        "name": "rs_fabric_monitor_read_fault",
+        "signature": "rs_status_t rs_fabric_monitor_read_fault(rs_fabric_fault_t *fault);"
+      },
+      {
+        "name": "rs_fabric_monitor_read_master",
+        "signature": "rs_status_t rs_fabric_monitor_read_master(rs_fabric_master_t master, rs_fabric_master_stats_t *stats);"
+      },
+      {
+        "name": "rs_fabric_monitor_read_target",
+        "signature": "rs_status_t rs_fabric_monitor_read_target(rs_fabric_target_t target, rs_fabric_target_stats_t *stats);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/fabric_monitor.h",
+    "flow": [
+      "Fabric events",
+      "Counters + snapshot",
+      "APB observations"
+    ]
+  },
+  "i2s": {
+    "title": "I2S Transceiver",
+    "blocks": [
+      "APB configuration",
+      "Configuration CDC",
+      "TX/RX stream FIFOs",
+      "Clock dividers",
+      "Stereo serializers",
+      "Audio pins"
+    ],
+    "function_sections": [
+      "AXI4-Stream and Sample Packing"
+    ],
+    "software_sections": [
+      "HAL Sequence"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/i2s.c",
+    "api": [
+      {
+        "name": "rs_i2s_pack_stereo16",
+        "signature": "uint32_t rs_i2s_pack_stereo16(uint16_t first, uint16_t second);"
+      },
+      {
+        "name": "rs_i2s_unpack_stereo16",
+        "signature": "void rs_i2s_unpack_stereo16(uint32_t word, uint16_t *first, uint16_t *second);"
+      },
+      {
+        "name": "rs_i2s_div_from_hz",
+        "signature": "rs_status_t rs_i2s_div_from_hz(uint32_t audio_clock_hz, uint32_t sample_hz, uint32_t sample_bits, uint8_t *sclk_div, uint8_t *lrck_div);"
+      },
+      {
+        "name": "rs_i2s_probe",
+        "signature": "rs_status_t rs_i2s_probe(uint32_t *version, uint32_t *capability);"
+      },
+      {
+        "name": "rs_i2s_configure",
+        "signature": "rs_status_t rs_i2s_configure(const rs_i2s_config_t *config);"
+      },
+      {
+        "name": "rs_i2s_enable",
+        "signature": "rs_status_t rs_i2s_enable(bool tx, bool rx);"
+      },
+      {
+        "name": "rs_i2s_disable",
+        "signature": "rs_status_t rs_i2s_disable(void);"
+      },
+      {
+        "name": "rs_i2s_flush",
+        "signature": "rs_status_t rs_i2s_flush(bool tx, bool rx, rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/i2s.h",
+    "flow": [
+      "TX stream / APB FIFO",
+      "Clocked serializer",
+      "SDOUT / BCLK / LRCK"
+    ]
+  },
+  "dvp": {
+    "title": "DVP Capture",
+    "blocks": [
+      "APB configuration",
+      "Pixel-clock input",
+      "Sync/crop control",
+      "Pixel/word packing",
+      "CDC FIFO",
+      "AXI4-Stream output"
+    ],
+    "function_sections": [
+      "AXI4-Stream and Capture Semantics"
+    ],
+    "software_sections": [
+      "DMA and Software Contract"
+    ],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/dvp.c",
+    "api": [
+      {
+        "name": "rs_dvp_probe",
+        "signature": "rs_status_t rs_dvp_probe(uint32_t *version, uint32_t *capability);"
+      },
+      {
+        "name": "rs_dvp_configure",
+        "signature": "rs_status_t rs_dvp_configure(const rs_dvp_config_t *config);"
+      },
+      {
+        "name": "rs_dvp_start",
+        "signature": "rs_status_t rs_dvp_start(void);"
+      },
+      {
+        "name": "rs_dvp_abort",
+        "signature": "rs_status_t rs_dvp_abort(void);"
+      },
+      {
+        "name": "rs_dvp_flush",
+        "signature": "rs_status_t rs_dvp_flush(void);"
+      },
+      {
+        "name": "rs_dvp_get_status",
+        "signature": "rs_status_t rs_dvp_get_status(rs_dvp_status_t *status);"
+      },
+      {
+        "name": "rs_dvp_interrupt_enable",
+        "signature": "rs_status_t rs_dvp_interrupt_enable(uint32_t mask);"
+      },
+      {
+        "name": "rs_dvp_interrupt_clear",
+        "signature": "rs_status_t rs_dvp_interrupt_clear(uint32_t mask);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/dvp.h",
+    "flow": [
+      "PCLK / VSYNC / HREF / D",
+      "Pixel packer + FIFO",
+      "APB / AXI4-Stream"
+    ]
+  },
+  "jpeg": {
+    "title": "JPEG Codec",
+    "blocks": [
+      "APB/job/ring control",
+      "Private AXI64 DMA",
+      "JPEG header/tables",
+      "Encode pipeline",
+      "Decode pipeline",
+      "Result/IRQ writer"
+    ],
+    "function_sections": [
+      "Implemented MVP",
+      "Data Contract",
+      "Descriptor ABI"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/jpeg.c",
+    "api": [
+      {
+        "name": "rs_jpeg_job_validate",
+        "signature": "rs_status_t rs_jpeg_job_validate(const rs_jpeg_job_t *job);"
+      },
+      {
+        "name": "rs_jpeg_descriptor_build",
+        "signature": "rs_status_t rs_jpeg_descriptor_build(rs_jpeg_descriptor_t *descriptor, const rs_jpeg_job_t *job, uint64_t cookie, bool interrupt);"
+      },
+      {
+        "name": "rs_jpeg_ring_validate",
+        "signature": "rs_status_t rs_jpeg_ring_validate(const rs_jpeg_descriptor_t *ring, uint32_t entries);"
+      },
+      {
+        "name": "rs_jpeg_configure",
+        "signature": "rs_status_t rs_jpeg_configure(const rs_jpeg_job_t *job);"
+      },
+      {
+        "name": "rs_jpeg_start",
+        "signature": "rs_status_t rs_jpeg_start(void);"
+      },
+      {
+        "name": "rs_jpeg_wait",
+        "signature": "rs_status_t rs_jpeg_wait(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_jpeg_abort",
+        "signature": "rs_status_t rs_jpeg_abort(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_jpeg_get_status",
+        "signature": "rs_status_t rs_jpeg_get_status(rs_jpeg_status_t *status);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/jpeg.h",
+    "flow": [
+      "Image / JPEG in memory",
+      "Codec + private DMA",
+      "JPEG / image in memory"
+    ]
+  },
+  "apu": {
+    "title": "Audio Processing Unit",
+    "blocks": [
+      "APB/job control",
+      "Microcode loader/store",
+      "Bounded sequencer",
+      "Codec transport",
+      "Private DMA/rings",
+      "I2S stream router"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "notes": [
+      "The current capability word is 0x000001BD: WAV, FLAC, private DMA, ring, stream, sequencer and resampler bits are set. MP3 and KWS bits remain clear. Capability is not evidence that every production codec corpus or physical release gate is complete.",
+      "LP loads a bounded APUMC image before submitting work. Current RTL has 2048 64-bit control-store words (16 KiB), CAPABILITY1=0x01827010 and APB version 1.0. The 4096-word/32 KiB and V1.1 capacity refreeze is for subsequent implementation.",
+      "The loader checks header, ABI, bounds, entry descriptors and CRC before publishing valid/lock state. Rejected or aborted loads must leave stale instructions unexecutable.",
+      "Direct jobs use JOB_* staging registers; ring jobs use descriptor ownership and producer/consumer rules. Buffer limits, codec entry bounds, ownership, quiesce and transport completion participate in admission and termination.",
+      "The codec controller coordinates parser microcode, transport and processing primitives. Private DMA moves input/output while the stream router connects permitted audio paths. Capabilities do not waive rate, format, microcode or lifecycle checks.",
+      "On a fault, inspect retained stage/address/detail and consumed/produced counts, acknowledge the correct IRQ causes, and stop or reset the appropriate lifecycle level before reusing buffers."
+    ],
+    "software_steps": [
+      "Probe information and capability through rs_apu_probe; reject codecs and formats not advertised by this snapshot.",
+      "Obtain ownership and configure allowed buffer ranges. Publish an aligned image and call rs_apu_microcode_load with a bounded timeout.",
+      "Check successful image validation before configuring a direct job or publishing ring descriptors. Set rate/channel/format expectations and valid input/output ranges.",
+      "Use the job/ring APIs declared in apu.h with the required fences and cache maintenance.",
+      "Wait for a terminal result and inspect counts, errors and IRQs. Successful transport alone does not establish full codec qualification."
+    ],
+    "example_file": "publications/examples/apu.c",
+    "api": [
+      {
+        "name": "rs_apu_probe",
+        "signature": "rs_status_t rs_apu_probe(rs_apu_info_t *info);"
+      },
+      {
+        "name": "rs_apu_set_acl",
+        "signature": "rs_status_t rs_apu_set_acl(uint32_t read_base, uint32_t read_limit, uint32_t write_base, uint32_t write_limit);"
+      },
+      {
+        "name": "rs_apu_microcode_load",
+        "signature": "rs_status_t rs_apu_microcode_load(const rs_apu_image_t *image, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_apu_validate_job",
+        "signature": "rs_status_t rs_apu_validate_job(const rs_apu_job_t *job);"
+      },
+      {
+        "name": "rs_apu_submit_direct",
+        "signature": "rs_status_t rs_apu_submit_direct(const rs_apu_job_t *job);"
+      },
+      {
+        "name": "rs_apu_wait_direct",
+        "signature": "rs_status_t rs_apu_wait_direct(rs_apu_result_t *result, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_apu_decode",
+        "signature": "rs_status_t rs_apu_decode(const rs_apu_job_t *job, rs_apu_result_t *result, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_apu_ring_configure",
+        "signature": "rs_status_t rs_apu_ring_configure(rs_apu_ring_t *ring, uint32_t stop_on_error, uint32_t coalesce_count, uint32_t coalesce_timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/apu.h",
+    "flow": [
+      "Job + microcode image",
+      "Loader / codec transport",
+      "Private DMA / I2S stream"
+    ]
+  },
+  "crypto": {
+    "title": "Crypto Controller",
+    "blocks": [
+      "APB/IRQ control",
+      "PIO/stream routing",
+      "AES engine",
+      "SHA-2 engine",
+      "RSA/Montgomery",
+      "Key/operand storage"
+    ],
+    "function_sections": [
+      "Implemented MVP",
+      "Data and Operation Contract",
+      "Security Boundary and Claims"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/crypto.c",
+    "api": [
+      {
+        "name": "rs_crypto_aes_set_key",
+        "signature": "rs_status_t rs_crypto_aes_set_key(const uint8_t *key, size_t key_bytes, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_crypto_aes_crypt",
+        "signature": "rs_status_t rs_crypto_aes_crypt(rs_crypto_aes_mode_t mode, bool decrypt, const uint8_t iv[16], const void *input, void *output, size_t byte_count, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_crypto_aes_crypt_dma",
+        "signature": "rs_status_t rs_crypto_aes_crypt_dma(rs_crypto_aes_mode_t mode, bool decrypt, const uint8_t iv[16], const void *input, void *output, size_t byte_count, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_crypto_sha2",
+        "signature": "rs_status_t rs_crypto_sha2(bool sha256, const void *input, size_t byte_count, uint8_t digest[32], rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_crypto_rsa_prepare",
+        "signature": "rs_status_t rs_crypto_rsa_prepare(const uint32_t modulus[RS_CRYPTO_RSA_WORDS], rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_crypto_rsa_modexp",
+        "signature": "rs_status_t rs_crypto_rsa_modexp(const uint32_t base[RS_CRYPTO_RSA_WORDS], const uint32_t exponent[RS_CRYPTO_RSA_WORDS], uint16_t exponent_bits, bool private_operation, uint32_t result[RS_CRYPTO_RSA_WORDS], rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_crypto_zeroize",
+        "signature": "rs_status_t rs_crypto_zeroize(void);"
+      },
+      {
+        "name": "rs_crypto_selftest",
+        "signature": "rs_status_t rs_crypto_selftest(rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/crypto.h",
+    "flow": [
+      "APB / stream payload",
+      "AES / SHA / RSA datapath",
+      "APB / stream result"
+    ]
+  },
+  "crc": {
+    "title": "CRC Engine",
+    "blocks": [
+      "APB control",
+      "Byte-lane selector",
+      "Polynomial datapath",
+      "Raw/result state"
+    ],
+    "function_sections": [
+      "Operation",
+      "APB Behavior"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/crc.c",
+    "api": [
+      {
+        "name": "rs_crc_get_profile",
+        "signature": "rs_status_t rs_crc_get_profile(rs_crc_profile_t profile, rs_crc_config_t *config);"
+      },
+      {
+        "name": "rs_crc_init",
+        "signature": "rs_status_t rs_crc_init(const rs_crc_config_t *config);"
+      },
+      {
+        "name": "rs_crc_start",
+        "signature": "rs_status_t rs_crc_start(void);"
+      },
+      {
+        "name": "rs_crc_update",
+        "signature": "rs_status_t rs_crc_update(const void *data, size_t length);"
+      },
+      {
+        "name": "rs_crc_finish",
+        "signature": "rs_status_t rs_crc_finish(uint32_t *result);"
+      },
+      {
+        "name": "rs_crc_abort",
+        "signature": "rs_status_t rs_crc_abort(void);"
+      },
+      {
+        "name": "rs_crc_compute",
+        "signature": "rs_status_t rs_crc_compute(const rs_crc_config_t *config, const void *data, size_t length, uint32_t *result);"
+      },
+      {
+        "name": "rs_crc_get_status",
+        "signature": "rs_status_t rs_crc_get_status(rs_crc_snapshot_t *snapshot);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/crc.h",
+    "flow": [
+      "APB data bytes",
+      "Polynomial state update",
+      "RESULT / RAW_STATE"
+    ]
+  },
+  "rng": {
+    "title": "RNG Controller",
+    "blocks": [
+      "Entropy input",
+      "Qualification checks",
+      "Output FIFO",
+      "Counters/status",
+      "APB/IRQ interface"
+    ],
+    "function_sections": [
+      "Operation",
+      "APB Behavior"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/rng.c",
+    "api": [
+      {
+        "name": "rs_rng_init",
+        "signature": "rs_status_t rs_rng_init(const rs_rng_config_t *config);"
+      },
+      {
+        "name": "rs_rng_get_status",
+        "signature": "rs_status_t rs_rng_get_status(rs_rng_snapshot_t *snapshot);"
+      },
+      {
+        "name": "rs_rng_read_entropy",
+        "signature": "rs_status_t rs_rng_read_entropy(uint32_t *word, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_rng_read_diagnostic",
+        "signature": "rs_status_t rs_rng_read_diagnostic(uint32_t *word, rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_rng_recover",
+        "signature": "rs_status_t rs_rng_recover(void);"
+      },
+      {
+        "name": "rs_rng_interrupt_enable",
+        "signature": "rs_status_t rs_rng_interrupt_enable(uint32_t mask);"
+      },
+      {
+        "name": "rs_rng_interrupt_clear",
+        "signature": "rs_status_t rs_rng_interrupt_clear(uint32_t mask);"
+      },
+      {
+        "name": "rs_rng_interrupt_test",
+        "signature": "rs_status_t rs_rng_interrupt_test(uint32_t mask);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/rng.h",
+    "flow": [
+      "Diagnostic source",
+      "Qualification gate",
+      "FIFO / status / IRQ"
+    ]
+  },
+  "extensions": {
+    "title": "Product Extension Slots",
+    "blocks": [
+      "APB identification",
+      "Owner/lock control",
+      "Quiesce/reset",
+      "Address bounds",
+      "EXT-H DMA master",
+      "Fault/IRQ state"
+    ],
+    "function_sections": [
+      "Register ABI"
+    ],
+    "software_sections": [],
+    "notes": [],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "example_file": "publications/examples/extensions.c",
+    "api": [
+      {
+        "name": "rs_extension_probe",
+        "signature": "rs_status_t rs_extension_probe(rs_extension_slot_t slot, rs_extension_capabilities_t *capabilities);"
+      },
+      {
+        "name": "rs_extension_get_status",
+        "signature": "rs_status_t rs_extension_get_status(rs_extension_slot_t slot, rs_extension_status_t *status);"
+      },
+      {
+        "name": "rs_extension_set_owner",
+        "signature": "rs_status_t rs_extension_set_owner(rs_extension_slot_t slot, rs_extension_owner_t owner, bool lock);"
+      },
+      {
+        "name": "rs_extension_set_lifecycle",
+        "signature": "rs_status_t rs_extension_set_lifecycle(rs_extension_slot_t slot, bool quiesce, bool reset, bool clear_fault);"
+      },
+      {
+        "name": "rs_extension_configure_acl",
+        "signature": "rs_status_t rs_extension_configure_acl(rs_extension_slot_t slot, const rs_extension_acl_t *configuration);"
+      },
+      {
+        "name": "rs_extension_read",
+        "signature": "rs_status_t rs_extension_read(rs_extension_slot_t slot, uint32_t offset, uint32_t *value);"
+      },
+      {
+        "name": "rs_extension_dma_start",
+        "signature": "rs_status_t rs_extension_dma_start(uintptr_t source, uintptr_t destination, uint32_t byte_count);"
+      },
+      {
+        "name": "rs_extension_dma_abort",
+        "signature": "rs_status_t rs_extension_dma_abort(void);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/extension.h",
+    "flow": [
+      "EXT-H memory request",
+      "Bounded AXI copy",
+      "Memory / fault / IRQ"
+    ]
+  },
+  "mpw-timer": {
+    "title": "MPW User Timer",
+    "blocks": [
+      "APB registers",
+      "Clock divider",
+      "Counter/reload",
+      "User GPIO output"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "notes": [
+      "The selected timer has an 8-bit divider and a live 16-bit counter. The divider cycles from zero through DIV, then emits an increment condition. COUNT increments on that condition, except that 0xFFFF clears to zero on the next user clock. A software COUNT write preloads the current count and takes precedence over normal updates; it is not an independently programmed auto-reload register.",
+      "At terminal count, a single output state toggles and is replicated on every selected user-GPIO output. The block continuously asserts its user output-enable vector. There is no run-enable bit or local output-mask register; root selection and pad ownership must be established before enabling the user path. Divider, count and output state reset to zero.",
+      "Both demo IPs complete APB access with PREADY=1 and PSLVERR=0. Only address bits 7:0 are decoded, so the local register pattern aliases every 256 bytes. Undefined reads return zero and undefined writes have no effect. These legacy blocks ignore PSTRB; software must use aligned full-word accesses. Neither block has a FIFO, DMA engine or dedicated interrupt."
+    ],
+    "software_steps": [
+      "Run only with the committed MPW configuration and a board-safe user-GPIO ownership mask. The PRODUCT user-IP aperture does not instantiate this selectable demo.",
+      "Probe the expected slot and check its identifier before accessing local registers; the probe selects that slot through SYSCTRL. Check every returned status.",
+      "Use the sequence below. This legacy block has no completion interrupt or local abort command; GPIO recovery clears OE, and timer recovery uses root reset/selection under the board ownership policy."
+    ],
+    "flow": [
+      "User clock",
+      "Divider + counter",
+      "Readback / user GPIO"
+    ],
+    "api": [
+      {
+        "name": "rs_user_ip_probe",
+        "signature": "rs_status_t rs_user_ip_probe(uint8_t ip_id, uint32_t *identifier);"
+      },
+      {
+        "name": "rs_user_ip_read",
+        "signature": "rs_status_t rs_user_ip_read(uint32_t offset, uint32_t *value);"
+      },
+      {
+        "name": "rs_user_ip_write",
+        "signature": "rs_status_t rs_user_ip_write(uint32_t offset, uint32_t value);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/user_ip.h",
+    "example_file": "publications/examples/mpw_timer.c"
+  },
+  "mpw-gpio": {
+    "title": "MPW User GPIO",
+    "blocks": [
+      "APB registers",
+      "Input observation",
+      "Output latch",
+      "Output enable"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "notes": [
+      "The selected GPIO demo has independent 32-bit output-enable and output-data latches. An OE bit of one drives the corresponding user output; zero releases it. DATA_IN reads the current user-GPIO input boundary. This block does not implement pin muxing, input filtering, edge capture or interrupt state; those functions remain in the root GPIO fabric.",
+      "Write DATA_OUT before asserting the intended OE bits to avoid an unwanted initial level. Clear OE before relinquishing the user path. Reset clears both output latches. Root GPIO eligibility and the selected MPW IP still determine whether a signal reaches a physical pad.",
+      "Both demo IPs complete APB access with PREADY=1 and PSLVERR=0. Only address bits 7:0 are decoded, so the local register pattern aliases every 256 bytes. Undefined reads return zero and undefined writes have no effect. These legacy blocks ignore PSTRB; software must use aligned full-word accesses. Neither block has a FIFO, DMA engine or dedicated interrupt."
+    ],
+    "software_steps": [
+      "Run only with the committed MPW configuration and a board-safe user-GPIO ownership mask. The PRODUCT user-IP aperture does not instantiate this selectable demo.",
+      "Probe the expected slot and check its identifier before accessing local registers; the probe selects that slot through SYSCTRL. Check every returned status.",
+      "Use the sequence below. This legacy block has no completion interrupt or local abort command; GPIO recovery clears OE, and timer recovery uses root reset/selection under the board ownership policy."
+    ],
+    "flow": [
+      "User data/output enable",
+      "Output latch",
+      "User GPIO boundary"
+    ],
+    "api": [
+      {
+        "name": "rs_user_ip_probe",
+        "signature": "rs_status_t rs_user_ip_probe(uint8_t ip_id, uint32_t *identifier);"
+      },
+      {
+        "name": "rs_user_ip_read",
+        "signature": "rs_status_t rs_user_ip_read(uint32_t offset, uint32_t *value);"
+      },
+      {
+        "name": "rs_user_ip_write",
+        "signature": "rs_status_t rs_user_ip_write(uint32_t offset, uint32_t value);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/user_ip.h",
+    "example_file": "publications/examples/mpw_gpio.c"
+  },
+  "rcu": {
+    "title": "Reset and Clock Unit",
+    "blocks": [
+      "AON request interface",
+      "Request validation",
+      "Quiesce/drain FSM",
+      "Safe clock selection",
+      "PLL qualification",
+      "Clock/reset domains"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "notes": [
+      "The RCU is controlled through SYSCTRL registers; it does not own another APB address aperture. Clock roots, divisions, safe fallback and memory-pad mode remain root-management operations."
+    ],
+    "software_steps": [
+      "Inspect clock status and capability; the reference profile has no enabled PLL macro.",
+      "Use rs_clock_set_frequency with a bounded timeout; traffic drain and safe-source sequencing remain controller responsibilities.",
+      "Check completion and sticky faults. Retain the safe source after a failed change."
+    ],
+    "reference": "docs/pll-clock-control.md",
+    "register_family": "sysctrl",
+    "example_file": "publications/examples/rcu.c",
+    "api": [
+      {
+        "name": "rs_clock_get_status",
+        "signature": "rs_status_t rs_clock_get_status(rs_clock_status_t *status);"
+      },
+      {
+        "name": "rs_clock_frequency_hz",
+        "signature": "rs_status_t rs_clock_frequency_hz(rs_clock_frequency_t frequency, uint32_t *frequency_hz);"
+      },
+      {
+        "name": "rs_clock_get_active_hz",
+        "signature": "rs_status_t rs_clock_get_active_hz(uint32_t *frequency_hz);"
+      },
+      {
+        "name": "rs_clock_set_frequency",
+        "signature": "rs_status_t rs_clock_set_frequency(rs_clock_frequency_t frequency, rs_timeout_t timeout);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/clock.h",
+    "flow": [
+      "Clock selection request",
+      "Drain + safe switch",
+      "Clock / reset domains"
+    ]
+  },
+  "ext-l": {
+    "title": "Low-Bandwidth Extension",
+    "blocks": [
+      "APB identification",
+      "Owner/lock state",
+      "Quiesce/reset",
+      "Interrupt output"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "notes": [
+      "EXT-L exposes control and interrupt capability without a data master, stream interface or local SRAM. EXT-H-only data and DMA controls are not supported in this slot."
+    ],
+    "software_steps": [
+      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
+      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+    ],
+    "reference": "docs/ip/extensions.md",
+    "register_family": "extensions",
+    "example_file": "publications/examples/ext-l.c",
+    "api": [
+      {
+        "name": "rs_extension_probe",
+        "signature": "rs_status_t rs_extension_probe(rs_extension_slot_t slot, rs_extension_capabilities_t *capabilities);"
+      },
+      {
+        "name": "rs_extension_get_status",
+        "signature": "rs_status_t rs_extension_get_status(rs_extension_slot_t slot, rs_extension_status_t *status);"
+      },
+      {
+        "name": "rs_extension_set_owner",
+        "signature": "rs_status_t rs_extension_set_owner(rs_extension_slot_t slot, rs_extension_owner_t owner, bool lock);"
+      },
+      {
+        "name": "rs_extension_set_lifecycle",
+        "signature": "rs_status_t rs_extension_set_lifecycle(rs_extension_slot_t slot, bool quiesce, bool reset, bool clear_fault);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/extension.h",
+    "flow": [
+      "APB request",
+      "Fixed slot + lifecycle",
+      "Response / IRQ"
+    ]
+  }
+}

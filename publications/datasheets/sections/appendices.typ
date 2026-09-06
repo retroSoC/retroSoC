@@ -31,6 +31,9 @@ and GPIO ownership rules before handoff. PRODUCT uses fixed extension slots and 
 selectable user cores or user IPs.
 #source("rtl/mini/integration/README.md", title:"Extension manifests and generation boundary")
 
+#include "../ips/mpw-timer.typ"
+#include "../ips/mpw-gpio.typ"
+
 = Appendix: Product Direction
 == Product Series
 #ds-table("family", [Family positioning - roadmap context],
@@ -73,8 +76,7 @@ number is used to imply completion.
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-05],[0.4 DRAFT],[Synchronize with reviewed dev RTL; commercial-style layout,
-   generated engineering tables and CeTZ diagrams.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-06],[0.4 DRAFT],[Expand IP functional, register, waveform and software reference; retain the gray/gold layout and update the dev snapshot.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify

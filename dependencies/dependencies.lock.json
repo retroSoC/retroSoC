@@ -114,6 +114,20 @@
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
   },
   "archives": {
+    "typst_wavy": {
+      "version": "0.1.3",
+      "url": "https://packages.typst.org/preview/wavy-0.1.3.tar.gz",
+      "sha256": "3a542065681a64beb9d430377ecbf210caa1f9d0e1968fd6284dd263f0a9391e",
+      "destination": ".cache/retrosoc/publications/packages/preview/wavy/0.1.3",
+      "license": "MIT"
+    },
+    "typst_jogs": {
+      "version": "0.2.4",
+      "url": "https://packages.typst.org/preview/jogs-0.2.4.tar.gz",
+      "sha256": "b653a1874492a6ffebb5ff894d0ca06d3523a1b8721eea2bc32034d8562ecb45",
+      "destination": ".cache/retrosoc/publications/packages/preview/jogs/0.2.4",
+      "license": "MIT"
+    },
     "apu_libflac": {
       "url": "https://codeload.github.com/xiph/flac/tar.gz/1507800de4b70e21be71f38caa0d9079d0bc6e45",
       "sha256": "d80ef5facdb21972efe91774da03d6b9abf216aa17093d740fcc411cd8afbb41",

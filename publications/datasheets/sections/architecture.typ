@@ -1,5 +1,6 @@
 #import "../style.typ": *
 #import "../figures.typ": *
+#import "../waveforms.typ": timing
 
 = System Architecture
 == Introduction
@@ -37,6 +38,15 @@ and clock boundaries. HP MMIO cannot write root-owned SYSCTRL/RCU, watchdog, GPI
 and other protected management controls.
 
 #figure(fabric-diagram(), caption:[PRODUCT control and memory paths. Gateway adaptation and CDC separate the functional clock domains.])<fabric-diagram>
+
+=== Common Bus Protocols <common-protocols>
+The following WaveDrom examples define the handshake notation used by the IP chapters.
+They show valid protocol ordering, not guaranteed transaction latency. Address windows,
+byte strobes, burst limits, access permissions and IP-specific side effects remain binding.
+
+#timing("apb4",[APB4 setup, access and wait-state example.])
+#timing("axi4",[AXI4 read-address and response-channel example.])
+#timing("axis",[AXI4-Stream backpressure and end-of-transfer example.])
 
 === Interconnect Matrix
 Eight initiator identities access five memory targets. The crossbar arbitrates reads and

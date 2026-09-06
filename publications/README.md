@@ -15,6 +15,40 @@ The canonical RTL/configuration inputs remain authoritative.
 - IP-to-window/IRQ/source coverage: [datasheets/ip-catalog.json](datasheets/ip-catalog.json).
 - Build and validation: [build_datasheet.py](build_datasheet.py).
 
+The same v0.4 DRAFT now includes detailed per-IP functional, protocol,
+register/bitfield and software reference chapters. Each actual IP starts on a
+new page; UART/SDIO instances share their common register descriptions.
+CPU ISA/CSR manuals remain outside this publication's scope.
+
+### Detailed IP reference sources
+
+- `datasheets/register-profiles.json` selects the reviewed RTL, managed IP,
+  register groups and instance geometry. Repeated banks retain their real
+  base/stride/count instead of duplicating every instance.
+- `datasheets/register-annotations.json` supplies reviewed field semantics,
+  access qualifications, conditional reset values and explicit special cases.
+- `register_reference.py` extracts publication data without generating RTL or
+  C definitions. It follows explicit readback packing and selected named
+  producer bindings, applies the annotations, and checks offsets, register/field
+  reset agreement, value ranges and complete non-overlapping 32-bit layouts.
+  Register entries link to RTL and C sources; explicit semantic overrides retain
+  a source pointer and review note.
+- `datasheets/ip-content.json`, `features.json` and `ips/` own the functional
+  chapters. The original grouping and meaningful child sections are retained.
+- `datasheets/overview-groups.json` contains only integrated IP names and
+  functional categories. Its membership is checked against the topology.
+- `datasheets/waveforms.json` contains the WaveDrom transaction/event examples.
+  `waveforms.typ` runs the pinned wavy renderer through jogs and normalizes SVG
+  typography before embedding the vector result. The package itself is not patched.
+  Representative wait, timeout, backpressure and recovery cases accompany the
+  external-interface examples. CeTZ IP diagrams include a data/event path below
+  the control and functional units.
+
+Fixed, conditional and live reset values are distinguished. A dynamic status
+word is not silently assigned a zero reset constant. The source snapshot still
+reports APU APB V1.0 and a 16 KiB control store; the later V1.1/32 KiB refreeze
+must not be advertised until the implementation and delivery evidence agree.
+
 The title remains **retroSoC Mini Gen2/Gen2+**. PRODUCT is the main configuration;
 MPW retains its own appendix. No difference between Gen2 and Gen2+ is inferred.
 The reference is `configs/ci/ihp130.mk`, with 32 KiB SRAM. The HP boot example
@@ -34,6 +68,15 @@ python publications/build_datasheet.py build
 python publications/build_datasheet.py check
 ```
 
+Validate the displayed SDK call examples with an installed C compiler:
+
+```sh
+python publications/check_examples.py --cc gcc
+```
+
+This generates only build-local reference-profile headers and runs freestanding
+syntax checks. It does not execute the examples or assert hardware validation.
+
 Pass `--typst PATH` to setup/build, or set `TYPST`, if the CLI is not on PATH.
 `setup --update` updates clean managed checkouts to their reviewed lock entries
 and restores modified package caches. It refuses to overwrite dirty repositories.
@@ -52,6 +95,7 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
 - `manifest.json`: source hashes, reviewed commit, configuration, media commit,
   font hashes, package hashes, compiler version and PDF digest;
 - `typst.log` and `check-report.json`: compiler and PDF checks.
+- `ip-pages.json`: queried start/end pages used to enforce per-IP page breaks.
 
 The document date fixes the PDF creation timestamp. Identical inputs produce
 identical PDF bytes; the build-directory timestamp is not printed in the PDF.
@@ -70,7 +114,7 @@ The three original SVGs are archived byte-for-byte in media and are not used as
 current architecture diagrams. Do not reintroduce copies beside the Typst files.
 
 [The shared dependency lock](../dependencies/dependencies.lock.json) pins media,
-CeTZ 0.5.2, its oxifmt 1.0.0 dependency and the required local Typst version.
+CeTZ 0.5.2, oxifmt 1.0.0, wavy 0.1.3, jogs 0.2.4 and the required local Typst version.
 Media's `.gitattributes` prevents platform line-ending conversion of hashed
 assets. Every file listed in media's `assets.json` is checked before building.
 Typst package extraction uses the shared safe archive helper and a file-hash
@@ -91,8 +135,8 @@ the main lock. A normal build never commits, pushes, or changes asset revisions.
 3. Address, LP IRQ, GPIO, pad and access-policy data come from existing canonical
    generators. SRAM uses the selected profile size, not the JSON maximum.
 4. Review RTL when an architecture document disagrees. Current important cases:
-   JPEG occupies AXI64 slot 6; APU has partial microcode/primitive infrastructure
-   but codec jobs and KWS remain disabled. Managed-IP links use their locked
+   JPEG occupies AXI64 slot 6; APU advertises WAV/FLAC job/transport infrastructure
+   while MP3/KWS and full production qualification remain unavailable. Managed-IP links use their locked
    upstream commits, not nonexistent main-repository blob paths.
 5. Compile, check, render all pages and inspect 100% scale and grayscale.
 
@@ -123,10 +167,11 @@ python publications/build_datasheet.py check
 git diff --check
 ```
 
-The focused exporter tests are `tests/test_publications.py`; existing memory,
+The focused exporter tests are `tests/test_publications.py` and
+`tests/test_publication_registers.py`; existing memory,
 topology and pin-map tests cover the reused canonical validators. PDF checks
 verify snapshot freshness, metadata, embedded fonts, bookmarks, navigable links,
-minimum 9 pt text, page-bound text and presence of every generated pad/window.
+minimum 9 pt text, page-bound text, per-IP starts and presence of every generated pad/window.
 They complement manual inspection of diagram meaning, continued headers,
 footnotes, page balance and grayscale readability.
 
