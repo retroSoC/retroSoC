@@ -1,0 +1,491 @@
+[
+  {
+    "id": "xpi",
+    "regions": [
+      "FLASH",
+      "XPI",
+      "APB4_XPI"
+    ],
+    "irqs": [
+      "xpi"
+    ],
+    "sources": [
+      "docs/ip/xpi.md"
+    ],
+    "summary": "SDR serial-memory controller; four chip selects, programmable LUT, indirect PIO/DMA and status polling."
+  },
+  {
+    "id": "spisd",
+    "regions": [
+      "APB4_SPISD"
+    ],
+    "irqs": [
+      "spisd"
+    ],
+    "sources": [
+      "docs/ip/spisd.md"
+    ],
+    "summary": "SPI-mode SD card host with command/data control and a private AXI4 DMA path."
+  },
+  {
+    "id": "sdio0",
+    "regions": [
+      "APB4_SDIO0"
+    ],
+    "irqs": [
+      "sdio0"
+    ],
+    "sources": [
+      "docs/ip/sdio.md"
+    ],
+    "summary": "SD native-mode controller 0; APB4 management and private AXI4 DMA."
+  },
+  {
+    "id": "sdio1",
+    "regions": [
+      "APB4_SDIO1"
+    ],
+    "irqs": [
+      "sdio1"
+    ],
+    "sources": [
+      "docs/ip/sdio.md"
+    ],
+    "summary": "SD native-mode controller 1; dedicated external pads and private AXI4 DMA."
+  },
+  {
+    "id": "sram",
+    "regions": [
+      "SRAM",
+      "APB4_SRAM"
+    ],
+    "irqs": [],
+    "sources": [
+      "docs/ip/onchip-sram.md"
+    ],
+    "summary": "Banked on-chip SRAM with a native AXI64 data port and APB4 management."
+  },
+  {
+    "id": "psram",
+    "regions": [
+      "PSRAM",
+      "APB4_PSRAM"
+    ],
+    "irqs": [
+      "psram"
+    ],
+    "sources": [
+      "docs/ip/psram.md"
+    ],
+    "summary": "Device-specific ESP-PSRAM64H QPI SDR controller; four 8 MiB external devices."
+  },
+  {
+    "id": "opipsram",
+    "regions": [
+      "OPIPSRAM",
+      "APB4_OPIPSRAM"
+    ],
+    "irqs": [
+      "opipsram"
+    ],
+    "sources": [
+      "docs/ip/opipsram.md"
+    ],
+    "summary": "Prototype octal DDR PSRAM / single-clock HyperBus-style controller."
+  },
+  {
+    "id": "sdram",
+    "regions": [
+      "SDRAM",
+      "APB4_SDRAM"
+    ],
+    "irqs": [],
+    "sources": [
+      "docs/ip/sdram.md"
+    ],
+    "summary": "64 MiB x16 SDR SDRAM controller with native bursts and programmable cycle timings."
+  },
+  {
+    "id": "gpio",
+    "regions": [
+      "APB4_GPIO",
+      "APB4_GPIO_ADMIN"
+    ],
+    "irqs": [
+      "gpio"
+    ],
+    "sources": [
+      "docs/ip/gpio.md"
+    ],
+    "summary": "One controller, 32 bidirectional GPIOs and two access windows."
+  },
+  {
+    "id": "dma",
+    "regions": [
+      "APB4_DMA"
+    ],
+    "irqs": [
+      "dma"
+    ],
+    "sources": [
+      "docs/ip/dma.md"
+    ],
+    "summary": "Eight channel contexts, 32-bit transfers, linked-list TCDs and stream endpoints."
+  },
+  {
+    "id": "timer",
+    "regions": [
+      "APB4_TIM0",
+      "APB4_TIM1"
+    ],
+    "irqs": [
+      "timer0",
+      "timer1"
+    ],
+    "sources": [
+      "docs/ip/timer.md"
+    ],
+    "summary": "Two 32-bit general timers, each with a 16-bit prescaler and two compare channels."
+  },
+  {
+    "id": "rtc",
+    "regions": [
+      "APB4_RTC"
+    ],
+    "irqs": [
+      "rtc"
+    ],
+    "sources": [
+      "rtl/managed/clusterip/rtc/doc/datasheet.md",
+      "rtl/mini/top/apb4_system.sv"
+    ],
+    "summary": "Real-time clock with a separate audio-derived timing source and a wake output."
+  },
+  {
+    "id": "wdg",
+    "regions": [
+      "APB4_WDG"
+    ],
+    "irqs": [
+      "watchdog_early_warning"
+    ],
+    "sources": [
+      "rtl/managed/clusterip/wdg/doc/datasheet.md",
+      "rtl/mini/top/apb4_system.sv"
+    ],
+    "summary": "Independent-clock window watchdog with early-warning IRQ and a reset request."
+  },
+  {
+    "id": "pwm",
+    "regions": [
+      "APB4_PWM"
+    ],
+    "irqs": [
+      "pwm"
+    ],
+    "sources": [
+      "rtl/managed/clusterip/pwm/doc/datasheet.md",
+      "rtl/mini/top/apb4_system.sv"
+    ],
+    "summary": "PWM V2 output and capture integration with interrupt and debug-halt input."
+  },
+  {
+    "id": "uart0",
+    "regions": [
+      "APB4_UART0"
+    ],
+    "irqs": [
+      "uart0"
+    ],
+    "sources": [
+      "docs/ip/uart.md"
+    ],
+    "summary": "Management UART: 64-byte TX/RX FIFOs, fractional baud rate, DMA and RTS/CTS."
+  },
+  {
+    "id": "uart1",
+    "regions": [
+      "APB4_UART1"
+    ],
+    "irqs": [
+      "uart1"
+    ],
+    "sources": [
+      "docs/ip/uart.md"
+    ],
+    "summary": "HP console using UART v3; dedicated TX/RX, without DMA or RTS/CTS connection."
+  },
+  {
+    "id": "i2c",
+    "regions": [
+      "APB4_I2C0",
+      "APB4_I2C1"
+    ],
+    "irqs": [
+      "i2c0",
+      "i2c1"
+    ],
+    "sources": [
+      "docs/ip/i2c.md"
+    ],
+    "summary": "Two controller-mode I2C instances with 7/10-bit addressing and command/RX FIFOs."
+  },
+  {
+    "id": "ws2812",
+    "regions": [
+      "APB4_WS2812"
+    ],
+    "irqs": [
+      "ws2812"
+    ],
+    "sources": [
+      "docs/ip/ws2812.md"
+    ],
+    "summary": "One 24-bit GRB transmitter, 16-word FIFO and programmable waveform timings."
+  },
+  {
+    "id": "ps2",
+    "regions": [
+      "APB4_PS2"
+    ],
+    "irqs": [
+      "ps2"
+    ],
+    "sources": [
+      "docs/ip/ps2.md"
+    ],
+    "summary": "Bidirectional PS/2 host with 16-entry TX/RX FIFOs and open-drain GPIO routing."
+  },
+  {
+    "id": "usb2",
+    "regions": [
+      "APB4_USB2"
+    ],
+    "irqs": [
+      "usb2"
+    ],
+    "sources": [
+      "docs/ip/usb2.md"
+    ],
+    "summary": "Dual-role USB 2.0 digital controller with external ULPI PHY and descriptor DMA."
+  },
+  {
+    "id": "archinfo",
+    "regions": [
+      "APB4_ARCHINFO"
+    ],
+    "irqs": [],
+    "sources": [
+      "rtl/managed/clusterip/archinfo/doc/datasheet.md",
+      "rtl/mini/top/apb4_system.sv"
+    ],
+    "summary": "Read-only discovery of build, topology, memory and technology capabilities."
+  },
+  {
+    "id": "sysctrl",
+    "regions": [
+      "APB4_SYSCTRL"
+    ],
+    "irqs": [],
+    "sources": [
+      "docs/ip/sysctrl.md"
+    ],
+    "summary": "Root system control: lifecycle, configuration, fault retention and test verdict."
+  },
+  {
+    "id": "clint",
+    "regions": [
+      "APB4_CLINT"
+    ],
+    "irqs": [
+      "clint_software",
+      "clint_timer"
+    ],
+    "sources": [
+      "docs/ip/clint.md"
+    ],
+    "summary": "Management-hart software and machine-timer interrupt controller."
+  },
+  {
+    "id": "hp-platform",
+    "regions": [
+      "HP_ACLINT",
+      "HP_PLIC",
+      "APB4_HP_MAILBOX"
+    ],
+    "irqs": [
+      "hp_mailbox_lp"
+    ],
+    "sources": [
+      "docs/ip/hp-platform.md",
+      "docs/lp-hp-architecture.md"
+    ],
+    "summary": "HP local timer/software interrupts, two-context PLIC and bidirectional mailbox."
+  },
+  {
+    "id": "resource",
+    "regions": [
+      "APB4_RESOURCE_CTRL"
+    ],
+    "irqs": [
+      "resource_fault"
+    ],
+    "sources": [
+      "docs/ip/resource-controller.md"
+    ],
+    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for eight resources."
+  },
+  {
+    "id": "monitor",
+    "regions": [
+      "APB4_FABRIC_MONITOR"
+    ],
+    "irqs": [],
+    "sources": [
+      "docs/ip/fabric-monitor.md"
+    ],
+    "summary": "Snapshot counters and sticky fault attribution beside the HP data crossbar."
+  },
+  {
+    "id": "i2s",
+    "regions": [
+      "APB4_I2S"
+    ],
+    "irqs": [
+      "i2s"
+    ],
+    "sources": [
+      "docs/ip/i2s.md"
+    ],
+    "summary": "Stereo master transceiver with independent audio clock and 32-bit TX/RX streams."
+  },
+  {
+    "id": "dvp",
+    "regions": [
+      "APB4_DVP"
+    ],
+    "irqs": [
+      "dvp"
+    ],
+    "sources": [
+      "docs/ip/dvp.md"
+    ],
+    "summary": "8-bit parallel capture with RGB565/YUV422, frame markers, crop and DMA streaming."
+  },
+  {
+    "id": "jpeg",
+    "regions": [
+      "APB4_JPEG"
+    ],
+    "irqs": [
+      "jpeg"
+    ],
+    "sources": [
+      "docs/ip/jpeg.md"
+    ],
+    "summary": "Baseline sequential JPEG encode/decode with private AXI64 DMA and SG ring."
+  },
+  {
+    "id": "apu",
+    "regions": [
+      "APB4_APU"
+    ],
+    "irqs": [
+      "apu"
+    ],
+    "sources": [
+      "docs/ip/apu.md",
+      "rtl/ip/multimedia/apu_reg.sv",
+      "rtl/ip/multimedia/apb4_apu.sv"
+    ],
+    "summary": "Partially implemented coreless audio subsystem; production codec jobs remain disabled."
+  },
+  {
+    "id": "crypto",
+    "regions": [
+      "APB4_CRYPTO"
+    ],
+    "irqs": [
+      "crypto"
+    ],
+    "sources": [
+      "docs/ip/crypto.md"
+    ],
+    "summary": "Management-only AES-128/192/256, SHA-224/256 and raw RSA-2048 controller."
+  },
+  {
+    "id": "crc",
+    "regions": [
+      "APB4_CRC"
+    ],
+    "irqs": [],
+    "sources": [
+      "rtl/managed/clusterip/crc/doc/datasheet.md",
+      "rtl/mini/top/apb4_system.sv"
+    ],
+    "summary": "APB4 CRC engine for data-integrity calculations."
+  },
+  {
+    "id": "rng",
+    "regions": [
+      "APB4_RNG"
+    ],
+    "irqs": [
+      "rng"
+    ],
+    "sources": [
+      "rtl/managed/clusterip/rng/doc/datasheet.md",
+      "rtl/mini/top/apb4_system.sv"
+    ],
+    "summary": "Entropy controller with an unqualified deterministic source in this integration."
+  },
+  {
+    "id": "ext-l",
+    "regions": [
+      "APB4_EXT_L"
+    ],
+    "irqs": [
+      "extension_l"
+    ],
+    "sources": [
+      "docs/ip/extensions.md"
+    ],
+    "summary": "Fixed low-bandwidth APB4 extension slot with one interrupt."
+  },
+  {
+    "id": "ext-h",
+    "regions": [
+      "APB4_EXT_H"
+    ],
+    "irqs": [
+      "extension_h"
+    ],
+    "sources": [
+      "docs/ip/extensions.md"
+    ],
+    "summary": "Fixed high-bandwidth extension slot with APB4, AXI64 master and one interrupt."
+  },
+  {
+    "id": "user-ip",
+    "regions": [
+      "APB4_USER_IP"
+    ],
+    "irqs": [],
+    "sources": [
+      "docs/ip/user-ip.md"
+    ],
+    "summary": "MPW selectable user-IP window; PRODUCT exposes a compatibility responder."
+  },
+  {
+    "id": "reserved",
+    "regions": [
+      "APB4_GA",
+      "SPISD"
+    ],
+    "irqs": [],
+    "sources": [
+      "rtl/mini/address_map/memory_map.json"
+    ],
+    "summary": "Reserved address ranges; no integrated graphics accelerator or card data aperture."
+  }
+]

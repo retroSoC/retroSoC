@@ -83,3 +83,4 @@ socver.*
 *result.json
 *.pdf
 /publications/datasheets/assets/
+/publications/media/

@@ -5,6 +5,11 @@ archives, OCI base images, Nix inputs, checksums, and CI tool bundles. Its diges
 contributes to every build variant identity. `flake.lock` resolves the pinned Nix
 inputs and is validated against this lock.
 
+Publication inputs are also locked here: `publication_media`, the CeTZ and
+oxifmt archives, and the locally required Typst version in `publication_tools`.
+They are prepared manually by `publications/build_datasheet.py setup`, without
+adding a root Makefile target. See [Publications](../publications/README.md).
+
 Do not add direct downloads to setup scripts or workflow YAML. Update the lock
 with a full Git revision or verified SHA-256 checksum, validate it with:
 

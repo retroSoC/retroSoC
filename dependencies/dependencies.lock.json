@@ -1,6 +1,13 @@
 {
   "schema_version": 1,
   "sources": {
+    "publication_media": {
+      "url": "https://github.com/retroSoC/media.git",
+      "revision": "773154ba6825f7878a0fee05cc6f2222efc1ca26",
+      "destination": "publications/media",
+      "license": "MulanPSL-2.0 AND OFL-1.1",
+      "purpose": "Publication fonts, licenses and original artwork"
+    },
     "mpw": {
       "url": "https://github.com/retroSoC/mini-ver-mpw.git",
       "revision": "e63d5cd71ffd912ad4f901e59f7f848c1a8bbfbd",
@@ -119,6 +126,20 @@
       "destination": ".cache/retrosoc/downloads/apu/flac-corpus-aa7b0c6cf32994c106ae517a08134c28a96ff5b2.tar.gz",
       "license": "CC0-1.0"
     },
+    "typst_cetz": {
+      "version": "0.5.2",
+      "url": "https://packages.typst.org/preview/cetz-0.5.2.tar.gz",
+      "sha256": "77cf8490114ae04c6e665a11efa691d284a0cadb9719771b5708c1197292f23f",
+      "destination": ".cache/retrosoc/publications/packages/preview/cetz/0.5.2",
+      "license": "LGPL-3.0-or-later"
+    },
+    "typst_oxifmt": {
+      "version": "1.0.0",
+      "url": "https://packages.typst.org/preview/oxifmt-1.0.0.tar.gz",
+      "sha256": "7d17a1fc8ad01740ec3cb2b03c7360a4225ff9318e5710765fa98ea6fd59594f",
+      "destination": ".cache/retrosoc/publications/packages/preview/oxifmt/1.0.0",
+      "license": "MIT OR Apache-2.0"
+    },
     "libjpeg_turbo": {
       "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
       "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
@@ -170,6 +191,13 @@
       "revision": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
       "nar_hash": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
       "license": "MIT"
+    }
+  },
+  "publication_tools": {
+    "typst": {
+      "version": "0.15.1",
+      "url": "https://github.com/typst/typst/releases/tag/v0.15.1",
+      "installation": "Use the locally installed CLI; no automatic compiler download"
     }
   },
   "toolchains": {
