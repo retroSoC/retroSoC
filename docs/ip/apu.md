@@ -117,7 +117,7 @@ apb4_apu
   apu_job_scheduler
   apu_dma
   apu_codec_sequencer
-    apu_control_store       (2048 x 64, 16 KiB)
+    apu_control_store       (4096 x 64, 32 KiB from the P5 capacity refreeze)
     apu_scalar_registers    (16 x 32)
     apu_loop_stack
   apu_bitstream_engine
@@ -136,11 +136,13 @@ system load/store, execute from AXI memory, address APB4, take a CPU interrupt,
 or run a compiler-generated program. It fetches one validated 64-bit control
 word per cycle from local control store and orchestrates fixed engines.
 
-Total local storage is 128 KiB:
+From the P5 capacity refreeze, total image/data storage is 144 KiB instead of
+the earlier 128 KiB target. P3/P4 implemented capacities remain as reported in
+their capability profiles:
 
 | Region | Capacity | Use |
 | --- | ---: | --- |
-| control store | 16 KiB | 2048 64-bit instructions containing WAV, MP3, FLAC, and common subroutines |
+| control store | 32 KiB | 4096 64-bit instructions containing codec programs and common subroutines; P3/P4 retain 2048 words / 16 KiB. |
 | codec table/scratch | 24 KiB | Huffman tables, MP3 reservoir/coefficient state, FLAC predictor/Rice state |
 | compressed/PCM staging | 16 KiB | input and output DMA/stream buffers |
 | KWS | 64 KiB | model weights, 49 by 10 history, and tiled activations |
@@ -423,9 +425,9 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | Offset | Register | Access | Reset | Contract |
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
-| `0x004` | `IP_VERSION` | RO | `0x00010000` | Public ABI V1.0. |
+| `0x004` | `IP_VERSION` | RO | implementation | APB ABI V1.0 `0x00010000` for P1..P4 and pre-expansion P5; expanded P5 onward is V1.1 `0x00010001`. |
 | `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; P5 is `0x000001bd`; MVP has 0..8 set. |
-| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4/P5 are `0x01827010`; MVP is 16/112/2/96. |
+| `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4 is `0x01827010`; expanded P5 onward is `0x01827020` (32/112/2/96). |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
 | `0x018` | `IRQ_STATE` | RW1C | `0` | Sticky events. |
@@ -444,14 +446,14 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x04c` | `WRITE_LIMIT` | RW idle/LP | `0` | Inclusive write limit. |
 | `0x050` | `DMA_TIMEOUT` | RW idle | `0x0000ffff` | Nonzero no-progress timeout. |
 | `0x054` | `ABI_DIGEST` | RO | `0` until MVP | CRC32 digest over the complete frozen V1 tables; partial P1..P7 implementations report zero. |
-| `0x058` | `SEQUENCER_STATUS` | RO | `0` | PC `[10:0]`, class `[14:11]`, opcode `[18:15]`, wait 19, loop-active 20. |
+| `0x058` | `SEQUENCER_STATUS` | RO | `0` | PC low `[10:0]`, class `[14:11]`, opcode `[18:15]`, wait 19, loop-active 20; APB V1.1 appends PC bit 11 at bit 21. |
 | `0x05c` | `SEQUENCER_RETIRED` | RO | `0` | Saturating instructions retired in current frame/block. |
 | `0x060` | `STREAM_WATERMARK` | RW idle | `0` | RX/input high `[7:0]`, TX/output low `[15:8]`, reserved `[31:16]=0`; zero disables, otherwise 1..64. Added in P2. |
 | `0x080` | `MC_IMAGE_ADDRESS` | RW idle/LP | `0` | 64-byte-aligned `APUMC` address. |
 | `0x084` | `MC_IMAGE_SIZE` | RW idle/LP | `0` | Exact nonzero bundle bytes. |
 | `0x088` | `MC_EXPECTED_CRC` | RW idle/LP | `0` | Expected payload CRC32, equal to header. |
 | `0x08c` | `MC_STATUS` | RO | `0` | Busy 0, valid 1, header error 2, range error 3, control-flow error 4, table error 5, CRC error 6, capability error 7; `[31:8]` reserved zero. |
-| `0x090` | `MC_ABI` | RO | `0` | Loaded combined major/minor microcode ABI; V1.0 is `0x00010000`. |
+| `0x090` | `MC_ABI` | RO | `0` | Loaded APUMC/ISA version: V1.0 `0x00010000` or V2.0 `0x00020000`, according to the validated image. Independent of APB IP_VERSION. |
 | `0x094` | `MC_BUILD_ID_LO` | RO | `0` | Build ID low. |
 | `0x098` | `MC_BUILD_ID_HI` | RO | `0` | Build ID high. |
 | `0x09c` | `MC_LOCK` | RO | `0` | Lock bit 0 sets automatically after successful load; `[31:1]` reserved zero; hard reset clears. |
@@ -574,9 +576,16 @@ format/KWS bit and the necessary engine/model state before submitting. The P2
 stream router remains unadvertised through P4 because its production endpoints
 remain unavailable. `ABI_DIGEST`
 is zero for every partial Phase1..7 build and becomes the nonzero CRC32 over
-the complete canonical V1 register/field/descriptor/`APUMC`/`APUM`/opcode/
+the complete canonical APB V1 register/field/job-descriptor, supported
+`APUMC` V1/V2, `APUM`, opcode,
 format/IRQ/error tables only in the Phase8 supported MVP. A zero digest means
 prototype/incomplete ABI and is not a compatibility hash for a subset.
+
+Expanded P5 keeps `CAPABILITY0=0x000001bd` and primitive mask `0x001fffff`,
+but advertises `CAPABILITY1=0x01827020` and `IP_VERSION=0x00010001` for the
+32 KiB store and appended PC-high status bit. This hardware discovery is
+constant even while a legacy V1 image is loaded. Format, TX/RX, KWS, data-SRAM,
+channel, rate, IRQ, ownership, and job behavior are otherwise unchanged.
 
 Hardware set wins same-cycle W1C. Snapshot captures all 64-bit counters
 atomically; software reads low then high.
@@ -598,20 +607,69 @@ changing state.
 
 ### `APUMC` microcode bundle ABI
 
+#### Versioned P5 control-store expansion
+
+The selected P5 capacity remedy is a 4096-word, 64-bit control store. The
+reported compacted 2437-word trial was already 389 words over the old limit
+and still omitted cross-frame FLAC resampling and complete long-Rice paths.
+That report is sizing evidence, not a complete-codec acceptance result. The
+expanded store leaves 1659 words relative to that incomplete trial; the final
+complete image must still demonstrate that it fits. No compact opcode,
+dynamic-kernel operand, parser/CRC shortcut in RTL, host decode, overlay, or
+runtime code replacement is authorized by this refreeze.
+
+APB register ABI and APUMC binary ABI have independent versions. APB V1.1 is
+an additive status/capacity extension. APUMC V2.0 versions the widened PC and
+branch operands so legacy images retain their exact V1 validation rules.
+
+| Target / image | APB `IP_VERSION` | `CAPABILITY1` | Header word 1 / loaded `MC_ABI` | Instruction count / PC width |
+| --- | --- | --- | --- | --- |
+| Historical P3 | `0x00010000` | `0x00000010` | `0x00010000` only | 1..2048 / 11 bits |
+| Historical P4 | `0x00010000` | `0x01827010` | `0x00010000` only | 1..2048 / 11 bits |
+| Pre-expansion P5 compatibility image | Historical hardware remains `0x00010000` | Historical hardware remains `0x01827010` | `0x00010000` | 1..2048 / 11 bits |
+| Expanded P5, legacy image loaded | `0x00010001` | `0x01827020` | `0x00010000` | 1..2048 / 11-bit validation on the 12-bit engine |
+| Expanded P5, V2 image loaded | `0x00010001` | `0x01827020` | `0x00020000` | 1..4096 / 12 bits |
+
+Expanded P5 must load both exact header versions. Unknown versions fail with
+the existing loader header-error tuple, locating header word 1 and reporting
+its observed value. A V1 image with count 2049..4096, a high descriptor PC bit,
+or branch immediate bit 11 set still fails V1 validation even on the expanded
+hardware. A V2 image is legal with fewer than 2049 instructions too; image size
+must never be used to infer the encoding. Older P3/P4/pre-expansion P5 loaders
+reject V2 at the header before publishing valid or fetching its instructions.
+
+Version-related loader failures keep code 9, stage 1, response/index zero:
+unknown version sets MC_STATUS header-error and uses address
+`MC_IMAGE_ADDRESS+4`, detail header word 1; invalid count sets range-error
+and uses `MC_IMAGE_ADDRESS+12`, detail header word 3. Invalid PC/reserved bits
+in entry word 0 or 1 set range-error and locate that entry word with its
+observed 32-bit value. A branch's nonzero reserved immediate bits set
+control-flow-error and use its full instruction source address plus the
+existing `trap_detail(1)` encoding. These are the same category precedence
+and locator rules as before; the selected version supplies only new bounds
+and masks. V2 does not create a new error code or IRQ.
+
+The 64-byte header, three 32-byte entry descriptors, 64-bit instruction format,
+opcode/predicate IDs, primitive masks, scratch/table fields, CRC algorithm and
+coverage, build ID, and MP3 stub contents are retained. Only the versioned
+instruction-count, PC fields and branch immediates below expand. The 128-byte
+public job/ring descriptor does not change. No image can switch ISA versions
+while executing, and lock/reset/admission/publication semantics are unchanged.
+
 All multibyte bundle fields and instructions are little-endian. The bundle
 starts with this exact 64-byte header:
 
 | Word | Field |
 | ---: | --- |
 | 0 | magic `0x41504d43` (`APMC`) |
-| 1 | combined APUMC/ISA ABI: major `[31:16]`, minor `[15:0]`; P3 accepts exactly V1.0, `0x00010000` |
+| 1 | combined APUMC/ISA ABI: major `[31:16]`, minor `[15:0]`; V1.0 `0x00010000` or V2.0 `0x00020000` under the target matrix above |
 | 2 | total bundle bytes |
-| 3 | instruction count, 1..2048 |
+| 3 | instruction count, 1..2048 for V1 or 1..4096 for V2 |
 | 4 | 64-byte-aligned instruction offset |
 | 5 | table-payload offset, 4-byte aligned |
 | 6 | table-payload bytes |
 | 7 | entry-descriptor offset, 32-byte aligned |
-| 8 | entry count; V1 requires exactly 3 |
+| 8 | entry count; V1 and V2 require exactly 3 |
 | 9 | required primitive mask, equal to the OR of all entry primitive masks |
 | 10 | maximum declared local scratch bytes |
 | 11 | CRC32/ISO-HDLC over all bytes after the header |
@@ -632,18 +690,30 @@ polynomial `0xedb88320` (normal form `0x04c11db7`), initial value
 `0xffffffff`, and final XOR `0xffffffff`. Any other word-1 value, reserved bit,
 entry count, alignment, size, range, overlap, or CRC relation is invalid.
 
-The descriptor array contains these exact three 32-byte, eight-word entries:
+The descriptor array contains three 32-byte, eight-word entries. Header word 1
+selects exactly one of the following PC allocations; there is no mixed-layout
+array. Unlisted fields below retain the same meaning in both versions.
 
 | Word | Bit allocation and units |
 | ---: | --- |
-| 0 | format ID `[3:0]`; entry PC `[14:4]`; `[31:15]` reserved zero |
-| 1 | program-first PC `[10:0]`; `[15:11]` reserved zero; program-last PC `[26:16]`; `[31:27]` reserved zero |
+| 0 | format ID `[3:0]`; V1 entry PC `[14:4]`, reserved `[31:15]`; V2 entry PC `[15:4]`, reserved `[31:16]`; all reserved bits zero |
+| 1 | V1 first PC `[10:0]`, last PC `[26:16]`, reserved `[15:11]` and `[31:27]`; V2 first PC `[11:0]`, last PC `[27:16]`, reserved `[15:12]` and `[31:28]`; all reserved bits zero |
 | 2 | scratch base byte offset `[16:0]`; `[31:17]` reserved zero |
 | 3 | scratch size in bytes `[16:0]`; `[31:17]` reserved zero |
 | 4 | maximum loop count `[15:0]`; `[31:16]` reserved zero |
 | 5 | maximum retired instructions per frame/block `[23:0]`; `[31:24]` reserved zero |
 | 6 | required primitive mask `[31:0]` |
 | 7 | table-relative byte offset `[15:0]`; table bytes `[31:16]` |
+
+Word 0 reserved masks are `0xffff8000` (V1) and `0xffff0000` (V2).
+Word 1 reserved masks are `0xf800f800` (V1) and `0xf000f000` (V2).
+Words 2..7 retain masks `0xfffe0000`, `0xfffe0000`, `0xffff0000`,
+`0xff000000`, `0xffe00000` (reserved primitive bits), and zero respectively;
+implemented-mask checks are additional to the word-6 reserved mask. V2 word 0
+is `format_id | (entry_pc<<4)` and word 1 is
+`first_pc | (last_pc<<16)`, without truncating any of the 12 PC bits. Entry
+format IDs/order remain 0/1/2. For PCs below 2048 these words have exactly
+the same values in V1 and V2; the header version still governs all checks.
 
 PC fields are 64-bit instruction indices, not byte addresses. Descriptor array
 indices 0, 1, and 2 have format IDs 0, 1, and 2 for WAV, MP3, and FLAC
@@ -694,7 +764,9 @@ Instructions are little-endian 64-bit words:
 ```
 
 The sequencer has 16 32-bit GPRs, three comparison flags (`EQ`, signed `LT`,
-and unsigned `LT`), four 11-bit return-stack entries, and four loop slots. All
+and unsigned `LT`), four return-stack entries, and four loop slots. Saved
+return PCs and loop-start PCs are 11 bits in P3/P4 and 12 bits in expanded P5;
+V1 execution still checks the 11-bit range. All
 are cleared at entry launch and on soft, resource, or hard reset. Every GPR is
 writable. GPR writes become visible to the next retired instruction. `CMP` is
 the only instruction that changes comparison flags. Arithmetic `ADD` and `SUB`
@@ -762,11 +834,11 @@ is rejected rather than ignored.
 | `0.0 NOP` | `dst/src0/src1/aux/immediate=0`; no effect. |
 | `0.1 END` | all operand fields zero; when true, stalls until accepted kernel/transport/writeback work has drained, then terminates and commits the latched `JOB_RESULT`; code zero is success and a nonzero code is terminal error. If none was latched, the committed result is zero/success. A drained engine/transport fault traps instead. |
 | `0.2 TRAP` | `dst/src0/src1/aux=0`; when true, traps with `immediate` as `ERROR_DETAIL`. |
-| `0.3 JUMP_FWD` | only `immediate[10:0]` is used and is 1..2047; target is `PC+1+delta` and must be inside the entry program range. |
+| `0.3 JUMP_FWD` | V1 uses `immediate[10:0]` in 1..2047; V2 uses `immediate[11:0]` in 1..4095; higher immediate bits and other operands are zero. Target is `PC+1+delta` and must be inside the entry program range. |
 | `0.4 CALL_FWD` | same target rule as `JUMP_FWD`; pushes `PC+1`, then branches; a fifth nested call traps. |
 | `0.5 RET` | all operands zero and predicate must be always; pops and branches; empty stack traps. |
 | `0.6 LOOP_SETUP` | predicate always; `aux[1:0]` selects an inactive loop slot, `aux[7:2]=0`, count is `R[src0][15:0]`, and other fields are zero. Count must be nonzero and no greater than the descriptor maximum; the slot records count and `PC+1` as its loop-start PC. |
-| `0.7 LOOP_BACK` | predicate always; `aux[1:0]` selects the active slot, `immediate[10:0]` is a nonzero backward distance, and other fields are zero. `PC+1-distance` must equal the slot's recorded loop-start. Count greater than one is decremented and branches there; count one clears the slot and falls through. Inactive slot, underflow, or target mismatch/range failure traps. |
+| `0.7 LOOP_BACK` | predicate always; `aux[1:0]` selects the active slot. V1 uses nonzero distance `immediate[10:0]` in 1..2047; V2 uses `immediate[11:0]` in 1..4095; higher immediate bits and other operands are zero. `PC+1-distance` must equal the slot's recorded loop-start. Count greater than one is decremented and branches there; count one clears the slot and falls through. Inactive slot, underflow, or target mismatch/range failure traps. |
 | `0.8 WAIT` | predicate always; `aux` source 0 DMA, 1 kernel, 2 input-FIFO ready, 3 output-FIFO ready, 4 TX-stream accepted/idle, or 5 ring writeback complete; all other operands zero. It stalls without retiring until true. Other sources are invalid. |
 | `1.0 MOV` | `R[dst]=R[src0]`; `src1/aux/immediate=0`. |
 | `1.1 MOVI` | `R[dst]=immediate`; `src0/src1/aux=0`. |
@@ -906,7 +978,12 @@ including predicate-false instructions. If the next instruction would exceed
 the descriptor maximum, it traps before instruction side effects; `END` may be
 the last allowed retirement. `FRAME_COMMIT` resets the counter only after its
 counter/result update commits. Falling through program-last PC or control-store
-word 2047 traps.
+word 2047 for V1, or word 4095 for V2, traps. Branch/call/loop/return targets
+are checked before assignment to the PC: V2 arithmetic uses at least 13 bits
+to detect underflow, overflow and a target of 4096 rather than wrapping it to
+zero. The width change does not permit arbitrary backward branches, increase
+call depth, add loop slots, alter loop counts, or change watchdog budgets.
+`END`/`TRAP` may legally occupy the final loaded word, including V2 PC 4095.
 
 An asynchronous P2 transport error is sampled at the next retirement boundary,
 then fetch and new commands stop while accepted transfers drain. Trap reason
@@ -918,12 +995,22 @@ explicit `TRAP`; 0 and 11..255 are reserved. A trap sets sticky
 reset. A trap leaves a previously loaded `MC_STATUS.VALID` and `MC_LOCK` set
 because the bundle itself remains loaded.
 
-For the table below, `PC` is the trapping 11-bit control-store word index and
-`trap_detail(reason)` is reason `[7:0]`, PC `[18:8]`, class `[22:19]`, opcode
+For the table below, `PC` is the trapping control-store word index (11 bits
+for V1, 12 for V2). The 32-bit `trap_detail(reason)` keeps its V1 allocation:
+reason `[7:0]`, **PC low 11 bits** `[18:8]`, class `[22:19]`, opcode
 `[26:23]`, and `aux[4:0]` `[31:27]`. Every primary non-AXI trap sets
 `ERROR_STATUS.VALID=1`, AXI response `0`, descriptor index `0`, and
 `ERROR_ADDRESS=zero_extend(PC)<<3`. APUMC entry indices are not job/ring
 descriptor indices and therefore never enter `ERROR_STATUS.DESCRIPTOR_INDEX`.
+
+`ERROR_ADDRESS` always uses the full PC, including V2 bit 11: PC 2048 reports
+`0x00004000` and PC 4095 reports `0x00007ff8`, including explicit reason-10
+TRAP. No bit of reason/class/opcode/aux is stolen to extend `ERROR_DETAIL`.
+For loader instruction diagnostics, the address remains the absolute bundle
+address `MC_IMAGE_ADDRESS + instruction_offset + 8*PC`, using the full PC;
+`trap_detail` there also retains the low-11-bit PC field. Reason 9 still
+preserves an existing causative AXI/engine tuple; its address must not be
+reinterpreted as a PC. Software uses retained SEQUENCER_STATUS for that case.
 
 | Trap reason | `ERROR_STATUS` code | Stage | AXI response | Descriptor index | `ERROR_ADDRESS` | `ERROR_DETAIL` |
 | ---: | ---: | ---: | ---: | ---: | --- | --- |
@@ -950,7 +1037,12 @@ AXI write, AXI read, DMA timeout, RX overrun, and TX underrun retain their
 existing order above the trap; the trap outranks forced abort. Every applicable
 sticky event still sets.
 
-`SEQUENCER_STATUS` bits `[31:21]` are reserved zero. While running, PC, class,
+Under APB V1.0, `SEQUENCER_STATUS` bits `[31:21]` remain reserved zero. APB
+V1.1 appends `PC_HIGH` at bit 21 (reset zero), with `[31:22]` reserved zero;
+PC-low, class, opcode, wait, and loop-active keep their original bit positions.
+The V1.1 reserved mask is `0xffc00000`, versus V1.0 `0xffe00000`. Decode the
+full PC as `(status & 0x7ff) | (((status >> 21) & 1) << 11)`; legacy V1
+execution has PC_HIGH zero. While running, PC, class,
 opcode, wait, and loop-active are live for the current instruction. Wait is one
 for any current-instruction stall, including explicit wait, pending-GPR,
 kernel, DMA, FIFO, or backpressure stall. The terminal readback rules are:
@@ -974,6 +1066,14 @@ launch or on soft/resource/hard reset; `END` and abort do not set it. The P3
 verification-only launch follows the same rules and creates no public launch
 mechanism.
 
+PC_HIGH participates in the same atomic running/terminal snapshot as PC-low:
+END/trap/abort retain it; accepted launch initializes it from the new entry
+PC; soft/resource/hard reset clears it; IRQ/error W1C and counter clear do not
+alter it. `SEQUENCER_RETIRED`, all first-error precedence, trap reasons, and
+terminal retention rules are otherwise unchanged. Readers requiring a stable
+PC while running read the single 32-bit status word rather than combining
+separately sampled status and ERROR_ADDRESS from different events.
+
 #### P3 loader, status, and control store
 
 `MC_STATUS` reset is zero. `BUSY` bit 0 is live, `VALID` bit 1 is retained
@@ -989,7 +1089,9 @@ The loader first validates header/ranges sufficiently to bound DMA, may then
 write the private control store while the sequencer is held idle and `VALID=0`,
 and publishes the new image atomically only after full validation and CRC.
 Success in one PCLK edge clears `BUSY`, sets `VALID` and `MC_LOCK`, writes
-`MC_ABI=0x00010000`, build ID and actual CRC, saturating-increments
+`MC_ABI` from the accepted header word 1 (`0x00010000` for P3/P4/V1 or
+`0x00020000` for an expanded-P5 V2 image), build ID and actual CRC,
+saturating-increments
 `MC_LOAD_COUNT`, and sets sticky IRQ bit 3. Load-done IRQ and count occur only
 on successful publication; the count saturates at `0xffffffff`. A failed
 attempt clears `BUSY`, keeps `VALID` and lock clear, does not increment the
@@ -1065,20 +1167,52 @@ loader error bits while preserving valid, lock, ABI/build/CRC, and load count.
 Terminal precedence is hard reset, resource reset, accepted abort, load
 failure, then load success.
 
-The control store is exactly 2048x64 (16 KiB), has synchronous one-PCLK-cycle
-sequencer fetches, no architecturally visible reset contents, and is readable
-only when valid. With `HAVE_SRAM_MACRO=YES`, it is implemented as four
+The P3/P4 control store is exactly 2048x64 (16 KiB), with the mapping below;
+expanded P5 uses the separately frozen 4096x64 mapping. Both have synchronous
+one-PCLK-cycle sequencer fetches, no architecturally visible reset contents,
+and are fetchable only when valid. With `HAVE_SRAM_MACRO=YES`, the P3/P4 store
+is implemented as four
 `tc_sram_1024x32` instances: two depth banks by low/high 32-bit halves; loader
 writes the halves and sequencer fetches the combined word, with mutually
 exclusive loader/fetch ownership. If a selected PDK advertises the macro but
 cannot elaborate that mapping, elaboration must fail.
 
-With `HAVE_SRAM_MACRO=NO`, including the supported ICS55 profile,
+For P3/P4 with `HAVE_SRAM_MACRO=NO`, including the supported ICS55 profile,
 `apu_control_store` selects a portable inferred synchronous
 `logic [63:0] mem [0:2047]` implementation with identical admission, latency,
 byte/word ordering, and loader/fetch exclusion. It must not instantiate an
 unconnected macro wrapper. This path is functional and synthesis-compatibility
 evidence only; it is not an SRAM-macro, PPA, or tapeout claim.
+
+Expanded P5 uses eight `tc_sram_1024x32` instances: four depth banks selected
+by word-address `[11:10]`, each with low/high 32-bit halves, and row `[9:0]`.
+Both halves form one 64-bit control word; loader writes, loader verification
+reads, and sequencer fetch retain the same exclusive ownership and one-cycle
+synchronous read behavior. The selected bank is registered with each read so
+the 2047/2048 boundary cannot return the preceding bank's data. The no-macro
+path is `logic [63:0] mem [0:4095]` with identical word ordering and latency.
+Memory contents need not reset. Header version, loaded instruction count,
+valid/lock state, and entry bounds gate every fetch: an accepted V1 image
+cannot access the upper half or stale words from an earlier image.
+
+Every loader/scanner/sequencer/fetch/return/loop PC path and saved verifier
+state must carry 12 bits on expanded P5. An instruction count or end sentinel
+must represent 4096 without truncation (at least 13 bits); the payload length
+must represent 32768 instruction bytes. Loader proof storage scales from 2048
+to 4096 pending path records for V2, retaining the V1 limit for V1 validation;
+the offline verifier's maximum-instruction-count-times-64 bound becomes 262144 for
+V2 versus 131072 for V1. Exceeding a proof bound remains a control-flow loader
+failure, never a reason to skip paths. Internal proof-record layouts are not
+APUMC fields, but all saved PCs must round-trip bit 11. Proof workspace is
+implementation overhead and must be reported separately from the advertised
+control/data capacities.
+
+No local-data partition, primitive latency, PCLK frequency, reset ownership,
+CDC/RDC crossing, DMA interface, or atomic table/control-store publication
+rule changes. `MC_LOAD_COUNT` and loader IRQ count one complete publication,
+not a bank or halfword. A late CRC/range/proof failure or an abort after an
+upper-bank write still publishes neither code nor tables. Existing soft/
+resource-reset lock retention and hard-reset invalidation apply to all banks.
 
 `apu-mcasm` is the single assembler/verifier and produces the binary, symbols,
 control-flow/loop report, primitive manifest, deterministic trace input, and
@@ -1089,6 +1223,26 @@ phases extend execution without changing these encodings. No partial tool-table
 fingerprint is exposed as the public `ABI_DIGEST`, which remains zero through
 P7. Neither tool accepts C, ELF, RV32, dynamic linking, or runtime code
 generation.
+
+For the capacity migration, `--target p3` and `--target p4` continue to emit
+APUMC V1 and enforce 2048 words. `--target p5` emits APUMC V2 by default and
+enforces 4096 words. The assembler adds an explicit `--mc-abi 1.0` or
+`--mc-abi 2.0` selector; p3/p4 with 2.0 is rejected. `--target p5 --mc-abi 1.0`
+is the retained legacy P5 build path, including its 2048-word rejection. Parser
+and interpreter select the exact PC/operand limits from header word 1, then
+check the requested target's allowed primitives. Python helpers must take the
+version explicitly or derive it from this target default; no global widening
+may silently relax V1 checks.
+
+All generated reports record APB compatibility, APUMC version, actual/maximum
+instruction words, byte size, free words, entry ranges, branch-delta maxima,
+source/coefficient hashes, bundle SHA-256 and CRC, and proof high-water. The
+canonical ABI manifest includes both descriptor/operand variants and the
+additive PC_HIGH field. RTL/C definitions remain independently handwritten and
+parity-tested; no generator is introduced. A source binary is rebuilt with the
+selected version, not patched in place; header/size/CRC/build-ID provenance
+must correspond to the exact resulting bytes. Existing legacy fixture bytes
+remain fixed.
 
 #### P4 primitive and local-SRAM profile
 
@@ -1330,12 +1484,12 @@ it does not declare that controller already implemented.
 | P5 discovery/admission | Exact value or rule |
 | --- | --- |
 | `CAPABILITY0` | `0x000001bd`: WAV 0, FLAC 2, DMA 3, ring 4, TX streams 5, sequencer 7, resampler 8. MP3 1 and KWS 6 remain zero. |
-| `CAPABILITY1` | `0x01827010`: 16 KiB control, 112 KiB data, two channels, 96 kHz maximum source rate. |
+| `CAPABILITY1` | Expanded P5: `0x01827020`, 32 KiB control, 112 KiB data, two channels, 96 kHz maximum source rate. |
 | Implemented primitive mask | `0x001fffff`, bits 0..20; reserved bits 21..31 remain zero. |
 | ISA target | Add `p5` to the assembler/parser/interpreter and hardware capability validation. Classes 0..6 and all six existing `WAIT` sources are admitted subject to entry masks. Existing `p3` and `p4` targets retain their masks and behavior. |
 | Public job | Operation 0 with format 0 WAV or 2 FLAC; one active job, direct or ring. MP3, KWS operation 1, and model load remain unavailable. |
 | Stream route | TX 0/1 legal; RX only 0 legal. Bit 5 means at least one implemented stream direction, not permission for RX/KWS. RX 1 and reserved direction values return `PSLVERR`. |
-| ABI identity | Existing offsets, descriptor size, instruction encoding, `MC_ABI=0x00010000`, and topology stay fixed. `ABI_DIGEST=0` through P7. |
+| ABI identity | Expanded P5 APB V1.1, `IP_VERSION=0x00010001`; new release bundles use APUMC V2.0 / `MC_ABI=0x00020000` and legacy V1 images remain loadable. Existing APB offsets, job descriptor, 64-bit instruction positions/opcodes, and topology stay fixed. `ABI_DIGEST=0` through P7. |
 
 Direct acceptance snapshots all job fields, requires owner/unblocked/idle,
 locked valid microcode, a supported format, valid ranges and output geometry,
@@ -1675,8 +1829,8 @@ When multiple parser checks at the same position fail, structural extent and
 reserved-bit errors precede unsupported-profile checks, then CRC checks;
 the first check in field order otherwise wins.
 
-The released P5 APUMC still contains exactly three entries. Instruction word
-0 is always `0x0200000001000001` (unconditional class-0 TRAP, detail
+The released P5 APUMC uses V2.0 and still contains exactly three entries.
+Instruction word 0 is always `0x0200000001000001` (unconditional class-0 TRAP, detail
 `0x01000001`). The MP3 entry at descriptor index 1 has the exact eight words
 `[0x00000001, 0, 0, 0, 1, 1, 0, 0]`: entry/first/last PC zero, zero scratch,
 table and primitive mask, maximum loop/retired one. A verification-only
@@ -1707,10 +1861,27 @@ submit, stream routing, KWS, interrupt, error, statistics, bounded wait, abort,
 and reset. Fallible functions return `rs_status_t` and waits take a timeout.
 `<retrosoc/hal/apu_regs.h>` independently mirrors every public constant.
 
-V1 is append-only. Existing offsets, descriptor size, opcode/format/error/IRQ
-IDs, `APUMC`, `APUM`, ownership, and lock semantics cannot change within major
-version 1. Incompatible behavior requires a new major version and capability
-negotiation; software fails closed on unknown major versions.
+The APB/job ABI is append-only within major version 1. Existing offsets,
+job-descriptor size, opcode/format/error/IRQ IDs, ownership, and lock semantics
+retain their meaning. APB V1.1 adds PC_HIGH and capacity discovery without
+moving an existing field. APUMC has its own binary/ISA version: legacy V1 is
+immutable, and the approved V2 widens its entry-PC and branch fields with
+explicit version negotiation. `APUM` model ABI does not change. Software fails
+closed on unknown major versions in the relevant namespace, not by equating
+APB `IP_VERSION` to `MC_ABI`.
+
+The updated P5 HAL accepts APB major 1, minor 0 or 1 for the supported legacy
+and expanded profiles, comparing the extracted major against 1 rather than
+against the full V1.1 word. It reads actual control-store KiB from CAPABILITY1.
+Release software targeting APUMC V2 requires APB V1.1 with 32 KiB before
+submitting that image. The existing microcode-load API and image structure
+remain unchanged; the hardware validates header word 1, and successful HAL
+load accepts/readbacks the corresponding MC_ABI 1.0 or 2.0. It must not require
+MC_ABI to be 1.0 on a valid V2 load or infer it from image size. Unknown image
+versions retain the existing header-failure/RS_EIO path. Existing legacy
+software can submit V1 images to expanded hardware; software displaying full
+PCs must use PC_HIGH or the full trap address. Functional PCM/job/error rules
+and every public HAL function signature remain unchanged.
 
 `STREAM_WATERMARK` at `0x060` is the sole P2 ABI append. P1 continues to return
 `PSLVERR` for that formerly reserved offset, while P2 implements it; no P1
@@ -2143,7 +2314,12 @@ required but no slower-clock real-time claim follows.
 
 Evidence includes:
 
-- control-store and local-SRAM macro count/utilization;
+- control-store and local-SRAM macro count/utilization; expanded P5 uses eight
+  4 KiB control-store wrappers plus the unchanged 28 local-data wrappers
+  (36 logical wrappers total versus 32 before expansion). Control storage
+  increases 16 KiB and combined image/data storage increases from 128 to
+  144 KiB. These are capacity counts, not measured area/power; report verifier
+  workspace, additional PC/branch flops, muxing, and fetch paths separately;
 - sequencer, entropy, transform, reconstruction, resampler, and KWS cells/area;
 - max/min WNS/TNS, worst APU paths, reset/fanout, clock gates, and black boxes;
 - instruction/control-store high-water, maximum frame instruction count,
@@ -2338,16 +2514,24 @@ Rice/fixed/LPC/decorrelation, resampling, memory/I2S output, interpreter/RTL
 differential, conformance corpus, and the frozen P5 HAL. Includes production
 class-6 transport, controller entry context, direct/ring backend connection,
 TX stream routing, and exact codec/result policies in the P5 sections above.
+The capacity refreeze adds the 4096x64 store, 12-bit PC/branch datapaths,
+APUMC V2 plus legacy V1 decoding, and APB V1.1 PC_HIGH/capacity discovery to
+this phase. Previously completed transport, HAL, formal, and corpus work is
+the implementation base and is preserved except for the required version/
+capacity/width integration.
 
 Dependencies: reviewed Phase4 and the exact RFC/libFLAC/corpus inputs above.
 Implement their dependency-lock/setup entries before reference tests. No host
 decoder enters the product path.
 
-Public changes: `CAPABILITY0=0x000001bd`, `CAPABILITY1=0x01827010`, implemented
+Public changes: `CAPABILITY0=0x000001bd`, `CAPABILITY1=0x01827020`, implemented
 primitive mask `0x001fffff`, classes 0..6, format IDs 0/2, TX route 1, and the
-documented HAL. MP3/KWS/RX route 1 remain unavailable and `ABI_DIGEST=0`.
-No existing APB offset, descriptor layout, P1..P4 target behavior, Resource7,
-APB group23, IRQ31/PLIC10, Gateway A identity, or clock/CDC allocation changes.
+documented HAL. `IP_VERSION=0x00010001`; new release images are APUMC V2.0,
+with widened entry PC/branch operands and PC_HIGH at SEQUENCER_STATUS bit 21.
+MP3/KWS/RX route 1 remain unavailable and `ABI_DIGEST=0`. No existing APB
+offset, job-descriptor layout, legacy APUMC V1 encoding, P1..P4 target behavior,
+Resource7, APB group23, IRQ31/PLIC10, Gateway A identity, or clock/CDC allocation
+changes.
 
 Validation:
 
@@ -2366,6 +2550,37 @@ deliverables included by the full Pytest command; missing required EDA/reference
 tools are reported as unrun, never counted as passing skipped tests. The
 ci_smoke command proves SoC integration and does not replace the directed
 codec corpus or long-playback evidence.
+
+Capacity-migration verification is mandatory in those same test/formal flows:
+
+- V1 accepts 2048 words and rejects 2049; V2 accepts complete 2049/2437/4096-
+  word fixtures and rejects 4097. A count of zero is rejected in both. Test
+  V1 high descriptor bits and immediate bit 11, V2 reserved bits and immediate
+  bit 12, unknown ABI, bad CRC, and field/region overflow with exact loader
+  error tuples and no valid/lock publication.
+- Round-trip entry/first/last PCs 0, 2047, 2048, and 4095 in handwritten SV/C
+  and Python tables. Exercise jump/call/return/loop crossings in both directions
+  across 2047/2048, zero/maximum deltas, underflow and a target of 4096; call
+  and loop depth/budgets retain their existing limits. No high bit may alias.
+- Verify loader writes, proof-state save/restore and fetches across all four
+  depth banks with distinct low/high words. Verify eight-macro and inferred
+  mappings in behavioral tests, including the no-macro profile. Abort/reset/
+  CRC failure after upper-bank writes must leave stale code unexecutable;
+  legacy images cannot execute it. Run the complete existing V1 P3/P4/P5
+  fixtures, retaining their original binary bytes and terminal tuples.
+- At PCs 2048 and 4095, verify SEQUENCER_STATUS PC_HIGH and all existing
+  class/opcode/wait/loop fields, full ERROR_ADDRESS, unchanged low-PC detail
+  packing, explicit-TRAP immediate, and END/trap/abort/reset retention. Include
+  an aux value with bit 4 set so no diagnostic bit is silently lost.
+- Rebuild the shared production WAV/FLAC bundle with every previously frozen
+  parser/output/error path, cross-frame FLAC resampling, and complete supported
+  long-Rice handling. Count every control-store word including the MP3 stub,
+  common subroutines and padding. The complete bundle must use at most 4096
+  words and publish exact size, free words, CRC/build/SHA-256 and source hashes.
+  A larger capacity alone, the incomplete 2437-word trial, or passing only
+  already-delivered transport tests cannot establish P5 completion. If the
+  complete image still exceeds 4096, report a capacity conflict; do not remove
+  required paths or move parsing into RTL/LP/HP.
 
 Completion: the exact supported/rejected matrices, malformed corpus, published
 error/count rules, HAL host tests, and production direct/ring/TX paths pass.
@@ -2398,8 +2613,8 @@ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
 ```
 
 Completion: supported modes/conformance pass PSNR and accounting gates;
-320 kbit/s stereo meets real-time; 2048-word store, SRAM, area, and timing
-evidence is reviewed.
+320 kbit/s stereo meets real-time; the inherited 4096-word store, SRAM, area,
+and timing evidence is reviewed.
 
 ### Phase 7 - Independent Continuous KWS Engine
 
