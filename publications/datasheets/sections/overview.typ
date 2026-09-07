@@ -1,14 +1,22 @@
 #import "../style.typ": *
 #import "../figures.typ": *
 
-#cover[
+// Publication status is explicit; successful build/tests do not change these marks.
+#let artifact-status = (
+  (name:"Available",selected:true),
+  (name:"Functional",selected:false),
+  (name:"Reproduced",selected:false),
+  (name:"Tapedout",selected:false),
+)
+
+#cover(evaluation:artifact-status)[
 #text(9pt, weight: "semibold", fill: gold)[PRODUCT DATASHEET / #doc.status]
 #v(rhythm.cover-gap)
 #text(30pt, weight: "semibold")[retroSoC Mini]
 #linebreak()
 #text(23pt, weight: "semibold", fill: gold)[Gen2/Gen2+]
 #v(rhythm.cover-gap)
-#text(13pt)[An open, asymmetric RISC-V SoC for embedded control and multimedia]
+#text(13pt)[An Open-Source, Linux-Capable Asymmetric Dual-Core SoC]
 #v(rhythm.cover-meta-gap)
 #grid(columns: (1fr, 1fr),
   [*#doc.document_id* · v#doc.version \ #doc.date],

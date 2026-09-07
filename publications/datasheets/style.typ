@@ -71,10 +71,36 @@
   #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
   #body
 ]
-#let cover(body) = {
-  show heading: it => heading-layout(it,
-    before:rhythm.cover-heading-before.at(calc.min(it.level - 1,1)),
-    after:rhythm.cover-heading-after)
+#let artifact-evaluation(states) = rect(width:92mm,height:10mm,radius:1.5mm,
+  fill:white,stroke:0.6pt + ink,inset:(x:2mm,y:1mm))[
+  #set text(size:9pt,weight:"regular",fill:ink)
+  #set par(leading:rhythm.small-leading,spacing:0pt)
+  #align(center + horizon)[
+    #grid(columns:(1fr,1fr,1fr,1fr),row-gutter:2pt,align:center,
+      ..states.map(state=>state.name),
+      ..states.map(state=>circle(radius:1.5mm,
+        fill:if state.selected {pale-gold} else {white},
+        stroke:0.6pt + if state.selected {gold} else {ink})),
+    )
+  ]
+]
+#let cover(body, evaluation:none) = {
+  show heading: it => {
+    if it.level==1 and it.body==[Product Brief] and evaluation!=none {
+      block(width:100%,above:rhythm.cover-heading-before.first(),
+        below:rhythm.cover-heading-after,sticky:true)[
+        #grid(columns:(1fr,92mm),column-gutter:4mm,row-gutter:2pt,
+          align(horizon,heading-layout(it,before:0pt,after:0pt)),
+          artifact-evaluation(evaluation),
+          [], align(center,text(9pt,weight:"regular",fill:black)[Artifact Evaluation]),
+        )
+      ]
+    } else {
+      heading-layout(it,
+        before:rhythm.cover-heading-before.at(calc.min(it.level - 1,1)),
+        after:rhythm.cover-heading-after)
+    }
+  }
   body
 }
 

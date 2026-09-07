@@ -283,6 +283,9 @@ font size or change field widths, offsets or semantic data to fit the page.
 
 ### Compact first page
 
+The 13 pt positioning line reads exactly:
+**An Open-Source, Linux-Capable Asymmetric Dual-Core SoC**.
+
 The cover uses Inter Semibold product lines at 30 and 23 pt, a 13 pt positioning
 line, and a 9 pt document-status label. Features remain 10.5 pt in two columns
 with a 7 mm gutter and the existing six groups. This is an explicit compact
@@ -301,6 +304,27 @@ with approximately 3 pt extra between items. Keep all six groups, both columns,
 10.5 pt text and the existing group-title styling. Use the elastic space above
 the Integration Note to accommodate this rhythm, not smaller type or an extra
 page.
+
+The Product Brief heading shares a normal-flow row with an Artifact Evaluation
+component at the right. Keep the original heading body, numbering, contents
+entry and bookmark unchanged; the component is separate display content, not a
+numbered figure or an additional heading.
+
+The outer box is 92 x 10 mm with a 1.5 mm corner radius, a 0.6 pt ink border and
+white fill (no gray background). Four equal columns show **Available**, **Functional**, **Reproduced**
+and **Tapedout**, with 9 pt Inter Regular labels above 3 mm circles. The current
+explicit `artifact-status` configuration in `sections/overview.typ` fills only
+Available in the existing pale gold (`#F4EFE4`), with a 0.6 pt gold outline;
+the other circles are white with 0.6 pt ink outlines.
+Keep 4 mm between the heading and box, and vertically center the heading against
+the box body. The unnumbered 9 pt black label **Artifact Evaluation** is centered
+2 pt below the box. These are native Typst vector shapes and grid content, not
+a raster asset or a third-party badge image.
+
+Use the cover's elastic space to accommodate the heading row without reducing
+Features typography or moving content to a second page. Marks are manually
+maintained publication status; PDF compilation or test success must not
+automatically select Functional, Reproduced or Tapedout.
 
 The Integration Note uses the shared pale-gold note style, including the 2 pt
 gold left rule and 10 pt inset. A normal-flow `v(1fr)` precedes it and its trailing
