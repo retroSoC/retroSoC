@@ -58,8 +58,9 @@ build date 2025-07-29, printed page 30 (PDF page 31). It was read from the PDF's
 text color values, not sampled from an antialiased screenshot. Only the color
 is adopted; no reference-document font or asset is added.
 
-Link color takes precedence: linked Fira Code remains `#245A81` with its blue
-underline. The shared `inline-code` wrapper preserves an inherited link-color
+Link color takes precedence: linked Fira Code remains `#245A81`; body links keep
+their blue underline, while register-summary name links omit it. The shared
+`inline-code` wrapper preserves an inherited link-color
 scope and applies the red color in other contexts, including muted metadata.
 Block-level raw code keeps its syntax palette and gray background. Inter
 paragraphs, register headings and bit-layout labels retain their existing colors.
@@ -68,8 +69,11 @@ Color supplements names, labels and line styles. It must not be the only way to
 read access permissions or distinguish a meaningful engineering state.
 
 Body links use `link-color` with a same-color 0.4 pt underline, offset 2 pt
-below the baseline. This applies to external sources, register-summary links
-and internal cross-references. Underlines follow wrapped text rather than
+below the baseline. This applies to external sources and internal body
+cross-references. Register-name links in Register Summary tables are an explicit
+local exception: keep their blue Fira Code text and destination, without an
+underline. This does not affect source links beside register descriptions.
+Underlines follow wrapped text rather than
 forming one unbreakable line. Source links retain their 9 pt size but do not
 override link color with muted gray; nonlinked metadata remains muted.
 The printed contents is the explicit exception: ink-colored clickable entries
@@ -341,6 +345,38 @@ Do not rescale the complete drawing or change data to make it fit.
 
 [waveforms.typ](waveforms.typ) renders the locked wavy/jogs output as vector
 SVG, normalizes its typography to Inter, and keeps diagram text and edges dark.
+Signal names use Inter Regular (explicit SVG weight 400), never bold, and remain
+at least 9 pt at final size. Lane names must be lowercase real port, interface
+member or internal-signal names; retain `_i`, `_o`, `_n` and verified bit/array
+selections. Do not turn a prose event such as "memory fence" into a fictitious
+signal by replacing spaces with underscores.
+
+[waveforms.json](waveforms.json) owns both the WaveDrom source and each lane's
+`signals` provenance record: RTL file, module/interface scope, declared symbol,
+polarity and meaning. Each figure records its `clock_domain`, `review_note` and
+`review_sources`; parameter overrides require a `parameter_note`. The visible
+note identifies the scopes and clock domain. Software actions and compressed
+protocol phases belong in that explanation or in data-value labels, not lane
+names. Data labels keep their protocol meaning and are not mechanically lowercased.
+
+[waveform_reference.py](../waveform_reference.py) checks one-to-one lane/source
+coverage, declaration presence in the correct scope, lowercase names, parameter
+resolution, array/bit bounds and scalar-versus-bus notation. Comments and names
+from unrelated modules do not establish a declaration. This bounded checker
+does not elaborate arbitrary SystemVerilog or simulate behavior; the stored
+behavior review supplies the semantic qualification. Unsupported declaration
+forms require an explicit, tested parser extension rather than a silent bypass.
+All source/review files enter the publication input hash. Each build emits
+`waveform-audit.json` with resolved widths, declaration lines and review notes.
+
+Retain a trajectory only when it expresses the real signal's behavior. Split
+combined address/data lanes and distinguish sampled inputs, driven outputs and
+output enables. Move unmappable behavior rows into prose or replace them with a
+reviewed transaction. Omitted intervals and example parameters must be explicit;
+never present a schematic waveform as measured latency or electrical signoff.
+Long names must fit without reducing text below 9 pt; adjust the label area or
+split a dense example when necessary.
+
 Each figure's multi-bit signal rows receive these valid-data fills in order,
 including rows inside nested signal groups:
 
@@ -358,7 +394,8 @@ single-bit signals, unknown-state patterns, high impedance, edge positions,
 labels, nodes and connections retain their meaning and geometry.
 
 The top caption, waveform and bottom explanatory note form one nonbreaking
-group with 12 pt before/after. The note uses 9 pt muted small-text rhythm and
+group spanning the full body width with 12 pt before/after. The note is
+center-aligned within that width, uses 9 pt muted small-text rhythm and
 4 pt leading space. Keep outer figure spacing on the group only. Inspect the
 actual SVG as well as color and grayscale PDF renders.
 

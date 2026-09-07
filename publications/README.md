@@ -48,7 +48,10 @@ its regressions are covered by `tests/test_publication_prose.py`.
   chapters. The original grouping and meaningful child sections are retained.
 - `datasheets/overview-groups.json` contains only integrated IP names and
   functional categories. Its membership is checked against the topology.
-- `datasheets/waveforms.json` contains the WaveDrom transaction/event examples.
+- `datasheets/waveforms.json` contains the WaveDrom examples and per-lane RTL
+  declaration bindings, polarity/meaning, clock scope and behavior review.
+  `waveform_reference.py` validates declaration coverage and selections and
+  generates `waveform-audit.json`; it is a static review aid, not a simulator.
   `waveforms.typ` runs the pinned wavy renderer through jogs and normalizes SVG
   typography before embedding the vector result. The package itself is not patched.
   Representative wait, timeout, backpressure and recovery cases accompany the
@@ -109,6 +112,8 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
 - `ip-pages.json`: queried start/end pages used to enforce per-IP page breaks.
 - `layout-regions.json`: renderer-marked continuation-text regions, hashed in
   the manifest to limit the 8.5 pt continuation-notice exception.
+- `waveform-audit.json`: source files/scopes, declaration lines, resolved lane
+  widths and behavior-review qualifications for every waveform.
 
 The document date fixes the PDF creation timestamp. Identical inputs produce
 identical PDF bytes; the build-directory timestamp is not printed in the PDF.

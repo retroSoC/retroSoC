@@ -110,10 +110,14 @@
       par([Instance offset: #code("0x"+str(group.base,base:16)) + n × #code("0x"+str(group.stride,base:16)),
         n = 0…#(group.count - 1). Local offsets below are added to this instance offset.])
     }
-    ds-table(family+"-summary-"+group.id,group.title,
-      ([Offset],[Register],[Access],[Reset],[Description]),
-      registers.map(r=>(code("0x"+str(r.offset,base:16)),link(label("reg-"+family+"-"+r.key),code(r.name)),r.access,inline(r.reset),inline(r.description))),
-      widths:(0.55fr,1.6fr,0.6fr,1.1fr,2.6fr))
+    {
+      // Register-name links keep their blue color and destination, without decoration.
+      show underline: it => it.body
+      ds-table(family+"-summary-"+group.id,group.title,
+        ([Offset],[Register],[Access],[Reset],[Description]),
+        registers.map(r=>(code("0x"+str(r.offset,base:16)),link(label("reg-"+family+"-"+r.key),code(r.name)),r.access,inline(r.reset),inline(r.description))),
+        widths:(0.55fr,1.6fr,0.6fr,1.1fr,2.6fr))
+    }
   }
   subhead(family,"Register Description",depth)
   [Bit-layout cells refer to the numbered field rows below each diagram. Reserved bits must

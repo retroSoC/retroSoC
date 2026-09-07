@@ -39,17 +39,17 @@
   svg = svg.replace(regex("font-family=\"[^\"]+\""), "font-family=\"Inter\"")
   svg = svg.replace(regex("(?i)#(?:0041c4|0000ff|00f)\\b"), "#292C31")
   svg = svg.replace("fill:blue", "fill:#292C31")
-  svg.replace("</style>", ".s8{fill:#F4EFE4}.s9{fill:#E7EFF6}.s10{fill:#E8F1EA}.s11{fill:#EEEAF5}</style>")
+  svg.replace("</style>", ".info{font-weight:400;font-style:normal}.s8{fill:#F4EFE4}.s9{fill:#E7EFF6}.s10{fill:#E8F1EA}.s11{fill:#EEEAF5}</style>")
 }
 
 #let timing(key, caption) = {
   let entry = data.waveforms.at(key)
-  block(above:rhythm.figure-space,below:rhythm.figure-space,breakable:false)[
+  block(width:100%,above:rhythm.figure-space,below:rhythm.figure-space,breakable:false)[
     #show figure: set block(above:0pt,below:0pt)
     #figure(image(bytes(wave-svg(key))), caption: caption)
-    #block(above:rhythm.metadata-before,below:0pt)[
+    #block(width:100%,above:rhythm.metadata-before,below:0pt)[
       #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
-      #text(9pt,fill:muted,entry.note)
+      #align(center,text(9pt,fill:muted,entry.note))
     ]
   ]
 }

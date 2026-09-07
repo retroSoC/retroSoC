@@ -27,6 +27,7 @@ from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo, 
 from scripts.check_clock_reset_domains import validate as validate_clocks  # noqa: E402
 from publications.register_reference import collect_registers  # noqa: E402
 from publications.chapter_reference import collect_chapters  # noqa: E402
+from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
 
 CONFIG = ROOT / "publications/datasheets/mini.json"
 CACHE = ROOT / ".cache/retrosoc/publications"
@@ -142,6 +143,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     irq_data = [dataclasses.asdict(i) for i in sorted(irqs, key=lambda i: i.core_bit)]
     validate_catalog(catalog, regions, irq_data)
     register_data = collect_registers()
+    waveforms, waveform_audit = collect_waveforms(ROOT)
     for region in regions:
         region["base_hex"] = f"0x{region['base']:08X}"
         region["end_hex"] = f"0x{region['end']:08X}"
@@ -181,7 +183,8 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         ],
         "registers": register_data,
         "chapters": collect_chapters(register_data),
-        "waveforms": read_json(ROOT / "publications/datasheets/waveforms.json"),
+        "waveforms": waveforms,
+        "waveform_audit": waveform_audit,
         "overview_groups": read_json(ROOT / "publications/datasheets/overview-groups.json"),
         "wave_renderer": "/" + load_lock()["archives"]["typst_wavy"]["destination"] + "/wavy.js",
     }
@@ -308,6 +311,7 @@ def source_hashes(
     }
     for entry in catalog:
         paths.update(entry["sources"])
+    paths.update(waveform_source_paths(read_json(ROOT / "publications/datasheets/waveforms.json")))
     paths.update(
         p.relative_to(ROOT).as_posix()
         for p in (ROOT / "publications").rglob("*")
@@ -336,6 +340,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         raise ValueError("--output-dir must be below the repository build directory")
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / "data.json", data)
+    write_json(out / "waveform-audit.json", data["waveform_audit"])
     pdf = out / config["filename"]
     epoch = int(datetime.fromisoformat(config["date"]).replace(tzinfo=timezone.utc).timestamp())
     command = [
