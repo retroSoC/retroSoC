@@ -29,7 +29,7 @@ counts are retained only as original media assets, not as current product figure
 Use the committed MPW profile and locked design manifest. Firmware must obey reset, selection
 and GPIO ownership rules before handoff. PRODUCT uses fixed extension slots and reports no
 selectable user cores or user IPs.
-#source("rtl/mini/integration/README.md", title:"Extension manifests and generation boundary")
+#source-note("rtl/mini/integration/README.md", title:"Extension manifests and generation boundary")
 
 #include "../ips/mpw-timer.typ"
 #include "../ips/mpw-gpio.typ"
@@ -47,7 +47,7 @@ selectable user cores or user IPs.
 The product ladder expresses intended positioning. It does not advertise implemented Tiny,
 Std or Pro profiles, a Mini NPU, a graphics accelerator or measured performance for a future
 device. Only the current Mini snapshot is specified here.
-#source("docs/soc-family-positioning.md", title:"Family roadmap and scope")
+#source-note("docs/soc-family-positioning.md", title:"Family roadmap and scope")
 
 == Roadmap
 #placeholder[Reviewed release and silicon roadmap]
@@ -97,7 +97,7 @@ documents do not override executable integration.
 retroSoC project material is distributed under Mulan Permissive Software License, Version 2.
 Third-party IP, fonts and Typst packages retain their own licenses. The media repository
 contains the original illustrations, font files and associated license texts.
-#source("LICENSE", title:"retroSoC Mulan PSL v2 license")
+#source-note("LICENSE", title:"retroSoC Mulan PSL v2 license")
 
 == Document Status and Contact
 This draft describes an evolving implementation. Numerical electrical ratings, ordering data,

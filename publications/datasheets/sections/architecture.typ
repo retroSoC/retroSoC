@@ -15,7 +15,7 @@ Hazard3 is hart 0 and the root-management processor. The reference profile selec
 firmware. Its AHB-Lite interface is adapted to AXI32 for control access; memory transactions
 are directed through the LP gateway to the shared data plane. The management JTAG path provides
 halt, resume, register and system-bus access. LP retains control while HP is held in reset.
-#source("docs/hazard3-debug.md", title:"Management debug transport and acceptance flow")
+#source-note("docs/hazard3-debug.md", title:"Management debug transport and acceptance flow")
 
 === Application Processor
 ==== VexiiRiscv
@@ -23,7 +23,7 @@ The generated HP hart is a dual-issue RV32IMAFDC + Zicbom configuration, with su
 modes, Sv32 virtual memory and 64-byte cache-maintenance blocks. Hart 1 uses native AXI64
 instruction and data paths. Its uncached MMIO path is downsized and crosses into the LP
 control plane. OpenSBI/Linux inputs and generated-core configuration are dependency-locked.
-#source("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
+#source-note("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
 
 == Interconnect
 === AXI4 and APB4 Interfaces
@@ -58,7 +58,6 @@ subject to active memory-pad mode, resource ownership, target readiness and EXT-
 An allowed entry does not guarantee throughput.]
 
 #pagebreak()
-#set page(flipped: true)
 #figure(matrix-diagram(), caption:[AXI64 memory access matrix: R = read, W = write, - = denied.])<bus-matrix>
 The I-cache is the only instruction-permitted initiator. HP cache attributes are preserved;
 DMA, I/O gateways, LP gateway, JPEG and EXT-H require non-cacheable transactions. XPI is read-only
@@ -68,9 +67,8 @@ Denied accesses return a finite error response with source attribution. EXT-H ha
 read/write address bounds. SRAM and SDRAM use multiple outstanding credits; serial targets
 have more restricted concurrency. Software must not assume coherency or treat theoretical bus
 width multiplied by clock rate as measured application bandwidth.
-#source("rtl/mini/integration/soc_topology.json", title:"Generated matrix source: data_master_policies")
+#source-note("rtl/mini/integration/soc_topology.json", title:"Generated matrix source: data_master_policies")
 #pagebreak()
-#set page(flipped: false)
 
 === Address Mapping
 All ranges below are inclusive. The SRAM range is resolved using the reference profile's
@@ -121,7 +119,7 @@ LP, select the safe source, apply and qualify the PLL setting, then restore the 
 roots. Timeout or lock loss returns to the safe source and retains fault status. Reset
 release uses per-domain synchronizers; coordinated warm flushes prevent stale transactions
 from re-entering a restarted domain.
-#source("docs/pll-clock-control.md", title:"Clock transition, fault and PLL control contract")
+#source-note("docs/pll-clock-control.md", title:"Clock transition, fault and PLL control contract")
 #tbd[PLL jitter, PVT range, clock-tree closure and pad-level reset timing require physical
 qualification. No crystal-oscillator range or maximum core frequency is specified here.]
 
@@ -139,4 +137,4 @@ HP has local software/timer interrupts and a 32-source, two-context PLIC. Source
 reserved; sources 1-10 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG and APU.
 Sources 11-31 are reserved. The contexts drive machine and supervisor external interrupts.
 Claim/complete and priority rules are defined in the HP platform contract.
-#source("docs/ip/hp-platform.md", title:"HP PLIC, local interrupts and mailbox")
+#source-note("docs/ip/hp-platform.md", title:"HP PLIC, local interrupts and mailbox")

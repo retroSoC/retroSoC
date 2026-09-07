@@ -375,12 +375,18 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     )
     if queried.returncode:
         raise ValueError("Typst page-map query failed:\n" + queried.stderr)
+    layout_items = json.loads(queried.stdout)
     page_map = [
         item
-        for item in json.loads(queried.stdout)
+        for item in layout_items
         if isinstance(item, dict) and item.get("kind") in {"ip-start", "ip-end"}
     ]
     write_json(out / "ip-pages.json", page_map)
+    reports = [item for item in layout_items
+               if isinstance(item, dict) and item.get("kind") == "layout-regions"]
+    if len(reports) != 1:
+        raise ValueError("missing or duplicated publication layout report")
+    write_json(out / "layout-regions.json", reports[0]["regions"])
     manifest = {
         "document": config,
         "inputs": inputs,
@@ -389,6 +395,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "typst": lock["publication_tools"]["typst"]["version"],
         "packages": {n: lock["archives"][f"typst_{n}"]["sha256"] for n in PACKAGES},
         "pdf_sha256": sha256(pdf),
+        "layout_regions_sha256": sha256(out / "layout-regions.json"),
     }
     write_json(out / "manifest.json", manifest)
     atomic_write(CACHE / "latest", str(out) + "\n")
@@ -464,6 +471,24 @@ def validate_page_map(items: list[dict], index: list[dict]) -> None:
         previous = ends[identifier]
 
 
+def validate_character_size(char: dict, number: int, regions: list[dict]) -> None:
+    """Only continuation text inside a renderer-marked box may be below 9 pt."""
+    if not char["text"].strip() or char["size"] >= 8.95:
+        return
+    continuation = any(
+        region["kind"] == "table-continuation"
+        and region["page"] == number
+        and char["x0"] >= region["x"] - 0.5
+        and char["x1"] <= region["x"] + region["width"] + 0.5
+        and char["top"] >= region["y"] - 0.5
+        and char["bottom"] <= region["y"] + region["height"] + 0.5
+        for region in regions
+    )
+    minimum = 8.5 if continuation else 9.0
+    if char["size"] < minimum - 0.05:
+        raise ValueError(f"text smaller than {minimum:g} pt on page {number}")
+
+
 def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     try:
         from pypdf import PdfReader
@@ -477,6 +502,10 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         raise ValueError("PDF inputs have changed; rebuild before checking this PDF")
     if manifest["pdf_sha256"] != sha256(pdf):
         raise ValueError("PDF differs from its build manifest")
+    region_path = pdf.parent / "layout-regions.json"
+    if not region_path.is_file() or manifest.get("layout_regions_sha256") != sha256(region_path):
+        raise ValueError("PDF layout regions missing or changed; rebuild before checking")
+    layout_regions = read_json(region_path)
     validate_page_map(
         read_json(pdf.parent / "ip-pages.json"),
         read_json(ROOT / "publications/datasheets/chapter-index.json"),
@@ -527,8 +556,7 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
                     or char["bottom"] > page.height + 0.5
                 ):
                     raise ValueError(f"text clipped outside page {number}")
-                if char["text"].strip() and char["size"] < 8.95:
-                    raise ValueError(f"text smaller than 9 pt on page {number}")
+                validate_character_size(char, number, layout_regions)
             all_text += page.extract_text() or ""
         normalized = re.sub(r"[\s\u200b\u00ad]", "", all_text)
         expected = [p["name"] for p in data["pads"]]

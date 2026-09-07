@@ -3,11 +3,8 @@
 #include "sections/overview.typ"
 #pagebreak()
 #include "sections/reading.typ"
-#{
-  set text(size: 9.5pt)
-  set par(leading: 0.4em, spacing: 0.4em)
-  outline(title: [Contents], depth: 5)
-}
+#pagebreak()
+#contents(depth:5)
 #pagebreak()
 #include "sections/architecture.typ"
 #include "sections/peripherals.typ"

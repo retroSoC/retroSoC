@@ -12,6 +12,7 @@ The canonical RTL/configuration inputs remain authoritative.
   [datasheets/mini.json](datasheets/mini.json).
 - Layout, diagrams and chapter content: `datasheets/style.typ`,
   `datasheets/figures.typ` and `datasheets/sections/`.
+- Layout standard: [datasheets/style.md](datasheets/style.md).
 - IP-to-window/IRQ/source coverage: [datasheets/ip-catalog.json](datasheets/ip-catalog.json).
 - Build and validation: [build_datasheet.py](build_datasheet.py).
 
@@ -19,6 +20,16 @@ The same v0.4 DRAFT now includes detailed per-IP functional, protocol,
 register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
+
+### Spacing and document flow
+
+The [layout standard](datasheets/style.md) records the implemented page,
+typography, spacing, navigation and diagram rules, including the compact cover
+and current table-caption behavior. Shared spacing lives in the `rhythm`
+configuration in `datasheets/style.typ`; update the standard together with
+intentional layout changes and verify actual spacing in the rendered PDF.
+The publication converter preserves real nested lists and explicit step numbers;
+its regressions are covered by `tests/test_publication_prose.py`.
 
 ### Detailed IP reference sources
 
@@ -96,6 +107,8 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
   font hashes, package hashes, compiler version and PDF digest;
 - `typst.log` and `check-report.json`: compiler and PDF checks.
 - `ip-pages.json`: queried start/end pages used to enforce per-IP page breaks.
+- `layout-regions.json`: renderer-marked continuation-text regions, hashed in
+  the manifest to limit the 8.5 pt continuation-notice exception.
 
 The document date fixes the PDF creation timestamp. Identical inputs produce
 identical PDF bytes; the build-directory timestamp is not printed in the PDF.
@@ -171,7 +184,8 @@ The focused exporter tests are `tests/test_publications.py` and
 `tests/test_publication_registers.py`; existing memory,
 topology and pin-map tests cover the reused canonical validators. PDF checks
 verify snapshot freshness, metadata, embedded fonts, bookmarks, navigable links,
-minimum 9 pt text, page-bound text, per-IP starts and presence of every generated pad/window.
+minimum 9 pt text (8.5 pt only inside marked continuation notices), page-bound
+text, per-IP starts and presence of every generated pad/window.
 They complement manual inspection of diagram meaning, continued headers,
 footnotes, page balance and grayscale readability.
 

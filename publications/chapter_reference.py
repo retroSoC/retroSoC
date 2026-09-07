@@ -7,25 +7,76 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+LIST_ITEM = re.compile(r"^( *)(?:(?P<bullet>[-+*])|(?P<number>\d+)[.)])\s+(?P<body>.*)$")
+
+
+def list_block(lines: list[str], start: int) -> tuple[dict, int]:
+    """Keep list hierarchy and explicit numbers instead of publishing fake paragraphs."""
+    first = LIST_ITEM.match(lines[start])
+    assert first is not None
+    indent = len(first[1])
+    ordered = first["number"] is not None
+    items = []
+    index = start
+    while index < len(lines):
+        match = LIST_ITEM.match(lines[index])
+        if (
+            match is None
+            or len(match[1]) != indent
+            or (match["number"] is not None) != ordered
+        ):
+            break
+        content_indent = match.start("body")
+        content = [match["body"]]
+        index += 1
+        blank = False
+        fence = None
+        while index < len(lines):
+            line = lines[index]
+            stripped = line.strip()
+            depth = len(line) - len(line.lstrip())
+            candidate = LIST_ITEM.match(line)
+            if fence is None:
+                if candidate and len(candidate[1]) <= indent:
+                    break
+                if stripped and depth <= indent and (
+                    blank or stripped.startswith(("#", "|", "```"))
+                ):
+                    break
+            if stripped.startswith("```"):
+                fence = None if fence else "```"
+            content.append(line[min(depth, content_indent) :])
+            blank = not stripped
+            index += 1
+        items.append(
+            {
+                "number": int(match["number"]) if ordered else None,
+                "blocks": blocks_from_markdown("\n".join(content)),
+            }
+        )
+    return {"kind": "list", "ordered": ordered, "items": items}, index
 
 
 def blocks_from_markdown(text: str) -> list[dict]:
     blocks = []
-    lines = text.splitlines()
+    lines = text.expandtabs(4).splitlines()
     i = 0
     while i < len(lines):
         line = lines[i].strip()
         if not line:
             i += 1
             continue
-        if line.startswith("#"):
+        if LIST_ITEM.match(lines[i]):
+            block, i = list_block(lines, i)
+            blocks.append(block)
+        elif line.startswith("#"):
             blocks.append({"kind": "heading", "text": line.lstrip("# ")})
             i += 1
         elif line.startswith("```"):
             language = line[3:].strip()
             start = i + 1
             i += 1
-            while i < len(lines) and not lines[i].startswith("```"):
+            while i < len(lines) and not lines[i].strip().startswith("```"):
                 i += 1
             code_text = "\n".join(lines[start:i])
             if language in {"", "text"} and re.search(r"\+[-─=]{2,}|-->|→", code_text):
@@ -48,8 +99,8 @@ def blocks_from_markdown(text: str) -> list[dict]:
             while (
                 i < len(lines)
                 and lines[i].strip()
-                and not lines[i].startswith(("#", "|", "```", "- "))
-                and not re.match(r"\d+\. ", lines[i])
+                and not lines[i].strip().startswith(("#", "|", "```"))
+                and not LIST_ITEM.match(lines[i])
             ):
                 content.append(lines[i].strip())
                 i += 1

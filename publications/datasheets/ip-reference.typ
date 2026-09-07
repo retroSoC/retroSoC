@@ -11,24 +11,37 @@
 }
 
 #let subhead(ip, name, depth) = [
-  #heading(level:depth+1,numbering:none,outlined:false,bookmarked:true,name)#label("detail-"+ip+"-"+lower(name).replace(" ","-"))
+  #{
+    show heading: it => heading-layout(it,before:rhythm.minor-before,after:rhythm.minor-after)
+    heading(level:depth+1,numbering:none,outlined:false,bookmarked:true,name)
+  }#label("detail-"+ip+"-"+lower(name).replace(" ","-"))
 ]
+
+#let prose-blocks(ip, section-title, blocks) = {
+  for (n,item) in blocks.enumerate() {
+    if item.kind=="heading" {
+      minor-title(inline(item.text))
+    } else if item.kind=="code" {
+      if item.language not in ("mermaid","dot") {
+        code-block(raw(item.text,block:true),breakable:true)
+      }
+    } else if item.kind=="table" {
+      ds-table(ip+"-"+str(n),section-title,
+        item.headers.map(inline),item.rows.map(r=>r.map(inline)))
+    } else if item.kind=="list" {
+      let bodies=item.items.enumerate().map(((index,entry))=>{
+        let content=prose-blocks(ip+"-"+str(n)+"-"+str(index),section-title,entry.blocks)
+        if item.ordered {enum.item(entry.number,content)} else {list.item(content)}
+      })
+      if item.ordered {enum(..bodies)} else {list(..bodies)}
+    } else { par(inline(item.text)) }
+  }
+}
 
 #let prose-sections(ip, sections, depth) = {
   for (index,section) in sections.enumerate() {
-    if sections.len()>1 { block(above:8pt,below:4pt,sticky:true,strong(section.title)) }
-    for (n,item) in section.blocks.enumerate() {
-      if item.kind=="heading" {
-        block(above:8pt,below:4pt,sticky:true,strong(inline(item.text)))
-      } else if item.kind=="code" {
-        if item.language not in ("mermaid","dot") {
-          block(inset:8pt,fill:gray,breakable:true,raw(item.text,block:true))
-        }
-      } else if item.kind=="table" {
-        ds-table(ip+"-"+str(index)+"-"+str(n),section.title,
-          item.headers.map(inline),item.rows.map(r=>r.map(inline)))
-      } else { par(inline(item.text)) }
-    }
+    if sections.len()>1 { minor-title(section.title) }
+    prose-blocks(ip+"-"+str(index),section.title,section.blocks)
   }
 }
 
@@ -67,17 +80,18 @@
 #let bit-layout(register) = {
   let fields=register.fields.sorted(key:f=>-f.msb)
   set text(size:9pt)
+  set par(leading:rhythm.small-leading,spacing:0pt)
+  let cells = ()
   for high in (31,15) {
-    table(columns:range(16).map(n=>1fr),
-      stroke:0.35pt+rule,inset:2pt,
-      ..range(high,high - 16,step:-1).map(b=>align(center,str(b))),
-      ..fields.enumerate().filter(((n,f))=>f.lsb<=high and f.msb>=high - 15).map(((n,f))=>{
+    cells += range(high,high - 16,step:-1).map(b=>align(center,str(b)))
+    cells += fields.enumerate().filter(((n,f))=>f.lsb<=high and f.msb>=high - 15).map(((n,f))=>{
         let span=calc.min(f.msb,high)-calc.max(f.lsb,high - 15)+1
         let text=if f.name.len()<=span*4 {f.name} else {"F"+str(n+1)}
         table.cell(colspan:span,fill:if f.name=="Reserved" {gray} else {pale-gold},align(center,text))
-      }),
-    )
+      })
   }
+  table(columns:range(16).map(n=>1fr),
+    stroke:table-stroke,inset:rhythm.bits-inset,..cells)
 }
 
 #let register-section(family, depth) = {
@@ -91,7 +105,7 @@
   for group in reference.groups {
     let registers=reference.registers.filter(r=>r.group==group.id)
     if registers.len()==0 { continue }
-    block(above:10pt,below:4pt,sticky:true)[*#group.title*]
+    minor-title(group.title)
     if group.count>1 {
       par([Instance offset: #code("0x"+str(group.base,base:16)) + n × #code("0x"+str(group.stride,base:16)),
         n = 0…#(group.count - 1). Local offsets below are added to this instance offset.])
@@ -105,7 +119,10 @@
   [Bit-layout cells refer to the numbered field rows below each diagram. Reserved bits must
   be handled as specified by the register; register access checks still apply to the full word.]
   for register in reference.registers {
-    block(above:14pt,below:5pt,sticky:true)[
+    block(above:rhythm.register-before,below:rhythm.metadata-after,breakable:false,sticky:true)[
+      #show heading: it => heading-layout(it,before:0pt,after:rhythm.register-after)
+      #set text(size:9pt)
+      #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
       #heading(level:depth+2,numbering:none,outlined:false,bookmarked:true,register.name)
       #label("reg-"+family+"-"+register.key)
       #text(9pt,fill:muted)[#register.group · offset #code("0x"+str(register.offset,base:16)) · #register.access · reset #inline(register.reset)]
@@ -114,7 +131,7 @@
       #if register.c_source!=none { [ · ]; source(register.c_source,title:"C ABI / HAL") }
     ]
     par(inline(register.description))
-    block(breakable:false,above:4pt,below:5pt,bit-layout(register))
+    block(breakable:false,above:rhythm.bits-space,below:rhythm.bits-space,bit-layout(register))
     let fields=register.fields.sorted(key:f=>-f.msb)
     ds-table("fields-"+family+"-"+register.key,[#register.name field descriptions],
       ([\#],[Bits],[Field],[Reset],[Description]),
@@ -127,7 +144,7 @@
 #let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none) = {
   let chapter=data.chapters.at(family)
   subhead(id,"Features and Block Diagram",depth)
-  for item in chapter.at("features",default:()) { list(inline(item)) }
+  list(..chapter.at("features",default:()).map(inline))
   figure(component-diagram(family,id),caption:[#chapter.title functional organization.])
   subhead(id,"Functional Description",depth)
   if legacy!=none {
@@ -160,20 +177,20 @@
   } else {
     prose-sections(id+"-software",chapter.software,depth)
   }
-  for (n,step) in chapter.software_steps.enumerate() { par([#(n+1). #inline(step)]) }
+  enum(..chapter.software_steps.map(inline))
   if chapter.at("api",default:()).len()>0 and id!="uart1" {
     ds-table(id+"-api",[Selected SDK interfaces],([Function],[Declaration]),
       chapter.api.map(a=>(code(a.name),code(a.signature))),widths:(1fr,2.8fr))
   }
   if chapter.example!="" and id!="uart1" {
     block(breakable:false)[
-      #block(above:8pt,below:4pt,sticky:true,strong("Minimal SDK call example"))
-      #block(inset:8pt,fill:gray,breakable:false,raw(chapter.example,block:true,lang:"c"))
+      #minor-title("Minimal SDK call example")
+      #code-block(raw(chapter.example,block:true,lang:"c"))
+      #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
       #text(9pt,fill:muted)[The example is syntax-checked against the SDK. It assumes clocks, ownership and board initialization are already valid.]
-      #linebreak()
-      #source(chapter.reference,title:"Detailed interface contract and source provenance")
+      #source-note(chapter.reference,title:"Detailed interface contract and source provenance")
     ]
   } else {
-    source(chapter.reference,title:"Detailed interface contract and source provenance")
+    source-note(chapter.reference,title:"Detailed interface contract and source provenance")
   }
 }

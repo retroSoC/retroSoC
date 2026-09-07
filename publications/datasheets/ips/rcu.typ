@@ -14,7 +14,7 @@
 RCU functionality is accessed through system control and the clock/reset subsystem rather
 than an additional standalone APB window. Clock switching, safe fallback and qualification
 limits are described in the Clock and Reset section.
-#source("docs/pll-clock-control.md")
+#source-note("docs/pll-clock-control.md")
 ])
 
 #context metadata((kind:"ip-end",id:"rcu",page:here().page()))
