@@ -190,9 +190,9 @@ module apu_reg_tb;
     begin
       s_reg_count = 0;
       add_register(`APB4_APU__IP_ID, AccessRo, 32'h4150_5530, 1'b0);
-      add_register(`APB4_APU__IP_VERSION, AccessRo, 32'h0001_0000, 1'b0);
+      add_register(`APB4_APU__IP_VERSION, AccessRo, 32'h0001_0001, 1'b0);
       add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_01bd, 1'b0);
-      add_register(`APB4_APU__CAPABILITY1, AccessRo, 32'h0182_7010, 1'b0);
+      add_register(`APB4_APU__CAPABILITY1, AccessRo, 32'h0182_7020, 1'b0);
       add_register(`APB4_APU__COMMAND, AccessWo, 32'd0, 1'b1);
       add_register(`APB4_APU__STATUS, AccessRo, 32'h0000_0100, 1'b0);
       add_register(`APB4_APU__IRQ_STATE, AccessRw, 32'd0, 1'b0);

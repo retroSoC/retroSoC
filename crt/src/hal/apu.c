@@ -200,7 +200,9 @@ rs_status_t rs_apu_probe(rs_apu_info_t *info) {
     info->capability1 = RS_APU_REG(RS_APU_ABI_CAPABILITY1);
     info->abi_digest = RS_APU_REG(RS_APU_ABI_ABI_DIGEST);
     if ((info->ip_id != RS_APU_IP_ID_VALUE) ||
-        ((info->version & RS_APU_IP_VERSION_MAJOR_MASK) != RS_APU_IP_VERSION_VALUE)) {
+        ((info->version & RS_APU_IP_VERSION_MAJOR_MASK) !=
+         (RS_APU_IP_VERSION_VALUE & RS_APU_IP_VERSION_MAJOR_MASK)) ||
+        ((info->version & UINT32_C(0xFFFF)) > 1U)) {
         return RS_ENOTSUP;
     }
     return RS_OK;

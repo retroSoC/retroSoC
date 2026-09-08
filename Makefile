@@ -122,6 +122,7 @@ APU_P5_DIR              := $(VARIANT_ROOT)/apu/p5
 APU_P5_BUNDLE           := $(APU_P5_DIR)/apu-p5.apumc
 APU_P5_REFERENCE_DIR    := $(VARIANT_ROOT)/apu/reference
 APU_P5_CORPUS_MANIFEST  := $(APU_P5_DIR)/corpus-manifest.json
+APU_P5_CORPUS_RTL_DIR   := $(APU_P5_DIR)/corpus-rtl
 HP_LINUX_BUILD_DIR      := $(VARIANT_ROOT)/hp-linux
 HP_LINUX_STAMP          := $(HP_LINUX_BUILD_DIR)/images/.stamp
 HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
@@ -373,7 +374,7 @@ help:
 	  '  setup                      install pinned external dependencies' \
 	  '  setup-apu-reference        install pinned host-only APU FLAC references' \
 	  '  apu-p5-bundle              build the deterministic WAV/FLAC APUMC bundle' \
-	  '  apu-p5-corpus              qualify the pinned FLAC corpus with libFLAC' \
+	  '  apu-p5-corpus              qualify pinned FLAC with BAM/libFLAC and production RTL' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
 	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
@@ -502,8 +503,11 @@ setup-apu-reference:
 	python3 $(ROOT_PATH)/scripts/setup_apu_reference.py --build-dir $(APU_P5_REFERENCE_DIR)
 
 $(APU_P5_BUNDLE): $(ROOT_PATH)/scripts/build_apu_p5_bundle.py \
+	$(ROOT_PATH)/scripts/generate_apu_p5_microcode.py \
 	$(ROOT_PATH)/scripts/apu_p5_coefficients.py $(ROOT_PATH)/scripts/apu_mcasm.py \
 	$(ROOT_PATH)/scripts/apu_isa.py $(ROOT_PATH)/rtl/ip/multimedia/apu_p5_codecs.apus
+	python3 $(ROOT_PATH)/scripts/generate_apu_p5_microcode.py \
+		--output $(ROOT_PATH)/rtl/ip/multimedia/apu_p5_codecs.apus --check
 	python3 $(ROOT_PATH)/scripts/build_apu_p5_bundle.py --output-dir $(APU_P5_DIR)
 
 apu-p5-bundle: $(APU_P5_BUNDLE)
@@ -513,6 +517,11 @@ apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
 		--flac $(APU_P5_REFERENCE_DIR)/src/flac/flac \
 		--corpus $(ROOT_PATH)/.cache/retrosoc/sources/apu-flac-corpus \
 		--output $(APU_P5_CORPUS_MANIFEST)
+	python3 $(ROOT_PATH)/scripts/run_apu_p5_corpus_rtl.py \
+		--manifest $(APU_P5_CORPUS_MANIFEST) --bundle $(APU_P5_BUNDLE) \
+		--corpus $(ROOT_PATH)/.cache/retrosoc/sources/apu-flac-corpus \
+		--build-dir $(APU_P5_CORPUS_RTL_DIR) --output $(APU_P5_CORPUS_MANIFEST) \
+		--jobs $(JOBS)
 
 setup-hp-linux:
 	python3 $(ROOT_PATH)/scripts/setup_hp_linux.py

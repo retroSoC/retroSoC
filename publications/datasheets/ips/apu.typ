@@ -11,7 +11,7 @@
 #ip("apu")
 
 #ip-reference("apu","apu",4,legacy:[
-The current APU RTL advertises capability word `0x000001BD` and APB version `0x00010000`. WAV/FLAC transport, job submission and stream paths are integrated; MP3 and KWS are not advertised. Delivery still requires a complete accepted microcode image and the corresponding codec corpus. The later 32 KiB/V1.1 capacity refreeze is not implemented by the current register constants.
+The current APU RTL advertises capability word `0x000001BD`, APB version `0x00010001`, and a 32 KiB control store through `CAPABILITY1=0x01827020`. WAV/FLAC transport, job submission and stream paths are integrated; APUMC V1 images remain loadable, while new P5 release images use APUMC V2. MP3 and KWS are not advertised. Delivery still requires the complete accepted codec image and corresponding production corpus evidence.
 
 ])
 

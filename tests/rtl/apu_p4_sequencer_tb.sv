@@ -8,13 +8,13 @@ module apu_p4_sequencer_tb;
   logic rst_n_i = 1'b0;
   logic soft_reset_i, resource_reset_i, abort_i, counter_clear_i, launch_i;
   logic store_loader_active, store_loader_write;
-  logic [10:0] store_loader_addr;
+  logic [11:0] store_loader_addr;
   logic [63:0] store_loader_data, store_loader_read_data;
   logic store_loader_valid;
   logic fetch, fetch_valid;
-  logic [10:0] fetch_addr;
+  logic [11:0] fetch_addr;
   logic [63:0] fetch_data;
-  logic [2:0][10:0] entry_pc, entry_first, entry_last;
+  logic [2:0][11:0] entry_pc, entry_first, entry_last;
   logic [2:0][15:0] entry_max_loop;
   logic [2:0][23:0] entry_max_retired;
   logic [2:0][16:0] entry_scratch_base, entry_scratch_bytes;
@@ -176,6 +176,7 @@ module apu_p4_sequencer_tb;
       .launch_i                 (launch_i),
       .launch_entry_i           (2'd0),
       .image_valid_i            (1'b1),
+      .image_abi_i              (`APB4_APU__APUMC_ABI),
       .timeout_i                (32'd4096),
       .entry_pc_i               (entry_pc),
       .entry_first_i            (entry_first),
@@ -351,7 +352,9 @@ module apu_p4_sequencer_tb;
             1,
             "APU-P4 sequencer fault code=%0d detail=%08x status=%08x insn=%016x legal=%0d r5=%08x r6=%08x valid=%0d",
             fault_code, fault_detail, status, u_sequencer.s_instruction_q,
-            apu_microcode_pkg::instruction_encoding_valid(u_sequencer.s_instruction_q), gpr[5],
+            apu_microcode_pkg::instruction_encoding_valid(
+                u_sequencer.s_instruction_q, 1'b0
+            ), gpr[5],
             gpr[6], u_local_sram.s_mutable_valid_q[17'h00200>>2]);
       end
       if (sequencer_idle && !primitive_busy && (retired != 32'd0)) break;

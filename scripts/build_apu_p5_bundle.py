@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from apu_mcasm import _artifact_data, assemble  # noqa: E402
+from apu_isa import abi_manifest, control_flow_report  # noqa: E402
 from apu_p5_coefficients import coefficient_bytes  # noqa: E402
 
 
@@ -33,13 +34,64 @@ def main() -> int:
     (output / "symbols.json").write_text(
         json.dumps(assembly.symbols, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    reports = {
+        "cfg-report.json": {
+            **_artifact_data(assembly),
+            "entries": [entry.__dict__ for entry in assembly.entries],
+            "control_flow": [
+                control_flow_report(
+                    assembly.instructions,
+                    entry,
+                    assembly.target,
+                    assembly.mc_abi,
+                )
+                for entry in assembly.entries
+            ],
+        },
+        "primitive-manifest.json": {
+            "target": "p5",
+            "implemented_mask": 0x001FFFFF,
+            "required_mask": __import__("functools").reduce(
+                int.__or__, (entry.primitive_mask for entry in assembly.entries), 0
+            ),
+            "entry_masks": [entry.primitive_mask for entry in assembly.entries],
+        },
+        "trace-input.json": {
+            "entries": [entry.entry_pc for entry in assembly.entries],
+            "instructions": [f"0x{item.encode():016x}" for item in assembly.instructions],
+        },
+        "abi-input-manifest.json": {
+            **_artifact_data(assembly),
+            "canonical_abi": abi_manifest(),
+        },
+    }
+    for name, report in reports.items():
+        (output / name).write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     high_water = {
+        "apumc_version": f"0x{assembly.mc_abi:08x}",
         "instruction_words": len(assembly.instructions),
+        "maximum_instruction_words": 4096,
+        "free_instruction_words": 4096 - len(assembly.instructions),
         "control_store_bytes": len(assembly.instructions) * 8,
         "table_bytes": len(coefficients),
         "maximum_scratch_end": max(
             entry.scratch_base + entry.scratch_bytes for entry in assembly.entries
         ),
+        "loader_proof_workspace": {
+            "pending_record_bits": 64,
+            "pending_path_records_v1": 2048,
+            "pending_path_records_v2": 4096,
+            "pending_storage_bytes_v1": 2048 * 8,
+            "pending_storage_bytes_v2": 4096 * 8,
+            "memo_entries": 8192,
+            "memo_entry_bits": 65,
+            "memo_storage_bytes_ceiling": (8192 * 65 + 7) // 8,
+            "traversal_limit_v1": 131072,
+            "traversal_limit_v2": 262144,
+        },
         "entries": [
             {
                 "format_id": entry.format_id,
@@ -67,6 +119,12 @@ def main() -> int:
                     "bundle": hashlib.sha256(assembly.bundle).hexdigest(),
                     "coefficients": hashlib.sha256(coefficients).hexdigest(),
                     "source": hashlib.sha256(source.read_bytes()).hexdigest(),
+                    "reports": {
+                        name: hashlib.sha256(
+                            (output / name).read_bytes()
+                        ).hexdigest()
+                        for name in reports
+                    },
                 },
                 "high_water": high_water,
             },

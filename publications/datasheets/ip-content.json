@@ -1714,7 +1714,7 @@
     "software_sections": [],
     "notes": [
       "The current capability word is 0x000001BD: WAV, FLAC, private DMA, ring, stream, sequencer and resampler bits are set. MP3 and KWS bits remain clear. Capability is not evidence that every production codec corpus or physical release gate is complete.",
-      "LP loads a bounded APUMC image before submitting work. Current RTL has 2048 64-bit control-store words (16 KiB), CAPABILITY1=0x01827010 and APB version 1.0. The 4096-word/32 KiB and V1.1 capacity refreeze is for subsequent implementation.",
+      "LP loads a bounded APUMC image before submitting work. Expanded P5 RTL has 4096 64-bit control-store words (32 KiB), CAPABILITY1=0x01827020 and APB version 1.1 while retaining APUMC V1 image compatibility.",
       "The loader checks header, ABI, bounds, entry descriptors and CRC before publishing valid/lock state. Rejected or aborted loads must leave stale instructions unexecutable.",
       "Direct jobs use JOB_* staging registers; ring jobs use descriptor ownership and producer/consumer rules. Buffer limits, codec entry bounds, ownership, quiesce and transport completion participate in admission and termination.",
       "The codec controller coordinates parser microcode, transport and processing primitives. Private DMA moves input/output while the stream router connects permitted audio paths. Capabilities do not waive rate, format, microcode or lifecycle checks.",

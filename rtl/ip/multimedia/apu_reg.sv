@@ -3,7 +3,9 @@
 
 `include "apu_define.svh"
 
-module apu_reg (
+module apu_reg #(
+    parameter bit EnableP5 = 1'b0
+) (
     // verilog_format: off -- preserve the APB and lifecycle boundary columns
     input  logic        clk_i,
     input  logic        rst_n_i,
@@ -84,9 +86,9 @@ module apu_reg (
     // verilog_format: on
 );
   localparam logic [31:0] IpId = 32'h4150_5530;
-  localparam logic [31:0] IpVersion = 32'h0001_0000;
-  localparam logic [31:0] Capability0 = 32'h0000_01bd;
-  localparam logic [31:0] Capability1 = 32'h0182_7010;
+  localparam logic [31:0] IpVersion = EnableP5 ? 32'h0001_0001 : 32'h0001_0000;
+  localparam logic [31:0] Capability0 = EnableP5 ? 32'h0000_01bd : 32'h0000_0198;
+  localparam logic [31:0] Capability1 = EnableP5 ? 32'h0182_7020 : 32'h0182_7010;
   localparam logic [31:0] AbiDigest = 32'd0;
   localparam logic [10:0] IrqMask = 11'h7ff;
   localparam logic [31:0] TimeoutReset = 32'h0000_ffff;

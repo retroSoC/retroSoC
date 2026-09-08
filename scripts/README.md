@@ -16,6 +16,11 @@ disabled below the selected build variant. These inputs never enter firmware,
 RTL, or shipped APU microcode.
 `qualify_apu_p5_corpus.py` enumerates that exact corpus, records source and
 decoded-PCM hashes, and classifies each file against the frozen P5 profile.
+`run_apu_p5_corpus_rtl.py` then runs every classified file through one shared,
+verification-only `apb4_apu` fixture compiled for Icarus and Verilator. It
+records exact production result/accounting and PCM hashes in the same manifest;
+per-case results are resumable and neither the fixture nor corpus enters a
+product filelist.
 
 Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download

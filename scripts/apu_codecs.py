@@ -9,12 +9,23 @@ from apu_p5_coefficients import coefficient_words
 
 
 class CodecError(ValueError):
-    def __init__(self, code: int, stage: int, reason: int, offset: int, warnings: int = 0):
+    def __init__(
+        self,
+        code: int,
+        stage: int,
+        reason: int,
+        offset: int,
+        warnings: int = 0,
+        *,
+        input_used: int | None = None,
+    ):
         self.code = code
         self.stage = stage
         self.reason = reason
         self.offset = offset
         self.warnings = warnings
+        self.input_used = offset if input_used is None else input_used
+        self.partial_audio = None
         super().__init__(f"codec error {code}/{stage} reason 0x{reason:04x} at {offset}")
 
 
@@ -43,6 +54,30 @@ class ProcessedPcm:
     bits: int
     frames: int
     payload: bytes
+
+
+def _attach_flac_prefix(
+    error: CodecError,
+    meta: _FlacMeta,
+    frames: list[tuple[int, ...]],
+    input_size: int,
+) -> CodecError:
+    input_used = min(error.input_used, input_size)
+    error.input_used = input_used
+    error.partial_audio = DecodedAudio(
+        AudioInfo(
+            meta.rate,
+            meta.channels,
+            meta.bits,
+            len(frames),
+            meta.frame_offset,
+            max(0, input_used - meta.frame_offset),
+            input_used,
+            error.warnings,
+        ),
+        tuple(frames),
+    )
+    return error
 
 
 _RESAMPLE_RATIOS = (
@@ -184,9 +219,7 @@ class _BitReader:
             bit_offset = self.bit & 7
             take = min(remaining, 8 - bit_offset)
             shift = 8 - bit_offset - take
-            value = (value << take) | (
-                (self.data[self.bit // 8] >> shift) & ((1 << take) - 1)
-            )
+            value = (value << take) | ((self.data[self.bit // 8] >> shift) & ((1 << take) - 1))
             self.bit += take
             remaining -= take
         return value
@@ -367,8 +400,10 @@ def decode_wav(data: bytes, *, strict: bool = True) -> DecodedAudio:
 
 
 def inspect_flac(data: bytes, *, strict: bool = True) -> AudioInfo:
-    if len(data) < 8 or data[:4] != b"fLaC":
-        raise CodecError(4, 4, 0x10, 0)
+    if len(data) < 4:
+        raise CodecError(5, 4, 0x20, len(data), 1)
+    if data[:4] != b"fLaC":
+        raise CodecError(4, 4, 0x10, 0, input_used=4)
     offset = 4
     blocks = 0
     metadata_bytes = 0
@@ -383,15 +418,23 @@ def inspect_flac(data: bytes, *, strict: bool = True) -> AudioInfo:
         size = int.from_bytes(data[offset + 1 : offset + 4], "big")
         payload = offset + 4
         end = payload + size
-        if end > len(data):
-            raise CodecError(5, 4, 0x20, len(data), 1)
         blocks += 1
+        if blocks == 1:
+            if block_type != 0:
+                raise CodecError(4, 4, 0x15, offset, 1, input_used=payload)
+            if size != 34:
+                raise CodecError(4, 4, 0x15, offset + 1, 1, input_used=payload + size)
+        elif block_type == 0 or block_type == 127:
+            raise CodecError(4, 4, 0x16, offset, 1, input_used=payload)
+        elif block_type >= 7:
+            raise CodecError(3, 4, 0x03, offset, 1, input_used=payload)
+
         metadata_bytes += size
         if blocks > 128 or metadata_bytes > 1024 * 1024:
-            raise CodecError(3, 4, 0x04, offset, 1)
+            raise CodecError(3, 4, 0x04, offset + 1, 1, input_used=payload)
+        if end > len(data):
+            raise CodecError(5, 4, 0x20, len(data), 1, input_used=payload)
         if blocks == 1:
-            if block_type != 0 or size != 34:
-                raise CodecError(4, 4, 0x15, offset, 1)
             minimum = int.from_bytes(data[payload : payload + 2], "big")
             maximum = int.from_bytes(data[payload + 2 : payload + 4], "big")
             min_frame = int.from_bytes(data[payload + 4 : payload + 7], "big")
@@ -401,23 +444,19 @@ def inspect_flac(data: bytes, *, strict: bool = True) -> AudioInfo:
             channels = ((packed >> 41) & 7) + 1
             bits = ((packed >> 36) & 0x1F) + 1
             samples = packed & ((1 << 36) - 1)
-            if (
-                minimum < 16
-                or maximum < minimum
-                or maximum > (4096 if channels == 1 else 2048)
-                or (min_frame and max_frame and min_frame > max_frame)
-                or max_frame > 65536
-                or channels not in (1, 2)
-                or bits not in (16, 24)
-                or rate < 8000
-                or rate > 96000
-            ):
-                raise CodecError(3, 4, 0x04, payload, 1)
+            if minimum < 16:
+                raise CodecError(3, 4, 0x04, payload, 1, input_used=end)
+            if maximum < minimum:
+                raise CodecError(4, 4, 0x15, payload + 2, 1, input_used=end)
+            if channels in (1, 2) and maximum > (4096 if channels == 1 else 2048):
+                raise CodecError(3, 4, 0x04, payload + 2, 1, input_used=end)
+            if min_frame and max_frame and min_frame > max_frame:
+                raise CodecError(4, 4, 0x15, payload + 7, 1, input_used=end)
+            if max_frame > 65536:
+                raise CodecError(3, 4, 0x04, payload + 7, 1, input_used=end)
+            if channels not in (1, 2) or bits not in (16, 24) or not 8000 <= rate <= 96000:
+                raise CodecError(3, 4, 0x02, payload + 10, 1, input_used=end)
             stream_info = AudioInfo(rate, channels, bits, samples or None, 0, 0, 0, 1)
-        elif block_type == 0 or block_type == 127:
-            raise CodecError(4, 4, 0x16, offset, 1)
-        elif block_type >= 7:
-            raise CodecError(3, 4, 0x03, offset, 1)
         offset = end
     if stream_info is None:
         raise CodecError(4, 4, 0x15, 4, 1)
@@ -639,19 +678,19 @@ def _decode_frame(
     rate = _sample_rate(rate_code, reader, meta.rate)
     bits = _sample_bits(bits_code, meta.bits, start)
     header_end = reader.byte_offset
-    expected_crc8 = reader.get(8, stage=4)
-    if crc8(data[start:header_end]) != expected_crc8:
-        raise CodecError(6, 4, 0x30, header_end, 1)
     if assignment <= 7:
         channels = assignment + 1
     elif assignment <= 10:
         channels = 2
     else:
-        raise CodecError(4, 4, 0x17, start, 1)
+        raise CodecError(4, 4, 0x17, start, 1, input_used=header_end)
     if (rate, channels, bits) != (meta.rate, meta.channels, meta.bits):
-        raise CodecError(4, 4, 0x18, start, 1)
+        raise CodecError(4, 4, 0x18, start, 1, input_used=header_end)
     if block_size > (4096 if channels == 1 else 2048):
-        raise CodecError(3, 4, 0x04, start, 1)
+        raise CodecError(3, 4, 0x04, start, 1, input_used=header_end)
+    expected_crc8 = reader.get(8, stage=4)
+    if crc8(data[start:header_end]) != expected_crc8:
+        raise CodecError(6, 4, 0x30, header_end, 1, input_used=reader.byte_offset)
 
     channel_bits = [bits] * channels
     if assignment == 8:
@@ -701,31 +740,43 @@ def decode_flac(data: bytes, *, strict: bool = True) -> DecodedAudio:
     strategy: int | None = None
     frame_number = 0
     while offset < len(data) and (meta.total_samples is None or len(frames) < meta.total_samples):
-        decoded, frame_end, block_size, frame_strategy, number = _decode_frame(data, offset, meta)
+        try:
+            decoded, frame_end, block_size, frame_strategy, number = _decode_frame(
+                data, offset, meta
+            )
+        except CodecError as error:
+            raise _attach_flac_prefix(error, meta, frames, len(data)) from error
         if strategy is None:
             strategy = frame_strategy
         elif strategy != frame_strategy:
-            raise CodecError(4, 4, 0x18, offset, 1)
+            error = CodecError(4, 4, 0x18, offset, 1, input_used=frame_end)
+            raise _attach_flac_prefix(error, meta, frames, len(data))
         expected_number = frame_number if frame_strategy == 0 else len(frames)
         if number != expected_number:
-            raise CodecError(4, 4, 0x1A, offset, 1)
+            error = CodecError(4, 4, 0x1A, offset, 1, input_used=frame_end)
+            raise _attach_flac_prefix(error, meta, frames, len(data))
+        if meta.total_samples is not None and len(frames) + len(decoded) > meta.total_samples:
+            error = CodecError(4, 4, 0x32, offset, 1, input_used=frame_end)
+            raise _attach_flac_prefix(error, meta, frames, len(data))
         frames.extend(decoded)
         blocks.append(block_size)
         frame_number += 1
         offset = frame_end
-        if meta.total_samples is not None and len(frames) > meta.total_samples:
-            raise CodecError(4, 4, 0x32, offset, 1)
     if meta.total_samples is not None and len(frames) != meta.total_samples:
-        raise CodecError(4, 4, 0x32, offset, 1)
+        error = CodecError(4, 4, 0x32, offset, 1)
+        raise _attach_flac_prefix(error, meta, frames, len(data))
     for block_size in blocks[:-1]:
         if not meta.minimum_block <= block_size <= meta.maximum_block:
-            raise CodecError(4, 4, 0x17, offset, 1)
+            error = CodecError(4, 4, 0x17, offset, 1)
+            raise _attach_flac_prefix(error, meta, frames, len(data))
     if blocks and blocks[-1] > meta.maximum_block:
-        raise CodecError(3, 4, 0x04, offset, 1)
+        error = CodecError(3, 4, 0x04, offset, 1)
+        raise _attach_flac_prefix(error, meta, frames, len(data))
     warnings = 1
     if offset != len(data):
         if strict:
-            raise CodecError(4, 4, 0x1B, offset, warnings)
+            error = CodecError(4, 4, 0x1B, offset, warnings)
+            raise _attach_flac_prefix(error, meta, frames, len(data))
         warnings |= 1 << 1
     info = AudioInfo(
         meta.rate,

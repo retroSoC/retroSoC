@@ -47,7 +47,7 @@ module apb4_apu (
   logic [3:0] s_mc_fault_stage;
   logic [1:0] s_mc_fault_resp;
   logic [31:0] s_mc_fault_addr, s_mc_fault_detail;
-  logic [2:0][10:0] s_mc_entry_pc, s_mc_entry_first, s_mc_entry_last;
+  logic [2:0][11:0] s_mc_entry_pc, s_mc_entry_first, s_mc_entry_last;
   logic [2:0][15:0] s_mc_entry_max_loop;
   logic [2:0][23:0] s_mc_entry_max_retired;
   logic [2:0][16:0] s_mc_entry_scratch_base, s_mc_entry_scratch_bytes;
@@ -55,11 +55,11 @@ module apb4_apu (
   logic [2:0][15:0] s_mc_entry_table_offset, s_mc_entry_table_bytes;
   logic [15:0] s_mc_table_bytes;
   logic s_store_active, s_store_read, s_store_write, s_store_valid;
-  logic [10:0] s_store_addr;
+  logic [11:0] s_store_addr;
   logic [63:0] s_store_write_data, s_store_read_data;
   logic s_seq_fetch, s_seq_fetch_valid, s_seq_trapped, s_seq_trap_event, s_seq_end_event;
   logic s_seq_abort_done, s_seq_fault_valid, s_seq_launch_epoch, s_seq_idle;
-  logic [10:0] s_seq_fetch_addr;
+  logic [11:0] s_seq_fetch_addr;
   logic [63:0] s_seq_fetch_data, s_seq_perf_retired;
   logic [31:0] s_seq_status, s_seq_retired;
   logic [15:0][31:0] s_seq_gpr;
@@ -105,7 +105,9 @@ module apb4_apu (
   logic [16:0] s_local_primitive_addr;
   logic [31:0] s_local_primitive_write_data;
   logic [ 3:0] s_local_primitive_strb;
-  logic s_local_transport_claim, s_local_transport_req, s_local_transport_write;
+  logic s_local_transport_claim, s_local_transport_select;
+  logic s_local_transport_req, s_local_transport_write;
+  logic        s_local_response_transport_q;
   logic [16:0] s_local_transport_addr;
   logic [31:0] s_local_transport_write_data;
   logic [ 3:0] s_local_transport_strb;
@@ -140,7 +142,7 @@ module apb4_apu (
   logic [31:0] s_dma_err_addr;
   logic s_dma_input_pending, s_dma_output_pending;
   logic [63:0] s_dma_read_bytes, s_dma_write_bytes;
-  logic s_dma_write_burst_done;
+  logic        s_dma_write_burst_done;
   logic [31:0] s_dma_write_burst_bytes;
   logic [63:0] s_dma_read_stalls, s_dma_write_stalls;
   logic s_scheduler_idle, s_scheduler_aborting, s_stream_idle;
@@ -314,18 +316,19 @@ module apb4_apu (
   assign s_transport_dma_req_ready = (s_dma_select == 2'd2) && s_dma_req_ready;
   assign s_primitive_req_ready = s_primitive_req_ready_raw && !s_local_transport_claim;
   assign s_transport_req_ready = s_transport_req_ready_raw && !s_primitive_busy;
-  assign s_local_codec_req = s_local_transport_claim ?
+  assign s_local_transport_select = s_local_transport_claim && !s_primitive_busy;
+  assign s_local_codec_req = s_local_transport_select ?
       s_local_transport_req : s_local_primitive_req;
-  assign s_local_codec_write = s_local_transport_claim ?
+  assign s_local_codec_write = s_local_transport_select ?
       s_local_transport_write : s_local_primitive_write;
-  assign s_local_codec_addr = s_local_transport_claim ?
+  assign s_local_codec_addr = s_local_transport_select ?
       s_local_transport_addr : s_local_primitive_addr;
-  assign s_local_codec_write_data = s_local_transport_claim ?
+  assign s_local_codec_write_data = s_local_transport_select ?
       s_local_transport_write_data : s_local_primitive_write_data;
-  assign s_local_codec_strb = s_local_transport_claim ?
+  assign s_local_codec_strb = s_local_transport_select ?
       s_local_transport_strb : s_local_primitive_strb;
-  assign s_local_primitive_valid = s_local_codec_valid && !s_local_transport_claim;
-  assign s_local_transport_valid = s_local_codec_valid && s_local_transport_claim;
+  assign s_local_primitive_valid = s_local_codec_valid && !s_local_response_transport_q;
+  assign s_local_transport_valid = s_local_codec_valid && s_local_response_transport_q;
   assign s_job_stat = (s_ring_control[0] || s_ring_stat[`APB4_APU__RING_STATUS_ACTIVE]) ?
       s_scheduler_job_stat : s_codec_job_status;
   assign s_ring_kick_allowed = s_ring_control[0] &&
@@ -348,6 +351,14 @@ module apb4_apu (
       s_dma_owner_q <= s_dma_select;
     end else if (s_dma_done) begin
       s_dma_owner_q <= 2'd0;
+    end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      s_local_response_transport_q <= 1'b0;
+    end else if (s_local_codec_req && s_local_codec_ready) begin
+      s_local_response_transport_q <= s_local_transport_select;
     end
   end
 
@@ -394,7 +405,9 @@ module apb4_apu (
     end
   end
 
-  apu_reg u_apu_reg (
+  apu_reg #(
+      .EnableP5(1'b1)
+  ) u_apu_reg (
       .clk_i                  (clk_i),
       .rst_n_i                (rst_n_i),
       .owner_i                (owner_i),
@@ -514,8 +527,10 @@ module apb4_apu (
   );
 
   apu_microcode_loader #(
-      .EnableP4(1'b1),
-      .EnableP5(1'b1)
+      .EnableP4      (1'b1),
+      .EnableP5      (1'b1),
+      .PathStackDepth(4096),
+      .PathMemoDepth (8192)
   ) u_microcode_loader (
       .clk_i                 (clk_i),
       .rst_n_i               (rst_n_i),
@@ -578,10 +593,14 @@ module apb4_apu (
       .fault_resp_o          (s_mc_fault_resp),
       .fault_addr_o          (s_mc_fault_addr),
       .fault_detail_o        (s_mc_fault_detail),
+      .proof_visit_count_o   (),
+      .proof_memo_full_o     (),
       .idle_o                (s_mc_idle)
   );
 
-  apu_control_store u_control_store (
+  apu_control_store #(
+      .Depth(4096)
+  ) u_control_store (
       .clk_i          (clk_i),
       .rst_n_i        (rst_n_i),
       .loader_active_i(s_store_active),
@@ -686,6 +705,7 @@ module apb4_apu (
       .launch_i(s_codec_seq_launch),
       .launch_entry_i(s_codec_seq_entry),
       .image_valid_i(s_mc_status[`APB4_APU__MC_STATUS_VALID]),
+      .image_abi_i(s_mc_abi),
       .timeout_i(s_sequencer_timeout),
       .entry_pc_i(s_mc_entry_pc),
       .entry_first_i(s_mc_entry_first),
@@ -893,7 +913,7 @@ module apb4_apu (
       .memory_addr_o(s_local_transport_addr),
       .memory_data_o(s_local_transport_write_data),
       .memory_strb_o(s_local_transport_strb),
-      .memory_ready_i(s_local_codec_ready && s_local_transport_claim),
+      .memory_ready_i(s_local_codec_ready && s_local_transport_select),
       .memory_valid_i(s_local_transport_valid),
       .memory_data_i(s_local_codec_read_data),
       .memory_error_i(s_local_codec_err),

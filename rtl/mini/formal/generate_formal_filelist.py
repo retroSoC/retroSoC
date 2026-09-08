@@ -32,6 +32,11 @@ APU_LOADER_SCENARIOS = {
     "apu_loader_control_flow": 4,
     "apu_loader_abort": 5,
     "apu_loader_resource_reset": 6,
+    "apu_loader_p5_success": 7,
+    "apu_loader_p5_bound": 8,
+    "apu_loader_p5_abort": 9,
+    "apu_loader_p5_resource_reset": 10,
+    "apu_loader_p5_memo_fallback": 11,
 }
 APU_PRIMITIVE_SCENARIOS = {
     "apu_primitives_invalid_read": 0,

@@ -45,9 +45,9 @@ CPU ISA/CSR manuals remain outside this publication's scope.
   the control and functional units.
 
 Fixed, conditional and live reset values are distinguished. A dynamic status
-word is not silently assigned a zero reset constant. The source snapshot still
-reports APU APB V1.0 and a 16 KiB control store; the later V1.1/32 KiB refreeze
-must not be advertised until the implementation and delivery evidence agree.
+word is not silently assigned a zero reset constant. The expanded P5 source
+snapshot reports APU APB V1.1 and a 32 KiB control store while retaining APUMC
+V1 image compatibility.
 
 The title remains **retroSoC Mini Gen2/Gen2+**. PRODUCT is the main configuration;
 MPW retains its own appendix. No difference between Gen2 and Gen2+ is inferred.

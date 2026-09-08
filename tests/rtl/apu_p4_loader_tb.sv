@@ -13,7 +13,7 @@ module apu_p4_loader_tb;
   logic [3:0] dma_keep;
   logic dma_last, dma_valid;
   logic store_active, store_read, store_write, store_valid;
-  logic [10:0] store_addr, fetch_addr;
+  logic [11:0] store_addr, fetch_addr;
   logic [63:0] store_write_data, store_read_data, fetch_data;
   logic fetch, fetch_valid;
   logic        local_write;
@@ -156,6 +156,8 @@ module apu_p4_loader_tb;
       .fault_resp_o          (fault_resp),
       .fault_addr_o          (fault_addr),
       .fault_detail_o        (fault_detail),
+      .proof_visit_count_o   (),
+      .proof_memo_full_o     (),
       .idle_o                (loader_idle)
   );
 

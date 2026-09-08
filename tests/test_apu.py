@@ -495,10 +495,11 @@ last:
 
 def test_apu_p3_control_store_profile_mapping() -> None:
     source = (ROOT / "rtl/ip/multimedia/apu_control_store.sv").read_text(encoding="utf-8")
-    assert source.count("tc_sram_1024x32 u_control_") == 4
+    assert source.count("tc_sram_1024x32 u_control_") == 8
+    assert "if (Depth == 4096) begin : gen_expanded_banks" in source
     assert "`ifdef HAVE_SRAM_MACRO" in source
     assert "logic [63:0] mem" in source
-    assert "[0:2047];" in source
+    assert "[0:Depth-1];" in source
     assert source.index("logic [63:0] mem") > source.index("`else")
 
 
