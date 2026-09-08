@@ -21,6 +21,31 @@ register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
 
+### System-use reference
+
+The same reviewed snapshot also includes configuration/feature availability,
+three typical system compositions, non-coherent buffer/DMA handoff, operating
+states/reset effects, resource ownership, access-control boundaries, debug/fault
+recovery, external-interface constraints, boot/recovery and software support.
+Electrical, thermal, performance and power sections describe required conditions
+and evidence without manufacturing values for uncharacterized hardware. Known
+limitations and revision compatibility are collected before Document Control.
+
+`datasheets/system-reference.json` owns the publication's 40-IP support inventory,
+limitation records and source/test/report references. `system_reference.py`
+checks coverage, unique identifiers, paths and evidence context; the builder
+emits `data.json.system_reference` and hashes these dependencies. Boot-image
+addresses and bounds are extracted from the existing loader header. No hardware
+or software ABI is generated. The source of truth remains the reviewed RTL,
+configuration, HAL, boot loader and Linux platform files.
+
+Implementation, test availability and reviewed successful runs are separate
+states. A Linux device-tree node or bare-metal HAL is not native driver support.
+The supplied initial console uses SBI. The loader's DMA failure path falls back
+to software copy/CRC; its final Linux-ready wait has no firmware-local deadline.
+CRC is not authentication. Power isolation, qualified entropy, physical ratings
+and production APU codec support are not inferred from controller capabilities.
+
 ### Spacing and document flow
 
 The [layout standard](datasheets/style.md) records the implemented page,
@@ -167,7 +192,7 @@ the main lock. A normal build never commits, pushes, or changes asset revisions.
 | Power, frequency and area | Exact workload/configuration and reproducible measured/signoff reports |
 | PCB and external interfaces | Approved schematic, banks, external devices and board timing |
 | Assembly and ordering | Supplier reflow/MSL data, part numbers, grades and availability |
-| Linux and APU | Reviewed driver matrix, boot/performance evidence and remaining codec/KWS delivery |
+| Linux and APU | Native driver/boot/performance qualification beyond the source-level support matrix, and remaining codec/KWS delivery |
 | Silicon and roadmap | Identified lot/revision, measurement setup and reviewed release milestones |
 
 TBD never means zero. The legacy 196 MHz, QFN128 dimensions, PicoRV32/TIM2/
@@ -186,7 +211,8 @@ git diff --check
 ```
 
 The focused exporter tests are `tests/test_publications.py` and
-`tests/test_publication_registers.py`; existing memory,
+`tests/test_publication_registers.py`; `tests/test_publication_system.py` covers
+support/evidence metadata and boot-layout extraction. Existing memory,
 topology and pin-map tests cover the reused canonical validators. PDF checks
 verify snapshot freshness, metadata, embedded fonts, bookmarks, navigable links,
 minimum 9 pt text (8.5 pt only inside marked continuation notices), page-bound

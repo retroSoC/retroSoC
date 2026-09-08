@@ -96,6 +96,7 @@ compatibility responder at the former selectable user-IP window; it does not ins
 MPW user IPs there. Neither case should be counted as an active accelerator.
 
 #pagebreak()
+#include "memory-use.typ"
 == Clock and Reset
 === Architecture
 The RCU compatibility wrapper contains the product clock/reset subsystem. AON uses REF24;
@@ -123,6 +124,8 @@ from re-entering a restarted domain.
 #tbd[PLL jitter, PVT range, clock-tree closure and pad-level reset timing require physical
 qualification. No crystal-oscillator range or maximum core frequency is specified here.]
 
+#include "operating-states.typ"
+
 == Interrupt System
 The management interrupt vector contains 32 allocated positions. The following numbers are
 LP vector bits, not HP PLIC source IDs. Peripheral-level status registers identify causes
@@ -138,3 +141,5 @@ reserved; sources 1-10 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-S
 Sources 11-31 are reserved. The contexts drive machine and supervisor external interrupts.
 Claim/complete and priority rules are defined in the HP platform contract.
 #source-note("docs/ip/hp-platform.md", title:"HP PLIC, local interrupts and mailbox")
+
+#include "system-management.typ"

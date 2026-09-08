@@ -69,6 +69,8 @@ number is used to imply completion.
   widths:(1.15fr,1.8fr,0.4fr),
 )
 
+#include "performance-reference.typ"
+
 = Document Control
 == Revision History
 #ds-table("revisions", [Document revision history],
@@ -76,18 +78,24 @@ number is used to imply completion.
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-06],[0.4 DRAFT],[Expand IP functional, register, waveform and software reference; retain the gray/gold layout and update the dev snapshot.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-06],[0.4 DRAFT],[Expand IP and system-use reference, configuration/support matrices, boot/recovery guidance and qualification boundaries; retain the gray/gold layout and reviewed snapshot.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify
 the electrical placeholders in this revision.
 
-== Sources and Reproducibility
+== Sources and Reproducibility <publication-provenance>
 Hardware snapshot: #code(doc.source_revision).
 The source revision, configuration files, media commit, font/package hashes and PDF digest
 are recorded in the build manifest. The datasheet is built manually with Typst 0.15.1 and
 CeTZ 0.5.2. Main-repository sources and assets in the separate media repository are maintained
 independently, with exact asset commits locked by the main repository.
+
+Publication-only support, limitation and register-annotation metadata can postdate the
+reviewed hardware commit. Their source links lead to this provenance section; obtain the
+matching publication sources and build manifest with this PDF. The manifest records hashes
+for the system-reference index, publication files and all declared engineering dependencies.
+It does not claim that newly authored publication files existed at the hardware commit.
 
 The generated address, IRQ, GPIO, pad and bus-permission data are derived from canonical
 inputs. Explanatory prose is reviewed against RTL and software contracts; stale descriptive

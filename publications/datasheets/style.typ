@@ -166,6 +166,11 @@
 #let code(value) = inline-code(text(font: mono, size: 9pt,
   value.replace("_", "_\u{200b}").replace(".", ".\u{200b}")))
 #let source(path, title: "Interface and implementation reference", line:none) = {
+  // Publication metadata can postdate the frozen hardware commit. Route readers
+  // to the delivered manifest instead of constructing a nonexistent old blob.
+  if path.starts-with("publications/") {
+    return link(<publication-provenance>,text(size:9pt,title))
+  }
   let managed = data.managed_sources.find(s=>path.starts-with(s.destination + "/"))
   let url = if managed == none {
     "https://github.com/retroSoC/retroSoC/blob/" + doc.source_revision + "/" + path

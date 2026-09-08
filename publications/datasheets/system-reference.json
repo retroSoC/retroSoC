@@ -1,0 +1,985 @@
+{
+  "schema_version": 1,
+  "source_revision": "56eb92312e2b83a85765bc7638b446382c1990dc",
+  "sources": [
+    "app/README.md",
+    "crt/README.md",
+    "publications/datasheets/mini.json",
+    "publications/datasheets/register-profiles.json",
+    "rtl/mini/integration/soc_topology.json",
+    "docs/lp-hp-architecture.md",
+    "docs/pll-clock-control.md",
+    "docs/hazard3-debug.md",
+    "docs/axi4-interconnect.md",
+    "docs/axi4-stream.md",
+    "docs/coremark.md",
+    "docs/engineering.md",
+    "docs/mini-high-performance-traceability.md",
+    "docs/ip/resource-controller.md",
+    "docs/ip/fabric-monitor.md",
+    "app/ports/linux/README.md",
+    "app/ports/linux/linux/retrosoc_hp.dts",
+    "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+    "app/apps/hp_boot/main.c",
+    "app/apps/hp_boot/hp_boot_bundle.h",
+    "crt/src/hal/resource.c",
+    "crt/src/hal/sysctrl.c",
+    "crt/include/retrosoc/hal/resource.h",
+    "crt/include/retrosoc/hal/sysctrl.h",
+    "scripts/package_hp_boot.py",
+    "scripts/build_hp_linux.py",
+    "scripts/check_lp_hp_performance.py",
+    "fpga/README.md",
+    "physical/README.md",
+    "configs/ci/ihp130.mk",
+    "configs/ci/ihp130-hp.mk",
+    "configs/cluster/mini-mpw.mk",
+    "configs/benchmark/ihp130-hazard3-coremark.mk"
+  ],
+  "support": [
+    {
+      "id": "xpi",
+      "title": "XPI Universal Controller",
+      "implementation": "Integrated",
+      "scope": "Four chip-select slots and 16 programmable LUT sequences.",
+      "dependencies": "External SDR SPI/QSPI flash; board-specific LUT and timing.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Memory/controller setup is a platform responsibility; only SDRAM is advertised as Linux RAM in the supplied DT.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/xpi.h",
+        "docs/ip/xpi.md",
+        "publications/examples/xpi.c",
+        "rtl/ip/storage/xpi_pkg.sv",
+        "rtl/ip/storage/xpi_reg.sv"
+      ],
+      "tests": [
+        "tests/test_xpi_io.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "spisd",
+      "title": "SPI SD Card Controller",
+      "implementation": "Integrated",
+      "scope": "SD card SPI-mode command/data host.",
+      "dependencies": "SPI-mode SD card; GPIO route and card supply.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/spisd.h",
+        "docs/ip/spisd.md",
+        "publications/examples/spisd.c",
+        "rtl/ip/storage/spisd_pkg.sv",
+        "rtl/ip/storage/spisd_reg.sv"
+      ],
+      "tests": [
+        "tests/test_spisd.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "sdio0",
+      "title": "SD/SDIO Host Controller",
+      "implementation": "Integrated",
+      "scope": "Native one-bit/four-bit SDR operation.",
+      "dependencies": "SD card and shared GPIO route.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/sdio.h",
+        "docs/ip/sdio.md",
+        "publications/examples/sdio.c",
+        "rtl/ip/storage/sdio_pkg.sv",
+        "rtl/ip/storage/sdio_reg.sv"
+      ],
+      "tests": [
+        "tests/test_sdio.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "sram",
+      "title": "On-Chip SRAM",
+      "implementation": "Integrated",
+      "scope": "32 KiB in the reference profile, using eight 4 KiB banks.",
+      "dependencies": "Selected technology SRAM macro; 32 KiB in the reference profile.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Memory/controller setup is a platform responsibility; only SDRAM is advertised as Linux RAM in the supplied DT.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/onchip_sram.h",
+        "docs/ip/onchip-sram.md",
+        "publications/examples/sram.c",
+        "rtl/mini/top/onchip_ram_reg.sv"
+      ],
+      "tests": [
+        "tests/test_onchip_sram_register_parity.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "psram",
+      "title": "QPI PSRAM Controller",
+      "implementation": "Integrated",
+      "scope": "Four ESP-PSRAM64H devices addressable through a 32 MiB window.",
+      "dependencies": "External QPI PSRAM; mutually exclusive with OPI on shared memory pads.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Memory/controller setup is a platform responsibility; only SDRAM is advertised as Linux RAM in the supplied DT.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/psram.h",
+        "docs/ip/psram.md",
+        "publications/examples/psram.c",
+        "rtl/ip/memory/psram_pkg.sv",
+        "rtl/ip/memory/psram_reg.sv"
+      ],
+      "tests": [
+        "tests/test_psram.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "opipsram",
+      "title": "OPI PSRAM Controller",
+      "implementation": "Partial",
+      "scope": "One octal DDR memory interface and one selected protocol profile.",
+      "dependencies": "Compatible octal/HyperBus-style device; shared pads and board timing qualification.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Memory/controller setup is a platform responsibility; only SDRAM is advertised as Linux RAM in the supplied DT.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/opipsram.h",
+        "docs/ip/opipsram.md",
+        "publications/examples/opipsram.c",
+        "rtl/ip/memory/opipsram_pkg.sv",
+        "rtl/ip/memory/opipsram_reg.sv"
+      ],
+      "tests": [
+        "tests/test_opipsram.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "sdram",
+      "title": "SDRAM Controller",
+      "implementation": "Integrated",
+      "scope": "Fixed 64 MiB, x16 SDR geometry with bank/row tracking.",
+      "dependencies": "External x16 SDR SDRAM; initialization and refresh timings.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Memory/controller setup is a platform responsibility; only SDRAM is advertised as Linux RAM in the supplied DT.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/sdram.h",
+        "docs/ip/sdram.md",
+        "publications/examples/sdram.c",
+        "rtl/ip/memory/sdram_pkg.sv",
+        "rtl/ip/memory/sdram_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "gpio",
+      "title": "GPIO Controller",
+      "implementation": "Integrated",
+      "scope": "32 bidirectional GPIOs with administration and restricted user windows.",
+      "dependencies": "Selected pad library and approved pin routing.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/gpio.h",
+        "docs/ip/gpio.md",
+        "publications/examples/gpio.c",
+        "rtl/ip/peripheral/gpio_reg.sv"
+      ],
+      "tests": [
+        "tests/test_gpio.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "dma",
+      "title": "DMA Controller",
+      "implementation": "Integrated",
+      "scope": "Eight channel contexts share a 32-bit AXI master.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/dma.h",
+        "docs/ip/dma.md",
+        "publications/examples/dma.c",
+        "rtl/ip/peripheral/dma_pkg.sv",
+        "rtl/ip/peripheral/dma_reg.sv"
+      ],
+      "tests": [
+        "tests/test_dma.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "timer",
+      "title": "General-Purpose Timers",
+      "implementation": "Integrated",
+      "scope": "Two 32-bit general-purpose timers.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/timer.h",
+        "docs/ip/timer.md",
+        "publications/examples/timer.c",
+        "rtl/ip/peripheral/timer_reg.sv"
+      ],
+      "tests": [
+        "tests/test_timer.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "rtc",
+      "title": "Real-Time Clock",
+      "implementation": "Integrated",
+      "scope": "64-bit seconds and 1/256-second subsecond time.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/rtc.h",
+        "publications/examples/rtc.c",
+        "rtl/managed/clusterip/rtc/doc/datasheet.md",
+        "rtl/managed/clusterip/rtc/rtl/rtc_pkg.sv",
+        "rtl/managed/clusterip/rtc/rtl/rtc_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "wdg",
+      "title": "Watchdog",
+      "implementation": "Integrated",
+      "scope": "Independent-clock window watchdog.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Register/platform interface; no standalone HAL example indexed.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "rtl/managed/clusterip/wdg/doc/datasheet.md",
+        "rtl/managed/clusterip/wdg/rtl/wdg_pkg.sv",
+        "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "pwm",
+      "title": "PWM Controller",
+      "implementation": "Integrated",
+      "scope": "Two timers, four output channels and two operators.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/pwm.h",
+        "publications/examples/pwm.c",
+        "rtl/managed/clusterip/pwm/doc/datasheet.md",
+        "rtl/managed/clusterip/pwm/rtl/pwm_pkg.sv",
+        "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "uart0",
+      "title": "UART",
+      "implementation": "Integrated",
+      "scope": "64-byte TX and RX FIFOs; fractional baud-rate generator.",
+      "dependencies": "Management serial connection; optional DMA/flow-control routing.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/uart.h",
+        "docs/ip/uart.md",
+        "publications/examples/uart.c",
+        "rtl/ip/serial/uart_reg.sv"
+      ],
+      "tests": [
+        "tests/test_uart.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "uart1",
+      "title": "UART",
+      "implementation": "Integrated",
+      "scope": "64-byte TX and RX FIFOs; fractional baud-rate generator.",
+      "dependencies": "Dedicated console TX/RX; no connected DMA or RTS/CTS.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "DT node exists; native driver not established. UART console uses SBI.",
+      "verification": "Tests available",
+      "sources": [
+        "app/ports/linux/README.md",
+        "app/ports/linux/linux/retrosoc_hp.dts",
+        "crt/include/retrosoc/hal/uart.h",
+        "docs/ip/uart.md",
+        "publications/examples/uart.c",
+        "rtl/ip/serial/uart_reg.sv"
+      ],
+      "tests": [
+        "tests/test_uart.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "i2c",
+      "title": "I2C Controllers",
+      "implementation": "Integrated",
+      "scope": "Two controller instances with 7-bit and 10-bit addressing.",
+      "dependencies": "External bus pull-ups and compatible target voltages.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/i2c.h",
+        "docs/ip/i2c.md",
+        "publications/examples/i2c.c",
+        "rtl/ip/serial/i2c_reg.sv"
+      ],
+      "tests": [
+        "tests/test_i2c.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "ws2812",
+      "title": "WS2812 Transmitter",
+      "implementation": "Integrated",
+      "scope": "24-bit GRB transmission on one GPIO alternate function.",
+      "dependencies": "Compatible LED chain and approved level/supply interface.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/ws2812.h",
+        "docs/ip/ws2812.md",
+        "publications/examples/ws2812.c",
+        "rtl/ip/serial/ws2812_reg.sv"
+      ],
+      "tests": [
+        "tests/test_ws2812.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "ps2",
+      "title": "PS/2 Host",
+      "implementation": "Integrated",
+      "scope": "Bidirectional open-drain host interface.",
+      "dependencies": "Open-drain interface and board pull-ups.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/ps2.h",
+        "publications/examples/ps2.c",
+        "rtl/managed/clusterip/ps2/doc/datasheet.md",
+        "rtl/managed/clusterip/ps2/rtl/ps2_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "sdio1",
+      "title": "SD/SDIO Host Controller",
+      "implementation": "Integrated",
+      "scope": "Native one-bit/four-bit SDR operation.",
+      "dependencies": "SD card and dedicated pads; generic FPGA mapping pending.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/sdio.h",
+        "docs/ip/sdio.md",
+        "publications/examples/sdio.c",
+        "rtl/ip/storage/sdio_pkg.sv",
+        "rtl/ip/storage/sdio_reg.sv"
+      ],
+      "tests": [
+        "tests/test_sdio.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "usb2",
+      "title": "USB 2.0 Controller",
+      "implementation": "Integrated",
+      "scope": "Dual-role digital controller with external 8-bit ULPI PHY.",
+      "dependencies": "External ULPI PHY, 60 MHz interface clock, VBUS/role circuitry.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/usb2.h",
+        "docs/ip/usb2.md",
+        "publications/examples/usb2.c",
+        "rtl/ip/usb/usb2_pkg.sv",
+        "rtl/ip/usb/usb2_reg.sv"
+      ],
+      "tests": [
+        "tests/test_usb2.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "archinfo",
+      "title": "Architecture Information",
+      "implementation": "Integrated",
+      "scope": "Read-only identity, configuration and topology discovery.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Register/platform interface; no standalone HAL example indexed.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "publications/examples/archinfo.c",
+        "rtl/managed/clusterip/archinfo/doc/datasheet.md",
+        "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "sysctrl",
+      "title": "System Controller",
+      "implementation": "Integrated",
+      "scope": "Root-managed configuration, HP lifecycle and clock requests.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/sysctrl.h",
+        "docs/ip/sysctrl.md",
+        "publications/examples/sysctrl.c",
+        "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "rtl/ip/peripheral/pll_ctrl_if.sv",
+        "rtl/ip/peripheral/sysctrl_core.sv",
+        "rtl/ip/peripheral/sysctrl_if.sv",
+        "rtl/ip/peripheral/sysctrl_reg.sv"
+      ],
+      "tests": [
+        "tests/test_clock_reset_domains.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "rcu",
+      "title": "Reset and Clock Unit",
+      "implementation": "Integrated",
+      "scope": "AON-controlled requests and clock/reset policy.",
+      "dependencies": "Reference PLL disabled; any physical PLL/backend needs separate qualification.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/clock.h",
+        "docs/pll-clock-control.md",
+        "publications/examples/rcu.c",
+        "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "rtl/ip/peripheral/pll_ctrl_if.sv",
+        "rtl/ip/peripheral/sysctrl_core.sv",
+        "rtl/ip/peripheral/sysctrl_if.sv",
+        "rtl/ip/peripheral/sysctrl_reg.sv"
+      ],
+      "tests": [
+        "tests/test_clock_reset_domains.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "clint",
+      "title": "Management CLINT",
+      "implementation": "Integrated",
+      "scope": "Per-hart software interrupts and 64-bit timer compare.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/clint.h",
+        "docs/ip/clint.md",
+        "publications/examples/clint.c",
+        "rtl/ip/peripheral/clint_reg.sv"
+      ],
+      "tests": [
+        "tests/test_clint.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "hp-aclint",
+      "title": "HP ACLINT",
+      "implementation": "Integrated",
+      "scope": "Two addressable hart slots; HP consumes slot 1.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Register/platform interface; no standalone HAL example indexed.",
+      "linux": "OpenSBI timer/IPI and standard DT bindings present; target boot report not supplied.",
+      "verification": "Tests available",
+      "sources": [
+        "app/ports/linux/linux/retrosoc_hp.dts",
+        "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "docs/ip/clint.md",
+        "rtl/ip/peripheral/clint_reg.sv"
+      ],
+      "tests": [
+        "tests/test_hp_platform.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "hp-plic",
+      "title": "HP PLIC",
+      "implementation": "Integrated",
+      "scope": "32 source IDs, with source 0 reserved.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Register/platform interface; no standalone HAL example indexed.",
+      "linux": "Standard PLIC DT binding present; target IRQ validation report not supplied.",
+      "verification": "Tests available",
+      "sources": [
+        "app/ports/linux/linux/retrosoc_hp.dts",
+        "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "docs/ip/hp-platform.md",
+        "rtl/ip/peripheral/apb4_plic.sv"
+      ],
+      "tests": [
+        "tests/test_hp_platform.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "hp-mailbox",
+      "title": "LP/HP Mailbox",
+      "implementation": "Integrated",
+      "scope": "Separate LP-to-HP and HP-to-LP payload banks.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "DT node and platform ABI exist; native mailbox driver not established.",
+      "verification": "Tests available",
+      "sources": [
+        "app/ports/linux/README.md",
+        "app/ports/linux/linux/retrosoc_hp.dts",
+        "crt/include/retrosoc/hal/hp_mailbox.h",
+        "docs/ip/hp-platform.md",
+        "publications/examples/mailbox.c",
+        "rtl/ip/peripheral/apb4_hp_mailbox.sv"
+      ],
+      "tests": [
+        "tests/test_hp_mailbox.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "resource",
+      "title": "Resource Controller",
+      "implementation": "Partial",
+      "scope": "Eight independently managed shared resources.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/resource.h",
+        "docs/ip/resource-controller.md",
+        "publications/examples/resource.c",
+        "rtl/mini/top/resource_controller.sv"
+      ],
+      "tests": [
+        "tests/test_resource_controller.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "monitor",
+      "title": "Fabric Monitor",
+      "implementation": "Integrated",
+      "scope": "Eight master and six target observation banks.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/fabric_monitor.h",
+        "docs/ip/fabric-monitor.md",
+        "publications/examples/monitor.c",
+        "rtl/mini/top/fabric_monitor.sv"
+      ],
+      "tests": [
+        "tests/test_fabric_monitor.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "i2s",
+      "title": "I2S Transceiver",
+      "implementation": "Integrated",
+      "scope": "Stereo master TX/RX with independent audio clock.",
+      "dependencies": "External audio clock and codec; stereo master operation.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/i2s.h",
+        "docs/ip/i2s.md",
+        "publications/examples/i2s.c",
+        "rtl/ip/serial/i2s_pkg.sv",
+        "rtl/ip/serial/i2s_reg.sv"
+      ],
+      "tests": [
+        "tests/test_i2s.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "dvp",
+      "title": "DVP Capture",
+      "implementation": "Integrated",
+      "scope": "8-bit parallel RGB565/YUV422 capture.",
+      "dependencies": "Parallel camera, sensor configuration and pixel clock.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/dvp.h",
+        "docs/ip/dvp.md",
+        "publications/examples/dvp.c",
+        "rtl/ip/multimedia/dvp_reg.sv"
+      ],
+      "tests": [
+        "tests/test_dvp.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "jpeg",
+      "title": "JPEG Codec",
+      "implementation": "Integrated",
+      "scope": "8-bit Baseline Sequential JPEG encode or decode.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/jpeg.h",
+        "docs/ip/jpeg.md",
+        "publications/examples/jpeg.c",
+        "rtl/ip/multimedia/jpeg_pkg.sv",
+        "rtl/ip/multimedia/jpeg_reg.sv"
+      ],
+      "tests": [
+        "tests/test_jpeg.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "apu",
+      "title": "Audio Processing Unit",
+      "implementation": "Partial",
+      "scope": "Coreless microcode sequencer with private DMA and local storage.",
+      "dependencies": "Codec microcode and stream integration; production codec jobs disabled.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/apu.h",
+        "docs/ip/apu.md",
+        "publications/examples/apu.c",
+        "rtl/ip/multimedia/apu_reg.sv"
+      ],
+      "tests": [
+        "tests/test_apu.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "crypto",
+      "title": "Crypto Controller",
+      "implementation": "Integrated",
+      "scope": "AES-128/192/256, SHA-224/256 and raw RSA-2048.",
+      "dependencies": "LP-controlled buffers and key lifecycle; no secure key-store claim.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Tests available",
+      "sources": [
+        "crt/include/retrosoc/hal/crypto.h",
+        "docs/ip/crypto.md",
+        "publications/examples/crypto.c",
+        "rtl/ip/security/apb4_crypto.sv",
+        "rtl/ip/security/crypto_pkg.sv"
+      ],
+      "tests": [
+        "tests/test_crypto.py"
+      ],
+      "reports": []
+    },
+    {
+      "id": "crc",
+      "title": "CRC Engine",
+      "implementation": "Integrated",
+      "scope": "Programmable 7-, 8-, 16- or 32-bit CRC.",
+      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/crc.h",
+        "publications/examples/crc.c",
+        "rtl/managed/clusterip/crc/doc/datasheet.md",
+        "rtl/managed/clusterip/crc/rtl/crc_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "rng",
+      "title": "RNG Controller",
+      "implementation": "Partial",
+      "scope": "Entropy-source qualification, FIFO and continuous health checks.",
+      "dependencies": "Entropy-source qualification absent; deterministic integration source.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/rng.h",
+        "publications/examples/rng.c",
+        "rtl/managed/clusterip/rng/doc/datasheet.md",
+        "rtl/managed/clusterip/rng/rtl/rng_reg.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "ext-l",
+      "title": "Low-Bandwidth Extension",
+      "implementation": "Integrated",
+      "scope": "Fixed APB4 control and one interrupt.",
+      "dependencies": "Fixed external APB target and lifecycle contract.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/extension.h",
+        "docs/ip/extensions.md",
+        "publications/examples/ext-l.c",
+        "rtl/mini/top/extension_slot.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "ext-h",
+      "title": "Product Extension Slots",
+      "implementation": "Integrated",
+      "scope": "Fixed EXT-H control, ownership, bounds and lifecycle.",
+      "dependencies": "Bounded external AXI master and ACL configuration.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Native driver support not established in this publication.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/extension.h",
+        "docs/ip/extensions.md",
+        "publications/examples/extensions.c",
+        "rtl/mini/top/extension_slot.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "mpw-timer",
+      "title": "MPW User Timer",
+      "implementation": "MPW only",
+      "scope": "MPW-selectable timer and divider.",
+      "dependencies": "MPW profile, selected user-IP manifest and pad ownership.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Outside the fixed PRODUCT HP Linux platform.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/user_ip.h",
+        "docs/ip/user-ip.md",
+        "publications/examples/mpw_timer.c",
+        "rtl/managed/mpw/ip/username1/user_ip_design.sv"
+      ],
+      "tests": [],
+      "reports": []
+    },
+    {
+      "id": "mpw-gpio",
+      "title": "MPW User GPIO",
+      "implementation": "MPW only",
+      "scope": "MPW-selectable user GPIO data and enables.",
+      "dependencies": "MPW profile, selected user-IP manifest and pad ownership.",
+      "hal": "Published API and syntax example; see the IP chapter.",
+      "linux": "Outside the fixed PRODUCT HP Linux platform.",
+      "verification": "Source reviewed",
+      "sources": [
+        "crt/include/retrosoc/hal/user_ip.h",
+        "docs/ip/user-ip.md",
+        "publications/examples/mpw_gpio.c",
+        "rtl/managed/mpw/ip/username2/user_ip_design.sv"
+      ],
+      "tests": [],
+      "reports": []
+    }
+  ],
+  "limitations": [
+    {
+      "id": "no-hardware-coherency",
+      "title": "Shared buffers are not hardware coherent",
+      "impact": "Stale reads or loss of dirty data across CPU/DMA ownership changes.",
+      "trigger": "Concurrent cached CPU access and non-snooping DMA/LP access.",
+      "workaround": "Use exclusive ownership, whole cache-block ranges, directional cache maintenance and fences.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "docs/lp-hp-architecture.md",
+        "docs/ip/resource-controller.md"
+      ]
+    },
+    {
+      "id": "hp-ready-wait",
+      "title": "HP loader has no firmware-local ready timeout",
+      "impact": "LP can wait indefinitely for the expected Linux mailbox event.",
+      "trigger": "No mailbox message after HP release.",
+      "workaround": "Use the simulator deadline during acceptance. A board supervisor/watchdog policy is integration work; no automatic retry is implemented here.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "app/apps/hp_boot/main.c",
+        "configs/ci/ihp130-hp.mk"
+      ]
+    },
+    {
+      "id": "crc-not-authentication",
+      "title": "Boot CRC is not authentication",
+      "impact": "A CRC-valid image is not proven to come from a trusted signer.",
+      "trigger": "Untrusted image or writable external boot storage.",
+      "workaround": "Treat signing, key storage, rollback prevention and secure recovery as separate unimplemented system requirements.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "app/apps/hp_boot/main.c",
+        "app/apps/hp_boot/hp_boot_bundle.h"
+      ]
+    },
+    {
+      "id": "native-linux-drivers",
+      "title": "Native Linux peripheral coverage is incomplete",
+      "impact": "A HAL or DT node does not provide a native Linux driver.",
+      "trigger": "Applications attempt direct Linux use of a custom peripheral.",
+      "workaround": "Use the published support matrix, retain LP ownership where needed, and validate a platform driver before handoff.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "app/ports/linux/README.md",
+        "app/ports/linux/linux/retrosoc_hp.dts"
+      ]
+    },
+    {
+      "id": "resource-reset",
+      "title": "Resource reset request is not universal engine reset",
+      "impact": "Some downstream peripheral engines are not reset by the central lifecycle request.",
+      "trigger": "Using Resource CONTROL.RESET as independent engine reset containment.",
+      "workaround": "Drain and use each IP reset/recovery contract. APU P1 has a local reset connection; do not generalize it to all engines.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "docs/ip/resource-controller.md"
+      ]
+    },
+    {
+      "id": "forced-hp-reset",
+      "title": "Forced HP reset can discard dirty cache state",
+      "impact": "Missing cache-clean acknowledgement prevents preservation of modified shared data.",
+      "trigger": "HP shutdown times out before acknowledgement.",
+      "workaround": "Keep a recoverable authoritative copy outside dirty HP cache; treat timed-out work as failed and reinitialize dependent queues.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "docs/lp-hp-architecture.md",
+        "docs/ip/resource-controller.md"
+      ]
+    },
+    {
+      "id": "memory-pad-exclusion",
+      "title": "QPI and OPI cannot operate together",
+      "impact": "The inactive memory window returns an error and its pads are disconnected.",
+      "trigger": "Accessing the inactive memory mode or attempting a live protocol change.",
+      "workaround": "Select the mode at boot before use; respect the sticky lock. A live handover is not supported.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "docs/lp-hp-architecture.md"
+      ]
+    },
+    {
+      "id": "board-routes",
+      "title": "Generic FPGA routes do not qualify every interface",
+      "impact": "Dedicated USB2 ULPI and SDIO1 pads need board assignment and electrical/timing review.",
+      "trigger": "Assuming logical pads are FPGA ball or package-pin assignments.",
+      "workaround": "Supply board constraints, bank voltages, external devices and validated timing before enabling a physical route.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "fpga/README.md",
+        "publications/datasheets/sections/pins.typ"
+      ]
+    },
+    {
+      "id": "apu-production",
+      "title": "APU production codec jobs remain disabled",
+      "impact": "The register shell and bounded codec/transport work do not establish a complete media product.",
+      "trigger": "Submitting unsupported production codec or KWS jobs.",
+      "workaround": "Check the implemented capability and job result; use only the bounded supported path described in the APU chapter.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "publications/datasheets/ips/apu.typ",
+        "rtl/ip/multimedia/apu_reg.sv"
+      ]
+    },
+    {
+      "id": "rng-entropy",
+      "title": "Integrated RNG entropy is unqualified",
+      "impact": "Deterministic test data cannot supply production cryptographic entropy.",
+      "trigger": "Using the current entropy stream to generate secret keys or nonces.",
+      "workaround": "Keep diagnostic use separate; production entropy requires a reviewed physical source and qualification.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "publications/datasheets/ips/rng.typ",
+        "rtl/mini/top/apb4_system.sv"
+      ]
+    },
+    {
+      "id": "physical-ratings",
+      "title": "Physical operating limits are not characterized",
+      "impact": "Configuration clocks and behavioral models are not electrical or silicon ratings.",
+      "trigger": "Selecting board voltage, frequency, thermal or timing limits from RTL defaults.",
+      "workaround": "Use approved technology, macro, package and board reports; leave absent specifications TBD.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "physical/README.md",
+        "docs/pll-clock-control.md"
+      ]
+    },
+    {
+      "id": "mpw-compatibility",
+      "title": "Legacy PRODUCT window is not an MPW selector",
+      "impact": "Legacy selection writes are rejected in PRODUCT.",
+      "trigger": "Calling selectable user-core/IP mutators on a fixed PRODUCT configuration.",
+      "workaround": "Detect mode/capabilities first and use fixed EXT-L/EXT-H APIs in PRODUCT.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
+      "sources": [
+        "docs/lp-hp-architecture.md",
+        "docs/ip/user-ip.md"
+      ]
+    }
+  ]
+}

@@ -13,6 +13,61 @@ Update this document together with any intentional change to those rules. If
 documentation and rendering disagree, inspect the implementation and the PDF;
 do not silently apply an older proposal instead.
 
+## System-use content and evidence
+
+The publication includes a complete system-use reference around the detailed IP
+chapters. Keep the cover and Overview, then place Product Configuration and
+Feature Availability and Typical Applications before Reading this datasheet.
+Contents and the two figure directories follow the complete Product Brief.
+Memory Attributes/Cache/DMA follows Interconnect; operating-state/reset guidance
+extends Clock and Reset. Multicore Ownership, Security Boundaries and Debug/Fault
+Recovery follow Interrupt System and precede Peripherals. Connection constraints
+extend Packaging. Software owns boot/recovery and the support matrix. Technical
+Report owns performance methods; Known Limitations precedes Document Control.
+
+Organize system-use topics as capability/prerequisites, key table, normal steps,
+failure handling and sources. Use native numbered lists for actionable sequences
+and CeTZ vector diagrams for system connections, state transitions and buffer
+handoffs. Keep the existing diagram font sizes and palette; label logical flows
+as ordering rather than measured cycle timing. Do not imply direct IP wiring,
+new operating modes or a complete application from a conceptual system diagram.
+
+`system-reference.json` is publication-only metadata for every IP chapter's
+support row, known limitations and their engineering sources. The builder adds
+it as `data.json.system_reference` and hashes all declared sources, tests and
+report/profile dependencies. Boot-image addresses and bounds are read from the
+existing loader header; the index does not define or generate RTL, registers or
+SDK APIs. Keep implementation status separate from verification evidence.
+
+Use `Source reviewed`, `Tests available` and `Reported pass` precisely: a source
+or test file's existence does not establish a passing run. A reported pass needs
+the actual report, matching full source revision, profile, platform stage and
+result. Simulation, FPGA and silicon are different stages. Never promote an old
+summary, a device-tree node or a published HAL into unqualified platform support.
+When no matching reviewed report is attached, say so in the matrix and retain
+physical/performance results as unavailable. A limitation records its impact,
+trigger, integration response, applicable snapshot and sources.
+
+Publication-only source references lead to Sources and Reproducibility, where
+the matching release manifest and source set are identified. Do not construct
+hardware-commit GitHub links for publication files authored after that commit.
+Engineering and managed-IP references retain their frozen source destinations.
+
+Executable configuration and implementation take precedence over old narrative
+summaries. Correct stale publication prose and diagrams together; do not change
+hardware to fit a description. Identify recommended integration policy and
+pseudocode explicitly. Do not invent callable APIs, cache services, boot retry,
+ready timeout, authentication, power isolation or silicon qualifications. Keep
+code examples in the existing syntax-check flow when new C examples are added.
+
+Electrical tables must identify device/process/package, supply/temperature,
+load/activity and evidence basis. Separate stress ratings, recommended operating
+conditions, typical observations and guaranteed limits. TBD never means zero.
+Configuration clocks, behavioral-model checks and analytical bandwidth ceilings
+are not characterized operating limits or measured system performance. Keep the
+benchmark profile, workload, placement, measurement boundary and report with any
+published result; quick CoreMark regression is not a qualified public score.
+
 ## Page, typography and color
 
 | Element | Current rule |
@@ -508,6 +563,17 @@ isolation. Export every waveform and inspect the effective font weight of signal
 names and multibit data labels, including inherited SVG text styles. Render short,
 long and successive bus labels at final size to check for overlap or clipping.
 Confirm technical text, figure numbering and generated data are unchanged.
+
+For system-use additions, check the support inventory against every IP chapter,
+reject duplicate/missing identifiers and broken source paths, and test rejection
+of verification claims without the required report context. Verify boot-layout
+extraction and dependency hashing. Review every new engineering statement against
+its source; compare the existing hardware/register data before and after the
+change. New chapter/table/figure numbers may change automatically, but labels,
+destinations and existing technical content must remain valid. Render the full
+PDF, inspect new tables/flows and chapter transitions, and verify a byte-identical
+offline repeat build in a separate output directory. Do not replace missing
+hardware evidence with a successful publication build.
 
 For an edit confined to this Markdown specification or its README link, verify
 the descriptions, relative links and commands and run `git diff --check`;

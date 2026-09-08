@@ -28,6 +28,7 @@ from scripts.check_clock_reset_domains import validate as validate_clocks  # noq
 from publications.register_reference import collect_registers  # noqa: E402
 from publications.chapter_reference import collect_chapters  # noqa: E402
 from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
+from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
 
 CONFIG = ROOT / "publications/datasheets/mini.json"
 CACHE = ROOT / ".cache/retrosoc/publications"
@@ -186,6 +187,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         "waveforms": waveforms,
         "waveform_audit": waveform_audit,
         "overview_groups": read_json(ROOT / "publications/datasheets/overview-groups.json"),
+        "system_reference": collect_system_reference(ROOT, config["source_revision"]),
         "wave_renderer": "/" + load_lock()["archives"]["typst_wavy"]["destination"] + "/wavy.js",
     }
 
@@ -312,6 +314,7 @@ def source_hashes(
     for entry in catalog:
         paths.update(entry["sources"])
     paths.update(waveform_source_paths(read_json(ROOT / "publications/datasheets/waveforms.json")))
+    paths.update(system_source_paths(read_json(ROOT / "publications/datasheets/system-reference.json")))
     paths.update(
         p.relative_to(ROOT).as_posix()
         for p in (ROOT / "publications").rglob("*")

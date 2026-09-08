@@ -176,10 +176,10 @@
 #let boot-diagram() = cetz.canvas({
   let stages = (
     [*Reset & LP startup* \ HP held in reset; LP owns root control],
-    [*Validate boot bundle* \ Header, bounds, payload CRC and destination checks],
-    [*Prepare HP memory* \ Configure SDRAM; DMA-copy and verify payloads],
-    [*Publish boot mailbox* \ Entry, device tree and memory handoff; fences],
-    [*Release HP* \ OpenSBI enters Linux; LP retains recovery authority],
+    [*Check prerequisites* \ Confirm HP reset and SDRAM readiness; validate bundle header and bounds],
+    [*Load HP memory* \ DMA-copy with CRC; software-copy/CRC fallback on failure],
+    [*Order and release* \ Fence; clear LP mailbox interrupt; request HP release],
+    [*Observe readiness* \ OpenSBI enters Linux; LP waits for the expected mailbox event],
   )
   for (n,s) in stages.enumerate() {
     let y = 8 - n * 1.8

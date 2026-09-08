@@ -38,6 +38,8 @@ peripheral route; switching function also changes its input and output-enable co
   Drivers must quiesce the old owner before changing pad mode.],
 )
 
+#include "connection-constraints.typ"
+
 === Package Dimensions
 #placeholder[Package outline and mechanical dimensions]
 The old QFN128 and 12.3 × 12.3 mm description is not retained as a qualified mechanical
@@ -48,6 +50,22 @@ connection must be supplied before a physical pinout is published.
 #tbd[Reflow profile, moisture sensitivity level, storage/bake requirements and permitted
 assembly excursions require the selected package supplier's qualified data.]
 
+=== Thermal and Reliability Information
+Publish thermal parameters only for an identified die, package and board condition. Junction-to-
+ambient, junction-to-case and characterization parameters are not interchangeable, and a
+typical board result is not a universal operating limit. No numerical thermal limit is attached
+to this digital reference.
+#ds-table("thermal-reliability",[Physical release information and required supporting evidence],
+  ([Topic],[Required supporting information],[State]),
+  (([Thermal],[Package/die, board stackup, airflow, power map, method and applicable parameters.],[TBD]),
+   ([ESD / latch-up],[Pad/device configuration, method, stress levels and qualification results.],[TBD]),
+   ([Reliability],[Operating grade, lifetime assumptions, qualification plan and reports.],[TBD]),
+   ([Assembly],[Package materials, MSL, bake/storage and approved reflow profile.],[TBD]),
+   ([Physical identification],[Pin 1, die pads versus package pins, exposed pad and test/power connections.],[TBD])),
+  widths:(0.75fr,2.85fr,0.4fr))
+Keep these fields separate from digital simulation and FPGA bringup results. Populate them
+from the chosen supplier/implementation reports before issuing a physical product specification.
+
 === Ordering Information
 #ds-table("ordering", [Ordering information awaiting qualification],
   ([Field], [Specification]),
@@ -56,21 +74,4 @@ assembly excursions require the selected package supplier's qualified data.]
   widths:(1fr,1fr),
 )
 
-== Electrical and Timing Specifications
-The RTL snapshot and configuration files do not establish absolute maximum ratings,
-recommended operating limits or production test coverage. Digital clock choices and
-simulation assertions are not substitutes for measured electrical characteristics.
-
-#ds-table("electrical", [Electrical characterization placeholders],
-  ([Parameter group], [Conditions], [Min], [Typ], [Max], [Unit]),
-  (([Core supply], [PDK / corner TBD], [TBD],[TBD],[TBD],[V]),
-   ([I/O supply and thresholds], [Pad / bank TBD], [TBD],[TBD],[TBD],[V]),
-   ([Operating temperature], [Grade TBD], [TBD],[TBD],[TBD],[°C]),
-   ([Power consumption], [Workload TBD], [TBD],[TBD],[TBD],[mW]),
-   ([Input/output timing], [Load / corner TBD], [TBD],[TBD],[TBD],[ns])),
-  widths:(1.4fr,1.25fr,0.5fr,0.5fr,0.5fr,0.5fr),
-  notes:[TBD means unavailable, not zero. No numerical operating limit is asserted by this table.],
-)
-#placeholder[Pad timing and reset waveforms]
-Absolute maximum ratings, ESD/latch-up, PLL jitter and memory/ULPI board timing will be added
-only with their applicable device, PDK, test conditions and supporting evidence.
+#include "electrical-reference.typ"

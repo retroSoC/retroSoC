@@ -2,6 +2,8 @@
 #show: template
 #include "sections/overview.typ"
 #pagebreak()
+#include "sections/product-use.typ"
+#pagebreak()
 #include "sections/reading.typ"
 #pagebreak()
 #contents(depth:5)
