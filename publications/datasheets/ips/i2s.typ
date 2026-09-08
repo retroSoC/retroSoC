@@ -4,7 +4,11 @@
 
 #pagebreak(weak:true)
 
-=== Multimedia
+=== Multimedia <multimedia-overview>
+
+#include "../sections/media-formats.typ"
+
+#pagebreak(weak:true)
 
 #context metadata((kind:"ip-start",id:"i2s",page:here().page()))
 

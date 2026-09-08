@@ -18,8 +18,10 @@ which software owns each resource and buffer before enabling interrupts or bus m
   widths:(0.8fr,1.6fr,1.8fr))
 
 The central Resource Controller covers DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG and APU.
-An owner selects one interrupt route, not both LP and HP simultaneously. Reset masks both
-routes. Owner locks are sticky under their reset contract. Per-IP local interrupt causes
+An owner selects one interrupt route, not both LP and HP simultaneously. The resource
+#code("CONTROL.RESET") request masks both routes; controller reset assignments and dynamic
+IRQ observations are distinguished in @reset-summary. Owner locks are sticky under their
+reset contract. Per-IP local interrupt causes
 must still be acknowledged at the peripheral; changing the route does not clear a cause.
 
 === Resource handoff procedure

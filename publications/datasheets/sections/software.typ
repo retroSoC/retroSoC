@@ -80,6 +80,8 @@ success. A complete Linux peripheral qualification requires the separate support
 #source-note("scripts/build_hp_linux.py",title:"OpenSBI FW_JUMP and Linux artifact composition")
 #source-note("scripts/package_hp_boot.py",title:"Bundle generation and layout checks")
 
+#include "image-maintenance.typ"
+
 == Runtime, SDK and Shell
 The freestanding CRT is organized into RISC-V architecture support, core, HAL, library and
 service layers. Applications consume public headers through `<retrosoc/...>`, use the `rs_`
@@ -192,3 +194,12 @@ A successful behavioral test or a generic PLL model does not prove physical sign
 #placeholder([Reference board and external-memory / ULPI wiring], height:22mm)
 #tbd[Approved schematic, power tree, connector pinout, impedance/timing constraints and
 board bringup results are required for a reference PCB specification.]
+
+#ds-table("physical-evidence-inventory",[Available physical-design inputs and missing release evidence],
+  ([Topic],[Available input],[Missing evidence]),
+  data.system_reference.product_details.physical.map(r=>(r.title,r.available,r.missing)),widths:(0.6fr,1.65fr,1.9fr))
+The StarrySky V2 constraint file is a board-specific implementation input. It is not a
+minimal-system schematic, an ASIC package-pin assignment or a characterization report.
+No approved schematic, physical package mapping or matching measurement result was supplied
+for this publication update; the corresponding existing specification fields remain unfilled.
+#source-note("fpga/mini/starrysky_v2.xdc",title:"Existing board-specific FPGA constraint input")

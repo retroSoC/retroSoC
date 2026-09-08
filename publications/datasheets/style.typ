@@ -288,6 +288,7 @@
       // Heading locations avoid the extra layout pass needed by page-valued metadata.
       // A later chapter/section heading closes the preceding IP's header scope.
       let navigation=query(selector(heading.where(level:1)).or(heading.where(level:2),
+        <multimedia-overview>,
         ..ip-chapters.map(chapter=>label(chapter.id))))
         .filter(h=>h.location().page()<=here().page())
       let active=if navigation.len()==0 {none} else {

@@ -30,6 +30,14 @@ such as the dual timer and dual I2C retain their documented instance counts in t
   data.system_reference.support.map(r=>([#r.title \ #r.implementation],r.scope,r.dependencies)),
   widths:(1.05fr,1.4fr,1.7fr))
 
+=== Interface selection summary
+#ds-table("interface-selection-summary",[Interface roles and key exclusions for selection],
+  ([Interface / role],[Important selection boundary]),
+  data.system_reference.product_details.interfaces.map(r=>([#r.title \ #r.role],r.excluded)),widths:(1fr,3.15fr))
+This is a source-level selection aid. Use @interface-subsets for the complete mode/software
+matrix and @media-interoperability for media layout and transport gates. An interface name
+does not establish all optional modes in a standard or a compliance certificate.
+
 === Selecting a usable configuration
 + Start with the reference profile and identify the memory needed by the application.
   Confirm that mapped capacity, fitted device capacity and linker placement agree.

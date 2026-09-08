@@ -64,6 +64,28 @@ that static integration limitation; it does not change RTL or promote standalone
 codec tests into an end-to-end SoC DMA result. Existing IP register/codec details
 remain available with this system-level qualification.
 
+The implementation-detail layer adds the LP/HP configuration comparison, reset
+initial-state/dependency summary, interface selection/subset matrices, multimedia
+format interoperability and an image-maintenance chapter. Its publication-only
+records live under `system-reference.json.product_details`; the
+`implementation_reference.py` collector validates source/reset bindings and
+extracts explicit LP/HP parameters, PMA envelopes and build flags. The LP firmware
+ISA/CSR choices are kept separate from hardware parameters. Unreviewed upstream
+defaults and cache capacity are not inferred from the HP generator's sets/ways.
+
+The Multimedia overview is outside the actual I2S IP page markers; its label
+ends the preceding IP header scope. All actual IP sections retain independent
+page starts. Interface/format agreement does not remove the existing JPEG or
+APU integration gates. The source-level matrices contain no compliance claims.
+
+Image-maintenance examples only describe the existing SRAM-loader flow.
+`passed=true` with `executed=false` is script preparation, not device programming.
+`tests/test_publication_implementation.py` verifies that distinction with mocked
+tool invocation, along with CPU/reset/capability-source checks. No live debugger,
+erase/program action, new core generation or hardware measurement is performed.
+Board constraint inputs are listed separately from the still-missing approved
+schematic, physical package and matching characterization evidence.
+
 ### Spacing and document flow
 
 The [layout standard](datasheets/style.md) records the implemented page,

@@ -2091,5 +2091,1068 @@
         ]
       }
     ]
+  },
+  "product_details": {
+    "cpu": {
+      "lp_fields": [
+        "BREAKPOINT_TRIGGERS",
+        "CSR_COUNTER",
+        "CSR_M_MANDATORY",
+        "DEBUG_SUPPORT",
+        "EXTENSION_A",
+        "EXTENSION_C",
+        "EXTENSION_M",
+        "MTVEC_INIT",
+        "PMP_REGIONS",
+        "RESET_VECTOR",
+        "U_MODE"
+      ],
+      "hp_fields": [
+        "additionalPerformanceCounters",
+        "asidWidth",
+        "decoders",
+        "fetchL1Enable",
+        "fetchL1Sets",
+        "fetchL1Ways",
+        "fetchMemDataWidthMin",
+        "lanes",
+        "lsuL1Enable",
+        "lsuL1Sets",
+        "lsuL1Ways",
+        "lsuMemDataWidthMin",
+        "physicalWidth",
+        "pmpParam.granularity",
+        "pmpParam.pmpSize",
+        "privParam.debugTriggers",
+        "privParam.withDebug",
+        "privParam.withRdTime",
+        "resetVector",
+        "xlen"
+      ]
+    },
+    "reset": [
+      {
+        "id": "clock-root",
+        "ips": [
+          "rcu"
+        ],
+        "label": "LP / peripheral clock selection",
+        "value_class": "Configured",
+        "initial": "LP mode resets to 0 (REF24). PCLK divider state is zero, selecting /1 after its reset/configuration path settles.",
+        "prerequisites": "External reset and reference clocks must satisfy board conditions; local reset must be released.",
+        "action": "Read clock status/capability before deriving peripheral timing.",
+        "observation": "Configured rate and observed ready/fault status; not a maximum operating limit.",
+        "sources": [
+          "rtl/mini/top/clock_config_controller.sv",
+          "rtl/mini/top/soc_clock_reset_subsystem.sv",
+          "rtl/managed/clusterip/common/rtl/utils/register.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/clock_config_controller.sv",
+            "kind": "snippet",
+            "text": ".RESET_VAL (2'd0)\n  ) u_lp_mode_dffrc"
+          },
+          {
+            "file": "rtl/mini/top/clock_config_controller.sv",
+            "kind": "snippet",
+            "text": ") u_pclk_div_dffr ("
+          },
+          {
+            "file": "rtl/managed/clusterip/common/rtl/utils/register.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "dat_o",
+            "value": "'0",
+            "module": "dffr"
+          }
+        ]
+      },
+      {
+        "id": "memory-pad",
+        "ips": [
+          "rcu",
+          "psram",
+          "opipsram"
+        ],
+        "label": "Memory pad mode",
+        "value_class": "Configured",
+        "initial": "MEM_PAD_MODE reset encoding is 1 (QPI); the mode lock resets clear.",
+        "prerequisites": "The selected external device and its interface clock/reset must be ready.",
+        "action": "Select the required boot-time mode before memory use; check the lock.",
+        "observation": "Inactive aperture errors are expected; mode is not a fitted-device probe.",
+        "sources": [
+          "rtl/mini/top/clock_config_controller.sv",
+          "docs/lp-hp-architecture.md",
+          "rtl/managed/clusterip/common/rtl/utils/register.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/clock_config_controller.sv",
+            "kind": "snippet",
+            "text": ".RESET_VAL (2'd1)\n  ) u_mem_pad_mode_dffrc"
+          },
+          {
+            "file": "rtl/mini/top/clock_config_controller.sv",
+            "kind": "snippet",
+            "text": ") u_mem_pad_lock_dffr ("
+          }
+        ]
+      },
+      {
+        "id": "hp-held",
+        "ips": [
+          "sysctrl"
+        ],
+        "label": "HP lifecycle",
+        "value_class": "Fixed",
+        "initial": "Controller state Held; HP release, flush and forced-fault state clear.",
+        "prerequisites": "Root clocks and management MMIO are available.",
+        "action": "Prepare memory/image and use the controlled release sequence.",
+        "observation": "Check requested and actual release/reset status; values can change once a request is accepted.",
+        "sources": [
+          "rtl/mini/top/hp_lifecycle_controller.sv",
+          "crt/src/hal/sysctrl.c"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/hp_lifecycle_controller.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_state_q",
+            "value": "Held"
+          },
+          {
+            "file": "rtl/mini/top/hp_lifecycle_controller.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_hp_release_q",
+            "value": "1'b0"
+          },
+          {
+            "file": "rtl/mini/top/hp_lifecycle_controller.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_forced_fault_q",
+            "value": "1'b0"
+          }
+        ]
+      },
+      {
+        "id": "resource-owner",
+        "ips": [
+          "resource"
+        ],
+        "label": "Resource owners and locks",
+        "value_class": "Fixed",
+        "initial": "OWNER flops reset to 0 (LP); owner lock, quiesce and resource-reset request clear.",
+        "prerequisites": "PCLK/local reset and the producer/engine status path must be available.",
+        "action": "Inspect owner, busy/idle and pending status before handoff.",
+        "observation": "Root ownership is not an independent power/reset guarantee for every engine.",
+        "sources": [
+          "rtl/mini/top/resource_controller.sv",
+          "docs/ip/resource-controller.md"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/resource_controller.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_owner_q",
+            "value": "'0"
+          },
+          {
+            "file": "rtl/mini/top/resource_controller.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_owner_lock_q",
+            "value": "'0"
+          },
+          {
+            "file": "rtl/mini/top/resource_controller.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_reset_q",
+            "value": "'0"
+          }
+        ]
+      },
+      {
+        "id": "irq-observation",
+        "ips": [
+          "resource"
+        ],
+        "label": "Interrupt observation",
+        "value_class": "Dynamic",
+        "initial": "IRQ outputs depend on peripheral causes, current owner and resource-reset request. A clear initial enable/status can change after an event.",
+        "prerequisites": "Know each peripheral reset/enable contract and the selected owner route.",
+        "action": "Install handlers, clear documented stale events, then enable the intended route.",
+        "observation": "CONTROL.RESET masks owner routes; do not confuse it with an independent controller-wide IRQ enable.",
+        "sources": [
+          "rtl/mini/top/resource_controller.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/resource_controller.sv",
+            "kind": "snippet",
+            "text": "irq_lp_o[resource] = irq_i[resource] && (s_owner_q[resource] == OwnerLp) && !s_reset_q[resource];"
+          }
+        ]
+      },
+      {
+        "id": "dma-initial",
+        "ips": [
+          "dma"
+        ],
+        "label": "Central DMA register context",
+        "value_class": "Fixed",
+        "initial": "Channel configuration, byte count, descriptor head/count and IRQ/event enables reset to zero.",
+        "prerequisites": "PCLK/register path and selected memory/endpoint are available.",
+        "action": "Probe capability; configure a legal idle context before START.",
+        "observation": "Zero reset configuration is not a ready-to-start transfer; the core validates width, count, alignment and endpoint.",
+        "sources": [
+          "rtl/ip/peripheral/dma_reg.sv",
+          "rtl/ip/peripheral/dma_core.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/dma_reg.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_ch_cfg_q",
+            "value": "'0"
+          },
+          {
+            "file": "rtl/ip/peripheral/dma_reg.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_irq_en_q",
+            "value": "'0"
+          },
+          {
+            "file": "rtl/ip/peripheral/dma_reg.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "s_byte_count_q",
+            "value": "'0"
+          }
+        ]
+      },
+      {
+        "id": "gpio-initial",
+        "ips": [
+          "gpio"
+        ],
+        "label": "GPIO digital control state",
+        "value_class": "Fixed",
+        "initial": "Output data/enable, alternate-function selection and interrupt-enable state use zero-reset Common flops.",
+        "prerequisites": "Read the selected PDK pad capability and actual board connection.",
+        "action": "Establish inactive output state, configure ownership/function, then enable the output or interrupt.",
+        "observation": "An input pad is not guaranteed low; digital reset values do not specify voltage, pull strength or package pins.",
+        "sources": [
+          "rtl/ip/peripheral/gpio_reg.sv",
+          "rtl/managed/clusterip/common/rtl/utils/register.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/gpio_reg.sv",
+            "kind": "snippet",
+            "text": ") u_output_enable_dffer ("
+          },
+          {
+            "file": "rtl/ip/peripheral/gpio_reg.sv",
+            "kind": "snippet",
+            "text": ") u_alt_enable_dffer ("
+          },
+          {
+            "file": "rtl/ip/peripheral/gpio_reg.sv",
+            "kind": "snippet",
+            "text": ") u_intr_enable_dffer ("
+          },
+          {
+            "file": "rtl/managed/clusterip/common/rtl/utils/register.sv",
+            "kind": "reset",
+            "signal": "rst_n_i",
+            "state": "dat_o",
+            "value": "'0",
+            "module": "dffer"
+          }
+        ]
+      },
+      {
+        "id": "external-memory",
+        "ips": [
+          "sdram",
+          "psram",
+          "opipsram",
+          "xpi"
+        ],
+        "label": "External-memory initialization",
+        "value_class": "Dynamic",
+        "initial": "Resetting a controller does not establish a populated, initialized and electrically valid external device.",
+        "prerequisites": "Correct device/protocol, clocks, pins and timing settings.",
+        "action": "Follow the controller initialization/probe sequence and wait with its defined timeout.",
+        "observation": "Use READY/INIT/error and ID where applicable; an address aperture alone proves no device presence.",
+        "sources": [
+          "docs/ip/sdram.md",
+          "docs/ip/psram.md",
+          "docs/ip/opipsram.md",
+          "docs/ip/xpi.md"
+        ],
+        "bindings": []
+      },
+      {
+        "id": "memory-content",
+        "ips": [
+          "sram"
+        ],
+        "label": "Memory contents and software startup",
+        "value_class": "Input-dependent",
+        "initial": "No universal SRAM/DRAM retention or reset-to-zero content guarantee is published.",
+        "prerequisites": "The selected memory implementation and loader/linker contract.",
+        "action": "Initialize software data/BSS and owned buffers before use.",
+        "observation": "Do not interpret a successful register reset as a memory scrub.",
+        "sources": [
+          "physical/README.md",
+          "crt/linker/ld2_all_sram.lds"
+        ],
+        "bindings": []
+      },
+      {
+        "id": "time-observation",
+        "ips": [
+          "clint",
+          "rtc"
+        ],
+        "label": "Counters and time sources",
+        "value_class": "Dynamic",
+        "initial": "Counters and status can advance as soon as the relevant clock/reset/enable conditions permit.",
+        "prerequisites": "Known timebase and the IP-specific coherent read/snapshot sequence.",
+        "action": "Read a bounded snapshot and establish the software epoch.",
+        "observation": "A later software read need not equal the reset assignment.",
+        "sources": [
+          "crt/src/hal/clint.c",
+          "docs/ip/clint.md"
+        ],
+        "bindings": []
+      }
+    ],
+    "interfaces": [
+      {
+        "id": "uart",
+        "ips": [
+          "uart0",
+          "uart1"
+        ],
+        "title": "UART0 / UART1",
+        "role": "Asynchronous TX/RX",
+        "modes": "5-8 data bits, parity/break and fractional baud; UART0 has the documented flow-control/DMA route.",
+        "excluded": "UART1 has no connected DMA or RTS/CTS path; unlisted higher-level serial protocols are not implied.",
+        "software": "LP HAL plus the indexed HP SBI console path; native driver status is separate.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/uart.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/serial/uart_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"64-byte TX and RX FIFOs; fractional baud-rate generator.\""
+          }
+        ]
+      },
+      {
+        "id": "i2c",
+        "ips": [
+          "i2c"
+        ],
+        "title": "I2C0 / I2C1",
+        "role": "Bus controller",
+        "modes": "7/10-bit addressing, repeated START, clock stretching, arbitration/error handling and paced DMA.",
+        "excluded": "Target role and complete SMBus/PMBus protocol support are not advertised by the current controller contract.",
+        "software": "HAL timing helpers and transactions; electrical mode qualification remains board/device dependent.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/i2c.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/serial/i2c_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Two controller instances with 7-bit and 10-bit addressing.\""
+          }
+        ]
+      },
+      {
+        "id": "i2s",
+        "ips": [
+          "i2s"
+        ],
+        "title": "I2S",
+        "role": "Stereo master TX/RX",
+        "modes": "16/24-bit samples; 48/96 kHz presets and exact programmable clocks; PIO and 32-bit streams.",
+        "excluded": "No slave, TDM or PDM mode; no automatic sample-rate conversion.",
+        "software": "HAL configuration and sample helpers; observe PIO/stream exclusion and packing.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/i2s.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/serial/i2s_pkg.sv",
+          "rtl/ip/serial/i2s_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Stereo master TX/RX with independent audio clock.\""
+          }
+        ]
+      },
+      {
+        "id": "ps2",
+        "ips": [
+          "ps2"
+        ],
+        "title": "PS/2",
+        "role": "Bidirectional host",
+        "modes": "Host command/receive path, open-drain routing and bounded error/recovery status.",
+        "excluded": "A PS/2 device-emulation role or arbitrary serial protocol is not implied.",
+        "software": "Use the host HAL with approved pull-ups and pin routing.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "publications/datasheets/features.json",
+          "rtl/managed/clusterip/ps2/doc/datasheet.md",
+          "rtl/managed/clusterip/ps2/rtl/ps2_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Bidirectional open-drain host interface.\""
+          }
+        ]
+      },
+      {
+        "id": "ws2812",
+        "ips": [
+          "ws2812"
+        ],
+        "title": "WS2812",
+        "role": "Transmit engine",
+        "modes": "24-bit GRB words, programmable timing and completion/underflow behavior.",
+        "excluded": "RGBW or other LED protocol formats are not advertised as equivalent modes.",
+        "software": "PIO/software-paced DMA helper; select timing from the actual clock and LED requirement.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/ws2812.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/serial/ws2812_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"24-bit GRB transmission on one GPIO alternate function.\""
+          }
+        ]
+      },
+      {
+        "id": "spisd",
+        "ips": [
+          "spisd"
+        ],
+        "title": "SPI-SD",
+        "role": "SD card SPI host",
+        "modes": "SPI-mode command/data transfer and private DMA.",
+        "excluded": "Native SD bus and SDIO I/O-function operation are not supplied by the SPI-SD interface.",
+        "software": "Use its dedicated card/command HAL rather than SDIO register sequences.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/spisd.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/storage/spisd_pkg.sv",
+          "rtl/ip/storage/spisd_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"SD card SPI-mode command/data host.\""
+          }
+        ]
+      },
+      {
+        "id": "sdio",
+        "ips": [
+          "sdio0",
+          "sdio1"
+        ],
+        "title": "SD/SDIO",
+        "role": "Native 1/4-bit SDR host",
+        "modes": "SD Memory v2 SDSC/SDHC and SDIO v2 CMD5/CMD52/CMD53 foundation; CRC, PIO and DMA.",
+        "excluded": "No UHS, DDR, 1.8 V switching, 8-bit bus, MMC/eMMC, tuning/DLL or CQE; hot-remove and combo-card policy are unsupported.",
+        "software": "Initialization, capabilities and speed selection remain software sequenced.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/sdio.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/storage/sdio_pkg.sv",
+          "rtl/ip/storage/sdio_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Native one-bit/four-bit SDR operation.\""
+          }
+        ]
+      },
+      {
+        "id": "usb2",
+        "ips": [
+          "usb2"
+        ],
+        "title": "USB2",
+        "role": "Digital dual-role controller",
+        "modes": "External ULPI interface; control/bulk/interrupt and single-transaction isochronous paths under the documented role policy.",
+        "excluded": "No integrated analog PHY; high-bandwidth isochronous and HNP/SRP are outside the current scope.",
+        "software": "DCD/HCD primitives and descriptor handling do not imply a complete class stack or USB compliance certificate.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/usb2.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/usb/usb2_pkg.sv",
+          "rtl/ip/usb/usb2_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Dual-role digital controller with external 8-bit ULPI PHY.\""
+          }
+        ]
+      },
+      {
+        "id": "xpi",
+        "ips": [
+          "xpi"
+        ],
+        "title": "XPI",
+        "role": "Programmable SDR serial controller",
+        "modes": "Single/dual/quad data phases, LUT, indirect command/polling and mapped read path.",
+        "excluded": "No DDR/DQS extension or arbitrary memory-mapped NOR writes.",
+        "software": "Use reviewed slot/LUT/device settings; erase/program use the indirect path.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/xpi.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/storage/xpi_pkg.sv",
+          "rtl/ip/storage/xpi_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Four chip-select slots and 16 programmable LUT sequences.\""
+          }
+        ]
+      },
+      {
+        "id": "qpi",
+        "ips": [
+          "psram"
+        ],
+        "title": "QPI PSRAM",
+        "role": "Device-specific SDR controller",
+        "modes": "ESP-PSRAM64H SPI/QPI initialization and mapped data operation.",
+        "excluded": "Not a generic controller for every QSPI RAM; shared-pad exclusion applies.",
+        "software": "Probe and initialize each enabled device with the documented recovery sequence.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/psram.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/memory/psram_pkg.sv",
+          "rtl/ip/memory/psram_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Four ESP-PSRAM64H devices addressable through a 32 MiB window.\""
+          }
+        ]
+      },
+      {
+        "id": "opi",
+        "ips": [
+          "opipsram"
+        ],
+        "title": "OPI / HyperBus-style",
+        "role": "Boot/profile-selected prototype",
+        "modes": "Octal DDR profile or the modified single-clock HyperBus-style profile.",
+        "excluded": "No live protocol switch or generic commercial HyperBus compatibility claim.",
+        "software": "Protocol encoding, latency and a specific physical device require separate review.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/opipsram.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/memory/opipsram_pkg.sv",
+          "rtl/ip/memory/opipsram_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"One octal DDR memory interface and one selected protocol profile.\""
+          }
+        ]
+      },
+      {
+        "id": "sdram",
+        "ips": [
+          "sdram"
+        ],
+        "title": "SDRAM",
+        "role": "x16 SDR controller",
+        "modes": "Fixed geometry, bank tracking, native bursts, initialization/refresh and programmable cycle timings.",
+        "excluded": "DDR/LPDDR and arbitrary geometries are not supported by this interface.",
+        "software": "Match the controller geometry and timing to the selected external component.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/sdram.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/memory/sdram_pkg.sv",
+          "rtl/ip/memory/sdram_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Fixed 64 MiB, x16 SDR geometry with bank/row tracking.\""
+          }
+        ]
+      },
+      {
+        "id": "dvp",
+        "ips": [
+          "dvp"
+        ],
+        "title": "DVP",
+        "role": "8-bit parallel camera input",
+        "modes": "RGB565/YUV422 byte input, explicit sync, crop/snapshot and word-packed stream output.",
+        "excluded": "No MIPI CSI receiver or automatic colorspace conversion; odd-pixel line DMA is unsupported.",
+        "software": "Sensor byte order and sync configuration must match the capture and consumer layout.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/dvp.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/multimedia/dvp_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"8-bit parallel RGB565/YUV422 capture.\""
+          }
+        ]
+      },
+      {
+        "id": "jpeg",
+        "ips": [
+          "jpeg"
+        ],
+        "title": "JPEG",
+        "role": "Baseline sequential codec",
+        "modes": "8-bit SOF0 encode/decode and the indexed raster formats; modes are mutually exclusive.",
+        "excluded": "No progressive/lossless/arithmetic/10-12-bit modes. Native SoC DMA admission is currently blocked at slot 6.",
+        "software": "Standalone codec/register behavior is distinct from end-to-end SoC payload availability.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/jpeg.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/multimedia/jpeg_pkg.sv",
+          "rtl/ip/multimedia/jpeg_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"8-bit Baseline Sequential JPEG encode or decode.\""
+          }
+        ]
+      },
+      {
+        "id": "apu",
+        "ips": [
+          "apu"
+        ],
+        "title": "APU",
+        "role": "Coreless control/transport subsystem",
+        "modes": "Register/transport and bounded development codec paths described in the IP chapter.",
+        "excluded": "Production codec/KWS jobs remain disabled in the reviewed snapshot.",
+        "software": "A HAL, microcode format or test source does not establish an enabled production audio service.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "docs/ip/apu.md",
+          "publications/datasheets/features.json",
+          "rtl/ip/multimedia/apu_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Coreless microcode sequencer with private DMA and local storage.\""
+          }
+        ]
+      }
+    ],
+    "formats": [
+      {
+        "id": "dvp-word",
+        "ips": [
+          "dvp"
+        ],
+        "title": "DVP RGB565/YUV422 stream",
+        "layout": "Two 16-bit pixels occupy a 32-bit word; sensor byte order and FORMAT swap controls determine the pixel value.",
+        "boundary": "TUSER marks frame start; TLAST marks line end. Odd width yields a partial last word, not a full-word DMA beat.",
+        "sources": [
+          "rtl/ip/multimedia/dvp_core.sv",
+          "docs/ip/dvp.md"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/dvp_core.sv",
+            "kind": "snippet",
+            "text": "s_first_word_q, s_last_pixel, 4'b1111, 4'b1111, s_pixel_word, s_word_q"
+          }
+        ]
+      },
+      {
+        "id": "i2s16",
+        "ips": [
+          "i2s"
+        ],
+        "title": "I2S 16-bit stereo words",
+        "layout": "Older sample in bits 15:0; newer sample in bits 31:16.",
+        "boundary": "One word carries two samples; channel/sample ordering must match the selected playback/capture convention.",
+        "sources": [
+          "crt/src/hal/i2s_math.c"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/i2s_math.c",
+            "kind": "snippet",
+            "text": "return ((uint32_t)second << 16) | first;"
+          }
+        ]
+      },
+      {
+        "id": "i2s24",
+        "ips": [
+          "i2s"
+        ],
+        "title": "I2S 24-bit sample words",
+        "layout": "One sample in bits 23:0 of a 32-bit container.",
+        "boundary": "Packed three-byte files require conversion into word containers; no implicit rate conversion.",
+        "sources": [
+          "crt/src/hal/i2s_math.c",
+          "docs/ip/i2s.md"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/i2s.md",
+            "kind": "snippet",
+            "text": "24-bit mode places one sample\nin `[23:0]`."
+          }
+        ]
+      },
+      {
+        "id": "jpeg-gray",
+        "ips": [
+          "jpeg"
+        ],
+        "title": "JPEG raster GRAY8",
+        "layout": "One 8-bit grayscale sample per pixel.",
+        "boundary": "Stride and job geometry are explicit; no automatic expansion to a different raster format.",
+        "sources": [
+          "docs/ip/jpeg.md",
+          "rtl/ip/multimedia/jpeg_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/jpeg.md",
+            "kind": "snippet",
+            "text": "`GRAY8`, `RGB565`, `RGB888`, `YUYV422`, and two-plane `NV12`"
+          }
+        ]
+      },
+      {
+        "id": "jpeg-rgb565",
+        "ips": [
+          "jpeg"
+        ],
+        "title": "JPEG raster RGB565",
+        "layout": "Little-endian 16-bit rrrrrggg gggbbbbb.",
+        "boundary": "Check camera byte order before consuming the same named format.",
+        "sources": [
+          "docs/ip/jpeg.md",
+          "rtl/ip/multimedia/jpeg_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/jpeg.md",
+            "kind": "snippet",
+            "text": "RGB565 words are little-endian `rrrrrggg gggbbbbb`."
+          }
+        ]
+      },
+      {
+        "id": "jpeg-rgb888",
+        "ips": [
+          "jpeg"
+        ],
+        "title": "JPEG raster RGB888",
+        "layout": "Bytes R, G, B in order.",
+        "boundary": "A 32-bit padded RGB layout is not identical to packed RGB888.",
+        "sources": [
+          "docs/ip/jpeg.md",
+          "rtl/ip/multimedia/jpeg_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/jpeg.md",
+            "kind": "snippet",
+            "text": "RGB888 byte order is R,\n  G, B."
+          }
+        ]
+      },
+      {
+        "id": "jpeg-yuyv",
+        "ips": [
+          "jpeg"
+        ],
+        "title": "JPEG raster YUYV422",
+        "layout": "Bytes Y0, Cb, Y1, Cr.",
+        "boundary": "A generic YUV422 label does not select UYVY/YVYU or another byte order.",
+        "sources": [
+          "docs/ip/jpeg.md",
+          "rtl/ip/multimedia/jpeg_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/jpeg.md",
+            "kind": "snippet",
+            "text": "YUYV is Y0, Cb, Y1, Cr."
+          }
+        ]
+      },
+      {
+        "id": "jpeg-nv12",
+        "ips": [
+          "jpeg"
+        ],
+        "title": "JPEG raster NV12",
+        "layout": "Two planes; plane 1 contains interleaved Cb/Cr pairs.",
+        "boundary": "Use the prescribed byte strides and plane addresses; I420/YV12 are not equivalent.",
+        "sources": [
+          "docs/ip/jpeg.md",
+          "rtl/ip/multimedia/jpeg_reg.sv"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/jpeg.md",
+            "kind": "snippet",
+            "text": "NV12 plane 1 contains interleaved Cb/Cr pairs."
+          }
+        ]
+      }
+    ],
+    "interoperability": [
+      {
+        "id": "dvp-jpeg-rgb",
+        "ips": [
+          "dvp",
+          "jpeg"
+        ],
+        "title": "DVP RGB565 -> memory -> JPEG",
+        "classification": "Blocked",
+        "condition": "Even-width word packing can describe compatible RGB565 storage only after byte-order/stride checks. Current JPEG normal admission credits are zero.",
+        "blockers": [
+          "jpeg-master-credit"
+        ],
+        "sources": [
+          "rtl/ip/multimedia/dvp_core.sv",
+          "docs/ip/jpeg.md",
+          "rtl/mini/top/axi4_data_crossbar.sv"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/jpeg.md",
+            "kind": "snippet",
+            "text": "RGB565 words are little-endian `rrrrrggg gggbbbbb`."
+          }
+        ]
+      },
+      {
+        "id": "dvp-jpeg-yuv",
+        "ips": [
+          "dvp",
+          "jpeg"
+        ],
+        "title": "DVP YUV422 -> memory -> JPEG YUYV",
+        "classification": "Blocked",
+        "condition": "Confirm Y0/Cb/Y1/Cr order; otherwise software rearrangement is required. Format agreement does not remove the current JPEG admission block.",
+        "blockers": [
+          "jpeg-master-credit"
+        ],
+        "sources": [
+          "rtl/ip/multimedia/dvp_core.sv",
+          "docs/ip/jpeg.md"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/jpeg.md",
+            "kind": "snippet",
+            "text": "YUYV is Y0, Cb, Y1, Cr."
+          }
+        ]
+      },
+      {
+        "id": "pcm16-i2s",
+        "ips": [
+          "dma",
+          "i2s"
+        ],
+        "title": "Software stereo16 -> DMA -> I2S",
+        "classification": "Format-compatible",
+        "condition": "Use the defined two-samples-per-word representation, full-word length, correct sample rate and exclusive endpoint/buffer ownership. Board/driver qualification is separate.",
+        "blockers": [],
+        "sources": [
+          "crt/src/hal/i2s_math.c",
+          "docs/ip/i2s.md",
+          "rtl/ip/peripheral/dma_core.sv"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/i2s_math.c",
+            "kind": "snippet",
+            "text": "return ((uint32_t)second << 16) | first;"
+          }
+        ]
+      },
+      {
+        "id": "pcm24-i2s",
+        "ips": [
+          "dma",
+          "i2s"
+        ],
+        "title": "Packed 24-bit file bytes -> I2S",
+        "classification": "Conversion required",
+        "condition": "Expand each three-byte sample into the low 24 bits of a 32-bit word; preserve sample/channel order and the configured rate.",
+        "blockers": [],
+        "sources": [
+          "docs/ip/i2s.md",
+          "crt/src/hal/i2s_math.c"
+        ],
+        "bindings": [
+          {
+            "file": "docs/ip/i2s.md",
+            "kind": "snippet",
+            "text": "24-bit mode places one sample\nin `[23:0]`."
+          }
+        ]
+      },
+      {
+        "id": "apu-i2s",
+        "ips": [
+          "apu",
+          "i2s"
+        ],
+        "title": "Production APU codec output -> I2S",
+        "classification": "Blocked",
+        "condition": "The stream-switch/control path does not establish enabled production codec jobs. Follow the documented job/transport restrictions.",
+        "blockers": [
+          "apu-production"
+        ],
+        "sources": [
+          "docs/ip/apu.md",
+          "rtl/ip/multimedia/apb4_apu.sv",
+          "publications/datasheets/features.json"
+        ],
+        "bindings": [
+          {
+            "file": "publications/datasheets/features.json",
+            "kind": "snippet",
+            "text": "\"Coreless microcode sequencer with private DMA and local storage.\""
+          }
+        ]
+      }
+    ],
+    "physical": [
+      {
+        "id": "board",
+        "title": "Board reference",
+        "available": "StarrySky V2 FPGA constraint file exists as a board-specific input.",
+        "missing": "Approved minimal-system schematic, device/BOM review and matching bringup report not supplied.",
+        "sources": [
+          "fpga/mini/starrysky_v2.xdc",
+          "fpga/README.md"
+        ]
+      },
+      {
+        "id": "package",
+        "title": "Physical package",
+        "available": "Logical pad inventory and technology wrapper sources are indexed.",
+        "missing": "Approved package-pin/die-pad assignment, supply-pin map and mechanical supplier drawing not supplied.",
+        "sources": [
+          "publications/datasheets/sections/pins.typ",
+          "physical/README.md"
+        ]
+      },
+      {
+        "id": "measurements",
+        "title": "Measurements",
+        "available": "Digital configuration, calculation examples and test entry points are available.",
+        "missing": "Matching physical DC/AC, power, thermal and application-performance characterization reports not supplied.",
+        "sources": [
+          "publications/datasheets/sections/electrical-reference.typ",
+          "publications/datasheets/sections/performance-reference.typ"
+        ]
+      }
+    ],
+    "sources": [
+      "app/apps/xpi_flash_loader/main.c",
+      "app/ports/linux/linux/retrosoc_hp.dts",
+      "configs/ci/ihp130-xpi-flash-loader.mk",
+      "configs/ci/ihp130.mk",
+      "crt/linker/jtag_sram.lds",
+      "crt/src/hal/i2s_math.c",
+      "dependencies/dependencies.lock.json",
+      "docs/hazard3-debug.md",
+      "docs/ip/apu.md",
+      "docs/ip/jpeg.md",
+      "docs/ip/xpi.md",
+      "docs/lp-hp-architecture.md",
+      "publications/datasheets/features.json",
+      "publications/datasheets/mini.json",
+      "publications/datasheets/system-reference.json",
+      "rtl/ip/multimedia/dvp_core.sv",
+      "rtl/ip/peripheral/dma_reg.sv",
+      "rtl/ip/peripheral/gpio_reg.sv",
+      "rtl/managed/clusterip/common/rtl/utils/register.sv",
+      "rtl/mini/top/clock_config_controller.sv",
+      "rtl/mini/top/hp_lifecycle_controller.sv",
+      "rtl/mini/top/mgmt_core_wrapper.sv",
+      "rtl/mini/top/resource_controller.sv",
+      "rtl/mini/top/soc_clock_reset_subsystem.sv",
+      "scripts/generate_vexiiriscv.py",
+      "scripts/program_xpi_flash.py",
+      "scripts/vexiiriscv/GenerateRetroSocHp.scala",
+      "tests/test_xpi_flash_tool.py"
+    ]
   }
 }

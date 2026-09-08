@@ -25,6 +25,8 @@ instruction and data paths. Its uncached MMIO path is downsized and crosses into
 control plane. OpenSBI/Linux inputs and generated-core configuration are dependency-locked.
 #source-note("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
 
+#include "processor-details.typ"
+
 == Interconnect
 === AXI4 and APB4 Interfaces
 The product replaces the former NMI/AXI4-Lite/APB3 organization with AXI4 control and data
@@ -127,6 +129,7 @@ from re-entering a restarted domain.
 qualification. No crystal-oscillator range or maximum core frequency is specified here.]
 
 #include "operating-states.typ"
+#include "reset-summary.typ"
 #include "clock-programming.typ"
 
 == Interrupt System
@@ -147,3 +150,4 @@ Claim/complete and priority rules are defined in the HP platform contract.
 
 #include "system-management.typ"
 #include "register-programming.typ"
+#include "interface-subsets.typ"

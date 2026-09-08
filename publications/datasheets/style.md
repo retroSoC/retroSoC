@@ -122,6 +122,61 @@ do not touch MMIO and are not firmware or hardware measurements. Render all new
 wide tables, formulas and appendices, check every directory destination, compare
 unchanged IP engineering data, and repeat the PDF build in an independent directory.
 
+## Processor, reset, interface and maintenance detail
+
+Processor Configuration and Software-visible Capabilities follows the LP/HP
+introductions. Reset-State Summary and Initialization Dependencies extends Clock
+and Reset. Product Brief includes the interface selection summary, with the full
+Interface Standards and Supported Subsets matrix before Peripherals. The
+Multimedia group opens with Data Formats and Peripheral Interoperability before
+the first actual IP, which still starts on its own page. The labelled multimedia
+overview closes the previous IP's running-header scope. Image Maintenance belongs
+after Boot and before the runtime/SDK description.
+
+`system-reference.json.product_details` records the reset, interface, format,
+interoperability and physical-evidence summaries. `implementation_reference.py`
+reads the named Hazard3 instance, explicit Scala generator assignments, ISA
+selection, PMA mappings and reference build choices. Reject absent/ambiguous
+instances, duplicate or missing parameters, unknown IP references and unsupported
+source bindings. Include all declared dependencies in the publication manifest.
+
+Keep LP instance parameters, HP generator configuration, generated-artifact
+evidence and software build flags separate. `ISA` and `HAVE_CSR` are not a hardware
+capability inventory. Do not infer cache byte capacity from sets/ways without the
+reviewed block size or treat a PMA envelope as implemented memory. When the locked
+upstream checkout/generated manifest is not supplied as publication evidence,
+identify explicit settings and leave unreviewed defaults/capacities unconfirmed.
+This is a configuration reference, not a CPU ISA/CSR manual or a new core build.
+
+Reset summaries distinguish asserted reset, assigned initial state and subsequent
+live observations. Fixed/configured claims need traceable reset assignments or
+explicit reset-flop parameters plus their primitive semantics. Preserve fixed,
+configured, input-dependent and dynamic classifications. Resource CONTROL.RESET
+and controller/global reset are different operations. Initial GPIO control values
+do not establish physical input voltage, pad pull behavior or package numbering.
+
+Interface tables separate role, source-level subset, exclusions, software support
+and evidence; none is a compliance certificate. Media tables specify containers,
+byte order, stride/alignment and boundary metadata. Format compatibility must not
+override an active integration limitation: JPEG admission and APU production-job
+gates remain visible even for matching data layouts. A claimed format or route
+must retain its source binding and any blocker reference.
+
+Maintenance commands are operator examples. The publication build never connects
+a debugger or runs an erase/program operation. Separate script generation from
+explicit execution and require both `executed` and `passed` when interpreting a
+tool result. A preparation-only pass is not device programming. Describe the
+actual management-halt/reset scope, SRAM residency, other-master quiescence,
+sector/readback checks and interruption limits without claiming OTA, A/B,
+authentication, atomic power-loss updates or rollback. Tests may exercise pure
+logic and mocked script generation, never real probe/flash operations.
+
+Existing board constraints are identified as board-specific inputs. Missing
+approved schematics, physical package mappings and characterization reports stay
+explicitly unprovided in the existing physical/electrical sections. Validate the
+new scope and result-state distinctions, then build/check/render the full PDF,
+verify IP preservation and navigation, and repeat the build independently.
+
 ## Page, typography and color
 
 | Element | Current rule |
