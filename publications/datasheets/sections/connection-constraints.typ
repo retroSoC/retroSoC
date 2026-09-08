@@ -23,6 +23,8 @@ and selected component. Do not assume arbitrary QSPI or HyperBus devices are int
 XPI writes use indirect commands; a CPU store into the read-only data-plane flash mapping is
 not a programming operation. Verify erase/program completion before making code executable.
 
+#include "device-compatibility.typ"
+
 ==== GPIO handoff and signal integrity
 + Reserve a pin group and check alternate-function conflicts before assigning a peripheral.
 + Stop the previous function and wait for its documented idle condition. Establish the

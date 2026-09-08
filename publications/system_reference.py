@@ -5,11 +5,14 @@ import json
 import re
 from pathlib import Path
 
+from publications.programming_reference import collect_programming, dependencies
+
 REFERENCE = "publications/datasheets/system-reference.json"
 
 
 def source_paths(reference: dict) -> set[str]:
     paths = set(reference["sources"])
+    paths.update(dependencies(reference.get("programming", {})))
     for row in [*reference["support"], *reference["limitations"]]:
         paths.update(row["sources"])
         paths.update(row.get("tests", []))
@@ -77,4 +80,5 @@ def collect_system_reference(root: Path, revision: str) -> dict:
         layout.append({"name": title, "address": f"0x{values['ADDRESS']:08X}",
                        "max_size_kib": values["MAX_SIZE"] // 1024})
     reference["boot_layout"] = layout
+    reference["programming"] = collect_programming(root, reference["programming"], {row["id"] for row in index}, revision)
     return reference

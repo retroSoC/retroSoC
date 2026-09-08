@@ -46,6 +46,24 @@ to software copy/CRC; its final Linux-ready wait has no firmware-local deadline.
 CRC is not authentication. Power isolation, qualified entropy, physical ratings
 and production APU codec support are not inferred from controller capabilities.
 
+The cross-IP reference additionally covers register access conventions,
+transaction/credit/arbitration rules, DMA request and interrupt routing,
+resource coexistence, clock/divider examples and external-memory compatibility.
+Two usage appendices provide software/buffer budgets and terminology/document
+navigation. `programming_reference.py` collects the corresponding
+`system-reference.json.programming` records, verifies RTL/SDK selector parity
+and connection evidence, extracts interrupt/credit data, and calculates bounded
+timing and buffer examples. The pure timing calculations are cross-checked
+against the existing C helpers by `tests/test_publication_programming.py` in the
+Linux host environment. No MMIO or new firmware/RTL simulation is involved in
+those calculation checks.
+
+The current native JPEG path is connected to master slot 6 but receives zero
+normal read/write credits in the reviewed crossbar. The publication now records
+that static integration limitation; it does not change RTL or promote standalone
+codec tests into an end-to-end SoC DMA result. Existing IP register/codec details
+remain available with this system-level qualification.
+
 ### Spacing and document flow
 
 The [layout standard](datasheets/style.md) records the implemented page,

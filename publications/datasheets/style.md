@@ -68,6 +68,60 @@ are not characterized operating limits or measured system performance. Keep the
 benchmark profile, workload, placement, measurement boundary and report with any
 published result; quick CoreMark regression is not a qualified public score.
 
+## Cross-IP programming and usage appendices
+
+Bus Transaction Rules and Arbitration belongs inside Interconnect; Clock,
+Divider and Timebase Programming belongs inside Clock and Reset. Place the
+DMA Request/Interrupt/Event map after Interrupt System and the coexistence
+matrix after Multicore Operation. Register Access and Programming Conventions
+precedes Peripherals. Device Compatibility is a child of External Interfaces.
+The Software Memory/Buffer and Terminology/Document Map appendices precede
+Document Control. Keep existing per-IP register details and link to exceptions
+instead of reproducing them in every global table.
+
+`system-reference.json.programming` owns reviewed route bindings, channel
+conventions, conflicts, device-profile evidence and terminology. The publication
+collector checks RTL/SDK request-number parity (including explicit QSPI/XPI
+aliases), coverage, actual connection snippets and referenced instances. Channel
+conventions are supported by driver call sites, not inferred from selector IDs.
+Private masters and central DMA contexts are different resources. Preserve
+endpoint IRQ, aggregate DMA IRQ, LP vector bit and HP PLIC source as separate
+fields/namespaces. Derive PLIC assignments and normal master credits from the
+current implementation; mark a zero-credit connected route explicitly.
+
+Cross-IP rules are explanatory defaults with documented exceptions. Do not
+invent a global atomic-register alias, exclusive-access guarantee or universal
+multiword read/write order. Describe PSTRB, W1C, FIFO pop, busy-write and dynamic
+reset behavior at the correct register/instance scope. A value present in an SDK
+enumeration does not establish that the current hardware start validator accepts it.
+
+Timing examples state input clock, target, integer register values, achieved
+nominal rate and rounding/error. Cross-check UART/I2C/timer/I2S calculations
+against the existing pure C helpers, including illegal and boundary inputs.
+For I2S also check the actual toggle-divider implementation. Nominal digital
+rates do not qualify board timing or device speed grades. Never substitute STA
+periods for a peripheral's configured functional input frequency.
+
+Compatibility tables distinguish protocol/geometry, model source/test coverage,
+board validation and silicon validation. A board/silicon pass needs matching
+report context, source revision and profile; absent evidence remains explicit.
+Do not pick an arbitrary commercial part or copy its rated speed into Mini ratings.
+
+Buffer examples state payload packing, word padding, alignment, buffer count and
+overflow bounds. Distinguish VMA/LMA, static section sizes, image allocation and
+runtime demand. A linker stack-top or heap-start symbol is not an actual usage
+measurement. DVP odd-line partial words and I2S 16/24-bit packing must be accounted
+for; an illustrative double-buffer budget does not imply a hardware ping-pong,
+cyclic-descriptor or frame-ring capability. Missing ELF/MAP or high-water evidence
+must remain unprovided, not filled with a calculated maximum allocation.
+
+Validate duplicate/missing routes, number mismatches, missing connections, unknown
+instances and unsupported qualification claims. Check rounding, field limits,
+sample packing, alignment and allocation overflow. Host-only C calculation tests
+do not touch MMIO and are not firmware or hardware measurements. Render all new
+wide tables, formulas and appendices, check every directory destination, compare
+unchanged IP engineering data, and repeat the PDF build in an independent directory.
+
 ## Page, typography and color
 
 | Element | Current rule |

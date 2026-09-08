@@ -70,6 +70,8 @@ width multiplied by clock rate as measured application bandwidth.
 #source-note("rtl/mini/integration/soc_topology.json", title:"Generated matrix source: data_master_policies")
 #pagebreak()
 
+#include "bus-programming.typ"
+
 === Address Mapping
 All ranges below are inclusive. The SRAM range is resolved using the reference profile's
 32 KiB setting. Peripheral windows are address allocations; not every offset implements a
@@ -125,6 +127,7 @@ from re-entering a restarted domain.
 qualification. No crystal-oscillator range or maximum core frequency is specified here.]
 
 #include "operating-states.typ"
+#include "clock-programming.typ"
 
 == Interrupt System
 The management interrupt vector contains 32 allocated positions. The following numbers are
@@ -143,3 +146,4 @@ Claim/complete and priority rules are defined in the HP platform contract.
 #source-note("docs/ip/hp-platform.md", title:"HP PLIC, local interrupts and mailbox")
 
 #include "system-management.typ"
+#include "register-programming.typ"

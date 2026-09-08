@@ -71,6 +71,8 @@ number is used to imply completion.
 
 #include "performance-reference.typ"
 
+#include "usage-appendices.typ"
+
 = Document Control
 == Revision History
 #ds-table("revisions", [Document revision history],
@@ -78,7 +80,7 @@ number is used to imply completion.
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-06],[0.4 DRAFT],[Expand IP and system-use reference, configuration/support matrices, boot/recovery guidance and qualification boundaries; retain the gray/gold layout and reviewed snapshot.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-06],[0.4 DRAFT],[Expand IP/system-use and cross-IP programming references, route/support matrices, calculation examples, usage appendices and qualification boundaries; retain the gray/gold layout and reviewed snapshot.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify

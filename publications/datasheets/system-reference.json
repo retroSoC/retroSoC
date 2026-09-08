@@ -670,9 +670,9 @@
     {
       "id": "jpeg",
       "title": "JPEG Codec",
-      "implementation": "Integrated",
+      "implementation": "Partial",
       "scope": "8-bit Baseline Sequential JPEG encode or decode.",
-      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "dependencies": "Native slot-6 payload admission is blocked by zero master credits in the reviewed crossbar; standalone codec behavior is a separate scope.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
       "verification": "Tests available",
@@ -681,7 +681,9 @@
         "docs/ip/jpeg.md",
         "publications/examples/jpeg.c",
         "rtl/ip/multimedia/jpeg_pkg.sv",
-        "rtl/ip/multimedia/jpeg_reg.sv"
+        "rtl/ip/multimedia/jpeg_reg.sv",
+        "rtl/mini/top/axi4_data_crossbar.sv",
+        "rtl/mini/top/soc_data_plane.sv"
       ],
       "tests": [
         "tests/test_jpeg.py"
@@ -980,6 +982,1114 @@
         "docs/lp-hp-architecture.md",
         "docs/ip/user-ip.md"
       ]
+    },
+    {
+      "id": "jpeg-master-credit",
+      "title": "Native JPEG master has no normal admission credits",
+      "impact": "The dedicated JPEG AXI path is wired to data-master slot 6, but the current crossbar read/write credit functions return zero for that slot. Normal payload addresses cannot be admitted through that route.",
+      "trigger": "JPEG private-master traffic routed through the reviewed PRODUCT data plane.",
+      "workaround": "Treat end-to-end JPEG private-DMA operation as unavailable on this snapshot. Standalone codec behavior does not prove SoC integration. A separately reviewed RTL change and regression are required; this publication does not change hardware.",
+      "applies_to": "Reviewed PRODUCT source snapshot; static implementation finding, not silicon measurement.",
+      "sources": [
+        "rtl/mini/top/soc_data_plane.sv",
+        "rtl/mini/top/axi4_data_crossbar.sv"
+      ]
     }
-  ]
+  ],
+  "programming": {
+    "sources": [
+      "crt/include/retrosoc/hal/dma.h",
+      "crt/include/retrosoc/hal/dma_regs.h",
+      "crt/include/retrosoc/hal/i2c.h",
+      "crt/include/retrosoc/hal/i2s.h",
+      "crt/include/retrosoc/hal/timer.h",
+      "crt/include/retrosoc/hal/uart.h",
+      "crt/linker/ld2_all_sram.lds",
+      "crt/linker/ld2_psram.lds",
+      "crt/linker/ld2_sdram.lds",
+      "crt/linker/ld2_sram.lds",
+      "crt/src/hal/clint.c",
+      "crt/src/hal/dvp.c",
+      "crt/src/hal/i2c.c",
+      "crt/src/hal/i2c_math.c",
+      "crt/src/hal/i2s.c",
+      "crt/src/hal/i2s_math.c",
+      "crt/src/hal/timer.c",
+      "crt/src/hal/timer_math.c",
+      "crt/src/hal/uart.c",
+      "crt/src/hal/uart_math.c",
+      "docs/README.md",
+      "docs/axi4-interconnect.md",
+      "docs/ip/clint.md",
+      "docs/ip/dma.md",
+      "docs/ip/dvp.md",
+      "docs/ip/gpio.md",
+      "docs/ip/i2s.md",
+      "docs/ip/opipsram.md",
+      "docs/ip/psram.md",
+      "docs/ip/resource-controller.md",
+      "docs/ip/sdram.md",
+      "docs/ip/uart.md",
+      "docs/ip/xpi.md",
+      "publications/datasheets/system-reference.json",
+      "rtl/ip/multimedia/dvp_core.sv",
+      "rtl/ip/peripheral/dma_core.sv",
+      "rtl/ip/peripheral/dma_pkg.sv",
+      "rtl/ip/peripheral/dma_reg.sv",
+      "rtl/ip/serial/i2s_clkgen.sv",
+      "rtl/ip/serial/i2s_pkg.sv",
+      "rtl/ip/serial/uart_baudgen.sv",
+      "rtl/mini/integration/clock_reset_domains.json",
+      "rtl/mini/integration/soc_topology.json",
+      "rtl/mini/top/apb4_periph.sv",
+      "rtl/mini/top/axi4_data_crossbar.sv",
+      "rtl/mini/top/axi4_downsizer_64to32.sv",
+      "rtl/mini/top/axi4_interconnect.sv",
+      "rtl/mini/top/axi4_upsizer_32to64.sv",
+      "rtl/mini/top/soc_data_plane.sv"
+    ],
+    "dma_routes": [
+      {
+        "id": "software",
+        "sdk": "RS_DMA_REQUEST_SOFTWARE",
+        "rtl": "DMA_REQUEST_SOFTWARE",
+        "ips": [
+          "dma"
+        ],
+        "label": "Software / MMIO clients",
+        "transport": "MM-to-MM; no peripheral pacing wire",
+        "channel": "Caller; WS2812 uses 3; HP boot uses 6",
+        "irq": null,
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": []
+      },
+      {
+        "id": "i2s_tx",
+        "sdk": "RS_DMA_REQUEST_I2S_TX",
+        "rtl": "DMA_REQUEST_I2S_TX",
+        "ips": [
+          "i2s"
+        ],
+        "label": "I2S TX",
+        "transport": "MM-to-stream",
+        "channel": "3, serialized",
+        "irq": "i2s",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".i2s_tx_axis(u_dma_i2s_tx_axis_if)"
+          }
+        ]
+      },
+      {
+        "id": "i2s_rx",
+        "sdk": "RS_DMA_REQUEST_I2S_RX",
+        "rtl": "DMA_REQUEST_I2S_RX",
+        "ips": [
+          "i2s"
+        ],
+        "label": "I2S RX",
+        "transport": "Stream-to-MM",
+        "channel": "3, serialized",
+        "irq": "i2s",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".i2s_rx_axis(u_dma_i2s_rx_axis_if)"
+          }
+        ]
+      },
+      {
+        "id": "xpi_tx",
+        "sdk": "RS_DMA_REQUEST_XPI_TX",
+        "rtl": "DMA_REQUEST_QSPI_TX",
+        "ips": [
+          "xpi"
+        ],
+        "label": "XPI TX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "Caller-selected; bulk convention 3",
+        "irq": "xpi",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.qspi_tx_proc=~s_dma_xpi_tx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "xpi_rx",
+        "sdk": "RS_DMA_REQUEST_XPI_RX",
+        "rtl": "DMA_REQUEST_QSPI_RX",
+        "ips": [
+          "xpi"
+        ],
+        "label": "XPI RX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "Caller-selected; bulk convention 3",
+        "irq": "xpi",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.qspi_rx_proc=~s_dma_xpi_rx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "uart_tx",
+        "sdk": "RS_DMA_REQUEST_UART_TX",
+        "rtl": "DMA_REQUEST_UART_TX",
+        "ips": [
+          "uart0"
+        ],
+        "label": "UART0 TX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "0",
+        "irq": "uart0",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.uart_tx_proc=~s_dma_uart_tx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "uart_rx",
+        "sdk": "RS_DMA_REQUEST_UART_RX",
+        "rtl": "DMA_REQUEST_UART_RX",
+        "ips": [
+          "uart0"
+        ],
+        "label": "UART0 RX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "0",
+        "irq": "uart0",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.uart_rx_proc=~s_dma_uart_rx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "i2c0_tx",
+        "sdk": "RS_DMA_REQUEST_I2C0_TX",
+        "rtl": "DMA_REQUEST_I2C0_TX",
+        "ips": [
+          "i2c"
+        ],
+        "label": "I2C0 TX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "1",
+        "irq": "i2c0",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.i2c0_tx_proc=~s_dma_i2c0_tx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "i2c0_rx",
+        "sdk": "RS_DMA_REQUEST_I2C0_RX",
+        "rtl": "DMA_REQUEST_I2C0_RX",
+        "ips": [
+          "i2c"
+        ],
+        "label": "I2C0 RX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "1",
+        "irq": "i2c0",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.i2c0_rx_proc=~s_dma_i2c0_rx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "i2c1_tx",
+        "sdk": "RS_DMA_REQUEST_I2C1_TX",
+        "rtl": "DMA_REQUEST_I2C1_TX",
+        "ips": [
+          "i2c"
+        ],
+        "label": "I2C1 TX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "2",
+        "irq": "i2c1",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.i2c1_tx_proc=~s_dma_i2c1_tx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "i2c1_rx",
+        "sdk": "RS_DMA_REQUEST_I2C1_RX",
+        "rtl": "DMA_REQUEST_I2C1_RX",
+        "ips": [
+          "i2c"
+        ],
+        "label": "I2C1 RX",
+        "transport": "Paced MM-to-MM via the peripheral data window",
+        "channel": "2",
+        "irq": "i2c1",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign u_dma_req_if.i2c1_rx_proc=~s_dma_i2c1_rx_stall;"
+          }
+        ]
+      },
+      {
+        "id": "dvp_rx",
+        "sdk": "RS_DMA_REQUEST_DVP_RX",
+        "rtl": "DMA_REQUEST_DVP_RX",
+        "ips": [
+          "dvp"
+        ],
+        "label": "DVP capture",
+        "transport": "Stream-to-MM; full words only",
+        "channel": "3",
+        "irq": "dvp",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".dvp_rx_axis(u_dvp_rx_axis_if)"
+          }
+        ]
+      },
+      {
+        "id": "crypto_in",
+        "sdk": "RS_DMA_REQUEST_CRYPTO_IN",
+        "rtl": "DMA_REQUEST_CRYPTO_IN",
+        "ips": [
+          "crypto"
+        ],
+        "label": "Crypto input",
+        "transport": "MM-to-stream",
+        "channel": "4",
+        "irq": null,
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".crypto_in_axis(u_crypto_in_axis_if)"
+          }
+        ]
+      },
+      {
+        "id": "crypto_out",
+        "sdk": "RS_DMA_REQUEST_CRYPTO_OUT",
+        "rtl": "DMA_REQUEST_CRYPTO_OUT",
+        "ips": [
+          "crypto"
+        ],
+        "label": "Crypto output",
+        "transport": "Stream-to-MM",
+        "channel": "5",
+        "irq": null,
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv",
+          "crt/include/retrosoc/hal/dma.h",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/mini/top/apb4_periph.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".crypto_out_axis(u_crypto_out_axis_if)"
+          }
+        ]
+      }
+    ],
+    "channels": [
+      {
+        "id": "uart0",
+        "symbol": "RS_DMA_CHANNEL_UART0",
+        "ips": [
+          "uart0"
+        ],
+        "label": "UART0 helpers",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "crt/src/hal/uart.c"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/uart.c",
+            "text": "rs_dma_configure(RS_DMA_CHANNEL_UART0"
+          }
+        ]
+      },
+      {
+        "id": "i2c0",
+        "symbol": "RS_DMA_CHANNEL_I2C0",
+        "ips": [
+          "i2c"
+        ],
+        "label": "I2C0 helpers",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "crt/src/hal/i2c.c"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/i2c.c",
+            "text": "RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1"
+          }
+        ]
+      },
+      {
+        "id": "i2c1",
+        "symbol": "RS_DMA_CHANNEL_I2C1",
+        "ips": [
+          "i2c"
+        ],
+        "label": "I2C1 helpers",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "crt/src/hal/i2c.c"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/i2c.c",
+            "text": "RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1"
+          }
+        ]
+      },
+      {
+        "id": "bulk",
+        "symbol": "RS_DMA_CHANNEL_BULK",
+        "ips": [
+          "dvp",
+          "ws2812",
+          "i2s",
+          "xpi"
+        ],
+        "label": "Shared bulk clients: DVP, WS2812; I2S/XPI convention",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "crt/src/hal/dvp.c",
+          "crt/src/hal/ws2812.c",
+          "docs/ip/dma.md"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/dvp.c",
+            "text": "rs_dma_configure(RS_DMA_CHANNEL_BULK"
+          }
+        ]
+      },
+      {
+        "id": "crypto_in",
+        "symbol": "RS_DMA_CHANNEL_CRYPTO_IN",
+        "ips": [
+          "crypto"
+        ],
+        "label": "Crypto input",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "crt/src/hal/crypto.c"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/crypto.c",
+            "text": "rs_dma_configure(RS_DMA_CHANNEL_CRYPTO_IN"
+          }
+        ]
+      },
+      {
+        "id": "crypto_out",
+        "symbol": "RS_DMA_CHANNEL_CRYPTO_OUT",
+        "ips": [
+          "crypto"
+        ],
+        "label": "Crypto output",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "crt/src/hal/crypto.c"
+        ],
+        "bindings": [
+          {
+            "file": "crt/src/hal/crypto.c",
+            "text": "rs_dma_configure(RS_DMA_CHANNEL_CRYPTO_OUT"
+          }
+        ]
+      },
+      {
+        "id": "hp",
+        "symbol": "RS_DMA_CHANNEL_HP",
+        "ips": [
+          "dma"
+        ],
+        "label": "HP boot loader",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "app/apps/hp_boot/main.c"
+        ],
+        "bindings": [
+          {
+            "file": "app/apps/hp_boot/main.c",
+            "text": "rs_dma_submit_tcd(RS_DMA_CHANNEL_HP"
+          }
+        ]
+      },
+      {
+        "id": "reserved",
+        "symbol": "RS_DMA_CHANNEL_RESERVED",
+        "ips": [
+          "dma"
+        ],
+        "label": "Reserved; no application allocation",
+        "sources": [
+          "crt/include/retrosoc/hal/dma.h",
+          "crt/include/retrosoc/hal/dma_regs.h",
+          "crt/include/retrosoc/hal/dma_regs.h"
+        ],
+        "bindings": [
+          {
+            "file": "crt/include/retrosoc/hal/dma_regs.h",
+            "text": "#define RS_DMA_CHANNEL_RESERVED 7U"
+          }
+        ]
+      }
+    ],
+    "engines": [
+      {
+        "id": "dma",
+        "ips": [
+          "dma"
+        ],
+        "name": "Central DMA",
+        "master": "2",
+        "irq": "dma",
+        "hp_signal": "resource_irq_hp_i[0]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "usb2",
+        "ips": [
+          "usb2"
+        ],
+        "name": "USB2 private DMA",
+        "master": "Gateway A (3)",
+        "irq": "usb2",
+        "hp_signal": "resource_irq_hp_i[1]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "sdio0",
+        "ips": [
+          "sdio0"
+        ],
+        "name": "SDIO0 private DMA",
+        "master": "Gateway A (3)",
+        "irq": "sdio0",
+        "hp_signal": "resource_irq_hp_i[2]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "sdio1",
+        "ips": [
+          "sdio1"
+        ],
+        "name": "SDIO1 private DMA",
+        "master": "Gateway B (4)",
+        "irq": "sdio1",
+        "hp_signal": "resource_irq_hp_i[3]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "spisd",
+        "ips": [
+          "spisd"
+        ],
+        "name": "SPI-SD private DMA",
+        "master": "Gateway B (4)",
+        "irq": "spisd",
+        "hp_signal": "resource_irq_hp_i[4]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "jpeg",
+        "ips": [
+          "jpeg"
+        ],
+        "name": "JPEG private DMA",
+        "master": "6; zero normal credits",
+        "irq": "jpeg",
+        "hp_signal": "resource_irq_hp_i[5]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "apu",
+        "ips": [
+          "apu"
+        ],
+        "name": "APU private DMA",
+        "master": "Gateway A (3)",
+        "irq": "apu",
+        "hp_signal": "resource_irq_hp_i[6]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "ext-h",
+        "ips": [
+          "ext-h"
+        ],
+        "name": "EXT-H reference DMA",
+        "master": "7",
+        "irq": "extension_h",
+        "hp_signal": "ext_h_hp_irq_i",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/resource-controller.md"
+        ]
+      }
+    ],
+    "conflicts": [
+      {
+        "id": "qpi-opi",
+        "ips": [
+          "psram",
+          "opipsram"
+        ],
+        "resource": "Shared memory pads",
+        "state": "Hardware exclusion",
+        "condition": "Select one memory-pad mode at boot; the inactive aperture returns an error.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "rtl/mini/top/memory_pad_mux.sv"
+        ]
+      },
+      {
+        "id": "bulk-context",
+        "ips": [
+          "i2s",
+          "dvp",
+          "ws2812",
+          "xpi"
+        ],
+        "resource": "Central DMA channel 3 convention",
+        "state": "Serialize / explicitly allocate",
+        "condition": "Convenience clients cannot overwrite an in-flight shared context. XPI accepts a caller-selected channel; changing it still requires ownership and endpoint checks.",
+        "sources": [
+          "docs/ip/dma.md",
+          "crt/src/hal/dvp.c",
+          "crt/src/hal/ws2812.c",
+          "crt/src/hal/xpi.c"
+        ]
+      },
+      {
+        "id": "stream-endpoint",
+        "ips": [
+          "i2s",
+          "dvp",
+          "crypto"
+        ],
+        "resource": "One active DMA endpoint selector",
+        "state": "Hardware exclusion",
+        "condition": "DMA rejects another active channel targeting the same protected stream endpoint. A different channel number alone does not permit concurrent ownership.",
+        "sources": [
+          "rtl/ip/peripheral/dma_core.sv"
+        ]
+      },
+      {
+        "id": "i2s-apu",
+        "ips": [
+          "i2s",
+          "apu",
+          "dma"
+        ],
+        "resource": "I2S stream-switch producer/consumer",
+        "state": "Mode-dependent",
+        "condition": "Check the APU/I2S stream-switch selection. No simultaneous competing TX producers or RX consumers are implied. Production APU jobs remain disabled.",
+        "sources": [
+          "rtl/ip/multimedia/apb4_apu.sv",
+          "rtl/mini/top/apb4_periph.sv",
+          "docs/ip/apu.md"
+        ]
+      },
+      {
+        "id": "gateway-a",
+        "ips": [
+          "usb2",
+          "sdio0",
+          "apu"
+        ],
+        "resource": "I/O gateway A and resource blocking",
+        "state": "Shared bandwidth / drain",
+        "condition": "These private masters share a gateway; ownership and lifecycle gates can conservatively block related traffic.",
+        "sources": [
+          "rtl/mini/top/soc_data_plane.sv",
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "gateway-b",
+        "ips": [
+          "sdio1",
+          "spisd"
+        ],
+        "resource": "I/O gateway B",
+        "state": "Shared bandwidth / drain",
+        "condition": "Separate controllers still share the admission path and memory targets.",
+        "sources": [
+          "rtl/mini/top/soc_data_plane.sv"
+        ]
+      },
+      {
+        "id": "gpio-alt",
+        "ips": [
+          "gpio"
+        ],
+        "resource": "GPIO alternate functions",
+        "state": "Pin-dependent exclusion",
+        "condition": "Use the generated GPIO ALT0/ALT1 matrix. A pin has one selected output/enable owner; different functions in one row cannot be enabled independently.",
+        "sources": [
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/gpio.md"
+        ]
+      },
+      {
+        "id": "clock-change",
+        "ips": [
+          "uart0",
+          "i2c",
+          "timer",
+          "dma"
+        ],
+        "resource": "Changing functional clock",
+        "state": "Quiesce / reconfigure",
+        "condition": "Stop affected transfers before changing their source/divider. Recompute rates after the transition; stable audio/memory domains have separate rules.",
+        "sources": [
+          "docs/pll-clock-control.md",
+          "rtl/mini/integration/clock_reset_domains.json"
+        ]
+      },
+      {
+        "id": "memory-contention",
+        "ips": [
+          "dma",
+          "usb2",
+          "sdio0",
+          "sdio1",
+          "spisd",
+          "jpeg",
+          "apu",
+          "ext-h"
+        ],
+        "resource": "Shared memory targets",
+        "state": "Bandwidth contention",
+        "condition": "Allowed routes are not a simultaneous throughput guarantee. Native JPEG slot 6 currently has zero master credits; see the bus table.",
+        "sources": [
+          "rtl/mini/top/axi4_data_crossbar.sv",
+          "rtl/mini/top/soc_data_plane.sv"
+        ]
+      }
+    ],
+    "devices": [
+      {
+        "id": "xpi-winbond",
+        "ips": [
+          "xpi"
+        ],
+        "name": "Winbond W25Q128JV model",
+        "protocol": "SDR SPI/QSPI; programmed slot/LUT",
+        "geometry": "Reset profile uses a 16 MiB NSS0 device and boot alias.",
+        "setup": "Match command/address/mode/dummy phases, status polling, page/erase bounds and slot device size.",
+        "model": "Pin-level model source and directed tests are present; fast-flash model covers a narrower read path.",
+        "board": "Not established",
+        "silicon": "Not established",
+        "reports": [],
+        "sources": [
+          "rtl/model/w25q128jvxim.sv",
+          "rtl/mini/dv/verilator/rtl/xpi_fast_flash_model.sv",
+          "tests/test_xpi_io.py",
+          "docs/ip/xpi.md"
+        ]
+      },
+      {
+        "id": "qpi-esp",
+        "ips": [
+          "psram"
+        ],
+        "name": "ESP-PSRAM64H",
+        "protocol": "Device-specific SDR SPI/QPI",
+        "geometry": "Four 8 MiB devices; 32 MiB decoded window.",
+        "setup": "Perform reset/ID/enter-QPI sequence; obey device page and chip boundaries.",
+        "model": "ESP_PSRAM64H model and directed tests present.",
+        "board": "Not established",
+        "silicon": "Not established",
+        "reports": [],
+        "sources": [
+          "rtl/mini/dv/model/ESP_PSRAM64H.sv",
+          "tests/test_psram.py",
+          "docs/ip/psram.md"
+        ]
+      },
+      {
+        "id": "sdram-geometry",
+        "ips": [
+          "sdram"
+        ],
+        "name": "Fixed-geometry SDR SDRAM",
+        "protocol": "x16 SDR interface",
+        "geometry": "2 bank bits, 13 row bits, 10 column bits; 64 MiB addressability.",
+        "setup": "Program initialization, refresh and timing cycles for the actual part and memory clock. Geometry alone does not qualify a supplier part.",
+        "model": "Directed SDRAM behavioral tests present; no specific board part qualification attached.",
+        "board": "Not established",
+        "silicon": "Not established",
+        "reports": [],
+        "sources": [
+          "docs/ip/sdram.md",
+          "rtl/ip/memory/sdram_pkg.sv",
+          "tests/test_sdram.py"
+        ]
+      },
+      {
+        "id": "opi-profile",
+        "ips": [
+          "opipsram"
+        ],
+        "name": "OPI profile; specific part not qualified",
+        "protocol": "Octal DDR command/address profile",
+        "geometry": "Configured device size must fit the aperture and profile.",
+        "setup": "Select and initialize the OPI profile; do not reuse HyperBus command encoding.",
+        "model": "Controller/protocol test source present.",
+        "board": "Not established",
+        "silicon": "Not established",
+        "reports": [],
+        "sources": [
+          "docs/ip/opipsram.md",
+          "rtl/ip/memory/opipsram_protocol.sv",
+          "tests/test_opipsram.py"
+        ]
+      },
+      {
+        "id": "hyper-profile",
+        "ips": [
+          "opipsram"
+        ],
+        "name": "Single-clock HyperBus-style profile",
+        "protocol": "Modified single-clock transaction profile",
+        "geometry": "Device, voltage and timing compatibility remain unqualified.",
+        "setup": "Select the profile before INIT and obey the profile lock/reset contract; generic HyperBus compatibility is not claimed.",
+        "model": "Prototype protocol test source present.",
+        "board": "Not established",
+        "silicon": "Not established",
+        "reports": [],
+        "sources": [
+          "docs/ip/opipsram.md",
+          "rtl/ip/memory/opipsram_protocol.sv",
+          "tests/test_opipsram.py"
+        ]
+      }
+    ],
+    "glossary": [
+      {
+        "id": "aon",
+        "term": "AON",
+        "meaning": "Always-on control clock/reset domain; not proof of a separate supply or retention island.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "lp",
+        "term": "LP",
+        "meaning": "Hazard3 root-management hart.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "hp",
+        "term": "HP",
+        "meaning": "VexiiRiscv application hart; asymmetric Linux platform.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "pclk",
+        "term": "PCLK",
+        "meaning": "Peripheral register/engine clock domain where specified.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "mmio",
+        "term": "MMIO",
+        "meaning": "Memory-mapped I/O with register-specific side effects and attributes.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "axi4",
+        "term": "AXI4",
+        "meaning": "Five-channel memory transaction protocol; the implemented subset is path-dependent.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "apb4",
+        "term": "APB4",
+        "meaning": "Peripheral register protocol, including byte strobes and error response.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "cbo",
+        "term": "CBO / Zicbom",
+        "meaning": "Cache-block maintenance operation / RISC-V extension; not hardware coherency.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "tcd",
+        "term": "TCD",
+        "meaning": "Central DMA transfer-control descriptor; the published structure is 64 bytes.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "irq",
+        "term": "IRQ / PLIC",
+        "meaning": "Interrupt request / HP priority and claim-complete controller; LP bit and HP source are different numbers.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "pio",
+        "term": "PIO",
+        "meaning": "Programmed I/O through data registers; may have FIFO pop/push side effects.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "tkeep",
+        "term": "TKEEP / TSTRB",
+        "meaning": "AXI4-Stream byte qualification; current central DMA requires full-word stream beats.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "tlast",
+        "term": "TLAST / TUSER",
+        "meaning": "Stream boundary and sideband metadata; their meaning depends on the producer.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "cdc",
+        "term": "CDC / warm flush",
+        "meaning": "Clock-domain crossing / coordinated clearing and epoch change for in-flight paths.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "dre",
+        "term": "DRE",
+        "meaning": "Data realignment engine; not supplied by the central DMA MVP.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "vma",
+        "term": "VMA / LMA",
+        "meaning": "Execution/data address / load-image address in the linker layout.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "kib",
+        "term": "KiB / MiB",
+        "meaning": "Binary units: 1024 and 1048576 bytes. kHz/MHz are decimal frequency units.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      },
+      {
+        "id": "tbd",
+        "term": "TBD",
+        "meaning": "No reviewed specification or result is supplied; not zero and not unlimited.",
+        "sources": [
+          "docs/lp-hp-architecture.md",
+          "docs/ip/dma.md",
+          "crt/linker/ld2_all_sram.lds"
+        ]
+      }
+    ]
+  }
 }

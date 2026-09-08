@@ -1,6 +1,8 @@
 #import "../style.typ": *
 #import "../system-figures.typ": sequence-diagram
 
+#include "routing-reference.typ"
+
 == Multicore Operation and Resource Ownership <multicore-operation>
 Hazard3 is the root-management hart; VexiiRiscv is the application hart. Linux does not take
 over the SoC's root clock, reset, admission and recovery controls merely by booting. Decide
@@ -57,6 +59,8 @@ by the lifecycle policy. See @memory-coherency and @operating-states.
 #source-note("docs/ip/resource-controller.md",title:"Resource ownership, cache and delivery boundaries")
 #source-note("crt/src/hal/resource.c",title:"Actual HAL handoff and acknowledgement sequence")
 #source-note("docs/ip/hp-platform.md",title:"HP interrupt and mailbox platform")
+
+#include "coexistence-reference.typ"
 
 == Security and Access-Control Boundaries <security-boundaries>
 The current protection model limits bus admission and root-control access. It must be used
