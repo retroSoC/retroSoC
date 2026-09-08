@@ -55,6 +55,8 @@ device. Only the current Mini snapshot is specified here.
 milestones have not been established as product commitments in this datasheet.]
 
 = Technical Report
+#include "release-verification.typ"
+
 == Shuttle and Qualification Evidence
 The previous draft's dated first-shuttle heading is replaced by an evidence placeholder.
 No fabricated die image, tapeout badge, packaged-part photograph or silicon performance
@@ -73,18 +75,23 @@ number is used to imply completion.
 
 #include "usage-appendices.typ"
 
+#include "register-index.typ"
+#include "fault-reference.typ"
+
 = Document Control
 == Revision History
+#change-start("revision-history", "Document revision history")
 #ds-table("revisions", [Document revision history],
   ([Date], [Version], [Change], [Author]),
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-06],[0.4 DRAFT],[Expand IP/system-use, cross-IP programming, processor/reset/interface detail, media interoperability and maintenance references; retain the gray/gold layout and reviewed snapshot.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-06],[0.4 DRAFT],[Expand IP/system-use, programming, processor/reset/interface and maintenance references; add register/code indexes and release-evidence summary. Retain the reviewed snapshot and gray/gold layout.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify
 the electrical placeholders in this revision.
+#change-end("revision-history")
 
 == Sources and Reproducibility <publication-provenance>
 Hardware snapshot: #code(doc.source_revision).

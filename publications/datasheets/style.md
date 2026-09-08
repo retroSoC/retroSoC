@@ -177,6 +177,74 @@ explicitly unprovided in the existing physical/electrical sections. Validate the
 new scope and result-state distinctions, then build/check/render the full PDF,
 verify IP preservation and navigation, and repeat the build independently.
 
+## Retrieval appendices and release evidence
+
+Place Global Register and Address Index, then Fault and Status Code Reference,
+after the existing usage appendices and before Document Control. The register
+index covers every published definition using the existing register records;
+instance rows may repeat shared definitions without copying the field prose.
+Sort PRODUCT instances by base/address, then show MPW selections separately.
+Keep UART/SDIO, timer and I2C instance bases distinct. Separate GPIO user/admin
+decode coverage, preserve EXT-L/EXT-H capability restrictions, and keep RCU in
+the SYSCTRL bank. Do not interpret a memory data aperture as a register window.
+
+Retain repeated-bank formulas instead of expanding every channel/array element.
+Show the element-zero instance-relative offset, first absolute address, stride,
+valid index range, access and reset meaning. State the 32-bit access width and
+link each register name to its existing description. Numeric addresses and names
+use the existing code face; register-name links remain blue without underlines.
+Long names may break at underscores without changing their visible spelling.
+Preserve conditional, dynamic and non-retained reset descriptions. Instance
+overrides require reviewed decoder/parameter bindings. Check the complete expanded
+address set for overlap and window bounds even though the PDF uses compact rows.
+
+Diagnostic tables identify the producing module and field before the value.
+Enums, independent mask bits, field positions, application result bytes and
+simulator strings have separate namespaces. Extract declarations or explicitly
+selected producing branches and reject omitted/changed codes. Link capture,
+acknowledgement and recovery semantics back to the owning IP; a code declaration
+does not establish implemented codec functionality or a usable system route.
+HP boot codes remain application-scoped. TEST_STATUS validity, sticky completion
+and simulator success/failure requirements remain distinct from console output.
+
+Packed producer expressions may receive readable field qualifications in the
+retrieval appendix only with explicit RTL bindings and checked bit ranges. Keep
+these annotations separate from the existing full register records. Explain
+requested versus actual lifecycle status, transient completion pulses, rejected
+writes with observable side effects, and declared SDK masks that the reviewed
+engine does not emit. Record newly observed source limitations with their scope;
+do not imply that documenting them fixed or dynamically verified the hardware.
+
+Release Verification Summary belongs in Technical Report. It records source/test
+availability, exact profile and stage, attached report status, readiness metadata
+and known limitations. A reported pass requires a real matching report; test-file
+existence or a successful PDF build is not hardware verification. Preserve the
+repository readiness declaration without changing its policy or promoting it.
+Physical release records bind package mapping, circuit/BOM/design assets,
+parameter conditions, measurement inputs, qualification and ordering identity to
+their actual device and report revisions. Missing physical data remain unprovided.
+
+## Modification page-range delivery
+
+For a content edit, retain the immediately preceding delivered PDF as the baseline.
+Add paired publication-change markers around newly added or substantively changed
+content and explicit new cross-references. Mark Contents and both figure/table
+directories separately as navigation updates. Markers are queried after layout;
+they must not participate in running-header selection.
+
+The build exports and hashes `change-markers.json`. Generate `changed-pages.json`
+with `publications/report_changes.py --baseline <previous.pdf> --pdf <final.pdf>`.
+The report verifies both PDF manifest digests, marker integrity, paired in-bounds
+ranges and the printed footer on each reported page. Preserve baseline/final
+digests and viewer-page indexes alongside printed page numbers. Check the marked
+ranges against visible content and a semantic before/after comparison.
+
+The final handoff includes a change-content versus final-page-range table, with
+added/rewritten content, new cross-references and navigation ranges distinguished.
+Use printed footer page numbers; also state viewer indexes if they differ.
+Describe later pagination/numbering-only changes separately. Update the tracked
+spans for each new editing round so a prior round's changes are not relabeled as new.
+
 ## Page, typography and color
 
 | Element | Current rule |
@@ -433,8 +501,10 @@ The caption color applies to both the Figure/Table prefix and its title text.
 Table notes, waveform explanations, headers/footers and other secondary text
 retain their existing colors; do not make them black through an enclosing rule.
 
-The `continuation-notice` helper labels its text box; the template exports its
-page/rectangle metadata in a layout report separate from the IP header markers.
+The `continuation-notice` helper labels its measured text box. After layout,
+the build uses `typst eval` to read the final page and rectangle separately from
+IP header markers. Do not feed those positions back into the document through
+a template-wide metadata query, which adds a convergence pass.
 The build records these markers in `layout-regions.json`, hashes that file in
 the PDF manifest, and permits 8.5 pt text only inside those marked regions.
 Unmarked or partly outside text still requires 9 pt, and continuation text

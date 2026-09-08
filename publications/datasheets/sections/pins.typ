@@ -24,6 +24,14 @@ Do not derive a package drawing from the order of rows in this table.]
   The inventory is generated from the canonical pin map.],
 )
 
+#change-start("physical-pin-record", "Pin mapping: physical release record")
+A released package mapping must bind each logical signal to a die pad, package pin, supply
+bank, pad-cell type and board net. Identify reset drive/enable and applicable electrical
+limits separately. Check pin uniqueness, intentional shared power connections and unbonded
+signals against the selected profile; row order and an FPGA ball assignment cannot supply
+this mapping. The matching physical release evidence is tracked in @release-verification.
+#change-end("physical-pin-record")
+
 #pagebreak()
 === GPIO Alternate-Function Matrix <gpio-mux>
 Each GPIO has software-controlled and alternate-function ownership. ALT0/ALT1 names below
@@ -46,6 +54,13 @@ The old QFN128 and 12.3 × 12.3 mm description is not retained as a qualified me
 specification. A package selection, approved outline, pin-1 orientation and thermal-pad
 connection must be supplied before a physical pinout is published.
 
+#change-start("mechanical-release-record", "Package dimensions: approved outline record")
+The mechanical record must identify the outline revision, top/bottom view, pin-1 orientation,
+body/lead dimensions and tolerances, seating plane and exposed-pad connection. Any CAD
+symbol, footprint or 3D model must name the same package revision. Those deliverables remain
+unprovided for this digital reference.
+#change-end("mechanical-release-record")
+
 === Graded Reflow Soldering
 #tbd[Reflow profile, moisture sensitivity level, storage/bake requirements and permitted
 assembly excursions require the selected package supplier's qualified data.]
@@ -66,6 +81,13 @@ to this digital reference.
 Keep these fields separate from digital simulation and FPGA bringup results. Populate them
 from the chosen supplier/implementation reports before issuing a physical product specification.
 
+#change-start("qualification-release-record", "Thermal/reliability: qualification record")
+For each qualification entry, retain the method/revision, stress conditions, tested sample
+or lot population, result and applicable device/package grades. Thermal characterization
+also retains board construction and airflow. The verification summary in @release-verification
+keeps those physical records distinct from RTL tests and analytical estimates.
+#change-end("qualification-release-record")
+
 === Ordering Information
 #ds-table("ordering", [Ordering information awaiting qualification],
   ([Field], [Specification]),
@@ -73,5 +95,12 @@ from the chosen supplier/implementation reports before issuing a physical produc
    ([Tape/reel and packing], [TBD]),([Availability / silicon revision], [TBD])),
   widths:(1fr,1fr),
 )
+
+#change-start("ordering-release-record", "Ordering: identification and revision linkage")
+An orderable-part record must connect its package and temperature grade to a documented
+die revision, marking scheme and packing option. Record applicable errata and ordering
+availability for that exact part. The source SHA and draft document version identify this
+publication; they are not a manufactured-device marking or a sales part number.
+#change-end("ordering-release-record")
 
 #include "electrical-reference.typ"

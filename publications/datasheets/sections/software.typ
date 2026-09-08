@@ -202,4 +202,12 @@ The StarrySky V2 constraint file is a board-specific implementation input. It is
 minimal-system schematic, an ASIC package-pin assignment or a characterization report.
 No approved schematic, physical package mapping or matching measurement result was supplied
 for this publication update; the corresponding existing specification fields remain unfilled.
+
+#change-start("pcb-release-record", "PCB hardware: design-asset and acceptance record")
+A reference-board release needs a versioned schematic and BOM, connector/net mapping,
+power/decoupling network, external-memory and PHY selection, clock/impedance constraints
+and bringup record. Publish the design-file revision with each drawing or download entry,
+and identify which routes were actually tested. The current XDC provides constraints for its
+named FPGA board; the missing circuit and acceptance records remain listed in @release-verification.
+#change-end("pcb-release-record")
 #source-note("fpga/mini/starrysky_v2.xdc",title:"Existing board-specific FPGA constraint input")

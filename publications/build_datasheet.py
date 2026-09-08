@@ -29,6 +29,8 @@ from publications.register_reference import collect_registers  # noqa: E402
 from publications.chapter_reference import collect_chapters  # noqa: E402
 from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
 from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
+from publications.retrieval_reference import collect_retrieval  # noqa: E402
+from publications.report_changes import page_ranges  # noqa: E402
 
 CONFIG = ROOT / "publications/datasheets/mini.json"
 CACHE = ROOT / ".cache/retrosoc/publications"
@@ -144,6 +146,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     irq_data = [dataclasses.asdict(i) for i in sorted(irqs, key=lambda i: i.core_bit)]
     validate_catalog(catalog, regions, irq_data)
     register_data = collect_registers()
+    system_reference = collect_system_reference(ROOT, config["source_revision"])
     waveforms, waveform_audit = collect_waveforms(ROOT)
     for region in regions:
         region["base_hex"] = f"0x{region['base']:08X}"
@@ -154,6 +157,11 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
             region["availability"] = "Compatibility window; no PRODUCT user IP"
         if region["symbol"] == "SRAM" and product["HAVE_SRAM_IF"] != "YES":
             region["availability"] = "Disabled in selected profile"
+    system_reference["retrieval"] = collect_retrieval(
+        ROOT, system_reference["retrieval"], register_data, regions, catalog,
+        read_json(ROOT / "rtl/mini/integration/user_extensions_legacy.json"),
+        config["source_revision"], system_reference["support"],
+    )
     return {
         "document": config,
         "profiles": profiles,
@@ -187,7 +195,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         "waveforms": waveforms,
         "waveform_audit": waveform_audit,
         "overview_groups": read_json(ROOT / "publications/datasheets/overview-groups.json"),
-        "system_reference": collect_system_reference(ROOT, config["source_revision"]),
+        "system_reference": system_reference,
         "wave_renderer": "/" + load_lock()["archives"]["typst_wavy"]["destination"] + "/wavy.js",
     }
 
@@ -371,30 +379,36 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         raise ValueError("Typst build failed or warned:\n" + result.stderr)
     query_command = [
         executable,
-        "query",
+        "eval",
+        '(items:query(metadata).map(it=>it.value), '
+        'regions:query(<table-continuation-region>).map(region=>{'
+        'let pos=region.location().position(); '
+        '(kind:"table-continuation",page:pos.page,x:pos.x.pt(),y:pos.y.pt(),'
+        'width:region.width.length.pt(),height:region.height.length.pt())}))',
+        "--in",
         config["entrypoint"],
-        "metadata",
-        "--field",
-        "value",
-        *command[4:-2],
+        *command[4:],
     ]
     queried = subprocess.run(
         query_command, cwd=ROOT, text=True, capture_output=True, encoding="utf-8"
     )
-    if queried.returncode:
+    if queried.returncode or "warning:" in queried.stderr:
         raise ValueError("Typst page-map query failed:\n" + queried.stderr)
-    layout_items = json.loads(queried.stdout)
+    layout_report = json.loads(queried.stdout)
+    layout_items = layout_report["items"]
     page_map = [
         item
         for item in layout_items
         if isinstance(item, dict) and item.get("kind") in {"ip-start", "ip-end"}
     ]
     write_json(out / "ip-pages.json", page_map)
-    reports = [item for item in layout_items
-               if isinstance(item, dict) and item.get("kind") == "layout-regions"]
-    if len(reports) != 1:
-        raise ValueError("missing or duplicated publication layout report")
-    write_json(out / "layout-regions.json", reports[0]["regions"])
+    # Read final labeled rectangles without feeding positions back into layout.
+    write_json(out / "layout-regions.json", layout_report["regions"])
+    change_markers = [item for item in layout_items if isinstance(item, dict)
+                      and item.get("kind") in {"publication-change-start", "publication-change-end"}]
+    # Pair/validate here; the final report also checks actual PDF pages and printed footers.
+    page_ranges(change_markers, max(item["page"] for item in change_markers))
+    write_json(out / "change-markers.json", change_markers)
     manifest = {
         "document": config,
         "inputs": inputs,
@@ -404,6 +418,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "packages": {n: lock["archives"][f"typst_{n}"]["sha256"] for n in PACKAGES},
         "pdf_sha256": sha256(pdf),
         "layout_regions_sha256": sha256(out / "layout-regions.json"),
+        "change_markers_sha256": sha256(out / "change-markers.json"),
     }
     write_json(out / "manifest.json", manifest)
     atomic_write(CACHE / "latest", str(out) + "\n")
@@ -519,6 +534,10 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         read_json(ROOT / "publications/datasheets/chapter-index.json"),
     )
     reader = PdfReader(pdf)
+    marker_path = pdf.parent / "change-markers.json"
+    if not marker_path.is_file() or manifest.get("change_markers_sha256") != sha256(marker_path):
+        raise ValueError("PDF change markers missing or changed; rebuild before checking")
+    page_ranges(read_json(marker_path), len(reader.pages))
     if reader.metadata.title != config["title"] or not reader.metadata.author:
         raise ValueError("PDF title or author metadata missing or inconsistent")
     if not reader.outline:

@@ -5,6 +5,11 @@ The following conventions explain how to read the IP register chapters. They do 
 an individual register's access width, strobe, reset or side-effect contract. Use the current
 IP version and capability before interpreting a familiar offset from another device or revision.
 
+#change-start("register-lookup-link", "Register conventions: global lookup link", category:"cross-reference")
+For an address-first lookup, use @global-register-index. Its instance-qualified formulas
+lead back to the same register definitions used in this chapter's access conventions.
+#change-end("register-lookup-link")
+
 === Access attributes and side effects
 #ds-table("register-access-conventions",[Register access attributes and safe software interpretation],
   ([Attribute / behavior],[Meaning],[Programming consequence]),
@@ -76,4 +81,3 @@ describe the result as separate samples rather than claiming an atomic 64-bit re
 #source-note("docs/ip/dvp.md",title:"DVP PIO/stream exclusion and frame semantics")
 #source-note("docs/ip/gpio.md",title:"GPIO-specific atomic operations and pad control")
 #source-note("rtl/ip/peripheral/dma_reg.sv",title:"DMA register legality and busy-state handling")
-

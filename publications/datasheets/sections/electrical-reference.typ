@@ -5,6 +5,13 @@ The RTL snapshot and reference configuration establish digital behavior, not pro
 electrical ratings. The following groups define the information needed for a physical release.
 TBD means no reviewed specification is attached; it never means zero or an unrestricted limit.
 
+#change-start("electrical-release-record", "Electrical/timing: report and condition linkage")
+Each completed parameter row must identify its supply/pad domain, PVT and load conditions,
+unit, Min/Typ/Max interpretation and report revision. Attach setup/hold and output-delay
+values to a waveform reference edge and test load. Keep analysis, characterization and
+production-test guarantees distinct when the release record in @release-verification is filled.
+#change-end("electrical-release-record")
+
 === Parameter conditions and evidence
 Every numerical electrical entry must identify process/PDK and revision, macro/pad implementation,
 package, supply, temperature, clock configuration and loading. Label the basis as approved

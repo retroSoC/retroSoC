@@ -86,6 +86,21 @@ erase/program action, new core generation or hardware measurement is performed.
 Board constraint inputs are listed separately from the still-missing approved
 schematic, physical package and matching characterization evidence.
 
+The retrieval appendices add a complete instance-qualified register address index
+and scoped fault/status-code lookup. `retrieval_reference.py` reuses the register
+records and validates publication mappings in `system-reference.json.retrieval`.
+It checks array geometry and all expanded addresses while retaining compact
+formulas in the PDF, separates GPIO windows/MPW selections, and preserves shared
+definition links. Diagnostic enums, masks, field positions, HP boot application
+codes, SDK returns and simulator verdicts keep distinct scopes. Their declarations
+and producing branches are source-checked; they do not imply feature availability.
+
+Release Verification Summary records test entrypoints, applicable profiles/stages,
+matching-report availability and the repository RTL readiness declaration. It does
+not promote readiness or replace missing reports with publication test results.
+Existing physical/electrical chapters specify the identity and evidence fields
+needed before package, PCB, numerical and ordering data can be released.
+
 ### Spacing and document flow
 
 The [layout standard](datasheets/style.md) records the implemented page,
@@ -179,6 +194,22 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
   the manifest to limit the 8.5 pt continuation-notice exception.
 - `waveform-audit.json`: source files/scopes, declaration lines, resolved lane
   widths and behavior-review qualifications for every waveform.
+- `change-markers.json`: paired layout positions for the current edit's substantive
+  content, explicit cross-references and navigation changes; hashed in the manifest.
+- `changed-pages.json`: final page-range report, generated after PDF checking with
+  the command below; binds the previous delivered PDF and final PDF digests.
+
+For a content-edit handoff, retain the previous PDF and run:
+
+```sh
+python publications/report_changes.py --baseline build/<previous>/<filename>.pdf --pdf build/<final>/<filename>.pdf
+```
+
+The report checks printed footers and PDF/marker integrity. Review its ranges
+against the rendered content, then include them in the final change summary.
+Subsequent pages whose only differences are pagination or automatic numbering
+are described separately from substantive edits. Maintain the paired markers for
+the current editing round rather than carrying forward stale change claims.
 
 The document date fixes the PDF creation timestamp. Identical inputs produce
 identical PDF bytes; the build-directory timestamp is not printed in the PDF.

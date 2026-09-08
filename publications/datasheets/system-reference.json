@@ -994,6 +994,18 @@
         "rtl/mini/top/soc_data_plane.sv",
         "rtl/mini/top/axi4_data_crossbar.sv"
       ]
+    },
+    {
+      "id": "ext-l-rejected-base-write",
+      "title": "Rejected EXT-L base writes can change readable state",
+      "impact": "READ_BASE and WRITE_BASE next-state assignments are not gated by the KindExtH write-legal result; an EXT-L write can change those readbacks while returning PSLVERR.",
+      "trigger": "Writing READ_BASE or WRITE_BASE through the EXT-L register window.",
+      "workaround": "Treat these writes as invalid and avoid them. Preserve the slot fault/address when diagnosing an error; do not assume a rejected write rolls back state. EXT-L has no connected data master, so these local outputs do not grant an EXT-L DMA path.",
+      "applies_to": "Reviewed v0.4 PRODUCT source snapshot; static RTL observation, no new simulation or hardware test.",
+      "sources": [
+        "rtl/mini/top/extension_slot.sv",
+        "rtl/mini/top/extension_subsystem.sv"
+      ]
     }
   ],
   "programming": {
@@ -3154,5 +3166,1732 @@
       "scripts/vexiiriscv/GenerateRetroSocHp.scala",
       "tests/test_xpi_flash_tool.py"
     ]
+  },
+  "retrieval": {
+    "instances": [
+      {
+        "id": "apb4_xpi",
+        "chapter": "xpi",
+        "family": "xpi",
+        "mode": "PRODUCT",
+        "region": "APB4_XPI",
+        "catalog": "xpi",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/xpi.md"
+        ]
+      },
+      {
+        "id": "apb4_spisd",
+        "chapter": "spisd",
+        "family": "spisd",
+        "mode": "PRODUCT",
+        "region": "APB4_SPISD",
+        "catalog": "spisd",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/spisd.md"
+        ]
+      },
+      {
+        "id": "apb4_sdio0",
+        "chapter": "sdio0",
+        "family": "sdio",
+        "mode": "PRODUCT",
+        "region": "APB4_SDIO0",
+        "catalog": "sdio0",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/sdio.md"
+        ]
+      },
+      {
+        "id": "apb4_sram",
+        "chapter": "sram",
+        "family": "sram",
+        "mode": "PRODUCT",
+        "region": "APB4_SRAM",
+        "catalog": "sram",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/onchip-sram.md"
+        ]
+      },
+      {
+        "id": "apb4_psram",
+        "chapter": "psram",
+        "family": "psram",
+        "mode": "PRODUCT",
+        "region": "APB4_PSRAM",
+        "catalog": "psram",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/psram.md"
+        ]
+      },
+      {
+        "id": "apb4_opipsram",
+        "chapter": "opipsram",
+        "family": "opipsram",
+        "mode": "PRODUCT",
+        "region": "APB4_OPIPSRAM",
+        "catalog": "opipsram",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/opipsram.md"
+        ]
+      },
+      {
+        "id": "apb4_sdram",
+        "chapter": "sdram",
+        "family": "sdram",
+        "mode": "PRODUCT",
+        "region": "APB4_SDRAM",
+        "catalog": "sdram",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/sdram.md"
+        ]
+      },
+      {
+        "id": "apb4_gpio",
+        "chapter": "gpio",
+        "family": "gpio",
+        "mode": "PRODUCT",
+        "region": "APB4_GPIO",
+        "catalog": "gpio",
+        "qualification": "User window: PAD_CAPABILITY is not decoded here; common IP_VERSION and CAPABILITY are visible.",
+        "sources": [
+          "docs/ip/gpio.md",
+          "rtl/ip/peripheral/gpio_reg.sv",
+          "rtl/ip/peripheral/gpio_reg.sv"
+        ],
+        "groups": [
+          "user",
+          "common"
+        ],
+        "exclude": [
+          "common.PAD_CAPABILITY"
+        ]
+      },
+      {
+        "id": "apb4_gpio_admin",
+        "chapter": "gpio",
+        "family": "gpio",
+        "mode": "PRODUCT",
+        "region": "APB4_GPIO_ADMIN",
+        "catalog": "gpio",
+        "qualification": "Management window: includes PAD_CAPABILITY and the common discovery words.",
+        "sources": [
+          "docs/ip/gpio.md",
+          "rtl/ip/peripheral/gpio_reg.sv",
+          "rtl/ip/peripheral/gpio_reg.sv"
+        ],
+        "groups": [
+          "admin",
+          "common"
+        ]
+      },
+      {
+        "id": "apb4_dma",
+        "chapter": "dma",
+        "family": "dma",
+        "mode": "PRODUCT",
+        "region": "APB4_DMA",
+        "catalog": "dma",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/dma.md"
+        ]
+      },
+      {
+        "id": "apb4_tim0",
+        "chapter": "timer",
+        "family": "timer",
+        "mode": "PRODUCT",
+        "region": "APB4_TIM0",
+        "catalog": "timer",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/timer.md"
+        ]
+      },
+      {
+        "id": "apb4_tim1",
+        "chapter": "timer",
+        "family": "timer",
+        "mode": "PRODUCT",
+        "region": "APB4_TIM1",
+        "catalog": "timer",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/timer.md"
+        ]
+      },
+      {
+        "id": "apb4_rtc",
+        "chapter": "rtc",
+        "family": "rtc",
+        "mode": "PRODUCT",
+        "region": "APB4_RTC",
+        "catalog": "rtc",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "rtl/managed/clusterip/rtc/doc/datasheet.md",
+          "rtl/mini/top/apb4_system.sv"
+        ]
+      },
+      {
+        "id": "apb4_wdg",
+        "chapter": "wdg",
+        "family": "wdg",
+        "mode": "PRODUCT",
+        "region": "APB4_WDG",
+        "catalog": "wdg",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "rtl/managed/clusterip/wdg/doc/datasheet.md",
+          "rtl/mini/top/apb4_system.sv"
+        ]
+      },
+      {
+        "id": "apb4_pwm",
+        "chapter": "pwm",
+        "family": "pwm",
+        "mode": "PRODUCT",
+        "region": "APB4_PWM",
+        "catalog": "pwm",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "rtl/managed/clusterip/pwm/doc/datasheet.md",
+          "rtl/mini/top/apb4_system.sv"
+        ]
+      },
+      {
+        "id": "apb4_uart0",
+        "chapter": "uart0",
+        "family": "uart",
+        "mode": "PRODUCT",
+        "region": "APB4_UART0",
+        "catalog": "uart0",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/uart.md"
+        ]
+      },
+      {
+        "id": "apb4_uart1",
+        "chapter": "uart1",
+        "family": "uart",
+        "mode": "PRODUCT",
+        "region": "APB4_UART1",
+        "catalog": "uart1",
+        "qualification": "Shared UART register layout; UART1 has no UART0 DMA/RTS/CTS routing. Consult its instance-specific capabilities and software notes.",
+        "sources": [
+          "docs/ip/uart.md"
+        ]
+      },
+      {
+        "id": "apb4_i2c0",
+        "chapter": "i2c",
+        "family": "i2c",
+        "mode": "PRODUCT",
+        "region": "APB4_I2C0",
+        "catalog": "i2c",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/i2c.md"
+        ]
+      },
+      {
+        "id": "apb4_i2c1",
+        "chapter": "i2c",
+        "family": "i2c",
+        "mode": "PRODUCT",
+        "region": "APB4_I2C1",
+        "catalog": "i2c",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/i2c.md"
+        ]
+      },
+      {
+        "id": "apb4_ws2812",
+        "chapter": "ws2812",
+        "family": "ws2812",
+        "mode": "PRODUCT",
+        "region": "APB4_WS2812",
+        "catalog": "ws2812",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/ws2812.md"
+        ]
+      },
+      {
+        "id": "apb4_ps2",
+        "chapter": "ps2",
+        "family": "ps2",
+        "mode": "PRODUCT",
+        "region": "APB4_PS2",
+        "catalog": "ps2",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/ps2.md"
+        ]
+      },
+      {
+        "id": "apb4_sdio1",
+        "chapter": "sdio1",
+        "family": "sdio",
+        "mode": "PRODUCT",
+        "region": "APB4_SDIO1",
+        "catalog": "sdio1",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/sdio.md"
+        ]
+      },
+      {
+        "id": "apb4_usb2",
+        "chapter": "usb2",
+        "family": "usb2",
+        "mode": "PRODUCT",
+        "region": "APB4_USB2",
+        "catalog": "usb2",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/usb2.md"
+        ]
+      },
+      {
+        "id": "apb4_archinfo",
+        "chapter": "archinfo",
+        "family": "archinfo",
+        "mode": "PRODUCT",
+        "region": "APB4_ARCHINFO",
+        "catalog": "archinfo",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "rtl/managed/clusterip/archinfo/doc/datasheet.md",
+          "rtl/mini/top/apb4_system.sv"
+        ]
+      },
+      {
+        "id": "apb4_sysctrl",
+        "chapter": "sysctrl",
+        "family": "sysctrl",
+        "mode": "PRODUCT",
+        "region": "APB4_SYSCTRL",
+        "catalog": "sysctrl",
+        "qualification": "SYSCTRL includes the RCU clock/memory-pad registers. There is no additional RCU base. PRODUCT-disabled selectors retain their published access restrictions.",
+        "sources": [
+          "docs/ip/sysctrl.md"
+        ]
+      },
+      {
+        "id": "apb4_clint",
+        "chapter": "clint",
+        "family": "clint",
+        "mode": "PRODUCT",
+        "region": "APB4_CLINT",
+        "catalog": "clint",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/clint.md"
+        ]
+      },
+      {
+        "id": "hp_aclint",
+        "chapter": "hp-aclint",
+        "family": "aclint",
+        "mode": "PRODUCT",
+        "region": "HP_ACLINT",
+        "catalog": "hp-platform",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/hp-platform.md",
+          "docs/lp-hp-architecture.md"
+        ]
+      },
+      {
+        "id": "hp_plic",
+        "chapter": "hp-plic",
+        "family": "plic",
+        "mode": "PRODUCT",
+        "region": "HP_PLIC",
+        "catalog": "hp-platform",
+        "qualification": "PRIORITY index 0 is reserved and hardwired zero; its generic array access does not make source 0 programmable. Context indices retain the HP-platform contract.",
+        "sources": [
+          "docs/ip/hp-platform.md",
+          "docs/lp-hp-architecture.md"
+        ]
+      },
+      {
+        "id": "apb4_hp_mailbox",
+        "chapter": "hp-mailbox",
+        "family": "mailbox",
+        "mode": "PRODUCT",
+        "region": "APB4_HP_MAILBOX",
+        "catalog": "hp-platform",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/hp-platform.md",
+          "docs/lp-hp-architecture.md"
+        ]
+      },
+      {
+        "id": "apb4_resource_ctrl",
+        "chapter": "resource",
+        "family": "resource",
+        "mode": "PRODUCT",
+        "region": "APB4_RESOURCE_CTRL",
+        "catalog": "resource",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/resource-controller.md"
+        ]
+      },
+      {
+        "id": "apb4_fabric_monitor",
+        "chapter": "monitor",
+        "family": "monitor",
+        "mode": "PRODUCT",
+        "region": "APB4_FABRIC_MONITOR",
+        "catalog": "monitor",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/fabric-monitor.md"
+        ]
+      },
+      {
+        "id": "apb4_i2s",
+        "chapter": "i2s",
+        "family": "i2s",
+        "mode": "PRODUCT",
+        "region": "APB4_I2S",
+        "catalog": "i2s",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/i2s.md"
+        ]
+      },
+      {
+        "id": "apb4_dvp",
+        "chapter": "dvp",
+        "family": "dvp",
+        "mode": "PRODUCT",
+        "region": "APB4_DVP",
+        "catalog": "dvp",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/dvp.md"
+        ]
+      },
+      {
+        "id": "apb4_jpeg",
+        "chapter": "jpeg",
+        "family": "jpeg",
+        "mode": "PRODUCT",
+        "region": "APB4_JPEG",
+        "catalog": "jpeg",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/jpeg.md"
+        ]
+      },
+      {
+        "id": "apb4_apu",
+        "chapter": "apu",
+        "family": "apu",
+        "mode": "PRODUCT",
+        "region": "APB4_APU",
+        "catalog": "apu",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/apu.md",
+          "rtl/ip/multimedia/apu_reg.sv",
+          "rtl/ip/multimedia/apb4_apu.sv"
+        ]
+      },
+      {
+        "id": "apb4_crypto",
+        "chapter": "crypto",
+        "family": "crypto",
+        "mode": "PRODUCT",
+        "region": "APB4_CRYPTO",
+        "catalog": "crypto",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "docs/ip/crypto.md"
+        ]
+      },
+      {
+        "id": "apb4_crc",
+        "chapter": "crc",
+        "family": "crc",
+        "mode": "PRODUCT",
+        "region": "APB4_CRC",
+        "catalog": "crc",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "rtl/managed/clusterip/crc/doc/datasheet.md",
+          "rtl/mini/top/apb4_system.sv"
+        ]
+      },
+      {
+        "id": "apb4_rng",
+        "chapter": "rng",
+        "family": "rng",
+        "mode": "PRODUCT",
+        "region": "APB4_RNG",
+        "catalog": "rng",
+        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
+        "sources": [
+          "rtl/managed/clusterip/rng/doc/datasheet.md",
+          "rtl/mini/top/apb4_system.sv"
+        ]
+      },
+      {
+        "id": "apb4_ext_l",
+        "chapter": "ext-l",
+        "family": "extensions",
+        "mode": "PRODUCT",
+        "region": "APB4_EXT_L",
+        "catalog": "ext-l",
+        "qualification": "No data master. ACL/timeout and DMA writes are rejected. In this snapshot, rejected READ_BASE/WRITE_BASE writes can still change readable storage; do not rely on an error response to roll back state.",
+        "sources": [
+          "docs/ip/extensions.md",
+          "rtl/mini/top/extension_slot.sv",
+          "rtl/mini/top/extension_subsystem.sv",
+          "rtl/mini/integration/user_extensions.json"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/extension_slot.sv",
+            "text": "localparam logic [31:0] Identifier = KindExtH ? 32'h4558_5448 : 32'h4558_544C;"
+          },
+          {
+            "file": "rtl/mini/top/extension_slot.sv",
+            "text": "16'd0, 8'(IrqCount), 4'd0, HasLocalSram, HasStream, HasDataMaster, 1'b1"
+          },
+          {
+            "file": "rtl/mini/top/extension_subsystem.sv",
+            "text": ".KindExtH (1'b0), .HasDataMaster(1'b0), .HasStream (1'b0), .HasLocalSram (1'b0), .IrqCount (1)"
+          },
+          {
+            "file": "rtl/mini/top/extension_slot.sv",
+            "text": "ReadBase: begin s_cfg_write_legal = KindExtH; s_read_base_d = cfg_apb4.pwdata; end"
+          },
+          {
+            "file": "rtl/mini/top/extension_slot.sv",
+            "text": "WriteBase: begin s_cfg_write_legal = KindExtH; s_write_base_d = cfg_apb4.pwdata; end"
+          }
+        ],
+        "overrides": {
+          "main.Identification": {
+            "reset": "0x4558544C"
+          },
+          "main.Capability": {
+            "reset": "0x00000101"
+          },
+          "main.ReadBase": {
+            "access": "Write rejected"
+          },
+          "main.ReadLimit": {
+            "access": "Write rejected"
+          },
+          "main.WriteBase": {
+            "access": "Write rejected"
+          },
+          "main.WriteLimit": {
+            "access": "Write rejected"
+          },
+          "main.Timeout": {
+            "access": "Write rejected"
+          },
+          "main.DmaSource": {
+            "access": "Write rejected"
+          },
+          "main.DmaDestination": {
+            "access": "Write rejected"
+          },
+          "main.DmaLength": {
+            "access": "Write rejected"
+          },
+          "main.DmaCommand": {
+            "access": "Write rejected"
+          },
+          "main.DmaStatus": {
+            "access": "RO (zero)",
+            "reset": "0x00000000"
+          }
+        }
+      },
+      {
+        "id": "apb4_ext_h",
+        "chapter": "ext-h",
+        "family": "extensions",
+        "mode": "PRODUCT",
+        "region": "APB4_EXT_H",
+        "catalog": "ext-h",
+        "qualification": "Shared extension-slot definitions are qualified by the slot capabilities. EXT-L has no data master; ACL/timeout and DMA writes are rejected there.",
+        "sources": [
+          "docs/ip/extensions.md",
+          "rtl/mini/top/extension_slot.sv",
+          "rtl/mini/top/extension_subsystem.sv",
+          "rtl/mini/integration/user_extensions.json"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/extension_slot.sv",
+            "text": "localparam logic [31:0] Identifier = KindExtH ? 32'h4558_5448 : 32'h4558_544C;"
+          },
+          {
+            "file": "rtl/mini/top/extension_slot.sv",
+            "text": "16'd0, 8'(IrqCount), 4'd0, HasLocalSram, HasStream, HasDataMaster, 1'b1"
+          }
+        ],
+        "overrides": {
+          "main.Identification": {
+            "reset": "0x45585448"
+          },
+          "main.Capability": {
+            "reset": "0x00000103"
+          }
+        }
+      },
+      {
+        "id": "mpw-timer",
+        "chapter": "mpw-timer",
+        "family": "mpw-timer",
+        "mode": "MPW",
+        "region": "APB4_USER_IP",
+        "slot": 1,
+        "design_id": "tiny_timer",
+        "qualification": "MPW selection 1: tiny_timer. Not an active PRODUCT user-IP register bank.",
+        "sources": [
+          "rtl/mini/integration/user_extensions_legacy.json"
+        ]
+      },
+      {
+        "id": "mpw-gpio",
+        "chapter": "mpw-gpio",
+        "family": "mpw-gpio",
+        "mode": "MPW",
+        "region": "APB4_USER_IP",
+        "slot": 2,
+        "design_id": "tiny_gpio",
+        "qualification": "MPW selection 2: tiny_gpio. Not an active PRODUCT user-IP register bank.",
+        "sources": [
+          "rtl/mini/integration/user_extensions_legacy.json"
+        ]
+      }
+    ],
+    "codes": [
+      {
+        "id": "sysctrl-reason",
+        "title": "SYSCTRL first-fault reason",
+        "source": "rtl/ip/peripheral/sysctrl_core.sv",
+        "pattern": "(?P<name>`RIB_RESP_\\w+|default):\\s*s_fault_reason_d\\s*=\\s*(?P<value>3\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "default": 1,
+          "`RIB_RESP_RESERVED": 2,
+          "`RIB_RESP_PROTERR": 3,
+          "`RIB_RESP_SLVERR": 4,
+          "`RIB_RESP_TIMEOUT": 5
+        },
+        "meanings": {
+          "default": "Decode/unclassified reason used by the default detail mapping.",
+          "`RIB_RESP_RESERVED": "Reserved target.",
+          "`RIB_RESP_PROTERR": "Access protection failure.",
+          "`RIB_RESP_SLVERR": "Target/slave error.",
+          "`RIB_RESP_TIMEOUT": "Transaction timeout."
+        },
+        "observation": "FAULT_STATUS.REASON [4:2], only meaningful with PENDING. Capture address, master, write direction and FAULT_DETAIL together.",
+        "handling": "Preserve the first event before W1C of PENDING. Clearing permits a later event to replace the captured fields; the counter is separate.",
+        "link": "sysctrl",
+        "sources": [
+          "rtl/ip/peripheral/sysctrl_core.sv"
+        ]
+      },
+      {
+        "id": "rib-detail",
+        "title": "RIB response / SYSCTRL detail",
+        "source": "rtl/mini/top/rib_defs.svh",
+        "pattern": "^`define\\s+(?P<name>RIB_RESP_\\w+)\\s+(?P<value>3\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "RIB_RESP_OK": 0,
+          "RIB_RESP_DECERR": 1,
+          "RIB_RESP_PROTERR": 2,
+          "RIB_RESP_SLVERR": 3,
+          "RIB_RESP_TIMEOUT": 4,
+          "RIB_RESP_RESERVED": 5,
+          "RIB_RESP_BURSTERR": 6
+        },
+        "meanings": {
+          "RIB_RESP_OK": "Successful response; not a fault cause.",
+          "RIB_RESP_DECERR": "Unmapped address / decode error.",
+          "RIB_RESP_PROTERR": "Access protection rejected.",
+          "RIB_RESP_SLVERR": "Slave error response.",
+          "RIB_RESP_TIMEOUT": "Finite transaction timeout.",
+          "RIB_RESP_RESERVED": "Reserved target decode.",
+          "RIB_RESP_BURSTERR": "Burst shape/length rejected; SYSCTRL reason uses its default mapping when this detail is captured."
+        },
+        "observation": "RIB response code; SYSCTRL FAULT_DETAIL preserves the selected fault detail. Its numeric namespace differs from FAULT_STATUS.REASON.",
+        "handling": "Follow the SYSCTRL capture sequence. A response code is not independently cleared by software.",
+        "link": "sysctrl",
+        "sources": [
+          "rtl/mini/top/rib_defs.svh"
+        ]
+      },
+      {
+        "id": "fabric-reason",
+        "title": "Native data-plane rejection reasons",
+        "source": "rtl/mini/top/axi4_data_crossbar.sv",
+        "pattern": "localparam\\s+logic\\s*\\[3:0\\]\\s+(?P<name>Fault\\w+)\\s*=\\s*(?P<value>4\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "FaultUnmapped": 1,
+          "FaultInactivePad": 2,
+          "FaultAccess": 3,
+          "FaultProtocol": 4
+        },
+        "meanings": {
+          "FaultUnmapped": "Address does not select a decoded data target.",
+          "FaultInactivePad": "QPI/OPI access targets the inactive memory-pad mode.",
+          "FaultAccess": "Initiator access policy rejects the request.",
+          "FaultProtocol": "Request violates the admitted AXI transaction subset."
+        },
+        "observation": "Fabric Monitor FAULT reason, with master/target/direction/address. These native AXI reasons are not the RIB/SYSCTRL reason enumeration.",
+        "handling": "Capture the monitor record and clear under its CONTROL contract. A clear neither widens access nor reactivates an isolated target.",
+        "link": "monitor",
+        "sources": [
+          "rtl/mini/top/axi4_data_crossbar.sv"
+        ]
+      },
+      {
+        "id": "fabric-timeout",
+        "title": "Native data-plane target timeout",
+        "source": "rtl/mini/top/soc_data_plane.sv",
+        "pattern": "localparam\\s+logic\\s*\\[3:0\\]\\s+(?P<name>FaultTimeout)\\s*=\\s*(?P<value>4\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "FaultTimeout": 5
+        },
+        "meanings": {
+          "FaultTimeout": "Target guard reports a timed-out transaction and isolation state."
+        },
+        "observation": "Same Fabric Monitor native reason namespace as the rejection table. Inspect target guard/isolation status.",
+        "handling": "Stop new work and follow the target recovery/reset contract before reuse. Clearing the monitor record alone does not reconnect the target.",
+        "link": "monitor",
+        "sources": [
+          "rtl/mini/top/soc_data_plane.sv"
+        ]
+      },
+      {
+        "id": "pll-response",
+        "title": "PLL transaction result",
+        "source": "rtl/mini/top/pll_rcu_controller.sv",
+        "pattern": "s_err_d\\s*=\\s*(?P<value>2\\x27d[0-3])",
+        "kind": "enum",
+        "expected": {
+          "0": 0,
+          "1": 1,
+          "2": 2,
+          "3": 3
+        },
+        "meanings": {
+          "0": "No transaction error; force-safe may also report zero.",
+          "1": "PLL capability absent.",
+          "2": "Quiesce, lock-low observation or lock qualification timed out.",
+          "3": "Previously active PLL lost lock."
+        },
+        "observation": "SYSCTRL PLL_STATUS error reason; also inspect valid, safe-clock and current lock bits.",
+        "handling": "Retain the error with clock state. Clear the appropriate sticky indication only after diagnosis; zero does not alone prove PLL operation.",
+        "link": "rcu",
+        "sources": [
+          "rtl/mini/top/pll_rcu_controller.sv"
+        ],
+        "assignment_values": true
+      },
+      {
+        "id": "dma-error",
+        "title": "Central DMA channel error code",
+        "source": "rtl/ip/peripheral/dma_pkg.sv",
+        "pattern": "localparam\\s+logic\\s*\\[3:0\\]\\s+(?P<name>DMA_ERROR_\\w+)\\s*=\\s*(?P<value>4\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "DMA_ERROR_NONE": 0,
+          "DMA_ERROR_CONFIG": 1,
+          "DMA_ERROR_ALIGNMENT": 2,
+          "DMA_ERROR_AXI_READ": 3,
+          "DMA_ERROR_AXI_WRITE": 4,
+          "DMA_ERROR_AXI_PROTOCOL": 5,
+          "DMA_ERROR_STREAM": 6,
+          "DMA_ERROR_ABORT": 7
+        },
+        "meanings": {
+          "DMA_ERROR_NONE": "No channel error.",
+          "DMA_ERROR_CONFIG": "Invalid channel/descriptor configuration.",
+          "DMA_ERROR_ALIGNMENT": "Address/length alignment check failed.",
+          "DMA_ERROR_AXI_READ": "AXI read returned a non-OKAY response.",
+          "DMA_ERROR_AXI_WRITE": "AXI write returned a non-OKAY response.",
+          "DMA_ERROR_AXI_PROTOCOL": "AXI completion/protocol check failed.",
+          "DMA_ERROR_STREAM": "Stream transfer framing or acceptance error.",
+          "DMA_ERROR_ABORT": "Transfer aborted."
+        },
+        "observation": "CH_ERROR_STATUS low nibble; response, direction and stream-last flags occupy separate fields. Capture CH_ERROR_ADDR and completed byte count.",
+        "handling": "Use channel event/IRQ acknowledgement and the documented submit/recovery sequence; do not write a read-only error code as an acknowledgement.",
+        "link": "dma",
+        "sources": [
+          "rtl/ip/peripheral/dma_pkg.sv"
+        ]
+      },
+      {
+        "id": "sdio-dma-mask",
+        "title": "SDIO private DMA ABI masks",
+        "source": "crt/include/retrosoc/hal/sdio_regs.h",
+        "pattern": "^#define\\s+(?P<name>RS_SDIO_DMA_ERROR_\\w+)\\s+UINT32_C\\((?P<value>0x[0-9A-Fa-f]+)\\)",
+        "kind": "mask",
+        "expected": {
+          "RS_SDIO_DMA_ERROR_INVALID_START": 1,
+          "RS_SDIO_DMA_ERROR_DESCRIPTOR": 2,
+          "RS_SDIO_DMA_ERROR_AXI": 4,
+          "RS_SDIO_DMA_ERROR_ABORT": 8,
+          "RS_SDIO_DMA_ERROR_PAYLOAD": 16,
+          "RS_SDIO_DMA_ERROR_INTERNAL": 128
+        },
+        "meanings": {
+          "RS_SDIO_DMA_ERROR_INVALID_START": "Invalid start/configuration.",
+          "RS_SDIO_DMA_ERROR_DESCRIPTOR": "Descriptor check failed.",
+          "RS_SDIO_DMA_ERROR_AXI": "AXI transfer failed.",
+          "RS_SDIO_DMA_ERROR_ABORT": "Abort observed.",
+          "RS_SDIO_DMA_ERROR_PAYLOAD": "Payload transfer failed.",
+          "RS_SDIO_DMA_ERROR_INTERNAL": "Internal DMA failure."
+        },
+        "observation": "Published SDK mask values, not ordinal numbers. The shared SDIO/SPI-SD engine currently emits one cause mask at a time; it uses 0x02 for its invalid-start check. The SDK 0x01 declaration is not emitted by the reviewed engine.",
+        "handling": "Preserve DMA and controller errors before local IRQ/error W1C; reinitialize the transfer only after the engine has stopped.",
+        "link": "sdio0",
+        "sources": [
+          "crt/include/retrosoc/hal/sdio_regs.h",
+          "rtl/ip/storage/sdio_dma.sv",
+          "rtl/ip/storage/sdio_core.sv",
+          "rtl/ip/storage/spisd_core.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/sdio_dma.sv",
+            "text": "s_err_code_d = 8'h02;"
+          },
+          {
+            "file": "rtl/ip/storage/spisd_core.sv",
+            "text": "assign dma_error_o = {24'd0, s_dma_err_code};"
+          },
+          {
+            "file": "rtl/ip/storage/sdio_core.sv",
+            "text": "assign dma_error_o = {24'd0, s_dma_err_code};"
+          }
+        ]
+      },
+      {
+        "id": "usb-dma",
+        "title": "USB2 DMA engine error codes",
+        "source": "rtl/ip/usb/usb2_dma.sv",
+        "pattern": "localparam\\s+logic\\s*\\[7:0\\]\\s+(?P<name>Error\\w+)\\s*=\\s*(?P<value>8\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "ErrorDescriptor": 1,
+          "ErrorLength": 2,
+          "ErrorAxiRead": 3,
+          "ErrorAxiWrite": 4,
+          "ErrorPacket": 5,
+          "ErrorAbort": 6,
+          "ErrorWriteback": 7
+        },
+        "meanings": {
+          "ErrorDescriptor": "Descriptor ownership/geometry validation failed.",
+          "ErrorLength": "Transfer length invalid.",
+          "ErrorAxiRead": "DMA AXI read failed.",
+          "ErrorAxiWrite": "DMA AXI write failed.",
+          "ErrorPacket": "Packet/buffer result failed.",
+          "ErrorAbort": "DMA transfer aborted.",
+          "ErrorWriteback": "Descriptor writeback failed."
+        },
+        "observation": "ERROR_CODE low byte captures a DMA engine code for DMA faults. Scheduler packet faults instead encode 0x80 OR the transfer-result nibble; capture the associated ERROR_STATUS and ERROR_INFO.",
+        "handling": "Record ERROR_DESC_ADDR and ERROR_BUFFER_ADDR before local W1C. A zero-initialized code is not a successful completion without the corresponding valid/done state.",
+        "link": "usb2",
+        "sources": [
+          "rtl/ip/usb/usb2_dma.sv"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/ip/usb/usb2_scheduler.sv",
+            "text": "s_fault_code_d = {4'h8, s_result_code};"
+          },
+          {
+            "file": "rtl/ip/usb/usb2_scheduler.sv",
+            "text": "s_err_code_d = {24'd0, s_fault_code_q};"
+          }
+        ]
+      },
+      {
+        "id": "usb-descriptor",
+        "title": "USB2 descriptor validation codes",
+        "source": "rtl/ip/usb/usb2_pkg.sv",
+        "pattern": "(?P<name>Usb2Desc\\w+)\\s*=\\s*(?P<value>5\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "Usb2DescOk": 0,
+          "Usb2DescNotOwned": 1,
+          "Usb2DescReserved": 2,
+          "Usb2DescBufferAlign": 3,
+          "Usb2DescLength": 4,
+          "Usb2DescNextAlign": 5,
+          "Usb2DescChain": 6,
+          "Usb2DescFrameReserved": 7,
+          "Usb2DescAddressWrap": 8
+        },
+        "meanings": {
+          "Usb2DescOk": "Descriptor validation succeeded.",
+          "Usb2DescNotOwned": "Descriptor not owned by hardware.",
+          "Usb2DescReserved": "Reserved descriptor fields are set.",
+          "Usb2DescBufferAlign": "Buffer alignment invalid.",
+          "Usb2DescLength": "Length invalid.",
+          "Usb2DescNextAlign": "Next descriptor alignment invalid.",
+          "Usb2DescChain": "Chain/end relationship invalid.",
+          "Usb2DescFrameReserved": "Frame reserved fields set.",
+          "Usb2DescAddressWrap": "Buffer address plus length wraps."
+        },
+        "observation": "Descriptor validation result; distinguish it from the USB2 packet result and descriptor completion bits.",
+        "handling": "Fix ownership, geometry or reserved fields after software owns the descriptor; preserve ERROR_CODE/INFO and descriptor/buffer addresses.",
+        "link": "usb2",
+        "sources": [
+          "rtl/ip/usb/usb2_pkg.sv"
+        ]
+      },
+      {
+        "id": "usb-result",
+        "title": "USB2 transfer result codes",
+        "source": "rtl/ip/usb/usb2_pkg.sv",
+        "pattern": "(?P<name>Usb2Result\\w+)\\s*=\\s*(?P<value>4\\x27d\\d+)",
+        "kind": "enum",
+        "expected": {
+          "Usb2ResultSuccess": 0,
+          "Usb2ResultNak": 1,
+          "Usb2ResultStall": 2,
+          "Usb2ResultTimeout": 3,
+          "Usb2ResultCrc": 4,
+          "Usb2ResultProtocol": 5,
+          "Usb2ResultOverflow": 6,
+          "Usb2ResultCanceled": 7
+        },
+        "meanings": {
+          "Usb2ResultSuccess": "Transfer completed successfully.",
+          "Usb2ResultNak": "NAK response; handle according to transfer/scheduling policy.",
+          "Usb2ResultStall": "Endpoint stalled.",
+          "Usb2ResultTimeout": "Response timed out.",
+          "Usb2ResultCrc": "CRC check failed.",
+          "Usb2ResultProtocol": "Protocol check failed.",
+          "Usb2ResultOverflow": "Received data exceeds capacity.",
+          "Usb2ResultCanceled": "Transfer canceled."
+        },
+        "observation": "Internal transfer result consumed by scheduling/writeback. Decode the corresponding public descriptor status, endpoint/channel status and error record.",
+        "handling": "These values are not a universal encoding of ERROR_CODE. Complete descriptor ownership and local acknowledgement before resubmission.",
+        "link": "usb2",
+        "sources": [
+          "rtl/ip/usb/usb2_pkg.sv"
+        ]
+      },
+      {
+        "id": "jpeg-error",
+        "title": "JPEG job error codes",
+        "source": "rtl/ip/multimedia/jpeg_pkg.sv",
+        "pattern": "",
+        "kind": "enum",
+        "expected": {
+          "JpegErrorNone": 0,
+          "JpegErrorConfig": 1,
+          "JpegErrorDescriptor": 2,
+          "JpegErrorTable": 3,
+          "JpegErrorUnsupportedMarker": 4,
+          "JpegErrorUnsupportedProcess": 5,
+          "JpegErrorUnsupportedPrecision": 6,
+          "JpegErrorUnsupportedSampling": 7,
+          "JpegErrorMalformedMarker": 8,
+          "JpegErrorMalformedHuffman": 9,
+          "JpegErrorTruncated": 10,
+          "JpegErrorRestart": 11,
+          "JpegErrorOutputOverflow": 12,
+          "JpegErrorAxiRead": 13,
+          "JpegErrorAxiWrite": 14,
+          "JpegErrorAxiDescriptor": 15,
+          "JpegErrorTimeout": 16,
+          "JpegErrorAborted": 17,
+          "JpegErrorInternal": 18
+        },
+        "meanings": {
+          "JpegErrorNone": "No error.",
+          "JpegErrorConfig": "Configuration rejected.",
+          "JpegErrorDescriptor": "Descriptor rejected.",
+          "JpegErrorTable": "Coding table invalid.",
+          "JpegErrorUnsupportedMarker": "Marker unsupported.",
+          "JpegErrorUnsupportedProcess": "JPEG process unsupported.",
+          "JpegErrorUnsupportedPrecision": "Sample precision unsupported.",
+          "JpegErrorUnsupportedSampling": "Sampling unsupported.",
+          "JpegErrorMalformedMarker": "Malformed marker.",
+          "JpegErrorMalformedHuffman": "Malformed Huffman data/table.",
+          "JpegErrorTruncated": "Input truncated.",
+          "JpegErrorRestart": "Restart sequence invalid.",
+          "JpegErrorOutputOverflow": "Output capacity exceeded.",
+          "JpegErrorAxiRead": "Input/payload AXI read failed.",
+          "JpegErrorAxiWrite": "Output AXI write failed.",
+          "JpegErrorAxiDescriptor": "Descriptor AXI access failed.",
+          "JpegErrorTimeout": "Engine timeout.",
+          "JpegErrorAborted": "Job aborted.",
+          "JpegErrorInternal": "Internal failure."
+        },
+        "observation": "ERROR_STATUS code and stage, ERROR_ADDRESS/DETAIL and descriptor result. A declared code does not prove the system payload path is usable.",
+        "handling": "Copy the first error before ERROR_STATUS/IRQ_STATE W1C and follow ring/direct-job recovery. The reviewed native master-credit limitation still applies.",
+        "link": "jpeg",
+        "sources": [
+          "rtl/ip/multimedia/jpeg_pkg.sv"
+        ],
+        "enum_type": "jpeg_error_e"
+      },
+      {
+        "id": "apu-error",
+        "title": "APU declared error codes",
+        "source": "rtl/ip/multimedia/apu_define.svh",
+        "pattern": "^`define\\s+(?P<name>APB4_APU__ERROR_CODE_\\w+)\\s+(?P<value>\\d+)\\s*$",
+        "kind": "enum",
+        "expected": {
+          "APB4_APU__ERROR_CODE_NONE": 0,
+          "APB4_APU__ERROR_CODE_INVALID_CONFIG": 1,
+          "APB4_APU__ERROR_CODE_INVALID_RING": 2,
+          "APB4_APU__ERROR_CODE_UNSUPPORTED": 3,
+          "APB4_APU__ERROR_CODE_MALFORMED": 4,
+          "APB4_APU__ERROR_CODE_TRUNCATED": 5,
+          "APB4_APU__ERROR_CODE_CODEC_CRC": 6,
+          "APB4_APU__ERROR_CODE_DECODE": 7,
+          "APB4_APU__ERROR_CODE_RECONSTRUCTION": 8,
+          "APB4_APU__ERROR_CODE_MICROCODE": 9,
+          "APB4_APU__ERROR_CODE_MICROCODE_CRC": 10,
+          "APB4_APU__ERROR_CODE_SEQUENCER": 11,
+          "APB4_APU__ERROR_CODE_KWS_MODEL": 12,
+          "APB4_APU__ERROR_CODE_KWS_CRC": 13,
+          "APB4_APU__ERROR_CODE_KWS_ARITHMETIC": 14,
+          "APB4_APU__ERROR_CODE_AXI_READ": 15,
+          "APB4_APU__ERROR_CODE_AXI_WRITE": 16,
+          "APB4_APU__ERROR_CODE_DMA_TIMEOUT": 17,
+          "APB4_APU__ERROR_CODE_STREAM_UNDERRUN": 18,
+          "APB4_APU__ERROR_CODE_STREAM_OVERRUN": 19,
+          "APB4_APU__ERROR_CODE_ABORT": 20,
+          "APB4_APU__ERROR_CODE_RESOURCE_RESET": 21,
+          "APB4_APU__ERROR_CODE_OVERFLOW": 22
+        },
+        "meanings": {
+          "APB4_APU__ERROR_CODE_NONE": "No error.",
+          "APB4_APU__ERROR_CODE_INVALID_CONFIG": "Configuration invalid.",
+          "APB4_APU__ERROR_CODE_INVALID_RING": "Ring configuration invalid.",
+          "APB4_APU__ERROR_CODE_UNSUPPORTED": "Requested operation unsupported.",
+          "APB4_APU__ERROR_CODE_MALFORMED": "Input malformed.",
+          "APB4_APU__ERROR_CODE_TRUNCATED": "Input truncated.",
+          "APB4_APU__ERROR_CODE_CODEC_CRC": "Codec CRC failure.",
+          "APB4_APU__ERROR_CODE_DECODE": "Decode failure.",
+          "APB4_APU__ERROR_CODE_RECONSTRUCTION": "Reconstruction failure.",
+          "APB4_APU__ERROR_CODE_MICROCODE": "Microcode rejected.",
+          "APB4_APU__ERROR_CODE_MICROCODE_CRC": "Microcode CRC failure.",
+          "APB4_APU__ERROR_CODE_SEQUENCER": "Sequencer failure.",
+          "APB4_APU__ERROR_CODE_KWS_MODEL": "KWS model rejected.",
+          "APB4_APU__ERROR_CODE_KWS_CRC": "KWS CRC failure.",
+          "APB4_APU__ERROR_CODE_KWS_ARITHMETIC": "KWS arithmetic failure.",
+          "APB4_APU__ERROR_CODE_AXI_READ": "AXI read failure.",
+          "APB4_APU__ERROR_CODE_AXI_WRITE": "AXI write failure.",
+          "APB4_APU__ERROR_CODE_DMA_TIMEOUT": "DMA timeout.",
+          "APB4_APU__ERROR_CODE_STREAM_UNDERRUN": "Stream underrun.",
+          "APB4_APU__ERROR_CODE_STREAM_OVERRUN": "Stream overrun.",
+          "APB4_APU__ERROR_CODE_ABORT": "Job aborted.",
+          "APB4_APU__ERROR_CODE_RESOURCE_RESET": "Resource reset interrupted work.",
+          "APB4_APU__ERROR_CODE_OVERFLOW": "Capacity or arithmetic overflow."
+        },
+        "observation": "ERROR_STATUS code, stage, AXI response and descriptor index; ERROR_ADDRESS/DETAIL provide context.",
+        "handling": "Preserve the first error, then apply the documented ERROR_STATUS/IRQ_STATE acknowledgement. Declared codec/KWS codes do not establish implemented production features.",
+        "link": "apu",
+        "sources": [
+          "rtl/ip/multimedia/apu_define.svh"
+        ]
+      },
+      {
+        "id": "sdk-result",
+        "title": "SDK rs_status_t return values",
+        "source": "crt/include/retrosoc/core/status.h",
+        "pattern": "^\\s*(?P<name>RS_(?:OK|E[A-Z]+))\\s*=\\s*(?P<value>-?\\d+),",
+        "kind": "enum",
+        "expected": {
+          "RS_OK": 0,
+          "RS_EINVAL": -1,
+          "RS_ENOMEM": -2,
+          "RS_ENOSPC": -3,
+          "RS_ETIMEOUT": -4,
+          "RS_EIO": -5,
+          "RS_ENOTSUP": -6,
+          "RS_EFORMAT": -7
+        },
+        "meanings": {
+          "RS_OK": "Operation completed under that API contract.",
+          "RS_EINVAL": "Input parameter invalid.",
+          "RS_ENOMEM": "Required memory unavailable.",
+          "RS_ENOSPC": "Output/buffer capacity insufficient.",
+          "RS_ETIMEOUT": "Bounded operation timed out.",
+          "RS_EIO": "I/O operation failed.",
+          "RS_ENOTSUP": "Operation unsupported.",
+          "RS_EFORMAT": "Input format rejected."
+        },
+        "observation": "Signed API return value. Exact triggering conditions depend on the called function; the enum definition does not make every code reachable from every API.",
+        "handling": "Check the return before using output values. No hardware W1C applies to a C return value; preserve the relevant peripheral status if diagnosis requires it.",
+        "link": "software-support",
+        "sources": [
+          "crt/include/retrosoc/core/status.h"
+        ]
+      }
+    ],
+    "status_registers": [
+      {
+        "id": "clock-lifecycle",
+        "title": "Clock, memory-pad and HP lifecycle observations",
+        "family": "sysctrl",
+        "registers": [
+          "main.PLL_STATUS",
+          "clock.CLK_STATUS",
+          "clock.CLK_FAULT",
+          "clock.MEM_PAD_FAULT",
+          "main.HP_STATUS"
+        ],
+        "observation": "Clock command response 0 means accepted and 1 means rejected; the controller validates selectors, idle state, nonzero timeout and memory-pad lock. Read requested and actual HP state together.",
+        "handling": "PLL/clock fault clear and memory-pad fault clear are distinct commands. HP forced-fault records cache-clean, drain or flush timeout and clears on reset/new release under its lifecycle contract.",
+        "link": "rcu",
+        "sources": [
+          "rtl/mini/top/clock_config_controller.sv",
+          "rtl/mini/top/pll_rcu_controller.sv",
+          "rtl/mini/top/hp_lifecycle_controller.sv",
+          "crt/src/hal/sysctrl.c"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/top/clock_config_controller.sv",
+            "text": "s_rsp_code_d = s_req_legal ? 4'd0 : 4'd1;"
+          },
+          {
+            "file": "rtl/ip/peripheral/sysctrl_core.sv",
+            "text": "21'd0, pll_ctrl.capable_i, s_pll_lock_q, s_pll_safe_clk_q, s_pll_err_reason_q, s_pll_err_q, s_pll_busy_q, s_pll_active_valid_q, s_pll_active_sel_q"
+          },
+          {
+            "file": "rtl/ip/peripheral/sysctrl_core.sv",
+            "text": "28'd0, s_clock_err_q, s_clock_busy_q, clock_ctrl.fault_i[1], clock_ctrl.fault_i[0]"
+          },
+          {
+            "file": "rtl/ip/peripheral/sysctrl_core.sv",
+            "text": "26'd0, sysctrl.hp_actual_released_i, sysctrl.hp_forced_fault_i, sysctrl.hp_draining_i, sysctrl.hp_present_i && !s_hp_release_q, s_hp_release_q, sysctrl.hp_present_i"
+          },
+          {
+            "file": "rtl/mini/top/clock_config_controller.sv",
+            "text": "assign clock_ctrl.fault_i = {30'd0, s_rsp_code_q != 4'd0, pll_fault_i};"
+          },
+          {
+            "file": "rtl/ip/peripheral/sysctrl_core.sv",
+            "text": "MemPadFault: read_data_o = {31'd0, clock_ctrl.memory_i[4]};"
+          }
+        ],
+        "field_overrides": {
+          "main.PLL_STATUS": [
+            {
+              "lsb": 0,
+              "msb": 2,
+              "name": "ACTIVE_SELECTION",
+              "description": "Returned active PLL selection."
+            },
+            {
+              "lsb": 3,
+              "msb": 3,
+              "name": "ACTIVE_VALID",
+              "description": "The returned PLL selection is valid."
+            },
+            {
+              "lsb": 4,
+              "msb": 4,
+              "name": "BUSY",
+              "description": "PLL request/response pending."
+            },
+            {
+              "lsb": 5,
+              "msb": 5,
+              "name": "ERROR",
+              "description": "Latched transaction error indication."
+            },
+            {
+              "lsb": 6,
+              "msb": 7,
+              "name": "ERROR_REASON",
+              "description": "PLL result enumeration in the code table."
+            },
+            {
+              "lsb": 8,
+              "msb": 8,
+              "name": "SAFE_CLOCK",
+              "description": "Returned safe-clock selection state."
+            },
+            {
+              "lsb": 9,
+              "msb": 9,
+              "name": "LOCKED",
+              "description": "Returned PLL lock observation."
+            },
+            {
+              "lsb": 10,
+              "msb": 10,
+              "name": "CAPABLE",
+              "description": "Selected implementation supplies the PLL capability."
+            }
+          ],
+          "clock.CLK_STATUS": [
+            {
+              "lsb": 0,
+              "msb": 0,
+              "name": "SOURCE_FAULT",
+              "description": "PLL or monitored-source fault input."
+            },
+            {
+              "lsb": 1,
+              "msb": 1,
+              "name": "RESPONSE_REJECTED",
+              "description": "Last AON clock command response was nonzero."
+            },
+            {
+              "lsb": 2,
+              "msb": 2,
+              "name": "BUSY",
+              "description": "Clock configuration request/response pending."
+            },
+            {
+              "lsb": 3,
+              "msb": 3,
+              "name": "ERROR",
+              "description": "Control-side command error indication."
+            }
+          ],
+          "clock.CLK_FAULT": [
+            {
+              "lsb": 0,
+              "msb": 0,
+              "name": "SOURCE_FAULT",
+              "description": "Aggregate PLL/clock monitor fault."
+            },
+            {
+              "lsb": 1,
+              "msb": 1,
+              "name": "RESPONSE_REJECTED",
+              "description": "Nonzero clock command response."
+            }
+          ],
+          "clock.MEM_PAD_FAULT": [
+            {
+              "lsb": 0,
+              "msb": 0,
+              "name": "PAD_CONFIG_FAULT",
+              "description": "Rejected memory-pad configuration observed; use its dedicated clear command."
+            }
+          ],
+          "main.HP_STATUS": [
+            {
+              "lsb": 0,
+              "msb": 0,
+              "name": "PRESENT",
+              "description": "HP is present in this implementation."
+            },
+            {
+              "lsb": 1,
+              "msb": 1,
+              "name": "REQUESTED_RELEASE",
+              "description": "LP requested HP release."
+            },
+            {
+              "lsb": 2,
+              "msb": 2,
+              "name": "REQUESTED_HOLD",
+              "description": "HP present and release request is clear; this is not an independent observation of actual reset."
+            },
+            {
+              "lsb": 3,
+              "msb": 3,
+              "name": "DRAINING",
+              "description": "Lifecycle is draining/stopping HP traffic."
+            },
+            {
+              "lsb": 4,
+              "msb": 4,
+              "name": "FORCED_FAULT",
+              "description": "A cache, drain or flush timeout forced lifecycle progress."
+            },
+            {
+              "lsb": 5,
+              "msb": 5,
+              "name": "ACTUAL_RELEASED",
+              "description": "Actual HP lifecycle release observation."
+            }
+          ]
+        }
+      },
+      {
+        "id": "resource-fault",
+        "title": "Resource ownership fault",
+        "family": "resource",
+        "registers": [
+          "resource.Status",
+          "resource.Fault"
+        ],
+        "observation": "FAULT is one sticky bit, not an encoded reason. A rejected OWNER write sets it; inspect owner lock, quiesce, block acknowledgement and idle state to determine the cause.",
+        "handling": "Capture STATUS before full-word W1C of FAULT bit 0. Clearing does not change owner or unlock the resource.",
+        "link": "resource",
+        "sources": [
+          "rtl/mini/top/resource_controller.sv",
+          "crt/src/hal/resource.c"
+        ]
+      },
+      {
+        "id": "central-dma-status",
+        "title": "Central DMA completion and error observations",
+        "family": "dma",
+        "registers": [
+          "ch.STATUS",
+          "ch.EVENT_STATUS",
+          "ch.ERROR_STATUS"
+        ],
+        "observation": "Use CH_ERROR_ADDR, bytes completed and descriptor status with these fields. ERROR_STATUS and channel events have distinct purposes.",
+        "handling": "Acknowledge local W1C event/IRQ fields according to the DMA contract; preserve read-only error detail before a new channel command changes it.",
+        "link": "dma",
+        "sources": [
+          "rtl/ip/peripheral/dma_core.sv",
+          "crt/include/retrosoc/hal/dma_regs.h"
+        ],
+        "field_overrides": {
+          "ch.ERROR_STATUS": [
+            {
+              "lsb": 0,
+              "msb": 3,
+              "name": "CODE",
+              "description": "Central DMA error enumeration in the code table."
+            },
+            {
+              "lsb": 4,
+              "msb": 5,
+              "name": "AXI_RESPONSE",
+              "description": "Captured two-bit AXI response."
+            },
+            {
+              "lsb": 6,
+              "msb": 6,
+              "name": "READ",
+              "description": "One identifies the read side of the reported error."
+            },
+            {
+              "lsb": 8,
+              "msb": 8,
+              "name": "STREAM_LAST",
+              "description": "Captured stream-last observation."
+            }
+          ]
+        },
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/dma_core.sv",
+            "text": "channel_error_status = {stream_last_i, 1'b0, error_read_i, response_i, error_code_i};"
+          }
+        ]
+      },
+      {
+        "id": "spisd-dma-status",
+        "title": "SPI-SD private DMA status",
+        "family": "spisd",
+        "registers": [
+          "main.DMA_STATUS",
+          "main.DMA_ERROR",
+          "main.ERROR_STATUS"
+        ],
+        "observation": "SPI-SD has its own DMA register semantics. Capture DMA_ERROR_ADDR, command/data completion and actual transfer count.",
+        "handling": "Copy the error snapshot before ERROR_STATUS and IRQ_STATUS W1C. Do not substitute the central DMA nibble enumeration.",
+        "link": "spisd",
+        "sources": [
+          "rtl/ip/storage/spisd_reg.sv",
+          "crt/include/retrosoc/hal/spisd_regs.h"
+        ]
+      },
+      {
+        "id": "sdio-dma-status",
+        "title": "SDIO0/1 private DMA status",
+        "family": "sdio",
+        "registers": [
+          "main.DMA_STATUS",
+          "main.DMA_ERROR"
+        ],
+        "observation": "Decode against the selected SDIO instance. The mask table above applies to DMA_ERROR; controller ERROR_STATUS remains a separate cause set.",
+        "handling": "Capture DMA_ERROR_ADDR and controller errors, stop/abort as required, then acknowledge local interrupt/error state.",
+        "link": "sdio0",
+        "sources": [
+          "rtl/ip/storage/sdio_reg.sv",
+          "crt/include/retrosoc/hal/sdio_regs.h"
+        ]
+      },
+      {
+        "id": "usb-dma-status",
+        "title": "USB2 first error record",
+        "family": "usb2",
+        "registers": [
+          "main.ERROR_STATUS",
+          "main.ERROR_CODE",
+          "main.ERROR_INFO"
+        ],
+        "observation": "Capture ERROR_DESC_ADDR and ERROR_BUFFER_ADDR plus endpoint/channel state and descriptor completion. Internal result and descriptor-validation enums are separate namespaces.",
+        "handling": "Follow USB2 ERROR_STATUS/IRQ_STATUS W1C and descriptor ownership rules. A packet retry is a scheduler/transfer-policy decision.",
+        "link": "usb2",
+        "sources": [
+          "rtl/ip/usb/usb2_reg.sv",
+          "rtl/ip/usb/usb2_pkg.sv"
+        ],
+        "field_overrides": {
+          "main.ERROR_STATUS": [
+            {
+              "lsb": 0,
+              "msb": 0,
+              "name": "SCHEDULER_FAULT",
+              "description": "Scheduler/DMA first-fault event, latched and W1C in the register block."
+            }
+          ],
+          "main.ERROR_CODE": [
+            {
+              "lsb": 0,
+              "msb": 7,
+              "name": "CODE",
+              "description": "DMA engine error code, or 0x80 OR packet-result nibble for scheduler packet faults."
+            }
+          ],
+          "main.ERROR_INFO": [
+            {
+              "lsb": 0,
+              "msb": 3,
+              "name": "INDEX",
+              "description": "Affected device endpoint or host channel."
+            },
+            {
+              "lsb": 4,
+              "msb": 4,
+              "name": "DIRECTION_IN",
+              "description": "Captured transfer direction."
+            },
+            {
+              "lsb": 14,
+              "msb": 15,
+              "name": "ROLE",
+              "description": "Captured role: 1 device, 2 host."
+            }
+          ]
+        },
+        "bindings": [
+          {
+            "file": "rtl/ip/usb/usb2_scheduler.sv",
+            "text": "s_err_stat_d = 32'h0000_0001;"
+          },
+          {
+            "file": "rtl/ip/usb/usb2_scheduler.sv",
+            "text": "s_err_code_d = {24'd0, s_fault_code_q};"
+          },
+          {
+            "file": "rtl/ip/usb/usb2_scheduler.sv",
+            "text": "s_err_info_d = {16'd0, s_current_role, 9'd0, s_current_direction_in, s_current_index};"
+          }
+        ]
+      },
+      {
+        "id": "jpeg-dma-status",
+        "title": "JPEG first error record",
+        "family": "jpeg",
+        "registers": [
+          "main.ERROR_STATUS",
+          "main.ERROR_DETAIL"
+        ],
+        "observation": "Capture ERROR_ADDRESS, ring position and descriptor status with the error code/stage.",
+        "handling": "Acknowledge only after recording the first failure. The documented zero-credit system limitation remains in force.",
+        "link": "jpeg",
+        "sources": [
+          "rtl/ip/multimedia/jpeg_reg.sv",
+          "rtl/ip/multimedia/jpeg_pkg.sv"
+        ]
+      },
+      {
+        "id": "apu-dma-status",
+        "title": "APU first error record",
+        "family": "apu",
+        "registers": [
+          "main.ERROR_STATUS",
+          "main.ERROR_DETAIL"
+        ],
+        "observation": "Capture ERROR_ADDRESS, ring position and stream state. The enum covers the declared ABI; production availability is qualified in the APU/system chapters.",
+        "handling": "Preserve error details before W1C; recover descriptor/stream ownership under the APU contract.",
+        "link": "apu",
+        "sources": [
+          "rtl/ip/multimedia/apu_reg.sv",
+          "rtl/ip/multimedia/apu_define.svh"
+        ]
+      },
+      {
+        "id": "extension-dma-status",
+        "title": "EXT-H DMA and slot fault",
+        "family": "extensions",
+        "registers": [
+          "main.Fault",
+          "main.DmaStatus"
+        ],
+        "observation": "FAULT is sticky; DMA_STATUS contains busy, a completion pulse and fault. Capture FAULT_ADDRESS. EXT-L reads zero in its DMA status view.",
+        "handling": "The slot COMMAND clear operation controls the sticky fault; DMA done is a pulse, not a W1C completion register. Preserve software completion state before it disappears.",
+        "link": "ext-h",
+        "sources": [
+          "rtl/mini/top/extension_slot.sv",
+          "rtl/mini/top/extension_dma_master.sv"
+        ],
+        "field_overrides": {
+          "main.DmaStatus": [
+            {
+              "lsb": 0,
+              "msb": 0,
+              "name": "BUSY",
+              "description": "EXT-H DMA busy."
+            },
+            {
+              "lsb": 1,
+              "msb": 1,
+              "name": "DONE_PULSE",
+              "description": "EXT-H one-cycle DMA completion observation; software must account for the interrupt/handler timing."
+            },
+            {
+              "lsb": 2,
+              "msb": 2,
+              "name": "FAULT",
+              "description": "EXT-H sticky slot/DMA fault. EXT-L returns zero for this whole register."
+            }
+          ]
+        },
+        "bindings": [
+          {
+            "file": "rtl/mini/top/extension_slot.sv",
+            "text": "s_apb4_rdata_d = KindExtH ? {29'd0, s_fault_sticky_q, dma_done_i, dma_busy_i} : 32'd0;"
+          }
+        ]
+      }
+    ],
+    "verification": [
+      {
+        "id": "integration-source",
+        "title": "Topology, register and reset contracts",
+        "stage": "source",
+        "status": "Source reviewed",
+        "tests": [],
+        "profiles": [
+          "configs/ci/ihp130.mk",
+          "configs/ci/ihp130-hp.mk"
+        ],
+        "sources": [
+          "rtl/mini/integration/soc_topology.json",
+          "rtl/mini/integration/clock_reset_domains.json",
+          "publications/datasheets/register-profiles.json"
+        ],
+        "boundary": "Static source-derived mappings; no runtime result is implied.",
+        "limitations": "Generated HP artifact/cache capacity remains unconfirmed.",
+        "reports": []
+      },
+      {
+        "id": "host-tools",
+        "title": "Host software and tooling tests",
+        "stage": "host",
+        "status": "Tests available",
+        "tests": [
+          "tests/c/test_runtime.c",
+          "tests/test_hp_boot_bundle.py",
+          "tests/test_publication_programming.py"
+        ],
+        "profiles": [
+          "configs/ci/ihp130.mk",
+          "configs/ci/ihp130-hp.mk"
+        ],
+        "sources": [
+          "tests/README.md",
+          "docs/engineering.md"
+        ],
+        "boundary": "Host logic and compiled-helper checks do not exercise MMIO timing or actual board devices.",
+        "limitations": "Publication-turn test results are delivered separately from product qualification.",
+        "reports": []
+      },
+      {
+        "id": "fabric",
+        "title": "Bus, clocks and resource behavior",
+        "stage": "simulation",
+        "status": "Tests available",
+        "tests": [
+          "tests/test_axi4.py",
+          "tests/test_clock_reset_domains.py",
+          "tests/test_resource_controller.py"
+        ],
+        "profiles": [
+          "configs/ci/ihp130.mk",
+          "configs/ci/ihp130-hp.mk"
+        ],
+        "sources": [
+          "docs/axi4-interconnect.md",
+          "docs/ip/resource-controller.md"
+        ],
+        "boundary": "Directed unit/component tests exist; selected test invocation and source/profile must accompany a run.",
+        "limitations": "The native JPEG master-credit limitation remains unresolved.",
+        "reports": []
+      },
+      {
+        "id": "boot",
+        "title": "HP platform and boot image path",
+        "stage": "simulation",
+        "status": "Tests available",
+        "tests": [
+          "tests/test_hp_boot_bundle.py",
+          "tests/test_hp_platform.py",
+          "tests/test_hp_mailbox.py",
+          "tests/test_plic.py"
+        ],
+        "profiles": [
+          "configs/ci/ihp130-hp.mk"
+        ],
+        "sources": [
+          "docs/ip/hp-platform.md"
+        ],
+        "boundary": "Image/layout and platform tests are not a recorded complete Linux boot on this publication profile.",
+        "limitations": "Boot-ready waiting and driver-support qualifications still apply.",
+        "reports": []
+      },
+      {
+        "id": "peripheral",
+        "title": "Storage, multimedia and private DMA",
+        "stage": "simulation",
+        "status": "Tests available",
+        "tests": [
+          "tests/test_dma.py",
+          "tests/test_sdram.py",
+          "tests/test_usb2.py",
+          "tests/test_jpeg.py",
+          "tests/test_apu.py"
+        ],
+        "profiles": [
+          "configs/ci/ihp130.mk",
+          "configs/ci/ihp130-hp.mk"
+        ],
+        "sources": [
+          "docs/ip/jpeg.md",
+          "docs/ip/apu.md"
+        ],
+        "boundary": "Standalone engine coverage must be distinguished from an integrated producer-to-consumer path.",
+        "limitations": "JPEG integration and APU production-feature limits remain active.",
+        "reports": []
+      },
+      {
+        "id": "physical-analysis",
+        "title": "Synthesis, netlist and static timing",
+        "stage": "physical-analysis",
+        "status": "Tests available",
+        "tests": [
+          "scripts/regress.py",
+          "physical/smoke/syn/yosys/script/synth.tcl",
+          "physical/smoke/sta/opensta/opensta.tcl"
+        ],
+        "profiles": [
+          "configs/ci/ihp130.mk"
+        ],
+        "sources": [
+          "physical/README.md",
+          "docs/engineering.md"
+        ],
+        "boundary": "Flows must report PDK, tools, constraints, corner and exact implementation.",
+        "limitations": "No matching physical signoff report is attached.",
+        "reports": []
+      },
+      {
+        "id": "fpga-board",
+        "title": "Board routes and FPGA bringup",
+        "stage": "fpga",
+        "status": "Not supplied",
+        "tests": [],
+        "profiles": [
+          "configs/ci/ihp130.mk",
+          "configs/ci/ihp130-hp.mk"
+        ],
+        "sources": [
+          "fpga/README.md",
+          "fpga/mini/starrysky_v2.xdc"
+        ],
+        "boundary": "The XDC is an input for its named FPGA board, not a pass report or an ASIC package map.",
+        "limitations": "Approved SDIO1/ULPI routes and matching board acceptance evidence remain missing.",
+        "reports": []
+      },
+      {
+        "id": "silicon",
+        "title": "Silicon, package and characterization",
+        "stage": "silicon",
+        "status": "Not supplied",
+        "tests": [],
+        "profiles": [
+          "configs/ci/ihp130.mk"
+        ],
+        "sources": [
+          "physical/README.md"
+        ],
+        "boundary": "Requires identified die/revision/lot, package, board, methods and test conditions.",
+        "limitations": "No measured DC/AC, power, thermal, reliability or orderable-part qualification is attached.",
+        "reports": []
+      }
+    ],
+    "sources": [
+      "publications/retrieval_reference.py",
+      "rtl/rtl_readiness.json",
+      "scripts/check_rtl_readiness.py",
+      "app/apps/hp_boot/main.c",
+      "app/apps/hp_boot/hp_boot_bundle.h",
+      "crt/src/service/test.c",
+      "crt/src/hal/sysctrl.c",
+      "rtl/ip/peripheral/sysctrl_define.svh",
+      "rtl/mini/dv/tb/retrosoc_tb.sv",
+      "rtl/mini/dv/verilator/csrc/Emulator.cpp",
+      "scripts/regress.py",
+      "scripts/run_flow.py",
+      "docs/engineering.md",
+      "tests/test_publication_retrieval.py"
+    ],
+    "boot": {
+      "expected_direct": [
+        2,
+        3,
+        4,
+        9,
+        10
+      ],
+      "expected_entries": 4,
+      "meanings": {
+        "0": "Expected Linux-ready mailbox event received; successful terminal status.",
+        "1": "UART initialization failed; terminal failure is written directly without requiring a printable console.",
+        "2": "HP hold/reset/debug-selection/presence prerequisite failed.",
+        "3": "SDRAM did not reach the required ready/error-free state within the firmware wait.",
+        "4": "Bundle header or bounds/format validation failed.",
+        "5": "DMA and software copy/CRC fallback failed for bundle entry index 0.",
+        "6": "DMA and software copy/CRC fallback failed for bundle entry index 1.",
+        "7": "DMA and software copy/CRC fallback failed for bundle entry index 2.",
+        "8": "DMA and software copy/CRC fallback failed for bundle entry index 3.",
+        "9": "Mailbox clear, HP release request or released-state check failed.",
+        "10": "Nonzero-sequence mailbox message did not carry the expected Linux-ready event/argument."
+      }
+    }
   }
 }

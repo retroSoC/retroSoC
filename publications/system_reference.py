@@ -7,6 +7,7 @@ from pathlib import Path
 
 from publications.programming_reference import collect_programming, dependencies
 from publications.implementation_reference import collect_details, dependencies as detail_dependencies
+from publications.retrieval_reference import dependencies as retrieval_dependencies
 
 REFERENCE = "publications/datasheets/system-reference.json"
 
@@ -15,6 +16,7 @@ def source_paths(reference: dict) -> set[str]:
     paths = set(reference["sources"])
     paths.update(dependencies(reference.get("programming", {})))
     paths.update(detail_dependencies(reference.get("product_details", {})))
+    paths.update(retrieval_dependencies(reference.get("retrieval", {})))
     for row in [*reference["support"], *reference["limitations"]]:
         paths.update(row["sources"])
         paths.update(row.get("tests", []))

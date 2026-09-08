@@ -66,6 +66,9 @@
 }
 
 #let minor-title(body) = block(above:rhythm.minor-before,below:rhythm.minor-after,sticky:true,strong(body))
+#let change-start(id, title, category:"modified") = context metadata((
+  kind:"publication-change-start",id:id,title:title,category:category,page:here().page()))
+#let change-end(id) = context metadata((kind:"publication-change-end",id:id,page:here().page()))
 #let code-block(body, breakable:false) = block(above:rhythm.code-space,below:rhythm.code-space,
   width:100%,inset:rhythm.code-inset,fill:gray,breakable:breakable)[
   #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
@@ -333,12 +336,4 @@
   show figure.caption: set text(size: 9pt, fill: black)
   show figure.caption: it => block(above:0pt,below:0pt,sticky:it.position==top,it)
   body
-  context {
-    let regions=query(<table-continuation-region>).map(region=>{
-      let pos=region.location().position()
-      (kind:"table-continuation",page:pos.page,x:pos.x.pt(),y:pos.y.pt(),
-        width:region.width.length.pt(),height:region.height.length.pt())
-    })
-    [#metadata((kind:"layout-regions",regions:regions))<layout-report>]
-  }
 }

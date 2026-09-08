@@ -7,6 +7,14 @@ index contains no matching reviewed performance report, so numerical product res
 unfilled. Configuration frequencies, analytic ceilings and historical projections are not
 substituted for measurements.
 
+#change-start("performance-release-record", "Performance/power: reproducible result record")
+A published result or curve must retain its raw report, workload/transfer size, achieved
+clock, memory placement and concurrent traffic, together with sample count and measurement
+boundaries. Use a distinct series for each configuration and show failed or incomplete runs
+in the supporting report. The evidence summary is @release-verification; the currently empty
+result fields below remain unmeasured.
+#change-end("performance-release-record")
+
 === Measurement record and acceptance
 Record the exact source/profile, generated core and cache configuration, firmware/compiler
 options, memory placement, external device/model, clock sources and workload. Identify whether
@@ -75,6 +83,9 @@ establish compatibility.
 == Implementation and Qualification Limitations
 #for item in data.system_reference.limitations {
   heading(level:3,item.title)
+  if item.id=="ext-l-rejected-base-write" {
+    change-start("ext-l-write-limitation", "Known limitations: rejected EXT-L base writes", category:"added")
+  }
   ds-table("limitation-"+item.id,[#item.title - impact and integration response],
     ([Field],[Description]),
     (([Impact],item.impact),([Trigger],item.trigger),([Integration response],item.workaround),([Applies to],item.applies_to)),
@@ -83,6 +94,7 @@ establish compatibility.
     source(path,title:if i==0 {"Implementation / contract"} else {"Additional source"})
     if i < item.sources.len()-1 {[ · ]}
   }
+  if item.id=="ext-l-rejected-base-write" {change-end("ext-l-write-limitation")}
 }
 
 == Revision Identification and Compatibility
