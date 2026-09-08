@@ -76,8 +76,9 @@ underline. This does not affect source links beside register descriptions.
 Underlines follow wrapped text rather than
 forming one unbreakable line. Source links retain their 9 pt size but do not
 override link color with muted gray; nonlinked metadata remains muted.
-The printed contents is the explicit exception: ink-colored clickable entries
-without underlines, retaining its abbreviation emphasis.
+The printed navigation directories (Contents, List of tables and List of
+figures) use ink-colored clickable entries without underlines. Abbreviation
+emphasis remains confined to Contents.
 
 ## Shared spacing
 
@@ -151,8 +152,12 @@ text, not its marker.
 
 The entry document requests `contents(depth: 5)`. Preserve this depth and the
 existing heading hierarchy. Contents starts on a new page after "Reading this
-datasheet", with its title and first entry together. Retain the page break after
-the complete contents and avoid additional blank pages.
+datasheet", with its title and first entry together. The front-matter order is
+**Contents -> List of tables -> List of figures -> System Architecture**.
+Each directory starts on a new page and keeps its title with its first entry.
+Retain the page break after each complete directory and avoid additional blank
+pages. The two figure-directory titles are unnumbered, excluded from Contents,
+included as PDF bookmarks, and used as the running header on their pages.
 
 All contents text, including numbering, dot leaders and page numbers, uses the
 body ink color `#292C31`, without underlines. This locally overrides ordinary
@@ -176,6 +181,26 @@ is measured from the longest outlined, numbered heading at the same level.
 Wrapped titles hang under the title text; page numbers remain right aligned
 with stretching dot leaders. Each entry is unbreakable. Level-one groups add
 12 pt before and 4 pt after to the ordinary entry spacing.
+
+The shared `figure-directory(tables: false)` helper generates List of figures;
+`figure-directory(tables: true)` generates List of tables. Follow the single-level
+layout of [RM0486](https://www.st.com/resource/en/reference_manual/rm0486-stm32n647657xx-armbased-32bit-mcus-stmicroelectronics.pdf),
+Rev 4, pages 116 and 134, while retaining the publication's typography. Include
+every numbered table or non-table figure with a caption, including register
+tables, native vector diagrams and waveform figures. Read numbers, full captions
+and actual start-page destinations from the document elements; do not maintain a
+separate entry list or renumber the body. Include a continued table only once.
+Unnumbered address tables, bit layouts and decorative components are excluded.
+
+Both directories use Inter 9.5 pt, the approximately 16 pt Contents baseline,
+and ink-colored clickable entries without underlines. Prefix entries with
+`Table N.` or `Figure N.` and measure one number-column width from the longest
+prefix in each directory. Use an 8 pt prefix-to-title gap, hanging wrapped titles,
+stretching dot leaders and right-aligned page numbers. Each whole entry links to
+the corresponding figure or table start and remains unbreakable. Do not apply
+Contents hierarchy indentation, chapter-group spacing or abbreviation emphasis
+to these flat directories. Complete coverage takes precedence over a fixed page
+budget; allow the directories to grow as numbered material is added.
 
 Outlined, numbered level-one and level-two headings in the body start on a new
 page, including software, implementation and appendix sections. The entire
@@ -459,6 +484,15 @@ matrix at final size and in grayscale. Verify font embedding, links, bookmarks,
 IP starts, clipping and the cover-note position. Measure baseline pitches after
 font or spacing changes. Confirm technical text and generated data are unchanged
 for a style-only change, and verify byte-identical offline repeat builds.
+
+For figure-directory changes, verify one-to-one coverage against numbered body
+captions, with no duplicates or omitted entries. Check each displayed page and
+link destination against the body start page, including continued tables.
+Inspect both directories' first, intermediate and final pages, long captions,
+four-digit table numbers and the transition to System Architecture. Confirm
+that body caption numbers and text are unchanged, new titles do not appear in
+Contents, bookmarks and running headers are correct, and Contents links and
+footer page totals reflect the added pages.
 
 For an edit confined to this Markdown specification or its README link, verify
 the descriptions, relative links and commands and run `git diff --check`;

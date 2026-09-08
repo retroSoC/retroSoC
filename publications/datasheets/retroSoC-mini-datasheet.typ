@@ -6,6 +6,10 @@
 #pagebreak()
 #contents(depth:5)
 #pagebreak()
+#figure-directory(tables:true)
+#pagebreak()
+#figure-directory()
+#pagebreak()
 #include "sections/architecture.typ"
 #include "sections/peripherals.typ"
 #include "sections/pins.typ"
