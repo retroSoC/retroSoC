@@ -1006,6 +1006,18 @@
         "rtl/mini/top/extension_slot.sv",
         "rtl/mini/top/extension_subsystem.sv"
       ]
+    },
+    {
+      "id": "lp-startup-psram-wait",
+      "title": "Generic LP startup has no PSRAM-ready deadline",
+      "impact": "Execution can remain before main and before the application writes TEST_STATUS.",
+      "trigger": "The generic CRT requests PSRAM initialization and PSRAM_STATUS.READY never becomes set.",
+      "workaround": "Confirm the selected startup/linker path, memory-pad selection and external memory readiness; use an external observer deadline. A returned application code cannot describe a stage that was never reached.",
+      "applies_to": "Reviewed generic LP CRT; dedicated debug and XPI-loader startups have separate initialization contracts.",
+      "sources": [
+        "crt/arch/riscv/startup.S",
+        "rtl/mini/mk/software.mk"
+      ]
     }
   ],
   "programming": {
@@ -4893,5 +4905,529 @@
         "10": "Nonzero-sequence mailbox message did not carry the expected Linux-ready event/argument."
       }
     }
+  },
+  "software": {
+    "sources": [
+      "crt/arch/riscv/startup.S",
+      "crt/arch/riscv/system_irq.S",
+      "crt/src/core/system_irq_handler.c",
+      "crt/src/core/irq.c",
+      "crt/include/retrosoc/core/irq.h",
+      "crt/src/service/test.c",
+      "rtl/mini/mk/software.mk",
+      "crt/linker/ld2_psram.lds",
+      "crt/linker/ld2_all_sram.lds",
+      "crt/linker/ld2_sram.lds",
+      "crt/linker/jtag_sram.lds",
+      "app/apps/bringup/app.mk",
+      "app/apps/hp_boot/app.mk",
+      "app/apps/debug/app.mk",
+      "app/apps/xpi_flash_loader/app.mk",
+      "app/apps/debug/startup.S",
+      "app/apps/xpi_flash_loader/startup.S",
+      "app/apps/ci_smoke/app.mk",
+      "app/apps/bringup/main.c",
+      "app/apps/ci_smoke/main.c",
+      "scripts/regress.py",
+      "crt/src/hal/sdio.c",
+      "crt/src/hal/usb2.c",
+      "crt/src/hal/crypto.c",
+      "crt/src/core/archinfo.c",
+      "app/ports/linux/linux/retrosoc_hp.dts",
+      "app/ports/linux/linux/retrosoc_hp.config",
+      "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+      "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
+      "scripts/build_hp_linux.py",
+      "app/apps/hp_boot/main.c",
+      "app/apps/hp_boot/hp_boot_bundle.h",
+      "publications/datasheets/mini.json"
+    ],
+    "bindings": [
+      {
+        "id": "csr-selection",
+        "file": "rtl/mini/mk/software.mk",
+        "text": "ifeq ($(HAVE_CSR),YES)\nDEF_VAL += -DCSR_ENABLE\nendif"
+      },
+      {
+        "id": "irq-objects",
+        "file": "rtl/mini/mk/software.mk",
+        "text": "ifeq ($(HAVE_CSR),YES)\nCRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/system_irq.S\nCRT_SRCS += $(ROOT_PATH)/crt/src/core/system_irq_handler.c\nCRT_SRCS += $(ROOT_PATH)/crt/src/core/irq.c"
+      },
+      {
+        "id": "app-override",
+        "file": "rtl/mini/mk/software.mk",
+        "text": "ifneq ($(strip $(APP_CRT_SRCS)),)\nCRT_SRCS := $(APP_CRT_SRCS)\nendif"
+      },
+      {
+        "id": "trap-before-memory",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "_start:\n#ifdef CSR_ENABLE"
+      },
+      {
+        "id": "direct-trap-mode",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "la t0, system_trap_entry\ncsrw CSR_MTVEC, t0"
+      },
+      {
+        "id": "psram-wait",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "PSRAM_READY_WAIT:\nli t0, PSRAM_STATUS\nlw t1, 0(t0)\nandi t1, t1, PSRAM_READY\nbeqz t1, PSRAM_READY_WAIT"
+      },
+      {
+        "id": "psram-pin-mask",
+        "file": "crt/arch/riscv/startup.S",
+        "text": ".equ BIT_MASK, 0x3FE00000"
+      },
+      {
+        "id": "initial-stack",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "la x2, _stack_point"
+      },
+      {
+        "id": "code-copy",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "la a0, _ram_lma\nla a1, _ram_vma\nbeq a0, a1, data_loader_start"
+      },
+      {
+        "id": "data-copy",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "la a0, _psram_lma\nla a1, _psram_vma\nbeq a0, a1, bss_cleaner_start"
+      },
+      {
+        "id": "bss",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "bss_cleaner:\nsw zero, 0(a0)\naddi a0, a0, 4\nblt a0, a1, bss_cleaner"
+      },
+      {
+        "id": "premain",
+        "file": "crt/arch/riscv/startup.S",
+        "text": "main_start:\n# call main\n#ifdef CSR_ENABLE\ncall _premain_init # init irq\n#endif\ncall main\nloop:\nj loop"
+      },
+      {
+        "id": "debug-start",
+        "file": "app/apps/debug/startup.S",
+        "text": "_start:\nla sp, _stack_point\ncall main\n1:\nj 1b"
+      },
+      {
+        "id": "loader-start",
+        "file": "app/apps/xpi_flash_loader/startup.S",
+        "text": "la a0, _sbss\nla a1, _ebss"
+      },
+      {
+        "id": "loader-return",
+        "file": "app/apps/xpi_flash_loader/startup.S",
+        "text": "2:\ncall main\n3:\nebreak\nj 3b"
+      },
+      {
+        "id": "trap-save",
+        "file": "crt/arch/riscv/system_irq.S",
+        "text": "system_trap_entry:\nSAVE_CONTEXT\nSAVE_CSR_CONTEXT"
+      },
+      {
+        "id": "trap-call",
+        "file": "crt/arch/riscv/system_irq.S",
+        "text": "csrr a0, mcause\nmv a1, sp"
+      },
+      {
+        "id": "trap-return",
+        "file": "crt/arch/riscv/system_irq.S",
+        "text": "call system_trap_handler\nRESTORE_CSR_CONTEXT\nRESTORE_CONTEXT\nmret"
+      },
+      {
+        "id": "handler-init",
+        "file": "crt/src/core/system_irq_handler.c",
+        "text": "rs_irq_init_tables();\n__enable_all_counter();",
+        "function": "_premain_init"
+      },
+      {
+        "id": "exception-loop",
+        "file": "crt/src/core/system_irq_handler.c",
+        "text": "for (;;) { }",
+        "function": "rs_default_exception"
+      },
+      {
+        "id": "external-dispatch",
+        "file": "crt/src/core/system_irq_handler.c",
+        "text": "if (id == IRQ_M_EXT) { rs_default_interrupt(mcause, stack_pointer); }",
+        "function": "system_trap_handler"
+      },
+      {
+        "id": "enable-order",
+        "file": "crt/src/core/system_irq_handler.c",
+        "text": "const rs_status_t status = rs_irq_register_core(id, handler);",
+        "function": "rs_irq_enable_core"
+      },
+      {
+        "id": "global-enable-separate",
+        "file": "crt/src/core/irq.c",
+        "text": "__enable_irq();",
+        "function": "irq_test"
+      },
+      {
+        "id": "linux-single-hart",
+        "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "text": ".hart_count = 1U,"
+      },
+      {
+        "id": "aclint-index-range",
+        "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "text": ".first_hartid = 0U,\n.hart_count = 2U,"
+      },
+      {
+        "id": "sbi-console",
+        "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "text": "sbi_console_set_device(&s_console);",
+        "function": "retrosoc_hp_early_init"
+      },
+      {
+        "id": "sbi-serial-poll",
+        "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "text": "while ((retrosoc_hp_uart_read(RETROSOC_HP_UART_STATUS_REG) & RETROSOC_HP_UART_TX_FULL) != 0U) { }",
+        "function": "retrosoc_hp_console_putc"
+      },
+      {
+        "id": "sbi-timer",
+        "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "text": "return aclint_mtimer_cold_init(&s_mtimer, NULL);",
+        "function": "retrosoc_hp_timer_init"
+      },
+      {
+        "id": "sbi-mswi",
+        "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+        "text": "return aclint_mswi_cold_init(&s_mswi);",
+        "function": "retrosoc_hp_early_init"
+      },
+      {
+        "id": "kernel-sbi",
+        "file": "app/ports/linux/linux/retrosoc_hp.config",
+        "text": "CONFIG_SMP=n\nCONFIG_HVC_RISCV_SBI=y\nCONFIG_SERIAL_EARLYCON_RISCV_SBI=y"
+      },
+      {
+        "id": "kernel-ready-support",
+        "file": "app/ports/linux/linux/retrosoc_hp.config",
+        "text": "CONFIG_DEVMEM=y"
+      },
+      {
+        "id": "initrd-patch",
+        "file": "scripts/build_hp_linux.py",
+        "text": "initrd_end = LAYOUT[\"rootfs.cpio.gz\"][0] + rootfs_source.stat().st_size"
+      },
+      {
+        "id": "sbi-entry",
+        "file": "scripts/build_hp_linux.py",
+        "text": "\"FW_TEXT_START=0x38000000\",\n\"FW_JUMP=y\",\n\"FW_JUMP_ADDR=0x38400000\",\n\"FW_JUMP_FDT_ADDR=0x38080000\","
+      },
+      {
+        "id": "ready-log",
+        "file": "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
+        "text": "echo \"retroSoC HP Linux ready\""
+      },
+      {
+        "id": "smoke-selection",
+        "file": "scripts/regress.py",
+        "text": "CI_SMOKE_APP_VALUE = \"APP=ci_smoke\""
+      },
+      {
+        "id": "usb-test-irq",
+        "file": "crt/src/hal/usb2.c",
+        "text": "const uint32_t test_irq = RS_USB2_IRQ_FATAL;",
+        "function": "rs_usb2_controller_selftest"
+      },
+      {
+        "id": "usb-idle",
+        "file": "crt/src/hal/usb2.c",
+        "text": "if ((rs_usb2_read(RS_USB2_REG_GLOBAL_STATUS) & RS_USB2_GLOBAL_STATUS_BUSY) != 0U) { return RS_EIO; }",
+        "function": "rs_usb2_controller_selftest"
+      },
+      {
+        "id": "usb-preserve-old-irq",
+        "file": "crt/src/hal/usb2.c",
+        "text": "if ((irq_before & test_irq) == 0U) { rs_usb2_write(RS_USB2_REG_IRQ_STATUS, test_irq); }",
+        "function": "rs_usb2_controller_selftest"
+      },
+      {
+        "id": "sdio-caps",
+        "file": "crt/src/hal/sdio.c",
+        "text": "(capability & (RS_SDIO_CAP_PIO | RS_SDIO_CAP_CRC)) != (RS_SDIO_CAP_PIO | RS_SDIO_CAP_CRC)",
+        "function": "rs_sdio_controller_selftest"
+      },
+      {
+        "id": "sdio-test-irq",
+        "file": "crt/src/hal/sdio.c",
+        "text": "result = rs_sdio_irq_test(instance, RS_SDIO_IRQ_CMD_DONE);",
+        "function": "rs_sdio_controller_selftest"
+      },
+      {
+        "id": "crypto-aes",
+        "file": "crt/src/hal/crypto.c",
+        "text": "rs_crypto_aes_crypt(RS_CRYPTO_AES_ECB, false, NULL, Plaintext, output, sizeof(Plaintext), timeout)",
+        "function": "rs_crypto_selftest"
+      },
+      {
+        "id": "crypto-sha",
+        "file": "crt/src/hal/crypto.c",
+        "text": "rs_crypto_sha2(true, Message, sizeof(Message), output, timeout)",
+        "function": "rs_crypto_selftest"
+      },
+      {
+        "id": "crypto-zero",
+        "file": "crt/src/hal/crypto.c",
+        "text": "if (rs_crypto_zeroize() != RS_OK) { result = RS_EIO; }",
+        "function": "rs_crypto_selftest"
+      },
+      {
+        "id": "smoke-apu-discovery",
+        "file": "app/apps/ci_smoke/main.c",
+        "text": "(info.abi_digest == RS_APU_DIGEST_IMPLEMENTED)",
+        "function": "rs_ci_smoke_apu"
+      },
+      {
+        "id": "smoke-rng-boundary",
+        "file": "app/apps/ci_smoke/main.c",
+        "text": "return rs_rng_read_entropy(&entropy, RS_TIMEOUT_DEFAULT) == RS_ENOTSUP;",
+        "function": "rs_ci_smoke_rng_v2"
+      },
+      {
+        "id": "smoke-gpio-pin",
+        "file": "app/apps/ci_smoke/main.c",
+        "text": "rs_gpio_configure(31U, &config)",
+        "function": "rs_ci_smoke_gpio_v2"
+      },
+      {
+        "id": "smoke-sdram-span",
+        "file": "app/apps/ci_smoke/main.c",
+        "text": "#define RS_CI_SMOKE_SDRAM_SPAN UINT32_C(16)"
+      }
+    ],
+    "runtime_profiles": [
+      "configs/ci/ihp130.mk",
+      "configs/ci/ihp130-hp.mk",
+      "configs/ci/ihp130-debug.mk",
+      "configs/ci/ihp130-xpi-flash-loader.mk"
+    ],
+    "applications": [
+      {
+        "id": "bringup",
+        "title": "Bringup application",
+        "source": "app/apps/bringup/main.c",
+        "profiles": [
+          "configs/ci/ihp130.mk"
+        ],
+        "selection": "Default APP=bringup in the publication reference profile.",
+        "prerequisites": "Complete generic LP startup and memory initialization; provide the reviewed peripheral configuration and LP ownership. The routine changes interrupt-test and Crypto state.",
+        "stages": [
+          {
+            "id": "uart",
+            "title": "Initialize UART0",
+            "kind": "return",
+            "code": 1,
+            "trigger": "rs_uart_init(",
+            "coverage": "Initialize the LP diagnostic console.",
+            "boundary": "Failure returns from main without writing TEST_STATUS; generic CRT then loops."
+          },
+          {
+            "id": "sdio",
+            "title": "SDIO0 controller discovery / IRQ",
+            "kind": "test-fail",
+            "code": 1,
+            "trigger": "rs_sdio_controller_selftest(",
+            "coverage": "Probe controller, check PIO/CRC capability and presence; inject/read/clear CMD_DONE.",
+            "boundary": "Does not initialize an SD card or transfer card data."
+          },
+          {
+            "id": "usb",
+            "title": "USB2 controller discovery / IRQ",
+            "kind": "test-fail",
+            "code": 2,
+            "trigger": "rs_usb2_controller_selftest(",
+            "coverage": "Probe the controller, require idle and observe an injected fatal-status IRQ.",
+            "boundary": "Does not enumerate a device or exercise a ULPI packet transfer."
+          },
+          {
+            "id": "crypto",
+            "title": "Crypto known-answer self-test",
+            "kind": "test-fail",
+            "code": 3,
+            "trigger": "rs_crypto_selftest(",
+            "coverage": "AES-128 ECB encryption and SHA-256 known answers, followed by zeroization.",
+            "boundary": "Does not cover every AES mode, SHA variant, RSA or streaming/DMA combination."
+          },
+          {
+            "id": "complete",
+            "title": "Completed selected checks",
+            "kind": "test-pass",
+            "code": 0,
+            "trigger": "rs_test_finish(RS_TEST_FAILED,3U)",
+            "coverage": "All preceding terminal checks returned success.",
+            "boundary": "ARCHINFO diagnostic text has no separately propagated terminal result in this application."
+          }
+        ]
+      },
+      {
+        "id": "ci_smoke",
+        "title": "CI smoke application",
+        "source": "app/apps/ci_smoke/main.c",
+        "profiles": [
+          "configs/ci/ihp130.mk"
+        ],
+        "selection": "Selected by the regression runner with APP=ci_smoke on the selected supported profile; not the default reference application.",
+        "prerequisites": "Reserve the scratch SRAM/SDRAM regions and GPIO31, stop competing users and use the matching PRODUCT map. Source-present checks are not an instruction to run this destructive scratch test on a live workload.",
+        "stages": [
+          {
+            "id": "uart-init",
+            "title": "Initialize UART0",
+            "kind": "test-fail",
+            "code": 6,
+            "trigger": "rs_uart_init(",
+            "coverage": "Initialize the console.",
+            "boundary": "Failure can precede usable UART output."
+          },
+          {
+            "id": "uart-loopback",
+            "title": "UART v3 loopback",
+            "kind": "test-fail",
+            "code": 7,
+            "trigger": "rs_ci_smoke_uart_v3(",
+            "coverage": "Check version/capability; transmit and receive one internal-loopback byte; restore console configuration.",
+            "boundary": "No board TX/RX or hardware-flow-control qualification."
+          },
+          {
+            "id": "identity",
+            "title": "ARCHINFO and RTC probe",
+            "kind": "test-fail",
+            "code": 1,
+            "trigger": "rs_ci_smoke_archinfo_v2(",
+            "coverage": "Validate build identity, expected unsupported device-ID read and RTC probe.",
+            "boundary": "No unique silicon identity or RTC accuracy qualification."
+          },
+          {
+            "id": "apu",
+            "title": "APU discovery",
+            "kind": "test-fail",
+            "code": 14,
+            "trigger": "rs_ci_smoke_apu(",
+            "coverage": "Compare APU discovery capabilities and ABI digest.",
+            "boundary": "No production codec job is submitted."
+          },
+          {
+            "id": "monitor-start",
+            "title": "Start Fabric Monitor",
+            "kind": "test-fail",
+            "code": 13,
+            "trigger": "rs_ci_smoke_fabric_monitor_start(",
+            "coverage": "Clear and enable monitoring before memory traffic.",
+            "boundary": "Code 13 also identifies the later monitor-observation stage."
+          },
+          {
+            "id": "sram",
+            "title": "SRAM discovery and memory accesses",
+            "kind": "test-fail",
+            "code": 12,
+            "trigger": "rs_ci_smoke_onchip_sram(",
+            "coverage": "Check presence/size/banks; exercise byte/halfword/word lanes and boundary storage when present.",
+            "boundary": "Writes scratch memory; not an exhaustive memory or ECC test. Code 12 is also used by USB2."
+          },
+          {
+            "id": "monitor-check",
+            "title": "Inspect Fabric Monitor",
+            "kind": "test-fail",
+            "code": 13,
+            "trigger": "rs_ci_smoke_fabric_monitor_check(",
+            "coverage": "Snapshot LP/target traffic and require nonzero reads/writes without recorded fault or flush.",
+            "boundary": "No throughput, latency or long-run fault-coverage claim."
+          },
+          {
+            "id": "extensions",
+            "title": "PRODUCT extension control",
+            "kind": "test-fail",
+            "code": 11,
+            "trigger": "rs_ci_smoke_extensions(",
+            "coverage": "Probe EXT-L/H, reject MPW selection and EXT-L ACL configuration; exercise EXT-H ACL/lifecycle.",
+            "boundary": "Does not execute an EXT-H DMA workload."
+          },
+          {
+            "id": "rng",
+            "title": "RNG diagnostic source",
+            "kind": "test-fail",
+            "code": 8,
+            "trigger": "rs_ci_smoke_rng_v2(",
+            "coverage": "Read changing diagnostic words, check source state and expected entropy rejection.",
+            "boundary": "Does not qualify entropy or cryptographic randomness."
+          },
+          {
+            "id": "clint",
+            "title": "Management CLINT access",
+            "kind": "test-fail",
+            "code": 2,
+            "trigger": "rs_ci_smoke_clint_standard_map(",
+            "coverage": "Observe time progress; write/read compare and software-pending state; restore compare.",
+            "boundary": "Polling register behavior does not demonstrate trap-handler delivery."
+          },
+          {
+            "id": "timer0",
+            "title": "Timer0 one-shot",
+            "kind": "test-fail",
+            "code": 3,
+            "trigger": "rs_ci_smoke_timer_one_shot(",
+            "coverage": "Configure/start down-counting one-shot; poll stopped state and timeout/compare flags.",
+            "boundary": "No CPU ISR, waveform or pad timing measurement."
+          },
+          {
+            "id": "timer1",
+            "title": "Timer1 periodic",
+            "kind": "test-fail",
+            "code": 4,
+            "trigger": "rs_ci_smoke_timer_periodic(",
+            "coverage": "Configure up-counting periodic timer; poll timeout/compare flags and stop.",
+            "boundary": "No guaranteed interrupt latency or accuracy result."
+          },
+          {
+            "id": "gpio",
+            "title": "GPIO31 output controls",
+            "kind": "test-fail",
+            "code": 5,
+            "trigger": "rs_ci_smoke_gpio_v2(",
+            "coverage": "Check capabilities; configure, write, toggle and clear output 31.",
+            "boundary": "Changes a GPIO output; no independent external voltage/readback measurement."
+          },
+          {
+            "id": "sdram",
+            "title": "SDRAM scratch access",
+            "kind": "test-fail",
+            "code": 9,
+            "trigger": "rs_ci_smoke_sdram_access(",
+            "coverage": "Wait for ready; byte/halfword/word write and readback in the last 16 mapped bytes.",
+            "boundary": "Destructive scratch test; not an exhaustive device/timing test."
+          },
+          {
+            "id": "crypto",
+            "title": "Crypto known-answer self-test",
+            "kind": "test-fail",
+            "code": 10,
+            "trigger": "rs_crypto_selftest(",
+            "coverage": "Run the same AES/SHA/zeroization routine as bringup.",
+            "boundary": "Does not extend that routine to other algorithms or DMA paths."
+          },
+          {
+            "id": "usb",
+            "title": "USB2 controller self-test",
+            "kind": "test-fail",
+            "code": 12,
+            "trigger": "rs_usb2_controller_selftest(",
+            "coverage": "Run the same discovery/idle/IRQ test as bringup.",
+            "boundary": "Code 12 also identifies SRAM failures; retain stage logs."
+          },
+          {
+            "id": "complete",
+            "title": "Completed selected checks",
+            "kind": "test-pass",
+            "code": 0,
+            "trigger": "printf(\"ci_smoke:allperipheraltestspassed\\n\")",
+            "coverage": "All preceding selected checks passed.",
+            "boundary": "The printed summary covers this sequence, not every SoC peripheral or operating mode."
+          }
+        ]
+      }
+    ]
   }
 }

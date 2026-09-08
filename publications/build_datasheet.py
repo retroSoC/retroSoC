@@ -31,6 +31,7 @@ from publications.waveform_reference import collect_waveforms, source_paths as w
 from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
 from publications.retrieval_reference import collect_retrieval  # noqa: E402
 from publications.report_changes import page_ranges  # noqa: E402
+from publications.structure_reference import validate_structure  # noqa: E402
 
 CONFIG = ROOT / "publications/datasheets/mini.json"
 CACHE = ROOT / ".cache/retrosoc/publications"
@@ -381,6 +382,8 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         executable,
         "eval",
         '(items:query(metadata).map(it=>it.value), '
+        'headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,'
+        'label:repr(h.at("label",default:none)),page:h.location().page())), '
         'regions:query(<table-continuation-region>).map(region=>{'
         'let pos=region.location().position(); '
         '(kind:"table-continuation",page:pos.page,x:pos.x.pt(),y:pos.y.pt(),'
@@ -395,6 +398,9 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     if queried.returncode or "warning:" in queried.stderr:
         raise ValueError("Typst page-map query failed:\n" + queried.stderr)
     layout_report = json.loads(queried.stdout)
+    validate_structure(read_json(ROOT / "publications/datasheets/structure-contract.json"),
+                       layout_report["headings"], read_json(ROOT / "publications/datasheets/chapter-index.json"))
+    write_json(out / "document-structure.json", layout_report["headings"])
     layout_items = layout_report["items"]
     page_map = [
         item
@@ -419,6 +425,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "pdf_sha256": sha256(pdf),
         "layout_regions_sha256": sha256(out / "layout-regions.json"),
         "change_markers_sha256": sha256(out / "change-markers.json"),
+        "document_structure_sha256": sha256(out / "document-structure.json"),
     }
     write_json(out / "manifest.json", manifest)
     atomic_write(CACHE / "latest", str(out) + "\n")
@@ -538,6 +545,11 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     if not marker_path.is_file() or manifest.get("change_markers_sha256") != sha256(marker_path):
         raise ValueError("PDF change markers missing or changed; rebuild before checking")
     page_ranges(read_json(marker_path), len(reader.pages))
+    structure_path = pdf.parent / "document-structure.json"
+    if not structure_path.is_file() or manifest.get("document_structure_sha256") != sha256(structure_path):
+        raise ValueError("PDF structure record missing or changed; rebuild before checking")
+    validate_structure(read_json(ROOT / "publications/datasheets/structure-contract.json"),
+                       read_json(structure_path), read_json(ROOT / "publications/datasheets/chapter-index.json"))
     if reader.metadata.title != config["title"] or not reader.metadata.author:
         raise ValueError("PDF title or author metadata missing or inconsistent")
     if not reader.outline:

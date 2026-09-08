@@ -146,7 +146,12 @@ HP has local software/timer interrupts and a 32-source, two-context PLIC. Source
 reserved; sources 1-10 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG and APU.
 Sources 11-31 are reserved. The contexts drive machine and supervisor external interrupts.
 Claim/complete and priority rules are defined in the HP platform contract.
-#source-note("docs/ip/hp-platform.md", title:"HP PLIC, local interrupts and mailbox")
+#change-start("irq-runtime-link", "Interrupt system: software IRQ support link", category:"cross-reference")
+#block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
+  #set text(size:9pt)
+  #source("docs/ip/hp-platform.md",title:"HP PLIC, local interrupts and mailbox") · LP software: @irq-runtime
+]
+#change-end("irq-runtime-link")
 
 #include "system-management.typ"
 #include "register-programming.typ"

@@ -105,11 +105,15 @@ qualification. Reserved, unsupported and TBD are different states; use the speci
 rather than assuming that an absent value is zero or that an address window guarantees a device.
 
 == Document and Evidence Navigation
+#change-start("software-navigation", "Document map: software and diagnostic navigation")
 #ds-table("document-navigation",[Where to find an authoritative answer],
   ([Question],[Primary reference],[How to use this datasheet]),
   (([Addresses, routes and pins],[Canonical memory/topology/pin inputs and generated bindings.],[Use the generated tables and cross-IP route/conflict summaries.]),
    ([Register behavior],[Current RTL, handwritten C definitions and reviewed IP contract.],[Use Register Programming plus the individual register exceptions.]),
    ([Driver sequence],[SDK implementation, platform source and the IP's software contract.],[Follow the supported path and its error/ownership boundaries.]),
+   ([LP startup / traps],[Selected CRT, linker and conditional IRQ implementation.],[Use Runtime, SDK and Shell; separate pre-main stalls from application results.]),
+   ([Linux readiness],[OpenSBI, generated DTB and rootfs mailbox publisher.],[Follow the platform handoff and distinguish console, ready event and terminal verdict.]),
+   ([Diagnostic coverage],[Selected application's actual checks and result branches.],[Use Applications and Firmware Application Results; retain stage logs for repeated codes.]),
    ([Board connection],[Approved board constraints/schematic and selected device/pad specifications.],[Use connection/compatibility tables to identify prerequisites and missing evidence.]),
    ([Validation or performance],[Matching source/profile report, tool versions, device/model and conditions.],[Use the support and characterization sections without promoting source presence to a pass.]),
    ([Publication identity],[This PDF's manifest and matching publication source set.],[Use Sources and Reproducibility for publication-only metadata links.])),
@@ -121,3 +125,4 @@ an old narrative conflicts with current executable integration, use the current 
 and record the discrepancy rather than silently copying the older statement.
 #source-note("publications/datasheets/system-reference.json",title:"Publication content and evidence index")
 #source-note("docs/README.md",title:"Engineering document map")
+#change-end("software-navigation")

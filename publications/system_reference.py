@@ -8,6 +8,7 @@ from pathlib import Path
 from publications.programming_reference import collect_programming, dependencies
 from publications.implementation_reference import collect_details, dependencies as detail_dependencies
 from publications.retrieval_reference import dependencies as retrieval_dependencies
+from publications.software_reference import collect_software, dependencies as software_dependencies
 
 REFERENCE = "publications/datasheets/system-reference.json"
 
@@ -17,6 +18,7 @@ def source_paths(reference: dict) -> set[str]:
     paths.update(dependencies(reference.get("programming", {})))
     paths.update(detail_dependencies(reference.get("product_details", {})))
     paths.update(retrieval_dependencies(reference.get("retrieval", {})))
+    paths.update(software_dependencies(reference.get("software", {})))
     for row in [*reference["support"], *reference["limitations"]]:
         paths.update(row["sources"])
         paths.update(row.get("tests", []))
@@ -86,4 +88,5 @@ def collect_system_reference(root: Path, revision: str) -> dict:
     reference["boot_layout"] = layout
     reference["programming"] = collect_programming(root, reference["programming"], {row["id"] for row in index}, revision)
     reference["product_details"] = collect_details(root, reference["product_details"], {row["id"] for row in index}, {row["id"] for row in reference["limitations"]})
+    reference["software"] = collect_software(root, reference["software"])
     return reference

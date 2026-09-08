@@ -94,6 +94,8 @@ waits. Drivers must observe ownership, clock transitions, cache maintenance and 
 error returns. A HAL interface does not imply a Linux kernel driver for the same IP.
 #source-note("crt/README.md", title:"Freestanding runtime and SDK layout")
 
+#include "software-runtime.typ"
+
 == Applications
 #ds-table("apps", [Application roles],
   ([Application], [Role / boundary]),
@@ -110,12 +112,16 @@ possible combination of compiler variables. Simulation passes require successful
 completion, the configured success marker and no failure/timeout markers.
 #source-note("app/README.md", title:"Application composition and current profiles")
 
+#include "application-diagnostics.typ"
+
 == Linux and Driver Status
 The repository provides the asymmetric Linux integration path with OpenSBI and Buildroot
 inputs. Linux boot, native driver coverage, performance, cache-maintenance correctness and
 physical implementation remain distinct qualification topics. The source-level matrix in
 @software-support describes the currently indexed interfaces and missing evidence. It does
 not assert complete Linux peripheral qualification or sustained application performance.
+
+#include "linux-runtime.typ"
 
 == Software Support and Validated Configurations <software-support>
 This matrix records the software interfaces indexed for the reviewed hardware snapshot.
@@ -203,11 +209,9 @@ minimal-system schematic, an ASIC package-pin assignment or a characterization r
 No approved schematic, physical package mapping or matching measurement result was supplied
 for this publication update; the corresponding existing specification fields remain unfilled.
 
-#change-start("pcb-release-record", "PCB hardware: design-asset and acceptance record")
 A reference-board release needs a versioned schematic and BOM, connector/net mapping,
 power/decoupling network, external-memory and PHY selection, clock/impedance constraints
 and bringup record. Publish the design-file revision with each drawing or download entry,
 and identify which routes were actually tested. The current XDC provides constraints for its
 named FPGA board; the missing circuit and acceptance records remain listed in @release-verification.
-#change-end("pcb-release-record")
 #source-note("fpga/mini/starrysky_v2.xdc",title:"Existing board-specific FPGA constraint input")

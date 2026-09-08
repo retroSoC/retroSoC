@@ -224,6 +224,50 @@ Physical release records bind package mapping, circuit/BOM/design assets,
 parameter conditions, measurement inputs, qualification and ordering identity to
 their actual device and report revisions. Missing physical data remain unprovided.
 
+## Software runtime, diagnostics and frozen structure
+
+Runtime, SDK and Shell owns ordinary LP startup, selected linker/CRT behavior and
+conditional exception/IRQ support. Distinguish hardware CSRs from HAVE_CSR and
+CSR_ENABLE, handler registration from enable/acknowledgement, and generic CRT
+initialization from an APP_CRT_SRCS replacement. A linker selection alone does
+not remove the generic PSRAM-ready wait. Source loops without a local deadline
+must remain identified; no new timeout or automatic TEST_STATUS result is implied.
+
+Linux and Driver Status owns the supplied OpenSBI/DT/kernel/rootfs handoff.
+Separate software template declarations from the generated core and actual clock
+configuration. Explain the built DTB's patched initrd boundary and the rootfs
+ready publisher's ordering. Console text, a mailbox event and a hardware terminal
+result remain separate observations; no native driver or complete boot pass is
+inferred from a node, callback or source file.
+
+Applications owns the ordered bringup/CI smoke coverage descriptions. Firmware
+Application Results owns their stage-scoped return/TEST_STATUS meanings and the
+existing HP boot results. Preserve duplicate code values as distinct application
+stages, include early C returns, and state destructive scratch/pin/state effects.
+Controller test-IRQ injection is not CPU ISR delivery or external device traffic.
+Describe known-answer tests by their actual modes and vectors, not as complete
+algorithm or physical qualification.
+
+`system-reference.json.software` contains reviewed source bindings and semantic
+records. `software_reference.py` extracts committed startup choices, platform
+properties, IRQ bounds and actual result-producing branches. Include all source
+dependencies in the publication manifest. Flow figures describe source ordering
+with existing vector primitives and fonts; they do not specify cycle timing.
+
+The post-expansion `structure-contract.json` freezes the outlined level-one and
+level-two chapter titles, levels, order and existing anchors, plus every actual
+IP entry even when it is deeper in the hierarchy. Chapter/appendix order and
+stable destinations must not drift. Level-three and deeper explanatory sections
+outside the IP-entry set, body text, tables, figures, numbering and pagination
+remain editable. This is a document organization baseline, not RTL freeze or a
+change from v0.4 DRAFT.
+
+Build and PDF check compare the resolved headings with the frozen contract.
+The renderer exports `document-structure.json`, which is hashed in the manifest.
+Normal builds never rewrite the contract. A later explicitly requested structure
+change must review and update the contract with the corresponding document edit;
+do not automatically accept a mismatch or introduce a hardware/CI policy gate.
+
 ## Modification page-range delivery
 
 For a content edit, retain the immediately preceding delivered PDF as the baseline.

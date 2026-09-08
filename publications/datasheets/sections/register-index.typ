@@ -2,7 +2,6 @@
 #import "../ip-reference.typ": inline
 
 = Appendix: Global Register and Address Index <global-register-index>
-#change-start("register-index", "Global Register and Address Index", category:"added")
 The index covers #data.system_reference.retrieval.register_index.definitions published
 register definitions through #data.system_reference.retrieval.register_index.rows instance
 rows. Repeated banks retain their address formula; together the rows describe
@@ -63,4 +62,3 @@ individual chapters. Mapping, exclusions and instance qualifications are reviewe
 the canonical topology and the selected register decoder.
 #source-note("publications/datasheets/register-profiles.json",title:"Shared register families and repeated-bank geometry")
 #source-note("publications/datasheets/system-reference.json",title:"Register-window mapping and reviewed instance qualifications")
-#change-end("register-index")

@@ -99,10 +99,8 @@ Bringup should establish a reliable LP console and management debug path before 
 HP applications or external memory. A successful debugger connection validates only the tested
 transport and target configuration, not the remaining peripheral or physical implementation.
 
-#change-start("diagnostic-lookup-link", "Diagnostics: code-reference link", category:"cross-reference")
 Use @fault-code-reference to decode a captured status in its producing module's namespace.
 Retain the first event before following the acknowledgement and recovery order below.
-#change-end("diagnostic-lookup-link")
 
 === Debug connection and scope
 The management JTAG transport uses TCK, TMS, TDI, TRST_n and TDO. Connect them using an approved

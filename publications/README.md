@@ -21,6 +21,29 @@ register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
 
+### Software execution and structure baseline
+
+The same draft now details generic LP startup/linker initialization, conditional
+exception/IRQ support, OpenSBI/device-tree/kernel/rootfs handoff, and the ordered
+bringup/CI smoke diagnostics. Application result tables retain stage identity
+when numeric codes repeat and distinguish a C return from a TEST_STATUS write.
+Source-level controller self-tests and known-answer checks are described by
+their actual coverage; they are not new hardware pass reports.
+
+`datasheets/system-reference.json.software` holds the reviewed semantic records
+and source bindings. `software_reference.py` derives startup choices, software
+IRQ bounds, platform properties, mailbox publication order and terminal branches.
+The manifest includes their runtime, application, configuration and tool sources.
+
+The [structure contract](datasheets/structure-contract.json) freezes the final
+outlined level-one/two headings and all IP entries, including deeper IP titles,
+their levels, order and stable anchors. Build/check validate the resolved heading
+record; `document-structure.json` is hashed in the manifest. Deeper explanatory
+subsections, content, figures and pagination can change without altering the
+contract. Normal builds never regenerate it. A later explicit structure-change
+task must review the revised contract alongside the document. This publication
+baseline does not change DRAFT status or the repository's RTL maturity policy.
+
 ### System-use reference
 
 The same reviewed snapshot also includes configuration/feature availability,
@@ -196,6 +219,8 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
   widths and behavior-review qualifications for every waveform.
 - `change-markers.json`: paired layout positions for the current edit's substantive
   content, explicit cross-references and navigation changes; hashed in the manifest.
+- `document-structure.json`: resolved headings checked against the frozen chapter/IP
+  contract and protected by a manifest digest.
 - `changed-pages.json`: final page-range report, generated after PDF checking with
   the command below; binds the previous delivered PDF and final PDF digests.
 

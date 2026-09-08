@@ -2,7 +2,6 @@
 #import "../ip-reference.typ": inline
 
 = Appendix: Fault and Status Code Reference <fault-code-reference>
-#change-start("fault-reference", "Fault and Status Code Reference", category:"added")
 This appendix is a lookup aid for the reviewed implementation. Begin with the producing
 module and the validity/ownership state, then decode its value. An equal number in two tables
 does not imply an equal fault. Numeric enums select one value; bitmasks can contain several
@@ -54,7 +53,13 @@ field's width does not define its own codebook.
   [Read/write details and recovery: #link(label(group.link))[#group.link].]
 }
 
-== HP Boot Application Results
+== Firmware Application Results <firmware-application-results>
+#change-start("firmware-application-results", "Firmware application results: HP boot, bringup and CI smoke")
+These tables distinguish application-specific TEST_STATUS values from C return values and
+intermediate console messages. The same integer can denote different stages, including within
+one application. Preserve application identity, execution order and preceding log markers.
+
+=== HP Boot Application Results
 These result codes belong to the supplied HP boot application. TEST_STATUS's result byte is
 application-defined; other firmware can assign different meanings. Code 1 can be written
 before a reliable console exists. A missing ready event does not generate a new firmware
@@ -70,6 +75,28 @@ failure is reported only after both the DMA attempt and software copy/CRC fallba
 After copying, HP release and Linux readiness are distinct checkpoints. See @boot-configuration
 for prerequisites and @image-maintenance for separate programming-tool result semantics.
 #source-note("app/apps/hp_boot/main.c",title:"Actual boot failure branches and ready-event handling")
+
+#for app in data.system_reference.software.applications {
+  heading(level:3,app.title)
+  par(app.selection)
+  ds-table("application-results-"+app.id,[#app.title: stage-scoped results],
+    ([Stage],[Observation],[Meaning / distinction]),
+    app.stages.map(s=>(s.title,s.result,s.boundary)),widths:(1.15fr,1.05fr,2.25fr))
+  source-note(app.source,title:"Result-producing branches in this application")
+}
+
+Bringup's early UART failure returns 1 from main without calling the terminal writer; the
+generic CRT spins after the return. Later bringup failures and all CI smoke terminal paths
+call rs_test_finish, which writes TEST_STATUS and loops. The final C return zero following
+that call is not an independently reached success path. A stall before main produces no
+application result; see @lp-runtime.
+
+CI smoke code 12 is shared by SRAM and USB2 failure branches; code 13 is shared by the monitor
+setup and observation branches. The code alone cannot identify the exact stage. Inspect
+preceding stage logs together with the selected source revision. Detailed check operations
+and coverage limits are listed in @application-diagnostics.
+#source-note("crt/src/service/test.c",title:"Terminal status writer and non-returning loop")
+#change-end("firmware-application-results")
 
 == Automated Completion and Simulator Verdicts
 #ds-table("terminal-status-format",[SYSCTRL TEST_STATUS result format],
@@ -95,4 +122,3 @@ different measurements. This appendix supplies no new successful hardware run.
 #source-note("rtl/mini/dv/tb/retrosoc_tb.sv",title:"Icarus testbench completion")
 #source-note("rtl/mini/dv/verilator/csrc/Emulator.cpp",title:"Verilator completion")
 #source-note("docs/engineering.md",title:"Regression verdict and evidence rules")
-#change-end("fault-reference")

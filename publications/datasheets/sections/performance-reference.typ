@@ -7,13 +7,11 @@ index contains no matching reviewed performance report, so numerical product res
 unfilled. Configuration frequencies, analytic ceilings and historical projections are not
 substituted for measurements.
 
-#change-start("performance-release-record", "Performance/power: reproducible result record")
 A published result or curve must retain its raw report, workload/transfer size, achieved
 clock, memory placement and concurrent traffic, together with sample count and measurement
 boundaries. Use a distinct series for each configuration and show failed or incomplete runs
 in the supporting report. The evidence summary is @release-verification; the currently empty
 result fields below remain unmeasured.
-#change-end("performance-release-record")
 
 === Measurement record and acceptance
 Record the exact source/profile, generated core and cache configuration, firmware/compiler
@@ -81,10 +79,10 @@ review of both the limitation and the proposed workaround; a document version al
 establish compatibility.
 
 == Implementation and Qualification Limitations
-#for item in data.system_reference.limitations {
+#let limitation-body(item) = {
   heading(level:3,item.title)
-  if item.id=="ext-l-rejected-base-write" {
-    change-start("ext-l-write-limitation", "Known limitations: rejected EXT-L base writes", category:"added")
+  if item.id=="lp-startup-psram-wait" {
+    change-start("lp-startup-limitation", "Known limitations: generic LP PSRAM-ready wait", category:"added")
   }
   ds-table("limitation-"+item.id,[#item.title - impact and integration response],
     ([Field],[Description]),
@@ -94,7 +92,17 @@ establish compatibility.
     source(path,title:if i==0 {"Implementation / contract"} else {"Additional source"})
     if i < item.sources.len()-1 {[ · ]}
   }
-  if item.id=="ext-l-rejected-base-write" {change-end("ext-l-write-limitation")}
+  if item.id=="lp-startup-psram-wait" {
+    block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
+      #text(size:9pt)[Startup: @lp-runtime · Application results: @firmware-application-results.]
+    ]
+    change-end("lp-startup-limitation")
+  }
+}
+#for item in data.system_reference.limitations {
+  if item.id=="lp-startup-psram-wait" {
+    block(breakable:false)[#limitation-body(item)]
+  } else {limitation-body(item)}
 }
 
 == Revision Identification and Compatibility

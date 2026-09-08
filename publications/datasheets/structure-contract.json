@@ -1,0 +1,585 @@
+{
+  "schema_version": 1,
+  "state": "frozen",
+  "scope": "Outlined level 1/2 headings and all IP entries; prose, deeper subsections and pagination remain editable.",
+  "document_version": "0.4 DRAFT",
+  "ip_ids": [
+    "xpi",
+    "spisd",
+    "sdio0",
+    "sram",
+    "psram",
+    "opipsram",
+    "sdram",
+    "gpio",
+    "dma",
+    "timer",
+    "rtc",
+    "wdg",
+    "pwm",
+    "uart0",
+    "uart1",
+    "i2c",
+    "ws2812",
+    "ps2",
+    "sdio1",
+    "usb2",
+    "archinfo",
+    "sysctrl",
+    "rcu",
+    "clint",
+    "hp-aclint",
+    "hp-plic",
+    "hp-mailbox",
+    "resource",
+    "monitor",
+    "i2s",
+    "dvp",
+    "jpeg",
+    "apu",
+    "crypto",
+    "crc",
+    "rng",
+    "ext-l",
+    "ext-h",
+    "mpw-timer",
+    "mpw-gpio"
+  ],
+  "entries": [
+    {
+      "level": 1,
+      "title": "Product Brief",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Features",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Overview",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Product Configuration and Feature Availability",
+      "anchor": "product-configuration"
+    },
+    {
+      "level": 2,
+      "title": "Typical Applications and System Configurations",
+      "anchor": "typical-applications"
+    },
+    {
+      "level": 2,
+      "title": "Reading this datasheet",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "System Architecture",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Introduction",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Interconnect",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Memory Attributes, Cache and DMA Coherency",
+      "anchor": "memory-coherency"
+    },
+    {
+      "level": 2,
+      "title": "Clock and Reset",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Interrupt System",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "DMA Request, Interrupt and Event Routing",
+      "anchor": "dma-routing"
+    },
+    {
+      "level": 2,
+      "title": "Multicore Operation and Resource Ownership",
+      "anchor": "multicore-operation"
+    },
+    {
+      "level": 2,
+      "title": "Peripheral Coexistence and Resource Conflicts",
+      "anchor": "resource-conflicts"
+    },
+    {
+      "level": 2,
+      "title": "Security and Access-Control Boundaries",
+      "anchor": "security-boundaries"
+    },
+    {
+      "level": 2,
+      "title": "Debug, Diagnostics and Fault Recovery",
+      "anchor": "system-diagnostics"
+    },
+    {
+      "level": 2,
+      "title": "Register Access and Programming Conventions",
+      "anchor": "register-programming"
+    },
+    {
+      "level": 2,
+      "title": "Interface Standards and Supported Subsets",
+      "anchor": "interface-subsets"
+    },
+    {
+      "level": 2,
+      "title": "Peripherals",
+      "anchor": null
+    },
+    {
+      "level": 5,
+      "title": "XPI Universal Controller (XPI)",
+      "anchor": "xpi"
+    },
+    {
+      "level": 5,
+      "title": "SPI SD Card Controller (SPISD)",
+      "anchor": "spisd"
+    },
+    {
+      "level": 5,
+      "title": "SD Card Controller (SDIO0)",
+      "anchor": "sdio0"
+    },
+    {
+      "level": 5,
+      "title": "On-Chip Memory (OCM / SRAM)",
+      "anchor": "sram"
+    },
+    {
+      "level": 5,
+      "title": "PSRAM Controller (PSRAM)",
+      "anchor": "psram"
+    },
+    {
+      "level": 5,
+      "title": "OPI PSRAM / HyperBus-Style Controller",
+      "anchor": "opipsram"
+    },
+    {
+      "level": 5,
+      "title": "SDRAM Controller (SDRAM)",
+      "anchor": "sdram"
+    },
+    {
+      "level": 3,
+      "title": "General-Purpose Input Output (GPIO)",
+      "anchor": "gpio"
+    },
+    {
+      "level": 3,
+      "title": "Direct Memory Access (DMA)",
+      "anchor": "dma"
+    },
+    {
+      "level": 4,
+      "title": "General-Purpose Timer (TIM0, TIM1)",
+      "anchor": "timer"
+    },
+    {
+      "level": 4,
+      "title": "Real-Time Clock (RTC)",
+      "anchor": "rtc"
+    },
+    {
+      "level": 4,
+      "title": "Watchdog (WDG)",
+      "anchor": "wdg"
+    },
+    {
+      "level": 4,
+      "title": "Pulse Width Modulation (PWM)",
+      "anchor": "pwm"
+    },
+    {
+      "level": 5,
+      "title": "Management Console (UART0)",
+      "anchor": "uart0"
+    },
+    {
+      "level": 5,
+      "title": "Application Console (UART1)",
+      "anchor": "uart1"
+    },
+    {
+      "level": 4,
+      "title": "Inter-Integrated Circuit (I2C)",
+      "anchor": "i2c"
+    },
+    {
+      "level": 4,
+      "title": "WS2812 LED Interface",
+      "anchor": "ws2812"
+    },
+    {
+      "level": 4,
+      "title": "Personal System/2 (PS2)",
+      "anchor": "ps2"
+    },
+    {
+      "level": 4,
+      "title": "SDIO Controller (SDIO1)",
+      "anchor": "sdio1"
+    },
+    {
+      "level": 4,
+      "title": "USB 2.0 Dual-Role Controller",
+      "anchor": "usb2"
+    },
+    {
+      "level": 4,
+      "title": "Architecture Information (ARCHINFO)",
+      "anchor": "archinfo"
+    },
+    {
+      "level": 4,
+      "title": "System Controller (SYSCTRL)",
+      "anchor": "sysctrl"
+    },
+    {
+      "level": 4,
+      "title": "Reset Clock Unit (RCU)",
+      "anchor": "rcu"
+    },
+    {
+      "level": 4,
+      "title": "Management Local Interrupts (CLINT)",
+      "anchor": "clint"
+    },
+    {
+      "level": 5,
+      "title": "HP Local Interrupt Controller (ACLINT)",
+      "anchor": "hp-aclint"
+    },
+    {
+      "level": 5,
+      "title": "HP Platform-Level Interrupt Controller (PLIC)",
+      "anchor": "hp-plic"
+    },
+    {
+      "level": 5,
+      "title": "LP/HP Mailbox",
+      "anchor": "hp-mailbox"
+    },
+    {
+      "level": 4,
+      "title": "Resource Controller",
+      "anchor": "resource"
+    },
+    {
+      "level": 4,
+      "title": "Fabric Monitor",
+      "anchor": "monitor"
+    },
+    {
+      "level": 4,
+      "title": "Inter-Integrated Circuit Sound (I2S)",
+      "anchor": "i2s"
+    },
+    {
+      "level": 4,
+      "title": "Digital Video Port (DVP)",
+      "anchor": "dvp"
+    },
+    {
+      "level": 4,
+      "title": "JPEG Encoder / Decoder",
+      "anchor": "jpeg"
+    },
+    {
+      "level": 4,
+      "title": "Audio Processing Unit (APU, partial)",
+      "anchor": "apu"
+    },
+    {
+      "level": 4,
+      "title": "Crypto Controller",
+      "anchor": "crypto"
+    },
+    {
+      "level": 4,
+      "title": "Cyclic Redundancy Check (CRC)",
+      "anchor": "crc"
+    },
+    {
+      "level": 4,
+      "title": "Random Number Generator (RNG)",
+      "anchor": "rng"
+    },
+    {
+      "level": 4,
+      "title": "Low-Bandwidth Extension (EXT-L)",
+      "anchor": "ext-l"
+    },
+    {
+      "level": 4,
+      "title": "High-Bandwidth Extension (EXT-H)",
+      "anchor": "ext-h"
+    },
+    {
+      "level": 2,
+      "title": "Packaging",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Electrical and Timing Specifications",
+      "anchor": "electrical-specifications"
+    },
+    {
+      "level": 1,
+      "title": "Software",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Boot Configuration, Initialization and Recovery",
+      "anchor": "boot-configuration"
+    },
+    {
+      "level": 2,
+      "title": "Programming, Image Maintenance and Service Procedures",
+      "anchor": "image-maintenance"
+    },
+    {
+      "level": 2,
+      "title": "Runtime, SDK and Shell",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Applications",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Linux and Driver Status",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Software Support and Validated Configurations",
+      "anchor": "software-support"
+    },
+    {
+      "level": 1,
+      "title": "Implementation",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "SoC Integration",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "RTL Simulation",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "FPGA Verification",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Physical Design",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "PCB Hardware",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Appendix: MPW Compatibility",
+      "anchor": "mpw"
+    },
+    {
+      "level": 2,
+      "title": "SoC Template",
+      "anchor": null
+    },
+    {
+      "level": 4,
+      "title": "MPW User Timer",
+      "anchor": "mpw-timer"
+    },
+    {
+      "level": 4,
+      "title": "MPW User GPIO",
+      "anchor": "mpw-gpio"
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Product Direction",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Product Series",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Roadmap",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Technical Report",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Release Verification Summary",
+      "anchor": "release-verification"
+    },
+    {
+      "level": 2,
+      "title": "Shuttle and Qualification Evidence",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Performance and Power Characterization",
+      "anchor": "performance-characterization"
+    },
+    {
+      "level": 1,
+      "title": "Known Limitations and Revision Compatibility",
+      "anchor": "known-limitations"
+    },
+    {
+      "level": 2,
+      "title": "Implementation and Qualification Limitations",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Revision Identification and Compatibility",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Software Memory and Buffer Requirements",
+      "anchor": "software-memory-budget"
+    },
+    {
+      "level": 2,
+      "title": "Linker Layout and Runtime Accounting",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Worked Buffer Budgets",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Terminology, Notation and Document Map",
+      "anchor": "document-map"
+    },
+    {
+      "level": 2,
+      "title": "Terminology and Units",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Reading Numbers and Status",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Document and Evidence Navigation",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Global Register and Address Index",
+      "anchor": "global-register-index"
+    },
+    {
+      "level": 2,
+      "title": "PRODUCT Register Instances",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "MPW Conditional Register Instances",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Fault and Status Code Reference",
+      "anchor": "fault-code-reference"
+    },
+    {
+      "level": 2,
+      "title": "Diagnostic Code Namespaces",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Status Registers and Capture Points",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Firmware Application Results",
+      "anchor": "firmware-application-results"
+    },
+    {
+      "level": 2,
+      "title": "Automated Completion and Simulator Verdicts",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Document Control",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Revision History",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Sources and Reproducibility",
+      "anchor": "publication-provenance"
+    },
+    {
+      "level": 2,
+      "title": "License",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Document Status and Contact",
+      "anchor": null
+    }
+  ]
+}

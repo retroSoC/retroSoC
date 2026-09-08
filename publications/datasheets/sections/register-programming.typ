@@ -5,10 +5,8 @@ The following conventions explain how to read the IP register chapters. They do 
 an individual register's access width, strobe, reset or side-effect contract. Use the current
 IP version and capability before interpreting a familiar offset from another device or revision.
 
-#change-start("register-lookup-link", "Register conventions: global lookup link", category:"cross-reference")
 For an address-first lookup, use @global-register-index. Its instance-qualified formulas
 lead back to the same register definitions used in this chapter's access conventions.
-#change-end("register-lookup-link")
 
 === Access attributes and side effects
 #ds-table("register-access-conventions",[Register access attributes and safe software interpretation],
