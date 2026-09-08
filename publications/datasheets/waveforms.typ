@@ -39,7 +39,7 @@
   svg = svg.replace(regex("font-family=\"[^\"]+\""), "font-family=\"Inter\"")
   svg = svg.replace(regex("(?i)#(?:0041c4|0000ff|00f)\\b"), "#292C31")
   svg = svg.replace("fill:blue", "fill:#292C31")
-  svg.replace("</style>", ".info{font-weight:400;font-style:normal}.s8{fill:#F4EFE4}.s9{fill:#E7EFF6}.s10{fill:#E8F1EA}.s11{fill:#EEEAF5}</style>")
+  svg.replace("</style>", "text{font-weight:400}.info{font-weight:400;font-style:normal}.s8{fill:#F4EFE4}.s9{fill:#E7EFF6}.s10{fill:#E8F1EA}.s11{fill:#EEEAF5}</style>")
 }
 
 #let timing(key, caption) = {

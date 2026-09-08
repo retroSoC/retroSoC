@@ -69,8 +69,11 @@ Color supplements names, labels and line styles. It must not be the only way to
 read access permissions or distinguish a meaningful engineering state.
 
 Body links use `link-color` with a same-color 0.4 pt underline, offset 2 pt
-below the baseline. This applies to external sources and internal body
-cross-references. Register-name links in Register Summary tables are an explicit
+below the baseline. This applies to external sources and ordinary internal body
+links. Normal heading cross-references displayed as `Section N` use the same
+`link-color` without an underline. Identify them by their referenced heading,
+not by matching the rendered words; preserve automatic numbering and the link
+destination. Register-name links in Register Summary tables are an explicit
 local exception: keep their blue Fira Code text and destination, without an
 underline. This does not affect source links beside register descriptions.
 Underlines follow wrapped text rather than
@@ -394,8 +397,12 @@ Do not rescale the complete drawing or change data to make it fit.
 
 [waveforms.typ](waveforms.typ) renders the locked wavy/jogs output as vector
 SVG, normalizes its typography to Inter, and keeps diagram text and edges dark.
-Signal names use Inter Regular (explicit SVG weight 400), never bold, and remain
-at least 9 pt at final size. Lane names must be lowercase real port, interface
+Signal names and text inside multibit data blocks use Inter Regular (explicit
+SVG weight 400), never bold, and remain at least 9 pt at final size. This includes
+bus values, addresses and protocol-phase labels. Normalize the base SVG text
+weight as well as the signal-name style in the local renderer wrapper; do not
+edit the locked third-party renderer. Preserve data-label text, size, color and
+waveform geometry. Lane names must be lowercase real port, interface
 member or internal-signal names; retain `_i`, `_o`, `_n` and verified bit/array
 selections. Do not turn a prose event such as "memory fence" into a fictitious
 signal by replacing spaces with underscores.
@@ -493,6 +500,14 @@ four-digit table numbers and the transition to System Architecture. Confirm
 that body caption numbers and text are unchanged, new titles do not appear in
 Contents, bookmarks and running headers are correct, and Contents links and
 footer page totals reflect the added pages.
+
+For heading-link or waveform-weight changes, verify that every normal heading
+reference is blue, has no underline and still reaches its original heading.
+Sample ordinary source links and all three navigation directories for style
+isolation. Export every waveform and inspect the effective font weight of signal
+names and multibit data labels, including inherited SVG text styles. Render short,
+long and successive bus labels at final size to check for overlap or clipping.
+Confirm technical text, figure numbering and generated data are unchanged.
 
 For an edit confined to this Markdown specification or its README link, verify
 the descriptions, relative links and commands and run `git diff --check`;

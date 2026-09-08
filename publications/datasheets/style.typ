@@ -312,6 +312,13 @@
   show raw.where(block:false): inline-code
   show link: set text(fill:link-color)
   show link: it => underline(stroke:0.4pt + link-color,offset:2pt,it)
+  show ref: it => {
+    if it.element!=none and it.element.func()==heading and it.form=="normal" {
+      set text(fill:link-color)
+      show underline: line => line.body
+      it
+    } else {it}
+  }
   set figure(gap: rhythm.figure-caption)
   show figure: set block(above:rhythm.figure-space,below:rhythm.figure-space,breakable:false)
   set figure.caption(position:top)
