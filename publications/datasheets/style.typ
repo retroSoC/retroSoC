@@ -107,17 +107,12 @@
   body
 }
 
-#let omit-link-underline(it) = {
-  let marker=it.fields().at("label",default:none)
-  if marker!=none and repr(marker).starts-with("<repository-footer-") {it} else {it.body}
-}
+#let omit-link-underline(it) = it.body
 #let repository-footer-link() = context {
   show underline: omit-link-underline
   show link: set text(fill:link-color,weight:"regular")
   let body=text(font:"Inter",size:9pt,weight:"regular",fill:link-color)[https://github.com/retroSoC/retroSoC]
-  link("https://github.com/retroSoC/retroSoC",[
-    #underline(stroke:0.4pt+link-color,offset:2pt,body)#label("repository-footer-"+str(here().page()))
-  ])
+  link("https://github.com/retroSoC/retroSoC",body)
 }
 
 #let contents(depth:5) = {

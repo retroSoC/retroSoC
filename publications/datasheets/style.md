@@ -867,7 +867,9 @@ or current level-one chapter outside an IP, on the right. It uses 9 pt muted
 text, a 4 pt gap and a 0.6 pt gold rule. The footer uses a 0.35 pt separator,
 a 4 pt gap and 9 pt Inter. At left, display the complete single-line URL
 `https://github.com/retroSoC/retroSoC`, linked to that exact destination with the
-existing blue link color and underline. Keep current/total page count centered
+existing blue link color, without an underline. Apply this decoration exception
+locally to the footer repository link; other source links retain their existing
+underlines. Keep current/total page count centered
 and the document date right-aligned in muted text. Document ID/version/status
 remain on the cover, in Document Control and in PDF metadata. Identity values
 come from [mini.json](mini.json); do not duplicate them in layout helpers or add
