@@ -329,8 +329,8 @@ module apu_codec_controller (
       fault_valid_o <= 1'b0;
       if (transport_job_done_i) s_transport_done_q <= 1'b1;
       if (soft_reset_i || resource_reset_apply_i) begin
-        s_state_q    <= Idle;
-        s_job_stat_q <= 32'd0;
+        s_state_q          <= Idle;
+        s_job_stat_q       <= 32'd0;
         s_transport_done_q <= 1'b0;
       end else begin
         unique case (s_state_q)

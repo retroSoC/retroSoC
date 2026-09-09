@@ -140,7 +140,7 @@ module apb4_apu (
   logic [31:0] s_dma_err_addr;
   logic s_dma_input_pending, s_dma_output_pending;
   logic [63:0] s_dma_read_bytes, s_dma_write_bytes;
-  logic s_dma_write_burst_done;
+  logic        s_dma_write_burst_done;
   logic [31:0] s_dma_write_burst_bytes;
   logic [63:0] s_dma_read_stalls, s_dma_write_stalls;
   logic s_scheduler_idle, s_scheduler_aborting, s_stream_idle;

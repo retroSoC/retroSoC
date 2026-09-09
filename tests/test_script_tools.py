@@ -1434,6 +1434,13 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     assert "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
 
 
+def test_quality_runs_p5_with_locked_open_source_simulators() -> None:
+    quality = (ROOT / ".github/workflows/quality.yml").read_text()
+
+    assert "tools: verilator sv2v iverilog" in quality
+    assert "python3 -m pytest -q tests/test_apu_codec_transport.py" in quality
+
+
 def test_regression_observations_do_not_block_or_skip_metrics(
     monkeypatch, tmp_path: Path, capsys
 ) -> None:

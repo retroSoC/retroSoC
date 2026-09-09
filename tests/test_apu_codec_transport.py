@@ -9,6 +9,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -88,7 +90,7 @@ def test_p5_production_transport_matches_icarus_and_verilator(tmp_path: Path) ->
     sv2v = shutil.which("sv2v")
     verilator = shutil.which("verilator")
     if None in (iverilog, vvp, sv2v, verilator):
-        raise RuntimeError("P5 requires Icarus, vvp, sv2v, and Verilator")
+        pytest.skip("P5 requires Icarus, vvp, sv2v, and Verilator")
     common = ROOT / "rtl/managed/clusterip/common/rtl"
     multimedia = ROOT / "rtl/ip/multimedia"
     filelist = tmp_path / "apu_p5_transport.fl"
@@ -161,7 +163,7 @@ def test_p5_direct_wav_uses_product_loader_dma_sequencer_and_tx(tmp_path: Path) 
     sv2v = shutil.which("sv2v")
     verilator = shutil.which("verilator")
     if None in (iverilog, vvp, sv2v, verilator):
-        raise RuntimeError("P5 integration requires Icarus, vvp, sv2v, and Verilator")
+        pytest.skip("P5 integration requires Icarus, vvp, sv2v, and Verilator")
     multimedia = ROOT / "rtl/ip/multimedia"
     common = ROOT / "rtl/managed/clusterip/common/rtl"
     assembly = assemble(

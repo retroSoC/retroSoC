@@ -138,7 +138,7 @@ module apu_p5_integration_tb;
       end
       if (i2s_tx_axis.tvalid && i2s_tx_axis.tready) begin
         tx_data_q[tx_count_q] <= i2s_tx_axis.tdata;
-        tx_count_q <= tx_count_q + 1'b1;
+        tx_count_q            <= tx_count_q + 1'b1;
         if (i2s_tx_axis.tlast) begin
           tx_last_q       <= 1'b1;
           tx_last_count_q <= tx_last_count_q + 1'b1;
