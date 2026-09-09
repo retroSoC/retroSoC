@@ -118,7 +118,14 @@ module axi4_async_bridge_tb;
     wait (!clear_busy_o);
     if (epoch_o != 8'd1) $fatal(1, "async bridge epoch did not advance");
 
-    $display("AXI4 async bridge transfer and warm flush test passed");
+    @(negedge dst_clk_i);
+    dst_rst_n_i = 1'b0;
+    repeat (3) @(posedge src_clk_i);
+    @(negedge dst_clk_i);
+    dst_rst_n_i = 1'b1;
+    wait (epoch_o == 8'd2);
+
+    $display("AXI4 async bridge transfer and warm flush test passed; unilateral reset passed");
     $finish;
   end
 

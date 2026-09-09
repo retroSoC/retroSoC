@@ -1,0 +1,202 @@
+[
+  {
+    "id": "xpi",
+    "family": "xpi",
+    "depth": 5
+  },
+  {
+    "id": "spisd",
+    "family": "spisd",
+    "depth": 5
+  },
+  {
+    "id": "sdio0",
+    "family": "sdio",
+    "depth": 5
+  },
+  {
+    "id": "sram",
+    "family": "sram",
+    "depth": 5
+  },
+  {
+    "id": "psram",
+    "family": "psram",
+    "depth": 5
+  },
+  {
+    "id": "opipsram",
+    "family": "opipsram",
+    "depth": 5
+  },
+  {
+    "id": "sdram",
+    "family": "sdram",
+    "depth": 5
+  },
+  {
+    "id": "gpio",
+    "family": "gpio",
+    "depth": 3
+  },
+  {
+    "id": "dma",
+    "family": "dma",
+    "depth": 3
+  },
+  {
+    "id": "timer",
+    "family": "timer",
+    "depth": 4
+  },
+  {
+    "id": "rtc",
+    "family": "rtc",
+    "depth": 4
+  },
+  {
+    "id": "wdg",
+    "family": "wdg",
+    "depth": 4
+  },
+  {
+    "id": "pwm",
+    "family": "pwm",
+    "depth": 4
+  },
+  {
+    "id": "uart0",
+    "family": "uart",
+    "depth": 5
+  },
+  {
+    "id": "uart1",
+    "family": "uart",
+    "depth": 5
+  },
+  {
+    "id": "i2c",
+    "family": "i2c",
+    "depth": 4
+  },
+  {
+    "id": "ws2812",
+    "family": "ws2812",
+    "depth": 4
+  },
+  {
+    "id": "ps2",
+    "family": "ps2",
+    "depth": 4
+  },
+  {
+    "id": "sdio1",
+    "family": "sdio",
+    "depth": 4
+  },
+  {
+    "id": "usb2",
+    "family": "usb2",
+    "depth": 4
+  },
+  {
+    "id": "archinfo",
+    "family": "archinfo",
+    "depth": 4
+  },
+  {
+    "id": "sysctrl",
+    "family": "sysctrl",
+    "depth": 4
+  },
+  {
+    "id": "rcu",
+    "family": "rcu",
+    "depth": 4
+  },
+  {
+    "id": "clint",
+    "family": "clint",
+    "depth": 4
+  },
+  {
+    "id": "hp-aclint",
+    "family": "aclint",
+    "depth": 5
+  },
+  {
+    "id": "hp-plic",
+    "family": "plic",
+    "depth": 5
+  },
+  {
+    "id": "hp-mailbox",
+    "family": "mailbox",
+    "depth": 5
+  },
+  {
+    "id": "resource",
+    "family": "resource",
+    "depth": 4
+  },
+  {
+    "id": "monitor",
+    "family": "monitor",
+    "depth": 4
+  },
+  {
+    "id": "i2s",
+    "family": "i2s",
+    "depth": 4
+  },
+  {
+    "id": "dvp",
+    "family": "dvp",
+    "depth": 4
+  },
+  {
+    "id": "jpeg",
+    "family": "jpeg",
+    "depth": 4
+  },
+  {
+    "id": "apu",
+    "family": "apu",
+    "depth": 4
+  },
+  {
+    "id": "crypto",
+    "family": "crypto",
+    "depth": 4
+  },
+  {
+    "id": "crc",
+    "family": "crc",
+    "depth": 4
+  },
+  {
+    "id": "rng",
+    "family": "rng",
+    "depth": 4
+  },
+  {
+    "id": "ext-l",
+    "family": "ext-l",
+    "depth": 4
+  },
+  {
+    "id": "ext-h",
+    "family": "extensions",
+    "depth": 4
+  },
+  {
+    "id": "mpw-timer",
+    "family": "mpw-timer",
+    "depth": 4
+  },
+  {
+    "id": "mpw-gpio",
+    "family": "mpw-gpio",
+    "depth": 4
+  }
+]

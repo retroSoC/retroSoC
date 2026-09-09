@@ -101,6 +101,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/dma_math.c \
             $(ROOT_PATH)/crt/src/hal/dma.c \
             $(ROOT_PATH)/crt/src/hal/crypto.c \
+            $(ROOT_PATH)/crt/src/hal/apu.c \
             $(ROOT_PATH)/crt/src/hal/jpeg_math.c \
             $(ROOT_PATH)/crt/src/hal/jpeg.c \
             $(ROOT_PATH)/crt/src/hal/dvp.c \

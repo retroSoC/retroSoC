@@ -119,6 +119,23 @@ ownership. Its implemented limits, handwritten ABI, measured performance, and
 commercial release gates are documented in
 [Baseline JPEG Codec](../docs/ip/jpeg.md).
 
+The Mini Audio Processing Unit has a frozen coreless architecture. APU-P5 adds
+the private AXI4 DMA and scheduler, microcode loader/sequencer, 112 KiB local
+store, primitive FIFOs, and class-2 through class-5 bitstream, entropy, local,
+and fixed-point DSP engines plus production WAV/FLAC microprogram transport to
+the APB4 shell at `APB4_APU`.
+Resource Controller index 7 and exclusive LP IRQ31/HP PLIC source10 routing
+remain fixed. Direct/ring WAV/FLAC jobs and the TX stream route are available;
+MP3, KWS, and the RX route remain disabled. The complete ABI, phase order, and evidence gates
+are defined in [Mini Audio Processing Unit](../docs/ip/apu.md).
+
+The P5 capacity refreeze specifies a 4096x64 (32 KiB) control store, 12-bit
+PC/branch paths, APUMC V2 with V1 compatibility, and APB V1.1 PC-high discovery.
+Its eight control-store SRAM wrappers are separate from the unchanged 112 KiB
+data store. This is an implementation requirement: full WAV/FLAC resampling
+and long-Rice coverage plus a complete image fitting 4096 words are still
+required before claiming P5 completion.
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and

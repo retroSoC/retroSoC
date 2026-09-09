@@ -83,7 +83,14 @@ SMOKE_COMMANDS = (
 NIGHTLY_EXTRA_COMMANDS = (
     (
         "configs/benchmark/ihp130-hazard3-coremark.mk",
-        ("SIMU=VERILATOR", "HAVE_SVA=YES", "coremark-report"),
+        # The quick-mode serial-flash boot plus benchmark needs ~33M emu cycles;
+        # hosted runners reach only ~15k cycles/s, far below the 180s default.
+        (
+            "SIMU=VERILATOR",
+            "SOC_SIM_TIME=3600",
+            "HAVE_SVA=YES",
+            "coremark-report",
+        ),
     ),
     ("configs/ci/ihp130.mk", ("SYNTH=YOSYS", "SYNTH_RECIPE=area", "synth")),
     ("configs/ci/ihp130.mk", ("STA=OPENSTA", "SYNTH_RECIPE=area", "sta")),

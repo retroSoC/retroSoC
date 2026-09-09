@@ -52,6 +52,7 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
         ("jtag_dmi", "jtag", "lp"),
         ("hp_mmio", "hp", "lp"),
         ("io_dma_data", "pclk", "hp"),
+        ("apu_data", "pclk", "hp"),
     }
     clint = next(
         crossing for crossing in document["crossings"] if crossing["name"] == "clint_timebase"

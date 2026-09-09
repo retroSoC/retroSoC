@@ -64,3 +64,18 @@ is distributed under Apache License 2.0. The artifact retains both exact
 license texts and is materialized only below the ignored `.cache/` tree.
 
 The preserved third-party notices are included to maintain attribution for code that was adapted or reused in this repository. They do not replace the repository's main license declaration. The retroSoC project itself is distributed under the Mulan PSL v2 license.
+
+## 7. Typst publication diagram packages
+
+The manual publication builder uses these checksum-locked third-party packages.
+Their original sources and notices remain in the verified package caches.
+
+| Package | Authors | License | Original text |
+| --- | --- | --- | --- |
+| bytefield 0.0.8 | Jomaway <https://github.com/jomaway> | MIT | [Exact license](licenses/Typst-bytefield-0.0.8-LICENSE) |
+| rivet 0.3.1 | Louis Heredero <https://git.kb28.ch/HEL> | Apache-2.0 | [Exact license](licenses/Typst-rivet-0.3.1-LICENSE) |
+| blockcell 0.1.0 | @daleione | MIT | [Exact license](licenses/Typst-blockcell-0.1.0-LICENSE) |
+| circuiteria 0.2.1 | Louis Heredero <https://git.kb28.ch/HEL> | Apache-2.0 | [Exact license](licenses/Typst-circuiteria-0.2.1-LICENSE) |
+| cetz 0.3.4 | Johannes Wolf <https://github.com/johannes-wolf>; fenjalien <https://github.com/fenjalien> | LGPL-3.0-or-later | [Exact license](licenses/Typst-cetz-0.3.4-LICENSE) |
+| tidy 0.3.0 | Mc-Zen <https://github.com/Mc-Zen> | MIT | [Exact license](licenses/Typst-tidy-0.3.0-LICENSE) |
+| oxifmt 0.2.1 | PgBiel <https://github.com/PgBiel> | MIT-0 | [Exact license](licenses/Typst-oxifmt-0.2.1-LICENSE) |

@@ -1,0 +1,192 @@
+{
+  "uart": [
+    "64-byte TX and RX FIFOs; fractional baud-rate generator.",
+    "5-8 data bits, parity, break, loopback and receive diagnostics.",
+    "UART0 connects DMA and RTS/CTS; UART1 has its own integration limits."
+  ],
+  "i2c": [
+    "Two controller instances with 7-bit and 10-bit addressing.",
+    "Sixteen-entry command/RX queues, repeated START and clock stretching.",
+    "Arbitration detection, bounded recovery and DMA pacing."
+  ],
+  "i2s": [
+    "Stereo master TX/RX with independent audio clock.",
+    "16/24-bit and 48/96 kHz presets; programmable clock division.",
+    "32-bit streams and CDC FIFOs; no slave, TDM or PDM mode."
+  ],
+  "ws2812": [
+    "24-bit GRB transmission on one GPIO alternate function.",
+    "Sixteen-word FIFO, frame length and programmable pulse/reset timings.",
+    "Explicit underflow, abort and completion reporting."
+  ],
+  "timer": [
+    "Two 32-bit general-purpose timers.",
+    "16-bit prescalers and two compare channels per instance.",
+    "Periodic/one-shot modes, count direction and debug freeze."
+  ],
+  "gpio": [
+    "32 bidirectional GPIOs with administration and restricted user windows.",
+    "Atomic output commands, open drain, filtering and per-pin interrupts.",
+    "Alternate-function ownership, guard cycles and irreversible locks."
+  ],
+  "clint": [
+    "Per-hart software interrupts and 64-bit timer compare.",
+    "Shared 64-bit timebase with RV32 word access.",
+    "One management hart slot in the reference integration."
+  ],
+  "aclint": [
+    "Two addressable hart slots; HP consumes slot 1.",
+    "Machine software and timer interrupts for the HP subsystem.",
+    "Separate address window from management CLINT."
+  ],
+  "dma": [
+    "Eight channel contexts share a 32-bit AXI master.",
+    "Direct and linked-list 64-byte TCD operation.",
+    "Up to 16-beat bursts and selected AXI4-Stream endpoints."
+  ],
+  "sysctrl": [
+    "Root-managed configuration, HP lifecycle and clock requests.",
+    "Sticky first-fault capture and performance snapshots.",
+    "Sticky firmware test result and RTC wake observation."
+  ],
+  "psram": [
+    "Four ESP-PSRAM64H devices addressable through a 32 MiB window.",
+    "Device-specific 4-bit SDR SPI/QPI protocol.",
+    "Separate APB management, recovery and timing configuration."
+  ],
+  "sdram": [
+    "Fixed 64 MiB, x16 SDR geometry with bank/row tracking.",
+    "Burst-capable AXI frontend and periodic refresh.",
+    "Programmable device timing in SDRAM-clock cycles."
+  ],
+  "opipsram": [
+    "One octal DDR memory interface and one selected protocol profile.",
+    "OPI or single-clock HyperBus-style digital transaction model.",
+    "Training/recovery controls; external-device qualification remains required."
+  ],
+  "xpi": [
+    "Four chip-select slots and 16 programmable LUT sequences.",
+    "SDR transfers over one, two or four data pads.",
+    "Mapped reads, indirect PIO/DMA and automatic status polling."
+  ],
+  "spisd": [
+    "SD card SPI-mode command/data host.",
+    "Private AXI DMA and scatter-gather descriptors.",
+    "CRC, timeout, PIO and explicit card-command completion."
+  ],
+  "sdio": [
+    "Native one-bit/four-bit SDR operation.",
+    "SD Memory/SDIO command support with per-lane CRC.",
+    "Private descriptor DMA and separate instance integration."
+  ],
+  "jpeg": [
+    "8-bit Baseline Sequential JPEG encode or decode.",
+    "Images up to 2048 × 2048; modes are mutually exclusive.",
+    "Private AXI64 DMA, direct jobs and a scatter-gather ring."
+  ],
+  "apu": [
+    "Coreless microcode sequencer with private DMA and local storage.",
+    "WAV/FLAC job and stream infrastructure in the current capability word.",
+    "MP3/KWS are not advertised; production bundle and capacity qualification remain distinct gates."
+  ],
+  "dvp": [
+    "8-bit parallel RGB565/YUV422 capture.",
+    "Programmable sync polarity, sample edge, crop and snapshot mode.",
+    "Word packing with start-of-frame/end-of-line stream markers."
+  ],
+  "usb2": [
+    "Dual-role digital controller with external 8-bit ULPI PHY.",
+    "Eight device endpoints, sixteen host channels and 16 KiB packet RAM.",
+    "Descriptor DMA, IRQ/error retention and role-specific control."
+  ],
+  "crypto": [
+    "AES-128/192/256, SHA-224/256 and raw RSA-2048.",
+    "PIO and central-DMA streaming paths.",
+    "Protected key/exponent readback; no claim of a secure key vault or certification."
+  ],
+  "mailbox": [
+    "Separate LP-to-HP and HP-to-LP payload banks.",
+    "Doorbells and independently masked interrupt state.",
+    "Boot/lifecycle message exchange with explicit publication ordering."
+  ],
+  "sram": [
+    "32 KiB in the reference profile, using eight 4 KiB banks.",
+    "Native AXI64 data frontend and byte-write support.",
+    "APB discovery and performance counters."
+  ],
+  "rtc": [
+    "64-bit seconds and 1/256-second subsecond time.",
+    "Two alarms, periodic wake timer and signed calibration.",
+    "Asynchronous command handoff and coherent snapshots."
+  ],
+  "wdg": [
+    "Independent-clock window watchdog.",
+    "Two-key servicing, early warning and retained reset cause.",
+    "Configuration locks and explicit debug policy."
+  ],
+  "pwm": [
+    "Two timers, four output channels and two operators.",
+    "Shadow updates, fade/gamma, complementary/dead-time control.",
+    "Fault handling and two capture inputs."
+  ],
+  "crc": [
+    "Programmable 7-, 8-, 16- or 32-bit CRC.",
+    "Polynomial, initialization, reflection, byte order and final XOR controls.",
+    "Byte-strobed input, running state and latched result."
+  ],
+  "rng": [
+    "Entropy-source qualification, FIFO and continuous health checks.",
+    "Sticky errors, counters and bounded reads.",
+    "The integrated deterministic source is unqualified for production entropy."
+  ],
+  "ps2": [
+    "Bidirectional open-drain host interface.",
+    "Sixteen-entry RX/TX FIFOs and input filtering.",
+    "Start/parity/stop checks, inhibit, timeouts and abort."
+  ],
+  "archinfo": [
+    "Read-only identity, configuration and topology discovery.",
+    "Generated build provenance and memory/technology capabilities.",
+    "Lifecycle-gated device identity reads."
+  ],
+  "resource": [
+    "Eight independently managed shared resources.",
+    "Owner locks, quiesce/reset and LP/HP IRQ routing.",
+    "Explicit cache-maintenance handoff and sticky faults."
+  ],
+  "monitor": [
+    "Eight master and six target observation banks.",
+    "Saturating counters, snapshots and outstanding high-water marks.",
+    "Sticky first-fault attribution and live isolation status."
+  ],
+  "extensions": [
+    "Fixed EXT-H control, ownership, bounds and lifecycle.",
+    "AXI64 data-master interface with address-range checking.",
+    "DMA service registers and timeout/fault reporting."
+  ],
+  "ext-l": [
+    "Fixed APB4 control and one interrupt.",
+    "Ownership, lock, quiesce and reset control.",
+    "No data master, stream interface or local SRAM."
+  ],
+  "rcu": [
+    "AON-controlled requests and clock/reset policy.",
+    "Safe-source fallback, traffic drain and PLL qualification.",
+    "Clock division and memory-pad mode through SYSCTRL."
+  ],
+  "plic": [
+    "32 source IDs, with source 0 reserved.",
+    "Two delivery contexts: machine and supervisor.",
+    "Priorities, masks, threshold and claim/complete semantics."
+  ],
+  "mpw-timer": [
+    "MPW-selectable timer and divider.",
+    "Small register window and user-GPIO output.",
+    "No PRODUCT instantiation or dedicated IRQ claim."
+  ],
+  "mpw-gpio": [
+    "MPW-selectable user GPIO data and enables.",
+    "Readback of the shared user-GPIO input bus.",
+    "Selection and pad ownership remain root-controlled."
+  ]
+}

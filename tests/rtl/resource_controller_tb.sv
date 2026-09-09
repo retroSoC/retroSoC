@@ -3,16 +3,17 @@
 module resource_controller_tb;
   logic             clk_i = 1'b0;
   logic             rst_n_i = 1'b0;
-  logic [ 5:0]      idle_i = '0;
-  logic [ 5:0]      block_ack_i = '0;
-  logic [ 5:0]      irq_i = '0;
+  logic [ 7:0]      idle_i = '0;
+  logic [ 7:0]      block_ack_i = '0;
+  logic [ 7:0]      irq_i = '0;
   logic             cache_request_i = 1'b0;
   logic             cache_clean_o;
-  logic [ 5:0][1:0] owner_o;
-  logic [ 5:0]      quiesce_o;
-  logic [ 5:0]      reset_o;
-  logic [ 5:0]      irq_lp_o;
-  logic [ 5:0]      irq_hp_o;
+  logic [ 7:0][1:0] owner_o;
+  logic [ 7:0]      owner_lock_o;
+  logic [ 7:0]      quiesce_o;
+  logic [ 7:0]      reset_o;
+  logic [ 7:0]      irq_lp_o;
+  logic [ 7:0]      irq_hp_o;
   logic             fault_irq_o;
   logic [31:0]      read_data;
 
@@ -32,6 +33,7 @@ module resource_controller_tb;
       .cache_request_i(cache_request_i),
       .cache_clean_o  (cache_clean_o),
       .owner_o        (owner_o),
+      .owner_lock_o   (owner_lock_o),
       .quiesce_o      (quiesce_o),
       .reset_o        (reset_o),
       .irq_lp_o       (irq_lp_o),
@@ -90,7 +92,7 @@ module resource_controller_tb;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
-    idle_i  = 6'h3F;
+    idle_i  = 8'hFF;
 
     apb_read(12'h000, read_data);
     if (read_data != 32'h5253_4354) $fatal(1, "resource controller ID mismatch");
@@ -133,6 +135,16 @@ module resource_controller_tb;
     apb_write(12'h124, 32'h0000_0003, 1'b0);
     if (!quiesce_o[1] || !reset_o[1]) begin
       $fatal(1, "resource lifecycle controls did not update");
+    end
+
+    irq_i[7] = 1'b1;
+    #1;
+    if (!irq_lp_o[7] || irq_hp_o[7]) $fatal(1, "APU reset owner routing mismatch");
+    block_ack_i[7] = 1'b1;
+    apb_write(12'h1E4, 32'h0000_0001, 1'b0);
+    apb_write(12'h1E0, 32'h0000_0101, 1'b0);
+    if ((owner_o[7] != 2'd1) || !owner_lock_o[7] || irq_lp_o[7] || !irq_hp_o[7]) begin
+      $fatal(1, "APU resource index 7 ownership or IRQ routing mismatch");
     end
 
     $display("Resource Controller ownership, IRQ, and cache handshake test passed");

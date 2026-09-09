@@ -1,0 +1,3847 @@
+{
+  "apb4": {
+    "source": {
+      "signal": [
+        {
+          "name": "pclk",
+          "wave": "p......."
+        },
+        {
+          "name": "psel",
+          "wave": "01...0.."
+        },
+        {
+          "name": "penable",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "pready",
+          "wave": "0...10.."
+        },
+        {
+          "name": "pwrite",
+          "wave": "1......."
+        },
+        {
+          "name": "paddr",
+          "wave": "x=...x..",
+          "data": [
+            "address"
+          ]
+        },
+        {
+          "name": "pwdata",
+          "wave": "x=...x..",
+          "data": [
+            "write data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: apb4_if. Clock: pclk. Write with wait states; address and write data are distinct stable buses. Transfer completes when psel, penable and pready are high. Example cycles only.",
+    "clock_domain": "pclk",
+    "signals": {
+      "pclk": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pclk",
+        "meaning": "APB sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "psel": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "psel",
+        "meaning": "Select stays asserted through the wait states.",
+        "polarity": "active-high"
+      },
+      "penable": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "penable",
+        "meaning": "Access phase follows the setup phase.",
+        "polarity": "active-high"
+      },
+      "pready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pready",
+        "meaning": "High with select and enable completes this transfer.",
+        "polarity": "active-high"
+      },
+      "pwrite": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pwrite",
+        "meaning": "Write direction for the illustrated transfer.",
+        "polarity": "active-high"
+      },
+      "paddr": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "paddr",
+        "meaning": "Stable byte address across setup and access.",
+        "polarity": "data"
+      },
+      "pwdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pwdata",
+        "meaning": "Stable write payload until completion.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"
+    ],
+    "review_note": "Split the former ADDR / DATA lane; retained the valid APB wait-state ordering.",
+    "parameters": {
+      "APB_ADDR_WIDTH": 32,
+      "APB_DATA_WIDTH": 32
+    },
+    "parameter_note": "The PRODUCT APB interface uses 32-bit address and data."
+  },
+  "axi4": {
+    "source": {
+      "signal": [
+        {
+          "name": "aclk",
+          "wave": "p......."
+        },
+        {
+          "name": "arvalid",
+          "wave": "01.0...."
+        },
+        {
+          "name": "arready",
+          "wave": "0.10...."
+        },
+        {
+          "name": "rvalid",
+          "wave": "0...1..0"
+        },
+        {
+          "name": "rready",
+          "wave": "0....1.."
+        },
+        {
+          "name": "rlast",
+          "wave": "0.....10"
+        },
+        {
+          "name": "rdata",
+          "wave": "x...=.=x",
+          "data": [
+            "D0",
+            "D1"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: axi4_if. Clock: aclk. Independent address and response channels. D0 is held while rready is low, then D1 completes with rlast. Example cycles only.",
+    "clock_domain": "aclk",
+    "signals": {
+      "aclk": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "aclk",
+        "meaning": "AXI sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "arvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arvalid",
+        "meaning": "Read-address valid held until accepted.",
+        "polarity": "active-high"
+      },
+      "arready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arready",
+        "meaning": "Address acceptance.",
+        "polarity": "active-high"
+      },
+      "rvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rvalid",
+        "meaning": "Read data valid across the stall.",
+        "polarity": "active-high"
+      },
+      "rready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rready",
+        "meaning": "Read response acceptance.",
+        "polarity": "active-high"
+      },
+      "rlast": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rlast",
+        "meaning": "Final data beat indication.",
+        "polarity": "active-high"
+      },
+      "rdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rdata",
+        "meaning": "First beat held during backpressure, then final beat.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"
+    ],
+    "review_note": "Preserved the original two-beat read handshakes; declarations use the native data-fabric interface.",
+    "parameters": {
+      "ADDR_WIDTH": 32,
+      "DATA_WIDTH": 64,
+      "ID_WIDTH": 6,
+      "USER_WIDTH": 1
+    },
+    "parameter_note": "Native PRODUCT data fabric is AXI64 with six-bit IDs; this example uses only the data channel."
+  },
+  "axis": {
+    "source": {
+      "signal": [
+        {
+          "name": "aclk",
+          "wave": "p......."
+        },
+        {
+          "name": "tvalid",
+          "wave": "01.....0"
+        },
+        {
+          "name": "tready",
+          "wave": "01.0.1.."
+        },
+        {
+          "name": "tdata",
+          "wave": "x===..=x",
+          "data": [
+            "D0",
+            "D1",
+            "D2",
+            "D3"
+          ]
+        },
+        {
+          "name": "tlast",
+          "wave": "0.....10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: axi4_stream_if. Clock: aclk. Transfer only when tvalid and tready are high; stalled data and tlast remain stable. Example cycles only.",
+    "clock_domain": "aclk",
+    "signals": {
+      "aclk": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "aclk",
+        "meaning": "Stream sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "tvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "tvalid",
+        "meaning": "Source valid.",
+        "polarity": "active-high"
+      },
+      "tready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "tready",
+        "meaning": "Sink readiness with backpressure.",
+        "polarity": "active-high"
+      },
+      "tdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "tdata",
+        "meaning": "D2 remains stable during the stall.",
+        "polarity": "data"
+      },
+      "tlast": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "tlast",
+        "meaning": "Packet end on the final accepted beat.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv"
+    ],
+    "review_note": "Retained stream handshake ordering; labels now match the shared interface.",
+    "parameters": {
+      "DATA_WIDTH": 32
+    },
+    "parameter_note": "The illustrated peripheral stream uses 32-bit payloads."
+  },
+  "uart": {
+    "source": {
+      "signal": [
+        {
+          "name": "tx_o",
+          "wave": "101010.101.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: uart_core. Clock: clk_i; displayed intervals are programmed serial bit periods. 8N1 transmission of 0xA5, least-significant bit first: idle, start, eight data bits and stop. Oversampling clocks are omitted.",
+    "clock_domain": "clk_i; displayed intervals are programmed serial bit periods",
+    "signals": {
+      "tx_o": {
+        "file": "rtl/ip/serial/uart_core.sv",
+        "scope": "uart_core",
+        "symbol": "tx_o",
+        "meaning": "Transmitted serial output, idle and stop high.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/apb4_uart_tx.sv",
+      "rtl/ip/serial/uart_core.sv"
+    ],
+    "review_note": "Removed synthetic bit-slot clock and moved payload/configuration into the note; retained the valid TX bit sequence."
+  },
+  "i2c": {
+    "source": {
+      "signal": [
+        {
+          "name": "scl_i",
+          "wave": "1.0.1.0.1.0.1.."
+        },
+        {
+          "name": "sda_i",
+          "wave": "10.1...0.....1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: i2c_core. Clock: clk_i; observed serial SCL/SDA intervals. Representative data and acknowledge bit intervals, not a complete byte: START/STOP change SDA while SCL is high; other changes occur while SCL is low. Full address/data bytes are omitted.",
+    "clock_domain": "clk_i; observed serial SCL/SDA intervals",
+    "signals": {
+      "scl_i": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "scl_i",
+        "meaning": "Observed SCL after input filtering.",
+        "polarity": "rising-edge"
+      },
+      "sda_i": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "sda_i",
+        "meaning": "Observed SDA, including START and STOP.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/i2c_core.sv"
+    ],
+    "review_note": "Removed phase labels and invalid multi-bit data notation on scalar SDA. Reviewed open-drain inputs and protocol transitions."
+  },
+  "i2s": {
+    "source": {
+      "signal": [
+        {
+          "name": "sclk_o",
+          "wave": "p...|...p..."
+        },
+        {
+          "name": "lrck_o",
+          "wave": "0...|1......"
+        },
+        {
+          "name": "dacdat_o",
+          "wave": "0101|.0101.0"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: i2s_if. Clock: i2s_core.clk_i; sclk_o serial sampling edges. Stereo I2S bit excerpt: a channel MSB begins one bit clock after the lrck_o transition. The break omits intervening bit clocks; channel words are not represented as a bus on dacdat_o.",
+    "clock_domain": "i2s_core.clk_i; sclk_o serial sampling edges",
+    "signals": {
+      "sclk_o": {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "scope": "i2s_if",
+        "symbol": "sclk_o",
+        "meaning": "Serial bit clock.",
+        "polarity": "rising-edge"
+      },
+      "lrck_o": {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "scope": "i2s_if",
+        "symbol": "lrck_o",
+        "meaning": "Channel-select clock.",
+        "polarity": "active-high"
+      },
+      "dacdat_o": {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "scope": "i2s_if",
+        "symbol": "dacdat_o",
+        "meaning": "Scalar serial DAC data, illustrative bit values.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/apb4_i2s.sv",
+      "rtl/ip/serial/i2s_core.sv",
+      "rtl/ip/serial/i2s_send.sv"
+    ],
+    "review_note": "Replaced BCLK/LRCK aliases with interface members and replaced the scalar-data bus shading. Removed synthetic word-valid lane."
+  },
+  "ws2812": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_xfer_data_q[23]",
+          "wave": "0...1..."
+        },
+        {
+          "name": "s_bit_cycle_q",
+          "wave": "========",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0",
+            "1",
+            "2",
+            "3"
+          ]
+        },
+        {
+          "name": "dat_o",
+          "wave": "10..1.0."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ws2812_core. Clock: clk_i; example bit_cycles_i = 4. Two serial symbols in an already active transfer: t0h_cycles = 1, t1h_cycles = 2 and bit_cycles = 4 are illustrative settings, not qualified electrical limits. Bytes are sent most-significant bit first.",
+    "clock_domain": "clk_i; example bit_cycles_i = 4",
+    "signals": {
+      "s_xfer_data_q[23]": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "s_xfer_data_q",
+        "meaning": "Current most-significant serial bit.",
+        "polarity": "active-high"
+      },
+      "s_bit_cycle_q": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "s_bit_cycle_q",
+        "meaning": "Bit-cycle position within each symbol.",
+        "polarity": "data"
+      },
+      "dat_o": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "dat_o",
+        "meaning": "Serial output uses shorter high time for zero than one.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/ws2812_core.sv"
+    ],
+    "review_note": "Replaced fictitious separate zero/one outputs with the actual current-bit selector and one dat_o output. Reviewed dat_o = s_bit_cycle_q < s_high_cycles."
+  },
+  "ps2": {
+    "source": {
+      "signal": [
+        {
+          "name": "ps2_clk_i",
+          "wave": "1n..........1"
+        },
+        {
+          "name": "ps2_dat_i",
+          "wave": "101010.101..."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ps2_core. Clock: clk_i; ps2_clk_i falling edges sample serial data. Device-to-host 0xA5 excerpt: start low, eight least-significant-bit-first data bits, odd parity high and stop high. Input filtering and core-clock synchronization are omitted.",
+    "clock_domain": "clk_i; ps2_clk_i falling edges sample serial data",
+    "signals": {
+      "ps2_clk_i": {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "scope": "ps2_core",
+        "symbol": "ps2_clk_i",
+        "meaning": "Device-provided serial clock.",
+        "polarity": "falling-edge"
+      },
+      "ps2_dat_i": {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "scope": "ps2_core",
+        "symbol": "ps2_dat_i",
+        "meaning": "Start, 0xA5 data, odd parity and stop.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/ps2/rtl/ps2_core.sv"
+    ],
+    "review_note": "Removed the phase lane; matched physical inputs and the documented falling-edge receive convention."
+  },
+  "xpi": {
+    "source": {
+      "signal": [
+        {
+          "name": "nss_o[0]",
+          "wave": "10......1"
+        },
+        {
+          "name": "sck_o",
+          "wave": "0p..|..0."
+        },
+        {
+          "name": "io_oe_o",
+          "wave": "=...=....",
+          "data": [
+            "0xf",
+            "0x0"
+          ]
+        },
+        {
+          "name": "io_do_o",
+          "wave": "x=..x....",
+          "data": [
+            "cmd/addr"
+          ]
+        },
+        {
+          "name": "io_di_i",
+          "wave": "x....=..x",
+          "data": [
+            "read data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: xpi_if. Clock: xpi_core.clk_i; sck_o is the serial clock. Quad mode-0 command/address, turnaround and read excerpt. Serial phases are compressed; io_do_o is not a tri-state pad. io_oe_o defines when outputs drive and io_di_i carries received data.",
+    "clock_domain": "xpi_core.clk_i; sck_o is the serial clock",
+    "signals": {
+      "nss_o[0]": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "nss_o",
+        "meaning": "Selected chip-select, active low.",
+        "polarity": "active-low"
+      },
+      "sck_o": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "sck_o",
+        "meaning": "Representative mode-0 serial clocks.",
+        "polarity": "rising-edge"
+      },
+      "io_oe_o": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "io_oe_o",
+        "meaning": "Output enable changes from transmit to receive.",
+        "polarity": "data"
+      },
+      "io_do_o": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "io_do_o",
+        "meaning": "Driven command/address nibbles; value immaterial when OE is zero.",
+        "polarity": "data"
+      },
+      "io_di_i": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "io_di_i",
+        "meaning": "Sampled receive nibbles after turnaround.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/xpi_core.sv",
+      "rtl/ip/storage/xpi_define.svh",
+      "rtl/ip/storage/xpi_if.sv"
+    ],
+    "review_note": "Removed synthetic phase/IO lanes and separated input, output and output-enable signals. Reviewed XPI core pad assignments.",
+    "parameters": {
+      "XPI_NSS_NUM": 4
+    },
+    "parameter_note": "xpi_define.svh fixes four chip selects."
+  },
+  "psram": {
+    "source": {
+      "signal": [
+        {
+          "name": "psram_nss_o[0]",
+          "wave": "10......1"
+        },
+        {
+          "name": "psram_sclk_o",
+          "wave": "0p..|..0."
+        },
+        {
+          "name": "psram_io_oe_o",
+          "wave": "=...=....",
+          "data": [
+            "0xf",
+            "0x0"
+          ]
+        },
+        {
+          "name": "psram_io_do_o",
+          "wave": "x=..x....",
+          "data": [
+            "cmd/addr"
+          ]
+        },
+        {
+          "name": "psram_io_di_i",
+          "wave": "x....=..x",
+          "data": [
+            "read data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: psram_phy. Clock: clk_i; psram_sclk_o serial edges. QPI read excerpt; command/address and latency clocks are compressed. OE controls driving; the input and output data ports are distinct. Timing depends on the programmed PHY configuration.",
+    "clock_domain": "clk_i; psram_sclk_o serial edges",
+    "signals": {
+      "psram_nss_o[0]": {
+        "file": "rtl/ip/memory/psram_phy.sv",
+        "scope": "psram_phy",
+        "symbol": "psram_nss_o",
+        "meaning": "Selected PSRAM chip select.",
+        "polarity": "active-low"
+      },
+      "psram_sclk_o": {
+        "file": "rtl/ip/memory/psram_phy.sv",
+        "scope": "psram_phy",
+        "symbol": "psram_sclk_o",
+        "meaning": "QPI serial clock excerpt.",
+        "polarity": "rising-edge"
+      },
+      "psram_io_oe_o": {
+        "file": "rtl/ip/memory/psram_phy.sv",
+        "scope": "psram_phy",
+        "symbol": "psram_io_oe_o",
+        "meaning": "QPI transmit-to-receive output-enable change.",
+        "polarity": "data"
+      },
+      "psram_io_do_o": {
+        "file": "rtl/ip/memory/psram_phy.sv",
+        "scope": "psram_phy",
+        "symbol": "psram_io_do_o",
+        "meaning": "Command/address nibbles driven by the controller.",
+        "polarity": "data"
+      },
+      "psram_io_di_i": {
+        "file": "rtl/ip/memory/psram_phy.sv",
+        "scope": "psram_phy",
+        "symbol": "psram_io_di_i",
+        "meaning": "Received memory nibbles.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/memory/psram_phy.sv"
+    ],
+    "review_note": "Used scalar chip select and separate QPI data-direction ports rather than one ambiguous IO lane."
+  },
+  "spisd": {
+    "source": {
+      "signal": [
+        {
+          "name": "nss_o",
+          "wave": "10.......1"
+        },
+        {
+          "name": "sck_o",
+          "wave": "0p..|...0."
+        },
+        {
+          "name": "mosi_o",
+          "wave": "1.0101|..."
+        },
+        {
+          "name": "miso_i",
+          "wave": "1.....|010"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: spisd_core. Clock: clk_i; sck_o mode-0 serial clock. SPI mode-0 command/response excerpt, not a complete 48-bit command or card response. Omitted clocks are indicated by the break. MOSI and MISO are separate scalar signals.",
+    "clock_domain": "clk_i; sck_o mode-0 serial clock",
+    "signals": {
+      "nss_o": {
+        "file": "rtl/ip/storage/spisd_core.sv",
+        "scope": "spisd_core",
+        "symbol": "nss_o",
+        "meaning": "Active-low SD card select.",
+        "polarity": "active-low"
+      },
+      "sck_o": {
+        "file": "rtl/ip/storage/spisd_core.sv",
+        "scope": "spisd_core",
+        "symbol": "sck_o",
+        "meaning": "SPI-SD serial clock excerpt.",
+        "polarity": "rising-edge"
+      },
+      "mosi_o": {
+        "file": "rtl/ip/storage/spisd_core.sv",
+        "scope": "spisd_core",
+        "symbol": "mosi_o",
+        "meaning": "Representative command bits followed by idle ones.",
+        "polarity": "data"
+      },
+      "miso_i": {
+        "file": "rtl/ip/storage/spisd_core.sv",
+        "scope": "spisd_core",
+        "symbol": "miso_i",
+        "meaning": "Representative response bits from the card.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/spisd_command.sv",
+      "rtl/ip/storage/spisd_core.sv"
+    ],
+    "review_note": "Removed the synthetic phase lane and incorrect shared multi-bit IO bus; retained the command/response scenario."
+  },
+  "opipsram": {
+    "source": {
+      "signal": [
+        {
+          "name": "cs_n_o",
+          "wave": "10.......1"
+        },
+        {
+          "name": "ck_o",
+          "wave": "0p..|...0."
+        },
+        {
+          "name": "dq_oe_o",
+          "wave": "=...=.....",
+          "data": [
+            "0xff",
+            "0x00"
+          ]
+        },
+        {
+          "name": "dq_o",
+          "wave": "x=..x.....",
+          "data": [
+            "CA"
+          ]
+        },
+        {
+          "name": "dq_i",
+          "wave": "x....=..x.",
+          "data": [
+            "read data"
+          ]
+        },
+        {
+          "name": "rwds_i",
+          "wave": "x...0p..x."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: opipsram_phy. Clock: clk_phy_i; ck_o DDR transfers. HyperBus-style read excerpt. Command/address bytes, variable latency and DDR beats are compressed; rwds_i is memory-driven. This does not specify board timing or qualified delay settings.",
+    "clock_domain": "clk_phy_i; ck_o DDR transfers",
+    "signals": {
+      "cs_n_o": {
+        "file": "rtl/ip/memory/opipsram_phy.sv",
+        "scope": "opipsram_phy",
+        "symbol": "cs_n_o",
+        "meaning": "Active-low external chip select.",
+        "polarity": "active-low"
+      },
+      "ck_o": {
+        "file": "rtl/ip/memory/opipsram_phy.sv",
+        "scope": "opipsram_phy",
+        "symbol": "ck_o",
+        "meaning": "External DDR clock excerpt.",
+        "polarity": "both-edges"
+      },
+      "dq_oe_o": {
+        "file": "rtl/ip/memory/opipsram_phy.sv",
+        "scope": "opipsram_phy",
+        "symbol": "dq_oe_o",
+        "meaning": "DQ output enables release for the read phase.",
+        "polarity": "data"
+      },
+      "dq_o": {
+        "file": "rtl/ip/memory/opipsram_phy.sv",
+        "scope": "opipsram_phy",
+        "symbol": "dq_o",
+        "meaning": "Command/address bytes from the controller.",
+        "polarity": "data"
+      },
+      "dq_i": {
+        "file": "rtl/ip/memory/opipsram_phy.sv",
+        "scope": "opipsram_phy",
+        "symbol": "dq_i",
+        "meaning": "Incoming read bytes.",
+        "polarity": "data"
+      },
+      "rwds_i": {
+        "file": "rtl/ip/memory/opipsram_phy.sv",
+        "scope": "opipsram_phy",
+        "symbol": "rwds_i",
+        "meaning": "Memory-driven latency/data strobe during the read phase.",
+        "polarity": "both-edges"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/memory/opipsram_phy.sv",
+      "rtl/ip/memory/opipsram_trx.sv"
+    ],
+    "review_note": "Mapped the actual PHY DQ input/output/OE and RWDS input ports; removed phase annotations from lane names."
+  },
+  "sdio": {
+    "source": {
+      "signal": [
+        {
+          "name": "sck_o",
+          "wave": "p...|...."
+        },
+        {
+          "name": "cmd_oe_o",
+          "wave": "1..0....."
+        },
+        {
+          "name": "cmd_do_o",
+          "wave": "0101|...."
+        },
+        {
+          "name": "cmd_di_i",
+          "wave": "1...|0101"
+        },
+        {
+          "name": "dat_oe_o",
+          "wave": "=........",
+          "data": [
+            "0x0"
+          ]
+        },
+        {
+          "name": "dat_di_i",
+          "wave": "x...|=..x",
+          "data": [
+            "read data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: sdio_if. Clock: sdio_core.clk_i; sck_o samples card responses/data. Four-bit SDR read excerpt; command, response and data intervals are compressed and do not depict their full frames. Command/data drive enables remain distinct from sampled input values.",
+    "clock_domain": "sdio_core.clk_i; sck_o samples card responses/data",
+    "signals": {
+      "sck_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "sck_o",
+        "meaning": "SD serial clock excerpt.",
+        "polarity": "rising-edge"
+      },
+      "cmd_oe_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "cmd_oe_o",
+        "meaning": "Host releases CMD for a response.",
+        "polarity": "active-high"
+      },
+      "cmd_do_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "cmd_do_o",
+        "meaning": "Representative outgoing command bits.",
+        "polarity": "data"
+      },
+      "cmd_di_i": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "cmd_di_i",
+        "meaning": "Representative incoming response bits.",
+        "polarity": "data"
+      },
+      "dat_oe_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "dat_oe_o",
+        "meaning": "Controller data output disabled for read.",
+        "polarity": "data"
+      },
+      "dat_di_i": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "dat_di_i",
+        "meaning": "Four-bit card data excerpt.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/sdio_command.sv",
+      "rtl/ip/storage/sdio_core.sv",
+      "rtl/ip/storage/sdio_data.sv",
+      "rtl/ip/storage/sdio_if.sv"
+    ],
+    "review_note": "Split the synthetic CMD and DAT lanes into real direction-specific interface signals; removed the unrelated DMA-request annotation."
+  },
+  "sdram": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_o",
+          "wave": "p......."
+        },
+        {
+          "name": "cs_n_o",
+          "wave": "0......."
+        },
+        {
+          "name": "ras_n_o",
+          "wave": "101....."
+        },
+        {
+          "name": "cas_n_o",
+          "wave": "1..01..."
+        },
+        {
+          "name": "we_n_o",
+          "wave": "1......."
+        },
+        {
+          "name": "addr_o",
+          "wave": "x=.=x...",
+          "data": [
+            "row",
+            "column"
+          ]
+        },
+        {
+          "name": "dq_i",
+          "wave": "x....==x",
+          "data": [
+            "D0",
+            "D1"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: sdram_if. Clock: sdram_core.clk_i; clk_o external SDRAM clock. ACTIVATE, NOP, READ and representative read beats. RAS/CAS/WE show actual command pins; row/column labels are values on addr_o. Spacing is an example, not a timing-limit guarantee.",
+    "clock_domain": "sdram_core.clk_i; clk_o external SDRAM clock",
+    "signals": {
+      "clk_o": {
+        "file": "rtl/ip/memory/axi4_sdram.sv",
+        "scope": "sdram_if",
+        "symbol": "clk_o",
+        "meaning": "External SDRAM sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "cs_n_o": {
+        "file": "rtl/ip/memory/axi4_sdram.sv",
+        "scope": "sdram_if",
+        "symbol": "cs_n_o",
+        "meaning": "Chip selected during the illustrated commands.",
+        "polarity": "active-low"
+      },
+      "ras_n_o": {
+        "file": "rtl/ip/memory/axi4_sdram.sv",
+        "scope": "sdram_if",
+        "symbol": "ras_n_o",
+        "meaning": "ACTIVATE asserts RAS low; READ uses RAS high.",
+        "polarity": "active-low"
+      },
+      "cas_n_o": {
+        "file": "rtl/ip/memory/axi4_sdram.sv",
+        "scope": "sdram_if",
+        "symbol": "cas_n_o",
+        "meaning": "READ asserts CAS low.",
+        "polarity": "active-low"
+      },
+      "we_n_o": {
+        "file": "rtl/ip/memory/axi4_sdram.sv",
+        "scope": "sdram_if",
+        "symbol": "we_n_o",
+        "meaning": "WE remains high for ACTIVATE and READ.",
+        "polarity": "active-low"
+      },
+      "addr_o": {
+        "file": "rtl/ip/memory/axi4_sdram.sv",
+        "scope": "sdram_if",
+        "symbol": "addr_o",
+        "meaning": "Row then column address.",
+        "polarity": "data"
+      },
+      "dq_i": {
+        "file": "rtl/ip/memory/axi4_sdram.sv",
+        "scope": "sdram_if",
+        "symbol": "dq_i",
+        "meaning": "Read data appears after configured CAS latency.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/memory/axi4_sdram.sv",
+      "rtl/ip/memory/sdram_core.sv",
+      "rtl/ip/memory/sdram_pkg.sv"
+    ],
+    "review_note": "Decoded command pins using SdramCmdAct=0011 and SdramCmdRead=0101; removed invented command and row/column signal names."
+  },
+  "usb2": {
+    "source": {
+      "signal": [
+        {
+          "name": "dir_i",
+          "wave": "0......."
+        },
+        {
+          "name": "nxt_i",
+          "wave": "0.1....."
+        },
+        {
+          "name": "data_oe_o",
+          "wave": "01...0.."
+        },
+        {
+          "name": "data_do_o",
+          "wave": "x=.=.0..",
+          "data": [
+            "TX command",
+            "payload"
+          ]
+        },
+        {
+          "name": "stp_o",
+          "wave": "0....10."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: usb2_ulpi_if. Clock: usb2_ulpi_link.clk_i (ULPI link clock). One-byte ULPI transmit ordering: command, payload and STP. data_do_o is a port value; data_oe_o controls the shared bus drive. Example link-clock intervals only.",
+    "clock_domain": "usb2_ulpi_link.clk_i (ULPI link clock)",
+    "signals": {
+      "dir_i": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "dir_i",
+        "meaning": "PHY leaves the bus owned by the link.",
+        "polarity": "active-high"
+      },
+      "nxt_i": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "nxt_i",
+        "meaning": "PHY accepts the transmit command and payload.",
+        "polarity": "active-high"
+      },
+      "data_oe_o": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "data_oe_o",
+        "meaning": "Link drives during command and valid payload.",
+        "polarity": "active-high"
+      },
+      "data_do_o": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "data_do_o",
+        "meaning": "Transmit command and payload byte, then idle output.",
+        "polarity": "data"
+      },
+      "stp_o": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "stp_o",
+        "meaning": "Link stop pulse ends transmit.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/usb/usb2_ulpi_if.sv",
+      "rtl/ip/usb/usb2_ulpi_link.sv"
+    ],
+    "review_note": "Separated DATA into output and OE signals; reviewed TxCommand, TxPayload and TxStop in the link."
+  },
+  "gpio": {
+    "source": {
+      "signal": [
+        {
+          "name": "user_select_i[0]",
+          "wave": "0...1..."
+        },
+        {
+          "name": "user_handoff_i[0]",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "s_selected_oe[0]",
+          "wave": "1......."
+        },
+        {
+          "name": "s_selected_data[0]",
+          "wave": "0...1..."
+        },
+        {
+          "name": "open_drain_i[0]",
+          "wave": "0......."
+        },
+        {
+          "name": "oe_o[0]",
+          "wave": "1.0..1.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: gpio_core, gpio_if. Clock: clk_i; ownership handoff observation. Pin 0 push-pull ownership handoff. The actual pad OE equation is !user_handoff_i[0] && s_selected_oe[0] when open drain is disabled; the guard suppresses drive while selection changes.",
+    "clock_domain": "clk_i; ownership handoff observation",
+    "signals": {
+      "user_select_i[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "user_select_i",
+        "meaning": "Pin 0 switches from native to user selection.",
+        "polarity": "active-high"
+      },
+      "user_handoff_i[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "user_handoff_i",
+        "meaning": "Handoff guard disables pin drive.",
+        "polarity": "active-high"
+      },
+      "s_selected_oe[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "s_selected_oe",
+        "meaning": "Both selected owners request output enable in this example.",
+        "polarity": "active-high"
+      },
+      "s_selected_data[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "s_selected_data",
+        "meaning": "Selected data changes with the owner.",
+        "polarity": "data"
+      },
+      "open_drain_i[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "open_drain_i",
+        "meaning": "Push-pull mode selected.",
+        "polarity": "active-high"
+      },
+      "oe_o[0]": {
+        "file": "rtl/ip/peripheral/gpio_if.sv",
+        "scope": "gpio_if",
+        "symbol": "oe_o",
+        "meaning": "Actual pad output enable is suppressed by the handoff guard.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/gpio_core.sv",
+      "rtl/ip/peripheral/gpio_if.sv"
+    ],
+    "review_note": "Removed old-owner/new-owner pseudo-signals and used actual owner, guard and selected-data/enable signals. Pad behavior follows the reviewed output-enable equation.",
+    "parameters": {
+      "PinNum": 32,
+      "DataWidth": 32
+    },
+    "parameter_note": "PRODUCT has one 32-pin GPIO controller and matching gpio_if."
+  },
+  "timer": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_tick",
+          "wave": "010101010"
+        },
+        {
+          "name": "value_o",
+          "wave": "=.=.=.=.=",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0"
+          ]
+        },
+        {
+          "name": "compare0_event_o",
+          "wave": "0....10.."
+        },
+        {
+          "name": "timeout_event_o",
+          "wave": "0......10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: timer_core. Clock: clk_i; qualified prescaler ticks shown. Periodic up-count example with load_i = 3 and compare0_i = 2. The event tests the current value on s_tick; the counter then advances or reloads. Prescale clocks are omitted.",
+    "clock_domain": "clk_i; qualified prescaler ticks shown",
+    "signals": {
+      "s_tick": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "s_tick",
+        "meaning": "Prescaler-qualified count enable.",
+        "polarity": "active-high"
+      },
+      "value_o": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "value_o",
+        "meaning": "Periodic up-counter value between ticks.",
+        "polarity": "data"
+      },
+      "compare0_event_o": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "compare0_event_o",
+        "meaning": "Compare event when the current value equals two on a tick.",
+        "polarity": "active-high"
+      },
+      "timeout_event_o": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "timeout_event_o",
+        "meaning": "Terminal event at value three.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/timer_core.sv"
+    ],
+    "review_note": "Replaced a fictitious core IRQ-state lane with compare0_event_o and timeout_event_o; reviewed compare-before-update behavior.",
+    "parameters": {
+      "CounterWidth": 32,
+      "PrescaleWidth": 16
+    },
+    "parameter_note": "Reference TIM0/TIM1 use 32-bit counters and 16-bit prescalers."
+  },
+  "rtc": {
+    "source": {
+      "signal": [
+        {
+          "name": "command_valid_i",
+          "wave": "01..0..."
+        },
+        {
+          "name": "command_ready_o",
+          "wave": "0..10..."
+        },
+        {
+          "name": "response_valid_o",
+          "wave": "01..0..."
+        },
+        {
+          "name": "response_ready_i",
+          "wave": "0..10..."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: rtc_core. Clock: clk_i (RTC core domain). Core command/response handshake: response_valid_o equals command_valid_i and command_ready_o equals response_ready_i. The APB-to-RTC CDC and software snapshot reads are outside this interface sketch.",
+    "clock_domain": "clk_i (RTC core domain)",
+    "signals": {
+      "command_valid_i": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "command_valid_i",
+        "meaning": "Command remains valid through backpressure.",
+        "polarity": "active-high"
+      },
+      "command_ready_o": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "command_ready_o",
+        "meaning": "Command ready mirrors response_ready_i.",
+        "polarity": "active-high"
+      },
+      "response_valid_o": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "response_valid_o",
+        "meaning": "Response valid directly mirrors command_valid_i.",
+        "polarity": "active-high"
+      },
+      "response_ready_i": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "response_ready_i",
+        "meaning": "Response sink eventually accepts the transaction.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/rtc/rtl/rtc_core.sv"
+    ],
+    "review_note": "Corrected the old artificial command-busy/response delay; reviewed the direct ready/valid assignments in rtc_core."
+  },
+  "wdg": {
+    "source": {
+      "signal": [
+        {
+          "name": "active_o",
+          "wave": "1.......0"
+        },
+        {
+          "name": "window_open_o",
+          "wave": "0.10.1..0"
+        },
+        {
+          "name": "s_service_command",
+          "wave": "0.10....."
+        },
+        {
+          "name": "warning_active_o",
+          "wave": "0.....1.0"
+        },
+        {
+          "name": "reset_req_o",
+          "wave": "0.......1"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: wdg_core. Clock: clk_i (watchdog reference domain); elapsed count intervals omitted. A legal service occurs while the window is open; a later unserviced interval reaches early warning and timeout. Programmed timeouts, prescale clocks and reset-pulse duration are not drawn to scale.",
+    "clock_domain": "clk_i (watchdog reference domain); elapsed count intervals omitted",
+    "signals": {
+      "active_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "active_o",
+        "meaning": "Watchdog active through service and later timeout.",
+        "polarity": "active-high"
+      },
+      "window_open_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "window_open_o",
+        "meaning": "Service window opens, closes on reload, then opens again.",
+        "polarity": "active-high"
+      },
+      "s_service_command": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "s_service_command",
+        "meaning": "Accepted legal service command during the first open window.",
+        "polarity": "active-high"
+      },
+      "warning_active_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "warning_active_o",
+        "meaning": "Early warning before the later unserviced timeout.",
+        "polarity": "active-high"
+      },
+      "reset_req_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "reset_req_o",
+        "meaning": "Reset request asserted on terminal timeout.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/wdg/rtl/wdg_core.sv"
+    ],
+    "review_note": "Mapped actual window, accepted-service predicate, warning and reset outputs; removed abstract count-phase and valid-service names."
+  },
+  "dma": {
+    "source": {
+      "signal": [
+        {
+          "name": "start_i[0]",
+          "wave": "010......"
+        },
+        {
+          "name": "busy_o[0]",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "remaining_o[31:0]",
+          "wave": "=.=..=.=.",
+          "data": [
+            "16",
+            "16",
+            "8",
+            "0"
+          ]
+        },
+        {
+          "name": "done_o[0]",
+          "wave": "0......1."
+        },
+        {
+          "name": "error_o[0]",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: dma_core. Clock: clk_i; descriptor/data work and response latency omitted. Channel 0 successful transfer after a valid configuration or linked descriptor. Remaining bytes reach zero before completion is consumed. Descriptor fetches, bus handshakes and variable stalls are omitted; interrupt routing remains a register-bank function.",
+    "clock_domain": "clk_i; descriptor/data work and response latency omitted",
+    "signals": {
+      "start_i[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "start_i",
+        "meaning": "Channel 0 software-start pulse.",
+        "polarity": "active-high"
+      },
+      "busy_o[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "busy_o",
+        "meaning": "Channel 0 executes a valid memory transfer.",
+        "polarity": "active-high"
+      },
+      "remaining_o[31:0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "remaining_o",
+        "meaning": "Remaining bytes for channel 0.",
+        "polarity": "data"
+      },
+      "done_o[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "done_o",
+        "meaning": "Channel completion state after all work finishes.",
+        "polarity": "active-high"
+      },
+      "error_o[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "error_o",
+        "meaning": "No channel error in this successful example.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/dma_core.sv",
+      "rtl/mini/top/apb4_periph.sv"
+    ],
+    "review_note": "Replaced descriptor-ready, AXI/stream-work and completion-IRQ pseudo-signals with actual channel start/status/progress ports.",
+    "parameters": {
+      "NumChannels": 8,
+      "DataWidth": 32,
+      "AddrWidth": 32
+    },
+    "parameter_note": "rtl/mini/top/apb4_periph.sv instantiates the reference DMA with NumChannels(8)."
+  },
+  "crc": {
+    "source": {
+      "signal": [
+        {
+          "name": "start_i",
+          "wave": "010......."
+        },
+        {
+          "name": "data_accept_i",
+          "wave": "0..10....."
+        },
+        {
+          "name": "data_i",
+          "wave": "x..=x.....",
+          "data": [
+            "word"
+          ]
+        },
+        {
+          "name": "data_ready_o",
+          "wave": "1..0..1..."
+        },
+        {
+          "name": "finish_i",
+          "wave": "0......10."
+        },
+        {
+          "name": "result_valid_o",
+          "wave": "0.......1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: crc_core. Clock: clk_i; byte processing gaps omitted. START, one accepted word, byte-processing wait, then FINISH and result validity. data_ready_o gates input; the byte-processing gap is illustrative.",
+    "clock_domain": "clk_i; byte processing gaps omitted",
+    "signals": {
+      "start_i": {
+        "file": "rtl/managed/clusterip/crc/rtl/crc_core.sv",
+        "scope": "crc_core",
+        "symbol": "start_i",
+        "meaning": "Begin a CRC calculation.",
+        "polarity": "active-high"
+      },
+      "data_accept_i": {
+        "file": "rtl/managed/clusterip/crc/rtl/crc_core.sv",
+        "scope": "crc_core",
+        "symbol": "data_accept_i",
+        "meaning": "Accept one input word.",
+        "polarity": "active-high"
+      },
+      "data_i": {
+        "file": "rtl/managed/clusterip/crc/rtl/crc_core.sv",
+        "scope": "crc_core",
+        "symbol": "data_i",
+        "meaning": "Accepted input value.",
+        "polarity": "data"
+      },
+      "data_ready_o": {
+        "file": "rtl/managed/clusterip/crc/rtl/crc_core.sv",
+        "scope": "crc_core",
+        "symbol": "data_ready_o",
+        "meaning": "Engine stalls input while processing bytes.",
+        "polarity": "active-high"
+      },
+      "finish_i": {
+        "file": "rtl/managed/clusterip/crc/rtl/crc_core.sv",
+        "scope": "crc_core",
+        "symbol": "finish_i",
+        "meaning": "Finish once input processing is complete.",
+        "polarity": "active-high"
+      },
+      "result_valid_o": {
+        "file": "rtl/managed/clusterip/crc/rtl/crc_core.sv",
+        "scope": "crc_core",
+        "symbol": "result_valid_o",
+        "meaning": "Final CRC result is valid.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/crc/rtl/crc_core.sv"
+    ],
+    "review_note": "Mapped START/DATA accepted/FINISH/RESULT_VALID to actual core ports; reviewed start, busy, finish and result validity ordering."
+  },
+  "rng": {
+    "source": {
+      "signal": [
+        {
+          "name": "enable_i",
+          "wave": "01......."
+        },
+        {
+          "name": "entropy_valid_i",
+          "wave": "0.10.10.."
+        },
+        {
+          "name": "entropy_ready_o",
+          "wave": "01......."
+        },
+        {
+          "name": "entropy_qualified_i",
+          "wave": "0........"
+        },
+        {
+          "name": "source_qualified_o",
+          "wave": "0........"
+        },
+        {
+          "name": "startup_done_o",
+          "wave": "0.....1.."
+        },
+        {
+          "name": "fifo_empty_o",
+          "wave": "1.....0.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: rng_core. Clock: clk_i; qualified input handshakes, not physical entropy timing. Unqualified diagnostic source example: the first sample is discarded and a later distinct sample may enter the FIFO. Availability does not imply cryptographic entropy; source_qualified_o remains low.",
+    "clock_domain": "clk_i; qualified input handshakes, not physical entropy timing",
+    "signals": {
+      "enable_i": {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "scope": "rng_core",
+        "symbol": "enable_i",
+        "meaning": "Enable the controller.",
+        "polarity": "active-high"
+      },
+      "entropy_valid_i": {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "scope": "rng_core",
+        "symbol": "entropy_valid_i",
+        "meaning": "Two distinct diagnostic source samples arrive.",
+        "polarity": "active-high"
+      },
+      "entropy_ready_o": {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "scope": "rng_core",
+        "symbol": "entropy_ready_o",
+        "meaning": "Controller can accept diagnostic samples.",
+        "polarity": "active-high"
+      },
+      "entropy_qualified_i": {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "scope": "rng_core",
+        "symbol": "entropy_qualified_i",
+        "meaning": "The source remains unqualified.",
+        "polarity": "active-high"
+      },
+      "source_qualified_o": {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "scope": "rng_core",
+        "symbol": "source_qualified_o",
+        "meaning": "Controller reports the sampled source qualification state.",
+        "polarity": "active-high"
+      },
+      "startup_done_o": {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "scope": "rng_core",
+        "symbol": "startup_done_o",
+        "meaning": "Second distinct sample completes startup handling.",
+        "polarity": "active-high"
+      },
+      "fifo_empty_o": {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "scope": "rng_core",
+        "symbol": "fifo_empty_o",
+        "meaning": "A diagnostic word becomes available after first-word discard.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/rng/rtl/rng_core.sv"
+    ],
+    "review_note": "Corrected the old usable-entropy abstraction. RTL accepts diagnostic samples without qualification; software must check the separate qualification status before security use."
+  },
+  "clint": {
+    "source": {
+      "signal": [
+        {
+          "name": "tick_i",
+          "wave": "0101010."
+        },
+        {
+          "name": "mtime_o",
+          "wave": "=.=.=.==",
+          "data": [
+            "N-1",
+            "N",
+            "N+1",
+            "N+2",
+            "N+2"
+          ]
+        },
+        {
+          "name": "mtimecmp_i[0]",
+          "wave": "=.....=.",
+          "data": [
+            "N",
+            "N+8"
+          ]
+        },
+        {
+          "name": "timer_irq_o[0]",
+          "wave": "0..1...0"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: clint_core. Clock: clk_i; mtime tick and comparator update. Hart 0: the timer IRQ is a registered comparison of mtime_o against mtimecmp_i[0]. Updating compare above the current time deasserts the IRQ on a subsequent core edge; timebase tick spacing is illustrative.",
+    "clock_domain": "clk_i; mtime tick and comparator update",
+    "signals": {
+      "tick_i": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "tick_i",
+        "meaning": "Qualified timebase increments.",
+        "polarity": "active-high"
+      },
+      "mtime_o": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "mtime_o",
+        "meaning": "MTIME advances through the programmed compare value.",
+        "polarity": "data"
+      },
+      "mtimecmp_i[0]": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "mtimecmp_i",
+        "meaning": "Hart 0 compare is moved beyond the current time.",
+        "polarity": "data"
+      },
+      "timer_irq_o[0]": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "timer_irq_o",
+        "meaning": "Registered timer interrupt follows comparison.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/clint_core.sv"
+    ],
+    "review_note": "Mapped mtime/mtimecmp aliases to ports and retained the registered comparator delay.",
+    "parameters": {
+      "HartNum": 1
+    },
+    "parameter_note": "Each LP or HP local interrupt block in this example has one hart."
+  },
+  "aclint": {
+    "source": {
+      "signal": [
+        {
+          "name": "tick_i",
+          "wave": "0101010."
+        },
+        {
+          "name": "mtime_o",
+          "wave": "=.=.=.==",
+          "data": [
+            "N-1",
+            "N",
+            "N+1",
+            "N+2",
+            "N+2"
+          ]
+        },
+        {
+          "name": "mtimecmp_i[0]",
+          "wave": "=.....=.",
+          "data": [
+            "N",
+            "N+8"
+          ]
+        },
+        {
+          "name": "timer_irq_o[0]",
+          "wave": "0..1...0"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: clint_core. Clock: clk_i; mtime tick and comparator update. Hart 0: the timer IRQ is a registered comparison of mtime_o against mtimecmp_i[0]. Updating compare above the current time deasserts the IRQ on a subsequent core edge; timebase tick spacing is illustrative.",
+    "clock_domain": "clk_i; mtime tick and comparator update",
+    "signals": {
+      "tick_i": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "tick_i",
+        "meaning": "Qualified timebase increments.",
+        "polarity": "active-high"
+      },
+      "mtime_o": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "mtime_o",
+        "meaning": "MTIME advances through the programmed compare value.",
+        "polarity": "data"
+      },
+      "mtimecmp_i[0]": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "mtimecmp_i",
+        "meaning": "Hart 0 compare is moved beyond the current time.",
+        "polarity": "data"
+      },
+      "timer_irq_o[0]": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "timer_irq_o",
+        "meaning": "Registered timer interrupt follows comparison.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/clint_core.sv"
+    ],
+    "review_note": "Mapped mtime/mtimecmp aliases to ports and retained the registered comparator delay.",
+    "parameters": {
+      "HartNum": 1
+    },
+    "parameter_note": "Each LP or HP local interrupt block in this example has one hart."
+  },
+  "plic": {
+    "source": {
+      "signal": [
+        {
+          "name": "source_i[1]",
+          "wave": "010......"
+        },
+        {
+          "name": "s_pending_q[1]",
+          "wave": "0.1.0...."
+        },
+        {
+          "name": "s_claimed_q[1]",
+          "wave": "0...1..0."
+        },
+        {
+          "name": "context_irq_o[0]",
+          "wave": "0.1.0...."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: apb4_plic. Clock: clk_i; APB access and service intervals omitted. Source 1 enabled for context 0 with priority above threshold. Claim clears pending and marks the source claimed; completion releases it. APB read/write handshakes and software service time are omitted.",
+    "clock_domain": "clk_i; APB access and service intervals omitted",
+    "signals": {
+      "source_i[1]": {
+        "file": "rtl/ip/peripheral/apb4_plic.sv",
+        "scope": "apb4_plic",
+        "symbol": "source_i",
+        "meaning": "Source 1 pulse.",
+        "polarity": "active-high"
+      },
+      "s_pending_q[1]": {
+        "file": "rtl/ip/peripheral/apb4_plic.sv",
+        "scope": "apb4_plic",
+        "symbol": "s_pending_q",
+        "meaning": "Pending latch is set then cleared by a claim.",
+        "polarity": "active-high"
+      },
+      "s_claimed_q[1]": {
+        "file": "rtl/ip/peripheral/apb4_plic.sv",
+        "scope": "apb4_plic",
+        "symbol": "s_claimed_q",
+        "meaning": "Claimed state persists until completion.",
+        "polarity": "active-high"
+      },
+      "context_irq_o[0]": {
+        "file": "rtl/ip/peripheral/apb4_plic.sv",
+        "scope": "apb4_plic",
+        "symbol": "context_irq_o",
+        "meaning": "Context 0 interrupt while enabled pending priority wins.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/apb4_plic.sv"
+    ],
+    "review_note": "Reviewed priority arbitration, pending and claimed arrays. Removed claim-read/complete-write pseudo-signals and kept their software actions in the note.",
+    "parameters": {
+      "NumSources": 32,
+      "NumContexts": 2
+    },
+    "parameter_note": "Reference HP PLIC exposes 32 source slots and two contexts."
+  },
+  "mailbox": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_lp_arg0_q",
+          "wave": "=.=......",
+          "data": [
+            "old",
+            "payload"
+          ]
+        },
+        {
+          "name": "s_lp_sequence_q",
+          "wave": "=..=.....",
+          "data": [
+            "N",
+            "N+1"
+          ]
+        },
+        {
+          "name": "s_hp_intr_state_q",
+          "wave": "0...1..0."
+        },
+        {
+          "name": "hp_irq_o",
+          "wave": "0...1..0."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: apb4_hp_mailbox. Clock: clk_i; software ordering and APB transaction gaps omitted. LP writes payload/sequence and performs required memory ordering before its doorbell sets HP interrupt state. HP acknowledges with W1C after service. Fences are software actions, not hardware signal lanes.",
+    "clock_domain": "clk_i; software ordering and APB transaction gaps omitted",
+    "signals": {
+      "s_lp_arg0_q": {
+        "file": "rtl/ip/peripheral/apb4_hp_mailbox.sv",
+        "scope": "apb4_hp_mailbox",
+        "symbol": "s_lp_arg0_q",
+        "meaning": "LP payload register is updated before the doorbell.",
+        "polarity": "data"
+      },
+      "s_lp_sequence_q": {
+        "file": "rtl/ip/peripheral/apb4_hp_mailbox.sv",
+        "scope": "apb4_hp_mailbox",
+        "symbol": "s_lp_sequence_q",
+        "meaning": "LP publishes a new sequence.",
+        "polarity": "data"
+      },
+      "s_hp_intr_state_q": {
+        "file": "rtl/ip/peripheral/apb4_hp_mailbox.sv",
+        "scope": "apb4_hp_mailbox",
+        "symbol": "s_hp_intr_state_q",
+        "meaning": "LP doorbell sets HP interrupt state; HP W1C clears it.",
+        "polarity": "active-high"
+      },
+      "hp_irq_o": {
+        "file": "rtl/ip/peripheral/apb4_hp_mailbox.sv",
+        "scope": "apb4_hp_mailbox",
+        "symbol": "hp_irq_o",
+        "meaning": "HP interrupt output with its enable already set.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/apb4_hp_mailbox.sv"
+    ],
+    "review_note": "Mapped actual payload, sequence and sticky interrupt registers; reviewed LP_DOORBELL and HP_INTR_STATE writes."
+  },
+  "resource": {
+    "source": {
+      "signal": [
+        {
+          "name": "quiesce_o[0]",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "block_ack_i[0]",
+          "wave": "0..1...0."
+        },
+        {
+          "name": "idle_i[0]",
+          "wave": "0...1...."
+        },
+        {
+          "name": "cache_clean_o",
+          "wave": "0....1..."
+        },
+        {
+          "name": "owner_o[0]",
+          "wave": "=.....=..",
+          "data": [
+            "0 (LP)",
+            "1 (HP)"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: resource_controller. Clock: clk_i; ownership transition intervals omitted. Resource 0 handoff waits for quiesce acknowledgement, idle and required cache-clean handling before an owner write; requests and software barriers are omitted. This is an ordering sketch.",
+    "clock_domain": "clk_i; ownership transition intervals omitted",
+    "signals": {
+      "quiesce_o[0]": {
+        "file": "rtl/mini/top/resource_controller.sv",
+        "scope": "resource_controller",
+        "symbol": "quiesce_o",
+        "meaning": "Resource 0 blocks new work.",
+        "polarity": "active-high"
+      },
+      "block_ack_i[0]": {
+        "file": "rtl/mini/top/resource_controller.sv",
+        "scope": "resource_controller",
+        "symbol": "block_ack_i",
+        "meaning": "Resource acknowledges admission blocking.",
+        "polarity": "active-high"
+      },
+      "idle_i[0]": {
+        "file": "rtl/mini/top/resource_controller.sv",
+        "scope": "resource_controller",
+        "symbol": "idle_i",
+        "meaning": "Previously accepted work drains.",
+        "polarity": "active-high"
+      },
+      "cache_clean_o": {
+        "file": "rtl/mini/top/resource_controller.sv",
+        "scope": "resource_controller",
+        "symbol": "cache_clean_o",
+        "meaning": "Required cache-clean acknowledgement has been recorded.",
+        "polarity": "active-high"
+      },
+      "owner_o[0]": {
+        "file": "rtl/mini/top/resource_controller.sv",
+        "scope": "resource_controller",
+        "symbol": "owner_o",
+        "meaning": "Resource owner changes after the handoff conditions.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/mini/top/resource_controller.sv"
+    ],
+    "review_note": "Replaced resource-busy/cache-handoff prose with actual admission, idle, acknowledgement and owner ports. Reviewed owner-write guards.",
+    "parameters": {
+      "ResourceCount": 8
+    },
+    "parameter_note": "The reviewed resource-controller integration tracks eight resource positions."
+  },
+  "monitor": {
+    "source": {
+      "signal": [
+        {
+          "name": "master_read_accept_i[0]",
+          "wave": "01010..."
+        },
+        {
+          "name": "s_master_read_accept_q[0]",
+          "wave": "=.=.=...",
+          "data": [
+            "0",
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "s_control_write",
+          "wave": "0.....10"
+        },
+        {
+          "name": "s_master_read_accept_snapshot_q[0]",
+          "wave": "=......=",
+          "data": [
+            "old",
+            "2"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: fabric_monitor. Clock: clk_i. Monitoring enabled and unfrozen. A legal CONTROL write with APB write-data bit 3 set snapshots the live counters; no separate snapshot-valid signal is implemented. Example sampling cycles only.",
+    "clock_domain": "clk_i",
+    "signals": {
+      "master_read_accept_i[0]": {
+        "file": "rtl/mini/top/fabric_monitor.sv",
+        "scope": "fabric_monitor",
+        "symbol": "master_read_accept_i",
+        "meaning": "Two accepted reads for master 0.",
+        "polarity": "active-high"
+      },
+      "s_master_read_accept_q[0]": {
+        "file": "rtl/mini/top/fabric_monitor.sv",
+        "scope": "fabric_monitor",
+        "symbol": "s_master_read_accept_q",
+        "meaning": "Live counter increments after each event.",
+        "polarity": "data"
+      },
+      "s_control_write": {
+        "file": "rtl/mini/top/fabric_monitor.sv",
+        "scope": "fabric_monitor",
+        "symbol": "s_control_write",
+        "meaning": "A legal control write requests snapshot via pwdata bit 3.",
+        "polarity": "active-high"
+      },
+      "s_master_read_accept_snapshot_q[0]": {
+        "file": "rtl/mini/top/fabric_monitor.sv",
+        "scope": "fabric_monitor",
+        "symbol": "s_master_read_accept_snapshot_q",
+        "meaning": "Snapshot captures the prior live counter value.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/mini/top/fabric_monitor.sv"
+    ],
+    "review_note": "Removed invented SNAPSHOT and snapshot-valid signals; used actual control decode and live/snapshot register arrays.",
+    "parameters": {
+      "NumMasters": 8,
+      "NumTargets": 6
+    },
+    "parameter_note": "Reference monitor parameters are eight masters and six target positions."
+  },
+  "sysctrl": {
+    "source": {
+      "signal": [
+        {
+          "name": "req_valid_o",
+          "wave": "01..0...."
+        },
+        {
+          "name": "req_ready_i",
+          "wave": "0..10...."
+        },
+        {
+          "name": "req_data_o",
+          "wave": "x=..x....",
+          "data": [
+            "request"
+          ]
+        },
+        {
+          "name": "rsp_valid_i",
+          "wave": "0.....1.."
+        },
+        {
+          "name": "rsp_ready_o",
+          "wave": "0......1."
+        },
+        {
+          "name": "rsp_data_i",
+          "wave": "x.....=..",
+          "data": [
+            "response"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: clock_ctrl_if. Clock: sysctrl_core.clk_i; clock-controller transaction boundary. SYSCTRL clock-command interface. Request and response handshakes are separated by implementation-dependent drain and clock-switch work. Internal PLL qualification and safe-source steps remain described in the architecture text.",
+    "clock_domain": "sysctrl_core.clk_i; clock-controller transaction boundary",
+    "signals": {
+      "req_valid_o": {
+        "file": "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "scope": "clock_ctrl_if",
+        "symbol": "req_valid_o",
+        "meaning": "Clock-change request is offered.",
+        "polarity": "active-high"
+      },
+      "req_ready_i": {
+        "file": "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "scope": "clock_ctrl_if",
+        "symbol": "req_ready_i",
+        "meaning": "Clock controller accepts the request.",
+        "polarity": "active-high"
+      },
+      "req_data_o": {
+        "file": "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "scope": "clock_ctrl_if",
+        "symbol": "req_data_o",
+        "meaning": "Request payload held through acceptance.",
+        "polarity": "data"
+      },
+      "rsp_valid_i": {
+        "file": "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "scope": "clock_ctrl_if",
+        "symbol": "rsp_valid_i",
+        "meaning": "Completion/fault response becomes available.",
+        "polarity": "active-high"
+      },
+      "rsp_ready_o": {
+        "file": "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "scope": "clock_ctrl_if",
+        "symbol": "rsp_ready_o",
+        "meaning": "SYSCTRL accepts the response.",
+        "polarity": "active-high"
+      },
+      "rsp_data_i": {
+        "file": "rtl/ip/peripheral/clock_ctrl_if.sv",
+        "scope": "clock_ctrl_if",
+        "symbol": "rsp_data_i",
+        "meaning": "Response payload held until consumed.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/clock_ctrl_if.sv",
+      "rtl/ip/peripheral/sysctrl_core.sv"
+    ],
+    "review_note": "Replaced conceptual clock-stage labels with actual clock_ctrl_if transaction ports; no stage latency is implied."
+  },
+  "sram": {
+    "source": {
+      "signal": [
+        {
+          "name": "aclk",
+          "wave": "p......."
+        },
+        {
+          "name": "arvalid",
+          "wave": "01.0...."
+        },
+        {
+          "name": "arready",
+          "wave": "0.10...."
+        },
+        {
+          "name": "rvalid",
+          "wave": "0...1..0"
+        },
+        {
+          "name": "rready",
+          "wave": "0....1.."
+        },
+        {
+          "name": "rdata",
+          "wave": "x...=..x",
+          "data": [
+            "read data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: axi4_if. Clock: aclk at the native SRAM AXI boundary. Native SRAM AXI read with response backpressure. The diagram illustrates the interface contract, not a guaranteed memory latency; read data remains stable while stalled.",
+    "clock_domain": "aclk at the native SRAM AXI boundary",
+    "signals": {
+      "aclk": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "aclk",
+        "meaning": "AXI sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "arvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arvalid",
+        "meaning": "Read address request.",
+        "polarity": "active-high"
+      },
+      "arready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arready",
+        "meaning": "Read address accepted.",
+        "polarity": "active-high"
+      },
+      "rvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rvalid",
+        "meaning": "Response held valid during a sink stall.",
+        "polarity": "active-high"
+      },
+      "rready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rready",
+        "meaning": "Read response sink readiness.",
+        "polarity": "active-high"
+      },
+      "rdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rdata",
+        "meaning": "Read data remains stable until consumed.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"
+    ],
+    "review_note": "Split the synthetic AR-handshake into actual ARVALID/ARREADY members; retained response wait behavior.",
+    "parameters": {
+      "ADDR_WIDTH": 32,
+      "DATA_WIDTH": 64,
+      "ID_WIDTH": 6,
+      "USER_WIDTH": 1
+    },
+    "parameter_note": "The PRODUCT SRAM data port is native AXI64."
+  },
+  "jpeg": {
+    "source": {
+      "signal": [
+        {
+          "name": "start_ready_o",
+          "wave": "1.0.....1"
+        },
+        {
+          "name": "start_i",
+          "wave": "010......"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1.....0"
+        },
+        {
+          "name": "done_o",
+          "wave": "0.......1"
+        },
+        {
+          "name": "error_o",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: jpeg_encode_core. Clock: clk_i; coefficient and entropy work omitted. Successful encoder start/completion ordering after dimensions, format and tables are configured. Pixel/coefficient/output handshakes and variable processing time are omitted; this does not promise a fixed encode latency.",
+    "clock_domain": "clk_i; coefficient and entropy work omitted",
+    "signals": {
+      "start_ready_o": {
+        "file": "rtl/ip/multimedia/jpeg_encode_core.sv",
+        "scope": "jpeg_encode_core",
+        "symbol": "start_ready_o",
+        "meaning": "Encoder ready before and after a frame.",
+        "polarity": "active-high"
+      },
+      "start_i": {
+        "file": "rtl/ip/multimedia/jpeg_encode_core.sv",
+        "scope": "jpeg_encode_core",
+        "symbol": "start_i",
+        "meaning": "Frame start request while ready.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/jpeg_encode_core.sv",
+        "scope": "jpeg_encode_core",
+        "symbol": "busy_o",
+        "meaning": "Encoding activity.",
+        "polarity": "active-high"
+      },
+      "done_o": {
+        "file": "rtl/ip/multimedia/jpeg_encode_core.sv",
+        "scope": "jpeg_encode_core",
+        "symbol": "done_o",
+        "meaning": "Frame encoding completes.",
+        "polarity": "active-high"
+      },
+      "error_o": {
+        "file": "rtl/ip/multimedia/jpeg_encode_core.sv",
+        "scope": "jpeg_encode_core",
+        "symbol": "error_o",
+        "meaning": "No error in the illustrated encoding path.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/jpeg_encode_core.sv"
+    ],
+    "review_note": "Replaced generic configuration/payload/IRQ lanes with actual encoder readiness and status. The APB interrupt mechanism is documented separately."
+  },
+  "apu": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_transport_job_start",
+          "wave": "010......"
+        },
+        {
+          "name": "s_codec_busy",
+          "wave": "1......0."
+        },
+        {
+          "name": "s_transport_job_done",
+          "wave": "0......10"
+        },
+        {
+          "name": "s_transport_result_valid",
+          "wave": "0...10..."
+        },
+        {
+          "name": "s_codec_direct_done",
+          "wave": "0......10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: apb4_apu. Clock: clk_i; microcode and transport processing intervals omitted. Supported direct-job transport ordering, with validated microcode and ownership assumed. WAV/FLAC infrastructure is present; full production qualification and later codecs remain outside this claim. Processing durations are schematic.",
+    "clock_domain": "clk_i; microcode and transport processing intervals omitted",
+    "signals": {
+      "s_transport_job_start": {
+        "file": "rtl/ip/multimedia/apb4_apu.sv",
+        "scope": "apb4_apu",
+        "symbol": "s_transport_job_start",
+        "meaning": "Transport starts a supported job.",
+        "polarity": "active-high"
+      },
+      "s_codec_busy": {
+        "file": "rtl/ip/multimedia/apb4_apu.sv",
+        "scope": "apb4_apu",
+        "symbol": "s_codec_busy",
+        "meaning": "The accepted job remains busy until direct completion.",
+        "polarity": "active-high"
+      },
+      "s_transport_job_done": {
+        "file": "rtl/ip/multimedia/apb4_apu.sv",
+        "scope": "apb4_apu",
+        "symbol": "s_transport_job_done",
+        "meaning": "Transport reports completion.",
+        "polarity": "active-high"
+      },
+      "s_transport_result_valid": {
+        "file": "rtl/ip/multimedia/apb4_apu.sv",
+        "scope": "apb4_apu",
+        "symbol": "s_transport_result_valid",
+        "meaning": "Intermediate transport instruction result pulse.",
+        "polarity": "active-high"
+      },
+      "s_codec_direct_done": {
+        "file": "rtl/ip/multimedia/apb4_apu.sv",
+        "scope": "apb4_apu",
+        "symbol": "s_codec_direct_done",
+        "meaning": "Direct-job completion is published after job completion.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/apb4_apu.sv",
+      "rtl/ip/multimedia/apu_codec_controller.sv",
+      "rtl/ip/multimedia/apu_codec_transport.sv"
+    ],
+    "review_note": "Mapped integrated wrapper signals. Transport instruction result_valid is a pulse, distinct from job_done; direct_done is registered when FinishTransport returns to Idle."
+  },
+  "crypto": {
+    "source": {
+      "signal": [
+        {
+          "name": "key_valid_o",
+          "wave": "1........"
+        },
+        {
+          "name": "start_i",
+          "wave": "010......"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "output_valid_o",
+          "wave": "0....1.0."
+        },
+        {
+          "name": "output_ready_i",
+          "wave": "0.....1.."
+        },
+        {
+          "name": "done_o",
+          "wave": "0......10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: crypto_aes_engine. Clock: clk_i; AES processing intervals omitted. AES engine example with key expansion complete and valid parameters. The final output waits for output_ready_i; internal block processing and earlier words are omitted. SHA/RSA have separate engine sequencing.",
+    "clock_domain": "clk_i; AES processing intervals omitted",
+    "signals": {
+      "key_valid_o": {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "scope": "crypto_aes_engine",
+        "symbol": "key_valid_o",
+        "meaning": "A committed expanded key is valid before start.",
+        "polarity": "active-high"
+      },
+      "start_i": {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "scope": "crypto_aes_engine",
+        "symbol": "start_i",
+        "meaning": "Start a configured AES job.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "scope": "crypto_aes_engine",
+        "symbol": "busy_o",
+        "meaning": "AES engine active.",
+        "polarity": "active-high"
+      },
+      "output_valid_o": {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "scope": "crypto_aes_engine",
+        "symbol": "output_valid_o",
+        "meaning": "Final output word offered and retained until accepted.",
+        "polarity": "active-high"
+      },
+      "output_ready_i": {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "scope": "crypto_aes_engine",
+        "symbol": "output_ready_i",
+        "meaning": "Output consumer readiness.",
+        "polarity": "active-high"
+      },
+      "done_o": {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "scope": "crypto_aes_engine",
+        "symbol": "done_o",
+        "meaning": "Job completion after the final accepted output.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/security/crypto_aes_engine.sv"
+    ],
+    "review_note": "Replaced generic accelerator lanes with the AES engine ready/valid and completion contract; no cipher throughput claim."
+  },
+  "dvp": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_i",
+          "wave": "p........"
+        },
+        {
+          "name": "vsync_i",
+          "wave": "10......."
+        },
+        {
+          "name": "href_i",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "dat_i",
+          "wave": "x.====x..",
+          "data": [
+            "B0",
+            "B1",
+            "B2",
+            "B3"
+          ]
+        },
+        {
+          "name": "push_valid_o",
+          "wave": "0.....10."
+        },
+        {
+          "name": "push_ready_i",
+          "wave": "1........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: dvp_core. Clock: clk_i is the captured pixel-clock domain. RGB565 excerpt with positive HREF and active-high VSYNC configuration. Two bytes form a pixel; two pixels form the 32-bit payload in one output record. Full frame/line lengths and partial-line records are omitted.",
+    "clock_domain": "clk_i is the captured pixel-clock domain",
+    "signals": {
+      "clk_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "clk_i",
+        "meaning": "Pixel-domain sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "vsync_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "vsync_i",
+        "meaning": "Illustrative frame boundary with configured active-high polarity.",
+        "polarity": "active-high"
+      },
+      "href_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "href_i",
+        "meaning": "Active line byte interval.",
+        "polarity": "active-high"
+      },
+      "dat_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "dat_i",
+        "meaning": "Camera input bytes in RGB565 mode.",
+        "polarity": "data"
+      },
+      "push_valid_o": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "push_valid_o",
+        "meaning": "A 32-bit record is offered after four input bytes.",
+        "polarity": "active-high"
+      },
+      "push_ready_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "push_ready_i",
+        "meaning": "Output queue has space in this example.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/dvp_core.sv"
+    ],
+    "review_note": "Mapped pixel-domain input and output record handshake; removed synthetic stream TLAST, which belongs to downstream stream packing."
+  },
+  "archinfo": {
+    "source": {
+      "signal": [
+        {
+          "name": "paddr_i",
+          "wave": "x=...x..",
+          "data": [
+            "offset"
+          ]
+        },
+        {
+          "name": "psel_i",
+          "wave": "01...0.."
+        },
+        {
+          "name": "penable_i",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "pwrite_i",
+          "wave": "0......."
+        },
+        {
+          "name": "pready_o",
+          "wave": "1......."
+        },
+        {
+          "name": "prdata_o",
+          "wave": "x=...x..",
+          "data": [
+            "value"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: archinfo_reg. Clock: APB combinational read boundary; sampled in its wrapper PCLK domain. Read-only identification register selection. pready_o is asserted combinationally; no invented internal PCLK port or multi-cycle read-result pipeline is implied.",
+    "clock_domain": "APB combinational read boundary; sampled in its wrapper PCLK domain",
+    "signals": {
+      "paddr_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "paddr_i",
+        "meaning": "Read register offset.",
+        "polarity": "data"
+      },
+      "psel_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "psel_i",
+        "meaning": "APB select.",
+        "polarity": "active-high"
+      },
+      "penable_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "penable_i",
+        "meaning": "APB access enable.",
+        "polarity": "active-high"
+      },
+      "pwrite_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "pwrite_i",
+        "meaning": "Read transaction.",
+        "polarity": "active-high"
+      },
+      "pready_o": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "pready_o",
+        "meaning": "Always-ready register interface.",
+        "polarity": "active-high"
+      },
+      "prdata_o": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "prdata_o",
+        "meaning": "Read value selected by address.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv"
+    ],
+    "review_note": "Used the actual combinational archinfo_reg ports; corrected the fictitious PCLK/APB-read signal labels."
+  },
+  "extensions": {
+    "source": {
+      "signal": [
+        {
+          "name": "quiesce_o",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "data_idle_i",
+          "wave": "0...1...."
+        },
+        {
+          "name": "dma_busy_i",
+          "wave": "1...0...."
+        },
+        {
+          "name": "idle_o",
+          "wave": "0...1...."
+        },
+        {
+          "name": "reset_o",
+          "wave": "0....1.0."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: extension_slot. Clock: clk_i; lifecycle control intervals omitted. EXT-H lifecycle ordering: quiesce, drain DMA/data work, request reset, then resume. EXT-L has no data master and reports idle constantly; its software-controlled quiesce/reset registers remain applicable.",
+    "clock_domain": "clk_i; lifecycle control intervals omitted",
+    "signals": {
+      "quiesce_o": {
+        "file": "rtl/mini/top/extension_slot.sv",
+        "scope": "extension_slot",
+        "symbol": "quiesce_o",
+        "meaning": "Software sets then clears admission quiesce.",
+        "polarity": "active-high"
+      },
+      "data_idle_i": {
+        "file": "rtl/mini/top/extension_slot.sv",
+        "scope": "extension_slot",
+        "symbol": "data_idle_i",
+        "meaning": "EXT-H accepted data work drains.",
+        "polarity": "active-high"
+      },
+      "dma_busy_i": {
+        "file": "rtl/mini/top/extension_slot.sv",
+        "scope": "extension_slot",
+        "symbol": "dma_busy_i",
+        "meaning": "EXT-H DMA engine becomes idle.",
+        "polarity": "active-high"
+      },
+      "idle_o": {
+        "file": "rtl/mini/top/extension_slot.sv",
+        "scope": "extension_slot",
+        "symbol": "idle_o",
+        "meaning": "EXT-H idle is data_idle_i and not dma_busy_i.",
+        "polarity": "active-high"
+      },
+      "reset_o": {
+        "file": "rtl/mini/top/extension_slot.sv",
+        "scope": "extension_slot",
+        "symbol": "reset_o",
+        "meaning": "Software-controlled reset request.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/mini/top/extension_slot.sv"
+    ],
+    "review_note": "Removed invented accepted-work and ready signals; reviewed idle_o and quiesce/reset output assignments. This example is explicitly EXT-H.",
+    "parameters": {
+      "KindExtH": 1
+    },
+    "parameter_note": "EXT-H branch shown; EXT-L constant-idle behavior is stated in the note."
+  },
+  "mpw-timer": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_i",
+          "wave": "p......."
+        },
+        {
+          "name": "s_div_cnt_q",
+          "wave": "=.......",
+          "data": [
+            "0"
+          ]
+        },
+        {
+          "name": "s_tim_cnt_q",
+          "wave": "========",
+          "data": [
+            "fffd",
+            "fffe",
+            "ffff",
+            "0",
+            "1",
+            "2",
+            "3",
+            "4"
+          ]
+        },
+        {
+          "name": "s_gpio_rev_q",
+          "wave": "0..1...."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: user_ip_design. Clock: clk_i (selected MPW user-IP clock). Selected MPW Timer only, divider register zero and no APB writes. Counter labels are hexadecimal. After count ffff the counter wraps to zero and the GPIO toggle changes. This configuration is not PRODUCT hardware.",
+    "clock_domain": "clk_i (selected MPW user-IP clock)",
+    "signals": {
+      "clk_i": {
+        "file": "rtl/managed/mpw/ip/username1/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "clk_i",
+        "meaning": "Selected user-IP sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "s_div_cnt_q": {
+        "file": "rtl/managed/mpw/ip/username1/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "s_div_cnt_q",
+        "meaning": "Divider remains zero with the divider register set to zero.",
+        "polarity": "data"
+      },
+      "s_tim_cnt_q": {
+        "file": "rtl/managed/mpw/ip/username1/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "s_tim_cnt_q",
+        "meaning": "Timer reaches full count and wraps on the following edge.",
+        "polarity": "data"
+      },
+      "s_gpio_rev_q": {
+        "file": "rtl/managed/mpw/ip/username1/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "s_gpio_rev_q",
+        "meaning": "User GPIO toggle register changes when the old count is all ones.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/mpw/ip/username1/user_ip_design.sv"
+    ],
+    "review_note": "Replaced COUNT/user GPIO aliases with actual stored registers. Reviewed 16-bit wrap and toggle equations; intervals illustrate events rather than a divider timing guarantee."
+  },
+  "mpw-gpio": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_gpio_do_en",
+          "wave": "010......"
+        },
+        {
+          "name": "s_gpio_do_q",
+          "wave": "=.=......",
+          "data": [
+            "old",
+            "data"
+          ]
+        },
+        {
+          "name": "s_gpio_oe_en",
+          "wave": "0...10..."
+        },
+        {
+          "name": "s_gpio_oe_q",
+          "wave": "=....=...",
+          "data": [
+            "0",
+            "mask"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: user_ip_design. Clock: clk_i (selected MPW user-IP clock). Selected MPW GPIO only. Write output data before output enable to avoid unintended driven values. Actual user_gpio outputs mirror these latches; this is not an independently integrated PRODUCT GPIO.",
+    "clock_domain": "clk_i (selected MPW user-IP clock)",
+    "signals": {
+      "s_gpio_do_en": {
+        "file": "rtl/managed/mpw/ip/username2/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "s_gpio_do_en",
+        "meaning": "Accepted write enables the output-data register.",
+        "polarity": "active-high"
+      },
+      "s_gpio_do_q": {
+        "file": "rtl/managed/mpw/ip/username2/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "s_gpio_do_q",
+        "meaning": "Output-data latch updates after its write.",
+        "polarity": "data"
+      },
+      "s_gpio_oe_en": {
+        "file": "rtl/managed/mpw/ip/username2/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "s_gpio_oe_en",
+        "meaning": "A separate write enables the output-enable register.",
+        "polarity": "active-high"
+      },
+      "s_gpio_oe_q": {
+        "file": "rtl/managed/mpw/ip/username2/user_ip_design.sv",
+        "scope": "user_ip_design",
+        "symbol": "s_gpio_oe_q",
+        "meaning": "Output enable is published after data.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/mpw/ip/username2/user_ip_design.sv",
+      "rtl/mini/integration/generate_user_extensions.py",
+      "rtl/mini/integration/user_extensions.json"
+    ],
+    "review_note": "Replaced generic APB write/DATA_OUT/OUTPUT_ENABLE with real write predicates and latched registers.",
+    "parameters": {
+      "USER_GPIO_NUM": 32
+    },
+    "parameter_note": "MPW user interface and mini user-extension generator use 32 logical GPIO bits."
+  },
+  "pwm": {
+    "source": {
+      "signal": [
+        {
+          "name": "timer_counter_o[0]",
+          "wave": "=.=.=.=.=",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0"
+          ]
+        },
+        {
+          "name": "channel_duty_i[0]",
+          "wave": "=..=.....",
+          "data": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "update_i",
+          "wave": "0...10..."
+        },
+        {
+          "name": "channel_active_duty_o[0]",
+          "wave": "=....=...",
+          "data": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "pwm_o[0]",
+          "wave": "10......1"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: pwm_core. Clock: clk_i; timer/update boundaries shown. Timer/channel 0 example with a shadow duty update. Actual application timing depends on the configured update mode; counter wrap and update intervals are illustrative, not an electrical timing guarantee.",
+    "clock_domain": "clk_i; timer/update boundaries shown",
+    "signals": {
+      "timer_counter_o[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "timer_counter_o",
+        "meaning": "Timer 0 counter excerpt.",
+        "polarity": "data"
+      },
+      "channel_duty_i[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "channel_duty_i",
+        "meaning": "Software changes the shadow duty input.",
+        "polarity": "data"
+      },
+      "update_i": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "update_i",
+        "meaning": "Explicit update request.",
+        "polarity": "active-high"
+      },
+      "channel_active_duty_o[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "channel_active_duty_o",
+        "meaning": "Active duty reflects the accepted update.",
+        "polarity": "data"
+      },
+      "pwm_o[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "pwm_o",
+        "meaning": "Channel 0 output for the shown counter/duty example.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_define.svh"
+    ],
+    "review_note": "Mapped counter, shadow input, update command, active duty and output ports. Replaced synthetic shadow-update/active-update signals.",
+    "parameters": {
+      "PWM_TIMER_COUNT": 2,
+      "PWM_CHANNEL_COUNT": 4
+    },
+    "parameter_note": "pwm_define.svh declares two timers and four PWM channels."
+  },
+  "uart-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "rx_i",
+          "wave": "101010.10.1|.."
+        },
+        {
+          "name": "s_frame_err_q",
+          "wave": "0.........1|.."
+        },
+        {
+          "name": "data_valid_o",
+          "wave": "0..........|10"
+        },
+        {
+          "name": "data_o",
+          "wave": "x..........|=.",
+          "data": [
+            "0x2a5"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: apb4_uart_rx. Clock: clk_i; serial bit intervals and receiver processing gap. 8N1 0xA5 with an invalid low stop bit; data_o[9] reports framing error. The break omits oversampling/processing clocks. This is an ordering sketch, not an exact latency trace.",
+    "clock_domain": "clk_i; serial bit intervals and receiver processing gap",
+    "signals": {
+      "rx_i": {
+        "file": "rtl/ip/serial/apb4_uart_rx.sv",
+        "scope": "apb4_uart_rx",
+        "symbol": "rx_i",
+        "meaning": "RX input with a low stop sample.",
+        "polarity": "data"
+      },
+      "s_frame_err_q": {
+        "file": "rtl/ip/serial/apb4_uart_rx.sv",
+        "scope": "apb4_uart_rx",
+        "symbol": "s_frame_err_q",
+        "meaning": "Registered framing-error bit after stop sampling.",
+        "polarity": "active-high"
+      },
+      "data_valid_o": {
+        "file": "rtl/ip/serial/apb4_uart_rx.sv",
+        "scope": "apb4_uart_rx",
+        "symbol": "data_valid_o",
+        "meaning": "Received word publication pulse after the stop interval.",
+        "polarity": "active-high"
+      },
+      "data_o": {
+        "file": "rtl/ip/serial/apb4_uart_rx.sv",
+        "scope": "apb4_uart_rx",
+        "symbol": "data_o",
+        "meaning": "Published byte and framing-error flag.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/apb4_uart_rx.sv"
+    ],
+    "review_note": "Reviewed STOP1 sampling and data_o packing: bit 9 is frame error, bit 8 parity error, bits 7:0 payload. Replaced synthetic RX phase and FIFO push with receiver signals."
+  },
+  "i2c-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "scl_pull_low_o",
+          "wave": "1.0......"
+        },
+        {
+          "name": "scl_i",
+          "wave": "0.......1"
+        },
+        {
+          "name": "stretch_timeout_event_o",
+          "wave": "0....10.."
+        },
+        {
+          "name": "busy_o",
+          "wave": "1.....0.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: i2c_core. Clock: clk_i; omitted programmed timeout intervals. The controller releases its open-drain SCL drive but observes SCL low. A programmed stretch timeout ends the transfer; later target release is shown. Durations are illustrative.",
+    "clock_domain": "clk_i; omitted programmed timeout intervals",
+    "signals": {
+      "scl_pull_low_o": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "scl_pull_low_o",
+        "meaning": "Controller pulls SCL low, then releases it.",
+        "polarity": "active-high"
+      },
+      "scl_i": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "scl_i",
+        "meaning": "SCL remains low after release because the target stretches.",
+        "polarity": "active-high"
+      },
+      "stretch_timeout_event_o": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "stretch_timeout_event_o",
+        "meaning": "Pulse when the configured stretch timeout expires.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "busy_o",
+        "meaning": "Transfer ends following timeout handling.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/i2c_core.sv"
+    ],
+    "review_note": "Mapped controller release, observed SCL and explicit timeout output. Target-held-low is explanatory text, not an invented input signal."
+  },
+  "ws2812-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "data_valid_i",
+          "wave": "1.0....."
+        },
+        {
+          "name": "busy_o",
+          "wave": "1......0"
+        },
+        {
+          "name": "underflow_o",
+          "wave": "0..10..."
+        },
+        {
+          "name": "reset_active_o",
+          "wave": "0..1...0"
+        },
+        {
+          "name": "dat_o",
+          "wave": "p..0...."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ws2812_core. Clock: clk_i; most bit clocks and reset hold are omitted. Underflow at a 24-bit word boundary with more frame words pending flushes the FIFO and enters reset-low hold. The drawing omits bit clocks and the programmed hold duration.",
+    "clock_domain": "clk_i; most bit clocks and reset hold are omitted",
+    "signals": {
+      "data_valid_i": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "data_valid_i",
+        "meaning": "No next FIFO word is available at the boundary.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "busy_o",
+        "meaning": "Busy includes the mandatory reset-low hold.",
+        "polarity": "active-high"
+      },
+      "underflow_o": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "underflow_o",
+        "meaning": "One-cycle underflow event.",
+        "polarity": "active-high"
+      },
+      "reset_active_o": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "reset_active_o",
+        "meaning": "Reset-low hold after underrun.",
+        "polarity": "active-high"
+      },
+      "dat_o": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "dat_o",
+        "meaning": "Representative serial activity then low output.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/ws2812_core.sv"
+    ],
+    "review_note": "Reviewed WS_XFER underflow and WS_RESET behavior; busy stays asserted throughout reset hold. No successful completion is implied."
+  },
+  "ps2-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "filtered_clk_o",
+          "wave": "n.0......"
+        },
+        {
+          "name": "rx_active_o",
+          "wave": "1....0..."
+        },
+        {
+          "name": "error_event_o[3]",
+          "wave": "0....10.."
+        },
+        {
+          "name": "ps2_clk_drive_low_o",
+          "wave": "0........"
+        },
+        {
+          "name": "ps2_dat_drive_low_o",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ps2_core. Clock: clk_i; configured frame-timeout duration is omitted. A stalled receive frame reaches its configured timeout. RX timeout is error_event_o[3]. Drive-low outputs remain deasserted; external line recovery depends on the device.",
+    "clock_domain": "clk_i; configured frame-timeout duration is omitted",
+    "signals": {
+      "filtered_clk_o": {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "scope": "ps2_core",
+        "symbol": "filtered_clk_o",
+        "meaning": "Filtered serial clock stalls in an active receive frame.",
+        "polarity": "falling-edge"
+      },
+      "rx_active_o": {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "scope": "ps2_core",
+        "symbol": "rx_active_o",
+        "meaning": "Receive frame is abandoned after timeout.",
+        "polarity": "active-high"
+      },
+      "error_event_o[3]": {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "scope": "ps2_core",
+        "symbol": "error_event_o",
+        "meaning": "RX frame-timeout event bit.",
+        "polarity": "active-high"
+      },
+      "ps2_clk_drive_low_o": {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "scope": "ps2_core",
+        "symbol": "ps2_clk_drive_low_o",
+        "meaning": "Host leaves its open-drain clock drive released.",
+        "polarity": "active-high"
+      },
+      "ps2_dat_drive_low_o": {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "scope": "ps2_core",
+        "symbol": "ps2_dat_drive_low_o",
+        "meaning": "Host leaves its open-drain data drive released.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+      "rtl/managed/clusterip/ps2/rtl/ps2_rx.sv"
+    ],
+    "review_note": "Reviewed error-event bit 3 and receive timeout wiring. Removed invented ABORT/reset and lines-released rows."
+  },
+  "i2s-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_send_done_re",
+          "wave": "010...10"
+        },
+        {
+          "name": "tx_empty_i",
+          "wave": "1..0...."
+        },
+        {
+          "name": "tx_underrun_o",
+          "wave": "010....."
+        },
+        {
+          "name": "tx_valid_o",
+          "wave": "0.....10"
+        },
+        {
+          "name": "s_send_data_q",
+          "wave": "=......=",
+          "data": [
+            "0",
+            "sample"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: i2s_core. Clock: clk_i. 24-bit FIFO mode, TX enabled and loopback disabled. An empty FIFO at a word boundary emits underrun and inserts zero; a later boundary consumes a refilled sample. Serial intervals are omitted.",
+    "clock_domain": "clk_i",
+    "signals": {
+      "s_send_done_re": {
+        "file": "rtl/ip/serial/i2s_core.sv",
+        "scope": "i2s_core",
+        "symbol": "s_send_done_re",
+        "meaning": "Completed serial word boundary pulse.",
+        "polarity": "active-high"
+      },
+      "tx_empty_i": {
+        "file": "rtl/ip/serial/i2s_core.sv",
+        "scope": "i2s_core",
+        "symbol": "tx_empty_i",
+        "meaning": "FIFO is empty at the first boundary, refilled before the next.",
+        "polarity": "active-high"
+      },
+      "tx_underrun_o": {
+        "file": "rtl/ip/serial/i2s_core.sv",
+        "scope": "i2s_core",
+        "symbol": "tx_underrun_o",
+        "meaning": "Underrun event at the empty word boundary.",
+        "polarity": "active-high"
+      },
+      "tx_valid_o": {
+        "file": "rtl/ip/serial/i2s_core.sv",
+        "scope": "i2s_core",
+        "symbol": "tx_valid_o",
+        "meaning": "FIFO pop request at the next boundary with data available.",
+        "polarity": "active-high"
+      },
+      "s_send_data_q": {
+        "file": "rtl/ip/serial/i2s_core.sv",
+        "scope": "i2s_core",
+        "symbol": "s_send_data_q",
+        "meaning": "Buffered TX sample becomes zero on underrun, then refills.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/i2s_core.sv"
+    ],
+    "review_note": "Reviewed the s_send_done_re branch in 24-bit mode. The refill is a FIFO action; W1C software handling stays in prose."
+  },
+  "dvp-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "href_i",
+          "wave": "1....0.1."
+        },
+        {
+          "name": "push_ready_i",
+          "wave": "1.0...1.."
+        },
+        {
+          "name": "active_o",
+          "wave": "1..0...1."
+        },
+        {
+          "name": "error_toggle_o",
+          "wave": "0..1....."
+        },
+        {
+          "name": "error_flags_o",
+          "wave": "=..=.....",
+          "data": [
+            "0",
+            "overflow"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: dvp_core. Clock: clk_i (pixel domain); frame boundaries compressed. Capture output overflow cannot stall the camera. The affected frame is dropped and error_toggle_o changes state; a later configured frame boundary can restart capture. The control-domain IRQ is downstream of this toggle.",
+    "clock_domain": "clk_i (pixel domain); frame boundaries compressed",
+    "signals": {
+      "href_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "href_i",
+        "meaning": "Camera continues producing a line despite backpressure.",
+        "polarity": "active-high"
+      },
+      "push_ready_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "push_ready_i",
+        "meaning": "Queue space is unavailable during part of the frame.",
+        "polarity": "active-high"
+      },
+      "active_o": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "active_o",
+        "meaning": "Capture drops the affected frame and can resume at a later boundary.",
+        "polarity": "active-high"
+      },
+      "error_toggle_o": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "error_toggle_o",
+        "meaning": "Error event is a toggle crossing to the control domain.",
+        "polarity": "active-high"
+      },
+      "error_flags_o": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "error_flags_o",
+        "meaning": "Error status records output overflow.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/dvp_core.sv"
+    ],
+    "review_note": "Preserved overflow recovery scenario using actual pixel-domain active/error signals. Do not depict a toggle as a one-cycle IRQ pulse."
+  },
+  "xpi-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "busy_o",
+          "wave": "1......0"
+        },
+        {
+          "name": "rx_valid_o",
+          "wave": "01....0."
+        },
+        {
+          "name": "rx_ready_i",
+          "wave": "0...1..."
+        },
+        {
+          "name": "rx_data_o",
+          "wave": "x=....x.",
+          "data": [
+            "byte"
+          ]
+        },
+        {
+          "name": "done_o",
+          "wave": "0......1"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: xpi_core. Clock: clk_i; a receive-byte backpressure interval. A received byte remains valid and stable while rx_ready_i is low. Final completion follows acceptance and chip-select hold. The final delay is illustrative.",
+    "clock_domain": "clk_i; a receive-byte backpressure interval",
+    "signals": {
+      "busy_o": {
+        "file": "rtl/ip/storage/xpi_core.sv",
+        "scope": "xpi_core",
+        "symbol": "busy_o",
+        "meaning": "Transaction active until completion.",
+        "polarity": "active-high"
+      },
+      "rx_valid_o": {
+        "file": "rtl/ip/storage/xpi_core.sv",
+        "scope": "xpi_core",
+        "symbol": "rx_valid_o",
+        "meaning": "Pending receive byte is held valid.",
+        "polarity": "active-high"
+      },
+      "rx_ready_i": {
+        "file": "rtl/ip/storage/xpi_core.sv",
+        "scope": "xpi_core",
+        "symbol": "rx_ready_i",
+        "meaning": "Consumer eventually accepts the byte.",
+        "polarity": "active-high"
+      },
+      "rx_data_o": {
+        "file": "rtl/ip/storage/xpi_core.sv",
+        "scope": "xpi_core",
+        "symbol": "rx_data_o",
+        "meaning": "Pending byte remains stable while not ready.",
+        "polarity": "data"
+      },
+      "done_o": {
+        "file": "rtl/ip/storage/xpi_core.sv",
+        "scope": "xpi_core",
+        "symbol": "done_o",
+        "meaning": "Completion after the final byte and CS hold.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/xpi_core.sv"
+    ],
+    "review_note": "Replaced FIFO-full and consumer-drain prose with the core receive ready/valid interface. Reviewed the pending RX-byte state."
+  },
+  "spisd-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "miso_i",
+          "wave": "1.0....1."
+        },
+        {
+          "name": "busy_o",
+          "wave": "1.......0"
+        },
+        {
+          "name": "done_o",
+          "wave": "0.......1"
+        },
+        {
+          "name": "busy_timeout_o",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: spisd_data. Clock: clk_i; serial busy duration omitted. Following an accepted write-data response, MISO remains low while the card is busy. Completion follows its release. The low interval is illustrative; timeout is separately programmable.",
+    "clock_domain": "clk_i; serial busy duration omitted",
+    "signals": {
+      "miso_i": {
+        "file": "rtl/ip/storage/spisd_data.sv",
+        "scope": "spisd_data",
+        "symbol": "miso_i",
+        "meaning": "Card drives MISO low during write busy.",
+        "polarity": "data"
+      },
+      "busy_o": {
+        "file": "rtl/ip/storage/spisd_data.sv",
+        "scope": "spisd_data",
+        "symbol": "busy_o",
+        "meaning": "Data engine remains active through busy handling.",
+        "polarity": "active-high"
+      },
+      "done_o": {
+        "file": "rtl/ip/storage/spisd_data.sv",
+        "scope": "spisd_data",
+        "symbol": "done_o",
+        "meaning": "Completion follows card release after a successful response.",
+        "polarity": "active-high"
+      },
+      "busy_timeout_o": {
+        "file": "rtl/ip/storage/spisd_data.sv",
+        "scope": "spisd_data",
+        "symbol": "busy_timeout_o",
+        "meaning": "No busy timeout in this delayed but successful example.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/spisd_data.sv",
+      "rtl/ip/storage/spisd_pkg.sv"
+    ],
+    "review_note": "Reviewed write-response/busy states; removed the software write-data and busy-wait labels."
+  },
+  "sdio-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "dat0_i",
+          "wave": "1.0....1."
+        },
+        {
+          "name": "busy_o",
+          "wave": "1.......0"
+        },
+        {
+          "name": "done_o",
+          "wave": "0.......1"
+        },
+        {
+          "name": "busy_timeout_o",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: sdio_data. Clock: clk_i; serial busy interval omitted. DAT0 stays low after a write-response token, then releases before the programmed timeout. Completion follows release. Busy duration is illustrative.",
+    "clock_domain": "clk_i; serial busy interval omitted",
+    "signals": {
+      "dat0_i": {
+        "file": "rtl/ip/storage/sdio_data.sv",
+        "scope": "sdio_data",
+        "symbol": "dat0_i",
+        "meaning": "DAT0 low indicates card busy after a write response.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/storage/sdio_data.sv",
+        "scope": "sdio_data",
+        "symbol": "busy_o",
+        "meaning": "Transfer state remains active during card busy.",
+        "polarity": "active-high"
+      },
+      "done_o": {
+        "file": "rtl/ip/storage/sdio_data.sv",
+        "scope": "sdio_data",
+        "symbol": "done_o",
+        "meaning": "Completion after busy release.",
+        "polarity": "active-high"
+      },
+      "busy_timeout_o": {
+        "file": "rtl/ip/storage/sdio_data.sv",
+        "scope": "sdio_data",
+        "symbol": "busy_timeout_o",
+        "meaning": "No timeout in the illustrated successful busy wait.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/sdio_data.sv"
+    ],
+    "review_note": "Mapped actual DAT0 and engine completion outputs; removed combined response/data and software busy-wait rows."
+  },
+  "sdram-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "refresh_start_i",
+          "wave": "010......"
+        },
+        {
+          "name": "rd_cmd_valid_i",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "rd_cmd_ready_o",
+          "wave": "0.....10."
+        },
+        {
+          "name": "s_cmd_q",
+          "wave": "=.=...=..",
+          "data": [
+            "NOP",
+            "REFRESH",
+            "NOP"
+          ]
+        },
+        {
+          "name": "perf_refresh_stall_o",
+          "wave": "0.1...0.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: sdram_core. Clock: clk_i; refresh and bank timing delays omitted. An initialized controller performs refresh while a read request waits. The request stays valid until accepted; tRFC and bank timing intervals are compressed.",
+    "clock_domain": "clk_i; refresh and bank timing delays omitted",
+    "signals": {
+      "refresh_start_i": {
+        "file": "rtl/ip/memory/sdram_core.sv",
+        "scope": "sdram_core",
+        "symbol": "refresh_start_i",
+        "meaning": "Software requests a refresh while initialized.",
+        "polarity": "active-high"
+      },
+      "rd_cmd_valid_i": {
+        "file": "rtl/ip/memory/sdram_core.sv",
+        "scope": "sdram_core",
+        "symbol": "rd_cmd_valid_i",
+        "meaning": "Read request is held pending through refresh.",
+        "polarity": "active-high"
+      },
+      "rd_cmd_ready_o": {
+        "file": "rtl/ip/memory/sdram_core.sv",
+        "scope": "sdram_core",
+        "symbol": "rd_cmd_ready_o",
+        "meaning": "Request becomes acceptable after refresh recovery.",
+        "polarity": "active-high"
+      },
+      "s_cmd_q": {
+        "file": "rtl/ip/memory/sdram_core.sv",
+        "scope": "sdram_core",
+        "symbol": "s_cmd_q",
+        "meaning": "Registered external command encoding.",
+        "polarity": "data"
+      },
+      "perf_refresh_stall_o": {
+        "file": "rtl/ip/memory/sdram_core.sv",
+        "scope": "sdram_core",
+        "symbol": "perf_refresh_stall_o",
+        "meaning": "Refresh-related stalled-work observation.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/memory/sdram_core.sv",
+      "rtl/ip/memory/sdram_pkg.sv"
+    ],
+    "review_note": "Mapped registered command encoding and true request/ready/performance outputs; reviewed refresh arbitration and timing."
+  },
+  "usb2-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "dir_i",
+          "wave": "0.....1."
+        },
+        {
+          "name": "nxt_i",
+          "wave": "0.10.1.."
+        },
+        {
+          "name": "data_oe_o",
+          "wave": "01....0."
+        },
+        {
+          "name": "data_do_o",
+          "wave": "x=.=..0.",
+          "data": [
+            "TX command",
+            "payload"
+          ]
+        },
+        {
+          "name": "stp_o",
+          "wave": "0......."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: usb2_ulpi_if. Clock: usb2_ulpi_link.clk_i (ULPI link clock). A payload waits while NXT is low. DIR takeover removes the link output enable and interrupts normal transmit sequencing. This is an ordering example; software recovery is described separately.",
+    "clock_domain": "usb2_ulpi_link.clk_i (ULPI link clock)",
+    "signals": {
+      "dir_i": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "dir_i",
+        "meaning": "PHY can take bus ownership.",
+        "polarity": "active-high"
+      },
+      "nxt_i": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "nxt_i",
+        "meaning": "PHY backpressures payload by deasserting NXT.",
+        "polarity": "active-high"
+      },
+      "data_oe_o": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "data_oe_o",
+        "meaning": "Link releases drive when DIR rises.",
+        "polarity": "active-high"
+      },
+      "data_do_o": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "data_do_o",
+        "meaning": "Payload remains unchanged during the NXT stall.",
+        "polarity": "data"
+      },
+      "stp_o": {
+        "file": "rtl/ip/usb/usb2_ulpi_if.sv",
+        "scope": "usb2_ulpi_if",
+        "symbol": "stp_o",
+        "meaning": "No normal stop pulse before PHY takeover.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/usb/usb2_ulpi_if.sv",
+      "rtl/ip/usb/usb2_ulpi_link.sv"
+    ],
+    "review_note": "Reviewed tx_data_ready and data_oe equations and TxPayload DIR handling; replaced a combined bidirectional DATA lane."
+  }
+}

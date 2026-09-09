@@ -68,6 +68,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 | [`scripts/`](scripts) and [`quality/`](quality) | Build helpers, regression orchestration, checks, warning baselines, and metric policy. |
 | [`.github/`](.github) | GitHub automation, Dependabot configuration, and CI/release workflows; see [`GUIDE.md`](.github/GUIDE.md). |
 | [`docs/`](docs) | Engineering workflow and release-process documentation. |
+| [`publications/`](publications) | Manually built Typst datasheets and versioned publication media. |
 
 ## Supported Configurations
 

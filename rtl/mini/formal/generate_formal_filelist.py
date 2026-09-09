@@ -22,12 +22,43 @@ PERIPHERAL = ROOT / "rtl/ip/peripheral"
 SERIAL = ROOT / "rtl/ip/serial"
 MEMORY = ROOT / "rtl/ip/memory"
 STORAGE = ROOT / "rtl/ip/storage"
+MULTIMEDIA = ROOT / "rtl/ip/multimedia"
 TOP = ROOT / "rtl/mini/top"
+APU_LOADER_SCENARIOS = {
+    "apu_loader_success": 0,
+    "apu_loader_header_range": 1,
+    "apu_loader_descriptor_range": 2,
+    "apu_loader_crc": 3,
+    "apu_loader_control_flow": 4,
+    "apu_loader_abort": 5,
+    "apu_loader_resource_reset": 6,
+}
+APU_PRIMITIVE_SCENARIOS = {
+    "apu_primitives_invalid_read": 0,
+    "apu_primitives_local": 1,
+    "apu_primitives_kernel": 2,
+    "apu_primitives_input_fifo": 3,
+    "apu_primitives_alignment": 4,
+    "apu_primitives_output_fifo": 5,
+    "apu_primitives_local_overflow": 6,
+}
 
 
 def target_defines(target: str) -> list[str]:
     if target == "onchip_ram":
         return ["+define+PDK_BEHAV", "+define+SYNTHESIS"]
+    if target == "apu_loader" or target in APU_LOADER_SCENARIOS:
+        scenario = APU_LOADER_SCENARIOS.get(target, 0)
+        return [
+            "+define+SV_ASSRT_DISABLE",
+            "+define+SYNTHESIS",
+            f"+define+APU_LOADER_FORMAL_SCENARIO={scenario}",
+        ]
+    if target in APU_PRIMITIVE_SCENARIOS:
+        return [
+            "+define+SV_ASSRT_DISABLE",
+            f"+define+APU_PRIMITIVES_FORMAL_SCENARIO={APU_PRIMITIVE_SCENARIOS[target]}",
+        ]
     if target == "opipsram":
         return ["+define+PDK_BEHAV"]
     if target == "sysctrl":
@@ -247,6 +278,56 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "dma_core.sv",
             SCRIPT_DIR / "dma_formal.sv",
         ]
+    if target == "apu":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "interface/axi4_stream_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            PERIPHERAL / "dma_axi4_master.sv",
+            MULTIMEDIA / "apu_dma.sv",
+            SCRIPT_DIR / "apu_formal.sv",
+        ]
+    if target == "apu_codec":
+        return [
+            COMMON_RTL / "interface/axi4_stream_if.sv",
+            MULTIMEDIA / "apu_codec_transport.sv",
+            SCRIPT_DIR / "apu_codec_formal.sv",
+        ]
+    if target == "apu_primitives" or target in APU_PRIMITIVE_SCENARIOS:
+        return [
+            COMMON_RTL / "utils/fifo.sv",
+            MULTIMEDIA / "apu_microcode_pkg.sv",
+            MULTIMEDIA / "apu_local_sram.sv",
+            MULTIMEDIA / "apu_bitstream_engine.sv",
+            MULTIMEDIA / "apu_entropy_engine.sv",
+            MULTIMEDIA / "apu_reconstruction_engine.sv",
+            MULTIMEDIA / "apu_transform_engine.sv",
+            MULTIMEDIA / "apu_resampler.sv",
+            MULTIMEDIA / "apu_kernel_engine.sv",
+            MULTIMEDIA / "apu_primitive_dispatcher.sv",
+            SCRIPT_DIR / "apu_primitives_formal.sv",
+        ]
+    if target == "apu_loader" or target in APU_LOADER_SCENARIOS:
+        return [
+            ROOT / "rtl/tech/tc_sram.sv",
+            MULTIMEDIA / "apu_microcode_pkg.sv",
+            MULTIMEDIA / "apu_microcode_loader.sv",
+            SCRIPT_DIR / "apu_loader_formal.sv",
+        ]
+    if target == "apu_sequencer":
+        return [
+            MULTIMEDIA / "apu_microcode_pkg.sv",
+            MULTIMEDIA / "apu_codec_sequencer.sv",
+            SCRIPT_DIR / "apu_sequencer_formal.sv",
+        ]
+    if target == "gateway_a":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "stream/round_robin_arbiter.sv",
+            TOP / "hp_axi4_mux3.sv",
+            SCRIPT_DIR / "gateway_a_formal.sv",
+        ]
     if target == "sdio":
         return [
             COMMON_RTL / "interface/apb4_if.sv",
@@ -285,6 +366,7 @@ def generate(
             PERIPHERAL,
             SERIAL,
             MEMORY,
+            MULTIMEDIA,
         ],
         files=source_files(target),
     ).deduplicate()
@@ -313,6 +395,13 @@ def parse_args() -> argparse.Namespace:
             "onchip_ram",
             "opipsram",
             "dma",
+            "apu",
+            "apu_codec",
+            "apu_primitives",
+            *APU_PRIMITIVE_SCENARIOS,
+            *APU_LOADER_SCENARIOS,
+            "apu_sequencer",
+            "gateway_a",
             "sdio",
         ),
         required=True,

@@ -87,6 +87,8 @@ module retrosoc (
       u_ext_h_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_jpeg_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
+      u_apu_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_hp_icache_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
@@ -191,6 +193,7 @@ module retrosoc (
   logic             s_mgmt_router_idle;
   logic [ 7:0]      s_data_plane_outstanding_read;
   logic [ 7:0]      s_data_plane_outstanding_write;
+  logic [ 7:0]      s_apu_bridge_epoch;
   logic             s_data_plane_fault_valid;
   logic [ 2:0]      s_data_plane_fault_master;
   logic [ 2:0]      s_data_plane_fault_target;
@@ -232,18 +235,21 @@ module retrosoc (
   logic [31:0]      s_ext_h_timeout;
   logic             s_ext_h_irq_raw;
   logic [ 1:0]      s_ext_h_owner;
-  logic [ 6:0][1:0] s_resource_owner;
-  logic [ 6:0]      s_resource_quiesce;
-  logic [ 6:0]      s_resource_reset;
-  logic [ 6:0]      s_resource_idle_hp;
-  logic [ 6:0]      s_resource_idle_pclk;
-  logic [ 6:0]      s_resource_block_ack_hp;
-  logic [ 6:0]      s_resource_block_ack_pclk;
-  logic [ 5:0]      s_resource_irq_raw;
-  logic [ 5:0]      s_resource_irq_lp;
-  logic [ 5:0]      s_resource_irq_hp;
+  logic [ 7:0][1:0] s_resource_owner;
+  logic [ 7:0]      s_resource_owner_lock;
+  logic [ 7:0]      s_resource_quiesce;
+  logic [ 7:0]      s_resource_reset;
+  logic [ 7:0]      s_resource_idle_hp;
+  logic [ 7:0]      s_resource_idle_pclk;
+  logic [ 7:0]      s_resource_block_ack_hp;
+  logic [ 7:0]      s_resource_block_ack_pclk;
+  logic [ 6:0]      s_resource_irq_raw;
+  logic [ 6:0]      s_resource_irq_lp;
+  logic [ 6:0]      s_resource_irq_hp;
+  logic             s_apu_idle;
   logic             s_jpeg_idle;
-  logic [ 6:0]      s_resource_idle_combined;
+  logic [ 7:0]      s_resource_idle_combined;
+  logic [ 7:0]      s_resource_block_ack_combined;
   logic [31:0]      s_fault_addr_mux;
   logic [ 3:0]      s_fault_wstrb_mux;
   logic             s_fault_reserved_mux;
@@ -569,6 +575,7 @@ core_wrapper u_core_wrapper (
       .sdio1_axi4          (u_sdio1_axi4_if),
       .spisd_axi4          (u_spisd_axi4_if),
       .usb2_axi4           (u_usb2_axi4_if),
+      .apu_axi4            (u_apu_axi4_if),
       .jpeg_axi4           (u_jpeg_wide_axi4_if),
       .lp_data_axi4        (u_mgmt_data_axi4_if),
       .ext_h_axi4          (u_ext_h_wide_axi4_if),
@@ -581,6 +588,7 @@ core_wrapper u_core_wrapper (
       .idle_o              (s_data_plane_idle),
       .flush_busy_o        (s_data_plane_flush_busy),
       .ext_h_idle_o        (s_ext_h_data_idle),
+      .apu_bridge_epoch_o  (s_apu_bridge_epoch),
       .resource_idle_o     (s_resource_idle_hp),
       .resource_block_ack_o(s_resource_block_ack_hp),
       .outstanding_read_o  (s_data_plane_outstanding_read),
@@ -595,7 +603,7 @@ core_wrapper u_core_wrapper (
 
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(7)
+      .DATA_WIDTH(8)
   ) u_resource_idle_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -604,7 +612,7 @@ core_wrapper u_core_wrapper (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(7)
+      .DATA_WIDTH(8)
   ) u_resource_block_ack_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -797,6 +805,11 @@ core_wrapper u_core_wrapper (
       .ext_h_hp_irq_i              ((s_ext_h_owner == 2'd1) ? s_ext_h_irq_raw : 1'b0),
       .resource_irq_lp_i           (s_resource_irq_lp),
       .resource_irq_hp_i           (s_resource_irq_hp),
+      .apu_owner_i                 (s_resource_owner[7]),
+      .apu_owner_lock_i            (s_resource_owner_lock[7]),
+      .apu_quiesce_i               (s_resource_quiesce[7]),
+      .apu_reset_i                 (s_resource_reset[7]),
+      .apu_bridge_epoch_i          (s_apu_bridge_epoch),
       .jpeg_quiesce_i              (s_resource_quiesce[6]),
       .jpeg_reset_i                (s_resource_reset[6]),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
@@ -804,6 +817,7 @@ core_wrapper u_core_wrapper (
       .sdio0_axi4                  (u_sdio0_axi4_if),
       .sdio1_axi4                  (u_sdio1_axi4_if),
       .usb2_axi4                   (u_usb2_axi4_if),
+      .apu_axi4                    (u_apu_axi4_if),
       .jpeg_axi4                   (u_jpeg_wide_axi4_if),
       .psram_axi4                  (u_data_qpi_axi4_if),
       .xpi_axi4                    (u_data_xpi_axi4_if),
@@ -840,6 +854,7 @@ core_wrapper u_core_wrapper (
       .hp_machine_external_irq_o   (s_hp_machine_external_irq),
       .hp_supervisor_external_irq_o(s_hp_supervisor_external_irq),
       .resource_irq_raw_o          (s_resource_irq_raw),
+      .apu_idle_o                  (s_apu_idle),
       .jpeg_idle_o                 (s_jpeg_idle),
       .irq_o                       (s_apb4_periph_irq)
   );
@@ -853,49 +868,54 @@ core_wrapper u_core_wrapper (
   );
 
   apb4_system u_apb4_system (
-      .clk_i               (clk_pclk_i),
-      .rst_n_i             (rst_pclk_n_i),
-      .clk_aud_i           (clk_aud_i),
-      .rst_aud_n_i         (rst_aud_n_i),
-      .debug_halted_i      (s_mgmt_debug_halted),
-      .ext_h_data_idle_i   (s_ext_h_data_idle),
-      .resource_idle_i     (s_resource_idle_combined),
-      .resource_block_ack_i(s_resource_block_ack_pclk),
-      .resource_irq_i      (s_resource_irq_raw),
-      .cache_request_i     (s_hp_cache_req_pclk),
-      .ext_h_axi4          (u_ext_h_wide_axi4_if),
-      .fabric_monitor      (u_fabric_monitor_pclk_if),
-      .axi4                (u_system_pclk_axi4_if),
-      .pwm                 (u_pwm_if),
-      .ps2                 (u_ps2_if),
-      .ip_sel_i            (u_sysctrl_if.ip_sel_o),
-      .user_gpio           (u_user_gpio_if),
-      .rtc_wake_o          (s_rtc_wake),
-      .wdg_reset_req_o     (wdg_reset_req_o),
-      .ext_h_block_o       (s_ext_h_block),
-      .ext_h_read_base_o   (s_ext_h_read_base),
-      .ext_h_read_limit_o  (s_ext_h_read_limit),
-      .ext_h_write_base_o  (s_ext_h_write_base),
-      .ext_h_write_limit_o (s_ext_h_write_limit),
-      .ext_h_timeout_o     (s_ext_h_timeout),
-      .ext_h_irq_raw_o     (s_ext_h_irq_raw),
-      .ext_h_owner_o       (s_ext_h_owner),
-      .cache_clean_o       (s_hp_cache_clean_pclk),
-      .resource_owner_o    (s_resource_owner),
-      .resource_quiesce_o  (s_resource_quiesce),
-      .resource_reset_o    (s_resource_reset),
-      .resource_irq_lp_o   (s_resource_irq_lp),
-      .resource_irq_hp_o   (s_resource_irq_hp),
-      .irq_o               (s_apb4_system_irq)
+      .clk_i                (clk_pclk_i),
+      .rst_n_i              (rst_pclk_n_i),
+      .clk_aud_i            (clk_aud_i),
+      .rst_aud_n_i          (rst_aud_n_i),
+      .debug_halted_i       (s_mgmt_debug_halted),
+      .ext_h_data_idle_i    (s_ext_h_data_idle),
+      .resource_idle_i      (s_resource_idle_combined),
+      .resource_block_ack_i (s_resource_block_ack_combined),
+      .resource_irq_i       (s_resource_irq_raw),
+      .cache_request_i      (s_hp_cache_req_pclk),
+      .ext_h_axi4           (u_ext_h_wide_axi4_if),
+      .fabric_monitor       (u_fabric_monitor_pclk_if),
+      .axi4                 (u_system_pclk_axi4_if),
+      .pwm                  (u_pwm_if),
+      .ps2                  (u_ps2_if),
+      .ip_sel_i             (u_sysctrl_if.ip_sel_o),
+      .user_gpio            (u_user_gpio_if),
+      .rtc_wake_o           (s_rtc_wake),
+      .wdg_reset_req_o      (wdg_reset_req_o),
+      .ext_h_block_o        (s_ext_h_block),
+      .ext_h_read_base_o    (s_ext_h_read_base),
+      .ext_h_read_limit_o   (s_ext_h_read_limit),
+      .ext_h_write_base_o   (s_ext_h_write_base),
+      .ext_h_write_limit_o  (s_ext_h_write_limit),
+      .ext_h_timeout_o      (s_ext_h_timeout),
+      .ext_h_irq_raw_o      (s_ext_h_irq_raw),
+      .ext_h_owner_o        (s_ext_h_owner),
+      .cache_clean_o        (s_hp_cache_clean_pclk),
+      .resource_owner_o     (s_resource_owner),
+      .resource_owner_lock_o(s_resource_owner_lock),
+      .resource_quiesce_o   (s_resource_quiesce),
+      .resource_reset_o     (s_resource_reset),
+      .resource_irq_lp_o    (s_resource_irq_lp),
+      .resource_irq_hp_o    (s_resource_irq_hp),
+      .irq_o                (s_apb4_system_irq)
   );
 
   assign s_resource_idle_combined = {
+    s_apu_idle && s_resource_idle_pclk[7],
     s_jpeg_idle && s_resource_idle_pclk[6],
     s_ext_h_data_idle && s_resource_idle_pclk[5],
     s_resource_idle_pclk[4:0]
   };
+  assign s_resource_block_ack_combined = {
+    s_apu_idle && s_resource_block_ack_pclk[7], s_resource_block_ack_pclk[6:0]
+  };
 
-  logic [35:0] s_unused_domain_inputs;
+  logic [36:0] s_unused_domain_inputs;
   assign s_unused_domain_inputs = {
     clk_pclk_i,
     rst_pclk_n_i,
@@ -910,6 +930,7 @@ core_wrapper u_core_wrapper (
     s_hp_lifecycle_draining,
     s_hp_lifecycle_fault,
     ^s_resource_owner,
+    ^s_resource_owner_lock,
     ^s_resource_quiesce,
     ^s_resource_reset,
     ^unused_cdc_clear_busy,

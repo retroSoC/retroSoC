@@ -1,0 +1,353 @@
+# Frozen APU-P5 three-entry release bundle source.
+.build_id 0x0005000000000001
+.entry 0 wav wav wav_last 65535 16777215 0x1800 0x4800 0x001f8031 0 0x1800
+.entry 1 mp3 mp3 mp3 1 1 0 0 0 0 0
+.entry 2 flac flac flac_last 65535 16777215 0x1800 0x4800 0x001ff83b 0 0x1800
+
+mp3:
+  trap 0x01000001
+
+wav:
+  movi r0, 0
+  movi r1, 256
+  input_refill r2, r0, r1
+  dma_wait r3
+  ld32 r6, r0, 0x47e0
+  cmp r2, r6
+  jump_fwd wav_unsupported if=ne
+  ld32 r4, r0, 0
+  movi r5, 0x46464952
+  cmp r4, r5
+  jump_fwd wav_bad if=ne
+  ld32 r4, r0, 8
+  movi r5, 0x45564157
+  cmp r4, r5
+  jump_fwd wav_bad if=ne
+  ld32 r4, r0, 4
+  movi r5, 8
+  add r4, r4, r5
+  cmp r4, r6
+  jump_fwd wav_bad if=ne
+  ld32 r4, r0, 12
+  movi r5, 0x20746d66
+  cmp r4, r5
+  jump_fwd wav_unsupported if=ne
+  ld32 r4, r0, 16
+  movi r5, 16
+  cmp r4, r5
+  jump_fwd wav_unsupported if=ne
+  ld32 r4, r0, 20
+  movi r5, 0x00020001
+  cmp r4, r5
+  jump_fwd wav_unsupported if=ne
+  ld32 r4, r0, 24
+  movi r5, 8000
+  cmp r4, r5
+  jump_fwd wav_unsupported if=ult
+  movi r5, 96001
+  cmp r4, r5
+  jump_fwd wav_unsupported if=uge
+  ld32 r5, r0, 28
+  movi r11, 2
+  shl r10, r4, r11
+  cmp r5, r10
+  jump_fwd wav_unsupported if=ne
+  ld32 r5, r0, 32
+  movi r10, 0x00100004
+  cmp r5, r10
+  jump_fwd wav_unsupported if=ne
+  ld32 r4, r0, 36
+  movi r5, 0x61746164
+  cmp r4, r5
+  jump_fwd wav_unsupported if=ne
+  ld32 r7, r0, 40
+  mov r6, r7
+  movi r5, 44
+  add r6, r6, r5
+  ld32 r10, r0, 0x47e0
+  cmp r6, r10
+  jump_fwd wav_unsupported if=ne
+  ld32 r10, r0, 0x47c0
+  movi r11, 0x00000c00
+  and r10, r10, r11
+  cmp r10, r0
+  jump_fwd wav_unsupported if=ne
+  ld32 r10, r0, 0x47c8
+  movi r11, 0x00180000
+  and r11, r10, r11
+  cmp r11, r0
+  jump_fwd wav_unsupported if=ne
+  movi r11, 0x00060000
+  and r11, r10, r11
+  movi r6, 0x00040000
+  cmp r11, r6
+  jump_fwd wav_unsupported if=ne
+  movi r11, 0x0001ffff
+  and r10, r10, r11
+  cmp r10, r0
+  jump_fwd wav_output_rate_ok if=eq
+  ld32 r4, r0, 24
+  cmp r10, r4
+  jump_fwd wav_unsupported if=ne
+wav_output_rate_ok:
+  mov r6, r7
+  movi r5, 44
+  add r6, r6, r5
+  movi r5, 0
+  st32 r5, r6, 0x47d0
+  ld32 r4, r5, 24
+  movi r6, 0x00840000
+  or r4, r4, r6
+  st32 r5, r4, 0x47d8
+  movi r6, 1
+  st32 r5, r6, 0x47dc
+  movi r9, 44
+  ld32 r4, r5, 0x47c0
+  movi r6, 0x00000100
+  and r4, r4, r6
+  movi r6, 0
+  cmp r4, r6
+  jump_fwd wav_stream if=ne
+  output_commit r8, r9, r7
+  jump_fwd wav_output_done
+wav_stream:
+  output_stream r8, r9, r7
+wav_output_done:
+  dma_wait r3
+  movi r4, 4
+  movi r5, 4
+  movi r11, 2
+  shr r10, r7, r11
+  loop_setup 0, r10
+wav_frame:
+  frame_commit r4, r5
+  loop_back 0, wav_frame
+  movi r4, 0
+  movi r5, 0
+  job_result r4, r5, 0
+  end
+wav_bad:
+  movi r4, 4
+  movi r5, 0x00000010
+  job_result r4, r5, 4
+  end
+wav_unsupported:
+  movi r4, 3
+  movi r5, 0x00000003
+  job_result r4, r5, 4
+wav_last:
+  end
+
+flac:
+  movi r0, 0
+  movi r1, 256
+  input_refill r2, r0, r1
+  dma_wait r3
+  get r4, 32
+  movi r5, 0x664c6143
+  cmp r4, r5
+  jump_fwd flac_bad if=ne
+  get r4, 8
+  movi r5, 0x80
+  cmp r4, r5
+  jump_fwd flac_bad_metadata if=ne
+  get r4, 24
+  movi r5, 34
+  cmp r4, r5
+  jump_fwd flac_bad_metadata if=ne
+  get r4, 16
+  movi r11, 16
+  cmp r4, r11
+  jump_fwd flac_unsupported if=ne
+  get r5, 16
+  cmp r5, r11
+  jump_fwd flac_unsupported if=ne
+  skip 24
+  skip 24
+  get r6, 20
+  movi r11, 48000
+  cmp r6, r11
+  jump_fwd flac_unsupported if=ne
+  get r7, 3
+  movi r11, 0
+  cmp r7, r11
+  jump_fwd flac_unsupported if=ne
+  get r8, 5
+  movi r11, 15
+  cmp r8, r11
+  jump_fwd flac_unsupported if=ne
+  get r9, 4
+  get r10, 32
+  mov r12, r10
+  skip 32
+  skip 32
+  skip 32
+  skip 32
+  movi r10, 1
+  add r7, r7, r10
+  movi r11, 17
+  shl r7, r7, r11
+  or r6, r6, r7
+  add r8, r8, r10
+  movi r11, 19
+  shl r8, r8, r11
+  or r6, r6, r8
+  movi r5, 0
+  movi r4, 42
+  st32 r5, r4, 0x47d0
+  st32 r5, r4, 0x47d4
+  st32 r5, r6, 0x47d8
+  movi r11, 0
+  cmp r12, r11
+  jump_fwd flac_empty if=eq
+  cmp r9, r11
+  jump_fwd flac_unsupported if=ne
+  movi r11, 16
+  cmp r12, r11
+  jump_fwd flac_unsupported if=ne
+
+  get r4, 32
+  movi r5, 0xfff86008
+  cmp r4, r5
+  jump_fwd flac_bad_frame if=ne
+  get r4, 16
+  movi r5, 0x0000000f
+  cmp r4, r5
+  jump_fwd flac_bad_frame if=ne
+  get r4, 8
+  movi r5, 0x00000096
+  cmp r4, r5
+  jump_fwd flac_bad_header_crc if=ne
+  movi r9, 0x0000a071
+  get r11, 8
+  crc16 r9, r9, r11
+  cmp r11, r0
+  jump_fwd flac_bad_entropy if=ne
+  get r11, 8
+  crc16 r9, r9, r11
+  movi r1, 8
+  shl r10, r11, r1
+  get r11, 8
+  crc16 r9, r9, r11
+  or r10, r10, r11
+  movi r1, 16
+  shl r10, r10, r1
+  sar r10, r10, r1
+  get r11, 16
+  cmp r9, r11
+  jump_fwd flac_bad_frame_crc if=ne
+  jump_fwd flac_constant_ready if=input_exhausted
+  jump_fwd flac_unsupported
+
+flac_constant_ready:
+  movi r12, 0x00000100
+  movi r15, 16
+  loop_setup 0, r15
+flac_store_constant:
+  st32 r12, r10, 0
+  movi r1, 4
+  add r12, r12, r1
+  loop_back 0, flac_store_constant
+  movi r4, 0x40000000
+  st32 r0, r4, 0x0300
+  movi r4, 1
+  st32 r0, r4, 0x0304
+  ld32 r4, r0, 0x47c8
+  movi r5, 0x00180000
+  and r4, r4, r5
+  cmp r4, r0
+  jump_fwd flac_unsupported if=ne
+  ld32 r4, r0, 0x47c0
+  movi r5, 0x00000100
+  and r4, r4, r5
+  cmp r4, r0
+  jump_fwd flac_pack_stream if=ne
+  ld32 r4, r0, 0x47c8
+  movi r5, 17
+  shr r4, r4, r5
+  movi r5, 3
+  and r4, r4, r5
+  movi r5, 2
+  cmp r4, r5
+  jump_fwd flac_pack_duplicate if=eq
+  movi r12, 0x00000100
+  movi r14, 0x00000300
+  movi r13, 0x00000400
+  pcm_pack r13, r12, r14, 0, 16
+  jump_fwd flac_pack_done
+flac_pack_stream:
+flac_pack_duplicate:
+  movi r12, 0x00000100
+  movi r14, 0x00000300
+  movi r13, 0x00000400
+  pcm_pack r13, r12, r14, 4, 16
+flac_pack_done:
+  wait 1
+  movi r4, 1
+  st32 r0, r4, 0x47dc
+  movi r12, 0x00000400
+  ld32 r4, r0, 0x47c0
+  movi r5, 0x00000100
+  and r4, r4, r5
+  cmp r4, r0
+  jump_fwd flac_output_stream if=ne
+  output_commit r15, r12, r13
+  jump_fwd flac_output_done
+flac_output_stream:
+  output_stream r15, r12, r13
+flac_output_done:
+  dma_wait r3
+  movi r4, 4
+  shr r5, r13, r4
+  movi r4, 16
+  loop_setup 0, r4
+flac_commit_frames:
+  frame_commit r0, r5
+  loop_back 0, flac_commit_frames
+  ld32 r4, r0, 0x47e0
+  st32 r0, r4, 0x47d0
+  jump_fwd flac_success
+
+flac_empty:
+  jump_fwd flac_success if=input_exhausted
+flac_unsupported:
+  movi r4, 3
+  movi r5, 0x02000004
+  job_result r4, r5, 4
+  end
+flac_success:
+  movi r4, 0
+  movi r5, 0x02010000
+  job_result r4, r5, 0
+  end
+flac_bad:
+  movi r4, 4
+  movi r5, 0x02000010
+  job_result r4, r5, 4
+  end
+flac_bad_metadata:
+  movi r4, 4
+  movi r5, 0x02000015
+  job_result r4, r5, 4
+  jump_fwd flac_last
+flac_bad_frame:
+  movi r4, 4
+  movi r5, 0x02000017
+  job_result r4, r5, 4
+  jump_fwd flac_last
+flac_bad_header_crc:
+  movi r4, 6
+  movi r5, 0x02000030
+  job_result r4, r5, 4
+  jump_fwd flac_last
+flac_bad_frame_crc:
+  movi r4, 6
+  movi r5, 0x02000031
+  job_result r4, r5, 4
+  jump_fwd flac_last
+flac_bad_entropy:
+  movi r4, 7
+  movi r5, 0x02000040
+  job_result r4, r5, 5
+flac_last:
+  end

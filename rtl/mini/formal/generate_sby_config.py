@@ -22,8 +22,11 @@ def render(
     mode: str,
     depth: int,
     vcd: bool = True,
+    skip: int | None = None,
 ) -> str:
     options = ["[options]", f"mode {mode}", f"depth {depth}"]
+    if skip is not None:
+        options.append(f"skip {skip}")
     if not vcd:
         options.append("vcd off")
     return "\n".join(
@@ -65,6 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", choices=("prove", "bmc", "cover"), required=True)
     parser.add_argument("--depth", type=positive_int, required=True)
     parser.add_argument("--no-vcd", action="store_false", dest="vcd")
+    parser.add_argument("--skip", type=positive_int)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -73,7 +77,16 @@ def main() -> int:
     args = parse_args()
     atomic_write(
         args.output.resolve(),
-        render(args.top, args.input, args.properties, args.solver, args.mode, args.depth, args.vcd),
+        render(
+            args.top,
+            args.input,
+            args.properties,
+            args.solver,
+            args.mode,
+            args.depth,
+            args.vcd,
+            args.skip,
+        ),
     )
     return 0
 

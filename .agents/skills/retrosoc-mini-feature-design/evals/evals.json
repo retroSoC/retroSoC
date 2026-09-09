@@ -1,0 +1,35 @@
+{
+  "skill_name": "retrosoc-mini-feature-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Research a commercial-grade audio processing unit for retroSoC Mini. Compare active SoCs and IP, then recommend an AXI4 data/APB4 control architecture with DMA, interrupts, an MVP, and a commercial roadmap. Do not modify RTL.",
+      "expected_output": "A read-only, repository-grounded research plan that separates repository evidence, external evidence, recommendations, assumptions, and open questions and does not implement code.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "The camera-scaler architecture has been approved. Freeze it into the repository specification and hand Phase 1 to Codex without implementing RTL.",
+      "expected_output": "An implementation-ready docs/ip/camera-scaler.md contract following the repository documentation layout, plus docs index updates and an implementation-preflight handoff.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "The USB2 netlist simulation failed in CI. Use this design skill to patch the RTL until it passes.",
+      "expected_output": "A refusal to patch or diagnose through the design skill and a route to retrosoc-mini-feature-review for evidence-based diagnosis, followed by the implementation skill only after root cause confirmation.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Research audio-processing-unit for retroSoC Mini. Do not modify files.",
+      "expected_output": "The action is resolved as research, the explicit feature slug is retained, repository and commercial evidence are gathered, and no files are modified.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Freeze the approved video-scaler design as docs/ip/video-scaler.md. Additional constraints: MUST keep the register window within 4 KiB; DEFER chroma resampling; ACCEPTANCE define stable implementation phases. Do not implement RTL.",
+      "expected_output": "The action is resolved as freeze, approved long-lived constraints become normative, stable Phase N - Title entries are defined, and the hand-off includes a copyable preflight prompt.",
+      "files": []
+    }
+  ]
+}

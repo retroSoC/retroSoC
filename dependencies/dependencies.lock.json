@@ -1,6 +1,13 @@
 {
   "schema_version": 1,
   "sources": {
+    "publication_media": {
+      "url": "https://github.com/retroSoC/media.git",
+      "revision": "773154ba6825f7878a0fee05cc6f2222efc1ca26",
+      "destination": "publications/media",
+      "license": "MulanPSL-2.0 AND OFL-1.1",
+      "purpose": "Publication fonts, licenses and original artwork"
+    },
     "mpw": {
       "url": "https://github.com/retroSoC/mini-ver-mpw.git",
       "revision": "e63d5cd71ffd912ad4f901e59f7f848c1a8bbfbd",
@@ -50,6 +57,18 @@
       "destination": "app/coremark/coremark-main",
       "license": "Apache-2.0"
     },
+    "apu_libflac": {
+      "url": "https://github.com/xiph/flac.git",
+      "revision": "1507800de4b70e21be71f38caa0d9079d0bc6e45",
+      "destination": ".cache/retrosoc/sources/apu-libflac",
+      "license": "NOASSERTION"
+    },
+    "apu_flac_corpus": {
+      "url": "https://github.com/ietf-wg-cellar/flac-test-files.git",
+      "revision": "aa7b0c6cf32994c106ae517a08134c28a96ff5b2",
+      "destination": ".cache/retrosoc/sources/apu-flac-corpus",
+      "license": "CC0-1.0"
+    },
     "third_party_ip": {
       "url": "https://github.com/retroSoC/3rd-party.git",
       "revision": "d991ec9f7bf696e7e5d840758487068b11bd4121",
@@ -95,6 +114,102 @@
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
   },
   "archives": {
+    "typst_bytefield": {
+      "package_name": "bytefield",
+      "version": "0.0.8",
+      "url": "https://packages.typst.org/preview/bytefield-0.0.8.tar.gz",
+      "sha256": "00b81fcabf5a2601da82812ce3274597baea4831b014f790a6350948470403c6",
+      "destination": ".cache/retrosoc/publications/packages/preview/bytefield/0.0.8",
+      "license": "MIT"
+    },
+    "typst_rivet": {
+      "package_name": "rivet",
+      "version": "0.3.1",
+      "url": "https://packages.typst.org/preview/rivet-0.3.1.tar.gz",
+      "sha256": "8057237ae348189df303fbc45548c87a6cf24f5c58c19a072b1d20fa4ce3bcc8",
+      "destination": ".cache/retrosoc/publications/packages/preview/rivet/0.3.1",
+      "license": "Apache-2.0"
+    },
+    "typst_blockcell": {
+      "package_name": "blockcell",
+      "version": "0.1.0",
+      "url": "https://packages.typst.org/preview/blockcell-0.1.0.tar.gz",
+      "sha256": "cf086664a01bf6ca4b7fa84a9746589039887f4bda13fe7b7781d1cea35f3164",
+      "destination": ".cache/retrosoc/publications/packages/preview/blockcell/0.1.0",
+      "license": "MIT"
+    },
+    "typst_circuiteria": {
+      "package_name": "circuiteria",
+      "version": "0.2.1",
+      "url": "https://packages.typst.org/preview/circuiteria-0.2.1.tar.gz",
+      "sha256": "207e33352f115c00d6ee141e3d2c89691f1307c456272e0e187f5303c9892729",
+      "destination": ".cache/retrosoc/publications/packages/preview/circuiteria/0.2.1",
+      "license": "Apache-2.0"
+    },
+    "typst_cetz_0_3_4": {
+      "package_name": "cetz",
+      "version": "0.3.4",
+      "url": "https://packages.typst.org/preview/cetz-0.3.4.tar.gz",
+      "sha256": "4f4b5a8d311d519e749940a766fe50521e40c041129e1c91af0c42e61f307514",
+      "destination": ".cache/retrosoc/publications/packages/preview/cetz/0.3.4",
+      "license": "LGPL-3.0-or-later"
+    },
+    "typst_tidy": {
+      "package_name": "tidy",
+      "version": "0.3.0",
+      "url": "https://packages.typst.org/preview/tidy-0.3.0.tar.gz",
+      "sha256": "a4c75f15b2cacdeef858453cdea6ee6e665c3464ebb5097a5b1a9c309418c249",
+      "destination": ".cache/retrosoc/publications/packages/preview/tidy/0.3.0",
+      "license": "MIT"
+    },
+    "typst_oxifmt_0_2_1": {
+      "package_name": "oxifmt",
+      "version": "0.2.1",
+      "url": "https://packages.typst.org/preview/oxifmt-0.2.1.tar.gz",
+      "sha256": "16fac2923032c59727de01e84d42cac45e8790da28df56effca49f4de41b09d9",
+      "destination": ".cache/retrosoc/publications/packages/preview/oxifmt/0.2.1",
+      "license": "MIT-0"
+    },
+    "typst_wavy": {
+      "version": "0.1.3",
+      "url": "https://packages.typst.org/preview/wavy-0.1.3.tar.gz",
+      "sha256": "3a542065681a64beb9d430377ecbf210caa1f9d0e1968fd6284dd263f0a9391e",
+      "destination": ".cache/retrosoc/publications/packages/preview/wavy/0.1.3",
+      "license": "MIT"
+    },
+    "typst_jogs": {
+      "version": "0.2.4",
+      "url": "https://packages.typst.org/preview/jogs-0.2.4.tar.gz",
+      "sha256": "b653a1874492a6ffebb5ff894d0ca06d3523a1b8721eea2bc32034d8562ecb45",
+      "destination": ".cache/retrosoc/publications/packages/preview/jogs/0.2.4",
+      "license": "MIT"
+    },
+    "apu_libflac": {
+      "url": "https://codeload.github.com/xiph/flac/tar.gz/1507800de4b70e21be71f38caa0d9079d0bc6e45",
+      "sha256": "d80ef5facdb21972efe91774da03d6b9abf216aa17093d740fcc411cd8afbb41",
+      "destination": ".cache/retrosoc/downloads/apu/libflac-1507800de4b70e21be71f38caa0d9079d0bc6e45.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "apu_flac_corpus": {
+      "url": "https://codeload.github.com/ietf-wg-cellar/flac-test-files/tar.gz/aa7b0c6cf32994c106ae517a08134c28a96ff5b2",
+      "sha256": "36de2310155b4084011fbd56f24603dfef91a26c5433e3f92bd21995b45089c3",
+      "destination": ".cache/retrosoc/downloads/apu/flac-corpus-aa7b0c6cf32994c106ae517a08134c28a96ff5b2.tar.gz",
+      "license": "CC0-1.0"
+    },
+    "typst_cetz": {
+      "version": "0.5.2",
+      "url": "https://packages.typst.org/preview/cetz-0.5.2.tar.gz",
+      "sha256": "77cf8490114ae04c6e665a11efa691d284a0cadb9719771b5708c1197292f23f",
+      "destination": ".cache/retrosoc/publications/packages/preview/cetz/0.5.2",
+      "license": "LGPL-3.0-or-later"
+    },
+    "typst_oxifmt": {
+      "version": "1.0.0",
+      "url": "https://packages.typst.org/preview/oxifmt-1.0.0.tar.gz",
+      "sha256": "7d17a1fc8ad01740ec3cb2b03c7360a4225ff9318e5710765fa98ea6fd59594f",
+      "destination": ".cache/retrosoc/publications/packages/preview/oxifmt/1.0.0",
+      "license": "MIT OR Apache-2.0"
+    },
     "libjpeg_turbo": {
       "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
       "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
@@ -146,6 +261,13 @@
       "revision": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
       "nar_hash": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
       "license": "MIT"
+    }
+  },
+  "publication_tools": {
+    "typst": {
+      "version": "0.15.1",
+      "url": "https://github.com/typst/typst/releases/tag/v0.15.1",
+      "installation": "Use the locally installed CLI; no automatic compiler download"
     }
   },
   "toolchains": {

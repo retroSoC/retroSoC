@@ -138,9 +138,10 @@ Its IRQ is delivered to LP IRQ 28 or HP PLIC source 3 according to owner,
 never both. Software discovers it through `<retrosoc/hal/extension.h>`.
 
 The Resource Controller at `0x2000_A000` is the central owner and IRQ authority
-for DMA, USB2, SDIO0/1, SPI-SD, and EXT-H. Handoff requires idle, owner lock is
-sticky, and rejected handoffs raise LP IRQ 29. It also carries the AON cache
-request/clean acknowledgement used before HP drain. See
+for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, and APU. Handoff requires idle,
+owner lock is sticky, and rejected handoffs raise LP IRQ 29. APU index 7 routes
+exclusively to LP IRQ31 or HP PLIC source10. The controller also carries the
+AON cache request/clean acknowledgement used before HP drain. See
 [`ip/resource-controller.md`](ip/resource-controller.md).
 
 The root-only Fabric Monitor at `0x2000_B000` records per-master and

@@ -1,0 +1,10 @@
+interface:
+  display_name: "retroSoC Mini Feature Review"
+  short_description: "Diagnose, review, or finalize Mini feature evidence"
+  default_prompt: >-
+    Use $retrosoc-mini-feature-review. Mode: review. Feature slug:
+    audio-processing-unit. Specification: docs/ip/audio-processing-unit.md.
+    Review range: main...HEAD. Do not modify files.
+
+policy:
+  allow_implicit_invocation: true

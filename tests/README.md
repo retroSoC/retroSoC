@@ -6,6 +6,8 @@ tooling.
 - `c/test_runtime.c` is the host C test program used by `make sw-host-test`.
 - `test_script_tools.py` covers setup, dependency, filelist, warning, metric,
   archive, and regression-helper behavior.
+- `test_agent_skills.py` checks the repository feature-skill metadata,
+  references, eval corpora, and manual hand-off policy.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming
@@ -14,6 +16,18 @@ tooling.
   APB4 simulations; `test_crypto_register_parity.py` checks the handwritten
   RTL/C register ABI and `test_dma.py` covers DMA bursts, TCD fetch, CRC,
   tail-byte writes, and crypto endpoints.
+- `test_apu.py` checks the fail-closed APU APB4/IRQ shell plus the P2 private
+  DMA, ring scheduler, stream router, Gateway A, and verification-only backend;
+  `test_apu_register_parity.py` keeps its handwritten RTL/C ABI and matrix
+  coverage synchronized. `test_apu_primitives.py` compares the P4 assembler,
+  BAM, loader, sequencer, local SRAM, FIFOs, and production primitive engines
+  with Icarus and Verilator while keeping its injectors out of product
+  filelists.
+- `test_apu_codecs.py` and `test_apu_codec_transport.py` check the P5 target,
+  deterministic coefficient/APUMC artifacts, integer WAV/FLAC and PCM models,
+  direct/ring product paths, and identical Icarus/Verilator execution of the
+  production class-6 transport. The explicit `apu-p5-corpus` target qualifies
+  every pinned official FLAC file against locked libFLAC.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.

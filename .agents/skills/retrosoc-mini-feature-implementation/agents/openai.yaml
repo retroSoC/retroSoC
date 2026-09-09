@@ -1,0 +1,10 @@
+interface:
+  display_name: "retroSoC Mini Feature Implementation"
+  short_description: "Preflight or implement one frozen Mini feature phase"
+  default_prompt: >-
+    Use $retrosoc-mini-feature-implementation. Stage: preflight. Feature slug:
+    audio-processing-unit. Phase: Phase 1 - APB4 CSR and interrupt skeleton.
+    Do not modify files.
+
+policy:
+  allow_implicit_invocation: true

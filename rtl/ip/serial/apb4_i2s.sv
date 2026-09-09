@@ -38,6 +38,8 @@ module apb4_i2s (
     input  logic          rst_aud_n_i,
     output logic          dma_tx_stall_o,
     output logic          dma_rx_stall_o,
+    output logic          tx_underrun_evt_o,
+    output logic          rx_overrun_evt_o,
     apb4_if.slave         apb4,
     axi4_stream_if.sink   tx_axis,
     axi4_stream_if.source rx_axis,
@@ -126,6 +128,8 @@ module apb4_i2s (
   assign s_rx_flush_busy = s_cmd_rx_flush || s_rx_dst_clear_busy || s_rx_src_busy_sys;
   assign s_tx_underrun_sys = s_tx_underrun_re || s_tx_underrun_fe;
   assign s_rx_overrun_sys = s_rx_overrun_re || s_rx_overrun_fe;
+  assign tx_underrun_evt_o = s_tx_underrun_sys;
+  assign rx_overrun_evt_o = s_rx_overrun_sys;
   assign s_tx_push = s_tx_src_valid && s_tx_src_ready;
   assign s_rx_pop = s_rx_dst_valid && s_rx_dst_ready;
   assign s_tx_level = s_tx_flush_busy ? 8'd0 : (s_tx_push_cnt_q - s_tx_pop_cnt_sys_q);

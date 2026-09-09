@@ -329,6 +329,11 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint_filelist = tmp_path / "clint.fl"
     onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
+    apu_filelist = tmp_path / "apu.fl"
+    apu_primitives_filelist = tmp_path / "apu_primitives.fl"
+    apu_loader_filelist = tmp_path / "apu_loader.fl"
+    apu_sequencer_filelist = tmp_path / "apu_sequencer.fl"
+    gateway_a_filelist = tmp_path / "gateway_a.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -354,6 +359,19 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist("apu", apu_filelist, memory_map, topology, user_extensions)
+    assert generate_formal_filelist(
+        "apu_primitives", apu_primitives_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "apu_loader", apu_loader_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "apu_sequencer", apu_sequencer_filelist, memory_map, topology, user_extensions
+    )
+    assert generate_formal_filelist(
+        "gateway_a", gateway_a_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -366,6 +384,11 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint = parse_filelists([clint_filelist], require_files=False)
     onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
+    apu = parse_filelists([apu_filelist], require_files=False)
+    apu_primitives = parse_filelists([apu_primitives_filelist], require_files=False)
+    apu_loader = parse_filelists([apu_loader_filelist], require_files=False)
+    apu_sequencer = parse_filelists([apu_sequencer_filelist], require_files=False)
+    gateway_a = parse_filelists([gateway_a_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert "+define+PDK_BEHAV" in onchip_ram.defines
     assert "+define+SYNTHESIS" in onchip_ram.defines
@@ -421,6 +444,33 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/tech/tc_clk.sv" in opipsram.files
     assert ROOT / "rtl/tech/tc_opipsram_delay.sv" in opipsram.files
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
+    assert ROOT / "rtl/ip/multimedia/apu_dma.sv" in apu.files
+    assert ROOT / "rtl/mini/formal/apu_formal.sv" in apu.files
+    assert ROOT / "rtl/ip/multimedia/apu_resampler.sv" in apu_primitives.files
+    assert ROOT / "rtl/ip/multimedia/apu_local_sram.sv" in apu_primitives.files
+    assert ROOT / "rtl/ip/multimedia/apu_kernel_engine.sv" in apu_primitives.files
+    assert ROOT / "rtl/ip/multimedia/apu_primitive_dispatcher.sv" in apu_primitives.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv" in apu_primitives.files
+    assert ROOT / "rtl/mini/formal/apu_primitives_formal.sv" in apu_primitives.files
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    for scenario in (
+        "apu_primitives_invalid_read",
+        "apu_primitives_local",
+        "apu_primitives_kernel",
+        "apu_primitives_input_fifo",
+        "apu_primitives_alignment",
+        "apu_primitives_output_fifo",
+    ):
+        assert scenario in formal_makefile
+    assert ROOT / "rtl/ip/multimedia/apu_microcode_loader.sv" in apu_loader.files
+    assert ROOT / "rtl/mini/formal/apu_loader_formal.sv" in apu_loader.files
+    assert ROOT / "rtl/ip/multimedia/apu_codec_sequencer.sv" in apu_sequencer.files
+    assert ROOT / "rtl/mini/formal/apu_sequencer_formal.sv" in apu_sequencer.files
+    assert ROOT / "rtl/mini/top/hp_axi4_mux3.sv" in gateway_a.files
+    assert (
+        ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv" in gateway_a.files
+    )
+    assert ROOT / "rtl/mini/formal/gateway_a_formal.sv" in gateway_a.files
 
 
 def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
@@ -454,6 +504,9 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     compact_cover_config = render_sby_config(
         "i2c_formal", design, properties, "bitwuzla", "cover", 80, vcd=False
     )
+    skipped_cover_config = render_sby_config(
+        "apu_loader_formal", design, properties, "bitwuzla", "cover", 64, skip=60
+    )
 
     assert "mode prove" in prove_config
     assert "mode cover" in cover_config
@@ -463,6 +516,7 @@ def test_sby_config_uses_prove_and_cover_with_bitwuzla(tmp_path: Path) -> None:
     assert f"properties.v {properties.resolve()}" in prove_config
     assert "vcd off" not in cover_config
     assert "vcd off" in compact_cover_config
+    assert "skip 60" in skipped_cover_config
 
 
 def test_bitwuzla_wrapper_translates_yosys_legacy_arguments() -> None:
@@ -725,6 +779,13 @@ def test_dependency_helpers_are_idempotent(tmp_path: Path) -> None:
     download_file(payload.as_uri(), downloaded, digest)
     assert downloaded.stat().st_mtime_ns == first_mtime
 
+    resumed = tmp_path / "resumed.bin"
+    partial = tmp_path / ".resumed.bin.partial"
+    partial.write_bytes(b"partial")
+    download_file(payload.as_uri(), resumed, digest, resume=True)
+    assert resumed.read_bytes() == b"verified"
+    assert not partial.exists()
+
 
 def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Path) -> None:
     commands: list[tuple[str, ...]] = []
@@ -980,6 +1041,8 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
                 assert simulation_timeout == ["SOC_SIM_TIME=360"]
                 assert "LINK_TYPE=ld2_all_sram" in values
                 assert "VERILATOR_SIM_ARGS=--fast-flash" in values
+            elif "coremark-report" in values:
+                assert simulation_timeout == ["SOC_SIM_TIME=3600"]
             else:
                 assert not simulation_timeout
             if "debug-sim" not in values:
@@ -1330,8 +1393,8 @@ def test_nightly_extra_regression_skips_pr_netsim() -> None:
         "--dry-run",
     )
     assert (
-        "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report"
-        in extra.stdout
+        "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk "
+        "SIMU=VERILATOR SOC_SIM_TIME=3600 HAVE_SVA=YES coremark-report" in extra.stdout
     )
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in extra.stdout
@@ -1370,9 +1433,14 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     assert "suite: nightly-extra" in nightly
     assert "timeout_minutes: 180" in nightly
     assert "suite: nightly\n" not in nightly
-    assert (
-        "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
-    )
+    assert "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
+
+
+def test_quality_runs_p5_with_locked_open_source_simulators() -> None:
+    quality = (ROOT / ".github/workflows/quality.yml").read_text()
+
+    assert "tools: verilator sv2v iverilog" in quality
+    assert "python3 -m pytest -q tests/test_apu_codec_transport.py" in quality
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

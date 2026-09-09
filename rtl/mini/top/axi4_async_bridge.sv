@@ -43,6 +43,9 @@ module axi4_async_bridge #(
   logic               s_clear_dst_q;
   logic               s_clear_src_pulse;
   logic               s_clear_dst_pulse;
+  logic               s_dst_rst_n_src;
+  logic               s_dst_rst_n_src_q;
+  logic               s_dst_reset_evt;
   logic [7:0] s_epoch_d, s_epoch_q;
   logic s_aw_src_clear_busy, s_aw_dst_clear_busy;
   logic s_w_src_clear_busy, s_w_dst_clear_busy;
@@ -68,9 +71,19 @@ module axi4_async_bridge #(
       .dat_i  (clear_i),
       .dat_o  (s_clear_dst)
   );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_dst_reset_src_sync (
+      .clk_i  (src_clk_i),
+      .rst_n_i(src_rst_n_i),
+      .dat_i  (dst_rst_n_i),
+      .dat_o  (s_dst_rst_n_src)
+  );
 
   assign s_clear_src_pulse = s_clear_src && !s_clear_q;
   assign s_clear_dst_pulse = s_clear_dst && !s_clear_dst_q;
+  assign s_dst_reset_evt = s_dst_rst_n_src_q && !s_dst_rst_n_src;
 
   assign s_aw_src_data = {
     src_axi4.awid,
@@ -238,16 +251,19 @@ module axi4_async_bridge #(
                         s_b_src_clear_busy || s_b_dst_clear_busy ||
                         s_ar_src_clear_busy || s_ar_dst_clear_busy ||
                         s_r_src_clear_busy || s_r_dst_clear_busy;
-  assign s_epoch_d = (s_clear_src_pulse && !clear_busy_o) ? s_epoch_q + 1'b1 : s_epoch_q;
+  assign s_epoch_d = ((s_clear_src_pulse && !clear_busy_o) || s_dst_reset_evt) ?
+      s_epoch_q + 1'b1 : s_epoch_q;
   assign epoch_o = s_epoch_q;
 
   always_ff @(posedge src_clk_i or negedge src_rst_n_i) begin
     if (!src_rst_n_i) begin
-      s_clear_q <= 1'b0;
-      s_epoch_q <= '0;
+      s_clear_q         <= 1'b0;
+      s_dst_rst_n_src_q <= 1'b0;
+      s_epoch_q         <= '0;
     end else begin
-      s_clear_q <= s_clear_src;
-      s_epoch_q <= s_epoch_d;
+      s_clear_q         <= s_clear_src;
+      s_dst_rst_n_src_q <= s_dst_rst_n_src;
+      s_epoch_q         <= s_epoch_d;
     end
   end
 

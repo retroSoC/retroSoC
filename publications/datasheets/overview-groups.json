@@ -1,0 +1,90 @@
+[
+  {
+    "title": "Processors and Debug",
+    "items": [
+      "Hazard3",
+      "VexiiRiscv",
+      "JTAG"
+    ]
+  },
+  {
+    "title": "Memory",
+    "items": [
+      "SRAM",
+      "XPI",
+      "QPI PSRAM",
+      "OPI PSRAM",
+      "SDRAM"
+    ]
+  },
+  {
+    "title": "System Control",
+    "items": [
+      "SYSCTRL",
+      "RCU",
+      "ARCHINFO",
+      "Resource Controller",
+      "Fabric Monitor"
+    ]
+  },
+  {
+    "title": "Interrupts and IPC",
+    "items": [
+      "LP CLINT",
+      "HP ACLINT",
+      "HP PLIC",
+      "LP/HP Mailbox"
+    ]
+  },
+  {
+    "title": "DMA and Extensions",
+    "items": [
+      "Central DMA",
+      "EXT-L",
+      "EXT-H"
+    ]
+  },
+  {
+    "title": "Timers",
+    "items": [
+      "TIM0",
+      "TIM1",
+      "RTC",
+      "WDG",
+      "PWM"
+    ]
+  },
+  {
+    "title": "Connectivity",
+    "items": [
+      "GPIO",
+      "UART0",
+      "UART1",
+      "I2C0",
+      "I2C1",
+      "SPI-SD",
+      "SDIO0",
+      "SDIO1",
+      "PS/2",
+      "WS2812",
+      "USB2"
+    ]
+  },
+  {
+    "title": "Multimedia",
+    "items": [
+      "I2S",
+      "DVP",
+      "JPEG",
+      "APU"
+    ]
+  },
+  {
+    "title": "Security and Integrity",
+    "items": [
+      "Crypto",
+      "CRC",
+      "RNG"
+    ]
+  }
+]

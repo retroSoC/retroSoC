@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 23,
+      "width": 24,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -275,6 +275,15 @@
       "group_bit": 7,
       "core_bit": 29,
       "signal": "s_resource_fault_irq",
+      "user_visible": false
+    },
+    {
+      "name": "apu",
+      "description": "APU completion and error interrupt",
+      "group": "apb4_periph",
+      "group_bit": 23,
+      "core_bit": 31,
+      "signal": "resource_irq_lp_i[6]",
       "user_visible": false
     }
   ],
@@ -600,6 +609,13 @@
       "timed_interface": "u_jpeg_apb4_if",
       "pure_interface": "u_jpeg_apb4_pure_if",
       "region": "APB4_JPEG"
+    },
+    {
+      "slot": 27,
+      "name": "apu",
+      "timed_interface": "u_apu_apb4_if",
+      "pure_interface": "u_apu_apb4_pure_if",
+      "region": "APB4_APU"
     }
   ],
   "apb4_system_targets": [

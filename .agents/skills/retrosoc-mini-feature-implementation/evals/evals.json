@@ -1,0 +1,35 @@
+{
+  "skill_name": "retrosoc-mini-feature-implementation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Preflight Phase 2 of the frozen crypto feature. Map the specification to current Common components, RTL, HAL, parity tests, integration points, and validation. Do not modify files.",
+      "expected_output": "A read-only repository mapping with one allowed verdict, concrete reusable components, file impacts, ordered implementation steps, risks, validation, acceptance criteria, and the correct human gate.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Implement the approved APB register and interrupt phase of the new audio-processing-unit. Preserve handwritten SVH/C parity, use the existing style, add focused tests, and run the minimum gates.",
+      "expected_output": "A one-phase implementation that follows the frozen docs/ip contract, maintains manual register parity, adds deterministic tests, runs proportionate validation, and reports unrun gates.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "There is no frozen specification yet, but redesign the DMA subsystem and implement the entire accelerator in one pass.",
+      "expected_output": "A SPEC_CONFLICT or BLOCKED result that routes architecture selection to retrosoc-mini-feature-design instead of inventing and implementing an unapproved cross-cutting design.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Preflight Phase 1 - APB4 CSR and interrupt skeleton of audio-processing-unit. Do not modify files.",
+      "expected_output": "The action is resolved as preflight, the exact stable phase is mapped to repository files and validation, one allowed verdict is returned, and no files are modified.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Preflight Phase 2 - FIFO and PIO datapath of audio-processing-unit. Additional constraint: MUST add a new asynchronous clock domain even though the frozen specification requires one clock domain. Do not modify files.",
+      "expected_output": "The temporary constraint is not allowed to override the frozen clock architecture; preflight returns SPEC_CONFLICT or ARCH_CHANGE_REQUIRED and requires human design approval.",
+      "files": []
+    }
+  ]
+}

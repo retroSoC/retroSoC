@@ -1,0 +1,15 @@
+{
+  "title": "retroSoC Mini Gen2/Gen2+",
+  "document_id": "RS-MINI-DS",
+  "version": "0.4",
+  "status": "DRAFT",
+  "date": "2026-09-06",
+  "author": "Yuchi Miao",
+  "maintainer": "ECOS Team, ICT, CAS",
+  "source_revision": "56eb92312e2b83a85765bc7638b446382c1990dc",
+  "profile": "configs/ci/ihp130.mk",
+  "hp_profile": "configs/ci/ihp130-hp.mk",
+  "mpw_profile": "configs/cluster/mini-mpw.mk",
+  "entrypoint": "publications/datasheets/retroSoC-mini-datasheet.typ",
+  "filename": "retrosoc-mini-gen2-gen2plus-datasheet.pdf"
+}
