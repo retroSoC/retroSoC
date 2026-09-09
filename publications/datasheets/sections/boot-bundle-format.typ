@@ -3,7 +3,7 @@
 #let hex(value) = code("0x"+upper(str(value,base:16)))
 
 === HP Boot Bundle Binary Format <boot-bundle-format>
-#change-start("boot-bundle-format", "HP boot bundle byte layout, validation and synthetic example")
+
 The supplied format is a fixed four-artifact bundle, serialized as little-endian 32-bit words.
 The format version is #bundle.version; it is independent of the datasheet's v0.4 revision.
 The bundle starts at Flash offset #hex(bundle.bundle_offset), after the LP firmware area.
@@ -84,4 +84,3 @@ filled with 0xFF; this includes the gap after LP firmware, gaps before payloads 
 alignment padding. The package manifest's image SHA-256 covers that complete generated image.
 The example values are recalculated from the actual packager rather than maintained by hand.
 #source-note("tests/test_hp_boot_bundle.py",title:"Existing package layout/CRC test boundary")
-#change-end("boot-bundle-format")

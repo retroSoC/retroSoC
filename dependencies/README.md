@@ -5,8 +5,11 @@ archives, OCI base images, Nix inputs, checksums, and CI tool bundles. Its diges
 contributes to every build variant identity. `flake.lock` resolves the pinned Nix
 inputs and is validated against this lock.
 
-Publication inputs are also locked here: `publication_media`, the CeTZ and
-oxifmt archives, and the locally required Typst version in `publication_tools`.
+Publication inputs are also locked here: `publication_media`, the CeTZ, oxifmt,
+wavy/jogs, bytefield, rivet, blockcell, circuiteria and tidy archives, and the
+locally required Typst version in `publication_tools`. Package identities include
+both name and version; CeTZ 0.3.4/0.5.2 and oxifmt 0.2.1/1.0.0 coexist as
+separate cache entries. Library imports are checked as a complete offline closure.
 They are prepared manually by `publications/build_datasheet.py setup`, without
 adding a root Makefile target. See [Publications](../publications/README.md).
 

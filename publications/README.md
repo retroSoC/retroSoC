@@ -21,6 +21,21 @@ register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
 
+The representative drawing layer additionally uses bytefield 0.0.8, rivet 0.3.1,
+blockcell 0.1.0 and circuiteria 0.2.1. `diagram_reference.py` provides source-bound
+descriptor/protocol/instruction/storage data and circuit connections;
+`datasheets/diagram-packages.typ` adapts their visual settings. The three selected
+IP circuit figures are UART0, central DMA and APU; other IP diagrams, register
+bit layouts and waveforms keep their existing implementation.
+
+`package_reference.py` identifies dependencies by name/version, validates each
+cache and walks its runtime imports. CeTZ 0.3.4 and oxifmt 0.2.1 are retained for
+these packages alongside CeTZ 0.5.2 and oxifmt 1.0.0; tidy 0.3.0 is a runtime
+input of circuiteria. Waveforms retain wavy 0.1.3 and jogs 0.2.4.
+Setup uses checksum-locked archives, and build/check require the
+complete local cache. The manifest records version-qualified package digests
+and their runtime import graph. Third-party manual sources are not built.
+
 ### Software execution and structure baseline
 
 The same draft now details generic LP startup/linker initialization, conditional
@@ -185,7 +200,8 @@ uses `configs/ci/ihp130-hp.mk`; legacy selection uses `configs/cluster/mini-mpw.
 
 Use Python 3.10 or newer, Git and **Typst 0.15.1**. PDF checks additionally use
 `pypdf` and `pdfplumber`, available in the Codex bundled document runtime. The
-build itself uses Python's standard library and the installed Typst CLI.
+build uses Python's standard library and the installed Typst CLI; Python 3.10
+also uses the `tomli` backport already pinned in `requirements/build.txt`.
 
 From the repository root:
 
@@ -263,7 +279,8 @@ The three original SVGs are archived byte-for-byte in media and are not used as
 current architecture diagrams. Do not reintroduce copies beside the Typst files.
 
 [The shared dependency lock](../dependencies/dependencies.lock.json) pins media,
-CeTZ 0.5.2, oxifmt 1.0.0, wavy 0.1.3, jogs 0.2.4 and the required local Typst version.
+all eleven runtime package name/version pairs documented above, and the required
+local Typst version.
 Media's `.gitattributes` prevents platform line-ending conversion of hashed
 assets. Every file listed in media's `assets.json` is checked before building.
 Typst package extraction uses the shared safe archive helper and a file-hash

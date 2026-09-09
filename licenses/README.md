@@ -12,3 +12,8 @@ The SKY130 OpenRAM SRAM dependency uses
 [`OpenRAM-BSD-3-Clause`](OpenRAM-BSD-3-Clause) and
 [`SKY130-OpenRAM-Mixed-NOTICE`](SKY130-OpenRAM-Mixed-NOTICE). Its downloaded
 artifact also contains the exact Apache-2.0 SkyWater build-space license.
+
+The `Typst-*-LICENSE` files preserve the exact license texts of the newly added
+publication diagram packages and their runtime dependencies. Their versions,
+authors and archive provenance are recorded in the dependency lock and
+[attribution inventory](../ATTRIBUTIONS.md).

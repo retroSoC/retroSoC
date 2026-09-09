@@ -1,5 +1,6 @@
 #import "../style.typ": *
 #import "../system-figures.typ": sequence-diagram
+#import "../diagram-packages.typ": cache-boundary-diagram
 
 == Memory Attributes, Cache and DMA Coherency <memory-coherency>
 The LP and HP cores do not form a cache-coherent SMP system. Shared memory is visible through
@@ -27,11 +28,18 @@ programming uses the command engine. Reserved ranges and inactive QPI/OPI window
 used as scratch space. Physical device capacity must match the controller and board setup.
 
 === Buffer ownership and alignment
-The generated HP core implements Zicbom with a 64-byte cache-maintenance block. Round shared
+#change-start("cache-maintenance-layout", "Software cache-maintenance granule and buffer boundaries")
+The supplied HP platform metadata declares Zicbom with a 64-byte cache-maintenance block. Round shared
 maintenance ranges to full blocks and prevent unrelated owners from sharing a boundary block.
 Check address-plus-length overflow before rounding. Device descriptors can impose additional
 alignment, byte-count, stride and memory-placement constraints; the DMA TCD is a separate
 64-byte descriptor contract, not a universal transfer-alignment rule for every IP.
+
+#figure(cache-boundary-diagram(),kind:image,supplement:[Figure],caption:[Software-declared maintenance blocks around a shared-buffer range.])<cache-maintenance-layout>
+Match the platform declaration to the generated HP artifact before deployment; this schematic
+does not independently establish physical cache-line geometry or total cache capacity.
+#source-note("app/ports/linux/linux/retrosoc_hp.dts",title:"Software-declared cache-maintenance block size")
+#change-end("cache-maintenance-layout")
 
 #ds-table("buffer-ownership",[Shared-buffer responsibilities],
   ([Actor],[Responsibility before handoff],[Responsibility after completion]),

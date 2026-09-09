@@ -77,7 +77,7 @@ failed release or forced stop, inspect actual reset/drain state before reusing H
 For target acceptance, capture profile/image hashes, LP load/release checkpoints, the expected
 Linux readiness event and the final simulator verdict. Do not treat UART startup alone as
 success. A complete Linux peripheral qualification requires the separate support matrix.
-#change-start("boot-source-layout", "Boot reference links: grouped layout")
+
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
   #set text(size:9pt)
   #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
@@ -86,7 +86,7 @@ success. A complete Linux peripheral qualification requires the separate support
   #source("scripts/build_hp_linux.py",title:"OpenSBI FW_JUMP and Linux artifact composition") ·
   #source("scripts/package_hp_boot.py",title:"Bundle generation and layout checks")
 ]
-#change-end("boot-source-layout")
+
 
 #include "image-maintenance.typ"
 

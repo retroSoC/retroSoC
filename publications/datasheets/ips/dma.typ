@@ -1,6 +1,7 @@
 #import "../style.typ": *
 
 #import "../ip-reference.typ": ip-reference
+#import "../diagram-packages.typ": dma-tcd-diagram
 
 #pagebreak(weak:true)
 
@@ -10,12 +11,20 @@
 
 #ip("dma")
 
-#ip-reference("dma","dma",3,software-note:[
-  #change-start("dma-api-link", "DMA software: command and drain completion links", category:"cross-reference")
+#ip-reference("dma","dma",3,functional-note:[
+  #block(breakable:false)[
+    #change-start("dma-tcd-layout", "Central DMA transfer-control descriptor layout", category:"added")
+    #figure(dma-tcd-diagram(),kind:image,supplement:[Figure],caption:[Central DMA TCD memory layout and field ownership.])<dma-tcd-layout>
+    #source-note("crt/include/retrosoc/hal/dma.h",title:"Handwritten 64-byte TCD layout")
+    #source-note("crt/src/hal/dma.c",title:"Current HAL descriptor result writeback")
+    #change-end("dma-tcd-layout")
+  ]
+],software-note:[
+
   #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
     #text(9pt)[Command submission, wait exhaustion and confirmed abort/drain: @api-completion.]
   ]
-  #change-end("dma-api-link")
+
 ],legacy:[
 ==== Architecture
 Eight channel contexts share one AXI32 master. The production integration uses 32-bit words,

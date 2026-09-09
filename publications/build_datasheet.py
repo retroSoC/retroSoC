@@ -32,10 +32,13 @@ from publications.system_reference import collect_system_reference, source_paths
 from publications.retrieval_reference import collect_retrieval  # noqa: E402
 from publications.report_changes import page_ranges  # noqa: E402
 from publications.structure_reference import validate_structure  # noqa: E402
+from publications.diagram_reference import collect_diagrams  # noqa: E402
+from publications.package_reference import (  # noqa: E402
+    directory_hashes, package_records, validate_imports, validate_package_closure,
+)
 
 CONFIG = ROOT / "publications/datasheets/mini.json"
 CACHE = ROOT / ".cache/retrosoc/publications"
-PACKAGES = ("cetz", "oxifmt", "wavy", "jogs")
 MAP = "rtl/mini/address_map/memory_map.json"
 TOPOLOGY = "rtl/mini/integration/soc_topology.json"
 PINS = "rtl/mini/pin_map/pin_map.json"
@@ -163,6 +166,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         read_json(ROOT / "rtl/mini/integration/user_extensions_legacy.json"),
         config["source_revision"], system_reference["support"],
     )
+    system_reference["illustrations"] = collect_diagrams(ROOT, system_reference["illustrations"], regions)
     return {
         "document": config,
         "profiles": profiles,
@@ -219,14 +223,6 @@ def gpio_label(mode: Any) -> str:
     return " / ".join(names) or "-"
 
 
-def directory_hashes(directory: Path) -> dict[str, str]:
-    return {
-        p.relative_to(directory).as_posix(): sha256(p)
-        for p in sorted(directory.rglob("*"))
-        if p.is_file() and p.name != ".manifest.json"
-    }
-
-
 def prepare(lock: dict, update: bool) -> None:
     for name, dependency in lock["sources"].items():
         if name.startswith("cluster_") or name in {"hazard3", "mpw"}:
@@ -238,8 +234,8 @@ def prepare(lock: dict, update: bool) -> None:
             )
     media = lock["sources"]["publication_media"]
     ensure_git_repo(media["url"], ROOT / media["destination"], media["revision"], update=update)
-    for name in PACKAGES:
-        package = lock["archives"][f"typst_{name}"]
+    for package in package_records(lock):
+        name = package["name"]
         archive = CACHE / "downloads" / f"{name}-{package['version']}.tar.gz"
         download_file(package["url"], archive, package["sha256"], update=update)
         destination = ROOT / package["destination"]
@@ -282,15 +278,7 @@ def check_assets(lock: dict) -> dict:
         path = location / relative
         if not path.is_file() or sha256(path) != expected:
             raise ValueError(f"missing or modified media asset: {relative}")
-    for name in PACKAGES:
-        spec = lock["archives"][f"typst_{name}"]
-        directory = ROOT / spec["destination"]
-        marker = directory / ".manifest.json"
-        if not marker.is_file() or read_json(marker) != {
-            "archive": spec["sha256"],
-            "files": directory_hashes(directory),
-        }:
-            raise ValueError(f"package {name} missing or modified; run setup")
+    validate_package_closure(ROOT, package_records(lock))
     return manifest
 
 
@@ -421,7 +409,8 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "media_revision": lock["sources"]["publication_media"]["revision"],
         "assets": assets,
         "typst": lock["publication_tools"]["typst"]["version"],
-        "packages": {n: lock["archives"][f"typst_{n}"]["sha256"] for n in PACKAGES},
+        "packages": {p["identity"]: p["sha256"] for p in package_records(lock)},
+        "package_runtime_imports": validate_package_closure(ROOT, package_records(lock)),
         "pdf_sha256": sha256(pdf),
         "layout_regions_sha256": sha256(out / "layout-regions.json"),
         "change_markers_sha256": sha256(out / "change-markers.json"),
@@ -436,10 +425,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
 def check_document_sources(config: dict, data: dict) -> None:
     sources = list((ROOT / "publications/datasheets").rglob("*.typ"))
     combined = "\n".join(p.read_text(encoding="utf-8") for p in sources)
-    permitted = {name: load_lock()["archives"][f"typst_{name}"]["version"] for name in PACKAGES}
-    for name, version in re.findall(r"@preview/([\w-]+):([0-9.]+)", combined):
-        if permitted.get(name) != version:
-            raise ValueError(f"unlocked Typst import: {name}:{version}")
+    validate_imports(combined, package_records(load_lock()))
     if re.search(r"#lorem\(|Lorem ipsum|balba|TO BE COMPLETED", combined):
         raise ValueError("unstructured placeholder remains in Typst source")
     for entry in data["catalog"]:

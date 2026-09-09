@@ -1,6 +1,7 @@
 #import "../style.typ": *
 #import "../figures.typ": *
 #import "../waveforms.typ": timing
+#import "../diagram-packages.typ": memory-window-diagram
 
 = System Architecture
 == Introduction
@@ -98,6 +99,12 @@ advertise an implemented IP.
 The retained GA register range and SPI-SD data aperture are reserved. PRODUCT keeps a
 compatibility responder at the former selectable user-IP window; it does not instantiate
 MPW user IPs there. Neither case should be counted as an active accelerator.
+
+#block(breakable:false)[
+  #change-start("memory-window-layout", "PRODUCT memory address-window diagram", category:"added")
+  #figure(memory-window-diagram(),kind:image,supplement:[Figure],caption:[Selected PRODUCT memory address windows in the reference configuration.])<memory-window-layout>
+  #change-end("memory-window-layout")
+]
 
 #pagebreak()
 #include "memory-use.typ"

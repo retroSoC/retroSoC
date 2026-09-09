@@ -9,6 +9,7 @@ from publications.programming_reference import collect_programming, dependencies
 from publications.implementation_reference import collect_details, dependencies as detail_dependencies
 from publications.retrieval_reference import dependencies as retrieval_dependencies
 from publications.software_reference import collect_software, dependencies as software_dependencies
+from publications.diagram_reference import dependencies as diagram_dependencies
 
 REFERENCE = "publications/datasheets/system-reference.json"
 
@@ -19,6 +20,7 @@ def source_paths(reference: dict) -> set[str]:
     paths.update(detail_dependencies(reference.get("product_details", {})))
     paths.update(retrieval_dependencies(reference.get("retrieval", {})))
     paths.update(software_dependencies(reference.get("software", {})))
+    paths.update(diagram_dependencies(reference.get("illustrations", {})))
     for row in [*reference["support"], *reference["limitations"]]:
         paths.update(row["sources"])
         paths.update(row.get("tests", []))

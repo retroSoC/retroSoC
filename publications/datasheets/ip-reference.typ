@@ -2,6 +2,7 @@
 #import "figures.typ": box, wire
 #import "@preview/cetz:0.5.2"
 #import "waveforms.typ": timing
+#import "diagram-packages.typ": circuit-diagram
 
 #let inline(value) = {
   let parts=value.split("`")
@@ -145,11 +146,17 @@
   }
 }
 
-#let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none, software-note:none) = {
+#let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none, software-note:none, functional-note:none, protocol-note:none) = {
   let chapter=data.chapters.at(family)
   subhead(id,"Features and Block Diagram",depth)
   list(..chapter.at("features",default:()).map(inline))
-  figure(component-diagram(family,id),caption:[#chapter.title functional organization.])
+  if id in ("uart0","dma","apu") {
+    block(breakable:false)[
+      #change-start("circuit-"+id,chapter.title+" internal circuit diagram")
+      #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#chapter.title functional organization.])
+      #change-end("circuit-"+id)
+    ]
+  } else {figure(component-diagram(family,id),caption:[#chapter.title functional organization.])}
   subhead(id,"Functional Description",depth)
   if legacy!=none {
     set heading(outlined:false,bookmarked:true)
@@ -157,8 +164,10 @@
   }
   for paragraph in chapter.notes { par(inline(paragraph)) }
   prose-sections(id+"-functional",chapter.functional,depth)
+  if functional-note!=none {functional-note}
   subhead(id,"Protocol and Timing",depth)
   [For common APB4/AXI4/stream handshake rules, see @common-protocols.]
+  if protocol-note!=none {protocol-note}
   if shared==none {
     timing(family,[#chapter.title example transaction or event sequence.])
     if family+"-exception" in data.waveforms {

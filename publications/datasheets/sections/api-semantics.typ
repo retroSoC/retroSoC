@@ -2,7 +2,7 @@
 #let api = data.system_reference.software.api_reference
 
 === Software Timeouts and Polling Budgets <software-timeouts>
-#change-start("software-timeouts", "Software timeout units and polling budgets")
+
 The SDK defines rs_timeout_t as an unsigned #(api.timeout_bits)-bit value and currently sets
 RS_TIMEOUT_DEFAULT to #api.default_budget. These values are software budgets, not a universal
 unit of microseconds, milliseconds or CPU cycles. Their consumption depends on the function:
@@ -33,10 +33,10 @@ Do not obtain a supposedly portable deadline by treating RS_TIMEOUT_DEFAULT as o
 #source-note("crt/include/retrosoc/core/wait.h",title:"Common wait predicates and zero-budget behavior")
 #source-note("crt/src/hal/uart.c",title:"Shared UART FIFO-wait budget")
 #source-note("crt/src/hal/timer.c",title:"Separate delay duration and software polling budget")
-#change-end("software-timeouts")
+
 
 === API Completion and State after Failure <api-completion>
-#change-start("api-completion", "API return, completion and failure-state semantics")
+
 RS_OK describes the operation implemented by the called function. It can mean a command was
 written, FIFO entries were accepted or a completion predicate was observed. Identify that
 boundary before releasing resources, consuming output or announcing completion to another hart.
@@ -65,4 +65,3 @@ General side-effect and retry rules remain in @register-programming.
   #source("crt/src/hal/dma.c",title:"DMA implementation") ·
   #source("crt/src/hal/timer.c",title:"Timer implementation")
 ]
-#change-end("api-completion")

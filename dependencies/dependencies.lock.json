@@ -114,6 +114,62 @@
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
   },
   "archives": {
+    "typst_bytefield": {
+      "package_name": "bytefield",
+      "version": "0.0.8",
+      "url": "https://packages.typst.org/preview/bytefield-0.0.8.tar.gz",
+      "sha256": "00b81fcabf5a2601da82812ce3274597baea4831b014f790a6350948470403c6",
+      "destination": ".cache/retrosoc/publications/packages/preview/bytefield/0.0.8",
+      "license": "MIT"
+    },
+    "typst_rivet": {
+      "package_name": "rivet",
+      "version": "0.3.1",
+      "url": "https://packages.typst.org/preview/rivet-0.3.1.tar.gz",
+      "sha256": "8057237ae348189df303fbc45548c87a6cf24f5c58c19a072b1d20fa4ce3bcc8",
+      "destination": ".cache/retrosoc/publications/packages/preview/rivet/0.3.1",
+      "license": "Apache-2.0"
+    },
+    "typst_blockcell": {
+      "package_name": "blockcell",
+      "version": "0.1.0",
+      "url": "https://packages.typst.org/preview/blockcell-0.1.0.tar.gz",
+      "sha256": "cf086664a01bf6ca4b7fa84a9746589039887f4bda13fe7b7781d1cea35f3164",
+      "destination": ".cache/retrosoc/publications/packages/preview/blockcell/0.1.0",
+      "license": "MIT"
+    },
+    "typst_circuiteria": {
+      "package_name": "circuiteria",
+      "version": "0.2.1",
+      "url": "https://packages.typst.org/preview/circuiteria-0.2.1.tar.gz",
+      "sha256": "207e33352f115c00d6ee141e3d2c89691f1307c456272e0e187f5303c9892729",
+      "destination": ".cache/retrosoc/publications/packages/preview/circuiteria/0.2.1",
+      "license": "Apache-2.0"
+    },
+    "typst_cetz_0_3_4": {
+      "package_name": "cetz",
+      "version": "0.3.4",
+      "url": "https://packages.typst.org/preview/cetz-0.3.4.tar.gz",
+      "sha256": "4f4b5a8d311d519e749940a766fe50521e40c041129e1c91af0c42e61f307514",
+      "destination": ".cache/retrosoc/publications/packages/preview/cetz/0.3.4",
+      "license": "LGPL-3.0-or-later"
+    },
+    "typst_tidy": {
+      "package_name": "tidy",
+      "version": "0.3.0",
+      "url": "https://packages.typst.org/preview/tidy-0.3.0.tar.gz",
+      "sha256": "a4c75f15b2cacdeef858453cdea6ee6e665c3464ebb5097a5b1a9c309418c249",
+      "destination": ".cache/retrosoc/publications/packages/preview/tidy/0.3.0",
+      "license": "MIT"
+    },
+    "typst_oxifmt_0_2_1": {
+      "package_name": "oxifmt",
+      "version": "0.2.1",
+      "url": "https://packages.typst.org/preview/oxifmt-0.2.1.tar.gz",
+      "sha256": "16fac2923032c59727de01e84d42cac45e8790da28df56effca49f4de41b09d9",
+      "destination": ".cache/retrosoc/publications/packages/preview/oxifmt/0.2.1",
+      "license": "MIT-0"
+    },
     "typst_wavy": {
       "version": "0.1.3",
       "url": "https://packages.typst.org/preview/wavy-0.1.3.tar.gz",

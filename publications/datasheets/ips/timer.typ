@@ -13,11 +13,11 @@
 #ip("timer")
 
 #ip-reference("timer","timer",4,software-note:[
-  #change-start("timer-api-link", "Timer software: delay budget and timeout-stop links", category:"cross-reference")
+
   #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
     #text(9pt)[Delay duration versus polling budget, and stop after timeout: @software-timeouts; @api-completion.]
   ]
-  #change-end("timer-api-link")
+
 ],legacy:[
 Both timers support free-running, periodic and one-shot operation, up/down counting and sticky
 interrupt status. An optional debug-freeze input stops counting while management Hazard3 is

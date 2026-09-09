@@ -17,3 +17,11 @@ The following third-party projects or authors are referenced in the RTL source h
   exact source revisions are retained in the downloaded artifact manifest.
 
 These notices are included solely to preserve attribution for the retained third-party source material. They do not alter the licensing terms of the retroSoC repository itself, which is distributed under the Mulan PSL v2 license.
+
+## Typst publication tooling
+
+The bytefield, rivet, blockcell and circuiteria drawing packages, and their
+CeTZ 0.3.4, tidy 0.3.0 and oxifmt 0.2.1 runtime dependencies, retain their upstream
+licenses and authorship. See the package/version entries in ATTRIBUTIONS.md and
+the exact Typst-*-LICENSE texts in licenses/. The dependency lock and publication
+manifest identify the archives used for each document build.

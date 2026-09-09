@@ -5627,5 +5627,1199 @@
         }
       ]
     }
+  },
+  "illustrations": {
+    "schema_version": 1,
+    "sources": [
+      "crt/include/retrosoc/hal/dma.h",
+      "crt/src/hal/dma.c",
+      "scripts/apu_isa.py",
+      "rtl/ip/multimedia/apu_microcode_pkg.sv",
+      "rtl/ip/multimedia/apu_define.svh",
+      "rtl/ip/serial/uart_reg.sv",
+      "rtl/ip/serial/apb4_uart_rx.sv",
+      "rtl/ip/storage/sdio_command.sv",
+      "rtl/ip/storage/sdio_pkg.sv",
+      "app/ports/linux/linux/retrosoc_hp.dts",
+      "rtl/mini/top/apb4_periph.sv"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/storage/sdio_command.sv",
+        "text": "s_tx_shift_d = { 1'b0, 1'b1, cmd_index_i, cmd_arg_i, sdio_pkg::sdio_crc7_calc({1'b0, 1'b1, cmd_index_i, cmd_arg_i}), 1'b1 };"
+      },
+      {
+        "file": "rtl/ip/storage/sdio_command.sv",
+        "text": "input logic [5:0] cmd_index_i"
+      },
+      {
+        "file": "rtl/ip/storage/sdio_command.sv",
+        "text": "input logic [31:0] cmd_arg_i"
+      },
+      {
+        "file": "rtl/ip/storage/sdio_command.sv",
+        "text": "? s_tx_shift_q[47] : 1'b1"
+      },
+      {
+        "file": "rtl/mini/top/apb4_periph.sv",
+        "text": ".NumChannels(8), .FifoDepth(32)"
+      },
+      {
+        "file": "rtl/ip/multimedia/apu_define.svh",
+        "text": "`define APB4_APU__APUMC_MAX_INSTRUCTIONS 2048"
+      },
+      {
+        "file": "crt/src/hal/dma.c",
+        "text": "current->crc_result = RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CRC_RESULT);"
+      },
+      {
+        "file": "rtl/ip/multimedia/apb4_apu.sv",
+        "text": "assign u_apu_rx_axis.tready = 1'b0;"
+      }
+    ],
+    "sdio_command": [
+      {
+        "name": "start",
+        "label": "S",
+        "lsb": 47,
+        "bits": 1
+      },
+      {
+        "name": "direction",
+        "label": "T",
+        "lsb": 46,
+        "bits": 1
+      },
+      {
+        "name": "command",
+        "label": "CMD",
+        "lsb": 40,
+        "bits": 6
+      },
+      {
+        "name": "argument",
+        "label": "ARG",
+        "lsb": 8,
+        "bits": 32
+      },
+      {
+        "name": "crc7",
+        "label": "CRC7",
+        "lsb": 1,
+        "bits": 7
+      },
+      {
+        "name": "end",
+        "label": "E",
+        "lsb": 0,
+        "bits": 1
+      }
+    ],
+    "circuits": {
+      "uart0": {
+        "nodes": [
+          {
+            "id": "apb",
+            "title": "APB4 control\nregister interface",
+            "x": 0,
+            "y": 5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/serial/apb4_uart.sv"
+            ],
+            "ports": [
+              {
+                "id": "out",
+                "side": "east",
+                "direction": "out",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "reg",
+            "title": "Register bank\nTX / RX FIFOs",
+            "x": 6.3,
+            "y": 5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/serial/uart_reg.sv"
+            ],
+            "ports": [
+              {
+                "id": "apb",
+                "side": "west",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "tx",
+                "side": "east",
+                "direction": "out",
+                "width": 8
+              },
+              {
+                "id": "rx",
+                "side": "east",
+                "direction": "in",
+                "width": 12
+              },
+              {
+                "id": "level",
+                "side": "south",
+                "direction": "out",
+                "width": 7
+              }
+            ],
+            "port_margins": {
+              "east": [
+                0,
+                25
+              ]
+            }
+          },
+          {
+            "id": "core",
+            "title": "Baud generator\nTX / RX engines",
+            "x": 12.6,
+            "y": 5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/serial/uart_core.sv"
+            ],
+            "ports": [
+              {
+                "id": "tx",
+                "side": "west",
+                "direction": "in",
+                "width": 8
+              },
+              {
+                "id": "rx",
+                "side": "west",
+                "direction": "out",
+                "width": 12
+              },
+              {
+                "id": "allow",
+                "side": "west",
+                "direction": "in",
+                "width": 1
+              },
+              {
+                "id": "txpad",
+                "side": "south",
+                "direction": "out",
+                "width": 1
+              },
+              {
+                "id": "rxpad",
+                "side": "south",
+                "direction": "in",
+                "width": 1
+              }
+            ]
+          },
+          {
+            "id": "flow",
+            "title": "CTS synchronizer\nRTS / start control",
+            "x": 6.3,
+            "y": 1.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/serial/uart_flow_ctrl.sv"
+            ],
+            "ports": [
+              {
+                "id": "cts",
+                "side": "west",
+                "direction": "in",
+                "width": 1
+              },
+              {
+                "id": "rts",
+                "side": "west",
+                "direction": "out",
+                "width": 1
+              },
+              {
+                "id": "level",
+                "side": "north",
+                "direction": "in",
+                "width": 7
+              },
+              {
+                "id": "allow",
+                "side": "east",
+                "direction": "out",
+                "width": 1
+              }
+            ]
+          },
+          {
+            "id": "modem",
+            "title": "CTS_n / RTS_n\nGPIO alternate path",
+            "x": 0,
+            "y": 1.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/serial/apb4_uart.sv"
+            ],
+            "ports": [
+              {
+                "id": "cts",
+                "side": "east",
+                "direction": "out",
+                "width": 1
+              },
+              {
+                "id": "rts",
+                "side": "east",
+                "direction": "in",
+                "width": 1
+              }
+            ]
+          },
+          {
+            "id": "pads",
+            "title": "Dedicated\nTX / RX pads",
+            "x": 12.6,
+            "y": 1.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/serial/apb4_uart.sv"
+            ],
+            "ports": [
+              {
+                "id": "tx",
+                "side": "north",
+                "direction": "in",
+                "width": 1
+              },
+              {
+                "id": "rx",
+                "side": "north",
+                "direction": "out",
+                "width": 1
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "from": "apb.out",
+            "to": "reg.apb",
+            "label": "APB4 / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".apb4(apb4)"
+              }
+            ]
+          },
+          {
+            "from": "reg.tx",
+            "to": "core.tx",
+            "label": "TX / 8",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".tx_data_o(s_tx_data)"
+              },
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".tx_data_i(s_tx_data)"
+              }
+            ]
+          },
+          {
+            "from": "core.rx",
+            "to": "reg.rx",
+            "label": "RX / 12",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".rx_data_o(s_rx_data)"
+              },
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".rx_data_i(s_rx_data)"
+              }
+            ]
+          },
+          {
+            "from": "reg.level",
+            "to": "flow.level",
+            "label": "LEVEL / 7",
+            "kind": "control",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".rx_level_o(s_rx_level)"
+              },
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".rx_level_i(s_rx_level)"
+              }
+            ]
+          },
+          {
+            "from": "modem.cts",
+            "to": "flow.cts",
+            "label": "CTS_n",
+            "kind": "control",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".cts_n_async_i(uart.cts_n_i)"
+              }
+            ]
+          },
+          {
+            "from": "flow.rts",
+            "to": "modem.rts",
+            "label": "RTS_n",
+            "kind": "control",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".rts_n_o(uart.rts_n_o)"
+              }
+            ]
+          },
+          {
+            "from": "flow.allow",
+            "to": "core.allow",
+            "label": "START",
+            "kind": "control",
+            "style": "zigzag",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".tx_start_allowed_o(s_tx_start_allowed)"
+              },
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".tx_start_allowed_i(s_tx_start_allowed)"
+              }
+            ]
+          },
+          {
+            "from": "core.txpad",
+            "to": "pads.tx",
+            "label": "TX",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".tx_o(s_tx)"
+              },
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": "assign uart.tx_o = s_tx;"
+              }
+            ]
+          },
+          {
+            "from": "pads.rx",
+            "to": "core.rxpad",
+            "label": "RX",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/apb4_uart.sv",
+                "text": ".rx_i(uart.rx_i)"
+              }
+            ]
+          }
+        ],
+        "note": "Selected functional paths. Data labels show payload width; dashed links are control. Clock/reset, full handshake and IRQ wiring are omitted for clarity."
+      },
+      "dma": {
+        "nodes": [
+          {
+            "id": "apb",
+            "title": "APB4 control\nregister interface",
+            "x": 0,
+            "y": 7,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/peripheral/apb4_dma.sv"
+            ],
+            "ports": [
+              {
+                "id": "out",
+                "side": "south",
+                "direction": "out",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "reg",
+            "title": "8 channel\nregister contexts",
+            "x": 0,
+            "y": 3.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/peripheral/dma_reg.sv"
+            ],
+            "ports": [
+              {
+                "id": "apb",
+                "side": "north",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "cfg",
+                "side": "east",
+                "direction": "out",
+                "width": 256
+              },
+              {
+                "id": "start",
+                "side": "east",
+                "direction": "out",
+                "width": 8
+              },
+              {
+                "id": "status",
+                "side": "east",
+                "direction": "in",
+                "width": 8
+              }
+            ]
+          },
+          {
+            "id": "core",
+            "title": "Channel scheduling\nFIFO / CRC control",
+            "x": 6.3,
+            "y": 3.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/peripheral/dma_core.sv"
+            ],
+            "ports": [
+              {
+                "id": "cfg",
+                "side": "west",
+                "direction": "in",
+                "width": 256
+              },
+              {
+                "id": "start",
+                "side": "west",
+                "direction": "in",
+                "width": 8
+              },
+              {
+                "id": "status",
+                "side": "west",
+                "direction": "out",
+                "width": 8
+              },
+              {
+                "id": "req",
+                "side": "east",
+                "direction": "out",
+                "width": 1
+              },
+              {
+                "id": "read",
+                "side": "east",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "write",
+                "side": "east",
+                "direction": "out",
+                "width": 32
+              },
+              {
+                "id": "out",
+                "side": "south",
+                "direction": "out",
+                "width": 32
+              },
+              {
+                "id": "in",
+                "side": "south",
+                "direction": "in",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "master",
+            "title": "AXI4 read/write\ntransaction engine",
+            "x": 12.6,
+            "y": 3.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/peripheral/dma_axi4_master.sv"
+            ],
+            "ports": [
+              {
+                "id": "req",
+                "side": "west",
+                "direction": "in",
+                "width": 1
+              },
+              {
+                "id": "read",
+                "side": "west",
+                "direction": "out",
+                "width": 32
+              },
+              {
+                "id": "write",
+                "side": "west",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "axi",
+                "side": "south",
+                "direction": "out",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "streams",
+            "title": "I2S / DVP / Crypto\nstream endpoints",
+            "x": 6.3,
+            "y": 0,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/peripheral/apb4_dma.sv"
+            ],
+            "ports": [
+              {
+                "id": "out",
+                "side": "north",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "in",
+                "side": "north",
+                "direction": "out",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "memory",
+            "title": "AXI32 gateway\nshared memory path",
+            "x": 12.6,
+            "y": 0,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/peripheral/apb4_dma.sv"
+            ],
+            "ports": [
+              {
+                "id": "axi",
+                "side": "north",
+                "direction": "in",
+                "width": 32
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "from": "apb.out",
+            "to": "reg.apb",
+            "label": "APB4 / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".apb4(apb4)"
+              }
+            ]
+          },
+          {
+            "from": "reg.cfg",
+            "to": "core.cfg",
+            "label": "CFG / 8ch",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".ch_cfg_o(s_ch_cfg)"
+              },
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".ch_cfg_i(s_ch_cfg)"
+              }
+            ]
+          },
+          {
+            "from": "reg.start",
+            "to": "core.start",
+            "label": "START",
+            "kind": "control",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".start_o(s_start)"
+              },
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".start_i(s_start)"
+              }
+            ]
+          },
+          {
+            "from": "core.status",
+            "to": "reg.status",
+            "label": "BUSY",
+            "kind": "control",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".busy_o(s_busy)"
+              },
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".busy_i(s_busy)"
+              }
+            ]
+          },
+          {
+            "from": "core.req",
+            "to": "master.req",
+            "label": "RD request",
+            "kind": "control",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/dma_core.sv",
+                "text": ".read_start_valid_i(s_axi_read_start_valid)"
+              }
+            ]
+          },
+          {
+            "from": "master.read",
+            "to": "core.read",
+            "label": "READ / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/dma_core.sv",
+                "text": ".read_data_o(s_axi_read_data)"
+              }
+            ]
+          },
+          {
+            "from": "core.write",
+            "to": "master.write",
+            "label": "WRITE / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/dma_core.sv",
+                "text": ".write_data_i(s_axi_write_data)"
+              }
+            ]
+          },
+          {
+            "from": "master.axi",
+            "to": "memory.axi",
+            "label": "AXI4 / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/dma_core.sv",
+                "text": ".axi4(axi4)"
+              }
+            ]
+          },
+          {
+            "from": "core.out",
+            "to": "streams.out",
+            "label": "TX / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".i2s_tx_axis(i2s_tx_axis)"
+              },
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".crypto_in_axis(crypto_in_axis)"
+              }
+            ]
+          },
+          {
+            "from": "streams.in",
+            "to": "core.in",
+            "label": "RX / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".i2s_rx_axis(i2s_rx_axis)"
+              },
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".dvp_rx_axis(dvp_rx_axis)"
+              },
+              {
+                "file": "rtl/ip/peripheral/apb4_dma.sv",
+                "text": ".crypto_out_axis(crypto_out_axis)"
+              }
+            ]
+          }
+        ],
+        "note": "Functional grouping of the integrated eight-channel DMA. Stream ports aggregate the listed input/output endpoints; handshakes and the request map remain defined by the protocol chapter."
+      },
+      "apu": {
+        "nodes": [
+          {
+            "id": "reg",
+            "title": "APB4 registers\njob / lifecycle control",
+            "x": 0,
+            "y": 7,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apb4_apu.sv"
+            ],
+            "ports": [
+              {
+                "id": "load",
+                "side": "east",
+                "direction": "out",
+                "width": 1
+              },
+              {
+                "id": "acl",
+                "side": "south",
+                "direction": "out",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "loader",
+            "title": "Microcode loader\nheader / CRC checks",
+            "x": 6.3,
+            "y": 7,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apu_microcode_loader.sv"
+            ],
+            "ports": [
+              {
+                "id": "load",
+                "side": "west",
+                "direction": "in",
+                "width": 1
+              },
+              {
+                "id": "data",
+                "side": "south",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "store",
+                "side": "east",
+                "direction": "out",
+                "width": 64
+              }
+            ]
+          },
+          {
+            "id": "store",
+            "title": "Control store\n2048 x 64 bits",
+            "x": 12.6,
+            "y": 7,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apu_control_store.sv"
+            ],
+            "ports": [
+              {
+                "id": "write",
+                "side": "west",
+                "direction": "in",
+                "width": 64
+              },
+              {
+                "id": "fetch",
+                "side": "south",
+                "direction": "out",
+                "width": 64
+              }
+            ]
+          },
+          {
+            "id": "dma",
+            "title": "Private DMA\nrequest arbitration\nring scheduler",
+            "x": 0,
+            "y": 3.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apb4_apu.sv"
+            ],
+            "ports": [
+              {
+                "id": "acl",
+                "side": "north",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "loader",
+                "side": "north",
+                "direction": "out",
+                "width": 32
+              },
+              {
+                "id": "read",
+                "side": "east",
+                "direction": "out",
+                "width": 32
+              },
+              {
+                "id": "write",
+                "side": "east",
+                "direction": "in",
+                "width": 32
+              }
+            ],
+            "port_margins": {
+              "east": [
+                0,
+                25
+              ]
+            }
+          },
+          {
+            "id": "transport",
+            "title": "Codec transport\nDMA / FIFO staging",
+            "x": 6.3,
+            "y": 3.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apu_codec_transport.sv"
+            ],
+            "ports": [
+              {
+                "id": "read",
+                "side": "west",
+                "direction": "in",
+                "width": 32
+              },
+              {
+                "id": "write",
+                "side": "west",
+                "direction": "out",
+                "width": 32
+              },
+              {
+                "id": "fifo",
+                "side": "east",
+                "direction": "in",
+                "width": 41
+              },
+              {
+                "id": "stream",
+                "side": "west",
+                "direction": "out",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "seq",
+            "title": "Bounded sequencer\npredicates / operands",
+            "x": 12.6,
+            "y": 3.5,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apu_codec_sequencer.sv"
+            ],
+            "ports": [
+              {
+                "id": "fetch",
+                "side": "north",
+                "direction": "in",
+                "width": 64
+              },
+              {
+                "id": "instr",
+                "side": "south",
+                "direction": "out",
+                "width": 64
+              }
+            ]
+          },
+          {
+            "id": "stream",
+            "title": "I2S stream router\nselected TX path",
+            "x": 0,
+            "y": 0,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apu_stream_router.sv"
+            ],
+            "ports": [
+              {
+                "id": "tx",
+                "side": "east",
+                "direction": "in",
+                "width": 32
+              }
+            ]
+          },
+          {
+            "id": "primitive",
+            "title": "Processing primitives\nlocal storage / FIFOs",
+            "x": 12.6,
+            "y": 0,
+            "w": 4.0,
+            "h": 1.8,
+            "sources": [
+              "rtl/ip/multimedia/apu_primitive_dispatcher.sv"
+            ],
+            "ports": [
+              {
+                "id": "instr",
+                "side": "north",
+                "direction": "in",
+                "width": 64
+              },
+              {
+                "id": "fifo",
+                "side": "west",
+                "direction": "out",
+                "width": 41
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "from": "reg.load",
+            "to": "loader.load",
+            "label": "LOAD",
+            "kind": "control",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".microcode_load_o(s_microcode_load)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".start_i(s_microcode_load)"
+              }
+            ]
+          },
+          {
+            "from": "loader.store",
+            "to": "store.write",
+            "label": "WRITE / 64",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".store_data_o(s_store_write_data)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".loader_data_i(s_store_write_data)"
+              }
+            ]
+          },
+          {
+            "from": "store.fetch",
+            "to": "seq.fetch",
+            "label": "FETCH / 64",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".fetch_data_o(s_seq_fetch_data)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".fetch_data_i(s_seq_fetch_data)"
+              }
+            ]
+          },
+          {
+            "from": "reg.acl",
+            "to": "dma.acl",
+            "label": "ACL / 32",
+            "kind": "control",
+            "style": "zigzag",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".read_base_o(s_read_base)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".read_base_i(s_read_base)"
+              }
+            ],
+            "zigzag-dir": "horizontal"
+          },
+          {
+            "from": "dma.loader",
+            "to": "loader.data",
+            "label": "MC read / 32",
+            "kind": "data",
+            "style": "zigzag",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".read_axis(u_dma_read_axis)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".dma_data_i(u_dma_read_axis.tdata)"
+              }
+            ],
+            "zigzag-dir": "horizontal"
+          },
+          {
+            "from": "dma.read",
+            "to": "transport.read",
+            "label": "READ / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": "assign u_transport_read_axis.tdata = u_dma_read_axis.tdata;"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".dma_read_axis(u_transport_read_axis)"
+              }
+            ]
+          },
+          {
+            "from": "transport.write",
+            "to": "dma.write",
+            "label": "WRITE / 32",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".dma_write_axis(u_transport_write_axis)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": "u_transport_write_axis.tdata : u_scheduler_write_axis.tdata;"
+              }
+            ]
+          },
+          {
+            "from": "seq.instr",
+            "to": "primitive.instr",
+            "label": "INSTR / 64",
+            "kind": "data",
+            "style": "direct",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".primitive_instruction_o(s_primitive_instruction)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".instruction_i(s_primitive_instruction)"
+              }
+            ]
+          },
+          {
+            "from": "primitive.fifo",
+            "to": "transport.fifo",
+            "label": "FIFO / 41",
+            "kind": "data",
+            "style": "zigzag",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".output_data_o(s_primitive_output_data)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".output_fifo_data_i(s_primitive_output_data)"
+              }
+            ]
+          },
+          {
+            "from": "transport.stream",
+            "to": "stream.tx",
+            "label": "PCM / 32",
+            "kind": "data",
+            "style": "zigzag",
+            "bindings": [
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".tx_axis(u_apu_tx_axis)"
+              },
+              {
+                "file": "rtl/ip/multimedia/apb4_apu.sv",
+                "text": ".apu_tx_axis(u_apu_tx_axis)"
+              }
+            ]
+          }
+        ],
+        "note": "Selected loader, execution and TX paths. Request arbitration/ring control is grouped; launch/status/return handshakes are not all shown. APU RX is disconnected and production codec qualification remains restricted."
+      }
+    }
   }
 }
