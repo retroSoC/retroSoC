@@ -1041,6 +1041,8 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
                 assert simulation_timeout == ["SOC_SIM_TIME=360"]
                 assert "LINK_TYPE=ld2_all_sram" in values
                 assert "VERILATOR_SIM_ARGS=--fast-flash" in values
+            elif "coremark-report" in values:
+                assert simulation_timeout == ["SOC_SIM_TIME=3600"]
             else:
                 assert not simulation_timeout
             if "debug-sim" not in values:
@@ -1391,8 +1393,8 @@ def test_nightly_extra_regression_skips_pr_netsim() -> None:
         "--dry-run",
     )
     assert (
-        "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR HAVE_SVA=YES coremark-report"
-        in extra.stdout
+        "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk "
+        "SIMU=VERILATOR SOC_SIM_TIME=3600 HAVE_SVA=YES coremark-report" in extra.stdout
     )
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in extra.stdout
