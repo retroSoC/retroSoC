@@ -86,7 +86,7 @@ number is used to imply completion.
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-06],[0.4 DRAFT],[Expand IP/system-use and retrieval references; add LP runtime, IRQ software boundaries, Linux handoff and application diagnostics. Freeze chapter/IP entry structure while retaining the reviewed hardware snapshot and gray/gold layout.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-06],[0.4 DRAFT],[Expand IP/system-use, retrieval and software references; add polling budgets, API completion/failure semantics and the HP bundle byte format. Retain the frozen chapter/IP structure, reviewed hardware snapshot and gray/gold layout.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify

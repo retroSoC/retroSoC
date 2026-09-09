@@ -105,7 +105,6 @@ qualification. Reserved, unsupported and TBD are different states; use the speci
 rather than assuming that an absent value is zero or that an address window guarantees a device.
 
 == Document and Evidence Navigation
-#change-start("software-navigation", "Document map: software and diagnostic navigation")
 #ds-table("document-navigation",[Where to find an authoritative answer],
   ([Question],[Primary reference],[How to use this datasheet]),
   (([Addresses, routes and pins],[Canonical memory/topology/pin inputs and generated bindings.],[Use the generated tables and cross-IP route/conflict summaries.]),
@@ -125,4 +124,3 @@ an old narrative conflicts with current executable integration, use the current 
 and record the discrepancy rather than silently copying the older statement.
 #source-note("publications/datasheets/system-reference.json",title:"Publication content and evidence index")
 #source-note("docs/README.md",title:"Engineering document map")
-#change-end("software-navigation")

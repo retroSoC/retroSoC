@@ -1,6 +1,5 @@
 #import "../style.typ": *
 
-#change-start("application-diagnostics", "Bringup and CI smoke diagnostic coverage")
 === Diagnostic application sequences <application-diagnostics>
 The following inventories describe the checks that the reviewed application sources execute.
 They are not newly observed pass results. Run selection and reported coverage must name the
@@ -44,4 +43,3 @@ Record test invocation and logs under @release-verification before publishing a 
 #source-note("crt/src/hal/usb2.c",title:"USB2 controller self-test implementation")
 #source-note("crt/src/hal/crypto.c",title:"Crypto known-answer checks and zeroization")
 #source-note("scripts/regress.py",title:"Regression selection of CI smoke firmware")
-#change-end("application-diagnostics")

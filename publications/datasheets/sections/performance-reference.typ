@@ -81,9 +81,6 @@ establish compatibility.
 == Implementation and Qualification Limitations
 #let limitation-body(item) = {
   heading(level:3,item.title)
-  if item.id=="lp-startup-psram-wait" {
-    change-start("lp-startup-limitation", "Known limitations: generic LP PSRAM-ready wait", category:"added")
-  }
   ds-table("limitation-"+item.id,[#item.title - impact and integration response],
     ([Field],[Description]),
     (([Impact],item.impact),([Trigger],item.trigger),([Integration response],item.workaround),([Applies to],item.applies_to)),
@@ -96,7 +93,6 @@ establish compatibility.
     block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
       #text(size:9pt)[Startup: @lp-runtime · Application results: @firmware-application-results.]
     ]
-    change-end("lp-startup-limitation")
   }
 }
 #for item in data.system_reference.limitations {

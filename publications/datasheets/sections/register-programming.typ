@@ -64,6 +64,12 @@ guarantee. Use the platform's required barriers and the sequences in @memory-coh
 Neither the LP fabric nor the native crossbar admits locked transactions in the reviewed
 predicate; do not infer a global exclusive-access service from CPU ISA names alone.
 
+#change-start("register-api-link", "Register conventions: software completion link", category:"cross-reference")
+#block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
+  #text(9pt)[Software timeout budgets and API return boundaries: @software-timeouts; @api-completion.]
+]
+#change-end("register-api-link")
+
 === RV32 access to multiword registers
 For CLINT, the SDK reads high, low and high again, accepting the result only if both high
 words match; its retry count is bounded. It writes the compare register by temporarily

@@ -145,7 +145,7 @@
   }
 }
 
-#let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none) = {
+#let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none, software-note:none) = {
   let chapter=data.chapters.at(family)
   subhead(id,"Features and Block Diagram",depth)
   list(..chapter.at("features",default:()).map(inline))
@@ -182,6 +182,7 @@
     prose-sections(id+"-software",chapter.software,depth)
   }
   enum(..chapter.software_steps.map(inline))
+  if software-note!=none {software-note}
   if chapter.at("api",default:()).len()>0 and id!="uart1" {
     ds-table(id+"-api",[Selected SDK interfaces],([Function],[Declaration]),
       chapter.api.map(a=>(code(a.name),code(a.signature))),widths:(1fr,2.8fr))

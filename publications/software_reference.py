@@ -6,10 +6,12 @@ import re
 from pathlib import Path
 
 from publications.implementation_reference import without_comments
+from publications.api_bundle_reference import bundle_layout, validate_api, dependencies as api_bundle_dependencies
 
 
 def dependencies(spec: dict) -> set[str]:
     paths = set(spec.get("sources", []))
+    paths.update(api_bundle_dependencies(spec))
     paths.update(spec.get("runtime_profiles", []))
     for row in spec.get("bindings", []):
         paths.add(row["file"])
@@ -181,4 +183,6 @@ def collect_software(root: Path, spec: dict) -> dict:
         raise ValueError("software diagnostic application coverage changed")
     return {**copy.deepcopy(spec), "sources": sorted(dependencies(spec)), "profiles": runtime_profiles(root, spec),
             "irq": irq_support(root), "platform": linux_platform(root),
+            "api_reference": validate_api(root, spec["api_semantics"], function_body),
+            "bundle_reference": bundle_layout(root, spec["boot_bundle"], function_body),
             "applications": [application_diagnostics(root, app) for app in spec["applications"]]}

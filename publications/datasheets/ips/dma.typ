@@ -10,7 +10,13 @@
 
 #ip("dma")
 
-#ip-reference("dma","dma",3,legacy:[
+#ip-reference("dma","dma",3,software-note:[
+  #change-start("dma-api-link", "DMA software: command and drain completion links", category:"cross-reference")
+  #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
+    #text(9pt)[Command submission, wait exhaustion and confirmed abort/drain: @api-completion.]
+  ]
+  #change-end("dma-api-link")
+],legacy:[
 ==== Architecture
 Eight channel contexts share one AXI32 master. The production integration uses 32-bit words,
 up to sixteen beats per burst and thirty-two words of buffering. Direct mode supports memory

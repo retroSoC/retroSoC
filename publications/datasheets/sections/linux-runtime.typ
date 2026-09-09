@@ -2,7 +2,6 @@
 #import "../system-figures.typ": sequence-diagram
 #let platform = data.system_reference.software.platform
 
-#change-start("linux-runtime", "OpenSBI, device-tree and Linux ready handoff")
 === OpenSBI platform and console path <linux-runtime>
 The supplied OpenSBI platform exposes one application hart, with hart ID #platform.hart_id.
 LP remains the separate management firmware processor. The platform's ACLINT descriptor covers
@@ -78,4 +77,3 @@ Resource ownership and non-coherent buffer rules still apply after Linux starts.
 transactions. This description adds no new successful boot or board-validation claim.
 #source-note("app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",title:"Ready message and actual mailbox write order")
 #source-note("app/apps/hp_boot/main.c",title:"LP sequence/event checks and final terminal result")
-#change-end("linux-runtime")

@@ -37,6 +37,8 @@ The manual preparation/build entry points are the existing #code("make setup-hp-
 building the Linux artifacts alone does not demonstrate a successful target boot. See the
 port guide for the generated output layout and boot packaging commands.
 
+#include "boot-bundle-format.typ"
+
 === Loader sequence and completion
 + Initialize the LP console, hold HP in reset, select management debug and confirm HP presence/reset.
 + Wait for SDRAM readiness with the loader's bounded wait. A ready controller still requires
@@ -75,10 +77,16 @@ failed release or forced stop, inspect actual reset/drain state before reusing H
 For target acceptance, capture profile/image hashes, LP load/release checkpoints, the expected
 Linux readiness event and the final simulator verdict. Do not treat UART startup alone as
 success. A complete Linux peripheral qualification requires the separate support matrix.
-#source-note("app/apps/hp_boot/main.c",title:"Executed boot checks, copy fallback and failure codes")
-#source-note("app/apps/hp_boot/hp_boot_bundle.h",title:"Image types, addresses and allocation bounds")
-#source-note("scripts/build_hp_linux.py",title:"OpenSBI FW_JUMP and Linux artifact composition")
-#source-note("scripts/package_hp_boot.py",title:"Bundle generation and layout checks")
+#change-start("boot-source-layout", "Boot reference links: grouped layout")
+#block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
+  #set text(size:9pt)
+  #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
+  #source("app/apps/hp_boot/main.c",title:"Executed boot checks, copy fallback and failure codes") ·
+  #source("app/apps/hp_boot/hp_boot_bundle.h",title:"Image types, addresses and allocation bounds") \
+  #source("scripts/build_hp_linux.py",title:"OpenSBI FW_JUMP and Linux artifact composition") ·
+  #source("scripts/package_hp_boot.py",title:"Bundle generation and layout checks")
+]
+#change-end("boot-source-layout")
 
 #include "image-maintenance.typ"
 

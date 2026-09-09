@@ -14,7 +14,13 @@
 
 #ip("uart0")
 
-#ip-reference("uart0","uart",5,legacy:[
+#ip-reference("uart0","uart",5,software-note:[
+  #change-start("uart-api-link", "UART0 software: timeout and completion links", category:"cross-reference")
+  #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
+    #text(9pt)[FIFO wait budgets and partial transfers: @software-timeouts; @api-completion.]
+  ]
+  #change-end("uart-api-link")
+],legacy:[
 UART0 supports configurable framing, fractional baud generation, watermark and receive-timeout
 interrupts, receive diagnostics, break, loopback and automatic active-low RTS/CTS. TX/RX have
 dedicated pads; GPIO0/1 ALT0 carry CTS/RTS. DMA pacing is connected only for UART0.

@@ -2,7 +2,6 @@
 #import "../system-figures.typ": sequence-diagram
 #let sw = data.system_reference.software
 
-#change-start("software-runtime", "LP startup, linker initialization and IRQ runtime")
 === LP ordinary startup <lp-runtime>
 The firmware's startup implementation is selected before its application entry point. The
 generic CRT is used unless the application's manifest supplies an explicit CRT replacement.
@@ -101,4 +100,4 @@ hardware routes and @fault-code-reference for interpreting captured results.
 #source-note("crt/arch/riscv/system_irq.S",title:"Saved context and direct trap entry")
 #source-note("crt/src/core/system_irq_handler.c",title:"Registration, supported enables and default dispatch behavior")
 #source-note("crt/src/core/irq.c",title:"Machine timer/software IRQ example")
-#change-end("software-runtime")
+#include "api-semantics.typ"

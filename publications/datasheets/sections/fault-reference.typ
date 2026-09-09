@@ -54,7 +54,6 @@ field's width does not define its own codebook.
 }
 
 == Firmware Application Results <firmware-application-results>
-#change-start("firmware-application-results", "Firmware application results: HP boot, bringup and CI smoke")
 These tables distinguish application-specific TEST_STATUS values from C return values and
 intermediate console messages. The same integer can denote different stages, including within
 one application. Preserve application identity, execution order and preceding log markers.
@@ -96,7 +95,6 @@ setup and observation branches. The code alone cannot identify the exact stage. 
 preceding stage logs together with the selected source revision. Detailed check operations
 and coverage limits are listed in @application-diagnostics.
 #source-note("crt/src/service/test.c",title:"Terminal status writer and non-returning loop")
-#change-end("firmware-application-results")
 
 == Automated Completion and Simulator Verdicts
 #ds-table("terminal-status-format",[SYSCTRL TEST_STATUS result format],

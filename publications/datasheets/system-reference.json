@@ -5428,6 +5428,204 @@
           }
         ]
       }
-    ]
+    ],
+    "api_semantics": [
+      {
+        "name": "rs_wait_mask",
+        "source": "crt/include/retrosoc/core/wait.h",
+        "body_sha256": "14f8fbc8e8654becac7c40e776098a2e62445468400d5578f070535e718c7b3a",
+        "budget": "At most timeout loop iterations/read attempts after input checks.",
+        "zero": "With valid input, return RS_ETIMEOUT without reading the register.",
+        "success": "A register sample satisfied the predicate: the masked register equals expected.",
+        "failure": "The helper performs no command, abort or reset. Its register reads can still have the target register's side effects.",
+        "next": "Check input validity and the owning IP state before retrying. A polling budget is not a wall-clock deadline."
+      },
+      {
+        "name": "rs_wait_value",
+        "source": "crt/include/retrosoc/core/wait.h",
+        "body_sha256": "2a38a2ad4befcb67b1b9fa9585b5ba67fa836bf77080b55e56a7ebb9d9679eea",
+        "budget": "At most timeout loop iterations/read attempts after input checks.",
+        "zero": "With valid input, return RS_ETIMEOUT without reading the register.",
+        "success": "A register sample satisfied the predicate: the register equals expected.",
+        "failure": "The helper performs no command, abort or reset. Its register reads can still have the target register's side effects.",
+        "next": "Check input validity and the owning IP state before retrying. A polling budget is not a wall-clock deadline."
+      },
+      {
+        "name": "rs_wait_not_value",
+        "source": "crt/include/retrosoc/core/wait.h",
+        "body_sha256": "34afe971625e3faef7eaef790260c84f63e5769e3beb8e7d940249f0f4108e7e",
+        "budget": "At most timeout loop iterations/read attempts after input checks.",
+        "zero": "With valid input, return RS_ETIMEOUT without reading the register.",
+        "success": "A register sample satisfied the predicate: the register differs from value.",
+        "failure": "The helper performs no command, abort or reset. Its register reads can still have the target register's side effects.",
+        "next": "Check input validity and the owning IP state before retrying. A polling budget is not a wall-clock deadline."
+      },
+      {
+        "name": "rs_uart_write",
+        "source": "crt/src/hal/uart.c",
+        "body_sha256": "ea54ac52b5e5835995715bc4456d51bf53718a21ed99a327f4231f549e3e8e04",
+        "budget": "One budget is shared across the call and consumed only while TX_FULL is observed.",
+        "zero": "Can write when FIFO space is immediately available; otherwise return RS_ETIMEOUT at the first required wait. Zero length succeeds.",
+        "success": "All requested bytes were written to TXDATA. The final serial bit need not have left the pin.",
+        "failure": "A prefix may already be queued or transmitted. No transferred-length result, automatic abort or rollback is returned.",
+        "next": "Use protocol-level framing and status before deciding what can be retried; blind replay can duplicate bytes."
+      },
+      {
+        "name": "rs_uart_read",
+        "source": "crt/src/hal/uart.c",
+        "body_sha256": "ff146e6746e27b576252c6e61b9dcbc056642b029edb3f048451bd0c813e0319",
+        "budget": "One budget is shared across the call and consumed only while RX_EMPTY is observed.",
+        "zero": "Can consume immediately available bytes; otherwise return RS_ETIMEOUT at the first required wait. Zero length succeeds.",
+        "success": "The requested number of RX entries was consumed and written into the caller buffer, including per-entry error bits.",
+        "failure": "Earlier entries may already have been popped and copied. The API does not return the completed prefix length.",
+        "next": "Validate entry error fields on success; use a protocol-aware receive/recovery policy after partial failure."
+      },
+      {
+        "name": "rs_dma_start",
+        "source": "crt/src/hal/dma.c",
+        "body_sha256": "159bc71910716dbdc95a6218282d98bd1fbdede26571d46ae870cf9bdd4ff5d0",
+        "budget": "No timeout argument; no completion polling.",
+        "zero": "Not applicable: no timeout parameter.",
+        "success": "For a valid channel, software cleared event flags and wrote START. It did not independently confirm command admission or completion.",
+        "failure": "An invalid channel is rejected locally; hardware may later report a command or transfer error.",
+        "next": "Observe channel status and completion/error records before consuming output or reusing buffers."
+      },
+      {
+        "name": "rs_dma_abort",
+        "source": "crt/src/hal/dma.c",
+        "body_sha256": "218dcfacb4d4af383b8f4dab44d3d4158f9cc580aeef690abbcdfcbea4a62749",
+        "budget": "No timeout argument; no drain polling.",
+        "zero": "Not applicable: no timeout parameter.",
+        "success": "For a valid channel, the ABORT command was written. Accepted transactions may still be draining.",
+        "failure": "The return does not confirm that BUSY is clear or that the buffer is reusable.",
+        "next": "Use rs_dma_abort_wait or an equivalent status/drain observation, then preserve completion and error details."
+      },
+      {
+        "name": "rs_dma_abort_wait",
+        "source": "crt/src/hal/dma.c",
+        "body_sha256": "ab0fcf5e54f87ab2d02064ce2f80c969474e6ea87769e3b327d69f76d626a80d",
+        "budget": "Send ABORT, then perform up to timeout status polls.",
+        "zero": "Still sends ABORT for a valid channel, then returns RS_ETIMEOUT without a status poll.",
+        "success": "A status read succeeded and BUSY was clear; it does not require a particular abort/error flag combination.",
+        "failure": "RS_ETIMEOUT does not establish that draining finished. The command has already been issued.",
+        "next": "Keep buffers owned until a later idle/drain confirmation; inspect the final reason flags separately."
+      },
+      {
+        "name": "rs_dma_wait",
+        "source": "crt/src/hal/dma.c",
+        "body_sha256": "4e256ff8cc97db4f4861e8c4f856135bfa4db4fbe97e8ebd9c18e8900a5e4125",
+        "budget": "Up to timeout status polls; error/aborted is tested before DONE.",
+        "zero": "For a valid channel, return RS_ETIMEOUT without reading status.",
+        "success": "A status sample showed DONE without the error or aborted flags.",
+        "failure": "Returns RS_EIO for an observed error/abort; exhaustion returns RS_ETIMEOUT without issuing ABORT.",
+        "next": "Retain ownership and inspect progress; if stopping is required, request abort and confirm drain before reusing storage."
+      },
+      {
+        "name": "rs_timer_delay_ms",
+        "source": "crt/src/hal/timer.c",
+        "body_sha256": "62c07d2e1581dceca825102377455044cffc7628b60fd09d3c462ce21b767868",
+        "budget": "milliseconds selects the hardware period; timeout independently bounds status-loop iterations.",
+        "zero": "Zero milliseconds succeeds for a valid timer. With a positive delay, zero timeout still configures/starts the timer, then attempts stop and returns RS_ETIMEOUT.",
+        "success": "Zero duration was requested, or a status sample showed the configured one-shot no longer active.",
+        "failure": "On loop exhaustion it calls rs_timer_stop, ignores that return and reports RS_ETIMEOUT. Earlier configuration/start errors do not provide a general rollback guarantee.",
+        "next": "This helper reconfigures the selected timer. Reserve it, and confirm state explicitly if recovery depends on successful stopping."
+      }
+    ],
+    "boot_bundle": {
+      "sources": [
+        "scripts/package_hp_boot.py",
+        "app/apps/hp_boot/hp_boot_bundle.h",
+        "app/apps/hp_boot/main.c"
+      ],
+      "loader_bindings": [
+        {
+          "source": "app/apps/hp_boot/main.c",
+          "function": "rs_hp_boot_crc32_byte",
+          "body_sha256": "b048241b3b6c9507a3d2b630af3ce8e4f2dbc0cdfbe662f76a8fce8ebe6037bc"
+        },
+        {
+          "source": "app/apps/hp_boot/main.c",
+          "function": "rs_hp_boot_crc32",
+          "body_sha256": "ee0d898baadc9da12772f6246b2f8b4635216fe68cf67e08793865d2ca40dc90"
+        },
+        {
+          "source": "app/apps/hp_boot/main.c",
+          "function": "rs_hp_boot_range_valid",
+          "body_sha256": "d9bdafe55cf55481f4a4b33e5ed41e73be9cf9f18a212c8acfcf20c46e0db4ed"
+        },
+        {
+          "source": "app/apps/hp_boot/main.c",
+          "function": "rs_hp_boot_entry_expected",
+          "body_sha256": "742ab68f51e33c801d28e5df8f18302f8a0651621868fb5e6ed64762b0734938"
+        },
+        {
+          "source": "app/apps/hp_boot/main.c",
+          "function": "rs_hp_boot_header_valid",
+          "body_sha256": "2409563cb2fb7bace28215f54f83189ecbd11c2257d1959be5aed5013d7c2905"
+        }
+      ],
+      "header_fields": {
+        "magic": "Format marker written as a little-endian 32-bit word.",
+        "version": "Bundle format version; distinct from the datasheet revision.",
+        "header_size": "Bytes in the fixed header plus all entry descriptors.",
+        "entry_count": "Number of fixed-order artifact entries.",
+        "total_size": "Bundle-relative byte extent from BUNDLE_OFFSET through the aligned image end; includes gaps and padding.",
+        "header_crc32": "CRC of the complete header/entry area with this field zeroed.",
+        "flags": "Generator writes REQUIRED; loader requires its bit to be set.",
+        "reserved": "Generator writes zero; loader has no independent zero-value check for this field."
+      },
+      "entry_fields": {
+        "type": "Fixed artifact type in the expected OpenSBI, DTB, Linux, initramfs order.",
+        "flash_offset": "Absolute offset from the start of the flash image, not from the bundle header.",
+        "load_address": "Fixed destination address in the selected SDRAM map.",
+        "size": "Nonzero payload byte count; excludes alignment padding.",
+        "crc32": "CRC of exactly size payload bytes.",
+        "flags": "Generator writes REQUIRED; loader requires its bit to be set."
+      },
+      "rules": [
+        {
+          "topic": "Serialization",
+          "producer": "Little-endian 32-bit words, eight fixed-header words and six words per entry.",
+          "loader": "Copies the header into the RV32 C structure and interprets its words; no alternative byte-order negotiation.",
+          "consequence": "Use the declared byte format; do not serialize an arbitrary host structure with native packing."
+        },
+        {
+          "topic": "Entry identity",
+          "producer": "Four artifacts in fixed order, with the prescribed load address and maximum size for each.",
+          "loader": "Checks exact type/order/load address and the per-artifact maximum, plus nonzero size and mapped ranges.",
+          "consequence": "This is not a generic relocatable image table."
+        },
+        {
+          "topic": "Header and payload CRC",
+          "producer": "Computes the complete header CRC with its CRC word zero; computes each payload CRC before padding.",
+          "loader": "Zeroes the header CRC word in its local copy before comparison; payload checks follow the existing DMA/copy path.",
+          "consequence": "Padding bytes are not payload CRC input; CRC detects corruption, not origin or rollback."
+        },
+        {
+          "topic": "Address alignment",
+          "producer": "Aligns each payload start and the final cursor to PAYLOAD_ALIGNMENT.",
+          "loader": "Checks flash_offset and load_address modulo four, not the generator's larger boundary.",
+          "consequence": "Generated layout and accepted alignment are different conditions."
+        },
+        {
+          "topic": "Flags and reserved word",
+          "producer": "Writes flags=REQUIRED and fixed-header reserved=0.",
+          "loader": "Requires the REQUIRED bit in header and entries. Does not independently reject extra flag bits or nonzero reserved.",
+          "consequence": "Preserve canonical generator values; do not claim strict reserved-bit rejection."
+        },
+        {
+          "topic": "Payload placement and fill",
+          "producer": "Places payloads sequentially without overlap, filling unused image bytes with 0xFF.",
+          "loader": "Bounds each entry within the bundle/SDRAM ranges; does not independently enforce sequential disjoint extents or padding values.",
+          "consequence": "Do not confuse deterministic output layout with stronger validation that is absent from the loader."
+        },
+        {
+          "topic": "Capacity and length",
+          "producer": "Rejects LP firmware beyond the bundle start, empty/oversized payloads and an aligned image beyond FLASH_SIZE.",
+          "loader": "Checks header size/count, bundle total limits and each entry's source/destination bounds.",
+          "consequence": "Per-artifact maximum allocations do not mean all maximum-sized artifacts fit simultaneously in flash."
+        }
+      ]
+    }
   }
 }

@@ -268,6 +268,47 @@ Normal builds never rewrite the contract. A later explicitly requested structure
 change must review and update the contract with the corresponding document edit;
 do not automatically accept a mismatch or introduce a hardware/CI policy gate.
 
+## Timeout/completion semantics and boot-bundle byte format
+
+Keep Software Timeouts and Polling Budgets and API Completion and State after
+Failure inside Runtime, SDK and Shell. The timeout type is not a universal
+wall-clock unit: record where the reviewed function decrements its budget and
+what zero means. Separate timer duration from its observation budget. Do not
+equate a successful command write, FIFO acceptance, completion flag and idle
+observation. Preserve partial-transfer side effects and the absence of a
+transferred-length result where the API provides none. State whether timeout
+only ends observation, requests abort, or attempts stop; never invent rollback.
+
+The representative API table covers the common wait helpers, UART read/write,
+DMA start/abort/abort-wait/wait and timer delay. Other HALs retain their own
+contracts. Keep full descriptions centralized and add short links in the
+selected IP software sections and common register-access guidance. Reviewed
+function-body digests bind the semantic records; source changes require review
+instead of silently retaining old conclusions. Digests ignore formatting but
+preserve string-literal bytes.
+
+HP Boot Bundle Binary Format is a subsection of the existing boot chapter.
+Tables state byte offsets relative to each structure, word width, little-endian
+serialization, descriptor-array positioning and the meaning of each size/offset.
+Distinguish absolute Flash offsets, bundle-relative extent and actual payload
+length. Header CRC uses a zero CRC field over the complete header/entry area;
+payload CRC excludes padding. CRC is not authentication or rollback protection.
+
+Always distinguish canonical packager output from the loader's actual checks.
+Document the larger generated alignment separately from the loader's word
+alignment, flags-bit tests, reserved-word treatment, range checks and properties
+that are not independently validated. Do not add stricter software acceptance
+rules through publication prose. The byte-layout example uses the existing
+packager with temporary deterministic synthetic files; it is not executable
+firmware and must never be described as a boot, flash or hardware test result.
+
+`system-reference.json.software` owns API semantics and bundle-format records.
+`api_bundle_reference.py` checks the bindings, extracts fields/constants and
+verifies the actual synthetic package CRC/layout before publishing values.
+Use original C function bodies with memory-backed register substitutes for
+host behavioral checks; no physical MMIO is accessed. Keep the frozen
+chapter/IP baseline unchanged and rerun the current edit's page-range report.
+
 ## Modification page-range delivery
 
 For a content edit, retain the immediately preceding delivered PDF as the baseline.

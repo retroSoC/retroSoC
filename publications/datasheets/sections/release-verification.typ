@@ -53,9 +53,7 @@ skipped and unrun cases. Cross-check limitations before stating which configurat
 #source-note("rtl/rtl_readiness.json",title:"Declared self-owned RTL maturity")
 #source-note("scripts/check_rtl_readiness.py",title:"Maturity-record validation")
 #source-note("publications/datasheets/system-reference.json",title:"Versioned verification and limitation inventory")
-#change-start("diagnostic-evidence-link", "Release evidence: diagnostic coverage link", category:"cross-reference")
 For the ordered checks performed by bringup and CI smoke, see @application-diagnostics and
 @firmware-application-results. An application's terminal pass qualifies only that selected
 sequence; controller self-test, CPU interrupt delivery and external-device traffic remain
 separate coverage statements.
-#change-end("diagnostic-evidence-link")

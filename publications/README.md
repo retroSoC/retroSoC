@@ -44,6 +44,16 @@ contract. Normal builds never regenerate it. A later explicit structure-change
 task must review the revised contract alongside the document. This publication
 baseline does not change DRAFT status or the repository's RTL maturity policy.
 
+The runtime reference also separates polling budgets from time units and API
+returns from hardware completion. Ten selected helpers retain their reviewed
+zero-budget, partial-transfer and recovery semantics, with source-body bindings.
+The HP boot chapter contains byte-level bundle tables, generator-versus-loader
+rules and a deterministic synthetic serialization example produced by the
+existing packager. The synthetic files are temporary and are not bootable images.
+`api_bundle_reference.py` supplies these records through the existing software
+data layer; `tests/test_publication_api_bundle.py` compares the format and tests
+original C function bodies against memory-backed register substitutes in Linux.
+
 ### System-use reference
 
 The same reviewed snapshot also includes configuration/feature availability,
