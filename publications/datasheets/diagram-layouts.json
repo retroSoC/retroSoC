@@ -1,0 +1,2537 @@
+[
+  {
+    "id": "dma-tcd",
+    "chapters": [
+      "dma"
+    ],
+    "title": "DMA 64-byte descriptor memory layout",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "crt/include/retrosoc/hal/dma.h",
+      "docs/ip/dma.md"
+    ],
+    "note": "Byte offsets increase left to right within 16-byte rows. Little-endian words; arrays are expanded into their actual elements. Gold is software configuration, blue-gray is result writeback, and gray is reserved. Control/ownership words may contain both software and hardware bits; use the field contract before modifying them.",
+    "bindings": [],
+    "order": "lsb",
+    "structure": {
+      "file": "crt/include/retrosoc/hal/dma.h",
+      "name": "rs_dma_tcd_t",
+      "bytes": 64,
+      "writeback": [
+        "crc_result",
+        "status",
+        "bytes_done",
+        "error_status"
+      ],
+      "mixed": []
+    },
+    "existing_label": "dma-tcd-layout"
+  },
+  {
+    "id": "spisd-descriptor",
+    "chapters": [
+      "spisd"
+    ],
+    "title": "SPISD 16-byte descriptor memory layout",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "crt/include/retrosoc/hal/spisd_regs.h",
+      "docs/ip/spisd.md"
+    ],
+    "note": "Byte offsets increase left to right within 16-byte rows. Little-endian words; arrays are expanded into their actual elements. Gold is software configuration, blue-gray is result writeback, and gray is reserved. Control/ownership words may contain both software and hardware bits; use the field contract before modifying them.",
+    "bindings": [],
+    "order": "lsb",
+    "structure": {
+      "file": "crt/include/retrosoc/hal/spisd_regs.h",
+      "name": "rs_spisd_descriptor_t",
+      "bytes": 16,
+      "writeback": [],
+      "mixed": [
+        "control_status"
+      ]
+    }
+  },
+  {
+    "id": "sdio-descriptor",
+    "chapters": [
+      "sdio0",
+      "sdio1"
+    ],
+    "title": "SDIO 16-byte descriptor memory layout",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "crt/include/retrosoc/hal/sdio_regs.h",
+      "docs/ip/sdio.md"
+    ],
+    "note": "Byte offsets increase left to right within 16-byte rows. Little-endian words; arrays are expanded into their actual elements. Gold is software configuration, blue-gray is result writeback, and gray is reserved. Control/ownership words may contain both software and hardware bits; use the field contract before modifying them.",
+    "bindings": [],
+    "order": "lsb",
+    "structure": {
+      "file": "crt/include/retrosoc/hal/sdio_regs.h",
+      "name": "rs_sdio_descriptor_t",
+      "bytes": 16,
+      "writeback": [],
+      "mixed": [
+        "control_status"
+      ]
+    }
+  },
+  {
+    "id": "usb2-descriptor",
+    "chapters": [
+      "usb2"
+    ],
+    "title": "USB2 32-byte descriptor memory layout",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "crt/include/retrosoc/hal/usb2_regs.h",
+      "docs/ip/usb2.md"
+    ],
+    "note": "Byte offsets increase left to right within 16-byte rows. Little-endian words; arrays are expanded into their actual elements. Gold is software configuration, blue-gray is result writeback, and gray is reserved. Control/ownership words may contain both software and hardware bits; use the field contract before modifying them.",
+    "bindings": [],
+    "order": "lsb",
+    "structure": {
+      "file": "crt/include/retrosoc/hal/usb2_regs.h",
+      "name": "rs_usb2_descriptor_t",
+      "bytes": 32,
+      "writeback": [
+        "actual_length",
+        "status",
+        "frame"
+      ],
+      "mixed": [
+        "control"
+      ]
+    }
+  },
+  {
+    "id": "jpeg-descriptor",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "JPEG 128-byte descriptor memory layout",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "crt/include/retrosoc/hal/jpeg.h",
+      "docs/ip/jpeg.md"
+    ],
+    "note": "Byte offsets increase left to right within 16-byte rows. Little-endian words; arrays are expanded into their actual elements. Gold is software configuration, blue-gray is result writeback, and gray is reserved. Control/ownership words may contain both software and hardware bits; use the field contract before modifying them.",
+    "bindings": [],
+    "order": "lsb",
+    "structure": {
+      "file": "crt/include/retrosoc/hal/jpeg.h",
+      "name": "rs_jpeg_descriptor_t",
+      "bytes": 128,
+      "writeback": [
+        "status",
+        "result_size",
+        "result_image_size",
+        "result_format",
+        "cycles_lo",
+        "cycles_hi",
+        "input_bytes",
+        "output_bytes"
+      ],
+      "mixed": [
+        "control"
+      ]
+    }
+  },
+  {
+    "id": "apu-descriptor",
+    "chapters": [
+      "apu"
+    ],
+    "title": "APU 128-byte descriptor memory layout",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "crt/include/retrosoc/hal/apu.h",
+      "docs/ip/apu.md"
+    ],
+    "note": "Byte offsets increase left to right within 16-byte rows. Little-endian words; arrays are expanded into their actual elements. Gold is software configuration, blue-gray is result writeback, and gray is reserved. Control/ownership words may contain both software and hardware bits; use the field contract before modifying them.",
+    "bindings": [],
+    "order": "lsb",
+    "structure": {
+      "file": "crt/include/retrosoc/hal/apu.h",
+      "name": "rs_apu_descriptor_t",
+      "bytes": 128,
+      "writeback": [
+        "result_status",
+        "result_input_used",
+        "result_output_bytes",
+        "result_frames",
+        "result_source_info",
+        "result_cycles",
+        "result_detail",
+        "start_timestamp",
+        "finish_timestamp",
+        "kws_result",
+        "microcode_build_id"
+      ],
+      "mixed": [
+        "control"
+      ]
+    }
+  },
+  {
+    "id": "apumc-header",
+    "chapters": [
+      "apu"
+    ],
+    "title": "APUMC 64-byte fixed header",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "scripts/apu_isa.py",
+      "rtl/ip/multimedia/apu_microcode_loader.sv"
+    ],
+    "note": "Little-endian 32-bit words. The CRC covers the bytes after this fixed header. Three entry descriptors begin at byte 64; instructions begin at byte 192, after descriptor/alignment space. This format does not establish delivery of a production codec image.",
+    "bindings": [
+      {
+        "file": "scripts/apu_isa.py",
+        "text": "APUMC_HEADER_BYTES = 64"
+      },
+      {
+        "file": "scripts/apu_isa.py",
+        "text": "APUMC_ENTRY_BYTES = 32"
+      },
+      {
+        "file": "scripts/apu_isa.py",
+        "text": "APUMC_ENTRY_COUNT = 3"
+      },
+      {
+        "file": "scripts/apu_isa.py",
+        "text": "APUMC_INSTRUCTION_OFFSET = 192"
+      },
+      {
+        "file": "scripts/apu_isa.py",
+        "text": "APUMC_MAGIC, APUMC_ABI, total_bytes, len(instructions), APUMC_INSTRUCTION_OFFSET, table_offset, len(table_payload), APUMC_HEADER_BYTES, APUMC_ENTRY_COUNT, required_mask, scratch_end, crc, build_id & 0xFFFFFFFF, (build_id >> 32) & 0xFFFFFFFF, 0, 0,"
+      }
+    ],
+    "order": "lsb",
+    "fields": [
+      {
+        "name": "magic",
+        "label": "magic",
+        "lsb": 0,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "abi",
+        "label": "abi",
+        "lsb": 32,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "total_bytes",
+        "label": "total_bytes",
+        "lsb": 64,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "instruction_count",
+        "label": "instruction_count",
+        "lsb": 96,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "instruction_offset",
+        "label": "instruction_offset",
+        "lsb": 128,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "table_offset",
+        "label": "table_offset",
+        "lsb": 160,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "table_bytes",
+        "label": "table_bytes",
+        "lsb": 192,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "entry_offset",
+        "label": "entry_offset",
+        "lsb": 224,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "entry_count",
+        "label": "entry_count",
+        "lsb": 256,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "primitive_mask",
+        "label": "primitive_mask",
+        "lsb": 288,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "scratch_end",
+        "label": "scratch_end",
+        "lsb": 320,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "payload_crc32",
+        "label": "payload_crc32",
+        "lsb": 352,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "build_id_lo",
+        "label": "build_id_lo",
+        "lsb": 384,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "build_id_hi",
+        "label": "build_id_hi",
+        "lsb": 416,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "reserved0",
+        "label": "reserved0",
+        "lsb": 448,
+        "bits": 32,
+        "role": "reserved"
+      },
+      {
+        "name": "reserved1",
+        "label": "reserved1",
+        "lsb": 480,
+        "bits": 32,
+        "role": "reserved"
+      }
+    ],
+    "bits": 512
+  },
+  {
+    "id": "apumc-entry",
+    "chapters": [
+      "apu"
+    ],
+    "title": "APUMC 32-byte codec entry descriptor",
+    "kind": "bytes",
+    "section": "functional",
+    "sources": [
+      "scripts/apu_isa.py"
+    ],
+    "note": "Each entry has eight little-endian words. Word 0: format in bits 3:0 and entry PC above bit 3. Word 1: first/last PC in low/high 16 bits. Word 7: table offset/size in low/high 16 bits. Actual PC, scratch and table bounds are checked by the existing packager/loader.",
+    "bindings": [
+      {
+        "file": "scripts/apu_isa.py",
+        "text": "self.format_id | (self.entry_pc << 4), self.first_pc | (self.last_pc << 16), self.scratch_base, self.scratch_bytes, self.max_loop_count, self.max_retired, self.primitive_mask, self.table_offset | (self.table_bytes << 16),"
+      }
+    ],
+    "order": "lsb",
+    "fields": [
+      {
+        "name": "format + entry_pc",
+        "label": "format + entry_pc",
+        "lsb": 0,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "first_pc + last_pc",
+        "label": "first_pc + last_pc",
+        "lsb": 32,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "scratch_base",
+        "label": "scratch_base",
+        "lsb": 64,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "scratch_bytes",
+        "label": "scratch_bytes",
+        "lsb": 96,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "max_loop_count",
+        "label": "max_loop_count",
+        "lsb": 128,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "max_retired",
+        "label": "max_retired",
+        "lsb": 160,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "primitive_mask",
+        "label": "primitive_mask",
+        "lsb": 192,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "table_offset + bytes",
+        "label": "table_offset + bytes",
+        "lsb": 224,
+        "bits": 32,
+        "role": "configuration"
+      }
+    ],
+    "bits": 256
+  },
+  {
+    "id": "hp-bundle-header",
+    "chapters": [
+      "software-boot"
+    ],
+    "title": "HP boot bundle fixed-header byte layout",
+    "kind": "bytes",
+    "section": "software",
+    "sources": [
+      "scripts/package_hp_boot.py",
+      "publications/api_bundle_reference.py"
+    ],
+    "note": "Fields and offsets are taken from the same packager/loader comparison as the tables below. Words are little-endian; flash offsets are absolute within the flash image, while bundle total size is relative to the bundle start.",
+    "bindings": [],
+    "order": "lsb",
+    "derived": "hp-header"
+  },
+  {
+    "id": "hp-bundle-entry",
+    "chapters": [
+      "software-boot"
+    ],
+    "title": "HP boot bundle payload-descriptor byte layout",
+    "kind": "bytes",
+    "section": "software",
+    "sources": [
+      "scripts/package_hp_boot.py",
+      "publications/api_bundle_reference.py"
+    ],
+    "note": "Fields and offsets are taken from the same packager/loader comparison as the tables below. Words are little-endian; flash offsets are absolute within the flash image, while bundle total size is relative to the bundle start.",
+    "bindings": [],
+    "order": "lsb",
+    "derived": "hp-entry"
+  },
+  {
+    "id": "uart-frame",
+    "chapters": [
+      "uart0",
+      "uart1"
+    ],
+    "title": "UART serial framing: data slots and optional framing bits",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/serial/uart_core.sv",
+      "rtl/ip/serial/apb4_uart_tx.sv",
+      "rtl/ip/serial/apb4_uart_rx.sv"
+    ],
+    "note": "Two examples show wire slots, not register bits: 8N1 and 8E2. Data is sent least-significant bit first; the parity slot is omitted when disabled. The controller supports 5-8 data bits, configured parity and one/two stop bits. Baud timing and error reporting remain in the existing timing diagrams.",
+    "bindings": [
+      {
+        "file": "rtl/ip/serial/uart_core.sv",
+        "text": "input logic [1:0] data_bits_i"
+      },
+      {
+        "file": "rtl/ip/serial/uart_core.sv",
+        "text": "input logic stop2_i"
+      },
+      {
+        "file": "rtl/ip/serial/uart_core.sv",
+        "text": "input logic [1:0] parity_i"
+      }
+    ],
+    "order": "lsb",
+    "rows": [
+      {
+        "label": "8N1 serial slots",
+        "bits": 10,
+        "fields": [
+          {
+            "name": "S=0",
+            "label": "S=0",
+            "lsb": 0,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "D0 ... D7",
+            "label": "D0 ... D7",
+            "lsb": 1,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "E=1",
+            "label": "E=1",
+            "lsb": 9,
+            "bits": 1,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "8E2 serial slots",
+        "bits": 12,
+        "fields": [
+          {
+            "name": "S=0",
+            "label": "S=0",
+            "lsb": 0,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "D0 ... D7",
+            "label": "D0 ... D7",
+            "lsb": 1,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "P",
+            "label": "P",
+            "lsb": 9,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "E1",
+            "label": "E1",
+            "lsb": 10,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "E2",
+            "label": "E2",
+            "lsb": 11,
+            "bits": 1,
+            "role": "configuration"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "i2c-command",
+    "chapters": [
+      "i2c"
+    ],
+    "title": "I2C 12-bit command FIFO entry",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/serial/apb4_i2c_define.svh",
+      "rtl/ip/serial/i2c_reg.sv"
+    ],
+    "note": "This is the internal command entry, distinct from the 32-bit APB access. READ changes the byte operation; RESTART/STOP request bus transitions and NACK_LAST selects the final receive acknowledgement.",
+    "bindings": [
+      {
+        "file": "rtl/ip/serial/apb4_i2c_define.svh",
+        "text": "`define I2C_DATA_CMD_READ 8"
+      },
+      {
+        "file": "rtl/ip/serial/apb4_i2c_define.svh",
+        "text": "`define I2C_DATA_CMD_RESTART 9"
+      },
+      {
+        "file": "rtl/ip/serial/apb4_i2c_define.svh",
+        "text": "`define I2C_DATA_CMD_STOP 10"
+      },
+      {
+        "file": "rtl/ip/serial/apb4_i2c_define.svh",
+        "text": "`define I2C_DATA_CMD_NACK_LAST 11"
+      }
+    ],
+    "order": "lsb",
+    "fields": [
+      {
+        "name": "Byte",
+        "label": "Byte",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "READ",
+        "label": "READ",
+        "lsb": 8,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "RESTART",
+        "label": "RESTART",
+        "lsb": 9,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "STOP",
+        "label": "STOP",
+        "lsb": 10,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "NACK",
+        "label": "NACK",
+        "lsb": 11,
+        "bits": 1,
+        "role": "configuration"
+      }
+    ],
+    "bits": 12
+  },
+  {
+    "id": "i2c-wire",
+    "chapters": [
+      "i2c"
+    ],
+    "title": "I2C address and data-byte transfer groups",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/serial/i2c_core.sv",
+      "docs/ip/i2c.md"
+    ],
+    "note": "Groups are shown in transmission order, with data bits MSB first. START/repeated START/STOP are bus transitions outside these bit groups. ACK/NACK occupies the ninth clock. Ten-bit read sequencing additionally uses the repeated address prefix described by the controller state machine.",
+    "bindings": [],
+    "order": "msb",
+    "rows": [
+      {
+        "label": "7-bit address group",
+        "bits": 9,
+        "fields": [
+          {
+            "name": "Address[6:0]",
+            "label": "Address[6:0]",
+            "lsb": 2,
+            "bits": 7,
+            "role": "configuration"
+          },
+          {
+            "name": "R/W",
+            "label": "R/W",
+            "lsb": 1,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "ACK",
+            "label": "ACK",
+            "lsb": 0,
+            "bits": 1,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "10-bit address prefix",
+        "bits": 9,
+        "fields": [
+          {
+            "name": "11110",
+            "label": "11110",
+            "lsb": 4,
+            "bits": 5,
+            "role": "configuration"
+          },
+          {
+            "name": "A9:A8",
+            "label": "A9:A8",
+            "lsb": 2,
+            "bits": 2,
+            "role": "configuration"
+          },
+          {
+            "name": "R/W",
+            "label": "R/W",
+            "lsb": 1,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "ACK",
+            "label": "ACK",
+            "lsb": 0,
+            "bits": 1,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "Address low byte / ordinary data byte",
+        "bits": 9,
+        "fields": [
+          {
+            "name": "D7 ... D0",
+            "label": "D7 ... D0",
+            "lsb": 1,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "ACK",
+            "label": "ACK",
+            "lsb": 0,
+            "bits": 1,
+            "role": "configuration"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ws2812-word",
+    "chapters": [
+      "ws2812"
+    ],
+    "title": "WS2812 GRB pixel word and transmission order",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "crt/src/hal/ws2812_math.c",
+      "rtl/ip/serial/ws2812_core.sv"
+    ],
+    "note": "The helper builds a 24-bit GRB value. Green is sent first, starting at bit 23; the core emits bit timing and the reset interval separately. The upper eight bits of the APB write are not an additional color channel.",
+    "bindings": [
+      {
+        "file": "crt/src/hal/ws2812_math.c",
+        "text": "return ((uint32_t)green << 16U) | ((uint32_t)red << 8U) | (uint32_t)blue;"
+      }
+    ],
+    "order": "msb",
+    "fields": [
+      {
+        "name": "Green",
+        "label": "Green",
+        "lsb": 16,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Red",
+        "label": "Red",
+        "lsb": 8,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Blue",
+        "label": "Blue",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 24
+  },
+  {
+    "id": "ps2-frame",
+    "chapters": [
+      "ps2"
+    ],
+    "title": "PS/2 serial frame slots",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+      "docs/ip/ps2.md"
+    ],
+    "note": "Serial slots run left to right: start, eight data bits LSB first, odd parity, stop. Host inhibit, filtering, timeout and frame-error policy remain part of the implementation contract; this diagram is not a timing measurement.",
+    "bindings": [],
+    "order": "lsb",
+    "fields": [
+      {
+        "name": "S=0",
+        "label": "S=0",
+        "lsb": 0,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "D0 ... D7",
+        "label": "D0 ... D7",
+        "lsb": 1,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "P odd",
+        "label": "P odd",
+        "lsb": 9,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "E=1",
+        "label": "E=1",
+        "lsb": 10,
+        "bits": 1,
+        "role": "configuration"
+      }
+    ],
+    "bits": 11
+  },
+  {
+    "id": "sdio-response",
+    "chapters": [
+      "sdio0",
+      "sdio1"
+    ],
+    "title": "Native SD short and long response field groups",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/storage/sdio_command.sv",
+      "rtl/ip/storage/sdio_pkg.sv"
+    ],
+    "note": "The first received bit is the leftmost field. Short responses contain 48 bits; long R2 responses contain 136 bits. Response type controls CRC/index checking, and R1b adds a separate DAT0 busy interval. CID/CSD payload semantics are not expanded into unrelated device-specific register claims.",
+    "bindings": [
+      {
+        "file": "rtl/ip/storage/sdio_command.sv",
+        "text": "output logic [135:0] response_o"
+      }
+    ],
+    "order": "msb",
+    "rows": [
+      {
+        "label": "48-bit short response",
+        "bits": 48,
+        "fields": [
+          {
+            "name": "S",
+            "label": "S",
+            "lsb": 47,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "T",
+            "label": "T",
+            "lsb": 46,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "Index / header",
+            "label": "Index / header",
+            "lsb": 40,
+            "bits": 6,
+            "role": "configuration"
+          },
+          {
+            "name": "Response payload",
+            "label": "Response payload",
+            "lsb": 8,
+            "bits": 32,
+            "role": "configuration"
+          },
+          {
+            "name": "CRC7 / fixed",
+            "label": "CRC7 / fixed",
+            "lsb": 1,
+            "bits": 7,
+            "role": "configuration"
+          },
+          {
+            "name": "E",
+            "label": "E",
+            "lsb": 0,
+            "bits": 1,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "136-bit R2 response (schematic widths)",
+        "bits": 136,
+        "fields": [
+          {
+            "name": "S",
+            "label": "S",
+            "lsb": 135,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "Header",
+            "label": "Header",
+            "lsb": 128,
+            "bits": 7,
+            "role": "configuration"
+          },
+          {
+            "name": "CID / CSD payload",
+            "label": "CID / CSD payload",
+            "lsb": 8,
+            "bits": 120,
+            "role": "configuration"
+          },
+          {
+            "name": "CRC7",
+            "label": "CRC7",
+            "lsb": 1,
+            "bits": 7,
+            "role": "configuration"
+          },
+          {
+            "name": "E",
+            "label": "E",
+            "lsb": 0,
+            "bits": 1,
+            "role": "configuration"
+          }
+        ],
+        "compressed": true
+      }
+    ]
+  },
+  {
+    "id": "sd-command",
+    "chapters": [
+      "sdio0",
+      "sdio1",
+      "spisd"
+    ],
+    "title": "SD 48-bit command content",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/storage/sdio_command.sv",
+      "rtl/ip/storage/spisd_command.sv"
+    ],
+    "note": "Native SDIO and SPI-SD share this command content; clocking, CS, response and busy framing follow their separate protocol chapters.",
+    "bindings": [
+      {
+        "file": "rtl/ip/storage/spisd_command.sv",
+        "text": "2'b01, cmd_index_i, cmd_arg_i, spisd_pkg::spisd_crc7_calc({2'b01, cmd_index_i, cmd_arg_i}), 1'b1"
+      }
+    ],
+    "order": "msb",
+    "existing_label": "sdio-command-layout",
+    "shared_notes": {
+      "spisd": "SPI-SD uses the same 48-bit command content; its CS, stuff-byte, response and busy framing remain SPI-mode behavior."
+    },
+    "fields": [
+      {
+        "name": "S",
+        "label": "S",
+        "lsb": 47,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "T",
+        "label": "T",
+        "lsb": 46,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "CMD",
+        "label": "CMD",
+        "lsb": 40,
+        "bits": 6,
+        "role": "configuration"
+      },
+      {
+        "name": "ARG",
+        "label": "ARG",
+        "lsb": 8,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "CRC7",
+        "label": "CRC7",
+        "lsb": 1,
+        "bits": 7,
+        "role": "configuration"
+      },
+      {
+        "name": "E",
+        "label": "E",
+        "lsb": 0,
+        "bits": 1,
+        "role": "configuration"
+      }
+    ],
+    "bits": 48
+  },
+  {
+    "id": "sdio-lanes",
+    "chapters": [
+      "sdio0",
+      "sdio1"
+    ],
+    "title": "SDIO data word byte lanes",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "crt/include/retrosoc/hal/sdio.h",
+      "rtl/ip/storage/sdio_data.sv"
+    ],
+    "note": "Memory/PIO lane 0 (bits 7:0) is the first byte placed on the SD wire. Each byte is transferred MSB first; a four-bit bus carries its high nibble before its low nibble. KEEP/STRB describes valid memory lanes and is not a transmitted CRC field.",
+    "bindings": [
+      {
+        "file": "rtl/ip/storage/sdio_data.sv",
+        "text": "dat_do_o[0] = s_tx_word_q[s_tx_byte_q*8+(int'(7)-int'(s_tx_bit_q))];"
+      }
+    ],
+    "order": "lsb",
+    "fields": [
+      {
+        "name": "Byte 0",
+        "label": "Byte 0",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Byte 1",
+        "label": "Byte 1",
+        "lsb": 8,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Byte 2",
+        "label": "Byte 2",
+        "lsb": 16,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Byte 3",
+        "label": "Byte 3",
+        "lsb": 24,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "spisd-response",
+    "chapters": [
+      "spisd"
+    ],
+    "title": "SPI-SD response groups",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/storage/spisd_command.sv",
+      "rtl/ip/storage/spisd_pkg.sv"
+    ],
+    "note": "MSB-first response groups, after command/stuff-byte handling. R1b adds a separate MISO busy interval. R3/R7 append a 32-bit payload to R1; R2 appends a second status byte. These are SPI-mode responses, not native SDIO response words.",
+    "bindings": [],
+    "order": "msb",
+    "rows": [
+      {
+        "label": "R1 / R1b status",
+        "bits": 8,
+        "fields": [
+          {
+            "name": "0",
+            "label": "0",
+            "lsb": 7,
+            "bits": 1,
+            "role": "configuration"
+          },
+          {
+            "name": "R1 status",
+            "label": "R1 status",
+            "lsb": 0,
+            "bits": 7,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "R2 status",
+        "bits": 16,
+        "fields": [
+          {
+            "name": "R1",
+            "label": "R1",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Status 2",
+            "label": "Status 2",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "R3 / R7 response",
+        "bits": 40,
+        "fields": [
+          {
+            "name": "R1",
+            "label": "R1",
+            "lsb": 32,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Response payload",
+            "label": "Response payload",
+            "lsb": 0,
+            "bits": 32,
+            "role": "configuration"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "spisd-block",
+    "chapters": [
+      "spisd"
+    ],
+    "title": "SPI-SD single-block token, payload and CRC example",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/storage/spisd_data.sv",
+      "crt/include/retrosoc/hal/sdio.h"
+    ],
+    "note": "A 512-byte data-block example, compressed horizontally and not to scale. Single-block data uses token 0xFE; multi-block write uses 0xFC and a separate stop token. Bytes are sent MSB first. The programmed block size and CRC policy remain authoritative.",
+    "bindings": [
+      {
+        "file": "rtl/ip/storage/spisd_data.sv",
+        "text": "s_serial_shift_d = s_multi_block_q ? 8'hFC : 8'hFE;"
+      },
+      {
+        "file": "crt/include/retrosoc/hal/sdio.h",
+        "text": "#define RS_SD_MEMORY_BLOCK_SIZE UINT32_C(512)"
+      }
+    ],
+    "order": "msb",
+    "compressed": true,
+    "fields": [
+      {
+        "name": "Token: 1 byte",
+        "label": "Token: 1 byte",
+        "lsb": 4112,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Payload: 512 bytes",
+        "label": "Payload: 512 bytes",
+        "lsb": 16,
+        "bits": 4096,
+        "role": "configuration"
+      },
+      {
+        "name": "CRC16: 2 bytes",
+        "label": "CRC16: 2 bytes",
+        "lsb": 0,
+        "bits": 16,
+        "role": "configuration"
+      }
+    ],
+    "bits": 4120
+  },
+  {
+    "id": "usb2-token",
+    "chapters": [
+      "usb2"
+    ],
+    "title": "USB2 token bytes presented after the PID",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/usb/usb2_sie_tx.sv",
+      "rtl/ip/usb/usb2_pkg.sv",
+      "rtl/ip/usb/usb2_ulpi_link.sv"
+    ],
+    "note": "The SIE supplies the token low byte, then token high bits plus CRC5. The separate ULPI TX command selects a 4-bit PID; the external PHY supplies wire PID/framing. SETUP/IN/OUT tokens use address/endpoint bits; SOF uses a frame number in the same 11-bit token container.",
+    "bindings": [
+      {
+        "file": "rtl/ip/usb/usb2_sie_tx.sv",
+        "text": "link_data_o = s_token_q[7:0];"
+      },
+      {
+        "file": "rtl/ip/usb/usb2_sie_tx.sv",
+        "text": "link_data_o = {s_token_crc, s_token_q[10:8]};"
+      }
+    ],
+    "order": "lsb",
+    "rows": [
+      {
+        "label": "First token byte",
+        "bits": 8,
+        "fields": [
+          {
+            "name": "Token[7:0]",
+            "label": "Token[7:0]",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "Second token byte",
+        "bits": 8,
+        "fields": [
+          {
+            "name": "Token[10:8]",
+            "label": "Token[10:8]",
+            "lsb": 0,
+            "bits": 3,
+            "role": "configuration"
+          },
+          {
+            "name": "CRC5",
+            "label": "CRC5",
+            "lsb": 3,
+            "bits": 5,
+            "role": "configuration"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "usb2-packet",
+    "chapters": [
+      "usb2"
+    ],
+    "title": "USB2 data-packet payload and CRC example",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/usb/usb2_sie_tx.sv",
+      "rtl/ip/usb/usb2_ulpi_link.sv"
+    ],
+    "note": "Eight payload bytes are illustrative; packet length follows the active transfer. The SIE sends finished CRC16 low byte before high byte. PID/SYNC/EOP belong to the PHY-facing framing path and are not bytes in this payload buffer. Handshake packets have no payload; zero-length data still has CRC.",
+    "bindings": [
+      {
+        "file": "rtl/ip/usb/usb2_sie_tx.sv",
+        "text": "link_data_o = payload_data_i;"
+      },
+      {
+        "file": "rtl/ip/usb/usb2_sie_tx.sv",
+        "text": "link_data_o = s_crc_finished[7:0];"
+      },
+      {
+        "file": "rtl/ip/usb/usb2_sie_tx.sv",
+        "text": "link_data_o = s_crc_finished[15:8];"
+      }
+    ],
+    "order": "lsb",
+    "compressed": true,
+    "fields": [
+      {
+        "name": "Payload: 8 bytes",
+        "label": "Payload: 8 bytes",
+        "lsb": 0,
+        "bits": 64,
+        "role": "configuration"
+      },
+      {
+        "name": "CRC low",
+        "label": "CRC low",
+        "lsb": 64,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "CRC high",
+        "label": "CRC high",
+        "lsb": 72,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 80
+  },
+  {
+    "id": "xpi-lut",
+    "chapters": [
+      "xpi"
+    ],
+    "title": "XPI 16-bit LUT instruction format",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/storage/xpi_pkg.sv",
+      "crt/src/hal/xpi.c"
+    ],
+    "note": "This is a serial-controller LUT instruction, not a CPU instruction or a register bit-layout replacement. Two instructions occupy one APB word, lower instruction first. Opcode selects command/address/mode/dummy/TX/RX/stop behavior; PADS selects the lane count.",
+    "bindings": [
+      {
+        "file": "rtl/ip/storage/xpi_pkg.sv",
+        "text": "return {opcode, pads, 2'b00, operand};"
+      }
+    ],
+    "order": "msb",
+    "fields": [
+      {
+        "name": "OP",
+        "label": "OP",
+        "lsb": 12,
+        "bits": 4,
+        "role": "configuration"
+      },
+      {
+        "name": "PADS",
+        "label": "PADS",
+        "lsb": 10,
+        "bits": 2,
+        "role": "configuration"
+      },
+      {
+        "name": "Zero",
+        "label": "Zero",
+        "lsb": 8,
+        "bits": 2,
+        "role": "reserved"
+      },
+      {
+        "name": "Operand",
+        "label": "Operand",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 16
+  },
+  {
+    "id": "opi-ca",
+    "chapters": [
+      "opipsram"
+    ],
+    "title": "Single-clock HyperBus command/address field layout",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/memory/opipsram_protocol.sv",
+      "rtl/ip/memory/opipsram_phy.sv"
+    ],
+    "note": "48-bit CA is sent most-significant byte first. R/W is the inverse of write; Space selects register access and Linear is 1. The controller forms word address from byte address shifted right by one. This single-clock profile is not a claim of external HyperBus compliance.",
+    "bindings": [
+      {
+        "file": "rtl/ip/memory/opipsram_protocol.sv",
+        "text": "assign s_hyper_word_addr = {1'b0, addr_i[31:1]};"
+      },
+      {
+        "file": "rtl/ip/memory/opipsram_protocol.sv",
+        "text": "hyper_ca_o[47] = !write_i; hyper_ca_o[46] = indirect_register_i; hyper_ca_o[45] = 1'b1; hyper_ca_o[44:16] = s_hyper_word_addr[31:3]; hyper_ca_o[15:3] = 13'd0; hyper_ca_o[2:0] = s_hyper_word_addr[2:0];"
+      }
+    ],
+    "order": "msb",
+    "compressed": true,
+    "fields": [
+      {
+        "name": "R/W",
+        "label": "R/W",
+        "lsb": 47,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "Space",
+        "label": "Space",
+        "lsb": 46,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "Linear",
+        "label": "Linear",
+        "lsb": 45,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "Word address[31:3]",
+        "label": "Word address[31:3]",
+        "lsb": 16,
+        "bits": 29,
+        "role": "configuration"
+      },
+      {
+        "name": "Reserved",
+        "label": "Reserved",
+        "lsb": 3,
+        "bits": 13,
+        "role": "reserved"
+      },
+      {
+        "name": "WA[2:0]",
+        "label": "WA[2:0]",
+        "lsb": 0,
+        "bits": 3,
+        "role": "configuration"
+      }
+    ],
+    "bits": 48
+  },
+  {
+    "id": "opi-command",
+    "chapters": [
+      "opipsram"
+    ],
+    "title": "OPI command-byte and address-byte ordering",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/memory/opipsram_protocol.sv"
+    ],
+    "note": "One- or two-byte command and three- or four-byte address are selected by the configured profile. The two strips are independent examples. Dummy/wait phases and DQS policy are timing controls, not extra address bytes.",
+    "bindings": [
+      {
+        "file": "rtl/ip/memory/opipsram_protocol.sv",
+        "text": "assign opi_cmd_first_o = opi_width16_i ? opi_cmd_i[15:8] : opi_cmd_i[7:0];"
+      },
+      {
+        "file": "rtl/ip/memory/opipsram_protocol.sv",
+        "text": "assign opi_addr_shift_o = (opi_addr_bytes_o == 3'd4) ? addr_i : {addr_i[23:0], 8'd0};"
+      }
+    ],
+    "order": "msb",
+    "rows": [
+      {
+        "label": "16-bit command example",
+        "bits": 16,
+        "fields": [
+          {
+            "name": "Command[15:8]",
+            "label": "Command[15:8]",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Command[7:0]",
+            "label": "Command[7:0]",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "32-bit address example",
+        "bits": 32,
+        "fields": [
+          {
+            "name": "A31:A24",
+            "label": "A31:A24",
+            "lsb": 24,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "A23:A16",
+            "label": "A23:A16",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "A15:A8",
+            "label": "A15:A8",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "A7:A0",
+            "label": "A7:A0",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "psram-address",
+    "chapters": [
+      "psram"
+    ],
+    "title": "QPI command and chip-local address fields",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/memory/psram_phy.sv",
+      "rtl/ip/memory/psram_pkg.sv"
+    ],
+    "note": "Address-bearing commands send an eight-bit opcode and a 24-bit address field whose top bit is zero. The remaining 23 bits are chip-local address bits. Single/quad lane timing, dummy phases, chip selection and data phases are separate from this field layout.",
+    "bindings": [
+      {
+        "file": "rtl/ip/memory/psram_phy.sv",
+        "text": "s_tx_shift_d = command_address_quad(s_cmd_q, s_qpi_q) ? {3'd0, s_addr_q[19:0], 40'd0} : {s_addr_q, 40'd0};"
+      },
+      {
+        "file": "rtl/ip/memory/psram_phy.sv",
+        "text": "{1'b0, s_addr_q[22:20]} : {3'd0, 1'b0};"
+      }
+    ],
+    "order": "msb",
+    "fields": [
+      {
+        "name": "Command",
+        "label": "Command",
+        "lsb": 24,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "0",
+        "label": "0",
+        "lsb": 23,
+        "bits": 1,
+        "role": "configuration"
+      },
+      {
+        "name": "Chip address[22:0]",
+        "label": "Chip address[22:0]",
+        "lsb": 0,
+        "bits": 23,
+        "role": "configuration"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "dvp-word",
+    "chapters": [
+      "dvp"
+    ],
+    "title": "DVP RGB565/YUV422 stream packing",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "rtl/ip/multimedia/dvp_core.sv",
+      "docs/ip/dvp.md"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "lsb",
+    "product_format": "dvp-word",
+    "fields": [
+      {
+        "name": "Earlier pixel",
+        "label": "Earlier pixel",
+        "lsb": 0,
+        "bits": 16,
+        "role": "configuration"
+      },
+      {
+        "name": "Later pixel",
+        "label": "Later pixel",
+        "lsb": 16,
+        "bits": 16,
+        "role": "configuration"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "i2s16",
+    "chapters": [
+      "i2s"
+    ],
+    "title": "I2S 16-bit stereo words packing",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "crt/src/hal/i2s_math.c"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "lsb",
+    "product_format": "i2s16",
+    "fields": [
+      {
+        "name": "Earlier sample",
+        "label": "Earlier sample",
+        "lsb": 0,
+        "bits": 16,
+        "role": "configuration"
+      },
+      {
+        "name": "Later sample",
+        "label": "Later sample",
+        "lsb": 16,
+        "bits": 16,
+        "role": "configuration"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "i2s24",
+    "chapters": [
+      "i2s"
+    ],
+    "title": "I2S 24-bit sample words packing",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "crt/src/hal/i2s_math.c",
+      "docs/ip/i2s.md"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "lsb",
+    "product_format": "i2s24",
+    "fields": [
+      {
+        "name": "Sample[23:0]",
+        "label": "Sample[23:0]",
+        "lsb": 0,
+        "bits": 24,
+        "role": "configuration"
+      },
+      {
+        "name": "Unused high bits",
+        "label": "Unused high bits",
+        "lsb": 24,
+        "bits": 8,
+        "role": "reserved"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "jpeg-gray",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "JPEG raster GRAY8 packing",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/jpeg.md",
+      "rtl/ip/multimedia/jpeg_reg.sv"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "lsb",
+    "product_format": "jpeg-gray",
+    "fields": [
+      {
+        "name": "Gray 0",
+        "label": "Gray 0",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Gray 1",
+        "label": "Gray 1",
+        "lsb": 8,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Gray 2",
+        "label": "Gray 2",
+        "lsb": 16,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Gray 3",
+        "label": "Gray 3",
+        "lsb": 24,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "jpeg-rgb565",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "JPEG raster RGB565 packing",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/jpeg.md",
+      "rtl/ip/multimedia/jpeg_reg.sv"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "msb",
+    "product_format": "jpeg-rgb565",
+    "fields": [
+      {
+        "name": "Red",
+        "label": "Red",
+        "lsb": 11,
+        "bits": 5,
+        "role": "configuration"
+      },
+      {
+        "name": "Green",
+        "label": "Green",
+        "lsb": 5,
+        "bits": 6,
+        "role": "configuration"
+      },
+      {
+        "name": "Blue",
+        "label": "Blue",
+        "lsb": 0,
+        "bits": 5,
+        "role": "configuration"
+      }
+    ],
+    "bits": 16
+  },
+  {
+    "id": "jpeg-rgb888",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "JPEG raster RGB888 packing",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/jpeg.md",
+      "rtl/ip/multimedia/jpeg_reg.sv"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "lsb",
+    "product_format": "jpeg-rgb888",
+    "fields": [
+      {
+        "name": "R",
+        "label": "R",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "G",
+        "label": "G",
+        "lsb": 8,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "B",
+        "label": "B",
+        "lsb": 16,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 24
+  },
+  {
+    "id": "jpeg-yuyv",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "JPEG raster YUYV422 packing",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/jpeg.md",
+      "rtl/ip/multimedia/jpeg_reg.sv"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "lsb",
+    "product_format": "jpeg-yuyv",
+    "fields": [
+      {
+        "name": "Y0",
+        "label": "Y0",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Cb",
+        "label": "Cb",
+        "lsb": 8,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Y1",
+        "label": "Y1",
+        "lsb": 16,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Cr",
+        "label": "Cr",
+        "lsb": 24,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "jpeg-nv12",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "NV12 plane byte ordering",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/jpeg.md",
+      "rtl/ip/multimedia/jpeg_reg.sv"
+    ],
+    "note": "",
+    "bindings": [],
+    "order": "lsb",
+    "product_format": "jpeg-nv12",
+    "rows": [
+      {
+        "label": "Plane 0: luma bytes",
+        "bits": 32,
+        "fields": [
+          {
+            "name": "Y0",
+            "label": "Y0",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Y1",
+            "label": "Y1",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Y2",
+            "label": "Y2",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Y3",
+            "label": "Y3",
+            "lsb": 24,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "Plane 1: interleaved chroma bytes",
+        "bits": 32,
+        "fields": [
+          {
+            "name": "Cb0",
+            "label": "Cb0",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Cr0",
+            "label": "Cr0",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Cb1",
+            "label": "Cb1",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "Cr1",
+            "label": "Cr1",
+            "lsb": 24,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "crypto-lanes",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "AES/SHA payload byte lanes",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/crypto.md",
+      "rtl/ip/security/apb4_crypto.sv"
+    ],
+    "note": "Little-endian APB/AXI lanes: lane 0 is earliest. Valid KEEP/PSTRB is a contiguous low-byte mask: 0001, 0011, 0111 or 1111. AES key/IV word 0 contains the first four API bytes; FIPS byte ordering is applied inside the engine.",
+    "bindings": [
+      {
+        "file": "docs/ip/crypto.md",
+        "text": "AES and SHA stream bytes are in little-endian APB/AXI word lanes: lane 0 is"
+      }
+    ],
+    "order": "lsb",
+    "fields": [
+      {
+        "name": "Byte 0",
+        "label": "Byte 0",
+        "lsb": 0,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Byte 1",
+        "label": "Byte 1",
+        "lsb": 8,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Byte 2",
+        "label": "Byte 2",
+        "lsb": 16,
+        "bits": 8,
+        "role": "configuration"
+      },
+      {
+        "name": "Byte 3",
+        "label": "Byte 3",
+        "lsb": 24,
+        "bits": 8,
+        "role": "configuration"
+      }
+    ],
+    "bits": 32
+  },
+  {
+    "id": "sha-digest",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "SHA digest word ordering",
+    "kind": "bytes",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/crypto.md",
+      "rtl/ip/security/crypto_sha2_engine.sv"
+    ],
+    "note": "Digest word 0 is the most significant digest word. SHA-256 uses eight words; SHA-224 uses seven meaningful words and returns zero in word 7. This word significance differs from RSA limb significance.",
+    "bindings": [
+      {
+        "file": "docs/ip/crypto.md",
+        "text": "SHA digest word 0 is the most significant digest word."
+      }
+    ],
+    "order": "lsb",
+    "fields": [
+      {
+        "name": "Digest word 0",
+        "label": "Digest word 0",
+        "lsb": 0,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Digest word 1",
+        "label": "Digest word 1",
+        "lsb": 32,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Digest word 2",
+        "label": "Digest word 2",
+        "lsb": 64,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Digest word 3",
+        "label": "Digest word 3",
+        "lsb": 96,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Digest word 4",
+        "label": "Digest word 4",
+        "lsb": 128,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Digest word 5",
+        "label": "Digest word 5",
+        "lsb": 160,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Digest word 6",
+        "label": "Digest word 6",
+        "lsb": 192,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Digest word 7",
+        "label": "Digest word 7",
+        "lsb": 224,
+        "bits": 32,
+        "role": "configuration"
+      }
+    ],
+    "bits": 256
+  },
+  {
+    "id": "rsa-limbs",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "RSA 2048-bit operand limb ordering",
+    "kind": "bits",
+    "section": "protocol",
+    "sources": [
+      "docs/ip/crypto.md",
+      "rtl/ip/security/crypto_rsa_core.sv"
+    ],
+    "note": "64 little-endian 32-bit limbs; word 0 is least significant and word 63 is most significant. The middle 60 words are collapsed in this schematic. Public/private exponent rules and operand validity remain those of the RSA contract.",
+    "bindings": [
+      {
+        "file": "docs/ip/crypto.md",
+        "text": "RSA operands are arrays of 64 little-endian 32-bit limbs. Word 0 is least"
+      }
+    ],
+    "order": "lsb",
+    "compressed": true,
+    "display_groups": [
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        61
+      ],
+      [
+        62,
+        62
+      ],
+      [
+        63,
+        63
+      ]
+    ],
+    "fields": [
+      {
+        "name": "Word 0",
+        "label": "Word 0",
+        "lsb": 0,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 1",
+        "label": "Word 1",
+        "lsb": 32,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 2",
+        "label": "Word 2",
+        "lsb": 64,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 3",
+        "label": "Word 3",
+        "lsb": 96,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 4",
+        "label": "Word 4",
+        "lsb": 128,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 5",
+        "label": "Word 5",
+        "lsb": 160,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 6",
+        "label": "Word 6",
+        "lsb": 192,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 7",
+        "label": "Word 7",
+        "lsb": 224,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 8",
+        "label": "Word 8",
+        "lsb": 256,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 9",
+        "label": "Word 9",
+        "lsb": 288,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 10",
+        "label": "Word 10",
+        "lsb": 320,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 11",
+        "label": "Word 11",
+        "lsb": 352,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 12",
+        "label": "Word 12",
+        "lsb": 384,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 13",
+        "label": "Word 13",
+        "lsb": 416,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 14",
+        "label": "Word 14",
+        "lsb": 448,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 15",
+        "label": "Word 15",
+        "lsb": 480,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 16",
+        "label": "Word 16",
+        "lsb": 512,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 17",
+        "label": "Word 17",
+        "lsb": 544,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 18",
+        "label": "Word 18",
+        "lsb": 576,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 19",
+        "label": "Word 19",
+        "lsb": 608,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 20",
+        "label": "Word 20",
+        "lsb": 640,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 21",
+        "label": "Word 21",
+        "lsb": 672,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 22",
+        "label": "Word 22",
+        "lsb": 704,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 23",
+        "label": "Word 23",
+        "lsb": 736,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 24",
+        "label": "Word 24",
+        "lsb": 768,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 25",
+        "label": "Word 25",
+        "lsb": 800,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 26",
+        "label": "Word 26",
+        "lsb": 832,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 27",
+        "label": "Word 27",
+        "lsb": 864,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 28",
+        "label": "Word 28",
+        "lsb": 896,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 29",
+        "label": "Word 29",
+        "lsb": 928,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 30",
+        "label": "Word 30",
+        "lsb": 960,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 31",
+        "label": "Word 31",
+        "lsb": 992,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 32",
+        "label": "Word 32",
+        "lsb": 1024,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 33",
+        "label": "Word 33",
+        "lsb": 1056,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 34",
+        "label": "Word 34",
+        "lsb": 1088,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 35",
+        "label": "Word 35",
+        "lsb": 1120,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 36",
+        "label": "Word 36",
+        "lsb": 1152,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 37",
+        "label": "Word 37",
+        "lsb": 1184,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 38",
+        "label": "Word 38",
+        "lsb": 1216,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 39",
+        "label": "Word 39",
+        "lsb": 1248,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 40",
+        "label": "Word 40",
+        "lsb": 1280,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 41",
+        "label": "Word 41",
+        "lsb": 1312,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 42",
+        "label": "Word 42",
+        "lsb": 1344,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 43",
+        "label": "Word 43",
+        "lsb": 1376,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 44",
+        "label": "Word 44",
+        "lsb": 1408,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 45",
+        "label": "Word 45",
+        "lsb": 1440,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 46",
+        "label": "Word 46",
+        "lsb": 1472,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 47",
+        "label": "Word 47",
+        "lsb": 1504,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 48",
+        "label": "Word 48",
+        "lsb": 1536,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 49",
+        "label": "Word 49",
+        "lsb": 1568,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 50",
+        "label": "Word 50",
+        "lsb": 1600,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 51",
+        "label": "Word 51",
+        "lsb": 1632,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 52",
+        "label": "Word 52",
+        "lsb": 1664,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 53",
+        "label": "Word 53",
+        "lsb": 1696,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 54",
+        "label": "Word 54",
+        "lsb": 1728,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 55",
+        "label": "Word 55",
+        "lsb": 1760,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 56",
+        "label": "Word 56",
+        "lsb": 1792,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 57",
+        "label": "Word 57",
+        "lsb": 1824,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 58",
+        "label": "Word 58",
+        "lsb": 1856,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 59",
+        "label": "Word 59",
+        "lsb": 1888,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 60",
+        "label": "Word 60",
+        "lsb": 1920,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 61",
+        "label": "Word 61",
+        "lsb": 1952,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 62",
+        "label": "Word 62",
+        "lsb": 1984,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "Word 63",
+        "label": "Word 63",
+        "lsb": 2016,
+        "bits": 32,
+        "role": "configuration"
+      }
+    ],
+    "bits": 2048
+  }
+]

@@ -107,21 +107,37 @@
   body
 }
 
+#let omit-link-underline(it) = {
+  let marker=it.fields().at("label",default:none)
+  if marker!=none and repr(marker).starts-with("<repository-footer-") {it} else {it.body}
+}
+#let repository-footer-link() = context {
+  show underline: omit-link-underline
+  show link: set text(fill:link-color,weight:"regular")
+  let body=text(font:"Inter",size:9pt,weight:"regular",fill:link-color)[https://github.com/retroSoC/retroSoC]
+  link("https://github.com/retroSoC/retroSoC",[
+    #underline(stroke:0.4pt+link-color,offset:2pt,body)#label("repository-footer-"+str(here().page()))
+  ])
+}
+
 #let contents(depth:5) = {
   set text(size:9.5pt,fill:ink)
   show link: set text(fill:ink)
-  show underline: it => it.body
+  show underline: omit-link-underline
   set par(leading:rhythm.toc-leading,spacing:rhythm.toc-leading)
   set outline(indent:rhythm.toc-indent)
   show outline.entry: it => context {
     let peers = query(heading).filter(h=>h.outlined and h.level==it.level and h.numbering!=none)
-    let widths = peers.map(h=>measure(numbering(h.numbering,..counter(heading).at(h.location()))).width)
+    let widths = peers.map(h=>measure(text(weight:if it.level==1 {"bold"} else {"regular"},
+      numbering(h.numbering,..counter(heading).at(h.location())))).width)
     let prefix-width = calc.max(0pt,..widths)
-    let prefix = it.prefix()
+    let prefix = if it.prefix()==none {none} else if it.level==1 {strong(it.prefix())} else {it.prefix()}
     // Scope emphasis by the section ancestor, not by a hard-coded chapter number.
     let ancestors = query(selector(heading).before(it.element.location(),inclusive:true)).filter(h=>h.level<=2)
     let peripheral = ancestors.len()>0 and ancestors.last().body==[Peripherals]
-    let inner = if peripheral {
+    let inner = if it.level==1 {
+      [#strong(it.body())#h(0.5em)#box(width:1fr,it.fill)#h(0.5em)#it.page()]
+    } else if peripheral {
       // Keep parentheses, separators and qualifiers such as "partial" regular.
       show regex("\\([^()]*\\)"): group => {
         show regex("\\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*\\b"): strong
@@ -140,7 +156,7 @@
 #let figure-directory(tables:false) = context {
   set text(font:"Inter",size:9.5pt,fill:ink,weight:"regular")
   show link: set text(fill:ink)
-  show underline: it => it.body
+  show underline: omit-link-underline
   set par(leading:rhythm.toc-leading,spacing:rhythm.toc-leading)
   set outline(indent:0pt)
   show outline: set heading(bookmarked:true)
@@ -280,7 +296,7 @@
 
 #let template(body) = {
   set document(title: doc.title, author: doc.author,
-    keywords: ("retroSoC", "Mini", "Gen2", "Gen2+", "datasheet", "DRAFT"))
+    keywords: ("retroSoC", "Mini", "Gen2", "Gen2+", "datasheet", doc.document_id, "v"+doc.version, doc.status))
   set text(font: "Inter", size: 10.5pt, fill: ink, lang: "en", weight: "regular")
   set par(justify: false, leading: rhythm.body-leading, spacing: rhythm.body-spacing,first-line-indent:0pt)
   set list(indent:rhythm.list-indent,body-indent:rhythm.list-body-indent,spacing:rhythm.list-spacing)
@@ -306,10 +322,11 @@
     },
     footer: context {
       set text(size: 9pt, fill: muted)
+      set par(leading:0pt,spacing:0pt)
       line(length: 100%, stroke: 0.35pt + rule)
       v(rhythm.header-gap)
       grid(columns: (1fr, auto, 1fr),
-        [#doc.document_id · v#doc.version · #doc.status],
+        repository-footer-link(),
         [#counter(page).display() / #counter(page).final().first()],
         align(right)[#doc.date],
       )
@@ -324,7 +341,7 @@
   show ref: it => {
     if it.element!=none and it.element.func()==heading and it.form=="normal" {
       set text(fill:link-color)
-      show underline: line => line.body
+      show underline: omit-link-underline
       it
     } else {it}
   }

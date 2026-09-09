@@ -17,10 +17,8 @@
 
 #ip-reference("uart0","uart",5,functional-note:[
   #block(breakable:false)[
-    #change-start("uart-fifo-layout", "UART0 transmit and receive FIFO storage", category:"added")
     #figure(uart-fifo-diagram(),kind:image,supplement:[Figure],caption:[UART0 FIFO depth and receive-entry storage.])<uart-fifo-layout>
     #source-note("rtl/ip/serial/uart_reg.sv",title:"Actual TX/RX FIFO geometry and register access")
-    #change-end("uart-fifo-layout")
   ]
 ],software-note:[
 

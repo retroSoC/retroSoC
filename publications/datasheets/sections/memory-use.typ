@@ -28,7 +28,6 @@ programming uses the command engine. Reserved ranges and inactive QPI/OPI window
 used as scratch space. Physical device capacity must match the controller and board setup.
 
 === Buffer ownership and alignment
-#change-start("cache-maintenance-layout", "Software cache-maintenance granule and buffer boundaries")
 The supplied HP platform metadata declares Zicbom with a 64-byte cache-maintenance block. Round shared
 maintenance ranges to full blocks and prevent unrelated owners from sharing a boundary block.
 Check address-plus-length overflow before rounding. Device descriptors can impose additional
@@ -39,7 +38,6 @@ alignment, byte-count, stride and memory-placement constraints; the DMA TCD is a
 Match the platform declaration to the generated HP artifact before deployment; this schematic
 does not independently establish physical cache-line geometry or total cache capacity.
 #source-note("app/ports/linux/linux/retrosoc_hp.dts",title:"Software-declared cache-maintenance block size")
-#change-end("cache-maintenance-layout")
 
 #ds-table("buffer-ownership",[Shared-buffer responsibilities],
   ([Actor],[Responsibility before handoff],[Responsibility after completion]),

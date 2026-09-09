@@ -1,4 +1,5 @@
 #import "@preview/cetz:0.5.2"
+#import "diagram-packages.typ": circuit-diagram
 #import "style.typ": ink, gold, pale-gold, gray, muted, data, rhythm
 
 // Coordinates are centimetres at final size. Text is never scaled down.
@@ -113,25 +114,7 @@
   panel(8,0.4 + 2*(w + 0.3),-13.5,w,2.3,(3,))
 })
 
-#let fabric-diagram() = cetz.canvas({
-  box(0, 7.4, 4.8, 1.2, [*Hazard3 LP* \ AHB-Lite to AXI32], fill: pale-gold)
-  box(6.1, 7.4, 4.8, 1.2, [*VexiiRiscv HP* \ I-cache / D-cache], fill: pale-gold)
-  box(12.2, 7.4, 4.8, 1.2, [*Device masters* \ DMA · I/O A/B · JPEG · EXT-H])
-  box(0, 4.9, 4.8, 1.35, [*LP management router* \ APB / MMIO control \ Memory via LP gateway])
-  box(6.1, 4.9, 10.9, 1.35, [*AXI64 crossbar (HP domain)* \ Per-target read/write arbitration \ IDs · admission policy · fault capture], fill: pale-gold)
-  wire(((2.4,7.4),(2.4,6.25)))
-  wire(((8.5,7.4),(8.5,6.25)))
-  wire(((14.6,7.4),(14.6,6.25)))
-  wire(((4.8,5.65),(6.1,5.65)))
-  box(0, 2.6, 4.8, 1.3, [*PCLK domain* \ APB4 peripheral island \ APB4 system island])
-  box(6.1, 2.6, 4.8, 1.3, [*SRAM* \ Native AXI64 / ID6 \ HP clock domain])
-  box(12.2, 2.6, 4.8, 1.3, [*Memory bridges* \ HP-to-memory CDC \ AXI64-to-32 adapters])
-  wire(((2.4,4.9),(2.4,3.9)))
-  wire(((8.5,4.9),(8.5,3.9)))
-  wire(((14.6,4.9),(14.6,3.9)))
-  box(6.1, 0.2, 10.9, 1.35, [*External memory targets* \ SDRAM x16 · QPI PSRAM · OPI/HyperBus-style · XPI \ QPI and OPI share pads; XPI data-plane access is read-only])
-  wire(((14.6,2.6),(14.6,1.55)))
-})
+#let fabric-diagram() = circuit-diagram("system-fabric")
 
 #let matrix-diagram() = cetz.canvas({
   import cetz.draw: *
@@ -154,24 +137,7 @@
   }
 })
 
-#let clock-diagram() = cetz.canvas({
-  box(0, 6, 4.8, 1.0, [*REF24 input* \ AON · 24 MHz], fill:pale-gold)
-  box(6.1, 6, 4.8, 1.0, [*External safe clock* \ 72 MHz], fill:pale-gold)
-  box(12.2, 6, 4.8, 1.0, [*Audio input* \ 18.432 MHz profile], fill:pale-gold)
-  box(0, 3.6, 4.8, 1.35, [*LP root selection* \ Reset: REF24 \ Controlled division from HP])
-  box(6.1, 3.6, 4.8, 1.35, [*HP safe selection* \ Reset: external 72 MHz \ Optional qualified PLL])
-  box(12.2, 3.6, 4.8, 1.35, [*Audio domain* \ I2S · RTC · watchdog \ Independent CDC])
-  wire(((2.4,6),(2.4,4.95)))
-  wire(((8.5,6),(8.5,4.95)))
-  wire(((14.6,6),(14.6,4.95)))
-  wire(((6.1,4.3),(4.8,4.3)), dashed:true)
-  box(0, 1.25, 4.8, 1.25, [*PCLK* \ LP divider: /1, /2, /4, /8, /16 \ APB4 register banks])
-  box(6.1, 1.25, 4.8, 1.25, [*Memory root* \ External 72 MHz / 2 \ Stable 36 MHz root])
-  box(12.2, 1.25, 4.8, 1.25, [*External domains* \ DVP pixel · ULPI · JTAG \ Domain reset synchronizers])
-  wire(((2.4,3.6),(2.4,2.5)))
-  wire(((8.5,5.55),(11.5,5.55),(11.5,1.875),(10.9,1.875)))
-  cetz.draw.content((8.5,0.4), text(9pt, [Dashed: controlled/derived relationship. PLL is absent in the reference profile.]))
-})
+#let clock-diagram() = circuit-diagram("system-clocks")
 
 #let boot-diagram() = cetz.canvas({
   let stages = (
@@ -188,14 +154,4 @@
   }
 })
 
-#let mpw-diagram() = cetz.canvas({
-  box(0, 4, 5, 1.4, [*Management* \ Hazard3 \ Root boot / selection], fill:pale-gold)
-  box(6, 4, 11, 1.4, [*C0-C3 selectable cores* \ kianV · SERV · FemtoRV32 · DarkRISCV \ One selected core at a time])
-  box(0, 1.7, 17, 1.2, [*MPW compatibility integration* \ Selected RIBP core interface → AXI4 adapter → shared platform])
-  wire(((2.5,4),(2.5,2.9)))
-  wire(((11.5,4),(11.5,2.9)))
-  box(0, -0.4, 8, 1.2, [*Shared platform* \ Memory, APB4 peripherals, SYSCTRL])
-  box(9, -0.4, 8, 1.2, [*Selectable user IP* \ Slot 1 timer · slot 2 GPIO \ APB4 and user GPIO boundary])
-  wire(((4,1.7),(4,0.8)))
-  wire(((13,1.7),(13,0.8)))
-})
+#let mpw-diagram() = circuit-diagram("system-mpw")

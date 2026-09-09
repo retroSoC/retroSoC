@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#import "../diagram-packages.typ": binary-figures, storage-figures
 #let bundle = data.system_reference.software.bundle_reference
 #let hex(value) = code("0x"+upper(str(value,base:16)))
 
@@ -16,6 +17,8 @@ array starts immediately after the fixed header, so descriptor n begins at
 All listed fields occupy four bytes. Use the explicit serialization, not an arbitrary host
 structure layout. The existing load addresses and maximum allocations remain in the preceding
 image-layout table.
+
+#binary-figures("software-boot","software")
 
 #ds-table("bundle-fixed-header",[HP boot bundle fixed-header fields],
   ([Byte offset],[Field],[Bytes],[Meaning]),
@@ -84,3 +87,5 @@ filled with 0xFF; this includes the gap after LP firmware, gaps before payloads 
 alignment padding. The package manifest's image SHA-256 covers that complete generated image.
 The example values are recalculated from the actual packager rather than maintained by hand.
 #source-note("tests/test_hp_boot_bundle.py",title:"Existing package layout/CRC test boundary")
+
+#storage-figures("software-boot",section:"software")

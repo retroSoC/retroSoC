@@ -13,11 +13,9 @@
 
 #ip-reference("dma","dma",3,functional-note:[
   #block(breakable:false)[
-    #change-start("dma-tcd-layout", "Central DMA transfer-control descriptor layout", category:"added")
     #figure(dma-tcd-diagram(),kind:image,supplement:[Figure],caption:[Central DMA TCD memory layout and field ownership.])<dma-tcd-layout>
     #source-note("crt/include/retrosoc/hal/dma.h",title:"Handwritten 64-byte TCD layout")
     #source-note("crt/src/hal/dma.c",title:"Current HAL descriptor result writeback")
-    #change-end("dma-tcd-layout")
   ]
 ],software-note:[
 

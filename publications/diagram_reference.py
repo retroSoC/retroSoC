@@ -3,12 +3,17 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 import re
 import sys
 from pathlib import Path
 
 from publications.implementation_reference import without_comments
 from publications.register_reference import number
+from publications.circuit_reference import validate_instance_connections
+from publications.instruction_reference import instruction_families
+from publications.format_reference import collect_layouts
+from publications.storage_reference import collect_storage
 
 
 def dependencies(spec: dict) -> set[str]:
@@ -111,7 +116,8 @@ def apu_formats(root: Path) -> dict:
             raise ValueError("APU instruction diagram failed round-trip encoding")
         examples.append({"title": title, "word": f"0x{word:016X}",
                          "values": {name: getattr(instruction, name) for name in aliases}})
-    return {"bits": 64, "fields": fields, "examples": examples, "max_instructions": isa.APUMC_MAX_INSTRUCTIONS}
+    return {"bits": 64, "fields": fields, "examples": examples, "max_instructions": isa.APUMC_MAX_INSTRUCTIONS,
+            "families": instruction_families(isa, defines)}
 
 
 def uart_fifo(root: Path) -> dict:
@@ -138,11 +144,16 @@ def validate_circuit(root: Path, circuit: dict) -> None:
         nodes[node["id"]] = node
         if not node.get("sources") or not node.get("title"):
             raise ValueError("circuit node lacks source/title")
+        instance = node.get("instance_source", {})
+        if any(instance[key] not in node["sources"] for key in ("file", "declaration_file") if key in instance):
+            raise ValueError("circuit instance declaration is outside its source inventory")
         for port in node["ports"]:
             key = node["id"] + "." + port["id"]
             if key in ports or port["side"] not in {"north", "south", "east", "west"}:
                 raise ValueError("duplicate or invalid circuit port")
-            if port["direction"] not in {"in", "out"} or not isinstance(port["width"], int) or port["width"] < 1:
+            width_valid = (type(port["width"]) is int and port["width"] > 0) or (
+                port["width"] is None and port.get("bundle") is True)
+            if port["direction"] not in {"in", "out"} or not width_valid:
                 raise ValueError("invalid circuit port direction/width")
             ports[key] = port
     seen = set()
@@ -158,17 +169,24 @@ def validate_circuit(root: Path, circuit: dict) -> None:
             raise ValueError("circuit connection lacks source binding")
         validate_bindings(root, edge["bindings"])
         seen.add((src, dst))
+    validate_instance_connections(root, circuit)
 
 
-def collect_diagrams(root: Path, spec: dict, regions: list[dict]) -> dict:
+def collect_diagrams(root: Path, spec: dict, regions: list[dict], system: dict) -> dict:
     for relative in dependencies(spec):
         path = root / relative
         if Path(relative).is_absolute() or ".." in Path(relative).parts or not path.resolve().is_relative_to(root.resolve()) or not path.is_file():
             raise ValueError("missing or invalid diagram source")
     validate_bindings(root, spec["bindings"])
-    if set(spec["circuits"]) != {"uart0", "dma", "apu"}:
-        raise ValueError("representative circuit coverage changed")
-    for circuit in spec["circuits"].values():
+    additional = json.loads((root / spec["circuit_catalog"]).read_text(encoding="utf-8"))
+    if set(additional) & set(spec["circuits"]):
+        raise ValueError("duplicate circuit illustration identifier")
+    circuits = {**spec["circuits"], **additional}
+    index = json.loads((root / "publications/datasheets/chapter-index.json").read_text(encoding="utf-8"))
+    expected = {row["id"] for row in index} | {"system-fabric", "system-clocks", "system-media", "system-mpw"}
+    if set(circuits) != expected:
+        raise ValueError("full-document circuit coverage changed")
+    for circuit in circuits.values():
         validate_circuit(root, circuit)
     validate_fields(spec["sdio_command"], 48)
     command_fields = [(f["name"], f["lsb"], f["bits"]) for f in spec["sdio_command"]]
@@ -185,8 +203,21 @@ def collect_diagrams(root: Path, spec: dict, regions: list[dict]) -> dict:
         raise ValueError("memory diagram has an invalid address window")
     if any(int(r["base_hex"], 16) != r["base"] or int(r["end_hex"], 16) != r["base"] + r["size"] - 1 for r in windows):
         raise ValueError("memory diagram range labels disagree with numeric bounds")
+    layouts = collect_layouts(root, spec["layout_catalog"], system)
+    for layout in layouts.values():
+        validate_bindings(root, layout.get("bindings", []))
+        for row in layout.get("rows", [layout]):
+            validate_fields(row["fields"], row["bits"])
+            groups = row.get("display_groups", layout.get("display_groups"))
+            if groups is not None:
+                indexes = [index for lo, hi in groups for index in range(lo, hi + 1)]
+                if indexes != list(range(len(row["fields"]))):
+                    raise ValueError("compressed binary diagram drops or repeats fields")
+    storage = collect_storage(root, spec["storage_catalog"], regions, system, layouts)
+    for record in storage.values():
+        validate_bindings(root, record.get("bindings", []))
     return {"sources": sorted(dependencies(spec)), "dma_tcd": dma_fields(root),
             "sdio_command": copy.deepcopy(spec["sdio_command"]), "apu": apu_formats(root),
             "uart_fifo": uart_fifo(root), "windows": sorted(windows, key=lambda r: r["base"]),
             "cache": {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128},
-            "circuits": copy.deepcopy(spec["circuits"])}
+            "circuits": circuits, "layouts": layouts, "storage": storage}

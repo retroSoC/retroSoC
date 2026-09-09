@@ -1,8 +1,6 @@
 #import "style.typ": *
-#import "figures.typ": box, wire
-#import "@preview/cetz:0.5.2"
 #import "waveforms.typ": timing
-#import "diagram-packages.typ": circuit-diagram
+#import "diagram-packages.typ": circuit-diagram, binary-figures, storage-figures
 
 #let inline(value) = {
   let parts=value.split("`")
@@ -46,38 +44,6 @@
   }
 }
 
-#let component-diagram(family, id) = {
-  let items=data.chapters.at(family).blocks
-  if id=="uart1" { items=items.map(v=>v.replace("Flow/DMA/IRQ","FIFO status / IRQ")) }
-  cetz.canvas({
-    import cetz.draw: line, content
-    box(4.3,1.0,8.4,1.0,text(9pt,items.first()),fill:pale-gold)
-    line((8.5,1.0),(8.5,0.55),stroke:0.6pt+ink)
-    let rows=calc.ceil((items.len()-1)/3)
-    line((-0.25,0.55),(-0.25,0.55-(rows - 1)*1.7),stroke:0.6pt+ink)
-    for row in range(rows) {
-      let columns=calc.min(3,items.len()-1-row*3)
-      line((-0.25,0.55-row*1.7),((columns - 1)*5.75+2.5,0.55-row*1.7),stroke:0.6pt+ink)
-    }
-    for (i,entry) in items.slice(1).enumerate() {
-      let col=calc.rem(i,3)
-      let row=calc.floor(i/3)
-      let x=col*5.75
-      let y= -row*1.7 - 1.0
-      box(x,y,5.0,0.95,text(9pt,entry),fill:gray)
-      line((x+2.5,0.55-row*1.7),(x+2.5,y+0.95),stroke:0.6pt+ink)
-    }
-    let flow=data.chapters.at(family).flow
-    if id=="uart1" { flow=("APB TXDATA","FIFO + serializer","Dedicated TX pad") }
-    let y= -rows*1.7 - 1.1
-    content((8.25,y+1.4),text(9pt,fill:muted,"Representative data / event path"))
-    for (n,entry) in flow.enumerate() {
-      box(n*5.75,y,5.0,1.0,text(9pt,entry),fill:white)
-      if n < 2 { wire(((n*5.75+5.0,y+0.5),(n*5.75+5.75,y+0.5))) }
-    }
-  })
-}
-
 #let bit-layout(register) = {
   let fields=register.fields.sorted(key:f=>-f.msb)
   set text(size:9pt)
@@ -113,7 +79,7 @@
     }
     {
       // Register-name links keep their blue color and destination, without decoration.
-      show underline: it => it.body
+      show underline: omit-link-underline
       ds-table(family+"-summary-"+group.id,group.title,
         ([Offset],[Register],[Access],[Reset],[Description]),
         registers.map(r=>(code("0x"+str(r.offset,base:16)),link(label("reg-"+family+"-"+r.key),code(r.name)),r.access,inline(r.reset),inline(r.description))),
@@ -150,13 +116,13 @@
   let chapter=data.chapters.at(family)
   subhead(id,"Features and Block Diagram",depth)
   list(..chapter.at("features",default:()).map(inline))
-  if id in ("uart0","dma","apu") {
-    block(breakable:false)[
+  block(breakable:false)[
       #change-start("circuit-"+id,chapter.title+" internal circuit diagram")
       #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#chapter.title functional organization.])
+      #label("circuit-"+id)
       #change-end("circuit-"+id)
     ]
-  } else {figure(component-diagram(family,id),caption:[#chapter.title functional organization.])}
+
   subhead(id,"Functional Description",depth)
   if legacy!=none {
     set heading(outlined:false,bookmarked:true)
@@ -164,10 +130,13 @@
   }
   for paragraph in chapter.notes { par(inline(paragraph)) }
   prose-sections(id+"-functional",chapter.functional,depth)
+  binary-figures(id,"functional")
   if functional-note!=none {functional-note}
+  storage-figures(id)
   subhead(id,"Protocol and Timing",depth)
   [For common APB4/AXI4/stream handshake rules, see @common-protocols.]
   if protocol-note!=none {protocol-note}
+  binary-figures(id,"protocol")
   if shared==none {
     timing(family,[#chapter.title example transaction or event sequence.])
     if family+"-exception" in data.waveforms {

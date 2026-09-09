@@ -30,9 +30,10 @@ from publications.chapter_reference import collect_chapters  # noqa: E402
 from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
 from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
 from publications.retrieval_reference import collect_retrieval  # noqa: E402
-from publications.report_changes import page_ranges  # noqa: E402
+from publications.report_changes import page_ranges, repository_footer_pages, REPOSITORY_URL  # noqa: E402
 from publications.structure_reference import validate_structure  # noqa: E402
 from publications.diagram_reference import collect_diagrams  # noqa: E402
+from publications.diagram_coverage import coverage as diagram_coverage, validate_usage as validate_diagram_usage  # noqa: E402
 from publications.package_reference import (  # noqa: E402
     directory_hashes, package_records, validate_imports, validate_package_closure,
 )
@@ -166,7 +167,9 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         read_json(ROOT / "rtl/mini/integration/user_extensions_legacy.json"),
         config["source_revision"], system_reference["support"],
     )
-    system_reference["illustrations"] = collect_diagrams(ROOT, system_reference["illustrations"], regions)
+    system_reference["illustrations"] = collect_diagrams(ROOT, system_reference["illustrations"], regions, system_reference)
+    system_reference["illustrations"]["coverage"] = diagram_coverage(
+        read_json(ROOT / "publications/datasheets/structure-contract.json"), system_reference["illustrations"])
     return {
         "document": config,
         "profiles": profiles,
@@ -390,6 +393,26 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
                        layout_report["headings"], read_json(ROOT / "publications/datasheets/chapter-index.json"))
     write_json(out / "document-structure.json", layout_report["headings"])
     layout_items = layout_report["items"]
+    diagram_records = [item for item in layout_items if isinstance(item, dict) and item.get("kind") == "publication-diagram"]
+    diagram_inventory = validate_diagram_usage(data["system_reference"]["illustrations"], diagram_records)
+    diagram_starts = {(item["package"], item["id"]): item for item in diagram_records}
+    diagram_ends = {}
+    for item in layout_items:
+        if isinstance(item, dict) and item.get("kind") == "publication-diagram-end":
+            key = (item["package"], item["id"])
+            if key in diagram_ends:
+                raise ValueError("duplicate diagram end position")
+            diagram_ends[key] = item
+    if diagram_ends.keys() != diagram_starts.keys():
+        raise ValueError("diagram visual bounds are incomplete")
+    for item in diagram_inventory:
+        start = diagram_starts[(item["package"], item["id"])]
+        end = diagram_ends[(item["package"], item["id"])]
+        if end["page"] != start["page"] or end["y"] < start["y"]:
+            raise ValueError("diagram unexpectedly spans pages")
+        item.update(x=start["x"], top=start["y"], bottom=end["y"])
+    write_json(out / "diagram-inventory.json", diagram_inventory)
+    write_json(out / "diagram-coverage.json", data["system_reference"]["illustrations"]["coverage"])
     page_map = [
         item
         for item in layout_items
@@ -405,6 +428,10 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     write_json(out / "change-markers.json", change_markers)
     manifest = {
         "document": config,
+        "publication_checkout": {"head": git("rev-parse", "HEAD"), "path": str(ROOT),
+                                 "has_local_changes": bool(git("status", "--porcelain", "--untracked-files=no"))},
+        "diagram_inventory_sha256": sha256(out / "diagram-inventory.json"),
+        "diagram_coverage_sha256": sha256(out / "diagram-coverage.json"),
         "inputs": inputs,
         "media_revision": lock["sources"]["publication_media"]["revision"],
         "assets": assets,
@@ -518,6 +545,14 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         raise ValueError("PDF inputs have changed; rebuild before checking this PDF")
     if manifest["pdf_sha256"] != sha256(pdf):
         raise ValueError("PDF differs from its build manifest")
+    for name in ("diagram-inventory", "diagram-coverage"):
+        path = pdf.parent / (name + ".json")
+        if not path.is_file() or manifest.get(name.replace("-", "_") + "_sha256") != sha256(path):
+            raise ValueError("PDF diagram coverage records missing or changed; rebuild before checking")
+    actual_diagrams = read_json(pdf.parent / "diagram-inventory.json")
+    validate_diagram_usage(data["system_reference"]["illustrations"], actual_diagrams)
+    if read_json(pdf.parent / "diagram-coverage.json") != data["system_reference"]["illustrations"]["coverage"]:
+        raise ValueError("PDF diagram chapter coverage differs from its current data")
     region_path = pdf.parent / "layout-regions.json"
     if not region_path.is_file() or manifest.get("layout_regions_sha256") != sha256(region_path):
         raise ValueError("PDF layout regions missing or changed; rebuild before checking")
@@ -538,6 +573,10 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
                        read_json(structure_path), read_json(ROOT / "publications/datasheets/chapter-index.json"))
     if reader.metadata.title != config["title"] or not reader.metadata.author:
         raise ValueError("PDF title or author metadata missing or inconsistent")
+    if not all(value in (reader.metadata.keywords or "") for value in (config["document_id"], "v" + config["version"], config["status"])):
+        raise ValueError("PDF identity/version/status keywords missing")
+    if repository_footer_pages(reader) != list(range(1, len(reader.pages) + 1)):
+        raise ValueError("PDF repository footer link missing on one or more pages")
     if not reader.outline:
         raise ValueError("PDF bookmarks missing")
     internal, external = 0, set()
@@ -545,6 +584,8 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         text = page.extract_text() or ""
         if not text.strip():
             raise ValueError("empty or raster-only PDF page")
+        if any(token in text for token in ("else if field.at(", "caption: [", "caption:[")):
+            raise ValueError("unrendered diagram source syntax in PDF")
         for annotation in page.get("/Annots", []):
             item = annotation.get_object()
             action = item.get("/A", {})
@@ -573,6 +614,9 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     with pdfplumber.open(pdf) as document:
         all_text = ""
         for number, page in enumerate(document.pages, 1):
+            footer_text = "".join(c["text"] for c in page.chars if c["top"] > page.height - 50)
+            if REPOSITORY_URL not in footer_text:
+                raise ValueError("PDF footer does not display the complete repository URL")
             for char in page.chars:
                 if (
                     char["x0"] < -0.5

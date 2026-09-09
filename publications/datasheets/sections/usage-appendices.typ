@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#import "../diagram-packages.typ": storage-figures
 
 = Appendix: Software Memory and Buffer Requirements <software-memory-budget>
 Memory-map capacity, image allocation, linked image size and peak runtime use are different
@@ -28,10 +29,19 @@ regions; inspect the actual script and generated memory regions rather than rely
 stale comment or filename. Retain both VMA and LMA in a size report. Compare the sum of static
 sections, reserved buffers and required stack/scratch margin with the available region before boot.
 
+#change-start("memory-linker-links","Memory accounting links to profile-specific load/run diagrams",category:"cross-reference")
+Profile-specific placement diagrams:
+#("ld2_psram","ld2_all_sram","ld2_sram","jtag_sram").map(name=>
+  link(label("storage-linker-"+name),code(name))).join([; ]).
+Each diagram preserves its actual linker regions and selected startup boundary.
+#change-end("memory-linker-links")
+
 == Worked Buffer Budgets
 The examples use 64-byte allocation alignment for shared HP cache-block ownership. This does
 not replace the peripheral's minimum alignment. Each independent buffer receives its own aligned
 stride so a maintenance operation does not include another owner's boundary bytes.
+
+#storage-figures("software-memory-budget",section:"software")
 
 #ds-table("buffer-budget-examples",[Payload, stored representation and aligned allocation],
   ([Scenario],[Payload / buffer],[Stored / buffer],[Aligned stride],[Total allocation]),

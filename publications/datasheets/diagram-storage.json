@@ -1,0 +1,1012 @@
+[
+  {
+    "id": "xpi-fifos",
+    "chapters": [
+      "xpi"
+    ],
+    "title": "XPI transmit and receive FIFO storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/storage/apb4_xpi.sv",
+        "instance": "u_tx_fifo",
+        "title": "TX FIFO",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "file": "rtl/ip/storage/apb4_xpi.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO",
+        "depth": 64,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/storage/apb4_xpi.sv"
+    ],
+    "bindings": [],
+    "note": "Each FIFO stores 64 32-bit words. The indirect byte path consumes/produces lanes from these words; the wire lane count and LUT instruction width are separate properties."
+  },
+  {
+    "id": "spisd-fifos",
+    "chapters": [
+      "spisd"
+    ],
+    "title": "SPI-SD payload FIFO storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/storage/spisd_core.sv",
+        "instance": "u_tx_fifo",
+        "title": "TX FIFO: data + strobes",
+        "depth": 16,
+        "bits": 36
+      },
+      {
+        "file": "rtl/ip/storage/spisd_core.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO",
+        "depth": 16,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/storage/spisd_core.sv"
+    ],
+    "bindings": [],
+    "note": "TX entries contain 32 data bits plus four valid-byte strobes; RX entries contain 32 data bits. The diagram shows storage geometry, not a live FIFO occupancy or a card block size."
+  },
+  {
+    "id": "sdio-pio",
+    "chapters": [
+      "sdio0",
+      "sdio1"
+    ],
+    "title": "Native SDIO PIO staging storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/storage/sdio_core.sv",
+        "symbols": [
+          "s_pio_tx_data_q",
+          "s_pio_tx_strb_q"
+        ],
+        "title": "PIO TX entries",
+        "depth": 4,
+        "bits": 36
+      },
+      {
+        "file": "rtl/ip/storage/sdio_core.sv",
+        "symbols": [
+          "s_pio_rdata_q"
+        ],
+        "title": "PIO RX holding word",
+        "depth": 1,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/storage/sdio_core.sv"
+    ],
+    "bindings": [],
+    "note": "PIO TX has four entries with a data word and four strobes. RX has one held 32-bit word with separate valid state. Descriptor DMA state is a separate path; FIFO_STATUS is not evidence of an additional undocumented data FIFO."
+  },
+  {
+    "id": "dma-channel-fifos",
+    "chapters": [
+      "dma"
+    ],
+    "title": "Central DMA per-channel buffering",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "instance": "u_data_fifo",
+        "title": "One channel data FIFO (8 instances)",
+        "depth": 32,
+        "bits": 32,
+        "parameters": {
+          "FifoDepth": 32
+        }
+      }
+    ],
+    "sources": [
+      "rtl/ip/peripheral/dma_core.sv",
+      "rtl/mini/top/apb4_periph.sv"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/mini/top/apb4_periph.sv",
+        "text": ".NumChannels(8), .FifoDepth(32)"
+      }
+    ],
+    "note": "The PRODUCT integration selects eight channels and a 32-word FIFO per channel. The cells illustrate one channel; channels do not share a single software-visible FIFO. A 64-byte descriptor is separate from this payload storage."
+  },
+  {
+    "id": "uart-fifos",
+    "chapters": [
+      "uart0",
+      "uart1"
+    ],
+    "title": "UART shared FIFO geometry",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/uart_reg.sv",
+        "instance": "u_tx_fifo",
+        "title": "TX FIFO",
+        "depth": 64,
+        "bits": 8
+      },
+      {
+        "file": "rtl/ip/serial/uart_reg.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO: data + error metadata",
+        "depth": 64,
+        "bits": 12
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/uart_reg.sv"
+    ],
+    "bindings": [],
+    "note": "UART0 and UART1 have the same storage geometry; UART1 omits UART0 DMA/RTS/CTS integration. RX metadata is part of each stored entry, distinct from the 32-bit APB read width.",
+    "existing_label": "uart-fifo-layout"
+  },
+  {
+    "id": "i2c-fifos",
+    "chapters": [
+      "i2c"
+    ],
+    "title": "I2C command and receive storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/i2c_reg.sv",
+        "instance": "u_cmd_fifo",
+        "title": "Command FIFO",
+        "depth": 16,
+        "bits": 12
+      },
+      {
+        "file": "rtl/ip/serial/i2c_reg.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO",
+        "depth": 16,
+        "bits": 8
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/i2c_reg.sv"
+    ],
+    "bindings": [],
+    "note": "Each I2C instance has a 16-entry command FIFO and a separate 16-byte RX FIFO. A command entry is 12 bits, including the byte and READ/RESTART/STOP/NACK controls; it is not a 16-bit payload."
+  },
+  {
+    "id": "ws2812-fifo",
+    "chapters": [
+      "ws2812"
+    ],
+    "title": "WS2812 pixel FIFO storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/ws2812_reg.sv",
+        "instance": "u_tx_fifo",
+        "title": "Pixel FIFO",
+        "depth": 16,
+        "bits": 24
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/ws2812_reg.sv"
+    ],
+    "bindings": [],
+    "note": "Sixteen 24-bit GRB entries feed the serializer. Frame length, FIFO occupancy and the reset interval are independent state."
+  },
+  {
+    "id": "i2s-fifos",
+    "chapters": [
+      "i2s"
+    ],
+    "title": "I2S audio CDC storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "instance": "u_tx_cdc_fifo",
+        "title": "TX CDC FIFO",
+        "depth": 128,
+        "bits": 32
+      },
+      {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "instance": "u_rx_cdc_fifo",
+        "title": "RX CDC FIFO",
+        "depth": 128,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/apb4_i2s.sv"
+    ],
+    "bindings": [],
+    "note": "Separate 128-word FIFOs cross system/audio clocks in opposite directions. Full/empty, flush completion and sample packing are separate from physical slot numbering."
+  },
+  {
+    "id": "dvp-fifo",
+    "chapters": [
+      "dvp"
+    ],
+    "title": "DVP pixel/event CDC FIFO",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+        "instance": "u_dvp_payload_fifo",
+        "title": "Pixel/event FIFO",
+        "depth": 128,
+        "bits": 42
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/axi4s_dvp.sv"
+    ],
+    "bindings": [],
+    "note": "128 entries store 32 data bits, four KEEP bits, four STRB bits and two frame/line markers. A partially filled final word retains its valid-lane metadata."
+  },
+  {
+    "id": "usb2-fifos",
+    "chapters": [
+      "usb2"
+    ],
+    "title": "USB2 packet stream CDC FIFOs",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/usb/apb4_usb2.sv",
+        "instance": "u_fill_stream_cdc",
+        "title": "System-to-ULPI FIFO",
+        "depth": 8,
+        "bits": 37
+      },
+      {
+        "file": "rtl/ip/usb/apb4_usb2.sv",
+        "instance": "u_drain_stream_cdc",
+        "title": "ULPI-to-system FIFO",
+        "depth": 8,
+        "bits": 37
+      }
+    ],
+    "sources": [
+      "rtl/ip/usb/apb4_usb2.sv"
+    ],
+    "bindings": [],
+    "note": "Each direction uses eight entries containing 32 data bits, four strobes and LAST. Work/result mailboxes and packet RAM are separate storage and handshake mechanisms."
+  },
+  {
+    "id": "sdram-queues",
+    "chapters": [
+      "sdram"
+    ],
+    "title": "SDRAM AXI adapter queues",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/memory/sdram_axi4.sv",
+        "instance": "u_ar_fifo",
+        "title": "Read-command queue",
+        "depth": 2,
+        "bits": 47
+      },
+      {
+        "file": "rtl/ip/memory/sdram_axi4.sv",
+        "instance": "u_aw_fifo",
+        "title": "Write-command queue",
+        "depth": 2,
+        "bits": 47
+      },
+      {
+        "file": "rtl/ip/memory/sdram_axi4.sv",
+        "instance": "u_w_fifo",
+        "title": "Write-data queue",
+        "depth": 8,
+        "bits": 37
+      },
+      {
+        "file": "rtl/ip/memory/sdram_axi4.sv",
+        "instance": "u_r_fifo",
+        "title": "Read-data queue",
+        "depth": 8,
+        "bits": 36
+      },
+      {
+        "file": "rtl/ip/memory/sdram_axi4.sv",
+        "instance": "u_b_fifo",
+        "title": "Write-response queue",
+        "depth": 2,
+        "bits": 3
+      }
+    ],
+    "sources": [
+      "rtl/ip/memory/sdram_axi4.sv"
+    ],
+    "bindings": [],
+    "note": "Read/write command queues carry address and burst fields; write/read data queues include protocol sidebands. These queue widths are not the external SDRAM DQ width."
+  },
+  {
+    "id": "ps2-fifos",
+    "chapters": [
+      "ps2"
+    ],
+    "title": "PS/2 receive and transmit FIFOs",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO",
+        "depth": 16,
+        "bits": 11
+      },
+      {
+        "file": "rtl/managed/clusterip/ps2/rtl/ps2_core.sv",
+        "instance": "u_tx_fifo",
+        "title": "TX FIFO",
+        "depth": 16,
+        "bits": 8
+      }
+    ],
+    "sources": [
+      "rtl/managed/clusterip/ps2/rtl/ps2_core.sv"
+    ],
+    "bindings": [],
+    "note": "RX entries carry eight data bits plus three metadata bits. TX stores eight-bit payloads; start/parity/stop slots are added by the serial engine."
+  },
+  {
+    "id": "pwm-capture",
+    "chapters": [
+      "pwm"
+    ],
+    "title": "PWM per-channel capture FIFO",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_capture.sv",
+        "instance": "u_capture_fifo",
+        "title": "One channel capture FIFO",
+        "depth": 4,
+        "bits": 32,
+        "defines": [
+          "rtl/managed/clusterip/pwm/rtl/pwm_define.svh"
+        ]
+      }
+    ],
+    "sources": [
+      "rtl/managed/clusterip/pwm/rtl/pwm_capture.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_define.svh"
+    ],
+    "bindings": [],
+    "note": "Each instantiated capture channel has a four-entry 32-bit FIFO. Channel count, capture timing and overflow policy remain in the PWM contract; this is not a shared global queue."
+  },
+  {
+    "id": "rng-fifo",
+    "chapters": [
+      "rng"
+    ],
+    "title": "RNG entropy FIFO",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "instance": "u_entropy_fifo",
+        "title": "Entropy word FIFO",
+        "depth": 8,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/managed/clusterip/rng/rtl/rng_core.sv"
+    ],
+    "bindings": [],
+    "note": "Eight words are buffered inside the RNG core. A filled FIFO does not independently establish entropy-source quality; qualification and health-check status still gate use."
+  },
+  {
+    "id": "crypto-fifos",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "Crypto streaming FIFO storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "instance": "u_input_fifo",
+        "title": "AES input FIFO",
+        "depth": 8,
+        "bits": 37
+      },
+      {
+        "file": "rtl/ip/security/crypto_aes_engine.sv",
+        "instance": "u_output_fifo",
+        "title": "AES output FIFO",
+        "depth": 8,
+        "bits": 37
+      },
+      {
+        "file": "rtl/ip/security/crypto_sha2_engine.sv",
+        "instance": "u_input_fifo",
+        "title": "SHA input FIFO",
+        "depth": 16,
+        "bits": 37
+      }
+    ],
+    "sources": [
+      "rtl/ip/security/crypto_aes_engine.sv",
+      "rtl/ip/security/crypto_sha2_engine.sv"
+    ],
+    "bindings": [],
+    "note": "Entries carry data and valid-byte/LAST metadata. AES has independent input/output FIFOs; SHA has an input FIFO and separate digest state. Zeroize/abort and ownership rules remain mandatory."
+  },
+  {
+    "id": "apu-fifos",
+    "chapters": [
+      "apu"
+    ],
+    "title": "APU primitive input/output storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/multimedia/apu_primitive_dispatcher.sv",
+        "instance": "u_input_fifo",
+        "title": "Primitive input FIFO",
+        "depth": 64,
+        "bits": 41
+      },
+      {
+        "file": "rtl/ip/multimedia/apu_primitive_dispatcher.sv",
+        "instance": "u_output_fifo",
+        "title": "Primitive output FIFO",
+        "depth": 64,
+        "bits": 41
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/apu_primitive_dispatcher.sv"
+    ],
+    "bindings": [],
+    "note": "Each FIFO has 64 entries of 41 bits: 32 data bits and nine format/metadata bits. Format presence is separate from production codec delivery and stream-route enablement."
+  },
+  {
+    "id": "psram-line",
+    "chapters": [
+      "psram"
+    ],
+    "title": "QPI read holding register as words",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/memory/apb4_psram.sv",
+        "symbols": [
+          "s_phy_rdata"
+        ],
+        "word_view": 32,
+        "title": "256-bit read holding register",
+        "depth": 8,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/memory/apb4_psram.sv"
+    ],
+    "bindings": [],
+    "note": "One 256-bit read holding register is shown as eight 32-bit word positions. This is a word view, not eight independently queued transactions; the PHY write path is separately 64 bits."
+  },
+  {
+    "id": "opi-lines",
+    "chapters": [
+      "opipsram"
+    ],
+    "title": "OPI optional controller line buffer",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/memory/opipsram_core.sv",
+        "symbols": [
+          "s_cache_data_q"
+        ],
+        "title": "Controller data lines",
+        "depth": 4,
+        "bits": 256
+      }
+    ],
+    "sources": [
+      "rtl/ip/memory/opipsram_core.sv"
+    ],
+    "bindings": [],
+    "note": "Four 32-byte data lines have separate tag/valid state. This controller line buffer is distinct from the software-declared 64-byte CPU cache-maintenance granule. Device-range and profile checks still control fills."
+  },
+  {
+    "id": "usb2-packet-ram",
+    "chapters": [
+      "usb2"
+    ],
+    "title": "USB2 packet RAM payload organization",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Packet payload words",
+        "depth": 4096,
+        "bits": 32,
+        "depth_ref": {
+          "file": "rtl/ip/usb/usb2_packet_ram.sv",
+          "symbol": "addr_i",
+          "power2": true
+        },
+        "bits_ref": {
+          "file": "rtl/ip/usb/usb2_packet_ram.sv",
+          "symbol": "write_data_i"
+        }
+      }
+    ],
+    "sources": [
+      "rtl/ip/usb/usb2_packet_ram.sv"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/usb/usb2_packet_ram.sv",
+        "text": "assign s_physical_write = {1'b0, s_write_code_injected};"
+      }
+    ],
+    "note": "The packet-RAM interface addresses 4,096 32-bit payload words (16 KiB). SECDED uses a 39-bit code stored in 40 physical bits; ECC overhead is not additional packet payload capacity. Endpoint/channel regions are software-partitioned and must not overlap."
+  },
+  {
+    "id": "jpeg-contexts",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "JPEG table-context storage",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Table contexts (each 1,328 words)",
+        "depth": 4,
+        "bits": 42496,
+        "depth_ref": {
+          "file": "rtl/ip/multimedia/jpeg_table_store.sv",
+          "symbol": "portal_context_i",
+          "power2": true
+        },
+        "bits_ref": {
+          "file": "rtl/ip/multimedia/jpeg_table_store.sv",
+          "constant": "EntriesPerContext",
+          "multiply": 32
+        }
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/jpeg_table_store.sv"
+    ],
+    "bindings": [],
+    "note": "Four logical contexts each contain 1,328 32-bit entries: 256 quantization, 48 DC-table and 1,024 AC-table entries. Context commit/valid state is distinct from table payload and job ownership."
+  },
+  {
+    "id": "apu-control-store",
+    "chapters": [
+      "apu"
+    ],
+    "title": "APU control-store organization",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "64-bit instruction words",
+        "depth": 2048,
+        "bits": 64,
+        "depth_ref": {
+          "file": "rtl/ip/multimedia/apu_control_store.sv",
+          "symbol": "loader_addr_i",
+          "power2": true
+        },
+        "bits_ref": {
+          "file": "rtl/ip/multimedia/apu_control_store.sv",
+          "symbol": "loader_data_i"
+        }
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/apu_control_store.sv"
+    ],
+    "bindings": [],
+    "note": "The current loader/fetch address is 11 bits, selecting 2,048 64-bit words (16 KiB). The later 4,096-word / 32 KiB refreeze is not implemented by this snapshot. Instruction memory and local data memory are separate spaces."
+  },
+  {
+    "id": "apu-local",
+    "chapters": [
+      "apu"
+    ],
+    "title": "APU declared local-data address regions",
+    "section": "functional",
+    "stores": [],
+    "sources": [
+      "rtl/ip/multimedia/apu_define.svh",
+      "rtl/ip/multimedia/apu_local_sram.sv"
+    ],
+    "bindings": [],
+    "note": "Offsets refer to the private local-data space, separate from instruction memory and SoC SRAM. These declared ranges do not advertise enabled KWS, verify physical bank utilization or establish a completed codec image.",
+    "derived": "apu-local"
+  },
+  {
+    "id": "rsa-vectors",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "RSA logical operand/result arrays",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/security/crypto_rsa_core.sv",
+        "symbols": [
+          "modulus_i"
+        ],
+        "word_view": 32,
+        "title": "Modulus",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "file": "rtl/ip/security/crypto_rsa_core.sv",
+        "symbols": [
+          "exponent_i"
+        ],
+        "word_view": 32,
+        "title": "Exponent",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "file": "rtl/ip/security/crypto_rsa_core.sv",
+        "symbols": [
+          "base_i"
+        ],
+        "word_view": 32,
+        "title": "Base",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "file": "rtl/ip/security/crypto_rsa_core.sv",
+        "symbols": [
+          "result_o"
+        ],
+        "word_view": 32,
+        "title": "Result",
+        "depth": 64,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/security/crypto_rsa_core.sv"
+    ],
+    "bindings": [],
+    "note": "Each 2,048-bit vector is shown as 64 little-endian 32-bit limb positions. These interfaces represent logical operand state, not secure SRAM, persistent keys or a key-slot service."
+  },
+  {
+    "id": "xpi-windows",
+    "chapters": [
+      "xpi"
+    ],
+    "title": "XPI address-window organization",
+    "section": "functional",
+    "stores": [],
+    "sources": [
+      "rtl/mini/address_map/memory_map.json"
+    ],
+    "bindings": [],
+    "note": "Address windows are schematic and not proportional to capacity. The range is the selected PRODUCT aperture; external-device capacity, readiness and memory attributes must be checked separately.",
+    "region_symbols": [
+      "FLASH",
+      "XPI"
+    ]
+  },
+  {
+    "id": "sram-window",
+    "chapters": [
+      "sram"
+    ],
+    "title": "SRAM address-window organization",
+    "section": "functional",
+    "stores": [],
+    "sources": [
+      "rtl/mini/address_map/memory_map.json"
+    ],
+    "bindings": [],
+    "note": "Address windows are schematic and not proportional to capacity. The range is the selected PRODUCT aperture; external-device capacity, readiness and memory attributes must be checked separately.",
+    "region_symbols": [
+      "SRAM"
+    ]
+  },
+  {
+    "id": "psram-window",
+    "chapters": [
+      "psram"
+    ],
+    "title": "PSRAM address-window organization",
+    "section": "functional",
+    "stores": [],
+    "sources": [
+      "rtl/mini/address_map/memory_map.json"
+    ],
+    "bindings": [],
+    "note": "Address windows are schematic and not proportional to capacity. The range is the selected PRODUCT aperture; external-device capacity, readiness and memory attributes must be checked separately.",
+    "region_symbols": [
+      "PSRAM"
+    ]
+  },
+  {
+    "id": "opi-window",
+    "chapters": [
+      "opipsram"
+    ],
+    "title": "OPIPSRAM address-window organization",
+    "section": "functional",
+    "stores": [],
+    "sources": [
+      "rtl/mini/address_map/memory_map.json"
+    ],
+    "bindings": [],
+    "note": "Address windows are schematic and not proportional to capacity. The range is the selected PRODUCT aperture; external-device capacity, readiness and memory attributes must be checked separately.",
+    "region_symbols": [
+      "OPIPSRAM"
+    ]
+  },
+  {
+    "id": "sdram-window",
+    "chapters": [
+      "sdram"
+    ],
+    "title": "SDRAM address-window organization",
+    "section": "functional",
+    "stores": [],
+    "sources": [
+      "rtl/mini/address_map/memory_map.json"
+    ],
+    "bindings": [],
+    "note": "Address windows are schematic and not proportional to capacity. The range is the selected PRODUCT aperture; external-device capacity, readiness and memory attributes must be checked separately.",
+    "region_symbols": [
+      "SDRAM"
+    ]
+  },
+  {
+    "id": "spisd-descriptor-storage",
+    "chapters": [
+      "spisd"
+    ],
+    "title": "SPISD linked-descriptor storage example",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Four illustrative descriptor positions",
+        "depth": 4,
+        "bits": 128,
+        "layout_ref": "spisd-descriptor",
+        "example": true
+      }
+    ],
+    "sources": [
+      "docs/ip/spisd.md"
+    ],
+    "bindings": [],
+    "note": "Four allocated descriptor positions illustrate a bounded chain; NEXT addresses and END terminate traversal, rather than implying adjacent hardware FIFO slots. This is not a live occupancy snapshot or an allocation performed by the documentation. Descriptor layout, alignment and completion rules remain in the associated format description."
+  },
+  {
+    "id": "sdio0-descriptor-storage",
+    "chapters": [
+      "sdio0",
+      "sdio1"
+    ],
+    "title": "SDIO linked-descriptor storage example",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Four illustrative descriptor positions",
+        "depth": 4,
+        "bits": 128,
+        "layout_ref": "sdio-descriptor",
+        "example": true
+      }
+    ],
+    "sources": [
+      "docs/ip/sdio.md"
+    ],
+    "bindings": [],
+    "note": "Four allocated descriptor positions illustrate a bounded chain; NEXT addresses and END terminate traversal, rather than implying adjacent hardware FIFO slots. This is not a live occupancy snapshot or an allocation performed by the documentation. Descriptor layout, alignment and completion rules remain in the associated format description."
+  },
+  {
+    "id": "usb2-descriptor-storage",
+    "chapters": [
+      "usb2"
+    ],
+    "title": "USB2 linked-descriptor storage example",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Four illustrative descriptor positions",
+        "depth": 4,
+        "bits": 256,
+        "layout_ref": "usb2-descriptor",
+        "example": true
+      }
+    ],
+    "sources": [
+      "docs/ip/usb2.md"
+    ],
+    "bindings": [],
+    "note": "Four allocated descriptor positions illustrate a bounded chain; NEXT addresses and END terminate traversal, rather than implying adjacent hardware FIFO slots. This is not a live occupancy snapshot or an allocation performed by the documentation. Descriptor layout, alignment and completion rules remain in the associated format description."
+  },
+  {
+    "id": "jpeg-descriptor-storage",
+    "chapters": [
+      "jpeg"
+    ],
+    "title": "JPEG descriptor-ring example",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Four illustrative descriptor positions",
+        "depth": 4,
+        "bits": 1024,
+        "layout_ref": "jpeg-descriptor",
+        "example": true
+      }
+    ],
+    "sources": [
+      "docs/ip/jpeg.md"
+    ],
+    "bindings": [],
+    "note": "Four allocated descriptor positions illustrate a software-owned ring; head/tail/OWN control admission and reuse. This is not a live occupancy snapshot or an allocation performed by the documentation. Descriptor layout, alignment and completion rules remain in the associated format description."
+  },
+  {
+    "id": "apu-descriptor-storage",
+    "chapters": [
+      "apu"
+    ],
+    "title": "APU descriptor-ring example",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Four illustrative descriptor positions",
+        "depth": 4,
+        "bits": 1024,
+        "layout_ref": "apu-descriptor",
+        "example": true
+      }
+    ],
+    "sources": [
+      "docs/ip/apu.md"
+    ],
+    "bindings": [],
+    "note": "Four allocated descriptor positions illustrate a software-owned ring; head/tail/OWN control admission and reuse. This is not a live occupancy snapshot or an allocation performed by the documentation. Descriptor layout, alignment and completion rules remain in the associated format description."
+  },
+  {
+    "id": "linker-ld2_psram",
+    "chapters": [
+      "software-runtime"
+    ],
+    "title": "LP bringup load/run section placement",
+    "section": "software",
+    "stores": [],
+    "sources": [
+      "configs/ci/ihp130.mk",
+      "crt/arch/riscv/startup.S",
+      "crt/linker/ld2_psram.lds"
+    ],
+    "bindings": [],
+    "note": "Section cells show linker placement, not final firmware sizes or executed startup steps. VMA is the run address; LMA is the load image. BSS has no initialized payload; handling follows the selected CRT. Stack top is the linker-selected region end, not a measured stack budget.",
+    "linker": "crt/linker/ld2_psram.lds",
+    "profile": "configs/ci/ihp130.mk"
+  },
+  {
+    "id": "linker-ld2_all_sram",
+    "chapters": [
+      "software-runtime"
+    ],
+    "title": "LP HP-boot firmware load/run placement",
+    "section": "software",
+    "stores": [],
+    "sources": [
+      "configs/ci/ihp130-hp.mk",
+      "crt/arch/riscv/startup.S",
+      "crt/linker/ld2_all_sram.lds"
+    ],
+    "bindings": [],
+    "note": "Section cells show linker placement, not final firmware sizes or executed startup steps. VMA is the run address; LMA is the load image. BSS has no initialized payload; handling follows the selected CRT. Stack top is the linker-selected region end, not a measured stack budget.",
+    "linker": "crt/linker/ld2_all_sram.lds",
+    "profile": "configs/ci/ihp130-hp.mk"
+  },
+  {
+    "id": "linker-ld2_sram",
+    "chapters": [
+      "software-runtime"
+    ],
+    "title": "Debug image load/run section placement",
+    "section": "software",
+    "stores": [],
+    "sources": [
+      "app/apps/debug/startup.S",
+      "configs/ci/ihp130-debug.mk",
+      "crt/linker/ld2_sram.lds"
+    ],
+    "bindings": [],
+    "note": "Section cells show linker placement, not final firmware sizes or executed startup steps. VMA is the run address; LMA is the load image. BSS has no initialized payload; handling follows the selected CRT. Stack top is the linker-selected region end, not a measured stack budget.",
+    "linker": "crt/linker/ld2_sram.lds",
+    "profile": "configs/ci/ihp130-debug.mk"
+  },
+  {
+    "id": "linker-jtag_sram",
+    "chapters": [
+      "software-runtime"
+    ],
+    "title": "JTAG flash-loader SRAM placement",
+    "section": "software",
+    "stores": [],
+    "sources": [
+      "app/apps/xpi_flash_loader/startup.S",
+      "configs/ci/ihp130-xpi-flash-loader.mk",
+      "crt/linker/jtag_sram.lds"
+    ],
+    "bindings": [],
+    "note": "Section cells show linker placement, not final firmware sizes or executed startup steps. VMA is the run address; LMA is the load image. BSS has no initialized payload; handling follows the selected CRT. Stack top is the linker-selected region end, not a measured stack budget.",
+    "linker": "crt/linker/jtag_sram.lds",
+    "profile": "configs/ci/ihp130-xpi-flash-loader.mk"
+  },
+  {
+    "id": "hp-load-windows",
+    "chapters": [
+      "software-boot"
+    ],
+    "title": "HP boot-artifact destination windows",
+    "section": "software",
+    "stores": [],
+    "sources": [
+      "app/apps/hp_boot/hp_boot_bundle.h",
+      "app/apps/hp_boot/main.c",
+      "scripts/package_hp_boot.py"
+    ],
+    "bindings": [],
+    "note": "These are configured destination bases and individual maximum allocations in SDRAM, not actual payload sizes. Boot validation, ownership and hardware qualification remain separate.",
+    "derived": "hp-load"
+  },
+  {
+    "id": "hp-flash-placement",
+    "chapters": [
+      "software-boot"
+    ],
+    "title": "Synthetic HP bundle flash placement",
+    "section": "software",
+    "stores": [],
+    "sources": [
+      "app/apps/hp_boot/hp_boot_bundle.h",
+      "app/apps/hp_boot/main.c",
+      "scripts/package_hp_boot.py"
+    ],
+    "bindings": [],
+    "note": "This layout uses the existing packager-generated synthetic example; it is not a production boot image. Addresses are absolute flash offsets and the figure is not to scale.",
+    "derived": "hp-flash"
+  },
+  {
+    "id": "worked-buffer-budgets",
+    "chapters": [
+      "software-memory-budget"
+    ],
+    "title": "Worked buffer-budget quantities",
+    "section": "software",
+    "stores": [],
+    "sources": [
+      "publications/programming_reference.py"
+    ],
+    "bindings": [],
+    "note": "Cells compare quantities, not adjacent memory regions. Packing overhead can occur within every row or sample, so it is not necessarily one tail-padding region. Odd-width DVP storage is illustrative and is not supported by the current full-word central-DMA path.",
+    "derived": "worked-budgets"
+  }
+]

@@ -1,5 +1,6 @@
 #import "../style.typ": *
 #import "../system-figures.typ": sequence-diagram
+#import "../diagram-packages.typ": storage-figures
 #let sw = data.system_reference.software
 
 === LP ordinary startup <lp-runtime>
@@ -67,6 +68,8 @@ The heap boundary symbol is an accounting marker; it does not introduce a hosted
 Buffer and stack accounting remain defined in @software-memory-budget.
 #source-note("crt/linker/ld2_psram.lds",title:"Reference load/run placement and stack boundary")
 #source-note("crt/linker/ld2_all_sram.lds",title:"HP loader's selected SRAM linker layout")
+
+#storage-figures("software-runtime",section:"software")
 
 === Exception entry and interrupt software support <irq-runtime>
 The main publication profile selects HAVE_CSR=NO. Other committed profiles, including the HP

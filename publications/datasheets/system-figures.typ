@@ -1,4 +1,5 @@
 #import "@preview/cetz:0.5.2"
+#import "diagram-packages.typ": circuit-diagram
 #import "style.typ": pale-gold, gray
 #import "figures.typ": box, wire
 
@@ -23,17 +24,4 @@
   }
 })
 
-#let media-system-diagram() = cetz.canvas({
-  box(0,4,5,1.3,[*External camera* \ Pixel clock, VSYNC/HREF \ Board configuration required])
-  box(5.8,4,5,1.3,[*DVP + central DMA* \ Capture stream and buffers])
-  box(11.6,4,5,1.3,[*Shared memory* \ Explicit buffer ownership])
-  wire(((5,4.65),(5.8,4.65)))
-  wire(((10.8,4.65),(11.6,4.65)))
-  box(11.6,1.6,5,1.3,[*JPEG / software consumer* \ Separate memory job \ No direct DVP-to-JPEG claim])
-  wire(((14.1,4),(14.1,2.9)))
-  box(0,1.6,5,1.3,[*External audio codec* \ Audio clock and I2S wiring])
-  box(5.8,1.6,5,1.3,[*I2S + DMA / software* \ Separate audio buffers])
-  wire(((5,2.25),(5.8,2.25)))
-  wire(((8.3,2.9),(8.3,3.3),(14.1,3.3),(14.1,4)))
-  box(0,-0.7,16.6,1.2,[*LP orchestrates clocks, pad mode and resource ownership* \ APU production codec jobs remain disabled in this snapshot.],fill:pale-gold)
-})
+#let media-system-diagram() = circuit-diagram("system-media")

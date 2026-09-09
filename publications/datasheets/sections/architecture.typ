@@ -40,7 +40,9 @@ global transaction IDs. Adapters preserve byte lanes and response attribution ac
 and clock boundaries. HP MMIO cannot write root-owned SYSCTRL/RCU, watchdog, GPIO administration
 and other protected management controls.
 
+#change-start("system-fabric", "PRODUCT control and memory circuit paths")
 #figure(fabric-diagram(), caption:[PRODUCT control and memory paths. Gateway adaptation and CDC separate the functional clock domains.])<fabric-diagram>
+#change-end("system-fabric")
 
 === Common Bus Protocols <common-protocols>
 The following WaveDrom examples define the handshake notation used by the IP chapters.
@@ -101,9 +103,7 @@ compatibility responder at the former selectable user-IP window; it does not ins
 MPW user IPs there. Neither case should be counted as an active accelerator.
 
 #block(breakable:false)[
-  #change-start("memory-window-layout", "PRODUCT memory address-window diagram", category:"added")
   #figure(memory-window-diagram(),kind:image,supplement:[Figure],caption:[Selected PRODUCT memory address windows in the reference configuration.])<memory-window-layout>
-  #change-end("memory-window-layout")
 ]
 
 #pagebreak()
@@ -115,7 +115,9 @@ LP resets to REF24 and HP resets to the external 72 MHz safe source. The referen
 disables the PLL. Generic PLL selectors model 72-240 MHz in 24 MHz steps; these are digital
 integration choices, not qualified silicon speed grades.
 
+#change-start("system-clocks", "System clock and reset circuit organization")
 #figure(clock-diagram(), caption:[Clock-domain organization and reset defaults. Frequencies shown are configuration values.])<clock-diagram>
+#change-end("system-clocks")
 
 The memory root is the stable external 72 MHz clock divided by two. Audio, DVP pixel, ULPI and
 JTAG have independent clocks. The inventory below lists domains without presenting synthesis

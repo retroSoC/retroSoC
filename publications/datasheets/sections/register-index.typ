@@ -29,7 +29,7 @@ also does not grant an initiator access or establish that an optional feature is
     #text(9pt,fill:muted)[Base #code(bank.base_hex) · #bank.qualification]
   ]
   {
-    show underline: it => it.body
+    show underline: omit-link-underline
     ds-table("lookup-"+bank.id,[#bank.region register address index],
       ([Offset],[Register / definition],[Absolute address / array],[Access],[Reset]),
       bank.rows.map(r=>(code(r.offset_hex),

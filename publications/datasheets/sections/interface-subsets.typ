@@ -11,6 +11,12 @@ authoritative. No interface compliance certificate is attached to this matrix.
   data.system_reference.product_details.interfaces.map(r=>([#r.title \ #r.role],r.modes,r.excluded)),
   widths:(0.9fr,1.65fr,1.6fr))
 
+#change-start("interface-format-links","Interface overview links to complete data-format diagrams",category:"cross-reference")
+Source-bound data layouts:
+#data.system_reference.product_details.formats.map(r=>link(label("binary-"+r.id),r.title)).join([; ]).
+Use the instance's protocol and availability qualifications together with its format diagram.
+#change-end("interface-format-links")
+
 === Software and verification boundary
 Hardware mode support, a callable HAL and a qualified protocol/system result are separate
 columns. A driver may implement only a subset of the digital engine. An external PHY, device,

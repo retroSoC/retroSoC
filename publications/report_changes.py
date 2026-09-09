@@ -8,6 +8,8 @@ import json
 import re
 from pathlib import Path
 
+REPOSITORY_URL = "https://github.com/retroSoC/retroSoC"
+
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -48,6 +50,20 @@ def verified_pdf(path: Path):
     return PdfReader(path), actual
 
 
+def repository_footer_pages(reader) -> list[int]:
+    pages = []
+    for number, page in enumerate(reader.pages, 1):
+        for reference in page.get("/Annots", []):
+            annotation = reference.get_object()
+            if annotation.get("/A", {}).get("/URI") != REPOSITORY_URL:
+                continue
+            rect = annotation.get("/Rect", [])
+            if len(rect) == 4 and 0 <= float(rect[1]) < float(rect[3]) < 70:
+                pages.append(number)
+                break
+    return pages
+
+
 def report_changes(pdf: Path, baseline: Path) -> dict:
     reader, final_hash = verified_pdf(pdf)
     old, baseline_hash = verified_pdf(baseline)
@@ -72,12 +88,19 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
             labels[page] = int(found[0][0])
         row["printed_start"] = labels[row["start_page"]]
         row["printed_end"] = labels[row["end_page"]]
+    global_changes = []
+    footer_pages = repository_footer_pages(reader)
+    if footer_pages == list(range(1, len(reader.pages) + 1)) and not repository_footer_pages(old):
+        global_changes.append({"id": "repository-footer", "category": "global-presentation",
+                               "title": "Left footer replaced by the clickable repository URL",
+                               "start_page": 1, "end_page": len(reader.pages), "url": REPOSITORY_URL})
     return {
         "baseline": {"path": str(baseline.resolve()), "sha256": baseline_hash, "pages": len(old.pages)},
         "final": {"path": str(pdf.resolve()), "sha256": final_hash, "pages": len(reader.pages)},
         "marker_sha256": digest(marker_file), "ranges": ranges,
+        "global_presentation_changes": global_changes,
         "printed_pages_equal_viewer_pages": all(page == value for page, value in labels.items()),
-        "scope": "Tracked added/rewritten content and explicit cross-references; navigation is separate. Subsequent pagination/numbering-only changes are not substantive edits.",
+        "scope": "Tracked added/rewritten content and explicit cross-references; navigation and global presentation changes are separate. Subsequent pagination/numbering-only changes are not substantive edits.",
     }
 
 

@@ -99,7 +99,9 @@ it does not establish that all peripheral drivers or workloads have been validat
 @boot-configuration for failure handling, including the unbounded firmware-local ready wait.
 
 === Camera and audio data paths
+#change-start("system-media", "Camera and audio circuit composition")
 #figure(media-system-diagram(),caption:[Memory-mediated camera and audio composition using the current digital interfaces.])
+#change-end("system-media")
 Use separate producer and consumer buffers, with an explicit lifetime for every captured
 frame or audio block. DVP capture reaches memory through its DMA/stream path; JPEG consumes
 an independently configured memory job. The drawing does not assert a direct hardware

@@ -8,7 +8,9 @@ The separate MPW configuration retains selectable user-core and user-IP mechanis
 not the fixed PRODUCT topology and does not define a Gen2/Gen2+ derivative mapping. Hazard3
 remains the management core. The selected C0-C3 interface uses RIBP and an AXI4 adapter.
 
+#change-start("system-mpw", "MPW hardware organization")
 #figure(mpw-diagram(), caption:[MPW compatibility profile: one selectable user core and legacy user-IP selection.])<mpw-figure>
+#change-end("system-mpw")
 
 #ds-table("mpw-cores", [Current MPW core slots],
   ([Slot], [Design ID], [Module], [Reset]),
@@ -86,7 +88,7 @@ number is used to imply completion.
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-06],[0.4 DRAFT],[Expand the implementation reference and add source-bound descriptor, protocol, microcode and storage diagrams using locked drawing packages. Refine three IP circuit diagrams while retaining the frozen structure and register/waveform implementations.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-06],[0.4 DRAFT],[Extend source-bound circuit, binary-layout, instruction and storage figures across applicable chapters, including all IPs. Bold level-one Contents titles and replace the left footer with the repository link. Preserve the frozen structure, hardware snapshot and register/waveform implementations.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify

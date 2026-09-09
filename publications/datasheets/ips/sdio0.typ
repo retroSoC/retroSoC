@@ -13,10 +13,8 @@
 
 #ip-reference("sdio0","sdio",5,protocol-note:[
   #block(breakable:false)[
-    #change-start("sdio-command-layout", "Native SDIO command-field layout", category:"added")
     #figure(sdio-command-diagram(),kind:image,supplement:[Figure],caption:[Native SD command field order, shared by SDIO0 and SDIO1.])<sdio-command-layout>
     #source-note("rtl/ip/storage/sdio_command.sv",title:"Command assembly and most-significant-bit-first transmission")
-    #change-end("sdio-command-layout")
   ]
 ],legacy:[
 SDIO0 provides native SD command/data transfers and descriptor-driven DMA through I/O gateway A.

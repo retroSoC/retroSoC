@@ -11,6 +11,12 @@ transport usable.
   data.system_reference.product_details.formats.map(r=>(r.title,r.layout,r.boundary)),
   widths:(1fr,1.45fr,1.7fr))
 
+#change-start("media-format-links","Media overview links to canonical packing figures",category:"cross-reference")
+Detailed packing figures:
+#data.system_reference.product_details.formats.map(r=>link(label("binary-"+r.id),r.title)).join([; ]).
+These shared figures define representation; transport and ownership gates below still apply.
+#change-end("media-format-links")
+
 JPEG raster strides are byte strides and must cover the logical row. Its input/output
 addresses and descriptor layout have their own alignment requirements; central-DMA word
 alignment is not a substitute. The listed JPEG raster formats describe the codec contract,

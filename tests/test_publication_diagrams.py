@@ -50,7 +50,8 @@ def test_representative_inventory_uses_actual_widths_and_addresses(data):
     assert value["uart_fifo"] == {"tx": {"depth": 64, "bits": 8}, "rx": {"depth": 64, "bits": 12}}
     assert next(row for row in value["windows"] if row["symbol"] == "SRAM")["size"] == 32768
     assert value["cache"] == {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128}
-    assert set(value["circuits"]) == {"uart0", "dma", "apu"}
+    assert len(value["circuits"]) == 44
+    assert {"uart0", "dma", "apu", "system-fabric", "system-clocks"} <= set(value["circuits"])
 
 
 @pytest.mark.parametrize("mutation", ["gap", "overlap", "oversize", "duplicate"])
@@ -72,7 +73,7 @@ def test_protocol_field_order_is_checked_even_with_complete_coverage(data):
     spec = copy.deepcopy(SPEC)
     spec["sdio_command"][0], spec["sdio_command"][-1] = spec["sdio_command"][-1], spec["sdio_command"][0]
     with pytest.raises(ValueError, match="field order"):
-        dr.collect_diagrams(ROOT, spec, data["regions"])
+        dr.collect_diagrams(ROOT, spec, data["regions"], data["system_reference"])
 
 
 @pytest.mark.parametrize("relative,old,new", [
@@ -86,7 +87,7 @@ def test_protocol_field_order_is_checked_even_with_complete_coverage(data):
 def test_source_drift_requires_diagram_review(source_tree, data, relative, old, new):
     replace(source_tree, relative, old, new)
     with pytest.raises(ValueError):
-        dr.collect_diagrams(source_tree, SPEC, data["regions"])
+        dr.collect_diagrams(source_tree, SPEC, data["regions"], data["system_reference"])
 
 
 @pytest.mark.parametrize("mutation", ["node", "port", "endpoint", "direction", "width", "binding", "duplicate-edge"])
@@ -114,7 +115,7 @@ def test_memory_window_labels_cannot_disagree_with_numeric_bounds(data):
     regions = copy.deepcopy(data["regions"])
     next(row for row in regions if row["symbol"] == "SRAM")["end_hex"] = "0xFFFFFFFF"
     with pytest.raises(ValueError, match="range labels"):
-        dr.collect_diagrams(ROOT, SPEC, regions)
+        dr.collect_diagrams(ROOT, SPEC, regions, data["system_reference"])
 
 
 def test_both_package_versions_are_locked_and_permitted():

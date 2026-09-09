@@ -21,12 +21,25 @@ register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
 
-The representative drawing layer additionally uses bytefield 0.0.8, rivet 0.3.1,
-blockcell 0.1.0 and circuiteria 0.2.1. `diagram_reference.py` provides source-bound
-descriptor/protocol/instruction/storage data and circuit connections;
-`datasheets/diagram-packages.typ` adapts their visual settings. The three selected
-IP circuit figures are UART0, central DMA and APU; other IP diagrams, register
-bit layouts and waveforms keep their existing implementation.
+The full drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
+circuiteria 0.2.1. All 40 IP chapters and four system hardware figures use
+source-bound circuits. Binary layouts cover descriptors, boot/microcode bundles,
+serial framing and media/crypto packing. APU's seven current instruction classes
+and 62 operations are grouped by format, operand constraints and tool target.
+Storage figures cover architectural FIFOs, line buffers, packet/table/control
+memory, descriptor examples, address windows, linker/load placement and budgets.
+Overview classification, access matrices, software flows, register bit layouts
+and WaveDrom keep their existing rendering.
+
+`diagram_reference.py` coordinates the circuit, binary, instruction and storage
+adapters. The catalogs under `datasheets/diagram-*.json` record sources and
+primary/shared chapter placement; `diagram-packages.typ` owns their appearance.
+`diagram_coverage.py` records covered/shared/not-applicable categories for all
+107 frozen entries and rejects declared drawings absent from renderer output.
+Instance port directions, selected signal widths, descriptor arrays, FIFO
+parameters and linker regions are checked against their actual definitions.
+Rendering a connected interface or accepted instruction encoding does not remove
+current admission/capability/delivery restrictions.
 
 `package_reference.py` identifies dependencies by name/version, validates each
 cache and walks its runtime imports. CeTZ 0.3.4 and oxifmt 0.2.1 are retained for
@@ -183,8 +196,8 @@ its regressions are covered by `tests/test_publication_prose.py`.
   `waveforms.typ` runs the pinned wavy renderer through jogs and normalizes SVG
   typography before embedding the vector result. The package itself is not patched.
   Representative wait, timeout, backpressure and recovery cases accompany the
-  external-interface examples. CeTZ IP diagrams include a data/event path below
-  the control and functional units.
+  external-interface examples. Circuit figures separately label selected control,
+  data and clock-domain relationships and retain instance-specific restrictions.
 
 Fixed, conditional and live reset values are distinguished. A dynamic status
 word is not silently assigned a zero reset constant. The source snapshot still
@@ -231,6 +244,13 @@ offline. The compiler is invoked with system fonts disabled, only the media font
 directory and the verified package cache. No root Makefile target or automatic
 publication workflow is added.
 
+If other work has advanced the hardware beyond `source_revision`, retain those
+changes and use an isolated checkout matching the reviewed snapshot with the
+publication changes applied there. Do not bypass the snapshot check or advance
+the advertised hardware revision to make a document build pass. Keep managed
+source checkouts inside that checkout so source-path containment remains valid;
+record the isolated publication checkout and input hashes in the build manifest.
+
 Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
 
 - `retrosoc-mini-gen2-gen2plus-datasheet.pdf`: final document;
@@ -247,8 +267,14 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
   content, explicit cross-references and navigation changes; hashed in the manifest.
 - `document-structure.json`: resolved headings checked against the frozen chapter/IP
   contract and protected by a manifest digest.
+- `diagram-inventory.json`: every specialized diagram's package, sources, actual
+  page and visual bounds; missing or duplicate renderer uses fail the build.
+- `diagram-coverage.json`: per-entry coverage of the 107 frozen structure records,
+  including shared diagrams, source pointers and explicit not-applicable reasons.
 - `changed-pages.json`: final page-range report, generated after PDF checking with
   the command below; binds the previous delivered PDF and final PDF digests.
+  Global presentation changes, such as the repository footer on every page, are
+  separate from content and navigation ranges; pagination alone is not a rewrite.
 
 For a content-edit handoff, retain the previous PDF and run:
 
@@ -342,6 +368,12 @@ minimum 9 pt text (8.5 pt only inside marked continuation notices), page-bound
 text, per-IP starts and presence of every generated pad/window.
 They complement manual inspection of diagram meaning, continued headers,
 footnotes, page balance and grayscale readability.
+
+`tests/test_publication_diagrams.py` and `tests/test_publication_full_diagrams.py`
+cover field/source drift, all instruction families, C descriptor layouts, actual
+storage geometry, named instance ports, chapter coverage and renderer completeness.
+The footer displays the complete clickable repository URL; Contents bolds only
+level-one chapter numbers/titles, leaving leaders/page numbers and flat lists regular.
 
 No RTL/HAL change is made by this publication flow. Simulation, synthesis,
 CDC/RDC and physical/silicon signoff remain hardware validation tasks and are
