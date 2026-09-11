@@ -4,9 +4,19 @@
 
 This document is the authoritative architecture, interface, microcode, software,
 and verification contract for the retroSoC Mini Audio Processing Unit (APU).
-The stable feature slug is `apu`. The APU provides autonomous WAV/PCM, MP3,
-and native FLAC decode, fixed-point sample processing, private DMA, direct I2S
-streaming, and continuous keyword spotting (KWS).
+The stable feature slug is `apu`. The current release provides autonomous
+WAV/PCM and native FLAC decode, fixed-point sample processing, private DMA,
+direct I2S streaming, and continuous keyword spotting (KWS).
+
+Current-release scope: APU-P6 MP3 decoding is explicitly DEFERRED. The stable
+Phase 6 ID/title remain as an inactive placeholder; Phase 7 proceeds from
+the reviewed Phase 5 baseline and Phase 8 does not require Phase 6 completion.
+The retained P6 design/reference sections are historical, non-normative notes
+for a future refreeze. They do not enable MP3 or require MP3 dependencies,
+three-active-codec packing, PSNR or MP3 real-time evidence in this release.
+This scope rule takes precedence over those deferred notes. All other active
+WAV/FLAC, KWS, transport, ABI, ownership and physical-evidence requirements
+remain in force.
 
 The APU is deliberately coreless. LP loads one validated codec-microcode bundle
 at startup and HP or LP later submits jobs. The APU contains a bounded codec
@@ -64,8 +74,8 @@ entropy, arithmetic, DMA, and recovery logic and make fixes silicon changes.
 | `APU-MVP-001` | The APU MUST expose APB4 configuration at the reserved `APB4_APU` window `0x1001_3000..0x1001_3fff`. |
 | `APU-MVP-002` | The APU MUST use a private 32-bit AXI4 DMA master for microcode, model, descriptors, compressed input, and optional PCM output. |
 | `APU-MVP-003` | The APU MUST expose 32-bit AXI4-Stream PCM input and output integrated with existing I2S RX/TX streams. |
-| `APU-MVP-004` | WAV/PCM, MPEG-1/2/2.5 Layer III MP3, and native FLAC decode MUST execute entirely in the coreless APU. |
-| `APU-MVP-005` | LP MUST load one bundle containing all three codec entry points before handoff; successful load MUST lock microcode until hard reset. |
+| `APU-MVP-004` | WAV/PCM and native FLAC decode MUST execute entirely in the coreless APU. MP3 decoding is deferred and MUST NOT be advertised by this release. |
+| `APU-MVP-005` | LP MUST load one bundle containing exactly three entry descriptors: active WAV and FLAC entries plus the existing unsupported-MP3 trap stub. Successful load MUST lock microcode until hard reset. |
 | `APU-MVP-006` | The codec sequencer MUST execute only the bounded V1 microcode ISA and MUST NOT execute RV32, C, ELF, or arbitrary system-memory instructions. |
 | `APU-MVP-007` | Continuous 16 kHz mono KWS MUST use an independent fixed MFCC/INT8 DS-CNN engine and MUST run concurrently with decode. |
 | `APU-MVP-008` | DMA, sequencer, primitive, stream, resampler, and KWS work MUST have timeout, abort, first-error, and recovery behavior. |
@@ -88,9 +98,13 @@ entropy, arithmetic, DMA, and recovery logic and make fixes silicon changes.
 
 ### Deferred work and non-goals
 
-The following work is DEFERRED outside Phases 0 through 8 and MUST NOT be
-silently inserted into an MVP phase:
+The following work is DEFERRED outside the active implementation phases of
+this release and MUST NOT be silently inserted into an MVP phase:
 
+- APU-P6 MPEG-1/2/2.5 Layer III MP3 decoding, its production microprogram,
+  reference/corpus setup, three-active-codec packing, PSNR and MP3 real-time
+  qualification; the Phase 6 slot remains reserved for an explicit future
+  refreeze and is not a release blocker;
 - AAC, HE-AAC, Opus, Vorbis, Ogg-FLAC, ALAC, WMA, Dolby, DTS, LC3, or any
   format beyond the three frozen entry points;
 - encoding, transcoding, MPEG Layer I/II, more than two channels, object audio,
@@ -171,6 +185,11 @@ The sequencer issues a kernel command and either continues independent scalar
 work or waits for completion. Each kernel has a specified maximum latency and
 cannot access outside its assigned local-memory range.
 
+Previously delivered P4 primitives remain implemented and tested even where
+their names or research rationale mention MP3. Their presence does not enable
+format ID 1. Deferring MP3 does not remove these engines, shrink the 4096-word
+control store or 112 KiB data store, or change the P5 instruction/transport ABI.
+
 ### Independent KWS
 
 I2S RX feeds a dedicated KWS input FIFO, mono/downmix, 16 kHz resampling,
@@ -186,7 +205,8 @@ PCLK, stream routing, IRQ collection, and lifecycle control are shared.
 ### Control and data flow
 
 1. LP programs read/write ACLs and the `APUMC` bundle address/size/CRC.
-2. Private DMA loads the complete WAV/MP3/FLAC bundle. Hardware and the offline
+2. Private DMA loads the WAV/FLAC bundle with the retained MP3 trap entry.
+   Hardware and the offline
    verifier validate header, capabilities, control flow, ranges, loop bounds,
    tables, and CRC before publishing valid.
 3. Successful load automatically sets a hard-reset-cleared microcode lock.
@@ -391,6 +411,18 @@ format 0 is WAV/PCM, 1 MP3 Layer III, and 2 native FLAC. Output mode 0 is
 memory and 1 is I2S stream. PCM format 0 is interleaved S16_LE and 1 is
 S24_32LE. All other V1 encodings fail validation.
 
+Format ID 1 remains allocated for compatibility but MP3 decode (operation 0,
+format 1) is unsupported throughout this release, including after P7 KWS is
+enabled. `RS_APU_MP3` remains declared and HAL decode/submission returns
+`RS_ENOTSUP` for it. A raw direct start returns `PSLVERR` without payload DMA
+or result mutation; an owned ring entry completes code 3/stage 2/detail
+`0x01000001` at its CONTROL address and follows existing writeback/OWN-clear
+rules. This does not defer KWS operation 1. No host MP3 fallback is allowed.
+MP3 format ID 1, capability bit 1, and format-1 parser-detail reasons
+`0x0100..0x0140` remain reserved for future MP3 reactivation and may not be
+reassigned. Those deferred parser details are not emitted in this release;
+the existing unsupported result/stub detail `0x01000001` is unchanged.
+
 ### Interrupts
 
 | Bit | Sticky event |
@@ -426,7 +458,7 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
 | `0x004` | `IP_VERSION` | RO | implementation | APB ABI V1.0 `0x00010000` for P1..P4 and pre-expansion P5; expanded P5 onward is V1.1 `0x00010001`. |
-| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; P5 is `0x000001bd`; P6 is `0x000001bf`; MVP has 0..8 set. |
+| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; P5 is `0x000001bd`; P7/completed current MVP is `0x000001fd`. MP3 bit 1 stays zero; deferred P6 introduces no current capability value. |
 | `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4 is `0x01827010`; expanded P5 onward is `0x01827020` (32/112/2/96). |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
@@ -578,7 +610,9 @@ remain unavailable. `ABI_DIGEST`
 is zero for every partial Phase1..7 build and becomes the nonzero CRC32 over
 the complete canonical APB V1 register/field/job-descriptor, supported
 `APUMC` V1/V2, `APUM`, opcode,
-format/IRQ/error tables only in the Phase8 supported MVP. A zero digest means
+format/IRQ/error tables only in the Phase8 supported MVP. For this release,
+the digest includes reserved MP3 identifiers and the P5 rejection/stub contract
+but excludes the inactive P6 design archive. A zero digest means
 prototype/incomplete ABI and is not a compatibility hash for a subset.
 
 Expanded P5 keeps `CAPABILITY0=0x000001bd` and primitive mask `0x001fffff`,
@@ -1372,7 +1406,8 @@ explicit operands rather than hidden RTL constants. Static coefficient banks
 originate in CRC-covered APUMC data; dynamic scales or predictors may be
 written to scratch by microcode. Hardware, assembler, interpreter, and BAM
 consume identical words. Codec-specific static values are selected with the
-P5/P6 bundles without changing the P4 arithmetic contract.
+P5 bundles, or a future explicitly reactivated P6 bundle, without changing
+the P4 arithmetic contract.
 
 For the class-5 table, `N=immediate[15:0]`, `P` is the transform or predictor
 order defined by the opcode, and the pre-issue value of `R[dst]` is the
@@ -1418,7 +1453,7 @@ Both state values start at zero; the first seven history frames and final nine
 look-ahead frames are explicit valid zeros supplied by microcode. A profile
 cannot change within a job; a new job reinitializes both state values. The three
 coefficient banks are APUMC data and have no hidden normalization or scale;
-the P5/P6 approved bundles provide their codec-quality values while P4 BAM
+the active P5 bundle provides its codec-quality values while P4 BAM
 compares the exact supplied Q2.30 words.
 
 ##### P4 latency and fault bounds
@@ -1841,7 +1876,17 @@ their masks contain the primitives they declare and may share read-only
 tables and scratch as already allowed. The header mask is the OR of entries,
 not forcibly `0x001fffff`; the implemented mask advertises hardware capacity.
 
+<details>
+<summary>Deferred APU-P6 design archive — not current-release requirements</summary>
+
 #### P6 MP3 profile, compatibility, and capacity
+
+Status: DEFERRED. Everything in this archive through the following closing
+details marker, including its capability/target, active-MP3 entry, packing and
+MP3 decode rules, is retained for future design reference only. It is not
+normative for the current release and cannot authorize implementation or
+advertising MP3. Reactivation requires an explicit refreeze. The current
+release uses the P5 WAV/FLAC image and MP3 stub, with MP3 capability bit 1 zero.
 
 This refreeze is grounded in code baseline
 `836371663feff6554ee923bb63a6a42978f4d777`. Its P5 microassembly contains
@@ -1849,7 +1894,7 @@ This refreeze is grounded in code baseline
 that appending a decoder to the current layout is not a credible capacity
 plan; it does not establish a size for a reorganized complete P6 bundle.
 
-| P6 property | Normative contract |
+| P6 property | Archived proposal (inactive for this release) |
 | --- | --- |
 | Discovery | `CAPABILITY0=0x000001bf`, `CAPABILITY1=0x01827020`, `IP_VERSION=0x00010001`, `ABI_DIGEST=0`. MP3 bit 1 becomes implemented; KWS bit 6 remains zero. |
 | Image and ISA | Add target `p6`, default APUMC V2 / `MC_ABI=0x00020000`, mask `0x001fffff`, existing classes 0..6 and 12-bit PC/branches. Preserve p3/p4/p5 targets and V1 rejection/compatibility rules. p6 may explicitly read/emit V1 within its 2048-word limit; the production P6 release is V2. |
@@ -2062,6 +2107,8 @@ errors retain P4/P5 tuples and PC_HIGH handling; they are not relabeled as
 one of these parser reasons. HAL status mapping treats format 1 explicitly:
 MP3 uses CAPABILITY0 bit 1 and these codes, not the previous non-WAV-to-FLAC
 fallback. Existing job/result structures and API signatures are retained.
+
+</details>
 
 ### `APUM` KWS model ABI
 
@@ -2378,9 +2425,9 @@ bus fault, timeout, abort, xrun, model failure, or lifecycle failure.
 
 - WAV RIFF PCM: mono/stereo, 8/16/24/32-bit, 8..96 kHz, checked unknown-chunk
   skip and deterministic sign extension/truncation/saturation without dither.
-- MP3: MPEG-1/2/2.5 Layer III, mono/normal/joint/dual stereo, CBR/VBR,
-  8..48 kHz, 8..320 kbit/s, and bounded legal ID3v2 skip. Layer I/II and
-  unqualified free-format streams fail closed.
+- MP3 is not part of this release. Format ID 1 and the three-descriptor APUMC
+  layout are retained with the P5 unsupported-MP3 trap stub; MP3 requests
+  continue to fail closed.
 - Native FLAC: mono/stereo, 16/24-bit, 8..96 kHz, constant/verbatim/fixed/LPC
   order0..32, Rice/Rice2, independent/left-side/side-right/mid-side, CRC8/16,
   and bounded metadata skip. Ogg mapping is unsupported.
@@ -2394,13 +2441,16 @@ bus fault, timeout, abort, xrun, model failure, or lifecycle failure.
 
 ### MVP acceptance
 
-1. WAV and FLAC produce bit-exact approved PCM; MP3 conformance vectors exceed
-   96 dB PSNR with exact frame/sample/channel accounting.
+1. WAV and FLAC produce bit-exact approved PCM with the P5
+   frame/sample/channel accounting and deterministic output-conversion rules.
+   MP3 unsupported-request and trap-stub compatibility tests pass; positive
+   MP3 decode, PSNR and three-active-codec packing are not acceptance gates.
 2. The official MLPerf Tiny KWS 1000-utterance set reaches at least 90 percent
    top-1 through the hardware MFCC/inference path.
-3. At 48 MHz PCLK, 320 kbit/s 48 kHz stereo MP3 and continuous KWS run
-   concurrently with zero I2S underrun and zero KWS overrun under the qualified
-   AXI service envelope.
+3. At 48 MHz PCLK, the P5 supported WAV/FLAC playback workloads run concurrently
+   with continuous KWS with zero I2S underrun and zero KWS overrun under the
+   active P5 ready-memory qualification conditions. MP3 performance workloads
+   and the archived P6 service-envelope gate are not prerequisites.
 4. 24-bit/96 kHz FLAC completes without xrun; byte/frame/cycle/stall counters
    match the scoreboard.
 5. `APUMC` static verification, instruction interpreter/RTL differential,
@@ -2426,9 +2476,10 @@ power, coherency, or security require a new approved phase/spec revision.
 - `apu-mcasm` and the Python microcode interpreter are self-owned and tested
   from the same frozen ISA definitions without generated register RTL.
 - WAV uses the existing bounded reader model extended for the frozen subset.
-- MP3 primitive and full-flow vectors use the exact minimp3 corpus and
-  independent mpg123/minimp3 decoder pins below. The earlier AOSP survey
-  pointer is not an active build, numerical oracle, or unpinned P6 input.
+- The minimp3/mpg123 pins and MP3 numerical/performance rules below are
+  archived P6 research only. This release does not require installing those
+  inputs, adding target p6, or running positive MP3 qualification. Existing
+  generic P4 primitive tests and P5 unsupported-MP3 tests remain required.
 - FLAC uses RFC 9639, locked Xiph libFLAC, and the official
   [FLAC test files](https://github.com/ietf-wg-cellar/flac-test-files).
 - MLPerf Tiny inputs/model/converter revision and generated `APUM` are locked
@@ -2508,7 +2559,17 @@ unbounded stalls. Measured maximum tolerable AXI stalls, source properties,
 instruction budget, and occupancy must accompany results. Static timing,
 area, power, netlist, and physical 48 MHz closure remain Phase8 evidence.
 
+<details>
+<summary>Deferred APU-P6 references and qualification — inactive for this release</summary>
+
 ### P6 locked MP3 inputs and numerical evidence
+
+Status: DEFERRED. This section and its PSNR, real-time and physical-evidence
+subsections are historical notes, not current-release requirements. No MP3
+dependency setup, decoder/corpus build, PSNR run, 320 kbit/s workload or
+three-active-codec report is required by this release. Current P8 physical
+requirements are stated in the active Synthesis, Timing, and Physical Evidence
+section; archiving these P6 notes does not remove those P8 requirements.
 
 These fixed revisions and archive SHA-256 values were read and computed from
 the complete upstream archive bytes on 2026-09-11. P6 implementation extends
@@ -2678,6 +2739,8 @@ those metrics remain explicitly report-only under repository policy, and a
 missing area report is not an area pass. No global warning or metric policy
 is changed by these feature evidence requirements.
 
+</details>
+
 ### Required evidence matrix
 
 | Area | Required evidence |
@@ -2688,7 +2751,7 @@ is changed by these feature evidence requirements.
 | Assembler/loader | Syntax and semantic rejection, deterministic binary, all control-flow/loop/stack/range checks, CRC, capability, atomic valid/lock, mutation/fuzz. |
 | Sequencer/formal | PC/control-store bounds, only bounded loop-back, counter decrement, call depth, watchdog, no system/APB access, descriptor-only DMA handles, legal traps. |
 | Primitives | Bitstream/CRC, every Huffman/Rice mode, arithmetic extremes, saturation, transform/LPC/resampler differential, latency bounds. |
-| Codecs | Complete-file differential, sample/rate/channel counts, malformed/truncated/adversarial corpus, metadata limits, reservoir/LPC extremes, long playlists. |
+| Codecs | WAV/FLAC complete-file differential, sample/rate/channel counts, malformed/truncated/adversarial corpus, metadata limits, FLAC predictor/Rice extremes, and long playlists; MP3 is tested only for unsupported-request/stub compatibility. |
 | KWS | MFCC differential, every INT8 layer tensor, converter rejection, official accuracy, threshold/debounce, continuous stream and overrun. |
 | SoC | Address/topology, Gateway A fairness, Resource7, IRQ31/PLIC10 exclusion, cache maintenance, handoff, warm flush, HP reset, USB2/SDIO0 contention. |
 | Software | HAL validation/timeouts/errors, microcode/model load, owner handoff, bare-metal acceptance, and Linux ASoC tests when delivered. |
@@ -2702,6 +2765,18 @@ The committed MVP profile is `configs/ci/ihp130.mk`. Block and full-SoC
 synthesis use locked Yosys. OpenSTA analyzes the 20.833 ns/48 MHz PCLK target
 and existing asynchronous relationships. Correctness at slower dividers is
 required but no slower-clock real-time claim follows.
+
+Current P8 physical acceptance covers the active P5 WAV/FLAC and P7 KWS
+hierarchy, compared with the reviewed P5 baseline under the same IHP130
+profile and locked tools. Max-delay WNS must be >= 0 ns and TNS = 0 at the
+20.833 ns PCLK target, with no unconstrained active APU path, inferred latch,
+or unresolved non-PDK black box; all macro/clock/reset views must be accounted
+for and hold analysis reported separately. Retain the eight control-store
+plus 28 data-store SRAM wrappers and complete per-block cell/macro/delta
+accounting. Standard-cell area and power remain report-only with no approved
+absolute ceiling, and missing reports do not count as passes. Pre-layout STA
+does not replace physical signoff. No MP3 hierarchy, decoder quality or MP3
+performance result is required for this release's P8 acceptance.
 
 Evidence includes:
 
@@ -2729,6 +2804,12 @@ silicon characterization.
 
 The following phase IDs and titles are frozen. They MUST NOT be renamed,
 renumbered, or reused; later work receives a new phase.
+
+The current active order is P0..P5, then P7, then P8. P6 is a deferred
+placeholder, not an implementation task or a prerequisite for P7/P8. Record
+it as DEFERRED, not completed or verified. Resuming MP3 requires a later
+explicit scope refreeze; the retained reference material is not authorization
+to start it automatically.
 
 ### Phase 0 - Freeze Coreless Microcode Architecture and ABI
 
@@ -2984,65 +3065,35 @@ PPA remain deferred to Phase8; functional cycle evidence is not timing signoff.
 
 ID: `APU-P6`.
 
-Scope: MP3 microassembly/tables, ID3/header/side-info/reservoir, scalefactors,
-Huffman, requant/reorder/antialias/stereo, IMDCT/polyphase, conformance,
-long-playback, complete three-format image packing, instruction/control-store
-optimization, cycle-counted real-time qualification, and the P8 physical
-evidence criteria frozen in the P6 sections above.
+Status: DEFERRED for the current release. The ID and title are retained for
+traceability; this phase must not be reported as implemented, passed or merged
+merely because it has been excluded.
 
-Dependencies: reviewed expanded Phase5 (APUMC V2/4096 words) and the exact P6
-reference/corpus pins. Complete-image/local-workspace packing is the first
-implementation gate. Register the pinned inputs and extend setup during P6
-implementation; do not treat uninstalled references as already measured evidence.
+Scope: no MP3 implementation in this release. Do not add an active p6 target,
+MP3 microprogram, three-real-codec bundle, MP3 reference/corpus setup, or MP3
+PSNR/real-time qualification on behalf of this phase. Retain the existing
+format ID, enum, reserved diagnostic IDs and unsupported-MP3 trap entry.
+Previously implemented P4 primitives, 4096-word control store, APUMC V1/V2
+compatibility, and all P5 functionality remain unchanged.
 
-Public changes: `CAPABILITY0=0x000001bf`, `CAPABILITY1=0x01827020`,
-`IP_VERSION=0x00010001`, `ABI_DIGEST=0`; target p6 defaults to APUMC V2 and
-uses primitive mask `0x001fffff`. Enable format 1 with the exact MP3 profile,
-diagnostics and loaded-stub rejection above. The new production bundle supplies
-all three formats and retains P5 behavior. No new opcode, APB offset, job
-descriptor, resource/address/IRQ/CDC allocation or HAL structure is added.
-KWS, model load and RX route 1 remain unavailable.
+Dependencies: none for the current active release path. A future MP3 effort
+requires an explicit refreeze and a fresh capacity/behavior/evidence review;
+the archived P6 notes do not activate it.
 
-Validation (P6 functional, numerical, cycle, formal and xrun gates only):
+Public changes: none from this deferred phase. MP3 CAPABILITY0 bit 1 stays
+zero. Discovery remains `0x000001bd` before KWS and becomes `0x000001fd`
+only when P7's KWS capabilities are actually implemented and qualified.
+`CAPABILITY1=0x01827020` and `IP_VERSION=0x00010001` are retained;
+`ABI_DIGEST=0` through P7. P5 direct/ring MP3 rejection and the exact
+verification-only trap-stub result remain required.
 
-```sh
-python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
-make sw-format-check sw-policy-check sw-host-test
-python3 -m pytest -q
-make CONFIG=configs/ci/ihp130.mk firmware
-make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES rtl-lint
-make CONFIG=configs/ci/ihp130.mk formal-apu formal-apu-loader formal-apu-sequencer
-make CONFIG=configs/ci/ihp130.mk APP=ci_smoke LINK_TYPE=ld2_all_sram SOC_SIM_TIME=360 VERILATOR_SIM_ARGS=--fast-flash SIMU=VERILATOR HAVE_SVA=YES firmware sim
-```
+Validation: no positive MP3, dual-decoder, MP3 dependency, 320 kbit/s, >96 dB
+or three-active-codec packing gate applies. Continue the existing P5
+unsupported-request, legacy image, ABI parity, and primitive regressions.
 
-The commands listed for other phases and the document-wide physical evidence matrix
-are not additional P6 prerequisites. Standalone implementation synthesis,
-netlist simulation, static timing, area/power evaluation and commercial
-CDC/RDC signoff for P6 are P8-only work. Their absence must be recorded as
-deferred, not used to reject P6 preflight or completion once the P6 gates pass.
-The mandatory P6 formal flow may use Yosys internally for proof preparation;
-that does not require the separate synthesis/STA/PPA flows. P8 retains all
-thresholds and reporting obligations in
-[P6 real-time envelope and physical-evidence boundary](#p6-real-time-envelope-and-physical-evidence-boundary).
-
-Extend Pytest with required P6 bundle, header/side-info/reservoir/CRC,
-diagnostic, dual-reference PCM, PSNR-boundary and long-playback tests, using
-focused Icarus and Verilator testbenches on the production pipeline. Add a P6
-builder and qualifier producing the complete-image report, corpus manifest,
-reference hashes, per-window SSE/PSNR, service traces, effective-clock report,
-and xrun/counter scoreboard below the variant artifact directory. The broad
-ci_smoke command checks integration and does not replace those codec tests.
-Missing tools or skipped tests are reported as unrun, never as passing gates.
-
-Completion: one <=4096-word image implements the entire P5 and P6 profiles,
-fits the unchanged local-data partitioning, and passes both legacy and new
-corpora. Every valid MP3 file/window/channel passes >96 dB against both pinned
-references, while malformed/unsupported files produce the exact first tuple.
-The named 320 kbit/s workloads meet the frozen service-envelope and zero-xrun
-window criteria. P6 reports all pending P8 synthesis/STA/area/power/CDC/RDC
-evidence explicitly; it does not claim physical closure. No capacity failure
-is resolved by omitting a decoder, reloading at each job, or moving parsing to
-RTL/LP/HP.
+Exit status for release planning: DEFERRED, not COMPLETE. The next active
+phase is P7 from reviewed P5; P8 reviews the active WAV/FLAC/KWS release and
+does not wait for P6.
 
 ### Phase 7 - Independent Continuous KWS Engine
 
@@ -3052,10 +3103,13 @@ Scope: 16 kHz input, MFCC, `APUM` converter/loader/lock, fixed INT8 engine,
 continuous scheduler, threshold/debounce, diagnostic operation1, IRQ, accuracy,
 performance, and concurrent decode/KWS.
 
-Dependencies: Phase6 and locked MLPerf Tiny model/data inputs.
+Dependencies: reviewed Phase5 and locked MLPerf Tiny model/data inputs.
+Deferred Phase6 is not a prerequisite and its MP3 reports are not required.
 
 Public changes: implements frozen KWS/model/descriptor-operation/IRQ/counter
-ABI; no generic NPU interface.
+ABI and RX route 1, with current-release `CAPABILITY0=0x000001fd` and MP3 bit
+1 still zero. `CAPABILITY1=0x01827020` and `IP_VERSION=0x00010001` are unchanged;
+`ABI_DIGEST=0` remains required through P7. No generic NPU interface.
 
 Validation:
 
@@ -3070,7 +3124,7 @@ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
 
 Completion: MFCC/layer differential passes, official accuracy is at least
 90 percent, continuous scheduling has no unexplained loss, and concurrent
-MP3/KWS meets the xrun gate.
+WAV/FLAC playback plus KWS meets the current MVP xrun gate.
 
 ### Phase 8 - LP/HP Software, Contention, and Physical Evidence
 
@@ -3080,7 +3134,8 @@ Scope: complete HAL, LP-only startup load, HP ownership/jobs, cache maintenance,
 Linux ASoC, handoff, USB2/SDIO0 contention, full regression, synthesis recipes,
 netlist, OpenSTA, warnings/metrics, and commercial-gap report.
 
-Dependencies: Phases1..7.
+Dependencies: Phases1..5 and Phase7. Phase6 remains DEFERRED and is not a
+release prerequisite.
 
 Public changes: completes frozen HAL/Linux surfaces; V1 register/descriptor/
 microcode/model/address/IRQ/resource/clock allocation cannot change.
@@ -3094,17 +3149,26 @@ make regress-pr
 make regress-nightly
 ```
 
-Completion: every objective MVP item passes; IHP130 block/full-SoC evidence is
-reviewed; unrun commercial gates remain explicit; no unsupported claim ships.
+Completion: every active WAV/FLAC/KWS MVP item passes; IHP130 block/full-SoC
+evidence is reviewed; unrun commercial gates remain explicit; no unsupported
+claim ships. MP3 remains unadvertised and its absence does not block this
+release. The current-release capability word stays `0x000001fd`; P8's ABI
+digest covers the released contract including reserved MP3 IDs/stub and
+excludes inactive P6 proposals.
 
 ## Commercial Delivery Gaps
 
 The following remain release blockers after MVP unless separately closed:
 
+These gaps apply to capabilities claimed by the delivered release. MP3/MPEG
+decoder qualification is deferred with P6 and is not a blocker for the current
+WAV/FLAC/KWS release.
+
 - full requirements-to-test traceability and functional/code coverage closure;
 - reusable APB4/AXI4/AXI4-Stream/I2S/microcode/descriptor/fault VIP;
-- licensed MPEG conformance, independent long-run decoder interoperability,
-  fuzzing, vulnerability intake, and codec maintenance process;
+- independent long-run WAV/FLAC interoperability, fuzzing, vulnerability
+  intake, and codec maintenance process; licensed MPEG conformance applies
+  only if MP3 is explicitly reactivated in a future release;
 - KWS false-positive/false-negative qualification across speakers, accents,
   noise, microphones, rooms, and target languages;
 - authenticated/anti-rollback microcode/model update, confidential storage,
@@ -3116,4 +3180,5 @@ The following remain release blockers after MVP unless separately closed:
   contention, and production soak;
 - upstream-quality Linux ASoC, recovery/update policy, release notes, SBOM,
   notices, integration examples, and versioned artifacts; and
-- every deferred codec, channel, low-power, coherency, safety, or security item.
+- qualification of deferred codec, channel, low-power, coherency, safety or
+  security capabilities when they are later included in an advertised release.
