@@ -50,6 +50,7 @@ JTAG_IDCODE              ?= DEADBEEF
 EXT_CLK_HZ               ?= 72000000
 AUD_CLK_HZ               ?= 18432000
 CLINT_TIMEBASE_HZ        ?= 1000000
+MGMT_CPU_CLK_HZ          := $(if $(filter PRODUCT,$(MINI_MODE)),24000000,$(EXT_CLK_HZ))
 WAVE                     ?= NO
 FORMAL                   ?= NO
 VCS_USE_LSF              ?= YES
@@ -97,8 +98,8 @@ JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
 else printf '%s' "$$count"; fi)
 LOCAL_RTL_FILES    ?=
 CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA \
-                   HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ ISA HAVE_CSR APP LINK_TYPE \
-                   COREMARK_MODE RTL_TOP FIRMWARE_NAME
+                   HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
+                   ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -439,7 +440,7 @@ config:
 	  PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
 	  HAVE_HP '$(HAVE_HP)' HP_CONFIG '$(HP_CONFIG)' BUILD_RELEASE '$(BUILD_RELEASE)' \
 	  JTAG_IDCODE '$(JTAG_IDCODE)' EXT_CLK_HZ '$(EXT_CLK_HZ)' AUD_CLK_HZ '$(AUD_CLK_HZ)' \
-	  CLINT_TIMEBASE_HZ '$(CLINT_TIMEBASE_HZ)' \
+	  CLINT_TIMEBASE_HZ '$(CLINT_TIMEBASE_HZ)' MGMT_CPU_CLK_HZ '$(MGMT_CPU_CLK_HZ)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
 	  LINK_TYPE '$(LINK_TYPE)' COREMARK_MODE '$(COREMARK_MODE)'
 

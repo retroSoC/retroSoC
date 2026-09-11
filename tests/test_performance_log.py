@@ -60,14 +60,14 @@ def test_parse_log_rejects_report_with_performance_failure() -> None:
 def test_parse_coremark_quick_report() -> None:
     report = parse_coremark_log(
         "COREMARK_RESULT mode=quick qualified=0 memory=sram iterations=4 cycles=2000 "
-        "cpu_hz=72000000\nCOREMARK_PASS\n"
+        "cpu_hz=24000000\nCOREMARK_PASS\n"
     )
 
     assert report["status"] == "passed"
     assert report["results"] == [
         {
             "coremark_per_mhz": "2000.000",
-            "cpu_hz": 72000000,
+            "cpu_hz": 24000000,
             "cycles": 2000,
             "iterations": 4,
             "memory": "sram",

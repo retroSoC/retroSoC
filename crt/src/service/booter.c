@@ -254,7 +254,7 @@ void rs_app_info(void) {
     printf("  COMPILER:            %s\n", COMPILER_NAME);
     printf("  CFLAGS:              %s\n", COMPILER_CFLAGS);
     printf("  ISA:                 %s\n", COMPILER_ISA);
-    printf("  FREQ:                %dMHz\n\n", CPU_FREQ);
+    printf("  FREQ:                %uMHz\n\n", (unsigned int)CPU_FREQ);
 
     printf("Inst/Memory Address Range:\n");
     printf("  XPI NOR:             @[0x%08x-0x%08x] %3d MiB\n", SPFS_MEM_START,

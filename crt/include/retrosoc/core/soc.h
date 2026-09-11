@@ -7,9 +7,12 @@
 #include <retrosoc/generated/memory_map.h>
 #include <retrosoc/generated/user_extensions.h>
 
-#define HW_CORE                    "Management Hazard3"
+#ifndef RS_CPU_CLOCK_HZ
+#define RS_CPU_CLOCK_HZ UINT32_C(72000000)
+#endif
 
-#define CPU_FREQ                   72     // unit: MHz
+#define HW_CORE                    "Management Hazard3"
+#define CPU_FREQ                   (RS_CPU_CLOCK_HZ / UINT32_C(1000000))
 #define UART_BPS                   921600 // unit: bps
 #define SPFS_MEM_START             RS_SOC_FLASH_BASE
 #define SPFS_MEM_OFFST             RS_SOC_FLASH_SIZE
