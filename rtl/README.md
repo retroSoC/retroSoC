@@ -136,6 +136,13 @@ data store. This is an implementation requirement: full WAV/FLAC resampling
 and long-Rice coverage plus a complete image fitting 4096 words are still
 required before claiming P5 completion.
 
+The P6 specification enables MP3 through a regenerated three-format APUMC V2
+bundle and the existing production pipeline. Its 4096-word/112 KiB limits,
+MP3 metadata/reservoir/CRC behavior, dual-reference PSNR and timed AXI/xrun
+qualification are normative design requirements, not evidence of delivered
+MP3 RTL or microcode. P5 compatibility and the complete-image packing gate
+remain prerequisites; KWS and RX stay deferred.
+
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its
 generated register offsets, APB4 timing, control-plane behavior, and

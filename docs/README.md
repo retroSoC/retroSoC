@@ -50,7 +50,8 @@ the root README and subsystem guides.
   including LP-loaded codec microcode, WAV/MP3/FLAC decode, private AXI4 DMA,
   APB4/ring ABI, I2S streams, independent KWS, lifecycle, and evidence gates;
   its P5 capacity refreeze specifies a 4096-word control store and versioned
-  APUMC V2 with V1 compatibility.
+  APUMC V2 with V1 compatibility. The P6 contract fixes the MP3 profile,
+  shared-image budget, reference pins, diagnostics, and real-time/PSNR gates.
 - [ip/mini-npu.md](ip/mini-npu.md) evaluates commercial edge-AI SoCs and records the
   optional Mini-AI NPU architecture direction, memory constraints, software
   boundary, and integration prerequisites; it is not an implemented profile.

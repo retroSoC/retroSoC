@@ -426,7 +426,7 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
 | `0x004` | `IP_VERSION` | RO | implementation | APB ABI V1.0 `0x00010000` for P1..P4 and pre-expansion P5; expanded P5 onward is V1.1 `0x00010001`. |
-| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; P5 is `0x000001bd`; MVP has 0..8 set. |
+| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; P5 is `0x000001bd`; P6 is `0x000001bf`; MVP has 0..8 set. |
 | `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4 is `0x01827010`; expanded P5 onward is `0x01827020` (32/112/2/96). |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
@@ -1841,6 +1841,228 @@ their masks contain the primitives they declare and may share read-only
 tables and scratch as already allowed. The header mask is the OR of entries,
 not forcibly `0x001fffff`; the implemented mask advertises hardware capacity.
 
+#### P6 MP3 profile, compatibility, and capacity
+
+This refreeze is grounded in code baseline
+`836371663feff6554ee923bb63a6a42978f4d777`. Its P5 microassembly contains
+4073 instructions, leaving 23 of the 4096 words unused. This establishes
+that appending a decoder to the current layout is not a credible capacity
+plan; it does not establish a size for a reorganized complete P6 bundle.
+
+| P6 property | Normative contract |
+| --- | --- |
+| Discovery | `CAPABILITY0=0x000001bf`, `CAPABILITY1=0x01827020`, `IP_VERSION=0x00010001`, `ABI_DIGEST=0`. MP3 bit 1 becomes implemented; KWS bit 6 remains zero. |
+| Image and ISA | Add target `p6`, default APUMC V2 / `MC_ABI=0x00020000`, mask `0x001fffff`, existing classes 0..6 and 12-bit PC/branches. Preserve p3/p4/p5 targets and V1 rejection/compatibility rules. p6 may explicitly read/emit V1 within its 2048-word limit; the production P6 release is V2. |
+| Job and route | Operation 0, formats 0 WAV, 1 MP3, 2 FLAC, direct/ring, memory or TX stream. RX route 1, KWS, model loading and other formats remain unavailable. No new register offset, IRQ, resource index, system master, pad, clock or CDC/RDC allocation. |
+| Resident image | One boot-loaded, validated and hard-reset-locked three-entry bundle contains all three real decoder entries. It replaces the P5 release image as a whole; MP3 entry 1 is no longer the P5 trap stub. No per-job reload, overlay, host parsing/decoding, C/DSP core, or unlocked code bank is introduced. |
+| Hard limits | 4096 total 64-bit words including every entry/common routine/padding; 32 KiB control store and 112 KiB data store. P4/P5 local partitions and published PCM/transport/HAL semantics are retained. No implicit 8192-word expansion or new ISA operand mode is authorized. |
+| Allowed compaction | The P6 emitter may regenerate, relocate, share routines and tables, change register allocation, tile kernels, and remove provably unreachable/duplicate instructions. It may not delete supported P5 paths, weaken diagnostics, change P4 arithmetic, or move parser decisions into RTL. No fixed fraction of the store is reserved for MP3; the only code budget is the complete 4096-word image. |
+
+Before changing production RTL or advertising P6 capability, implementation
+must produce a complete three-format microassembly packing report and a local
+table/scratch live-range report, covering MP3 and every P5 path. The current
+4073-word layout is not immutable inside the new image; the committed P5 image
+and its builder/fixtures remain reproducible compatibility artifacts. Passing
+P6 means the new image also passes the P5 corpus with identical PCM, parsed
+input/output/frame accounting, acceptance/rejection, and semantic error tuple.
+Build IDs, code PCs, retired counts and cycle measurements naturally describe
+the new image; their definitions and PC-to-symbol diagnostics stay unchanged.
+Packing is the first bounded implementation milestone, not an artifact this
+documentation-only refreeze claims to have produced. Preflight must distinguish
+a decision-complete contract from an unproven packing result and make the
+packing gate visible before authorizing downstream production changes.
+
+The packing gate must include all MP3 parsing, reservoir/Huffman/scalefactor,
+requantization/reorder/antialias/stereo, long/start/short/stop IMDCT, overlap,
+polyphase synthesis, output/resampling and error paths. P5 coefficient banks
+and its FLAC workspace cannot simply be displaced by MP3 tables. MP3 may
+reuse scratch between nonoverlapping lifetimes, generate coefficients there
+with the existing arithmetic, and use explicit table/bit-reader routines;
+it cannot reinterpret the P4 canonical-Huffman, REQUANT, or DCT32_POLY opcode
+semantics as a different hardwired MP3 operation. The report must show the
+actual lowering to existing primitives and its numerical/latency evidence.
+The existing 24 KiB combined codec table/scratch ceiling applies to the
+complete bundle, not independently to each static table image.
+
+If those complete packing reports exceed code or data limits, return
+`SPEC_CONFLICT` before downstream implementation; do not claim that this
+refreeze proves the three decoders fit. Increasing capacity or changing the
+ISA requires a separate explicit architectural refreeze. This is an evidence
+gate with an exact budget, not permission to omit unimplemented branches.
+
+P6 hardware continues to accept supported legacy images. It must recognize
+the exact P5 entry-1 trap descriptor/body already specified and reject a public
+MP3 job against that stub before executing it: direct start returns PSLVERR
+with no job mutation; an owned ring entry completes code 3/stage 2/detail
+`0x01000001` at its CONTROL address. WAV/FLAC jobs remain legal. Release
+software uses the manifest of the loaded image when selecting formats;
+CAPABILITY0 describes hardware and alone does not certify arbitrary loaded
+microcode. The P5 verification-only stub launch keeps its original trap tuple.
+
+##### P6 file, header, and metadata rules
+
+P6 accepts finite elementary Layer III streams, at most `0x7fffffff` input
+bytes, with the following exact subset. Bitstream constants are cross-checked
+against the pinned independent decoder sources in the P6 reference section;
+ID3 framing follows [ID3v2.3](https://id3.org/id3v2.3.0) and
+[ID3v2.4](https://id3.org/id3v2.4.0-structure). Reference decoder tolerance does
+not override the rejection rules here.
+
+| Field or structure | Accepted values and required handling |
+| --- | --- |
+| Leading ID3 | Zero to four consecutive ID3v2.2/2.3/2.4 tags at byte zero, revision 0. Each has a complete 10-byte header and four synchsafe size bytes with high bits zero. Total skipped tag bodies, headers and footers must be at most 1 MiB. There is no arbitrary junk search before the first audio frame. |
+| ID3 flags | v2.2 allowed mask `0xc0`; v2.3 `0xe0`; v2.4 `0xf0`. Other flag bits fail. Tag body is an opaque skip of the declared on-disk bytes, including unsynchronisation, compression and any extended header; no ID3 text/CRC/decryption semantics are claimed. v2.4 footer bit `0x10` adds 10 bytes beyond header+body and requires `3DI` plus identical version/flags/size fields. Other versions have no footer. Checked range arithmetic precedes the skip. |
+| MPEG version | Header version bits 3 MPEG-1, 2 MPEG-2, 0 MPEG-2.5; value 1 is reserved and fails. Layer bits must be 1 (Layer III); Layers I/II are unsupported. |
+| Bitrate | Indices 1..14 use the exact tables below. Index 0 (free format) is always unsupported, even if a reference can infer its frame length; index 15 is malformed. No scan-ahead free-format heuristic. |
+| Sample rate | Index 0/1/2 uses the exact table below; index 3 is malformed. Version and rate are constant for the entire job. |
+| Channels/mode | Modes 0 stereo, 1 joint stereo, 2 dual channel produce two channels; mode 3 produces one. Stereo/dual/joint may switch without changing channel count. A mono/stereo transition is rejected. Both joint-stereo extension bits (intensity and MS) are supported; extension bits are ignored outside joint mode. |
+| Other header bits | Padding 0/1 and bitrate may change per frame (CBR/VBR/ABR accepted). Protection may change; zero means the two-byte CRC is present. Private/copyright/original bits are accepted without affecting output. Emphasis 0 is supported, 1/3 are unsupported, and reserved 2 is malformed. |
+| Frame byte count | MPEG-1: `floor(144000*bitrate_kbps/rate_hz)+padding`; MPEG-2/2.5: `floor(72000*bitrate_kbps/rate_hz)+padding`. The count includes header/CRC/side-info and must fit the input and be at least their sum. Maximum supported frame length is 1441 bytes. |
+| Side-info size | MPEG-1: 17 bytes mono, 32 stereo; MPEG-2/2.5: 9 mono, 17 stereo. Two granules/frame for MPEG-1, one for MPEG-2/2.5; every granule/channel represents 576 samples. |
+| Geometry changes | Reject version/rate/channel-count changes at the first differing header field. Expected nonzero INPUT_CONFIG rate/channels must match. MP3 has no encoded PCM bit depth: P6 reports decoded source precision 24; expected bits is zero or 24, otherwise unsupported. |
+| End tags | One final 128-byte ID3v1 block beginning `TAG` is accepted and consumed in either strict mode. No APE or midstream ID3 parsing. Other trailing bytes are rejected in strict mode and ignored only after at least one complete audio frame in relaxed mode. A partial sync/header or a valid next header whose frame is truncated is always an error, not relaxed trailing junk. |
+| VBR metadata | Xing/Info/VBRI/LAME ancillary bytes do not supply authoritative duration, seek points, gain, encoder delay, padding, or frame count. Their containing MPEG frames are decoded/count normally. No gapless trim or ReplayGain is applied; actual validated frame headers determine accounting. |
+
+| MPEG family | Bitrate indices 1..14, kbit/s | Rate indices 0,1,2, Hz | Samples/channel/frame |
+| --- | --- | --- | ---: |
+| MPEG-1 | 32,40,48,56,64,80,96,112,128,160,192,224,256,320 | 44100,48000,32000 | 1152 |
+| MPEG-2 | 8,16,24,32,40,48,56,64,80,96,112,128,144,160 | 22050,24000,16000 | 576 |
+| MPEG-2.5 | 8,16,24,32,40,48,56,64,80,96,112,128,144,160 | 11025,12000,8000 | 576 |
+
+At least one complete audio frame is required; a tag-only or empty MP3 input
+returns malformed/no-audio. Frame boundaries follow the computed byte count.
+There is no silent resynchronization, concealment, skipped bad frame, or
+property-dependent restart inside a job.
+At an expected initial audio header, a nonempty remainder shorter than four
+bytes is truncated input. After a valid frame, a short suffix beginning with
+`0xff` and matching the available MPEG sync/version/layer bits is a truncated
+header; other short suffixes follow the strict/relaxed trailing-byte rule.
+A recognized `ID3` or `TAG` prefix with insufficient bytes for its required
+header/block is truncated in both modes. These checks precede a relaxed skip.
+
+##### P6 side-info, reservoir, and integrity rules
+
+Let `P` be the cumulative number of main-data slot bytes in all preceding
+frames, excluding their header, optional CRC and side-info. Let `M` be the
+current frame's main-data slot count and `B=main_data_begin`. MPEG-1 B is a
+9-bit value 0..511; MPEG-2/2.5 B is 8 bits 0..255. The current coded data
+starts at byte `P-B` of that main-data-only stream. At job start history and
+overlap are zero/empty, so the first frame requires B=0. Retain the last 511
+main-data slot bytes plus current frame slots, at most 1952 bytes. Headers,
+ID3 and CRC bytes never become reservoir bytes. Reset/abort or the next job
+clears this history; it is never shared between ring jobs.
+
+Require B no larger than actual retained history. The start bit must not
+precede the previous frame's consumed main-data end bit, and the sum of all
+`part2_3_length` values must end no later than `8*(P+M)`. Ancillary gaps and
+byte-alignment stuffing between coded frame payloads are allowed. A reference
+decoder that substitutes silence on reservoir underflow does not define P6
+behavior: P6 terminates without PCM from the affected frame.
+
+Side-info is parsed in transmitted granule/channel order. Each big_values is
+0..288; each part2_3 length is a 12-bit bit budget, not a byte count. Reject
+reserved codebook selections 4/14 and region boundaries outside 576 lines.
+Table 0 produces zero pairs without consuming Huffman bits. Window switching
+requires block_type 1/2/3; mixed_block is legal only with short block type 2.
+Support long/start/short/stop and mixed blocks, MPEG-1 scfsi/preflag,
+MPEG-2/2.5 scalefactor-compress and intensity rules, scalefac_scale,
+subblock_gain, both count1 tables, all nonreserved pair codebooks and linbits.
+Scalefactor bits are charged against part2_3 before Huffman data. Pair/quad
+decoding cannot publish past line 575 or consume another part's bit budget;
+remaining uncoded lines are zero and legal count1 termination/stuffing is
+handled without reading beyond that budget. Truncated physical input and a
+budget violation are distinct errors.
+
+When protection is zero, read the stored big-endian CRC16 immediately after
+the four-byte header. Compute MSB-first CRC with initial `0xffff`, polynomial
+`0x8005`, no final XOR, over the header's final 16 bits (bitrate index through
+emphasis), followed by all side-info bits in transmitted order. Exclude the
+stored CRC and main-data bytes. CRC checking is mandatory in strict and
+relaxed modes. It is MPEG error protection, not a whole-audio checksum.
+The existing CRC16 primitive can use this nonzero initial accumulator;
+its opcode behavior does not change.
+
+No PCM from a frame is issued until its complete physical byte range,
+side-info, CRC (when present), reservoir range and compressed-sample decode
+have passed. Earlier valid output remains on later failure. Synthesis history
+may be updated speculatively only if it cannot affect another job after an
+error. Source bit extraction may use bounded scalar/table routines on the
+saved reservoir; the original input FIFO is not rewound or fed duplicate
+header bytes. The P5 explicit refill/cursor/EOF contract remains unchanged.
+
+##### P6 PCM, counts, and first-offender diagnostics
+
+MP3 decoding includes requantization, short-block reorder, alias reduction,
+joint-stereo reconstruction, windowed IMDCT/overlap-add, frequency inversion
+and synthesis polyphase filtering, in MPEG order. Intermediate representations
+and coefficient realization must lower to the existing fixed-point primitives
+and are qualified by the bit-accurate lowering report and the numerical gates
+below. No synthesis stage or frequency band may be dropped to meet capacity.
+Decoded samples enter the P5 post-processing path as signed Q1.31. Native
+S24_32 output is the arithmetic right shift by 8 with saturation; S16 is the
+right shift by 16. P5 downmix, duplication, resampling, capacity, TLAST, and
+whole-output-frame rules are inherited exactly.
+The reported precision 24 describes the canonical decoded PCM representation;
+already normalized MP3 Q1.31 samples must not be shifted left again as if they
+were raw 24-bit input samples.
+
+Count every decoded MPEG frame including Xing/Info/VBRI-containing frames.
+Native source sample-frame count is 1152 per MPEG-1 frame or 576 per lower
+rate frame. No leading synthesis delay, encoder padding, or final samples
+are trimmed, and no extra overlap tail is flushed beyond that count.
+`JOB_FRAMES`/descriptor RESULT_FRAMES count destination PCM sample frames
+after P5 rate conversion, not MPEG frames or channel samples. SOURCE_INFO
+contains rate, 1/2 channels, and precision 24. INPUT_USED is the parsed physical
+file prefix including accepted ID3 tags and frame bytes, never reservoir
+rereads or prefetched bytes. Relaxed ignored trailing junk is excluded. Output
+bytes/partial output and all direct/ring completion ordering remain P5 rules.
+
+For MP3 parser failures, DETAIL `[31:24]=1`, `[23:16]` is warnings, and
+`[15:0]` is the reason below. Warning bit 1 means relaxed trailing bytes were
+ignored; other MP3 warning bits are zero. On success reason is zero. Each row
+sets ERROR_STATUS valid=1, response=0, direct index=0 or owning ring index,
+with the specified code/stage. Addresses below are absolute input addresses:
+`F` is the current four-byte MPEG header address, `S=F+4+crc_bytes`, and a
+field address is the byte containing the first transmitted bit of that field.
+For reservoir-derived entropy bits, retain their original physical-byte
+provenance across frames; do not report a scratch pointer as an input address.
+
+| Reason | Failure | Code / stage | First-offender address |
+| --- | --- | --- | --- |
+| `0x0100` | Unsupported ID3 major/revision | 3 / 4 | Tag start + 3 |
+| `0x0101` | Reserved ID3 flags | 4 / 4 | Tag start + 5 |
+| `0x0102` | Nonsynchsafe ID3 size | 4 / 4 | First size byte with bit 7 set |
+| `0x0103` | ID3 count/1 MiB limit or extent arithmetic overflow | 3 / 4 for limit, 4 / 4 for overflow | Offending tag start |
+| `0x0104` | ID3v2.4 footer mismatch | 4 / 4 | First differing footer byte |
+| `0x0110` | Missing sync/no audio/invalid reserved version | 4 / 4 | F (no audio: parsed tag end) |
+| `0x0111` | Unsupported layer | 3 / 4 | F + 1 |
+| `0x0112` | Free-format bitrate index 0 | 3 / 4 | F + 2 |
+| `0x0113` | Bitrate index 15 or rate index 3 | 4 / 4 | F + 2 |
+| `0x0114` | Unsupported/reserved emphasis | 3 / 4 for 1/3, 4 / 4 for 2 | F + 3 |
+| `0x0115` | Frame shorter than its mandatory structures | 4 / 4 | F + 2 |
+| `0x0116` | Version/rate/channel-count change | 4 / 4 | First changed field in header byte order |
+| `0x0117` | Expected source-geometry mismatch | 3 / 4 | First offending version/rate/mode field; expected precision mismatch uses F |
+| `0x0120` | Mandatory ID3/header/side-info/frame bytes missing | 5 / 4 | INPUT_ADDRESS + INPUT_LENGTH |
+| `0x0121` | Strict unrecognized trailing bytes | 4 / 4 | First trailing byte |
+| `0x0130` | Side-info big_values/window/codebook/region invalid | 7 / 5 | First invalid transmitted field |
+| `0x0131` | Reservoir history underflow | 7 / 5 | S (main_data_begin field) |
+| `0x0132` | Reservoir overlap or summed part2_3 range violation | 7 / 5 | S for overlap; first part2_3_length field making the sum exceed available bits otherwise |
+| `0x0133` | Scalefactor/entropy part budget invalid | 7 / 5 | Start of that part's first undecodable code, mapped to physical input |
+| `0x0134` | Illegal Huffman prefix/line count | 7 / 5 | First offending code's original physical byte |
+| `0x0140` | Stored MPEG CRC mismatch | 6 / 4 | F + 4 |
+
+Within a frame, validate complete header and its range, then side-info field
+legality, then MPEG CRC, then reservoir bounds, then scalefactors/entropy. A
+missing mandatory byte outranks checks that require that missing structure;
+an already invalid earlier header is reported without reading later bytes.
+Within side-info use transmitted bit order and granule/channel order. Global
+AXI/DMA/xrun/trap/abort precedence and immutable-first-error capture remain
+unchanged. Primitive/kernel overflow, sequencer faults, and output-capacity
+errors retain P4/P5 tuples and PC_HIGH handling; they are not relabeled as
+one of these parser reasons. HAL status mapping treats format 1 explicitly:
+MP3 uses CAPABILITY0 bit 1 and these codes, not the previous non-WAV-to-FLAC
+fallback. Existing job/result structures and API signatures are retained.
+
 ### `APUM` KWS model ABI
 
 The 64-byte model header contains magic `APUM`, header/model ABI, total bytes,
@@ -2204,10 +2426,9 @@ power, coherency, or security require a new approved phase/spec revision.
 - `apu-mcasm` and the Python microcode interpreter are self-owned and tested
   from the same frozen ISA definitions without generated register RTL.
 - WAV uses the existing bounded reader model extended for the frozen subset.
-- MP3 primitive and full-flow vectors are derived from standards/conformance
-  material and compared with two independent decoders; the maintained
-  [AOSP fixed-point decoder source](https://android.googlesource.com/platform/frameworks/av/+/b7a5619/media/libstagefright/codecs/mp3dec/src/)
-  is a partitioning/reference input, not shipped APU code.
+- MP3 primitive and full-flow vectors use the exact minimp3 corpus and
+  independent mpg123/minimp3 decoder pins below. The earlier AOSP survey
+  pointer is not an active build, numerical oracle, or unpinned P6 input.
 - FLAC uses RFC 9639, locked Xiph libFLAC, and the official
   [FLAC test files](https://github.com/ietf-wg-cellar/flac-test-files).
 - MLPerf Tiny inputs/model/converter revision and generated `APUM` are locked
@@ -2286,6 +2507,176 @@ verify bounded error/drain rather than claim uninterrupted playback under
 unbounded stalls. Measured maximum tolerable AXI stalls, source properties,
 instruction budget, and occupancy must accompany results. Static timing,
 area, power, netlist, and physical 48 MHz closure remain Phase8 evidence.
+
+### P6 locked MP3 inputs and numerical evidence
+
+These fixed revisions and archive SHA-256 values were read and computed from
+the complete upstream archive bytes on 2026-09-11. P6 implementation extends
+`scripts/setup_apu_reference.py` and the executable dependency lock with these
+exact keys. This refreeze changes documentation only. Existing FLAC lock keys,
+setup and qualification remain intact.
+
+| Source lock key | URL / full revision | Source destination | License record |
+| --- | --- | --- | --- |
+| `apu_minimp3` | `https://github.com/lieff/minimp3.git` / `ea99364f61c14656440e8d77e9c233ccf3124633` | `.cache/retrosoc/sources/apu-minimp3` | `CC0-1.0`, retain LICENSE and upstream attribution. |
+| `apu_mpg123` | `https://github.com/madebr/mpg123.git` / `f6c19f46031088efc8d0e5b83305a6f36ceceb65` | `.cache/retrosoc/sources/apu-mpg123` | `LGPL-2.1-only` as the default COPYING terms; retain COPYING, AUTHORS and any per-file exceptions. |
+| `apu_mp3_corpus` | Same minimp3 URL / `ea99364f61c14656440e8d77e9c233ccf3124633`; select `vectors/` | `.cache/retrosoc/sources/apu-mp3-corpus` | Record upstream `CC0-1.0` declaration and retain LICENSE; preserve vector provenance and any per-file notices. Host-only test material, not a claim of ISO certification or a new license grant over third-party vectors. |
+
+| Archive key | URL | SHA-256 | Download destination |
+| --- | --- | --- | --- |
+| `apu_minimp3` | `https://codeload.github.com/lieff/minimp3/tar.gz/ea99364f61c14656440e8d77e9c233ccf3124633` | `5628166eb82a9bb581317918a334c317a2c0a30278bb14a20381307976768f34` | `.cache/retrosoc/downloads/apu/minimp3-ea99364f61c14656440e8d77e9c233ccf3124633.tar.gz` |
+| `apu_mpg123` | `https://codeload.github.com/madebr/mpg123/tar.gz/f6c19f46031088efc8d0e5b83305a6f36ceceb65` | `1b42d961c56ec0e47510e69768277dd6726316a3063116bfd8264f19b9e1c218` | `.cache/retrosoc/downloads/apu/mpg123-f6c19f46031088efc8d0e5b83305a6f36ceceb65.tar.gz` |
+| `apu_mp3_corpus` | Same fixed minimp3 archive URL | `5628166eb82a9bb581317918a334c317a2c0a30278bb14a20381307976768f34` | Same minimp3 download destination, verified once and reused for extraction. |
+
+The mpg123 mirror is linked by the project's
+[download page](https://www.mpg123.de/download.shtml). The two decoders have
+independent implementations; one decoder executed with two configurations is
+not sufficient. All reference programs and corpus files are host-only, outside
+firmware, RTL and APUMC release outputs. Use shared checksum/download/extraction
+helpers; there is no floating HEAD/tag fallback. Retain notices with cached
+sources and any redistributed reference artifacts. Product microassembly and
+numerical tables must have independently recorded provenance; copying GPL/LGPL
+decoder code into the product is not authorized by these test-input pins.
+
+Setup keeps the existing `--build-dir` interface and adds `--phase p5|p6`
+(default p5). P6 installs all P5 inputs plus the three keys above. It checks
+CMake at least 3.27, Ninja, and a C compiler before building the pinned mpg123
+tree at `ports/cmake`; use `BUILD_PROGRAMS=OFF`, `BUILD_LIBOUT123=OFF`,
+`BUILD_SHARED_LIBS=OFF`, `GAPLESS=OFF`, `NO_LAYER1=ON`, `NO_LAYER2=ON`,
+`NO_NTOM=ON`, `NO_EQUALIZER=ON`, `NETWORK=OFF`, `NO_REAL=OFF`, and `HAVE_FPU=ON`.
+Select the library's `generic` decoder explicitly. Build minimp3 with
+`MINIMP3_IMPLEMENTATION`, `MINIMP3_ONLY_MP3`, `MINIMP3_NO_SIMD`, and
+`MINIMP3_FLOAT_OUTPUT`. Both host wrappers disable fast-math and FP contraction,
+use native source rate/channels and float32 output, and record compiler,
+configuration and binary hashes. Missing build tools are explicit setup
+prerequisites, not skipped evidence or direct unpinned installer downloads.
+
+mpg123 uses feeder decoding with GAPLESS removed, IGNORE_INFOFRAME set, unity
+scale, ReplayGain disabled and no forced resampling or mono mode. minimp3
+uses the frame decoder with persistent state, not the extended whole-file
+helper's automatic gapless trimming. Both receive the same exact MPEG frame
+bytes after this specification's metadata classification. Assert frame count,
+sample count, rate and channels before comparing PCM. A reference that silently
+resynchronizes or omits an Info frame is a harness failure. Neither reference's
+CRC/underflow tolerance is the oracle for malformed files: a separate bounded
+header/reservoir/CRC model implements the P6 rejection rules.
+
+Every pinned `vectors/**/*.bit` and `vectors/**/*.mp3` is classified in a
+committed deterministic manifest by path and SHA-256. Unsupported layer/free-
+format/geometry/emphasis cases are rejection tests, not silently excluded
+tests. Every valid in-profile file is a numerical test. Paired upstream `.pcm`
+files are supplementary evidence with their byte order/count recorded; the
+primary normalized oracle is the pinned mpg123 wrapper. Required stress
+families include `l3-compl.bit`, `l3-he_32khz.bit`, `l3-he_44khz.bit`,
+`l3-he_48khz.bit`, `l3-he_mode.bit`, `l3-si.bit`, `l3-si_block.bit`,
+`l3-si_huff.bit`, `l3-sin1k0db.bit`, `M2L3_bitrate_16_all.bit`,
+`M2L3_bitrate_22_all.bit`, `M2L3_bitrate_24_all.bit`, `M2L3_compl24.bit`, and
+the performance vectors below. A named file may fail the P6 profile; its exact
+first-offender result is then tested instead of treating tolerant reference
+decoding as evidence of support.
+
+Self-owned deterministic vectors supplement missing corners: all nine rates,
+both channel counts, all supported bitrate indices, MPEG-2.5, protected frames,
+all block/mixed modes and joint-stereo combinations, maximum reservoir, VBR,
+zero main-data, every ID3 flag/size/footer boundary, and truncated headers,
+side-info and entropy. Generate exact coded frames from documented literal
+headers/side-info/Huffman symbols and pair every valid frame sequence with both
+decoders; no new encoder dependency or opaque Internet audio sample is needed.
+No coverage item is waived merely because the pinned corpus lacks it.
+
+#### P6 PSNR calculation and comparison windows
+
+Compare native-rate, source-channel MP3 PCM before P5 downmix/resampling.
+Promote each reference float32 `x` to float64 before normalization. Clamp it
+to `[-1,1-2^-31]`, round `x*2^31` to nearest-even, then arithmetic-shift right
+eight bits to obtain signed 24-bit `r`. Obtain APU `a` from S24_32 output
+using the same native geometry and no optional processing. Full-scale peak is fixed at
+`P=8388607`, not the measured signal peak. For N samples,
+`SSE=sum((a-r)^2)`, `MSE=SSE/N`, and `PSNR=10*log10(P^2/MSE)`; SSE zero means
+positive infinity. NaN/infinite reference samples fail the harness before
+quantization. Accumulate integer SSE in at least 128 bits or arbitrary-precision
+integers without overflow. The acceptance
+comparison is strictly `SSE < N*P^2/10^9.6` (>96 dB), evaluated with enough
+precision to resolve the boundary; printed rounded dB is never the verdict.
+
+Require >96 dB against each independent reference on the full file, on each
+individual channel, and on consecutive 1152-source-sample-frame windows
+(including the final nonempty short window). Also compare the two references
+to each other with the same threshold; disagreement blocks qualification and
+must be investigated, not resolved by choosing the easier oracle. Report
+SSE, N, maximum absolute error and worst-window PSNR. Do not optimize delay,
+gain, sample offset, or channel permutation to raise PSNR. Start all decoder
+histories empty, include encoder/synthesis delay and padding samples, include
+Info frames, and require exactly 1152/576 frames per MPEG frame; there is no
+trimmed warmup window. Empty/tag-only inputs are error tests, not infinite-
+PSNR successes.
+
+Separate S16, downmix and resampling tests compare against applying the frozen
+P5 integer post-processing model to the APU's native decoded sequence. This
+isolates post-processing correctness from MP3 approximation error; the native
+PSNR gates still apply. Run the unchanged WAV/FLAC bit-exact corpus against
+both the legacy P5 image and the rewritten P6 image. Code relocation may change
+build IDs and cycle/PC measurements, but not PCM, accounting or semantic errors.
+
+#### P6 real-time envelope and physical-evidence boundary
+
+The mandatory 320 kbit/s, 48 kHz joint-stereo workloads come from the pinned
+corpus. Their file hashes are:
+
+| Relative path under vectors | SHA-256 |
+| --- | --- |
+| `performance/MIPSTest.mp3` | `197265fa09d1b6777b71269d986055035f3e9e1f4d74e4cbaa0e55034447a9ca` |
+| `performance/MEANDR_PHASE90.mp3` | `b8a8f2b38e2cacc42849af754a926552b87478003738a9f40c86ff0e22f555a1` |
+| `performance/noise_meandr.mp3` | `423a97ef5b01c8253940d04bf93ee0d9508b77ef17608c69a1b3c09ae8667c0d` |
+
+Run each as a finite job and in a descriptor ring for at least 60 simulated
+seconds, restarting decoder history at each job boundary as specified. Test
+S16 and S24_32, at 48 MHz PCLK, 48 kHz I2S; test 48-to-96 kHz output separately
+using the P5 resampler. KWS is disabled in P6; simultaneous KWS qualification
+is still a P7/P8 requirement. Do not label a clock divider slower than 48 MHz
+or a different source corpus as the qualified run.
+
+The qualified AXI service envelope is measured at the APU PCLK master and
+includes Gateway A/CDC/target delay: AR or AW handshake within 64 PCLK cycles
+of continuously asserted VALID; first RVALID within 32 cycles after AR; at
+most four cycles between available R beats when the APU is ready; WREADY at
+least once every four cycles after AW; BVALID within 16 cycles after the last
+W handshake. Bursts are the existing 1..16 beats/4 KiB subset, responses OKAY.
+The BFM must cover both zero-delay and maximum-delay schedules and randomized
+legal schedules. APU-generated backpressure and local-SRAM stalls are not
+subtracted from execution time. This is a qualified environment assumption,
+not a new QoS guarantee imposed on the entire SoC or on slow serial memories.
+
+Start I2S consumption after 64 APU-router words are prefetched, or the whole
+output for a shorter job; initial prefill must finish within 2400000 PCLK
+cycles from the first MPEG header after ID3. Per job, the steady interval from
+the first consumed PCM sample through the last must show zero I2S underrun,
+zero dropped/reordered/duplicated PCM frames, exactly one final TLAST for a
+nonempty output, and exact P5 byte/frame counters. Queue gaps between jobs
+are excluded only if explicitly recorded; they are not a gapless-playback
+claim. Clear xrun state before the window and check both sticky state and
+event scoreboard during it. Report effective clocks, per-frame/granule cycles,
+minimum FIFO occupancy, refill stalls, last-sample time and the full service
+trace. An average faster-than-real-time result cannot excuse an underrun.
+
+Randomized tests beyond the service envelope verify the existing timeout,
+first-error and drain behavior; uninterrupted playback is not required under
+unbounded stalls. Physical signoff remains deferred to P8 as in the approved
+APU execution policy. P6 completion requires functional/cycle/formal evidence,
+not a claim that an RTL cycle model closes physical timing.
+
+P8 must synthesize this exact P6/P7 hierarchy and compare with the reviewed P5
+baseline under the same committed IHP130 profile and locked tools. Static
+acceptance is max-delay WNS >= 0 ns and TNS = 0 at the 20.833 ns PCLK target,
+no unconstrained active APU clock/data paths, no inferred latch or unresolved
+non-PDK black box, and all macro/clock/reset views accounted for. Report hold
+analysis separately; pre-layout STA is not post-layout signoff. Area acceptance
+requires the unchanged eight control plus 28 data SRAM wrappers, complete
+cell/macro accounting and reviewed per-block/total deltas versus P5. There is
+no approved absolute standard-cell mm2 or power ceiling before measurement:
+those metrics remain explicitly report-only under repository policy, and a
+missing area report is not an area pass. No global warning or metric policy
+is changed by these feature evidence requirements.
 
 ### Required evidence matrix
 
@@ -2595,26 +2986,53 @@ ID: `APU-P6`.
 
 Scope: MP3 microassembly/tables, ID3/header/side-info/reservoir, scalefactors,
 Huffman, requant/reorder/antialias/stereo, IMDCT/polyphase, conformance,
-long-playback, instruction/control-store optimization, and real-time/PPA.
+long-playback, complete three-format image packing, instruction/control-store
+optimization, cycle-counted real-time qualification, and the P8 physical
+evidence criteria frozen in the P6 sections above.
 
-Dependencies: Phase5 and locked MP3 conformance/reference inputs.
+Dependencies: reviewed expanded Phase5 (APUMC V2/4096 words) and the exact P6
+reference/corpus pins. Complete-image/local-workspace packing is the first
+implementation gate. Register the pinned inputs and extend setup during P6
+implementation; do not treat uninstalled references as already measured evidence.
 
-Public changes: enables format ID1; no new opcode class or public ABI.
+Public changes: `CAPABILITY0=0x000001bf`, `CAPABILITY1=0x01827020`,
+`IP_VERSION=0x00010001`, `ABI_DIGEST=0`; target p6 defaults to APUMC V2 and
+uses primitive mask `0x001fffff`. Enable format 1 with the exact MP3 profile,
+diagnostics and loaded-stub rejection above. The new production bundle supplies
+all three formats and retains P5 behavior. No new opcode, APB offset, job
+descriptor, resource/address/IRQ/CDC allocation or HAL structure is added.
+KWS, model load and RX route 1 remain unavailable.
 
 Validation:
 
 ```sh
+python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 make sw-format-check sw-policy-check sw-host-test
 python3 -m pytest -q
 make CONFIG=configs/ci/ihp130.mk firmware
-make CONFIG=configs/ci/ihp130.mk APP=ci_smoke SIMU=VERILATOR firmware sim
-make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
+make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES rtl-lint
+make CONFIG=configs/ci/ihp130.mk formal-apu formal-apu-loader formal-apu-sequencer
+make CONFIG=configs/ci/ihp130.mk APP=ci_smoke LINK_TYPE=ld2_all_sram SOC_SIM_TIME=360 VERILATOR_SIM_ARGS=--fast-flash SIMU=VERILATOR HAVE_SVA=YES firmware sim
 ```
 
-Completion: supported modes/conformance pass PSNR and accounting gates;
-320 kbit/s stereo meets real-time; the inherited 4096-word store, SRAM, area,
-and timing evidence is reviewed.
+Extend Pytest with required P6 bundle, header/side-info/reservoir/CRC,
+diagnostic, dual-reference PCM, PSNR-boundary and long-playback tests, using
+focused Icarus and Verilator testbenches on the production pipeline. Add a P6
+builder and qualifier producing the complete-image report, corpus manifest,
+reference hashes, per-window SSE/PSNR, service traces, effective-clock report,
+and xrun/counter scoreboard below the variant artifact directory. The broad
+ci_smoke command checks integration and does not replace those codec tests.
+Missing tools or skipped tests are reported as unrun, never as passing gates.
+
+Completion: one <=4096-word image implements the entire P5 and P6 profiles,
+fits the unchanged local-data partitioning, and passes both legacy and new
+corpora. Every valid MP3 file/window/channel passes >96 dB against both pinned
+references, while malformed/unsupported files produce the exact first tuple.
+The named 320 kbit/s workloads meet the frozen service-envelope and zero-xrun
+window criteria. P6 reports all pending P8 synthesis/STA/area/power/CDC/RDC
+evidence explicitly; it does not claim physical closure. No capacity failure
+is resolved by omitting a decoder, reloading at each job, or moving parsing to
+RTL/LP/HP.
 
 ### Phase 7 - Independent Continuous KWS Engine
 
