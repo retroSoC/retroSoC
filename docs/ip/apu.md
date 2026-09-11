@@ -3003,7 +3003,7 @@ all three formats and retains P5 behavior. No new opcode, APB offset, job
 descriptor, resource/address/IRQ/CDC allocation or HAL structure is added.
 KWS, model load and RX route 1 remain unavailable.
 
-Validation:
+Validation (P6 functional, numerical, cycle, formal and xrun gates only):
 
 ```sh
 python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
@@ -3014,6 +3014,16 @@ make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES rtl-lint
 make CONFIG=configs/ci/ihp130.mk formal-apu formal-apu-loader formal-apu-sequencer
 make CONFIG=configs/ci/ihp130.mk APP=ci_smoke LINK_TYPE=ld2_all_sram SOC_SIM_TIME=360 VERILATOR_SIM_ARGS=--fast-flash SIMU=VERILATOR HAVE_SVA=YES firmware sim
 ```
+
+The commands listed for other phases and the document-wide physical evidence matrix
+are not additional P6 prerequisites. Standalone implementation synthesis,
+netlist simulation, static timing, area/power evaluation and commercial
+CDC/RDC signoff for P6 are P8-only work. Their absence must be recorded as
+deferred, not used to reject P6 preflight or completion once the P6 gates pass.
+The mandatory P6 formal flow may use Yosys internally for proof preparation;
+that does not require the separate synthesis/STA/PPA flows. P8 retains all
+thresholds and reporting obligations in
+[P6 real-time envelope and physical-evidence boundary](#p6-real-time-envelope-and-physical-evidence-boundary).
 
 Extend Pytest with required P6 bundle, header/side-info/reservoir/CRC,
 diagnostic, dual-reference PCM, PSNR-boundary and long-playback tests, using
