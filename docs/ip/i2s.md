@@ -24,6 +24,14 @@ MCLK is a buffered copy of `clk_aud_i` when `CLK_DIV[23:16]` is zero. SCLK and
 LRCK run only while `CTRL.ENABLE` is set. Slave, TDM, PDM, and left/right
 justified formats are not implemented.
 
+The [APU-P7 contract](apu.md) additionally requires exporting the existing
+PCLK-synchronized RX warm-flush-busy state as `rx_flush_busy_o` to the APU's
+`i2s_rx_flush_busy_i`. This is a P7 implementation obligation, not an output
+assumed present in the reviewed P5 baseline. It lets KWS invalidate partial
+pairs/history on a flush or unilateral audio reset without a new CDC,
+AXI sideband, register or pad. KWS mono pairing follows accepted sample order;
+the untagged RX stream does not expose left/right identity after a pause.
+
 ## Register ABI
 
 All registers are 32 bits and naturally aligned. Unmapped, unaligned, and

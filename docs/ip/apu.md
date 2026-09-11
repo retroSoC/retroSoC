@@ -18,6 +18,12 @@ This scope rule takes precedence over those deferred notes. All other active
 WAV/FLAC, KWS, transport, ABI, ownership and physical-evidence requirements
 remain in force.
 
+APU-P7 is refrozen on 2026-09-11 by the P7 sections below. They fix the
+reference inputs, APUM 1.0 wire format, numerical profile, capture settings,
+HAL and acceptance rules; they do not assert that P7 is implemented. The
+starting implementation remains reviewed P5 with `CAPABILITY0=0x000001bd`.
+Only completed P7 qualification permits `0x000001fd`. No P6 work is reactivated.
+
 The APU is deliberately coreless. LP loads one validated codec-microcode bundle
 at startup and HP or LP later submits jobs. The APU contains a bounded codec
 sequencer and fixed processing engines; it does not contain Hazard3, VexiiRiscv,
@@ -195,7 +201,8 @@ control store or 112 KiB data store, or change the P5 instruction/transport ABI.
 I2S RX feeds a dedicated KWS input FIFO, mono/downmix, 16 kHz resampling,
 512-point fixed FFT/MFCC, and a 16-lane INT8/INT32 DS-CNN engine. Supported
 operators are Conv2D, depthwise 3 by 3, pointwise 1 by 1, bias,
-requantization/ReLU, global average pool, and fully connected.
+requantization/ReLU, the pinned 25 by 5 average pool, fully connected, and
+INT8 Softmax. The source model's shape-only reshape is folded by the converter.
 
 KWS evaluates a 49 by 10 INT8 window every 100 ms. Score threshold and 1..255
 consecutive-hit debounce are programmable. KWS does not use codec microcode or
@@ -387,15 +394,15 @@ independently.
 | 1 | `RESULT_STATUS` | HW to SW: done 0, error 1, aborted 2, error code `[8:3]`, stage `[12:9]`, AXI response `[14:13]`. |
 | 2 | `INPUT_ADDRESS` | Aligned compressed-file or diagnostic PCM source. |
 | 3 | `INPUT_LENGTH` | Nonzero source bytes. |
-| 4 | `OUTPUT_ADDRESS` | Aligned PCM destination; zero only for stream output. |
-| 5 | `OUTPUT_CAPACITY` | Destination bytes; zero only for stream output. |
+| 4 | `OUTPUT_ADDRESS` | Aligned PCM destination for decode; zero for stream output or operation1. |
+| 5 | `OUTPUT_CAPACITY` | Destination bytes for decode; zero for stream output or operation1. |
 | 6 | `INPUT_CONFIG` | Expected rate `[16:0]`, channels `[18:17]`, source bits/sample `[25:20]`; zero fields mean derive. |
 | 7 | `OUTPUT_CONFIG` | Rate `[16:0]`, channels `[18:17]`, PCM format `[20:19]`. |
 | 8 | `JOB_FLAGS` | Strict decode bit 0; all other V1 bits zero. |
 | 9 | `KWS_CONFIG` | Memory-window threshold `[7:0]`, debounce `[15:8]`; zero for decode. |
 | 10 | `RESULT_INPUT_USED` | Bytes consumed. |
 | 11 | `RESULT_OUTPUT_BYTES` | PCM bytes written or streamed. |
-| 12 | `RESULT_FRAMES` | PCM sample frames produced. |
+| 12 | `RESULT_FRAMES` | PCM sample frames produced by decode; input sample frames consumed by operation1. |
 | 13 | `RESULT_SOURCE_INFO` | Detected rate `[16:0]`, channels `[18:17]`, bits/sample `[24:19]`. |
 | 14 | `RESULT_CYCLES` | Saturating job cycle count. |
 | 15 | `RESULT_DETAIL` | Format-, microcode-, or primitive-specific diagnostic. |
@@ -530,6 +537,7 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x230` | `KWS_OVERRUN_COUNT` | RO | `0` | Dropped/late windows. |
 | `0x234` | `KWS_MODEL_STATUS` | RO | `0` | Busy, valid/lock, header/range/size/CRC/operator errors. |
 | `0x238` | `KWS_MODEL_ACTUAL_CRC` | RO | `0` | Observed payload CRC32. |
+| `0x23c` | `KWS_INPUT_CONFIG` | RW disabled/idle | `0x0104bb80` | P7 append: rate `[16:0]`, physical channels `[18:17]`, precision `[25:20]`; see P7 capture rules. |
 | `0x300` | `PERF_CONTROL` | RW | `0` | Enable 0, clear pulse 1, snapshot pulse 2. |
 | `0x304` | `PERF_STATUS` | RO | `0` | Snapshot valid and overflow summary. |
 | `0x308..0x354` | `PERF_*` | RO snapshot | `0` | Ten 64-bit pairs: active cycles, input/output bytes, decoded frames, DMA read/write stalls, stream stalls, sequencer instructions, KWS cycles, and faults. |
@@ -2112,16 +2120,464 @@ fallback. Existing job/result structures and API signatures are retained.
 
 ### `APUM` KWS model ABI
 
-The 64-byte model header contains magic `APUM`, header/model ABI, total bytes,
-operator-set ID 1, MFCC geometry 49 by 10, class count 12, parameter bytes,
-scratch bytes, signed asymmetric INT8/INT32 quantization ID, payload CRC32,
-64-bit model ID, default threshold/debounce, and reserved zero words.
+This is the first byte-level definition of APUM 1.0; no P1..P5 implementation
+accepts an APUM image. All multibyte fields are little-endian, offsets are byte
+offsets, signed integers are two's complement, and padding/reserved bytes MUST
+be zero. APUM is not a TFLite FlatBuffer and is independent of APUMC and APB
+versions. P7 accepts only the graph/quantization below, not a general NPU graph.
 
-The converter accepts only the frozen KWS operators and static tensor shapes.
-Unknown operator, dynamic shape, floating point, unsupported quantization,
-class count other than 12, excessive scratch, bad range, or CRC failure keeps
-model valid clear. Successful LP load automatically locks the model until hard
-reset.
+#### APUM header and layout
+
+The image base is 64-byte aligned. The header is exactly 64 bytes. The image
+is exactly 32768 bytes: 12 operator records at `0x0040`, 13 tensor records at
+`0x0340`, zero padding at `0x04e0..0x04ff`, parameters at `0x0500..0x768f`,
+and zero tail padding at `0x7690..0x7fff`. There are no external pointers,
+compressed parameters, optional sections, alias records, or variable shapes.
+
+| Header byte | Type | Field / required P7 value |
+| ---: | --- | --- |
+| `0x00` | u32 | Magic `0x4d555041` (bytes `APUM`). |
+| `0x04` | u32 | APUM ABI `0x00010000`. |
+| `0x08` | u32 | Total image bytes `32768`. |
+| `0x0c` | u32 | Operator-set ID `1`. |
+| `0x10` | u32 | MFCC rows `[15:0]=49`, coefficients `[31:16]=10`. |
+| `0x14` | u32 | Classes `[15:0]=12`, operator count `[31:16]=12`. |
+| `0x18` | u32 | Parameter bytes `29072`, starting at fixed offset `0x0500`. |
+| `0x1c` | u32 | Scratch reservation `32768` bytes, separate from image bytes. |
+| `0x20` | u32 | Quantization profile ID `1`, defined below. |
+| `0x24` | u32 | CRC-32/ISO-HDLC over bytes `[64,32768)`, including padding. |
+| `0x28` | u64 | Model ID `0xce4f70006843eaae`; first eight SHA-256 digest bytes of the pinned TFLite, interpreted little-endian. |
+| `0x30` | u32 | Default threshold `[7:0]=128`, debounce `[15:8]=3`, upper bits zero. |
+| `0x34` | u32 | Tensor count `13`. |
+| `0x38` | u32 | Scratch-layout ID `1`. |
+| `0x3c` | u32 | Reserved zero. |
+
+CRC uses reflected polynomial `0xedb88320`, initial state `0xffffffff`, bytes
+in increasing address order, and final XOR `0xffffffff` (`123456789` gives
+`0xcbf43926`). The header CRC word and `KWS_MODEL_EXPECTED_CRC` MUST both equal
+the observed payload CRC. Header fields are validated separately; neither CRC
+nor the truncated model ID authenticates an image. The complete upstream SHA
+and generated-image SHA belong in the host release manifest.
+
+An independent freeze-time in-memory packing of the pinned model under these
+rules gives the following golden values. The implementation converter MUST
+reproduce them; these are computed bytes, not a claimed RTL/converter test.
+
+| Golden object | Required value |
+| --- | --- |
+| Payload CRC / production expected CRC | `0xb9034b22` |
+| Complete 32768-byte APUM SHA-256 | `87861b5f866182969e34917b4bf57cab61cd2245c3ab9b933797209322e3ce63` |
+| Parameters `[0x0500,0x7690)` SHA-256 | `0e4eb210d247a45747049ef9602bbd7e90868e9cb1c04fb2a02f128db44e241e` |
+| Weighted operators' multiplier then shift arrays, graph order, no delimiters, SHA-256 | `222e05821695f3fdd47be682b2cc75e0e735aa106436bf941cdda3ef8cb03b59` |
+
+The corresponding 64-byte header, consecutive hexadecimal bytes, is:
+
+```text
+4150554d00000100008000000100000031000a000c000c009071000000800000
+01000000224b03b9aeea436800704fce800300000d0000000100000000000000
+```
+
+The runtime CRC check compares observed/header/register values as specified;
+it is not a SHA validator or authorization for a differently trained release
+model. The release flow additionally requires the complete golden APUM hash.
+
+Each operator record is 64 bytes:
+
+| Byte in record | Type | Meaning |
+| ---: | --- | --- |
+| `0x00` | u16 | Opcode: 1 Conv2D (also pointwise), 2 depthwise, 3 average pool, 4 fully connected, 5 Softmax. |
+| `0x02` | u16 | Flags: bit 0 fused ReLU; all others zero. |
+| `0x04`, `0x06` | u16 each | Input and output tensor IDs. |
+| `0x08`, `0x0c` | u32 each | Image-relative weight and bias offsets. |
+| `0x10`, `0x14` | u32 each | Image-relative Q31 multiplier and signed-shift array offsets. |
+| `0x18`, `0x1c` | u32 each | Weight byte count; output channel count. |
+| `0x20`, `0x22` | u16 each | Kernel height and width. |
+| `0x24`, `0x26` | u16 each | Height and width stride. |
+| `0x28..0x2b` | u8 each | Top, bottom, left, right zero-point padding. |
+| `0x2c`, `0x30` | i32 each | Input and output zero points. |
+| `0x34`, `0x38` | i32 each | Inclusive output clamp minimum and maximum. |
+| `0x3c` | u32 | Reserved zero. |
+
+Convolution weights are signed INT8 in `[out,h,w,in]` order; depthwise weights
+are `[1,h,w,channel]`, depth multiplier one; FC weights are `[out,in]`. All
+weight zero points are zero. Bias, multiplier and shift arrays contain one
+signed-32 word per output channel. FC's single source scale is broadcast to
+12 output channels. For each weighted operator in graph order, append weights,
+biases, multipliers, then shifts, each 16-byte aligned. These arrays total
+22016 + 2352 + 2352 + 2352 = 29072 bytes; no array is deduplicated. Pool and
+Softmax have zero in all four parameter offsets and weight-byte count. FC and
+Softmax use kernel/stride 1 by 1 and zero padding. Pool uses kernel/stride
+25 by 5, VALID padding. Pool/FC/Softmax have no ReLU; clamp is -128..127.
+
+Each tensor record is 32 bytes: u16 `N,H,W,C` at bytes 0,2,4,6; u32
+scratch-relative offset at 8; u32 byte count at 12; u32 element type `1=INT8`
+at 16; u32 IEEE-754 binary32 scale bits at 20; i32 zero point at 24; u32 zero
+at 28. Scale bits are immutable metadata checked against the pinned tensor
+table, not permission to execute floating-point arithmetic in hardware.
+Byte count equals `N*H*W*C`, checked without overflow. All tensors are NHWC,
+batch one. Pool/FC tensors use the four-dimensional shapes below; the upstream
+reshape changes no bytes and creates no APUM operator or additional buffer.
+
+#### P7 fixed graph and quantization profile 1
+
+The immutable source is TFLite SHA-256
+`aeea436800704fce17b17292e4412630ad856e9d777c044c64ef748a880bd0ae`.
+The binary, not a freshly trained Keras graph or its prose README, is the
+authority for every weight, bias and per-channel scale. It contains 13 TFLite
+operators and 35 tensors; folding only reshape yields the 12 operators and
+13 activation tensors below. Batch normalization and ReLU are already fused.
+
+| APUM tensor | Producer / source TFLite output | Shape N,H,W,C | Scale bits / zero point | Scratch offset |
+| ---: | --- | --- | --- | ---: |
+| 0 | MFCC / 0 | 1,49,10,1 | `0x3f15af17` / 83 | `0x4000` |
+| 1 | Conv 10x4, stride 2x2 / 22 | 1,25,5,64 | `0x3da13ac8` / -128 | `0x0000` |
+| 2 | Depthwise 3x3 / 23 | 1,25,5,64 | `0x3da99aea` / -128 | `0x2000` |
+| 3 | Pointwise 1x1 / 24 | 1,25,5,64 | `0x3d75dd81` / -128 | `0x0000` |
+| 4 | Depthwise 3x3 / 25 | 1,25,5,64 | `0x3d808854` / -128 | `0x2000` |
+| 5 | Pointwise 1x1 / 26 | 1,25,5,64 | `0x3d19329e` / -128 | `0x0000` |
+| 6 | Depthwise 3x3 / 27 | 1,25,5,64 | `0x3d3c02c1` / -128 | `0x2000` |
+| 7 | Pointwise 1x1 / 28 | 1,25,5,64 | `0x3d070c5a` / -128 | `0x0000` |
+| 8 | Depthwise 3x3 / 29 | 1,25,5,64 | `0x3d3fdf8a` / -128 | `0x2000` |
+| 9 | Pointwise 1x1 / 30 | 1,25,5,64 | `0x3da452db` / -128 | `0x0000` |
+| 10 | Average pool 25x5 / 31 (32 aliases 31) | 1,1,1,64 | `0x3da452db` / -128 | `0x2000` |
+| 11 | FC 64 to 12 / 33 | 1,1,1,12 | `0x3e142a46` / 14 | `0x0000` |
+| 12 | Softmax beta 1 / 34 | 1,1,1,12 | `0x3b800000` / -128 | `0x2000` |
+
+Operator `i` consumes tensor `i` and produces `i+1`. First-convolution padding
+is top 4, bottom 5, left 1, right 1. Depthwise padding is one on every side;
+pointwise has zero padding. All other convolution strides are one, dilation
+is one, and all nine convolution operators fuse ReLU. The source weight/bias
+tensor pairs in weighted-operator order are `(17,3)`, `(5,4)`, `(18,6)`,
+`(8,7)`, `(19,9)`, `(11,10)`, `(20,12)`, `(14,13)`, `(21,15)`, `(16,1)`.
+Per-channel scales use the source quantized dimension (Conv axis 0, depthwise
+axis 3); FC is per-tensor. No recalibration, retraining, bias re-rounding,
+channel permutation, pruning, or alternative model is part of P7.
+
+For output channel c, accumulate `bias[c] + sum((input-zin)*weight[c])` in
+signed INT32 with checked wider intermediates, in h,w,input-channel order.
+Padding contributes `input=zin`. Overflow is an arithmetic fault, not wrap or
+silent accumulator saturation. Convert the effective multiplier
+`double(input_scale)*double(weight_scale[c])/double(output_scale)` with the
+pinned TFLite `QuantizeMultiplier`: binary64 operations without contraction,
+frexp, positive nearest/ties-away Q31 rounding, carry renormalization, and
+the upstream shift-below-minus-31 flush. Record the resulting Q31 word and
+shift, not a decimal approximation. Runtime requantization uses the pinned
+`MultiplyByQuantizedMultiplier` double-rounding behavior: checked left shift,
+`SaturatingRoundingDoublingHighMul`, then `RoundingDivideByPOT`. Add zout and
+clamp to `[max(-128,zout),127]` for ReLU, otherwise `[-128,127]`. Do not
+replace these rules with nearest-even rounding or single-rounding DSP modes.
+
+Average pool sums the 125 signed input bytes in INT32 and divides by 125
+with nearest rounding, ties away from zero, retaining the same scale/zero
+point; it is not the 24x5 pool suggested by the training source's shape
+calculation. Softmax is the pinned
+`tflite::reference_ops::Softmax<int8_t,int8_t>` with
+`input_multiplier=1242899200`, `input_left_shift=24`, `diff_min=-124`,
+Q5.26 scaled differences and Q12 accumulation, using the pinned gemmlowp
+fixed-point exp/reciprocal routines. The host oracle and RTL must agree on
+all twelve output bytes, including underflow, saturation and tied maxima.
+No float exp, alternative LUT approximation, omitted Softmax, or CMSIS-NN
+rounding substitution is permitted in the inference reference path.
+
+#### P7 memory and loader validation
+
+The existing KWS partition remains banks 10..25, local `0x0a000..0x19fff`,
+64 KiB total. Banks 10..17 hold the 32 KiB APUM; banks 18..25 are the 32 KiB
+scratch reservation. Codec/control-store banks, Gateway A identity, IRQ and
+resource allocations do not change. A new independently arbitrated KWS client
+may access only these KWS banks; it cannot borrow codec buffers or MAC lanes.
+
+Scratch layout 1 has A at `0x0000..0x1fff`, B at `0x2000..0x3fff`, MFCC at
+`0x4000..0x41ff`, a 50x40 u32 raw-mel ring at `0x4200..0x61ff`, complex FFT
+workspace at `0x6200..0x71ff`, 768 S16 ingress samples at `0x7200..0x77ff`,
+and metadata at `0x7800..0x7fff` (peak ring, FIR state, counters, pending
+stereo word and reduction state). A/B lifetimes alternate exactly as in the
+tensor table. Scratch range checking cannot treat the entire 112 KiB local
+store as available. The one-second history is retained as raw mel bands plus
+peak metadata, not an additional unbudgeted 32000-byte PCM buffer. Immutable
+frontend coefficients are fixed engine ROM constants generated from the
+numerical recipe; report their separate ROM/logic footprint in P8.
+
+MODEL_LOAD is LP-only, globally idle and quiesced, KWS disabled, ACL-valid and
+model unlocked. Fetch/validate header first, then exact-size payload and CRC,
+then records, ranges and quantization. Validate every fixed field, zero byte,
+opcode, tensor ID, shape, scale/zero point, array length/alignment, graph edge,
+padding/stride, scratch lifetime and parameter region before publishing valid.
+Unsupported major/minor/quantization/operator-set/layout versions fail closed.
+The loader MUST compare the records and requantization arrays with the frozen
+profile; arbitrary parameters with internally consistent but different shapes
+or arithmetic do not become a second supported model. All address additions
+are checked; no DMA may escape the inclusive read ACL or image range.
+
+An accepted load clears previous unlocked loader diagnostics and actual CRC,
+sets busy and keeps valid clear. Success atomically publishes valid/locked and
+the observed CRC, applies the header defaults to KWS_CONFIG and raises IRQ 4.
+Any failure leaves valid/locked clear and execution disabled, records the
+specified error and raises terminal IRQ 4 plus first-error IRQ 8. A retry is
+allowed only after draining and clearing/recovering the error. A successful
+lock cannot be cleared or reloaded by software, HP, abort, soft reset or
+resource reset; only hard/PCLK reset invalidates it. An aborted partial load
+never publishes valid or raises a successful-load indication.
+
+### P7 frontend numerical profile 1
+
+This profile closes the former 10 ms/49-row contradiction: a one-second,
+16000-sample mono window uses 480-sample (30 ms) frames, 320-sample (20 ms)
+hop, and a 512-point FFT. Frame r uses samples `320*r .. 320*r+479`, r=0..48;
+the last 160 samples contribute to the normalization peak but not to a frame.
+Inference windows end after samples 16000,17600,19200,... in continuous mode.
+There is no pre-emphasis, DC removal, noise augmentation, AGC, dither, lifter,
+center padding or trailing STFT padding. The frozen floating reference is the
+pinned `get_dataset.py` MFCC branch, not its LFBE/microfrontend branch.
+
+Let RNE denote exact nearest integer with ties to even and TZ truncation
+toward zero. All constant generation uses increased precision with interval
+bounds until rounding is unambiguous; independently generate and compare the
+ROM words, and put their SHA-256 and profile ID in every release report.
+Host math-library defaults are not the numerical specification.
+
+1. Input is signed S16 after the capture conversion below. Use the positive
+   peak `P=max(1,max(x[0..15999]))`, not max absolute value. The `max(1,...)`
+   rule explicitly defines silence/all-nonpositive inputs where the upstream
+   division would otherwise be invalid or unsuitable. On the official corpus
+   the positive-peak rule is unchanged. Retain maxima for 100 successive
+   160-sample blocks so each rolling window has its own exact P.
+2. Hann coefficients are `H[n]=RNE(2^30*(1-cos(2*pi*n/480))/2)`, n=0..479.
+   Build a 512-element complex input with real part
+   `RNE(x[n]*H[n]/2^15)` and imaginary zero; n=480..511 is zero. This carries
+   15 fractional bits of the unnormalized S16 value. Do not normalize each
+   frame with a different peak.
+3. Use radix-2 decimation-in-time FFT, bit-reversed input, stages of length
+   2,4,...,512 and ascending butterfly indices. Twiddles are independently
+   RNE-quantized Q2.30 cos and negative sin. For each complex multiply, form
+   both signed-64 sums of products before one RNE divide by `2^30`; butterfly
+   sum/difference is then RNE divided by two at every stage. Components are
+   signed-32; overflow faults rather than wrapping. Thus final components
+   represent the unscaled DFT times 64. Keep bins 0..256 and use nearest
+   integer square root of the unsigned-64 sum of component squares (ties
+   even); no magnitude-squared/power substitution or log10 is allowed.
+4. Define `mel(f)=1127*ln(1+f/700)`. Forty triangular filters have 42 evenly
+   spaced mel edges from mel(20) to mel(4000). Evaluate triangles at
+   `f[k]=16000*k/512`; clamp each to [0,1], force DC-bin weights to zero,
+   and quantize weights to Q2.30 using RNE. For each band store
+   `M=RNE(sum(magnitude[k]*weight[k])/2^32)` as unsigned UQ28.4. This is
+   raw, unnormalized magnitude, not power. Products/reduction use unsigned
+   64-bit checked arithmetic. A 50-row ring holds these 40-word frames.
+5. At a window endpoint, capture P and the 49 corresponding mel rows. For
+   each band form the positive rational
+   `z=(1000000*M+16*P)/(16000000*P)`; this is `M/(16*P)+1e-6`.
+   Normalize z exactly as `2^e*m`, 1<=m<2. The fixed log ROM contains
+   `L[i]=RNE(2^24*ln(1+i/1024))`, i=0..1024, and
+   `LN2=RNE(2^24*ln(2))`. Set i=floor(1024*(m-1)) and
+   `f=RNE(65536*(1024*(m-1)-i))`, allowing f=65536. Output signed Q8.24
+   `e*LN2+L[i]+RNE((L[i+1]-L[i])*f/65536)`. Integer divisions and exponent
+   selection must use the exact rational; no intermediate float is implied.
+6. DCT coefficients are
+   `D[j,b]=RNE(2^30*sqrt(2/40)*cos(pi*(b+1/2)*j/40))`, j=0..9,b=0..39.
+   Compute `C[j]=RNE(sum(log[b]*D[j,b])/2^30)` in signed Q8.24 using signed-64
+   checked reduction. Coefficient zero has the same scaling as the other
+   coefficients, matching TensorFlow MFCC rather than an orthonormal DCT-II.
+7. Quantize with `q=TZ(C[j]/(2^24*S)+83)` using the exact binary32 scale
+   `S=0x3f15af17`. Store the low eight bits, interpreted signed INT8.
+   This intentional modulo-256 conversion matches upstream NumPy INT8
+   export; it is NOT saturation. The published corpus includes 15 features
+   in `tst_000563_Go_1.bin` for which saturation gives different bytes.
+   This compatibility exception applies only at the MFCC boundary; inference
+   requantization and PCM conversion retain their own saturation rules.
+
+For the independently evaluated floating recipe on all 1000 reconstructed
+waveforms, 1381 of 490000 feature bytes differed from the published bytes when
+using saturation: 15 were the export-wrap case and the others were within one
+LSB. This 2026-09-11 host cross-check supports the corpus mapping and exposes
+the quantizer distinction; it is NOT fixed-point RTL accuracy evidence.
+P7 MUST implement a bit-accurate model (BAM) of the integer profile above and
+compare every frontend stage and every inference tensor against RTL. Report
+wrapped INT8 feature distance, per-stage error versus the floating reference,
+and end-to-end top-1 separately. No feature-distance tolerance waives the
+900/1000 hardware top-1 gate, and no implementation may change the formulas
+or constants merely to improve that score without another refreeze.
+
+### P7 capture, scheduling, status and diagnostic operation
+
+P7 appends one register; existing offsets and reserved masks are unchanged:
+
+| Offset | Name | Access / reset | Meaning |
+| ---: | --- | --- | --- |
+| `0x23c` | `KWS_INPUT_CONFIG` | RW disabled/idle; `0x0104bb80` | Rate `[16:0]`, physical channels `[18:17]`, precision `[25:20]`; all other bits zero. Reset is stereo S16 at 48000 Hz. |
+
+This register is needed because AXI4-Stream audio has no rate/precision tag.
+It does not cause APU to read or write I2S APB registers. Legal continuous
+values are two physical channels, 16 or 24 bits, and 16000/48000/96000 Hz.
+The caller must configure matching I2S master/dividers/stream RX while I2S is
+disabled, then select RX route 1. The current I2S HAL's exact divider checks
+remain authoritative; programmable 16 kHz capture is a P7 integration test.
+Memory-window operation ignores KWS_INPUT_CONFIG and is always mono S16/16 kHz.
+Unsupported rates, mono physical I2S, or reserved fields return PSLVERR before
+state changes. P1..P5 continue returning PSLVERR at the new offset. Software
+must test KWS capability before access; IP_VERSION remains `0x00010001`.
+KWS_INPUT_CONFIG uses byte-strobe merge and validates the merged full value,
+like KWS_CONFIG. KWS_CONTROL pulses/transitions require a full-word strobe.
+
+S16 RX consumes the older low half then newer high half of each full 32-bit
+beat. S24 RX pairs consecutive beats using signed bits 23:0; upper bits are
+ignored. The mono pair is defined by wire order, not a nonexistent LRCK/channel
+tag: after flush, its first member is the first complete accepted sample,
+then the next sample. Do not infer left/right identity from a paused 24-bit
+stream. Downmix is arithmetic floor((older+newer)/2) in a widened signed
+accumulator. S24 is then arithmetic-shifted right eight
+and saturated to S16. `TKEEP=TSTRB=0xf`, no RX TLAST; malformed sidebands or
+unrecoverable half-pairs cause code 19/stage 9, clear history and stop KWS.
+
+P7 exports the I2S wrapper's existing synchronized PCLK `s_rx_flush_busy`
+as a same-domain `rx_flush_busy_o`, connected to APU
+`i2s_rx_flush_busy_i`. This is an internal integration status wire, not an
+AXI sideband, APB register, pad or new CDC. It reuses the existing Common
+warm-flush detection, including unilateral audio reset. While asserted, APU
+must not accept RX data and must invalidate any pending half-pair/history;
+a live unplanned epoch loss counts one overrun and requires explicit restart.
+For planned quiesce/reset, use the existing non-error/forced-loss distinction.
+No new complete inference may contain samples from both sides of a flush.
+
+At 16 kHz conversion is exact bypass. At 48/96 kHz use a dedicated 63-tap
+causal FIR and decimation D=3/6. With input indices starting at zero, emit
+at n=D-1,2D-1,... using `sum(t=0..62,H_D[t]*x[n-t])`, zero history for n<t.
+Let c=1/D, x=t-31, w=(1-cos(2*pi*t/62))/2 and
+`a=c*sinc(c*x)*w`, sinc(z)=sin(pi*z)/(pi*z), sinc(0)=1. Quantize normalized
+coefficients to Q2.30 by RNE and add the unity-sum residual to tap 31.
+Use signed-64 reduction, RNE divide by `2^30`, then S16 saturation. These
+126 fixed ROM words are independent of P5 codec resampler profiles/state.
+Record the 31-input-sample filter delay; do not trim it or silently resample
+the official mono16k diagnostic corpus. Neither this FIR nor the FFT may use
+codec microcode, codec scratch or codec MAC lanes.
+
+KWS_CONTROL bits remain ENABLE 0, MEMORY_WINDOW 1 and CLEAR_HISTORY pulse 2.
+An enable rising edge latches continuous input/config, requires valid locked model and
+starts empty history. ENABLE=1/MEMORY_WINDOW=0 is continuous RX; value 3 arms
+memory-window operation without listening. Mode may change only disabled.
+Configuration/clear-history writes require KWS disabled and global idle,
+except KWS_CONFIG may be changed while memory mode is armed and no finite job
+is active. The full-word write that clears ENABLE while retaining mode and
+writing no pulse is additionally legal while KWS is active: stop admitting
+new work, finish the current feature/inference, drain accepted input/DMA,
+then become disabled. It does not abort a concurrent codec job. Mode/config
+changes during this drain are rejected. CLEAR_HISTORY resets feature/peak/FIR
+history, debounce and result-valid, but not the model, counters or IRQ state.
+
+Global STATUS.IDLE and the resource idle output still require every client
+idle; continuous listening counts as busy until disabled or quiesced. P7
+separates that global lifecycle condition from finite-job admission: job/ring
+configuration and codec START/RING_KICK may proceed when the finite-job path
+is idle even while continuous KWS runs. This narrow admission exception does
+not permit ACL/model/microcode/route/reset changes during listening. Configure
+and enable continuous KWS before starting concurrent decode. Quiesce drains
+the current KWS work, suppresses new windows and preserves enable/mode/model;
+release resumes with fresh history and a one-second warm-up. If a nonempty
+history was discarded, count one abandoned window, without first-error IRQ.
+Do not combine samples across the gap. Abort disables KWS; soft/resource reset
+clears enable/mode, capture/config registers to reset values, history, results,
+IRQs and counters while preserving valid locked model bytes and actual CRC.
+Forced loss and unilateral resets follow the existing error/CDC precedence.
+
+Continuous inference begins only with a complete history, then every 1600
+accepted 16 kHz samples. The deadline is the next such endpoint. The 49-row
+MFCC snapshot must be consumed before its oldest raw-mel row is overwritten;
+no partially updated input tensor may reach inference. A missed deadline,
+mel-ring overwrite or RX overrun abandons that window, increments overrun
+once, clears history/debounce, records code19/stage9 and stops KWS. Recovery
+is bounded disable/drain, RX flush, error/IRQ clear, history clear and enable;
+the validated model is retained. No silent catch-up, sample duplication or
+completion of a corrupted window is allowed. Frontend/inference watchdogs
+use the existing nonzero SEQUENCER_TIMEOUT as a maximum consecutive
+no-progress PCLK-cycle count independently per KWS work item. Progress means
+an accepted PCM sample, completed butterfly/band/feature, completed MAC
+reduction step or committed output tensor element, not merely an active
+state machine. Expiry is code14 at stage9/10 and quiesces the APU. Slow
+PCLK correctness tests may increase that timeout but may not claim 48 MHz
+real-time performance. DMA stalls continue to use DMA_TIMEOUT.
+
+| KWS_STATUS bit | Meaning |
+| ---: | --- |
+| 0 | Listening, live continuous capture (not quiesced/draining). |
+| 1 | Inference busy, including preparation of its immutable MFCC snapshot. |
+| 2 | History full, belonging to the current uninterrupted capture epoch. |
+| 3 | Current published result is a stable hit (same as KWS_RESULT bit16). |
+| 4 | Sticky overrun, cleared with the existing stream-xrun IRQ_STATE bit9 W1C or soft/resource/hard reset. A new overrun also raises IRQ9; hardware set wins clear. |
+| 5, 6 | Model valid, model locked. |
+| 7 | Result valid; at least one result has been published since history/reset clear. |
+| 31:8 | Reserved zero. |
+
+KWS_MODEL_STATUS bits 0,1,2 are busy, valid, locked. Bits 8,9,10,11,12 are
+header, range, size, CRC and operator/quantization failure respectively;
+all other bits read zero. They are sticky until the next accepted unlocked
+load or reset, with exactly one semantic failure bit selected. Validation
+order is size, header fields in byte order, payload DMA/CRC, then records in
+byte order; range is checked before dereferencing each field. Failures use
+code12/stage1, except CRC uses code13/stage1. ERROR_ADDRESS is the first bad
+field's external byte address (size uses KWS_MODEL_SIZE's APB address; CRC
+uses model base+0x24), and ERROR_DETAIL is `0x07000000 | reason`, reason
+1=size, 2=header, 3=range, 4=CRC, 5=operator/quantization. AXI/timeout/abort
+faults retain their existing codes and precedence. Internal KWS arithmetic
+uses code14/stage9 or10, address equal to the failing local byte address,
+detail `0x07000100 | operator_index` (frontend index 0xff).
+If new KWS and existing codec semantic faults coincide, the pre-existing
+global AXI/lifecycle/xrun precedence still wins; otherwise retain the codec
+fault, then KWS frontend, then KWS inference in that order. Model loading is
+globally exclusive. Collect every applicable sticky event/counter without
+overwriting the first error. Actual model CRC remains zero until the entire
+payload has been received, then reports the observed finalized CRC even if
+subsequent CRC/record validation fails.
+
+Choose the lowest class ID on tied final INT8 scores. Class order is Down,
+Go, Left, No, Off, On, Right, Stop, Up, Yes, Silence, Unknown (0..11).
+Unsigned confidence is `int32(softmax[class])+128` (0..255); threshold is an
+inclusive comparison. Only classes 0..9 can be hits. A run increments only
+for the same above-threshold keyword on consecutive completed windows; a
+different class starts at one, and silence/unknown/below-threshold/gap resets
+the run. Emit one stable-hit event when run count first reaches debounce
+(1..255), saturating the run count at debounce, not emitting on later matching
+windows. Hold hit for that uninterrupted
+run; re-arm on the first nonmatching/below-threshold result or explicit clear.
+KWS_RESULT holds every latest completed top-1 result, including non-hits;
+IRQ2 and HIT_COUNT change only on the event edge. IRQ W1C does not re-arm or
+clear the classifier history. Hardware set wins W1C.
+
+The timestamp is the 64-bit PCLK timestamp of the accepted last sample of
+the evaluated one-second window, not the time software services the IRQ.
+Reading KWS_RESULT atomically latches its timestamp for subsequent LO/HI
+reads; a later inference cannot tear that pair. A read does not acknowledge
+IRQ or consume the result. Frame, inference, hit and overrun counters are
+unsigned-32 saturating: completed raw-mel frames, completed inferences,
+stable-hit edges and abandoned windows respectively. CLEAR_COUNTERS is
+globally idle-only and clears these without clearing model/history/IRQ.
+
+Diagnostic operation 1 uses the existing direct/ring slot, not a second
+concurrent finite job. It requires valid locked microcode (compatibility
+admission only; no codec entry executes), valid locked model and memory mode
+armed; it is rejected while continuous KWS is enabled. CONTROL operation=1,
+format=0, output-mode=0, downmix/resample=0; INPUT_ADDRESS is four-byte aligned,
+INPUT_LENGTH=32000, INPUT_CONFIG explicitly mono/16000/16. OUTPUT_ADDRESS,
+OUTPUT_CAPACITY, OUTPUT_CONFIG and JOB_FLAGS are zero. This is the sole
+operation-1 exception to the decode rule requiring a nonzero memory output.
+All other reserved fields remain zero; OWN/IOC/cookie/ring ordering are
+unchanged. KWS_CONFIG is descriptor word9 for ring jobs and the KWS_CONFIG
+register latched at START for direct jobs. Each independent memory window
+clears debounce history and RESULT_VALID at acceptance, so debounce>1 returns hit=0 even when top-1 is a
+keyword. Accuracy uses top-1, not hit; use debounce=1 for standalone hit tests.
+
+Success returns INPUT_USED=32000, OUTPUT_BYTES=0, FRAMES=16000,
+SOURCE_INFO=mono/16000/16, DETAIL=0 and the normal done/cycles/timestamps/cookie;
+descriptor word22 and KWS_RESULT contain the result. No PCM output DMA is
+issued. Direct reads use existing job result registers plus KWS_RESULT;
+ring reads use word22 before slot reuse. A failed/aborted operation sets
+word22=0, does not publish a fresh KWS result or inference/hit count, and
+uses existing terminal writeback/OWN-clear rules. Input-used is the contiguous
+number of successfully consumed bytes, a multiple of two, at failure.
+RESULT_FRAMES on failure is INPUT_USED/2; OUTPUT_BYTES stays zero. A ring may
+mix decode and operation1 entries while memory mode is armed, but cannot
+silently switch a running continuous listener into memory mode.
+Invalid raw direct requests return PSLVERR without payload DMA/result change;
+invalid owned ring requests use code2/stage2 at the first invalid descriptor
+word, DETAIL=`0x07000200 | word_index`, then normal error writeback.
 
 ### HAL and compatibility
 
@@ -2294,6 +2750,141 @@ only requested implemented bits, and reads never clear. Invalid mask bits are
 `RS_EINVAL`. Error clear writes only ERROR_STATUS valid/W1C and cannot clear a
 same-cycle hardware fault. None of these calls changes existing IRQ routing.
 
+### P7 HAL additions
+
+These declarations are frozen additions to `<retrosoc/hal/apu.h>` for
+implementation in `crt/src/hal/apu.c`. Existing P5 structures/functions and
+the 128-byte descriptor retain their layout and signatures. The new structs
+are host-side objects, not DMA wire layouts; all flags/enumerated integers
+must be range checked. No dynamic allocation or hosted-library dependency is
+permitted. Independently extend `apu_regs.h` and `apu_define.svh`, and maintain
+handwritten Python APUM constants and deterministic parity tests.
+
+```c
+typedef struct {
+    uint32_t threshold;       /* 0..255, inclusive */
+    uint32_t debounce;        /* 1..255 */
+    uint32_t input_rate;      /* 16000, 48000 or 96000 */
+    uint32_t input_bits;      /* 16 or 24; physical I2S channels fixed at two */
+} rs_apu_kws_config_t;
+
+typedef struct {
+    uint32_t input_address;   /* exactly 32000 mono S16_LE bytes */
+    uint32_t threshold;
+    uint32_t debounce;
+    uint32_t cookie[2];
+} rs_apu_kws_job_t;
+
+typedef struct {
+    uint32_t class_id;
+    uint32_t score;
+    uint32_t hit;
+    uint32_t timestamp[2];   /* low, high; evaluated-window endpoint */
+} rs_apu_kws_result_t;
+
+typedef struct {
+    uint32_t status;
+    uint32_t model_status;
+    uint32_t model_crc;
+    uint32_t frame_count;
+    uint32_t inference_count;
+    uint32_t hit_count;
+    uint32_t overrun_count;
+} rs_apu_kws_status_t;
+
+typedef struct {
+    rs_apu_result_t job;
+    uint32_t class_id;
+    uint32_t score;
+    uint32_t hit;
+} rs_apu_kws_completion_t;
+
+rs_status_t rs_apu_kws_model_load(const rs_apu_image_t *image, rs_timeout_t timeout);
+rs_status_t rs_apu_kws_configure(const rs_apu_kws_config_t *config);
+rs_status_t rs_apu_kws_enable(uint32_t memory_window);
+rs_status_t rs_apu_kws_disable(rs_timeout_t timeout);
+rs_status_t rs_apu_kws_clear_history(void);
+rs_status_t rs_apu_kws_status_read(rs_apu_kws_status_t *status);
+rs_status_t rs_apu_kws_result_read(rs_apu_kws_result_t *result);
+rs_status_t rs_apu_kws_validate_job(const rs_apu_kws_job_t *job);
+rs_status_t rs_apu_kws_submit_direct(const rs_apu_kws_job_t *job);
+rs_status_t rs_apu_kws_wait_direct(rs_apu_kws_completion_t *result, rs_timeout_t timeout);
+rs_status_t rs_apu_kws_ring_submit(rs_apu_ring_t *ring, const rs_apu_kws_job_t *job,
+                                    uint32_t ioc, uint32_t *slot);
+rs_status_t rs_apu_kws_ring_result(const rs_apu_ring_t *ring, uint32_t slot,
+                                    rs_apu_kws_completion_t *result, rs_timeout_t timeout);
+```
+
+- `model_load` is blocking and reuses rs_apu_image_t's DMA address, exact byte
+  size and expected payload CRC. Validate size=32768, alignment, checked
+  inclusive ACL range, LP ownership, quiesce/global idle, disabled KWS and
+  unlocked model; perform the same CBO/fence discipline as microcode load.
+  Program the three existing model registers, issue COMMAND bit5, and poll
+  KWS_MODEL_STATUS. Success requires valid AND locked and matching actual CRC.
+  No unlock, implicit hard reset, IRQ acknowledgement or retry is hidden.
+- `configure` requires disabled/global idle, packs the two fields of
+  KWS_CONFIG and the appended KWS_INPUT_CONFIG, and preserves all other
+  settings. It does not configure I2S, change route or clear history/errors.
+  `enable(memory_window)` accepts only 0/1, validates capability/model/owner
+  and nonquiesced admission, and writes control 1 or 3. Continuous mode also
+  requires RX route1; the caller is responsible for matching I2S settings.
+  No codec microcode executes in either KWS mode.
+- `disable` initiates the KWS-only bounded drain, preserving mode. Poll until
+  ENABLE reads zero and both listening/inference-busy clear; hardware keeps
+  ENABLE readback one until drain completes. Already-disabled is RS_OK. Do
+  not abort a concurrent codec job or silently reroute RX to central DMA.
+  `clear_history` issues only bit2 while disabled/global idle, preserving
+  mode and model lock. Neither call clears unrelated IRQ or first-error state.
+- `status_read` returns the raw status/model words, actual CRC and individual
+  monotonic counters. These live counter reads are not a multi-register
+  atomic snapshot; use the existing PERF snapshot for cycle comparisons.
+  `result_read` checks RESULT_VALID, reads KWS_RESULT (latching its timestamp),
+  then timestamp LO/HI, and decodes class/score/hit. It returns the latest
+  valid result without consuming it; no-result returns RS_ETIMEOUT immediately.
+- `validate_job` is pure, performs no MMIO and validates nonnull pointer,
+  four-byte alignment, checked 32000-byte range and threshold/debounce.
+  Submit functions additionally check capability, model/microcode locks,
+  owner/quiesce/ACL state and armed memory mode. They are nonblocking:
+  pack operation1 exactly as above and either issue START or publish the
+  owned ring entry with the existing cache/fence/doorbell discipline. Ring
+  submission preserves caller cookie and sets IOC from exactly 0/1. Do not
+  call the P5 WAV decoder to process these raw PCM bytes.
+- `wait_direct` and `ring_result` are bounded completion readers with normal
+  P5 job/result/error semantics. Read descriptor word22 only after completed
+  OWN-clear and cache invalidation, before the caller reuses that slot; ring
+  results use that word, not the newest global result. Both completion APIs
+  return the unchanged job START/FINISH timestamps in `job`; they do not
+  claim a per-descriptor capture-endpoint timestamp. On a failed job, zero
+  the returned class_id/score/hit fields and return its error;
+  a previous successful global result is never presented as the failed job.
+
+The global KWS result reports a capture endpoint, whereas the immutable
+descriptor records job start/finish. All START/FINISH fields keep their
+original meanings, including operation1. A per-descriptor capture-endpoint
+timestamp is explicitly deferred because it requires a new descriptor ABI.
+
+All fallible APIs use existing rs_status_t values: RS_EINVAL for null/range/
+state/ownership/mode errors; RS_ENOTSUP for missing KWS or unsupported APB
+major version (test discovery before touching the P7-only offset); RS_EFORMAT
+for model size/header/range/operator rejection (code12); RS_EIO for CRC,
+AXI, arithmetic and other hardware terminal failures; RS_ETIMEOUT for an
+exhausted poll budget; RS_OK only on the specified successful state/result.
+Waits use the existing rs_timeout_t poll budget `max(1,timeout)`, not
+milliseconds and never an infinite wait. Timeout does not transfer ownership,
+clear OWN, unlock the model, acknowledge IRQs or cancel outstanding DMA.
+The caller retains input storage until bounded disable/abort/drain confirms
+completion; global abort/reset is an explicit caller decision. Existing
+rs_apu_irq_* and error APIs manage IRQ2/4/8/9 without new interrupt allocation.
+The owner driver serializes register configuration, submission and result
+reads; these freestanding APIs add no OS lock and are not implicitly reentrant.
+
+Deterministic host tests cover exact packing/offsets and model CRC, every
+rejection and return mapping, zero/one/max timeouts, no-MMIO pure validation,
+no writes after failed validation, result freshness, ring slot reuse, cache
+ordering, and P5 discovery fail-closed behavior. The implementation must review
+applicable MISRA rules and add a reviewed deviation only if actually needed;
+this documentation freeze grants no new MISRA deviation.
+
 ## Clock, Reset, CDC/RDC, and Lifecycle
 
 APB4, DMA source, sequencer, local SRAM, fixed engines, KWS, and stream router
@@ -2433,7 +3024,7 @@ bus fault, timeout, abort, xrun, model failure, or lifecycle failure.
   and bounded metadata skip. Ogg mapping is unsupported.
 - S16_LE or S24_32LE memory/I2S output; fixed-point resampling to 48/96 kHz,
   including 44.1-to-48 kHz.
-- Continuous KWS: 16 kHz mono S16, one-second history, 10 ms feature stride,
+- Continuous KWS: 16 kHz mono S16, one-second history, 20 ms feature stride,
   49 by 10 INT8 MFCC, 12 classes, inference each 100 ms, configurable threshold
   and debounce.
 - One decode job plus concurrent KWS, direct/ring DMA, APB4, LP/HP ownership,
@@ -2488,6 +3079,168 @@ power, coherency, or security require a new approved phase/spec revision.
 All new external corpora or reference packages require exact revisions or
 archive checksums in the dependency lock. Managed source retains notices and
 does not become evidence of self-owned MISRA conformance.
+
+### P7 locked reference inputs and corpus provenance
+
+The following revisions and complete archive SHA-256 values were verified
+from upstream bytes on 2026-09-11. Register them in the executable dependency
+lock during P7 implementation, using the existing shared dependency helpers
+and `scripts/setup_apu_reference.py`; this refreeze changes documentation only.
+No floating branch, newly trained model, arbitrary first-1000 selection,
+unverified cache hit or direct CI download is an equivalent input.
+
+| Source lock key | Repository / full revision | License and retained notice |
+| --- | --- | --- |
+| `sources.apu_mlperf_tiny` | `https://github.com/mlcommons/tiny.git` at `4addd0fa08d216e20637637874e084895f289da4` | Apache-2.0; LICENSE.md and source/model notices. |
+| `sources.apu_kws_mfcc` | `https://github.com/eembc/benchmark-runner-ml.git` at `cf7c2f2634608a7c0ea7458ab7cb3379f2863424` | Mixed tree: lock NOASSERTION, consume only datasets/kws01; retain source README and Speech Commands CC-BY-4.0 attribution. Do not package the runner or unrelated datasets. |
+| `sources.apu_tfds` | `https://github.com/tensorflow/datasets.git` at `8997c4140cd4fc145f0693787b1da78691930459` (v4.3.0) | Apache-2.0; LICENSE and per-file notices; ordering reference only. |
+| `sources.apu_tensorflow` | `https://github.com/tensorflow/tensorflow.git` at `fcc4b966f1265f466e82617020af93670141b009` (v2.3.1) | Apache-2.0; LICENSE and per-file notices; host numerical reference only. |
+| `sources.apu_gemmlowp` | `https://github.com/google/gemmlowp.git` at `fda83bdc38b118cc6b56753bd540caa49e570745` | Apache-2.0; LICENSE and per-file notices; scalar fixed-point oracle only. |
+
+Source destinations are `.cache/retrosoc/sources/<source-key-with-underscores-replaced-by-hyphens>`
+(for example `.cache/retrosoc/sources/apu-mlperf-tiny`). Archive keys below
+match source keys where applicable. Archive download destinations are
+`.cache/retrosoc/downloads/apu/<key>-<revision>.<tar.gz-or-zip>`; the Google
+corpus uses `speech_commands_test_set_v0.02.tar.gz`. These are managed inputs,
+not installed Python runtime versions or code permitted in freestanding CRT.
+
+| Archive key | Immutable URL | SHA-256 |
+| --- | --- | --- |
+| `archives.apu_mlperf_tiny` | `https://codeload.github.com/mlcommons/tiny/tar.gz/4addd0fa08d216e20637637874e084895f289da4` | `70012ee5a8fc3367b466854b1840fb0246e0525744262631a98c5fc0971a04b0` |
+| `archives.apu_kws_mfcc` | `https://codeload.github.com/eembc/benchmark-runner-ml/tar.gz/cf7c2f2634608a7c0ea7458ab7cb3379f2863424` | `87e431a6b4d3f011d672180a3fb1f08856d8074310f37653d5388ec2affc5209` |
+| `archives.apu_tfds` | `https://codeload.github.com/tensorflow/datasets/tar.gz/8997c4140cd4fc145f0693787b1da78691930459` | `e300258c247fe8607f3c0200a34343c6a28efb69f0d2b822606a8a66cccea651` |
+| `archives.apu_tensorflow` | `https://codeload.github.com/tensorflow/tensorflow/tar.gz/fcc4b966f1265f466e82617020af93670141b009` | `ad41490904b0313c00f3729c7e2ba931b2b8d1e54ea1a859a4bcea3054d4fdc0` |
+| `archives.apu_gemmlowp` | `https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/gemmlowp/archive/fda83bdc38b118cc6b56753bd540caa49e570745.zip` | `43146e6f56cb5218a8caaab6b5d1601a083f1f31c06ff474a4378a7d35be9cfb` |
+| `archives.apu_kws_pcm` | `https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_test_set_v0.02.tar.gz` | `cc2a00c1147c2254e9be3fa0f779d8c17421dc349b86366567a8edfa9acd51df` |
+
+The PCM archive is exactly 112563277 bytes and contains 4890 WAV files. Extract
+it to `.cache/retrosoc/sources/apu-kws-pcm` with the shared safe extractor.
+License is CC-BY-4.0; retain its LICENSE and README.md, attribute Pete Warden /
+Google Speech Commands Data Set Test Files v0.02, and identify padding and
+feature extraction as modifications in redistributed derivatives. Managed
+reference code/data is excluded from self-owned MISRA claims. P7 release
+notices must cover any derived model/ROM/data actually shipped; benchmark
+inputs themselves are host-only unless explicitly included as test fixtures.
+
+The model path under apu-mlperf-tiny is
+`benchmark/training/keyword_spotting/trained_models/kws_ref_model.tflite`,
+53936 bytes, SHA-256
+`aeea436800704fce17b17292e4412630ad856e9d777c044c64ef748a880bd0ae`.
+Do not substitute the README's obsolete `aww_ref_model` name, the float32
+model, or a newly generated `kws_model.tflite`. Source preprocessing/converter
+reference files are `benchmark/training/keyword_spotting/{get_dataset.py,kws_util.py,make_bin_files.py}`
+at that same full revision. The scalar inference reference is
+`tensorflow/lite/kernels/internal/{common.h,quantization_util.cc,reference/softmax.h,reference/integer_ops/conv.h,reference/integer_ops/depthwise_conv.h,reference/integer_ops/pooling.h,reference/integer_ops/fully_connected.h}`
+at the pinned TensorFlow
+revision, with scalar `fixedpoint/fixedpoint.h` from pinned gemmlowp. No
+TensorFlow wheel, network-accessing training script or TFDS runtime is needed
+to reconstruct the frozen PCM manifest.
+
+#### Exact 1000-window selection
+
+[apu-kws-corpus.tsv](apu-kws-corpus.tsv) is a normative input manifest, not a
+build report. It has no header, UTF-8/ASCII text, six tab-separated columns
+and LF terminators including the last line: six-digit index, official binary
+name, relative source WAV path, decimal class ID, source WAV SHA-256, padded
+PCM SHA-256. Its canonical-text SHA-256 is
+`57fa600948ef7a19ed5eb0d0e73c7d09fef7d0dbb12bc8833a0a8caad1d6845e`.
+When checkout line endings differ, normalize CRLF to LF only before checking
+this text hash. Binary WAV/PCM/MFCC hashes never normalize bytes.
+
+The verified selection reproduces TFDS speech_commands 0.0.2 ordering as
+used by the upstream test exporter: take each WAV's key `<directory>_<filename>`,
+sort by the unsigned 128-bit MD5 of UTF-8 `test` followed by that key, divide
+the 4890 sorted records into four contiguous shards of 1222,1223,1223,1222
+records (round-to-nearest-even boundaries 0,1222,2445,3668,4890), then read
+16 records from each shard in order, repeatedly. Take the first 1000.
+The MD5 here is an ordering algorithm, not an integrity/security checksum.
+All 1000 labels match the official list. No filename remapping based only on
+class labels, nearest-feature search or host-dependent TFDS iteration is used.
+
+Read each selected RIFF WAV as mono 16000 Hz signed S16, preserve sample bits,
+right-pad with signed-zero samples to exactly 16000 samples, and emit exactly
+32000 little-endian bytes. Reject a longer file or different rate/precision.
+The first source is `stop/563aa4e6_nohash_3.wav`; the last is
+`up/c22d3f18_nohash_2.wav`. The PCM manifest is independently reproducible from
+the public Google archive; an unavailable/deleted EEMBC td_samples package
+or user-supplied licensed download is not a prerequisite.
+
+| Object / byte-order of concatenation | Required SHA-256 |
+| --- | --- |
+| 1000 padded PCM files, index 0..999, no delimiters (32000000 bytes) | `abd1ff2c988ac168dd68c29f934d95114d1094d7818d79fe73adb166ac009bee` |
+| Official `datasets/kws01/y_labels.csv`; identical to Tiny `benchmark/evaluation/datasets/kws01/y_labels.csv` | `6cb3709762d53fe64eb00eaf4a75796248bb3c1386f1d1f93ccdb07b071e9698` |
+| Official 1000 `datasets/kws01/tst_*.bin`, index order, 490 bytes each, no delimiters | `c2e5f02def82726f5c49dfe85c311c52f295ad68561f6bae89931fdadaaedc73` |
+
+The future self-owned converter is `scripts/apu_kws_convert.py`, contract
+revision `apu-kws-convert/1.0.0`, target `p7`, APUM ABI 1.0 and frontend
+profile 1. It performs the specified static import/packing, not training or
+quantization calibration. Its source commit/hash cannot exist before
+implementation: each P7 artifact MUST record the exact implemented converter
+Git revision, dirty status, source-file SHA-256 and contract revision. A dirty
+or missing converter identity cannot qualify a release. Two independent
+imports of the pinned source must give identical APUM bytes, CRC, ROM words
+and manifest. Check the generated APUM CRC/SHA and parameter/requantization
+hashes against the independent freeze-time golden values above, and record
+the actual results. The production converter is still an implementation
+deliverable; its existence or correctness is not implied by that byte-layout
+cross-check.
+
+#### P7 qualification artifacts and gates
+
+The implementation extends the existing APU reference setup flow with target
+P7 and offline doctor checks. Its generated corpus, model, coefficients,
+per-layer tensors and JSON reports belong below the selected committed
+profile's `build/<profile>-<date>-<hash>/apu-kws/`. Setup/doctor must check all
+archive, source model, label, manifest, per-file and aggregate hashes above.
+It must fail for missing input rather than downloading outside the shared
+dependency helpers or replacing the corpus with synthetic stimuli.
+
+Required report names are `provenance.json`, `apum-layout.json`,
+`frontend-differential.json`, `layer-differential.json`, `accuracy.json`,
+`concurrent.json`, and `lifecycle.json`. They record input/converter/BAM/RTL
+revisions, model/ROM hashes, profile, simulator/tool versions, seed, exact
+command, success/failure, counts and artifact paths. Layout includes every
+image interval, scratch lifetime, bank access and high-water, not just the
+53 KiB source TFLite size. That source file must never be copied verbatim
+into the 32 KiB APUM model reservation.
+
+- Official feature-input inference is a separate host/verification-only
+  layer differential on all 1000 MFCC files; it exposes no new public
+  operation or bypass bit. Each INT8 layer and final result is bit-exact
+  against the pinned scalar inference reference.
+- End-to-end accuracy feeds all 1000 padded PCM windows through operation 1
+  and the real hardware frontend/inference path, resets history per input,
+  threshold=128/debounce=1, and requires at least 900 correct top-1 labels
+  out of exactly 1000. Silence/unknown remain part of the denominator. No
+  skipped/duplicated utterance, CPU MFCC or precomputed-input substitution
+  is allowed. Report per-class counts and every incorrect index.
+- Continuous tests cover the initial one-second warm-up, 20 ms feature hop,
+  100 ms inference cadence, every tie/threshold/debounce edge, snapshot
+  coherency, counter saturation, planned gaps and stale-result prevention.
+  Raw-mel reuse must equal recomputing the same window's integer frontend.
+- Mutate every APUM header/record/range/CRC/reserved field, per-channel
+  scaling, sign/rounding extrema and scratch boundary. Test partial load,
+  retry, lock, HP denial, no payload DMA before admission and no valid on
+  failure. Independently handwritten RTL/C/Python constants and wire
+  fixtures must agree; a register generator is still prohibited.
+- Concurrent WAV and every qualified P5 FLAC performance workload run with
+  continuous RX KWS for at least 60 simulated seconds at 48 MHz, at both
+  48 and 96 kHz I2S and both precisions, with the active P5 ready-memory
+  qualification. Require zero codec underrun and KWS overrun, every full
+  uninterrupted scheduled window completed before its successor, and
+  matching byte/frame/cycle/stall scoreboards. Do not promote archived P6
+  memory-service envelopes to new P7 prerequisites.
+- Separately inject AXI stalls/errors, RX/TX xrun, abort/reset/quiesce/handoff
+  at each loader/frontend/layer/writeback state, descriptor wrap/ownership,
+  half stereo pairs and unilateral clock-domain resets. These stress cases
+  require the bounded specified recovery, not an impossible zero-xrun claim
+  under arbitrary starvation. KWS failure must not corrupt codec SRAM,
+  model lock or previously published descriptor completions.
+
+IHP130 synthesis/netlist/OpenSTA and final commercial physical evidence remain
+P8 work, as for P5. P7 records cycle/memory/ROM/CDC integration evidence but
+does not claim area/timing/power closure or an official MLPerf submission.
+The current release still advertises no MP3 support.
 
 ### P5 locked reference inputs and qualification
 
@@ -3103,28 +3856,66 @@ Scope: 16 kHz input, MFCC, `APUM` converter/loader/lock, fixed INT8 engine,
 continuous scheduler, threshold/debounce, diagnostic operation1, IRQ, accuracy,
 performance, and concurrent decode/KWS.
 
-Dependencies: reviewed Phase5 and locked MLPerf Tiny model/data inputs.
+Dependencies: reviewed Phase5; the P7 source/model/corpus/converter contracts
+above are frozen inputs. Registering their exact dependency entries and
+installing them through the shared setup flow is P7 implementation work,
+not an open choice of model/dataset or a missing-user-data prerequisite.
 Deferred Phase6 is not a prerequisite and its MP3 reports are not required.
 
 Public changes: implements frozen KWS/model/descriptor-operation/IRQ/counter
-ABI and RX route 1, with current-release `CAPABILITY0=0x000001fd` and MP3 bit
-1 still zero. `CAPABILITY1=0x01827020` and `IP_VERSION=0x00010001` are unchanged;
-`ABI_DIGEST=0` remains required through P7. No generic NPU interface.
+ABI, the additive KWS HAL and KWS_INPUT_CONFIG at `0x23c`, and RX route 1.
+The I2S wrapper also exports its existing synchronized RX flush-busy state
+to APU over the specified same-PCLK internal wire.
+Existing offsets/reserved masks, 128-byte descriptor, APUMC V1/V2, 4096-word
+control store, bank count, Gateway/IRQ/resource/pad/clock/CDC allocations are
+unchanged. `CAPABILITY1=0x01827020`, `IP_VERSION=0x00010001` and `ABI_DIGEST=0`
+remain required. Only after every P7 gate passes does the release capability
+change from P5 `0x000001bd` to `0x000001fd`; MP3 bit1 remains zero. No generic
+NPU interface, CPU MFCC, host inference or shared-codec-lane fallback.
 
-Validation:
+Implementation order within this single phase:
+
+1. Add exact dependency inputs, offline verification and the fixed corpus
+   manifest import; implement converter contract 1.0.0 and independent BAM.
+2. Add handwritten RTL/C/Python APUM/register parity, wire fixtures and
+   deterministic HAL packing tests before enabling public commands.
+3. Implement bounded model DMA/CRC/validation/atomic lock and failure tests.
+4. Add the independent banks10..25 client, capture/FIR/MFCC/16-lane inference,
+   fixed graph, scheduler, snapshot/status/counters and lifecycle integration.
+5. Activate RX route1 and direct/ring operation1 with HAL, firmware and
+   fault/ownership tests; retain all reviewed P5 and MP3-stub behavior.
+6. Produce the complete P7 differential, 1000-window accuracy, concurrency
+   and lifecycle reports, then promote only the KWS capability bit.
+
+Validation after implementation (these commands are not evidence of results
+from this documentation-only refreeze):
 
 ```sh
+python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
+ruff check .
 make sw-format-check sw-policy-check sw-host-test
 python3 -m pytest -q
 make CONFIG=configs/ci/ihp130.mk formal
 make CONFIG=configs/ci/ihp130.mk APP=ci_smoke SIMU=VERILATOR firmware sim
-make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
-make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
+git diff --check
 ```
 
-Completion: MFCC/layer differential passes, official accuracy is at least
-90 percent, continuous scheduling has no unexplained loss, and concurrent
-WAV/FLAC playback plus KWS meets the current MVP xrun gate.
+P7 must additionally register and run directed KWS model/frontend/inference,
+HAL and full qualification tests under Pytest and the affected formal/firmware
+flow; a green generic smoke is not a substitute for the seven named reports.
+Extend `scripts/setup_apu_reference.py` with `--target p7` and `--doctor`,
+preserving its current `--build-dir` and P5 default behavior. The future
+converter accepts `--target p7 --model <verified-tflite> --output <apum>` and
+`--manifest <json>`; all paths resolve inside the active build directory except
+read-only managed model input. These options are implementation deliverables,
+not commands assumed to exist before P7.
+
+Completion: every byte/schema/loader/HAL/lifecycle gate above passes, every
+layer is bit-exact, all 1000 windows execute through hardware with top-1
+>=900/1000, and concurrent WAV/FLAC plus KWS meets the stated zero-xrun gate.
+The source manifest and generation hashes must be reported, not inferred
+from a successful simulator exit. Synthesis, netlist, OpenSTA, full LP/HP
+contention and commercial physical closure remain P8; P6 remains deferred.
 
 ### Phase 8 - LP/HP Software, Contention, and Physical Evidence
 
