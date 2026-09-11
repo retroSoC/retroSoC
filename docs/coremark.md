@@ -11,13 +11,15 @@ the UART, flash fetches, or a peripheral timer.
 The benchmark application emits a single machine-readable UART record:
 
 ```text
-COREMARK_RESULT mode=quick qualified=0 memory=sram iterations=4 cycles=<n> cpu_hz=72000000
+COREMARK_RESULT mode=quick qualified=0 memory=sram iterations=4 cycles=<n> cpu_hz=24000000
 ```
 
 `scripts/parse_coremark_log.py` converts the record to `meta/coremark.json`.
 `coremark_per_mhz` is calculated as `iterations * 1,000,000 / cycles` and is
 rounded to three decimal places. The result also requires `COREMARK_PASS` and
-the common `SIM_TEST_PASS` terminal software result.
+the common `SIM_TEST_PASS` terminal software result. The PRODUCT management
+core starts from REF24 at 24 MHz, and the firmware build derives `cpu_hz` and
+UART timing from that reset-clock contract.
 
 ## Quick Regression Measurement
 
@@ -25,14 +27,15 @@ Run the fixed four-iteration workload with Verilator:
 
 ```sh
 make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk \
-  SIMU=VERILATOR coremark-report
+  SIMU=VERILATOR SOC_SIM_TIME=7200 coremark-report
 ```
 
 The quick profile is included in the IHP130 nightly regression. It verifies
-the CoreMark CRCs, SRAM linker placement, machine cycle counting, report
-parsing, and terminal test status. Its short fixed workload is reproducible
-for regression trending, but it is not an EEMBC-qualified CoreMark score and
-must not be used for public performance claims.
+the pin-level XPI boot path, CoreMark CRCs, SRAM linker placement, machine
+cycle counting, report parsing, and terminal test status. Its short fixed
+workload is reproducible for regression trending, but it is not an
+EEMBC-qualified CoreMark score and must not be used for public performance
+claims.
 
 ## Standard Hardware Measurement
 

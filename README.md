@@ -238,7 +238,7 @@ make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG \
 | Icarus netlist simulation after synthesis | `make CONFIG=configs/ci/ihp130.mk SIMU=IVERILOG netsim` |
 | OpenSTA core timing analysis after synthesis | `make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta` |
 | Strict Verilator RTL lint | `make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES check-rtl-lint` |
-| Hazard3 CoreMark quick report | `make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report` |
+| Hazard3 CoreMark quick report | `make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR SOC_SIM_TIME=7200 coremark-report` |
 | Generate the untracked HP core RTL | `make CONFIG=configs/ci/ihp130-hp.mk vexii-generate` |
 | Build and package the HP Linux flash image | `make setup-hp-linux && make CONFIG=configs/ci/ihp130-hp.mk hp-bundle` |
 | IHP130 fast smoke suite | `make regress-smoke` |

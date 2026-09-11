@@ -83,11 +83,11 @@ SMOKE_COMMANDS = (
 NIGHTLY_EXTRA_COMMANDS = (
     (
         "configs/benchmark/ihp130-hazard3-coremark.mk",
-        # The quick-mode serial-flash boot plus benchmark needs ~33M emu cycles;
-        # hosted runners reach only ~15k cycles/s, far below the 180s default.
+        # Pin-level serial-flash boot plus the PRODUCT benchmark needs ~80M
+        # emulator steps; 7200s preserves XPI coverage with runner margin.
         (
             "SIMU=VERILATOR",
-            "SOC_SIM_TIME=3600",
+            "SOC_SIM_TIME=7200",
             "HAVE_SVA=YES",
             "coremark-report",
         ),

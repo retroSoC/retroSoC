@@ -20,6 +20,7 @@ Original Author: Shay Gal-on
 #include <stdint.h>
 
 #include <retrosoc/arch/riscv/system_base.h>
+#include <retrosoc/core/soc.h>
 
 #if VALIDATION_RUN
 volatile ee_s32 seed1_volatile = 0x3415;
@@ -55,7 +56,7 @@ static CORETIMETYPE barebones_clock(void) {
    does not occur. If there are issues with the return value overflowing,
    increase this value.
         */
-#define CLOCKS_PER_SEC             72000000
+#define CLOCKS_PER_SEC             RS_CPU_CLOCK_HZ
 #define GETMYTIME(_t)              (*_t = barebones_clock())
 #define MYTIMEDIFF(fin, ini)       ((fin) - (ini))
 #define TIMER_RES_DIVIDER          1

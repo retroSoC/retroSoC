@@ -56,7 +56,8 @@ make CONFIG=configs/ci/ihp130-shell.mk SIMU=VERILATOR firmware sim
 make CONFIG=configs/benchmark/ihp130-hazard3.mk SIMU=VERILATOR benchmark-report
 
 # IHP130/Hazard3 fixed-workload CoreMark; result is written to meta/coremark.json
-make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk SIMU=VERILATOR coremark-report
+make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk \
+  SIMU=VERILATOR SOC_SIM_TIME=7200 coremark-report
 
 # Hazard3 remote-bitbang, OpenOCD, and GDB acceptance flow
 make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim

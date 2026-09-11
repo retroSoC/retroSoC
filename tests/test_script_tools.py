@@ -882,6 +882,18 @@ def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> N
         line.startswith("MGMT_CORE") and line.rstrip().endswith("HAZARD3")
         for line in default_core.splitlines()
     )
+    assert any(
+        line.startswith("MGMT_CPU_CLK_HZ") and line.rstrip().endswith("24000000")
+        for line in default_core.splitlines()
+    )
+
+    mpw_config = run("make", "CONFIG=configs/cluster/mini-mpw.mk", "config").stdout
+    assert any(
+        line.startswith("MGMT_CPU_CLK_HZ") and line.rstrip().endswith("72000000")
+        for line in mpw_config.splitlines()
+    )
+    software_makefile = (ROOT / "rtl/mini/mk/software.mk").read_text(encoding="utf-8")
+    assert "-DRS_CPU_CLOCK_HZ=$(MGMT_CPU_CLK_HZ)U" in software_makefile
 
     removed_debug = subprocess.run(
         ["make", "HAVE_DEBUG=NO", "config"],
@@ -1042,7 +1054,8 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
                 assert "LINK_TYPE=ld2_all_sram" in values
                 assert "VERILATOR_SIM_ARGS=--fast-flash" in values
             elif "coremark-report" in values:
-                assert simulation_timeout == ["SOC_SIM_TIME=3600"]
+                assert simulation_timeout == ["SOC_SIM_TIME=7200"]
+                assert not any(value.startswith("VERILATOR_SIM_ARGS=") for value in values)
             else:
                 assert not simulation_timeout
             if "debug-sim" not in values:
@@ -1394,8 +1407,9 @@ def test_nightly_extra_regression_skips_pr_netsim() -> None:
     )
     assert (
         "+ make CONFIG=configs/benchmark/ihp130-hazard3-coremark.mk "
-        "SIMU=VERILATOR SOC_SIM_TIME=3600 HAVE_SVA=YES coremark-report" in extra.stdout
+        "SIMU=VERILATOR SOC_SIM_TIME=7200 HAVE_SVA=YES coremark-report" in extra.stdout
     )
+    assert "--fast-flash" not in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS SYNTH_RECIPE=area synth" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk STA=OPENSTA SYNTH_RECIPE=area sta" in extra.stdout
     assert "+ make CONFIG=configs/ci/ihp130.mk SYNTH_RECIPE=area metrics" in extra.stdout
