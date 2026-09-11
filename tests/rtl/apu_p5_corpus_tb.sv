@@ -20,6 +20,8 @@ module apu_p5_corpus_tb;
   logic write_active_q, write_response_q;
   logic [31:0] write_addr_q;
   logic [7:0] write_len_q, write_beat_q;
+  longint unsigned input_next_offset_q;
+  longint unsigned output_next_offset_q;
   logic [31:0] s_value;
   logic [31:0] s_job_status, s_job_input_used, s_job_output_bytes;
   logic [31:0] s_job_frames, s_job_source_info, s_job_cycles, s_job_detail;
@@ -110,12 +112,15 @@ module apu_p5_corpus_tb;
         data_o = image[(address_i-ImageBase)>>2];
       end else if ((address_i >= InputBase) &&
                    (address_i < InputBase + s_input_bytes + 32'd3)) begin
-        s_seek_result = $fseek(s_input_file, address_i - InputBase, 0);
-        if (s_seek_result != 0) $fatal(1, "P5 corpus input seek failed at %h", address_i);
+        if ((address_i - InputBase) != input_next_offset_q) begin
+          s_seek_result = $fseek(s_input_file, address_i - InputBase, 0);
+          if (s_seek_result != 0) $fatal(1, "P5 corpus input seek failed at %h", address_i);
+        end
         for (int lane = 0; lane < 4; lane++) begin
           s_byte            = $fgetc(s_input_file);
           data_o[lane*8+:8] = (s_byte < 0) ? 8'd0 : 8'(s_byte);
         end
+        input_next_offset_q = address_i - InputBase + 32'd4;
       end else begin
         $fatal(1, "P5 corpus unexpected AXI read %h", address_i);
       end
@@ -135,6 +140,8 @@ module apu_p5_corpus_tb;
       write_addr_q     <= 32'd0;
       write_len_q      <= 8'd0;
       write_beat_q     <= 8'd0;
+      input_next_offset_q <= 64'd0;
+      output_next_offset_q <= 64'd0;
     end else begin
       if (axi4.arvalid && axi4.arready) begin
         load_read_data(axi4.araddr, s_read_data);
@@ -164,11 +171,21 @@ module apu_p5_corpus_tb;
         if ((write_addr_q < OutputBase) || (write_addr_q >= OutputBase + s_output_capacity)) begin
           $fatal(1, "P5 corpus unexpected AXI write %h", write_addr_q);
         end
-        for (int lane = 0; lane < 4; lane++) begin
-          if (axi4.wstrb[lane]) begin
-            s_seek_result = $fseek(s_output_file, write_addr_q - OutputBase + lane, 0);
-            if (s_seek_result != 0) $fatal(1, "P5 corpus output seek failed at %h", write_addr_q);
-            $fwrite(s_output_file, "%c", axi4.wdata[lane*8+:8]);
+        if ((axi4.wstrb == 4'hf) &&
+            ((write_addr_q - OutputBase) == output_next_offset_q)) begin
+          $fwrite(s_output_file, "%c%c%c%c", axi4.wdata[7:0], axi4.wdata[15:8],
+                  axi4.wdata[23:16], axi4.wdata[31:24]);
+          output_next_offset_q <= output_next_offset_q + 64'd4;
+        end else begin
+          for (int lane = 0; lane < 4; lane++) begin
+            if (axi4.wstrb[lane]) begin
+              s_seek_result = $fseek(s_output_file, write_addr_q - OutputBase + lane, 0);
+              if (s_seek_result != 0) $fatal(1, "P5 corpus output seek failed at %h", write_addr_q);
+              $fwrite(s_output_file, "%c", axi4.wdata[lane*8+:8]);
+              if ((write_addr_q - OutputBase + lane + 1) > output_next_offset_q) begin
+                output_next_offset_q <= write_addr_q - OutputBase + lane + 1;
+              end
+            end
           end
         end
         if (axi4.wlast != (write_beat_q == write_len_q)) begin
@@ -338,8 +355,13 @@ module apu_p5_corpus_tb;
     $finish;
   end
 
-  initial begin
-    #4000000000;
-    $fatal(1, "P5 corpus wall clock timeout");
+  initial begin : wallclock_timeout
+    longint unsigned wallclock_ns;
+    wallclock_ns = 64'd4_000_000_000;
+    void'($value$plusargs("WALLCLOCK_NS=%d", wallclock_ns));
+    if (wallclock_ns != 0) begin
+      #(wallclock_ns);
+      $fatal(1, "P5 corpus wall clock timeout");
+    end
   end
 endmodule

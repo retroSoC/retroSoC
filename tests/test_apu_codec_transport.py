@@ -12,6 +12,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -31,7 +33,13 @@ from apu_isa import (  # noqa: E402
 from apu_mcasm import assemble  # noqa: E402
 from apu_p5_coefficients import coefficient_bytes  # noqa: E402
 from apu_primitives import PrimitiveBam  # noqa: E402
-from run_apu_p5_corpus_rtl import _can_reuse_result  # noqa: E402
+import run_apu_p5_corpus_rtl as corpus_runner  # noqa: E402
+from run_apu_p5_corpus_rtl import (  # noqa: E402
+    MIGRATABLE_VERIFICATION_SHA256,
+    _can_migrate_pass_result,
+    _can_reuse_result,
+    _truth_sha256,
+)
 
 
 TRANSPORT_PROGRAM = """
@@ -181,11 +189,137 @@ def test_p5_corpus_timeout_result_is_never_reused() -> None:
         "source_sha256": "source",
         "bundle_sha256": "bundle",
         "verification_sha256": "verification",
+        "truth_sha256": "truth",
     }
     assert not _can_reuse_result(
-        {"status": "failed", **identity}, "source", "bundle", "verification"
+        {"status": "failed", **identity}, "source", "bundle", "verification", "truth"
     )
-    assert _can_reuse_result({"status": "passed", **identity}, "source", "bundle", "verification")
+    assert _can_reuse_result(
+        {"status": "passed", **identity}, "source", "bundle", "verification", "truth"
+    )
+
+
+def test_p5_corpus_cache_requires_canonical_bam_truth_identity() -> None:
+    record = {
+        "path": "case.flac",
+        "sha256": "source",
+        "expected": "supported",
+        "production_truth": {"status": "success", "code": 0, "reason": 0},
+    }
+    truth = _truth_sha256(record)
+    identity = {
+        "source_sha256": "source",
+        "bundle_sha256": "bundle",
+        "verification_sha256": "verification",
+        "truth_sha256": truth,
+    }
+    assert _can_reuse_result(
+        {"status": "passed", **identity}, "source", "bundle", "verification", truth
+    )
+    changed = {**record, "production_truth": {"status": "error", "code": 4, "reason": 0x10}}
+    assert not _can_reuse_result(
+        {"status": "passed", **identity},
+        "source",
+        "bundle",
+        "verification",
+        _truth_sha256(changed),
+    )
+    assert not _can_migrate_pass_result(
+        {
+            "status": "passed",
+            **identity,
+            "verification_sha256": next(iter(MIGRATABLE_VERIFICATION_SHA256)),
+        },
+        "source",
+        "bundle",
+        _truth_sha256(changed),
+    )
+
+
+def test_p5_corpus_migrates_only_known_pre_wallclock_passes() -> None:
+    legacy_verification = next(iter(MIGRATABLE_VERIFICATION_SHA256))
+    cached = {
+        "status": "passed",
+        "source_sha256": "source",
+        "bundle_sha256": "bundle",
+        "verification_sha256": legacy_verification,
+        "truth_sha256": "truth",
+        "command": ["vvp", "fixture", "+MAX_CYCLES=5000000"],
+    }
+    assert _can_migrate_pass_result(cached, "source", "bundle", "truth")
+    assert not _can_migrate_pass_result({**cached, "status": "failed"}, "source", "bundle", "truth")
+    assert not _can_migrate_pass_result(
+        {**cached, "verification_sha256": "future"}, "source", "bundle", "truth"
+    )
+    assert not _can_migrate_pass_result(
+        {**cached, "command": [*cached["command"], "+WALLCLOCK_NS=0"]},
+        "source",
+        "bundle",
+        "truth",
+    )
+
+
+def test_p5_corpus_output_size_mismatch_is_structured_and_retryable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "case.flac"
+    source.write_bytes(b"fLaC")
+    image = tmp_path / "image.apumc"
+    image.write_bytes(b"image")
+    record = {
+        "path": "case.flac",
+        "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "expected": "malformed",
+        "production_truth": {
+            "status": "error",
+            "code": 4,
+            "stage": 4,
+            "warnings": 1,
+            "reason": 0x10,
+            "error_offset": 0,
+            "input_used": 4,
+            "output_bytes": 0,
+            "frames": 0,
+            "source_info": 0,
+            "pcm_sha256": hashlib.sha256(b"").hexdigest(),
+        },
+    }
+    stdout = (
+        "APU_P5_CORPUS_RESULT status=00010304 input_used=00000004 "
+        "output_bytes=00000004 frames=00000000 source_info=00000000 "
+        "cycles=00000010 detail=02010010 error_status=00000207 "
+        "error_address=40000000 error_detail=02010010 elapsed=10"
+    )
+    monkeypatch.setattr(
+        corpus_runner,
+        "_run_command",
+        lambda command, cwd, timeout: {
+            "command": command,
+            "duration_seconds": 0.1,
+            "exit_code": 0,
+            "stdout": stdout,
+            "stderr": "",
+            "timed_out": False,
+        },
+    )
+    case_dir = tmp_path / "case"
+    case_dir.mkdir()
+    result = corpus_runner._run_case(
+        "verilator",
+        tmp_path / "fake-vlt",
+        tmp_path / "fake-vvp",
+        image,
+        source,
+        record,
+        case_dir,
+        300,
+        "bundle",
+        "verification",
+    )
+    assert result["status"] == "failed"
+    assert (
+        "verilator output size 0 does not match RESULT_OUTPUT_BYTES 4" in result["execution_errors"]
+    )
 
 
 def test_p5_production_transport_matches_icarus_and_verilator(tmp_path: Path) -> None:

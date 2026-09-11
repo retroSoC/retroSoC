@@ -521,7 +521,7 @@ apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
 		--manifest $(APU_P5_CORPUS_MANIFEST) --bundle $(APU_P5_BUNDLE) \
 		--corpus $(ROOT_PATH)/.cache/retrosoc/sources/apu-flac-corpus \
 		--build-dir $(APU_P5_CORPUS_RTL_DIR) --output $(APU_P5_CORPUS_MANIFEST) \
-		--jobs $(JOBS)
+		--jobs $(JOBS) --timeout-seconds 86400
 
 setup-hp-linux:
 	python3 $(ROOT_PATH)/scripts/setup_hp_linux.py

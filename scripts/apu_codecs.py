@@ -423,7 +423,10 @@ def inspect_flac(data: bytes, *, strict: bool = True) -> AudioInfo:
             if block_type != 0:
                 raise CodecError(4, 4, 0x15, offset, 1, input_used=payload)
             if size != 34:
-                raise CodecError(4, 4, 0x15, offset + 1, 1, input_used=payload + size)
+                # Only the metadata header has been consumed when the first
+                # STREAMINFO size is invalid; do not report bytes beyond the
+                # supplied input or imply that the payload was inspected.
+                raise CodecError(4, 4, 0x15, offset + 1, 1, input_used=payload)
         elif block_type == 0 or block_type == 127:
             raise CodecError(4, 4, 0x16, offset, 1, input_used=payload)
         elif block_type >= 7:
@@ -660,7 +663,7 @@ def _subframe(reader: _BitReader, block_size: int, bits: int) -> list[int]:
 
 
 def _decode_frame(
-    data: bytes, offset: int, meta: _FlacMeta
+    data: bytes, offset: int, meta: _FlacMeta, expected_number: int | None = None
 ) -> tuple[list[tuple[int, ...]], int, int, int, int]:
     start = offset
     reader = _BitReader(data, offset)
@@ -688,6 +691,10 @@ def _decode_frame(
         raise CodecError(4, 4, 0x18, start, 1, input_used=header_end)
     if block_size > (4096 if channels == 1 else 2048):
         raise CodecError(3, 4, 0x04, start, 1, input_used=header_end)
+    if expected_number is not None and number != expected_number:
+        # Frame numbering is checked before either CRC.  This preserves the
+        # frozen first-offender ordering for a bad number plus bad CRC.
+        raise CodecError(4, 4, 0x1A, start, 1, input_used=header_end)
     expected_crc8 = reader.get(8, stage=4)
     if crc8(data[start:header_end]) != expected_crc8:
         raise CodecError(6, 4, 0x30, header_end, 1, input_used=reader.byte_offset)
@@ -741,8 +748,9 @@ def decode_flac(data: bytes, *, strict: bool = True) -> DecodedAudio:
     frame_number = 0
     while offset < len(data) and (meta.total_samples is None or len(frames) < meta.total_samples):
         try:
+            expected_number = frame_number if strategy in (None, 0) else len(frames)
             decoded, frame_end, block_size, frame_strategy, number = _decode_frame(
-                data, offset, meta
+                data, offset, meta, expected_number
             )
         except CodecError as error:
             raise _attach_flac_prefix(error, meta, frames, len(data)) from error
@@ -751,12 +759,17 @@ def decode_flac(data: bytes, *, strict: bool = True) -> DecodedAudio:
         elif strategy != frame_strategy:
             error = CodecError(4, 4, 0x18, offset, 1, input_used=frame_end)
             raise _attach_flac_prefix(error, meta, frames, len(data))
-        expected_number = frame_number if frame_strategy == 0 else len(frames)
-        if number != expected_number:
-            error = CodecError(4, 4, 0x1A, offset, 1, input_used=frame_end)
-            raise _attach_flac_prefix(error, meta, frames, len(data))
         if meta.total_samples is not None and len(frames) + len(decoded) > meta.total_samples:
             error = CodecError(4, 4, 0x32, offset, 1, input_used=frame_end)
+            raise _attach_flac_prefix(error, meta, frames, len(data))
+        final_frame = (
+            meta.total_samples is not None and len(frames) + block_size == meta.total_samples
+        ) or (meta.total_samples is None and frame_end == len(data))
+        if not final_frame and not meta.minimum_block <= block_size <= meta.maximum_block:
+            error = CodecError(3, 4, 0x04, offset, 1, input_used=frame_end)
+            raise _attach_flac_prefix(error, meta, frames, len(data))
+        if final_frame and block_size > meta.maximum_block:
+            error = CodecError(3, 4, 0x04, offset, 1, input_used=frame_end)
             raise _attach_flac_prefix(error, meta, frames, len(data))
         frames.extend(decoded)
         blocks.append(block_size)
@@ -764,13 +777,6 @@ def decode_flac(data: bytes, *, strict: bool = True) -> DecodedAudio:
         offset = frame_end
     if meta.total_samples is not None and len(frames) != meta.total_samples:
         error = CodecError(4, 4, 0x32, offset, 1)
-        raise _attach_flac_prefix(error, meta, frames, len(data))
-    for block_size in blocks[:-1]:
-        if not meta.minimum_block <= block_size <= meta.maximum_block:
-            error = CodecError(4, 4, 0x17, offset, 1)
-            raise _attach_flac_prefix(error, meta, frames, len(data))
-    if blocks and blocks[-1] > meta.maximum_block:
-        error = CodecError(3, 4, 0x04, offset, 1)
         raise _attach_flac_prefix(error, meta, frames, len(data))
     warnings = 1
     if offset != len(data):

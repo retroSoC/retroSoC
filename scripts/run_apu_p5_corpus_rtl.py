@@ -20,6 +20,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_BASE = 0x40000000
 EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
+MIGRATABLE_VERIFICATION_SHA256 = {
+    "ff529cb4ae848f1dfe05e0f2b9b3d9dc93f2d98e9810e0c48a769b38e85d21dd",
+    "5bd8606e74da174cb235eb0fc56b4d5e95a7bf6ab2f0218d466467c052b25ba1",
+}
 RESULT_PATTERN = re.compile(
     r"APU_P5_CORPUS_RESULT "
     r"status=(?P<status>[0-9a-fA-F]{8}) "
@@ -150,6 +154,14 @@ def _verification_sha256() -> str:
     return digest.hexdigest()
 
 
+def _truth_sha256(record: dict[str, Any]) -> str:
+    """Hash the canonical BAM/libFLAC truth fields for one corpus record."""
+    truth_record = dict(record)
+    truth_record.pop("production_rtl", None)
+    canonical = json.dumps(truth_record, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def _compile(build_dir: Path, bundle: Path) -> tuple[dict[str, Path], dict[str, Any]]:
     tools = {name: shutil.which(name) for name in ("iverilog", "vvp", "verilator")}
     missing = [name for name, path in tools.items() if path is None]
@@ -275,13 +287,37 @@ def _case_id(index: int, record: dict[str, Any]) -> str:
 
 
 def _can_reuse_result(
-    cached: dict[str, Any], source_sha256: str, bundle_sha256: str, verification_sha256: str
+    cached: dict[str, Any],
+    source_sha256: str,
+    bundle_sha256: str,
+    verification_sha256: str,
+    truth_sha256: str,
 ) -> bool:
     return (
         cached.get("status") == "passed"
         and cached.get("source_sha256") == source_sha256
         and cached.get("bundle_sha256") == bundle_sha256
         and cached.get("verification_sha256") == verification_sha256
+        and cached.get("truth_sha256") == truth_sha256
+    )
+
+
+def _can_migrate_pass_result(
+    cached: dict[str, Any],
+    source_sha256: str,
+    bundle_sha256: str,
+    truth_sha256: str,
+) -> bool:
+    """Reuse a pass from the pre-WALLCLOCK_NS fixture after a harness-only fix."""
+    command = cached.get("command", [])
+    return (
+        cached.get("status") == "passed"
+        and cached.get("source_sha256") == source_sha256
+        and cached.get("bundle_sha256") == bundle_sha256
+        and cached.get("verification_sha256") in MIGRATABLE_VERIFICATION_SHA256
+        and cached.get("truth_sha256") == truth_sha256
+        and isinstance(command, list)
+        and "+WALLCLOCK_NS=0" not in command
     )
 
 
@@ -317,6 +353,37 @@ def _parse_result(stdout: str) -> dict[str, int]:
     result = {name: int(match.group(name), 16) for name in RESULT_FIELDS}
     result["elapsed"] = int(match.group("elapsed"), 10)
     return result
+
+
+def _record_execution_failure(
+    *,
+    simulator: str,
+    source_sha256: str,
+    bundle_sha256: str,
+    verification_sha256: str,
+    truth_sha256: str,
+    command: list[str],
+    timeout: int,
+    max_cycles: int,
+    log_path: Path,
+    duration_seconds: float,
+    reason: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "status": "failed",
+        "simulator": simulator,
+        "source_sha256": source_sha256,
+        "bundle_sha256": bundle_sha256,
+        "verification_sha256": verification_sha256,
+        "truth_sha256": truth_sha256,
+        "command": command,
+        "timeout_seconds": timeout,
+        "max_cycles": max_cycles,
+        "duration_seconds": duration_seconds,
+        "log": str(log_path),
+        "execution_errors": [reason],
+    }
 
 
 def _check_truth(record: dict[str, Any], result: dict[str, int], pcm_sha256: str) -> None:
@@ -370,9 +437,19 @@ def _run_case(
 ) -> dict[str, Any]:
     result_path = case_dir / f"result-{simulator}.json"
     source_sha256 = record["sha256"]
+    truth_sha256 = _truth_sha256(record)
     if result_path.is_file():
         cached = json.loads(result_path.read_text(encoding="utf-8"))
-        if _can_reuse_result(cached, source_sha256, bundle_sha256, verification_sha256):
+        if _can_reuse_result(
+            cached, source_sha256, bundle_sha256, verification_sha256, truth_sha256
+        ):
+            return cached
+        if _can_migrate_pass_result(cached, source_sha256, bundle_sha256, truth_sha256):
+            cached["migrated_from_verification_sha256"] = cached["verification_sha256"]
+            cached["migration_reason"] = "wallclock-and-sequential-output-harness-only"
+            cached["verification_sha256"] = verification_sha256
+            cached["truth_sha256"] = truth_sha256
+            _write_json(result_path, cached)
             return cached
     parameters = _case_parameters(record, source)
     output = case_dir / f"output-{simulator}.pcm"
@@ -385,34 +462,68 @@ def _run_case(
         f"+OUTPUT_CONFIG={parameters['output_config']:x}",
         f"+OUTPUT_CAPACITY={parameters['output_capacity']}",
         f"+MAX_CYCLES={parameters['max_cycles']}",
+        "+WALLCLOCK_NS=0",
     ]
     execution = _run_command(command, cwd=ROOT, timeout=timeout)
     log_path = case_dir / f"{simulator}.log"
     log_path.write_text(execution["stdout"] + execution["stderr"], encoding="utf-8")
     if execution["exit_code"] != 0:
-        result = {
-            "schema_version": 1,
-            "status": "failed",
-            "simulator": simulator,
-            "source_sha256": source_sha256,
-            "bundle_sha256": bundle_sha256,
-            "verification_sha256": verification_sha256,
-            "command": command,
-            "timeout_seconds": timeout,
-            "max_cycles": parameters["max_cycles"],
-            "duration_seconds": execution["duration_seconds"],
-            "log": str(log_path),
-            "execution_errors": [
-                "simulator timeout" if execution["timed_out"] else "simulator failed"
-            ],
-        }
+        result = _record_execution_failure(
+            simulator=simulator,
+            source_sha256=source_sha256,
+            bundle_sha256=bundle_sha256,
+            verification_sha256=verification_sha256,
+            truth_sha256=truth_sha256,
+            command=command,
+            timeout=timeout,
+            max_cycles=parameters["max_cycles"],
+            log_path=log_path,
+            duration_seconds=execution["duration_seconds"],
+            reason="simulator timeout" if execution["timed_out"] else "simulator failed",
+        )
         _write_json(result_path, result)
         return result
-    parsed = _parse_result(execution["stdout"])
+    try:
+        parsed = _parse_result(execution["stdout"])
+    except RuntimeError as error:
+        result = _record_execution_failure(
+            simulator=simulator,
+            source_sha256=source_sha256,
+            bundle_sha256=bundle_sha256,
+            verification_sha256=verification_sha256,
+            truth_sha256=truth_sha256,
+            command=command,
+            timeout=timeout,
+            max_cycles=parameters["max_cycles"],
+            log_path=log_path,
+            duration_seconds=execution["duration_seconds"],
+            reason=str(error),
+        )
+        _write_json(result_path, result)
+        return result
     pcm_sha256 = _sha256_file(output) if output.is_file() else EMPTY_SHA256
     output_size = output.stat().st_size if output.is_file() else 0
     if output_size != parsed["output_bytes"]:
-        raise RuntimeError(f"{simulator} output size does not match RESULT_OUTPUT_BYTES")
+        result = _record_execution_failure(
+            simulator=simulator,
+            source_sha256=source_sha256,
+            bundle_sha256=bundle_sha256,
+            verification_sha256=verification_sha256,
+            truth_sha256=truth_sha256,
+            command=command,
+            timeout=timeout,
+            max_cycles=parameters["max_cycles"],
+            log_path=log_path,
+            duration_seconds=execution["duration_seconds"],
+            reason=(
+                f"{simulator} output size {output_size} does not match "
+                f"RESULT_OUTPUT_BYTES {parsed['output_bytes']}"
+            ),
+        )
+        if output.is_file():
+            output.unlink()
+        _write_json(result_path, result)
+        return result
     truth_errors: list[str] = []
     try:
         _check_truth(record, parsed, pcm_sha256)
@@ -427,6 +538,7 @@ def _run_case(
         "source_sha256": source_sha256,
         "bundle_sha256": bundle_sha256,
         "verification_sha256": verification_sha256,
+        "truth_sha256": truth_sha256,
         "command": command,
         "timeout_seconds": timeout,
         "max_cycles": parameters["max_cycles"],

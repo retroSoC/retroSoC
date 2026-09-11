@@ -741,6 +741,84 @@ def test_flac_metadata_structure_precedes_impossible_length() -> None:
     ) == (4, 4, 0x02010016)
 
 
+def test_flac_invalid_first_streaminfo_size_reports_header_only_input() -> None:
+    image = bytearray(_empty_flac())
+    image[5:8] = (0xFFFFFF).to_bytes(3, "big")
+    with pytest.raises(CodecError) as caught:
+        inspect_flac(bytes(image))
+    error = caught.value
+    assert (error.code, error.stage, error.reason) == (4, 4, 0x15)
+    assert (error.offset, error.input_used) == (5, 8)
+
+
+def test_flac_frame_number_precedes_crc8_failure() -> None:
+    image = bytearray(_constant_flac())
+    frame_offset = 42
+    image[frame_offset + 4] = 1
+    image[frame_offset + 6] ^= 1
+    with pytest.raises(CodecError) as caught:
+        decode_flac(bytes(image))
+    error = caught.value
+    assert (error.code, error.stage, error.reason) == (4, 4, 0x1A)
+    assert error.offset == frame_offset
+    assert error.input_used == frame_offset + 6
+
+
+def test_release_flac_rejects_nonfinal_block_below_streaminfo_minimum() -> None:
+    streaminfo = bytearray(34)
+    streaminfo[0:2] = (16).to_bytes(2, "big")
+    streaminfo[2:4] = (16).to_bytes(2, "big")
+    streaminfo[10:18] = ((48000 << 44) | (15 << 36) | 24).to_bytes(8, "big")
+
+    def frame(number: int, count: int, sample: int) -> bytes:
+        header = ((0x3FFE << 18) | (6 << 12) | (4 << 1)).to_bytes(4, "big")
+        header += bytes([number, count - 1])
+        header += bytes([crc8(header)])
+        payload = header + b"\0" + sample.to_bytes(2, "big", signed=True)
+        return payload + crc16(payload).to_bytes(2, "big")
+
+    image = bytearray(b"fLaC" + bytes([0x80, 0, 0, 34]) + streaminfo)
+    image.extend(frame(0, 8, 3))
+    image.extend(frame(1, 16, 4))
+    with pytest.raises(CodecError) as caught:
+        decode_flac(bytes(image))
+    assert (caught.value.code, caught.value.stage, caught.value.reason) == (3, 4, 0x04)
+    result = _run_release_codec(
+        bytes(image),
+        2,
+        output_rate=48000,
+        output_channels=1,
+        output_bits=16,
+    )
+    transport = result["transport"]
+    assert transport is not None
+    assert bytes.fromhex(transport["output"]) == b""
+    assert (transport["result_code"], transport["result_stage"]) == (3, 4)
+    assert transport["result_detail"] == 0x02010004
+
+
+@pytest.mark.parametrize("field_offset", [12, 15])
+def test_release_flac_rejects_actual_frame_size_outside_hints(field_offset: int) -> None:
+    image = bytearray(_constant_flac())
+    actual_size = len(image) - 42
+    if field_offset == 12:
+        image[field_offset : field_offset + 3] = (actual_size + 1).to_bytes(3, "big")
+    else:
+        image[field_offset : field_offset + 3] = (actual_size - 1).to_bytes(3, "big")
+    result = _run_release_codec(
+        bytes(image),
+        2,
+        output_rate=48000,
+        output_channels=1,
+        output_bits=16,
+    )
+    transport = result["transport"]
+    assert transport is not None
+    assert bytes.fromhex(transport["output"]) == b""
+    assert (transport["result_code"], transport["result_stage"]) == (3, 4)
+    assert transport["result_detail"] == 0x02010004
+
+
 @pytest.mark.parametrize(
     ("mutation", "expected"),
     [

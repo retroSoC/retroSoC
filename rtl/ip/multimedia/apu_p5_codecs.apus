@@ -689,6 +689,21 @@ flac_subframes_done:
   ld32 r1, r0, 0x44c4
   sub r2, r11, r1
   st32 r0, r2, 0x4520
+  movi r3, 65537
+  cmp r2, r3
+  jump_fwd flac_profile_limit4 if=uge
+  ld32 r3, r0, 0x448c
+  cmp r3, r0
+  jump_fwd flac_frame_max_check if=eq
+  cmp r2, r3
+  jump_fwd flac_profile_limit4 if=ult
+flac_frame_max_check:
+  ld32 r3, r0, 0x4490
+  cmp r3, r0
+  jump_fwd flac_frame_profile_ready if=eq
+  cmp r3, r2
+  jump_fwd flac_profile_limit4 if=ult
+flac_frame_profile_ready:
   st32 r0, r0, 0x4560
   ld32 r1, r0, 0x4494
   ld32 r2, r0, 0x4498
@@ -716,6 +731,14 @@ flac_final_unknown:
   movi r2, 1
   st32 r0, r2, 0x4560 if=eq
 flac_final_ready:
+  ld32 r1, r0, 0x4560
+  cmp r1, r0
+  jump_fwd flac_block_profile_ready if=ne
+  ld32 r1, r0, 0x44b0
+  ld32 r2, r0, 0x4484
+  cmp r1, r2
+  jump_fwd flac_profile_limit4 if=ult
+flac_block_profile_ready:
   call_fwd flac_process_frame
   ld32 r1, r0, 0x449c
   ld32 r2, r0, 0x44b0
