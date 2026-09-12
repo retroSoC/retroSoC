@@ -20,9 +20,9 @@ module apu_p5_corpus_tb;
   logic write_active_q, write_response_q;
   logic [31:0] write_addr_q;
   logic [7:0] write_len_q, write_beat_q;
-  longint unsigned input_next_offset_q;
-  longint unsigned output_next_offset_q;
-  logic [31:0] s_value;
+  longint unsigned        input_next_offset_q;
+  longint unsigned        output_next_offset_q;
+  logic            [31:0] s_value;
   logic [31:0] s_job_status, s_job_input_used, s_job_output_bytes;
   logic [31:0] s_job_frames, s_job_source_info, s_job_cycles, s_job_detail;
   logic [31:0] s_error_status, s_error_address, s_error_detail;
@@ -130,17 +130,17 @@ module apu_p5_corpus_tb;
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     integer s_seek_result;
     if (!rst_n_i) begin
-      read_active_q    <= 1'b0;
-      read_addr_q      <= 32'd0;
-      read_len_q       <= 8'd0;
-      read_beat_q      <= 8'd0;
-      read_data_q      <= 32'd0;
-      write_active_q   <= 1'b0;
-      write_response_q <= 1'b0;
-      write_addr_q     <= 32'd0;
-      write_len_q      <= 8'd0;
-      write_beat_q     <= 8'd0;
-      input_next_offset_q <= 64'd0;
+      read_active_q        <= 1'b0;
+      read_addr_q          <= 32'd0;
+      read_len_q           <= 8'd0;
+      read_beat_q          <= 8'd0;
+      read_data_q          <= 32'd0;
+      write_active_q       <= 1'b0;
+      write_response_q     <= 1'b0;
+      write_addr_q         <= 32'd0;
+      write_len_q          <= 8'd0;
+      write_beat_q         <= 8'd0;
+      input_next_offset_q  <= 64'd0;
       output_next_offset_q <= 64'd0;
     end else begin
       if (axi4.arvalid && axi4.arready) begin
@@ -171,10 +171,9 @@ module apu_p5_corpus_tb;
         if ((write_addr_q < OutputBase) || (write_addr_q >= OutputBase + s_output_capacity)) begin
           $fatal(1, "P5 corpus unexpected AXI write %h", write_addr_q);
         end
-        if ((axi4.wstrb == 4'hf) &&
-            ((write_addr_q - OutputBase) == output_next_offset_q)) begin
-          $fwrite(s_output_file, "%c%c%c%c", axi4.wdata[7:0], axi4.wdata[15:8],
-                  axi4.wdata[23:16], axi4.wdata[31:24]);
+        if ((axi4.wstrb == 4'hf) && ((write_addr_q - OutputBase) == output_next_offset_q)) begin
+          $fwrite(s_output_file, "%c%c%c%c", axi4.wdata[7:0], axi4.wdata[15:8], axi4.wdata[23:16],
+                  axi4.wdata[31:24]);
           output_next_offset_q <= output_next_offset_q + 64'd4;
         end else begin
           for (int lane = 0; lane < 4; lane++) begin

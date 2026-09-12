@@ -168,7 +168,7 @@ module apu_codec_transport (
   logic s_input_contract_ok, s_input_reservation_ok;
   logic s_output_contract_ok, s_output_capacity_error, s_output_cursor_overflow;
   logic s_job_result_contract_ok, s_frame_commit_contract_ok;
-  logic s_source_info_valid;
+  logic       s_source_info_valid;
   logic [1:0] s_output_channels;
   logic [3:0] s_output_frame_bytes;
   logic s_active_input, s_active_output, s_opposite_async_request;
@@ -180,9 +180,9 @@ module apu_codec_transport (
     logic [ 1:0] s_channels;
     logic [ 5:0] s_bits;
     begin
-      s_rate = source_info_i[16:0];
+      s_rate     = source_info_i[16:0];
       s_channels = source_info_i[18:17];
-      s_bits = source_info_i[24:19];
+      s_bits     = source_info_i[24:19];
       return (source_info_i[31:25] == 7'd0) &&
           (s_rate >= 17'd8000) && (s_rate <= 17'd96000) &&
           (s_channels inside {2'd1, 2'd2}) &&
@@ -258,27 +258,9 @@ module apu_codec_transport (
       ({1'b0, s_logical_output_q} + {1'b0, request_source1_i} <=
        {1'b0, s_output_cursor_q});
   assign s_source_info_valid = source_info_valid(memory_data_i);
-  assign s_req_trap_detail1 = {
-    request_detail_aux_i,
-    request_opcode_i,
-    4'd6,
-    request_pc_i,
-    8'd1
-  };
-  assign s_req_trap_detail5 = {
-    request_detail_aux_i,
-    request_opcode_i,
-    4'd6,
-    request_pc_i,
-    8'd5
-  };
-  assign s_req_trap_detail9 = {
-    request_detail_aux_i,
-    request_opcode_i,
-    4'd6,
-    request_pc_i,
-    8'd9
-  };
+  assign s_req_trap_detail1 = {request_detail_aux_i, request_opcode_i, 4'd6, request_pc_i, 8'd1};
+  assign s_req_trap_detail5 = {request_detail_aux_i, request_opcode_i, 4'd6, request_pc_i, 8'd5};
+  assign s_req_trap_detail9 = {request_detail_aux_i, request_opcode_i, 4'd6, request_pc_i, 8'd9};
   assign s_active_trap_detail5 = {1'b0, s_req_aux_q, s_opcode_q, 4'd6, s_pc_q, 8'd5};
   assign s_active_trap_detail9 = {1'b0, s_req_aux_q, s_opcode_q, 4'd6, s_pc_q, 8'd9};
   assign s_output_channels = (s_descriptor_q[0][9:8] == 2'd1) ? 2'd2 :

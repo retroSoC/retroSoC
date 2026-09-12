@@ -930,6 +930,96 @@ static int test_apu_validation(void) {
     return 0;
 }
 
+static void test_apu_mmio_reset(void);
+
+static int test_apu_kws_validation(void) {
+    const rs_apu_kws_job_t job = {
+        .input_address = UINT32_C(0x10001000),
+        .threshold = 128U,
+        .debounce = 1U,
+        .cookie = {UINT32_C(0x01234567), UINT32_C(0x89ABCDEF)},
+    };
+    const rs_apu_image_t image = {
+        .address = UINT32_C(0x10000000),
+        .bytes = UINT32_C(32768),
+        .expected_crc = UINT32_C(0xB9034B22),
+    };
+    rs_apu_image_t bad_image = image;
+    rs_apu_kws_completion_t completion;
+
+    test_apu_mmio_reset();
+    APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) = UINT32_C(0xA5A5A5A5);
+    if ((rs_apu_kws_validate_job(&job) != RS_OK) ||
+        (rs_apu_kws_model_load(&image, 0U) != RS_ENOTSUP) ||
+        (APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) != UINT32_C(0xA5A5A5A5))) {
+        return 1;
+    }
+    APU_TEST_REG(RS_APU_ABI_STREAM_ROUTE) = UINT32_C(0xA5A5A5A5);
+    if ((rs_apu_stream_route(0U, 1U) != RS_ENOTSUP) ||
+        (APU_TEST_REG(RS_APU_ABI_STREAM_ROUTE) != UINT32_C(0xA5A5A5A5))) {
+        return 2;
+    }
+    APU_TEST_REG(RS_APU_ABI_IP_ID) = RS_APU_IP_ID_VALUE;
+    APU_TEST_REG(RS_APU_ABI_IP_VERSION) = RS_APU_IP_VERSION_VALUE;
+    APU_TEST_REG(RS_APU_ABI_CAPABILITY0) = RS_APU_CAPABILITY0_P7_IMPLEMENTED;
+    APU_TEST_REG(RS_APU_ABI_STREAM_STATUS) = UINT32_C(1) << RS_APU_ABI_STREAM_STATUS_RX_ACTIVE;
+    APU_TEST_REG(RS_APU_ABI_STREAM_ROUTE) = 0U;
+    if ((rs_apu_stream_route(0U, 1U) != RS_EINVAL) ||
+        (APU_TEST_REG(RS_APU_ABI_STREAM_ROUTE) != 0U)) {
+        return 3;
+    }
+    APU_TEST_REG(RS_APU_ABI_STREAM_STATUS) = 0U;
+    if ((rs_apu_stream_route(0U, 1U) != RS_OK) || (APU_TEST_REG(RS_APU_ABI_STREAM_ROUTE) != 4U)) {
+        return 4;
+    }
+    bad_image.expected_crc ^= UINT32_C(1);
+    APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) = UINT32_C(0xA5A5A5A5);
+    if ((rs_apu_kws_model_load(&bad_image, 0U) != RS_EINVAL) ||
+        (APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) != UINT32_C(0xA5A5A5A5))) {
+        return 5;
+    }
+    APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) =
+        UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_QUIESCE;
+    APU_TEST_REG(RS_APU_ABI_KWS_MODEL_STATUS) = 0U;
+    if ((rs_apu_kws_model_load(&image, 1U) != RS_EIO) ||
+        (APU_TEST_REG(RS_APU_ABI_COMMAND) !=
+         (UINT32_C(1) << RS_APU_ABI_COMMAND_MODEL_LOAD))) {
+        return 6;
+    }
+    APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = 0U;
+    APU_TEST_REG(RS_APU_ABI_KWS_CONTROL) = UINT32_C(3);
+    APU_TEST_REG(RS_APU_ABI_KWS_MODEL_STATUS) = UINT32_C(6);
+    APU_TEST_REG(RS_APU_ABI_KWS_STATUS) = 0U;
+    APU_TEST_REG(RS_APU_ABI_JOB_STATUS) = 0U;
+    if ((rs_apu_kws_submit_direct(&job) != RS_OK) ||
+        (APU_TEST_REG(RS_APU_ABI_JOB_CONTROL) != UINT32_C(1)) ||
+        (APU_TEST_REG(RS_APU_ABI_JOB_FLAGS) != 0U) ||
+        (APU_TEST_REG(RS_APU_ABI_KWS_CONFIG) != UINT32_C(0x0180))) {
+        return 7;
+    }
+    completion.class_id = UINT32_C(0xA5A5A5A5);
+    if ((rs_apu_kws_wait_direct(&completion, 0U) != RS_ETIMEOUT) ||
+        (completion.class_id != UINT32_C(0xA5A5A5A5))) {
+        return 8;
+    }
+    APU_TEST_REG(RS_APU_ABI_JOB_STATUS) = UINT32_C(1) << RS_APU_ABI_JOB_STATUS_DONE;
+    APU_TEST_REG(RS_APU_ABI_KWS_STATUS) = UINT32_C(1) << RS_APU_ABI_KWS_STATUS_RESULT_VALID;
+    APU_TEST_REG(RS_APU_ABI_KWS_RESULT) = UINT32_C(0x00017F03);
+    if ((rs_apu_kws_wait_direct(&completion, 1U) != RS_OK) || (completion.class_id != 3U) ||
+        (completion.score != 127U) || (completion.hit != 1U) ||
+        (completion.job.cookie[0] != job.cookie[0]) ||
+        (completion.job.cookie[1] != job.cookie[1])) {
+        return 9;
+    }
+    APU_TEST_REG(RS_APU_ABI_KWS_CONTROL) = UINT32_C(3);
+    APU_TEST_REG(RS_APU_ABI_KWS_STATUS) = 0U;
+    if ((rs_apu_kws_disable(0U) != RS_OK) ||
+        (APU_TEST_REG(RS_APU_ABI_KWS_CONTROL) != UINT32_C(2))) {
+        return 10;
+    }
+    return 0;
+}
+
 static void test_apu_mmio_reset(void) {
     for (size_t index = 0U; index < (sizeof(rs_apu_test_mmio) / sizeof(rs_apu_test_mmio[0]));
          ++index) {
@@ -989,11 +1079,13 @@ static int test_apu_hal_contract(void) {
     }
 
     APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = 0U;
+    APU_TEST_REG(RS_APU_ABI_STATUS) = 0U;
     if (rs_apu_submit_direct(&job) != RS_OK ||
         APU_TEST_REG(RS_APU_ABI_JOB_INPUT_ADDRESS) != job.input_address ||
         APU_TEST_REG(RS_APU_ABI_COMMAND) != (UINT32_C(1) << RS_APU_ABI_COMMAND_START_DIRECT)) {
         return 3;
     }
+    APU_TEST_REG(RS_APU_ABI_STATUS) = UINT32_C(1) << RS_APU_ABI_STATUS_IDLE;
     APU_TEST_REG(RS_APU_ABI_RING_CONTROL) = 1U;
     APU_TEST_REG(RS_APU_ABI_JOB_INPUT_ADDRESS) = UINT32_C(0xA5A5A5A5);
     if ((rs_apu_submit_direct(&job) != RS_EINVAL) ||
@@ -1206,6 +1298,7 @@ int main(void) {
         test_extension_validation(),
         test_resource_validation(),
         test_apu_validation(),
+        test_apu_kws_validation(),
         test_apu_hal_contract(),
         test_jpeg_validation(),
         test_ps2_decoders(),

@@ -4,7 +4,7 @@
 
 module apu_reg_tb;
   localparam logic [31:0] ApuBase = 32'h1001_3000;
-  localparam int unsigned RegisterCount = 96;
+  localparam int unsigned RegisterCount = 97;
   localparam logic [1:0] AccessRo = 2'd0;
   localparam logic [1:0] AccessWo = 2'd1;
   localparam logic [1:0] AccessRw = 2'd2;
@@ -98,23 +98,24 @@ module apu_reg_tb;
   always #5 clk_i = ~clk_i;
 
   apb4_apu u_dut (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .owner_i          (owner_i),
-      .owner_lock_i     (owner_lock_i),
-      .quiesce_i        (quiesce_i),
-      .resource_reset_i (resource_reset_i),
-      .bridge_epoch_i   (8'd0),
-      .i2s_tx_underrun_i(1'b0),
-      .i2s_rx_overrun_i (1'b0),
-      .apb4             (apb4),
-      .axi4             (axi4),
-      .dma_tx_axis      (dma_tx_axis),
-      .dma_rx_axis      (dma_rx_axis),
-      .i2s_tx_axis      (i2s_tx_axis),
-      .i2s_rx_axis      (i2s_rx_axis),
-      .idle_o           (idle_o),
-      .irq_o            (irq_o)
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .owner_i            (owner_i),
+      .owner_lock_i       (owner_lock_i),
+      .quiesce_i          (quiesce_i),
+      .resource_reset_i   (resource_reset_i),
+      .bridge_epoch_i     (8'd0),
+      .i2s_tx_underrun_i  (1'b0),
+      .i2s_rx_overrun_i   (1'b0),
+      .i2s_rx_flush_busy_i(1'b0),
+      .apb4               (apb4),
+      .axi4               (axi4),
+      .dma_tx_axis        (dma_tx_axis),
+      .dma_rx_axis        (dma_rx_axis),
+      .i2s_tx_axis        (i2s_tx_axis),
+      .i2s_rx_axis        (i2s_rx_axis),
+      .idle_o             (idle_o),
+      .irq_o              (irq_o)
   );
 
   function automatic logic [31:0] legal_write_value(input logic [11:0] offset_i);
@@ -151,6 +152,7 @@ module apu_reg_tb;
       `APB4_APU__KWS_MODEL_EXPECTED_CRC: legal_write_value = 32'h5a5a_a5a5;
       `APB4_APU__KWS_CONTROL:            legal_write_value = 32'h0000_0004;
       `APB4_APU__KWS_CONFIG:             legal_write_value = 32'h0000_0590;
+      `APB4_APU__KWS_INPUT_CONFIG:       legal_write_value = 32'h0104_bb80;
       `APB4_APU__PERF_CONTROL:           legal_write_value = 32'h0000_0001;
       default:                           legal_write_value = 32'd0;
     endcase
@@ -263,6 +265,7 @@ module apu_reg_tb;
       add_register(`APB4_APU__KWS_OVERRUN_COUNT, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__KWS_MODEL_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__KWS_MODEL_ACTUAL_CRC, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__KWS_INPUT_CONFIG, AccessRo, 32'h0104_bb80, 1'b0);
       add_register(`APB4_APU__PERF_CONTROL, AccessRw, 32'd0, 1'b0);
       add_register(`APB4_APU__PERF_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__PERF_ACTIVE_CYCLES_LO, AccessRo, 32'd0, 1'b0);
@@ -425,7 +428,8 @@ module apu_reg_tb;
     logic [31:0] s_expected;
     begin
       for (int unsigned register_index = 0; register_index < RegisterCount; register_index++) begin
-        if (s_reg_access[register_index] != AccessWo) begin
+        if ((s_reg_access[register_index] != AccessWo) &&
+            (s_reg_offset[register_index] != `APB4_APU__KWS_INPUT_CONFIG)) begin
           s_expected = preserve_acl_i ?
               reset_or_preserved_value(s_reg_offset[register_index], s_reg_reset[register_index]) :
               s_reg_reset[register_index];
@@ -488,6 +492,8 @@ module apu_reg_tb;
       hard_reset();
       if (s_reg_access[register_index] == AccessWo) begin
         apb_read(s_reg_offset[register_index], s_value, 1'b1);
+      end else if (s_reg_offset[register_index] == `APB4_APU__KWS_INPUT_CONFIG) begin
+        apb_read(s_reg_offset[register_index], s_value, 1'b1);
       end else begin
         expect_read(s_reg_offset[register_index], s_reg_reset[register_index]);
       end
@@ -500,7 +506,9 @@ module apu_reg_tb;
           apb_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'h1234_5678, 4'hf, 1'b0);
           apb_write(s_reg_offset[register_index], 32'd0, 4'hf, 1'b1);
           expect_read(`APB4_APU__SEQUENCER_TIMEOUT, 32'h1234_5678);
-          if ((s_reg_offset[register_index] != `APB4_APU__ERROR_ADDRESS) &&
+          if (s_reg_offset[register_index] == `APB4_APU__KWS_INPUT_CONFIG) begin
+            apb_read(s_reg_offset[register_index], s_value, 1'b1);
+          end else if ((s_reg_offset[register_index] != `APB4_APU__ERROR_ADDRESS) &&
               (s_reg_offset[register_index] != `APB4_APU__ERROR_DETAIL)) begin
             expect_read(s_reg_offset[register_index], s_reg_reset[register_index]);
           end
@@ -724,11 +732,209 @@ module apu_reg_tb;
 
     s_phase = "command state predicates";
     hard_reset();
-    force u_dut.u_apu_reg.core_busy_i = 1'b1;
-    force u_dut.u_apu_reg.core_idle_i = 1'b0;
+    force u_dut.s_dma_busy = 1'b1;
     apb_write(`APB4_APU__COMMAND, 32'h0000_0002, 4'hf, 1'b0);
     apb_write(`APB4_APU__COMMAND, 32'h0000_0040, 4'hf, 1'b1);
     expect_read(`APB4_APU__ERROR_STATUS, 32'd1 | (32'(`APB4_APU__ERROR_CODE_INVALID_CONFIG) << 1));
+    force u_dut.s_dma_busy = 1'b0;
+    release u_dut.s_dma_busy;
+
+    s_phase = "KWS loader lifecycle";
+    hard_reset();
+    apb_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'h1234_5678, 4'hf, 1'b0);
+    force u_dut.s_kws_loader_busy = 1'b1;
+    force u_dut.s_codec_direct_allowed = 1'b1;
+    #1;
+    if (idle_o) $fatal(1, "active KWS model loader was reported globally idle");
+    if (u_dut.s_direct_start_allowed || u_dut.s_ring_kick_allowed) begin
+      $fatal(1, "active KWS model loader admitted new work");
+    end
+    apb_write(`APB4_APU__KWS_MODEL_ADDRESS, 32'h3005_0000, 4'hf, 1'b1);
+    s_phase = "KWS loader soft-reset rejection";
+    apb_write(`APB4_APU__COMMAND, 32'd1 << `APB4_APU__COMMAND_SOFT_RESET, 4'hf, 1'b1);
+    s_phase = "KWS loader resource-reset drain";
+    @(negedge clk_i);
+    resource_reset_i = 1'b1;
+    repeat (3) @(posedge clk_i);
+    if (u_dut.s_resource_reset_apply_q || (u_dut.u_apu_reg.s_timeout_q[0] != 32'h1234_5678)) begin
+      $fatal(1, "resource reset applied before KWS loader drain");
+    end
+    force u_dut.s_kws_loader_busy = 1'b0;
+    wait (u_dut.s_resource_reset_apply_q);
+    release u_dut.s_kws_loader_busy;
+    release u_dut.s_codec_direct_allowed;
+    @(posedge clk_i);
+    @(negedge clk_i);
+    resource_reset_i = 1'b0;
+    expect_read(`APB4_APU__SEQUENCER_TIMEOUT, 32'h0000_ffff);
+
+    s_phase = "KWS loader terminal IRQs";
+    hard_reset();
+    force u_dut.s_kws_loader_fault_code = `APB4_APU__ERROR_CODE_AXI_READ;
+    force u_dut.s_kws_loader_fault_stage = `APB4_APU__ERROR_STAGE_DMA_READ;
+    force u_dut.s_kws_loader_fault_resp = 2'd2;
+    force u_dut.s_kws_loader_fault_addr = 32'h3005_1234;
+    force u_dut.s_kws_loader_fault_detail = 32'd0;
+    force u_dut.s_kws_loader_done = 1'b1;
+    @(posedge clk_i);
+    #1;
+    force u_dut.s_kws_loader_done = 1'b0;
+    release u_dut.s_kws_loader_fault_detail;
+    release u_dut.s_kws_loader_fault_addr;
+    release u_dut.s_kws_loader_fault_resp;
+    release u_dut.s_kws_loader_fault_stage;
+    release u_dut.s_kws_loader_fault_code;
+    expect_read(`APB4_APU__IRQ_STATE,
+                (32'd1 << `APB4_APU__IRQ_MODEL_LOAD_DONE) | (32'd1 << `APB4_APU__IRQ_FIRST_ERROR));
+    expect_read(`APB4_APU__ERROR_ADDRESS, 32'h3005_1234);
+    expect_read(`APB4_APU__ERROR_DETAIL, 32'd0);
+    apb_write(`APB4_APU__IRQ_STATE, 32'h0000_07ff, 4'hf, 1'b0);
+    release u_dut.s_kws_loader_done;
+    force u_dut.s_kws_loader_abort_done = 1'b1;
+    @(posedge clk_i);
+    #1;
+    force u_dut.s_kws_loader_abort_done = 1'b0;
+    expect_read(`APB4_APU__IRQ_STATE, 32'd1 << `APB4_APU__IRQ_ABORT_DONE);
+
+    s_phase = "KWS disable drain";
+    hard_reset();
+    release u_dut.s_kws_loader_abort_done;
+    force u_dut.u_apu_reg.s_kws_control_q = 2'd1;
+    force u_dut.u_kws_engine.s_front_state_q = 4'd3;
+    apb_write(`APB4_APU__KWS_CONTROL, 32'd0, 4'hf, 1'b0);
+    release u_dut.u_apu_reg.s_kws_control_q;
+    expect_read(`APB4_APU__KWS_CONTROL, 32'd1);
+    if (!u_dut.s_kws_disable_request || !u_dut.u_kws_engine.status_o[1] ||
+        u_dut.s_kws_rx_ready) begin
+      $fatal(1, "KWS disable did not stop admission while retaining ENABLE readback");
+    end
+    release u_dut.u_kws_engine.s_front_state_q;
+    wait (!u_dut.s_kws_disable_request);
+    expect_read(`APB4_APU__KWS_CONTROL, 32'd0);
+
+    s_phase = "KWS integrated disable boundary";
+    hard_reset();
+    force u_dut.s_kws_disable_request = 1'b1;
+    force u_dut.s_backend_job_valid_unused = 1'b1;
+    #1;
+    if (!u_dut.u_codec_controller.block_new_i || u_dut.s_codec_ring_job_ready ||
+        !u_dut.u_codec_controller.idle_o) begin
+      $fatal(1, "same-cycle KWS disable did not block controller ring admission");
+    end
+    force u_dut.u_codec_transport.s_job_active_q = 1'b1;
+    force u_dut.u_codec_transport.s_state_q = 5'd0;
+    force u_dut.u_codec_controller.s_state_q = 4'd3;
+    force u_dut.s_transport_opcode = `APB4_APU__MC_TRANSPORT_FRAME_COMMIT;
+    #1;
+    if (u_dut.u_codec_transport.block_new_i || !u_dut.s_transport_req_ready_raw ||
+        !u_dut.s_kws_disable_done) begin
+      $fatal(1, "KWS disable stalled an accepted concurrent codec transport");
+    end
+    release u_dut.s_transport_opcode;
+    release u_dut.u_codec_controller.s_state_q;
+    release u_dut.u_codec_transport.s_state_q;
+    release u_dut.u_codec_transport.s_job_active_q;
+    release u_dut.s_backend_job_valid_unused;
+    release u_dut.s_kws_disable_request;
+
+    s_phase = "KWS integrated start drain";
+    hard_reset();
+    force u_dut.u_apu_reg.s_kws_control_q = 2'd3;
+    force u_dut.s_kws_model_valid = 1'b1;
+    force u_dut.s_kws_model_lock = 1'b1;
+    force u_dut.s_kws_disable_request = 1'b1;
+    @(negedge clk_i);
+    u_dut.u_codec_controller.s_descriptor_q[(0*32)+:32] = 32'd1;
+    u_dut.u_codec_controller.s_descriptor_q[(2*32)+:32] = 32'h3000_4000;
+    u_dut.u_codec_controller.s_state_q                  = 4'd7;
+    #1;
+    if (!u_dut.s_codec_kws_start || !u_dut.s_kws_mem_start_ready || u_dut.s_kws_disable_done) begin
+      $fatal(1, "accepted KWS start was not ready during disable drain");
+    end
+    @(posedge clk_i);
+    #1;
+    if ((u_dut.u_codec_controller.s_state_q != 4'd8) ||
+        !u_dut.u_kws_engine.s_mem_job_q || !u_dut.u_kws_engine.s_mem_req_q) begin
+      $fatal(1, "accepted KWS start was dropped at the disable boundary");
+    end
+    release u_dut.s_kws_disable_request;
+    release u_dut.s_kws_model_lock;
+    release u_dut.s_kws_model_valid;
+    release u_dut.u_apu_reg.s_kws_control_q;
+
+    s_phase = "KWS model default publication";
+    hard_reset();
+    apb_write(`APB4_APU__KWS_CONFIG, 32'h0000_0590, 4'hf, 1'b0);
+    force u_dut.s_kws_config_default = 16'h0380;
+    force u_dut.s_kws_config_publish = 1'b1;
+    @(posedge clk_i);
+    #1;
+    release u_dut.s_kws_config_publish;
+    release u_dut.s_kws_config_default;
+    expect_read(`APB4_APU__KWS_CONFIG, 32'h0000_0380);
+
+    s_phase = "KWS counter and xrun clear";
+    hard_reset();
+    @(negedge clk_i);
+    u_dut.u_kws_engine.s_frame_count_q     = 32'd11;
+    u_dut.u_kws_engine.s_inference_count_q = 32'd12;
+    u_dut.u_kws_engine.s_hit_count_q       = 32'd13;
+    u_dut.u_kws_engine.s_overrun_count_q   = 32'd14;
+    u_dut.u_kws_engine.s_epoch_samples_q   = 32'd1234;
+    u_dut.u_kws_engine.s_result_q          = 32'h0001_5507;
+    u_dut.u_kws_engine.s_result_valid_q    = 1'b1;
+    apb_write(`APB4_APU__COMMAND, 32'd1 << `APB4_APU__COMMAND_CLEAR_COUNTERS, 4'hf, 1'b0);
+    expect_read(`APB4_APU__KWS_FRAME_COUNT, 32'd0);
+    expect_read(`APB4_APU__KWS_INFERENCE_COUNT, 32'd0);
+    expect_read(`APB4_APU__KWS_HIT_COUNT, 32'd0);
+    expect_read(`APB4_APU__KWS_OVERRUN_COUNT, 32'd0);
+    if ((u_dut.u_kws_engine.s_epoch_samples_q != 32'd1234) ||
+        (u_dut.u_kws_engine.s_result_q != 32'h0001_5507) ||
+        !u_dut.u_kws_engine.s_result_valid_q) begin
+      $fatal(1, "APB KWS counter clear disturbed engine state");
+    end
+    u_dut.u_kws_engine.s_overrun_sticky_q = 1'b1;
+    apb_write(`APB4_APU__IRQ_TEST, 32'd1 << `APB4_APU__IRQ_STREAM_XRUN, 4'hf, 1'b0);
+    apb_write(`APB4_APU__IRQ_STATE, 32'd1 << `APB4_APU__IRQ_STREAM_XRUN, 4'hf, 1'b0);
+    if (u_dut.u_kws_engine.s_overrun_sticky_q) begin
+      $fatal(1, "APB stream-xrun W1C did not reach KWS engine");
+    end
+    expect_read(`APB4_APU__IRQ_STATE, 32'd0);
+
+    s_phase = "P7 DMA owner routing";
+    hard_reset();
+    force u_dut.s_mc_idle = 1'b1;
+    force u_dut.s_ring_dma_req_valid = 1'b0;
+    force u_dut.s_transport_dma_req_valid = 1'b0;
+    force u_dut.s_kws_loader_dma_req = 1'b0;
+    force u_dut.s_kws_mem_dma_req = 1'b1;
+    force u_dut.s_dma_req_ready = 1'b1;
+    @(posedge clk_i);
+    #1;
+    if ((u_dut.s_dma_owner_q != 3'd4) || !u_dut.s_kws_mem_dma_rdy ||
+        u_dut.s_kws_loader_dma_rdy) begin
+      $fatal(1, "KWS memory DMA did not receive its distinct owner");
+    end
+    force u_dut.s_kws_loader_dma_rdy_data = 1'b0;
+    force u_dut.s_kws_mem_dma_data_rdy = 1'b1;
+    #1;
+    if (!u_dut.u_dma_read_axis.tready) begin
+      $fatal(1, "KWS memory DMA ready did not reach the shared DMA");
+    end
+    force u_dut.s_kws_mem_dma_data_rdy = 1'b0;
+    force u_dut.s_kws_loader_dma_rdy_data = 1'b1;
+    #1;
+    if (u_dut.u_dma_read_axis.tready) begin
+      $fatal(1, "loader ready leaked into KWS memory DMA ownership");
+    end
+    release u_dut.s_kws_loader_dma_rdy_data;
+    release u_dut.s_kws_mem_dma_data_rdy;
+    release u_dut.s_dma_req_ready;
+    release u_dut.s_kws_mem_dma_req;
+    release u_dut.s_kws_loader_dma_req;
+    release u_dut.s_transport_dma_req_valid;
+    release u_dut.s_ring_dma_req_valid;
+    release u_dut.s_mc_idle;
 
     $display("APU-P1 complete APB register matrix passed");
     $finish;

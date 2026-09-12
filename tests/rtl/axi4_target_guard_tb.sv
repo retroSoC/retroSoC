@@ -74,8 +74,8 @@ module axi4_target_guard_tb;
     end
   endtask
 
-  task automatic return_read_beat(input logic [5:0] id, input logic last,
-                                  input logic expected_last, input logic [1:0] expected_resp);
+  task automatic return_read_beat(input logic [5:0] id, input logic last, input logic expected_last,
+                                  input logic [1:0] expected_resp);
     begin
       @(negedge clk_i);
       sink.rid    = id;

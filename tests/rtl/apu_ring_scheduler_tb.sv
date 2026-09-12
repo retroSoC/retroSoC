@@ -87,7 +87,9 @@ module apu_ring_scheduler_tb;
   assign dma_read_axis.tvalid  = dma_active_q && !dma_write_q && !hold_dma_read;
   assign dma_write_axis.tready = dma_active_q && dma_write_q && !hold_dma_write;
 
-  apu_ring_scheduler u_dut (
+  apu_ring_scheduler #(
+      .EnableP7(1'b1)
+  ) u_dut (
       .clk_i,
       .rst_n_i,
       .soft_reset_i,
@@ -233,6 +235,17 @@ module apu_ring_scheduler_tb;
       memory[(descriptor_i*32)+5] = 32'd512 + descriptor_i;
       memory[(descriptor_i*32)+16] = 32'hc001_0000 + descriptor_i;
       memory[(descriptor_i*32)+17] = 32'hc002_0000 + descriptor_i;
+    end
+  endtask
+
+  task automatic make_invalid_kws_descriptor(input int unsigned descriptor_i);
+    begin
+      clear_descriptor(descriptor_i);
+      memory[descriptor_i*32]     = (32'd1 << `APB4_APU__DESCRIPTOR_CONTROL_OWN) | 32'd1;
+      memory[(descriptor_i*32)+2] = 32'h0000_4000;
+      memory[(descriptor_i*32)+3] = 32'd31998;
+      memory[(descriptor_i*32)+6] = 32'h0102_3e80;
+      memory[(descriptor_i*32)+9] = 32'h0000_0180;
     end
   endtask
 
@@ -656,6 +669,19 @@ module apu_ring_scheduler_tb;
     end
 
     if (backend_accepted != 32'd13) $fatal(1, "unexpected backend job count");
+
+    hard_reset();
+    s_phase = "P7 KWS validation handoff";
+    clear_descriptor(0);
+    make_invalid_kws_descriptor(0);
+    ring_tail_i   = 8'd1;
+    ring_enable_i = 1'b1;
+    pulse_start();
+    wait_completed(32'd1);
+    if ((backend_accepted != 32'd1) || memory[0][31]) begin
+      $fatal(1, "P7 KWS descriptor was rejected before backend ABI validation");
+    end
+
     @(negedge clk_i);
     counter_clear_i = 1'b1;
     @(negedge clk_i);

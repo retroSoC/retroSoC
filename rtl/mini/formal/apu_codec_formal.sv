@@ -5,7 +5,7 @@ module apu_codec_formal_design (
     input  logic        clk_i,
     output logic        rst_n_i,
     output logic        f_past_valid,
-    output logic [2:0]  scenario,
+    output logic [ 2:0] scenario,
     output logic [ 5:0] cycle,
     output logic        block_new,
     output logic        context_ready,
@@ -18,11 +18,11 @@ module apu_codec_formal_design (
     output logic        memory_claim,
     output logic        memory_request,
     output logic        fault_valid,
-    output logic [5:0]  fault_code,
-    output logic [3:0]  fault_stage,
+    output logic [ 5:0] fault_code,
+    output logic [ 3:0] fault_stage,
     output logic [31:0] fault_detail
 );
-  (* anyconst *)logic   [2:0]  f_scenario;
+  (* anyconst *)logic [   2:0] f_scenario;
   logic [   5:0] s_cycle_q;
   logic [1023:0] s_descriptor;
 
@@ -46,7 +46,7 @@ module apu_codec_formal_design (
   );
 
   always_comb begin
-    s_descriptor = '0;
+    s_descriptor             = '0;
     s_descriptor[(2*32)+:32] = 32'h1000_0000;
     s_descriptor[(3*32)+:32] = 32'd64;
     s_descriptor[(4*32)+:32] = 32'h2000_0000;

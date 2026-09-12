@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from apu_interpreter import Machine, PredicateInputs
 from apu_isa import ControlOpcode, Instruction, crc32_iso_hdlc
+from apu_kws import infer_apum
+from apu_kws_convert import import_tflite
 from apu_mcasm import assemble
 
 
@@ -19,6 +21,44 @@ ROOT = Path(__file__).resolve().parents[1]
 TOPOLOGY = ROOT / "rtl/mini/integration/soc_topology.json"
 TOPOLOGY_GENERATOR = ROOT / "rtl/mini/integration/generate_soc_topology.py"
 MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
+KWS_MODEL = (
+    ROOT
+    / ".cache/retrosoc/sources/apu-mlperf-tiny/benchmark/training/keyword_spotting"
+    / "trained_models/kws_ref_model.tflite"
+)
+
+
+def _patch_crc32(payload: bytearray, offset: int, target: int) -> None:
+    payload[offset : offset + 4] = b"\0\0\0\0"
+    base = crc32_iso_hdlc(payload)
+    effects: list[int] = []
+    for bit in range(32):
+        candidate = bytearray(payload)
+        candidate[offset + bit // 8] ^= 1 << (bit % 8)
+        effects.append(crc32_iso_hdlc(candidate) ^ base)
+
+    basis: dict[int, tuple[int, int]] = {}
+    for bit, effect in enumerate(effects):
+        value = effect
+        combination = 1 << bit
+        while value:
+            pivot = value.bit_length() - 1
+            if pivot not in basis:
+                basis[pivot] = (value, combination)
+                break
+            value ^= basis[pivot][0]
+            combination ^= basis[pivot][1]
+
+    value = target ^ base
+    combination = 0
+    while value:
+        pivot = value.bit_length() - 1
+        if pivot not in basis:
+            raise AssertionError("CRC32 patch matrix is singular")
+        value ^= basis[pivot][0]
+        combination ^= basis[pivot][1]
+    payload[offset : offset + 4] = combination.to_bytes(4, "little")
+    assert crc32_iso_hdlc(payload) == target
 
 
 def test_apu_p1_apb_register_shell(tmp_path: Path) -> None:
@@ -52,6 +92,9 @@ def test_apu_p1_apb_register_shell(tmp_path: Path) -> None:
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_kws_engine.sv"),
+                str(multimedia / "apu_kws_sram_client.sv"),
+                str(multimedia / "apu_kws_model_loader.sv"),
                 str(multimedia / "apu_bitstream_engine.sv"),
                 str(multimedia / "apu_entropy_engine.sv"),
                 str(multimedia / "apu_reconstruction_engine.sv"),
@@ -139,6 +182,9 @@ def test_apu_p1_integrated_irq_ownership_topology(tmp_path: Path) -> None:
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_kws_engine.sv"),
+                str(multimedia / "apu_kws_sram_client.sv"),
+                str(multimedia / "apu_kws_model_loader.sv"),
                 str(multimedia / "apu_bitstream_engine.sv"),
                 str(multimedia / "apu_entropy_engine.sv"),
                 str(multimedia / "apu_reconstruction_engine.sv"),
@@ -276,7 +322,7 @@ last:
     image = tmp_path / "apu_p3_image.hex"
     image.write_text(
         "".join(
-            f"{int.from_bytes(bundle[offset:offset + 4], 'little'):08x}\n"
+            f"{int.from_bytes(bundle[offset : offset + 4], 'little'):08x}\n"
             for offset in range(0, len(bundle), 4)
         ),
         encoding="utf-8",
@@ -306,7 +352,7 @@ done:
     invalid_image = tmp_path / "apu_p3_invalid_control.hex"
     invalid_image.write_text(
         "".join(
-            f"{int.from_bytes(invalid_bundle[offset:offset + 4], 'little'):08x}\n"
+            f"{int.from_bytes(invalid_bundle[offset : offset + 4], 'little'):08x}\n"
             for offset in range(0, len(invalid_bundle), 4)
         ),
         encoding="utf-8",
@@ -338,7 +384,7 @@ done:
     invalid_loop_image = tmp_path / "apu_p3_invalid_loop.hex"
     invalid_loop_image.write_text(
         "".join(
-            f"{int.from_bytes(invalid_loop_bundle[offset:offset + 4], 'little'):08x}\n"
+            f"{int.from_bytes(invalid_loop_bundle[offset : offset + 4], 'little'):08x}\n"
             for offset in range(0, len(invalid_loop_bundle), 4)
         ),
         encoding="utf-8",
@@ -369,7 +415,7 @@ last:
     diagnostic_image = tmp_path / "apu_p3_diagnostic_order.hex"
     diagnostic_image.write_text(
         "".join(
-            f"{int.from_bytes(diagnostic_bundle[offset:offset + 4], 'little'):08x}\n"
+            f"{int.from_bytes(diagnostic_bundle[offset : offset + 4], 'little'):08x}\n"
             for offset in range(0, len(diagnostic_bundle), 4)
         ),
         encoding="utf-8",
@@ -401,7 +447,7 @@ last:
     lexical_image = tmp_path / "apu_p3_lexical_path_image.hex"
     lexical_image.write_text(
         "".join(
-            f"{int.from_bytes(lexical_bundle[offset:offset + 4], 'little'):08x}\n"
+            f"{int.from_bytes(lexical_bundle[offset : offset + 4], 'little'):08x}\n"
             for offset in range(0, len(lexical_bundle), 4)
         ),
         encoding="utf-8",
@@ -424,7 +470,7 @@ last:
     deep_image = tmp_path / "apu_p3_deep_path_image.hex"
     deep_image.write_text(
         "".join(
-            f"{int.from_bytes(deep_bundle[offset:offset + 4], 'little'):08x}\n"
+            f"{int.from_bytes(deep_bundle[offset : offset + 4], 'little'):08x}\n"
             for offset in range(0, len(deep_bundle), 4)
         ),
         encoding="utf-8",
@@ -524,7 +570,7 @@ done:
     image = tmp_path / "apu_p3_integration_image.hex"
     image.write_text(
         "".join(
-            f"{int.from_bytes(bundle[offset:offset + 4], 'little'):08x}\n"
+            f"{int.from_bytes(bundle[offset : offset + 4], 'little'):08x}\n"
             for offset in range(0, len(bundle), 4)
         ),
         encoding="utf-8",
@@ -554,6 +600,9 @@ done:
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_kws_engine.sv"),
+                str(multimedia / "apu_kws_sram_client.sv"),
+                str(multimedia / "apu_kws_model_loader.sv"),
                 str(multimedia / "apu_bitstream_engine.sv"),
                 str(multimedia / "apu_entropy_engine.sv"),
                 str(multimedia / "apu_reconstruction_engine.sv"),
@@ -912,4 +961,257 @@ def test_apu_p2_gateway_a_round_robin_fairness(tmp_path: Path) -> None:
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], check=True, capture_output=True, text=True)
-    assert "APU-P2 Gateway A round-robin fairness passed with read/write/mixed retention" in result.stdout
+    assert (
+        "APU-P2 Gateway A round-robin fairness passed with read/write/mixed retention"
+        in result.stdout
+    )
+
+
+def test_apu_p7_kws_engine_directed(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    sv2v = shutil.which("sv2v")
+    if iverilog is None or vvp is None or sv2v is None:
+        return
+    common = ROOT / "rtl/managed/clusterip/common/rtl"
+    multimedia = ROOT / "rtl/ip/multimedia"
+    source_list = tmp_path / "apu_kws_engine.fl"
+    source_list.write_text(
+        "\n".join(
+            [
+                "+define+SV_ASSRT_DISABLE",
+                f"+incdir+{common}",
+                f"+incdir+{common / 'interface'}",
+                f"+incdir+{multimedia}",
+                str(common / "interface/axi4_stream_if.sv"),
+                str(multimedia / "apu_kws_sram_client.sv"),
+                str(multimedia / "apu_kws_engine.sv"),
+                str(ROOT / "tests/rtl/apu_kws_engine_tb.sv"),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    converted = tmp_path / "apu_kws_engine.v"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            "-f",
+            str(source_list),
+            "--output",
+            str(converted),
+        ],
+        check=True,
+    )
+    simulation = tmp_path / "apu_kws_engine"
+    subprocess.run(
+        [iverilog, "-g2012", "-s", "apu_kws_engine_tb", "-o", str(simulation), str(converted)],
+        check=True,
+    )
+    command = [vvp, str(simulation)]
+    feature = (
+        ROOT
+        / ".cache/retrosoc/sources/apu-kws-mfcc/datasets/kws01"
+        / "tst_000000_Stop_7.bin"
+    )
+    if KWS_MODEL.is_file() and feature.is_file():
+        image = import_tflite(KWS_MODEL)
+        apum_hex = tmp_path / "kws_apum.hex"
+        mfcc_hex = tmp_path / "kws_mfcc.hex"
+        layers_hex = tmp_path / "kws_layers.hex"
+        apum_hex.write_text(
+            "".join(
+                f"{int.from_bytes(image[offset : offset + 4], 'little'):08x}\n"
+                for offset in range(0, len(image), 4)
+            ),
+            encoding="ascii",
+        )
+        mfcc_hex.write_text(
+            "".join(f"{value:02x}\n" for value in feature.read_bytes()),
+            encoding="ascii",
+        )
+        layers = infer_apum(image, feature.read_bytes())
+        layers_hex.write_text(
+            "".join(f"{value & 0xff:02x}\n" for layer in layers for value in layer),
+            encoding="ascii",
+        )
+        command.extend(
+            (
+                f"+APUM_HEX={apum_hex}",
+                f"+MFCC_HEX={mfcc_hex}",
+                f"+LAYERS_HEX={layers_hex}",
+            )
+        )
+    result = subprocess.run(command, check=True, capture_output=True, text=True)
+    assert "APU-P7 KWS engine directed test passed" in result.stdout
+
+
+def test_apu_p7_kws_sram_layout_and_isolation(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    sv2v = shutil.which("sv2v")
+    if iverilog is None or vvp is None or sv2v is None:
+        return
+    multimedia = ROOT / "rtl/ip/multimedia"
+    source_list = tmp_path / "apu_kws_sram_client.fl"
+    source_list.write_text(
+        "\n".join(
+            [
+                f"+incdir+{multimedia}",
+                str(ROOT / "rtl/tech/tc_sram.sv"),
+                str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_kws_sram_client.sv"),
+                str(ROOT / "tests/rtl/apu_kws_sram_client_tb.sv"),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    converted = tmp_path / "apu_kws_sram_client.v"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            "-f",
+            str(source_list),
+            "--output",
+            str(converted),
+        ],
+        check=True,
+    )
+    simulation = tmp_path / "apu_kws_sram_client"
+    subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-s",
+            "apu_kws_sram_client_tb",
+            "-o",
+            str(simulation),
+            str(converted),
+        ],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], check=True, capture_output=True, text=True)
+    assert "PASS: APU P7 banks10..25 model/scratch SRAM isolation" in result.stdout
+
+
+def test_apu_p7_kws_job_lifecycle(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    sv2v = shutil.which("sv2v")
+    if iverilog is None or vvp is None or sv2v is None:
+        return
+    common = ROOT / "rtl/managed/clusterip/common/rtl"
+    multimedia = ROOT / "rtl/ip/multimedia"
+    source_list = tmp_path / "apu_kws_job.fl"
+    source_list.write_text(
+        "\n".join(
+            [
+                "+define+SV_ASSRT_DISABLE",
+                f"+incdir+{common}",
+                f"+incdir+{multimedia}",
+                str(multimedia / "apu_codec_controller.sv"),
+                str(ROOT / "tests/rtl/apu_kws_job_tb.sv"),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    converted = tmp_path / "apu_kws_job.v"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            "-f",
+            str(source_list),
+            "--output",
+            str(converted),
+        ],
+        check=True,
+    )
+    simulation = tmp_path / "apu_kws_job"
+    subprocess.run(
+        [iverilog, "-g2012", "-s", "apu_kws_job_tb", "-o", str(simulation), str(converted)],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], check=True, capture_output=True, text=True)
+    assert "PASS: APU P7 direct/ring KWS job lifecycle" in result.stdout
+
+
+def test_apu_p7_kws_loader_admission_and_abort(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    sv2v = shutil.which("sv2v")
+    if iverilog is None or vvp is None or sv2v is None:
+        return
+    multimedia = ROOT / "rtl/ip/multimedia"
+    source_list = tmp_path / "apu_kws_loader.fl"
+    source_list.write_text(
+        "\n".join(
+            [
+                f"+incdir+{multimedia}",
+                str(multimedia / "apu_kws_model_loader.sv"),
+                str(ROOT / "tests/rtl/apu_kws_loader_tb.sv"),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    converted = tmp_path / "apu_kws_loader.v"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            "-f",
+            str(source_list),
+            "--output",
+            str(converted),
+        ],
+        check=True,
+    )
+    simulation = tmp_path / "apu_kws_loader"
+    subprocess.run(
+        [iverilog, "-g2012", "-s", "apu_kws_loader_tb", "-o", str(simulation), str(converted)],
+        check=True,
+    )
+    command = [vvp, str(simulation)]
+    if KWS_MODEL.is_file():
+        apum_hex = tmp_path / "kws_apum.hex"
+        bad_crc_hex = tmp_path / "kws_bad_crc.hex"
+        bad_profile_hex = tmp_path / "kws_bad_profile.hex"
+        image = import_tflite(KWS_MODEL)
+        apum_hex.write_text(
+            "".join(
+                f"{int.from_bytes(image[offset : offset + 4], 'little'):08x}\n"
+                for offset in range(0, len(image), 4)
+            ),
+            encoding="ascii",
+        )
+        bad_crc = bytearray(image)
+        bad_crc[0x1200] ^= 1
+        bad_crc_hex.write_text(
+            "".join(
+                f"{int.from_bytes(bad_crc[offset : offset + 4], 'little'):08x}\n"
+                for offset in range(0, len(bad_crc), 4)
+            ),
+            encoding="ascii",
+        )
+        bad_profile = bytearray(image)
+        bad_profile[0x1000] ^= 1
+        bad_profile_payload = bad_profile[64:]
+        _patch_crc32(bad_profile_payload, 0x1200 - 64, 0xB9034B22)
+        bad_profile[64:] = bad_profile_payload
+        bad_profile_hex.write_text(
+            "".join(
+                f"{int.from_bytes(bad_profile[offset : offset + 4], 'little'):08x}\n"
+                for offset in range(0, len(bad_profile), 4)
+            ),
+            encoding="ascii",
+        )
+        command.append(f"+APUM_HEX={apum_hex}")
+        command.append(f"+APUM_BAD_CRC_HEX={bad_crc_hex}")
+        command.append(f"+APUM_BAD_PROFILE_HEX={bad_profile_hex}")
+    result = subprocess.run(command, check=True, capture_output=True, text=True)
+    assert "APU-P7 KWS loader admission and abort test passed" in result.stdout

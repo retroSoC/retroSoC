@@ -123,6 +123,7 @@ APU_P5_BUNDLE           := $(APU_P5_DIR)/apu-p5.apumc
 APU_P5_REFERENCE_DIR    := $(VARIANT_ROOT)/apu/reference
 APU_P5_CORPUS_MANIFEST  := $(APU_P5_DIR)/corpus-manifest.json
 APU_P5_CORPUS_RTL_DIR   := $(APU_P5_DIR)/corpus-rtl
+APU_P7_DIR              := $(VARIANT_ROOT)/apu/kws
 HP_LINUX_BUILD_DIR      := $(VARIANT_ROOT)/hp-linux
 HP_LINUX_STAMP          := $(HP_LINUX_BUILD_DIR)/images/.stamp
 HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
@@ -340,7 +341,7 @@ endif
 include physical/librelane/Makefile
 include physical/ecc/Makefile
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference apu-p5-bundle apu-p5-corpus setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
@@ -348,7 +349,7 @@ include physical/ecc/Makefile
 	hp-performance-check \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-gateway-a formal-sdio formal-clean formal-doctor \
+	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all vexii-generate
 .NOTPARALLEL: setup
 
@@ -373,6 +374,7 @@ help:
 	  '  ecc-package                 package ECC core views and evidence' \
 	  '  setup                      install pinned external dependencies' \
 	  '  setup-apu-reference        install pinned host-only APU FLAC references' \
+	  '  setup-apu-kws-reference   validate pinned P7 KWS model/corpus inputs' \
 	  '  apu-p5-bundle              build the deterministic WAV/FLAC APUMC bundle' \
 	  '  apu-p5-corpus              qualify pinned FLAC with BAM/libFLAC and production RTL' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
@@ -395,7 +397,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-apu | formal-gateway-a | formal-sdio run peripheral proofs' \
+	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-apu | formal-apu-kws | formal-gateway-a | formal-sdio run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -501,6 +503,9 @@ setup-app:
 
 setup-apu-reference:
 	python3 $(ROOT_PATH)/scripts/setup_apu_reference.py --build-dir $(APU_P5_REFERENCE_DIR)
+
+setup-apu-kws-reference:
+	python3 $(ROOT_PATH)/scripts/setup_apu_reference.py --target p7 --build-dir $(APU_P7_DIR)
 
 $(APU_P5_BUNDLE): $(ROOT_PATH)/scripts/build_apu_p5_bundle.py \
 	$(ROOT_PATH)/scripts/generate_apu_p5_microcode.py \

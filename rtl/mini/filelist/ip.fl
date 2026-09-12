@@ -132,6 +132,9 @@
 /ip/multimedia/apu_control_store.sv
 /ip/multimedia/apu_microcode_loader.sv
 /ip/multimedia/apu_local_sram.sv
+/ip/multimedia/apu_kws_engine.sv
+/ip/multimedia/apu_kws_sram_client.sv
+/ip/multimedia/apu_kws_model_loader.sv
 /ip/multimedia/apu_bitstream_engine.sv
 /ip/multimedia/apu_entropy_engine.sv
 /ip/multimedia/apu_reconstruction_engine.sv

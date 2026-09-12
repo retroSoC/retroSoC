@@ -45,9 +45,9 @@ module apu_dma_tb;
   logic       allow_write_response = 1'b1;
   logic [7:0] source_last_index = 8'd0;
   int unsigned read_bursts, write_bursts;
-  int unsigned write_burst_completions;
-  logic [63:0] successful_write_burst_bytes;
-  string s_phase;
+  int unsigned        write_burst_completions;
+  logic        [63:0] successful_write_burst_bytes;
+  string              s_phase;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -190,7 +190,7 @@ module apu_dma_tb;
         write_bursts <= write_bursts + 1;
       end
       if (write_burst_done_o) begin
-        write_burst_completions <= write_burst_completions + 1;
+        write_burst_completions      <= write_burst_completions + 1;
         successful_write_burst_bytes <= successful_write_burst_bytes + write_burst_bytes_o;
       end
       if (axi4.wvalid && axi4.wready) begin

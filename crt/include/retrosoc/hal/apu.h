@@ -82,6 +82,37 @@ typedef struct {
 } rs_apu_image_t;
 
 typedef struct {
+    uint32_t threshold;
+    uint32_t debounce;
+    uint32_t input_rate;
+    uint32_t input_bits;
+} rs_apu_kws_config_t;
+
+typedef struct {
+    uint32_t input_address;
+    uint32_t threshold;
+    uint32_t debounce;
+    uint32_t cookie[2];
+} rs_apu_kws_job_t;
+
+typedef struct {
+    uint32_t class_id;
+    uint32_t score;
+    uint32_t hit;
+    uint32_t timestamp[2];
+} rs_apu_kws_result_t;
+
+typedef struct {
+    uint32_t status;
+    uint32_t model_status;
+    uint32_t model_crc;
+    uint32_t frame_count;
+    uint32_t inference_count;
+    uint32_t hit_count;
+    uint32_t overrun_count;
+} rs_apu_kws_status_t;
+
+typedef struct {
     uint32_t status;
     uint32_t address;
     uint32_t detail;
@@ -101,6 +132,13 @@ typedef struct {
     uint32_t microcode_build_id;
     rs_apu_error_t first_error;
 } rs_apu_result_t;
+
+typedef struct {
+    rs_apu_result_t job;
+    uint32_t class_id;
+    uint32_t score;
+    uint32_t hit;
+} rs_apu_kws_completion_t;
 
 typedef struct {
     rs_apu_descriptor_t *descriptors;
@@ -160,5 +198,19 @@ rs_status_t rs_apu_error_clear(void);
 rs_status_t rs_apu_irq_read(uint32_t *state);
 rs_status_t rs_apu_irq_enable(uint32_t mask);
 rs_status_t rs_apu_irq_ack(uint32_t mask);
+rs_status_t rs_apu_kws_model_load(const rs_apu_image_t *image, rs_timeout_t timeout);
+rs_status_t rs_apu_kws_configure(const rs_apu_kws_config_t *config);
+rs_status_t rs_apu_kws_enable(uint32_t memory_window);
+rs_status_t rs_apu_kws_disable(rs_timeout_t timeout);
+rs_status_t rs_apu_kws_clear_history(void);
+rs_status_t rs_apu_kws_status_read(rs_apu_kws_status_t *status);
+rs_status_t rs_apu_kws_result_read(rs_apu_kws_result_t *result);
+rs_status_t rs_apu_kws_validate_job(const rs_apu_kws_job_t *job);
+rs_status_t rs_apu_kws_submit_direct(const rs_apu_kws_job_t *job);
+rs_status_t rs_apu_kws_wait_direct(rs_apu_kws_completion_t *result, rs_timeout_t timeout);
+rs_status_t rs_apu_kws_ring_submit(rs_apu_ring_t *ring, const rs_apu_kws_job_t *job, uint32_t ioc,
+                                   uint32_t *slot);
+rs_status_t rs_apu_kws_ring_result(const rs_apu_ring_t *ring, uint32_t slot,
+                                   rs_apu_kws_completion_t *result, rs_timeout_t timeout);
 
 #endif

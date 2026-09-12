@@ -298,6 +298,12 @@ def source_files(target: str) -> list[Path]:
             MULTIMEDIA / "apu_codec_transport.sv",
             SCRIPT_DIR / "apu_codec_formal.sv",
         ]
+    if target == "apu_kws":
+        return [
+            MULTIMEDIA / "apu_kws_model_loader.sv",
+            MULTIMEDIA / "apu_codec_controller.sv",
+            SCRIPT_DIR / "apu_kws_formal.sv",
+        ]
     if target == "apu_primitives" or target in APU_PRIMITIVE_SCENARIOS:
         return [
             COMMON_RTL / "utils/fifo.sv",
@@ -402,6 +408,7 @@ def parse_args() -> argparse.Namespace:
             "dma",
             "apu",
             "apu_codec",
+            "apu_kws",
             "apu_primitives",
             *APU_PRIMITIVE_SCENARIOS,
             *APU_LOADER_SCENARIOS,

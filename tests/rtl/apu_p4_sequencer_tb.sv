@@ -352,10 +352,8 @@ module apu_p4_sequencer_tb;
             1,
             "APU-P4 sequencer fault code=%0d detail=%08x status=%08x insn=%016x legal=%0d r5=%08x r6=%08x valid=%0d",
             fault_code, fault_detail, status, u_sequencer.s_instruction_q,
-            apu_microcode_pkg::instruction_encoding_valid(
-                u_sequencer.s_instruction_q, 1'b0
-            ), gpr[5],
-            gpr[6], u_local_sram.s_mutable_valid_q[17'h00200>>2]);
+            apu_microcode_pkg::instruction_encoding_valid(u_sequencer.s_instruction_q, 1'b0),
+            gpr[5], gpr[6], u_local_sram.s_mutable_valid_q[17'h00200>>2]);
       end
       if (sequencer_idle && !primitive_busy && (retired != 32'd0)) break;
       if (cycle == 9999) $fatal(1, "APU-P4 sequencer timed out");

@@ -22,6 +22,7 @@ FORMAL_APU_P5_LOADER_DEPTH    ?= 48
 FORMAL_APU_P5_LOADER_COVER_DEPTH ?= 145
 FORMAL_APU_P5_LOADER_COVER_SKIP = $(if $(filter apu_loader_p5_success,$*),120,$(if $(filter apu_loader_p5_bound,$*),107,$(if $(filter apu_loader_p5_memo_fallback,$*),105,30)))
 FORMAL_APU_SEQUENCER_DEPTH    ?= 38
+FORMAL_APU_KWS_DEPTH          ?= 32
 FORMAL_GATEWAY_A_DEPTH        ?= 20
 FORMAL_SDIO_DEPTH             ?= 20
 FORMAL_SDIO_COVER_DEPTH       ?= 24
@@ -37,12 +38,12 @@ FORMAL_SDIO_TIMEOUT           ?= 120
 FORMAL_APU_P5_LOADER_TARGETS  := apu_loader_p5_success apu_loader_p5_bound apu_loader_p5_abort apu_loader_p5_resource_reset apu_loader_p5_memo_fallback
 FORMAL_APU_LOADER_TARGETS     := apu_loader_success apu_loader_header_range apu_loader_descriptor_range apu_loader_crc apu_loader_control_flow apu_loader_abort apu_loader_resource_reset $(FORMAL_APU_P5_LOADER_TARGETS)
 FORMAL_APU_PRIMITIVE_TARGETS  := apu_primitives_invalid_read apu_primitives_local apu_primitives_local_overflow apu_primitives_kernel apu_primitives_input_fifo apu_primitives_alignment apu_primitives_output_fifo
-FORMAL_TARGET_TIMEOUT         = $(if $(filter dma,$*),$(FORMAL_DMA_TIMEOUT),$(if $(filter apu apu_codec apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS),$*),$(FORMAL_APU_TIMEOUT),$(if $(filter gateway_a,$*),$(FORMAL_GATEWAY_A_TIMEOUT),$(if $(filter sdio,$*),$(FORMAL_SDIO_TIMEOUT),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_TIMEOUT),$(if $(filter ws2812,$*),$(FORMAL_WS2812_TIMEOUT),$(if $(filter i2c,$*),$(FORMAL_I2C_TIMEOUT),$(FORMAL_TIMEOUT))))))))
-FORMAL_APU_TARGET_DEPTH       = $(if $(filter $(FORMAL_APU_P5_LOADER_TARGETS),$*),$(FORMAL_APU_P5_LOADER_DEPTH),$(if $(filter $(FORMAL_APU_LOADER_TARGETS),$*),$(FORMAL_APU_LOADER_DEPTH),$(if $(filter apu_sequencer,$*),$(FORMAL_APU_SEQUENCER_DEPTH),$(if $(filter apu_codec,$*),$(FORMAL_APU_CODEC_DEPTH),$(FORMAL_APU_DEPTH)))))
+FORMAL_TARGET_TIMEOUT         = $(if $(filter dma,$*),$(FORMAL_DMA_TIMEOUT),$(if $(filter apu apu_codec apu_kws apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS),$*),$(FORMAL_APU_TIMEOUT),$(if $(filter gateway_a,$*),$(FORMAL_GATEWAY_A_TIMEOUT),$(if $(filter sdio,$*),$(FORMAL_SDIO_TIMEOUT),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_TIMEOUT),$(if $(filter ws2812,$*),$(FORMAL_WS2812_TIMEOUT),$(if $(filter i2c,$*),$(FORMAL_I2C_TIMEOUT),$(FORMAL_TIMEOUT))))))))
+FORMAL_APU_TARGET_DEPTH       = $(if $(filter $(FORMAL_APU_P5_LOADER_TARGETS),$*),$(FORMAL_APU_P5_LOADER_DEPTH),$(if $(filter $(FORMAL_APU_LOADER_TARGETS),$*),$(FORMAL_APU_LOADER_DEPTH),$(if $(filter apu_kws,$*),$(FORMAL_APU_KWS_DEPTH),$(if $(filter apu_sequencer,$*),$(FORMAL_APU_SEQUENCER_DEPTH),$(if $(filter apu_codec,$*),$(FORMAL_APU_CODEC_DEPTH),$(FORMAL_APU_DEPTH))))))
 FORMAL_APU_TARGET_COVER_DEPTH = $(if $(filter $(FORMAL_APU_P5_LOADER_TARGETS),$*),$(FORMAL_APU_P5_LOADER_COVER_DEPTH),$(if $(filter $(FORMAL_APU_LOADER_TARGETS),$*),$(FORMAL_APU_LOADER_COVER_DEPTH),$(FORMAL_APU_TARGET_DEPTH)))
 FORMAL_TARGET_TOP             = $(if $(filter $(FORMAL_APU_LOADER_TARGETS),$*),apu_loader,$(if $(filter $(FORMAL_APU_PRIMITIVE_TARGETS),$*),apu_primitives,$*))
 FORMAL_COMPACT_COVER_TARGETS  := i2c opipsram dma $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS)
-FORMAL_TARGETS                := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp i2s psram onchip_ram opipsram dma apu apu_codec $(FORMAL_APU_PRIMITIVE_TARGETS) $(FORMAL_APU_LOADER_TARGETS) apu_sequencer gateway_a sdio
+FORMAL_TARGETS                := bus rib_adapter rib2apb sysctrl pll_rcu gpio ws2812 uart i2c timer clint dvp i2s psram onchip_ram opipsram dma apu apu_codec apu_kws $(FORMAL_APU_PRIMITIVE_TARGETS) $(FORMAL_APU_LOADER_TARGETS) apu_sequencer gateway_a sdio
 FORMAL_FILELIST_GENERATOR     := $(RTL_PATH)/formal/generate_formal_filelist.py
 FORMAL_SBY_GENERATOR          := $(RTL_PATH)/formal/generate_sby_config.py
 FORMAL_RESULT_GENERATOR       := $(RTL_PATH)/formal/formal_results.py
@@ -84,6 +85,8 @@ FORMAL_SOURCE_FILES           := $(RTL_PATH)/formal/bus_formal.sv \
                              $(RTL_PATH)/formal/apu_formal_props.sv \
                              $(RTL_PATH)/formal/apu_codec_formal.sv \
                              $(RTL_PATH)/formal/apu_codec_formal_props.sv \
+                             $(RTL_PATH)/formal/apu_kws_formal.sv \
+                             $(RTL_PATH)/formal/apu_kws_formal_props.sv \
                              $(RTL_PATH)/formal/apu_primitives_formal.sv \
                              $(RTL_PATH)/formal/apu_primitives_formal_props.sv \
                              $(RTL_PATH)/formal/apu_loader_formal.sv \
@@ -224,14 +227,14 @@ $(FORMAL_DIR)/%/prove.sby: $(FORMAL_DIR)/%/design.v \
 	$(FORMAL_SBY_GENERATOR)
 	python3 $(FORMAL_SBY_GENERATOR) --top $(FORMAL_TARGET_TOP)_formal --input $< \
 		--properties $(RTL_PATH)/formal/$(FORMAL_TARGET_TOP)_formal_props.sv --solver $(FORMAL_SOLVER) \
-	--mode $(if $(filter dma apu apu_codec apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS) gateway_a sdio onchip_ram,$*),bmc,prove) --depth $(if $(filter pll_rcu,$*),$(FORMAL_PLL_RCU_DEPTH),$(if $(filter dma,$*),$(FORMAL_DMA_DEPTH),$(if $(filter apu apu_codec apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS),$*),$(FORMAL_APU_TARGET_DEPTH),$(if $(filter gateway_a,$*),$(FORMAL_GATEWAY_A_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH))))))))))) --output $@
+	--mode $(if $(filter dma apu apu_codec apu_kws apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS) gateway_a sdio onchip_ram,$*),bmc,prove) --depth $(if $(filter pll_rcu,$*),$(FORMAL_PLL_RCU_DEPTH),$(if $(filter dma,$*),$(FORMAL_DMA_DEPTH),$(if $(filter apu apu_codec apu_kws apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS),$*),$(FORMAL_APU_TARGET_DEPTH),$(if $(filter gateway_a,$*),$(FORMAL_GATEWAY_A_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH))))))))))) --output $@
 	@if [ "$*" = opipsram ]; then sed -i '/^async2sync/i clk2fflogic' $@; fi
 
 $(FORMAL_DIR)/%/cover.sby: $(FORMAL_DIR)/%/design.v \
 	$(FORMAL_SBY_GENERATOR)
 	python3 $(FORMAL_SBY_GENERATOR) --top $(FORMAL_TARGET_TOP)_formal --input $< \
 		--properties $(RTL_PATH)/formal/$(FORMAL_TARGET_TOP)_formal_props.sv --solver $(FORMAL_SOLVER) \
-	--mode cover --depth $(if $(filter pll_rcu,$*),$(FORMAL_PLL_RCU_DEPTH),$(if $(filter dma,$*),$(FORMAL_DMA_COVER_DEPTH),$(if $(filter apu apu_codec apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS),$*),$(FORMAL_APU_TARGET_COVER_DEPTH),$(if $(filter gateway_a,$*),$(FORMAL_GATEWAY_A_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_COVER_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH))))))))))) \
+	--mode cover --depth $(if $(filter pll_rcu,$*),$(FORMAL_PLL_RCU_DEPTH),$(if $(filter dma,$*),$(FORMAL_DMA_COVER_DEPTH),$(if $(filter apu apu_codec apu_kws apu_primitives apu_sequencer $(FORMAL_APU_LOADER_TARGETS) $(FORMAL_APU_PRIMITIVE_TARGETS),$*),$(FORMAL_APU_TARGET_COVER_DEPTH),$(if $(filter gateway_a,$*),$(FORMAL_GATEWAY_A_DEPTH),$(if $(filter sdio,$*),$(FORMAL_SDIO_COVER_DEPTH),$(if $(filter opipsram,$*),$(FORMAL_OPIPSRAM_DEPTH),$(if $(filter ws2812,$*),$(FORMAL_WS2812_DEPTH),$(if $(filter i2c,$*),$(FORMAL_I2C_DEPTH),$(if $(filter clint,$*),$(FORMAL_CLINT_DEPTH),$(if $(filter psram,$*),$(FORMAL_PSRAM_DEPTH),$(FORMAL_DEPTH))))))))))) \
 		$(if $(filter $(FORMAL_APU_P5_LOADER_TARGETS),$*),--skip $(FORMAL_APU_P5_LOADER_COVER_SKIP)) \
 		$(if $(filter $(FORMAL_COMPACT_COVER_TARGETS),$*),--no-vcd) --output $@
 	@if [ "$*" = opipsram ]; then sed -i '/^async2sync/i clk2fflogic' $@; fi
@@ -295,6 +298,8 @@ $(FORMAL_RESULT): $(FORMAL_STAMPS) $(FORMAL_RESULT_GENERATOR)
 
 formal: $(FORMAL_RESULT) | manifest
 
+formal-apu-kws: $(FORMAL_DIR)/apu_kws/.stamp | manifest
+
 formal-bus: $(FORMAL_DIR)/bus/.stamp | manifest
 
 formal-rib-adapter: $(FORMAL_DIR)/rib_adapter/.stamp | manifest
@@ -347,4 +352,4 @@ formal-doctor:
 formal-clean:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(FORMAL_DIR)
 
-.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-dvp formal-i2s formal-psram formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-loader formal-apu-loader-p5 formal-apu-sequencer formal-gateway-a formal-sdio formal-doctor formal-clean
+.PHONY: formal formal-bus formal-rib-adapter formal-rib2apb formal-sysctrl formal-pll-rcu formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-clint formal-dvp formal-i2s formal-psram formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-loader formal-apu-loader-p5 formal-apu-sequencer formal-gateway-a formal-sdio formal-doctor formal-clean

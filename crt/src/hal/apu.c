@@ -330,7 +330,7 @@ rs_status_t rs_apu_submit_direct(const rs_apu_job_t *job) {
     if (status != RS_OK) {
         return status;
     }
-    if ((rs_apu_bit(RS_APU_REG(RS_APU_ABI_STATUS), RS_APU_ABI_STATUS_IDLE) == 0U) ||
+    if ((rs_apu_bit(RS_APU_REG(RS_APU_ABI_JOB_STATUS), RS_APU_ABI_JOB_STATUS_BUSY) != 0U) ||
         (RS_APU_REG(RS_APU_ABI_RING_CONTROL) != 0U)) {
         return RS_EINVAL;
     }
@@ -549,11 +549,18 @@ rs_status_t rs_apu_stream_route(uint32_t tx_route, uint32_t rx_route) {
     const uint32_t status = RS_APU_REG(RS_APU_ABI_STREAM_STATUS);
     const uint32_t capability = RS_APU_REG(RS_APU_ABI_CAPABILITY0);
 
-    if ((tx_route > 1U) || (rx_route != 0U) ||
-        ((tx_route == 1U) && (rs_apu_bit(capability, RS_APU_ABI_CAPABILITY0_STREAMS) == 0U)) ||
-        (((status & (UINT32_C(1) << RS_APU_ABI_STREAM_STATUS_TX_ACTIVE)) != 0U) &&
-         (tx_route != (RS_APU_REG(RS_APU_ABI_STREAM_ROUTE) & 3U)))) {
-        return (rx_route != 0U) ? RS_ENOTSUP : RS_EINVAL;
+    if ((tx_route > 1U) || (rx_route > 1U)) {
+        return RS_EINVAL;
+    }
+    if (((tx_route == 1U) && (rs_apu_bit(capability, RS_APU_ABI_CAPABILITY0_STREAMS) == 0U)) ||
+        ((rx_route == 1U) && (rs_apu_bit(capability, RS_APU_ABI_CAPABILITY0_KWS) == 0U))) {
+        return RS_ENOTSUP;
+    }
+    if ((((status & (UINT32_C(1) << RS_APU_ABI_STREAM_STATUS_TX_ACTIVE)) != 0U) &&
+         (tx_route != (RS_APU_REG(RS_APU_ABI_STREAM_ROUTE) & 3U))) ||
+        (((status & (UINT32_C(1) << RS_APU_ABI_STREAM_STATUS_RX_ACTIVE)) != 0U) &&
+         (rx_route != ((RS_APU_REG(RS_APU_ABI_STREAM_ROUTE) >> 2U) & 3U)))) {
+        return RS_EINVAL;
     }
     RS_APU_REG(RS_APU_ABI_STREAM_ROUTE) = tx_route | (rx_route << 2U);
     return RS_OK;
@@ -601,5 +608,339 @@ rs_status_t rs_apu_irq_ack(uint32_t mask) {
         return RS_EINVAL;
     }
     RS_APU_REG(RS_APU_ABI_IRQ_STATE) = mask;
+    return RS_OK;
+}
+
+static rs_status_t rs_apu_kws_discover(void) {
+    rs_apu_info_t info;
+
+    if (rs_apu_probe(&info) != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    return (rs_apu_bit(info.capability0, RS_APU_ABI_CAPABILITY0_KWS) != 0U) ? RS_OK : RS_ENOTSUP;
+}
+
+static rs_status_t rs_apu_kws_admission(const rs_apu_kws_job_t *job) {
+    uint32_t model_status;
+
+    if (rs_apu_owner_unblocked() == 0U ||
+        (rs_apu_bit(RS_APU_REG(RS_APU_ABI_MC_STATUS), RS_APU_ABI_MC_STATUS_VALID) == 0U) ||
+        (rs_apu_bit(RS_APU_REG(RS_APU_ABI_MC_LOCK), RS_APU_ABI_MC_LOCK_LOCKED) == 0U)) {
+        return RS_EINVAL;
+    }
+    model_status = RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS);
+    if ((model_status & UINT32_C(6)) != UINT32_C(6) ||
+        (RS_APU_REG(RS_APU_ABI_KWS_CONTROL) != UINT32_C(3)) ||
+        (rs_apu_bit(RS_APU_REG(RS_APU_ABI_KWS_STATUS), RS_APU_ABI_KWS_STATUS_LISTENING) != 0U)) {
+        return RS_EINVAL;
+    }
+    if ((rs_apu_range_in_acl(job->input_address, UINT32_C(32000), RS_APU_REG(RS_APU_ABI_READ_BASE),
+                             RS_APU_REG(RS_APU_ABI_READ_LIMIT)) == 0U) ||
+        (rs_apu_bit(RS_APU_REG(RS_APU_ABI_JOB_STATUS), RS_APU_ABI_JOB_STATUS_BUSY) != 0U)) {
+        return RS_EINVAL;
+    }
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_model_load(const rs_apu_image_t *image, rs_timeout_t timeout) {
+    uint32_t polls;
+    uint32_t model_status;
+
+    if ((image == NULL) || ((image->address & UINT32_C(63)) != 0U) ||
+        (image->bytes != RS_APU_ABI_APUM_IMAGE_BYTES) ||
+        (image->expected_crc != RS_APU_ABI_APUM_PAYLOAD_CRC) ||
+        (image->address > (UINT32_MAX - (RS_APU_ABI_APUM_IMAGE_BYTES - 1U)))) {
+        return RS_EINVAL;
+    }
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    if ((rs_apu_lp_quiesced() == 0U) ||
+        (rs_apu_bit(RS_APU_REG(RS_APU_ABI_STATUS), RS_APU_ABI_STATUS_IDLE) == 0U) ||
+        (rs_apu_range_in_acl(image->address, image->bytes, RS_APU_REG(RS_APU_ABI_READ_BASE),
+                             RS_APU_REG(RS_APU_ABI_READ_LIMIT)) == 0U) ||
+        ((RS_APU_REG(RS_APU_ABI_KWS_CONTROL) & UINT32_C(1)) != 0U) ||
+        ((RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS) & UINT32_C(4)) != 0U)) {
+        return RS_EINVAL;
+    }
+    RS_APU_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) = image->address;
+    RS_APU_REG(RS_APU_ABI_KWS_MODEL_SIZE) = image->bytes;
+    RS_APU_REG(RS_APU_ABI_KWS_MODEL_EXPECTED_CRC) = image->expected_crc;
+    rs_apu_fence();
+    RS_APU_REG(RS_APU_ABI_COMMAND) = UINT32_C(1) << RS_APU_ABI_COMMAND_MODEL_LOAD;
+    polls = rs_apu_poll_count(timeout);
+    while (polls-- != 0U) {
+        model_status = RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS);
+        if ((model_status & UINT32_C(1)) == 0U) {
+            if (((model_status & UINT32_C(6)) == UINT32_C(6)) &&
+                (RS_APU_REG(RS_APU_ABI_KWS_MODEL_ACTUAL_CRC) == image->expected_crc)) {
+                return RS_OK;
+            }
+            return ((model_status & UINT32_C(0x1700)) != 0U) ? RS_EFORMAT : RS_EIO;
+        }
+    }
+    return RS_ETIMEOUT;
+}
+
+rs_status_t rs_apu_kws_configure(const rs_apu_kws_config_t *config) {
+    uint32_t input_config;
+
+    if ((config == NULL) || (config->threshold > UINT32_C(255)) || (config->debounce == 0U) ||
+        (config->debounce > UINT32_C(255)) ||
+        ((config->input_rate != UINT32_C(16000)) && (config->input_rate != UINT32_C(48000)) &&
+         (config->input_rate != UINT32_C(96000))) ||
+        ((config->input_bits != UINT32_C(16)) && (config->input_bits != UINT32_C(24)))) {
+        return RS_EINVAL;
+    }
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    if (rs_apu_bit(RS_APU_REG(RS_APU_ABI_STATUS), RS_APU_ABI_STATUS_IDLE) == 0U) {
+        return RS_EINVAL;
+    }
+    input_config = config->input_rate |
+                   (UINT32_C(2) << RS_APU_ABI_KWS_INPUT_CONFIG_CHANNELS_SHIFT) |
+                   (config->input_bits << RS_APU_ABI_KWS_INPUT_CONFIG_PRECISION_SHIFT);
+    RS_APU_REG(RS_APU_ABI_KWS_CONFIG) = config->threshold | (config->debounce << 8U);
+    RS_APU_REG(RS_APU_ABI_KWS_INPUT_CONFIG) = input_config;
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_enable(uint32_t memory_window) {
+    uint32_t model_status;
+
+    if (memory_window > 1U) {
+        return RS_EINVAL;
+    }
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    model_status = RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS);
+    if ((rs_apu_owner_unblocked() == 0U) || ((model_status & UINT32_C(6)) != UINT32_C(6)) ||
+        (RS_APU_REG(RS_APU_ABI_KWS_CONTROL) != 0U)) {
+        return RS_EINVAL;
+    }
+    if ((memory_window == 0U) &&
+        ((RS_APU_REG(RS_APU_ABI_STREAM_ROUTE) >> 2U) & UINT32_C(3)) != 1U) {
+        return RS_EINVAL;
+    }
+    RS_APU_REG(RS_APU_ABI_KWS_CONTROL) = UINT32_C(1) | (memory_window << 1U);
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_disable(rs_timeout_t timeout) {
+    uint32_t polls;
+    uint32_t control;
+
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    control = RS_APU_REG(RS_APU_ABI_KWS_CONTROL);
+    if ((control & UINT32_C(1)) == 0U) {
+        return RS_OK;
+    }
+    RS_APU_REG(RS_APU_ABI_KWS_CONTROL) = control & UINT32_C(2);
+    polls = rs_apu_poll_count(timeout);
+    while (polls-- != 0U) {
+        if (((RS_APU_REG(RS_APU_ABI_KWS_CONTROL) & UINT32_C(1)) == 0U) &&
+            ((RS_APU_REG(RS_APU_ABI_KWS_STATUS) & UINT32_C(3)) == 0U)) {
+            return RS_OK;
+        }
+    }
+    return RS_ETIMEOUT;
+}
+
+rs_status_t rs_apu_kws_clear_history(void) {
+    uint32_t control;
+
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    control = RS_APU_REG(RS_APU_ABI_KWS_CONTROL);
+    if (((control & UINT32_C(1)) != 0U) ||
+        (rs_apu_bit(RS_APU_REG(RS_APU_ABI_STATUS), RS_APU_ABI_STATUS_IDLE) == 0U)) {
+        return RS_EINVAL;
+    }
+    RS_APU_REG(RS_APU_ABI_KWS_CONTROL) =
+        control | (UINT32_C(1) << RS_APU_ABI_KWS_CONTROL_CLEAR_HISTORY);
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_status_read(rs_apu_kws_status_t *status) {
+    if (status == NULL) {
+        return RS_EINVAL;
+    }
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    status->status = RS_APU_REG(RS_APU_ABI_KWS_STATUS);
+    status->model_status = RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS);
+    status->model_crc = RS_APU_REG(RS_APU_ABI_KWS_MODEL_ACTUAL_CRC);
+    status->frame_count = RS_APU_REG(RS_APU_ABI_KWS_FRAME_COUNT);
+    status->inference_count = RS_APU_REG(RS_APU_ABI_KWS_INFERENCE_COUNT);
+    status->hit_count = RS_APU_REG(RS_APU_ABI_KWS_HIT_COUNT);
+    status->overrun_count = RS_APU_REG(RS_APU_ABI_KWS_OVERRUN_COUNT);
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_result_read(rs_apu_kws_result_t *result) {
+    uint32_t value;
+
+    if (result == NULL) {
+        return RS_EINVAL;
+    }
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    if ((RS_APU_REG(RS_APU_ABI_KWS_STATUS) & (UINT32_C(1) << RS_APU_ABI_KWS_STATUS_RESULT_VALID)) ==
+        0U) {
+        return RS_ETIMEOUT;
+    }
+    value = RS_APU_REG(RS_APU_ABI_KWS_RESULT);
+    result->class_id = value & UINT32_C(0xff);
+    result->score = (value >> 8U) & UINT32_C(0xff);
+    result->hit = (value >> 16U) & UINT32_C(1);
+    result->timestamp[0] = RS_APU_REG(RS_APU_ABI_KWS_TIMESTAMP_LO);
+    result->timestamp[1] = RS_APU_REG(RS_APU_ABI_KWS_TIMESTAMP_HI);
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_validate_job(const rs_apu_kws_job_t *job) {
+    if ((job == NULL) || ((job->input_address & UINT32_C(3)) != 0U) ||
+        (job->input_address > (UINT32_MAX - UINT32_C(31999))) || (job->threshold > UINT32_C(255)) ||
+        (job->debounce == 0U) || (job->debounce > UINT32_C(255))) {
+        return RS_EINVAL;
+    }
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_submit_direct(const rs_apu_kws_job_t *job) {
+    rs_status_t status = rs_apu_kws_validate_job(job);
+
+    if (status != RS_OK) {
+        return status;
+    }
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    status = rs_apu_kws_admission(job);
+    if (status != RS_OK) {
+        return status;
+    }
+    RS_APU_REG(RS_APU_ABI_JOB_CONTROL) = UINT32_C(1);
+    RS_APU_REG(RS_APU_ABI_JOB_INPUT_ADDRESS) = job->input_address;
+    RS_APU_REG(RS_APU_ABI_JOB_INPUT_LENGTH) = UINT32_C(32000);
+    RS_APU_REG(RS_APU_ABI_JOB_OUTPUT_ADDRESS) = 0U;
+    RS_APU_REG(RS_APU_ABI_JOB_OUTPUT_CAPACITY) = 0U;
+    RS_APU_REG(RS_APU_ABI_JOB_INPUT_CONFIG) =
+        UINT32_C(16000) | (UINT32_C(1) << 17U) | (UINT32_C(16) << 20U);
+    RS_APU_REG(RS_APU_ABI_JOB_OUTPUT_CONFIG) = 0U;
+    RS_APU_REG(RS_APU_ABI_JOB_FLAGS) = 0U;
+    RS_APU_REG(RS_APU_ABI_KWS_CONFIG) = job->threshold | (job->debounce << 8U);
+    rs_apu_direct_cookie[0] = job->cookie[0];
+    rs_apu_direct_cookie[1] = job->cookie[1];
+    rs_apu_fence();
+    RS_APU_REG(RS_APU_ABI_COMMAND) = UINT32_C(1) << RS_APU_ABI_COMMAND_START_DIRECT;
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_wait_direct(rs_apu_kws_completion_t *result, rs_timeout_t timeout) {
+    rs_status_t status;
+    rs_apu_kws_completion_t completion = {0};
+    rs_apu_kws_result_t kws_result;
+
+    if (result == NULL) {
+        return RS_EINVAL;
+    }
+    status = rs_apu_wait_direct(&completion.job, timeout);
+    if (status != RS_OK) {
+        if (status != RS_ETIMEOUT) {
+            *result = completion;
+        }
+        return status;
+    }
+    status = rs_apu_kws_result_read(&kws_result);
+    if (status != RS_OK) {
+        return RS_EIO;
+    }
+    completion.class_id = kws_result.class_id;
+    completion.score = kws_result.score;
+    completion.hit = kws_result.hit;
+    *result = completion;
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_ring_submit(rs_apu_ring_t *ring, const rs_apu_kws_job_t *job, uint32_t ioc,
+                                   uint32_t *slot) {
+    uint32_t next;
+    rs_status_t status;
+
+    if ((ring == NULL) || (job == NULL) || (slot == NULL) || (ioc > 1U) ||
+        (ring->descriptors == NULL) || (ring->entries < 2U) || (ring->entries > 256U) ||
+        ((ring->entries & (ring->entries - 1U)) != 0U) || (ring->tail >= ring->entries)) {
+        return RS_EINVAL;
+    }
+    status = rs_apu_kws_validate_job(job);
+    if (status != RS_OK) {
+        return status;
+    }
+    if (rs_apu_kws_discover() != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    status = rs_apu_kws_admission(job);
+    if (status != RS_OK) {
+        return status;
+    }
+    if (((RS_APU_REG(RS_APU_ABI_RING_CONTROL) & UINT32_C(1)) == 0U) ||
+        (RS_APU_REG(RS_APU_ABI_RING_BASE) != ring->dma_address) ||
+        (RS_APU_REG(RS_APU_ABI_RING_SIZE) != ring->entries)) {
+        return RS_EINVAL;
+    }
+    next = (ring->tail + 1U) & (ring->entries - 1U);
+    if ((next == RS_APU_REG(RS_APU_ABI_RING_HEAD)) || (rs_apu_slot_collected(ring->tail) == 0U) ||
+        ((ring->descriptors[ring->tail].control & UINT32_C(0x80000000)) != 0U)) {
+        return RS_ENOSPC;
+    }
+    *slot = ring->tail;
+    ring->descriptors[*slot] = (rs_apu_descriptor_t){0};
+    ring->descriptors[*slot].control = UINT32_C(1) | (ioc << RS_APU_ABI_DESCRIPTOR_CONTROL_IOC);
+    ring->descriptors[*slot].input_address = job->input_address;
+    ring->descriptors[*slot].input_length = UINT32_C(32000);
+    ring->descriptors[*slot].input_config =
+        UINT32_C(16000) | (UINT32_C(1) << 17U) | (UINT32_C(16) << 20U);
+    ring->descriptors[*slot].kws_config = job->threshold | (job->debounce << 8U);
+    ring->descriptors[*slot].cookie[0] = job->cookie[0];
+    ring->descriptors[*slot].cookie[1] = job->cookie[1];
+    rs_apu_fence();
+    ring->descriptors[*slot].control |= UINT32_C(1) << RS_APU_ABI_DESCRIPTOR_CONTROL_OWN;
+    rs_apu_fence();
+    rs_apu_set_slot_collected(*slot, 0U);
+    ring->tail = next;
+    RS_APU_REG(RS_APU_ABI_RING_TAIL) = next;
+    RS_APU_REG(RS_APU_ABI_RING_DOORBELL) = UINT32_C(1);
+    return RS_OK;
+}
+
+rs_status_t rs_apu_kws_ring_result(const rs_apu_ring_t *ring, uint32_t slot,
+                                   rs_apu_kws_completion_t *result, rs_timeout_t timeout) {
+    rs_status_t status;
+    uint32_t value;
+    rs_apu_kws_completion_t completion = {0};
+
+    if (result == NULL) {
+        return RS_EINVAL;
+    }
+    status = rs_apu_ring_result(ring, slot, &completion.job, timeout);
+    if (status != RS_OK) {
+        if (status != RS_ETIMEOUT) {
+            *result = completion;
+        }
+        return status;
+    }
+    value = ring->descriptors[slot].kws_result;
+    completion.class_id = value & UINT32_C(0xff);
+    completion.score = (value >> 8U) & UINT32_C(0xff);
+    completion.hit = (value >> 16U) & UINT32_C(1);
+    *result = completion;
     return RS_OK;
 }

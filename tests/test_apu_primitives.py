@@ -150,14 +150,28 @@ def test_p4_interpreter_stalls_without_eof_and_watchdogs() -> None:
 
 def test_p4_local_sram_has_macro_and_inferred_profiles() -> None:
     source = (ROOT / "rtl/ip/multimedia/apu_local_sram.sv").read_text(encoding="utf-8")
-    assert "localparam int unsigned BankCount = 28" in source
+    compact = "".join(source.split())
+    assert "localparamintunsignedLogicalBankCount=28" in compact
+    assert "localparamintunsignedPhysicalBankCount=LogicalBankCount-16" in compact
     assert "tc_sram_1024x32 u_local_sram" in source
-    assert "parameterintunsignedMemoryWordCount=`APB4_APU__LOCAL_DATA_BYTES/4" in "".join(
-        source.split()
-    )
-    assert "logic[31:0]mem[0:MemoryWordCount-1]" in "".join(source.split())
+    assert "parameterintunsignedMemoryWordCount=`APB4_APU__LOCAL_DATA_BYTES/4" in compact
+    assert "logic[31:0]mem[0:PhysicalWordCount-1]" in compact
+    assert "s_physical_word_selected" in source
     assert "`ifdef HAVE_SRAM_MACRO" in source
     assert "`else" in source
+
+    kws_source = (ROOT / "rtl/ip/multimedia/apu_kws_sram_client.sv").read_text(
+        encoding="utf-8"
+    )
+    engine_source = (ROOT / "rtl/ip/multimedia/apu_kws_engine.sv").read_text(
+        encoding="utf-8"
+    )
+    compact_engine = "".join(engine_source.split())
+    assert "KwsWordCount=ModelWordCount+ScratchWordCount" in "".join(kws_source.split())
+    assert "`RETROSOC_APU_KWS__SCRATCH_BYTES/4" in "".join(kws_source.split())
+    assert "logicsigned[7:0]s_tensor_a_q[" not in compact_engine
+    assert "logicsigned[7:0]s_tensor_b_q[" not in compact_engine
+    assert "logic[31:0]s_mel_q[" not in compact_engine
 
 
 def test_bitstream_crc_and_frame_sync() -> None:

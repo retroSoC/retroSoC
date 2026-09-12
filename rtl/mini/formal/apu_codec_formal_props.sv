@@ -9,9 +9,9 @@ module apu_codec_formal;
   wire block_new, context_ready, request_valid, request_ready;
   wire dma_request_valid, dma_request_ready, memory_claim, memory_request;
   wire [31:0] dma_request_addr, dma_request_bytes;
-  wire fault_valid;
-  wire [5:0] fault_code;
-  wire [3:0] fault_stage;
+  wire        fault_valid;
+  wire [ 5:0] fault_code;
+  wire [ 3:0] fault_stage;
   wire [31:0] fault_detail;
 
   apu_codec_formal_design u_design (.*);
@@ -49,7 +49,6 @@ module apu_codec_formal;
     cover (rst_n_i && dma_request_valid && !block_new && (cycle >= 6'd22));
     cover (rst_n_i && block_new && request_valid && !request_ready);
     cover (rst_n_i && (scenario == 3'd1) && fault_valid && (fault_detail[7:0] == 8'd5));
-    cover (rst_n_i && (scenario == 3'd2) && fault_valid &&
-           (fault_detail[15:0] == 16'h0051));
+    cover (rst_n_i && (scenario == 3'd2) && fault_valid && (fault_detail[15:0] == 16'h0051));
   end
 endmodule
