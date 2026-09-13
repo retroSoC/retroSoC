@@ -206,6 +206,14 @@
 #define CSR_MCOUNTINHIBIT         0x320
 #define CSR_MSCOUNTEREN           0x321
 
+/* Hazard3 Xh3irq array and context CSRs. */
+#define CSR_HAZARD3_MEIEA         0xbe0
+#define CSR_HAZARD3_MEIPA         0xbe1
+#define CSR_HAZARD3_MEIFA         0xbe2
+#define CSR_HAZARD3_MEIPRA        0xbe3
+#define CSR_HAZARD3_MEINEXT       0xbe4
+#define CSR_HAZARD3_MEICONTEXT    0xbe5
+
 #define CSR_MVENDORID             0xf11
 #define CSR_MARCHID               0xf12
 #define CSR_MIMPID                0xf13

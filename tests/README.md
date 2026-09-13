@@ -31,6 +31,8 @@ tooling.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.
+- `test_lp_irq.py` checks the 64-bit LP vector, 62-input metadata, Xh3irq
+  wrapper/backend contract, CSR-disabled stubs, and generated routing.
 - `test_hp_boot_bundle.py` checks the HP flash ABI, CRCs, payload placement,
   and handwritten mailbox RTL/C offset parity. `test_hp_platform.py`,
   `test_hp_mailbox.py`, `test_plic.py`, and the AXI tests cover the remaining

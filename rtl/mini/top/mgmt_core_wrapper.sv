@@ -10,11 +10,13 @@
 
 `include "mmap_define.svh"
 
-module mgmt_core_wrapper (
+module mgmt_core_wrapper #(
+    parameter int ExternalIrqCount = 30
+) (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
-    input  logic [31:0] irq_i,
+    input  logic [ExternalIrqCount+1:0] irq_i,
     input  logic        jtag_tck_i,
     input  logic        jtag_tms_i,
     input  logic        jtag_tdi_i,
@@ -133,9 +135,9 @@ module mgmt_core_wrapper (
       .PMP_HARDWIRED_CFG  (0),
       .DEBUG_SUPPORT      (1),
       .BREAKPOINT_TRIGGERS(2),
-      .NUM_IRQS           (30),
+      .NUM_IRQS           (ExternalIrqCount),
       .IRQ_PRIORITY_BITS  (2),
-      .IRQ_INPUT_BYPASS   (30'h0),
+      .IRQ_INPUT_BYPASS   ({ExternalIrqCount{1'b0}}),
       .MVENDORID_VAL      (32'h0),
       .MCONFIGPTR_VAL     (32'h0),
       .REDUCED_BYPASS     (0),
@@ -196,7 +198,7 @@ module mgmt_core_wrapper (
       .dbg_sbus_rdata            (s_dbg_sbus_rdata),
       .mhartid_val               ('0),
       .eco_version               ('0),
-      .irq                       (irq_i[31:2]),
+      .irq                       (irq_i[ExternalIrqCount+1:2]),
       .soft_irq                  (irq_i[0]),
       .timer_irq                 (irq_i[1])
   );

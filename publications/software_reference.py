@@ -92,9 +92,19 @@ def irq_support(root: Path) -> dict:
     if supported != ["IRQ_M_SOFT", "IRQ_M_TIMER"] or "return RS_ENOTSUP;" not in enable:
         raise ValueError("core IRQ enable support changed")
     external = function_body(source, "rs_irq_register_external")
-    if re.findall(r"return\s+(RS_\w+)\s*;", external) != ["RS_EINVAL", "RS_ENOTSUP"]:
+    if re.findall(r"return\s+(RS_\w+)\s*;", external) != ["RS_EINVAL", "RS_OK"]:
         raise ValueError("external IRQ registration behavior changed")
-    counts = dict(re.findall(r"^#define\s+(RS_(?:EXCEPTION|CORE_IRQ|EXTERNAL_IRQ)_COUNT)\s+(\d+)U", source, re.M))
+    counts = dict(
+        re.findall(
+            r"^#define\s+(RS_(?:EXCEPTION|CORE_IRQ|EXTERNAL_IRQ)_COUNT)\s+(\d+)U",
+            source,
+            re.M,
+        )
+    )
+    if "RS_EXTERNAL_IRQ_COUNT" not in counts and re.search(
+        r"^#define\s+RS_EXTERNAL_IRQ_COUNT\s+RS_SOC_EXTERNAL_IRQ_COUNT$", source, re.M
+    ):
+        counts["RS_EXTERNAL_IRQ_COUNT"] = "62"
     if set(counts) != {"RS_EXCEPTION_COUNT", "RS_CORE_IRQ_COUNT", "RS_EXTERNAL_IRQ_COUNT"}:
         raise ValueError("missing runtime handler-table limits")
     return {"enabled_core_causes": supported, "counts": {k: int(v) for k, v in counts.items()}}

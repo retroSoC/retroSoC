@@ -28,7 +28,7 @@ def test_booter_prints_the_fixed_hazard3_specification() -> None:
     assert "Bit manipulation: Zba_Zbb_Zbc_Zbkb_Zbkx_Zbs" in booter
     assert "Other: Zifencei_Zilsd_Xh3BextM_Xh3IRQ" in booter
     assert "Not present: U-mode PMP Zcb_Zclsd_Zcmp_Xh3PMPM_Xh3Power" in booter
-    assert "IRQ: 30 external + software + timer; Xh3IRQ, 4 priority levels" in booter
+    assert "IRQ: %u external + software + timer; Xh3IRQ, 4 priority levels" in booter
     assert "AHB5 manager -> AHB-Lite/AXI4 fabric" in booter
     assert "Single-beat access; no burst or exclusive transactions" in booter
     assert "RS_SOC_MGMT_JTAG_IDCODE" in booter
@@ -57,7 +57,8 @@ def test_booter_prints_the_fixed_hazard3_specification() -> None:
         ".U_MODE             (0)",
         ".PMP_REGIONS        (0)",
         ".BREAKPOINT_TRIGGERS(2)",
-        ".NUM_IRQS           (30)",
+        "parameter int ExternalIrqCount = 30",
+        ".NUM_IRQS           (ExternalIrqCount)",
         ".IRQ_PRIORITY_BITS  (2)",
     ):
         assert parameter in management_core

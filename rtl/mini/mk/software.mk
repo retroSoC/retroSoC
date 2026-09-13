@@ -135,6 +135,8 @@ CRT_SRCS += $(ROOT_PATH)/crt/src/core/system_irq_handler.c
 CRT_SRCS += $(ROOT_PATH)/crt/src/core/irq.c
 endif
 
+CRT_SRCS += $(ROOT_PATH)/crt/src/core/irq_nocsr.c
+
 APP_SRCS     :=
 APP_INC_DIRS :=
 APP_CFLAGS   :=
@@ -161,6 +163,7 @@ endif
 
 INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(MEMORY_MAP_C_DIR) \
+            -I$(SOC_TOPOLOGY_INCLUDE_DIR) \
             -I$(USER_EXTENSIONS_DIR)/include \
             -I$(ARCHINFO_METADATA_DIR) \
             -I$(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
@@ -211,7 +214,7 @@ asm: $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
-$(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+$(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(SOC_IRQ_METADATA) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mini/mk/software.mk
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)

@@ -1,6 +1,8 @@
 #include <archinfo_regs.h>
 #include <retrosoc/core/archinfo.h>
+#include <retrosoc/core/irq.h>
 #include <retrosoc/core/soc.h>
+#include <retrosoc/arch/riscv/system_base.h>
 #include <retrosoc/hal/apu.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
@@ -25,6 +27,239 @@ static bool rs_ci_smoke_archinfo_v2(void) {
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
 }
+
+#ifdef CSR_ENABLE
+static volatile uint32_t rs_ci_smoke_external_irq_count;
+static volatile uint32_t rs_ci_smoke_external_irq_sequence[4];
+static volatile uint32_t rs_ci_smoke_external_irq_sequence_count;
+static volatile uint32_t rs_ci_smoke_timer_irq_count;
+static volatile uint32_t rs_ci_smoke_software_irq_count;
+
+static void rs_ci_smoke_external_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    const uint32_t context = (uint32_t)__RV_CSR_READ(CSR_HAZARD3_MEICONTEXT);
+    const uint32_t irq = (context >> 4U) & UINT32_C(0x1ff);
+
+    (void)mcause;
+    (void)stack_pointer;
+    ++rs_ci_smoke_external_irq_count;
+    if (rs_ci_smoke_external_irq_sequence_count < 4U) {
+        rs_ci_smoke_external_irq_sequence[rs_ci_smoke_external_irq_sequence_count] = irq;
+        ++rs_ci_smoke_external_irq_sequence_count;
+    }
+}
+
+static void rs_ci_smoke_timer_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    uint64_t now;
+
+    (void)mcause;
+    (void)stack_pointer;
+    ++rs_ci_smoke_timer_irq_count;
+    if (rs_clint_get_time(&now) == RS_OK) {
+        (void)rs_clint_set_compare(0U, now + UINT64_C(100));
+    }
+}
+
+static void rs_ci_smoke_software_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    (void)mcause;
+    (void)stack_pointer;
+    (void)rs_clint_set_software_interrupt(0U, false);
+    ++rs_ci_smoke_software_irq_count;
+}
+
+static void rs_ci_smoke_force_external_irq(uint32_t id) {
+    const uint32_t bank = id >> 4U;
+    const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
+
+    (void)__RV_CSR_READ_SET(CSR_HAZARD3_MEIFA, (bank & UINT32_C(0x7f)) | (mask << 16U));
+}
+
+static void rs_ci_smoke_clear_external_irq(uint32_t id) {
+    const uint32_t bank = id >> 4U;
+    const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
+
+    (void)__RV_CSR_READ_CLEAR(CSR_HAZARD3_MEIFA, (bank & UINT32_C(0x7f)) | (mask << 16U));
+}
+
+static uint32_t rs_ci_smoke_external_enabled(uint32_t id) {
+    const uint32_t bank = id >> 4U;
+    const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
+    const uint32_t value = (uint32_t)__RV_CSR_READ_SET(CSR_HAZARD3_MEIEA, bank & UINT32_C(0x1f));
+
+    return ((value >> 16U) & mask) != 0U ? 1U : 0U;
+}
+
+static bool rs_ci_smoke_wait_external_count(uint32_t target) {
+    for (rs_timeout_t timeout = 100000U;
+         (timeout != 0U) && (rs_ci_smoke_external_irq_count < target); --timeout) {
+    }
+    return rs_ci_smoke_external_irq_count >= target;
+}
+
+static bool rs_ci_smoke_external_single(uint32_t id) {
+    rs_ci_smoke_external_irq_count = 0U;
+    rs_ci_smoke_external_irq_sequence_count = 0U;
+    if (rs_irq_enable_external(id, rs_ci_smoke_external_irq_handler) != RS_OK) {
+        return false;
+    }
+    rs_ci_smoke_force_external_irq(id);
+    __enable_irq();
+    if (!rs_ci_smoke_wait_external_count(1U) || (rs_ci_smoke_external_irq_sequence[0] != id)) {
+        __disable_irq();
+        (void)rs_irq_disable_external(id);
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_irq();
+    if (rs_irq_disable_external(id) != RS_OK) {
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_ext_irq();
+    return true;
+}
+
+static bool rs_ci_smoke_external_priority_matrix(void) {
+    bool passed;
+
+    rs_ci_smoke_external_irq_count = 0U;
+    rs_ci_smoke_external_irq_sequence_count = 0U;
+    __RV_CSR_WRITE(CSR_HAZARD3_MEICONTEXT, UINT32_C(0));
+    if ((rs_irq_set_external_priority(29U, UINT8_C(0)) != RS_OK) ||
+        (rs_irq_set_external_priority(30U, UINT8_C(1)) != RS_OK) ||
+        (rs_irq_set_external_priority(31U, UINT8_C(2)) != RS_OK) ||
+        (rs_irq_set_external_priority(32U, UINT8_C(3)) != RS_OK) ||
+        (rs_irq_enable_external(29U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(30U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(31U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(32U, rs_ci_smoke_external_irq_handler) != RS_OK)) {
+        return false;
+    }
+    rs_ci_smoke_force_external_irq(29U);
+    rs_ci_smoke_force_external_irq(30U);
+    rs_ci_smoke_force_external_irq(31U);
+    rs_ci_smoke_force_external_irq(32U);
+    __enable_irq();
+    passed = rs_ci_smoke_wait_external_count(4U) && (rs_ci_smoke_external_irq_sequence[0] == 32U) &&
+             (rs_ci_smoke_external_irq_sequence[1] == 31U) &&
+             (rs_ci_smoke_external_irq_sequence[2] == 30U) &&
+             (rs_ci_smoke_external_irq_sequence[3] == 29U);
+    __disable_irq();
+    if ((rs_irq_disable_external(29U) != RS_OK) || (rs_irq_disable_external(30U) != RS_OK) ||
+        (rs_irq_disable_external(31U) != RS_OK) || (rs_irq_disable_external(32U) != RS_OK)) {
+        passed = false;
+    }
+    __disable_ext_irq();
+    return passed;
+}
+
+static bool rs_ci_smoke_external_irq(void) {
+    static const uint32_t tested_ordinals[] = {0U, 15U, 16U, 29U, 30U, 31U, 32U, 61U};
+    uint64_t now;
+    uint32_t index;
+
+    for (index = 0U; index < (uint32_t)(sizeof(tested_ordinals) / sizeof(tested_ordinals[0]));
+         ++index) {
+        if (!rs_ci_smoke_external_single(tested_ordinals[index])) {
+            return false;
+        }
+    }
+
+    if ((rs_irq_register_external(62U, rs_ci_smoke_external_irq_handler) != RS_EINVAL) ||
+        (rs_irq_enable_external(62U, rs_ci_smoke_external_irq_handler) != RS_EINVAL) ||
+        (rs_irq_disable_external(62U) != RS_EINVAL) ||
+        (rs_irq_set_external_priority(62U, UINT8_C(1)) != RS_EINVAL) ||
+        (rs_irq_set_external_priority(15U, UINT8_C(4)) != RS_EINVAL)) {
+        return false;
+    }
+
+    if ((rs_irq_set_external_priority(15U, UINT8_C(3)) != RS_OK) ||
+        (rs_irq_set_external_priority(16U, UINT8_C(1)) != RS_OK) ||
+        (rs_irq_enable_external(15U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(16U, rs_ci_smoke_external_irq_handler) != RS_OK)) {
+        return false;
+    }
+    rs_ci_smoke_external_irq_count = 0U;
+    rs_ci_smoke_external_irq_sequence_count = 0U;
+    rs_ci_smoke_force_external_irq(15U);
+    rs_ci_smoke_force_external_irq(16U);
+    __enable_irq();
+    if (!rs_ci_smoke_wait_external_count(2U) || (rs_ci_smoke_external_irq_sequence[0] != 15U) ||
+        (rs_ci_smoke_external_irq_sequence[1] != 16U)) {
+        __disable_irq();
+        return false;
+    }
+    __disable_irq();
+    if ((rs_irq_disable_external(15U) != RS_OK) || (rs_irq_disable_external(16U) != RS_OK)) {
+        return false;
+    }
+
+    if (!rs_ci_smoke_external_priority_matrix()) {
+        return false;
+    }
+
+    if (rs_irq_register_external(29U, rs_ci_smoke_external_irq_handler) != RS_OK) {
+        return false;
+    }
+    rs_ci_smoke_force_external_irq(29U);
+    __enable_irq();
+    for (rs_timeout_t timeout = 1000U; timeout != 0U; --timeout) {
+    }
+    __disable_irq();
+    rs_ci_smoke_clear_external_irq(29U);
+    if ((rs_ci_smoke_external_irq_count != 4U) || (rs_irq_disable_external(29U) != RS_OK)) {
+        return false;
+    }
+
+    if (rs_irq_set_external_priority(40U, UINT8_C(1)) != RS_OK) {
+        return false;
+    }
+    (void)__RV_CSR_READ_SET(CSR_HAZARD3_MEIEA,
+                            UINT32_C(2) | (UINT32_C(1) << (16U + (40U & UINT32_C(0xf)))));
+    rs_ci_smoke_force_external_irq(40U);
+    __enable_ext_irq();
+    __enable_irq();
+    for (rs_timeout_t timeout = 1000U; (timeout != 0U) && (rs_ci_smoke_external_enabled(40U) != 0U);
+         --timeout) {
+    }
+    __disable_irq();
+    rs_ci_smoke_clear_external_irq(40U);
+    if (rs_ci_smoke_external_enabled(40U) != 0U) {
+        return false;
+    }
+    __disable_ext_irq();
+
+    rs_ci_smoke_timer_irq_count = 0U;
+    rs_ci_smoke_software_irq_count = 0U;
+    if ((rs_irq_enable_external(0U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_core(IRQ_M_TIMER, rs_ci_smoke_timer_irq_handler) != RS_OK) ||
+        (rs_irq_enable_core(IRQ_M_SOFT, rs_ci_smoke_software_irq_handler) != RS_OK) ||
+        (rs_clint_get_time(&now) != RS_OK) ||
+        (rs_clint_set_compare(0U, now + UINT64_C(100)) != RS_OK)) {
+        return false;
+    }
+    __enable_irq();
+    for (rs_timeout_t timeout = 100000U; (timeout != 0U) && (rs_ci_smoke_timer_irq_count == 0U);
+         --timeout) {
+    }
+    if (rs_clint_set_software_interrupt(0U, true) != RS_OK) {
+        __disable_irq();
+        return false;
+    }
+    for (rs_timeout_t timeout = 100000U; (timeout != 0U) && (rs_ci_smoke_software_irq_count == 0U);
+         --timeout) {
+    }
+    __disable_irq();
+    __disable_core_irq(IRQ_M_TIMER);
+    __disable_core_irq(IRQ_M_SOFT);
+    (void)rs_irq_disable_external(0U);
+    __disable_ext_irq();
+    return (rs_ci_smoke_timer_irq_count != 0U) && (rs_ci_smoke_software_irq_count != 0U);
+}
+#else
+static bool rs_ci_smoke_external_irq(void) {
+    return true;
+}
+#endif
 
 static bool rs_ci_smoke_apu(void) {
     rs_apu_info_t info;
@@ -385,6 +620,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_external_irq()) {
+        rs_test_finish(RS_TEST_FAILED, 15U);
+    }
+    printf("ci_smoke: external irq passed\n");
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }

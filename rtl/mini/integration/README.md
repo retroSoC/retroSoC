@@ -53,9 +53,13 @@ and emits packed `soc_data_policy.svh` constants consumed by the crossbar.
 This keeps access policy reviewable without generating register definitions.
 
 `irq_vector_width`, `irq_groups`, and `interrupts` define the complete core
-interrupt topology. `apb4_periph` and `apb4_system` group entries declare the
-wrapper output width and the associated `retrosoc.sv` signal. Every group bit must be present
-exactly once, each core-vector bit must have one source, and sources are limited
+interrupt topology. Phase 1 sets the LP vector capacity to 64 bits while the
+canonical source list retains the existing assignments in bits 0..31;
+unallocated bits 32..63 are generated low. Product builds expose 62 external
+Hazard3 inputs, while MPW compatibility builds select the 30-input wrapper
+variant. `apb4_periph` and `apb4_system` group entries declare the wrapper
+output width and the associated `retrosoc.sv` signal. Every group bit must be present
+exactly once, each allocated core-vector bit must have one source, and sources are limited
 to scalar signal references or one-bit constants. The generator emits the two
 wrapper bindings, the core-vector wiring, and simulation-only assertions.
 Existing allocated core IRQ bits retain their compatibility mapping; additions
@@ -63,11 +67,14 @@ must use currently unallocated bits and preserve the existing entries. SDIO0
 and SDIO1 use APB4 group bits 16 and 17 and core bits 10 and 21. Crypto uses
 APB4 group bit 18 and core bit 23. USB2 uses APB4 group bit 19 and core bit 24.
 JPEG uses group bit 22 and core bit 30; APU uses group bit 23 and core bit 31.
-All resource-owned sources remain management-only in the
-generated user IRQ mask. Removing a source leaves its
-core IRQ bit unallocated and driven low. Firmware does not
-expose a generic external interrupt API until the SoC includes a claim/complete
-interrupt controller.
+All resource-owned sources remain management-only in the generated user IRQ
+mask. Removing a source leaves its core IRQ bit unallocated and driven low.
+The Phase 1 SDK uses Hazard3 Xh3irq array CSRs and `MEINEXT` dispatch for the
+LP management hart; it does not add a PLIC or change the HP interrupt path.
+
+The generator also emits `include/retrosoc/generated/irq_metadata.h` with the
+selected vector/external counts and allocated source macros. It contains no
+GA2D source macro until Phase 3 wiring.
 
 `user_extensions.json` defines the active SoC-level user-core and user-IP
 design IDs, slots, module names, and reset types. The locked mini-ver-mpw

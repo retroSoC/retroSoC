@@ -75,6 +75,9 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     irq_wiring = (tmp_path / "rtl/soc_irq_wiring.svh").read_text(encoding="utf-8")
     irq_sva = (tmp_path / "rtl/soc_irq_sva.svh").read_text(encoding="utf-8")
     data_policy = (tmp_path / "rtl/soc_data_policy.svh").read_text(encoding="utf-8")
+    irq_metadata = (
+        tmp_path / "include/retrosoc/generated/irq_metadata.h"
+    ).read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
     assert interfaces.count("apb4_if u_") == 26
@@ -140,8 +143,8 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".system_axi4(u_system_axi4_if)" in bus_fabric
     assert ".axi4(u_system_axi4_if)" in apb_system_fabric
     assert ".usb2_axi4(u_usb2_axi4_if)" in apb_periph_fabric
-    assert "`define SOC_IRQ_VECTOR_WIDTH 32" in irq_config
-    assert "`define SOC_USER_IRQ_MASK 32'h004EFBFC" in irq_config
+    assert "`define SOC_IRQ_VECTOR_WIDTH 64" in irq_config
+    assert "`define SOC_USER_IRQ_MASK 64'h00000000004EFBFC" in irq_config
     assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 24" in irq_config
     assert "`define SOC_IRQ_APB4_SYSTEM_WIDTH 8" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
@@ -191,12 +194,18 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "SOC_DATA_POLICY_WRITE_TARGET_MASK" in data_policy
     assert "SOC_DATA_POLICY_ALLOW_INSTRUCTION" in data_policy
     assert "SOC_DATA_POLICY_REQUIRE_NONCACHEABLE" in data_policy
+    assert "RS_SOC_IRQ_VECTOR_WIDTH UINT32_C(64)" in irq_metadata
+    assert "RS_SOC_EXTERNAL_IRQ_COUNT UINT32_C(62)" in irq_metadata
+    assert "RS_SOC_IRQ_UART0 UINT32_C(2)" in irq_metadata
+    assert "RS_SOC_EXT_IRQ_UART0 UINT32_C(0)" in irq_metadata
+    assert "RS_SOC_IRQ_APU" in irq_metadata
+    assert "RS_SOC_IRQ_GA2D" not in irq_metadata
     assert filelist.startswith("+incdir+")
 
 
 def test_topology_preserves_default_irq_compatibility_mapping() -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
-    assert document["irq_vector_width"] == 32
+    assert document["irq_vector_width"] == 64
     mappings = [
         (
             interrupt["name"],

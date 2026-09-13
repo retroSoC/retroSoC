@@ -17,6 +17,8 @@ SOC_TOPOLOGY_SCRIPT        := $(RTL_PATH)/integration/generate_soc_topology.py
 SOC_TOPOLOGY_DIR           := $(VARIANT_ROOT)/generated/soc_topology
 SOC_TOPOLOGY_STAMP         := $(SOC_TOPOLOGY_DIR)/.stamp
 SOC_TOPOLOGY_FILELIST      := $(SOC_TOPOLOGY_DIR)/soc_topology.fl
+SOC_TOPOLOGY_INCLUDE_DIR   := $(SOC_TOPOLOGY_DIR)/include
+SOC_IRQ_METADATA           := $(SOC_TOPOLOGY_INCLUDE_DIR)/retrosoc/generated/irq_metadata.h
 PRODUCT_EXTENSIONS_SOURCE  := $(RTL_PATH)/integration/user_extensions.json
 LEGACY_EXTENSIONS_SOURCE   := $(RTL_PATH)/integration/user_extensions_legacy.json
 USER_EXTENSIONS_SOURCE     := $(if $(filter MPW,$(MINI_MODE)),$(LEGACY_EXTENSIONS_SOURCE),$(PRODUCT_EXTENSIONS_SOURCE))
@@ -89,7 +91,8 @@ check-pin-map:
 
 $(SOC_TOPOLOGY_STAMP): $(SOC_TOPOLOGY_SOURCE) $(SOC_TOPOLOGY_SCRIPT) $(MEMORY_MAP_SOURCE)
 	$(FLOW_PYTHON) $(SOC_TOPOLOGY_SCRIPT) --map $(SOC_TOPOLOGY_SOURCE) \
-		--memory-map $(MEMORY_MAP_SOURCE) --output-dir $(SOC_TOPOLOGY_DIR)
+		--memory-map $(MEMORY_MAP_SOURCE) --output-dir $(SOC_TOPOLOGY_DIR) \
+		--external-irq-count $(if $(filter PRODUCT,$(MINI_MODE)),62,30)
 	@touch $@
 
 soc-topology: $(SOC_TOPOLOGY_STAMP)

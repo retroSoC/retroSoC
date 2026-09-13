@@ -29,7 +29,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | --- | --- |
 | `benchmark` | Fixed-workload memory and DMA baseline with machine-readable wait counters and readback checksums. |
 | `bringup` | Manual startup diagnostic with architecture details and crypto AES/SHA known-answer self-test. |
-| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2, RNG, crypto AES/SHA, SDRAM mapped access, and test-status completion. |
+| `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2, LP external IRQ dispatch when CSR-enabled, RNG, crypto AES/SHA, SDRAM mapped access, and test-status completion. |
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `hp_boot` | SRAM-resident LP loader that validates the HP Linux flash bundle, loads SDRAM, releases HP, and monitors the mailbox verdict. |

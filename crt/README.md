@@ -46,6 +46,12 @@ clock, user-core, performance, and test-service APIs use this HAL; direct
 `reg_sysctrl_*` register macros are not public SDK interfaces. See the
 [SystemCtrl contract](../docs/ip/sysctrl.md).
 
+`<retrosoc/core/irq.h>` provides exception/core registration and the LP Hazard3
+Xh3irq external registration, enable/disable, priority, and dispatch APIs.
+External IRQ ordinals are supplied by the build-local
+`<retrosoc/generated/irq_metadata.h>` header. CSR-disabled images keep polling
+support and return `RS_ENOTSUP` from the external-control APIs.
+
 `<retrosoc/hal/extension.h>` owns product EXT-L/EXT-H discovery, lifecycle,
 ownership, status, and ACL operations. `<retrosoc/hal/user_ip.h>` remains the
 MPW compatibility API; selector mutators return `RS_ENOTSUP` in product builds.

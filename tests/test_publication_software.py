@@ -41,7 +41,7 @@ def test_real_software_records_separate_startup_and_irq_selections():
     assert rows["debug"]["startup"] == "app/apps/debug/startup.S"
     assert rows["xpi_flash_loader"]["startup"] == "app/apps/xpi_flash_loader/startup.S"
     assert result["irq"]["enabled_core_causes"] == ["IRQ_M_SOFT", "IRQ_M_TIMER"]
-    assert result["irq"]["counts"]["RS_EXTERNAL_IRQ_COUNT"] == 30
+    assert result["irq"]["counts"]["RS_EXTERNAL_IRQ_COUNT"] == 62
     assert sr.dependencies(result) == sr.dependencies(SPEC)
 
 
@@ -95,7 +95,7 @@ def test_application_results_keep_early_return_and_repeated_stage_values():
         ("return", 1), ("test-fail", 1), ("test-fail", 2), ("test-fail", 3), ("test-pass", 0)]
     assert [r["id"] for r in smoke["stages"] if r["code"] == 12] == ["sram", "usb"]
     assert [r["id"] for r in smoke["stages"] if r["code"] == 13] == ["monitor-start", "monitor-check"]
-    assert len(smoke["stages"]) == 17
+    assert len(smoke["stages"]) == 18
 
 
 @pytest.mark.parametrize("mutation", ["omit", "duplicate-stage", "value", "scope", "trigger"])

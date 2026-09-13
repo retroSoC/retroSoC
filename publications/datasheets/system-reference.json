@@ -5048,7 +5048,7 @@
       {
         "id": "external-dispatch",
         "file": "crt/src/core/system_irq_handler.c",
-        "text": "if (id == IRQ_M_EXT) { rs_default_interrupt(mcause, stack_pointer); }",
+        "text": "if (id == IRQ_M_EXT) { rs_irq_dispatch_external(mcause, stack_pointer); }",
         "function": "system_trap_handler"
       },
       {
@@ -5299,6 +5299,15 @@
             "trigger": "rs_ci_smoke_archinfo_v2(",
             "coverage": "Validate build identity, expected unsupported device-ID read and RTC probe.",
             "boundary": "No unique silicon identity or RTC accuracy qualification."
+          },
+          {
+            "id": "external-irq",
+            "title": "Hazard3 external IRQ dispatch",
+            "kind": "test-fail",
+            "code": 15,
+            "trigger": "rs_ci_smoke_external_irq(",
+            "coverage": "Exercise Xh3irq ordinals 0/15/16/29/30/31/32/61, invalid 62, priority/masking, no-handler masking, timer/software coexistence, and handler entry/return.",
+            "boundary": "Only the CSR-enabled build exercises dispatch; no peripheral GA2D source is wired."
           },
           {
             "id": "apu",

@@ -1,6 +1,7 @@
 #include <stddef.h>
 
 #include <retrosoc/core/soc.h>
+#include <retrosoc/generated/irq_metadata.h>
 #include <retrosoc/lib/printf.h>
 #include <socver.h>
 #include <retrosoc/hal/psram.h>
@@ -25,7 +26,8 @@ static void rs_print_hazard3_spec(void) {
     printf("    Not present: U-mode PMP Zcb_Zclsd_Zcmp_Xh3PMPM_Xh3Power\n");
     printf("  Privilege and interrupts\n");
     printf("    Mode: M-mode only; mandatory, trap, and counter CSRs enabled\n");
-    printf("    IRQ: 30 external + software + timer; Xh3IRQ, 4 priority levels\n");
+    printf("    IRQ: %u external + software + timer; Xh3IRQ, 4 priority levels\n",
+           (unsigned int)RS_SOC_EXTERNAL_IRQ_COUNT);
     printf("  Memory bus\n");
     printf("    AHB5 manager -> AHB-Lite/AXI4 fabric\n");
     printf("    Single-beat access; no burst or exclusive transactions\n");

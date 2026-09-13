@@ -174,7 +174,7 @@ module retrosoc (
   logic [                          63:0] s_perf_flash_wait;
   logic [                          63:0] s_perf_opipsram_wait;
 `ifndef MINI_PRODUCT
-  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
+  logic [31:0] s_user_irq;
 `else
   logic s_unused_product_legacy;
 `endif
@@ -341,11 +341,22 @@ module retrosoc (
   // Generated GPIO alternate-function wiring is checked against soc_topology.json.
   `include "soc_gpio_alt_bindings.svh"
 
-core_wrapper u_core_wrapper (
+`ifdef MINI_PRODUCT
+  localparam int ManagementExternalIrqCount = `SOC_IRQ_VECTOR_WIDTH - 2;
+`else
+  localparam int ManagementExternalIrqCount = 30;
+  localparam logic [31:0] LegacyUserIrqMask = `SOC_USER_IRQ_MASK;
+`endif
+  logic [ManagementExternalIrqCount+1:0] s_management_irq;
+  assign s_management_irq = s_irq[ManagementExternalIrqCount+1:0];
+
+  core_wrapper #(
+      .ExternalIrqCount(ManagementExternalIrqCount)
+  ) u_core_wrapper (
       .clk_i         (clk_lp_i),
       .rst_n_i       (rst_lp_n_i),
       `include "soc_mgmt_core_wrapper_fabric.svh"
-      .irq_i         (s_irq),
+      .irq_i         (s_management_irq),
       .jtag_tck_i    (jtag_tck_i),
       .jtag_tms_i    (s_debug_hp_sel_jtag ? 1'b1 : jtag_tms_i),
       .jtag_tdi_i    (s_debug_hp_sel_jtag ? 1'b0 : jtag_tdi_i),
@@ -378,7 +389,7 @@ core_wrapper u_core_wrapper (
       .axi4   (u_user_axi4_if)
   );
 `else
-  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq & `SOC_USER_IRQ_MASK) : '0;
+  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq[31:0] & LegacyUserIrqMask) : '0;
 
   user_core_top u_user_core_top (
       .clk_i       (clk_lp_i),
