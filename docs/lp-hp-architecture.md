@@ -1,5 +1,11 @@
 # Mini Product LP/HP Architecture
 
+The frozen [GA2D specification](ip/ga2d.md) approves a phased expansion to a
+64-bit LP interrupt vector, nine AXI64 masters with seven-bit global IDs, and
+Resource Controller entry 8. These are pending implementation requirements;
+this document's current-product descriptions do not imply those phases have
+already been delivered. Existing hart, memory, and source identities remain fixed.
+
 ## Product contract
 
 Every committed `MINI_MODE=PRODUCT` profile instantiates two fixed harts:

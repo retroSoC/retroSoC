@@ -22,6 +22,9 @@ extension interfaces.
 - [jpeg.md](jpeg.md) defines the Baseline JPEG encoder/decoder, commercial
   reference survey, APB4/AXI4 DMA and SG-ring ABI, HAL, verification evidence,
   measured performance baseline, and 1080p60 optimization gates.
+- [ga2d.md](ga2d.md) freezes the Mini 2D graphics accelerator, private AXI64
+  DMA, APB4 and HAL ABI, expanded LP interrupts, ninth data master, and
+  ordered implementation/evidence phases; it does not claim implemented RTL.
 - [apu.md](apu.md) defines the coreless Mini Audio Processing Unit, bounded
   codec microcode ISA, WAV/MP3/FLAC decode, private AXI4 DMA, APB4/ring ABI,
   I2S streams, independent KWS, lifecycle, and commercial delivery gates.

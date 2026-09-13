@@ -1,5 +1,11 @@
 # Mini Resource Controller
 
+The approved [GA2D contract](ga2d.md) adds resource 8 and version 1.1 during
+its Phase 2, with LP vector 32 / HP PLIC source 11 connected in Phase 3.
+Its source-stop/drain-before-block sequence is specified there. These changes
+are pending implementation; the existing resources and register fields below
+are not renumbered or reinterpreted by the documentation freeze.
+
 ## Scope
 
 The Resource Controller at `0x2000_A000` is the root-management ownership and

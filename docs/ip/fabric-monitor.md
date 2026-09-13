@@ -1,5 +1,11 @@
 # Mini Data-Plane Fabric Monitor
 
+The approved [GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
+adds master bank 8, version 1.1, and master bit 3 at `FAULT[12]`, preserving
+the existing packed fields. It also requires complete four-bit master identity
+through SYSCTRL. These are pending implementation changes, not current monitor
+capabilities; the freeze does not alter executable RTL or HAL definitions.
+
 ## Scope
 
 The Fabric Monitor at `0x2000_B000` provides root-management visibility into

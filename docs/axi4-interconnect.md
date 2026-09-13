@@ -5,6 +5,12 @@ control/compatibility plane; `axi4_data_crossbar` is the 64-bit HP payload
 plane. Common `axi4_if`, `memory_map.json`, and `soc_topology.json` are the
 executable protocol, address, and integration sources of truth.
 
+[GA2D Phase 2](ip/ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
+is the approved, pending expansion to nine native masters and seven-bit global
+IDs. It adds master 8 and preserves all existing identities, target policy,
+and timeout behavior. The GA2D specification also records the existing
+master-6/JPEG admission discrepancy; it must not be interpreted as a free port.
+
 ## LP control plane
 
 The LP fabric has 32-bit address/data, one-bit ID/user fields, and eight master

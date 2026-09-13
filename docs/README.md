@@ -46,6 +46,9 @@ the root README and subsystem guides.
 - [ip/jpeg.md](ip/jpeg.md) records the commercial JPEG IP/SoC survey and
   defines the Mini Baseline JPEG codec, private AXI4 DMA, APB4/ring ABI, HAL,
   verification boundary, and measured 1080p60 optimization plan.
+- [ip/ga2d.md](ip/ga2d.md) freezes the Mini 2D graphics accelerator, private
+  AXI64 2D DMA, APB4/HAL ABI, opaque alpha composition, and the approved LP
+  interrupt/fabric expansion phases; implementation and PPA evidence remain pending.
 - [ip/apu.md](ip/apu.md) defines the coreless Mini Audio Processing Unit,
   including LP-loaded codec microcode, WAV/MP3/FLAC decode, private AXI4 DMA,
   APB4/ring ABI, I2S streams, independent KWS, lifecycle, and evidence gates;
