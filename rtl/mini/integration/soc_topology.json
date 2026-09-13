@@ -409,6 +409,14 @@
       "write_targets": ["sram", "sdram", "qpi", "opi"],
       "allow_instruction": false,
       "require_noncacheable": true
+    },
+    {
+      "index": 8,
+      "name": "ga2d",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
     }
   ],
   "apb4_periph_targets": [

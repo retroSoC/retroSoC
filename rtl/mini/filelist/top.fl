@@ -17,6 +17,7 @@
 /top/axi4_target_guard.sv
 /top/fabric_monitor.sv
 /top/soc_data_plane.sv
+/top/data_plane_fault_cdc.sv
 /top/axi4_error_slave.sv
 /top/rib2axi4.sv
 /top/ahbl2axi4.sv

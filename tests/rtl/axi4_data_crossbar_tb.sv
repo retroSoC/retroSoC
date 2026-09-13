@@ -1,29 +1,31 @@
 `timescale 1ns / 1ps
 
 module axi4_data_crossbar_tb;
-  localparam int NumMasters = 8;
+  localparam int NumMasters = 9;
   localparam int NumTargets = 6;
 
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
   logic        idle_o;
-  logic [ 7:0] master_block_i = '0;
-  logic [ 7:0] master_idle_o;
+  logic [ 8:0] master_block_i = '0;
+  logic [ 8:0] master_idle_o;
   logic [ 7:0] outstanding_read_o;
   logic [ 7:0] outstanding_write_o;
   logic        fault_valid_o;
-  logic [ 2:0] fault_master_o;
+  logic        fault_ready_i = 1'b1;
+  logic [ 3:0] fault_master_o;
   logic [ 2:0] fault_target_o;
   logic [31:0] fault_addr_o;
   logic        fault_write_o;
   logic [ 3:0] fault_reason_o;
   logic        recovery_i = 1'b0;
-  logic [ 7:0] monitor_master_promotion_o;
+  logic        flush_i = 1'b0;
+  logic [ 8:0] monitor_master_promotion_o;
 
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(64),
-      .ID_WIDTH  (6),
+      .ID_WIDTH  (7),
       .USER_WIDTH(1)
   ) masters[NumMasters] (
       .aclk   (clk_i),
@@ -32,7 +34,7 @@ module axi4_data_crossbar_tb;
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(64),
-      .ID_WIDTH  (6),
+      .ID_WIDTH  (7),
       .USER_WIDTH(1)
   ) targets[NumTargets] (
       .aclk   (clk_i),
@@ -47,17 +49,23 @@ module axi4_data_crossbar_tb;
   end
 
   axi4_data_crossbar #(
-      .StarvationCycles   (4),
-      .ReadTargetMask     (40'b1111100000111111111111111111111111111111),
-      .WriteTargetMask    (40'b0111100000011110111101111011110111100000),
-      .AllowInstruction   (8'b00000001),
-      .RequireNoncacheable(8'b11111100)
+      .StarvationCycles(4),
+      .ReadTargetMask(
+      '{5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111}
+      ),
+      .WriteTargetMask(
+      '{5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b00000}
+      ),
+      .AllowInstruction(9'b000000001),
+      .RequireNoncacheable(9'b111111100)
   ) u_dut (
       .clk_i                     (clk_i),
       .rst_n_i                   (rst_n_i),
       .block_new_i               (1'b0),
       .master_block_i            (master_block_i),
       .recovery_i                (recovery_i),
+      .flush_i                   (flush_i),
+      .fault_ready_i             (fault_ready_i),
       .mem_pad_mode_i            (2'd1),
       .ext_h_read_base_i         (32'h3000_0000),
       .ext_h_read_limit_i        (32'h4FFF_FFFF),
@@ -78,7 +86,7 @@ module axi4_data_crossbar_tb;
       .monitor_master_promotion_o(monitor_master_promotion_o)
   );
 
-  task automatic issue_master1_read(input logic [5:0] id, input logic [31:0] addr);
+  task automatic issue_master1_read(input logic [6:0] id, input logic [31:0] addr);
     begin
       @(negedge clk_i);
       masters[1].arid    = id;
@@ -90,7 +98,7 @@ module axi4_data_crossbar_tb;
     end
   endtask
 
-  task automatic return_target0_read(input logic [5:0] id, input logic [63:0] data);
+  task automatic return_target0_read(input logic [6:0] id, input logic [63:0] data);
     begin
       @(negedge clk_i);
       targets[0].rid    = id;
@@ -104,7 +112,7 @@ module axi4_data_crossbar_tb;
     end
   endtask
 
-  task automatic return_target1_read(input logic [5:0] id, input logic [63:0] data);
+  task automatic return_target1_read(input logic [6:0] id, input logic [63:0] data);
     begin
       @(negedge clk_i);
       targets[1].rid    = id;
@@ -118,7 +126,7 @@ module axi4_data_crossbar_tb;
     end
   endtask
 
-  task automatic return_target5_read(input logic [5:0] id);
+  task automatic return_target5_read(input logic [6:0] id);
     begin
       @(negedge clk_i);
       targets[5].rid    = id;
@@ -128,6 +136,57 @@ module axi4_data_crossbar_tb;
       do @(posedge clk_i); while (!targets[5].rready);
       @(negedge clk_i);
       targets[5].rvalid = 1'b0;
+    end
+  endtask
+
+  task automatic return_target0_write(input logic [6:0] id);
+    begin
+      @(negedge clk_i);
+      targets[0].bid    = id;
+      targets[0].bresp  = 2'b00;
+      targets[0].bvalid = 1'b1;
+      do @(posedge clk_i); while (!targets[0].bready);
+      @(negedge clk_i);
+      targets[0].bvalid = 1'b0;
+    end
+  endtask
+
+  task automatic return_invalid_target0_response(input logic [3:0] prefix,
+                                                 input logic write_access);
+    logic [6:0] id;
+    begin
+      id = {prefix, 3'd0};
+      @(negedge clk_i);
+      if (write_access) begin
+        targets[0].bid    = id;
+        targets[0].bresp  = 2'b00;
+        targets[0].bvalid = 1'b1;
+      end else begin
+        targets[0].rid    = id;
+        targets[0].rdata  = 64'hDEAD_BEEF_0000_0000 | id;
+        targets[0].rresp  = 2'b00;
+        targets[0].rlast  = 1'b1;
+        targets[0].rvalid = 1'b1;
+      end
+      #1;
+      if (!(write_access ? targets[0].bready : targets[0].rready)) begin
+        $fatal(1, "invalid returned master prefix was not accepted for containment");
+      end
+      @(posedge clk_i);
+      #1;
+      if (!fault_valid_o || (fault_master_o != prefix) || (fault_target_o != 3'd0) ||
+          (fault_reason_o != 4'd4) || (fault_write_o != write_access)) begin
+        $fatal(1, "invalid returned master prefix was not contained");
+      end
+      if (masters[0].rvalid || masters[0].bvalid) begin
+        $fatal(1, "invalid response prefix fell back to master 0");
+      end
+      @(negedge clk_i);
+      if (write_access) begin
+        targets[0].bvalid = 1'b0;
+      end else begin
+        targets[0].rvalid = 1'b0;
+      end
     end
   endtask
 
@@ -188,6 +247,7 @@ module axi4_data_crossbar_tb;
     `INIT_MASTER(5)
     `INIT_MASTER(6)
     `INIT_MASTER(7)
+    `INIT_MASTER(8)
     `INIT_TARGET(0)
     `INIT_TARGET(1)
     `INIT_TARGET(2)
@@ -239,6 +299,83 @@ module axi4_data_crossbar_tb;
       $fatal(1, "read completion did not drain the crossbar");
     end
 
+    ga2d_master_id_credit_and_qos : begin
+      @(negedge clk_i);
+      targets[0].arready = 1'b0;
+      masters[8].arid    = 7'h40;
+      masters[8].araddr  = 32'h3000_0040;
+      masters[8].arqos   = 4'hF;
+      masters[8].arvalid = 1'b1;
+      #1;
+      if (!targets[0].arvalid || (targets[0].arid != 7'h40) || (targets[0].arqos != 4'd0)) begin
+        $fatal(1, "GA2D read ID prefix or AxQOS was not preserved");
+      end
+      targets[0].arready = 1'b1;
+      do @(posedge clk_i); while (!masters[8].arready);
+      @(negedge clk_i);
+      masters[8].arvalid = 1'b0;
+      masters[8].arqos   = '0;
+
+      @(negedge clk_i);
+      targets[0].awready = 1'b0;
+      masters[8].awid    = 7'h41;
+      masters[8].awaddr  = 32'h3000_0080;
+      masters[8].awqos   = 4'hF;
+      masters[8].awvalid = 1'b1;
+      #1;
+      if (!targets[0].awvalid || (targets[0].awid != 7'h41) || (targets[0].awqos != 4'd0)) begin
+        $fatal(1, "GA2D write ID prefix or AxQOS was not preserved");
+      end
+      targets[0].awready = 1'b1;
+      do @(posedge clk_i); while (!masters[8].awready);
+      @(negedge clk_i);
+      masters[8].awvalid = 1'b0;
+      masters[8].awqos   = '0;
+      masters[8].wdata   = 64'hA5A5_5A5A_1122_3344;
+      masters[8].wstrb   = 8'hFF;
+      masters[8].wvalid  = 1'b1;
+      do @(posedge clk_i); while (!masters[8].wready);
+      @(negedge clk_i);
+      masters[8].wvalid = 1'b0;
+
+      @(negedge clk_i);
+      masters[8].arid    = 7'h42;
+      masters[8].araddr  = 32'h3000_00C0;
+      masters[8].arvalid = 1'b1;
+      masters[8].awid    = 7'h43;
+      masters[8].awaddr  = 32'h3000_0100;
+      masters[8].awvalid = 1'b1;
+      #1;
+      if (masters[8].arready || masters[8].awready) begin
+        $fatal(1, "GA2D exceeded its one-read plus one-write credit");
+      end
+      masters[8].arvalid = 1'b0;
+      masters[8].awvalid = 1'b0;
+
+      fork
+        return_target0_read(7'h40, 64'h8888_8888_8888_0040);
+        begin
+          wait (masters[8].rvalid);
+          if ((masters[8].rid != 7'h40) || (masters[8].rdata != 64'h8888_8888_8888_0040)) begin
+            $fatal(1, "GA2D read response did not return to master 8");
+          end
+        end
+      join
+      fork
+        return_target0_write(7'h41);
+        begin
+          wait (masters[8].bvalid);
+          if (masters[8].bid != 7'h41) begin
+            $fatal(1, "GA2D write response did not return to master 8");
+          end
+        end
+      join
+      @(negedge clk_i);
+      if (!idle_o || (outstanding_read_o != 8'd0) || (outstanding_write_o != 8'd0)) begin
+        $fatal(1, "GA2D master credits did not drain independently");
+      end
+    end
+
     issue_master1_read(6'b001_010, 32'h3000_0040);
     issue_master1_read(6'b001_011, 32'h3000_0080);
     if (outstanding_read_o != 8'd2) begin
@@ -268,25 +405,76 @@ module axi4_data_crossbar_tb;
       $fatal(1, "same-target reads did not drain the crossbar");
     end
 
-    @(negedge clk_i);
-    masters[6].arid    = 6'b110_000;
-    masters[6].araddr  = 32'h3000_0000;
-    masters[6].arvalid = 1'b1;
-    do @(posedge clk_i); while (!masters[6].arready);
-    #1;
-    if (!fault_valid_o || (fault_master_o != 3'd6) ||
-        (fault_reason_o != 4'd3) || fault_write_o) begin
-      $fatal(1, "reserved-master ACL fault attribution mismatch");
+    jpeg_zero_credit : begin
+      @(negedge clk_i);
+      masters[6].arid    = 7'h30;
+      masters[6].araddr  = 32'h3000_0000;
+      masters[6].arvalid = 1'b1;
+      #1;
+      if (masters[6].arready || targets[0].arvalid) begin
+        $fatal(1, "JPEG read received normal admission credit");
+      end
+      masters[6].arvalid = 1'b0;
+
+      @(negedge clk_i);
+      masters[6].awid    = 7'h31;
+      masters[6].awaddr  = 32'h3000_0040;
+      masters[6].awvalid = 1'b1;
+      #1;
+      if (masters[6].awready || targets[0].awvalid) begin
+        $fatal(1, "JPEG write received normal admission credit");
+      end
+      masters[6].awvalid = 1'b0;
     end
-    @(negedge clk_i);
-    masters[6].arvalid = 1'b0;
-    targets[5].rid     = 6'b110_000;
-    targets[5].rresp   = 2'b10;
-    targets[5].rlast   = 1'b1;
-    targets[5].rvalid  = 1'b1;
-    do @(posedge clk_i); while (!targets[5].rready);
-    @(negedge clk_i);
-    targets[5].rvalid = 1'b0;
+
+    fault_backpressure : begin
+      @(negedge clk_i);
+      fault_ready_i      = 1'b0;
+      masters[2].arid    = 6'b010_110;
+      masters[2].araddr  = 32'h3000_0060;
+      masters[2].arcache = 4'b0011;
+      masters[2].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[2].arready);
+      #1;
+      if (!fault_valid_o || (fault_master_o != 4'd2) ||
+          (fault_addr_o != 32'h3000_0060) || (fault_reason_o != 4'd3)) begin
+        $fatal(1, "first backpressured fault was not retained");
+      end
+      @(negedge clk_i);
+      masters[2].arvalid = 1'b0;
+      masters[2].arcache = '0;
+      masters[1].arid    = 6'b001_110;
+      masters[1].araddr  = 32'h3000_00A0;
+      masters[1].arprot  = 3'b100;
+      masters[1].arvalid = 1'b1;
+      #1;
+      if (masters[1].arready) begin
+        $fatal(1, "second faulting request bypassed a full fault slot");
+      end
+      repeat (2) begin
+        @(posedge clk_i);
+        #1;
+        if (!fault_valid_o || (fault_master_o != 4'd2) ||
+            (fault_addr_o != 32'h3000_0060) || (fault_reason_o != 4'd3) ||
+            masters[1].arready) begin
+          $fatal(1, "backpressured fault payload or admission was not held");
+        end
+      end
+      return_target5_read(6'b010_110);
+      @(negedge clk_i);
+      fault_ready_i = 1'b1;
+      do @(posedge clk_i); while (!masters[1].arready);
+      #1;
+      if (!fault_valid_o || (fault_master_o != 4'd1) ||
+          (fault_addr_o != 32'h3000_00A0) || (fault_reason_o != 4'd3)) begin
+        $fatal(1, "second backpressured fault was not delivered after release");
+      end
+      @(negedge clk_i);
+      masters[1].arvalid = 1'b0;
+      masters[1].arprot  = '0;
+      return_target5_read(6'b001_110);
+      @(posedge clk_i);
+    end
 
     @(negedge clk_i);
     masters[2].arid    = 6'b010_001;
@@ -397,6 +585,44 @@ module axi4_data_crossbar_tb;
       masters[0].arvalid = 1'b0;
       return_target0_read(6'b101_001, 64'h5555_5555_0000_0200);
       return_target0_read(6'b000_101, 64'h0000_0000_0000_0280);
+    end
+
+    invalid_return_prefix_recovery : begin
+      for (int prefix = 9; prefix < 16; prefix++) begin
+        return_invalid_target0_response(4'(prefix), prefix[0]);
+
+        if (prefix == 9) begin
+          masters[8].arid    = 7'h42;
+          masters[8].araddr  = 32'h3000_0140;
+          masters[8].arvalid = 1'b1;
+          #1;
+          if (masters[8].arready || idle_o) begin
+            $fatal(1, "protocol recovery accepted a new request before flush");
+          end
+          masters[8].arvalid = 1'b0;
+        end
+
+        flush_i = 1'b1;
+        @(posedge clk_i);
+        @(negedge clk_i);
+        flush_i = 1'b0;
+      end
+
+      masters[8].arid    = 7'h42;
+      masters[8].araddr  = 32'h3000_0140;
+      masters[8].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[8].arready);
+      @(negedge clk_i);
+      masters[8].arvalid = 1'b0;
+      fork
+        return_target0_read(7'h42, 64'h8888_8888_8888_0042);
+        begin
+          wait (masters[8].rvalid);
+          if ((masters[8].rid != 7'h42) || (masters[8].rdata != 64'h8888_8888_8888_0042)) begin
+            $fatal(1, "crossbar did not recover after protocol flush");
+          end
+        end
+      join
     end
 
     @(negedge clk_i);

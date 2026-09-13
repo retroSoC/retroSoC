@@ -8020,19 +8020,19 @@
           {
             "id": "p1",
             "direction": "in",
-            "width": 8,
+            "width": 9,
             "side": "west"
           },
           {
             "id": "p2",
             "direction": "out",
-            "width": 16,
+            "width": 18,
             "side": "east"
           },
           {
             "id": "p3",
             "direction": "out",
-            "width": 8,
+            "width": 9,
             "side": "south"
           }
         ],
@@ -8058,7 +8058,7 @@
           {
             "id": "p1",
             "direction": "out",
-            "width": 8,
+            "width": 9,
             "side": "east"
           }
         ],
@@ -8077,7 +8077,7 @@
           {
             "id": "p2",
             "direction": "in",
-            "width": 16,
+            "width": 18,
             "side": "west"
           }
         ],
@@ -8096,7 +8096,7 @@
           {
             "id": "p3",
             "direction": "in",
-            "width": 8,
+            "width": 9,
             "side": "north"
           }
         ],
@@ -8144,7 +8144,7 @@
             "file": "rtl/mini/top/apb4_system.sv",
             "scope": "apb4_system",
             "symbol": "resource_idle_i",
-            "bits": 8
+            "bits": 9
           }
         ],
         "instance_ports": [
@@ -8172,7 +8172,7 @@
             "file": "rtl/mini/top/apb4_system.sv",
             "scope": "apb4_system",
             "symbol": "s_resource_owner",
-            "bits": 16
+            "bits": 18
           }
         ],
         "instance_ports": [
@@ -8200,7 +8200,7 @@
             "file": "rtl/mini/top/apb4_system.sv",
             "scope": "apb4_system",
             "symbol": "s_resource_irq_lp",
-            "bits": 8
+            "bits": 9
           }
         ],
         "instance_ports": [
@@ -8213,7 +8213,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Eight resources retain independent owner/lock/quiesce/reset state. IRQ steering and cache-clean coordination are control relationships, not a hardware cache-coherence implementation."
+    "note": "Nine resources retain independent owner/lock/quiesce/reset state; resource 8 is the idle GA2D bridge placeholder only. IRQ steering and cache-clean coordination are control relationships, not a hardware cache-coherence implementation."
   },
   "monitor": {
     "nodes": [
@@ -8228,7 +8228,7 @@
           {
             "id": "p0",
             "direction": "out",
-            "width": 8,
+            "width": 9,
             "side": "east"
           }
         ],
@@ -8247,7 +8247,7 @@
           {
             "id": "p0",
             "direction": "in",
-            "width": 8,
+            "width": 9,
             "side": "west"
           },
           {
@@ -8331,7 +8331,7 @@
             "file": "rtl/mini/top/soc_data_plane.sv",
             "scope": "soc_data_plane",
             "symbol": "s_monitor_master_read_accept",
-            "bits": 8
+            "bits": 9
           }
         ],
         "instance_ports": [
@@ -8351,7 +8351,7 @@
         "bindings": [
           {
             "file": "rtl/mini/top/soc_data_plane.sv",
-            "text": ".fault_valid_i(fault_valid_o)"
+            "text": ".fault_valid_i(fault_valid_o && fault_ready_i)"
           }
         ],
         "signals": [
@@ -8366,7 +8366,7 @@
           {
             "node": "core",
             "port": "fault_valid_i",
-            "expression": "fault_valid_o"
+            "expression": "fault_valid_o && fault_ready_i"
           }
         ],
         "zigzag-dir": "horizontal"
@@ -8573,7 +8573,7 @@
         "instance_ports": []
       }
     ],
-    "note": "PRODUCT uses a native AXI64/ID6 SRAM target in the HP clock domain. The selected IHP130 profile supplies 32 KiB. Bank count and physical macro organization are distinct from the address aperture."
+    "note": "PRODUCT uses a native AXI64/ID7 SRAM target in the HP clock domain. The selected IHP130 profile supplies 32 KiB. Bank count and physical macro organization are distinct from the address aperture."
   },
   "xpi": {
     "nodes": [
@@ -9676,7 +9676,7 @@
           },
           {
             "file": "rtl/mini/top/axi4_data_crossbar.sv",
-            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if (master == 5) return CountWidth'(1); return '0; endfunction"
+            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if (master == 5) return CountWidth'(1); if (master == 8) return CountWidth'(1); return '0; endfunction"
           }
         ],
         "instance_ports": [
@@ -10903,7 +10903,7 @@
       },
       {
         "id": "sram",
-        "title": "HP-domain SRAM\nnative AXI64 / ID6",
+        "title": "HP-domain SRAM\nnative AXI64 / ID7",
         "x": 12.6,
         "y": 3.5,
         "w": 4.0,
@@ -11513,7 +11513,7 @@
           },
           {
             "file": "rtl/mini/top/axi4_data_crossbar.sv",
-            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if (master == 5) return CountWidth'(1); return '0; endfunction"
+            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if (master == 5) return CountWidth'(1); if (master == 8) return CountWidth'(1); return '0; endfunction"
           }
         ],
         "instance_ports": [

@@ -1,10 +1,11 @@
 # Mini Data-Plane Fabric Monitor
 
-The approved [GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
+[GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
 adds master bank 8, version 1.1, and master bit 3 at `FAULT[12]`, preserving
-the existing packed fields. It also requires complete four-bit master identity
-through SYSCTRL. These are pending implementation changes, not current monitor
-capabilities; the freeze does not alter executable RTL or HAL definitions.
+the existing packed fields. It also carries the complete four-bit master
+identity through SYSCTRL. Bank 8 observes the dedicated PCLK-to-HP
+AXI64/ID3 GA2D bridge placeholder, whose source is idle; it does not imply an
+implemented GA2D APB shell, IRQ, payload/DMA, or pixel function.
 
 ## Scope
 
@@ -24,11 +25,11 @@ so a multi-register sample is stable while live counting continues.
 | Offset | Name | Access | Contract |
 | ---: | --- | --- | --- |
 | `0x000` | `IP_ID` | RO | `0x44504D4E` (`DPMN`) |
-| `0x004` | `IP_VERSION` | RO | `0x00010000` |
+| `0x004` | `IP_VERSION` | RO | `0x00010001` |
 | `0x008` | `CAPABILITY` | RO | target count `[31:24]`, master count `[23:16]`, saturating/snapshot capability `[1:0]` |
 | `0x00C` | `CONTROL` | RW | enable bit 0, freeze bit 1, clear pulse bit 2, snapshot pulse bit 3 |
 | `0x010` | `STATUS` | RO | write outstanding `[23:16]`, read outstanding `[15:8]`, flush busy bit 2, recovery bit 1, idle bit 0 |
-| `0x014` | `FAULT` | RO | reason `[11:8]`, target `[7:5]`, master `[4:2]`, write bit 1, valid bit 0 |
+| `0x014` | `FAULT` | RO | master high bit 3 `[12]`, reason `[11:8]`, target `[7:5]`, master low bits `[4:2]`, write bit 1, valid bit 0 |
 | `0x018` | `FAULT_ADDRESS` | RO | address of the first retained fault |
 | `0x01C` | `FLUSH_COUNT` | RO | snapshotted warm-flush rising-edge count |
 | `0x020` | `FAULT_COUNT` | RO | live count of all observed fault events |
@@ -41,12 +42,14 @@ does not clear state.
 
 The first fault after reset or clear is sticky. Later faults increment
 `FAULT_COUNT` but do not overwrite its identity or address. This preserves the
-root cause across the PCLK-to-HP bridge and prevents a short data-plane pulse
-from being missed by software.
+root cause across the PCLK-to-HP bridge. The monitor counts data-plane faults
+only when their HP valid/ready report handshake succeeds, so mailbox
+backpressure does not duplicate or lose an accepted event.
 
 ## Master Counter Banks
 
-Eight master banks start at `0x100 + master * 0x20`:
+Nine master banks start at `0x100 + master * 0x20`. Master bank 8 occupies
+`0x200..0x21F`:
 
 | Relative offset | Counter |
 | ---: | --- |
@@ -60,8 +63,9 @@ Eight master banks start at `0x100 + master * 0x20`:
 | `0x1C` | write high-water `[5:3]`, read high-water `[2:0]` |
 
 Master indices are HP I-cache, HP D-cache, central DMA, I/O gateway A, I/O
-gateway B, LP data gateway, reserved, and EXT-H. The reserved slot remains
-visible so an integration defect cannot silently disappear from accounting.
+gateway B, LP data gateway, JPEG, EXT-H, and the idle GA2D bridge placeholder.
+JPEG remains visible with zero normal admission credit (`GA2D-GAP-01`), so an
+integration defect cannot silently disappear from accounting.
 
 ## Target Counter Banks
 

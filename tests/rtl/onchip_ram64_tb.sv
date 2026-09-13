@@ -14,7 +14,7 @@ module onchip_ram64_tb #(
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(64),
-      .ID_WIDTH  (6),
+      .ID_WIDTH  (7),
       .USER_WIDTH(1)
   ) mem_axi4 (
       .aclk   (clk_i),
@@ -31,7 +31,7 @@ module onchip_ram64_tb #(
       .Present    (1'b1),
       .CapacityKiB(CapacityKiB),
       .DataWidth  (64),
-      .IdWidth    (6)
+      .IdWidth    (7)
   ) u_dut (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
@@ -41,7 +41,7 @@ module onchip_ram64_tb #(
       .cfg_apb4     (cfg_apb4)
   );
 
-  task automatic issue_write(input logic [5:0] id, input logic [31:0] address,
+  task automatic issue_write(input logic [6:0] id, input logic [31:0] address,
                              input logic [7:0] length, input logic [2:0] size,
                              input logic [63:0] seed, input logic [7:0] strobe);
     begin
@@ -74,7 +74,7 @@ module onchip_ram64_tb #(
     end
   endtask
 
-  task automatic expect_read(input logic [5:0] id, input logic [31:0] address,
+  task automatic expect_read(input logic [6:0] id, input logic [31:0] address,
                              input logic [7:0] length, input logic [63:0] seed);
     integer previous_cycle;
     integer cycle_count;
@@ -154,10 +154,10 @@ module onchip_ram64_tb #(
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
 
-    issue_write(6'h2A, SramBase + 32'h100, 8'd3, 3'd3, 64'h1000_2000_3000_4000, 8'hFF);
-    expect_read(6'h2B, SramBase + 32'h100, 8'd3, 64'h1000_2000_3000_4000);
-    issue_write(6'h2C, SramBase + 32'h10C, 8'd0, 3'd2, 64'hDEAD_BEEF_0000_0000, 8'hF0);
-    expect_read(6'h2D, SramBase + 32'h108, 8'd0, 64'hDEAD_BEEF_3000_4001);
+    issue_write(7'h40, SramBase + 32'h100, 8'd3, 3'd3, 64'h1000_2000_3000_4000, 8'hFF);
+    expect_read(7'h41, SramBase + 32'h100, 8'd3, 64'h1000_2000_3000_4000);
+    issue_write(7'h42, SramBase + 32'h10C, 8'd0, 3'd2, 64'hDEAD_BEEF_0000_0000, 8'hF0);
+    expect_read(7'h43, SramBase + 32'h108, 8'd0, 64'hDEAD_BEEF_3000_4001);
 
     $display("native AXI64 on-chip SRAM test passed");
     $finish;

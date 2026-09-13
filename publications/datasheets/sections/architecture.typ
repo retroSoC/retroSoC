@@ -35,7 +35,7 @@ paths and APB4 register targets. The compatibility RIBP boundary for selected MP
 described in @mpw. It is not the PRODUCT data fabric.
 
 The LP control fabric uses 32-bit data. APB accesses cross LP to PCLK through asynchronous
-request/response bridges. The HP data plane uses 64-bit data, 32-bit addresses and six-bit
+request/response bridges. The HP data plane uses 64-bit data, 32-bit addresses and seven-bit
 global transaction IDs. Adapters preserve byte lanes and response attribution across width
 and clock boundaries. HP MMIO cannot write root-owned SYSCTRL/RCU, watchdog, GPIO administration
 and other protected management controls.

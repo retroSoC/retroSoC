@@ -5,14 +5,16 @@ module axi4_target_guard_tb;
   logic        rst_n_i = 1'b0;
   logic        abort_o;
   logic        timeout_valid_o;
+  logic        timeout_ready_i = 1'b1;
+  logic        isolated_o;
   logic        timeout_write_o;
-  logic [ 5:0] timeout_id_o;
+  logic [ 6:0] timeout_id_o;
   logic [31:0] timeout_addr_o;
 
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(64),
-      .ID_WIDTH  (6),
+      .ID_WIDTH  (7),
       .USER_WIDTH(1)
   ) source (
       .aclk   (clk_i),
@@ -21,7 +23,7 @@ module axi4_target_guard_tb;
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(64),
-      .ID_WIDTH  (6),
+      .ID_WIDTH  (7),
       .USER_WIDTH(1)
   ) sink (
       .aclk   (clk_i),
@@ -31,6 +33,7 @@ module axi4_target_guard_tb;
   always #5 clk_i = ~clk_i;
 
   axi4_target_guard #(
+      .IdWidth   (7),
       .ReadDepth (4),
       .WriteDepth(2)
   ) u_dut (
@@ -42,6 +45,8 @@ module axi4_target_guard_tb;
       .abort_o        (abort_o),
       .abort_done_i   (abort_o),
       .timeout_valid_o(timeout_valid_o),
+      .timeout_ready_i(timeout_ready_i),
+      .isolated_o     (isolated_o),
       .timeout_write_o(timeout_write_o),
       .timeout_id_o   (timeout_id_o),
       .timeout_addr_o (timeout_addr_o),
@@ -49,7 +54,7 @@ module axi4_target_guard_tb;
       .sink           (sink)
   );
 
-  task automatic issue_read(input logic [5:0] id, input logic [7:0] len, input logic [31:0] addr);
+  task automatic issue_read(input logic [6:0] id, input logic [7:0] len, input logic [31:0] addr);
     begin
       @(negedge clk_i);
       source.arid    = id;
@@ -62,7 +67,19 @@ module axi4_target_guard_tb;
     end
   endtask
 
-  task automatic expect_error_read(input logic [5:0] id, input int unsigned beats);
+  task automatic issue_write_address(input logic [6:0] id, input logic [31:0] addr);
+    begin
+      @(negedge clk_i);
+      source.awid    = id;
+      source.awaddr  = addr;
+      source.awvalid = 1'b1;
+      do @(posedge clk_i); while (!source.awready);
+      @(negedge clk_i);
+      source.awvalid = 1'b0;
+    end
+  endtask
+
+  task automatic expect_error_read(input logic [6:0] id, input int unsigned beats);
     begin
       for (int beat = 0; beat < beats; beat++) begin
         do @(posedge clk_i); while (!source.rvalid);
@@ -74,7 +91,7 @@ module axi4_target_guard_tb;
     end
   endtask
 
-  task automatic return_read_beat(input logic [5:0] id, input logic last, input logic expected_last,
+  task automatic return_read_beat(input logic [6:0] id, input logic last, input logic expected_last,
                                   input logic [1:0] expected_resp);
     begin
       @(negedge clk_i);
@@ -146,26 +163,93 @@ module axi4_target_guard_tb;
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
 
-    issue_read(6'h07, 8'd1, 32'h3800_0020);
+    issue_read(7'h40, 8'd1, 32'h3800_0020);
     do @(posedge clk_i); while (!sink.arvalid);
-    return_read_beat(6'h07, 1'b0, 1'b0, 2'b00);
-    return_read_beat(6'h07, 1'b0, 1'b1, 2'b10);
+    return_read_beat(7'h40, 1'b0, 1'b0, 2'b00);
+    return_read_beat(7'h40, 1'b0, 1'b1, 2'b10);
 
     issue_read(6'h08, 8'd0, 32'h3800_0030);
     do @(posedge clk_i); while (!sink.arvalid);
     return_read_beat(6'h08, 1'b1, 1'b1, 2'b00);
 
-    issue_read(6'h09, 8'd1, 32'h3800_0040);
+    timeout_ready_i = 1'b0;
+    sink.arready    = 1'b0;
+    issue_read(7'h09, 8'd1, 32'h3800_0040);
     wait (timeout_valid_o);
-    if (timeout_write_o || (timeout_id_o != 6'h09) || (timeout_addr_o != 32'h3800_0040)) begin
+    if (timeout_write_o || (timeout_id_o != 7'h09) || (timeout_addr_o != 32'h3800_0040)) begin
+      $fatal(1, "backpressured target-guard timeout attribution mismatch");
+    end
+    @(posedge clk_i);
+    #1;
+    if (!timeout_valid_o) begin
+      $fatal(1, "target-guard timeout was not latched before sink recovery");
+    end
+    @(negedge clk_i);
+    sink.arready = 1'b1;
+    repeat (3) begin
+      @(posedge clk_i);
+      #1;
+      if (!timeout_valid_o || timeout_write_o || (timeout_id_o != 7'h09) ||
+          (timeout_addr_o != 32'h3800_0040) || sink.arvalid || source.rvalid) begin
+        $fatal(1, "backpressured target-guard timeout was not held safely");
+      end
+    end
+    @(negedge clk_i);
+    timeout_ready_i = 1'b1;
+    expect_error_read(7'h09, 2);
+    if (isolated_o) begin
+      $fatal(1, "pre-accept timeout incorrectly isolated the target");
+    end
+
+    timeout_ready_i = 1'b0;
+    sink.awready    = 1'b0;
+    issue_write_address(7'h4C, 32'h3800_0060);
+    wait (timeout_valid_o);
+    if (!timeout_write_o || (timeout_id_o != 7'h4C) || (timeout_addr_o != 32'h3800_0060)) begin
+      $fatal(1, "backpressured target-guard write timeout attribution mismatch");
+    end
+    @(posedge clk_i);
+    #1;
+    if (!timeout_valid_o) begin
+      $fatal(1, "target-guard write timeout was not latched before sink recovery");
+    end
+    @(negedge clk_i);
+    sink.awready = 1'b1;
+    repeat (3) begin
+      @(posedge clk_i);
+      #1;
+      if (!timeout_valid_o || !timeout_write_o || (timeout_id_o != 7'h4C) ||
+          (timeout_addr_o != 32'h3800_0060) || sink.awvalid || source.bvalid) begin
+        $fatal(1, "backpressured target-guard write timeout was not held safely");
+      end
+    end
+    @(negedge clk_i);
+    timeout_ready_i = 1'b1;
+    source.wdata    = 64'h0123_4567_89AB_CDEF;
+    source.wstrb    = 8'hFF;
+    source.wvalid   = 1'b1;
+    do @(posedge clk_i); while (!source.wready);
+    @(negedge clk_i);
+    source.wvalid = 1'b0;
+    do @(posedge clk_i); while (!source.bvalid);
+    if ((source.bid != 7'h4C) || (source.bresp != 2'b10) || sink.awvalid || sink.wvalid) begin
+      $fatal(1, "backpressured target-guard write termination mismatch");
+    end
+    if (isolated_o) begin
+      $fatal(1, "pre-accept write timeout incorrectly isolated the target");
+    end
+
+    issue_read(7'h0A, 8'd1, 32'h3800_0080);
+    wait (timeout_valid_o);
+    if (timeout_write_o || (timeout_id_o != 7'h0A) || (timeout_addr_o != 32'h3800_0080)) begin
       $fatal(1, "target guard read timeout attribution mismatch");
     end
-    expect_error_read(6'h09, 2);
+    expect_error_read(7'h0A, 2);
 
     fork
       begin
-        issue_read(6'h0A, 8'd0, 32'h3800_0080);
-        expect_error_read(6'h0A, 1);
+        issue_read(7'h0B, 8'd0, 32'h3800_00C0);
+        expect_error_read(7'h0B, 1);
       end
       begin
         repeat (12) begin
@@ -176,7 +260,7 @@ module axi4_target_guard_tb;
     join
 
     @(negedge clk_i);
-    source.awid    = 6'h0B;
+    source.awid    = 7'h4B;
     source.awaddr  = 32'h3800_0100;
     source.awvalid = 1'b1;
     do @(posedge clk_i); while (!source.awready);
@@ -189,7 +273,7 @@ module axi4_target_guard_tb;
     @(negedge clk_i);
     source.wvalid = 1'b0;
     do @(posedge clk_i); while (!source.bvalid);
-    if ((source.bid != 6'h0B) || (source.bresp != 2'b10) || sink.awvalid || sink.wvalid) begin
+    if ((source.bid != 7'h4B) || (source.bresp != 2'b10) || sink.awvalid || sink.wvalid) begin
       $fatal(1, "isolated target write termination mismatch");
     end
 

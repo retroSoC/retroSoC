@@ -108,9 +108,28 @@
     {"name": "sdram_config", "source": "pclk", "destination": "memory", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_sdram_cfg_cdc"},
     {"name": "sram_config", "source": "pclk", "destination": "hp", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_sram_cfg_cdc"},
     {"name": "fabric_monitor", "source": "pclk", "destination": "hp", "primitive": "apb4_async_bridge", "path": "rtl/mini/top/retrosoc.sv", "instance": "u_fabric_monitor_cdc"},
+    {
+      "name": "data_plane_fault",
+      "source": "hp",
+      "destination": "pclk",
+      "primitive": "async_reqack",
+      "path": "rtl/mini/top/data_plane_fault_cdc.sv",
+      "instance": "u_fault_mailbox",
+      "unilateral_reset": {
+        "source_reset": "abort_accepted_mailbox_item",
+        "destination_reset": "abort_accepted_item_backpressure_unaccepted_source"
+      }
+    },
     {"name": "io_dma_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_io_cdc"},
     {"name": "apu_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_io_cdc"},
     {"name": "jpeg_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_jpeg_cdc"},
+    {"name": "ga2d_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_cdc"},
+    {"name": "ga2d_source_idle", "source": "pclk", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_source_idle_sync"},
+    {"name": "ga2d_source_quiesced", "source": "pclk", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_source_quiesced_sync"},
+    {"name": "ga2d_hp_reset", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_hp_reset_sync"},
+    {"name": "ga2d_flush", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_flush_sync"},
+    {"name": "ga2d_master_idle", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_master_idle_sync"},
+    {"name": "ga2d_block_ack", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_block_ack_sync"},
     {"name": "extension_h_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ext_h_cdc"},
     {"name": "sdram_data", "source": "hp", "destination": "memory", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},
     {"name": "serial_memory_data", "source": "hp", "destination": "memory", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},

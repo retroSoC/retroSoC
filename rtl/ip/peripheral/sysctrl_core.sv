@@ -124,7 +124,7 @@ module sysctrl_core (
   logic [2:0] s_fault_detail_d, s_fault_detail_q;
   logic [31:0] s_fault_addr_d, s_fault_addr_q;
   logic [31:0] s_fault_count_d, s_fault_count_q;
-  logic [2:0] s_fault_master_d, s_fault_master_q;
+  logic [3:0] s_fault_master_d, s_fault_master_q;
   logic s_perf_en_d, s_perf_en_q;
   logic [63:0] s_perf_mgmt_wait_d, s_perf_mgmt_wait_q;
   logic [63:0] s_perf_user_wait_d, s_perf_user_wait_q;
@@ -653,7 +653,7 @@ module sysctrl_core (
         s_sysctrl_coresel_q
       };
 `endif
-      FaultMaster: read_data_o = {29'd0, s_fault_master_q};
+      FaultMaster: read_data_o = {28'd0, s_fault_master_q};
       FaultDetail: read_data_o = {29'd0, s_fault_detail_q};
       PerfCtrl: read_data_o = {31'd0, s_perf_en_q};
       PerfMgmtWaitLo: read_data_o = s_perf_mgmt_wait_q[31:0];

@@ -374,6 +374,7 @@ module apu_p2_integration_tb;
       .abort_o        (target_guard_abort),
       .abort_done_i   (target_guard_abort),
       .timeout_valid_o(),
+      .timeout_ready_i(1'b1),
       .isolated_o     (),
       .timeout_write_o(),
       .timeout_id_o   (),

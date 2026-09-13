@@ -6,10 +6,13 @@ plane. Common `axi4_if`, `memory_map.json`, and `soc_topology.json` are the
 executable protocol, address, and integration sources of truth.
 
 [GA2D Phase 2](ip/ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
-is the approved, pending expansion to nine native masters and seven-bit global
-IDs. It adds master 8 and preserves all existing identities, target policy,
-and timeout behavior. The GA2D specification also records the existing
-master-6/JPEG admission discrepancy; it must not be interpreted as a free port.
+expands the fabric to nine native masters and seven-bit global IDs. It adds
+master 8 and preserves all existing identities, target policy, and timeout
+behavior. Master 8 is fed only by its dedicated PCLK-to-HP AXI64/ID3 bridge,
+whose source is idle. `APB4_GA` remains reserved and inactive; the GA2D APB
+shell, IRQ, payload/DMA, and pixel function remain deferred. The GA2D
+specification also records the existing master-6/JPEG admission discrepancy;
+it must not be interpreted as a free port.
 
 ## LP control plane
 
@@ -31,8 +34,8 @@ master from writing SYSCTRL/RCU, watchdog, and GPIO administration windows.
 
 ## HP data plane
 
-The native payload fabric is AXI64 with 32-bit addresses and six-bit global
-IDs. It has eight masters:
+The native payload fabric is AXI64 with 32-bit addresses and seven-bit global
+IDs. It has nine masters:
 
 | Index | Master | Adaptation |
 | ---: | --- | --- |
@@ -42,10 +45,12 @@ IDs. It has eight masters:
 | 3 | I/O gateway A | USB2 and SDIO0, PCLK-to-HP CDC, AXI32-to-64 |
 | 4 | I/O gateway B | SDIO1 and SPI-SD, PCLK-to-HP CDC, AXI32-to-64 |
 | 5 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC, AXI32-to-64 |
-| 6 | reserved | permanently idle and denied |
+| 6 | JPEG | PCLK-to-HP AXI64 CDC; zero normal admission credit (`GA2D-GAP-01`) |
 | 7 | EXT-H | PCLK-to-HP AXI64 CDC |
+| 8 | GA2D bridge placeholder | dedicated PCLK-to-HP AXI64/ID3 CDC; source held idle |
 
-Each source receives a fixed three-bit master prefix. The crossbar maintains
+Each source receives a fixed four-bit master prefix over a three-bit source
+ID. The crossbar maintains
 independent read and write arbitration for each target, enabling read/write
 overlap and cross-target concurrency. Different IDs from HP/DMA/EXT-H may be
 active on the same or different targets up to master and target credits. The
@@ -54,7 +59,7 @@ reads and two writes; serial and error targets use one read and one write.
 
 | Target | Current backend |
 | --- | --- |
-| on-chip SRAM | native AXI64/ID6 striped technology macros in HP |
+| on-chip SRAM | native AXI64/ID7 striped technology macros in HP |
 | SDRAM | HP-to-memory AXI64 CDC, local 64-to-32 SDRAM adaptation |
 | QPI PSRAM | AXI64-to-32, CDC, selected QPI frontend |
 | OPI/HyperBus | AXI64-to-32, CDC, selected OPI frontend |
@@ -69,7 +74,8 @@ the integration RTL:
 | HP I-cache | all five memories | none | allowed | cache attributes preserved |
 | HP D-cache | all five memories | SRAM, SDRAM, QPI, OPI | denied | cache attributes preserved |
 | DMA, I/O A/B, LP gateway | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required |
-| reserved | none | none | denied | fail-closed |
+| GA2D bridge placeholder | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; source is idle in P2 |
+| JPEG | none | none | denied | zero normal admission credit (`GA2D-GAP-01`) |
 | EXT-H | all five memories within slot ACL | SRAM, SDRAM, QPI, OPI within slot ACL | denied | `AxCACHE=0` required |
 
 XPI is read-only on the data plane. A denied target, instruction access,

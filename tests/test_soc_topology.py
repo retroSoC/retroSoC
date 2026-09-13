@@ -194,6 +194,10 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "SOC_DATA_POLICY_WRITE_TARGET_MASK" in data_policy
     assert "SOC_DATA_POLICY_ALLOW_INSTRUCTION" in data_policy
     assert "SOC_DATA_POLICY_REQUIRE_NONCACHEABLE" in data_policy
+    assert "`define SOC_DATA_POLICY_READ_TARGET_MASK             45'b111111111111111111111111111111111111111111111" in data_policy
+    assert "`define SOC_DATA_POLICY_WRITE_TARGET_MASK            45'b011110111101111011110111101111011110111100000" in data_policy
+    assert "`define SOC_DATA_POLICY_ALLOW_INSTRUCTION            9'b000000001" in data_policy
+    assert "`define SOC_DATA_POLICY_REQUIRE_NONCACHEABLE         9'b111111100" in data_policy
     assert "RS_SOC_IRQ_VECTOR_WIDTH UINT32_C(64)" in irq_metadata
     assert "RS_SOC_EXTERNAL_IRQ_COUNT UINT32_C(62)" in irq_metadata
     assert "RS_SOC_IRQ_UART0 UINT32_C(2)" in irq_metadata
@@ -252,6 +256,37 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
     ]
 
 
+def test_ga2d_p2_topology_is_data_master_only() -> None:
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    policies = document["data_master_policies"]
+
+    assert [policy["name"] for policy in policies] == [
+        "hp_icache",
+        "hp_dcache",
+        "dma",
+        "io_gateway_a",
+        "io_gateway_b",
+        "lp_gateway",
+        "jpeg",
+        "ext_h",
+        "ga2d",
+    ]
+    assert [policy["index"] for policy in policies] == list(range(9))
+    assert policies[8] == {
+        "index": 8,
+        "name": "ga2d",
+        "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+        "write_targets": ["sram", "sdram", "qpi", "opi"],
+        "allow_instruction": False,
+        "require_noncacheable": True,
+    }
+    assert all(
+        target["name"] != "ga2d"
+        for target in document["apb4_periph_targets"] + document["apb4_system_targets"]
+    )
+    assert all("ga2d" not in interrupt["name"] for interrupt in document["interrupts"])
+
+
 def test_apu_p1_fixed_resource_and_hp_irq_allocations() -> None:
     periph = (ROOT / "rtl/mini/top/apb4_periph.sv").read_text(encoding="utf-8")
     system = (ROOT / "rtl/mini/top/apb4_system.sv").read_text(encoding="utf-8")
@@ -262,12 +297,12 @@ def test_apu_p1_fixed_resource_and_hp_irq_allocations() -> None:
 
     assert "s_hp_plic_source[10] = resource_irq_hp_i[6];" in periph
     assert "s_apu_irq_raw, s_jpeg_irq_raw" in periph
-    assert ".ResourceCount(8)" in system
+    assert ".ResourceCount(9)" in system
     assert ".apu_owner_i                 (s_resource_owner[7])" in top
     assert ".apu_quiesce_i               (s_resource_quiesce[7])" in top
     assert ".apu_reset_i                 (s_resource_reset[7])" in top
     assert "RS_RESOURCE_APU = 7" in resource_header
-    assert "RS_RESOURCE_COUNT = 8" in resource_header
+    assert "RS_RESOURCE_COUNT = 9" in resource_header
 
 
 def test_topology_always_adds_the_user_apb_target(tmp_path: Path) -> None:
@@ -417,6 +452,14 @@ def test_topology_rejects_invalid_irq_groups_and_bindings(tmp_path: Path) -> Non
     result = validate(write_invalid_topology(tmp_path, document))
     assert result.returncode != 0
     assert "core interrupt bit 0 must retain its compatibility binding" in result.stderr
+
+
+def test_topology_rejects_missing_ga2d_data_policy(tmp_path: Path) -> None:
+    document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
+    document["data_master_policies"].pop()
+    result = validate(write_invalid_topology(tmp_path, document))
+    assert result.returncode != 0
+    assert "all 9 data masters" in result.stderr
 
 
 def test_generated_irq_wiring_preserves_the_expected_core_vector(tmp_path: Path) -> None:

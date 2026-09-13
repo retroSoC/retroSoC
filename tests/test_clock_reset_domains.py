@@ -51,13 +51,30 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
         ("clint_timebase", "aon", "lp"),
         ("jtag_dmi", "jtag", "lp"),
         ("hp_mmio", "hp", "lp"),
+        ("data_plane_fault", "hp", "pclk"),
         ("io_dma_data", "pclk", "hp"),
         ("apu_data", "pclk", "hp"),
+        ("ga2d_data", "pclk", "hp"),
+        ("ga2d_source_idle", "pclk", "hp"),
+        ("ga2d_source_quiesced", "pclk", "hp"),
+        ("ga2d_hp_reset", "hp", "pclk"),
+        ("ga2d_flush", "hp", "pclk"),
+        ("ga2d_master_idle", "hp", "pclk"),
+        ("ga2d_block_ack", "hp", "pclk"),
     }
     clint = next(
         crossing for crossing in document["crossings"] if crossing["name"] == "clint_timebase"
     )
     assert clint["primitive"] == "edge_det"
+    data_plane_fault = next(
+        crossing for crossing in document["crossings"] if crossing["name"] == "data_plane_fault"
+    )
+    assert data_plane_fault["primitive"] == "async_reqack"
+    assert data_plane_fault["instance"] == "u_fault_mailbox"
+    assert data_plane_fault["unilateral_reset"] == {
+        "source_reset": "abort_accepted_mailbox_item",
+        "destination_reset": "abort_accepted_item_backpressure_unaccepted_source",
+    }
     assert {
         "usb2_work",
         "usb2_result",
@@ -125,3 +142,25 @@ def test_clock_reset_domain_inventory_rejects_invalid_sta_net_driver(tmp_path: P
     result = check(write_invalid_map(tmp_path, document))
     assert result.returncode != 0
     assert "sta.net must be a SystemVerilog identifier" in result.stderr
+
+
+def test_clock_reset_domain_inventory_requires_data_plane_fault_reset_contract(
+    tmp_path: Path,
+) -> None:
+    document = json.loads(DOMAIN_MAP.read_text(encoding="utf-8"))
+    data_plane_fault = next(
+        crossing for crossing in document["crossings"] if crossing["name"] == "data_plane_fault"
+    )
+    data_plane_fault.pop("unilateral_reset")
+    result = check(write_invalid_map(tmp_path, document))
+    assert result.returncode != 0
+    assert "unilateral_reset must declare the data-plane fault reset contract" in result.stderr
+
+    document = json.loads(DOMAIN_MAP.read_text(encoding="utf-8"))
+    data_plane_fault = next(
+        crossing for crossing in document["crossings"] if crossing["name"] == "data_plane_fault"
+    )
+    data_plane_fault["instance"] = "u_other_mailbox"
+    result = check(write_invalid_map(tmp_path, document))
+    assert result.returncode != 0
+    assert "must use async_reqack instance u_fault_mailbox" in result.stderr

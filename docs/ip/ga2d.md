@@ -898,7 +898,14 @@ comparing recipes. The full product must be analyzed, including wider ID and
 interrupt routing. Report unclosed timing honestly; it blocks a frequency or
 verified-readiness claim rather than authorizing a new timing contract.
 
-The existing implementation workflow's final IHP130 command is:
+Only Phase 6 executes synthesis, OpenSTA, netlist simulation, warning
+collection, and metric collection for GA2D. Earlier phases require their
+listed directed functional, integration, firmware, and lint/formal evidence,
+but defer full-product physical evidence to Phase 6. This scheduling does not
+waive any GA2D-V14 requirement or permit an earlier phase to claim
+verified-readiness.
+
+The Phase 6 final IHP130 command is:
 
 ```sh
 python3 scripts/regress.py --root . --suite pr --pdk IHP130 --netsim-boot-only
@@ -987,9 +994,9 @@ make CONFIG=configs/cluster/mini-mpw.mk SIMU=VERILATOR comp
 ```
 
 Completion: GA2D-V01/V02 pass for this boundary; all old IRQ mappings and
-debug/timer/exception paths remain usable. Report missing synthesis/timing
-evidence for the expanded priority encoder; do not change priority width or
-reset behavior to avoid a failure.
+debug/timer/exception paths remain usable. Synthesis/timing evidence is
+deferred exclusively to Phase 6; do not change priority width or reset
+behavior to avoid a failure.
 
 ### Phase 2 - Expand AXI64 Fabric and Resource Integration
 
@@ -1021,8 +1028,9 @@ make CONFIG=configs/ci/ihp130.mk HAVE_CSR=YES APP=ci_smoke SIMU=VERILATOR firmwa
 
 Completion: GA2D-V01/V03/V08 platform cases pass with master-8 BFM traffic,
 old/new IDs cannot alias, the new source has one credit per direction, and
-all target/monitor routes retain ID7. Include affected synthesis/STA and
-export/netlist evidence; a parameter-only elaboration pass is insufficient.
+all target/monitor routes retain ID7. Synthesis, STA, netlist, warning, and
+metric evidence is deferred exclusively to Phase 6; a parameter-only
+elaboration pass is insufficient for this phase's directed platform cases.
 
 ### Phase 3 - GA2D Naming Migration and APB4 Shell
 
@@ -1115,7 +1123,8 @@ ID: `GA2D-P6`.
 Dependencies: Phase 5 and resolution/evidence of applicable baseline gaps.
 Scope: complete HAL/host checks, real LP ISR and HP acceptance payloads,
 cache/ownership handoff, deterministic benchmark/report artifacts, randomized
-campaign, competing-master progress, full regression, and physical evidence.
+campaign, competing-master progress, full regression, and the only GA2D
+synthesis/timing/netlist/physical-evidence execution phase.
 
 Changes: tests, SDK/app acceptance and benchmark integration, documentation
 and evidence/readiness records justified by results. No frozen allocation,

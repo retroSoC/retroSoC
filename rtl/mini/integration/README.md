@@ -3,13 +3,14 @@
 `soc_topology.json` is the source of truth for internal Mini SoC integration
 that is not part of the software address-map ABI or the package pad map.
 
-[GA2D](../../../docs/ip/ga2d.md) defines approved, not yet implemented changes:
-Phase 1 expands the root LP IRQ vector to 64 bits while retaining the legacy
-32-bit user-core interface; Phase 2 adds data master/resource 8 and ID7;
-Phase 3 appends APB slot 28 and GA2D's LP32/HP PLIC11 interrupt. Existing
-allocations remain stable. Until those phases land, the manifest and generated
-outputs retain the baseline capacities described below. The Xh3irq SDK path
-also requires the Phase 1 implementation; a wiring-only expansion is insufficient.
+[GA2D](../../../docs/ip/ga2d.md) Phase 2 expands the topology to data
+master/resource 8 and seven-bit global IDs while retaining all existing
+allocations. It adds only a dedicated PCLK-to-HP AXI64/ID3 GA2D bridge whose
+source is held idle. `APB4_GA` remains reserved and inactive; the GA2D APB
+shell, IRQ wiring, payload/DMA, and pixel function remain deferred to later
+phases. Phase 3 appends APB slot 28 and GA2D's LP32/HP PLIC11 interrupt. The
+Xh3irq SDK path also requires the Phase 1 implementation; a wiring-only
+expansion is insufficient.
 
 The topology generator validates APB4 island ownership against
 `../address_map/memory_map.json` and emits generated SystemVerilog include
@@ -46,7 +47,7 @@ the canonical memory map. Slot 10 is the Resource Controller; slot 11 is the
 external HP-domain Fabric Monitor reached through its explicit PCLK-to-HP APB
 bridge.
 
-`data_master_policies` defines all eight native data-plane master identities,
+`data_master_policies` defines all nine native data-plane master identities,
 read/write target sets, instruction permission, and non-cacheable attribute
 requirements. The generator rejects missing, reordered, or unknown entries
 and emits packed `soc_data_policy.svh` constants consumed by the crossbar.

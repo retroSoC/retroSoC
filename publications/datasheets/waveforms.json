@@ -206,10 +206,10 @@
     "parameters": {
       "ADDR_WIDTH": 32,
       "DATA_WIDTH": 64,
-      "ID_WIDTH": 6,
+      "ID_WIDTH": 7,
       "USER_WIDTH": 1
     },
-    "parameter_note": "Native PRODUCT data fabric is AXI64 with six-bit IDs; this example uses only the data channel."
+    "parameter_note": "Native PRODUCT data fabric is AXI64 with seven-bit IDs; this example uses only the data channel."
   },
   "axis": {
     "source": {
@@ -2059,9 +2059,9 @@
     ],
     "review_note": "Replaced resource-busy/cache-handoff prose with actual admission, idle, acknowledgement and owner ports. Reviewed owner-write guards.",
     "parameters": {
-      "ResourceCount": 8
+      "ResourceCount": 9
     },
-    "parameter_note": "The reviewed resource-controller integration tracks eight resource positions."
+    "parameter_note": "The reviewed resource-controller integration tracks nine resource positions."
   },
   "monitor": {
     "source": {
@@ -2134,10 +2134,10 @@
     ],
     "review_note": "Removed invented SNAPSHOT and snapshot-valid signals; used actual control decode and live/snapshot register arrays.",
     "parameters": {
-      "NumMasters": 8,
+      "NumMasters": 9,
       "NumTargets": 6
     },
-    "parameter_note": "Reference monitor parameters are eight masters and six target positions."
+    "parameter_note": "Reference monitor parameters are nine masters and six target positions."
   },
   "sysctrl": {
     "source": {
@@ -2319,7 +2319,7 @@
     "parameters": {
       "ADDR_WIDTH": 32,
       "DATA_WIDTH": 64,
-      "ID_WIDTH": 6,
+      "ID_WIDTH": 7,
       "USER_WIDTH": 1
     },
     "parameter_note": "The PRODUCT SRAM data port is native AXI64."

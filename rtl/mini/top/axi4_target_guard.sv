@@ -20,6 +20,7 @@ module axi4_target_guard #(
     output logic                 abort_o,
     input  logic                 abort_done_i,
     output logic                 timeout_valid_o,
+    input  logic                 timeout_ready_i,
     output logic                 isolated_o,
     output logic                 timeout_write_o,
     output logic [IdWidth-1:0]   timeout_id_o,
@@ -100,13 +101,24 @@ module axi4_target_guard #(
   logic [31:0] s_write_timeout_d, s_write_timeout_q;
   logic s_write_last_seen_d, s_write_last_seen_q;
   logic s_isolated_d, s_isolated_q;
-  logic s_timeout_read;
-  logic s_timeout_write;
   logic s_read_progress;
   logic s_write_progress;
   logic s_read_timeout_enable;
   logic s_write_timeout_enable;
   logic s_read_missing_last;
+  logic s_read_timeout_raw;
+  logic s_write_timeout_raw;
+  logic s_read_timeout_latched_d, s_read_timeout_latched_q;
+  logic s_write_timeout_latched_d, s_write_timeout_latched_q;
+  logic s_read_timeout_pending;
+  logic s_write_timeout_pending;
+  logic s_timeout_hold_d, s_timeout_hold_q;
+  logic s_timeout_sel_write_d, s_timeout_sel_write_q;
+  logic s_timeout_sel_write;
+  logic s_timeout_accept;
+  logic s_read_timeout_accept;
+  logic s_write_timeout_accept;
+  logic s_timeout_block;
 
   assign s_ar_push_data = {
     source.arid,
@@ -208,9 +220,9 @@ module axi4_target_guard #(
   assign sink.arqos = s_ar_qos;
   assign sink.arregion = s_ar_region;
   assign sink.aruser = s_ar_user;
-  assign sink.arvalid = (s_read_state_q == ReadSend) && !s_isolated_q;
+  assign sink.arvalid = (s_read_state_q == ReadSend) && !s_isolated_q && !s_read_timeout_pending;
   assign s_ar_pop = ((s_read_state_q == ReadSend) &&
-                     (sink.arready || s_timeout_read || s_isolated_q)) ||
+                     ((sink.arvalid && sink.arready) || s_read_timeout_accept || s_isolated_q)) ||
                     ((s_read_state_q == ReadIdle) && s_isolated_q && !s_ar_empty);
 
   assign s_read_missing_last = (s_read_state_q == ReadForward) && sink.rvalid &&
@@ -224,7 +236,8 @@ module axi4_target_guard #(
   assign source.ruser = (s_read_state_q == ReadSynthetic) ? '0 : sink.ruser;
   assign source.rvalid = (s_read_state_q == ReadSynthetic) ||
                          ((s_read_state_q == ReadForward) && sink.rvalid);
-  assign sink.rready = (s_read_state_q == ReadForward) ? source.rready :
+  assign sink.rready = (s_read_state_q == ReadForward) && !s_read_timeout_pending ?
+                       source.rready :
                        ((s_read_state_q == ReadAbort) ||
                         (s_read_state_q == ReadSynthetic));
 
@@ -234,7 +247,8 @@ module axi4_target_guard #(
                                  (((s_read_state_q == ReadSend) && !sink.arready) ||
                                   ((s_read_state_q == ReadForward) && source.rready &&
                                    !sink.rvalid));
-  assign s_timeout_read = s_read_timeout_enable && (s_read_timeout_q == timeout_i - 1'b1);
+  assign s_read_timeout_raw = s_read_timeout_enable && (s_read_timeout_q == timeout_i - 1'b1);
+  assign s_read_timeout_pending = s_read_timeout_latched_q || s_read_timeout_raw;
 
   always_comb begin
     s_read_state_d     = s_read_state_q;
@@ -242,7 +256,9 @@ module axi4_target_guard #(
     s_read_addr_d      = s_read_addr_q;
     s_read_remaining_d = s_read_remaining_q;
     s_read_timeout_d   = s_read_timeout_q;
-    if (s_read_state_q == ReadIdle) begin
+    if (s_timeout_block) begin
+      s_read_timeout_d = s_read_timeout_q;
+    end else if (s_read_state_q == ReadIdle) begin
       s_read_timeout_d = '0;
       if (!s_ar_empty && s_isolated_q) begin
         s_read_id_d        = s_ar_id;
@@ -259,7 +275,7 @@ module axi4_target_guard #(
       s_read_state_d     = ReadSynthetic;
     end else if (s_isolated_q && (s_read_state_q == ReadForward)) begin
       s_read_state_d = ReadAbort;
-    end else if (s_timeout_read) begin
+    end else if (s_read_timeout_accept) begin
       s_read_timeout_d = '0;
       if (s_read_state_q == ReadSend) begin
         s_read_id_d        = s_ar_id;
@@ -271,6 +287,8 @@ module axi4_target_guard #(
         s_read_addr_d  = s_read_addr_q;
         s_read_state_d = ReadAbort;
       end
+    end else if (s_read_timeout_pending) begin
+      s_read_timeout_d = s_read_timeout_q;
     end else begin
       s_read_timeout_d = s_read_progress ? 32'd0 :
           s_read_timeout_enable ? s_read_timeout_q + 1'b1 : s_read_timeout_q;
@@ -317,17 +335,19 @@ module axi4_target_guard #(
   assign sink.awqos = s_aw_qos;
   assign sink.awregion = s_aw_region;
   assign sink.awuser = s_aw_user;
-  assign sink.awvalid = (s_write_state_q == WriteSend) && !s_isolated_q;
+  assign sink.awvalid = (s_write_state_q == WriteSend) && !s_isolated_q && !s_write_timeout_pending;
   assign s_aw_pop = ((s_write_state_q == WriteSend) &&
-                     (sink.awready || s_timeout_write || s_isolated_q)) ||
+                     ((sink.awvalid && sink.awready) || s_write_timeout_accept || s_isolated_q)) ||
                     ((s_write_state_q == WriteIdle) && s_isolated_q && !s_aw_empty);
 
   assign sink.wdata = source.wdata;
   assign sink.wstrb = source.wstrb;
   assign sink.wlast = source.wlast;
   assign sink.wuser = source.wuser;
-  assign sink.wvalid = (s_write_state_q == WriteStream) && source.wvalid;
-  assign source.wready = (s_write_state_q == WriteStream) ? sink.wready :
+  assign sink.wvalid = (s_write_state_q == WriteStream) && source.wvalid &&
+                       !s_write_timeout_pending;
+  assign source.wready = (s_write_state_q == WriteStream) && !s_write_timeout_pending ?
+                         sink.wready :
                          (s_write_state_q == WriteDrop);
 
   assign source.bid = (s_write_state_q == WriteSynthetic) ? s_write_id_q : sink.bid;
@@ -335,7 +355,8 @@ module axi4_target_guard #(
   assign source.buser = (s_write_state_q == WriteSynthetic) ? '0 : sink.buser;
   assign source.bvalid = (s_write_state_q == WriteSynthetic) ||
                          ((s_write_state_q == WriteResponse) && sink.bvalid);
-  assign sink.bready = (s_write_state_q == WriteResponse) ? source.bready :
+  assign sink.bready = (s_write_state_q == WriteResponse) && !s_write_timeout_pending ?
+                       source.bready :
                        ((s_write_state_q == WriteAbort) ||
                         (s_write_state_q == WriteSynthetic));
 
@@ -346,7 +367,8 @@ module axi4_target_guard #(
       (((s_write_state_q == WriteSend) && !sink.awready) ||
        ((s_write_state_q == WriteStream) && source.wvalid && !sink.wready) ||
        ((s_write_state_q == WriteResponse) && source.bready && !sink.bvalid));
-  assign s_timeout_write = s_write_timeout_enable && (s_write_timeout_q == timeout_i - 1'b1);
+  assign s_write_timeout_raw = s_write_timeout_enable && (s_write_timeout_q == timeout_i - 1'b1);
+  assign s_write_timeout_pending = s_write_timeout_latched_q || s_write_timeout_raw;
 
   always_comb begin
     s_write_state_d     = s_write_state_q;
@@ -354,7 +376,9 @@ module axi4_target_guard #(
     s_write_addr_d      = s_write_addr_q;
     s_write_timeout_d   = s_write_timeout_q;
     s_write_last_seen_d = s_write_last_seen_q;
-    if (s_write_state_q == WriteIdle) begin
+    if (s_timeout_block) begin
+      s_write_timeout_d = s_write_timeout_q;
+    end else if (s_write_state_q == WriteIdle) begin
       s_write_timeout_d   = '0;
       s_write_last_seen_d = 1'b0;
       if (!s_aw_empty && s_isolated_q) begin
@@ -371,7 +395,7 @@ module axi4_target_guard #(
     end else if (s_isolated_q && ((s_write_state_q == WriteStream) ||
                                   (s_write_state_q == WriteResponse))) begin
       s_write_state_d = WriteAbort;
-    end else if (s_timeout_write) begin
+    end else if (s_write_timeout_accept) begin
       s_write_timeout_d = '0;
       if (s_write_state_q == WriteSend) begin
         s_write_id_d    = s_aw_id;
@@ -380,6 +404,8 @@ module axi4_target_guard #(
       end else begin
         s_write_state_d = WriteAbort;
       end
+    end else if (s_write_timeout_pending) begin
+      s_write_timeout_d = s_write_timeout_q;
     end else begin
       s_write_timeout_d = s_write_progress ? 32'd0 :
           s_write_timeout_enable ? s_write_timeout_q + 1'b1 : s_write_timeout_q;
@@ -422,50 +448,96 @@ module axi4_target_guard #(
 
   always_comb begin
     s_isolated_d = s_isolated_q;
-    if ((s_timeout_read && (s_read_state_q == ReadForward)) ||
-        (s_timeout_write && ((s_write_state_q == WriteStream) ||
-                             (s_write_state_q == WriteResponse)))) begin
+    if ((s_read_timeout_accept && (s_read_state_q == ReadForward)) ||
+        (s_write_timeout_accept && ((s_write_state_q == WriteStream) ||
+                                    (s_write_state_q == WriteResponse)))) begin
       s_isolated_d = 1'b1;
+    end
+  end
+
+  assign s_timeout_sel_write = s_timeout_hold_q ? s_timeout_sel_write_q :
+                               !s_read_timeout_pending && s_write_timeout_pending;
+  assign timeout_valid_o = !clear_i &&
+                           (s_timeout_hold_q || s_read_timeout_pending ||
+                            s_write_timeout_pending);
+  assign s_timeout_accept = timeout_valid_o && timeout_ready_i;
+  assign s_read_timeout_accept = s_timeout_accept && !s_timeout_sel_write;
+  assign s_write_timeout_accept = s_timeout_accept && s_timeout_sel_write;
+  assign s_timeout_block = timeout_valid_o && !timeout_ready_i;
+
+  always_comb begin
+    s_read_timeout_latched_d  = s_read_timeout_latched_q;
+    s_write_timeout_latched_d = s_write_timeout_latched_q;
+    s_timeout_hold_d          = s_timeout_hold_q;
+    s_timeout_sel_write_d     = s_timeout_sel_write_q;
+    if (clear_i) begin
+      s_read_timeout_latched_d  = 1'b0;
+      s_write_timeout_latched_d = 1'b0;
+      s_timeout_hold_d          = 1'b0;
+    end else begin
+      if (s_read_timeout_accept) begin
+        s_read_timeout_latched_d = 1'b0;
+      end else if (s_read_timeout_raw) begin
+        s_read_timeout_latched_d = 1'b1;
+      end
+      if (s_write_timeout_accept) begin
+        s_write_timeout_latched_d = 1'b0;
+      end else if (s_write_timeout_raw) begin
+        s_write_timeout_latched_d = 1'b1;
+      end
+      if (s_timeout_hold_q) begin
+        if (s_timeout_accept) s_timeout_hold_d = 1'b0;
+      end else if (timeout_valid_o && !timeout_ready_i) begin
+        s_timeout_hold_d      = 1'b1;
+        s_timeout_sel_write_d = s_timeout_sel_write;
+      end
     end
   end
 
   assign abort_o = (s_read_state_q == ReadAbort) || (s_write_state_q == WriteAbort);
   assign clear_busy_o = clear_i || abort_o;
-  assign timeout_valid_o = s_timeout_read || s_timeout_write;
   assign isolated_o = s_isolated_q;
-  assign timeout_write_o = s_timeout_write;
-  assign timeout_id_o = s_timeout_write ?
+  assign timeout_write_o = s_timeout_sel_write;
+  assign timeout_id_o = s_timeout_sel_write ?
                         ((s_write_state_q == WriteSend) ? s_aw_id : s_write_id_q) :
                         ((s_read_state_q == ReadSend) ? s_ar_id : s_read_id_q);
-  assign timeout_addr_o = s_timeout_write ?
+  assign timeout_addr_o = s_timeout_sel_write ?
                           ((s_write_state_q == WriteSend) ? s_aw_addr : s_write_addr_q) :
                           ((s_read_state_q == ReadSend) ? s_ar_addr : s_read_addr_q);
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      s_read_state_q      <= ReadIdle;
-      s_read_id_q         <= '0;
-      s_read_addr_q       <= '0;
-      s_read_remaining_q  <= '0;
-      s_read_timeout_q    <= '0;
-      s_write_state_q     <= WriteIdle;
-      s_write_id_q        <= '0;
-      s_write_addr_q      <= '0;
-      s_write_timeout_q   <= '0;
-      s_write_last_seen_q <= 1'b0;
-      s_isolated_q        <= 1'b0;
+      s_read_state_q            <= ReadIdle;
+      s_read_id_q               <= '0;
+      s_read_addr_q             <= '0;
+      s_read_remaining_q        <= '0;
+      s_read_timeout_q          <= '0;
+      s_write_state_q           <= WriteIdle;
+      s_write_id_q              <= '0;
+      s_write_addr_q            <= '0;
+      s_write_timeout_q         <= '0;
+      s_write_last_seen_q       <= 1'b0;
+      s_isolated_q              <= 1'b0;
+      s_read_timeout_latched_q  <= 1'b0;
+      s_write_timeout_latched_q <= 1'b0;
+      s_timeout_hold_q          <= 1'b0;
+      s_timeout_sel_write_q     <= 1'b0;
     end else begin
-      s_read_state_q      <= s_read_state_d;
-      s_read_id_q         <= s_read_id_d;
-      s_read_addr_q       <= s_read_addr_d;
-      s_read_remaining_q  <= s_read_remaining_d;
-      s_read_timeout_q    <= s_read_timeout_d;
-      s_write_state_q     <= s_write_state_d;
-      s_write_id_q        <= s_write_id_d;
-      s_write_addr_q      <= s_write_addr_d;
-      s_write_timeout_q   <= s_write_timeout_d;
-      s_write_last_seen_q <= s_write_last_seen_d;
-      s_isolated_q        <= s_isolated_d;
+      s_read_state_q            <= s_read_state_d;
+      s_read_id_q               <= s_read_id_d;
+      s_read_addr_q             <= s_read_addr_d;
+      s_read_remaining_q        <= s_read_remaining_d;
+      s_read_timeout_q          <= s_read_timeout_d;
+      s_write_state_q           <= s_write_state_d;
+      s_write_id_q              <= s_write_id_d;
+      s_write_addr_q            <= s_write_addr_d;
+      s_write_timeout_q         <= s_write_timeout_d;
+      s_write_last_seen_q       <= s_write_last_seen_d;
+      s_isolated_q              <= s_isolated_d;
+      s_read_timeout_latched_q  <= s_read_timeout_latched_d;
+      s_write_timeout_latched_q <= s_write_timeout_latched_d;
+      s_timeout_hold_q          <= s_timeout_hold_d;
+      s_timeout_sel_write_q     <= s_timeout_sel_write_d;
     end
   end
 

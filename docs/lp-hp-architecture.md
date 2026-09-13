@@ -1,10 +1,11 @@
 # Mini Product LP/HP Architecture
 
-The frozen [GA2D specification](ip/ga2d.md) approves a phased expansion to a
-64-bit LP interrupt vector, nine AXI64 masters with seven-bit global IDs, and
-Resource Controller entry 8. These are pending implementation requirements;
-this document's current-product descriptions do not imply those phases have
-already been delivered. Existing hart, memory, and source identities remain fixed.
+The frozen [GA2D specification](ip/ga2d.md) defines the phased GA2D delivery.
+Phase 2 expands the implemented platform to nine AXI64 masters with seven-bit
+global IDs and Resource Controller entry 8. Its dedicated PCLK-to-HP
+AXI64/ID3 bridge is an idle placeholder only. `APB4_GA` remains reserved and
+inactive, and the GA2D APB shell, IRQ, payload/DMA, and pixel function remain
+deferred. Existing hart, memory, and source identities remain fixed.
 
 ## Product contract
 
@@ -78,7 +79,7 @@ same memory admission, inactive-pad, ACL, and fault path as HP and DMA.
 
 ## Native AXI64 data plane
 
-`soc_data_plane` contains an 8-master, 6-target AXI64 crossbar. Read and write
+`soc_data_plane` contains a 9-master, 6-target AXI64 crossbar. Read and write
 channels progress independently, and different source IDs may be active against
 the same or different targets. The same source ID is blocked until completion.
 SRAM and SDRAM accept four reads and two writes; serial memories and the error
@@ -94,9 +95,10 @@ and a Common FIFO preserves write-data order where AXI4 W has no ID.
 | I/O gateway B | SDIO1 and SPI-SD, then PCLK-to-HP CDC and upsizer |
 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC and upsizer |
 | EXT-H | PCLK-to-HP AXI64 async bridge, ID prefix 7 |
+| GA2D bridge placeholder | dedicated PCLK-to-HP AXI64/ID3 async bridge; source held idle |
 
 Targets are SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, XPI/flash, and a
-finite-latency error slave. SRAM is a native AXI64, six-bit-ID target in HP and
+finite-latency error slave. SRAM is a native AXI64, seven-bit-ID target in HP and
 stripes each beat across two existing 32-bit technology macros. SDRAM, QPI,
 OPI, and XPI cross directly from HP to the stable memory domain as AXI64 and
 are downsized only beside their current 32-bit controller frontends. Serial
@@ -112,6 +114,14 @@ that target until hard reset so a late response cannot contaminate new traffic.
 All async AXI channels use Common coordinated warm-flush FIFOs and expose a
 source-domain epoch. HP shutdown holds a flush request until every bridge sees
 it, then waits for bridge recovery before resetting the core.
+
+`data_plane_fault_cdc` carries HP fault metadata to PCLK through Common's
+one-entry `async_reqack` mailbox. The crossbar and target guards hold a
+valid, stable 44-bit fault payload until its ready handshake, applying
+backpressure before another reportable fault can retire. Reset in either
+mailbox domain aborts an item already accepted by the mailbox; a unilateral
+PCLK reset keeps an unaccepted HP-source event backpressured until the link
+is released.
 
 ## Memory and shared pads
 
@@ -144,11 +154,16 @@ Its IRQ is delivered to LP IRQ 28 or HP PLIC source 3 according to owner,
 never both. Software discovers it through `<retrosoc/hal/extension.h>`.
 
 The Resource Controller at `0x2000_A000` is the central owner and IRQ authority
-for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, and APU. Handoff requires idle,
+for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, and APU, and the lifecycle
+authority for the idle GA2D bridge placeholder. Resource 8 has no routed IRQ
+until Phase 3. Handoff requires idle,
 owner lock is sticky, and rejected handoffs raise LP IRQ 29. APU index 7 routes
 exclusively to LP IRQ31 or HP PLIC source10. The controller also carries the
 AON cache request/clean acknowledgement used before HP drain. See
 [`ip/resource-controller.md`](ip/resource-controller.md).
+Resource 8 qualifies its HP block acknowledgement with a fresh synchronized
+source-quiesced state, so an old idle sample cannot hand off a
+`WVALID`-before-`AWVALID` write.
 
 The root-only Fabric Monitor at `0x2000_B000` records per-master and
 per-target traffic, wait, promotion, credit high-water, timeout, isolation,

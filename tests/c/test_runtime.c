@@ -11,6 +11,7 @@
 #include <retrosoc/hal/clock.h>
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
+#include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
@@ -44,8 +45,10 @@ unsigned long long __umoddi3(unsigned long long dividend, unsigned long long div
 static uint8_t storage[32];
 static uint32_t image_call_count;
 volatile uint32_t rs_apu_test_mmio[1024];
+volatile uint32_t rs_fabric_monitor_test_mmio[1024];
 
 #define APU_TEST_REG(offset) rs_apu_test_mmio[(offset) / 4U]
+#define FABRIC_MONITOR_TEST_REG(offset) rs_fabric_monitor_test_mmio[(offset) / 4U]
 
 void putch(char ch) {
     (void)ch;
@@ -855,6 +858,12 @@ static int test_extension_validation(void) {
 static int test_resource_validation(void) {
     rs_resource_status_t status;
 
+    if ((RS_RESOURCE_DMA != 0) || (RS_RESOURCE_USB2 != 1) || (RS_RESOURCE_SDIO0 != 2) ||
+        (RS_RESOURCE_SDIO1 != 3) || (RS_RESOURCE_SPISD != 4) || (RS_RESOURCE_EXT_H != 5) ||
+        (RS_RESOURCE_JPEG != 6) || (RS_RESOURCE_APU != 7) || (RS_RESOURCE_GA2D != 8) ||
+        (RS_RESOURCE_COUNT != 9)) {
+        return 1;
+    }
     if ((rs_resource_get_status((rs_resource_t)RS_RESOURCE_COUNT, &status) != RS_EINVAL) ||
         (rs_resource_get_status(RS_RESOURCE_DMA, NULL) != RS_EINVAL) ||
         (rs_resource_set_owner((rs_resource_t)RS_RESOURCE_COUNT, RS_RESOURCE_OWNER_LP, false) !=
@@ -863,7 +872,53 @@ static int test_resource_validation(void) {
         (rs_resource_set_lifecycle((rs_resource_t)RS_RESOURCE_COUNT, false, false) != RS_EINVAL) ||
         (rs_resource_clear_fault((rs_resource_t)RS_RESOURCE_COUNT) != RS_EINVAL) ||
         (rs_resource_get_cache_status(NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    return 0;
+}
+
+static void test_fabric_monitor_mmio_reset(void) {
+    for (size_t index = 0U;
+         index < (sizeof(rs_fabric_monitor_test_mmio) / sizeof(rs_fabric_monitor_test_mmio[0]));
+         ++index) {
+        rs_fabric_monitor_test_mmio[index] = 0U;
+    }
+}
+
+static int test_fabric_monitor_hal_contract(void) {
+    rs_fabric_fault_t fault;
+
+    if ((RS_FABRIC_MASTER_HP_ICACHE != 0) || (RS_FABRIC_MASTER_HP_DCACHE != 1) ||
+        (RS_FABRIC_MASTER_DMA != 2) || (RS_FABRIC_MASTER_IO_A != 3) ||
+        (RS_FABRIC_MASTER_IO_B != 4) || (RS_FABRIC_MASTER_LP != 5) ||
+        (RS_FABRIC_MASTER_JPEG != 6) || (RS_FABRIC_MASTER_RESERVED != 6) ||
+        (RS_FABRIC_MASTER_EXT_H != 7) || (RS_FABRIC_MASTER_GA2D != 8) ||
+        (RS_FABRIC_MASTER_COUNT != 9)) {
         return 1;
+    }
+
+    test_fabric_monitor_mmio_reset();
+    FABRIC_MONITOR_TEST_REG(UINT32_C(0x004)) = UINT32_C(0x00010000);
+    FABRIC_MONITOR_TEST_REG(UINT32_C(0x014)) =
+        UINT32_C(0x00001000) | UINT32_C(0x0A00) | UINT32_C(0x0080) | UINT32_C(0x000C) |
+        UINT32_C(0x0003);
+    FABRIC_MONITOR_TEST_REG(UINT32_C(0x018)) = UINT32_C(0x12345678);
+    FABRIC_MONITOR_TEST_REG(UINT32_C(0x020)) = UINT32_C(0x0000002A);
+    if ((rs_fabric_monitor_read_fault(&fault) != RS_OK) || (fault.master != 3U) ||
+        (fault.target != 4U) || (fault.reason != 10U) || !fault.valid || !fault.write ||
+        (fault.address != UINT32_C(0x12345678)) || (fault.count != UINT32_C(0x0000002A))) {
+        return 2;
+    }
+
+    FABRIC_MONITOR_TEST_REG(UINT32_C(0x004)) = UINT32_C(0x00010001);
+    FABRIC_MONITOR_TEST_REG(UINT32_C(0x014)) =
+        UINT32_C(0x00001000) | UINT32_C(0x0A00) | UINT32_C(0x0080) | UINT32_C(0x0003);
+    if ((rs_fabric_monitor_read_fault(&fault) != RS_OK) ||
+        (fault.master != RS_FABRIC_MASTER_GA2D)) {
+        return 3;
+    }
+    if (rs_fabric_monitor_read_fault(NULL) != RS_EINVAL) {
+        return 4;
     }
     return 0;
 }
@@ -1205,6 +1260,7 @@ int main(void) {
         test_user_ip_validation(),
         test_extension_validation(),
         test_resource_validation(),
+        test_fabric_monitor_hal_contract(),
         test_apu_validation(),
         test_apu_hal_contract(),
         test_jpeg_validation(),

@@ -9,7 +9,7 @@ module axi4_downsizer_64to32_tb;
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(64),
-      .ID_WIDTH  (3),
+      .ID_WIDTH  (7),
       .USER_WIDTH(1)
   ) wide (
       .aclk   (clk_i),
@@ -27,7 +27,9 @@ module axi4_downsizer_64to32_tb;
 
   always #5 clk_i = ~clk_i;
 
-  axi4_downsizer_64to32 u_dut (
+  axi4_downsizer_64to32 #(
+      .WideIdWidth(7)
+  ) u_dut (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
       .clear_i(1'b0),
@@ -85,7 +87,7 @@ module axi4_downsizer_64to32_tb;
   endtask
 
   task automatic accept_read(input logic [31:0] address, input logic [7:0] length,
-                             input logic [2:0] size, input logic [2:0] id,
+                             input logic [2:0] size, input logic [6:0] id,
                              input logic [7:0] expected_length);
     begin
       @(negedge clk_i);
@@ -110,7 +112,7 @@ module axi4_downsizer_64to32_tb;
   endtask
 
   task automatic accept_write(input logic [31:0] address, input logic [7:0] length,
-                              input logic [2:0] size, input logic [2:0] id,
+                              input logic [2:0] size, input logic [6:0] id,
                               input logic [7:0] expected_length);
     begin
       @(negedge clk_i);
@@ -134,7 +136,7 @@ module axi4_downsizer_64to32_tb;
     end
   endtask
 
-  task automatic return_write_response(input logic [2:0] expected_id, input logic [1:0] response);
+  task automatic return_write_response(input logic [6:0] expected_id, input logic [1:0] response);
     begin
       @(negedge clk_i);
       narrow.bresp  = response;
@@ -166,7 +168,7 @@ module axi4_downsizer_64to32_tb;
     repeat (4) @(posedge clk_i);
     rst_n_i = 1'b1;
 
-    accept_read(32'h0000_0040, 8'd0, 3'd3, 3'd5, 8'd1);
+    accept_read(32'h0000_0040, 8'd0, 3'd3, 7'h40, 8'd1);
     @(negedge clk_i);
     narrow.rdata  = 32'h1122_3344;
     narrow.rresp  = `AXI4_RESP_SLAVE_ERROR;
@@ -181,7 +183,7 @@ module axi4_downsizer_64to32_tb;
     narrow.rresp = `AXI4_RESP_OKAY;
     narrow.rlast = 1'b1;
     #1;
-    if (!wide.rvalid || narrow.rready || wide.rid != 3'd5 ||
+    if (!wide.rvalid || narrow.rready || wide.rid != 7'h40 ||
         wide.rdata != 64'h5566_7788_1122_3344 || wide.rresp != `AXI4_RESP_SLAVE_ERROR ||
         !wide.rlast) begin
       $fatal(1, "64-bit read assembly or backpressure mismatch");
@@ -194,7 +196,7 @@ module axi4_downsizer_64to32_tb;
     wide.rready   = 1'b0;
     narrow.rvalid = 1'b0;
 
-    accept_read(32'h0000_0000, 8'd1, 3'd2, 3'd3, 8'd1);
+    accept_read(32'h0000_0000, 8'd1, 3'd2, 7'h41, 8'd1);
     @(negedge clk_i);
     narrow.rdata  = 32'hA5A5_0000;
     narrow.rresp  = `AXI4_RESP_OKAY;
@@ -202,7 +204,7 @@ module axi4_downsizer_64to32_tb;
     narrow.rvalid = 1'b1;
     wide.rready   = 1'b1;
     #1;
-    if (wide.rdata != 64'h0000_0000_A5A5_0000 || wide.rid != 3'd3) begin
+    if (wide.rdata != 64'h0000_0000_A5A5_0000 || wide.rid != 7'h41) begin
       $fatal(1, "lower 32-bit read lane mismatch");
     end
     @(posedge clk_i);
@@ -218,7 +220,7 @@ module axi4_downsizer_64to32_tb;
     wide.rready   = 1'b0;
     narrow.rvalid = 1'b0;
 
-    accept_write(32'h0000_0080, 8'd0, 3'd3, 3'd6, 8'd1);
+    accept_write(32'h0000_0080, 8'd0, 3'd3, 7'h42, 8'd1);
     @(negedge clk_i);
     wide.wdata    = 64'h1122_3344_5566_7788;
     wide.wstrb    = 8'hF3;
@@ -240,9 +242,9 @@ module axi4_downsizer_64to32_tb;
     @(negedge clk_i);
     wide.wvalid   = 1'b0;
     narrow.wready = 1'b0;
-    return_write_response(3'd6, `AXI4_RESP_DECODE_ERROR);
+    return_write_response(7'h42, `AXI4_RESP_DECODE_ERROR);
 
-    accept_write(32'h0000_0004, 8'd1, 3'd2, 3'd2, 8'd1);
+    accept_write(32'h0000_0004, 8'd1, 3'd2, 7'h43, 8'd1);
     @(negedge clk_i);
     wide.wdata    = 64'hCAFE_0000_DEAD_0000;
     wide.wstrb    = 8'hF0;
@@ -266,7 +268,7 @@ module axi4_downsizer_64to32_tb;
     @(negedge clk_i);
     wide.wvalid   = 1'b0;
     narrow.wready = 1'b0;
-    return_write_response(3'd2, `AXI4_RESP_OKAY);
+    return_write_response(7'h43, `AXI4_RESP_OKAY);
 
     $display("AXI4 64-to-32 downsizer test passed");
     $finish;

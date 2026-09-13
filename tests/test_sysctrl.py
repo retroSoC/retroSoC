@@ -10,6 +10,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PERIPHERAL = ROOT / "rtl/ip/peripheral"
+TOP = ROOT / "rtl/mini/top"
+
+
+def test_sysctrl_fault_master_keeps_the_data_plane_high_bit() -> None:
+    interface = (PERIPHERAL / "sysctrl_if.sv").read_text(encoding="utf-8")
+    core = (PERIPHERAL / "sysctrl_core.sv").read_text(encoding="utf-8")
+    top = (TOP / "retrosoc.sv").read_text(encoding="utf-8")
+    fault_cdc = (TOP / "data_plane_fault_cdc.sv").read_text(encoding="utf-8")
+
+    assert "logic [                         3:0] fault_master_i;" in interface
+    assert "28'd0, s_fault_master_q" in core
+    assert "{1'b0, s_bus_fault_master}" in top
+    assert "data_plane_fault_cdc u_data_plane_fault_cdc" in top
+    assert ".fault_ready_i           (s_data_plane_fault_ready_hp)" in top
+    assert "s_data_plane_fault_valid_pclk || s_bus_fault_valid" in top
+    assert "async_reqack" in fault_cdc
+    assert "fault_ready_o" in fault_cdc
 
 
 def test_sysctrl_registers_lifecycle_faults_and_wake(tmp_path: Path) -> None:
@@ -59,6 +76,10 @@ def test_sysctrl_registers_lifecycle_faults_and_wake(tmp_path: Path) -> None:
                 str(common / "interface/apb4_if.sv"),
                 str(common / "utils/register.sv"),
                 str(common / "cdc/cdc_sync.sv"),
+                str(common / "clkrst/rst_sync.sv"),
+                str(common / "cdc/cdc_rst_ctrlr.sv"),
+                str(TOP / "soc_common_cdc.sv"),
+                str(TOP / "data_plane_fault_cdc.sv"),
                     str(PERIPHERAL / "pll_ctrl_if.sv"),
                     str(PERIPHERAL / "clock_ctrl_if.sv"),
                 str(PERIPHERAL / "sysctrl_if.sv"),

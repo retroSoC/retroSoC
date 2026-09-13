@@ -1,10 +1,12 @@
 # Mini Resource Controller
 
-The approved [GA2D contract](ga2d.md) adds resource 8 and version 1.1 during
-its Phase 2, with LP vector 32 / HP PLIC source 11 connected in Phase 3.
-Its source-stop/drain-before-block sequence is specified there. These changes
-are pending implementation; the existing resources and register fields below
-are not renumbered or reinterpreted by the documentation freeze.
+[GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
+adds resource 8 and version 1.1. It covers only the dedicated PCLK-to-HP
+AXI64/ID3 GA2D bridge placeholder, whose source is idle. LP vector 32 / HP
+PLIC source 11 and GA2D APB-shell wiring remain Phase 3 work; `APB4_GA`
+therefore remains reserved and inactive. Its source-stop/drain-before-block
+sequence is specified there. Existing resources and register fields are not
+renumbered or reinterpreted.
 
 ## Scope
 
@@ -27,17 +29,20 @@ Resource indices are fixed:
 | 5 | EXT-H | 3 |
 | 6 | JPEG | 9 |
 | 7 | APU | 10 |
+| 8 | GA2D bridge placeholder (idle) | 11, not routed until Phase 3 |
 
-Owner `0` routes the resource interrupt to the existing LP vector. Owner `1`
-removes it from LP and routes it to the listed HP PLIC source. Reset masks both
-routes. Hardware never delivers one resource interrupt to both owners.
+For resources 0 through 7, owner `0` routes the resource interrupt to the
+existing LP vector. Owner `1` removes it from LP and routes it to the listed HP
+PLIC source. Resource 8 has a fixed-inactive raw IRQ and no LP or HP IRQ route
+until Phase 3. Reset masks both applicable routes. Hardware never delivers one
+resource interrupt to both owners.
 
 ## Register ABI
 
 | Offset | Name | Access | Contract |
 | ---: | --- | --- | --- |
 | `0x000` | `IP_ID` | RO | `0x52534354` (`RSCT`) |
-| `0x004` | `IP_VERSION` | RO | `0x00010000` |
+| `0x004` | `IP_VERSION` | RO | `0x00010001` |
 | `0x008` | `CAPABILITY` | RO | resource count and ABI capability |
 | `0x00C` | `GLOBAL_STATUS` | RO | cache request/clean and resource fault summary |
 | `0x010` | `CACHE_CONTROL` | RW | bit 0 clean ACK, bit 1 live request |
@@ -61,6 +66,13 @@ leaves the owner unchanged, and raises the resource-fault interrupt on LP IRQ
 condition for DMA and I/O resources; this is safe but can delay an otherwise
 independent handoff.
 
+For resource 8, the PCLK source stop admits an already presented address
+handshake before closing new traffic. Its HP block and acknowledgement require
+a fresh synchronized source-quiesced confirmation after the source has drained
+its AXI state. This prevents a stale idle indication from acknowledging a legal
+`WVALID`-before-`AWVALID` write. The PCLK controller view also qualifies
+resource-8 idle and ACK with the live source-safe-idle signal.
+
 ## Cache Maintenance
 
 VexiiRiscv implements `Zicbom` with a 64-byte CBO block. On HP shutdown the AON
@@ -78,11 +90,13 @@ and a Linux platform driver remain software responsibilities.
 ## Delivery Boundary
 
 Central owner/lock, quiesce-gated handoff, cache request/ACK, fault IRQ, and
-LP/HP IRQ routing are implemented and directed-tested. `CONTROL.QUIESCE`
-blocks the corresponding data-crossbar master and waits per-master outstanding
-zero; shared I/O gateways are conservatively blocked as a pair. `CONTROL.RESET`
-also blocks new data and masks IRQ but is not yet connected to every peripheral
-engine's internal reset state machine. The APU-P1 shell is an exception: its
-index-7 quiesce acknowledgement and reset are connected locally in PCLK. It
-must not be described as independent peripheral power isolation or reset containment until
+LP/HP IRQ routing are implemented and directed-tested. P2 appends resource 8
+for the idle GA2D bridge placeholder only; it creates no GA2D IRQ route or
+functional GA2D peripheral. `CONTROL.QUIESCE` blocks the corresponding
+data-crossbar master and waits per-master outstanding zero; shared I/O gateways
+are conservatively blocked as a pair. `CONTROL.RESET` also blocks new data and
+masks IRQ but is not yet connected to every peripheral engine's internal reset
+state machine. The APU-P1 shell is an exception: its index-7 quiesce
+acknowledgement and reset are connected locally in PCLK. It must not be
+described as independent peripheral power isolation or reset containment until
 those downstream acknowledgements and fault-injection tests exist.

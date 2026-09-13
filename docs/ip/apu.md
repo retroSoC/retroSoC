@@ -227,8 +227,8 @@ contract.
 The APU provides one PCLK-domain 32-bit AXI4 master with 32-bit addresses,
 one-bit ID/user, and ID zero. It occupies the unused third input of I/O Gateway
 A and uses the existing PCLK-to-HP `axi4_async_bridge` and 32-to-64 upsizer.
-It retains global data-master identity 3; the eight-master crossbar and global
-ID width do not expand.
+It retains global data-master identity 3; the nine-master crossbar and
+seven-bit global ID width preserve that identity.
 
 Gateway A MUST replace its fixed-priority selection with a burst-boundary
 Common round-robin arbiter among APU, SDIO0, and USB2. Ownership is retained

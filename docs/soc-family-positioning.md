@@ -141,9 +141,12 @@ capabilities:
 - The canonical address map exposes configurable on-chip SRAM, a 64 MiB SDRAM
   window, and an 8 MiB PSRAM window. Address-window capacity does not guarantee
   that every implementation includes the corresponding physical memory.
-- AXI4 uses a 32-bit LP control plane and an 8x6 native AXI64 HP data plane.
-  Vexii I/D ports remain independent; DMA and I/O masters cross into HP and
-  current memory frontends are reached through 64-to-32 target adapters.
+- AXI4 uses a 32-bit LP control plane and a 9x6 native AXI64 HP data plane
+  with seven-bit global IDs. Vexii I/D ports remain independent; DMA and I/O
+  masters cross into HP and current memory frontends are reached through
+  64-to-32 target adapters. Master 8 is a dedicated PCLK-to-HP AXI64/ID3 GA2D
+  bridge whose source is idle; `APB4_GA` remains reserved and inactive, and no
+  GA2D APB shell, IRQ, payload/DMA, or pixel function is implemented.
 - Current external-memory targets serialize accepted AXI4 bursts into ordered
   scalar engine accesses. They do not yet combine a burst into a native SDRAM,
   PSRAM, flash, or SPI-SD physical transaction.

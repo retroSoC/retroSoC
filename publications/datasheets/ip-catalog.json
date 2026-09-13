@@ -333,7 +333,7 @@
     "sources": [
       "docs/ip/resource-controller.md"
     ],
-    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for eight resources."
+    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for nine resources; resource 8 is the idle GA2D bridge placeholder only."
   },
   {
     "id": "monitor",
@@ -344,7 +344,7 @@
     "sources": [
       "docs/ip/fabric-monitor.md"
     ],
-    "summary": "Snapshot counters and sticky fault attribution beside the HP data crossbar."
+    "summary": "Nine-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes the idle GA2D bridge placeholder."
   },
   {
     "id": "i2s",
